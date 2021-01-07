@@ -319,8 +319,8 @@ Also, ensure that any thread that uses the floating point registers has
 sufficient added stack space for saving floating point register values
 during context switches, as described above.
 
-Use the :option:`CONFIG_SSE` configuration option to enable support for
-SSEx instructions (x86 only).
+For x86, use the :option:`CONFIG_X86_SSE` configuration option to enable
+support for SSEx instructions.
 
 API Reference
 *************

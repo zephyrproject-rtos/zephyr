@@ -92,22 +92,16 @@ if CPU_HAS_FPU
 config SSE
 	bool "SSE registers"
 	depends on FPU
+	select X86_SSE
 	help
-	  This option enables the use of SSE registers by threads.
+	  This option is deprecated. Please use CONFIG_X86_SSE instead.
 
 config SSE_FP_MATH
 	bool "Compiler-generated SSEx instructions"
-	depends on SSE
+	depends on X86_SSE
+	select X86_SSE_FP_MATH
 	help
-	  This option allows the compiler to generate SSEx instructions for
-	  performing floating point math. This can greatly improve performance
-	  when exactly the same operations are to be performed on multiple
-	  data objects; however, it can also significantly reduce performance
-	  when preemptive task switches occur because of the larger register
-	  set that must be saved and restored.
-
-	  Disabling this option means that the compiler utilizes only the
-	  x87 instruction set for floating point operations.
+	  This option is deprecated. Please use CONFIG_X86_SSE_FP_MATH instead.
 
 config EAGER_FPU_SHARING
 	bool

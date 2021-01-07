@@ -21,10 +21,10 @@ if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
     )
 endif()
 
-if(CONFIG_SSE)
+if(CONFIG_X86_SSE)
   zephyr_cc_option(-msse)
 
-  if(CONFIG_SSE_FP_MATH)
+  if(CONFIG_X86_SSE_FP_MATH)
       zephyr_cc_option(-mfpmath=sse)
   else()
       zephyr_cc_option(-mfpmath=387)

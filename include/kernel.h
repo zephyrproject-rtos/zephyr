@@ -247,7 +247,7 @@ extern void k_thread_foreach_unlocked(
 #ifdef CONFIG_X86
 /* x86 Bitmask definitions for threads user options */
 
-#if defined(CONFIG_FPU_SHARING) && defined(CONFIG_SSE)
+#if defined(CONFIG_FPU_SHARING) && defined(CONFIG_X86_SSE)
 /* thread uses SSEx (and also FP) registers */
 #define K_SSE_REGS (BIT(7))
 #endif
