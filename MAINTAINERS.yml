@@ -1042,7 +1042,7 @@ Twister:
         - nashif
     files:
         - scripts/twister
-        - scripts/pylib/twister
+        - scripts/pylib/twister/
     labels:
         - "area: Twister"
 
