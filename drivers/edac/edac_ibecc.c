@@ -158,7 +158,7 @@ static void parse_ecclog(const struct device *dev, const uint64_t ecclog)
 }
 
 #if defined(CONFIG_EDAC_ERROR_INJECT)
-static int inject_addr_set(const struct device *dev, uint64_t addr)
+static int inject_set_param1(const struct device *dev, uint64_t addr)
 {
 	struct ibecc_data *data = dev->data;
 
@@ -172,7 +172,7 @@ static int inject_addr_set(const struct device *dev, uint64_t addr)
 	return 0;
 }
 
-static uint64_t inject_addr_get(const struct device *dev)
+static uint64_t inject_get_param1(const struct device *dev)
 {
 	struct ibecc_data *data = dev->data;
 
@@ -180,7 +180,7 @@ static uint64_t inject_addr_get(const struct device *dev)
 				       IBECC_INJ_ADDR_BASE));
 }
 
-static int inject_addr_mask_set(const struct device *dev, uint64_t mask)
+static int inject_set_param2(const struct device *dev, uint64_t mask)
 {
 	struct ibecc_data *data = dev->data;
 
@@ -194,7 +194,7 @@ static int inject_addr_mask_set(const struct device *dev, uint64_t mask)
 	return 0;
 }
 
-static uint64_t inject_addr_mask_get(const struct device *dev)
+static uint64_t inject_get_param2(const struct device *dev)
 {
 	struct ibecc_data *data = dev->data;
 
@@ -284,10 +284,10 @@ static int notify_callback_set(const struct device *dev,
 static const struct edac_driver_api api = {
 #if defined(CONFIG_EDAC_ERROR_INJECT)
 	/* Error Injection functions */
-	.inject_addr_set = inject_addr_set,
-	.inject_addr_get = inject_addr_get,
-	.inject_addr_mask_set = inject_addr_mask_set,
-	.inject_addr_mask_get = inject_addr_mask_get,
+	.inject_set_param1 = inject_set_param1,
+	.inject_get_param1 = inject_get_param1,
+	.inject_set_param2 = inject_set_param2,
+	.inject_get_param2 = inject_get_param2,
 	.inject_ctrl_set = inject_ctrl_set,
 #endif /* CONFIG_EDAC_ERROR_INJECT */
 

@@ -76,30 +76,30 @@ static void test_ibecc_error_inject_api(void)
 	uint64_t val;
 	int ret;
 
-	ret = edac_inject_addr_set(dev, TEST_ADDRESS);
+	ret = edac_inject_set_param1(dev, TEST_ADDRESS);
 	zassert_equal(ret, 0, "Error setting inject address");
 
-	val = edac_inject_addr_get(dev);
+	val = edac_inject_get_param1(dev);
 	zassert_equal(val, TEST_ADDRESS, "Read back value differs");
 
-	ret = edac_inject_addr_mask_set(dev, TEST_ADDRESS_MASK);
+	ret = edac_inject_set_param2(dev, TEST_ADDRESS_MASK);
 	zassert_equal(ret, 0, "Error setting inject address mask");
 
-	val = edac_inject_addr_mask_get(dev);
+	val = edac_inject_get_param2(dev);
 	zassert_equal(val, TEST_ADDRESS_MASK, "Read back value differs");
 
 	/* Clearing registers */
 
-	val = edac_inject_addr_set(dev, 0);
+	val = edac_inject_set_param1(dev, 0);
 	zassert_equal(ret, 0, "Error setting inject address");
 
-	val = edac_inject_addr_get(dev);
+	val = edac_inject_get_param1(dev);
 	zassert_equal(val, 0, "Read back value differs");
 
-	ret = edac_inject_addr_mask_set(dev, 0);
+	ret = edac_inject_set_param2(dev, 0);
 	zassert_equal(ret, 0, "Error setting inject address mask");
 
-	val = edac_inject_addr_mask_get(dev);
+	val = edac_inject_get_param2(dev);
 	zassert_equal(val, 0, "Read back value differs");
 }
 #else
@@ -119,10 +119,10 @@ static void test_ibecc_error_inject_test(void)
 	ret = edac_notify_callback_set(dev, callback);
 	zassert_equal(ret, 0, "Error setting notification callback");
 
-	ret = edac_inject_addr_set(dev, TEST_ADDRESS);
+	ret = edac_inject_set_param1(dev, TEST_ADDRESS);
 	zassert_equal(ret, 0, "Error setting inject address");
 
-	ret = edac_inject_addr_mask_set(dev, TEST_ADDRESS_MASK);
+	ret = edac_inject_set_param2(dev, TEST_ADDRESS_MASK);
 	zassert_equal(ret, 0, "Error setting inject address mask");
 
 	ret = edac_inject_ctrl_set(dev, 0x1);
