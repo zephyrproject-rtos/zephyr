@@ -145,7 +145,7 @@ static inline void z_do_sse_regs_init(void)
  */
 static void FpCtxSave(struct k_thread *thread)
 {
-#ifdef CONFIG_SSE
+#ifdef CONFIG_X86_SSE
 	if ((thread->base.user_options & K_SSE_REGS) != 0) {
 		z_do_fp_and_sse_regs_save(&thread->arch.preempFloatReg);
 		return;
@@ -163,7 +163,7 @@ static void FpCtxSave(struct k_thread *thread)
 static inline void FpCtxInit(struct k_thread *thread)
 {
 	z_do_fp_regs_init();
-#ifdef CONFIG_SSE
+#ifdef CONFIG_X86_SSE
 	if ((thread->base.user_options & K_SSE_REGS) != 0) {
 		z_do_sse_regs_init();
 	}

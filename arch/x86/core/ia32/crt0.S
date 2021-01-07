@@ -34,7 +34,7 @@
 #endif
 
 
-#if defined(CONFIG_SSE)
+#if defined(CONFIG_X86_SSE)
 	GDATA(_sse_mxcsr_default_value)
 #endif
 
@@ -101,7 +101,7 @@ __csSet:
 
 	fninit				/* set x87 FPU to its default state */
 
-  #if defined(CONFIG_SSE)
+  #if defined(CONFIG_X86_SSE)
 	/*
 	 * Permit use of SSE instructions
 	 *
@@ -116,7 +116,7 @@ __csSet:
 
 	ldmxcsr _sse_mxcsr_default_value   /* initialize SSE control/status reg */
 
-  #endif /* CONFIG_SSE */
+  #endif /* CONFIG_X86_SSE */
 
 #endif /* !CONFIG_FPU */
 
@@ -236,7 +236,7 @@ __csSet:
 
 _x86_bss_zero:
 	/* ECX = size, EDI = starting address */
-#ifdef CONFIG_SSE
+#ifdef CONFIG_X86_SSE
 	/* use XMM register to clear 16 bytes at a time */
 	pxor	%xmm0, %xmm0		/* zero out xmm0 register */
 
@@ -258,7 +258,7 @@ bssWords:
 	rep
 	stosl				/* zero memory per 4 bytes */
 
-#else /* !CONFIG_SSE */
+#else /* !CONFIG_X86_SSE */
 
 	/* clear out BSS double words (32-bits at a time) */
 
@@ -267,13 +267,13 @@ bssWords:
 	rep
 	stosl				/* zero memory per 4 bytes */
 
-#endif /* CONFIG_SSE */
+#endif /* CONFIG_X86_SSE */
 	ret
 
 #ifdef CONFIG_XIP
 _x86_data_copy:
 	/* EDI = dest, ESI = source, ECX = size in 32-bit chunks */
-  #ifdef CONFIG_SSE
+  #ifdef CONFIG_X86_SSE
 	/* copy 16 bytes at a time using XMM until < 16 bytes remain */
 
 	movl	%ecx ,%edx		/* save number of quad bytes */
@@ -290,7 +290,7 @@ dataDQ:
 dataWords:
 	movl	%edx, %ecx	/* restore # quad bytes */
 	andl	$0x3, %ecx	/* only need to copy at most 3 quad bytes */
-  #endif /* CONFIG_SSE */
+  #endif /* CONFIG_X86_SSE */
 
 	rep
 	movsl				/* copy data 4 bytes at a time */
@@ -298,14 +298,14 @@ dataWords:
 #endif /* CONFIG_XIP */
 
 
-#if defined(CONFIG_SSE)
+#if defined(CONFIG_X86_SSE)
 
 	/* SSE control & status register initial value */
 
 _sse_mxcsr_default_value:
 	.long	0x1f80			/* all SSE exceptions clear & masked */
 
-#endif /* CONFIG_SSE */
+#endif /* CONFIG_X86_SSE */
 
 	 /* Interrupt Descriptor Table (IDT) definition */
 

@@ -27,7 +27,7 @@
  * cases a 4 byte boundary is sufficient.
  */
 #if defined(CONFIG_EAGER_FPU_SHARING) || defined(CONFIG_LAZY_FPU_SHARING)
-#ifdef CONFIG_SSE
+#ifdef CONFIG_X86_SSE
 #define FP_REG_SET_ALIGN  16
 #else
 #define FP_REG_SET_ALIGN  4
@@ -82,7 +82,7 @@ typedef struct _callee_saved _callee_saved_t;
  * The macros CONFIG_{LAZY|EAGER}_FPU_SHARING shall be set to indicate that the
  * saving/restoring of the traditional x87 floating point (and MMX) registers
  * are supported by the kernel's context swapping code. The macro
- * CONFIG_SSE shall _also_ be set if saving/restoring of the XMM
+ * CONFIG_X86_SSE shall _also_ be set if saving/restoring of the XMM
  * registers is also supported in the kernel's context swapping code.
  */
 
@@ -120,7 +120,7 @@ typedef struct s_FpRegSet {  /* # of bytes: name of register */
 	tFpReg fpReg[8];	 /* 80 : ST0 -> ST7 */
 } tFpRegSet __aligned(FP_REG_SET_ALIGN);
 
-#ifdef CONFIG_SSE
+#ifdef CONFIG_X86_SSE
 
 /* definition of a single x87 (floating point / MMX) register */
 
@@ -168,12 +168,12 @@ typedef struct s_FpRegSetEx /* # of bytes: name of register */
 	unsigned char rsrvd3[176]; /* 176 : reserved */
 } tFpRegSetEx __aligned(FP_REG_SET_ALIGN);
 
-#else /* CONFIG_SSE == 0 */
+#else /* CONFIG_X86_SSE == 0 */
 
 typedef struct s_FpRegSetEx {
 } tFpRegSetEx;
 
-#endif /* CONFIG_SSE == 0 */
+#endif /* CONFIG_X86_SSE == 0 */
 
 #else /* !CONFIG_LAZY_FPU_SHARING && !CONFIG_EAGER_FPU_SHARING */
 
