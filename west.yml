@@ -117,8 +117,7 @@ manifest:
       revision: 38c79a447e4a47d413b4e8d34448316a5cece77c
       path: modules/debug/segger
     - name: sof
-      west-commands: zephyr/west/west-commands.yml
-      revision: 1026dfdb13a3cf65d6a541c05c22a41df93c03d5
+      revision: ed0b4b930c40b1d0c044653658f6e9211848fdec
       path: modules/audio/sof
     - name: tinycbor
       path: modules/lib/tinycbor
