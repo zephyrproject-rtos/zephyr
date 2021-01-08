@@ -1,11 +1,9 @@
 /*
- * Copyright (c) 2016-2018 Nordic Semiconductor ASA
+ * Copyright (c) 2016-2021 Nordic Semiconductor ASA
  * Copyright (c) 2016 Vinayak Kariappa Chettimada
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#define LL_VERSION_NUMBER BT_HCI_VERSION_5_2
 
 #define LL_ADV_CMDS_ANY    0 /* Any advertising cmd/evt allowed */
 #define LL_ADV_CMDS_LEGACY 1 /* Only legacy advertising cmd/evt allowed */
