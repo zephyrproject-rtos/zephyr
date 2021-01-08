@@ -558,11 +558,11 @@ requires the following folder structure:
 
    <module-root>
    ├── zephyr/module.yml
-   └── zephyrous
-       ├── arch
-       ├── boards
-       ├── dts
-       ├── soc
+   └── zephyrous/
+       ├── arch/
+       ├── boards/
+       ├── dts/
+       ├── soc/
        ├── ...
        ├── CMakeLists.txt
        └── Kconfig
@@ -588,10 +588,10 @@ requires the following folder structure:
 
    <module-root>
    ├── zephyr/module.yml
-   ├── arch
-   ├── boards
-   ├── dts
-   ├── soc
+   ├── arch/
+   ├── boards/
+   ├── dts/
+   ├── soc/
    ├── ...
    ├── CMakeLists.txt
    └── Kconfig
@@ -669,16 +669,17 @@ requires the following folder and file structure:
 .. code-block:: none
 
    <module-root>
-   └── zephyr
+   └── zephyr/
        ├── module.yml
-       ├── CMakeLists.txt
-       ├── Kconfig
        ├── arch/
        ├── boards/
        ├── dts/
        ├── samples/
        ├── soc/
-       └── tests/
+       ├── tests/
+       ├── ...
+       ├── CMakeLists.txt
+       └── Kconfig
 
 Module Inclusion
 ================
