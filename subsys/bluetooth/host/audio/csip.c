@@ -152,19 +152,18 @@ static int sirk_decrypt(struct bt_conn *conn,
 			struct bt_csip_set_sirk_t *out_sirk)
 {
 	int err;
-	uint8_t k[16];
+	uint8_t *k;
 
 	if (IS_ENABLED(CONFIG_BT_CSIS_TEST_ENC_SIRK)) {
 		/* test_k is from the sample data from A.2 in the CSIS spec */
-		uint8_t test_k[] = {0x1c, 0x01, 0xea, 0xf6,
-				    0x50, 0x7d, 0x43, 0x71,
-				    0x6f, 0x69, 0x48, 0xd4,
-				    0x9b, 0x1b, 0x6e, 0x67};
+		static uint8_t test_k[] = {0x1c, 0x01, 0xea, 0xf6,
+					   0x50, 0x7d, 0x43, 0x71,
+					   0x6f, 0x69, 0x48, 0xd4,
+					   0x9b, 0x1b, 0x6e, 0x67};
 		BT_DBG("Decrypting with sample data K");
-		memcpy(k, test_k, sizeof(k));
+		k = test_k;
 	} else {
-		memcpy(k, conn->le.keys->irk.val, 8);
-		memcpy(k + 8, conn->le.keys->ltk.val + 8, 8);
+		k = conn->le.keys->ltk.val;
 	}
 
 	err = bt_csis_sdf(k, enc_sirk->value, out_sirk->value);
