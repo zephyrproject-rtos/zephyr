@@ -190,23 +190,18 @@ static int sirk_encrypt(struct bt_conn *conn,
 			struct bt_csip_set_sirk_t *enc_sirk)
 {
 	int err;
-	uint8_t k[16];
+	uint8_t *k;
 
 	if (IS_ENABLED(CONFIG_BT_CSIS_TEST_ENC_SIRK)) {
 		/* test_k is from the sample data from A.2 in the CSIS spec */
-		uint8_t test_k[] = {0x1c, 0x01, 0xea, 0xf6,
-				    0x50, 0x7d, 0x43, 0x71,
-				    0x6f, 0x69, 0x48, 0xd4,
-				    0x9b, 0x1b, 0x6e, 0x67};
+		static uint8_t test_k[] = {0x1c, 0x01, 0xea, 0xf6,
+					   0x50, 0x7d, 0x43, 0x71,
+					   0x6f, 0x69, 0x48, 0xd4,
+					   0x9b, 0x1b, 0x6e, 0x67};
 		BT_DBG("Encrypting test SIRK");
-		memcpy(k, test_k, sizeof(k));
+		k = test_k;
 	} else {
-#if defined(CONFIG_BT_PRIVACY)
-		memcpy(k, bt_dev.irk, 8);
-#else
-		memset(k, 0, 8);
-#endif /* CONFIG_BT_PRIVACY */
-		memcpy(k + 8, conn->le.keys->ltk.val + 8, 8);
+		k = conn->le.keys->ltk.val;
 	}
 
 	err = bt_csis_sef(k, sirk->value, enc_sirk->value);
