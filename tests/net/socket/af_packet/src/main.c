@@ -95,7 +95,7 @@ static int setup_socket(struct net_if *iface, int type, int proto)
 {
 	int sock;
 
-	sock = socket(AF_PACKET, type, htons(proto));
+	sock = socket(AF_PACKET, type, proto);
 	zassert_true(sock >= 0, "Cannot create packet socket (%d)", -errno);
 
 	return sock;
