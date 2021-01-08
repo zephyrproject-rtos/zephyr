@@ -943,6 +943,7 @@ void log_free(void *str)
 }
 
 #if defined(CONFIG_USERSPACE)
+/* LCOV_EXCL_START */
 void z_impl_z_log_string_from_user(uint32_t src_level_val, const char *str)
 {
 	ARG_UNUSED(src_level_val);
@@ -950,6 +951,7 @@ void z_impl_z_log_string_from_user(uint32_t src_level_val, const char *str)
 
 	__ASSERT(false, "This function can be called from user mode only.");
 }
+/* LCOV_EXCL_STOP */
 
 void z_vrfy_z_log_string_from_user(uint32_t src_level_val, const char *str)
 {
@@ -1037,6 +1039,7 @@ void log_from_user(struct log_msg_ids src_level, const char *fmt, ...)
 	va_end(ap);
 }
 
+/* LCOV_EXCL_START */
 void z_impl_z_log_hexdump_from_user(uint32_t src_level_val, const char *metadata,
 				    const uint8_t *data, uint32_t len)
 {
@@ -1047,6 +1050,7 @@ void z_impl_z_log_hexdump_from_user(uint32_t src_level_val, const char *metadata
 
 	__ASSERT(false, "This function can be called from user mode only.");
 }
+/* LCOV_EXCL_STOP */
 
 void z_vrfy_z_log_hexdump_from_user(uint32_t src_level_val, const char *metadata,
 				    const uint8_t *data, uint32_t len)
@@ -1112,6 +1116,7 @@ void log_hexdump_from_user(struct log_msg_ids src_level, const char *metadata,
 				(const uint8_t *)data, len);
 }
 #else
+/* LCOV_EXCL_START */
 void z_impl_z_log_string_from_user(uint32_t src_level_val, const char *str)
 {
 	ARG_UNUSED(src_level_val);
@@ -1159,6 +1164,7 @@ void log_hexdump_from_user(struct log_msg_ids src_level, const char *metadata,
 
 	__ASSERT_NO_MSG(false);
 }
+/* LCOV_EXCL_STOP */
 #endif /* !defined(CONFIG_USERSPACE) */
 
 void z_log_msg2_init(void)
