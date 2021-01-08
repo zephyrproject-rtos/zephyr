@@ -18,7 +18,7 @@
 #include "host/conn_internal.h"
 #include "iso_internal.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_ISO)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_ISO)
 #define LOG_MODULE_NAME bt_iso
 #include "common/log.h"
 
@@ -34,7 +34,7 @@ NET_BUF_POOL_FIXED_DEFINE(iso_frag_pool, CONFIG_BT_ISO_TX_FRAG_COUNT,
 
 /* TODO: Allow more than one server? */
 static struct bt_iso_server *iso_server;
-struct bt_conn iso_conns[CONFIG_BT_MAX_ISO_CONN];
+struct bt_conn iso_conns[CONFIG_BT_ISO_MAX_CHAN];
 
 
 struct bt_iso_data_path {
@@ -257,7 +257,7 @@ void bt_iso_cleanup(struct bt_conn *conn)
 	conn->iso.acl = NULL;
 
 	/* Check if conn is last of CIG */
-	for (i = 0; i < CONFIG_BT_MAX_ISO_CONN; i++) {
+	for (i = 0; i < CONFIG_BT_ISO_MAX_CHAN; i++) {
 		if (conn == &iso_conns[i]) {
 			continue;
 		}
@@ -268,7 +268,7 @@ void bt_iso_cleanup(struct bt_conn *conn)
 		}
 	}
 
-	if (i == CONFIG_BT_MAX_ISO_CONN) {
+	if (i == CONFIG_BT_ISO_MAX_CHAN) {
 		hci_le_remove_cig(conn->iso.cig_id);
 	}
 
@@ -417,7 +417,7 @@ int bt_conn_bind_iso(struct bt_iso_create_param *param)
 		return -ENOTSUP;
 	}
 
-	if (!param->num_conns || param->num_conns > CONFIG_BT_MAX_ISO_CONN) {
+	if (!param->num_conns || param->num_conns > CONFIG_BT_ISO_MAX_CHAN) {
 		return -EINVAL;
 	}
 
@@ -520,7 +520,7 @@ int bt_conn_connect_iso(struct bt_conn **conns, uint8_t num_conns)
 		return -ENOTSUP;
 	}
 
-	if (num_conns > CONFIG_BT_MAX_ISO_CONN) {
+	if (num_conns > CONFIG_BT_ISO_MAX_CHAN) {
 		return -EINVAL;
 	}
 
@@ -783,7 +783,7 @@ int bt_iso_server_register(struct bt_iso_server *server)
 	return 0;
 }
 
-#if defined(CONFIG_BT_AUDIO_DEBUG_ISO)
+#if defined(CONFIG_BT_DEBUG_ISO)
 const char *bt_iso_chan_state_str(uint8_t state)
 {
 	switch (state) {
@@ -847,7 +847,7 @@ void bt_iso_chan_set_state(struct bt_iso_chan *chan, uint8_t state)
 {
 	chan->state = state;
 }
-#endif /* CONFIG_BT_AUDIO_DEBUG_ISO */
+#endif /* CONFIG_BT_DEBUG_ISO */
 
 void bt_iso_chan_remove(struct bt_conn *conn, struct bt_iso_chan *chan)
 {
@@ -898,7 +898,7 @@ int bt_iso_chan_bind(struct bt_conn **conns, uint8_t num_conns,
 
 int bt_iso_chan_connect(struct bt_iso_chan **chans, uint8_t num_chans)
 {
-	struct bt_conn *conns[CONFIG_BT_MAX_ISO_CONN];
+	struct bt_conn *conns[CONFIG_BT_ISO_MAX_CHAN];
 	int i, err;
 
 	__ASSERT_NO_MSG(chans);
