@@ -171,7 +171,11 @@ static void set_absolute_alarm(uint32_t chan, uint32_t abs_val)
 		 */
 		set_comparator(chan, now);
 		if (counter_sub(prev_cc, now) == 1) {
-			k_busy_wait(15);
+			/* It should wait for half of RTC tick 15.26us. As
+			 * busy wait runs from different clock source thus
+			 * wait longer to cover for discrepancy.
+			 */
+			k_busy_wait(19);
 		}
 
 
