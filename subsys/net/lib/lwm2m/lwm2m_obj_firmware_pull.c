@@ -27,7 +27,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define NETWORK_CONNECT_TIMEOUT	K_SECONDS(10)
 #define PACKET_TRANSFER_RETRY_MAX	3
 
-static struct k_work firmware_work;
 static char firmware_uri[URI_LEN];
 static struct lwm2m_ctx firmware_ctx = {
 	.sock_fd = -1
@@ -366,7 +365,7 @@ static void do_transmit_timeout_cb(struct lwm2m_message *msg)
 	}
 }
 
-static void firmware_transfer(struct k_work *work)
+static void firmware_transfer(void)
 {
 	int ret;
 	char *server_addr;
@@ -468,12 +467,11 @@ int lwm2m_firmware_start_transfer(char *package_uri)
 	firmware_ctx.sock_fd = -1;
 	firmware_ctx.fault_cb = socket_fault_cb;
 	firmware_retry = 0;
-	k_work_init(&firmware_work, firmware_transfer);
 	lwm2m_firmware_set_update_state(STATE_DOWNLOADING);
 
-	/* start file transfer work */
+	/* start file transfer */
 	strncpy(firmware_uri, package_uri, URI_LEN - 1);
-	k_work_submit(&firmware_work);
+	firmware_transfer();
 
 	return 0;
 }
