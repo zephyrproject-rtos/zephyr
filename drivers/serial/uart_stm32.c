@@ -75,7 +75,10 @@ static inline void uart_stm32_set_baudrate(const struct device *dev,
 				      baud_rate);
 	} else {
 #endif /* HAS_LPUART_1 */
-
+#ifdef USART_CR1_OVER8
+		LL_USART_SetOverSampling(UartInstance,
+					 LL_USART_OVERSAMPLING_16);
+#endif
 		LL_USART_SetBaudRate(UartInstance,
 				     clock_rate,
 #ifdef USART_PRESC_PRESCALER
