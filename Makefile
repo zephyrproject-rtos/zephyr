@@ -5,20 +5,25 @@
 BUILDDIR ?= doc/_build
 DOC_TAG ?= development
 SPHINXOPTS ?= -q
+KCONFIG_TURBO_MODE ?= 0
 
 # Documentation targets
 # ---------------------------------------------------------------------------
 clean:
 	rm -rf ${BUILDDIR}
 
-htmldocs:
-	mkdir -p ${BUILDDIR} && cmake -GNinja -DDOC_TAG=${DOC_TAG} -DSPHINXOPTS=${SPHINXOPTS} -B${BUILDDIR} -Hdoc/ && ninja -C ${BUILDDIR} htmldocs
-
 htmldocs-fast:
-	mkdir -p ${BUILDDIR} && cmake -GNinja -DKCONFIG_TURBO_MODE=1 -DDOC_TAG=${DOC_TAG} -DSPHINXOPTS=${SPHINXOPTS} -B${BUILDDIR} -Hdoc/ && ninja -C ${BUILDDIR} htmldocs
+	${MAKE} htmldocs KCONFIG_TURBO_MODE=1
 
-pdfdocs:
-	mkdir -p ${BUILDDIR} && cmake -GNinja -DDOC_TAG=${DOC_TAG} -DSPHINXOPTS=${SPHINXOPTS} -B${BUILDDIR} -Hdoc/ && ninja -C ${BUILDDIR} pdfdocs
+htmldocs pdfdocs doxygen: configure
+	cmake --build ${BUILDDIR} -- $@  # -v # VERBOSE=1
 
-doxygen:
-	mkdir -p ${BUILDDIR} && cmake -GNinja -DDOC_TAG=${DOC_TAG} -DSPHINXOPTS=${SPHINXOPTS} -B${BUILDDIR} -Hdoc/ && ninja -C ${BUILDDIR} doxygen
+# Run CMake every time cause it's quick and re-configures TURBO_MODE if
+# needed
+.PHONY: configure
+configure:
+	cmake -GNinja  -B${BUILDDIR} -Sdoc/ -DDOC_TAG=${DOC_TAG} \
+		-DSPHINXOPTS=${SPHINXOPTS} \
+		-DKCONFIG_TURBO_MODE=${KCONFIG_TURBO_MODE}
+
+.PHONY: clean htmldocs htmldocs-fast pdfdocs doxygen
