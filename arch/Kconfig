@@ -476,12 +476,6 @@ config ARCH_HAS_THREAD_LOCAL_STORAGE
 config ARCH_HAS_THREAD_ABORT
 	bool
 
-config BOOTLOADER_CONTEXT_RESTORE_SUPPORTED
-	bool
-	help
-	  This option signifies that the target has options of bootloaders
-	  that support context restore upon resume from deep sleep
-
 #
 # Hidden CPU family configs
 #

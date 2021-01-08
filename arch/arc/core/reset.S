@@ -154,8 +154,7 @@ done_mpu_regions_reset:
 #endif
 #endif
 
-#if defined(CONFIG_PM_DEEP_SLEEP_STATES) && \
-	!defined(CONFIG_BOOTLOADER_CONTEXT_RESTORE)
+#if defined(CONFIG_PM_DEEP_SLEEP_STATES)
         jl @pm_system_resume_from_deep_sleep
 #endif
 
