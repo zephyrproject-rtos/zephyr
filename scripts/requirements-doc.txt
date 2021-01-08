@@ -8,5 +8,6 @@ sphinxcontrib-svg2pdfconverter
 pygments~=2.9
 sphinx-notfound-page>=0.6
 
-# Used by zephyr_module
+# YAML validation. Used by zephyr_module.
+PyYAML>=5.1
 pykwalify
