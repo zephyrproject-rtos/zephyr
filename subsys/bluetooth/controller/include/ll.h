@@ -57,10 +57,6 @@ static inline uint8_t ll_adv_iso_by_hci_handle_new(uint8_t hci_handle,
 }
 #endif
 
-void *ll_iso_tx_mem_acquire(void);
-void ll_iso_tx_mem_release(void *tx);
-int ll_iso_tx_mem_enqueue(uint16_t handle, void *tx);
-
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 #if defined(CONFIG_BT_HCI_RAW)
 int ll_adv_cmds_set(uint8_t adv_cmds);
@@ -82,6 +78,15 @@ uint8_t ll_adv_data_set(uint8_t handle, uint8_t len,
 			uint8_t const *const p_data);
 uint8_t ll_adv_scan_rsp_set(uint8_t handle, uint8_t len,
 			    uint8_t const *const p_data);
+#else /* !CONFIG_BT_CTLR_ADV_EXT */
+uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
+		       uint8_t own_addr_type, uint8_t direct_addr_type,
+		       uint8_t const *const direct_addr, uint8_t chan_map,
+		       uint8_t filter_policy);
+uint8_t ll_adv_data_set(uint8_t len, uint8_t const *const p_data);
+uint8_t ll_adv_scan_rsp_set(uint8_t len, uint8_t const *const p_data);
+#endif /* !CONFIG_BT_CTLR_ADV_EXT */
+
 uint8_t ll_adv_aux_random_addr_set(uint8_t handle, uint8_t const *const addr);
 uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 			       uint8_t len, uint8_t const *const data);
@@ -96,14 +101,6 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval,
 uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 				uint8_t const *const data);
 uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable);
-#else /* !CONFIG_BT_CTLR_ADV_EXT */
-uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
-		       uint8_t own_addr_type, uint8_t direct_addr_type,
-		       uint8_t const *const direct_addr, uint8_t chan_map,
-		       uint8_t filter_policy);
-uint8_t ll_adv_data_set(uint8_t len, uint8_t const *const p_data);
-uint8_t ll_adv_scan_rsp_set(uint8_t len, uint8_t const *const p_data);
-#endif /* !CONFIG_BT_CTLR_ADV_EXT */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT) || defined(CONFIG_BT_HCI_MESH_EXT)
 #if defined(CONFIG_BT_HCI_MESH_EXT)
@@ -135,6 +132,10 @@ uint8_t ll_scan_params_set(uint8_t type, uint16_t interval, uint16_t window,
 		uint8_t own_addr_type, uint8_t filter_policy);
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 uint8_t ll_scan_enable(uint8_t enable, uint16_t duration, uint16_t period);
+#else /* !CONFIG_BT_CTLR_ADV_EXT */
+uint8_t ll_scan_enable(uint8_t enable);
+#endif /* !CONFIG_BT_CTLR_ADV_EXT */
+
 uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 		       uint8_t *adv_addr, uint16_t skip,
 		       uint16_t sync_timeout, uint8_t sync_cte_type);
@@ -146,9 +147,6 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 			   uint16_t sync_timeout, uint8_t num_bis,
 			   uint8_t *bis);
 uint8_t ll_big_sync_terminate(uint8_t big_handle, void **rx);
-#else /* !CONFIG_BT_CTLR_ADV_EXT */
-uint8_t ll_scan_enable(uint8_t enable);
-#endif /* !CONFIG_BT_CTLR_ADV_EXT */
 
 uint8_t ll_cig_parameters_open(uint8_t cig_id,
 			       uint32_t m_interval, uint32_t s_interval,
@@ -279,6 +277,23 @@ uint8_t ll_phy_get(uint16_t handle, uint8_t *const tx, uint8_t *const rx);
 uint8_t ll_phy_default_set(uint8_t tx, uint8_t rx);
 uint8_t ll_phy_req_send(uint16_t handle, uint8_t tx, uint8_t flags, uint8_t rx);
 
+/* Direction Finding */
+/* Sets CTE transmission parameters for periodic advertising */
+uint8_t ll_df_set_cl_cte_tx_params(uint8_t adv_handle, uint8_t cte_len,
+				   uint8_t cte_type, uint8_t cte_count,
+				   uint8_t num_ant_ids, uint8_t *ant_ids);
+/* Enables or disables CTE TX for periodic advertising */
+uint8_t ll_df_set_cl_cte_tx_enable(uint8_t adv_handle, uint8_t cte_enable);
+/* Provides information about antennae switching and sampling settings */
+uint8_t ll_df_set_conn_cte_tx_params(uint16_t handle, uint8_t cte_types,
+				     uint8_t switching_patterns_len,
+				     uint8_t *ant_id);
+/* Sets CTE transmission parameters for a connection */
+void ll_df_read_ant_inf(uint8_t *switch_sample_rates,
+			uint8_t *num_ant,
+			uint8_t *max_switch_pattern_len,
+			uint8_t *max_cte_len);
+
 /* Downstream - Data */
 void *ll_tx_mem_acquire(void);
 void ll_tx_mem_release(void *node_tx);
@@ -289,28 +304,12 @@ uint8_t ll_rx_get(void **node_rx, uint16_t *handle);
 void ll_rx_dequeue(void);
 void ll_rx_mem_release(void **node_rx);
 
+/* Downstream - ISO Data */
+void *ll_iso_tx_mem_acquire(void);
+void ll_iso_tx_mem_release(void *tx);
+int ll_iso_tx_mem_enqueue(uint16_t handle, void *tx);
+
 /* External co-operation */
 void ll_timeslice_ticker_id_get(uint8_t * const instance_index, uint8_t * const user_id);
 void ll_radio_state_abort(void);
 uint32_t ll_radio_state_is_idle(void);
-
-/* Direction Finding */
-
-/* Sets CTE transmission parameters for periodic advertising */
-uint8_t ll_df_set_cl_cte_tx_params(uint8_t adv_handle, uint8_t cte_len,
-				   uint8_t cte_type, uint8_t cte_count,
-				   uint8_t num_ant_ids, uint8_t *ant_ids);
-
-/* Enables or disables CTE TX for periodic advertising */
-uint8_t ll_df_set_cl_cte_tx_enable(uint8_t adv_handle, uint8_t cte_enable);
-
-/* Provides information about antennae switching and sampling settings */
-uint8_t ll_df_set_conn_cte_tx_params(uint16_t handle, uint8_t cte_types,
-				     uint8_t switching_patterns_len,
-				     uint8_t *ant_id);
-
-/* Sets CTE transmission parameters for a connection */
-void ll_df_read_ant_inf(uint8_t *switch_sample_rates,
-			uint8_t *num_ant,
-			uint8_t *max_switch_pattern_len,
-			uint8_t *max_cte_len);
