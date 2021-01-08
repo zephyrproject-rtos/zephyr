@@ -574,6 +574,11 @@ from :file:`runners/__init__.py`.
    changes break existing test cases, CI testing on upstream pull
    requests will fail.
 
+..
+   Including this automodule fails with a clear warning if west is
+   missing because west_commands/runners/ have an unsurprising
+   dependency on west through (at least) zephyr_ext_common
+
 .. automodule:: runners.core
    :members:
 

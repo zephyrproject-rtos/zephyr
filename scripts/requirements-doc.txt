@@ -7,5 +7,6 @@ sphinx_rtd_theme
 sphinx-tabs
 sphinxcontrib-svg2pdfconverter
 
-# Used by zephyr_module
+# YAML validation. Used by zephyr_module.
+PyYAML
 pykwalify
