@@ -117,8 +117,8 @@ Glossary of Terms
       and default manifest file are aware of.
 
    :makevar:`ZEPHYR_MODULES`
-      The Zephyr build system CMake variable through which a list paths to
-      all Zephyr modules may be provided.
+     The Zephyr build system CMake variable through which a list of paths to
+     Zephyr modules that should be included in the current build.
 
    :makevar:`ZEPHYR_EXTRA_MODULES`
       The Zephyr build system CMake variable through which paths to
