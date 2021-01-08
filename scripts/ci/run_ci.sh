@@ -148,8 +148,6 @@ function west_setup() {
 		west init -l ${git_dir}
 		west update 1> west.update.log || west update 1> west.update-2.log
 		west forall -c 'git reset --hard HEAD'
-		# fetch sof submodules
-		west sof update
 	fi
 	popd
 }
