@@ -28,8 +28,8 @@ struct iso_data {
 
 #define iso(buf) ((struct iso_data *)net_buf_user_data(buf))
 
-#if defined(CONFIG_BT_MAX_ISO_CONN)
-extern struct bt_conn iso_conns[CONFIG_BT_MAX_ISO_CONN];
+#if defined(CONFIG_BT_ISO_MAX_CHAN)
+extern struct bt_conn iso_conns[CONFIG_BT_ISO_MAX_CHAN];
 #endif
 
 /* Process ISO buffer */
@@ -97,14 +97,14 @@ struct net_buf *bt_iso_create_frag_timeout(size_t reserve, k_timeout_t timeout);
 	bt_iso_create_frag_timeout(_reserve, K_FOREVER)
 #endif
 
-#if defined(CONFIG_BT_AUDIO_DEBUG_ISO)
+#if defined(CONFIG_BT_DEBUG_ISO)
 void bt_iso_chan_set_state_debug(struct bt_iso_chan *chan, uint8_t state,
 				 const char *func, int line);
 #define bt_iso_chan_set_state(_chan, _state) \
 	bt_iso_chan_set_state_debug(_chan, _state, __func__, __LINE__)
 #else
 void bt_iso_chan_set_state(struct bt_iso_chan *chan, uint8_t state);
-#endif /* CONFIG_BT_AUDIO_DEBUG_ISO */
+#endif /* CONFIG_BT_DEBUG_ISO */
 
 /* Process incoming data for a connection */
 void bt_iso_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags);
