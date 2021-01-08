@@ -95,9 +95,12 @@ void test_write_confirm(void)
 {
 	const uint32_t img_magic[4] = BOOT_MAGIC_VALUES;
 	uint32_t readout[ARRAY_SIZE(img_magic)];
-	const uint32_t flag = 0xffffff01;
+	uint8_t flag[BOOT_MAX_ALIGN];
 	const struct flash_area *fa;
 	int ret;
+
+	flag[0] = 0x01;
+	memset(&flag[1], 0xff, sizeof(flag) - 1);
 
 	ret = flash_area_open(FLASH_AREA_ID(image_0), &fa);
 	if (ret) {
