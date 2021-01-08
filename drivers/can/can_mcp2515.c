@@ -524,12 +524,12 @@ static int mcp2515_attach_isr(const struct device *dev,
 
 	/* find free filter */
 	while ((BIT(filter_idx) & dev_data->filter_usage)
-	       && (filter_idx < CONFIG_CAN_MCP2515_MAX_FILTER)) {
+	       && (filter_idx < CONFIG_CAN_MAX_FILTER)) {
 		filter_idx++;
 	}
 
 	/* setup filter */
-	if (filter_idx < CONFIG_CAN_MCP2515_MAX_FILTER) {
+	if (filter_idx < CONFIG_CAN_MAX_FILTER) {
 		dev_data->filter_usage |= BIT(filter_idx);
 
 		dev_data->filter[filter_idx] = *filter;
@@ -590,7 +590,7 @@ static void mcp2515_rx_filter(const struct device *dev,
 
 	k_mutex_lock(&dev_data->mutex, K_FOREVER);
 
-	for (; filter_idx < CONFIG_CAN_MCP2515_MAX_FILTER; filter_idx++) {
+	for (; filter_idx < CONFIG_CAN_MAX_FILTER; filter_idx++) {
 		if (!(BIT(filter_idx) & dev_data->filter_usage)) {
 			continue; /* filter slot empty */
 		}
