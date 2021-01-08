@@ -5206,7 +5206,7 @@ static void process_events(struct k_poll_event *ev, int count)
 #if defined(CONFIG_BT_CONN)
 #if defined(CONFIG_BT_ISO)
 /* command FIFO + conn_change signal + MAX_CONN + MAX_ISO_CONN */
-#define EV_COUNT (2 + CONFIG_BT_MAX_CONN + CONFIG_BT_MAX_ISO_CONN)
+#define EV_COUNT (2 + CONFIG_BT_MAX_CONN + CONFIG_BT_ISO_MAX_CHAN)
 #else
 /* command FIFO + conn_change signal + MAX_CONN */
 #define EV_COUNT (2 + CONFIG_BT_MAX_CONN)
