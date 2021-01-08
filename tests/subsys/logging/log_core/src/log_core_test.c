@@ -36,8 +36,6 @@ struct backend_cb {
 	uint32_t exp_id[100];
 	bool check_timestamp;
 	uint32_t exp_timestamps[100];
-	bool check_args;
-	uint32_t exp_nargs[100];
 	bool check_strdup;
 	bool exp_strdup[100];
 	custom_put_callback_t callback;
@@ -48,7 +46,6 @@ static void put(struct log_backend const *const backend,
 		struct log_msg *msg)
 {
 	log_msg_get(msg);
-	uint32_t nargs = log_msg_nargs_get(msg);
 	struct backend_cb *cb = (struct backend_cb *)backend->cb->ctx;
 
 	if (cb->check_id) {
@@ -65,16 +62,6 @@ static void put(struct log_backend const *const backend,
 		zassert_equal(log_msg_timestamp_get(msg),
 			      exp_timestamp,
 			      "Unexpected message index");
-	}
-
-	/* Arguments in the test are fixed, 1,2,3,4,5,... */
-	if (cb->check_args && log_msg_is_std(msg) && nargs > 0) {
-		for (int i = 0; i < nargs; i++) {
-			uint32_t arg = log_msg_arg_get(msg, i);
-
-			zassert_equal(i+1, arg,
-				      "Unexpected argument in the message");
-		}
 	}
 
 	if (cb->check_strdup) {
@@ -177,7 +164,7 @@ static void test_log_strdup_gc(void)
 {
 	char test_str[] = "test string";
 	char *dstr;
-	uint32_t size_u0, size_u1, size_l0, size_l1;
+	uint32_t size_u0, size_u1, size_cu0, size_cu1, size_l0, size_l1;
 
 	log_setup(false);
 
@@ -189,6 +176,7 @@ static void test_log_strdup_gc(void)
 
 	size_l0 = log_get_strdup_longest_string();
 	size_u0 = log_get_strdup_pool_utilization();
+	size_cu0 = log_get_strdup_pool_current_utilization();
 
 	dstr = log_strdup(test_str);
 	/* test if message freeing is not fooled by using value within strdup
@@ -207,6 +195,8 @@ static void test_log_strdup_gc(void)
 	backend1_cb.exp_strdup[2] = true;
 	LOG_INF("%s", log_strdup(test_str));
 
+	size_cu1 = log_get_strdup_pool_current_utilization();
+
 	while (log_process(false)) {
 	}
 
@@ -216,6 +206,8 @@ static void test_log_strdup_gc(void)
 	size_u1 = log_get_strdup_pool_utilization();
 	zassert_true(size_l1 > size_l0, "longest string size never changed");
 	zassert_true(size_u1 > size_u0, "strdup pool utilization never changed");
+	zassert_true(size_cu1 > size_cu0,
+		     "strdup pool current utilization never changed");
 }
 
 #define DETECT_STRDUP_MISSED(str, do_strdup, ...) \
