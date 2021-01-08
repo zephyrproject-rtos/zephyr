@@ -187,7 +187,7 @@ void hci_le_cis_req(struct net_buf *buf)
 	/* Lookup existing connection with same handle */
 	iso = bt_conn_lookup_handle(cis_handle);
 	if (iso) {
-		BT_ERR("Invalid ISO handle %d", cis_handle);
+		BT_ERR("Invalid ISO handle %u", cis_handle);
 		hci_le_reject_cis(cis_handle, BT_HCI_ERR_CONN_LIMIT_EXCEEDED);
 		bt_conn_unref(iso);
 		return;
@@ -196,7 +196,7 @@ void hci_le_cis_req(struct net_buf *buf)
 	/* Lookup ACL connection to attach */
 	conn = bt_conn_lookup_handle(acl_handle);
 	if (!conn) {
-		BT_ERR("Invalid ACL handle %d", acl_handle);
+		BT_ERR("Invalid ACL handle %u", acl_handle);
 		hci_le_reject_cis(cis_handle, BT_HCI_ERR_UNKNOWN_CONN_ID);
 		return;
 	}
@@ -207,6 +207,7 @@ void hci_le_cis_req(struct net_buf *buf)
 	bt_conn_unref(conn);
 
 	if (!iso) {
+		BT_ERR("Could not create and add ISO to conn %u", acl_handle);
 		hci_le_reject_cis(cis_handle,
 				  BT_HCI_ERR_INSUFFICIENT_RESOURCES);
 		return;
@@ -215,6 +216,7 @@ void hci_le_cis_req(struct net_buf *buf)
 	/* Request application to accept */
 	err = bt_iso_accept(iso);
 	if (err) {
+		BT_DBG("App rejected ISO %d", err);
 		bt_iso_cleanup(iso);
 		hci_le_reject_cis(cis_handle,
 				  BT_HCI_ERR_INSUFFICIENT_RESOURCES);
@@ -985,19 +987,22 @@ void bt_iso_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 		       pb == BT_ISO_START ? "Start" : "Single", buf->len, len,
 		       flags, iso(buf)->ts);
 
-		if (conn->rx_len) {
+		if (conn->rx) {
 			BT_ERR("Unexpected ISO %s fragment",
 			       pb == BT_ISO_START ? "Start" : "Single");
 			bt_conn_reset_rx_state(conn);
 		}
 
+		conn->rx = buf;
 		conn->rx_len = len - buf->len;
 		if (conn->rx_len) {
+			/* if conn->rx_len then package is longer than the
+			 * buf->len and cannot fit in a SINGLE package
+			 */
 			if (pb == BT_ISO_SINGLE) {
 				BT_ERR("Unexpected ISO single fragment");
 				bt_conn_reset_rx_state(conn);
 			}
-			conn->rx = buf;
 			return;
 		}
 		break;
@@ -1006,9 +1011,8 @@ void bt_iso_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 		/* The ISO_Data_Load field contains a continuation fragment of
 		 * an SDU.
 		 */
-		if (!conn->rx_len) {
+		if (!conn->rx) {
 			BT_ERR("Unexpected ISO continuation fragment");
-			bt_conn_reset_rx_state(conn);
 			net_buf_unref(buf);
 			return;
 		}
@@ -1033,6 +1037,12 @@ void bt_iso_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 		 */
 		BT_DBG("End, len %u rx_len %u", buf->len, conn->rx_len);
 
+		if (!conn->rx) {
+			BT_ERR("Unexpected ISO end fragment");
+			net_buf_unref(buf);
+			return;
+		}
+
 		if (buf->len > net_buf_tailroom(conn->rx)) {
 			BT_ERR("Not enough buffer space for ISO data");
 			bt_conn_reset_rx_state(conn);
@@ -1044,15 +1054,6 @@ void bt_iso_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 		conn->rx_len -= buf->len;
 		net_buf_unref(buf);
 
-		if (conn->rx_len) {
-			BT_ERR("Unexpected ISO end fragment");
-			return;
-		}
-
-		buf = conn->rx;
-		conn->rx = NULL;
-		conn->rx_len = 0U;
-
 		break;
 	default:
 		BT_ERR("Unexpected ISO pb flags (0x%02x)", pb);
@@ -1063,9 +1064,11 @@ void bt_iso_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&conn->channels, chan, node) {
 		if (chan->ops->recv) {
-			chan->ops->recv(chan, buf);
+			chan->ops->recv(chan, conn->rx);
 		}
 	}
+
+	bt_conn_reset_rx_state(conn);
 }
 
 int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf)
@@ -1079,6 +1082,7 @@ int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf)
 	BT_DBG("chan %p len %zu", chan, net_buf_frags_len(buf));
 
 	if (!chan->conn) {
+		BT_DBG("Not connected");
 		return -ENOTCONN;
 	}
 
