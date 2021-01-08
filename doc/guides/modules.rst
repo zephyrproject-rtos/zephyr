@@ -673,12 +673,12 @@ requires the following folder and file structure:
        ├── module.yml
        ├── CMakeLists.txt
        ├── Kconfig
-       ├── arch
-       ├── boards
-       ├── dts
-       ├── samples
-       ├── soc
-       └── tests
+       ├── arch/
+       ├── boards/
+       ├── dts/
+       ├── samples/
+       ├── soc/
+       └── tests/
 
 Module Inclusion
 ================
