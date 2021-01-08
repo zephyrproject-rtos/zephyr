@@ -154,7 +154,7 @@ static int sirk_decrypt(struct bt_conn *conn,
 	int err;
 	uint8_t *k;
 
-	if (IS_ENABLED(CONFIG_BT_CSIS_TEST_ENC_SIRK)) {
+	if (IS_ENABLED(CONFIG_BT_CSIS_TEST_SAMPLE_DATA)) {
 		/* test_k is from the sample data from A.2 in the CSIS spec */
 		static uint8_t test_k[] = {0x1c, 0x01, 0xea, 0xf6,
 					   0x50, 0x7d, 0x43, 0x71,
