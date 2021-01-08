@@ -283,22 +283,44 @@ static void test_log_arguments(void)
 	backend1_cb.exp_nargs[4] = 4U;
 	backend1_cb.exp_nargs[5] = 5U;
 	backend1_cb.exp_nargs[6] = 6U;
-	backend1_cb.exp_nargs[7] = 10U;
+	backend1_cb.exp_nargs[7] = 7U;
+	backend1_cb.exp_nargs[8] = 8U;
+	backend1_cb.exp_nargs[9] = 9U;
+	backend1_cb.exp_nargs[10] = 10U;
+	backend1_cb.exp_nargs[11] = 11U;
+	backend1_cb.exp_nargs[12] = 12U;
+	backend1_cb.exp_nargs[13] = 13U;
+	backend1_cb.exp_nargs[14] = 14U;
 
 	LOG_INF("test");
 	LOG_INF("test %d", 1);
 	LOG_INF("test %d %d", 1, 2);
 	LOG_INF("test %d %d %d", 1, 2, 3);
 	LOG_INF("test %d %d %d %d", 1, 2, 3, 4);
+	/* to avoid messges drop */
+	while (log_process(false)) {
+	}
 	LOG_INF("test %d %d %d %d %d", 1, 2, 3, 4, 5);
 	LOG_INF("test %d %d %d %d %d %d", 1, 2, 3, 4, 5, 6);
+	LOG_INF("test %d %d %d %d %d %d %d", 1, 2, 3, 4, 5, 6, 7);
+	LOG_INF("test %d %d %d %d %d %d %d %d", 1, 2, 3, 4, 5, 6, 7, 8);
+	LOG_INF("test %d %d %d %d %d %d %d %d %d", 1, 2, 3, 4, 5, 6, 7, 8, 9);
 	LOG_INF("test %d %d %d %d %d %d %d %d %d %d",
 			1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
-
+	while (log_process(false)) {
+	}
+	LOG_INF("test %d %d %d %d %d %d %d %d %d %d %d",
+			1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11);
+	LOG_INF("test %d %d %d %d %d %d %d %d %d %d %d %d",
+			1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
+	LOG_INF("test %d %d %d %d %d %d %d %d %d %d %d %d %d",
+			1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13);
+	LOG_INF("test %d %d %d %d %d %d %d %d %d %d %d %d %d %d",
+			1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14);
 	while (log_process(false)) {
 	}
 
-	zassert_equal(8,
+	zassert_equal(15,
 		      backend1_cb.counter,
 		      "Unexpected amount of messages received by the backend.");
 }
@@ -330,6 +352,7 @@ static void test_log_strdup_gc(void)
 {
 	char test_str[] = "test string";
 	char *dstr;
+	uint32_t size_u0, size_u1, size_l0, size_l1;
 
 	log_setup(false);
 
@@ -338,6 +361,9 @@ static void test_log_strdup_gc(void)
 	backend1_cb.check_strdup = true;
 	backend1_cb.exp_strdup[0] = true;
 	backend1_cb.exp_strdup[1] = false;
+
+	size_l0 = log_get_strdup_longest_string();
+	size_u0 = log_get_strdup_pool_utilization();
 
 	dstr = log_strdup(test_str);
 	/* test if message freeing is not fooled by using value within strdup
@@ -361,7 +387,10 @@ static void test_log_strdup_gc(void)
 
 	zassert_equal(3, backend1_cb.counter,
 		      "Unexpected amount of messages received by the backend.");
-
+	size_l1 = log_get_strdup_longest_string();
+	size_u1 = log_get_strdup_pool_utilization();
+	zassert_true(size_l1 > size_l0, "longest string size never changed");
+	zassert_true(size_u1 > size_u0, "strdup pool utilization never changed");
 }
 
 #define DETECT_STRDUP_MISSED(str, do_strdup, ...) \

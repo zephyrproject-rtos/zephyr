@@ -22,6 +22,8 @@
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_INF);
 static K_SEM_DEFINE(log_sem, 0, 1);
 
+ZTEST_BMEM uint32_t source_id;
+
 struct backend_cb {
 	/* count log messages handled by this backend */
 	size_t counter;
@@ -124,6 +126,9 @@ static void log_setup(bool backend2_enable)
 	stamp = 0U;
 
 	log_init();
+#ifndef CONFIG_LOG_PROCESS_THREAD
+	log_thread_set(k_current_get());
+#endif
 
 	memset(&backend1_cb, 0, sizeof(backend1_cb));
 
@@ -297,7 +302,9 @@ static void test_log_timestamping(void)
 	}
 
 	TC_PRINT("Register timestamp function\n");
-	zassert_equal(0, log_set_timestamp_func(timestamp_get, 0),
+	zassert_equal(-EINVAL, log_set_timestamp_func(NULL, 0),
+		      "Expects successful timestamp function setting.");
+	zassert_equal(0, log_set_timestamp_func(timestamp_get, 2000000),
 		      "Expects successful timestamp function setting.");
 
 	memset(&backend1_cb, 0, sizeof(backend1_cb));
@@ -387,6 +394,37 @@ static void test_log_thread(void)
 }
 #endif
 
+static void call_log_generic(uint32_t source_id, const char *fmt, ...)
+{
+	struct log_msg_ids src_level = {
+		.level = LOG_LEVEL_INF,
+		.domain_id = CONFIG_LOG_DOMAIN_ID,
+		.source_id = source_id,
+	};
+
+	va_list ap;
+
+	va_start(ap, fmt);
+	log_generic(src_level, fmt, ap, LOG_STRDUP_EXEC);
+	va_end(ap);
+}
+
+void test_log_generic(void)
+{
+	source_id = LOG_CURRENT_MODULE_ID();
+	char *log_msg = "log user space";
+
+	log_setup(false);
+	backend1_cb.total_logs = 4;
+
+	call_log_generic(source_id, "log generic");
+	call_log_generic(source_id, "log generic: %s", log_msg);
+	call_log_generic(source_id, "log generic %d\n", source_id);
+	call_log_generic(source_id, "log generic %d, %d\n", source_id, 1);
+	while (log_test_process(false)) {
+	}
+}
+
 /* The log process thread has the K_LOWEST_APPLICATION_THREAD_PRIO, adjust it
  * to a higher priority to increase the chances of being scheduled to handle
  * log message as soon as possible
@@ -406,6 +444,7 @@ void test_main(void)
 #endif
 	ztest_test_suite(test_log_list,
 			 ztest_unit_test(test_multiple_backends),
+			 ztest_unit_test(test_log_generic),
 			 ztest_unit_test(test_log_domain_id),
 			 ztest_unit_test(test_log_severity),
 			 ztest_unit_test(test_log_timestamping),
