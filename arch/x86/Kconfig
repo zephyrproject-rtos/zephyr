@@ -18,6 +18,10 @@ config CPU_ATOM
 	select CPU_HAS_FPU
 	select ARCH_HAS_STACK_PROTECTION if X86_MMU
 	select ARCH_HAS_USERSPACE if X86_MMU
+	select X86_CPU_HAS_MMX
+	select X86_CPU_HAS_SSE
+	select X86_CPU_HAS_SSE2
+	select X86_CPU_HAS_SSE3
 	help
 	  This option signifies the use of a CPU from the Atom family.
 
@@ -33,6 +37,14 @@ config CPU_APOLLO_LAKE
 	select CPU_HAS_FPU
 	select ARCH_HAS_STACK_PROTECTION if X86_MMU
 	select ARCH_HAS_USERSPACE if X86_MMU
+	select X86_MMU
+	select X86_CPU_HAS_MMX
+	select X86_CPU_HAS_SSE
+	select X86_CPU_HAS_SSE2
+	select X86_CPU_HAS_SSE3
+	select X86_CPU_HAS_SSSE3
+	select X86_CPU_HAS_SSE41
+	select X86_CPU_HAS_SSE42
 	help
 	  This option signifies the use of a CPU from the Apollo Lake family.
 
@@ -47,15 +59,96 @@ config X86_64
 	select USE_SWITCH_SUPPORTED
 	select SCHED_IPI_SUPPORTED
 	select X86_MMU
+	select X86_CPU_HAS_MMX
+	select X86_CPU_HAS_SSE
+	select X86_CPU_HAS_SSE2
+	select X86_MMX
+	select X86_SSE
+	select X86_SSE2
 
 menu "x86 Features"
 
+config X86_CPU_HAS_MMX
+	bool
+
+config X86_CPU_HAS_SSE
+	bool
+
+config X86_CPU_HAS_SSE2
+	bool
+
+config X86_CPU_HAS_SSE3
+	bool
+
+config X86_CPU_HAS_SSSE3
+	bool
+
+config X86_CPU_HAS_SSE41
+	bool
+
+config X86_CPU_HAS_SSE42
+	bool
+
+config X86_CPU_HAS_SSE4A
+	bool
+
+if FPU || X86_64
+
+config X86_MMX
+	bool "Enable MMX Support"
+	depends on X86_CPU_HAS_MMX
+	help
+	  This option enables MMX support, and the use of MMX registers
+	  by threads.
+
 config X86_SSE
 	bool "Enable SSE Support"
-	depends on FPU
+	depends on X86_CPU_HAS_SSE
 	help
 	  This option enables SSE support, and the use of SSE registers
 	  by threads.
+
+config X86_SSE2
+	bool "Enable SSE2 Support"
+	depends on X86_CPU_HAS_SSE2
+	select X86_SSE
+	help
+	  This option enables SSE2 support.
+
+config X86_SSE3
+	bool "Enable SSE3 Support"
+	depends on X86_CPU_HAS_SSE3
+	select X86_SSE
+	help
+	  This option enables SSE3 support.
+
+config X86_SSSE3
+	bool "Enable SSSE3 (Supplemental SSE3) Support"
+	depends on X86_CPU_HAS_SSSE3
+	select X86_SSE
+	help
+	  This option enables Supplemental SSE3 support.
+
+config X86_SSE41
+	bool "Enable SSE4.1 Support"
+	depends on X86_CPU_HAS_SSE41
+	select X86_SSE
+	help
+	  This option enables SSE4.1 support.
+
+config X86_SSE42
+	bool "Enable SSE4.2 Support"
+	depends on X86_CPU_HAS_SSE42
+	select X86_SSE
+	help
+	  This option enables SSE4.2 support.
+
+config X86_SSE4A
+	bool "Enable SSE4A Support"
+	depends on X86_CPU_HAS_SSE4A
+	select X86_SSE
+	help
+	  This option enables SSE4A support.
 
 config X86_SSE_FP_MATH
 	bool "Compiler-generated SSEx instructions for floating point math"
@@ -70,6 +163,8 @@ config X86_SSE_FP_MATH
 
 	  Disabling this option means that the compiler utilizes only the
 	  x87 instruction set for floating point operations.
+
+endif # FPU || X86_64
 
 endmenu
 
