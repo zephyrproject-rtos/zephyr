@@ -154,10 +154,6 @@ done_mpu_regions_reset:
 #endif
 #endif
 
-#if defined(CONFIG_PM_DEEP_SLEEP_STATES)
-        jl @pm_system_resume_from_deep_sleep
-#endif
-
 #if defined(CONFIG_SMP) || CONFIG_MP_NUM_CPUS  > 1
 	_get_cpu_id r0
 	breq r0, 0, _master_core_startup
