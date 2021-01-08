@@ -119,6 +119,7 @@ static void att_req_destroy(struct bt_att_req *req)
 
 	if (req->buf) {
 		net_buf_unref(req->buf);
+		req->buf = NULL;
 	}
 
 	if (req->destroy) {
@@ -2074,14 +2075,9 @@ static uint8_t att_error_rsp(struct bt_att_chan *chan, struct net_buf *buf)
 
 	err = rsp->error;
 #if defined(CONFIG_BT_SMP)
-	if (chan->req->retrying) {
-		goto done;
-	}
-
-	/* Check if security needs to be changed */
+	/* Check if error can be handled by elevating security. */
 	if (!att_change_security(chan->chan.chan.conn, err)) {
 		chan->req->retrying = true;
-		/* Wait security_changed: TODO: Handle fail case */
 		return 0;
 	}
 #endif /* CONFIG_BT_SMP */
@@ -2725,10 +2721,14 @@ static void bt_att_encrypt_change(struct bt_l2cap_chan *chan,
 	BT_DBG("Retrying");
 
 	/* Resend buffer */
-	bt_att_chan_send_rsp(att_chan, att_chan->req->buf,
-			     chan_cb(att_chan->req->buf));
 
-	att_chan->req->buf = NULL;
+	/* Since packets are created in ATT and released in L2CAP we need to
+	 * take a new reference to "create" the packet in ATT again.
+	 */
+	if (chan_send(att_chan, net_buf_ref(att_chan->req->buf), NULL)) {
+		net_buf_unref(att_chan->req->buf);
+		att_handle_rsp(att_chan, NULL, 0, BT_ATT_ERR_AUTHENTICATION);
+	}
 }
 #endif /* CONFIG_BT_SMP */
 
