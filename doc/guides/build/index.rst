@@ -265,3 +265,10 @@ The following is a detailed description of the scripts used during the build pro
 .. include:: ../../../scripts/process_gperf.py
    :start-after: """
    :end-before: """
+
+:zephyr_file:`scripts/gen_app_partitions.py`
+============================================
+
+.. include:: ../../../scripts/gen_app_partitions.py
+   :start-after: """
+   :end-before: """
