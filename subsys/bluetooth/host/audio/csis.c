@@ -192,7 +192,7 @@ static int sirk_encrypt(struct bt_conn *conn,
 	int err;
 	uint8_t *k;
 
-	if (IS_ENABLED(CONFIG_BT_CSIS_TEST_ENC_SIRK)) {
+	if (IS_ENABLED(CONFIG_BT_CSIS_TEST_SAMPLE_DATA)) {
 		/* test_k is from the sample data from A.2 in the CSIS spec */
 		static uint8_t test_k[] = {0x1c, 0x01, 0xea, 0xf6,
 					   0x50, 0x7d, 0x43, 0x71,
@@ -668,14 +668,7 @@ static int bt_csis_init(const struct device *unused)
 	csis_inst.set_lock = BT_CSIP_RELEASE_VALUE;
 	csis_inst.set_sirk.type = BT_CSIP_SIRK_TYPE_PLAIN;
 
-	if (IS_ENABLED(CONFIG_BT_CSIS_TEST_SIH_SIRK)) {
-		uint8_t test_sirk[] = {
-			0xb8, 0x03, 0xea, 0xc6, 0xaf, 0xbb, 0x65, 0xa2,
-			0x5a, 0x41, 0xf1, 0x53, 0x05, 0x68, 0x8e, 0x83
-		};
-
-		memcpy(csis_inst.set_sirk.value, test_sirk, sizeof(test_sirk));
-	} else if (IS_ENABLED(CONFIG_BT_CSIS_TEST_ENC_SIRK)) {
+	if (IS_ENABLED(CONFIG_BT_CSIS_TEST_SAMPLE_DATA)) {
 		uint8_t test_sirk[] = {
 			0xcd, 0xcc, 0x72, 0xdd, 0x86, 0x8c, 0xcd, 0xce,
 			0x22, 0xfd, 0xa1, 0x21, 0x09, 0x7d, 0x7d, 0x45,
@@ -706,7 +699,7 @@ static int csis_update_psri(void)
 	uint32_t prand;
 	uint32_t hash;
 
-	if (IS_ENABLED(CONFIG_BT_CSIS_TEST_SIH_SIRK)) {
+	if (IS_ENABLED(CONFIG_BT_CSIS_TEST_SAMPLE_DATA)) {
 		prand = 0x69f563;
 	} else {
 		res = generate_prand(&prand);
