@@ -1796,12 +1796,6 @@ static void smp_reset(struct bt_smp *smp)
 	atomic_set(&smp->allowed_cmds, 0);
 	atomic_set(smp->flags, 0);
 
-	if (conn->required_sec_level != conn->sec_level) {
-		/* TODO report error */
-		/* reset required security level in case of error */
-		conn->required_sec_level = conn->sec_level;
-	}
-
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
 	    conn->role == BT_HCI_ROLE_MASTER) {
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_SECURITY_REQUEST);
@@ -1867,6 +1861,10 @@ static void smp_pairing_complete(struct bt_smp *smp, uint8_t status)
 	}
 
 	smp_reset(smp);
+
+	if (conn->sec_level != conn->required_sec_level) {
+		bt_smp_start_security(conn);
+	}
 }
 
 static void smp_timeout(struct k_work *work)
@@ -3059,6 +3057,13 @@ static int smp_send_pairing_req(struct bt_conn *conn)
 		return -EIO;
 	}
 
+	/* A higher security level is requested during the key distribution
+	 * phase, once pairing is complete a new pairing procedure will start.
+	 */
+	if (atomic_test_bit(smp->flags, SMP_FLAG_KEYS_DISTR)) {
+		return 0;
+	}
+
 	/* pairing is in progress */
 	if (atomic_test_bit(smp->flags, SMP_FLAG_PAIRING)) {
 		return -EBUSY;
@@ -3919,6 +3924,13 @@ static uint8_t smp_security_request(struct bt_smp *smp, struct net_buf *buf)
 	uint8_t auth;
 
 	BT_DBG("");
+
+	/* A higher security level is requested during the key distribution
+	 * phase, once pairing is complete a new pairing procedure will start.
+	 */
+	if (atomic_test_bit(smp->flags, SMP_FLAG_KEYS_DISTR)) {
+		return 0;
+	}
 
 	if (atomic_test_bit(smp->flags, SMP_FLAG_PAIRING)) {
 		/* We have already started pairing process */
