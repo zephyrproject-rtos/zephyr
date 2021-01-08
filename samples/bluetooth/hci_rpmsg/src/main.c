@@ -143,6 +143,7 @@ static K_FIFO_DEFINE(tx_queue);
 #define HCI_RPMSG_ACL 0x02
 #define HCI_RPMSG_SCO 0x03
 #define HCI_RPMSG_EVT 0x04
+#define HCI_RPMSG_ISO 0x05
 
 static struct net_buf *hci_rpmsg_cmd_recv(uint8_t *data, size_t remaining)
 {
@@ -206,6 +207,37 @@ static struct net_buf *hci_rpmsg_acl_recv(uint8_t *data, size_t remaining)
 	return buf;
 }
 
+static struct net_buf *hci_rpmsg_iso_recv(uint8_t *data, size_t remaining)
+{
+	struct bt_hci_iso_hdr *hdr = (void *)data;
+	struct net_buf *buf;
+
+	if (remaining < sizeof(*hdr)) {
+		LOG_ERR("Not enough data for ISO header");
+		return NULL;
+	}
+
+	buf = bt_buf_get_tx(BT_BUF_ISO_OUT, K_NO_WAIT, hdr, sizeof(*hdr));
+	if (buf) {
+		data += sizeof(*hdr);
+		remaining -= sizeof(*hdr);
+	} else {
+		LOG_ERR("No available ISO buffers!");
+		return NULL;
+	}
+
+	if (remaining != sys_le16_to_cpu(hdr->len)) {
+		LOG_ERR("ISO payload length is not correct");
+		net_buf_unref(buf);
+		return NULL;
+	}
+
+	LOG_DBG("len %zu", remaining);
+	net_buf_add_mem(buf, data, remaining);
+
+	return buf;
+}
+
 static void hci_rpmsg_rx(uint8_t *data, size_t len)
 {
 	uint8_t pkt_indicator;
@@ -224,6 +256,10 @@ static void hci_rpmsg_rx(uint8_t *data, size_t len)
 
 	case HCI_RPMSG_ACL:
 		buf = hci_rpmsg_acl_recv(data, remaining);
+		break;
+
+	case HCI_RPMSG_ISO:
+		buf = hci_rpmsg_iso_recv(data, remaining);
 		break;
 
 	default:
@@ -275,6 +311,9 @@ static int hci_rpmsg_send(struct net_buf *buf)
 		break;
 	case BT_BUF_EVT:
 		pkt_indicator = HCI_RPMSG_EVT;
+		break;
+	case BT_BUF_ISO_IN:
+		pkt_indicator = HCI_RPMSG_ISO;
 		break;
 	default:
 		LOG_ERR("Unknown type %u", bt_buf_get_type(buf));
