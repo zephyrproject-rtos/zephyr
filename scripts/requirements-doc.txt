@@ -6,3 +6,6 @@ sphinx>=3.3.0,<3.4.0
 sphinx_rtd_theme
 sphinx-tabs
 sphinxcontrib-svg2pdfconverter
+
+# Used by zephyr_module
+pykwalify
