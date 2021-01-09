@@ -22,6 +22,15 @@ struct lll_adv_pdu {
 	uint8_t volatile first;
 	uint8_t          last;
 	uint8_t          *pdu[DOUBLE_BUFFER_SIZE];
+#if IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
+	/* This is a storage for LLL configuration that may be
+	 * changed while LLL advertising role is started.
+	 * Also it makes the configuration data to be in sync
+	 * with extended advertising PDU e.g. CTE TX configuration
+	 * and CTEInfo field.
+	 */
+	void             *extra_data[DOUBLE_BUFFER_SIZE];
+#endif /* CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY */
 };
 
 struct lll_adv_aux {
@@ -36,10 +45,6 @@ struct lll_adv_aux {
 	int8_t tx_pwr_lvl;
 #endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
 };
-
-#if IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
-struct lll_df_adv_cfg;
-#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 
 struct lll_adv_iso {
 	struct lll_hdr hdr;
@@ -72,7 +77,10 @@ struct lll_adv_sync {
 #endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
 
 #if IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
-	struct lll_df_adv_cfg *df_cfg;
+	/* This flag is used only by LLL. It holds information if CTE
+	 * transmission was started by LLL.
+	 */
+	uint8_t cte_started:1;
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 };
 
@@ -134,6 +142,17 @@ int lll_adv_data_release(struct lll_adv_pdu *pdu);
 struct pdu_adv *lll_adv_pdu_alloc(struct lll_adv_pdu *pdu, uint8_t *idx);
 void lll_adv_prepare(void *param);
 
+#if IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
+int lll_adv_and_extra_data_init(struct lll_adv_pdu *pdu);
+int lll_adv_and_extra_data_release(struct lll_adv_pdu *pdu);
+struct pdu_adv *lll_adv_pdu_and_extra_data_alloc(struct lll_adv_pdu *pdu,
+						 void **extra_data,
+						 uint8_t *idx);
+struct pdu_adv *lll_adv_pdu_and_extra_data_latest_get(struct lll_adv_pdu *pdu,
+						      void **extra_data,
+						      uint8_t *is_modified);
+#endif /* CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY */
+
 static inline void lll_adv_pdu_enqueue(struct lll_adv_pdu *pdu, uint8_t idx)
 {
 	pdu->last = idx;
@@ -190,9 +209,14 @@ static inline struct pdu_adv *lll_adv_aux_data_peek(struct lll_adv_aux *lll)
 
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
 static inline struct pdu_adv *lll_adv_sync_data_alloc(struct lll_adv_sync *lll,
-						     uint8_t *idx)
+						      void **extra_data,
+						      uint8_t *idx)
 {
+#if IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
+	return lll_adv_pdu_and_extra_data_alloc(&lll->data, extra_data, idx);
+#else
 	return lll_adv_pdu_alloc(&lll->data, idx);
+#endif /* CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY */
 }
 
 static inline void lll_adv_sync_data_enqueue(struct lll_adv_sync *lll,
@@ -201,9 +225,18 @@ static inline void lll_adv_sync_data_enqueue(struct lll_adv_sync *lll,
 	lll_adv_pdu_enqueue(&lll->data, idx);
 }
 
-static inline struct pdu_adv *lll_adv_sync_data_peek(struct lll_adv_sync *lll)
+static inline struct pdu_adv *lll_adv_sync_data_peek(struct lll_adv_sync *lll,
+						     void **extra_data)
 {
-	return (void *)lll->data.pdu[lll->data.last];
+	uint8_t last = lll->data.last;
+
+#if IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
+	if (extra_data) {
+		*extra_data = lll->data.extra_data[last];
+	}
+#endif /* CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY */
+
+	return (void *)lll->data.pdu[last];
 }
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */

@@ -4,6 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+struct lll_df_adv_cfg;
+#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
+
 struct ll_adv_set {
 	struct evt_hdr evt;
 	struct ull_hdr ull;
@@ -36,6 +40,10 @@ struct ll_adv_set {
 	uint8_t  id_addr_type:1;
 	uint8_t  id_addr[BDADDR_SIZE];
 #endif /* CONFIG_BT_CTLR_PRIVACY */
+
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+	struct lll_df_adv_cfg *df_cfg;
+#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 };
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)

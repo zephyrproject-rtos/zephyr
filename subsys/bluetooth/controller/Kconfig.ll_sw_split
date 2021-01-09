@@ -175,6 +175,20 @@ config BT_CTLR_ADV_DATA_BUF_MAX
 	  Maximum number of buffered Advertising Data payload across enabled
 	  advertising sets.
 
+config BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY
+	bool
+	depends on BT_CTLR_ADV_EXT
+	help
+	  Add additional memory to advertising PDU storage. The memory is a
+	  general purpose storage for data that should be send from ULL to LLL.
+	  The data stored in the memory are in synchoronization with content
+	  of PDU memory.
+
+	  For example, the extra data memory is used for storage for parameters
+	  to configure Radio peripheral to transmit CTE. The configuration data
+	  must be synchronized with CTEInfo field in extended advertising header
+	  that is part of PDU data.
+
 config BT_CTRL_ADV_ADI_IN_SCAN_RSP
 	bool "Include ADI in AUX_SCAN_RSP PDU"
 	depends on BT_BROADCASTER && BT_CTLR_ADV_EXT
