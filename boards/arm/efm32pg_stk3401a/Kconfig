@@ -1,0 +1,13 @@
+# EFM32PG STK3401A board configuration
+
+# Copyright (c) 2020 Rafael Dias Menezes <rdmeneze@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_INIT_PRIORITY
+	int
+	default KERNEL_INIT_PRIORITY_DEFAULT
+	depends on BOARD_EFM32PG_STK3401A
+	depends on GPIO
+	help
+	  Board initialization priority. This must be bigger than
+	  GPIO_GECKO_COMMON_INIT_PRIORITY.
