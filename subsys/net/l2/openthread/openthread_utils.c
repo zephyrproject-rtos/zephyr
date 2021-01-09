@@ -250,6 +250,7 @@ void add_ipv6_maddr_to_ot(struct openthread_context *context)
 void add_ipv6_maddr_to_zephyr(struct openthread_context *context)
 {
 	const otNetifMulticastAddress *maddress;
+	struct net_if_mcast_addr *zmaddr;
 
 	for (maddress = otIp6GetMulticastAddresses(context->instance);
 	     maddress; maddress = maddress->mNext) {
@@ -269,8 +270,18 @@ void add_ipv6_maddr_to_zephyr(struct openthread_context *context)
 							 buf, sizeof(buf))));
 		}
 
-		net_if_ipv6_maddr_add(context->iface,
+		zmaddr = net_if_ipv6_maddr_add(context->iface,
 				      (struct in6_addr *)(&maddress->mAddress));
+
+		if (zmaddr &&
+		    !(net_if_ipv6_maddr_is_joined(zmaddr) ||
+		      net_ipv6_is_addr_mcast_iface(
+				(struct in6_addr *)(&maddress->mAddress)) ||
+		      net_ipv6_is_addr_mcast_link_all_nodes(
+				(struct in6_addr *)(&maddress->mAddress)))) {
+
+			net_if_ipv6_maddr_join(zmaddr);
+		}
 	}
 }
 
