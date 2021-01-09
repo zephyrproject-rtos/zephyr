@@ -117,7 +117,7 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 
 	sync->interval = interval;
 
-	ter_pdu = lll_adv_sync_data_peek(lll_sync);
+	ter_pdu = lll_adv_sync_data_peek(lll_sync, NULL);
 	ter_pdu->type = PDU_ADV_TYPE_AUX_SYNC_IND;
 	ter_pdu->rfu = 0U;
 	ter_pdu->chan_sel = 0U;
@@ -187,14 +187,14 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 	}
 
 	/* Get reference to previous tertiary PDU data */
-	ter_pdu_prev = lll_adv_sync_data_peek(lll_sync);
+	ter_pdu_prev = lll_adv_sync_data_peek(lll_sync, NULL);
 	ter_com_hdr_prev = (void *)&ter_pdu_prev->adv_ext_ind;
 	ter_hdr = (void *)ter_com_hdr_prev->ext_hdr_adv_data;
 	ter_hdr_prev = *ter_hdr;
 	ter_dptr_prev = ter_hdr->data;
 
 	/* Get reference to new tertiary PDU data buffer */
-	ter_pdu = lll_adv_sync_data_alloc(lll_sync, &ter_idx);
+	ter_pdu = lll_adv_sync_data_alloc(lll_sync, NULL, &ter_idx);
 	ter_pdu->type = ter_pdu_prev->type;
 	ter_pdu->rfu = 0U;
 	ter_pdu->chan_sel = 0U;

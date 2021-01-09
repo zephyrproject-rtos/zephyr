@@ -39,6 +39,7 @@
 #include "lll_tim_internal.h"
 #include "lll_adv_internal.h"
 #include "lll_prof_internal.h"
+#include "lll_df_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_lll_adv
@@ -109,6 +110,34 @@ static MFIFO_DEFINE(pdu_free, sizeof(void *), PDU_MEM_FIFO_COUNT);
 
 /* Semaphore to wakeup thread waiting for free AD data PDU buffers */
 static struct k_sem sem_pdu_free;
+
+#if IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
+#if IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+#define EXTRA_DATA_MEM_SIZE MROUND(sizeof(struct lll_df_adv_cfg))
+#else
+#define EXTRA_DATA_MEM_SIZE 0
+#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
+
+/* ToDo check if number of fragments is not smaller than number of CTE
+ * to be transmitted. Pay attention it would depend on the chain PDU storage
+ *
+ * Currently we can send only single CTE with AUX_SYNC_IND.
+ * Number is equal to allowed adv sync sets * 2 (double buffering).
+ */
+#define EXTRA_DATA_MEM_COUNT (BT_CTLR_ADV_SYNC_SET * PAYLOAD_FRAG_COUNT + 1)
+#define EXTRA_DATA_MEM_FIFO_COUNT (EXTRA_DATA_MEM_COUNT * 2)
+#define EXTRA_DATA_POOL_SIZE (EXTRA_DATA_MEM_SIZE * EXTRA_DATA_MEM_COUNT * 2)
+
+/* Free extra data buffer pool */
+static struct {
+	void *free;
+	uint8_t pool[EXTRA_DATA_POOL_SIZE];
+} mem_extra_data;
+
+/* FIFO to return stale extra data buffers from LLL to thread context. */
+static MFIFO_DEFINE(extra_data_free, sizeof(void *), EXTRA_DATA_MEM_FIFO_COUNT);
+static struct k_sem sem_extra_data_free;
+#endif /* CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY */
 
 int lll_adv_init(void)
 {
@@ -181,6 +210,13 @@ int lll_adv_data_reset(struct lll_adv_pdu *pdu)
 	pdu->last = 0U;
 	pdu->pdu[1] = NULL;
 
+#if IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
+	/* Both slots are NULL because the extra_memory is allocated only
+	 * on request. Not every advertising PDU includes extra_data.
+	 */
+	pdu->extra_data[0] = NULL;
+	pdu->extra_data[1] = NULL;
+#endif /* CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY */
 	return 0;
 }
 
@@ -207,34 +243,11 @@ int lll_adv_data_release(struct lll_adv_pdu *pdu)
 	return 0;
 }
 
-struct pdu_adv *lll_adv_pdu_alloc(struct lll_adv_pdu *pdu, uint8_t *idx)
+static inline struct pdu_adv *adv_pdu_allocate(struct lll_adv_pdu *pdu,
+					       uint8_t last)
 {
-	uint8_t first, last;
-	struct pdu_adv *p;
+	void *p;
 	int err;
-
-	first = pdu->first;
-	last = pdu->last;
-	if (first == last) {
-		last++;
-		if (last == DOUBLE_BUFFER_SIZE) {
-			last = 0U;
-		}
-	} else {
-		uint8_t first_latest;
-
-		pdu->last = first;
-		cpu_dmb();
-		first_latest = pdu->first;
-		if (first_latest != first) {
-			last++;
-			if (last == DOUBLE_BUFFER_SIZE) {
-				last = 0U;
-			}
-		}
-	}
-
-	*idx = last;
 
 	p = (void *)pdu->pdu[last];
 	if (p) {
@@ -268,6 +281,36 @@ struct pdu_adv *lll_adv_pdu_alloc(struct lll_adv_pdu *pdu, uint8_t *idx)
 	pdu->pdu[last] = (void *)p;
 
 	return p;
+}
+
+struct pdu_adv *lll_adv_pdu_alloc(struct lll_adv_pdu *pdu, uint8_t *idx)
+{
+	uint8_t first, last;
+
+	first = pdu->first;
+	last = pdu->last;
+	if (first == last) {
+		last++;
+		if (last == DOUBLE_BUFFER_SIZE) {
+			last = 0U;
+		}
+	} else {
+		uint8_t first_latest;
+
+		pdu->last = first;
+		cpu_dmb();
+		first_latest = pdu->first;
+		if (first_latest != first) {
+			last++;
+			if (last == DOUBLE_BUFFER_SIZE) {
+				last = 0U;
+			}
+		}
+	}
+
+	*idx = last;
+
+	return adv_pdu_allocate(pdu, last);
 }
 
 struct pdu_adv *lll_adv_pdu_latest_get(struct lll_adv_pdu *pdu,
@@ -305,6 +348,209 @@ struct pdu_adv *lll_adv_pdu_latest_get(struct lll_adv_pdu *pdu,
 
 	return (void *)pdu->pdu[first];
 }
+
+#if IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
+int lll_adv_and_extra_data_init(struct lll_adv_pdu *pdu)
+{
+	struct pdu_adv *p;
+	void *extra_data;
+
+	p = mem_acquire(&mem_pdu.free);
+	if (!p) {
+		return -ENOMEM;
+	}
+
+	pdu->pdu[0] = (void *)p;
+
+	extra_data = mem_acquire(&mem_extra_data.free);
+	if (!extra_data) {
+		return -ENOMEM;
+	}
+
+	pdu->extra_data[0] = extra_data;
+
+	return 0;
+}
+
+static inline void adv_extra_data_release(struct lll_adv_pdu *pdu, int idx)
+{
+	void *extra_data;
+
+	extra_data = pdu->extra_data[idx];
+	if (extra_data) {
+		pdu->extra_data[idx] = NULL;
+		mem_release(extra_data, &mem_extra_data.free);
+	}
+}
+
+int lll_adv_and_extra_data_release(struct lll_adv_pdu *pdu)
+{
+	uint8_t last;
+	void *p;
+
+	last = pdu->last;
+	p = pdu->pdu[last];
+	pdu->pdu[last] = NULL;
+	mem_release(p, &mem_pdu.free);
+
+	adv_extra_data_release(pdu, last);
+
+	last++;
+	if (last == DOUBLE_BUFFER_SIZE) {
+		last = 0U;
+	}
+	p = pdu->pdu[last];
+	if (p) {
+		pdu->pdu[last] = NULL;
+		mem_release(p, &mem_pdu.free);
+	}
+
+	adv_extra_data_release(pdu, last);
+
+	return 0;
+}
+
+static inline void *adv_extra_data_allocate(struct lll_adv_pdu *pdu,
+					    uint8_t last)
+{
+	void *extra_data;
+	int err;
+
+	extra_data = pdu->extra_data[last];
+	if (extra_data) {
+		return extra_data;
+	}
+
+	extra_data = MFIFO_DEQUEUE_PEEK(extra_data_free);
+	if (extra_data) {
+		err = k_sem_take(&sem_extra_data_free, K_NO_WAIT);
+		LL_ASSERT(!err);
+
+		MFIFO_DEQUEUE(extra_data_free);
+		pdu->extra_data[last] = extra_data;
+
+		return extra_data;
+	}
+
+	extra_data = mem_acquire(&mem_extra_data.free);
+	if (extra_data) {
+		pdu->extra_data[last] = extra_data;
+
+		return extra_data;
+	}
+
+	err = k_sem_take(&sem_extra_data_free, K_FOREVER);
+	LL_ASSERT(!err);
+
+	extra_data = MFIFO_DEQUEUE(extra_data_free);
+	LL_ASSERT(extra_data);
+
+	pdu->extra_data[last] = (void *)extra_data;
+
+	return extra_data;
+}
+
+struct pdu_adv *lll_adv_pdu_and_extra_data_alloc(struct lll_adv_pdu *pdu,
+						 void **extra_data,
+						 uint8_t *idx)
+{
+	uint8_t first, last;
+	struct pdu_adv *p;
+
+	first = pdu->first;
+	last = pdu->last;
+	if (first == last) {
+		last++;
+		if (last == DOUBLE_BUFFER_SIZE) {
+			last = 0U;
+		}
+	} else {
+		uint8_t first_latest;
+
+		pdu->last = first;
+		cpu_dsb();
+		first_latest = pdu->first;
+		if (first_latest != first) {
+			last++;
+			if (last == DOUBLE_BUFFER_SIZE) {
+				last = 0U;
+			}
+		}
+	}
+
+	*idx = last;
+
+	p = adv_pdu_allocate(pdu, last);
+
+	if (extra_data) {
+		*extra_data = adv_extra_data_allocate(pdu, last);
+	} else {
+		pdu->extra_data[last] = NULL;
+	}
+
+	return p;
+}
+
+struct pdu_adv *lll_adv_pdu_and_extra_data_latest_get(struct lll_adv_pdu *pdu,
+						      void **extra_data,
+						      uint8_t *is_modified)
+{
+	uint8_t first;
+
+	first = pdu->first;
+	if (first != pdu->last) {
+		uint8_t pdu_free_idx;
+		uint8_t ed_free_idx;
+		void *ed;
+		uint8_t pdu_idx;
+		void *p;
+
+		if (!MFIFO_ENQUEUE_IDX_GET(pdu_free, &pdu_free_idx)) {
+			LL_ASSERT(false);
+
+			return NULL;
+		}
+
+		pdu_idx = first;
+		ed = pdu->extra_data[pdu_idx];
+
+		if (ed && (!MFIFO_ENQUEUE_IDX_GET(extra_data_free,
+						  &ed_free_idx))) {
+			LL_ASSERT(false);
+			/* ToDo what if enqueue fails and assert does not fire?
+			 * pdu_free_idx should be released before return.
+			 */
+			return NULL;
+		}
+
+		first += 1U;
+		if (first == DOUBLE_BUFFER_SIZE) {
+			first = 0U;
+		}
+		pdu->first = first;
+		*is_modified = 1U;
+
+		p = pdu->pdu[pdu_idx];
+		pdu->pdu[pdu_idx] = NULL;
+
+		MFIFO_BY_IDX_ENQUEUE(pdu_free, pdu_free_idx, p);
+		k_sem_give(&sem_pdu_free);
+
+		if (ed) {
+			pdu->extra_data[pdu_idx] = NULL;
+
+			MFIFO_BY_IDX_ENQUEUE(extra_data_free, ed_free_idx, ed);
+			k_sem_give(&sem_extra_data_free);
+		}
+	}
+
+	if (extra_data) {
+		*extra_data = pdu->extra_data[first];
+	}
+
+	return (void *)pdu->pdu[first];
+}
+#endif /* CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY */
 
 void lll_adv_prepare(void *param)
 {
@@ -418,6 +664,17 @@ static int init_reset(void)
 
 	/* Initialize AC PDU free buffer return queue */
 	MFIFO_INIT(pdu_free);
+
+#if IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
+	/* Initialize extra data pool */
+	mem_init(mem_extra_data.pool, EXTRA_DATA_MEM_SIZE,
+		 (sizeof(mem_extra_data.pool) / EXTRA_DATA_MEM_SIZE), &mem_extra_data.free);
+
+	/* Initialize extra data free buffer return queue */
+	MFIFO_INIT(extra_data_free);
+
+	k_sem_init(&sem_extra_data_free, 0, EXTRA_DATA_MEM_FIFO_COUNT);
+#endif /* CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY */
 
 	/* Initialize semaphore for ticker API blocking wait */
 	k_sem_init(&sem_pdu_free, 0, PDU_MEM_FIFO_COUNT);

@@ -146,7 +146,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 			     ((uint32_t)lll->crc_init[0])));
 	lll_chan_set(data_chan_use);
 
-	pdu = lll_adv_sync_data_latest_get(lll, &upd);
+	pdu = lll_adv_sync_data_latest_get(lll, NULL, &upd);
 	radio_pkt_tx_set(pdu);
 
 	/* TODO: chaining */

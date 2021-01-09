@@ -100,6 +100,7 @@ config BT_CTLR_DF_CONN_CTE_RSP
 config BT_CTLR_DF_ADV_CTE_TX
 	bool "Enable Connectionless CTE Transmitter feature"
 	depends on BT_CTLR_DF_CTE_TX && BT_CTLR_ADV_PERIODIC
+	select BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY
 	default y
 	help
 	  Enable support for Bluetooth v5.1 Connectionless CTE Transmitter
