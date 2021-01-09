@@ -6,6 +6,7 @@ name: Documentation GitHub Workflow
 on:
   pull_request:
     paths:
+    - 'Makefile'
     - 'doc/**'
     - '**.rst'
     - 'include/**'
