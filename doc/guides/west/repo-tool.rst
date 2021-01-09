@@ -257,6 +257,28 @@ If you would like ``west update`` to keep local branches checked out as
 long as they point to commits that are descendants of the new
 ``manifest-rev``, use the ``-k`` (``--keep-descendants``) option.
 
+.. note::
+
+   ``west update --rebase`` will fail in projects that have git conflicts
+   between your branch and new commits brought in by the manifest. You
+   should immediately resolve these conflicts as you usually do with
+   ``git``, or you can use ``git -C <project_path> rebase --abort`` to
+   ignore incoming changes for the moment.
+
+   With a clean working tree, a plain ``west update`` never fails
+   because it does not try to hold on to your commits and simply
+   leaves them aside.
+
+   ``west update --keep-descendants`` offers an intermediate option that
+   never fails either but does not treat all projects the same:
+
+   - in projects where your branch diverged from the incoming commits, it
+     does not even try to rebase and leaves your branches behind just like a
+     plain ``west update`` does;
+   - in all other projects where no rebase or merge is needed it keeps
+     your branches in place.
+
+
 .. _west-multi-repo-misc:
 
 Other Repository Management Commands
