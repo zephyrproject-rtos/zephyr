@@ -1,0 +1,8 @@
+# nRF52840-MDK-dongle board configuration
+
+# Copyright (c) 2021 Adam BZH (bzhthedeveloper@gmail.com)
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NRF52840_MDK_DONGLE
+	bool "NRF52840-MDK-dongle"
+	depends on SOC_NRF52840_QIAA
