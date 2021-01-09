@@ -1,0 +1,25 @@
+# EFM32PG1B MCU line
+
+# Copyright (c) 2020 Rafael Dias Menezes
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_EFM32PG1B
+	bool "EFM32PG1B Series MCU"
+	select ARM
+	select HAS_SILABS_GECKO
+	select HAS_SWO
+	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_HAS_FPU
+	select CPU_HAS_ARM_MPU
+	select SOC_FAMILY_EXX32
+	select HAS_POWER_STATE_SLEEP_1
+	select HAS_POWER_STATE_SLEEP_2
+	select HAS_POWER_STATE_SLEEP_3
+	select SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
+	select SOC_GECKO_HAS_HFRCO_FREQRANGE
+	select SOC_GECKO_CMU
+	select SOC_GECKO_EMU
+	select SOC_GECKO_GPIO
+	help
+	  Enable support for EFM32 PearlGecko MCU series

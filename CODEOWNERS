@@ -46,6 +46,7 @@
 /soc/arm/nuvoton_npcx/                    @MulinChao
 /soc/arm/qemu_cortex_a53/                 @carlocaione
 /soc/arm/quicklogic_eos_s3/               @kowalewskijan @kgugala
+/soc/arm/silabs_exx32/efm32pg1b/          @rdmeneze
 /soc/arm/silabs_exx32/efr32mg21/          @l-alfred
 /soc/arm/st_stm32/                        @erwango
 /soc/arm/st_stm32/*/power.c               @FRASTM
@@ -83,6 +84,7 @@
 /boards/arm/cc3220sf_launchxl/            @vanti
 /boards/arm/cy8*                          @nandojve
 /boards/arm/disco_l475_iot1/              @erwango
+/boards/arm/efm32pg_stk3401a/             @rdmeneze
 /boards/arm/faze/                         @mbittan @simonguinot
 /boards/arm/frdm*/                        @MaureenHelm
 /boards/arm/frdm*/doc/                    @MaureenHelm @MeganHansen
@@ -316,11 +318,13 @@
 /dts/arm/nuvoton/npcx/                    @MulinChao
 /dts/arm/nxp/                             @MaureenHelm
 /dts/arm/microchip/                       @franciscomunoz @albertofloyd @scottwcpg
+/dts/arm/silabs/efm32_pg_1b.dtsi          @rdmeneze
 /dts/arm/silabs/efm32gg11b*               @oanerer
 /dts/arm/silabs/efm32_jg_pg*              @chrta
 /dts/arm/silabs/efr32bg13p*               @mnkp
 /dts/arm/silabs/efm32jg12b*               @chrta
 /dts/arm/silabs/efm32pg12b*               @chrta
+/dts/arm/silabs/efm32pg1b*                @rdmeneze
 /dts/arm/silabs/efr32mg21*                @l-alfred
 /dts/riscv/it8xxx2.dtsi                   @ite
 /dts/riscv/microsemi-miv.dtsi             @galak
