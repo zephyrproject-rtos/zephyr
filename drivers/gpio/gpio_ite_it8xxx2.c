@@ -268,7 +268,7 @@ static void gpio_ite_isr(const void *arg)
 	int gpio_index = 0;
 	const struct device *dev = arg;
 	struct gpio_ite_wui *wui_local;
-	struct gpio_ite_reg_table *gpio_tab_local;
+	struct gpio_ite_reg_table *gpio_tab_local = NULL;
 	const struct gpio_ite_cfg *gpio_config = DEV_GPIO_CFG(dev);
 	struct gpio_ite_data *data = DEV_GPIO_DATA(dev);
 
