@@ -181,7 +181,7 @@ function(trusted_firmware_build)
     )
 
   add_library(tfm_api
-    ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/tf-m-tests/app/os_wrapper_cmsis_rtos_v2.c
+    ${ZEPHYR_BASE}/modules/trusted-firmware-m/src/zephyr_tfm_log.c
   )
 
   target_include_directories(tfm_api
@@ -256,6 +256,8 @@ if (CONFIG_BUILD_WITH_TFM)
   )
 
   zephyr_link_libraries(tfm_api)
+  zephyr_sources(
+    ${ZEPHYR_BASE}/modules/trusted-firmware-m/src/zephyr_tfm_ns_interface.c)
 
   # Set default image versions if not defined elsewhere
   if (NOT DEFINED TFM_IMAGE_VERSION_S)
