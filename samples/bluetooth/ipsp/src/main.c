@@ -25,12 +25,6 @@ LOG_MODULE_REGISTER(ipsp);
 #include <net/net_context.h>
 #include <net/udp.h>
 
-/* admin-local, dynamically allocated multicast address */
-#define MCAST_IP6ADDR { { { 0xff, 0x02, 0, 0, 0, 0, 0, 0, \
-			    0, 0, 0, 0, 0, 0, 0, 0x1 } } }
-
-struct in6_addr in6addr_mcast = MCAST_IP6ADDR;
-
 /* Define my IP address where to expect messages */
 #define MY_IP6ADDR { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, \
 			 0, 0, 0, 0, 0, 0, 0, 0x1 } } }
@@ -87,20 +81,13 @@ static inline void init_app(void)
 		ifaddr = net_if_ipv6_addr_add(net_if_get_default(),
 					      &in6addr_my, NET_ADDR_MANUAL, 0);
 	} while (0);
-
-	net_if_ipv6_maddr_add(net_if_get_default(), &in6addr_mcast);
 }
 
 static inline bool get_context(struct net_context **udp_recv6,
-			       struct net_context **tcp_recv6,
-			       struct net_context **mcast_recv6)
+			       struct net_context **tcp_recv6)
 {
 	int ret;
-	struct sockaddr_in6 mcast_addr6 = { 0 };
 	struct sockaddr_in6 my_addr6 = { 0 };
-
-	net_ipaddr_copy(&mcast_addr6.sin6_addr, &in6addr_mcast);
-	mcast_addr6.sin6_family = AF_INET6;
 
 	my_addr6.sin6_family = AF_INET6;
 	my_addr6.sin6_port = htons(MY_PORT);
@@ -116,20 +103,6 @@ static inline bool get_context(struct net_context **udp_recv6,
 	if (ret < 0) {
 		LOG_ERR("Cannot bind IPv6 UDP port %d (%d)",
 			ntohs(my_addr6.sin6_port), ret);
-		return false;
-	}
-
-	ret = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_UDP, mcast_recv6);
-	if (ret < 0) {
-		LOG_ERR("Cannot get receiving IPv6 mcast network context (%d)",
-			ret);
-		return false;
-	}
-
-	ret = net_context_bind(*mcast_recv6, (struct sockaddr *)&mcast_addr6,
-			       sizeof(struct sockaddr_in6));
-	if (ret < 0) {
-		LOG_ERR("Cannot bind IPv6 mcast (%d)", ret);
 		return false;
 	}
 
@@ -314,9 +287,8 @@ static void listen(void)
 {
 	struct net_context *udp_recv6 = { 0 };
 	struct net_context *tcp_recv6 = { 0 };
-	struct net_context *mcast_recv6 = { 0 };
 
-	if (!get_context(&udp_recv6, &tcp_recv6, &mcast_recv6)) {
+	if (!get_context(&udp_recv6, &tcp_recv6)) {
 		LOG_ERR("Cannot get network contexts");
 		return;
 	}
@@ -331,7 +303,6 @@ static void listen(void)
 	LOG_INF("Stopping...");
 
 	net_context_put(udp_recv6);
-	net_context_put(mcast_recv6);
 	net_context_put(tcp_recv6);
 }
 
