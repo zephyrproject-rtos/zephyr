@@ -1672,6 +1672,12 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
 		return NULL;
 	}
 
+	if (net_if_ipv6_maddr_lookup(addr, &iface)) {
+		NET_WARN("Multicast address %s is is already registered.",
+			log_strdup(net_sprint_ipv6_addr(addr)));
+		return NULL;
+	}
+
 	for (i = 0; i < NET_IF_MAX_IPV6_MADDR; i++) {
 		if (ipv6->mcast[i].is_used) {
 			continue;
