@@ -165,6 +165,48 @@ void test_z_phys_map_side_effect(void)
 	ztest_test_fail();
 }
 
+/**
+ * Basic k_mem_map() functionality
+ *
+ * Does not exercise K_MEM_MAP_* control flags, just default behavior
+ */
+void test_k_mem_map(void)
+{
+	size_t free_mem, free_mem_after_map;
+	char *mapped;
+	int i;
+
+	free_mem = k_mem_free_get();
+	zassert_not_equal(free_mem, 0, "no free memory");
+	printk("Free memory: %zu\n", free_mem);
+
+	mapped = k_mem_map(CONFIG_MMU_PAGE_SIZE, K_MEM_PERM_RW);
+	zassert_not_null(mapped, "failed to map memory");
+	printk("mapped a page to %p\n", mapped);
+
+	/* Page should be zeroed */
+	for (i = 0; i < CONFIG_MMU_PAGE_SIZE; i++) {
+		zassert_equal(mapped[i], '\x00', "page not zeroed");
+	}
+
+	free_mem_after_map = k_mem_free_get();
+	printk("Free memory now: %zu\n", free_mem_after_map);
+	zassert_equal(free_mem, free_mem_after_map + CONFIG_MMU_PAGE_SIZE,
+		      "incorrect free memory accounting");
+
+	/* Show we can write to page without exploding */
+	(void)memset(mapped, '\xFF', CONFIG_MMU_PAGE_SIZE);
+	for (i = 0; i < CONFIG_MMU_PAGE_SIZE; i++) {
+		zassert_true(mapped[i] == '\xFF',
+			     "incorrect value 0x%hhx read at index %d",
+			     mapped[i], i);
+	}
+
+	/* TODO: Un-map the mapped page to clean up, once we have that
+	 * capability
+	 */
+}
+
 /* ztest main entry*/
 void test_main(void)
 {
@@ -177,7 +219,8 @@ void test_main(void)
 	ztest_test_suite(test_mem_map,
 			ztest_unit_test(test_z_phys_map_rw),
 			ztest_unit_test(test_z_phys_map_exec),
-			ztest_unit_test(test_z_phys_map_side_effect)
+			ztest_unit_test(test_z_phys_map_side_effect),
+			ztest_unit_test(test_k_mem_map)
 			);
 	ztest_run_test_suite(test_mem_map);
 }
