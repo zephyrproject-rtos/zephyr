@@ -377,7 +377,7 @@ static int i2c_ctrl_wait_stop_completed(const struct device *dev, int timeout)
 		k_msleep(1);
 	} while (--timeout);
 
-	if (timeout) {
+	if (timeout > 0) {
 		return 0;
 	} else {
 		return -ETIMEDOUT;
@@ -401,7 +401,7 @@ static int i2c_ctrl_wait_idle_completed(const struct device *dev, int timeout)
 		k_msleep(1);
 	} while (--timeout);
 
-	if (timeout) {
+	if (timeout > 0) {
 		return 0;
 	} else {
 		return -ETIMEDOUT;
@@ -413,6 +413,10 @@ static int i2c_ctrl_recovery(const struct device *dev)
 	struct smb_fifo_reg *const inst_fifo = HAL_I2C_FIFO_INSTANCE(dev);
 	struct i2c_ctrl_data *const data = DRV_DATA(dev);
 	int ret;
+
+	if (data->oper_state != NPCX_I2C_ERROR_RECOVERY) {
+		data->oper_state = NPCX_I2C_ERROR_RECOVERY;
+	}
 
 	/* Step 1: Make sure the bus is not stalled before exit. */
 	i2c_ctrl_hold_bus(dev, 0);
@@ -426,10 +430,9 @@ static int i2c_ctrl_recovery(const struct device *dev)
 	inst_fifo->SMBST |= BIT(NPCX_SMBST_BER) | BIT(NPCX_SMBST_NEGACK);
 	ret = i2c_ctrl_wait_stop_completed(dev, I2C_MAX_TIMEOUT);
 	inst_fifo->SMBCST |= BIT(NPCX_SMBCST_BB);
-	if (!ret) {
+	if (ret != 0) {
 		LOG_ERR("Abort i2c port%02x fail! Bus might be stalled.",
 								data->port);
-		return -EIO;
 	}
 
 	/*
@@ -440,7 +443,7 @@ static int i2c_ctrl_recovery(const struct device *dev)
 	 */
 	inst_fifo->SMBCTL2 &= ~BIT(NPCX_SMBCTL2_ENABLE);
 	ret = i2c_ctrl_wait_idle_completed(dev, I2C_MAX_TIMEOUT);
-	if (!ret) {
+	if (ret != 0) {
 		LOG_ERR("Reset i2c port%02x fail! Bus might be stalled.",
 								data->port);
 		return -EIO;
@@ -773,7 +776,8 @@ int npcx_i2c_ctrl_transfer(const struct device *i2c_dev, struct i2c_msg *msgs,
 	/* Does bus need recovery? */
 	if (data->oper_state != NPCX_I2C_WRITE_SUSPEND &&
 			data->oper_state != NPCX_I2C_READ_SUSPEND) {
-		if (i2c_ctrl_bus_busy(i2c_dev)) {
+		if (i2c_ctrl_bus_busy(i2c_dev) ||
+		    data->oper_state == NPCX_I2C_ERROR_RECOVERY) {
 			ret = i2c_ctrl_recovery(i2c_dev);
 			if (ret) {
 				return ret;
