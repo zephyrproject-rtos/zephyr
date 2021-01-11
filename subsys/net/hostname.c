@@ -27,13 +27,17 @@ const char *net_hostname_get(void)
 int net_hostname_set_postfix(const uint8_t *hostname_postfix,
 			     int postfix_len)
 {
+#if !defined(CONFIG_NET_HOSTNAME_UNIQUE_UPDATE)
 	static bool postfix_set;
+#endif
 	int pos = 0;
 	int i;
 
+#if !defined(CONFIG_NET_HOSTNAME_UNIQUE_UPDATE)
 	if (postfix_set) {
 		return -EALREADY;
 	}
+#endif
 
 	NET_ASSERT(postfix_len > 0);
 
@@ -50,7 +54,9 @@ int net_hostname_set_postfix(const uint8_t *hostname_postfix,
 
 	NET_DBG("New hostname %s", log_strdup(hostname));
 
+#if !defined(CONFIG_NET_HOSTNAME_UNIQUE_UPDATE)
 	postfix_set = true;
+#endif
 
 	return 0;
 }
