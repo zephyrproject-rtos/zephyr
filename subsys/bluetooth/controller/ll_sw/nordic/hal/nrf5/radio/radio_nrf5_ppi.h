@@ -7,7 +7,7 @@
 
 #if defined(CONFIG_SOC_SERIES_NRF51X) || defined(CONFIG_SOC_COMPATIBLE_NRF52X)
 
-#include <nrfx/hal/nrf_ppi.h>
+#include <hal/nrf_ppi.h>
 
 static inline void hal_radio_nrf_ppi_channels_enable(uint32_t mask)
 {
@@ -605,7 +605,7 @@ static inline void hal_radio_sw_switch_ppi_group_setup(void)
 
 #elif defined(CONFIG_SOC_NRF5340_CPUNET)
 
-#include <nrfx/hal/nrf_dppi.h>
+#include <hal/nrf_dppi.h>
 
 static inline void hal_radio_nrf_ppi_channels_enable(uint32_t mask)
 {

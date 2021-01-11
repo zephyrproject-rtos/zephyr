@@ -8,11 +8,11 @@
 #include <sys/dlist.h>
 #include <toolchain.h>
 
-#include <nrfx/hal/nrf_radio.h>
-#include <nrfx/hal/nrf_rtc.h>
-#include <nrfx/hal/nrf_timer.h>
-#include <nrfx/hal/nrf_ccm.h>
-#include <nrfx/hal/nrf_aar.h>
+#include <hal/nrf_radio.h>
+#include <hal/nrf_rtc.h>
+#include <hal/nrf_timer.h>
+#include <hal/nrf_ccm.h>
+#include <hal/nrf_aar.h>
 
 #include "util/mem.h"
 #include "hal/ccm.h"
