@@ -218,7 +218,7 @@ static int encode_option(struct coap_packet *cpkt, uint16_t code,
 		if (!res) {
 			return -EINVAL;
 		}
-	} else if (delta_size == 2U) {
+	} else if (len_size == 2U) {
 		res = append_be16(cpkt, len_ext);
 		if (!res) {
 			return -EINVAL;
