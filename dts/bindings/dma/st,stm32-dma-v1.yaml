@@ -82,6 +82,7 @@ properties:
 
     st,mem2mem:
       type: boolean
+      required: false
       description: If the DMA controller V1 supports memory to memory transfer
 
     dma-offset:
