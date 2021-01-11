@@ -37,4 +37,26 @@ struct bt_df_adv_cte_tx_param {
 int bt_df_set_adv_cte_tx_param(struct bt_le_ext_adv *adv,
 			       const struct bt_df_adv_cte_tx_param *params);
 
+/** @brief Enable transmission of Constant Tone Extension for the given
+ *        advertising set.
+ *
+ * Transmission of Constant Tone Extension may be enabled only after setting
+ * periodic advertising parameters (@ref bt_le_per_adv_set_param) and Constant
+ * Tone Extension parameters (@ref bt_df_set_adv_cte_tx_param).
+ *
+ * @param[in] adv           Advertising set object.
+ *
+ * @return Zero on success or (negative) error code otherwise.
+ */
+int bt_df_adv_cte_tx_enable(struct bt_le_ext_adv *adv);
+
+/** @brief Disable transmission of Constant Tone Extension for the given
+ *        advertising set.
+ *
+ * @param[in] adv           Advertising set object.
+ *
+ * @return Zero on success or (negative) error code otherwise.
+ */
+int bt_df_adv_cte_tx_disable(struct bt_le_ext_adv *adv);
+
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_DF_H_ */

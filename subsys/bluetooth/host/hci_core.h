@@ -105,6 +105,14 @@ enum {
 	BT_PER_ADV_ENABLED,
 	/* Periodic Advertising parameters has been set in the controller. */
 	BT_PER_ADV_PARAMS_SET,
+	/* Constant Tone Extension parameters for Periodic Advertising
+	 * has been set in the controller.
+	 */
+	BT_PER_ADV_CTE_PARAMS_SET,
+	/* Constant Tone Extension for Periodic Advertising has been enabled
+	 * in the controller.
+	 */
+	BT_PER_ADV_CTE_ENABLED,
 
 	BT_ADV_NUM_FLAGS,
 };
