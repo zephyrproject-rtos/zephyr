@@ -636,7 +636,7 @@ if BT_CTLR_GPIO_PA
 
 config BT_CTLR_GPIO_PA_PIN
 	int "Power Amplifier GPIO pin number"
-	range 0 47 if SOC_NRF52840
+	range 0 47 if SOC_NRF52840 || SOC_NRF5340_CPUNET
 	range 0 31
 	help
 	  GPIO Pin number connected to a Power Amplifier.
@@ -667,7 +667,7 @@ if BT_CTLR_GPIO_LNA
 
 config BT_CTLR_GPIO_LNA_PIN
 	int "Low Noise Amplifier GPIO pin number"
-	range 0 47 if SOC_NRF52840
+	range 0 47 if SOC_NRF52840 || SOC_NRF5340_CPUNET
 	range 0 31
 	help
 	  GPIO Pin number connected to a Low Noise Amplifier.
