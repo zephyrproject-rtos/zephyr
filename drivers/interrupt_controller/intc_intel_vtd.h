@@ -17,27 +17,33 @@
 
 /* Interrupt Remapping Table Entry (IRTE) for Remapped Interrupts */
 struct vtd_irte {
-	struct {
-		uint64_t present		: 1;
-		uint64_t fpd			: 1;
-		uint64_t dst_mode		: 1;
-		uint64_t redirection_hint	: 1;
-		uint64_t trigger_mode		: 1;
-		uint64_t delivery_mode		: 3;
-		uint64_t available		: 4;
-		uint64_t _reserved_0		: 3;
-		uint64_t irte_mode		: 1;
-		uint64_t vector			: 8;
-		uint64_t _reserved_1		: 8;
-		uint64_t dst_id			: 32;
-	} l;
+	union {
+		struct vtd_irte_low {
+			uint64_t present		: 1;
+			uint64_t fpd			: 1;
+			uint64_t dst_mode		: 1;
+			uint64_t redirection_hint	: 1;
+			uint64_t trigger_mode		: 1;
+			uint64_t delivery_mode		: 3;
+			uint64_t available		: 4;
+			uint64_t _reserved_0		: 3;
+			uint64_t irte_mode		: 1;
+			uint64_t vector			: 8;
+			uint64_t _reserved_1		: 8;
+			uint64_t dst_id			: 32;
+		} l;
+		uint64_t low;
+	};
 
-	struct {
-		uint64_t src_id			: 16;
-		uint64_t src_id_qualifier	: 2;
-		uint64_t src_validation_type	: 2;
-		uint64_t _reserved		: 44;
-	} h;
+	union {
+		struct vtd_irte_high {
+			uint64_t src_id			: 16;
+			uint64_t src_id_qualifier	: 2;
+			uint64_t src_validation_type	: 2;
+			uint64_t _reserved		: 44;
+		} h;
+		uint64_t high;
+	};
 } __packed;
 
 /* The table must be 4KB aligned, which is exactly 256 entries.
