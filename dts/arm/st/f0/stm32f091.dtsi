@@ -75,7 +75,6 @@
 			interrupts = <9 0 10 0 10 0 11 0 11 0 11 0
 				      11 0 10 0 10 0 11 0 11 0 11 0>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x2>;
-			st,mem2mem;
 			status = "disabled";
 			label = "DMA_2";
 		};
