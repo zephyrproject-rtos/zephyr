@@ -4301,7 +4301,7 @@ static uint8_t get_adv_props(uint8_t evt_type)
 static void le_adv_recv(bt_addr_le_t *addr, struct bt_le_scan_recv_info *info,
 			struct net_buf *buf, uint8_t len)
 {
-	struct bt_le_scan_cb *listener;
+	struct bt_le_scan_cb *listener, *next;
 	struct net_buf_simple_state state;
 	bt_addr_le_t id_addr;
 
@@ -4339,8 +4339,7 @@ static void le_adv_recv(bt_addr_le_t *addr, struct bt_le_scan_recv_info *info,
 		net_buf_simple_restore(&buf->b, &state);
 	}
 
-
-	SYS_SLIST_FOR_EACH_CONTAINER(&scan_cbs, listener, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&scan_cbs, listener, next, node) {
 		if (listener->recv) {
 			net_buf_simple_save(&buf->b, &state);
 
@@ -4359,7 +4358,7 @@ static void le_adv_recv(bt_addr_le_t *addr, struct bt_le_scan_recv_info *info,
 #if defined(CONFIG_BT_EXT_ADV)
 static void le_scan_timeout(struct net_buf *buf)
 {
-	struct bt_le_scan_cb *listener;
+	struct bt_le_scan_cb *listener, *next;
 
 	atomic_clear_bit(bt_dev.flags, BT_DEV_SCANNING);
 	atomic_clear_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN);
@@ -4371,7 +4370,7 @@ static void le_scan_timeout(struct net_buf *buf)
 	pending_id_keys_update();
 #endif
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&scan_cbs, listener, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&scan_cbs, listener, next, node) {
 		if (listener->timeout) {
 			listener->timeout();
 		}
@@ -8995,6 +8994,11 @@ int bt_le_scan_stop(void)
 void bt_le_scan_cb_register(struct bt_le_scan_cb *cb)
 {
 	sys_slist_append(&scan_cbs, &cb->node);
+}
+
+void bt_le_scan_cb_unregister(struct bt_le_scan_cb *cb)
+{
+	sys_slist_find_and_remove(&scan_cbs, &cb->node);
 }
 #endif /* CONFIG_BT_OBSERVER */
 
