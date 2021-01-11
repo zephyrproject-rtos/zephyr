@@ -753,9 +753,11 @@ static inline int can_set_bitrate(const struct device *dev,
 static inline int can_configure(const struct device *dev, enum can_mode mode,
 				uint32_t bitrate)
 {
-	int err = can_set_bitrate(dev, bitrate, 0);
-	if (err != 0) {
-		return err;
+	if (bitrate > 0) {
+		int err = can_set_bitrate(dev, bitrate, 0);
+		if (err != 0) {
+			return err;
+		}
 	}
 
 	return can_set_mode(dev, mode);
