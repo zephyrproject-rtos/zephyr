@@ -34,7 +34,7 @@ static void vtd_write_reg32(const struct device *dev,
 	sys_write32(value, (base_address + reg));
 }
 
-static uint32_t vtd_read_reg(const struct device *dev, uint16_t reg)
+static uint32_t vtd_read_reg32(const struct device *dev, uint16_t reg)
 {
 	uintptr_t base_address = DEVICE_MMIO_GET(dev);
 
@@ -115,7 +115,7 @@ static void fault_event_isr(const void *arg)
 	uint32_t status;
 	uint8_t f_idx;
 
-	status = vtd_read_reg(dev, VTD_FSTS_REG);
+	status = vtd_read_reg32(dev, VTD_FSTS_REG);
 	fault_status_description(status);
 
 	if (!(status & VTD_FSTS_PPF)) {
@@ -341,7 +341,7 @@ static int vtd_ictl_init(const struct device *dev)
 	vtd_send_cmd(dev, VTD_GCMD_IRE, VTD_GSTS_IRES);
 
 	printk("Intel VT-D up and running (status 0x%x)\n",
-	       vtd_read_reg(dev, VTD_GSTS_REG));
+	       vtd_read_reg32(dev, VTD_GSTS_REG));
 
 	irq_unlock(key);
 
