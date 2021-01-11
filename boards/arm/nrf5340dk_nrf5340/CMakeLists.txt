@@ -43,13 +43,10 @@ if (CONFIG_BUILD_WITH_TFM)
 		# Merge tfm_s and zephyr (NS) image to a single binary.
 		set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
 			COMMAND ${SREC_CAT}
-			ARGS ${CMAKE_BINARY_DIR}/tfm/bin/tfm_s.bin -Binary
+			ARGS $<TARGET_PROPERTY:tfm,TFM_S_BIN_FILE> -Binary
 				${CMAKE_BINARY_DIR}/zephyr/${KERNEL_BIN_NAME} -Binary
 				-offset ${CONFIG_FLASH_LOAD_OFFSET}
 				-o ${CMAKE_BINARY_DIR}/tfm_merged.hex -intel
-
-			# Copy tfm_sign.hex to zephyr
-			COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/tfm_merged.hex ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_HEX_NAME}
 		)
 	else()
 		#Create and sign for concatenated binary image, should align with the TF-M BL2
@@ -99,9 +96,13 @@ if (CONFIG_BUILD_WITH_TFM)
 				-offset 0x10000
 				-o ${CMAKE_BINARY_DIR}/tfm_sign.hex
 				-intel
+		)
 
-			# Copy tfm_sign.hex to zephyr
-			COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/tfm_sign.hex ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_HEX_NAME}
+		set_property(GLOBAL APPEND PROPERTY extra_post_build_byproducts
+			${CMAKE_BINARY_DIR}/tfm_s_signed.bin
+			${CMAKE_BINARY_DIR}/zephyr_ns_signed.bin
+			${CMAKE_BINARY_DIR}/tfm_sign.bin
+			${CMAKE_BINARY_DIR}/tfm_sign.hex
 		)
 	endif()
 endif()
