@@ -321,6 +321,12 @@ MCUBoot
     see ``CONFIG_MCUBOOT_CLEANUP_ARM_CORE``.
   * Allow the final data chunk in the image to be unaligned in
     the serial-recovery protocol.
+  * Kconfig: allow xip-revert only for xip-mode.
+  * ext: tinycrypt: update ctr mode to stream.
+  * Use minimal CBPRINTF implementation.
+  * Configure logging to LOG_MINIMAL by default.
+  * boot: cleanup NXP MPU configuration before boot.
+  * Fix nokogiri<=1.11.0.rc4 vulnerability.
 
 * imgtool
 
@@ -328,6 +334,7 @@ MCUBoot
   * Add possibility to set confirm flag for hex files as well.
   * Usage of --confirm implies --pad.
   * Fixed 'custom_tlvs' argument handling.
+  * Add support for setting fixed ROM address into image header.
 
 
 Trusted-Firmware-M
