@@ -5774,7 +5774,7 @@ static void le_remote_feat_complete(uint8_t status, struct pdu_data *pdu_data,
 		return;
 	}
 
-	sep = meta_evt(buf, BT_HCI_EV_LE_REMOTE_FEAT_COMPLETE, sizeof(*sep));
+	sep = meta_evt(buf, BT_HCI_EVT_LE_REMOTE_FEAT_COMPLETE, sizeof(*sep));
 
 	sep->status = status;
 	sep->handle = sys_cpu_to_le16(handle);
