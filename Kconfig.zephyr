@@ -362,6 +362,16 @@ endmenu
 
 menu "Boot Options"
 
+config IS_CHAIN_LOADABLE_APPLICATION
+	bool
+	select USE_DT_CODE_PARTITION
+	help
+	  This option indicates that the Zephyr application
+	  image is chain-loadable by a bootloader image. The
+	  option selects USE_DT_CODE_PARTITION, indicating
+	  that the chain-loadable image will be placed to a
+	  code partition specified by Device Tree.
+
 config IS_BOOTLOADER
 	bool "Act as a bootloader"
 	depends on XIP
@@ -389,7 +399,7 @@ config MCUBOOT
 
 config BOOTLOADER_MCUBOOT
 	bool "MCUboot bootloader support"
-	select USE_DT_CODE_PARTITION
+	select IS_CHAIN_LOADABLE_APPLICATION
 	imply INIT_ARCH_HW_AT_BOOT if ARCH_SUPPORTS_ARCH_HW_INIT
 	depends on !MCUBOOT
 	help
@@ -469,9 +479,8 @@ config BOOTLOADER_ESP_IDF
 
 config BOOTLOADER_BOSSA
 	bool "BOSSA bootloader support"
-	select USE_DT_CODE_PARTITION
+	select IS_CHAIN_LOADABLE_APPLICATION
 	depends on SOC_FAMILY_SAM0
-
 	help
 	  Signifies that the target uses a BOSSA compatible bootloader.  If CDC
 	  ACM USB support is also enabled then the board will reboot into the
