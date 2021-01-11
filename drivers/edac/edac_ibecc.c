@@ -28,6 +28,42 @@ struct ibecc_data {
 	unsigned int errors_uc;
 };
 
+static void ibecc_write_reg64(const struct device *dev,
+			      uint16_t reg, uint64_t value)
+{
+	struct ibecc_data *data = dev->data;
+	mem_addr_t reg_addr = data->mchbar + reg;
+
+	sys_write64(value, reg_addr);
+}
+
+static uint64_t ibecc_read_reg64(const struct device *dev, uint16_t reg)
+{
+	struct ibecc_data *data = dev->data;
+	mem_addr_t reg_addr = data->mchbar + reg;
+
+	return sys_read64(reg_addr);
+}
+
+#if defined(CONFIG_EDAC_ERROR_INJECT)
+static void ibecc_write_reg32(const struct device *dev,
+			      uint16_t reg, uint32_t value)
+{
+	struct ibecc_data *data = dev->data;
+	mem_addr_t reg_addr = data->mchbar + reg;
+
+	sys_write32(value, reg_addr);
+}
+#endif
+
+static uint32_t ibecc_read_reg32(const struct device *dev, uint16_t reg)
+{
+	struct ibecc_data *data = dev->data;
+	mem_addr_t reg_addr = data->mchbar + reg;
+
+	return sys_read32(reg_addr);
+}
+
 static bool ibecc_enabled(const pcie_bdf_t bdf)
 {
 	return !!(pcie_conf_read(bdf, CAPID0_C_REG) & CAPID0_C_IBECC_ENABLED);
@@ -89,23 +125,20 @@ static const char *get_dimm_width(uint8_t type)
 
 static void mchbar_regs_dump(const struct device *dev)
 {
-	struct ibecc_data *data = dev->data;
 	uint32_t mad_inter_chan, chan_hash;
 
 	/* Memory configuration */
 
-	chan_hash =  sys_read32(HOST_REG(data->mchbar, CHANNEL_HASH));
+	chan_hash = ibecc_read_reg32(dev, CHANNEL_HASH);
 	LOG_DBG("Channel hash %x", chan_hash);
 
-	mad_inter_chan = sys_read32(HOST_REG(data->mchbar, MAD_INTER_CHAN));
+	mad_inter_chan = ibecc_read_reg32(dev, MAD_INTER_CHAN);
 	LOG_DBG("DDR memory type %s",
 	       get_ddr_type(INTER_CHAN_DDR_TYPE(mad_inter_chan)));
 
 	for (int ch = 0; ch < DRAM_MAX_CHANNELS; ch++) {
-		uint32_t intra_ch =
-			sys_read32(HOST_REG(data->mchbar, MAD_INTRA_CH(ch)));
-		uint32_t dimm_ch =
-			sys_read32(HOST_REG(data->mchbar, MAD_DIMM_CH(ch)));
+		uint32_t intra_ch = ibecc_read_reg32(dev, MAD_INTRA_CH(ch));
+		uint32_t dimm_ch = ibecc_read_reg32(dev, MAD_DIMM_CH(ch));
 		uint64_t l_size = DIMM_L_SIZE(dimm_ch);
 		uint64_t s_size = DIMM_S_SIZE(dimm_ch);
 		uint8_t l_map = DIMM_L_MAP(intra_ch);
@@ -161,46 +194,34 @@ static void parse_ecclog(const struct device *dev, const uint64_t ecclog)
 #if defined(CONFIG_EDAC_ERROR_INJECT)
 static int inject_set_param1(const struct device *dev, uint64_t addr)
 {
-	struct ibecc_data *data = dev->data;
-
 	if (addr & ~INJ_ADDR_BASE_MASK) {
 		return -EINVAL;
 	}
 
-	sys_write64(addr, (mm_reg_t)((uint8_t *)data->mchbar +
-				     IBECC_INJ_ADDR_BASE));
+	ibecc_write_reg64(dev, IBECC_INJ_ADDR_BASE, addr);
 
 	return 0;
 }
 
 static uint64_t inject_get_param1(const struct device *dev)
 {
-	struct ibecc_data *data = dev->data;
-
-	return sys_read64((mem_addr_t)((uint8_t *)data->mchbar +
-				       IBECC_INJ_ADDR_BASE));
+	return ibecc_read_reg64(dev, IBECC_INJ_ADDR_BASE);
 }
 
 static int inject_set_param2(const struct device *dev, uint64_t mask)
 {
-	struct ibecc_data *data = dev->data;
-
 	if (mask & ~INJ_ADDR_BASE_MASK_MASK) {
 		return -EINVAL;
 	}
 
-	sys_write64(mask, (mm_reg_t)((uint8_t *)data->mchbar +
-				     IBECC_INJ_ADDR_MASK));
+	ibecc_write_reg64(dev, IBECC_INJ_ADDR_MASK, mask);
 
 	return 0;
 }
 
 static uint64_t inject_get_param2(const struct device *dev)
 {
-	struct ibecc_data *data = dev->data;
-
-	return sys_read64((mem_addr_t)((uint8_t *)data->mchbar +
-				       IBECC_INJ_ADDR_MASK));
+	return ibecc_read_reg64(dev, IBECC_INJ_ADDR_MASK);
 }
 
 static int inject_set_error_type(const struct device *dev,
@@ -237,8 +258,7 @@ static int inject_error_trigger(const struct device *dev)
 		break;
 	}
 
-	sys_write32(ctrl, (mem_addr_t)((uint8_t *)data->mchbar +
-				       IBECC_INJ_ADDR_CTRL));
+	ibecc_write_reg32(dev, IBECC_INJ_ADDR_CTRL, ctrl);
 
 	return 0;
 }
@@ -246,44 +266,32 @@ static int inject_error_trigger(const struct device *dev)
 
 static uint64_t ecc_error_log_get(const struct device *dev)
 {
-	struct ibecc_data *data = dev->data;
-
 	LOG_DBG("Get ECC Error Log");
 
-	return sys_read64((mem_addr_t)((uint8_t *)data->mchbar +
-				       IBECC_ECC_ERROR_LOG));
+	return ibecc_read_reg64(dev, IBECC_ECC_ERROR_LOG);
 }
 
 static void ecc_error_log_clear(const struct device *dev)
 {
-	struct ibecc_data *data = dev->data;
-
 	LOG_DBG("Clearing ECC Error Log");
 
 	/* Clear all error bits */
-	sys_write64(ECC_ERROR_MERRSTS | ECC_ERROR_CERRSTS,
-		    (mm_reg_t)((uint8_t *)data->mchbar + IBECC_ECC_ERROR_LOG));
+	ibecc_write_reg64(dev, IBECC_ECC_ERROR_LOG,
+			  ECC_ERROR_MERRSTS | ECC_ERROR_CERRSTS);
 }
 
 static uint64_t parity_error_log_get(const struct device *dev)
 {
-	struct ibecc_data *data = dev->data;
-
 	LOG_DBG("Get Parity Error Log");
 
-	return sys_read64((mem_addr_t)((uint8_t *)data->mchbar +
-				       IBECC_PARITY_ERROR_LOG));
+	return ibecc_read_reg64(dev, IBECC_PARITY_ERROR_LOG);
 }
 
 static void parity_error_log_clear(const struct device *dev)
 {
-	struct ibecc_data *data = dev->data;
-
 	LOG_DBG("Clearing Parity Error Log");
 
-	sys_write64(PARITY_ERROR_ERRSTS,
-		    (mm_reg_t)((uint8_t *)data->mchbar +
-			       IBECC_PARITY_ERROR_LOG));
+	ibecc_write_reg64(dev, IBECC_PARITY_ERROR_LOG, PARITY_ERROR_ERRSTS);
 }
 
 static unsigned int errors_cor_get(const struct device *dev)

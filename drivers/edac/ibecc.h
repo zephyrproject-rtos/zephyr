@@ -81,8 +81,6 @@
  * Host Memory Mapped Configuration Space (MCHBAR) registers area
  */
 
-#define HOST_REG(base, reg)	(mm_reg_t)((uint8_t *)base + reg)
-
 #define CHANNEL_HASH		0x5024
 
 /* ECC Injection Registers */
