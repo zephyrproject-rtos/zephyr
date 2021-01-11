@@ -250,6 +250,13 @@ detached ``HEAD`` at the manifest revision for each updated project,
 leaving behind any branches which were already checked out. This is
 typically a safe operation that will not modify any of your local branches.
 
+However, if you had added some local commits onto a previously detached
+``HEAD`` checked out by west, then git will warn you that you've left
+behind some commits which are no longer referred to by any branch. These
+may be garbage-collected and lost at some point in the future. To avoid
+this if you have local commits in the project, make sure you have a local
+branch checked out before running ``west update``.
+
 If you would rather rebase any locally checked out branches instead, use
 the ``-r`` (``--rebase``) option.
 
