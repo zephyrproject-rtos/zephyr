@@ -21,7 +21,6 @@ source "modules/Kconfig.loramac-node"
 source "modules/Kconfig.mbedtls"
 source "modules/Kconfig.mcux"
 source "modules/Kconfig.microchip"
-source "modules/Kconfig.nordic"
 source "modules/Kconfig.nuvoton"
 source "modules/Kconfig.open-amp"
 source "modules/Kconfig.silabs"
@@ -49,6 +48,9 @@ comment "Unavailable modules, please install those via the project manifest."
 # ---------------------------------------------------
 # config ZEPHYR_<MODULE_NAME_UPPER>_MODULE
 # 	bool
+
+comment "hal_nordic module not available."
+	depends on !ZEPHYR_HAL_NORDIC_MODULE
 
 # This ensures that symbols are available in Kconfig for dependency checking
 # and referencing, while keeping the settings themselves unavailable when the
