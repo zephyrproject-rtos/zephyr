@@ -124,20 +124,6 @@ static size_t discovery_results_size;
 static size_t discovery_results_count;
 #endif /* CONFIG_BT_BREDR */
 
-struct cmd_state_set {
-	atomic_t *target;
-	int bit;
-	bool val;
-};
-
-void cmd_state_set_init(struct cmd_state_set *state, atomic_t *target, int bit,
-			bool val)
-{
-	state->target = target;
-	state->bit = bit;
-	state->val = val;
-}
-
 struct cmd_data {
 	/** HCI status of the command completion */
 	uint8_t  status;
@@ -146,7 +132,7 @@ struct cmd_data {
 	uint16_t opcode;
 
 	/** The state to update when command completes with success. */
-	struct cmd_state_set *state;
+	struct bt_hci_cmd_state_set *state;
 
 	/** Used by bt_hci_cmd_send_sync. */
 	struct k_sem *sync;
@@ -156,6 +142,12 @@ static struct cmd_data cmd_data[CONFIG_BT_HCI_CMD_COUNT];
 
 #define cmd(buf) (&cmd_data[net_buf_id(buf)])
 #define acl(buf) ((struct acl_data *)net_buf_user_data(buf))
+
+void bt_hci_cmd_data_state_set(struct net_buf *buf,
+			       struct bt_hci_cmd_state_set *state)
+{
+	cmd(buf)->state = state;
+}
 
 /* HCI command buffers. Derive the needed size from BT_BUF_RX_SIZE since
  * the same buffer is also used for the response.
@@ -484,7 +476,7 @@ struct bt_le_ext_adv *bt_adv_lookup_legacy(void)
 static int set_le_adv_enable_legacy(struct bt_le_ext_adv *adv, bool enable)
 {
 	struct net_buf *buf;
-	struct cmd_state_set state;
+	struct bt_hci_cmd_state_set state;
 	int err;
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_ENABLE, 1);
@@ -498,7 +490,7 @@ static int set_le_adv_enable_legacy(struct bt_le_ext_adv *adv, bool enable)
 		net_buf_add_u8(buf, BT_HCI_LE_ADV_DISABLE);
 	}
 
-	cmd_state_set_init(&state, adv->flags, BT_ADV_ENABLED, enable);
+	bt_hci_cmd_state_set_init(&state, adv->flags, BT_ADV_ENABLED, enable);
 	cmd(buf)->state = &state;
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_ADV_ENABLE, buf, NULL);
@@ -543,7 +535,7 @@ static int set_le_adv_enable_ext(struct bt_le_ext_adv *adv,
 				 const struct bt_le_ext_adv_start_param *param)
 {
 	struct net_buf *buf;
-	struct cmd_state_set state;
+	struct bt_hci_cmd_state_set state;
 	int err;
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_EXT_ADV_ENABLE, 6);
@@ -563,7 +555,7 @@ static int set_le_adv_enable_ext(struct bt_le_ext_adv *adv,
 	net_buf_add_le16(buf, param ? sys_cpu_to_le16(param->timeout) : 0);
 	net_buf_add_u8(buf, param ? param->num_events : 0);
 
-	cmd_state_set_init(&state, adv->flags, BT_ADV_ENABLED, enable);
+	bt_hci_cmd_state_set_init(&state, adv->flags, BT_ADV_ENABLED, enable);
 	cmd(buf)->state = &state;
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_EXT_ADV_ENABLE, buf, NULL);
@@ -1061,7 +1053,7 @@ static bool bt_le_adv_random_addr_check(const struct bt_le_adv_param *param)
 static int set_le_ext_scan_enable(uint8_t enable, uint16_t duration)
 {
 	struct bt_hci_cp_le_set_ext_scan_enable *cp;
-	struct cmd_state_set state;
+	struct bt_hci_cmd_state_set state;
 	struct net_buf *buf;
 	int err;
 
@@ -1083,8 +1075,8 @@ static int set_le_ext_scan_enable(uint8_t enable, uint16_t duration)
 	cp->duration = sys_cpu_to_le16(duration);
 	cp->period = 0;
 
-	cmd_state_set_init(&state, bt_dev.flags, BT_DEV_SCANNING,
-				   enable == BT_HCI_LE_SCAN_ENABLE);
+	bt_hci_cmd_state_set_init(&state, bt_dev.flags, BT_DEV_SCANNING,
+				  enable == BT_HCI_LE_SCAN_ENABLE);
 	cmd(buf)->state = &state;
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_EXT_SCAN_ENABLE, buf, NULL);
@@ -1098,7 +1090,7 @@ static int set_le_ext_scan_enable(uint8_t enable, uint16_t duration)
 static int set_le_scan_enable_legacy(uint8_t enable)
 {
 	struct bt_hci_cp_le_set_scan_enable *cp;
-	struct cmd_state_set state;
+	struct bt_hci_cmd_state_set state;
 	struct net_buf *buf;
 	int err;
 
@@ -1118,8 +1110,8 @@ static int set_le_scan_enable_legacy(uint8_t enable)
 
 	cp->enable = enable;
 
-	cmd_state_set_init(&state, bt_dev.flags, BT_DEV_SCANNING,
-				   enable == BT_HCI_LE_SCAN_ENABLE);
+	bt_hci_cmd_state_set_init(&state, bt_dev.flags, BT_DEV_SCANNING,
+				  enable == BT_HCI_LE_SCAN_ENABLE);
 	cmd(buf)->state = &state;
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_SCAN_ENABLE, buf, NULL);
@@ -1370,7 +1362,7 @@ int bt_le_create_conn_ext(const struct bt_conn *conn)
 {
 	struct bt_hci_cp_le_ext_create_conn *cp;
 	struct bt_hci_ext_conn_phy *phy;
-	struct cmd_state_set state;
+	struct bt_hci_cmd_state_set state;
 	bool use_filter = false;
 	struct net_buf *buf;
 	uint8_t own_addr_type;
@@ -1441,7 +1433,8 @@ int bt_le_create_conn_ext(const struct bt_conn *conn)
 		set_phy_conn_param(conn, phy);
 	}
 
-	cmd_state_set_init(&state, bt_dev.flags, BT_DEV_INITIATING, true);
+	bt_hci_cmd_state_set_init(&state, bt_dev.flags,
+				  BT_DEV_INITIATING, true);
 	cmd(buf)->state = &state;
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_EXT_CREATE_CONN, buf, NULL);
@@ -1450,7 +1443,7 @@ int bt_le_create_conn_ext(const struct bt_conn *conn)
 int bt_le_create_conn_legacy(const struct bt_conn *conn)
 {
 	struct bt_hci_cp_le_create_conn *cp;
-	struct cmd_state_set state;
+	struct bt_hci_cmd_state_set state;
 	bool use_filter = false;
 	struct net_buf *buf;
 	uint8_t own_addr_type;
@@ -1500,7 +1493,8 @@ int bt_le_create_conn_legacy(const struct bt_conn *conn)
 	cp->conn_latency = sys_cpu_to_le16(conn->le.latency);
 	cp->supervision_timeout = sys_cpu_to_le16(conn->le.timeout);
 
-	cmd_state_set_init(&state, bt_dev.flags, BT_DEV_INITIATING, true);
+	bt_hci_cmd_state_set_init(&state, bt_dev.flags,
+				  BT_DEV_INITIATING, true);
 	cmd(buf)->state = &state;
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CREATE_CONN, buf, NULL);
@@ -1519,11 +1513,12 @@ int bt_le_create_conn(const struct bt_conn *conn)
 int bt_le_create_conn_cancel(void)
 {
 	struct net_buf *buf;
-	struct cmd_state_set state;
+	struct bt_hci_cmd_state_set state;
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_CREATE_CONN_CANCEL, 0);
 
-	cmd_state_set_init(&state, bt_dev.flags, BT_DEV_INITIATING, false);
+	bt_hci_cmd_state_set_init(&state, bt_dev.flags,
+				  BT_DEV_INITIATING, false);
 	cmd(buf)->state = &state;
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CREATE_CONN_CANCEL, buf, NULL);
@@ -3913,7 +3908,7 @@ static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *buf)
 	}
 
 	if (cmd(buf)->state && !status) {
-		struct cmd_state_set *update = cmd(buf)->state;
+		struct bt_hci_cmd_state_set *update = cmd(buf)->state;
 
 		atomic_set_bit_to(update->target, update->bit, update->val);
 	}
@@ -7222,7 +7217,7 @@ static int bt_le_per_adv_enable(struct bt_le_ext_adv *adv, bool enable)
 {
 	struct bt_hci_cp_le_set_per_adv_enable *cp;
 	struct net_buf *buf;
-	struct cmd_state_set state;
+	struct bt_hci_cmd_state_set state;
 	int err;
 
 	/* TODO: We could setup some default ext adv params if not already set*/
@@ -7245,7 +7240,8 @@ static int bt_le_per_adv_enable(struct bt_le_ext_adv *adv, bool enable)
 	cp->handle = adv->handle;
 	cp->enable = enable ? 1 : 0;
 
-	cmd_state_set_init(&state, adv->flags, BT_PER_ADV_ENABLED, enable);
+	bt_hci_cmd_state_set_init(&state, adv->flags,
+				  BT_PER_ADV_ENABLED, enable);
 	cmd(buf)->state = &state;
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_PER_ADV_ENABLE, buf, NULL);
@@ -7482,7 +7478,7 @@ static int bt_le_set_per_adv_recv_enable(
 	struct bt_le_per_adv_sync_cb *listener;
 	struct bt_le_per_adv_sync_state_info info;
 	struct net_buf *buf;
-	struct cmd_state_set state;
+	struct bt_hci_cmd_state_set state;
 	int err;
 
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
@@ -7516,9 +7512,9 @@ static int bt_le_set_per_adv_recv_enable(
 	cp->handle = sys_cpu_to_le16(per_adv_sync->handle);
 	cp->enable = enable ? 1 : 0;
 
-	cmd_state_set_init(&state, per_adv_sync->flags,
-			   BT_PER_ADV_SYNC_RECV_DISABLED,
-			   enable);
+	bt_hci_cmd_state_set_init(&state, per_adv_sync->flags,
+				  BT_PER_ADV_SYNC_RECV_DISABLED,
+				  enable);
 	cmd(buf)->state = &state;
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_PER_ADV_RECV_ENABLE,
