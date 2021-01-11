@@ -2449,6 +2449,27 @@ static void le_df_set_cl_cte_tx_params(struct net_buf *buf,
 
 	*evt = cmd_complete_status(status);
 }
+
+static void le_df_set_cl_cte_enable(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_set_cl_cte_tx_enable *cmd = (void *)buf->data;
+	uint8_t status;
+	uint8_t handle;
+
+	if (adv_cmds_ext_check(evt)) {
+		return;
+	}
+
+	status = ll_adv_set_by_hci_handle_get(cmd->handle, &handle);
+	if (status) {
+		*evt = cmd_complete_status(status);
+		return;
+	}
+
+	status = ll_df_set_cl_cte_tx_enable(handle, cmd->cte_enable);
+
+	*evt = cmd_complete_status(status);
+}
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 
 #if IS_ENABLED(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
@@ -3508,6 +3529,9 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 #if IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 	case BT_OCF(BT_HCI_OP_LE_SET_CL_CTE_TX_PARAMS):
 		le_df_set_cl_cte_tx_params(cmd, evt);
+		break;
+	case BT_OCF(BT_HCI_OP_LE_SET_CL_CTE_TX_ENABLE):
+		le_df_set_cl_cte_enable(cmd, evt);
 		break;
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 	case BT_OCF(BT_HCI_OP_LE_READ_ANT_INFO):

@@ -303,6 +303,9 @@ uint8_t ll_df_set_cl_cte_tx_params(uint8_t adv_handle, uint8_t cte_len,
 				   uint8_t cte_type, uint8_t cte_count,
 				   uint8_t num_ant_ids, uint8_t *ant_ids);
 
+/* Enables or disables CTE TX for periodic advertising */
+uint8_t ll_df_set_cl_cte_tx_enable(uint8_t adv_handle, uint8_t cte_enable);
+
 /* Provides information about antennae switching and sampling settings */
 uint8_t ll_df_set_conn_cte_tx_params(uint16_t handle, uint8_t cte_types,
 				     uint8_t switching_patterns_len,
