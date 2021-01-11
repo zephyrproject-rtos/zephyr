@@ -15,7 +15,6 @@ struct dmamux_stm32_channel {
 
 /* the table of all the dmamux channel */
 struct dmamux_stm32_data {
-	struct dmamux_stm32_channel *mux_channels;
 	void *callback_arg;
 	void (*dmamux_callback)(void *arg, uint32_t id,
 				int error_code);
@@ -28,6 +27,7 @@ struct dmamux_stm32_config {
 	uint8_t channel_nb;	/* total nb of channels */
 	uint8_t gen_nb;	/* total nb of Request generator */
 	uint8_t req_nb;	/* total nb of Peripheral Request inputs */
+	const struct dmamux_stm32_channel *mux_channels;
 };
 
 uint32_t table_ll_channel[] = {
