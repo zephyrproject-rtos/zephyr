@@ -1412,6 +1412,99 @@ void test_cancel_processed_work_item(void)
 	k_sleep(TIMEOUT);
 }
 
+/* negative testcase */
+/**
+ * @brief Test workq of work poll is not NULL statement for
+ * API k_work_poll_submit_to_queue()
+ *
+ * @details Using workq of work poll is not NULL as
+ * parameter to cover some branches.
+ *
+ * @see k_work_poll_submit_to_queue()
+ *
+ * @ingroup kernel_poll_tests
+ */
+void test_work_submit_to_queue_workq(void)
+{
+	triggered_work[0].workq = &workq;
+	k_work_poll_submit_to_queue(&workq,
+			&triggered_work[0],
+			&triggered_work_event[0], 1,
+			K_FOREVER);
+}
+
+/**
+ * @brief Test workq of work poll is invalid statement for
+ * API k_work_poll_submit_to_queue()
+ *
+ * @details Using workq of work poll is invalid as
+ * parameter to cover some branches.
+ *
+ * @see k_work_poll_submit_to_queue()
+ *
+ * @ingroup kernel_poll_tests
+ */
+void test_work_submit_to_queue_invalid_workq(void)
+{
+	triggered_work[0].workq = &user_workq;
+	k_work_poll_submit_to_queue(&workq,
+			&triggered_work[0],
+			&triggered_work_event[0], 1,
+			K_FOREVER);
+}
+
+/**
+ * @brief Test set a specific time for
+ * API k_work_poll_submit_to_queue()
+ *
+ * @details Set a specific time to test
+ * uncovered branches
+ *
+ * @see k_work_poll_submit_to_queue()
+ *
+ * @ingroup kernel_poll_tests
+ */
+void test_work_poll_submit_to_queue_timeout(void)
+{
+	k_poll_event_init(&triggered_work_event[0],
+			K_POLL_TYPE_SIGNAL,
+			K_POLL_MODE_NOTIFY_ONLY,
+			&triggered_work_signal[0]);
+
+	/**TESTPOINT: init via k_work_poll_init*/
+	k_work_poll_init(&triggered_work[0], work_handler);
+	k_work_poll_submit_to_queue(&workq,
+			&triggered_work[0],
+			&triggered_work_event[0], 1,
+			K_MSEC(1));
+}
+
+/**
+ * @brief Test set a specific time for
+ * API k_work_poll_submit_to_queue()
+ *
+ * @details Set a K_NO_WAIT time to test
+ * uncovered branches
+ *
+ * @see k_work_poll_submit_to_queue()
+ *
+ * @ingroup kernel_poll_tests
+ */
+void test_work_poll_submit_to_queue_no_wait(void)
+{
+	k_poll_event_init(&triggered_work_event[1],
+			K_POLL_TYPE_SIGNAL,
+			K_POLL_MODE_NOTIFY_ONLY,
+			&triggered_work_signal[1]);
+	/**TESTPOINT: init via k_work_poll_init*/
+	k_work_poll_init(&triggered_work[1], work_handler);
+
+	k_work_poll_submit_to_queue(&workq,
+			&triggered_work[1],
+			&triggered_work_event[1], 1,
+			K_NO_WAIT);
+}
+
 void test_main(void)
 {
 	main_thread = k_current_get();
@@ -1461,6 +1554,11 @@ void test_main(void)
 			 ztest_unit_test(test_process_work_items_fifo),
 			 ztest_unit_test(test_sched_delayed_work_item),
 			 ztest_unit_test(test_workqueue_max_number),
-			 ztest_unit_test(test_cancel_processed_work_item));
+			 ztest_unit_test(test_cancel_processed_work_item),
+			 ztest_1cpu_unit_test(test_work_submit_to_queue_workq),
+			 ztest_1cpu_unit_test(test_work_submit_to_queue_invalid_workq),
+			 ztest_1cpu_unit_test(test_work_poll_submit_to_queue_timeout),
+			 ztest_1cpu_unit_test(test_work_poll_submit_to_queue_no_wait)
+			 );
 	ztest_run_test_suite(workqueue_api);
 }
