@@ -235,6 +235,42 @@ config TFM_REGRESSION
 	  When enabled, this option signifies that the TF-M build includes
 	  the Secure and the Non-Secure regression tests.
 
+choice TFM_PSA_TEST
+	prompt "Enable a PSA test suite"
+	default TFM_PSA_TEST_NONE
+
+config TFM_PSA_TEST_CRYPTO
+	bool "Crypto tests"
+	depends on MAIN_STACK_SIZE >= 4096
+	help
+	  Enable the PSA Crypto test suite.
+
+config TFM_PSA_TEST_PROTECTED_STORAGE
+	bool "Storage tests"
+	help
+	  Enable the PSA Protected Storage test suite.
+
+config TFM_PSA_TEST_INTERNAL_TRUSTED_STORAGE
+	bool "Internal Trusted Storage tests"
+	help
+	  Enable the PSA Internal Trusted Storage test suite.
+
+config TFM_PSA_TEST_STORAGE
+	bool "Storage tests"
+	help
+	  Enable the PSA Storage test suite. This is a combination of the
+	  protected storage and internal trusted storage tests.
+
+config TFM_PSA_TEST_INITIAL_ATTESTATION
+	bool "Initial attestation tests"
+	depends on MAIN_STACK_SIZE >= 4096
+	help
+	  Enable the PSA Initial Attestation test suite.
+
+config TFM_PSA_TEST_NONE
+	bool "No PSA test suite"
+
+endchoice
 
 if TFM_BL2
 
