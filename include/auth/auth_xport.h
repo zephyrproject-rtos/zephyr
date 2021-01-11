@@ -1,4 +1,6 @@
 /**
+ * Copyright (c) 2021 Golden Bits Software, Inc.
+ *
  * @file auth_xport.h
  *
  * @brief

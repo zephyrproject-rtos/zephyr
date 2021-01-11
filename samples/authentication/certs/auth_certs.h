@@ -1,4 +1,6 @@
 /*
+ * Copyright (c) 2021 Golden Bits Software, Inc.
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 

@@ -1,4 +1,6 @@
 /**
+ *  Copyright (c) 2021 Golden Bits Software, Inc.
+ *
  *  @file  BLE Authentication using DTLS
  *
  *  @brief  DTLS authentication code using Mbed DTLS

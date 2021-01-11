@@ -1,9 +1,9 @@
-
-/* main.c - Application main entry point
- *          Sample authenticating over a UART link */
-
 /*
- * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2021 Golden Bits Software, Inc.
+ *  SPDX-License-Identifier: Apache-2.0
+ *
+ * main.c - Application main entry point
+ *          Sample authenticating over a UART link
  */
 
 

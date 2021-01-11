@@ -1,4 +1,6 @@
 /**
+ * Copyright (c) 2021 Golden Bits Software, Inc.
+ *
  *  @file  auth_chalresp.c
  *
  *  @brief  Challenge-Response method for authenticating connection.

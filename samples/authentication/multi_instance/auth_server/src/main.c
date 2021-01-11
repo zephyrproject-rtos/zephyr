@@ -1,4 +1,6 @@
 /*
+ * Copyright (c) 2021 Golden Bits Software, Inc.
+ *
  *  Sample authentication BLE peripheral
  *
  * SPDX-License-Identifier: Apache-2.0

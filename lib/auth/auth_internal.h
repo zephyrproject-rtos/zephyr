@@ -1,4 +1,6 @@
 /**
+ *  Copyright (c) 2021 Golden Bits Software, Inc.
+ *
  *  @file  auth_internal.h
  *
  *  @brief  Internal functions used by the authentication library.

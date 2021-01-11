@@ -1,4 +1,6 @@
 /**
+ * Copyright (c) 2021 Golden Bits Software, Inc.
+ *
  * @file auth_lib.h
  *
  * @brief  Authentication library functions
