@@ -29,7 +29,7 @@
 	rd	%psr, %l0; \
 	sethi	%hi(handler), %l4; \
 	jmp	%l4+%lo(handler); \
-	 nop;
+	 rd	%tbr, %l6;
 
 #define RESET_TRAP(handler) \
 	mov	%g0, %g4; \
@@ -168,7 +168,7 @@ __start:
 	SOFT_TRAP;                                    ! 12
 	IRQ_OFFLOAD_TRAP;                             ! 13
 	SOFT_TRAP;                                    ! 14
-	SOFT_TRAP;                                    ! 15
+	TRAP(__sparc_trap_except_reason);             ! 15
 	SOFT_TRAP; SOFT_TRAP; SOFT_TRAP; SOFT_TRAP;   ! 90 - 93
 	SOFT_TRAP; SOFT_TRAP; SOFT_TRAP; SOFT_TRAP;   ! 94 - 97
 	SOFT_TRAP; SOFT_TRAP; SOFT_TRAP; SOFT_TRAP;   ! 98 - 9B
