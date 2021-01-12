@@ -26,6 +26,11 @@
 
 #include "intc_intel_vtd.h"
 
+static inline void vtd_pause_cpu(void)
+{
+	__asm__ volatile("pause" ::: "memory");
+}
+
 static void vtd_write_reg32(const struct device *dev,
 			    uint16_t reg, uint32_t value)
 {
@@ -67,6 +72,94 @@ static void vtd_send_cmd(const struct device *dev,
 			     status_bit)) {
 		/* Do nothing */
 	}
+}
+
+static void vtd_qi_init(const struct device *dev)
+{
+	struct vtd_ictl_data *data = dev->data;
+	uint64_t value;
+
+	vtd_write_reg64(dev, VTD_IQT_REG, 0);
+	data->qi_tail = 0;
+
+	value = VTD_IQA_REG_GEN_CONTENT((uintptr_t)data->qi,
+					VTD_IQA_WIDTH_128_BIT, QI_SIZE);
+	vtd_write_reg64(dev, VTD_IQA_REG, value);
+
+	vtd_send_cmd(dev, VTD_GCMD_QIE, VTD_GSTS_QIES);
+}
+
+static inline void vtd_qi_tail_inc(const struct device *dev)
+{
+	struct vtd_ictl_data *data = dev->data;
+
+	data->qi_tail += sizeof(struct qi_descriptor);
+	data->qi_tail %= (QI_NUM * sizeof(struct qi_descriptor));
+}
+
+static int vtd_qi_send(const struct device *dev,
+		       struct qi_descriptor *descriptor)
+{
+	struct vtd_ictl_data *data = dev->data;
+	union qi_wait_descriptor wait_desc = { 0 };
+	struct qi_descriptor *desc;
+	uint32_t wait_status;
+
+	desc = (struct qi_descriptor *)((uintptr_t)data->qi + data->qi_tail);
+
+	desc->low = descriptor->low;
+	desc->high = descriptor->high;
+
+	vtd_qi_tail_inc(dev);
+
+	desc++;
+
+	wait_status = QI_WAIT_STATUS_INCOMPLETE;
+
+	wait_desc.wait.type = QI_TYPE_WAIT;
+	wait_desc.wait.status_write = 1;
+	wait_desc.wait.status_data = QI_WAIT_STATUS_COMPLETE;
+	wait_desc.wait.address = ((uintptr_t)&wait_status) >> 2;
+
+	desc->low = wait_desc.desc.low;
+	desc->high = wait_desc.desc.high;
+
+	vtd_qi_tail_inc(dev);
+
+	vtd_write_reg64(dev, VTD_IQT_REG, data->qi_tail);
+
+	while (wait_status != QI_WAIT_STATUS_COMPLETE) {
+		if (vtd_read_reg32(dev, VTD_FSTS_REG) & VTD_FSTS_IQE) {
+			return -EIO;
+		}
+
+		vtd_pause_cpu();
+	}
+
+	return 0;
+}
+
+static int vtd_global_iec_invalidate(const struct device *dev)
+{
+	union qi_iec_descriptor iec_desc = { 0 };
+
+	iec_desc.iec.type = QI_TYPE_IEC;
+	iec_desc.iec.granularity = 0; /* Global Invalidation requested */
+
+	return vtd_qi_send(dev, &iec_desc.desc);
+}
+
+static int vtd_index_iec_invalidate(const struct device *dev, uint8_t irte_idx)
+{
+	union qi_iec_descriptor iec_desc = { 0 };
+
+	iec_desc.iec.type = QI_TYPE_IEC;
+	iec_desc.iec.granularity = 1; /* Index based invalidation requested */
+
+	iec_desc.iec.interrupt_index = irte_idx;
+	iec_desc.iec.index_mask = 0;
+
+	return vtd_qi_send(dev, &iec_desc.desc);
 }
 
 static void fault_status_description(uint32_t status)
@@ -233,6 +326,8 @@ static int vtd_ictl_remap(const struct device *dev,
 	data->irte[irte_idx].low = irte.low;
 	data->irte[irte_idx].high = irte.high;
 
+	vtd_index_iec_invalidate(dev, irte_idx);
+
 	return 0;
 }
 
@@ -318,10 +413,13 @@ static int vtd_ictl_init(const struct device *dev)
 	unsigned int key = irq_lock();
 	uint64_t eime = 0;
 	uint64_t value;
+	int ret = 0;
 
 	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
 
 	vtd_fault_event_init(dev);
+
+	vtd_qi_init(dev);
 
 	if (IS_ENABLED(CONFIG_X2APIC)) {
 		eime = VTD_IRTA_EIME;
@@ -331,6 +429,12 @@ static int vtd_ictl_init(const struct device *dev)
 					 IRTA_SIZE, eime);
 
 	vtd_write_reg64(dev, VTD_IRTA_REG, value);
+
+	if (vtd_global_iec_invalidate(dev) != 0) {
+		printk("Could not perform IEC invalidation\n");
+		ret = -EIO;
+		goto out;
+	}
 
 	if (!IS_ENABLED(CONFIG_X2APIC) &&
 	    IS_ENABLED(CONFIG_INTEL_VTD_ICTL_XAPIC_PASSTHROUGH)) {
@@ -343,9 +447,10 @@ static int vtd_ictl_init(const struct device *dev)
 	printk("Intel VT-D up and running (status 0x%x)\n",
 	       vtd_read_reg32(dev, VTD_GSTS_REG));
 
+out:
 	irq_unlock(key);
 
-	return 0;
+	return ret;
 }
 
 static const struct vtd_driver_api vtd_api = {
