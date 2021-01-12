@@ -140,6 +140,7 @@
 #define VTD_FSTS_IQE		BIT(4)
 #define VTD_FSTS_ICE		BIT(5)
 #define VTD_FSTS_ITE		BIT(6)
+
 #define VTD_FSTS_FRI_POS	8
 #define VTD_FSTS_FRI_MASK	(0xF << VTD_FSTS_FRI_POS)
 #define VTD_FSTS_FRI(status)					\
@@ -181,6 +182,21 @@
 #define VTD_FRCD_FI_IR_MASK	((uint64_t)0xFFFF << VTD_FRCD_FI_IR_POS)
 #define VTD_FRCD_FI_IR(fault)					\
 	((fault & VTD_FRCD_FI_IR_MASK) >> VTD_FRCD_FI_IR_POS)
+
+/* Invalidation Queue Address register details */
+#define VTD_IQA_SIZE_MASK	0x7
+#define VTD_IQA_WIDTH_128_BIT	0
+#define VTD_IQA_WIDTH_256_BIT	BIT(11)
+#define VTD_IQA_REG_GEN_CONTENT(addr, width, size)			\
+	((uint64_t)0 | (addr) | (width) | (size & VTD_IQA_SIZE_MASK))
+
+/* Invalidation Queue Head register details */
+#define VTD_IQH_QH_POS_128	4
+#define VTD_IQH_QH_MASK		((uint64_t)0xEF << VTD_IQH_QH_POS_128)
+
+/* Invalidation Queue Tail register details */
+#define VTD_IQT_QT_POS_128	4
+#define VTD_IQT_QT_MASK		((uint64_t)0xEF << VTD_IQT_QT_POS_128)
 
 #endif /* _ASMLANGUAGE */
 
