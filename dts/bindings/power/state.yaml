@@ -18,6 +18,10 @@ properties:
             - "suspend-to-ram"
             - "suspend-to-disk"
             - "soft-off"
+    substate-id:
+        type: int
+        required: false
+        description: Platform specific identification.
     min-residency-us:
         type: int
         required: false
