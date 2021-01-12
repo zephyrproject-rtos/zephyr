@@ -605,6 +605,14 @@ class DeviceHandler(Handler):
         ser_fileno = ser.fileno()
         readlist = [halt_fileno, ser_fileno]
 
+        if self.coverage:
+            # Set capture_coverage to True to indicate that right after
+            # test results we should get coverage data, otherwise we exit
+            # from the test.
+            harness.capture_coverage = True
+
+        ser.flush()
+
         while ser.isOpen():
             readable, _, _ = select.select(readlist, [], [], self.timeout)
 
@@ -635,8 +643,9 @@ class DeviceHandler(Handler):
                 harness.handle(sl.rstrip())
 
             if harness.state:
-                ser.close()
-                break
+                if not harness.capture_coverage:
+                    ser.close()
+                    break
 
         log_out_fp.close()
 
@@ -2233,6 +2242,7 @@ class ProjectBuilder(FilterBuilder):
             instance.handler.call_make_run = True
         elif self.device_testing:
             instance.handler = DeviceHandler(instance, "device")
+            instance.handler.coverage = self.coverage
         elif instance.platform.simulation == "nsim":
             if find_executable("nsimdrv"):
                 instance.handler = BinaryHandler(instance, "nsim")
