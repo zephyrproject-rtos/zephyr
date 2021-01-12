@@ -7,19 +7,24 @@
 /* Flash partition table without support for Nordic nRF5 bootloader */
 
 &flash0 {
+	/* Default flash partitioning.
+	 *
+	 * Note: A Zephyr build should use partitions belonging
+	 * to the same flash layout.
+	 */
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+	/* Flash layout with MCUboot */
 		/* The size of this partition ensures that MCUBoot can be built
 		 * with an RTT console, CDC ACM support, and w/o optimizations.
 		 */
-		boot_partition: partition@0 {
+		boot_partition: partition_boot@0 {
 			label = "mcuboot";
 			reg = <0x000000000 0x00012000>;
 		};
-
 		slot0_partition: partition@12000 {
 			label = "image-0";
 			reg = <0x00012000 0x000069000>;
@@ -32,6 +37,14 @@
 			label = "image-scratch";
 			reg = <0x000e4000 0x00018000>;
 		};
+
+	/* Flash layout without MCUboot */
+		code_partition: partition@0 {
+			label = "code";
+			reg = <0x00000000 0x0000fc000>;
+		};
+
+	/* Common to both layouts */
 		storage_partition: partition@fc000 {
 			label = "storage";
 			reg = <0x000fc000 0x00004000>;

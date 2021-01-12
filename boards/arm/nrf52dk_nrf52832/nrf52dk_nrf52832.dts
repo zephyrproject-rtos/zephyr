@@ -20,6 +20,7 @@
 		zephyr,bt-c2h-uart = &uart0;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,single-image-code-partition = &code_partition;
 		zephyr,code-partition = &slot0_partition;
 	};
 
@@ -195,12 +196,18 @@ arduino_spi: &spi2 {
 
 &flash0 {
 
+	/* Default flash partitioning.
+	 *
+	 * Note: A Zephyr build should use partitions belonging
+	 * to the same flash layout.
+	 */
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		boot_partition: partition@0 {
+	/* Flash layout with MCUboot */
+		boot_partition: partition_boot@0 {
 			label = "mcuboot";
 			reg = <0x00000000 0xc000>;
 		};
@@ -216,6 +223,14 @@ arduino_spi: &spi2 {
 			label = "image-scratch";
 			reg = <0x00070000 0xa000>;
 		};
+
+	/* Flash layout without MCUboot */
+		code_partition: partition@0 {
+			label = "code";
+			reg = <0x00000000 0x0007a000>;
+		};
+
+	/* Common to both layouts */
 		storage_partition: partition@7a000 {
 			label = "storage";
 			reg = <0x0007a000 0x00006000>;
