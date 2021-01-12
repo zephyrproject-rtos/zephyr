@@ -1503,7 +1503,7 @@ static void tcp_in(struct tcp *conn, struct net_pkt *pkt)
 
 		conn->send_win = ntohs(th_win(th));
 
-#if IS_ENABLED(CONFIG_NET_TCP_MAX_SEND_WINDOW_SIZE)
+#if defined(CONFIG_NET_TCP_MAX_SEND_WINDOW_SIZE)
 		if (CONFIG_NET_TCP_MAX_SEND_WINDOW_SIZE) {
 			max_win = CONFIG_NET_TCP_MAX_SEND_WINDOW_SIZE;
 		} else
