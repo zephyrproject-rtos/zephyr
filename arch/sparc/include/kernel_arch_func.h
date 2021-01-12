@@ -28,8 +28,37 @@ static ALWAYS_INLINE void arch_kernel_init(void)
 
 void z_sparc_arch_switch(void *switch_to, void **switched_from);
 
+#if defined(CONFIG_THREAD_STACK_INFO)
+static inline void z_sparc_spcheck(const struct k_thread *thread)
+{
+	register uintptr_t spreg __asm__ ("sp");
+	uintptr_t start;
+	uintptr_t end;
+
+	if (thread->base.thread_state & (_THREAD_DUMMY | _THREAD_SUSPENDED)) {
+		return;
+	}
+
+	start = thread->stack_info.start;
+	end = start + thread->stack_info.size;
+
+	if (spreg < start || end <= spreg) {
+		z_except_reason(K_ERR_STACK_CHK_FAIL);
+	}
+}
+#else
+static inline void z_sparc_spcheck(const struct k_thread *thread)
+{
+	ARG_UNUSED(thread);
+}
+#endif
+
 static inline void arch_switch(void *switch_to, void **switched_from)
 {
+	struct k_thread *from;
+
+	from = CONTAINER_OF(switched_from, struct k_thread, switch_handle);
+	z_sparc_spcheck(from);
 	z_sparc_arch_switch(switch_to, switched_from);
 }
 

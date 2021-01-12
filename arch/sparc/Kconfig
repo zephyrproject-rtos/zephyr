@@ -68,6 +68,9 @@ config NET_TX_STACK_SIZE
 	default 2048
 
 config NET_RX_STACK_SIZE
-	default 2048
+	default 3072
+
+config NET_MGMT_EVENT_STACK_SIZE
+	default 1024
 
 endmenu
