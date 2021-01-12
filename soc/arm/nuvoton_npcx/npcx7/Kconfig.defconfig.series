@@ -88,6 +88,15 @@ config I2C_NPCX
 	  both Intel SMBus and Philips I2C physical layer. There are 8 SMBus
 	  modules and 10 buses in NPCX7 series.
 
+config TACH_NPCX
+	default y
+	depends on SENSOR
+	help
+	  Enable support for NPCX tachometer sensor driver. The NPCX7 series
+	  contains two tachometer (TACH) modules that contains two counters
+	  (counter A and B). They are used to capture/compare a counter value
+	  when an event is generated on comparison of signals match.
+
 if SOC_POWER_MANAGEMENT
 
 config PM
