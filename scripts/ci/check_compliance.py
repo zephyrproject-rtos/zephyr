@@ -1086,7 +1086,8 @@ def main():
     except BaseException:
         # Catch BaseException instead of Exception to include stuff like
         # SystemExit (raised by sys.exit())
-        print(format(__file__, traceback.format_exc()))
+        print("Python exception in `{}`:\n\n"
+              "```\n{}\n```".format(__file__, traceback.format_exc()))
 
         raise
 
