@@ -226,24 +226,43 @@ manifest` file.
 
    west update [-h] [--stats] [-f {always,smart}] [-k] [-r] [PROJECT ...]
 
-By default, this command:
+**Which projects are updated:**
 
-#. Parses the manifest file, usually :file:`west.yml`
-#. Clones any project repositories that are not already present locally
-#. Fetches any project revisions which are not already pulled from the
-   remote
-#. Sets each project's :ref:`manifest-rev <west-manifest-rev>` branch to the
-   revision specified for that project in the manifest file
-#. Checks out each ``manifest-rev`` in local working trees, as `detached
+By default, this command parses the manifest file, usually
+:file:`west.yml`, and updates each project specified there. To operate on a
+subset of projects only, give ``PROJECT`` argument(s). Each ``PROJECT`` is
+either a project name as given in the manifest file, or a path that points
+to the project within the workspace.
+
+**Project update procedure:**
+
+For each project that is updated, this command:
+
+#. Initializes a local Git repository for the project in the workspace, if
+   it does not already exist
+#. Inspects the project's ``revision`` field in the manifest, and fetches
+   it from the remote if it is not already available locally
+#. Sets the project's :ref:`manifest-rev <west-manifest-rev>` branch to the
+   commit specified by the revision in the previous step.
+#. Checks out ``manifest-rev`` in the local working copy as a `detached
    HEADs <https://git-scm.com/docs/git-checkout#_detached_head>`_
 
-To operate on a subset of projects only, specify them using the ``PROJECT``
-positional arguments, which can be either project names as given in the
-manifest file, or paths to the local project clones.
+To avoid unnecessary fetches, ``west update`` will not fetch project
+``revision`` values which are Git SHAs or tags that are already available
+locally. This is the behavior when the ``-f`` (``--fetch``) option has its
+default value, ``smart``. To force this command to fetch from project remotes
+even if the revisions appear to be available locally, either use ``-f always``
+or set the ``update.fetch`` :ref:`configuration option <west-config>` to
+``always``. SHAs may be given as unique prefixes as long as they are acceptable
+to Git [#fetchall]_.
 
-To force this command to fetch from project remotes even if the revisions
-appear to be available locally, either use ``--fetch always`` or set the
-``update.fetch`` :ref:`configuration option <west-config>` to ``"always"``.
+If the project ``revision`` is a Git ref that is not a tag nor a SHA (i.e.
+if the project is tracking a branch), ``west update`` always fetches,
+regardless of ``-f`` and ``update.fetch``.
+
+Some branch names might look like short SHAs, like ``deadbeef``. You can
+always disambiguate this situation by prefixing the ``revision`` value with
+``refs/heads/``, e.g. ``revision: refs/heads/deadbeef``.
 
 For safety, ``west update`` uses ``git checkout --detach`` to check out a
 detached ``HEAD`` at the manifest revision for each updated project,
@@ -605,3 +624,11 @@ update`` without entering your password in that same shell.
 
 .. _namespace package:
    https://www.python.org/dev/peps/pep-0420/
+
+.. rubric:: Footnotes
+
+.. [#fetchall]
+
+   West may fetch all refs from the Git server when given a SHA as a revision.
+   This is because some Git servers have historically not allowed fetching
+   SHAs directly.
