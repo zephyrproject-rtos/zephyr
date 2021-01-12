@@ -34,6 +34,7 @@
  */
 #define SPARC_SW_TRAP_FLUSH_WINDOWS     0x03
 #define SPARC_SW_TRAP_SET_PIL           0x09
+#define SPARC_SW_TRAP_EXCEPT            0x0F
 
 #ifndef _ASMLANGUAGE
 #include <sys/util.h>
@@ -109,6 +110,17 @@ struct __esf {
 };
 
 typedef struct __esf z_arch_esf_t;
+
+#define ARCH_EXCEPT(reason_p) do { \
+	__asm__ volatile( \
+		"set %[reason], %%o0\n\t" \
+		"ta %[vector]\n\t" \
+		: \
+		: [vector] "i" (SPARC_SW_TRAP_EXCEPT), \
+		  [reason] "i" (reason_p) \
+		: "o0"); \
+	CODE_UNREACHABLE; \
+} while (false)
 
 #ifdef __cplusplus
 }
