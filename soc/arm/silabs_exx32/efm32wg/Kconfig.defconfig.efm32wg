@@ -18,3 +18,7 @@ config I2C_GECKO
 config SOC_FLASH_GECKO
 	default y
 	depends on FLASH
+
+config SPI_GECKO
+	default y
+	depends on SPI
