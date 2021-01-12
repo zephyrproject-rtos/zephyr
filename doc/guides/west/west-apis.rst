@@ -265,6 +265,8 @@ Manifest and sub-objects
    .. versionadded:: 0.7.0
    .. automethod:: as_frozen_yaml
    .. versionadded:: 0.7.0
+   .. automethod:: is_active
+   .. versionadded:: 0.9.0
 
 .. autoclass:: west.manifest.ImportFlag
    :members:
@@ -284,6 +286,9 @@ Manifest and sub-objects
 
    .. versionadded:: 0.7.0
       The *remote_name* and *name_and_path* attributes.
+
+   .. versionadded:: 0.9.0
+      The *group_filter* and *submodules* attributes.
 
    Constructor:
 
@@ -351,6 +356,10 @@ Manifest and sub-objects
    .. automethod:: as_dict
 
 .. versionadded:: 0.6.0
+
+.. autoclass:: west.manifest.Submodule
+
+.. versionadded:: 0.9.0
 
 Exceptions
 ==========
