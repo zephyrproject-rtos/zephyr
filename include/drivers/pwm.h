@@ -208,12 +208,6 @@ static inline int z_impl_pwm_pin_set_cycles(const struct device *dev,
  * @retval -EIO if IO error occurred while configuring
  * @retval -EBUSY if PWM capture is already in progress
  */
-static inline int pwm_pin_configure_capture(const struct device *dev,
-					    uint32_t pwm,
-					    pwm_flags_t flags,
-					    pwm_capture_callback_handler_t cb,
-					    void *user_data);
-
 #ifdef CONFIG_PWM_CAPTURE
 static inline int pwm_pin_configure_capture(const struct device *dev,
 					    uint32_t pwm,
