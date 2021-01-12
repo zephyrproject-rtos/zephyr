@@ -1,0 +1,56 @@
+# MCP25XXFD CAN configuration options
+
+# Copyright (c) 2020 Abram Early
+# SPDX-License-Identifier: Apache-2.0
+
+DT_COMPAT_MICROCHIP_MCP25XXFD_CAN := microchip,mcp25xxfd
+
+config CAN_MCP25XXFD
+	bool "MCP25XXFD CAN Driver"
+	default $(dt_compat_enabled,$(DT_COMPAT_MICROCHIP_MCP25XXFD_CAN))
+	depends on SPI
+	select CAN_AUTO_BUS_OFF_RECOVERY
+	select CAN_HAS_CANFD
+	select CAN_HAS_RX_TIMESTAMP
+	help
+	  Enable MCP25XXFD CAN Driver
+
+if CAN_MCP25XXFD
+
+config CAN_MCP25XXFD_MAX_TX_QUEUE
+	int "Maximum number of queued messages"
+	default 4
+	range 1 31
+	help
+		Defines the array size of transmit callback pointers and semaphores,
+		as well as the number of TX FIFOs allocated on the MCP25XXFD.
+
+config CAN_MCP25XXFD_INT_THREAD_STACK_SIZE
+	int "Stack size for interrupt handler"
+	default 768
+	help
+	  Size of the stack used for internal thread which is ran for
+	  interrupt handling and incoming packets.
+
+config CAN_MCP25XXFD_INT_THREAD_PRIO
+	int "Priority for interrupt handler"
+	default 2
+	help
+	  Priority level of the internal thread which is ran for
+	  interrupt handling and incoming packets.
+
+config CAN_MAX_FILTER
+	int "Maximum number of concurrent active filters"
+	default 5
+	range 1 31
+	help
+	  Defines the array size of the callback/msgq pointers.
+	  Must be at least the size of concurrent reads.
+
+config CAN_MCP25XXFD_INIT_PRIORITY
+	int "Init priority"
+	default 80
+	help
+	  MCP25XXFD driver initialization priority, must be higher than SPI.
+
+endif # CAN_MCP25XXFD
