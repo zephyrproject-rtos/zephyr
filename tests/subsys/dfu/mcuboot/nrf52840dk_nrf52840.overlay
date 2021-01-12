@@ -10,7 +10,7 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		boot_partition: partition@0 {
+		boot_partition: partition_boot@0 {
 			label = "mcuboot";
 			reg = <0x000000000 0x0000E000>;
 		};
