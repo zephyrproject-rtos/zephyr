@@ -3,6 +3,7 @@
 zephyr_sources_ifdef(CONFIG_CAN              can_common.c)
 zephyr_sources_ifdef(CONFIG_CAN_LOOPBACK     can_loopback.c)
 zephyr_sources_ifdef(CONFIG_CAN_MCP2515      can_mcp2515.c)
+zephyr_sources_ifdef(CONFIG_CAN_MCP25XXFD    can_mcp25xxfd.c)
 zephyr_sources_ifdef(CONFIG_CAN_STM32        can_stm32.c)
 zephyr_sources_ifdef(CONFIG_CAN_STM32FD      can_stm32fd.c)
 zephyr_sources_ifdef(CONFIG_CAN_MCAN         can_mcan.c)

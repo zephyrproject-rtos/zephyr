@@ -92,6 +92,7 @@ source "drivers/can/Kconfig.mcux"
 source "drivers/can/Kconfig.mcp2515"
 source "drivers/can/Kconfig.mcan"
 source "drivers/can/Kconfig.rcar"
+source "drivers/can/Kconfig.mcp25xxfd"
 source "drivers/can/Kconfig.loopback"
 source "drivers/can/Kconfig.net"
 
