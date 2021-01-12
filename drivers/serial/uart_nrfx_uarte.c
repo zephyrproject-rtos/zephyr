@@ -642,7 +642,8 @@ static int uarte_nrfx_init(const struct device *dev)
 	 */
 	if (nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_RXSTARTED)) {
 		nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STOPRX);
-		while (!nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_RXTO)) {
+		while (!nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_RXTO) &&
+		       !nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_ERROR)) {
 			/* Busy wait for event to register */
 		}
 		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXSTARTED);
@@ -1845,7 +1846,9 @@ static void uarte_nrfx_set_power_state(const struct device *dev,
 #endif
 			nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STOPRX);
 			while (!nrf_uarte_event_check(uarte,
-						      NRF_UARTE_EVENT_RXTO)) {
+						      NRF_UARTE_EVENT_RXTO) &&
+			       !nrf_uarte_event_check(uarte,
+			                              NRF_UARTE_EVENT_ERROR)) {
 				/* Busy wait for event to register */
 			}
 			nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXSTARTED);
