@@ -432,6 +432,9 @@ static inline int z_impl_adc_read(const struct device *dev,
 /**
  * @brief Set an asynchronous read request.
  *
+ * @note This function is available only if @option{CONFIG_ADC_ASYNC}
+ * is selected.
+ *
  * If invoked from user mode, any sequence struct options for callback must
  * be NULL.
  *
@@ -451,23 +454,17 @@ __syscall int adc_read_async(const struct device *dev,
 			     struct k_poll_signal *async);
 
 
+#ifdef CONFIG_ADC_ASYNC
 static inline int z_impl_adc_read_async(const struct device *dev,
 					const struct adc_sequence *sequence,
 					struct k_poll_signal *async)
 {
-#ifdef CONFIG_ADC_ASYNC
 	const struct adc_driver_api *api =
 				(const struct adc_driver_api *)dev->api;
 
 	return api->read_async(dev, sequence, async);
-#else
-	ARG_UNUSED(dev);
-	ARG_UNUSED(sequence);
-	ARG_UNUSED(async);
-
-	return -ENOTSUP;
-#endif /* CONFIG_ADC_ASYNC */
 }
+#endif /* CONFIG_ADC_ASYNC */
 
 /**
  * @brief Get the internal reference voltage.
