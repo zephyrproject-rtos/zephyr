@@ -1173,4 +1173,78 @@ struct itim64_reg {
 #define NPCX_ITCTSXX_CKSEL               4
 #define NPCX_ITCTSXX_ITEN                7
 
+/*
+ * Tachometer (TACH) Sensor device registers
+ */
+struct tach_reg {
+	/* 0x000: Timer/Counter 1 */
+	volatile uint16_t TCNT1;
+	/* 0x002: Reload/Capture A */
+	volatile uint16_t TCRA;
+	/* 0x004: Reload/Capture B */
+	volatile uint16_t TCRB;
+	/* 0x006: Timer/Counter 2 */
+	volatile uint16_t TCNT2;
+	/* 0x008: Clock Prescaler */
+	volatile uint8_t TPRSC;
+	volatile uint8_t reserved1;
+	/* 0x00A: Clock Unit Control */
+	volatile uint8_t TCKC;
+	volatile uint8_t reserved2;
+	/* 0x00C: Timer Mode Control */
+	volatile uint8_t TMCTRL;
+	volatile uint8_t reserved3;
+	/* 0x00E: Timer Event Control */
+	volatile uint8_t TECTRL;
+	volatile uint8_t reserved4;
+	/* 0x010: Timer Event Clear */
+	volatile uint8_t TECLR;
+	volatile uint8_t reserved5;
+	/* 0x012: Timer Interrupt Enable */
+	volatile uint8_t TIEN;
+	volatile uint8_t reserved6;
+	/* 0x014: Compare A */
+	volatile uint16_t TCPA;
+	/* 0x016: Compare B */
+	volatile uint16_t TCPB;
+	/* 0x018: Compare Configuration */
+	volatile uint8_t TCPCFG;
+	volatile uint8_t reserved7;
+	/* 0x01A: Timer Wake-Up Enablen */
+	volatile uint8_t TWUEN;
+	volatile uint8_t reserved8;
+	/* 0x01C: Timer Configuration */
+	volatile uint8_t TCFG;
+	volatile uint8_t reserved9;
+};
+
+/* TACH register fields */
+#define NPCX_TCKC_LOW_PWR                7
+#define NPCX_TCKC_PLS_ACC_CLK            6
+#define NPCX_TCKC_C1CSEL_FIELD           FIELD(0, 3)
+#define NPCX_TCKC_C2CSEL_FIELD           FIELD(3, 3)
+#define NPCX_TMCTRL_MDSEL_FIELD          FIELD(0, 3)
+#define NPCX_TMCTRL_TAEN                 5
+#define NPCX_TMCTRL_TBEN                 6
+#define NPCX_TMCTRL_TAEDG                3
+#define NPCX_TMCTRL_TBEDG                4
+#define NPCX_TCFG_TADBEN                 6
+#define NPCX_TCFG_TBDBEN                 7
+#define NPCX_TECTRL_TAPND                0
+#define NPCX_TECTRL_TBPND                1
+#define NPCX_TECTRL_TCPND                2
+#define NPCX_TECTRL_TDPND                3
+#define NPCX_TECLR_TACLR                 0
+#define NPCX_TECLR_TBCLR                 1
+#define NPCX_TECLR_TCCLR                 2
+#define NPCX_TECLR_TDCLR                 3
+#define NPCX_TIEN_TAIEN                  0
+#define NPCX_TIEN_TBIEN                  1
+#define NPCX_TIEN_TCIEN                  2
+#define NPCX_TIEN_TDIEN                  3
+#define NPCX_TWUEN_TAWEN                 0
+#define NPCX_TWUEN_TBWEN                 1
+#define NPCX_TWUEN_TCWEN                 2
+#define NPCX_TWUEN_TDWEN                 3
+
 #endif /* _NUVOTON_NPCX_REG_DEF_H */

@@ -11,6 +11,7 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/i2c/i2c.h>
 #include <dt-bindings/pwm/pwm.h>
+#include <dt-bindings/sensor/npcx_tach.h>
 
 /* NPCX7 series pinmux mapping table */
 #include "npcx/npcx7-alts-map.dtsi"
@@ -698,6 +699,22 @@
 			controller = <&i2c_ctrl7>;
 			pinctrl-0 = <&alt2_i2c7_0_sl>; /* PINB3.B2 */
 			label = "I2C_7_PORT_0";
+			status = "disabled";
+		};
+
+		tach1: tach@400e1000 {
+			compatible = "nuvoton,npcx-tach";
+			reg = <0x400e1000 0x2000>;
+			clocks = <&pcc NPCX_CLOCK_BUS_LFCLK NPCX_PWDWN_CTL1 5>;
+			label = "TACH_1";
+			status = "disabled";
+		};
+
+		tach2: tach@400e3000 {
+			compatible = "nuvoton,npcx-tach";
+			reg = <0x400e3000 0x2000>;
+			clocks = <&pcc NPCX_CLOCK_BUS_LFCLK NPCX_PWDWN_CTL1 6>;
+			label = "TACH_2";
 			status = "disabled";
 		};
 	};
