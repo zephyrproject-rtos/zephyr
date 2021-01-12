@@ -251,6 +251,9 @@ For each project that is updated, this command:
    commit specified by the revision in the previous step.
 #. Checks out ``manifest-rev`` in the local working copy as a `detached
    HEADs <https://git-scm.com/docs/git-checkout#_detached_head>`_
+#. If the manifest file specifies a :ref:`submodules
+   <west-manifest-submodules>` key for the project, recursively updates
+   the project's submodules as described below.
 
 To avoid unnecessary fetches, ``west update`` will not fetch project
 ``revision`` values which are Git SHAs or tags that are already available
@@ -327,6 +330,36 @@ to the value of ``manifest.group-filter``, run ``west update``, then restored
 Note that using the syntax ``--group-filter=VALUE`` instead of
 ``--group-filter VALUE`` avoids issues parsing command line options
 if you just want to disable a single group, e.g. ``--group-filter=-bar``.
+
+**Submodule update procedure:**
+
+If a project in the manifest has a ``submodules`` key, the submodules are
+updated as follows, depending on the value of the ``submodules`` key.
+
+If the project has ``submodules: true``, west runs one of the following in
+the project repository, depending on whether you run ``west update``
+with the ``--rebase`` option or without it:
+
+.. code-block::
+
+   # without --rebase, e.g. "west update":
+   git submodule update init --checkout --recursive
+
+   # with --rebase, e.g. "west update --rebase":
+   git submodule update init --rebase --recursive
+
+Otherwise, the project has ``submodules: <list-of-submodules>``. In this
+case, west runs one of the following in the project repository for each
+submodule path in the list, depending on whether you run ``west update``
+with the ``--rebase`` option or without it:
+
+.. code-block::
+
+   # without --rebase, e.g. "west update":
+   git submodule update init --checkout --recursive <submodule-path>
+
+   # with --rebase, e.g. "west update --rebase":
+   git submodule update init --rebase --recursive <submodule-path>
 
 .. _west-multi-repo-misc:
 

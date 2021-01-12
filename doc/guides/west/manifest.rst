@@ -224,6 +224,11 @@ The list of project keys and their usage follows. Sometimes we'll refer to the
   :ref:`west-manifest-import` for details.
 - ``groups``: Optional, a list of groups the project belongs to. See
   :ref:`west-manifest-groups` for details.
+- ``submodules``: Optional. You can use this to make ``west update`` also
+  update `Git submodules`_ defined by the project. See
+  :ref:`west-manifest-submodules` for details.
+
+.. _Git submodules: https://git-scm.com/book/en/v2/Git-Tools-Submodules
 
 The ``defaults`` subsection can provide default values for project
 attributes. In particular, the default remote name and revision can be
@@ -1561,6 +1566,83 @@ manifest.group-filter -- "-groupA,-groupB"``).
 In this case, both ``groupA`` and ``groupB`` are disabled.
 
 Therefore, projects ``foo`` and ``bar`` are both inactive.
+
+.. _west-manifest-submodules:
+
+Git Submodules in Projects
+**************************
+
+You can use the ``submodules`` keys briefly described :ref:`above
+<west-manifest-files>` to force ``west update`` to also handle any `Git
+submodules`_ configured in project's git repository. The ``submodules`` key can
+appear inside ``projects``, like this:
+
+.. code-block:: YAML
+
+   manifest:
+     projects:
+       - name: some-project
+         submodules: ...
+
+The ``submodules`` key can be a boolean or a list of mappings. We'll describe
+these in order.
+
+Option 1: Boolean
+=================
+
+This is the easiest way to use ``submodules``.
+
+If ``submodules`` is ``true`` as a ``projects`` attribute, ``west update`` will
+recursively update the project's Git submodules whenever it updates the project
+itself. If it's ``false`` or missing, it has no effect.
+
+For example, let's say you have a source code repository ``foo``, which has
+some submodules, and you want ``west update`` to keep all of them them in sync,
+along with another project named ``bar`` in the same workspace.
+
+You can do that with this manifest file:
+
+.. code-block:: yaml
+
+   manifest:
+     projects:
+       - name: foo
+         submodules: true
+       - name: bar
+
+Here, ``west update`` will initialize and update all submodules in ``foo``. If
+``bar`` has any submodules, they are ignored, because ``bar`` does not have a
+``submodules`` value.
+
+Option 2: List of mappings
+==========================
+
+The ``submodules`` key may be a list of mappings. Each element in the list
+defines the name of the submodule to update, and the path -- relative to the
+project's absolute path in the workspace -- to use for the submodule.
+The submodule will be updated recursively.
+
+For example, let's say you have a source code repository ``foo``, which has
+many submodules, and you want ``west update`` to keep some but not all of them
+in sync, along with another project named ``bar`` in the same workspace.
+
+You can do that with this manifest file:
+
+.. code-block:: yaml
+
+   manifest:
+     projects:
+       - name: foo
+         submodules:
+           - name: foo-first-sub
+             path: path/to/foo-first-sub
+           - name: foo-second-sub
+             path: path/to/foo-second-sub
+       - name: bar
+
+Here, ``west update`` will recursively initialize and update just the
+submodules in ``foo`` with paths ``path/to/foo-first-sub`` and
+``path/to/foo-second-sub``. Any submodules in ``bar`` are still ignored.
 
 .. _west-manifest-cmd:
 
