@@ -72,6 +72,8 @@ source "drivers/flash/Kconfig.nor"
 
 source "drivers/flash/Kconfig.stm32"
 
+source "drivers/flash/Kconfig.stm32_qspi"
+
 source "drivers/flash/Kconfig.sam0"
 
 source "drivers/flash/Kconfig.sam"
