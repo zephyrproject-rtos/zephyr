@@ -3607,6 +3607,7 @@ class CoverageTool:
             logger.error("Unsupported coverage tool specified: {}".format(tool))
             return None
 
+        logger.debug(f"Select {tool} as the coverage tool...")
         return t
 
     @staticmethod
@@ -3692,10 +3693,13 @@ class Lcov(CoverageTool):
     def _generate(self, outdir, coveragelog):
         coveragefile = os.path.join(outdir, "coverage.info")
         ztestfile = os.path.join(outdir, "ztest.info")
-        subprocess.call(["lcov", "--gcov-tool", self.gcov_tool,
+        cmd = ["lcov", "--gcov-tool", self.gcov_tool,
                          "--capture", "--directory", outdir,
                          "--rc", "lcov_branch_coverage=1",
-                         "--output-file", coveragefile], stdout=coveragelog)
+                         "--output-file", coveragefile]
+        cmd_str = " ".join(cmd)
+        logger.debug(f"Running {cmd_str}...")
+        subprocess.call(cmd, stdout=coveragelog)
         # We want to remove tests/* and tests/ztest/test/* but save tests/ztest
         subprocess.call(["lcov", "--gcov-tool", self.gcov_tool, "--extract",
                          coveragefile,
@@ -3754,10 +3758,12 @@ class Gcovr(CoverageTool):
         excludes = Gcovr._interleave_list("-e", self.ignores)
 
         # We want to remove tests/* and tests/ztest/test/* but save tests/ztest
-        subprocess.call(["gcovr", "-r", self.base_dir, "--gcov-executable",
-                         self.gcov_tool, "-e", "tests/*"] + excludes +
-                        ["--json", "-o", coveragefile, outdir],
-                        stdout=coveragelog)
+        cmd = ["gcovr", "-r", self.base_dir, "--gcov-executable",
+               self.gcov_tool, "-e", "tests/*"] + excludes + ["--json", "-o",
+               coveragefile, outdir]
+        cmd_str = " ".join(cmd)
+        logger.debug(f"Running {cmd_str}...")
+        subprocess.call(cmd, stdout=coveragelog)
 
         subprocess.call(["gcovr", "-r", self.base_dir, "--gcov-executable",
                          self.gcov_tool, "-f", "tests/ztest", "-e",
