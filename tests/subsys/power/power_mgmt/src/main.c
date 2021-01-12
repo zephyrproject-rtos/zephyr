@@ -30,7 +30,7 @@ static struct dummy_driver_api *api;
  * Weak power hook functions. Used on systems that have not implemented
  * power management.
  */
-__weak void pm_power_state_set(enum pm_state state)
+__weak void pm_power_state_set(struct pm_state_info info)
 {
 	/* at this point, notify_pm_state_entry() implemented in
 	 * this file has been called and set_pm should have been set
@@ -47,11 +47,11 @@ __weak void pm_power_state_set(enum pm_state state)
 	/* this function is called when system entering low power state, so
 	 * parameter state should not be POWER_STATE_ACTIVE
 	 */
-	zassert_false(state == PM_STATE_ACTIVE,
+	zassert_false(info.state == PM_STATE_ACTIVE,
 		      "Entering low power state with a wrong parameter");
 }
 
-__weak void pm_power_state_exit_post_ops(enum pm_state state)
+__weak void pm_power_state_exit_post_ops(struct pm_state_info info)
 {
 	/* pm_system_suspend is entered with irq locked
 	 * unlock irq before leave pm_system_suspend
@@ -65,9 +65,9 @@ __weak bool pm_policy_low_power_devices(enum pm_state state)
 }
 
 /* Our PM policy handler */
-enum pm_state pm_policy_next_state(int ticks)
+struct pm_state_info pm_policy_next_state(int ticks)
 {
-	enum pm_state state;
+	struct pm_state_info info;
 
 	/* make sure this is idle thread */
 	zassert_true(z_is_idle_thread_object(_current), NULL);
@@ -77,14 +77,14 @@ enum pm_state pm_policy_next_state(int ticks)
 	if (enter_low_power) {
 		enter_low_power = false;
 		notify_app_entry = true;
-		state = PM_STATE_RUNTIME_IDLE;
+		info.state = PM_STATE_RUNTIME_IDLE;
 	} else {
 		/* only test pm_policy_next_state()
 		 * no PM operation done
 		 */
-		state = PM_STATE_ACTIVE;
+		info.state = PM_STATE_ACTIVE;
 	}
-	return state;
+	return info;
 }
 
 /* implement in application, called by idle thread */

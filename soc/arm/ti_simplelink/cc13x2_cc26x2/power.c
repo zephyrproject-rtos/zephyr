@@ -56,12 +56,12 @@ extern PowerCC26X2_ModuleState PowerCC26X2_module;
  */
 
 /* Invoke Low Power/System Off specific Tasks */
-void pm_power_state_set(enum pm_state state)
+void pm_power_state_set(struct pm_state_info info)
 {
 	uint32_t modeVIMS;
 	uint32_t constraints;
 
-	LOG_DBG("SoC entering power state %d", state);
+	LOG_DBG("SoC entering power state %d", info.state);
 
 	/* Switch to using PRIMASK instead of BASEPRI register, since
 	 * we are only able to wake up from standby while using PRIMASK.
@@ -71,7 +71,7 @@ void pm_power_state_set(enum pm_state state)
 	/* Set BASEPRI to 0 */
 	irq_unlock(0);
 
-	switch (state) {
+	switch (info.state) {
 	case PM_STATE_SUSPEND_TO_IDLE:
 		/* query the declared constraints */
 		constraints = Power_getConstraintMask();
@@ -114,15 +114,15 @@ void pm_power_state_set(enum pm_state state)
 		Power_shutdown(0, 0);
 		break;
 	default:
-		LOG_DBG("Unsupported power state %u", state);
+		LOG_DBG("Unsupported power state %u", info.state);
 		break;
 	}
 
-	LOG_DBG("SoC leaving power state %d", state);
+	LOG_DBG("SoC leaving power state %d", info.state);
 }
 
 /* Handle SOC specific activity after Low Power Mode Exit */
-void pm_power_state_exit_post_ops(enum pm_state state)
+void pm_power_state_exit_post_ops(struct pm_state_info info)
 {
 	/*
 	 * System is now in active mode. Reenable interrupts which were disabled

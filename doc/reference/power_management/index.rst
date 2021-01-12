@@ -158,7 +158,7 @@ the following function.
 
 .. code-block:: c
 
-   enum pm_state pm_policy_next_state(int32_t ticks);
+   struct pm_state_info pm_policy_next_state(int32_t ticks);
 
 Dummy
 -----

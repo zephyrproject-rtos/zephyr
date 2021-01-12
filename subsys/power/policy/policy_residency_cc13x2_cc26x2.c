@@ -25,13 +25,17 @@ LOG_MODULE_DECLARE(power);
 /* Wakeup delay from standby in microseconds */
 #define WAKEDELAYSTANDBY    240
 
+#define STATE_ACTIVE \
+	(struct pm_state_info){PM_STATE_ACTIVE, 0, 0}
+
+
 extern PowerCC26X2_ModuleState PowerCC26X2_module;
 
 /* PM Policy based on SoC/Platform residency requirements */
 static const struct pm_state_info residency_info[] =
 	PM_STATE_INFO_DT_ITEMS_LIST(DT_NODELABEL(cpu0));
 
-enum pm_state pm_policy_next_state(int32_t ticks)
+struct pm_state_info pm_policy_next_state(int32_t ticks)
 {
 	uint32_t constraints;
 	bool disallowed = false;
@@ -46,7 +50,7 @@ enum pm_state pm_policy_next_state(int32_t ticks)
 	if ((ticks != K_TICKS_FOREVER) && (ticks <
 		k_us_to_ticks_ceil32(residency_info[0].min_residency_us))) {
 		LOG_DBG("Not enough time for PM operations: %d", ticks);
-		return PM_STATE_ACTIVE;
+		return STATE_ACTIVE;
 	}
 
 	for (i = ARRAY_SIZE(residency_info) - 1; i >= 0; i--) {
@@ -127,14 +131,14 @@ enum pm_state pm_policy_next_state(int32_t ticks)
 			residency_info[i].state, ticks,
 			k_us_to_ticks_ceil32(
 				residency_info[i].min_residency_us));
-		return residency_info[i].state;
+		return residency_info[i];
 	}
 
 	LOG_DBG("No suitable power state found!");
-	return PM_STATE_ACTIVE;
+	return STATE_ACTIVE;
 }
 
 __weak bool pm_policy_low_power_devices(enum pm_state state)
 {
-	return state  == PM_STATE_STANDBY;
+	return state == PM_STATE_STANDBY;
 }
