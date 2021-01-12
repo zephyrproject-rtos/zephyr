@@ -64,18 +64,6 @@ if SOC_POWER_MANAGEMENT
 config PM
 	default y if SYS_CLOCK_EXISTS
 
-config PM_SLEEP_STATES
-	default y
-
-config HAS_POWER_STATE_SLEEP_1
-	default y
-
-config PM_DEEP_SLEEP_STATES
-	default y
-
-config HAS_POWER_STATE_DEEP_SLEEP_1
-	default y
-
 config PM_DEVICE
 	default n
 
