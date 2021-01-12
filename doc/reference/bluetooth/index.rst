@@ -21,3 +21,4 @@ Bluetooth
    sdp.rst
    uuid.rst
    iso.rst
+   audio.rst
