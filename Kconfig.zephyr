@@ -444,6 +444,12 @@ config BOOTLOADER_MCUBOOT
 	  the application. This removes the need by MCUboot to reset
 	  the core registers' state itself.
 
+	  This option instructs Zephyr to link the image code into the code
+	  partition specified by the zephyr,code-partition property in
+	  /chosen in DeviceTree. The existence of such a code partition is
+	  a required dependency for allowing the Zephyr image to be built as
+	  application that is chain-loadable by MCUboot.
+
 if BOOTLOADER_MCUBOOT
 
 config MCUBOOT_SIGNATURE_KEY_FILE
@@ -509,6 +515,12 @@ config BOOTLOADER_BOSSA
 	  Signifies that the target uses a BOSSA compatible bootloader.  If CDC
 	  ACM USB support is also enabled then the board will reboot into the
 	  bootloader automatically when bossac is run.
+	  This option instructs Zephyr to link the image code into the code
+	  partition specified by the zephyr,code-partition property in
+	  /chosen in DeviceTree. The existence of such a code partition is
+	  a required dependency for allowing the Zephyr image to be built as
+	  application that is chain-loadable by the BOSSA bootloader.
+
 
 config BOOTLOADER_BOSSA_DEVICE_NAME
 	string "BOSSA CDC ACM device name"
