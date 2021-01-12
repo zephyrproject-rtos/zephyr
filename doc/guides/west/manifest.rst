@@ -307,8 +307,9 @@ manifest file schema that can parse this file's data:
 
 The pykwalify schema :file:`manifest-schema.yml` in the west source code
 repository is used to validate the manifest section. The current manifest
-``version`` is 0.7, which corresponds to west version 0.7. This is the only
-value this field can currently take.
+``version`` is 0.9, which corresponds to west version 0.9.
+
+The ``version`` value may be 0.7, 0.8, or 0.9.
 
 If a later version of west, say version ``21.0``, includes changes to the
 manifest schema that cannot be parsed by west 0.7, then setting ``version:
