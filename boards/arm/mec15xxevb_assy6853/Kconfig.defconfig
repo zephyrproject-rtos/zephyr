@@ -70,15 +70,4 @@ config TACH_XEC
 	default y
 	depends on SENSOR
 
-# power management stuff
-if PM
-
-config PM_MIN_RESIDENCY_SLEEP_1
-	default 1000
-
-config PM_MIN_RESIDENCY_DEEP_SLEEP_1
-	default 2000
-
-endif # PM
-
 endif # BOARD_MEC15XXEVB_ASSY6853
