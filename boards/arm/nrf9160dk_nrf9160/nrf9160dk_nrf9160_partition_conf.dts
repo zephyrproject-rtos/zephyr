@@ -7,35 +7,26 @@
 /*
  * Default Flash planning for nRF9160dk_nrf9160.
  *
- * Zephyr build for nRF9160 with ARM TrustZone-M support,
- * implies building Secure and Non-Secure Zephyr images.
+ * Zephyr build for nRF9160 with ARM TrustZone-M support, and either
+ * CONFIG_TRUSTED_EXECUTION_SECURE=y or CONFIG_TRUSTED_EXECUTION_NONSECURE=y
+ * implies building Secure and Non-Secure images.
  *
- * Secure image will be placed, by default, in flash0
- * (or in slot0, if MCUboot is present).
+ * Secure image will be placed in the following code partition:
+ * - slot0_s_partition, when building with MCUboot support
+ * - code_s_partition, when building without MCUboot support
+ *
  * Secure image will use sram0 for system memory.
  *
- * Non-Secure image will be placed in slot0_ns, and use
- * sram0_ns for system memory.
+ * Non-Secure image will be placed in the following code partition:
+ * - slot0_ns_partition, when building with MCUboot support
+ * - code_ns_partition, when building without MCUboot support
+ *
+ * Non-Secure image will use sram0_ns for system memory.
  *
  * Note that the Secure image only requires knowledge of
  * the beginning of the Non-Secure image (not its size).
  */
 
-&slot0_partition {
-	reg = <0x00010000 0x40000>;
-};
-
-&slot0_ns_partition {
-	reg = <0x00050000 0x30000>;
-};
-
-&slot1_partition {
-	reg = <0x00080000 0x40000>;
-};
-
-&slot1_ns_partition {
-	reg = <0x000c0000 0x30000>;
-};
 
 /* Default SRAM planning when building for nRF9160 with
  * ARM TrustZone-M support

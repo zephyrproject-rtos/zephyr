@@ -13,6 +13,7 @@ config BOARD
 # be loaded by MCUboot. If the secure firmware is to be combined with a non-
 # secure image (TRUSTED_EXECUTION_SECURE=y), the secure FW image shall always
 # be restricted to the size of its code partition.
+#
 # For the non-secure version of the board, the firmware
 # must be linked into the code-partition (non-secure) defined in DT, regardless.
 # Apply this configuration below by setting the Kconfig symbols used by
@@ -20,18 +21,47 @@ config BOARD
 
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
+DT_CHOSEN_Z_SINGLE_IMAGE_CODE_PARTITION := zephyr,single-image-code-partition
+DT_CHOSEN_Z_CODE_S_PARTITION := zephyr,code-s-partition
+DT_CHOSEN_Z_SINGLE_IMAGE_CODE_S_PARTITION := zephyr,single-image-code-s-partition
+
+if BOARD_NRF9160DK_NRF9160
+
+config HAS_DT_CODE_PARTITION
+	bool
+	default $(dt_chosen_enabled,$(DT_CHOSEN_Z_CODE_S_PARTITION)) if TRUSTED_EXECUTION_SECURE && BOOTLOADER_MCUBOOT
+	default $(dt_chosen_enabled,$(DT_CHOSEN_Z_SINGLE_IMAGE_CODE_S_PARTITION)) if TRUSTED_EXECUTION_SECURE
+	default $(dt_chosen_enabled,$(DT_CHOSEN_Z_CODE_PARTITION)) if TRUSTED_EXECUTION_SECURE && BOOTLOADER_MCUBOOT
+	default $(dt_chosen_enabled,$(DT_CHOSEN_Z_SINGLE_IMAGE_CODE_PARTITION)) if TRUSTED_EXECUTION_SECURE
+
+config FLASH_LOAD_OFFSET
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_S_PARTITION)) if TRUSTED_EXECUTION_SECURE && BOOTLOADER_MCUBOOT
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_SINGLE_IMAGE_CODE_S_PARTITION)) if TRUSTED_EXECUTION_SECURE
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION)) if BOOTLOADER_MCUBOOT
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_SINGLE_IMAGE_CODE_PARTITION))
 
 config FLASH_LOAD_SIZE
-	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
-	depends on BOARD_NRF9160DK_NRF9160 && TRUSTED_EXECUTION_SECURE
+	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_CODE_S_PARTITION)) if TRUSTED_EXECUTION_SECURE && BOOTLOADER_MCUBOOT
+	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_SINGLE_IMAGE_CODE_S_PARTITION)) if TRUSTED_EXECUTION_SECURE
+	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_CODE_PARTITION)) if BOOTLOADER_MCUBOOT
+	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_SINGLE_IMAGE_CODE_PARTITION))
+
+endif # BOARD_NRF9160DK_NRF9160
 
 if BOARD_NRF9160DK_NRF9160NS
 
+config HAS_DT_CODE_PARTITION
+	bool
+	default $(dt_chosen_enabled,$(DT_CHOSEN_Z_CODE_PARTITION)) if BOOTLOADER_MCUBOOT
+	default $(dt_chosen_enabled,$(DT_CHOSEN_Z_SINGLE_IMAGE_CODE_PARTITION))
+
 config FLASH_LOAD_OFFSET
-	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION)) if BOOTLOADER_MCUBOOT
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_SINGLE_IMAGE_CODE_PARTITION))
 
 config FLASH_LOAD_SIZE
-	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
+	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_CODE_PARTITION)) if BOOTLOADER_MCUBOOT
+	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_SINGLE_IMAGE_CODE_PARTITION))
 
 endif # BOARD_NRF9160DK_NRF9160NS
 

@@ -145,36 +145,81 @@
 };
 
 &flash0 {
+	/* Default flash partitioning.
+	 *
+	 * Note: A Zephyr build should use partitions belonging
+	 * to the same flash layout.
+	 */
 
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		boot_partition: partition@0 {
+	/* MCUboot partition, common to both layouts with MCUboot,
+	 * Secure-only and Secure/Non-Secure.
+	 */
+		boot_partition: partition_boot@0 {
 			label = "mcuboot";
-			reg = <0x00000000 0x00010000>;
+			reg = <0x000000000 0x00010000>;
 		};
+
+	/* Secure-only flash layout with MCUboot */
 		slot0_partition: partition@10000 {
 			label = "image-0";
-		};
-		slot0_ns_partition: partition@50000 {
-			label = "image-0-nonsecure";
+			reg = <0x00010000 0x00070000>;
 		};
 		slot1_partition: partition@80000 {
 			label = "image-1";
+			reg = <0x00080000 0x00070000>;
 		};
-		slot1_ns_partition: partition@c0000 {
+
+	/* Secure-only flash layout without MCUboot */
+		code_partition: partition_code@0 {
+			label = "code";
+			reg = <0x00000000 0x000f8000>;
+		};
+
+	/* Secure/Non-Secure flash layout with MCUboot */
+		slot0_s_partition: partition_s@10000 {
+			label = "image-0-secure";
+			reg = <0x00010000 0x40000>;
+		};
+		slot0_ns_partition: partition_ns@50000 {
+			label = "image-0-nonsecure";
+			reg = <0x00050000 0x30000>;
+		};
+		slot1_s_partition: partition_s@80000 {
+			label = "image-1-secure";
+			reg = <0x00080000 0x40000>;
+		};
+		slot1_ns_partition: partition_ns@c0000 {
 			label = "image-1-nonsecure";
+			reg = <0x000c0000 0x30000>;
 		};
+
+	/* Secure/Non-Secure flash layout without MCUboot */
+		code_s_partition: partition_code_s@0 {
+			label = "code-secure";
+			reg = <0x00000000 0x00040000>;
+		};
+		code_ns_partition: partition_code_ns@40000 {
+			label = "code-nonsecure";
+			reg = <0x00040000 0x000b8000>;
+		};
+
+	/* Common to layouts with MCUboot */
 		scratch_partition: partition@f0000 {
 			label = "image-scratch";
-			reg = <0x000f0000 0xa000>;
+			reg = <0x000f0000 0x8000>;
 		};
-		storage_partition: partition@fa000 {
+
+	/* Common to all layouts */
+		storage_partition: partition@f8000 {
 			label = "storage";
-			reg = <0x000fa000 0x00006000>;
+			reg = <0x000f8000 0x00008000>;
 		};
+
 	};
 };
 

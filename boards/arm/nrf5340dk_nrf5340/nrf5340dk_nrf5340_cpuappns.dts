@@ -16,6 +16,7 @@
 		zephyr,sram = &sram0_ns;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_ns_partition;
+		zephyr,single-image-code-partition = &code_ns_partition;
 	};
 };
 

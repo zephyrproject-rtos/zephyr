@@ -13,6 +13,9 @@
 		zephyr,sram = &sram0_s;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,single-image-code-partition = &code_partition;
+		zephyr,code-s-partition = &slot0_s_partition;
+		zephyr,single-image-code-s-partition = &code_s_partition;
 		zephyr,sram-secure-partition = &sram0_s;
 		zephyr,sram-non-secure-partition = &sram0_ns;
 	};
