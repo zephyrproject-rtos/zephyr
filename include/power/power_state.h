@@ -109,6 +109,29 @@ enum pm_state {
  */
 struct pm_state_info {
 	enum pm_state state;
+
+	/**
+	 * Some platforms have multiple states that map to
+	 * one Zephyr power state. This property allows the platform
+	 * distinguish them. e.g:
+	 *
+	 *	power-states {
+	 *		state0: state0 {
+	 *			compatible = "zephyr,power-state";
+	 *			power-state-name = "suspend-to-idle";
+	 *			substate-id = <1>;
+	 *			min-residency-us = <1>;
+	 *		};
+	 *		state1: state1 {
+	 *			compatible = "zephyr,power-state";
+	 *			power-state-name = "suspend-to-idle";
+	 *			substate-id = <2>;
+	 *			min-residency-us = <1>;
+	 *		};
+	 *	}
+	 */
+	uint8_t substate_id;
+
 	/**
 	 * Minimum residency duration in microseconds. It is the minimum
 	 * time for a given idle state to be worthwhile energywise.
@@ -127,8 +150,10 @@ struct pm_state_info {
  */
 #define PM_STATE_INFO_DT_ITEM_BY_IDX(node_id, i)                    \
 	{                                                           \
-		.state = DT_ENUM_IDX(DT_PHANDLE_BY_IDX(node_id,     \
-				cpu_power_states, i), power_state_name),\
+		.state = DT_ENUM_IDX(DT_PHANDLE_BY_IDX(node_id,	\
+			cpu_power_states, i), power_state_name),    \
+		.substate_id = DT_PROP_BY_PHANDLE_IDX_OR(node_id, \
+			cpu_power_states, i, substate_id, 0),   \
 		.min_residency_us = DT_PROP_BY_PHANDLE_IDX_OR(node_id, \
 				cpu_power_states, i, min_residency_us, 0),\
 	},
@@ -203,9 +228,9 @@ struct pm_state_info {
  * @param i index into cpu-power-states property
  * @return pm_state item from 'cpu-power-states' property at index 'i'
  */
-#define PM_STATE_DT_ITEM_BY_IDX(node_id, i)                \
-		DT_ENUM_IDX(DT_PHANDLE_BY_IDX(node_id,     \
-				cpu_power_states, i), power_state_name),
+#define PM_STATE_DT_ITEM_BY_IDX(node_id, i)			\
+	DT_ENUM_IDX(DT_PHANDLE_BY_IDX(node_id,			\
+		      cpu_power_states, i), power_state_name),
 
 
 /**
