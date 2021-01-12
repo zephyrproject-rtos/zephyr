@@ -17,10 +17,15 @@
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
 /* Invoke Low Power/System Off specific Tasks */
-void pm_power_state_set(enum pm_state state)
+void pm_power_state_set(struct pm_state_info info)
 {
-	switch (state) {
-	case PM_STATE_RUNTIME_IDLE:
+	if (info.state != PM_STATE_SUSPEND_TO_IDLE) {
+		LOG_DBG("Unsupported power state %u", info.state);
+		return;
+	}
+
+	switch (info.substate_id) {
+	case 0:
 
 		/* this corresponds to the STOP0 mode: */
 #ifdef CONFIG_DEBUG
@@ -35,7 +40,7 @@ void pm_power_state_set(enum pm_state state)
 		/* enter SLEEP mode : WFE or WFI */
 		k_cpu_idle();
 		break;
-	case PM_STATE_SUSPEND_TO_IDLE:
+	case 1:
 		/* this corresponds to the STOP1 mode: */
 #ifdef CONFIG_DEBUG
 		/* Enable the Debug Module during STOP mode */
@@ -48,7 +53,7 @@ void pm_power_state_set(enum pm_state state)
 		LL_LPM_EnableDeepSleep();
 		k_cpu_idle();
 		break;
-	case PM_STATE_STANDBY:
+	case 2:
 		/* this corresponds to the STOP2 mode: */
 #ifdef CONFIG_DEBUG
 		/* Enable the Debug Module during STOP mode */
@@ -65,26 +70,32 @@ void pm_power_state_set(enum pm_state state)
 		k_cpu_idle();
 		break;
 	default:
-		LOG_DBG("Unsupported power state %u", state);
+		LOG_DBG("Unsupported power state substate-id %u",
+			info.substate_id);
 		break;
 	}
 }
 
 /* Handle SOC specific activity after Low Power Mode Exit */
-void pm_power_state_exit_post_ops(enum pm_state state)
+void pm_power_state_exit_post_ops(struct pm_state_info info)
 {
-	switch (state) {
-	case PM_STATE_RUNTIME_IDLE:
-		__fallthrough;
-	case PM_STATE_SUSPEND_TO_IDLE:
-		__fallthrough;
-	case PM_STATE_STANDBY:
-		LL_LPM_DisableSleepOnExit();
-		LL_LPM_EnableSleep();
-		break;
-	default:
-		LOG_DBG("Unsupported power state %u", state);
-		break;
+	if (info.state != PM_STATE_SUSPEND_TO_IDLE) {
+		LOG_DBG("Unsupported power substate-id %u", info.state);
+	} else {
+		switch (info.substate_id) {
+		case 0:	/* STOP0 */
+			__fallthrough;
+		case 1:	/* STOP1 */
+			__fallthrough;
+		case 2:	/* STOP2 */
+			LL_LPM_DisableSleepOnExit();
+			LL_LPM_EnableSleep();
+			break;
+		default:
+			LOG_DBG("Unsupported power substate-id %u",
+				info.substate_id);
+			break;
+		}
 	}
 
 	/*

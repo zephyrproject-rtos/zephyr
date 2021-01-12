@@ -133,18 +133,21 @@ static inline void pm_idle_exit_notification_disable(void)
  * If enabled PM_DIRECT_FORCE_MODE, this function can only
  * run in thread context.
  *
- * @param state Power state which should be used in the ongoing
- *		suspend operation or POWER_STATE_AUTO.
+ * @param info Power state which should be used in the ongoing
+ *	suspend operation.
  */
-void pm_power_state_force(enum pm_state state);
+void pm_power_state_force(struct pm_state_info info);
 
 /**
  * @brief Put processor into a power state.
  *
  * This function implements the SoC specific details necessary
  * to put the processor into available power states.
+ *
+ * @param info Power state which should be used in the ongoing
+ *	suspend operation.
  */
-void pm_power_state_set(enum pm_state state);
+void pm_power_state_set(struct pm_state_info info);
 
 #ifdef CONFIG_PM_DEBUG
 /**
@@ -274,7 +277,7 @@ enum pm_state pm_system_suspend(int32_t ticks);
  * interrupts after resuming from sleep state. In future, the enabling
  * of interrupts may be moved into the kernel.
  */
-void pm_power_state_exit_post_ops(enum pm_state state);
+void pm_power_state_exit_post_ops(struct pm_state_info info);
 
 /**
  * @brief Register a power management notifier
