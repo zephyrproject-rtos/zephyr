@@ -23,10 +23,3 @@ FUNC_NORETURN void z_sparc_fatal_error(unsigned int reason,
 	z_fatal_error(reason, esf);
 	CODE_UNREACHABLE;
 }
-
-FUNC_NORETURN void _Fault(const z_arch_esf_t *esf)
-{
-	LOG_ERR("Trap tt=0x%02x", (esf->tbr >> 4) & 0xff);
-
-	z_sparc_fatal_error(K_ERR_CPU_EXCEPTION, esf);
-}
