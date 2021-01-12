@@ -1,5 +1,5 @@
 tests:
   benchmark.kernel.core:
     arch_exclude: nios2 riscv32 xtensa
-    min_ram: 32
+    min_ram: 36
     tags: benchmark
