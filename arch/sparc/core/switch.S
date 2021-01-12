@@ -136,10 +136,8 @@ SECTION_FUNC(TEXT, z_sparc_context_switch)
 	 nop
 
 SECTION_FUNC(TEXT, z_thread_entry_wrapper)
-	mov	%g0, %o7
-	ld	[%sp + 0x40], %o0
-	ld	[%sp + 0x44], %o1
-	ld	[%sp + 0x48], %o2
-	ld	[%sp + 0x4C], %o3
+	mov	%i0, %o0
+	mov	%i1, %o1
+	mov	%i2, %o2
 	call	z_thread_entry
-	 nop
+	 mov	%i3, %o3
