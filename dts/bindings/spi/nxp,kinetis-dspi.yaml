@@ -41,3 +41,55 @@ properties:
     pinctrl-0:
       type: phandles
       required: true
+
+    nxp,rx-tx-chn-share:
+      type: boolean
+      required: false
+      description: If the edma channel shared with tx and rx
+
+    ctar:
+      type: int
+      required: false
+      description: |
+        ctar register selection range form 0-1 for master mode, 0 for slave mode
+
+    sample-point:
+      type: int
+      required: false
+      description: |
+        Controls when the DSPI master samples SIN in the Modified Transfer Format.
+        This field is valid only when the CPHA bit in the CTAR register is 0.
+
+    continuous-sck:
+      type: boolean
+      required: false
+      description: |
+        continuous SCK enable. Note that the continuous SCK is only
+        supported for CPHA = 1.
+
+    rx-fifo-overwrite:
+      type: boolean
+      required: false
+      description: |
+        receive FIFO overflow overwrite enable. If ROOE = 0, the incoming
+        data is ignored and the data from the transfer that generated the overflow
+        is also ignored. If ROOE = 1, the incoming data is shifted to the
+        shift register.
+
+    modified-timing-format:
+      type: boolean
+      required: false
+      description: |
+        Enables a modified transfer format to be used if true.
+
+    tx-fifo-size:
+      type: int
+      required: false
+      description: |
+        tx fifo size
+
+    rx-fifo-size:
+      type: int
+      required: false
+      description: |
+        rx fifo size
