@@ -6,6 +6,7 @@ tests:
   edac.ibecc.production:
     extra_configs:
       - CONFIG_EDAC_ERROR_INJECT=n
+      - CONFIG_EDAC_LOG_LEVEL_DBG=y
   edac.ibecc.debug:
     extra_configs:
       - CONFIG_EDAC_ERROR_INJECT=y
