@@ -5,7 +5,7 @@
 This script help you to compare footprint results with previous commits in git.
 If you don't have a git repository, it will compare your current tree
 against the last release results.
-To run it you need to set up the same environment as sanity check.
+To run it you need to set up the same environment as twister.
 The scripts take 2 optional args COMMIT and BASE_COMMIT, which tell the scripts
 which commit to use as current commit and as base for comparing, respectively.
 The script can take any SHA commit recognized for git.
@@ -70,7 +70,7 @@ def init_logs():
 def parse_args():
     parser = argparse.ArgumentParser(
                 description="Compare footprint apps RAM and ROM sizes. Note: "
-                "To run it you need to set up the same environment as sanitycheck.")
+                "To run it you need to set up the same environment as twister.")
     parser.add_argument('-b', '--base-commit', default=None,
                         help="Commit ID to use as base for footprint "
                                     "compare. Default is parent current commit."
@@ -119,7 +119,7 @@ def run_sanity_footprint(commit=None, cwd=os.environ.get('ZEPHYR_BASE'),
                          output_file=None):
     if not output_file:
         output_file = sanity_results_filename(commit)
-    cmd = '/bin/bash -c "source ./zephyr-env.sh && sanitycheck'
+    cmd = '/bin/bash -c "source ./zephyr-env.sh && twister'
     cmd += ' +scripts/sanity_chk/sanity_compare.args -o %s"' % output_file
     logger.debug('Sanity (%s)   %s' %(commit, cmd))
 
