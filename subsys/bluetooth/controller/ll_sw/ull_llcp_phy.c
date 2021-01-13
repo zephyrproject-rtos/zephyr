@@ -26,6 +26,7 @@
 #include "ull_tx_queue.h"
 
 #include "ull_conn_types.h"
+#include "ull_internal.h"
 #include "ull_llcp.h"
 #include "ull_llcp_internal.h"
 
@@ -88,12 +89,6 @@ enum {
 };
 
 /*
- * ULL -> LL Interface
- */
-
-extern void ll_rx_enqueue(struct node_rx_pdu *rx);
-
-/*
  * LLCP Local Procedure PHY Update FSM
  */
 
@@ -154,12 +149,14 @@ static void lp_pu_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	LL_ASSERT(ntf);
 
 	ntf->hdr.type = NODE_RX_TYPE_PHY_UPDATE;
+	ntf->hdr.handle = conn->lll.handle;
 	pdu = (struct node_rx_pu *)ntf->pdu;
 
 	pdu->status = ctx->data.pu.error;
 
 	/* Enqueue notification towards LL */
-	ll_rx_enqueue(ntf);
+	ll_rx_put(ntf->hdr.link, ntf);
+	ll_rx_sched();
 }
 
 static void lp_pu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
@@ -449,12 +446,14 @@ static void rp_pu_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	LL_ASSERT(ntf);
 
 	ntf->hdr.type = NODE_RX_TYPE_PHY_UPDATE;
+	ntf->hdr.handle = conn->lll.handle;
 	pdu = (struct node_rx_pu *)ntf->pdu;
 
 	pdu->status = ctx->data.pu.error;
 
 	/* Enqueue notification towards LL */
-	ll_rx_enqueue(ntf);
+	ll_rx_put(ntf->hdr.link, ntf);
+	ll_rx_sched();
 }
 
 static void rp_pu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
