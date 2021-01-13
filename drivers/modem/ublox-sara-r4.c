@@ -380,8 +380,15 @@ static ssize_t send_socket_data(void *obj,
 	/* Wait for prompt '@' */
 	k_sem_take(&mdata.sem_prompt, K_FOREVER);
 
-	/* slight pause per spec so that @ prompt is received */
-	k_sleep(MDM_PROMPT_CMD_DELAY);
+	/*
+	 * The AT commands manual requires a 50 ms wait
+	 * after '@' prompt if using AT+USOWR, but not
+	 * if using AT+USOST. This if condition is matched with
+	 * the command selection above.
+	 */
+	if (sock->ip_proto != IPPROTO_UDP) {
+		k_sleep(MDM_PROMPT_CMD_DELAY);
+	}
 
 	/* Reset response semaphore before sending data
 	 * So that we are sure that we won't use a previously pending one
