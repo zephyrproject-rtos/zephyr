@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2021 IoT.bzh
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <arm/armv7-r.dtsi>
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-r7";
+			reg = <0>;
+		};
+	};
+
+	soc {
+		sram0: memory@40040000 {
+			compatible = "mmio-sram";
+			reg = <0x40040000 0x1fc0000>;
+		};
+
+		gic: interrupt-controller@f1110000 {
+			compatible = "arm,gic";
+			reg = <0xf1110000 0x1000>,
+			      <0xf1120000 0x20000>,
+			      <0xf1140000 0x20000>,
+			      <0xf1060000 0x20000>;
+			interrupt-controller;
+			#interrupt-cells = <4>;
+			label = "GIC";
+			status = "okay";
+		};
+	};
+};
