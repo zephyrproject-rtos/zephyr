@@ -7,7 +7,7 @@
 pyelftools>=0.26
 
 # used by dts generation to parse binding YAMLs, also used by
-# sanitycheck to parse YAMLs
+# twister to parse YAMLs
 PyYAML>=5.1
 
 # used by west_commands

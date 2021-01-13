@@ -41,7 +41,7 @@ def get_cld_pid(mdb_process):
 # MDB creates child process (cld) which won't be terminated if we simply
 # terminate parents process (mdb). 'record_cld_pid' is provided to record 'cld'
 # process pid to file (mdb.pid) so this process can be terminated correctly by
-# sanitycheck infrastructure
+# twister infrastructure
 def record_cld_pid(mdb_runner, mdb_process):
     for _i in range(100):
         found, pid = get_cld_pid(mdb_process)
