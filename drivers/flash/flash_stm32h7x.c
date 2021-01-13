@@ -578,7 +578,7 @@ void flash_stm32_page_layout(const struct device *dev,
 
 	if (stm32h7_flash_layout[0].pages_count == 0) {
 		stm32h7_flash_layout[0].pages_count =
-				REAL_FLASH_SIZE / FLASH_SECTOR_SIZE;
+				REAL_FLASH_SIZE_KB / FLASH_SECTOR_SIZE;
 		stm32h7_flash_layout[0].pages_size = FLASH_SECTOR_SIZE;
 	}
 	*layout_size = ARRAY_SIZE(stm32h7_flash_layout);
