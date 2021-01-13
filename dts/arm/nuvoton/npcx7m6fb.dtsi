@@ -510,8 +510,6 @@
 			reg = <0x40009000 0x1000>;
 			interrupts = <13 0>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL3 0>;
-			#address-cells = <1>;
-			#size-cells = <0>;
 			label = "I2C_CTRL0";
 		};
 
@@ -520,8 +518,6 @@
 			reg = <0x4000b000 0x1000>;
 			interrupts = <14 0>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL3 1>;
-			#address-cells = <1>;
-			#size-cells = <0>;
 			label = "I2C_CTRL1";
 		};
 
@@ -530,8 +526,6 @@
 			reg = <0x400c0000 0x1000>;
 			interrupts = <36 0>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL3 2>;
-			#address-cells = <1>;
-			#size-cells = <0>;
 			label = "I2C_CTRL2";
 		};
 
@@ -540,8 +534,6 @@
 			reg = <0x400c2000 0x1000>;
 			interrupts = <37 0>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL3 3>;
-			#address-cells = <1>;
-			#size-cells = <0>;
 			label = "I2C_CTRL3";
 		};
 
@@ -550,8 +542,6 @@
 			reg = <0x40008000 0x1000>;
 			interrupts = <19 0>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL3 4>;
-			#address-cells = <1>;
-			#size-cells = <0>;
 			label = "I2C_CTRL4";
 		};
 
@@ -560,8 +550,6 @@
 			reg = <0x40017000 0x1000>;
 			interrupts = <20 0>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL7 0>;
-			#address-cells = <1>;
-			#size-cells = <0>;
 			label = "I2C_CTRL5";
 		};
 
@@ -570,8 +558,6 @@
 			reg = <0x40018000 0x1000>;
 			interrupts = <16 0>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL7 1>;
-			#address-cells = <1>;
-			#size-cells = <0>;
 			label = "I2C_CTRL6";
 		};
 
@@ -580,14 +566,14 @@
 			reg = <0x40019000 0x1000>;
 			interrupts = <8 0>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL7 2>;
-			#address-cells = <1>;
-			#size-cells = <0>;
 			label = "I2C_CTRL7";
 		};
 
 		/* I2c Ports - Please use them as i2c node */
 		i2c0_0: io_i2c_ctrl0_port0 {
 			compatible = "nuvoton,npcx-i2c-port";
+			#address-cells = <1>;
+			#size-cells = <0>;
 			port = <0x00>;
 			controller = <&i2c_ctrl0>;
 			pinctrl-0 = <&alt2_i2c0_0_sl>; /* PINB5.B4 */
@@ -597,6 +583,8 @@
 
 		i2c1_0: io_i2c_ctrl1_port0 {
 			compatible = "nuvoton,npcx-i2c-port";
+			#address-cells = <1>;
+			#size-cells = <0>;
 			port = <0x10>;
 			controller = <&i2c_ctrl1>;
 			pinctrl-0 = <&alt2_i2c1_0_sl>; /* PIN90.87 */
@@ -606,6 +594,8 @@
 
 		i2c2_0: io_i2c_ctrl2_port0 {
 			compatible = "nuvoton,npcx-i2c-port";
+			#address-cells = <1>;
+			#size-cells = <0>;
 			port = <0x20>;
 			controller = <&i2c_ctrl2>;
 			pinctrl-0 = <&alt2_i2c2_0_sl>; /* PIN92.91 */
@@ -615,6 +605,8 @@
 
 		i2c3_0: io_i2c_ctrl3_port0 {
 			compatible = "nuvoton,npcx-i2c-port";
+			#address-cells = <1>;
+			#size-cells = <0>;
 			port = <0x30>;
 			controller = <&i2c_ctrl3>;
 			pinctrl-0 = <&alt2_i2c3_0_sl>; /* PIND1.D0 */
@@ -624,6 +616,8 @@
 
 		i2c4_1: io_i2c_ctrl4_port1 {
 			compatible = "nuvoton,npcx-i2c-port";
+			#address-cells = <1>;
+			#size-cells = <0>;
 			port = <0x41>;
 			controller = <&i2c_ctrl4>;
 			pinctrl-0 = <&alt6_i2c4_1_sl>; /* PINF3.F2 */
@@ -633,6 +627,8 @@
 
 		i2c5_0: io_i2c_ctrl5_port0 {
 			compatible = "nuvoton,npcx-i2c-port";
+			#address-cells = <1>;
+			#size-cells = <0>;
 			port = <0x50>;
 			controller = <&i2c_ctrl5>;
 			pinctrl-0 = <&alt2_i2c5_0_sl>; /* PIN33.36 */
@@ -642,6 +638,8 @@
 
 		i2c5_1: io_i2c_ctrl5_port1 {
 			compatible = "nuvoton,npcx-i2c-port";
+			#address-cells = <1>;
+			#size-cells = <0>;
 			port = <0x51>;
 			controller = <&i2c_ctrl5>;
 			pinctrl-0 = <&alt6_i2c5_1_sl>; /* PINF5.F4 */
@@ -651,6 +649,8 @@
 
 		i2c6_0: io_i2c_ctrl6_port0 {
 			compatible = "nuvoton,npcx-i2c-port";
+			#address-cells = <1>;
+			#size-cells = <0>;
 			port = <0x60>;
 			controller = <&i2c_ctrl6>;
 			pinctrl-0 = <&alt2_i2c6_0_sl>; /* PINC2.C1 */
@@ -660,6 +660,8 @@
 
 		i2c6_1: io_i2c_ctrl6_port1 {
 			compatible = "nuvoton,npcx-i2c-port";
+			#address-cells = <1>;
+			#size-cells = <0>;
 			port = <0x61>;
 			controller = <&i2c_ctrl6>;
 			pinctrl-0 = <&alt6_i2c6_1_sl>; /* PINE4.E3 */
@@ -669,6 +671,8 @@
 
 		i2c7_0: io_i2c_ctrl7_port0 {
 			compatible = "nuvoton,npcx-i2c-port";
+			#address-cells = <1>;
+			#size-cells = <0>;
 			port = <0x70>;
 			controller = <&i2c_ctrl7>;
 			pinctrl-0 = <&alt2_i2c7_0_sl>; /* PINB3.B2 */

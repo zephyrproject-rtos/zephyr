@@ -5,7 +5,7 @@ description: Nuvoton, NPCX-I2C port pads node
 
 compatible: "nuvoton,npcx-i2c-port"
 
-include: [base.yaml]
+include: i2c-controller.yaml
 
 properties:
     label:
