@@ -240,9 +240,9 @@ static inline int pwm_pin_configure_capture(const struct device *dev,
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
+#ifdef CONFIG_PWM_CAPTURE
 __syscall int pwm_pin_enable_capture(const struct device *dev, uint32_t pwm);
 
-#ifdef CONFIG_PWM_CAPTURE
 static inline int z_impl_pwm_pin_enable_capture(const struct device *dev,
 						uint32_t pwm)
 {
@@ -269,9 +269,9 @@ static inline int z_impl_pwm_pin_enable_capture(const struct device *dev,
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
+#ifdef CONFIG_PWM_CAPTURE
 __syscall int pwm_pin_disable_capture(const struct device *dev, uint32_t pwm);
 
-#ifdef CONFIG_PWM_CAPTURE
 static inline int z_impl_pwm_pin_disable_capture(const struct device *dev,
 						 uint32_t pwm)
 {
@@ -312,11 +312,13 @@ static inline int z_impl_pwm_pin_disable_capture(const struct device *dev,
  * @retval -EIO IO error while capturing.
  * @retval -ERANGE If result is too large.
  */
+#ifdef CONFIG_PWM_CAPTURE
 __syscall int pwm_pin_capture_cycles(const struct device *dev, uint32_t pwm,
 				     pwm_flags_t flags,
 				     uint32_t *period,
 				     uint32_t *pulse,
 				     k_timeout_t timeout);
+#endif /* CONFIG_PWM_CAPTURE */
 
 /**
  * @brief Get the clock rate (cycles per second) for a single PWM output.
@@ -503,6 +505,7 @@ static inline int pwm_pin_cycles_to_nsec(const struct device *dev, uint32_t pwm,
  * @retval -EIO IO error while capturing.
  * @retval -ERANGE If result is too large.
  */
+#ifdef CONFIG_PWM_CAPTURE
 static inline int pwm_pin_capture_usec(const struct device *dev, uint32_t pwm,
 				       pwm_flags_t flags,
 				       uint64_t *period,
@@ -531,6 +534,7 @@ static inline int pwm_pin_capture_usec(const struct device *dev, uint32_t pwm,
 
 	return 0;
 }
+#endif /* CONFIG_PWM_CAPTURE */
 
 /**
  * @brief Capture a single PWM period/pulse width in nanoseconds for a single
@@ -559,6 +563,7 @@ static inline int pwm_pin_capture_usec(const struct device *dev, uint32_t pwm,
  * @retval -EIO IO error while capturing.
  * @retval -ERANGE If result is too large.
  */
+#ifdef CONFIG_PWM_CAPTURE
 static inline int pwm_pin_capture_nsec(const struct device *dev, uint32_t pwm,
 				       pwm_flags_t flags,
 				       uint64_t *period,
@@ -587,6 +592,7 @@ static inline int pwm_pin_capture_nsec(const struct device *dev, uint32_t pwm,
 
 	return 0;
 }
+#endif /* CONFIG_PWM_CAPTURE */
 
 #ifdef __cplusplus
 }
