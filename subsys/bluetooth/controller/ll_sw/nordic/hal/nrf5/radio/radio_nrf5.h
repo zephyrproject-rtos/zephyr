@@ -40,5 +40,12 @@
 #include "radio_nrf5340.h"
 #endif
 
+#include <nrf_peripherals.h>
+
+#if defined(PPI_PRESENT)
 #include "radio_nrf5_ppi.h"
+#endif
+#if defined(DPPI_PRESENT)
+#include "radio_nrf5_dppi.h"
+#endif
 #include "radio_nrf5_txp.h"
