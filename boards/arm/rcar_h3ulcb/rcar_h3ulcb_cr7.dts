@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2021 IoT.bzh
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+/dts-v1/;
+#include <arm/renesas/gen3/r8a77951.dtsi>
+
+/ {
+	model = "Renesas h3ulcb board";
+	compatible = "renesas,h3ulcb-cr7";
+
+	chosen {
+		zephyr,sram = &sram0;
+	};
+};
