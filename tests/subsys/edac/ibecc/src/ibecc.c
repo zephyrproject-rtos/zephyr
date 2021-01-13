@@ -10,13 +10,13 @@
 #include <tc_util.h>
 
 #include <drivers/edac.h>
+#include <ibecc.h>
 
 #define DEVICE_NAME		"IBECC"
 
 #if defined(CONFIG_EDAC_ERROR_INJECT)
-#include <ibecc.h>
-
-#define TEST_ADDRESS		0x2000
+#define TEST_ADDRESS1		0x1000
+#define TEST_ADDRESS2		0x2000
 #define TEST_DATA		0xface
 #define TEST_ADDRESS_MASK	INJ_ADDR_BASE_MASK_MASK
 #define DURATION		100
@@ -34,10 +34,18 @@ static void test_ibecc_initialized(void)
 }
 
 static volatile int interrupt;
+static volatile uint32_t error_type;
+static volatile uint64_t error_address;
+static volatile uint16_t error_syndrome;
 
 static void callback(const struct device *d, void *data)
 {
+	struct ibecc_error *error_data = data;
+
 	interrupt++;
+	error_type = error_data->type;
+	error_address = error_data->address;
+	error_syndrome = error_data->syndrome;
 }
 
 static void test_ibecc_api(void)
@@ -76,21 +84,31 @@ static void test_ibecc_error_inject_api(void)
 	uint64_t val;
 	int ret;
 
-	ret = edac_inject_set_param1(dev, TEST_ADDRESS);
+	/* Set correct value of param1 */
+	ret = edac_inject_set_param1(dev, TEST_ADDRESS1);
 	zassert_equal(ret, 0, "Error setting inject address");
 
-	val = edac_inject_get_param1(dev);
-	zassert_equal(val, TEST_ADDRESS, "Read back value differs");
+	/* Try to set incorrect value of param1 with UINT64_MAX */
+	ret = edac_inject_set_param1(dev, UINT64_MAX);
+	zassert_not_equal(ret, 0, "Error setting invalid param1");
 
+	val = edac_inject_get_param1(dev);
+	zassert_equal(val, TEST_ADDRESS1, "Read back value differs");
+
+	/* Set correct value of param2 */
 	ret = edac_inject_set_param2(dev, TEST_ADDRESS_MASK);
 	zassert_equal(ret, 0, "Error setting inject address mask");
+
+	/* Try to set incorrect value of param2 with UINT64_MAX */
+	ret = edac_inject_set_param2(dev, UINT64_MAX);
+	zassert_not_equal(ret, 0, "Error setting invalid param1");
 
 	val = edac_inject_get_param2(dev);
 	zassert_equal(val, TEST_ADDRESS_MASK, "Read back value differs");
 
-	/* Clearing registers */
+	/* Clearing parameters */
 
-	val = edac_inject_set_param1(dev, 0);
+	ret = edac_inject_set_param1(dev, 0);
 	zassert_equal(ret, 0, "Error setting inject address");
 
 	val = edac_inject_get_param1(dev);
@@ -110,30 +128,34 @@ static void test_ibecc_error_inject_api(void)
 #endif
 
 #if defined(CONFIG_EDAC_ERROR_INJECT)
-static void test_ibecc_error_inject_test(void)
+static void test_inject(uint64_t addr, uint64_t mask, uint8_t type)
 {
+
 	uint64_t test_addr;
 	uint32_t test_value;
 	int ret;
 
-	ret = edac_notify_callback_set(dev, callback);
-	zassert_equal(ret, 0, "Error setting notification callback");
+	interrupt = 0;
 
-	ret = edac_inject_set_param1(dev, TEST_ADDRESS);
+	ret = edac_inject_set_param1(dev, addr);
 	zassert_equal(ret, 0, "Error setting inject address");
 
-	ret = edac_inject_set_param2(dev, TEST_ADDRESS_MASK);
+	ret = edac_inject_set_param2(dev, mask);
 	zassert_equal(ret, 0, "Error setting inject address mask");
 
-	ret = edac_inject_set_error_type(dev, EDAC_ERROR_TYPE_DRAM_COR);
+	/* Test correctable error inject */
+	ret = edac_inject_set_error_type(dev, type);
 	zassert_equal(ret, 0, "Error setting inject error type");
+
+	test_value = edac_inject_get_error_type(dev);
+	zassert_equal(test_value, type,
+		      "Read back value differs");
 
 	ret = edac_inject_error_trigger(dev);
 	zassert_equal(ret, 0, "Error setting ctrl");
 
-	device_map((mm_reg_t *)&test_addr, TEST_ADDRESS, 0x100,
-		   K_MEM_CACHE_NONE);
-	TC_PRINT("Mapped 0x%x to 0x%llx\n", TEST_ADDRESS, test_addr);
+	device_map((mm_reg_t *)&test_addr, addr, 0x100, K_MEM_CACHE_NONE);
+	TC_PRINT("Mapped 0x%llx to 0x%llx\n", addr, test_addr);
 
 	test_value = sys_read32(test_addr);
 	TC_PRINT("Read value 0x%llx: 0x%x\n", test_addr, test_value);
@@ -154,6 +176,32 @@ static void test_ibecc_error_inject_test(void)
 		      "Interrupt handler executed more than once! (%d)\n",
 		      interrupt);
 
+	TC_PRINT("Interrupt %d\n", interrupt);
+	TC_PRINT("ECC Error Log 0x%llx\n", edac_ecc_error_log_get(dev));
+	TC_PRINT("Error: type %u, address 0x%llx, syndrome %u\n",
+		 error_type, error_address, error_syndrome);
+}
+
+static void test_ibecc_error_inject_test(void)
+{
+	int ret;
+
+	ret = edac_notify_callback_set(dev, callback);
+	zassert_equal(ret, 0, "Error setting notification callback");
+
+	/* Test injecting correctable error at address TEST_ADDRESS1 */
+	test_inject(TEST_ADDRESS1, TEST_ADDRESS_MASK, EDAC_ERROR_TYPE_DRAM_COR);
+
+	/* Verify page address and error type */
+	zassert_equal(error_address, TEST_ADDRESS1, "Error address wrong");
+	zassert_equal(error_type, EDAC_ERROR_TYPE_DRAM_COR, "Error type wrong");
+
+	/* Test injecting uncorrectable error ad address TEST_ADDRESS2 */
+	test_inject(TEST_ADDRESS2, TEST_ADDRESS_MASK, EDAC_ERROR_TYPE_DRAM_UC);
+
+	/* Verify page address and error type */
+	zassert_equal(error_address, TEST_ADDRESS2, "Error address wrong");
+	zassert_equal(error_type, EDAC_ERROR_TYPE_DRAM_UC, "Error type wrong");
 }
 #else
 static void test_ibecc_error_inject_test(void)

@@ -168,7 +168,8 @@ static void mchbar_regs_dump(const struct device *dev)
 	}
 }
 
-static void parse_ecclog(const struct device *dev, const uint64_t ecclog)
+static void parse_ecclog(const struct device *dev, const uint64_t ecclog,
+			 struct ibecc_error *error_data)
 {
 	struct ibecc_data *data = dev->data;
 
@@ -176,6 +177,9 @@ static void parse_ecclog(const struct device *dev, const uint64_t ecclog)
 		return;
 	}
 
+	error_data->type = ECC_ERROR_ERRTYPE(ecclog);
+	error_data->address = ECC_ERROR_ERRADD(ecclog);
+	error_data->syndrome = ECC_ERROR_ERRSYND(ecclog);
 
 	if (ecclog & ECC_ERROR_MERRSTS) {
 		data->errors_uc++;
@@ -447,6 +451,7 @@ bool z_x86_do_kernel_nmi(const z_arch_esf_t *esf)
 {
 	const struct device *dev = DEVICE_GET(edac_ibecc);
 	struct ibecc_data *data = dev->data;
+	struct ibecc_error error_data;
 	k_spinlock_key_t key;
 	bool ret = true;
 	uint64_t ecclog;
@@ -466,10 +471,10 @@ bool z_x86_do_kernel_nmi(const z_arch_esf_t *esf)
 	}
 
 	ecclog = edac_ecc_error_log_get(dev);
-	parse_ecclog(dev, ecclog);
+	parse_ecclog(dev, ecclog, &error_data);
 
 	if (data->cb) {
-		data->cb(dev, NULL);
+		data->cb(dev, &error_data);
 	}
 
 	edac_ecc_error_log_clear(dev);

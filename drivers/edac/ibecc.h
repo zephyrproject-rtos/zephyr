@@ -103,6 +103,7 @@
 #define ECC_ERROR_MERRSTS	BIT64(63)
 /* Correctable Error Status (CERRSTS) */
 #define ECC_ERROR_CERRSTS	BIT64(62)
+#define ECC_ERROR_ERRTYPE(val)	BITFIELD(val, 63, 62)
 /* CMI address of the address block of main memory where error happened */
 #define ECC_ERROR_ERRADD(val)	((val) & GENMASK(38, 5))
 /* ECC Error Syndrome (ERRSYND) */
@@ -150,3 +151,9 @@
 
 /* MC Enhanced Channel Selection register, 32 bit */
 #define CHANNEL_EHASH		0x5028
+
+struct ibecc_error {
+	uint32_t type;
+	uint64_t address;
+	uint16_t syndrome;
+};
