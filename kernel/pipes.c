@@ -41,36 +41,8 @@ struct k_pipe *_trace_list_k_pipe;
 #endif	/* CONFIG_OBJECT_TRACING */
 
 #if (CONFIG_NUM_PIPE_ASYNC_MSGS > 0)
-
 /* stack of unused asynchronous message descriptors */
 K_STACK_DEFINE(pipe_async_msgs, CONFIG_NUM_PIPE_ASYNC_MSGS);
-
-/* Allocate an asynchronous message descriptor */
-static void pipe_async_alloc(struct k_pipe_async **async)
-{
-	(void)k_stack_pop(&pipe_async_msgs, (stack_data_t *)async, K_FOREVER);
-}
-
-/* Free an asynchronous message descriptor */
-static void pipe_async_free(struct k_pipe_async *async)
-{
-	k_stack_push(&pipe_async_msgs, (stack_data_t)async);
-}
-
-/* Finish an asynchronous operation */
-static void pipe_async_finish(struct k_pipe_async *async_desc)
-{
-	/*
-	 * An asynchronous operation is finished with the scheduler locked
-	 * to prevent the called routines from scheduling a new thread.
-	 */
-
-	if (async_desc->desc.sem != NULL) {
-		k_sem_give(async_desc->desc.sem);
-	}
-
-	pipe_async_free(async_desc);
-}
 #endif /* CONFIG_NUM_PIPE_ASYNC_MSGS > 0 */
 
 #if (CONFIG_NUM_PIPE_ASYNC_MSGS > 0) || \
@@ -412,7 +384,6 @@ static void pipe_thread_ready(struct k_thread *thread)
 {
 #if (CONFIG_NUM_PIPE_ASYNC_MSGS > 0)
 	if ((thread->base.thread_state & _THREAD_DUMMY) != 0U) {
-		pipe_async_finish((struct k_pipe_async *)thread);
 		return;
 	}
 #endif
@@ -516,11 +487,6 @@ int z_pipe_put_internal(struct k_pipe *pipe, struct k_pipe_async *async_desc,
 
 	if (num_bytes_written == bytes_to_write) {
 		*bytes_written = num_bytes_written;
-#if (CONFIG_NUM_PIPE_ASYNC_MSGS > 0)
-		if (async_desc != NULL) {
-			pipe_async_finish(async_desc);
-		}
-#endif
 		k_sched_unlock();
 		return 0;
 	}
@@ -529,36 +495,11 @@ int z_pipe_put_internal(struct k_pipe *pipe, struct k_pipe_async *async_desc,
 	    && num_bytes_written >= min_xfer
 	    && min_xfer > 0) {
 		*bytes_written = num_bytes_written;
-#if (CONFIG_NUM_PIPE_ASYNC_MSGS > 0)
-		if (async_desc != NULL) {
-			pipe_async_finish(async_desc);
-		}
-#endif
 		k_sched_unlock();
 		return 0;
 	}
 
 	/* Not all data was copied */
-
-#if (CONFIG_NUM_PIPE_ASYNC_MSGS > 0)
-	if (async_desc != NULL) {
-		/*
-		 * Lock interrupts and unlock the scheduler before
-		 * manipulating the writers wait_q.
-		 */
-		k_spinlock_key_t key2 = k_spin_lock(&pipe->lock);
-		z_sched_unlock_no_reschedule();
-
-		async_desc->desc.buffer = data + num_bytes_written;
-		async_desc->desc.bytes_to_xfer =
-			bytes_to_write - num_bytes_written;
-
-		z_pend_thread((struct k_thread *) &async_desc->thread,
-			     &pipe->wait_q.writers, K_FOREVER);
-		z_reschedule(&pipe->lock, key2);
-		return 0;
-	}
-#endif
 
 	struct k_pipe_desc  pipe_desc;
 
@@ -776,30 +717,6 @@ int z_vrfy_k_pipe_put(struct k_pipe *pipe, void *data, size_t bytes_to_write,
 				timeout);
 }
 #include <syscalls/k_pipe_put_mrsh.c>
-#endif
-
-#if (CONFIG_NUM_PIPE_ASYNC_MSGS > 0)
-void k_pipe_block_put(struct k_pipe *pipe, struct k_mem_block *block,
-		      size_t bytes_to_write, struct k_sem *sem)
-{
-	struct k_pipe_async  *async_desc;
-	size_t                dummy_bytes_written;
-
-	/* For simplicity, always allocate an asynchronous descriptor */
-	pipe_async_alloc(&async_desc);
-
-	async_desc->desc.block = &async_desc->desc.copy_block;
-	async_desc->desc.copy_block = *block;
-	async_desc->desc.sem = sem;
-	async_desc->thread.prio = k_thread_priority_get(_current);
-#ifdef CONFIG_SMP
-	async_desc->thread.is_idle = 0;
-#endif
-
-	(void) z_pipe_put_internal(pipe, async_desc, block->data,
-				    bytes_to_write, &dummy_bytes_written,
-				    bytes_to_write, K_FOREVER);
-}
 #endif
 
 size_t z_impl_k_pipe_read_avail(struct k_pipe *pipe)
