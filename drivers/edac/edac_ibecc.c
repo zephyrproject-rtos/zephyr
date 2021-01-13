@@ -176,17 +176,12 @@ static void parse_ecclog(const struct device *dev, const uint64_t ecclog)
 		return;
 	}
 
-	/* Note: works for small addresses */
-	LOG_DBG("Error address: 0x%llx", ECC_ERROR_ERRADD(ecclog));
-	LOG_DBG("Error Syndrome: 0x%lx", (long)ECC_ERROR_ERRSYND(ecclog));
 
 	if (ecclog & ECC_ERROR_MERRSTS) {
-		LOG_DBG("Uncorrectable Error (UE)");
 		data->errors_uc++;
 	}
 
 	if (ecclog & ECC_ERROR_CERRSTS) {
-		LOG_DBG("Correctable Error (CE)");
 		data->errors_cor++;
 	}
 }
@@ -266,15 +261,11 @@ static int inject_error_trigger(const struct device *dev)
 
 static uint64_t ecc_error_log_get(const struct device *dev)
 {
-	LOG_DBG("Get ECC Error Log");
-
 	return ibecc_read_reg64(dev, IBECC_ECC_ERROR_LOG);
 }
 
 static void ecc_error_log_clear(const struct device *dev)
 {
-	LOG_DBG("Clearing ECC Error Log");
-
 	/* Clear all error bits */
 	ibecc_write_reg64(dev, IBECC_ECC_ERROR_LOG,
 			  ECC_ERROR_MERRSTS | ECC_ERROR_CERRSTS);
@@ -282,15 +273,11 @@ static void ecc_error_log_clear(const struct device *dev)
 
 static uint64_t parity_error_log_get(const struct device *dev)
 {
-	LOG_DBG("Get Parity Error Log");
-
 	return ibecc_read_reg64(dev, IBECC_PARITY_ERROR_LOG);
 }
 
 static void parity_error_log_clear(const struct device *dev)
 {
-	LOG_DBG("Clearing Parity Error Log");
-
 	ibecc_write_reg64(dev, IBECC_PARITY_ERROR_LOG, PARITY_ERROR_ERRSTS);
 }
 
