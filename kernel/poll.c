@@ -118,7 +118,7 @@ static inline void add_event(sys_dlist_t *events, struct k_poll_event *event,
 }
 
 /* must be called with interrupts locked */
-static inline int register_event(struct k_poll_event *event,
+static inline void register_event(struct k_poll_event *event,
 				 struct z_poller *poller)
 {
 	switch (event->type) {
@@ -143,8 +143,6 @@ static inline int register_event(struct k_poll_event *event,
 	}
 
 	event->poller = poller;
-
-	return 0;
 }
 
 /* must be called with interrupts locked */
@@ -213,12 +211,8 @@ static inline int register_events(struct k_poll_event *events,
 			set_event_ready(&events[ii], state);
 			poller->is_polling = false;
 		} else if (!just_check && poller->is_polling) {
-			int rc = register_event(&events[ii], poller);
-			if (rc == 0) {
-				events_registered += 1;
-			} else {
-				__ASSERT(false, "unexpected return code\n");
-			}
+			register_event(&events[ii], poller);
+			events_registered += 1;
 		}
 		k_spin_unlock(&lock, key);
 	}
