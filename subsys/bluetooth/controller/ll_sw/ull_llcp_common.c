@@ -85,12 +85,6 @@ enum {
 };
 
 /*
- * ULL -> LL Interface
- */
-
-extern void ll_rx_enqueue(struct node_rx_pdu *rx);
-
-/*
  * LLCP Local Procedure Common FSM
  */
 
@@ -190,8 +184,8 @@ static void lp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 
 	ntf->hdr.type = NODE_RX_TYPE_DC_PDU;
 	ntf->hdr.handle = conn->lll.handle;
-
 	pdu = (struct pdu_data *) ntf->pdu;
+
 	switch (ctx->proc) {
 	case PROC_FEATURE_EXCHANGE:
 		lp_comm_ntf_feature_exchange(conn, ctx, pdu);
@@ -555,7 +549,9 @@ static void rp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	LL_ASSERT(ntf);
 
 	ntf->hdr.type = NODE_RX_TYPE_DC_PDU;
+	ntf->hdr.handle = conn->lll.handle;
 	pdu = (struct pdu_data *) ntf->pdu;
+
 	switch (ctx->proc) {
 	case PROC_TERMINATE:
 		rp_comm_ntf_terminate_ind(conn, ctx, pdu);
@@ -566,7 +562,8 @@ static void rp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	}
 
 	/* Enqueue notification towards LL */
-	ll_rx_enqueue(ntf);
+	ll_rx_put(ntf->hdr.link, ntf);
+	ll_rx_sched();
 }
 
 static void rp_comm_send_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
