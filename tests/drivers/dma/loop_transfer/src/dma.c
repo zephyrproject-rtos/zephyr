@@ -28,7 +28,7 @@ static __aligned(16) char rx_data[TRANSFER_LOOPS][RX_BUFF_SIZE] __used
 #else
 /* this src memory shall be in RAM to support usingas a DMA source pointer.*/
 static char tx_data[] =
-	"The quick brown fox jumps over the lazy dog ....";
+	"The quick brown fox jumps over the lazy dog";
 static __aligned(16) char rx_data[TRANSFER_LOOPS][RX_BUFF_SIZE] = { { 0 } };
 #endif
 
@@ -116,9 +116,7 @@ void main(void)
 #endif
 	chan_id = CONFIG_DMA_LOOP_TRANSFER_CHANNEL_NR;
 	transfer_count = 0;
-	printk("Starting the transfer on channel %d and waiting for 1 second\n", chan_id);
-	printk("TX data: %s\n", tx_data);
-	printk("block_size %d\n", strlen(tx_data));
+	printk("Starting the transfer and waiting for 1 second\n");
 	dma_block_cfg.block_size = strlen(tx_data);
 	dma_block_cfg.source_address = (uint32_t)tx_data;
 	dma_block_cfg.dest_address = (uint32_t)rx_data[transfer_count];
