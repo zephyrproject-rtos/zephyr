@@ -4697,23 +4697,6 @@ __syscall int k_pipe_get(struct k_pipe *pipe, void *data,
 			 size_t min_xfer, k_timeout_t timeout);
 
 /**
- * @brief Write memory block to a pipe.
- *
- * This routine writes the data contained in a memory block to @a pipe.
- * Once all of the data in the block has been written to the pipe, it will
- * free the memory block @a block and give the semaphore @a sem (if specified).
- *
- * @param pipe Address of the pipe.
- * @param block Memory block containing data to send
- * @param size Number of data bytes in memory block to send
- * @param sem Semaphore to signal upon completion (else NULL)
- *
- * @return N/A
- */
-extern void k_pipe_block_put(struct k_pipe *pipe, struct k_mem_block *block,
-			     size_t size, struct k_sem *sem);
-
-/**
  * @brief Query the number of bytes that may be read from @a pipe.
  *
  * @param pipe Address of the pipe.
