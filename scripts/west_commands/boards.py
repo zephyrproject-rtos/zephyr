@@ -51,6 +51,9 @@ class Boards(WestCommand):
         parser.add_argument('-f', '--format', default=default_fmt,
                             help='''Format string to use to list each board;
                                     see FORMAT STRINGS below.''')
+        parser.add_argument('-n', '--name', dest='name_re',
+                            help='''a regular expression; only boards whose
+                            names match NAME_RE will be listed''')
 
         return parser
 
@@ -75,8 +78,15 @@ class Boards(WestCommand):
                 board = match.group(1)
                 boards[arch].append(board)
 
+        if args.name_re is not None:
+            name_re = re.compile(args.name_re)
+        else:
+            name_re = None
+
         for arch in boards:
             for board in boards[arch]:
+                if name_re is not None and not name_re.search(board):
+                    continue
                 try:
                     result = args.format.format(
                         name=board,
