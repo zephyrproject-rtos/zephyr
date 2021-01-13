@@ -5,9 +5,7 @@ description: Nuvoton, NPCX-I2C controller node
 
 compatible: "nuvoton,npcx-i2c-ctrl"
 
-include: [i2c-controller.yaml]
-
-bus: i2c
+include: base.yaml
 
 properties:
     reg:
