@@ -17,6 +17,7 @@
 #define CONFIG_OPENTHREAD_THREAD_PRIORITY 5
 #define OT_WORKER_PRIORITY K_PRIO_COOP(CONFIG_OPENTHREAD_THREAD_PRIORITY)
 #define CONFIG_NET_L2_OPENTHREAD 1
+#define CONFIG_OPENTHREAD_RADIO_WORKQUEUE_STACK_SIZE 512
 
 /* needed for stubbing device driver */
 const struct device *device_get_binding_stub(const char *name);
