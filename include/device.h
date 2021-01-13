@@ -767,6 +767,9 @@ static inline int device_pm_put_sync(const struct device *dev) { return -ENOTSUP
 }
 #endif
 
+/* device_extern is generated base on devicetree nodes */
+#include <device_extern.h>
+
 #include <syscalls/device.h>
 
 #endif /* ZEPHYR_INCLUDE_DEVICE_H_ */
