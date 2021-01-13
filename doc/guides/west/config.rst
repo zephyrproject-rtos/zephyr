@@ -135,6 +135,10 @@ commands are documented in the pages for those commands.
        stdout is a terminal.
    * - ``commands.allow_extensions``
      - Boolean, default ``true``, disables :ref:`west-extensions` if ``false``
+   * - ``manifest.file``
+     - String, default ``west.yml``. Relative path from the manifest repository
+       root directory to the manifest file used by ``west init`` and other
+       commands which parse the manifest.
    * - ``manifest.path``
      - String, relative path from the :term:`west workspace` root directory
        to the manifest repository used by ``west update`` and other commands
