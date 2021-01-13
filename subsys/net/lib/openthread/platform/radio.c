@@ -44,8 +44,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #define FRAME_TYPE_MASK 0x07
 #define FRAME_TYPE_ACK 0x02
 
-#define OT_WORKER_STACK_SIZE 512
-
 #if IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)
 #define OT_WORKER_PRIORITY   K_PRIO_COOP(CONFIG_OPENTHREAD_THREAD_PRIORITY)
 #else
@@ -88,7 +86,8 @@ static uint8_t  energy_detection_channel;
 static int16_t energy_detected_value;
 
 ATOMIC_DEFINE(pending_events, PENDING_EVENT_COUNT);
-K_KERNEL_STACK_DEFINE(ot_task_stack, OT_WORKER_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(ot_task_stack,
+		      CONFIG_OPENTHREAD_RADIO_WORKQUEUE_STACK_SIZE);
 static struct k_work_q ot_work_q;
 static otError tx_rx_result;
 
