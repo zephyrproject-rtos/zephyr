@@ -512,15 +512,6 @@ config HEAP_MEM_POOL_SIZE
 	  the memory pool is only limited to available memory. A size of zero
 	  means that no heap memory pool is defined.
 
-config HEAP_MEM_POOL_MIN_SIZE
-	int "The smallest blocks in the heap memory pool (in bytes)"
-	depends on HEAP_MEM_POOL_SIZE != 0
-	default 64
-	help
-	  This option specifies the size of the smallest block in the pool.
-	  Option must be a power of 2 and lower than or equal to the size
-	  of the entire pool.
-
 endif # KERNEL_MEM_POOL
 
 endmenu
