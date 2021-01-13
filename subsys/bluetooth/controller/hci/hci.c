@@ -4075,6 +4075,11 @@ int hci_acl_handle(struct net_buf *buf, struct net_buf **evt)
 		return -EINVAL;
 	}
 
+	if (len > CONFIG_BT_CTLR_TX_BUFFER_SIZE) {
+		BT_ERR("Invalid HCI ACL Data length");
+		return -EINVAL;
+	}
+
 	/* assigning flags first because handle will be overwritten */
 	flags = bt_acl_flags(handle);
 	handle = bt_acl_handle(handle);
