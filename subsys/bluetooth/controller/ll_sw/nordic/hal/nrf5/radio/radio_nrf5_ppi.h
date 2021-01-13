@@ -286,6 +286,28 @@ static inline void hal_palna_ppi_setup(void)
 #endif /* CONFIG_BT_CTLR_GPIO_PA_PIN || CONFIG_BT_CTLR_GPIO_LNA_PIN */
 
 /******************************************************************************/
+#if defined(CONFIG_BT_CTLR_FEM_NRF21540)
+static inline void hal_pa_ppi_setup(void)
+{
+	/* Nothing specific to PA with FEM to handle inside TRX chains */
+}
+
+static inline void hal_lna_ppi_setup(void)
+{
+	/* Nothing specific to LNA with FEM to handle inside TRX chains */
+}
+
+/* TODO: Dummy assignments, implementation will be added in subsequently */
+#define HAL_ENABLE_FEM_PPI  4
+#define HAL_DISABLE_FEM_PPI 5
+
+static inline void hal_fem_ppi_setup(void)
+{
+	/* TODO: Implementation will be added in subsequently */
+}
+#endif /* CONFIG_BT_CTLR_FEM_NRF21540 */
+
+/******************************************************************************/
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
 /* PPI setup used for SW-based auto-switching during TIFS. */
 
