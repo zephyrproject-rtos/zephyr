@@ -399,11 +399,9 @@ int edac_ibecc_init(const struct device *dev)
 
 static struct ibecc_data ibecc_data;
 
-DEVICE_AND_API_INIT(edac_ibecc, EDAC_IBECC_NAME,
-		    &edac_ibecc_init,
-		    &ibecc_data, NULL,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &api);
+DEVICE_DEFINE(edac_ibecc, EDAC_IBECC_NAME, &edac_ibecc_init,
+	      NULL, &ibecc_data, NULL, POST_KERNEL,
+	      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &api);
 
 /**
  * An IBECC error causes SERR_NMI_STS set and is indicated by
