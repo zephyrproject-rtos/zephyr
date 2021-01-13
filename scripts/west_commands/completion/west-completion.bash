@@ -590,7 +590,7 @@ __comp_west_completion()
 __comp_west_boards()
 {
 	local boards_args_opts="
-		--format -f
+		--format -f --name -n
 	"
 
 	case "$cur" in
