@@ -136,6 +136,7 @@ void test_setup(struct ll_conn *conn)
 	/* Initialize the connection object */
 	ll_conn_init(conn);
 
+	ll_reset();
 	conn->lll.event_counter = 0;
 	event_active = 0;
 	lazy = 0;

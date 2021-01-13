@@ -27,6 +27,7 @@
 #include "ull_tx_queue.h"
 
 #include "ull_conn_types.h"
+#include "ull_internal.h"
 #include "ull_llcp.h"
 #include "ull_llcp_internal.h"
 
@@ -188,6 +189,8 @@ static void lp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	LL_ASSERT(ntf);
 
 	ntf->hdr.type = NODE_RX_TYPE_DC_PDU;
+	ntf->hdr.handle = conn->lll.handle;
+
 	pdu = (struct pdu_data *) ntf->pdu;
 	switch (ctx->proc) {
 	case PROC_FEATURE_EXCHANGE:
@@ -205,7 +208,8 @@ static void lp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	}
 
 	/* Enqueue notification towards LL */
-	ll_rx_enqueue(ntf);
+	ll_rx_put(ntf->hdr.link, ntf);
+	ll_rx_sched();
 }
 
 static void lp_comm_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
