@@ -2988,9 +2988,15 @@ class TestSuite(DisablePyTestCollectionMixin):
         logger.info("Building initial testcase list...")
 
         for tc_name, tc in self.testcases.items():
+
+            if tc.build_on_all and not platform_filter:
+                platform_scope = self.platforms
+            else:
+                platform_scope = platforms
+
             # list of instances per testcase, aka configurations.
             instance_list = []
-            for plat in platforms:
+            for plat in platform_scope:
                 instance = TestInstance(tc, plat, self.outdir)
                 if runnable:
                     tfilter = 'runnable'
@@ -3027,9 +3033,6 @@ class TestSuite(DisablePyTestCollectionMixin):
 
                 if tc.skip:
                     discards[instance] = discards.get(instance, "Skip filter")
-
-                if tc.build_on_all and not platform_filter:
-                    platform_filter = []
 
                 if tag_filter and not tc.tags.intersection(tag_filter):
                     discards[instance] = discards.get(instance, "Command line testcase tag filter")
