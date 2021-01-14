@@ -89,7 +89,11 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
  * EGON: following 2 functions need to be removed when implementing tx/rx path
  */
 
+#ifdef ZTEST_UNITTEST
+extern sys_slist_t ut_rx_q;
+#else
 sys_slist_t ut_rx_q;
+#endif
 
 void ll_rx_enqueue(struct node_rx_pdu *rx)
 {
