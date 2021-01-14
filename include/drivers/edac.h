@@ -12,9 +12,6 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_EDAC_H_
 #define ZEPHYR_INCLUDE_DRIVERS_EDAC_H_
 
-#define EDAC_ERROR_TYPE_DRAM_COR	BIT(0)
-#define EDAC_ERROR_TYPE_DRAM_UC		BIT(1)
-
 #include <sys/types.h>
 
 typedef int (*edac_api_inject_set_param1_f)(const struct device *dev,
@@ -45,6 +42,21 @@ typedef void (*edac_notify_callback_f)(const struct device *dev,
 typedef int (*edac_api_notify_cb_set_f)(const struct device *dev,
 				      edac_notify_callback_f cb);
 
+/**
+ * @defgroup edac Zephyr API
+ * @{
+ */
+
+/** @brief Correctable error type */
+#define EDAC_ERROR_TYPE_DRAM_COR	BIT(0)
+/** @brief Uncorrectable error type */
+#define EDAC_ERROR_TYPE_DRAM_UC		BIT(1)
+
+/**
+ * @brief EDAC driver API
+ *
+ * This is the mandatory API any EDAC driver needs to expose.
+ */
 __subsystem struct edac_driver_api {
 #if defined(CONFIG_EDAC_ERROR_INJECT)
 	/* Error Injection API is disabled by default */
@@ -300,5 +312,9 @@ static inline int edac_notify_callback_set(const struct device *dev,
 
 	return api->notify_cb_set(dev, cb);
 }
+
+/**
+ * @}
+ */
 
 #endif  /* ZEPHYR_INCLUDE_DRIVERS_EDAC_H_ */

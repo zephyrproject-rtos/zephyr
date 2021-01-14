@@ -16,6 +16,7 @@ API Reference
    devicetree/index.rst
    drivers/index.rst
    display/index.rst
+   edac/index.rst
    file_system/index.rst
    misc/formatted_output.rst
    kernel/index.rst

@@ -97,6 +97,11 @@ current :ref:`stability level <api_lifecycle>`.
      - 2.4
      - 2.4
 
+   * - :ref:`edac_api`
+     - Experimental
+     - 2.5
+     - 2.5
+
    * - :ref:`eeprom_api`
      - Stable
      - 2.1
