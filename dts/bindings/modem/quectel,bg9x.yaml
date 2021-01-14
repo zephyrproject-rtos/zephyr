@@ -22,3 +22,7 @@ properties:
     mdm-dtr-gpios:
       type: phandle-array
       required: false
+
+    mdm-wdisable-gpios:
+      type: phandle-array
+      required: false
