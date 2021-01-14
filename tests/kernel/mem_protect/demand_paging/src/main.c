@@ -8,7 +8,12 @@
 #include <sys/mem_manage.h>
 #include <mmu.h>
 
-#define SWAP_PAGES	16
+#ifdef CONFIG_BACKING_STORE_RAM_PAGES
+#define EXTRA_PAGES	CONFIG_BACKING_STORE_RAM_PAGES
+#else
+#error "Unsupported configuration"
+#endif
+
 size_t arena_size;
 char *arena;
 
@@ -27,9 +32,16 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 	}
 }
 
+/* The mapped anonymous area will be free RAM plus half of the available
+ * frames in the backing store.
+ */
+#define HALF_PAGES	(EXTRA_PAGES / 2)
+#define HALF_BYTES	(HALF_PAGES * CONFIG_MMU_PAGE_SIZE)
+static const char *nums = "0123456789";
+
 void test_map_anon_pages(void)
 {
-	arena_size = k_mem_free_get() + ((SWAP_PAGES - 1) * CONFIG_MMU_PAGE_SIZE);
+	arena_size = k_mem_free_get() + HALF_BYTES;
 	arena = k_mem_map(arena_size, K_MEM_PERM_RW);
 
 	zassert_not_null(arena, "failed to map anonymous memory arena size %zu",
@@ -41,7 +53,6 @@ void test_map_anon_pages(void)
 void test_touch_anon_pages(void)
 {
 	unsigned long faults;
-	static const char *nums = "0123456789";
 
 	faults = z_num_pagefaults_get();
 
@@ -65,6 +76,7 @@ void test_touch_anon_pages(void)
 		zassert_equal(arena[i], nums[i % 10],
 			      "arena corrupted at index %d (%p): got 0x%hhx expected 0x%hhx",
 			      i, &arena[i], arena[i], nums[i % 10]);
+		arena[i] = 0;
 	}
 
 	faults = z_num_pagefaults_get() - faults;
@@ -74,12 +86,112 @@ void test_touch_anon_pages(void)
 	printk("Kernel handled %lu page faults\n", faults);
 }
 
+void test_z_mem_page_out(void)
+{
+	unsigned long faults;
+	int key, ret;
+
+	/* Lock IRQs to prevent other pagefaults from happening while we
+	 * are measuring stuff
+	 */
+	key = irq_lock();
+	faults = z_num_pagefaults_get();
+	ret = z_mem_page_out(arena, HALF_BYTES);
+	zassert_equal(ret, 0, "z_mem_page_out failed with %d", ret);
+
+	/* Write to the supposedly evicted region */
+	for (size_t i = 0; i < HALF_BYTES; i++) {
+		arena[i] = nums[i % 10];
+	}
+	faults = z_num_pagefaults_get() - faults;
+	irq_unlock(key);
+
+	zassert_equal(faults, HALF_PAGES,
+		      "unexpected num pagefaults expected %lu got %d",
+		      HALF_PAGES, faults);
+
+	ret = z_mem_page_out(arena, arena_size);
+	zassert_equal(ret, -ENOMEM, "z_mem_page_out should have failed");
+
+}
+
+void test_z_mem_page_in(void)
+{
+	unsigned long faults;
+	int key, ret;
+
+	/* Lock IRQs to prevent other pagefaults from happening while we
+	 * are measuring stuff
+	 */
+	key = irq_lock();
+
+	ret = z_mem_page_out(arena, HALF_BYTES);
+	zassert_equal(ret, 0, "z_mem_page_out failed with %d", ret);
+
+	z_mem_page_in(arena, HALF_BYTES);
+
+	faults = z_num_pagefaults_get();
+	/* Write to the supposedly evicted region */
+	for (size_t i = 0; i < HALF_BYTES; i++) {
+		arena[i] = nums[i % 10];
+	}
+	faults = z_num_pagefaults_get() - faults;
+	irq_unlock(key);
+
+	zassert_equal(faults, 0, "%d page faults when 0 expected",
+		      faults);
+}
+
+void test_z_mem_pin(void)
+{
+	unsigned long faults;
+	int key;
+
+	z_mem_pin(arena, HALF_BYTES);
+
+	/* Write to the rest of the arena */
+	for (size_t i = HALF_BYTES; i < arena_size; i++) {
+		arena[i] = nums[i % 10];
+	}
+
+	key = irq_lock();
+	/* Show no faults writing to the pinned area */
+	faults = z_num_pagefaults_get();
+	for (size_t i = 0; i < HALF_BYTES; i++) {
+		arena[i] = nums[i % 10];
+	}
+	faults = z_num_pagefaults_get() - faults;
+	irq_unlock(key);
+
+	zassert_equal(faults, 0, "%d page faults when 0 expected",
+		      faults);
+
+	/* Clean up */
+	z_mem_unpin(arena, HALF_BYTES);
+}
+
+void test_z_mem_unpin(void)
+{
+	/* Pin the memory (which we know works from prior test) */
+	z_mem_pin(arena, HALF_BYTES);
+
+	/* Now un-pin it */
+	z_mem_unpin(arena, HALF_BYTES);
+
+	/* repeat the page_out scenario, which should work */
+	test_z_mem_page_out();
+}
+
 /* ztest main entry*/
 void test_main(void)
 {
 	ztest_test_suite(test_demand_paging,
 			ztest_unit_test(test_map_anon_pages),
-			ztest_unit_test(test_touch_anon_pages)
+			ztest_unit_test(test_touch_anon_pages),
+			ztest_unit_test(test_z_mem_page_out),
+			ztest_unit_test(test_z_mem_page_in),
+			ztest_unit_test(test_z_mem_pin),
+			ztest_unit_test(test_z_mem_unpin)
 			);
 	ztest_run_test_suite(test_demand_paging);
 }
