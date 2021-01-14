@@ -60,6 +60,14 @@ config PRINTK_SYNC
 	  interleaving with concurrent usage from another CPU or an
 	  preempting interrupt.
 
+config MPSC_PBUF
+	bool "Multi producer, single consumer packet buffer"
+	select TIMEOUT_64BIT
+	help
+	  Enable usage of mpsc packet buffer. Packet buffer is capable of
+	  storing variable length packets in a circular way and operate directly
+	  on the buffer memory.
+
 rsource "Kconfig.cbprintf"
 
 endmenu
