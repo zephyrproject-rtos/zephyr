@@ -24,5 +24,11 @@ steps:
     continue_on_failure: true
 
   - plugins:
-      - junit-annotate#v1.7.0:
-          artifacts: twister-*.xml
+      - bugcrowd/test-summary#v1.11.0:
+          inputs:
+            - label: foobar
+              artifact_path: twister-*.xml
+              type: junit
+          formatter:
+            type: details
+          context: test-summary
