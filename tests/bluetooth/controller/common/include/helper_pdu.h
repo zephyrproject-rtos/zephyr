@@ -37,6 +37,8 @@ void helper_pdu_encode_conn_update_ind(struct pdu_data *pdu, void *param);
 
 void helper_pdu_encode_terminate_ind(struct pdu_data *pdu, void *param);
 
+void helper_pdu_encode_channel_map_update_ind(struct pdu_data *pdu, void *param);
+
 void helper_pdu_verify_ping_req(const char *file, uint32_t line, struct pdu_data *pdu, void *param);
 void helper_pdu_verify_ping_rsp(const char *file, uint32_t line, struct pdu_data *pdu, void *param);
 
@@ -70,6 +72,8 @@ void helper_pdu_verify_unknown_rsp(const char *file, uint32_t line, struct pdu_d
 
 void helper_pdu_verify_terminate_ind(const char *file, uint32_t line, struct pdu_data *pdu, void *param);
 
+void helper_pdu_verify_channel_map_update_ind(const char *file, uint32_t line, struct pdu_data *pdu, void *param);
+
 void helper_node_verify_phy_update(const char *file, uint32_t line,
 				   struct node_rx_pdu *rx, void *param);
 void helper_pdu_verify_conn_param_req(const char *file, uint32_t line, struct pdu_data *pdu, void *param);
@@ -100,6 +104,7 @@ typedef enum {
 	LL_CONNECTION_PARAM_REQ,
 	LL_CONNECTION_PARAM_RSP,
 	LL_TERMINATE_IND,
+	LL_CHAN_MAP_UPDATE_IND,
 } helper_pdu_opcode_t;
 
 typedef enum {
