@@ -68,6 +68,7 @@ helper_pdu_encode_func_t * const helper_pdu_encode[] = {
 	helper_pdu_encode_conn_param_req,
 	helper_pdu_encode_conn_param_rsp,
 	helper_pdu_encode_terminate_ind,
+	helper_pdu_encode_channel_map_update_ind,
 };
 
 helper_pdu_verify_func_t *const helper_pdu_verify[] = {
@@ -92,6 +93,7 @@ helper_pdu_verify_func_t *const helper_pdu_verify[] = {
 	helper_pdu_verify_conn_param_req,
 	helper_pdu_verify_conn_param_rsp,
 	helper_pdu_verify_terminate_ind,
+	helper_pdu_verify_channel_map_update_ind,
 };
 
 
