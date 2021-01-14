@@ -7,7 +7,9 @@
 #define ZEPHYR_ARCH_XTENSA_INCLUDE_XTENSA_API_H_
 
 #include <xtensa/hal.h>
+#if defined(CONFIG_SOC_ESP32)
 #include <xtensa/core-macros.h>
+#endif
 #include "xtensa_rtos.h"
 #include "xtensa_context.h"
 
