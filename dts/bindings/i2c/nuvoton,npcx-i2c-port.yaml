@@ -8,9 +8,6 @@ compatible: "nuvoton,npcx-i2c-port"
 include: i2c-controller.yaml
 
 properties:
-    label:
-        required: true
-
     port:
         type: int
         required: true
@@ -27,6 +24,4 @@ properties:
         description: configurations of pinmux controllers
 
     clock-frequency:
-        type: int
-        required: false
-        description: Initial clock frequency in Hz
+        required: true
