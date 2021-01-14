@@ -6,6 +6,7 @@
 
 #include <ztest.h>
 #include <irq_offload.h>
+#include <ztest_error_hook.h>
 
 #define TIMEOUT K_MSEC(100)
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
@@ -15,26 +16,6 @@ static ZTEST_BMEM stack_data_t data[STACK_LEN];
 extern struct k_stack stack;
 K_THREAD_STACK_DEFINE(threadstack2, STACK_SIZE);
 struct k_thread thread_data2;
-
-/* action after self-defined fatal handler. */
-static ZTEST_BMEM volatile bool valid_fault;
-
-static inline void set_fault_valid(bool valid)
-{
-	valid_fault = valid;
-}
-
-void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
-{
-	printk("Caught system error -- reason %d %d\n", reason, valid_fault);
-	if (valid_fault) {
-		printk("Fatal error expected as part of test case.\n");
-		valid_fault = false; /* reset back to normal */
-	} else {
-		printk("Fatal error was unexpected, aborting...\n");
-		k_fatal_halt(reason);
-	}
-}
 
 static void stack_pop_fail(struct k_stack *stack)
 {
@@ -130,7 +111,7 @@ void test_stack_user_pop_fail(void)
  */
 void test_stack_user_init_null(void)
 {
-	set_fault_valid(true);
+	ztest_set_fault_valid(true);
 	k_stack_alloc_init(NULL, STACK_LEN);
 }
 
@@ -141,7 +122,7 @@ void test_stack_user_init_null(void)
  */
 void test_stack_user_init_invalid_value(void)
 {
-	set_fault_valid(true);
+	ztest_set_fault_valid(true);
 	struct k_stack *alloc_stack = k_object_alloc(K_OBJ_STACK);
 
 	zassert_not_null(alloc_stack, "couldn't allocate stack object");
@@ -155,7 +136,7 @@ void test_stack_user_init_invalid_value(void)
  */
 void test_stack_user_push_null(void)
 {
-	set_fault_valid(true);
+	ztest_set_fault_valid(true);
 	k_stack_push(NULL, 0);
 }
 
@@ -165,7 +146,7 @@ void test_stack_user_push_null(void)
  */
 void test_stack_user_pop_null(void)
 {
-	set_fault_valid(true);
+	ztest_set_fault_valid(true);
 	k_stack_pop(NULL, 0, K_NO_WAIT);
 }
 
@@ -176,7 +157,7 @@ void test_stack_user_pop_null(void)
  */
 void test_stack_user_pop_permission(void)
 {
-	set_fault_valid(true);
+	ztest_set_fault_valid(true);
 	struct k_stack *alloc_stack = k_object_alloc(K_OBJ_STACK);
 
 	zassert_not_null(alloc_stack, "couldn't allocate stack object");
