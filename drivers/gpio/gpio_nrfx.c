@@ -396,13 +396,6 @@ static inline void fire_callbacks(const struct device *port, uint32_t pins)
 	gpio_fire_callbacks(list, port, pins);
 }
 
-#ifdef CONFIG_GPIO_NRF_P0
-DEVICE_DT_DECLARE(GPIO(0));
-#endif
-#ifdef CONFIG_GPIO_NRF_P1
-DEVICE_DT_DECLARE(GPIO(1));
-#endif
-
 static void gpiote_event_handler(void)
 {
 	uint32_t fired_triggers[GPIO_COUNT] = {0};

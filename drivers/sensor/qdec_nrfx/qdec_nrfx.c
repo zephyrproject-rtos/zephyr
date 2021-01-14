@@ -32,9 +32,6 @@ struct qdec_nrfx_data {
 
 static struct qdec_nrfx_data qdec_nrfx_data;
 
-DEVICE_DT_INST_DECLARE(0);
-
-
 static void accumulate(struct qdec_nrfx_data *data, int16_t acc)
 {
 	unsigned int key = irq_lock();

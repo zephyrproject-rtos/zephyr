@@ -51,9 +51,6 @@ struct adc_xec_regs {
 #define ADC_XEC_REG_BASE						\
 	((struct adc_xec_regs *)(DT_INST_REG_ADDR(0)))
 
-
-DEVICE_DT_INST_DECLARE(0);
-
 static void adc_context_start_sampling(struct adc_context *ctx)
 {
 	struct adc_xec_data *data = CONTAINER_OF(ctx, struct adc_xec_data, ctx);

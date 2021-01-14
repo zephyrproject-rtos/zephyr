@@ -618,8 +618,6 @@ static const struct uart_driver_api uart_cc13xx_cc26xx_driver_api = {
 
 
 #define UART_CC13XX_CC26XX_INIT(n)				     \
-	DEVICE_DT_INST_DECLARE(n);				     \
-								     \
 	UART_CC13XX_CC26XX_INIT_FUNC(n);			     \
 								     \
 	static const struct uart_device_config			     \

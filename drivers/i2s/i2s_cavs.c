@@ -808,9 +808,6 @@ static const struct i2s_driver_api i2s_cavs_driver_api = {
 };
 
 #define I2S_CAVS_DEVICE_INIT(n)						\
-	DEVICE_DT_INST_DECLARE(n);					\
-	static void i2s_cavs_irq_connect_##n(void);			\
-									\
 	static const struct i2s_cavs_config i2s_cavs_config_##n = {	\
 		.regs = (struct i2s_cavs_ssp *)				\
 				DT_INST_REG_ADDR_BY_IDX(n, 0),		\

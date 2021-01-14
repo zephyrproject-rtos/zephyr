@@ -34,8 +34,6 @@ struct wdt_sam_dev_cfg {
 	Wdt *regs;
 };
 
-DEVICE_DT_INST_DECLARE(0);
-
 struct wdt_sam_dev_data {
 	wdt_callback_t cb;
 	uint32_t mode;

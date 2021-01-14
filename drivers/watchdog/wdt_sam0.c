@@ -38,8 +38,6 @@ struct wdt_sam0_dev_data {
 	bool timeout_valid;
 };
 
-DEVICE_DT_INST_DECLARE(0);
-
 static struct wdt_sam0_dev_data wdt_sam0_data = { 0 };
 
 static void wdt_sam0_wait_synchronization(void)

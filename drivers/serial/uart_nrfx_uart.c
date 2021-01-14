@@ -52,8 +52,6 @@ BUILD_ASSERT((PROP(hw_flow_control) && HW_FLOW_CONTROL_AVAILABLE) ||
 
 static NRF_UART_Type *const uart0_addr = (NRF_UART_Type *)DT_INST_REG_ADDR(0);
 
-DEVICE_DT_INST_DECLARE(0);
-
 /* Device data structure */
 struct uart_nrfx_data {
 	struct uart_config uart_config;

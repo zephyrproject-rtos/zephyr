@@ -579,8 +579,6 @@ static const struct i2c_driver_api i2c_esp32_driver_api = {
 };
 
 #if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
-DEVICE_DT_INST_DECLARE(0);
-
 static void i2c_esp32_connect_irq_0(void)
 {
 	IRQ_CONNECT(CONFIG_I2C_ESP32_0_IRQ, 1, i2c_esp32_isr,
@@ -625,8 +623,6 @@ DEVICE_DT_INST_DEFINE(0, &i2c_esp32_init, device_pm_control_nop,
 #endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay) */
 
 #if DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay)
-DEVICE_DT_INST_DECLARE(1);
-
 static void i2c_esp32_connect_irq_1(void)
 {
 	IRQ_CONNECT(CONFIG_I2C_ESP32_1_IRQ, 1, i2c_esp32_isr,

@@ -390,8 +390,6 @@ static void saadc_irq_handler(const struct device *dev)
 	}
 }
 
-DEVICE_DT_INST_DECLARE(0);
-
 static int init_saadc(const struct device *dev)
 {
 	nrf_saadc_event_clear(NRF_SAADC, NRF_SAADC_EVENT_END);

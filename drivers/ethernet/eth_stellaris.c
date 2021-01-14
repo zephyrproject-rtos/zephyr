@@ -318,8 +318,6 @@ static int eth_stellaris_dev_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_INST_DECLARE(0);
-
 static void eth_stellaris_irq_config(const struct device *dev)
 {
 	/* Enable Interrupt. */

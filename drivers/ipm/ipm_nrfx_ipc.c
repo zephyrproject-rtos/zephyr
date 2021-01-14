@@ -27,8 +27,6 @@ static void gipm_send(uint32_t id);
 
 #if IS_ENABLED(CONFIG_IPM_NRF_SINGLE_INSTANCE)
 
-DEVICE_DT_INST_DECLARE(0);
-
 static void nrfx_ipc_handler(uint32_t event_mask, void *p_context)
 {
 	if (nrfx_ipm_data.callback) {

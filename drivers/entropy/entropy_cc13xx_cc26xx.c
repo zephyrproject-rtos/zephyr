@@ -40,8 +40,6 @@ struct entropy_cc13xx_cc26xx_data {
 #endif
 };
 
-DEVICE_DT_INST_DECLARE(0);
-
 static inline struct entropy_cc13xx_cc26xx_data *
 get_dev_data(const struct device *dev)
 {

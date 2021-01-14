@@ -332,8 +332,6 @@ static const struct counter_driver_api counter_gecko_driver_api = {
 
 /* RTCC0 */
 
-DEVICE_DT_INST_DECLARE(0);
-
 ISR_DIRECT_DECLARE(counter_gecko_isr_0)
 {
 	const struct device *dev = DEVICE_DT_INST_GET(0);

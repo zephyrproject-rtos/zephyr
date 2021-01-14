@@ -1646,7 +1646,6 @@ static int uarte_nrfx_pm_control(const struct device *dev,
 
 #define UART_NRF_UARTE_DEVICE(idx)					       \
 	HWFC_CONFIG_CHECK(idx);						       \
-	DEVICE_DT_DECLARE(UARTE(idx));					       \
 	UARTE_INT_DRIVEN(idx);						       \
 	UARTE_ASYNC(idx);						       \
 	static struct uarte_nrfx_data uarte_##idx##_data = {		       \

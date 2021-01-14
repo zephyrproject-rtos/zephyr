@@ -23,8 +23,6 @@ LOG_MODULE_REGISTER(i2c_cc13xx_cc26xx);
 
 #include "i2c-priv.h"
 
-DEVICE_DT_INST_DECLARE(0);
-
 struct i2c_cc13xx_cc26xx_data {
 	struct k_sem lock;
 	struct k_sem complete;

@@ -29,7 +29,6 @@ struct cavs_idc_data {
 	void		*user_data;
 };
 
-DEVICE_DT_INST_DECLARE(0);
 static struct cavs_idc_data cavs_idc_device_data;
 
 static void cavs_idc_isr(const struct device *dev)

@@ -108,8 +108,6 @@ static const struct sensor_driver_api temp_nrf5_driver_api = {
 	.channel_get = temp_nrf5_channel_get,
 };
 
-DEVICE_DT_INST_DECLARE(0);
-
 static int temp_nrf5_init(const struct device *dev)
 {
 	struct temp_nrf5_data *data = dev->data;

@@ -24,9 +24,6 @@ struct wdt_xec_data {
 	bool timeout_installed;
 };
 
-
-DEVICE_DT_INST_DECLARE(0);
-
 static int wdt_xec_setup(const struct device *dev, uint8_t options)
 {
 	WDT_Type *wdt_regs = WDT_XEC_REG_BASE;

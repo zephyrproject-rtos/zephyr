@@ -32,8 +32,6 @@ struct uart_cc32xx_dev_data_t {
 #define PRIME_CHAR '\r'
 
 /* Forward decls: */
-DEVICE_DT_INST_DECLARE(0);
-
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_cc32xx_isr(const struct device *dev);
 #endif
