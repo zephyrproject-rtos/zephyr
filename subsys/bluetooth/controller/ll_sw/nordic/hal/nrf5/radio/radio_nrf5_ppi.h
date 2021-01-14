@@ -297,14 +297,29 @@ static inline void hal_lna_ppi_setup(void)
 	/* Nothing specific to LNA with FEM to handle inside TRX chains */
 }
 
-/* TODO: Dummy assignments, implementation will be added in subsequently */
 #define HAL_ENABLE_FEM_PPI  4
 #define HAL_DISABLE_FEM_PPI 5
 
 static inline void hal_fem_ppi_setup(void)
 {
-	/* TODO: Implementation will be added in subsequently */
+	nrf_ppi_channel_and_fork_endpoint_setup(
+		NRF_PPI,
+		HAL_ENABLE_FEM_PPI,
+		(uint32_t)&(EVENT_TIMER->EVENTS_COMPARE[3]),
+		(uint32_t)&(NRF_GPIOTE->TASKS_OUT[
+				CONFIG_BT_CTLR_PDN_GPIOTE_CHAN]),
+		(uint32_t)&(NRF_GPIOTE->TASKS_OUT[
+				CONFIG_BT_CTLR_CSN_GPIOTE_CHAN]));
+	nrf_ppi_channel_and_fork_endpoint_setup(
+		NRF_PPI,
+		HAL_DISABLE_FEM_PPI,
+		(uint32_t)&(NRF_RADIO->EVENTS_DISABLED),
+		(uint32_t)&(NRF_GPIOTE->TASKS_OUT[
+				CONFIG_BT_CTLR_PDN_GPIOTE_CHAN]),
+		(uint32_t)&(NRF_GPIOTE->TASKS_OUT[
+				CONFIG_BT_CTLR_CSN_GPIOTE_CHAN]));
 }
+
 #endif /* CONFIG_BT_CTLR_FEM_NRF21540 */
 
 /******************************************************************************/
@@ -639,7 +654,8 @@ static inline void hal_radio_sw_switch_ppi_group_setup(void)
 	 BIT(HAL_TRIGGER_CRYPT_PPI) | \
 	 BIT(HAL_TRIGGER_AAR_PPI) | \
 	 HAL_USED_PPI_CHANNELS_2 | HAL_USED_PPI_CHANNELS_3 | \
-	 HAL_USED_PPI_CHANNELS_4 | HAL_USED_PPI_CHANNELS_5)
+	 HAL_USED_PPI_CHANNELS_4 | HAL_USED_PPI_CHANNELS_5 | \
+	 HAL_USED_PPI_CHANNELS_6)
 
 #if defined(HAL_TRIGGER_RATEOVERRIDE_PPI)
 #define HAL_USED_PPI_CHANNELS_2 \
@@ -675,6 +691,14 @@ static inline void hal_radio_sw_switch_ppi_group_setup(void)
 	 BIT(HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI))
 #else
 #define HAL_USED_PPI_CHANNELS_5 0
+#endif
+
+#if defined(HAL_ENABLE_FEM_PPI)
+#define HAL_USED_PPI_CHANNELS_6 \
+	(BIT(HAL_ENABLE_FEM_PPI) | \
+	 BIT(HAL_DISABLE_FEM_PPI))
+#else
+#define HAL_USED_PPI_CHANNELS_6 0
 #endif
 
 BUILD_ASSERT(
