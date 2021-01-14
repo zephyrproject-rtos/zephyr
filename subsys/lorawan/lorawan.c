@@ -85,7 +85,10 @@ static void McpsConfirm(McpsConfirm_t *mcpsConfirm)
 	}
 
 	last_mcps_confirm_status = mcpsConfirm->Status;
-	k_sem_give(&mcps_confirm_sem);
+	/* mcps_confirm_sem is only blocked on in the MCPS_CONFIRMED case */
+	if (mcpsConfirm->McpsRequest == MCPS_CONFIRMED) {
+		k_sem_give(&mcps_confirm_sem);
+	}
 }
 
 static void McpsIndication(McpsIndication_t *mcpsIndication)
