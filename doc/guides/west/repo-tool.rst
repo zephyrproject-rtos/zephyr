@@ -139,6 +139,15 @@ it.
    West does not create a ``manifest-rev`` branch in the manifest repository,
    since west does not manage the manifest repository's branches or revisions.
 
+The ``refs/west/*`` Git refs
+****************************
+
+West also reserves all Git refs that begin with ``refs/west/`` (such as
+``refs/west/foo``) for itself in local project repositories. Unlike
+``manifest-rev``, these refs are not regular branches. West's behavior here is
+an implementation detail; users should not rely on these refs existence or
+behavior.
+
 .. _west-built-in-cmds:
 
 Built-in Commands
