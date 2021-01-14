@@ -1,14 +1,15 @@
 # MCP23X17 GPIO configuration options
 
 # Copyright (c) 2020 Geanix ApS
+# Copyright (c) 2021 Prevas A/S
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig GPIO_MCP23X17
-	bool "MCP23X17 SPI-based GPIO chip"
-	depends on SPI
+	bool "MCP23017/MCP23S17 GPIO expander chip"
+	depends on (SPI || I2C)
 	select HAS_DTS_GPIO
 	help
-	  Enable driver for MCP23X17 SPI-based GPIO chip.
+	  Enable driver for MCP23017/MCP23S17 GPIO expander chip for either I2C or SPI.
 
 if GPIO_MCP23X17
 

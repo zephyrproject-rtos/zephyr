@@ -576,3 +576,12 @@ test_i2c_vcnl4040: vcnl4040@60 {
 	reg = <0x60>;
 	int-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_mcp23x17: mcp23x17@20 {
+	compatible = "microchip,mcp23x17";
+	reg = <0x20>;
+	label = "GPIO_EX0";
+	ngpios = <16>;
+	gpio-controller;
+	#gpio-cells = <2>;
+};

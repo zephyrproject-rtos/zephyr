@@ -1,0 +1,11 @@
+#
+# Copyright (c) 2018-2020 Prevas A/S
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Microchip MCP23017 I2C Gpio Expander.
+
+compatible: "microchip,mcp23x17"
+
+include: [gpio-controller.yaml, i2c-device.yaml, "microchip,mcp23x17-common.yaml"]

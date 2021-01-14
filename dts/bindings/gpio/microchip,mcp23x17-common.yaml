@@ -1,16 +1,8 @@
 #
-# Copyright (c) 2020 Geanix ApS
-# Copyright (c) 2020 Prevas A/S
+# Copyright (c) 2018-2020 Prevas A/S
 #
 # SPDX-License-Identifier: Apache-2.0
 #
-
-description: >
-    This is a representation of the Microchip MCP23X17 Gpio Expander family.
-
-compatible: "microchip,mcp23x17"
-
-include: [gpio-controller.yaml, spi-device.yaml]
 
 properties:
     label:

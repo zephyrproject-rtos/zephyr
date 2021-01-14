@@ -26,15 +26,14 @@
 	};
 };
 
-&spi0 {
+&i2c0 {
 	status = "ok";
 
-	gpioex0:mcp23x17@40 {
+	gpioex0:mcp23x17@20 {
 		compatible = "microchip,mcp23x17";
-		reg = <0x40>;
+		reg = <0x20>;
 		label = "GPIO_EX0";
 		ngpios = <16>;
-		spi-max-frequency = <10000>;
 		gpio-controller;
 		#gpio-cells = <2>;
 	};

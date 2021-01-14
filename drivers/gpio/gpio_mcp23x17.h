@@ -51,12 +51,23 @@ struct mcp23x17_config {
 	/* gpio_driver_data needs to be first */
 	struct gpio_driver_config common;
 
+#if MCP23X17_BUS_I2C
+	/** The master I2C device's name */
+	const char *const i2c_master_dev_name;
+	/** The slave address of the chip */
+	uint16_t i2c_slave_addr;
+
+	uint8_t stride[2];
+#endif /* MCP23X17_BUS_I2C */
+
+#if MCP23X17_BUS_SPI
 	const char *const spi_dev_name;
 	const uint16_t slave;
 	const uint32_t freq;
 	const char *const cs_dev;
 	const uint32_t cs_pin;
 	const uint8_t cs_flags;
+#endif  /* MCP23X17_BUS_ */
 };
 
 /** Runtime driver data */
@@ -64,10 +75,17 @@ struct mcp23x17_drv_data {
 	/* gpio_driver_data needs to be first */
 	struct gpio_driver_config data;
 
+#if MCP23X17_BUS_I2C
+	/** Master I2C device */
+	const struct device *i2c_master;
+#endif /* MCP23X17_BUS_I2C */
+
+#if MCP23X17_BUS_SPI
 	/** Master SPI device */
 	const struct device *spi;
 	struct spi_config spi_cfg;
 	struct spi_cs_control mcp23x17_cs_ctrl;
+#endif /* MCP23X17_BUS_SPI */
 
 	struct k_sem lock;
 
