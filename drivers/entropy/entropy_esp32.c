@@ -15,6 +15,7 @@
 #include <soc/apb_ctrl_reg.h>
 #include <esp_system.h>
 #include <soc.h>
+#include <xtensa/core-macros.h>
 
 extern int esp_clk_cpu_freq(void);
 extern int esp_clk_apb_freq(void);

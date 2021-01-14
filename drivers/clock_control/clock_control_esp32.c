@@ -21,6 +21,7 @@
 #include <sys/util.h>
 #include "clock_control_esp32.h"
 #include "driver/periph_ctrl.h"
+#include <xtensa/core-macros.h>
 
 struct esp32_clock_config {
 	uint32_t clk_src_sel;
