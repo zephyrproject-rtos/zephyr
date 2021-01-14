@@ -662,8 +662,7 @@ static int execute(const struct shell *shell)
 		}
 
 		if (IS_ENABLED(CONFIG_SHELL_HELP) && (cmd_lvl > 0) &&
-		    (!strcmp(argvp[0], "-h") ||
-		     !strcmp(argvp[0], "--help"))) {
+		    z_shell_help_request(argvp[0])) {
 			/* Command called with help option so it makes no sense
 			 * to search deeper commands.
 			 */

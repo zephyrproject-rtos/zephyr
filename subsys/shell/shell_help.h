@@ -22,6 +22,9 @@ void z_shell_help_subcmd_print(const struct shell *shell,
 			       const struct shell_static_entry *cmd,
 			       const char *description);
 
+/* Function returns true if str == -h or --help */
+bool z_shell_help_request(const char *str);
+
 /**
  * @}
  */
