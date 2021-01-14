@@ -907,6 +907,12 @@ static void pin_init(void)
 {
 	LOG_INF("Setting Modem Pins");
 
+#if DT_INST_NODE_HAS_PROP(0, mdm_wdisable_gpios)
+	LOG_INF("Deactivate W Disable");
+	modem_pin_write(&mctx, MDM_WDISABLE, 0);
+	k_sleep(K_MSEC(250));
+#endif
+
 	/* NOTE: Per the BG95 document, the Reset pin is internally connected to the
 	 * Power key pin.
 	 */
