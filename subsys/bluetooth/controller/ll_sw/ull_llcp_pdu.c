@@ -407,3 +407,24 @@ void ull_cp_priv_pdu_decode_conn_update_ind(struct proc_ctx *ctx, struct pdu_dat
 {
 	ctx->data.cu.instant = sys_le16_to_cpu(pdu->llctrl.conn_update_ind.instant);
 }
+
+/*
+ * Channel Map Update Procedure Helpers
+ */
+void ull_cp_priv_pdu_encode_chan_map_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_chan_map_ind *p;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, chan_map_ind) + sizeof(struct pdu_data_llctrl_chan_map_ind);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CHAN_MAP_IND;
+	p = &pdu->llctrl.chan_map_ind;
+	p->instant = sys_cpu_to_le16(ctx->data.chmu.instant);
+	memcpy(p->chm, ctx->data.chmu.chm, sizeof(p->chm));
+}
+
+void ull_cp_priv_pdu_decode_chan_map_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	ctx->data.chmu.instant = sys_le16_to_cpu(pdu->llctrl.chan_map_ind.instant);
+	memcpy(ctx->data.chmu.chm, pdu->llctrl.chan_map_ind.chm, sizeof(ctx->data.chmu.chm));
+}
