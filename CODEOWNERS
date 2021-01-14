@@ -543,6 +543,7 @@
 /subsys/dfu/                              @nvlsianpu
 /subsys/tracing/                          @nashif @wentongwu
 /subsys/debug/asan_hacks.c                @vanwinkeljan @aescolar @daor-oti
+/subsys/demand_paging/                    @andrewboie
 /subsys/disk/disk_access_spi_sdhc.c       @JunYangNXP
 /subsys/disk/disk_access_sdhc.h           @JunYangNXP
 /subsys/disk/disk_access_usdhc.c          @JunYangNXP
