@@ -61,6 +61,17 @@ The sample can be built and executed for the FRDM-K64F as follows:
 Pressing the button labelled ``SW3`` will increment the button press
 counter object at index ``0x2102`` in the object dictionary.
 
+Building and Running for boards without storage partition
+=========================================================
+The sample can be built for boards without a flash storage partition by using a different configuration file:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/canbus/canopen
+   :board: <your_board_name>
+   :conf: "prj_no_storage.conf"
+   :goals: build flash
+   :compact:
+
 Testing CANopen Communication
 *****************************
 CANopen communication between the host PC and Zephyr can be
