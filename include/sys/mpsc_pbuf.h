@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2021 Nordic Semiconductor ASA
  *
@@ -28,8 +27,8 @@ extern "C" {
  * Multi producer, single consumer packet buffer allows to allocate variable
  * length consecutive space for storing a packet. When space is allocated
  * it can be filled by the user (except for the first 2 bits) and when packet
- * is ready it is commited. It is allowed to allocate another packet before
- * commiting the previous one.
+ * is ready it is committed. It is allowed to allocate another packet before
+ * committing the previous one.
  *
  * If buffer is full and packet cannot be allocated then null is returned unless
  * overwrite mode is selected. In that mode, oldest entry are dropped (user is
@@ -43,7 +42,8 @@ extern "C" {
  */
 
 /**@defgroup MPSC_PBUF_FLAGS MPSC packet buffer flags
- * @{ */
+ * @{
+ */
 
 /** @brief Flag indicating that buffer size is power of 2.
  *
