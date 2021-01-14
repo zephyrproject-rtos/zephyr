@@ -5,6 +5,7 @@
  */
 #include <ztest.h>
 #include <irq_offload.h>
+#include <ztest_error_hook.h>
 
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define THREAD_TEST_PRIORITY 5
@@ -13,6 +14,10 @@
 static ZTEST_DMEM int case_type;
 
 static struct k_mutex mutex;
+static struct k_sem sem;
+static struct k_pipe pipe;
+static struct k_queue queue;
+
 
 static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 static struct k_thread tdata;
@@ -20,113 +25,24 @@ static struct k_thread tdata;
 /* enumerate our negative case scenario */
 enum {
 	MUTEX_INIT_NULL,
+	MUTEX_INIT_INVALID_OBJ,
 	MUTEX_LOCK_NULL,
+	MUTEX_LOCK_INVALID_OBJ,
 	MUTEX_UNLOCK_NULL,
-	MUTEX_LOCK_IN_ISR,
-	MUTEX_UNLOCK_IN_ISR,
-	MUTEX_UNLOCK_COUNT_UNMET,
+	MUTEX_UNLOCK_INVALID_OBJ,
 	NOT_DEFINE
 } neg_case;
 
 /* This is a semaphore using inside irq_offload */
 extern struct k_sem offload_sem;
 
+/* A call back function which is hooked in default assert handler. */
+void ztest_post_fatal_error_hook(unsigned int reason,
+		const z_arch_esf_t *pEsf)
 
-/* action after self-defined fatal handler. */
-static ZTEST_BMEM volatile bool valid_fault;
-
-static inline void set_fault_valid(bool valid)
 {
-	valid_fault = valid;
-}
-
-static void action_after_assert_fail(void *param)
-{
-	int choice = *((int *)param);
-
-	switch (choice) {
-	case MUTEX_LOCK_IN_ISR:
-	case MUTEX_UNLOCK_IN_ISR:
-		/* Semaphore used inside irq_offload need to be
-		 * released after assert or fault happened.
-		 */
-		k_sem_give(&offload_sem);
-		ztest_test_pass();
-		break;
-
-	case MUTEX_UNLOCK_COUNT_UNMET:
-		ztest_test_pass();
-		break;
-
-	default:
-		ztest_test_fail();
-		break;
-	}
-}
-
-void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
-{
-	printk("Caught system error -- reason %d %d\n", reason, valid_fault);
-	if (valid_fault) {
-		printk("Fatal error expected as part of test case.\n");
-		valid_fault = false; /* reset back to normal */
-	} else {
-		printk("Fatal error was unexpected, aborting...\n");
-		k_fatal_halt(reason);
-	}
-}
-/* end of self-defined fatal handler */
-
-/* action for self-defined assert handler. */
-static ZTEST_DMEM volatile bool valid_assert;
-
-static inline void set_assert_valid(bool valid)
-{
-	valid_assert = valid;
-}
-
-#ifdef CONFIG_ASSERT_NO_FILE_INFO
-void assert_post_action(void)
-#else
-void assert_post_action(const char *file, unsigned int line)
-#endif
-{
-#ifndef CONFIG_ASSERT_NO_FILE_INFO
-	ARG_UNUSED(file);
-	ARG_UNUSED(line);
-#endif
-
-	printk("Caught assert failed\n");
-
-	if (valid_assert) {
-		valid_assert = false; /* reset back to normal */
-		printk("Assert error expected as part of test case.\n");
-
-		/* do some action after fatal error happened */
-		action_after_assert_fail(&case_type);
-	} else {
-		printk("Assert failed was unexpected, aborting...\n");
-#ifdef CONFIG_USERSPACE
-	/* User threads aren't allowed to induce kernel panics; generate
-	 * an oops instead.
-	 */
-		if (_is_user_context()) {
-			k_oops();
-		}
-#endif
-		k_panic();
-	}
-}
-/* end of self-defined assert handler */
-
-static void tIsr_entry_lock(const void *p)
-{
-	k_mutex_lock((struct k_mutex *)p, K_NO_WAIT);
-}
-
-static void tIsr_entry_unlock(const void *p)
-{
-	k_mutex_unlock((struct k_mutex *)p);
+	/* check if expected error */
+	zassert_equal(reason, K_ERR_KERNEL_OOPS, NULL);
 }
 
 static void tThread_entry_negative(void *p1, void *p2, void *p3)
@@ -140,26 +56,29 @@ static void tThread_entry_negative(void *p1, void *p2, void *p3)
 	 */
 	switch (choice) {
 	case MUTEX_INIT_NULL:
-		set_fault_valid(true);
+		ztest_set_fault_valid(true);
 		k_mutex_init(NULL);
 		break;
+	case MUTEX_INIT_INVALID_OBJ:
+		ztest_set_fault_valid(true);
+		k_mutex_init((struct k_mutex *)&sem);
+		break;
 	case MUTEX_LOCK_NULL:
-		set_fault_valid(true);
+		ztest_set_fault_valid(true);
 		k_mutex_lock(NULL, K_NO_WAIT);
 		break;
+	case MUTEX_LOCK_INVALID_OBJ:
+		ztest_set_fault_valid(true);
+		k_mutex_lock((struct k_mutex *)&pipe, K_NO_WAIT);
+		break;
 	case MUTEX_UNLOCK_NULL:
-		set_fault_valid(true);
+		ztest_set_fault_valid(true);
 		k_mutex_unlock(NULL);
 		break;
-	case MUTEX_LOCK_IN_ISR:
-		k_mutex_init(&mutex);
-		set_assert_valid(true);
-		irq_offload(tIsr_entry_lock, (void *)p1);
+	case MUTEX_UNLOCK_INVALID_OBJ:
+		ztest_set_fault_valid(true);
+		k_mutex_unlock((struct k_mutex *)&queue);
 		break;
-	case MUTEX_UNLOCK_IN_ISR:
-		k_mutex_init(&mutex);
-		set_assert_valid(true);
-		irq_offload(tIsr_entry_unlock, (void *)p1);
 	default:
 		TC_PRINT("should not be here!\n");
 		break;
@@ -193,65 +112,112 @@ static int create_negative_test_thread(int choice)
 	return ret;
 }
 
-/* TESTPOINT: Pass a null pointer into the API k_mutex_init */
+
+/**
+ * @brief Test initializing mutex with a NULL pointer
+ *
+ * @details Pass a null pointer as parameter, then see if the
+ * expected error happens.
+ *
+ * @ingroup kernel_mutex_tests
+ *
+ * @see k_mutex_init()
+ */
 static void test_mutex_init_null(void)
 {
 	create_negative_test_thread(MUTEX_INIT_NULL);
 }
-/* TESTPOINT: Pass a null pointer into the API k_mutex_lock */
+
+/**
+ * @brief Test initialize mutex with a invalid kernel object
+ *
+ * @details Pass a invalid kobject as parameter, then see if the
+ * expected error happens.
+ *
+ * @ingroup kernel_mutex_tests
+ *
+ * @see k_mutex_init()
+ */
+static void test_mutex_init_invalid_obj(void)
+{
+	create_negative_test_thread(MUTEX_INIT_INVALID_OBJ);
+}
+
+/**
+ * @brief Test locking mutex with a NULL pointer
+ *
+ * @details Pass a null pointer as parameter, then see if the
+ * expected error happens.
+ *
+ * @ingroup kernel_mutex_tests
+ *
+ * @see k_mutex_lock()
+ */
 static void test_mutex_lock_null(void)
 {
 	create_negative_test_thread(MUTEX_LOCK_NULL);
 }
 
-/* TESTPOINT: Pass a null pointer into the API k_mutex_unlock */
+/**
+ * @brief Test locking mutex with a invalid kernel object
+ *
+ * @details Pass a invalid kobject as parameter, then see if the
+ * expected error happens.
+ *
+ * @ingroup kernel_mutex_tests
+ *
+ * @see k_mutex_lock()
+ */
+/* TESTPOINT: Pass a invalid kobject into the API k_mutex_lock */
+static void test_mutex_lock_invalid_obj(void)
+{
+	create_negative_test_thread(MUTEX_LOCK_INVALID_OBJ);
+}
+
+/**
+ * @brief Test unlocking mutex with a NULL pointer
+ *
+ * @details Pass a null pointer as parameter, then see if the
+ * expected error happens.
+ *
+ * @ingroup kernel_mutex_tests
+ *
+ * @see k_mutex_unlock()
+ */
 static void test_mutex_unlock_null(void)
 {
 	create_negative_test_thread(MUTEX_UNLOCK_NULL);
 }
 
-/* TESTPOINT: Try to lock mutex in isr context */
-static void test_mutex_lock_in_isr(void)
+/**
+ * @brief Test unlocking mutex with a invalid kernel object
+ *
+ * @details Pass a invalid kobject as parameter, then see if the
+ * expected error happens.
+ *
+ * @ingroup kernel_mutex_tests
+ *
+ * @see k_mutex_unlock()
+ */
+/* TESTPOINT: Pass a invalid kobject into the API k_mutex_unlock */
+static void test_mutex_unlock_invalid_obj(void)
 {
-	create_negative_test_thread(MUTEX_LOCK_IN_ISR);
+	create_negative_test_thread(MUTEX_UNLOCK_INVALID_OBJ);
 }
-
-/* TESTPOINT: Try to unlock mutex in isr context */
-static void test_mutex_unlock_in_isr(void)
-{
-	create_negative_test_thread(MUTEX_UNLOCK_IN_ISR);
-}
-
-static void test_mutex_unlock_count_unmet(void)
-{
-	struct k_mutex tmutex;
-
-	case_type = MUTEX_UNLOCK_COUNT_UNMET;
-
-	k_mutex_init(&tmutex);
-	zassert_true(k_mutex_lock(&tmutex, K_FOREVER) == 0,
-			"current thread failed to lock the mutex");
-	/* Verify an assertion will be trigger if lock_count is zero while
-	 * the lock owner try to unlock mutex.
-	 */
-	tmutex.lock_count = 0;
-	set_assert_valid(true);
-	k_mutex_unlock(&tmutex);
-}
-
 
 /*test case main entry*/
 void test_main(void)
 {
-	k_thread_access_grant(k_current_get(), &tdata, &tstack, &mutex);
+	k_thread_access_grant(k_current_get(), &tdata, &tstack,
+		       &mutex, &sem, &pipe, &queue);
 
 	ztest_test_suite(mutex_api,
-		 ztest_unit_test(test_mutex_lock_in_isr),
-		 ztest_unit_test(test_mutex_unlock_in_isr),
 		 ztest_user_unit_test(test_mutex_init_null),
+		 ztest_user_unit_test(test_mutex_init_invalid_obj),
 		 ztest_user_unit_test(test_mutex_lock_null),
+		 ztest_user_unit_test(test_mutex_lock_invalid_obj),
 		 ztest_user_unit_test(test_mutex_unlock_null),
-		 ztest_unit_test(test_mutex_unlock_count_unmet)
+		 ztest_user_unit_test(test_mutex_unlock_invalid_obj)
 		 );
 	ztest_run_test_suite(mutex_api);
 }
