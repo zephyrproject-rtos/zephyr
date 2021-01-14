@@ -16,6 +16,7 @@ enum llcp_proc {
 	PROC_CONN_UPDATE,
 	PROC_CONN_PARAM_REQ,
 	PROC_TERMINATE,
+	PROC_CHAN_MAP_UPDATE,
 };
 
 /* LLCP Procedure Context */
@@ -75,6 +76,12 @@ struct proc_ctx {
 		struct {
 			uint8_t error_code;
 		} term;
+
+		/* Use by Channel Map Update Procedure */
+		struct {
+			uint16_t instant;
+			uint8_t chm[5];
+		} chmu;
 
 	} data;
 	struct {
@@ -398,6 +405,22 @@ static inline void lp_cu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *p
 	return ull_cp_priv_lp_cu_run(conn, ctx, param);
 }
 
+/*
+ * LLCP Local Channel Map Update
+ */
+void ull_cp_priv_lp_chmu_init_proc(struct proc_ctx *ctx);
+
+static inline void lp_chmu_init_proc(struct proc_ctx *ctx)
+{
+	return ull_cp_priv_lp_chmu_init_proc(ctx);
+}
+
+void ull_cp_priv_lp_chmu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
+
+static inline void lp_chmu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
+{
+	return ull_cp_priv_lp_chmu_run(conn, ctx, param);
+}
 
 /*
  * LLCP Remote Procedure PHY Update
@@ -873,6 +896,42 @@ static inline void pdu_decode_conn_update_ind(struct proc_ctx *ctx, struct pdu_d
 	return ull_cp_priv_pdu_decode_conn_update_ind(ctx, pdu);
 }
 
+/*
+ * Remote Channel Map Update Procedure Helper
+ */
+
+void ull_cp_priv_pdu_encode_chan_map_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
+static inline void pdu_encode_chan_map_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	return ull_cp_priv_pdu_encode_chan_map_update_ind(ctx, pdu);
+}
+
+void ull_cp_priv_pdu_decode_chan_map_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
+static inline void pdu_decode_chan_map_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	return ull_cp_priv_pdu_decode_chan_map_update_ind(ctx, pdu);
+}
+
+void ull_cp_priv_rp_chmu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
+
+static inline void rp_chmu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
+{
+	return ull_cp_priv_rp_chmu_rx(conn, ctx, rx);
+}
+
+void ull_cp_priv_rp_chmu_init_proc(struct proc_ctx *ctx);
+
+static inline void rp_chmu_init_proc(struct proc_ctx *ctx)
+{
+	return ull_cp_priv_rp_chmu_init_proc(ctx);
+}
+
+void ull_cp_priv_rp_chmu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
+
+static inline void rp_chmu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
+{
+	return ull_cp_priv_rp_chmu_run(conn, ctx, param);
+}
 
 #ifdef ZTEST_UNITTEST
 bool lr_is_disconnected(struct ll_conn *conn);

@@ -110,3 +110,8 @@ void ull_cp_conn_param_req_neg_reply(struct ll_conn *conn);
  * @brief Initiate a Termination Procedure.
  */
 uint8_t ull_cp_terminate(struct ll_conn *conn, uint8_t error_code);
+
+/**
+ * @brief Initiate a Channel Map Update Procedure.
+ */
+uint8_t ull_cp_chan_map_update(struct ll_conn *conn, uint8_t chm[5]);
