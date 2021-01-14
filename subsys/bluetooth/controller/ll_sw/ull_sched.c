@@ -4,11 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stddef.h>
+#include <zephyr.h>
 
-#include <zephyr/types.h>
 #include <sys/byteorder.h>
-#include <toolchain.h>
 
 #include "hal/ccm.h"
 #include "hal/radio.h"
