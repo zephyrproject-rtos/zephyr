@@ -33,7 +33,7 @@ The CPU provides support for the following devices:
      nRF21540 DK (Credit: Nordic Semiconductor)
 
 More information about the board can be found at the `nRF21540 website`_.
-The `Nordic Semiconductor Infocenter`_ contains the processor'sand front end
+The `Nordic Semiconductor Infocenter`_ contains the processor's and front end
 module's information and the datasheet.
 
 Hardware
@@ -110,8 +110,8 @@ Push buttons
 Front End Module
 ----------------
 
-* MISO        = P1.13
-* MOSI        = P1.14
+* MOSI        = P1.13
+* MISO        = P1.14
 * CLOCK       = P1.15
 * CHIP SELECT = P0.21
 * PDN         = P0.23
@@ -145,7 +145,7 @@ First, run your favorite terminal program to listen for output.
 
    $ minicom -D <tty_device> -b 115200
 
-Replace :code:`<tty_device>` with the port where the board nRF52840 DK
+Replace :code:`<tty_device>` with the port where the board nRF21540 DK
 can be found. For example, under Linux, :code:`/dev/ttyACM0`.
 
 Then build and flash the application in the usual way.
