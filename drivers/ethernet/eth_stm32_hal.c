@@ -855,8 +855,6 @@ static const struct ethernet_api eth_api = {
 	.send = eth_tx,
 };
 
-DEVICE_DT_INST_DECLARE(0);
-
 static void eth0_irq_config(void)
 {
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), eth_isr,

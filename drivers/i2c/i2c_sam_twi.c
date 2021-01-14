@@ -339,8 +339,6 @@ static const struct i2c_driver_api i2c_sam_twi_driver_api = {
 };
 
 #define I2C_TWI_SAM_INIT(n)						\
-	DEVICE_DT_INST_DECLARE(n);					\
-									\
 	static void i2c##n##_sam_irq_config(void)			\
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),	\

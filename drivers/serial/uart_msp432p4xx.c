@@ -33,8 +33,6 @@ struct uart_msp432p4xx_dev_data_t {
 #define DEV_DATA(dev) \
 	((struct uart_msp432p4xx_dev_data_t * const)(dev)->data)
 
-DEVICE_DT_INST_DECLARE(0);
-
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_msp432p4xx_isr(const struct device *dev);
 #endif

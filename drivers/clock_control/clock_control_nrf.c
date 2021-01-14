@@ -110,8 +110,6 @@ static struct onoff_manager *get_onoff_manager(const struct device *dev,
 }
 
 
-DEVICE_DT_DECLARE(DT_NODELABEL(clock));
-
 #define CLOCK_DEVICE DEVICE_DT_GET(DT_NODELABEL(clock))
 
 struct onoff_manager *z_nrf_clock_control_get_onoff(clock_control_subsys_t sys)

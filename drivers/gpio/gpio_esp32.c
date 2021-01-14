@@ -265,8 +265,6 @@ static void gpio_esp32_fire_callbacks(const struct device *device)
 
 static void gpio_esp32_isr(const void *param);
 
-DEVICE_DT_DECLARE(DT_NODELABEL(pinmux));
-
 static int gpio_esp32_init(const struct device *device)
 {
 	struct gpio_esp32_data *data = device->data;

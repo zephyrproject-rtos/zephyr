@@ -62,8 +62,6 @@ static KSCAN_Type *base = (KSCAN_Type *)
 
 static struct kscan_xec_data kbd_data;
 
-DEVICE_DT_INST_DECLARE(0);
-
 static void drive_keyboard_column(int data)
 {
 	if (data == KEYBOARD_COLUMN_DRIVE_ALL) {

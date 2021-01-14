@@ -1173,8 +1173,6 @@ static const struct uart_driver_api uart_xlnx_ps_driver_api = {
 	.irq_config_func = uart_xlnx_ps_irq_config_##port,
 
 #define UART_XLNX_PS_IRQ_CONF_FUNC(port) \
-DEVICE_DT_INST_DECLARE(port); \
-\
 static void uart_xlnx_ps_irq_config_##port(const struct device *dev) \
 { \
 	IRQ_CONNECT(DT_INST_IRQN(port), \

@@ -41,8 +41,6 @@ struct sdhc_spi_data {
 #endif
 };
 
-DEVICE_DT_INST_DECLARE(0);
-
 /* Traces card traffic for LOG_LEVEL_DBG */
 static int sdhc_spi_trace(struct sdhc_spi_data *data, int dir, int err,
 		      const uint8_t *buf, int len)

@@ -396,8 +396,6 @@ static int dma_sam0_get_status(const struct device *dev, uint32_t channel,
 	return 0;
 }
 
-DEVICE_DT_INST_DECLARE(0);
-
 #define DMA_SAM0_IRQ_CONNECT(n)						 \
 	do {								 \
 		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, n, irq),		 \

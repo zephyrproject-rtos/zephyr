@@ -665,7 +665,6 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 	BUILD_ASSERT((RTC_PROP(idx, prescaler) - 1) <=			       \
 		     RTC_PRESCALER_PRESCALER_Msk,			       \
 		     "RTC prescaler out of range");			       \
-	DEVICE_DT_DECLARE(RTC(idx));					       \
 	static int counter_##idx##_init(const struct device *dev)	       \
 	{								       \
 		IRQ_CONNECT(DT_IRQN(RTC(idx)), DT_IRQ(RTC(idx), priority),     \

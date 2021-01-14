@@ -239,8 +239,6 @@ static int adc_nrfx_read_async(const struct device *dev,
 }
 #endif /* CONFIG_ADC_ASYNC */
 
-DEVICE_DT_INST_DECLARE(0);
-
 static void event_handler(const nrfx_adc_evt_t *p_event)
 {
 	const struct device *dev = DEVICE_DT_INST_GET(0);

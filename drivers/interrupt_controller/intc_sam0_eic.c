@@ -30,9 +30,6 @@ struct sam0_eic_data {
 #define DEV_DATA(dev) \
 	((struct sam0_eic_data *const)(dev)->data)
 
-DEVICE_DT_INST_DECLARE(0);
-
-
 static void wait_synchronization(void)
 {
 #ifdef REG_EIC_SYNCBUSY

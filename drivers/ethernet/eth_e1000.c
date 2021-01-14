@@ -210,8 +210,6 @@ static void e1000_isr(const struct device *device)
 #define PCI_VENDOR_ID_INTEL	0x8086
 #define PCI_DEVICE_ID_I82540EM	0x100e
 
-DEVICE_DT_INST_DECLARE(0);
-
 int e1000_probe(const struct device *device)
 {
 	const pcie_bdf_t bdf = PCIE_BDF(0, 3, 0);

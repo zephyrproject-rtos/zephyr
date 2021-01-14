@@ -299,8 +299,6 @@ static void iproc_pcie_flr(const struct device *dev)
 }
 #endif
 
-DEVICE_DT_INST_DECLARE(0);
-
 static void iproc_pcie_reset_config(const struct device *dev)
 {
 	__unused uint32_t data;

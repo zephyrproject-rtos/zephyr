@@ -582,8 +582,6 @@ static const struct dma_driver_api pl330_driver_api = {
 	.stop = dma_pl330_transfer_stop,
 };
 
-DEVICE_DT_INST_DECLARE(0);
-
 static const struct dma_pl330_config pl330_config = {
 	.reg_base = DT_INST_REG_ADDR(0),
 #ifdef CONFIG_DMA_64BIT

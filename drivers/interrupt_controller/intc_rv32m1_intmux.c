@@ -50,8 +50,6 @@ struct rv32m1_intmux_config {
 
 #define DEV_REGS(dev) (DEV_CFG(dev)->regs)
 
-DEVICE_DT_INST_DECLARE(0);
-
 /*
  * <irq_nextlevel.h> API
  */

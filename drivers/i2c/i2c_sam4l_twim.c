@@ -607,8 +607,6 @@ static const struct i2c_driver_api i2c_sam_twim_driver_api = {
 	.hs_data_strength_low = DT_INST_ENUM_IDX(n, hs_data_strength_low)
 
 #define I2C_TWIM_SAM_INIT(n)						\
-	DEVICE_DT_INST_DECLARE(n);					\
-									\
 	static void i2c##n##_sam_irq_config(void)			\
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),	\

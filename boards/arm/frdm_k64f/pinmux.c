@@ -14,7 +14,7 @@ static int frdm_k64f_pinmux_init(const struct device *dev)
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(porta), okay)
 	__unused const struct device *porta =
-		device_get_binding(DT_LABEL(DT_NODELABEL(porta)));
+		DEVICE_DT_GET(DT_NODELABEL(porta));
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(portb), okay)
 	__unused const struct device *portb =

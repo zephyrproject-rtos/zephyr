@@ -2139,8 +2139,6 @@ static const struct ethernet_api eth_api = {
 #endif
 };
 
-DEVICE_DT_INST_DECLARE(0);
-
 static void eth0_irq_config(void)
 {
 	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, gmac, irq),

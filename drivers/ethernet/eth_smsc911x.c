@@ -658,8 +658,6 @@ done:
 
 /* Bindings to the platform */
 
-DEVICE_DT_INST_DECLARE(0);
-
 int eth_init(const struct device *dev)
 {
 	IRQ_CONNECT(DT_INST_IRQN(0),

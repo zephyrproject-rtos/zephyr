@@ -153,7 +153,6 @@ static void wdt_event_handler(const struct device *dev)
 #define WDT(idx) DT_NODELABEL(wdt##idx)
 
 #define WDT_NRFX_WDT_DEVICE(idx)					       \
-	DEVICE_DT_DECLARE(WDT(idx));					       \
 	static void wdt_##idx##_event_handler(void)			       \
 	{								       \
 		wdt_event_handler(DEVICE_DT_GET(WDT(idx)));		       \
