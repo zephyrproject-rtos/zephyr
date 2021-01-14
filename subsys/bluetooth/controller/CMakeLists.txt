@@ -82,6 +82,7 @@ if(CONFIG_BT_LL_SW_SPLIT)
         ll_sw/ull_llcp_pdu.c
         ll_sw/ull_llcp_phy.c
         ll_sw/ull_llcp_conn_upd.c
+        ll_sw/ull_llcp_chmu.c
         ll_sw/ull_llcp_remote.c
         ll_sw/ull_connections.c
 	ll_sw/ull_llcp_hci.c
