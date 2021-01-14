@@ -556,7 +556,7 @@ static ssize_t offload_sendto(void *obj, const void *buf, size_t len,
 	}
 
 	/* UDP is not supported. */
-	if (sock->ip_proto != IPPROTO_UDP) {
+	if (sock->ip_proto == IPPROTO_UDP) {
 		errno = ENOTSUP;
 		return -1;
 	}
@@ -747,7 +747,7 @@ static int offload_connect(void *obj, const struct sockaddr *addr,
 	}
 
 	/* UDP is not supported. */
-	if (sock->ip_proto != IPPROTO_UDP) {
+	if (sock->ip_proto == IPPROTO_UDP) {
 		errno = ENOTSUP;
 		return -1;
 	}
