@@ -40,7 +40,10 @@ void test_map_anon_pages(void)
 
 void test_touch_anon_pages(void)
 {
+	unsigned long faults;
 	static const char *nums = "0123456789";
+
+	faults = z_num_pagefaults_get();
 
 	printk("checking zeroes\n");
 	/* The mapped area should have started out zeroed. Check this. */
@@ -63,6 +66,12 @@ void test_touch_anon_pages(void)
 			      "arena corrupted at index %d (%p): got 0x%hhx expected 0x%hhx",
 			      i, &arena[i], arena[i], nums[i % 10]);
 	}
+
+	faults = z_num_pagefaults_get() - faults;
+
+	/* Specific number depends on how much RAM we have but shouldn't be 0 */
+	zassert_not_equal(faults, 0UL, "no page faults handled?");
+	printk("Kernel handled %lu page faults\n", faults);
 }
 
 /* ztest main entry*/
