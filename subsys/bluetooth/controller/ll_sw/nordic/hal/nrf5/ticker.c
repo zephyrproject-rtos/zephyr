@@ -7,6 +7,7 @@
 
 #include <stdbool.h>
 #include <sys/dlist.h>
+#include <sys/util.h>
 
 #include "hal/cntr.h"
 
