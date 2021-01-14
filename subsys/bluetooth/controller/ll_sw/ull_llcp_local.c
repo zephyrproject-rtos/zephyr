@@ -166,6 +166,9 @@ static void lr_act_run(struct ll_conn *conn)
 	case PROC_TERMINATE:
 		lp_comm_run(conn, ctx, NULL);
 		break;
+	case PROC_CHAN_MAP_UPDATE:
+		lp_chmu_run(conn, ctx, NULL);
+		break;
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
