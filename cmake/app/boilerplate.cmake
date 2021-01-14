@@ -343,6 +343,11 @@ foreach(root ${BOARD_ROOT})
         ${SHIELD_DIR_${s}}/dts_fixup.h
         )
 
+      list(APPEND
+        SHIELD_DIRS
+        ${SHIELD_DIR_${s}}
+        )
+
       # search for shield/shield.conf file
       if(EXISTS ${shield_dir}/${s_dir}/${s}.conf)
         # add shield.conf to the shield config list
