@@ -30,12 +30,16 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
 
     def __init__(self, cfg, device,
                  commander=DEFAULT_JLINK_EXE,
-                 flash_addr=0x0, erase=True, reset_after_load=False,
+                 flash_addr=0x0, flash_hex=False,
+                 erase=True, reset_after_load=False,
                  iface='swd', speed='auto',
                  gdbserver='JLinkGDBServer', gdb_port=DEFAULT_JLINK_GDB_PORT,
                  tui=False, tool_opt=[]):
         super().__init__(cfg)
-        self.bin_name = cfg.bin_file
+        if flash_hex:
+            self.file_name = cfg.hex_file
+        else:
+            self.file_name = cfg.bin_file
         self.elf_name = cfg.elf_file
         self.gdb_cmd = [cfg.gdb] if cfg.gdb else None
         self.device = device
@@ -88,6 +92,8 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                             dest='reset_after_load', nargs=0,
                             action=ToggleAction,
                             help='reset after loading? (default: no)')
+        parser.add_argument('--flash-hex', default=False, action='store_true',
+                            help='flash .hex file instead of .bin file')
 
         parser.set_defaults(reset_after_load=False)
 
@@ -97,7 +103,8 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         flash_addr = cls.get_flash_address(args, build_conf)
         return JLinkBinaryRunner(cfg, args.device,
                                  commander=args.commander,
-                                 flash_addr=flash_addr, erase=args.erase,
+                                 flash_addr=flash_addr,
+                                 flash_hex=args.flash_hex, erase=args.erase,
                                  reset_after_load=args.reset_after_load,
                                  iface=args.iface, speed=args.speed,
                                  gdbserver=args.gdbserver,
@@ -179,15 +186,15 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
 
     def flash(self, **kwargs):
         self.require(self.commander)
-        if self.bin_name is None:
-            raise ValueError('Cannot flash; bin_name is missing')
+        if self.file_name is None:
+            raise ValueError('Cannot flash; file_name is missing')
 
         lines = ['r'] # Reset and halt the target
 
         if self.erase:
             lines.append('erase') # Erase all flash sectors
 
-        lines.append('loadfile {} 0x{:x}'.format(self.bin_name,
+        lines.append('loadfile {} 0x{:x}'.format(self.file_name,
                                                  self.flash_addr))
         if self.reset_after_load:
             lines.append('r') # Reset and halt the target
@@ -227,5 +234,5 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                     '-CommanderScript', fname] +
                    self.tool_opt)
 
-            self.logger.info('Flashing file: {}'.format(self.bin_name))
+            self.logger.info('Flashing file: {}'.format(self.file_name))
             self.check_call(cmd)
