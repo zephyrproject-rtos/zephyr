@@ -208,6 +208,9 @@ struct proc_ctx *ull_cp_priv_create_local_procedure(enum llcp_proc proc)
 	case PROC_TERMINATE:
 		lp_comm_init_proc(ctx);
 		break;
+	case PROC_CHAN_MAP_UPDATE:
+		lp_chmu_init_proc(ctx);
+		break;
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
@@ -450,6 +453,43 @@ uint8_t ull_cp_terminate(struct ll_conn *conn, uint8_t error_code)
 	 * Termination procedure may be initiated at any time, even if other
 	 * LLCP is active.
 	 */
+	lr_enqueue(conn, ctx);
+
+	return BT_HCI_ERR_SUCCESS;
+}
+
+uint8_t ull_cp_chan_map_update(struct ll_conn *conn, uint8_t chm[5])
+{
+	struct proc_ctx *ctx;
+
+	if (conn->lll.role != BT_HCI_ROLE_MASTER) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	/* TODO
+	 * HCI requires at least 1 channel to be unknown but LL requires 2...
+	 * Figure out whom should be responsible for checking this.
+	 */
+	if ((chm[0] == 0) && (chm[1] == 0) && (chm[2] == 0) && (chm[3] == 0) &&
+	    (chm[4] == 0)) {
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
+
+	/* RFU bits */
+	if (chm[4] & 0x07) {
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
+
+	ctx = create_local_procedure(PROC_CHAN_MAP_UPDATE);
+	if (!ctx) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	/* TODO
+	 * Should probably be stored in conn when integrated with LL
+	 */
+	memcpy(ctx->data.chmu.chm, chm, sizeof(ctx->data.chmu.chm));
+
 	lr_enqueue(conn, ctx);
 
 	return BT_HCI_ERR_SUCCESS;
