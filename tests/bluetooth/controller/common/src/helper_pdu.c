@@ -236,6 +236,18 @@ void helper_pdu_encode_terminate_ind(struct pdu_data *pdu, void *param)
 	pdu->llctrl.terminate_ind.error_code = p->error_code;
 }
 
+void helper_pdu_encode_channel_map_update_ind(struct pdu_data *pdu, void *param)
+{
+	struct pdu_data_llctrl_chan_map_ind *p = param;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, chan_map_ind) + sizeof(struct pdu_data_llctrl_chan_map_ind);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CHAN_MAP_IND;
+	pdu->llctrl.chan_map_ind.instant = p->instant;
+	memcpy(pdu->llctrl.chan_map_ind.chm, p->chm, sizeof(pdu->llctrl.chan_map_ind.chm));
+}
+
+
 void helper_pdu_verify_version_ind(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
 {
 	struct pdu_data_llctrl_version_ind *p = param;
@@ -454,3 +466,15 @@ void helper_pdu_verify_terminate_ind(const char *file, uint32_t line, struct pdu
 	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_TERMINATE_IND, "Not a LL_TERMINATE_IND.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->llctrl.terminate_ind.error_code, p->error_code, "Error code mismatch.\nCalled at %s:%d\n", file, line);
 }
+
+void helper_pdu_verify_channel_map_update_ind(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
+{
+	struct pdu_data_llctrl_chan_map_ind *p = param;
+
+	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_CHAN_MAP_IND, "Not a LL_CHANNEL_MAP_UPDATE_IND.\nCalled at %s:%d ( %d %d)\n", file, line, pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_CHAN_MAP_IND);
+	zassert_equal(pdu->len, offsetof(struct pdu_data_llctrl, chan_map_ind) + sizeof(struct pdu_data_llctrl_chan_map_ind), "Wrong length.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.chan_map_ind.instant, p->instant, "Instant mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_mem_equal(pdu->llctrl.chan_map_ind.chm, p->chm, sizeof(p->chm), "Channel Map mismatch.\nCalled at %s:%d\n", file, line);
+}
+

@@ -26,6 +26,7 @@ FILE(GLOB ll_sw_sources
         ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp_phy.c
         ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp_enc.c
         ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp_conn_upd.c
+        ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp_chmu.c
         ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp.c
         ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp_hci.c
 	${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_connections.c
