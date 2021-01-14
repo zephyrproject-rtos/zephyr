@@ -52,6 +52,16 @@ config NEWLIB_LIBC_NANO
 	  The newlib-nano library for ARM embedded processors is a part of the
 	  GNU Tools for ARM Embedded Processors.
 
+config NEWLIB_LIBC_MAX_MAPPED_REGION_SIZE
+	int "Maximum memory mapped for newlib heap"
+	depends on MMU
+	default 1048576
+	help
+	  On MMU-based systems, indicates the maximum amount of memory which
+	  will be used for the newlib malloc() heap. The actual amount of
+	  memory used will be the minimum of this value and the amount of
+	  free physical memory at kernel boot.
+
 config NEWLIB_LIBC_ALIGNED_HEAP_SIZE
 	int "Newlib aligned heap size"
 	depends on MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
