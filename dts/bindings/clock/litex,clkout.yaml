@@ -27,37 +27,37 @@ properties:
 
   litex,clock-frequency:
     required: true
-    type : int
+    type: int
     description: |
       default frequency in Hz for clock output
 
   litex,clock-phase:
     required: true
-    type : int
+    type: int
     description: |
       default phase offset given in degrees
 
   litex,clock-duty-num:
     required: true
-    type : int
+    type: int
     description: |
       default duty cycle numerator value
 
   litex,clock-duty-den:
     required: true
-    type : int
+    type: int
     description: |
       default duty cycle denominator value
 
   litex,clock-margin:
     required: true
-    type : int
+    type: int
     description: |
       clock output margin coefficient
 
   litex,clock-margin-exp:
     required: true
-    type : int
+    type: int
     description: |
       exponent for clkout margin
       effective clkout margin shall be
