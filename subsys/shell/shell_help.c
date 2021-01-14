@@ -187,3 +187,16 @@ void z_shell_help_cmd_print(const struct shell *shell,
 
 	formatted_text_print(shell, cmd->help, field_width, false);
 }
+
+bool z_shell_help_request(const char *str)
+{
+	if (!IS_ENABLED(CONFIG_SHELL_HELP_OPT_PARSE)) {
+		return false;
+	}
+
+	if (!strcmp(str, "-h") || !strcmp(str, "--help")) {
+		return true;
+	}
+
+	return false;
+}
