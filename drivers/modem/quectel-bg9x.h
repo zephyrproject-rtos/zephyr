@@ -65,6 +65,9 @@ enum mdm_control_pins {
 #if DT_INST_NODE_HAS_PROP(0, mdm_dtr_gpios)
 	MDM_DTR,
 #endif
+#if DT_INST_NODE_HAS_PROP(0, mdm_wdisable_gpios)
+	MDM_WDISABLE,
+#endif
 };
 
 /* driver data */
@@ -134,6 +137,12 @@ static struct modem_pin modem_pins[] = {
 	MODEM_PIN(DT_INST_GPIO_LABEL(0, mdm_dtr_gpios),
 		  DT_INST_GPIO_PIN(0, mdm_dtr_gpios),
 		  DT_INST_GPIO_FLAGS(0, mdm_dtr_gpios) | GPIO_OUTPUT_LOW),
+#endif
+#if DT_INST_NODE_HAS_PROP(0, mdm_wdisable_gpios)
+	/* MDM_WDISABLE */
+	MODEM_PIN(DT_INST_GPIO_LABEL(0, mdm_wdisable_gpios),
+		  DT_INST_GPIO_PIN(0, mdm_wdisable_gpios),
+		  DT_INST_GPIO_FLAGS(0, mdm_wdisable_gpios) | GPIO_OUTPUT_LOW),
 #endif
 };
 
