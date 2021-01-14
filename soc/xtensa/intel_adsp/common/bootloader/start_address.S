@@ -21,4 +21,10 @@
 __start:
 	movi	a0, 0
 	call0	_start		 /* jump to _start (in crt1-*.S) */
+
+	/* never returns */
+
+	.size	__start, . - __start
+
+	.end	literal_prefix
 #endif
