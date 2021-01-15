@@ -44,7 +44,7 @@ static void run_led_test(const struct device *led_pwm, uint8_t led)
 	int err;
 	uint16_t level;
 
-	LOG_INF("Testing LED %d (%s)", led, led_label[led] ? : "no label");
+	LOG_INF("Testing LED %d - %s", led, led_label[led] ? : "no label");
 
 	/* Turn LED on. */
 	err = led_on(led_pwm, led);
@@ -77,7 +77,7 @@ static void run_led_test(const struct device *led_pwm, uint8_t led)
 	k_sleep(K_MSEC(1000));
 
 	/* Set LED blinking (on: 0.1 sec, off: 0.1 sec) */
-	LOG_INF("  Blinking (on: 0.1 sec, off: 0.1 sec)");
+	LOG_INF("  Blinking on: 0.1 sec, off: 0.1 sec");
 	err = led_blink(led_pwm, led, 100, 100);
 	if (err < 0) {
 		LOG_ERR("err=%d", err);
@@ -86,7 +86,7 @@ static void run_led_test(const struct device *led_pwm, uint8_t led)
 	k_sleep(K_MSEC(5000));
 
 	/* Enable LED blinking (on: 1 sec, off: 1 sec) */
-	LOG_INF("  Blinking (on: 1 sec, off: 1 sec)");
+	LOG_INF("  Blinking on: 1 sec, off: 1 sec");
 	err = led_blink(led_pwm, led, 1000, 1000);
 	if (err < 0) {
 		LOG_ERR("err=%d", err);

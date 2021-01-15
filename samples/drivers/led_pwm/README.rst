@@ -16,12 +16,12 @@ Test pattern
 
 For each PWM LEDs (one after the other):
 
-- turn on
-- turn off
-- increase the brightness gradually up to the maximum level
-- blink (0.1 sec on, 0.1 sec off)
-- blink (1 sec on, 1 sec off)
-- turn off
+- Turning on
+- Turning off
+- Increasing brightness gradually
+- Blinking on: 0.1 sec, off: 0.1 sec
+- Blinking on: 1 sec, off: 1 sec
+- Turning off
 
 Building and Running
 ********************
