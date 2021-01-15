@@ -119,14 +119,11 @@
 #define VTD_GSTS_TES		31
 
 /* Interrupt Remapping Table Address Register details */
-#define VTD_IRTA_SIZE_MASK	0x00000000000000FF
+#define VTD_IRTA_SIZE_MASK	0x000000000000000FUL
 #define VTD_IRTA_EIME		BIT(11)
-#define VTD_IRTA_ADDR_SHIFT	12
 
-#define VTD_IRTA_REG_GEN_CONTENT(addr, size, mode) \
-	(0 |					   \
-	 (addr << VTD_IRTA_ADDR_SHIFT) |	   \
-	 (mode) | (size & VTD_IRTA_SIZE_MASK))
+#define VTD_IRTA_REG_GEN_CONTENT(addr, size, mode)		\
+	((uint64_t)(addr) | (mode) | (size & VTD_IRTA_SIZE_MASK))
 
 /* Fault event control register details */
 #define VTD_FECTL_REG_IP	30

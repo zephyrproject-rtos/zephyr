@@ -103,7 +103,7 @@ union qi_wait_descriptor {
 #define QI_WAIT_STATUS_COMPLETE 0x1UL
 
 struct vtd_ictl_data {
-	struct vtd_irte irte[IRTE_NUM];
+	struct vtd_irte irte[IRTE_NUM] __aligned(0x1000);
 	struct qi_descriptor qi[QI_NUM] __aligned(0x1000);
 	int irqs[IRTE_NUM];
 	int vectors[IRTE_NUM];
