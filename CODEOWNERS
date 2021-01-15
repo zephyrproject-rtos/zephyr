@@ -184,6 +184,7 @@
 /drivers/can/*mcp2515*                    @karstenkoenig
 /drivers/clock_control/*nrf*              @nordic-krch
 /drivers/clock_control/*esp32*            @extremegtx
+/drivers/clock_control/*rcar*             @julien-massot
 /drivers/counter/                         @nordic-krch
 /drivers/console/ipm_console.c            @finikorg
 /drivers/console/semihost_console.c       @luozhongyao
