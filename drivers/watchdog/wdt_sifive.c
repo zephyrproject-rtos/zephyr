@@ -258,8 +258,6 @@ static const struct wdt_driver_api wdt_sifive_api = {
 	.feed = wdt_sifive_feed,
 };
 
-DEVICE_DT_INST_DECLARE(0);
-
 static void wdt_sifive_irq_config(void)
 {
 	IRQ_CONNECT(DT_INST_IRQN(0),
