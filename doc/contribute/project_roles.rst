@@ -175,10 +175,8 @@ MAINTAINERS File
 
 Generic guidelines for deciding and filling in the Maintainers' list
 
-* The MAINTAINERS file shall coexist with the CODEOWNERS file.
-  MAINTAINERS file is used to set assignees, CODEOWNERS file is used for
-  more granularity and to add reviewers down to the file level.
-  CODEOWNERS file entries do not signify maintainership.
+* The MAINTAINERS file shall replace the CODEOWNERS file and will be used
+  for both setting assignees and reviewers.
 * We should keep the granularity of code maintainership at a manageable level
 * We should be looking for maintainers for areas of code that
   are orphaned (i.e. without an explicit maintainer)
