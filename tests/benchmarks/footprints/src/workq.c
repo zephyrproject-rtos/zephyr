@@ -15,11 +15,19 @@ static K_THREAD_STACK_DEFINE(workq_stack, STACK_SIZE);
 
 struct k_sem sync_sema;
 
-#ifdef CONFIG_USERSPACE
-static struct k_work_q user_workq;
+#if CONFIG_USERSPACE
+static struct k_work_user_q user_workq;
 static K_THREAD_STACK_DEFINE(user_workq_stack, STACK_SIZE);
 
-static FP_BMEM struct k_work user_work_item;
+static FP_BMEM struct k_work_user user_work_item;
+
+void user_workq_func(struct k_work_user *unused)
+{
+	ARG_UNUSED(unused);
+
+	k_sem_give(&sync_sema);
+}
+
 #endif
 
 void workq_func(struct k_work *unused)
@@ -59,7 +67,7 @@ void delayed_workq_thread(void *arg1, void *arg2, void *arg3)
 	k_sem_take(&sync_sema, K_FOREVER);
 }
 
-#ifdef CONFIG_USERSPACE
+#if CONFIG_USERSPACE
 void simple_user_workq_thread(void *arg1, void *arg2, void *arg3)
 {
 	ARG_UNUSED(arg1);
@@ -67,8 +75,8 @@ void simple_user_workq_thread(void *arg1, void *arg2, void *arg3)
 	ARG_UNUSED(arg3);
 
 	k_sem_reset(&sync_sema);
-	k_work_init(&user_work_item, workq_func);
-	k_work_submit_to_user_queue(&user_workq, &user_work_item);
+	k_work_user_init(&user_work_item, user_workq_func);
+	k_work_user_submit_to_queue(&user_workq, &user_work_item);
 
 	k_sem_take(&sync_sema, K_FOREVER);
 }
@@ -98,10 +106,10 @@ void run_workq(void)
 
 	k_thread_join(tid, K_FOREVER);
 
-#ifdef CONFIG_USERSPACE
-	k_work_q_user_start(&user_workq, user_workq_stack,
-			    K_THREAD_STACK_SIZEOF(user_workq_stack),
-			    CONFIG_MAIN_THREAD_PRIORITY);
+#if CONFIG_USERSPACE
+	k_work_user_queue_start(&user_workq, user_workq_stack,
+				K_THREAD_STACK_SIZEOF(user_workq_stack),
+				CONFIG_MAIN_THREAD_PRIORITY, NULL);
 
 	k_mem_domain_add_thread(&footprint_mem_domain, &user_workq.thread);
 	k_thread_access_grant(&user_workq.thread, &user_workq_stack);
