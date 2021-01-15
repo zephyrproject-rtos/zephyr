@@ -267,6 +267,7 @@ void k_mem_domain_add_thread(struct k_mem_domain *domain, k_tid_t thread)
 	k_spin_unlock(&z_mem_domain_lock, key);
 }
 
+/* LCOV_EXCL_START */
 void k_mem_domain_remove_thread(k_tid_t thread)
 {
 	k_mem_domain_add_thread(&k_mem_domain_default, thread);
@@ -297,6 +298,7 @@ void k_mem_domain_destroy(struct k_mem_domain *domain)
 
 	k_spin_unlock(&z_mem_domain_lock, key);
 }
+/* LCOV_EXCL_STOP */
 
 static int init_mem_domain_module(const struct device *arg)
 {

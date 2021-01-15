@@ -43,7 +43,7 @@ extern "C" {
 			compiler_barrier();		\
 			z_impl_user_fault(reason_p);	\
 		}					\
-		CODE_UNREACHABLE;			\
+		CODE_UNREACHABLE; /* LCOV_EXCL_LINE */	\
 	} while (false)
 #else
 #define ARCH_EXCEPT(reason_p)	do {			\

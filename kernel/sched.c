@@ -1578,7 +1578,7 @@ static bool thread_obj_validate(struct k_thread *thread)
 #endif
 		Z_OOPS(Z_SYSCALL_VERIFY_MSG(ret, "access denied"));
 	}
-	CODE_UNREACHABLE;
+	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 }
 
 static inline int z_vrfy_k_thread_join(struct k_thread *thread,
