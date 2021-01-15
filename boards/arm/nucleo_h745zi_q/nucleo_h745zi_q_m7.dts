@@ -25,7 +25,7 @@
 		zephyr,console = &usart3;
 		zephyr,shell-uart = &usart3;
 		zephyr,dtcm = &dtcm;
-		zephyr,sram = &sram0;
+		zephyr,sram = &axi_sram;
 		zephyr,flash = &flash0;
 	};
 
