@@ -533,6 +533,10 @@ static int exec_cmd(const struct shell *shell, size_t argc, const char **argv,
 	}
 
 	if (!ret_val) {
+#if CONFIG_SHELL_GETOPT
+		z_shell_getopt_init(&shell->ctx->getopt_state);
+#endif
+
 		z_flag_cmd_ctx_set(shell, true);
 		/* Unlock thread mutex in case command would like to borrow
 		 * shell context to other thread to avoid mutex deadlock.
