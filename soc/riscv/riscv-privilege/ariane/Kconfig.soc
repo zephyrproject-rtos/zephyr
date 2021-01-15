@@ -1,0 +1,15 @@
+# RISCV32_MIV configuration options
+
+# Copyright (c) 2018 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "Ariane system implementation"
+	depends on SOC_SERIES_RISCV64_ARIANE
+
+config SOC_RISCV64_ARIANE
+	bool "Ariane RISCV implementation"
+	select ATOMIC_OPERATIONS_C
+    select RISCV
+
+endchoice

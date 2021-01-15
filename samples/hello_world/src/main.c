@@ -9,5 +9,10 @@
 
 void main(void)
 {
-	printk("Hello World! %s\n", CONFIG_BOARD);
-}
+    printk("Hello from zephyr! %s\n", CONFIG_BOARD);
+
+    volatile int i = 0;
+    while (1) {
+        i++;
+    }
+ }
