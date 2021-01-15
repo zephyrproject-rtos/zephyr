@@ -134,11 +134,30 @@ static uint32_t ots_obj_read(struct bt_ots *ots, struct bt_conn *conn,
 	return len;
 }
 
+static int ots_obj_write(struct bt_ots *ots, struct bt_conn *conn, uint64_t id,
+		     uint8_t *data, uint32_t len, uint32_t offset,
+		     uint32_t rem)
+{
+	char id_str[BT_OTS_OBJ_ID_STR_LEN];
+	uint32_t obj_index = (id % ARRAY_SIZE(objects));
+
+	bt_ots_obj_id_to_str(id, id_str, sizeof(id_str));
+
+	printk("Object with %s ID is being written\n"
+		"Offset = %d, Length = %d, Remaining= %d\n",
+		id_str, offset, len, rem);
+
+	memcpy(&objects[obj_index][offset], data, len);
+
+	return 0;
+}
+
 static struct bt_ots_cb ots_callbacks = {
 	.obj_created = ots_obj_created,
 	.obj_deleted = ots_obj_deleted,
 	.obj_selected = ots_obj_selected,
 	.obj_read = ots_obj_read,
+	.obj_write = ots_obj_write,
 };
 
 static int ots_init(void)
@@ -157,6 +176,8 @@ static int ots_init(void)
 	/* Configure OTS initialization. */
 	memset(&ots_init, 0, sizeof(ots_init));
 	BT_OTS_OACP_SET_FEAT_READ(ots_init.features.oacp);
+	BT_OTS_OACP_SET_FEAT_WRITE(ots_init.features.oacp);
+	BT_OTS_OACP_SET_FEAT_PATCH(ots_init.features.oacp);
 	BT_OTS_OLCP_SET_FEAT_GO_TO(ots_init.features.olcp);
 	ots_init.cb = &ots_callbacks;
 
@@ -179,6 +200,8 @@ static int ots_init(void)
 	obj_init.size.cur = sizeof(objects[0]);
 	obj_init.size.alloc = sizeof(objects[0]);
 	BT_OTS_OBJ_SET_PROP_READ(obj_init.props);
+	BT_OTS_OBJ_SET_PROP_WRITE(obj_init.props);
+	BT_OTS_OBJ_SET_PROP_PATCH(obj_init.props);
 
 	err = bt_ots_obj_add(ots, &obj_init);
 	if (err) {

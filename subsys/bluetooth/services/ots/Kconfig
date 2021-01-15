@@ -29,6 +29,25 @@ config BT_OTS_OACP_READ_SUPPORT
 	bool "Support OACP Read Operation"
 	default y
 
+config BT_OTS_OACP_WRITE_SUPPORT
+	bool "Support OACP Write Operation"
+	default n
+
+config BT_OTS_OACP_PATCH_SUPPORT
+	bool "Support patching of objects"
+	default n
+	depends on BT_OTS_OACP_WRITE_SUPPORT
+
+config BT_OTS_OACP_APPEND_SUPPORT
+	bool "Support appending additional data to objects"
+	default n
+	depends on BT_OTS_OACP_WRITE_SUPPORT
+
+config BT_OTS_OACP_TRUNCATE_SUPPORT
+	bool "Support truncating objects"
+	default n
+	depends on BT_OTS_OACP_WRITE_SUPPORT
+
 config BT_OTS_OLCP_GO_TO_SUPPORT
 	bool "Support OLCP Go To Operation"
 	default y

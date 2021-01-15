@@ -60,6 +60,14 @@ enum bt_gatt_ots_oacp_res_code {
 	BT_GATT_OTS_OACP_RES_OPER_FAILED    = 0x0A
 };
 
+#define BT_GATT_OTS_OACP_PROC_WRITE_MODE_TRUNC 1
+
+#define BT_GATT_OTS_OACP_PROC_WRITE_MODE_GET_TRUNC(mode) \
+	((mode) & BIT(BT_GATT_OTS_OACP_PROC_WRITE_MODE_TRUNC))
+
+#define BT_GATT_OTS_OACP_PROC_WRITE_MODE_GET_RFU(mode) \
+	((mode) & ~BIT(BT_GATT_OTS_OACP_PROC_WRITE_MODE_TRUNC))
+
 /* Object Action Control Point procedure definition. */
 struct bt_gatt_ots_oacp_proc {
 	enum bt_gatt_ots_oacp_proc_type type;
@@ -80,7 +88,7 @@ struct bt_gatt_ots_oacp_proc {
 			uint32_t offset;
 			uint32_t len;
 			uint8_t mode;
-		} write_params;
+		} __packed write_params;
 	};
 };
 

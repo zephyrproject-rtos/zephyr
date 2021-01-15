@@ -545,6 +545,31 @@ struct bt_ots_cb {
 	uint32_t (*obj_read)(struct bt_ots *ots, struct bt_conn *conn,
 			     uint64_t id, uint8_t **data, uint32_t len,
 			     uint32_t offset);
+
+	/** @brief Object write callback
+	 *
+	 *  This callback is called multiple times during the Object write
+	 *  operation. OTS module will keep providing successive Object
+	 *  fragments to the application until the write operation is
+	 *  completed. The remaining length indicates data length remaining to
+	 *  be written and will decrease each write iteration until it
+	 *  reaches 0 in the last write fragment.
+	 *
+	 *  @param ots    OTS instance.
+	 *  @param conn   The connection that wrote object.
+	 *  @param id     Object ID.
+	 *  @param data   Next chunk of data to be written.
+	 *  @param len    Length of the current chunk of data in the buffer
+	 *  @param offset Object data offset.
+	 *  @param rem    Remaining length in the write operation.
+	 *
+	 *  @return 0 in case of success or negative value in case of error.
+	 *  @return -EINPROGRESS has a special meaning and is unsupported at the
+	 *                       moment. It should not be returned.
+	 */
+	int (*obj_write)(struct bt_ots *ots, struct bt_conn *conn, uint64_t id,
+			 uint8_t *data, uint32_t len, uint32_t offset,
+			 uint32_t rem);
 };
 
 /** @brief Descriptor for OTS initialization. */

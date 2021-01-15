@@ -91,6 +91,21 @@ static void l2cap_sent(struct bt_l2cap_chan *chan)
 	}
 }
 
+int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
+{
+	struct bt_gatt_ots_l2cap *l2cap_ctx;
+
+	LOG_DBG("Incoming data channel %p received", chan);
+
+	l2cap_ctx = CONTAINER_OF(chan, struct bt_gatt_ots_l2cap, ot_chan);
+
+	if (!l2cap_ctx->rx_done) {
+		return -ENODEV;
+	}
+
+	return l2cap_ctx->rx_done(l2cap_ctx, chan->conn, buf);
+}
+
 static void l2cap_status(struct bt_l2cap_chan *chan, atomic_t *status)
 {
 	LOG_DBG("Channel %p status %u", chan, *status);
@@ -103,11 +118,20 @@ static void l2cap_connected(struct bt_l2cap_chan *chan)
 
 static void l2cap_disconnected(struct bt_l2cap_chan *chan)
 {
+	struct bt_gatt_ots_l2cap *l2cap_ctx;
+
 	LOG_DBG("Channel %p disconnected", chan);
+
+	l2cap_ctx = CONTAINER_OF(chan, struct bt_gatt_ots_l2cap, ot_chan);
+
+	if (l2cap_ctx->closed) {
+		l2cap_ctx->closed(l2cap_ctx, chan->conn);
+	}
 }
 
 static const struct bt_l2cap_chan_ops l2cap_ops = {
 	.sent		= l2cap_sent,
+	.recv           = l2cap_recv,
 	.status		= l2cap_status,
 	.connected	= l2cap_connected,
 	.disconnected	= l2cap_disconnected,

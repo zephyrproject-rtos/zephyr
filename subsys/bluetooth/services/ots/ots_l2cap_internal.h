@@ -28,6 +28,10 @@ struct bt_gatt_ots_l2cap {
 	struct bt_gatt_ots_l2cap_tx tx;
 	void (*tx_done)(struct bt_gatt_ots_l2cap *l2cap_ctx,
 			struct bt_conn *conn);
+	int (*rx_done)(struct bt_gatt_ots_l2cap *l2cap_ctx,
+			struct bt_conn *conn, struct net_buf *buf);
+	void (*closed)(struct bt_gatt_ots_l2cap *l2cap_ctx,
+			struct bt_conn *conn);
 };
 
 bool bt_gatt_ots_l2cap_is_open(struct bt_gatt_ots_l2cap *l2cap_ctx,
