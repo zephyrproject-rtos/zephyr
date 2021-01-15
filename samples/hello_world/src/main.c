@@ -10,9 +10,4 @@
 void main(void)
 {
     printk("Hello from zephyr! %s\n", CONFIG_BOARD);
-
-    volatile int i = 0;
-    while (1) {
-        i++;
-    }
- }
+}
