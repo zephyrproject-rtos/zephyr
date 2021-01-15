@@ -7,6 +7,33 @@
 struct lll_adv_iso {
 	struct lll_hdr hdr;
 	struct lll_adv *adv;
+
+	uint8_t seed_access_addr[4];
+	uint8_t base_crc_init[2];
+
+	uint8_t num_bis:5;
+	uint8_t bn:3;
+
+	uint8_t payload_count[5];
+
+	uint16_t latency_prepare;
+	uint16_t latency_event;
+
+	uint8_t data_chan_map[5];
+	uint8_t data_chan_count:6;
+	uint16_t data_chan_id;
+
+	uint32_t nse:5;
+	uint32_t phy:3;
+	uint32_t sub_interval:20;
+	uint32_t pto:4;
+
+	uint32_t bis_spacing:20;
+	uint32_t irc:4;
+	uint32_t max_pdu:8;
+
+	uint32_t sdu_interval:20;
+	uint32_t max_sdu:8;
 };
 
 struct lll_adv_sync {
