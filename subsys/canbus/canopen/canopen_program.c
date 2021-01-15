@@ -276,15 +276,48 @@ static CO_SDO_abortCode_t canopen_odf_1f51(CO_ODF_arg_t *odf_arg)
 }
 
 #ifdef CONFIG_BOOTLOADER_MCUBOOT
+/** @brief Calculate crc for region in flash
+ *
+ * @param flash_area Flash area to read from, must be open
+ * @offset Offset to read from
+ * @size Number of bytes to include in calculation
+ * @pcrc Pointer to uint32_t where crc will be written if return value is 0
+ *
+ * @return 0 if successful, negative errno on failure
+ */
+static int flash_crc(const struct flash_area *flash_area,
+		off_t offset, size_t size, uint32_t *pcrc)
+{
+	uint32_t crc = 0;
+	uint8_t buffer[32];
+
+	while (size > 0) {
+		size_t len = MIN(size, sizeof(buffer));
+
+		int err = flash_area_read(flash_area, offset, buffer, len);
+
+		if (err) {
+			return err;
+		}
+
+		crc = crc32_ieee_update(crc, buffer, len);
+
+		offset += len;
+		size -= len;
+	}
+
+	*pcrc = crc;
+
+	return 0;
+}
+
 static CO_SDO_abortCode_t canopen_odf_1f56(CO_ODF_arg_t *odf_arg)
 {
 	const struct flash_area *flash_area;
 	struct mcuboot_img_header header;
 	off_t offset = 0;
 	uint32_t crc = 0;
-	size_t size;
 	uint8_t fa_id;
-	uint32_t data;
 	uint32_t len;
 	int err;
 
@@ -345,25 +378,18 @@ static CO_SDO_abortCode_t canopen_odf_1f56(CO_ODF_arg_t *odf_arg)
 		return CO_SDO_AB_HW;
 	}
 
-	while (len) {
-		size = (len >= sizeof(data)) ? sizeof(data) : len;
-		err = flash_area_read(flash_area, offset, &data, size);
-		if (err) {
-			LOG_ERR("failed to read flash (err %d)", err);
-			CO_errorReport(ctx.em, CO_EM_NON_VOLATILE_MEMORY,
-				       CO_EMC_HARDWARE, err);
-			flash_area_close(flash_area);
-
-			CO_LOCK_OD();
-			return CO_SDO_AB_HW;
-		}
-
-		crc = crc32_ieee_update(crc, (uint8_t *)&data, size);
-		len -= size;
-		offset += size;
-	}
+	err = flash_crc(flash_area, offset, len, &crc);
 
 	flash_area_close(flash_area);
+
+	if (err) {
+		LOG_ERR("failed to read flash (err %d)", err);
+		CO_errorReport(ctx.em, CO_EM_NON_VOLATILE_MEMORY,
+			       CO_EMC_HARDWARE, err);
+
+		CO_LOCK_OD();
+		return CO_SDO_AB_HW;
+	}
 
 	CO_setUint32(odf_arg->data, crc);
 
