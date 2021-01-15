@@ -36,6 +36,11 @@ zephyr_sources_ifdef(
   )
 
 zephyr_sources_ifdef(
+  CONFIG_SHELL_GETOPT
+  shell_getopt.c
+  )
+
+zephyr_sources_ifdef(
   CONFIG_SHELL_CMDS
   shell_cmds.c
 )

@@ -16,6 +16,10 @@
 #include <logging/log.h>
 #include <sys/util.h>
 
+#if defined CONFIG_SHELL_GETOPT
+#include <shell/shell_getopt.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -67,6 +71,7 @@ extern "C" {
  * @{
  */
 
+struct getopt_state;
 struct shell_static_entry;
 
 /**
@@ -649,6 +654,11 @@ struct shell_ctx {
 	/*!< VT100 color and cursor position, terminal width.*/
 	struct shell_vt100_ctx vt100_ctx;
 
+#if defined CONFIG_SHELL_GETOPT
+	/*!< getopt context for a shell backend. */
+	struct getopt_state getopt_state;
+#endif
+
 	uint16_t cmd_buff_len; /*!< Command length.*/
 	uint16_t cmd_buff_pos; /*!< Command buffer cursor position.*/
 
@@ -958,6 +968,40 @@ void shell_help(const struct shell *shell);
 /* @brief Command's help has been printed */
 #define SHELL_CMD_HELP_PRINTED	(1)
 
+#if defined CONFIG_SHELL_GETOPT
+/**
+ * @brief Parses the command-line arguments.
+ *
+ * It is based on FreeBSD implementation.
+ *
+ * @param[in] shell	Pointer to the shell instance.
+ * @param[in] argc	Arguments count.
+ * @param[in] argv	Arguments.
+ * @param[in] ostr	String containing the legitimate option characters.
+ *
+ * @return		If an option was successfully found, function returns
+ *			the option character.
+ * @return		If options have been detected that is not in @p ostr
+ *			function will return '?'.
+ *			If function encounters an option with a missing
+ *			argument, then the return value depends on the first
+ *			character in optstring: if it is ':', then ':' is
+ *			returned; otherwise '?' is returned.
+ * @return -1		If all options have been parsed.
+ */
+int shell_getopt(const struct shell *shell, int argc, char *const argv[],
+		 const char *ostr);
+
+/**
+ * @brief Returns shell_getopt state.
+ *
+ * @param[in] shell	Pointer to the shell instance.
+ *
+ * @return		Pointer to struct getopt_state.
+ */
+struct getopt_state *shell_getopt_state_get(const struct shell *shell);
+#endif /* CONFIG_SHELL_GETOPT */
+
 /** @brief Execute command.
  *
  * Pass command line to shell to execute.
@@ -973,7 +1017,7 @@ void shell_help(const struct shell *shell);
  *			@option{CONFIG_SHELL_BACKEND_DUMMY} option is enabled.
  * @param[in] cmd	Command to be executed.
  *
- * @returns		Result of the execution
+ * @return		Result of the execution
  */
 int shell_execute_cmd(const struct shell *shell, const char *cmd);
 

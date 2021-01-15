@@ -109,6 +109,12 @@ config SHELL_VT100_COLORS
 	help
 	  If enabled VT100 colors are used in shell (e.g. print errors in red).
 
+config SHELL_GETOPT
+	bool "Enable getopt support"
+	select GETOPT
+	help
+	  Enables getopt support in the shell.
+
 config SHELL_METAKEYS
 	bool "Enable metakeys"
 	default y if !SHELL_MINIMAL
