@@ -35,7 +35,7 @@ static int iis2dlpc_set_range(const struct device *dev, uint8_t fs)
 {
 	int err;
 	struct iis2dlpc_data *iis2dlpc = dev->data;
-	const struct iis2dlpc_device_config *cfg = dev->config;
+	const struct iis2dlpc_dev_config *cfg = dev->config;
 	uint8_t shift_gain = 0U;
 
 	err = iis2dlpc_full_scale_set(iis2dlpc->ctx, fs);
@@ -179,7 +179,7 @@ static int iis2dlpc_sample_fetch(const struct device *dev,
 				 enum sensor_channel chan)
 {
 	struct iis2dlpc_data *iis2dlpc = dev->data;
-	const struct iis2dlpc_device_config *cfg = dev->config;
+	const struct iis2dlpc_dev_config *cfg = dev->config;
 	uint8_t shift;
 	int16_t buf[3];
 
@@ -215,23 +215,16 @@ static const struct sensor_driver_api iis2dlpc_driver_api = {
 static int iis2dlpc_init_interface(const struct device *dev)
 {
 	struct iis2dlpc_data *iis2dlpc = dev->data;
-	const struct iis2dlpc_device_config *cfg = dev->config;
+	const struct iis2dlpc_dev_config *cfg = dev->config;
 
+	LOG_INF("bus name %s", cfg->bus_name);
 	iis2dlpc->bus = device_get_binding(cfg->bus_name);
 	if (!iis2dlpc->bus) {
 		LOG_DBG("master bus not found: %s", cfg->bus_name);
 		return -EINVAL;
 	}
 
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-	iis2dlpc_spi_init(dev);
-#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-	iis2dlpc_i2c_init(dev);
-#else
-#error "BUS MACRO NOT DEFINED IN DTS"
-#endif
-
-	return 0;
+	return cfg->bus_init(dev);
 }
 
 static int iis2dlpc_set_power_mode(struct iis2dlpc_data *iis2dlpc,
@@ -257,8 +250,10 @@ static int iis2dlpc_set_power_mode(struct iis2dlpc_data *iis2dlpc,
 static int iis2dlpc_init(const struct device *dev)
 {
 	struct iis2dlpc_data *iis2dlpc = dev->data;
-	const struct iis2dlpc_device_config *cfg = dev->config;
+	const struct iis2dlpc_dev_config *cfg = dev->config;
 	uint8_t wai;
+
+	iis2dlpc->dev = dev;
 
 	if (iis2dlpc_init_interface(dev)) {
 		return -EINVAL;
@@ -385,28 +380,137 @@ static int iis2dlpc_init(const struct device *dev)
 	return 0;
 }
 
-const struct iis2dlpc_device_config iis2dlpc_cfg = {
-	.bus_name = DT_INST_BUS_LABEL(0),
-	.pm = DT_INST_PROP(0, power_mode),
-	.range = DT_INST_PROP(0, range),
-#ifdef CONFIG_IIS2DLPC_TRIGGER
-	.int_gpio_port = DT_INST_GPIO_LABEL(0, drdy_gpios),
-	.int_gpio_pin = DT_INST_GPIO_PIN(0, drdy_gpios),
-	.int_gpio_flags = DT_INST_GPIO_FLAGS(0, drdy_gpios),
-	.drdy_int = DT_INST_PROP(0, drdy_int),
+#if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0
+#warning "IIS2DLPC driver enabled without any devices"
+#endif
+
+/*
+ * Device creation macro, shared by IIS2DLPC_DEFINE_SPI() and
+ * IIS2DLPC_DEFINE_I2C().
+ */
+
+#define IIS2DLPC_DEVICE_INIT(inst)					\
+	DEVICE_DT_INST_DEFINE(inst,					\
+			    iis2dlpc_init,				\
+			    device_pm_control_nop,			\
+			    &iis2dlpc_data_##inst,			\
+			    &iis2dlpc_config_##inst,			\
+			    POST_KERNEL,				\
+			    CONFIG_SENSOR_INIT_PRIORITY,		\
+			    &iis2dlpc_driver_api);
+
+/*
+ * Instantiation macros used when a device is on a SPI bus.
+ */
+
+#define IIS2DLPC_HAS_CS(inst) DT_INST_SPI_DEV_HAS_CS_GPIOS(inst)
+
+#define IIS2DLPC_DATA_SPI_CS(inst)					\
+	{ .cs_ctrl = {							\
+		.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(inst),		\
+		.gpio_dt_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(inst),	\
+		},							\
+	}
+
+#define IIS2DLPC_DATA_SPI(inst)						\
+	COND_CODE_1(IIS2DLPC_HAS_CS(inst),				\
+		    (IIS2DLPC_DATA_SPI_CS(inst)),			\
+		    ({}))
+
+#define IIS2DLPC_SPI_CS_PTR(inst)					\
+	COND_CODE_1(IIS2DLPC_HAS_CS(inst),				\
+		    (&(iis2dlpc_data_##inst.cs_ctrl)),			\
+		    (NULL))
+
+#define IIS2DLPC_SPI_CS_LABEL(inst)					\
+	COND_CODE_1(IIS2DLPC_HAS_CS(inst),				\
+		    (DT_INST_SPI_DEV_CS_GPIOS_LABEL(inst)), (NULL))
+
+#define IIS2DLPC_SPI_CFG(inst)						\
+	(&(struct iis2dlpc_spi_cfg) {					\
+		.spi_conf = {						\
+			.frequency =					\
+				DT_INST_PROP(inst, spi_max_frequency),	\
+			.operation = (SPI_WORD_SET(8) |			\
+				      SPI_OP_MODE_MASTER |		\
+				      SPI_LINES_SINGLE |		\
+				      SPI_MODE_CPOL |			\
+				      SPI_MODE_CPHA),			\
+			.slave = DT_INST_REG_ADDR(inst),		\
+			.cs = IIS2DLPC_SPI_CS_PTR(inst),		\
+		},							\
+		.cs_gpios_label = IIS2DLPC_SPI_CS_LABEL(inst),		\
+	})
 
 #ifdef CONFIG_IIS2DLPC_TAP
-	.tap_mode = DT_INST_PROP(0, tap_mode),
-	.tap_threshold = DT_INST_PROP(0, tap_threshold),
-	.tap_shock = DT_INST_PROP(0, tap_shock),
-	.tap_latency = DT_INST_PROP(0, tap_latency),
-	.tap_quiet = DT_INST_PROP(0, tap_quiet),
+#define IIS2DLPC_CONFIG_TAP(inst)					\
+	.tap_mode = DT_INST_PROP(inst, tap_mode),			\
+	.tap_threshold = DT_INST_PROP(inst, tap_threshold),		\
+	.tap_shock = DT_INST_PROP(inst, tap_shock),			\
+	.tap_latency = DT_INST_PROP(inst, tap_latency),			\
+	.tap_quiet = DT_INST_PROP(inst, tap_quiet),
+#else
+#define IIS2DLPC_CONFIG_TAP(inst)
 #endif /* CONFIG_IIS2DLPC_TAP */
+
+#ifdef CONFIG_IIS2DLPC_TRIGGER
+#define IIS2DLPC_CFG_IRQ(inst) \
+		.irq_dev_name = DT_INST_GPIO_LABEL(inst, drdy_gpios),	\
+		.irq_pin = DT_INST_GPIO_PIN(inst, drdy_gpios),		\
+		.irq_flags = DT_INST_GPIO_FLAGS(inst, drdy_gpios),	\
+		.drdy_int = DT_INST_PROP(inst, drdy_int),
+#else
+#define IIS2DLPC_CFG_IRQ(inst)
 #endif /* CONFIG_IIS2DLPC_TRIGGER */
-};
 
-struct iis2dlpc_data iis2dlpc_data;
+#define IIS2DLPC_CONFIG_SPI(inst)					\
+	{								\
+		.pm = DT_INST_PROP(inst, power_mode),			\
+		.range = DT_INST_PROP(inst, range),			\
+		.bus_name = DT_INST_BUS_LABEL(inst),			\
+		.bus_init = iis2dlpc_spi_init,				\
+		.bus_cfg = { .spi_cfg = IIS2DLPC_SPI_CFG(inst)	},	\
+		IIS2DLPC_CONFIG_TAP(inst)				\
+		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),	\
+			(IIS2DLPC_CFG_IRQ(inst)), ())			\
+	}
 
-DEVICE_DT_INST_DEFINE(0, iis2dlpc_init, device_pm_control_nop,
-	     &iis2dlpc_data, &iis2dlpc_cfg, POST_KERNEL,
-	     CONFIG_SENSOR_INIT_PRIORITY, &iis2dlpc_driver_api);
+#define IIS2DLPC_DEFINE_SPI(inst)					\
+	static struct iis2dlpc_data iis2dlpc_data_##inst =		\
+		IIS2DLPC_DATA_SPI(inst);				\
+	static const struct iis2dlpc_dev_config iis2dlpc_config_##inst =\
+		IIS2DLPC_CONFIG_SPI(inst);				\
+	IIS2DLPC_DEVICE_INIT(inst)
+
+/*
+ * Instantiation macros used when a device is on an I2C bus.
+ */
+
+#define IIS2DLPC_CONFIG_I2C(inst)					\
+	{								\
+		.pm = DT_INST_PROP(inst, power_mode),			\
+		.range = DT_INST_PROP(inst, range),			\
+		.bus_name = DT_INST_BUS_LABEL(inst),			\
+		.bus_init = iis2dlpc_i2c_init,				\
+		.bus_cfg = { .i2c_slv_addr = DT_INST_REG_ADDR(inst), },	\
+		IIS2DLPC_CONFIG_TAP(inst)				\
+		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),	\
+			(IIS2DLPC_CFG_IRQ(inst)), ())			\
+	}
+
+#define IIS2DLPC_DEFINE_I2C(inst)					\
+	static struct iis2dlpc_data iis2dlpc_data_##inst;		\
+	static const struct iis2dlpc_dev_config iis2dlpc_config_##inst =\
+		IIS2DLPC_CONFIG_I2C(inst);				\
+	IIS2DLPC_DEVICE_INIT(inst)
+/*
+ * Main instantiation macro. Use of COND_CODE_1() selects the right
+ * bus-specific macro at preprocessor time.
+ */
+
+#define IIS2DLPC_DEFINE(inst)						\
+	COND_CODE_1(DT_INST_ON_BUS(inst, spi),				\
+		    (IIS2DLPC_DEFINE_SPI(inst)),			\
+		    (IIS2DLPC_DEFINE_I2C(inst)))
+
+DT_INST_FOREACH_STATUS_OKAY(IIS2DLPC_DEFINE)

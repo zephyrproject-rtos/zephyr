@@ -25,7 +25,7 @@ LOG_MODULE_DECLARE(IIS2DLPC, CONFIG_SENSOR_LOG_LEVEL);
 static int iis2dlpc_enable_int(const struct device *dev,
 			       enum sensor_trigger_type type, int enable)
 {
-	const struct iis2dlpc_device_config *cfg = dev->config;
+	const struct iis2dlpc_dev_config *cfg = dev->config;
 	struct iis2dlpc_data *iis2dlpc = dev->data;
 	iis2dlpc_reg_t int_route;
 
@@ -165,7 +165,7 @@ static int iis2dlpc_handle_double_tap_int(const struct device *dev)
 static void iis2dlpc_handle_interrupt(const struct device *dev)
 {
 	struct iis2dlpc_data *iis2dlpc = dev->data;
-	const struct iis2dlpc_device_config *cfg = dev->config;
+	const struct iis2dlpc_dev_config *cfg = dev->config;
 	iis2dlpc_all_sources_t sources;
 
 	iis2dlpc_all_sources_get(iis2dlpc->ctx, &sources);
@@ -182,7 +182,7 @@ static void iis2dlpc_handle_interrupt(const struct device *dev)
 	}
 #endif /* CONFIG_IIS2DLPC_TAP */
 
-	gpio_pin_interrupt_configure(iis2dlpc->gpio, cfg->int_gpio_pin,
+	gpio_pin_interrupt_configure(iis2dlpc->gpio, cfg->irq_pin,
 				     GPIO_INT_EDGE_TO_ACTIVE);
 }
 
@@ -229,14 +229,14 @@ static void iis2dlpc_work_cb(struct k_work *work)
 int iis2dlpc_init_interrupt(const struct device *dev)
 {
 	struct iis2dlpc_data *iis2dlpc = dev->data;
-	const struct iis2dlpc_device_config *cfg = dev->config;
+	const struct iis2dlpc_dev_config *cfg = dev->config;
 	int ret;
 
 	/* setup data ready gpio interrupt (INT1 or INT2) */
-	iis2dlpc->gpio = device_get_binding(cfg->int_gpio_port);
+	iis2dlpc->gpio = device_get_binding(cfg->irq_dev_name);
 	if (iis2dlpc->gpio == NULL) {
 		LOG_DBG("Cannot get pointer to %s device",
-			    cfg->int_gpio_port);
+			    cfg->irq_dev_name);
 		return -EINVAL;
 	}
 
@@ -254,10 +254,10 @@ int iis2dlpc_init_interrupt(const struct device *dev)
 	iis2dlpc->work.handler = iis2dlpc_work_cb;
 #endif /* CONFIG_IIS2DLPC_TRIGGER_OWN_THREAD */
 
-	iis2dlpc->gpio_pin = cfg->int_gpio_pin;
+	iis2dlpc->gpio_pin = cfg->irq_pin;
 
-	ret = gpio_pin_configure(iis2dlpc->gpio, cfg->int_gpio_pin,
-				 GPIO_INPUT | cfg->int_gpio_flags);
+	ret = gpio_pin_configure(iis2dlpc->gpio, cfg->irq_pin,
+				 GPIO_INPUT | cfg->irq_flags);
 	if (ret < 0) {
 		LOG_DBG("Could not configure gpio");
 		return ret;
@@ -265,7 +265,7 @@ int iis2dlpc_init_interrupt(const struct device *dev)
 
 	gpio_init_callback(&iis2dlpc->gpio_cb,
 			   iis2dlpc_gpio_callback,
-			   BIT(cfg->int_gpio_pin));
+			   BIT(cfg->irq_pin));
 
 	if (gpio_add_callback(iis2dlpc->gpio, &iis2dlpc->gpio_cb) < 0) {
 		LOG_DBG("Could not set gpio callback");
@@ -277,6 +277,6 @@ int iis2dlpc_init_interrupt(const struct device *dev)
 		return -EIO;
 	}
 
-	return gpio_pin_interrupt_configure(iis2dlpc->gpio, cfg->int_gpio_pin,
+	return gpio_pin_interrupt_configure(iis2dlpc->gpio, cfg->irq_pin,
 					    GPIO_INT_EDGE_TO_ACTIVE);
 }
