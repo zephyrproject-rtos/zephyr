@@ -37,11 +37,19 @@
 		compatible = "SiFive,FE310G-0002-Z0-soc", "fe310-soc",
 			"sifive-soc", "simple-bus";
 		ranges;
-		aon: aon@10000000 {
+		wdog0: wdog@10000000 {
+			compatible = "sifive,wdt";
+			interrupt-parent = <&plic>;
+			interrupts = <1 1>;
+			reg = <0x10000000 0x40>;
+			reg-names = "control";
+			label = "WDOG0";
+		};
+		aon: aon@10000040 {
 			compatible = "sifive,aon0";
 			interrupt-parent = <&plic>;
-			interrupts = <1 1>, <2 1>;
-			reg = <0x10000000 0x1000>;
+			interrupts = <2 1>;
+			reg = <0x10000040 0x9c0>;
 			reg-names = "control";
 		};
 		clint: clint@2000000 {
