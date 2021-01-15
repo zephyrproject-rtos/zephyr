@@ -110,7 +110,7 @@ struct x86_ssf {
 		"int $32\n\t" \
 		: \
 		: [reason] "i" (reason_p)); \
-	CODE_UNREACHABLE; \
+	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */ \
 } while (false)
 
 #endif /* _ASMLANGUAGE */

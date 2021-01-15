@@ -46,7 +46,7 @@ FUNC_NORETURN void z_self_abort(void)
 	k_thread_suspend(_current);
 	z_swap_irqlock(key);
 	__ASSERT(false, "should never get here");
-	CODE_UNREACHABLE;
+	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 }
 
 #if !defined(CONFIG_ARCH_HAS_THREAD_ABORT)
