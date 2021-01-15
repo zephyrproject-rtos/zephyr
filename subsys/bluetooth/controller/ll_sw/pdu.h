@@ -63,7 +63,7 @@
 #define PDU_AC_LL_SIZE_MAX     (PDU_AC_LL_HEADER_SIZE + PDU_AC_PAYLOAD_SIZE_MAX)
 
 /* Advertisement channel maximum legacy advertising/scan data size */
-#define PDU_AC_DATA_SIZE_MAX 31
+#define PDU_AC_DATA_SIZE_MAX   31
 
 /* Advertisement channel Access Address */
 #define PDU_AC_ACCESS_ADDR     0x8e89bed6
@@ -77,6 +77,9 @@
 
 /* Link Layer Max size of an empty PDU. TODO: Remove; only used in Nordic LLL */
 #define PDU_EM_LL_SIZE_MAX     (PDU_DC_LL_HEADER_SIZE)
+
+/* Link Layer header size of BIS PDU. Assumes pdu_bis is packed */
+#define PDU_BIS_LL_HEADER_SIZE (offsetof(struct pdu_bis, payload))
 
 /* Event interframe timings */
 #define EVENT_IFS_US            150
