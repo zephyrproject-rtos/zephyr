@@ -5,13 +5,13 @@
  */
 
 #include <zephyr.h>
-#include <sys/printk.h>
 #include <shell/shell.h>
 #include <version.h>
 #include <logging/log.h>
 #include <stdlib.h>
 #include <drivers/uart.h>
 #include <usb/usb_device.h>
+#include <ctype.h>
 
 LOG_MODULE_REGISTER(app);
 
@@ -89,6 +89,59 @@ static int cmd_demo_ping(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
+#if defined CONFIG_SHELL_GETOPT
+static int cmd_demo_getopt(const struct shell *shell, size_t argc, char **argv)
+{
+	struct getopt_state *state;
+	char *cvalue = NULL;
+	int aflag = 0;
+	int bflag = 0;
+	int c;
+
+	while ((c = shell_getopt(shell, argc, argv, "abhc:")) != -1) {
+		state = shell_getopt_state_get(shell);
+		switch (c) {
+		case 'a':
+			aflag = 1;
+			break;
+		case 'b':
+			bflag = 1;
+			break;
+		case 'c':
+			cvalue = state->optarg;
+			break;
+		case 'h':
+			/* When getopt is active shell is not parsing
+			 * command handler to print help message. It must
+			 * be done explicitly.
+			 */
+			shell_help(shell);
+			return SHELL_CMD_HELP_PRINTED;
+		case '?':
+			if (state->optopt == 'c') {
+				shell_print(shell,
+					"Option -%c requires an argument.",
+					state->optopt);
+			} else if (isprint(state->optopt)) {
+				shell_print(shell,
+					"Unknown option `-%c'.",
+					state->optopt);
+			} else {
+				shell_print(shell,
+					"Unknown option character `\\x%x'.",
+					state->optopt);
+			}
+			return 1;
+		default:
+			break;
+		}
+	}
+
+	shell_print(shell, "aflag = %d, bflag = %d", aflag, bflag);
+	return 0;
+}
+#endif
+
 static int cmd_demo_params(const struct shell *shell, size_t argc, char **argv)
 {
 	shell_print(shell, "argc = %d", argc);
@@ -139,6 +192,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_demo,
 	SHELL_CMD(hexdump, NULL, "Hexdump params command.", cmd_demo_hexdump),
 	SHELL_CMD(params, NULL, "Print params command.", cmd_demo_params),
 	SHELL_CMD(ping, NULL, "Ping command.", cmd_demo_ping),
+#if defined CONFIG_SHELL_GETOPT
+	SHELL_CMD(getopt, NULL,	"Cammand using getopt, looking for: \"abhc:\".",
+		  cmd_demo_getopt),
+#endif
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 SHELL_CMD_REGISTER(demo, &sub_demo, "Demo commands", NULL);
