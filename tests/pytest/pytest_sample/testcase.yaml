@@ -1,0 +1,4 @@
+tests:
+  pytest.sample:
+    platform_allow: qemu_x86 qemu_x86_64
+    harness: pytest
