@@ -1,3 +1,5 @@
 tests:
-  kernel.common:
+  kernel.context:
     tags: kernel
+    # Bug is #31333
+    filter: not CONFIG_DEMAND_PAGING
