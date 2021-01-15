@@ -129,6 +129,22 @@ static void test_inst_props(void)
 			      strlen(label_startswith)), "");
 }
 
+#define BOOL_WITH_DEFAULT DT_PATH(test, bool_with_default)
+static void test_bool_with_default(void)
+{
+	/* Boolean properties with default values */
+
+	zassert_true(DT_PROP(BOOL_WITH_DEFAULT, default_true), "");
+	zassert_false(DT_PROP(BOOL_WITH_DEFAULT, default_false), "");
+	zassert_false(DT_PROP(BOOL_WITH_DEFAULT, default_false_explicit), "");
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_bool_with_default
+	zassert_true(DT_INST_PROP(0, default_true), "");
+	zassert_false(DT_INST_PROP(0, default_false), "");
+	zassert_false(DT_INST_PROP(0, default_false_explicit), "");
+}
+
 static void test_prop_or(void)
 {
 	/*
@@ -1550,6 +1566,7 @@ void test_main(void)
 			 ztest_unit_test(test_alias_props),
 			 ztest_unit_test(test_nodelabel_props),
 			 ztest_unit_test(test_inst_props),
+			 ztest_unit_test(test_bool_with_default),
 			 ztest_unit_test(test_prop_or),
 			 ztest_unit_test(test_has_path),
 			 ztest_unit_test(test_has_alias),

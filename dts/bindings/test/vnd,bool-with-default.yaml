@@ -1,0 +1,19 @@
+description: Test binding for booleans with defaults in the bindings
+
+compatible: "vnd,bool-with-default"
+
+properties:
+  compatible:
+    type: string
+    required: true
+
+  default-true:
+    type: boolean
+    default: true
+
+  default-false:
+    type: boolean
+
+  default-false-explicit:
+    type: boolean
+    default: false
