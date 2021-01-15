@@ -101,6 +101,7 @@
 			#gpio-cells = <2>;
 			label = "GPIO_0";
 			status = "disabled";
+			port = <0>;
 		};
 
 		gpio1: gpio@418c0800 {
@@ -111,6 +112,7 @@
 			ngpios = <16>;
 			label = "GPIO_1";
 			status = "disabled";
+			port = <1>;
 		};
 
 		gpiote: gpiote@4100a000 {

@@ -307,6 +307,7 @@ gpio0: gpio@842500 {
 	#gpio-cells = <2>;
 	label = "GPIO_0";
 	status = "disabled";
+	port = <0>;
 };
 
 rtc0: rtc@14000 {

@@ -332,6 +332,7 @@ gpio0: gpio@842500 {
 	#gpio-cells = <2>;
 	label = "GPIO_0";
 	status = "disabled";
+	port = <0>;
 };
 
 gpio1: gpio@842800 {
@@ -342,6 +343,7 @@ gpio1: gpio@842800 {
 	ngpios = <16>;
 	label = "GPIO_1";
 	status = "disabled";
+	port = <1>;
 };
 
 qspi: qspi@2b000 {
