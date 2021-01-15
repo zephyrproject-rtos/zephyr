@@ -310,63 +310,76 @@ static int iis2dlpc_init(const struct device *dev)
 		return -EIO;
 	}
 
-#ifdef CONFIG_IIS2DLPC_PULSE
-	if (iis2dlpc_tap_mode_set(iis2dlpc->ctx, cfg->pulse_trigger) < 0) {
-		LOG_ERR("Failed to select pulse trigger mode");
+#ifdef CONFIG_IIS2DLPC_TAP
+	LOG_INF("TAP: tap mode is %d", cfg->tap_mode);
+	if (iis2dlpc_tap_mode_set(iis2dlpc->ctx, cfg->tap_mode) < 0) {
+		LOG_ERR("Failed to select tap trigger mode");
 		return -EIO;
 	}
 
+	LOG_INF("TAP: ths_x is %02x", cfg->tap_threshold[0]);
 	if (iis2dlpc_tap_threshold_x_set(iis2dlpc->ctx,
-					 cfg->pulse_ths[0]) < 0) {
+					 cfg->tap_threshold[0]) < 0) {
 		LOG_ERR("Failed to set tap X axis threshold");
 		return -EIO;
 	}
 
+	LOG_INF("TAP: ths_y is %02x", cfg->tap_threshold[1]);
 	if (iis2dlpc_tap_threshold_y_set(iis2dlpc->ctx,
-					 cfg->pulse_ths[1]) < 0) {
+					 cfg->tap_threshold[1]) < 0) {
 		LOG_ERR("Failed to set tap Y axis threshold");
 		return -EIO;
 	}
 
+	LOG_INF("TAP: ths_z is %02x", cfg->tap_threshold[2]);
 	if (iis2dlpc_tap_threshold_z_set(iis2dlpc->ctx,
-					 cfg->pulse_ths[2]) < 0) {
+					 cfg->tap_threshold[2]) < 0) {
 		LOG_ERR("Failed to set tap Z axis threshold");
 		return -EIO;
 	}
 
-	if (iis2dlpc_tap_detection_on_x_set(iis2dlpc->ctx,
-					    CONFIG_IIS2DLPC_PULSE_X) < 0) {
-		LOG_ERR("Failed to set tap detection on X axis");
-		return -EIO;
+	if (cfg->tap_threshold[0] > 0) {
+		LOG_INF("TAP: tap_x enabled");
+		if (iis2dlpc_tap_detection_on_x_set(iis2dlpc->ctx, 1) < 0) {
+			LOG_ERR("Failed to set tap detection on X axis");
+			return -EIO;
+		}
 	}
 
-	if (iis2dlpc_tap_detection_on_y_set(iis2dlpc->ctx,
-					    CONFIG_IIS2DLPC_PULSE_Y) < 0) {
-		LOG_ERR("Failed to set tap detection on Y axis");
-		return -EIO;
+	if (cfg->tap_threshold[1] > 0) {
+		LOG_INF("TAP: tap_y enabled");
+		if (iis2dlpc_tap_detection_on_y_set(iis2dlpc->ctx, 1) < 0) {
+			LOG_ERR("Failed to set tap detection on Y axis");
+			return -EIO;
+		}
 	}
 
-	if (iis2dlpc_tap_detection_on_z_set(iis2dlpc->ctx,
-					    CONFIG_IIS2DLPC_PULSE_Z) < 0) {
-		LOG_ERR("Failed to set tap detection on Z axis");
-		return -EIO;
+	if (cfg->tap_threshold[2] > 0) {
+		LOG_INF("TAP: tap_z enabled");
+		if (iis2dlpc_tap_detection_on_z_set(iis2dlpc->ctx, 1) < 0) {
+			LOG_ERR("Failed to set tap detection on Z axis");
+			return -EIO;
+		}
 	}
 
-	if (iis2dlpc_tap_shock_set(iis2dlpc->ctx, cfg->pulse_shock) < 0) {
+	LOG_INF("TAP: shock is %02x", cfg->tap_shock);
+	if (iis2dlpc_tap_shock_set(iis2dlpc->ctx, cfg->tap_shock) < 0) {
 		LOG_ERR("Failed to set tap shock duration");
 		return -EIO;
 	}
 
-	if (iis2dlpc_tap_dur_set(iis2dlpc->ctx, cfg->pulse_ltncy) < 0) {
+	LOG_INF("TAP: latency is %02x", cfg->tap_latency);
+	if (iis2dlpc_tap_dur_set(iis2dlpc->ctx, cfg->tap_latency) < 0) {
 		LOG_ERR("Failed to set tap latency");
 		return -EIO;
 	}
 
-	if (iis2dlpc_tap_quiet_set(iis2dlpc->ctx, cfg->pulse_quiet) < 0) {
+	LOG_INF("TAP: quiet time is %02x", cfg->tap_quiet);
+	if (iis2dlpc_tap_quiet_set(iis2dlpc->ctx, cfg->tap_quiet) < 0) {
 		LOG_ERR("Failed to set tap quiet time");
 		return -EIO;
 	}
-#endif /* CONFIG_IIS2DLPC_PULSE */
+#endif /* CONFIG_IIS2DLPC_TAP */
 #endif /* CONFIG_IIS2DLPC_TRIGGER */
 
 	return 0;
@@ -380,21 +393,15 @@ const struct iis2dlpc_device_config iis2dlpc_cfg = {
 	.int_gpio_port = DT_INST_GPIO_LABEL(0, drdy_gpios),
 	.int_gpio_pin = DT_INST_GPIO_PIN(0, drdy_gpios),
 	.int_gpio_flags = DT_INST_GPIO_FLAGS(0, drdy_gpios),
-#ifdef CONFIG_IIS2DLPC_PULSE
-#if defined(CONFIG_IIS2DLPC_ONLY_SINGLE)
-	.pulse_trigger = IIS2DLPC_ONLY_SINGLE,
-#elif defined(CONFIG_IIS2DLPC_SINGLE_DOUBLE)
-	.pulse_trigger = IIS2DLPC_BOTH_SINGLE_DOUBLE,
-#endif
-	.pulse_ths[0] = CONFIG_IIS2DLPC_PULSE_THSX,
-	.pulse_ths[1] = CONFIG_IIS2DLPC_PULSE_THSY,
-	.pulse_ths[2] = CONFIG_IIS2DLPC_PULSE_THSZ,
-	.pulse_shock = CONFIG_IIS2DLPC_PULSE_SHOCK,
-	.pulse_ltncy = CONFIG_IIS2DLPC_PULSE_LTNCY,
-	.pulse_quiet = CONFIG_IIS2DLPC_PULSE_QUIET,
-#endif /* CONFIG_IIS2DLPC_PULSE */
 	.drdy_int = DT_INST_PROP(0, drdy_int),
 
+#ifdef CONFIG_IIS2DLPC_TAP
+	.tap_mode = DT_INST_PROP(0, tap_mode),
+	.tap_threshold = DT_INST_PROP(0, tap_threshold),
+	.tap_shock = DT_INST_PROP(0, tap_shock),
+	.tap_latency = DT_INST_PROP(0, tap_latency),
+	.tap_quiet = DT_INST_PROP(0, tap_quiet),
+#endif /* CONFIG_IIS2DLPC_TAP */
 #endif /* CONFIG_IIS2DLPC_TRIGGER */
 };
 
