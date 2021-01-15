@@ -6,8 +6,8 @@
  */
 
 / {
-	model = "Circuit Dojo nRF9160 Feather";
-	compatible = "circuitdojo,feather-nrf9160";
+	model = "Sparkfun nRF9160 Thing Plus";
+	compatible = "sparkfun,thing-plus-nrf9160";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -53,26 +53,26 @@
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
 		gpio-map = <12 0 &gpio0 26 0>,  /* SDA */
-				<13 0 &gpio0 27 0>,  /* SCL */
-				<14 0 &gpio0 29 0>,  /* PWM3 */
-				<15 0 &gpio0 30 0>,  /* PWM3 */
-				<16 0 &gpio0 0 0>,   /* PWM1 */
-				<17 0 &gpio0 1 0>,   /* PWM1 */
-				<18 0 &gpio0 2 0>,   /* PWM1 */
-				<19 0 &gpio0 3 0>,   /* PWM0 */
-				<20 0 &gpio0 4 0>,   /* PWM1 */
-				/* 11 not connected */
-				<10 0 &gpio0 24 0>,  /* TX */
-				<9 0 &gpio0 23 0>,   /* RX */
-				<8 0 &gpio0 22 0>,   /* MISO */
-				<7 0 &gpio0 21 0>,   /* MOSI */
-				<6 0 &gpio0 19 0>,   /* SCK */
-				<5 0 &gpio0 18 0>,   /* SS */
-				<4 0 &gpio0 17 0>,   /* ADC4 = AIN6 */
-				<3 0 &gpio0 16 0>,   /* ADC3 = AIN5 */
-				<2 0 &gpio0 15 0>,   /* ADC2 = AIN4 */
-				<1 0 &gpio0 14 0>,   /* ADC1 = AIN2 */
-				<0 0 &gpio0 13 0>;   /* ADC0 = AIN1 */
+		<13 0 &gpio0 27 0>,  /* SCL */
+		<14 0 &gpio0 29 0>,  /* PWM3 */
+		<15 0 &gpio0 30 0>,  /* PWM3 */
+		<16 0 &gpio0 0 0>,   /* PWM1 */
+		<17 0 &gpio0 1 0>,   /* PWM1 */
+		<18 0 &gpio0 2 0>,   /* PWM1 */
+		<19 0 &gpio0 3 0>,   /* PWM0 */
+		<20 0 &gpio0 4 0>,   /* PWM1 */
+		/* 11 not connected */
+		<10 0 &gpio0 24 0>,  /* TX */
+		<9 0 &gpio0 23 0>,   /* RX */
+		<8 0 &gpio0 22 0>,   /* MISO */
+		<7 0 &gpio0 21 0>,   /* MOSI */
+		<6 0 &gpio0 19 0>,   /* SCK */
+		<5 0 &gpio0 18 0>,   /* SS */
+		<4 0 &gpio0 17 0>,   /* ADC4 = AIN6 */
+		<3 0 &gpio0 16 0>,   /* ADC3 = AIN5 */
+		<2 0 &gpio0 15 0>,   /* ADC2 = AIN4 */
+		<1 0 &gpio0 14 0>,   /* ADC1 = AIN2 */
+		<0 0 &gpio0 13 0>;   /* ADC0 = AIN1 */
 	};
 };
 
@@ -135,22 +135,22 @@
 &spi3 {
 	compatible = "nordic,nrf-spim";
 	status = "okay";
-	sck-pin = < 11 >;
-	mosi-pin = < 9 >;
-	miso-pin = < 28 >;
-	cs-gpios = < &gpio0 7 GPIO_ACTIVE_LOW >;
+	sck-pin = <11>;
+	mosi-pin = <9>;
+	miso-pin = <28>;
+	cs-gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
 	w25q32jv: w25q32jv@0 {
 		compatible = "jedec,spi-nor";
 		label = "W25Q32JV";
-		reg = < 0 >;
-		spi-max-frequency = < 40000000 >;
-		wp-gpios = < &gpio0 8 GPIO_ACTIVE_LOW >;
-		hold-gpios = < &gpio0 10 GPIO_ACTIVE_LOW >;
-		size = < 0x2000000 >;
+		reg = <0>;
+		spi-max-frequency = <40000000>;
+		wp-gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
+		hold-gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+		size = <0x2000000>;
 		has-dpd;
-		t-enter-dpd = < 3000 >;
-		t-exit-dpd = < 30000 >;
-		jedec-id = [ ef 40 16  ];
+		t-enter-dpd = <3000>;
+		t-exit-dpd = <30000>;
+		jedec-id = [ ef 40 16 ];
 	};
 };
 
@@ -167,7 +167,6 @@
 };
 
 &flash0 {
-
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -232,4 +231,4 @@
 };
 
 /* Include partition configuration file */
-#include "circuitdojo_feather_nrf9160_partition_conf.dts"
+#include "sparkfun_thing_plus_nrf9160_partition_conf.dts"
