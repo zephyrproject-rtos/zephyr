@@ -268,14 +268,21 @@ void z_eviction_init(void);
  * may simply generate location tokens purely as a function of pf->addr with no
  * other management necessary.
  *
+ * This function distinguishes whether it was called on behalf of a page
+ * fault. A free backing store location must always be reserved in order for
+ * page faults to succeed. If the page_fault parameter is not set, this
+ * function should return -ENOMEM even if one location is available.
+ *
  * This function is invoked with interrupts locked.
  *
  * @param addr Virtual address to obtain a storage location
  * @param [out] location storage location token
+ * @param page_fault Whether this request was for a page fault
  * @return 0 Success
  * @return -ENOMEM Backing store is full
  */
-int z_backing_store_location_get(struct z_page_frame *pf, uintptr_t *location);
+int z_backing_store_location_get(struct z_page_frame *pf, uintptr_t *location,
+				 bool page_fault);
 
 /**
  * Free a backing store location
