@@ -4202,6 +4202,173 @@ static inline k_ticks_t k_delayed_work_remaining_ticks(
 
 /** @} */
 
+struct k_work_user;
+
+/**
+ * @addtogroup thread_apis
+ * @{
+ */
+
+/**
+ * @typedef k_work_user_handler_t
+ * @brief Work item handler function type for user work queues.
+ *
+ * A work item's handler function is executed by a user workqueue's thread
+ * when the work item is processed by the workqueue.
+ *
+ * @param work Address of the work item.
+ *
+ * @return N/A
+ */
+typedef void (*k_work_user_handler_t)(struct k_work_user *work);
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+
+struct k_work_user_q {
+	struct k_queue queue;
+	struct k_thread thread;
+};
+
+enum {
+	K_WORK_USER_STATE_PENDING,	/* Work item pending state */
+};
+
+struct k_work_user {
+	void *_reserved;		/* Used by k_queue implementation. */
+	k_work_user_handler_t handler;
+	atomic_t flags;
+};
+
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
+
+#define Z_WORK_USER_INITIALIZER(work_handler) \
+	{ \
+	.handler = work_handler, \
+	}
+
+/**
+ * @brief Initialize a statically-defined user work item.
+ *
+ * This macro can be used to initialize a statically-defined user work
+ * item, prior to its first use. For example,
+ *
+ * @code static K_WORK_USER_DEFINE(<work>, <work_handler>); @endcode
+ *
+ * @param work Symbol name for work item object
+ * @param work_handler Function to invoke each time work item is processed.
+ */
+#define K_WORK_USER_DEFINE(work, work_handler) \
+	struct k_work_user work = Z_WORK_USER_INITIALIZER(work_handler)
+
+/**
+ * @brief Initialize a userspace work item.
+ *
+ * This routine initializes a user workqueue work item, prior to its
+ * first use.
+ *
+ * @param work Address of work item.
+ * @param handler Function to invoke each time work item is processed.
+ *
+ * @return N/A
+ */
+static inline void k_work_user_init(struct k_work_user *work,
+				    k_work_user_handler_t handler)
+{
+	*work = (struct k_work_user)Z_WORK_USER_INITIALIZER(handler);
+}
+
+/**
+ * @brief Check if a userspace work item is pending.
+ *
+ * This routine indicates if user work item @a work is pending in a workqueue's
+ * queue.
+ *
+ * @note Checking if the work is pending gives no guarantee that the
+ *       work will still be pending when this information is used. It is up to
+ *       the caller to make sure that this information is used in a safe manner.
+ *
+ * @note Can be called by ISRs.
+ *
+ * @param work Address of work item.
+ *
+ * @return true if work item is pending, or false if it is not pending.
+ */
+static inline bool k_work_user_is_pending(struct k_work_user *work)
+{
+	return atomic_test_bit(&work->flags, K_WORK_USER_STATE_PENDING);
+}
+
+/**
+ * @brief Submit a work item to a user mode workqueue
+ *
+ * Submits a work item to a workqueue that runs in user mode. A temporary
+ * memory allocation is made from the caller's resource pool which is freed
+ * once the worker thread consumes the k_work item. The workqueue
+ * thread must have memory access to the k_work item being submitted. The caller
+ * must have permission granted on the work_q parameter's queue object.
+ *
+ * @note Can be called by ISRs.
+ *
+ * @param work_q Address of workqueue.
+ * @param work Address of work item.
+ *
+ * @retval -EBUSY if the work item was already in some workqueue
+ * @retval -ENOMEM if no memory for thread resource pool allocation
+ * @retval 0 Success
+ */
+static inline int k_work_user_submit_to_queue(struct k_work_user_q *work_q,
+					      struct k_work_user *work)
+{
+	int ret = -EBUSY;
+
+	if (!atomic_test_and_set_bit(&work->flags,
+				     K_WORK_USER_STATE_PENDING)) {
+		ret = k_queue_alloc_append(&work_q->queue, work);
+
+		/* Couldn't insert into the queue. Clear the pending bit
+		 * so the work item can be submitted again
+		 */
+		if (ret != 0) {
+			atomic_clear_bit(&work->flags,
+					 K_WORK_USER_STATE_PENDING);
+		}
+	}
+
+	return ret;
+}
+
+/**
+ * @brief Start a workqueue in user mode
+ *
+ * This works identically to k_work_queue_start() except it is callable from
+ * user mode, and the worker thread created will run in user mode.  The caller
+ * must have permissions granted on both the work_q parameter's thread and
+ * queue objects, and the same restrictions on priority apply as
+ * k_thread_create().
+ *
+ * @param work_q Address of workqueue.
+ * @param stack Pointer to work queue thread's stack space, as defined by
+ *		K_THREAD_STACK_DEFINE()
+ * @param stack_size Size of the work queue thread's stack (in bytes), which
+ *		should either be the same constant passed to
+ *		K_THREAD_STACK_DEFINE() or the value of K_THREAD_STACK_SIZEOF().
+ * @param prio Priority of the work queue's thread.
+ * @param name optional thread name.  If not null a copy is made into the
+ *		thread's name buffer.
+ *
+ * @return N/A
+ */
+extern void k_work_user_queue_start(struct k_work_user_q *work_q,
+				    k_thread_stack_t *stack,
+				    size_t stack_size, int prio,
+				    const char *name);
+
+/** @} */
+
 #endif /* !CONFIG_KERNEL_WORK1 */
 
 /**
