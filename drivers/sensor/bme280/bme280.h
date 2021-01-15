@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2016, 2017 Intel Corporation
  * Copyright (c) 2017 IpTronix S.r.l.
+ * Copyright (c) 2021 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +11,48 @@
 
 #include <zephyr/types.h>
 #include <device.h>
+#include <devicetree.h>
+#include <drivers/spi.h>
+#include <drivers/i2c.h>
+
+#define DT_DRV_COMPAT bosch_bme280
+
+#define BME280_BUS_SPI DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+#define BME280_BUS_I2C DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+
+union bme280_bus_config {
+#if BME280_BUS_SPI
+	struct spi_config spi_cfg;
+#endif
+#if BME280_BUS_I2C
+	uint16_t i2c_addr;
+#endif
+};
+
+typedef int (*bme280_bus_check_fn)(const struct device *bus,
+				   const union bme280_bus_config *bus_config);
+typedef int (*bme280_reg_read_fn)(const struct device *bus,
+				  const union bme280_bus_config *bus_config,
+				  uint8_t start, uint8_t *buf, int size);
+typedef int (*bme280_reg_write_fn)(const struct device *bus,
+				   const union bme280_bus_config *bus_config,
+				   uint8_t reg, uint8_t val);
+
+struct bme280_bus_io {
+	bme280_bus_check_fn check;
+	bme280_reg_read_fn read;
+	bme280_reg_write_fn write;
+};
+
+#if BME280_BUS_SPI
+#define BME280_SPI_OPERATION (SPI_WORD_SET(8) | SPI_TRANSFER_MSB |	\
+			      SPI_MODE_CPOL | SPI_MODE_CPHA)
+extern const struct bme280_bus_io bme280_bus_io_spi;
+#endif
+
+#if BME280_BUS_I2C
+extern const struct bme280_bus_io bme280_bus_io_i2c;
+#endif
 
 #define BME280_REG_PRESS_MSB            0xF7
 #define BME280_REG_COMP_START           0x88
