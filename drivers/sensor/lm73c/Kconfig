@@ -1,7 +1,7 @@
 # Copyright (c) 2020 SER Consulting LLC
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig LM73C
+config LM73C
 	bool "LM73C Temperature Sensor"
 	depends on I2C
 	help
