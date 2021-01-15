@@ -129,8 +129,13 @@ static void test_inst_props(void)
 			      strlen(label_startswith)), "");
 }
 
-static void test_default_prop_access(void)
+static void test_prop_or(void)
 {
+	/*
+	 * Tests for APIs that expand to a default value if a property
+	 * is undefined, like DT_PROP_OR, DT_PHA_BY_IDX_OR, etc.
+	 */
+
 	/*
 	 * The APIs guarantee that the default_value is not expanded
 	 * if the relevant property or cell is defined. This "X" macro
@@ -1545,7 +1550,7 @@ void test_main(void)
 			 ztest_unit_test(test_alias_props),
 			 ztest_unit_test(test_nodelabel_props),
 			 ztest_unit_test(test_inst_props),
-			 ztest_unit_test(test_default_prop_access),
+			 ztest_unit_test(test_prop_or),
 			 ztest_unit_test(test_has_path),
 			 ztest_unit_test(test_has_alias),
 			 ztest_unit_test(test_inst_checks),
