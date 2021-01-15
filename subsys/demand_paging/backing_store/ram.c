@@ -51,6 +51,7 @@
 static char backing_store[CONFIG_MMU_PAGE_SIZE *
 			  CONFIG_BACKING_STORE_RAM_PAGES];
 static struct k_mem_slab backing_slabs;
+static unsigned int free_slabs;
 
 static void *location_to_slab(uintptr_t location)
 {
@@ -78,17 +79,21 @@ static uintptr_t slab_to_location(void *slab)
 	return offset;
 }
 
-int z_backing_store_location_get(struct z_page_frame *pf,
-				 uintptr_t *location)
+int z_backing_store_location_get(struct z_page_frame *pf, uintptr_t *location,
+				 bool page_fault)
 {
 	int ret;
 	void *slab;
 
-	ret = k_mem_slab_alloc(&backing_slabs, &slab, K_NO_WAIT);
-	if (ret != 0) {
+	if ((!page_fault && free_slabs == 1) || free_slabs == 0) {
 		return -ENOMEM;
 	}
+
+	ret = k_mem_slab_alloc(&backing_slabs, &slab, K_NO_WAIT);
+	__ASSERT(ret == 0, "slab count mismatch");
+	(void)ret;
 	*location = slab_to_location(slab);
+	free_slabs--;
 
 	return 0;
 }
@@ -98,6 +103,7 @@ void z_backing_store_location_free(uintptr_t location)
 	void *slab = location_to_slab(location);
 
 	k_mem_slab_free(&backing_slabs, &slab);
+	free_slabs++;
 }
 
 void z_backing_store_page_out(uintptr_t location)
@@ -121,4 +127,5 @@ void z_backing_store_init(void)
 {
 	k_mem_slab_init(&backing_slabs, backing_store, CONFIG_MMU_PAGE_SIZE,
 			CONFIG_BACKING_STORE_RAM_PAGES);
+	free_slabs = CONFIG_BACKING_STORE_RAM_PAGES;
 }
