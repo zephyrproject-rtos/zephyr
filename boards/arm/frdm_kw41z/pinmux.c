@@ -14,15 +14,15 @@ static int frdm_kw41z_pinmux_init(const struct device *dev)
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(porta), okay)
 	__unused const struct device *porta =
-		device_get_binding(DT_LABEL(DT_NODELABEL(porta)));
+		DEVICE_DT_GET(DT_NODELABEL(porta));
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(portb), okay)
 	__unused const struct device *portb =
-		device_get_binding(DT_LABEL(DT_NODELABEL(portb)));
+		DEVICE_DT_GET(DT_NODELABEL(portb));
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(portc), okay)
 	__unused const struct device *portc =
-		device_get_binding(DT_LABEL(DT_NODELABEL(portc)));
+		DEVICE_DT_GET(DT_NODELABEL(portc));
 #endif
 
 	/* Red, green, blue LEDs. Note the red LED and accel INT1 are both

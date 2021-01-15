@@ -14,23 +14,23 @@ static int frdm_k82f_pinmux_init(const struct device *dev)
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(porta), okay)
 	__unused const struct device *porta =
-		device_get_binding(DT_LABEL(DT_NODELABEL(porta)));
+		DEVICE_DT_GET(DT_NODELABEL(porta));
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(portb), okay)
 	__unused const struct device *portb =
-		device_get_binding(DT_LABEL(DT_NODELABEL(portb)));
+		DEVICE_DT_GET(DT_NODELABEL(portb));
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(portc), okay)
 	__unused const struct device *portc =
-		device_get_binding(DT_LABEL(DT_NODELABEL(portc)));
+		DEVICE_DT_GET(DT_NODELABEL(portc));
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(portd), okay)
 	__unused const struct device *portd =
-		device_get_binding(DT_LABEL(DT_NODELABEL(portd)));
+		DEVICE_DT_GET(DT_NODELABEL(portd));
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(porte), okay)
 	__unused const struct device *porte =
-		device_get_binding(DT_LABEL(DT_NODELABEL(porte)));
+		DEVICE_DT_GET(DT_NODELABEL(porte));
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ftm3), nxp_kinetis_ftm_pwm, okay) && CONFIG_PWM

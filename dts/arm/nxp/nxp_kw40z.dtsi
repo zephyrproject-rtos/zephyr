@@ -109,21 +109,18 @@
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x40049000 0xa4>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 9>;
-			label = "porta";
 		};
 
 		portb: pinmux@4004a000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004a000 0xa4>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 10>;
-			label = "portb";
 		};
 
 		portc: pinmux@4004b000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004b000 0xa4>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 11>;
-			label = "portc";
 		};
 
 		gpioa: gpio@400ff000 {
