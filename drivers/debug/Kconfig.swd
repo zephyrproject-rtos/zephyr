@@ -1,0 +1,30 @@
+# Kconfig - SWD driver configuration options
+
+#
+# Copyright (c) 2019 Phytec Messtechnik GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig SWD_DRIVER
+	bool "Serial Wire Interface driver"
+	help
+	  Enable SWD Driver Configuration
+
+if SWD_DRIVER
+
+module = SWD_DRIVER
+module-str = swd driver
+source "subsys/logging/Kconfig.template.log_config"
+
+config SWD_BITBANG_DRIVER
+	bool "Serial Wire Interface bit-bang driver"
+	default y
+
+config SWD_DRIVER_INIT_PRIO
+	int "Serial Driver initialization priority"
+	default 80
+	help
+	  Set the initialization priority number.
+
+endif # SWD_DRIVER

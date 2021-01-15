@@ -1,0 +1,47 @@
+# Copyright (c) 2019, Phytec Messtechnik GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+title: Blah blah
+
+description: >
+    This is a representation of the SW GPIO interface
+
+compatible: "dap,sw_gpio"
+
+include: base.yaml
+
+properties:
+    clk-gpios:
+      type: phandle-array
+      required: true
+      description: GPIO pin used for SWCLK output
+
+    dout-gpios:
+      type: phandle-array
+      required: true
+      description: GPIO pin used for SWDIO output
+
+    din-gpios:
+      type: phandle-array
+      required: true
+      description: GPIO pin used for SWDIO input
+
+    dnoe-gpios:
+      type: phandle-array
+      required: true
+      description: GPIO pin used for SWDIO NOE output
+
+    noe-gpios:
+      type: phandle-array
+      required: true
+      description: GPIO pin used for SWD NOE output
+
+    reset-gpios:
+      type: phandle-array
+      required: true
+      description: GPIO pin used for RESET input
+
+    port-write-cycles:
+      type: int
+      required: true
+      description: Number of processor cycles for I/O Port write operations
