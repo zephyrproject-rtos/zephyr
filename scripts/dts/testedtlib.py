@@ -253,7 +253,12 @@ def test_prop_defaults():
     edt = edtlib.EDT("test.dts", ["test-bindings"])
 
     assert str(edt.get_node("/defaults").props) == \
-        r"OrderedDict([('int', <Property, name: int, type: int, value: 123>), ('array', <Property, name: array, type: array, value: [1, 2, 3]>), ('uint8-array', <Property, name: uint8-array, type: uint8-array, value: b'\x89\xab\xcd'>), ('string', <Property, name: string, type: string, value: 'hello'>), ('string-array', <Property, name: string-array, type: string-array, value: ['hello', 'there']>), ('default-not-used', <Property, name: default-not-used, type: int, value: 234>)])"
+        ("OrderedDict([('int', <Property, name: int, type: int, value: 123>), "
+         "('array', <Property, name: array, type: array, value: [1, 2, 3]>), "
+         r"('uint8-array', <Property, name: uint8-array, type: uint8-array, value: b'\x89\xab\xcd'>), "
+         "('string', <Property, name: string, type: string, value: 'hello'>), "
+         "('string-array', <Property, name: string-array, type: string-array, value: ['hello', 'there']>), "
+         "('default-not-used', <Property, name: default-not-used, type: int, value: 234>)])")
 
 def test_prop_enums():
     '''test properties with enum: in the binding'''
