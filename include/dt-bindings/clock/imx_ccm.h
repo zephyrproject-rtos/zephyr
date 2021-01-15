@@ -15,8 +15,9 @@
 #define IMX_CCM_LPSPI_CLK		5
 #define IMX_CCM_USDHC1_CLK		6
 #define IMX_CCM_USDHC2_CLK		7
-#define IMX_CCM_EDMA_CLK        8
+#define IMX_CCM_EDMA_CLK		8
 #define IMX_CCM_UART_CLK		9
 #define IMX_CCM_CAN_CLK			10
+#define IMX_CCM_GPT_CLK			11
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_IMX_CCM_H_ */
