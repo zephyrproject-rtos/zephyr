@@ -20,6 +20,7 @@
 #include <drivers/clock_control.h>
 #include <errno.h>
 #include <sys/util.h>
+#include <esp_attr.h>
 
 
 /*
@@ -141,7 +142,7 @@ static int uart_esp32_poll_in(const struct device *dev, unsigned char *p_char)
 	return 0;
 }
 
-static void uart_esp32_poll_out(const struct device *dev,
+static IRAM_ATTR void uart_esp32_poll_out(const struct device *dev,
 				unsigned char c)
 {
 	/* Wait for space in FIFO */
@@ -443,7 +444,7 @@ void uart_esp32_isr(const struct device *dev)
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-static const struct uart_driver_api uart_esp32_api = {
+static const DRAM_ATTR struct uart_driver_api uart_esp32_api = {
 	.poll_in = uart_esp32_poll_in,
 	.poll_out = uart_esp32_poll_out,
 	.err_check = uart_esp32_err_check,
@@ -495,7 +496,7 @@ static const struct uart_driver_api uart_esp32_api = {
 #endif
 #define ESP32_UART_INIT(idx)						       \
 ESP32_UART_IRQ_HANDLER_DECL(idx);					       \
-static const struct uart_esp32_config uart_esp32_cfg_port_##idx = {	       \
+static const DRAM_ATTR struct uart_esp32_config uart_esp32_cfg_port_##idx = {	       \
 	.dev_conf = {							       \
 		.base =							       \
 		    (uint8_t *)DT_INST_REG_ADDR(idx), \

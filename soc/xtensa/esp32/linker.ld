@@ -59,6 +59,7 @@ PROVIDE ( esp32_rom_ets_delay_us = ets_delay_us );
 
 /* __udivdi3 is exported using assignment, which declares strong symbols */
 __udivdi3 = 0x4000cff8;
+__umoddi3 = 0x4000d280;
 
 MEMORY
 {
@@ -257,6 +258,7 @@ _net_buf_pool_list = _esp_net_buf_pool_list;
      * when flash cache is disabled */
     *libarch__xtensa__core.a:(.rodata .rodata.*)
     *libkernel.a:fatal.*(.rodata .rodata.*)
+    *libzephyr.a:cbprintf_complete*(.rodata .rodata.*)
     KEEP(*(.jcr))
     *(.dram1 .dram1.*)
     _data_end = ABSOLUTE(.);
@@ -370,6 +372,9 @@ __shell_root_cmds_end = __esp_shell_root_cmds_end;
     *libzephyr.a:log_noos.*(.literal .text .literal.* .text.*)
     *libzephyr.a:xtensa_sys_timer.*(.literal .text .literal.* .text.*)
     *libzephyr.a:log_core.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:cbprintf_complete.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:printk.*(.literal.printk .literal.vprintk .literal.char_out .text.printk .text.vprintk .text.char_out)
+    *libzephyr.a:uart_console.*(.literal.console_out .text.console_out)
     *liblib__libc__minimal.a:string.*(.literal .text .literal.* .text.*)
     *libgcov.a:(.literal .text .literal.* .text.*)
     *libnet80211.a:( .wifi0iram  .wifi0iram.*)

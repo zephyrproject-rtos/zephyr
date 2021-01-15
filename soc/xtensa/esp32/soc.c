@@ -102,7 +102,7 @@ void __attribute__((section(".iram1"))) __start(void)
 }
 
 /* Boot-time static default printk handler, possibly to be overridden later. */
-int arch_printk_char_out(int c)
+int IRAM_ATTR arch_printk_char_out(int c)
 {
 	if (c == '\n') {
 		esp32_rom_uart_tx_one_char('\r');
