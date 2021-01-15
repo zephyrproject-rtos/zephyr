@@ -29,46 +29,47 @@ static int iis2dlpc_enable_int(const struct device *dev,
 	struct iis2dlpc_data *iis2dlpc = dev->data;
 	iis2dlpc_reg_t int_route;
 
-	if (cfg->drdy_int == 1U) {
+	switch (type) {
+	case SENSOR_TRIG_DATA_READY:
+		if (cfg->drdy_int == 1) {
+			/* set interrupt for pin INT1 */
+			iis2dlpc_pin_int1_route_get(iis2dlpc->ctx,
+					&int_route.ctrl4_int1_pad_ctrl);
+			int_route.ctrl4_int1_pad_ctrl.int1_drdy = enable;
+
+			return iis2dlpc_pin_int1_route_set(iis2dlpc->ctx,
+					&int_route.ctrl4_int1_pad_ctrl);
+		} else {
+			/* set interrupt for pin INT2 */
+			iis2dlpc_pin_int2_route_get(iis2dlpc->ctx,
+					&int_route.ctrl5_int2_pad_ctrl);
+			int_route.ctrl5_int2_pad_ctrl.int2_drdy = enable;
+
+			return iis2dlpc_pin_int2_route_set(iis2dlpc->ctx,
+					&int_route.ctrl5_int2_pad_ctrl);
+		}
+		break;
+#ifdef CONFIG_IIS2DLPC_PULSE
+	case SENSOR_TRIG_TAP:
 		/* set interrupt for pin INT1 */
 		iis2dlpc_pin_int1_route_get(iis2dlpc->ctx,
 				&int_route.ctrl4_int1_pad_ctrl);
-
-		switch (type) {
-		case SENSOR_TRIG_DATA_READY:
-			int_route.ctrl4_int1_pad_ctrl.int1_drdy = enable;
-			break;
-#ifdef CONFIG_IIS2DLPC_PULSE
-		case SENSOR_TRIG_TAP:
-			int_route.ctrl4_int1_pad_ctrl.int1_single_tap = enable;
-			break;
-		case SENSOR_TRIG_DOUBLE_TAP:
-			int_route.ctrl4_int1_pad_ctrl.int1_tap = enable;
-			break;
-#endif /* CONFIG_IIS2DLPC_PULSE */
-		default:
-			LOG_ERR("Unsupported trigger interrupt route");
-			return -ENOTSUP;
-		}
+		int_route.ctrl4_int1_pad_ctrl.int1_single_tap = enable;
 
 		return iis2dlpc_pin_int1_route_set(iis2dlpc->ctx,
 				&int_route.ctrl4_int1_pad_ctrl);
-	} else {
-		/* set interrupt for pin INT2 */
-		iis2dlpc_pin_int2_route_get(iis2dlpc->ctx,
-					    &int_route.ctrl5_int2_pad_ctrl);
+	case SENSOR_TRIG_DOUBLE_TAP:
+		/* set interrupt for pin INT1 */
+		iis2dlpc_pin_int1_route_get(iis2dlpc->ctx,
+				&int_route.ctrl4_int1_pad_ctrl);
+		int_route.ctrl4_int1_pad_ctrl.int1_tap = enable;
 
-		switch (type) {
-		case SENSOR_TRIG_DATA_READY:
-			int_route.ctrl5_int2_pad_ctrl.int2_drdy = enable;
-			break;
-		default:
-			LOG_ERR("Unsupported trigger interrupt route");
-			return -ENOTSUP;
-		}
-
-		return iis2dlpc_pin_int2_route_set(iis2dlpc->ctx,
-				&int_route.ctrl5_int2_pad_ctrl);
+		return iis2dlpc_pin_int1_route_set(iis2dlpc->ctx,
+				&int_route.ctrl4_int1_pad_ctrl);
+#endif /* CONFIG_IIS2DLPC_PULSE */
+	default:
+		LOG_ERR("Unsupported trigger interrupt route %d", type);
+		return -ENOTSUP;
 	}
 }
 
