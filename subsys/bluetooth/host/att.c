@@ -2611,7 +2611,6 @@ static void att_timeout(struct k_work *work)
 	 * target device on this ATT Bearer.
 	 */
 	bt_att_disconnected(&chan->chan.chan);
-	ch->chan.conn = NULL;
 }
 
 static struct bt_att_chan *att_get_fixed_chan(struct bt_conn *conn)
