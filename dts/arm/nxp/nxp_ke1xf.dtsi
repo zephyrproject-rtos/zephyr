@@ -302,35 +302,30 @@
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x40049000 0x1000>;
 			clocks = <&pcc 0x124 KINETIS_PCC_SRC_NONE_OR_EXT>;
-			label = "porta";
 		};
 
 		portb: pinmux@4004a000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004a000 0x1000>;
 			clocks = <&pcc 0x128 KINETIS_PCC_SRC_NONE_OR_EXT>;
-			label = "portb";
 		};
 
 		portc: pinmux@4004b000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004b000 0x1000>;
 			clocks = <&pcc 0x12c KINETIS_PCC_SRC_NONE_OR_EXT>;
-			label = "portc";
 		};
 
 		portd: pinmux@4004c000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004c000 0x1000>;
 			clocks = <&pcc 0x130 KINETIS_PCC_SRC_NONE_OR_EXT>;
-			label = "portd";
 		};
 
 		porte: pinmux@4004d000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004d000 0x1000>;
 			clocks = <&pcc 0x134 KINETIS_PCC_SRC_NONE_OR_EXT>;
-			label = "porte";
 		};
 
 		gpioa: gpio@400ff000 {
