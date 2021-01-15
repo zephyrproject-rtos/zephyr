@@ -298,6 +298,14 @@ static CO_SDO_abortCode_t canopen_odf_1f56(CO_ODF_arg_t *odf_arg)
 		return CO_SDO_AB_READONLY;
 	}
 
+	/* Reading from flash and calculating crc can take 100ms or more, and
+	 * this function is called with the can od lock taken.
+	 *
+	 * Release the lock before performing time consuming work, and reacquire
+	 * before return.
+	 */
+	CO_UNLOCK_OD();
+
 	/*
 	 * Calculate the CRC32 of the image that is running or will be
 	 * started upon receiveing the next 'start' command.
@@ -312,6 +320,8 @@ static CO_SDO_abortCode_t canopen_odf_1f56(CO_ODF_arg_t *odf_arg)
 	if (err) {
 		LOG_WRN("failed to read bank header (err %d)", err);
 		CO_setUint32(odf_arg->data, 0U);
+
+		CO_LOCK_OD();
 		return CO_SDO_AB_NONE;
 	}
 
@@ -319,6 +329,8 @@ static CO_SDO_abortCode_t canopen_odf_1f56(CO_ODF_arg_t *odf_arg)
 		LOG_WRN("unsupported mcuboot header version %d",
 			header.mcuboot_version);
 		CO_setUint32(odf_arg->data, 0U);
+
+		CO_LOCK_OD();
 		return CO_SDO_AB_NONE;
 	}
 	len = header.h.v1.image_size;
@@ -328,6 +340,8 @@ static CO_SDO_abortCode_t canopen_odf_1f56(CO_ODF_arg_t *odf_arg)
 		LOG_ERR("failed to open flash area (err %d)", err);
 		CO_errorReport(ctx.em, CO_EM_NON_VOLATILE_MEMORY,
 			       CO_EMC_HARDWARE, err);
+
+		CO_LOCK_OD();
 		return CO_SDO_AB_HW;
 	}
 
@@ -339,6 +353,8 @@ static CO_SDO_abortCode_t canopen_odf_1f56(CO_ODF_arg_t *odf_arg)
 			CO_errorReport(ctx.em, CO_EM_NON_VOLATILE_MEMORY,
 				       CO_EMC_HARDWARE, err);
 			flash_area_close(flash_area);
+
+			CO_LOCK_OD();
 			return CO_SDO_AB_HW;
 		}
 
@@ -351,6 +367,7 @@ static CO_SDO_abortCode_t canopen_odf_1f56(CO_ODF_arg_t *odf_arg)
 
 	CO_setUint32(odf_arg->data, crc);
 
+	CO_LOCK_OD();
 	return CO_SDO_AB_NONE;
 }
 #endif /* CONFIG_BOOTLOADER_MCUBOOT */
