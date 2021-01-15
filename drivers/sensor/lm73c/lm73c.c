@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 SER Consulting LLC
+ * Copyright (c) 2020 SER Consulting LLC / Steven Riedl
  *
  * SPDX-License-Identifier: Apache-2.0
  */
