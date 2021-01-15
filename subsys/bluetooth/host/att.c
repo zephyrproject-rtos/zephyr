@@ -133,6 +133,8 @@ typedef void (*bt_att_chan_sent_t)(struct bt_att_chan *chan);
 static bt_att_chan_sent_t chan_cb(struct net_buf *buf);
 static bt_conn_tx_cb_t att_cb(bt_att_chan_sent_t cb);
 
+static void bt_att_disconnected(struct bt_l2cap_chan *chan);
+
 void att_sent(struct bt_conn *conn, void *user_data)
 {
 	struct bt_l2cap_chan *chan = user_data;
@@ -2597,8 +2599,6 @@ static void att_timeout(struct k_work *work)
 {
 	struct bt_att_chan *chan = CONTAINER_OF(work, struct bt_att_chan,
 						timeout_work);
-	struct bt_att *att = chan->att;
-	struct bt_l2cap_le_chan *ch = &chan->chan;
 
 	BT_ERR("ATT Timeout");
 
@@ -2610,17 +2610,7 @@ static void att_timeout(struct k_work *work)
 	 * requests, commands, indications or notifications shall be sent to the
 	 * target device on this ATT Bearer.
 	 */
-	att_chan_detach(chan);
-
-	/* Don't notify if there are still channels to be used */
-	if (!sys_slist_is_empty(&att->chans)) {
-		return;
-	}
-
-	att_reset(att);
-
-	/* Consider the channel disconnected */
-	bt_gatt_disconnected(ch->chan.conn);
+	bt_att_disconnected(&chan->chan.chan);
 	ch->chan.conn = NULL;
 }
 
@@ -2676,6 +2666,11 @@ static void bt_att_disconnected(struct bt_l2cap_chan *chan)
 	struct bt_l2cap_le_chan *ch = BT_L2CAP_LE_CHAN(chan);
 
 	BT_DBG("chan %p cid 0x%04x", ch, ch->tx.cid);
+
+	if (!att_chan->att) {
+		BT_DBG("Ignore disconnect on detached ATT chan");
+		return;
+	}
 
 	att_chan_detach(att_chan);
 
