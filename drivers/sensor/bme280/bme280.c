@@ -3,6 +3,7 @@
 /*
  * Copyright (c) 2016, 2017 Intel Corporation
  * Copyright (c) 2017 IpTronix S.r.l.
+ * Copyright (c) 2021 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,22 +12,12 @@
 #include <drivers/sensor.h>
 #include <init.h>
 #include <drivers/gpio.h>
-#include <drivers/i2c.h>
-#include <drivers/spi.h>
 #include <sys/byteorder.h>
 #include <sys/__assert.h>
 
 #include <logging/log.h>
 
 #include "bme280.h"
-
-#define BME280_SPI_OPERATION (SPI_WORD_SET(8) | SPI_TRANSFER_MSB |	\
-			      SPI_MODE_CPOL | SPI_MODE_CPHA)
-
-#define DT_DRV_COMPAT bosch_bme280
-
-#define BME280_BUS_SPI DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-#define BME280_BUS_I2C DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 
 LOG_MODULE_REGISTER(BME280, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -70,34 +61,10 @@ struct bme280_data {
 #endif
 };
 
-union bme280_bus_config {
-#if BME280_BUS_SPI
-	struct spi_config spi_cfg;
-#endif
-#if BME280_BUS_I2C
-	uint16_t i2c_addr;
-#endif
-};
-
 struct bme280_config {
 	const struct device *bus;
 	const struct bme280_bus_io *bus_io;
 	const union bme280_bus_config bus_config;
-};
-
-typedef int (*bme280_bus_check_fn)(const struct device *bus,
-				   const union bme280_bus_config *bus_config);
-typedef int (*bme280_reg_read_fn)(const struct device *bus,
-				  const union bme280_bus_config *bus_config,
-				  uint8_t start, uint8_t *buf, int size);
-typedef int (*bme280_reg_write_fn)(const struct device *bus,
-				   const union bme280_bus_config *bus_config,
-				   uint8_t reg, uint8_t val);
-
-struct bme280_bus_io {
-	bme280_bus_check_fn check;
-	bme280_reg_read_fn read;
-	bme280_reg_write_fn write;
 };
 
 static inline struct bme280_data *to_data(const struct device *dev)
@@ -120,128 +87,6 @@ to_bus_config(const struct device *dev)
 {
 	return &to_config(dev)->bus_config;
 }
-
-#if BME280_BUS_SPI
-static int bme280_bus_check_spi(const struct device *bus,
-				const union bme280_bus_config *bus_config)
-{
-	const struct spi_cs_control *cs;
-
-	if (!device_is_ready(bus)) {
-		LOG_DBG("SPI bus %s not ready", bus->name);
-		return -ENODEV;
-	}
-
-	cs = bus_config->spi_cfg.cs;
-	if (cs && !device_is_ready(cs->gpio_dev)) {
-		LOG_DBG("SPI CS GPIO controller %s not ready",
-			cs->gpio_dev->name);
-		return -ENODEV;
-	}
-
-	return 0;
-}
-
-static int bme280_reg_read_spi(const struct device *bus,
-			       const union bme280_bus_config *bus_config,
-			       uint8_t start, uint8_t *buf, int size)
-{
-	uint8_t addr;
-	const struct spi_buf tx_buf = {
-		.buf = &addr,
-		.len = 1
-	};
-	const struct spi_buf_set tx = {
-		.buffers = &tx_buf,
-		.count = 1
-	};
-	struct spi_buf rx_buf[2];
-	const struct spi_buf_set rx = {
-		.buffers = rx_buf,
-		.count = 2
-	};
-	int i;
-
-	rx_buf[0].buf = NULL;
-	rx_buf[0].len = 1;
-
-	rx_buf[1].len = 1;
-
-	for (i = 0; i < size; i++) {
-		int ret;
-
-		addr = (start + i) | 0x80;
-		rx_buf[1].buf = &buf[i];
-
-		ret = spi_transceive(bus, &bus_config->spi_cfg, &tx, &rx);
-		if (ret) {
-			LOG_DBG("spi_transceive FAIL %d\n", ret);
-			return ret;
-		}
-	}
-
-	return 0;
-}
-
-static int bme280_reg_write_spi(const struct device *bus,
-				const union bme280_bus_config *bus_config,
-				uint8_t reg, uint8_t val)
-{
-	uint8_t cmd[2] = { reg & 0x7F, val };
-	const struct spi_buf tx_buf = {
-		.buf = cmd,
-		.len = 2
-	};
-	const struct spi_buf_set tx = {
-		.buffers = &tx_buf,
-		.count = 1
-	};
-	int ret;
-
-	ret = spi_write(bus, &bus_config->spi_cfg, &tx);
-	if (ret) {
-		LOG_DBG("spi_write FAIL %d\n", ret);
-		return ret;
-	}
-	return 0;
-}
-
-static const struct bme280_bus_io bme280_bus_io_spi = {
-	.check = bme280_bus_check_spi,
-	.read = bme280_reg_read_spi,
-	.write = bme280_reg_write_spi,
-};
-#endif /* BME280_BUS_SPI */
-
-#if BME280_BUS_I2C
-static int bme280_bus_check_i2c(const struct device *bus,
-				const union bme280_bus_config *bus_config)
-{
-	return device_is_ready(bus) ? 0 : -ENODEV;
-}
-
-static int bme280_reg_read_i2c(const struct device *bus,
-			       const union bme280_bus_config *bus_config,
-			       uint8_t start, uint8_t *buf, int size)
-{
-	return i2c_burst_read(bus, bus_config->i2c_addr,
-			      start, buf, size);
-}
-
-static int bme280_reg_write_i2c(const struct device *bus,
-				const union bme280_bus_config *bus_config,
-				uint8_t reg, uint8_t val)
-{
-	return i2c_reg_write_byte(bus, bus_config->i2c_addr,
-				  reg, val);
-}
-
-static const struct bme280_bus_io bme280_bus_io_i2c = {
-	.check = bme280_bus_check_i2c,
-	.read = bme280_reg_read_i2c,
-	.write = bme280_reg_write_i2c,
-};
-#endif /* BME280_BUS_I2C */
 
 static inline int bme280_bus_check(const struct device *dev)
 {
