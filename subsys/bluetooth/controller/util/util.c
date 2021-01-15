@@ -215,3 +215,52 @@ again:
 
 	return 0;
 }
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
+void util_saa_le32(uint8_t *dst, uint8_t handle)
+{
+	/* Refer to Bluetooth Core Specification Version 5.2 Vol 6, Part B,
+	 * section 2.1.2 Access Address
+	 */
+	uint32_t saa, saa_15, saa_16;
+	uint8_t bits;
+
+	/* Get random number */
+	lll_csrand_get(dst, sizeof(uint32_t));
+	saa = sys_get_le32(dst);
+
+	/* SAA_19 = SAA_15 */
+	saa_15 = (saa >> 15) & 0x01;
+	saa &= ~BIT(19);
+	saa |= saa_15 << 19;
+
+	/* SAA_16 != SAA_15 */
+	saa &= ~BIT(16);
+	saa_16 = ~saa_15 & 0x01;
+	saa |= saa_16 << 16;
+
+	/* SAA_22 = SAA_16 */
+	saa &= ~BIT(22);
+	saa |= saa_16 << 22;
+
+	/* SAA_25 = 0 */
+	saa &= ~BIT(25);
+
+	/* SAA_23 = 1 */
+	saa |= BIT(23);
+
+	/* For any pair of BIGs transmitted by the same device, the SAA 15-0
+	 * values shall differ in at least two bits.
+	 * - Find the number of bits required to support 3 times the maximum
+	 *   ISO connection handles supported
+	 * - Clear those number many bits
+	 * - Set the value that is 3 times the handle so that consecutive values
+	 *   differ in at least two bits.
+	 */
+	bits = find_msb_set(CONFIG_BT_CTLR_ADV_ISO_SET * 0x03);
+	saa &= ~BIT_MASK(bits);
+	saa |= (handle * 0x03);
+
+	sys_put_le32(saa, dst);
+}
+#endif /* CONFIG_BT_CTLR_ADV_ISO */
