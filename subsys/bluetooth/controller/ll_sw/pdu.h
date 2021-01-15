@@ -86,6 +86,10 @@
 #define EVENT_MAFS_US           300
 /* Standard allows 2 us timing uncertainty inside the event */
 #define EVENT_MAFS_MAX_US       (EVENT_MAFS_US + 2)
+/* Minimum Subevent Space timings */
+#define EVENT_MSS_US            150
+/* Standard allows 2 us timing uncertainty inside the event */
+#define EVENT_MSS_MAX_US        (EVENT_MSS_US + 2)
 
 /* Offset Units field encoding */
 #define OFFS_UNIT_30_US         30
@@ -152,6 +156,8 @@
 #define PKT_US(octets, phy) PKT_DC_US((octets), (PDU_MIC_SIZE), (phy))
 
 #define PKT_AC_US(octets, mic, phy) PKT_DC_US((octets), (mic), (phy))
+
+#define PKT_BIS_US(octets, mic, phy) PKT_DC_US((octets), (mic), (phy))
 
 /* Extra bytes for enqueued node_rx metadata: rssi (always), resolving
  * index, directed adv report, and mesh channel and instant.
