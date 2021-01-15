@@ -200,6 +200,7 @@ Build system:
         - cmake/
         - CMakeLists.txt
         - scripts/zephyr_module.py
+        - share/
         - doc/guides/build/
         - doc/guides/modules.rst
     labels:
@@ -390,6 +391,7 @@ Documentation:
         - samples/drivers/can/
         - tests/drivers/can/
         - samples/subsys/canbus/
+        - doc/reference/networking/can_api.rst
     labels:
         - "area: CAN"
 
@@ -1239,6 +1241,7 @@ NXP Platforms:
     - drivers/*/*lpc*
     - drivers/*/*mcux*
     - dts/arm/nxp/
+    - dts/bindings/*/nxp*
   labels:
     - "platform: NXP"
 
@@ -1262,7 +1265,7 @@ nRF Platforms:
     maintainers:
         - ioannisg
     files:
-        - boards/arm/nrf*/
+        - boards/arm/*nrf*/
         - drivers/*/*nrfx*
         - soc/arm/nordic_nrf/
         - samples/boards/nrf/
@@ -1322,6 +1325,7 @@ Tracing:
         - subsys/timing/
         - samples/subsys/tracing/
         - doc/guides/tracing/
+        - tests/subsys/tracing/
     labels:
         - "area: tracing"
 
@@ -1425,6 +1429,8 @@ CI:
         - .github/
         - .buildkite/
         - scripts/ci/
+        - .checkpatch.conf
+        - scripts/gitlint/
     labels:
         - "area: Continuous Integration"
 
