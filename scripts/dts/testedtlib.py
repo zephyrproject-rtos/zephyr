@@ -258,6 +258,8 @@ def test_prop_defaults():
          r"('uint8-array', <Property, name: uint8-array, type: uint8-array, value: b'\x89\xab\xcd'>), "
          "('string', <Property, name: string, type: string, value: 'hello'>), "
          "('string-array', <Property, name: string-array, type: string-array, value: ['hello', 'there']>), "
+         "('boolean-true', <Property, name: boolean-true, type: boolean, value: True>), "
+         "('boolean-false', <Property, name: boolean-false, type: boolean, value: False>), "
          "('default-not-used', <Property, name: default-not-used, type: int, value: 234>)])")
 
 def test_prop_enums():

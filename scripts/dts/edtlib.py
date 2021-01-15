@@ -2041,7 +2041,7 @@ def _check_prop_type_and_default(prop_name, prop_type, default, binding_path):
     if default is None:
         return
 
-    if prop_type in {"boolean", "compound", "phandle", "phandles",
+    if prop_type in {"compound", "phandle", "phandles",
                      "phandle-array", "path"}:
         _err("'default:' can't be combined with 'type: {}' for '{}' in "
              "'properties:' in {}".format(prop_type, prop_name, binding_path))
@@ -2049,8 +2049,9 @@ def _check_prop_type_and_default(prop_name, prop_type, default, binding_path):
     def ok_default():
         # Returns True if 'default' is an okay default for the property's type
 
-        if prop_type == "int" and isinstance(default, int) or \
-           prop_type == "string" and isinstance(default, str):
+        if (prop_type == "int" and isinstance(default, int)) or \
+           (prop_type == "string" and isinstance(default, str)) or \
+           (prop_type == "boolean" and isinstance(default, bool)):
             return True
 
         # array, uint8-array, or string-array

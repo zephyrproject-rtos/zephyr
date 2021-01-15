@@ -30,6 +30,14 @@ properties:
         required: false
         default: ["hello", "there"]
 
+    boolean-true:
+        type: boolean
+        default: true
+
+    boolean-false:
+        type: boolean
+        default: false
+
     default-not-used:
         type: int
         required: false
