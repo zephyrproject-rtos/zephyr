@@ -33,6 +33,7 @@
 #include "ull_internal.h"
 #include "ull_adv_types.h"
 #include "ull_adv_internal.h"
+#include "ull_chan_internal.h"
 
 #include "ll.h"
 
@@ -65,8 +66,11 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	struct lll_adv_iso *lll_adv_iso;
 	struct ll_adv_iso_set *adv_iso;
 	struct pdu_adv *pdu_prev, *pdu;
+	struct pdu_big_info *big_info;
 	struct node_rx_pdu *node_rx;
+	uint8_t pdu_big_info_size;
 	struct ll_adv_set *adv;
+	uint16_t iso_interval;
 	uint8_t ter_idx;
 	uint8_t *acad;
 	uint8_t err;
@@ -133,10 +137,64 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 		}
 	}
 
-	/* TODO: Allow more than 1 BIS in a BIG */
-	if (num_bis != 1) {
-		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+	/* Store parameters in LLL context */
+	/* TODO: parameters to ULL if only accessed by ULL */
+	lll_adv_iso = &adv_iso->lll;
+	/* Mandatory Num_BIS = 1 */
+	lll_adv_iso->num_bis = num_bis;
+	/* TODO: Calculate NSE (No. of Sub Events), Mandatory NSE = 1 */
+	lll_adv_iso->nse = 1;
+	/* TODO: Calculate BN (Burst Count), Mandatory BN = 1 */
+	lll_adv_iso->bn = 1;
+	/* TODO: Immediate Repetation Count (IRC), Mandatory IRC = 1 */
+	lll_adv_iso->irc = 1;
+	/* TODO: Group count, GC = NSE / BN; PTO = GC - IRC;
+	 */
+	lll_adv_iso->pto = 0;
+	lll_adv_iso->max_pdu = CONFIG_BT_CTLR_ADV_ISO_PDU_LEN_MAX;
+	/* TODO: Calculate sub_interval, if interleaved then it is Num_BIS x
+	 *       BIS_Spacing (by BT Spec.)
+	 *       else if sequential, then by our implementation, lets keep it
+	 *       max_tx_time for Max_PDU + tMSS.
+	 */
+	/* TODO: BIS_Spacing, if interleaved, then by our implementation, lets
+	 *       keep it max_rx_time for Max_PDU + tMSS.
+	 */
+	/* TODO: packing support, sequential or interleaved */
+	if (encryption) {
+		lll_adv_iso->sub_interval = PKT_BIS_US(lll_adv_iso->max_pdu,
+						       PDU_MIC_SIZE, phy) +
+					    EVENT_MSS_US;
+		lll_adv_iso->bis_spacing = PKT_BIS_US(lll_adv_iso->max_pdu,
+						      PDU_MIC_SIZE, phy) +
+					   EVENT_MSS_US;
+	} else {
+		lll_adv_iso->sub_interval = PKT_BIS_US(lll_adv_iso->max_pdu, 0,
+						       phy) +
+					    EVENT_MSS_US;
+		lll_adv_iso->bis_spacing = PKT_BIS_US(lll_adv_iso->max_pdu, 0,
+						      phy) +
+					   EVENT_MSS_US;
 	}
+	util_saa_le32(lll_adv_iso->seed_access_addr, big_handle);
+	lll_adv_iso->sdu_interval = sdu_interval;
+	lll_adv_iso->max_sdu = max_sdu;
+	lll_csrand_get(lll_adv_iso->base_crc_init,
+		       sizeof(lll_adv_iso->base_crc_init));
+	lll_adv_iso->data_chan_count =
+		ull_chan_map_get(lll_adv_iso->data_chan_map);
+	lll_adv_iso->data_chan_id = 0;
+	lll_adv_iso->phy = phy;
+	lll_adv_iso->latency_prepare = 0;
+	lll_adv_iso->latency_event = 0;
+	lll_csrand_get(lll_adv_iso->payload_count,
+		       sizeof(lll_adv_iso->payload_count));
+	lll_adv_iso->payload_count[4] &= 0x3F;
+
+	/* TODO: framing support */
+
+	/* TODO: Calculate ISO interval */
+	iso_interval = sdu_interval / 1250U;
 
 	/* Allocate next PDU */
 	err = ull_adv_sync_pdu_alloc(adv, ULL_ADV_PDU_EXTRA_DATA_ALLOC_IF_EXIST, &pdu_prev, &pdu,
@@ -146,16 +204,50 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	}
 
 	/* Add ACAD to AUX_SYNC_IND */
-	hdr_data[0] = sizeof(struct pdu_big_info) + 2;
-	err = ull_adv_sync_pdu_set_clear(lll_adv_sync, pdu_prev, pdu, ULL_ADV_PDU_HDR_FIELD_ACAD,
-					 0U, hdr_data);
+	if (encryption) {
+		pdu_big_info_size = PDU_BIG_INFO_ENCRYPTED_SIZE;
+	} else {
+		pdu_big_info_size = PDU_BIG_INFO_CLEARTEXT_SIZE;
+	}
+	hdr_data[0] = pdu_big_info_size + 2;
+	err = ull_adv_sync_pdu_set_clear(lll_adv_sync, pdu_prev, pdu,
+					 ULL_ADV_PDU_HDR_FIELD_ACAD, 0U,
+					 &hdr_data);
 	if (err) {
 		return err;
 	}
 
 	memcpy(&acad, &hdr_data[1], sizeof(acad));
-	acad[0] = sizeof(struct pdu_big_info) + 1;
+	acad[0] = pdu_big_info_size + 1;
 	acad[1] = BT_DATA_BIG_INFO;
+	big_info = (void *)&acad[2];
+
+	/* big_info->offset and big_info->offset_units will be filled by LLL
+	 */
+
+	big_info->iso_interval = iso_interval;
+	big_info->num_bis = lll_adv_iso->num_bis;
+	big_info->nse = lll_adv_iso->nse;
+	big_info->bn = lll_adv_iso->bn;
+	big_info->sub_interval = lll_adv_iso->sub_interval;
+	big_info->pto = lll_adv_iso->pto;
+	big_info->spacing = lll_adv_iso->bis_spacing;
+	big_info->irc = lll_adv_iso->irc;
+	big_info->max_pdu = lll_adv_iso->max_pdu;
+	memcpy(&big_info->seed_access_addr, lll_adv_iso->seed_access_addr,
+	       sizeof(big_info->seed_access_addr));
+	big_info->sdu_interval = sdu_interval;
+	big_info->max_sdu = max_sdu;
+	memcpy(&big_info->base_crc_init, lll_adv_iso->base_crc_init,
+	       sizeof(big_info->base_crc_init));
+	memcpy(big_info->chm_phy, lll_adv_iso->data_chan_map,
+	       sizeof(big_info->chm_phy));
+	big_info->chm_phy[4] &= 0x1F;
+	big_info->chm_phy[4] |= ((find_lsb_set(phy) - 1) << 5);
+	memcpy(big_info->payload_count_framing, lll_adv_iso->payload_count,
+	       sizeof(big_info->payload_count_framing));
+	big_info->payload_count_framing[4] &= 0x7F;
+	big_info->payload_count_framing[4] |= ((framing & 0x01) << 7);
 
 	lll_adv_sync_data_enqueue(lll_adv_sync, ter_idx);
 
@@ -181,7 +273,6 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	/* Associate the ISO instance with a Periodic Advertising and
 	 * an Extended Advertising instance
 	 */
-	lll_adv_iso = &adv_iso->lll;
 	lll_adv_sync->iso = lll_adv_iso;
 	lll_adv_iso->adv = &adv->lll;
 

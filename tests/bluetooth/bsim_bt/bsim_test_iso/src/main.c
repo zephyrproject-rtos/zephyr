@@ -111,11 +111,11 @@ static void test_iso_main(void)
 #if !IS_ENABLED(USE_HOST_API)
 	uint8_t big_handle = 0;
 	uint8_t adv_handle;
-	uint32_t sdu_interval = 0x10000; /*us */
-	uint16_t max_sdu = 0x10;
-	uint16_t max_latency = 0x0A;
+	uint32_t sdu_interval = 10000; /* us */
+	uint16_t max_sdu = CONFIG_BT_CTLR_ADV_ISO_PDU_LEN_MAX;
+	uint16_t max_latency = 10; /* ms */
 	uint8_t rtn = 0;
-	uint8_t phy = 0;
+	uint8_t phy = BIT(0);
 	uint8_t packing = 0;
 	uint8_t framing = 0;
 	uint8_t encryption = 0;
