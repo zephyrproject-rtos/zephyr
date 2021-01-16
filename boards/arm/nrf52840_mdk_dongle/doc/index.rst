@@ -10,7 +10,7 @@ The nRF52840-MDK USB Dongle is a versatile, easy-to-use IoT hardware platform fo
 Bluetooth 5, Bluetooth Mesh, Thread, IEEE 802.15.4, ANT and 2.4GHz proprietary
 applications using the nRF52840 SoC.
 
-The kit features programmable user button, RGB LED, up to 12 GPIOs, antenna 
+The kit features programmable user button, RGB LED, up to 12 GPIOs, antenna
 selection for custom applications.
 
 See `nRF52840-mdk-dongle website`_ for more information about the development
