@@ -698,7 +698,8 @@ uint8_t ll_apto_set(uint16_t handle, uint16_t apto)
 	}
 
 	conn->apto_reload = RADIO_CONN_EVENTS(apto * 10U * 1000U,
-					      conn->lll.interval * 1250);
+					      conn->lll.interval *
+					      CONN_INT_UNIT_US);
 
 	return 0;
 }
@@ -2155,7 +2156,8 @@ static inline void event_conn_upd_init(struct ll_conn *conn,
 	pdu_ctrl_tx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND;
 	pdu_ctrl_tx->llctrl.conn_update_ind.win_size = conn->llcp_cu.win_size;
 	pdu_ctrl_tx->llctrl.conn_update_ind.win_offset =
-		sys_cpu_to_le16(conn->llcp_cu.win_offset_us / 1250U);
+		sys_cpu_to_le16(conn->llcp_cu.win_offset_us /
+			CONN_INT_UNIT_US);
 	pdu_ctrl_tx->llctrl.conn_update_ind.interval =
 		sys_cpu_to_le16(conn->llcp_cu.interval);
 	pdu_ctrl_tx->llctrl.conn_update_ind.latency =
@@ -2320,7 +2322,7 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 		if ((conn->llcp_cu.interval != lll->interval) ||
 		    (conn->llcp_cu.latency != lll->latency) ||
 		    (RADIO_CONN_EVENTS(conn->llcp_cu.timeout * 10000U,
-				       lll->interval * 1250) !=
+				       lll->interval * CONN_INT_UNIT_US) !=
 		     conn->supervision_reload)) {
 			struct node_rx_cu *cu;
 
@@ -2361,10 +2363,12 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 		conn_interval_new = latency * conn->llcp_cu.interval;
 		if (conn_interval_new > conn_interval_old) {
 			ticks_at_expire += HAL_TICKER_US_TO_TICKS(
-				(conn_interval_new - conn_interval_old) * 1250U);
+				(conn_interval_new - conn_interval_old) *
+				CONN_INT_UNIT_US);
 		} else {
 			ticks_at_expire -= HAL_TICKER_US_TO_TICKS(
-				(conn_interval_old - conn_interval_new) * 1250U);
+				(conn_interval_old - conn_interval_new) *
+				CONN_INT_UNIT_US);
 		}
 		lll->latency_prepare += lazy;
 		lll->latency_prepare -= (instant_latency - latency);
@@ -2380,7 +2384,8 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 		}
 
 		/* calculate the window widening and interval */
-		conn_interval_us = conn->llcp_cu.interval * 1250U;
+		conn_interval_us = conn->llcp_cu.interval *
+			CONN_INT_UNIT_US;
 		periodic_us = conn_interval_us;
 
 		if (0) {
@@ -2397,7 +2402,7 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 			lll->slave.window_widening_max_us =
 				(conn_interval_us >> 1) - EVENT_IFS_US;
 			lll->slave.window_size_prepare_us =
-				conn->llcp_cu.win_size * 1250U;
+				conn->llcp_cu.win_size * CONN_INT_UNIT_US;
 			conn->slave.ticks_to_offset = 0U;
 
 			lll->slave.window_widening_prepare_us +=
@@ -2413,7 +2418,8 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 				lll->slave.window_widening_periodic_us *
 				latency);
 			ticks_win_offset = HAL_TICKER_US_TO_TICKS(
-				(conn->llcp_cu.win_offset_us / 1250U) * 1250U);
+				(conn->llcp_cu.win_offset_us /
+				CONN_INT_UNIT_US) * CONN_INT_UNIT_US);
 			periodic_us -= lll->slave.window_widening_periodic_us;
 #endif /* CONFIG_BT_PERIPHERAL */
 
@@ -3836,7 +3842,8 @@ static uint8_t conn_upd_recv(struct ll_conn *conn, memq_link_t *link,
 
 	conn->llcp_cu.win_size = pdu->llctrl.conn_update_ind.win_size;
 	conn->llcp_cu.win_offset_us =
-		sys_le16_to_cpu(pdu->llctrl.conn_update_ind.win_offset) * 1250;
+		sys_le16_to_cpu(pdu->llctrl.conn_update_ind.win_offset) *
+			CONN_INT_UNIT_US;
 	conn->llcp_cu.interval =
 		sys_le16_to_cpu(pdu->llctrl.conn_update_ind.interval);
 	conn->llcp_cu.latency =
@@ -5759,7 +5766,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 				    (RADIO_CONN_EVENTS(conn->llcp_conn_param.timeout *
 						       10000U,
 						       lll->interval *
-						       1250) !=
+						       CONN_INT_UNIT_US) !=
 				     conn->supervision_reload)) {
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 					/* postpone CP request event if under
@@ -5862,7 +5869,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 			    (RADIO_CONN_EVENTS(conn->llcp_conn_param.timeout *
 					       10000U,
 					       lll->interval *
-					       1250) !=
+					       CONN_INT_UNIT_US) !=
 			     conn->supervision_reload)) {
 				conn->llcp_conn_param.state =
 					LLCP_CPR_STATE_APP_WAIT;

@@ -196,7 +196,7 @@ void ull_sync_iso_setup(struct ll_sync_iso *sync_iso,
 	handle = ull_sync_iso_handle_get(sync_iso);
 
 	interval = sys_le16_to_cpu(biginfo->iso_interval);
-	interval_us = interval * 1250U;
+	interval_us = interval * CONN_INT_UNIT_US;
 
 	/* TODO: Populate LLL with information from the BIGINFO */
 

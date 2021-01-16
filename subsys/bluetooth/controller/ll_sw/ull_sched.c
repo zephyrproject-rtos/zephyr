@@ -179,7 +179,7 @@ void ull_sched_mfy_win_offset_use(void *param)
 			      conn->llcp.conn_upd.ticks_anchor,
 			      &conn->llcp_cu.win_offset_us);
 
-	win_offset = conn->llcp_cu.win_offset_us / 1250;
+	win_offset = conn->llcp_cu.win_offset_us / CONN_INT_UNIT_US;
 
 	sys_put_le16(win_offset, (void *)conn->llcp.conn_upd.pdu_win_offset);
 }
@@ -222,7 +222,7 @@ void ull_sched_mfy_win_offset_select(void *param)
 	uint16_t win_offset_s;
 
 	ticks_to_offset = HAL_TICKER_US_TO_TICKS(conn->llcp_conn_param.offset0 *
-						 1250);
+						 CONN_INT_UNIT_US);
 
 	win_offset_calc(conn, 1, &ticks_to_offset,
 			conn->llcp_conn_param.interval_max, &offset_m_max,
@@ -256,11 +256,13 @@ void ull_sched_mfy_win_offset_select(void *param)
 	}
 
 	if (offset_index_s < OFFSET_S_MAX) {
-		conn->llcp_cu.win_offset_us = win_offset_s * 1250;
+		conn->llcp_cu.win_offset_us = win_offset_s *
+			CONN_INT_UNIT_US;
 		sys_put_le16(win_offset_s,
 			     (void *)conn->llcp.conn_upd.pdu_win_offset);
 	} else if (!has_offset_s) {
-		conn->llcp_cu.win_offset_us = win_offset_m[0] * 1250;
+		conn->llcp_cu.win_offset_us = win_offset_m[0] *
+			CONN_INT_UNIT_US;
 		sys_put_le16(win_offset_m[0],
 			     (void *)conn->llcp.conn_upd.pdu_win_offset);
 	} else {
@@ -435,7 +437,8 @@ static void win_offset_calc(struct ll_conn *conn_curr, uint8_t is_select,
 #endif
 
 			ticks_slot_abs_curr += conn->evt.ticks_slot +
-					       HAL_TICKER_US_TO_TICKS(1250);
+					HAL_TICKER_US_TO_TICKS(
+						CONN_INT_UNIT_US);
 
 			if (conn->lll.role) {
 				ticks_slot_margin =
@@ -458,7 +461,8 @@ static void win_offset_calc(struct ll_conn *conn_curr, uint8_t is_select,
 					 ticks_slot_margin))) {
 					offset = HAL_TICKER_TICKS_TO_US(
 						ticks_to_expire_prev +
-						ticks_slot_abs_prev) / 1250;
+						ticks_slot_abs_prev) /
+						CONN_INT_UNIT_US;
 					if (offset >= conn_interval) {
 						ticks_to_expire_prev = 0U;
 
@@ -472,7 +476,8 @@ static void win_offset_calc(struct ll_conn *conn_curr, uint8_t is_select,
 					offset_index++;
 
 					ticks_to_expire_prev +=
-						HAL_TICKER_US_TO_TICKS(1250);
+						HAL_TICKER_US_TO_TICKS(
+							CONN_INT_UNIT_US);
 				}
 
 				*ticks_to_offset_next = ticks_to_expire_prev;
@@ -497,7 +502,7 @@ static void win_offset_calc(struct ll_conn *conn_curr, uint8_t is_select,
 		while (offset_index < *offset_max) {
 			offset = HAL_TICKER_TICKS_TO_US(ticks_to_expire_prev +
 							ticks_slot_abs_prev) /
-				 1250;
+				 CONN_INT_UNIT_US;
 			if (offset >= conn_interval) {
 				ticks_to_expire_prev = 0U;
 
@@ -508,7 +513,8 @@ static void win_offset_calc(struct ll_conn *conn_curr, uint8_t is_select,
 							    offset_index)));
 			offset_index++;
 
-			ticks_to_expire_prev += HAL_TICKER_US_TO_TICKS(1250);
+			ticks_to_expire_prev += HAL_TICKER_US_TO_TICKS(
+				CONN_INT_UNIT_US);
 		}
 
 		*ticks_to_offset_next = ticks_to_expire_prev;
@@ -542,7 +548,8 @@ static void after_mstr_offset_get(uint16_t conn_interval, uint32_t ticks_slot,
 	}
 
 	if ((*win_offset_us & BIT(31)) == 0) {
-		uint32_t conn_interval_us = conn_interval * 1250;
+		uint32_t conn_interval_us = conn_interval *
+			CONN_INT_UNIT_US;
 
 		while (*win_offset_us > conn_interval_us) {
 			*win_offset_us -= conn_interval_us;

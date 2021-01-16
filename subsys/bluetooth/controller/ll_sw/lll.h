@@ -17,6 +17,10 @@
 #define EVENT_PIPELINE_MAX 7
 #define EVENT_DONE_MAX 3
 
+#define ADV_INT_UNIT_US  625U
+#define SCAN_INT_UNIT_US 625U
+#define CONN_INT_UNIT_US 1250U
+
 #define HDR_ULL(p)     ((void *)((uint8_t *)(p) + sizeof(struct evt_hdr)))
 #define HDR_ULL2LLL(p) ((struct lll_hdr *)((uint8_t *)(p) + \
 					   sizeof(struct ull_hdr)))
