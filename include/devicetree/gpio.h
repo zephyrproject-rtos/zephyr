@@ -58,7 +58,8 @@ extern "C" {
  * @param node_id node identifier
  * @param gpio_pha lowercase-and-underscores GPIO property with
  *        type "phandle-array"
- * @return the label property of the node referenced at index 0
+ * @return a node identifier for the gpio controller at index 0
+ *         in "gpio_pha"
  * @see DT_GPIO_CTLR_BY_IDX()
  */
 #define DT_GPIO_CTLR(node_id, gpio_pha) \
