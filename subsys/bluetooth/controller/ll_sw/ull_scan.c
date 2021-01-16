@@ -339,7 +339,7 @@ void ull_scan_params_set(struct lll_scan *lll, uint8_t type, uint16_t interval,
 	lll->filter_policy = filter_policy;
 	lll->interval = interval;
 	lll->ticks_window = HAL_TICKER_US_TO_TICKS((uint64_t)window *
-						   SCAN_INTERVAL_UNIT_US);
+						   SCAN_INT_UNIT_US);
 }
 
 uint8_t ull_scan_enable(struct ll_scan_set *scan)
@@ -359,7 +359,7 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 	lll_hdr_init(lll, scan);
 
 	ticks_interval = HAL_TICKER_US_TO_TICKS((uint64_t)lll->interval *
-						SCAN_INTERVAL_UNIT_US);
+						SCAN_INT_UNIT_US);
 
 	/* TODO: active_to_start feature port */
 	scan->evt.ticks_active_to_start = 0U;
@@ -422,7 +422,7 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 			   TICKER_USER_ID_THREAD, TICKER_ID_SCAN_BASE + handle,
 			   ticks_anchor, 0, ticks_interval,
 			   HAL_TICKER_REMAINDER((uint64_t)lll->interval *
-						SCAN_INTERVAL_UNIT_US),
+						SCAN_INT_UNIT_US),
 			   TICKER_NULL_LAZY,
 			   (scan->evt.ticks_slot + ticks_slot_overhead),
 			   ticker_cb, scan,

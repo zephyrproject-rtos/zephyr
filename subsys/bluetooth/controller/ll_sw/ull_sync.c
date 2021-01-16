@@ -381,7 +381,7 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 
 	sca = si->sca_chm[4] >> 5;
 	interval = sys_le16_to_cpu(si->interval);
-	interval_us = interval * 1250U;
+	interval_us = interval * CONN_INT_UNIT_US;
 
 	sync->timeout_reload = RADIO_SYNC_EVENTS((sync->timeout * 10U * 1000U),
 						 interval_us);

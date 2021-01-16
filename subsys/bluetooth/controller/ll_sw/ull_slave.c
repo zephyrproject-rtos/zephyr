@@ -98,7 +98,7 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	lll->latency = sys_le16_to_cpu(pdu_adv->connect_ind.latency);
 
 	win_offset = sys_le16_to_cpu(pdu_adv->connect_ind.win_offset);
-	conn_interval_us = interval * 1250U;
+	conn_interval_us = interval * CONN_INT_UNIT_US;
 
 	if (0) {
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
@@ -121,7 +121,8 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 		  conn_interval_us) + (1000000 - 1)) / 1000000U;
 	lll->slave.window_widening_max_us = (conn_interval_us >> 1) -
 					    EVENT_IFS_US;
-	lll->slave.window_size_event_us = pdu_adv->connect_ind.win_size * 1250U;
+	lll->slave.window_size_event_us = pdu_adv->connect_ind.win_size *
+		CONN_INT_UNIT_US;
 
 	/* procedure timeouts */
 	timeout = sys_le16_to_cpu(pdu_adv->connect_ind.timeout);
@@ -296,7 +297,7 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	conn_interval_us -= lll->slave.window_widening_periodic_us;
 
 	conn_offset_us = ftr->radio_end_us;
-	conn_offset_us += win_offset * 1250U;
+	conn_offset_us += win_offset * CONN_INT_UNIT_US;
 	conn_offset_us += win_delay_us;
 	conn_offset_us -= EVENT_OVERHEAD_START_US;
 	conn_offset_us -= EVENT_TICKER_RES_MARGIN_US;

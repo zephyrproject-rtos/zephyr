@@ -396,7 +396,8 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 			 */
 			aux->interval = adv->interval +
 					(HAL_TICKER_TICKS_TO_US(
-						ULL_ADV_RANDOM_DELAY) /	625U);
+						ULL_ADV_RANDOM_DELAY) /
+						ADV_INT_UNIT_US);
 
 			ret = ull_adv_aux_start(aux, ticks_anchor_aux,
 						ticks_slot_overhead_aux);
@@ -477,7 +478,7 @@ uint32_t ull_adv_sync_start(struct ll_adv_sync_set *sync,
 		ticks_slot_overhead = 0;
 	}
 
-	interval_us = (uint32_t)sync->interval * 1250U;
+	interval_us = (uint32_t)sync->interval * CONN_INT_UNIT_US;
 
 	sync_handle = sync_handle_get(sync);
 

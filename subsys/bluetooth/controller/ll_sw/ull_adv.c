@@ -1066,8 +1066,10 @@ uint8_t ll_adv_enable(uint8_t enable)
 		_radio.advertiser.scan_window_ms = scan_window;
 
 		interval_min_us = slot_us + (scan_delay + scan_window) * 1000;
-		if ((interval * 625) < interval_min_us) {
-			interval = (interval_min_us + (625 - 1)) / 625;
+		if ((interval * SCAN_INT_UNIT_US) < interval_min_us) {
+			interval = (interval_min_us +
+				(SCAN_INT_UNIT_US - 1)) /
+				SCAN_INT_UNIT_US;
 		}
 
 		/* passive scanning */
@@ -1217,7 +1219,8 @@ uint8_t ll_adv_enable(uint8_t enable)
 			 */
 			aux->interval = adv->interval +
 					(HAL_TICKER_TICKS_TO_US(
-						ULL_ADV_RANDOM_DELAY) / 625U);
+						ULL_ADV_RANDOM_DELAY) /
+						ADV_INT_UNIT_US);
 
 			ret = ull_adv_aux_start(aux, ticks_anchor_aux,
 						ticks_slot_overhead_aux);
@@ -1244,7 +1247,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 				   (TICKER_ID_ADV_BASE + handle),
 				   ticks_anchor, 0,
 				   HAL_TICKER_US_TO_TICKS((uint64_t)interval *
-							  625),
+							  ADV_INT_UNIT_US),
 				   TICKER_NULL_REMAINDER,
 #if !defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE) && \
 	!defined(CONFIG_BT_CTLR_LOW_LAT)
@@ -1565,7 +1568,8 @@ void ull_adv_done(struct node_rx_event_done *done)
 		rx_hdr->rx_ftr.param_adv_term.status = BT_HCI_ERR_LIMIT_REACHED;
 	} else if (adv->ticks_remain_duration &&
 		   (adv->ticks_remain_duration <
-		    HAL_TICKER_US_TO_TICKS((uint64_t)adv->interval * 625U))) {
+		    HAL_TICKER_US_TO_TICKS((uint64_t)adv->interval *
+			ADV_INT_UNIT_US))) {
 		adv->ticks_remain_duration = 0;
 
 		rx_hdr = (void *)lll->node_rx_adv_term;
@@ -1707,7 +1711,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t laz
 		if (adv->ticks_remain_duration) {
 			uint32_t ticks_interval =
 				HAL_TICKER_US_TO_TICKS((uint64_t)adv->interval *
-						       625U);
+						       ADV_INT_UNIT_US);
 			if (adv->ticks_remain_duration > ticks_interval) {
 				adv->ticks_remain_duration -= ticks_interval;
 

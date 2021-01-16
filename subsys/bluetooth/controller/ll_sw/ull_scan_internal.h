@@ -9,7 +9,6 @@
 #define SCAN_HANDLE_1M        0
 #define SCAN_HANDLE_PHY_CODED 1
 
-#define SCAN_INTERVAL_UNIT_US     625U
 #define EXT_SCAN_DURATION_UNIT_US 10000U
 #define EXT_SCAN_PERIOD_UNIT_US   1280000U
 
@@ -21,12 +20,12 @@
 /* Convert duration in 10 ms unit to radio events count */
 #define ULL_SCAN_DURATION_TO_EVENTS(duration, interval) \
 	(((uint32_t)(duration) * EXT_SCAN_DURATION_UNIT_US / \
-	  SCAN_INTERVAL_UNIT_US) / (interval))
+	  SCAN_INT_UNIT_US) / (interval))
 
 /* Convert period in 1.28 s unit to radio events count */
 #define ULL_SCAN_PERIOD_TO_EVENTS(period, interval) \
 	(((uint32_t)(period) * EXT_SCAN_PERIOD_UNIT_US / \
-	  SCAN_INTERVAL_UNIT_US) / (interval))
+	  SCAN_INT_UNIT_US) / (interval))
 
 int ull_scan_init(void);
 int ull_scan_reset(void);
