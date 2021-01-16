@@ -248,12 +248,28 @@ void *sys_heap_alloc(struct sys_heap *heap, size_t bytes)
 void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 {
 	struct z_heap *h = heap->heap;
+	size_t padded_sz, gap, rewind;
 
+	/*
+	 * Split align and rewind values (if any).
+	 * We allow for one bit of rewind in addition to the alignment
+	 * value to efficiently accommodate z_heap_aligned_alloc().
+	 * So if e.g. align = 0x28 (32 | 8) this means we align to a 32-byte
+	 * boundary and then rewind 8 bytes.
+	 */
+	rewind = align & -align;
+	if (align != rewind) {
+		align -= rewind;
+		gap = MIN(rewind, chunk_header_bytes(h));
+	} else {
+		if (align <= chunk_header_bytes(h)) {
+			return sys_heap_alloc(heap, bytes);
+		}
+		rewind = 0;
+		gap = chunk_header_bytes(h);
+	}
 	__ASSERT((align & (align - 1)) == 0, "align must be a power of 2");
 
-	if (align <= chunk_header_bytes(h)) {
-		return sys_heap_alloc(heap, bytes);
-	}
 	if (bytes == 0 || size_too_big(h, bytes)) {
 		return NULL;
 	}
@@ -263,16 +279,16 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 	 * We over-allocate to account for alignment and then free
 	 * the extra allocations afterwards.
 	 */
-	size_t padded_sz =
-		bytes_to_chunksz(h, bytes + align - chunk_header_bytes(h));
+	padded_sz = bytes_to_chunksz(h, bytes + align - gap);
 	chunkid_t c0 = alloc_chunk(h, padded_sz);
 
 	if (c0 == 0) {
 		return NULL;
 	}
+	uint8_t *mem = chunk_mem(h, c0);
 
 	/* Align allocated memory */
-	uint8_t *mem = (uint8_t *) ROUND_UP(chunk_mem(h, c0), align);
+	mem = (uint8_t *) ROUND_UP(mem + rewind, align) - rewind;
 	chunk_unit_t *end = (chunk_unit_t *) ROUND_UP(mem + bytes, CHUNK_UNIT);
 
 	/* Get corresponding chunks */
