@@ -12,3 +12,4 @@ supported:
   - arduino_gpio
   - gpio
   - counter
+  - can
