@@ -29,6 +29,18 @@ config CAN_FD_MODE
 	help
 	  Enable CAN-FD compatible API
 
+if CAN_FD_MODE
+
+config CANFD_MAX_DLC
+	int "Max data length code in CAN frames"
+	range 8 15
+	default 15
+	help
+	  Maximum allowed DLC in a CAN frame. This parameter sets the
+	  data buffer size in a CAN frame and is therefore only used to
+	  optimize memory consumption.
+endif # CAN_FD_MODE
+
 config CAN_INIT_PRIORITY
 	int "CAN driver init priority"
 	default 80
