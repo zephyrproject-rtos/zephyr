@@ -155,12 +155,11 @@ a mailbox. When a transmitting mailbox is assigned, sending cannot be canceled.
           .id_type = CAN_STANDARD_IDENTIFIER,
           .rtr = CAN_DATAFRAME,
           .id = 0x123,
-          .dlc = 8
+          .dlc = 8,
+          .data = {1,2,3,4,5,6,7,8}
   };
   const struct device *can_dev;
   int ret;
-
-  frame.data = {1,2,3,4,5,6,7,8};
 
   can_dev = device_get_binding("CAN_0");
 
@@ -196,7 +195,9 @@ occurred. It does not block until the message is sent like the example above.
                   .dlc = 2
           };
 
-          frame.data = {1,2};
+          frame.data[0] = 1;
+          frame.data[1] = 2;
+
           return can_send(can_dev, &frame, K_FOREVER, tx_irq_callback, "Sender 1");
   }
 
