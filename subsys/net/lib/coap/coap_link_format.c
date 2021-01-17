@@ -460,7 +460,6 @@ int coap_well_known_core_get(struct coap_resource *resource,
 	uint16_t remaining;
 	uint16_t id;
 	uint8_t tkl;
-	uint8_t format;
 	int r;
 	bool more = false;
 
@@ -502,10 +501,8 @@ int coap_well_known_core_get(struct coap_resource *resource,
 		goto end;
 	}
 
-	format = 40U; /* application/link-format */
-
-	r = coap_packet_append_option(response, COAP_OPTION_CONTENT_FORMAT,
-				      &format, sizeof(format));
+	r = coap_append_option_int(response, COAP_OPTION_CONTENT_FORMAT,
+				   COAP_CONTENT_FORMAT_APP_LINK_FORMAT);
 	if (r < 0) {
 		goto end;
 	}
@@ -659,7 +656,6 @@ int coap_well_known_core_get(struct coap_resource *resource,
 	uint8_t token[8];
 	uint16_t id;
 	uint8_t tkl;
-	uint8_t format;
 	uint8_t num_queries;
 	int r;
 
@@ -686,9 +682,8 @@ int coap_well_known_core_get(struct coap_resource *resource,
 		return r;
 	}
 
-	format = 40U; /* application/link-format */
-	r = coap_packet_append_option(response, COAP_OPTION_CONTENT_FORMAT,
-				      &format, sizeof(format));
+	r = coap_append_option_int(response, COAP_OPTION_CONTENT_FORMAT,
+				   COAP_CONTENT_FORMAT_APP_LINK_FORMAT);
 	if (r < 0) {
 		return -EINVAL;
 	}
