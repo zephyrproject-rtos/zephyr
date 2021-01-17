@@ -33,7 +33,22 @@ extern "C" {
 #define CAN_STD_ID_MASK CAN_MAX_STD_ID
 #define CAN_EXT_ID_MASK (0x1FFFFFFF)
 #define CAN_MAX_DLC    (8)
+#define CANFD_MAX_DLC  CONFIG_CANFD_MAX_DLC
+#ifndef CONFIG_CANFD_MAX_DLC
 #define CAN_MAX_DLEN    8
+#else
+#if CONFIG_CANFD_MAX_DLC <= 8
+#define CAN_MAX_DLEN    CONFIG_CANFD_MAX_DLC
+#elif CONFIG_CANFD_MAX_DLC <= 12
+#define CAN_MAX_DLEN    CONFIG_CANFD_MAX_DLC + (CONFIG_CANFD_MAX_DLC - 8) * 4
+#elif CONFIG_CANFD_MAX_DLC == 13
+#define CAN_MAX_DLEN 32
+#elif CONFIG_CANFD_MAX_DLC == 14
+#define CAN_MAX_DLEN 48
+#elif CONFIG_CANFD_MAX_DLC == 15
+#define CAN_MAX_DLEN 64
+#endif
+#endif /* CONFIG_CANFD_MAX_DLC */
 
 /* CAN_TX_* are the error flags from tx_callback and send.*/
 /** send successfully */
