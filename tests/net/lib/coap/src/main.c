@@ -103,12 +103,11 @@ done:
 static int test_build_simple_pdu(void)
 {
 	uint8_t result_pdu[] = { 0x55, 0xA5, 0x12, 0x34, 't', 'o', 'k', 'e',
-				 'n', 0xC1, 0x00, 0xFF, 'p', 'a', 'y', 'l',
+				 'n', 0xC0, 0xFF, 'p', 'a', 'y', 'l',
 				 'o', 'a', 'd', 0x00 };
 	struct coap_packet cpkt;
 	const char token[] = "token";
 	uint8_t *data;
-	uint8_t format = 0U;
 	int result = TC_FAIL;
 	int r;
 
@@ -127,8 +126,8 @@ static int test_build_simple_pdu(void)
 		goto done;
 	}
 
-	r = coap_packet_append_option(&cpkt, COAP_OPTION_CONTENT_FORMAT,
-				      &format, sizeof(format));
+	r = coap_append_option_int(&cpkt, COAP_OPTION_CONTENT_FORMAT,
+				   COAP_CONTENT_FORMAT_TEXT_PLAIN);
 	if (r < 0) {
 		TC_PRINT("Could not append option\n");
 		goto done;
@@ -356,7 +355,8 @@ static int test_parse_simple_pdu(void)
 		goto done;
 	}
 
-	if (((uint8_t *)options[0].value)[0] != 0U) {
+	if (((uint8_t *)options[0].value)[0] !=
+			COAP_CONTENT_FORMAT_TEXT_PLAIN) {
 		TC_PRINT("Option value doesn't match the reference\n");
 		goto done;
 	}

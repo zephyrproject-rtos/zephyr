@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Intel Corporation
+ * Copyright (c) 2021 Nordic Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -146,6 +147,21 @@ enum coap_response_code {
 };
 
 #define COAP_CODE_EMPTY (0)
+
+/**
+ * @brief Set of Content-Format option values for CoAP.
+ *
+ * To be used when encoding or decoding a Content-Format option.
+ */
+enum coap_content_format {
+	COAP_CONTENT_FORMAT_TEXT_PLAIN = 0, /* charset=urf-8 */
+	COAP_CONTENT_FORMAT_APP_LINK_FORMAT = 40,
+	COAP_CONTENT_FORMAT_APP_XML = 41,
+	COAP_CONTENT_FORMAT_APP_OCTET_STREAM = 42,
+	COAP_CONTENT_FORMAT_APP_EXI = 47,
+	COAP_CONTENT_FORMAT_APP_JSON = 50,
+	COAP_CONTENT_FORMAT_APP_CBOR = 60,
+};
 
 /* block option helper */
 #define GET_BLOCK_NUM(v)        ((v) >> 4)

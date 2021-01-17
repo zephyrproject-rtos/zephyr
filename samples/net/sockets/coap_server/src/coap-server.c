@@ -45,8 +45,6 @@ LOG_MODULE_REGISTER(net_coap_server_sample, LOG_LEVEL_DBG);
 /* CoAP socket fd */
 static int sock;
 
-static const uint8_t plain_text_format;
-
 static struct coap_observer observers[NUM_OBSERVERS];
 
 static struct coap_pending pendings[NUM_PENDINGS];
@@ -242,9 +240,8 @@ static int piggyback_get(struct coap_resource *resource,
 		goto end;
 	}
 
-	r = coap_packet_append_option(&response, COAP_OPTION_CONTENT_FORMAT,
-				      &plain_text_format,
-				      sizeof(plain_text_format));
+	r = coap_append_option_int(&response, COAP_OPTION_CONTENT_FORMAT,
+				   COAP_CONTENT_FORMAT_TEXT_PLAIN);
 	if (r < 0) {
 		goto end;
 	}
@@ -506,9 +503,8 @@ static int query_get(struct coap_resource *resource,
 		goto end;
 	}
 
-	r = coap_packet_append_option(&response, COAP_OPTION_CONTENT_FORMAT,
-				      &plain_text_format,
-				      sizeof(plain_text_format));
+	r = coap_append_option_int(&response, COAP_OPTION_CONTENT_FORMAT,
+				   COAP_CONTENT_FORMAT_TEXT_PLAIN);
 	if (r < 0) {
 		goto end;
 	}
@@ -657,9 +653,8 @@ static int separate_get(struct coap_resource *resource,
 		goto end;
 	}
 
-	r = coap_packet_append_option(&response, COAP_OPTION_CONTENT_FORMAT,
-				      &plain_text_format,
-				      sizeof(plain_text_format));
+	r = coap_append_option_int(&response, COAP_OPTION_CONTENT_FORMAT,
+				   COAP_CONTENT_FORMAT_TEXT_PLAIN);
 	if (r < 0) {
 		goto end;
 	}
@@ -738,9 +733,8 @@ static int large_get(struct coap_resource *resource,
 		return -EINVAL;
 	}
 
-	r = coap_packet_append_option(&response, COAP_OPTION_CONTENT_FORMAT,
-				      &plain_text_format,
-				      sizeof(plain_text_format));
+	r = coap_append_option_int(&response, COAP_OPTION_CONTENT_FORMAT,
+				   COAP_CONTENT_FORMAT_TEXT_PLAIN);
 	if (r < 0) {
 		goto end;
 	}
@@ -1054,9 +1048,8 @@ static int send_notification_packet(const struct sockaddr *addr,
 		}
 	}
 
-	r = coap_packet_append_option(&response, COAP_OPTION_CONTENT_FORMAT,
-				      &plain_text_format,
-				      sizeof(plain_text_format));
+	r = coap_append_option_int(&response, COAP_OPTION_CONTENT_FORMAT,
+				   COAP_CONTENT_FORMAT_TEXT_PLAIN);
 	if (r < 0) {
 		goto end;
 	}
