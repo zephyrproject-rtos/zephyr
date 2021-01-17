@@ -54,10 +54,10 @@ extern "C" {
 #define PWM_CAPTURE_TYPE_BOTH		(PWM_CAPTURE_TYPE_PERIOD | \
 					 PWM_CAPTURE_TYPE_PULSE)
 
-/* PWM pin capture captures a single period/pulse width. */
+/** PWM pin capture captures a single period/pulse width. */
 #define PWM_CAPTURE_MODE_SINGLE		(0U << PWM_CAPTURE_MODE_SHIFT)
 
-/* PWM pin capture captures period/pulse width continuously. */
+/** PWM pin capture captures period/pulse width continuously. */
 #define PWM_CAPTURE_MODE_CONTINUOUS	(1U << PWM_CAPTURE_MODE_SHIFT)
 
 /** @} */
@@ -82,8 +82,8 @@ typedef int (*pwm_pin_set_t)(const struct device *dev, uint32_t pwm,
  *
  * @note The callback handler will be called in interrupt context.
  *
- * @note @option{CONFIG_PWM_CAPTURE} must be selected for this function to be
- * available.
+ * @note @option{CONFIG_PWM_CAPTURE} must be selected to enable PWM capture
+ * support.
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param pwm PWM pin.
@@ -124,7 +124,7 @@ typedef int (*pwm_pin_enable_capture_t)(const struct device *dev,
 /**
  * @typedef pwm_pin_disable_capture_t
  * @brief Callback API upon disabling PWM pin capture
- * See @a @a pwm_pin_disable_capture() for argument description
+ * See @a pwm_pin_disable_capture() for argument description
  */
 typedef int (*pwm_pin_disable_capture_t)(const struct device *dev,
 					 uint32_t pwm);
@@ -238,7 +238,10 @@ static inline int pwm_pin_configure_capture(const struct device *dev,
  * @param pwm PWM pin.
  *
  * @retval 0 If successful.
- * @retval Negative errno code if failure.
+ * @retval -EINVAL if invalid function parameters were given
+ * @retval -ENOTSUP if PWM capture is not supported
+ * @retval -EIO if IO error occurred while enabling PWM capture
+ * @retval -EBUSY if PWM capture is already in progress
  */
 __syscall int pwm_pin_enable_capture(const struct device *dev, uint32_t pwm);
 
@@ -267,7 +270,9 @@ static inline int z_impl_pwm_pin_enable_capture(const struct device *dev,
  * @param pwm PWM pin.
  *
  * @retval 0 If successful.
- * @retval Negative errno code if failure.
+ * @retval -EINVAL if invalid function parameters were given
+ * @retval -ENOTSUP if PWM capture is not supported
+ * @retval -EIO if IO error occurred while disabling PWM capture
  */
 __syscall int pwm_pin_disable_capture(const struct device *dev, uint32_t pwm);
 
@@ -291,7 +296,7 @@ static inline int z_impl_pwm_pin_disable_capture(const struct device *dev,
  *
  * This API function wraps calls to @a pwm_pin_configure_capture(), @a
  * pwm_pin_enable_capture(), and @a pwm_pin_disable_capture() and passes the
- * capture results to the caller. The function is blocking until either the PWM
+ * capture result to the caller. The function is blocking until either the PWM
  * capture is completed or a timeout occurs.
  *
  * @note @option{CONFIG_PWM_CAPTURE} must be selected for this function to be
@@ -481,7 +486,7 @@ static inline int pwm_pin_cycles_to_nsec(const struct device *dev, uint32_t pwm,
  *        PWM input.
  *
  * This API function wraps calls to @a pwm_pin_capture_cycles() and @a
- * pwm_pin_cycles_to_usec() and passes the capture results to the caller. The
+ * pwm_pin_cycles_to_usec() and passes the capture result to the caller. The
  * function is blocking until either the PWM capture is completed or a timeout
  * occurs.
  *
@@ -537,7 +542,7 @@ static inline int pwm_pin_capture_usec(const struct device *dev, uint32_t pwm,
  *        PWM input.
  *
  * This API function wraps calls to @a pwm_pin_capture_cycles() and @a
- * pwm_pin_cycles_to_nsec() and passes the capture results to the caller. The
+ * pwm_pin_cycles_to_nsec() and passes the capture result to the caller. The
  * function is blocking until either the PWM capture is completed or a timeout
  * occurs.
  *
