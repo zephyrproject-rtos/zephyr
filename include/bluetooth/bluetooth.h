@@ -518,10 +518,22 @@ struct bt_le_adv_param {
 	/** Bit-field of advertising options */
 	uint32_t options;
 
-	/** Minimum Advertising Interval (N * 0.625) */
+	/** Minimum Advertising Interval (N * 0.625 milliseconds)
+	 * Minimum Advertising Interval shall be less than or equal to the
+	 * Maximum Advertising Interval. The Minimum Advertising Interval and
+	 * Maximum Advertising Interval should not be the same value (as stated
+	 * in Bluetooth Core Spec 5.2, section 7.8.5)
+	 * Range: 0x0020 to 0x4000
+	 */
 	uint32_t interval_min;
 
-	/** Maximum Advertising Interval (N * 0.625) */
+	/** Maximum Advertising Interval (N * 0.625 milliseconds)
+	 * Minimum Advertising Interval shall be less than or equal to the
+	 * Maximum Advertising Interval. The Minimum Advertising Interval and
+	 * Maximum Advertising Interval should not be the same value (as stated
+	 * in Bluetooth Core Spec 5.2, section 7.8.5)
+	 * Range: 0x0020 to 0x4000
+	 */
 	uint32_t interval_max;
 
 	/**
