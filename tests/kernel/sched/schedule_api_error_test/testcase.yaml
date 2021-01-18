@@ -1,0 +1,3 @@
+tests:
+  kernel.schedule:
+    tags: kernel userspace ignore_faults
