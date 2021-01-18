@@ -29,6 +29,7 @@
 #include "lll_adv.h"
 #include "lll/lll_adv_pdu.h"
 #include "lll_conn.h"
+#include "lll_adv_iso.h"
 
 #include "ull_internal.h"
 #include "ull_adv_types.h"
@@ -47,11 +48,17 @@ static void *adv_iso_free;
 
 static uint32_t ull_adv_iso_start(struct ll_adv_iso_set *adv_iso,
 				  uint32_t ticks_anchor);
-static inline struct ll_adv_iso_set *ull_adv_iso_get(uint8_t handle);
+static void mfy_iso_offset_get(void *param);
+static inline struct pdu_big_info *big_info_get(struct pdu_adv *pdu);
+static inline void big_info_offset_fill(struct pdu_big_info *bi,
+					uint32_t ticks_offset,
+					uint32_t start_us);
 static int init_reset(void);
+static inline struct ll_adv_iso_set *ull_adv_iso_get(uint8_t handle);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		      uint32_t remainder, uint16_t lazy, uint8_t force,
 		      void *param);
+static void ticker_op_cb(uint32_t status, void *param);
 static void tx_lll_flush(void *param);
 static void ticker_op_stop_cb(uint32_t status, void *param);
 
@@ -69,6 +76,7 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	struct pdu_big_info *big_info;
 	struct node_rx_pdu *node_rx;
 	uint8_t pdu_big_info_size;
+	uint32_t ticks_anchor_iso;
 	struct ll_adv_set *adv;
 	uint16_t iso_interval;
 	uint8_t ter_idx;
@@ -252,14 +260,17 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 
 	lll_adv_sync_data_enqueue(lll_adv_sync, ter_idx);
 
-	/* TODO: start sending BIS empty data packet for each BIS */
-	ull_adv_iso_start(adv_iso, 0 /* TODO: Calc ticks_anchor */);
-
 	/* Associate the ISO instance with a Periodic Advertising and
 	 * an Extended Advertising instance
 	 */
 	lll_adv_sync->iso = lll_adv_iso;
 	lll_adv_iso->adv = &adv->lll;
+
+	lll_hdr_init(lll_adv_iso, adv_iso);
+
+	/* Start sending BIS empty data packet for each BIS */
+	ticks_anchor_iso = ticker_ticks_now_get();
+	ull_adv_iso_start(adv_iso, ticks_anchor_iso);
 
 	/* Prepare BIG complete event */
 	/* TODO: Implement custom node_rx struct for optimization */
@@ -433,6 +444,37 @@ uint8_t ll_adv_iso_by_hci_handle_new(uint8_t hci_handle, uint8_t *handle)
 }
 #endif /* CONFIG_BT_CTLR_HCI_ADV_HANDLE_MAPPING */
 
+void ull_adv_iso_offset_get(struct ll_adv_sync_set *sync)
+{
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, mfy_iso_offset_get};
+	uint32_t ret;
+
+	mfy.param = sync;
+	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_ULL_LOW, 1,
+			     &mfy);
+	LL_ASSERT(!ret);
+}
+
+static int init_reset(void)
+{
+	/* Initialize pool. */
+	mem_init(ll_adv_iso, sizeof(struct ll_adv_iso_set),
+		 sizeof(ll_adv_iso) / sizeof(struct ll_adv_iso_set),
+		 &adv_iso_free);
+
+	return 0;
+}
+
+static inline struct ll_adv_iso_set *ull_adv_iso_get(uint8_t handle)
+{
+	if (handle >= CONFIG_BT_CTLR_ADV_SET) {
+		return NULL;
+	}
+
+	return &ll_adv_iso[handle];
+}
+
 static uint32_t ull_adv_iso_start(struct ll_adv_iso_set *adv_iso,
 				  uint32_t ticks_anchor)
 {
@@ -483,32 +525,106 @@ static uint32_t ull_adv_iso_start(struct ll_adv_iso_set *adv_iso,
 	return 0;
 }
 
-static inline struct ll_adv_iso_set *ull_adv_iso_get(uint8_t handle)
+static void mfy_iso_offset_get(void *param)
 {
-	if (handle >= BT_CTLR_ADV_SET) {
-		return NULL;
+	struct ll_adv_sync_set *sync;
+	struct lll_adv_iso *lll_iso;
+	uint32_t ticks_to_expire;
+	struct pdu_big_info *bi;
+	uint32_t ticks_current;
+	struct pdu_adv *pdu;
+	uint8_t ticker_id;
+	uint8_t retry;
+	uint8_t id;
+
+	sync = param;
+	lll_iso = sync->lll.iso;
+	ticker_id = TICKER_ID_ADV_ISO_BASE + lll_iso->handle;
+
+	id = TICKER_NULL;
+	ticks_to_expire = 0U;
+	ticks_current = 0U;
+	retry = 4U;
+	do {
+		uint32_t volatile ret_cb;
+		uint32_t ticks_previous;
+		uint32_t ret;
+
+		ticks_previous = ticks_current;
+
+		ret_cb = TICKER_STATUS_BUSY;
+		ret = ticker_next_slot_get(TICKER_INSTANCE_ID_CTLR,
+					   TICKER_USER_ID_ULL_LOW,
+					   &id,
+					   &ticks_current, &ticks_to_expire,
+					   ticker_op_cb, (void *)&ret_cb);
+		if (ret == TICKER_STATUS_BUSY) {
+			while (ret_cb == TICKER_STATUS_BUSY) {
+				ticker_job_sched(TICKER_INSTANCE_ID_CTLR,
+						 TICKER_USER_ID_ULL_LOW);
+			}
+		}
+
+		LL_ASSERT(ret_cb == TICKER_STATUS_SUCCESS);
+
+		LL_ASSERT((ticks_current == ticks_previous) || retry--);
+
+		LL_ASSERT(id != TICKER_NULL);
+	} while (id != ticker_id);
+
+	pdu = lll_adv_sync_data_curr_get(&sync->lll, NULL);
+	bi = big_info_get(pdu);
+	big_info_offset_fill(bi, ticks_to_expire, 0);
+	/* FIXME: Fill the payload count */
+}
+
+static inline struct pdu_big_info *big_info_get(struct pdu_adv *pdu)
+{
+	struct pdu_adv_com_ext_adv *p;
+	struct pdu_adv_ext_hdr *h;
+	uint8_t *ptr;
+
+	p = (void *)&pdu->adv_ext_ind;
+	h = (void *)p->ext_hdr_adv_data;
+	ptr = h->data;
+
+	/* FIXME: CTEInfo */
+
+	if (h->aux_ptr) {
+		ptr += sizeof(struct pdu_adv_aux_ptr);
 	}
 
-	return &ll_adv_iso[handle];
+	if (h->tx_pwr) {
+		ptr++;
+	}
+
+	/* Length encoded AD Format */
+	ptr += 2;
+
+	return (void *)ptr;
 }
 
-static int init_reset(void)
+static inline void big_info_offset_fill(struct pdu_big_info *bi,
+					uint32_t ticks_offset,
+					uint32_t start_us)
 {
-	/* Initialize pool. */
-	mem_init(ll_adv_iso, sizeof(struct ll_adv_iso_set),
-		 sizeof(ll_adv_iso) / sizeof(struct ll_adv_iso_set),
-		 &adv_iso_free);
+	uint32_t offs;
 
-	return 0;
+	offs = HAL_TICKER_TICKS_TO_US(ticks_offset) - start_us;
+	offs = offs / OFFS_UNIT_30_US;
+	if (!!(offs >> 13)) {
+		bi->offs = offs / (OFFS_UNIT_300_US / OFFS_UNIT_30_US);
+		bi->offs_units = 1U;
+	} else {
+		bi->offs = offs;
+		bi->offs_units = 0U;
+	}
 }
-
 
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		      uint32_t remainder, uint16_t lazy, uint8_t force,
 		      void *param)
 {
-	/* TODO: LLL support for ADV ISO */
-#if 0
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, lll_adv_iso_prepare};
 	static struct lll_prepare_param p;
@@ -536,7 +652,11 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	LL_ASSERT(!ret);
 
 	DEBUG_RADIO_PREPARE_A(1);
-#endif
+}
+
+static void ticker_op_cb(uint32_t status, void *param)
+{
+	*((uint32_t volatile *)param) = status;
 }
 
 static void tx_lll_flush(void *param)
