@@ -16,3 +16,8 @@
 		zephyr,sram = &sram0;
 	};
 };
+
+&cmt0 {
+	status = "okay";
+	clock-frequency = <32000>;
+};
