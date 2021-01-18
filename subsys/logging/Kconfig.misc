@@ -1,0 +1,19 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Misc"
+
+config LOG_DOMAIN_ID
+	int "Domain ID"
+	default 0
+	range 0 7
+	help
+	  In multicore system each application/core must have unique domain ID.
+
+config LOG_CMDS
+	bool "Enable shell commands"
+	depends on SHELL
+	depends on !LOG_FRONTEND
+	default y if SHELL
+
+endmenu

@@ -94,9 +94,6 @@ logger.
 :option:`CONFIG_LOG_MODE_OVERFLOW`: When logger cannot allocate new message
 oldest one are discarded.
 
-:option:`CONFIG_LOG_MODE_NO_OVERFLOW`: When logger cannot allocate new message
-it is discarded.
-
 :option:`CONFIG_LOG_BLOCK_IN_THREAD`: If enabled and new log message cannot
 be allocated thread context will block for up to
 :option:`CONFIG_LOG_BLOCK_IN_THREAD_TIMEOUT_MS` or until log message is
