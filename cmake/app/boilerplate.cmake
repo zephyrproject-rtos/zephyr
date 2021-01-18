@@ -190,7 +190,9 @@ endif()
 
 add_custom_target(
   pristine
-  COMMAND ${CMAKE_COMMAND} -P ${ZEPHYR_BASE}/cmake/pristine.cmake
+  COMMAND ${CMAKE_COMMAND} -DBINARY_DIR=${APPLICATION_BINARY_DIR}
+          -DSOURCE_DIR=${APPLICATION_SOURCE_DIR}
+          -P ${ZEPHYR_BASE}/cmake/pristine.cmake
   # Equivalent to rm -rf build/*
   )
 
