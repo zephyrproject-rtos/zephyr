@@ -572,7 +572,7 @@ static void mfy_iso_offset_get(void *param)
 		LL_ASSERT(id != TICKER_NULL);
 	} while (id != ticker_id);
 
-	pdu = lll_adv_sync_data_curr_get(&sync->lll, NULL);
+	pdu = lll_adv_sync_data_latest_peek(&sync->lll);
 	bi = big_info_get(pdu);
 	big_info_offset_fill(bi, ticks_to_expire, 0);
 	/* FIXME: Fill the payload count */
