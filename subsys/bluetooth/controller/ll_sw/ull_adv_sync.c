@@ -1545,7 +1545,7 @@ static void mfy_sync_offset_get(void *param)
 	 */
 	lll_sync->ticks_offset = ticks_to_expire + 1;
 
-	pdu = lll_adv_aux_data_curr_get(adv->lll.aux);
+	pdu = lll_adv_aux_data_latest_peek(adv->lll.aux);
 	si = sync_info_get(pdu);
 	sync_info_offset_fill(si, ticks_to_expire, 0);
 	si->evt_cntr = lll_sync->event_counter + lll_sync->latency_prepare +
