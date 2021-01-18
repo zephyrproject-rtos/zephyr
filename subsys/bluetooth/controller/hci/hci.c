@@ -6364,8 +6364,7 @@ static void le_big_complete(struct pdu_data *pdu_data,
 
 	adv_iso = node_rx->hdr.rx_ftr.param;
 
-	evt_size = sizeof(*sep) +
-			adv_iso->num_bis * sizeof(adv_iso->bis_handle);
+	evt_size = sizeof(*sep) + adv_iso->lll.num_bis * sizeof(uint16_t);
 
 	adv_iso = node_rx->hdr.rx_ftr.param;
 
@@ -6382,16 +6381,15 @@ static void le_big_complete(struct pdu_data *pdu_data,
 	/* TODO: Fill values */
 	sys_put_le24(0, sep->sync_delay);
 	sys_put_le24(0, sep->latency);
-	sep->phy = adv_iso->phy;
+	sep->phy = adv_iso->lll.phy;
 	sep->nse = 0;
 	sep->bn = 0;
 	sep->pto = 0;
 	sep->irc = 0;
 	sep->max_pdu = 0;
-	sep->num_bis = adv_iso->num_bis;
-	/* TODO: Add support for multiple BIS per BIG */
-	LL_ASSERT(sep->num_bis == 1);
-	sep->handle[0] = sys_cpu_to_le16(adv_iso->bis_handle);
+	sep->num_bis = adv_iso->lll.num_bis;
+	/* TODO: */
+	sep->handle[0] = sys_cpu_to_le16(0);
 }
 #endif /* CONFIG_BT_CTLR_ADV_ISO */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
