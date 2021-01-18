@@ -619,9 +619,19 @@ static int i2c_xec_init(const struct device *dev)
 {
 	struct i2c_xec_data *data =
 		(struct i2c_xec_data *const) (dev->data);
+	int ret;
 
 	data->pending_stop = 0;
 	data->slave_attached = false;
+
+	/* Default configuration */
+	ret = i2c_xec_configure(dev,
+				I2C_MODE_MASTER |
+				I2C_SPEED_SET(I2C_SPEED_STANDARD));
+	if (ret) {
+		LOG_ERR("i2c configure failed %d", ret);
+		return ret;
+	}
 
 #ifdef CONFIG_I2C_SLAVE
 	const struct i2c_xec_config *config =
