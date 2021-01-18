@@ -1,0 +1,15 @@
+sample:
+    description: This app provides an example of how to integrate
+        RPMsg Service with Zephyr.
+    name: RPMsg Service example integration
+tests:
+    sample.ipc.rpmsg_service:
+        platform_allow: nrf5340dk_nrf5340_cpuapp mps2_an521 v2m_musca_b1
+        tags: ipm
+        harness: console
+        harness_config:
+          type: multi_line
+          regex:
+            - "Master core received a message: 1"
+            - "Master core received a message: 99"
+            - "RPMsg Service demo ended."
