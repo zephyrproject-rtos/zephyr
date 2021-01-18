@@ -1196,18 +1196,28 @@ struct coap_pending *coap_pending_next_to_expire(
 	return found;
 }
 
-/* TODO: random generated initial ACK timeout
- * ACK_TIMEOUT < INIT_ACK_TIMEOUT < ACK_TIMEOUT * ACK_RANDOM_FACTOR
- * where ACK_TIMEOUT = 2 and ACK_RANDOM_FACTOR = 1.5 by default
- * Ref: https://tools.ietf.org/html/rfc7252#section-4.8
- */
-#define INIT_ACK_TIMEOUT	CONFIG_COAP_INIT_ACK_TIMEOUT_MS
+static uint32_t init_ack_timeout(void)
+{
+#if defined(CONFIG_COAP_RANDOMIZE_ACK_TIMEOUT)
+	const uint32_t max_ack = CONFIG_COAP_INIT_ACK_TIMEOUT_MS *
+				 COAP_DEFAULT_ACK_RANDOM_FACTOR;
+	const uint32_t min_ack = CONFIG_COAP_INIT_ACK_TIMEOUT_MS;
+
+	/* Randomly generated initial ACK timeout
+	 * ACK_TIMEOUT < INIT_ACK_TIMEOUT < ACK_TIMEOUT * ACK_RANDOM_FACTOR
+	 * Ref: https://tools.ietf.org/html/rfc7252#section-4.8
+	 */
+	return min_ack + (sys_rand32_get() % (max_ack - min_ack));
+#else
+	return CONFIG_COAP_INIT_ACK_TIMEOUT_MS;
+#endif /* defined(CONFIG_COAP_RANDOMIZE_ACK_TIMEOUT) */
+}
 
 bool coap_pending_cycle(struct coap_pending *pending)
 {
 	if (pending->timeout == 0) {
 		/* Initial transmission. */
-		pending->timeout = INIT_ACK_TIMEOUT;
+		pending->timeout = init_ack_timeout();
 
 		return true;
 	}
