@@ -81,23 +81,48 @@ hardware features:
 | WDT       | on-chip    | watchdog             |
 +-----------+------------+----------------------+
 
-Other hardware features are not supported by the Zephyr kernel.
-See the `Sentrius BT510 website`_
-for a complete list of BT510 Sensor features.
-
 Connections and IOs
 ===================
 
 LED
 ---
 
-* LED1A (green) = P0.22
-* LED1B (red) = P0.20
+Two LEDs are visible through the BT510 housing lid.
+
+* LED_1A (green) = P0.22
+* LED_1B (red) = P0.20
 
 Push button
 ------------
 
-* BUTTON = SW1 = P1.10
+The BT510 housing lid also acts as a push button.
+
+* BUTTON_1 = SW1 = P1.10
+
+Magnetoresistive sensor
+-----------------------
+
+The BT510 incorporates a Honeywell SM351LT magnetoresistive sensor. Refer to the `Honeywell SM351LT datasheet`_ for further details.
+
+* MAG = P1.14
+
+Accelerometer
+-------------
+
+The BT510 incorporates an I2C ST Microelectronics LIS2DH accelerometer. Refer to the `ST Microelectronics LIS2DH datasheet`_ for further details.
+
+* SDA = P0.26
+* SCL = P0.27
+* INT_1 = P1.05
+* INT_2 = P1.12
+
+Temperature Sensor
+------------------
+
+The BT510 incorporates an I2C Silabs SI7055 temperature sensor. Refer to the `Silabs 7055 datasheet`_ for further details.
+
+* SDA = P0.26
+* SCL = P0.27
 
 Programming and Debugging
 *************************
@@ -204,7 +229,7 @@ the board are working properly with Zephyr:
 * :ref:`button-sample`
 
 You can build and flash the examples to make sure Zephyr is running correctly on
-your board. The button and LED definitions can be found in
+your board. The button, LED and sensor device definitions can be found in
 :zephyr_file:`boards/arm/bt510/bt510.dts`.
 
 
@@ -217,3 +242,6 @@ References
 .. _TagConnect TC2050 product page: https://www.tag-connect.com/product/tc2050-idc-050
 .. _USB SWD Programmer product page: https://www.lairdconnect.com/usb-swd-programmer/
 .. _MAX3232 datasheet: https://www.ti.com/lit/ds/symlink/max3232.pdf
+.. _Silabs 7055 datasheet: https://www.silabs.com/documents/public/data-sheets/Si7050-1-3-4-5-A20.pdf
+.. _ST Microelectronics LIS2DH datasheet: https://www.st.com/resource/en/datasheet/lis2dh.pdf
+.. _Honeywell SM351LT datasheet: https://sensing.honeywell.com/honeywell-sensing-nanopower-series-datasheet-50095501-c-en.pdf
