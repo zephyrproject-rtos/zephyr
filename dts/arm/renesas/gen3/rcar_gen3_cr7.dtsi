@@ -8,6 +8,7 @@
 #include <arm/armv7-r.dtsi>
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 #include <dt-bindings/clock/renesas_rcar_cpg.h>
+#include <dt-bindings/gpio/gpio.h>
 
 / {
 	cpus {
@@ -37,6 +38,30 @@
 			#interrupt-cells = <4>;
 			label = "GIC";
 			status = "okay";
+		};
+
+		gpio5: gpio@e6055000 {
+			compatible = "renesas,rcar-gpio";
+			reg = <0xe6055000 0x50>;
+			#gpio-cells = <2>;
+			gpio-controller;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 9 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&cpg CPG_MOD 907>;
+			status = "disabled";
+			label = "gpio5";
+		};
+
+		gpio6: gpio@e6055400 {
+			compatible = "renesas,rcar-gpio";
+			reg = <0xe6055400 0x50>;
+			#gpio-cells = <2>;
+			gpio-controller;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 10 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&cpg CPG_MOD 906>;
+			status = "disabled";
+			label = "gpio6";
 		};
 
 		cmt0: timer@e60f0500 {
