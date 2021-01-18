@@ -1255,7 +1255,7 @@ static void mfy_aux_offset_get(void *param)
 		HAL_TICKER_US_TO_TICKS(EVENT_TICKER_RES_MARGIN_US);
 
 	/* FIXME: we are in ULL_LOW context, fill offset in LLL context */
-	pdu = lll_adv_data_curr_get(&adv->lll);
+	pdu = lll_adv_data_latest_peek(&adv->lll);
 	ull_adv_aux_lll_offset_fill(ticks_to_expire, 0, pdu);
 }
 
