@@ -43,16 +43,6 @@ if LOG
 config LOG_BACKEND_NATIVE_POSIX
 	default y if !SERIAL
 
-# For native_posix we can log immediately without any problem
-# Doing so will be nicer for debugging
-config LOG_IMMEDIATE
-	default y
-
-# If we set LOG_IMMEDIATE, there is no need to have the logging thread
-# running
-config LOG_PROCESS_THREAD
-	default n
-
 endif # LOG
 
 if CONSOLE

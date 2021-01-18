@@ -1,0 +1,54 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "Mode"
+	default LOG_MODE_DEFERRED
+
+config LOG_MODE_DEFERRED
+	bool "Deferred logging"
+	help
+	  Log messages are buffered and processed later. This mode has the
+	  least impact on the application. Time consuming processing is
+	  deferred to the known context.
+
+config LOG_MODE_IMMEDIATE
+	bool "Synchronous"
+	help
+	  When enabled log is processed in the context of the call. It impacts
+	  performance of the system since time consuming operations are
+	  performed in the context of the log entry (e.g. high priority
+	  interrupt).Logger backends must support exclusive access to work
+	  flawlessly in that mode because one log operation can be interrupted
+	  by another one in the higher priority context.
+
+
+config LOG_MODE_MINIMAL
+	bool "Minimal-footprint"
+	imply PRINTK
+	help
+	  Enable minimal logging implementation. This has very little footprint
+	  overhead on top of the printk() implementation for standard
+	  logging macros. Hexdump macros are also supported, with a small
+	  amount of code pulled in if used. Build time filtering is supported,
+	  but not runtime filtering. There are no timestamps, prefixes,
+	  colors, or asynchronous logging, and all messages are simply
+	  sent to printk().
+
+config LOG_FRONTEND
+	bool "Frontend"
+	help
+	  When enabled, logs are redirected to a custom frontend instead
+	  of being processed by the logger. In this mode runtime filtering and
+	  multiple backends are not used.
+
+endchoice
+
+config LOG_IMMEDIATE
+	bool
+	default y if LOG_MODE_IMMEDIATE
+
+config LOG_MINIMAL
+	bool
+	imply PRINTK
+	default y if LOG_MODE_MINIMAL
