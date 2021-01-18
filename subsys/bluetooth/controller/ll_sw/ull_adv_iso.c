@@ -140,6 +140,7 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	/* Store parameters in LLL context */
 	/* TODO: parameters to ULL if only accessed by ULL */
 	lll_adv_iso = &adv_iso->lll;
+	lll_adv_iso->handle = big_handle;
 	/* Mandatory Num_BIS = 1 */
 	lll_adv_iso->num_bis = num_bis;
 	/* TODO: Calculate NSE (No. of Sub Events), Mandatory NSE = 1 */
@@ -251,22 +252,6 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 
 	lll_adv_sync_data_enqueue(lll_adv_sync, ter_idx);
 
-	/* TODO: For now we can just use the unique BIG handle as the BIS
-	 * handle until we support multiple BIS
-	 */
-	adv_iso->bis_handle = big_handle;
-
-	adv_iso->num_bis = num_bis;
-	adv_iso->sdu_interval = sdu_interval;
-	adv_iso->max_sdu = max_sdu;
-	adv_iso->max_latency = max_latency;
-	adv_iso->rtn = rtn;
-	adv_iso->phy = phy;
-	adv_iso->packing = packing;
-	adv_iso->framing = framing;
-	adv_iso->encryption = encryption;
-	memcpy(adv_iso->bcode, bcode, sizeof(adv_iso->bcode));
-
 	/* TODO: start sending BIS empty data packet for each BIS */
 	ull_adv_iso_start(adv_iso, 0 /* TODO: Calc ticks_anchor */);
 
@@ -360,7 +345,7 @@ uint8_t ll_big_terminate(uint8_t big_handle, uint8_t reason)
 	/* TODO: Terminate all BIS data paths */
 
 	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
-			  TICKER_ID_ADV_ISO_BASE + adv_iso->bis_handle,
+			  (TICKER_ID_ADV_ISO_BASE + lll_adv_iso->handle),
 			  ticker_op_stop_cb, adv_iso);
 
 	lll_adv_iso->adv = NULL;
@@ -481,11 +466,11 @@ static uint32_t ull_adv_iso_start(struct ll_adv_iso_set *adv_iso,
 	/* iso_interval shall be at least SDU interval,
 	 * or integer multiple of SDU interval for unframed PDUs
 	 */
-	iso_interval_us = adv_iso->sdu_interval;
+	iso_interval_us = adv_iso->lll.sdu_interval;
 
 	ret_cb = TICKER_STATUS_BUSY;
 	ret = ticker_start(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
-			   (TICKER_ID_ADV_ISO_BASE + adv_iso->bis_handle),
+			   (TICKER_ID_ADV_ISO_BASE + adv_iso->lll.handle),
 			   ticks_anchor, 0,
 			   HAL_TICKER_US_TO_TICKS(iso_interval_us),
 			   HAL_TICKER_REMAINDER(iso_interval_us),
