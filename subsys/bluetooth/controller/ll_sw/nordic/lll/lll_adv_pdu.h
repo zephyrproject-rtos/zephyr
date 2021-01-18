@@ -174,20 +174,6 @@ lll_adv_sync_data_latest_peek(const struct lll_adv_sync *const lll)
 	return lll_adv_pdu_latest_peek(&lll->data);
 }
 
-static inline struct pdu_adv *
-lll_adv_sync_data_curr_get(struct lll_adv_sync *lll, void **extra_data)
-{
-	uint8_t first = lll->data.first;
-
-#if defined(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
-	if (extra_data) {
-		*extra_data = lll->data.extra_data[first];
-	}
-#endif /* CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY */
-
-	return (void *)lll->data.pdu[first];
-}
-
 #if defined(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
 static inline void *lll_adv_sync_extra_data_peek(struct lll_adv_sync *lll)
 {
