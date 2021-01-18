@@ -995,7 +995,8 @@ static int create_pending_request(struct coap_packet *response,
 		return -ENOMEM;
 	}
 
-	r = coap_pending_init(pending, response, addr);
+	r = coap_pending_init(pending, response, addr,
+			      COAP_DEFAULT_MAX_RETRANSMIT);
 	if (r < 0) {
 		return -EINVAL;
 	}

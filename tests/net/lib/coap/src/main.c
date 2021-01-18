@@ -1099,7 +1099,8 @@ static int test_retransmit_second_round(void)
 		goto done;
 	}
 
-	r = coap_pending_init(pending, &cpkt, (struct sockaddr *) &dummy_addr);
+	r = coap_pending_init(pending, &cpkt, (struct sockaddr *) &dummy_addr,
+			      COAP_DEFAULT_MAX_RETRANSMIT);
 	if (r < 0) {
 		TC_PRINT("Could not initialize packet\n");
 		goto done;

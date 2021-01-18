@@ -233,6 +233,8 @@ typedef int (*coap_reply_t)(const struct coap_packet *response,
 			    struct coap_reply *reply,
 			    const struct sockaddr *from);
 
+#define COAP_DEFAULT_MAX_RETRANSMIT 4
+
 /**
  * @brief Represents a request awaiting for an acknowledgment (ACK).
  */
@@ -243,6 +245,7 @@ struct coap_pending {
 	uint16_t id;
 	uint8_t *data;
 	uint16_t len;
+	uint8_t retries;
 };
 
 /**
@@ -687,12 +690,14 @@ void coap_reply_init(struct coap_reply *reply,
  * confirmation message, initialized with data from @a request
  * @param request Message waiting for confirmation
  * @param addr Address to send the retransmission
+ * @param retries Maximum number of retransmissions of the message.
  *
  * @return 0 in case of success or negative in case of error.
  */
 int coap_pending_init(struct coap_pending *pending,
 		      const struct coap_packet *request,
-		      const struct sockaddr *addr);
+		      const struct sockaddr *addr,
+		      uint8_t retries);
 
 /**
  * @brief Returns the next available pending struct, that can be used
