@@ -217,17 +217,25 @@ void nrfx_busy_wait(uint32_t usec_to_wait);
 //------------------------------------------------------------------------------
 
 /** @brief Bitmask that defines DPPI channels that are reserved for use outside of the nrfx library. */
-#define NRFX_DPPI_CHANNELS_USED   NRFX_PPI_CHANNELS_USED_BY_BT_CTLR
+#define NRFX_DPPI_CHANNELS_USED   (NRFX_PPI_CHANNELS_USED_BY_BT_CTLR |    \
+				   NRFX_PPI_CHANNELS_USED_BY_802154_DRV | \
+				   NRFX_PPI_CHANNELS_USED_BY_MPSL)
 
 /** @brief Bitmask that defines DPPI groups that are reserved for use outside of the nrfx library. */
-#define NRFX_DPPI_GROUPS_USED     NRFX_PPI_GROUPS_USED_BY_BT_CTLR
+#define NRFX_DPPI_GROUPS_USED     (NRFX_PPI_GROUPS_USED_BY_BT_CTLR |    \
+				   NRFX_PPI_GROUPS_USED_BY_802154_DRV | \
+				   NRFX_PPI_GROUPS_USED_BY_MPSL)
 
 /** @brief Bitmask that defines PPI channels that are reserved for use outside of the nrfx library. */
-#define NRFX_PPI_CHANNELS_USED    (NRFX_PPI_CHANNELS_USED_BY_BT_CTLR | \
-                                   NRFX_PPI_CHANNELS_USED_BY_PWM_SW)
+#define NRFX_PPI_CHANNELS_USED    (NRFX_PPI_CHANNELS_USED_BY_BT_CTLR |    \
+				   NRFX_PPI_CHANNELS_USED_BY_802154_DRV | \
+				   NRFX_PPI_CHANNELS_USED_BY_MPSL |       \
+				   NRFX_PPI_CHANNELS_USED_BY_PWM_SW)
 
 /** @brief Bitmask that defines PPI groups that are reserved for use outside of the nrfx library. */
-#define NRFX_PPI_GROUPS_USED      NRFX_PPI_GROUPS_USED_BY_BT_CTLR
+#define NRFX_PPI_GROUPS_USED      (NRFX_PPI_GROUPS_USED_BY_BT_CTLR |    \
+				   NRFX_PPI_GROUPS_USED_BY_802154_DRV | \
+				   NRFX_PPI_GROUPS_USED_BY_MPSL)
 
 /** @brief Bitmask that defines GPIOTE channels that are reserved for use outside of the nrfx library. */
 #define NRFX_GPIOTE_CHANNELS_USED NRFX_GPIOTE_CHANNELS_USED_BY_PWM_SW
@@ -240,6 +248,27 @@ extern const uint32_t z_bt_ctlr_used_nrf_ppi_groups;
 #else
 #define NRFX_PPI_CHANNELS_USED_BY_BT_CTLR   0
 #define NRFX_PPI_GROUPS_USED_BY_BT_CTLR     0
+#endif
+
+#if defined(CONFIG_NRF_802154_RADIO_DRIVER)
+extern const uint32_t g_nrf_802154_used_nrf_ppi_channels;
+extern const uint32_t g_nrf_802154_used_nrf_ppi_groups;
+#define NRFX_PPI_CHANNELS_USED_BY_802154_DRV   g_nrf_802154_used_nrf_ppi_channels
+#define NRFX_PPI_GROUPS_USED_BY_802154_DRV     g_nrf_802154_used_nrf_ppi_groups
+#else
+#define NRFX_PPI_CHANNELS_USED_BY_802154_DRV   0
+#define NRFX_PPI_GROUPS_USED_BY_802154_DRV     0
+#endif
+
+#if defined(CONFIG_NRF_802154_RADIO_DRIVER) && \
+	!defined(CONFIG_NRF_802154_SL_OPENSOURCE)
+extern const uint32_t z_mpsl_used_nrf_ppi_channels;
+extern const uint32_t z_mpsl_used_nrf_ppi_groups;
+#define NRFX_PPI_CHANNELS_USED_BY_MPSL   z_mpsl_used_nrf_ppi_channels
+#define NRFX_PPI_GROUPS_USED_BY_MPSL     z_mpsl_used_nrf_ppi_groups
+#else
+#define NRFX_PPI_CHANNELS_USED_BY_MPSL   0
+#define NRFX_PPI_GROUPS_USED_BY_MPSL     0
 #endif
 
 #if defined(CONFIG_PWM_NRF5_SW)
