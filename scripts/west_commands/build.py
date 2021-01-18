@@ -421,7 +421,13 @@ class Build(Forceable):
                     'Zephyr build system')
 
         cache = CMakeCache.from_build_dir(self.build_dir)
-        cmake_args = ['-P', cache['ZEPHYR_BASE'] + '/cmake/pristine.cmake']
+
+        app_src_dir = cache.get('APPLICATION_SOURCE_DIR')
+        app_bin_dir = cache.get('APPLICATION_BINARY_DIR')
+
+        cmake_args = [f'-DBINARY_DIR={app_bin_dir}',
+                      f'-DSOURCE_DIR={app_src_dir}',
+                      '-P', cache['ZEPHYR_BASE'] + '/cmake/pristine.cmake']
         run_cmake(cmake_args, cwd=self.build_dir, dry_run=self.args.dry_run)
 
     def _run_build(self, target):
