@@ -1,0 +1,7 @@
+# Copyright (c) 2019 SiFive Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_GENESYS2
+	bool "Recogni Genesys2 FPGA target"
+	depends on SOC_RISCV64_ARIANE
+    select 64BIT

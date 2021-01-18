@@ -9,5 +9,5 @@
 
 void main(void)
 {
-	printk("Hello World! %s\n", CONFIG_BOARD);
+    printk("Hello from zephyr! %s\n", CONFIG_BOARD);
 }
