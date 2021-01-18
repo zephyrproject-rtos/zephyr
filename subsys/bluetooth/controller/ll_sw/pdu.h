@@ -823,7 +823,7 @@ struct pdu_bis {
 #else
 #error "Unsupported endianness"
 #endif /* __BYTE_ORDER__ */
-	uint8_t length;
+	uint8_t len;
 	union {
 		uint8_t payload[0];
 		struct pdu_big_ctrl ctrl;
@@ -832,8 +832,8 @@ struct pdu_bis {
 
 struct pdu_big_info {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-	uint32_t offset:14;
-	uint32_t offset_units:1;
+	uint32_t offs:14;
+	uint32_t offs_units:1;
 	uint32_t iso_interval:12;
 	uint32_t num_bis:5;
 
@@ -855,8 +855,8 @@ struct pdu_big_info {
 #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
 	uint32_t num_bis:5;
 	uint32_t iso_interval:12;
-	uint32_t offset_units:1;
-	uint32_t offset:14;
+	uint32_t offs_units:1;
+	uint32_t offs:14;
 
 	uint32_t pto:4;
 	uint32_t sub_interval:20;
