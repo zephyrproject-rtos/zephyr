@@ -41,9 +41,22 @@ More information about the SoC that equips the board can be found here :
 Supported Features
 ==================
 
-The port is currently in a state in which we can only write to the console ram.
+Here is the current supported features when running Zephyr Project on the R-Car ULCB CR7:
+
++-----------+------------------------------+
+| Interface | Driver/components            |
++===========+==============================+
+| CLOCK     | clock_control                |
++-----------+------------------------------+
+| GPIO      | gpio                         |
++-----------+------------------------------+
+| GIC       | GIC 400 interrupt controller |
++-----------+------------------------------+
+
+It's also currently possible to write on the ram console.
 
 More features will be supported soon.
+
 
 Connections and IOs
 ===================
