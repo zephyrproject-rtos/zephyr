@@ -729,8 +729,7 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	hdma.Init.Mode = DMA_NORMAL;
 	hdma.Init.Priority = dma_cfg.channel_priority;
 #ifdef CONFIG_DMA_STM32_V1
-	/* TODO: Not tested in this configuration */
-	hdma.Init.Channel = dma_cfg.dma_slot;
+	hdma.Init.Channel = dma_cfg.dma_slot << DMA_SxCR_CHSEL_Pos;
 	hdma.Instance = __LL_DMA_GET_STREAM_INSTANCE(dev_data->dma.reg,
 						     dev_data->dma.channel);
 #else

@@ -19,6 +19,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,dtcm = &dtcm;
+		zephyr,flash-controller = &n25q128a1;
 	};
 
 	leds {
@@ -118,4 +119,43 @@
 		     &eth_tx_en_pg11
 		     &eth_txd0_pg13
 		     &eth_txd1_pg14>;
+};
+&dma2 {
+	status = "okay";
+};
+
+&quadspi {
+	pinctrl-0 = <&quadspi_clk_pb2 &quadspi_bk1_ncs_pb6
+		     &quadspi_bk1_io0_pd11 &quadspi_bk1_io1_pd12
+		     &quadspi_bk1_io2_pe2 &quadspi_bk1_io3_pd13>;
+	dmas = <&dma2 7 3 0x0000 0x03>;
+	dma-names = "tx_rx";
+
+	status = "okay";
+
+	n25q128a1: qspi-nor-flash@0 {
+		compatible = "st,stm32-qspi-nor";
+		label = "N25Q128A1";
+		reg = <0>;
+		qspi-max-frequency = <108000000>;
+		/* 128 Megabits = 16 Megabytes */
+		size = <0x8000000>;
+		status = "okay";
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			slot1_partition: partition@0 {
+				label = "image-1";
+				reg = <0x00000000 0x000D8000>;
+				};
+
+			storage_partition: partition@D8000 {
+				label = "storage";
+				reg = <0x000D8000 DT_SIZE_M(7)>;
+			};
+		};
+	};
 };

@@ -116,6 +116,8 @@ The Zephyr stm32f769i_disco board configuration supports the following hardware 
 +-----------+------------+-------------------------------------+
 | ETHERNET  | on-chip    | Ethernet                            |
 +-----------+------------+-------------------------------------+
+| QSPI NOR  | on-chip    | flash                               |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on Zephyr porting.
 

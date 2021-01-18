@@ -112,6 +112,8 @@ The Zephyr stm32f746g_disco board configuration supports the following hardware 
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
+| QSPI NOR  | on-chip    | flash                               |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on Zephyr porting.
 

@@ -18,6 +18,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,dtcm = &dtcm;
+		zephyr,flash-controller = &mx25l51245g;
 	};
 
 	leds {
@@ -103,4 +104,44 @@ arduino_serial: &usart6 {};
 		     &sdmmc2_d2_pb3 &sdmmc2_d3_pb4
 		     &sdmmc2_ck_pd6 &sdmmc2_cmd_pd7>;
 	cd-gpios = <&gpioi 15 GPIO_ACTIVE_LOW>;
+};
+
+&dma2 {
+	status = "okay";
+};
+
+&quadspi {
+	pinctrl-0 = <&quadspi_clk_pb2 &quadspi_bk1_ncs_pb6
+		     &quadspi_bk1_io0_pc9 &quadspi_bk1_io1_pc10
+		     &quadspi_bk1_io2_pe2 &quadspi_bk1_io3_pd13>;
+	dmas = <&dma2 7 3 0x0000 0x03>;
+	dma-names = "tx_rx";
+
+	status = "okay";
+
+	mx25l51245g: qspi-nor-flash@0 {
+		compatible = "st,stm32-qspi-nor";
+		label = "MX25L51245G";
+		reg = <0>;
+		qspi-max-frequency = <70000000>;
+		/* 512 Megabits = 64 Megabytes */
+		size = <0x20000000>;
+		status = "okay";
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			slot1_partition: partition@0 {
+				label = "image-1";
+				reg = <0x00000000 0x000D8000>;
+				};
+
+			storage_partition: partition@D8000 {
+				label = "storage";
+				reg = <0x000D8000 DT_SIZE_M(7)>;
+			};
+		};
+	};
 };
