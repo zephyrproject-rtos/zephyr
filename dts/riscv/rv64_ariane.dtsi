@@ -1,0 +1,106 @@
+/dts-v1/;
+
+/ {
+    //#address-cells = <2>;
+    //#size-cells = <2>;
+    #address-cells = <1>;
+    #size-cells = <1>;
+    compatible = "eth,ariane-bare-dev";
+    model = "eth,ariane-bare";
+
+    aliases {
+        console = &uart0;
+    };
+    
+    cpus {
+        #address-cells = <1>;
+        #size-cells = <0>;
+        timebase-frequency = <32768>; // 32.768 kHz
+        CPU0: cpu@0 {
+            clock-frequency = <50000000>; // 50 MHz
+            device_type = "cpu";
+            reg = <0>;
+            status = "okay";
+            compatible = "eth, ariane", "riscv";
+            riscv,isa = "rv64imac";
+            mmu-type = "riscv,sv39";
+            tlb-split;
+            // HLIC - hart local interrupt controller
+            CPU0_intc: interrupt-controller {
+                #interrupt-cells = <1>;
+                interrupt-controller;
+                compatible = "riscv,cpu-intc";
+            };
+        };
+    };
+
+    memory@80000000 {
+        device_type = "memory";
+        reg = <0x80000000 0x40000000>;  // 1 Gbyte
+    };
+
+    soc {
+        //#address-cells = <2>;
+        //#size-cells = <2>;
+        #address-cells = <1>;
+        #size-cells = <1>;
+        compatible = "eth,ariane-bare-soc", "simple-bus";
+        ranges;
+        clint@2000000 {
+            #interrupt-cells = <1>;
+            interrupt-controller;
+            compatible = "riscv,clint0";
+            interrupts-extended = <&CPU0_intc 3 &CPU0_intc 7>;
+            reg = <0x2000000 0xc0000>;
+
+            reg-names = "control";
+        };
+
+        // PLIC needs to be disabled for tandem verification
+        PLIC0: interrupt-controller@c000000 {
+            //#address-cells = <0>;
+            #interrupt-cells = <1>;
+            compatible = "sifive,plic-1.0.0", "riscv,plic0";
+            interrupt-controller;
+            interrupts-extended = <&CPU0_intc 11 &CPU0_intc 9>;
+            reg = <0x0c000000 0x00002000
+                    0x0c002000 0x001fe000
+                    0x0c200000 0x03e00000>;
+            reg-names = "prio", "irq_en", "reg";
+            riscv,max-priority = <7>;
+            riscv,ndev = <2>;
+        };
+
+        // TODO: How is this verified?
+        debug-controller@0 {
+            compatible = "riscv,debug-013";
+            interrupts-extended = <&CPU0_intc 65535>;
+            reg = <0x0 0x1000>;
+            reg-names = "control";
+        };
+
+        uart0: serial@10000000 {
+            compatible = "ns16550";
+            reg = <0x10000000 0x1000>;
+            clock-frequency = <50000000>;
+            current-speed = <115200>;
+            interrupt-parent = <&PLIC0>;
+            interrupts = <1>;
+            label = "UART_0";
+        };
+
+        timer@18000000 {
+            compatible = "pulp,apb_timer";
+            interrupts = <0x00000004 0x00000005 0x00000006 0x00000007>;
+            reg = <0x18000000 0x00001000>;
+            interrupt-parent = <&PLIC0>;
+            reg-names = "control";
+        };
+    }; //SOC
+    
+}; //main
+
+
+
+
+
