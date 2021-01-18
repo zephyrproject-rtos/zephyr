@@ -1,4 +1,4 @@
-# Copyright (c) 2016 Nordic Semiconductor ASA
+# Copyright (c) 2016-2021 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
 config ZEPHYR_HAL_NORDIC_MODULE
@@ -107,13 +107,7 @@ config NRF_802154_SER_HOST
 	bool "nRF IEEE 802.15.4 Driver serialization host"
 	depends on !NRF_802154_RADIO_DRIVER
 	depends on !HAS_HW_NRF_RADIO_IEEE802154
-	select IPM
-	select IPM_NRFX
-	select IPM_MSG_CH_0_ENABLE
-	select IPM_MSG_CH_1_ENABLE
-	select IPM_MSG_CH_0_TX
-	select IPM_MSG_CH_1_RX
-	select OPENAMP
+	select RPMSG_SERVICE
 	select IEEE802154_NRF5_EXT_IRQ_MGMT if IEEE802154_NRF5
 	help
 	  Enable serialization of nRF IEEE 802.15.4 Driver. This option is to be
@@ -124,13 +118,7 @@ menuconfig NRF_802154_SER_RADIO
 	bool "nRF IEEE 802.15.4 Driver serialization radio"
 	depends on HAS_HW_NRF_RADIO_IEEE802154
 	depends on !IEEE802154_NRF5
-	select IPM
-	select IPM_NRFX
-	select IPM_MSG_CH_0_ENABLE
-	select IPM_MSG_CH_1_ENABLE
-	select IPM_MSG_CH_0_RX
-	select IPM_MSG_CH_1_TX
-	select OPENAMP
+	select RPMSG_SERVICE
 	select NRF_802154_RADIO_DRIVER
 	help
 	  Enable serialization of nRF IEEE 802.15.4 Driver. This option is to be
@@ -145,6 +133,10 @@ config NRF_802154_SER_RADIO_INIT_PRIO
 	help
 	  Set the initialization priority number. Do not mess with it unless
 	  you know what you are doing.
+
+choice RPMSG_SERVICE_MODE
+	default RPMSG_SERVICE_MODE_REMOTE
+endchoice
 
 endif
 
@@ -180,6 +172,10 @@ config NRF_802154_RX_BUFFERS
 	help
 	  Number of buffers in nRF 802.15.4 driver serialization host's receive queue.
 	  If this value is modified, its remote counterpart must be set to the exact same value.
+
+choice RPMSG_SERVICE_MODE
+	default RPMSG_SERVICE_MODE_MASTER
+endchoice
 
 endif
 
