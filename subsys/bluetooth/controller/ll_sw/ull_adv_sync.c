@@ -1719,6 +1719,12 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 			     TICKER_USER_ID_LLL, 0, &mfy);
 	LL_ASSERT(!ret);
 
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
+	if (lll->iso) {
+		ull_adv_iso_offset_get(sync);
+	}
+#endif /* CONFIG_BT_CTLR_ADV_ISO */
+
 	DEBUG_RADIO_PREPARE_A(1);
 }
 
