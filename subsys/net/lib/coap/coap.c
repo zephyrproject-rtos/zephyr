@@ -1072,7 +1072,8 @@ size_t coap_next_block(const struct coap_packet *cpkt,
 
 int coap_pending_init(struct coap_pending *pending,
 		      const struct coap_packet *request,
-		      const struct sockaddr *addr)
+		      const struct sockaddr *addr,
+		      uint8_t retries)
 {
 	memset(pending, 0, sizeof(*pending));
 
@@ -1083,6 +1084,7 @@ int coap_pending_init(struct coap_pending *pending,
 	pending->data = request->data;
 	pending->len = request->offset;
 	pending->t0 = k_uptime_get_32();
+	pending->retries = retries;
 
 	return 0;
 }
@@ -1201,30 +1203,24 @@ struct coap_pending *coap_pending_next_to_expire(
  */
 #define INIT_ACK_TIMEOUT	CONFIG_COAP_INIT_ACK_TIMEOUT_MS
 
-static int32_t next_timeout(int32_t previous)
-{
-	switch (previous) {
-	case INIT_ACK_TIMEOUT:
-	case (INIT_ACK_TIMEOUT * 2):
-	case (INIT_ACK_TIMEOUT * 4):
-		return previous << 1;
-	case (INIT_ACK_TIMEOUT * 8):
-		/* equal value is returned to end retransmit */
-		return previous;
-	}
-
-	/* initial or unrecognized */
-	return INIT_ACK_TIMEOUT;
-}
-
 bool coap_pending_cycle(struct coap_pending *pending)
 {
-	int32_t old = pending->timeout;
+	if (pending->timeout == 0) {
+		/* Initial transmission. */
+		pending->timeout = INIT_ACK_TIMEOUT;
+
+		return true;
+	}
+
+	if (pending->retries == 0) {
+		return false;
+	}
 
 	pending->t0 += pending->timeout;
-	pending->timeout = next_timeout(pending->timeout);
+	pending->timeout = pending->timeout << 1;
+	pending->retries--;
 
-	return (old != pending->timeout);
+	return true;
 }
 
 void coap_pending_clear(struct coap_pending *pending)

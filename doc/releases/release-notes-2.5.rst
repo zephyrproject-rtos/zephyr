@@ -58,6 +58,10 @@ API Changes
   timeout usage must use the new-style k_timeout_t type and not the
   legacy/deprecated millisecond counts.
 
+* The :c:func:`coap_pending_init` function now accepts an additional ``retries``
+  parameter, allowing to specify the maximum retransmission count of the
+  confirmable message.
+
 Deprecated in this release
 ==========================
 
