@@ -552,6 +552,7 @@
 /subsys/fs/fuse_fs_access.c               @vanwinkeljan
 /subsys/fs/littlefs_fs.c                  @pabigot
 /subsys/fs/nvs/                           @Laczen
+/subsys/ipc/                              @ioannisg
 /subsys/logging/                          @nordic-krch
 /subsys/logging/log_backend_net.c         @nordic-krch @jukkar
 /subsys/lorawan/                          @Mani-Sadhasivam
