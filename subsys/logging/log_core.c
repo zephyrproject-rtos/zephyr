@@ -899,7 +899,7 @@ char *log_strdup(const char *str)
 
 	if (IS_ENABLED(CONFIG_LOG_STRDUP_POOL_PROFILING)) {
 		size_t slen = strlen(str);
-		struct k_spinlock lock;
+		static struct k_spinlock lock;
 		k_spinlock_key_t key;
 
 		key = k_spin_lock(&lock);
