@@ -39,6 +39,8 @@
 #define DEVICE_NAME		CONFIG_BT_DEVICE_NAME
 #define DEVICE_NAME_LEN		(sizeof(DEVICE_NAME) - 1)
 
+static bool no_settings_load;
+
 uint8_t selected_id = BT_ID_DEFAULT;
 const struct shell *ctx_shell;
 
@@ -511,8 +513,9 @@ static void bt_ready(int err)
 
 	shell_print(ctx_shell, "Bluetooth initialized");
 
-	if (IS_ENABLED(CONFIG_SETTINGS)) {
+	if (IS_ENABLED(CONFIG_SETTINGS) && !no_settings_load) {
 		settings_load();
+		shell_print(ctx_shell, "Settings Loaded");
 	}
 
 	if (IS_ENABLED(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)) {
@@ -537,16 +540,54 @@ static void bt_ready(int err)
 static int cmd_init(const struct shell *shell, size_t argc, char *argv[])
 {
 	int err;
+	bool no_ready_cb = false;
 
 	ctx_shell = shell;
 
-	err = bt_enable(bt_ready);
-	if (err) {
-		shell_error(shell, "Bluetooth init failed (err %d)", err);
+	for (size_t argn = 1; argn < argc; argn++) {
+		const char *arg = argv[argn];
+
+		if (!strcmp(arg, "no-settings-load")) {
+			no_settings_load = true;
+		} else if (!strcmp(arg, "sync")) {
+			no_ready_cb = true;
+		} else {
+			shell_help(shell);
+			return SHELL_CMD_HELP_PRINTED;
+		}
+	}
+
+	if (no_ready_cb) {
+		err = bt_enable(bt_ready);
+		if (err) {
+			shell_error(shell, "Bluetooth init failed (err %d)",
+				    err);
+		}
+
+	} else {
+		err = bt_enable(NULL);
+		bt_ready(err);
 	}
 
 	return err;
 }
+
+#ifdef CONFIG_SETTINGS
+static int cmd_settings_load(const struct shell *shell, size_t argc,
+			     char *argv[])
+{
+	int err;
+
+	err = settings_load();
+	if (err) {
+		shell_error(shell, "Settings load failed (err %d)", err);
+		return err;
+	}
+
+	shell_print(shell, "Settings loaded");
+	return 0;
+}
+#endif
 
 #if defined(CONFIG_BT_HCI)
 static int cmd_hci_cmd(const struct shell *shell, size_t argc, char *argv[])
@@ -2881,7 +2922,11 @@ static int cmd_auth_oob_tk(const struct shell *shell, size_t argc, char *argv[])
 #endif /* defined(CONFIG_BT_EXT_ADV) */
 
 SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
-	SHELL_CMD_ARG(init, NULL, HELP_NONE, cmd_init, 1, 0),
+	SHELL_CMD_ARG(init, NULL, "[no-settings-load], [sync]",
+		      cmd_init, 1, 2),
+#if defined(CONFIG_SETTINGS)
+	SHELL_CMD_ARG(settings-load, NULL, HELP_NONE, cmd_settings_load, 1, 0),
+#endif
 #if defined(CONFIG_BT_HCI)
 	SHELL_CMD_ARG(hci-cmd, NULL, "<ogf> <ocf> [data]", cmd_hci_cmd, 3, 1),
 #endif
