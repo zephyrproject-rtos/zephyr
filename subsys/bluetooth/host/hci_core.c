@@ -6845,6 +6845,20 @@ int bt_id_create(bt_addr_le_t *addr, uint8_t *irk)
 		return -ENOMEM;
 	}
 
+	/* bt_rand is not available before Bluetooth enable has been called */
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_ENABLE)) {
+		uint8_t zero_irk[16] = { 0 };
+
+		if (!(addr && bt_addr_le_cmp(addr, BT_ADDR_LE_ANY))) {
+			return -EINVAL;
+		}
+
+		if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
+		    !(irk && memcmp(irk, zero_irk, 16))) {
+			return -EINVAL;
+		}
+	}
+
 	new_id = bt_dev.id_count++;
 	id_create(new_id, addr, irk);
 

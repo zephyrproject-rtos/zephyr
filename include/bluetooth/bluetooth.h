@@ -202,6 +202,9 @@ void bt_id_get(bt_addr_le_t *addrs, size_t *count);
  * the address from and will be able to repeat the procedure on every power
  * cycle, i.e. it would be redundant to also store the information in flash.
  *
+ * Generating random static address or random IRK is not supported when calling
+ * this function before bt_enable().
+ *
  * If the application wants to have the stack randomly generate identities
  * and store them in flash for later recovery, the way to do it would be
  * to first initialize the stack (using bt_enable), then call settings_load(),
@@ -210,8 +213,8 @@ void bt_id_get(bt_addr_le_t *addrs, size_t *count);
  * call bt_id_create() to create new ones.
  *
  * @param addr Address to use for the new identity. If NULL or initialized
- *             to BT_ADDR_LE_ANY the stack will generate a new static
- *             random address for the identity and copy it to the given
+ *             to BT_ADDR_LE_ANY the stack will generate a new random
+ *             static address for the identity and copy it to the given
  *             parameter upon return from this function (in case the
  *             parameter was non-NULL).
  * @param irk  Identity Resolving Key (16 bytes) to be used with this
