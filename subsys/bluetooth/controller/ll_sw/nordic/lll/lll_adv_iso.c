@@ -37,7 +37,13 @@
 #include "hal/debug.h"
 
 static int init_reset(void);
+static void prepare(void *param);
+static void create_prepare_bh(void *param);
+static void prepare_bh(void *param);
+static int create_prepare_cb(struct lll_prepare_param *p);
 static int prepare_cb(struct lll_prepare_param *p);
+static int prepare_cb_common(struct lll_prepare_param *p);
+static void isr_create_done(void *param);
 
 int lll_adv_iso_init(void)
 {
@@ -63,7 +69,24 @@ int lll_adv_iso_reset(void)
 	return 0;
 }
 
+void lll_adv_iso_create_prepare(void *param)
+{
+	prepare(param);
+	create_prepare_bh(param);
+}
+
 void lll_adv_iso_prepare(void *param)
+{
+	prepare(param);
+	prepare_bh(param);
+}
+
+static int init_reset(void)
+{
+	return 0;
+}
+
+static void prepare(void *param)
 {
 	struct lll_prepare_param *p;
 	struct lll_adv_iso *lll;
@@ -82,18 +105,60 @@ void lll_adv_iso_prepare(void *param)
 
 	/* Save the (latency + 1) for use in event */
 	lll->latency_prepare += elapsed;
+}
+
+static void create_prepare_bh(void *param)
+{
+	int err;
 
 	/* Invoke common pipeline handling of prepare */
-	err = lll_prepare(lll_is_abort_cb, lll_abort_cb, prepare_cb, 0, p);
+	err = lll_prepare(lll_is_abort_cb, lll_abort_cb, create_prepare_cb, 0,
+			  param);
 	LL_ASSERT(!err || err == -EINPROGRESS);
 }
 
-static int init_reset(void)
+static void prepare_bh(void *param)
 {
+	int err;
+
+	/* Invoke common pipeline handling of prepare */
+	err = lll_prepare(lll_is_abort_cb, lll_abort_cb, prepare_cb, 0, param);
+	LL_ASSERT(!err || err == -EINPROGRESS);
+}
+
+static int create_prepare_cb(struct lll_prepare_param *p)
+{
+	int err;
+
+	err = prepare_cb_common(p);
+	if (err) {
+		DEBUG_RADIO_START_A(1);
+		return 0;
+	}
+
+	radio_isr_set(isr_create_done, p->param);
+
+	DEBUG_RADIO_START_A(1);
 	return 0;
 }
 
 static int prepare_cb(struct lll_prepare_param *p)
+{
+	int err;
+
+	err = prepare_cb_common(p);
+	if (err) {
+		DEBUG_RADIO_START_A(1);
+		return 0;
+	}
+
+	radio_isr_set(lll_isr_done, p->param);
+
+	DEBUG_RADIO_START_A(1);
+	return 0;
+}
+
+static int prepare_cb_common(struct lll_prepare_param *p)
 {
 	struct lll_adv_iso *lll;
 	uint32_t ticks_at_event;
@@ -185,8 +250,6 @@ static int prepare_cb(struct lll_prepare_param *p)
 	pdu->len = 0;
 	radio_pkt_tx_set(pdu);
 
-	/* TODO: chaining */
-	radio_isr_set(lll_isr_done, lll);
 	radio_switch_complete_and_disable();
 
 	ticks_at_event = p->ticks_at_expire;
@@ -208,22 +271,37 @@ static int prepare_cb(struct lll_prepare_param *p)
 	ARG_UNUSED(start_us);
 #endif /* !CONFIG_BT_CTLR_GPIO_PA_PIN */
 
+	if (0) {
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED) && \
 	(EVENT_OVERHEAD_PREEMPT_US <= EVENT_OVERHEAD_PREEMPT_MIN_US)
 	/* check if preempt to start has changed */
-	if (lll_preempt_calc(evt, (TICKER_ID_ADV_ISO_BASE + lll->handle),
-			     ticks_at_event)) {
+	} else if (lll_preempt_calc(evt, (TICKER_ID_ADV_ISO_BASE + lll->handle),
+				    ticks_at_event)) {
 		radio_isr_set(lll_isr_abort, lll);
 		radio_disable();
-	} else
+
+		return -ECANCELED;
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
-	{
+	} else {
 		uint32_t ret;
 
 		ret = lll_prepare_done(lll);
 		LL_ASSERT(!ret);
 	}
 
-	DEBUG_RADIO_START_A(1);
 	return 0;
+}
+
+static void isr_create_done(void *param)
+{
+	struct event_done_extra *extra;
+
+	lll_isr_status_reset();
+
+	extra = ull_event_done_extra_get();
+	LL_ASSERT(extra);
+
+	extra->type = EVENT_DONE_EXTRA_TYPE_ADV_ISO_CREATED;
+
+	lll_isr_cleanup(param);
 }
