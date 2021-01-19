@@ -6,6 +6,7 @@
 
 /*
  * Copyright (c) 2016 Intel Corporation
+ * Copyright (c) 2021 Nordic Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -264,6 +265,10 @@ int net_context_get(sa_family_t family,
 		net_context_set_family(&contexts[i], family);
 		net_context_set_type(&contexts[i], type);
 		net_context_set_ip_proto(&contexts[i], ip_proto);
+
+#if defined(CONFIG_NET_CONTEXT_RCVTIMEO)
+		contexts[i].options.rcvtimeo = K_FOREVER;
+#endif
 
 		if (IS_ENABLED(CONFIG_NET_IPV6) ||
 		    IS_ENABLED(CONFIG_NET_IPV4)) {
@@ -1214,6 +1219,22 @@ static int get_context_txtime(struct net_context *context,
 #endif
 }
 
+static int get_context_rcvtimeo(struct net_context *context,
+				void *value, size_t *len)
+{
+#if defined(CONFIG_NET_CONTEXT_RCVTIMEO)
+	*((k_timeout_t *)value) = context->options.rcvtimeo;
+
+	if (len) {
+		*len = sizeof(k_timeout_t);
+	}
+
+	return 0;
+#else
+	return -ENOTSUP;
+#endif
+}
+
 /* If buf is not NULL, then use it. Otherwise read the data to be written
  * to net_pkt from msghdr.
  */
@@ -2149,6 +2170,22 @@ static int set_context_proxy(struct net_context *context,
 #endif
 }
 
+static int set_context_rcvtimeo(struct net_context *context,
+				const void *value, size_t len)
+{
+#if defined(CONFIG_NET_CONTEXT_RCVTIMEO)
+	if (len != sizeof(k_timeout_t)) {
+		return -EINVAL;
+	}
+
+	context->options.rcvtimeo = *((k_timeout_t *)value);
+
+	return 0;
+#else
+	return -ENOTSUP;
+#endif
+}
+
 int net_context_set_option(struct net_context *context,
 			   enum net_context_option option,
 			   const void *value, size_t len)
@@ -2175,6 +2212,9 @@ int net_context_set_option(struct net_context *context,
 		break;
 	case NET_OPT_SOCKS5:
 		ret = set_context_proxy(context, value, len);
+		break;
+	case NET_OPT_RCVTIMEO:
+		ret = set_context_rcvtimeo(context, value, len);
 		break;
 	}
 
@@ -2209,6 +2249,9 @@ int net_context_get_option(struct net_context *context,
 		break;
 	case NET_OPT_SOCKS5:
 		ret = get_context_proxy(context, value, len);
+		break;
+	case NET_OPT_RCVTIMEO:
+		ret = get_context_rcvtimeo(context, value, len);
 		break;
 	}
 

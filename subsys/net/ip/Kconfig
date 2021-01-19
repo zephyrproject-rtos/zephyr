@@ -1,6 +1,7 @@
 # IP stack config
 
 # Copyright (c) 2016 Intel Corporation.
+# Copyright (c) 2021 Nordic Semiconductor
 # SPDX-License-Identifier: Apache-2.0
 
 menu "IP stack"
@@ -550,6 +551,14 @@ config NET_CONTEXT_TXTIME
 	  It is possible to add information when the outgoing network packet
 	  should be sent. The TX time information should be placed into
 	  ancillary data field in sendmsg call.
+
+config NET_CONTEXT_RCVTIMEO
+	bool "Add RCVTIMEO support to net_context"
+	help
+	  It is possible to time out receiving a network packet. The timeout
+	  time is configurable run-time in the application code. For network
+	  sockets timeout is configured per socket with
+	  setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, ...) function.
 
 config NET_TEST
 	bool "Network Testing"
