@@ -53,7 +53,7 @@ K_SEM_DEFINE(mcps_confirm_sem, 0, 1);
 K_MUTEX_DEFINE(lorawan_join_mutex);
 K_MUTEX_DEFINE(lorawan_send_mutex);
 
-static enum lorawan_datarate lorawan_datarate = LORAWAN_DR_0;
+static enum lorawan_datarate lorawan_datarate;
 static uint8_t lorawan_conf_msg_tries = 1;
 static bool lorawan_adr_enable;
 
@@ -414,6 +414,8 @@ int lorawan_start(void)
 {
 	LoRaMacStatus_t status;
 	MibRequestConfirm_t mib_req;
+	GetPhyParams_t phy_params;
+	PhyParam_t phy_param;
 
 	status = LoRaMacStart();
 	if (status != LORAMAC_STATUS_OK) {
@@ -421,6 +423,11 @@ int lorawan_start(void)
 			lorawan_status2str(status));
 		return -EINVAL;
 	}
+
+	/* Retrieve the default TX datarate for selected region */
+	phy_params.Attribute = PHY_DEF_TX_DR;
+	phy_param = RegionGetPhyParam(LORAWAN_REGION, &phy_params);
+	lorawan_datarate = phy_param.Value;
 
 	/* TODO: Move these to a proper location */
 	mib_req.Type = MIB_SYSTEM_MAX_RX_ERROR;
