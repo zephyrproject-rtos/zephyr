@@ -43,7 +43,9 @@ zephyr_library_sources_ifdef(CONFIG_I2C_STM32_V2
 
 if(CONFIG_I2C_DW)
   zephyr_library_sources(i2c_dw.c)
-  foreach(NUM RANGE 0 11)
+  math(EXPR max_index "${CONFIG_I2C_DW_MAX_INSTANCES} - 1")
+  foreach(NUM RANGE 0 ${max_index})
+    math(EXPR NEXT_NUM "${NUM} + 1")
     configure_file(
       i2c_dw_port_x.h
       ${PROJECT_BINARY_DIR}/include/generated/i2c_dw_port_${NUM}.h

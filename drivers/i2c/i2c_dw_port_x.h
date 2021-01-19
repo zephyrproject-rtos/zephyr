@@ -6,6 +6,8 @@
  * This file is a template for cmake and is not meant to be used directly!
  */
 
+#if DT_NODE_HAS_STATUS(DT_DRV_INST(@NUM@), okay)
+
 static void i2c_config_@NUM@(const struct device *port);
 
 static const struct i2c_dw_rom_config i2c_config_dw_@NUM@ = {
@@ -82,3 +84,10 @@ static void i2c_config_@NUM@(const struct device *port)
 
 #endif
 }
+
+#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(@NUM@), okay) */
+
+/* Include subsequent instances */
+#if @NEXT_NUM@ < CONFIG_I2C_DW_MAX_INSTANCES
+#include <i2c_dw_port_@NEXT_NUM@.h>
+#endif
