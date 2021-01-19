@@ -53,7 +53,12 @@ K_SEM_DEFINE(mcps_confirm_sem, 0, 1);
 K_MUTEX_DEFINE(lorawan_join_mutex);
 K_MUTEX_DEFINE(lorawan_send_mutex);
 
-static enum lorawan_datarate lorawan_datarate;
+/* We store both the default datarate requested through lorawan_set_datarate
+ * and the current datarate so that we can use the default datarate for all
+ * join requests, even as the current datarate changes due to ADR.
+ */
+static enum lorawan_datarate default_datarate;
+static enum lorawan_datarate current_datarate;
 static uint8_t lorawan_conf_msg_tries = 1;
 static bool lorawan_adr_enable;
 
@@ -83,6 +88,20 @@ static void OnMacProcessNotify(void)
 	LoRaMacProcess();
 }
 
+static void datarate_observe(bool force_notification)
+{
+	MibRequestConfirm_t mibGet;
+
+	mibGet.Type = MIB_CHANNELS_DATARATE;
+	LoRaMacMibGetRequestConfirm(&mibGet);
+
+	if ((mibGet.Param.ChannelsDatarate != current_datarate) ||
+	    (force_notification)) {
+		current_datarate = mibGet.Param.ChannelsDatarate;
+		LOG_INF("Datarate changed: DR_%d", current_datarate);
+	}
+}
+
 static void McpsConfirm(McpsConfirm_t *mcpsConfirm)
 {
 	LOG_DBG("Received McpsConfirm (for McpsRequest %d)",
@@ -93,6 +112,11 @@ static void McpsConfirm(McpsConfirm_t *mcpsConfirm)
 			lorawan_eventinfo2str(mcpsConfirm->Status));
 	} else {
 		LOG_DBG("McpsRequest success!");
+	}
+
+	/* Datarate may have changed due to a missed ADRACK */
+	if (lorawan_adr_enable) {
+		datarate_observe(false);
 	}
 
 	last_mcps_confirm_status = mcpsConfirm->Status;
@@ -110,6 +134,11 @@ static void McpsIndication(McpsIndication_t *mcpsIndication)
 		LOG_ERR("McpsIndication failed : %s",
 			lorawan_eventinfo2str(mcpsIndication->Status));
 		return;
+	}
+
+	/* Datarate can change as result of ADR command from server */
+	if (lorawan_adr_enable) {
+		datarate_observe(false);
 	}
 
 	/* TODO: Check MCPS Indication type */
@@ -170,7 +199,7 @@ static LoRaMacStatus_t lorawan_join_otaa(
 	MibRequestConfirm_t mib_req;
 
 	mlme_req.Type = MLME_JOIN;
-	mlme_req.Req.Join.Datarate = lorawan_datarate;
+	mlme_req.Req.Join.Datarate = default_datarate;
 
 	mib_req.Type = MIB_DEV_EUI;
 	mib_req.Param.DevEui = join_cfg->dev_eui;
@@ -290,7 +319,7 @@ out:
 		MibRequestConfirm_t mib_req;
 
 		mib_req.Type = MIB_CHANNELS_DATARATE;
-		mib_req.Param.ChannelsDatarate = lorawan_datarate;
+		mib_req.Param.ChannelsDatarate = default_datarate;
 		LoRaMacMibSetRequestConfirm(&mib_req);
 	}
 
@@ -344,7 +373,8 @@ int lorawan_set_datarate(enum lorawan_datarate dr)
 		return -EINVAL;
 	}
 
-	lorawan_datarate = dr;
+	default_datarate = dr;
+	current_datarate = dr;
 
 	return 0;
 }
@@ -429,14 +459,14 @@ int lorawan_send(uint8_t port, uint8_t *data, uint8_t len, uint8_t flags)
 			mcpsReq.Req.Confirmed.fBuffer = data;
 			mcpsReq.Req.Confirmed.fBufferSize = len;
 			mcpsReq.Req.Confirmed.NbTrials = lorawan_conf_msg_tries;
-			mcpsReq.Req.Confirmed.Datarate = lorawan_datarate;
+			mcpsReq.Req.Confirmed.Datarate = current_datarate;
 		} else {
 			/* default message type */
 			mcpsReq.Type = MCPS_UNCONFIRMED;
 			mcpsReq.Req.Unconfirmed.fPort = port;
 			mcpsReq.Req.Unconfirmed.fBuffer = data;
 			mcpsReq.Req.Unconfirmed.fBufferSize = len;
-			mcpsReq.Req.Unconfirmed.Datarate = lorawan_datarate;
+			mcpsReq.Req.Unconfirmed.Datarate = current_datarate;
 		}
 	}
 
@@ -503,7 +533,8 @@ int lorawan_start(void)
 	/* Retrieve the default TX datarate for selected region */
 	phy_params.Attribute = PHY_DEF_TX_DR;
 	phy_param = RegionGetPhyParam(LORAWAN_REGION, &phy_params);
-	lorawan_datarate = phy_param.Value;
+	default_datarate = phy_param.Value;
+	current_datarate = default_datarate;
 
 	/* TODO: Move these to a proper location */
 	mib_req.Type = MIB_SYSTEM_MAX_RX_ERROR;
