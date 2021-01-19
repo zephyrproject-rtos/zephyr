@@ -513,6 +513,144 @@ void test_v4_accept_timeout(void)
 	k_sleep(TCP_TEARDOWN_TIMEOUT);
 }
 
+void test_v4_so_rcvtimeo(void)
+{
+	int c_sock;
+	int s_sock;
+	int new_sock;
+	struct sockaddr_in c_saddr;
+	struct sockaddr_in s_saddr;
+	struct sockaddr addr;
+	socklen_t addrlen = sizeof(addr);
+
+	int rv;
+	uint32_t start_time, time_diff;
+	ssize_t recved = 0;
+	char rx_buf[30] = {0};
+
+	struct timeval optval = {
+		.tv_sec = 2,
+		.tv_usec = 500000,
+	};
+
+	prepare_sock_tcp_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, ANY_PORT,
+			    &c_sock, &c_saddr);
+	prepare_sock_tcp_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, SERVER_PORT,
+			    &s_sock, &s_saddr);
+
+	test_bind(s_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_listen(s_sock);
+
+	test_connect(c_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+
+	test_accept(s_sock, &new_sock, &addr, &addrlen);
+	zassert_equal(addrlen, sizeof(struct sockaddr_in), "wrong addrlen");
+
+	rv = setsockopt(c_sock, SOL_SOCKET, SO_RCVTIMEO, &optval,
+			sizeof(optval));
+	zassert_equal(rv, 0, "setsockopt failed (%d)", errno);
+
+	optval.tv_usec = 0;
+	rv = setsockopt(new_sock, SOL_SOCKET, SO_RCVTIMEO, &optval,
+			sizeof(optval));
+	zassert_equal(rv, 0, "setsockopt failed (%d)", errno);
+
+	start_time = k_uptime_get_32();
+	recved = recv(c_sock, rx_buf, sizeof(rx_buf), 0);
+	time_diff = k_uptime_get_32() - start_time;
+
+	zassert_equal(recved, -1, "Unexpected return code");
+	zassert_equal(errno, EAGAIN, "Unexpected errno value: %d", errno);
+	zassert_true(time_diff >= 2500, "Expected timeout after 2500ms but "
+			"was %dms", time_diff);
+
+	start_time = k_uptime_get_32();
+	recved = recv(new_sock, rx_buf, sizeof(rx_buf), 0);
+	time_diff = k_uptime_get_32() - start_time;
+
+	zassert_equal(recved, -1, "Unexpected return code");
+	zassert_equal(errno, EAGAIN, "Unexpected errno value: %d", errno);
+	zassert_true(time_diff >= 2000, "Expected timeout after 2000ms but "
+			"was %dms", time_diff);
+
+	test_close(c_sock);
+	test_eof(new_sock);
+
+	test_close(new_sock);
+	test_close(s_sock);
+
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
+}
+
+void test_v6_so_rcvtimeo(void)
+{
+	int c_sock;
+	int s_sock;
+	int new_sock;
+	struct sockaddr_in6 c_saddr;
+	struct sockaddr_in6 s_saddr;
+	struct sockaddr addr;
+	socklen_t addrlen = sizeof(addr);
+
+	int rv;
+	uint32_t start_time, time_diff;
+	ssize_t recved = 0;
+	char rx_buf[30] = {0};
+
+	struct timeval optval = {
+		.tv_sec = 2,
+		.tv_usec = 500000,
+	};
+
+	prepare_sock_tcp_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, ANY_PORT,
+			    &c_sock, &c_saddr);
+	prepare_sock_tcp_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, SERVER_PORT,
+			    &s_sock, &s_saddr);
+
+	test_bind(s_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_listen(s_sock);
+
+	test_connect(c_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+
+	test_accept(s_sock, &new_sock, &addr, &addrlen);
+	zassert_equal(addrlen, sizeof(struct sockaddr_in6), "wrong addrlen");
+
+	rv = setsockopt(c_sock, SOL_SOCKET, SO_RCVTIMEO, &optval,
+			sizeof(optval));
+	zassert_equal(rv, 0, "setsockopt failed (%d)", errno);
+
+	optval.tv_usec = 0;
+	rv = setsockopt(new_sock, SOL_SOCKET, SO_RCVTIMEO, &optval,
+			sizeof(optval));
+	zassert_equal(rv, 0, "setsockopt failed (%d)", errno);
+
+	start_time = k_uptime_get_32();
+	recved = recv(c_sock, rx_buf, sizeof(rx_buf), 0);
+	time_diff = k_uptime_get_32() - start_time;
+
+	zassert_equal(recved, -1, "Unexpected return code");
+	zassert_equal(errno, EAGAIN, "Unexpected errno value: %d", errno);
+	zassert_true(time_diff >= 2500, "Expected timeout after 2500ms but "
+			"was %dms", time_diff);
+
+	start_time = k_uptime_get_32();
+	recved = recv(new_sock, rx_buf, sizeof(rx_buf), 0);
+	time_diff = k_uptime_get_32() - start_time;
+
+	zassert_equal(recved, -1, "Unexpected return code");
+	zassert_equal(errno, EAGAIN, "Unexpected errno value: %d", errno);
+	zassert_true(time_diff >= 2000, "Expected timeout after 2000ms but "
+			"was %dms", time_diff);
+
+	test_close(c_sock);
+	test_eof(new_sock);
+
+	test_close(new_sock);
+	test_close(s_sock);
+
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
+}
+
 #ifdef CONFIG_USERSPACE
 #define CHILD_STACK_SZ		(2048 + CONFIG_TEST_EXTRA_STACKSIZE)
 struct k_thread child_thread;
@@ -599,6 +737,8 @@ void test_main(void)
 		ztest_user_unit_test(test_v6_recv_enotconn),
 		ztest_unit_test(test_open_close_immediately),
 		ztest_user_unit_test(test_v4_accept_timeout),
+		ztest_unit_test(test_v4_so_rcvtimeo),
+		ztest_unit_test(test_v6_so_rcvtimeo),
 		ztest_user_unit_test(test_socket_permission)
 		);
 
