@@ -21,6 +21,7 @@ import shlex
 import shutil
 import signal
 import subprocess
+import re
 from typing import Dict, List, NamedTuple, NoReturn, Optional, Set, Type, \
     Union
 
@@ -144,23 +145,32 @@ class BuildConfiguration:
         self._parse(self.path)
 
     def _parse(self, filename: str):
+        opt_value = re.compile('^(?P<option>CONFIG_[A-Za-z0-9_]+)=(?P<value>.*)$')
+        not_set = re.compile('^# (?P<option>CONFIG_[A-Za-z0-9_]+) is not set$')
+
         with open(filename, 'r') as f:
-            for line in f:
-                line = line.strip()
-                if not line or line.startswith('#'):
-                    continue
-                option, value = line.split('=', 1)
-                self.options[option] = self._parse_value(value)
+            lines = f.readlines()
 
-    @staticmethod
-    def _parse_value(value):
-        if value.startswith('"') or value.startswith("'"):
-            return value.split()
-        try:
-            return int(value, 0)
-        except ValueError:
-            return value
+        for line in lines:
+            match = opt_value.match(line)
+            if match:
+                value = match.group('value').rstrip()
+                if value.startswith('"') and value.endswith('"'):
+                    value = value[1:-1]
+                else:
+                    try:
+                        base = 16 if value.startswith('0x') else 10
+                        self.options[match.group('option')] = int(value, base=base)
+                        continue
+                    except ValueError:
+                        pass
 
+                self.options[match.group('option')] = value
+                continue
+
+            match = not_set.match(line)
+            if match:
+                self.options[match.group('option')] = 'n'
 
 class MissingProgram(FileNotFoundError):
     '''FileNotFoundError subclass for missing program dependencies.
