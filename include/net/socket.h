@@ -805,6 +805,8 @@ static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
  * Applies to receive functions like recv(), but not to connect()
  */
 #define SO_RCVTIMEO 20
+/** sockopt: Send timeout */
+#define SO_SNDTIMEO 21
 
 /** sockopt: Timestamp TX packets */
 #define SO_TIMESTAMPING 37
