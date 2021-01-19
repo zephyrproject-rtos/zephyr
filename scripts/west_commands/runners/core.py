@@ -128,6 +128,7 @@ class BuildConfiguration:
     def __init__(self, build_dir: str):
         self.build_dir = build_dir
         self.options: Dict[str, Union[str, int]] = {}
+        self.path = os.path.join(self.build_dir, 'zephyr', '.config')
         self._init()
 
     def __contains__(self, item):
@@ -140,7 +141,7 @@ class BuildConfiguration:
         return self.options.get(option, *args)
 
     def _init(self):
-        self._parse(os.path.join(self.build_dir, 'zephyr', '.config'))
+        self._parse(self.path)
 
     def _parse(self, filename: str):
         with open(filename, 'r') as f:
