@@ -97,9 +97,9 @@ config PM
 	  system enters idle state.
 
 config PM_DEVICE
-	default n
+	default y
 	help
-	  Disable device power management so far.
+	  Enable device power management support.
 
 endif # SOC_POWER_MANAGEMENT
 

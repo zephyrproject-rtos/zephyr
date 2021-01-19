@@ -11,6 +11,7 @@
 #include <drivers/uart.h>
 #include <drivers/clock_control.h>
 #include <kernel.h>
+#include <power/power.h>
 #include <soc.h>
 #include "soc_miwu.h"
 
@@ -36,6 +37,9 @@ struct uart_npcx_data {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t user_cb;
 	void *user_data;
+#endif
+#ifdef CONFIG_PM_DEVICE
+	uint32_t pm_state;
 #endif
 };
 
@@ -362,6 +366,72 @@ static int uart_npcx_init(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_PM_DEVICE
+static inline bool uart_npcx_device_is_transmitting(const struct device *dev)
+{
+	if (IS_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN)) {
+		/* The transmitted transaction is completed? */
+		return !uart_npcx_irq_tx_complete(dev);
+	}
+
+	/* No need for polling mode */
+	return 0;
+}
+
+static inline int uart_npcx_get_power_state(const struct device *dev,
+							uint32_t *state)
+{
+	const struct uart_npcx_data *const data = DRV_DATA(dev);
+
+	*state = data->pm_state;
+	return 0;
+}
+
+static inline int uart_npcx_set_power_state(const struct device *dev,
+							uint32_t next_state)
+{
+	struct uart_npcx_data *const data = DRV_DATA(dev);
+
+	/* If next device power state is LOW or SUSPEND power state */
+	if (next_state == DEVICE_PM_LOW_POWER_STATE ||
+	    next_state == DEVICE_PM_SUSPEND_STATE) {
+		/*
+		 * If uart device is busy with transmitting, the driver will
+		 * stay in while loop and wait for the transaction is completed.
+		 */
+		while (uart_npcx_device_is_transmitting(dev)) {
+			continue;
+		}
+	}
+
+	data->pm_state = next_state;
+	return 0;
+}
+
+/* Implements the device power management control functionality */
+static int uart_npcx_pm_control(const struct device *dev, uint32_t ctrl_command,
+				 void *context, device_pm_cb cb, void *arg)
+{
+	int ret = 0;
+
+	switch (ctrl_command) {
+	case DEVICE_PM_SET_POWER_STATE:
+		ret = uart_npcx_set_power_state(dev, *((uint32_t *)context));
+		break;
+	case DEVICE_PM_GET_POWER_STATE:
+		ret = uart_npcx_get_power_state(dev, (uint32_t *)context);
+		break;
+	default:
+		ret = -EINVAL;
+	}
+
+	if (cb != NULL) {
+		cb(dev, ret, context, arg);
+	}
+	return ret;
+}
+#endif /* CONFIG_PM_DEVICE */
+
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 #define NPCX_UART_IRQ_CONFIG_FUNC_DECL(inst) \
 	static void uart_npcx_irq_config_##inst(const struct device *dev)
@@ -406,7 +476,7 @@ static int uart_npcx_init(const struct device *dev)
 									       \
 	DEVICE_DT_INST_DEFINE(inst,					       \
 			&uart_npcx_init,                                       \
-			device_pm_control_nop,				       \
+			uart_npcx_pm_control,				       \
 			&uart_npcx_data_##inst, &uart_npcx_cfg_##inst,         \
 			PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,      \
 			&uart_npcx_driver_api);                                \
