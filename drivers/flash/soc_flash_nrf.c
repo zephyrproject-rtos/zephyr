@@ -15,6 +15,7 @@
 #include <drivers/flash.h>
 #include <string.h>
 #include <nrfx_nvmc.h>
+#include <nrf_erratas.h>
 
 #include "soc_flash_nrf.h"
 
@@ -73,6 +74,17 @@ static struct k_sem sem_lock;
 #define SYNC_UNLOCK()
 #endif
 
+#if NRF52_ERRATA_242_PRESENT
+#include <hal/nrf_power.h>
+static int suspend_pofwarn(void);
+static void restore_pofwarn(void);
+
+#define SUSPEND_POFWARN() suspend_pofwarn()
+#define RESUME_POFWARN()  restore_pofwarn()
+#else
+#define SUSPEND_POFWARN() 0
+#define RESUME_POFWARN()
+#endif /* NRF52_ERRATA_242_PRESENT */
 
 static int write(off_t addr, const void *data, size_t len);
 static int erase(uint32_t addr, uint32_t size);
@@ -343,12 +355,20 @@ static int erase_op(void *context)
 
 #ifdef CONFIG_SOC_FLASH_NRF_UICR
 	if (e_ctx->flash_addr == (off_t)NRF_UICR) {
+		if (SUSPEND_POFWARN()) {
+			return -ECANCELED;
+		}
+
 		(void)nrfx_nvmc_uicr_erase();
+		RESUME_POFWARN();
 		return FLASH_OP_DONE;
 	}
 #endif
 
 	do {
+		if (SUSPEND_POFWARN()) {
+			return -ECANCELED;
+		}
 
 #if defined(CONFIG_SOC_FLASH_NRF_PARTIAL_ERASE)
 		if (e_ctx->flash_addr == e_ctx->flash_addr_next) {
@@ -366,6 +386,8 @@ static int erase_op(void *context)
 		e_ctx->len -= pg_size;
 		e_ctx->flash_addr += pg_size;
 #endif /* CONFIG_SOC_FLASH_NRF_PARTIAL_ERASE */
+
+		RESUME_POFWARN();
 
 #ifndef CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE
 		i++;
@@ -410,10 +432,15 @@ static int write_op(void *context)
 			count = w_ctx->len;
 		}
 
+		if (SUSPEND_POFWARN()) {
+			return -ECANCELED;
+		}
+
 		nrfx_nvmc_bytes_write(w_ctx->flash_addr,
 				      (const void *)w_ctx->data_addr,
 				      count);
 
+		RESUME_POFWARN();
 		shift_write_context(count, w_ctx);
 
 #ifndef CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE
@@ -428,9 +455,13 @@ static int write_op(void *context)
 #endif /* CONFIG_SOC_FLASH_NRF_EMULATE_ONE_BYTE_WRITE_ACCESS */
 	/* Write all the 4-byte aligned data */
 	while (w_ctx->len >= sizeof(uint32_t)) {
+		if (SUSPEND_POFWARN()) {
+			return -ECANCELED;
+		}
+
 		nrfx_nvmc_word_write(w_ctx->flash_addr,
 				     UNALIGNED_GET((uint32_t *)w_ctx->data_addr));
-
+		RESUME_POFWARN();
 		shift_write_context(sizeof(uint32_t), w_ctx);
 
 #ifndef CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE
@@ -447,10 +478,14 @@ static int write_op(void *context)
 #if IS_ENABLED(CONFIG_SOC_FLASH_NRF_EMULATE_ONE_BYTE_WRITE_ACCESS)
 	/* Write remaining unaligned data */
 	if (w_ctx->len) {
+		if (SUSPEND_POFWARN()) {
+			return -ECANCELED;
+		}
+
 		nrfx_nvmc_bytes_write(w_ctx->flash_addr,
 				      (const void *)w_ctx->data_addr,
 				      w_ctx->len);
-
+		RESUME_POFWARN();
 		shift_write_context(w_ctx->len, w_ctx);
 	}
 #endif /* CONFIG_SOC_FLASH_NRF_EMULATE_ONE_BYTE_WRITE_ACCESS */
@@ -488,3 +523,50 @@ static int write(off_t addr, const void *data, size_t len)
 
 	return write_op(&context);
 }
+
+#if NRF52_ERRATA_242_PRESENT
+/* Disable POFWARN by writing POFCON before a write or erase operation.
+ * Do not attempt to write or erase if EVENTS_POFWARN is already asserted.
+ */
+static bool pofcon_enabled;
+
+static int suspend_pofwarn(void)
+{
+	if (!nrf52_errata_242()) {
+		return 0;
+	}
+
+	bool enabled;
+	nrf_power_pof_thr_t pof_thr;
+
+	pof_thr = nrf_power_pofcon_get(NRF_POWER, &enabled);
+
+	if (enabled) {
+		nrf_power_pofcon_set(NRF_POWER, false, pof_thr);
+
+		/* This check need to be reworked once POFWARN event will be
+		 * served by zephyr.
+		 */
+		if (nrf_power_event_check(NRF_POWER, NRF_POWER_EVENT_POFWARN)) {
+			nrf_power_pofcon_set(NRF_POWER, true, pof_thr);
+			return -ECANCELED;
+		}
+
+		pofcon_enabled = enabled;
+	}
+
+	return 0;
+}
+
+static void restore_pofwarn(void)
+{
+	nrf_power_pof_thr_t pof_thr;
+
+	if (pofcon_enabled) {
+		pof_thr = nrf_power_pofcon_get(NRF_POWER, NULL);
+
+		nrf_power_pofcon_set(NRF_POWER, true, pof_thr);
+		pofcon_enabled = false;
+	}
+}
+#endif  /* NRF52_ERRATA_242_PRESENT */
