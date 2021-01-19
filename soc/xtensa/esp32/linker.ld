@@ -258,7 +258,23 @@ _net_buf_pool_list = _esp_net_buf_pool_list;
      * when flash cache is disabled */
     *libarch__xtensa__core.a:(.rodata .rodata.*)
     *libkernel.a:fatal.*(.rodata .rodata.*)
+    *libkernel.a:init.*(.rodata .rodata.*)
     *libzephyr.a:cbprintf_complete*(.rodata .rodata.*)
+    *libzephyr.a:log_core.*(.rodata .rodata.*)
+    *libzephyr.a:log_backend_uart.*(.rodata .rodata.*)
+    *libzephyr.a:log_output.*(.rodata .rodata.*)
+    *libdrivers__serial.a:uart_esp32.*(.rodata .rodata.*)
+
+   . = ALIGN(4);
+    __esp_log_const_start = .;
+    KEEP(*(SORT(.log_const_*)));
+    __esp_log_const_end = .;
+
+    . = ALIGN(4);
+    __esp_log_backends_start = .;
+    KEEP(*("._log_backend.*"));
+    __esp_log_backends_end = .;
+
     KEEP(*(.jcr))
     *(.dram1 .dram1.*)
     _data_end = ABSOLUTE(.);
@@ -279,16 +295,6 @@ _net_buf_pool_list = _esp_net_buf_pool_list;
     Z_LINK_ITERABLE(settings_handler_static);
     . = ALIGN(4);
 #endif
-
-    . = ALIGN(4);
-    __esp_log_const_start = .;
-    KEEP(*(SORT(.log_const_*)));
-    __esp_log_const_end = .;
-
-    . = ALIGN(4);
-    __esp_log_backends_start = .;
-    KEEP(*("._log_backend.*"));
-    __esp_log_backends_end = .;
 
     . = ALIGN(4);
     Z_LINK_ITERABLE(shell);
@@ -374,7 +380,11 @@ __shell_root_cmds_end = __esp_shell_root_cmds_end;
     *libzephyr.a:log_core.*(.literal .text .literal.* .text.*)
     *libzephyr.a:cbprintf_complete.*(.literal .text .literal.* .text.*)
     *libzephyr.a:printk.*(.literal.printk .literal.vprintk .literal.char_out .text.printk .text.vprintk .text.char_out)
+    *libzephyr.a:log_msg.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:log_list.*(.literal .text .literal.* .text.*)
     *libzephyr.a:uart_console.*(.literal.console_out .text.console_out)
+    *libzephyr.a:log_output.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:log_backend_uart.*(.literal .text .literal.* .text.*)
     *liblib__libc__minimal.a:string.*(.literal .text .literal.* .text.*)
     *libgcov.a:(.literal .text .literal.* .text.*)
     *libnet80211.a:( .wifi0iram  .wifi0iram.*)
