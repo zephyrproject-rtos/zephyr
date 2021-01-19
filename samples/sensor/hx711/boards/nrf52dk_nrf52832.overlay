@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2020 George Gkinis
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+
+/{
+	hx711 {
+		compatible = "avia,hx711";
+		status = "okay";
+		label = "HX711";
+		dout-gpios = <&gpio0 30 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP) >;
+		sck-gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>;
+		rate-gpios = <&gpio0 31 GPIO_ACTIVE_HIGH>;
+	};
+};

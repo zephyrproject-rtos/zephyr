@@ -1,0 +1,7 @@
+sample:
+  name: HX711 24-Bit Analog-to-Digital Converter (ADC) for Weigh Scales
+tests:
+  sample.sensor.hx711:
+    tags: sensors
+    depends_on: gpio
+    platform_allow: nrf52dk_nrf52832
