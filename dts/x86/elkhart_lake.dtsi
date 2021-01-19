@@ -165,6 +165,201 @@
 			status = "disabled";
 			current-speed = <115200>;
 		};
+
+		i2c0: i2c@a800 {
+			compatible = "snps,designware-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <PCIE_BDF(0,0x15,0) PCIE_ID(0x8086,0x4b78)>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			label = "I2C_0";
+
+			status = "okay";
+		};
+
+		i2c1: i2c@a900 {
+			compatible = "snps,designware-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <PCIE_BDF(0,0x15,1) PCIE_ID(0x8086,0x4b79)>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			label = "I2C_1";
+
+			status = "okay";
+		};
+
+		i2c2: i2c@aa00 {
+			compatible = "snps,designware-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <PCIE_BDF(0,0x15,2) PCIE_ID(0x8086,0x4b7a)>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			label = "I2C_2";
+
+			status = "okay";
+		};
+
+		i2c3: i2c@ab00 {
+			compatible = "snps,designware-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <PCIE_BDF(0,0x15,3) PCIE_ID(0x8086,0x4b7b)>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			label = "I2C_3";
+
+			status = "okay";
+		};
+
+		i2c4: i2c@c800 {
+			compatible = "snps,designware-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <PCIE_BDF(0,0x19,0) PCIE_ID(0x8086,0x4b4b)>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			label = "I2C_4";
+
+			status = "okay";
+		};
+
+		i2c5: i2c@c900 {
+			compatible = "snps,designware-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <PCIE_BDF(0,0x19,1) PCIE_ID(0x8086,0x4b4c)>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			label = "I2C_5";
+
+			status = "okay";
+		};
+
+		i2c6: i2c@8000 {
+			compatible = "snps,designware-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <PCIE_BDF(0,0x10,0) PCIE_ID(0x8086,0x4b44)>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			label = "I2C_6";
+
+			status = "okay";
+		};
+
+		i2c7: i2c@8100 {
+			compatible = "snps,designware-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <PCIE_BDF(0,0x10,1) PCIE_ID(0x8086,0x4b45)>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			label = "I2C_7";
+
+			status = "okay";
+		};
+
+		i2c_pse_0: i2c@d800 {
+			compatible = "snps,designware-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <PCIE_BDF(0,0x1b,0) PCIE_ID(0x8086,0x4bb9)>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			label = "I2C_PSE_0";
+
+			status = "okay";
+		};
+
+		i2c_pse_1: i2c@d900 {
+			compatible = "snps,designware-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <PCIE_BDF(0,0x1b,1) PCIE_ID(0x8086,0x4bba)>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			label = "I2C_PSE_1";
+
+			status = "okay";
+		};
+
+		i2c_pse_2: i2c@da00 {
+			compatible = "snps,designware-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <PCIE_BDF(0,0x1b,2) PCIE_ID(0x8086,0x4bbb)>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			label = "I2C_PSE_2";
+
+			status = "okay";
+		};
+
+		i2c_pse_3: i2c@db00 {
+			compatible = "snps,designware-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <PCIE_BDF(0,0x1b,3) PCIE_ID(0x8086,0x4bbc)>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			label = "I2C_PSE_3";
+
+			status = "okay";
+		};
+
+		i2c_pse_4: i2c@dc00 {
+			compatible = "snps,designware-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <PCIE_BDF(0,0x1b,4) PCIE_ID(0x8086,0x4bbd)>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			label = "I2C_PSE_4";
+
+			status = "okay";
+		};
+
+		i2c_pse_5: i2c@dd00 {
+			compatible = "snps,designware-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <PCIE_BDF(0,0x1b,5) PCIE_ID(0x8086,0x4bbe)>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			label = "I2C_PSE_5";
+
+			status = "okay";
+		};
+
+		i2c_pse_6: i2c@de00 {
+			compatible = "snps,designware-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <PCIE_BDF(0,0x1b,6) PCIE_ID(0x8086,0x4bbf)>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			label = "I2C_PSE_6";
+
+			status = "okay";
+		};
 	};
 
 	soc {
@@ -201,216 +396,6 @@
 
 			status = "disabled";
 			current-speed = <115200>;
-		};
-
-		i2c0: i2c@a800 {
-			compatible = "snps,designware-i2c";
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			pcie;
-			reg = <PCIE_BDF(0,0x15,0) PCIE_ID(0x8086,0x4b78)>;
-			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
-			interrupt-parent = <&intc>;
-			label = "I2C_0";
-
-			status = "okay";
-		};
-
-		i2c1: i2c@a900 {
-			compatible = "snps,designware-i2c";
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			pcie;
-			reg = <PCIE_BDF(0,0x15,1) PCIE_ID(0x8086,0x4b79)>;
-			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
-			interrupt-parent = <&intc>;
-			label = "I2C_1";
-
-			status = "okay";
-		};
-
-		i2c2: i2c@aa00 {
-			compatible = "snps,designware-i2c";
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			pcie;
-			reg = <PCIE_BDF(0,0x15,2) PCIE_ID(0x8086,0x4b7a)>;
-			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
-			interrupt-parent = <&intc>;
-			label = "I2C_2";
-
-			status = "okay";
-		};
-
-		i2c3: i2c@ab00 {
-			compatible = "snps,designware-i2c";
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			pcie;
-			reg = <PCIE_BDF(0,0x15,3) PCIE_ID(0x8086,0x4b7b)>;
-			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
-			interrupt-parent = <&intc>;
-			label = "I2C_3";
-
-			status = "okay";
-		};
-
-		i2c4: i2c@c800 {
-			compatible = "snps,designware-i2c";
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			pcie;
-			reg = <PCIE_BDF(0,0x19,0) PCIE_ID(0x8086,0x4b4b)>;
-			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
-			interrupt-parent = <&intc>;
-			label = "I2C_4";
-
-			status = "okay";
-		};
-
-		i2c5: i2c@c900 {
-			compatible = "snps,designware-i2c";
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			pcie;
-			reg = <PCIE_BDF(0,0x19,1) PCIE_ID(0x8086,0x4b4c)>;
-			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
-			interrupt-parent = <&intc>;
-			label = "I2C_5";
-
-			status = "okay";
-		};
-
-		i2c6: i2c@8000 {
-			compatible = "snps,designware-i2c";
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			pcie;
-			reg = <PCIE_BDF(0,0x10,0) PCIE_ID(0x8086,0x4b44)>;
-			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
-			interrupt-parent = <&intc>;
-			label = "I2C_6";
-
-			status = "okay";
-		};
-
-		i2c7: i2c@8100 {
-			compatible = "snps,designware-i2c";
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			pcie;
-			reg = <PCIE_BDF(0,0x10,1) PCIE_ID(0x8086,0x4b45)>;
-			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
-			interrupt-parent = <&intc>;
-			label = "I2C_7";
-
-			status = "okay";
-		};
-
-		i2c_pse_0: i2c@d800 {
-			compatible = "snps,designware-i2c";
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			pcie;
-			reg = <PCIE_BDF(0,0x1b,0) PCIE_ID(0x8086,0x4bb9)>;
-			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
-			interrupt-parent = <&intc>;
-			label = "I2C_PSE_0";
-
-			status = "okay";
-		};
-
-		i2c_pse_1: i2c@d900 {
-			compatible = "snps,designware-i2c";
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			pcie;
-			reg = <PCIE_BDF(0,0x1b,1) PCIE_ID(0x8086,0x4bba)>;
-			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
-			interrupt-parent = <&intc>;
-			label = "I2C_PSE_1";
-
-			status = "okay";
-		};
-
-		i2c_pse_2: i2c@da00 {
-			compatible = "snps,designware-i2c";
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			pcie;
-			reg = <PCIE_BDF(0,0x1b,2) PCIE_ID(0x8086,0x4bbb)>;
-			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
-			interrupt-parent = <&intc>;
-			label = "I2C_PSE_2";
-
-			status = "okay";
-		};
-
-		i2c_pse_3: i2c@db00 {
-			compatible = "snps,designware-i2c";
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			pcie;
-			reg = <PCIE_BDF(0,0x1b,3) PCIE_ID(0x8086,0x4bbc)>;
-			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
-			interrupt-parent = <&intc>;
-			label = "I2C_PSE_3";
-
-			status = "okay";
-		};
-
-		i2c_pse_4: i2c@dc00 {
-			compatible = "snps,designware-i2c";
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			pcie;
-			reg = <PCIE_BDF(0,0x1b,4) PCIE_ID(0x8086,0x4bbd)>;
-			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
-			interrupt-parent = <&intc>;
-			label = "I2C_PSE_4";
-
-			status = "okay";
-		};
-
-		i2c_pse_5: i2c@dd00 {
-			compatible = "snps,designware-i2c";
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			pcie;
-			reg = <PCIE_BDF(0,0x1b,5) PCIE_ID(0x8086,0x4bbe)>;
-			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
-			interrupt-parent = <&intc>;
-			label = "I2C_PSE_5";
-
-			status = "okay";
-		};
-
-		i2c_pse_6: i2c@de00 {
-			compatible = "snps,designware-i2c";
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			pcie;
-			reg = <PCIE_BDF(0,0x1b,6) PCIE_ID(0x8086,0x4bbf)>;
-			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
-			interrupt-parent = <&intc>;
-			label = "I2C_PSE_6";
-
-			status = "okay";
 		};
 
 		hpet: hpet@fed00000 {

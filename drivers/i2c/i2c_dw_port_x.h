@@ -13,7 +13,7 @@ static const struct i2c_dw_rom_config i2c_config_dw_@NUM@ = {
 	.config_func = i2c_config_@NUM@,
 	.bitrate = DT_INST_PROP(@NUM@, clock_frequency),
 
-#if DT_INST_PROP(@NUM@, pcie)
+#if DT_INST_ON_BUS(@NUM@, pcie)
 	.pcie = true,
 	.pcie_bdf = DT_INST_REG_ADDR(@NUM@),
 	.pcie_id = DT_INST_REG_SIZE(@NUM@),
@@ -36,7 +36,7 @@ static void i2c_config_@NUM@(const struct device *port)
 {
 	ARG_UNUSED(port);
 
-#if DT_INST_PROP(@NUM@, pcie)
+#if DT_INST_ON_BUS(@NUM@, pcie)
 #if DT_INST_IRQN(@NUM@) == PCIE_IRQ_DETECT
 
 	/* PCI(e) with auto IRQ detection */
