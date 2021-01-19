@@ -104,7 +104,7 @@ static void nrf5_get_eui64(uint8_t *mac)
 				   sizeof(factoryAddress));
 #endif
 	if (ret != 0) {
-		LOG_ERR("Unable to read EUI64 from the secure zone.")
+		LOG_ERR("Unable to read EUI64 from the secure zone.");
 		LOG_ERR("Setting EUI64 to 0");
 		factoryAddress = 0ULL;
 	}
