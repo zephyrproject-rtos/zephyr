@@ -262,7 +262,7 @@ class KconfigCheck(ComplianceTest):
         with open(modules_file, 'w') as fp_module_file:
             for module in modules:
                 fp_module_file.write("ZEPHYR_{}_KCONFIG = {}\n".format(
-                    module.upper(),
+                    re.sub('[^a-zA-Z0-9]', '_', module).upper(),
                     modules_dir + '/' + module + '/Kconfig'
                 ))
             fp_module_file.write(content)
