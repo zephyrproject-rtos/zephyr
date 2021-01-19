@@ -146,9 +146,9 @@ def process_cmake(module, meta):
     cmake_extern = section.get('cmake-ext', False)
     if cmake_extern:
         return('\"{}\":\"{}\":\"{}\"\n'
-               .format(module_path.name,
+               .format(meta['name'],
                        module_path.as_posix(),
-                       "${ZEPHYR_" + module_path.name.upper() + "_CMAKE_DIR}"))
+                       "${ZEPHYR_" + meta['name'].upper() + "_CMAKE_DIR}"))
 
     cmake_setting = section.get('cmake', None)
     if not validate_setting(cmake_setting, module, 'CMakeLists.txt'):
@@ -185,11 +185,11 @@ def process_settings(module, meta):
     return out_text
 
 
-def kconfig_snippet(path, kconfig_file=None):
-    snippet = (f'menu "{path.name} ({path})"',
+def kconfig_snippet(name, path, kconfig_file=None):
+    snippet = (f'menu "{name} ({path})"',
                f'osource "{kconfig_file.resolve().as_posix()}"' if kconfig_file
-               else f'osource "$(ZEPHYR_{path.name.upper()}_KCONFIG)"',
-               f'config ZEPHYR_{path.name.upper()}_MODULE',
+               else f'osource "$(ZEPHYR_{name.upper()}_KCONFIG)"',
+               f'config ZEPHYR_{name.upper()}_MODULE',
                '	bool',
                '	default y',
                'endmenu\n')
@@ -202,7 +202,7 @@ def process_kconfig(module, meta):
     module_yml = module_path.joinpath('zephyr/module.yml')
     kconfig_extern = section.get('kconfig-ext', False)
     if kconfig_extern:
-        return kconfig_snippet(module_path)
+        return kconfig_snippet(meta['name'], module_path)
 
     kconfig_setting = section.get('kconfig', None)
     if not validate_setting(kconfig_setting, module):
@@ -212,7 +212,7 @@ def process_kconfig(module, meta):
 
     kconfig_file = os.path.join(module, kconfig_setting or 'zephyr/Kconfig')
     if os.path.isfile(kconfig_file):
-        return kconfig_snippet(module_path, Path(kconfig_file))
+        return kconfig_snippet(meta['name'], module_path, Path(kconfig_file))
     else:
         return ""
 
