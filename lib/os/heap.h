@@ -229,6 +229,16 @@ static inline int bucket_idx(struct z_heap *h, size_t sz)
 	return 31 - __builtin_clz(usable_sz);
 }
 
+static inline bool size_too_big(struct z_heap *h, size_t bytes)
+{
+	/*
+	 * Quick check to bail out early if size is too big.
+	 * Also guards against potential arithmetic overflows elsewhere.
+	 * There is a minimum of one chunk always in use by the heap header.
+	 */
+	return (bytes / CHUNK_UNIT) >= h->len;
+}
+
 /* For debugging */
 void heap_dump(struct z_heap *h);
 
