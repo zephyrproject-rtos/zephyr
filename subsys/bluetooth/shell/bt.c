@@ -672,6 +672,7 @@ static int cmd_id_create(const struct shell *shell, size_t argc, char *argv[])
 	err = bt_id_create(&addr, NULL);
 	if (err < 0) {
 		shell_error(shell, "Creating new ID failed (err %d)", err);
+		return err;
 	}
 
 	bt_addr_le_to_str(&addr, addr_str, sizeof(addr_str));
