@@ -53,7 +53,7 @@ static int bme280_reg_read_spi(const struct device *bus,
 	struct spi_buf rx_buf[2];
 	const struct spi_buf_set rx = {
 		.buffers = rx_buf,
-		.count = 2
+		.count = ARRAY_SIZE(rx_buf)
 	};
 	int i;
 
@@ -82,10 +82,10 @@ static int bme280_reg_write_spi(const struct device *bus,
 				const union bme280_bus_config *bus_config,
 				uint8_t reg, uint8_t val)
 {
-	uint8_t cmd[2] = { reg & 0x7F, val };
+	uint8_t cmd[] = { reg & 0x7F, val };
 	const struct spi_buf tx_buf = {
 		.buf = cmd,
-		.len = 2
+		.len = sizeof(cmd)
 	};
 	const struct spi_buf_set tx = {
 		.buffers = &tx_buf,
