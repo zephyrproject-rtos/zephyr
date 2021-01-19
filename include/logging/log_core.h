@@ -257,6 +257,14 @@ static inline char z_log_minimal_level_to_char(int level)
 /******************************************************************************/
 /****************** Macros for standard logging *******************************/
 /******************************************************************************/
+#if defined(CONFIG_ZTEST_COVERAGE_EXCLUDE_LOG)
+/* Exclude the LOG macro while generating code coverage report. */
+#define __LOG(_level, _id, _filter, ...)				       \
+	do {								       \
+		Z_LOG_TO_PRINTK(_level, __VA_ARGS__);				\
+	} while (false)
+#else
+/* Normal functionality of LOG macro */
 #define __LOG(_level, _id, _filter, ...)				       \
 	do {								       \
 		if (Z_LOG_CONST_LEVEL_CHECK(_level)) {			       \
@@ -292,6 +300,7 @@ static inline char z_log_minimal_level_to_char(int level)
 			log_printf_arg_checker(__VA_ARGS__);		       \
 		}							       \
 	} while (false)
+#endif
 
 #define Z_LOG(_level, ...)			       \
 	__LOG(_level,				       \
@@ -311,6 +320,17 @@ static inline char z_log_minimal_level_to_char(int level)
 /******************************************************************************/
 /****************** Macros for hexdump logging ********************************/
 /******************************************************************************/
+#if defined(CONFIG_ZTEST_COVERAGE_EXCLUDE_LOG)
+/* Exclude the LOG macro while generating code coverage report. */
+#define __LOG_HEXDUMP(_level, _id, _filter, _data, _length, _str)		\
+	do {									\
+		Z_LOG_TO_PRINTK(_level, "%s", _str);				\
+		log_minimal_hexdump_print(_level,				\
+					  (const char *)_data,			\
+					  _length);				\
+	} while (false)
+#else
+/* Normal functionality of LOG_HEXDUMP macro */
 #define __LOG_HEXDUMP(_level, _id, _filter, _data, _length, _str)	       \
 	do {								       \
 		if (Z_LOG_CONST_LEVEL_CHECK(_level)) {			       \
@@ -346,6 +366,7 @@ static inline char z_log_minimal_level_to_char(int level)
 			}						       \
 		}							       \
 	} while (false)
+#endif
 
 #define Z_LOG_HEXDUMP(_level, _data, _length, _str)	       \
 	__LOG_HEXDUMP(_level,				       \

@@ -72,6 +72,14 @@ config ZTEST_ASSERT_HOOK
 	  error test case. Remember to add ignore_fault tag in yaml file when
 	  using twister to run testing.
 
+config ZTEST_COVERAGE_EXCLUDE_LOG
+	bool "Exclude LOG marco when generation code covergage report"
+	default n
+	depends on HAS_COVERAGE_SUPPORT
+	depends on COVERAGE_GCOV
+	help
+	  If True the code coverage report will not include the LOG relvant macro.
+
 endif # ZTEST
 
 config ZTEST_MOCKING
