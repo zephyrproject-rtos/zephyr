@@ -93,6 +93,12 @@ Deprecated in this release
 * DEVICE_AND_API_INIT was deprecated in favor of DEVICE_DT_INST_DEFINE and
   DEVICE_DEFINE.
 
+* Bluetooth
+
+  * Deprecated the :c:func:`bt_set_id_addr` function, use :c:func:`bt_id_create`
+    before calling :c:func:`bt_enable` instead. When ``CONFIG_PRIVACY`` is
+    enabled a valid IRK has to be supplied by the application for this case.
+
 Removed APIs in this release
 ============================
 
