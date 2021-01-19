@@ -48,7 +48,7 @@ int fputs(const char *_MLIBC_RESTRICT string, FILE *_MLIBC_RESTRICT stream)
 	int len = strlen(string);
 	int ret;
 
-	ret = fwrite(string, len, 1, stream);
+	ret = fwrite(string, 1, len, stream);
 
 	return len == ret ? 0 : EOF;
 }
