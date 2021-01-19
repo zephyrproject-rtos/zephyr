@@ -10,7 +10,7 @@
 #include <kernel.h>
 
 #define FLASH_OP_DONE    (0) /* 0 for compliance with the driver API. */
-#define FLASH_OP_ONGOING (-1)
+#define FLASH_OP_ONGOING  1
 
 struct flash_context {
 	uint32_t data_addr;  /* Address of data to write. */
@@ -53,7 +53,8 @@ struct flash_context {
  *
  * @param context pointer to flash_context structure.
  * @retval @ref FLASH_OP_DONE once operation was done, @ref FLASH_OP_ONGOING if
- *         operation needs more time for execution.
+ *         operation needs more time for execution and a negative error code if
+ *         operation was aborted.
  */
 typedef int (*flash_op_handler_t) (void *context);
 
@@ -92,12 +93,13 @@ bool nrf_flash_sync_is_required(void);
  * to timing settings requested by nrf_flash_sync_set_context().
  * This routine need to be called the handler as many time as it returns
  * FLASH_OP_ONGOING, howewer an operation timeot should be implemented.
- * When the handler() returns FLASH_OP_DONE, no further execution windows are
- * needed so function should return as the handler() finished its operation.
+ * When the handler() returns FLASH_OP_DONE or an error code, no further
+ * execution windows are needed so function should return as the handler()
+ * finished its operation.
  *
- * @retval 0 if op_desc->handler() was executed and
- * finished its operation. Otherwise (timeout, couldn't schedule execution...)
- * a negative error code.
+ * @retval 0 if op_desc->handler() was executed and finished its operation
+ * successfully. Otherwise (handler returned error, timeout, couldn't schedule
+ * execution...) a negative error code.
  *
  *                              execution window
  *            Driver task           task
