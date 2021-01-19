@@ -223,11 +223,12 @@ static chunkid_t alloc_chunk(struct z_heap *h, size_t sz)
 
 void *sys_heap_alloc(struct sys_heap *heap, size_t bytes)
 {
-	if (bytes == 0U) {
+	struct z_heap *h = heap->heap;
+
+	if (bytes == 0U || size_too_big(h, bytes)) {
 		return NULL;
 	}
 
-	struct z_heap *h = heap->heap;
 	size_t chunk_sz = bytes_to_chunksz(h, bytes);
 	chunkid_t c = alloc_chunk(h, chunk_sz);
 	if (c == 0U) {
@@ -253,7 +254,7 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 	if (align <= chunk_header_bytes(h)) {
 		return sys_heap_alloc(heap, bytes);
 	}
-	if (bytes == 0) {
+	if (bytes == 0 || size_too_big(h, bytes)) {
 		return NULL;
 	}
 
@@ -297,6 +298,8 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 
 void *sys_heap_realloc(struct sys_heap *heap, void *ptr, size_t bytes)
 {
+	struct z_heap *h = heap->heap;
+
 	/* special realloc semantics */
 	if (ptr == NULL) {
 		return sys_heap_alloc(heap, bytes);
@@ -306,7 +309,10 @@ void *sys_heap_realloc(struct sys_heap *heap, void *ptr, size_t bytes)
 		return NULL;
 	}
 
-	struct z_heap *h = heap->heap;
+	if (size_too_big(h, bytes)) {
+		return NULL;
+	}
+
 	chunkid_t c = mem_to_chunkid(h, ptr);
 	chunkid_t rc = right_chunk(h, c);
 	size_t chunks_need = bytes_to_chunksz(h, bytes);
