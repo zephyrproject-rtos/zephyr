@@ -302,6 +302,8 @@ void test_fatal(void)
 	k_thread_abort(&alt_thread);
 	zassert_not_equal(rv, TC_FAIL, "thread was not aborted");
 
+#if defined(CONFIG_ASSERT)
+	/* This test shall be skip while ASSERT is off */
 	TC_PRINT("test alt thread 4: fail assertion\n");
 	k_thread_create(&alt_thread, alt_stack,
 			K_THREAD_STACK_SIZEOF(alt_stack),
@@ -310,6 +312,7 @@ void test_fatal(void)
 			K_NO_WAIT);
 	k_thread_abort(&alt_thread);
 	zassert_not_equal(rv, TC_FAIL, "thread was not aborted");
+#endif
 
 	TC_PRINT("test alt thread 5: initiate arbitrary SW exception\n");
 	k_thread_create(&alt_thread, alt_stack,
