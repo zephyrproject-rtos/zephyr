@@ -104,7 +104,7 @@ if(WEST OR ZEPHYR_MODULES)
 
       list(APPEND ZEPHYR_MODULE_NAMES ${module_name})
 
-      string(TOUPPER ${module_name} MODULE_NAME_UPPER)
+      zephyr_string(SANITIZE TOUPPER MODULE_NAME_UPPER ${module_name})
       if(NOT ${MODULE_NAME_UPPER} STREQUAL CURRENT)
         set(ZEPHYR_${MODULE_NAME_UPPER}_MODULE_DIR ${module_path})
         set(ZEPHYR_${MODULE_NAME_UPPER}_CMAKE_DIR ${cmake_path})

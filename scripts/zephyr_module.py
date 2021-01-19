@@ -19,6 +19,7 @@ maintained in modules in addition to what is available in the main Zephyr tree.
 
 import argparse
 import os
+import re
 import sys
 import yaml
 import pykwalify.core
@@ -128,11 +129,13 @@ def process_module(module):
                      .format(module_yml.as_posix(), e))
 
         meta['name'] = meta.get('name', module_path.name)
+        meta['name-sanitized'] = re.sub('[^a-zA-Z0-9]', '_', meta['name'])
         return meta
 
     if Path(module_path.joinpath('zephyr/CMakeLists.txt')).is_file() and \
        Path(module_path.joinpath('zephyr/Kconfig')).is_file():
         return {'name': module_path.name,
+                'name-sanitized': re.sub('[^a-zA-Z0-9]', '_', module_path.name),
                 'build': {'cmake': 'zephyr', 'kconfig': 'zephyr/Kconfig'}}
 
     return None
@@ -148,7 +151,7 @@ def process_cmake(module, meta):
         return('\"{}\":\"{}\":\"{}\"\n'
                .format(meta['name'],
                        module_path.as_posix(),
-                       "${ZEPHYR_" + meta['name'].upper() + "_CMAKE_DIR}"))
+                       "${ZEPHYR_" + meta['name-sanitized'].upper() + "_CMAKE_DIR}"))
 
     cmake_setting = section.get('cmake', None)
     if not validate_setting(cmake_setting, module, 'CMakeLists.txt'):
@@ -185,11 +188,14 @@ def process_settings(module, meta):
     return out_text
 
 
-def kconfig_snippet(name, path, kconfig_file=None):
+def kconfig_snippet(meta, path, kconfig_file=None):
+    name = meta['name']
+    name_sanitized = meta['name-sanitized']
+
     snippet = (f'menu "{name} ({path})"',
                f'osource "{kconfig_file.resolve().as_posix()}"' if kconfig_file
-               else f'osource "$(ZEPHYR_{name.upper()}_KCONFIG)"',
-               f'config ZEPHYR_{name.upper()}_MODULE',
+               else f'osource "$(ZEPHYR_{name_sanitized.upper()}_KCONFIG)"',
+               f'config ZEPHYR_{name_sanitized.upper()}_MODULE',
                '	bool',
                '	default y',
                'endmenu\n')
@@ -202,7 +208,7 @@ def process_kconfig(module, meta):
     module_yml = module_path.joinpath('zephyr/module.yml')
     kconfig_extern = section.get('kconfig-ext', False)
     if kconfig_extern:
-        return kconfig_snippet(meta['name'], module_path)
+        return kconfig_snippet(meta, module_path)
 
     kconfig_setting = section.get('kconfig', None)
     if not validate_setting(kconfig_setting, module):
@@ -212,7 +218,7 @@ def process_kconfig(module, meta):
 
     kconfig_file = os.path.join(module, kconfig_setting or 'zephyr/Kconfig')
     if os.path.isfile(kconfig_file):
-        return kconfig_snippet(meta['name'], module_path, Path(kconfig_file))
+        return kconfig_snippet(meta, module_path, Path(kconfig_file))
     else:
         return ""
 

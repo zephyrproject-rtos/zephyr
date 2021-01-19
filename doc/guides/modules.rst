@@ -421,6 +421,13 @@ CMake variable ``ZEPHYR_<MODULE_NAME>_MODULE_DIR`` and the variable
 ``ZEPHYR_<MODULE_NAME>_CMAKE_DIR`` holds the location of the directory
 containing the module's :file:`CMakeLists.txt` file.
 
+.. note::
+   When used for CMake and Kconfig variables, all letters in module names are
+   converted to uppercase and all non-alphanumeric characters are converted
+   to underscores (_).
+   As example, the module ``foo-bar`` must be referred to as
+   ``ZEPHYR_FOO_BAR_MODULE_DIR`` in CMake and Kconfig.
+
 Here is an example for the Zephyr module ``foo``:
 
 .. code-block:: yaml
