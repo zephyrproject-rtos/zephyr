@@ -665,50 +665,8 @@ static int i2c_dw_initialize(const struct device *dev)
 	return 0;
 }
 
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
+/* The instance-specific header files are chained together (each instance
+ * includes the next one, unless it's the last instance) so we only need to
+ * include the first instance.
+ */
 #include <i2c_dw_port_0.h>
-#endif
-
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay)
-#include <i2c_dw_port_1.h>
-#endif
-
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(2), okay)
-#include <i2c_dw_port_2.h>
-#endif
-
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(3), okay)
-#include <i2c_dw_port_3.h>
-#endif
-
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(4), okay)
-#include <i2c_dw_port_4.h>
-#endif
-
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(5), okay)
-#include <i2c_dw_port_5.h>
-#endif
-
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(6), okay)
-#include <i2c_dw_port_6.h>
-#endif
-
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(7), okay)
-#include <i2c_dw_port_7.h>
-#endif
-
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(8), okay)
-#include <i2c_dw_port_8.h>
-#endif
-
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(9), okay)
-#include <i2c_dw_port_9.h>
-#endif
-
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(10), okay)
-#include <i2c_dw_port_10.h>
-#endif
-
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(11), okay)
-#include <i2c_dw_port_11.h>
-#endif
