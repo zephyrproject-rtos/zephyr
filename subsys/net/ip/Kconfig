@@ -567,6 +567,14 @@ config NET_CONTEXT_RCVTIMEO
 	  sockets timeout is configured per socket with
 	  setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, ...) function.
 
+config NET_CONTEXT_SNDTIMEO
+	bool "Add SNDTIMEO support to net_context"
+	help
+	  It is possible to time out sending a network packet. The timeout
+	  time is configurable run-time in the application code. For network
+	  sockets timeout is configured per socket with
+	  setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, ...) function.
+
 config NET_TEST
 	bool "Network Testing"
 	help

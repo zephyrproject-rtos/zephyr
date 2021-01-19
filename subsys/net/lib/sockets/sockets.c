@@ -591,6 +591,7 @@ ssize_t zsock_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 	if ((flags & ZSOCK_MSG_DONTWAIT) || sock_is_nonblock(ctx)) {
 		timeout = K_NO_WAIT;
 	} else {
+		net_context_get_option(ctx, NET_OPT_SNDTIMEO, &timeout, NULL);
 		buf_timeout = z_timeout_end_calc(MAX_WAIT_BUFS);
 	}
 
@@ -684,6 +685,8 @@ ssize_t zsock_sendmsg_ctx(struct net_context *ctx, const struct msghdr *msg,
 
 	if ((flags & ZSOCK_MSG_DONTWAIT) || sock_is_nonblock(ctx)) {
 		timeout = K_NO_WAIT;
+	} else {
+		net_context_get_option(ctx, NET_OPT_SNDTIMEO, &timeout, NULL);
 	}
 
 	status = net_context_sendmsg(ctx, msg, flags, NULL, timeout, NULL);
@@ -1649,6 +1652,37 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 							     &timeout,
 							     sizeof(timeout));
 
+				if (ret < 0) {
+					errno = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
+
+			break;
+
+		case SO_SNDTIMEO:
+			if (IS_ENABLED(CONFIG_NET_CONTEXT_SNDTIMEO)) {
+				const struct zsock_timeval *tv = optval;
+				k_timeout_t timeout;
+
+				if (optlen != sizeof(struct zsock_timeval)) {
+					errno = EINVAL;
+					return -1;
+				}
+
+				if (tv->tv_sec == 0 && tv->tv_usec == 0) {
+					timeout = K_FOREVER;
+				} else {
+					timeout = K_USEC(tv->tv_sec * 1000000ULL
+							 + tv->tv_usec);
+				}
+
+				ret = net_context_set_option(ctx,
+							     NET_OPT_SNDTIMEO,
+							     &timeout,
+							     sizeof(timeout));
 				if (ret < 0) {
 					errno = -ret;
 					return -1;

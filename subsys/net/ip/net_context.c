@@ -269,6 +269,9 @@ int net_context_get(sa_family_t family,
 #if defined(CONFIG_NET_CONTEXT_RCVTIMEO)
 		contexts[i].options.rcvtimeo = K_FOREVER;
 #endif
+#if defined(CONFIG_NET_CONTEXT_SNDTIMEO)
+		contexts[i].options.sndtimeo = K_FOREVER;
+#endif
 
 		if (IS_ENABLED(CONFIG_NET_IPV6) ||
 		    IS_ENABLED(CONFIG_NET_IPV4)) {
@@ -1235,6 +1238,22 @@ static int get_context_rcvtimeo(struct net_context *context,
 #endif
 }
 
+static int get_context_sndtimeo(struct net_context *context,
+				void *value, size_t *len)
+{
+#if defined(CONFIG_NET_CONTEXT_SNDTIMEO)
+	*((k_timeout_t *)value) = context->options.sndtimeo;
+
+	if (len) {
+		*len = sizeof(k_timeout_t);
+	}
+
+	return 0;
+#else
+	return -ENOTSUP;
+#endif
+}
+
 /* If buf is not NULL, then use it. Otherwise read the data to be written
  * to net_pkt from msghdr.
  */
@@ -2190,6 +2209,22 @@ static int set_context_rcvtimeo(struct net_context *context,
 #endif
 }
 
+static int set_context_sndtimeo(struct net_context *context,
+				const void *value, size_t len)
+{
+#if defined(CONFIG_NET_CONTEXT_SNDTIMEO)
+	if (len != sizeof(k_timeout_t)) {
+		return -EINVAL;
+	}
+
+	context->options.sndtimeo = *((k_timeout_t *)value);
+
+	return 0;
+#else
+	return -ENOTSUP;
+#endif
+}
+
 int net_context_set_option(struct net_context *context,
 			   enum net_context_option option,
 			   const void *value, size_t len)
@@ -2219,6 +2254,9 @@ int net_context_set_option(struct net_context *context,
 		break;
 	case NET_OPT_RCVTIMEO:
 		ret = set_context_rcvtimeo(context, value, len);
+		break;
+	case NET_OPT_SNDTIMEO:
+		ret = set_context_sndtimeo(context, value, len);
 		break;
 	}
 
@@ -2256,6 +2294,9 @@ int net_context_get_option(struct net_context *context,
 		break;
 	case NET_OPT_RCVTIMEO:
 		ret = get_context_rcvtimeo(context, value, len);
+		break;
+	case NET_OPT_SNDTIMEO:
+		ret = get_context_sndtimeo(context, value, len);
 		break;
 	}
 
