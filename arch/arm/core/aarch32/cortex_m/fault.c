@@ -170,7 +170,7 @@ static const struct z_exc_handle exceptions[] = {
  *
  * @return true if error is recoverable, otherwise return false.
  */
-static bool memory_fault_recoverable(z_arch_esf_t *esf)
+static bool memory_fault_recoverable(z_arch_esf_t *esf, bool synchronous)
 {
 #ifdef CONFIG_USERSPACE
 	for (int i = 0; i < ARRAY_SIZE(exceptions); i++) {
@@ -178,6 +178,14 @@ static bool memory_fault_recoverable(z_arch_esf_t *esf)
 		uint32_t start = (uint32_t)exceptions[i].start & ~0x1U;
 		uint32_t end = (uint32_t)exceptions[i].end & ~0x1U;
 
+#if defined(CONFIG_CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_DETECTION_DWT)
+	/* Non-synchronous exceptions (e.g. DebugMonitor) may have
+	 * allowed PC to continue to the next instruction.
+	 */
+	end += (synchronous) ? 0x0 : 0x4;
+#else
+	ARG_UNUSED(synchronous);
+#endif
 		if (esf->basic.pc >= start && esf->basic.pc < end) {
 			esf->basic.pc = (uint32_t)(exceptions[i].fixup);
 			return true;
@@ -333,7 +341,7 @@ static uint32_t mem_manage_fault(z_arch_esf_t *esf, int from_hard_fault,
 	SCB->CFSR |= SCB_CFSR_MEMFAULTSR_Msk;
 
 	/* Assess whether system shall ignore/recover from this MPU fault. */
-	*recoverable = memory_fault_recoverable(esf);
+	*recoverable = memory_fault_recoverable(esf, true);
 
 	return reason;
 }
@@ -487,7 +495,7 @@ static int bus_fault(z_arch_esf_t *esf, int from_hard_fault, bool *recoverable)
 	/* clear BFSR sticky bits */
 	SCB->CFSR |= SCB_CFSR_BUSFAULTSR_Msk;
 
-	*recoverable = memory_fault_recoverable(esf);
+	*recoverable = memory_fault_recoverable(esf, true);
 
 	return reason;
 }
@@ -595,12 +603,26 @@ static void secure_fault(const z_arch_esf_t *esf)
  *
  * @return N/A
  */
-static void debug_monitor(const z_arch_esf_t *esf)
+static void debug_monitor(z_arch_esf_t *esf, bool *recoverable)
 {
-	ARG_UNUSED(esf);
+	*recoverable = false;
 
 	PR_FAULT_INFO(
-		"***** Debug monitor exception (not implemented) *****");
+		"***** Debug monitor exception *****");
+
+#if defined(CONFIG_CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_DETECTION_DWT)
+	if (!z_arm_debug_monitor_event_error_check()) {
+		/* By default, all debug monitor exceptions that are not
+		 * treated as errors by z_arm_debug_event_error_check(),
+		 * they are considered as recoverable errors.
+		 */
+		*recoverable = true;
+	} else {
+
+		*recoverable = memory_fault_recoverable(esf, false);
+	}
+
+#endif
 }
 
 #else
@@ -646,7 +668,7 @@ static uint32_t hard_fault(z_arch_esf_t *esf, bool *recoverable)
 	}
 #undef _SVC_OPCODE
 
-	*recoverable = memory_fault_recoverable(esf);
+	*recoverable = memory_fault_recoverable(esf, true);
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	*recoverable = false;
 
@@ -719,7 +741,7 @@ static uint32_t fault_handle(z_arch_esf_t *esf, int fault, bool *recoverable)
 		break;
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
 	case 12:
-		debug_monitor(esf);
+		debug_monitor(esf, recoverable);
 		break;
 #else
 #error Unknown ARM architecture
