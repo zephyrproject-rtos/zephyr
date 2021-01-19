@@ -7,7 +7,7 @@
 
 #include <sys/dlist.h>
 
-#include <hal/nrf_rtc.h>
+#include <nrfx/hal/nrf_rtc.h>
 
 #include "hal/cntr.h"
 
