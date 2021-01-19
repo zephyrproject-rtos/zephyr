@@ -205,6 +205,19 @@ void lorawan_enable_adr(bool enable);
  */
 int lorawan_set_datarate(enum lorawan_datarate dr);
 
+/**
+ * @brief Get the current payload sizes
+ *
+ * Query the current payload sizes. The maximum payload size varies with
+ * datarate, while the current payload size can be less due to MAC layer
+ * commands which are inserted into uplink packets.
+ *
+ * @param max_next_payload_size Maximum payload size for the next transmission
+ * @param max_payload_size Maximum payload size for this datarate
+ */
+void lorawan_get_payload_sizes(uint8_t *max_next_payload_size,
+			       uint8_t *max_payload_size);
+
 #ifdef __cplusplus
 }
 #endif

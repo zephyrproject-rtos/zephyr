@@ -349,6 +349,18 @@ int lorawan_set_datarate(enum lorawan_datarate dr)
 	return 0;
 }
 
+void lorawan_get_payload_sizes(uint8_t *max_next_payload_size,
+			       uint8_t *max_payload_size)
+{
+	LoRaMacTxInfo_t txInfo;
+
+	/* QueryTxPossible cannot fail */
+	(void)LoRaMacQueryTxPossible(0, &txInfo);
+
+	*max_next_payload_size = txInfo.MaxPossibleApplicationDataSize;
+	*max_payload_size = txInfo.CurrentPossiblePayloadSize;
+}
+
 void lorawan_enable_adr(bool enable)
 {
 	MibRequestConfirm_t mib_req;
