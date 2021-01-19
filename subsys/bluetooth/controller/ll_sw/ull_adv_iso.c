@@ -62,6 +62,9 @@ static void ticker_op_cb(uint32_t status, void *param);
 static void tx_lll_flush(void *param);
 static void ticker_op_stop_cb(uint32_t status, void *param);
 
+static memq_link_t link_lll_prepare;
+static struct mayfly mfy_lll_prepare = {0, 0, &link_lll_prepare, NULL, NULL};
+
 uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 		      uint32_t sdu_interval, uint16_t max_sdu,
 		      uint16_t max_latency, uint8_t rtn, uint8_t phy,
@@ -74,13 +77,14 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	struct ll_adv_iso_set *adv_iso;
 	struct pdu_adv *pdu_prev, *pdu;
 	struct pdu_big_info *big_info;
-	struct node_rx_pdu *node_rx;
 	uint8_t pdu_big_info_size;
 	uint32_t ticks_anchor_iso;
 	struct ll_adv_set *adv;
 	uint16_t iso_interval;
+	memq_link_t *link;
 	uint8_t ter_idx;
 	uint8_t *acad;
+	uint32_t ret;
 	uint8_t err;
 
 	adv_iso = ull_adv_iso_get(big_handle);
@@ -143,6 +147,11 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 		if (encryption > 1) {
 			return BT_HCI_ERR_INVALID_PARAM;
 		}
+	}
+
+	link = ll_rx_link_alloc();
+	if (!link) {
+		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 	}
 
 	/* Store parameters in LLL context */
@@ -223,6 +232,8 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 					 ULL_ADV_PDU_HDR_FIELD_ACAD, 0U,
 					 &hdr_data);
 	if (err) {
+		ll_rx_link_release(link);
+
 		return err;
 	}
 
@@ -266,18 +277,19 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	lll_adv_sync->iso = lll_adv_iso;
 	lll_adv_iso->adv = &adv->lll;
 
+	/* Store the link buffer for ISO create complete event */
+	adv_iso->node_rx_complete.link = link;
+
+	/* Initialise LLL header members */
 	lll_hdr_init(lll_adv_iso, adv_iso);
 
 	/* Start sending BIS empty data packet for each BIS */
 	ticks_anchor_iso = ticker_ticks_now_get();
-	ull_adv_iso_start(adv_iso, ticks_anchor_iso);
-
-	/* Prepare BIG complete event */
-	/* TODO: Implement custom node_rx struct for optimization */
-	node_rx = (void *)&adv_iso->node_rx_complete;
-	node_rx->hdr.type = NODE_RX_TYPE_BIG_COMPLETE;
-	node_rx->hdr.handle = big_handle;
-	node_rx->hdr.rx_ftr.param = adv_iso;
+	ret = ull_adv_iso_start(adv_iso, ticks_anchor_iso);
+	if (ret) {
+		/* FIXME: release resources */
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
 
 	return BT_HCI_ERR_SUCCESS;
 }
@@ -456,6 +468,28 @@ void ull_adv_iso_offset_get(struct ll_adv_sync_set *sync)
 	LL_ASSERT(!ret);
 }
 
+void ull_adv_iso_done(struct node_rx_event_done *done)
+{
+	struct ll_adv_iso_set *adv_iso;
+	struct lll_adv_iso *lll;
+	struct node_rx_hdr *rx;
+
+	/* switch to normal prepare */
+	mfy_lll_prepare.fp = lll_adv_iso_prepare;
+
+	lll = (void *)HDR_ULL2LLL(done->param);
+	adv_iso = (void *)HDR_LLL2EVT(lll);
+
+	/* Prepare BIG complete event */
+	rx = &adv_iso->node_rx_complete;
+	rx->type = NODE_RX_TYPE_BIG_COMPLETE;
+	rx->handle = lll->handle;
+	rx->rx_ftr.param = adv_iso;
+
+	ll_rx_put(rx->link, rx);
+	ll_rx_sched();
+}
+
 static int init_reset(void)
 {
 	/* Initialize pool. */
@@ -504,6 +538,9 @@ static uint32_t ull_adv_iso_start(struct ll_adv_iso_set *adv_iso,
 		ticks_slot_overhead = 0;
 	}
 
+	/* setup to use ISO create prepare function for first radio event */
+	mfy_lll_prepare.fp = lll_adv_iso_create_prepare;
+
 	/* TODO: Calculate ISO interval */
 	/* iso_interval shall be at least SDU interval,
 	 * or integer multiple of SDU interval for unframed PDUs
@@ -522,7 +559,7 @@ static uint32_t ull_adv_iso_start(struct ll_adv_iso_set *adv_iso,
 			   ull_ticker_status_give, (void *)&ret_cb);
 	ret = ull_ticker_status_take(ret, &ret_cb);
 
-	return 0;
+	return ret;
 }
 
 static void mfy_iso_offset_get(void *param)
@@ -639,8 +676,6 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		      uint32_t remainder, uint16_t lazy, uint8_t force,
 		      void *param)
 {
-	static memq_link_t link;
-	static struct mayfly mfy = {0, 0, &link, NULL, lll_adv_iso_prepare};
 	static struct lll_prepare_param p;
 	struct ll_adv_iso_set *adv_iso = param;
 	uint32_t ret;
@@ -658,11 +693,11 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	p.lazy = lazy;
 	p.force = force;
 	p.param = &adv_iso->lll;
-	mfy.param = &p;
+	mfy_lll_prepare.param = &p;
 
 	/* Kick LLL prepare */
-	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
-			     TICKER_USER_ID_LLL, 0, &mfy);
+	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL, 0,
+			     &mfy_lll_prepare);
 	LL_ASSERT(!ret);
 
 	DEBUG_RADIO_PREPARE_A(1);

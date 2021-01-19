@@ -231,6 +231,9 @@ int ull_adv_iso_reset(void);
 /* helper function to schedule a mayfly to get BIG offset */
 void ull_adv_iso_offset_get(struct ll_adv_sync_set *sync);
 
+/* helper function to handle adv ISO done events */
+void ull_adv_iso_done(struct node_rx_event_done *done);
+
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 /* helper function to release unused DF configuration memory */
 void ull_df_adv_cfg_release(struct lll_df_adv_cfg *df_adv_cfg);
