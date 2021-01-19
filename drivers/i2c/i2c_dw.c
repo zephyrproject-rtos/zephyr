@@ -609,7 +609,7 @@ static int i2c_dw_initialize(const struct device *dev)
 	struct i2c_dw_dev_config * const dw = dev->data;
 	volatile struct i2c_dw_registers *regs;
 
-#ifdef I2C_DW_PCIE_ENABLED
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
 	if (rom->pcie) {
 		struct pcie_mbar mbar;
 
