@@ -403,6 +403,12 @@ static MFIFO_DEFINE(pdu_rx_free, sizeof(void *), PDU_RX_CNT);
 						     PDU_DATA_SIZE), \
 						 PDU_RX_USER_PDU_OCTETS_MAX))
 
+#if defined(CONFIG_BT_CTLR_ADV_ISO_SET)
+#define BT_CTLR_ADV_ISO_SET CONFIG_BT_CTLR_ADV_ISO_SET
+#else
+#define BT_CTLR_ADV_ISO_SET 0
+#endif
+
 #if defined(CONFIG_BT_PER_ADV_SYNC_MAX)
 #define BT_CTLR_SCAN_SYNC_SET CONFIG_BT_PER_ADV_SYNC_MAX
 #else
@@ -1125,6 +1131,10 @@ void ll_rx_dequeue(void)
 	case NODE_RX_TYPE_DC_PDU:
 #endif /* CONFIG_BT_CONN */
 
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
+	case NODE_RX_TYPE_BIG_COMPLETE:
+#endif /* CONFIG_BT_CTLR_ADV_ISO */
+
 #if defined(CONFIG_BT_OBSERVER)
 	case NODE_RX_TYPE_REPORT:
 
@@ -1251,6 +1261,11 @@ void ll_rx_mem_release(void **node_rx)
 		case NODE_RX_TYPE_EXT_ADV_TERMINATE:
 			mem_release(rx_free, &mem_pdu_rx.free);
 			break;
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
+		case NODE_RX_TYPE_BIG_COMPLETE:
+			/* Nothing to release */
+			break;
+#endif /* CONFIG_BT_CTLR_ADV_ISO */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_BROADCASTER */
 
@@ -2646,6 +2661,11 @@ static inline void rx_demux_event_done(memq_link_t *link,
 	case EVENT_DONE_EXTRA_TYPE_ADV_AUX:
 		ull_adv_aux_done(done);
 		break;
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
+	case EVENT_DONE_EXTRA_TYPE_ADV_ISO_CREATED:
+		ull_adv_iso_done(done);
+		break;
+#endif /* CONFIG_BT_CTLR_ADV_ISO */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_CTLR_ADV_EXT || CONFIG_BT_CTLR_JIT_SCHEDULING */
 #endif /* CONFIG_BT_BROADCASTER */
