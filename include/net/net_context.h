@@ -6,6 +6,7 @@
 
 /*
  * Copyright (c) 2016 Intel Corporation
+ * Copyright (c) 2021 Nordic Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -303,6 +304,9 @@ __net_socket struct net_context {
 			struct sockaddr addr;
 			socklen_t addrlen;
 		} proxy;
+#endif
+#if defined(CONFIG_NET_CONTEXT_RCVTIMEO)
+		k_timeout_t rcvtimeo;
 #endif
 	} options;
 
@@ -1043,6 +1047,7 @@ enum net_context_option {
 	NET_OPT_TIMESTAMP	= 2,
 	NET_OPT_TXTIME		= 3,
 	NET_OPT_SOCKS5		= 4,
+	NET_OPT_RCVTIMEO        = 5,
 };
 
 /**

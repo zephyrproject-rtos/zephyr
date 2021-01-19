@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Linaro Limited
+ * Copyright (c) 2021 Nordic Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +16,7 @@ LOG_MODULE_REGISTER(net_sock, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <net/net_context.h>
 #include <net/net_pkt.h>
 #include <net/socket.h>
+#include <net/socket_types.h>
 #include <syscall_handler.h>
 #include <sys/fdtable.h>
 #include <sys/math_extras.h>
@@ -934,6 +936,8 @@ static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 
 	if ((flags & ZSOCK_MSG_DONTWAIT) || sock_is_nonblock(ctx)) {
 		timeout = K_NO_WAIT;
+	} else {
+		net_context_get_option(ctx, NET_OPT_RCVTIMEO, &timeout, NULL);
 	}
 
 	if (flags & ZSOCK_MSG_PEEK) {
@@ -1034,6 +1038,8 @@ static inline ssize_t zsock_recv_stream(struct net_context *ctx,
 
 	if ((flags & ZSOCK_MSG_DONTWAIT) || sock_is_nonblock(ctx)) {
 		timeout = K_NO_WAIT;
+	} else {
+		net_context_get_option(ctx, NET_OPT_RCVTIMEO, &timeout, NULL);
 	}
 
 	do {
@@ -1584,6 +1590,38 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 				ret = net_context_set_option(ctx,
 							     NET_OPT_TIMESTAMP,
 							     optval, optlen);
+				if (ret < 0) {
+					errno = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
+
+			break;
+
+		case SO_RCVTIMEO:
+			if (IS_ENABLED(CONFIG_NET_CONTEXT_RCVTIMEO)) {
+				const struct zsock_timeval *tv = optval;
+				k_timeout_t timeout;
+
+				if (optlen != sizeof(struct zsock_timeval)) {
+					errno = EINVAL;
+					return -1;
+				}
+
+				if (tv->tv_sec == 0 && tv->tv_usec == 0) {
+					timeout = K_FOREVER;
+				} else {
+					timeout = K_USEC(tv->tv_sec * 1000000ULL
+							 + tv->tv_usec);
+				}
+
+				ret = net_context_set_option(ctx,
+							     NET_OPT_RCVTIMEO,
+							     &timeout,
+							     sizeof(timeout));
+
 				if (ret < 0) {
 					errno = -ret;
 					return -1;
