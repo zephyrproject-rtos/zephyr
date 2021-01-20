@@ -32,6 +32,14 @@ LOG_MODULE_REGISTER(lorawan_class_a);
 
 char data[] = {'h', 'e', 'l', 'l', 'o', 'w', 'o', 'r', 'l', 'd'};
 
+static void lorwan_datarate_changed(enum lorawan_datarate dr)
+{
+	uint8_t unused, max_size;
+
+	lorawan_get_payload_sizes(&unused, &max_size);
+	LOG_INF("New Datarate: DR_%d, Max Payload %d", dr, max_size);
+}
+
 void main(void)
 {
 	const struct device *lora_dev;
@@ -52,6 +60,8 @@ void main(void)
 		LOG_ERR("lorawan_start failed: %d", ret);
 		return;
 	}
+
+	lorawan_register_dr_changed_callback(lorwan_datarate_changed);
 
 	join_cfg.mode = LORAWAN_ACT_OTAA;
 	join_cfg.dev_eui = dev_eui;
