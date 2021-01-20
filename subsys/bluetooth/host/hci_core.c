@@ -40,7 +40,7 @@
 #include "ecc.h"
 
 #include "conn_internal.h"
-#include "audio/iso_internal.h"
+#include "iso_internal.h"
 #include "l2cap_internal.h"
 #include "gatt_internal.h"
 #include "smp.h"
