@@ -96,6 +96,21 @@
             interrupt-parent = <&PLIC0>;
             reg-names = "control";
         };
+        xlnx_gpio0: gpio@40000000 {
+            #gpio-cells = <2>;
+            compatible = "xlnx,xps-gpio-1.00.a";
+            gpio-controller ;
+            reg = <0x0 0x40000000 0x0 0x10000 >;
+            xlnx,all-inputs = <0x0>;
+            xlnx,all-inputs-2 = <0x0>;
+            xlnx,dout-default = <0x0>;
+            xlnx,dout-default-2 = <0x0>;
+            xlnx,gpio-width = <0x8>;
+            xlnx,gpio2-width = <0x8>;
+            xlnx,is-dual = <0x1>;
+            xlnx,tri-default = <0xffffffff>;
+            xlnx,tri-default-2 = <0xffffffff>;
+        };
     }; //SOC
     
 }; //main
