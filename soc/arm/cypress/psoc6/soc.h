@@ -24,8 +24,6 @@
 
 #include <cy_device_headers.h>
 
-#include "../common/cypress_psoc6_dt.h"
-
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _SOC__H_ */
