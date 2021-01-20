@@ -430,7 +430,7 @@ config BT_CTLR_PHY_2M
 config BT_CTLR_PHY_CODED
 	bool "Coded PHY Support"
 	depends on (BT_CTLR_PHY || BT_CTLR_ADV_EXT) && BT_CTLR_PHY_CODED_SUPPORT
-	default y
+	default y if BT_HCI_RAW
 	help
 	  Enable support for Bluetooth 5.0 Coded PHY in the Controller.
 

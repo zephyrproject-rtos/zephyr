@@ -62,6 +62,9 @@ API Changes
   parameter, allowing to specify the maximum retransmission count of the
   confirmable message.
 
+* The ``CONFIG_BT_CTLR_CODED_PHY`` is now disabled by default for builds
+  combining both Bluetooth host and controller.
+
 Deprecated in this release
 ==========================
 
