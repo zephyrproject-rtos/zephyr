@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2020 ITE Corporation. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1116,30 +1116,75 @@
  * (1Fxxh) External Timer & External Watchdog (ETWD)
  *
  */
-#define ETWCFG			ECREG(EC_REG_BASE_ADDR + 0x1F01)
+#ifndef __ASSEMBLER__
+struct wdt_it8xxx2_regs {
+	/* 0x000: Reserved1 */
+	volatile uint8_t reserved1;
+	/* 0x001: External Timer1/WDT Configuration */
+	volatile uint8_t ETWCFG;
+	/* 0x002: External Timer1 Prescaler */
+	volatile uint8_t ET1PSR;
+	/* 0x003: External Timer1 Counter High Byte */
+	volatile uint8_t ET1CNTLHR;
+	/* 0x004: External Timer1 Counter Low Byte */
+	volatile uint8_t ET1CNTLLR;
+	/* 0x005: External Timer1/WDT Control */
+	volatile uint8_t ETWCTRL;
+	/* 0x006: External WDT Counter Low Byte */
+	volatile uint8_t EWDCNTLR;
+	/* 0x007: External WDT Key */
+	volatile uint8_t EWDKEYR;
+	/* 0x008: Reserved2 */
+	volatile uint8_t reserved2;
+	/* 0x009: External WDT Counter High Byte */
+	volatile uint8_t EWDCNTHR;
+	/* 0x00A: External Timer2 Prescaler */
+	volatile uint8_t ET2PSR;
+	/* 0x00B: External Timer2 Counter High Byte */
+	volatile uint8_t ET2CNTLHR;
+	/* 0x00C: External Timer2 Counter Low Byte */
+	volatile uint8_t ET2CNTLLR;
+	/* 0x00D: Reserved3 */
+	volatile uint8_t reserved3;
+	/* 0x00E: External Timer2 Counter High Byte2 */
+	volatile uint8_t ET2CNTLH2R;
+	/* 0x00F~0x03F: Reserved4 */
+	volatile uint8_t reserved4[49];
+	/* 0x040: External Timer1 Counter Observation Low Byte */
+	volatile uint8_t ET1CNTOLR;
+	/* 0x041: External Timer1 Counter Observation High Byte */
+	volatile uint8_t ET1CNTOHR;
+	/* 0x042~0x043: Reserved5 */
+	volatile uint8_t reserved5[2];
+	/* 0x044: External Timer1 Counter Observation Low Byte */
+	volatile uint8_t ET2CNTOLR;
+	/* 0x045: External Timer1 Counter Observation High Byte */
+	volatile uint8_t ET2CNTOHR;
+	/* 0x046: External Timer1 Counter Observation High Byte2 */
+	volatile uint8_t ET2CNTOH2R;
+	/* 0x047~0x05F: Reserved6 */
+	volatile uint8_t reserved6[25];
+	/* 0x060: External WDT Counter Observation Low Byte */
+	volatile uint8_t EWDCNTOLR;
+	/* 0x061: External WDT Counter Observation High Byte */
+	volatile uint8_t EWDCNTOHR;
+};
+#endif /* !__ASSEMBLER__ */
+
+/* WDT register fields */
 #define EWDKEYEN		BIT(5)
 #define EWDSRC			BIT(4)
 #define LEWDCNTL		BIT(3)
 #define LET1CNTL		BIT(2)
 #define LET1PS			BIT(1)
 #define LETWCFG			BIT(0)
-#define ET1PSR			ECREG(EC_REG_BASE_ADDR + 0x1F02)
-#define ET1CNTLHR		ECREG(EC_REG_BASE_ADDR + 0x1F03)
-#define ET1CNTLLR		ECREG(EC_REG_BASE_ADDR + 0x1F04)
-#define ETWCTRL			ECREG(EC_REG_BASE_ADDR + 0x1F05)
 #define EWDSCEN			BIT(5)
 #define EWDSCMS			BIT(4)
 #define ET2TC			BIT(3)
 #define ET2RST			BIT(2)
 #define ET1TC			BIT(1)
 #define ET1RST			BIT(0)
-#define EWDCNTLR		ECREG(EC_REG_BASE_ADDR + 0x1F06)
-#define EWDKEYR			ECREG(EC_REG_BASE_ADDR + 0x1F07)
-#define EWDCNTHR		ECREG(EC_REG_BASE_ADDR + 0x1F09)
-#define ET2PSR			ECREG(EC_REG_BASE_ADDR + 0x1F0A)
-#define ET2CNTLHR		ECREG(EC_REG_BASE_ADDR + 0x1F0B)
-#define ET2CNTLLR		ECREG(EC_REG_BASE_ADDR + 0x1F0C)
-#define ET2CNTLH2R		ECREG(EC_REG_BASE_ADDR + 0x1F0E)
+
 #define ET3CTRL			ECREG(EC_REG_BASE_ADDR + 0x1F10)
 #define ET3PSR			ECREG(EC_REG_BASE_ADDR + 0x1F11)
 #define ET3CNTLLR		ECREG(EC_REG_BASE_ADDR + 0x1F14)
