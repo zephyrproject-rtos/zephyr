@@ -182,7 +182,7 @@ struct bt_conn {
 		struct bt_conn_br	br;
 		struct bt_conn_sco	sco;
 #endif
-#if defined(CONFIG_BT_AUDIO)
+#if defined(CONFIG_BT_ISO)
 		struct bt_conn_iso	iso;
 #endif
 	};

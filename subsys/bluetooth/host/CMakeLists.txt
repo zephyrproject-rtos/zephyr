@@ -60,6 +60,11 @@ if(CONFIG_BT_HCI_HOST)
     endif()
   endif()
 
+  zephyr_library_sources_ifdef(
+    CONFIG_BT_ISO
+    iso.c
+    )
+
   if(CONFIG_BT_DF)
     zephyr_library_sources(
       direction.c
@@ -101,5 +106,3 @@ if(CONFIG_BT_CONN_DISABLE_SECURITY)
   Do not use in production."
     )
 endif()
-
-add_subdirectory_ifdef(CONFIG_BT_AUDIO audio)

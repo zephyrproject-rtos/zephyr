@@ -35,7 +35,7 @@
 #include "ssp.h"
 #include "att_internal.h"
 #include "gatt_internal.h"
-#include "audio/iso_internal.h"
+#include "iso_internal.h"
 
 /* Peripheral timeout to initialize Connection Parameter Update procedure */
 #define CONN_UPDATE_TIMEOUT  K_MSEC(CONFIG_BT_CONN_PARAM_UPDATE_TIMEOUT)
