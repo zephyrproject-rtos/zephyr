@@ -96,7 +96,6 @@
             interrupt-parent = <&PLIC0>;
             reg-names = "control";
         };
-
         xlnx_gpio0: gpio@40000000 {
             #gpio-cells = <2>;
             compatible = "xlnx,xps-gpio-1.00.a";
