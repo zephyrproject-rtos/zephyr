@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Nuvoton Technology Corporation.
+ * Copyright (c) 2021 Nuvoton Technology Corporation.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,12 +8,12 @@
 #include "npcx7.dtsi"
 
 / {
-	flash0: flash@10090000 {
-		reg = <0x10090000 DT_SIZE_K(192)>;
+	flash0: flash@10070000 {
+		reg = <0x10070000 DT_SIZE_K(320)>;
 	};
 
 	flash1: flash@64000000 {
-		reg = <0x64000000 DT_SIZE_M(1)>;
+		reg = <0x64000000 DT_SIZE_K(512)>;
 	};
 
 	sram0: memory@200c0000 {
