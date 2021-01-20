@@ -653,45 +653,6 @@ int bt_conn_create_auto_stop(void);
 int bt_le_set_auto_conn(const bt_addr_le_t *addr,
 			const struct bt_le_conn_param *param);
 
-/** @brief Initiate directed advertising to a remote device
- *
- *  Allows initiating a new LE connection to remote peer with the remote
- *  acting in central role and the local device in peripheral role.
- *
- *  The advertising type will either be BT_LE_ADV_DIRECT_IND, or
- *  BT_LE_ADV_DIRECT_IND_LOW_DUTY if the BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY
- *  option was used as part of the advertising parameters.
- *
- *  In case of high duty cycle this will result in a callback with
- *  connected() with a new connection or with an error.
- *
- *  The advertising may be canceled with bt_conn_disconnect().
- *
- *  The caller gets a new reference to the connection object which must be
- *  released with bt_conn_unref() once done using the object.
- *
- *  @param peer  Remote address.
- *  @param param Directed advertising parameters.
- *
- *  @return Valid connection object on success or NULL otherwise.
- */
-__deprecated static inline
-struct bt_conn *bt_conn_create_slave_le(const bt_addr_le_t *peer,
-					const struct bt_le_adv_param *param)
-{
-	struct bt_le_adv_param adv_param = *param;
-
-	adv_param.options |= (BT_LE_ADV_OPT_CONNECTABLE |
-			      BT_LE_ADV_OPT_ONE_TIME);
-	adv_param.peer = peer;
-
-	if (!bt_le_adv_start(&adv_param, NULL, 0, NULL, 0)) {
-		return NULL;
-	}
-
-	return bt_conn_lookup_addr_le(param->id, peer);
-}
-
 /** Security level. */
 typedef enum __packed {
 	/** Level 0: Only for BR/EDR special cases, like SDP */

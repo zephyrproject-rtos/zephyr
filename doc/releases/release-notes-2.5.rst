@@ -105,6 +105,9 @@ Removed APIs in this release
     use bt_conn_le_create() instead.
   * The deprecated bt_conn_create_auto_le() function has been removed,
     use bt_conn_le_create_auto() instead.
+  * The deprecated bt_conn_create_slave_le() function has been removed,
+    use bt_le_adv_start() instead with bt_le_adv_param::peer set to the remote
+    peers address.
   * The deprecated BT_LE_ADV_* macros have been removed,
     use the BT_GAP_ADV_* enums instead.
   * The deprecated bt_conn_security function has been removed,
