@@ -8,10 +8,6 @@
 #include <errno.h>
 #include <string.h>
 
-#define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
-#include <logging/log.h>
-LOG_MODULE_REGISTER(main);
-
 #include <zephyr.h>
 #include <device.h>
 #include <stdio.h>
@@ -51,12 +47,11 @@ static int run_full_read(const struct device *i2c, uint8_t addr,
 {
 	int ret;
 
-	LOG_INF("Start full read. Master: %s, address: 0x%x",
-		    i2c->name, addr);
+	TC_PRINT("Testing full read: Master: %s, address: 0x%x\n",
+		 i2c->name, addr);
 
 	/* Read EEPROM from I2C Master requests, then compare */
-	ret = i2c_burst_read(i2c, addr,
-			     0, i2c_buffer, TEST_DATA_SIZE);
+	ret = i2c_burst_read(i2c, addr, 0, i2c_buffer, TEST_DATA_SIZE);
 	zassert_equal(ret, 0, "Failed to read EEPROM");
 
 	if (memcmp(i2c_buffer, comp_buffer, TEST_DATA_SIZE)) {
@@ -64,10 +59,10 @@ static int run_full_read(const struct device *i2c, uint8_t addr,
 				  buffer_print_i2c);
 		to_display_format(comp_buffer, TEST_DATA_SIZE,
 				  buffer_print_eeprom);
-		LOG_ERR("Buffer contents are different: %s",
-			    buffer_print_i2c);
-		LOG_ERR("                 vs expected: %s",
-			    buffer_print_eeprom);
+		TC_PRINT("Error: Buffer contents are different: %s\n",
+			 buffer_print_i2c);
+		TC_PRINT("                         vs expected: %s\n",
+			 buffer_print_eeprom);
 		return -EIO;
 	}
 
@@ -79,8 +74,8 @@ static int run_partial_read(const struct device *i2c, uint8_t addr,
 {
 	int ret;
 
-	LOG_INF("Start partial read. Master: %s, address: 0x%x, off=%d",
-		    i2c->name, addr, offset);
+	TC_PRINT("Testing partial read. Master: %s, address: 0x%x, off=%d\n",
+		 i2c->name, addr, offset);
 
 	ret = i2c_burst_read(i2c, addr,
 			     offset, i2c_buffer, TEST_DATA_SIZE-offset);
@@ -91,10 +86,10 @@ static int run_partial_read(const struct device *i2c, uint8_t addr,
 				  buffer_print_i2c);
 		to_display_format(&comp_buffer[offset], TEST_DATA_SIZE-offset,
 				  buffer_print_eeprom);
-		LOG_ERR("Buffer contents are different: %s",
-			    buffer_print_i2c);
-		LOG_ERR("                  vs expected: %s",
-			    buffer_print_eeprom);
+		TC_PRINT("Error: Buffer contents are different: %s\n",
+			 buffer_print_i2c);
+		TC_PRINT("                         vs expected: %s\n",
+			 buffer_print_eeprom);
 		return -EIO;
 	}
 
@@ -106,8 +101,8 @@ static int run_program_read(const struct device *i2c, uint8_t addr,
 {
 	int ret, i;
 
-	LOG_INF("Start program. Master: %s, address: 0x%x, off=%d",
-		    i2c->name, addr, offset);
+	TC_PRINT("Testing program. Master: %s, address: 0x%x, off=%d\n",
+		i2c->name, addr, offset);
 
 	for (i = 0 ; i < TEST_DATA_SIZE-offset ; ++i) {
 		i2c_buffer[i] = i;
@@ -128,7 +123,8 @@ static int run_program_read(const struct device *i2c, uint8_t addr,
 		if (i2c_buffer[i] != i) {
 			to_display_format(i2c_buffer, TEST_DATA_SIZE-offset,
 					  buffer_print_i2c);
-			LOG_ERR("Invalid Buffer content: %s", buffer_print_i2c);
+			TC_PRINT("Error: Unexpected buffer content: %s\n",
+				 buffer_print_i2c);
 			return -EIO;
 		}
 	}
@@ -152,15 +148,15 @@ void test_eeprom_slave(void)
 			 DT_BUS_LABEL(NODE_EP0));
 	zassert_not_null(eeprom_0, "EEPROM device %s not found", label_0);
 
-	LOG_INF("Found EP0 %s on I2C Master device %s at addr %02x",
-		label_0, DT_BUS_LABEL(NODE_EP0), addr_0);
+	TC_PRINT("Found EP0 %s on I2C Master device %s at addr %02x\n",
+		 label_0, DT_BUS_LABEL(NODE_EP0), addr_0);
 
 	zassert_not_null(i2c_1, "I2C device %s not found",
 			 DT_BUS_LABEL(NODE_EP1));
 	zassert_not_null(eeprom_1, "EEPROM device %s not found", label_1);
 
-	LOG_INF("Found EP1 %s on I2C Master device %s at addr %02x",
-		label_1, DT_BUS_LABEL(NODE_EP1), addr_1);
+	TC_PRINT("Found EP1 %s on I2C Master device %s at addr %02x\n",
+		 label_1, DT_BUS_LABEL(NODE_EP1), addr_1);
 
 	/* Program differentiable data into the two devices through a back door
 	 * that doesn't use I2C.
@@ -173,11 +169,9 @@ void test_eeprom_slave(void)
 	/* Attach each EEPROM to its owning bus as a follower device. */
 	ret = i2c_slave_driver_register(eeprom_0);
 	zassert_equal(ret, 0, "Failed to register EEPROM %s", label_0);
-	LOG_INF("EEPROM %s Attached !", label_0);
 
 	ret = i2c_slave_driver_register(eeprom_1);
 	zassert_equal(ret, 0, "Failed to register EEPROM %s", label_1);
-	LOG_INF("EEPROM %s Attached !", label_1);
 
 	/* The simulated EP0 is configured to be accessed as a follower device
 	 * at addr_0 on i2c_0 and should expose eeprom_0_data.  The validation
@@ -212,16 +206,12 @@ void test_eeprom_slave(void)
 			      "Program I2C read EP1 failed");
 	}
 
-	LOG_INF("Success !");
-
 	/* Detach EEPROM */
 	ret = i2c_slave_driver_unregister(eeprom_0);
 	zassert_equal(ret, 0, "Failed to unregister EEPROM %s", label_0);
-	LOG_INF("EEPROM %s Detached !", label_0);
 
 	ret = i2c_slave_driver_unregister(eeprom_1);
 	zassert_equal(ret, 0, "Failed to unregister EEPROM %s", label_1);
-	LOG_INF("EEPROM %s Detached !", label_1);
 }
 
 void test_main(void)
