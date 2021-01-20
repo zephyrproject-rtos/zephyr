@@ -2158,17 +2158,6 @@ int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 			bt_le_scan_update(false);
 		}
 		return 0;
-	case BT_CONN_CONNECT_DIR_ADV:
-		BT_WARN("Deprecated: Use bt_le_adv_stop instead");
-		conn->err = reason;
-		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
-		if (IS_ENABLED(CONFIG_BT_PERIPHERAL)) {
-			/* User should unref connection object when receiving
-			 * error in connection callback.
-			 */
-			return bt_le_adv_stop();
-		}
-		return 0;
 	case BT_CONN_CONNECT:
 #if defined(CONFIG_BT_BREDR)
 		if (conn->type == BT_CONN_TYPE_BR) {
