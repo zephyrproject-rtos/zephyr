@@ -21,9 +21,9 @@
 
 #if DUMP_PTE
 #define L0_SPACE ""
-#define L1_SPACE "  "
-#define L2_SPACE "    "
-#define L3_SPACE "      "
+#define L1_SPACE ". "
+#define L2_SPACE ". . "
+#define L3_SPACE ". . . "
 #define XLAT_TABLE_LEVEL_SPACE(level)		\
 	(((level) == 0) ? L0_SPACE :		\
 	((level) == 1) ? L1_SPACE :		\
@@ -46,15 +46,14 @@
 /* 48-bit VA address */
 #define VA_SIZE_SHIFT_MAX	48U
 
-/* Maximum 4 XLAT table (L0 - L3) */
-#define XLAT_LEVEL_MAX		4U
+/* Maximum 4 XLAT table levels (L0 - L3) */
+#define XLAT_LAST_LEVEL		3U
 
 /* The VA shift of L3 depends on the granule size */
 #define L3_XLAT_VA_SIZE_SHIFT	PAGE_SIZE_SHIFT
 
 /* Number of VA bits to assign to each table (9 bits) */
-#define Ln_XLAT_VA_SIZE_SHIFT	((VA_SIZE_SHIFT_MAX - L3_XLAT_VA_SIZE_SHIFT) / \
-				 XLAT_LEVEL_MAX)
+#define Ln_XLAT_VA_SIZE_SHIFT	(PAGE_SIZE_SHIFT - 3)
 
 /* Starting bit in the VA address for each level */
 #define L2_XLAT_VA_SIZE_SHIFT	(L3_XLAT_VA_SIZE_SHIFT + Ln_XLAT_VA_SIZE_SHIFT)
@@ -63,10 +62,10 @@
 
 #define LEVEL_TO_VA_SIZE_SHIFT(level)			\
 	(PAGE_SIZE_SHIFT + (Ln_XLAT_VA_SIZE_SHIFT *	\
-	((XLAT_LEVEL_MAX - 1) - (level))))
+	(XLAT_LAST_LEVEL - (level))))
 
 /* Number of entries for each table (512) */
-#define Ln_XLAT_NUM_ENTRIES	(1U << Ln_XLAT_VA_SIZE_SHIFT)
+#define Ln_XLAT_NUM_ENTRIES	((1U << PAGE_SIZE_SHIFT) / 8U)
 
 /* Virtual Address Index within a given translation table level */
 #define XLAT_TABLE_VA_IDX(va_addr, level) \
