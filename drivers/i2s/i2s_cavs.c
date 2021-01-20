@@ -808,6 +808,16 @@ static const struct i2s_driver_api i2s_cavs_driver_api = {
 };
 
 #define I2S_CAVS_DEVICE_INIT(n)						\
+	static void i2s_cavs_irq_connect_##n(void)			\
+	{								\
+		IRQ_CONNECT(DT_INST_IRQN(n),				\
+			    DT_INST_IRQ(n, priority),			\
+			    i2s_cavs_isr,				\
+			    DEVICE_DT_INST_GET(n), 0);			\
+									\
+		irq_enable(DT_INST_IRQN(n));				\
+	}								\
+									\
 	static const struct i2s_cavs_config i2s_cavs_config_##n = {	\
 		.regs = (struct i2s_cavs_ssp *)				\
 				DT_INST_REG_ADDR_BY_IDX(n, 0),		\
@@ -870,16 +880,6 @@ static const struct i2s_driver_api i2s_cavs_driver_api = {
 			&i2s_cavs_data_##n,				\
 			&i2s_cavs_config_##n,				\
 			POST_KERNEL, CONFIG_I2S_INIT_PRIORITY,		\
-			&i2s_cavs_driver_api);				\
-									\
-	static void i2s_cavs_irq_connect_##n(void)			\
-	{								\
-		IRQ_CONNECT(DT_INST_IRQN(n),				\
-			    DT_INST_IRQ(n, priority),			\
-			    i2s_cavs_isr,				\
-			    DEVICE_DT_INST_GET(n), 0);			\
-									\
-		irq_enable(DT_INST_IRQN(n));				\
-	}
+			&i2s_cavs_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(I2S_CAVS_DEVICE_INIT)
