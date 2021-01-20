@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2018, Cypress
- * Copyright (c) 2020, ATL Electronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,14 +14,14 @@
 #ifndef _SOC__H_
 #define _SOC__H_
 
-#include <sys/util.h>
-
 #ifndef _ASMLANGUAGE
-
-/* Add include for DTS generated information */
-#include <devicetree.h>
-
 #include <cy_device_headers.h>
+
+/* ARM CMSIS definitions must be included before kernel_includes.h.
+ * Therefore, it is essential to include kernel_includes.h after including
+ * core SOC-specific headers.
+ */
+#include <kernel_includes.h>
 
 #endif /* !_ASMLANGUAGE */
 
