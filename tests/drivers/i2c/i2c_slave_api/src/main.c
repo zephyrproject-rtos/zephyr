@@ -158,20 +158,31 @@ void test_eeprom_slave(void)
 	TC_PRINT("Found EP1 %s on I2C Master device %s at addr %02x\n",
 		 label_1, DT_BUS_LABEL(NODE_EP1), addr_1);
 
+	if (IS_ENABLED(CONFIG_APP_DUAL_ROLE_I2C)) {
+		TC_PRINT("Testing dual-role\n");
+	} else {
+		TC_PRINT("Testing single-role\n");
+	}
+
 	/* Program differentiable data into the two devices through a back door
 	 * that doesn't use I2C.
 	 */
 	ret = eeprom_slave_program(eeprom_0, eeprom_0_data, TEST_DATA_SIZE);
 	zassert_equal(ret, 0, "Failed to program EEPROM %s", label_0);
-	ret = eeprom_slave_program(eeprom_1, eeprom_1_data, TEST_DATA_SIZE);
-	zassert_equal(ret, 0, "Failed to program EEPROM %s", label_1);
+	if (IS_ENABLED(CONFIG_APP_DUAL_ROLE_I2C)) {
+		ret = eeprom_slave_program(eeprom_1, eeprom_1_data,
+					   TEST_DATA_SIZE);
+		zassert_equal(ret, 0, "Failed to program EEPROM %s", label_1);
+	}
 
 	/* Attach each EEPROM to its owning bus as a follower device. */
 	ret = i2c_slave_driver_register(eeprom_0);
 	zassert_equal(ret, 0, "Failed to register EEPROM %s", label_0);
 
-	ret = i2c_slave_driver_register(eeprom_1);
-	zassert_equal(ret, 0, "Failed to register EEPROM %s", label_1);
+	if (IS_ENABLED(CONFIG_APP_DUAL_ROLE_I2C)) {
+		ret = i2c_slave_driver_register(eeprom_1);
+		zassert_equal(ret, 0, "Failed to register EEPROM %s", label_1);
+	}
 
 	/* The simulated EP0 is configured to be accessed as a follower device
 	 * at addr_0 on i2c_0 and should expose eeprom_0_data.  The validation
@@ -186,32 +197,43 @@ void test_eeprom_slave(void)
 	ret = run_full_read(i2c_1, addr_0, eeprom_0_data);
 	zassert_equal(ret, 0,
 		     "Full I2C read from EP0 failed");
-	ret = run_full_read(i2c_0, addr_1, eeprom_1_data);
-	zassert_equal(ret, 0,
-		     "Full I2C read from EP1 failed");
+	if (IS_ENABLED(CONFIG_APP_DUAL_ROLE_I2C)) {
+		ret = run_full_read(i2c_0, addr_1, eeprom_1_data);
+		zassert_equal(ret, 0,
+			      "Full I2C read from EP1 failed");
+	}
 
 	for (offset = 0 ; offset < TEST_DATA_SIZE-1 ; ++offset) {
 		zassert_equal(0, run_partial_read(i2c_1, addr_0,
 			      eeprom_0_data, offset),
 			      "Partial I2C read EP0 failed");
-		zassert_equal(0, run_partial_read(i2c_0, addr_1,
-			      eeprom_1_data, offset),
-			      "Partial I2C read EP1 failed");
+		if (IS_ENABLED(CONFIG_APP_DUAL_ROLE_I2C)) {
+			zassert_equal(0, run_partial_read(i2c_0, addr_1,
+							  eeprom_1_data,
+							  offset),
+				      "Partial I2C read EP1 failed");
+		}
 	}
 
 	for (offset = 0 ; offset < TEST_DATA_SIZE-1 ; ++offset) {
 		zassert_equal(0, run_program_read(i2c_1, addr_0, offset),
 			      "Program I2C read EP0 failed");
-		zassert_equal(0, run_program_read(i2c_0, addr_1, offset),
-			      "Program I2C read EP1 failed");
+		if (IS_ENABLED(CONFIG_APP_DUAL_ROLE_I2C)) {
+			zassert_equal(0, run_program_read(i2c_0, addr_1,
+							  offset),
+				      "Program I2C read EP1 failed");
+		}
 	}
 
 	/* Detach EEPROM */
 	ret = i2c_slave_driver_unregister(eeprom_0);
 	zassert_equal(ret, 0, "Failed to unregister EEPROM %s", label_0);
 
-	ret = i2c_slave_driver_unregister(eeprom_1);
-	zassert_equal(ret, 0, "Failed to unregister EEPROM %s", label_1);
+	if (IS_ENABLED(CONFIG_APP_DUAL_ROLE_I2C)) {
+		ret = i2c_slave_driver_unregister(eeprom_1);
+		zassert_equal(ret, 0, "Failed to unregister EEPROM %s",
+			      label_1);
+	}
 }
 
 void test_main(void)

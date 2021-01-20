@@ -9,15 +9,23 @@ I2C API, and the Zephyr application issues commands to one controller
 that are responded to by the simulated EEPROM connected through the
 other controller.
 
+This test was originally designed for I2C controllers that support both
+leader and follower behavior simultaneously.  This is not true of all
+I2C controllers, so this behavior is now opt-in using
+CONFIG_APP_DUAL_ROLE_I2C.  However, the devicetree still must provide a
+second EEPROM just to identify the bus.
+
 In slightly more detail the test has these phases:
 
 * Use API specific to the simulated EEPROM to pre-populate the simulated
   devices with device-specific content.
-* Register each simulated EEPROM as a I2C follower device on a bus.
+* Register a simulated EEPROM as a I2C follower device on a bus.  If
+  CONFIG_APP_DUAL_ROLE_I2C is selected, register both.
 * Issue commands on one bus controller (operating as the bus leader
   (master)) and verify that the data supplied by the other controller
   (as bus follower) match the expected values given the content known to
-  be present on the simulated device.
+  be present on the simulated device.  If CONFIG_APP_DUAL_ROLE_I2C is
+  selected, do this with the roles reversed.
 
 Transfer of commands from one bus controller to the other is
 accomplished by hardware through having the SCL (and SDA) signals
