@@ -655,8 +655,8 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	conn->phy_pref_flags = 0U;
 #endif /* CONFIG_BT_CTLR_PHY */
 
-	conn->tx_head = conn->tx_ctrl = conn->tx_ctrl_last =
-	conn->tx_data = conn->tx_data_last = 0;
+	/* Re-initialize the Tx Q */
+	ull_tx_q_init(&conn->tx_q);
 
 	lll->conn = conn_lll;
 
