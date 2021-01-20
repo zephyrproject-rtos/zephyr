@@ -333,7 +333,7 @@ test_i2c_lis2dh: lis2dh@2b {
 };
 
 test_i2c_lis2dh12: lis2dh12@2c {
-	compatible = "st,lis2dh12";
+	compatible = "st,lis2dh12", "st,lis2dh";
 	label = "LIS2DH12";
 	reg = <0x2c>;
 	irq-gpios = <&test_gpio 0 0>;
@@ -361,7 +361,7 @@ test_i2c_lis2mdl: lis2mdl@2f {
 };
 
 test_i2c_lis3dh: lis3dh@30 {
-	compatible = "st,lis3dh";
+	compatible = "st,lis3dh", "st,lis2dh";
 	label = "LIS3DH";
 	reg = <0x30>;
 	irq-gpios = <&test_gpio 0 0>;
@@ -394,7 +394,7 @@ test_i2c_lps25hb_press: lps25hb-press@34 {
 };
 
 test_i2c_lsm303agr_accel: lsm303agr-accel@35 {
-	compatible = "st,lsm303agr-accel";
+	compatible = "st,lsm303agr-accel", "st,lis2dh";
 	label = "LSM303AGR-ACCEL";
 	reg = <0x35>;
 	irq-gpios = <&test_gpio 0 0>;
@@ -402,7 +402,7 @@ test_i2c_lsm303agr_accel: lsm303agr-accel@35 {
 };
 
 test_i2c_lsm303dlhc_accel: lsm303dlhc-accel@36 {
-	compatible = "st,lsm303dlhc-accel";
+	compatible = "st,lsm303dlhc-accel", "st,lis2dh";
 	label = "LSM303DLHC-ACCEL";
 	reg = <0x36>;
 	irq-gpios = <&test_gpio 0 0>;

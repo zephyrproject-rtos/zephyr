@@ -56,7 +56,7 @@
 	status = "okay";
 
 	lis3dh@32 {
-		compatible = "st,lis3dh";
+		compatible = "st,lis3dh", "st,lis2dh";
 		reg = <0x32>;
 		label = "LIS3DH";
 	};

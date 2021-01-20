@@ -104,7 +104,7 @@
 	};
 
 	lsm303agr-accel@19 {
-		compatible = "st,lis2dh", "st,lsm303agr-accel";
+		compatible = "st,lsm303agr-accel", "st,lis2dh";
 		status = "okay";
 		reg = <0x19>;
 		label = "LSM303AGR-ACCEL";

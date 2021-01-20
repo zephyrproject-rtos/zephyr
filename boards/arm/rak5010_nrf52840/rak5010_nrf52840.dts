@@ -85,7 +85,7 @@
 
 	/* ST Microelectronics LIS3DH motion sensor */
 	lis3dh@19 {
-		compatible = "st,lis3dh";
+		compatible = "st,lis3dh", "st,lis2dh";
 		label = "LIS3DH";
 		reg = <0x19>;
 		irq-gpios = <&gpio0 15 0>;
