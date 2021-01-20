@@ -733,13 +733,6 @@ typedef enum __packed {
 	BT_SECURITY_L3,
 	/** Level 4: Authenticated Secure Connections and 128-bit key. */
 	BT_SECURITY_L4,
-
-	BT_SECURITY_NONE   __deprecated = BT_SECURITY_L0,
-	BT_SECURITY_LOW    __deprecated = BT_SECURITY_L1,
-	BT_SECURITY_MEDIUM __deprecated = BT_SECURITY_L2,
-	BT_SECURITY_HIGH   __deprecated = BT_SECURITY_L3,
-	BT_SECURITY_FIPS   __deprecated = BT_SECURITY_L4,
-
 	/** Bit to force new pairing procedure, bit-wise OR with requested
 	 *  security level.
 	 */
