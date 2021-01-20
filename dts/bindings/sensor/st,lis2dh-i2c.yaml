@@ -2,7 +2,30 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    STMicroelectronics LIS2DH 3-axis accelerometer accessed through I2C bus
+    STMicroelectronics LIS2DH 3-axis accelerometer accessed through I2C bus.
+
+    This binding is supported by CONFIG_LIS2DH.
+
+    The LIS3DH sensor is supported by the same driver, and should be
+    specified in devicetree with:
+
+        compatible = "st,lis3dh", "st,lis2dh";
+
+    The LIS2DH12 sensor is supported by the same driver, and should be
+    specified in devicetree with:
+
+        compatible = "st,lis2dh12", "st,lis2dh";
+
+    The accelerometer side of the LSM303DHLC sensor is supported by the
+    same driver, and should be specified in devicetree with:
+
+        compatible = "st,lsm303dlhc-accel", "st,lis2dh";
+
+    The accelerometer side of the LSM303AGC sensor is supported by the
+    same driver, and should be specified in devicetree with:
+
+        compatible = "st,lsm303agr-accel", "st,lis2dh";
+
 
 compatible: "st,lis2dh"
 
