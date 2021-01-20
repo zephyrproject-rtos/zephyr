@@ -252,6 +252,21 @@ class KconfigCheck(ComplianceTest):
         except subprocess.CalledProcessError as ex:
             self.error(ex.output)
 
+        modules_dir = ZEPHYR_BASE + '/modules'
+        modules = [name for name in os.listdir(modules_dir) if
+                   os.path.exists(os.path.join(modules_dir, name, 'Kconfig'))]
+
+        with open(modules_file, 'r') as fp_module_file:
+            content = fp_module_file.read()
+
+        with open(modules_file, 'w') as fp_module_file:
+            for module in modules:
+                fp_module_file.write("ZEPHYR_{}_KCONFIG = {}\n".format(
+                    module.upper(),
+                    modules_dir + '/' + module + '/Kconfig'
+                ))
+            fp_module_file.write(content)
+
     def write_kconfig_soc(self):
         """
         Write KConfig soc files to be sourced during Kconfig parsing
