@@ -748,12 +748,6 @@ int bt_conn_set_security(struct bt_conn *conn, bt_security_t sec);
  */
 bt_security_t bt_conn_get_security(struct bt_conn *conn);
 
-static inline int __deprecated bt_conn_security(struct bt_conn *conn,
-						bt_security_t sec)
-{
-	return bt_conn_set_security(conn, sec);
-}
-
 /** @brief Get encryption key size.
  *
  *  This function gets encryption key size.
