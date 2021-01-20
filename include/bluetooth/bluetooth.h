@@ -1489,11 +1489,6 @@ enum {
 	 * @note Requires @ref BT_LE_SCAN_OPT_CODED.
 	 */
 	BT_LE_SCAN_OPT_NO_1M = BIT(3),
-
-	BT_LE_SCAN_FILTER_DUPLICATE __deprecated =
-		BT_LE_SCAN_OPT_FILTER_DUPLICATE,
-	BT_LE_SCAN_FILTER_WHITELIST __deprecated =
-		BT_LE_SCAN_OPT_FILTER_WHITELIST,
 };
 
 enum {
@@ -1509,13 +1504,8 @@ struct bt_le_scan_param {
 	/** Scan type (BT_LE_SCAN_TYPE_ACTIVE or BT_LE_SCAN_TYPE_PASSIVE) */
 	uint8_t  type;
 
-	union {
-		/** Bit-field of scanning filter options. */
-		uint32_t filter_dup __deprecated;
-
-		/** Bit-field of scanning options. */
-		uint32_t options;
-	};
+	/** Bit-field of scanning options. */
+	uint32_t options;
 
 	/** Scan interval (N * 0.625 ms) */
 	uint16_t interval;
