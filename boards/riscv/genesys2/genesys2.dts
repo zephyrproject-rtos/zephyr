@@ -20,11 +20,9 @@
 
 };
 
-/*****
-&gpio0 {
+&xlnx_gpio0 {
 	status = "okay";
 };
-*******/
 
 &uart0 {
 	status = "okay";
