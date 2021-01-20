@@ -361,6 +361,16 @@ void lorawan_get_payload_sizes(uint8_t *max_next_payload_size,
 	*max_payload_size = txInfo.CurrentPossiblePayloadSize;
 }
 
+enum lorawan_datarate lorawan_get_min_datarate(void)
+{
+	MibRequestConfirm_t mibGet;
+
+	mibGet.Type = MIB_CHANNELS_MIN_TX_DATARATE;
+	LoRaMacMibGetRequestConfirm(&mibGet);
+
+	return mibGet.Param.ChannelsMinTxDatarate;
+}
+
 void lorawan_enable_adr(bool enable)
 {
 	MibRequestConfirm_t mib_req;

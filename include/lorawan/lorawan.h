@@ -206,6 +206,16 @@ void lorawan_enable_adr(bool enable);
 int lorawan_set_datarate(enum lorawan_datarate dr);
 
 /**
+ * @brief Get the minimum possible datarate
+ *
+ * The minimum possible datarate may change in response to a TxParamSetupReq
+ * command from the network server.
+ *
+ * @return Minimum possible data rate
+ */
+enum lorawan_datarate lorawan_get_min_datarate(void);
+
+/**
  * @brief Get the current payload sizes
  *
  * Query the current payload sizes. The maximum payload size varies with
