@@ -38,6 +38,7 @@
  * attrs[5] : Execute Permissions privileged mode (PXN)
  * attrs[6] : Execute Permissions unprivileged mode (UXN)
  * attrs[7] : Mirror RO/RW permissions to EL0
+ * attrs[8] : Overwrite existing mapping if any
  *
  */
 #define MT_PERM_SHIFT		3U
@@ -45,6 +46,7 @@
 #define MT_P_EXECUTE_SHIFT	5U
 #define MT_U_EXECUTE_SHIFT	6U
 #define MT_RW_AP_SHIFT		7U
+#define MT_OVERWRITE_SHIFT	8U
 
 #define MT_RO			(0U << MT_PERM_SHIFT)
 #define MT_RW			(1U << MT_PERM_SHIFT)
@@ -60,6 +62,8 @@
 
 #define MT_U_EXECUTE		(0U << MT_U_EXECUTE_SHIFT)
 #define MT_U_EXECUTE_NEVER	(1U << MT_U_EXECUTE_SHIFT)
+
+#define MT_OVERWRITE		(1U << MT_OVERWRITE_SHIFT)
 
 #define MT_P_RW_U_RW		(MT_RW | MT_RW_AP_ELx | MT_P_EXECUTE_NEVER | MT_U_EXECUTE_NEVER)
 #define MT_P_RW_U_NA		(MT_RW | MT_RW_AP_EL_HIGHER  | MT_P_EXECUTE_NEVER | MT_U_EXECUTE_NEVER)

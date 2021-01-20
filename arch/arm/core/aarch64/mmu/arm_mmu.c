@@ -8,12 +8,16 @@
 #include <device.h>
 #include <init.h>
 #include <kernel.h>
+#include <kernel_arch_interface.h>
+#include <logging/log.h>
 #include <arch/arm/aarch64/cpu.h>
 #include <arch/arm/aarch64/arm_mmu.h>
 #include <linker/linker-defs.h>
 #include <sys/util.h>
 
 #include "arm_mmu.h"
+
+LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 static uint64_t kernel_xlat_tables[CONFIG_MAX_XLAT_TABLES * Ln_XLAT_NUM_ENTRIES]
 		__aligned(Ln_XLAT_NUM_ENTRIES * sizeof(uint64_t));
@@ -22,75 +26,16 @@ static struct arm_mmu_ptables kernel_ptables = {
 	.xlat_tables = kernel_xlat_tables,
 };
 
-/* Translation table control register settings */
-static uint64_t get_tcr(int el)
+/* Returns a new preallocated table */
+static uint64_t *new_prealloc_table(struct arm_mmu_ptables *ptables)
 {
-	uint64_t tcr;
-	uint64_t va_bits = CONFIG_ARM64_VA_BITS;
-	uint64_t tcr_ps_bits;
+	ptables->next_table++;
 
-	tcr_ps_bits = TCR_PS_BITS;
-
-	if (el == 1) {
-		tcr = (tcr_ps_bits << TCR_EL1_IPS_SHIFT);
-		/*
-		 * TCR_EL1.EPD1: Disable translation table walk for addresses
-		 * that are translated using TTBR1_EL1.
-		 */
-		tcr |= TCR_EPD1_DISABLE;
-	} else
-		tcr = (tcr_ps_bits << TCR_EL3_PS_SHIFT);
-
-	tcr |= TCR_T0SZ(va_bits);
-	/*
-	 * Translation table walk is cacheable, inner/outer WBWA and
-	 * inner shareable
-	 */
-	tcr |= TCR_TG0_4K | TCR_SHARED_INNER | TCR_ORGN_WBWA | TCR_IRGN_WBWA;
-
-	return tcr;
-}
-
-static int pte_desc_type(uint64_t *pte)
-{
-	return *pte & PTE_DESC_TYPE_MASK;
-}
-
-static uint64_t *calculate_pte_index(struct arm_mmu_ptables *ptables,
-				     uintptr_t addr, unsigned int level)
-{
-	int base_level = BASE_XLAT_LEVEL;
-	uint64_t *pte;
-	uint64_t idx;
-	unsigned int i;
-
-	/* Walk through all translation tables to find pte index */
-	pte = (uint64_t *)ptables->xlat_tables;
-	for (i = base_level; i < XLAT_LEVEL_MAX; i++) {
-		idx = XLAT_TABLE_VA_IDX(addr, i);
-		pte += idx;
-
-		/* Found pte index */
-		if (i == level)
-			return pte;
-		/* if PTE is not table desc, can't traverse */
-		if (pte_desc_type(pte) != PTE_TABLE_DESC)
-			return NULL;
-		/* Move to the next translation table level */
-		pte = (uint64_t *)(*pte & 0x0000fffffffff000ULL);
+	if (ptables->next_table >= CONFIG_MAX_XLAT_TABLES) {
+		LOG_ERR("CONFIG_MAX_XLAT_TABLES, too small");
+		return NULL;
 	}
-
-	return NULL;
-}
-
-static void set_pte_table_desc(uint64_t *pte, uint64_t *table, unsigned int level)
-{
-#if DUMP_PTE
-	MMU_DEBUG("%s", XLAT_TABLE_LEVEL_SPACE(level));
-	MMU_DEBUG("%p: [Table] %p\n", pte, table);
-#endif
-	/* Point pte to new table */
-	*pte = PTE_TABLE_DESC | (uint64_t)table;
+	return &ptables->xlat_tables[ptables->next_table * Ln_XLAT_NUM_ENTRIES];
 }
 
 static uint64_t get_region_desc(uint32_t attrs)
@@ -159,16 +104,50 @@ static uint64_t get_region_desc(uint32_t attrs)
 	return desc;
 }
 
-static uint64_t get_region_desc_from_pte(uint64_t *pte)
+static inline bool is_free_desc(uint64_t desc)
 {
-	return ((*pte) & DESC_ATTRS_MASK);
+	return (desc & PTE_DESC_TYPE_MASK) == PTE_INVALID_DESC;
 }
 
-static void set_pte_block_desc(uint64_t *pte, uint64_t addr_pa,
-			       uint64_t desc, unsigned int level)
+static inline bool is_table_desc(uint64_t desc, unsigned int level)
 {
-	desc |= addr_pa;
-	desc |= (level == 3) ? PTE_PAGE_DESC : PTE_BLOCK_DESC;
+	return level != XLAT_LAST_LEVEL &&
+	       (desc & PTE_DESC_TYPE_MASK) == PTE_TABLE_DESC;
+}
+
+static inline bool is_block_desc(uint64_t desc)
+{
+	return (desc & PTE_DESC_TYPE_MASK) == PTE_BLOCK_DESC;
+}
+
+static inline uint64_t *pte_desc_table(uint64_t desc)
+{
+	uint64_t address = desc & GENMASK(47, PAGE_SIZE_SHIFT);
+
+	return (uint64_t *)address;
+}
+
+static inline bool is_desc_superset(uint64_t desc1, uint64_t desc2,
+				    unsigned int level)
+{
+	uint64_t mask = DESC_ATTRS_MASK | GENMASK(47, LEVEL_TO_VA_SIZE_SHIFT(level));
+
+	return (desc1 & mask) == (desc2 & mask);
+}
+
+static void set_pte_table_desc(uint64_t *pte, uint64_t *table, unsigned int level)
+{
+#if DUMP_PTE
+	MMU_DEBUG("%s", XLAT_TABLE_LEVEL_SPACE(level));
+	MMU_DEBUG("%p: [Table] %p\n", pte, table);
+#endif
+	/* Point pte to new table */
+	*pte = PTE_TABLE_DESC | (uint64_t)table;
+}
+
+static void set_pte_block_desc(uint64_t *pte, uint64_t desc, unsigned int level)
+{
+	desc |= (level == XLAT_LAST_LEVEL) ? PTE_PAGE_DESC : PTE_BLOCK_DESC;
 
 #if DUMP_PTE
 	uint8_t mem_type = (desc >> 2) & MT_TYPE_MASK;
@@ -188,97 +167,105 @@ static void set_pte_block_desc(uint64_t *pte, uint64_t addr_pa,
 	*pte = desc;
 }
 
-/* Returns a new reallocated table */
-static uint64_t *new_prealloc_table(struct arm_mmu_ptables *ptables)
+static void populate_table(uint64_t *table, uint64_t desc, unsigned int level)
 {
-	ptables->next_table++;
+	unsigned int stride_shift = LEVEL_TO_VA_SIZE_SHIFT(level);
+	unsigned int i;
 
-	__ASSERT(ptables->next_table < CONFIG_MAX_XLAT_TABLES,
-		"Enough xlat tables not allocated");
+	MMU_DEBUG("Populating table with PTE 0x%016llx(L%d)\n", desc, level);
 
-	return (uint64_t *)(&ptables->xlat_tables[ptables->next_table *
-			    Ln_XLAT_NUM_ENTRIES]);
-}
-
-/* Splits a block into table with entries spanning the old block */
-static void split_pte_block_desc(struct arm_mmu_ptables *ptables, uint64_t *pte,
-				 uint64_t desc, unsigned int level)
-{
-	uint64_t old_block_desc = *pte;
-	uint64_t *new_table;
-	unsigned int i = 0;
-	/* get address size shift bits for next level */
-	unsigned int levelshift = LEVEL_TO_VA_SIZE_SHIFT(level + 1);
-
-	MMU_DEBUG("Splitting existing PTE %p(L%d)\n", pte, level);
-
-	new_table = new_prealloc_table(ptables);
-
-	for (i = 0; i < Ln_XLAT_NUM_ENTRIES; i++) {
-		new_table[i] = old_block_desc | (i << levelshift);
-
-		if ((level + 1) == 3)
-			new_table[i] |= PTE_PAGE_DESC;
+	if (level == XLAT_LAST_LEVEL) {
+		desc |= PTE_PAGE_DESC;
 	}
 
-	/* Overwrite existing PTE set the new table into effect */
-	set_pte_table_desc(pte, new_table, level);
+	for (i = 0; i < Ln_XLAT_NUM_ENTRIES; i++) {
+		table[i] = desc | (i << stride_shift);
+	}
 }
 
-static void add_map(struct arm_mmu_ptables *ptables, const char *name,
-		    uintptr_t phys, uintptr_t virt, size_t size, uint32_t attrs)
+static int add_map(struct arm_mmu_ptables *ptables, const char *name,
+		   uintptr_t phys, uintptr_t virt, size_t size, uint32_t attrs)
 {
 	uint64_t desc, *pte;
 	uint64_t level_size;
-	uint64_t *new_table;
+	uint64_t *table = ptables->xlat_tables;
 	unsigned int level = BASE_XLAT_LEVEL;
 
 	MMU_DEBUG("mmap [%s]: virt %lx phys %lx size %lx\n",
 		   name, virt, phys, size);
 
 	/* check minimum alignment requirement for given mmap region */
-	__ASSERT(((virt & (CONFIG_MMU_PAGE_SIZE - 1)) == 0) &&
-		 ((size & (CONFIG_MMU_PAGE_SIZE - 1)) == 0),
+	__ASSERT(((virt | phys | size) & (CONFIG_MMU_PAGE_SIZE - 1)) == 0,
 		 "address/size are not page aligned\n");
 
-	desc = get_region_desc(attrs);
+	desc = phys | get_region_desc(attrs);
 
 	while (size) {
-		__ASSERT(level < XLAT_LEVEL_MAX,
+		__ASSERT(level <= XLAT_LAST_LEVEL,
 			 "max translation table level exceeded\n");
 
 		/* Locate PTE for given virtual address and page table level */
-		pte = calculate_pte_index(ptables, virt, level);
-		__ASSERT(pte != NULL, "pte not found\n");
+		pte = &table[XLAT_TABLE_VA_IDX(virt, level)];
+
+		if (is_table_desc(*pte, level)) {
+			/* Move to the next translation table level */
+			level++;
+			table = pte_desc_table(*pte);
+			continue;
+		}
+
+		if (!(attrs & MT_OVERWRITE) && !is_free_desc(*pte)) {
+			/* the entry is already allocated */
+			LOG_ERR("entry already in use: "
+				"level %d pte %p *pte 0x%016llx",
+				level, pte, *pte);
+			return -EBUSY;
+		}
 
 		level_size = 1ULL << LEVEL_TO_VA_SIZE_SHIFT(level);
 
-		if (size >= level_size && !(virt & (level_size - 1))) {
-			/* Given range fits into level size,
-			 * create block/page descriptor
-			 */
-			set_pte_block_desc(pte, phys, desc, level);
-			virt += level_size;
-			phys += level_size;
-			size -= level_size;
-			/* Range is mapped, start again for next range */
-			level = BASE_XLAT_LEVEL;
-		} else if (pte_desc_type(pte) == PTE_INVALID_DESC) {
-			/* Range doesn't fit, create subtable */
-			new_table = new_prealloc_table(ptables);
-			set_pte_table_desc(pte, new_table, level);
-			level++;
-		} else if (pte_desc_type(pte) == PTE_BLOCK_DESC) {
-			/* Check if the block is already mapped with the correct attrs */
-			if (desc == get_region_desc_from_pte(pte))
-				return;
+		if (is_desc_superset(*pte, desc, level)) {
+			/* This block already covers our range */
+			level_size -= (virt & (level_size - 1));
+			if (level_size > size) {
+				level_size = size;
+			}
+			goto move_on;
+		}
 
-			/* We need to split a new table */
-			split_pte_block_desc(ptables, pte, desc, level);
+		if ((size < level_size) || (virt & (level_size - 1))) {
+			/* Range doesn't fit, create subtable */
+			table = new_prealloc_table(ptables);
+			if (!table) {
+				return -ENOMEM;
+			}
+			/*
+			 * If entry at current level was already populated
+			 * then we need to reflect that in the new table.
+			 */
+			if (is_block_desc(*pte)) {
+				populate_table(table, *pte, level + 1);
+			}
+			/* And link it. */
+			set_pte_table_desc(pte, table, level);
 			level++;
-		} else if (pte_desc_type(pte) == PTE_TABLE_DESC)
-			level++;
+			continue;
+		}
+
+		/* Create block/page descriptor */
+		set_pte_block_desc(pte, desc, level);
+
+move_on:
+		virt += level_size;
+		desc += level_size;
+		size -= level_size;
+
+		/* Range is mapped, start again for next range */
+		table = ptables->xlat_tables;
+		level = BASE_XLAT_LEVEL;
 	}
+
+	return 0;
 }
 
 /* zephyr execution regions with appropriate attributes */
@@ -292,24 +279,24 @@ static const struct arm_mmu_region mmu_zephyr_regions[] = {
 
 	/* Mark rest of the zephyr execution regions (data, bss, noinit, etc.)
 	 * cacheable, read-write
-	 * Note: read-write region is marked execute-ever internally
+	 * Note: read-write region is marked execute-never internally
 	 */
 	MMU_REGION_FLAT_ENTRY("zephyr_data",
 			      (uintptr_t)__kernel_ram_start,
 			      (uintptr_t)__kernel_ram_size,
-			      MT_NORMAL | MT_P_RW_U_NA | MT_DEFAULT_SECURE_STATE),
+			      MT_NORMAL | MT_P_RW_U_NA | MT_DEFAULT_SECURE_STATE | MT_OVERWRITE),
 
 	/* Mark text segment cacheable,read only and executable */
 	MMU_REGION_FLAT_ENTRY("zephyr_code",
 			      (uintptr_t)_image_text_start,
 			      (uintptr_t)_image_text_size,
-			      MT_NORMAL | MT_P_RX_U_NA | MT_DEFAULT_SECURE_STATE),
+			      MT_NORMAL | MT_P_RX_U_NA | MT_DEFAULT_SECURE_STATE | MT_OVERWRITE),
 
 	/* Mark rodata segment cacheable, read only and execute-never */
 	MMU_REGION_FLAT_ENTRY("zephyr_rodata",
 			      (uintptr_t)_image_rodata_start,
 			      (uintptr_t)_image_rodata_size,
-			      MT_NORMAL | MT_P_RO_U_NA | MT_DEFAULT_SECURE_STATE),
+			      MT_NORMAL | MT_P_RO_U_NA | MT_DEFAULT_SECURE_STATE | MT_OVERWRITE),
 };
 
 static inline void add_arm_mmu_region(struct arm_mmu_ptables *ptables,
@@ -354,6 +341,35 @@ static void setup_page_tables(struct arm_mmu_ptables *ptables)
 		if (region->size || region->attrs)
 			add_arm_mmu_region(ptables, region);
 	}
+}
+
+/* Translation table control register settings */
+static uint64_t get_tcr(int el)
+{
+	uint64_t tcr;
+	uint64_t va_bits = CONFIG_ARM64_VA_BITS;
+	uint64_t tcr_ps_bits;
+
+	tcr_ps_bits = TCR_PS_BITS;
+
+	if (el == 1) {
+		tcr = (tcr_ps_bits << TCR_EL1_IPS_SHIFT);
+		/*
+		 * TCR_EL1.EPD1: Disable translation table walk for addresses
+		 * that are translated using TTBR1_EL1.
+		 */
+		tcr |= TCR_EPD1_DISABLE;
+	} else
+		tcr = (tcr_ps_bits << TCR_EL3_PS_SHIFT);
+
+	tcr |= TCR_T0SZ(va_bits);
+	/*
+	 * Translation table walk is cacheable, inner/outer WBWA and
+	 * inner shareable
+	 */
+	tcr |= TCR_TG0_4K | TCR_SHARED_INNER | TCR_ORGN_WBWA | TCR_IRGN_WBWA;
+
+	return tcr;
 }
 
 static void enable_mmu_el1(struct arm_mmu_ptables *ptables, unsigned int flags)
@@ -433,10 +449,10 @@ SYS_INIT(arm_mmu_init, PRE_KERNEL_1,
 #endif
 );
 
-int arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
+static int __arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 {
 	struct arm_mmu_ptables *ptables;
-	uint32_t entry_flags = MT_SECURE | MT_P_RX_U_NA;
+	uint32_t entry_flags = MT_SECURE | MT_P_RX_U_NA | MT_OVERWRITE;
 
 	/* Always map in the kernel page tables */
 	ptables = &kernel_ptables;
@@ -476,7 +492,15 @@ int arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 		return -ENOTSUP;
 	}
 
-	add_map(ptables, "generic", phys, (uintptr_t)virt, size, entry_flags);
+	return add_map(ptables, "generic", phys, (uintptr_t)virt, size, entry_flags);
+}
 
-	return 0;
+void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
+{
+	int ret = __arch_mem_map(virt, phys, size, flags);
+
+	if (ret) {
+		LOG_ERR("__arch_mem_map() returned %d", ret);
+		k_panic();
+	}
 }
