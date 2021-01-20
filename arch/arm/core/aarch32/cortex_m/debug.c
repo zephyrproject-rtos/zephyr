@@ -61,6 +61,34 @@ static int z_arm_debug_enable_null_pointer_detection(const struct device *arg)
 	 * unused by the system.
 	 */
 
+#if defined(CONFIG_ARMV8_M_MAINLINE)
+
+	/* ASSERT that we have the comparators needed for the implementation */
+	if (((DWT->CTRL & DWT_CTRL_NUMCOMP_Msk) >> DWT_CTRL_NUMCOMP_Pos) < 2) {
+		__ASSERT(0, "on board DWT does not support the feature\n");
+		return -EINVAL;
+	}
+
+	/* Use comparators 0, 1, R/W access check */
+	DWT->COMP0 = 0;
+	DWT->COMP1 = CONFIG_CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_PAGE_SIZE - 1;
+
+	DWT->FUNCTION0 =
+		((0x4 << DWT_FUNCTION_MATCH_Pos) & DWT_FUNCTION_MATCH_Msk)
+		|
+		((0x1 << DWT_FUNCTION_ACTION_Pos) & DWT_FUNCTION_ACTION_Msk)
+		|
+		((0x0 << DWT_FUNCTION_DATAVSIZE_Pos) & DWT_FUNCTION_DATAVSIZE_Msk)
+		;
+	DWT->FUNCTION1 =
+		((0x7 << DWT_FUNCTION_MATCH_Pos) & DWT_FUNCTION_MATCH_Msk)
+		|
+		((0x1 << DWT_FUNCTION_ACTION_Pos) & DWT_FUNCTION_ACTION_Msk)
+		|
+		((0x0 << DWT_FUNCTION_DATAVSIZE_Pos) & DWT_FUNCTION_DATAVSIZE_Msk)
+		;
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+
 	/* ASSERT that we have the comparator needed for the implementation */
 	if (((DWT->CTRL & DWT_CTRL_NUMCOMP_Msk) >> DWT_CTRL_NUMCOMP_Pos) < 1) {
 		__ASSERT(0, "on board DWT does not support the feature\n");
@@ -77,6 +105,7 @@ static int z_arm_debug_enable_null_pointer_detection(const struct device *arg)
 	/* Set mask according to the desired size */
 	DWT->MASK0 = 32 - __builtin_clzl(
 		CONFIG_CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_PAGE_SIZE - 1);
+#endif
 
 	return 0;
 }
