@@ -107,6 +107,8 @@ Removed APIs in this release
     use bt_conn_le_create_auto() instead.
   * The deprecated BT_LE_ADV_* macros have been removed,
     use the BT_GAP_ADV_* enums instead.
+  * The deprecated bt_conn_security function has been removed,
+    use bt_conn_set_security instead.
   * The deprecated BT_SECURITY_* defines NONE, LOW, MEDIUM, HIGH, FIPS have been
     removed, use the L0, L1, L2, L3, L4 defines instead.
   * The deprecated BT_HCI_ERR_AUTHENTICATION_FAIL define has been removed,
