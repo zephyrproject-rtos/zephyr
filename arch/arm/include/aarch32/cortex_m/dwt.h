@@ -132,6 +132,24 @@ static inline void z_arm_dwt_cycle_count_start(void)
 	DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
 }
 
+/**
+ * @brief Enable the debug monitor handler
+ *
+ * This routine enables the DebugMonitor handler to service
+ * data watchpoint events coming from DWT. The routine sets
+ * the DebugMonitor exception priority to highest possible.
+ *
+ * @return N/A
+ */
+static inline void z_arm_dwt_enable_debug_monitor(void)
+{
+	/* Set the DebugMonitor handler priority to the higyhest value. */
+	NVIC_SetPriority(DebugMonitor_IRQn, _EXC_FAULT_PRIO);
+
+	/* Enable debug monitor exception triggered on debug events */
+	CoreDebug->DEMCR |= CoreDebug_DEMCR_MON_EN_Msk;
+}
+
 #endif /* CONFIG_CORTEX_M_DWT */
 
 #ifdef __cplusplus

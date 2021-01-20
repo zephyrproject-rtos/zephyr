@@ -157,7 +157,7 @@ static ALWAYS_INLINE void z_arm_clear_faults(void)
 /**
  * @brief Assess whether a debug monitor event should be treated as an error
  *
- * This routine checks the status of a debug monitor ()exception, and
+ * This routine checks the status of a debug_monitor() exception, and
  * evaluates whether this needs to be considered as a processor error.
  *
  * @return true if the DM exception is a processor error, otherwise false
