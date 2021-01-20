@@ -101,6 +101,10 @@ Removed APIs in this release
     use BT_LE_SCAN_OPT_FILTER_WHITELIST instead.
   * The deprecated bt_le_scan_param::filter_dup argument has been removed,
     use bt_le_scan_param::options instead.
+  * The deprecated bt_conn_create_le() function has been removed,
+    use bt_conn_le_create() instead.
+  * The deprecated bt_conn_create_auto_le() function has been removed,
+    use bt_conn_le_create_auto() instead.
   * The deprecated BT_LE_ADV_* macros have been removed,
     use the BT_GAP_ADV_* enums instead.
   * The deprecated BT_SECURITY_* defines NONE, LOW, MEDIUM, HIGH, FIPS have been

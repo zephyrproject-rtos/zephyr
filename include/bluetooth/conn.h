@@ -542,7 +542,7 @@ struct bt_conn_le_create_param {
 	 *  Set zero to use the default @option{CONFIG_BT_CREATE_CONN_TIMEOUT}
 	 *  timeout.
 	 *
-	 *  @note Unused in @ref bt_conn_create_auto_le
+	 *  @note Unused in @ref bt_conn_le_create_auto
 	 */
 	uint16_t timeout;
 };
@@ -612,24 +612,6 @@ int bt_conn_le_create(const bt_addr_le_t *peer,
 		      const struct bt_le_conn_param *conn_param,
 		      struct bt_conn **conn);
 
-__deprecated static inline
-struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
-				  const struct bt_le_conn_param *conn_param)
-{
-	struct bt_conn *conn;
-	struct bt_conn_le_create_param param = BT_CONN_LE_CREATE_PARAM_INIT(
-						BT_CONN_LE_OPT_NONE,
-						BT_GAP_SCAN_FAST_INTERVAL,
-						BT_GAP_SCAN_FAST_INTERVAL);
-
-	if (bt_conn_le_create(peer, &param, conn_param,
-			      &conn)) {
-		return NULL;
-	}
-
-	return conn;
-}
-
 /** @brief Automatically connect to remote devices in whitelist.
  *
  *  This uses the Auto Connection Establishment procedure.
@@ -647,17 +629,6 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
  */
 int bt_conn_le_create_auto(const struct bt_conn_le_create_param *create_param,
 			   const struct bt_le_conn_param *conn_param);
-
-__deprecated static inline
-int bt_conn_create_auto_le(const struct bt_le_conn_param *conn_param)
-{
-	struct bt_conn_le_create_param param = BT_CONN_LE_CREATE_PARAM_INIT(
-						BT_CONN_LE_OPT_NONE,
-						BT_GAP_SCAN_FAST_INTERVAL,
-						BT_GAP_SCAN_FAST_WINDOW);
-
-	return bt_conn_le_create_auto(&param, conn_param);
-}
 
 /** @brief Stop automatic connect creation.
  *
@@ -845,7 +816,7 @@ struct bt_conn_cb {
 	 *
 	 *  @p err can mean either of the following:
 	 *  - @ref BT_HCI_ERR_UNKNOWN_CONN_ID Creating the connection started by
-	 *    @ref bt_conn_create_le was canceled either by the user through
+	 *    @ref bt_conn_le_create was canceled either by the user through
 	 *    @ref bt_conn_disconnect or by the timeout in the host through
 	 *    @ref bt_conn_le_create_param timeout parameter, which defaults to
 	 *    @option{CONFIG_BT_CREATE_CONN_TIMEOUT} seconds.
