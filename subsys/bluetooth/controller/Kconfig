@@ -554,6 +554,30 @@ config BT_CTLR_PERIPHERAL_ISO
 	bool "LE Connected Isochronous Stream Peripheral [EXPERIMENTAL]" if BT_LL_SW_SPLIT
 	select BT_CTLR_SET_HOST_FEATURE
 
+config BT_CTLR_CONN_ISO_STREAMS
+	int "LE Connected Isochronous Streams"
+	depends on BT_CTLR_CENTRAL_ISO || BT_CTLR_PERIPHERAL_ISO
+	range 1 64
+	default 2
+	help
+	  Maximum supported total number of CISes.
+
+config BT_CTLR_CONN_ISO_GROUPS
+	int "LE Connected Isochronous Groups"
+	depends on BT_CTLR_CENTRAL_ISO || BT_CTLR_PERIPHERAL_ISO
+	range 1 240
+	default 1
+	help
+	  Maximum supported CIGs.
+
+config BT_CTLR_CONN_ISO_STREAMS_PER_GROUP
+	int "LE Connected Isochronous Streams per Group"
+	depends on BT_CTLR_CENTRAL_ISO || BT_CTLR_PERIPHERAL_ISO
+	range 1 31
+	default 2
+	help
+	  Maximum supported CISes per CIG.
+
 config BT_CTLR_DTM
 	bool
 	help
