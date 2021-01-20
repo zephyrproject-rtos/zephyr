@@ -225,6 +225,7 @@ endif # BT_CONN
 
 config BT_ISO
 	bool "Bluetooth Isochronous Channel Support [EXPERIMENTAL]"
+	depends on BT_CONN
 	help
 	  Select this to enable Isochronous Channel support.
 
