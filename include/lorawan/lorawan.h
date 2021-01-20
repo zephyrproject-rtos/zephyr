@@ -122,6 +122,19 @@ struct lorawan_join_config {
 int lorawan_set_battery_level_callback(uint8_t (*battery_lvl_cb)(void));
 
 /**
+ * @brief Register a callback to be called when the datarate changes
+ *
+ * The callback is called once upon successfully joining a network and again
+ * each time the datarate changes due to ADR.
+ *
+ * The callback function takes one parameter:
+ *	- dr - updated datarate
+ *
+ * @param dr_cb Pointer to datarate update callback
+ */
+void lorawan_register_dr_changed_callback(void (*dr_cb)(enum lorawan_datarate));
+
+/**
  * @brief Join the LoRaWAN network
  *
  * Join the LoRaWAN network using OTAA or AWB.

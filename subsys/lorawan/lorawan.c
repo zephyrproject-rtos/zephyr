@@ -73,6 +73,7 @@ static LoRaMacEventInfoStatus_t last_mcps_indication_status;
 static LoRaMacEventInfoStatus_t last_mlme_indication_status;
 
 static uint8_t (*getBatteryLevelUser)(void);
+static void (*dr_change_cb)(enum lorawan_datarate dr);
 
 static uint8_t getBatteryLevelLocal(void)
 {
@@ -98,6 +99,9 @@ static void datarate_observe(bool force_notification)
 	if ((mibGet.Param.ChannelsDatarate != current_datarate) ||
 	    (force_notification)) {
 		current_datarate = mibGet.Param.ChannelsDatarate;
+		if (dr_change_cb) {
+			dr_change_cb(current_datarate);
+		}
 		LOG_INF("Datarate changed: DR_%d", current_datarate);
 	}
 }
@@ -193,7 +197,7 @@ static void MlmeIndication(MlmeIndication_t *mlmeIndication)
 }
 
 static LoRaMacStatus_t lorawan_join_otaa(
-			const struct lorawan_join_config *join_cfg)
+	const struct lorawan_join_config *join_cfg)
 {
 	MlmeReq_t mlme_req;
 	MibRequestConfirm_t mib_req;
@@ -221,7 +225,7 @@ static LoRaMacStatus_t lorawan_join_otaa(
 }
 
 static LoRaMacStatus_t lorawan_join_abp(
-			const struct lorawan_join_config *join_cfg)
+	const struct lorawan_join_config *join_cfg)
 {
 	MibRequestConfirm_t mib_req;
 
@@ -307,20 +311,30 @@ int lorawan_join(const struct lorawan_join_config *join_cfg)
 	}
 
 out:
-	/*
-	 * Several regions (AS923, AU915, US915) overwrite the datarate as part
-	 * of the join process. Reset the datarate to the value requested
-	 * (and validated) in lorawan_set_datarate so that the MAC layer is
-	 * aware of the set datarate for LoRaMacQueryTxPossible. This is only
-	 * performed when ADR is disabled as it the network servers
-	 * responsibility to increase datarates when ADR is enabled.
-	 */
-	if ((ret == 0) && (!lorawan_adr_enable)) {
-		MibRequestConfirm_t mib_req;
+	/* If the join succeeded */
+	if (ret == 0) {
+		/*
+		 * Several regions (AS923, AU915, US915) overwrite the
+		 * datarate as part of the join process. Reset the datarate
+		 * to the value requested (and validated) in
+		 * lorawan_set_datarate so that the MAC layer is aware of the
+		 * set datarate for LoRaMacQueryTxPossible. This is only
+		 * performed when ADR is disabled as it the network servers
+		 * responsibility to increase datarates when ADR is enabled.
+		 */
+		if (!lorawan_adr_enable) {
+			MibRequestConfirm_t mib_req;
 
-		mib_req.Type = MIB_CHANNELS_DATARATE;
-		mib_req.Param.ChannelsDatarate = default_datarate;
-		LoRaMacMibSetRequestConfirm(&mib_req);
+			mib_req.Type = MIB_CHANNELS_DATARATE;
+			mib_req.Param.ChannelsDatarate = default_datarate;
+			LoRaMacMibSetRequestConfirm(&mib_req);
+		}
+
+		/*
+		 * Force a notification of the datarate on network join as the
+		 * user may not have explicitly set a datarate to use.
+		 */
+		datarate_observe(true);
 	}
 
 	k_mutex_unlock(&lorawan_join_mutex);
@@ -344,7 +358,7 @@ int lorawan_set_class(enum lorawan_class dev_class)
 		return -ENOTSUP;
 	default:
 		return -EINVAL;
-	};
+	}
 
 	status = LoRaMacMibSetRequestConfirm(&mib_req);
 	if (status != LORAMAC_STATUS_OK) {
@@ -514,6 +528,11 @@ int lorawan_set_battery_level_callback(uint8_t (*battery_lvl_cb)(void))
 	getBatteryLevelUser = battery_lvl_cb;
 
 	return 0;
+}
+
+void lorawan_register_dr_changed_callback(void (*cb)(enum lorawan_datarate))
+{
+	dr_change_cb = cb;
 }
 
 int lorawan_start(void)
