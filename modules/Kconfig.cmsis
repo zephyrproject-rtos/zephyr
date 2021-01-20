@@ -22,8 +22,7 @@ endif
 
 menuconfig CMSIS_DSP
 	bool "CMSIS-DSP Library Support"
-	depends on CPU_CORTEX
-	depends on NEWLIB_LIBC
+	depends on (CPU_CORTEX && NEWLIB_LIBC) || ARCH_POSIX
 
 if CMSIS_DSP
 source "modules/Kconfig.cmsis_dsp"
