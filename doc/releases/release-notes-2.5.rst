@@ -101,6 +101,10 @@ Removed APIs in this release
     use BT_LE_SCAN_OPT_FILTER_WHITELIST instead.
   * The deprecated bt_le_scan_param::filter_dup argument has been removed,
     use bt_le_scan_param::options instead.
+  * The deprecated BT_SECURITY_* defines NONE, LOW, MEDIUM, HIGH, FIPS have been
+    removed, use the L0, L1, L2, L3, L4 defines instead.
+  * The deprecated BT_HCI_ERR_AUTHENTICATION_FAIL define has been removed,
+    use BT_HCI_ERR_AUTH_FAIL instead.
 
 Stable API changes in this release
 ==================================

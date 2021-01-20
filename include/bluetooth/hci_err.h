@@ -83,8 +83,6 @@ extern "C" {
 #define BT_HCI_ERR_OP_CANCELLED_BY_HOST         0x44
 #define BT_HCI_ERR_PACKET_TOO_LONG              0x45
 
-#define BT_HCI_ERR_AUTHENTICATION_FAIL __DEPRECATED_MACRO BT_HCI_ERR_AUTH_FAIL
-
 #ifdef __cplusplus
 }
 #endif
