@@ -1104,9 +1104,13 @@ uint8_t ll_adv_enable(uint8_t enable)
 		conn->phy_pref_flags = 0;
 #endif /* CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY */
 
-
+#if (!defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY))
+		/* Re-initialize the Tx Q */
+		ull_tx_q_init(&conn->tx_q);
+#else
 		conn->tx_head = conn->tx_ctrl = conn->tx_ctrl_last =
 		conn->tx_data = conn->tx_data_last = 0;
+#endif
 
 		/* NOTE: using same link as supplied for terminate ind */
 		adv->link_cc_free = link;

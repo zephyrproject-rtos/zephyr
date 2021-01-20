@@ -482,12 +482,6 @@ struct ll_conn {
 	uint16_t procedure_reload;
 	uint16_t procedure_expire;
 
-	struct node_tx *tx_head;
-	struct node_tx *tx_ctrl;
-	struct node_tx *tx_ctrl_last;
-	struct node_tx *tx_data;
-	struct node_tx *tx_data_last;
-
 #if defined(CONFIG_BT_CTLR_PHY)
 	uint8_t phy_pref_tx:3;
 	uint8_t phy_pref_flags:1;
