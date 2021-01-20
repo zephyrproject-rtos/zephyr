@@ -330,6 +330,8 @@
 /drivers/watchdog/*sifive*                @katsuster
 /drivers/watchdog/wdt_handlers.c          @dcpleung @nashif
 /drivers/watchdog/*cc32xx*                @pavlohamov
+/drivers/watchdog/wdt_ite_it8xxx2.c       @RuibinChang
+/drivers/watchdog/Kconfig.it8xxx2         @RuibinChang
 /drivers/wifi/                            @jukkar @tbursztyka @pfalcon
 /drivers/wifi/esp_at/                     @mniestroj
 /drivers/wifi/eswifi/                     @loicpoulain @nandojve
