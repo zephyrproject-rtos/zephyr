@@ -256,6 +256,14 @@
 			status = "disabled";
 			label = "DMAMUX_1";
 		};
+
+		sdmmc1: sdmmc@50062400 {
+			compatible = "st,stm32-sdmmc";
+			reg = <0x50062400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x400000>;
+			status = "disabled";
+			label = "SDMMC_1";
+		};
 	};
 
 	otgfs_phy: otgfs_phy {
