@@ -55,7 +55,7 @@ typedef int (*cbprintf_cb)(/* int c, void *ctx */);
  * the functionality is enabled.
  *
  * @note The functionality of this function is significantly reduced
- * when `CONFIG_CBPRINTF_NANO` is selected.
+ * when @option{CONFIG_CBPRINTF_NANO} is selected.
  *
  * @param out the function used to emit each generated character.
  *
@@ -80,11 +80,11 @@ int cbprintf(cbprintf_cb out, void *ctx, const char *format, ...);
  * formatting text of unbounded length without incurring the cost of a
  * temporary buffer.
  *
- * @note This function is available only when `CONFIG_CBPRINTF_LIBC_SUBSTS` is
- * selected.
+ * @note This function is available only when
+ * @option{CONFIG_CBPRINTF_LIBC_SUBSTS} is selected.
  *
  * @note The functionality of this function is significantly reduced when
- * `CONFIG_CBPRINTF_NANO` is selected.
+ * @option{CONFIG_CBPRINTF_NANO} is selected.
  *
  * @param out the function used to emit each generated character.
  *
@@ -104,11 +104,11 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *format, va_list ap);
 
 /** @brief fprintf using Zephyrs cbprintf infrastructure.
  *
- * @note This function is available only when `CONFIG_CBPRINTF_LIBC_SUBSTS` is
- * selected.
+ * @note This function is available only when
+ * @option{CONFIG_CBPRINTF_LIBC_SUBSTS} is selected.
  *
  * @note The functionality of this function is significantly reduced
- * when `CONFIG_CBPRINTF_NANO` is selected.
+ * when @option{CONFIG_CBPRINTF_NANO} is selected.
  *
  * @param stream the stream to which the output should be written.
  *
@@ -125,11 +125,11 @@ int fprintfcb(FILE * stream, const char *format, ...);
 
 /** @brief vfprintf using Zephyrs cbprintf infrastructure.
  *
- * @note This function is available only when `CONFIG_CBPRINTF_LIBC_SUBSTS` is
- * selected.
+ * @note This function is available only when
+ * @option{CONFIG_CBPRINTF_LIBC_SUBSTS} is selected.
  *
  * @note The functionality of this function is significantly reduced when
- * `CONFIG_CBPRINTF_NANO` is selected.
+ * @option{CONFIG_CBPRINTF_NANO} is selected.
  *
  * @param stream the stream to which the output should be written.
  *
@@ -144,11 +144,11 @@ int vfprintfcb(FILE *stream, const char *format, va_list ap);
 
 /** @brief printf using Zephyrs cbprintf infrastructure.
  *
- * @note This function is available only when `CONFIG_CBPRINTF_LIBC_SUBSTS` is
- * selected.
+ * @note This function is available only when
+ * @option{CONFIG_CBPRINTF_LIBC_SUBSTS} is selected.
  *
  * @note The functionality of this function is significantly reduced
- * when `CONFIG_CBPRINTF_NANO` is selected.
+ * when @option{CONFIG_CBPRINTF_NANO} is selected.
  *
  * @param format a standard ISO C format string with characters and
  * conversion specifications.
@@ -163,11 +163,11 @@ int printfcb(const char *format, ...);
 
 /** @brief vprintf using Zephyrs cbprintf infrastructure.
  *
- * @note This function is available only when `CONFIG_CBPRINTF_LIBC_SUBSTS` is
- * selected.
+ * @note This function is available only when
+ * @option{CONFIG_CBPRINTF_LIBC_SUBSTS} is selected.
  *
  * @note The functionality of this function is significantly reduced when
- * `CONFIG_CBPRINTF_NANO` is selected.
+ * @option{CONFIG_CBPRINTF_NANO} is selected.
  *
  * @param format a standard ISO C format string with characters and conversion
  * specifications.
@@ -180,11 +180,11 @@ int vprintfcb(const char *format, va_list ap);
 
 /** @brief snprintf using Zephyrs cbprintf infrastructure.
  *
- * @note This function is available only when `CONFIG_CBPRINTF_LIBC_SUBSTS` is
- * selected.
+ * @note This function is available only when
+ * @option{CONFIG_CBPRINTF_LIBC_SUBSTS} is selected.
  *
  * @note The functionality of this function is significantly reduced
- * when `CONFIG_CBPRINTF_NANO` is selected.
+ * when @option{CONFIG_CBPRINTF_NANO} is selected.
  *
  * @param str where the formatted content should be written
  *
@@ -206,11 +206,11 @@ int snprintfcb(char *str, size_t size, const char *format, ...);
 
 /** @brief vsnprintf using Zephyrs cbprintf infrastructure.
  *
- * @note This function is available only when `CONFIG_CBPRINTF_LIBC_SUBSTS` is
- * selected.
+ * @note This function is available only when
+ * @option{CONFIG_CBPRINTF_LIBC_SUBSTS} is selected.
  *
  * @note The functionality of this function is significantly reduced when
- * `CONFIG_CBPRINTF_NANO` is selected.
+ * @option{CONFIG_CBPRINTF_NANO} is selected.
  *
  * @param str where the formatted content should be written
  *
