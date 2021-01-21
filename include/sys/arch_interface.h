@@ -250,6 +250,15 @@ static inline bool arch_irq_unlocked(unsigned int key);
 /**
  * Disable the specified interrupt line
  *
+ * @note: The behavior of interrupts that arrive after this call
+ * returns and before the corresponding call to arch_irq_enable() is
+ * undefined.  The hardware is not required to latch and deliver such
+ * an interrupt, though on some architectures that may work.  Other
+ * architectures will simply lose such an interrupt and never deliver
+ * it.  Many drivers and subsystems are not tolerant of such dropped
+ * interrupts and it is the job of the application layer to ensure
+ * that behavior remains correct.
+ *
  * @see irq_disable()
  */
 void arch_irq_disable(unsigned int irq);
