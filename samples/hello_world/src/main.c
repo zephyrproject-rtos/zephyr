@@ -9,5 +9,5 @@
 
 void main(void)
 {
-    printk("Hello from zephyr! %s\n", CONFIG_BOARD);
+    printk("Hello from zephyr! %s %s %s\n", CONFIG_BOARD, __DATE__, __TIME__);
 }

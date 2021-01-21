@@ -92,13 +92,14 @@
         };
 
         uart0: serial@10000000 {
-            compatible = "ns16550";
+            compatible = "digi_16550", "uart0";
             reg = <0x10000000 0x1000>;
             clock-frequency = <25000000>;
             current-speed = <115200>;
             interrupt-parent = <&PLIC0>;
             interrupts = <1>;
             label = "UART_0";
+            status = "okay";
         };
 
         timer@18000000 {
@@ -125,9 +126,8 @@
             xlnx,tri-default = <0xffffffff>;
             xlnx,tri-default-2 = <0xffffffff>;
         };
-    }; //SOC
-    
-}; //main
+    };
+};
 
 
 
