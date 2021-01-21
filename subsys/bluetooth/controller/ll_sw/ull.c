@@ -204,7 +204,8 @@ static struct {
 
 static struct {
 	void *free;
-	uint8_t pool[sizeof(memq_link_t) * EVENT_DONE_MAX];
+	uint8_t pool[sizeof(memq_link_t) *
+		     (EVENT_DONE_MAX + EVENT_DONE_LINK_CNT)];
 } mem_link_done;
 
 /* Minimum number of node rx for ULL to LL/HCI thread per connection.
@@ -307,6 +308,9 @@ static struct {
 
 static MEMQ_DECLARE(ull_rx);
 static MEMQ_DECLARE(ll_rx);
+#if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
+static MEMQ_DECLARE(ull_done);
+#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 
 #if defined(CONFIG_BT_CONN)
 static MFIFO_DEFINE(ll_pdu_rx_free, sizeof(void *), LL_PDU_RX_CNT);
@@ -340,6 +344,9 @@ static inline void rx_demux_event_done(memq_link_t *link,
 				       struct node_rx_hdr *rx);
 static inline void ll_rx_link_inc_quota(int8_t delta);
 static void disabled_cb(void *param);
+#if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
+static void ull_done(void *param);
+#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 
 int ll_init(struct k_sem *sem_rx)
 {
@@ -1520,6 +1527,23 @@ void ull_rx_sched(void)
 	mayfly_enqueue(TICKER_USER_ID_LLL, TICKER_USER_ID_ULL_HIGH, 1, &mfy);
 }
 
+#if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
+void ull_rx_put_done(memq_link_t *link, void *done)
+{
+	/* Enqueue the done object */
+	memq_enqueue(link, done, &memq_ull_done.tail);
+}
+
+void ull_rx_sched_done(void)
+{
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, ull_done};
+
+	/* Kick the ULL (using the mayfly, tailchain it) */
+	mayfly_enqueue(TICKER_USER_ID_LLL, TICKER_USER_ID_ULL_HIGH, 1, &mfy);
+}
+#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
+
 int ull_prepare_enqueue(lll_is_abort_cb_t is_abort_cb,
 			lll_abort_cb_t abort_cb,
 			struct lll_prepare_param *prepare_param,
@@ -1594,8 +1618,13 @@ void *ull_event_done(void *param)
 	evdone->hdr.type = NODE_RX_TYPE_EVENT_DONE;
 	evdone->param = param;
 
+#if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
+	ull_rx_put_done(link, evdone);
+	ull_rx_sched_done();
+#else
 	ull_rx_put(link, evdone);
 	ull_rx_sched();
+#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 
 	return evdone;
 }
@@ -1655,8 +1684,8 @@ static inline int init_reset(void)
 		 EVENT_DONE_MAX, &mem_done.free);
 
 	/* Initialize done link pool. */
-	mem_init(mem_link_done.pool, sizeof(memq_link_t), EVENT_DONE_MAX,
-		 &mem_link_done.free);
+	mem_init(mem_link_done.pool, sizeof(memq_link_t), EVENT_DONE_MAX +
+		 EVENT_DONE_LINK_CNT, &mem_link_done.free);
 
 	/* Allocate done buffers */
 	done_alloc();
@@ -1677,6 +1706,15 @@ static inline int init_reset(void)
 
 	/* Initialize ull rx memq */
 	MEMQ_INIT(ull_rx, link);
+
+#if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
+	/* Acquire a link to initialize ull done memq */
+	link = mem_acquire(&mem_link_done.free);
+	LL_ASSERT(link);
+
+	/* Initialize ull done memq */
+	MEMQ_INIT(ull_done, link);
+#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 
 	/* Acquire a link to initialize ll rx memq */
 	link = mem_acquire(&mem_link_rx.free);
@@ -2036,6 +2074,25 @@ static inline void rx_demux_conn_tx_ack(uint8_t ack_last, uint16_t handle,
 }
 #endif /* CONFIG_BT_CONN */
 
+#if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
+static void ull_done(void *param)
+{
+	memq_link_t *link;
+	struct node_rx_hdr *done;
+
+	do {
+		link = memq_peek(memq_ull_done.head, memq_ull_done.tail,
+				 (void **)&done);
+
+		if (link) {
+			/* Process done event */
+			memq_dequeue(memq_ull_done.tail, &memq_ull_done.head, NULL);
+			rx_demux_event_done(link, done);
+		}
+	} while (link);
+}
+#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
+
 /**
  * @brief Dispatch rx objects
  * @details Rx objects are only peeked, not dequeued yet.
@@ -2045,12 +2102,14 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 {
 	/* Demux Rx objects */
 	switch (rx->type) {
+#if defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
 	case NODE_RX_TYPE_EVENT_DONE:
 	{
 		memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
 		rx_demux_event_done(link, rx);
 	}
 	break;
+#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 
 #if defined(CONFIG_BT_OBSERVER)
 #if defined(CONFIG_BT_CTLR_ADV_EXT)

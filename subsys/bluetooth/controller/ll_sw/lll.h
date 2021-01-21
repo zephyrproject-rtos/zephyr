@@ -16,6 +16,11 @@
 
 #define EVENT_PIPELINE_MAX 7
 #define EVENT_DONE_MAX 3
+#if defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
+#define EVENT_DONE_LINK_CNT 0
+#else
+#define EVENT_DONE_LINK_CNT 1
+#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 
 #define ADV_INT_UNIT_US  625U
 #define SCAN_INT_UNIT_US 625U
@@ -397,6 +402,8 @@ void *ull_iso_pdu_rx_alloc_peek(uint8_t count);
 void *ull_iso_pdu_rx_alloc_peek_iter(uint8_t *idx);
 void *ull_iso_pdu_rx_alloc(void);
 void ull_rx_put(memq_link_t *link, void *rx);
+void ull_rx_put_done(memq_link_t *link, void *done);
 void ull_rx_sched(void);
+void ull_rx_sched_done(void);
 void *ull_event_done_extra_get(void);
 void *ull_event_done(void *param);
