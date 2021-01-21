@@ -43,7 +43,7 @@ extern "C" {
  *
  * @return The expanded name of the device object created by DEVICE_DEFINE()
  */
-#define DEVICE_NAME_GET(name) (_CONCAT(__device_, name))
+#define DEVICE_NAME_GET(name) _CONCAT(__device_, name)
 
 /**
  * @def SYS_DEVICE_DEFINE
