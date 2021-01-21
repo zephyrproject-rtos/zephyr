@@ -347,6 +347,40 @@ static int arm_mpu_init(const struct device *arg)
 
 	arm_core_mpu_enable();
 
+	/* Program additional fixed flash region for null-pointer
+	 * dereferencing detection (debug feature)
+	 */
+#if defined(CONFIG_CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_DETECTION_MPU)
+#if (defined(CONFIG_ARMV8_M_BASELINE) || defined(CONFIG_ARMV8_M_MAINLINE)) && \
+	(CONFIG_FLASH_BASE_ADDRESS > CONFIG_CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_PAGE_SIZE)
+#pragma message "Null-Pointer exception detection cannot be configured on un-mapped flash areas"
+#else
+	const struct z_arm_mpu_partition unmap_region =	{
+		.start = 0x0,
+		.size = CONFIG_CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_PAGE_SIZE,
+#if defined(CONFIG_ARMV8_M_BASELINE) || defined(CONFIG_ARMV8_M_MAINLINE)
+		/* Overlapping region (with any permissions)
+		 * will result in fault generation
+		 */
+		.attr = K_MEM_PARTITION_P_RO_U_NA,
+#else
+		/* Explicit no-access policy */
+		.attr = K_MEM_PARTITION_P_NA_U_NA,
+#endif
+	};
+
+	if (mpu_configure_region(static_regions_num, &unmap_region) == -EINVAL) {
+
+		__ASSERT(0,
+			"Programming null-pointer detection region failed\n");
+		return -EINVAL;
+	}
+
+	static_regions_num++;
+
+#endif
+#endif /* CONFIG_CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_DETECTION_MPU */
+
 	/* Sanity check for number of regions in Cortex-M0+, M3, and M4. */
 #if defined(CONFIG_CPU_CORTEX_M0PLUS) || \
 	defined(CONFIG_CPU_CORTEX_M3) || \
