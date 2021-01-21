@@ -16,20 +16,25 @@ includes the SoC's ``.dtsi``. One way to figure out the devicetree's contents
 is by opening these files, e.g. by looking in
 ``dts/<ARCH>/<vendor>/<soc>.dtsi``, but this can be time consuming.
 
-Furthermore, you might want to see the actual generated header file. You might
-also be working with a board definition outside of the zephyr repository,
-making it unclear where ``BOARD.dts`` is in the first place.
+If you just want to see the "final" devicetree for your board, build an
+application and open the :file:`zephyr.dts` file in the build directory.
 
-Luckily, there is an easy way to do both: build your application.
+.. tip::
 
-For example, using west and the :ref:`qemu_cortex_m3` board to build
-:ref:`hello_world`, forcing CMake to re-run:
+   You can build :ref:`hello_world` to see the "base" devicetree for your board
+   without any additional changes from :ref:`overlay files <dt-input-files>`.
+
+For example, using the :ref:`qemu_cortex_m3` board to build :ref:`hello_world`:
 
 .. code-block:: sh
 
-   west build -b qemu_cortex_m3 -s samples/hello_world --cmake
+   # --cmake-only here just forces CMake to run, skipping the
+   # build process to save time.
+   west build -b qemu_cortex_m3 -s samples/hello_world --cmake-only
 
-The build system prints the output file locations:
+You can change ``qemu_cortex_m3`` to match your board.
+
+CMake prints the input and output file locations like this:
 
 .. code-block:: none
 
@@ -37,7 +42,11 @@ The build system prints the output file locations:
    -- Generated zephyr.dts: .../zephyr/build/zephyr/zephyr.dts
    -- Generated devicetree_unfixed.h: .../zephyr/build/zephyr/include/generated/devicetree_unfixed.h
 
-Change ``qemu_cortex_m3`` to the board you are using, of course.
+The :file:`zephyr.dts` file is the final devicetree in DTS format.
+
+The :file:`devicetree_unfixed.h` file is the corresponding generated header.
+
+See :ref:`devicetree-in-out-files` for details about these files.
 
 .. _dt-get-device:
 
