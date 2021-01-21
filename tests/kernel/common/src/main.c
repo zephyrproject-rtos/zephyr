@@ -33,6 +33,7 @@ extern void test_sys_put_le48(void);
 extern void test_sys_get_le64(void);
 extern void test_sys_put_le64(void);
 extern void test_atomic(void);
+extern void test_errno(void);
 extern void test_printk(void);
 extern void test_timeout_order(void);
 extern void test_clock_cycle(void);
@@ -105,8 +106,14 @@ static void test_bounds_check_mitigation(void)
 #endif
 }
 
+extern struct k_stack eno_stack;
+extern struct k_thread eno_thread;
+
 void test_main(void)
 {
+#if CONFIG_USERSPACE
+	k_thread_access_grant(k_current_get(), &eno_thread, &eno_stack);
+#endif
 	ztest_test_suite(common,
 			 ztest_unit_test(test_bootdelay),
 			 ztest_unit_test(test_irq_offload),
@@ -141,6 +148,7 @@ void test_main(void)
 			 ztest_unit_test(test_version),
 			 ztest_unit_test(test_multilib),
 			 ztest_unit_test(test_thread_context),
+			 ztest_user_unit_test(test_errno),
 			 ztest_unit_test(test_ms_time_duration),
 			 ztest_unit_test(test_bounds_check_mitigation)
 			 );
