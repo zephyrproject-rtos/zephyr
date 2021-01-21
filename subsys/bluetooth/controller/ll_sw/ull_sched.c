@@ -182,6 +182,9 @@ void ull_sched_mfy_win_offset_use(void *param)
 	win_offset = conn->llcp_cu.win_offset_us / CONN_INT_UNIT_US;
 
 	sys_put_le16(win_offset, (void *)conn->llcp.conn_upd.pdu_win_offset);
+
+	/* move to offset calculated state */
+	conn->llcp_cu.state = LLCP_CUI_STATE_OFFS_RDY;
 }
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
@@ -260,11 +263,15 @@ void ull_sched_mfy_win_offset_select(void *param)
 			CONN_INT_UNIT_US;
 		sys_put_le16(win_offset_s,
 			     (void *)conn->llcp.conn_upd.pdu_win_offset);
+		/* move to offset calculated state */
+		conn->llcp_cu.state = LLCP_CUI_STATE_OFFS_RDY;
 	} else if (!has_offset_s) {
 		conn->llcp_cu.win_offset_us = win_offset_m[0] *
 			CONN_INT_UNIT_US;
 		sys_put_le16(win_offset_m[0],
 			     (void *)conn->llcp.conn_upd.pdu_win_offset);
+		/* move to offset calculated state */
+		conn->llcp_cu.state = LLCP_CUI_STATE_OFFS_RDY;
 	} else {
 		struct pdu_data *pdu_ctrl_tx;
 
@@ -278,10 +285,9 @@ void ull_sched_mfy_win_offset_select(void *param)
 		ull_conn_upd_curr_reset();
 
 		/* send reject_ind_ext */
-		pdu_ctrl_tx = (void *)
-			((uint8_t *)conn->llcp.conn_upd.pdu_win_offset -
-			 offsetof(struct pdu_data,
-				  llctrl.conn_update_ind.win_offset));
+		pdu_ctrl_tx = CONTAINER_OF(conn->llcp.conn_upd.pdu_win_offset,
+					   struct pdu_data,
+					   llctrl.conn_update_ind.win_offset);
 		pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
 		pdu_ctrl_tx->len =
 			offsetof(struct pdu_data_llctrl, reject_ext_ind) +
@@ -292,6 +298,8 @@ void ull_sched_mfy_win_offset_select(void *param)
 			PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ;
 		pdu_ctrl_tx->llctrl.reject_ext_ind.error_code =
 			BT_HCI_ERR_UNSUPP_LL_PARAM_VAL;
+		/* move to conn param reject */
+		conn->llcp_cu.state = LLCP_CUI_STATE_REJECT;
 	}
 #undef OFFSET_S_MAX
 #undef OFFSET_M_MAX
