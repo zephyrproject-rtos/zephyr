@@ -368,21 +368,21 @@ int edac_ibecc_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	mchbar &= GENMASK(38, 16);
+	mchbar &= MCHBAR_MASK;
 
 	/* workaround for 32 bit read */
 	touud = pcie_conf_read(bdf, TOUUD_REG);
 	touud |= (uint64_t)pcie_conf_read(bdf, TOUUD_REG + 1) << 32;
-	touud &= GENMASK(38, 20);
+	touud &= TOUUD_MASK;
 
 	/* workaround for 32 bit read */
 	tom = pcie_conf_read(bdf, TOM_REG);
 	tom |= (uint64_t)pcie_conf_read(bdf, TOM_REG + 1) << 32;
-	tom &= GENMASK(38, 20);
+	tom &= TOM_MASK;
 
-	tolud = pcie_conf_read(bdf, TOLUD_REG) & GENMASK(31, 20);
+	tolud = pcie_conf_read(bdf, TOLUD_REG) & TOLUD_MASK;
 
-	device_map(&data->mchbar, mchbar, 0x10000, K_MEM_CACHE_NONE);
+	device_map(&data->mchbar, mchbar, MCH_SIZE, K_MEM_CACHE_NONE);
 
 	LOG_DBG("MCHBAR\t%llx", mchbar);
 	LOG_DBG("TOUUD\t%llx", touud);
