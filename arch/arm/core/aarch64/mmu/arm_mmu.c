@@ -29,13 +29,44 @@ static struct arm_mmu_ptables kernel_ptables = {
 /* Returns a new preallocated table */
 static uint64_t *new_prealloc_table(struct arm_mmu_ptables *ptables)
 {
-	ptables->next_table++;
+	unsigned int i;
 
-	if (ptables->next_table >= CONFIG_MAX_XLAT_TABLES) {
-		LOG_ERR("CONFIG_MAX_XLAT_TABLES, too small");
-		return NULL;
+	/* Look for a free table. Table 0 is always allocated. */
+	for (i = 1; i < CONFIG_MAX_XLAT_TABLES; i++) {
+		if (ptables->use_count[i] == 0) {
+			ptables->use_count[i] = 1;
+			return &ptables->xlat_tables[i * Ln_XLAT_NUM_ENTRIES];
+		}
 	}
-	return &ptables->xlat_tables[ptables->next_table * Ln_XLAT_NUM_ENTRIES];
+
+	LOG_ERR("CONFIG_MAX_XLAT_TABLES, too small");
+	return NULL;
+}
+
+static void free_prealloc_table(struct arm_mmu_ptables *ptables, uint64_t *table)
+{
+	unsigned int i = (table - ptables->xlat_tables) / Ln_XLAT_NUM_ENTRIES;
+
+	__ASSERT(i < CONFIG_MAX_XLAT_TABLES, "table out of range");
+	__ASSERT(ptables->use_count[i] == 1, "table still in use");
+	ptables->use_count[i] = 0;
+}
+
+static int prealloc_table_usage(struct arm_mmu_ptables *ptables,
+				uint64_t *table, int adjustment)
+{
+	unsigned int i = (table - ptables->xlat_tables) / Ln_XLAT_NUM_ENTRIES;
+
+	__ASSERT(i < CONFIG_MAX_XLAT_TABLES, "table out of range");
+	ptables->use_count[i] += adjustment;
+	__ASSERT(ptables->use_count[i] > 0, "usage count underflow");
+	return ptables->use_count[i];
+}
+
+static inline bool is_prealloc_table_unused(struct arm_mmu_ptables *ptables,
+					    uint64_t *table)
+{
+	return prealloc_table_usage(ptables, table, 0) == 1;
 }
 
 static uint64_t get_region_desc(uint32_t attrs)
@@ -147,7 +178,9 @@ static void set_pte_table_desc(uint64_t *pte, uint64_t *table, unsigned int leve
 
 static void set_pte_block_desc(uint64_t *pte, uint64_t desc, unsigned int level)
 {
-	desc |= (level == XLAT_LAST_LEVEL) ? PTE_PAGE_DESC : PTE_BLOCK_DESC;
+	if (desc) {
+		desc |= (level == XLAT_LAST_LEVEL) ? PTE_PAGE_DESC : PTE_BLOCK_DESC;
+	}
 
 #if DUMP_PTE
 	uint8_t mem_type = (desc >> 2) & MT_TYPE_MASK;
@@ -183,22 +216,20 @@ static void populate_table(uint64_t *table, uint64_t desc, unsigned int level)
 	}
 }
 
-static int add_map(struct arm_mmu_ptables *ptables, const char *name,
-		   uintptr_t phys, uintptr_t virt, size_t size, uint32_t attrs)
+static int set_mapping(struct arm_mmu_ptables *ptables,
+		       uintptr_t phys, uintptr_t virt, size_t size,
+		       uint64_t desc, bool may_overwrite)
 {
-	uint64_t desc, *pte;
+	uint64_t *pte, *ptes[XLAT_LAST_LEVEL + 1];
 	uint64_t level_size;
 	uint64_t *table = ptables->xlat_tables;
 	unsigned int level = BASE_XLAT_LEVEL;
-
-	MMU_DEBUG("mmap [%s]: virt %lx phys %lx size %lx\n",
-		   name, virt, phys, size);
 
 	/* check minimum alignment requirement for given mmap region */
 	__ASSERT(((virt | phys | size) & (CONFIG_MMU_PAGE_SIZE - 1)) == 0,
 		 "address/size are not page aligned\n");
 
-	desc = phys | get_region_desc(attrs);
+	desc |= phys;
 
 	while (size) {
 		__ASSERT(level <= XLAT_LAST_LEVEL,
@@ -206,6 +237,7 @@ static int add_map(struct arm_mmu_ptables *ptables, const char *name,
 
 		/* Locate PTE for given virtual address and page table level */
 		pte = &table[XLAT_TABLE_VA_IDX(virt, level)];
+		ptes[level] = pte;
 
 		if (is_table_desc(*pte, level)) {
 			/* Move to the next translation table level */
@@ -214,7 +246,7 @@ static int add_map(struct arm_mmu_ptables *ptables, const char *name,
 			continue;
 		}
 
-		if (!(attrs & MT_OVERWRITE) && !is_free_desc(*pte)) {
+		if (!may_overwrite && !is_free_desc(*pte)) {
 			/* the entry is already allocated */
 			LOG_ERR("entry already in use: "
 				"level %d pte %p *pte 0x%016llx",
@@ -244,7 +276,12 @@ static int add_map(struct arm_mmu_ptables *ptables, const char *name,
 			 * then we need to reflect that in the new table.
 			 */
 			if (is_block_desc(*pte)) {
+				prealloc_table_usage(ptables, table, Ln_XLAT_NUM_ENTRIES);
 				populate_table(table, *pte, level + 1);
+			}
+			/* Adjust usage count for parent table */
+			if (is_free_desc(*pte)) {
+				prealloc_table_usage(ptables, pte, 1);
 			}
 			/* And link it. */
 			set_pte_table_desc(pte, table, level);
@@ -252,12 +289,28 @@ static int add_map(struct arm_mmu_ptables *ptables, const char *name,
 			continue;
 		}
 
-		/* Create block/page descriptor */
+		/* Adjust usage count for corresponding table */
+		if (is_free_desc(*pte)) {
+			prealloc_table_usage(ptables, pte, 1);
+		}
+		if (!desc) {
+			prealloc_table_usage(ptables, pte, -1);
+		}
+		/* Create (or erase) block/page descriptor */
 		set_pte_block_desc(pte, desc, level);
+
+		/* recursively free unused tables if any */
+		while (level != BASE_XLAT_LEVEL &&
+		       is_prealloc_table_unused(ptables, pte)) {
+			free_prealloc_table(ptables, pte);
+			pte = ptes[--level];
+			set_pte_block_desc(pte, 0, level);
+			prealloc_table_usage(ptables, pte, -1);
+		}
 
 move_on:
 		virt += level_size;
-		desc += level_size;
+		desc += desc ? level_size : 0;
 		size -= level_size;
 
 		/* Range is mapped, start again for next range */
@@ -266,6 +319,24 @@ move_on:
 	}
 
 	return 0;
+}
+
+static int add_map(struct arm_mmu_ptables *ptables, const char *name,
+		   uintptr_t phys, uintptr_t virt, size_t size, uint32_t attrs)
+{
+	uint64_t desc = get_region_desc(attrs);
+	bool may_overwrite = (attrs & MT_OVERWRITE);
+
+	MMU_DEBUG("mmap [%s]: virt %lx phys %lx size %lx attr %llx\n",
+		  name, virt, phys, size, desc);
+	return set_mapping(ptables, phys, virt, size, desc, may_overwrite);
+}
+
+static int remove_map(struct arm_mmu_ptables *ptables, const char *name,
+		      uintptr_t virt, size_t size)
+{
+	MMU_DEBUG("unmmap [%s]: virt %lx size %lx\n", name, virt, size);
+	return set_mapping(ptables, 0, virt, size, 0, true);
 }
 
 /* zephyr execution regions with appropriate attributes */
@@ -496,5 +567,14 @@ void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 	if (ret) {
 		LOG_ERR("__arch_mem_map() returned %d", ret);
 		k_panic();
+	}
+}
+
+void arch_mem_unmap(void *addr, size_t size)
+{
+	int ret = remove_map(&kernel_ptables, "generic", (uintptr_t)addr, size);
+
+	if (ret) {
+		LOG_ERR("remove_map() returned %d", ret);
 	}
 }
