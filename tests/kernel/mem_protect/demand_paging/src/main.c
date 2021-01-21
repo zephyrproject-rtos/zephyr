@@ -86,7 +86,7 @@ void test_touch_anon_pages(void)
 	printk("Kernel handled %lu page faults\n", faults);
 }
 
-void test_z_mem_page_out(void)
+void test_k_mem_page_out(void)
 {
 	unsigned long faults;
 	int key, ret;
@@ -96,8 +96,8 @@ void test_z_mem_page_out(void)
 	 */
 	key = irq_lock();
 	faults = z_num_pagefaults_get();
-	ret = z_mem_page_out(arena, HALF_BYTES);
-	zassert_equal(ret, 0, "z_mem_page_out failed with %d", ret);
+	ret = k_mem_page_out(arena, HALF_BYTES);
+	zassert_equal(ret, 0, "k_mem_page_out failed with %d", ret);
 
 	/* Write to the supposedly evicted region */
 	for (size_t i = 0; i < HALF_BYTES; i++) {
@@ -110,12 +110,12 @@ void test_z_mem_page_out(void)
 		      "unexpected num pagefaults expected %lu got %d",
 		      HALF_PAGES, faults);
 
-	ret = z_mem_page_out(arena, arena_size);
-	zassert_equal(ret, -ENOMEM, "z_mem_page_out should have failed");
+	ret = k_mem_page_out(arena, arena_size);
+	zassert_equal(ret, -ENOMEM, "k_mem_page_out should have failed");
 
 }
 
-void test_z_mem_page_in(void)
+void test_k_mem_page_in(void)
 {
 	unsigned long faults;
 	int key, ret;
@@ -125,10 +125,10 @@ void test_z_mem_page_in(void)
 	 */
 	key = irq_lock();
 
-	ret = z_mem_page_out(arena, HALF_BYTES);
-	zassert_equal(ret, 0, "z_mem_page_out failed with %d", ret);
+	ret = k_mem_page_out(arena, HALF_BYTES);
+	zassert_equal(ret, 0, "k_mem_page_out failed with %d", ret);
 
-	z_mem_page_in(arena, HALF_BYTES);
+	k_mem_page_in(arena, HALF_BYTES);
 
 	faults = z_num_pagefaults_get();
 	/* Write to the supposedly evicted region */
@@ -142,12 +142,12 @@ void test_z_mem_page_in(void)
 		      faults);
 }
 
-void test_z_mem_pin(void)
+void test_k_mem_pin(void)
 {
 	unsigned long faults;
 	int key;
 
-	z_mem_pin(arena, HALF_BYTES);
+	k_mem_pin(arena, HALF_BYTES);
 
 	/* Write to the rest of the arena */
 	for (size_t i = HALF_BYTES; i < arena_size; i++) {
@@ -167,19 +167,19 @@ void test_z_mem_pin(void)
 		      faults);
 
 	/* Clean up */
-	z_mem_unpin(arena, HALF_BYTES);
+	k_mem_unpin(arena, HALF_BYTES);
 }
 
-void test_z_mem_unpin(void)
+void test_k_mem_unpin(void)
 {
 	/* Pin the memory (which we know works from prior test) */
-	z_mem_pin(arena, HALF_BYTES);
+	k_mem_pin(arena, HALF_BYTES);
 
 	/* Now un-pin it */
-	z_mem_unpin(arena, HALF_BYTES);
+	k_mem_unpin(arena, HALF_BYTES);
 
 	/* repeat the page_out scenario, which should work */
-	test_z_mem_page_out();
+	test_k_mem_page_out();
 }
 
 /* Show that even if we map enough anonymous memory to fill the backing
@@ -223,10 +223,10 @@ void test_main(void)
 	ztest_test_suite(test_demand_paging,
 			ztest_unit_test(test_map_anon_pages),
 			ztest_unit_test(test_touch_anon_pages),
-			ztest_unit_test(test_z_mem_page_out),
-			ztest_unit_test(test_z_mem_page_in),
-			ztest_unit_test(test_z_mem_pin),
-			ztest_unit_test(test_z_mem_unpin),
+			ztest_unit_test(test_k_mem_page_out),
+			ztest_unit_test(test_k_mem_page_in),
+			ztest_unit_test(test_k_mem_pin),
+			ztest_unit_test(test_k_mem_unpin),
 			ztest_unit_test(test_backing_store_capacity));
 
 	ztest_run_test_suite(test_demand_paging);

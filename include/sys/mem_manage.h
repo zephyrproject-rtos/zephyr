@@ -228,7 +228,7 @@ size_t k_mem_region_align(uintptr_t *aligned_addr, size_t *aligned_size,
  * @retval -ENOMEM Insufficient space in backing store to satisfy request.
  *         The region may be partially paged out.
  */
-int z_mem_page_out(void *addr, size_t size);
+int k_mem_page_out(void *addr, size_t size);
 
 /**
  * Load a virtual data region into memory
@@ -243,7 +243,7 @@ int z_mem_page_out(void *addr, size_t size);
  * @param addr Base page-aligned virtual address
  * @param size Page-aligned data region size
  */
-void z_mem_page_in(void *addr, size_t size);
+void k_mem_page_in(void *addr, size_t size);
 
 /**
  * Pin an aligned virtual data region, paging in as necessary
@@ -258,7 +258,7 @@ void z_mem_page_in(void *addr, size_t size);
  * @param addr Base page-aligned virtual address
  * @param size Page-aligned data region size
  */
-void z_mem_pin(void *addr, size_t size);
+void k_mem_pin(void *addr, size_t size);
 
 /**
  * Un-pin an aligned virtual data region
@@ -270,7 +270,7 @@ void z_mem_pin(void *addr, size_t size);
  * @param addr Base page-aligned virtual address
  * @param size Page-aligned data region size
  */
-void z_mem_unpin(void *addr, size_t size);
+void k_mem_unpin(void *addr, size_t size);
 #endif /* CONFIG_DEMAND_PAGING */
 
 #ifdef __cplusplus
