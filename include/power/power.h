@@ -8,6 +8,7 @@
 #define ZEPHYR_INCLUDE_POWER_POWER_H_
 
 #include <zephyr/types.h>
+#include <sys/slist.h>
 #include <power/power_state.h>
 #include <stdbool.h>
 
