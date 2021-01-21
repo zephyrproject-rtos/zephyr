@@ -61,6 +61,9 @@
 
 #define HCI_CMD_TIMEOUT      K_SECONDS(10)
 
+#define PHY_REQ_MAX_RETRY    (5)
+#define PHY_REQ_RETRY_CI     (6)
+
 /* Stacks for the threads */
 #if !defined(CONFIG_BT_RECV_IS_RX_THREAD)
 static struct k_thread rx_thread_data;
@@ -139,6 +142,18 @@ struct cmd_data {
 };
 
 static struct cmd_data cmd_data[CONFIG_BT_HCI_CMD_COUNT];
+
+#if defined(CONFIG_BT_AUTO_PHY_UPDATE)
+struct phy_retry {
+	struct  bt_conn *conn;
+	struct  k_delayed_work work;
+	uint8_t remain;
+};
+
+static struct phy_retry phy_retry_data[CONFIG_BT_MAX_CONN];
+
+static void conn_auto_initiate(struct bt_conn *conn);
+#endif /* CONFIG_BT_AUTO_PHY_UPDATE */
 
 #define cmd(buf) (&cmd_data[net_buf_id(buf)])
 #define acl(buf) ((struct acl_data *)net_buf_user_data(buf))
@@ -1732,7 +1747,7 @@ int bt_le_set_phy(struct bt_conn *conn, uint8_t all_phys,
 	cp->rx_phys = pref_rx_phy;
 	cp->phy_opts = phy_opts;
 
-	return bt_hci_cmd_send(BT_HCI_OP_LE_SET_PHY, buf);
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_PHY, buf, NULL);
 }
 
 #if defined(CONFIG_BT_SMP)
@@ -1805,6 +1820,17 @@ static struct bt_conn *find_pending_connect(uint8_t role, bt_addr_le_t *peer_add
 	return NULL;
 }
 
+#if defined(CONFIG_BT_AUTO_PHY_UPDATE)
+static void phy_retry_worker(struct k_work *work)
+{
+	struct phy_retry *phy_retry;
+
+	phy_retry = CONTAINER_OF(work, struct phy_retry, work);
+	conn_auto_initiate(phy_retry->conn);
+	bt_conn_unref(phy_retry->conn);
+}
+#endif /* CONFIG_BT_AUTO_PHY_UPDATE */
+
 static void conn_auto_initiate(struct bt_conn *conn)
 {
 	int err;
@@ -1834,19 +1860,52 @@ static void conn_auto_initiate(struct bt_conn *conn)
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_BT_AUTO_PHY_UPDATE) &&
-	    !atomic_test_bit(conn->flags, BT_CONN_AUTO_PHY_COMPLETE) &&
+#if defined(CONFIG_BT_AUTO_PHY_UPDATE)
+	if (!atomic_test_bit(conn->flags, BT_CONN_AUTO_PHY_COMPLETE) &&
 	    BT_FEAT_LE_PHY_2M(bt_dev.le.features)) {
 		err = bt_le_set_phy(conn, 0U, BT_HCI_LE_PHY_PREFER_2M,
 				    BT_HCI_LE_PHY_PREFER_2M,
 				    BT_HCI_LE_PHY_CODED_ANY);
-		if (!err) {
-			atomic_set_bit(conn->flags, BT_CONN_AUTO_PHY_UPDATE);
-			return;
+
+		if (!atomic_test_bit(conn->flags, BT_CONN_AUTO_PHY_UPDATE)) {
+			/* First attempt. Set max. number of retries */
+			phy_retry_data[conn->handle].remain =
+				PHY_REQ_MAX_RETRY;
 		}
 
-		BT_ERR("Failed to set LE PHY (%d)", err);
+		if (err) {
+			/* Phy update request failed to initiate. Check for
+			 * exhausted retry.
+			 */
+			if (!phy_retry_data[conn->handle].remain) {
+				/* No more retries - set complete and continue
+				 * with next procedure.
+				 */
+				atomic_set_bit(conn->flags,
+					BT_CONN_AUTO_PHY_COMPLETE);
+
+				BT_ERR("Failed to set LE PHY (%d)", err);
+				goto data_len_update;
+			}
+
+			/* Take a conn reference and start delayed retry */
+			bt_conn_ref(conn);
+			phy_retry_data[conn->handle].conn = conn;
+			k_delayed_work_init(&phy_retry_data[conn->handle].work,
+				phy_retry_worker);
+			k_delayed_work_submit(
+				&phy_retry_data[conn->handle].work,
+				K_MSEC(PHY_REQ_RETRY_CI * 1250 *
+					(uint32_t)conn->le.interval / 1000));
+		}
+
+		atomic_set_bit(conn->flags, BT_CONN_AUTO_PHY_UPDATE);
+		phy_retry_data[conn->handle].remain--;
+		return;
 	}
+
+data_len_update:
+#endif /* CONFIG_BT_AUTO_PHY_UPDATE */
 
 	if (IS_ENABLED(CONFIG_BT_AUTO_DATA_LEN_UPDATE) &&
 	    BT_FEAT_LE_DLE(bt_dev.le.features)) {
@@ -2272,6 +2331,26 @@ static void le_phy_update_complete(struct net_buf *buf)
 
 	if (IS_ENABLED(CONFIG_BT_AUTO_PHY_UPDATE) &&
 	    atomic_test_and_clear_bit(conn->flags, BT_CONN_AUTO_PHY_UPDATE)) {
+
+		if (evt->status == BT_HCI_ERR_DIFF_TRANS_COLLISION) {
+			/* Phy update request failed with Different Transaction
+			 * Collision. Keep the conn reference and retry if
+			 * number of retries have not been exhausted.
+			 */
+			if (phy_retry_data[conn->handle].remain) {
+				phy_retry_data[conn->handle].conn = conn;
+				k_delayed_work_init(
+					&phy_retry_data[conn->handle].work,
+					phy_retry_worker);
+				k_delayed_work_submit(
+					&phy_retry_data[conn->handle].work,
+						K_MSEC(PHY_REQ_RETRY_CI * 1250 *
+						(uint32_t)conn->le.interval /
+						1000));
+				return;
+			}
+		}
+
 		atomic_set_bit(conn->flags, BT_CONN_AUTO_PHY_COMPLETE);
 
 		/* Continue with auto-initiated procedures */
