@@ -178,10 +178,6 @@ void main(void)
 
 	log_init();
 
-#if defined(CONFIG_AUTH_DTLS) && defined(CONFIG_AUTH_CHALLENGE_RESPONSE)
-#error Invalid authentication config, either DTLS or Challenge-Response, not both.
-#endif
-
 	uint32_t flags = AUTH_CONN_SERVER;
 
 
