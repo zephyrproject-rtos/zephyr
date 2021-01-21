@@ -40,3 +40,5 @@ _vector_end = .;
 
 KEEP(*(.openocd_dbg))
 KEEP(*(".openocd_dbg.*"))
+
+#include "cortex_m/vector_table_pad.ld"
