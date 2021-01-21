@@ -52,6 +52,7 @@ int z_clock_driver_init(const struct device *device)
 
 	IRQ_CONNECT(ARM_ARCH_TIMER_IRQ, ARM_ARCH_TIMER_PRIO,
 		    arm_arch_timer_compare_isr, NULL, ARM_ARCH_TIMER_FLAGS);
+	arm_arch_timer_init();
 	arm_arch_timer_set_compare(arm_arch_timer_count() + CYC_PER_TICK);
 	arm_arch_timer_enable(true);
 	irq_enable(ARM_ARCH_TIMER_IRQ);
