@@ -9,7 +9,7 @@ target_include_directories(base_module PUBLIC
   ${SOC_DIR}/${ARCH}/${SOC_PATH}/include
   ${SOC_DIR}/${ARCH}/${SOC_PATH}/../common/include
   ${ZEPHYR_BASE}/../modules/hal/xtensa/include
-  ${ZEPHYR_BASE}/build/zephyr/include/generated
+  ${PROJECT_BINARY_DIR}/include/generated
   ${ZEPHYR_BASE}/../modules/audio/sof/zephyr/include
   )
 
@@ -18,7 +18,7 @@ target_include_directories(boot_module PUBLIC
   ${SOC_DIR}/${ARCH}/${SOC_PATH}/include
   ${SOC_DIR}/${ARCH}/${SOC_PATH}/../common/include
   ${ZEPHYR_BASE}/../modules/hal/xtensa/include
-  ${ZEPHYR_BASE}/build/zephyr/include/generated
+  ${PROJECT_BINARY_DIR}/include/generated
   ${ZEPHYR_BASE}/../modules/audio/sof/zephyr/include
   )
 
@@ -40,11 +40,11 @@ set(zephyr_sdk $ENV{ZEPHYR_SDK_INSTALL_DIR})
 
 target_include_directories(bootloader PUBLIC
   ./
-  ${ZEPHYR_BASE}/include
+  ${PROJECT_BINARY_DIR}/include
   ${TOOLCHAIN_INCLUDES}
   ${SOC_DIR}/${ARCH}/${SOC_PATH}/
   ${SOC_DIR}/${ARCH}/${SOC_PATH}/include
-  ${ZEPHYR_BASE}/build/zephyr/include/generated
+  ${PROJECT_BINARY_DIR}/include/generated
   ${ZEPHYR_BASE}/../modules/audio/sof/zephyr/include
   )
 
