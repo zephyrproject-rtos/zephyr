@@ -48,8 +48,8 @@ static struct x86_64_arch_block arch_blk;
 
 void arch_coredump_info_dump(const z_arch_esf_t *esf)
 {
-	struct z_coredump_arch_hdr_t hdr = {
-		.id = Z_COREDUMP_ARCH_HDR_ID,
+	struct coredump_arch_hdr_t hdr = {
+		.id = COREDUMP_ARCH_HDR_ID,
 		.hdr_version = ARCH_HDR_VER,
 		.num_bytes = sizeof(arch_blk),
 	};
@@ -98,8 +98,8 @@ void arch_coredump_info_dump(const z_arch_esf_t *esf)
 #endif
 
 	/* Send for output */
-	z_coredump_buffer_output((uint8_t *)&hdr, sizeof(hdr));
-	z_coredump_buffer_output((uint8_t *)&arch_blk, sizeof(arch_blk));
+	coredump_buffer_output((uint8_t *)&hdr, sizeof(hdr));
+	coredump_buffer_output((uint8_t *)&arch_blk, sizeof(arch_blk));
 }
 
 uint16_t arch_coredump_tgt_code_get(void)

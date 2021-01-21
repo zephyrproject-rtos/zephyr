@@ -9,17 +9,17 @@ import struct
 
 
 # Note: keep sync with C code
-Z_COREDUMP_HDR_ID = b'ZE'
-Z_COREDUMP_HDR_VER = 1
+COREDUMP_HDR_ID = b'ZE'
+COREDUMP_HDR_VER = 1
 LOG_HDR_STRUCT = "<ccHHBBI"
 LOG_HDR_SIZE = struct.calcsize(LOG_HDR_STRUCT)
 
-Z_COREDUMP_ARCH_HDR_ID = b'A'
+COREDUMP_ARCH_HDR_ID = b'A'
 LOG_ARCH_HDR_STRUCT = "<cHH"
 LOG_ARCH_HDR_SIZE = struct.calcsize(LOG_ARCH_HDR_STRUCT)
 
-Z_COREDUMP_MEM_HDR_ID = b'M'
-Z_COREDUMP_MEM_HDR_VER = 1
+COREDUMP_MEM_HDR_ID = b'M'
+COREDUMP_MEM_HDR_VER = 1
 LOG_MEM_HDR_STRUCT = "<cH"
 LOG_MEM_HDR_SIZE = struct.calcsize(LOG_MEM_HDR_STRUCT)
 
@@ -85,8 +85,8 @@ class CoredumpLogFile:
         hdr = self.fd.read(LOG_MEM_HDR_SIZE)
         _, hdr_ver = struct.unpack(LOG_MEM_HDR_STRUCT, hdr)
 
-        if hdr_ver != Z_COREDUMP_MEM_HDR_VER:
-            logger.error(f"Memory block version: {hdr_ver}, expected {Z_COREDUMP_MEM_HDR_VER}!")
+        if hdr_ver != COREDUMP_MEM_HDR_VER:
+            logger.error(f"Memory block version: {hdr_ver}, expected {COREDUMP_MEM_HDR_VER}!")
             return False
 
         # Figure out how to read the start and end addresses
@@ -120,13 +120,13 @@ class CoredumpLogFile:
         hdr = self.fd.read(LOG_HDR_SIZE)
         id1, id2, hdr_ver, tgt_code, ptr_size, flags, reason = struct.unpack(LOG_HDR_STRUCT, hdr)
 
-        if (id1 + id2) != Z_COREDUMP_HDR_ID:
+        if (id1 + id2) != COREDUMP_HDR_ID:
             # ID in header does not match
             logger.error("Log header ID not found...")
             return False
 
-        if hdr_ver != Z_COREDUMP_HDR_VER:
-            logger.error(f"Log version: {hdr_ver}, expected: {Z_COREDUMP_HDR_VER}!")
+        if hdr_ver != COREDUMP_HDR_VER:
+            logger.error(f"Log version: {hdr_ver}, expected: {COREDUMP_HDR_VER}!")
             return False
 
         ptr_size = 2 ** ptr_size
@@ -151,11 +151,11 @@ class CoredumpLogFile:
                 break
 
             self.fd.seek(-1, 1) # go back 1 byte
-            if section_id == Z_COREDUMP_ARCH_HDR_ID:
+            if section_id == COREDUMP_ARCH_HDR_ID:
                 if not self.parse_arch_section():
                     logger.error("Cannot parse architecture section")
                     return False
-            elif section_id == Z_COREDUMP_MEM_HDR_ID:
+            elif section_id == COREDUMP_MEM_HDR_ID:
                 if not self.parse_memory_section():
                     logger.error("Cannot parse memory section")
                     return False

@@ -64,15 +64,15 @@ enum coredump_cmd_id {
 #include <arch/cpu.h>
 #include <sys/byteorder.h>
 
-#define Z_COREDUMP_HDR_VER		1
+#define COREDUMP_HDR_VER		1
 
-#define	Z_COREDUMP_ARCH_HDR_ID		'A'
+#define	COREDUMP_ARCH_HDR_ID		'A'
 
-#define	Z_COREDUMP_MEM_HDR_ID		'M'
-#define Z_COREDUMP_MEM_HDR_VER		1
+#define	COREDUMP_MEM_HDR_ID		'M'
+#define COREDUMP_MEM_HDR_VER		1
 
 /* Target code */
-enum z_coredump_tgt_code {
+enum coredump_tgt_code {
 	COREDUMP_TGT_UNKNOWN = 0,
 	COREDUMP_TGT_X86,
 	COREDUMP_TGT_X86_64,
@@ -80,7 +80,7 @@ enum z_coredump_tgt_code {
 };
 
 /* Coredump header */
-struct z_coredump_hdr_t {
+struct coredump_hdr_t {
 	/* 'Z', 'E' */
 	char		id[2];
 
@@ -100,8 +100,8 @@ struct z_coredump_hdr_t {
 } __packed;
 
 /* Architecture-specific block header */
-struct z_coredump_arch_hdr_t {
-	/* Z_COREDUMP_ARCH_HDR_ID */
+struct coredump_arch_hdr_t {
+	/* COREDUMP_ARCH_HDR_ID */
 	char		id;
 
 	/* Header version */
@@ -112,8 +112,8 @@ struct z_coredump_arch_hdr_t {
 } __packed;
 
 /* Memory block header */
-struct z_coredump_mem_hdr_t {
-	/* Z_COREDUMP_MEM_HDR_ID */
+struct coredump_mem_hdr_t {
+	/* COREDUMP_MEM_HDR_ID */
 	char		id;
 
 	/* Header version */
@@ -126,26 +126,26 @@ struct z_coredump_mem_hdr_t {
 	uintptr_t	end;
 } __packed;
 
-void z_coredump(unsigned int reason, const z_arch_esf_t *esf,
-		struct k_thread *thread);
-void z_coredump_memory_dump(uintptr_t start_addr, uintptr_t end_addr);
-void z_coredump_buffer_output(uint8_t *buf, size_t buflen);
+void coredump(unsigned int reason, const z_arch_esf_t *esf,
+	      struct k_thread *thread);
+void coredump_memory_dump(uintptr_t start_addr, uintptr_t end_addr);
+void coredump_buffer_output(uint8_t *buf, size_t buflen);
 
 int coredump_query(enum coredump_query_id query_id, void *arg);
 int coredump_cmd(enum coredump_cmd_id cmd_id, void *arg);
 
 #else
 
-void z_coredump(unsigned int reason, const z_arch_esf_t *esf,
-		struct k_thread *thread)
+void coredump(unsigned int reason, const z_arch_esf_t *esf,
+	      struct k_thread *thread)
 {
 }
 
-void z_coredump_memory_dump(uintptr_t start_addr, uintptr_t end_addr)
+void coredump_memory_dump(uintptr_t start_addr, uintptr_t end_addr)
 {
 }
 
-void z_coredump_buffer_output(uint8_t *buf, size_t buflen)
+void coredump_buffer_output(uint8_t *buf, size_t buflen)
 {
 }
 
@@ -168,7 +168,7 @@ int coredump_cmd(enum coredump_cmd_id query_id, void *arg)
  */
 
 /**
- * @fn void z_coredump(unsigned int reason, const z_arch_esf_t *esf, struct k_thread *thread);
+ * @fn void coredump(unsigned int reason, const z_arch_esf_t *esf, struct k_thread *thread);
  * @brief Perform coredump.
  *
  * Normally, this is called inside z_fatal_error() to generate coredump
@@ -181,15 +181,15 @@ int coredump_cmd(enum coredump_cmd_id query_id, void *arg)
  */
 
 /**
- * @fn void z_coredump_memory_dump(uintptr_t start_addr, uintptr_t end_addr);
+ * @fn void coredump_memory_dump(uintptr_t start_addr, uintptr_t end_addr);
  * @brief Dump memory region
  *
  * @param start_addr Start address of memory region to be dumped
- * @param emd_addr End address of memory region to be dumped
+ * @param end_addr End address of memory region to be dumped
  */
 
 /**
- * @fn int z_coredump_buffer_output(uint8_t *buf, size_t buflen);
+ * @fn int coredump_buffer_output(uint8_t *buf, size_t buflen);
  * @brief Output the buffer via coredump
  *
  * This outputs the buffer of byte array to the coredump backend.
