@@ -241,7 +241,6 @@ extern "C" {
 #define LOG_INST_HEXDUMP_DBG(_log_inst, _data, _length, _str)	\
 	Z_LOG_HEXDUMP_INSTANCE(LOG_LEVEL_DBG, _log_inst, _data, _length, _str)
 
-#ifndef CONFIG_LOG_MINIMAL
 /**
  * @brief Writes an formatted string to the log.
  *
@@ -255,6 +254,7 @@ extern "C" {
  */
 void log_printk(const char *fmt, va_list ap);
 
+#ifndef CONFIG_LOG_MINIMAL
 /** @brief Copy transient string to a buffer from internal, logger pool.
  *
  * Function should be used when transient string is intended to be logged.
@@ -274,10 +274,6 @@ void log_printk(const char *fmt, va_list ap);
  */
 char *log_strdup(const char *str);
 #else
-static inline void log_printk(const char *fmt, va_list ap)
-{
-	vprintk(fmt, ap);
-}
 
 static inline char *log_strdup(const char *str)
 {
