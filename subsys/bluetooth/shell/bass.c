@@ -17,8 +17,7 @@
 #include <bluetooth/bluetooth.h>
 #include "../host/audio/bass.h"
 
-static inline int cmd_bass_synced(const struct shell *shell, size_t argc,
-				  char **argv)
+static int cmd_bass_synced(const struct shell *shell, size_t argc, char **argv)
 {
 	int result;
 	long src_id;
@@ -54,7 +53,7 @@ static inline int cmd_bass_synced(const struct shell *shell, size_t argc,
 	return result;
 }
 
-static inline int cmd_bass(const struct shell *shell, size_t argc, char **argv)
+static int cmd_bass(const struct shell *shell, size_t argc, char **argv)
 {
 	if (argc > 1) {
 		shell_error(shell, "%s unknown parameter: %s",

@@ -18,8 +18,8 @@
 #include "../host/audio/bass.h"
 #include "bt.h"
 
-static inline int cmd_bass_synced(const struct shell *shell, size_t argc,
-				  char **argv)
+
+static int cmd_bass_synced(const struct shell *shell, size_t argc, char **argv)
 {
 	int result;
 	long src_id;
@@ -55,7 +55,7 @@ static inline int cmd_bass_synced(const struct shell *shell, size_t argc,
 	return result;
 }
 
-static inline int cmd_bass(const struct shell *shell, size_t argc, char **argv)
+static int cmd_bass(const struct shell *shell, size_t argc, char **argv)
 {
 	if (argc > 1) {
 		shell_error(shell, "%s unknown parameter: %s",
@@ -67,8 +67,8 @@ static inline int cmd_bass(const struct shell *shell, size_t argc, char **argv)
 	return -ENOEXEC;
 }
 
-static inline int cmd_bass_client_discover(const struct shell *shell,
-					   size_t argc, char **argv)
+static int cmd_bass_client_discover(const struct shell *shell, size_t argc,
+				    char **argv)
 {
 	int result;
 
@@ -79,8 +79,8 @@ static inline int cmd_bass_client_discover(const struct shell *shell,
 	return result;
 }
 
-static inline int cmd_bass_client_scan_start(const struct shell *shell,
-					     size_t argc, char **argv)
+static int cmd_bass_client_scan_start(const struct shell *shell, size_t argc,
+				      char **argv)
 {
 	int result;
 	int force = false;
@@ -101,8 +101,8 @@ static inline int cmd_bass_client_scan_start(const struct shell *shell,
 	return result;
 }
 
-static inline int cmd_bass_client_scan_stop(const struct shell *shell,
-					    size_t argc, char **argv)
+static int cmd_bass_client_scan_stop(const struct shell *shell, size_t argc,
+				     char **argv)
 {
 	int result;
 
@@ -113,8 +113,8 @@ static inline int cmd_bass_client_scan_stop(const struct shell *shell,
 	return result;
 }
 
-static inline int cmd_bass_client_add_src(const struct shell *shell,
-					  size_t argc, char **argv)
+static int cmd_bass_client_add_src(const struct shell *shell, size_t argc,
+				   char **argv)
 {
 	int result;
 	long adv_sid;
@@ -170,8 +170,8 @@ static inline int cmd_bass_client_add_src(const struct shell *shell,
 	return result;
 }
 
-static inline int cmd_bass_client_mod_src(const struct shell *shell,
-					  size_t argc, char **argv)
+static int cmd_bass_client_mod_src(const struct shell *shell, size_t argc,
+				   char **argv)
 {
 	int result;
 	long src_id;
@@ -219,8 +219,8 @@ static inline int cmd_bass_client_mod_src(const struct shell *shell,
 	return result;
 }
 
-static inline int cmd_bass_client_broadcast_code(const struct shell *shell,
-						 size_t argc, char **argv)
+static int cmd_bass_client_broadcast_code(const struct shell *shell,
+					  size_t argc, char **argv)
 {
 	int result;
 	int src_id;
@@ -244,8 +244,8 @@ static inline int cmd_bass_client_broadcast_code(const struct shell *shell,
 	return result;
 }
 
-static inline int cmd_bass_client_rem_src(const struct shell *shell,
-					  size_t argc, char **argv)
+static int cmd_bass_client_rem_src(const struct shell *shell, size_t argc,
+				   char **argv)
 {
 	int result;
 	int src_id;
@@ -265,8 +265,8 @@ static inline int cmd_bass_client_rem_src(const struct shell *shell,
 
 
 
-static inline int cmd_bass_client_read_recv_state(const struct shell *shell,
-						  size_t argc, char **argv)
+static int cmd_bass_client_read_recv_state(const struct shell *shell,
+					   size_t argc, char **argv)
 {
 	int result;
 	int idx;
@@ -285,8 +285,7 @@ static inline int cmd_bass_client_read_recv_state(const struct shell *shell,
 }
 
 
-static inline int cmd_bass_client(const struct shell *shell, size_t argc,
-				  char **argv)
+static int cmd_bass_client(const struct shell *shell, size_t argc, char **argv)
 {
 	if (argc > 1) {
 		shell_error(shell, "%s unknown parameter: %s",
