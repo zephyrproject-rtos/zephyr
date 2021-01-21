@@ -24,6 +24,9 @@
 static K_THREAD_STACK_ARRAY_DEFINE(stacks, N_THREADS, STACK_SIZE);
 static struct k_thread threads[N_THREADS];
 
+K_THREAD_STACK_DEFINE(eno_stack, STACK_SIZE);
+struct k_thread eno_thread;
+
 static int errno_values[N_THREADS + 1] = {
 	0xbabef00d,
 	0xdeadbeef,
@@ -98,4 +101,57 @@ void test_thread_context(void)
 	if (errno != errno_values[N_THREADS]) {
 		rv = TC_FAIL;
 	}
+
+	/* Make sure all the test thread end. */
+	for (int ii = 0; ii < N_THREADS; ii++) {
+		k_thread_join(&threads[ii], K_FOREVER);
+	}
+}
+
+
+#define ERROR_ANY 0xfc
+
+void thread_entry_user(void *p1, void *p2, void *p3)
+{
+#ifdef CONFIG_ARCH_POSIX
+	/* The errno in native posix will be handled by native
+	 * operation system, so we skip it.
+	 */
+	ztest_test_skip();
+#else
+	int got_errno;
+
+	/* assign the error number to C standard errno */
+	errno = ERROR_ANY;
+
+	/* got errno zephyr stored */
+	got_errno = *(z_errno());
+
+	zassert_equal(errno, got_errno, "errno is not corresponding.");
+#endif
+}
+
+/**
+ * @brief Verify errno works well
+ *
+ * @details Check whether a C standard errno can be stored successfully,
+ *  no matter it is using tls or not.
+ *
+ * @ingroup kernel_threadcontext_tests
+ */
+void test_errno(void)
+{
+	k_tid_t tid;
+	uint32_t perm = K_INHERIT_PERMS;
+
+	if (_is_user_context()) {
+		perm = perm | K_USER;
+	}
+
+	tid = k_thread_create(&eno_thread, eno_stack, STACK_SIZE,
+				thread_entry_user, NULL, NULL, NULL,
+				K_PRIO_PREEMPT(1), perm,
+				K_NO_WAIT);
+
+	k_thread_join(tid, K_FOREVER);
 }
