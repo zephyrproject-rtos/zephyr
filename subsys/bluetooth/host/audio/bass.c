@@ -445,10 +445,18 @@ static ssize_t write_control_point(struct bt_conn *conn,
 	switch (cp->opcode) {
 	case BASS_OP_SCAN_STOP:
 		BT_DBG("Client stopped scanning");
+		if (len != sizeof(cp->scan_stop)) {
+			BT_DBG("Invalid length %u", len);
+			return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+		}
 		bass_client->scanning = false;
 		break;
 	case BASS_OP_SCAN_START:
 		BT_DBG("Client started scanning");
+		if (len != sizeof(cp->scan_start)) {
+			BT_DBG("Invalid length %u", len);
+			return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+		}
 		bass_client->scanning = true;
 		break;
 	case BASS_OP_ADD_SRC:
