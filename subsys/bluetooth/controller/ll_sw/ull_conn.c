@@ -3064,9 +3064,6 @@ static inline void event_conn_param_req(struct ll_conn *conn,
 		return;
 	}
 
-	/* move to wait for conn_update/rsp/rej */
-	conn->llcp_conn_param.state = LLCP_CPR_STATE_RSP_WAIT;
-
 	/* place the conn param req packet as next in tx queue */
 	pdu_ctrl_tx = (void *)tx->pdu;
 	pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
@@ -3079,15 +3076,12 @@ static inline void event_conn_param_req(struct ll_conn *conn,
 	p->latency = sys_cpu_to_le16(conn->llcp_conn_param.latency);
 	p->timeout = sys_cpu_to_le16(conn->llcp_conn_param.timeout);
 	p->preferred_periodicity = 0U;
-	p->reference_conn_event_count = sys_cpu_to_le16(event_counter);
 	p->offset0 = sys_cpu_to_le16(0x0000);
 	p->offset1 = sys_cpu_to_le16(0xffff);
 	p->offset2 = sys_cpu_to_le16(0xffff);
 	p->offset3 = sys_cpu_to_le16(0xffff);
 	p->offset4 = sys_cpu_to_le16(0xffff);
 	p->offset5 = sys_cpu_to_le16(0xffff);
-
-	ctrl_tx_enqueue(conn, tx);
 
 	/* set CUI/CPR mutex */
 	conn_upd_curr = conn;
@@ -3098,6 +3092,9 @@ static inline void event_conn_param_req(struct ll_conn *conn,
 	conn->procedure_expire = conn->procedure_reload;
 
 #if defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
+	/* move to wait for offset calculations */
+	conn->llcp_conn_param.state = LLCP_CPR_STATE_OFFS_REQ;
+
 	{
 		static memq_link_t s_link;
 		static struct mayfly s_mfy_sched_offset = {0, 0, &s_link, NULL,
@@ -3129,6 +3126,13 @@ static inline void event_conn_param_req(struct ll_conn *conn,
 	}
 #else /* !CONFIG_BT_CTLR_SCHED_ADVANCED */
 	ARG_UNUSED(ticks_at_expire);
+
+	/* set reference counter value */
+	p->reference_conn_event_count = sys_cpu_to_le16(event_counter);
+	/* move to wait for conn_update_rsp/rej */
+	conn->llcp_conn_param.state = LLCP_CPR_STATE_RSP_WAIT;
+	/* enqueue control PDU */
+	ctrl_tx_enqueue(conn, tx);
 #endif /* !CONFIG_BT_CTLR_SCHED_ADVANCED */
 }
 
@@ -3313,6 +3317,32 @@ static inline void event_conn_param_prep(struct ll_conn *conn,
 	case LLCP_CPR_STATE_UPD:
 		/* Do nothing */
 		break;
+
+#if defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
+	case LLCP_CPR_STATE_OFFS_REQ:
+		/* Do nothing */
+		break;
+
+	case LLCP_CPR_STATE_OFFS_RDY:
+	{
+		struct pdu_data *pdu_ctrl_tx;
+		struct node_tx *tx;
+
+		/* set reference counter value */
+		pdu_ctrl_tx =
+			CONTAINER_OF(conn->llcp_conn_param.pdu_win_offset0,
+				     struct pdu_data,
+				     llctrl.conn_param_req.offset0);
+		pdu_ctrl_tx->llctrl.conn_param_req.reference_conn_event_count =
+			sys_cpu_to_le16(event_counter);
+		/* move to wait for conn_update_rsp/rej */
+		conn->llcp_conn_param.state = LLCP_CPR_STATE_RSP_WAIT;
+		/* enqueue control PDU */
+		tx = CONTAINER_OF(pdu_ctrl_tx, struct node_tx, pdu);
+		ctrl_tx_enqueue(conn, tx);
+	}
+	break;
+#endif /* CONFIG_BT_CTLR_SCHED_ADVANCED */
 
 	default:
 		LL_ASSERT(0);

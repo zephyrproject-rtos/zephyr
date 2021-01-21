@@ -210,6 +210,9 @@ void ull_sched_mfy_free_win_offset_calc(void *param)
 	win_offset_calc(conn, 0, ticks_to_offset_next,
 			conn->llcp_conn_param.interval_max, &offset_max,
 			(void *)conn->llcp_conn_param.pdu_win_offset0);
+
+	/* move to offset calculated state */
+	conn->llcp_conn_param.state = LLCP_CPR_STATE_OFFS_RDY;
 }
 
 void ull_sched_mfy_win_offset_select(void *param)
