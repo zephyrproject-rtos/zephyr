@@ -345,7 +345,7 @@ static int fuse_fs_access_truncate(const char *path, off_t size)
 	int err;
 	static struct fs_file_t file;
 
-	err = fs_open(&file, path);
+	err = fs_open(&file, path, FS_O_CREATE | FS_O_WRITE);
 	if (err != 0) {
 		return err;
 	}
