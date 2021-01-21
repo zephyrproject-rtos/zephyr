@@ -8,6 +8,7 @@ User and Developer Guides
 
    getting-help.rst
    beyond-GSG.rst
+   arch/index.rst
    bluetooth/index.rst
    build/index
    coding_guidelines/index
