@@ -109,7 +109,7 @@ extern "C" {
 #define LOG_CONST_ID_GET(_addr) \
 	Z_LOG_EVAL(\
 	  CONFIG_LOG,\
-	  (__log_level ? \
+	  (log_level ? \
 	  log_const_source_id((const struct log_source_const_data *)_addr) : \
 	  0),\
 	  (0)\
@@ -119,15 +119,15 @@ extern "C" {
  * @def LOG_CURRENT_MODULE_ID
  * @brief Macro for getting ID of current module.
  */
-#define LOG_CURRENT_MODULE_ID() (__log_level != 0 ? \
-	log_const_source_id(__log_current_const_data) : 0U)
+#define LOG_CURRENT_MODULE_ID() (log_level != 0 ? \
+	log_const_source_id(log_current_const_data) : 0U)
 
 /**
  * @def LOG_CURRENT_DYNAMIC_DATA_ADDR
  * @brief Macro for getting address of dynamic structure of current module.
  */
-#define LOG_CURRENT_DYNAMIC_DATA_ADDR()	(__log_level ? \
-	__log_current_dynamic_data : (struct log_source_dynamic_data *)0U)
+#define LOG_CURRENT_DYNAMIC_DATA_ADDR()	(log_level ? \
+	log_current_dynamic_data : (struct log_source_dynamic_data *)0U)
 
 /** @brief Macro for getting ID of the element of the section.
  *
@@ -136,7 +136,7 @@ extern "C" {
 #define LOG_DYNAMIC_ID_GET(_addr) \
 	Z_LOG_EVAL(\
 	  CONFIG_LOG,\
-	  (__log_level ? \
+	  (log_level ? \
 	  log_dynamic_source_id((struct log_source_dynamic_data *)_addr) : 0),\
 	  (0)\
 	)
@@ -224,7 +224,7 @@ extern "C" {
 	(Z_LOG_LEVEL_CHECK(_level, CONFIG_LOG_OVERRIDE_LEVEL, LOG_LEVEL_NONE) \
 	||								    \
 	((IS_ENABLED(CONFIG_LOG_OVERRIDE_LEVEL) == false) &&		    \
-	(_level <= __log_level) &&					    \
+	(_level <= log_level) &&					    \
 	(_level <= CONFIG_LOG_MAX_LEVEL)				    \
 	)								    \
 	))

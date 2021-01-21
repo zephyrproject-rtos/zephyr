@@ -403,19 +403,19 @@ static inline char *log_strdup(const char *str)
 			LOG_ITEM_DYNAMIC_DATA(GET_ARG_N(1, __VA_ARGS__));     \
 									      \
 	static const struct log_source_const_data *			      \
-		__log_current_const_data __unused =			      \
+		log_current_const_data __unused =			      \
 			_LOG_LEVEL_RESOLVE(__VA_ARGS__) ?		      \
 			&LOG_ITEM_CONST_DATA(GET_ARG_N(1, __VA_ARGS__)) :     \
 			NULL;						      \
 									      \
 	static struct log_source_dynamic_data *				      \
-		__log_current_dynamic_data __unused =			      \
+		log_current_dynamic_data __unused =			      \
 			(_LOG_LEVEL_RESOLVE(__VA_ARGS__) &&		      \
 			IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) ?	      \
 			&LOG_ITEM_DYNAMIC_DATA(GET_ARG_N(1, __VA_ARGS__)) :   \
 			NULL;						      \
 									      \
-	static const uint32_t __log_level __unused =			      \
+	static const uint32_t log_level __unused =			      \
 					_LOG_LEVEL_RESOLVE(__VA_ARGS__)
 
 /**
@@ -425,7 +425,7 @@ static inline char *log_strdup(const char *str)
  * @param level Level used in file or in function.
  *
  */
-#define LOG_LEVEL_SET(level) static const uint32_t __log_level __unused = \
+#define LOG_LEVEL_SET(level) static const uint32_t log_level __unused = \
 				Z_LOG_RESOLVED_LEVEL(level, 0)
 
 /**
