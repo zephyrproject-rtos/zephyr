@@ -45,18 +45,24 @@
 
 /* Top of Upper Usable DRAM, offset 0xa8, 64 bit */
 #define TOUUD_REG		0x2a
+#define	TOUUD_MASK		GENMASK(38, 20)
 
 /* Top of Low Usable DRAM, offset 0xbc, 32 bit */
 #define TOLUD_REG		0x2f
+#define TOLUD_MASK		GENMASK(31, 20)
 
 /* Total amount of physical memory, offset 0xa0, 64 bit */
 #define TOM_REG			0x28
+#define TOM_MASK		GENMASK(38, 20)
 
 /* Base address for the Host Memory Mapped Configuration space,
  * offset 0x48, 64 bit
  */
 #define MCHBAR_REG		0x12
+#define MCHBAR_MASK		GENMASK(38, 16)
 #define MCHBAR_ENABLE		BIT(0)
+/* Size of Host Memory Mapped Configuration space (64K) */
+#define MCH_SIZE		0x10000
 
 /* Capability register, offset 0xec, 32 bit */
 #define CAPID0_C_REG		0x3b
