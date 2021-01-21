@@ -139,6 +139,12 @@ commands are documented in the pages for those commands.
      - String, default ``west.yml``. Relative path from the manifest repository
        root directory to the manifest file used by ``west init`` and other
        commands which parse the manifest.
+   * - ``manifest.group-filter``
+     - String, default empty. A comma-separated list of project groups to
+       enable and disable within the workspace. Prefix enabled groups with
+       ``+`` and disabled groups with ``-``. For example, the value
+       ``"+foo,-bar"`` enables group ``foo`` and disables ``bar``. See
+       :ref:`west-manifest-groups`.
    * - ``manifest.path``
      - String, relative path from the :term:`west workspace` root directory
        to the manifest repository used by ``west update`` and other commands

@@ -74,8 +74,8 @@ Notice the following important details:
 Manifest Files
 **************
 
-A west manifest is a YAML file named :file:`west.yml`. Manifests have a
-top-level ``manifest`` section with some subsections, like this:
+West manifests are YAML files. Manifests have a top-level ``manifest`` section
+with some subsections, like this:
 
 .. code-block:: yaml
 
@@ -86,6 +86,8 @@ top-level ``manifest`` section with some subsections, like this:
        # short names for project URLs (optional)
      projects:
        # a list of projects managed by west (mandatory)
+     group-filter:
+       # a list of project groups to enable or disable (optional)
      self:
        # configuration related to the manifest repository itself,
        # i.e. the repository containing west.yml (optional)
@@ -95,10 +97,10 @@ In YAML terms, the manifest file contains a mapping, with a ``manifest``
 key. Any other keys and their contents are ignored (west v0.5 also required a
 ``west`` key, but this is ignored starting with v0.6).
 
-There are four subsections: ``defaults``, ``remotes``, ``projects``, and
-``self``. In YAML terms, the value of the ``manifest`` key is also a mapping,
-with these "subsections" as keys. Only ``projects`` is mandatory: this is the
-list of repositories managed by west and their metadata.
+The manifest contains subsections, like ``defaults``, ``remotes``,
+``projects``, and ``self``. In YAML terms, the value of the ``manifest`` key is
+also a mapping, with these "subsections" as keys. Only ``projects`` is
+mandatory: this is the list of repositories managed by west and their metadata.
 
 We'll cover the ``remotes`` and ``projects`` subsections in detail first.
 
@@ -219,7 +221,9 @@ The list of project keys and their usage follows. Sometimes we'll refer to the
   :ref:`west-extensions` for details.
 - ``import``: Optional. If ``true``, imports projects from manifest files in
   the given repository into the current manifest. See
-  :ref:`west-manifest-import` for more details.
+  :ref:`west-manifest-import` for details.
+- ``groups``: Optional, a list of groups the project belongs to. See
+  :ref:`west-manifest-groups` for details.
 
 The ``defaults`` subsection can provide default values for project
 attributes. In particular, the default remote name and revision can be
@@ -1178,6 +1182,385 @@ processed in this order:
   lexicographic order -- i.e., sorted by file name.
 - If the value is a sequence, its elements are recursively imported in the
   order they appear.
+
+.. _west-manifest-groups:
+
+Project Groups and Active Projects
+**********************************
+
+You can use the ``groups`` and ``group-filter`` keys briefly described
+:ref:`above <west-manifest-files>` to place projects into groups, and filter
+which groups are enabled. These keys appear in the manifest like this:
+
+.. code-block:: yaml
+
+   manifest:
+     projects:
+       - name: some-project
+         groups: ...
+     group-filter: ...
+
+You can enable or disable project groups using ``group-filter``. Projects whose
+groups are all disabled are *inactive*; west essentially ignores inactive
+projects unless explicitly requested not to.
+
+The next section introduces project groups; the following sections describe
+:ref:`west-enabled-disabled-groups` and :ref:`west-active-inactive-projects`.
+Finally, there are :ref:`west-project-group-examples`.
+
+Project Groups
+==============
+
+Inside ``manifest: projects:``, you can add a project to one or more groups.
+The ``groups`` key is a list of group names. Group names are strings.
+
+For example, in this manifest fragment:
+
+.. code-block:: yaml
+
+  manifest:
+    projects:
+      - name: project-1
+        groups:
+          - groupA
+      - name: project-2
+        groups:
+          - groupB
+          - groupC
+      - name: project-3
+
+The projects are in these groups:
+
+- ``project-1``: one group, named ``groupA``
+- ``project-2``: two groups, named ``groupB`` and ``groupC``
+- ``project-3``: no groups
+
+Project group names must not contain commas (,), colons (:), or whitespace.
+
+Group names must not begin with a dash (-) or the plus sign (+), but they may
+contain these characters elsewhere in their names. For example, ``foo-bar`` and
+``foo+bar`` are valid groups, but ``-foobar`` and ``+foobar`` are not.
+
+Group names are otherwise arbitrary strings. Group names are case sensitive.
+
+As a restriction, no project may use both ``import:`` and ``groups:``. (This
+avoids some edge cases whose semantics are difficult to specify.)
+
+.. _west-enabled-disabled-groups:
+
+Enabled and Disabled Project Groups
+===================================
+
+You can enable or disable project groups in both your manifest file and
+:ref:`west-config`.
+
+All groups are enabled by default.
+
+Within the manifest file, the top level ``manifest: group-filter:`` value can
+be used to disable project groups. To disable a group, prefix its name with a
+dash (-). For example, in this manifest fragment:
+
+.. code-block:: yaml
+
+   manifest:
+     group-filter: [-groupA,-groupB]
+
+The groups named ``groupA`` and ``groupB`` are disabled by this
+``group-filter`` value.
+
+The ``group-filter`` list is an ordinary YAML list, so you could have also
+written this fragment like this:
+
+.. code-block:: yaml
+
+   manifest:
+     group-filter:
+       - -groupA
+       - -groupB
+
+However, this syntax is harder to read and therefore discouraged.
+
+Although it's not an error to enable groups within ``manifest: group-filter:``,
+like this:
+
+.. code-block:: yaml
+
+   manifest:
+     ...
+     group-filter: [+groupA]
+
+doing so is redundant since groups are enabled by default.
+
+Only the **top level manifest file's** ``manifest: group-filter:`` value has
+any effect. The ``manifest: group-filter:`` values in any
+:ref:`imported manifests <west-manifest-import>` are ignored.
+
+In addition to the manifest file, you can control which groups are enabled and
+disabled using the ``manifest.group-filter`` configuration option. This option
+is a comma-separated list of groups to enable and/or disable.
+
+To enable a group, add its name to the list prefixed with ``+``. To disable a
+group, add its name prefixed with ``-``. For example, setting
+``manifest.group-filter`` to ``+groupA,-groupB`` enables ``groupA``, and
+disables ``groupB``.
+
+The value of the configuration option overrides any data in the manifest file.
+You can think of this as if the ``manifest.group-filter`` configuration option
+is appended to the ``manifest: group-filter:`` list from YAML, with "last entry
+wins" semantics.
+
+.. _west-active-inactive-projects:
+
+Active and Inactive Projects
+============================
+
+All projects are *active* by default. Projects with no groups are always
+active. A project is *inactive* if all of its groups are disabled. This is the
+only way to make a project inactive.
+
+Most west commands that operate on projects will ignore inactive projects by
+default. For example, :ref:`west-update` when run without arguments will not
+update inactive projects. As another example, running ``west list`` without
+arguments will not print information for inactive projects.
+
+.. _west-project-group-examples:
+
+Project Group Examples
+======================
+
+This section contains example situations involving project groups and active
+projects. The examples use both ``manifest: group-filter:`` YAML lists and
+``manifest.group-filter`` configuration lists, to show how they work together.
+
+Note that the ``defaults`` and ``remotes`` data in the following manifests
+isn't relevant except to make the examples complete and self-contained.
+
+Example 1: no disabled groups
+-----------------------------
+
+The entire manifest file is:
+
+.. code-block:: yaml
+
+   manifest:
+     projects:
+       - name: foo
+         groups:
+           - groupA
+       - name: bar
+         groups:
+           - groupA
+           - groupB
+       - name: baz
+
+     defaults:
+       remote: example-remote
+     remotes:
+       - name: example-remote
+         url-base: https://git.example.com
+
+The ``manifest.group-filter`` configuration option is not set (you can ensure
+this by running ``west config -D manifest.group-filter``).
+
+No groups are disabled, because all groups are enabled by default. Therefore,
+all three projects (``foo``, ``bar``, and ``baz``) are active. Note that there
+is no way to make project ``baz`` inactive, since it has no groups.
+
+Example 2: Disabling one group via manifest
+-------------------------------------------
+
+The entire manifest file is:
+
+.. code-block:: yaml
+
+   manifest:
+     projects:
+       - name: foo
+         groups:
+           - groupA
+       - name: bar
+         groups:
+           - groupA
+           - groupB
+
+     group-filter: [-groupA]
+
+     defaults:
+       remote: example-remote
+     remotes:
+       - name: example-remote
+         url-base: https://git.example.com
+
+The ``manifest.group-filter`` configuration option is not set (you can ensure
+this by running ``west config -D manifest.group-filter``).
+
+Since ``groupA`` is disabled, project ``foo`` is inactive. Project ``bar`` is
+active, because ``groupB`` is enabled.
+
+Example 3: Disabling multiple groups via manifest
+-------------------------------------------------
+
+The entire manifest file is:
+
+.. code-block:: yaml
+
+   manifest:
+     projects:
+       - name: foo
+         groups:
+           - groupA
+       - name: bar
+         groups:
+           - groupA
+           - groupB
+
+     group-filter: [-groupA,-groupB]
+
+     defaults:
+       remote: example-remote
+     remotes:
+       - name: example-remote
+         url-base: https://git.example.com
+
+The ``manifest.group-filter`` configuration option is not set (you can ensure
+this by running ``west config -D manifest.group-filter``).
+
+Both ``foo`` and ``bar`` are inactive, because all of their groups are
+disabled.
+
+Example 4: Disabling a group via configuration
+----------------------------------------------
+
+The entire manifest file is:
+
+.. code-block:: yaml
+
+   manifest:
+     projects:
+       - name: foo
+         groups:
+           - groupA
+       - name: bar
+         groups:
+           - groupA
+           - groupB
+
+     defaults:
+       remote: example-remote
+     remotes:
+       - name: example-remote
+         url-base: https://git.example.com
+
+The ``manifest.group-filter`` configuration option is set to ``-groupA`` (you
+can ensure this by running ``west config manifest.group-filter -- -groupA``;
+the extra ``--`` is required so the argument parser does not treat ``-groupA``
+as a command line option ``-g`` with value ``roupA``).
+
+Project ``foo`` is inactive because ``groupA`` has been disabled by the
+``manifest.group-filter`` configuration option. Project ``bar`` is active
+because ``groupB`` is enabled.
+
+Example 5: Overriding a disabled group via configuration
+--------------------------------------------------------
+
+The entire manifest file is:
+
+.. code-block:: yaml
+
+   manifest:
+     projects:
+       - name: foo
+       - name: bar
+         groups:
+           - groupA
+       - name: baz
+         groups:
+           - groupA
+           - groupB
+
+     group-filter: [-groupA]
+
+     defaults:
+       remote: example-remote
+     remotes:
+       - name: example-remote
+         url-base: https://git.example.com
+
+The ``manifest.group-filter`` configuration option is set to ``+groupA`` (you
+can ensure this by running ``west config manifest.group-filter +groupA``).
+
+In this case, ``groupA`` is enabled: the ``manifest.group-filter``
+configuration option has higher precedence than the ``manifest: group-filter:
+[-groupA]`` content in the manifest file.
+
+Therefore, projects ``foo`` and ``bar`` are both active.
+
+Example 6: Overriding multiple disabled groups via configuration
+----------------------------------------------------------------
+
+The entire manifest file is:
+
+.. code-block:: yaml
+
+   manifest:
+     projects:
+       - name: foo
+       - name: bar
+         groups:
+           - groupA
+       - name: baz
+         groups:
+           - groupA
+           - groupB
+
+     group-filter: [-groupA,-groupB]
+
+     defaults:
+       remote: example-remote
+     remotes:
+       - name: example-remote
+         url-base: https://git.example.com
+
+The ``manifest.group-filter`` configuration option is set to
+``+groupA,+groupB`` (you can ensure this by running ``west config
+manifest.group-filter "+groupA,+groupB"``).
+
+In this case, both ``groupA`` and ``groupB`` are enabled, because the
+configuration value overrides the manifest file for both groups.
+
+Therefore, projects ``foo`` and ``bar`` are both active.
+
+Example 7: Disabling multiple groups via configuration
+------------------------------------------------------
+
+The entire manifest file is:
+
+.. code-block:: yaml
+
+   manifest:
+     projects:
+       - name: foo
+       - name: bar
+         groups:
+           - groupA
+       - name: baz
+         groups:
+           - groupA
+           - groupB
+
+     defaults:
+       remote: example-remote
+     remotes:
+       - name: example-remote
+         url-base: https://git.example.com
+
+The ``manifest.group-filter`` configuration option is set to
+``-groupA,-groupB`` (you can ensure this by running ``west config
+manifest.group-filter -- "-groupA,-groupB"``).
+
+In this case, both ``groupA`` and ``groupB`` are disabled.
+
+Therefore, projects ``foo`` and ``bar`` are both inactive.
 
 .. _west-manifest-cmd:
 

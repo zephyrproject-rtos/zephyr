@@ -224,15 +224,20 @@ manifest` file.
 
 .. code-block:: none
 
-   west update [-h] [--stats] [-f {always,smart}] [-k] [-r] [PROJECT ...]
+   west update [-f {always,smart}] [-k] [-r]
+               [--group-filter FILTER] [--stats] [PROJECT ...]
 
 **Which projects are updated:**
 
 By default, this command parses the manifest file, usually
-:file:`west.yml`, and updates each project specified there. To operate on a
-subset of projects only, give ``PROJECT`` argument(s). Each ``PROJECT`` is
-either a project name as given in the manifest file, or a path that points
-to the project within the workspace.
+:file:`west.yml`, and updates each project specified there.
+If your manifest uses :ref:`project groups <west-manifest-groups>`, then
+only the active projects are updated.
+
+To operate on a subset of projects only, give ``PROJECT`` argument(s). Each
+``PROJECT`` is either a project name as given in the manifest file, or a
+path that points to the project within the workspace. If you specify
+projects explicitly, they are updated regardless of whether they are active.
 
 **Project update procedure:**
 
@@ -304,6 +309,24 @@ long as they point to commits that are descendants of the new
    - in all other projects where no rebase or merge is needed it keeps
      your branches in place.
 
+**One-time project group manipulation:**
+
+The ``--group-filter`` option can be used to change which project groups
+are enabled or disabled for the duration of a single ``west update`` command.
+See :ref:`west-manifest-groups` for details on the project group feature.
+
+The ``west update`` command behaves as if the ``--group-filter`` option's
+value were appended to the ``manifest.group-filter``
+:ref:`configuration option <west-config-index>`.
+
+For example, running ``west update --group-filter=+foo,-bar`` would behave
+the same way as if you had temporarily appended the string ``"+foo,-bar"``
+to the value of ``manifest.group-filter``, run ``west update``, then restored
+``manifest.group-filter`` to its original value.
+
+Note that using the syntax ``--group-filter=VALUE`` instead of
+``--group-filter VALUE`` avoids issues parsing command line options
+if you just want to disable a single group, e.g. ``--group-filter=-bar``.
 
 .. _west-multi-repo-misc:
 
