@@ -42,7 +42,9 @@ struct bass_client_instance_t {
 	struct bt_gatt_subscribe_params recv_state_sub_params
 		[CONFIG_BT_BASS_CLIENT_RECV_STATE_COUNT];
 	struct bt_gatt_read_params read_params;
+	struct bt_gatt_write_params write_params;
 	struct bt_gatt_discover_params disc_params;
+	uint8_t write_buf[sizeof(union bass_cp_t)];
 };
 
 static struct bt_bass_client_cb_t *bass_cbs;
@@ -346,11 +348,80 @@ static uint8_t primary_char_discover_func(struct bt_conn *conn,
 	return BT_GATT_ITER_STOP;
 }
 
+static void bass_client_write_cp_cb(struct bt_conn *conn, uint8_t err,
+				    struct bt_gatt_write_params *params)
+{
+	uint8_t opcode = bass_client.write_buf[0];
+
+	bass_client.busy = false;
+
+	if (!bass_cbs) {
+		return;
+	}
+
+	switch (opcode) {
+	case BASS_OP_SCAN_STOP:
+		if (bass_cbs->scan_stop) {
+			bass_cbs->scan_stop(conn, err);
+		}
+		break;
+	case BASS_OP_SCAN_START:
+		if (bass_cbs->scan_start) {
+			bass_cbs->scan_start(conn, err);
+		}
+		break;
+	case BASS_OP_ADD_SRC:
+		if (bass_cbs->add_src) {
+			bass_cbs->add_src(conn, err);
+		}
+		break;
+	case BASS_OP_MOD_SRC:
+		if (bass_cbs->mod_src) {
+			bass_cbs->mod_src(conn, err);
+		}
+		break;
+	case BASS_OP_BROADCAST_CODE:
+		if (bass_cbs->broadcast_code) {
+			bass_cbs->broadcast_code(conn, err);
+		}
+		break;
+	case BASS_OP_REM_SRC:
+		if (bass_cbs->rem_src) {
+			bass_cbs->rem_src(conn, err);
+		}
+		break;
+	default:
+		BT_DBG("Unknown opcode 0x%02x", opcode);
+		break;
+	}
+}
+
 static int bt_bass_client_common_cp(struct bt_conn *conn, union bass_cp_t *cp,
 				    uint8_t data_len)
 {
-	return bt_gatt_write_without_response(conn, bass_client.cp_handle,
-					      cp, data_len, false);
+	int err;
+
+	if (!conn) {
+		return -ENOTCONN;
+	} else if (!bass_client.cp_handle) {
+		BT_DBG("Handle not set");
+		return -EINVAL;
+	} else if (bass_client.busy) {
+		return -EBUSY;
+	}
+
+	memcpy(bass_client.write_buf, cp, data_len);
+	bass_client.write_params.offset = 0;
+	bass_client.write_params.data = bass_client.write_buf;
+	bass_client.write_params.length = data_len;
+	bass_client.write_params.handle = bass_client.cp_handle;
+	bass_client.write_params.func = bass_client_write_cp_cb;
+
+	err = bt_gatt_write(conn, &bass_client.write_params);
+	if (!err) {
+		bass_client.busy = true;
+	}
+	return err;
 }
 
 
