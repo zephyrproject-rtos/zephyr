@@ -834,7 +834,6 @@ int auth_init_dtls_method(struct authenticate_conn *auth_conn, struct auth_optio
 
 	/* Save MBED tls context as internal object. The intent of using a void
 	 * 'internal_obj' is to provide a var in the struct authentication_conn to
-	 * store different authentication methods.  Instead of Mbed, it maybe a
 	 * Challenge-Response instance.
 	 */
 	auth_conn->internal_obj = mbed_ctx;
@@ -892,6 +891,7 @@ int auth_init_dtls_method(struct authenticate_conn *auth_conn, struct auth_optio
 
 	/* set CA certs into context */
 	mbedtls_ssl_conf_ca_chain(&mbed_ctx->conf, &mbed_ctx->cacert, NULL);
+
 
 	/* Get and parse the device cert */
 	if ((certs->device_cert_pem.cert == NULL) || (certs->device_cert_pem.cert_size == 0)) {
