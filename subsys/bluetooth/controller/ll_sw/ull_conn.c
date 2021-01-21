@@ -2197,12 +2197,6 @@ static inline void event_conn_upd_init(struct ll_conn *conn,
 				       struct mayfly *mfy_sched_offset,
 				       void (*fp_mfy_select_or_use)(void *))
 {
-	/* move to in progress */
-	conn->llcp_cu.state = LLCP_CUI_STATE_INPROG;
-
-	/* set instant */
-	conn->llcp.conn_upd.instant = event_counter + conn->lll.latency + 6;
-
 	/* place the conn update req packet as next in tx queue */
 	pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
 	pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, conn_update_ind) +
@@ -2218,10 +2212,11 @@ static inline void event_conn_upd_init(struct ll_conn *conn,
 		sys_cpu_to_le16(conn->llcp_cu.latency);
 	pdu_ctrl_tx->llctrl.conn_update_ind.timeout =
 		sys_cpu_to_le16(conn->llcp_cu.timeout);
-	pdu_ctrl_tx->llctrl.conn_update_ind.instant =
-		sys_cpu_to_le16(conn->llcp.conn_upd.instant);
 
 #if defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
+	/* move to offset calculation requested state */
+	conn->llcp_cu.state = LLCP_CUI_STATE_OFFS_REQ;
+
 	{
 		uint32_t retval;
 
@@ -2257,6 +2252,9 @@ static inline void event_conn_upd_init(struct ll_conn *conn,
 	ARG_UNUSED(ticks_at_expire);
 	ARG_UNUSED(mfy_sched_offset);
 	ARG_UNUSED(fp_mfy_select_or_use);
+
+	/* move to in progress */
+	conn->llcp_cu.state = LLCP_CUI_STATE_INPROG;
 #endif /* !CONFIG_BT_CTLR_SCHED_ADVANCED */
 }
 
@@ -2281,15 +2279,62 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 	instant_latency = (event_counter - conn->llcp.conn_upd.instant) &
 			  0xffff;
 	if (conn->llcp_cu.state != LLCP_CUI_STATE_INPROG) {
+		struct pdu_data *pdu_ctrl_tx;
+		struct node_rx_pdu *rx;
+		struct node_tx *tx;
 #if defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
 		static memq_link_t s_link;
 		static struct mayfly s_mfy_sched_offset = {0, 0,
 			&s_link, 0, 0 };
 		void (*fp_mfy_select_or_use)(void *) = NULL;
-#endif /* CONFIG_BT_CTLR_SCHED_ADVANCED */
-		struct pdu_data *pdu_ctrl_tx;
-		struct node_rx_pdu *rx;
-		struct node_tx *tx;
+
+		switch (conn->llcp_cu.state) {
+		case LLCP_CUI_STATE_USE:
+			fp_mfy_select_or_use = ull_sched_mfy_win_offset_use;
+			break;
+
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+		case LLCP_CUI_STATE_SELECT:
+			fp_mfy_select_or_use = ull_sched_mfy_win_offset_select;
+			break;
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
+
+		case LLCP_CUI_STATE_OFFS_REQ:
+			return -EBUSY;
+
+		case LLCP_CUI_STATE_OFFS_RDY:
+			/* set instant */
+			conn->llcp.conn_upd.instant = event_counter +
+						      conn->lll.latency + 6;
+			pdu_ctrl_tx =
+				CONTAINER_OF(conn->llcp.conn_upd.pdu_win_offset,
+					     struct pdu_data,
+					     llctrl.conn_update_ind.win_offset);
+			pdu_ctrl_tx->llctrl.conn_update_ind.instant =
+				sys_cpu_to_le16(conn->llcp.conn_upd.instant);
+			/* move to in progress */
+			conn->llcp_cu.state = LLCP_CUI_STATE_INPROG;
+			/* enqueue control PDU */
+			tx = CONTAINER_OF(pdu_ctrl_tx, struct node_tx, pdu);
+			ctrl_tx_enqueue(conn, tx);
+			return -EINPROGRESS;
+
+		case LLCP_CUI_STATE_REJECT:
+			/* move to in progress */
+			conn->llcp_cu.state = LLCP_CUI_STATE_INPROG;
+			/* enqueue control PDU */
+			pdu_ctrl_tx =
+				CONTAINER_OF(conn->llcp.conn_upd.pdu_win_offset,
+					     struct pdu_data,
+					     llctrl.conn_update_ind.win_offset);
+			tx = CONTAINER_OF(pdu_ctrl_tx, struct node_tx, pdu);
+			ctrl_tx_enqueue(conn, tx);
+			return -EINPROGRESS;
+		default:
+			LL_ASSERT(0);
+			break;
+		}
+#endif /* !CONFIG_BT_CTLR_SCHED_ADVANCED */
 
 		rx = ll_pdu_rx_alloc_peek(1);
 		if (!rx) {
@@ -2308,32 +2353,20 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 		pdu_ctrl_tx = (void *)tx->pdu;
 
 #if defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
-		switch (conn->llcp_cu.state) {
-		case LLCP_CUI_STATE_USE:
-			fp_mfy_select_or_use = ull_sched_mfy_win_offset_use;
-			break;
-
-#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
-		case LLCP_CUI_STATE_SELECT:
-			fp_mfy_select_or_use = ull_sched_mfy_win_offset_select;
-			break;
-#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
-
-		default:
-			LL_ASSERT(0);
-			break;
-		}
-
 		event_conn_upd_init(conn, event_counter, ticks_at_expire,
 				    pdu_ctrl_tx, &s_mfy_sched_offset,
 				    fp_mfy_select_or_use);
 #else /* !CONFIG_BT_CTLR_SCHED_ADVANCED */
 		event_conn_upd_init(conn, event_counter, ticks_at_expire,
 				    pdu_ctrl_tx, NULL, NULL);
-#endif /* !CONFIG_BT_CTLR_SCHED_ADVANCED */
-
+		/* set instant */
+		conn->llcp.conn_upd.instant = event_counter +
+					      conn->lll.latency + 6;
+		pdu_ctrl_tx->llctrl.conn_update_ind.instant =
+			sys_cpu_to_le16(conn->llcp.conn_upd.instant);
+		/* enqueue control PDU */
 		ctrl_tx_enqueue(conn, tx);
-
+#endif /* !CONFIG_BT_CTLR_SCHED_ADVANCED */
 	} else if (instant_latency <= 0x7FFF) {
 		uint32_t ticks_win_offset = 0;
 		uint32_t ticks_slot_overhead;
