@@ -10,6 +10,15 @@ enum bt_mesh_walk {
 	BT_MESH_WALK_CONTINUE,
 };
 
+/* bt_mesh_model.flags */
+enum {
+	BT_MESH_MOD_BIND_PENDING = BIT(0),
+	BT_MESH_MOD_SUB_PENDING = BIT(1),
+	BT_MESH_MOD_PUB_PENDING = BIT(2),
+	BT_MESH_MOD_EXTENDED = BIT(3),
+	BT_MESH_MOD_DEVKEY_ONLY = BIT(4),
+};
+
 void bt_mesh_elem_register(struct bt_mesh_elem *elem, uint8_t count);
 
 uint8_t bt_mesh_elem_count(void);
