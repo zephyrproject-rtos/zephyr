@@ -107,11 +107,26 @@ typedef void (*bt_bass_client_scan_cb_t)(
 typedef void (*bt_bass_client_recv_state_cb_t)(
 	struct bt_conn *conn, const struct bass_recv_state_t *state);
 
+/** @brief Callback function for writes.
+ *
+ *  @param conn    The connection to the peer device.
+ *  @param err     Error value. 0 on success, GATT error on fail.
+ */
+typedef void (*bt_bass_client_write_cb_t)(
+	struct bt_conn *conn, int err);
+
 struct bt_bass_client_cb_t {
 	bt_bass_client_discover_cb_t    discover;
 	bt_bass_client_scan_cb_t        scan;
 	bt_bass_client_recv_state_cb_t  recv_state;
 	bt_bass_client_recv_state_cb_t  recv_state_removed;
+
+	bt_bass_client_write_cb_t       scan_start;
+	bt_bass_client_write_cb_t       scan_stop;
+	bt_bass_client_write_cb_t       add_src;
+	bt_bass_client_write_cb_t       mod_src;
+	bt_bass_client_write_cb_t       broadcast_code;
+	bt_bass_client_write_cb_t       rem_src;
 };
 
 /**
