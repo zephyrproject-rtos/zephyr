@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT intel_ibecc
+
 #include <zephyr.h>
 #include <device.h>
 #include <drivers/pcie/pcie.h>
@@ -17,6 +19,12 @@
  */
 #include <logging/log.h>
 LOG_MODULE_REGISTER(edac_ibecc, CONFIG_EDAC_LOG_LEVEL);
+
+#define DEVICE_NODE DT_NODELABEL(ibecc)
+/* Workaround for getting bus/device/function from DTS */
+#define PCI_ENDPOINT DT_REG_ADDR(DEVICE_NODE)
+/* Workaround for getting PCI Vendor ID from DTS */
+#define PCI_VENDOR_ID DT_REG_SIZE(DEVICE_NODE)
 
 struct ibecc_data {
 	mem_addr_t mchbar;
@@ -339,18 +347,16 @@ static const struct edac_driver_api api = {
 
 int edac_ibecc_init(const struct device *dev)
 {
-	const pcie_bdf_t bdf = PCIE_BDF(0, 0, 0);
+	const pcie_bdf_t bdf = PCI_ENDPOINT;
 	struct ibecc_data *data = dev->data;
 	uint32_t tolud;
 	uint64_t touud, tom, mchbar;
 
 	LOG_INF("EDAC IBECC initialization");
 
-	if (!pcie_probe(bdf, PCIE_ID(PCI_VENDOR_ID_INTEL,
-				     PCI_DEVICE_ID_SKU7)) &&
-	    !pcie_probe(bdf, PCIE_ID(PCI_VENDOR_ID_INTEL,
-				     PCI_DEVICE_ID_SKU12))) {
-		LOG_ERR("Probe failed");
+	if (!pcie_probe(bdf, PCIE_ID(PCI_VENDOR_ID, PCI_DEVICE_ID_SKU7)) &&
+	    !pcie_probe(bdf, PCIE_ID(PCI_VENDOR_ID, PCI_DEVICE_ID_SKU12))) {
+		LOG_ERR("PCI Probe failed");
 		return -ENODEV;
 	}
 
@@ -399,9 +405,9 @@ int edac_ibecc_init(const struct device *dev)
 
 static struct ibecc_data ibecc_data;
 
-DEVICE_DEFINE(edac_ibecc, EDAC_IBECC_NAME, &edac_ibecc_init,
-	      NULL, &ibecc_data, NULL, POST_KERNEL,
-	      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &api);
+DEVICE_DT_DEFINE(DEVICE_NODE, &edac_ibecc_init,
+		 NULL, &ibecc_data, NULL, POST_KERNEL,
+		 CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &api);
 
 /**
  * An IBECC error causes SERR_NMI_STS set and is indicated by
@@ -447,7 +453,7 @@ static bool handle_nmi(void)
 
 bool z_x86_do_kernel_nmi(const z_arch_esf_t *esf)
 {
-	const struct device *dev = DEVICE_GET(edac_ibecc);
+	const struct device *dev = DEVICE_DT_GET(DEVICE_NODE);
 	struct ibecc_data *data = dev->data;
 	struct ibecc_error error_data;
 	k_spinlock_key_t key;
