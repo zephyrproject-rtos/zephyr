@@ -310,12 +310,12 @@ The architecture-specific block is target specific and requires new
 dumping routine and parser for new targets. To add a new target,
 the following needs to be done:
 
-#. Add a new target code to the ``enum z_coredump_tgt_code`` in
+#. Add a new target code to the ``enum coredump_tgt_code`` in
    :zephyr_file:`include/debug/coredump.h`.
 #. Implement :c:func:`arch_coredump_tgt_code_get` simply to return
    the newly introducted target code.
 #. Implement :c:func:`arch_coredump_info_dump` to construct
-   a target architecture block and call :c:func:`z_coredump_buffer_output`
+   a target architecture block and call :c:func:`coredump_buffer_output`
    to output the block to core dump backend.
 #. Add a parser to the core dump GDB stub scripts under
    ``scripts/coredump/gdbstubs/``
