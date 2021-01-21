@@ -40,6 +40,7 @@
 #elif defined(CONFIG_CPU_CORTEX_R)
 #include <arch/arm/aarch32/cortex_a_r/cpu.h>
 #include <arch/arm/aarch32/cortex_a_r/sys_io.h>
+#include <arch/arm/aarch32/cortex_a_r/timer.h>
 #endif
 
 #ifdef __cplusplus

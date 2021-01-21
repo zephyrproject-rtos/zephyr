@@ -23,6 +23,9 @@ extern "C" {
 #define CNTV_CTL_ENABLE		((1) << 0)
 #define CNTV_CTL_IMASK			((1) << 1)
 
+static ALWAYS_INLINE void arm_arch_timer_init(void)
+{
+}
 
 static ALWAYS_INLINE void arm_arch_timer_set_compare(uint64_t val)
 {
