@@ -11,6 +11,8 @@
 #include <drivers/edac.h>
 #include "ibecc.h"
 
+#define DEVICE_NAME DT_LABEL(DT_NODELABEL(ibecc))
+
 /**
  * EDAC Error Injection interface
  *
@@ -58,7 +60,7 @@ static int cmd_edac_info(const struct shell *shell, size_t argc, char **argv)
 	const struct device *dev;
 	uint64_t error;
 
-	dev = device_get_binding("IBECC");
+	dev = device_get_binding(DEVICE_NAME);
 	if (!dev) {
 		shell_error(shell, "IBECC device not found");
 		return -ENODEV;
@@ -88,7 +90,7 @@ static int cmd_inject_addr(const struct shell *shell, size_t argc, char **argv)
 {
 	const struct device *dev;
 
-	dev = device_get_binding("IBECC");
+	dev = device_get_binding(DEVICE_NAME);
 	if (!dev) {
 		shell_error(shell, "IBECC device not found");
 		return -ENODEV;
@@ -121,7 +123,7 @@ static int cmd_inject_mask(const struct shell *shell, size_t argc, char **argv)
 {
 	const struct device *dev;
 
-	dev = device_get_binding("IBECC");
+	dev = device_get_binding(DEVICE_NAME);
 	if (!dev) {
 		shell_error(shell, "IBECC device not found");
 		return -ENODEV;
@@ -156,7 +158,7 @@ static int cmd_inject_ctrl(const struct shell *shell, size_t argc, char **argv)
 	const struct device *dev;
 	uint32_t value;
 
-	dev = device_get_binding("IBECC");
+	dev = device_get_binding(DEVICE_NAME);
 	if (!dev) {
 		shell_error(shell, "IBECC device not found");
 		return -ENODEV;
@@ -213,7 +215,7 @@ static int cmd_ecc_error_show(const struct shell *shell, size_t argc,
 	const struct device *dev;
 	uint64_t error;
 
-	dev = device_get_binding("IBECC");
+	dev = device_get_binding(DEVICE_NAME);
 	if (!dev) {
 		shell_error(shell, "IBECC device not found");
 		return -ENODEV;
@@ -234,7 +236,7 @@ static int cmd_ecc_error_clear(const struct shell *shell, size_t argc,
 {
 	const struct device *dev;
 
-	dev = device_get_binding("IBECC");
+	dev = device_get_binding(DEVICE_NAME);
 	if (!dev) {
 		shell_error(shell, "IBECC device not found");
 		return -ENODEV;
@@ -259,7 +261,7 @@ static int cmd_parity_error_show(const struct shell *shell, size_t argc,
 	const struct device *dev;
 	uint64_t error;
 
-	dev = device_get_binding("IBECC");
+	dev = device_get_binding(DEVICE_NAME);
 	if (!dev) {
 		shell_error(shell, "IBECC device not found");
 		return -ENODEV;
@@ -276,7 +278,7 @@ static int cmd_parity_error_clear(const struct shell *shell, size_t argc,
 {
 	const struct device *dev;
 
-	dev = device_get_binding("IBECC");
+	dev = device_get_binding(DEVICE_NAME);
 	if (!dev) {
 		shell_error(shell, "IBECC device not found");
 		return -ENODEV;

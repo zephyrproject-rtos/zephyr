@@ -6,6 +6,7 @@
 
 #include <zephyr.h>
 #include <device.h>
+#include <devicetree.h>
 
 #include <drivers/edac.h>
 
@@ -29,13 +30,15 @@ static void notification_callback(const struct device *dev, void *data)
 	atomic_set(&handled, true);
 }
 
+#define DEVICE_NAME DT_LABEL(DT_NODELABEL(ibecc))
+
 void main(void)
 {
 	const struct device *dev;
 
-	dev = device_get_binding("IBECC");
+	dev = device_get_binding(DEVICE_NAME);
 	if (!dev) {
-		LOG_ERR("Cannot open EDAC device");
+		LOG_ERR("Cannot open EDAC device: %s", DEVICE_NAME);
 		return;
 	}
 

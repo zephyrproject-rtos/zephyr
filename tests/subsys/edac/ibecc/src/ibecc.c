@@ -12,7 +12,7 @@
 #include <drivers/edac.h>
 #include <ibecc.h>
 
-#define DEVICE_NAME		"IBECC"
+#define DEVICE_NAME		DT_LABEL(DT_NODELABEL(ibecc))
 
 #if defined(CONFIG_EDAC_ERROR_INJECT)
 #define TEST_ADDRESS1		0x1000
