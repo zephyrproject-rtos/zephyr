@@ -14,11 +14,12 @@ if(CONFIG_AUTH_LIB)
     zephyr_library_sources_ifdef(CONFIG_AUTH_CHALLENGE_RESPONSE auth_chalresp.c)
 
     zephyr_library_sources_ifdef(CONFIG_AUTH_DTLS auth_dtls.c)
+
+    # Include Mbed if DTLS auth defined
+    if(CONFIG_AUTH_DTLS)
+        zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
+    endif()
+
 endif()
 
-# Is this the correct way to include Mbed TLS module directory?
-if(CONFIG_MBEDTLS)
-    zephyr_include_directories($ENV{ZEPHYR_BASE}/../modules/crypto/mbedtls/include)
-    zephyr_include_directories($ENV{ZEPHYR_BASE}/../modules/crypto/mbedtls/configs)
-endif()
 

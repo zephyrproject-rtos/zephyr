@@ -10,13 +10,15 @@ menuconfig AUTH_LIB
 
 if AUTH_LIB
 	config AUTH_CHALLENGE_RESPONSE
-		bool "Challenge Response (Must use TINYCRYPT and TINYCRYPT_SHA256)"
+		bool "Challenge Response"
+		depends on TINYCRYPT
+		depends on TINYCRYPT_SHA256
 		help
 		Selects the Challenge Response authentication method.
-		Must use TINYCRYPT and TINYCRYPT_SHA256
 
 	config AUTH_DTLS
 		bool "DTLS Authentication"
+		depends on MBEDTLS
 		help
 		Selects the DTLS authentication method.
 

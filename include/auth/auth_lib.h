@@ -164,6 +164,8 @@ struct authenticate_conn {
 	/* The auth instance ID for this connection */
 	enum auth_instance_id instance;
 
+	enum auth_flags authflags;
+
 	/* status callback func */
 	auth_status_cb_t status_cb;
 	void *callback_context;

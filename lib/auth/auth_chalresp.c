@@ -16,7 +16,7 @@
 #include <init.h>
 
 #include <auth/auth_lib.h>
-#include <random/rand32.h>
+
 
 #include <tinycrypt/constants.h>
 #include <tinycrypt/sha256.h>
@@ -46,6 +46,7 @@ LOG_MODULE_DECLARE(auth_lib, CONFIG_AUTH_LOG_LEVEL);
 /* Timeout for receive */
 #define AUTH_RX_TIMEOUT_MSEC                (3000u)
 
+#define NUM_CHALLENGE_RESP_INST		    (CONFIG_NUM_AUTH_INSTANCES)
 
 /* ensure structs are byte aligned */
 #pragma pack(push, 1)
@@ -100,32 +101,67 @@ struct auth_chalresp_result {
 #pragma pack(pop)
 
 
+
 /**
- * Shared key.
- * @brief  In a production system, the shared key should be stored in a
- * secure hardware store such as an ECC608A or TrustZone.
+ * Challenge-Response instance info.  Used to set shared key for each
+ * auth instance.
  */
-static uint8_t default_shared_key[AUTH_SHARED_KEY_LEN] = {
-	0xBD, 0x84, 0xDC, 0x6E, 0x5C, 0x77, 0x41, 0x58, 0xE8, 0xFB, 0x1D, 0xB9, 0x95, 0x39, 0x20, 0xE4,
-	0xC5, 0x03, 0x69, 0x9D, 0xBC, 0x53, 0x08, 0x20, 0x1E, 0xF4, 0x72, 0x8E, 0x90, 0x56, 0x49, 0xA8
+struct chalresp_instance {
+	bool in_use;
+	uint8_t chalresp_key[AUTH_SHARED_KEY_LEN];
 };
 
-/* default shared key if not set */
-static uint8_t *shared_key = default_shared_key;
+static struct chalresp_instance chalresp_inst_tbl[NUM_CHALLENGE_RESP_INST];
 
-/* If caller specifies a new shared key, it is copied into this buffer. */
-static uint8_t chalresp_key[AUTH_SHARED_KEY_LEN];
+
+/**
+ * Gets a Challenge-Response auth instance.
+ *
+ * @return Pointer to instance on success, else NULL.
+ */
+static struct chalresp_instance *auth_chalresp_get_instance(void)
+{
+	uint32_t cnt;
+
+	for(cnt = 0; cnt < NUM_CHALLENGE_RESP_INST; cnt++) {
+
+		if(!chalresp_inst_tbl[cnt].in_use) {
+			chalresp_inst_tbl[cnt].in_use = true;
+			return &chalresp_inst_tbl[cnt];
+		}
+	}
+
+	return NULL;
+}
+
+/**
+ * Frees a Challenge-Response instance, clears out shared key contained in
+ * the instance data.
+ *
+ * @param chalresp_inst Point to the instance to free
+ */
+static void auth_chalresp_free_instance(struct chalresp_instance *chalresp_inst)
+{
+	if(chalresp_inst) {
+		chalresp_inst->in_use = false;
+		memset(chalresp_inst, 0, sizeof(struct chalresp_instance));
+	}
+}
+
+
+
 
 /**
  * Utility function to create the hash of the random challenge and the shared key.
  * Uses Tiny Crypt hashing code.
  *
  * @param random_chal  Pointer to 32 byte value to hash with shared key.
+ * @param shared_key   Shared key.
  * @param hash         Buffer where hash is returned.
  *
  * @return AUTH_SUCCESS on success, else error value.
  */
-static int auth_chalresp_hash(const uint8_t *random_chal, uint8_t *hash)
+static int auth_chalresp_hash(const uint8_t *random_chal, const uint8_t *shared_key, uint8_t *hash)
 {
 	int err = 0;
 	struct tc_sha256_state_struct hash_state;
@@ -215,6 +251,7 @@ static bool auth_client_recv_chal_resp(struct authenticate_conn *auth_conn, cons
 	struct auth_chalresp_result chal_result;
 	uint8_t *buf = (uint8_t *)&server_resp;
 	int len = sizeof(server_resp);
+	struct chalresp_instance *chalresp_inst = (struct chalresp_instance *)auth_conn->internal_obj;
 
 	while (len > 0) {
 
@@ -251,7 +288,7 @@ static bool auth_client_recv_chal_resp(struct authenticate_conn *auth_conn, cons
 
 	/* Now verify response, is the response correct?  Hash the random challenge
 	 * with the shared key. */
-	err = auth_chalresp_hash(random_chal, hash);
+	err = auth_chalresp_hash(random_chal, chalresp_inst->chalresp_key, hash);
 
 	if (err) {
 		LOG_ERR("Failed to calc hash, err: %d", err);
@@ -286,7 +323,8 @@ static bool auth_client_recv_chal_resp(struct authenticate_conn *auth_conn, cons
 	client_resp.hdr.msg_id = AUTH_CLIENT_CHALRESP_MSG_ID;
 
 	/* Create response to the server's random challenge */
-	err = auth_chalresp_hash(server_resp.server_challenge, client_resp.client_response);
+	err = auth_chalresp_hash(server_resp.server_challenge, chalresp_inst->chalresp_key,
+				 client_resp.client_response);
 
 	if (err) {
 		LOG_ERR("Failed to create server response to challenge, err: %d", err);
@@ -321,7 +359,7 @@ static bool auth_server_recv_msg(struct authenticate_conn *auth_conn, uint8_t *m
 {
 	int numbytes;
 
-	while ((int)msglen > 0) {
+	while (msglen > 0) {
 
 		numbytes = auth_xport_recv(auth_conn->xport_hdl, msgbuf, msglen, AUTH_RX_TIMEOUT_MSEC);
 
@@ -358,6 +396,8 @@ static bool auth_server_recv_challenge(struct authenticate_conn *auth_conn, uint
 {
 	struct client_challenge chal;
 	struct server_chal_response server_resp;
+	struct chalresp_instance *chalresp_inst = (struct chalresp_instance *)auth_conn->internal_obj;
+
 	int numbytes;
 
 	if (!auth_server_recv_msg(auth_conn, (uint8_t *)&chal, sizeof(chal))) {
@@ -379,10 +419,12 @@ static bool auth_server_recv_challenge(struct authenticate_conn *auth_conn, uint
 	       sizeof(server_resp.server_challenge));
 
 	/* Now create the response for the Client */
-	auth_chalresp_hash(chal.client_challenge, server_resp.server_response);
+	auth_chalresp_hash(chal.client_challenge, chalresp_inst->chalresp_key,
+			   server_resp.server_response);
 
 	/* Send response */
-	numbytes = auth_xport_send(auth_conn->xport_hdl, (uint8_t *)&server_resp, sizeof(server_resp));
+	numbytes = auth_xport_send(auth_conn->xport_hdl,
+				   (uint8_t *)&server_resp, sizeof(server_resp));
 
 	if ((numbytes <= 0) || (numbytes != sizeof(server_resp))) {
 		LOG_ERR("Failed to send challenge response to the Client.");
@@ -408,6 +450,8 @@ static bool auth_server_recv_chalresp(struct authenticate_conn *auth_conn, uint8
 	struct auth_chalresp_result result_resp;
 	uint8_t hash[AUTH_SHA256_HASH];
 	int err, numbytes;
+	struct chalresp_instance *chalresp_inst =
+		(struct chalresp_instance *)auth_conn->internal_obj;
 
 	memset(&client_resp, 0, sizeof(client_resp));
 
@@ -443,7 +487,7 @@ static bool auth_server_recv_chalresp(struct authenticate_conn *auth_conn, uint8
 		return false;
 	}
 
-	err = auth_chalresp_hash(server_random_chal, hash);
+	err = auth_chalresp_hash(server_random_chal, chalresp_inst->chalresp_key, hash);
 	if (err) {
 		LOG_ERR("Failed to create hash.");
 		*status = AUTH_STATUS_FAILED;
@@ -490,7 +534,7 @@ static int auth_chalresp_client(struct authenticate_conn *auth_conn)
 	enum auth_status status;
 
 	/* generate random number as challenge */
-	sys_rand_get(random_chal, sizeof(random_chal));
+	auth_get_random(random_chal, sizeof(random_chal));
 
 
 	if (!auth_client_send_challenge(auth_conn, random_chal)) {
@@ -558,7 +602,7 @@ static int auth_chalresp_server(struct authenticate_conn *auth_conn)
 	uint8_t random_chal[AUTH_CHALLENGE_LEN];
 
 	/* generate random number as challenge */
-	sys_rand_get(random_chal, sizeof(random_chal));
+	auth_get_random(random_chal, sizeof(random_chal));
 
 	/* Wait for challenge from the Central */
 	if (!auth_server_recv_challenge(auth_conn, random_chal)) {
@@ -586,33 +630,12 @@ static int auth_chalresp_server(struct authenticate_conn *auth_conn)
 	return AUTH_SUCCESS;
 }
 
-
-/**
- * @see auth_internal.h
- */
-int auth_init_chalresp_method(struct authenticate_conn *auth_conn, struct auth_challenge_resp *chal_resp)
-{
-	/* verify inputs */
-	if ((auth_conn == NULL) || (chal_resp == NULL)) {
-		return AUTH_ERROR_INVALID_PARAM;
-	}
-
-	/* set new shared key */
-	memcpy(chalresp_key, chal_resp->shared_key, AUTH_SHARED_KEY_LEN);
-
-	/* set shared key pointer to new key */
-	shared_key = chalresp_key;
-
-	return AUTH_SUCCESS;
-}
-
-
 /**
  * Use hash (SHA-256) with shared key to authenticate each side.
  *
  * @param auth_conn  The authenticate_conn connection.
  */
-void auth_chalresp_thread(struct authenticate_conn *auth_conn)
+static void auth_chalresp_thread(struct authenticate_conn *auth_conn)
 {
 	int ret;
 
@@ -637,3 +660,51 @@ void auth_chalresp_thread(struct authenticate_conn *auth_conn)
 	/* End of Challenge-Response authentication thread */
 	LOG_DBG("Challenge-Response thread complete.");
 }
+
+
+
+/**
+ * @see auth_internal.h
+ */
+int auth_init_chalresp_method(struct authenticate_conn *auth_conn, struct auth_optional_param *opt_params)
+{
+	struct auth_challenge_resp *chalresp_param;
+	struct chalresp_instance *chalresp_inst;
+
+	/* verify inputs */
+	if ((auth_conn == NULL) || (opt_params == NULL) || (opt_params->param_id != AUTH_CHALRESP_PARAM)) {
+		LOG_ERR("Invalid param, failed to initialize Challenge-Response auth method.");
+		return AUTH_ERROR_INVALID_PARAM;
+	}
+
+	chalresp_inst = auth_chalresp_get_instance();
+	if(chalresp_inst == NULL) {
+		LOG_ERR("No free Challenge-Resp instance.");
+		return AUTH_ERROR_NO_RESOURCE;
+	}
+
+	chalresp_param = &opt_params->param_body.chal_resp;
+
+	/* Set the Challenge-Response authentication thread */
+	auth_conn->auth_func = auth_chalresp_thread;
+	auth_conn->internal_obj = chalresp_inst;
+
+	/* set new shared key */
+	memcpy(chalresp_inst->chalresp_key, chalresp_param->shared_key, AUTH_SHARED_KEY_LEN);
+
+	return AUTH_SUCCESS;
+}
+
+/**
+ * @see auth_internal.h
+ */
+int auth_deinit_chalresp(struct authenticate_conn *auth_conn)
+{
+	if(auth_conn->internal_obj) {
+		auth_chalresp_free_instance((struct chalresp_instance *)auth_conn->internal_obj);
+		auth_conn->internal_obj = NULL;
+	}
+
+	return AUTH_SUCCESS;
+}
+

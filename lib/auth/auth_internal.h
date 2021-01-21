@@ -97,26 +97,44 @@ void auth_lib_set_status(struct authenticate_conn *auth_conn, enum auth_status s
 /**
  * Initializes DTLS authentication method.
  *
- * @param auth_conn Pointer to Authentication connection struct.
- * @param certs     Pointer to certs and associated private keys.
+ * @param auth_conn   Pointer to Authentication connection struct.
+ * @param opt_params  Pointer to DTLS params which should contain certs and
+ *                    associated private keys.
  *
  * @return  0 on success else one of AUTH_ERROR_* values.
  */
 int auth_init_dtls_method(struct authenticate_conn *auth_conn,
-			  struct auth_dtls_certs *certs);
+			  struct auth_optional_param *opt_params);
 
+/**
+ * De-initialize, free any resources used during DTLS authentication.
+ *
+ * @param auth_conn Pointer to Authentication connection struct.
+ *
+ * return AUTH_SUCCESS on success, else AUTH_ERROR_* value.
+ */
+int auth_deinit_dtls(struct authenticate_conn *auth_conn);
 
 /**
  * Initialize Challenge-Response method with additional parameters.
  *
  * @param auth_conn   Pointer to Authentication connection struct.
- * @param chal_resp   Pointer to Challenge-Response params.
+ * @param opt_params  Pointer to optional Challenge-Response params.
  *
  * @return  0 on success else one of AUTH_ERROR_* values.
  */
 int auth_init_chalresp_method(struct authenticate_conn *auth_conn,
-			      struct auth_challenge_resp *chal_resp);
+			      struct auth_optional_param *opt_params);
 
+/**
+ * De-initialize and free any resources used with the Challenge-Response
+ * authentication method.
+ *
+ * @param auth_conn Pointer to Authentication connection struct.
+ *
+ * return AUTH_SUCCESS on success, else AUTH_ERROR_* value.
+ */
+int auth_deinit_chalresp(struct authenticate_conn *auth_conn);
 
 /**
  *  Used by the client to send data bytes to the Peripheral.
@@ -291,7 +309,12 @@ void auth_message_hdr_to_cpu(struct auth_message_frag_hdr *frag_hdr);
  */
 void auth_message_hdr_to_be16(struct auth_message_frag_hdr *frag_hdr);
 
-
-
+/**
+ * Get random numbers
+ *
+ * @param buf  Buffer to return random bytes.
+ * @param num  Number of random bytes requested.
+ */
+void auth_get_random(uint8_t *buf, size_t num);
 
 #endif   /* ZEPHYR_INCLUDE_AUTH_INTERNAL_H_ */

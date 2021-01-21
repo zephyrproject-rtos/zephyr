@@ -15,6 +15,7 @@
 #include <errno.h>
 #include <zephyr.h>
 #include <init.h>
+#include <random/rand32.h>
 
 #define LOG_LEVEL CONFIG_AUTH_LOG_LEVEL
 #include <logging/log.h>
@@ -1001,6 +1002,19 @@ void auth_message_hdr_to_be16(struct auth_message_frag_hdr *frag_hdr)
 {
 	frag_hdr->sync_flags = sys_cpu_to_be16(frag_hdr->sync_flags);
 	frag_hdr->payload_len = sys_cpu_to_be16(frag_hdr->payload_len);
+}
+
+/**
+ * @see auth_internal.h
+ */
+void auth_get_random(uint8_t *buf, size_t num)
+{
+#if defined(CONFIG_HARDWARE_DEVICE_CS_GENERATOR)
+	/* if hardware based random num generator available */
+	sys_csrand_get(buf, num);
+#else
+	sys_rand_get(buf, num);
+#endif
 }
 
 

@@ -67,12 +67,6 @@ K_THREAD_DEFINE(auth_tid_2, AUTH_THRD_STACK_SIZE,
 #endif
 
 
-/**
- * Forward function declarations for authentication threads.
- */
-void auth_dtls_thead(struct authenticate_conn *auth_conn);
-void auth_chalresp_thread(struct authenticate_conn *auth_conn);
-
 
 /* ========================== local functions ========================= */
 
@@ -164,7 +158,7 @@ int auth_lib_init(struct authenticate_conn *auth_conn, enum auth_instance_id ins
 		  auth_status_cb_t status_func, void *context, struct auth_optional_param *opt_params,
 		  enum auth_flags auth_flags)
 {
-	int err = 0;
+	int err;
 
 	/* check input params */
 	if (status_func == NULL) {
@@ -187,55 +181,32 @@ int auth_lib_init(struct authenticate_conn *auth_conn, enum auth_instance_id ins
 
 	auth_conn->cancel_auth = false;
 	auth_conn->instance = instance;
+	auth_conn->authflags = auth_flags;
 
 	/* init the work item used to post authentication status */
 	k_work_init(&auth_conn->auth_status_work, auth_lib_status_work);
 
 	auth_conn->is_client = (auth_flags & AUTH_CONN_CLIENT) ? true : false;
 
+	err = AUTH_ERROR_FAILED;
+
 #if defined(CONFIG_AUTH_DTLS)
-
 	if (auth_flags & AUTH_CONN_DTLS_AUTH_METHOD) {
-		/* Set the DTLS authentication thread */
-		auth_conn->auth_func = auth_dtls_thead;
-		{
-			if (opt_params == NULL || opt_params->param_id != AUTH_DTLS_PARAM) {
-				LOG_ERR("Missing certificates for TLS/DTLS authentication.");
-				return AUTH_ERROR_INVALID_PARAM;
-			}
-
-			struct auth_dtls_certs *certs = &opt_params->param_body.dtls_certs;
-
-			// init TLS layer
-			err = auth_init_dtls_method(auth_conn, certs);
-		}
-
-		if (err) {
-			LOG_ERR("Failed to initialize MBed TLS, err: %d", err);
-			return err;
-		}
+		err = auth_init_dtls_method(auth_conn, opt_params);
 	}
 #endif
 
 #if defined(CONFIG_AUTH_CHALLENGE_RESPONSE)
-
 	if (auth_flags & AUTH_CONN_CHALLENGE_AUTH_METHOD) {
-		/* Set the Challenge-Response authentication thread */
-		auth_conn->auth_func = auth_chalresp_thread;
-
-		if ((opt_params != NULL) && (opt_params->param_id == AUTH_CHALRESP_PARAM)) {
-
-			struct auth_challenge_resp *chal_resp = &opt_params->param_body.chal_resp;
-
-			err = auth_init_chalresp_method(auth_conn, chal_resp);
-
-			if (err) {
-				LOG_ERR("Failed to set Challege-Response param, err: %d", err);
-				return err;
-			}
-		}
+		err = auth_init_chalresp_method(auth_conn, opt_params);
 	}
 #endif
+
+	/* check if auth method was initialized correctly. */
+	if(err) {
+		LOG_ERR("Failed to initialize authentication method.");
+		return err;
+	}
 
 	/*
 	 * Set auth connect into thread param instance.
@@ -256,9 +227,22 @@ int auth_lib_init(struct authenticate_conn *auth_conn, enum auth_instance_id ins
  */
 int auth_lib_deinit(struct authenticate_conn *auth_conn)
 {
-	/* Free any resources, nothing for now, but maybe
-	 * needed in the future */
-	return AUTH_SUCCESS;
+	int ret = AUTH_ERROR_INTERNAL;
+
+#if defined(CONFIG_AUTH_DTLS)
+	/* Free any resources for the auth method used */
+	if(auth_conn->authflags & AUTH_CONN_DTLS_AUTH_METHOD) {
+		ret = auth_deinit_dtls(auth_conn);
+	}
+#endif
+
+#if defined(CONFIG_AUTH_CHALLENGE_RESPONSE)
+	if(auth_conn->authflags & AUTH_CONN_CHALLENGE_AUTH_METHOD) {
+		ret = auth_deinit_chalresp(auth_conn);
+	}
+#endif
+
+	return ret;
 }
 
 /**
