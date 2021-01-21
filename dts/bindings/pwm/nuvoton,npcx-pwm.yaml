@@ -18,6 +18,11 @@ properties:
         type: phandles
         required: true
         description: configurations of pinmux controllers
+    drive-open-drain:
+        type: boolean
+        description: |
+            The PWM output will be configured as open-drain. If not set,
+            defaults to push-pull.
 
 pwm-cells:
     - channel
