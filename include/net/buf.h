@@ -2346,7 +2346,8 @@ typedef struct net_buf *(*net_buf_allocator_cb)(k_timeout_t timeout,
  *
  * @details Append data to a net_buf. If there is not enough space in the
  * net_buf then more net_buf will be added, unless there are no free net_buf
- * and timeout occurs.
+ * and timeout occurs. If not allocator is provided it attempts to allocate from
+ * the same pool as the original buffer.
  *
  * @param buf Network buffer.
  * @param len Total length of input data

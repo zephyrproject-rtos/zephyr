@@ -750,7 +750,18 @@ size_t net_buf_append_bytes(struct net_buf *buf, size_t len,
 			return added_len;
 		}
 
-		frag = allocate_cb(timeout, user_data);
+		if (allocate_cb) {
+			frag = allocate_cb(timeout, user_data);
+		} else {
+			struct net_buf_pool *pool;
+
+			/* Allocate from the original pool if no callback has
+			 * been provided.
+			 */
+			pool = net_buf_pool_get(buf->pool_id);
+			frag = net_buf_alloc_len(pool, len, timeout);
+		}
+
 		if (!frag) {
 			return added_len;
 		}
