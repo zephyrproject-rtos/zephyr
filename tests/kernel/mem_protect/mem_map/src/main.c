@@ -214,7 +214,7 @@ void test_main(void)
 	/* This test sets up multiple mappings of RAM pages, which is only
 	 * allowed for pinned memory
 	 */
-	z_mem_pin(test_page, sizeof(test_page));
+	k_mem_pin(test_page, sizeof(test_page));
 #endif
 	ztest_test_suite(test_mem_map,
 			ztest_unit_test(test_z_phys_map_rw),
