@@ -333,7 +333,8 @@ static uint32_t mem_manage_fault(z_arch_esf_t *esf, int from_hard_fault,
 #else
 	(void)mmfar;
 	__ASSERT(!(SCB->CFSR & SCB_CFSR_MSTKERR_Msk),
-		"Stacking error without stack guard / User-mode support\n");
+		"Stacking or Data Access Violation error "
+		"without stack guard, user-mode or null-pointer detection\n");
 #endif /* CONFIG_MPU_STACK_GUARD || CONFIG_USERSPACE */
 	}
 
