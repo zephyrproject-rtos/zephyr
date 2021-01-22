@@ -64,8 +64,6 @@ MEMORY
 #endif
 #define ROM_BASE 0x80000000
 #define ROM_SIZE 0x60000
-#define CONFIG_SRAM_SIZE (64  * 1024)
-#define CONFIG_SRAM_BASE_ADDRESS 0x80060000
 
     ROM (rx)  : ORIGIN = ROM_BASE, LENGTH = ROM_SIZE     //Comes here
 #endif

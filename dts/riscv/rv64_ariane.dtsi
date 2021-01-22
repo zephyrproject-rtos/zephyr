@@ -10,14 +10,15 @@
 
     aliases {
         console = &uart0;
-    };
+        led0 = &led0;
+   };
     
     cpus {
         #address-cells = <1>;
         #size-cells = <0>;
         timebase-frequency = <32768>; // 32.768 kHz
         CPU0: cpu@0 {
-            clock-frequency = <50000000>; // 50 MHz
+            clock-frequency = <25000000>; // 50 MHz
             device_type = "cpu";
             reg = <0>;
             status = "okay";
@@ -37,6 +38,17 @@
     memory@80000000 {
         device_type = "memory";
         reg = <0x80000000 0x40000000>;  // 1 Gbyte
+    };
+
+
+    leds {
+            compatible = "gpio-leds";
+            led0: heartbeat-led {
+            gpios = <&xlnx_gpio0 1 0>;
+            label = "myLED";
+        /*           linux,default-trigger = "heartbeat";
+                     retain-state-suspended; */
+            };
     };
 
     soc {
@@ -82,7 +94,7 @@
         uart0: serial@10000000 {
             compatible = "ns16550";
             reg = <0x10000000 0x1000>;
-            clock-frequency = <50000000>;
+            clock-frequency = <25000000>;
             current-speed = <115200>;
             interrupt-parent = <&PLIC0>;
             interrupts = <1>;
@@ -96,11 +108,13 @@
             interrupt-parent = <&PLIC0>;
             reg-names = "control";
         };
+        
         xlnx_gpio0: gpio@40000000 {
             #gpio-cells = <2>;
             compatible = "xlnx,xps-gpio-1.00.a";
             gpio-controller ;
-            reg = <0x0 0x40000000 0x0 0x10000 >;
+            reg = <0x40000000 0x10000 >;
+            label = "myGPIO";
             xlnx,all-inputs = <0x0>;
             xlnx,all-inputs-2 = <0x0>;
             xlnx,dout-default = <0x0>;
