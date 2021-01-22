@@ -53,6 +53,17 @@ if(CONFIG_UART_NS16550)
   endforeach(NUM)
 endif()
 
+if(CONFIG_UART_DIGI_NS16550)
+ zephyr_library_sources(uart_digilent.c)
+  foreach(NUM RANGE 0 0)
+    configure_file(
+      uart_digilent_port_x.h
+     ${PROJECT_BINARY_DIR}/include/generated/uart_digilent_port_${NUM}.h
+      @ONLY
+      )
+  endforeach(NUM)
+endif()
+
 if(CONFIG_UART_NATIVE_POSIX)
   zephyr_library_compile_definitions(NO_POSIX_CHEATS)
   zephyr_library_sources(uart_native_posix.c)

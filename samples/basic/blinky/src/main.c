@@ -46,8 +46,6 @@ void main(void)
 	while (1) {
 		gpio_pin_set(dev, PIN, (int)led_is_on);
 		led_is_on = !led_is_on;
-		printk("Going to sleep..\n");
 		k_msleep(SLEEP_TIME_MS);
-		printk(" WOKE UP!\n");
 	}
 }
