@@ -9,7 +9,7 @@
 #include <mmu.h>
 
 #ifdef CONFIG_BACKING_STORE_RAM_PAGES
-#define EXTRA_PAGES	(CONFIG_BACKING_STORE_RAM_PAGES - 1)
+#define EXTRA_PAGES	CONFIG_BACKING_STORE_RAM_PAGES
 #else
 #error "Unsupported configuration"
 #endif
@@ -182,41 +182,6 @@ void test_z_mem_unpin(void)
 	test_z_mem_page_out();
 }
 
-/* Show that even if we map enough anonymous memory to fill the backing
- * store, we can still handle pagefaults.
- * This eats up memory so should be last in the suite.
- */
-void test_backing_store_capacity(void)
-{
-	char *mem, *ret;
-	int key;
-	unsigned long faults;
-	size_t size = (((CONFIG_BACKING_STORE_RAM_PAGES - 1) - HALF_PAGES) *
-		       CONFIG_MMU_PAGE_SIZE);
-
-	/* Consume the rest of memory */
-	mem = k_mem_map(size, K_MEM_PERM_RW);
-	zassert_not_null(mem, "k_mem_map failed");
-
-	/* Show no memory is left */
-	ret = k_mem_map(CONFIG_MMU_PAGE_SIZE, K_MEM_PERM_RW);
-	zassert_is_null(ret, "k_mem_map shouldn't have succeeded");
-
-	key = irq_lock();
-	faults = z_num_pagefaults_get();
-	/* Poke all anonymous memory */
-	for (size_t i = 0; i < HALF_BYTES; i++) {
-		arena[i] = nums[i % 10];
-	}
-	for (size_t i = 0; i < size; i++) {
-		mem[i] = nums[i % 10];
-	}
-	faults = z_num_pagefaults_get() - faults;
-	irq_unlock(key);
-
-	zassert_not_equal(faults, 0, "should have had some pagefaults");
-}
-
 /* ztest main entry*/
 void test_main(void)
 {
@@ -226,8 +191,7 @@ void test_main(void)
 			ztest_unit_test(test_z_mem_page_out),
 			ztest_unit_test(test_z_mem_page_in),
 			ztest_unit_test(test_z_mem_pin),
-			ztest_unit_test(test_z_mem_unpin),
-			ztest_unit_test(test_backing_store_capacity));
-
+			ztest_unit_test(test_z_mem_unpin)
+			);
 	ztest_run_test_suite(test_demand_paging);
 }

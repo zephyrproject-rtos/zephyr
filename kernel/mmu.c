@@ -607,7 +607,7 @@ static void page_frame_free_locked(struct z_page_frame *pf)
  * Returns -ENOMEM if the backing store is full
  */
 static int page_frame_prepare_locked(struct z_page_frame *pf, bool *dirty_ptr,
-				     bool page_fault, uintptr_t *location_ptr)
+				     bool page_in, uintptr_t *location_ptr)
 {
 	uintptr_t phys;
 	int ret;
@@ -632,13 +632,12 @@ static int page_frame_prepare_locked(struct z_page_frame *pf, bool *dirty_ptr,
 		dirty = dirty || !z_page_frame_is_backed(pf);
 	}
 
-	if (dirty || page_fault) {
+	if (dirty || page_in) {
 		arch_mem_scratch(phys);
 	}
 
 	if (z_page_frame_is_mapped(pf)) {
-		ret = z_backing_store_location_get(pf, location_ptr,
-						   page_fault);
+		ret = z_backing_store_location_get(pf, location_ptr);
 		if (ret != 0) {
 			LOG_ERR("out of backing store memory");
 			return -ENOMEM;
