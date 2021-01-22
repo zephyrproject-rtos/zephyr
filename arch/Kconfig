@@ -61,7 +61,6 @@ config X86
 	select ARCH_HAS_GDBSTUB if !X86_64
 	select ARCH_HAS_TIMING_FUNCTIONS
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
-	select ARCH_HAS_DEMAND_PAGING
 	help
 	  x86 architecture
 
