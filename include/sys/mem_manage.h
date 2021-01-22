@@ -139,19 +139,6 @@ void z_phys_map(uint8_t **virt_ptr, uintptr_t phys, size_t size,
 #define K_MEM_MAP_GUARD		BIT(18)
 
 /**
- * Return the amount of free memory available
- *
- * The returned value will reflect how many free RAM page frames are available.
- * If demand paging is enabled, it may still be possible to allocate more.
- *
- * The information reported by this function may go stale immediately if
- * concurrent memory mappings or page-ins take place.
- *
- * @return Free physical RAM, in bytes
- */
-size_t k_mem_free_get(void);
-
-/**
  * Map anonymous memory into Zephyr's address space
  *
  * This function effectively increases the data space available to Zephyr.

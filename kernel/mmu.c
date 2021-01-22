@@ -363,20 +363,6 @@ out:
 	return dst;
 }
 
-size_t k_mem_free_get(void)
-{
-	size_t ret;
-	k_spinlock_key_t key;
-
-	__ASSERT(page_frames_initialized, "%s called too early", __func__);
-
-	key = k_spin_lock(&z_mm_lock);
-	ret = z_free_page_count;
-	k_spin_unlock(&z_mm_lock, key);
-
-	return ret * CONFIG_MMU_PAGE_SIZE;
-}
-
 /* This may be called from arch early boot code before z_cstart() is invoked.
  * Data will be copied and BSS zeroed, but this must not rely on any
  * initialization functions being called prior to work correctly.
