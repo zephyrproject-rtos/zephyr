@@ -1,0 +1,42 @@
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig UART_DIGI_NS16550
+	bool "Digilent NS16550 serial driver"
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  This option enables the NS16550 serial driver.
+	  This driver can be used for the serial hardware
+	  available on x86 boards.
+
+config UART_DIGI_NS16550_LINE_CTRL
+	bool "Enable Serial Line Control for Apps"
+	depends on UART_LINE_CTRL && UART_DIGI_NS16550
+	help
+	  This enables the API for apps to control the serial line,
+	  such as CTS and RTS.
+
+	  Says n if not sure.
+
+config UART_DIGI_NS16550_DRV_CMD
+	bool "Enable Driver Commands"
+	depends on UART_DRV_CMD && UART_DIGI_NS16550
+	help
+	  This enables the API for apps to send commands to driver.
+
+	  Says n if not sure.
+
+config UART_DIGI_NS16750
+	bool "Enable UART 16750 (64-bytes FIFO and auto flow control)"
+	depends on UART_DIGI_NS16550
+	help
+	  This enables support for 64-bytes FIFO and automatic hardware
+	  flow control if UART controller is 16750.
+
+config UART_DIGI_NS16550_ACCESS_WORD_ONLY
+	bool "NS16550 only allows word access"
+	depends on UART_DIGI_NS16550
+	help
+	  In some case, e.g. ARC HS Development kit, the peripheral space of ns
+	  16550 (DesignWare UART) only allows word access, byte access will raise
+	  exception.
