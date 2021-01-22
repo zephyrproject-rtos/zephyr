@@ -527,20 +527,8 @@ void z_mem_manage_init(void)
 	 */
 	VIRT_FOREACH(Z_KERNEL_VIRT_START, Z_KERNEL_VIRT_SIZE, addr)
 	{
-		pf = z_phys_to_page_frame(BOOT_VIRT_TO_PHYS(addr));
-		frame_mapped_set(pf, addr);
-
-		/* TODO: for now we pin the whole Zephyr image. Demand paging
-		 * currently tested with anonymously-mapped pages which are not
-		 * pinned.
-		 *
-		 * We will need to setup linker regions for a subset of kernel
-		 * code/data pages which are pinned in memory and
-		 * may not be evicted. This will contain critical CPU data
-		 * structures, and any code used to perform page fault
-		 * handling, page-ins, etc.
-		 */
-		pf->flags |= Z_PAGE_FRAME_PINNED;
+		frame_mapped_set(z_phys_to_page_frame(BOOT_VIRT_TO_PHYS(addr)),
+				 addr);
 	}
 
 	/* Any remaining pages that aren't mapped, reserved, or pinned get
