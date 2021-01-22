@@ -453,29 +453,6 @@ size_t k_mem_region_align(uintptr_t *aligned_phys, size_t *aligned_size,
  */
 #define BOOT_VIRT_TO_PHYS(virt) ((uintptr_t)(((uint8_t *)virt) + VM_OFFSET))
 
-#ifdef CONFIG_USERSPACE
-void z_kernel_map_fixup(void)
-{
-	/* XXX: Gperf kernel object data created at build time will not have
-	 * visibility in zephyr_prebuilt.elf. There is a possibility that this
-	 * data would not be memory-mapped if it shifts z_mapped_end between
-	 * builds. Ensure this area is mapped.
-	 *
-	 * A third build phase for page tables would solve this.
-	 */
-	uint8_t *kobject_page_begin =
-		(uint8_t *)ROUND_DOWN((uintptr_t)&z_kobject_data_begin,
-				      CONFIG_MMU_PAGE_SIZE);
-	size_t kobject_size = (size_t)(Z_KERNEL_VIRT_END - kobject_page_begin);
-
-	if (kobject_size != 0) {
-		arch_mem_map(kobject_page_begin,
-			     BOOT_VIRT_TO_PHYS(kobject_page_begin),
-			     kobject_size, K_MEM_PERM_RW | K_MEM_CACHE_WB);
-	}
-}
-#endif /* CONFIG_USERSPACE */
-
 void z_mem_manage_init(void)
 {
 	uintptr_t phys;
