@@ -55,7 +55,7 @@ void arch_timing_stop(void)
 
 timing_t arch_timing_counter_get(void)
 {
-	return k_cycle_get_32();
+	return z_tsc_read();
 }
 
 uint64_t arch_timing_cycles_get(volatile timing_t *const start,
@@ -72,7 +72,7 @@ uint64_t arch_timing_freq_get(void)
 
 uint64_t arch_timing_cycles_to_ns(uint64_t cycles)
 {
-	return k_cyc_to_ns_floor64(cycles);
+	return ((cycles) * NSEC_PER_SEC / tsc_freq);
 }
 
 uint64_t arch_timing_cycles_to_ns_avg(uint64_t cycles, uint32_t count)
