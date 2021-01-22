@@ -17,60 +17,157 @@
 #include <bluetooth/bluetooth.h>
 #include "../host/audio/bass.h"
 #include "bt.h"
+#include "common/log.h"
 
-
-static int cmd_bass_synced(const struct shell *shell, size_t argc, char **argv)
+static const char *phy2str(uint8_t phy)
 {
-	int result;
-	long src_id;
-	long pa_sync_state;
-	long bis_synced;
-	long encrypted;
-
-	src_id = strtol(argv[1], NULL, 0);
-	if (src_id < 0 || src_id > UINT8_MAX) {
-		shell_error(shell, "adv_sid shall be 0x00-0xff");
-		return -ENOEXEC;
+	switch (phy) {
+	case 0: return "No packets";
+	case BT_GAP_LE_PHY_1M: return "LE 1M";
+	case BT_GAP_LE_PHY_2M: return "LE 2M";
+	case BT_GAP_LE_PHY_CODED: return "LE Coded";
+	default: return "Unknown";
 	}
-
-	pa_sync_state = strtol(argv[2], NULL, 0);
-	if (pa_sync_state < 0 || pa_sync_state > BASS_PA_STATE_NO_PAST) {
-		shell_error(shell, "Invalid pa_sync_state %u", pa_sync_state);
-		return -ENOEXEC;
-	}
-
-	bis_synced = strtol(argv[3], NULL, 0);
-	if (bis_synced < 0 || bis_synced > UINT32_MAX) {
-		shell_error(shell, "Invalid bis_synced %u", bis_synced);
-		return -ENOEXEC;
-	}
-
-	encrypted = strtol(argv[4], NULL, 0);
-
-	result = bt_bass_set_synced(src_id, pa_sync_state, bis_synced,
-				    encrypted);
-	if (result) {
-		shell_print(shell, "Fail: %d", result);
-	}
-	return result;
 }
 
-static int cmd_bass(const struct shell *shell, size_t argc, char **argv)
+static void bass_client_discover_cb(struct bt_conn *conn, int err,
+				    uint8_t recv_state_count)
 {
-	if (argc > 1) {
-		shell_error(shell, "%s unknown parameter: %s",
-			    argv[0], argv[1]);
+	if (err) {
+		shell_error(ctx_shell, "BASS discover failed (%d)", err);
 	} else {
-		shell_error(shell, "%s Missing subcommand", argv[0]);
+		shell_print(ctx_shell, "BASS discover done with %u recv states",
+			    recv_state_count);
 	}
 
-	return -ENOEXEC;
 }
+
+static void bass_client_scan_cb(const struct bt_le_scan_recv_info *info)
+{
+	char le_addr[BT_ADDR_LE_STR_LEN];
+	char name[30];
+
+	(void)memset(name, 0, sizeof(name));
+
+	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+	shell_print(ctx_shell, "[DEVICE]: %s, AD evt type %u, RSSI %i %s "
+		    "C:%u S:%u D:%d SR:%u E:%u Prim: %s, Secn: %s, "
+		    "Interval: 0x%04x (%u ms), SID: 0x%x",
+		    le_addr, info->adv_type, info->rssi, name,
+		    (info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) != 0,
+		    (info->adv_props & BT_GAP_ADV_PROP_SCANNABLE) != 0,
+		    (info->adv_props & BT_GAP_ADV_PROP_DIRECTED) != 0,
+		    (info->adv_props & BT_GAP_ADV_PROP_SCAN_RESPONSE) != 0,
+		    (info->adv_props & BT_GAP_ADV_PROP_EXT_ADV) != 0,
+		    phy2str(info->primary_phy), phy2str(info->secondary_phy),
+		    info->interval, info->interval * 5 / 4, info->sid);
+
+}
+
+static void bass_client_recv_state_cb(struct bt_conn *conn, int err,
+				      const struct bass_recv_state_t *state)
+{
+	char le_addr[BT_ADDR_LE_STR_LEN];
+
+	if (err) {
+		shell_error(ctx_shell, "BASS recv state read failed (%d)", err);
+	} else {
+		bt_addr_le_to_str(&state->addr, le_addr, sizeof(le_addr));
+		shell_print(ctx_shell, "BASS recv state: src_id %u, addr %s, "
+			    "sid %u, sync_state %u, bis_sync_state 0x%x, "
+			    "big_enc %u, metadata_len %u, metadata %s",
+			    state->src_id, le_addr, state->adv_sid,
+			    state->pa_sync_state, state->bis_sync_state,
+			    state->big_enc, state->metadata_len,
+			    bt_hex(state->metadata, state->metadata_len));
+	}
+}
+
+static void bass_client_recv_state_removed_cb(
+	struct bt_conn *conn, int err, const struct bass_recv_state_t *state)
+{
+	if (err) {
+		shell_error(ctx_shell, "BASS recv state removed failed (%d)",
+			    err);
+	} else {
+		shell_print(ctx_shell, "BASS recv state %u removed",
+			    state->src_id);
+	}
+}
+
+static void bass_client_scan_start_cb(struct bt_conn *conn, int err)
+{
+	if (err) {
+		shell_error(ctx_shell, "BASS scan start failed (%d)", err);
+	} else {
+		shell_print(ctx_shell, "BASS scan start successful");
+	}
+}
+
+static void bass_client_scan_stop_cb(struct bt_conn *conn, int err)
+{
+	if (err) {
+		shell_error(ctx_shell, "BASS scan stop failed (%d)", err);
+	} else {
+		shell_print(ctx_shell, "BASS scan stop successful");
+	}
+}
+
+static void bass_client_add_src_cb(struct bt_conn *conn, int err)
+{
+	if (err) {
+		shell_error(ctx_shell, "BASS add source failed (%d)", err);
+	} else {
+		shell_print(ctx_shell, "BASS add source successful");
+	}
+}
+
+static void bass_client_mod_src_cb(struct bt_conn *conn, int err)
+{
+	if (err) {
+		shell_error(ctx_shell, "BASS modify source failed (%d)", err);
+	} else {
+		shell_print(ctx_shell, "BASS modify source successful");
+	}
+}
+
+static void bass_client_broadcast_code_cb(struct bt_conn *conn, int err)
+{
+	if (err) {
+		shell_error(ctx_shell, "BASS broadcast code failed (%d)", err);
+	} else {
+		shell_print(ctx_shell, "BASS broadcast code successful");
+	}
+}
+
+static void bass_client_rem_src_cb(struct bt_conn *conn, int err)
+{
+	if (err) {
+		shell_error(ctx_shell, "BASS remove source failed (%d)", err);
+	} else {
+		shell_print(ctx_shell, "BASS remove source successful");
+	}
+}
+
+static struct bt_bass_client_cb_t cbs = {
+	.discover = bass_client_discover_cb,
+	.scan = bass_client_scan_cb,
+	.recv_state = bass_client_recv_state_cb,
+	.recv_state_removed = bass_client_recv_state_removed_cb,
+	.scan_start = bass_client_scan_start_cb,
+	.scan_stop = bass_client_scan_stop_cb,
+	.add_src = bass_client_add_src_cb,
+	.mod_src = bass_client_mod_src_cb,
+	.broadcast_code = bass_client_broadcast_code_cb,
+	.rem_src = bass_client_rem_src_cb,
+};
 
 static int cmd_bass_client_discover(const struct shell *shell, size_t argc,
 				    char **argv)
 {
 	int result;
+
+	bt_bass_client_register_cb(&cbs);
 
 	result = bt_bass_client_discover(default_conn);
 	if (result) {

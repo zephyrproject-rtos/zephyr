@@ -102,10 +102,11 @@ typedef void (*bt_bass_client_scan_cb_t)(
  *  later changed by either the client or the server.
  *
  * @param conn     The connection to the BASS server.
+ * @param err      Error value. 0 on success, GATT error on fail.
  * @param state    The receive state
  */
 typedef void (*bt_bass_client_recv_state_cb_t)(
-	struct bt_conn *conn, const struct bass_recv_state_t *state);
+	struct bt_conn *conn, int err, const struct bass_recv_state_t *state);
 
 /** @brief Callback function for writes.
  *
