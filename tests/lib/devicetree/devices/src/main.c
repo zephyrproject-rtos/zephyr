@@ -9,11 +9,11 @@
 #include <device.h>
 #include <drivers/gpio.h>
 
-#define GPIO DT_NODELABEL(test_gpio_0)
-#define I2C DT_NODELABEL(test_i2c)
-#define DEVA DT_NODELABEL(test_dev_a)
-#define GPIOX DT_NODELABEL(test_gpiox)
-#define DEVB DT_NODELABEL(test_dev_b)
+#define TEST_GPIO DT_NODELABEL(test_gpio_0)
+#define TEST_I2C DT_NODELABEL(test_i2c)
+#define TEST_DEVA DT_NODELABEL(test_dev_a)
+#define TEST_GPIOX DT_NODELABEL(test_gpiox)
+#define TEST_DEVB DT_NODELABEL(test_dev_b)
 
 static const struct device *devlist;
 static const struct device *devlist_end;
@@ -30,31 +30,31 @@ static int dev_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_DEFINE(GPIO, dev_init, device_pm_control_nop,
+DEVICE_DT_DEFINE(TEST_GPIO, dev_init, device_pm_control_nop,
 		 NULL, NULL, PRE_KERNEL_1, 90, NULL);
-DEVICE_DT_DEFINE(I2C, dev_init, device_pm_control_nop,
+DEVICE_DT_DEFINE(TEST_I2C, dev_init, device_pm_control_nop,
 		 NULL, NULL, POST_KERNEL, 10, NULL);
-DEVICE_DT_DEFINE(DEVA, dev_init, device_pm_control_nop,
+DEVICE_DT_DEFINE(TEST_DEVA, dev_init, device_pm_control_nop,
 		 NULL, NULL, POST_KERNEL, 20, NULL);
 /* NB: Intentional init devb before required gpiox */
-DEVICE_DT_DEFINE(DEVB, dev_init, device_pm_control_nop,
+DEVICE_DT_DEFINE(TEST_DEVB, dev_init, device_pm_control_nop,
 		 NULL, NULL, POST_KERNEL, 30, NULL);
-DEVICE_DT_DEFINE(GPIOX, dev_init, device_pm_control_nop,
+DEVICE_DT_DEFINE(TEST_GPIOX, dev_init, device_pm_control_nop,
 		 NULL, NULL, POST_KERNEL, 40, NULL);
 
 #define DEV_HDL(node_id) device_handle_get(DEVICE_DT_GET(node_id))
 
 static void test_init_order(void)
 {
-	zassert_equal(init_order[0], DEV_HDL(GPIO),
+	zassert_equal(init_order[0], DEV_HDL(TEST_GPIO),
 		      NULL);
-	zassert_equal(init_order[1], DEV_HDL(I2C),
+	zassert_equal(init_order[1], DEV_HDL(TEST_I2C),
 		      NULL);
-	zassert_equal(init_order[2], DEV_HDL(DEVA),
+	zassert_equal(init_order[2], DEV_HDL(TEST_DEVA),
 		      NULL);
-	zassert_equal(init_order[3], DEV_HDL(DEVB),
+	zassert_equal(init_order[3], DEV_HDL(TEST_DEVB),
 		      NULL);
-	zassert_equal(init_order[4], DEV_HDL(GPIOX),
+	zassert_equal(init_order[4], DEV_HDL(TEST_GPIOX),
 		      NULL);
 }
 
@@ -80,40 +80,40 @@ static void test_requires(void)
 	const device_handle_t *hdls;
 	const struct device *dev;
 
-	/* GPIO: no req */
-	dev = device_get_binding(DT_LABEL(GPIO));
-	zassert_equal(dev, DEVICE_DT_GET(GPIO), NULL);
+	/* TEST_GPIO: no req */
+	dev = device_get_binding(DT_LABEL(TEST_GPIO));
+	zassert_equal(dev, DEVICE_DT_GET(TEST_GPIO), NULL);
 	hdls = device_get_requires_handles(dev, &nhdls);
 	zassert_equal(nhdls, 0, NULL);
 
-	/* I2C: no req */
-	dev = device_get_binding(DT_LABEL(I2C));
-	zassert_equal(dev, DEVICE_DT_GET(I2C), NULL);
+	/* TEST_I2C: no req */
+	dev = device_get_binding(DT_LABEL(TEST_I2C));
+	zassert_equal(dev, DEVICE_DT_GET(TEST_I2C), NULL);
 	hdls = device_get_requires_handles(dev, &nhdls);
 	zassert_equal(nhdls, 0, NULL);
 
-	/* DEVA: I2C GPIO */
-	dev = device_get_binding(DT_LABEL(DEVA));
-	zassert_equal(dev, DEVICE_DT_GET(DEVA), NULL);
+	/* TEST_DEVA: TEST_I2C GPIO */
+	dev = device_get_binding(DT_LABEL(TEST_DEVA));
+	zassert_equal(dev, DEVICE_DT_GET(TEST_DEVA), NULL);
 	hdls = device_get_requires_handles(dev, &nhdls);
 	zassert_equal(nhdls, 2, NULL);
-	zassert_true(check_handle(DEV_HDL(I2C), hdls, nhdls), NULL);
-	zassert_true(check_handle(DEV_HDL(GPIO), hdls, nhdls), NULL);
+	zassert_true(check_handle(DEV_HDL(TEST_I2C), hdls, nhdls), NULL);
+	zassert_true(check_handle(DEV_HDL(TEST_GPIO), hdls, nhdls), NULL);
 
-	/* GPIOX: I2C */
-	dev = device_get_binding(DT_LABEL(GPIOX));
-	zassert_equal(dev, DEVICE_DT_GET(GPIOX), NULL);
+	/* TEST_GPIOX: TEST_I2C */
+	dev = device_get_binding(DT_LABEL(TEST_GPIOX));
+	zassert_equal(dev, DEVICE_DT_GET(TEST_GPIOX), NULL);
 	hdls = device_get_requires_handles(dev, &nhdls);
 	zassert_equal(nhdls, 1, NULL);
-	zassert_true(check_handle(DEV_HDL(I2C), hdls, nhdls), NULL);
+	zassert_true(check_handle(DEV_HDL(TEST_I2C), hdls, nhdls), NULL);
 
-	/* DEVB: I2C GPIOX */
-	dev = device_get_binding(DT_LABEL(DEVB));
-	zassert_equal(dev, DEVICE_DT_GET(DEVB), NULL);
+	/* TEST_DEVB: TEST_I2C TEST_GPIOX */
+	dev = device_get_binding(DT_LABEL(TEST_DEVB));
+	zassert_equal(dev, DEVICE_DT_GET(TEST_DEVB), NULL);
 	hdls = device_get_requires_handles(dev, &nhdls);
 	zassert_equal(nhdls, 2, NULL);
-	zassert_true(check_handle(DEV_HDL(I2C), hdls, nhdls), NULL);
-	zassert_true(check_handle(DEV_HDL(GPIOX), hdls, nhdls), NULL);
+	zassert_true(check_handle(DEV_HDL(TEST_I2C), hdls, nhdls), NULL);
+	zassert_true(check_handle(DEV_HDL(TEST_GPIOX), hdls, nhdls), NULL);
 }
 
 void test_main(void)
