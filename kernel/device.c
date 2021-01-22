@@ -79,6 +79,10 @@ const struct device *z_impl_device_get_binding(const char *name)
 {
 	const struct device *dev;
 
+	if (name == NULL) {
+		return NULL;
+	}
+
 	/* Split the search into two loops: in the common scenario, where
 	 * device names are stored in ROM (and are referenced by the user
 	 * with CONFIG_* macros), only cheap pointer comparisons will be
