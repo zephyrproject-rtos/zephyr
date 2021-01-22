@@ -51,10 +51,9 @@ extern "C" {
 /**
  * Map a physical memory region into the kernel's virtual address space
  *
- * This function is intended for mapping memory-mapped I/O regions into
- * the virtual address space. Given a physical address and a size, return a
- * linear address representing the base of where the physical region is mapped
- * in the virtual address space for the Zephyr kernel.
+ * Given a physical address and a size, return a linear address
+ * representing the base of where the physical region is mapped in
+ * the virtual address space for the Zephyr kernel.
  *
  * This function alters the active page tables in the area reserved
  * for the kernel. This function will choose the virtual address
@@ -71,17 +70,11 @@ extern "C" {
  * with user access and code execution forbidden. This policy is changed
  * by passing K_MEM_CACHE_* and K_MEM_PERM_* macros into the 'flags' parameter.
  *
- * If there is insufficient virtual address space for the mapping this will
- * generate a kernel panic.
+ * If there is insufficient virtual address space for the mapping, or
+ * bad flags are passed in, or if additional memory is needed to update
+ * page tables that is not available, this will generate a kernel panic.
  *
  * This API is only available if CONFIG_MMU is enabled.
- *
- * It is highly discouraged to use this function to map system RAM page
- * frames. It may conflict with anonymous memory mappings and demand paging
- * and produce undefined behavior.  Do not use this for RAM unless you know
- * exactly what you are doing. If you need a chunk of memory, use k_mem_map().
- * If you need a contiguous buffer of physical memory, statically declare it
- * and pin it at build time, it will be mapped when the system boots.
  *
  * This API is part of infrastructure still under development and may
  * change.
