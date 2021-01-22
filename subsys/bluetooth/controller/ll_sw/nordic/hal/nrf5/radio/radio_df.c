@@ -8,7 +8,7 @@
 #include <errno.h>
 #include <devicetree.h>
 #include <sys/util_macro.h>
-#include <nrfx/hal/nrf_radio.h>
+#include <hal/nrf_radio.h>
 
 #include "radio_df.h"
 
