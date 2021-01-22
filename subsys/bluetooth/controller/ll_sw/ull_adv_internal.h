@@ -47,8 +47,18 @@ const uint8_t *ull_adv_pdu_update_addrs(struct ll_adv_set *adv,
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 
 #define ULL_ADV_PDU_HDR_FIELD_ADVA      BIT(0)
+#define ULL_ADV_PDU_HDR_FIELD_CTE_INFO  BIT(2)
+#define ULL_ADV_PDU_HDR_FIELD_AUX_PTR   BIT(4)
 #define ULL_ADV_PDU_HDR_FIELD_SYNC_INFO BIT(5)
 #define ULL_ADV_PDU_HDR_FIELD_AD_DATA   BIT(8)
+
+/* Helper type to store data for extended advertising
+ * header fields and extra data.
+ */
+struct adv_pdu_field_data {
+	uint8_t *field_data;
+	void *extra_data;
+};
 
 /* helper function to handle adv done events */
 void ull_adv_done(struct node_rx_event_done *done);
@@ -91,6 +101,15 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 				  struct pdu_adv_adi *adi,
 				  uint8_t *pri_idx);
 
+/* helper function to set/clear common extended header format fields
+ * for AUX_SYNC_IND PDU.
+ */
+uint8_t ull_adv_sync_pdu_set_clear(struct ll_adv_set *adv,
+				   uint16_t hdr_add_fields,
+				   uint16_t hdr_rem_fields,
+				   struct adv_pdu_field_data *data,
+				   uint8_t *ter_idx);
+
 /* helper function to calculate common ext adv payload header length and
  * adjust the data pointer.
  * NOTE: This function reverts the header data pointer if there is no
@@ -129,12 +148,23 @@ int ull_adv_sync_init(void);
 int ull_adv_sync_reset(void);
 
 /* helper function to start periodic advertising */
-uint32_t ull_adv_sync_start(struct ll_adv_sync_set *sync,
+uint32_t ull_adv_sync_start(struct ll_adv_set *adv,
+			    struct ll_adv_sync_set *sync,
 			    uint32_t ticks_anchor);
+
+/* helper function to update periodic advertising event length */
+void ull_adv_sync_update(struct ll_adv_sync_set *sync, uint32_t slot_plus_us,
+			 uint32_t slot_minus_us);
 
 /* helper function to schedule a mayfly to get sync offset */
 void ull_adv_sync_offset_get(struct ll_adv_set *adv);
 
 int ull_adv_iso_init(void);
 int ull_adv_iso_reset(void);
+
+#if IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+/* helper function to release unused DF configuration memory */
+void ull_df_adv_cfg_release(struct lll_df_adv_cfg *df_adv_cfg);
+#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
+
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
