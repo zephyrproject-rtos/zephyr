@@ -296,17 +296,7 @@ class PtableSet(object):
         some kind of leaf page table class (Pt or PtXd)"""
         raise NotImplementedError()
 
-    def new_child_table(self, table, virt_addr, depth):
-        new_table_addr = self.get_new_mmutable_addr()
-        new_table = self.levels[depth]()
-        debug("new %s at physical addr 0x%x"
-                      % (self.levels[depth].__name__, new_table_addr))
-        self.tables[new_table_addr] = new_table
-        table.map(virt_addr, new_table_addr, INT_FLAGS)
-
-        return new_table
-
-    def map_page(self, virt_addr, phys_addr, flags, reserve):
+    def map_page(self, virt_addr, phys_addr, flags):
         """Map a virtual address to a physical address in the page tables,
         with provided access flags"""
         table = self.toplevel
@@ -315,29 +305,18 @@ class PtableSet(object):
         for depth in range(1, len(self.levels)):
             # Create child table if needed
             if not table.has_entry(virt_addr):
-                table = self.new_child_table(table, virt_addr, depth)
+                new_table_addr = self.get_new_mmutable_addr()
+                new_table = self.levels[depth]()
+                debug("new %s at physical addr 0x%x"
+                      % (self.levels[depth].__name__, new_table_addr))
+                self.tables[new_table_addr] = new_table
+                table.map(virt_addr, new_table_addr, INT_FLAGS)
+                table = new_table
             else:
                 table = self.tables[table.lookup(virt_addr)]
 
         # Set up entry in leaf page table
-        if not reserve:
-            table.map(virt_addr, phys_addr, flags)
-
-    def reserve(self, virt_base, size):
-        debug("Reserving paging structures 0x%x (%d)" %
-              (virt_base, size))
-
-        align_check(virt_base, size)
-
-        # How much memory is covered by leaf page table
-        scope = 1 << self.levels[-2].addr_shift
-
-        if virt_base % scope != 0:
-            error("misaligned virtual address space, 0x%x not a multiple of 0x%x" %
-                  (virt_base, scope))
-
-        for addr in range(virt_base, virt_base + size, scope):
-            self.map_page(addr, 0, 0, True)
+        table.map(virt_addr, phys_addr, flags)
 
     def map(self, phys_base, size, flags):
         """Identity map an address range in the page tables, with provided
@@ -352,7 +331,7 @@ class PtableSet(object):
                 # Never map the NULL page
                 continue
 
-            self.map_page(addr, addr, flags, False)
+            self.map_page(addr, addr, flags)
 
     def set_region_perms(self, name, flags):
         """Set access permissions for a named region that is already mapped
@@ -456,18 +435,12 @@ def main():
 
     debug("building %s" % pclass.__name__)
 
-    vm_base = syms["CONFIG_KERNEL_VM_BASE"]
-    vm_size = syms["CONFIG_KERNEL_VM_SIZE"]
-
+    # Identity-mapped Zephyr image in RAM
     image_base = syms["z_mapped_start"]
     image_size = syms["z_mapped_size"]
     ptables_phys = syms["z_x86_pagetables_start"]
 
-    debug("Address space: 0x%x - 0x%x size %x" %
-          (vm_base, vm_base + vm_size, vm_size))
-
-    debug("Zephyr image: 0x%x - 0x%x size %x" %
-          (image_base, image_base + image_size, image_size))
+    debug("Base addresses: physical 0x%x size %d" % (image_base, image_size))
 
     is_perm_regions = isdef("CONFIG_SRAM_REGION_PERMISSIONS")
 
@@ -479,9 +452,6 @@ def main():
         map_flags = FLAG_P
 
     pt = pclass(ptables_phys)
-    # Instantiate all the paging structures for the address space
-    pt.reserve(vm_base, vm_size)
-    # Map the zephyr image
     pt.map(image_base, image_size, map_flags | ENTRY_RW)
 
     if isdef("CONFIG_X86_64"):

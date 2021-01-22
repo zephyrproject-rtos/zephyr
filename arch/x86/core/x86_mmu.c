@@ -195,25 +195,24 @@ static const struct paging_level paging_levels[] = {
 #define NUM_PD_ENTRIES   1024U
 #define NUM_PT_ENTRIES   1024U
 #endif /* !CONFIG_X86_64 && !CONFIG_X86_PAE */
-
 /* Memory range covered by an instance of various table types */
-#define PT_AREA		((uintptr_t)(CONFIG_MMU_PAGE_SIZE * NUM_PT_ENTRIES))
+#define PT_AREA  ((uintptr_t)(CONFIG_MMU_PAGE_SIZE *  NUM_PT_ENTRIES))
 #define PD_AREA 	(PT_AREA * NUM_PD_ENTRIES)
 #ifdef CONFIG_X86_64
 #define PDPT_AREA	(PD_AREA * NUM_PDPT_ENTRIES)
 #endif
 
-#define VM_ADDR		CONFIG_KERNEL_VM_BASE
-#define VM_SIZE		CONFIG_KERNEL_VM_SIZE
+#define VM_ADDR DT_REG_ADDR(DT_CHOSEN(zephyr_sram))
+#define VM_SIZE DT_REG_SIZE(DT_CHOSEN(zephyr_sram))
 
 /* Define a range [PT_START, PT_END) which is the memory range
- * covered by all the page tables needed for the address space
+ * covered by all the page tables needed for system RAM
  */
 #define PT_START	((uintptr_t)ROUND_DOWN(VM_ADDR, PT_AREA))
 #define PT_END		((uintptr_t)ROUND_UP(VM_ADDR + VM_SIZE, PT_AREA))
 
-/* Number of page tables needed to cover address space. Depends on the specific
- * bounds, but roughly 1 page table per 2MB of RAM
+/* Number of page tables needed to cover system RAM. Depends on the specific
+ * bounds of system RAM, but roughly 1 page table per 2MB of RAM
  */
 #define NUM_PT	((PT_END - PT_START) / PT_AREA)
 
@@ -223,8 +222,8 @@ static const struct paging_level paging_levels[] = {
  */
 #define PD_START	((uintptr_t)ROUND_DOWN(VM_ADDR, PD_AREA))
 #define PD_END		((uintptr_t)ROUND_UP(VM_ADDR + VM_SIZE, PD_AREA))
-/* Number of page directories needed to cover the address space. Depends on the
- * specific bounds, but roughly 1 page directory per 1GB of RAM
+/* Number of page directories needed to cover system RAM. Depends on the
+ * specific bounds of system RAM, but roughly 1 page directory per 1GB of RAM
  */
 #define NUM_PD	((PD_END - PD_START) / PD_AREA)
 #else
@@ -234,11 +233,13 @@ static const struct paging_level paging_levels[] = {
 
 #ifdef CONFIG_X86_64
 /* Same semantics as above, but for the page directory pointer tables needed
- * to cover the address space. On 32-bit there is just one 4-entry PDPT.
+ * to cover system RAM. On 32-bit there is just one 4-entry PDPT.
  */
 #define PDPT_START	((uintptr_t)ROUND_DOWN(VM_ADDR, PDPT_AREA))
 #define PDPT_END	((uintptr_t)ROUND_UP(VM_ADDR + VM_SIZE, PDPT_AREA))
-/* Number of PDPTs needed to cover the address space. 1 PDPT per 512GB of VM */
+/* Number of PDPTs needed to cover system RAM. Depends on the
+ * specific bounds of system RAM, but roughly 1 PDPT per 512GB of RAM
+ */
 #define NUM_PDPT	((PDPT_END - PDPT_START) / PDPT_AREA)
 
 /* All pages needed for page tables, using computed values plus one more for
@@ -699,6 +700,47 @@ void z_x86_dump_mmu_flags(pentry_t *ptables, void *virt)
 }
 #endif /* CONFIG_EXCEPTION_DEBUG */
 
+/*
+ * Pool of free memory pages for creating new page tables, as needed.
+ *
+ * XXX: This is very crude, once obtained, pages may not be returned. Tuning
+ * the optimal value of CONFIG_X86_MMU_PAGE_POOL_PAGES is not intuitive,
+ * Better to have a kernel managed page pool of unused RAM that can be used for
+ * this, sbrk(), and other anonymous mappings. See #29526
+ */
+static uint8_t __noinit
+	page_pool[CONFIG_MMU_PAGE_SIZE * CONFIG_X86_MMU_PAGE_POOL_PAGES]
+	__aligned(CONFIG_MMU_PAGE_SIZE);
+
+static uint8_t *page_pos = page_pool + sizeof(page_pool);
+
+/* Return a zeroed and suitably aligned memory page for page table data
+ * from the global page pool
+ */
+static void *page_pool_get(void)
+{
+	void *ret;
+
+	if (page_pos == page_pool) {
+		ret = NULL;
+	} else {
+		page_pos -= CONFIG_MMU_PAGE_SIZE;
+		ret = page_pos;
+	}
+
+	if (ret != NULL) {
+		memset(ret, 0, CONFIG_MMU_PAGE_SIZE);
+	}
+
+	return ret;
+}
+
+/* Debugging function to show how many pages are free in the pool */
+static inline unsigned int pages_free(void)
+{
+	return (page_pos - page_pool) / CONFIG_MMU_PAGE_SIZE;
+}
+
 /* Reset permissions on a PTE to original state when the mapping was made */
 static inline pentry_t reset_pte(pentry_t old_val)
 {
@@ -807,6 +849,12 @@ static inline bool atomic_pte_cas(pentry_t *target, pentry_t old_value,
  */
 #define OPTION_RESET		BIT(2)
 
+/* Indicates that allocations from the page pool are allowed to instantiate
+ * new paging structures. Only necessary when establishing new mappings
+ * and the entire address space isn't pre-allocated.
+ */
+#define OPTION_ALLOC		BIT(3)
+
 /**
  * Atomically update bits in a page table entry
  *
@@ -875,6 +923,10 @@ static inline pentry_t pte_atomic_update(pentry_t *pte, pentry_t update_val,
  * modified by another CPU, using atomic operations to update the requested
  * bits and return the previous PTE value.
  *
+ * This function is NOT atomic with respect to allocating intermediate
+ * paging structures, and this must be called with x86_mmu_lock held if
+ * OPTION_ALLOC is used.
+ *
  * Common mask values:
  *  MASK_ALL  - Update all PTE bits. Exitsing state totally discarded.
  *  MASK_PERM - Only update permission bits. All other bits and physical
@@ -886,12 +938,16 @@ static inline pentry_t pte_atomic_update(pentry_t *pte, pentry_t update_val,
  * @param [out] old_val_ptr Filled in with previous PTE value. May be NULL.
  * @param mask What bits to update in the PTE (ignored if OPTION_RESET)
  * @param options Control options, described above
+ * @retval 0 Success
+ * @retval -ENOMEM allocation required and no free pages (only if OPTION_ALLOC)
  */
-static void page_map_set(pentry_t *ptables, void *virt, pentry_t entry_val,
-			 pentry_t *old_val_ptr, pentry_t mask, uint32_t options)
+static int page_map_set(pentry_t *ptables, void *virt, pentry_t entry_val,
+			pentry_t *old_val_ptr, pentry_t mask, uint32_t options)
 {
 	pentry_t *table = ptables;
 	bool flush = (options & OPTION_FLUSH) != 0U;
+
+	assert_virt_addr_aligned(virt);
 
 	for (int level = 0; level < NUM_LEVELS; level++) {
 		int index;
@@ -910,20 +966,42 @@ static void page_map_set(pentry_t *ptables, void *virt, pentry_t entry_val,
 			break;
 		}
 
-		/* We fail an assertion here due to no support for
-		 * splitting existing bigpage mappings.
-		 * If the PS bit is not supported at some level (like
-		 * in a PML4 entry) it is always reserved and must be 0
-		 */
-		__ASSERT((*entryp & MMU_PS) == 0U, "large page encountered");
-		table = next_table(*entryp, level);
-		__ASSERT(table != NULL,
-			 "missing page table level %d when trying to map %p",
-			 level + 1, virt);
+		/* This is a non-leaf entry */
+		if ((*entryp & MMU_P) == 0U) {
+			/* Not present. Never done a mapping here yet, need
+			 * some RAM for linked tables
+			 */
+			void *new_table;
+
+			__ASSERT((options & OPTION_ALLOC) != 0,
+				 "missing page table and allocations disabled");
+
+			new_table = page_pool_get();
+
+			if (new_table == NULL) {
+				return -ENOMEM;
+			}
+
+			*entryp = ((pentry_t)z_x86_phys_addr(new_table) |
+				   INT_FLAGS);
+			table = new_table;
+		} else {
+			/* We fail an assertion here due to no support for
+			 * splitting existing bigpage mappings.
+			 * If the PS bit is not supported at some level (like
+			 * in a PML4 entry) it is always reserved and must be 0
+			 */
+			__ASSERT((*entryp & MMU_PS) == 0U,
+				  "large page encountered");
+			table = next_table(*entryp, level);
+		}
 	}
+
 	if (flush) {
 		tlb_flush_page(virt);
 	}
+
+	return 0;
 }
 
 /**
@@ -931,6 +1009,8 @@ static void page_map_set(pentry_t *ptables, void *virt, pentry_t entry_val,
  *
  * See documentation for page_map_set() for additional notes about masks and
  * supported options.
+ *
+ * Must call this with x86_mmu_lock held if OPTION_ALLOC is used.
  *
  * It is vital to remember that all virtual-to-physical mappings must be
  * the same with respect to supervisor mode regardless of what thread is
@@ -951,11 +1031,14 @@ static void page_map_set(pentry_t *ptables, void *virt, pentry_t entry_val,
  * @param mask What bits to update in each PTE. Un-set bits will never be
  *        modified. Ignored if OPTION_RESET.
  * @param options Control options, described above
+ * @retval 0 Success
+ * @retval -ENOMEM allocation required and no free pages (only if OPTION_ALLOC)
  */
-static void range_map_ptables(pentry_t *ptables, void *virt, uintptr_t phys,
-			      size_t size, pentry_t entry_flags, pentry_t mask,
-			      uint32_t options)
+static int range_map_ptables(pentry_t *ptables, void *virt, uintptr_t phys,
+			     size_t size, pentry_t entry_flags, pentry_t mask,
+			     uint32_t options)
 {
+	int ret;
 	bool reset = (options & OPTION_RESET) != 0U;
 
 	assert_addr_aligned(phys);
@@ -979,9 +1062,14 @@ static void range_map_ptables(pentry_t *ptables, void *virt, uintptr_t phys,
 			entry_val = (phys + offset) | entry_flags;
 		}
 
-		page_map_set(ptables, dest_virt, entry_val, NULL, mask,
-			     options);
+		ret = page_map_set(ptables, dest_virt, entry_val, NULL, mask,
+				   options);
+		if (ret != 0) {
+			return ret;
+		}
 	}
+
+	return 0;
 }
 
 /**
@@ -1005,10 +1093,14 @@ static void range_map_ptables(pentry_t *ptables, void *virt, uintptr_t phys,
  *             be preserved. Ignored if OPTION_RESET.
  * @param options Control options. Do not set OPTION_USER here. OPTION_FLUSH
  *                will trigger a TLB shootdown after all tables are updated.
+ * @retval 0 Success
+ * @retval -ENOMEM page table allocation required, but no free pages
  */
-static void range_map(void *virt, uintptr_t phys, size_t size,
-		      pentry_t entry_flags, pentry_t mask, uint32_t options)
+static int range_map(void *virt, uintptr_t phys, size_t size,
+		     pentry_t entry_flags, pentry_t mask, uint32_t options)
 {
+	int ret = 0;
+
 	LOG_DBG("%s: %p -> %p (%zu) flags " PRI_ENTRY " mask "
 		PRI_ENTRY " opt 0x%x", __func__, (void *)phys, virt, size,
 		entry_flags, mask, options);
@@ -1039,29 +1131,47 @@ static void range_map(void *virt, uintptr_t phys, size_t size,
 		struct arch_mem_domain *domain =
 			CONTAINER_OF(node, struct arch_mem_domain, node);
 
-		range_map_ptables(domain->ptables, virt, phys, size,
-				  entry_flags, mask, options | OPTION_USER);
+		ret = range_map_ptables(domain->ptables, virt, phys, size,
+					entry_flags, mask,
+					options | OPTION_USER);
+		if (ret != 0) {
+			/* NOTE: Currently we do not un-map a partially
+			 * completed mapping.
+			 */
+			goto out_unlock;
+		}
 	}
 #endif /* CONFIG_USERSPACE */
-	range_map_ptables(z_x86_kernel_ptables, virt, phys, size, entry_flags,
-			  mask, options);
+	ret = range_map_ptables(z_x86_kernel_ptables, virt, phys, size,
+				entry_flags, mask, options);
+#if defined(CONFIG_USERSPACE) && !defined(CONFIG_X86_COMMON_PAGE_TABLE)
+out_unlock:
+#endif /* CONFIG_USERSPACE */
+	if (ret == 0 && (options & OPTION_ALLOC) != 0) {
+		LOG_DBG("page pool pages free: %u / %u", pages_free(),
+			CONFIG_X86_MMU_PAGE_POOL_PAGES);
+	}
 
 #ifdef CONFIG_SMP
 	if ((options & OPTION_FLUSH) != 0U) {
 		tlb_shootdown();
 	}
 #endif /* CONFIG_SMP */
+	return ret;
 }
 
-static inline void range_map_unlocked(void *virt, uintptr_t phys, size_t size,
-				      pentry_t entry_flags, pentry_t mask,
-				      uint32_t options)
+static inline int range_map_unlocked(void *virt, uintptr_t phys, size_t size,
+				     pentry_t entry_flags, pentry_t mask,
+				     uint32_t options)
 {
+	int ret;
 	k_spinlock_key_t key;
 
 	key = k_spin_lock(&x86_mmu_lock);
-	range_map(virt, phys, size, entry_flags, mask, options);
+	ret = range_map(virt, phys, size, entry_flags, mask, options);
 	k_spin_unlock(&x86_mmu_lock, key);
+
+	return ret;
 }
 
 static pentry_t flags_to_entry(uint32_t flags)
@@ -1105,10 +1215,8 @@ static pentry_t flags_to_entry(uint32_t flags)
 /* map new region virt..virt+size to phys with provided arch-neutral flags */
 int arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 {
-	range_map_unlocked(virt, phys, size, flags_to_entry(flags),
-			   MASK_ALL, 0);
-
-	return 0;
+	return range_map_unlocked(virt, phys, size, flags_to_entry(flags),
+				  MASK_ALL, OPTION_ALLOC);
 }
 
 #if CONFIG_X86_STACK_PROTECTION
@@ -1122,8 +1230,8 @@ void z_x86_set_stack_guard(k_thread_stack_t *stack)
 	 * Guard page is always the first page of the stack object for both
 	 * kernel and thread stacks.
 	 */
-	range_map_unlocked(stack, 0, CONFIG_MMU_PAGE_SIZE,
-			   MMU_P | ENTRY_XD, MASK_PERM, OPTION_FLUSH);
+	(void)range_map_unlocked(stack, 0, CONFIG_MMU_PAGE_SIZE,
+				 MMU_P | ENTRY_XD, MASK_PERM, OPTION_FLUSH);
 }
 #endif /* CONFIG_X86_STACK_PROTECTION */
 
@@ -1225,14 +1333,14 @@ int arch_buffer_validate(void *addr, size_t size, int write)
 
 static inline void reset_region(uintptr_t start, size_t size)
 {
-	range_map_unlocked((void *)start, 0, size, 0, 0,
-			   OPTION_FLUSH | OPTION_RESET);
+	(void)range_map_unlocked((void *)start, 0, size, 0, 0,
+				 OPTION_FLUSH | OPTION_RESET);
 }
 
 static inline void apply_region(uintptr_t start, size_t size, pentry_t attr)
 {
-	range_map_unlocked((void *)start, 0, size, attr, MASK_PERM,
-			   OPTION_FLUSH);
+	(void)range_map_unlocked((void *)start, 0, size, attr, MASK_PERM,
+				 OPTION_FLUSH);
 }
 
 /* Cache of the current memory domain applied to the common page tables and
@@ -1357,44 +1465,6 @@ void arch_mem_domain_destroy(struct k_mem_domain *domain)
 }
 #else
 /* Memory domains each have a set of page tables assigned to them */
-
-/*
- * Pool of free memory pages for copying page tables, as needed.
- */
-#define PTABLE_COPY_SIZE	(NUM_TABLE_PAGES * CONFIG_MMU_PAGE_SIZE)
-
-static uint8_t __noinit
-	page_pool[PTABLE_COPY_SIZE * CONFIG_X86_MAX_ADDITIONAL_MEM_DOMAINS]
-	__aligned(CONFIG_MMU_PAGE_SIZE);
-
-static uint8_t *page_pos = page_pool + sizeof(page_pool);
-
-/* Return a zeroed and suitably aligned memory page for page table data
- * from the global page pool
- */
-static void *page_pool_get(void)
-{
-	void *ret;
-
-	if (page_pos == page_pool) {
-		ret = NULL;
-	} else {
-		page_pos -= CONFIG_MMU_PAGE_SIZE;
-		ret = page_pos;
-	}
-
-	if (ret != NULL) {
-		memset(ret, 0, CONFIG_MMU_PAGE_SIZE);
-	}
-
-	return ret;
-}
-
-/* Debugging function to show how many pages are free in the pool */
-static inline unsigned int pages_free(void)
-{
-	return (page_pos - page_pool) / CONFIG_MMU_PAGE_SIZE;
-}
 
 /**
 *  Duplicate an entire set of page tables
@@ -1566,6 +1636,9 @@ int arch_mem_domain_init(struct k_mem_domain *domain)
 	if (ret == 0) {
 		sys_slist_append(&x86_domain_list, &domain->arch.node);
 	}
+
+	LOG_DBG("page pool pages free: %u / %u\n", pages_free(),
+		CONFIG_X86_MMU_PAGE_POOL_PAGES);
 	k_spin_unlock(&x86_mmu_lock, key);
 
 	return ret;
