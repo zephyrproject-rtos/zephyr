@@ -1,6 +1,7 @@
 tests:
   testing.ztest.mock:
     arch_exclude: arm
+    platform_exclude: qemu_x86_64
     tags: test_framework
     integration_platforms:
       - native_posix

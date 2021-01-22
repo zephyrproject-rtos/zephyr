@@ -21,4 +21,5 @@ tests:
     tags: kernel ignore_faults userspace
   kernel.common.stack_sentinel:
     extra_args: CONF_FILE=sentinel.conf
+    platform_exclude: qemu_x86_64_nokpti qemu_x86_64
     tags: kernel ignore_faults
