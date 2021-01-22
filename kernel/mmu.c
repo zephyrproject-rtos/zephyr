@@ -564,8 +564,6 @@ void z_mem_manage_init(void)
 }
 
 #ifdef CONFIG_DEMAND_PAGING
-static unsigned long z_num_pagefaults;
-
 /* Current implementation relies on interrupt locking to any prevent page table
  * access, which falls over if other CPUs are active. Addressing this is not
  * as simple as using spinlocks as regular memory reads/writes constitute
@@ -946,30 +944,7 @@ void z_mem_pin(void *addr, size_t size)
 
 bool z_page_fault(void *addr)
 {
-	bool ret;
-
-	ret = do_page_fault(addr, false);
-	if (ret) {
-		/* Wasn't an error, increment page fault count */
-		int key;
-
-		key = irq_lock();
-		z_num_pagefaults++;
-		irq_unlock(key);
-	}
-	return ret;
-}
-
-unsigned long z_num_pagefaults_get(void)
-{
-	unsigned long ret;
-	int key;
-
-	key = irq_lock();
-	ret = z_num_pagefaults;
-	irq_unlock(key);
-
-	return ret;
+	return do_page_fault(addr, false);
 }
 
 static void do_mem_unpin(void *addr)
