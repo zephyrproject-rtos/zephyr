@@ -375,7 +375,7 @@ device_from_handle(device_handle_t dev_handle)
 	extern const struct device __device_start[];
 	extern const struct device __device_end[];
 	const struct device *dev = NULL;
-	size_t numdev = __device_end - __device_start;
+	ptrdiff_t numdev = __device_end - __device_start;
 
 	if (dev_handle < numdev) {
 		dev = &__device_start[dev_handle];
