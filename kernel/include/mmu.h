@@ -356,16 +356,6 @@ void z_backing_store_init(void);
  */
 
 /**
- * Number of page faults since system startup
- *
- * Counts only those page faults that were handled successfully by the demand
- * paging mechanism and were not errors.
- *
- * @return Number of successful page faults
- */
-unsigned long z_num_pagefaults_get(void);
-
-/**
  * Free a page frame physical address by evicting its contents
  *
  * The indicated page frame, if it contains a data page, will have that
