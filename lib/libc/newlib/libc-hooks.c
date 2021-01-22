@@ -16,111 +16,91 @@
 #include <app_memory/app_memdomain.h>
 #include <init.h>
 #include <sys/sem.h>
-#include <sys/mem_manage.h>
 
 #define LIBC_BSS	K_APP_BMEM(z_libc_partition)
 #define LIBC_DATA	K_APP_DMEM(z_libc_partition)
 
-/*
- * End result of this thorny set of ifdefs is to define:
- *
- * - HEAP_BASE base address of the heap arena
- * - MAX_HEAP_SIZE size of the heap arena
+#if CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE
+K_APPMEM_PARTITION_DEFINE(z_malloc_partition);
+#define MALLOC_BSS	K_APP_BMEM(z_malloc_partition)
+
+/* Compiler will throw an error if the provided value isn't a power of two */
+MALLOC_BSS static unsigned char __aligned(CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE)
+	heap_base[CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE];
+#define MAX_HEAP_SIZE CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE
+
+#else /* CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE */
+/* Heap base and size are determined based on the available unused SRAM,
+ * in the interval from a properly aligned address after the linker symbol
+ * `_end`, to the end of SRAM
  */
+#define USED_RAM_END_ADDR   POINTER_TO_UINT(&_end)
+
+#ifdef Z_MALLOC_PARTITION_EXISTS
+/* Need to be able to program a memory protection region from HEAP_BASE
+ * to the end of RAM so that user threads can get at it.
+ * Implies that the base address needs to be suitably aligned since the
+ * bounds have to go in a k_mem_partition.
+ */
+#ifdef CONFIG_MMU
+/* Linker script may already have done this, but just to be safe */
+#define HEAP_BASE	ROUND_UP(USED_RAM_END_ADDR, CONFIG_MMU_PAGE_SIZE)
+#else /* MPU-based systems */
+/* TODO: Need a generic Kconfig for the MPU region granularity */
+#if defined(CONFIG_ARM)
+#define HEAP_BASE	ROUND_UP(USED_RAM_END_ADDR, \
+				 CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE)
+#elif defined(CONFIG_ARC)
+#define HEAP_BASE	ROUND_UP(USED_RAM_END_ADDR, Z_ARC_MPU_ALIGN)
+#else
+#error "Unsupported platform"
+#endif /* CONFIG_<arch> */
+#endif /* !CONFIG_MMU */
+#else /* !Z_MALLOC_PARTITION_EXISTS */
+/* No partition, heap can just start wherever _end is */
+#define HEAP_BASE	USED_RAM_END_ADDR
+#endif /* Z_MALLOC_PARTITION_EXISTS */
 
 #ifdef CONFIG_MMU
-	#ifdef CONFIG_USERSPACE
-		struct k_mem_partition z_malloc_partition;
-	#endif
+/* Currently a placeholder, we're just setting up all unused RAM pages
+ * past the end of the kernel as the heap arena. SRAM_BASE_ADDRESS is
+ * a physical address so we can't use that.
+ *
+ * Later, we should do this much more like other VM-enabled operating systems:
+ * - Set up a core kernel ontology of free physical pages
+ * - Allow anonymous memoory mappings drawing from the pool of free physical
+ *   pages
+ * - Have _sbrk() map anonymous pages into the heap arena as needed
+ * - See: https://github.com/zephyrproject-rtos/zephyr/issues/29526
+ */
+#define MAX_HEAP_SIZE	(CONFIG_KERNEL_RAM_SIZE - (HEAP_BASE - \
+						   CONFIG_KERNEL_VM_BASE))
+#elif defined(CONFIG_XTENSA)
+extern void *_heap_sentry;
+#define MAX_HEAP_SIZE	(POINTER_TO_UINT(&_heap_sentry) - HEAP_BASE)
+#else
+#define MAX_HEAP_SIZE	(KB(CONFIG_SRAM_SIZE) - (HEAP_BASE - \
+						 CONFIG_SRAM_BASE_ADDRESS))
+#endif /* CONFIG_MMU */
 
-	LIBC_BSS static unsigned char *heap_base;
-	LIBC_BSS static size_t max_heap_size;
+#if Z_MALLOC_PARTITION_EXISTS
+struct k_mem_partition z_malloc_partition;
 
-	#define HEAP_BASE		heap_base
-	#define MAX_HEAP_SIZE		max_heap_size
-	#define USE_MALLOC_PREPARE	1
-#elif CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE
-	/* Arena size expressed in Kconfig, due to power-of-two size/align
-	 * requirements of certain MPUs.
-	 *
-	 * We use an automatic memory partition instead of setting this up
-	 * in malloc_prepare().
-	 */
-	K_APPMEM_PARTITION_DEFINE(z_malloc_partition);
-	#define MALLOC_BSS	K_APP_BMEM(z_malloc_partition)
-
-	/* Compiler will throw an error if the provided value isn't a
-	 * power of two
-	 */
-	MALLOC_BSS static unsigned char
-		__aligned(CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE)
-		heap_base[CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE];
-	#define MAX_HEAP_SIZE CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE
-	#define HEAP_BASE heap_base
-#else /* Not MMU or CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE */
-	#define USED_RAM_END_ADDR   POINTER_TO_UINT(&_end)
-
-	#ifdef Z_MALLOC_PARTITION_EXISTS
-		/* Start of malloc arena needs to be aligned per MPU
-		 * requirements
-		 */
-		struct k_mem_partition z_malloc_partition;
-
-		#if defined(CONFIG_ARM)
-			#define HEAP_BASE	ROUND_UP(USED_RAM_END_ADDR, \
-				 CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE)
-		#elif defined(CONFIG_ARC)
-			#define HEAP_BASE	ROUND_UP(USED_RAM_END_ADDR, \
-							  Z_ARC_MPU_ALIGN)
-		#else
-			#error "Unsupported platform"
-		#endif /* CONFIG_<arch> */
-		#define USE_MALLOC_PREPARE	1
-	#else
-		/* End of kernel image */
-		#define HEAP_BASE		USED_RAM_END_ADDR
-	#endif
-
-	/* End of the malloc arena is the end of physical memory */
-	#if defined(CONFIG_XTENSA)
-		/* TODO: Why is xtensa a special case? */
-		extern void *_heap_sentry;
-		#define MAX_HEAP_SIZE	(POINTER_TO_UINT(&_heap_sentry) - \
-					 HEAP_BASE)
-	#else
-		#define MAX_HEAP_SIZE	(KB(CONFIG_SRAM_SIZE) - (HEAP_BASE - \
-					 CONFIG_SRAM_BASE_ADDRESS))
-	#endif /* CONFIG_XTENSA */
-#endif
-
-#ifdef USE_MALLOC_PREPARE
 static int malloc_prepare(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 
-#ifdef CONFIG_MMU
-	max_heap_size = k_mem_free_get();
-
-	if (max_heap_size != 0) {
-		heap_base = k_mem_map(max_heap_size, K_MEM_PERM_RW);
-		__ASSERT(heap_base != NULL,
-			 "failed to allocate heap of size %zu", max_heap_size);
-
-	}
-#endif /* CONFIG_MMU */
-#ifdef Z_MALLOC_PARTITION_EXISTS
-	z_malloc_partition.start = (uintptr_t)HEAP_BASE;
-	z_malloc_partition.size = (size_t)MAX_HEAP_SIZE;
+	z_malloc_partition.start = HEAP_BASE;
+	z_malloc_partition.size = MAX_HEAP_SIZE;
 	z_malloc_partition.attr = K_MEM_PARTITION_P_RW_U_RW;
-#endif /* Z_MALLOC_PARTITION_EXISTS */
 	return 0;
 }
 
 SYS_INIT(malloc_prepare, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
-#endif /* USE_MALLOC_PREPARE */
+#endif /* CONFIG_USERSPACE */
+#endif /* CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE */
 
-/* Current offset from HEAP_BASE of unused memory */
-LIBC_BSS static size_t heap_sz;
+LIBC_BSS static unsigned int heap_sz;
 
 static int _stdout_hook_default(int c)
 {
@@ -268,13 +248,18 @@ __weak void _exit(int status)
 
 static LIBC_DATA SYS_SEM_DEFINE(heap_sem, 1, 1);
 
-void *_sbrk(intptr_t count)
+void *_sbrk(int count)
 {
 	void *ret, *ptr;
 
 	/* coverity[CHECKED_RETURN] */
 	sys_sem_take(&heap_sem, K_FOREVER);
+
+#if CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE
+	ptr = heap_base + heap_sz;
+#else
 	ptr = ((char *)HEAP_BASE) + heap_sz;
+#endif
 
 	if ((heap_sz + count) < MAX_HEAP_SIZE) {
 		heap_sz += count;
