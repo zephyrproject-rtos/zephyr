@@ -101,8 +101,7 @@ void test_ram_perms(void)
 				expected = MMU_P | MMU_XD;
 			}
 #endif /* CONFIG_X86_64 */
-#if !defined(CONFIG_X86_KPTI) && !defined(CONFIG_X86_COMMON_PAGE_TABLE) && \
-				  defined(CONFIG_USERSPACE)
+#if !defined(CONFIG_X86_KPTI) && !defined(CONFIG_X86_COMMON_PAGE_TABLE)
 		} else if (IN_REGION(_app_smem, pos)) {
 			/* If KPTI is not enabled, then the default memory
 			 * domain affects our page tables even though we are
@@ -156,13 +155,11 @@ void z_impl_dump_my_ptables(void)
 	z_x86_dump_page_tables(z_x86_thread_page_tables_get(cur));
 }
 
-#ifdef CONFIG_USERSPACE
 void z_vrfy_dump_my_ptables(void)
 {
 	z_impl_dump_my_ptables();
 }
 #include <syscalls/dump_my_ptables_mrsh.c>
-#endif /* CONFIG_USERSPACE */
 
 /**
  * Dump kernel's page tables to console
