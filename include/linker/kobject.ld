@@ -5,7 +5,6 @@
  */
 
 #ifdef CONFIG_USERSPACE
-	z_kobject_data_begin = .;
 	/* Constraints:
          *
          * - changes to the size of this section between build phases
