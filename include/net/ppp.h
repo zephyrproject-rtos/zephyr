@@ -547,6 +547,8 @@ void net_ppp_init(struct net_if *iface);
 enum net_event_ppp_cmd {
 	NET_EVENT_PPP_CMD_CARRIER_ON = 1,
 	NET_EVENT_PPP_CMD_CARRIER_OFF,
+	NET_EVENT_PPP_CMD_PHASE_RUNNING,
+	NET_EVENT_PPP_CMD_PHASE_DEAD,
 };
 
 #define NET_EVENT_PPP_CARRIER_ON					\
@@ -554,6 +556,12 @@ enum net_event_ppp_cmd {
 
 #define NET_EVENT_PPP_CARRIER_OFF					\
 	(_NET_PPP_EVENT | NET_EVENT_PPP_CMD_CARRIER_OFF)
+
+#define NET_EVENT_PPP_PHASE_RUNNING					\
+	(_NET_PPP_EVENT | NET_EVENT_PPP_CMD_PHASE_RUNNING)
+
+#define NET_EVENT_PPP_PHASE_DEAD					\
+	(_NET_PPP_EVENT | NET_EVENT_PPP_CMD_PHASE_DEAD)
 
 struct net_if;
 
@@ -582,6 +590,34 @@ static inline void ppp_mgmt_raise_carrier_on_event(struct net_if *iface)
 void ppp_mgmt_raise_carrier_off_event(struct net_if *iface);
 #else
 static inline void ppp_mgmt_raise_carrier_off_event(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
+}
+#endif
+
+/**
+ * @brief Raise PHASE_RUNNING event when PPP reaching RUNNING phase
+ *
+ * @param iface PPP network interface.
+ */
+#if defined(CONFIG_NET_L2_PPP_MGMT)
+void ppp_mgmt_raise_phase_running_event(struct net_if *iface);
+#else
+static inline void ppp_mgmt_raise_phase_running_event(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
+}
+#endif
+
+/**
+ * @brief Raise PHASE_DEAD event when PPP reaching DEAD phase
+ *
+ * @param iface PPP network interface.
+ */
+#if defined(CONFIG_NET_L2_PPP_MGMT)
+void ppp_mgmt_raise_phase_dead_event(struct net_if *iface);
+#else
+static inline void ppp_mgmt_raise_phase_dead_event(struct net_if *iface)
 {
 	ARG_UNUSED(iface);
 }
