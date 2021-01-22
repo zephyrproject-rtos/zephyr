@@ -127,7 +127,7 @@ def build_elf(elf_file):
                     "zefi.elf"], check = True)
 
     # Convert it to a PE-COFF DLL.
-    cmd = [args.objcopy,
+    cmd = [args.objcopy, "--target=efi-app-x86_64",
         "-j", ".text", "-j", ".reloc", "-j", ".data",
         "zefi.elf", "zephyr.efi"]
     verbose(" ".join(cmd))
