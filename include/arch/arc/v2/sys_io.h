@@ -164,7 +164,7 @@ static ALWAYS_INLINE void sys_write16(uint16_t data, mem_addr_t addr)
 
 static ALWAYS_INLINE uint32_t sys_read32(mem_addr_t addr)
 {
-	uint16_t value;
+	uint32_t value;
 
 	compiler_barrier();
 	value = *(volatile uint32_t *)addr;
