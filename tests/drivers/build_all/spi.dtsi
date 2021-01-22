@@ -567,3 +567,10 @@ test_spi_icm42605: icm42605@38 {
 	spi-max-frequency = <0>;
 	int-gpios = <&test_gpio 0 0>;
 };
+
+test_spi_max6675: max6675@38 {
+	compatible = "maxim,max6675";
+	label = "MAX6675";
+	reg = <0x38>;
+	spi-max-frequency = <0>;
+};
