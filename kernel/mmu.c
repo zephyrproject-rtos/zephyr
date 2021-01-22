@@ -713,7 +713,7 @@ out:
 	return ret;
 }
 
-int k_mem_page_out(void *addr, size_t size)
+int z_mem_page_out(void *addr, size_t size)
 {
 	__ASSERT(page_frames_initialized, "%s called on %p too early", __func__,
 		 addr);
@@ -920,7 +920,7 @@ static void do_page_in(void *addr)
 	(void)ret;
 }
 
-void k_mem_page_in(void *addr, size_t size)
+void z_mem_page_in(void *addr, size_t size)
 {
 	__ASSERT(!IS_ENABLED(CONFIG_DEMAND_PAGING_ALLOW_IRQ) || !k_is_in_isr(),
 		 "%s may not be called in ISRs if CONFIG_DEMAND_PAGING_ALLOW_IRQ is enabled",
@@ -937,7 +937,7 @@ static void do_mem_pin(void *addr)
 	(void)ret;
 }
 
-void k_mem_pin(void *addr, size_t size)
+void z_mem_pin(void *addr, size_t size)
 {
 	__ASSERT(!IS_ENABLED(CONFIG_DEMAND_PAGING_ALLOW_IRQ) || !k_is_in_isr(),
 		 "%s may not be called in ISRs if CONFIG_DEMAND_PAGING_ALLOW_IRQ is enabled",
@@ -990,7 +990,7 @@ static void do_mem_unpin(void *addr)
 	irq_unlock(key);
 }
 
-void k_mem_unpin(void *addr, size_t size)
+void z_mem_unpin(void *addr, size_t size)
 {
 	__ASSERT(page_frames_initialized, "%s called on %p too early", __func__,
 		 addr);
