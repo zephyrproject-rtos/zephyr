@@ -358,7 +358,7 @@ device_handle_get(const struct device *dev)
 	/* TODO: If/when devices can be constructed that are not part of the
 	 * fixed we'll need another solution.
 	 */
-	return (device_handle_t)(dev - __device_start);
+	return 1 + (device_handle_t)(dev - __device_start);
 }
 
 /**
@@ -377,8 +377,8 @@ device_from_handle(device_handle_t dev_handle)
 	const struct device *dev = NULL;
 	size_t numdev = __device_end - __device_start;
 
-	if (dev_handle < numdev) {
-		dev = &__device_start[dev_handle];
+	if ((dev_handle > 0) && ((size_t)dev_handle < numdev)) {
+		dev = &__device_start[dev_handle - 1];
 	}
 
 	return dev;

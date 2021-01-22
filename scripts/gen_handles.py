@@ -207,17 +207,18 @@ def main():
         if device_size == 0:
             device_size = device.sym.entry.st_size
 
-        # Where in the sequence of devices this particular node occurs
-        device.dev_ordinal = (device.sym.entry.st_value - device_start_addr) / device_size
-        debug("%s dev ordinal %d" % (device.sym.name, device.dev_ordinal))
+        # The device handle is one plus the ordinal of this device in
+        # the device table.
+        device.dev_handle = 1 + int((device.sym.entry.st_value - device_start_addr) / device_size)
+        debug("%s dev ordinal %d" % (device.sym.name, device.dev_handle))
 
         n = handle.node
         if n is not None:
-            debug("%s dev ordinal %d\n\t%s" % (n.path, device.dev_ordinal, ' ; '.join(str(_) for _ in handle.handles)))
+            debug("%s dev ordinal %d\n\t%s" % (n.path, device.dev_handle, ' ; '.join(str(_) for _ in handle.handles)))
             used_nodes.add(n)
             n.__device = device
         else:
-            debug("orphan %d" % (device.dev_ordinal,))
+            debug("orphan %d" % (device.dev_handle,))
         hv = handle.handles
         hvi = 1
         handle.dev_deps = []
@@ -269,7 +270,7 @@ def main():
 
             sn = hs.node
             if sn:
-                hdls.extend(dn.__device.dev_ordinal for dn in sn.__depends)
+                hdls.extend(dn.__device.dev_handle for dn in sn.__depends)
                 for dn in sn.depends_on:
                     if dn in sn.__depends:
                         dep_paths.append(dn.path)
@@ -291,7 +292,7 @@ def main():
 
             lines = [
                 '',
-                '/* %d : %s:' % (dev.dev_ordinal, (sn and sn.path) or "sysinit"),
+                '/* %d : %s:' % (dev.dev_handle, (sn and sn.path) or "sysinit"),
             ]
 
             if len(dep_paths) > 0:
