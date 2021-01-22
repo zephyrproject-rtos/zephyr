@@ -1,4 +1,0 @@
-tests:
-  kernel.memory_protection.demand_paging:
-    tags: kernel mmu demand_paging ignore_faults
-    filter: CONFIG_DEMAND_PAGING
