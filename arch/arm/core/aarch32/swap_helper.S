@@ -49,8 +49,8 @@ GDATA(z_arm_tls_ptr)
  * For Cortex-M, z_arm_pendsv() is invoked with no arguments.
  *
  * For Cortex-R, PendSV exception is not supported by the architecture and this
- * function is directly called either by _IntExit in case of preemption, or
- * z_arm_svc in case of cooperative switching.
+ * function is directly called either by z_arm_{exc,int}_exit in case of
+ * preemption, or z_arm_svc in case of cooperative switching.
  */
 
 SECTION_FUNC(TEXT, z_arm_pendsv)
@@ -380,7 +380,7 @@ _thread_irq_disabled:
 
     /*
      * Cortex-M: return from PendSV exception
-     * Cortex-R: return to the caller (_IntExit or z_arm_svc)
+     * Cortex-R: return to the caller (z_arm_{exc,int}_exit, or z_arm_svc)
      */
     bx lr
 
