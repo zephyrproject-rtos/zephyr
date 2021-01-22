@@ -378,7 +378,12 @@ static ssize_t send_socket_data(void *obj,
 	}
 
 	/* Wait for prompt '@' */
-	k_sem_take(&mdata.sem_prompt, K_FOREVER);
+	ret = k_sem_take(&mdata.sem_prompt, K_SECONDS(1));
+	if (ret != 0) {
+		ret = -ETIMEDOUT;
+		LOG_ERR("No @ prompt received");
+		goto exit;
+	}
 
 	/*
 	 * The AT commands manual requires a 50 ms wait
