@@ -68,6 +68,13 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	 */
 	cps #MODE_SVC
 
+	/*
+	 * Preserve lr_svc which may contain the branch return address of the
+	 * interrupted context in case of a nested interrupt. This value will
+	 * be restored prior to exiting the interrupt in z_arm_int_exit.
+	 */
+	push {lr}
+
 	/* Align stack at double-word boundary */
 	and r3, sp, #4
 	sub sp, sp, r3
