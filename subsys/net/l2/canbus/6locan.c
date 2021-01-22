@@ -1467,11 +1467,11 @@ static enum net_verdict canbus_recv(struct net_if *iface,
 
 	if (pkt->canbus_rx_ctx) {
 		if (lladdr->len == sizeof(struct net_canbus_lladdr)) {
-			NET_DBG("Push reassembled packet from 0x%04x trough "
+			NET_DBG("Push reassembled packet from 0x%04x through "
 				"stack again", canbus_get_src_lladdr(pkt));
 		} else {
 			NET_DBG("Push reassembled packet from "
-				"%02x:%02x:%02x:%02x:%02x:%02x trough stack again",
+				"%02x:%02x:%02x:%02x:%02x:%02x through stack again",
 				lladdr->addr[0], lladdr->addr[1], lladdr->addr[2],
 				lladdr->addr[3], lladdr->addr[4], lladdr->addr[5]);
 		}
