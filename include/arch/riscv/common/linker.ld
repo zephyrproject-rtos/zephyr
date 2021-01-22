@@ -62,10 +62,13 @@ MEMORY
 #define ROM_BASE DT_REG_ADDR_BY_IDX(SPI_CTRL, 1)
 #define ROM_SIZE DT_REG_SIZE_BY_IDX(SPI_CTRL, 1)
 #endif
+
+#ifndef ROM_BASE
 #define ROM_BASE 0x80000000
 #define ROM_SIZE 0x60000
+#endif
 
-    ROM (rx)  : ORIGIN = ROM_BASE, LENGTH = ROM_SIZE     //Comes here
+    ROM (rx)  : ORIGIN = ROM_BASE, LENGTH = ROM_SIZE
 #endif
     RAM (rwx) : ORIGIN = CONFIG_SRAM_BASE_ADDRESS, LENGTH = KB(CONFIG_SRAM_SIZE)
     /* Used by and documented in include/linker/intlist.ld */
