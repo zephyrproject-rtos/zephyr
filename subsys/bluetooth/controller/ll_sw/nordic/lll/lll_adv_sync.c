@@ -29,7 +29,9 @@
 #include "lll_internal.h"
 #include "lll_adv_internal.h"
 #include "lll_tim_internal.h"
+#if IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 #include "lll_df_internal.h"
+#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_lll_adv_sync
