@@ -7,7 +7,6 @@
 
 / {
 	model = "Recogni Genesys2 FPGA";
-	//compatible = "sifive,hifive1-revb";
 
 	chosen {
 		zephyr,console = &uart0;
