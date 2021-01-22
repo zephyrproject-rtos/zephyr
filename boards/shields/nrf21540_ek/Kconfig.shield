@@ -1,0 +1,5 @@
+# Copyright (c) 2021, Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_NRF21540_EK
+	def_bool $(shields_list_contains,nrf21540_ek)
