@@ -145,14 +145,12 @@ static uint8_t notify_handler(struct bt_conn *conn,
 		/* If src is set, then the state is active, else it has
 			* been removed
 			*/
-		if (bass_cbs &&
-			bass_cbs->recv_state &&
-			!BASS_RECV_STATE_EMPTY(recv_state)) {
-			bass_cbs->recv_state(conn, recv_state);
-		} else if (bass_cbs &&
-				bass_cbs->recv_state_removed &&
-				BASS_RECV_STATE_EMPTY(recv_state)) {
-			bass_cbs->recv_state_removed(conn, recv_state);
+		if (bass_cbs && bass_cbs->recv_state &&
+		    !BASS_RECV_STATE_EMPTY(recv_state)) {
+			bass_cbs->recv_state(conn, 0, recv_state);
+		} else if (bass_cbs && bass_cbs->recv_state_removed &&
+			   BASS_RECV_STATE_EMPTY(recv_state)) {
+			bass_cbs->recv_state_removed(conn, 0, recv_state);
 		}
 	}
 
@@ -185,7 +183,7 @@ static uint8_t read_recv_state_cb(struct bt_conn *conn, uint8_t err,
 			}
 		} else {
 			if (bass_cbs && bass_cbs->recv_state) {
-				bass_cbs->recv_state(conn, NULL);
+				bass_cbs->recv_state(conn, err, NULL);
 			}
 		}
 	} else if (handle == last_handle) {
@@ -203,7 +201,7 @@ static uint8_t read_recv_state_cb(struct bt_conn *conn, uint8_t err,
 					continue;
 				}
 				bass_cbs->recv_state(
-					conn, &bass_client.recv_state[i]);
+					conn, err, &bass_client.recv_state[i]);
 
 			}
 		}
