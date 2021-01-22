@@ -276,6 +276,7 @@ static void frame_mapped_set(struct z_page_frame *pf, void *addr)
  */
 static int map_anon_page(void *addr, uint32_t flags)
 {
+	int ret;
 	struct z_page_frame *pf;
 	uintptr_t phys;
 	bool lock = (flags & K_MEM_MAP_LOCK) != 0;
@@ -284,10 +285,14 @@ static int map_anon_page(void *addr, uint32_t flags)
 	if (pf == NULL) {
 		return -ENOMEM;
 	}
-
 	phys = z_page_frame_to_phys(pf);
-	arch_mem_map(addr, phys, CONFIG_MMU_PAGE_SIZE, flags | K_MEM_CACHE_WB);
 
+	ret = arch_mem_map(addr, phys, CONFIG_MMU_PAGE_SIZE,
+			   flags | K_MEM_CACHE_WB);
+	if (ret != 0) {
+		free_page_frame_list_put(pf);
+		return -ENOMEM;
+	}
 	if (lock) {
 		pf->flags |= Z_PAGE_FRAME_PINNED;
 	}
@@ -380,6 +385,7 @@ void z_phys_map(uint8_t **virt_ptr, uintptr_t phys, size_t size, uint32_t flags)
 {
 	uintptr_t aligned_phys, addr_offset;
 	size_t aligned_size;
+	int ret;
 	k_spinlock_key_t key;
 	uint8_t *dest_addr;
 
@@ -407,7 +413,11 @@ void z_phys_map(uint8_t **virt_ptr, uintptr_t phys, size_t size, uint32_t flags)
 	LOG_DBG("arch_mem_map(%p, 0x%lx, %zu, %x) offset %lu", dest_addr,
 		aligned_phys, aligned_size, flags, addr_offset);
 
-	arch_mem_map(dest_addr, aligned_phys, aligned_size, flags);
+	ret = arch_mem_map(dest_addr, aligned_phys, aligned_size, flags);
+	if (ret != 0) {
+		LOG_ERR("arch_mem_map() failed with %d", ret);
+		goto fail;
+	}
 	k_spin_unlock(&z_mm_lock, key);
 
 	*virt_ptr = dest_addr + addr_offset;

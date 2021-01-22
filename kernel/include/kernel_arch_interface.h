@@ -241,13 +241,6 @@ static inline bool arch_is_in_isr(void);
  * to this API are assumed to be serialized, and indeed all usage will
  * originate from kernel/mm.c which handles virtual memory management.
  *
- * Architectures are expected to pre-allocate page tables for the entire
- * address space, as defined by CONFIG_KERNEL_VM_BASE and
- * CONFIG_KERNEL_VM_SIZE. This operation should never require any kind of
- * allocation for paging structures.
- *
- * Validation of arguments should be done via assertions.
- *
  * This API is part of infrastructure still under development and may
  * change.
  *
@@ -255,8 +248,12 @@ static inline bool arch_is_in_isr(void);
  * @param addr Page-aligned Source physical address to map
  * @param size Page-aligned size of the mapped memory region in bytes
  * @param flags Caching, access and control flags, see K_MAP_* macros
+ * @retval 0 Success
+ * @retval -ENOTSUP Unsupported cache mode with no suitable fallback, or
+ *	   unsupported flags
+ * @retval -ENOMEM Memory for additional paging structures unavailable
  */
-void arch_mem_map(void *dest, uintptr_t addr, size_t size, uint32_t flags);
+int arch_mem_map(void *dest, uintptr_t addr, size_t size, uint32_t flags);
 
 /**
  * Remove mappings for a provided virtual address range
