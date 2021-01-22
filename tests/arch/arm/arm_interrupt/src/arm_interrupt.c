@@ -467,6 +467,37 @@ void test_arm_user_interrupt(void)
 }
 #endif /* CONFIG_USERSPACE */
 
+#if defined(CONFIG_CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION)
+#pragma GCC push_options
+#pragma GCC optimize("O0")
+/* Avoid compiler optimizing null pointer de-referencing. */
+void test_arm_null_pointer_exception(void)
+{
+	int reason;
+
+	struct test_struct {
+		uint32_t val[2];
+	};
+
+	struct test_struct *test_struct_null_pointer = 0x0;
+
+	expected_reason = K_ERR_CPU_EXCEPTION;
+
+	printk("Reading a null pointer value: 0x%0x\n",
+		test_struct_null_pointer->val[1]);
+
+	reason = expected_reason;
+	zassert_equal(reason, -1,
+		"expected_reason has not been reset (%d)\n", reason);
+}
+#pragma GCC pop_options
+#else
+void test_arm_null_pointer_exception(void)
+{
+	TC_PRINT("Skipped\n");
+}
+
+#endif /* CONFIG_CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION */
 
 /**
  * @}
