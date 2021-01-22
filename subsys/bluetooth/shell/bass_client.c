@@ -17,7 +17,6 @@
 #include <bluetooth/bluetooth.h>
 #include "../host/audio/bass.h"
 #include "bt.h"
-#include "common/log.h"
 
 static const char *phy2str(uint8_t phy)
 {
@@ -68,18 +67,20 @@ static void bass_client_recv_state_cb(struct bt_conn *conn, int err,
 				      const struct bass_recv_state_t *state)
 {
 	char le_addr[BT_ADDR_LE_STR_LEN];
+	char metadata[512];
 
 	if (err) {
 		shell_error(ctx_shell, "BASS recv state read failed (%d)", err);
 	} else {
 		bt_addr_le_to_str(&state->addr, le_addr, sizeof(le_addr));
+		bin2hex(state->metadata, state->metadata_len,
+			metadata, sizeof(metadata));
 		shell_print(ctx_shell, "BASS recv state: src_id %u, addr %s, "
 			    "sid %u, sync_state %u, bis_sync_state 0x%x, "
 			    "big_enc %u, metadata_len %u, metadata %s",
 			    state->src_id, le_addr, state->adv_sid,
 			    state->pa_sync_state, state->bis_sync_state,
-			    state->big_enc, state->metadata_len,
-			    bt_hex(state->metadata, state->metadata_len));
+			    state->big_enc, state->metadata_len, metadata);
 	}
 }
 
