@@ -517,14 +517,6 @@ config CPU_HAS_MMU
 	  This hidden option is selected when the CPU has a Memory Management Unit
 	  (MMU).
 
-config ARCH_HAS_RESERVED_PAGE_FRAMES
-	bool
-	help
-	  This hidden configuration should be selected by the architecture if
-	  certain RAM page frames need to be marked as reserved and never used for
-	  memory mappings. The architecture will need to implement
-	  arch_reserved_pages_update().
-
 menuconfig MMU
 	bool "Enable MMU features"
 	depends on CPU_HAS_MMU
