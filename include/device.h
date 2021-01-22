@@ -348,17 +348,23 @@ struct device {
  *
  * @param dev the device for which a handle is desired.
  *
- * @return the handle for the device.
+ * @return the handle for the device, or DEVICE_HANDLE_NULL if the
+ * device does not have an associated handle.
  */
 static inline device_handle_t
 device_handle_get(const struct device *dev)
 {
+	device_handle_t ret = DEVICE_HANDLE_NULL;
 	extern const struct device __device_start[];
 
 	/* TODO: If/when devices can be constructed that are not part of the
 	 * fixed we'll need another solution.
 	 */
-	return 1 + (device_handle_t)(dev - __device_start);
+	if (dev != NULL) {
+		ret = 1 + (device_handle_t)(dev - __device_start);
+	}
+
+	return ret;
 }
 
 /**
