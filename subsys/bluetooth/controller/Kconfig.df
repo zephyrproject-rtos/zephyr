@@ -110,7 +110,7 @@ config BT_CTLR_DF_ADV_CTE_TX
 
 config BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN
 	int "Maximum length of antenna switch pattern"
-	range 3 40 if SOC_COMPATIBLE_NRF
+	range 3 39 if SOC_COMPATIBLE_NRF
 	range 2 75 if !SOC_COMPATIBLE_NRF
 	default 12
 	help

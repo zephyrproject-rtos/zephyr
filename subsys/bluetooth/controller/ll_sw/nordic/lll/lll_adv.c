@@ -39,7 +39,9 @@
 #include "lll_tim_internal.h"
 #include "lll_adv_internal.h"
 #include "lll_prof_internal.h"
+#if IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 #include "lll_df_internal.h"
+#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_lll_adv
@@ -47,6 +49,14 @@
 #include "hal/debug.h"
 
 static int init_reset(void);
+
+static struct pdu_adv *adv_pdu_allocate(struct lll_adv_pdu *pdu, uint8_t last);
+#if IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
+static inline void adv_extra_data_release(struct lll_adv_pdu *pdu, int idx);
+static void *adv_extra_data_allocate(struct lll_adv_pdu *pdu, uint8_t last);
+static int adv_extra_data_free(struct lll_adv_pdu *pdu, uint8_t last);
+#endif /* CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY */
+
 static int prepare_cb(struct lll_prepare_param *p);
 static int is_abort_cb(void *next, int prio, void *curr,
 		       lll_prepare_cb_t *resume_cb, int *resume_prio);
@@ -243,46 +253,6 @@ int lll_adv_data_release(struct lll_adv_pdu *pdu)
 	return 0;
 }
 
-static inline struct pdu_adv *adv_pdu_allocate(struct lll_adv_pdu *pdu,
-					       uint8_t last)
-{
-	void *p;
-	int err;
-
-	p = (void *)pdu->pdu[last];
-	if (p) {
-		return p;
-	}
-
-	p = MFIFO_DEQUEUE_PEEK(pdu_free);
-	if (p) {
-		err = k_sem_take(&sem_pdu_free, K_NO_WAIT);
-		LL_ASSERT(!err);
-
-		MFIFO_DEQUEUE(pdu_free);
-		pdu->pdu[last] = (void *)p;
-
-		return p;
-	}
-
-	p = mem_acquire(&mem_pdu.free);
-	if (p) {
-		pdu->pdu[last] = (void *)p;
-
-		return p;
-	}
-
-	err = k_sem_take(&sem_pdu_free, K_FOREVER);
-	LL_ASSERT(!err);
-
-	p = MFIFO_DEQUEUE(pdu_free);
-	LL_ASSERT(p);
-
-	pdu->pdu[last] = (void *)p;
-
-	return p;
-}
-
 struct pdu_adv *lll_adv_pdu_alloc(struct lll_adv_pdu *pdu, uint8_t *idx)
 {
 	uint8_t first, last;
@@ -372,17 +342,6 @@ int lll_adv_and_extra_data_init(struct lll_adv_pdu *pdu)
 	return 0;
 }
 
-static inline void adv_extra_data_release(struct lll_adv_pdu *pdu, int idx)
-{
-	void *extra_data;
-
-	extra_data = pdu->extra_data[idx];
-	if (extra_data) {
-		pdu->extra_data[idx] = NULL;
-		mem_release(extra_data, &mem_extra_data.free);
-	}
-}
-
 int lll_adv_and_extra_data_release(struct lll_adv_pdu *pdu)
 {
 	uint8_t last;
@@ -410,46 +369,6 @@ int lll_adv_and_extra_data_release(struct lll_adv_pdu *pdu)
 	return 0;
 }
 
-static inline void *adv_extra_data_allocate(struct lll_adv_pdu *pdu,
-					    uint8_t last)
-{
-	void *extra_data;
-	int err;
-
-	extra_data = pdu->extra_data[last];
-	if (extra_data) {
-		return extra_data;
-	}
-
-	extra_data = MFIFO_DEQUEUE_PEEK(extra_data_free);
-	if (extra_data) {
-		err = k_sem_take(&sem_extra_data_free, K_NO_WAIT);
-		LL_ASSERT(!err);
-
-		MFIFO_DEQUEUE(extra_data_free);
-		pdu->extra_data[last] = extra_data;
-
-		return extra_data;
-	}
-
-	extra_data = mem_acquire(&mem_extra_data.free);
-	if (extra_data) {
-		pdu->extra_data[last] = extra_data;
-
-		return extra_data;
-	}
-
-	err = k_sem_take(&sem_extra_data_free, K_FOREVER);
-	LL_ASSERT(!err);
-
-	extra_data = MFIFO_DEQUEUE(extra_data_free);
-	LL_ASSERT(extra_data);
-
-	pdu->extra_data[last] = (void *)extra_data;
-
-	return extra_data;
-}
-
 struct pdu_adv *lll_adv_pdu_and_extra_data_alloc(struct lll_adv_pdu *pdu,
 						 void **extra_data,
 						 uint8_t *idx)
@@ -468,7 +387,7 @@ struct pdu_adv *lll_adv_pdu_and_extra_data_alloc(struct lll_adv_pdu *pdu,
 		uint8_t first_latest;
 
 		pdu->last = first;
-		cpu_dsb();
+		cpu_dmb();
 		first_latest = pdu->first;
 		if (first_latest != first) {
 			last++;
@@ -485,7 +404,18 @@ struct pdu_adv *lll_adv_pdu_and_extra_data_alloc(struct lll_adv_pdu *pdu,
 	if (extra_data) {
 		*extra_data = adv_extra_data_allocate(pdu, last);
 	} else {
-		pdu->extra_data[last] = NULL;
+		if (adv_extra_data_free(pdu, last)) {
+			LL_ASSERT(false);
+
+			/* There is no release of memory allocated by
+			 * adv_pdu_allocate because there is no memory leak.
+			 * If caller can recover from this error and subsequent
+			 * call to this function occures, no new memory will be
+			 * allocated. adv_pdu_allocate will return already
+			 * allocated memory.
+			 */
+			return NULL;
+		}
 	}
 
 	return p;
@@ -517,8 +447,9 @@ struct pdu_adv *lll_adv_pdu_and_extra_data_latest_get(struct lll_adv_pdu *pdu,
 		if (ed && (!MFIFO_ENQUEUE_IDX_GET(extra_data_free,
 						  &ed_free_idx))) {
 			LL_ASSERT(false);
-			/* ToDo what if enqueue fails and assert does not fire?
-			 * pdu_free_idx should be released before return.
+			/* No pdu_free_idx clean up is required, sobsequent
+			 * calls to MFIFO_ENQUEUE_IDX_GET return ther same
+			 * index to memory that is in limbo state.
 			 */
 			return NULL;
 		}
@@ -681,6 +612,121 @@ static int init_reset(void)
 
 	return 0;
 }
+
+static struct pdu_adv *adv_pdu_allocate(struct lll_adv_pdu *pdu, uint8_t last)
+{
+	void *p;
+	int err;
+
+	p = (void *)pdu->pdu[last];
+	if (p) {
+		return p;
+	}
+
+	p = MFIFO_DEQUEUE_PEEK(pdu_free);
+	if (p) {
+		err = k_sem_take(&sem_pdu_free, K_NO_WAIT);
+		LL_ASSERT(!err);
+
+		MFIFO_DEQUEUE(pdu_free);
+		pdu->pdu[last] = (void *)p;
+
+		return p;
+	}
+
+	p = mem_acquire(&mem_pdu.free);
+	if (p) {
+		pdu->pdu[last] = (void *)p;
+
+		return p;
+	}
+
+	err = k_sem_take(&sem_pdu_free, K_FOREVER);
+	LL_ASSERT(!err);
+
+	p = MFIFO_DEQUEUE(pdu_free);
+	LL_ASSERT(p);
+
+	pdu->pdu[last] = (void *)p;
+
+	return p;
+}
+
+#if IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
+static void *adv_extra_data_allocate(struct lll_adv_pdu *pdu, uint8_t last)
+{
+	void *extra_data;
+	int err;
+
+	extra_data = pdu->extra_data[last];
+	if (extra_data) {
+		return extra_data;
+	}
+
+	extra_data = MFIFO_DEQUEUE_PEEK(extra_data_free);
+	if (extra_data) {
+		err = k_sem_take(&sem_extra_data_free, K_NO_WAIT);
+		LL_ASSERT(!err);
+
+		MFIFO_DEQUEUE(extra_data_free);
+		pdu->extra_data[last] = extra_data;
+
+		return extra_data;
+	}
+
+	extra_data = mem_acquire(&mem_extra_data.free);
+	if (extra_data) {
+		pdu->extra_data[last] = extra_data;
+
+		return extra_data;
+	}
+
+	err = k_sem_take(&sem_extra_data_free, K_FOREVER);
+	LL_ASSERT(!err);
+
+	extra_data = MFIFO_DEQUEUE(extra_data_free);
+	LL_ASSERT(extra_data);
+
+	pdu->extra_data[last] = (void *)extra_data;
+
+	return extra_data;
+}
+
+static int adv_extra_data_free(struct lll_adv_pdu *pdu, uint8_t last)
+{
+	uint8_t ed_free_idx;
+	void *ed;
+
+	ed = pdu->extra_data[last];
+
+	if (ed) {
+		if (!MFIFO_ENQUEUE_IDX_GET(extra_data_free, &ed_free_idx)) {
+			LL_ASSERT(false);
+			/* ToDo what if enqueue fails and assert does not fire?
+			 * pdu_free_idx should be released before return.
+			 */
+			return -ENOMEM;
+		}
+		pdu->extra_data[last] = NULL;
+
+		MFIFO_BY_IDX_ENQUEUE(extra_data_free, ed_free_idx, ed);
+		k_sem_give(&sem_extra_data_free);
+	}
+
+	return 0;
+}
+
+static inline void adv_extra_data_release(struct lll_adv_pdu *pdu, int idx)
+{
+	void *extra_data;
+
+	extra_data = pdu->extra_data[idx];
+	if (extra_data) {
+		pdu->extra_data[idx] = NULL;
+		mem_release(extra_data, &mem_extra_data.free);
+	}
+}
+#endif /* CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY */
 
 static int prepare_cb(struct lll_prepare_param *p)
 {
