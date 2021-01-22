@@ -43,7 +43,9 @@ endif()
 include(${ZEPHYR_BASE}/cmake/version.cmake)
 # Process modules
 set(KCONFIG_BINARY_DIR ${CMAKE_BINARY_DIR}/Kconfig)
+list(INSERT MODULE_EXT_ROOT 0 ${ZEPHYR_BASE})
 file(MAKE_DIRECTORY ${KCONFIG_BINARY_DIR})
+include(${ZEPHYR_BASE}/cmake/extensions.cmake)
 include(${ZEPHYR_BASE}/cmake/zephyr_module.cmake)
 
 # Note that this won't force fatal error if latexmk is not found.
@@ -224,6 +226,21 @@ file(WRITE ${KCONFIG_BINARY_DIR}/Kconfig.soc.arch
      "osource \"${ZEPHYR_BASE}/soc/$(ARCH)/*/Kconfig\"\n"
 )
 
+foreach(module_name ${ZEPHYR_MODULE_NAMES})
+  zephyr_string(SANITIZE TOUPPER MODULE_NAME_UPPER ${module_name})
+  list(APPEND
+       ZEPHYR_KCONFIG_MODULES
+       "ZEPHYR_${MODULE_NAME_UPPER}_MODULE_DIR=${ZEPHYR_${MODULE_NAME_UPPER}_MODULE_DIR}"
+  )
+
+  if(ZEPHYR_${MODULE_NAME_UPPER}_KCONFIG)
+    list(APPEND
+         ZEPHYR_KCONFIG_MODULES
+         "ZEPHYR_${MODULE_NAME_UPPER}_KCONFIG=${ZEPHYR_${MODULE_NAME_UPPER}_KCONFIG}"
+  )
+  endif()
+endforeach()
+
 add_custom_target(
   kconfig
   COMMAND ${CMAKE_COMMAND} -E make_directory ${RST_OUT}/doc/reference/kconfig
@@ -239,6 +256,7 @@ add_custom_target(
   KCONFIG_WARN_UNDEF=y
   KCONFIG_TURBO_MODE=${KCONFIG_TURBO_MODE}
   KCONFIG_DOC_MODE=1
+  ${ZEPHYR_KCONFIG_MODULES}
     ${PYTHON_EXECUTABLE} scripts/gen_kconfig_rest.py ${RST_OUT}/doc/reference/kconfig/
       --separate-all-index
       --keep-module-paths
