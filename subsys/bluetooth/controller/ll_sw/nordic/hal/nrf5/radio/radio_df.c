@@ -10,6 +10,7 @@
 #include <sys/util_macro.h>
 #include <hal/nrf_radio.h>
 
+#include "radio_nrf5.h"
 #include "radio_df.h"
 
 /* @brief Minimum antennas number required if antenna switching is enabled */
@@ -133,4 +134,80 @@ uint8_t radio_df_ant_num_get(void)
 #else
 	return 0;
 #endif
+}
+
+static inline void radio_df_mode_set(uint8_t mode)
+{
+	NRF_RADIO->DFEMODE &= ~RADIO_DFEMODE_DFEOPMODE_Msk;
+	NRF_RADIO->DFEMODE |= ((mode << RADIO_DFEMODE_DFEOPMODE_Pos)
+			       & RADIO_DFEMODE_DFEOPMODE_Msk);
+}
+
+void radio_df_mode_set_aoa(void)
+{
+	radio_df_mode_set(NRF_RADIO_DFE_OP_MODE_AOA);
+}
+
+void radio_df_mode_set_aod(void)
+{
+	radio_df_mode_set(NRF_RADIO_DFE_OP_MODE_AOD);
+}
+
+void radio_df_cte_inline_set(uint8_t enable)
+{
+	NRF_RADIO->CTEINLINECONF &= ~RADIO_CTEINLINECONF_CTEINLINECTRLEN_Msk;
+	NRF_RADIO->CTEINLINECONF |= ((enable <<
+				      RADIO_CTEINLINECONF_CTEINLINECTRLEN_Pos)
+				     & RADIO_CTEINLINECONF_CTEINLINECTRLEN_Msk);
+}
+
+void radio_df_cte_length_set(uint8_t value)
+{
+	NRF_RADIO->DFECTRL1 &= ~RADIO_DFECTRL1_NUMBEROF8US_Msk;
+	NRF_RADIO->DFECTRL1 |= ((value << RADIO_DFECTRL1_NUMBEROF8US_Pos)
+				& RADIO_DFECTRL1_NUMBEROF8US_Msk);
+}
+
+void radio_df_ant_switch_pattern_clear(void)
+{
+	NRF_RADIO->CLEARPATTERN = RADIO_CLEARPATTERN_CLEARPATTERN_Clear;
+}
+
+static inline void radio_df_ant_switch_spacing_set(uint8_t spacing)
+{
+	NRF_RADIO->DFECTRL1 &= ~RADIO_DFECTRL1_TSWITCHSPACING_Msk;
+	NRF_RADIO->DFECTRL1 |= ((spacing << RADIO_DFECTRL1_TSWITCHSPACING_Pos)
+				& RADIO_DFECTRL1_TSWITCHSPACING_Msk);
+}
+
+void radio_df_ant_switch_spacing_set_2us(void)
+{
+	radio_df_ant_switch_spacing_set(RADIO_DFECTRL1_TSWITCHSPACING_2us);
+}
+
+void radio_df_ant_switch_spacing_set_4us(void)
+{
+	radio_df_ant_switch_spacing_set(RADIO_DFECTRL1_TSWITCHSPACING_4us);
+}
+
+void radio_df_ant_switch_pattern_set(uint8_t pattern)
+{
+	NRF_RADIO->SWITCHPATTERN = pattern;
+}
+
+void radio_df_reset(void)
+{
+	radio_df_mode_set(RADIO_DFEMODE_DFEOPMODE_Disabled);
+	radio_df_cte_inline_set(RADIO_CTEINLINECONF_CTEINLINECTRLEN_Disabled);
+	radio_df_ant_switch_pattern_clear();
+}
+
+void radio_switch_complete_and_phy_end_disable(void)
+{
+	NRF_RADIO->SHORTS =
+	       (RADIO_SHORTS_READY_START_Msk | RADIO_SHORTS_PHYEND_DISABLE_Msk);
+
+#if !defined(CONFIG_BT_CTLR_TIFS_HW)
+	hal_radio_sw_switch_disable();
+#endif /* !CONFIG_BT_CTLR_TIFS_HW */
 }
