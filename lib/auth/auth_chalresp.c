@@ -123,9 +123,9 @@ static struct chalresp_instance *auth_chalresp_get_instance(void)
 {
 	uint32_t cnt;
 
-	for(cnt = 0; cnt < NUM_CHALLENGE_RESP_INST; cnt++) {
+	for (cnt = 0; cnt < NUM_CHALLENGE_RESP_INST; cnt++) {
 
-		if(!chalresp_inst_tbl[cnt].in_use) {
+		if (!chalresp_inst_tbl[cnt].in_use) {
 			chalresp_inst_tbl[cnt].in_use = true;
 			return &chalresp_inst_tbl[cnt];
 		}
@@ -142,7 +142,7 @@ static struct chalresp_instance *auth_chalresp_get_instance(void)
  */
 static void auth_chalresp_free_instance(struct chalresp_instance *chalresp_inst)
 {
-	if(chalresp_inst) {
+	if (chalresp_inst) {
 		chalresp_inst->in_use = false;
 		memset(chalresp_inst, 0, sizeof(struct chalresp_instance));
 	}
@@ -287,7 +287,8 @@ static bool auth_client_recv_chal_resp(struct authenticate_conn *auth_conn, cons
 
 
 	/* Now verify response, is the response correct?  Hash the random challenge
-	 * with the shared key. */
+	 * with the shared key.
+	 */
 	err = auth_chalresp_hash(random_chal, chalresp_inst->chalresp_key, hash);
 
 	if (err) {
@@ -555,7 +556,7 @@ static int auth_chalresp_client(struct authenticate_conn *auth_conn)
 
 	/* Wait for the final response from the Server indicating success or failure
 	 * of the Client's response. */
-	numbytes = auth_xport_recv(auth_conn->xport_hdl, (uint8_t * ) &server_result,
+	numbytes = auth_xport_recv(auth_conn->xport_hdl, (uint8_t *)&server_result,
 				   sizeof(server_result), AUTH_RX_TIMEOUT_MSEC);
 
 	/* check for cancel operation */
@@ -641,10 +642,7 @@ static void auth_chalresp_thread(struct authenticate_conn *auth_conn)
 
 	auth_lib_set_status(auth_conn, AUTH_STATUS_STARTED);
 
-	/**
-	 * Since a device can be a client and server at the same
-	 * time need to use is_client to determine which funcs to call.
-	 * refactor this code. */
+	/* Start Challenge-Resposne authentication. */
 	if (auth_conn->is_client) {
 		ret = auth_chalresp_client(auth_conn);
 	} else {
@@ -672,13 +670,14 @@ int auth_init_chalresp_method(struct authenticate_conn *auth_conn, struct auth_o
 	struct chalresp_instance *chalresp_inst;
 
 	/* verify inputs */
-	if ((auth_conn == NULL) || (opt_params == NULL) || (opt_params->param_id != AUTH_CHALRESP_PARAM)) {
+	if ((auth_conn == NULL) || (opt_params == NULL) ||
+	    (opt_params->param_id != AUTH_CHALRESP_PARAM)) {
 		LOG_ERR("Invalid param, failed to initialize Challenge-Response auth method.");
 		return AUTH_ERROR_INVALID_PARAM;
 	}
 
 	chalresp_inst = auth_chalresp_get_instance();
-	if(chalresp_inst == NULL) {
+	if (chalresp_inst == NULL) {
 		LOG_ERR("No free Challenge-Resp instance.");
 		return AUTH_ERROR_NO_RESOURCE;
 	}
@@ -700,11 +699,10 @@ int auth_init_chalresp_method(struct authenticate_conn *auth_conn, struct auth_o
  */
 int auth_deinit_chalresp(struct authenticate_conn *auth_conn)
 {
-	if(auth_conn->internal_obj) {
+	if (auth_conn->internal_obj) {
 		auth_chalresp_free_instance((struct chalresp_instance *)auth_conn->internal_obj);
 		auth_conn->internal_obj = NULL;
 	}
 
 	return AUTH_SUCCESS;
 }
-

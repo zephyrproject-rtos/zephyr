@@ -30,8 +30,3 @@ west build -d build_auth_server -b nrf52840dk_nrf52840  -- -DCONF_FILE=dtls.prj.
 
 
 Note:  To avoid problems, ensure debug output is done via Jlink RTT, not the UART backend.
-
-
-
-
-

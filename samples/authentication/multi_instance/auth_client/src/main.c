@@ -52,7 +52,8 @@ static struct bt_uuid_128 auth_server_char = AUTH_SVC_SERVER_CHAR;
 #define AUTH_CHALLENGE_INST     AUTH_INST_2_ID
 
 /* The Root and Intermediate Certs in a single CA chain.
- * plus the server cert. All in PEM format.*/
+ * plus the server cert. All in PEM format.
+ */
 static const uint8_t auth_cert_ca_chain[] = AUTH_ROOTCA_CERT_PEM AUTH_INTERMEDIATE_CERT_PEM;
 static const uint8_t auth_dev_client_cert[] = AUTH_CLIENT_CERT_PEM;
 static const uint8_t auth_client_privatekey[] = AUTH_CLIENT_PRIVATE_KEY_PEM;
@@ -278,9 +279,9 @@ static uint8_t discover_func(struct bt_conn *conn,
 			auth_svc_gatt_tbl[AUTH_SVC_SERVER_CHAR_INDEX].value_handle;
 
 		/* setup the BT transport params */
-		struct auth_xp_bt_params xport_params =
-		{ .conn = conn, .is_central = true,
-		  .server_char_hdl = server_char_handle };
+		struct auth_xp_bt_params xport_params = {
+			.conn = conn, .is_central = true,
+		  	.server_char_hdl = server_char_handle };
 
 		err = auth_xport_init(&auth_conn_bt.xport_hdl,
 				      auth_conn_bt.instance,

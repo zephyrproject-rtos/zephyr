@@ -35,7 +35,7 @@ static struct auth_optional_param chal_resp_param = {
 static void auth_status_callback(struct authenticate_conn *auth_conn, enum auth_instance_id instance,
 				 enum auth_status status, void *context)
 {
-	// dummy function
+	/* dummy function */
 }
 
 static void test_auth_api(void)
@@ -55,9 +55,10 @@ static void test_auth_api(void)
 
 	zassert_equal(ret_val, AUTH_ERROR_INVALID_PARAM, "Invalid flags test failed.");
 
-	/* Verify DLTS and Challenge-Reponse flags fail */
+	/* Verify DLTS and Challenge-Response flags fail */
 	ret_val = auth_lib_init(&auth_conn, AUTH_INST_1_ID,  auth_status_callback, NULL,
-				NULL, AUTH_CONN_SERVER | AUTH_CONN_DTLS_AUTH_METHOD | AUTH_CONN_CHALLENGE_AUTH_METHOD);
+				NULL, AUTH_CONN_SERVER | AUTH_CONN_DTLS_AUTH_METHOD |
+					      AUTH_CONN_CHALLENGE_AUTH_METHOD);
 
 	zassert_equal(ret_val, AUTH_ERROR_INVALID_PARAM, "Invalid flags test failed.");
 

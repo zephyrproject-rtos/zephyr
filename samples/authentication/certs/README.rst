@@ -8,7 +8,3 @@ Overview
 
 These test X.509 certificates are used with the DTLS authentication method.  The private keys
 for each certificate are located in the **keys** directory.
-
-
-
-

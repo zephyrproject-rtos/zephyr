@@ -97,6 +97,4 @@
 	"e1Hf59Ga2Vmti/QTvzczZrvj/m0LbKzmnw==\r\n"			       \
 	"-----END EC PRIVATE KEY-----\r\n"
 
-#endif  // ZEPHYR_INCLUDE_AUTH_CERTS_H_
-
-
+#endif  /* ZEPHYR_INCLUDE_AUTH_CERTS_H_ */

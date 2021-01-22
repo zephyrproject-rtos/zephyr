@@ -108,7 +108,8 @@ K_MSGQ_DEFINE(recv_event_queue, sizeof(struct serial_recv_event), RX_EVENT_MSGQ_
 
 
 /* Atomic bits to determine if a buffer is in use.  If bit is set
- * buffer is in use. */
+ * buffer is in use.
+ */
 ATOMIC_DEFINE(buffer_in_use, NUM_BUFFERS);
 
 
@@ -318,7 +319,8 @@ static void auth_xp_serial_irq_recv_fragment(struct serial_xp_instance *xp_inst)
 	}
 
 	/* Check if rx buffer is full, if so then something went wrong.
-	 * Log and error and drop bytes received so far */
+	 * Log and error and drop bytes received so far
+	 */
 	if (xp_inst->curr_rx_cnt == SERIAL_XP_BUFFER_LEN) {
 		xp_inst->curr_rx_cnt = 0;
 		LOG_ERR("Receive buffer full, dropped %d bytes.", SERIAL_XP_BUFFER_LEN);
@@ -391,7 +393,6 @@ static void auth_xp_serial_irq_recv_fragment(struct serial_xp_instance *xp_inst)
 static void auth_xp_serial_irq_cb(const struct device *uart_dev, void *user_data)
 {
 	int num_bytes;
-	static int total_cnt = 0;
 
 	enum uart_rx_stop_reason rx_stop;
 	struct serial_xp_instance *xp_inst = (struct serial_xp_instance *) user_data;
@@ -425,7 +426,6 @@ static void auth_xp_serial_irq_cb(const struct device *uart_dev, void *user_data
 		return;
 	}
 
-	total_cnt = 0;
 	while (uart_irq_tx_ready(uart_dev) && xp_inst->tx_buf != NULL) {
 
 		num_bytes = uart_fifo_fill(uart_dev,
@@ -436,7 +436,6 @@ static void auth_xp_serial_irq_cb(const struct device *uart_dev, void *user_data
 		xp_inst->tx_bytes -= num_bytes;
 		xp_inst->curr_tx_cnt += num_bytes;
 
-		total_cnt += num_bytes;
 
 		/* if no more data to send, then break */
 		if (xp_inst->tx_bytes == 0) {
@@ -597,8 +596,3 @@ int auth_xp_serial_get_max_payload(const auth_xport_hdl_t xporthdl)
 {
 	return SERIAL_LINK_MTU;
 }
-
-
-
-
-

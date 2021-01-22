@@ -38,7 +38,7 @@ struct auth_thread_params {
 #define XPORT_FRAG_LOWBYTE_MASK         (0xF0)  /* bits 3-0 for flags */
 
 #define XPORT_FRAG_SYNC_BITS            ((XPORT_FRAG_SYNC_BYTE_HIGH << 8u) | \
-					                                XPORT_FRAG_SYNC_BYTE_LOW)
+						XPORT_FRAG_SYNC_BYTE_LOW)
 #define XPORT_FRAG_SYNC_MASK            (0xFFF0)
 
 /**
@@ -61,7 +61,8 @@ struct auth_message_frag_hdr {
 	/* bits 15-4  are for fragment sync, bits 3-0 are flags */
 	uint16_t sync_flags;    /* bytes to insure we're at a fragment */
 	uint16_t payload_len;   /* number of bytes in the payload, does not
-	                         * include the header. */
+	                         * include the header.
+	                         */
 };
 
 /**
@@ -182,7 +183,7 @@ int auth_client_recv_timeout(struct authenticate_conn *auth_conn, unsigned char 
 /**
  * Used by the server to send data to the Central. Will break up buffer to max MTU
  * sizes if necessary and send multiple PDUs.  Uses Write Indications to get
- * acknowledgement from the Central before sending additional packet.
+ * acknowledgment from the Central before sending additional packet.
  *
  * @param auth_conn Pointer to Authentication connection struct.
  * @param buf       Data to send

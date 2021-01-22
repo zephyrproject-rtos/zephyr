@@ -23,9 +23,9 @@ Certificate:
                 ASN1 OID: prime256v1
                 NIST CURVE: P-256
         X509v3 extensions:
-            X509v3 Basic Constraints: 
+            X509v3 Basic Constraints:
                 CA:FALSE
-            X509v3 Authority Key Identifier: 
+            X509v3 Authority Key Identifier:
                 keyid:36:1F:70:3A:68:8A:0D:81:79:00:21:5C:DA:CF:ED:7D:F4:96:85:2A
 
             X509v3 Key Usage: critical

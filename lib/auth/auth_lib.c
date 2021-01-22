@@ -42,8 +42,7 @@ K_SEM_DEFINE(thrd_sem_2, 0, 1);
 
 static void auth_thrd_entry(void *, void *, void *);
 
-static struct auth_thread_params thrd_params[CONFIG_NUM_AUTH_INSTANCES] =
-{
+static struct auth_thread_params thrd_params[CONFIG_NUM_AUTH_INSTANCES] = {
 #if defined(AUTH_INSTANCE_1)
 	{ .thrd_sem = &thrd_sem_1 },
 #endif
@@ -155,8 +154,8 @@ static void auth_thrd_entry(void *arg1, void *arg2, void *arg3)
  * @see auth_lib.h
  */
 int auth_lib_init(struct authenticate_conn *auth_conn, enum auth_instance_id instance,
-		  auth_status_cb_t status_func, void *context, struct auth_optional_param *opt_params,
-		  enum auth_flags auth_flags)
+		  auth_status_cb_t status_func, void *context,
+		  struct auth_optional_param *opt_params, enum auth_flags auth_flags)
 {
 	int err;
 
@@ -203,7 +202,7 @@ int auth_lib_init(struct authenticate_conn *auth_conn, enum auth_instance_id ins
 #endif
 
 	/* check if auth method was initialized correctly. */
-	if(err) {
+	if (err) {
 		LOG_ERR("Failed to initialize authentication method.");
 		return err;
 	}
@@ -231,13 +230,13 @@ int auth_lib_deinit(struct authenticate_conn *auth_conn)
 
 #if defined(CONFIG_AUTH_DTLS)
 	/* Free any resources for the auth method used */
-	if(auth_conn->authflags & AUTH_CONN_DTLS_AUTH_METHOD) {
+	if (auth_conn->authflags & AUTH_CONN_DTLS_AUTH_METHOD) {
 		ret = auth_deinit_dtls(auth_conn);
 	}
 #endif
 
 #if defined(CONFIG_AUTH_CHALLENGE_RESPONSE)
-	if(auth_conn->authflags & AUTH_CONN_CHALLENGE_AUTH_METHOD) {
+	if (auth_conn->authflags & AUTH_CONN_CHALLENGE_AUTH_METHOD) {
 		ret = auth_deinit_chalresp(auth_conn);
 	}
 #endif

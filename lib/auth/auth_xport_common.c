@@ -135,7 +135,7 @@ static void auth_xport_iobuffer_reset(struct auth_xport_io_buffer *iobuf)
 static int auth_xport_buffer_put(struct auth_xport_io_buffer *iobuf,
 				 const uint8_t *in_buf, size_t num_bytes)
 {
-	// Is the buffer full?
+	/* Is the buffer full? */
 	if (iobuf->num_valid_bytes == XPORT_IOBUF_LEN) {
 		return AUTH_ERROR_IOBUFF_FULL;
 	}
@@ -147,6 +147,7 @@ static int auth_xport_buffer_put(struct auth_xport_io_buffer *iobuf,
 
 	/* lock mutex */
 	int err = k_mutex_lock(&iobuf->buf_mutex, K_FOREVER);
+
 	if (err) {
 		return err;
 	}
@@ -157,7 +158,7 @@ static int auth_xport_buffer_put(struct auth_xport_io_buffer *iobuf,
 	uint32_t byte_cnt;
 
 	if (iobuf->head_index < iobuf->tail_index) {
-		// only enough room from head to tail, don't over-write
+		/* only enough room from head to tail, don't over-write */
 		uint32_t max_copy_cnt = iobuf->tail_index - iobuf->head_index;
 
 		copy_cnt = MIN(max_copy_cnt, copy_cnt);
@@ -170,7 +171,7 @@ static int auth_xport_buffer_put(struct auth_xport_io_buffer *iobuf,
 
 	} else {
 
-		// copy from head to end of buffer
+		/* copy from head to end of buffer */
 		byte_cnt = XPORT_IOBUF_LEN - iobuf->head_index;
 
 		if (byte_cnt > copy_cnt) {
@@ -186,7 +187,7 @@ static int auth_xport_buffer_put(struct auth_xport_io_buffer *iobuf,
 
 		iobuf->num_valid_bytes += byte_cnt;
 
-		// if wrapped, then copy from beginning of buffer
+		/* if wrapped, then copy from beginning of buffer */
 		if (copy_cnt > 0) {
 			memcpy(iobuf->io_buffer, in_buf, copy_cnt);
 
@@ -226,6 +227,7 @@ static int auth_xport_buffer_get_internal(struct auth_xport_io_buffer *iobuf,
 
 	/* lock mutex */
 	int err = k_mutex_lock(&iobuf->buf_mutex, K_FOREVER);
+
 	if (err) {
 		return err;
 	}
@@ -263,7 +265,8 @@ static int auth_xport_buffer_get_internal(struct auth_xport_io_buffer *iobuf,
 		}
 
 		/* wrapped around, copy from beginning of buffer until
-		   copy_count is satisfied */
+		 * copy_count is satisfied
+		 */
 		if (copy_cnt > 0) {
 
 			memcpy(out_buf, iobuf->io_buffer, copy_cnt);
@@ -640,7 +643,8 @@ int auth_xport_send(const auth_xport_hdl_t xporthdl, const uint8_t *data, size_t
 
 
 	/* If the lower transport MTU size isn't set, get it.  This can happen
-	 * when the the MTU is negotiated after the initial connection. */
+	 * when the the MTU is negotiated after the initial connection.
+	 */
 	if (xp_inst->payload_size == 0) {
 		xp_inst->payload_size = auth_xport_get_max_payload(xporthdl);
 	}
@@ -670,7 +674,8 @@ int auth_xport_send(const auth_xport_hdl_t xporthdl, const uint8_t *data, size_t
 			msg_frag.hdr.sync_flags = XPORT_FRAG_SYNC_BITS | XPORT_FRAG_END;
 
 			/* now check if we're only sending one frame, then set
-			 * the frame begin flag */
+			 * the frame begin flag
+			 */
 			if (num_fragments == 0) {
 				msg_frag.hdr.sync_flags |= XPORT_FRAG_BEGIN;
 			}
@@ -847,8 +852,9 @@ bool auth_message_get_fragment(const uint8_t *buffer, uint16_t buflen,
 	temp_payload_len = sys_be16_to_cpu(frm_hdr->payload_len) +
 			   XPORT_FRAG_HDR_BYTECNT;
 
-	/* does the buffer contian all of the fragment bytes?
-	 * Including the header. */
+	/* does the buffer contain all of the fragment bytes?
+	 * Including the header.
+	 */
 	if (temp_payload_len > (buflen - cur_offset)) {
 		/* not enough bytes for a full frame */
 		return false;
@@ -887,7 +893,8 @@ int auth_message_assemble(const auth_xport_hdl_t xporthdl, const uint8_t *buf,
 
 	/* If max payload size isn't set, get it from the lower transport.
 	 * This can happen if the lower transports frame/MTU size is set
-	 * after an initial connection. */
+	 * after an initial connection.
+	 */
 	if (xp_inst->payload_size == 0) {
 		xp_inst->payload_size = auth_xport_get_max_payload(xporthdl);
 	}
@@ -1047,9 +1054,3 @@ void *auth_xport_get_context(auth_xport_hdl_t xporthdl)
 
 	return xp_inst->xport_ctx;
 }
-
-
-
-
-
-

@@ -250,9 +250,9 @@ static uint8_t discover_func(struct bt_conn *conn,
 			auth_svc_gatt_tbl[AUTH_SVC_SERVER_CHAR_INDEX].value_handle;
 
 		/* setup the BT transport params */
-		struct auth_xp_bt_params xport_params =
-		{ .conn = conn, .is_central = true,
-		  .server_char_hdl = server_char_handle };
+		struct auth_xp_bt_params xport_params = {
+			.conn = conn, .is_central = true,
+			.server_char_hdl = server_char_handle };
 
 		err = auth_xport_init(&central_auth_conn.xport_hdl,
 				      central_auth_conn.instance,
@@ -524,7 +524,7 @@ void main(void)
 
 
 	uint32_t flags = AUTH_CONN_CLIENT;
-	
+
 
 #if defined(CONFIG_AUTH_DTLS)
 	flags |= AUTH_CONN_DTLS_AUTH_METHOD;

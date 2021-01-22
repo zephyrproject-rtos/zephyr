@@ -189,12 +189,3 @@ API Reference
 
 .. doxygengroup:: zauth_api
    :project: Zephyr
-
-
-
-
-
-
-
-
-

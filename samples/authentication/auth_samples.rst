@@ -11,5 +11,3 @@ The following samples show how to use the Authentication library over Bluetooth 
    :glob:
 
    **/*
-
-

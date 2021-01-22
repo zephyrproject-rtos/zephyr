@@ -110,7 +110,7 @@ static struct mbed_tls_context tlscontext[MAX_MBEDTLS_CONTEXT];
  */
 static struct mbed_tls_context *auth_get_mbedcontext(void)
 {
-	// use mutex lock to protect accessing list
+	/* use mutex lock to protect accessing list */
 	for (int cnt = 0; cnt < MAX_MBEDTLS_CONTEXT; cnt++) {
 
 		if (!tlscontext[cnt].in_use) {
@@ -277,7 +277,7 @@ static unsigned long auth_tls_timing_get_timer(struct mbedtls_timing_hr_time *va
 
 	delta = cur_msg - *mssec;
 
-	return (unsigned long )delta;
+	return (unsigned long)delta;
 }
 
 /**
@@ -446,7 +446,8 @@ static int auth_mbedtls_tx(void *ctx, const uint8_t *buf, size_t len)
 
 	/* Combine the header with the payload.  This maximizes the lower
 	 * transport throughput vs. sending the DTLS header separately then
-	 * sending the body. */
+	 * sending the body.
+	 */
 	memcpy(&mbedctx->temp_dtlsbuf[DTLS_HEADER_BYTES], buf, len);
 
 	/* send to peripheral */
@@ -522,13 +523,13 @@ static int auth_mbedtls_rx(void *ctx, uint8_t *buffer, size_t len)
 
 		/* check for sync bytes */
 		if (sys_be16_to_cpu(dtls_hdr.sync_bytes) != DTLS_PACKET_SYNC_BYTES) {
-			// read bytes and try to peek again
+			/* read bytes and try to peek again */
 			auth_xport_recv(auth_conn->xport_hdl, (uint8_t *)&dtls_hdr,
 					sizeof(struct dtls_packet_hdr), 1000u);
 			continue;
 		}
 
-		// have valid DTLS packet header, check packet length
+		/* have valid DTLS packet header, check packet length */
 		dtls_hdr.packet_len = sys_be16_to_cpu(dtls_hdr.packet_len);
 
 		/* Is there enough room to copy into Mbedtls buffer? */
@@ -546,7 +547,8 @@ static int auth_mbedtls_rx(void *ctx, uint8_t *buffer, size_t len)
 		}
 
 		/* rx_bytes must be at least DTLS_HEADER_BYTES in length here.  Enough
-		 * to fill a complete DTLS packet. */
+		 * to fill a complete DTLS packet.
+		 */
 		if ((int)dtls_hdr.packet_len <= (rx_bytes - (int)DTLS_HEADER_BYTES)) {
 
 			packet_len = dtls_hdr.packet_len;
@@ -661,13 +663,14 @@ static void auth_dtls_thead(struct authenticate_conn *auth_conn)
 		int ret = auth_tls_set_cookie(auth_conn);
 
 		if (ret) {
-			LOG_ERR("Failed to get connection info for DTLS cookie, auth failed, error: 0x%x", ret);
+			LOG_ERR("Failed to get connection info for DTLS cookie, error: 0x%x", ret);
 			auth_lib_set_status(auth_conn, AUTH_STATUS_FAILED);
 			return;
 		}
 
 		/* Sit in a loop waiting for the initial Client Hello message
-		 * from the client. */
+		 * from the client.
+		 */
 		while (bytecount == 0) {
 
 			if (auth_conn->cancel_auth) {
@@ -755,7 +758,8 @@ static void auth_dtls_thead(struct authenticate_conn *auth_conn)
 		ret = AUTH_SUCCESS;
 	} else {
 		/* All of the MBed error are of the form -0xXXXX.  To display
-		 * correctly negate the error value, thus -ret */
+		 * correctly negate the error value, thus -ret
+		 */
 		LOG_ERR("DTLS Handshake failed, error: -0x%x", -ret);
 		mbedtls_strerror(ret, err_buf, sizeof(err_buf));
 		LOG_ERR("%s", log_strdup(err_buf));
@@ -786,8 +790,6 @@ static void auth_dtls_thead(struct authenticate_conn *auth_conn)
 
 	/* Call status */
 	auth_lib_set_status(auth_conn, auth_status);
-
-	return;
 }
 
 
@@ -806,7 +808,8 @@ int auth_init_dtls_method(struct authenticate_conn *auth_conn, struct auth_optio
 	LOG_DBG("Initializing Mbed DTLS");
 
 	/* Check parameters for DTLS */
-	if((auth_conn == NULL) || (opt_params == NULL) || (opt_params->param_id != AUTH_DTLS_PARAM)) {
+	if ((auth_conn == NULL) || (opt_params == NULL) ||
+	    (opt_params->param_id != AUTH_DTLS_PARAM)) {
 		LOG_ERR("Missing certificates for TLS/DTLS authentication.");
 		return AUTH_ERROR_INVALID_PARAM;
 	}
@@ -832,7 +835,8 @@ int auth_init_dtls_method(struct authenticate_conn *auth_conn, struct auth_optio
 	/* Save MBED tls context as internal object. The intent of using a void
 	 * 'internal_obj' is to provide a var in the struct authentication_conn to
 	 * store different authentication methods.  Instead of Mbed, it maybe a
-	 * Challenge-Response.*/
+	 * Challenge-Response instance.
+	 */
 	auth_conn->internal_obj = mbed_ctx;
 
 	int endpoint = auth_conn->is_client ? MBEDTLS_SSL_IS_CLIENT : MBEDTLS_SSL_IS_SERVER;
@@ -975,11 +979,10 @@ init_error:
 int auth_deinit_dtls(struct authenticate_conn *auth_conn)
 {
 	/* if present, free Mbed context */
-	if(auth_conn->internal_obj) {
+	if (auth_conn->internal_obj) {
 		auth_free_mbedcontext((struct mbed_tls_context *)auth_conn->internal_obj);
 		auth_conn->internal_obj = NULL;
 	}
 
 	return AUTH_SUCCESS;
 }
-

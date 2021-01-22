@@ -21,5 +21,3 @@ if(CONFIG_AUTH_LIB)
     endif()
 
 endif()
-
-

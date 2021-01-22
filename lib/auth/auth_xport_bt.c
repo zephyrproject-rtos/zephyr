@@ -46,7 +46,8 @@ struct auth_xport_connection_map {
 	struct bt_conn *conn;
 
 	/* Peripheral (server) characteristic value handle.  Used by the
-	 * Central (client) to send data. */
+	 * Central (client) to send data.
+	 */
 	uint16_t server_char_hdl;
 
 	/* The Central (client) attribute, used by the Peripheral (server)
@@ -55,7 +56,8 @@ struct auth_xport_connection_map {
 	const struct bt_gatt_attr *client_attr;
 
 	/* Used to wait for central write completion before
-	 * sending more data */
+	 * sending more data
+	 */
 	struct k_sem auth_central_write_sem;
 
 	volatile uint8_t write_att_err;
@@ -361,7 +363,8 @@ static int auth_xp_bt_central_tx(struct auth_xport_connection_map *bt_xp_conn,
 	write_params.offset = 0;
 
 	/* Set payload size if not set.  This is necessary when the MTU
-	 * size is negotiated after the BT connection has been established. */
+	 * size is negotiated after the BT connection has been established.
+	 */
 	if (bt_xp_conn->payload_size == 0) {
 		bt_xp_conn->payload_size = auth_xp_bt_get_max_payload(bt_xp_conn->xporthdl);
 	}
@@ -426,7 +429,7 @@ static void auth_xp_bt_peripheral_indicate(struct bt_conn *conn,
 	/* set error */
 	bt_xp_conn->indicate_err = err;
 
-	// signal semaphore that chunk fo data was received from the peripheral
+	/* signal semaphore that chunk fo data was received from the peripheral */
 	k_sem_give(&bt_xp_conn->auth_indicate_sem);
 
 	/* if an error occurred */
@@ -455,7 +458,8 @@ static int auth_xp_bt_peripheral_tx(struct auth_xport_connection_map *bt_xp_conn
 
 
 	/* Set payload size if not set.  This is necessary when the MTU
-	 * size is negotiated after the BT connection has been established. */
+	 * size is negotiated after the BT connection has been established.
+	 */
 	if (bt_xp_conn->payload_size == 0) {
 		bt_xp_conn->payload_size = auth_xp_bt_get_max_payload(bt_xp_conn->xporthdl);
 	}
@@ -463,7 +467,8 @@ static int auth_xp_bt_peripheral_tx(struct auth_xport_connection_map *bt_xp_conn
 
 	/* Setup the indicate params.  The client will use BLE indications vs.
 	 * notifications.  This enables the client to know when the central has
-	 * read the attribute and send another packet of data. */
+	 * read the attribute and send another packet of data.
+	 */
 	struct bt_gatt_indicate_params indicate_params;
 
 	/* setup indicate params */

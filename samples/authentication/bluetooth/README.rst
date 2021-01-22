@@ -24,5 +24,3 @@ cmake -Bbuild_auth_peripheral -DBOARD=nrf52840dk_nrf52840  -DCONF_FILE=dtls.prj.
 To build the central with DLTS using West:|br|
 west build -d build_auth_central -b nrf52840dk_nrf52840 -- -DCONF_FILE=dtls.prj.conf samples/authentication/bluetooth/central_auth |br|
 (note: Two dashes '-' after 'west build -b build_auth_central -b nrf52840dk_nrf52840 --', necessary for -DCONF_FILE define)
-
-
