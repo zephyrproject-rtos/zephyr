@@ -133,12 +133,14 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 
 		LOG_DBG("Frame received");
 
+		/* Block the RX thread until net_pkt is available, so that we
+		 * don't drop already ACKed frame in case of temporary net_pkt
+		 * scarcity. The nRF 802154 radio driver will accumulate any
+		 * incoming frames until it runs out of internal buffers (and
+		 * thus stops acknowledging consecutive frames).
+		 */
 		pkt = net_pkt_rx_alloc_with_buffer(nrf5_radio->iface, pkt_len,
-						   AF_UNSPEC, 0, K_NO_WAIT);
-		if (!pkt) {
-			LOG_ERR("No pkt available");
-			goto drop;
-		}
+						   AF_UNSPEC, 0, K_FOREVER);
 
 		if (net_pkt_write(pkt, rx_frame->psdu + 1, pkt_len)) {
 			goto drop;
