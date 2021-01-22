@@ -99,8 +99,7 @@ static int malloc_prepare(const struct device *unused)
 	ARG_UNUSED(unused);
 
 #ifdef CONFIG_MMU
-	max_heap_size = MIN(CONFIG_NEWLIB_LIBC_MAX_MAPPED_REGION_SIZE,
-			    k_mem_free_get());
+	max_heap_size = k_mem_free_get();
 
 	if (max_heap_size != 0) {
 		heap_base = k_mem_map(max_heap_size, K_MEM_PERM_RW);
