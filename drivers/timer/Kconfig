@@ -116,6 +116,7 @@ config ALTERA_AVALON_TIMER
 config ITE_IT8XXX2_TIMER
 	bool "ITE it8xxx2 timer driver"
 	depends on SOC_IT8XXX2
+	select TICKLESS_CAPABLE
 	help
 	  This module implements a kernel device driver for the ITE it8xxx2
 	  HW timer model
