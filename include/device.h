@@ -817,16 +817,11 @@ static inline int device_pm_put_sync(const struct device *dev) { return -ENOTSUP
 	Z_DEVICE_DEFINE_HANDLES(node_id, dev_name, __VA_ARGS__)
 
 #define Z_DEVICE_DEFINE_HANDLES(node_id, dev_name, ...)			\
-	extern const device_handle_t					\
-		Z_DEVICE_HANDLE_NAME(node_id, dev_name)[];		\
-	const device_handle_t						\
-	__attribute__((__weak__,					\
-		       __section__(".__device_handles_pass1")))		\
-	Z_DEVICE_HANDLE_NAME(node_id, dev_name)[] = {			\
+	static const device_handle_t Z_DEVICE_HANDLE_NAME(node_id,dev_name)[] = { \
 	COND_CODE_1(DT_NODE_EXISTS(node_id), (				\
 			DT_DEP_ORD(node_id),				\
 			DT_REQUIRES_DEP_ORDS(node_id)			\
-		), (							\
+		),(							\
 			DEVICE_HANDLE_NULL,				\
 		))							\
 			DEVICE_HANDLE_SEP,				\

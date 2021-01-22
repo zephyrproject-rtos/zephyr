@@ -37,17 +37,6 @@
 	}
 	ASSERT(SIZEOF(initlevel_error) == 0, "Undefined initialization levels used.")
 
-	SECTION_DATA_PROLOGUE(device_handles,,)
-	{
-		__device_handles_start = .;
-#ifdef LINKER_PASS2
-		KEEP(*(SORT(.__device_handles_pass2)));
-#else /* LINKER_PASS2 */
-		KEEP(*(SORT(.__device_handles_pass1)));
-#endif /* LINKER_PASS2 */
-		__device_handles_end = .;
-	} GROUP_LINK_IN(ROMABLE_REGION)
-
 #ifdef CONFIG_CPLUSPLUS
 	SECTION_PROLOGUE(_CTOR_SECTION_NAME,,)
 	{
