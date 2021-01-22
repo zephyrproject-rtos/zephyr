@@ -252,7 +252,7 @@ static void free_page_frame_list_init(void)
  * local ontology (and do some assertions while we're at it)
  */
 static void frame_mapped_set(struct z_page_frame *pf, void *addr)
-{
+{	
 	PF_ASSERT(pf, !z_page_frame_is_reserved(pf),
 		  "attempted to map a reserved page frame");
 
@@ -266,102 +266,9 @@ static void frame_mapped_set(struct z_page_frame *pf, void *addr)
 
 	pf->flags |= Z_PAGE_FRAME_MAPPED;
 	pf->addr = addr;
+	pf->refcount++;
 }
 
-/* Allocate a free page frame, and map it to a specified virtual address
- *
- * TODO: Add optional support for copy-on-write mappings to a zero page instead
- * of allocating, in which case page frames will be allocated lazily as
- * the mappings to the zero page get touched.
- */
-static int map_anon_page(void *addr, uint32_t flags)
-{
-	int ret;
-	struct z_page_frame *pf;
-	uintptr_t phys;
-	bool lock = (flags & K_MEM_MAP_LOCK) != 0;
-
-	pf = free_page_frame_list_get();
-	if (pf == NULL) {
-		return -ENOMEM;
-	}
-	phys = z_page_frame_to_phys(pf);
-
-	ret = arch_mem_map(addr, phys, CONFIG_MMU_PAGE_SIZE,
-			   flags | K_MEM_CACHE_WB);
-	if (ret != 0) {
-		free_page_frame_list_put(pf);
-		return -ENOMEM;
-	}
-	if (lock) {
-		pf->flags |= Z_PAGE_FRAME_PINNED;
-	}
-	frame_mapped_set(pf, addr);
-
-	return 0;
-}
-
-void *k_mem_map(size_t size, uint32_t flags)
-{;
-	uint8_t *dst;
-	size_t total_size = size;
-	int ret;
-	k_spinlock_key_t key;
-	bool uninit = (flags & K_MEM_MAP_UNINIT) != 0;
-	bool guard = (flags & K_MEM_MAP_GUARD) != 0;
-	uint8_t *pos;
-
-	__ASSERT(!(((flags & K_MEM_PERM_USER) != 0) && uninit),
-		 "user access to anonymous uninitialized pages is forbidden");
-	__ASSERT(size % CONFIG_MMU_PAGE_SIZE == 0,
-		 "unaligned size %zu passed to %s", size, __func__);
-	__ASSERT(size != 0, "zero sized memory mapping");
-	__ASSERT(page_frames_initialized, "%s called too early", __func__);
-	__ASSERT((flags & K_MEM_CACHE_MASK) == 0,
-		 "%s does not support explicit cache settings", __func__);
-
-	key = k_spin_lock(&z_mm_lock);
-
-	if (guard) {
-		/* Need extra virtual page for the guard which we
-		 * won't map
-		 */
-		total_size += CONFIG_MMU_PAGE_SIZE;
-	}
-
-	dst = virt_region_get(total_size);
-	if (dst == NULL) {
-		/* Address space has no free region */
-		goto out;
-	}
-	if (guard) {
-		/* Skip over the guard page in returned address. */
-		dst += CONFIG_MMU_PAGE_SIZE;
-	}
-
-	VIRT_FOREACH(dst, size, pos) {
-		ret = map_anon_page(pos, flags);
-
-		if (ret != 0) {
-			/* TODO: call k_mem_unmap(dst, pos - dst)  when
-			 * implmented in #28990 and release any guard virtual
-			 * page as well.
-			 */
-			dst = NULL;
-			goto out;
-		}
-	}
-
-	if (!uninit) {
-		/* If we later implement mappings to a copy-on-write zero
-		 * page, won't need this step
-		 */
-		memset(dst, 0, size);
-	}
-out:
-	k_spin_unlock(&z_mm_lock, key);
-	return dst;
-}
 
 /* This may be called from arch early boot code before z_cstart() is invoked.
  * Data will be copied and BSS zeroed, but this must not rely on any
