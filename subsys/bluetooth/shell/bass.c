@@ -16,6 +16,81 @@
 #include <bluetooth/gatt.h>
 #include <bluetooth/bluetooth.h>
 #include "../host/audio/bass.h"
+#include "bt.h"
+
+#if defined(CONFIG_BT_BASS_AUTO_SYNC)
+static void pa_synced(uint8_t src_id, uint32_t bis_sync,
+		      const struct bt_le_per_adv_sync_synced_info *info)
+{
+	shell_print(ctx_shell, "BASS src %u was PA synced (bis 0x%x)",
+		    src_id, bis_sync);
+}
+
+static void pa_term(uint8_t src_id,
+		    const struct bt_le_per_adv_sync_term_info *info)
+{
+	shell_print(ctx_shell, "BASS src %u PA synced terminated", src_id);
+
+}
+
+static void pa_recv(uint8_t src_id,
+		    const struct bt_le_per_adv_sync_recv_info *info,
+		    struct net_buf_simple *buf)
+{
+	char le_addr[BT_ADDR_LE_STR_LEN];
+	char hex[512];
+
+	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+	bin2hex(buf->data, buf->len, hex, sizeof(hex));
+	shell_print(ctx_shell, "src_id %u: device %s, tx_power %i, "
+		    "RSSI %i, CTE %u, data length %u, data %s",
+		    src_id, le_addr, info->tx_power,
+		    info->rssi, info->cte_type, buf->len, hex);
+
+}
+#else
+static void pa_sync_req(uint8_t src_id, uint32_t bis_sync, bt_addr_le_t *addr,
+			uint8_t adv_sid, uint8_t metadata_len,
+			uint8_t *metadata)
+{
+	char le_addr[BT_ADDR_LE_STR_LEN];
+	char hex[512];
+
+	bt_addr_le_to_str(addr, le_addr, sizeof(le_addr));
+	bin2hex(metadata, metadata_len, hex, sizeof(hex));
+	shell_print(ctx_shell, "Request to PA sync to: src_id %u, device %s, "
+		    "adv_sid %u, metadata %s", src_id, le_addr, adv_sid, hex);
+
+
+	/* TODO: Establish PA sync */
+
+}
+
+static void pa_sync_term_req(uint8_t src_id)
+{
+	shell_print(ctx_shell, "Request to terminate PA sync to src_id %u",
+		    src_id);
+
+	/* TODO: Terminate PA sync */
+}
+#endif /* defined(CONFIG_BT_BASS_AUTO_SYNC) */
+
+static struct bt_bass_cb_t cbs = {
+#if defined(CONFIG_BT_BASS_AUTO_SYNC)
+	.pa_synced = pa_synced,
+	.pa_term = pa_term,
+	.pa_recv = pa_recv
+#else
+	.pa_sync_req = pa_sync_req,
+	.pa_sync_term_req = pa_sync_term_req
+#endif /* defined(CONFIG_BT_BASS_AUTO_SYNC) */
+};
+
+static int cmd_bass_init(const struct shell *shell, size_t argc, char **argv)
+{
+	bt_bass_register_cb(&cbs);
+	return 0;
+}
 
 static int cmd_bass_synced(const struct shell *shell, size_t argc, char **argv)
 {
@@ -66,6 +141,9 @@ static int cmd_bass(const struct shell *shell, size_t argc, char **argv)
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(bass_cmds,
+	SHELL_CMD_ARG(init, NULL,
+		      "Initialize the service and register callbacks",
+		      cmd_bass_init, 1, 0),
 	SHELL_CMD_ARG(synced, NULL,
 		      "Set server scan state <src_id> <pa_synced> <bis_syncs> "
 		      "<enc_state>", cmd_bass_synced, 5, 0),
