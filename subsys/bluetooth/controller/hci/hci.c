@@ -1502,6 +1502,11 @@ static void le_set_scan_enable(struct net_buf *buf, struct net_buf **evt)
 	status = ll_scan_enable(cmd->enable);
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
 
+	if (!IS_ENABLED(CONFIG_BT_CTLR_SCAN_ENABLE_STRICT) &&
+	    (status == BT_HCI_ERR_CMD_DISALLOWED)) {
+		status = BT_HCI_ERR_SUCCESS;
+	}
+
 	*evt = cmd_complete_status(status);
 }
 
@@ -2972,6 +2977,11 @@ static void le_set_ext_scan_enable(struct net_buf *buf, struct net_buf **evt)
 #endif
 
 	status = ll_scan_enable(cmd->enable, cmd->duration, cmd->period);
+
+	if (!IS_ENABLED(CONFIG_BT_CTLR_SCAN_ENABLE_STRICT) &&
+	    (status == BT_HCI_ERR_CMD_DISALLOWED)) {
+		status = BT_HCI_ERR_SUCCESS;
+	}
 
 	*evt = cmd_complete_status(status);
 }
