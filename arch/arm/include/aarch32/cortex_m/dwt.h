@@ -143,6 +143,18 @@ static inline void z_arm_dwt_cycle_count_start(void)
  */
 static inline void z_arm_dwt_enable_debug_monitor(void)
 {
+#if defined(CONFIG_ARMV8_M_SE) && !defined(CONFIG_ARM_NONSECURE_FIRMWARE)
+	/*
+	 * By design, the DebugMonitor exception is only employed
+	 * for null-pointer dereferencing detection, and enabling
+	 * that feature is not supported in Non-Secure builds. So
+	 * when enabling the DebugMonitor exception, assert that
+	 * it is not targeting the Non Secure domain.
+	 */
+	__ASSERT((CoreDebug->DEMCR & DCB_DEMCR_SDME_Msk) != 0,
+		"DebugMonitor targets Non-Secure\n");
+#endif
+
 	/* Set the DebugMonitor handler priority to the higyhest value. */
 	NVIC_SetPriority(DebugMonitor_IRQn, _EXC_FAULT_PRIO);
 
