@@ -1204,7 +1204,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 					ticks_slot_aux +
 					HAL_TICKER_US_TO_TICKS(EVENT_MAFS_US);
 
-				ret = ull_adv_sync_start(sync,
+				ret = ull_adv_sync_start(adv, sync,
 							 ticks_anchor_sync);
 				if (ret) {
 					goto failure_cleanup;
