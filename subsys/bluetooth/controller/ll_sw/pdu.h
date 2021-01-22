@@ -224,7 +224,7 @@ struct pdu_adv_ext_hdr {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 	uint8_t adv_addr:1;
 	uint8_t tgt_addr:1;
-	uint8_t rfu0:1;
+	uint8_t cte_info:1;
 	uint8_t adi:1;
 	uint8_t aux_ptr:1;
 	uint8_t sync_info:1;
@@ -236,7 +236,7 @@ struct pdu_adv_ext_hdr {
 	uint8_t sync_info:1;
 	uint8_t aux_ptr:1;
 	uint8_t adi:1;
-	uint8_t rfu0:1;
+	uint8_t cte_info:1;
 	uint8_t tgt_addr:1;
 	uint8_t adv_addr:1;
 #else
@@ -311,6 +311,20 @@ enum pdu_adv_aux_phy {
 	EXT_ADV_AUX_PHY_LE_1M  = 0x00,
 	EXT_ADV_AUX_PHY_LE_2M  = 0x01,
 	EXT_ADV_AUX_PHY_LE_COD = 0x02,
+};
+
+struct pdu_cte_info {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+	uint8_t  time:5;
+	uint8_t  rfu:1;
+	uint8_t  type:2;
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+	uint8_t  type:2;
+	uint8_t  rfu:1;
+	uint8_t  time:5;
+#else
+#error "Unsupported endianness"
+#endif
 };
 
 struct pdu_adv_sync_info {
