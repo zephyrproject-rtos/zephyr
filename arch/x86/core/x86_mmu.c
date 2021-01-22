@@ -1084,7 +1084,7 @@ static pentry_t flags_to_entry(uint32_t flags)
 	case K_MEM_CACHE_WB:
 		break;
 	default:
-		__ASSERT(false, "bad memory mapping flags 0x%x", flags);
+		return -ENOTSUP;
 	}
 
 	if ((flags & K_MEM_PERM_RW) != 0U) {
@@ -1103,10 +1103,12 @@ static pentry_t flags_to_entry(uint32_t flags)
 }
 
 /* map new region virt..virt+size to phys with provided arch-neutral flags */
-void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
+int arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 {
 	range_map_unlocked(virt, phys, size, flags_to_entry(flags),
 			   MASK_ALL, 0);
+
+	return 0;
 }
 
 #if CONFIG_X86_STACK_PROTECTION
