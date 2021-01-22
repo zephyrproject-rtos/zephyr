@@ -81,10 +81,9 @@
  * walking and creating page tables.
  */
 #ifdef CONFIG_MMU
-#define Z_X86_VIRT_OFFSET ((CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_VM_OFFSET) - \
-			   CONFIG_SRAM_BASE_ADDRESS)
+#define Z_X86_VIRT_OFFSET  (CONFIG_KERNEL_VM_BASE - CONFIG_SRAM_BASE_ADDRESS)
 #else
-#define Z_X86_VIRT_OFFSET 0
+#define Z_X86_VIRT_OFFSET	0
 #endif
 
 /* ASM code */
