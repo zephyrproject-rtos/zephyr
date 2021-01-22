@@ -140,7 +140,7 @@ manifest:
       path: modules/hal/xtensa
     - name: edtt
       path: tools/edtt
-      revision: b209a60ba3ad8887a7f35f67c0372c84a28b9b9b
+      revision: 7dd56fc100d79cc45c33d43e7401d1803e26f6e7
     - name: trusted-firmware-m
       path: modules/tee/tfm
       revision: 96340fb6c0b7e31c2070e1f428ca24076d2700a6
