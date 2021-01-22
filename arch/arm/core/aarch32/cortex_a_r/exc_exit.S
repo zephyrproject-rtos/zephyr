@@ -131,10 +131,18 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, z_arm_exc_exit)
 	/* Clean up exception stack frame */
 	add sp, #32
 
-	/* Switch in the next scheduled thread */
+	/*
+	 * Switch in the next scheduled thread.
+	 *
+	 * Note that z_arm_pendsv must be called in the SVC mode because it
+	 * switches to the SVC mode during context switch and returns to the
+	 * caller using lr_svc.
+	 */
+	cps #MODE_SVC
 	bl z_arm_pendsv
 
 	/* Decrement exception nesting count */
+	ldr r3, =_kernel
 	ldr r0, [r3, #_kernel_offset_to_nested]
 	sub r0, r0, #1
 	str r0, [r3, #_kernel_offset_to_nested]
