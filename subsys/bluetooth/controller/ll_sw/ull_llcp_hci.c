@@ -528,7 +528,6 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	lll->adv_addr_type = peer_addr_type;
 	memcpy(lll->adv_addr, peer_addr, BDADDR_SIZE);
 	lll->conn_timeout = timeout;
-	lll->conn_ticks_slot = 0; /* TODO: */
 
 	conn_lll = &conn->lll;
 
