@@ -12,6 +12,7 @@
 #include "hal/ccm.h"
 #include "hal/radio.h"
 #include "hal/ticker.h"
+#include "hal/radio_df.h"
 
 #include "util/util.h"
 #include "util/memq.h"
@@ -28,6 +29,7 @@
 #include "lll_internal.h"
 #include "lll_adv_internal.h"
 #include "lll_tim_internal.h"
+#include "lll_df_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_lll_adv_sync
@@ -36,6 +38,7 @@
 
 static int init_reset(void);
 static int prepare_cb(struct lll_prepare_param *p);
+static void isr_done(void *param);
 
 int lll_adv_sync_init(void)
 {
@@ -93,6 +96,9 @@ static int init_reset(void)
 
 static int prepare_cb(struct lll_prepare_param *p)
 {
+#if IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+	struct lll_df_adv_cfg *df_cfg;
+#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 	struct lll_adv_sync *lll;
 	uint32_t ticks_at_event;
 	uint32_t ticks_at_start;
@@ -102,6 +108,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	struct evt_hdr *evt;
 	uint32_t remainder;
 	uint32_t start_us;
+	void *extra_data;
 	uint8_t phy_s;
 	uint8_t upd;
 
@@ -146,12 +153,33 @@ static int prepare_cb(struct lll_prepare_param *p)
 			     ((uint32_t)lll->crc_init[0])));
 	lll_chan_set(data_chan_use);
 
-	pdu = lll_adv_sync_data_latest_get(lll, NULL, &upd);
+	pdu = lll_adv_sync_data_latest_get(lll, &extra_data, &upd);
+#if IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+	if (extra_data) {
+		df_cfg = (struct lll_df_adv_cfg *)extra_data;
+		lll_df_conf_cte_tx_enable(df_cfg->cte_type, df_cfg->cte_length,
+					  df_cfg->ant_sw_len, df_cfg->ant_ids);
+		lll->cte_started = 1U;
+	} else {
+		df_cfg = NULL;
+		lll->cte_started = 0U;
+	}
+#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
+
 	radio_pkt_tx_set(pdu);
 
 	/* TODO: chaining */
 	radio_isr_set(lll_isr_done, lll);
-	radio_switch_complete_and_disable();
+	radio_isr_set(isr_done, lll);
+
+#if IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+	if (df_cfg) {
+		radio_switch_complete_and_phy_end_disable();
+	} else
+#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
+	{
+		radio_switch_complete_and_disable();
+	}
 
 	ticks_at_event = p->ticks_at_expire;
 	evt = HDR_LLL2EVT(lll);
@@ -192,4 +220,17 @@ static int prepare_cb(struct lll_prepare_param *p)
 	DEBUG_RADIO_START_A(1);
 
 	return 0;
+}
+
+static void isr_done(void *param)
+{
+	struct lll_adv_sync *lll;
+
+	lll = param;
+#if IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+	if (lll->cte_started) {
+		lll_df_conf_cte_tx_disable();
+	}
+#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
+	lll_isr_done(lll);
 }

@@ -25,5 +25,14 @@ struct lll_df_adv_cfg {
 /* @brief Min supported length of antenna switching pattern */
 #define LLL_DF_MIN_ANT_PATTERN_LEN 3
 
+/* @brief Macro to convert length of CTE to [us] */
+#define CTE_LEN_US(n) ((n) * 8U)
+
 /* Provides number of available antennae for Direction Finding */
 uint8_t lll_df_ant_num_get(void);
+
+/* Enables CTE transmission according to provided configuration */
+void lll_df_conf_cte_tx_enable(uint8_t type, uint8_t length,
+			       uint8_t ant_num, uint8_t *ant_ids);
+/* Disables CTE transmission */
+void lll_df_conf_cte_tx_disable(void);
