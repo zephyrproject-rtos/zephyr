@@ -610,6 +610,12 @@ SECTION_FUNC(TEXT, z_arm_svc)
     push {r0-r3, r12, lr}
     cps #MODE_SVC
 
+    /*
+     * Store lr_svc to the SVC mode stack. This value will be restored prior to
+     * exiting the SVC call in z_arm_int_exit.
+     */
+    push {lr}
+
     /* Align stack at double-word boundary */
     and r3, sp, #4
     sub sp, sp, r3

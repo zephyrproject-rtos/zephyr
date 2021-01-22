@@ -82,6 +82,13 @@ __EXIT_INT:
 	add sp, sp, r3
 
 	/*
+	 * Restore lr_svc stored into the SVC mode stack by the mode entry
+	 * function. This ensures that the return address of the interrupted
+	 * context is preserved in case of interrupt nesting.
+	 */
+	pop {lr}
+
+	/*
 	 * Restore r0-r3, r12 and lr_irq stored into the process stack by the
 	 * mode entry function. These registers are saved by _isr_wrapper for
 	 * IRQ mode and z_arm_svc for SVC mode.
