@@ -12,4 +12,10 @@ config GPIO_STELLARIS
 	default y
 	depends on GPIO
 
+# DWT is not properly emulated in QEMU
+choice CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_DETECTION
+	bool
+	default CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_DETECTION_NONE
+endchoice
+
 endif # BOARD_QEMU_CORTEX_M3
