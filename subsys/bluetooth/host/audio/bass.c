@@ -584,8 +584,9 @@ static int bt_bass_init(const struct device *unused)
 #endif /* CONFIG_BT_BASS_RECV_STATE_COUNT > 2 */
 #endif /* CONFIG_BT_BASS_RECV_STATE_COUNT > 1 */
 
-
+#if defined(CONFIG_BT_BASS_AUTO_SYNC)
 	bt_le_per_adv_sync_cb_register(&pa_sync_cb);
+#endif
 	return 0;
 }
 
