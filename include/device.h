@@ -377,7 +377,10 @@ device_from_handle(device_handle_t dev_handle)
 	const struct device *dev = NULL;
 	size_t numdev = __device_end - __device_start;
 
-	if (dev_handle < numdev) {
+	/* Negative values are reserved for things that are not
+	 * devices, or at least not in the standard table.
+	 */
+	if ((dev_handle >= 0) && ((size_t)dev_handle < numdev)) {
 		dev = &__device_start[dev_handle];
 	}
 
