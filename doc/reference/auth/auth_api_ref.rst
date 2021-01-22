@@ -8,6 +8,7 @@ with a Bluetooth or serial connected device using a simple
 Challenge-Response or DTLS authentication method.  Authentication
 means proving the peer device’s identity.
 
+
 Use the authentication samples as a template for adding authentication into your
 firmware application.
 
@@ -28,7 +29,9 @@ Kconfig Options
 
 :option:`CONFIG_BT_XPORT`:  Use Bluetooth as lower transport.
 
+
 :option:`CONFIG_ALT_AUTH_BT_UUIDS`: Use alternate Bluetooth Auth service UUIDs.
+
 
 :option:`CONFIG_NUM_AUTH_INSTANCES`: Each authentication instance uses a thread to authenticate with
 a peer over the lower transport.  It is possible to have multiple
@@ -45,6 +48,7 @@ transport. The calling application configures the ZAUTH library, starts the auth
 process and monitors results via a status callback. The API is also designed to handle
 multiple concurrent authentication processes, for example If device is acting as a
 Bluetooth Central and Peripheral. An example of the API used is shown in the following
+
 code snippet.
 
 .. code-block:: none

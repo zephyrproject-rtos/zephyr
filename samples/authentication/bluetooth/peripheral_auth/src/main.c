@@ -161,6 +161,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	if (err) {
 		printk("Connection failed (err 0x%02x)\n", err);
 	} else {
+
 		default_conn = bt_conn_ref(conn);
 		printk("Connected\n");
 

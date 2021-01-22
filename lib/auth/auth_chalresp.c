@@ -685,6 +685,7 @@ int auth_init_chalresp_method(struct authenticate_conn *auth_conn, struct auth_o
 
 	chalresp_inst = auth_chalresp_get_instance();
 
+
 	if (chalresp_inst == NULL) {
 		LOG_ERR("No free Challenge-Resp instance.");
 		return AUTH_ERROR_NO_RESOURCE;
@@ -707,6 +708,8 @@ int auth_init_chalresp_method(struct authenticate_conn *auth_conn, struct auth_o
  */
 int auth_deinit_chalresp(struct authenticate_conn *auth_conn)
 {
+
+
 
 	if (auth_conn->internal_obj) {
 		auth_chalresp_free_instance((struct chalresp_instance *)auth_conn->internal_obj);

@@ -525,6 +525,7 @@ void main(void)
 
 	uint32_t flags = AUTH_CONN_CLIENT;
 
+
 #if defined(CONFIG_AUTH_DTLS)
 	flags |= AUTH_CONN_DTLS_AUTH_METHOD;
 

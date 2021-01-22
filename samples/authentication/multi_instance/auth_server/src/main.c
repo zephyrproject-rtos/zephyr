@@ -79,6 +79,7 @@ BT_GATT_SERVICE_DEFINE(auth_svc,
 
 
 
+
 struct bt_conn *default_conn;
 
 static bool is_connected;
