@@ -1,6 +1,8 @@
 Title: Test to verify code fault handling in ISR execution context
        and the behavior of irq_lock() and irq_unlock() when invoked
-       from User Mode. (ARM Only)
+       from User Mode. An additional test case verifies that null
+       pointer dereferencing attempts are detected and interpreted
+       as CPU fauls. Tests supported only on Cortex-M architecture.
 
 Description:
 
@@ -20,6 +22,10 @@ The test also verifies
 The second test verifies that threads in user mode, despite being able to call
 the irq_lock() and irq_unlock() functions without triggering a CPU fault,
 they won't be able to read or modify the current IRQ locking status.
+
+An additional test case verifies that null pointer dereferencing (read)
+attempts are caught and successfully trigger a CPU exception in the case
+the read is attempted by privileged code.
 
 ---------------------------------------------------------------------------
 
@@ -46,57 +52,94 @@ or
 ---------------------------------------------------------------------------
 
 Sample Output:
-*** Booting Zephyr OS build v2.3.0-rc1-295-g630f69889088  ***
+*** Booting Zephyr OS build zephyr-v2.4.0-3490-ga44a42e3f4d5  ***
 Running test suite arm_interrupt
 ===================================================================
-starting test - test_arm_interrupt
-Available IRQ line: 70
+START - test_arm_null_pointer_exception
+E: ***** Debug monitor exception *****
+Null-pointer exception?
+E: r0/a1:  0x20000000  r1/a2:  0x00000000  r2/a3:  0x20001e40
+E: r3/a4:  0x00003109 r12/ip:  0xfabf33ff r14/lr:  0x00003e7f
+E:  xpsr:  0x41000000
+E: Faulting instruction address (r15/pc): 0x00000f34
+E: >>> ZEPHYR FATAL ERROR 0: CPU exception on CPU 0
+E: Current thread: 0x20000148 (unknown)
+Caught system error -- reason 0
+ PASS - test_arm_null_pointer_exception
+===================================================================
+START - test_arm_interrupt
+Available IRQ line: 68
 E: >>> ZEPHYR FATAL ERROR 1: Unhandled interrupt on CPU 0
-E: Current thread: 0x20400190 (unknown)
+E: Current thread: 0x20000148 (unknown)
 Caught system error -- reason 1
-E: r0/a1:  0x00000003  r1/a2:  0x20401d6c  r2/a3:  0x00000003
-E: r3/a4:  0x20401af8 r12/ip:  0x0295a8d1 r14/lr:  0x00401ad3
-E:  xpsr:  0x61000056
-E: Faulting instruction address (r15/pc): 0x00400622
+E: r0/a1:  0x00000003  r1/a2:  0x200020b8  r2/a3:  0x00000003
+E: r3/a4:  0x20001e40 r12/ip:  0x00000000 r14/lr:  0x00002f47
+E:  xpsr:  0x61000054
+E: Faulting instruction address (r15/pc): 0x000009a6
 E: >>> ZEPHYR FATAL ERROR 3: Kernel oops on CPU 0
 E: Fault during interrupt handling
 
-E: Current thread: 0x20400190 (unknown)
+E: Current thread: 0x20000148 (unknown)
 Caught system error -- reason 3
-E: r0/a1:  0x00000004  r1/a2:  0x20401d6c  r2/a3:  0x00000004
-E: r3/a4:  0x20401af8 r12/ip:  0x00000000 r14/lr:  0x00401ad3
-E:  xpsr:  0x61000056
-E: Faulting instruction address (r15/pc): 0x00400640
+E: r0/a1:  0x00000004  r1/a2:  0x200020b8  r2/a3:  0x00000004
+E: r3/a4:  0x20001e40 r12/ip:  0x00000000 r14/lr:  0x00002f47
+E:  xpsr:  0x61000054
+E: Faulting instruction address (r15/pc): 0x000009c4
 E: >>> ZEPHYR FATAL ERROR 4: Kernel panic on CPU 0
 E: Fault during interrupt handling
 
-E: Current thread: 0x20400190 (unknown)
+E: Current thread: 0x20000148 (unknown)
 Caught system error -- reason 4
-ASSERTION FAIL [0] @ ../src/arm_interrupt.c:49
+ASSERTION FAIL [0] @ ../src/arm_interrupt.c:207
         Intentional assert
 
-E: r0/a1:  0x00000004  r1/a2:  0x00000031  r2/a3:  0x80000000
-E: r3/a4:  0x00000056 r12/ip:  0x00000000 r14/lr:  0x00401ad3
-E:  xpsr:  0x41000056
-E: Faulting instruction address (r15/pc): 0x00409b34
+E: r0/a1:  0x00000004  r1/a2:  0x000000cf  r2/a3:  0x00000000
+E: r3/a4:  0x00000054 r12/ip:  0x00000000 r14/lr:  0x00002f47
+E:  xpsr:  0x41000054
+E: Faulting instruction address (r15/pc): 0x0000cab0
 E: >>> ZEPHYR FATAL ERROR 4: Kernel panic on CPU 0
 E: Fault during interrupt handling
 
-E: Current thread: 0x20400190 (unknown)
+E: Current thread: 0x20000148 (unknown)
 Caught system error -- reason 4
-E: ***** MPU FAULT *****
-E:   Stacking error (context area might be not valid)
-E: r0/a1:  0x2e706106  r1/a2:  0x739e3f03  r2/a3:  0xf1c99979
-E: r3/a4:  0xe9973b26 r12/ip:  0x87d3b16f r14/lr:  0x01c98b2b
-E:  xpsr:  0x80608800
-E: Faulting instruction address (r15/pc): 0x885e4061
+ASSERTION FAIL [0] @ WEST_TOPDIR/zephyr/drivers/timer/sys_clock_init.c:23
+E: ***** HARD FAULT *****
+E:   Fault escalation (see below)
+E: r0/a1:  0x00000004  r1/a2:  0x00000017  r2/a3:  0x00000000
+E: r3/a4:  0x0000000f r12/ip:  0x00000000 r14/lr:  0xfffffff1
+E:  xpsr:  0x4100000f
+E: Faulting instruction address (r15/pc): 0x0000cab0
+E: >>> ZEPHYR FATAL ERROR 0: CPU exception on CPU 0
+E: Fault during interrupt handling
+
+E: Current thread: 0x20000148 (unknown)
+Caught system error -- reason 0
+E: ***** USAGE FAULT *****
+E:   Stack overflow (context area not valid)
+E: r0/a1:  0xdde8d9e7  r1/a2:  0x5510538d  r2/a3:  0x00000d74
+E: r3/a4:  0x01000000 r12/ip:  0xdfcdaf37 r14/lr:  0xe4698510
+E:  xpsr:  0x53445600
+E: Faulting instruction address (r15/pc): 0xf9cfef45
 E: >>> ZEPHYR FATAL ERROR 2: Stack overflow on CPU 0
-E: Current thread: 0x20400190 (unknown)
+E: Current thread: 0x20000148 (unknown)
 Caught system error -- reason 2
-PASS - test_arm_interrupt
+ PASS - test_arm_interrupt
 ===================================================================
-starting test - test_arm_user_interrupt
-PASS - test_arm_user_interrupt
+START - test_arm_esf_collection
+Testing ESF Reporting
+E: ***** USAGE FAULT *****
+E:   Attempt to execute undefined instruction
+E: r0/a1:  0x00000000  r1/a2:  0x00000001  r2/a3:  0x00000002
+E: r3/a4:  0x00000003 r12/ip:  0x0000000c r14/lr:  0x0000000f
+E:  xpsr:  0x01000000
+E: Faulting instruction address (r15/pc): 0x0000bec0
+E: >>> ZEPHYR FATAL ERROR 0: CPU exception on CPU 0
+E: Current thread: 0x20000080 (unknown)
+Caught system error -- reason 0
+ PASS - test_arm_esf_collection
+===================================================================
+START - test_arm_user_interrupt
+ PASS - test_arm_user_interrupt
 ===================================================================
 Test suite arm_interrupt succeeded
 ===================================================================
