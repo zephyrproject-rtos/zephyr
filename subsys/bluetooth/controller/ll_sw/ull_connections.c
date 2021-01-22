@@ -394,7 +394,7 @@ int ull_conn_rx(memq_link_t *link, struct node_rx_pdu **rx)
 	conn = ll_connected_get((*rx)->hdr.handle);
 	if (!conn) {
 		/* Mark for buffer for release */
-		(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+		(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 
 		return 0;
 	}
@@ -421,7 +421,7 @@ int ull_conn_rx(memq_link_t *link, struct node_rx_pdu **rx)
 				BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL;
 
 			/* Mark for buffer for release */
-			(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+			(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 		}
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 		break;
@@ -442,7 +442,7 @@ int ull_conn_rx(memq_link_t *link, struct node_rx_pdu **rx)
 		/* Invalid LL id, drop it. */
 
 		/* Mark for buffer for release */
-		(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+		(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 
 		break;
 	}
