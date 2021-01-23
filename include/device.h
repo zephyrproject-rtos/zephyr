@@ -99,7 +99,8 @@ extern "C" {
  * since the API is not specified;
  *
  * @param dev_name Device name. This must be less than Z_DEVICE_MAX_NAME_LEN
- * characters in order to be looked up from user mode with device_get_binding().
+ * characters (including terminating NUL) in order to be looked up from user
+ * mode with device_get_binding().
  *
  * @param drv_name The name this instance of the driver exposes to
  * the system.
@@ -168,7 +169,7 @@ extern "C" {
  */
 #define DEVICE_DT_DEFINE(node_id, init_fn, pm_control_fn,		\
 			 data_ptr, cfg_ptr, level, prio, api_ptr)	\
-	Z_DEVICE_DEFINE(node_id, node_id,				\
+	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_NAME(node_id),		\
 			DT_PROP_OR(node_id, label, NULL), init_fn,	\
 			pm_control_fn,					\
 			data_ptr, cfg_ptr, level, prio, api_ptr)
@@ -202,7 +203,7 @@ extern "C" {
  * @return The expanded name of the device object created by
  * DEVICE_DT_DEFINE()
  */
-#define DEVICE_DT_NAME_GET(node_id) DEVICE_NAME_GET(node_id)
+#define DEVICE_DT_NAME_GET(node_id) DEVICE_NAME_GET(Z_DEVICE_DT_DEV_NAME(node_id))
 
 /**
  * @def DEVICE_DT_GET
@@ -688,10 +689,20 @@ static inline int device_pm_put_sync(const struct device *dev) { return -ENOTSUP
  * @}
  */
 
+/* Node paths can exceed the maximum size supported by device_get_binding() in user mode,
+ * so synthesize a unique dev_name from the devicetree node.
+ *
+ * The ordinal used in this name can be mapped to the path by
+ * examining zephyr/include/generated/device_extern.h header.  If the
+ * format of this conversion changes, gen_defines should be updated to
+ * match it.
+ */
+#define Z_DEVICE_DT_DEV_NAME(node_id) _CONCAT(dts_ord_, DT_DEP_ORD(node_id))
+
 #define Z_DEVICE_DEFINE(node_id, dev_name, drv_name, init_fn, pm_control_fn, \
 			data_ptr, cfg_ptr, level, prio, api_ptr)	\
 	Z_DEVICE_DEFINE_PM(dev_name)					\
-	COND_CODE_1(DT_NODE_EXISTS(dev_name), (), (static))		\
+	COND_CODE_1(DT_NODE_EXISTS(node_id), (), (static))		\
 		const Z_DECL_ALIGN(struct device)			\
 		DEVICE_NAME_GET(dev_name) __used			\
 	__attribute__((__section__(".device_" #level STRINGIFY(prio)))) = { \
@@ -701,8 +712,10 @@ static inline int device_pm_put_sync(const struct device *dev) { return -ENOTSUP
 		.data = (data_ptr),					\
 		Z_DEVICE_DEFINE_PM_INIT(dev_name, pm_control_fn)	\
 	};								\
-	Z_INIT_ENTRY_DEFINE(_CONCAT(__device_, dev_name), init_fn,	\
-			    (&_CONCAT(__device_, dev_name)), level, prio)
+	BUILD_ASSERT(sizeof(Z_STRINGIFY(drv_name)) <= Z_DEVICE_MAX_NAME_LEN, \
+		     Z_STRINGIFY(DEVICE_GET_NAME(drv_name)) " too long"); \
+	Z_INIT_ENTRY_DEFINE(DEVICE_NAME_GET(dev_name), init_fn,		\
+		(&DEVICE_NAME_GET(dev_name)), level, prio)
 
 #ifdef CONFIG_PM_DEVICE
 #define Z_DEVICE_DEFINE_PM(dev_name)					\

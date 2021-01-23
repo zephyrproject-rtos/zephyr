@@ -132,7 +132,8 @@ def write_device_extern_header(device_header_out, edt):
         print("", file=dev_header_file)
 
         for node in sorted(edt.nodes, key=lambda node: node.dep_ordinal):
-            print(f"extern const struct device DEVICE_DT_NAME_GET(DT_{node.z_path_id});", file=dev_header_file)
+            print(f"extern const struct device DEVICE_DT_NAME_GET(DT_{node.z_path_id}); /* dts_ord_{node.dep_ordinal} */",
+                  file=dev_header_file)
 
         print("", file=dev_header_file)
         print("#ifdef __cplusplus", file=dev_header_file)
