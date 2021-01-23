@@ -28,7 +28,6 @@ Kconfig Options
 
 :option:`CONFIG_BT_XPORT`:  Use Bluetooth as lower transport.
 
-
 :option:`CONFIG_ALT_AUTH_BT_UUIDS`: Use alternate Bluetooth Auth service UUIDs.
 
 
