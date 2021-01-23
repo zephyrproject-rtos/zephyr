@@ -65,6 +65,13 @@ API Changes
 * The ``CONFIG_BT_CTLR_CODED_PHY`` is now disabled by default for builds
   combining both Bluetooth host and controller.
 
+* The :c:func:`coap_packet_append_payload` function will now take a pointer to a
+  constant buffer as the ``payload`` argument instead of a pointer to a writable
+  buffer.
+
+* The :c:func:`coap_packet_init` function will now take a pointer to a constant
+  buffer as the ``token`` argument instead of a pointer to a writable buffer.
+
 Deprecated in this release
 ==========================
 

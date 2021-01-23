@@ -99,9 +99,9 @@ static inline bool append(struct coap_packet *cpkt, const uint8_t *data, uint16_
 	return true;
 }
 
-int coap_packet_init(struct coap_packet *cpkt, uint8_t *data,
-		     uint16_t max_len, uint8_t ver, uint8_t type,
-		     uint8_t tokenlen, uint8_t *token, uint8_t code, uint16_t id)
+int coap_packet_init(struct coap_packet *cpkt, uint8_t *data, uint16_t max_len,
+		     uint8_t ver, uint8_t type, uint8_t token_len,
+		     const uint8_t *token, uint8_t code, uint16_t id)
 {
 	uint8_t hdr;
 	bool res;
@@ -119,7 +119,7 @@ int coap_packet_init(struct coap_packet *cpkt, uint8_t *data,
 
 	hdr = (ver & 0x3) << 6;
 	hdr |= (type & 0x3) << 4;
-	hdr |= tokenlen & 0xF;
+	hdr |= token_len & 0xF;
 
 	res = append_u8(cpkt, hdr);
 	if (!res) {
@@ -136,15 +136,15 @@ int coap_packet_init(struct coap_packet *cpkt, uint8_t *data,
 		return -EINVAL;
 	}
 
-	if (token && tokenlen) {
-		res = append(cpkt, token, tokenlen);
+	if (token && token_len) {
+		res = append(cpkt, token, token_len);
 		if (!res) {
 			return -EINVAL;
 		}
 	}
 
 	/* Header length : (version + type + tkl) + code + id + [token] */
-	cpkt->hdr_len = 1 + 1 + 2 + tokenlen;
+	cpkt->hdr_len = 1 + 1 + 2 + token_len;
 
 	return 0;
 }
@@ -326,7 +326,7 @@ int coap_packet_append_payload_marker(struct coap_packet *cpkt)
 	return append_u8(cpkt, COAP_MARKER) ? 0 : -EINVAL;
 }
 
-int coap_packet_append_payload(struct coap_packet *cpkt, uint8_t *payload,
+int coap_packet_append_payload(struct coap_packet *cpkt, const uint8_t *payload,
 			       uint16_t payload_len)
 {
 	return append(cpkt, payload, payload_len) ? 0 : -EINVAL;
