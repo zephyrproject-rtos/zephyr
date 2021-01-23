@@ -14,6 +14,20 @@
 extern "C" {
 #endif
 
+typedef struct {
+	int quot;
+	int rem;
+} div_t;
+
+typedef struct {
+	long quot;
+	long rem;
+} ldiv_t;
+
+
+div_t div(int numerator, int denominator);
+ldiv_t ldiv(long numerator, long denominator);
+
 unsigned long int strtoul(const char *str, char **endptr, int base);
 long int strtol(const char *str, char **endptr, int base);
 int atoi(const char *s);

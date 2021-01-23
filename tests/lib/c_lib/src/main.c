@@ -644,6 +644,68 @@ void test_asctime_r(void)
 	zassert_true(strcmp(test_buf, "??? ???  3 02:01:00 1905\n") == 0, "asctime_r error");
 }
 
+void test_div(void)
+{
+	struct input_s {
+		int num;
+		int den;
+	}
+
+	const input[] = {
+		{5, 3},
+		{5, 7},
+		{-5, 7},
+		{5, -7},
+		{-5, -7},
+	};
+
+	for (size_t i = 0; i < ARRAY_SIZE(input); ++i) {
+		int num = input[i].num;
+		int den = input[i].den;
+
+		div_t res = div(num, den);
+
+		zassert_equal(num, res.quot * den + res.rem,
+			"Invariant failed for %d / %d : q = %d, r = %d",
+			num, den, res.quot, res.rem);
+
+		zassert_equal(num >= 0, res.rem >= 0,
+			"Quotient not rounded toward zero : q = %d, r = %d",
+			num, den, res.quot, res.rem);
+		}
+}
+
+void test_ldiv(void)
+{
+	struct input_s {
+		long num;
+		long den;
+	}
+
+	const input[] = {
+		{5, 3},
+		{5, 7},
+		{-5, 7},
+		{5, -7},
+		{-5, -7},
+	};
+
+	for (size_t i = 0; i < ARRAY_SIZE(input); ++i) {
+		long num = input[i].num;
+		long den = input[i].den;
+
+		ldiv_t res = ldiv(num, den);
+
+		zassert_equal(num, res.quot * den + res.rem,
+			"Invariant failed for %ld / %ld : q = %ld, r = %ld",
+			num, den, res.quot, res.rem);
+
+		zassert_equal(num >= 0, res.rem >= 0,
+			"Quotient not rounded toward zero : q = %ld, r = %ld",
+			num, den, res.quot, res.rem);
+		}
+}
+
 void test_main(void)
 {
 	ztest_test_suite(test_c_lib,
@@ -669,7 +731,9 @@ void test_main(void)
 			 ztest_unit_test(test_tolower_toupper),
 			 ztest_unit_test(test_strtok_r),
 			 ztest_unit_test(test_asctime),
-			 ztest_unit_test(test_asctime_r)
+			 ztest_unit_test(test_asctime_r),
+			 ztest_unit_test(test_div),
+			 ztest_unit_test(test_ldiv)
 			 );
 	ztest_run_test_suite(test_c_lib);
 }
