@@ -55,9 +55,10 @@ BT_GATT_SERVICE_DEFINE(auth_svc,
 	BT_GATT_PRIMARY_SERVICE(&auth_service_uuid),
 
 	/**
-	 *    Central (client role) bt_gatt_write()  ---> server characteristic --> bt_gatt_read() Peripheral (server role)
+	 *    Central (client role)                     Peripheral (server role)
+	 *    bt_gatt_write()  ---> server characteristic --> bt_gatt_read()
 	 *
-	 *                Central    <---  Notification (client characteristic)  <--- Peripheral
+	 *    Central <---  Notification (client characteristic) <--- Peripheral
 	 *
 	 */
 

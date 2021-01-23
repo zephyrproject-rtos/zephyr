@@ -50,12 +50,13 @@ static void client_ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t val
 
 /* AUTH Service Declaration */
 BT_GATT_SERVICE_DEFINE(auth_svc,
-       BT_GATT_PRIMARY_SERVICE(&auth_service_uuid),
+	BT_GATT_PRIMARY_SERVICE(&auth_service_uuid),
 
 	/**
-	 *    Central (client role) bt_gatt_write()  ---> server characteristic --> bt_gatt_read() Peripheral (server role)
+	 *    Central (client role)                 Peripheral (server role)
+	 *    bt_gatt_write()  ---> server characteristic --> bt_gatt_read()
 	 *
-	 *                Central    <---  Notification (client characteristic)  <--- Peripheral
+	 *    Central <---  Notification (client characteristic) <--- Peripheral
 	 *
 	 */
 
@@ -74,7 +75,7 @@ BT_GATT_SERVICE_DEFINE(auth_svc,
 	*/
 	BT_GATT_CHARACTERISTIC((const struct bt_uuid *)&auth_server_char, BT_GATT_CHRC_WRITE,
 			      (BT_GATT_PERM_READ | BT_GATT_PERM_WRITE), NULL, auth_xp_bt_central_write, NULL),
-	);
+);
 
 
 

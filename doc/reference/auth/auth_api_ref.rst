@@ -28,7 +28,7 @@ Kconfig Options
 
 :option:`CONFIG_BT_XPORT`:  Use Bluetooth as lower transport.
 
-:option:`CONFIG_BT_ALT_AUTH_BT_UUIDS`: Use alternate Bluetooth Auth service UUIDs.
+:option:`CONFIG_ALT_AUTH_BT_UUIDS`: Use alternate Bluetooth Auth service UUIDs.
 
 :option:`CONFIG_NUM_AUTH_INSTANCES`: Each authentication instance uses a thread to authenticate with
 a peer over the lower transport.  It is possible to have multiple
