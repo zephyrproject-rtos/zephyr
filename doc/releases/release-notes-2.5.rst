@@ -151,6 +151,8 @@ Boards & SoC Support
 
 * Added support for these following shields:
 
+  * Inventek es-WIFI shield
+
 Drivers and Sensors
 *******************
 
@@ -248,6 +250,8 @@ Drivers and Sensors
 * Watchdog
 
 * WiFi
+
+  * Added uart bus interface for eswifi driver.
 
 Networking
 **********
