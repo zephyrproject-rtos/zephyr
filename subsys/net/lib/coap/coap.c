@@ -14,6 +14,7 @@ LOG_MODULE_REGISTER(net_coap, CONFIG_COAP_LOG_LEVEL);
 #include <errno.h>
 #include <random/rand32.h>
 #include <sys/atomic.h>
+#include <sys/util.h>
 
 #include <zephyr/types.h>
 #include <sys/byteorder.h>
@@ -333,10 +334,12 @@ int coap_packet_append_payload(struct coap_packet *cpkt, uint8_t *payload,
 
 uint8_t *coap_next_token(void)
 {
-	static uint32_t rand[2];
+	static uint32_t rand[
+		ceiling_fraction(COAP_TOKEN_MAX_LEN, sizeof(uint32_t))];
 
-	rand[0] = sys_rand32_get();
-	rand[1] = sys_rand32_get();
+	for (size_t i = 0; i < ARRAY_SIZE(rand); ++i) {
+		rand[i] = sys_rand32_get();
+	}
 
 	return (uint8_t *) rand;
 }
@@ -1255,13 +1258,13 @@ struct coap_reply *coap_response_received(
 	struct coap_reply *replies, size_t len)
 {
 	struct coap_reply *r;
-	uint8_t token[8];
+	uint8_t token[COAP_TOKEN_MAX_LEN];
 	uint16_t id;
 	uint8_t tkl;
 	size_t i;
 
 	id = coap_header_get_id(response);
-	tkl = coap_header_get_token(response, (uint8_t *)token);
+	tkl = coap_header_get_token(response, token);
 
 	for (i = 0, r = replies; i < len; i++, r++) {
 		int age;
@@ -1301,12 +1304,12 @@ struct coap_reply *coap_response_received(
 void coap_reply_init(struct coap_reply *reply,
 		     const struct coap_packet *request)
 {
-	uint8_t token[8];
+	uint8_t token[COAP_TOKEN_MAX_LEN];
 	uint8_t tkl;
 	int age;
 
 	reply->id = coap_header_get_id(request);
-	tkl = coap_header_get_token(request, (uint8_t *)&token);
+	tkl = coap_header_get_token(request, token);
 
 	if (tkl > 0) {
 		memcpy(reply->token, token, tkl);
