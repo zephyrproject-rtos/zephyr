@@ -42,7 +42,7 @@ if AUTH_LIB
 		If using Bluetooth to authenticate peer.
 
 
-	config BT_ALT_AUTH_BT_UUIDS
+	config ALT_AUTH_BT_UUIDS
 	    bool "Authentication service alternate Bluetooth UUIDs"
 	    depends on BT_XPORT
 	    help

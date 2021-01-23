@@ -61,8 +61,8 @@ struct auth_message_frag_hdr {
 	/* bits 15-4  are for fragment sync, bits 3-0 are flags */
 	uint16_t sync_flags;    /* bytes to insure we're at a fragment */
 	uint16_t payload_len;   /* number of bytes in the payload, does not
-	                         * include the header.
-	                         */
+				 * include the header.
+				 */
 };
 
 /**

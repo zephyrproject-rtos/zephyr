@@ -2,11 +2,11 @@ Authentication
 ##############################################
 
 The Zephyr Authentication Library is a library that provides
-authentication services between two devices independent of the lower 
+authentication services between two devices independent of the lower
 transport layer.   The library enables firmware applications to authenticate
-with a Bluetooth or serial connected device using a simple 
-Challenge-Response or DTLS authentication method.  Authentication 
-means proving the peer device’s identity. 
+with a Bluetooth or serial connected device using a simple
+Challenge-Response or DTLS authentication method.  Authentication
+means proving the peer device’s identity.
 
 Use the authentication samples as a template for adding authentication into your
 firmware application.
@@ -40,11 +40,11 @@ over Bluetooth and another authenticates over a serial link.
 Examples of API usage:
 -----------------------------
 
-The Authentication API is designed to abstract away the authentication method and 
-transport. The calling application configures the ZAUTH library, starts the authentication 
-process and monitors results via a status callback. The API is also designed to handle 
+The Authentication API is designed to abstract away the authentication method and
+transport. The calling application configures the ZAUTH library, starts the authentication
+process and monitors results via a status callback. The API is also designed to handle
 multiple concurrent authentication processes, for example If device is acting as a
-Bluetooth Central and Peripheral. An example of the API used is shown in the following 
+Bluetooth Central and Peripheral. An example of the API used is shown in the following
 code snippet.
 
 .. code-block:: none

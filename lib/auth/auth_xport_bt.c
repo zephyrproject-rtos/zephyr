@@ -21,7 +21,7 @@
 #include "auth_internal.h"
 
 
-#define LOG_LEVEL CONFIG_AUTH_LOGLEVEL
+#define LOG_LEVEL CONFIG_AUTH_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(auth_bt_xport, CONFIG_AUTH_LOG_LEVEL);
 

@@ -281,7 +281,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 		/* setup the BT transport params */
 		struct auth_xp_bt_params xport_params = {
 			.conn = conn, .is_central = true,
-		  	.server_char_hdl = server_char_handle };
+			.server_char_hdl = server_char_handle };
 
 		err = auth_xport_init(&auth_conn_bt.xport_hdl,
 				      auth_conn_bt.instance,

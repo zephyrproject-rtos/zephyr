@@ -52,29 +52,29 @@ static void client_ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t val
 
 /* AUTH Service Declaration */
 BT_GATT_SERVICE_DEFINE(auth_svc,
-    BT_GATT_PRIMARY_SERVICE(&auth_service_uuid),
+	BT_GATT_PRIMARY_SERVICE(&auth_service_uuid),
 
-    /**
-     *    Central (client role) bt_gatt_write()  ---> server characteristic --> bt_gatt_read() Peripheral (server role)
-     *
-     *                Central    <---  Notification (client characteristic)  <--- Peripheral
-     *
-     */
+	/**
+	 *    Central (client role) bt_gatt_write()  ---> server characteristic --> bt_gatt_read() Peripheral (server role)
+	 *
+	 *                Central    <---  Notification (client characteristic)  <--- Peripheral
+	 *
+	 */
 
-    /**
-     * Client characteristic, used by the peripheral (server role) to write messages authentication messages
-     * to the central (client role).  The peripheral needs to alert the central a message is
-     * ready to be read.
-     */
-    BT_GATT_CHARACTERISTIC((const struct bt_uuid *)&auth_client_char, BT_GATT_CHRC_INDICATE,
+	/**
+	 * Client characteristic, used by the peripheral (server role) to write messages authentication messages
+	 * to the central (client role).  The peripheral needs to alert the central a message is
+	 * ready to be read.
+	 */
+	BT_GATT_CHARACTERISTIC((const struct bt_uuid *)&auth_client_char, BT_GATT_CHRC_INDICATE,
 	(BT_GATT_PERM_READ|BT_GATT_PERM_WRITE), NULL, NULL, NULL),
-    BT_GATT_CCC(client_ccc_cfg_changed, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
+	BT_GATT_CCC(client_ccc_cfg_changed, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
 
-    /**
-     * Server characteristic, used by the central (client role) to write authentication messages to.
-     * to the server (peripheral)
-     */
-    BT_GATT_CHARACTERISTIC((const struct bt_uuid *)&auth_server_char, BT_GATT_CHRC_WRITE,
+	/**
+	 * Server characteristic, used by the central (client role) to write authentication messages to.
+	 * to the server (peripheral)
+	 */
+	BT_GATT_CHARACTERISTIC((const struct bt_uuid *)&auth_server_char, BT_GATT_CHRC_WRITE,
 	(BT_GATT_PERM_READ|BT_GATT_PERM_WRITE), NULL, auth_xp_bt_central_write, NULL),
 );
 
@@ -159,7 +159,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 
 	if (err) {
 		printk("Connection failed (err 0x%02x)\n", err);
-    	} else {
+	} else {
 		default_conn = bt_conn_ref(conn);
 		printk("Connected\n");
 
@@ -284,7 +284,7 @@ static void auth_status(struct authenticate_conn *auth_conn, enum auth_instance_
 	   auth_lib_getstatus_str(status));
 
 #if defined(CONFIG_AUTH_DTLS)
-	if(status == AUTH_STATUS_IN_PROCESS) {
+	if (status == AUTH_STATUS_IN_PROCESS) {
 		printk("     DTLS may take 30-60 seconds.\n");
 	}
 #endif
