@@ -19,4 +19,5 @@ zephyr_library_sources(
   source/stdout/sprintf.c
   source/stdout/fprintf.c
   source/time/gmtime.c
+  source/time/asctime.c
 )

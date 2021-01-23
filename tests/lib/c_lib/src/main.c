@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <ctype.h>
+#include <time.h>
 
 /* Recent GCC's are issuing a warning for the truncated strncpy()
  * below (the static source string is longer than the locally-defined
@@ -598,6 +599,51 @@ void test_strtok_r(void)
 	test_strtok_r_do("1|2|3,4|5",           "| ", 5, tc01, false);
 }
 
+void test_asctime(void)
+{
+	struct tm time = {
+		.tm_sec = 0,
+		.tm_min = 1,
+		.tm_hour = 2,
+		.tm_mday = 3,
+		.tm_mon = 4,
+		.tm_year = 5,
+		.tm_wday = 6
+	};
+
+	zassert_true(strcmp(asctime(&time), "Sat May  3 02:01:00 1905\n") == 0, "asctime error");
+	time.tm_wday = -2;
+	zassert_true(strcmp(asctime(&time), "??? May  3 02:01:00 1905\n") == 0, "asctime error");
+	time.tm_mon = 15;
+	zassert_true(strcmp(asctime(&time), "??? ???  3 02:01:00 1905\n") == 0, "asctime error");
+}
+
+void test_asctime_r(void)
+{
+	struct tm time = {
+		.tm_sec = 0,
+		.tm_min = 1,
+		.tm_hour = 2,
+		.tm_mday = 3,
+		.tm_mon = 4,
+		.tm_year = 5,
+		.tm_wday = 6
+	};
+
+	char test_buf[26];
+
+	asctime_r(&time, test_buf);
+	zassert_true(strcmp(test_buf, "Sat May  3 02:01:00 1905\n") == 0, "asctime_r error");
+
+	time.tm_wday = -2;
+	asctime_r(&time, test_buf);
+	zassert_true(strcmp(test_buf, "??? May  3 02:01:00 1905\n") == 0, "asctime_r error");
+
+	time.tm_mon = 15;
+	asctime_r(&time, test_buf);
+	zassert_true(strcmp(test_buf, "??? ???  3 02:01:00 1905\n") == 0, "asctime_r error");
+}
+
 void test_main(void)
 {
 	ztest_test_suite(test_c_lib,
@@ -621,7 +667,9 @@ void test_main(void)
 			 ztest_unit_test(test_memstr),
 			 ztest_unit_test(test_str_operate),
 			 ztest_unit_test(test_tolower_toupper),
-			 ztest_unit_test(test_strtok_r)
+			 ztest_unit_test(test_strtok_r),
+			 ztest_unit_test(test_asctime),
+			 ztest_unit_test(test_asctime_r)
 			 );
 	ztest_run_test_suite(test_c_lib);
 }

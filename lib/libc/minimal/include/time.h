@@ -52,6 +52,15 @@ struct tm *gmtime(const time_t *timep);
 struct tm *gmtime_r(const time_t *_MLIBC_RESTRICT timep,
 		    struct tm *_MLIBC_RESTRICT result);
 
+/*
+ * The asctime/_r functions shall convert the broken-down time in the
+ * structure pointed to by timeptr into a string in the form:
+ *
+ *            Day Mon dd hh:mm:ss yyyy\n\0
+ */
+char *asctime(const struct tm *timeptr);
+char *asctime_r(const struct tm *timeptr, char *buf);
+
 #ifdef __cplusplus
 }
 #endif
