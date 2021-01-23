@@ -62,6 +62,7 @@ config X86
 	select ARCH_HAS_TIMING_FUNCTIONS
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
 	select ARCH_HAS_DEMAND_PAGING
+	select ARCH_MAPS_ALL_RAM
 	help
 	  x86 architecture
 
@@ -531,6 +532,26 @@ config ARCH_HAS_RESERVED_PAGE_FRAMES
 	  certain RAM page frames need to be marked as reserved and never used for
 	  memory mappings. The architecture will need to implement
 	  arch_reserved_pages_update().
+
+config ARCH_MAPS_ALL_RAM
+	bool
+	help
+	  This hidden option is selected by the architecture to inform the kernel
+	  that all RAM is mapped at boot, and not just the bounds of the Zephyr image.
+	  If RAM starts at 0x0, the first page must remain un-mapped to catch NULL
+	  pointer dereferences. With this enabled, the kernel will not assume that
+	  virtual memory addresses past the kernel image are available for mappings,
+	  but instead takes into account an entire RAM mapping instead.
+
+	  This is typically set by architectures which need direct access to all memory.
+	  It is the architecture's responsibility to mark reserved memory regions
+	  as such in arch_reserved_pages_update().
+
+	  Although the kernel will not disturb this RAM mapping by re-mapping the associated
+	  virtual addresses elsewhere, this is limited to only management of the
+	  virtual address space. The kernel's page frame ontology will not consider
+	  this mapping at all; non-kernel pages will be considered free (unless marked
+	  as reserved) and Z_PAGE_FRAME_MAPPED will not be set.
 
 menuconfig MMU
 	bool "Enable MMU features"

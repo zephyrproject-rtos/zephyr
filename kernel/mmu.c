@@ -125,25 +125,32 @@ void z_page_frames_dump(void)
 	for (_pos = _base; \
 	     _pos < ((uintptr_t)_base + _size); _pos += CONFIG_MMU_PAGE_SIZE)
 
+
 /*
  * Virtual address space management
  *
  * Call all of these functions with z_mm_lock held.
  *
  * Overall virtual memory map: When the kernel starts, it resides in
- * virtual memory in the region Z_BOOT_KERNEL_VIRT_START to
- * Z_BOOT_KERNEL_VIRT_END. Unused virtual memory past this, up to the limit
+ * virtual memory in the region Z_KERNEL_VIRT_START to
+ * Z_KERNEL_VIRT_END. Unused virtual memory past this, up to the limit
  * noted by CONFIG_KERNEL_VM_SIZE may be used for runtime memory mappings.
+ *
+ * If CONFIG_ARCH_MAPS_ALL_RAM is set, we do not just map the kernel image,
+ * but have a mapping for all RAM in place. This is for special architectural
+ * purposes and does not otherwise affect page frame accounting or flags;
+ * the only guarantee is that such RAM mapping outside of the Zephyr image
+ * won't be disturbed by subsequent memory mapping calls.
  *
  * +--------------+ <- Z_VIRT_ADDR_START
  * | Undefined VM | <- May contain ancillary regions like x86_64's locore
- * +--------------+ <- Z_BOOT_KERNEL_VIRT_START (often == Z_VIRT_ADDR_START)
+ * +--------------+ <- Z_KERNEL_VIRT_START (often == Z_VIRT_ADDR_START)
  * | Mapping for  |
  * | main kernel  |
  * | image        |
  * |		  |
  * |		  |
- * +--------------+ <- Z_BOOT_KERNEL_VIRT_END
+ * +--------------+ <- Z_FREE_VM_START
  * |              |
  * | Unused,      |
  * | Available VM |
@@ -175,7 +182,7 @@ static void *virt_region_get(size_t size)
 {
 	uint8_t *dest_addr;
 
-	if ((mapping_pos - size) < Z_KERNEL_VIRT_END) {
+	if ((mapping_pos - size) < Z_FREE_VM_START) {
 		LOG_ERR("insufficient virtual address space (requested %zu)",
 			size);
 		return NULL;
@@ -474,14 +481,6 @@ size_t k_mem_region_align(uintptr_t *aligned_phys, size_t *aligned_size,
 	return addr_offset;
 }
 
-#define VM_OFFSET	 ((CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_VM_OFFSET) - \
-			  CONFIG_SRAM_BASE_ADDRESS)
-
-/* Only applies to boot RAM mappings within the Zephyr image that have never
- * been remapped or paged out. Never use this unless you know exactly what you
- * are doing.
- */
-#define BOOT_VIRT_TO_PHYS(virt) ((uintptr_t)(((uint8_t *)virt) + VM_OFFSET))
 
 #ifdef CONFIG_USERSPACE
 void z_kernel_map_fixup(void)
@@ -500,7 +499,7 @@ void z_kernel_map_fixup(void)
 
 	if (kobject_size != 0) {
 		arch_mem_map(kobject_page_begin,
-			     BOOT_VIRT_TO_PHYS(kobject_page_begin),
+			     Z_BOOT_VIRT_TO_PHYS(kobject_page_begin),
 			     kobject_size, K_MEM_PERM_RW | K_MEM_CACHE_WB);
 	}
 }
@@ -527,7 +526,7 @@ void z_mem_manage_init(void)
 	 */
 	VIRT_FOREACH(Z_KERNEL_VIRT_START, Z_KERNEL_VIRT_SIZE, addr)
 	{
-		pf = z_phys_to_page_frame(BOOT_VIRT_TO_PHYS(addr));
+		pf = z_phys_to_page_frame(Z_BOOT_VIRT_TO_PHYS(addr));
 		frame_mapped_set(pf, addr);
 
 		/* TODO: for now we pin the whole Zephyr image. Demand paging
