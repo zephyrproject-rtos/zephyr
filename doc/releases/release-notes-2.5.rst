@@ -260,6 +260,8 @@ Drivers and Sensors
 Networking
 **********
 
+  * Added TagoIO IoT Cloud HTTP post sample.
+
 Bluetooth
 *********
 
