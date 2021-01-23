@@ -417,7 +417,7 @@ static int process_obs_coap_reply(void)
 {
 	struct coap_packet reply;
 	uint16_t id;
-	uint8_t token[8];
+	uint8_t token[COAP_TOKEN_MAX_LEN];
 	uint8_t *data;
 	uint8_t type;
 	uint8_t tkl;
@@ -455,7 +455,7 @@ static int process_obs_coap_reply(void)
 		goto end;
 	}
 
-	tkl = coap_header_get_token(&reply, (uint8_t *)token);
+	tkl = coap_header_get_token(&reply, token);
 	id = coap_header_get_id(&reply);
 
 	type = coap_header_get_type(&reply);

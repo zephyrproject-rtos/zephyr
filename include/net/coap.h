@@ -148,6 +148,8 @@ enum coap_response_code {
 
 #define COAP_CODE_EMPTY (0)
 
+#define COAP_TOKEN_MAX_LEN 8UL
+
 /**
  * @brief Set of Content-Format option values for CoAP.
  *
@@ -300,9 +302,10 @@ uint8_t coap_header_get_type(const struct coap_packet *cpkt);
  * @brief Returns the token (if any) in the CoAP packet.
  *
  * @param cpkt CoAP packet representation
- * @param token Where to store the token
+ * @param token Where to store the token, must point to a buffer containing
+ *              at least COAP_TOKEN_MAX_LEN bytes
  *
- * @return Token length in the CoAP packet.
+ * @return Token length in the CoAP packet (0 - COAP_TOKEN_MAX_LEN).
  */
 uint8_t coap_header_get_token(const struct coap_packet *cpkt, uint8_t *token);
 
