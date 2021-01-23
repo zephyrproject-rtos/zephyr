@@ -9,6 +9,7 @@
 #include <ztest.h>
 #include <linker/linker-defs.h>
 #include "test_syscalls.h"
+#include <mmu.h>
 
 #define BUF_SIZE	32
 #define SLEEP_MS_LONG	15000
@@ -18,7 +19,7 @@
 #define FAULTY_ADDRESS 0x0FFFFFFF
 #elif CONFIG_MMU
 /* Just past the zephyr image mapping should be a non-present page */
-#define FAULTY_ADDRESS ((uint8_t *)(&z_mapped_end))
+#define FAULTY_ADDRESS Z_FREE_VM_START
 #else
 #define FAULTY_ADDRESS 0xFFFFFFF0
 #endif
