@@ -261,6 +261,22 @@ int lorawan_join(const struct lorawan_join_config *join_cfg)
 	}
 
 out:
+	/*
+	 * Several regions (AS923, AU915, US915) overwrite the datarate as part
+	 * of the join process. Reset the datarate to the value requested
+	 * (and validated) in lorawan_set_datarate so that the MAC layer is
+	 * aware of the set datarate for LoRaMacQueryTxPossible. This is only
+	 * performed when ADR is disabled as it the network servers
+	 * responsibility to increase datarates when ADR is enabled.
+	 */
+	if ((ret == 0) && (!lorawan_adr_enable)) {
+		MibRequestConfirm_t mib_req;
+
+		mib_req.Type = MIB_CHANNELS_DATARATE;
+		mib_req.Param.ChannelsDatarate = lorawan_datarate;
+		LoRaMacMibSetRequestConfirm(&mib_req);
+	}
+
 	k_mutex_unlock(&lorawan_join_mutex);
 	return ret;
 }
