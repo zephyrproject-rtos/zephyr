@@ -147,7 +147,8 @@ Boards & SoC Support
   * CY8CKIT_062_WIFI_BT: Now M0+/M4 are at same common board.
   * nRF5340 DK: Selected TF-M as the default Secure Processing Element
     (SPE) when building Zephyr for the non-secure domain.
-
+  * SAM4E_XPRO: Added support to SAM-BA ROM bootloader.
+  * SAM4S_XPLAINED: Added support to SAM-BA ROM bootloader.
 
 * Added support for these following shields:
 
@@ -196,12 +197,15 @@ Drivers and Sensors
 * GPIO
 
   * Added Cypress PSoC-6 driver.
+  * Added Atmel SAM4L driver.
 
 * Hardware Info
 
   * Added Cypress PSoC-6 driver.
 
 * I2C
+
+  * Added Atmel SAM4L TWIM driver.
 
 * I2S
 
