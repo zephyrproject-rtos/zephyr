@@ -289,6 +289,15 @@ Libraries / Subsystems
 
   * updatehub
 
+    * Added support to Network Manager and interface overlays at UpdateHub
+      sample. Ethernet is the default interface configuration and overlays
+      can be used to change default configuration
+    * Added WIFI overlay
+    * Added MODEM overlay
+    * Added IEEE 802.15.4 overlay [experimental]
+    * Added BLE IPSP overlay as [experimental]
+    * Added OpenThread overlay as [experimental].
+
 * Settings
 
 * Random
