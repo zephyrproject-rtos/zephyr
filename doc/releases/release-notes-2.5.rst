@@ -295,6 +295,13 @@ Build and Infrastructure
     documented in :ref:`dt-from-c`. Information on flash partitions has moved
     to :ref:`flash_map_api`.
 
+* West
+
+  * Improve bossac runner. It supports now native ROM bootloader for Atmel
+    MCUs and extended SAM-BA bootloader like Arduino and Adafruit UF2. The
+    devices supported depend on bossac version inside Zephyr SDK or in users
+    path. The recommended Zephyr SDK version is 0.12.0 or newer.
+
 Libraries / Subsystems
 **********************
 
