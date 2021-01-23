@@ -1,3 +1,5 @@
+common:
+  timeout: 180
 tests:
   kernel.scheduler:
     filter: not CONFIG_SCHED_MULTIQ
