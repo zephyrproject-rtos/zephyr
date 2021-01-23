@@ -457,10 +457,15 @@ def main():
     debug("building %s" % pclass.__name__)
 
     vm_base = syms["CONFIG_KERNEL_VM_BASE"]
-    vm_size = syms["CONFIG_KERNEL_VM_SIZE"]
+    # Work around #31562
+    vm_size = syms["CONFIG_KERNEL_VM_SIZE"] & 0xFFFFFFFF
 
-    image_base = syms["z_mapped_start"]
-    image_size = syms["z_mapped_size"]
+    if isdef("CONFIG_ARCH_MAPS_ALL_RAM"):
+        image_base = syms["CONFIG_SRAM_BASE_ADDRESS"]
+        image_size = syms["CONFIG_SRAM_SIZE"] * 1024
+    else:
+        image_base = syms["z_mapped_start"]
+        image_size = syms["z_mapped_size"]
     ptables_phys = syms["z_x86_pagetables_start"]
 
     debug("Address space: 0x%x - 0x%x size %x" %
@@ -470,6 +475,9 @@ def main():
           (image_base, image_base + image_size, image_size))
 
     is_perm_regions = isdef("CONFIG_SRAM_REGION_PERMISSIONS")
+
+    if image_size >= vm_size:
+        error("VM size is too small (have 0x%x need more than 0x%x)" % (vm_size, image_size))
 
     if is_perm_regions:
         # Don't allow execution by default for any pages. We'll adjust this

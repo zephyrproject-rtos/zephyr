@@ -159,6 +159,22 @@ void test_ram_perms(void)
 			      PRI_ENTRY, flags, pos, expected);
 	}
 #endif /* CONFIG_X86_64 */
+
+#ifdef CONFIG_ARCH_MAPS_ALL_RAM
+	/* All RAM page frame entries aside from 0x0 must have a mapping.
+	 * We currently identity-map on x86, no conversion necessary other than a cast
+	 */
+	for (pos = (uint8_t *)Z_PHYS_RAM_START; pos < (uint8_t *)Z_PHYS_RAM_END;
+	     pos += CONFIG_MMU_PAGE_SIZE) {
+		if (pos == NULL) {
+			continue;
+		}
+
+		entry = get_entry(&flags, pos);
+		zassert_true((flags & MMU_P) != 0,
+			     "address %p isn't mapped", pos);
+	}
+#endif
 }
 
 /**

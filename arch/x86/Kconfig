@@ -95,6 +95,7 @@ endchoice
 
 config ACPI
 	bool "ACPI (Advanced Configuration and Power Interface) support"
+	select ARCH_MAPS_ALL_RAM
 	help
 	  Allow retrieval of platform configuration at runtime.
 
