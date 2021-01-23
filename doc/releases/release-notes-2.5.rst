@@ -124,11 +124,15 @@ Boards & SoC Support
 
 * Added support for these SoC series:
 
+  * Cypress PSoC-63
+
 * Made these changes in other SoC series:
 
 * Changes for ARC boards:
 
 * Added support for these ARM boards:
+
+  * Cypress CY8CKIT_062_BLE board
 
 * Added support for these SPARC boards:
 
@@ -138,6 +142,9 @@ Boards & SoC Support
 
 * Made these changes in other boards:
 
+  * CY8CKIT_062_WIFI_BT_M0: was renamed to CY8CKIT_062_WIFI_BT.
+  * CY8CKIT_062_WIFI_BT_M4: was moved into CY8CKIT_062_WIFI_BT.
+  * CY8CKIT_062_WIFI_BT: Now M0+/M4 are at same common board.
   * nRF5340 DK: Selected TF-M as the default Secure Processing Element
     (SPE) when building Zephyr for the non-secure domain.
 
@@ -186,7 +193,11 @@ Drivers and Sensors
 
 * GPIO
 
+  * Added Cypress PSoC-6 driver.
+
 * Hardware Info
+
+  * Added Cypress PSoC-6 driver.
 
 * I2C
 
@@ -195,6 +206,8 @@ Drivers and Sensors
 * IEEE 802.15.4
 
 * Interrupt Controller
+
+  * Added Cypress PSoC-6 Cortex-M0+ interrupt multiplexer driver.
 
 * IPM
 
