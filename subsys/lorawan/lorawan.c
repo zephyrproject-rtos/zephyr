@@ -296,8 +296,18 @@ int lorawan_set_class(enum lorawan_class dev_class)
 
 int lorawan_set_datarate(enum lorawan_datarate dr)
 {
+	MibRequestConfirm_t mib_req;
+
 	/* Bail out if using ADR */
 	if (lorawan_adr_enable) {
+		return -EINVAL;
+	}
+
+	/* Notify MAC layer of the requested datarate */
+	mib_req.Type = MIB_CHANNELS_DATARATE;
+	mib_req.Param.ChannelsDatarate = dr;
+	if (LoRaMacMibSetRequestConfirm(&mib_req) != LORAMAC_STATUS_OK) {
+		/* Datarate is invalid for this region */
 		return -EINVAL;
 	}
 
