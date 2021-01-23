@@ -169,14 +169,21 @@ static int auth_chalresp_hash(const uint8_t *random_chal, const uint8_t *shared_
 	tc_sha256_init(&hash_state);
 
 	/* Update the hash with the random challenge followed by the shared key. */
-	if ((err = tc_sha256_update(&hash_state, random_chal, AUTH_CHALLENGE_LEN)) != TC_CRYPTO_SUCCESS ||
-	    (err = tc_sha256_update(&hash_state, shared_key, AUTH_SHARED_KEY_LEN)) != TC_CRYPTO_SUCCESS) {
+	err = tc_sha256_update(&hash_state, random_chal, AUTH_CHALLENGE_LEN);
+
+	if (err != TC_CRYPTO_SUCCESS) {
+		return AUTH_ERROR_CRYPTO;
+	}
+
+	err = tc_sha256_update(&hash_state, shared_key, AUTH_SHARED_KEY_LEN);
+
+	if (err != TC_CRYPTO_SUCCESS) {
 		return AUTH_ERROR_CRYPTO;
 	}
 
 	/* calc the final hash */
 	err = tc_sha256_final(hash, &hash_state) == TC_CRYPTO_SUCCESS ?
-	      AUTH_SUCCESS : AUTH_ERROR_CRYPTO;
+		AUTH_SUCCESS : AUTH_ERROR_CRYPTO;
 
 	return err;
 }

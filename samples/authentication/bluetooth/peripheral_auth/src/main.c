@@ -141,7 +141,7 @@ static struct auth_optional_param chal_resp_param  = {
  * Set up the advertising data
  */
 static const struct bt_data ad[] = {
- 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
+	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
 
 	/* auth service UUID */
 	BT_DATA_BYTES(BT_DATA_UUID128_ALL, AUTH_SERVICE_UUID_BYTES),
