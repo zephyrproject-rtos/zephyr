@@ -1,3 +1,5 @@
 tests:
   kernel.lifo.usage:
+    # see #26646
+    platform_exclude: m2gl025_miv
     tags: kernel
