@@ -385,6 +385,8 @@ void SX126xReset(void)
 	k_sleep(K_MSEC(20));
 	gpio_pin_set(dev_data.reset, GPIO_RESET_PIN, 0);
 	k_sleep(K_MSEC(10));
+	/* Device transitions to standby on reset */
+	dev_data.mode = MODE_STDBY_RC;
 }
 
 void SX126xSetRfTxPower(int8_t power)
@@ -425,6 +427,11 @@ void SX126xWakeup(void)
 	LOG_DBG("Waiting for device...");
 	SX126xWaitOnBusy();
 	LOG_DBG("Device ready");
+	/* This function is only called from sleep mode
+	 * All edges on the SS SPI pin will transition the modem to
+	 * standby mode (via startup)
+	 */
+	dev_data.mode = MODE_STDBY_RC;
 }
 
 static void sx126x_dio1_irq_work_handler(struct k_work *work)
@@ -500,7 +507,6 @@ static int sx126x_lora_init(const struct device *dev)
 	dev_data.spi_cfg.frequency = DT_INST_PROP(0, spi_max_frequency);
 	dev_data.spi_cfg.slave = DT_INST_REG_ADDR(0);
 
-	dev_data.mode = MODE_SLEEP;
 
 	ret = sx12xx_init(dev);
 	if (ret < 0) {
