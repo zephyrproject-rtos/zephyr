@@ -222,10 +222,16 @@ static LoRaMacStatus_t lorawan_join_abp(
 
 int lorawan_join(const struct lorawan_join_config *join_cfg)
 {
+	MibRequestConfirm_t mib_req;
 	LoRaMacStatus_t status;
 	int ret = 0;
 
 	k_mutex_lock(&lorawan_join_mutex, K_FOREVER);
+
+	/* MIB_PUBLIC_NETWORK powers on the radio and does not turn it off */
+	mib_req.Type = MIB_PUBLIC_NETWORK;
+	mib_req.Param.EnablePublicNetwork = true;
+	LoRaMacMibSetRequestConfirm(&mib_req);
 
 	if (join_cfg->mode == LORAWAN_ACT_OTAA) {
 		status = lorawan_join_otaa(join_cfg);
@@ -458,10 +464,6 @@ int lorawan_start(void)
 	/* TODO: Move these to a proper location */
 	mib_req.Type = MIB_SYSTEM_MAX_RX_ERROR;
 	mib_req.Param.SystemMaxRxError = CONFIG_LORAWAN_SYSTEM_MAX_RX_ERROR;
-	LoRaMacMibSetRequestConfirm(&mib_req);
-
-	mib_req.Type = MIB_PUBLIC_NETWORK;
-	mib_req.Param.EnablePublicNetwork = true;
 	LoRaMacMibSetRequestConfirm(&mib_req);
 
 	return 0;
