@@ -72,6 +72,9 @@ struct ll_conn {
 #endif /* CONFIG_BT_CTLR_CONN_META */
 			uint8_t  latency_cancel:1;
 			uint8_t  sca:3;
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+			uint8_t  llcp_type;
+#endif /* CONFIG_BT_CTLR_LE_ENC */
 #if defined(CONFIG_BT_CTLR_CONN_RANDOM_FORCE)
 			uint32_t force;
 #endif /* CONFIG_BT_CTLR_CONN_RANDOM_FORCE */
@@ -94,6 +97,7 @@ struct ll_conn {
 
 	uint8_t llcp_req;
 	uint8_t llcp_ack;
+
 	uint8_t llcp_type;
 
 	struct {
@@ -128,7 +132,6 @@ struct ll_conn {
 				LLCP_ENC_STATE_INIT,
 				LLCP_ENC_STATE_LTK_WAIT,
 			} state:2 __packed;
-			uint8_t  pend_llcp_type;
 			uint8_t  error_code;
 			uint8_t  skd[16];
 		} encryption;
