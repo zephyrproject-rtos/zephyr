@@ -637,8 +637,7 @@ uint8_t ll_phy_req_send(uint16_t handle, uint8_t tx, uint8_t flags, uint8_t rx)
 		return BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
 	}
 
-	if ((conn->llcp_req != conn->llcp_ack) ||
-	    (conn->llcp_phy.req != conn->llcp_phy.ack)) {
+	if (conn->llcp_phy.req != conn->llcp_phy.ack) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
