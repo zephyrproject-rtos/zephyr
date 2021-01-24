@@ -10,4 +10,12 @@ config USBH_SAM0
 	help
 	  SAM0 family USB host controller Driver.
 
+config USBH_EHCI
+	bool "EHCI USB Host Controller driver"
+	default y
+	depends on HAS_MCUX_USB_EHCI
+	select NOCACHE_MEMORY if HAS_MCUX_CACHE
+	help
+	  RT EHCI USB Host Controller Driver.
+
 endif

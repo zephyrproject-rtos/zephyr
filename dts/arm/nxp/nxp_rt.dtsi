@@ -41,6 +41,7 @@
 	};
 
 	soc {
+
 		flexram: flexram@400b0000 {
 			compatible = "nxp,imx-flexram";
 			reg = <0x400b0000 0x4000>;
@@ -548,6 +549,21 @@
 			maximum-speed = "full-speed";
 			status = "disabled";
 			label = "USBD_2";
+		};
+
+		usbh0: usbh@402e0100{
+			compatible = "nxp,kinetis-usbh";
+			label = "USBHO";
+			reg = <0x402e0100 0x100>;
+			buf-len = <1024>;
+			nbr-ep-bulk = <2>;
+			nbr-ep-intr = <2>;
+			nbr-isoc-ep = <2>;
+			interrupts = <113 1>;
+			dma;
+			mem_addr = <0x0>;
+			mem_size = <0>;
+			status = "disabled";
 		};
 
 		usdhc1: usdhc@402c0000 {

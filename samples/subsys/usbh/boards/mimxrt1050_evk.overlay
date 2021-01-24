@@ -1,0 +1,3 @@
+&usbh0 {
+	status = "okay";
+};
