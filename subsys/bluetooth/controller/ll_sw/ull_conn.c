@@ -863,6 +863,9 @@ int ull_conn_llcp(struct ll_conn *conn, uint32_t ticks_at_expire, uint16_t lazy)
 	 */
 	if ((conn->llcp_ack == conn->llcp_req) &&
 #if defined(CONFIG_BT_CTLR_LE_ENC)
+#if defined(CONFIG_BT_PERIPHERAL)
+	    (!conn->lll.role || (conn->slave.llcp_type == LLCP_NONE)) &&
+#endif /* CONFIG_BT_PERIPHERAL */
 	    !conn->llcp_enc.pause_rx) {
 #else /* !CONFIG_BT_CTLR_LE_ENC */
 	    1) {
@@ -995,10 +998,34 @@ int ull_conn_llcp(struct ll_conn *conn, uint32_t ticks_at_expire, uint16_t lazy)
 		}
 	}
 
-#if defined(CONFIG_BT_CTLR_LE_ENC)
-	/* Run any pending procedure stored while encryption was started */
-	if (conn->llcp.encryption.pend_llcp_type != LLCP_NONE) {
-		switch (conn->llcp.encryption.pend_llcp_type) {
+#if defined(CONFIG_BT_PERIPHERAL) && defined(CONFIG_BT_CTLR_LE_ENC)
+	/* Run any pending local peripheral role initiated procedure stored when
+	 * peer central initiated a encryption procedure
+	 */
+	if (conn->lll.role && (conn->slave.llcp_type != LLCP_NONE)) {
+		switch (conn->slave.llcp_type) {
+		case LLCP_CONN_UPD:
+		{
+			if (event_conn_upd_prep(conn, lazy,
+						ticks_at_expire) == 0) {
+				return -ECANCELED;
+			}
+		}
+		break;
+
+		case LLCP_CHAN_MAP:
+		{
+			struct lll_conn *lll = &conn->lll;
+			uint16_t event_counter;
+
+			/* Calculate current event counter */
+			event_counter = lll->event_counter +
+					lll->latency_prepare + lazy;
+
+			event_ch_map_prep(conn, event_counter);
+		}
+		break;
+
 #if defined(CONFIG_BT_CTLR_PHY)
 		case LLCP_PHY_UPD:
 		{
@@ -1019,7 +1046,7 @@ int ull_conn_llcp(struct ll_conn *conn, uint32_t ticks_at_expire, uint16_t lazy)
 			break;
 		}
 	}
-#endif /* CONFIG_BT_CTLR_LE_ENC */
+#endif /* CONFIG_BT_PERIPHERAL && CONFIG_BT_CTLR_LE_ENC */
 
 	/* Terminate Procedure Request */
 	if (conn->llcp_terminate.ack != conn->llcp_terminate.req) {
@@ -2319,9 +2346,21 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 		uint32_t periodic_us;
 		uint16_t latency;
 
+#if defined(CONFIG_BT_PERIPHERAL)
+		if (conn->lll.role && (conn->slave.llcp_type != LLCP_NONE)) {
+			/* Local peripheral initiated PHY update completed while
+			 * a remote central had initiated encryption procedure
+			 */
+			conn->slave.llcp_type = LLCP_NONE;
+		} else
+#endif /* CONFIG_BT_PERIPHERAL */
+		{
+			/* procedure request acked */
+			conn->llcp_ack = conn->llcp_req;
+		}
+
 		/* procedure request acked */
 		conn->llcp_cu.ack = conn->llcp_cu.req;
-		conn->llcp_ack = conn->llcp_req;
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 		if ((conn->llcp_conn_param.req != conn->llcp_conn_param.ack) &&
@@ -2591,8 +2630,18 @@ static inline void event_ch_map_prep(struct ll_conn *conn,
 			    <= 0x7FFF) {
 		struct lll_conn *lll = &conn->lll;
 
-		/* procedure request acked */
-		conn->llcp_ack = conn->llcp_req;
+#if defined(CONFIG_BT_PERIPHERAL)
+		if (conn->lll.role && (conn->slave.llcp_type != LLCP_NONE)) {
+			/* Local peripheral initiated PHY update completed while
+			 * a remote central had initiated encryption procedure
+			 */
+			conn->slave.llcp_type = LLCP_NONE;
+		} else
+#endif /* CONFIG_BT_PERIPHERAL */
+		{
+			/* procedure request acked */
+			conn->llcp_ack = conn->llcp_req;
+		}
 
 		/* copy to active channel map */
 		memcpy(&lll->data_chan_map[0],
@@ -2802,19 +2851,6 @@ static inline void event_enc_prep(struct ll_conn *conn)
 		/* resume data packet rx and tx */
 		conn->llcp_enc.pause_rx = 0U;
 		conn->llcp_enc.pause_tx = 0U;
-
-		/* If the encryption procedure interrupted another procedcure,
-		 * continue that procedure
-		 */
-		if (conn->llcp.encryption.pend_llcp_type != LLCP_NONE) {
-			conn->llcp_type = conn->llcp.encryption.pend_llcp_type;
-			conn->llcp.encryption.pend_llcp_type = LLCP_NONE;
-			/* return now to prevent the 'procedure request acked',
-			 * below, otherwise the ack/req flow prevents the
-			 * interrupted procedure to run.
-			 */
-			return;
-		}
 #endif /* !CONFIG_BT_CTLR_FAST_ENC */
 	}
 
@@ -3721,14 +3757,17 @@ static inline void event_phy_upd_ind_prep(struct ll_conn *conn,
 		struct node_rx_pdu *rx;
 		uint8_t old_tx, old_rx;
 
-		if (conn->llcp.encryption.pend_llcp_type == LLCP_NONE) {
+#if defined(CONFIG_BT_PERIPHERAL)
+		if (conn->lll.role && (conn->slave.llcp_type != LLCP_NONE)) {
+			/* Local peripheral initiated PHY update completed while
+			 * a remote central had initiated encryption procedure
+			 */
+			conn->slave.llcp_type = LLCP_NONE;
+		} else
+#endif /* CONFIG_BT_PERIPHERAL */
+		{
 			/* procedure request acked */
 			conn->llcp_ack = conn->llcp_req;
-		} else {
-			/* PHY Update completed, so clear the
-			 * pending procedure
-			 */
-			conn->llcp.encryption.pend_llcp_type = LLCP_NONE;
 		}
 
 		/* apply new phy */
@@ -5510,17 +5549,19 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 		}
 
 #if defined(CONFIG_BT_CTLR_PHY)
-		/* LL_ENC_REQ was received while LLCP_PHY_UPD was running */
-		if (conn->llcp_type == LLCP_PHY_UPD &&
-		    conn->llcp_ack != conn->llcp_req) {
-			 /* Adjust ack due to decrement below, to prevent
-			  * failures
-			  */
+		/* LL_ENC_REQ was received while local peripheral initiated
+		 * procedure is in progress.
+		 */
+		if (unlikely(((conn->llcp_req - conn->llcp_ack) & 0x03) ==
+			     0x02)) {
+			/* Adjust ack due to decrement below, to prevent
+			 * failures
+			 */
 			conn->llcp_ack += 2U;
-			/* Remember that LLCP_PHY_UPD was interrupted */
-			conn->llcp.encryption.pend_llcp_type = LLCP_PHY_UPD;
-		} else {
-			conn->llcp.encryption.pend_llcp_type = LLCP_NONE;
+
+			/* Store the local peripheral initiated procedure */
+			LL_ASSERT(conn->slave.llcp_type == LLCP_NONE);
+			conn->slave.llcp_type = conn->llcp_type;
 		}
 #endif /* CONFIG_BT_CTLR_PHY */
 
