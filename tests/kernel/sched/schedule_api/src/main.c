@@ -45,6 +45,7 @@ void test_main(void)
 			      &ustack);
 #endif /* CONFIG_USERSPACE */
 
+	/* Just add a note to see if the CI build failure */
 	ztest_test_suite(threads_scheduling,
 			 ztest_unit_test(test_bad_priorities),
 			 ztest_unit_test(test_priority_cooperative),
