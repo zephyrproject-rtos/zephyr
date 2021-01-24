@@ -72,8 +72,12 @@ struct ll_conn {
 #endif /* CONFIG_BT_CTLR_CONN_META */
 			uint8_t  latency_cancel:1;
 			uint8_t  sca:3;
+#if defined(CONFIG_BT_CTLR_CONN_RANDOM_FORCE)
 			uint32_t force;
+#endif /* CONFIG_BT_CTLR_CONN_RANDOM_FORCE */
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 			uint32_t ticks_to_offset;
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 		} slave;
 #endif /* CONFIG_BT_PERIPHERAL */
 
