@@ -331,6 +331,11 @@ void SX126xSetOperatingMode(RadioOperatingModes_t mode)
 		sx126x_set_rx_enable(1);
 		break;
 
+	case MODE_SLEEP:
+		/* Additionally disable the DIO1 interrupt to save power */
+		gpio_pin_interrupt_configure(dev_data.dio1, GPIO_DIO1_PIN,
+					     GPIO_INT_DISABLE);
+		__fallthrough;
 	default:
 		sx126x_set_rx_enable(0);
 		sx126x_set_tx_enable(0);
@@ -406,6 +411,10 @@ void SX126xWakeup(void)
 {
 	int ret;
 
+	/* Reenable DIO1 when waking up */
+	gpio_pin_interrupt_configure(dev_data.dio1, GPIO_DIO1_PIN,
+				     GPIO_INT_EDGE_TO_ACTIVE);
+
 	uint8_t req[] = { RADIO_GET_STATUS, 0 };
 	const struct spi_buf tx_buf = {
 		.buf = req,
@@ -479,9 +488,6 @@ static int sx126x_lora_init(const struct device *dev)
 		LOG_ERR("Could not set GPIO callback for DIO1 interrupt.");
 		return -EIO;
 	}
-
-	gpio_pin_interrupt_configure(dev_data.dio1, GPIO_DIO1_PIN,
-				     GPIO_INT_EDGE_TO_ACTIVE);
 
 	dev_data.spi = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (!dev_data.spi) {
