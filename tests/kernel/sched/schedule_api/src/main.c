@@ -65,7 +65,17 @@ void test_main(void)
 			 ztest_unit_test(test_priority_scheduling),
 			 ztest_unit_test(test_wakeup_expired_timer_thread),
 			 ztest_user_unit_test(test_user_k_wakeup),
-			 ztest_user_unit_test(test_user_k_is_preempt)
+			 ztest_user_unit_test(test_user_k_is_preempt),
+			 ztest_1cpu_unit_test(test_kernel_api_pend_unpend),
+			 ztest_unit_test(test_kernel_api_append_remove_queue),
+			 ztest_user_unit_test(test_k_thread_suspend_init_null),
+			 ztest_user_unit_test(test_k_thread_resume_init_null),
+			 ztest_user_unit_test(test_k_thread_priority_get_init_null),
+			 ztest_user_unit_test(test_k_thread_priority_set_init_null),
+			 ztest_user_unit_test(test_k_thread_priority_set_invalid1),
+			 ztest_user_unit_test(test_k_thread_priority_set_invalid2),
+			 ztest_user_unit_test(test_k_wakeup_init_null),
+			 ztest_unit_test(test_k_thread_resume_unsuspend)
 			 );
 	ztest_run_test_suite(threads_scheduling);
 }
