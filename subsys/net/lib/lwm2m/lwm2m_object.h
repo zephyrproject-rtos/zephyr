@@ -52,6 +52,7 @@
 #include <net/net_ip.h>
 #include <sys/printk.h>
 #include <sys/util.h>
+#include <sys/types.h>
 
 #include <net/coap.h>
 #include <net/lwm2m.h>
@@ -522,6 +523,8 @@ struct lwm2m_writer {
 	size_t (*put_objlnk)(struct lwm2m_output_context *out,
 			     struct lwm2m_obj_path *path,
 			     struct lwm2m_objlnk *value);
+	ssize_t (*put_corelink)(struct lwm2m_output_context *out,
+				const struct lwm2m_obj_path *path);
 };
 
 struct lwm2m_reader {
@@ -735,6 +738,16 @@ static inline size_t engine_put_objlnk(struct lwm2m_output_context *out,
 				       struct lwm2m_objlnk *value)
 {
 	return out->writer->put_objlnk(out, path, value);
+}
+
+static inline ssize_t engine_put_corelink(struct lwm2m_output_context *out,
+					  const struct lwm2m_obj_path *path)
+{
+	if (out->writer->put_corelink) {
+		return out->writer->put_corelink(out, path);
+	}
+
+	return -ENOTSUP;
 }
 
 static inline size_t engine_get_s32(struct lwm2m_input_context *in,
