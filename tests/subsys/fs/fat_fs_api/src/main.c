@@ -11,6 +11,8 @@ const char *test_fs_open_flags_file_path =  FATFS_MNTP"/the_file.txt";
 
 void test_main(void)
 {
+	fs_file_t_init(&filep);
+
 	ztest_test_suite(fat_fs_basic_test,
 			 ztest_unit_test(test_fat_mount),
 			 ztest_unit_test(test_fat_file),
