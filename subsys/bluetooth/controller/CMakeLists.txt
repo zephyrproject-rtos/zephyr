@@ -90,6 +90,12 @@ if(CONFIG_BT_LL_SW_SPLIT)
       )
   endif()
 
+  if(CONFIG_BT_CTLR_PERIPHERAL_ISO OR
+     CONFIG_BT_CTLR_CENTRAL_ISO)
+    zephyr_library_sources(
+      ll_sw/ull_conn_iso.c
+      )
+  endif()
   if(CONFIG_BT_CTLR_ADV_ISO OR
      CONFIG_BT_CTLR_SYNC_ISO OR
      CONFIG_BT_CTLR_PERIPHERAL_ISO OR

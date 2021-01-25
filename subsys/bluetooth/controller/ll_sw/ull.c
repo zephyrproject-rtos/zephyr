@@ -52,6 +52,9 @@
 #include "ull_sync_internal.h"
 #include "ull_sync_iso_internal.h"
 #include "ull_conn_internal.h"
+#include "ull_conn_iso_internal.h"
+#include "ull_central_iso_internal.h"
+#include "ull_peripheral_iso_internal.h"
 #include "ull_df.h"
 
 #if defined(CONFIG_BT_CTLR_USER_EXT)
@@ -459,12 +462,34 @@ int ll_init(struct k_sem *sem_rx)
 	* CONFIG_BT_CTLR_PERIPHERAL_ISO || CONFIG_BT_CTLR_CENTRAL_ISO
 	*/
 
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) || \
+	defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+	err = ull_conn_iso_init();
+	if (err) {
+		return err;
+	}
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO || CONFIG_BT_CTLR_CENTRAL_ISO */
+
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+	err = ull_peripheral_iso_init();
+	if (err) {
+		return err;
+	}
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+	err = ull_central_iso_init();
+	if (err) {
+		return err;
+	}
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
+
 #if defined(CONFIG_BT_CTLR_ADV_ISO)
 	err = ull_adv_iso_init();
 	if (err) {
 		return err;
 	}
-#endif /* CONFIG_BT_CONN */
+#endif /* CONFIG_BT_CTLR_ADV_ISO */
 
 #if IS_ENABLED(CONFIG_BT_CTLR_DF)
 	err = lll_df_init();
@@ -535,11 +560,27 @@ void ll_reset(void)
 	* CONFIG_BT_CTLR_PERIPHERAL_ISO || CONFIG_BT_CTLR_CENTRAL_ISO
 	*/
 
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) || \
+	defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+	err = ull_conn_iso_reset();
+	LL_ASSERT(!err);
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO || CONFIG_BT_CTLR_CENTRAL_ISO */
+
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+	err = ull_peripheral_iso_reset();
+	LL_ASSERT(!err);
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+	err = ull_central_iso_reset();
+	LL_ASSERT(!err);
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
+
 #if defined(CONFIG_BT_CTLR_ADV_ISO)
 	/* Reset periodic sync sets */
 	err = ull_adv_iso_reset();
 	LL_ASSERT(!err);
-#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
+#endif /* CONFIG_BT_CTLR_ADV_ISO */
 
 #if IS_ENABLED(CONFIG_BT_CTLR_DF)
 	err = ull_df_reset();
