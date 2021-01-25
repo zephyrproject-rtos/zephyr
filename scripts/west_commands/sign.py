@@ -401,7 +401,6 @@ class RimageSigner(Signer):
 
         log.die('Signing not supported for board ' + board)
 
-
     def sign(self, command, build_dir, bcfg, formats):
         args = command.args
 
@@ -433,11 +432,20 @@ class RimageSigner(Signer):
         out_bin = str(b / 'zephyr' / 'zephyr.ri')
         out_xman = str(b / 'zephyr' / 'zephyr.ri.xman')
         out_tmp = str(b / 'zephyr' / 'zephyr.rix')
-        rimage_conf = pathlib.Path(cache['RIMAGE_CONFIG_PATH'])
-        conf_path = str(rimage_conf / conf)
+        conf_path_cmd = []
+        if cache.get('RIMAGE_CONFIG_PATH') and not args.tool_data:
+            rimage_conf = pathlib.Path(cache['RIMAGE_CONFIG_PATH'])
+            conf_path = str(rimage_conf / conf)
+            conf_path_cmd = ['-c', conf_path]
+        elif args.tool_data:
+            conf_dir = pathlib.Path(args.tool_data)
+            conf_path = str(conf_dir / conf)
+            conf_path_cmd = ['-c', conf_path]
+        else:
+            log.die('Configuration not found')
 
         sign_base = ([tool_path] + args.tool_args +
-                     ['-o', out_bin, '-c', conf_path, '-i', '3', '-e'] +
+                     ['-o', out_bin] +  conf_path_cmd + ['-i', '3', '-e'] +
                      [bootloader, kernel])
 
         if not args.quiet:
