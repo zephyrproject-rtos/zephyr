@@ -31,7 +31,7 @@ Signing keys
 The key used is Intel Open Source Technology Center (OTC) community key.
 It can be freely used by anyone and intended for firmware developers.
 Please download and store private key from the location:
-https://github.com/thesofproject/sof/blob/master/rimage/keys/otc_private_key.pem
+https://github.com/thesofproject/sof/blob/master/keys/otc_private_key.pem
 
 For more information about keys refer to `rimage keys`_.
 
