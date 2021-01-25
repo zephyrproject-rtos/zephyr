@@ -60,24 +60,6 @@ static device_idx_t num_pm;
 /* Number of devices successfully suspended. */
 static device_idx_t num_susp;
 
-const char *device_pm_state_str(uint32_t state)
-{
-	switch (state) {
-	case DEVICE_PM_ACTIVE_STATE:
-		return "active";
-	case DEVICE_PM_LOW_POWER_STATE:
-		return "low power";
-	case DEVICE_PM_SUSPEND_STATE:
-		return "suspend";
-	case DEVICE_PM_FORCE_SUSPEND_STATE:
-		return "force suspend";
-	case DEVICE_PM_OFF_STATE:
-		return "off";
-	default:
-		return "";
-	}
-}
-
 static int _pm_devices(uint32_t state)
 {
 	num_susp = 0;
@@ -183,3 +165,21 @@ void pm_create_device_list(void)
 	}
 }
 #endif /* defined(CONFIG_PM) */
+
+const char *device_pm_state_str(uint32_t state)
+{
+	switch (state) {
+	case DEVICE_PM_ACTIVE_STATE:
+		return "active";
+	case DEVICE_PM_LOW_POWER_STATE:
+		return "low power";
+	case DEVICE_PM_SUSPEND_STATE:
+		return "suspend";
+	case DEVICE_PM_FORCE_SUSPEND_STATE:
+		return "force suspend";
+	case DEVICE_PM_OFF_STATE:
+		return "off";
+	default:
+		return "";
+	}
+}
