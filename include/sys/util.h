@@ -224,6 +224,22 @@ static inline int64_t arithmetic_shift_right(int64_t value, uint8_t shift)
 }
 
 /**
+ * @brief byte by byte memcpy.
+ *
+ * Copy `size` bytes of `src` into `dest`. This is guaranteed to be done byte by byte.
+ *
+ * @param dst Pointer to the destination memory.
+ * @param src Pointer to the source of the data.
+ * @param size The number of bytes to copy.
+ */
+static inline void bytecpy(void *dst, const void *src, size_t size)
+{
+	for (size_t i = 0; i < size; ++i) {
+		((uint8_t *)dst)[i] = ((uint8_t *)src)[i];
+	}
+}
+
+/**
  * @brief      Convert a single character into a hexadecimal nibble.
  *
  * @param c     The character to convert
