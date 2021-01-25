@@ -26,7 +26,7 @@
 		 * instruction.  See include/sw_isr_table.h.
 		 */
 		. = ALIGN(CONFIG_ARCH_SW_ISR_TABLE_ALIGN);
-		*(_SW_ISR_TABLE_SECTION_NAME)
+		*(_SW_ISR_TABLE_SECTION_SYMS)
 	} GROUP_LINK_IN(ROMABLE_REGION)
 #endif
 
