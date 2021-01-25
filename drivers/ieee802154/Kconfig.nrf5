@@ -43,13 +43,4 @@ config IEEE802154_NRF5_EXT_IRQ_MGMT
 	  the system. One example of external radio IRQ provider could be
 	  a radio arbiter used in dynamic multiprotocol applications.
 
-config IEEE802154_NRF5_PKT_TXTIME
-	bool "Driver's TX time support"
-	depends on !NRF_802154_SL_OPENSOURCE && !NRF_802154_SER_HOST
-	depends on NET_PKT_TXTIME
-	default y
-	help
-	  Enable TX time support. This is needed when upper layers want
-	  to set the exact time when the packet should be sent.
-
 endif
