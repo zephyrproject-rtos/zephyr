@@ -20,6 +20,10 @@ config HAS_SEMTECH_RADIO_DRIVERS
 	help
 	  This option enables the use of Semtech's Radio drivers
 
+config HAS_SEMTECH_SX1272
+	bool
+	depends on HAS_SEMTECH_RADIO_DRIVERS
+
 config HAS_SEMTECH_SX1276
 	bool
 	depends on HAS_SEMTECH_RADIO_DRIVERS
