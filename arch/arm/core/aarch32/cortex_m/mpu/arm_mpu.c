@@ -369,6 +369,27 @@ static int arm_mpu_init(const struct device *arg)
 #endif
 	};
 
+	/* The flash region for null pointer dereferencing detection shall
+	 * comply with the regular MPU partition definition restrictions
+	 * (size and alignment).
+	 */
+	_ARCH_MEM_PARTITION_ALIGN_CHECK(0x0,
+		CONFIG_CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_PAGE_SIZE);
+
+#if defined(CONFIG_ARMV8_M_BASELINE) || defined(CONFIG_ARMV8_M_MAINLINE)
+	/* ARMv8-M requires that the area:
+	 * 0x0 - CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_PAGE_SIZE
+	 * is not unmapped (belongs to a valid MPU region already).
+	 */
+	if ((arm_cmse_mpu_region_get(0x0) == -EINVAL) ||
+		(arm_cmse_mpu_region_get(
+			CONFIG_CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_PAGE_SIZE - 1)
+		== -EINVAL)) {
+		__ASSERT(0,
+			"Null pointer detection page unmapped\n");
+		}
+#endif
+
 	if (mpu_configure_region(static_regions_num, &unmap_region) == -EINVAL) {
 
 		__ASSERT(0,
