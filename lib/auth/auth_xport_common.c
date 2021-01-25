@@ -641,6 +641,10 @@ int auth_xport_send(const auth_xport_hdl_t xporthdl, const uint8_t *data, size_t
 	int send_ret = AUTH_SUCCESS;
 	struct auth_message_fragment msg_frag;
 
+	/* check params */
+	if (xp_inst == NULL || data == NULL || len == 0) {
+		return AUTH_ERROR_INVALID_PARAM;
+	}
 
 	/* If the lower transport MTU size isn't set, get it.  This can happen
 	 * when the the MTU is negotiated after the initial connection.
@@ -652,10 +656,6 @@ int auth_xport_send(const auth_xport_hdl_t xporthdl, const uint8_t *data, size_t
 	const uint16_t max_frame = MIN(sizeof(msg_frag), xp_inst->payload_size);
 	const uint16_t max_payload = max_frame - XPORT_FRAG_HDR_BYTECNT;
 
-	/* sanity check */
-	if (xp_inst == NULL) {
-		return AUTH_ERROR_INVALID_PARAM;
-	}
 
 	/* set frame header */
 	msg_frag.hdr.sync_flags = XPORT_FRAG_SYNC_BITS | XPORT_FRAG_BEGIN;
