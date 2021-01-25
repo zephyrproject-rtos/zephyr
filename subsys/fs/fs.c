@@ -143,25 +143,30 @@ int fs_open(struct fs_file_t *zfp, const char *file_name, fs_mode_t flags)
 		return -EINVAL;
 	}
 
+	if (zfp->mp != NULL) {
+		return -EBUSY;
+	}
+
 	rc = fs_get_mnt_point(&mp, file_name, NULL);
 	if (rc < 0) {
 		LOG_ERR("%s:mount point not found!!", __func__);
 		return rc;
 	}
 
-	zfp->mp = mp;
 	if (((mp->flags & FS_MOUNT_FLAG_READ_ONLY) != 0) &&
 	    (flags & FS_O_CREATE || flags & FS_O_WRITE)) {
 		return -EROFS;
 	}
 
-	CHECKIF(zfp->mp->fs->open == NULL) {
+	CHECKIF(mp->fs->open == NULL) {
 		return -ENOTSUP;
 	}
 
-	rc = zfp->mp->fs->open(zfp, file_name, flags);
+	zfp->mp = mp;
+	rc = mp->fs->open(zfp, file_name, flags);
 	if (rc < 0) {
 		LOG_ERR("file open error (%d)", rc);
+		zfp->mp = NULL;
 		return rc;
 	}
 
