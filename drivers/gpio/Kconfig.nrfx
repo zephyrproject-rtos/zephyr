@@ -5,6 +5,7 @@ menuconfig GPIO_NRFX
 	bool "nRF GPIO driver"
 	default y
 	depends on SOC_FAMILY_NRF
+	select NRFX_GPIOTE
 	help
 	  Enable GPIO driver for nRF line of MCUs.
 
