@@ -187,22 +187,27 @@ drop:
 	}
 }
 
+static void nrf5_get_capabilities_at_boot(void)
+{
+	nrf_802154_capabilities_t caps = nrf_802154_capabilities_get();
+
+	nrf5_data.capabilities =
+		IEEE802154_HW_FCS |
+		IEEE802154_HW_PROMISC |
+		IEEE802154_HW_FILTER |
+		((caps & NRF_802154_CAPABILITY_CSMA) ? IEEE802154_HW_CSMA : 0UL) |
+		IEEE802154_HW_2_4_GHZ |
+		IEEE802154_HW_TX_RX_ACK |
+		IEEE802154_HW_ENERGY_SCAN |
+		((caps & NRF_802154_CAPABILITY_DELAYED_TX) ? IEEE802154_HW_TXTIME : 0UL) |
+		IEEE802154_HW_SLEEP_TO_TX;
+}
+
 /* Radio device API */
 
 static enum ieee802154_hw_caps nrf5_get_capabilities(const struct device *dev)
 {
-	return IEEE802154_HW_FCS |
-	       IEEE802154_HW_FILTER |
-#if !defined(CONFIG_NRF_802154_SL_OPENSOURCE)
-	       IEEE802154_HW_CSMA |
-#ifdef CONFIG_IEEE802154_NRF5_PKT_TXTIME
-	       IEEE802154_HW_TXTIME |
-#endif /* CONFIG_IEEE802154_NRF5_PKT_TXTIME */
-#endif
-	       IEEE802154_HW_2_4_GHZ |
-	       IEEE802154_HW_TX_RX_ACK |
-	       IEEE802154_HW_ENERGY_SCAN |
-	       IEEE802154_HW_SLEEP_TO_TX;
+	return nrf5_data.capabilities;
 }
 
 static int nrf5_cca(const struct device *dev)
@@ -576,6 +581,7 @@ static void nrf5_iface_init(struct net_if *iface)
 	nrf5_radio->iface = iface;
 
 	ieee802154_init(iface);
+	nrf5_get_capabilities_at_boot();
 }
 
 static int nrf5_configure(const struct device *dev,
