@@ -9,7 +9,7 @@ properties:
       type: phandle-array
       required: true
       description: |
-        GPIO connected to the modem's NRST signal.
+        GPIO connected to the modem's NRESET signal.
 
         This signal is open-drain, active-low as interpreted by the
         modem.
