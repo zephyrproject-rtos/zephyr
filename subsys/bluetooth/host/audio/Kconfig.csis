@@ -74,6 +74,13 @@ config BT_CSIP
 
 if BT_CSIP
 
+config BT_CSIP_TEST_SAMPLE_DATA
+	bool "Coordinated Set Identification Service Test Sample Data"
+	help
+	  Enable the use of the sample data defined by the CSIS spec.
+	  This will use the sample SIRK, prand and LTK.
+	  Should not be used for production builds.
+
 config BT_CSIP_MAX_CSIS_INSTANCES
 	int "Coordinated Set Identification Service Count"
 	default 1

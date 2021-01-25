@@ -154,10 +154,10 @@ static int sirk_decrypt(struct bt_conn *conn,
 	int err;
 	uint8_t *k;
 
-	if (IS_ENABLED(CONFIG_BT_CSIS_TEST_SAMPLE_DATA)) {
+	if (IS_ENABLED(CONFIG_BT_CSIP_TEST_SAMPLE_DATA)) {
 		/* test_k is from the sample data from A.2 in the CSIS spec */
-		static uint8_t test_k[] = {0x1c, 0x01, 0xea, 0xf6,
-					   0x50, 0x7d, 0x43, 0x71,
+		static uint8_t test_k[] = {0xd9, 0xce, 0xe5, 0x3c,
+					   0x22, 0xc6, 0x1e, 0x06,
 					   0x6f, 0x69, 0x48, 0xd4,
 					   0x9b, 0x1b, 0x6e, 0x67};
 		BT_DBG("Decrypting with sample data K");
@@ -678,6 +678,8 @@ static bool is_set_member(struct bt_data *data)
 
 	calculated_hash &= 0xffffff;
 
+	BT_DBG("calculated_hash: 0x%06x, hash 0x%06x", calculated_hash, hash);
+
 	return calculated_hash == hash;
 }
 
@@ -1052,8 +1054,6 @@ static void csip_connected(struct bt_conn *conn, uint8_t err)
 				csip_cbs->lock_set(err);
 			}
 		}
-
-		bt_conn_ref(conn);
 	}
 }
 
@@ -1067,8 +1067,6 @@ static void csip_disconnected(struct bt_conn *conn, uint8_t reason)
 
 		BT_DBG("Disconnected: %s (reason %u)", log_strdup(addr),
 		       reason);
-
-		bt_conn_unref(conn);
 	}
 }
 
