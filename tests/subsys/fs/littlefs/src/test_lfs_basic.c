@@ -77,6 +77,7 @@ static int create_write_hello(const struct fs_mount_t *mp)
 	struct testfs_path path;
 	struct fs_file_t file;
 
+	fs_file_t_init(&file);
 	TC_PRINT("creating and writing file\n");
 
 	zassert_equal(fs_open(&file,
@@ -144,6 +145,7 @@ static int verify_hello(const struct fs_mount_t *mp)
 	struct testfs_path path;
 	struct fs_file_t file;
 
+	fs_file_t_init(&file);
 	TC_PRINT("opening and verifying file\n");
 
 	zassert_equal(fs_open(&file,
@@ -175,6 +177,7 @@ static int seek_within_hello(const struct fs_mount_t *mp)
 	struct testfs_path path;
 	struct fs_file_t file;
 
+	fs_file_t_init(&file);
 	TC_PRINT("seek and tell in file\n");
 
 	zassert_equal(fs_open(&file,
@@ -242,6 +245,7 @@ static int truncate_hello(const struct fs_mount_t *mp)
 	struct testfs_path path;
 	struct fs_file_t file;
 
+	fs_file_t_init(&file);
 	TC_PRINT("truncate in file\n");
 
 	zassert_equal(fs_open(&file,
@@ -332,6 +336,7 @@ static int sync_goodbye(const struct fs_mount_t *mp)
 	struct testfs_path path;
 	struct fs_file_t file;
 
+	fs_file_t_init(&file);
 	TC_PRINT("sync goodbye\n");
 
 	zassert_equal(fs_open(&file,
@@ -395,6 +400,7 @@ static int verify_goodbye(const struct fs_mount_t *mp)
 	struct testfs_path path;
 	struct fs_file_t file;
 
+	fs_file_t_init(&file);
 	TC_PRINT("verify goodbye\n");
 
 	zassert_equal(fs_open(&file,

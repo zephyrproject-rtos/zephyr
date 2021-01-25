@@ -26,6 +26,7 @@ void test_fs_mount_flags(void)
 	int ret = 0;
 	struct fs_file_t fs;
 
+	fs_file_t_init(&fs);
 	cleanup(mp);
 
 	/* Test FS_MOUNT_FLAG_NO_FORMAT flag */
