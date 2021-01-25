@@ -57,7 +57,7 @@ manifest:
       revision: f1fa8241f8786198ba41155413243de36ed878a5
       path: modules/hal/infineon
     - name: hal_nordic
-      revision: 74e4ab0185a9a53d03bf382d4bfe5ec81e05b5e4
+      revision: f0d54d8449acbee49b3cebcef0e3e56640c50277
       path: modules/hal/nordic
     - name: hal_openisa
       revision: 40d049f69c50b58ea20473bee14cf93f518bf262
