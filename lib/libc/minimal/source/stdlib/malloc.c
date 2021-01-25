@@ -12,6 +12,7 @@
 #include <string.h>
 #include <app_memory/app_memdomain.h>
 #include <sys/sys_heap.h>
+#include <zephyr/types.h>
 
 #define LOG_LEVEL CONFIG_KERNEL_LOG_LEVEL
 #include <logging/log.h>
@@ -34,8 +35,9 @@ Z_GENERIC_SECTION(POOL_SECTION) static char z_malloc_heap_mem[HEAP_BYTES];
 
 void *malloc(size_t size)
 {
-	void *ret;
-	ret = sys_heap_alloc(&z_malloc_heap, size);
+	void *ret = sys_heap_aligned_alloc(&z_malloc_heap,
+					   __alignof__(z_max_align_t),
+					   size);
 	if (ret == NULL) {
 		errno = ENOMEM;
 	}
