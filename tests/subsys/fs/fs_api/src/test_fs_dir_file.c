@@ -436,6 +436,10 @@ void test_file_open(void)
 	ret = fs_open(&filep, TEST_FILE, FS_O_READ);
 	zassert_equal(ret, 0, "Fail to open file");
 
+	TC_PRINT("\nDouble-open\n");
+	ret = fs_open(&filep, TEST_FILE, FS_O_READ);
+	zassert_equal(ret, -EBUSY, "Expected -EBUSY, got %d", ret);
+
 	TC_PRINT("\nReopen the same file");
 	ret = fs_open(&filep, TEST_FILE, FS_O_READ);
 	zassert_not_equal(ret, 0, "Reopen an opend file");
@@ -826,6 +830,12 @@ void test_file_close(void)
 
 	ret = fs_close(&filep);
 	zassert_equal(ret, 0, "Fail to close file");
+
+	TC_PRINT("Reuse fs_file_t from closed file");
+	ret = fs_open(&filep, TEST_FILE, FS_O_READ);
+	zassert_equal(ret, 0, "Expected open to succeed, got %d", ret);
+	ret = fs_close(&filep);
+	zassert_equal(ret, 0, "Expected close to succeed, got %d", ret);
 
 	TC_PRINT("\nClose a closed file:\n");
 	filep.mp = &test_fs_mnt_1;
