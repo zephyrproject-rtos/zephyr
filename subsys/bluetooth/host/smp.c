@@ -4059,6 +4059,12 @@ static uint8_t smp_public_key_slave(struct bt_smp *smp)
 {
 	uint8_t err;
 
+	if (!atomic_test_bit(smp->flags, SMP_FLAG_SC_DEBUG_KEY) &&
+	    memcmp(smp->pkey, sc_public_key, 64) == 0) {
+		BT_WARN("Remote is using identical public key");
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+
 	err = sc_send_public_key(smp);
 	if (err) {
 		return err;
@@ -4124,6 +4130,12 @@ static uint8_t smp_public_key(struct bt_smp *smp, struct net_buf *buf)
 
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
 	    smp->chan.chan.conn->role == BT_HCI_ROLE_MASTER) {
+		if (!atomic_test_bit(smp->flags, SMP_FLAG_SC_DEBUG_KEY) &&
+		    memcmp(smp->pkey, sc_public_key, 64) == 0) {
+			BT_WARN("Remote is using identical public key");
+			return BT_SMP_ERR_UNSPECIFIED;
+		}
+
 		switch (smp->method) {
 		case PASSKEY_CONFIRM:
 		case JUST_WORKS:
