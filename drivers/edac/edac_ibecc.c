@@ -21,10 +21,7 @@
 LOG_MODULE_REGISTER(edac_ibecc, CONFIG_EDAC_LOG_LEVEL);
 
 #define DEVICE_NODE DT_NODELABEL(ibecc)
-/* Workaround for getting bus/device/function from DTS */
-#define PCI_ENDPOINT DT_REG_ADDR(DEVICE_NODE)
-/* Workaround for getting PCI Vendor ID from DTS */
-#define PCI_VENDOR_ID DT_REG_SIZE(DEVICE_NODE)
+#define PCI_ENDPOINT PCIE_BDF(0, 0, 0)
 
 struct ibecc_data {
 	mem_addr_t mchbar;
@@ -354,8 +351,10 @@ int edac_ibecc_init(const struct device *dev)
 
 	LOG_INF("EDAC IBECC initialization");
 
-	if (!pcie_probe(bdf, PCIE_ID(PCI_VENDOR_ID, PCI_DEVICE_ID_SKU7)) &&
-	    !pcie_probe(bdf, PCIE_ID(PCI_VENDOR_ID, PCI_DEVICE_ID_SKU12))) {
+	if (!pcie_probe(bdf, PCIE_ID(PCI_VENDOR_ID_INTEL,
+				     PCI_DEVICE_ID_SKU7)) &&
+	    !pcie_probe(bdf, PCIE_ID(PCI_VENDOR_ID_INTEL,
+				     PCI_DEVICE_ID_SKU12))) {
 		LOG_ERR("PCI Probe failed");
 		return -ENODEV;
 	}
@@ -483,7 +482,7 @@ bool z_x86_do_kernel_nmi(const z_arch_esf_t *esf)
 
 	edac_ecc_error_log_clear(dev);
 
-	ibecc_errsts_clear(PCIE_BDF(0, 0, 0));
+	ibecc_errsts_clear(PCI_ENDPOINT);
 
 out:
 	k_spin_unlock(&nmi_lock, key);

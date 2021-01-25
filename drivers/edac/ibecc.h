@@ -7,6 +7,8 @@
 /* TODO: Add to include/sys/util.h */
 #define BITFIELD(val, h, l)	(((val) & GENMASK(h, l)) >> l)
 
+#define PCI_VENDOR_ID_INTEL	0x8086
+
 #define PCI_DEVICE_ID_SKU7	0x452a
 #define PCI_DEVICE_ID_SKU12	0x4518
 
