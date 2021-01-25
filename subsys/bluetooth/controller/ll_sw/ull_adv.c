@@ -904,6 +904,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 		conn->llcp_conn_param.req = 0;
 		conn->llcp_conn_param.ack = 0;
 		conn->llcp_conn_param.disabled = 0;
+		conn->slave.ticks_to_offset = 0;
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
