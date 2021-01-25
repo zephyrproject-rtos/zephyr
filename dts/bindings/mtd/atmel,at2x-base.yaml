@@ -1,7 +1,7 @@
 # Copyright (c) 2019 Vestas Wind Systems A/S
 # SPDX-License-Identifier: Apache-2.0
 
-# Common fields for I2C and SPI EEPROM devices
+# Common fields for AT24 (I2C) and AT25 (SPI) EEPROM devices
 
 include: eeprom-base.yaml
 

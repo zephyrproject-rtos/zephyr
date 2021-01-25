@@ -6,4 +6,4 @@ description: Atmel AT24 (or compatible) I2C EEPROM
 
 compatible: "atmel,at24"
 
-include: [eeprom-spi-i2c.yaml, i2c-device.yaml]
+include: ["atmel,at2x-base.yaml", i2c-device.yaml]
