@@ -390,7 +390,8 @@ static void nrf5_tx_started(const struct device *dev,
 	}
 }
 
-#ifdef CONFIG_IEEE802154_NRF5_PKT_TXTIME
+/* This function cannot be used in the serialized version yet. */
+#if defined(CONFIG_NET_PKT_TXTIME) && !defined(CONFIG_NRF_802154_SER_HOST)
 static bool nrf5_tx_at(struct net_pkt *pkt, bool cca)
 {
 	uint32_t tx_at = net_pkt_txtime(pkt) / NSEC_PER_USEC;
@@ -406,7 +407,7 @@ static bool nrf5_tx_at(struct net_pkt *pkt, bool cca)
 	}
 	return ret;
 }
-#endif /* CONFIG_IEEE802154_NRF5_PKT_TXTIME */
+#endif /* CONFIG_NET_PKT_TXTIME */
 
 static int nrf5_tx(const struct device *dev,
 		   enum ieee802154_tx_mode mode,
@@ -433,19 +434,18 @@ static int nrf5_tx(const struct device *dev,
 	case IEEE802154_TX_MODE_CCA:
 		ret = nrf_802154_transmit_raw(nrf5_radio->tx_psdu, true);
 		break;
-#if !defined(CONFIG_NRF_802154_SL_OPENSOURCE)
 	case IEEE802154_TX_MODE_CSMA_CA:
 		nrf_802154_transmit_csma_ca_raw(nrf5_radio->tx_psdu);
 		break;
-#ifdef CONFIG_IEEE802154_NRF5_PKT_TXTIME
+/* This function cannot be used in the serialized version yet. */
+#if defined(CONFIG_NET_PKT_TXTIME) && !defined(CONFIG_NRF_802154_SER_HOST)
 	case IEEE802154_TX_MODE_TXTIME:
 	case IEEE802154_TX_MODE_TXTIME_CCA:
 		__ASSERT_NO_MSG(pkt);
 		ret = nrf5_tx_at(pkt,
 				 mode == IEEE802154_TX_MODE_TXTIME_CCA);
 		break;
-#endif /* CONFIG_IEEE802154_NRF5_PKT_TXTIME */
-#endif
+#endif /* CONFIG_NET_PKT_TXTIME */
 	default:
 		NET_ERR("TX mode %d not supported", mode);
 		return -ENOTSUP;
