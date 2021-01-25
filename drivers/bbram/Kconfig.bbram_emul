@@ -1,0 +1,7 @@
+# Copyright (c) 2021 Google Inc
+# SPDX-License-Identifier: Apache-2.0
+
+config BBRAM_EMUL
+	bool "Battery-backed RAM emulated drivers"
+	help
+	  This option enables the BBRAM emulation driver.

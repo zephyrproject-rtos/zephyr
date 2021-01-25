@@ -117,4 +117,6 @@ source "drivers/cache/Kconfig"
 
 source "drivers/syscon/Kconfig"
 
+source "drivers/bbram/Kconfig"
+
 endmenu
