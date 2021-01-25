@@ -25,6 +25,8 @@ static int create_file(const char *path)
 {
 	struct fs_file_t fp;
 	int res = 0;
+
+	fs_file_t_init(&fp);
 	if (!check_file_dir_exists(path)) {
 		res = fs_open(&fp, path, FS_O_CREATE | FS_O_RDWR);
 		if (!res) {
