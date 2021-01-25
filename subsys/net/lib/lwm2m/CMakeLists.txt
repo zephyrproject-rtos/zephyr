@@ -9,6 +9,7 @@ zephyr_library_sources(
     lwm2m_obj_security.c
     lwm2m_obj_server.c
     lwm2m_obj_device.c
+    lwm2m_rw_link_format.c
     lwm2m_rw_plain_text.c
     lwm2m_rw_oma_tlv.c
     lwm2m_util.c
