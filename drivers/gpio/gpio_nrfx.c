@@ -7,13 +7,11 @@
 #include <drivers/gpio.h>
 #include <hal/nrf_gpio.h>
 #include <hal/nrf_gpiote.h>
+#include <nrfx_gpiote.h>
 
 #include "gpio_utils.h"
 
 #define GPIO(id) DT_NODELABEL(gpio##id)
-
-/* Mask holding information about which channels are allocated. */
-static atomic_t gpiote_alloc_mask;
 
 struct gpio_nrfx_data {
 	/* gpio_driver_data needs to be first */
@@ -47,32 +45,29 @@ static inline const struct gpio_nrfx_cfg *get_port_cfg(const struct device *port
 	return port->config;
 }
 
-static int gpiote_channel_alloc(atomic_t *mask, uint32_t abs_pin,
+static int gpiote_channel_alloc(uint32_t abs_pin,
 				nrf_gpiote_polarity_t polarity)
 {
-	for (uint8_t channel = 0; channel < GPIOTE_CH_NUM; ++channel) {
-		atomic_val_t prev = atomic_or(mask, BIT(channel));
+	uint8_t channel;
 
-		if ((prev & BIT(channel)) == 0) {
-			nrf_gpiote_event_t evt =
-				offsetof(NRF_GPIOTE_Type, EVENTS_IN[channel]);
-
-			nrf_gpiote_event_configure(NRF_GPIOTE, channel, abs_pin,
-						   polarity);
-			nrf_gpiote_event_clear(NRF_GPIOTE, evt);
-			nrf_gpiote_event_enable(NRF_GPIOTE, channel);
-			nrf_gpiote_int_enable(NRF_GPIOTE, BIT(channel));
-			return 0;
-		}
+	if (nrfx_gpiote_channel_alloc(&channel) != NRFX_SUCCESS) {
+		return -ENODEV;
 	}
 
-	return -ENODEV;
+	nrf_gpiote_event_t evt = offsetof(NRF_GPIOTE_Type, EVENTS_IN[channel]);
+
+	nrf_gpiote_event_configure(NRF_GPIOTE, channel, abs_pin, polarity);
+	nrf_gpiote_event_clear(NRF_GPIOTE, evt);
+	nrf_gpiote_event_enable(NRF_GPIOTE, channel);
+	nrf_gpiote_int_enable(NRF_GPIOTE, BIT(channel));
+
+	return 0;
 }
 
 /* Function checks if given pin does not have already enabled GPIOTE event and
  * disables it.
  */
-static void gpiote_pin_cleanup(atomic_t *mask, uint32_t abs_pin)
+static void gpiote_pin_cleanup(uint32_t abs_pin)
 {
 	uint32_t intenset = nrf_gpiote_int_enable_check(NRF_GPIOTE,
 						     NRF_GPIOTE_INT_IN_MASK);
@@ -80,9 +75,9 @@ static void gpiote_pin_cleanup(atomic_t *mask, uint32_t abs_pin)
 	for (size_t i = 0; i < GPIOTE_CH_NUM; i++) {
 		if ((nrf_gpiote_event_pin_get(NRF_GPIOTE, i) == abs_pin)
 		    && (intenset & BIT(i))) {
-			(void)atomic_and(mask, ~BIT(i));
 			nrf_gpiote_event_disable(NRF_GPIOTE, i);
 			nrf_gpiote_int_disable(NRF_GPIOTE, BIT(i));
+			nrfx_gpiote_channel_free(i);
 			return;
 		}
 	}
@@ -104,7 +99,7 @@ static int gpiote_pin_int_cfg(const struct device *port, uint32_t pin)
 	uint32_t abs_pin = NRF_GPIO_PIN_MAP(cfg->port_num, pin);
 	int res = 0;
 
-	gpiote_pin_cleanup(&gpiote_alloc_mask, abs_pin);
+	gpiote_pin_cleanup(abs_pin);
 	nrf_gpio_cfg_sense_set(abs_pin, NRF_GPIO_PIN_NOSENSE);
 
 	/* Pins trigger interrupts only if pin has been configured to do so */
@@ -121,8 +116,7 @@ static int gpiote_pin_int_cfg(const struct device *port, uint32_t pin)
 				pol = NRF_GPIOTE_POLARITY_HITOLO;
 			}
 
-			res = gpiote_channel_alloc(&gpiote_alloc_mask,
-						   abs_pin, pol);
+			res = gpiote_channel_alloc(abs_pin, pol);
 		} else {
 		/* For level triggering we use sense mechanism. */
 			uint32_t sense = sense_for_pin(data, pin);
