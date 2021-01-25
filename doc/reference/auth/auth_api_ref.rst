@@ -110,8 +110,9 @@ architecture can support additional authentication methods in the future.
   constrained devices. Identities are verified using X.509 certificates and trusted root certificates. The
   DTLS handshake steps are used for authentication, a successful handshake means each side of the connection
   has been properly authenticated. A result of the DTLS handshake steps is a shared secret key which can be
-  used to encrypted further communications, this is up to the firmware application to implement. For the ZAUTH
-  this key is not used.
+  used to encrypted further communications using the underlying Mbed DTLS implementation. There are two
+  functions, auth_lib_dtls_send() and auth_lib_dtls_recv(), that enable an application to send/receive
+  DTLS messages after a successful handshake.  See the Bluetooth sample application code.
 
 
 * Challenge-Response. A simple Challenge-Response authentication method is an alternative lighter weight
@@ -154,8 +155,8 @@ Authentication messages larger than the underlying transport MTU are fragmented;
 re-assembles messages over the transport layer.  For example, if a 267 byte message is send over a Bluetooth link
 with an MTU of 150, ZAUTH will break up the message into one 150 byte message and a second 117 byte fragments when
 sending.  The receiving side will reassemble the fragments into the original 267 byte message before
-forwarding to the Rx queue.  An important caveat is ZAUTH does not handle reordering of fragments, if fragment 2
-arrives before fragment 1, the message is corrupted.
+forwarding to the Rx queue.  An important caveat is the authentication library does not handle reordering of
+fragments, if fragment 2 arrives before fragment 1, the message is corrupted.
 
 
 The diagram below shows how the Tx and Rx queues are used along with message fragmentation.
@@ -174,7 +175,7 @@ to a connection using the *struct auth_xport_connection_map*
 Transport Layer Interface
 ------------------------------
 Transport layer details vary greatly, it does not make sense to create a one-size-fits-all transport
-API.  ZAUTH separates the transport into transport independent and transport specific.  For example, the details
+API.  The library separates the transport into transport independent and transport specific.  For example, the details
 of the Bluetooth transport are in the *auth_xport_bt.c* file.  This includes direct calls into the Zephyr
 Bluetooth stack.  The transport common function, *auth_xport_init()*, calls the transport specific i
 nitialization function, passing the opaque transport handle (*auth_xport_hdl_t*) as an argument and transport

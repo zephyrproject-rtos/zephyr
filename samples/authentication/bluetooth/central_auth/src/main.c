@@ -48,7 +48,7 @@ static struct bt_uuid_128 auth_client_char = AUTH_SVC_CLIENT_CHAR_UUID;
 
 static struct bt_uuid_128 auth_server_char = AUTH_SVC_SERVER_CHAR;
 
-
+K_SEM_DEFINE(auth_done_sem, 0, 1);
 
 #if defined(CONFIG_AUTH_DTLS)
 /* The Root and Intermediate Certs in a single CA chain.
@@ -482,7 +482,60 @@ static void auth_status(struct authenticate_conn *auth_conn,  enum auth_instance
 		printk("     DTLS may take 30-60 seconds.\n");
 	}
 #endif
+
+	if(auth_lib_is_finished(auth_conn, NULL)) {
+		k_sem_give(&auth_done_sem);
+	}
 }
+
+#if defined(CONFIG_AUTH_DTLS)
+
+#define ECHO_BUFFER_LEN		(200u)
+/**
+ * Echo message between the central and periphal to test send/recv
+ * using the DTLS library.
+ */
+static void echo_msg(void)
+{
+	uint8_t send_msg_buffer[ECHO_BUFFER_LEN];
+	uint8_t recv_msg_buffer[ECHO_BUFFER_LEN];
+	int msg_cnt = 1;
+	int ret;
+	int msg_len = sizeof(send_msg_buffer);
+
+
+	while(true) {
+
+		/* set buffer with known value, increment for each loop. */
+		memset(send_msg_buffer, msg_cnt, sizeof(send_msg_buffer));
+
+		ret = auth_lib_dtls_send(&central_auth_conn, send_msg_buffer, msg_len);
+
+		/* if error on send */
+		if(ret != msg_len) {
+			LOG_ERR("Failed to send echo test message, ret: %d", ret);
+			break;
+		}
+
+		/* wait for response */
+		ret = auth_lib_dtls_recv(&central_auth_conn, recv_msg_buffer, sizeof(recv_msg_buffer));
+
+		if(ret < 0) {
+			LOG_ERR("Failed to recv echo test message, ret: %d", ret);
+			break;
+		}
+
+		/* verify message */
+		if(memcmp(send_msg_buffer, recv_msg_buffer, msg_len) != 0) {
+			LOG_ERR("Echo message check failed.");
+			break;
+		}
+
+		printk("Echo message: %d\r", msg_cnt++);
+	}
+}
+#endif
+
 
 /**
  * Process log messages.
@@ -573,7 +626,17 @@ void main(void)
 
 	if (err) {
 		printk("Scanning failed to start (err %d)\n", err);
+		idle_function();  /* does not return */
 	}
+
+	/* Wait for authentication to finish */
+	k_sem_take(&auth_done_sem, K_FOREVER);
+
+#if defined(CONFIG_AUTH_DTLS)
+	/* Echo message between the central and peripheral
+	 * using DTLS */
+	echo_msg();
+#endif
 
 	/* does not return */
 	idle_function();

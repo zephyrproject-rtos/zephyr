@@ -270,6 +270,90 @@ int auth_lib_cancel(struct authenticate_conn *auth_conn)
 /**
  * @see auth_lib.h
  */
+int auth_lib_dtls_send(struct authenticate_conn *auth_conn, void *data, size_t len)
+{
+	int bytes_sent = AUTH_ERROR_NOT_IMPLEMENTED;
+
+#if defined(CONFIG_AUTH_DTLS)
+	/* Check auth type, only able to send when DTLS is used.  Future
+	 * versions may enable sending over an encrypted link after authentication.
+	 */
+	if((auth_conn->authflags & AUTH_CONN_DTLS_AUTH_METHOD) != AUTH_CONN_DTLS_AUTH_METHOD) {
+		LOG_ERR("Connection not using DTLS");
+		return AUTH_ERROR_INVALID_PARAM;
+	}
+
+	/* Can only send if authentication is complete. */
+	if(auth_conn->curr_status != AUTH_STATUS_SUCCESSFUL) {
+		LOG_ERR("Unable to send, authentication not successful.");
+		return AUTH_ERROR_XPORT_SEND;
+	}
+
+	bytes_sent = auth_dtls_send(auth_conn, data, len);
+#endif
+	return bytes_sent;
+}
+
+
+/**
+ * @see auth_lib.h
+ */
+int auth_lib_dtls_recv(struct authenticate_conn *auth_conn, void *data, size_t len)
+{
+	int bytes_recv = AUTH_ERROR_NOT_IMPLEMENTED;
+
+#if defined(CONFIG_AUTH_DTLS)
+	/* Check auth type, only able to send when DTLS is used.  Future
+	 * versions may enable sending over an encrypted link after authentication.
+	 */
+	if((auth_conn->authflags & AUTH_CONN_DTLS_AUTH_METHOD) != AUTH_CONN_DTLS_AUTH_METHOD) {
+		LOG_ERR("Connection not using DTLS");
+		return AUTH_ERROR_INVALID_PARAM;
+	}
+
+	/* Can only send if authentication is complete. */
+	if(auth_conn->curr_status != AUTH_STATUS_SUCCESSFUL) {
+		LOG_ERR("Unable to send, authentication not successful.");
+		return AUTH_ERROR_XPORT_SEND;
+	}
+
+	bytes_recv = auth_dtls_recv(auth_conn, data, len);
+#endif
+	return bytes_recv;
+}
+
+/**
+ * @see auth_lib.h
+ */
+bool auth_lib_is_finished(struct authenticate_conn *auth_conn, enum auth_status *status)
+{
+	bool is_finished = false;
+
+	switch(auth_conn->curr_status) {
+
+	case AUTH_STATUS_STARTED:
+	case AUTH_STATUS_IN_PROCESS:
+		break;
+
+	case AUTH_STATUS_CANCELED:
+	case AUTH_STATUS_FAILED:
+	case AUTH_STATUS_AUTHENTICATION_FAILED:
+	case AUTH_STATUS_SUCCESSFUL:
+		is_finished = true;
+		break;
+
+	}
+
+	if(status != NULL) {
+		*status = auth_conn->curr_status;
+	}
+
+	return is_finished;
+}
+
+/**
+ * @see auth_lib.h
+ */
 const char *auth_lib_getstatus_str(enum auth_status status)
 {
 	switch (status) {

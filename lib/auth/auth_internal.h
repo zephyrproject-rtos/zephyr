@@ -128,6 +128,29 @@ int auth_init_chalresp_method(struct authenticate_conn *auth_conn,
 			      struct auth_optional_param *opt_params);
 
 /**
+ * Sends message via DTLS.  This is a blocking call.
+ *
+ * @param auth_conn  Pointer to Authentication connection struct.
+ * @param data       Data buffer to send.
+ * @param len        Number of bytes to send.
+ *
+ * @return  Number of bytes sent, else negative number on error.
+ */
+int auth_dtls_send(struct authenticate_conn *auth_conn, void *data, size_t len);
+
+
+/**
+ * Receives message via DTLS.  This is a blocking call.
+ *
+ * @param auth_conn   Pointer to Authentication connection struct.
+ * @param buf         Buffer to read bytes into.
+ * @param buf_len     Size of the bufer.
+ *
+ * @return Number of bytes recevied on success, negative number on error.
+ */
+int auth_dtls_recv(struct authenticate_conn *auth_conn, void *buf, size_t buf_len);
+
+/**
  * De-initialize and free any resources used with the Challenge-Response
  * authentication method.
  *
