@@ -103,12 +103,18 @@ config NRF_802154_RX_BUFFERS
 
 endif # NRF_802154_RADIO_DRIVER
 
+config NRF_802154_SERIALIZATION
+	bool
+	select RPMSG_SERVICE
+	help
+	  This helper symbol indicates that the nRF 802.15.4 serialization is available.
+
 config NRF_802154_SER_HOST
 	bool "nRF IEEE 802.15.4 Driver serialization host"
 	depends on !NRF_802154_RADIO_DRIVER
 	depends on !HAS_HW_NRF_RADIO_IEEE802154
-	select RPMSG_SERVICE
 	select IEEE802154_NRF5_EXT_IRQ_MGMT if IEEE802154_NRF5
+	select NRF_802154_SERIALIZATION
 	help
 	  Enable serialization of nRF IEEE 802.15.4 Driver. This option is to be
 	  used if radio is not available in the core, but radio services are
@@ -118,8 +124,8 @@ menuconfig NRF_802154_SER_RADIO
 	bool "nRF IEEE 802.15.4 Driver serialization radio"
 	depends on HAS_HW_NRF_RADIO_IEEE802154
 	depends on !IEEE802154_NRF5
-	select RPMSG_SERVICE
 	select NRF_802154_RADIO_DRIVER
+	select NRF_802154_SERIALIZATION
 	help
 	  Enable serialization of nRF IEEE 802.15.4 Driver. This option is to be
 	  used if radio is available in the core to provide radio services over

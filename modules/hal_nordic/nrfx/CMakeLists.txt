@@ -1,3 +1,8 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+zephyr_library()
+
 set(NRFX_DIR ${ZEPHYR_CURRENT_MODULE_DIR}/nrfx)
 set(INC_DIR ${NRFX_DIR}/drivers/include)
 set(SRC_DIR ${NRFX_DIR}/drivers/src)
