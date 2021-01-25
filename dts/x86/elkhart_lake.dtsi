@@ -27,6 +27,12 @@
 		reg = <0x0 DT_DRAM_SIZE>;
 	};
 
+	ibecc: ibecc {
+	       compatible = "intel,ibecc";
+	       label = "ibecc";
+	       status = "okay";
+	};
+
 	intc: ioapic@fec00000  {
 		compatible = "intel,ioapic";
 		reg = <0xfec00000 0x1000>;
@@ -406,13 +412,6 @@
 			interrupt-parent = <&intc>;
 
 			status = "okay";
-		};
-
-		ibecc: ibecc@0 {
-			compatible = "intel,ibecc";
-			label = "ibecc";
-			status = "okay";
-			reg = <1 1>;
 		};
 	};
 };
