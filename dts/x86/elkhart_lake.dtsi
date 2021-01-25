@@ -410,10 +410,9 @@
 
 		ibecc: ibecc@0 {
 			compatible = "intel,ibecc";
-			reg = <PCIE_BDF(0,0,0) 0x8086>;
 			label = "ibecc";
 			status = "okay";
+			reg = <1 1>;
 		};
 	};
-
 };
