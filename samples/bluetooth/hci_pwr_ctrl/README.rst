@@ -11,7 +11,7 @@ of the BLE controller via Zephyr HCI VS commands. The application implements a
 peripheral advertising with varying Tx power. The initial advertiser TX power
 for the first 5s of the application is the Kconfig set default TX power. Then,
 the TX power variation of the advertiser is a repeatedly descending staircase
-pattern ranging from -4 dB to -30 dB where the Tx power levels decrease every
+pattern ranging from -4 dBm to -30 dBm where the Tx power levels decrease every
 5s.
 
 Upon sucessful connection, the connection RSSI strength is being monitored and
