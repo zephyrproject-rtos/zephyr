@@ -49,6 +49,13 @@ bool z_arm_debug_monitor_event_error_check(void)
 
 #if defined(CONFIG_CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_DETECTION_DWT)
 
+/* The area (0x0 - <size>) monitored by DWT needs to be a power of 2,
+ * so we add a build assert that catches it.
+ */
+BUILD_ASSERT(!(CONFIG_CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_PAGE_SIZE &
+	(CONFIG_CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_PAGE_SIZE - 1)),
+	"the size of the partition must be power of 2");
+
 static int z_arm_debug_enable_null_pointer_detection(const struct device *arg)
 {
 	ARG_UNUSED(arg);
