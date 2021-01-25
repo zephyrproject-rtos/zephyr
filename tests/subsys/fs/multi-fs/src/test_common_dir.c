@@ -19,6 +19,7 @@ int test_mkdir(const char *dir_path, const char *file)
 	struct fs_file_t filep;
 	char file_path[PATH_MAX] = { 0 };
 
+	fs_file_t_init(&filep);
 	res = sprintf(file_path, "%s/%s", dir_path, file);
 	__ASSERT_NO_MSG(res < sizeof(file_path));
 
@@ -48,6 +49,7 @@ int test_mkdir(const char *dir_path, const char *file)
 	TC_PRINT("Testing write to file %s\n", file_path);
 	res = test_file_write(&filep, "NOTHING");
 	if (res) {
+		fs_close(&filep);
 		return res;
 	}
 
