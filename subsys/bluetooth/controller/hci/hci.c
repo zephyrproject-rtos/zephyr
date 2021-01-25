@@ -33,10 +33,12 @@
 #include "ll_sw/lll_scan.h"
 #include "ll_sw/lll_sync.h"
 #include "ll_sw/lll_conn.h"
+#include "ll_sw/lll_conn_iso.h"
 #include "ll_sw/ull_adv_types.h"
 #include "ll_sw/ull_scan_types.h"
 #include "ll_sw/ull_sync_types.h"
 #include "ll_sw/ull_conn_types.h"
+#include "ll_sw/ull_conn_iso_types.h"
 #include "ll.h"
 #include "ll_feat.h"
 #include "ll_settings.h"
@@ -3135,7 +3137,21 @@ static void le_cis_request(struct pdu_data *pdu_data,
 			   struct node_rx_pdu *node_rx,
 			   struct net_buf *buf)
 {
-	/* TODO: generate event and fill in data from LL */
+	struct bt_hci_evt_le_cis_req *sep;
+	struct node_rx_conn_iso_req *req;
+
+	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
+	    !(le_event_mask & BT_EVT_MASK_LE_CIS_REQ)) {
+		return;
+	}
+
+	req = (void *)pdu_data;
+
+	sep = meta_evt(buf, BT_HCI_EVT_LE_CIS_REQ, sizeof(*sep));
+	sep->acl_handle = sys_cpu_to_le16(node_rx->hdr.handle);
+	sep->cis_handle = sys_cpu_to_le16(req->cis_handle);
+	sep->cig_id = req->cig_id;
+	sep->cis_id = req->cis_id;
 }
 #endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
 
@@ -3145,11 +3161,52 @@ static void le_cis_established(struct pdu_data *pdu_data,
 			       struct node_rx_pdu *node_rx,
 			       struct net_buf *buf)
 {
-#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
-	cis_pending_count--;
-#endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
+	struct lll_conn_iso_stream_rxtx *lll_cis_c;
+	struct lll_conn_iso_stream_rxtx *lll_cis_p;
+	struct bt_hci_evt_le_cis_established *sep;
+	struct lll_conn_iso_stream *lll_cis;
+	struct node_rx_conn_iso_estab *est;
+	struct ll_conn_iso_stream *cis;
+	struct ll_conn_iso_group *cig;
+	bool is_central;
 
-	/* TODO: generate event and fill in data from LL */
+	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
+	    !(le_event_mask & BT_EVT_MASK_LE_CIS_ESTABLISHED)) {
+		return;
+	}
+
+	cis = node_rx->hdr.rx_ftr.param;
+	cig = cis->group;
+	lll_cis = &cis->lll;
+	is_central = lll_cis->conn->role == BT_CONN_ROLE_MASTER;
+	lll_cis_c = is_central ? &lll_cis->tx : &lll_cis->rx;
+	lll_cis_p = is_central ? &lll_cis->rx : &lll_cis->tx;
+	est = (void *)pdu_data;
+
+	sep = meta_evt(buf, BT_HCI_EVT_LE_CIS_ESTABLISHED, sizeof(*sep));
+
+	sep->status = est->status;
+	sep->conn_handle = sys_cpu_to_le16(est->cis_handle);
+	sys_put_le24(cig->sync_delay, sep->cig_sync_delay);
+	sys_put_le24(cis->sync_delay, sep->cis_sync_delay);
+	sys_put_le24(cig->c_latency, sep->m_latency);
+	sys_put_le24(cig->p_latency, sep->s_latency);
+	sep->m_phy = lll_cis_c->phy;
+	sep->s_phy = lll_cis_p->phy;
+	sep->nse = lll_cis->num_subevents;
+	sep->m_bn = lll_cis_c->burst_number;
+	sep->s_bn = lll_cis_p->burst_number;
+	sep->m_ft = lll_cis_c->flush_timeout;
+	sep->s_ft = lll_cis_p->flush_timeout;
+	sep->m_max_pdu = sys_cpu_to_le16(lll_cis_c->max_octets);
+	sep->s_max_pdu = sys_cpu_to_le16(lll_cis_p->max_octets);
+	sep->interval = sys_cpu_to_le16(cig->iso_interval);
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+	if (is_central) {
+		cis_pending_count--;
+	}
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
 }
 #endif /* CONFIG_BT_CTLR_CENTRAL_ISO || CONFIG_BT_CTLR_PERIPHERAL_ISO */
 
