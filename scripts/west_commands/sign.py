@@ -109,6 +109,8 @@ class Sign(Forceable):
                            are currently supported''')
         group.add_argument('-p', '--tool-path', default=None,
                            help='''path to the tool itself, if needed''')
+        group.add_argument('-D', '--tool-data', default=None,
+                           help='''path to tool data/configuration directory, if needed''')
         group.add_argument('tool_args', nargs='*', metavar='tool_opt',
                            help='extra option(s) to pass to the signing tool')
 
