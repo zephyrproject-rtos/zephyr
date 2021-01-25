@@ -8,6 +8,8 @@
 #ifndef ZEPHYR_DRIVERS_IEEE802154_IEEE802154_NRF5_H_
 #define ZEPHYR_DRIVERS_IEEE802154_IEEE802154_NRF5_H_
 
+#include "ieee802154_radio.h"
+
 #define NRF5_FCS_LENGTH   (2)
 #define NRF5_PSDU_LENGTH  (125)
 #define NRF5_PHR_LENGTH   (1)
@@ -78,6 +80,9 @@ struct nrf5_802154_data {
 	 * Can be NULL if event notification is not needed.
 	 */
 	ieee802154_event_cb_t event_handler;
+
+	/* Capabilities of the network interface. */
+	enum ieee802154_hw_caps capabilities;
 };
 
 #endif /* ZEPHYR_DRIVERS_IEEE802154_IEEE802154_NRF5_H_ */
