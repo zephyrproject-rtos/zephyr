@@ -2734,7 +2734,7 @@ class TestSuite(DisablePyTestCollectionMixin):
         logger.info(f"{Fore.GREEN}{run}{Fore.RESET} test configurations executed on platforms, \
 {Fore.RED}{results.total - run - results.skipped_configs}{Fore.RESET} test configurations were only built.")
 
-    def save_reports(self, name, suffix, report_dir, no_update, release, only_failed, platform_reports):
+    def save_reports(self, name, suffix, report_dir, no_update, release, only_failed, platform_reports, json_report):
         if not self.instances:
             return
 
@@ -2761,7 +2761,9 @@ class TestSuite(DisablePyTestCollectionMixin):
             self.xunit_report(filename + "_report.xml", full_report=True,
                               append=only_failed, version=self.version)
             self.csv_report(filename + ".csv")
-            self.json_report(filename + ".json", append=only_failed, version=self.version)
+
+            if json_report:
+                self.json_report(filename + ".json", append=only_failed, version=self.version)
 
             if platform_reports:
                 self.target_report(outdir, suffix, append=only_failed)

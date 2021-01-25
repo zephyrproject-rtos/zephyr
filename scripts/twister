@@ -337,7 +337,10 @@ Artificially long but functional example:
         The output will be both in CSV and JUNIT format
         (twister.csv and twister.xml).
         """)
-
+    parser.add_argument(
+        "--json-report", action="store_true",
+        help="""Generate a JSON file with all test results. [Experimental]
+        """)
     parser.add_argument(
         "--platform-reports", action="store_true",
         help="""Create individual reports for each platform.
@@ -1254,6 +1257,7 @@ def main():
                        options.release,
                        options.only_failed,
                        options.platform_reports,
+                       options.json_report
                        )
 
     # FIXME: remove later
