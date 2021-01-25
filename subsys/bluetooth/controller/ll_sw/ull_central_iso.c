@@ -122,3 +122,13 @@ void ll_cis_create(uint16_t cis_handle, uint16_t acl_handle)
 	ARG_UNUSED(cis_handle);
 	ARG_UNUSED(acl_handle);
 }
+
+int ull_central_iso_init(void)
+{
+	return 0;
+}
+
+int ull_central_iso_reset(void)
+{
+	return 0;
+}

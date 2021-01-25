@@ -25,3 +25,13 @@ uint8_t ll_cis_reject(uint16_t handle, uint8_t reason)
 
 	return BT_HCI_ERR_CMD_DISALLOWED;
 }
+
+int ull_peripheral_iso_init(void)
+{
+	return 0;
+}
+
+int ull_peripheral_iso_reset(void)
+{
+	return 0;
+}
