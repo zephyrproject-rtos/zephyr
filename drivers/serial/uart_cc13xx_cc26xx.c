@@ -243,7 +243,7 @@ static void uart_cc13xx_cc26xx_irq_tx_enable(const struct device *dev)
 		 * standby mode instead, since it is the power state that
 		 * would interfere with a transfer.
 		 */
-		pm_ctrl_disable_state(PM_STATE_STANDBY);
+		pm_constraint_set(PM_STATE_STANDBY);
 		get_dev_data(dev)->tx_constrained = true;
 	}
 #endif
@@ -257,7 +257,7 @@ static void uart_cc13xx_cc26xx_irq_tx_disable(const struct device *dev)
 
 #ifdef CONFIG_PM
 	if (get_dev_data(dev)->tx_constrained) {
-		pm_ctrl_enable_state(PM_STATE_STANDBY);
+		pm_constraint_release(PM_STATE_STANDBY);
 		get_dev_data(dev)->tx_constrained = false;
 	}
 #endif
@@ -277,7 +277,7 @@ static void uart_cc13xx_cc26xx_irq_rx_enable(const struct device *dev)
 	 * standby.
 	 */
 	if (!get_dev_data(dev)->rx_constrained) {
-		pm_ctrl_disable_state(PM_STATE_STANDBY);
+		pm_constraint_set(PM_STATE_STANDBY);
 		get_dev_data(dev)->rx_constrained = true;
 	}
 #endif
@@ -289,7 +289,7 @@ static void uart_cc13xx_cc26xx_irq_rx_disable(const struct device *dev)
 {
 #ifdef CONFIG_PM
 	if (get_dev_data(dev)->rx_constrained) {
-		pm_ctrl_enable_state(PM_STATE_STANDBY);
+		pm_constraint_release(PM_STATE_STANDBY);
 		get_dev_data(dev)->rx_constrained = false;
 	}
 #endif

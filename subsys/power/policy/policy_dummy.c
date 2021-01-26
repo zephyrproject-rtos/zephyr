@@ -33,7 +33,7 @@ struct pm_state_info pm_policy_next_state(int32_t ticks)
 		i = (i + 1) % states_len;
 
 #ifdef CONFIG_PM_STATE_LOCK
-		if (!pm_ctrl_is_state_enabled(
+		if (!pm_constraint_get(
 			    pm_dummy_states[i].state)) {
 			continue;
 		}
