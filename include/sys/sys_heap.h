@@ -137,10 +137,15 @@ void sys_heap_free(struct sys_heap *h, void *mem);
  *
  * @param heap Heap from which to allocate
  * @param ptr Original pointer returned from a previous allocation
+ * @param align Alignment in bytes, must be a power of two
  * @param bytes Number of bytes requested for the new block
  * @return Pointer to memory the caller can now use, or NULL
  */
-void *sys_heap_realloc(struct sys_heap *heap, void *ptr, size_t bytes);
+void *sys_heap_aligned_realloc(struct sys_heap *heap, void *ptr,
+			       size_t align, size_t bytes);
+
+#define sys_heap_realloc(heap, ptr, bytes) \
+	sys_heap_aligned_realloc(heap, ptr, 0, bytes)
 
 /** @brief Validate heap integrity
  *
