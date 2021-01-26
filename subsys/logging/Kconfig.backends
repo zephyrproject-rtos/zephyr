@@ -174,7 +174,6 @@ endif # LOG_BACKEND_SPINEL
 config LOG_BACKEND_NATIVE_POSIX
 	bool "Enable native backend"
 	depends on ARCH_POSIX
-	depends on !LOG2
 	help
 	  Enable backend in native_posix
 
