@@ -257,6 +257,13 @@ class KconfigCheck(ComplianceTest):
         modules = [name for name in os.listdir(modules_dir) if
                    os.path.exists(os.path.join(modules_dir, name, 'Kconfig'))]
 
+        nrf_modules_dir = ZEPHYR_BASE + '/../nrf/modules'
+        nrf_modules = []
+        if os.path.exists(nrf_modules_dir):
+            nrf_modules = [name for name in os.listdir(nrf_modules_dir) if
+                           os.path.exists(os.path.join(nrf_modules_dir, name,
+                                                       'Kconfig'))]
+
         with open(modules_file, 'r') as fp_module_file:
             content = fp_module_file.read()
 
@@ -265,6 +272,11 @@ class KconfigCheck(ComplianceTest):
                 fp_module_file.write("ZEPHYR_{}_KCONFIG = {}\n".format(
                     re.sub('[^a-zA-Z0-9]', '_', module).upper(),
                     modules_dir + '/' + module + '/Kconfig'
+                ))
+            for module in nrf_modules:
+                fp_module_file.write("ZEPHYR_{}_KCONFIG = {}\n".format(
+                    re.sub('[^a-zA-Z0-9]', '_', module).upper(),
+                    nrf_modules_dir + '/' + module + '/Kconfig'
                 ))
             fp_module_file.write(content)
 
