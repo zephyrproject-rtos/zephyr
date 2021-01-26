@@ -658,6 +658,9 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	/* Re-initialize the Tx Q */
 	ull_tx_q_init(&conn->tx_q);
 
+	/* Re-initialize the control procedure data structures */
+	ll_conn_init(conn);
+
 	lll->conn = conn_lll;
 
 	ull_hdr_init(&conn->ull);
