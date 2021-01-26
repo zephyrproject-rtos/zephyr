@@ -619,6 +619,9 @@ static int init_reset(void)
 	mem_init(mem_link_tx.pool, sizeof(memq_link_t),
 		 CONFIG_BT_CTLR_TX_BUFFERS, &mem_link_tx.free);
 
+	/* Initialize control procedure system. */
+	ull_cp_init();
+
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	/* Initialize the DLE defaults */
 	default_tx_octets = PDU_DC_PAYLOAD_SIZE_MIN;

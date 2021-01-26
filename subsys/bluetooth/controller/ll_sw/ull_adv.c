@@ -1107,6 +1107,9 @@ uint8_t ll_adv_enable(uint8_t enable)
 #if (!defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY))
 		/* Re-initialize the Tx Q */
 		ull_tx_q_init(&conn->tx_q);
+
+		/* Re-initialize the control procedure data structures */
+		ll_conn_init(conn);
 #else
 		conn->tx_head = conn->tx_ctrl = conn->tx_ctrl_last =
 		conn->tx_data = conn->tx_data_last = 0;
