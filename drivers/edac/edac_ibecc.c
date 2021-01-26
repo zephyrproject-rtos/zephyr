@@ -21,7 +21,7 @@
 LOG_MODULE_REGISTER(edac_ibecc, CONFIG_EDAC_LOG_LEVEL);
 
 #define DEVICE_NODE DT_NODELABEL(ibecc)
-#define PCI_ENDPOINT PCIE_BDF(0, 0, 0)
+#define PCI_HOST_BRIDGE PCIE_BDF(0, 0, 0)
 
 struct ibecc_data {
 	mem_addr_t mchbar;
@@ -344,7 +344,7 @@ static const struct edac_driver_api api = {
 
 int edac_ibecc_init(const struct device *dev)
 {
-	const pcie_bdf_t bdf = PCI_ENDPOINT;
+	const pcie_bdf_t bdf = PCI_HOST_BRIDGE;
 	struct ibecc_data *data = dev->data;
 	uint32_t tolud;
 	uint64_t touud, tom, mchbar;
@@ -482,7 +482,7 @@ bool z_x86_do_kernel_nmi(const z_arch_esf_t *esf)
 
 	edac_ecc_error_log_clear(dev);
 
-	ibecc_errsts_clear(PCI_ENDPOINT);
+	ibecc_errsts_clear(PCI_HOST_BRIDGE);
 
 out:
 	k_spin_unlock(&nmi_lock, key);
