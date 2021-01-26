@@ -154,8 +154,12 @@ static inline void z_arm_floating_point_init(void)
 	 * Note:
 	 * In Sharing FP Registers mode CONTROL.FPCA is cleared before switching
 	 * to main, so it may be skipped here (saving few boot cycles).
+	 *
+	 * If CONFIG_INIT_ARCH_HW_AT_BOOT is set, CONTROL is cleared at reset.
 	 */
-#if !defined(CONFIG_FPU) || !defined(CONFIG_FPU_SHARING)
+#if (!defined(CONFIG_FPU) || !defined(CONFIG_FPU_SHARING)) && \
+	(!defined(CONFIG_INIT_ARCH_HW_AT_BOOT))
+
 	__set_CONTROL(__get_CONTROL() & (~(CONTROL_FPCA_Msk)));
 #endif
 }
