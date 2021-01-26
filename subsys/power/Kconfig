@@ -22,14 +22,6 @@ menuconfig PM
 
 if PM
 
-config PM_STATE_LOCK
-	bool "Power State locking capability"
-	help
-	  Enable Power Management system state locking capability
-	  if any application wants to temporarily disable certain
-	  Power States while doing any critical work or needs quick
-	  response from hardware resources.
-
 config PM_DIRECT_FORCE_MODE
 	bool "System power management direct force trigger mode"
 	help

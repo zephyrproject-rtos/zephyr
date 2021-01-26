@@ -32,12 +32,11 @@ struct pm_state_info pm_policy_next_state(int32_t ticks)
 	do {
 		i = (i + 1) % states_len;
 
-#ifdef CONFIG_PM_STATE_LOCK
 		if (!pm_constraint_get(
 			    pm_dummy_states[i].state)) {
 			continue;
 		}
-#endif
+
 		cur_pm_state_info = pm_dummy_states[i];
 
 		LOG_DBG("Selected power state: %u", pm_dummy_states[i].state);

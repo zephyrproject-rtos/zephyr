@@ -160,7 +160,6 @@ void pm_dump_debug_info(void);
 
 #endif /* CONFIG_PM_DEBUG */
 
-#ifdef CONFIG_PM_STATE_LOCK
 /**
  * @brief Disable particular power state
  *
@@ -195,7 +194,6 @@ void pm_constraint_release(enum pm_state state);
  */
 bool pm_constraint_get(enum pm_state state);
 
-#endif /* CONFIG_PM_STATE_LOCK */
 
 /**
  * @}
