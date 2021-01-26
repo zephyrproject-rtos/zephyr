@@ -2,6 +2,11 @@
  * Copyright (c) 2020 Bose Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The static functions in this file operate on Big Endian (BE) as the
+ * underlying encryption library is BE as well. Furthermore, the sample data
+ * in the CSIS spec is also provided as BE, and logging values as BE will make
+ * it easier to compare.
  */
 #include "csis_crypto.h"
 #include <bluetooth/crypto.h>
@@ -53,27 +58,29 @@ int bt_csis_sih(const uint8_t sirk[16], const uint32_t r, uint32_t *out)
 {
 	uint8_t res[16];
 	int err;
+	uint8_t sirk_tmp[16];
 
 	if ((r & BIT(23)) || ((r & BIT(22)) == 0)) {
 		BT_DBG("Invalid r %0x06x", r & 0xffffff);
 	}
 
-	BT_DBG("sirk %s", bt_hex(sirk, 16));
+	BT_DBG("SIRK %s", bt_hex(sirk, 16));
 	BT_DBG("r 0x%06x", r);
 
 	/* r' = padding || r */
-	memcpy(res, &r, 3);
-	(void)memset(res + 3, 0, 13);
+	(void)memset(res, 0, 13);
+	sys_put_be24(r, res + 13);
 
-	BT_DBG("r' %s", bt_hex(res, 16));
+	BT_DBG("BE: r' %s", bt_hex(res, 16));
 
-	if (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__) {
-		/* r' should be the "lowest" 3 bytes */
-		sys_mem_swap(res, 16);
-		err = bt_encrypt_be(sirk, res, res);
+	if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) {
+		/* Swap to Big Endian (BE) */
+		sys_memcpy_swap(sirk_tmp, sirk, BT_CSIP_SET_SIRK_SIZE);
 	} else {
-		err = bt_encrypt_le(sirk, res, res);
+		memcpy(sirk_tmp, sirk, BT_CSIP_SET_SIRK_SIZE);
 	}
+
+	err = bt_encrypt_be(sirk_tmp, res, res);
 
 	if (err) {
 		return err;
@@ -86,15 +93,12 @@ int bt_csis_sih(const uint8_t sirk[16], const uint32_t r, uint32_t *out)
 	 * result of sih.
 	 */
 
-	BT_DBG("res %s", bt_hex(res, 16));
-	BT_DBG("sih %s", bt_hex(res, 3));
+	BT_DBG("BE: res %s", bt_hex(res, 16));
 
 	/* Result is the lowest 3 bytes */
-	if (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__) {
-		memcpy(out, res + 13, 3);
-	} else {
-		memcpy(out, res, 3);
-	}
+	*out = sys_get_be24(res + 13);
+
+	BT_DBG("sih 0x%06x", *out);
 
 	return 0;
 }
@@ -129,13 +133,13 @@ static int k1(const uint8_t *n, size_t n_size, const uint8_t salt[16],
 	 * k1(N, SALT, P) = AES-CMAC_T(P)
 	 */
 
-	BT_DBG("n %s", bt_hex(n, n_size));
-	BT_DBG("salt %s", bt_hex(salt, 16));
-	BT_DBG("p %s", bt_hex(p, p_size));
+	BT_DBG("BE: n %s", bt_hex(n, n_size));
+	BT_DBG("BE: salt %s", bt_hex(salt, 16));
+	BT_DBG("BE: p %s", bt_hex(p, p_size));
 
 	err = aes_cmac(salt, n, n_size, t);
 
-	BT_DBG("t %s", bt_hex(t, sizeof(t)));
+	BT_DBG("BE: t %s", bt_hex(t, sizeof(t)));
 
 	if (err) {
 		return err;
@@ -143,7 +147,7 @@ static int k1(const uint8_t *n, size_t n_size, const uint8_t salt[16],
 
 	err = aes_cmac(t, p, p_size, out);
 
-	BT_DBG("out %s", bt_hex(out, 16));
+	BT_DBG("BE: out %s", bt_hex(out, 16));
 
 	return err;
 }
@@ -165,12 +169,13 @@ static int s1(const uint8_t *m, size_t m_size, uint8_t out[16])
 	 * s1(M) = AES-CMAC_zero(M)
 	 */
 
-	BT_DBG("m %s", bt_hex(m, m_size));
+	BT_DBG("BE: m %s", bt_hex(m, m_size));
 
 	memset(zero, 0, sizeof(zero));
 
 	err = aes_cmac(zero, m, m_size, out);
-	BT_DBG("out %s", bt_hex(out, 16));
+
+	BT_DBG("BE: out %s", bt_hex(out, 16));
 
 	return err;
 }
@@ -189,15 +194,7 @@ int bt_csis_sef(const uint8_t k[16], const uint8_t sirk[BT_CSIP_SET_SIRK_SIZE],
 	 * sef(K, SIRK) = k1(K, s1("SIRKenc"), "csis") ^ SIRK
 	 */
 
-	BT_DBG("k %s", bt_hex(k, 16));
 	BT_DBG("SIRK %s", bt_hex(sirk, BT_CSIP_SET_SIRK_SIZE));
-
-	err = s1(m, sizeof(m), s1_out);
-	if (err) {
-		return err;
-	}
-
-	BT_DBG("s1 result %s", bt_hex(s1_out, sizeof(s1_out)));
 
 	if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) {
 		/* Swap because aes_cmac is big endian
@@ -207,17 +204,26 @@ int bt_csis_sef(const uint8_t k[16], const uint8_t sirk[BT_CSIP_SET_SIRK_SIZE],
 	} else {
 		memcpy(k1_tmp, k, 16);
 	}
+	BT_DBG("BE: k %s", bt_hex(k1_tmp, 16));
+
+	err = s1(m, sizeof(m), s1_out);
+	if (err) {
+		return err;
+	}
+
+	BT_DBG("BE: s1 result %s", bt_hex(s1_out, sizeof(s1_out)));
 
 	err = k1(k1_tmp, 16, s1_out, p, sizeof(p), k1_out);
 	if (err) {
 		return err;
 	}
 
+	BT_DBG("BE: k1 result %s", bt_hex(k1_out, sizeof(k1_out)));
+
 	if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) {
 		/* Swap result back to little endian */
 		sys_mem_swap(k1_out, 16);
 	}
-	BT_DBG("k1 result %s", bt_hex(k1_out, sizeof(k1_out)));
 
 	xor_128(k1_out, sirk, out_sirk);
 	BT_DBG("out %s", bt_hex(out_sirk, 16));
