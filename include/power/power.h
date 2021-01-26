@@ -161,25 +161,29 @@ void pm_dump_debug_info(void);
 #endif /* CONFIG_PM_DEBUG */
 
 /**
- * @brief Disable particular power state
+ * @brief Set a constraint for a power state
  *
  * @details Disabled state cannot be selected by the Zephyr power
  *	    management policies. Application defined policy should
  *	    use the @ref pm_constraint_get function to
  *	    check if given state is enabled and could be used.
  *
+ * @note This API is refcount
+ *
  * @param [in] state Power state to be disabled.
  */
 void pm_constraint_set(enum pm_state state);
 
 /**
- * @brief Enable particular power state
+ * @brief Release a constraint for a power state
  *
  * @details Enabled state can be selected by the Zephyr power
  *	    management policies. Application defined policy should
  *	    use the @ref pm_constraint_get function to
  *	    check if given state is enabled and could be used.
  *	    By default all power states are enabled.
+ *
+ * @note This API is refcount
  *
  * @param [in] state Power state to be enabled.
  */
