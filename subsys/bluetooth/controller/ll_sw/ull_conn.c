@@ -2320,8 +2320,14 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 			return -EINPROGRESS;
 
 		case LLCP_CUI_STATE_REJECT:
-			/* move to in progress */
-			conn->llcp_cu.state = LLCP_CUI_STATE_INPROG;
+			/* procedure request acked */
+			conn->llcp_ack = conn->llcp_req;
+			conn->llcp_cu.ack = conn->llcp_cu.req;
+			conn->llcp_conn_param.ack = conn->llcp_conn_param.req;
+
+			/* reset mutex */
+			ull_conn_upd_curr_reset();
+
 			/* enqueue control PDU */
 			pdu_ctrl_tx =
 				CONTAINER_OF(conn->llcp.conn_upd.pdu_win_offset,
@@ -2329,7 +2335,8 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 					     llctrl.conn_update_ind.win_offset);
 			tx = CONTAINER_OF(pdu_ctrl_tx, struct node_tx, pdu);
 			ctrl_tx_enqueue(conn, tx);
-			return -EINPROGRESS;
+			return -ECANCELED;
+
 		default:
 			LL_ASSERT(0);
 			break;

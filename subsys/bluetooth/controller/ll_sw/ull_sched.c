@@ -277,15 +277,6 @@ void ull_sched_mfy_win_offset_select(void *param)
 	} else {
 		struct pdu_data *pdu_ctrl_tx;
 
-		/* procedure request acked */
-		conn->llcp_ack = conn->llcp_req;
-
-		/* CPR request acked */
-		conn->llcp_conn_param.ack = conn->llcp_conn_param.req;
-
-		/* reset mutex */
-		ull_conn_upd_curr_reset();
-
 		/* send reject_ind_ext */
 		pdu_ctrl_tx = CONTAINER_OF(conn->llcp.conn_upd.pdu_win_offset,
 					   struct pdu_data,
