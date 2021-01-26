@@ -330,27 +330,12 @@ static int format_attributes(const char * const *attributes,
 	bool res;
 
 	if (!attributes) {
-		goto terminator;
+		*more = false;
+		return 0;
 	}
 
-	for (attr = attributes; *attr; ) {
-		int attr_len = strlen(*attr);
-
-		res = append_to_coap_pkt(response, *attr, attr_len,
-					 remaining, offset, current);
-		if (!res) {
-			return -ENOMEM;
-		}
-
-		if (!*remaining) {
-			*more = true;
-			return 0;
-		}
-
-		attr++;
-		if (!*attr) {
-			continue;
-		}
+	for (attr = attributes; *attr; attr++) {
+		int attr_len;
 
 		res = append_to_coap_pkt(response, ";", 1,
 					 remaining, offset, current);
@@ -362,21 +347,22 @@ static int format_attributes(const char * const *attributes,
 			*more = true;
 			return 0;
 		}
-	}
 
-terminator:
-	res = append_to_coap_pkt(response, ";", 1, remaining, offset, current);
-	if (!res) {
-		return -ENOMEM;
-	}
+		attr_len = strlen(*attr);
 
-	if (!*remaining) {
-		*more = true;
-		return 0;
+		res = append_to_coap_pkt(response, *attr, attr_len,
+					 remaining, offset, current);
+		if (!res) {
+			return -ENOMEM;
+		}
+
+		if (*(attr + 1) && !*remaining) {
+			*more = true;
+			return 0;
+		}
 	}
 
 	*more = false;
-
 	return 0;
 }
 
@@ -535,6 +521,14 @@ int coap_well_known_core_get(struct coap_resource *resource,
 		if (r < 0) {
 			goto end;
 		}
+
+		if ((resource + 1) && (resource + 1)->path) {
+			r = append_to_coap_pkt(response, ",", 1, &remaining,
+					       &offset, ctx.current);
+			if (!r) {
+				goto end;
+			}
+		}
 	}
 
 	/* Offset is the total size now, but block2 option is already
@@ -601,28 +595,19 @@ static int format_attributes(const char * const *attributes,
 	bool res;
 
 	if (!attributes) {
-		goto terminator;
+		return 0;
 	}
 
-	for (attr = attributes; *attr; ) {
-		res = append(response, (uint8_t *) *attr, strlen(*attr));
+	for (attr = attributes; *attr; attr++) {
+		res = append_u8(response, (uint8_t) ';');
 		if (!res) {
 			return -ENOMEM;
 		}
 
-		attr++;
-		if (*attr) {
-			res = append_u8(response, (uint8_t) ';');
-			if (!res) {
-				return -ENOMEM;
-			}
+		res = append(response, (uint8_t *) *attr, strlen(*attr));
+		if (!res) {
+			return -ENOMEM;
 		}
-	}
-
-terminator:
-	res = append_u8(response, (uint8_t) ';');
-	if (!res) {
-		return -ENOMEM;
 	}
 
 	return 0;
@@ -701,6 +686,13 @@ int coap_well_known_core_get(struct coap_resource *resource,
 		r = format_resource(resource, response);
 		if (r < 0) {
 			return r;
+		}
+
+		if ((resource + 1) && (resource + 1)->path) {
+			r = append_u8(response, (uint8_t) ',');
+			if (!r) {
+				return -ENOMEM;
+			}
 		}
 	}
 
