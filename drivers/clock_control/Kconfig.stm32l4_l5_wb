@@ -9,27 +9,37 @@ config CLOCK_STM32_PLL_M_DIVISOR
 	int "PLL divisor"
 	depends on CLOCK_STM32_SYSCLK_SRC_PLL
 	default 1
-	range 1 8
+	range 1 8 if SOC_SERIES_STM32L4X || SOC_SERIES_STM32WBX
+	range 1 16 if SOC_SERIES_STM32L5X
 	help
-	  PLL divisor, allowed values: 1-8. With this ensure that the PLL
-	  VCO input frequency ranges from 4 to 16MHz.
+	  PLL divisor,
+	  L4: allowed values: 1-8. PLL VCO input ranges from 4 to 16MHz
+	  L5: allowed values: 1-16. PLL VCO input ranges from 4 to 16MHz
+	  WB: allowed values: 1-8. PLL VCO input ranges from 2.66 to 16MHz
 
 config CLOCK_STM32_PLL_N_MULTIPLIER
 	int "PLL multiplier"
 	depends on CLOCK_STM32_SYSCLK_SRC_PLL
 	default 20
-	range 8 86
+	range 8 86 if SOC_SERIES_STM32L4X || SOC_SERIES_STM32L5X
+	range 6 127 if SOC_SERIES_STM32WBX
 	help
-	  PLL multiplier, allowed values: 2-16. PLL output must not
-	  exceed 344MHz.
+	  PLL multiplier,
+	  L4: allowed values: 8-86. PLL VCO output ranges from 64 to 334MHz
+	  L5: allowed values: 8-86. PLL VCO output ranges from 64 to 334MHz
+	  WB: allowed values: 6-127. PLL VCO output ranges from 96 to 334MHz
 
 config CLOCK_STM32_PLL_P_DIVISOR
 	int "PLL P Divisor"
 	depends on CLOCK_STM32_SYSCLK_SRC_PLL
 	default 7
-	range 0 17
+	range 0 17 if SOC_SERIES_STM32L4X || SOC_SERIES_STM32L5X
+	range 0 32 if SOC_SERIES_STM32WBX
 	help
-	  PLL P Output divisor, allowed values: 0, 7, 17.
+	  PLL P Output divisor
+	  L4: allowed values: 0, 7, 17. PLLP do not exceed 80MHz
+	  L5: allowed values: 0, 7, 17. PLLP do not exceed 80MHz
+	  WB: allowed values: 0, 2-32. PLLP do not exceed 64MHz
 
 config CLOCK_STM32_PLL_Q_DIVISOR
 	int "PLL Q Divisor"
@@ -37,7 +47,10 @@ config CLOCK_STM32_PLL_Q_DIVISOR
 	default 2
 	range 0 8
 	help
-	  PLL Q Output divisor, allowed values: 0, 2, 4, 6, 8.
+	  PLL Q Output divisor
+	  L4: allowed values: 0, 2, 4, 6, 8. PLLQ do not exceed 80MHz
+	  L5: allowed values: 0, 2, 4, 6, 8. PLLQ do not exceed 80MHz
+	  WB: allowed values: 0, 2-8. PLLQ do not exceed 64MHz
 
 config CLOCK_STM32_PLL_R_DIVISOR
 	int "PLL R Divisor"
@@ -45,7 +58,10 @@ config CLOCK_STM32_PLL_R_DIVISOR
 	default 4
 	range 0 8
 	help
-	  PLL R Output divisor, allowed values: 0, 2, 4, 6, 8.
+	  PLL R Output divisor
+	  L4: allowed values: 0, 2, 4, 6, 8. PLLR do not exceed 80MHz
+	  L5: allowed values: 0, 2, 4, 6, 8. PLLR do not exceed 110MHz
+	  WB: allowed values: 0, 2-8. PLLR do not exceed 64MHz
 
 config CLOCK_STM32_LSE
 	bool "Low-speed external clock"
