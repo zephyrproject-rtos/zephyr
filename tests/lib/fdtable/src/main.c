@@ -15,7 +15,9 @@
 static struct k_thread fd_thread;
 static int shared_fd;
 
-#define VTABLE_INIT ((const struct fd_op_vtable *)1)
+static struct fd_op_vtable fd_vtable = { 0 };
+
+#define VTABLE_INIT (&fd_vtable)
 
 K_THREAD_STACK_DEFINE(fd_thread_stack, CONFIG_ZTEST_STACKSIZE +
 		      CONFIG_TEST_EXTRA_STACKSIZE);
@@ -60,7 +62,7 @@ void test_z_get_fd_obj(void)
 	zassert_is_null(obj, "obj not is NULL");
 
 	obj = (void *)1;
-	vtable = (const struct fd_op_vtable *)1;
+	vtable = NULL;
 
 	/* This will set obj and vtable properly */
 	z_finalize_fd(fd, obj, vtable);
