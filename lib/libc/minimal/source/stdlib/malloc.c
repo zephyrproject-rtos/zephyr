@@ -60,7 +60,10 @@ void *realloc(void *ptr, size_t requested_size)
 					     __alignof__(z_max_align_t),
 					     requested_size);
 
-	return ret == NULL ? ptr : ret;
+	if (ret == NULL && requested_size != 0) {
+		errno = ENOMEM;
+	}
+	return ret;
 }
 
 void free(void *ptr)
