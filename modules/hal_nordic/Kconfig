@@ -61,6 +61,8 @@ choice NRF_802154_SL_TYPE
 
 config NRF_802154_SL_OPENSOURCE
 	bool "nRF IEEE 802.15.4 Open source Service Layer"
+	select SENSOR
+	select TEMP_NRF5
 
 endchoice
 
