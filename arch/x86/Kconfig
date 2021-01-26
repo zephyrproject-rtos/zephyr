@@ -107,6 +107,9 @@ config PCIE_MMIO_CFG
 	  Configuration Space instead of the traditional 0xCF8/0xCFC
 	  IO Port registers.
 
+config KERNEL_VM_SIZE
+	default 0xC0000000 if ACPI
+
 config X86_MEMMAP_ENTRIES
 	int "Number of memory map entries"
 	range 1 256
