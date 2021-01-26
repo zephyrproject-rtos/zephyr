@@ -261,7 +261,7 @@ static void test_realloc(void)
 
 	zassert_true(sys_heap_validate(&heap), "invalid heap");
 	zassert_true(p1 != p2,
-		     "Realloc should must have moved %p", p1);
+		     "Realloc should have moved %p", p1);
 	zassert_true(realloc_check_block(p2, p2, 64), "data changed");
 	zassert_true(realloc_check_block(p3, p1, 64), "data changed");
 
@@ -290,6 +290,37 @@ static void test_realloc(void)
 		     "Realloc should have expanded in place %p -> %p",
 		     p1, p3);
 	zassert_true(realloc_check_block(p3, p1, 61), "data changed");
+
+	/* Corner case with sys_heap_aligned_realloc() on 32-bit targets
+	 * where actual memory doesn't match with given pointer
+	 * (align_gap != 0).
+	 */
+	p1 = sys_heap_aligned_alloc(&heap, 8, 32);
+	realloc_fill_block(p1, 32);
+	p2 = sys_heap_alloc(&heap, 32);
+	realloc_fill_block(p2, 32);
+	p3 = sys_heap_aligned_realloc(&heap, p1, 8, 36);
+
+	zassert_true(sys_heap_validate(&heap), "invalid heap");
+	zassert_true(realloc_check_block(p3, p1, 32), "data changed");
+	zassert_true(realloc_check_block(p2, p2, 32), "data changed");
+	realloc_fill_block(p3, 36);
+	zassert_true(sys_heap_validate(&heap), "invalid heap");
+	zassert_true(p1 != p3,
+		     "Realloc should have moved %p", p1);
+
+	/* Test realloc with increasing alignment */
+	p1 = sys_heap_aligned_alloc(&heap, 32, 32);
+	p2 = sys_heap_aligned_alloc(&heap, 8, 32);
+	p3 = sys_heap_aligned_realloc(&heap, p2, 8, 16);
+	zassert_true(sys_heap_validate(&heap), "invalid heap");
+	zassert_true(p2 == p3,
+		     "Realloc should have expanded in place %p -> %p",
+		     p2, p3);
+	p3 = sys_heap_aligned_alloc(&heap, 32, 8);
+	zassert_true(sys_heap_validate(&heap), "invalid heap");
+	zassert_true(p2 != p3,
+		     "Realloc should have moved %p", p2);
 }
 
 void test_main(void)

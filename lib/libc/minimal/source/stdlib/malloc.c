@@ -56,7 +56,9 @@ static int malloc_prepare(const struct device *unused)
 
 void *realloc(void *ptr, size_t requested_size)
 {
-	void *ret = sys_heap_realloc(&z_malloc_heap, ptr, requested_size);
+	void *ret = sys_heap_aligned_realloc(&z_malloc_heap, ptr,
+					     __alignof__(z_max_align_t),
+					     requested_size);
 
 	return ret == NULL ? ptr : ret;
 }

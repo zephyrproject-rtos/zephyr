@@ -312,18 +312,21 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 	return mem;
 }
 
-void *sys_heap_realloc(struct sys_heap *heap, void *ptr, size_t bytes)
+void *sys_heap_aligned_realloc(struct sys_heap *heap, void *ptr,
+			       size_t align, size_t bytes)
 {
 	struct z_heap *h = heap->heap;
 
 	/* special realloc semantics */
 	if (ptr == NULL) {
-		return sys_heap_alloc(heap, bytes);
+		return sys_heap_aligned_alloc(heap, align, bytes);
 	}
 	if (bytes == 0) {
 		sys_heap_free(heap, ptr);
 		return NULL;
 	}
+
+	__ASSERT((align & (align - 1)) == 0, "align must be a power of 2");
 
 	if (size_too_big(h, bytes)) {
 		return NULL;
@@ -331,9 +334,12 @@ void *sys_heap_realloc(struct sys_heap *heap, void *ptr, size_t bytes)
 
 	chunkid_t c = mem_to_chunkid(h, ptr);
 	chunkid_t rc = right_chunk(h, c);
-	size_t chunks_need = bytes_to_chunksz(h, bytes);
+	size_t align_gap = (uint8_t *)ptr - (uint8_t *)chunk_mem(h, c);
+	size_t chunks_need = bytes_to_chunksz(h, bytes + align_gap);
 
-	if (chunk_size(h, c) == chunks_need) {
+	if (align && ((uintptr_t)ptr & (align - 1))) {
+		/* ptr is not sufficiently aligned */
+	} else if (chunk_size(h, c) == chunks_need) {
 		/* We're good already */
 		return ptr;
 	} else if (chunk_size(h, c) > chunks_need) {
@@ -357,18 +363,18 @@ void *sys_heap_realloc(struct sys_heap *heap, void *ptr, size_t bytes)
 		merge_chunks(h, c, rc);
 		set_chunk_used(h, c, true);
 		return ptr;
-	} else {
-		/* Reallocate and copy */
-		void *ptr2 = sys_heap_alloc(heap, bytes);
-
-		if (ptr2 == NULL) {
-			return NULL;
-		}
-
-		memcpy(ptr2, ptr, bytes);
-		sys_heap_free(heap, ptr);
-		return ptr2;
 	}
+
+	/* Fallback: allocate and copy */
+	void *ptr2 = sys_heap_aligned_alloc(heap, align, bytes);
+
+	if (ptr2 == NULL) {
+		return NULL;
+	}
+
+	memcpy(ptr2, ptr, bytes);
+	sys_heap_free(heap, ptr);
+	return ptr2;
 }
 
 void sys_heap_init(struct sys_heap *heap, void *mem, size_t bytes)
