@@ -21,7 +21,7 @@ struct pm_state_info pm_policy_next_state(int32_t ticks)
 
 	for (i = ARRAY_SIZE(pm_min_residency) - 1; i >= 0; i--) {
 #ifdef CONFIG_PM_STATE_LOCK
-		if (!pm_ctrl_is_state_enabled(pm_min_residency[i].state)) {
+		if (!pm_constraint_get(pm_min_residency[i].state)) {
 			continue;
 		}
 #endif

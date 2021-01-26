@@ -208,7 +208,7 @@ static int i2c_cc13xx_cc26xx_transfer(const struct device *dev,
 	k_sem_take(&get_dev_data(dev)->lock, K_FOREVER);
 
 #ifdef CONFIG_PM
-	pm_ctrl_disable_state(PM_STATE_STANDBY);
+	pm_constraint_set(PM_STATE_STANDBY);
 #endif
 
 	for (int i = 0; i < num_msgs; i++) {
@@ -232,7 +232,7 @@ static int i2c_cc13xx_cc26xx_transfer(const struct device *dev,
 	}
 
 #ifdef CONFIG_PM
-	pm_ctrl_enable_state(PM_STATE_STANDBY);
+	pm_constraint_release(PM_STATE_STANDBY);
 #endif
 
 	k_sem_give(&get_dev_data(dev)->lock);
