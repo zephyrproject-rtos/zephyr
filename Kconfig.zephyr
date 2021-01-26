@@ -317,6 +317,20 @@ config BUILD_OUTPUT_BIN
 	  Build a "raw" binary zephyr/zephyr.bin in the build directory.
 	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
 
+config BUILD_OUTPUT_EFI
+	bool "Build as an EFI application"
+	default n
+	depends on X86_64
+	help
+	  Build as an EFI application.
+
+	  This works by creating a "zephyr.efi" EFI binary containing a zephyr
+	  image extracted from a built zephyr.elf file.  EFI applications are
+	  relocatable, and cannot be placed at specific locations in memory.
+	  Instead, the stub code will copy the embedded zephyr sections to the
+	  appropriate locations at startup, clear any zero-filled (BSS, etc...)
+	  areas, then jump into the 64 bit entry point.
+
 config BUILD_OUTPUT_EXE
 	bool "Build a binary in ELF format with .exe extension"
 	help
