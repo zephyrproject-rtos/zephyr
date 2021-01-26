@@ -167,7 +167,7 @@ void pm_dump_debug_info(void);
  * @details Disabled state cannot be selected by the Zephyr power
  *	    management policies. Application defined policy should
  *	    use the @ref pm_ctrl_is_state_enabled function to
- *	    check if given state could is enabled and could be used.
+ *	    check if given state is enabled and could be used.
  *
  * @param [in] state Power state to be disabled.
  */
@@ -179,7 +179,7 @@ void pm_ctrl_disable_state(enum pm_state state);
  * @details Enabled state can be selected by the Zephyr power
  *	    management policies. Application defined policy should
  *	    use the @ref pm_ctrl_is_state_enabled function to
- *	    check if given state could is enabled and could be used.
+ *	    check if given state is enabled and could be used.
  *	    By default all power states are enabled.
  *
  * @param [in] state Power state to be enabled.
