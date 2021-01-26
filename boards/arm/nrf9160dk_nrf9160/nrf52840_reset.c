@@ -7,38 +7,34 @@
 #include <drivers/gpio.h>
 #include <drivers/uart.h>
 #include <device.h>
+#include <devicetree.h>
 
-#define RESET_PIN CONFIG_BOARD_NRF52840_GPIO_RESET_PIN
+#define RESET_NODE DT_NODELABEL(nrf52840_reset)
 
-/* Must be a pin from 17 to 23.
- * Only those can be connected to the nRF52840.
- */
-BUILD_ASSERT(RESET_PIN > 16 && RESET_PIN < 24,
-	     "Selected pin is not connected to nRF52840");
+#if DT_NODE_HAS_STATUS(RESET_NODE, okay)
+
+#define RESET_GPIO_CTRL  DT_GPIO_CTLR(RESET_NODE, gpios)
+#define RESET_GPIO_PIN   DT_GPIO_PIN(RESET_NODE, gpios)
+#define RESET_GPIO_FLAGS DT_GPIO_FLAGS(RESET_NODE, gpios)
 
 int bt_hci_transport_setup(const struct device *h4)
 {
 	int err;
 	char c;
-	const struct device *port;
+	const struct device *port = DEVICE_DT_GET(RESET_GPIO_CTRL);
 
-	port = device_get_binding(DT_LABEL(DT_NODELABEL(gpio0)));
-	if (!port) {
-		return -EIO;
-	}
-
-	/* Configure pin as output and initialize it to low. */
-	err = gpio_pin_configure(port, RESET_PIN, GPIO_OUTPUT_LOW);
+	/* Configure pin as output and initialize it to inactive state. */
+	err = gpio_pin_configure(port, RESET_GPIO_PIN,
+				 RESET_GPIO_FLAGS | GPIO_OUTPUT_INACTIVE);
 	if (err) {
 		return err;
 	}
 
-	/* Reset the nRF52840 and let it wait until the pin is
-	 * pulled low again before running to main to ensure
-	 * that it won't send any data until the H4 device
-	 * is setup and ready to receive.
+	/* Reset the nRF52840 and let it wait until the pin is inactive again
+	 * before running to main to ensure that it won't send any data until
+	 * the H4 device is setup and ready to receive.
 	 */
-	err = gpio_pin_set(port, RESET_PIN, 1);
+	err = gpio_pin_set(port, RESET_GPIO_PIN, 1);
 	if (err) {
 		return err;
 	}
@@ -56,10 +52,12 @@ int bt_hci_transport_setup(const struct device *h4)
 	}
 
 	/* We are ready, let the nRF52840 run to main */
-	err = gpio_pin_set(port, RESET_PIN, 0);
+	err = gpio_pin_set(port, RESET_GPIO_PIN, 0);
 	if (err) {
 		return err;
 	}
 
 	return 0;
 }
+
+#endif /* DT_NODE_HAS_STATUS(RESET_NODE, okay) */

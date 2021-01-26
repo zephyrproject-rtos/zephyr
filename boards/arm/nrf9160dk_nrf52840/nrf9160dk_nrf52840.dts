@@ -20,6 +20,118 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 	};
+
+	interface_to_nrf9160: gpio-interface {
+		compatible = "nordic,nrf9160dk-nrf52840-interface";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xf 0>;
+		gpio-map-pass-thru = <0 0xffffffff>;
+		gpio-map = <0 0 &gpio0 17 0>,
+			   <1 0 &gpio0 20 0>,
+			   <2 0 &gpio0 15 0>,
+			   <3 0 &gpio0 22 0>,
+			   <4 0 &gpio1  4 0>,
+			   <5 0 &gpio1  2 0>,
+			   <6 0 &gpio1 13 0>,
+			   <7 0 &gpio1 11 0>,
+			   <8 0 &gpio1 15 0>;
+	};
+
+	reset_input: gpio-reset {
+		compatible = "nordic,nrf9160dk-nrf52840-reset";
+		/*
+		 * This line is specified as active high for compatibility
+		 * with the previously used Kconfig-based configuration.
+		 */
+		gpios = <&interface_to_nrf9160 5
+			(GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+		status = "disabled";
+	};
+
+	board-control {
+		vcom0_pins_routing: switch-nrf91-uart1 {
+			compatible = "nordic,nrf9160dk-optional-routing";
+			control-gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
+			status = "okay";
+		};
+
+		vcom2_pins_routing: switch-nrf91-uart2 {
+			compatible = "nordic,nrf9160dk-optional-routing";
+			/*
+			 * Two pins (P1.12 and P0.12) need to be driven for
+			 * this switch.
+			 */
+			control-gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>,
+					<&gpio0 12 GPIO_ACTIVE_HIGH>;
+			status = "okay";
+		};
+
+		led1_pin_routing: switch-nrf91-led1 {
+			compatible = "nordic,nrf9160dk-optional-routing";
+			control-gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
+			status = "okay";
+		};
+
+		led2_pin_routing: switch-nrf91-led2 {
+			compatible = "nordic,nrf9160dk-optional-routing";
+			control-gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
+			status = "okay";
+		};
+
+		led3_pin_routing: switch-nrf91-led3 {
+			compatible = "nordic,nrf9160dk-optional-routing";
+			control-gpios = <&gpio1 1 GPIO_ACTIVE_LOW>;
+			status = "okay";
+		};
+
+		led4_pin_routing: switch-nrf91-led4 {
+			compatible = "nordic,nrf9160dk-optional-routing";
+			control-gpios = <&gpio1 3 GPIO_ACTIVE_LOW>;
+			status = "okay";
+		};
+
+		switch1_pin_routing: switch-nrf91-switch1 {
+			compatible = "nordic,nrf9160dk-optional-routing";
+			control-gpios = <&gpio1 9 GPIO_ACTIVE_LOW>;
+			status = "okay";
+		};
+
+		switch2_pin_routing: switch-nrf91-switch2 {
+			compatible = "nordic,nrf9160dk-optional-routing";
+			control-gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
+			status = "okay";
+		};
+
+		button1_pin_routing: switch-nrf91-button1 {
+			compatible = "nordic,nrf9160dk-optional-routing";
+			control-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+			status = "okay";
+		};
+
+		button2_pin_routing: switch-nrf91-button2 {
+			compatible = "nordic,nrf9160dk-optional-routing";
+			control-gpios = <&gpio0 26 GPIO_ACTIVE_LOW>;
+			status = "okay";
+		};
+
+		nrf_interface_pins_0_2_routing: switch-nrf-if0-2-ctrl {
+			compatible = "nordic,nrf9160dk-optional-routing";
+			control-gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
+			status = "disabled";
+		};
+
+		nrf_interface_pins_3_5_routing: switch-nrf-if3-5-ctrl {
+			compatible = "nordic,nrf9160dk-optional-routing";
+			control-gpios = <&gpio0 24 GPIO_ACTIVE_HIGH>;
+			status = "disabled";
+		};
+
+		nrf_interface_pins_6_8_routing: switch-nrf-if6-8-ctrl {
+			compatible = "nordic,nrf9160dk-optional-routing";
+			control-gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
+			status = "disabled";
+		};
+	};
 };
 
 &gpiote {
