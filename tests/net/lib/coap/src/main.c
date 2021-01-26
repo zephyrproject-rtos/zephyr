@@ -523,6 +523,124 @@ done:
 	return result;
 }
 
+static int test_parse_req_build_ack(void)
+{
+	uint8_t pdu[] = { 0x45, 0xA5, 0x12, 0x34, 't', 'o', 'k', 'e', 'n',
+		       0x00, 0xc1, 0x00, 0xff, 'p', 'a', 'y', 'l', 'o',
+		       'a', 'd', 0x00 };
+	uint8_t ack_pdu[] = { 0x65, 0x80, 0x12, 0x34, 't', 'o', 'k', 'e', 'n' };
+	struct coap_packet cpkt;
+	struct coap_packet ack_cpkt;
+	uint8_t *data = NULL;
+	uint8_t *ack_data = NULL;
+	int result = TC_FAIL;
+	int r;
+
+	data = (uint8_t *)k_malloc(COAP_BUF_SIZE);
+	if (!data) {
+		goto done;
+	}
+
+	memcpy(data, pdu, sizeof(pdu));
+
+	r = coap_packet_parse(&cpkt, data, sizeof(pdu), NULL, 0);
+	if (r) {
+		TC_PRINT("Could not parse packet\n");
+		goto done;
+	}
+
+	ack_data = (uint8_t *)k_malloc(COAP_BUF_SIZE);
+	if (!ack_data) {
+		goto done;
+	}
+
+	r = coap_ack_init(&ack_cpkt, &cpkt, ack_data, COAP_BUF_SIZE,
+			  COAP_RESPONSE_CODE_BAD_REQUEST);
+	if (r < 0) {
+		TC_PRINT("Could not initialize ACK packet\n");
+		goto done;
+	}
+
+	if (ack_cpkt.offset != sizeof(ack_pdu)) {
+		TC_PRINT("Different size from the reference packet\n");
+		goto done;
+	}
+
+	if (memcmp(ack_pdu, ack_cpkt.data, ack_cpkt.offset)) {
+		TC_PRINT("Built packet doesn't match reference packet\n");
+		goto done;
+	}
+
+	result = TC_PASS;
+
+done:
+	k_free(data);
+	k_free(ack_data);
+
+	TC_END_RESULT(result);
+
+	return result;
+}
+
+static int test_parse_req_build_empty_ack(void)
+{
+	uint8_t pdu[] = { 0x45, 0xA5, 0xDE, 0xAD, 't', 'o', 'k', 'e', 'n',
+		       0x00, 0xc1, 0x00, 0xff, 'p', 'a', 'y', 'l', 'o',
+		       'a', 'd', 0x00 };
+	uint8_t ack_pdu[] = { 0x60, 0x00, 0xDE, 0xAD };
+	struct coap_packet cpkt;
+	struct coap_packet ack_cpkt;
+	uint8_t *data = NULL;
+	uint8_t *ack_data = NULL;
+	int result = TC_FAIL;
+	int r;
+
+	data = (uint8_t *)k_malloc(COAP_BUF_SIZE);
+	if (!data) {
+		goto done;
+	}
+
+	memcpy(data, pdu, sizeof(pdu));
+
+	r = coap_packet_parse(&cpkt, data, sizeof(pdu), NULL, 0);
+	if (r) {
+		TC_PRINT("Could not parse packet\n");
+		goto done;
+	}
+
+	ack_data = (uint8_t *)k_malloc(COAP_BUF_SIZE);
+	if (!ack_data) {
+		goto done;
+	}
+
+	r = coap_ack_init(&ack_cpkt, &cpkt, ack_data, COAP_BUF_SIZE,
+			  COAP_CODE_EMPTY);
+	if (r < 0) {
+		TC_PRINT("Could not initialize ACK packet\n");
+		goto done;
+	}
+
+	if (ack_cpkt.offset != sizeof(ack_pdu)) {
+		TC_PRINT("Different size from the reference packet\n");
+		goto done;
+	}
+
+	if (memcmp(ack_pdu, ack_cpkt.data, ack_cpkt.offset)) {
+		TC_PRINT("Built packet doesn't match reference packet\n");
+		goto done;
+	}
+
+	result = TC_PASS;
+
+done:
+	k_free(data);
+	k_free(ack_data);
+
+	TC_END_RESULT(result);
+
+	return result;
+}
+
 static int test_match_path_uri(void)
 {
 	int result = TC_FAIL;
@@ -1471,6 +1589,9 @@ static const struct {
 		test_parse_malformed_opt_len_ext },
 	{ "Parse malformed empty payload with marker",
 		test_parse_malformed_marker, },
+	{ "Parse request and build ack ", test_parse_req_build_ack, },
+	{ "Parse request and build empty ack ",
+		test_parse_req_build_empty_ack, },
 	{ "Test match path uri", test_match_path_uri, },
 	{ "Test block sized 1 transfer", test_block1_size, },
 	{ "Test block sized 2 transfer", test_block2_size, },
