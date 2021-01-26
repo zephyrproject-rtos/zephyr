@@ -27,7 +27,7 @@ static int disable_ds_1(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	pm_ctrl_disable_state(PM_STATE_SOFT_OFF);
+	pm_constraint_set(PM_STATE_SOFT_OFF);
 	return 0;
 }
 
