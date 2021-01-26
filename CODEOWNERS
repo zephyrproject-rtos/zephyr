@@ -59,9 +59,9 @@
 /arch/x86/                                @jhedberg @andrewboie @jenmwms @aasthagr
 /arch/nios2/                              @andrewboie @wentongwu
 /arch/posix/                              @aescolar @daor-oti
-/arch/riscv/                              @kgugala @pgielda @nategraff-sifive
+/arch/riscv/                              @kgugala @pgielda
 /soc/posix/                               @aescolar @daor-oti
-/soc/riscv/                               @kgugala @pgielda @nategraff-sifive
+/soc/riscv/                               @kgugala @pgielda
 /soc/riscv/openisa*/                      @MaureenHelm
 /soc/x86/                                 @andrewboie @jenmwms @aasthagr
 /arch/xtensa/                             @andrewboie @dcpleung @andyross
@@ -130,7 +130,7 @@
 /boards/arm/stm32_min_dev/                @cbsiddharth
 /boards/posix/                            @aescolar @daor-oti
 /boards/posix/nrf52_bsim/                 @aescolar @wopu-ot
-/boards/riscv/                            @kgugala @pgielda @nategraff-sifive
+/boards/riscv/                            @kgugala @pgielda
 /boards/riscv/rv32m1_vega/                @MaureenHelm
 /boards/shields/                          @erwango
 /boards/shields/atmel_rf2xx/              @nandojve
@@ -281,7 +281,7 @@
 /drivers/timer/arm_arch_timer.c           @carlocaione
 /drivers/timer/cortex_m_systick.c         @ioannisg
 /drivers/timer/altera_avalon_timer_hal.c  @wentongwu
-/drivers/timer/riscv_machine_timer.c      @nategraff-sifive @kgugala @pgielda
+/drivers/timer/riscv_machine_timer.c      @kgugala @pgielda
 /drivers/timer/ite_it8xxx2_timer.c        @ite
 /drivers/timer/xlnx_psttc_timer*          @wjliang @stephanosio
 /drivers/timer/cc13x2_cc26x2_rtc_timer.c  @vanti
@@ -333,11 +333,10 @@
 /dts/arm/silabs/efm32pg12b*               @chrta
 /dts/arm/silabs/efm32pg1b*                @rdmeneze
 /dts/arm/silabs/efr32mg21*                @l-alfred
-/dts/riscv/                               @kgugala @pgielda @nategraff-sifive
+/dts/riscv/                               @kgugala @pgielda
 /dts/riscv/it8xxx2.dtsi                   @ite
 /dts/riscv/microsemi-miv.dtsi             @galak
 /dts/riscv/rv32m1*                        @MaureenHelm
-/dts/riscv/riscv32-fe310.dtsi             @nategraff-sifive
 /dts/riscv/riscv32-litex-vexriscv.dtsi    @mateusz-holenko @kgugala @pgielda
 /dts/arm/armv7-r.dtsi                     @bbolen @stephanosio
 /dts/arm/armv8-a.dtsi                     @carlocaione
@@ -359,7 +358,7 @@
 /dts/bindings/*/openisa*                  @MaureenHelm
 /dts/bindings/*/st*                       @erwango
 /dts/bindings/sensor/ams*                 @alexanderwachter
-/dts/bindings/*/sifive*                   @mateusz-holenko @kgugala @pgielda @nategraff-sifive
+/dts/bindings/*/sifive*                   @mateusz-holenko @kgugala @pgielda
 /dts/bindings/*/litex*                    @mateusz-holenko @kgugala @pgielda
 /dts/bindings/*/vexriscv*                 @mateusz-holenko @kgugala @pgielda
 /dts/bindings/psci/*                      @carlocaione
@@ -402,7 +401,7 @@
 /include/arch/nios2/                      @andrewboie
 /include/arch/nios2/arch.h                @andrewboie
 /include/arch/posix/                      @aescolar @daor-oti
-/include/arch/riscv/                      @nategraff-sifive @kgugala @pgielda
+/include/arch/riscv/                      @kgugala @pgielda
 /include/arch/x86/                        @andrewboie @wentongwu
 /include/arch/common/                     @andrewboie @andyross @nashif
 /include/arch/xtensa/                     @andrewboie
