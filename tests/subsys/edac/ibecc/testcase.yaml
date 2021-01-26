@@ -10,4 +10,4 @@ tests:
   edac.ibecc.debug:
     extra_configs:
       - CONFIG_EDAC_ERROR_INJECT=y
-      - CONFIG_LOG_MINIMAL=n
+      - CONFIG_LOG_MODE_MINIMAL=n
