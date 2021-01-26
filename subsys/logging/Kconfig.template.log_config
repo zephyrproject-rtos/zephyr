@@ -1,8 +1,61 @@
 # SPDX-License-Identifier: Apache-2.0
 
+# Template for setting module log level. Default log level is set to INF with
+# optional overwrite. Following variables need to be configured prior to
+# including the template file:
+#
+# module - module name used for prefixing log level defines. Capital letters
+# should be used.
+#
+# module-str - module name as it that will be added to the help message.
+#
+# default-log-level - optionally specifies default level setting. It accepts
+# following values: OFF, ERR, WRN, INF, DBG. INF level is the default when
+# variable is not set.
+#
+# Example:
+#
+#   module = FOO
+#   module-str = foo
+#   default-log-level = WRN
+#   source "subsys/logging/Kconfig.template.log_config"
+#
+# Following example will create define CONFIG_FOO_LOG_LEVEL 2 which shall be
+# used when module is registered,
+# e.g. LOG_MODULE_REGISTER(foo, CONFIG_FOO_LOG_LEVEL);
+#
+# It will also create choice menu for menuconfig configuration. In order to
+# overwrite the level in a configuration file specific level option must be
+# enabled, e.g. setting debug level for foo module is done by:
+# CONFIG_FOO_LOG_LEVEL_DBG=y
+
+config $(module)_LOG_LEVEL_OFF_DUMMY
+	bool
+
+config $(module)_LOG_LEVEL_ERR_DUMMY
+	bool
+
+config $(module)_LOG_LEVEL_WRN_DUMMY
+	bool
+
+config $(module)_LOG_LEVEL_INF_DUMMY
+	bool
+
+config $(module)_LOG_LEVEL_DBG_DUMMY
+	bool
+
+config $(module)_LOG_LEVEL_$(default-log-level)_DUMMY
+	bool
+	default y
+
 choice
 	prompt "Max compiled-in log level for $(module-str)"
-	default $(module)_LOG_LEVEL_INF
+	default $(module)_LOG_LEVEL_OFF if $(module)_LOG_LEVEL_OFF_DUMMY
+	default $(module)_LOG_LEVEL_ERR if $(module)_LOG_LEVEL_ERR_DUMMY
+	default $(module)_LOG_LEVEL_WRN if $(module)_LOG_LEVEL_WRN_DUMMY
+	default $(module)_LOG_LEVEL_INF if $(module)_LOG_LEVEL_INF_DUMMY
+	default $(module)_LOG_LEVEL_DBG if $(module)_LOG_LEVEL_DBG_DUMMY
+	default $(module)_LOG_LEVEL_INF if $(module)_LOG_LEVEL__DUMMY
 	depends on LOG
 
 config $(module)_LOG_LEVEL_OFF
