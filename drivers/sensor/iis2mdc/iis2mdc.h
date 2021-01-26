@@ -11,46 +11,42 @@
 #ifndef __MAG_IIS2MDC_H
 #define __MAG_IIS2MDC_H
 
-#include <drivers/spi.h>
 #include <drivers/gpio.h>
 #include <drivers/sensor.h>
 #include <sys/util.h>
 #include "iis2mdc_reg.h"
 
-union axis3bit16_t {
-	int16_t i16bit[3];
-	uint8_t u8bit[6];
-};
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+#include <drivers/spi.h>
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
 
-union axis1bit16_t {
-	int16_t i16bit;
-	uint8_t u8bit[2];
-};
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+#include <drivers/i2c.h>
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c) */
 
-struct iis2mdc_config {
-	char *master_dev_name;
-	int (*bus_init)(const struct device *dev);
-#ifdef CONFIG_IIS2MDC_TRIGGER
-	const char *drdy_port;
-	gpio_pin_t drdy_pin;
-	gpio_dt_flags_t drdy_flags;
-#endif  /* CONFIG_IIS2MDC_TRIGGER */
+
+union iis2mdc_bus_cfg {
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 	uint16_t i2c_slv_addr;
-#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-	struct spi_config spi_conf;
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	const char *gpio_cs_port;
-	uint8_t cs_gpio;
-	uint8_t cs_gpio_flags;
-#endif /* DT_INST_SPI_DEV_HAS_CS_GPIOS(0) */
+#endif
+
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+	struct spi_config spi_cfg;
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
+};
+
+struct iis2mdc_dev_config {
+	const struct device *bus;
+	int (*bus_init)(const struct device *dev);
+	const union iis2mdc_bus_cfg bus_cfg;
+#ifdef CONFIG_IIS2MDC_TRIGGER
+	const struct gpio_dt_spec gpio_drdy;
+#endif  /* CONFIG_IIS2MDC_TRIGGER */
 };
 
 /* Sensor data */
 struct iis2mdc_data {
 	const struct device *dev;
-	const struct device *bus;
 	uint16_t i2c_addr;
 	int16_t mag[3];
 	int32_t temp_sample;
@@ -59,12 +55,12 @@ struct iis2mdc_data {
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 	stmdev_ctx_t ctx_i2c;
-#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+#endif
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 	stmdev_ctx_t ctx_spi;
 #endif
 
 #ifdef CONFIG_IIS2MDC_TRIGGER
-	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 
 	sensor_trigger_handler_t handler_drdy;
@@ -77,9 +73,6 @@ struct iis2mdc_data {
 	struct k_work work;
 #endif  /* CONFIG_IIS2MDC_TRIGGER_GLOBAL_THREAD */
 #endif  /* CONFIG_IIS2MDC_TRIGGER */
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	struct spi_cs_control cs_ctrl;
-#endif /* DT_INST_SPI_DEV_HAS_CS_GPIOS(0) */
 };
 
 int iis2mdc_spi_init(const struct device *dev);
