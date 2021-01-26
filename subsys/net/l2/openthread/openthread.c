@@ -69,6 +69,12 @@ LOG_MODULE_REGISTER(net_l2_openthread, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #define OT_XPANID ""
 #endif
 
+#if defined(CONFIG_OPENTHREAD_MASTERKEY)
+#define OT_MASTERKEY CONFIG_OPENTHREAD_MASTERKEY
+#else
+#define OT_MASTERKEY ""
+#endif
+
 #if defined(CONFIG_OPENTHREAD_JOINER_PSKD)
 #define OT_JOINER_PSKD CONFIG_OPENTHREAD_JOINER_PSKD
 #else
@@ -374,12 +380,19 @@ int openthread_start(struct openthread_context *ot_context)
 		NET_DBG("Loading OpenThread default configuration.");
 
 		otExtendedPanId xpanid;
+		otMasterKey     masterkey;
 
 		otThreadSetNetworkName(ot_instance, OT_NETWORK_NAME);
 		otLinkSetChannel(ot_instance, OT_CHANNEL);
 		otLinkSetPanId(ot_instance, OT_PANID);
 		net_bytes_from_str(xpanid.m8, 8, (char *)OT_XPANID);
 		otThreadSetExtendedPanId(ot_instance, &xpanid);
+
+		if (strlen(OT_MASTERKEY)) {
+			net_bytes_from_str(masterkey.m8, OT_MASTER_KEY_SIZE,
+					   (char *)OT_MASTERKEY);
+			otThreadSetMasterKey(ot_instance, &masterkey);
+		}
 	}
 
 	NET_INFO("Network name: %s",
