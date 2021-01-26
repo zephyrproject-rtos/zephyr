@@ -61,6 +61,32 @@
 		};
 	};
 
+	interface_to_nrf52840: gpio-interface {
+		compatible = "nordic,nrf9160dk-nrf52840-interface";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xf 0>;
+		gpio-map-pass-thru = <0 0xffffffff>;
+		gpio-map = <0 0 &gpio0 17 0>,
+			   <1 0 &gpio0 18 0>,
+			   <2 0 &gpio0 19 0>,
+			   <3 0 &gpio0 21 0>,
+			   <4 0 &gpio0 22 0>,
+			   <5 0 &gpio0 23 0>;
+			   /* 6: COEX0 */
+			   /* 7: COEX1 */
+			   /* 8: COEX2 */
+	};
+
+	nrf52840_reset: gpio-reset {
+		compatible = "nordic,nrf9160dk-nrf52840-reset";
+		status = "disabled";
+		/*
+		 * This line is specified as active high for compatibility
+		 * with the previously used Kconfig-based configuration.
+		 */
+		gpios = <&interface_to_nrf52840 5 GPIO_ACTIVE_HIGH>;
+	};
+
 	/* These aliases are provided for compatibility with samples */
 	aliases {
 		led0 = &led0;

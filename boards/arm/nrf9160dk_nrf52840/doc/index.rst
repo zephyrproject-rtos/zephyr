@@ -119,41 +119,127 @@ with a Segger IC.
 
 Remember to set the PROG/DEBUG switch on the DK to nRF52.
 
+.. _nrf9160dk_board_controller_firmware:
+
 Board controller firmware
 *************************
 
 The board controller firmware is a small snippet of code that takes care of
-routing specific pins on nRF9160 SiP to different components on the board,
-such as LEDs, switches, and specific nRF52840 SoC pins.
+routing specific pins of the nRF9160 SiP to different components on the DK,
+such as LEDs and buttons, UART interfaces (VCOMx) of the interface MCU, and
+specific nRF52840 SoC pins.
+
+.. note::
+   nRF9160 signals routed to other components on the DK are not simultaneously
+   available on the DK connectors.
 
 When compiling a project for nrf9160dk_nrf52840, the board controller firmware
 will be compiled and run automatically after the Kernel has been initialized.
 
 By default, the board controller firmware will route the following:
 
-+-----------------+----------------------------------+
-| Component       | Routed to                        |
-+=================+==================================+
-| nRF9160 UART0   | VCOM0                            |
-+-----------------+----------------------------------+
-| nRF9160 UART1   | VCOM2                            |
-+-----------------+----------------------------------+
-| LEDs 1-4        | physical LEDs                    |
-+-----------------+----------------------------------+
-| Buttons 1-2     | physical buttons                 |
-+-----------------+----------------------------------+
-| Switches 1-2    | physical switches                |
-+-----------------+----------------------------------+
-| MCU Interface 0 | Arduino pin headers              |
-+-----------------+----------------------------------+
-| MCU Interface 1 | Trace interface                  |
-+-----------------+----------------------------------+
-| MCU Interface 2 | COEX interface                   |
-+-----------------+----------------------------------+
++--------------------------------+----------------------------------+
+| nRF9160 pins                   | Routed to                        |
++================================+==================================+
+| P0.26, P0.27, P0.28, and P0.29 | VCOM0                            |
++--------------------------------+----------------------------------+
+| P0.01, P0.00, P0.15, and P0.14 | VCOM2                            |
++--------------------------------+----------------------------------+
+| P0.02                          | LED1                             |
++--------------------------------+----------------------------------+
+| P0.03                          | LED2                             |
++--------------------------------+----------------------------------+
+| P0.04                          | LED3                             |
++--------------------------------+----------------------------------+
+| P0.05                          | LED4                             |
++--------------------------------+----------------------------------+
+| P0.08                          | Switch 1                         |
++--------------------------------+----------------------------------+
+| P0.09                          | Switch 2                         |
++--------------------------------+----------------------------------+
+| P0.06                          | Button 1                         |
++--------------------------------+----------------------------------+
+| P0.07                          | Button 2                         |
++--------------------------------+----------------------------------+
+| P0.17, P0.18, and P0.19        | Arduino pin headers              |
++--------------------------------+----------------------------------+
+| P0.21, P0.22, and P0.23        | Trace interface                  |
++--------------------------------+----------------------------------+
+| COEX0, COEX1, and COEX2        | COEX interface                   |
++--------------------------------+----------------------------------+
 
-It is possible to configure the behavior of the board controller firmware by
-using Kconfig and editing its options under "Board options".
+For a complete list of all the routing options available,
+see the `nRF9160 DK board control section in the nRF9160 DK User Guide`_.
 
+If you want to route some of the above pins differently or enable any of the
+other available routing options, enable or disable the devicetree node that
+represents the analog switch that provides the given routing.
+
+The following devicetree nodes are defined for the analog switches present
+on the nRF9160 DK:
+
++------------------------------------+------------------------------+
+| Devicetree node label              | Analog switch name           |
++====================================+==============================+
+| ``vcom0_pins_routing``             | nRF91_UART1 (nRF91_APP1)     |
++------------------------------------+------------------------------+
+| ``vcom2_pins_routing``             | nRF91_UART2 (nRF91_APP2)     |
++------------------------------------+------------------------------+
+| ``led1_pin_routing``               | nRF91_LED1                   |
++------------------------------------+------------------------------+
+| ``led2_pin_routing``               | nRF91_LED2                   |
++------------------------------------+------------------------------+
+| ``led3_pin_routing``               | nRF91_LED3                   |
++------------------------------------+------------------------------+
+| ``led4_pin_routing``               | nRF91_LED4                   |
++------------------------------------+------------------------------+
+| ``switch1_pin_routing``            | nRF91_SWITCH1                |
++------------------------------------+------------------------------+
+| ``switch2_pin_routing``            | nRF91_SWITCH2                |
++------------------------------------+------------------------------+
+| ``button1_pin_routing``            | nRF91_BUTTON1                |
++------------------------------------+------------------------------+
+| ``button2_pin_routing``            | nRF91_BUTTON2                |
++------------------------------------+------------------------------+
+| ``nrf_interface_pins_0_2_routing`` | nRF_IF0-2_CTRL (nRF91_GPIO)  |
++------------------------------------+------------------------------+
+| ``nrf_interface_pins_3_5_routing`` | nRF_IF3-5_CTRL (nRF91_TRACE) |
++------------------------------------+------------------------------+
+| ``nrf_interface_pins_6_8_routing`` | nRF_IF6-8_CTRL (nRF91_COEX)  |
++------------------------------------+------------------------------+
+
+For example, if you want to enable the optional routing for the nRF9160 pins
+P0.17, P0.18, and P0.19 so that they are routed to nRF52840 pins P0.17, P0.20,
+and P0.15, respectively, add the following in the devicetree overlay in your
+application:
+
+.. code-block:: none
+
+   &nrf_interface_pins_0_2_routing {
+           status = "okay";
+   };
+
+And if you want to, for example, disable routing for the VCOM2 pins, add the
+following:
+
+.. code-block:: none
+
+   &vcom2_pins_routing {
+           status = "disabled";
+   };
+
+A few helper .dtsi files are provided in the directories
+:zephyr_file:`boards/arm/nrf9160dk_nrf52840/dts` and
+:zephyr_file:`boards/arm/nrf9160dk_nrf9160/dts`. They can serve as examples of
+how to configure and use the above routings. You can also include them from
+respective devicetree overlay files in your applications to conveniently
+configure the signal routing between nRF9160 and nRF52840 on the nRF9160 DK.
+For example, to use ``uart1`` on both these chips for communication between
+them, add the following line in the overlays for applications on both sides:
+
+.. code-block:: none
+
+   #include <nrf9160dk_uart1_on_if0_3.dtsi>
 
 References
 **********
@@ -162,3 +248,4 @@ References
 .. _Nordic Low power cellular IoT: https://www.nordicsemi.com/Products/Low-power-cellular-IoT
 .. _Nordic Semiconductor Infocenter: https://infocenter.nordicsemi.com
 .. _J-Link Software and documentation pack: https://www.segger.com/jlink-software.html
+.. _nRF9160 DK board control section in the nRF9160 DK User Guide: https://infocenter.nordicsemi.com/topic/ug_nrf91_dk/UG/nrf91_DK/board_controller.html
