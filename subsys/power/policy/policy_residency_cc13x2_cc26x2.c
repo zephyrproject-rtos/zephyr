@@ -54,11 +54,10 @@ struct pm_state_info pm_policy_next_state(int32_t ticks)
 	}
 
 	for (i = ARRAY_SIZE(residency_info) - 1; i >= 0; i--) {
-#ifdef CONFIG_PM_STATE_LOCK
 		if (!pm_constraint_get(residency_info[i].state)) {
 			continue;
 		}
-#endif
+
 		if ((ticks <
 		     k_us_to_ticks_ceil32(residency_info[i].min_residency_us))
 		    && (ticks != K_TICKS_FOREVER)) {
