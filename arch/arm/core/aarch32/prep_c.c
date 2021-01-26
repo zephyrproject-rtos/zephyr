@@ -103,8 +103,8 @@ static inline void z_arm_floating_point_init(void)
 	 * Upon reset, the FPU Context Control Register is 0xC0000000
 	 * (both Automatic and Lazy state preservation is enabled).
 	 */
-#if !defined(CONFIG_FPU_SHARING)
-	/* Default mode is Unshared FP registers mode. We disable the
+#if defined(CONFIG_MULTITHREADING) && !defined(CONFIG_FPU_SHARING)
+	/* Unshared FP registers (multithreading) mode. We disable the
 	 * automatic stacking of FP registers (automatic setting of
 	 * FPCA bit in the CONTROL register), upon exception entries,
 	 * as the FP registers are to be used by a single context (and
@@ -116,6 +116,8 @@ static inline void z_arm_floating_point_init(void)
 	FPU->FPCCR &= (~(FPU_FPCCR_ASPEN_Msk | FPU_FPCCR_LSPEN_Msk));
 #else
 	/*
+	 * FP register sharing (multithreading) mode or single-threading mode.
+	 *
 	 * Enable both automatic and lazy state preservation of the FP context.
 	 * The FPCA bit of the CONTROL register will be automatically set, if
 	 * the thread uses the floating point registers. Because of lazy state
@@ -123,7 +125,8 @@ static inline void z_arm_floating_point_init(void)
 	 * exception entry, however, the required area in the stack frame will
 	 * be reserved for them. This configuration improves interrupt latency.
 	 * The registers will eventually be stacked when the thread is swapped
-	 * out during context-switch.
+	 * out during context-switch or if an ISR attempts to execute floating
+	 * point instructions.
 	 */
 	FPU->FPCCR = FPU_FPCCR_ASPEN_Msk | FPU_FPCCR_LSPEN_Msk;
 #endif /* CONFIG_FPU_SHARING */
