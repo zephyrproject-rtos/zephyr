@@ -27,6 +27,7 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/gatt.h>
 #include <bluetooth/buf.h>
+#include <sys/byteorder.h>
 #include "csip.h"
 #include "csis_crypto.h"
 #include "../conn_internal.h"
@@ -156,11 +157,19 @@ static int sirk_decrypt(struct bt_conn *conn,
 
 	if (IS_ENABLED(CONFIG_BT_CSIP_TEST_SAMPLE_DATA)) {
 		/* test_k is from the sample data from A.2 in the CSIS spec */
-		static uint8_t test_k[] = {0xd9, 0xce, 0xe5, 0x3c,
-					   0x22, 0xc6, 0x1e, 0x06,
-					   0x6f, 0x69, 0x48, 0xd4,
-					   0x9b, 0x1b, 0x6e, 0x67};
+		static uint8_t test_k[] = {0x67, 0x6e, 0x1b, 0x9b,
+					   0xd4, 0x48, 0x69, 0x6f,
+					   0x06, 0x1e, 0xc6, 0x22,
+					   0x3c, 0xe5, 0xce, 0xd9};
+		static bool swapped;
+
 		BT_DBG("Decrypting with sample data K");
+
+		if (!swapped && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) {
+			/* Swap test_k to little endian */
+			sys_mem_swap(test_k, 16);
+			swapped = true;
+		}
 		k = test_k;
 	} else {
 		k = conn->le.keys->ltk.val;
