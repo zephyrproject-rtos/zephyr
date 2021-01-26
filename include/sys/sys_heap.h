@@ -76,7 +76,9 @@ void sys_heap_init(struct sys_heap *h, void *mem, size_t bytes);
  * Returns a pointer to a block of unused memory in the heap.  This
  * memory will not otherwise be used until it is freed with
  * sys_heap_free().  If no memory can be allocated, NULL will be
- * returned.
+ * returned.  The allocated memory is guaranteed to have a starting
+ * address which is a multiple of sizeof(void *).  If a bigger alignment
+ * is necessary then sys_heap_aligned_alloc() should be used instead.
  *
  * @note The sys_heap implementation is not internally synchronized.
  * No two sys_heap functions should operate on the same heap at the
@@ -93,8 +95,8 @@ void *sys_heap_alloc(struct sys_heap *h, size_t bytes);
  * Behaves in all ways like sys_heap_alloc(), except that the returned
  * memory (if available) will have a starting address in memory which
  * is a multiple of the specified power-of-two alignment value in
- * bytes.  The resulting memory can be returned to the heap using
- * sys_heap_free().
+ * bytes.  With align=0 this behaves exactly like sys_heap_alloc().
+ * The resulting memory can be returned to the heap using sys_heap_free().
  *
  * @param h Heap from which to allocate
  * @param align Alignment in bytes, must be a power of two
