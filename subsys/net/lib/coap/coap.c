@@ -146,6 +146,22 @@ int coap_packet_init(struct coap_packet *cpkt, uint8_t *data, uint16_t max_len,
 	return 0;
 }
 
+int coap_ack_init(struct coap_packet *cpkt, const struct coap_packet *req,
+		  uint8_t *data, uint16_t max_len, uint8_t code)
+{
+	uint16_t id;
+	uint8_t ver;
+	uint8_t tkl;
+	uint8_t token[COAP_TOKEN_MAX_LEN];
+
+	ver = coap_header_get_version(req);
+	id = coap_header_get_id(req);
+	tkl = code ? coap_header_get_token(req, token) : 0;
+
+	return coap_packet_init(cpkt, data, max_len, ver, COAP_TYPE_ACK, tkl,
+				token, code, id);
+}
+
 static void option_header_set_delta(uint8_t *opt, uint8_t delta)
 {
 	*opt = (delta & 0xF) << 4;
