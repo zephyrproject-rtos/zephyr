@@ -659,7 +659,7 @@ ZTEST_BMEM volatile int result;
 
 static void child_entry(void *p1, void *p2, void *p3)
 {
-	int sock = (int)p1;
+	int sock = POINTER_TO_INT(p1);
 
 	result = close(sock);
 }
@@ -668,7 +668,7 @@ static void spawn_child(int sock)
 {
 	k_thread_create(&child_thread, child_stack,
 			K_THREAD_STACK_SIZEOF(child_stack), child_entry,
-			(void *)sock, NULL, NULL, 0, K_USER,
+			INT_TO_POINTER(sock), NULL, NULL, 0, K_USER,
 			K_FOREVER);
 }
 #endif
