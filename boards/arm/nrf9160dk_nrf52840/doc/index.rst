@@ -130,8 +130,9 @@ such as LEDs and buttons, UART interfaces (VCOMx) of the interface MCU, and
 specific nRF52840 SoC pins.
 
 .. note::
-   nRF9160 signals routed to other components on the DK are not simultaneously
-   available on the DK connectors.
+   In nRF9160 DK revisions earlier than v0.14.0, nRF9160 signals routed to
+   other components on the DK are not simultaneously available on the DK
+   connectors.
 
 When compiling a project for nrf9160dk_nrf52840, the board controller firmware
 will be compiled and run automatically after the Kernel has been initialized.
@@ -206,6 +207,20 @@ on the nRF9160 DK:
 | ``nrf_interface_pins_3_5_routing`` | nRF_IF3-5_CTRL (nRF91_TRACE) |
 +------------------------------------+------------------------------+
 | ``nrf_interface_pins_6_8_routing`` | nRF_IF6-8_CTRL (nRF91_COEX)  |
++------------------------------------+------------------------------+
+
+When building for the DK revision 0.14.0 or later, you can use the following
+additional nodes (see :ref:`application_board_version` for information how to
+build for specific revisions of the board):
+
++------------------------------------+------------------------------+
+| Devicetree node label              | Analog switch name           |
++====================================+==============================+
+| ``nrf_interface_pin_9_routing``    | nRF_IF9_CTRL                 |
++------------------------------------+------------------------------+
+| ``io_expander_pins_routing``       | IO_EXP_EN                    |
++------------------------------------+------------------------------+
+| ``external_flash_pins_routing``    | EXT_MEM_CTRL                 |
 +------------------------------------+------------------------------+
 
 For example, if you want to enable the optional routing for the nRF9160 pins
