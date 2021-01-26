@@ -1956,13 +1956,13 @@ class CMake():
 
             if log_msg:
                 res = re.findall("region `(FLASH|RAM|SRAM)' overflowed by", log_msg)
-                if res and not self.overflow_as_errors:
+                if res and not self.overflow_as_errors and self.platform.simulation == 'na':
                     logger.debug("Test skipped due to {} Overflow".format(res[0]))
                     self.instance.status = "skipped"
                     self.instance.reason = "{} overflow".format(res[0])
                 else:
                     self.instance.status = "error"
-                    self.instance.reason = "Build failure"
+                    self.instance.reason = "{} overflow".format(res[0])
 
             results = {
                 "returncode": p.returncode,
