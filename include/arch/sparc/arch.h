@@ -66,7 +66,8 @@ static ALWAYS_INLINE unsigned int z_sparc_set_pil_inline(unsigned int newpil)
 	__asm__ volatile (
 		"ta %1\nnop\n" :
 		"=r" (oldpil) :
-		"i" (SPARC_SW_TRAP_SET_PIL), "r" (oldpil)
+		"i" (SPARC_SW_TRAP_SET_PIL), "r" (oldpil) :
+		"memory"
 		);
 	return oldpil;
 }
