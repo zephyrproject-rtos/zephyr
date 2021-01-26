@@ -99,7 +99,7 @@ static int cmd_inject_addr(const struct shell *shell, size_t argc, char **argv)
 	if (argc > 2) {
 		/* Usage */
 		shell_fprintf(shell, SHELL_NORMAL,
-			      "Usage: edac inject %s [addr]", argv[0]);
+			      "Usage: edac inject %s [addr]\n", argv[0]);
 		return -ENOTSUP;
 	}
 
@@ -132,7 +132,7 @@ static int cmd_inject_mask(const struct shell *shell, size_t argc, char **argv)
 	if (argc > 2) {
 		/* Usage */
 		shell_fprintf(shell, SHELL_NORMAL,
-			      "Usage: edac inject %s [mask]", argv[0]);
+			      "Usage: edac inject %s [mask]\n", argv[0]);
 		return -ENOTSUP;
 	}
 
@@ -153,10 +153,10 @@ static int cmd_inject_mask(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
-static int cmd_inject_ctrl(const struct shell *shell, size_t argc, char **argv)
+static int cmd_inject_trigger(const struct shell *shell, size_t argc,
+			      char **argv)
 {
 	const struct device *dev;
-	uint32_t value;
 
 	dev = device_get_binding(DEVICE_NAME);
 	if (!dev) {
@@ -164,17 +164,7 @@ static int cmd_inject_ctrl(const struct shell *shell, size_t argc, char **argv)
 		return -ENODEV;
 	}
 
-	if (argc == 1) {
-		return 0;
-	}
-
-	value = strtoul(argv[1], NULL, 16);
-	value &= GENMASK(2, 0);
-
-	shell_fprintf(shell, SHELL_NORMAL, "Set injection control to: 0x%x\n",
-		      value);
-
-	edac_inject_set_error_type(dev, value);
+	shell_fprintf(shell, SHELL_NORMAL, "Triggering injection\n");
 
 	edac_inject_error_trigger(dev);
 
@@ -197,12 +187,83 @@ static int cmd_inject_enable_nmi(const struct shell *shell, size_t argc,
 	return 0;
 }
 
+static const char *get_error_type(uint32_t type)
+{
+	switch (type) {
+	case EDAC_ERROR_TYPE_DRAM_COR:
+		return "correctable";
+	case EDAC_ERROR_TYPE_DRAM_UC:
+		return "uncorrectable";
+	default:
+		return "unknown";
+	}
+}
+
+static int cmd_inject_error_type_show(const struct shell *shell, size_t argc,
+				      char **argv)
+{
+	const struct device *dev;
+	uint32_t error_type;
+
+	dev = device_get_binding(DEVICE_NAME);
+	if (!dev) {
+		shell_error(shell, "IBECC device not found");
+		return -ENODEV;
+	}
+
+	error_type = edac_inject_get_error_type(dev);
+
+	shell_fprintf(shell, SHELL_NORMAL, "Injection error type: %s\n",
+		      get_error_type(error_type));
+
+	return 0;
+}
+
+static int set_error_type(const struct shell *shell, uint32_t error_type)
+{
+	const struct device *dev;
+
+	dev = device_get_binding(DEVICE_NAME);
+	if (!dev) {
+		shell_error(shell, "IBECC device not found");
+		return -ENODEV;
+	}
+
+	shell_fprintf(shell, SHELL_NORMAL, "Set injection error type: %s\n",
+		      get_error_type(error_type));
+
+	return edac_inject_set_error_type(dev, error_type);
+}
+
+static int cmd_inject_error_type_cor(const struct shell *shell, size_t argc,
+				     char **argv)
+{
+	return set_error_type(shell, EDAC_ERROR_TYPE_DRAM_COR);
+}
+
+static int cmd_inject_error_type_uc(const struct shell *shell, size_t argc,
+				    char **argv)
+{
+	return set_error_type(shell, EDAC_ERROR_TYPE_DRAM_UC);
+}
+
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_inject_error_type_cmds,
+	SHELL_CMD(correctable, NULL, "Set correctable error type",
+		  cmd_inject_error_type_cor),
+	SHELL_CMD(uncorrectable, NULL, "Set uncorrectable error type",
+		  cmd_inject_error_type_uc),
+	SHELL_SUBCMD_SET_END /* Array terminated */
+);
+
 /* EDAC Error Injection shell commands */
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_inject_cmds,
 	SHELL_CMD(addr, NULL, "Get / Set physical address", cmd_inject_addr),
 	SHELL_CMD(mask, NULL, "Get / Set address mask", cmd_inject_mask),
-	SHELL_CMD_ARG(ctrl, NULL, "Set injection control",
-		      cmd_inject_ctrl, 2, 0),
+	SHELL_CMD_ARG(trigger, NULL, "Trigger injection", cmd_inject_trigger,
+		      1, 0),
+	SHELL_CMD(error_type, &sub_inject_error_type_cmds,
+		  "Get / Set injection error type",
+		  cmd_inject_error_type_show),
 	SHELL_CMD(disable_nmi, NULL, "Disable NMI", cmd_inject_disable_nmi),
 	SHELL_CMD(enable_nmi, NULL, "Enable NMI", cmd_inject_enable_nmi),
 	SHELL_SUBCMD_SET_END /* Array terminated */
