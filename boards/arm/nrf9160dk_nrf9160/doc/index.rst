@@ -83,6 +83,31 @@ hardware features:
 | WDT       | on-chip    | watchdog             |
 +-----------+------------+----------------------+
 
+.. _nrf9160dk_additional_hardware:
+
+Additional hardware in v0.14.0+
+-------------------------------
+
+Starting from v0.14.0, additional hardware is available on the DK:
+
+* External flash memory (MX25R6435F, 64 Mb)
+* I/O expander (PCAL6408A) that can be used to interface LEDs, slide switches,
+  and buttons
+
+To use this additional hardware, specify the revision of the board that
+should be used when building your application (for more information, see
+:ref:`application_board_version`). For example, to build for nRF9160 DK v1.0.0:
+
+.. zephyr-app-commands::
+   :tool: all
+   :cd-into:
+   :board: nrf9160dk_nrf9160@1.0.0
+   :goals: build
+   :compact:
+
+Remember to also enable routing for this additional hardware in the firmware for
+:ref:`nrf9160dk_nrf52840` (see :ref:`nrf9160dk_board_controller_firmware`).
+
 Other hardware features are not supported by the Zephyr kernel.
 See `nRF9160 DK website`_ and `Nordic Semiconductor Infocenter`_
 for a complete list of nRF9160 DK board hardware features.
