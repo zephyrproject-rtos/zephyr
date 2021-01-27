@@ -23,6 +23,7 @@
 #define WDT_NODE DT_ALIAS(watchdog0)
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_window_watchdog)
 #define WDT_NODE DT_INST(0, st_stm32_window_watchdog)
+#define WDT_MAX_WINDOW  100U
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_watchdog)
 #define WDT_NODE DT_INST(0, st_stm32_watchdog)
 #elif DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_watchdog)
@@ -35,6 +36,10 @@
 #define WDT_NODE DT_INST(0, nxp_kinetis_wdog32)
 #elif DT_HAS_COMPAT_STATUS_OKAY(microchip_xec_watchdog)
 #define WDT_NODE DT_INST(0, microchip_xec_watchdog)
+#endif
+
+#ifndef WDT_MAX_WINDOW
+#define WDT_MAX_WINDOW  1000U
 #endif
 
 /*
@@ -79,9 +84,9 @@ void main(void)
 	/* Reset SoC when watchdog timer expires. */
 	wdt_config.flags = WDT_FLAG_RESET_SOC;
 
-	/* Expire watchdog after 1000 milliseconds. */
+	/* Expire watchdog after max window */
 	wdt_config.window.min = 0U;
-	wdt_config.window.max = 1000U;
+	wdt_config.window.max = WDT_MAX_WINDOW;
 
 	/* Set up watchdog callback. Jump into it when watchdog expired. */
 	wdt_config.callback = wdt_callback;
