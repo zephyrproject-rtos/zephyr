@@ -2297,6 +2297,24 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 		case LLCP_CUI_STATE_SELECT:
 			fp_mfy_select_or_use = ull_sched_mfy_win_offset_select;
 			break;
+
+		case LLCP_CUI_STATE_REJECT:
+			/* procedure request acked */
+			conn->llcp_ack = conn->llcp_req;
+			conn->llcp_cu.ack = conn->llcp_cu.req;
+			conn->llcp_conn_param.ack = conn->llcp_conn_param.req;
+
+			/* reset mutex */
+			ull_conn_upd_curr_reset();
+
+			/* enqueue control PDU */
+			pdu_ctrl_tx =
+				CONTAINER_OF(conn->llcp.conn_upd.pdu_win_offset,
+					     struct pdu_data,
+					     llctrl.conn_update_ind.win_offset);
+			tx = CONTAINER_OF(pdu_ctrl_tx, struct node_tx, pdu);
+			ctrl_tx_enqueue(conn, tx);
+			return -ECANCELED;
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 		case LLCP_CUI_STATE_OFFS_REQ:
@@ -2318,24 +2336,6 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 			tx = CONTAINER_OF(pdu_ctrl_tx, struct node_tx, pdu);
 			ctrl_tx_enqueue(conn, tx);
 			return -EINPROGRESS;
-
-		case LLCP_CUI_STATE_REJECT:
-			/* procedure request acked */
-			conn->llcp_ack = conn->llcp_req;
-			conn->llcp_cu.ack = conn->llcp_cu.req;
-			conn->llcp_conn_param.ack = conn->llcp_conn_param.req;
-
-			/* reset mutex */
-			ull_conn_upd_curr_reset();
-
-			/* enqueue control PDU */
-			pdu_ctrl_tx =
-				CONTAINER_OF(conn->llcp.conn_upd.pdu_win_offset,
-					     struct pdu_data,
-					     llctrl.conn_update_ind.win_offset);
-			tx = CONTAINER_OF(pdu_ctrl_tx, struct node_tx, pdu);
-			ctrl_tx_enqueue(conn, tx);
-			return -ECANCELED;
 
 		default:
 			LL_ASSERT(0);
