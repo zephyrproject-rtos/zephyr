@@ -78,6 +78,15 @@ static inline uint8_t esp_mode_from_flags(struct esp_data *data)
 		mode |= ESP_MODE_AP;
 	}
 
+	/*
+	 * ESP AT 1.7 does not allow to disable radio, so enter STA mode
+	 * instead.
+	 */
+	if (IS_ENABLED(CONFIG_WIFI_ESP_AT_VERSION_1_7) &&
+	    mode == ESP_MODE_NONE) {
+		mode = ESP_MODE_STA;
+	}
+
 	return mode;
 }
 
@@ -806,6 +815,9 @@ static void esp_init_work(struct k_work *work)
 	static const struct setup_cmd setup_cmds_target_baudrate[] = {
 		SETUP_CMD_NOHANDLE("AT"),
 #endif
+#if defined(CONFIG_WIFI_ESP_AT_VERSION_1_7)
+		SETUP_CMD_NOHANDLE(ESP_CMD_CWMODE(STA)),
+#endif
 #if defined(CONFIG_WIFI_ESP_IP_STATIC)
 		/* enable Static IP Config */
 		SETUP_CMD_NOHANDLE(ESP_CMD_DHCP_ENABLE(STATION, 0)),
@@ -823,8 +835,8 @@ static void esp_init_work(struct k_work *work)
 #if defined(CONFIG_WIFI_ESP_AT_VERSION_2_0)
 		SETUP_CMD_NOHANDLE(ESP_CMD_CWMODE(STA)),
 		SETUP_CMD_NOHANDLE("AT+CWAUTOCONN=0"),
-#endif
 		SETUP_CMD_NOHANDLE(ESP_CMD_CWMODE(NONE)),
+#endif
 #if defined(CONFIG_WIFI_ESP_PASSIVE_MODE)
 		SETUP_CMD_NOHANDLE("AT+CIPRECVMODE=1"),
 #endif
