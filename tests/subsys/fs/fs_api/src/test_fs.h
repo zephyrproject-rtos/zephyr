@@ -32,6 +32,7 @@ struct test_fs_data {
 	int reserve;
 };
 
+void test_fs_file_t_init(void);
 void test_fs_register(void);
 void test_mount(void);
 void test_file_statvfs(void);

@@ -72,6 +72,7 @@ void test_main(void)
 			 ztest_unit_test_setup_teardown(test_mount,
 							fs_setup,
 							dummy_teardown),
+			 ztest_unit_test(test_fs_file_t_init),
 			 ztest_unit_test(test_file_statvfs),
 			 ztest_unit_test(test_mkdir),
 			 ztest_unit_test(test_opendir),

@@ -221,6 +221,20 @@ struct fs_statvfs {
 	extern struct fs_mount_t FS_FSTAB_ENTRY(node_id)
 
 /**
+ * @brief Initialize fs_file_t object
+ *
+ * Initialized the fs_file_t object; the function needs to be invoked
+ * on object before first use with fs_open.
+ *
+ * @param zfp Pointer to file object
+ *
+ */
+static inline void fs_file_t_init(struct fs_file_t *zfp)
+{
+	*zfp = (struct fs_file_t){ 0 };
+}
+
+/**
  * @brief Open or create file
  *
  * Opens or possibly creates a file and associates a stream with it.

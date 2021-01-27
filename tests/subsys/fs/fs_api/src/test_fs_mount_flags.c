@@ -18,7 +18,9 @@ static struct fs_mount_t mp = {
 void test_mount_flags(void)
 {
 	int ret = 0;
-	struct fs_file_t fs = { 0 };
+	struct fs_file_t fs;
+
+	fs_file_t_init(&fs);
 
 	/* Format volume and add some files/dirs to check read-only flag */
 	mp.flags = 0;
