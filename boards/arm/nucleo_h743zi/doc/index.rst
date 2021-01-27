@@ -121,6 +121,8 @@ features:
 +-------------+------------+-------------------------------------+
 | Backup SRAM | on-chip    | Backup SRAM                         |
 +-------------+------------+-------------------------------------+
+| WATCHDOG    | on-chip    | independent watchdog                |
++-------------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
