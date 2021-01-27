@@ -27,6 +27,9 @@ config SYS_CLOCK_TICKS_PER_SEC
 config ARCH_HAS_CUSTOM_BUSY_WAIT
 	default y
 
+config PM
+	default y if SYS_CLOCK_EXISTS
+
 config BUILD_OUTPUT_HEX
 	default y
 
