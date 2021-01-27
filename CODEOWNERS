@@ -463,6 +463,7 @@
 /lib/util/                                @carlescufi @jakub-uC
 /lib/util/fnmatch/                        @carlescufi @jakub-uC
 /lib/util/getopt/                         @jakub-uC
+/lib/auth/                                @deangereaux
 /lib/gui/                                 @vanwinkeljan
 /lib/open-amp/                            @arnopo
 /lib/os/                                  @dcpleung @nashif @andyross
@@ -476,6 +477,7 @@
 /kernel/device.c                          @andyross @nashif
 /kernel/idle.c                            @andyross @nashif
 /samples/                                 @nashif
+/samples/authentication/                  @deangereaux
 /samples/basic/minimal/                   @carlescufi
 /samples/basic/servo_motor/boards/*microbit* @jhe
 /samples/bluetooth/                       @jhedberg @Vudentz @joerchan
