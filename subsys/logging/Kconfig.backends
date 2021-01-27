@@ -52,7 +52,6 @@ endif # LOG_BACKEND_SWO
 config LOG_BACKEND_RTT
 	bool "Enable Segger J-Link RTT backend"
 	depends on USE_SEGGER_RTT
-	depends on !LOG2
 	default y if !SHELL_BACKEND_RTT
 	help
 	  When enabled, backend will use RTT for logging. This backend works on a per
