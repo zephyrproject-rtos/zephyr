@@ -869,7 +869,7 @@ static int send_at_cmd(struct hl7800_socket *sock, const uint8_t *data,
 		}
 		if (no_id_resp) {
 			strncpy(ictx.no_id_resp_cmd, data,
-				sizeof(ictx.no_id_resp_cmd));
+				sizeof(ictx.no_id_resp_cmd) - 1);
 			ictx.search_no_id_resp = true;
 		}
 
