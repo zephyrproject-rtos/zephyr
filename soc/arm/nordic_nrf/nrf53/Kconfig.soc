@@ -64,6 +64,7 @@ config SOC_NRF5340_CPUAPP
 	select HAS_HW_NRF_USBREG
 	select HAS_HW_NRF_WDT0
 	select HAS_HW_NRF_WDT1
+	select HAS_PM
 
 config SOC_NRF5340_CPUNET
 	depends on SOC_SERIES_NRF53X
