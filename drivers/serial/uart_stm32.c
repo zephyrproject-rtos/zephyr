@@ -1373,6 +1373,9 @@ static int uart_stm32_init(const struct device *dev)
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)
 	config->uconf.irq_config_func(dev);
 #endif
+#ifdef CONFIG_PM_DEVICE
+	data->pm_state = DEVICE_PM_ACTIVE_STATE;
+#endif /* CONFIG_PM_DEVICE */
 
 #ifdef CONFIG_UART_ASYNC_API
 	return uart_stm32_async_init(dev);
@@ -1380,6 +1383,67 @@ static int uart_stm32_init(const struct device *dev)
 	return 0;
 #endif
 }
+
+#ifdef CONFIG_PM_DEVICE
+static int uart_stm32_set_power_state(const struct device *dev,
+					      uint32_t new_state)
+{
+	USART_TypeDef *UartInstance = UART_STRUCT(dev);
+	struct uart_stm32_data *data = DEV_DATA(dev);
+
+	/* setting a low power mode */
+	if (new_state != DEVICE_PM_ACTIVE_STATE) {
+		/* Make sure that no USART transfer is on-going */
+		while (LL_USART_IsActiveFlag_BUSY(UartInstance) == 1) {
+		}
+		while (LL_USART_IsActiveFlag_TC(UartInstance) == 0) {
+		}
+		/* Make sure that USART is ready for reception */
+		while (LL_USART_IsActiveFlag_REACK(UartInstance) == 0) {
+		}
+		/* Clear OVERRUN flag */
+		LL_USART_ClearFlag_ORE(UartInstance);
+		/* Leave UartInstance unchanged */
+	}
+	data->pm_state = new_state;
+	/* UartInstance returning to active mode has nothing special to do */
+	return 0;
+}
+
+/**
+ * @brief disable the UART channel
+ *
+ * This routine is called to put the device in low power mode.
+ *
+ * @param dev UART device struct
+ *
+ * @return 0
+ */
+static int uart_stm32_pm_control(const struct device *dev,
+					 uint32_t ctrl_command,
+					 void *context, device_pm_cb cb,
+					 void *arg)
+{
+	struct uart_stm32_data *data = DEV_DATA(dev);
+
+	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
+		uint32_t new_state = *((const uint32_t *)context);
+
+		if (new_state != data->pm_state) {
+			uart_stm32_set_power_state(dev, new_state);
+		}
+	} else {
+		__ASSERT_NO_MSG(ctrl_command == DEVICE_PM_GET_POWER_STATE);
+		*((uint32_t *)context) = data->pm_state;
+	}
+
+	if (cb) {
+		cb(dev, 0, context, arg);
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
 
 #ifdef CONFIG_UART_ASYNC_API
 #define DMA_CHANNEL_CONFIG(id, dir)					\
@@ -1475,7 +1539,7 @@ static struct uart_stm32_data uart_stm32_data_##index = {		\
 									\
 DEVICE_DT_INST_DEFINE(index,						\
 		    &uart_stm32_init,					\
-		    device_pm_control_nop,				\
+		    &uart_stm32_pm_control,				\
 		    &uart_stm32_data_##index, &uart_stm32_cfg_##index,	\
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
 		    &uart_stm32_driver_api);				\
