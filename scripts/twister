@@ -1114,7 +1114,17 @@ def main():
         return
 
     if options.subset:
-        suite.instances = OrderedDict(sorted(suite.instances.items()))
+        # Test instances are sorted depending on the context. For CI runs
+        # the execution order is: "plat1-testA, plat1-testB, ...,
+        # plat1-testZ, plat2-testA, ...". For hardware tests
+        # (device_testing), were multiple physical platforms can run the tests
+        # in parallel, it is more efficient to run in the order:
+        # "plat1-testA, plat2-testA, ..., plat1-testB, plat2-testB, ..."
+        if options.device_testing:
+            suite.instances = OrderedDict(sorted(suite.instances.items(),
+                                key=lambda x: x[0][x[0].find("/") + 1:]))
+        else:
+            suite.instances = OrderedDict(sorted(suite.instances.items()))
 
         subset, sets = options.subset.split("/")
         subset = int(subset)
