@@ -10,10 +10,10 @@ if [ -z "$2" ]
   then
     echo "Signing using default key"
     west sign -d ${BUILD} -t rimage
-else
+elif [ -n "$3" ] && [ -n "$4" ]
+  then
     echo "Signing with key " $key
-    west sign -d ${BUILD} -t rimage -- -k $2
+    west sign -d ${BUILD} -t rimage -p $4 -D $3 -- -k $2
 fi
-
 echo ${FLASHER} -f ${FIRMWARE}
 ${FLASHER} -f ${FIRMWARE} || /bin/true  2>&1
