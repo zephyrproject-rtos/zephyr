@@ -102,6 +102,74 @@ extern "C" {
 #define DT_PWMS_LABEL(node_id) DT_PWMS_LABEL_BY_IDX(node_id, 0)
 
 /**
+ * @brief Get the node identifier for the PWM controller from a
+ *        pwms property at an index
+ *
+ * Example devicetree fragment:
+ *
+ *     pwm1: pwm-controller@... { ... };
+ *
+ *     pwm2: pwm-controller@... { ... };
+ *
+ *     n: node {
+ *             pwms = <&pwm1 1 PWM_POLARITY_NORMAL>,
+ *                    <&pwm2 3 PWM_POLARITY_INVERTED>;
+ *     };
+ *
+ * Example usage:
+ *
+ *     DT_PWMS_CTLR_BY_IDX(DT_NODELABEL(n), 0) // DT_NODELABEL(pwm1)
+ *     DT_PWMS_CTLR_BY_IDX(DT_NODELABEL(n), 1) // DT_NODELABEL(pwm2)
+ *
+ * @param node_id node identifier for a node with a pwms property
+ * @param idx logical index into pwms property
+ * @return the node identifier for the PWM controller referenced at
+ *         index "idx"
+ * @see DT_PROP_BY_PHANDLE_IDX()
+ */
+#define DT_PWMS_CTLR_BY_IDX(node_id, idx) \
+	DT_PHANDLE_BY_IDX(node_id, pwms, idx)
+
+/**
+ * @brief Get the node identifier for the PWM controller from a
+ *        pwms property by name
+ *
+ * Example devicetree fragment:
+ *
+ *     pwm1: pwm-controller@... { ... };
+ *
+ *    pwm2: pwm-controller@... { ... };
+ *
+ *     n: node {
+ *             pwms = <&pwm1 1 PWM_POLARITY_NORMAL>,
+ *                    <&pwm2 3 PWM_POLARITY_INVERTED>;
+ *             pwm-names = "alpha", "beta";
+ *     };
+ *
+ * Example usage:
+ *
+ *     DT_PWMS_CTLR_BY_NAME(DT_NODELABEL(n), alpha) // DT_NODELABEL(pwm1)
+ *     DT_PWMS_CTLR_BY_NAME(DT_NODELABEL(n), beta)  // DT_NODELABEL(pwm2)
+ *
+ * @param node_id node identifier for a node with a pwms property
+ * @param name lowercase-and-underscores name of a pwms element
+ *             as defined by the node's pwm-names property
+ * @return the node identifier for the PWM controller in the named element
+ * @see DT_PHANDLE_BY_NAME()
+ */
+#define DT_PWMS_CTLR_BY_NAME(node_id, name) \
+	DT_PHANDLE_BY_NAME(node_id, pwms, name)
+
+/**
+ * @brief Equivalent to DT_PWMS_CTLR_BY_IDX(node_id, 0)
+ * @param node_id node identifier for a node with a pwms property
+ * @return the node identifier for the PWM controller at index 0
+ *         in the node's "pwms" property
+ * @see DT_PWMS_CTLR_BY_IDX()
+ */
+#define DT_PWMS_CTLR(node_id) DT_PWMS_CTLR_BY_IDX(node_id, 0)
+
+/**
  * @brief Get PWM specifier's cell value at an index
  *
  * Example devicetree fragment:
@@ -363,6 +431,40 @@ extern "C" {
  * @see DT_PWMS_LABEL_BY_IDX()
  */
 #define DT_INST_PWMS_LABEL(inst) DT_INST_PWMS_LABEL_BY_IDX(inst, 0)
+
+/**
+ * @brief Get the node identifier for the PWM controller from a
+ *        DT_DRV_COMPAT instance's pwms property at an index
+ *
+ * @param inst DT_DRV_COMPAT instance number
+ * @param idx logical index into pwms property
+ * @return the node identifier for the PWM controller referenced at
+ *         index "idx"
+ * @see DT_PWMS_CTLR_BY_IDX()
+ */
+#define DT_INST_PWMS_CTLR_BY_IDX(inst, idx) \
+	DT_PWMS_CTLR_BY_IDX(DT_DRV_INST(inst), idx)
+
+/**
+ * @brief Get the node identifier for the PWM controller from a
+ *        DT_DRV_COMPAT instance's pwms property by name
+ * @param inst DT_DRV_COMPAT instance number
+ * @param name lowercase-and-underscores name of a pwms element
+ *             as defined by the node's pwm-names property
+ * @return the node identifier for the PWM controller in the named element
+ * @see DT_PWMS_CTLR_BY_NAME()
+ */
+#define DT_INST_PWMS_CTLR_BY_NAME(inst, name) \
+	DT_PWMS_CTLR_BY_NAME(DT_DRV_INST(inst), name)
+
+/**
+ * @brief Equivalent to DT_INST_PWMS_CTLR_BY_IDX(inst, 0)
+ * @param inst DT_DRV_COMPAT instance number
+ * @return the node identifier for the PWM controller at index 0
+ *         in the instance's "pwms" property
+ * @see DT_PWMS_CTLR_BY_IDX()
+ */
+#define DT_INST_PWMS_CTLR(inst) DT_INST_PWMS_CTLR_BY_IDX(inst, 0)
 
 /**
  * @brief Get a DT_DRV_COMPAT instance's PWM specifier's cell value
