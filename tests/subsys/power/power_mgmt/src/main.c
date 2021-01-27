@@ -67,7 +67,7 @@ __weak bool pm_policy_low_power_devices(enum pm_state state)
 /* Our PM policy handler */
 struct pm_state_info pm_policy_next_state(int ticks)
 {
-	struct pm_state_info info;
+	struct pm_state_info info = {};
 
 	/* make sure this is idle thread */
 	zassert_true(z_is_idle_thread_object(_current), NULL);
