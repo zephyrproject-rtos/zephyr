@@ -858,6 +858,13 @@ class DeviceHandler(Handler):
 
         self.instance.results = harness.tests
 
+        # sometimes a test instance hasn't been executed successfully with an
+        # empty dictionary results, in order to include it into final report,
+        # so fill the results as BLOCK
+        if self.instance.results == {}:
+            for k in self.instance.testcase.cases:
+                self.instance.results[k] = 'BLOCK'
+
         if harness.state:
             self.set_state(harness.state, handler_time)
             if  harness.state == "failed":
