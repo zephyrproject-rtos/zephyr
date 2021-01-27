@@ -118,6 +118,10 @@
 	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pb5>;
 };
 
+&backup_sram {
+	status = "okay";
+};
+
 &flash0 {
 	partitions {
 		compatible = "fixed-partitions";
