@@ -13,14 +13,4 @@ config SPI_STM32_INTERRUPT
 	default y
 	depends on SPI
 
-if WATCHDOG
-
-config WWDG_STM32
-	default y
-
-config IWDG_STM32
-	default n
-
-endif # WATCHDOG
-
 endif # BOARD_NUCLEO_F401RE

@@ -36,16 +36,6 @@ config PINMUX_STM32
 	default y
 	depends on PINMUX
 
-if WATCHDOG
-
-config IWDG_STM32
-	default y
-
-config WWDG_STM32
-	default n
-
-endif # WATCHDOG
-
 config PWM_STM32
 	default y
 	depends on PWM
