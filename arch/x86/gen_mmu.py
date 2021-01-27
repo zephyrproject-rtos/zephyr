@@ -457,8 +457,7 @@ def main():
     debug("building %s" % pclass.__name__)
 
     vm_base = syms["CONFIG_KERNEL_VM_BASE"]
-    # Work around #31562
-    vm_size = syms["CONFIG_KERNEL_VM_SIZE"] & 0xFFFFFFFF
+    vm_size = syms["CONFIG_KERNEL_VM_SIZE"]
 
     if isdef("CONFIG_ARCH_MAPS_ALL_RAM"):
         image_base = syms["CONFIG_SRAM_BASE_ADDRESS"]
