@@ -13,8 +13,8 @@ tests:
             - "Waiting for reset..."
             - "Watchdog sample application"
     depends_on: watchdog
-    platform_exclude: nucleo_l496zg nucleo_f401re
-  sample.drivers.watchdog.nucleo_l496zg:
+    filter: not dt_compat_enabled("st,stm32-window-watchdog")
+  sample.drivers.watchdog.stm32wwdg:
     tags: drivers
     harness: console
     harness_config:
@@ -25,6 +25,8 @@ tests:
             - "Feeding watchdog..."
             - "Waiting for reset..."
             - "Watchdog sample application"
+    tags: drivers watchdog
+    filter: dt_compat_enabled("st,stm32-window-watchdog")
     depends_on: watchdog
-    platform_allow: nucleo_l496zg
-    extra_args: CONF_FILE="prj.conf;nucleo_l496zg.conf"
+    extra_configs:
+      - CONFIG_CLOCK_STM32_APB1_PRESCALER=16
