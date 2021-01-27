@@ -235,7 +235,7 @@ static int erase_sector(const struct device *dev, int offset)
 		return rc;
 	}
 
-	*(sector.cr) &= FLASH_CR_SNB;
+	*(sector.cr) &= ~FLASH_CR_SNB;
 	*(sector.cr) |= (FLASH_CR_SER
 		| ((sector.sector_index << FLASH_CR_SNB_Pos) & FLASH_CR_SNB));
 	*(sector.cr) |= FLASH_CR_START;
