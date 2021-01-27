@@ -38,6 +38,10 @@ over Bluetooth and another authenticates over a serial link.
 
 :option:`CONFIG_AUTH_THREAD_PRIORITY`:  Authentication thread priority.
 
+The Authentication Library requires the use of a cryptographically secure random number generator. Use the
+appropriate Kconfig options for the selected SOC to enable CONFIG_ENTROPY_GENERATOR and
+CONFIG_ENTROPY_DEVICE_RANDOM_GENERATOR options.
+
 Examples of API usage:
 -----------------------------
 
@@ -104,6 +108,15 @@ Authentication Methods
 -------------------------
 Two authentication methods are supported, DTLS and simple Challenge-Response. However, the authentication
 architecture can support additional authentication methods in the future.
+
+.. note::
+
+   Depending on the authentication method, subsequent messages over the transport link may not be securely
+   encrypted. The Challenge-Response method **does not** provide encryption of subsequent messages after the
+   initial authentication has completed.  The DTLS method **does** provide encryption for subsequent messages
+   by using the ``auth_lib_dtls_send()`` and ``auth_lib_dtls_recv()`` functions.
+
+
 
 * DTLS. The TLS protocol is the gold standard of authentication and securing network communications. DTLS
   is part of the TLS protocol, but designed for IP datagrams which are lighter weight and ideal for resource

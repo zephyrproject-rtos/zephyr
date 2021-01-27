@@ -483,7 +483,7 @@ static void auth_status(struct authenticate_conn *auth_conn,  enum auth_instance
 	}
 #endif
 
-	if(auth_lib_is_finished(auth_conn, NULL)) {
+	if (auth_lib_is_finished(auth_conn, NULL)) {
 		k_sem_give(&auth_done_sem);
 	}
 }
@@ -504,7 +504,7 @@ static void echo_msg(void)
 	int msg_len = sizeof(send_msg_buffer);
 
 
-	while(true) {
+	while (true) {
 
 		/* set buffer with known value, increment for each loop. */
 		memset(send_msg_buffer, msg_cnt, sizeof(send_msg_buffer));
@@ -512,7 +512,7 @@ static void echo_msg(void)
 		ret = auth_lib_dtls_send(&central_auth_conn, send_msg_buffer, msg_len);
 
 		/* if error on send */
-		if(ret != msg_len) {
+		if (ret != msg_len) {
 			LOG_ERR("Failed to send echo test message, ret: %d", ret);
 			break;
 		}
@@ -520,13 +520,13 @@ static void echo_msg(void)
 		/* wait for response */
 		ret = auth_lib_dtls_recv(&central_auth_conn, recv_msg_buffer, sizeof(recv_msg_buffer));
 
-		if(ret < 0) {
+		if (ret < 0) {
 			LOG_ERR("Failed to recv echo test message, ret: %d", ret);
 			break;
 		}
 
 		/* verify message */
-		if(memcmp(send_msg_buffer, recv_msg_buffer, msg_len) != 0) {
+		if (memcmp(send_msg_buffer, recv_msg_buffer, msg_len) != 0) {
 			LOG_ERR("Echo message check failed.");
 			break;
 		}

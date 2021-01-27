@@ -290,7 +290,7 @@ static void auth_status(struct authenticate_conn *auth_conn, enum auth_instance_
 	}
 #endif
 
-	if(auth_lib_is_finished(auth_conn, NULL)) {
+	if (auth_lib_is_finished(auth_conn, NULL)) {
 		k_sem_give(&auth_done_sem);
 	}
 }
@@ -310,12 +310,12 @@ static void echo_msg(void)
 	int msg_cnt = 1;
 	int ret;
 
-	while(true) {
+	while (true) {
 
 		/* wait for response */
 		recv_cnt = auth_lib_dtls_recv(&auth_conn, recv_msg_buffer, sizeof(recv_msg_buffer));
 
-		if(recv_cnt < 0) {
+		if( recv_cnt < 0) {
 			LOG_ERR("Failed to recv echo test message, ret: %d", recv_cnt);
 			break;
 		}
@@ -324,7 +324,7 @@ static void echo_msg(void)
 		ret = auth_lib_dtls_send(&auth_conn, recv_msg_buffer, recv_cnt);
 
 		/* if error on send */
-		if(ret < 0) {
+		if (ret < 0) {
 			LOG_ERR("Failed to send echo test message, ret: %d", ret);
 			break;
 		}

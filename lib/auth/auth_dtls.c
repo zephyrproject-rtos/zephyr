@@ -157,7 +157,7 @@ static void auth_init_context(struct mbed_tls_context *mbed_ctx)
 	mbedtls_ctr_drbg_init(&mbed_ctx->ctr_drbg);
 	mbedtls_entropy_init(&mbed_ctx->entropy);
 
-	auth_get_random(mbed_ctx->cookie, sizeof(mbed_ctx->cookie));
+	sys_csrand_get(mbed_ctx->cookie, sizeof(mbed_ctx->cookie));
 }
 
 /**
@@ -626,7 +626,7 @@ static int auth_tls_entropy(void *data, unsigned char *output, size_t len,
 {
 	(void) data;
 
-	auth_get_random(output, len);
+	sys_csrand_get(output, len);
 	*olen = len;
 
 	return 0;
@@ -640,13 +640,13 @@ int auth_dtls_send(struct authenticate_conn *auth_conn, void *data, size_t len)
 	int bytes_sent;
 	struct mbed_tls_context *mbed_ctx = (struct mbed_tls_context *)auth_conn->internal_obj;
 
-	if(mbed_ctx == NULL) {
+	if (mbed_ctx == NULL) {
 		return AUTH_ERROR_INTERNAL;
 	}
 
 	bytes_sent = mbedtls_ssl_write(&mbed_ctx->ssl, data, len);
 
-	if(bytes_sent < 0) {
+	if (bytes_sent < 0) {
 		LOG_ERR("Failed to send via DTLS, error: -0x%x", -bytes_sent);
 		return AUTH_ERROR_IO_ERR;
 	}
@@ -662,13 +662,13 @@ int auth_dtls_recv(struct authenticate_conn *auth_conn, void *buf, size_t buf_le
 	int bytes_recv;
 	struct mbed_tls_context *mbed_ctx = (struct mbed_tls_context *)auth_conn->internal_obj;
 
-	if(mbed_ctx == NULL) {
+	if (mbed_ctx == NULL) {
 		return AUTH_ERROR_INTERNAL;
 	}
 
 	bytes_recv = mbedtls_ssl_read(&mbed_ctx->ssl, buf, buf_len);
 
-	if(bytes_recv < 0) {
+	if (bytes_recv < 0) {
 		LOG_ERR("Failed to receive via DTLS, error: -0x%x", -bytes_recv);
 		return AUTH_ERROR_IO_ERR;
 	}

@@ -333,13 +333,4 @@ void auth_message_hdr_to_cpu(struct auth_message_frag_hdr *frag_hdr);
  */
 void auth_message_hdr_to_be16(struct auth_message_frag_hdr *frag_hdr);
 
-/**
- * Get random numbers
- *
- * @param buf  Buffer to return random bytes.
- * @param num  Number of random bytes requested.
- */
-void auth_get_random(uint8_t *buf, size_t num);
-
 #endif   /* ZEPHYR_INCLUDE_AUTH_INTERNAL_H_ */
-

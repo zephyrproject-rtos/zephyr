@@ -278,13 +278,13 @@ int auth_lib_dtls_send(struct authenticate_conn *auth_conn, void *data, size_t l
 	/* Check auth type, only able to send when DTLS is used.  Future
 	 * versions may enable sending over an encrypted link after authentication.
 	 */
-	if((auth_conn->authflags & AUTH_CONN_DTLS_AUTH_METHOD) != AUTH_CONN_DTLS_AUTH_METHOD) {
+	if ((auth_conn->authflags & AUTH_CONN_DTLS_AUTH_METHOD) != AUTH_CONN_DTLS_AUTH_METHOD) {
 		LOG_ERR("Connection not using DTLS");
 		return AUTH_ERROR_INVALID_PARAM;
 	}
 
 	/* Can only send if authentication is complete. */
-	if(auth_conn->curr_status != AUTH_STATUS_SUCCESSFUL) {
+	if (auth_conn->curr_status != AUTH_STATUS_SUCCESSFUL) {
 		LOG_ERR("Unable to send, authentication not successful.");
 		return AUTH_ERROR_XPORT_SEND;
 	}
@@ -306,13 +306,13 @@ int auth_lib_dtls_recv(struct authenticate_conn *auth_conn, void *data, size_t l
 	/* Check auth type, only able to send when DTLS is used.  Future
 	 * versions may enable sending over an encrypted link after authentication.
 	 */
-	if((auth_conn->authflags & AUTH_CONN_DTLS_AUTH_METHOD) != AUTH_CONN_DTLS_AUTH_METHOD) {
+	if ((auth_conn->authflags & AUTH_CONN_DTLS_AUTH_METHOD) != AUTH_CONN_DTLS_AUTH_METHOD) {
 		LOG_ERR("Connection not using DTLS");
 		return AUTH_ERROR_INVALID_PARAM;
 	}
 
 	/* Can only send if authentication is complete. */
-	if(auth_conn->curr_status != AUTH_STATUS_SUCCESSFUL) {
+	if (auth_conn->curr_status != AUTH_STATUS_SUCCESSFUL) {
 		LOG_ERR("Unable to send, authentication not successful.");
 		return AUTH_ERROR_XPORT_SEND;
 	}
@@ -344,7 +344,7 @@ bool auth_lib_is_finished(struct authenticate_conn *auth_conn, enum auth_status 
 
 	}
 
-	if(status != NULL) {
+	if (status != NULL) {
 		*status = auth_conn->curr_status;
 	}
 
