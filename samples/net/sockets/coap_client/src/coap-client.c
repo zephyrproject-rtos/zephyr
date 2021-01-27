@@ -140,7 +140,8 @@ static int send_simple_coap_request(uint8_t method)
 	}
 
 	r = coap_packet_init(&request, data, MAX_COAP_MSG_LEN,
-			     1, COAP_TYPE_CON, 8, coap_next_token(),
+			     COAP_VERSION_1, COAP_TYPE_CON,
+			     8, coap_next_token(),
 			     method, coap_next_id());
 	if (r < 0) {
 		LOG_ERR("Failed to init CoAP message");
@@ -326,7 +327,8 @@ static int send_large_coap_request(void)
 	}
 
 	r = coap_packet_init(&request, data, MAX_COAP_MSG_LEN,
-			     1, COAP_TYPE_CON, 8, coap_next_token(),
+			     COAP_VERSION_1, COAP_TYPE_CON,
+			     8, coap_next_token(),
 			     COAP_METHOD_GET, coap_next_id());
 	if (r < 0) {
 		LOG_ERR("Failed to init CoAP message");
@@ -398,7 +400,7 @@ static int send_obs_reply_ack(uint16_t id, uint8_t *token, uint8_t tkl)
 	}
 
 	r = coap_packet_init(&request, data, MAX_COAP_MSG_LEN,
-			     1, COAP_TYPE_ACK, tkl, token, 0, id);
+			     COAP_VERSION_1, COAP_TYPE_ACK, tkl, token, 0, id);
 	if (r < 0) {
 		LOG_ERR("Failed to init CoAP message");
 		goto end;
@@ -483,7 +485,8 @@ static int send_obs_coap_request(void)
 	}
 
 	r = coap_packet_init(&request, data, MAX_COAP_MSG_LEN,
-			     1, COAP_TYPE_CON, 8, coap_next_token(),
+			     COAP_VERSION_1, COAP_TYPE_CON,
+			     8, coap_next_token(),
 			     COAP_METHOD_GET, coap_next_id());
 	if (r < 0) {
 		LOG_ERR("Failed to init CoAP message");
@@ -528,7 +531,8 @@ static int send_obs_reset_coap_request(void)
 	}
 
 	r = coap_packet_init(&request, data, MAX_COAP_MSG_LEN,
-			     1, COAP_TYPE_RESET, 8, coap_next_token(),
+			     COAP_VERSION_1, COAP_TYPE_RESET,
+			     8, coap_next_token(),
 			     0, coap_next_id());
 	if (r < 0) {
 		LOG_ERR("Failed to init CoAP message");

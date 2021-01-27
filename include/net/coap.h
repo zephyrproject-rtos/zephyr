@@ -77,6 +77,8 @@ enum coap_method {
 
 #define COAP_REQUEST_MASK 0x07
 
+#define COAP_VERSION_1 1U
+
 /**
  * @brief CoAP packets may be of one of these types.
  */
