@@ -27,6 +27,10 @@ uint32_t sysview_get_timestamp(void)
 
 uint32_t sysview_get_interrupt(void)
 {
+#ifdef CONFIG_CPU_CORTEX_M
+	interrupt = ((SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk) >>
+		     SCB_ICSR_VECTACTIVE_Pos);
+#endif
 	return interrupt;
 }
 
