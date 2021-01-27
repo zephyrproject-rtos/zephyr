@@ -51,6 +51,9 @@ struct bt_bass_cb_t {
 	void (*pa_sync_req)(uint8_t src_id, uint32_t bis_sync,
 			    bt_addr_le_t *addr, uint8_t adv_sid,
 			    uint8_t metadata_len, uint8_t *metadata);
+	void (*past_req)(struct bt_conn *conn, uint8_t src_id,
+			 uint32_t bis_sync, bt_addr_le_t *addr,
+			 uint8_t metadata_len, uint8_t *metadata);
 	void (*pa_sync_term_req)(uint8_t src_id);
 #endif /* defined(CONFIG_BT_BASS_AUTO_SYNC) */
 };

@@ -16,6 +16,7 @@
 #include <bluetooth/gatt.h>
 #include <bluetooth/bluetooth.h>
 #include "../host/audio/bass.h"
+#include "../host/hci_core.h"
 #include "bt.h"
 
 static const char *phy2str(uint8_t phy)
@@ -71,16 +72,53 @@ static void bass_client_recv_state_cb(struct bt_conn *conn, int err,
 
 	if (err) {
 		shell_error(ctx_shell, "BASS recv state read failed (%d)", err);
-	} else {
-		bt_addr_le_to_str(&state->addr, le_addr, sizeof(le_addr));
-		bin2hex(state->metadata, state->metadata_len,
-			metadata, sizeof(metadata));
-		shell_print(ctx_shell, "BASS recv state: src_id %u, addr %s, "
-			    "sid %u, sync_state %u, bis_sync_state 0x%x, "
-			    "big_enc %u, metadata_len %u, metadata %s",
-			    state->src_id, le_addr, state->adv_sid,
-			    state->pa_sync_state, state->bis_sync_state,
-			    state->big_enc, state->metadata_len, metadata);
+		return;
+	}
+
+
+	bt_addr_le_to_str(&state->addr, le_addr, sizeof(le_addr));
+	bin2hex(state->metadata, state->metadata_len,
+		metadata, sizeof(metadata));
+	shell_print(ctx_shell, "BASS recv state: src_id %u, addr %s, "
+		    "sid %u, sync_state %u, bis_sync_state 0x%x, "
+		    "big_enc %u, metadata_len %u, metadata %s",
+		    state->src_id, le_addr, state->adv_sid,
+		    state->pa_sync_state, state->bis_sync_state,
+		    state->big_enc, state->metadata_len, metadata);
+
+
+	if (state->pa_sync_state == BASS_PA_STATE_INFO_REQ) {
+		struct bt_le_per_adv_sync *per_adv_sync = NULL;
+
+		/* Lookup matching PA sync */
+
+		/* TODO: Implement a get_addr function for PA syncs */
+		for (int i = 0; i < ARRAY_SIZE(per_adv_syncs); i++) {
+			if (per_adv_syncs[i] &&
+			    !bt_addr_le_cmp(&per_adv_syncs[i]->addr,
+					    &state->addr)) {
+				per_adv_sync = per_adv_syncs[i];
+				break;
+			}
+		}
+
+		if (per_adv_sync == NULL) {
+			shell_error(ctx_shell,
+				    "No periodic adv sync available");
+			/* Nothing more we can really do except wait for server
+			 * timeout
+			 */
+			return;
+		}
+
+		err = bt_le_per_adv_sync_transfer(per_adv_sync,
+						  conn, BT_UUID_BASS_VAL);
+
+		if (err) {
+			shell_error(ctx_shell,
+				    "Could not transfer periodic adv sync: %d",
+				    err);
+		}
 	}
 }
 
