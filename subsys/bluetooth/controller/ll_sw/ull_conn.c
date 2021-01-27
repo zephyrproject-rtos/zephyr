@@ -2346,14 +2346,15 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 		uint32_t periodic_us;
 		uint16_t latency;
 
-#if defined(CONFIG_BT_PERIPHERAL)
+#if defined(CONFIG_BT_PERIPHERAL) && defined(CONFIG_BT_CTLR_LE_ENC)
 		if (conn->lll.role && (conn->slave.llcp_type != LLCP_NONE)) {
-			/* Local peripheral initiated PHY update completed while
-			 * a remote central had initiated encryption procedure
+			/* Local peripheral initiated connection update
+			 * completed while a remote central had initiated
+			 * encryption procedure
 			 */
 			conn->slave.llcp_type = LLCP_NONE;
 		} else
-#endif /* CONFIG_BT_PERIPHERAL */
+#endif /* CONFIG_BT_PERIPHERAL && CONFIG_BT_CTLR_LE_ENC */
 		{
 			/* procedure request acked */
 			conn->llcp_ack = conn->llcp_req;
@@ -2630,14 +2631,15 @@ static inline void event_ch_map_prep(struct ll_conn *conn,
 			    <= 0x7FFF) {
 		struct lll_conn *lll = &conn->lll;
 
-#if defined(CONFIG_BT_PERIPHERAL)
+#if defined(CONFIG_BT_PERIPHERAL) && defined(CONFIG_BT_CTLR_LE_ENC)
 		if (conn->lll.role && (conn->slave.llcp_type != LLCP_NONE)) {
-			/* Local peripheral initiated PHY update completed while
-			 * a remote central had initiated encryption procedure
+			/* Local peripheral initiated channel map update
+			 * completed while a remote central had initiated
+			 * encryption procedure
 			 */
 			conn->slave.llcp_type = LLCP_NONE;
 		} else
-#endif /* CONFIG_BT_PERIPHERAL */
+#endif /* CONFIG_BT_PERIPHERAL && CONFIG_BT_CTLR_LE_ENC */
 		{
 			/* procedure request acked */
 			conn->llcp_ack = conn->llcp_req;
@@ -3757,14 +3759,14 @@ static inline void event_phy_upd_ind_prep(struct ll_conn *conn,
 		struct node_rx_pdu *rx;
 		uint8_t old_tx, old_rx;
 
-#if defined(CONFIG_BT_PERIPHERAL)
+#if defined(CONFIG_BT_PERIPHERAL) && defined(CONFIG_BT_CTLR_LE_ENC)
 		if (conn->lll.role && (conn->slave.llcp_type != LLCP_NONE)) {
 			/* Local peripheral initiated PHY update completed while
 			 * a remote central had initiated encryption procedure
 			 */
 			conn->slave.llcp_type = LLCP_NONE;
 		} else
-#endif /* CONFIG_BT_PERIPHERAL */
+#endif /* CONFIG_BT_PERIPHERAL && CONFIG_BT_CTLR_LE_ENC */
 		{
 			/* procedure request acked */
 			conn->llcp_ack = conn->llcp_req;
@@ -6500,6 +6502,7 @@ static uint8_t force_md_cnt_calc(struct lll_conn *lll_conn, uint32_t tx_rate)
 {
 	uint32_t time_incoming, time_outgoing;
 	uint8_t force_md_cnt;
+	uint8_t mic_size;
 	uint8_t phy;
 
 #if defined(CONFIG_BT_CTLR_PHY)
@@ -6508,10 +6511,15 @@ static uint8_t force_md_cnt_calc(struct lll_conn *lll_conn, uint32_t tx_rate)
 	phy = PHY_1M;
 #endif /* !CONFIG_BT_CTLR_PHY */
 
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+	mic_size = PDU_MIC_SIZE * lll_conn->enc_tx;
+#else /* !CONFIG_BT_CTLR_LE_ENC */
+	mic_size = 0U;
+#endif /* !CONFIG_BT_CTLR_LE_ENC */
+
 	time_incoming = (LL_LENGTH_OCTETS_RX_MAX << 3) *
 			1000000UL / tx_rate;
-	time_outgoing = PKT_DC_US(LL_LENGTH_OCTETS_RX_MAX,
-				  (PDU_MIC_SIZE * lll_conn->enc_tx), phy) +
+	time_outgoing = PKT_DC_US(LL_LENGTH_OCTETS_RX_MAX, mic_size, phy) +
 			PKT_DC_US(0U, 0U, phy) +
 			(EVENT_IFS_US << 1);
 
