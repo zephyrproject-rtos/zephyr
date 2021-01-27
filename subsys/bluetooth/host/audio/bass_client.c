@@ -111,8 +111,6 @@ static int parse_recv_state(const void *data, uint16_t length,
 		       bt_addr_le_str(&recv_state->addr),
 		       recv_state->adv_sid, recv_state->metadata_len);
 
-		/* TODO: Perform PAST if requested and supported */
-
 	} else {
 		BT_DBG("Invalid receive state length %u, expected %u",
 		       length, BASS_ACTUAL_SIZE(*new_recv_state));
