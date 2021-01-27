@@ -20,3 +20,4 @@ supported:
   - netif:eth
   - spi
   - backup_sram
+  - watchdog
