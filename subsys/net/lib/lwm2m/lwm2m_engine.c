@@ -1367,6 +1367,37 @@ static int path_to_objs(const struct lwm2m_obj_path *path,
 	return 0;
 }
 
+struct lwm2m_attr *lwm2m_engine_get_next_attr(const void *ref,
+					      struct lwm2m_attr *prev)
+{
+	struct lwm2m_attr *iter = (prev == NULL) ? write_attr_pool : prev + 1;
+	struct lwm2m_attr *result = NULL;
+
+	if (!PART_OF_ARRAY(write_attr_pool, iter)) {
+		return NULL;
+	}
+
+	while (iter < &write_attr_pool[ARRAY_SIZE(write_attr_pool)]) {
+		if (ref == iter->ref) {
+			result = iter;
+			break;
+		}
+
+		++iter;
+	}
+
+	return result;
+}
+
+const char *lwm2m_engine_get_attr_name(const struct lwm2m_attr *attr)
+{
+	if (attr->type >= NR_LWM2M_ATTR) {
+		return NULL;
+	}
+
+	return LWM2M_ATTR_STR[attr->type];
+}
+
 int lwm2m_engine_create_obj_inst(char *pathstr)
 {
 	struct lwm2m_obj_path path;
@@ -3484,6 +3515,44 @@ int lwm2m_get_or_create_engine_obj(struct lwm2m_message *msg,
 	}
 
 	return ret;
+}
+
+struct lwm2m_engine_obj *lwm2m_engine_get_obj(
+					const struct lwm2m_obj_path *path)
+{
+	if (path->level < LWM2M_PATH_LEVEL_OBJECT) {
+		return NULL;
+	}
+
+	return get_engine_obj(path->obj_id);
+}
+
+struct lwm2m_engine_obj_inst *lwm2m_engine_get_obj_inst(
+					const struct lwm2m_obj_path *path)
+{
+	if (path->level < LWM2M_PATH_LEVEL_OBJECT_INST) {
+		return NULL;
+	}
+
+	return get_engine_obj_inst(path->obj_id, path->obj_inst_id);
+}
+
+struct lwm2m_engine_res *lwm2m_engine_get_res(
+					const struct lwm2m_obj_path *path)
+{
+	struct lwm2m_engine_res *res = NULL;
+	int ret;
+
+	if (path->level < LWM2M_PATH_LEVEL_RESOURCE) {
+		return NULL;
+	}
+
+	ret = path_to_objs(path, NULL, NULL, &res, NULL);
+	if (ret < 0) {
+		return NULL;
+	}
+
+	return res;
 }
 
 static int do_write_op(struct lwm2m_message *msg,

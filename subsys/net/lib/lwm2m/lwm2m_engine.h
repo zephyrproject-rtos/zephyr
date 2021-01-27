@@ -65,6 +65,13 @@ int  lwm2m_get_or_create_engine_obj(struct lwm2m_message *msg,
 				    struct lwm2m_engine_obj_inst **obj_inst,
 				    uint8_t *created);
 
+struct lwm2m_engine_obj *lwm2m_engine_get_obj(
+					const struct lwm2m_obj_path *path);
+struct lwm2m_engine_obj_inst *lwm2m_engine_get_obj_inst(
+					const struct lwm2m_obj_path *path);
+struct lwm2m_engine_res *lwm2m_engine_get_res(
+					const struct lwm2m_obj_path *path);
+
 /* LwM2M context functions */
 int lwm2m_engine_context_close(struct lwm2m_ctx *client_ctx);
 void lwm2m_engine_context_init(struct lwm2m_ctx *client_ctx);
@@ -117,6 +124,12 @@ void lwm2m_firmware_set_update_state(uint8_t state);
 void lwm2m_firmware_set_update_result(uint8_t result);
 uint8_t lwm2m_firmware_get_update_result(void);
 #endif
+
+/* Attribute handling. */
+
+struct lwm2m_attr *lwm2m_engine_get_next_attr(const void *ref,
+					      struct lwm2m_attr *prev);
+const char *lwm2m_engine_get_attr_name(const struct lwm2m_attr *attr);
 
 /* Network Layer */
 int  lwm2m_socket_add(struct lwm2m_ctx *ctx);
