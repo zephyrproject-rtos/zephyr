@@ -407,6 +407,7 @@ MCUBoot
   * Usage of --confirm implies --pad.
   * Fixed 'custom_tlvs' argument handling.
   * Add support for setting fixed ROM address into image header.
+  * Fixed verification with protected TLVs.
 
 
 Trusted-Firmware-M
