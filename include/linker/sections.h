@@ -61,6 +61,8 @@
 #define _STM32_SDRAM1_SECTION_NAME	.stm32_sdram1
 #define _STM32_SDRAM2_SECTION_NAME	.stm32_sdram2
 
+#define _STM32_BACKUP_SRAM_SECTION_NAME	.stm32_backup_sram
+
 #ifdef CONFIG_NOCACHE_MEMORY
 #define _NOCACHE_SECTION_NAME nocache
 #endif
