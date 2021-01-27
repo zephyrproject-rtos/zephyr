@@ -48,8 +48,8 @@
 		aon: aon@10000040 {
 			compatible = "sifive,aon0";
 			interrupt-parent = <&plic>;
-			interrupts = <2 1>;
-			reg = <0x10000040 0x9c0>;
+			interrupts = <1 0 2 0>;
+			reg = <0x10000000 0x1000>;
 			reg-names = "control";
 		};
 		clint: clint@2000000 {
