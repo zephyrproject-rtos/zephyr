@@ -140,6 +140,12 @@
 struct lwm2m_engine_obj;
 struct lwm2m_message;
 
+#define LWM2M_PATH_LEVEL_NONE 0
+#define LWM2M_PATH_LEVEL_OBJECT 1
+#define LWM2M_PATH_LEVEL_OBJECT_INST 2
+#define LWM2M_PATH_LEVEL_RESOURCE 3
+#define LWM2M_PATH_LEVEL_RESOURCE_INST 4
+
 /* path representing object instances */
 struct lwm2m_obj_path {
 	uint16_t obj_id;
