@@ -118,7 +118,7 @@ static int test_build_simple_pdu(void)
 
 	r = coap_packet_init(&cpkt, data, COAP_BUF_SIZE,
 			     COAP_VERSION_1, COAP_TYPE_NON_CON,
-			     strlen(token), (uint8_t *)token,
+			     strlen(token), token,
 			     COAP_RESPONSE_CODE_PROXYING_NOT_SUPPORTED,
 			     0x1234);
 	if (r < 0) {
@@ -617,7 +617,7 @@ static int prepare_block1_request(struct coap_packet *req,
 
 	r = coap_packet_init(req, data, COAP_BUF_SIZE, COAP_VERSION_1,
 			     COAP_TYPE_CON, strlen(token),
-			     (uint8_t *) token, COAP_METHOD_POST,
+			     token, COAP_METHOD_POST,
 			     coap_next_id());
 	if (r < 0) {
 		TC_PRINT("Unable to initialize request\n");
@@ -852,7 +852,7 @@ static int prepare_block2_request(struct coap_packet *req,
 
 	r = coap_packet_init(req, data, COAP_BUF_SIZE, COAP_VERSION_1,
 			     COAP_TYPE_CON, strlen(token),
-			     (uint8_t *) token, COAP_METHOD_GET,
+			     token, COAP_METHOD_GET,
 			     coap_next_id());
 	if (r < 0) {
 		TC_PRINT("Unable to initialize request\n");
@@ -1378,7 +1378,7 @@ static int test_observer_client(void)
 
 	r = coap_packet_init(&req, data, COAP_BUF_SIZE,
 			     COAP_VERSION_1, COAP_TYPE_CON,
-			     strlen(token), (uint8_t *)token,
+			     strlen(token), token,
 			     COAP_METHOD_GET, coap_next_id());
 	if (r < 0) {
 		TC_PRINT("Unable to initialize request\n");
