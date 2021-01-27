@@ -1323,6 +1323,7 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 {
 	char buf[CONVERTED_BUFLEN];
 	size_t count = 0;
+	sint_value_type sint;
 
 /* Output character, returning EOF if output failed, otherwise
  * updating count.
@@ -1579,11 +1580,16 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 				sign = ' ';
 			}
 
-			if (value->sint < 0) {
+			/* sint/uint overlay in the union, and so
+			 * can't appear in read and write operations
+			 * in the same statement.
+			 */
+			sint = value->sint;
+			if (sint < 0) {
 				sign = '-';
-				value->uint = (uint_value_type)-value->sint;
+				value->uint = (uint_value_type)-sint;
 			} else {
-				value->uint = (uint_value_type)value->sint;
+				value->uint = (uint_value_type)sint;
 			}
 
 			__fallthrough;
