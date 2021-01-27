@@ -188,6 +188,7 @@ static int cmd_trunc(const struct shell *shell, size_t argc, char **argv)
 		length = 0;
 	}
 
+	fs_file_t_init(&file);
 	err = fs_open(&file, path, FS_O_CREATE | FS_O_RDWR);
 	if (err) {
 		shell_error(shell, "Failed to open %s (%d)", path, err);
@@ -277,6 +278,7 @@ static int cmd_read(const struct shell *shell, size_t argc, char **argv)
 
 	shell_print(shell, "File size: %zd", dirent.size);
 
+	fs_file_t_init(&file);
 	err = fs_open(&file, path, FS_O_CREATE | FS_O_RDWR);
 	if (err) {
 		shell_error(shell, "Failed to open %s (%d)", path, err);
@@ -376,6 +378,7 @@ static int cmd_write(const struct shell *shell, size_t argc, char **argv)
 		arg_offset = 2;
 	}
 
+	fs_file_t_init(&file);
 	err = fs_open(&file, path, FS_O_CREATE | FS_O_RDWR);
 	if (err) {
 		shell_error(shell, "Failed to open %s (%d)", path, err);
