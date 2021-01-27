@@ -11,3 +11,16 @@ properties:
       type: int
       required: true
       description: Number of items to expect in a pwm specifier
+
+child-binding:
+  description: PWM Channel
+  properties:
+    reg:
+      type: int
+      required: true
+      description: PWM channel number
+    flags:
+      type: int
+      required: false
+      description: |
+        Flags as define in pwm.h, for example PWM_POLARITY_NORMAL.
