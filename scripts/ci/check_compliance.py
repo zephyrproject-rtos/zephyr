@@ -536,6 +536,7 @@ UNDEF_KCONFIG_WHITELIST = {
     "FLAG",  # Used as an example
     "FOO",
     "FOO_LOG_LEVEL",
+    "FOO_LOG_LEVEL_DBG",
     "FOO_SETTING_1",
     "FOO_SETTING_2",
     "LIS2DW12_INT_PIN",
