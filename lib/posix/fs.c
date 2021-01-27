@@ -107,7 +107,7 @@ int open(const char *name, int flags, ...)
 		return -1;
 	}
 
-	(void)memset(&ptr->file, 0, sizeof(ptr->file));
+	fs_file_t_init(&ptr->file);
 
 	rc = fs_open(&ptr->file, name, zmode);
 
