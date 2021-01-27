@@ -2776,7 +2776,7 @@ static void sock_read(struct net_buf **buf, uint16_t len)
 	sock = socket_from_id(ictx.last_socket_id);
 	if (!sock) {
 		LOG_ERR("Socket not found! (%d)", ictx.last_socket_id);
-		goto done;
+		goto exit;
 	}
 
 	if (sock->error) {
@@ -2913,6 +2913,7 @@ done:
 	} else {
 		sock->state = SOCK_IDLE;
 	}
+exit:
 	allow_sleep(true);
 	hl7800_TX_unlock();
 }
