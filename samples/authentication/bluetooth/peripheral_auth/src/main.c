@@ -315,7 +315,7 @@ static void echo_msg(void)
 		/* wait for response */
 		recv_cnt = auth_lib_dtls_recv(&auth_conn, recv_msg_buffer, sizeof(recv_msg_buffer));
 
-		if( recv_cnt < 0) {
+		if (recv_cnt < 0) {
 			LOG_ERR("Failed to recv echo test message, ret: %d", recv_cnt);
 			break;
 		}

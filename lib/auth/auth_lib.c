@@ -329,7 +329,7 @@ bool auth_lib_is_finished(struct authenticate_conn *auth_conn, enum auth_status 
 {
 	bool is_finished = false;
 
-	switch(auth_conn->curr_status) {
+	switch (auth_conn->curr_status) {
 
 	case AUTH_STATUS_STARTED:
 	case AUTH_STATUS_IN_PROCESS:
