@@ -19,3 +19,4 @@ supported:
   - adc
   - netif:eth
   - spi
+  - backup_sram
