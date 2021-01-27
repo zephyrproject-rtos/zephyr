@@ -675,8 +675,8 @@ static uint8_t primary_discover_func(struct bt_conn *conn,
 static bool is_set_member(struct bt_data *data)
 {
 	uint8_t err;
-	uint32_t hash = ((uint32_t *)data->data)[0] & 0xffffff;
-	uint32_t prand = ((uint32_t *)(data->data + 3))[0] & 0xffffff;
+	uint32_t hash = sys_get_le24(data->data);
+	uint32_t prand = sys_get_le24(data->data + 3);
 	uint32_t calculated_hash;
 
 	BT_DBG("hash: 0x%06x, prand 0x%06x", hash, prand);
@@ -740,18 +740,6 @@ static bool csis_found(struct bt_data *data, void *user_data)
 		}
 	}
 	return true;
-}
-
-static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
-			 struct net_buf_simple *ad)
-{
-	/* We're only interested in connectable events */
-	if (type != BT_GAP_ADV_TYPE_ADV_IND &&
-	    type != BT_GAP_ADV_TYPE_ADV_DIRECT_IND) {
-		return;
-	}
-
-	bt_data_parse(ad, csis_found, (void *)addr);
 }
 
 static int init_discovery(struct set_member_t *member, bool subscribe,
@@ -1084,6 +1072,20 @@ static struct bt_conn_cb csip_conn_callbacks = {
 	.disconnected = csip_disconnected,
 };
 
+static void csip_scan_recv(const struct bt_le_scan_recv_info *info,
+			   struct net_buf_simple *ad)
+{
+	/* We're only interested in connectable events */
+	if (info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) {
+		bt_data_parse(ad, csis_found, (void *)info->addr);
+
+	}
+}
+
+static struct bt_le_scan_cb csip_scan_callbacks = {
+	.recv = csip_scan_recv
+};
+
 static void csip_write_lowest_rank(void)
 {
 	int8_t cur_idx;
@@ -1320,6 +1322,7 @@ int bt_csip_discover(struct bt_conn *conn, bool subscribe)
 
 	if (!conn_cb_registered) {
 		bt_conn_cb_register(&csip_conn_callbacks);
+		bt_le_scan_cb_register(&csip_scan_callbacks);
 		conn_cb_registered = true;
 	}
 
@@ -1420,7 +1423,7 @@ int bt_csip_discover_members(struct bt_csip_set_t *set)
 	}
 
 	/* TODO: Add timeout on scan if not all devices could be found */
-	err = bt_le_scan_start(BT_LE_SCAN_ACTIVE, device_found);
+	err = bt_le_scan_start(BT_LE_SCAN_ACTIVE, NULL);
 	if (!err) {
 		busy = true;
 	}
