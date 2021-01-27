@@ -56,9 +56,8 @@ static void irq_config_func_@NUM@(const struct device *dev)
 	ARG_UNUSED(dev);
 
 	IRQ_CONNECT(DT_INST_IRQN(@NUM@),
-		    //DT_INST_IRQ(@NUM@, priority),
-            1,  //XXX HARDCODING FOR NOW!! FIXME
-		    uart_digi_ns16550_isr,
+		    DT_INST_IRQ(@NUM@, priority),
+            uart_digi_ns16550_isr,
 		    DEVICE_DT_INST_GET(@NUM@),
 		    INST_@NUM@_IRQ_FLAGS);
 

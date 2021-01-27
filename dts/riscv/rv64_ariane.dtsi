@@ -50,13 +50,11 @@
     };
 
     soc {
-        //#address-cells = <2>;
-        //#size-cells = <2>;
         #address-cells = <1>;
         #size-cells = <1>;
         compatible = "eth,ariane-bare-soc", "simple-bus";
         ranges;
-        clint@2000000 {
+        clint0: clint@2000000 {
             #interrupt-cells = <1>;
             interrupt-controller;
             compatible = "riscv,clint0";
@@ -66,17 +64,23 @@
         };
 
         plic0: interrupt-controller@c000000 {
-            //#address-cells = <0>;
-            #interrupt-cells = <1>;
-            compatible = "sifive,plic-1.0.0", "riscv,plic0";
+            #interrupt-cells = <2>;
+            compatible = "sifive,plic-1.0.0", "riscv,plic0-priority";
             interrupt-controller;
-            interrupts-extended = <&hlic 11 &hlic 9>;
+            interrupts-extended = <&hlic 11>;
+            /*
+             *  The first reg is the address of the PLIC_PRIO register, the 
+             *  second entry being the length of said register.
+             *  The next line is the IRQ_ENABLE offset followed by the context
+             *  length. Finally followed by the claim register and the rest of
+             *  the space.
+             */
             reg = <0x0c000000 0x00002000
                    0x0c002000 0x001fe000
                    0x0c200000 0x03e00000>;
             reg-names = "prio", "irq_en", "reg";
             riscv,max-priority = <7>;
-            riscv,ndev = <2>;
+            riscv,ndev = <31>;
         };
 
         // TODO: How is this verified?
@@ -93,16 +97,16 @@
             clock-frequency = <25000000>;
             current-speed = <115200>;
             interrupt-parent = <&plic0>;
-            interrupts = <1>;
+            interrupts = <1 7>;
             label = "UART_0";
             status = "okay";
         };
 
         timer@18000000 {
             compatible = "pulp,apb_timer";
-            interrupts = <0x00000004 0x00000005 0x00000006 0x00000007>;
+            interrupts = <0x00000004 7 0x00000005 7 0x00000006 7 0x00000007 7>;
             reg = <0x18000000 0x00001000>;
-            interrupt-parent = <&plic0>;
+            interrupt-parent = <&clint0>;
             reg-names = "control";
         };
         

@@ -36,7 +36,28 @@
 #include <sys/sys_io.h>
 #include <spinlock.h>
 
+#include <assert.h>
+#include <stats/stats.h>
+
 #include "uart_digilent.h"
+
+STATS_SECT_START(uart_stats)
+  STATS_SECT_ENTRY(poll_tx)
+  STATS_SECT_ENTRY(poll_rx)
+  STATS_SECT_ENTRY(isr)
+  STATS_SECT_ENTRY(isr_tx)
+  STATS_SECT_ENTRY(isr_rx)
+STATS_SECT_END;
+STATS_SECT_DECL(uart_stats) uart_stats;
+
+
+STATS_NAME_START(uart_stats)
+  STATS_NAME(uart_stats, poll_tx)
+  STATS_NAME(uart_stats, poll_rx)
+  STATS_NAME(uart_stats, isr)
+  STATS_NAME(uart_stats, isr_tx)
+  STATS_NAME(uart_stats, isr_rx)
+STATS_NAME_END(uart_stats);
 
 /* register definitions */
 
@@ -438,6 +459,8 @@ static int uart_digi_ns16550_init(const struct device *dev)
 		return ret;
 	}
 
+	assert(STATS_INIT_AND_REG(uart_stats, STATS_SIZE_32, "uart_stats") == 0);
+
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	DEV_CFG(dev)->irq_config_func(dev);
 #endif
@@ -462,6 +485,7 @@ static int uart_digi_ns16550_poll_in(const struct device *dev, unsigned char *c)
 		/* got a character */
 		*c = INBYTE(RDR(dev));
 		ret = 0;
+		STATS_INC(uart_stats, poll_rx);
 	}
 
 	k_spin_unlock(&DEV_DATA(dev)->lock, key);
@@ -490,6 +514,7 @@ static void uart_digi_ns16550_poll_out(const struct device *dev,
 	}
 
 	OUTBYTE(THR(dev), c);
+	STATS_INC(uart_stats, poll_tx);
 
 	k_spin_unlock(&DEV_DATA(dev)->lock, key);
 }
@@ -608,6 +633,10 @@ static int uart_digi_ns16550_irq_tx_ready(const struct device *dev)
 
 	int ret = ((IIRC(dev) & IIR_ID) == IIR_THRE) ? 1 : 0;
 
+	if (ret) {
+		STATS_INC(uart_stats, isr_tx);
+	}
+
 	k_spin_unlock(&DEV_DATA(dev)->lock, key);
 
 	return ret;
@@ -676,6 +705,10 @@ static int uart_digi_ns16550_irq_rx_ready(const struct device *dev)
 	k_spinlock_key_t key = k_spin_lock(&DEV_DATA(dev)->lock);
 
 	int ret = ((IIRC(dev) & IIR_ID) == IIR_RBRF) ? 1 : 0;
+
+	if (ret) {
+		STATS_INC(uart_stats, isr_rx);
+	}
 
 	k_spin_unlock(&DEV_DATA(dev)->lock, key);
 
@@ -785,6 +818,7 @@ static void uart_digi_ns16550_isr(const struct device *dev)
 	struct uart_digi_ns16550_dev_data_t * const dev_data = DEV_DATA(dev);
 
 	if (dev_data->cb) {
+		STATS_INC(uart_stats, isr);
 		dev_data->cb(dev, dev_data->cb_data);
 	}
 

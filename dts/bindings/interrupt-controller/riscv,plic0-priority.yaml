@@ -1,0 +1,24 @@
+# Copyright (c) 2020, Recogni Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for the RISC-V platform-local interrupt controller, these 
+# add to the normally available `irq` field with the `priority` for each
+# interrupt source.
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  reg:
+      required: true
+
+  riscv,max-priority:
+      type: int
+      description: maximum interrupt priority
+      required: true
+
+  "#interrupt-cells":
+      const: 2
+
+interrupt-cells:
+  - irq
+  - priority

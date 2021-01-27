@@ -5,7 +5,7 @@ description: SiFive RISCV-V platform-local interrupt controller
 
 compatible: "sifive,plic-1.0.0"
 
-include: riscv,plic0.yaml
+include: riscv,plic0-priority.yaml
 
 properties:
     riscv,ndev:
