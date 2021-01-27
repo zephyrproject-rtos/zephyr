@@ -234,7 +234,8 @@ static int piggyback_get(struct coap_resource *resource,
 	}
 
 	r = coap_packet_init(&response, data, MAX_COAP_MSG_LEN,
-			     1, type, tkl, (uint8_t *)token,
+			     COAP_VERSION_1, type, tkl,
+			     (uint8_t *)token,
 			     COAP_RESPONSE_CODE_CONTENT, id);
 	if (r < 0) {
 		goto end;
@@ -306,7 +307,8 @@ static int test_del(struct coap_resource *resource,
 	}
 
 	r = coap_packet_init(&response, data, MAX_COAP_MSG_LEN,
-			     1, type, tkl, (uint8_t *)token,
+			     COAP_VERSION_1, type, tkl,
+			     (uint8_t *)token,
 			     COAP_RESPONSE_CODE_DELETED, id);
 	if (r < 0) {
 		goto end;
@@ -361,7 +363,8 @@ static int test_put(struct coap_resource *resource,
 	}
 
 	r = coap_packet_init(&response, data, MAX_COAP_MSG_LEN,
-			     1, type, tkl, (uint8_t *)token,
+			     COAP_VERSION_1, type, tkl,
+			     (uint8_t *)token,
 			     COAP_RESPONSE_CODE_CHANGED, id);
 	if (r < 0) {
 		goto end;
@@ -421,7 +424,8 @@ static int test_post(struct coap_resource *resource,
 	}
 
 	r = coap_packet_init(&response, data, MAX_COAP_MSG_LEN,
-			     1, type, tkl, (uint8_t *)token,
+			     COAP_VERSION_1, type, tkl,
+			     (uint8_t *)token,
 			     COAP_RESPONSE_CODE_CREATED, id);
 	if (r < 0) {
 		goto end;
@@ -497,7 +501,8 @@ static int query_get(struct coap_resource *resource,
 	}
 
 	r = coap_packet_init(&response, data, MAX_COAP_MSG_LEN,
-			     1, COAP_TYPE_ACK, tkl, (uint8_t *) token,
+			     COAP_VERSION_1, COAP_TYPE_ACK, tkl,
+			     (uint8_t *) token,
 			     COAP_RESPONSE_CODE_CONTENT, id);
 	if (r < 0) {
 		goto end;
@@ -573,7 +578,8 @@ static int location_query_post(struct coap_resource *resource,
 	}
 
 	r = coap_packet_init(&response, data, MAX_COAP_MSG_LEN,
-			     1, type, tkl, (uint8_t *)token,
+			     COAP_VERSION_1, type, tkl,
+			     (uint8_t *)token,
 			     COAP_RESPONSE_CODE_CREATED, id);
 	if (r < 0) {
 		goto end;
@@ -629,7 +635,8 @@ static int separate_get(struct coap_resource *resource,
 	}
 
 	r = coap_packet_init(&response, data, MAX_COAP_MSG_LEN,
-			     1, COAP_TYPE_ACK, tkl, (uint8_t *)token, 0, id);
+			     COAP_VERSION_1, COAP_TYPE_ACK, tkl,
+			     (uint8_t *)token, 0, id);
 	if (r < 0) {
 		goto end;
 	}
@@ -647,7 +654,8 @@ static int separate_get(struct coap_resource *resource,
 
 	/* Do not free and allocate "data" again, re-use the buffer */
 	r = coap_packet_init(&response, data, MAX_COAP_MSG_LEN,
-			     1, type, tkl, (uint8_t *)token,
+			     COAP_VERSION_1, type, tkl,
+			     (uint8_t *)token,
 			     COAP_RESPONSE_CODE_CONTENT, id);
 	if (r < 0) {
 		goto end;
@@ -727,7 +735,8 @@ static int large_get(struct coap_resource *resource,
 	}
 
 	r = coap_packet_init(&response, data, MAX_COAP_MSG_LEN,
-			     1, COAP_TYPE_ACK, tkl, (uint8_t *) token,
+			     COAP_VERSION_1, COAP_TYPE_ACK, tkl,
+			     (uint8_t *) token,
 			     COAP_RESPONSE_CODE_CONTENT, id);
 	if (r < 0) {
 		return -EINVAL;
@@ -843,7 +852,8 @@ static int large_update_put(struct coap_resource *resource,
 	}
 
 	r = coap_packet_init(&response, data, MAX_COAP_MSG_LEN,
-			     1, COAP_TYPE_ACK, tkl, (uint8_t *) token, code, id);
+			     COAP_VERSION_1, COAP_TYPE_ACK, tkl,
+			     (uint8_t *) token, code, id);
 	if (r < 0) {
 		goto end;
 	}
@@ -924,7 +934,8 @@ static int large_create_post(struct coap_resource *resource,
 	}
 
 	r = coap_packet_init(&response, data, MAX_COAP_MSG_LEN,
-			     1, COAP_TYPE_ACK, tkl, (uint8_t *)token, code, id);
+			     COAP_VERSION_1, COAP_TYPE_ACK, tkl,
+			     (uint8_t *)token, code, id);
 	if (r < 0) {
 		goto end;
 	}
@@ -1035,7 +1046,8 @@ static int send_notification_packet(const struct sockaddr *addr,
 	}
 
 	r = coap_packet_init(&response, data, MAX_COAP_MSG_LEN,
-			     1, type, tkl, (uint8_t *)token,
+			     COAP_VERSION_1, type, tkl,
+			     (uint8_t *)token,
 			     COAP_RESPONSE_CODE_CONTENT, id);
 	if (r < 0) {
 		goto end;
@@ -1167,7 +1179,8 @@ static int core_get(struct coap_resource *resource,
 	}
 
 	r = coap_packet_init(&response, data, MAX_COAP_MSG_LEN,
-			     1, COAP_TYPE_ACK, tkl, (uint8_t *)token,
+			     COAP_VERSION_1, COAP_TYPE_ACK, tkl,
+			     (uint8_t *)token,
 			     COAP_RESPONSE_CODE_CONTENT, id);
 	if (r < 0) {
 		r = -EINVAL;

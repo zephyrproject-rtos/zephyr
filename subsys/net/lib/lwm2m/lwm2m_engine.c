@@ -940,7 +940,8 @@ int lwm2m_init_message(struct lwm2m_message *msg)
 	}
 
 	r = coap_packet_init(&msg->cpkt, msg->msg_data, sizeof(msg->msg_data),
-			     1, msg->type, tokenlen, token, msg->code, msg->mid);
+			     COAP_VERSION_1, msg->type, tokenlen, token,
+			     msg->code, msg->mid);
 	if (r < 0) {
 		LOG_ERR("coap packet init error (err:%d)", r);
 		goto cleanup;

@@ -263,8 +263,9 @@ static int send_request(enum coap_msgtype msgtype, enum coap_method method,
 		goto error;
 	}
 
-	ret = coap_packet_init(&request_packet, data, MAX_PAYLOAD_SIZE, 1,
-			       COAP_TYPE_CON, 8, coap_next_token(), method,
+	ret = coap_packet_init(&request_packet, data, MAX_PAYLOAD_SIZE,
+			       COAP_VERSION_1, COAP_TYPE_CON,
+			       8, coap_next_token(), method,
 			       coap_next_id());
 	if (ret < 0) {
 		LOG_ERR("Could not init packet");

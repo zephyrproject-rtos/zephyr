@@ -41,9 +41,6 @@ LOG_MODULE_REGISTER(net_coap, CONFIG_COAP_LOG_LEVEL);
 #define COAP_OPTION_EXT_15 15
 #define COAP_OPTION_EXT_269 269
 
-/* CoAP Version */
-#define COAP_VERSION		1
-
 /* CoAP Payload Marker */
 #define COAP_MARKER		0xFF
 
