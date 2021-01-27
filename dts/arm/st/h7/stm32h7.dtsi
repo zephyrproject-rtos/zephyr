@@ -168,6 +168,13 @@
 			};
 		};
 
+		iwdg1: watchdog@58004800 {
+			compatible = "st,stm32-watchdog";
+			reg = <0x58004800 0x400>;
+			label = "IWDG_1";
+			status = "disabled";
+		};
+
 		wwdg1: watchdog@50003000 {
 			compatible = "st,stm32-window-watchdog";
 			reg = <0x50003000 0x400>;
