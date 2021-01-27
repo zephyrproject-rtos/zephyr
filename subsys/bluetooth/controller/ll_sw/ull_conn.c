@@ -2510,7 +2510,10 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 				(conn_interval_us >> 1) - EVENT_IFS_US;
 			lll->slave.window_size_prepare_us =
 				conn->llcp_cu.win_size * CONN_INT_UNIT_US;
+
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 			conn->slave.ticks_to_offset = 0U;
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 			lll->slave.window_widening_prepare_us +=
 				lll->slave.window_widening_periodic_us *
@@ -4325,6 +4328,7 @@ static int feature_rsp_send(struct ll_conn *conn, struct node_rx_pdu *rx,
 	return 0;
 }
 
+#if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_CTLR_SLAVE_FEAT_REQ)
 static void feature_rsp_recv(struct ll_conn *conn, struct pdu_data *pdu_rx)
 {
 	struct pdu_data_llctrl_feature_rsp *rsp;
@@ -4348,6 +4352,7 @@ static void feature_rsp_recv(struct ll_conn *conn, struct pdu_data *pdu_rx)
 	conn->llcp_feature.ack = conn->llcp_feature.req;
 	conn->procedure_expire = 0U;
 }
+#endif /* CONFIG_BT_CENTRAL || CONFIG_BT_CTLR_SLAVE_FEAT_REQ */
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 static int pause_enc_rsp_send(struct ll_conn *conn, struct node_rx_pdu *rx,
