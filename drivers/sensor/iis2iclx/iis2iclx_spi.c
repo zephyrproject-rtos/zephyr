@@ -102,8 +102,8 @@ int iis2iclx_spi_init(const struct device *dev)
 	const struct iis2iclx_config *cfg = dev->config;
 	const struct iis2iclx_spi_cfg *spi_cfg = cfg->bus_cfg.spi_cfg;
 
-	data->ctx_spi.read_reg = (stmdev_read_ptr) iis2iclx_spi_read,
-	data->ctx_spi.write_reg = (stmdev_write_ptr) iis2iclx_spi_write,
+	data->ctx_spi.read_reg = (stmdev_read_ptr) iis2iclx_spi_read;
+	data->ctx_spi.write_reg = (stmdev_write_ptr) iis2iclx_spi_write;
 
 	data->ctx = &data->ctx_spi;
 	data->ctx->handle = data;
