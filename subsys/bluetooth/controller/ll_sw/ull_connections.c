@@ -75,18 +75,20 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 				(CONFIG_BT_CTLR_TX_BUFFER_SIZE + \
 				BT_CTLR_USER_TX_BUFFER_OVERHEAD))
 
-#define CONN_TX_CTRL_BUFFERS (4 * CONFIG_BT_CTLR_LLCP_CONN)
-
-
 static MFIFO_DEFINE(conn_tx, sizeof(struct lll_tx), CONFIG_BT_CTLR_TX_BUFFERS);
-static MFIFO_DEFINE(conn_ack, sizeof(struct lll_tx),
-		    (CONFIG_BT_CTLR_TX_BUFFERS + CONN_TX_CTRL_BUFFERS));
+static MFIFO_DEFINE(conn_ack, sizeof(struct lll_tx),CONFIG_BT_CTLR_TX_BUFFERS);
 
 
 static struct {
 	void *free;
 	uint8_t pool[CONN_TX_BUF_SIZE * CONFIG_BT_CTLR_TX_BUFFERS];
 } mem_conn_tx;
+
+/* TODO(thoh): What is the correct size for this pool ? */
+static struct {
+	void *free;
+	uint8_t pool[sizeof(memq_link_t) * CONFIG_BT_CTLR_TX_BUFFERS];
+} mem_link_tx;
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 static uint16_t default_tx_octets;
@@ -422,12 +424,27 @@ ull_conn_tx_demux_release:
 
 void ull_conn_tx_lll_enqueue(struct ll_conn *conn, uint8_t count)
 {
-	return;
+	while (count--) {
+		struct node_tx *tx;
+		memq_link_t *link;
+
+		tx = ull_tx_q_dequeue(&conn->tx_q);
+		if (!tx) {
+			/* No more tx nodes available */
+			break;
+		}
+
+		link = mem_acquire(&mem_link_tx.free);
+		LL_ASSERT(link);
+
+		/* Enqueue towards LLL */
+		memq_enqueue(link, tx, &conn->lll.memq_tx.tail);
+	}
 }
 
 void ull_conn_link_tx_release(void *link)
 {
-	return;
+	mem_release(link, &mem_link_tx.free);
 }
 
 uint8_t ull_conn_ack_last_idx_get(void)
@@ -551,6 +568,10 @@ static int init_reset(void)
 	/* Initialize conn pool. */
 	mem_init(mem_conn.pool, sizeof(struct ll_conn),
 		 sizeof(mem_conn.pool) / sizeof(struct ll_conn), &mem_conn.free);
+
+	/* Initialize tx link pool. */
+	mem_init(mem_link_tx.pool, sizeof(memq_link_t),
+		 CONFIG_BT_CTLR_TX_BUFFERS, &mem_link_tx.free);
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	/* Initialize the DLE defaults */
