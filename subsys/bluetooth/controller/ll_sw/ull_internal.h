@@ -31,6 +31,7 @@ static inline void ull_hdr_init(struct ull_hdr *hdr)
 	hdr->disabled_cb = hdr->disabled_param = NULL;
 }
 
+void ll_tx_ack_put(uint16_t handle, struct node_tx *node_tx);
 void *ll_rx_link_alloc(void);
 void ll_rx_link_release(void *link);
 void *ll_rx_alloc(void);
