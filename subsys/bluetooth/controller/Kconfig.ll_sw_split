@@ -204,6 +204,7 @@ config BT_CTLR_SCAN_SYNC_ISO_SET
 config BT_CTLR_ZLI
 	bool "Use Zero Latency IRQs"
 	depends on ZERO_LATENCY_IRQS
+	default y
 	help
 	  Enable support for use of Zero Latency IRQ feature. Note, applications
 	  shall not use Zero Latency IRQ themselves when this option is selected,
@@ -266,7 +267,7 @@ config BT_CTLR_SCHED_ADVANCED
 	  leading to skipped events amongst active roles.
 
 config BT_CTLR_LLL_PRIO
-	int "Lower Link Layer (Radio) IRQ priority"
+	int "Lower Link Layer (Radio) IRQ priority" if !BT_CTLR_ZLI
 	range 0 3 if SOC_SERIES_NRF51X
 	range 0 6 if (SOC_SERIES_NRF52X || SOC_SERIES_NRF53X)
 	default 0
@@ -277,7 +278,8 @@ config BT_CTLR_ULL_HIGH_PRIO
 	int "Upper Link Layer High IRQ priority"
 	range BT_CTLR_LLL_PRIO 3 if SOC_SERIES_NRF51X
 	range BT_CTLR_LLL_PRIO 6 if (SOC_SERIES_NRF52X || SOC_SERIES_NRF53X)
-	default BT_CTLR_LLL_PRIO
+	default BT_CTLR_LLL_PRIO if (BT_CTLR_ZLI || BT_CTLR_LOW_LAT_ULL)
+	default 1
 	help
 	  The interrupt priority for Ticker's Worker IRQ and Upper Link Layer
 	  higher priority functions.
