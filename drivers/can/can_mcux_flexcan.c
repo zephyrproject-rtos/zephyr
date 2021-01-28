@@ -35,6 +35,14 @@ LOG_MODULE_REGISTER(can_mcux_flexcan);
 #error You must either set a sampling-point or timings (phase-seg* and prop-seg)
 #endif
 
+#if ((defined(FSL_FEATURE_FLEXCAN_HAS_ERRATA_5641) && FSL_FEATURE_FLEXCAN_HAS_ERRATA_5641) || \
+	(defined(FSL_FEATURE_FLEXCAN_HAS_ERRATA_5829) && FSL_FEATURE_FLEXCAN_HAS_ERRATA_5829))
+/* the first valid MB should be occupied by ERRATA 5461 or 5829. */
+#define RX_START_IDX 1
+#else
+#define RX_START_IDX 0
+#endif
+
 /*
  * RX message buffers (filters) will take up the first N message
  * buffers. The rest are available for TX use.
@@ -165,6 +173,7 @@ static int mcux_flexcan_set_mode(const struct device *dev, enum can_mode mode)
 	}
 
 	FLEXCAN_GetDefaultConfig(&flexcan_config);
+	flexcan_config.maxMbNum = FSL_FEATURE_FLEXCAN_HAS_MESSAGE_BUFFER_MAX_NUMBERn(0);
 	flexcan_config.clkSrc = config->clk_source;
 	flexcan_config.baudRate = clock_freq /
 	      (1U + data->timing.prop_seg + data->timing.phase_seg1 +
@@ -370,7 +379,7 @@ static int mcux_flexcan_attach_isr(const struct device *dev,
 	k_mutex_lock(&data->rx_mutex, K_FOREVER);
 
 	/* Find and allocate RX message buffer */
-	for (i = 0; i < MCUX_FLEXCAN_MAX_RX; i++) {
+	for (i = RX_START_IDX; i < MCUX_FLEXCAN_MAX_RX; i++) {
 		if (!atomic_test_and_set_bit(data->rx_allocs, i)) {
 			alloc = i;
 			break;
