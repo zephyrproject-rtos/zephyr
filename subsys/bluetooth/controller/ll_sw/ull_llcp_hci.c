@@ -787,7 +787,7 @@ uint8_t ll_chm_update(uint8_t const *const chm)
 {
 	uint16_t handle;
 
-	ull_conn_chan_map_set(chm);
+	ull_chan_map_set(chm);
 
 	handle = CONFIG_BT_MAX_CONN;
 	while (handle--) {
