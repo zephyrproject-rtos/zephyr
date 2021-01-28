@@ -177,9 +177,7 @@ only when dealing with lower priority threads that are less time-sensitive.
    The kernel's time slicing algorithm does *not* ensure that a set
    of equal-priority threads receive an equitable amount of CPU time,
    since it does not measure the amount of time a thread actually gets to
-   execute. For example, a thread may become the current thread just before
-   the end of a time slice and then immediately have to yield the CPU.
-   However, the algorithm *does* ensure that a thread never executes
+   execute. However, the algorithm *does* ensure that a thread never executes
    for longer than a single time slice without being required to yield.
 
 Scheduler Locking
