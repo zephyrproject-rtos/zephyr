@@ -333,7 +333,7 @@ uint8_t ll_conn_update(uint16_t handle, uint8_t cmd, uint8_t status, uint16_t in
 		if (!conn->llcp_conn_param.disabled &&
 		    (!conn->common.fex_valid ||
 		     (conn->llcp_feature.features_conn &
-		      BIT(BT_LE_FEAT_BIT_CONN_PARAM_REQ)))) {
+		      BIT64(BT_LE_FEAT_BIT_CONN_PARAM_REQ)))) {
 			cmd++;
 		} else if (conn->lll.role) {
 			return BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
@@ -523,7 +523,7 @@ uint32_t ll_length_req_send(uint16_t handle, uint16_t tx_octets, uint16_t tx_tim
 
 	if (conn->llcp_length.disabled ||
 	    (conn->common.fex_valid &&
-	     !(conn->llcp_feature.features_conn & BIT(BT_LE_FEAT_BIT_DLE)))) {
+	     !(conn->llcp_feature.features_conn & BIT64(BT_LE_FEAT_BIT_DLE)))) {
 		return BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
 	}
 
@@ -634,9 +634,9 @@ uint8_t ll_phy_req_send(uint16_t handle, uint8_t tx, uint8_t flags, uint8_t rx)
 
 	if (conn->llcp_phy.disabled ||
 	    (conn->common.fex_valid &&
-	     !(conn->llcp_feature.features_conn & BIT(BT_LE_FEAT_BIT_PHY_2M)) &&
+	     !(conn->llcp_feature.features_conn & BIT64(BT_LE_FEAT_BIT_PHY_2M)) &&
 	     !(conn->llcp_feature.features_conn &
-	       BIT(BT_LE_FEAT_BIT_PHY_CODED)))) {
+	       BIT64(BT_LE_FEAT_BIT_PHY_CODED)))) {
 		return BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
 	}
 
@@ -2709,7 +2709,7 @@ static inline void event_enc_reject_prep(struct ll_conn *conn,
 
 	if (conn->common.fex_valid &&
 	    (conn->llcp_feature.features_conn &
-	     BIT(BT_LE_FEAT_BIT_EXT_REJ_IND))) {
+	     BIT64(BT_LE_FEAT_BIT_EXT_REJ_IND))) {
 		struct pdu_data_llctrl_reject_ext_ind *p;
 
 		pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND;
@@ -2937,7 +2937,7 @@ static inline void event_fex_prep(struct ll_conn *conn)
 		pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_FEATURE_RSP;
 		(void)memset(&pdu->llctrl.feature_rsp.features[0], 0x00,
 			sizeof(pdu->llctrl.feature_rsp.features));
-		sys_put_le24(conn->llcp_feature.features_peer,
+		sys_put_le64(conn->llcp_feature.features_peer,
 			     pdu->llctrl.feature_req.features);
 
 		/* enqueue feature rsp structure into rx queue */
@@ -2967,7 +2967,7 @@ static inline void event_fex_prep(struct ll_conn *conn)
 		(void)memset(&pdu->llctrl.feature_req.features[0],
 			     0x00,
 			     sizeof(pdu->llctrl.feature_req.features));
-		sys_put_le24(conn->llcp_feature.features_conn,
+		sys_put_le64(conn->llcp_feature.features_conn,
 			     pdu->llctrl.feature_req.features);
 
 		ctrl_tx_enqueue(conn, tx);
@@ -3395,22 +3395,22 @@ static inline void event_ping_prep(struct ll_conn *conn)
 static inline void dle_max_time_get(const struct ll_conn *conn,
 				    uint16_t *max_rx_time, uint16_t *max_tx_time)
 {
-	uint32_t feature_coded_phy = 0;
-	uint32_t feature_phy_2m = 0;
+	uint64_t feature_coded_phy = 0;
+	uint64_t feature_phy_2m = 0;
 	uint16_t rx_time = 0;
 	uint16_t tx_time = 0;
 
 #if defined(CONFIG_BT_CTLR_PHY)
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 	feature_coded_phy = (conn->llcp_feature.features_conn &
-			     BIT(BT_LE_FEAT_BIT_PHY_CODED));
+			     BIT64(BT_LE_FEAT_BIT_PHY_CODED));
 #else
 	feature_coded_phy = 0;
 #endif
 
 #if defined(CONFIG_BT_CTLR_PHY_2M)
 	feature_phy_2m = (conn->llcp_feature.features_conn &
-			  BIT(BT_LE_FEAT_BIT_PHY_2M));
+			  BIT64(BT_LE_FEAT_BIT_PHY_2M));
 #else
 	feature_phy_2m = 0;
 #endif
@@ -4252,12 +4252,11 @@ static int unknown_rsp_send(struct ll_conn *conn, struct node_rx_pdu *rx,
 	return 0;
 }
 
-static inline uint32_t feat_get(uint8_t *features)
+static inline uint64_t feat_get(uint8_t *features)
 {
-	uint32_t feat;
+	uint64_t feat;
 
-	feat = ~LL_FEAT_BIT_MASK_VALID | features[0] |
-	       (features[1] << 8) | (features[2] << 16);
+	feat = ~LL_FEAT_BIT_MASK_VALID | sys_get_le64(features);
 	feat &= LL_FEAT_BIT_MASK;
 
 	return feat;
@@ -4267,9 +4266,9 @@ static inline uint32_t feat_get(uint8_t *features)
  * Perform a logical and on octet0 and keep the remaining bits of the
  * first input parameter
  */
-static inline uint32_t feat_land_octet0(uint32_t feat_to_keep, uint32_t feat_octet0)
+static inline uint64_t feat_land_octet0(uint64_t feat_to_keep, uint64_t feat_octet0)
 {
-	uint32_t feat_result;
+	uint64_t feat_result;
 
 	feat_result = feat_to_keep & feat_octet0;
 	feat_result &= 0xFF;
@@ -4284,7 +4283,7 @@ static int feature_rsp_send(struct ll_conn *conn, struct node_rx_pdu *rx,
 	struct pdu_data_llctrl_feature_req *req;
 	struct node_tx *tx;
 	struct pdu_data *pdu_tx;
-	uint32_t feat;
+	uint64_t feat;
 
 	/* acquire tx mem */
 	tx = mem_acquire(&mem_conn_tx_ctrl.free);
@@ -4319,7 +4318,7 @@ static int feature_rsp_send(struct ll_conn *conn, struct node_rx_pdu *rx,
 	 * See BTCore V5.2 VOl 6 Part B, chapter 5.1.4
 	 */
 	feat = feat_land_octet0(LL_FEAT, conn->llcp_feature.features_conn);
-	sys_put_le24(feat, pdu_tx->llctrl.feature_rsp.features);
+	sys_put_le64(feat, pdu_tx->llctrl.feature_rsp.features);
 
 	ctrl_tx_sec_enqueue(conn, tx);
 
