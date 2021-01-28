@@ -610,6 +610,10 @@ struct profile {
 	uint8_t cur;
 	uint8_t min;
 	uint8_t max;
+	uint8_t radio;
+	uint8_t lll;
+	uint8_t ull_high;
+	uint8_t ull_low;
 } __packed;
 #endif /* CONFIG_BT_CTLR_PROFILE_ISR */
 
