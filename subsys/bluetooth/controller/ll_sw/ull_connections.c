@@ -93,28 +93,31 @@ static uint8_t default_phy_tx;
 static uint8_t default_phy_rx;
 #endif /* CONFIG_BT_CTLR_PHY */
 
-static struct ll_conn conn_pool[CONFIG_BT_MAX_CONN];
+static struct {
+	void *free;
+	struct ll_conn pool[CONFIG_BT_MAX_CONN];
+} mem_conn;
+
 static struct ll_conn *conn_upd_curr;
-static void *conn_free;
 
 struct ll_conn *ll_conn_acquire(void)
 {
-	return mem_acquire(&conn_free);
+	return mem_acquire(&mem_conn.free);
 }
 
 void ll_conn_release(struct ll_conn  *conn)
 {
-	mem_release(conn, &conn_free);
+	mem_release(conn, &mem_conn.free);
 }
 
 uint16_t ll_conn_handle_get(struct ll_conn *conn)
 {
-	return mem_index_get(conn, conn_pool, sizeof(struct ll_conn));
+	return mem_index_get(conn, mem_conn.pool, sizeof(struct ll_conn));
 }
 
 struct ll_conn *ll_conn_get(uint16_t handle)
 {
-	return mem_get(conn_pool, sizeof(struct ll_conn), handle);
+	return mem_get(mem_conn.pool, sizeof(struct ll_conn), handle);
 }
 
 struct ll_conn  *ll_connected_get(uint16_t handle)
@@ -504,8 +507,8 @@ uint16_t ull_conn_lll_max_tx_octets_get(struct lll_conn *lll)
 static int init_reset(void)
 {
 	/* Initialize conn pool. */
-	mem_init(conn_pool, sizeof(struct ll_conn),
-		 sizeof(conn_pool) / sizeof(struct ll_conn), &conn_free);
+	mem_init(mem_conn.pool, sizeof(struct ll_conn),
+		 sizeof(mem_conn.pool) / sizeof(struct ll_conn), &mem_conn.free);
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	/* Initialize the DLE defaults */
