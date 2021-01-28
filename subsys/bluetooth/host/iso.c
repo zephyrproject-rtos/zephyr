@@ -734,6 +734,25 @@ static void bt_iso_remove_data_path(struct bt_conn *conn)
 	hci_le_remove_iso_data_path(conn, BT_HCI_DATAPATH_DIR_HOST_TO_CTLR);
 }
 
+static void bt_iso_chan_del(struct bt_iso_chan *chan)
+{
+	BT_DBG("%p", chan);
+
+	if (!chan->conn) {
+		goto done;
+	}
+
+	if (chan->ops->disconnected) {
+		chan->ops->disconnected(chan);
+	}
+
+	bt_conn_unref(chan->conn);
+	chan->conn = NULL;
+
+done:
+	bt_iso_chan_set_state(chan, BT_ISO_DISCONNECTED);
+}
+
 void bt_iso_disconnected(struct bt_conn *conn)
 {
 	struct bt_iso_chan *chan, *next;
@@ -749,16 +768,7 @@ void bt_iso_disconnected(struct bt_conn *conn)
 	bt_iso_remove_data_path(conn);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&conn->channels, chan, next, node) {
-		if (chan->ops->disconnected) {
-			chan->ops->disconnected(chan);
-		}
-
-		if (chan->conn) {
-			bt_conn_unref(chan->conn);
-			chan->conn = NULL;
-		}
-
-		bt_iso_chan_set_state(chan, BT_ISO_DISCONNECTED);
+		bt_iso_chan_del(chan);
 	}
 }
 
@@ -943,10 +953,8 @@ int bt_iso_chan_disconnect(struct bt_iso_chan *chan)
 	}
 
 	if (chan->state == BT_ISO_BOUND) {
-		bt_iso_chan_set_state(chan, BT_ISO_DISCONNECTED);
 		bt_iso_chan_remove(chan->conn, chan);
-		bt_conn_unref(chan->conn);
-		chan->conn = NULL;
+		bt_iso_chan_del(chan);
 		return 0;
 	}
 
