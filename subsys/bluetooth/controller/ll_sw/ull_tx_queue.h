@@ -54,6 +54,15 @@ void ull_tx_q_enqueue_data(struct ull_tx_q *queue, struct node_tx *tx);
 void ull_tx_q_enqueue_ctrl(struct ull_tx_q *queue, struct node_tx *tx);
 
 /**
+ * @brief Peek head tx node of tx queue.
+ *
+ * @param ull_tx_q Address of tx queue.
+ *
+ * @return Head tx node of the tx queue.
+ */
+struct node_tx *ull_tx_q_peek(struct ull_tx_q *queue);
+
+/**
  * @brief Dequeue a tx node from a tx queue.
  *
  * @param ull_tx_q Address of tx queue.
