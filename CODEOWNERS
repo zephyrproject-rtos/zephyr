@@ -27,7 +27,7 @@
 /arch/arm/core/aarch32/cortex_a_r/        @MaureenHelm @galak @ioannisg @bbolen @stephanosio
 /arch/common/                             @andrewboie @ioannisg @andyross
 /soc/arc/snps_*/                          @abrodkin @ruuddw
-/soc/nios2/                               @nashif @wentongwu
+/soc/nios2/                               @nashif
 /soc/arm/                                 @MaureenHelm @galak @ioannisg
 /soc/arm/arm/mps2/                        @fvincenzo
 /soc/arm/atmel_sam/common/*_sam4l_*.c     @nandojve
@@ -57,7 +57,7 @@
 /soc/arm/xilinx_zynqmp/                   @stephanosio
 /soc/xtensa/intel_s1000/                  @sathishkuttan @dcpleung
 /arch/x86/                                @jhedberg @andrewboie @jenmwms @aasthagr
-/arch/nios2/                              @andrewboie @wentongwu
+/arch/nios2/                              @nashif
 /arch/posix/                              @aescolar @daor-oti
 /arch/riscv/                              @kgugala @pgielda
 /soc/posix/                               @aescolar @daor-oti
@@ -125,8 +125,8 @@
 /boards/arm/stm32*_eval/                  @erwango @ABOSTM @FRASTM
 /boards/common/                           @mbolivar-nordic
 /boards/deprecated.cmake                  @tejlmand
-/boards/nios2/                            @wentongwu
-/boards/nios2/altera_max10/               @wentongwu
+/boards/nios2/                            @nashif
+/boards/nios2/altera_max10/               @nashif
 /boards/arm/stm32_min_dev/                @cbsiddharth
 /boards/posix/                            @aescolar @daor-oti
 /boards/posix/nrf52_bsim/                 @aescolar @wopu-ot
@@ -259,7 +259,7 @@
 /drivers/sensor/lsm*/                     @avisconti
 /drivers/sensor/mpr/                      @sven-hm
 /drivers/sensor/st*/                      @avisconti
-/drivers/serial/uart_altera_jtag_hal.c    @wentongwu
+/drivers/serial/uart_altera_jtag_hal.c    @nashif
 /drivers/serial/*ns16550*                 @andrewboie @jenmwms @aasthagr
 /drivers/serial/*nrfx*                    @Mierunski @anangl
 /drivers/serial/uart_liteuart.c           @mateusz-holenko @kgugala @pgielda
@@ -280,7 +280,7 @@
 /drivers/timer/apic_timer.c               @andrewboie
 /drivers/timer/arm_arch_timer.c           @carlocaione
 /drivers/timer/cortex_m_systick.c         @ioannisg
-/drivers/timer/altera_avalon_timer_hal.c  @wentongwu
+/drivers/timer/altera_avalon_timer_hal.c  @nashif
 /drivers/timer/riscv_machine_timer.c      @kgugala @pgielda
 /drivers/timer/ite_it8xxx2_timer.c        @ite
 /drivers/timer/xlnx_psttc_timer*          @wjliang @stephanosio
@@ -398,11 +398,11 @@
 /include/arch/arm/aarch64/                @carlocaione
 /include/arch/arm/arm-smccc.h             @carlocaione
 /include/arch/arm/aarch32/irq.h           @andrewboie
-/include/arch/nios2/                      @andrewboie
-/include/arch/nios2/arch.h                @andrewboie
+/include/arch/nios2/                      @nashif
+/include/arch/nios2/arch.h                @nashif
 /include/arch/posix/                      @aescolar @daor-oti
 /include/arch/riscv/                      @kgugala @pgielda
-/include/arch/x86/                        @andrewboie @wentongwu
+/include/arch/x86/                        @andrewboie @jhedberg @dcpleung
 /include/arch/common/                     @andrewboie @andyross @nashif
 /include/arch/xtensa/                     @andrewboie
 /include/arch/sparc/                      @martin-aberg
@@ -410,11 +410,11 @@
 /include/bluetooth/                       @joerchan @jhedberg @Vudentz
 /include/cache.h                          @andrewboie @andyross
 /include/canbus/                          @alexanderwachter
-/include/tracing/                         @wentongwu @nashif
+/include/tracing/                         @nashif
 /include/debug/                           @nashif
 /include/debug/coredump.h                 @dcpleung
 /include/debug/gdbstub.h                  @ceolin
-/include/device.h                         @wentongwu @nashif
+/include/device.h                         @tbursztyka @nashif
 /include/devicetree.h                     @galak
 /include/display/                         @vanwinkeljan
 /include/dt-bindings/clock/kinetis_mcg.h  @henrikbrixandersen
@@ -423,7 +423,7 @@
 /include/dt-bindings/pcie/                @andrewboie
 /include/dt-bindings/usb/usb.h            @galak @finikorg
 /include/emul.h                           @sjg20
-/include/fs/                              @nashif @wentongwu
+/include/fs/                              @nashif @nvlsianpu @de-nordic @pabigot
 /include/init.h                           @andrewboie @andyross
 /include/irq.h                            @andrewboie @andyross
 /include/irq_offload.h                    @andrewboie @andyross
@@ -440,7 +440,7 @@
 /include/net/lwm2m*.h                     @jukkar @rlubos
 /include/net/mqtt.h                       @jukkar @rlubos
 /include/posix/                           @pfalcon
-/include/power/power.h                    @wentongwu @nashif @ceolin
+/include/power/power.h                    @pabigot @nashif @ceolin
 /include/ptp_clock.h                      @jukkar
 /include/shared_irq.h                     @andrewboie @andyross
 /include/shell/                           @jakub-uC @nordic-krch
@@ -493,7 +493,7 @@
 /samples/subsys/mgmt/updatehub/           @nandojve @otavio
 /samples/subsys/mgmt/osdp/                @cbsiddharth
 /samples/subsys/usb/                      @jfischer-no @finikorg
-/samples/subsys/power/                    @wentongwu @pabigot @ceolin
+/samples/subsys/power/                    @nashif @pabigot @ceolin
 /samples/tfm_integration/                 @ioannisg @microbuilder
 /samples/userspace/                       @andrewboie
 /scripts/coccicheck                       @himanshujha199640 @JuliaLawall
@@ -514,11 +514,11 @@
 /scripts/list_boards.py                   @mbolivar-nordic
 /scripts/net/                             @jukkar
 /scripts/process_gperf.py                 @andrewboie
-/scripts/gen_relocate_app.py              @wentongwu
+/scripts/gen_relocate_app.py              @dcpleung
 /scripts/requirements*.txt                @mbolivar-nordic @galak @nashif
 /scripts/tests/twister/                   @aasthagr
 /scripts/tests/build/test_subfolder_list.py @rmstoi
-/scripts/tracing/                         @wentongwu
+/scripts/tracing/                         @nashif
 /scripts/pylib/twister/                   @nashif
 /scripts/twister                          @nashif
 /scripts/series-push-hook.sh              @erwango
@@ -539,7 +539,7 @@
 /subsys/debug/gdbstub/                    @ceolin
 /subsys/debug/gdbstub.c                   @ceolin
 /subsys/dfu/                              @nvlsianpu
-/subsys/tracing/                          @nashif @wentongwu
+/subsys/tracing/                          @nashif
 /subsys/debug/asan_hacks.c                @vanwinkeljan @aescolar @daor-oti
 /subsys/demand_paging/                    @andrewboie
 /subsys/disk/disk_access_spi_sdhc.c       @JunYangNXP
@@ -577,7 +577,7 @@
 /subsys/net/l2/                           @jukkar @tbursztyka
 /subsys/net/l2/canbus/                    @alexanderwachter @jukkar
 /subsys/net/*/openthread/                 @rlubos
-/subsys/power/                            @wentongwu @pabigot @ceolin
+/subsys/power/                            @nashif @pabigot @ceolin
 /subsys/random/                           @dleach02
 /subsys/settings/                         @nvlsianpu
 /subsys/shell/                            @jakub-uC @nordic-krch
@@ -619,7 +619,7 @@
 /tests/net/socket/socketpair/             @cfriedt
 /tests/net/socket/                        @jukkar @tbursztyka @pfalcon
 /tests/subsys/debug/coredump/             @dcpleung
-/tests/subsys/fs/                         @nashif @wentongwu
+/tests/subsys/fs/                         @nashif @nvlsianpu @de-nordic @pabigot
 /tests/subsys/settings/                   @nvlsianpu
 /tests/subsys/shell/                      @jakub-uC @nordic-krch
 # Get all docs reviewed
