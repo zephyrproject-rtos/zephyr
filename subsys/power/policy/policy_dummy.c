@@ -42,7 +42,7 @@ struct pm_state_info pm_policy_next_state(int32_t ticks)
 
 		LOG_DBG("Selected power state: %u", pm_dummy_states[i].state);
 
-		return pm_dummy_states[i].state;
+		return pm_dummy_states[i];
 	} while (pm_dummy_states[i].state != cur_pm_state_info.state);
 
 	LOG_DBG("No suitable power state found!");
