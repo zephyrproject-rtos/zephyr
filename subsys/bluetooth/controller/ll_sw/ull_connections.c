@@ -63,9 +63,6 @@ static inline void disable(uint16_t handle);
 static int empty_data_start_release(struct ll_conn *conn, struct node_tx *tx);
 #endif /* CONFIG_BT_CTLR_LLID_DATA_START_EMPTY */
 
-static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
-			  struct pdu_data *pdu_rx, struct ll_conn *conn);
-
 #if !defined(BT_CTLR_USER_TX_BUFFER_OVERHEAD)
 #define BT_CTLR_USER_TX_BUFFER_OVERHEAD 0
 #endif /* BT_CTLR_USER_TX_BUFFER_OVERHEAD */
@@ -321,10 +318,8 @@ int ull_conn_rx(memq_link_t *link, struct node_rx_pdu **rx)
 	switch (pdu_rx->ll_id) {
 	case PDU_DATA_LLID_CTRL:
 	{
-		int nack;
-
-		nack = ctrl_rx(link, rx, pdu_rx, conn);
-		return nack;
+		ull_cp_rx(conn, *rx);
+		return 0;
 	}
 
 	case PDU_DATA_LLID_DATA_CONTINUE:
@@ -688,13 +683,3 @@ static int empty_data_start_release(struct ll_conn *conn, struct node_tx *tx)
 	return 0;
 }
 #endif /* CONFIG_BT_CTLR_LLID_DATA_START_EMPTY */
-
-static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
-			  struct pdu_data *pdu_rx, struct ll_conn *conn)
-{
-	/*
-	 * EGON TODO: this is part of the receiving of PDUs,
-	 * to be filled in later
-	 */
-	return 0;
-}
