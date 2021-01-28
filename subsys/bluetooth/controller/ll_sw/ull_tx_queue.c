@@ -47,6 +47,15 @@ void ull_tx_q_enqueue_ctrl(struct ull_tx_q *queue, struct node_tx *tx)
 	sys_slist_append(&queue->tx_list, (sys_snode_t *)tx);
 }
 
+struct node_tx *ull_tx_q_peek(struct ull_tx_q *queue)
+{
+	struct node_tx *tx;
+
+	tx = (struct node_tx *)sys_slist_peek_head(&queue->tx_list);
+
+	return tx;
+}
+
 struct node_tx *ull_tx_q_dequeue(struct ull_tx_q *queue)
 {
 	struct node_tx *tx;
