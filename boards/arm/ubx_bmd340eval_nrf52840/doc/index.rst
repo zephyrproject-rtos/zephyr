@@ -55,8 +55,9 @@ however, the BMD-340-EVAL and BMD-341-EVAL do.
 
 .. note::
 
-	When targeting a custom design without a slow crystal, be sure to
-	modify code to utilize the internal RC oscillator for the slow clock.
+	When targeting a custom design without a slow crystal, be sure 
+	to modify code to utilize the internal RC oscillator for the 
+	slow clock.
 
 Supported Features
 ==================
@@ -445,9 +446,11 @@ There are 2 samples that allow you to test that the buttons
    samples/basic/blinky
    samples/basic/button
 
-You can build and flash the examples to make sure Zephyr is running correctly on
-your board. The button and LED definitions can be found in
-:zephyr_file:`boards/arm/ubx_bmd340eval_nrf52840/ubx_bmd340eval_nrf52840.dts`.
+You can build and flash the examples to make sure Zephyr is running 
+correctly on your board. The button and LED definitions can be found 
+in 
+:zephyr_file:
+`boards/arm/ubx_bmd340eval_nrf52840/ubx_bmd340eval_nrf52840.dts`.
 
 Using UART1
 ***********
@@ -455,7 +458,8 @@ Using UART1
 The following approach can be used when an application needs to use
 more than one UART for connecting peripheral devices:
 
-1. Add device tree overlay file to the main directory of your application:
+1. Add device tree overlay file to the main directory of your 
+   application:
 
    .. code-block:: console
 
@@ -468,15 +472,17 @@ more than one UART for connecting peripheral devices:
         rx-pin = <16>;
       };
 
-   In the overlay file above, pin P0.16 is used for RX and P0.14 is used for TX
+   In the overlay file above, pin P0.16 is used for RX and P0.14 is 
+   used for TX
 
 2. Use the UART1 as ``device_get_binding("UART_1")``
 
 Overlay file naming
 ===================
 
-The file has to be named ``<board>.overlay`` and placed in the app main directory to be
-picked up automatically by the device tree compiler.
+The file has to be named ``<board>.overlay`` and placed in the app 
+main directory to be picked up automatically by the device tree 
+compiler.
 
 Selecting the pins
 ==================
@@ -486,12 +492,14 @@ To select the pin numbers for tx-pin and rx-pin:
 
    tx-pin = <pin_no>
 
-Open the data sheet for the BMD-340 at `u-blox website`_, Section 2 'Pin definition'.
-In the table 3 select the pins marked 'GPIO'.  Note that pins marked as 'Standard drive, 
-low frequency I/O only (<10 kH' can only be used in under-10KHz applications. 
+Open the data sheet for the BMD-340 at the `u-blox website`_, Section 2 
+'Pin definition'. In the table 3 select the pins marked 'GPIO'.  
+Note that pins marked as 'Standard drive, low frequency I/O only 
+(<10 kH' can only be used in under-10KHz applications. 
 They are not suitable for 115200 speed of UART.
 
-Translate 'Pin' into number for Device tree by using the following formula::
+Translate 'Pin' into number for Device tree by using the following 
+formula::
 
    pin_no = b\*32 + a
 
@@ -499,11 +507,12 @@ where ``a`` and ``b`` are from the Pin value in the table (Pb.a).
 For example, for P0.1, ``pin_no = 1`` and for P1.0, ``pin_no = 32``.
 
 .. note:
-  Pins are defined according to the "nRF52" pin number, not the module pad number.
+  Pins are defined according to the "nRF52" pin number, not the module 
+  pad number.
 
 References
 **********
 
 .. target-notes::
 
-.. _u-blox website: https://www.u-blox.com/en/product/bmd-34-series-open-cpu
+.. _u-blox website: https://www.u-blox.com/docs/UBX-19033353
