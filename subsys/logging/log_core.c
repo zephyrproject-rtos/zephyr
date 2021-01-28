@@ -636,6 +636,7 @@ static bool msg_filter_check(struct log_backend const *backend,
 	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) {
 		uint32_t backend_level;
 		uint32_t msg_level;
+				(struct log_source_dynamic_data *)
 
 		backend_level = log_filter_get(backend,
 					       log_msg_domain_id_get(msg),
@@ -674,7 +675,7 @@ static void msg_process(struct log_msg *msg, bool bypass)
 
 void dropped_notify(void)
 {
-	uint32_t dropped = atomic_set(&dropped_cnt, 0);
+	uint32_t dropped = z_log_dropped_read_and_clear();
 
 	for (int i = 0; i < log_backend_count_get(); i++) {
 		struct log_backend const *backend = log_backend_get(i);
@@ -702,7 +703,7 @@ bool z_impl_log_process(bool bypass)
 		msg_process(msg, bypass);
 	}
 
-	if (!bypass && dropped_cnt) {
+	if (!bypass && z_log_dropped_pending()) {
 		dropped_notify();
 	}
 
@@ -730,9 +731,19 @@ uint32_t z_vrfy_log_buffered_cnt(void)
 #include <syscalls/log_buffered_cnt_mrsh.c>
 #endif
 
-void log_dropped(void)
+void z_log_dropped(void)
 {
 	atomic_inc(&dropped_cnt);
+}
+
+uint32_t z_log_dropped_read_and_clear(void)
+{
+	return atomic_set(&dropped_cnt, 0);
+}
+
+bool z_log_dropped_pending(void)
+{
+	return dropped_cnt >= 0;
 }
 
 uint32_t log_src_cnt_get(uint32_t domain_id)
@@ -763,16 +774,15 @@ static uint32_t max_filter_get(uint32_t filters)
 }
 
 uint32_t z_impl_log_filter_set(struct log_backend const *const backend,
-			    uint32_t domain_id,
-			    uint32_t src_id,
-			    uint32_t level)
+			       uint32_t domain_id, int16_t source_id,
+			       uint32_t level)
 {
-	__ASSERT_NO_MSG(src_id < log_sources_count());
+	__ASSERT_NO_MSG(source_id < log_sources_count());
 
 	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) {
 		uint32_t new_aggr_filter;
 
-		uint32_t *filters = log_dynamic_filters_get(src_id);
+		uint32_t *filters = log_dynamic_filters_get(source_id);
 
 		if (backend == NULL) {
 			struct log_backend const *iter_backend;
@@ -783,14 +793,14 @@ uint32_t z_impl_log_filter_set(struct log_backend const *const backend,
 				iter_backend = log_backend_get(i);
 				current = log_filter_set(iter_backend,
 							 domain_id,
-							 src_id, level);
+							 source_id, level);
 				max = MAX(current, max);
 			}
 
 			level = max;
 		} else {
 			uint32_t max = log_filter_get(backend, domain_id,
-						   src_id, false);
+						      source_id, false);
 
 			level = MIN(level, max);
 
@@ -815,7 +825,7 @@ uint32_t z_impl_log_filter_set(struct log_backend const *const backend,
 #ifdef CONFIG_USERSPACE
 uint32_t z_vrfy_log_filter_set(struct log_backend const *const backend,
 			    uint32_t domain_id,
-			    uint32_t src_id,
+			    int16_t src_id,
 			    uint32_t level)
 {
 	Z_OOPS(Z_SYSCALL_VERIFY_MSG(backend == 0,
@@ -873,20 +883,22 @@ void log_backend_disable(struct log_backend const *const backend)
 }
 
 uint32_t log_filter_get(struct log_backend const *const backend,
-		     uint32_t domain_id,
-		     uint32_t src_id,
-		     bool runtime)
+			uint32_t domain_id, int16_t source_id, bool runtime)
 {
-	__ASSERT_NO_MSG(src_id < log_sources_count());
+	__ASSERT_NO_MSG(source_id < log_sources_count());
 
 	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) && runtime) {
-		uint32_t *filters = log_dynamic_filters_get(src_id);
+		if (source_id < 0) {
+			return LOG_LEVEL_DBG;
+		}
+
+		uint32_t *filters = log_dynamic_filters_get(source_id);
 
 		return LOG_FILTER_SLOT_GET(filters,
 					   log_backend_id_get(backend));
-	} else {
-		return log_compiled_level_get(src_id);
 	}
+
+	return log_compiled_level_get(source_id);
 }
 
 char *log_strdup(const char *str)

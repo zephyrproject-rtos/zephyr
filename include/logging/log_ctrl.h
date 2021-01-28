@@ -106,11 +106,11 @@ uint32_t log_src_cnt_get(uint32_t domain_id);
 /** @brief Get name of the source (module or instance).
  *
  * @param domain_id Domain ID.
- * @param src_id    Source ID.
+ * @param source_id Source ID.
  *
  * @return Source name or NULL if invalid arguments.
  */
-const char *log_source_name_get(uint32_t domain_id, uint32_t src_id);
+const char *log_source_name_get(uint32_t domain_id, uint32_t source_id);
 
 /** @brief Get name of the domain.
  *
@@ -125,29 +125,28 @@ const char *log_domain_name_get(uint32_t domain_id);
  *
  * @param backend	Backend instance.
  * @param domain_id	ID of the domain.
- * @param src_id	Source (module or instance) ID.
+ * @param source_id	Source (module or instance) ID.
  * @param runtime	True for runtime filter or false for compiled in.
  *
  * @return		Severity level.
  */
 uint32_t log_filter_get(struct log_backend const *const backend,
-		     uint32_t domain_id, uint32_t src_id, bool runtime);
+			uint32_t domain_id, int16_t source_id, bool runtime);
 
 /**
  * @brief Set filter on given source for the provided backend.
  *
  * @param backend	Backend instance. NULL for all backends.
  * @param domain_id	ID of the domain.
- * @param src_id	Source (module or instance) ID.
+ * @param source_id	Source (module or instance) ID.
  * @param level		Severity level.
  *
  * @return Actual level set which may be limited by compiled level. If filter
  *	   was set for all backends then maximal level that was set is returned.
  */
 __syscall uint32_t log_filter_set(struct log_backend const *const backend,
-			       uint32_t domain_id,
-			       uint32_t src_id,
-			       uint32_t level);
+				  uint32_t domain_id, int16_t source_id,
+				  uint32_t level);
 
 /**
  *
