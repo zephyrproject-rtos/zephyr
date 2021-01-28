@@ -72,6 +72,13 @@ API Changes
 * The :c:func:`coap_packet_init` function will now take a pointer to a constant
   buffer as the ``token`` argument instead of a pointer to a writable buffer.
 
+* A new :ref:`regulator_api` API has been added to support controlling power
+  sources.  Regulators can also be associated with devicetree nodes, allowing
+  drivers to ensure the device they access has been powered up.  For simple
+  GPIO-only regulators a devicetree property ``supply-gpios`` is defined as a
+  standard way to identify the control signal in nodes that support power
+  control.
+
 Deprecated in this release
 ==========================
 
