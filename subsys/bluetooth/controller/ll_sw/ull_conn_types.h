@@ -495,8 +495,11 @@ struct ll_conn {
 #endif /* CONFIG_BT_CTLR_PHY */
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
-
-}; /* struct ll_con */
+#if defined(CONFIG_BT_CTLR_LLID_DATA_START_EMPTY)
+	/* Detect empty L2CAP start frame */
+	uint8_t  start_empty:1;
+#endif /* CONFIG_BT_CTLR_LLID_DATA_START_EMPTY */
+}; /* struct ll_conn */
 #endif /* BT_LL_SW_SPLIT_LEGACY */
 
 struct node_rx_cc {
