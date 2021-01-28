@@ -449,24 +449,47 @@ void ull_conn_link_tx_release(void *link)
 
 uint8_t ull_conn_ack_last_idx_get(void)
 {
-	return 0;
+	return mfifo_conn_ack.l;
 }
 
 memq_link_t *ull_conn_ack_peek(uint8_t *ack_last, uint16_t *handle,
 			       struct node_tx **tx)
 {
-	return NULL;
+	struct lll_tx *lll_tx;
+
+	lll_tx = MFIFO_DEQUEUE_GET(conn_ack);
+	if (!lll_tx) {
+		return NULL;
+	}
+
+	*ack_last = mfifo_conn_ack.l;
+
+	*handle = lll_tx->handle;
+	*tx = lll_tx->node;
+
+	return (*tx)->link;
 }
 
 memq_link_t *ull_conn_ack_by_last_peek(uint8_t last, uint16_t *handle,
 				       struct node_tx **tx)
 {
-	return NULL;
+	struct lll_tx *lll_tx;
+
+	lll_tx = mfifo_dequeue_get(mfifo_conn_ack.m, mfifo_conn_ack.s,
+				   mfifo_conn_ack.f, last);
+	if (!lll_tx) {
+		return NULL;
+	}
+
+	*handle = lll_tx->handle;
+	*tx = lll_tx->node;
+
+	return (*tx)->link;
 }
 
 void *ull_conn_ack_dequeue(void)
 {
-	return NULL;
+	return MFIFO_DEQUEUE(conn_ack);
 }
 
 void ull_conn_lll_ack_enqueue(uint16_t handle, struct node_tx *tx)
@@ -485,6 +508,34 @@ void ull_conn_lll_ack_enqueue(uint16_t handle, struct node_tx *tx)
 
 void ull_conn_tx_ack(uint16_t handle, memq_link_t *link, struct node_tx *tx)
 {
+	struct pdu_data *pdu_tx;
+
+	pdu_tx = (void *)tx->pdu;
+	LL_ASSERT(pdu_tx->len);
+
+	if (pdu_tx->ll_id == PDU_DATA_LLID_CTRL) {
+		if (handle != 0xFFFF) {
+			struct ll_conn *conn = ll_conn_get(handle);
+
+			ull_cp_tx_ack(conn, tx);
+		}
+
+		/* release ctrl mem if points to itself */
+		if (link->next == (void *)tx) {
+			LL_ASSERT(link->next);
+			ull_cp_release_tx(tx);
+			return;
+		} else {
+			LL_ASSERT(!link->next);
+		}
+	} else if (handle == 0xFFFF) {
+		pdu_tx->ll_id = PDU_DATA_LLID_RESV;
+	} else {
+		LL_ASSERT(handle != 0xFFFF);
+	}
+
+	ll_tx_ack_put(handle, tx);
+
 	return;
 }
 
