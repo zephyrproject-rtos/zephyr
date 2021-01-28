@@ -178,7 +178,7 @@ struct bt_codec_lc3_frame_len {
  */
 #define BT_CODEC_LC3_DATA(_freq, _duration, _chan_count, _len_min, _len_max) \
 { \
-	 BT_CODEC_DATA(BT_CODEC_LC3_FREQ, _freq), \
+	 BT_CODEC_DATA(BT_CODEC_LC3_FREQ, _freq, _freq >> 8), \
 	 BT_CODEC_DATA(BT_CODEC_LC3_DURATION, _duration), \
 	 BT_CODEC_DATA(BT_CODEC_LC3_CHAN_COUNT, _chan_count), \
 	 BT_CODEC_DATA(BT_CODEC_LC3_FRAME_LEN, _len_min, _len_min >> 8, \
