@@ -34,6 +34,7 @@ LOG_MODULE_REGISTER(net_shell, LOG_LEVEL_DBG);
 
 #if defined(CONFIG_NET_TCP)
 #include "tcp_internal.h"
+#include <sys/slist.h>
 #endif
 
 #include "ipv6.h"
@@ -1329,81 +1330,6 @@ struct tcp2_detail_info {
 };
 #endif
 
-#if defined(CONFIG_NET_TCP1) && \
-	(defined(CONFIG_NET_OFFLOAD) || defined(CONFIG_NET_NATIVE))
-static void tcp_cb(struct net_tcp *tcp, void *user_data)
-{
-	struct net_shell_user_data *data = user_data;
-	const struct shell *shell = data->shell;
-	int *count = data->user_data;
-	uint16_t recv_mss = net_tcp_get_recv_mss(tcp);
-
-	PR("%p %p   %5u    %5u %10u %10u %5u   %s\n",
-	   tcp, tcp->context,
-	   ntohs(net_sin6_ptr(&tcp->context->local)->sin6_port),
-	   ntohs(net_sin6(&tcp->context->remote)->sin6_port),
-	   tcp->send_seq, tcp->send_ack, recv_mss,
-	   net_tcp_state_str(net_tcp_get_state(tcp)));
-
-	(*count)++;
-}
-
-#if CONFIG_NET_TCP_LOG_LEVEL >= LOG_LEVEL_DBG
-static void tcp_sent_list_cb(struct net_tcp *tcp, void *user_data)
-{
-	struct net_shell_user_data *data = user_data;
-	const struct shell *shell = data->shell;
-	int *printed = data->user_data;
-	struct net_pkt *pkt;
-	struct net_pkt *tmp;
-
-	if (sys_slist_is_empty(&tcp->sent_list)) {
-		return;
-	}
-
-	if (!*printed) {
-		PR("\nTCP packets waiting ACK:\n");
-		PR("TCP             net_pkt[ref/totlen]->net_buf[ref/len]..."
-		   "\n");
-	}
-
-	PR("%p      ", tcp);
-
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&tcp->sent_list, pkt, tmp,
-					  sent_list) {
-		struct net_buf *frag = pkt->frags;
-
-		if (!*printed) {
-			PR("%p[%d/%zd]", pkt, atomic_get(&pkt->atomic_ref),
-			       net_pkt_get_len(pkt));
-			*printed = true;
-		} else {
-			PR("                %p[%d/%zd]",
-			   pkt, atomic_get(&pkt->atomic_ref),
-			   net_pkt_get_len(pkt));
-		}
-
-		if (frag) {
-			PR("->");
-		}
-
-		while (frag) {
-			PR("%p[%d/%d]", frag, frag->ref, frag->len);
-
-			frag = frag->frags;
-			if (frag) {
-				PR("->");
-			}
-		}
-
-		PR("\n");
-	}
-
-	*printed = true;
-}
-#endif /* CONFIG_NET_TCP_LOG_LEVEL >= LOG_LEVEL_DBG */
-#endif /* TCP1 */
-
 #if defined(CONFIG_NET_TCP2) && \
 	(defined(CONFIG_NET_OFFLOAD) || defined(CONFIG_NET_NATIVE))
 static void tcp_cb(struct tcp *conn, void *user_data)
@@ -1430,7 +1356,7 @@ static void tcp_sent_list_cb(struct tcp *conn, void *user_data)
 	const struct shell *shell = data->shell;
 	struct tcp2_detail_info *details = data->user_data;
 	struct net_pkt *pkt;
-	struct net_pkt *tmp;
+	sys_snode_t *node;
 
 	if (conn->state != TCP_LISTEN) {
 		if (!details->printed_details) {
@@ -1460,34 +1386,38 @@ static void tcp_sent_list_cb(struct tcp *conn, void *user_data)
 
 	PR("%p      ", conn);
 
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&conn->send_queue, pkt, tmp,
-					  sent_list) {
-		struct net_buf *frag = pkt->frags;
+	node = sys_slist_peek_head(&conn->send_queue);
+	if (node) {
+		pkt = CONTAINER_OF(node, struct net_pkt, next);
+		if (pkt) {
+			struct net_buf *frag = pkt->frags;
 
-		if (!details->printed_send_queue_header) {
-			PR("%p[%d/%zd]", pkt, atomic_get(&pkt->atomic_ref),
-			       net_pkt_get_len(pkt));
-			details->printed_send_queue_header = true;
-		} else {
-			PR("                %p[%d/%zd]",
-			   pkt, atomic_get(&pkt->atomic_ref),
-			   net_pkt_get_len(pkt));
-		}
+			if (!details->printed_send_queue_header) {
+				PR("%p[%d/%zd]", pkt,
+				   atomic_get(&pkt->atomic_ref),
+				   net_pkt_get_len(pkt));
+				details->printed_send_queue_header = true;
+			} else {
+				PR("                %p[%d/%zd]",
+				   pkt, atomic_get(&pkt->atomic_ref),
+				   net_pkt_get_len(pkt));
+			}
 
-		if (frag) {
-			PR("->");
-		}
-
-		while (frag) {
-			PR("%p[%d/%d]", frag, frag->ref, frag->len);
-
-			frag = frag->frags;
 			if (frag) {
 				PR("->");
 			}
-		}
 
-		PR("\n");
+			while (frag) {
+				PR("%p[%d/%d]", frag, frag->ref, frag->len);
+
+				frag = frag->frags;
+				if (frag) {
+					PR("->");
+				}
+			}
+
+			PR("\n");
+		}
 	}
 
 	details->printed_send_queue_header = true;
