@@ -64,11 +64,10 @@ void main(void)
 	status = GPIO_getEventMultiDio(GPIO_DIO_ALL_MASK);
 	GPIO_clearEventMultiDio(status);
 
-	/* Above we disabled entry to deep sleep based on duration of
-	 * controlled delay.  Here we need to override that, then
-	 * force a sleep so that the deep sleep takes effect.
+	/*
+	 * Force the SOFT_OFF state.
 	 */
-	pm_power_state_force((struct pm_state_info){PM_STATE_STANDBY, 0, 0});
+	pm_power_state_force((struct pm_state_info){PM_STATE_SOFT_OFF, 0, 0});
 	k_sleep(K_MSEC(1));
 
 	printk("ERROR: System off failed\n");
