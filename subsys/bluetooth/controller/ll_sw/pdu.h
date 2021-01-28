@@ -616,6 +616,9 @@ struct pdu_data_llctrl {
 	} __packed;
 } __packed;
 
+#define PDU_DATA_LLCTRL_LEN(type) (offsetof(struct pdu_data_llctrl, type) + \
+				   sizeof(struct pdu_data_llctrl_ ## type))
+
 #if defined(CONFIG_BT_CTLR_PROFILE_ISR)
 struct profile {
 	uint8_t lcur;
