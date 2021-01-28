@@ -70,14 +70,20 @@ static inline void put_sync_hexdump(const struct log_backend *const backend,
 			   metadata, data, length, format_flags());
 }
 
+static void process(const struct log_backend *const backend,
+		union log_msg2_generic *msg)
+{
+	log_output_msg2_process(&log_output_adsp, &msg->log, format_flags());
+}
+
 const struct log_backend_api log_backend_adsp_api = {
-#ifdef CONFIG_LOG_IMMEDIATE
-	.put_sync_string = put_sync_string,
-	.put_sync_hexdump = put_sync_hexdump,
-#else
-	.put = put,
-	.dropped = dropped,
-#endif
+	.process = IS_ENABLED(CONFIG_LOG2) ? process : NULL,
+	.put_sync_string = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ?
+		put_sync_string : NULL,
+	.put_sync_hexdump = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ?
+		put_sync_hexdump : NULL,
+	.put = IS_ENABLED(CONFIG_LOG_MODE_DEFERRED) ? put : NULL,
+	.dropped = IS_ENABLED(CONFIG_LOG_IMMEDIATE) ? NULL : dropped,
 	.panic = panic,
 };
 
