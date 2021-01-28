@@ -9,7 +9,6 @@ void ll_conn_release(struct ll_conn *conn);
 uint16_t ll_conn_handle_get(struct ll_conn *conn);
 struct ll_conn *ll_conn_get(uint16_t handle);
 struct ll_conn *ll_connected_get(uint16_t handle);
-void ll_tx_ack_put(uint16_t handle, struct node_tx *node_tx);
 int ull_conn_init(void);
 int ull_conn_reset(void);
 void ull_conn_chan_map_set(uint8_t *chan_map);
