@@ -103,6 +103,11 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 #if defined(CONFIG_USERSPACE) || defined(CONFIG_FPU_SHARING)
 	thread->arch.mode = 0;
+#if FP_GUARD_EXTRA_SIZE > 0
+	if ((thread->base.user_options & K_FP_REGS) != 0) {
+		thread->arch.mode |= Z_ARM_MODE_MPU_GUARD_FLOAT_Msk;
+	}
+#endif
 #if defined(CONFIG_USERSPACE)
 	thread->arch.priv_stack_start = 0;
 #endif
@@ -112,6 +117,100 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 * irrelevant.
 	 */
 }
+
+#if defined(CONFIG_MPU_STACK_GUARD) && defined(CONFIG_FPU) \
+	&& defined(CONFIG_FPU_SHARING)
+
+static inline void z_arm_thread_stack_info_adjust(struct k_thread *thread,
+	bool use_large_guard)
+{
+	if (use_large_guard) {
+		/* Switch to use a large MPU guard if not already. */
+		if ((thread->arch.mode &
+			Z_ARM_MODE_MPU_GUARD_FLOAT_Msk) == 0) {
+			/* Default guard size is used. Update required. */
+			thread->arch.mode |= Z_ARM_MODE_MPU_GUARD_FLOAT_Msk;
+#if defined(CONFIG_USERSPACE)
+			if (thread->arch.priv_stack_start) {
+				/* User thread */
+				thread->arch.priv_stack_start +=
+					FP_GUARD_EXTRA_SIZE;
+			} else
+#endif /* CONFIG_USERSPACE */
+			{
+				/* Privileged thread */
+				thread->stack_info.start +=
+					FP_GUARD_EXTRA_SIZE;
+				thread->stack_info.size -=
+					FP_GUARD_EXTRA_SIZE;
+			}
+		}
+	} else {
+		/* Switch to use the default MPU guard size if not already. */
+		if ((thread->arch.mode &
+			Z_ARM_MODE_MPU_GUARD_FLOAT_Msk) != 0) {
+			/* Large guard size is used. Update required. */
+			thread->arch.mode &= ~Z_ARM_MODE_MPU_GUARD_FLOAT_Msk;
+#if defined(CONFIG_USERSPACE)
+			if (thread->arch.priv_stack_start) {
+				/* User thread */
+				thread->arch.priv_stack_start -=
+					FP_GUARD_EXTRA_SIZE;
+			} else
+#endif /* CONFIG_USERSPACE */
+			{
+				/* Privileged thread */
+				thread->stack_info.start -=
+					FP_GUARD_EXTRA_SIZE;
+				thread->stack_info.size +=
+					FP_GUARD_EXTRA_SIZE;
+			}
+		}
+	}
+}
+
+/*
+ * Adjust the MPU stack guard size together with the FPU
+ * policy and the stack_info values for the thread that is
+ * being switched in.
+ */
+uint32_t z_arm_mpu_stack_guard_and_fpu_adjust(struct k_thread *thread)
+{
+	if (((thread->base.user_options & K_FP_REGS) != 0) ||
+		((thread->arch.mode & CONTROL_FPCA_Msk) != 0)) {
+		/* The thread has been pre-tagged (at creation or later) with
+		 * K_FP_REGS, i.e. it is expected to be using the FPU registers
+		 * (if not already). Activate lazy stacking and program a large
+		 * MPU guard to safely detect privilege thread stack overflows.
+		 *
+		 * OR
+		 * The thread is not pre-tagged with K_FP_REGS, but it has
+		 * generated an FP context. Activate lazy stacking and
+		 * program a large MPU guard to detect privilege thread
+		 * stack overflows.
+		 */
+		FPU->FPCCR |= FPU_FPCCR_LSPEN_Msk;
+
+		z_arm_thread_stack_info_adjust(thread, true);
+
+		/* Tag the thread with K_FP_REGS */
+		thread->base.user_options |= K_FP_REGS;
+
+		return MPU_GUARD_ALIGN_AND_SIZE_FLOAT;
+	}
+
+	/* Thread is not pre-tagged with K_FP_REGS, and it has
+	 * not been using the FPU. Since there is no active FPU
+	 * context, de-activate lazy stacking and program the
+	 * default MPU guard size.
+	 */
+	FPU->FPCCR &= (~FPU_FPCCR_LSPEN_Msk);
+
+	z_arm_thread_stack_info_adjust(thread, false);
+
+	return MPU_GUARD_ALIGN_AND_SIZE;
+}
+#endif
 
 #ifdef CONFIG_USERSPACE
 FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
@@ -129,7 +228,7 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	 * which accounted for memory borrowed from the thread stack.
 	 */
 #if FP_GUARD_EXTRA_SIZE > 0
-	if ((_current->base.user_options & K_FP_REGS) != 0) {
+	if ((_current->arch.mode & Z_ARM_MODE_MPU_GUARD_FLOAT_Msk) != 0) {
 		_current->stack_info.start -= FP_GUARD_EXTRA_SIZE;
 		_current->stack_info.size += FP_GUARD_EXTRA_SIZE;
 	}
@@ -144,7 +243,7 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	 */
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	_current->arch.priv_stack_start +=
-		(_current->base.user_options & K_FP_REGS) ?
+		((_current->arch.mode & Z_ARM_MODE_MPU_GUARD_FLOAT_Msk) != 0) ?
 		MPU_GUARD_ALIGN_AND_SIZE_FLOAT : MPU_GUARD_ALIGN_AND_SIZE;
 #else
 	_current->arch.priv_stack_start += MPU_GUARD_ALIGN_AND_SIZE;
@@ -264,10 +363,16 @@ uint32_t z_check_thread_stack_fail(const uint32_t fault_addr, const uint32_t psp
 	}
 #endif
 
-#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
-	uint32_t guard_len = (thread->base.user_options & K_FP_REGS) ?
+#if (defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)) && \
+	defined(CONFIG_MPU_STACK_GUARD)
+	uint32_t guard_len =
+		((_current->arch.mode & Z_ARM_MODE_MPU_GUARD_FLOAT_Msk) != 0) ?
 		MPU_GUARD_ALIGN_AND_SIZE_FLOAT : MPU_GUARD_ALIGN_AND_SIZE;
 #else
+	/* If MPU_STACK_GUARD is not enabled, the guard length is
+	 * effectively zero. Stack overflows may be detected only
+	 * for user threads in nPRIV mode.
+	 */
 	uint32_t guard_len = MPU_GUARD_ALIGN_AND_SIZE;
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 
