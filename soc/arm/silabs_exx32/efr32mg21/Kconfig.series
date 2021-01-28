@@ -14,7 +14,6 @@ config SOC_SERIES_EFR32MG21
 	select SOC_FAMILY_EXX32
 	select HAS_SILABS_GECKO
 	select HAS_SWO
-	select SOC_GECKO_CORE
 	select SOC_GECKO_CMU
 	select SOC_GECKO_EMU
 	select SOC_GECKO_GPIO
