@@ -53,7 +53,8 @@ static void ep_iso_connected(struct bt_iso_chan *chan)
 	 * sink to start.
 	 */
 	if (ep->type == BT_AUDIO_EP_LOCAL &&
-	    ep->chan->cap->type == BT_AUDIO_SINK) {
+	    ep->chan->cap->type == BT_AUDIO_SINK &&
+	    ep->status.state == BT_ASCS_ASE_STATE_ENABLING) {
 		bt_audio_chan_start(ep->chan);
 	}
 }
