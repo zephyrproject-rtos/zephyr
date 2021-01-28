@@ -11,6 +11,12 @@
 
 #include "gpio_utils.h"
 
+#if IS_ENABLED(CONFIG_GPIO_NRF_INT_EDGE_USING_SENSE) &&	\
+	!defined(NRF_GPIO_LATCH_PRESENT)
+#error "GPIO LATCH is required by edge interrupts using GPIO SENSE," \
+	"but it is not supported by the platform."
+#endif
+
 #define GPIO(id) DT_NODELABEL(gpio##id)
 
 struct gpio_nrfx_data {
@@ -105,20 +111,40 @@ static int gpiote_pin_int_cfg(const struct device *port, uint32_t pin)
 	/* Pins trigger interrupts only if pin has been configured to do so */
 	if (data->pin_int_en & BIT(pin)) {
 		if (data->trig_edge & BIT(pin)) {
-		/* For edge triggering we use GPIOTE channels. */
-			nrf_gpiote_polarity_t pol;
+			if (IS_ENABLED(CONFIG_GPIO_NRF_INT_EDGE_USING_SENSE)) {
+				bool high;
+				uint32_t sense;
 
-			if (data->double_edge & BIT(pin)) {
-				pol = NRF_GPIOTE_POLARITY_TOGGLE;
-			} else if ((data->int_active_level & BIT(pin)) != 0U) {
-				pol = NRF_GPIOTE_POLARITY_LOTOHI;
+				if (nrf_gpio_pin_dir_get(abs_pin) ==
+				    NRF_GPIO_PIN_DIR_OUTPUT) {
+					high = nrf_gpio_pin_out_read(abs_pin);
+				} else {
+					high = nrf_gpio_pin_read(abs_pin);
+				}
+
+				if (high) {
+					sense = GPIO_PIN_CNF_SENSE_Low;
+				} else {
+					sense = GPIO_PIN_CNF_SENSE_High;
+				}
+
+				nrf_gpio_cfg_sense_set(abs_pin, sense);
 			} else {
-				pol = NRF_GPIOTE_POLARITY_HITOLO;
-			}
+				/* For edge triggering we use GPIOTE channels. */
+				nrf_gpiote_polarity_t pol;
 
-			res = gpiote_channel_alloc(abs_pin, pol);
+				if (data->double_edge & BIT(pin)) {
+					pol = NRF_GPIOTE_POLARITY_TOGGLE;
+				} else if ((data->int_active_level & BIT(pin)) != 0U) {
+					pol = NRF_GPIOTE_POLARITY_LOTOHI;
+				} else {
+					pol = NRF_GPIOTE_POLARITY_HITOLO;
+				}
+
+				res = gpiote_channel_alloc(abs_pin, pol);
+			}
 		} else {
-		/* For level triggering we use sense mechanism. */
+			/* For level triggering we use sense mechanism. */
 			uint32_t sense = sense_for_pin(data, pin);
 
 			nrf_gpio_cfg_sense_set(abs_pin, sense);
@@ -261,7 +287,8 @@ static int gpio_nrfx_pin_interrupt_configure(const struct device *port,
 	struct gpio_nrfx_data *data = get_port_data(port);
 	uint32_t abs_pin = NRF_GPIO_PIN_MAP(get_port_cfg(port)->port_num, pin);
 
-	if ((mode == GPIO_INT_MODE_EDGE) &&
+	if (!IS_ENABLED(CONFIG_GPIO_NRF_INT_EDGE_USING_SENSE) &&
+	    (mode == GPIO_INT_MODE_EDGE) &&
 	    (nrf_gpio_pin_dir_get(abs_pin) == NRF_GPIO_PIN_DIR_OUTPUT)) {
 		/*
 		 * The pin's output value as specified in the GPIO will be
@@ -298,6 +325,32 @@ static const struct gpio_driver_api gpio_nrfx_drv_api_funcs = {
 	.pin_interrupt_configure = gpio_nrfx_pin_interrupt_configure,
 	.manage_callback = gpio_nrfx_manage_callback,
 };
+
+static void cfg_edge_sense_pins(const struct device *port,
+				uint32_t sense_levels)
+{
+	const struct gpio_nrfx_data *data = get_port_data(port);
+	const struct gpio_nrfx_cfg *cfg = get_port_cfg(port);
+	uint32_t pin = 0U;
+	uint32_t bit = 1U << pin;
+	uint32_t edge_pins = data->pin_int_en & (data->trig_edge |
+						 data->double_edge);
+
+	/* Configure sense detection on all pins that use it. */
+	while (edge_pins) {
+		if (edge_pins & bit) {
+			uint32_t abs_pin = NRF_GPIO_PIN_MAP(cfg->port_num, pin);
+			uint32_t sense = (sense_levels & bit) ?
+				GPIO_PIN_CNF_SENSE_High :
+				GPIO_PIN_CNF_SENSE_Low;
+
+			nrf_gpio_cfg_sense_set(abs_pin, sense);
+			edge_pins &= ~bit;
+		}
+		++pin;
+		bit <<= 1;
+	}
+}
 
 static inline uint32_t get_level_pins(const struct device *port)
 {
@@ -347,7 +400,8 @@ static void cfg_level_pins(const struct device *port)
  *
  * @return Bitmask where 1 marks pin as trigger source.
  */
-static uint32_t check_level_trigger_pins(const struct device *port)
+static uint32_t check_level_trigger_pins(const struct device *port,
+					 uint32_t *sense_levels)
 {
 	struct gpio_nrfx_data *data = get_port_data(port);
 	const struct gpio_nrfx_cfg *cfg = get_port_cfg(port);
@@ -368,16 +422,56 @@ static uint32_t check_level_trigger_pins(const struct device *port)
 	uint32_t pin = 0U;
 	uint32_t bit = 1U << pin;
 
-	while (level_pins) {
-		if (level_pins & bit) {
+	uint32_t port_latch = 0;
+
+	uint32_t check_pins = level_pins;
+
+	if (IS_ENABLED(CONFIG_GPIO_NRF_INT_EDGE_USING_SENSE)) {
+		check_pins = data->pin_int_en;
+	}
+
+#if IS_ENABLED(CONFIG_GPIO_NRF_INT_EDGE_USING_SENSE)
+	/* Read LATCH, which will tell us which pin has changed its state. */
+	port_latch = cfg->port->LATCH;
+#endif
+
+	while (check_pins) {
+		if (check_pins & bit) {
 			uint32_t abs_pin = NRF_GPIO_PIN_MAP(cfg->port_num, pin);
 
+			if (!(level_pins & bit)) {
+				uint32_t sense = nrf_gpio_pin_sense_get(abs_pin);
+				bool high = (sense == GPIO_PIN_CNF_SENSE_High);
+
+				if (port_latch & bit) {
+					/* check if there was an interrupt */
+					if ((data->double_edge & bit) ||
+					    ((!!data->int_active_level) == high)) {
+						out |= bit;
+					}
+
+					/* invert configured level */
+					high = !high;
+				}
+
+				if (high) {
+					*sense_levels |= bit;
+				}
+			}
+
 			nrf_gpio_cfg_sense_set(abs_pin, NRF_GPIO_PIN_NOSENSE);
-			level_pins &= ~bit;
+			check_pins &= ~bit;
 		}
 		++pin;
 		bit <<= 1;
 	}
+
+#if IS_ENABLED(CONFIG_GPIO_NRF_INT_EDGE_USING_SENSE)
+	/* Clear LATCH, as at this point every level detection pin is
+	 * disabled.
+	 */
+	cfg->port->LATCH = port_latch;
+#endif
 
 	return out;
 }
@@ -393,17 +487,20 @@ static inline void fire_callbacks(const struct device *port, uint32_t pins)
 static void gpiote_event_handler(void)
 {
 	uint32_t fired_triggers[GPIO_COUNT] = {0};
+	uint32_t sense_levels[GPIO_COUNT] = {0};
 	bool port_event = nrf_gpiote_event_check(NRF_GPIOTE,
 						 NRF_GPIOTE_EVENT_PORT);
 
 	if (port_event) {
 #ifdef CONFIG_GPIO_NRF_P0
 		fired_triggers[0] =
-			check_level_trigger_pins(DEVICE_DT_GET(GPIO(0)));
+			check_level_trigger_pins(DEVICE_DT_GET(GPIO(0)),
+						 &sense_levels[0]);
 #endif
 #ifdef CONFIG_GPIO_NRF_P1
 		fired_triggers[1] =
-			check_level_trigger_pins(DEVICE_DT_GET(GPIO(1)));
+			check_level_trigger_pins(DEVICE_DT_GET(GPIO(1)),
+						 &sense_levels[1]);
 #endif
 
 		/* Sense detect was disabled while checking pins so
@@ -424,6 +521,21 @@ static void gpiote_event_handler(void)
 			fired_triggers[abs_pin / 32U] |= BIT(abs_pin % 32);
 			nrf_gpiote_event_clear(NRF_GPIOTE, evt);
 		}
+	}
+
+	if (IS_ENABLED(CONFIG_GPIO_NRF_INT_EDGE_USING_SENSE) && port_event) {
+		/* Reprogram sense to match current edge to be detected. Make it
+		 * now to detect all new edges after callbacks were fired.
+		 *
+		 * This may cause DETECT to be re-asserted if pin state has
+		 * already changed to the newly configured sense level.
+		 */
+#ifdef CONFIG_GPIO_NRF_P0
+		cfg_edge_sense_pins(DEVICE_DT_GET(GPIO(0)), sense_levels[0]);
+#endif
+#ifdef CONFIG_GPIO_NRF_P1
+		cfg_edge_sense_pins(DEVICE_DT_GET(GPIO(1)), sense_levels[1]);
+#endif
 	}
 
 #ifdef CONFIG_GPIO_NRF_P0
