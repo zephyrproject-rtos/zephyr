@@ -330,9 +330,9 @@ struct net_buf *bt_iso_create_frag_timeout(size_t reserve, k_timeout_t timeout)
 {
 	struct net_buf_pool *pool = NULL;
 
-#if CONFIG_BT_L2CAP_TX_FRAG_COUNT > 0
+#if CONFIG_BT_ISO_TX_FRAG_COUNT > 0
 	pool = &iso_frag_pool;
-#endif
+#endif /* CONFIG_BT_ISO_TX_FRAG_COUNT > 0 */
 
 #if defined(CONFIG_NET_BUF_LOG)
 	return bt_conn_create_pdu_timeout_debug(pool, reserve, timeout, func,
