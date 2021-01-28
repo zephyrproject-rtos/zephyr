@@ -58,6 +58,11 @@ extern uint16_t ull_conn_interval_min_get(struct ll_conn *conn);
 static int init_reset(void);
 
 static inline void disable(uint16_t handle);
+
+#if defined(CONFIG_BT_CTLR_LLID_DATA_START_EMPTY)
+static int empty_data_start_release(struct ll_conn *conn, struct node_tx *tx);
+#endif /* CONFIG_BT_CTLR_LLID_DATA_START_EMPTY */
+
 static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 			  struct pdu_data *pdu_rx, struct ll_conn *conn);
 
@@ -253,7 +258,9 @@ uint8_t ull_conn_default_phy_rx_get(void)
 {
 	return default_phy_rx;
 }
+#endif /* CONFIG_BT_CTLR_PHY */
 
+#if defined(CONFIG_BT_CTLR_PHY)
 void ull_conn_default_phy_tx_set(uint8_t phy_tx)
 {
        default_phy_tx = phy_tx;
@@ -375,7 +382,42 @@ void ull_conn_done(struct node_rx_event_done *done)
 
 void ull_conn_tx_demux(uint8_t count)
 {
-	return;
+	do {
+		struct lll_tx *lll_tx;
+		struct ll_conn *conn;
+
+		lll_tx = MFIFO_DEQUEUE_GET(conn_tx);
+		if (!lll_tx) {
+			break;
+		}
+
+		conn = ll_connected_get(lll_tx->handle);
+		if (conn) {
+			struct node_tx *tx = lll_tx->node;
+
+#if defined(CONFIG_BT_CTLR_LLID_DATA_START_EMPTY)
+			if (empty_data_start_release(conn, tx)) {
+				goto ull_conn_tx_demux_release;
+			}
+#endif /* CONFIG_BT_CTLR_LLID_DATA_START_EMPTY */
+
+			/* TODO(thoh): Is this assignment needed? */
+			tx->next = NULL;
+			ull_tx_q_enqueue_data(&conn->tx_q, tx);
+		} else {
+			struct node_tx *tx = lll_tx->node;
+			struct pdu_data *p = (void *)tx->pdu;
+
+			p->ll_id = PDU_DATA_LLID_RESV;
+			ll_tx_ack_put(0xFFFF, tx);
+		}
+
+#if defined(CONFIG_BT_CTLR_LLID_DATA_START_EMPTY)
+ull_conn_tx_demux_release:
+#endif /* CONFIG_BT_CTLR_LLID_DATA_START_EMPTY */
+
+		MFIFO_DEQUEUE(conn_tx);
+	} while (--count);
 }
 
 void ull_conn_tx_lll_enqueue(struct ll_conn *conn, uint8_t count)
@@ -551,6 +593,29 @@ static inline void disable(uint16_t handle)
 	conn->lll.link_tx_free = NULL;
 	*/
 }
+
+#if defined(CONFIG_BT_CTLR_LLID_DATA_START_EMPTY)
+static int empty_data_start_release(struct ll_conn *conn, struct node_tx *tx)
+{
+	struct pdu_data *p = (void *)tx->pdu;
+
+	if ((p->ll_id == PDU_DATA_LLID_DATA_START) && !p->len) {
+		conn->start_empty = 1U;
+
+		ll_tx_ack_put(conn->lll.handle, tx);
+
+		return -EINVAL;
+	} else if (p->len && conn->start_empty) {
+		conn->start_empty = 0U;
+
+		if (p->ll_id == PDU_DATA_LLID_DATA_CONTINUE) {
+			p->ll_id = PDU_DATA_LLID_DATA_START;
+		}
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_CTLR_LLID_DATA_START_EMPTY */
 
 static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 			  struct pdu_data *pdu_rx, struct ll_conn *conn)
