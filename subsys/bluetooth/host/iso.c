@@ -390,10 +390,10 @@ static struct net_buf *hci_le_set_cig_params(struct bt_iso_create_param *param)
 
 		switch (param->chans[i]->qos->dir) {
 		case BT_ISO_CHAN_QOS_IN:
-			cis->m_sdu = param->chans[i]->qos->sdu;
+			cis->s_sdu = param->chans[i]->qos->sdu;
 			break;
 		case BT_ISO_CHAN_QOS_OUT:
-			cis->s_sdu = param->chans[i]->qos->sdu;
+			cis->m_sdu = param->chans[i]->qos->sdu;
 			break;
 		case BT_ISO_CHAN_QOS_INOUT:
 			cis->m_sdu = param->chans[i]->qos->sdu;
