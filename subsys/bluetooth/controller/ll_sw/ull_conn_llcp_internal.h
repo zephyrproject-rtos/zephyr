@@ -15,10 +15,8 @@ void ll_conn_release(struct ll_conn *conn);
 uint16_t ll_conn_handle_get(struct ll_conn *conn);
 struct ll_conn *ll_conn_get(uint16_t handle);
 struct ll_conn *ll_connected_get(uint16_t handle);
-uint16_t ull_conn_init(void);
+int ull_conn_init(void);
 int ull_conn_reset(void);
-uint8_t ull_conn_chan_map_cpy(uint8_t *chan_map);
-void ull_conn_chan_map_set(uint8_t const *const chan_map);
 uint16_t ull_conn_default_tx_octets_get(void);
 uint16_t ull_conn_default_tx_time_get(void);
 void ull_conn_default_tx_octets_set(uint16_t tx_octets);
@@ -40,8 +38,7 @@ memq_link_t *ull_conn_ack_peek(uint8_t *ack_last, uint16_t *handle,
 memq_link_t *ull_conn_ack_by_last_peek(uint8_t last, uint16_t *handle,
 				       struct node_tx **tx);
 void *ull_conn_ack_dequeue(void);
-struct ll_conn *ull_conn_tx_ack(uint16_t handle, memq_link_t *link,
-				struct node_tx *tx);
+void ull_conn_tx_ack(uint16_t handle, memq_link_t *link, struct node_tx *tx);
 uint8_t ull_conn_llcp_req(void *conn);
 
 void *ull_conn_tx_mem_acquire(void);
