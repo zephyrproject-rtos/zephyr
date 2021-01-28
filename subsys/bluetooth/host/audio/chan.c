@@ -23,7 +23,7 @@
 #define LOG_MODULE_NAME bt_audio_chan
 #include "common/log.h"
 
-static struct bt_audio_chan *chan_enabling;
+static struct bt_audio_chan *chan_listen;
 
 static void chan_attach(struct bt_conn *conn, struct bt_audio_chan *chan,
 			struct bt_audio_ep *ep, struct bt_audio_cap *cap,
@@ -144,6 +144,51 @@ int bt_audio_chan_reconfig(struct bt_audio_chan *chan,
 #define IN_RANGE(_min, _max, _value) \
 	(_value >= _min && _value <= _max)
 
+static int bt_audio_chan_iso_accept(struct bt_conn *conn,
+				    struct bt_iso_chan **chan)
+{
+	BT_DBG("conn %p", conn);
+
+	if (!chan_listen) {
+		BT_ERR("No channel listening\n");
+		return -EPERM;
+	}
+
+	*chan = chan_listen->iso;
+	chan_listen = NULL;
+
+	return 0;
+}
+
+static struct bt_iso_server iso_server = {
+	.sec_level = BT_SECURITY_L2,
+	.accept = bt_audio_chan_iso_accept,
+};
+
+static int bt_audio_chan_iso_listen(struct bt_audio_chan *chan)
+{
+	static bool server;
+	int err;
+
+	BT_DBG("chan %p conn %p", chan, chan->conn);
+
+	if (server) {
+		chan_listen = chan;
+		return 0;
+	}
+
+	err = bt_iso_server_register(&iso_server);
+	if (err) {
+		BT_ERR("bt_iso_server_register: %d", err);
+		return err;
+	}
+
+	server = true;
+	chan_listen = chan;
+
+	return 0;
+}
+
 int bt_audio_chan_qos(struct bt_audio_chan *chan, struct bt_codec_qos *qos)
 {
 	int err;
@@ -232,53 +277,8 @@ int bt_audio_chan_qos(struct bt_audio_chan *chan, struct bt_codec_qos *qos)
 
 	if (chan->ep->type == BT_AUDIO_EP_LOCAL) {
 		bt_audio_ep_set_state(chan->ep, BT_ASCS_ASE_STATE_QOS);
+		bt_audio_chan_iso_listen(chan);
 	}
-
-	return 0;
-}
-
-static int bt_audio_chan_iso_accept(struct bt_conn *conn,
-				    struct bt_iso_chan **chan)
-{
-	BT_DBG("conn %p", conn);
-
-	if (!chan_enabling ||
-	    chan_enabling->state != BT_AUDIO_CHAN_CONFIGURED) {
-		BT_ERR("No channel in enabling state\n");
-		return -EPERM;
-	}
-
-	*chan = chan_enabling->iso;
-	chan_enabling = NULL;
-
-	return 0;
-}
-
-static struct bt_iso_server iso_server = {
-	.sec_level = BT_SECURITY_L2,
-	.accept = bt_audio_chan_iso_accept,
-};
-
-static int bt_audio_chan_iso_enable(struct bt_audio_chan *chan)
-{
-	static bool server;
-	int err;
-
-	BT_DBG("chan %p", chan);
-
-	if (server) {
-		chan_enabling = chan;
-		return 0;
-	}
-
-	err = bt_iso_server_register(&iso_server);
-	if (err) {
-		BT_ERR("bt_iso_server_register: %d", err);
-		return err;
-	}
-
-	server = true;
-	chan_enabling = chan;
 
 	return 0;
 }
@@ -317,9 +317,7 @@ done:
 
 	bt_audio_ep_set_state(chan->ep, BT_ASCS_ASE_STATE_ENABLING);
 
-	err = bt_audio_chan_iso_enable(chan);
-	if (!err) {
-		/* Wait for ISO channel to be stabilished */
+	if (chan == chan_listen) {
 		return 0;
 	}
 
