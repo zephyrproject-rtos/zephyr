@@ -162,8 +162,8 @@ struct ll_conn {
 	struct {
 		uint8_t  req;
 		uint8_t  ack;
-		uint32_t features_conn;
-		uint32_t features_peer;
+		uint64_t features_conn;
+		uint64_t features_peer;
 	} llcp_feature;
 
 	struct {
