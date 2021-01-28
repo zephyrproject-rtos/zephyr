@@ -62,11 +62,9 @@ int z_clock_driver_init(const struct device *device)
 
 void z_clock_set_timeout(int32_t ticks, bool idle)
 {
-	ARG_UNUSED(idle);
-
 #if defined(CONFIG_TICKLESS_KERNEL)
 
-	if (idle) {
+	if (ticks == K_TICKS_FOREVER && idle) {
 		return;
 	}
 
@@ -90,6 +88,9 @@ void z_clock_set_timeout(int32_t ticks, bool idle)
 	arm_arch_timer_set_irq_mask(false);
 	k_spin_unlock(&lock, key);
 
+#else  /* CONFIG_TICKLESS_KERNEL */
+	ARG_UNUSED(ticks);
+	ARG_UNUSED(idle);
 #endif
 }
 

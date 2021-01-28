@@ -123,7 +123,23 @@ void z_add_timeout(struct _timeout *to, _timeout_func_t fn,
 		}
 
 		if (to == first()) {
+#if CONFIG_TIMESLICING
+			/*
+			 * This is not ideal, since it does not
+			 * account the time elapsed since the the
+			 * last announcement, and slice_ticks is based
+			 * on that. It means the that time remaining for
+			 * the next announcement can be lesser than
+			 * slice_ticks.
+			 */
+			int32_t next_time = next_timeout();
+
+			if (_current_cpu->slice_ticks != next_time) {
+				z_clock_set_timeout(next_time, false);
+			}
+#else
 			z_clock_set_timeout(next_timeout(), false);
+#endif	/* CONFIG_TIMESLICING */
 		}
 	}
 }
