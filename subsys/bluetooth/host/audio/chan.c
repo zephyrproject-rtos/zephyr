@@ -506,14 +506,16 @@ done:
 		return err;
 	}
 
-	bt_audio_ep_set_state(chan->ep, BT_ASCS_ASE_STATE_QOS);
-
 	/* If the Receiver Stop Ready operation has completed successfully the
 	 * Unicast Client or the Unicast Server may terminate a CIS established
 	 * for that ASE by following the Connected Isochronous Stream Terminate
 	 * procedure defined in Volume 3, Part C, Section 9.3.15.
 	 */
-	bt_audio_chan_disconnect(chan);
+	if (!bt_audio_chan_disconnect(chan)) {
+		return err;
+	}
+
+	bt_audio_ep_set_state(chan->ep, BT_ASCS_ASE_STATE_QOS);
 
 	return err;
 }
@@ -761,7 +763,7 @@ int bt_audio_chan_disconnect(struct bt_audio_chan *chan)
 	}
 
 	if (!chan->iso || !chan->iso->conn) {
-		return 0;
+		return -ENOTCONN;
 	}
 
 	return bt_iso_chan_disconnect(chan->iso);
