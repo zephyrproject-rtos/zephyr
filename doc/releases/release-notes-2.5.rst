@@ -355,6 +355,9 @@ Build and Infrastructure
     should be using the new devicetree API introduced in Zephyr 2.3 and
     documented in :ref:`dt-from-c`. Information on flash partitions has moved
     to :ref:`flash_map_api`.
+  * It is now possible to resolve at build time the device pointer associated
+    with a device that is defined in devicetree, via ``DEVICE_DT_GET``.  See
+    :ref:`dt-get-device`.
 
 * West
 
