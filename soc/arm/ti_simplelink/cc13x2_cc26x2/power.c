@@ -111,6 +111,8 @@ void pm_power_state_set(struct pm_state_info info)
 	case PM_STATE_SUSPEND_TO_RAM:
 		__fallthrough;
 	case PM_STATE_SUSPEND_TO_DISK:
+		__fallthrough;
+	case PM_STATE_SOFT_OFF:
 		Power_shutdown(0, 0);
 		break;
 	default:
