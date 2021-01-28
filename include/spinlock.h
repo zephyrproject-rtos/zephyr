@@ -11,6 +11,10 @@
 #include <stdbool.h>
 #include <arch/cpu.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct z_spinlock_key {
 	int key;
 };
@@ -190,5 +194,8 @@ static ALWAYS_INLINE void k_spin_release(struct k_spinlock *l)
 #endif
 }
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZEPHYR_INCLUDE_SPINLOCK_H_ */
