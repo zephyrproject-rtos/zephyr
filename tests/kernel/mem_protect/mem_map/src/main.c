@@ -6,6 +6,7 @@
 
 #include <ztest.h>
 #include <sys/mem_manage.h>
+#include <toolchain.h>
 
 /* 32-bit IA32 page tables have no mechanism to restrict execution */
 #if defined(CONFIG_X86) && !defined(CONFIG_X86_64) && !defined(CONFIG_X86_PAE)
@@ -87,6 +88,11 @@ void test_z_phys_map_rw(void)
 }
 
 #ifndef SKIP_EXECUTE_TESTS
+extern char __test_mem_map_start[];
+extern char __test_mem_map_end[];
+extern char __test_mem_map_size[];
+
+__in_section_unique(test_mem_map) __used
 static void transplanted_function(bool *executed)
 {
 	*executed = true;
@@ -99,29 +105,30 @@ static void transplanted_function(bool *executed)
  */
 void test_z_phys_map_exec(void)
 {
-	uint8_t *mapped_rw, *mapped_exec, *mapped_ro;
+	uint8_t *mapped_exec, *mapped_ro;
 	bool executed = false;
 	void (*func)(bool *executed);
 
 	expect_fault = false;
 
-	/* Map with write permissions and copy the function into the page */
-	z_phys_map(&mapped_rw, (uintptr_t)test_page,
-		   sizeof(test_page), BASE_FLAGS | K_MEM_PERM_RW);
-
-	memcpy(mapped_rw, (void *)&transplanted_function, CONFIG_MMU_PAGE_SIZE);
+	/*
+	 * Need to reference the function or else linker would
+	 * garbage collected it.
+	 */
+	func = transplanted_function;
 
 	/* Now map with execution enabled and try to run the copied fn */
-	z_phys_map(&mapped_exec, (uintptr_t)test_page,
-		   sizeof(test_page), BASE_FLAGS | K_MEM_PERM_EXEC);
+	z_phys_map(&mapped_exec, (uintptr_t)__test_mem_map_start,
+		   (uintptr_t)__test_mem_map_size,
+		   BASE_FLAGS | K_MEM_PERM_EXEC);
 
 	func = (void (*)(bool *executed))mapped_exec;
 	func(&executed);
 	zassert_true(executed, "function did not execute");
 
 	/* Now map without execution and execution should now fail */
-	z_phys_map(&mapped_ro, (uintptr_t)test_page,
-		   sizeof(test_page), BASE_FLAGS);
+	z_phys_map(&mapped_ro, (uintptr_t)__test_mem_map_start,
+		   (uintptr_t)__test_mem_map_size, BASE_FLAGS);
 
 	func = (void (*)(bool *executed))mapped_ro;
 	expect_fault = true;
