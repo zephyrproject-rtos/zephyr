@@ -59,8 +59,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define ENGINE_UPDATE_INTERVAL_MS 500
 #define OBSERVE_COUNTER_START 0U
 
-#define WELL_KNOWN_CORE_PATH	"</.well-known/core>"
-
 /*
  * TODO: to implement a way for clients to specify alternate path
  * via Kconfig (LwM2M specification 8.2.2 Alternate Path)
@@ -3316,7 +3314,7 @@ static int print_resource_dimension(struct lwm2m_output_context *out,
 	return 0;
 }
 
-static int do_discover_op(struct lwm2m_message *msg, bool well_known)
+static int do_discover_op(struct lwm2m_message *msg)
 {
 	static char disc_buf[24];
 	struct lwm2m_engine_obj *obj;
@@ -3324,12 +3322,10 @@ static int do_discover_op(struct lwm2m_message *msg, bool well_known)
 	int ret;
 	bool reported = false;
 
-	/* object ID is required unless it's a ".well-known/core" discovery
-	 * ref: lwm2m spec 20170208-A table 11
+	/* object ID is required in Device Management Discovery (5.4.2).
 	 */
-	if (!well_known &&
-	    (msg->path.level == 0U ||
-	     msg->path.obj_id == LWM2M_OBJECT_SECURITY_ID)) {
+	if (msg->path.level == 0U ||
+	    msg->path.obj_id == LWM2M_OBJECT_SECURITY_ID) {
 		return -EPERM;
 	}
 
@@ -3345,30 +3341,6 @@ static int do_discover_op(struct lwm2m_message *msg, bool well_known)
 	ret = coap_packet_append_payload_marker(msg->out.out_cpkt);
 	if (ret < 0) {
 		return ret;
-	}
-
-	/* Handle CoAP .well-known/core discover */
-	if (well_known) {
-		/* </.well-known/core> */
-		ret = buf_append(CPKT_BUF_WRITE(msg->out.out_cpkt),
-				 WELL_KNOWN_CORE_PATH,
-				 strlen(WELL_KNOWN_CORE_PATH));
-		if (ret < 0) {
-			return ret;
-		}
-
-		SYS_SLIST_FOR_EACH_CONTAINER(&engine_obj_list, obj, node) {
-			snprintk(disc_buf, sizeof(disc_buf), ",</%u>",
-				 obj->obj_id);
-
-			ret = buf_append(CPKT_BUF_WRITE(msg->out.out_cpkt),
-					 disc_buf, strlen(disc_buf));
-			if (ret < 0) {
-				return ret;
-			}
-		}
-
-		return 0;
 	}
 
 	/* Report object attributes only when Object ID (alone) was
@@ -3812,7 +3784,6 @@ static int handle_request(struct coap_packet *request,
 	uint8_t tkl = 0U;
 	uint16_t format = LWM2M_FORMAT_NONE, accept;
 	int observe = -1; /* default to -1, 0 = ENABLE, 1 = DISABLE */
-	bool well_known = false;
 	int block_opt, block_num;
 	struct lwm2m_block_context *block_ctx = NULL;
 	enum coap_block_size block_size;
@@ -3872,22 +3843,10 @@ static int handle_request(struct coap_packet *request,
 		}
 	}
 
-	/* check for .well-known/core URI query (DISCOVER) */
-	if (r == 2 &&
-	    (options[0].len == 11U &&
-	     strncmp(options[0].value, ".well-known", 11) == 0) &&
-	    (options[1].len == 4U &&
-	     strncmp(options[1].value, "core", 4) == 0)) {
-		if ((code & COAP_REQUEST_MASK) != COAP_METHOD_GET) {
-			r = -EPERM;
-			goto error;
-		}
-
-		well_known = true;
 #if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
 	/* check for bootstrap-finish */
-	} else if ((code & COAP_REQUEST_MASK) == COAP_METHOD_POST && r == 1 && \
-		   strncmp(options[0].value, "bs", options[0].len) == 0) {
+	if ((code & COAP_REQUEST_MASK) == COAP_METHOD_POST && r == 1 &&
+	    strncmp(options[0].value, "bs", options[0].len) == 0) {
 		engine_bootstrap_finish();
 
 		msg->code = COAP_RESPONSE_CODE_CHANGED;
@@ -3898,8 +3857,9 @@ static int handle_request(struct coap_packet *request,
 		}
 
 		return 0;
+	} else
 #endif
-	} else {
+	{
 		r = coap_options_to_path(options, r, &msg->path);
 		if (r < 0) {
 			r = -ENOENT;
@@ -3932,8 +3892,7 @@ static int handle_request(struct coap_packet *request,
 		goto error;
 	}
 
-	if (!well_known && !(msg->ctx->bootstrap_mode &&
-			     msg->path.level == 0)) {
+	if (!(msg->ctx->bootstrap_mode && msg->path.level == 0)) {
 		/* find registered obj */
 		obj = get_engine_obj(msg->path.obj_id);
 		if (!obj) {
@@ -3951,7 +3910,7 @@ static int handle_request(struct coap_packet *request,
 		 * LwM2M V1_0_1-20170704-A, table 25,
 		 * Discover: CoAP GET + accept=LWM2M_FORMAT_APP_LINK_FORMAT
 		 */
-		if (well_known || accept == LWM2M_FORMAT_APP_LINK_FORMAT) {
+		if (accept == LWM2M_FORMAT_APP_LINK_FORMAT) {
 			msg->operation = LWM2M_OP_DISCOVER;
 			accept = LWM2M_FORMAT_APP_LINK_FORMAT;
 		} else {
@@ -4121,7 +4080,7 @@ static int handle_request(struct coap_packet *request,
 				break;
 			}
 #endif
-			r = do_discover_op(msg, well_known);
+			r = do_discover_op(msg);
 			break;
 
 		case LWM2M_OP_WRITE:
