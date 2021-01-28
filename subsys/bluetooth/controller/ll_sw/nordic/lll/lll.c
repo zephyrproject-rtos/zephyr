@@ -30,6 +30,7 @@
 #include "lll_vendor.h"
 #include "lll_clock.h"
 #include "lll_internal.h"
+#include "lll_prof_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_lll
@@ -78,9 +79,13 @@ ISR_DIRECT_DECLARE(radio_nrf5_isr)
 {
 	DEBUG_RADIO_ISR(1);
 
+	lll_prof_enter_radio();
+
 	isr_radio();
 
 	ISR_DIRECT_PM();
+
+	lll_prof_exit_radio();
 
 	DEBUG_RADIO_ISR(0);
 	return 1;
@@ -89,6 +94,8 @@ ISR_DIRECT_DECLARE(radio_nrf5_isr)
 static void rtc0_nrf5_isr(const void *arg)
 {
 	DEBUG_TICKER_ISR(1);
+
+	lll_prof_enter_ull_high();
 
 	/* On compare0 run ticker worker instance0 */
 	if (NRF_RTC0->EVENTS_COMPARE[0]) {
@@ -99,9 +106,15 @@ static void rtc0_nrf5_isr(const void *arg)
 
 	mayfly_run(TICKER_USER_ID_ULL_HIGH);
 
+	lll_prof_exit_ull_high();
+
 #if !defined(CONFIG_BT_CTLR_LOW_LAT) && \
 	(CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
+	lll_prof_enter_ull_low();
+
 	mayfly_run(TICKER_USER_ID_ULL_LOW);
+
+	lll_prof_exit_ull_low();
 #endif
 
 	DEBUG_TICKER_ISR(0);
@@ -111,7 +124,11 @@ static void swi_lll_nrf5_isr(const void *arg)
 {
 	DEBUG_RADIO_ISR(1);
 
+	lll_prof_enter_lll();
+
 	mayfly_run(TICKER_USER_ID_LLL);
+
+	lll_prof_exit_lll();
 
 	DEBUG_RADIO_ISR(0);
 }
@@ -122,7 +139,11 @@ static void swi_ull_low_nrf5_isr(const void *arg)
 {
 	DEBUG_TICKER_JOB(1);
 
+	lll_prof_enter_ull_low();
+
 	mayfly_run(TICKER_USER_ID_ULL_LOW);
+
+	lll_prof_exit_ull_low();
 
 	DEBUG_TICKER_JOB(0);
 }
