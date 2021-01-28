@@ -13,7 +13,7 @@
 #include <sys/byteorder.h>
 #include <host/hci_core.h>
 
-extern struct bt_le_ext_adv *g_adv;
+#include "common.h"
 
 /* Macros delivering common values for unit tests */
 #define CTE_LEN_VALID                   (BT_HCI_LE_CTE_LEN_MIN + 5)
