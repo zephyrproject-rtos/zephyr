@@ -1482,7 +1482,7 @@ int bt_mesh_cfg_mod_app_get_vnd(uint16_t net_idx, uint16_t addr, uint16_t elem_a
 	}
 
 	return mod_member_list_get(OP_VND_MOD_APP_GET, OP_VND_MOD_APP_LIST,
-				   net_idx, addr, elem_addr, mod_id, CID_NVAL,
+				   net_idx, addr, elem_addr, mod_id, cid,
 				   status, apps, app_cnt);
 }
 
