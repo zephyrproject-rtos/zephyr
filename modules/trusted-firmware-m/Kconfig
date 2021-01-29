@@ -116,6 +116,16 @@ config TFM_BL2_FALSE
 
 endchoice
 
+config TFM_MCUBOOT_IMAGE_NUMBER
+	int "Granularity of FW updates of TFM and app"
+	range 1 2
+	default 2
+	help
+	  How many images the bootloader sees when it looks at TFM and the app.
+	  When this is 1, the S and NS are considered as 1 image and must be
+	  updated in one atomic operation. When this is 2, they are split and
+	  can be updated independently if dependency requirements are met.
+
 config TFM_IPC
 	bool "IPC"
 	help
