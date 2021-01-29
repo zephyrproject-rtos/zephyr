@@ -62,7 +62,7 @@ static void sync_hexdump(const struct log_backend *const backend,
 				     timestamp, metadata, data, length);
 }
 
-static void log_backend_spinel_init(void)
+static void log_backend_spinel_init(struct log_backend const *const backend)
 {
 	memset(char_buf, '\0', sizeof(char_buf));
 }
