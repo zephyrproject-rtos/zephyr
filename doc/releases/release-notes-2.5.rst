@@ -154,6 +154,8 @@ Architectures
     * Introduced the functionality for chain-loadable Zephyr
       fimrmware images to force the initialization of internal
       architecture state during early system boot (Cortex-M).
+    * Changed the default Floating Point Services mode to
+      Shared FP registers mode.
 
   * AARCH64
 
