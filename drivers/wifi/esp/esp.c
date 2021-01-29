@@ -398,7 +398,7 @@ MODEM_CMD_DEFINE(on_cmd_closed)
 				ESP_SOCK_CONNECTED, ESP_SOCK_CLOSE_PENDING);
 
 	if (!(old_flags & ESP_SOCK_CONNECTED)) {
-		LOG_WRN("Link %d already closed", link_id);
+		LOG_DBG("Link %d already closed", link_id);
 		goto socket_unref;
 	}
 
