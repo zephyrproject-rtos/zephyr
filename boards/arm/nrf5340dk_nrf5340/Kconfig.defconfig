@@ -22,18 +22,6 @@ config BOARD
 config BUILD_WITH_TFM
 	default y if BOARD_NRF5340DK_NRF5340_CPUAPPNS || BOARD_NRF5340PDK_NRF5340_CPUAPPNS
 
-if BUILD_WITH_TFM
-
-# By default, force building TF-M without bootloader support.
-
-choice TFM_BL2
-	bool
-	prompt "BL2 configuration, should TFM build with MCUboot support"
-	default TFM_BL2_FALSE
-endchoice
-
-endif # BUILD_WITH_TFM
-
 # Code Partition:
 #
 # For the secure version of the board the firmware is linked at the beginning
