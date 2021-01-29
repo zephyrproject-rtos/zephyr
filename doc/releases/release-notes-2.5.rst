@@ -371,6 +371,11 @@ Libraries / Subsystems
 
 * Disk
 
+* File Systems
+
+  * :option:`CONFIG_FS_LITTLEFS_FC_MEM_POOL` has been deprecated and
+    should be replaced by :option:`CONFIG_FS_LITTLEFS_FC_HEAP_SIZE`.
+
 * Management
 
   * MCUmgr
