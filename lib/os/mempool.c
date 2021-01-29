@@ -9,6 +9,7 @@
 #include <misc/__assert.h>
 #include <misc/mempool_base.h>
 #include <misc/mempool.h>
+#include <sys/math_extras.h>
 
 #ifdef CONFIG_MISRA_SANE
 #define LVL_ARRAY_SZ(n) (8 * sizeof(void *) / 2)
@@ -349,7 +350,12 @@ void *sys_mem_pool_alloc(struct sys_mem_pool *p, size_t size)
 
 	sys_mutex_lock(&p->mutex, K_FOREVER);
 
-	size += sizeof(struct sys_mem_pool_block);
+	if (size_add_overflow(size, WB_UP(sizeof(struct sys_mem_pool_block)),
+			      &size)) {
+		ret = NULL;
+		goto out;
+	}
+
 	if (z_sys_mem_pool_block_alloc(&p->base, size, &level, &block,
 				      (void **)&ret)) {
 		ret = NULL;
