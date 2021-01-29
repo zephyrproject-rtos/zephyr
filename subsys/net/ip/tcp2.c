@@ -304,13 +304,19 @@ static void tcp_send(struct net_pkt *pkt)
 	if (is_6lo_technology(pkt)) {
 		struct net_pkt *new_pkt;
 
-		new_pkt = net_pkt_clone(pkt, TCP_PKT_ALLOC_TIMEOUT);
+		new_pkt = tcp_pkt_clone(pkt);
 		if (!new_pkt) {
+			/* The caller of this func assumes that the net_pkt
+			 * is consumed by this function. We call unref here
+			 * so that the unref at the end of the func will
+			 * free the net_pkt.
+			 */
+			tcp_pkt_unref(pkt);
 			goto out;
 		}
 
 		if (net_send_data(new_pkt) < 0) {
-			net_pkt_unref(new_pkt);
+			tcp_pkt_unref(new_pkt);
 		}
 
 		/* We simulate sending of the original pkt and unref it like
@@ -354,15 +360,14 @@ static int tcp_conn_unref(struct tcp *conn)
 	}
 #endif /* CONFIG_NET_TEST_PROTOCOL */
 
-	ref_count = atomic_dec(&conn->ref_count) - 1;
+	k_mutex_lock(&tcp_lock, K_FOREVER);
 
+	ref_count = atomic_dec(&conn->ref_count) - 1;
 	if (ref_count) {
 		tp_out(net_context_get_family(conn->context), conn->iface,
 		       "TP_TRACE", "event", "CONN_DELETE");
-		goto out;
+		goto unlock;
 	}
-
-	k_mutex_lock(&tcp_lock, K_FOREVER);
 
 	/* If there is any pending data, pass that to application */
 	while ((pkt = k_fifo_get(&conn->recv_data, K_NO_WAIT)) != NULL) {
@@ -403,6 +408,7 @@ static int tcp_conn_unref(struct tcp *conn)
 
 	k_mem_slab_free(&tcp_conns_slab, (void **)&conn);
 
+unlock:
 	k_mutex_unlock(&tcp_lock);
 out:
 	return ref_count;
@@ -681,7 +687,7 @@ static int tcp_data_get(struct tcp *conn, struct net_pkt *pkt, size_t *len)
 	}
 
 	if (conn->context->recv_cb) {
-		struct net_pkt *up = net_pkt_clone(pkt, TCP_PKT_ALLOC_TIMEOUT);
+		struct net_pkt *up = tcp_pkt_clone(pkt);
 
 		if (!up) {
 			ret = -ENOBUFS;
@@ -915,11 +921,11 @@ static int tcp_send_data(struct tcp *conn)
 		conn->unacked_len += len;
 
 		if (conn->data_mode == TCP_DATA_MODE_RESEND) {
-			net_stats_update_tcp_resent(net_pkt_iface(pkt), len);
+			net_stats_update_tcp_resent(conn->iface, len);
 			net_stats_update_tcp_seg_rexmit(conn->iface);
 		} else {
-			net_stats_update_tcp_sent(net_pkt_iface(pkt), len);
-			net_stats_update_tcp_seg_sent(net_pkt_iface(pkt));
+			net_stats_update_tcp_sent(conn->iface, len);
+			net_stats_update_tcp_seg_sent(conn->iface);
 		}
 	}
 
@@ -1098,38 +1104,44 @@ static struct tcp *tcp_conn_alloc(void)
 
 	ret = k_mem_slab_alloc(&tcp_conns_slab, (void **)&conn, K_NO_WAIT);
 	if (ret) {
+		NET_ERR("Cannot allocate slab");
 		goto out;
 	}
 
 	memset(conn, 0, sizeof(*conn));
 
+	if (CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT) {
+		conn->queue_recv_data = tcp_rx_pkt_alloc(conn, 0);
+		if (conn->queue_recv_data == NULL) {
+			NET_ERR("Cannot allocate %s queue for conn %p", "recv",
+				conn);
+			goto fail;
+		}
+	}
+
+	conn->send_data = tcp_pkt_alloc(conn, 0);
+	if (conn->send_data == NULL) {
+		NET_ERR("Cannot allocate %s queue for conn %p", "send", conn);
+		goto fail;
+	}
+
 	k_mutex_init(&conn->lock);
 	k_fifo_init(&conn->recv_data);
+	k_sem_init(&conn->connect_sem, 0, UINT_MAX);
 
+	conn->in_connect = false;
 	conn->state = TCP_LISTEN;
-
 	conn->recv_win = tcp_window;
-
 	conn->seq = (IS_ENABLED(CONFIG_NET_TEST_PROTOCOL) ||
 		     IS_ENABLED(CONFIG_NET_TEST)) ? 0 : sys_rand32_get();
 
 	sys_slist_init(&conn->send_queue);
 
 	k_delayed_work_init(&conn->send_timer, tcp_send_process);
-
 	k_delayed_work_init(&conn->timewait_timer, tcp_timewait_timeout);
 	k_delayed_work_init(&conn->fin_timer, tcp_fin_timeout);
-
-	if (CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT) {
-		conn->queue_recv_data = tcp_rx_pkt_alloc(conn, 0);
-	}
-
-	conn->send_data = tcp_pkt_alloc(conn, 0);
 	k_delayed_work_init(&conn->send_data_timer, tcp_resend_data);
 	k_delayed_work_init(&conn->recv_queue_timer, tcp_cleanup_recv_queue);
-
-	k_sem_init(&conn->connect_sem, 0, UINT_MAX);
-	conn->in_connect = false;
 
 	tcp_conn_ref(conn);
 
@@ -1138,6 +1150,15 @@ out:
 	NET_DBG("conn: %p", conn);
 
 	return conn;
+
+fail:
+	if (CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT && conn->queue_recv_data) {
+		tcp_pkt_unref(conn->queue_recv_data);
+		conn->queue_recv_data = NULL;
+	}
+
+	k_mem_slab_free(&tcp_conns_slab, (void **)&conn);
+	return NULL;
 }
 
 int net_tcp_get(struct net_context *context)
