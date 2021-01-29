@@ -45,6 +45,9 @@ static void esf_dump(const z_arch_esf_t *esf)
 		LOG_ERR("r10/v7: 0x%08x  r11/v8: 0x%08x    psp:  0x%08x",
 			callee->v7, callee->v8, callee->psp);
 	}
+
+	LOG_ERR("EXC_RETURN: 0x%0x", esf->extra_info.exc_return);
+
 #endif /* CONFIG_EXTRA_EXCEPTION_INFO */
 	LOG_ERR("Faulting instruction address (r15/pc): 0x%08x",
 		esf->basic.pc);
