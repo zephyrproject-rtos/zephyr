@@ -1,0 +1,10 @@
+sample:
+  name: Disk Access Speed Test
+common:
+  tags: diskaccess
+tests:
+  sample.subsys.disk.rwcheck:
+    depends_on: sdhc
+    harness: console
+    harness_config:
+      fixture: fixture_sdhc
