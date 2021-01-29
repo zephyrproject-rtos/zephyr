@@ -98,7 +98,7 @@ void main(void)
 			return;
 		}
 
-		printk("ADC reading(s):");
+		printk("ADC reading:");
 		for (uint8_t i = 0; i < ADC_NUM_CHANNELS; i++) {
 			int32_t raw_value = sample_buffer[i];
 
