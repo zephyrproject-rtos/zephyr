@@ -319,15 +319,15 @@ static int start_read(const struct device *dev,
 	}
 
 	uint32_t channels = sequence->channels;
-	if (channels > find_lsb_set(channels)) {
+	uint8_t index = find_lsb_set(channels) - 1;
+
+	if (channels > BIT(index)) {
 		LOG_ERR("Only single channel supported");
 		return -ENOTSUP;
 	}
 
 	data->buffer = sequence->buffer;
-	uint8_t index;
 
-	index = find_lsb_set(channels) - 1;
 	uint32_t channel = __LL_ADC_DECIMAL_NB_TO_CHANNEL(index);
 #if defined(CONFIG_SOC_SERIES_STM32H7X)
 	/*
