@@ -298,7 +298,7 @@ static void spin_entry(void *p1, void *p2, void *p3)
  * @see k_mem_domain_add_thread()
  */
 
-#ifdef CONFIG_SMP
+#if CONFIG_MP_NUM_CPUS > 1
 #define PRIO	K_PRIO_COOP(0)
 #else
 #define PRIO	K_PRIO_PREEMPT(1)
