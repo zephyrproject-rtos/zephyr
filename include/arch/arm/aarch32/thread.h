@@ -75,6 +75,23 @@ struct _thread_arch {
 #endif
 
 #if defined(CONFIG_USERSPACE) || defined(CONFIG_FPU_SHARING)
+	/*
+	 * Status variable holding several thread status flags
+	 * as follows:
+	 *
+	 * +--------------bit-3----------bit-2--------bit-1---+----bit-0------+
+	 * :          |             |              |          |               |
+	 * : reserved |<Guard FLOAT>| <FP context> | reserved |  <priv mode>  |
+	 * :   bits   |             | CONTROL.FPCA |          | CONTROL.nPRIV |
+	 * +------------------------------------------------------------------+
+	 *
+	 * Bit 0: thread's current privileged mode (Supervisor or User mode)
+	 *        Mirrors CONTROL.nPRIV flag.
+	 * Bit 2: indicating whether the thread has an active FP context.
+	 *        Mirrors CONTROL.FPCA flag.
+	 * Bit 3: indicating whether the thread is applying the long (FLOAT)
+	 *        or the default MPU stack guard size.
+	 */
 	uint32_t mode;
 #if defined(CONFIG_USERSPACE)
 	uint32_t priv_stack_start;
@@ -82,6 +99,9 @@ struct _thread_arch {
 #endif
 };
 
+#if defined(CONFIG_FPU_SHARING) && defined(CONFIG_MPU_STACK_GUARD)
+#define Z_ARM_MODE_MPU_GUARD_FLOAT_Msk (1 << 3)
+#endif
 typedef struct _thread_arch _thread_arch_t;
 
 #endif /* _ASMLANGUAGE */
