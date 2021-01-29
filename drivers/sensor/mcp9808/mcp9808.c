@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(MCP9808, CONFIG_SENSOR_LOG_LEVEL);
 
 int mcp9808_reg_read(const struct device *dev, uint8_t reg, uint16_t *val)
 {
-	const struct mcp9808_data *data = dev->data;
+	struct mcp9808_data *data = dev->data;
 	const struct mcp9808_config *cfg = dev->config;
 	int rc = i2c_write_read(data->i2c_master, cfg->i2c_addr,
 				&reg, sizeof(reg),
@@ -33,6 +33,39 @@ int mcp9808_reg_read(const struct device *dev, uint8_t reg, uint16_t *val)
 	}
 
 	return rc;
+}
+
+int mcp9808_reg_write_16bit(const struct device *dev, uint8_t reg,
+			    uint16_t val)
+{
+	struct mcp9808_data *data = dev->data;
+	const struct mcp9808_config *cfg = dev->config;
+
+	uint8_t buf[3];
+
+	buf[0] = reg;
+	sys_put_be16(val, &buf[1]);
+
+	return i2c_write(data->i2c_master, buf, sizeof(buf), cfg->i2c_addr);
+}
+
+int mcp9808_reg_write_8bit(const struct device *dev, uint8_t reg,
+			   uint8_t val)
+{
+	struct mcp9808_data *data = dev->data;
+	const struct mcp9808_config *cfg = dev->config;
+	uint8_t buf[2] = {
+		reg,
+		val,
+	};
+
+	return i2c_write(data->i2c_master, buf, sizeof(buf), cfg->i2c_addr);
+}
+
+static int mcp9808_set_temperature_resolution(const struct device *dev,
+					      uint8_t resolution)
+{
+	return mcp9808_reg_write_8bit(dev, MCP9808_REG_RESOLUTION, resolution);
 }
 
 static int mcp9808_sample_fetch(const struct device *dev,
@@ -78,8 +111,14 @@ int mcp9808_init(const struct device *dev)
 
 	data->i2c_master = device_get_binding(cfg->i2c_bus);
 	if (!data->i2c_master) {
-		LOG_DBG("mcp9808: i2c master not found: %s", cfg->i2c_bus);
+		LOG_ERR("mcp9808: i2c master not found: %s", cfg->i2c_bus);
 		return -EINVAL;
+	}
+
+	rc = mcp9808_set_temperature_resolution(dev, cfg->resolution);
+	if (rc) {
+		LOG_ERR("Could not set the resolution of mcp9808 module");
+		return rc;
 	}
 
 #ifdef CONFIG_MCP9808_TRIGGER
@@ -97,9 +136,10 @@ static const struct mcp9808_config mcp9808_cfg = {
 	.alert_pin = DT_INST_GPIO_PIN(0, int_gpios),
 	.alert_flags = DT_INST_GPIO_FLAGS(0, int_gpios),
 	.alert_controller = DT_INST_GPIO_LABEL(0, int_gpios),
+	.resolution = DT_INST_PROP(0, resolution),
 #endif /* CONFIG_MCP9808_TRIGGER */
 };
 
 DEVICE_DT_INST_DEFINE(0, mcp9808_init, device_pm_control_nop,
-		    &mcp9808_data, &mcp9808_cfg, POST_KERNEL,
-		    CONFIG_SENSOR_INIT_PRIORITY, &mcp9808_api_funcs);
+		      &mcp9808_data, &mcp9808_cfg, POST_KERNEL,
+		      CONFIG_SENSOR_INIT_PRIORITY, &mcp9808_api_funcs);
