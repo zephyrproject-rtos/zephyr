@@ -194,8 +194,9 @@ static void send_output(const struct log_backend *const backend,
 	log_msg_put(msg);
 }
 
-static void init_net(void)
+static void init_net(struct log_backend const *const backend)
 {
+	ARG_UNUSED(backend);
 	int ret;
 
 	net_sin(&server_addr)->sin_port = htons(514);

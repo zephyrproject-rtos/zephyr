@@ -74,7 +74,7 @@ static void log_backend_swo_put(const struct log_backend *const backend,
 	log_backend_std_put(&log_output_swo, flag, msg);
 }
 
-static void log_backend_swo_init(void)
+static void log_backend_swo_init(struct log_backend const *const backend)
 {
 	/* Enable DWT and ITM units */
 	CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;

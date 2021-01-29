@@ -36,7 +36,7 @@ void main(void)
 
 		if (!log_backend_is_active(backend)) {
 			if (backend->api->init != NULL) {
-				backend->api->init();
+				backend->api->init(backend);
 			}
 
 			log_backend_activate(backend, NULL);

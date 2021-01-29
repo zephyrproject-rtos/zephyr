@@ -40,7 +40,7 @@ struct log_backend_api {
 
 	void (*dropped)(const struct log_backend *const backend, uint32_t cnt);
 	void (*panic)(const struct log_backend *const backend);
-	void (*init)(void);
+	void (*init)(const struct log_backend *const backend);
 };
 
 /**
