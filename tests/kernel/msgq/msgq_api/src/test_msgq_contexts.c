@@ -404,8 +404,11 @@ void test_msgq_empty(void)
 	 */
 	ret = k_msgq_cleanup(&msgq1);
 	zassert_equal(ret, -EBUSY, NULL);
+
 	/* put a message to wake that getting thread */
-	k_msgq_put(&msgq1, &data[0], K_NO_WAIT);
+	ret = k_msgq_put(&msgq1, &data[0], K_NO_WAIT);
+	zassert_equal(ret, 0, NULL);
+
 	k_thread_abort(tid);
 }
 
@@ -429,8 +432,9 @@ void test_msgq_full(void)
 	ret = k_sem_init(&end_sema, 0, 1);
 	zassert_equal(ret, 0, NULL);
 
+	ret = k_msgq_put(&msgq1, &data[0], K_NO_WAIT);
+	zassert_equal(ret, 0, NULL);
 
-	k_msgq_put(&msgq1, &data[0], K_NO_WAIT);
 	k_tid_t tid = k_thread_create(&tdata2, tstack2, STACK_SIZE,
 					put_full_entry, &msgq1, NULL,
 					NULL, pri, 0, K_NO_WAIT);
