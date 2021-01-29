@@ -28,13 +28,21 @@ static struct fs_mount_t mp = {
 *  Note the fatfs library is able to mount only strings inside _VOLUME_STRS
 *  in ffconf.h
 */
+#ifdef CONFIG_DISK_ACCESS_RAM
+static const char *disk_mount_pt = "/RAM:";
+#else
 static const char *disk_mount_pt = "/SD:";
+#endif
 
 void main(void)
 {
 	/* raw disk i/o */
 	do {
+#ifdef CONFIG_DISK_ACCESS_RAM
+		static const char *disk_pdrv = "RAM";
+#else
 		static const char *disk_pdrv = "SD";
+#endif
 		uint64_t memory_size_mb;
 		uint32_t block_count;
 		uint32_t block_size;
@@ -59,7 +67,7 @@ void main(void)
 		printk("Sector size %u\n", block_size);
 
 		memory_size_mb = (uint64_t)block_count * block_size;
-		printk("Memory Size(MB) %u\n", (uint32_t)(memory_size_mb >> 20));
+		printk("Memory Size(MB) %u, (KB) %u\n", (uint32_t)(memory_size_mb >> 20), (uint32_t)(memory_size_mb >> 10));
 	} while (0);
 
 	mp.mnt_point = disk_mount_pt;
