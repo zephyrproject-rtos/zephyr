@@ -83,4 +83,6 @@ source "drivers/gpio/Kconfig.npcx"
 
 source "drivers/gpio/Kconfig.emul"
 
+source "drivers/gpio/Kconfig.pcal6408a"
+
 endif # GPIO
