@@ -305,6 +305,20 @@ int bt_iso_server_register(struct bt_iso_server *server);
 int bt_iso_chan_bind(struct bt_conn **conns, uint8_t num_conns,
 		     struct bt_iso_chan **chans);
 
+/** @brief Unbind ISO channel
+ *
+ *  Unbind ISO channel from ACL connection, channel must be in BT_ISO_BOUND
+ *  state.
+ *
+ *  Note: Channels which the ACL connection has been disconnected are unbind
+ *  automatically.
+ *
+ *  @param chan Channel object.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_iso_chan_unbind(struct bt_iso_chan *chan);
+
 /** @brief Connect ISO channels
  *
  *  Connect ISO channels, once the connection is completed each channel
