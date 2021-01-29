@@ -544,7 +544,7 @@ void log_init(void)
 
 		if (backend->autostart) {
 			if (backend->api->init != NULL) {
-				backend->api->init();
+				backend->api->init(backend);
 			}
 
 			log_backend_enable(backend, NULL, CONFIG_LOG_MAX_LEVEL);
