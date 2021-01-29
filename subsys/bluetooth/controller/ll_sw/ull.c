@@ -323,6 +323,9 @@ static inline void *mark_get(void *m);
 static inline void done_alloc(void);
 static inline void rx_alloc(uint8_t max);
 static void rx_demux(void *param);
+#if defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
+static void rx_demux_yield(void);
+#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 #if defined(CONFIG_BT_CONN)
 static uint8_t tx_cmplt_get(uint16_t *handle, uint8_t *first, uint8_t last);
 static inline void rx_demux_conn_tx_ack(uint8_t ack_last, uint16_t handle,
@@ -1853,7 +1856,7 @@ static void rx_demux(void *param)
 
 #if defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
 			if (!nack) {
-				ull_rx_sched();
+				rx_demux_yield();
 			}
 #else /* !CONFIG_BT_CTLR_LOW_LAT_ULL */
 			if (nack) {
@@ -1873,7 +1876,7 @@ static void rx_demux(void *param)
 						      link, node_tx);
 
 #if defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
-				ull_rx_sched();
+				rx_demux_yield();
 #endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 
 			}
@@ -1884,6 +1887,18 @@ static void rx_demux(void *param)
 	} while (link);
 #endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 }
+
+#if defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
+static void rx_demux_yield(void)
+{
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, rx_demux};
+
+	/* Kick the ULL (using the mayfly, tailchain it) */
+	mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_ULL_HIGH, 1,
+		       &mfy);
+}
+#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 
 #if defined(CONFIG_BT_CONN)
 static uint8_t tx_cmplt_get(uint16_t *handle, uint8_t *first, uint8_t last)
