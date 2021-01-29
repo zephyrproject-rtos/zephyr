@@ -94,6 +94,20 @@ void test_fs_file_t_init(void)
 }
 
 /**
+ * @brief Test fs_dir_t_init initializer
+ */
+void test_fs_dir_t_init(void)
+{
+	struct fs_dir_t dirp;
+
+	memset(&dirp, 0xff, sizeof(dirp));
+
+	fs_dir_t_init(&dirp);
+	zassert_equal(dirp.mp, NULL, "Expected to be initialized to NULL");
+	zassert_equal(dirp.dirp, NULL, "Expected to be initialized to NULL");
+}
+
+/**
  * @brief Test mount interface of filesystem
  *
  * @details
@@ -263,7 +277,8 @@ void test_opendir(void)
 
 	TC_PRINT("\nopendir tests:\n");
 
-	memset(&dirp, 0, sizeof(dirp));
+	fs_dir_t_init(&dirp);
+
 	TC_PRINT("Test null path\n");
 	ret = fs_opendir(NULL, NULL);
 	zassert_not_equal(ret, 0, "Open dir with NULL pointer parameter");
@@ -307,7 +322,7 @@ void test_closedir(void)
 	struct fs_dir_t dirp;
 
 	TC_PRINT("\nclosedir tests: %s\n", TEST_DIR);
-	memset(&dirp, 0, sizeof(dirp));
+	fs_dir_t_init(&dirp);
 	ret = fs_opendir(&dirp, TEST_DIR);
 	zassert_equal(ret, 0, "Fail to open dir");
 
@@ -331,7 +346,7 @@ static int _test_lsdir(const char *path)
 
 	TC_PRINT("\nlsdir tests:\n");
 
-	memset(&dirp, 0, sizeof(dirp));
+	fs_dir_t_init(&dirp);
 	memset(&entry, 0, sizeof(entry));
 
 	TC_PRINT("read an unopened dir\n");

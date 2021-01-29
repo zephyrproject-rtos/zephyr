@@ -235,6 +235,20 @@ static inline void fs_file_t_init(struct fs_file_t *zfp)
 }
 
 /**
+ * @brief Initialize fs_dir_t object
+ *
+ * Initializes the fs_dir_t object; the function needs to be invoked
+ * on object before first use with fs_opendir.
+ *
+ * @param zdp Pointer to file object
+ *
+ */
+static inline void fs_dir_t_init(struct fs_dir_t *zdp)
+{
+	*zdp = (struct fs_dir_t){ 0 };
+}
+
+/**
  * @brief Open or create file
  *
  * Opens or possibly creates a file and associates a stream with it.
