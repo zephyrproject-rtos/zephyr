@@ -59,6 +59,8 @@ struct fs_file_t {
 /**
  * @brief Directory object representing an open directory
  *
+ * The object needs to be initialized with function fs_dir_t_init().
+ *
  * @param dirp Pointer to directory object structure
  * @param mp Pointer to mount point structure
  */
