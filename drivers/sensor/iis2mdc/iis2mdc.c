@@ -279,13 +279,6 @@ static int iis2mdc_init(const struct device *dev)
 
 	k_busy_wait(100);
 
-#if CONFIG_IIS2MDC_SPI_FULL_DUPLEX
-	/* After s/w reset set SPI 4wires again if the case */
-	if (iis2mdc_spi_mode_set(iis2mdc->ctx, IIS2MDC_SPI_4_WIRE) < 0) {
-		return -EIO;
-	}
-#endif
-
 	/* enable BDU */
 	if (iis2mdc_block_data_update_set(iis2mdc->ctx, PROPERTY_ENABLE) < 0) {
 		LOG_DBG("setting bdu failed\n");

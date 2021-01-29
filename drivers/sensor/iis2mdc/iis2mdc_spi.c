@@ -109,13 +109,6 @@ int iis2mdc_spi_init(const struct device *dev)
 	data->ctx = &data->ctx_spi;
 	data->ctx->handle = (void *)dev;
 
-#if CONFIG_IIS2MDC_SPI_FULL_DUPLEX
-	/* Set SPI 4wires */
-	if (iis2mdc_spi_mode_set(data->ctx, IIS2MDC_SPI_4_WIRE) < 0) {
-		return -EIO;
-	}
-#endif
-
 	return 0;
 }
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
