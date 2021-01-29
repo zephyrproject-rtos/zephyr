@@ -69,6 +69,27 @@ config TFM_PROFILE
 	  profile_medium and profile_small. The default profile does not need
 	  to have this configuration set.
 
+choice TFM_CMAKE_BUILD_TYPE
+	prompt "The build type for TFM"
+	default TFM_CMAKE_BUILD_TYPE_RELEASE if SPEED_OPTIMIZATIONS && BUILD_OUTPUT_STRIPPED
+	default TFM_CMAKE_BUILD_TYPE_MINSIZEREL if SIZE_OPTIMIZATIONS
+	default TFM_CMAKE_BUILD_TYPE_DEBUG if DEBUG_OPTIMIZATIONS
+	default TFM_CMAKE_BUILD_TYPE_RELWITHDEBINFO
+
+config TFM_CMAKE_BUILD_TYPE_RELEASE
+	bool "Release build"
+
+config TFM_CMAKE_BUILD_TYPE_RELWITHDEBINFO
+	bool "Release build with Debug info"
+
+config TFM_CMAKE_BUILD_TYPE_MINSIZEREL
+	bool "Release build, optimized for size"
+
+config TFM_CMAKE_BUILD_TYPE_DEBUG
+	bool "Debug build"
+
+endchoice
+
 config TFM_ISOLATION_LEVEL
 	int "Isolation level setting."
 	range 1 3
