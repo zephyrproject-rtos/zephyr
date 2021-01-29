@@ -58,6 +58,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "lwm2m_object.h"
 #include "lwm2m_engine.h"
+#include "lwm2m_rw_link_format.h"
 
 #define LWM2M_RD_CLIENT_URI "rd"
 
@@ -122,7 +123,6 @@ struct lwm2m_rd_client_info {
  * documented in the LwM2M specification.
  */
 static char query_buffer[MAX(32, sizeof("ep=") + CLIENT_EP_LEN)];
-static uint8_t client_data[256]; /* allocate some data for the RD */
 
 void engine_update_tx_time(void)
 {
@@ -663,7 +663,6 @@ static int sm_send_registration(bool send_obj_support_data,
 				lwm2m_message_timeout_cb_t timeout_cb)
 {
 	struct lwm2m_message *msg;
-	uint16_t client_data_len;
 	int ret;
 	char binding[CLIENT_BINDING_LEN];
 
@@ -766,11 +765,10 @@ static int sm_send_registration(bool send_obj_support_data,
 			goto cleanup;
 		}
 
-		/* generate the rd data */
-		client_data_len = lwm2m_get_rd_data(client_data,
-						    sizeof(client_data));
-		ret = buf_append(CPKT_BUF_WRITE(&msg->cpkt), client_data,
-				 client_data_len);
+		msg->out.out_cpkt = &msg->cpkt;
+		msg->out.writer = &link_format_writer;
+
+		ret = do_register_op_link_format(msg);
 		if (ret < 0) {
 			goto cleanup;
 		}

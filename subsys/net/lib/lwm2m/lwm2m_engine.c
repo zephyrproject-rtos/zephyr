@@ -60,26 +60,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define ENGINE_UPDATE_INTERVAL_MS 500
 #define OBSERVE_COUNTER_START 0U
 
-/*
- * TODO: to implement a way for clients to specify alternate path
- * via Kconfig (LwM2M specification 8.2.2 Alternate Path)
- *
- * For now, in order to inform server we support JSON format, we have to
- * report 'ct=11543' to the server. '</>' is required in order to append
- * content attribute. And resource type attribute is appended because of
- * Eclipse wakaama will reject the registration when 'rt="oma.lwm2m"' is
- * missing.
- */
-
-#define RESOURCE_TYPE		";rt=\"oma.lwm2m\""
-
-#if defined(CONFIG_LWM2M_RW_JSON_SUPPORT)
-#define REG_PREFACE		"</>" RESOURCE_TYPE \
-				";ct=" STRINGIFY(LWM2M_FORMAT_OMA_JSON)
-#else
-#define REG_PREFACE		""
-#endif
-
 #if defined(CONFIG_COAP_EXTENDED_OPTIONS_LEN)
 #define	COAP_OPTION_BUF_LEN	(CONFIG_COAP_EXTENDED_OPTIONS_LEN_VALUE + 1)
 #else
@@ -1100,17 +1080,13 @@ void lwm2m_acknowledge(struct lwm2m_ctx *client_ctx)
 	request->acknowledged = true;
 }
 
-uint16_t lwm2m_get_rd_data(uint8_t *client_data, uint16_t size)
+int lwm2m_register_payload_handler(struct lwm2m_message *msg)
 {
 	struct lwm2m_engine_obj *obj;
 	struct lwm2m_engine_obj_inst *obj_inst;
-	uint8_t temp[32];
-	uint16_t pos = 0U;
-	int len;
+	int ret;
 
-	/* Add resource-type/content-type to the registration message */
-	memcpy(client_data, REG_PREFACE, sizeof(REG_PREFACE) - 1);
-	pos += sizeof(REG_PREFACE) - 1;
+	engine_put_begin(&msg->out, NULL);
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&engine_obj_list, obj, node) {
 		/* Security obj MUST NOT be part of registration message */
@@ -1120,43 +1096,37 @@ uint16_t lwm2m_get_rd_data(uint8_t *client_data, uint16_t size)
 
 		/* Only report <OBJ_ID> when no instance available */
 		if (obj->instance_count == 0U) {
-			len = snprintk(temp, sizeof(temp), "%s</%u>",
-				       (pos > 0) ? "," : "", obj->obj_id);
-			if (pos + len >= size) {
-				/* full buffer -- exit loop */
-				break;
+			struct lwm2m_obj_path path = {
+				.obj_id = obj->obj_id,
+				.level = LWM2M_PATH_LEVEL_OBJECT,
+			};
+
+			ret = engine_put_corelink(&msg->out, &path);
+			if (ret < 0) {
+				return ret;
 			}
 
-			memcpy(&client_data[pos], temp, len);
-			pos += len;
 			continue;
 		}
 
 		SYS_SLIST_FOR_EACH_CONTAINER(&engine_obj_inst_list,
 					     obj_inst, node) {
 			if (obj_inst->obj->obj_id == obj->obj_id) {
-				len = snprintk(temp, sizeof(temp),
-					       "%s</%u/%u>",
-					       (pos > 0) ? "," : "",
-					       obj_inst->obj->obj_id,
-					       obj_inst->obj_inst_id);
-				/*
-				 * TODO: iterate through resources once block
-				 * transfer is handled correctly
-				 */
-				if (pos + len >= size) {
-					/* full buffer -- exit loop */
-					break;
-				}
+				struct lwm2m_obj_path path = {
+					.obj_id = obj_inst->obj->obj_id,
+					.obj_inst_id = obj_inst->obj_inst_id,
+					.level = LWM2M_PATH_LEVEL_OBJECT_INST,
+				};
 
-				memcpy(&client_data[pos], temp, len);
-				pos += len;
+				ret = engine_put_corelink(&msg->out, &path);
+				if (ret < 0) {
+					return ret;
+				}
 			}
 		}
 	}
 
-	client_data[pos] = '\0';
-	return pos;
+	return 0;
 }
 
 /* input / output selection */
