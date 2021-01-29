@@ -32,24 +32,78 @@ struct lfs_file_data {
 #define LFS_FILEP(fp) (&((struct lfs_file_data *)(fp->filep))->file)
 
 /* Global memory pool for open files and dirs */
-K_MEM_SLAB_DEFINE(file_data_pool, sizeof(struct lfs_file_data),
-		  CONFIG_FS_LITTLEFS_NUM_FILES, 4);
-K_MEM_SLAB_DEFINE(lfs_dir_pool, sizeof(struct lfs_dir),
-		  CONFIG_FS_LITTLEFS_NUM_DIRS, 4);
+static K_MEM_SLAB_DEFINE(file_data_pool, sizeof(struct lfs_file_data),
+			 CONFIG_FS_LITTLEFS_NUM_FILES, 4);
+static K_MEM_SLAB_DEFINE(lfs_dir_pool, sizeof(struct lfs_dir),
+			 CONFIG_FS_LITTLEFS_NUM_DIRS, 4);
+
+/* If either filecache memory pool is customized by either the legacy
+ * mem_pool or heap Kconfig options then we need to use a heap.
+ * Otherwise we can use a fixed region.
+ */
+#define FC_ON_HEAP defined(CONFIG_FS_LITTLEFS_FC_MEM_POOL)	\
+	|| ((CONFIG_FS_LITTLEFS_FC_HEAP_SIZE - 0) > 0)
+
+#if FC_ON_HEAP
+
+/* Inferred overhead, in bytes, for each k_heap_aligned allocation for
+ * the filecache heap.  This relates to the CHUNK_UNIT parameter in
+ * the heap implementation, but that value is not visible outside the
+ * kernel.
+ */
+#define FC_HEAP_PER_ALLOC_OVERHEAD 24U
 
 /* If not explicitly customizing provide a default that's appropriate
  * based on other configuration options.
  */
 #ifndef CONFIG_FS_LITTLEFS_FC_MEM_POOL
-BUILD_ASSERT(CONFIG_FS_LITTLEFS_CACHE_SIZE >= 4);
-#define CONFIG_FS_LITTLEFS_FC_MEM_POOL_MIN_SIZE 4
 #define CONFIG_FS_LITTLEFS_FC_MEM_POOL_MAX_SIZE CONFIG_FS_LITTLEFS_CACHE_SIZE
 #define CONFIG_FS_LITTLEFS_FC_MEM_POOL_NUM_BLOCKS CONFIG_FS_LITTLEFS_NUM_FILES
 #endif
 
-K_HEAP_DEFINE(file_cache_pool,
-	      CONFIG_FS_LITTLEFS_FC_MEM_POOL_MAX_SIZE *
-	      CONFIG_FS_LITTLEFS_FC_MEM_POOL_NUM_BLOCKS);
+/* If not explicitly customizing infer a default from the legacy
+ * mem-pool configuration options.
+ */
+#if (CONFIG_FS_LITTLEFS_FC_HEAP_SIZE - 0) <= 0
+#undef CONFIG_FS_LITTLEFS_FC_HEAP_SIZE
+#define CONFIG_FS_LITTLEFS_FC_HEAP_SIZE					\
+	((CONFIG_FS_LITTLEFS_FC_MEM_POOL_MAX_SIZE			\
+	  + FC_HEAP_PER_ALLOC_OVERHEAD)					\
+	 * CONFIG_FS_LITTLEFS_FC_MEM_POOL_NUM_BLOCKS)
+#endif /* CONFIG_FS_LITTLEFS_FC_HEAP_SIZE */
+
+static K_HEAP_DEFINE(file_cache_heap, CONFIG_FS_LITTLEFS_FC_HEAP_SIZE);
+
+#else /* FC_ON_HEAP */
+
+static K_MEM_SLAB_DEFINE(file_cache_slab, CONFIG_FS_LITTLEFS_CACHE_SIZE,
+			 CONFIG_FS_LITTLEFS_NUM_FILES, 4);
+
+#endif /* FC_ON_HEAP */
+
+static inline void *fc_allocate(size_t size)
+{
+	void *ret = NULL;
+
+#if FC_ON_HEAP
+	ret = k_heap_alloc(&file_cache_heap, size, K_NO_WAIT);
+#else
+	if (k_mem_slab_alloc(&file_cache_slab, &ret, K_NO_WAIT) != 0) {
+		ret = NULL;
+	}
+#endif
+
+	return ret;
+}
+
+static inline void fc_release(void *buf)
+{
+#if FC_ON_HEAP
+	k_heap_free(&file_cache_heap, buf);
+#else /* FC_ON_HEAP */
+	k_mem_slab_free(&file_cache_slab, &buf);
+#endif /* FC_ON_HEAP */
+}
 
 static inline void fs_lock(struct fs_littlefs *fs)
 {
@@ -174,7 +228,7 @@ static void release_file_data(struct fs_file_t *fp)
 	struct lfs_file_data *fdp = fp->filep;
 
 	if (fdp->config.buffer) {
-		k_heap_free(&file_cache_pool, fdp->cache_block);
+		fc_release(fdp->cache_block);
 	}
 
 	k_mem_slab_free(&file_data_pool, &fp->filep);
@@ -212,8 +266,7 @@ static int littlefs_open(struct fs_file_t *fp, const char *path,
 
 	memset(fdp, 0, sizeof(*fdp));
 
-	fdp->cache_block = k_heap_alloc(&file_cache_pool,
-					lfs->cfg->cache_size, K_NO_WAIT);
+	fdp->cache_block = fc_allocate(lfs->cfg->cache_size);
 	if (fdp->cache_block == NULL) {
 		ret = -ENOMEM;
 		goto out;
