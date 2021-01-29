@@ -88,6 +88,9 @@ static inline void *fc_allocate(size_t size)
 #if FC_ON_HEAP
 	ret = k_heap_alloc(&file_cache_heap, size, K_NO_WAIT);
 #else
+	__ASSERT(size <= CONFIG_FS_LITTLEFS_CACHE_SIZE,
+		 "size %zu exceeds slab reservation", size);
+
 	if (k_mem_slab_alloc(&file_cache_slab, &ret, K_NO_WAIT) != 0) {
 		ret = NULL;
 	}
