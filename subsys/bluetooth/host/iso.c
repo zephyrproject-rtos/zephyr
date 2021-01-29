@@ -257,26 +257,43 @@ void bt_iso_cleanup(struct bt_conn *conn)
 {
 	int i;
 
-	if (conn->iso.acl) { /* CIS */
-		bt_conn_unref(conn->iso.acl);
-		conn->iso.acl = NULL;
+	__ASSERT_NO_MSG(conn->type == BT_CONN_TYPE_ISO);
 
-		/* Check if conn is last of CIG */
-		for (i = 0; i < CONFIG_BT_ISO_MAX_CHAN; i++) {
-			if (conn == &iso_conns[i]) {
-				continue;
-			}
+	BT_DBG("%p", conn);
 
-			if (atomic_get(&iso_conns[i].ref) &&
-			    iso_conns[i].iso.cig_id == conn->iso.cig_id) {
-				break;
-			}
+	/* Check if ISO connection is in fact a BIS */
+	if (!conn->iso.acl) {
+		goto done;
+	}
+
+	/* If ACL is still connected there are channels to serve that means the
+	 * connection is still in use.
+	 */
+	if (conn->iso.acl->state == BT_CONN_CONNECTED &&
+	    !sys_slist_is_empty(&conn->channels)) {
+		goto done;
+	}
+
+	bt_conn_unref(conn->iso.acl);
+	conn->iso.acl = NULL;
+
+	/* Check if conn is last of CIG */
+	for (i = 0; i < CONFIG_BT_ISO_MAX_CHAN; i++) {
+		if (conn == &iso_conns[i]) {
+			continue;
 		}
 
-		if (i == CONFIG_BT_ISO_MAX_CHAN) {
-			hci_le_remove_cig(conn->iso.cig_id);
+		if (atomic_get(&iso_conns[i].ref) &&
+		    iso_conns[i].iso.cig_id == conn->iso.cig_id) {
+			break;
 		}
 	}
+
+	if (i == CONFIG_BT_ISO_MAX_CHAN) {
+		hci_le_remove_cig(conn->iso.cig_id);
+	}
+
+done:
 	bt_conn_unref(conn);
 }
 
@@ -734,23 +751,25 @@ static void bt_iso_remove_data_path(struct bt_conn *conn)
 	hci_le_remove_iso_data_path(conn, BT_HCI_DATAPATH_DIR_HOST_TO_CTLR);
 }
 
-static void bt_iso_chan_del(struct bt_iso_chan *chan)
+static void bt_iso_chan_disconnected(struct bt_iso_chan *chan)
 {
 	BT_DBG("%p", chan);
 
 	if (!chan->conn) {
-		goto done;
+		bt_iso_chan_set_state(chan, BT_ISO_DISCONNECTED);
+		return;
+	}
+
+	bt_iso_chan_set_state(chan, BT_ISO_BOUND);
+
+	/* Unbind if acting as slave */
+	if (chan->conn->role == BT_HCI_ROLE_SLAVE) {
+		bt_iso_chan_unbind(chan);
 	}
 
 	if (chan->ops->disconnected) {
 		chan->ops->disconnected(chan);
 	}
-
-	bt_conn_unref(chan->conn);
-	chan->conn = NULL;
-
-done:
-	bt_iso_chan_set_state(chan, BT_ISO_DISCONNECTED);
 }
 
 void bt_iso_disconnected(struct bt_conn *conn)
@@ -768,7 +787,7 @@ void bt_iso_disconnected(struct bt_conn *conn)
 	bt_iso_remove_data_path(conn);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&conn->channels, chan, next, node) {
-		bt_iso_chan_del(chan);
+		bt_iso_chan_disconnected(chan);
 	}
 }
 
@@ -832,12 +851,8 @@ void bt_iso_chan_set_state_debug(struct bt_iso_chan *chan, uint8_t state,
 	/* check transitions validness */
 	switch (state) {
 	case BT_ISO_DISCONNECTED:
-		/* regardless of old state always allows this state */
-		break;
 	case BT_ISO_BOUND:
-		if (chan->state != BT_ISO_DISCONNECTED) {
-			BT_WARN("%s()%d: invalid transition", func, line);
-		}
+		/* regardless of old state always allows these states */
 		break;
 	case BT_ISO_CONNECT:
 		if (chan->state != BT_ISO_BOUND) {
@@ -916,6 +931,24 @@ int bt_iso_chan_bind(struct bt_conn **conns, uint8_t num_conns,
 	return 0;
 }
 
+int bt_iso_chan_unbind(struct bt_iso_chan *chan)
+{
+	__ASSERT_NO_MSG(chan);
+
+	if (!chan->conn || chan->state != BT_ISO_BOUND) {
+		return -EINVAL;
+	}
+
+	bt_iso_chan_remove(chan->conn, chan);
+
+	bt_conn_unref(chan->conn);
+	chan->conn = NULL;
+
+	bt_iso_chan_set_state(chan, BT_ISO_DISCONNECTED);
+
+	return 0;
+}
+
 int bt_iso_chan_connect(struct bt_iso_chan **chans, uint8_t num_chans)
 {
 	struct bt_conn *conns[CONFIG_BT_ISO_MAX_CHAN];
@@ -954,7 +987,7 @@ int bt_iso_chan_disconnect(struct bt_iso_chan *chan)
 
 	if (chan->state == BT_ISO_BOUND) {
 		bt_iso_chan_remove(chan->conn, chan);
-		bt_iso_chan_del(chan);
+		bt_iso_chan_disconnected(chan);
 		return 0;
 	}
 
