@@ -707,13 +707,15 @@ struct bt_conn_iso *bt_audio_chan_bind(struct bt_audio_chan *chan,
 	}
 
 	/* Fill up ISO QoS settings from Codec QoS*/
-	chan->iso->qos->dir = qos->dir;
-	chan->iso->qos->interval = qos->interval;
-	chan->iso->qos->framing = qos->framing;
-	chan->iso->qos->latency = qos->latency;
-	chan->iso->qos->sdu = qos->sdu;
-	chan->iso->qos->phy = qos->phy;
-	chan->iso->qos->rtn = qos->rtn;
+	if (chan->qos != qos) {
+		chan->iso->qos->dir = qos->dir;
+		chan->iso->qos->interval = qos->interval;
+		chan->iso->qos->framing = qos->framing;
+		chan->iso->qos->latency = qos->latency;
+		chan->iso->qos->sdu = qos->sdu;
+		chan->iso->qos->phy = qos->phy;
+		chan->iso->qos->rtn = qos->rtn;
+	}
 
 	conns[0] = chan->conn;
 	chans[0] = chan->iso;
@@ -742,7 +744,11 @@ int bt_audio_chan_connect(struct bt_audio_chan *chan)
 
 	switch (chan->iso->state) {
 	case BT_ISO_DISCONNECTED:
-		return -ENOTCONN;
+		if (!bt_audio_chan_bind(chan, chan->qos)) {
+			return -ENOTCONN;
+		}
+
+		return bt_iso_chan_connect(&chan->iso, 1);
 	case BT_ISO_CONNECT:
 		return -EINPROGRESS;
 	case BT_ISO_CONNECTED:
