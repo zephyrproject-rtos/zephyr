@@ -124,10 +124,12 @@ static int parse_recv_state(const void *data, uint16_t length,
 
 /** @brief Handles notifications and indications from the server */
 static uint8_t notify_handler(struct bt_conn *conn,
-			   struct bt_gatt_subscribe_params *params,
-			   const void *data, uint16_t length)
+			      struct bt_gatt_subscribe_params *params,
+			      const void *data, uint16_t length)
 {
 	uint16_t handle = params->value_handle;
+	struct bass_recv_state_t *recv_state;
+	int err;
 
 	if (!data) {
 		BT_DBG("[UNSUBSCRIBED] %u", handle);
@@ -136,28 +138,21 @@ static uint8_t notify_handler(struct bt_conn *conn,
 		return BT_GATT_ITER_STOP;
 	}
 
-	if (handle == bass_client.cp_handle) {
-		if (length == sizeof(bass_client.pa_sync)) {
-			memcpy(&bass_client.pa_sync, data, length);
-		}
-	} else {
-		struct bass_recv_state_t *recv_state =
-			get_recv_state_by_handle(handle);
-		int err = parse_recv_state(data, length, recv_state);
+	recv_state = get_recv_state_by_handle(handle);
+	err = parse_recv_state(data, length, recv_state);
 
-		if (!err) {
-			/* If src is set, then the state is active, else it has
-			 * been removed
-			 */
-			if (bass_cbs &&
-			    bass_cbs->recv_state &&
-			    !BASS_RECV_STATE_EMPTY(recv_state)) {
-				bass_cbs->recv_state(conn, recv_state);
-			} else if (bass_cbs &&
-				   bass_cbs->recv_state_removed &&
-				   BASS_RECV_STATE_EMPTY(recv_state)) {
-				bass_cbs->recv_state_removed(conn, recv_state);
-			}
+	if (!err) {
+		/* If src is set, then the state is active, else it has
+			* been removed
+			*/
+		if (bass_cbs &&
+			bass_cbs->recv_state &&
+			!BASS_RECV_STATE_EMPTY(recv_state)) {
+			bass_cbs->recv_state(conn, recv_state);
+		} else if (bass_cbs &&
+				bass_cbs->recv_state_removed &&
+				BASS_RECV_STATE_EMPTY(recv_state)) {
+			bass_cbs->recv_state_removed(conn, recv_state);
 		}
 	}
 
