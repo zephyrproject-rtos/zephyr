@@ -14,38 +14,82 @@ LOG_MODULE_REGISTER(net_lwm2m_link_format, CONFIG_LWM2M_LOG_LEVEL);
 
 #define CORELINK_BUF_SIZE 24
 
+#define ENABLER_VERSION "lwm2m=\"" LWM2M_PROTOCOL_VERSION "\""
+
+/*
+ * TODO: to implement a way for clients to specify alternate path
+ * via Kconfig (LwM2M specification 8.2.2 Alternate Path)
+ *
+ * For now, in order to inform server we support JSON format, we have to
+ * report 'ct=11543' to the server. '</>' is required in order to append
+ * content attribute. And resource type attribute is appended because of
+ * Eclipse wakaama will reject the registration when 'rt="oma.lwm2m"' is
+ * missing.
+ */
+
+#if defined(CONFIG_LWM2M_RW_JSON_SUPPORT)
+#define RESOURCE_TYPE		";rt=\"oma.lwm2m\""
+
+#define REG_PREFACE		"</>" RESOURCE_TYPE \
+				";ct=" STRINGIFY(LWM2M_FORMAT_OMA_JSON)
+#else
+#define REG_PREFACE		""
+#endif
+
+enum link_format_mode {
+	LINK_FORMAT_MODE_DISCOVERY,
+	LINK_FORMAT_MODE_BOOTSTRAP_DISCOVERY,
+	LINK_FORMAT_MODE_REGISTER,
+};
+
 struct link_format_out_formatter_data {
 	uint8_t request_level;
-	bool is_bootstrap : 1;
+	uint8_t mode;
 	bool is_first : 1;
 };
 
 static size_t put_begin(struct lwm2m_output_context *out,
 			struct lwm2m_obj_path *path)
 {
-	char enabler_ver[] = "lwm2m=\"" LWM2M_PROTOCOL_VERSION "\"";
+	char init_string[MAX(sizeof(ENABLER_VERSION), sizeof(REG_PREFACE))];
 	struct link_format_out_formatter_data *fd;
 	int ret;
+
+	ARG_UNUSED(path);
 
 	fd = engine_get_out_user_data(out);
 	if (fd == NULL) {
 		return 0;
 	}
 
-	if (!fd->is_bootstrap) {
+	switch (fd->mode) {
+	case LINK_FORMAT_MODE_DISCOVERY:
 		/* Nothing to add in device management mode. */
+		return 0;
+
+	case LINK_FORMAT_MODE_BOOTSTRAP_DISCOVERY:
+		strcpy(init_string, ENABLER_VERSION);
+		break;
+
+	case LINK_FORMAT_MODE_REGISTER:
+		/* Only indicate content type if json is enabled.  */
+		if (!IS_ENABLED(CONFIG_LWM2M_RW_JSON_SUPPORT)) {
+			return 0;
+		}
+
+		strcpy(init_string, REG_PREFACE);
+		break;
+	}
+
+	ret = buf_append(CPKT_BUF_WRITE(out->out_cpkt), init_string,
+			 strlen(init_string));
+	if (ret < 0) {
 		return 0;
 	}
 
 	fd->is_first = false;
 
-	ret = buf_append(CPKT_BUF_WRITE(out->out_cpkt), enabler_ver,
-			 strlen(enabler_ver));
-	if (ret < 0) {
-		return 0;
-	}
-
-	return strlen(enabler_ver);
+	return strlen(init_string);
 }
 
 static int put_corelink_separator(struct lwm2m_output_context *out)
@@ -235,7 +279,7 @@ static int put_obj_corelink(struct lwm2m_output_context *out,
 		return ret;
 	}
 
-	if (!fd->is_bootstrap) {
+	if (fd->mode == LINK_FORMAT_MODE_DISCOVERY) {
 		/* Report object attributes only in device management mode
 		 * (5.4.2).
 		 */
@@ -278,10 +322,14 @@ static int put_obj_inst_corelink(struct lwm2m_output_context *out,
 		return ret;
 	}
 
+	if (fd->mode == LINK_FORMAT_MODE_REGISTER) {
+		return len;
+	}
+
 	/* Bootstrap object instance corelink shall only contain ssid
 	 * parameter for Security and Server objects (5.2.7.3).
 	 */
-	if (fd->is_bootstrap) {
+	if (fd->mode == LINK_FORMAT_MODE_BOOTSTRAP_DISCOVERY) {
 		if (path->obj_id == LWM2M_OBJECT_SECURITY_ID ||
 		    path->obj_id == LWM2M_OBJECT_SERVER_ID) {
 			ret = put_corelink_ssid(out, path, obj_buf,
@@ -327,8 +375,8 @@ static int put_res_corelink(struct lwm2m_output_context *out,
 	int len = 0;
 	int ret;
 
-	if (fd->is_bootstrap) {
-		/* No resource reporting in bootstrap mode. */
+	if (fd->mode != LINK_FORMAT_MODE_DISCOVERY) {
+		/* Report resources only in device management discovery. */
 		return 0;
 	}
 
@@ -445,11 +493,28 @@ int do_discover_op_link_format(struct lwm2m_message *msg, bool is_bootstrap)
 	int ret;
 
 	fd.is_first = true;
-	fd.is_bootstrap = is_bootstrap;
+	fd.mode = is_bootstrap ? LINK_FORMAT_MODE_BOOTSTRAP_DISCOVERY :
+				 LINK_FORMAT_MODE_DISCOVERY;
 	fd.request_level = msg->path.level;
 
 	engine_set_out_user_data(&msg->out, &fd);
 	ret = lwm2m_discover_handler(msg, is_bootstrap);
+	engine_clear_out_user_data(&msg->out);
+
+	return ret;
+}
+
+int do_register_op_link_format(struct lwm2m_message *msg)
+{
+	struct link_format_out_formatter_data fd;
+	int ret;
+
+	fd.is_first = true;
+	fd.mode = LINK_FORMAT_MODE_REGISTER;
+	fd.request_level = LWM2M_PATH_LEVEL_NONE;
+
+	engine_set_out_user_data(&msg->out, &fd);
+	ret = lwm2m_register_payload_handler(msg);
 	engine_clear_out_user_data(&msg->out);
 
 	return ret;
