@@ -235,9 +235,8 @@ static void host_kbc_ibf_isr(void *arg)
 	 * The high byte contains information from the host, and the lower byte
 	 * indicates if the host sent a command or data. 1 = Command.
 	 */
-	evt.evt_data = (inst_kbc->HIKMDI << NPCX_8042_DATA_POS) |
-		       (IS_BIT_SET(inst_kbc->HIKMST, NPCX_HIKMST_A2) <<
-				       NPCX_8042_TYPE_POS);
+	evt.evt_data = NPCX_8042_EVT_DATA(NPCX_8042_EVT_IBF, inst_kbc->HIKMDI,
+			IS_BIT_SET(inst_kbc->HIKMST, NPCX_HIKMST_A2));
 
 	LOG_DBG("%s: kbc data 0x%02x", __func__, evt.evt_data);
 	espi_send_callbacks(host_sub_data.callbacks, host_sub_data.host_bus_dev,
@@ -248,6 +247,9 @@ static void host_kbc_obe_isr(void *arg)
 {
 	ARG_UNUSED(arg);
 	struct kbc_reg *const inst_kbc = host_sub_cfg.inst_kbc;
+	struct espi_event evt = { ESPI_BUS_PERIPHERAL_NOTIFICATION,
+		ESPI_PERIPHERAL_8042_KBC, ESPI_PERIPHERAL_NODATA
+	};
 
 	/* Disable KBC OBE interrupt first */
 	inst_kbc->HICTRL &= ~BIT(NPCX_HICTRL_OBECIE);
@@ -255,11 +257,13 @@ static void host_kbc_obe_isr(void *arg)
 	LOG_DBG("%s: kbc status 0x%02x", __func__, inst_kbc->HIKMST);
 
 	/*
-	 * TODO: Notify application that host already read out data. We might
-	 * use E8042_SET_FLAG in espi_api_lpc_write_request() instead of setting
-	 * status of HIKMST here directly.
+	 * Notify application that host already read out data. The application
+	 * might need to clear status register via espi_api_lpc_write_request()
+	 * with E8042_CLEAR_FLAG opcode in callback.
 	 */
-	inst_kbc->HIKMST &= ~BIT(NPCX_HIKMST_ST1);
+	evt.evt_data = NPCX_8042_EVT_DATA(NPCX_8042_EVT_OBE, 0, 0);
+	espi_send_callbacks(host_sub_data.callbacks, host_sub_data.host_bus_dev,
+							evt);
 }
 
 static void host_kbc_init(void)
