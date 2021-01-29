@@ -290,18 +290,27 @@ steps:
             $ git tag -s -m "Zephyr 1.11.0-rc1" v1.11.0-rc1
             $ git push git@github.com:zephyrproject-rtos/zephyr.git v1.11.0-rc1
 
-        #. Create a shortlog of changes between the previous release (use
-           rc1..rc2 between release candidates)::
+        #. Once the tag is pushed, a github action will create a draft release
+           in Github with a shortlog since the last tag. The action will also
+           create a SPDX manifest of the Zephyr tree and will add the file as an
+           asset in the release.
 
-            $ git shortlog v1.10.0..v1.11.0-rc1
+           Go to the draft release that was created and edit as needed. If this
+           step fails for a reason, it can be done manually following the steps
+           below:
 
-        #. Find the new tag at the top of the releases page and edit the release
-           with the ``Edit tag`` button with the following:
+                #. Create a shortlog of changes between the previous release (use
+                   rc1..rc2 between release candidates)::
 
-            * Name it ``Zephyr 1.11.0-rc1``
-            * Copy the shortlog into the release notes textbox (*don't forget
-              to quote it properly so it shows as unformatted text in Markdown*)
-            * Check the "This is a pre-release" checkbox
+                    $ git shortlog v1.10.0..v1.11.0-rc1
+
+                #. Find the new tag at the top of the releases page and edit the release
+                   with the ``Edit tag`` button with the following:
+
+                    * Name it ``Zephyr 1.11.0-rc1``
+                    * Copy the shortlog into the release notes textbox (*don't forget
+                      to quote it properly so it shows as unformatted text in Markdown*)
+                    * Check the "This is a pre-release" checkbox
 
         #. Send an email to the mailing lists (``announce`` and ``devel``)
            with a link to the release
