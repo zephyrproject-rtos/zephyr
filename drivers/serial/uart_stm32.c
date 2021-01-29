@@ -334,15 +334,10 @@ static int uart_stm32_configure(const struct device *dev,
 #endif
 
 	/* Driver doesn't support 5 or 6 databits and potentially 7 or 9 */
-	if ((UART_CFG_DATA_BITS_5 == cfg->data_bits) ||
-	    (UART_CFG_DATA_BITS_6 == cfg->data_bits)
-#ifndef LL_USART_DATAWIDTH_7B
-	    || (UART_CFG_DATA_BITS_7 == cfg->data_bits)
-#endif /* LL_USART_DATAWIDTH_7B */
-#ifndef LL_USART_DATAWIDTH_9B
-	    || (UART_CFG_DATA_BITS_9 == cfg->data_bits)
-#endif /* LL_USART_DATAWIDTH_9B */
-		) {
+	if ((cfg->data_bits == UART_CFG_DATA_BITS_5) ||
+	    (cfg->data_bits == UART_CFG_DATA_BITS_6) ||
+	    (cfg->data_bits == UART_CFG_DATA_BITS_7) ||
+	    (cfg->data_bits == UART_CFG_DATA_BITS_9)) {
 		return -ENOTSUP;
 	}
 
