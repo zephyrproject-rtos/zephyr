@@ -55,6 +55,8 @@
 #define MCP9808_TEMP_UPR_BIT		BIT(14)
 #define MCP9808_TEMP_CRT_BIT		BIT(15)
 
+#define MCP9808_REG_RESOLUTION          0x08
+
 struct mcp9808_data {
 	const struct device *i2c_master;
 
@@ -82,6 +84,7 @@ struct mcp9808_data {
 struct mcp9808_config {
 	const char *i2c_bus;
 	uint16_t i2c_addr;
+	uint8_t resolution;
 #ifdef CONFIG_MCP9808_TRIGGER
 	uint8_t alert_pin;
 	uint8_t alert_flags;
@@ -90,6 +93,10 @@ struct mcp9808_config {
 };
 
 int mcp9808_reg_read(const struct device *dev, uint8_t reg, uint16_t *val);
+int mcp9808_reg_write_16bit(const struct device *dev, uint8_t reg,
+			    uint16_t val);
+int mcp9808_reg_write_8bit(const struct device *dev, uint8_t reg,
+			   uint8_t val);
 
 #ifdef CONFIG_MCP9808_TRIGGER
 int mcp9808_attr_set(const struct device *dev, enum sensor_channel chan,
