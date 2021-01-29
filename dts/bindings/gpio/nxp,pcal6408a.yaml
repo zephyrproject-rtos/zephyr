@@ -1,0 +1,35 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: PCAL6408A 8-bit I2C-based I/O expander
+
+compatible: "nxp,pcal6408a"
+
+include: [i2c-device.yaml, gpio-controller.yaml]
+
+properties:
+    label:
+      required: true
+
+    ngpios:
+      required: true
+      const: 8
+
+    int-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        GPIO connected to the controller INT pin. This pin is active-low.
+
+    reset-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        GPIO connected to the controller RESET pin. This pin is active-low.
+
+    "#gpio-cells":
+      const: 2
+
+gpio-cells:
+  - pin
+  - flags
