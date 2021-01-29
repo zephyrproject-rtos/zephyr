@@ -5,6 +5,7 @@
 # are matched, then twister will not do a full run and optionally will only
 # run on changed tests or boards.
 #
+.buildkite/daily.yml
 .gitlint
 .checkpatch.conf
 .clang-format
