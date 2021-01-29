@@ -3408,8 +3408,8 @@ class TestSuite(DisablePyTestCollectionMixin):
                                     'error',
                                     type="failure",
                                     message="failed")
-                            p = os.path.join(self.outdir, instance.platform.name, instance.testcase.name)
-                            log_file = os.path.join(p, "handler.log")
+                            log_root = os.path.join(self.outdir, instance.platform.name, instance.testcase.name)
+                            log_file = os.path.join(log_root, "handler.log")
                             el.text = self.process_log(log_file)
 
                         elif instance.results[k] == 'PASS' \
@@ -3445,9 +3445,9 @@ class TestSuite(DisablePyTestCollectionMixin):
                             type="failure",
                             message=instance.reason)
 
-                        p = ("%s/%s/%s" % (self.outdir, instance.platform.name, instance.testcase.name))
-                        bl = os.path.join(p, "build.log")
-                        hl = os.path.join(p, "handler.log")
+                        log_root = ("%s/%s/%s" % (self.outdir, instance.platform.name, instance.testcase.name))
+                        bl = os.path.join(log_root, "build.log")
+                        hl = os.path.join(log_root, "handler.log")
                         log_file = bl
                         if instance.reason != 'Build error':
                             if os.path.exists(hl):
