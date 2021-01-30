@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <nxp/nxp_k2x.dtsi>
+#include <dt-bindings/pwm/pwm.h>
 
 / {
 	model = "NXP Freedom MK22F board";
@@ -18,6 +19,10 @@
 		led2 = &red_led;
 		sw0 = &user_button_3;
 		sw1 = &user_button_2;
+		pwm-led0 = &green_pwm_led;
+		green-pwm-led = &green_pwm_led;
+		blue-pwm-led = &blue_pwm_led;
+		red-pwm-led = &red_pwm_led;
 	};
 
 	chosen {
@@ -42,6 +47,23 @@
 		blue_led: led_2 {
 			gpios = <&gpiod 5 0>;
 			label = "User LD3";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		red_pwm_led: red_pwm_led {
+			label = "red_led";
+			pwms = <&ftm0 6 15625000 PWM_POLARITY_INVERTED>;
+		};
+		green_pwm_led: green_pwm_led {
+			label = "green_led";
+			pwms = <&ftm0 7 15625000 PWM_POLARITY_INVERTED>;
+		};
+		blue_pwm_led: blue_pwm_led {
+			label = "blue_led";
+			pwms = <&ftm0 5 15625000 PWM_POLARITY_INVERTED>;
 		};
 	};
 
@@ -112,7 +134,7 @@ arduino_spi: &spi0 {
 	status = "okay";
 };
 
-&ftm3 {
+&ftm0 {
 	status = "okay";
 	compatible = "nxp,kinetis-ftm-pwm";
 	#pwm-cells = <3>;

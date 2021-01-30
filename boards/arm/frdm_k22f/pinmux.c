@@ -59,10 +59,17 @@ static int frdm_k22f_pinmux_init(const struct device *dev)
 	/* FXOS8700 INT2 */
 	pinmux_pin_set(portd, 1, PORT_PCR_MUX(kPORT_MuxAsGpio));
 
-	/* Red, green, blue LEDs */
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ftm0), nxp_kinetis_ftm_pwm, okay) && CONFIG_PWM
+	/* Red, green, blue LEDs as PWM channels*/
+	pinmux_pin_set(porta, 1, PORT_PCR_MUX(kPORT_MuxAlt3));
+	pinmux_pin_set(porta, 2, PORT_PCR_MUX(kPORT_MuxAlt3));
+	pinmux_pin_set(portd, 5, PORT_PCR_MUX(kPORT_MuxAlt4));
+#else
+	/* Red, green, blue LEDs as GPIO channels*/
 	pinmux_pin_set(porta, 1, PORT_PCR_MUX(kPORT_MuxAsGpio));
 	pinmux_pin_set(porta, 2, PORT_PCR_MUX(kPORT_MuxAsGpio));
 	pinmux_pin_set(portd, 5, PORT_PCR_MUX(kPORT_MuxAsGpio));
+#endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(spi0), okay) && CONFIG_SPI
 	/* SPI0 CS0, SCK, SOUT, SIN */
