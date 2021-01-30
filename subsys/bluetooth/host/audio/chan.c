@@ -514,6 +514,7 @@ done:
 	}
 
 	bt_audio_ep_set_state(chan->ep, BT_ASCS_ASE_STATE_QOS);
+	bt_audio_chan_iso_listen(chan);
 
 	return err;
 }
@@ -734,6 +735,13 @@ struct bt_conn_iso *bt_audio_chan_bind(struct bt_audio_chan *chan,
 	return &chan->iso->conn->iso;
 }
 
+int bt_audio_chan_unbind(struct bt_audio_chan *chan)
+{
+	BT_DBG("chan %p", chan);
+
+	return bt_iso_chan_unbind(chan->iso);
+}
+
 int bt_audio_chan_connect(struct bt_audio_chan *chan)
 {
 	BT_DBG("chan %p iso %p", chan, chan->iso);
@@ -781,6 +789,7 @@ void bt_audio_chan_reset(struct bt_audio_chan *chan)
 		return;
 	}
 
+	bt_audio_chan_unbind(chan);
 	bt_audio_chan_unlink(chan, NULL);
 	bt_audio_chan_set_state(chan, BT_AUDIO_CHAN_IDLE);
 }
