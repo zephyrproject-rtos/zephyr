@@ -1,5 +1,4 @@
 tests:
   authentication.auth:
     tags: authentication
-    filter: CONFIG_ENTROPY_HAS_DRIVER
-    platform_allow: nrf52840dk_nrf52840
+    platform_allow: qemu_cortex_m3 qemu_x86

@@ -6,3 +6,4 @@ tests:
     harness: bluetooth
     platform_allow:  qemu_x86
     tags: authentication
+    extra_args: CONF_FILE=ci.prj.conf
