@@ -135,6 +135,9 @@ static int bap_reconfig(struct bt_audio_chan *chan, struct bt_audio_cap *cap,
 		tmp->codec = codec;
 	}
 
+	/* Unbind if there is an existing QoS */
+	bt_audio_chan_unbind(chan);
+
 	return 0;
 }
 

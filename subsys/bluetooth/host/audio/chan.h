@@ -32,6 +32,9 @@ void bt_audio_chan_set_state(struct bt_audio_chan *chan, uint8_t state);
 struct bt_conn_iso *bt_audio_chan_bind(struct bt_audio_chan *chan,
 				       struct bt_codec_qos *qos);
 
+/* Unbind ISO channel */
+int bt_audio_chan_unbind(struct bt_audio_chan *chan);
+
 /* Connect ISO channel */
 int bt_audio_chan_connect(struct bt_audio_chan *chan);
 
