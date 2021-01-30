@@ -196,6 +196,26 @@ Drivers and Sensors
 
 * CAN
 
+  * We reworked the configuration API.
+    A user can now specify the timing manually (define prop segment,
+    phase segment1, phase segment2, and prescaler) or use a newly introduced
+    algorithm to calculate optimal timing values from a bitrate and sample point.
+    The bitrate and sample point can be specified in the device tree too.
+    It is possible to change the timing values at runtime now.
+
+  * We reworked the zcan_frame struct due to undefined behavior.
+    The std_id (11-bit) and ext_id (29-bit) are merged to a single id
+    field (29-bit). The union of both IDs was removed.
+
+  * We made the CANbus API CAN-FD compatible.
+    The zcan_frame data-field can have a size of >8 bytes now.
+    A flag was introduced to mark a zcan_frame as CAN-FD frame.
+    A flag was introduced that enables a bitrate switch in CAN-FD frames.
+    The configuration API supports an additional timing parameter for the CAN-FD
+    data-phase.
+
+  * drivers are converted to use the new DEVICE_DT_* macros.
+
 * Clock Control
 
 * Console
