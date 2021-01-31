@@ -1,6 +1,8 @@
 /*
  * Copyright (c) 2019 Manivannan Sadhasivam
  *
+ * Modifications (c) 2021 Dean Weiten
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -9,13 +11,14 @@
 #include <errno.h>
 #include <sys/util.h>
 #include <zephyr.h>
+#include <ctype.h>
 
 #define DEFAULT_RADIO_NODE DT_ALIAS(lora0)
 BUILD_ASSERT(DT_NODE_HAS_STATUS(DEFAULT_RADIO_NODE, okay),
 	     "No default LoRa radio specified in DT");
 #define DEFAULT_RADIO DT_LABEL(DEFAULT_RADIO_NODE)
 
-#define MAX_DATA_LEN 255
+#define MAX_DATA_LEN 25
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include <logging/log.h>
@@ -23,43 +26,122 @@ LOG_MODULE_REGISTER(lora_receive);
 
 void main(void)
 {
-	const struct device *lora_dev;
-	struct lora_modem_config config;
-	int ret, len;
-	uint8_t data[MAX_DATA_LEN] = {0};
+	const struct device *LoraDevice;
+	struct lora_modem_config LoraConfig;
+	int     IntRetVal;
+	int     DataLength;
+	uint8_t RawData[MAX_DATA_LEN*2] = {0};
+	uint8_t SafeData[MAX_DATA_LEN*2];
 	int16_t rssi;
-	int8_t snr;
+	int8_t  snr;
+	int		MessageCounter;
+	int		CharCtr;
 
-	lora_dev = device_get_binding(DEFAULT_RADIO);
-	if (!lora_dev) {
+
+	printk("\f\n");
+	printk("Simple LoRa receive test for board config \"%s\"\n\n", CONFIG_BOARD);
+
+	/* Connect to the LoRa radio */
+	LoraDevice = device_get_binding(DEFAULT_RADIO);
+	if (!LoraDevice) {
 		LOG_ERR("%s Device not found", DEFAULT_RADIO);
 		return;
 	}
 
-	config.frequency = 865100000;
-	config.bandwidth = BW_125_KHZ;
-	config.datarate = SF_10;
-	config.preamble_len = 8;
-	config.coding_rate = CR_4_5;
-	config.tx_power = 14;
-	config.tx = false;
+	/*
+	 * LoRa configuration settings.
+	 *
+	 * Generally, we Will only be able to communicate with
+	 * other devices with the same frequency, bandwidth and
+	 * datarate settings.  In fact, systems with different
+	 * bandwidth and datarate are more or less "orthoganal"
+	 * to each other, meaning that one system will see the
+	 * other system's signal as uncorrelated noise.
+	 */
+	LoraConfig.frequency = 915000000;  /* In Hz */
+	LoraConfig.bandwidth = BW_250_KHZ; /* Driver can interpret valid Hz or enum */
+	LoraConfig.datarate = SF_10;
+	LoraConfig.preamble_len = 8;
+	LoraConfig.coding_rate = CR_4_5;
+	LoraConfig.tx_power = 14;
+	LoraConfig.tx = false;
 
-	ret = lora_config(lora_dev, &config);
-	if (ret < 0) {
+	/* Print LoRa settings in use */
+	printk("Settings:\n");
+	printk("  Frequency                      = %d (Hz)\n", LoraConfig.frequency);
+	printk("  Bandwidth                      = %d (Hz or enum)\n", LoraConfig.bandwidth);
+	printk("  DataRate (spreading factor/SF) = %d\n", LoraConfig.datarate);
+	printk("  PreambleLen                    = %d\n", LoraConfig.preamble_len);
+	printk("  CodingRate                     = %d\n", LoraConfig.coding_rate);
+	printk("  TxPower                        = %d\n", LoraConfig.tx_power);
+	printk("  Tx                             = %d\n", LoraConfig.tx);
+	printk("\n");
+
+	/* Set the configuration of the LoRa receiver */
+	IntRetVal = lora_config(LoraDevice, &LoraConfig);
+	if (IntRetVal < 0) {
 		LOG_ERR("LoRa config failed");
 		return;
 	}
 
+	/* Listen for LoRa messages forever. */
+	MessageCounter = 0;
 	while (1) {
 		/* Block until data arrives */
-		len = lora_recv(lora_dev, data, MAX_DATA_LEN, K_FOREVER,
+		DataLength = lora_recv(LoraDevice, RawData, MAX_DATA_LEN, K_FOREVER,
 				&rssi, &snr);
-		if (len < 0) {
+		if (DataLength < 0) {
 			LOG_ERR("LoRa receive failed");
 			return;
 		}
 
-		LOG_INF("Received data: %s (RSSI:%ddBm, SNR:%ddBm)",
-			log_strdup(data), rssi, snr);
+		/* Counter can probably do more, but we'll wrap at 65,536 */
+		MessageCounter++;
+		if  (MessageCounter > 0xFFFF)
+			MessageCounter = 0;
+
+		/*
+		 * Changed from LOG_INF to give more flexibility in printout.
+		 *
+		 * LOG_INF("Received data 0x%4.4X: %s (RSSI:%ddBm, SNR:%ddBm)",
+		 *	MessageCounter, log_strdup(SafeData), rssi, snr);
+		 */
+
+		/* Some data received is not string-safe, so sanitize string for printing */
+		for (CharCtr = 0; ((CharCtr < DataLength) && (CharCtr < MAX_DATA_LEN)); CharCtr++) {
+			if  (isprint(RawData[CharCtr])) {
+				SafeData[CharCtr] = RawData[CharCtr];
+			} else {
+				SafeData[CharCtr] = '.';
+			}
+		}
+		SafeData[CharCtr] = '\0';
+
+		/* Print statistics */
+		printk("\n");
+		printk("Msg 0x%4.4X received (RSSI:%ddBm, SNR:%ddBm):\n",
+				MessageCounter, rssi, snr);
+
+		/* Print sanitized string */
+		printk("As string: %s\n", SafeData);
+
+		/* Print hex dump of byte data */
+		printk("As hex bytes:");
+		for (CharCtr = 0; ((CharCtr < DataLength) && (CharCtr < MAX_DATA_LEN)); CharCtr++) {
+			if  ((CharCtr & 0x0F) == 0) {
+				printk("\n  0x%4.4X - ", CharCtr);
+			} else {
+				if  (((CharCtr & 0x0F) == 4) || ((CharCtr & 0x0F) == 12)) {
+					printk(" ");
+				} else {
+					if  ((CharCtr & 0x0F) == 8)
+						printk("- ");
+				}
+			}
+			printk("%2.2X ", RawData[CharCtr]);
+		}
+
+		/* Blank space before next message */
+		printk("\n\n");
 	}
 }
