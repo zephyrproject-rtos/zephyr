@@ -20,11 +20,15 @@
 #define th_flags(_x) UNALIGNED_GET(&(_x)->th_flags)
 #define th_win(_x) UNALIGNED_GET(&(_x)->th_win)
 
-#define tcp_slist(_slist, _op, _type, _link)				\
+#define tcp_slist(_conn, _slist, _op, _type, _link)			\
 ({									\
+	k_mutex_lock(&conn->lock, K_FOREVER);				\
+									\
 	sys_snode_t *_node = sys_slist_##_op(_slist);			\
 									\
 	_type * _x = _node ? CONTAINER_OF(_node, _type, _link) : NULL;	\
+									\
+	k_mutex_unlock(&conn->lock);					\
 									\
 	_x;								\
 })
