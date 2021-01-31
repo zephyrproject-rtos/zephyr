@@ -22,6 +22,8 @@ LOG_MODULE_REGISTER(net_tcp, CONFIG_NET_TCP_LOG_LEVEL);
 #include "net_private.h"
 #include "tcp2_priv.h"
 
+#define ACK_TIMEOUT_MS CONFIG_NET_TCP_ACK_TIMEOUT
+#define ACK_TIMEOUT K_MSEC(ACK_TIMEOUT_MS)
 #define FIN_TIMEOUT_MS MSEC_PER_SEC
 #define FIN_TIMEOUT K_MSEC(FIN_TIMEOUT_MS)
 
@@ -1058,11 +1060,24 @@ static void tcp_timewait_timeout(struct k_work *work)
 	net_context_unref(conn->context);
 }
 
+static void tcp_establish_timeout(struct tcp *conn)
+{
+	NET_DBG("Did not receive %s in %dms", "ACK", ACK_TIMEOUT_MS);
+	NET_DBG("conn: %p %s", conn, log_strdup(tcp_conn_state(conn, NULL)));
+
+	(void)tcp_conn_unref(conn);
+}
+
 static void tcp_fin_timeout(struct k_work *work)
 {
 	struct tcp *conn = CONTAINER_OF(work, struct tcp, fin_timer);
 
-	NET_DBG("Did not receive FIN in %dms", FIN_TIMEOUT_MS);
+	if (conn->state == TCP_SYN_RECEIVED) {
+		tcp_establish_timeout(conn);
+		return;
+	}
+
+	NET_DBG("Did not receive %s in %dms", "FIN", FIN_TIMEOUT_MS);
 	NET_DBG("conn: %p %s", conn, log_strdup(tcp_conn_state(conn, NULL)));
 
 	/* Extra unref from net_tcp_put() */
@@ -1535,6 +1550,11 @@ next_state:
 			tcp_out(conn, SYN | ACK);
 			conn_seq(conn, + 1);
 			next = TCP_SYN_RECEIVED;
+
+			/* Close the connection if we do not receive ACK on time.
+			 */
+			k_delayed_work_submit(&conn->establish_timer,
+					      ACK_TIMEOUT);
 		} else {
 			tcp_out(conn, SYN);
 			conn_seq(conn, + 1);
@@ -1544,6 +1564,7 @@ next_state:
 	case TCP_SYN_RECEIVED:
 		if (FL(&fl, &, ACK, th_ack(th) == conn->seq &&
 				th_seq(th) == conn->ack)) {
+			k_delayed_work_cancel(&conn->establish_timer);
 			tcp_send_timer_cancel(conn);
 			next = TCP_ESTABLISHED;
 			net_context_set_state(conn->context,
