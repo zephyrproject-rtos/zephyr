@@ -223,7 +223,14 @@ struct tcp { /* TCP connection */
 	struct k_delayed_work recv_queue_timer;
 	struct k_delayed_work send_data_timer;
 	struct k_delayed_work timewait_timer;
-	struct k_delayed_work fin_timer;
+	union {
+		/* Because FIN and establish timers are never happening
+		 * at the same time, share the timer between them to
+		 * save memory.
+		 */
+		struct k_delayed_work fin_timer;
+		struct k_delayed_work establish_timer;
+	};
 	union tcp_endpoint src;
 	union tcp_endpoint dst;
 	size_t send_data_total;
