@@ -6,9 +6,9 @@ Blinky
 Overview
 ********
 
-Blinky is a simple application which blinks an LED forever using the :ref:`GPIO
-API <gpio_api>`. The source code shows how to configure GPIO pins as outputs,
-then turn them on and off.
+Blinky is a simple application which blinks an LED forever, in a simple pattern,
+using the :ref:`GPIO API <gpio_api>`. The source code shows how to configure GPIO
+pins as outputs, then turn them on and off.
 
 See :ref:`pwm-blinky-sample` for a sample which uses the PWM API to blink an
 LED.
