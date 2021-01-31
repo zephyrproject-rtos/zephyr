@@ -339,7 +339,7 @@ static void tcp_send_queue_flush(struct tcp *conn)
 
 	k_delayed_work_cancel(&conn->send_timer);
 
-	while ((pkt = tcp_slist(&conn->send_queue, get,
+	while ((pkt = tcp_slist(conn, &conn->send_queue, get,
 				struct net_pkt, next))) {
 		tcp_pkt_unref(pkt);
 	}
@@ -432,7 +432,7 @@ static bool tcp_send_process_no_lock(struct tcp *conn)
 	bool unref = false;
 	struct net_pkt *pkt;
 
-	pkt = tcp_slist(&conn->send_queue, peek_head,
+	pkt = tcp_slist(conn, &conn->send_queue, peek_head,
 			struct net_pkt, next);
 	if (!pkt) {
 		goto out;
@@ -458,8 +458,9 @@ static bool tcp_send_process_no_lock(struct tcp *conn)
 		bool forget = ACK == fl || PSH == fl || (ACK | PSH) == fl ||
 			RST & fl;
 
-		pkt = forget ? tcp_slist(&conn->send_queue, get, struct net_pkt,
-						next) : tcp_pkt_clone(pkt);
+		pkt = forget ? tcp_slist(conn, &conn->send_queue, get,
+					 struct net_pkt, next) :
+			tcp_pkt_clone(pkt);
 		if (!pkt) {
 			NET_ERR("net_pkt alloc failure");
 			goto out;
@@ -507,7 +508,7 @@ static void tcp_send_timer_cancel(struct tcp *conn)
 	k_delayed_work_cancel(&conn->send_timer);
 
 	{
-		struct net_pkt *pkt = tcp_slist(&conn->send_queue, get,
+		struct net_pkt *pkt = tcp_slist(conn, &conn->send_queue, get,
 						struct net_pkt, next);
 		if (pkt) {
 			NET_DBG("%s", log_strdup(tcp_th(pkt)));
