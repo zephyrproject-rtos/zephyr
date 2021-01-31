@@ -118,7 +118,7 @@
 	status = "okay";
 };
 
-&i2c0 {
+arduino_i2c: &i2c0 {
 	status = "okay";
 
 	fxos8700@1c {

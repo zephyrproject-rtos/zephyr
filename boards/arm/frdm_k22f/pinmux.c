@@ -88,6 +88,18 @@ static int frdm_k22f_pinmux_init(const struct device *dev)
 					| PORT_PCR_ODE_MASK);
 #endif
 
+#if CONFIG_SHIELD_FRDM_STBC_AGM01
+	/* FXOS8700 INT1 */
+	pinmux_pin_set(portb, 16, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	/* FXOS8700 INT2 */
+	pinmux_pin_set(porta, 4, PORT_PCR_MUX(kPORT_MuxAsGpio));
+
+	/* FXAS21002 INT1 */
+	pinmux_pin_set(portb, 18, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	/* FXAS21002 INT2 */
+	pinmux_pin_set(portb, 19, PORT_PCR_MUX(kPORT_MuxAsGpio));
+#endif
+
 	return 0;
 }
 
