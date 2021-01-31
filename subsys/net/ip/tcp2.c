@@ -371,9 +371,13 @@ static int tcp_conn_unref(struct tcp *conn)
 
 	/* If there is any pending data, pass that to application */
 	while ((pkt = k_fifo_get(&conn->recv_data, K_NO_WAIT)) != NULL) {
-		net_context_packet_received(
-			(struct net_conn *)conn->context->conn_handler,
-			pkt, NULL, NULL, conn->recv_user_data);
+		if (net_context_packet_received(
+			    (struct net_conn *)conn->context->conn_handler,
+			    pkt, NULL, NULL, conn->recv_user_data) ==
+		    NET_DROP) {
+			/* Application is no longer there, unref the pkt */
+			tcp_pkt_unref(pkt);
+		}
 	}
 
 	if (conn->context->conn_handler) {
@@ -1816,8 +1820,12 @@ next_state:
 	 */
 	while (conn_handler && atomic_get(&conn->ref_count) > 0 &&
 	       (recv_pkt = k_fifo_get(recv_data_fifo, K_NO_WAIT)) != NULL) {
-		net_context_packet_received(conn_handler, recv_pkt, NULL, NULL,
-					    recv_user_data);
+		if (net_context_packet_received(conn_handler, recv_pkt, NULL,
+						NULL, recv_user_data) ==
+		    NET_DROP) {
+			/* Application is no longer there, unref the pkt */
+			tcp_pkt_unref(recv_pkt);
+		}
 	}
 
 	/* We must not try to unref the connection while having a connection
