@@ -534,10 +534,11 @@ void test_lfs_basic(void)
 	zassert_equal(fs_unmount(mp), 0,
 		      "unmount2 small failed");
 
-	zassert_equal(check_medium(), TC_PASS,
-		      "check medium failed");
+	if (IS_ENABLED(CONFIG_APP_TEST_CUSTOM)) {
+		zassert_equal(check_medium(), TC_PASS,
+			      "check medium failed");
 
-	zassert_equal(check_large(), TC_PASS,
-		      "check large failed");
-
+		zassert_equal(check_large(), TC_PASS,
+			      "check large failed");
+	}
 }

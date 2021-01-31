@@ -1,5 +1,12 @@
-tests:
-  filesystem.littlefs:
-    platform_allow: nrf52840dk_nrf52840 native_posix native_posix_64
+common:
     tags: filesystem
+    platform_allow: nrf52840dk_nrf52840 native_posix native_posix_64
+
+tests:
+  filesystem.littlefs.default:
+    timeout: 60
+  filesystem.littlefs.custom:
     timeout: 180
+    extra_configs:
+      - CONFIG_APP_TEST_CUSTOM=y
+      - CONFIG_FS_LITTLEFS_FC_HEAP_SIZE=16384
