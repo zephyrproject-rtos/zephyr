@@ -7,7 +7,7 @@ Overview
 ********
 
 A simple sample that can be used with any :ref:`supported board <boards>` and
-prints "Hello World" to the console.
+prints "Hello World" to the console repeatedly, with approx. one second delay.
 
 Building and Running
 ********************
@@ -28,6 +28,9 @@ Sample Output
 
 .. code-block:: console
 
-    Hello World! x86
+    Hello World! x86 pass         1
+    Hello World! x86 pass         2
+    Hello World! x86 pass         3
+    ...
 
 Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.
