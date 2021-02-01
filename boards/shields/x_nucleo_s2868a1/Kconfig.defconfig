@@ -1,0 +1,22 @@
+# Copyright (c) 2021 Nikos Oikonomou <nikoikonomou92@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_X_NUCLEO_S2868A1
+
+if IEEE802154
+
+config SPI
+	default y
+	depends on IEEE802154
+
+config IEEE802154_S2LP
+	default y
+	depends on IEEE802154
+
+config NET_CONFIG_IEEE802154_DEV_NAME
+	default "IEEE802154_S2LP"
+	depends on IEEE802154_S2LP
+
+endif # IEEE802154
+
+endif # SHIELD_X_NUCLEO_S2868A1

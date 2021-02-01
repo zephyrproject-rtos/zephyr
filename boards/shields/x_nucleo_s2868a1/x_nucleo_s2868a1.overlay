@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2021 Nikos Oikonomou <nikoikonomou92@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&arduino_spi {
+	status = "okay";
+	cs-gpios = <&arduino_header 1 GPIO_ACTIVE_LOW>; /* A1 */
+
+	s2lp@0 {
+		status = "okay";
+		compatible = "st,s2lp";
+		reg = <0x0>;
+		label = "s2lp";
+		spi-max-frequency = <4000000>;
+		sdn-gpios = <&arduino_header 13 GPIO_ACTIVE_LOW>; /* D7 */
+		rx-rdy-irq-gpios = <&arduino_header 5 (GPIO_PULL_UP|GPIO_ACTIVE_LOW)>; /* A5 */
+	};
+};
