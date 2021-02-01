@@ -4,5 +4,5 @@ cmake_minimum_required(VERSION 3.13.1)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(nrf_system_off)
 
-FILE(GLOB app_sources src/*.c)
-target_sources(app PRIVATE ${app_sources})
+target_sources(app PRIVATE src/main.c)
+target_sources_ifdef(CONFIG_APP_RETENTION app PRIVATE src/retained.c)

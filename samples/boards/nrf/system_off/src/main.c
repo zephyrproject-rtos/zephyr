@@ -9,6 +9,7 @@
 #include <device.h>
 #include <init.h>
 #include <power/power.h>
+#include "retained.h"
 #include <hal/nrf_gpio.h>
 
 #define CONSOLE_LABEL DT_LABEL(DT_CHOSEN(zephyr_console))
@@ -40,6 +41,21 @@ void main(void)
 
 	printk("\n%s system off demo\n", CONFIG_BOARD);
 
+	if (IS_ENABLED(CONFIG_APP_RETENTION)) {
+		bool retained_ok = retained_validate();
+
+		/* Increment for this boot attempt and update. */
+		retained.boots += 1;
+		retained_update();
+
+		printk("Retained data: %s\n", retained_ok ? "valid" : "INVALID");
+		printk("Boot count: %u\n", retained.boots);
+		printk("Off count: %u\n", retained.off_count);
+		printk("Active Ticks: %" PRIu64 "\n", retained.uptime_sum);
+	} else {
+		printk("Retained data not supported\n");
+	}
+
 	/* Configure to generate PORT event (wakeup) on button 1 press. */
 	nrf_gpio_cfg_input(DT_GPIO_PIN(DT_NODELABEL(button0), gpios),
 			   NRF_GPIO_PIN_PULLUP);
@@ -63,6 +79,12 @@ void main(void)
 	rc = device_set_power_state(cons, DEVICE_PM_ACTIVE_STATE, NULL, NULL);
 
 	printk("Entering system off; press BUTTON1 to restart\n");
+
+	if (IS_ENABLED(CONFIG_APP_RETENTION)) {
+		/* Update the retained state */
+		retained.off_count += 1;
+		retained_update();
+	}
 
 	/* Above we disabled entry to deep sleep based on duration of
 	 * controlled delay.  Here we need to override that, then
