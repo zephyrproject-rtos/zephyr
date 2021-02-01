@@ -375,7 +375,7 @@ static int cmd_bass_client_read_recv_state(const struct shell *shell,
 		return -ENOEXEC;
 	}
 
-	result = bt_bass_client_rem_src(default_conn, idx);
+	result = bt_bass_client_read_recv_state(default_conn, idx);
 	if (result) {
 		shell_print(shell, "Fail: %d", result);
 	}
