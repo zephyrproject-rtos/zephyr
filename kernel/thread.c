@@ -884,6 +884,15 @@ int z_impl_k_float_disable(struct k_thread *thread)
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 }
 
+int z_impl_k_float_enable(struct k_thread *thread, unsigned int options)
+{
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
+	return arch_float_enable(thread, options);
+#else
+	return -ENOTSUP;
+#endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
+}
+
 #ifdef CONFIG_USERSPACE
 static inline int z_vrfy_k_float_disable(struct k_thread *thread)
 {
