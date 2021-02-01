@@ -14,6 +14,7 @@ static inline void lll_adv_pdu_enqueue(struct lll_adv_pdu *pdu, uint8_t idx)
 }
 
 struct pdu_adv *lll_adv_pdu_alloc(struct lll_adv_pdu *pdu, uint8_t *idx);
+struct pdu_adv *lll_adv_pdu_alloc_pdu_adv(void);
 
 static inline struct pdu_adv *lll_adv_data_alloc(struct lll_adv *lll,
 						 uint8_t *idx)
