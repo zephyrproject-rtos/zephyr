@@ -1453,6 +1453,7 @@ static int cmd_per_adv_data(const struct shell *shell, size_t argc,
 		return -EINVAL;
 	}
 
+	memset(hex_data, 0, sizeof(hex_data));
 	ad_len = hex2bin(argv[1], strlen(argv[1]), hex_data, sizeof(hex_data));
 
 	if (!ad_len) {
@@ -1464,7 +1465,7 @@ static int cmd_per_adv_data(const struct shell *shell, size_t argc,
 	ad.type = hex_data[1];
 	ad.data = &hex_data[2];
 
-	err = bt_le_per_adv_set_data(adv, &ad, ad_len);
+	err = bt_le_per_adv_set_data(adv, &ad, 1);
 	if (err) {
 		shell_error(shell,
 			    "Failed to set periodic advertising data (%d)",
