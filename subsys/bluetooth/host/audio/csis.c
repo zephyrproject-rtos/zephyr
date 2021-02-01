@@ -273,7 +273,7 @@ static int csis_update_psri(void)
 	uint32_t prand;
 	uint32_t hash;
 
-	if (IS_ENABLED(CONFIG_BT_CSIS_TEST_SIH_SIRK)) {
+	if (IS_ENABLED(CONFIG_BT_CSIS_TEST_SAMPLE_DATA)) {
 		prand = 0x69f563;
 	} else {
 		res = generate_prand(&prand);
