@@ -38,11 +38,18 @@ static struct {
 	uint8_t pool[sizeof(memq_link_t) * EVENT_DONE_MAX];
 } mem_link_done;
 
-/*
- * just a big number
- */
+#if defined(CONFIG_BT_CTLR_PHY) && defined(CONFIG_BT_CTLR_DATA_LENGTH)
+#define LL_PDU_RX_CNT (3+128)
+#else
+#define LL_PDU_RX_CNT (2+128)
+#endif
 
-#define PDU_RX_POOL_SIZE 16384
+#define PDU_RX_CNT    (CONFIG_BT_CTLR_RX_BUFFERS + 3)
+#define RX_CNT        (PDU_RX_CNT + LL_PDU_RX_CNT)
+
+static MFIFO_DEFINE(pdu_rx_free, sizeof(void *), PDU_RX_CNT);
+
+
 #if defined(CONFIG_BT_RX_USER_PDU_LEN)
 #define PDU_RX_USER_PDU_OCTETS_MAX (CONFIG_BT_RX_USER_PDU_LEN)
 #else
@@ -63,23 +70,16 @@ static struct {
 		      PDU_RX_USER_PDU_OCTETS_MAX)	\
 		)
 
-#if defined(CONFIG_BT_CTLR_PHY) && defined(CONFIG_BT_CTLR_DATA_LENGTH)
-#define LL_PDU_RX_CNT (3+128)
-#else
-#define LL_PDU_RX_CNT (2+128)
-#endif
 
-#define PDU_RX_CNT    (CONFIG_BT_CTLR_RX_BUFFERS + 3)
-#define RX_CNT        (PDU_RX_CNT + LL_PDU_RX_CNT)
 
-static MEMQ_DECLARE(ull_rx);
-static MEMQ_DECLARE(ll_rx);
 
-#if defined(CONFIG_BT_CONN)
-static MFIFO_DEFINE(ll_pdu_rx_free, sizeof(void *), LL_PDU_RX_CNT);
-#endif /* CONFIG_BT_CONN */
 
-static MFIFO_DEFINE(pdu_rx_free, sizeof(void *), PDU_RX_CNT);
+
+
+/*
+ * just a big number
+ */
+#define PDU_RX_POOL_SIZE 16384
 
 static struct {
 	void *free;
@@ -90,7 +90,6 @@ static struct {
  * just a big number
  */
 #define LINK_RX_POOL_SIZE 16384
-
 static struct {
 	uint8_t quota_pdu; /* Number of un-utilized buffers */
 
@@ -98,36 +97,28 @@ static struct {
 	uint8_t pool[LINK_RX_POOL_SIZE];
 } mem_link_rx;
 
+static MEMQ_DECLARE(ull_rx);
+static MEMQ_DECLARE(ll_rx);
+
+#if defined(CONFIG_BT_CONN)
+static MFIFO_DEFINE(ll_pdu_rx_free, sizeof(void *), LL_PDU_RX_CNT);
+#endif /* CONFIG_BT_CONN */
+
 sys_slist_t ut_rx_q;
 
 static inline int init_reset(void);
 static inline void rx_alloc(uint8_t max);
 static inline void ll_rx_link_inc_quota(int8_t delta);
 
-
-void ull_ticker_status_give(uint32_t status, void *param)
+void ll_reset(void)
 {
-
+	MFIFO_INIT(ll_pdu_rx_free);
+	init_reset();
 }
 
-uint32_t ull_ticker_status_take(uint32_t ret, uint32_t volatile *ret_cb)
+static inline void ll_rx_link_inc_quota(int8_t delta)
 {
-	return *ret_cb;
-}
-
-void *ull_disable_mark(void *param)
-{
-	return NULL;
-}
-
-void *ull_disable_unmark(void *param)
-{
-	return NULL;
-}
-
-int ull_disable(void *lll)
-{
-	return 0;
+	mem_link_rx.quota_pdu += delta;
 }
 
 void *ll_rx_link_alloc(void)
@@ -150,18 +141,6 @@ void ll_rx_release(void *node_rx)
 	mem_release(node_rx, &mem_pdu_rx.free);
 }
 
-void *ll_pdu_rx_alloc(void)
-{
-	void *temp;
-
-	temp = MFIFO_DEQUEUE(ll_pdu_rx_free);
-
-	return temp;
-}
-
-
-
-
 void ll_rx_put(memq_link_t *link, void *rx)
 {
 	sys_slist_append(&ut_rx_q, (sys_snode_t *) rx);
@@ -172,10 +151,79 @@ void ll_rx_sched(void)
 
 }
 
-void ll_reset(void)
+void *ll_pdu_rx_alloc(void)
 {
-	MFIFO_INIT(ll_pdu_rx_free);
-	init_reset();
+	void *temp;
+
+	temp = MFIFO_DEQUEUE(ll_pdu_rx_free);
+
+	return temp;
+}
+
+/* Forward declaration */
+struct node_tx;
+void ll_tx_ack_put(uint16_t handle, struct node_tx *node_tx)
+{
+
+}
+
+void ull_ticker_status_give(uint32_t status, void *param)
+{
+
+}
+
+uint32_t ull_ticker_status_take(uint32_t ret, uint32_t volatile *ret_cb)
+{
+	return *ret_cb;
+}
+
+void *ull_disable_mark(void *param)
+{
+	return NULL;
+}
+
+void *ull_disable_unmark(void *param)
+{
+	return NULL;
+}
+
+void *ull_disable_mark_get(void)
+{
+	return NULL;
+}
+
+int ull_ticker_stop_with_mark(uint8_t ticker_handle, void *param,
+			      void *lll_disable)
+{
+	return 0;
+}
+
+void *ull_update_mark(void *param)
+{
+	return NULL;
+}
+
+void *ull_update_unmark(void *param)
+{
+	return NULL;
+}
+
+void *ull_update_mark_get(void)
+{
+	return NULL;
+}
+
+int ull_disable(void *lll)
+{
+	return 0;
+}
+
+/* Forward declaration */
+struct node_rx_event_done;
+void ull_drift_ticks_get(struct node_rx_event_done *done,
+			 uint32_t *ticks_drift_plus,
+			 uint32_t *ticks_drift_minus)
+{
 }
 
 static inline int init_reset(void)
@@ -274,9 +322,4 @@ static inline void rx_alloc(uint8_t max)
 
 		ll_rx_link_inc_quota(-1);
 	}
-}
-
-static inline void ll_rx_link_inc_quota(int8_t delta)
-{
-	mem_link_rx.quota_pdu += delta;
 }
