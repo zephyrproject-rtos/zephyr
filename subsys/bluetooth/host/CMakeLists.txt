@@ -39,6 +39,10 @@ if(CONFIG_BT_HCI_HOST)
     CONFIG_BT_HOST_CRYPTO
     crypto.c
     )
+  zephyr_library_sources_ifdef(
+    CONFIG_BT_ECC
+    ecc.c
+    )
 
   if(CONFIG_BT_CONN)
     zephyr_library_sources(
