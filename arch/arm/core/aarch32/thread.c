@@ -458,6 +458,12 @@ int arch_float_disable(struct k_thread *thread)
 
 	return 0;
 }
+
+int arch_float_enable(struct k_thread *thread, unsigned int options)
+{
+	/* This is not supported in Cortex-M and Cortex-R does not have FPU */
+	return -ENOTSUP;
+}
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 
 /* Internal function for Cortex-M initialization,
