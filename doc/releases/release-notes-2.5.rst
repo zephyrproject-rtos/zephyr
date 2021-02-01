@@ -117,6 +117,16 @@ Removed APIs in this release
   * The deprecated BT_HCI_ERR_AUTHENTICATION_FAIL define has been removed,
     use BT_HCI_ERR_AUTH_FAIL instead.
 
+* Kernel
+
+  * The deprecated k_mem_pool API has been removed entirely (for the
+    past release it was backed by a k_heap, but maintained a
+    compatible API).  Now all instantiated heaps must be
+    sys_heap/k_heaps.  Note that the new-style heap is a general
+    purpose allocator and does not make the same promises about block
+    alignment/splitting.  Applications with such requirements should
+    look at porting their logic, or perhaps at the k_mem_slab utility.
+
 Stable API changes in this release
 ==================================
 
