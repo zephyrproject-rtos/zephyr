@@ -57,7 +57,10 @@ extern uint16_t ull_conn_interval_min_get(struct ll_conn *conn);
 
 static int init_reset(void);
 
+static void ticker_update_conn_op_cb(uint32_t status, void *param);
+
 static inline void disable(uint16_t handle);
+static void conn_cleanup(struct ll_conn *conn, uint8_t reason);
 
 #if defined(CONFIG_BT_CTLR_LLID_DATA_START_EMPTY)
 static int empty_data_start_release(struct ll_conn *conn, struct node_tx *tx);
@@ -101,8 +104,6 @@ static struct {
 	void *free;
 	struct ll_conn pool[CONFIG_BT_MAX_CONN];
 } mem_conn;
-
-static struct ll_conn *conn_upd_curr;
 
 struct ll_conn *ll_conn_acquire(void)
 {
@@ -374,7 +375,235 @@ int ull_conn_llcp(struct ll_conn *conn, uint32_t ticks_at_expire, uint16_t lazy)
 
 void ull_conn_done(struct node_rx_event_done *done)
 {
-	return;
+	struct lll_conn *lll = (void *)HDR_ULL2LLL(done->param);
+	struct ll_conn *conn = (void *)HDR_LLL2EVT(lll);
+	uint32_t ticks_drift_minus;
+	uint32_t ticks_drift_plus;
+	uint16_t latency_event;
+	uint16_t elapsed_event;
+	uint8_t reason_peer;
+	uint16_t lazy;
+	uint8_t force;
+
+	/* Skip if connection terminated by local host */
+	if (unlikely(lll->handle == 0xFFFF)) {
+		return;
+	}
+
+	/* Events elapsed used in timeout checks below */
+#if defined(CONFIG_BT_CTLR_CONN_META)
+	/* If event has shallow expiry do not add latency, but rely on
+	 * accumulated lazy count.
+	 */
+	latency_event = conn->common.is_must_expire ? 0 : lll->latency_event;
+#else
+	latency_event = lll->latency_event;
+#endif
+	elapsed_event = latency_event + 1;
+
+	/* Slave drift compensation calc and new latency or
+	 * master terminate acked
+	 */
+	ticks_drift_plus = 0U;
+	ticks_drift_minus = 0U;
+	if (done->extra.trx_cnt) {
+		if (0) {
+#if defined(CONFIG_BT_PERIPHERAL)
+		} else if (lll->role) {
+			ull_drift_ticks_get(done, &ticks_drift_plus,
+					    &ticks_drift_minus);
+
+			if (!ull_tx_q_peek(&conn->tx_q)) {
+				ull_conn_tx_demux(UINT8_MAX);
+			}
+
+			if (ull_tx_q_peek(&conn->tx_q) || memq_peek(lll->memq_tx.head,
+						       lll->memq_tx.tail,
+						       NULL)) {
+				lll->latency_event = 0;
+			} else if (lll->slave.latency_enabled) {
+				lll->latency_event = lll->latency;
+			}
+#endif /* CONFIG_BT_PERIPHERAL */
+
+#if defined(CONFIG_BT_CENTRAL)
+		} else if (reason_peer) {
+			/*conn->master.terminate_ack = 1;*/
+#endif /* CONFIG_BT_CENTRAL */
+
+		}
+
+		/* Reset connection failed to establish countdown */
+		conn->connect_expire = 0U;
+	}
+
+	/* Reset supervision countdown */
+	if (done->extra.crc_valid) {
+		conn->supervision_expire = 0U;
+	}
+
+	/* check connection failed to establish */
+	else if (conn->connect_expire) {
+		if (conn->connect_expire > elapsed_event) {
+			conn->connect_expire -= elapsed_event;
+		} else {
+			conn_cleanup(conn, BT_HCI_ERR_CONN_FAIL_TO_ESTAB);
+
+			return;
+		}
+	}
+
+	/* if anchor point not sync-ed, start supervision timeout, and break
+	 * latency if any.
+	 */
+	else {
+		/* Start supervision timeout, if not started already */
+		if (!conn->supervision_expire) {
+			conn->supervision_expire = conn->supervision_reload;
+		}
+	}
+
+	/* check supervision timeout */
+	force = 0U;
+	if (conn->supervision_expire) {
+		if (conn->supervision_expire > elapsed_event) {
+			conn->supervision_expire -= elapsed_event;
+
+			/* break latency */
+			lll->latency_event = 0U;
+
+			/* Force both master and slave when close to
+			 * supervision timeout.
+			 */
+			if (conn->supervision_expire <= 6U) {
+				force = 1U;
+			}
+#if defined(CONFIG_BT_CTLR_CONN_RANDOM_FORCE)
+			/* use randomness to force slave role when anchor
+			 * points are being missed.
+			 */
+			else if (lll->role) {
+				if (latency_event) {
+					force = 1U;
+				} else {
+					force = conn->slave.force & 0x01;
+
+					/* rotate force bits */
+					conn->slave.force >>= 1U;
+					if (force) {
+						conn->slave.force |= BIT(31);
+					}
+				}
+			}
+#endif /* CONFIG_BT_CTLR_CONN_RANDOM_FORCE */
+		} else {
+			conn_cleanup(conn, BT_HCI_ERR_CONN_TIMEOUT);
+
+			return;
+		}
+	}
+
+	/* check procedure timeout */
+	if (conn->procedure_expire != 0U) {
+		if (conn->procedure_expire > elapsed_event) {
+			conn->procedure_expire -= elapsed_event;
+		} else {
+			conn_cleanup(conn, BT_HCI_ERR_LL_RESP_TIMEOUT);
+
+			return;
+		}
+	}
+
+#if defined(CONFIG_BT_CTLR_LE_PING)
+	/* check apto */
+	if (conn->apto_expire != 0U) {
+		if (conn->apto_expire > elapsed_event) {
+			conn->apto_expire -= elapsed_event;
+		} else {
+			struct node_rx_hdr *rx;
+
+			rx = ll_pdu_rx_alloc();
+			if (rx) {
+				conn->apto_expire = 0U;
+
+				rx->handle = lll->handle;
+				rx->type = NODE_RX_TYPE_APTO;
+
+				/* enqueue apto event into rx queue */
+				ll_rx_put(rx->link, rx);
+				ll_rx_sched();
+			} else {
+				conn->apto_expire = 1U;
+			}
+		}
+	}
+
+	/* check appto */
+	if (conn->appto_expire != 0U) {
+		if (conn->appto_expire > elapsed_event) {
+			conn->appto_expire -= elapsed_event;
+		} else {
+			conn->appto_expire = 0U;
+		}
+	}
+#endif /* CONFIG_BT_CTLR_LE_PING */
+
+#if defined(CONFIG_BT_CTLR_CONN_RSSI_EVENT)
+	/* generate RSSI event */
+	if (lll->rssi_sample_count == 0U) {
+		struct node_rx_pdu *rx;
+		struct pdu_data *pdu_data_rx;
+
+		rx = ll_pdu_rx_alloc();
+		if (rx) {
+			lll->rssi_reported = lll->rssi_latest;
+			lll->rssi_sample_count = LLL_CONN_RSSI_SAMPLE_COUNT;
+
+			/* Prepare the rx packet structure */
+			rx->hdr.handle = lll->handle;
+			rx->hdr.type = NODE_RX_TYPE_RSSI;
+
+			/* prepare connection RSSI structure */
+			pdu_data_rx = (void *)rx->pdu;
+			pdu_data_rx->rssi = lll->rssi_reported;
+
+			/* enqueue connection RSSI structure into queue */
+			ll_rx_put(rx->hdr.link, rx);
+			ll_rx_sched();
+		}
+	}
+#endif /* CONFIG_BT_CTLR_CONN_RSSI_EVENT */
+
+	/* check if latency needs update */
+	lazy = 0U;
+	if ((force) || (latency_event != lll->latency_event)) {
+		lazy = lll->latency_event + 1U;
+	}
+
+	/* update conn ticker */
+	if (ticks_drift_plus || ticks_drift_minus || lazy || force) {
+		uint8_t ticker_id = TICKER_ID_CONN_BASE + lll->handle;
+		struct ll_conn *conn = lll->hdr.parent;
+		uint32_t ticker_status;
+
+		/* Call to ticker_update can fail under the race
+		 * condition where in the Slave role is being stopped but
+		 * at the same time it is preempted by Slave event that
+		 * gets into close state. Accept failure when Slave role
+		 * is being stopped.
+		 */
+		ticker_status = ticker_update(TICKER_INSTANCE_ID_CTLR,
+					      TICKER_USER_ID_ULL_HIGH,
+					      ticker_id,
+					      ticks_drift_plus,
+					      ticks_drift_minus, 0, 0,
+					      lazy, force,
+					      ticker_update_conn_op_cb,
+					      conn);
+		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
+			  (ticker_status == TICKER_STATUS_BUSY) ||
+			  ((void *)conn == ull_disable_mark_get()));
+	}
 }
 
 void ull_conn_tx_demux(uint8_t count)
@@ -647,6 +876,18 @@ static int init_reset(void)
 	return 0;
 }
 
+static void ticker_update_conn_op_cb(uint32_t status, void *param)
+{
+	/* Slave drift compensation succeeds, or it fails in a race condition
+	 * when disconnecting or connection update (race between ticker_update
+	 * and ticker_stop calls).
+	 */
+	LL_ASSERT(status == TICKER_STATUS_SUCCESS ||
+		  param == ull_update_mark_get() ||
+		  param == ull_disable_mark_get());
+}
+
+
 static inline void disable(uint16_t handle)
 {
 	struct ll_conn *conn;
@@ -663,6 +904,11 @@ static inline void disable(uint16_t handle)
 	conn->lll.link_tx_free = NULL;
 	*/
 }
+
+static void conn_cleanup(struct ll_conn *conn, uint8_t reason)
+{
+}
+
 
 #if defined(CONFIG_BT_CTLR_LLID_DATA_START_EMPTY)
 static int empty_data_start_release(struct ll_conn *conn, struct node_tx *tx)
