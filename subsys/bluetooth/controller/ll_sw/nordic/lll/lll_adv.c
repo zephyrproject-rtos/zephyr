@@ -51,7 +51,6 @@
 
 static int init_reset(void);
 
-static struct pdu_adv *adv_pdu_allocate(struct lll_adv_pdu *pdu, uint8_t last);
 #if defined(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
 static inline void adv_extra_data_release(struct lll_adv_pdu *pdu, int idx);
 static void *adv_extra_data_allocate(struct lll_adv_pdu *pdu, uint8_t last);
@@ -257,6 +256,7 @@ int lll_adv_data_release(struct lll_adv_pdu *pdu)
 struct pdu_adv *lll_adv_pdu_alloc(struct lll_adv_pdu *pdu, uint8_t *idx)
 {
 	uint8_t first, last;
+	void *p;
 
 	first = pdu->first;
 	last = pdu->last;
@@ -281,7 +281,45 @@ struct pdu_adv *lll_adv_pdu_alloc(struct lll_adv_pdu *pdu, uint8_t *idx)
 
 	*idx = last;
 
-	return adv_pdu_allocate(pdu, last);
+	p = (void *)pdu->pdu[last];
+	if (p) {
+		return p;
+	}
+
+	p = lll_adv_pdu_alloc_pdu_adv();
+
+	pdu->pdu[last] = (void *)p;
+
+	return p;
+}
+
+struct pdu_adv *lll_adv_pdu_alloc_pdu_adv(void)
+{
+	struct pdu_adv *p;
+	int err;
+
+	p = MFIFO_DEQUEUE_PEEK(pdu_free);
+	if (p) {
+		err = k_sem_take(&sem_pdu_free, K_NO_WAIT);
+		LL_ASSERT(!err);
+
+		MFIFO_DEQUEUE(pdu_free);
+
+		return p;
+	}
+
+	p = mem_acquire(&mem_pdu.free);
+	if (p) {
+		return p;
+	}
+
+	err = k_sem_take(&sem_pdu_free, K_FOREVER);
+	LL_ASSERT(!err);
+
+	p = MFIFO_DEQUEUE(pdu_free);
+	LL_ASSERT(p);
+
+	return p;
 }
 
 struct pdu_adv *lll_adv_pdu_latest_get(struct lll_adv_pdu *pdu,
@@ -605,49 +643,6 @@ static int init_reset(void)
 	k_sem_init(&sem_pdu_free, 0, PDU_MEM_FIFO_COUNT);
 
 	return 0;
-}
-
-static struct pdu_adv *adv_pdu_allocate(struct lll_adv_pdu *pdu, uint8_t last)
-{
-	void *p;
-	int err;
-
-	p = (void *)pdu->pdu[last];
-	if (p) {
-		return p;
-	}
-
-	p = MFIFO_DEQUEUE_PEEK(pdu_free);
-	if (p) {
-		err = k_sem_take(&sem_pdu_free, K_NO_WAIT);
-		LL_ASSERT(!err);
-
-		MFIFO_DEQUEUE(pdu_free);
-		pdu->pdu[last] = (void *)p;
-
-		return p;
-	}
-
-	p = mem_acquire(&mem_pdu.free);
-	if (p) {
-		pdu->pdu[last] = (void *)p;
-
-		return p;
-	}
-
-	err = k_sem_take(&sem_pdu_free, K_FOREVER);
-	LL_ASSERT(!err);
-
-	p = MFIFO_DEQUEUE(pdu_free);
-	LL_ASSERT(p);
-	/* If !p then check initial value of sem_pdu_free. It must be the same
-	 * as number of elements in pdu_free store. This may not happen in
-	 * runtime.
-	 */
-
-	pdu->pdu[last] = (void *)p;
-
-	return p;
 }
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
