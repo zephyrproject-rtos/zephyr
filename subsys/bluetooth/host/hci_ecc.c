@@ -317,6 +317,14 @@ int bt_hci_ecc_send(struct net_buf *buf)
 	return bt_dev.drv->send(buf);
 }
 
+void bt_hci_ecc_supported_commands(uint8_t *supported_commands)
+{
+	/* LE Read Local P-256 Public Key */
+	supported_commands[34] |= BIT(1);
+	/* LE Generate DH Key v1 */
+	supported_commands[34] |= BIT(2);
+}
+
 int default_CSPRNG(uint8_t *dst, unsigned int len)
 {
 	return !bt_rand(dst, len);
