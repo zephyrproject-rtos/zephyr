@@ -387,3 +387,7 @@ void hci_evt_user_confirm_req(struct net_buf *buf);
 void hci_evt_user_passkey_notify(struct net_buf *buf);
 void hci_evt_user_passkey_req(struct net_buf *buf);
 void hci_evt_auth_complete(struct net_buf *buf);
+
+/* ECC HCI event handlers */
+void bt_hci_evt_le_pkey_complete(struct net_buf *buf);
+void bt_hci_evt_le_dhkey_complete(struct net_buf *buf);
