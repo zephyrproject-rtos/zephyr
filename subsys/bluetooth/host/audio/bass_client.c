@@ -138,20 +138,22 @@ static uint8_t notify_handler(struct bt_conn *conn,
 		return BT_GATT_ITER_STOP;
 	}
 
+	BT_HEXDUMP_DBG(data, length, "Receive state notification:");
+
 	recv_state = get_recv_state_by_handle(handle);
 	err = parse_recv_state(data, length, recv_state);
 
-	if (!err) {
-		/* If src is set, then the state is active, else it has
-			* been removed
-			*/
-		if (bass_cbs && bass_cbs->recv_state &&
-		    !BASS_RECV_STATE_EMPTY(recv_state)) {
+	if (err) {
+		BT_DBG("Invalid receive state");
+		return BT_GATT_ITER_STOP;
+	}
+
+	if (!BASS_RECV_STATE_EMPTY(recv_state)) {
+		if (bass_cbs && bass_cbs->recv_state) {
 			bass_cbs->recv_state(conn, 0, recv_state);
-		} else if (bass_cbs && bass_cbs->recv_state_removed &&
-			   BASS_RECV_STATE_EMPTY(recv_state)) {
-			bass_cbs->recv_state_removed(conn, 0, recv_state);
 		}
+	} else if (bass_cbs && bass_cbs->recv_state_removed) {
+		bass_cbs->recv_state_removed(conn, 0, recv_state);
 	}
 
 	return BT_GATT_ITER_CONTINUE;
@@ -172,6 +174,10 @@ static uint8_t read_recv_state_cb(struct bt_conn *conn, uint8_t err,
 		struct bass_recv_state_t *recv_state =
 			get_recv_state_by_handle(handle);
 		err = parse_recv_state(data, length, recv_state);
+
+		if (err) {
+			BT_DBG("Invalid receive state");
+		}
 	}
 
 	if (err) {
