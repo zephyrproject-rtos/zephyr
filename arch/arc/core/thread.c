@@ -232,7 +232,7 @@ int arch_float_disable(struct k_thread *thread)
 }
 
 
-int arch_float_enable(struct k_thread *thread)
+int arch_float_enable(struct k_thread *thread, unsigned int options)
 {
 	unsigned int key;
 

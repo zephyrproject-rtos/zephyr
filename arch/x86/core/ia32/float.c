@@ -179,7 +179,7 @@ static inline void FpCtxInit(struct k_thread *thread)
  * The locking isn't really needed when the routine is called by a cooperative
  * thread (since context switching can't occur), but it is harmless.
  */
-void k_float_enable(struct k_thread *thread, unsigned int options)
+void z_float_enable(struct k_thread *thread, unsigned int options)
 {
 	unsigned int imask;
 	struct k_thread *fp_owner;

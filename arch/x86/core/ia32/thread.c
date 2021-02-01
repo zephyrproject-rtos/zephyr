@@ -59,6 +59,17 @@ int arch_float_disable(struct k_thread *thread)
 	return -ENOSYS;
 #endif /* CONFIG_LAZY_FPU_SHARING */
 }
+
+extern int z_float_enable(struct k_thread *thread, unsigned int options);
+
+int arch_float_enable(struct k_thread *thread, unsigned int options)
+{
+#if defined(CONFIG_LAZY_FPU_SHARING)
+	return z_float_enable(thread, options);
+#else
+	return -ENOTSUP;
+#endif /* CONFIG_LAZY_FPU_SHARING */
+}
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,

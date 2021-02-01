@@ -5544,6 +5544,46 @@ __syscall void k_str_out(char *c, size_t n);
  */
 __syscall int k_float_disable(struct k_thread *thread);
 
+/**
+ * @brief Enable preservation of floating point context information.
+ *
+ * This routine informs the kernel that the specified thread
+ * will use the floating point registers.
+
+ * Invoking this routine initializes the thread's floating point context info
+ * to that of an FPU that has been reset. The next time the thread is scheduled
+ * by z_swap() it will either inherit an FPU that is guaranteed to be in a
+ * "sane" state (if the most recent user of the FPU was cooperatively swapped
+ * out) or the thread's own floating point context will be loaded (if the most
+ * recent user of the FPU was preempted, or if this thread is the first user
+ * of the FPU). Thereafter, the kernel will protect the thread's FP context
+ * so that it is not altered during a preemptive context switch.
+ *
+ * The @a options parameter indicates which floating point register sets will
+ * be used by the specified thread.
+ *
+ * For x86 options:
+ *
+ * - K_FP_REGS  indicates x87 FPU and MMX registers only
+ * - K_SSE_REGS indicates SSE registers (and also x87 FPU and MMX registers)
+ *
+ * @warning
+ * Some architectures apply restrictions on how the enabling of floating
+ * point preservation may be requested, see arch_float_enable.
+ *
+ * @warning
+ * This routine should only be used to enable floating point support for
+ * a thread that currently has such support enabled.
+ *
+ * @param thread  ID of thread.
+ * @param options architecture dependent options
+ *
+ * @retval 0        On success.
+ * @retval -ENOTSUP If the floating point enabling is not implemented.
+ *         -EINVAL  If the floating point enabling could not be performed.
+ */
+__syscall int k_float_enable(struct k_thread *thread, unsigned int options);
+
 #ifdef CONFIG_THREAD_RUNTIME_STATS
 
 /**
