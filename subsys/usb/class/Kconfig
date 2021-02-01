@@ -80,6 +80,30 @@ config MASS_STORAGE_DISK_NAME
 	help
 	  Mass storage device disk or drive name
 
+config MASS_STORAGE_INQ_VENDOR_ID
+	string "T10 assigned vendor ID for inquiry (must be 8 characters)"
+	depends on USB_MASS_STORAGE
+	default "ZEPHYR  "
+	help
+	  Vendor ID used for enquiry requests.
+	  Spaces must be added to bring the string to 8 bytes.
+
+config MASS_STORAGE_INQ_PRODUCT_ID
+	string "Product ID for inquiry (must be 16 characters)"
+	depends on USB_MASS_STORAGE
+	default "ZEPHYR USB DISK "
+	help
+	  Product ID used for enquiry requests.
+	  Spaces must be added to bring the string to 16 bytes.
+
+config MASS_STORAGE_INQ_REVISION
+	string "Revision for inquiry (must be 4 characters)"
+	depends on USB_MASS_STORAGE
+	default "0.01"
+	help
+	  Revision used for enquiry requests.
+	  Spaces must be added to bring the string to 4 bytes.
+
 config MASS_STORAGE_BULK_EP_MPS
 	int
 	depends on USB_MASS_STORAGE

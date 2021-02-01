@@ -180,6 +180,33 @@ static uint8_t max_lun_count;
 /*memory OK (after a memoryVerify)*/
 static bool memOK;
 
+#define INQ_VENDOR_ID_LEN 8
+#define INQ_PRODUCT_ID_LEN 16
+#define INQ_REVISION_LEN 4
+
+struct dabc_inquiry_data {
+	uint8_t head[8];
+	uint8_t t10_vid[INQ_VENDOR_ID_LEN];
+	uint8_t product_id[INQ_PRODUCT_ID_LEN];
+	uint8_t product_rev[INQ_REVISION_LEN];
+} __packed;
+
+static const struct dabc_inquiry_data inq_rsp = {
+	.head = {0x00, 0x80, 0x00, 0x01, 36 - 4, 0x80, 0x00, 0x00},
+	.t10_vid = CONFIG_MASS_STORAGE_INQ_VENDOR_ID,
+	.product_id = CONFIG_MASS_STORAGE_INQ_PRODUCT_ID,
+	.product_rev = CONFIG_MASS_STORAGE_INQ_REVISION,
+};
+
+BUILD_ASSERT(sizeof(CONFIG_MASS_STORAGE_INQ_VENDOR_ID) == (INQ_VENDOR_ID_LEN + 1),
+	"CONFIG_MASS_STORAGE_INQ_VENDOR_ID must be 8 characters (pad with spaces)");
+
+BUILD_ASSERT(sizeof(CONFIG_MASS_STORAGE_INQ_PRODUCT_ID) == (INQ_PRODUCT_ID_LEN + 1),
+	"CONFIG_MASS_STORAGE_INQ_PRODUCT_ID must be 16 characters (pad with spaces)");
+
+BUILD_ASSERT(sizeof(CONFIG_MASS_STORAGE_INQ_REVISION) == (INQ_REVISION_LEN + 1),
+	"CONFIG_MASS_STORAGE_INQ_REVISION must be 4 characters (pad with spaces)");
+
 static void msd_state_machine_reset(void)
 {
 	stage = MSC_READ_CBW;
@@ -321,15 +348,7 @@ static bool requestSense(void)
 
 static bool inquiryRequest(void)
 {
-	uint8_t inquiry[] = { 0x00, 0x80, 0x00, 0x01,
-	36 - 4, 0x80, 0x00, 0x00,
-	'Z', 'E', 'P', 'H', 'Y', 'R', ' ', ' ',
-	'Z', 'E', 'P', 'H', 'Y', 'R', ' ', 'U', 'S', 'B', ' ',
-	'D', 'I', 'S', 'K', ' ',
-	'0', '.', '0', '1',
-	};
-
-	return write(inquiry, sizeof(inquiry));
+	return write((uint8_t *)&inq_rsp, sizeof(inq_rsp));
 }
 
 static bool modeSense6(void)
