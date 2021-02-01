@@ -755,6 +755,8 @@ static inline int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 				*tx_release = tx;
 
 				FORCE_MD_CNT_SET();
+			} else {
+				LL_ASSERT(0);
 			}
 
 			if (IS_ENABLED(CONFIG_BT_CENTRAL) && !lll->role &&
