@@ -215,7 +215,7 @@ void z_set_timeout_expiry(int32_t ticks, bool is_idle)
 	LOCKED(&timeout_lock) {
 		int next_to = next_timeout();
 		bool sooner = (next_to == K_TICKS_FOREVER)
-			      || (ticks < next_to);
+			      || (ticks <= next_to);
 		bool imminent = next_to <= 1;
 
 		/* Only set new timeouts when they are sooner than
