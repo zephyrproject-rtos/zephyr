@@ -1077,32 +1077,27 @@ uint8_t ll_adv_enable(uint8_t enable)
 		/* EGON TODO: fill in conn param */
 #endif /* CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY */
 
-#ifdef CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+#ifdef CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY
 		conn->llcp_length.req = conn->llcp_length.ack = 0U;
 		conn->llcp_length.disabled = 0U;
 		conn->llcp_length.cache.tx_octets = 0U;
+#endif /* CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY */
 		conn->default_tx_octets = ull_conn_default_tx_octets_get();
-
 #if defined(CONFIG_BT_CTLR_PHY)
 		conn->default_tx_time = ull_conn_default_tx_time_get();
 #endif /* CONFIG_BT_CTLR_PHY */
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
-#endif /* CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY */
 
-#ifdef CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY
 #if defined(CONFIG_BT_CTLR_PHY)
+#ifdef CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY
 		conn->llcp_phy.req = conn->llcp_phy.ack = 0;
 		conn->llcp_phy.disabled = 0U;
 		conn->llcp_phy.pause_tx = 0U;
+#endif /* CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY */
 		conn->phy_pref_tx = ull_conn_default_phy_tx_get();
 		conn->phy_pref_rx = ull_conn_default_phy_rx_get();
 #endif /* CONFIG_BT_CTLR_PHY */
-#else
-		conn->phy_pref_tx = ull_conn_default_phy_tx_get();
-		conn->phy_pref_rx = ull_conn_default_phy_rx_get();
-		conn->phy_pref_flags = 0;
-#endif /* CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY */
 
 #if (!defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY))
 		/* Re-initialize the Tx Q */
