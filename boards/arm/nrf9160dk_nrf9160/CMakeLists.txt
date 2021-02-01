@@ -74,7 +74,7 @@ if (CONFIG_BUILD_WITH_TFM)
 		COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PROPERTY:tfm,BL2_BIN_FILE> ${CMAKE_BINARY_DIR}/mcuboot.bin
 
 		# Generate an intel hex file from the signed output binary
-		COMMAND srec_cat ${CMAKE_BINARY_DIR}/tfm_sign.bin
+		COMMAND ${SREC_CAT} ${CMAKE_BINARY_DIR}/tfm_sign.bin
 		-binary
 		-offset 0x10000
 		-o ${CMAKE_BINARY_DIR}/tfm_sign.hex
