@@ -21,6 +21,17 @@ struct bt_pub_key_cb {
 	struct bt_pub_key_cb *_next;
 };
 
+/*  @brief Check if public key is equal to the debug public key.
+ *
+ *  Compare the Public key to the Bluetooth specification defined debug public
+ *  key.
+ *
+ *  @param pub_key The public key to compare.
+ *
+ *  @return True if the public key is the debug public key.
+ */
+bool bt_pub_key_is_debug(uint8_t *pub_key);
+
 /*  @brief Generate a new Public Key.
  *
  *  Generate a new ECC Public Key. The callback will persist even after the

@@ -46,20 +46,11 @@ static const uint8_t debug_private_key_be[32] = {
 	0x58, 0x99, 0xb8, 0xa6, 0xcd, 0x3c, 0x1a, 0xbd,
 };
 
-#if defined(CONFIG_BT_USE_DEBUG_KEYS)
-static const uint8_t debug_public_key[64] = {
-	0xe6, 0x9d, 0x35, 0x0e, 0x48, 0x01, 0x03, 0xcc, 0xdb, 0xfd, 0xf4, 0xac,
-	0x11, 0x91, 0xf4, 0xef, 0xb9, 0xa5, 0xf9, 0xe9, 0xa7, 0x83, 0x2c, 0x5e,
-	0x2c, 0xbe, 0x97, 0xf2, 0xd2, 0x03, 0xb0, 0x20, 0x8b, 0xd2, 0x89, 0x15,
-	0xd0, 0x8e, 0x1c, 0x74, 0x24, 0x30, 0xed, 0x8f, 0xc2, 0x45, 0x63, 0x76,
-	0x5c, 0x15, 0x52, 0x5a, 0xbf, 0x9a, 0x32, 0x63, 0x6d, 0xeb, 0x2a, 0x65,
-	0x49, 0x9c, 0x80, 0xdc
-};
-#endif
-
 enum {
 	PENDING_PUB_KEY,
 	PENDING_DHKEY,
+
+	USE_DEBUG_KEY,
 
 	/* Total number of flags - must be at the end of the enum */
 	NUM_FLAGS,
@@ -107,7 +98,6 @@ static void send_cmd_status(uint16_t opcode, uint8_t status)
 
 static uint8_t generate_keys(void)
 {
-#if !defined(CONFIG_BT_USE_DEBUG_KEYS)
 	do {
 		int rc;
 
@@ -120,11 +110,7 @@ static uint8_t generate_keys(void)
 
 	/* make sure generated key isn't debug key */
 	} while (memcmp(ecc.private_key_be, debug_private_key_be, 32) == 0);
-#else
-	sys_memcpy_swap(ecc.public_key_be, debug_public_key, 32);
-	sys_memcpy_swap(&ecc.public_key_be[32], &debug_public_key[32], 32);
-	memcpy(ecc.private_key_be, debug_private_key_be, 32);
-#endif
+
 	return 0;
 }
 
@@ -180,7 +166,11 @@ static void emulate_le_generate_dhkey(void)
 		BT_ERR("public key is not valid (ret %d)", ret);
 		ret = TC_CRYPTO_FAIL;
 	} else {
-		ret = uECC_shared_secret(ecc.public_key_be, ecc.private_key_be,
+		bool use_debug = atomic_test_bit(flags, USE_DEBUG_KEY);
+
+		ret = uECC_shared_secret(ecc.public_key_be,
+					 use_debug ? debug_private_key_be :
+						     ecc.private_key_be,
 					 ecc.dhkey_be, &curve_secp256r1);
 	}
 
@@ -240,38 +230,56 @@ static void clear_ecc_events(struct net_buf *buf)
 	cmd->events[1] &= ~0x01; /* LE Generate DHKey Compl Event */
 }
 
-static void le_gen_dhkey(struct net_buf *buf)
+static uint8_t le_gen_dhkey(uint8_t *key, uint8_t key_type)
+{
+	if (atomic_test_bit(flags, PENDING_PUB_KEY)) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	if (key_type > BT_HCI_LE_KEY_TYPE_DEBUG) {
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
+
+	if (atomic_test_and_set_bit(flags, PENDING_DHKEY)) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	/* Convert X and Y coordinates from little-endian HCI to
+	 * big-endian (expected by the crypto API).
+	 */
+	sys_memcpy_swap(ecc.public_key_be, key, 32);
+	sys_memcpy_swap(&ecc.public_key_be[32], &key[32], 32);
+
+	atomic_set_bit_to(flags, USE_DEBUG_KEY,
+			  key_type == BT_HCI_LE_KEY_TYPE_DEBUG);
+
+	k_sem_give(&cmd_sem);
+
+	return BT_HCI_ERR_SUCCESS;
+}
+
+static void le_gen_dhkey_v1(struct net_buf *buf)
 {
 	struct bt_hci_cp_le_generate_dhkey *cmd;
 	uint8_t status;
 
-	if (atomic_test_bit(flags, PENDING_PUB_KEY)) {
-		status = BT_HCI_ERR_CMD_DISALLOWED;
-		goto send_status;
-	}
-
-	if (buf->len < sizeof(struct bt_hci_cp_le_generate_dhkey)) {
-		status = BT_HCI_ERR_INVALID_PARAM;
-		goto send_status;
-	}
-
-	if (atomic_test_and_set_bit(flags, PENDING_DHKEY)) {
-		status = BT_HCI_ERR_CMD_DISALLOWED;
-		goto send_status;
-	}
-
 	cmd = (void *)buf->data;
-	/* Convert X and Y coordinates from little-endian HCI to
-	 * big-endian (expected by the crypto API).
-	 */
-	sys_memcpy_swap(ecc.public_key_be, cmd->key, 32);
-	sys_memcpy_swap(&ecc.public_key_be[32], &cmd->key[32], 32);
-	k_sem_give(&cmd_sem);
-	status = BT_HCI_ERR_SUCCESS;
+	status = le_gen_dhkey(cmd->key, BT_HCI_LE_KEY_TYPE_GENERATED);
 
-send_status:
 	net_buf_unref(buf);
 	send_cmd_status(BT_HCI_OP_LE_GENERATE_DHKEY, status);
+}
+
+static void le_gen_dhkey_v2(struct net_buf *buf)
+{
+	struct bt_hci_cp_le_generate_dhkey_v2 *cmd;
+	uint8_t status;
+
+	cmd = (void *)buf->data;
+	status = le_gen_dhkey(cmd->key, cmd->key_type);
+
+	net_buf_unref(buf);
+	send_cmd_status(BT_HCI_OP_LE_GENERATE_DHKEY_V2, status);
 }
 
 static void le_p256_pub_key(struct net_buf *buf)
@@ -304,7 +312,11 @@ int bt_hci_ecc_send(struct net_buf *buf)
 			return 0;
 		case BT_HCI_OP_LE_GENERATE_DHKEY:
 			net_buf_pull(buf, sizeof(*chdr));
-			le_gen_dhkey(buf);
+			le_gen_dhkey_v1(buf);
+			return 0;
+		case BT_HCI_OP_LE_GENERATE_DHKEY_V2:
+			net_buf_pull(buf, sizeof(*chdr));
+			le_gen_dhkey_v2(buf);
 			return 0;
 		case BT_HCI_OP_LE_SET_EVENT_MASK:
 			clear_ecc_events(buf);
@@ -323,6 +335,8 @@ void bt_hci_ecc_supported_commands(uint8_t *supported_commands)
 	supported_commands[34] |= BIT(1);
 	/* LE Generate DH Key v1 */
 	supported_commands[34] |= BIT(2);
+	/* LE Generate DH Key v2 */
+	supported_commands[41] |= BIT(2);
 }
 
 int default_CSPRNG(uint8_t *dst, unsigned int len)
