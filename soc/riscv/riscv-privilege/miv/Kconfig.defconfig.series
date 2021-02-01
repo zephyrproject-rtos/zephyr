@@ -5,8 +5,13 @@ if SOC_SERIES_RISCV32_MIV
 config SOC_SERIES
 	default "miv"
 
+# NOTE: 4 MHz was chosen here as a reasonable workaround value because
+# it allows the test suite to complete in reasonable time (the renode
+# simulator is ~40x slower than the emulated CPU).  The default
+# emulated device, however, reports itself as a having a 66 Mhz clock
+# rate.
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 660000
+	default 4000000
 
 config RISCV_SOC_INTERRUPT_INIT
 	default y
