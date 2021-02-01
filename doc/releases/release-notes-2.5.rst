@@ -244,6 +244,9 @@ Drivers and Sensors
 
 * EEPROM
 
+  * Marked the EEPROM API as stable.
+  * Added support for AT24Cxx devices.
+
 * Entropy
 
 * ESPI
