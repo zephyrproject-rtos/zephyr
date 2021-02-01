@@ -214,11 +214,11 @@ struct pdu_adv *lll_adv_pdu_alloc(struct lll_adv_pdu *pdu, uint8_t *idx)
 		pdu->last = first;
 		/* FIXME: Ensure that data is synchronized so that an ISR
 		 *        vectored, after pdu->last has been updated, does
-		 *        access the latest value. __DSB() is used in ARM
+		 *        access the latest value. __DMB() is used in ARM
 		 *        Cortex M4 architectures. Use appropriate
 		 *        instructions on other platforms.
 		 *
-		 *        cpu_dsb();
+		 *        cpu_dmb();
 		 */
 		first_latest = pdu->first;
 		if (first_latest != first) {
