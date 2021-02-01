@@ -429,7 +429,6 @@ config BT_FIXED_PASSKEY
 
 config BT_USE_DEBUG_KEYS
 	bool "Enable Security Manager Debug Mode"
-	depends on BT_TINYCRYPT_ECC
 	help
 	  This option places Security Manager in a Debug Mode. In this mode
 	  predefined Diffie-Hellman private/public key pair is used as described
