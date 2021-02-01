@@ -18,6 +18,8 @@
 #include <driverlib/uart.h>
 
 struct uart_cc32xx_dev_data_t {
+	uint32_t prcm;
+	uint32_t baud_rate;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t cb; /**< Callback function pointer */
 	void *cb_data; /**< Callback function arg */
@@ -36,17 +38,6 @@ struct uart_cc32xx_dev_data_t {
 static void uart_cc32xx_isr(const struct device *dev);
 #endif
 
-static const struct uart_device_config uart_cc32xx_dev_cfg_0 = {
-	.base = (void *)DT_INST_REG_ADDR(0),
-	.sys_clk_freq = DT_INST_PROP_BY_PHANDLE(0, clocks, clock_frequency)
-};
-
-static struct uart_cc32xx_dev_data_t uart_cc32xx_dev_data_0 = {
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	.cb = NULL,
-#endif
-};
-
 /*
  *  CC32XX UART has a configurable FIFO length, from 1 to 8 characters.
  *  However, the Zephyr console driver, and the Zephyr uart sample test, assume
@@ -57,13 +48,17 @@ static struct uart_cc32xx_dev_data_t uart_cc32xx_dev_data_0 = {
 static int uart_cc32xx_init(const struct device *dev)
 {
 	const struct uart_device_config *config = DEV_CFG(dev);
+	const struct uart_cc32xx_dev_data_t *data = DEV_DATA(dev);
 
-	MAP_PRCMPeripheralReset(PRCM_UARTA0);
+	MAP_PRCMPeripheralClkEnable(data->prcm,
+		    PRCM_RUN_MODE_CLK | PRCM_SLP_MODE_CLK);
+
+	MAP_PRCMPeripheralReset(data->prcm);
 
 	/* This also calls MAP_UARTEnable() to enable the FIFOs: */
 	MAP_UARTConfigSetExpClk((unsigned long)config->base,
-				MAP_PRCMPeripheralClockGet(PRCM_UARTA0),
-				DT_INST_PROP(0, current_speed),
+				MAP_PRCMPeripheralClockGet(data->prcm),
+				data->baud_rate,
 				(UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE
 				 | UART_CONFIG_PAR_NONE));
 	MAP_UARTFlowControlSet((unsigned long)config->base,
@@ -75,11 +70,7 @@ static int uart_cc32xx_init(const struct device *dev)
 	/* Clear any pending UART RX interrupts: */
 	MAP_UARTIntClear((unsigned long)config->base, UART_INT_RX);
 
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority),
-		    uart_cc32xx_isr, DEVICE_DT_INST_GET(0),
-		    0);
-	irq_enable(DT_INST_IRQN(0));
+	config->irq_config_func(dev);
 
 	/* Fill the tx fifo, so Zephyr console & shell subsystems get "primed"
 	 * with first tx fifo empty interrupt when they first call
@@ -314,8 +305,33 @@ static const struct uart_driver_api uart_cc32xx_driver_api = {
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
-DEVICE_DT_INST_DEFINE(0, uart_cc32xx_init,
-		    device_pm_control_nop, &uart_cc32xx_dev_data_0,
-		    &uart_cc32xx_dev_cfg_0,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    (void *)&uart_cc32xx_driver_api);
+#define UART_32XX_DEVICE(idx) \
+IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, \
+	(static void uart_cc32xx_cfg_func_##idx(const struct device *dev) \
+	{ \
+		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, ( \
+			IRQ_CONNECT(DT_INST_IRQN(idx), \
+			    DT_INST_IRQ(idx, priority), \
+			    uart_cc32xx_isr, DEVICE_DT_INST_GET(idx), \
+			    0); \
+			irq_enable(DT_INST_IRQN(idx))) \
+		); \
+	})); \
+static const struct uart_device_config uart_cc32xx_dev_cfg_##idx = { \
+	.base = (void *)DT_INST_REG_ADDR(idx), \
+	.sys_clk_freq = DT_INST_PROP_BY_PHANDLE(idx, clocks, clock_frequency),\
+	IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, \
+		    (.irq_config_func = uart_cc32xx_cfg_func_##idx,)) \
+}; \
+static struct uart_cc32xx_dev_data_t uart_cc32xx_dev_data_##idx = { \
+	.prcm = PRCM_UARTA##idx, \
+	.baud_rate = DT_INST_PROP(idx, current_speed), \
+	IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, (.cb = NULL,)) \
+}; \
+DEVICE_DT_INST_DEFINE(idx, uart_cc32xx_init, \
+	device_pm_control_nop, &uart_cc32xx_dev_data_##idx, \
+	&uart_cc32xx_dev_cfg_##idx, \
+	PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
+	(void *)&uart_cc32xx_driver_api); \
+
+DT_INST_FOREACH_STATUS_OKAY(UART_32XX_DEVICE);
