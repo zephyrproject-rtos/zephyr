@@ -182,6 +182,15 @@ enter_code64:
 	movw %ax, %ss
 	movw %ax, %fs
 
+	/* On Intel processors, if GS is not zero and is being set to
+	 * zero, GS_BASE is also being set to zero. This would interfere
+	 * with the actual use of GS_BASE for usespace. To avoid accidentally
+	 * clearing GS_BASE, simply set GS to 0 at boot, so any subsequent
+	 * clearing of GS will not clear GS_BASE.
+	 */
+	mov $0, %eax
+	movw %ax, %gs
+
 	movw __x86_cpuboot_t_tr_OFFSET(%rbp), %ax
 	ltr %ax
 
