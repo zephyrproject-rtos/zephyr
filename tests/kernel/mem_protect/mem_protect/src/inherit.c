@@ -176,8 +176,9 @@ void test_inherit_resource_pool(void)
 			K_THREAD_STACK_SIZEOF(parent_thr_stack),
 			parent_handler,
 			NULL, NULL, NULL,
-			PRIORITY, 0, K_NO_WAIT);
+			PRIORITY, 0, K_FOREVER);
 	k_thread_heap_assign(&parent_thr, &res_pool);
+	k_thread_start(&parent_thr);
 	k_sem_take(&sync_sem, K_FOREVER);
 	zassert_true(parent_res_pool_ptr == child_res_pool_ptr,
 		     "Resource pool of the parent thread not inherited,"
