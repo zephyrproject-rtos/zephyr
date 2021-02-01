@@ -24,6 +24,7 @@ tests:
         - "Hello with printf"
         - "Complete"
   lib.cbprintf_fp.printf_nl:
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
     extra_configs:
       - CONFIG_APP_FORMATTER_PRINTF=y
       - CONFIG_NEWLIB_LIBC=y
@@ -43,6 +44,7 @@ tests:
         - "Hello with printfcb"
         - "Complete"
   lib.cbprintf_fp.printfcb_nl:
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
     extra_configs:
       - CONFIG_APP_FORMATTER_PRINTFCB=y
       - CONFIG_NEWLIB_LIBC=y
