@@ -149,8 +149,9 @@ static void pa_synced(struct bt_le_per_adv_sync *sync,
 		state->state.pa_sync_state = BASS_PA_STATE_SYNCED;
 		state->pa_sync_pending = false;
 
-		bt_gatt_notify(NULL, state->attr,
-			       &state->state, BASS_ACTUAL_SIZE(state->state));
+		bt_gatt_notify_uuid(NULL, BT_UUID_BASS_RECV_STATE, state->attr,
+				    &state->state,
+				    BASS_ACTUAL_SIZE(state->state));
 
 		if (bass_cbs && bass_cbs->pa_synced) {
 			bass_cbs->pa_synced(state->state.src_id,
@@ -175,8 +176,9 @@ static void pa_terminated(struct bt_le_per_adv_sync *sync,
 		state->state.pa_sync_state = BASS_PA_STATE_NOT_SYNCED;
 		state->pa_sync_pending = false;
 
-		bt_gatt_notify(NULL, state->attr,
-			       &state->state, BASS_ACTUAL_SIZE(state->state));
+		bt_gatt_notify_uuid(NULL, BT_UUID_BASS_RECV_STATE, state->attr,
+				    &state->state,
+				    BASS_ACTUAL_SIZE(state->state));
 
 		if (bass_cbs && bass_cbs->pa_term) {
 			bass_cbs->pa_term(state->state.src_id, info);
@@ -324,8 +326,9 @@ static struct bass_recv_state_internal_t *bass_add_source(
 		       state->big_enc, bt_addr_le_str(&state->addr),
 		       state->adv_sid, state->metadata_len);
 
-		bt_gatt_notify(NULL, internal_state->attr,
-			       state, BASS_ACTUAL_SIZE((*state)));
+		bt_gatt_notify_uuid(NULL, BT_UUID_BASS_RECV_STATE,
+				    internal_state->attr, state,
+				    BASS_ACTUAL_SIZE((*state)));
 	} else {
 		BT_DBG("Could not add src");
 	}
@@ -372,8 +375,9 @@ static struct bass_recv_state_internal_t *bass_mod_src(
 
 		/* Notify if changed */
 		if (notify) {
-			bt_gatt_notify(NULL, internal_state->attr,
-				       state, BASS_ACTUAL_SIZE(*state));
+			bt_gatt_notify_uuid(NULL, BT_UUID_BASS_RECV_STATE,
+					    internal_state->attr, state,
+					    BASS_ACTUAL_SIZE(*state));
 		}
 	}
 	return internal_state;
@@ -411,8 +415,9 @@ static struct bass_recv_state_internal_t *bass_rem_src(
 		BT_DBG("Index %u: Removed source with ID 0x%02x",
 		       state->index, rem_src->src_id);
 
-		bt_gatt_notify(NULL, state->attr,
-			       &state->state, BASS_ACTUAL_SIZE(state->state));
+		bt_gatt_notify_uuid(NULL, BT_UUID_BASS_RECV_STATE, state->attr,
+				    &state->state,
+				    BASS_ACTUAL_SIZE(state->state));
 	}
 	return state;
 }
@@ -573,13 +578,14 @@ BT_GATT_SERVICE_DEFINE(bass_svc,
 
 static int bt_bass_init(const struct device *unused)
 {
-	bass_inst.recv_states[0].attr = &bass_svc.attrs[5];
+	/* Store the point to the first characteristic in each receive state */
+	bass_inst.recv_states[0].attr = &bass_svc.attrs[3];
 	bass_inst.recv_states[0].index = 0;
 #if CONFIG_BT_BASS_RECV_STATE_COUNT > 1
-	bass_inst.recv_states[1].attr = &bass_svc.attrs[8];
+	bass_inst.recv_states[1].attr = &bass_svc.attrs[6];
 	bass_inst.recv_states[1].index = 1;
 #if CONFIG_BT_BASS_RECV_STATE_COUNT > 2
-	bass_inst.recv_states[2].attr = &bass_svc.attrs[11];
+	bass_inst.recv_states[2].attr = &bass_svc.attrs[9];
 	bass_inst.recv_states[2].index = 2;
 #endif /* CONFIG_BT_BASS_RECV_STATE_COUNT > 2 */
 #endif /* CONFIG_BT_BASS_RECV_STATE_COUNT > 1 */
@@ -635,8 +641,9 @@ int bt_bass_set_synced(uint8_t src_id, uint8_t pa_sync_state,
 	recv_state->state.big_enc = encrypted;
 
 	if (notify) {
-		bt_gatt_notify(NULL, recv_state->attr, &recv_state->state,
-			       BASS_ACTUAL_SIZE(recv_state->state));
+		bt_gatt_notify_uuid(NULL, BT_UUID_BASS_RECV_STATE,
+				    recv_state->attr, &recv_state->state,
+				    BASS_ACTUAL_SIZE(recv_state->state));
 	}
 
 	return 0;
