@@ -12,6 +12,7 @@
 #include <stm32l4xx_ll_cortex.h>
 #include <stm32l4xx_ll_pwr.h>
 #include <stm32l4xx_ll_rcc.h>
+#include <stm32l4xx_ll_system.h>
 
 #include <logging/log.h>
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
