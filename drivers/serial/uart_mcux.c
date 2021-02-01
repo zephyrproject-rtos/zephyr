@@ -257,7 +257,7 @@ static int uart_mcux_irq_rx_full(const struct device *dev)
 	return (flags & kUART_RxDataRegFullFlag) != 0U;
 }
 
-static int uart_mcux_irq_rx_ready(const struct device *dev)
+static int uart_mcux_irq_rx_pending(const struct device *dev)
 {
 	const struct uart_mcux_config *config = dev->config;
 	uint32_t mask = kUART_RxDataRegFullInterruptEnable;
@@ -288,7 +288,7 @@ static void uart_mcux_irq_err_disable(const struct device *dev)
 
 static int uart_mcux_irq_is_pending(const struct device *dev)
 {
-	return uart_mcux_irq_tx_ready(dev) || uart_mcux_irq_rx_ready(dev);
+	return uart_mcux_irq_tx_ready(dev) || uart_mcux_irq_rx_pending(dev);
 }
 
 static int uart_mcux_irq_update(const struct device *dev)
@@ -351,7 +351,7 @@ static const struct uart_driver_api uart_mcux_driver_api = {
 	.irq_tx_ready = uart_mcux_irq_tx_ready,
 	.irq_rx_enable = uart_mcux_irq_rx_enable,
 	.irq_rx_disable = uart_mcux_irq_rx_disable,
-	.irq_rx_ready = uart_mcux_irq_rx_ready,
+	.irq_rx_ready = uart_mcux_irq_rx_full,
 	.irq_err_enable = uart_mcux_irq_err_enable,
 	.irq_err_disable = uart_mcux_irq_err_disable,
 	.irq_is_pending = uart_mcux_irq_is_pending,

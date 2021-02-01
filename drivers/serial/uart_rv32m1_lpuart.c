@@ -175,7 +175,7 @@ static int rv32m1_lpuart_irq_rx_full(const struct device *dev)
 	return (flags & kLPUART_RxDataRegFullFlag) != 0U;
 }
 
-static int rv32m1_lpuart_irq_rx_ready(const struct device *dev)
+static int rv32m1_lpuart_irq_rx_pending(const struct device *dev)
 {
 	const struct rv32m1_lpuart_config *config = dev->config;
 	uint32_t mask = kLPUART_RxDataRegFullInterruptEnable;
@@ -207,7 +207,7 @@ static void rv32m1_lpuart_irq_err_disable(const struct device *dev)
 static int rv32m1_lpuart_irq_is_pending(const struct device *dev)
 {
 	return (rv32m1_lpuart_irq_tx_ready(dev)
-		|| rv32m1_lpuart_irq_rx_ready(dev));
+		|| rv32m1_lpuart_irq_rx_pending(dev));
 }
 
 static int rv32m1_lpuart_irq_update(const struct device *dev)
@@ -287,7 +287,7 @@ static const struct uart_driver_api rv32m1_lpuart_driver_api = {
 	.irq_tx_ready = rv32m1_lpuart_irq_tx_ready,
 	.irq_rx_enable = rv32m1_lpuart_irq_rx_enable,
 	.irq_rx_disable = rv32m1_lpuart_irq_rx_disable,
-	.irq_rx_ready = rv32m1_lpuart_irq_rx_ready,
+	.irq_rx_ready = rv32m1_lpuart_irq_rx_full,
 	.irq_err_enable = rv32m1_lpuart_irq_err_enable,
 	.irq_err_disable = rv32m1_lpuart_irq_err_disable,
 	.irq_is_pending = rv32m1_lpuart_irq_is_pending,
