@@ -1083,6 +1083,18 @@ struct bt_hci_cp_le_generate_dhkey {
 	uint8_t key[64];
 } __packed;
 
+
+#define BT_HCI_OP_LE_GENERATE_DHKEY_V2          BT_OP(BT_OGF_LE, 0x005e)
+
+#define BT_HCI_LE_KEY_TYPE_GENERATED            0x00
+#define BT_HCI_LE_KEY_TYPE_DEBUG                0x01
+
+struct bt_hci_cp_le_generate_dhkey_v2 {
+	uint8_t key[64];
+	uint8_t key_type;
+} __packed;
+
+
 #define BT_HCI_OP_LE_ADD_DEV_TO_RL              BT_OP(BT_OGF_LE, 0x0027)
 struct bt_hci_cp_le_add_dev_to_rl {
 	bt_addr_le_t  peer_id_addr;
