@@ -15,7 +15,7 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(power);
 
-#define PM_STATES_LEN (PM_STATE_SOFT_OFF - PM_STATE_ACTIVE)
+#define PM_STATES_LEN (1 + PM_STATE_SOFT_OFF - PM_STATE_ACTIVE)
 
 static atomic_t power_state_disable_count[PM_STATES_LEN];
 
