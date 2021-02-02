@@ -18,7 +18,7 @@ BUILD_ASSERT(DT_NODE_HAS_STATUS(DEFAULT_RADIO_NODE, okay),
 	     "No default LoRa radio specified in DT");
 #define DEFAULT_RADIO DT_LABEL(DEFAULT_RADIO_NODE)
 
-#define MAX_DATA_LEN 25
+#define MAX_DATA_LEN	(255)
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include <logging/log.h>
