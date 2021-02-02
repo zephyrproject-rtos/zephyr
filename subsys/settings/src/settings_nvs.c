@@ -213,6 +213,9 @@ static int settings_nvs_save(struct settings_store *cs, const char *name,
 	/* write the value */
 	rc = nvs_write(&cf->cf_nvs, write_name_id + NVS_NAME_ID_OFFSET,
 		       value, val_len);
+	if (rc < 0) {
+		return rc;
+	}
 
 	/* write the name if required */
 	if (write_name) {
