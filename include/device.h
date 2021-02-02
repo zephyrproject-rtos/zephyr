@@ -285,7 +285,18 @@ struct device_pm {
 };
 
 /**
- * @brief Runtime device structure (in memory) per driver instance
+ * @brief Runtime device dynamic structure (in RAM) per driver instance
+ *
+ * Fields in this are expected to be default-initialized to zero.  The
+ * kernel driver infrastructure and driver access functions are
+ * responsible for ensuring that any non-zero initialization is done
+ * before they are accessed.
+ */
+struct device_state {
+};
+
+/**
+ * @brief Runtime device structure (in ROM) per driver instance
  */
 struct device {
 	/** Name of the device instance */
@@ -294,6 +305,8 @@ struct device {
 	const void *config;
 	/** Address of the API structure exposed by the device instance */
 	const void *api;
+	/** Address of the common device state */
+	struct device_state * const state;
 	/** Address of the device instance private data */
 	void * const data;
 #ifdef CONFIG_PM_DEVICE
@@ -732,9 +745,15 @@ static inline int device_pm_put_sync(const struct device *dev) { return -ENOTSUP
  */
 #define Z_DEVICE_DT_DEV_NAME(node_id) _CONCAT(dts_ord_, DT_DEP_ORD(node_id))
 
+/* Synthesize a unique name for the device state associated with
+ * dev_name.
+ */
+#define Z_DEVICE_STATE_NAME(dev_name) _CONCAT(__devstate_, dev_name)
+
 #define Z_DEVICE_DEFINE(node_id, dev_name, drv_name, init_fn, pm_control_fn, \
 			data_ptr, cfg_ptr, level, prio, api_ptr)	\
 	Z_DEVICE_DEFINE_PM(dev_name)					\
+	static struct device_state Z_DEVICE_STATE_NAME(dev_name);	\
 	COND_CODE_1(DT_NODE_EXISTS(node_id), (), (static))		\
 		const Z_DECL_ALIGN(struct device)			\
 		DEVICE_NAME_GET(dev_name) __used			\
@@ -742,6 +761,7 @@ static inline int device_pm_put_sync(const struct device *dev) { return -ENOTSUP
 		.name = drv_name,					\
 		.config = (cfg_ptr),					\
 		.api = (api_ptr),					\
+		.state = &Z_DEVICE_STATE_NAME(dev_name),		\
 		.data = (data_ptr),					\
 		Z_DEVICE_DEFINE_PM_INIT(dev_name, pm_control_fn)	\
 	};								\
