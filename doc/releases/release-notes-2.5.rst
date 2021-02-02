@@ -79,6 +79,9 @@ API Changes
   standard way to identify the control signal in nodes that support power
   control.
 
+* :c:type:`fs_tile_t` objects must now be initialized by calling
+  :c:func:`fs_file_t_init` before their first use.
+
 Deprecated in this release
 ==========================
 
@@ -371,6 +374,13 @@ Build and Infrastructure
 
 Libraries / Subsystems
 **********************
+
+* File systems
+
+  * API
+
+    * Added c:func:`fs_file_t_init` function for initialization of
+      c:type:`fs_file_t` objects.
 
 * Disk
 
