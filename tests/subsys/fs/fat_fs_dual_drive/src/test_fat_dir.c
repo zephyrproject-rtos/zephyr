@@ -70,6 +70,8 @@ static int test_lsdir(const char *path)
 
 	TC_PRINT("lsdir tests:\n");
 
+	fs_dir_t_init(&dirp);
+
 	/* Verify fs_opendir() */
 	res = fs_opendir(&dirp, path);
 	if (res) {
@@ -109,6 +111,8 @@ static int test_rmdir(const char *dir)
 	char file_path[80];
 
 	TC_PRINT("rmdir tests:\n");
+
+	fs_dir_t_init(&dirp);
 
 	if (!check_file_dir_exists(dir)) {
 		TC_PRINT("%s doesn't exist\n", dir);
