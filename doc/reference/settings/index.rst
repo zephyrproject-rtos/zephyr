@@ -5,11 +5,11 @@ Settings
 
 The settings subsystem gives modules a way to store persistent per-device
 configuration and runtime state.  A variety of storage implementations are
-provided behind a common API using FCB, NVS, or a file system.  These different
-implementations give the application developer flexibility to select an
-appropriate storage medium, and even change it later as needs change.  This
-subsystem is used by various Zephyr components and can be used simultaneously by
-user applications.
+provided behind a common API using FCB, NVS, a file system, or an EEPROM.
+These different implementations give the application developer flexibility to
+select an appropriate storage medium, and even change it later as needs change.
+This subsystem is used by various Zephyr components and can be used
+simultaneously by user applications.
 
 Settings items are stored as key-value pair strings.  By convention,
 the keys can be organized by the package and subtree defining the key,
@@ -82,10 +82,11 @@ backend.
 Zephyr Storage Backends
 ***********************
 
-Zephyr has three storage backends: a Flash Circular Buffer
+Zephyr has four storage backends: a Flash Circular Buffer
 (:option:`CONFIG_SETTINGS_FCB`), a file in the filesystem
-(:option:`CONFIG_SETTINGS_FS`), or non-volatile storage
-(:option:`CONFIG_SETTINGS_NVS`).
+(:option:`CONFIG_SETTINGS_FS`), non-volatile storage
+(:option:`CONFIG_SETTINGS_NVS`), or EEPROM storage
+(:option:`CONFIG_SETTINGS_EEPROM`).
 
 You can declare multiple sources for settings; settings from
 all of these are restored when ``settings_load()`` is called.
@@ -101,6 +102,8 @@ initializes the FCB area, so it must be called before calling
 Non-volatile storage read target is registered using
 ``settings_nvs_src()``, and write target by using
 ``settings_nvs_dst()``.
+EEPROM storage read target is registered using ``settings_eeprom_src()``, and
+write target by using ``settings_eeprom_dst()``.
 
 Loading data from persisted storage
 ***********************************
