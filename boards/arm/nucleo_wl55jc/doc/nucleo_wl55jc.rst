@@ -190,6 +190,8 @@ features:
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -211,6 +213,10 @@ Default Zephyr Peripheral Mapping:
 - LPUART_1 TX/RX : PA3/PA2 (ST-Link Virtual Port Com)
 - I2C_2_SCL : PA12 (Arduino I2C)
 - I2C_2_SDA : PA11 (Arduino I2C)
+- SPI_1_NSS : PA4 (arduino_spi)
+- SPI_1_SCK : PA5 (arduino_spi)
+- SPI_1_MISO : PA6 (arduino_spi)
+- SPI_1_MOSI : PA7 (arduino_spi)
 
 System Clock
 ------------

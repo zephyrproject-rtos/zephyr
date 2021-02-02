@@ -37,3 +37,4 @@
 
 arduino_serial: &lpuart1 {};
 arduino_i2c: &i2c2 {};
+arduino_spi: &spi1 {};
