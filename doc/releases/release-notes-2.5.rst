@@ -190,6 +190,37 @@ Boards & SoC Support
   * Generic LEON3 board configuration for GRLIB FPGA reference designs
   * SPARC QEMU for emulating LEON3 processors and running kernel tests
 
+* Added support for these STM32 boards and SoCs :
+
+  * Cortex-M Trace Reference Board V1.2 (SEGGER TRB STM32F407)
+  * MikroE Clicker 2 for STM32
+  * STM32F103RCT6 Mini
+  * ST Nucleo F303K8
+  * ST Nucleo F410RB
+  * ST Nucleo H723ZG
+  * ST Nucleo L011K4
+  * ST Nucleo L031K6
+  * ST Nucleo L433RC-P
+  * ST STM32L562E-DK Discovery
+  * STM32F105xx and STM32F103xG SoC variants
+  * STM32G070xx SoC variants
+  * STM32G474xB/C SoC variants
+  * STM32L071xx SoC variants
+  * STM32L151xC and STM32L152xC SoC variants
+
+* Made these global changes in STM32 boards and SoC series:
+
+  * Pin control configuration is now done through device tree and existing
+    macros to configure pins in pinmux.c files are tagged as deprecated.
+    The new pin settings are provided thanks to .dtsi files distributed in
+    hal_stm32 module.
+  * Generic LL headers, also distributed in hal_stm32 module, are now available
+    to abstract series references in drivers.
+  * Hardware stack protection is now default on all boards with enabled MPU
+    (SRAM > 64K ), excluding F0/G0/L0 series.
+  * West flash STM32CubeProgrammer runner was added as a new option for STM32
+    boards flashing (to be installed separately).
+
 * Made these changes in other boards:
 
   * CY8CKIT_062_WIFI_BT_M0: was renamed to CY8CKIT_062_WIFI_BT.
@@ -251,6 +282,8 @@ Drivers and Sensors
 
 * DMA
 
+  * kmalloc was removed from STM32 DMAMUX driver initialization.
+
 * EEPROM
 
   * Marked the EEPROM API as stable.
@@ -266,6 +299,9 @@ Drivers and Sensors
 
   * CONFIG_NORDIC_QSPI_NOR_QE_BIT has been removed.  The
     quad-enable-requirements devicetree property should be used instead.
+  * MPU_ALLOW_FLASH_WRITE is now default on STM32 boards when MPU is enabled.
+  * Add driver for STM32H7 and STM32L1 SoC series.
+  * Add QSPI NOR Flash controller support for STM32 family.
 
 * GPIO
 
@@ -298,11 +334,18 @@ Drivers and Sensors
 
 * LoRa
 
+* memc
+
+  * Added FMC/SDRAM memory controller for STM32 family
+
 * Modem
 
 * PECI
 
 * Pinmux
+
+  * STM32 pinmux driver has been reworked to allow pin configuration using
+    device tree definitions. The previous C macros are now deprecated.
 
 * PS/2
 
@@ -311,6 +354,8 @@ Drivers and Sensors
 * Sensor
 
 * Serial
+
+  * Added ASYNC API support on STM32 family.
 
 * SPI
 
@@ -508,6 +553,8 @@ Documentation
 
 Tests and Samples
 *****************
+
+  * A sample was added to demonstrate how to use the ADC driver API.
 
 Issue Related Items
 *******************
