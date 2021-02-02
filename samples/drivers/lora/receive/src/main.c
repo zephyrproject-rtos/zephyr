@@ -30,8 +30,8 @@ void main(void)
 	struct lora_modem_config LoraConfig;
 	int     IntRetVal;
 	int     DataLength;
-	uint8_t RawData[MAX_DATA_LEN*2] = {0};
-	uint8_t SafeData[MAX_DATA_LEN*2];
+	uint8_t RawData[MAX_DATA_LEN+10] = {0};
+	uint8_t SafeData[MAX_DATA_LEN+10];
 	int16_t rssi;
 	int8_t  snr;
 	int		MessageCounter;
