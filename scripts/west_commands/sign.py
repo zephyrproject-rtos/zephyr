@@ -7,6 +7,7 @@ import argparse
 import os
 import pathlib
 import pickle
+import platform
 import shutil
 import subprocess
 import sys
@@ -288,15 +289,24 @@ class ImgtoolSigner(Signer):
     @staticmethod
     def find_imgtool(command, args):
         if args.tool_path:
-            command.check_force(shutil.which(args.tool_path),
-                                '--tool-path {}: not an executable'.
-                                format(args.tool_path))
-            return [args.tool_path]
+            imgtool = args.tool_path
+            if not os.path.isfile(imgtool):
+                log.die(f'--tool-path {imgtool}: no such file')
+        else:
+            imgtool = shutil.which('imgtool') or shutil.which('imgtool.py')
+            if not imgtool:
+                log.die('imgtool not found; either install it',
+                        '(e.g. "pip3 install imgtool") or provide --tool-path')
 
-        imgtool = shutil.which('imgtool') or shutil.which('imgtool.py')
-        if not imgtool:
-            log.die('imgtool not found; either install it',
-                    '(e.g. "pip3 install imgtool") or provide --tool-path')
+        if platform.system() == 'Windows' and imgtool.endswith('.py'):
+            # Windows users may not be able to run .py files
+            # as executables in subprocesses, regardless of
+            # what the mode says. Always run imgtool as
+            # 'python path/to/imgtool.py' instead of
+            # 'path/to/imgtool.py' in these cases.
+            # https://github.com/zephyrproject-rtos/zephyr/issues/31876
+            return [sys.executable, imgtool]
+
         return [imgtool]
 
     @staticmethod
