@@ -24,6 +24,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_engine.h"
 #include "lwm2m_resource_ids.h"
 
+#define GENERIC_VERSION_MAJOR 1
+#define GENERIC_VERSION_MINOR 0
+
 #ifdef CONFIG_LWM2M_IPSO_GENERIC_SENSOR_TIMESTAMP
 #define ADD_TIMESTAMPS 1
 #define NUMBER_OF_OBJ_FIELDS 10
@@ -241,6 +244,9 @@ static struct lwm2m_engine_obj_inst *generic_sensor_create(uint16_t obj_inst_id)
 static int ipso_generic_sensor_init(const struct device *dev)
 {
 	sensor.obj_id = IPSO_OBJECT_ID;
+	sensor.version_major = GENERIC_VERSION_MAJOR;
+	sensor.version_minor = GENERIC_VERSION_MINOR;
+	sensor.is_core = false;
 	sensor.fields = fields;
 	sensor.field_count = ARRAY_SIZE(fields);
 	sensor.max_instance_count = MAX_INSTANCE_COUNT;

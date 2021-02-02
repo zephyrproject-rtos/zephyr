@@ -10,7 +10,12 @@
 
 #include "lwm2m_object.h"
 
-#define LWM2M_PROTOCOL_VERSION "1.0"
+#define LWM2M_PROTOCOL_VERSION_MAJOR 1
+#define LWM2M_PROTOCOL_VERSION_MINOR 0
+
+#define LWM2M_PROTOCOL_VERSION_STRING STRINGIFY(LWM2M_PROTOCOL_VERSION_MAJOR) \
+				      "." \
+				      STRINGIFY(LWM2M_PROTOCOL_VERSION_MINOR)
 
 /* LWM2M / CoAP Content-Formats */
 #define LWM2M_FORMAT_PLAIN_TEXT		0
@@ -71,6 +76,8 @@ struct lwm2m_engine_obj_inst *lwm2m_engine_get_obj_inst(
 					const struct lwm2m_obj_path *path);
 struct lwm2m_engine_res *lwm2m_engine_get_res(
 					const struct lwm2m_obj_path *path);
+
+bool lwm2m_engine_shall_report_obj_version(const struct lwm2m_engine_obj *obj);
 
 /* LwM2M context functions */
 int lwm2m_engine_context_close(struct lwm2m_ctx *client_ctx);

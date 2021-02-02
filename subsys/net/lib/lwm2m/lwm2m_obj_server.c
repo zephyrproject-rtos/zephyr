@@ -20,6 +20,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_rd_client.h"
 #endif
 
+#define SERVER_VERSION_MAJOR 1
+#define SERVER_VERSION_MINOR 0
+
 /* Server resource IDs */
 #define SERVER_SHORT_SERVER_ID		0
 #define SERVER_LIFETIME_ID		1
@@ -250,6 +253,9 @@ static int lwm2m_server_init(const struct device *dev)
 	int ret = 0;
 
 	server.obj_id = LWM2M_OBJECT_SERVER_ID;
+	server.version_major = SERVER_VERSION_MAJOR;
+	server.version_minor = SERVER_VERSION_MINOR;
+	server.is_core = true;
 	server.fields = fields;
 	server.field_count = ARRAY_SIZE(fields);
 	server.max_instance_count = MAX_INSTANCE_COUNT;

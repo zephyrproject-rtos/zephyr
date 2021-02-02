@@ -17,6 +17,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_object.h"
 #include "lwm2m_engine.h"
 
+#define FIRMWARE_VERSION_MAJOR 1
+#define FIRMWARE_VERSION_MINOR 0
+
 /* Firmware resource IDs */
 #define FIRMWARE_PACKAGE_ID			0
 #define FIRMWARE_PACKAGE_URI_ID			1
@@ -357,6 +360,9 @@ static int lwm2m_firmware_init(const struct device *dev)
 #endif
 
 	firmware.obj_id = LWM2M_OBJECT_FIRMWARE_ID;
+	firmware.version_major = FIRMWARE_VERSION_MAJOR;
+	firmware.version_minor = FIRMWARE_VERSION_MINOR;
+	firmware.is_core = true;
 	firmware.fields = fields;
 	firmware.field_count = ARRAY_SIZE(fields);
 	firmware.max_instance_count = 1U;
