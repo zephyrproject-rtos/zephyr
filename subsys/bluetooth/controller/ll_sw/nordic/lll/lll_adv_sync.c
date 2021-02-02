@@ -33,6 +33,7 @@
 #include "lll_internal.h"
 #include "lll_adv_internal.h"
 #include "lll_tim_internal.h"
+#include "lll_prof_internal.h"
 #include "lll_df_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
@@ -40,10 +41,21 @@
 #include "common/log.h"
 #include "hal/debug.h"
 
+#if defined(CONFIG_BT_CTLR_ADV_SYNC_PDU_BACK2BACK)
+#define ADV_SYNC_PDU_B2B_AFS  (CONFIG_BT_CTLR_ADV_SYNC_PDU_BACK2BACK_AFS)
+#endif
+
 static int init_reset(void);
 static int prepare_cb(struct lll_prepare_param *p);
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param);
 static void isr_done(void *param);
+#if defined(CONFIG_BT_CTLR_ADV_SYNC_PDU_BACK2BACK)
+static void isr_tx(void *param);
+static void pdu_b2b_update(struct lll_adv_sync *lll, struct pdu_adv *pdu);
+static void pdu_b2b_aux_ptr_update(struct pdu_adv *pdu, uint8_t phy,
+				   uint8_t flags, uint8_t chan_idx,
+				   uint32_t tifs);
+#endif /* CONFIG_BT_CTLR_ADV_SYNC_PDU_BACK2BACK */
 
 int lll_adv_sync_init(void)
 {
@@ -148,6 +160,15 @@ static int prepare_cb(struct lll_prepare_param *p)
 	pdu = lll_adv_sync_data_latest_get(lll, &extra_data, &upd);
 	LL_ASSERT(pdu);
 
+#if defined(CONFIG_BT_CTLR_ADV_SYNC_PDU_BACK2BACK)
+	if (upd) {
+		/* AuxPtr offsets for b2b TX are fixed for given chain so we can
+		 * calculate them here in advance.
+		 */
+		pdu_b2b_update(lll, pdu);
+	}
+#endif
+
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 	if (extra_data) {
 		df_cfg = (struct lll_df_adv_cfg *)extra_data;
@@ -162,16 +183,26 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	radio_pkt_tx_set(pdu);
 
-	/* TODO: chaining */
-	radio_isr_set(isr_done, lll);
+#if defined(CONFIG_BT_CTLR_ADV_SYNC_PDU_BACK2BACK)
+	if (pdu->adv_ext_ind.ext_hdr_len && pdu->adv_ext_ind.ext_hdr.aux_ptr) {
+		lll->last_pdu = pdu;
 
+		radio_isr_set(isr_tx, lll);
+		radio_tmr_tifs_set(ADV_SYNC_PDU_B2B_AFS);
+		radio_switch_complete_and_b2b_tx(phy_s, 0, phy_s, 0);
+#else
+	if (0) {
+#endif /* CONFIG_BT_CTLR_ADV_SYNC_PDU_BACK2BACK */
+	} else {
+		radio_isr_set(isr_done, lll);
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
-	if (df_cfg) {
-		radio_switch_complete_and_phy_end_disable();
-	} else
+		if (df_cfg) {
+			radio_switch_complete_and_phy_end_disable();
+		} else
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
-	{
-		radio_switch_complete_and_disable();
+		{
+			radio_switch_complete_and_disable();
+		}
 	}
 
 	ticks_at_event = p->ticks_at_expire;
@@ -256,3 +287,132 @@ static void isr_done(void *param)
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 	lll_isr_done(lll);
 }
+
+#if defined(CONFIG_BT_CTLR_ADV_SYNC_PDU_BACK2BACK)
+static void isr_tx(void *param)
+{
+	struct lll_adv_sync *lll_sync;
+	struct pdu_adv *pdu;
+	struct lll_adv *lll;
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_latency_capture();
+	}
+
+	/* Clear radio tx status and events */
+	lll_isr_tx_status_reset();
+
+	lll_sync = param;
+	lll = lll_sync->adv;
+
+	/* TODO: do not hardcode to single value */
+	lll_chan_set(0);
+
+	pdu = lll_adv_pdu_linked_next_get(lll_sync->last_pdu);
+	LL_ASSERT(pdu);
+	lll_sync->last_pdu = pdu;
+
+	/* setup tIFS switching */
+	if (pdu->adv_ext_ind.ext_hdr_len && pdu->adv_ext_ind.ext_hdr.aux_ptr) {
+		radio_tmr_tifs_set(ADV_SYNC_PDU_B2B_AFS);
+		radio_isr_set(isr_tx, lll_sync);
+		radio_switch_complete_and_b2b_tx(lll->phy_s, 0, lll->phy_s, 0);
+	} else {
+		radio_isr_set(lll_isr_done, lll);
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+		if (lll_sync->cte_started) {
+			radio_switch_complete_and_phy_end_disable();
+		} else
+#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
+		{
+			radio_switch_complete_and_disable();
+		}
+	}
+
+	radio_pkt_tx_set(pdu);
+
+	/* assert if radio packet ptr is not set and radio started rx */
+	LL_ASSERT(!radio_is_ready());
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_cputime_capture();
+	}
+
+	/* capture end of AUX_SYNC_IND/AUX_CHAIN_IND PDU, used for calculating
+	 * next PDU timestamp.
+	 */
+	radio_tmr_end_capture();
+
+#if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		/* PA/LNA enable is overwriting packet end used in ISR
+		 * profiling, hence back it up for later use.
+		 */
+		lll_prof_radio_end_backup();
+	}
+
+	radio_gpio_lna_setup();
+	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() +
+				 ADV_SYNC_PDU_B2B_AFS - 4 -
+				 radio_tx_chain_delay_get(lll->phy_s, 0) -
+				 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
+#endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_send();
+	}
+}
+
+static void pdu_b2b_update(struct lll_adv_sync *lll, struct pdu_adv *pdu)
+{
+	while (pdu) {
+		pdu_b2b_aux_ptr_update(pdu, lll->adv->phy_s, 0, 0,
+				       ADV_SYNC_PDU_B2B_AFS);
+		pdu = lll_adv_pdu_linked_next_get(pdu);
+	}
+}
+
+static void pdu_b2b_aux_ptr_update(struct pdu_adv *pdu, uint8_t phy,
+				   uint8_t flags, uint8_t chan_idx,
+				   uint32_t tifs)
+{
+	struct pdu_adv_com_ext_adv *com_hdr;
+	struct pdu_adv_ext_hdr *hdr;
+	struct pdu_adv_aux_ptr *aux;
+	uint32_t offs;
+	uint8_t *dptr;
+
+	com_hdr = &pdu->adv_ext_ind;
+	hdr = &com_hdr->ext_hdr;
+	/* Skip flags */
+	dptr = hdr->data;
+
+	if (!com_hdr->ext_hdr_len || !hdr->aux_ptr) {
+		return;
+	}
+
+	LL_ASSERT(!hdr->adv_addr);
+	LL_ASSERT(!hdr->tgt_addr);
+
+	if (hdr->cte_info) {
+		dptr++;
+	}
+
+	LL_ASSERT(!hdr->adi);
+
+	/* Update AuxPtr */
+	aux = (void *)dptr;
+	offs = PKT_AC_US(pdu->len, phy) + tifs;
+	offs = offs / OFFS_UNIT_30_US;
+	if ((offs >> 13) != 0) {
+		aux->offs = offs / (OFFS_UNIT_300_US / OFFS_UNIT_30_US);
+		aux->offs_units = 1U;
+	} else {
+		aux->offs = offs;
+		aux->offs_units = 0U;
+	}
+	aux->chan_idx = chan_idx;
+	aux->ca = 0;
+	aux->phy = find_lsb_set(phy) - 1;
+}
+#endif /* CONFIG_BT_CTLR_ADV_SYNC_PDU_BACK2BACK */
