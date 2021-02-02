@@ -1094,8 +1094,11 @@ int lwm2m_register_payload_handler(struct lwm2m_message *msg)
 			continue;
 		}
 
-		/* Only report <OBJ_ID> when no instance available */
-		if (obj->instance_count == 0U) {
+		/* Only report <OBJ_ID> when no instance available or it's
+		 * needed to report object version.
+		 */
+		if (obj->instance_count == 0U ||
+		    lwm2m_engine_shall_report_obj_version(obj)) {
 			struct lwm2m_obj_path path = {
 				.obj_id = obj->obj_id,
 				.level = LWM2M_PATH_LEVEL_OBJECT,
@@ -1106,7 +1109,9 @@ int lwm2m_register_payload_handler(struct lwm2m_message *msg)
 				return ret;
 			}
 
-			continue;
+			if (obj->instance_count == 0U) {
+				continue;
+			}
 		}
 
 		SYS_SLIST_FOR_EACH_CONTAINER(&engine_obj_inst_list,
@@ -3263,11 +3268,13 @@ int lwm2m_discover_handler(struct lwm2m_message *msg, bool is_bootstrap)
 		}
 
 		/* For bootstrap discover, only report object ID when no
-		 * instance is available.
+		 * instance is available or it's needed to report object
+		 * version.
 		 * For device management discovery, only report object ID with
 		 * attributes if object ID (alone) was provided.
 		 */
-		if ((is_bootstrap && obj->instance_count == 0U) ||
+		if ((is_bootstrap && (obj->instance_count == 0U ||
+				      lwm2m_engine_shall_report_obj_version(obj))) ||
 		    (!is_bootstrap && msg->path.level == LWM2M_PATH_LEVEL_OBJECT)) {
 			struct lwm2m_obj_path path = {
 				.obj_id = obj->obj_id,
@@ -3281,7 +3288,7 @@ int lwm2m_discover_handler(struct lwm2m_message *msg, bool is_bootstrap)
 
 			reported = true;
 
-			if (is_bootstrap) {
+			if (obj->instance_count == 0U) {
 				continue;
 			}
 		}
@@ -3432,6 +3439,16 @@ struct lwm2m_engine_res *lwm2m_engine_get_res(
 	}
 
 	return res;
+}
+
+bool lwm2m_engine_shall_report_obj_version(const struct lwm2m_engine_obj *obj)
+{
+	if (obj->is_core) {
+		return obj->version_major != LWM2M_PROTOCOL_VERSION_MAJOR ||
+		       obj->version_minor != LWM2M_PROTOCOL_VERSION_MINOR;
+	}
+
+	return obj->version_major != 1 || obj->version_minor != 0;
 }
 
 static int do_write_op(struct lwm2m_message *msg,

@@ -21,6 +21,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_object.h"
 #include "lwm2m_engine.h"
 
+#define TIMER_VERSION_MAJOR 1
+#define TIMER_VERSION_MINOR 0
+
 /* Server resource IDs */
 #define TIMER_DELAY_DURATION_ID		5521
 #define TIMER_REMAINING_TIME_ID		5538
@@ -386,6 +389,9 @@ static struct lwm2m_engine_obj_inst *timer_create(uint16_t obj_inst_id)
 static int ipso_timer_init(const struct device *dev)
 {
 	timer.obj_id = IPSO_OBJECT_TIMER_ID;
+	timer.version_major = TIMER_VERSION_MAJOR;
+	timer.version_minor = TIMER_VERSION_MINOR;
+	timer.is_core = false;
 	timer.fields = fields;
 	timer.field_count = ARRAY_SIZE(fields);
 	timer.max_instance_count = MAX_INSTANCE_COUNT;

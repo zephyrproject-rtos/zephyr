@@ -14,7 +14,7 @@ LOG_MODULE_REGISTER(net_lwm2m_link_format, CONFIG_LWM2M_LOG_LEVEL);
 
 #define CORELINK_BUF_SIZE 24
 
-#define ENABLER_VERSION "lwm2m=\"" LWM2M_PROTOCOL_VERSION "\""
+#define ENABLER_VERSION "lwm2m=\"" LWM2M_PROTOCOL_VERSION_STRING "\""
 
 /*
  * TODO: to implement a way for clients to specify alternate path
@@ -103,6 +103,26 @@ static int put_corelink_separator(struct lwm2m_output_context *out)
 	}
 
 	return (int)sizeof(comma);
+}
+
+static int put_corelink_version(struct lwm2m_output_context *out,
+				const struct lwm2m_engine_obj *obj,
+				uint8_t *buf, uint16_t buflen)
+{
+	int ret, len;
+
+	len = snprintk(buf, buflen, ";ver=%u.%u", obj->version_major,
+		       obj->version_minor);
+	if (len < 0 || len >= buflen) {
+		return -ENOMEM;
+	}
+
+	ret = buf_append(CPKT_BUF_WRITE(out->out_cpkt), buf, len);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return len;
 }
 
 static int put_corelink_dimension(struct lwm2m_output_context *out,
@@ -264,6 +284,7 @@ static int put_obj_corelink(struct lwm2m_output_context *out,
 			    struct link_format_out_formatter_data *fd)
 {
 	char obj_buf[CORELINK_BUF_SIZE];
+	struct lwm2m_engine_obj *obj;
 	int len = 0;
 	int ret;
 
@@ -279,16 +300,24 @@ static int put_obj_corelink(struct lwm2m_output_context *out,
 		return ret;
 	}
 
+	obj = lwm2m_engine_get_obj(path);
+	if (obj == NULL) {
+		return -EINVAL;
+	}
+
+	if (lwm2m_engine_shall_report_obj_version(obj)) {
+		ret = put_corelink_version(out, obj, obj_buf, sizeof(obj_buf));
+		if (ret < 0) {
+			return ret;
+		}
+
+		len += ret;
+	}
+
 	if (fd->mode == LINK_FORMAT_MODE_DISCOVERY) {
 		/* Report object attributes only in device management mode
 		 * (5.4.2).
 		 */
-		struct lwm2m_engine_obj *obj = lwm2m_engine_get_obj(path);
-
-		if (obj == NULL) {
-			return -EINVAL;
-		}
-
 		ret = put_corelink_attributes(out, obj, obj_buf,
 					      sizeof(obj_buf));
 		if (ret < 0) {

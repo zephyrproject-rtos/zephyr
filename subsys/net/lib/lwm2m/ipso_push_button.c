@@ -21,6 +21,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_object.h"
 #include "lwm2m_engine.h"
 
+#define BUTTON_VERSION_MAJOR 1
+#define BUTTON_VERSION_MINOR 0
+
 #ifdef CONFIG_LWM2M_IPSO_PUSH_BUTTON_TIMESTAMP
 #define ADD_TIMESTAMPS 1
 #else
@@ -169,6 +172,9 @@ static struct lwm2m_engine_obj_inst *button_create(uint16_t obj_inst_id)
 static int ipso_button_init(const struct device *dev)
 {
 	onoff_switch.obj_id = IPSO_OBJECT_PUSH_BUTTON_ID;
+	onoff_switch.version_major = BUTTON_VERSION_MAJOR;
+	onoff_switch.version_minor = BUTTON_VERSION_MINOR;
+	onoff_switch.is_core = false;
 	onoff_switch.fields = fields;
 	onoff_switch.field_count = ARRAY_SIZE(fields);
 	onoff_switch.max_instance_count = ARRAY_SIZE(inst);

@@ -21,6 +21,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_object.h"
 #include "lwm2m_engine.h"
 
+#define ACCEL_VERSION_MAJOR 1
+#define ACCEL_VERSION_MINOR 0
+
 #ifdef CONFIG_LWM2M_IPSO_ACCELEROMETER_TIMESTAMP
 #define ADD_TIMESTAMPS 1
 #else
@@ -145,6 +148,9 @@ static struct lwm2m_engine_obj_inst *accel_create(uint16_t obj_inst_id)
 static int ipso_accel_init(const struct device *dev)
 {
 	accel.obj_id = IPSO_OBJECT_ACCELEROMETER_ID;
+	accel.version_major = ACCEL_VERSION_MAJOR;
+	accel.version_minor = ACCEL_VERSION_MINOR;
+	accel.is_core = false;
 	accel.fields = fields;
 	accel.field_count = ARRAY_SIZE(fields);
 	accel.max_instance_count = ARRAY_SIZE(inst);

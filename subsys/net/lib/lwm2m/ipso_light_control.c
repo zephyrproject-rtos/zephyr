@@ -23,6 +23,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_object.h"
 #include "lwm2m_engine.h"
 
+#define LIGHT_VERSION_MAJOR 1
+#define LIGHT_VERSION_MINOR 0
+
 /* Server resource IDs */
 #define LIGHT_ON_OFF_ID				5850
 #define LIGHT_DIMMER_ID				5851
@@ -202,6 +205,9 @@ static struct lwm2m_engine_obj_inst *light_control_create(uint16_t obj_inst_id)
 static int ipso_light_control_init(const struct device *dev)
 {
 	light_control.obj_id = IPSO_OBJECT_LIGHT_CONTROL_ID;
+	light_control.version_major = LIGHT_VERSION_MAJOR;
+	light_control.version_minor = LIGHT_VERSION_MINOR;
+	light_control.is_core = false;
 	light_control.fields = fields;
 	light_control.field_count = ARRAY_SIZE(fields);
 	light_control.max_instance_count = MAX_INSTANCE_COUNT;

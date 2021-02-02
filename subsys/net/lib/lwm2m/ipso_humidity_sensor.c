@@ -19,6 +19,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_engine.h"
 #include "lwm2m_resource_ids.h"
 
+#define HUMIDITY_VERSION_MAJOR 1
+#define HUMIDITY_VERSION_MINOR 0
+
 #ifdef CONFIG_LWM2M_IPSO_HUMIDITY_SENSOR_TIMESTAMP
 #define ADD_TIMESTAMPS 1
 #define NUMBER_OF_OBJ_FIELDS 8
@@ -219,6 +222,9 @@ humidity_sensor_create(uint16_t obj_inst_id)
 static int ipso_humidity_sensor_init(const struct device *dev)
 {
 	sensor.obj_id = IPSO_OBJECT_ID;
+	sensor.version_major = HUMIDITY_VERSION_MAJOR;
+	sensor.version_minor = HUMIDITY_VERSION_MINOR;
+	sensor.is_core = false;
 	sensor.fields = fields;
 	sensor.field_count = ARRAY_SIZE(fields);
 	sensor.max_instance_count = MAX_INSTANCE_COUNT;
