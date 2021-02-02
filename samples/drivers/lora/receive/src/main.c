@@ -24,6 +24,10 @@ BUILD_ASSERT(DT_NODE_HAS_STATUS(DEFAULT_RADIO_NODE, okay),
 #include <logging/log.h>
 LOG_MODULE_REGISTER(lora_receive);
 
+/* 1000 msec = 1 sec */
+#define FAIL_SLEEP_TIME_MS	(10)
+
+
 void main(void)
 {
 	const struct device *LoraDevice;
@@ -91,57 +95,60 @@ void main(void)
 		DataLength = lora_recv(LoraDevice, RawData, MAX_DATA_LEN, K_FOREVER,
 				&rssi, &snr);
 		if (DataLength < 0) {
+			/* If receive error, log the error, wait a short time, then try again. */
 			LOG_ERR("LoRa receive failed");
-			return;
-		}
+			k_msleep(FAIL_SLEEP_TIME_MS);
+		} else {
+			/* If packet received, count it, then print it. */
 
-		/* Counter can probably do more, but we'll wrap at 65,536 */
-		MessageCounter++;
-		if  (MessageCounter > 0xFFFF)
-			MessageCounter = 0;
+			/* Counter can probably do more, but we'll wrap at 65,536 */
+			MessageCounter++;
+			if  (MessageCounter > 0xFFFF)
+				MessageCounter = 0;
 
-		/*
-		 * Changed from LOG_INF to give more flexibility in printout.
-		 *
-		 * LOG_INF("Received data 0x%4.4X: %s (RSSI:%ddBm, SNR:%ddBm)",
-		 *	MessageCounter, log_strdup(SafeData), rssi, snr);
-		 */
+			/*
+			* Changed from LOG_INF to give more flexibility in printout.
+			*
+			* LOG_INF("Received data 0x%4.4X: %s (RSSI:%ddBm, SNR:%ddBm)",
+			*	MessageCounter, log_strdup(SafeData), rssi, snr);
+			*/
 
-		/* Some data received is not string-safe, so sanitize string for printing */
-		for (CharCtr = 0; ((CharCtr < DataLength) && (CharCtr < MAX_DATA_LEN)); CharCtr++) {
-			if  (isprint(RawData[CharCtr])) {
-				SafeData[CharCtr] = RawData[CharCtr];
-			} else {
-				SafeData[CharCtr] = '.';
-			}
-		}
-		SafeData[CharCtr] = '\0';
-
-		/* Print statistics */
-		printk("\n");
-
-		/* Print sanitized string */
-		printk("As string: %s\n", SafeData);
-
-		/* Print hex dump of byte data */
-		printk("As hex bytes:");
-		for (CharCtr = 0; ((CharCtr < DataLength) && (CharCtr < MAX_DATA_LEN)); CharCtr++) {
-			if  ((CharCtr & 0x0F) == 0) {
-				printk("\n  0x%4.4X - ", CharCtr);
-			} else {
-				if  (((CharCtr & 0x0F) == 4) || ((CharCtr & 0x0F) == 12)) {
-					printk(" ");
-			printk("Msg 0x%4.4X of length %3d received (RSSI:%ddBm, SNR:%ddBm):\n",
-					MessageCounter, DataLength, rssi, snr);
+			/* Some data received is not string-safe, so sanitize string for printing */
+			for (CharCtr = 0; ((CharCtr < DataLength) && (CharCtr < MAX_DATA_LEN)); CharCtr++) {
+				if  (isprint(RawData[CharCtr])) {
+					SafeData[CharCtr] = RawData[CharCtr];
 				} else {
-					if  ((CharCtr & 0x0F) == 8)
-						printk("- ");
+					SafeData[CharCtr] = '.';
 				}
 			}
-			printk("%2.2X ", RawData[CharCtr]);
-		}
+			SafeData[CharCtr] = '\0';
 
-		/* Blank space before next message */
-		printk("\n\n");
+			/* Print statistics */
+			printk("\n");
+			printk("Msg 0x%4.4X of length %3d received (RSSI:%ddBm, SNR:%ddBm):\n",
+					MessageCounter, DataLength, rssi, snr);
+
+			/* Print sanitized string */
+			printk("As string: %s\n", SafeData);
+
+			/* Print hex dump of byte data */
+			printk("As hex bytes:");
+			for (CharCtr = 0; ((CharCtr < DataLength) && (CharCtr < MAX_DATA_LEN)); CharCtr++) {
+				if  ((CharCtr & 0x0F) == 0) {
+					printk("\n  0x%4.4X - ", CharCtr);
+				} else {
+					if  (((CharCtr & 0x0F) == 4) || ((CharCtr & 0x0F) == 12)) {
+						printk(" ");
+					} else {
+						if  ((CharCtr & 0x0F) == 8)
+							printk("- ");
+					}
+				}
+				printk("%2.2X ", RawData[CharCtr]);
+			}
+
+			/* Blank space before next message */
+			printk("\n\n");
+		}
 	}
 }
