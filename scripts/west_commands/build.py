@@ -190,7 +190,13 @@ class Build(Forceable):
         if self.cmake_cache:
             board, origin = (self.cmake_cache.get('CACHED_BOARD'),
                              'CMakeCache.txt')
-        elif self.args.board:
+
+            # A malformed CMake cache may exist, but not have a board.
+            # This happens if there's a build error from a previous run.
+            if board is not None:
+                return (board, origin)
+
+        if self.args.board:
             board, origin = self.args.board, 'command line'
         elif 'BOARD' in os.environ:
             board, origin = os.environ['BOARD'], 'env'
