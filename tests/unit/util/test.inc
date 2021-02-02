@@ -254,6 +254,13 @@ static void test_FOR_EACH(void)
 	zassert_equal(array[0], 1, "Unexpected value %d", array[0]);
 	zassert_equal(array[1], 2, "Unexpected value %d", array[1]);
 	zassert_equal(array[2], 3, "Unexpected value %d", array[2]);
+
+	buf = array;
+	FAST_FOR_EACH(FOR_EACH_MACRO_TEST, (;), 4, 5, 6);
+
+	zassert_equal(array[0], 4, "Unexpected value %d", array[0]);
+	zassert_equal(array[1], 5, "Unexpected value %d", array[1]);
+	zassert_equal(array[2], 6, "Unexpected value %d", array[2]);
 }
 
 static void test_FOR_EACH_NONEMPTY_TERM(void)
@@ -301,18 +308,28 @@ static void test_FOR_EACH_FIXED_ARG(void)
 	FOR_EACH_FIXED_ARG(fsum, (;), &sum, 1, 2, 3);
 
 	zassert_equal(sum, 6, "Unexpected value %d", sum);
+
+	sum = 0;
+	FAST_FOR_EACH_FIXED_ARG(fsum, (;), &sum, 10, 20, 30);
+
+	zassert_equal(sum, 60, "Unexpected value %d", sum);
 }
 
 static void test_FOR_EACH_IDX(void)
 {
 	#define FOR_EACH_IDX_MACRO_TEST(n, arg) uint8_t a##n = arg
+	#define FAST_FOR_EACH_IDX_MACRO_TEST(n, arg) uint8_t b##n = arg
 
 	FOR_EACH_IDX(FOR_EACH_IDX_MACRO_TEST, (;), 1, 2, 3);
+	FAST_FOR_EACH_IDX(FAST_FOR_EACH_IDX_MACRO_TEST, (;), 1, 2, 3);
 
 	zassert_equal(a0, 1, "Unexpected value %d", a0);
 	zassert_equal(a1, 2, "Unexpected value %d", a1);
 	zassert_equal(a2, 3, "Unexpected value %d", a2);
 
+	zassert_equal(b0, 3, "Unexpected value %d", a0);
+	zassert_equal(b1, 2, "Unexpected value %d", a1);
+	zassert_equal(b2, 1, "Unexpected value %d", a2);
 	#define FOR_EACH_IDX_MACRO_TEST2(n, arg) array[n] = arg
 	uint8_t array[32] = {0};
 
@@ -324,6 +341,14 @@ static void test_FOR_EACH_IDX(void)
 	}
 	zassert_equal(array[15], 0, "Unexpected value: %d", array[15]);
 
+	FAST_FOR_EACH_IDX(FOR_EACH_IDX_MACRO_TEST2, (;),
+			  14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0);
+	for (int i = 0; i < 15; i++) {
+		zassert_equal(array[i], i,
+				"Unexpected value: %d", array[i]);
+	}
+	zassert_equal(array[15], 0, "Unexpected value: %d", array[15]);
+
 	#define FOR_EACH_IDX_MACRO_TEST3(n, arg) &a##n
 
 	uint8_t *a[] = {
@@ -331,6 +356,14 @@ static void test_FOR_EACH_IDX(void)
 	};
 
 	zassert_equal(ARRAY_SIZE(a), 3, "Unexpected value:%d", ARRAY_SIZE(a));
+
+	#define FAST_FOR_EACH_IDX_MACRO_TEST3(n, arg) &b##n
+
+	uint8_t *b[] = {
+		FAST_FOR_EACH_IDX(FAST_FOR_EACH_IDX_MACRO_TEST3, (,), 1, 2, 3)
+	};
+
+	zassert_equal(ARRAY_SIZE(b), 3, "Unexpected value:%d", ARRAY_SIZE(b));
 }
 
 static void test_FOR_EACH_IDX_FIXED_ARG(void)
@@ -344,6 +377,12 @@ static void test_FOR_EACH_IDX_FIXED_ARG(void)
 	zassert_equal(a0, 1, "Unexpected value %d", a0);
 	zassert_equal(a1, 2, "Unexpected value %d", a1);
 	zassert_equal(a2, 3, "Unexpected value %d", a2);
+
+	FAST_FOR_EACH_IDX_FIXED_ARG(FOO, (;), b, 1, 2, 3);
+
+	zassert_equal(b0, 3, "Unexpected value %d", a0);
+	zassert_equal(b1, 2, "Unexpected value %d", a1);
+	zassert_equal(b2, 1, "Unexpected value %d", a2);
 }
 
 static void test_IS_EMPTY(void)
@@ -385,6 +424,12 @@ static void test_nested_FOR_EACH(void)
 	zassert_equal(a0, 0, NULL);
 	zassert_equal(a1, 1, NULL);
 	zassert_equal(a2, 2, NULL);
+
+	FAST_FOR_EACH(FOO_2, (;), FAST_FOR_EACH(FOO_1, (,), 3, 4, 5));
+
+	zassert_equal(a3, 3, NULL);
+	zassert_equal(a4, 4, NULL);
+	zassert_equal(a5, 5, NULL);
 }
 
 static void test_GET_ARG_N(void)
@@ -396,6 +441,10 @@ static void test_GET_ARG_N(void)
 	zassert_equal(a, 10, NULL);
 	zassert_equal(b, 100, NULL);
 	zassert_equal(c, 1000, NULL);
+
+	zassert_equal(FAST_GET_ARG_N(1, 10, 100, 1000), 10, NULL);
+	zassert_equal(FAST_GET_ARG_N(2, 10, 100, 1000), 100, NULL);
+	zassert_equal(FAST_GET_ARG_N(3, 10, 100, 1000), 1000, NULL);
 }
 
 static void test_GET_ARGS_LESS_N(void)
@@ -403,15 +452,24 @@ static void test_GET_ARGS_LESS_N(void)
 	uint8_t a[] = { GET_ARGS_LESS_N(0, 1, 2, 3) };
 	uint8_t b[] = { GET_ARGS_LESS_N(1, 1, 2, 3) };
 	uint8_t c[] = { GET_ARGS_LESS_N(2, 1, 2, 3) };
+	uint8_t a2[] = { FAST_GET_ARGS_LESS_N(0, 1, 2, 3) };
+	uint8_t b2[] = { FAST_GET_ARGS_LESS_N(1, 1, 2, 3) };
+	uint8_t c2[] = { FAST_GET_ARGS_LESS_N(2, 1, 2, 3) };
 
 	zassert_equal(sizeof(a), 3, NULL);
+	zassert_equal(sizeof(a2), 3, NULL);
 
 	zassert_equal(sizeof(b), 2, NULL);
+	zassert_equal(sizeof(b2), 2, NULL);
 	zassert_equal(b[0], 2, NULL);
 	zassert_equal(b[1], 3, NULL);
+	zassert_equal(b2[0], 2, NULL);
+	zassert_equal(b2[1], 3, NULL);
 
 	zassert_equal(sizeof(c), 1, NULL);
+	zassert_equal(sizeof(c2), 1, NULL);
 	zassert_equal(c[0], 3, NULL);
+	zassert_equal(c2[0], 3, NULL);
 }
 
 static void test_mixing_GET_ARG_and_FOR_EACH(void)
