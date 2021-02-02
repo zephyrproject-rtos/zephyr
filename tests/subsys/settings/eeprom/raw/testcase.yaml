@@ -1,0 +1,5 @@
+tests:
+  system.settings.eeprom:
+    depends_on: eeprom
+    min_ram: 32
+    tags: settings_eeprom

@@ -23,6 +23,9 @@ LOG_MODULE_REGISTER(settings_basic_test);
 #include <fs/fs.h>
 #include <fs/littlefs.h>
 #endif
+#if IS_ENABLED(CONFIG_SETTINGS_EEPROM)
+#include <drivers/eeprom.h>
+#endif
 
 /* The standard test expects a cleared flash area.  Make sure it has
  * one.
@@ -58,6 +61,29 @@ static void test_clear_settings(void)
 	rc = fs_unlink(CONFIG_SETTINGS_FS_FILE);
 	zassert_true(rc == 0 || rc == -ENOENT,
 		     "can't delete config file%d\n", rc);
+#endif
+#if IS_ENABLED(CONFIG_SETTINGS_EEPROM)
+	const struct device *eeprom = DEVICE_DT_GET(DT_ALIAS(eeprom_0));
+	off_t addr = 0;
+	size_t len = 0;
+	uint8_t buf[4] = { 0xff, 0xff, 0xff, 0xff};
+	int rc;
+
+	rc = device_is_ready(eeprom);
+	zassert_false(rc == 0, "clear settings failed");
+
+	/* Writing the buffer to clear the eeprom "fs" */
+	len = eeprom_get_size(eeprom);
+	while (len) {
+		size_t wrlen = MIN(len, sizeof(buf));
+
+		rc = eeprom_write(eeprom, addr, buf, wrlen);
+		zassert_true(rc == 0, "clear settings failed");
+		addr += wrlen;
+		len -= wrlen;
+	}
+
+
 #endif
 }
 
@@ -605,7 +631,6 @@ static void test_direct_loading_filter(void)
 			n, data_final[n].n);
 	}
 }
-
 
 void test_main(void)
 {
