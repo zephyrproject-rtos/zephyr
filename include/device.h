@@ -293,6 +293,10 @@ struct device_pm {
  * before they are accessed.
  */
 struct device_state {
+#ifdef CONFIG_PM_DEVICE
+	/* Power management data */
+	struct device_pm pm;
+#endif /* CONFIG_PM_DEVICE */
 };
 
 /**
@@ -752,7 +756,6 @@ static inline int device_pm_put_sync(const struct device *dev) { return -ENOTSUP
 
 #define Z_DEVICE_DEFINE(node_id, dev_name, drv_name, init_fn, pm_control_fn, \
 			data_ptr, cfg_ptr, level, prio, api_ptr)	\
-	Z_DEVICE_DEFINE_PM(dev_name)					\
 	static struct device_state Z_DEVICE_STATE_NAME(dev_name);	\
 	COND_CODE_1(DT_NODE_EXISTS(node_id), (), (static))		\
 		const Z_DECL_ALIGN(struct device)			\
@@ -771,23 +774,10 @@ static inline int device_pm_put_sync(const struct device *dev) { return -ENOTSUP
 		(&DEVICE_NAME_GET(dev_name)), level, prio)
 
 #ifdef CONFIG_PM_DEVICE
-#define Z_DEVICE_DEFINE_PM(dev_name)					\
-	static struct device_pm _CONCAT(__pm_, dev_name) __used  = {	\
-		.usage = ATOMIC_INIT(0),				\
-		.lock = Z_SEM_INITIALIZER(				\
-			_CONCAT(__pm_, dev_name).lock, 1, 1),		\
-		.signal = K_POLL_SIGNAL_INITIALIZER(			\
-			_CONCAT(__pm_, dev_name).signal),		\
-		.event = K_POLL_EVENT_INITIALIZER(			\
-			K_POLL_TYPE_SIGNAL,				\
-			K_POLL_MODE_NOTIFY_ONLY,			\
-			&_CONCAT(__pm_, dev_name).signal),		\
-	};
 #define Z_DEVICE_DEFINE_PM_INIT(dev_name, pm_control_fn)		\
 	.device_pm_control = (pm_control_fn),				\
-	.pm  = &_CONCAT(__pm_, dev_name),
+	.pm = &Z_DEVICE_STATE_NAME(dev_name).pm,
 #else
-#define Z_DEVICE_DEFINE_PM(dev_name)
 #define Z_DEVICE_DEFINE_PM_INIT(dev_name, pm_control_fn)
 #endif
 
