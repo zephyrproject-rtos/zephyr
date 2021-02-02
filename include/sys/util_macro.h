@@ -267,6 +267,17 @@ extern "C" {
  */
 #define GET_ARG_N(N, ...) _Z_GET_ARG_N(N, 1, __VA_ARGS__)
 
+/** @brief Get nth argument from argument list.
+ *
+ * Version is limited to 32 arguments but is much faster to compile.
+ *
+ * @param N Argument index to fetch. Counter from 1. Cannot be bigger than 32.
+ * @param ... Variable list of argments from which one argument is returned.
+ *
+ * @return Nth argument.
+ */
+#define FAST_GET_ARG_N(n, ...) Z_FAST_GET_ARG_##n(__VA_ARGS__)
+
 /**
  * @brief Strips n first arguments from the argument list.
  *
@@ -276,6 +287,18 @@ extern "C" {
  * @return argument list without N first arguments.
  */
 #define GET_ARGS_LESS_N(N, ...) _Z_GET_ARG_N(UTIL_INC(N), 0, __VA_ARGS__)
+
+/**
+ * @brief Strips n first arguments from the argument list.
+ *
+ * Version is limited to 32 arguments but is much faster to compile.
+ *
+ * @param N Number of arguments to discard. Cannot be bigger than 32.
+ * @param ... Variable list of argments.
+ *
+ * @return argument list without N first arguments.
+ */
+#define FAST_GET_ARGS_LESS_N(n, ...) Z_FAST_GET_ARGS_LESS_##n(__VA_ARGS__)
 
 /** Expands to the first argument.
  *
@@ -372,6 +395,20 @@ extern "C" {
 			0, Z_FOR_EACH_SWALLOW_INDEX_FIXED_ARG, sep, \
 			F, 0, __VA_ARGS__)
 
+/** @brief Similar to @ref FOR_EACH but much faster to compile.
+ *
+ * See @ref FOR_EACH.
+ *
+ * @param F Macro to invoke
+ * @param sep Separator (e.g. comma or semicolon). Must be in parentheses;
+ *            this is required to enable providing a comma as separator.
+ * @param ... Variable argument list. The macro @p F is invoked as
+ *            <tt>F(element)</tt> for each element in the list. Up to 32
+ *            arguments is supported.
+ */
+#define FAST_FOR_EACH(x, sep, ...) \
+	FAST_FOR_EACH_ENGINE(Z_FAST_FOR_EACH, sep, x, _, __VA_ARGS__)
+
 /**
  * @brief Like FOR_EACH(), but with a terminator instead of a separator,
  *        and drops empty elements from the argument list
@@ -466,6 +503,22 @@ extern "C" {
 			0, Z_FOR_EACH_SWALLOW_FIXED_ARG, sep, \
 			F, 0, __VA_ARGS__)
 
+/** @brief Similar to @ref FOR_EACH_IDX.
+ *
+ * Macro compiles much faster but there are following limitations:
+ * - Maximum 32 arguments can be used
+ * - User macro is invoked with reversed index, e.g. first argument is invoked
+ *   with the index equal to number of arguments provided - 1.
+ *
+ * @param F Macro to invoke
+ * @param sep Separator (e.g. comma or semicolon). Must be in parentheses;
+ *            this is required to enable providing a comma as separator.
+ * @param ... Variable argument list. The macro @p F is invoked as
+ *            <tt>F(index, element)</tt> for each element in the list. Number
+ *            of arguments is limited to 32.
+ */
+#define FAST_FOR_EACH_IDX(x, sep, ...) \
+	FAST_FOR_EACH_ENGINE(Z_FAST_FOR_EACH_IDX, sep, x, _, __VA_ARGS__)
 /**
  * @brief Call macro @p F on each provided argument, with an additional fixed
  *	  argument as a parameter.
@@ -496,6 +549,20 @@ extern "C" {
 			0, Z_FOR_EACH_SWALLOW_INDEX, sep, \
 			F, fixed_arg, __VA_ARGS__)
 
+/** @brief Similar to @ref FOR_EACH_FIXED_ARG.
+ *
+ * Macro compiles much faster but number of arguments is limited to 32.
+ *
+ * @param F Macro to invoke
+ * @param sep Separator (e.g. comma or semicolon). Must be in parentheses;
+ *            this is required to enable providing a comma as separator.
+ * @param ... Variable argument list. The macro @p F is invoked as
+ *            <tt>F(element, fixed_arg)</tt> for each element in the list.
+ *            Number of arguments is limited to 32.
+ */
+#define FAST_FOR_EACH_FIXED_ARG(x, sep, fixed_arg, ...) \
+	FAST_FOR_EACH_ENGINE(Z_FAST_FOR_EACH_FIXED_ARG, sep, \
+			     x, fixed_arg, __VA_ARGS__)
 /**
  * @brief Calls macro @p F for each variable argument with an index and fixed
  *        argument
@@ -526,6 +593,23 @@ extern "C" {
 			0, Z_FOR_EACH_SWALLOW_NOTHING, sep, \
 			F, fixed_arg, __VA_ARGS__)
 
+/** @brief Similar to @ref FOR_EACH_IDX_FIXED_ARG.
+ *
+ * Macro compiles much faster but there are following limitations:
+ * - Maximum 32 arguments can be used
+ * - User macro is invoked with reversed index, e.g. first argument is invoked
+ *   with the index equal to number of arguments provided - 1.
+ *
+ * @param F Macro to invoke
+ * @param sep Separator (e.g. comma or semicolon). Must be in parentheses;
+ *            this is required to enable providing a comma as separator.
+ * @param ... Variable argument list. The macro @p F is invoked as
+ *            <tt>F(index, element, fixed_arg)</tt> for each element in the
+ *            list. Number of arguments is limited to 32.
+ */
+#define FAST_FOR_EACH_IDX_FIXED_ARG(x, sep, fixed_arg, ...) \
+	FAST_FOR_EACH_ENGINE(Z_FAST_FOR_EACH_IDX_FIXED_ARG, sep, \
+			     x, fixed_arg, __VA_ARGS__)
 /**
  * @brief Number of arguments in the variable arguments list minus one.
  *

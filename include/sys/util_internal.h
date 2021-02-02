@@ -773,4 +773,386 @@
 #define MACRO_MC_14(m, a, ...) UTIL_CAT(m(a), MACRO_MC_13(m, __VA_ARGS__,))
 #define MACRO_MC_15(m, a, ...) UTIL_CAT(m(a), MACRO_MC_14(m, __VA_ARGS__,))
 
+#define Z_FAST_FOR_LOOP_GET_ARG(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, \
+		  		_12, _13, _14, _15, _16, _17, _18, _19, _20, \
+				_21, _22, _23, _24, _25, _26, _27, _28, _29, \
+			       	_30, _31, _32, N, ...) N
+
+#define Z_CBPRINTF_IS_PCHAR2(x) Z_CBPRINTF_IS_PCHAR(x) +
+
+#define Z_FAST_FOR_LOOP_0(z_call, sep, fixed_arg0, fixed_arg1, ...)
+
+#define Z_FAST_FOR_LOOP_1(z_call, sep, fixed_arg0, fixed_arg1, x) \
+	z_call(0, x, fixed_arg0, fixed_arg1)
+
+#define Z_FAST_FOR_LOOP_2(z_call, sep, fixed_arg0, fixed_arg1, x, ...) \
+	z_call(1, x, fixed_arg0, fixed_arg1) __DEBRACKET sep \
+	Z_FAST_FOR_LOOP_1(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__)
+
+#define Z_FAST_FOR_LOOP_3(z_call, sep, fixed_arg0, fixed_arg1, x, ...) \
+	z_call(2, x, fixed_arg0, fixed_arg1) __DEBRACKET sep \
+	Z_FAST_FOR_LOOP_2(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__)
+
+#define Z_FAST_FOR_LOOP_4(z_call, sep, fixed_arg0, fixed_arg1, x, ...) \
+	z_call(3, x, fixed_arg0, fixed_arg1) __DEBRACKET sep \
+	Z_FAST_FOR_LOOP_3(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__)
+
+#define Z_FAST_FOR_LOOP_5(z_call, sep, fixed_arg0, fixed_arg1, x, ...) \
+	z_call(4, x, fixed_arg0, fixed_arg1) __DEBRACKET sep \
+	Z_FAST_FOR_LOOP_4(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__)
+
+#define Z_FAST_FOR_LOOP_6(z_call, sep, fixed_arg0, fixed_arg1, x, ...) \
+	z_call(5, x, fixed_arg0, fixed_arg1) __DEBRACKET sep \
+	Z_FAST_FOR_LOOP_5(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__)
+
+#define Z_FAST_FOR_LOOP_7(z_call, sep, fixed_arg0, fixed_arg1, x, ...) \
+	z_call(6, x, fixed_arg0, fixed_arg1) __DEBRACKET sep \
+	Z_FAST_FOR_LOOP_6(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__)
+
+#define Z_FAST_FOR_LOOP_8(z_call, sep, fixed_arg0, fixed_arg1, x, ...) \
+	z_call(7, x, fixed_arg0, fixed_arg1) __DEBRACKET sep \
+	Z_FAST_FOR_LOOP_7(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__)
+
+#define Z_FAST_FOR_LOOP_9(z_call, sep, fixed_arg0, fixed_arg1, x, ...) \
+	z_call(8,x, fixed_arg0, fixed_arg1) __DEBRACKET sep \
+	Z_FAST_FOR_LOOP_8(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__)
+
+#define Z_FAST_FOR_LOOP_10(z_call, sep, fixed_arg0, fixed_arg1, x, ...) \
+	z_call(9, x, fixed_arg0, fixed_arg1) __DEBRACKET sep \
+	Z_FAST_FOR_LOOP_9(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__)
+
+#define Z_FAST_FOR_LOOP_11(z_call, sep, fixed_arg0, fixed_arg1, x, ...) \
+	z_call(10, x, fixed_arg0, fixed_arg1) __DEBRACKET sep \
+	Z_FAST_FOR_LOOP_10(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__)
+
+#define Z_FAST_FOR_LOOP_12(z_call, sep, fixed_arg0, fixed_arg1, x, ...) \
+	z_call(11, x, fixed_arg0, fixed_arg1) __DEBRACKET sep \
+	Z_FAST_FOR_LOOP_11(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__)
+
+#define Z_FAST_FOR_LOOP_13(z_call, sep, fixed_arg0, fixed_arg1, x, ...) \
+	z_call(12, x, fixed_arg0, fixed_arg1) __DEBRACKET sep \
+	Z_FAST_FOR_LOOP_12(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__)
+
+#define Z_FAST_FOR_LOOP_14(z_call, sep, fixed_arg0, fixed_arg1, x, ...) \
+	z_call(13, x, fixed_arg0, fixed_arg1) __DEBRACKET sep \
+	Z_FAST_FOR_LOOP_13(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__)
+
+#define Z_FAST_FOR_LOOP_15(z_call, sep, fixed_arg0, fixed_arg1, x, ...) \
+	z_call(14, x, fixed_arg0, fixed_arg1) __DEBRACKET sep \
+	Z_FAST_FOR_LOOP_14(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__)
+
+#define Z_FAST_FOR_LOOP_16(z_call, sep, fixed_arg0, fixed_arg1, x, ...) \
+	z_call(15, x, fixed_arg0, fixed_arg1) __DEBRACKET sep \
+	Z_FAST_FOR_LOOP_15(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__)
+
+#define Z_FAST_FOR_LOOP_17(z_call, sep, fixed_arg0, fixed_arg1, x, ...) \
+	z_call(16, x, fixed_arg0, fixed_arg1) __DEBRACKET sep \
+	Z_FAST_FOR_LOOP_16(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__)
+
+#define Z_FAST_FOR_LOOP_18(z_call, sep, fixed_arg0, fixed_arg1, x, ...) \
+	z_call(17, x, fixed_arg0, fixed_arg1) __DEBRACKET sep \
+	Z_FAST_FOR_LOOP_17(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__)
+
+#define Z_FAST_FOR_LOOP_19(z_call, sep, fixed_arg0, fixed_arg1, x, ...) \
+	z_call(18,x, fixed_arg0, fixed_arg1) __DEBRACKET sep \
+	Z_FAST_FOR_LOOP_18(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__)
+
+#define Z_FAST_FOR_LOOP_20(z_call, sep, fixed_arg0, fixed_arg1, x, ...) \
+	z_call(19, x, fixed_arg0, fixed_arg1) __DEBRACKET sep \
+	Z_FAST_FOR_LOOP_19(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__)
+
+#define Z_FAST_FOR_LOOP_21(z_call, sep, fixed_arg0, fixed_arg1, x, ...) \
+	z_call(20, x, fixed_arg0, fixed_arg1) __DEBRACKET sep \
+	Z_FAST_FOR_LOOP_20(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__)
+
+#define Z_FAST_FOR_LOOP_22(z_call, sep, fixed_arg0, fixed_arg1, x, ...) \
+	z_call(21, x, fixed_arg0, fixed_arg1) __DEBRACKET sep \
+	Z_FAST_FOR_LOOP_21(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__)
+
+#define Z_FAST_FOR_LOOP_23(z_call, sep, fixed_arg0, fixed_arg1, x, ...) \
+	z_call(22, x, fixed_arg0, fixed_arg1) __DEBRACKET sep \
+	Z_FAST_FOR_LOOP_22(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__)
+
+#define Z_FAST_FOR_LOOP_24(z_call, sep, fixed_arg0, fixed_arg1, x, ...) \
+	z_call(23, x, fixed_arg0, fixed_arg1) __DEBRACKET sep \
+	Z_FAST_FOR_LOOP_23(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__)
+
+#define Z_FAST_FOR_LOOP_25(z_call, sep, fixed_arg0, fixed_arg1, x, ...) \
+	z_call(24, x, fixed_arg0, fixed_arg1) __DEBRACKET sep \
+	Z_FAST_FOR_LOOP_24(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__)
+
+#define Z_FAST_FOR_LOOP_26(z_call, sep, fixed_arg0, fixed_arg1, x, ...) \
+	z_call(25, x, fixed_arg0, fixed_arg1) __DEBRACKET sep \
+	Z_FAST_FOR_LOOP_25(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__)
+
+#define Z_FAST_FOR_LOOP_27(z_call, sep, fixed_arg0, fixed_arg1, x, ...) \
+	z_call(26, x, fixed_arg0, fixed_arg1) __DEBRACKET sep \
+	Z_FAST_FOR_LOOP_26(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__)
+
+#define Z_FAST_FOR_LOOP_28(z_call, sep, fixed_arg0, fixed_arg1, x, ...) \
+	z_call(27, x, fixed_arg0, fixed_arg1) __DEBRACKET sep \
+	Z_FAST_FOR_LOOP_27(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__)
+
+#define Z_FAST_FOR_LOOP_29(z_call, sep, fixed_arg0, fixed_arg1, x, ...) \
+	z_call(28,x, fixed_arg0, fixed_arg1) __DEBRACKET sep \
+	Z_FAST_FOR_LOOP_28(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__)
+
+#define Z_FAST_FOR_LOOP_30(z_call, sep, fixed_arg0, fixed_arg1, x, ...) \
+	z_call(29, x, fixed_arg0, fixed_arg1) __DEBRACKET sep \
+	Z_FAST_FOR_LOOP_29(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__)
+
+#define Z_FAST_FOR_LOOP_31(z_call, sep, fixed_arg0, fixed_arg1, x, ...) \
+	z_call(30, x, fixed_arg0, fixed_arg1) __DEBRACKET sep \
+	Z_FAST_FOR_LOOP_30(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__)
+
+#define Z_FAST_FOR_LOOP_32(z_call, sep, fixed_arg0, fixed_arg1, x, ...) \
+	z_call(31, x, fixed_arg0, fixed_arg1) __DEBRACKET sep \
+	Z_FAST_FOR_LOOP_31(z_call, sep, fixed_arg0, fixed_arg1, ##__VA_ARGS__)
+
+#define FAST_FOR_EACH_ENGINE(x, sep, fixed_arg0, fixed_arg1, ...) \
+	Z_FAST_FOR_LOOP_GET_ARG(__VA_ARGS__, \
+		  Z_FAST_FOR_LOOP_32, Z_FAST_FOR_LOOP_31, \
+		  Z_FAST_FOR_LOOP_30, Z_FAST_FOR_LOOP_29, Z_FAST_FOR_LOOP_28, \
+		  Z_FAST_FOR_LOOP_27, Z_FAST_FOR_LOOP_26, Z_FAST_FOR_LOOP_25, \
+		  Z_FAST_FOR_LOOP_24, Z_FAST_FOR_LOOP_23, Z_FAST_FOR_LOOP_22, \
+		  Z_FAST_FOR_LOOP_21, Z_FAST_FOR_LOOP_20, Z_FAST_FOR_LOOP_19, \
+		  Z_FAST_FOR_LOOP_18, Z_FAST_FOR_LOOP_17, Z_FAST_FOR_LOOP_16, \
+		  Z_FAST_FOR_LOOP_15, Z_FAST_FOR_LOOP_14, Z_FAST_FOR_LOOP_13, \
+		  Z_FAST_FOR_LOOP_12, Z_FAST_FOR_LOOP_11, Z_FAST_FOR_LOOP_10, \
+		  Z_FAST_FOR_LOOP_9, Z_FAST_FOR_LOOP_8, Z_FAST_FOR_LOOP_7, \
+		  Z_FAST_FOR_LOOP_6, Z_FAST_FOR_LOOP_5, Z_FAST_FOR_LOOP_4, \
+		  Z_FAST_FOR_LOOP_3, Z_FAST_FOR_LOOP_2, Z_FAST_FOR_LOOP_1, \
+		  Z_FAST_FOR_LOOP_0)(x, sep, fixed_arg0, fixed_arg1, \
+		  ##__VA_ARGS__)
+
+#define Z_FAST_GET_ARG_1(_0, ...) _0
+
+#define Z_FAST_GET_ARG_2(_0, _1, ...) _1
+
+#define Z_FAST_GET_ARG_3(_0, _1, _2, ...) _2
+
+#define Z_FAST_GET_ARG_4(_0, _1, _2, _3, ...) _3
+
+#define Z_FAST_GET_ARG_5(_0, _1, _2, _3, _4, ...) _4
+
+#define Z_FAST_GET_ARG_6(_0, _1, _2, _3, _4, _5, ...) _5
+
+#define Z_FAST_GET_ARG_7(_0, _1, _2, _3, _4, _5, _6, ...) _6
+
+#define Z_FAST_GET_ARG_8(_0, _1, _2, _3, _4, _5, _6, _7, ...) _7
+
+#define Z_FAST_GET_ARG_9(_0, _1, _2, _3, _4, _5, _6, _7, _8, ...) _8
+
+#define Z_FAST_GET_ARG_10(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, ...) _9
+
+#define Z_FAST_GET_ARG_11(_0, _1, _2, _3, _4, _5, \
+			      _6, _7, _8, _9, _10, ...) _10
+
+#define Z_FAST_GET_ARG_12(_0, _1, _2, _3, _4, _5, _6,\
+	       		      _7, _8, _9, _10, _11, ...) _11
+
+#define Z_FAST_GET_ARG_13(_0, _1, _2, _3, _4, _5, _6, \
+			      _7, _8, _9, _10, _11, _12, ...) _12
+
+#define Z_FAST_GET_ARG_14(_0, _1, _2, _3, _4, _5, _6, \
+			      _7, _8, _9, _10, _11, _12, _13, ...) _13
+
+#define Z_FAST_GET_ARG_15(_0, _1, _2, _3, _4, _5, _6, _7, \
+			      _8, _9, _10, _11, _12, _13, _14, ...) _14
+
+#define Z_FAST_GET_ARG_16(_0, _1, _2, _3, _4, _5, _6, _7, \
+			      _8, _9, _10, _11, _12, _13, _14, _15, ...) _15
+
+#define Z_FAST_GET_ARG_17(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, \
+			      _11, _12, _13, _14, _15, _16, ...) _16
+
+#define Z_FAST_GET_ARG_18(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, \
+			      _11, _12, _13, _14, _15, _16, _17, ...) _17
+
+#define Z_FAST_GET_ARG_19(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, \
+			      _11, _12, _13, _14, _15, _16, _17, _18, ...) _18
+
+#define Z_FAST_GET_ARG_20(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, \
+			      _11, _12, _13, _14, _15, _16, _17, _18, _19, \
+			      ...) _19
+
+#define Z_FAST_GET_ARG_21(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, \
+			      _11, _12, _13, _14, _15, _16, _17, _18, _19, \
+			      _20, ...) _20
+
+#define Z_FAST_GET_ARG_22(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, \
+			      _11, _12, _13, _14, _15, _16, _17, _18, _19, \
+			      _20, _21, ...) _21
+
+#define Z_FAST_GET_ARG_23(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, \
+			      _11, _12, _13, _14, _15, _16, _17, _18, _19, \
+			      _20, _21, _22, ...) _22
+
+#define Z_FAST_GET_ARG_24(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, \
+			      _11, _12, _13, _14, _15, _16, _17, _18, _19, \
+			      _20, _21, _22, _23, ...) _23
+
+#define Z_FAST_GET_ARG_25(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, \
+			      _11, _12, _13, _14, _15, _16, _17, _18, _19, \
+			      _20, _21, _22, _23, _24, ...) _24
+
+#define Z_FAST_GET_ARG_26(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, \
+			      _11, _12, _13, _14, _15, _16, _17, _18, _19, \
+			      _20, _21, _22, _23, _24, _25, ...) _25
+
+#define Z_FAST_GET_ARG_27(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, \
+			      _11, _12, _13, _14, _15, _16, _17, _18, _19, \
+			      _20, _21, _22, _23, _24, _25, _26, ...) _26
+
+#define Z_FAST_GET_ARG_28(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, \
+			      _11, _12, _13, _14, _15, _16, _17, _18, _19, \
+			      _20, _21, _22, _23, _24, _25, _26, _27, ...) _27
+
+#define Z_FAST_GET_ARG_29(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, \
+			      _11, _12, _13, _14, _15, _16, _17, _18, _19, \
+			      _20, _21, _22, _23, _24, _25, _26, _27, _28, \
+			      ...) _28
+
+#define Z_FAST_GET_ARG_30(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, \
+			      _11, _12, _13, _14, _15, _16, _17, _18, _19, \
+			      _20, _21, _22, _23, _24, _25, _26, _27, _28, \
+			      _29, ...) _29
+
+#define Z_FAST_GET_ARG_31(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, \
+			      _11, _12, _13, _14, _15, _16, _17, _18, _19, \
+			      _20, _21, _22, _23, _24, _25, _26, _27, _28, \
+			      _29, _30, ...) _30
+
+#define Z_FAST_GET_ARG_32(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, \
+			      _11, _12, _13, _14, _15, _16, _17, _18, _19, \
+			      _20, _21, _22, _23, _24, _25, _26, _27, _28, \
+			      _29, _30, _31, ...) _31
+
+#define Z_FAST_GET_ARGS_LESS_0(...) __VA_ARGS__
+
+#define Z_FAST_GET_ARGS_LESS_1(_0, ...) __VA_ARGS__
+
+#define Z_FAST_GET_ARGS_LESS_2(_0, _1, ...) __VA_ARGS__
+
+#define Z_FAST_GET_ARGS_LESS_3(_0, _1, _2, ...) __VA_ARGS__
+
+#define Z_FAST_GET_ARGS_LESS_4(_0, _1, _2, _3, ...) __VA_ARGS__
+
+#define Z_FAST_GET_ARGS_LESS_5(_0, _1, _2, _3, _4, ...) __VA_ARGS__
+
+#define Z_FAST_GET_ARGS_LESS_6(_0, _1, _2, _3, _4, _5, ...) __VA_ARGS__
+
+#define Z_FAST_GET_ARGS_LESS_7(_0, _1, _2, _3, _4, _5, _6, ...) __VA_ARGS__
+
+#define Z_FAST_GET_ARGS_LESS_8(_0, _1, _2, _3, _4, _5, \
+				_6, _7, ...) __VA_ARGS__
+
+#define Z_FAST_GET_ARGS_LESS_9(_0, _1, _2, _3, _4, _5, \
+				_6, _7, _8, ...) __VA_ARGS__
+
+#define Z_FAST_GET_ARGS_LESS_10(_0, _1, _2, _3, _4, _5, \
+				_6, _7, _8, _9, ...) __VA_ARGS__
+
+#define Z_FAST_GET_ARGS_LESS_11(_0, _1, _2, _3, _4, _5, \
+			 	_6, _7, _8, _9, _10, ...) __VA_ARGS__
+
+#define Z_FAST_GET_ARGS_LESS_12(_0, _1, _2, _3, _4, _5, _6,\
+				_7, _8, _9, _10, _11, ...) __VA_ARGS__
+
+#define Z_FAST_GET_ARGS_LESS_13(_0, _1, _2, _3, _4, _5, _6, \
+				_7, _8, _9, _10, _11, _12, ...) __VA_ARGS__
+
+#define Z_FAST_GET_ARGS_LESS_14(_0, _1, _2, _3, _4, _5, _6, \
+				_7, _8, _9, _10, _11, _12, _13, \
+				...) __VA_ARGS__
+
+#define Z_FAST_GET_ARGS_LESS_15(_0, _1, _2, _3, _4, _5, _6, _7, \
+				_8, _9, _10, _11, _12, _13, _14, \
+				...) __VA_ARGS__
+
+#define Z_FAST_GET_ARGS_LESS_16(_0, _1, _2, _3, _4, _5, _6, _7, \
+				_8, _9, _10, _11, _12, _13, _14, _15, ...) \
+				__VA_ARGS__
+
+#define Z_FAST_GET_ARGS_LESS_17(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, \
+				_11, _12, _13, _14, _15, _16, ...) __VA_ARGS__
+
+#define Z_FAST_GET_ARGS_LESS_18(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, \
+				_11, _12, _13, _14, _15, _16, _17, ...) \
+				__VA_ARGS__
+
+#define Z_FAST_GET_ARGS_LESS_19(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, \
+				_11, _12, _13, _14, _15, _16, _17, _18, ...) \
+				__VA_ARGS__
+
+#define Z_FAST_GET_ARGS_LESS_20(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, \
+				_11, _12, _13, _14, _15, _16, _17, _18, _19, \
+			    ...) __VA_ARGS__
+
+#define Z_FAST_GET_ARGS_LESS_21(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, \
+				_11, _12, _13, _14, _15, _16, _17, _18, _19, \
+				_20, ...) __VA_ARGS__
+
+#define Z_FAST_GET_ARGS_LESS_22(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, \
+				_11, _12, _13, _14, _15, _16, _17, _18, _19, \
+				_20, _21, ...) __VA_ARGS__
+
+#define Z_FAST_GET_ARGS_LESS_23(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, \
+				_11, _12, _13, _14, _15, _16, _17, _18, _19, \
+				_20, _21, _22, ...) __VA_ARGS__
+
+#define Z_FAST_GET_ARGS_LESS_24(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, \
+				_11, _12, _13, _14, _15, _16, _17, _18, _19, \
+				_20, _21, _22, _23, ...) __VA_ARGS__
+
+#define Z_FAST_GET_ARGS_LESS_25(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, \
+				_11, _12, _13, _14, _15, _16, _17, _18, _19, \
+				_20, _21, _22, _23, _24, ...) __VA_ARGS__
+
+#define Z_FAST_GET_ARGS_LESS_26(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, \
+				_11, _12, _13, _14, _15, _16, _17, _18, _19, \
+				_20, _21, _22, _23, _24, _25, ...) __VA_ARGS__
+
+#define Z_FAST_GET_ARGS_LESS_27(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, \
+				_11, _12, _13, _14, _15, _16, _17, _18, _19, \
+				_20, _21, _22, _23, _24, _25, _26, ...) \
+		  		__VA_ARGS__
+
+#define Z_FAST_GET_ARGS_LESS_28(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, \
+				_11, _12, _13, _14, _15, _16, _17, _18, _19, \
+				_20, _21, _22, _23, _24, _25, _26, _27, \
+				...) __VA_ARGS__
+
+#define Z_FAST_GET_ARGS_LESS_29(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, \
+				_11, _12, _13, _14, _15, _16, _17, _18, _19, \
+				_20, _21, _22, _23, _24, _25, _26, _27, _28, \
+				...) __VA_ARGS__
+
+#define Z_FAST_GET_ARGS_LESS_30(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, \
+				_11, _12, _13, _14, _15, _16, _17, _18, _19, \
+				_20, _21, _22, _23, _24, _25, _26, _27, _28, \
+				_29, ...) __VA_ARGS__
+
+#define Z_FAST_GET_ARGS_LESS_31(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, \
+				_11, _12, _13, _14, _15, _16, _17, _18, _19, \
+				_20, _21, _22, _23, _24, _25, _26, _27, _28, \
+				_29, _30, ...) __VA_ARGS__
+
+#define Z_FAST_GET_ARGS_LESS_32(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, \
+				_11, _12, _13, _14, _15, _16, _17, _18, _19, \
+				_20, _21, _22, _23, _24, _25, _26, _27, _28, \
+				_29, _30, _31, ...) __VA_ARGS__
+
+#define Z_FAST_FOR_EACH_IDX_FIXED_ARG(idx, x, fixed_arg0, fixed_arg1) \
+	fixed_arg0(idx, x, fixed_arg1)
+
+#define Z_FAST_FOR_EACH_FIXED_ARG(idx, x, fixed_arg0, fixed_arg1) \
+	fixed_arg0(x, fixed_arg1)
+
+#define Z_FAST_FOR_EACH_IDX(idx, x, fixed_arg0, fixed_arg1) \
+	fixed_arg0(idx, x)
+
+#define Z_FAST_FOR_EACH(idx, x, fixed_arg0, fixed_arg1) \
+	fixed_arg0(x)
+
 #endif /* ZEPHYR_INCLUDE_SYS_UTIL_INTERNAL_H_ */
