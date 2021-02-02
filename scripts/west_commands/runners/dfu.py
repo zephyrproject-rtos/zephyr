@@ -106,6 +106,7 @@ class DfuUtilBinaryRunner(ZephyrBinaryRunner):
 
     def do_run(self, command, **kwargs):
         self.require(self.cmd[0])
+        self.ensure_output('bin')
 
         if not self.find_device():
             raise RuntimeError('device not found')

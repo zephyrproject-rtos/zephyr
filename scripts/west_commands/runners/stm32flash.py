@@ -87,6 +87,7 @@ class Stm32flashBinaryRunner(ZephyrBinaryRunner):
 
     def do_run(self, command, **kwargs):
         self.require('stm32flash')
+        self.ensure_output('bin')
 
         bin_name = self.cfg.bin_file
         bin_size = path.getsize(bin_name)

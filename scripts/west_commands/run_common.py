@@ -346,9 +346,7 @@ def get_runner_config(build_dir, yaml_path, runners_yaml, args=None):
             # directory containing the runners.yaml file.
             return fspath(yaml_dir / from_yaml)
 
-        # FIXME these RunnerConfig values really ought to be
-        # Optional[str], but some runners rely on them being str.
-        return ''
+        return None
 
     def config(attr):
         return getattr(args, attr, None) or yaml_config.get(attr)
