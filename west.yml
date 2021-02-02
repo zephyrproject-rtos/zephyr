@@ -21,6 +21,8 @@ manifest:
   remotes:
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
+    - name: recogni
+      url-base: https://github.com/recogni
 
   #
   # Please add items below based on alphabetical order
@@ -45,7 +47,8 @@ manifest:
       revision: 17269ae883441d3dd8498b7f170cf9cb421edc05
       path: modules/hal/espressif
     - name: fatfs
-      revision: 1d1fcc725aa1cb3c32f366e0c53d7490d0fe1109
+      remote: recogni
+      revision: be10dd604d02df19b483ad9e9af54a2acc69c438
       path: modules/fs/fatfs
     - name: hal_cypress
       revision: a12d92816a53a521d79cefcf5c38b9dc8a4fed6e
