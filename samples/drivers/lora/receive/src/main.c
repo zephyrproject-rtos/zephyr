@@ -62,8 +62,8 @@ void main(void)
 	 * to each other, meaning that one system will see the
 	 * other system's signal as uncorrelated noise.
 	 */
-	LoraConfig.frequency = 915000000;  /* In Hz */
-	LoraConfig.bandwidth = BW_250_KHZ; /* Driver can interpret valid Hz or enum */
+	LoraConfig.frequency = 915000000;	/* In Hz */
+	LoraConfig.bandwidth = BW_250_KHZ;	/* Driver can interpret valid Hz or enum */
 	LoraConfig.datarate = SF_10;
 	LoraConfig.preamble_len = 8;
 	LoraConfig.coding_rate = CR_4_5;
