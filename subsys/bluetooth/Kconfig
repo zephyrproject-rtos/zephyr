@@ -315,5 +315,6 @@ config BT_COMPANY_ID
 	  https://www.bluetooth.com/specifications/assigned-numbers/company-identifiers
 
 source "subsys/bluetooth/mesh/Kconfig"
+source "subsys/bluetooth/audio/Kconfig"
 
 endif # BT
