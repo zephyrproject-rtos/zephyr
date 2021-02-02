@@ -64,7 +64,7 @@ void main(void)
 	 */
 	LoraConfig.frequency = 915000000;	/* In Hz */
 	LoraConfig.bandwidth = BW_250_KHZ;	/* Driver can interpret valid Hz or enum */
-	LoraConfig.datarate = SF_10;
+	LoraConfig.datarate = SF_7;			/* Many systems default to SF_10 */
 	LoraConfig.preamble_len = 8;
 	LoraConfig.coding_rate = CR_4_5;
 	LoraConfig.tx_power = 14;
@@ -139,18 +139,18 @@ void main(void)
 					((CharCtr < DataLength) && (CharCtr < MAX_DATA_LEN));
 						CharCtr++) {
 				switch (CharCtr & 0x0F) {
-					case  0:	/* A line is 16 bytes.  Put "address" within packet at beginning of line */
-						printk("\n  0x%4.4X - ", CharCtr);
-						break;
+				case  0:	/* A line is 16 bytes.  Put "address" within packet at beginning of line */
+					printk("\n  0x%4.4X - ", CharCtr);
+					break;
 
-					case  4:	/* Small visual cue at the quarter line marks - 4th and 12th byte */
-					case 12:
-						printk(" ");
-						break;
+				case  4:	/* Small visual cue at the quarter line marks - 4th and 12th byte */
+				case 12:
+					printk(" ");
+					break;
 
-					case  8:	/* Larger visual cue at the half line mark - 8th byte */
-						printk("- ");
-						break;
+				case  8:	/* Larger visual cue at the half line mark - 8th byte */
+					printk("- ");
+					break;
 				}
 				printk("%2.2X ", RawData[CharCtr]);
 			}
