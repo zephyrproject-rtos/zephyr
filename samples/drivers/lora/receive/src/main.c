@@ -138,15 +138,19 @@ void main(void)
 			for (CharCtr = 0;
 					((CharCtr < DataLength) && (CharCtr < MAX_DATA_LEN));
 						CharCtr++) {
-				if  ((CharCtr & 0x0F) == 0) {
-					printk("\n  0x%4.4X - ", CharCtr);
-				} else {
-					if  (((CharCtr & 0x0F) == 4) || ((CharCtr & 0x0F) == 12)) {
+				switch (CharCtr & 0x0F) {
+					case  0:	/* A line is 16 bytes.  Put "address" within packet at beginning of line */
+						printk("\n  0x%4.4X - ", CharCtr);
+						break;
+
+					case  4:	/* Small visual cue at the quarter line marks - 4th and 12th byte */
+					case 12:
 						printk(" ");
-					} else {
-						if  ((CharCtr & 0x0F) == 8)
-							printk("- ");
-					}
+						break;
+
+					case  8:	/* Larger visual cue at the half line mark - 8th byte */
+						printk("- ");
+						break;
 				}
 				printk("%2.2X ", RawData[CharCtr]);
 			}
