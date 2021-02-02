@@ -107,11 +107,11 @@ void main(void)
 				MessageCounter = 0;
 
 			/*
-			* Changed from LOG_INF to give more flexibility in printout.
-			*
-			* LOG_INF("Received data 0x%4.4X: %s (RSSI:%ddBm, SNR:%ddBm)",
-			*	MessageCounter, log_strdup(SafeData), rssi, snr);
-			*/
+			 * Changed from LOG_INF to give more flexibility in printout.
+			 *
+			 * LOG_INF("Received data 0x%4.4X: %s (RSSI:%ddBm, SNR:%ddBm)",
+			 *	MessageCounter, log_strdup(SafeData), rssi, snr);
+			 */
 
 			/* Some data received is not string-safe, so sanitize string for printing */
 			for (CharCtr = 0; ((CharCtr < DataLength) && (CharCtr < MAX_DATA_LEN)); CharCtr++) {
