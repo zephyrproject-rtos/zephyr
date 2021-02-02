@@ -119,8 +119,6 @@ void main(void)
 
 		/* Print statistics */
 		printk("\n");
-		printk("Msg 0x%4.4X received (RSSI:%ddBm, SNR:%ddBm):\n",
-				MessageCounter, rssi, snr);
 
 		/* Print sanitized string */
 		printk("As string: %s\n", SafeData);
@@ -133,6 +131,8 @@ void main(void)
 			} else {
 				if  (((CharCtr & 0x0F) == 4) || ((CharCtr & 0x0F) == 12)) {
 					printk(" ");
+			printk("Msg 0x%4.4X of length %3d received (RSSI:%ddBm, SNR:%ddBm):\n",
+					MessageCounter, DataLength, rssi, snr);
 				} else {
 					if  ((CharCtr & 0x0F) == 8)
 						printk("- ");
