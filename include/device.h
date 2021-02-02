@@ -270,8 +270,11 @@ struct device_pm {
 	const struct device *dev;
 	/** Lock to synchronize the get/put operations */
 	struct k_sem lock;
+	/* Following are packed fields protected by #lock. */
 	/** Device pm enable flag */
-	bool enable;
+	bool enable : 1;
+	/* Following are packed fields accessed with atomic bit operations. */
+	atomic_t atomic_flags;
 	/** Device usage count */
 	atomic_t usage;
 	/** Device idle internal power state */
@@ -283,6 +286,11 @@ struct device_pm {
 	/** Signal to notify the Async API callers */
 	struct k_poll_signal signal;
 };
+
+/** Bit position in device_pm::atomic_flags that records whether the
+ * device is busy.
+ */
+#define DEVICE_PM_ATOMIC_FLAGS_BUSY_BIT 0
 
 /**
  * @brief Runtime device dynamic structure (in RAM) per driver instance

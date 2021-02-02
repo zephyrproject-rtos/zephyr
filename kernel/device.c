@@ -25,12 +25,6 @@ extern const struct device __device_end[];
 
 extern uint32_t __device_init_status_start[];
 
-#ifdef CONFIG_PM_DEVICE
-extern uint32_t __device_busy_start[];
-extern uint32_t __device_busy_end[];
-#define DEVICE_BUSY_SIZE (__device_busy_end - __device_busy_start)
-#endif
-
 static inline void device_pm_state_init(const struct device *dev)
 {
 #ifdef CONFIG_PM_DEVICE
@@ -180,20 +174,23 @@ int device_pm_control_nop(const struct device *unused_device,
 
 int device_any_busy_check(void)
 {
-	int i = 0;
+	const struct device *dev = __device_start;
 
-	for (i = 0; i < DEVICE_BUSY_SIZE; i++) {
-		if (__device_busy_start[i] != 0U) {
+	while (dev < __device_end) {
+		if (atomic_test_bit(&dev->pm->atomic_flags,
+				    DEVICE_PM_ATOMIC_FLAGS_BUSY_BIT)) {
 			return -EBUSY;
 		}
+		++dev;
 	}
+
 	return 0;
 }
 
-int device_busy_check(const struct device *chk_dev)
+int device_busy_check(const struct device *dev)
 {
-	if (atomic_test_bit((const atomic_t *)__device_busy_start,
-			    (chk_dev - __device_start))) {
+	if (atomic_test_bit(&dev->pm->atomic_flags,
+			    DEVICE_PM_ATOMIC_FLAGS_BUSY_BIT)) {
 		return -EBUSY;
 	}
 	return 0;
@@ -201,22 +198,22 @@ int device_busy_check(const struct device *chk_dev)
 
 #endif
 
-void device_busy_set(const struct device *busy_dev)
+void device_busy_set(const struct device *dev)
 {
 #ifdef CONFIG_PM_DEVICE
-	atomic_set_bit((atomic_t *) __device_busy_start,
-		       (busy_dev - __device_start));
+	atomic_set_bit(&dev->pm->atomic_flags,
+		       DEVICE_PM_ATOMIC_FLAGS_BUSY_BIT);
 #else
-	ARG_UNUSED(busy_dev);
+	ARG_UNUSED(dev);
 #endif
 }
 
-void device_busy_clear(const struct device *busy_dev)
+void device_busy_clear(const struct device *dev)
 {
 #ifdef CONFIG_PM_DEVICE
-	atomic_clear_bit((atomic_t *) __device_busy_start,
-			 (busy_dev - __device_start));
+	atomic_clear_bit(&dev->pm->atomic_flags,
+			 DEVICE_PM_ATOMIC_FLAGS_BUSY_BIT);
 #else
-	ARG_UNUSED(busy_dev);
+	ARG_UNUSED(dev);
 #endif
 }
