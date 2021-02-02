@@ -139,7 +139,7 @@ void main(void)
 					((CharCtr < DataLength) && (CharCtr < MAX_DATA_LEN));
 						CharCtr++) {
 				switch (CharCtr & 0x0F) {
-				case  0:	/* A line is 16 bytes.  Put "address" at beginning of line */
+				case  0:	/* A line is 16 bytes.  Put address at beginning */
 					printk("\n  0x%4.4X - ", CharCtr);
 					break;
 
