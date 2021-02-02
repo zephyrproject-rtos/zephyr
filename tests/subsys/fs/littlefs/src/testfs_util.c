@@ -354,6 +354,8 @@ int testfs_bcmd_verify_layout(struct testfs_path *pp,
 		++cp;
 	}
 
+	fs_dir_t_init(&dir);
+
 	int rc = fs_opendir(&dir, pp->path);
 
 	if (rc != 0) {
