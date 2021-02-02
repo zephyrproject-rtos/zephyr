@@ -91,14 +91,22 @@ void z_sys_init_run_level(int32_t level)
 
 	for (entry = levels[level]; entry < levels[level+1]; entry++) {
 		const struct device *dev = entry->dev;
+		int rc = entry->init(dev);
 
-		if ((entry->init(dev) != 0) && (dev != NULL)) {
-			/* Initialization failed.
-			 * Set the init status bit so device is not declared ready.
+		if (dev != NULL) {
+			/* Mark device initialized.  If initialization
+			 * failed, record the error condition.
 			 */
-			sys_bitfield_set_bit(
-				(mem_addr_t) __device_init_status_start,
-				(dev - __device_start));
+			if (rc != 0) {
+				if (rc < 0) {
+					rc = -rc;
+				}
+				if (rc > UINT8_MAX) {
+					rc = UINT8_MAX;
+				}
+				dev->state->init_res = rc;
+			}
+			dev->state->initialized = true;
 		}
 	}
 }
@@ -157,9 +165,7 @@ size_t z_device_get_all_static(struct device const **devices)
 
 bool z_device_ready(const struct device *dev)
 {
-	/* Set bit indicates device failed initialization */
-	return !(sys_bitfield_test_bit((mem_addr_t)__device_init_status_start,
-					(dev - __device_start)));
+	return dev->state->initialized && (dev->state->init_res == 0);
 }
 
 #ifdef CONFIG_PM_DEVICE
