@@ -56,4 +56,6 @@ source "drivers/adc/Kconfig.mcp320x"
 
 source "drivers/adc/Kconfig.npcx"
 
+source "drivers/adc/Kconfig.cc32xx"
+
 endif # ADC
