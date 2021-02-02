@@ -306,45 +306,44 @@ set(SHIELD-NOTFOUND ${SHIELD_AS_LIST})
 # When found, use that path to infer the ARCH we are building for.
 foreach(root ${BOARD_ROOT})
   set(shield_dir ${root}/boards/shields)
-  # Match the .overlay files in the shield directories to make sure we are
-  # finding shields, e.g. x_nucleo_iks01a1/x_nucleo_iks01a1.overlay
-  file(GLOB_RECURSE shields_refs_list
-    RELATIVE ${shield_dir}
-    ${shield_dir}/*/*.overlay
-    )
+  # Match the Kconfig.shield files in the shield directories to make sure we are
+  # finding shields, e.g. x_nucleo_iks01a1/Kconfig.shield
+  file(GLOB_RECURSE shields_refs_list ${shield_dir}/*/Kconfig.shield)
 
   # The above gives a list like
-  # x_nucleo_iks01a1/x_nucleo_iks01a1.overlay;x_nucleo_iks01a2/x_nucleo_iks01a2.overlay
-  # we construct a list of shield names by extracting file name and
-  # removing the extension.
+  # x_nucleo_iks01a1/Kconfig.shield;x_nucleo_iks01a2/Kconfig.shield
+  # we construct a list of shield names by extracting the folder and find
+  # and overlay files in there. Each overlay corresponds to a shield.
+  # We obtain the shield name by removing the overlay extension.
   unset(SHIELD_LIST)
-  foreach(shield_path ${shields_refs_list})
-    get_filename_component(shield ${shield_path} NAME_WE)
-    list(APPEND SHIELD_LIST ${shield})
+  foreach(shields_refs ${shields_refs_list})
+    get_filename_component(shield_path ${shields_refs} DIRECTORY)
+    file(GLOB shield_overlays RELATIVE ${shield_path} ${shield_path}/*.overlay)
+    foreach(overlay ${shield_overlays})
+      get_filename_component(shield ${overlay} NAME_WE)
+      list(APPEND SHIELD_LIST ${shield})
+      set(SHIELD_DIR_${shield} ${shield_path})
+    endforeach()
   endforeach()
 
   if(DEFINED SHIELD)
     foreach(s ${SHIELD_AS_LIST})
-      list(FIND SHIELD_LIST ${s} _idx)
-      if (_idx EQUAL -1)
+      if(NOT ${s} IN_LIST SHIELD_LIST)
         continue()
       endif()
 
       list(REMOVE_ITEM SHIELD-NOTFOUND ${s})
 
-      list(GET shields_refs_list ${_idx} s_path)
-      get_filename_component(s_dir ${s_path} DIRECTORY)
-
       # if shield config flag is on, add shield overlay to the shield overlays
       # list and dts_fixup file to the shield fixup file
       list(APPEND
         shield_dts_files
-        ${shield_dir}/${s_path}
+        ${SHIELD_DIR_${s}}/${s}.overlay
         )
 
       list(APPEND
         shield_dts_fixups
-        ${shield_dir}/${s_dir}/dts_fixup.h
+        ${SHIELD_DIR_${s}}/dts_fixup.h
         )
 
       # search for shield/shield.conf file
@@ -352,15 +351,15 @@ foreach(root ${BOARD_ROOT})
         # add shield.conf to the shield config list
         list(APPEND
           shield_conf_files
-          ${shield_dir}/${s_dir}/${s}.conf
+          ${SHIELD_DIR_${s}}/${s}.conf
           )
       endif()
 
-      zephyr_file(CONF_FILES ${shield_dir}/${s_dir}/boards
+      zephyr_file(CONF_FILES ${SHIELD_DIR_${s}}/boards
                   DTS   shield_dts_files
                   KCONF shield_conf_files
       )
-      zephyr_file(CONF_FILES ${shield_dir}/${s_dir}/boards/${s}
+      zephyr_file(CONF_FILES ${SHIELD_DIR_${s}}/boards/${s}
                   DTS   shield_dts_files
                   KCONF shield_conf_files
       )
