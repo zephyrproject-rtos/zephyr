@@ -273,11 +273,13 @@ void test_mkdir(void)
 void test_opendir(void)
 {
 	int ret;
-	struct fs_dir_t dirp;
+	struct fs_dir_t dirp, dirp2, dirp3;
 
 	TC_PRINT("\nopendir tests:\n");
 
 	fs_dir_t_init(&dirp);
+	fs_dir_t_init(&dirp2);
+	fs_dir_t_init(&dirp3);
 
 	TC_PRINT("Test null path\n");
 	ret = fs_opendir(NULL, NULL);
@@ -303,11 +305,11 @@ void test_opendir(void)
 	ret = fs_opendir(&dirp, "/");
 	zassert_equal(ret, 0, "Fail to open root dir");
 
-	ret = fs_opendir(&dirp, TEST_DIR);
+	ret = fs_opendir(&dirp2, TEST_DIR);
 	zassert_equal(ret, 0, "Fail to open dir");
 
 	TC_PRINT("Open same directory multi times\n");
-	ret = fs_opendir(&dirp, TEST_DIR);
+	ret = fs_opendir(&dirp3, TEST_DIR);
 	zassert_not_equal(ret, 0, "Can't reopen an opened dir");
 }
 
@@ -369,6 +371,7 @@ static int _test_lsdir(const char *path)
 	}
 
 	TC_PRINT("read an opened dir\n");
+	fs_dir_t_init(&dirp);
 	ret = fs_opendir(&dirp, path);
 	if (ret) {
 		if (path) {
