@@ -1086,7 +1086,7 @@ if(NOT CONFIG_BUILD_NO_GAP_FILL)
 endif()
 
 if(CONFIG_OUTPUT_PRINT_MEMORY_USAGE)
-  target_link_libraries(${ZEPHYR_PREBUILT_EXECUTABLE} $<TARGET_PROPERTY:linker,memusage>)
+  target_link_libraries(${logical_target_for_zephyr_elf} $<TARGET_PROPERTY:linker,memusage>)
 
   get_property(memusage_build_command TARGET bintools PROPERTY memusage_command)
   if(memusage_build_command)
