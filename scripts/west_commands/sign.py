@@ -213,7 +213,7 @@ class ImgtoolSigner(Signer):
         args = command.args
         b = pathlib.Path(build_dir)
 
-        tool_path = self.find_imgtool(command, args)
+        imgtool = self.find_imgtool(command, args)
         # The vector table offset is set in Kconfig:
         vtoff = self.get_cfg(command, bcfg, 'CONFIG_ROM_START_OFFSET')
         # Flash device write alignment and the partition's slot size
@@ -259,11 +259,11 @@ class ImgtoolSigner(Signer):
         # We provide a default --version in case the user is just
         # messing around and doesn't want to set one. It will be
         # overridden if there is a --version in args.tool_args.
-        sign_base = [tool_path, 'sign',
-                     '--version', '0.0.0+0',
-                     '--align', str(align),
-                     '--header-size', str(vtoff),
-                     '--slot-size', str(size)]
+        sign_base = imgtool + ['sign',
+                               '--version', '0.0.0+0',
+                               '--align', str(align),
+                               '--header-size', str(vtoff),
+                               '--slot-size', str(size)]
         sign_base.extend(args.tool_args)
 
         if not args.quiet:
@@ -291,13 +291,13 @@ class ImgtoolSigner(Signer):
             command.check_force(shutil.which(args.tool_path),
                                 '--tool-path {}: not an executable'.
                                 format(args.tool_path))
-            tool_path = args.tool_path
-        else:
-            tool_path = shutil.which('imgtool') or shutil.which('imgtool.py')
-            if not tool_path:
-                log.die('imgtool not found; either install it',
-                        '(e.g. "pip3 install imgtool") or provide --tool-path')
-        return tool_path
+            return [args.tool_path]
+
+        imgtool = shutil.which('imgtool') or shutil.which('imgtool.py')
+        if not imgtool:
+            log.die('imgtool not found; either install it',
+                    '(e.g. "pip3 install imgtool") or provide --tool-path')
+        return [imgtool]
 
     @staticmethod
     def get_cfg(command, bcfg, item):
