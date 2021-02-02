@@ -134,6 +134,4 @@ source "drivers/serial/Kconfig.npcx"
 
 source "drivers/serial/Kconfig.apbuart"
 
-source "drivers/serial/Kconfig.digilent"
-
 endif # SERIAL

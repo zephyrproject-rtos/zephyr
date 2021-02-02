@@ -92,7 +92,7 @@
         };
 
         uart0: serial@10000000 {
-            compatible = "digi_16550", "uart0";
+            compatible = "ns16550", "uart0";
             reg = <0x10000000 0x1000>;
             clock-frequency = <25000000>;
             current-speed = <115200>;
