@@ -139,16 +139,16 @@ void main(void)
 					((CharCtr < DataLength) && (CharCtr < MAX_DATA_LEN));
 						CharCtr++) {
 				switch (CharCtr & 0x0F) {
-				case  0:	/* A line is 16 bytes.  Put "address" within packet at beginning of line */
+				case  0:	/* A line is 16 bytes.  Put "address" at beginning of line */
 					printk("\n  0x%4.4X - ", CharCtr);
 					break;
 
-				case  4:	/* Small visual cue at the quarter line marks - 4th and 12th byte */
+				case  4:	/* Small visual cue at the quarter line marks */
 				case 12:
 					printk(" ");
 					break;
 
-				case  8:	/* Larger visual cue at the half line mark - 8th byte */
+				case  8:	/* Larger visual cue at the half line mark */
 					printk("- ");
 					break;
 				}
