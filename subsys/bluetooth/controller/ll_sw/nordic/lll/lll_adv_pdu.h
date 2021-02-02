@@ -91,6 +91,10 @@ static inline struct pdu_adv *lll_adv_aux_data_curr_get(struct lll_adv_aux *lll)
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
 int lll_adv_and_extra_data_release(struct lll_adv_pdu *pdu);
 
+#if defined(CONFIG_BT_CTLR_ADV_SYNC_PDU_BACK2BACK)
+void lll_adv_sync_pdu_b2b_update(struct lll_adv_sync *lll, uint8_t idx);
+#endif
+
 struct pdu_adv *lll_adv_pdu_and_extra_data_alloc(struct lll_adv_pdu *pdu,
 						 void **extra_data,
 						 uint8_t *idx);

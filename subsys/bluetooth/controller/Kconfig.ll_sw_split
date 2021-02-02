@@ -172,6 +172,26 @@ config BT_CTLR_ADV_PDU_LINK
 	  is required to enable advertising data trains (i.e. transmission of
 	  AUX_CHAIN_IND).
 
+config BT_CTLR_ADV_SYNC_PDU_BACK2BACK
+	bool "Enable back-to-back transmission of periodic advertising trains"
+	depends on BT_CTLR_ADV_PERIODIC
+	select BT_CTLR_ADV_PDU_LINK
+	help
+	  Enables transmission of AUX_CHAIN_IND in periodic advertising train by
+	  sending each AUX_CHAIN_IND one after another back-to-back.
+	  Note, consecutive AUX_CHAIN_IND packets are not scheduled but sent at
+	  a constant offset on a best effort basis. This means advertising train can
+	  be preempted by other event at any time.
+
+config BT_CTLR_ADV_SYNC_PDU_BACK2BACK_AFS
+	int "AUX Frame Space for back-to-back transmission of periodic advertising trains"
+	depends on BT_CTLR_ADV_SYNC_PDU_BACK2BACK
+	default 300
+	range 300 1000
+	help
+	  Specific AUX Frame Space to be used for back-to-back transmission of
+	  periodic advertising trains. Time specified in microseconds.
+
 config BT_CTLR_ADV_DATA_BUF_MAX
 	int "Advertising Data Maximum Buffers"
 	depends on BT_BROADCASTER
