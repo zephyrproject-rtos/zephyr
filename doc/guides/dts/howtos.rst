@@ -202,6 +202,8 @@ Here are some ways to set it:
 #. create a ``boards/<BOARD>_<revision>.overlay`` file in the application
    folder for the current board revision. This requires that the board supports
    multiple revisions, see :ref:`porting_board_revisions`.
+   The ``boards/<BOARD>_<revision>.overlay`` file will be merged with
+   ``boards/<BOARD>.overlay`` if this file also exists.
 #. create a ``boards/<BOARD>.overlay`` file in the application
    folder, for the current board
 #. create a ``<BOARD>.overlay`` file in the application folder
