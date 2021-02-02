@@ -526,9 +526,11 @@ static inline enum net_verdict fragment_add_to_cache(struct net_pkt *pkt)
 	fragment_append(cache->pkt, frag);
 
 	if (fragment_cached_pkt_len(cache->pkt) == cache->size) {
-		/* Assign buffer back to input packet. */
-		pkt->buffer = cache->pkt->buffer;
-		cache->pkt->buffer = NULL;
+		if (!first_frag) {
+			/* Assign buffer back to input packet. */
+			pkt->buffer = cache->pkt->buffer;
+			cache->pkt->buffer = NULL;
+		}
 
 		fragment_reconstruct_packet(pkt);
 
