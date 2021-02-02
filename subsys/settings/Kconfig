@@ -72,6 +72,13 @@ config SETTINGS_NONE
 	bool "NONE"
 	help
 	  No storage back-end.
+
+config SETTINGS_EEPROM
+	bool "EEPROM storage support"
+	depends on EEPROM
+	help
+	  Enables EEPROM storage support
+
 endchoice
 
 config SETTINGS_FCB_NUM_AREAS
