@@ -31,6 +31,21 @@ extern uint32_t __device_busy_end[];
 #define DEVICE_BUSY_SIZE (__device_busy_end - __device_busy_start)
 #endif
 
+static inline void device_pm_state_init(const struct device *dev)
+{
+#ifdef CONFIG_PM_DEVICE
+	*dev->pm = (struct device_pm){
+		.usage = ATOMIC_INIT(0),
+		.lock = Z_SEM_INITIALIZER(dev->pm->lock, 1, 1),
+		.signal = K_POLL_SIGNAL_INITIALIZER(dev->pm->signal),
+		.event = K_POLL_EVENT_INITIALIZER(
+			K_POLL_TYPE_SIGNAL,
+			K_POLL_MODE_NOTIFY_ONLY,
+			&dev->pm->signal),
+	};
+#endif /* CONFIG_PM_DEVICE */
+}
+
 /**
  * @brief Initialize state for all static devices.
  *
@@ -42,6 +57,7 @@ void z_device_state_init(void)
 	const struct device *dev = __device_start;
 
 	while (dev < __device_end) {
+		device_pm_state_init(dev);
 		z_object_init(dev);
 		++dev;
 	}
