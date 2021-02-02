@@ -13,7 +13,9 @@
 #ifndef ZEPHYR_DRIVERS_CAN_SOCKET_CAN_GENERIC_H_
 #define ZEPHYR_DRIVERS_CAN_SOCKET_CAN_GENERIC_H_
 
+#define SOCKET_CAN_NAME_0 "SOCKET_CAN_0"
 #define SOCKET_CAN_NAME_1 "SOCKET_CAN_1"
+#define SOCKET_CAN_NAME_2 "SOCKET_CAN_2"
 #define SEND_TIMEOUT K_MSEC(100)
 #define RX_THREAD_STACK_SIZE 512
 #define RX_THREAD_PRIORITY 2
@@ -116,8 +118,6 @@ static struct canbus_api socket_can_api = {
 	.close = socket_can_close,
 	.setsockopt = socket_can_setsockopt,
 };
-
-static struct socket_can_context socket_can_context_1;
 
 static inline void rx_thread(void *ctx, void *unused1, void *unused2)
 {
