@@ -188,7 +188,8 @@ features:
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
-
+| I2C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -208,6 +209,8 @@ Default Zephyr Peripheral Mapping:
 .. rst-class:: rst-columns
 
 - LPUART_1 TX/RX : PA3/PA2 (ST-Link Virtual Port Com)
+- I2C_2_SCL : PA12 (Arduino I2C)
+- I2C_2_SDA : PA11 (Arduino I2C)
 
 System Clock
 ------------

@@ -10,4 +10,6 @@ ram: 64
 flash: 256
 supported:
   - gpio
+  - i2c
   - arduino_gpio
+  - arduino_i2c
