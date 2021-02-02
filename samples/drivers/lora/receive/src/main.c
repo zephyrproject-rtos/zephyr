@@ -114,7 +114,9 @@ void main(void)
 			 */
 
 			/* Some data received is not string-safe, so sanitize string for printing */
-			for (CharCtr = 0; ((CharCtr < DataLength) && (CharCtr < MAX_DATA_LEN)); CharCtr++) {
+			for (CharCtr = 0;
+					((CharCtr < DataLength) && (CharCtr < MAX_DATA_LEN));
+						CharCtr++) {
 				if  (isprint(RawData[CharCtr])) {
 					SafeData[CharCtr] = RawData[CharCtr];
 				} else {
@@ -133,7 +135,9 @@ void main(void)
 
 			/* Print hex dump of byte data */
 			printk("As hex bytes:");
-			for (CharCtr = 0; ((CharCtr < DataLength) && (CharCtr < MAX_DATA_LEN)); CharCtr++) {
+			for (CharCtr = 0;
+					((CharCtr < DataLength) && (CharCtr < MAX_DATA_LEN));
+						CharCtr++) {
 				if  ((CharCtr & 0x0F) == 0) {
 					printk("\n  0x%4.4X - ", CharCtr);
 				} else {
