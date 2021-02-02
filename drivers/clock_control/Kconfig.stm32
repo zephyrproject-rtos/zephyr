@@ -39,7 +39,7 @@ config CLOCK_STM32_SYSCLK_SRC_HSI
 
 config CLOCK_STM32_SYSCLK_SRC_MSI
 	bool "MSI"
-	depends on SOC_SERIES_STM32L0X || SOC_SERIES_STM32L4X || SOC_SERIES_STM32L5X || SOC_SERIES_STM32WBX
+	depends on SOC_SERIES_STM32L0X || SOC_SERIES_STM32L4X || SOC_SERIES_STM32L5X || SOC_SERIES_STM32WBX || SOC_SERIES_STM32WLX
 	help
 	  Use MSI as source of SYSCLK
 
@@ -95,7 +95,7 @@ choice
 
 config CLOCK_STM32_PLL_SRC_MSI
 	bool "MSI"
-	depends on SOC_SERIES_STM32L0X || SOC_SERIES_STM32L4X || SOC_SERIES_STM32L5X || SOC_SERIES_STM32WBX
+	depends on SOC_SERIES_STM32L0X || SOC_SERIES_STM32L4X || SOC_SERIES_STM32L5X || SOC_SERIES_STM32WBX || SOC_SERIES_STM32WLX
 	help
 	  Use MSI as source of PLL
 
@@ -132,7 +132,7 @@ source "drivers/clock_control/Kconfig.stm32f1"
 source "drivers/clock_control/Kconfig.stm32f2_f4_f7"
 source "drivers/clock_control/Kconfig.stm32h7"
 source "drivers/clock_control/Kconfig.stm32l0_l1"
-source "drivers/clock_control/Kconfig.stm32l4_l5_wb"
+source "drivers/clock_control/Kconfig.stm32l4_l5_wb_wl"
 source "drivers/clock_control/Kconfig.stm32g0"
 source "drivers/clock_control/Kconfig.stm32g4"
 
@@ -144,7 +144,7 @@ config CLOCK_STM32_AHB_PRESCALER
 	int "AHB prescaler"
 	default 1
 	range 1 512
-	depends on !SOC_SERIES_STM32WBX
+	depends on !SOC_SERIES_STM32WBX && !SOC_SERIES_STM32WLX
 	help
 	  AHB prescaler, allowed values: 1, 2, 4, 8, 16, 64, 128,
 	  256, 512.
@@ -170,19 +170,28 @@ config CLOCK_STM32_CPU1_PRESCALER
 	int "CPU1 HCLK prescaler"
 	default 1
 	range 1 512
-	depends on SOC_SERIES_STM32WBX
+	depends on SOC_SERIES_STM32WBX || SOC_SERIES_STM32WLX
 	help
-	  CPU1 HCLK prescaler, allowed values: 1, 2, 4, 8, 16, 64, 128,
-	  256, 512.
+	  CPU1 HCLK prescaler, allowed values: 1, 2, 3, 4, 5, 6, 8, 10, 16, 32,
+	  64, 128, 256, 512.
 
 config CLOCK_STM32_CPU2_PRESCALER
 	int "CPU2 HCLK prescaler"
 	default 1
 	range 1 512
-	depends on SOC_SERIES_STM32WBX
+	depends on SOC_SERIES_STM32WBX || SOC_SERIES_STM32WLX
 	help
-	  CPU2 HCLK prescaler, allowed values: 1, 2, 4, 8, 16, 64, 128,
-	  256, 512.
+	  CPU2 HCLK prescaler, allowed values: 1, 2, 3, 4, 5, 6, 8, 10, 16, 32,
+	  64, 128, 256, 512.
+
+config CLOCK_STM32_AHB3_PRESCALER
+	int "AHB3 HCLK prescaler"
+	default 1
+	range 1 512
+	depends on SOC_SERIES_STM32WLX
+	help
+	  HCLK4 prescaler, allowed values: 1, 2, 3, 4, 5, 6, 8, 10, 16, 32,
+	  64, 128, 256, 512.
 
 config CLOCK_STM32_AHB4_PRESCALER
 	int "AHB4 HCLK prescaler"
@@ -190,8 +199,8 @@ config CLOCK_STM32_AHB4_PRESCALER
 	range 1 512
 	depends on SOC_SERIES_STM32WBX
 	help
-	  HCLK4 prescaler, allowed values: 1, 2, 4, 8, 16, 64, 128,
-	  256, 512.
+	  HCLK4 prescaler, allowed values: 1, 2, 3, 4, 5, 6, 8, 10, 16, 32,
+	  64, 128, 256, 512.
 
 endif # !SOC_SERIES_STM32H7X
 
