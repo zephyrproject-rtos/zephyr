@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
+import os
 from unittest.mock import patch, call
 
 import pytest
@@ -54,6 +55,11 @@ def find_device_patch():
 def require_patch(program):
     assert program in [DFU_UTIL, TEST_EXE]
 
+def os_path_isfile_patch(filename):
+    if filename == RC_KERNEL_BIN:
+        return True
+    return os.path.isfile(filename)
+
 def id_fn(tc):
     return 'exe={},alt={},dfuse_config={},img={}'.format(*tc)
 
@@ -75,7 +81,8 @@ def test_dfu_util_init(cc, req, find_device, tc, runner_config):
     exe, alt, dfuse_config, img = tc
     runner = DfuUtilBinaryRunner(runner_config, TEST_PID, alt, img, exe=exe,
                                  dfuse_config=dfuse_config)
-    runner.run('flash')
+    with patch('os.path.isfile', side_effect=os_path_isfile_patch):
+        runner.run('flash')
     assert find_device.called
     assert req.called_with(exe)
     assert cc.call_args_list == [call(EXPECTED_COMMAND[tc])]
@@ -119,7 +126,8 @@ def test_dfu_util_create(cc, req, gfa, find_device, bcfg, tc, runner_config):
     DfuUtilBinaryRunner.add_parser(parser)
     arg_namespace = parser.parse_args(args)
     runner = DfuUtilBinaryRunner.create(runner_config, arg_namespace)
-    runner.run('flash')
+    with patch('os.path.isfile', side_effect=os_path_isfile_patch):
+        runner.run('flash')
 
     if dfuse:
         cfg = DfuSeConfig(address=TEST_DFUSE_ADDR, options=modifiers or '')

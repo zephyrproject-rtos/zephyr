@@ -133,10 +133,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
             self.do_debugserver(**kwargs)
 
     def do_flash(self, **kwargs):
-        if not path.isfile(self.hex_name):
-            raise ValueError('Cannot flash; hex file ({}) does not exist. '.
-                             format(self.hex_name) +
-                             'Try enabling CONFIG_BUILD_OUTPUT_HEX.')
+        self.ensure_output('hex')
         if self.load_cmd is None:
             raise ValueError('Cannot flash; load command is missing')
         if self.verify_cmd is None:

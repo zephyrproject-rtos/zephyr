@@ -65,6 +65,11 @@ def os_path_getsize_patch(filename):
         return TEST_BIN_SIZE
     return os.path.isfile(filename)
 
+def os_path_isfile_patch(filename):
+    if filename == RC_KERNEL_BIN:
+        return True
+    return os.path.isfile(filename)
+
 @pytest.mark.parametrize('action', EXPECTED_COMMANDS)
 @patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
 @patch('runners.core.ZephyrBinaryRunner.check_call')
@@ -80,7 +85,8 @@ def test_stm32flash_init(cc, req, action, runner_config):
                  serial_mode=TEST_SERIAL_MODE, reset=TEST_RESET, verify=TEST_VERIFY)
 
     with patch('os.path.getsize', side_effect=os_path_getsize_patch):
-        runner.run('flash')
+        with patch('os.path.isfile', side_effect=os_path_isfile_patch):
+            runner.run('flash')
     assert cc.call_args_list == [call(x) for x in EXPECTED_COMMANDS[action]]
 
 @pytest.mark.parametrize('action', EXPECTED_COMMANDS)
@@ -99,5 +105,6 @@ def test_stm32flash_create(cc, req, action, runner_config):
     arg_namespace = parser.parse_args(args)
     runner = Stm32flashBinaryRunner.create(runner_config, arg_namespace)
     with patch('os.path.getsize', side_effect=os_path_getsize_patch):
-        runner.run('flash')
+        with patch('os.path.isfile', side_effect=os_path_isfile_patch):
+            runner.run('flash')
     assert cc.call_args_list == [call(x) for x in EXPECTED_COMMANDS[action]]

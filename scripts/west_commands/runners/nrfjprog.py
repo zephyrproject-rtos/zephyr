@@ -5,7 +5,6 @@
 
 '''Runner for flashing with nrfjprog.'''
 
-import os
 import shlex
 import subprocess
 import sys
@@ -294,11 +293,8 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
     def do_run(self, command, **kwargs):
         self.require('nrfjprog')
         self.build_conf = BuildConfiguration(self.cfg.build_dir)
-        if not os.path.isfile(self.hex_):
-            raise RuntimeError(
-                f'Cannot flash; hex file ({self.hex_}) does not exist. '
-                'Try enabling CONFIG_BUILD_OUTPUT_HEX.')
 
+        self.ensure_output('hex')
         self.ensure_snr()
         self.ensure_family()
         self.check_force_uicr()

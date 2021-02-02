@@ -155,6 +155,7 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
             self.check_call(cmd_stty)
 
     def make_bossac_cmd(self):
+        self.ensure_output('bin')
         cmd_flash = [self.bossac, '-p', self.port, '-R', '-e', '-w', '-v',
                      '-b', self.cfg.bin_file]
 
