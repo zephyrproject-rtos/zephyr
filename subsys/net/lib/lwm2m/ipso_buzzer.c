@@ -21,6 +21,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_object.h"
 #include "lwm2m_engine.h"
 
+#define BUZZER_VERSION_MAJOR 1
+#define BUZZER_VERSION_MINOR 0
+
 /* resource IDs */
 #define BUZZER_ON_OFF_ID		5850
 #define BUZZER_LEVEL_ID			5548
@@ -246,6 +249,9 @@ static struct lwm2m_engine_obj_inst *buzzer_create(uint16_t obj_inst_id)
 static int ipso_buzzer_init(const struct device *dev)
 {
 	buzzer.obj_id = IPSO_OBJECT_BUZZER_ID;
+	buzzer.version_major = BUZZER_VERSION_MAJOR;
+	buzzer.version_minor = BUZZER_VERSION_MINOR;
+	buzzer.is_core = false;
 	buzzer.fields = fields;
 	buzzer.field_count = ARRAY_SIZE(fields);
 	buzzer.max_instance_count = ARRAY_SIZE(inst);

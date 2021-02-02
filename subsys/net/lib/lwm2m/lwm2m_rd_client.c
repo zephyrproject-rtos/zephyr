@@ -714,7 +714,7 @@ static int sm_send_registration(bool send_obj_support_data,
 
 	if (!sm_is_registered()) {
 		snprintk(query_buffer, sizeof(query_buffer) - 1,
-			"lwm2m=%s", LWM2M_PROTOCOL_VERSION);
+			"lwm2m=%s", LWM2M_PROTOCOL_VERSION_STRING);
 		ret = coap_packet_append_option(
 			&msg->cpkt, COAP_OPTION_URI_QUERY,
 			query_buffer, strlen(query_buffer));

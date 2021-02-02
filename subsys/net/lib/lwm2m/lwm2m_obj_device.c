@@ -23,6 +23,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_object.h"
 #include "lwm2m_engine.h"
 
+#define DEVICE_VERSION_MAJOR 1
+#define DEVICE_VERSION_MINOR 0
+
 /* Device resource IDs */
 #define DEVICE_MANUFACTURER_ID			0
 #define DEVICE_MODEL_NUMBER_ID			1
@@ -260,6 +263,9 @@ static int lwm2m_device_init(const struct device *dev)
 
 	/* initialize the device field data */
 	device.obj_id = LWM2M_OBJECT_DEVICE_ID;
+	device.version_major = DEVICE_VERSION_MAJOR;
+	device.version_minor = DEVICE_VERSION_MINOR;
+	device.is_core = true;
 	device.fields = fields;
 	device.field_count = ARRAY_SIZE(fields);
 	device.max_instance_count = 1U;
