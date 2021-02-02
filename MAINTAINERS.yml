@@ -210,7 +210,6 @@ C library:
     status: orphaned
     collaborators:
          - nashif
-         - andrewboie
     files:
          - lib/libc/
          - tests/lib/c_lib/
@@ -228,8 +227,9 @@ CMSIS API layer:
 
 Common arch:
     status: maintained
-    maintainers:
-        - andrewboie
+    collaborators:
+        - dcpleung
+        - nashif
     files:
         - arch/common/
         - include/arch/common/
@@ -299,6 +299,7 @@ Devicetree:
         - tests/lib/devicetree/
         - dts/bindings/test/
         - doc/guides/dts/
+        - include/devicetree/
     labels:
         - "area: Devicetree"
 
@@ -598,8 +599,8 @@ Documentation:
 
 "Drivers: IPM":
     status: maintained
-    maintainers:
-        - andrewboie
+    collaborators:
+        - dcpleung
     files:
         - drivers/ipm/
     description: >-
@@ -673,7 +674,9 @@ Documentation:
     maintainers:
         - dcpleung
     collaborators:
-        - andrewboie
+        - jhedberg
+        - finikorg
+        - tbursztyka
     files:
         - drivers/pcie/
         - include/drivers/pcie/
@@ -730,8 +733,8 @@ Documentation:
     files:
         - drivers/pwm/
         - dts/bindings/pwm/
-        - include/drivers/pwm.h
         - tests/drivers/pwm/
+        - include/*/pwms.h
     labels:
         - "area: PWM"
 
@@ -877,7 +880,9 @@ Kernel:
     maintainers:
         - andyross
     collaborators:
-        - andrewboie
+        - nashif
+        - ceolin
+        - dcpleung
     files:
         - doc/reference/kernel/
         - include/kernel*.h
@@ -892,7 +897,7 @@ Base OS:
     maintainers:
         - andyross
     collaborators:
-        - andrewboie
+        - dcpleung
         - nashif
     files:
         - include/sys/
@@ -1199,6 +1204,34 @@ Synopsys Platforms:
     labels:
         - "platform: Synopsys"
 
+Nuvoton Platforms:
+    status: maintained
+    collaborators:
+        - MulinChao
+        - sjg20
+        - jackrosenthal
+    files:
+        - soc/arm/nuvoton/
+        - boards/arm/npcx*/
+        - dts/arm/nuvoton/
+        - dts/bindings/*/nuvoton/*
+        - drivers/*/*_npcx*
+    labels:
+        - "platform: Nuvoton"
+
+SiLabs Platforms:
+    status: maintained
+    collaborators:
+        - chrta
+    files:
+        - soc/arm/silabs_*/
+        - boards/arm/ef*/
+        - dts/arm/silabs/
+        - dts/bindings/*/silabs*
+        - drivers/*/*_gecko*
+    labels:
+        - "platform: SiLabs"
+
 Intel Platforms (X86):
     status: maintained
     maintainers:
@@ -1347,8 +1380,9 @@ USB:
 
 Userspace:
     status: maintained
-    maintainers:
-        - andrewboie
+    collaborators:
+        - dcpleung
+        - ioannisg
     files:
         - doc/reference/usermode/kernelobjects.rst
         - include/app_memory/
@@ -1357,6 +1391,12 @@ Userspace:
         - samples/userspace/
         - include/syscall.h
         - kernel/userspace*
+        - scripts/gen_app_partitions.py
+        - scripts/gen_kobject_list.py
+        - scripts/gen_syscalls.py
+        - scripts/process_gperf.py
+        - scripts/gen_relocate_app.py
+        - include/sys/kobject.h
     labels:
         - "area: Userspace"
 
@@ -1392,7 +1432,7 @@ Xtensa arch:
         - dcpleung
     collaborators:
         - andyross
-        - andrewboie
+        - nashif
     files:
         - arch/xtensa/
         - include/arch/xtensa/
@@ -1408,7 +1448,7 @@ x86 arch:
     collaborators:
         - andyross
         - nashif
-        - andrewboie
+        - dcpleung
         - ceolin
         - jenmwms
         - aasthagr
