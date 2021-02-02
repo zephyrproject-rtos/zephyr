@@ -923,12 +923,12 @@ static int mcp2515_init(const struct device *dev)
 		}
 	}
 
-	ret = can_set_mode(dev, CAN_NORMAL_MODE);
+	ret = can_set_timing(dev, &timing, NULL);
 	if (ret) {
 		return ret;
 	}
 
-	ret = can_set_timing(dev, &timing, NULL);
+	ret = can_set_mode(dev, CAN_NORMAL_MODE);
 
 	return ret;
 }
