@@ -269,7 +269,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	lll->chan = aux_ptr->chan_idx;
 	lll->phy = BIT(aux_ptr->phy);
 
-	aux_offset_us = ftr->radio_end_us - PKT_AC_US(pdu->len, 0, phy);
+	aux_offset_us = ftr->radio_end_us - PKT_AC_US(pdu->len, phy);
 	if (aux_ptr->offs_units) {
 		lll->window_size_us = OFFS_UNIT_300_US;
 	} else {
@@ -306,7 +306,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
 				       ready_delay_us +
 				       PKT_AC_US(PDU_AC_EXT_PAYLOAD_SIZE_MAX,
-						 0, lll->phy) +
+						 lll->phy) +
 				       EVENT_OVERHEAD_END_US);
 
 	ticks_slot_offset = MAX(aux->ull.ticks_active_to_start,

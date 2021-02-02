@@ -164,7 +164,7 @@
 
 #define PKT_US(octets, phy) PKT_DC_US((octets), (PDU_MIC_SIZE), (phy))
 
-#define PKT_AC_US(octets, mic, phy) PKT_DC_US((octets), (mic), (phy))
+#define PKT_AC_US(octets, phy) PKT_DC_US((octets), 0, (phy))
 
 #define PKT_BIS_US(octets, mic, phy) PKT_DC_US((octets), (mic), (phy))
 
