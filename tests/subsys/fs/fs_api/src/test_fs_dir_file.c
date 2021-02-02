@@ -308,9 +308,11 @@ void test_opendir(void)
 	ret = fs_opendir(&dirp2, TEST_DIR);
 	zassert_equal(ret, 0, "Fail to open dir");
 
-	TC_PRINT("Open same directory multi times\n");
+	mock_opendir_result(-EIO);
+	TC_PRINT("Transfer underlying FS error\n");
 	ret = fs_opendir(&dirp3, TEST_DIR);
-	zassert_not_equal(ret, 0, "Can't reopen an opened dir");
+	mock_opendir_result(0);
+	zassert_equal(ret, -EIO, "FS error not transferred\n");
 }
 
 /**
