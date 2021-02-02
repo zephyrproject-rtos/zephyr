@@ -478,17 +478,16 @@ The CACHED_CONF_FILE is internal Zephyr variable used between CMake runs. \
 To change CONF_FILE, use the CONF_FILE variable.")
 unset(CONF_FILE CACHE)
 
+zephyr_file(CONF_FILES ${APPLICATION_SOURCE_DIR}/boards DTS APP_BOARD_DTS)
+
 if(DTC_OVERLAY_FILE)
   # DTC_OVERLAY_FILE has either been specified on the cmake CLI or is already
   # in the CMakeCache.txt. This has precedence over the environment
   # variable DTC_OVERLAY_FILE
 elseif(DEFINED ENV{DTC_OVERLAY_FILE})
   set(DTC_OVERLAY_FILE $ENV{DTC_OVERLAY_FILE})
-elseif(EXISTS          ${APPLICATION_SOURCE_DIR}/boards/${BOARD}.overlay)
-  set(DTC_OVERLAY_FILE ${APPLICATION_SOURCE_DIR}/boards/${BOARD}.overlay)
-elseif((DEFINED BOARD_REVISION) AND
-       EXISTS          ${APPLICATION_SOURCE_DIR}/${BOARD}_${BOARD_REVISION_STRING}.overlay)
-  set(DTC_OVERLAY_FILE ${APPLICATION_SOURCE_DIR}/${BOARD}_${BOARD_REVISION_STRING}.overlay)
+elseif(APP_BOARD_DTS)
+  set(DTC_OVERLAY_FILE ${APP_BOARD_DTS})
 elseif(EXISTS          ${APPLICATION_SOURCE_DIR}/${BOARD}.overlay)
   set(DTC_OVERLAY_FILE ${APPLICATION_SOURCE_DIR}/${BOARD}.overlay)
 elseif(EXISTS          ${APPLICATION_SOURCE_DIR}/app.overlay)
