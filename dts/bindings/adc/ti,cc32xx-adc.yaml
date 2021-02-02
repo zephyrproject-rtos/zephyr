@@ -1,0 +1,21 @@
+# Copyright (c) 2021 Pavlo Hamov <pasha.gamov@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: cc32xx ADC node
+
+compatible: "ti,cc32xx-adc"
+
+include: adc-controller.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    "#io-channel-cells":
+      const: 1
+
+io-channel-cells:
+    - input
