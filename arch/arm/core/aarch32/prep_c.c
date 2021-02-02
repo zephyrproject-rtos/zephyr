@@ -44,11 +44,8 @@ void *_vector_table_pointer;
 
 #ifdef CONFIG_CPU_CORTEX_M_HAS_VTOR
 
-#ifdef CONFIG_XIP
 #define VECTOR_ADDRESS ((uintptr_t)_vector_start)
-#else
-#define VECTOR_ADDRESS CONFIG_SRAM_BASE_ADDRESS
-#endif
+
 static inline void relocate_vector_table(void)
 {
 	SCB->VTOR = VECTOR_ADDRESS & SCB_VTOR_TBLOFF_Msk;
