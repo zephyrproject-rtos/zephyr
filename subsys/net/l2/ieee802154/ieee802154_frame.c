@@ -89,10 +89,10 @@ struct ieee802154_fcf_seq *ieee802154_validate_fc_seq(uint8_t *buf, uint8_t **p_
 	return fs;
 }
 
-static inline struct ieee802154_address_field *
-validate_addr(uint8_t *buf, uint8_t **p_buf, uint8_t *length,
-	      enum ieee802154_addressing_mode mode,
-	      bool pan_id_compression)
+static inline bool validate_addr(uint8_t *buf, uint8_t **p_buf, uint8_t *length,
+				 enum ieee802154_addressing_mode mode,
+				 bool pan_id_compression,
+				 struct ieee802154_address_field **addr)
 {
 	uint8_t len = 0;
 
@@ -102,7 +102,8 @@ validate_addr(uint8_t *buf, uint8_t **p_buf, uint8_t *length,
 		buf, mode, pan_id_compression);
 
 	if (mode == IEEE802154_ADDR_MODE_NONE) {
-		return NULL;
+		*addr = NULL;
+		return true;
 	}
 
 	if (!pan_id_compression) {
@@ -117,13 +118,15 @@ validate_addr(uint8_t *buf, uint8_t **p_buf, uint8_t *length,
 	}
 
 	if (len > *length) {
-		return NULL;
+		return false;
 	}
 
 	*p_buf += len;
 	*length -= len;
 
-	return (struct ieee802154_address_field *)buf;
+	*addr = (struct ieee802154_address_field *)buf;
+
+	return true;
 }
 
 #ifdef CONFIG_NET_L2_IEEE802154_SECURITY
@@ -439,13 +442,15 @@ bool ieee802154_validate_frame(uint8_t *buf, uint8_t length,
 		return false;
 	}
 
-	mpdu->mhr.dst_addr = validate_addr(p_buf, &p_buf, &length,
-					   mpdu->mhr.fs->fc.dst_addr_mode,
-					   false);
-
-	mpdu->mhr.src_addr = validate_addr(p_buf, &p_buf, &length,
-					   mpdu->mhr.fs->fc.src_addr_mode,
-					   (mpdu->mhr.fs->fc.pan_id_comp));
+	if (!validate_addr(p_buf, &p_buf, &length,
+			   mpdu->mhr.fs->fc.dst_addr_mode,
+			   false, &mpdu->mhr.dst_addr) ||
+	    !validate_addr(p_buf, &p_buf, &length,
+			   mpdu->mhr.fs->fc.src_addr_mode,
+			   (mpdu->mhr.fs->fc.pan_id_comp),
+			   &mpdu->mhr.src_addr)) {
+		return false;
+	}
 
 #ifdef CONFIG_NET_L2_IEEE802154_SECURITY
 	if (mpdu->mhr.fs->fc.security_enabled) {
