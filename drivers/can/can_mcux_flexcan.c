@@ -820,11 +820,12 @@ static const struct can_driver_api mcux_flexcan_driver_api = {
 DT_INST_FOREACH_STATUS_OKAY(FLEXCAN_DEVICE_INIT_MCUX)
 
 #if defined(CONFIG_NET_SOCKETS_CAN)
-#include "socket_can_generic.h"						\
+#include "socket_can_generic.h"
 #define FLEXCAN_DEVICE_SOCKET_CAN(id)					\
+	static struct socket_can_context socket_can_context_##id;	\
 	static int socket_can_init_##id(const struct device *dev)	\
 	{								\
-		struct device *can_dev = DEVICE_DT_INST_GET(id);	\
+		const struct device *can_dev = DEVICE_DT_INST_GET(id);	\
 		struct socket_can_context *socket_context = dev->data;	\
 		LOG_DBG("Init socket CAN device %p (%s) for dev %p (%s)", \
 			dev, dev->name, can_dev, can_dev->name);	\

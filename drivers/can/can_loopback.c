@@ -303,6 +303,8 @@ DEVICE_DEFINE(can_loopback_1, CONFIG_CAN_LOOPBACK_DEV_NAME,
 
 #include "socket_can_generic.h"
 
+static struct socket_can_context socket_can_context_1;
+
 static int socket_can_init_1(const struct device *dev)
 {
 	const struct device *can_dev = DEVICE_GET(can_loopback_1);
