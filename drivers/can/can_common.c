@@ -216,7 +216,9 @@ static int can_calc_timing_int(uint32_t core_clock, struct can_timing *res,
 
 		if (sp_err < sp_err_min) {
 			sp_err_min = sp_err;
-			*res = tmp_res;
+			res->prop_seg = tmp_res.prop_seg;
+			res->phase_seg1 = tmp_res.phase_seg1;
+			res->phase_seg2 = tmp_res.phase_seg2;
 			res->prescaler = (uint16_t)prescaler;
 			if (sp_err == 0) {
 				/* No better result than a perfect match*/
