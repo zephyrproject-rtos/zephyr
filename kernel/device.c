@@ -32,6 +32,22 @@ extern uint32_t __device_busy_end[];
 #endif
 
 /**
+ * @brief Initialize state for all static devices.
+ *
+ * The state object is always zero-initialized, but this may not be
+ * sufficient.
+ */
+void z_device_state_init(void)
+{
+	const struct device *dev = __device_start;
+
+	while (dev < __device_end) {
+		z_object_init(dev);
+		++dev;
+	}
+}
+
+/**
  * @brief Execute all the init entry initialization functions at a given level
  *
  * @details Invokes the initialization routine for each init entry object
@@ -59,10 +75,6 @@ void z_sys_init_run_level(int32_t level)
 
 	for (entry = levels[level]; entry < levels[level+1]; entry++) {
 		const struct device *dev = entry->dev;
-
-		if (dev != NULL) {
-			z_object_init(dev);
-		}
 
 		if ((entry->init(dev) != 0) && (dev != NULL)) {
 			/* Initialization failed.
