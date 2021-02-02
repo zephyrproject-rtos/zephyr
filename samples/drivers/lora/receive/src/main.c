@@ -68,13 +68,13 @@ void main(void)
 
 	/* Print LoRa settings in use */
 	printk("Settings:\n");
-	printk("  Frequency                      = %d (Hz)\n", LoraConfig.frequency);
-	printk("  Bandwidth                      = %d (Hz or enum)\n", LoraConfig.bandwidth);
-	printk("  DataRate (spreading factor/SF) = %d\n", LoraConfig.datarate);
-	printk("  PreambleLen                    = %d\n", LoraConfig.preamble_len);
-	printk("  CodingRate                     = %d\n", LoraConfig.coding_rate);
-	printk("  TxPower                        = %d\n", LoraConfig.tx_power);
-	printk("  Tx                             = %d\n", LoraConfig.tx);
+	printk("  Frequency                      = %9d (Hz)\n", LoraConfig.frequency);
+	printk("  Bandwidth                      = %9d (Hz or enum)\n", LoraConfig.bandwidth);
+	printk("  DataRate (spreading factor/SF) = %9d\n", LoraConfig.datarate);
+	printk("  PreambleLen                    = %9d\n", LoraConfig.preamble_len);
+	printk("  CodingRate                     = %9d\n", LoraConfig.coding_rate);
+	printk("  TxPower                        = %9d\n", LoraConfig.tx_power);
+	printk("  Tx                             = %9d\n", LoraConfig.tx);
 	printk("\n");
 
 	/* Set the configuration of the LoRa receiver */
