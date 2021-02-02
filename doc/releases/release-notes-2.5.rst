@@ -234,6 +234,7 @@ Boards & SoC Support
 * Added support for these following shields:
 
   * Inventek es-WIFI shield
+  * Sharp memory display generic shield
 
 Drivers and Sensors
 *******************
