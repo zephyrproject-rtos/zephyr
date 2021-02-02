@@ -24,12 +24,6 @@
 	((__device_end - __device_start) / _DEVICE_STRUCT_SIZEOF)
 #define DEVICE_BITFIELD_SIZE	(((DEVICE_COUNT + 31) / 32) * 4)
 
-#define DEVICE_INIT_STATUS_BITFIELD() 		\
-		FILL(0x00);			\
-		__device_init_status_start = .; \
-		. = . + DEVICE_BITFIELD_SIZE;	\
-		__device_init_status_end = .;
-
 #ifdef CONFIG_PM_DEVICE
 #define DEVICE_BUSY_BITFIELD()			\
 		FILL(0x00);			\
@@ -53,7 +47,6 @@
 		CREATE_OBJ_LEVEL(device, APPLICATION)
 		CREATE_OBJ_LEVEL(device, SMP)
 		__device_end = .;
-		DEVICE_INIT_STATUS_BITFIELD()
 		DEVICE_BUSY_BITFIELD()
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 

@@ -293,6 +293,20 @@ struct device_pm {
  * before they are accessed.
  */
 struct device_state {
+	/** Non-negative result of initializing the device.
+	 *
+	 * The absolute value returned when the device initialization
+	 * function was invoked, or `UINT8_MAX` if the value exceeds
+	 * an 8-bit integer.  If initialized is also set, a zero value
+	 * indicates initialization succeeded.
+	 */
+	unsigned int init_res : 8;
+
+	/** Indicates the device initialization function has been
+	 * invoked.
+	 */
+	bool initialized : 1;
+
 #ifdef CONFIG_PM_DEVICE
 	/* Power management data */
 	struct device_pm pm;
