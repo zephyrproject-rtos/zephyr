@@ -14,12 +14,13 @@
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <arch/cpu.h>
+#include <offsets_short.h>
 
 .macro SMCCC instr
 	\instr  #0
 	ldr     x4, [sp]
-	stp     x0, x1, [x4]
-	stp     x2, x3, [x4, #16]
+	stp     x0, x1, [x4, __arm_smccc_res_t_a0_a1_OFFSET]
+	stp     x2, x3, [x4, __arm_smccc_res_t_a2_a3_OFFSET]
 	ret
 .endm
 

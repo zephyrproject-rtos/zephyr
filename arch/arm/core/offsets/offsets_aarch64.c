@@ -52,4 +52,13 @@ GEN_NAMED_OFFSET_SYM(_esf_t, x0, x0_x1);
 
 GEN_ABSOLUTE_SYM(___esf_t_SIZEOF, sizeof(_esf_t));
 
+#ifdef CONFIG_HAS_ARM_SMCCC
+
+#include <arch/arm/arm-smccc.h>
+
+GEN_NAMED_OFFSET_SYM(arm_smccc_res_t, a0, a0_a1);
+GEN_NAMED_OFFSET_SYM(arm_smccc_res_t, a2, a2_a3);
+
+#endif /* CONFIG_HAS_ARM_SMCCC */
+
 #endif /* _ARM_OFFSETS_INC_ */
