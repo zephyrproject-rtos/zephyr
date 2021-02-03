@@ -77,7 +77,7 @@ struct bme280_data {
 
 	uint8_t chip_id;
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 	uint32_t pm_state; /* Current power state */
 #endif
 };
@@ -322,7 +322,7 @@ static int bme280_sample_fetch(const struct device *dev,
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 	/* Do not allow sample fetching from OFF state */
 	if (data->pm_state == DEVICE_PM_OFF_STATE)
 		return -EIO;
@@ -585,7 +585,7 @@ int bme280_init(const struct device *dev)
 
 	rc = 0;
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 	/* Set power state to ACTIVE */
 	data->pm_state = DEVICE_PM_ACTIVE_STATE;
 #endif
@@ -599,7 +599,7 @@ done:
 	return rc;
 }
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 int bme280_pm_ctrl(const struct device *dev, uint32_t ctrl_command,
 				void *context, device_pm_cb cb, void *arg)
 {
@@ -649,7 +649,7 @@ int bme280_pm_ctrl(const struct device *dev, uint32_t ctrl_command,
 
 	return ret;
 }
-#endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
+#endif /* CONFIG_PM_DEVICE */
 
 
 /*
