@@ -13,7 +13,6 @@ properties:
 
     eirq:
       type: int
-      default: 0
       description: Extended interrupt number (or 0 for none)
 
     "#interrupt-cells":
