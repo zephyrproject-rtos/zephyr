@@ -100,7 +100,7 @@ Next, you'll install some host dependencies using your package manager.
 
          .. code-block:: bash
 
-            /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
       #. Use ``brew`` to install dependencies:
 
