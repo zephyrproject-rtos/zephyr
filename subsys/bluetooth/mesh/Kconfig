@@ -1209,6 +1209,16 @@ config BT_MESH_RPR_SRV_AD_DATA_MAX
 	  extended scanning.
 endmenu
 
+config BT_MESH_LARGE_COMP_DATA_SRV
+	bool "Support for Large Composition Data Server Model"
+	help
+	  Enable support for the Large Composition Data Server model.
+
+config BT_MESH_LARGE_COMP_DATA_CLI
+	bool "Support for Large Composition Data Client Model"
+	help
+	  Enable support for the Large Composition Data Client model.
+
 endif # BT_MESH_V1d1
 
 rsource "shell/Kconfig"

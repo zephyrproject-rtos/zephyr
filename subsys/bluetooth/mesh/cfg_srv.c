@@ -47,79 +47,6 @@ static void node_reset_pending_handler(struct k_work *work)
 
 static K_WORK_DEFINE(node_reset_pending, node_reset_pending_handler);
 
-static int comp_add_elem(struct net_buf_simple *buf, struct bt_mesh_elem *elem,
-			 bool primary)
-{
-	struct bt_mesh_model *mod;
-	int i;
-
-	if (net_buf_simple_tailroom(buf) <
-	    4 + (elem->model_count * 2U) + (elem->vnd_model_count * 4U)) {
-		LOG_ERR("Too large device composition");
-		return -E2BIG;
-	}
-
-	net_buf_simple_add_le16(buf, elem->loc);
-
-	net_buf_simple_add_u8(buf, elem->model_count);
-	net_buf_simple_add_u8(buf, elem->vnd_model_count);
-
-	for (i = 0; i < elem->model_count; i++) {
-		mod = &elem->models[i];
-		net_buf_simple_add_le16(buf, mod->id);
-	}
-
-	for (i = 0; i < elem->vnd_model_count; i++) {
-		mod = &elem->vnd_models[i];
-		net_buf_simple_add_le16(buf, mod->vnd.company);
-		net_buf_simple_add_le16(buf, mod->vnd.id);
-	}
-
-	return 0;
-}
-
-int bt_mesh_comp_get_page_0(struct net_buf_simple *buf)
-{
-	uint16_t feat = 0U;
-	const struct bt_mesh_comp *comp;
-	int i;
-
-	comp = bt_mesh_comp_get();
-
-	if (IS_ENABLED(CONFIG_BT_MESH_RELAY)) {
-		feat |= BT_MESH_FEAT_RELAY;
-	}
-
-	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {
-		feat |= BT_MESH_FEAT_PROXY;
-	}
-
-	if (IS_ENABLED(CONFIG_BT_MESH_FRIEND)) {
-		feat |= BT_MESH_FEAT_FRIEND;
-	}
-
-	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
-		feat |= BT_MESH_FEAT_LOW_POWER;
-	}
-
-	net_buf_simple_add_le16(buf, comp->cid);
-	net_buf_simple_add_le16(buf, comp->pid);
-	net_buf_simple_add_le16(buf, comp->vid);
-	net_buf_simple_add_le16(buf, CONFIG_BT_MESH_CRPL);
-	net_buf_simple_add_le16(buf, feat);
-
-	for (i = 0; i < comp->elem_count; i++) {
-		int err;
-
-		err = comp_add_elem(buf, &comp->elem[i], i == 0);
-		if (err) {
-			return err;
-		}
-	}
-
-	return 0;
-}
-
 static int dev_comp_data_get(struct bt_mesh_model *model,
 			     struct bt_mesh_msg_ctx *ctx,
 			     struct net_buf_simple *buf)
@@ -154,7 +81,7 @@ static int dev_comp_data_get(struct bt_mesh_model *model,
 
 		sdu.size += BT_MESH_MIC_SHORT;
 	} else {
-		err = bt_mesh_comp_get_page_0(&sdu);
+		err = bt_mesh_comp_data_get_page_0(&sdu, 0);
 		if (err < 0) {
 			LOG_ERR("Unable to get composition page 0");
 			return err;

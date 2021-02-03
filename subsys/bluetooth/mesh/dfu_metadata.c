@@ -10,7 +10,7 @@
 
 #include <zephyr/bluetooth/mesh.h>
 #include "crypto.h"
-#include "foundation.h"
+#include "access.h"
 
 int bt_mesh_dfu_metadata_decode(struct net_buf_simple *buf,
 				struct bt_mesh_dfu_metadata *metadata)
@@ -91,7 +91,7 @@ int bt_mesh_dfu_metadata_comp_hash_local_get(uint8_t *key, uint32_t *hash)
 	NET_BUF_SIMPLE_DEFINE(buf, BT_MESH_TX_SDU_MAX);
 	int err;
 
-	err = bt_mesh_comp_get_page_0(&buf);
+	err = bt_mesh_comp_data_get_page_0(&buf, 0);
 	if (err) {
 		return err;
 	}
