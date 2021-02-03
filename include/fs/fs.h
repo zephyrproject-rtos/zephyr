@@ -223,7 +223,7 @@ struct fs_statvfs {
 /**
  * @brief Initialize fs_file_t object
  *
- * Initialized the fs_file_t object; the function needs to be invoked
+ * Initializes the fs_file_t object; the function needs to be invoked
  * on object before first use with fs_open.
  *
  * @param zfp Pointer to file object
