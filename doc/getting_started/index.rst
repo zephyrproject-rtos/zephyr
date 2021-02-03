@@ -318,6 +318,13 @@ to build Zephyr applications.
 
             You cannot move the SDK directory after you have installed it.
 
+      #. Set the required :ref:`environment variable <env_vars>`:
+
+         .. code-block:: bash
+
+            echo 'export ZEPHYR_TOOLCHAIN_VARIANT=zephyr' >> ~/.bashrc
+            source ~/.bashrc
+
       #. Install `udev <https://en.wikipedia.org/wiki/Udev>`_ rules, which
          allow you to flash most Zephyr boards as a regular user:
 

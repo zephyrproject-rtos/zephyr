@@ -290,6 +290,9 @@ installed it.
    this allow Zephyr to pick the right toolchain, while allowing multiple Zephyr
    SDKs to be grouped together at a custom location.
 
+#. Set the required :ref:`environment variable <env_vars>`,
+   :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``zephyr``.
+
 .. _sdkless_builds:
 
 Building on Linux without the Zephyr SDK
