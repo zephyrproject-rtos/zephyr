@@ -4304,12 +4304,6 @@ void k_heap_free(struct k_heap *h, void *mem);
 		 },						\
 	}
 
-extern int z_mem_pool_alloc(struct k_mem_pool *pool, struct k_mem_block *block,
-			    size_t size, k_timeout_t timeout);
-extern void *z_mem_pool_malloc(struct k_mem_pool *pool, size_t size);
-extern void z_mem_pool_free(struct k_mem_block *block);
-extern void z_mem_pool_free_id(struct k_mem_block_id *id);
-
 /**
  * @}
  */
