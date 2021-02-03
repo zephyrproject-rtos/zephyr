@@ -454,6 +454,8 @@ int bt_conn_bind_iso(struct bt_iso_create_param *param)
 	    cig_rsp->num_handles != param->num_conns) {
 		BT_WARN("Unexpected response to hci_le_set_cig_params");
 		err = -EIO;
+		net_buf_unref(rsp);
+		goto failed;
 	}
 
 	for (i = 0; i < cig_rsp->num_handles; i++) {
