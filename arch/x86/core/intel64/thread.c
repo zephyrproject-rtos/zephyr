@@ -12,6 +12,14 @@
 
 extern void x86_sse_init(struct k_thread *); /* in locore.S */
 
+/* FIXME: This exists to make space for a "return address" at the top
+ * of the stack.  Obviously this is unused at runtime, but is required
+ * for alignment: stacks at runtime should be 16-byte aligned, and a
+ * CALL will therefore push a return address that leaves the stack
+ * misaligned.  Effectively we're wasting 8 bytes here to undo (!) the
+ * alignment that the upper level code already tried to do for us.  We
+ * should clean this up.
+ */
 struct x86_initial_frame {
 	/* zeroed return address for ABI */
 	uint64_t rip;
