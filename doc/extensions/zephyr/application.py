@@ -229,6 +229,7 @@ class ZephyrAppCommandsDirective(Directive):
 
     def _generate_west(self, **kwargs):
         content = []
+        generator = kwargs['generator']
         board = kwargs['board']
         app = kwargs['app']
         in_tree = kwargs['in_tree']
@@ -237,7 +238,9 @@ class ZephyrAppCommandsDirective(Directive):
         build_dir = kwargs['build_dir']
         compact = kwargs['compact']
         kwargs['board'] = None
-        cmake_args = self._cmake_args(**kwargs)
+        # west always defaults to ninja
+        gen_arg = ' -G\'Unix Makefiles\'' if generator == 'make' else ''
+        cmake_args = gen_arg + self._cmake_args(**kwargs)
         cmake_args = ' --{}'.format(cmake_args) if cmake_args != '' else ''
         # ignore zephyr_app since west needs to run within
         # the installation. Instead rely on relative path.
