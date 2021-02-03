@@ -55,7 +55,22 @@ static void set_compare(uint64_t time)
 
 static uint64_t count(void)
 {
-	return shim_regs->walclk;
+	/* The count register is 64 bits, but we're a 32 bit CPU that
+	 * can only read four bytes at a time, so a bit of care is
+	 * needed to prevent racing against a wraparound of the low
+	 * word.  Wrap the low read between two reads of the high word
+	 * and make sure it didn't change.
+	 */
+	volatile uint32_t *wc = (void *)&shim_regs->walclk;
+	uint32_t hi0, hi1, lo;
+
+	do {
+		hi0 = wc[1];
+		lo = wc[0];
+		hi1 = wc[1];
+	} while (hi0 != hi1);
+
+	return (((uint64_t)hi0) << 32) | lo;
 }
 
 static uint32_t count32(void)
