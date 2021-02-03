@@ -210,9 +210,10 @@ if(SUPPORTS_DTS)
   # Run gen_defines.py to create a header file, zephyr.dts, and edt.pickle.
   #
 
+  string(REPLACE ";" " " EXTRA_DTC_FLAGS_RAW "${EXTRA_DTC_FLAGS}")
   set(CMD_EXTRACT ${PYTHON_EXECUTABLE} ${GEN_DEFINES_SCRIPT}
   --dts ${BOARD}.dts.pre.tmp
-  --dtc-flags '${EXTRA_DTC_FLAGS}'
+  --dtc-flags '${EXTRA_DTC_FLAGS_RAW}'
   --bindings-dirs ${DTS_ROOT_BINDINGS}
   --header-out ${DEVICETREE_UNFIXED_H}
   --device-header-out ${DEVICE_EXTERN_H}
