@@ -91,6 +91,11 @@
 #define OP_VND_MOD_APP_GET                 BT_MESH_MODEL_OP_2(0x80, 0x4d)
 #define OP_VND_MOD_APP_LIST                BT_MESH_MODEL_OP_2(0x80, 0x4e)
 
+#define OP_LARGE_COMP_DATA_GET             BT_MESH_MODEL_OP_2(0x80, 0x74)
+#define OP_LARGE_COMP_DATA_STATUS          BT_MESH_MODEL_OP_2(0x80, 0x75)
+#define OP_MODELS_METADATA_GET             BT_MESH_MODEL_OP_2(0x80, 0x76)
+#define OP_MODELS_METADATA_STATUS          BT_MESH_MODEL_OP_2(0x80, 0x77)
+
 #define STATUS_SUCCESS                     0x00
 #define STATUS_INVALID_ADDRESS             0x01
 #define STATUS_INVALID_MODEL               0x02
@@ -115,8 +120,6 @@ void bt_mesh_model_reset(void);
 void bt_mesh_attention(struct bt_mesh_model *model, uint8_t time);
 
 #include <zephyr/sys/byteorder.h>
-
-int bt_mesh_comp_get_page_0(struct net_buf_simple *buf);
 
 static inline void key_idx_pack(struct net_buf_simple *buf,
 				uint16_t idx1, uint16_t idx2)
