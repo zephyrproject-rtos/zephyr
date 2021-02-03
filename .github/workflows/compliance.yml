@@ -31,7 +31,15 @@ jobs:
         pip3 install west
 
     - name: west setup
+      env:
+        BASE_REF: ${{ github.base_ref }}
       run: |
+        git config --global user.email "you@example.com"
+        git config --global user.name "Your Name"
+        git remote -v
+        git rebase origin/${BASE_REF}
+        # debug
+        git log  --pretty=oneline | head -n 10
         west init -l . || true
         west update
 
@@ -42,10 +50,6 @@ jobs:
         BASE_REF: ${{ github.base_ref }}
       run: |
         export ZEPHYR_BASE=$PWD
-        git config --global user.email "you@example.com"
-        git config --global user.name "Your Name"
-        git remote -v
-        git rebase origin/${BASE_REF}
         # debug
         ls -la
         git log  --pretty=oneline | head -n 10
