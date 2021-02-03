@@ -285,7 +285,7 @@ config BT_CTLR_ULL_HIGH_PRIO
 	int "Upper Link Layer High IRQ priority"
 	range BT_CTLR_LLL_PRIO 3 if SOC_SERIES_NRF51X
 	range BT_CTLR_LLL_PRIO 6 if (SOC_SERIES_NRF52X || SOC_SERIES_NRF53X)
-	default BT_CTLR_LLL_PRIO if (BT_CTLR_ZLI || BT_CTLR_LOW_LAT_ULL)
+	default BT_CTLR_LLL_PRIO if (BT_CTLR_ZLI || BT_CTLR_LOW_LAT)
 	default 1
 	help
 	  The interrupt priority for Ticker's Worker IRQ and Upper Link Layer
