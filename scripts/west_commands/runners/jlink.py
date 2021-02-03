@@ -179,7 +179,8 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
 
     def flash(self, **kwargs):
         self.require(self.commander)
-        self.ensure_output('bin')
+        if self.bin_name is None:
+            raise ValueError('Cannot flash; bin_name is missing')
 
         lines = ['r'] # Reset and halt the target
 

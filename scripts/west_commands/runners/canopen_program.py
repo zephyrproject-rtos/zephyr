@@ -101,7 +101,6 @@ class CANopenBinaryRunner(ZephyrBinaryRunner):
 
     def flash(self, **kwargs):
         '''Download program to flash over CANopen'''
-        self.ensure_output('bin')
         self.logger.info('Using Node ID %d, program number %d',
                          self.downloader.node_id,
                          self.downloader.program_number)

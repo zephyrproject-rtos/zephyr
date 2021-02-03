@@ -5,7 +5,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
-import os
 import platform
 from unittest.mock import patch, call
 
@@ -161,11 +160,6 @@ def bcfg_check_cond5(item):
 def bcfg_get_cond5(item):
     return dict(BC_DICT_COND5)[item]
 
-def os_path_isfile_patch(filename):
-    if filename == RC_KERNEL_BIN:
-        return True
-    return os.path.isfile(filename)
-
 
 @patch('runners.bossac.BossacBinaryRunner.supports',
 	return_value=False)
@@ -199,8 +193,7 @@ def test_bossac_init(cc, req, bcfg_ini, bcfg_check, bcfg_val,
 	no --offset
     """
     runner = BossacBinaryRunner(runner_config, port=TEST_BOSSAC_PORT)
-    with patch('os.path.isfile', side_effect=os_path_isfile_patch):
-        runner.run('flash')
+    runner.run('flash')
     assert cc.call_args_list == [call(x) for x in EXPECTED_COMMANDS]
 
 
@@ -240,8 +233,7 @@ def test_bossac_create(cc, req, bcfg_ini, bcfg_check, bcfg_val,
     BossacBinaryRunner.add_parser(parser)
     arg_namespace = parser.parse_args(args)
     runner = BossacBinaryRunner.create(runner_config, arg_namespace)
-    with patch('os.path.isfile', side_effect=os_path_isfile_patch):
-        runner.run('flash')
+    runner.run('flash')
     assert cc.call_args_list == [call(x) for x in EXPECTED_COMMANDS]
 
 
@@ -283,8 +275,7 @@ def test_bossac_create_with_speed(cc, req, bcfg_ini, bcfg_check, bcfg_val,
     BossacBinaryRunner.add_parser(parser)
     arg_namespace = parser.parse_args(args)
     runner = BossacBinaryRunner.create(runner_config, arg_namespace)
-    with patch('os.path.isfile', side_effect=os_path_isfile_patch):
-        runner.run('flash')
+    runner.run('flash')
     assert cc.call_args_list == [call(x) for x in EXPECTED_COMMANDS_WITH_SPEED]
 
 
@@ -328,8 +319,7 @@ def test_bossac_create_with_flash_address(cc, req, bcfg_ini, bcfg_check,
     BossacBinaryRunner.add_parser(parser)
     arg_namespace = parser.parse_args(args)
     runner = BossacBinaryRunner.create(runner_config, arg_namespace)
-    with patch('os.path.isfile', side_effect=os_path_isfile_patch):
-        runner.run('flash')
+    runner.run('flash')
     assert cc.call_args_list == [
         call(x) for x in EXPECTED_COMMANDS_WITH_FLASH_ADDRESS
     ]
@@ -370,8 +360,7 @@ def test_bossac_create_with_omit_address(cc, req, bcfg_ini, bcfg_check,
 	no --offset
     """
     runner = BossacBinaryRunner(runner_config, port=TEST_BOSSAC_PORT)
-    with patch('os.path.isfile', side_effect=os_path_isfile_patch):
-        runner.run('flash')
+    runner.run('flash')
     assert cc.call_args_list == [call(x) for x in EXPECTED_COMMANDS]
 
 
@@ -409,8 +398,7 @@ def test_bossac_create_with_arduino(cc, req, bcfg_ini, bcfg_check,
 	--offset
     """
     runner = BossacBinaryRunner(runner_config, port=TEST_BOSSAC_PORT)
-    with patch('os.path.isfile', side_effect=os_path_isfile_patch):
-        runner.run('flash')
+    runner.run('flash')
     assert cc.call_args_list == [call(x) for x in EXPECTED_COMMANDS_WITH_EXTENDED]
 
 @patch('runners.bossac.BossacBinaryRunner.supports',
@@ -447,8 +435,7 @@ def test_bossac_create_with_adafruit(cc, req, bcfg_ini, bcfg_check,
 	--offset
     """
     runner = BossacBinaryRunner(runner_config, port=TEST_BOSSAC_PORT)
-    with patch('os.path.isfile', side_effect=os_path_isfile_patch):
-        runner.run('flash')
+    runner.run('flash')
     assert cc.call_args_list == [call(x) for x in EXPECTED_COMMANDS_WITH_EXTENDED]
 
 
@@ -485,8 +472,7 @@ def test_bossac_create_with_oldsdk(cc, req, bcfg_ini, bcfg_check,
     """
     runner = BossacBinaryRunner(runner_config)
     with pytest.raises(RuntimeError) as rinfo:
-        with patch('os.path.isfile', side_effect=os_path_isfile_patch):
-            runner.run('flash')
+        runner.run('flash')
     assert str(rinfo.value) == "This version of BOSSA does not support the" \
                                " --offset flag. Please upgrade to a newer" \
                                " Zephyr SDK version >= 0.12.0."
@@ -525,8 +511,7 @@ def test_bossac_create_error_missing_dt_info(cc, req, bcfg_ini, bcfg_check,
     """
     runner = BossacBinaryRunner(runner_config)
     with pytest.raises(RuntimeError) as rinfo:
-        with patch('os.path.isfile', side_effect=os_path_isfile_patch):
-            runner.run('flash')
+        runner.run('flash')
     assert str(rinfo.value) == "The device tree zephyr,code-partition" \
                                " chosen node must be defined."
 
@@ -565,8 +550,7 @@ def test_bossac_create_error_missing_kconfig(cc, req, bcfg_ini, bcfg_check,
     """
     runner = BossacBinaryRunner(runner_config)
     with pytest.raises(RuntimeError) as rinfo:
-        with patch('os.path.isfile', side_effect=os_path_isfile_patch):
-            runner.run('flash')
+        runner.run('flash')
     assert str(rinfo.value) == \
         "There is no CONFIG_USE_DT_CODE_PARTITION Kconfig defined at " \
         + TEST_BOARD_NAME + "_defconfig file.\n This means that" \
