@@ -823,14 +823,16 @@ endfunction()
 #                   `<board>@2.0.0` or higher.
 #                   This field is not needed when `EXACT` is used.
 #
+# VALID_REVISIONS:  A list of valid revisions for this board.
+#                   If this argument is not provided, then each Kconfig fragment
+#                   of the form ``<board>_<revision>.conf`` in the board folder
+#                   will be used as a valid revision for the board.
+#
 function(board_check_revision)
   set(options EXACT)
   set(single_args FORMAT DEFAULT_REVISION HIGHEST_REVISION)
-  cmake_parse_arguments(BOARD_REV "${options}" "${single_args}" "" ${ARGN})
-
-  file(GLOB revision_candidates LIST_DIRECTORIES false RELATIVE ${BOARD_DIR}
-         ${BOARD_DIR}/${BOARD}_*.conf
-    )
+  set(multi_args  VALID_REVISIONS)
+  cmake_parse_arguments(BOARD_REV "${options}" "${single_args}" "${multi_args}" ${ARGN})
 
   string(TOUPPER ${BOARD_REV_FORMAT} BOARD_REV_FORMAT)
 
@@ -882,31 +884,40 @@ function(board_check_revision)
             Board `${BOARD}` uses revision format: ${BOARD_REV_FORMAT}.")
   endif()
 
-  string(REPLACE "." "_" underscore_revision_regex ${revision_regex})
-  set(file_revision_regex "${BOARD}_${underscore_revision_regex}.conf")
-  foreach(candidate ${revision_candidates})
-    if(${candidate} MATCHES "${file_revision_regex}")
-      string(REPLACE "_" "." FOUND_BOARD_REVISION ${CMAKE_MATCH_1})
-      if(${BOARD_REVISION} STREQUAL ${FOUND_BOARD_REVISION})
-        # Found exact match.
-        return()
+  if(NOT DEFINED BOARD_REV_VALID_REVISIONS)
+    file(GLOB revision_candidates LIST_DIRECTORIES false RELATIVE ${BOARD_DIR}
+         ${BOARD_DIR}/${BOARD}_*.conf
+    )
+    string(REPLACE "." "_" underscore_revision_regex ${revision_regex})
+    set(file_revision_regex "${BOARD}_${underscore_revision_regex}.conf")
+    foreach(candidate ${revision_candidates})
+      if(${candidate} MATCHES "${file_revision_regex}")
+        string(REPLACE "_" "." FOUND_BOARD_REVISION ${CMAKE_MATCH_1})
+        list(APPEND BOARD_REV_VALID_REVISIONS ${FOUND_BOARD_REVISION})
       endif()
+    endforeach()
+  endif()
 
-      if(NOT BOARD_REV_EXACT)
-        if((BOARD_REV_FORMAT MATCHES "^MAJOR\.MINOR\.PATCH$") AND
-           (${BOARD_REVISION} VERSION_GREATER_EQUAL ${FOUND_BOARD_REVISION}) AND
-           (${FOUND_BOARD_REVISION} VERSION_GREATER_EQUAL "${ACTIVE_BOARD_REVISION}")
-        )
-          set(ACTIVE_BOARD_REVISION ${FOUND_BOARD_REVISION})
-        elseif((BOARD_REV_FORMAT STREQUAL LETTER) AND
-               (${BOARD_REVISION} STRGREATER ${FOUND_BOARD_REVISION}) AND
-               (${FOUND_BOARD_REVISION} STRGREATER "${ACTIVE_BOARD_REVISION}")
-        )
-          set(ACTIVE_BOARD_REVISION ${FOUND_BOARD_REVISION})
-        endif()
+  if(${BOARD_REVISION} IN_LIST BOARD_REV_VALID_REVISIONS)
+    # Found exact match.
+    return()
+  endif()
+
+  if(NOT BOARD_REV_EXACT)
+    foreach(TEST_REVISION ${BOARD_REV_VALID_REVISIONS})
+      if((BOARD_REV_FORMAT MATCHES "^MAJOR\.MINOR\.PATCH$") AND
+         (${BOARD_REVISION} VERSION_GREATER_EQUAL ${TEST_REVISION}) AND
+         (${TEST_REVISION} VERSION_GREATER_EQUAL "${ACTIVE_BOARD_REVISION}")
+      )
+        set(ACTIVE_BOARD_REVISION ${TEST_REVISION})
+      elseif((BOARD_REV_FORMAT STREQUAL LETTER) AND
+             (${BOARD_REVISION} STRGREATER ${TEST_REVISION}) AND
+             (${TEST_REVISION} STRGREATER "${ACTIVE_BOARD_REVISION}")
+      )
+        set(ACTIVE_BOARD_REVISION ${TEST_REVISION})
       endif()
-    endif()
-  endforeach()
+    endforeach()
+  endif()
 
   if(BOARD_REV_EXACT OR NOT DEFINED ACTIVE_BOARD_REVISION)
     message(FATAL_ERROR "Board revision `${BOARD_REVISION}` for board \
