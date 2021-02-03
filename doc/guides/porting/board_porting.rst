@@ -521,13 +521,13 @@ files in the board folder:
 .. code-block:: none
 
    boards/<ARCH>/plank
-   ├── plank_<revision>.conf
+   ├── plank_<revision>.conf     # optional
    ├── plank_<revision>.overlay  # optional
    └── revision.cmake
 
 When the user builds for board ``plank@<revision>``:
 
-- Additional Kconfig settings specified in the file
+- The optional Kconfig settings specified in the file
   :file:`plank_<revision>.conf` will be merged into the board's default Kconfig
   configuration.
 
@@ -538,15 +538,25 @@ When the user builds for board ``plank@<revision>``:
   the ``<board>@<revision>`` string specified by the user when building an
   application for the board.
 
-.. important::
-
-   If you only need a devicetree overlay, you must still create an empty
-   :file:`<board>_<revision>.conf` file.
-
 Currently, ``<revision>`` can be either a numeric ``MAJOR.MINOR.PATCH`` style
 revision like ``1.5.0``, or single letter like ``A``, ``B``, etc. Zephyr
 provides a CMake board extension function, ``board_check_revision()``, to make
 it easy to match either style from :file:`revision.cmake`.
+
+Valid board revisions may be specified as arguments to the
+``board_check_revision()`` function, like:
+
+.. code-block:: cmake
+
+   board_check_revision(FORMAT MAJOR.MINOR.PATCH
+                        VALID_REVISIONS 0.1.0 0.3.0 ...
+   )
+
+.. note::
+   ``VALID_REVISIONS`` can be omitted if all valid revisions have specific
+   Kconfig fragments, such as ``<board>_0_1_0.conf``, ``<board>_0_3_0.conf``.
+   This allows you to just place Kconfig revision fragments in the board
+   folder and not have to keep the corresponding ``VALID_REVISIONS`` in sync.
 
 The following sections describe how to support these styles of revision
 numbers.
@@ -555,7 +565,8 @@ Numeric revisions
 =================
 
 Let's say you want to add support for revisions ``0.5.0``, ``1.0.0``, and
-``1.5.0`` of the ``plank`` board. Create :file:`revision.cmake` with
+``1.5.0`` of the ``plank`` board with both Kconfig fragments and devicetree
+overlays. Create :file:`revision.cmake` with
 ``board_check_revision(FORMAT MAJOR.MINOR.PATCH)``, and create the following
 additional files in the board directory:
 
@@ -563,11 +574,11 @@ additional files in the board directory:
 
    boards/<ARCH>/plank
    ├── plank_0_5_0.conf
-   ├── plank_0_5_0.overlay  # optional
+   ├── plank_0_5_0.overlay
    ├── plank_1_0_0.conf
-   ├── plank_1_0_0.overlay  # optional
+   ├── plank_1_0_0.overlay
    ├── plank_1_5_0.conf
-   ├── plank_1_5_0.overlay  # optional
+   ├── plank_1_5_0.overlay
    └── revision.cmake
 
 Notice how the board files have changed periods (".") in the revision number to
@@ -632,11 +643,11 @@ directory:
 
    boards/<ARCH>/plank
    ├── plank_A.conf
-   ├── plank_A.overlay  # optional
+   ├── plank_A.overlay
    ├── plank_B.conf
-   ├── plank_B.overlay  # optional
+   ├── plank_B.overlay
    ├── plank_C.conf
-   ├── plank_C.overlay  # optional
+   ├── plank_C.overlay
    └── revision.cmake
 
 And add the following to :file:`revision.cmake`:
@@ -654,6 +665,7 @@ board_check_revision() details
                         [EXACT]
                         [DEFAULT_REVISION <revision>]
                         [HIGHEST_REVISION <revision>]
+                        [VALID_REVISIONS <revision> [<revision> ...]]
    )
 
 This function supports the following arguments:
@@ -681,6 +693,11 @@ This function supports the following arguments:
   0.x.0-0.99.99 and 1.0.0-1.99.99, and it is expected that the implementation
   will not work with board revision 2.0.0, then giving ``HIGHEST_REVISION
   1.99.99`` causes an error if the user builds using ``<board>@2.0.0``.
+
+* ``VALID_REVISIONS``: if given, specifies a list of revisions that are valid
+  for this board. If this argument is not given, then each Kconfig fragment of
+  the form ``<board>_<revision>.conf`` in the board folder will be used as a
+  valid revision for the board.
 
 .. _porting_custom_board_revisions:
 
