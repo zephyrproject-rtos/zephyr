@@ -30,6 +30,8 @@
 #include "blob.h"
 
 #define CID_NVAL   0xffff
+#define COMPANY_ID_LF 0x05F1
+#define COMPANY_ID_NORDIC_SEMI 0x05F9
 
 const struct shell *bt_mesh_shell_ctx_shell;
 
@@ -142,9 +144,24 @@ static const struct bt_mesh_health_srv_cb health_srv_cb = {
 };
 #endif /* CONFIG_BT_MESH_SHELL_HEALTH_SRV_INSTANCE */
 
+#ifdef CONFIG_BT_MESH_LARGE_COMP_DATA_SRV
+static uint8_t health_tests[] = {
+	BT_MESH_HEALTH_TEST_INFO(COMPANY_ID_LF, 6, 0x01, 0x02, 0x03, 0x04, 0x34, 0x15),
+	BT_MESH_HEALTH_TEST_INFO(COMPANY_ID_NORDIC_SEMI, 3, 0x01, 0x02, 0x03),
+};
+
+static struct bt_mesh_models_metadata_entry health_srv_meta[] = {
+	BT_MESH_HEALTH_TEST_INFO_METADATA(health_tests),
+	BT_MESH_MODELS_METADATA_END,
+};
+#endif
+
 struct bt_mesh_health_srv bt_mesh_shell_health_srv = {
 #if defined(CONFIG_BT_MESH_SHELL_HEALTH_SRV_INSTANCE)
 	.cb = &health_srv_cb,
+#endif
+#ifdef CONFIG_BT_MESH_LARGE_COMP_DATA_SRV
+	.metadata = health_srv_meta,
 #endif
 };
 
