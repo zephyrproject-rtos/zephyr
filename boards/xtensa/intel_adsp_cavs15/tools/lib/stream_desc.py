@@ -38,7 +38,7 @@ class DmaBuf:
             raise ValueError("Not enough buffer. allocated: %d requested: %d"
                              % (self.alloc_size, size))
         logging.debug("Copying Data to DMA buffer")
-        self.buf[:] = data[:]
+        self.buf[:size] = data[:size]
 
     def free(self):
         if self.mem:
