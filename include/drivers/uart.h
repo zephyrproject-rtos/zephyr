@@ -49,8 +49,9 @@ enum uart_line_ctrl {
  *
  *    - Provide second buffer using uart_rx_buf_rsp, when first buffer is
  *      filled, receiving will automatically start to second buffer.
- *    - Ignore the event, this way when current buffer is filled UART_RX_DONE
- *      event will be generated and receiving will be stopped.
+ *    - Ignore the event, this way when current buffer is filled
+ *      @ref uart_event_type::UART_RX_RDY event will be generated and
+ *      receiving will be stopped.
  *
  * 3. If some data was received and timeout occurred
  *    @ref uart_event_type::UART_RX_RDY event will be generated. It can happen
