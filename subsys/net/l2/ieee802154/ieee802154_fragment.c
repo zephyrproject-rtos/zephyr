@@ -530,7 +530,13 @@ static inline enum net_verdict fragment_add_to_cache(struct net_pkt *pkt)
 			/* Assign buffer back to input packet. */
 			pkt->buffer = cache->pkt->buffer;
 			cache->pkt->buffer = NULL;
+		} else {
+			/* in case pkt == cache->pkt, we don't want
+			 * to unref it while clearing the cach.
+			 */
+			cache->pkt = NULL;
 		}
+
 
 		fragment_reconstruct_packet(pkt);
 
