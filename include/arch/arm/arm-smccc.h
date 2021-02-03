@@ -18,6 +18,8 @@ struct arm_smccc_res {
 	unsigned long a3;
 };
 
+typedef struct arm_smccc_res arm_smccc_res_t;
+
 enum arm_smccc_conduit {
 	SMCCC_CONDUIT_NONE,
 	SMCCC_CONDUIT_SMC,
