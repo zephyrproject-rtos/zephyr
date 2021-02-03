@@ -81,6 +81,8 @@ void dma_stm32_clear_gi(DMA_TypeDef *DMAx, uint32_t id);
 #endif
 
 bool stm32_dma_is_irq_active(DMA_TypeDef *dma, uint32_t id);
+bool stm32_dma_is_ht_irq_active(DMA_TypeDef *dma, uint32_t id);
+bool stm32_dma_is_tc_irq_active(DMA_TypeDef *dma, uint32_t id);
 
 void stm32_dma_dump_stream_irq(DMA_TypeDef *dma, uint32_t id);
 void stm32_dma_clear_stream_irq(DMA_TypeDef *dma, uint32_t id);
