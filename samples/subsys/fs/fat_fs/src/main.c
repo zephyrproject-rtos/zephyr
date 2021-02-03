@@ -25,9 +25,9 @@ static struct fs_mount_t mp = {
 };
 
 /*
-*  Note the fatfs library is able to mount only strings inside _VOLUME_STRS
-*  in ffconf.h
-*/
+ *  Note the fatfs library is able to mount only strings inside _VOLUME_STRS
+ *  in ffconf.h
+ */
 #ifdef CONFIG_DISK_ACCESS_RAM
 static const char *disk_mount_pt = "/RAM:";
 #else
@@ -53,14 +53,14 @@ void main(void)
 		}
 
 		if (disk_access_ioctl(disk_pdrv,
-				DISK_IOCTL_GET_SECTOR_COUNT, &block_count)) {
+				      DISK_IOCTL_GET_SECTOR_COUNT, &block_count)) {
 			LOG_ERR("Unable to get sector count");
 			break;
 		}
 		LOG_INF("Block count %u", block_count);
 
 		if (disk_access_ioctl(disk_pdrv,
-				DISK_IOCTL_GET_SECTOR_SIZE, &block_size)) {
+				      DISK_IOCTL_GET_SECTOR_SIZE, &block_size)) {
 			LOG_ERR("Unable to get sector size");
 			break;
 		}
@@ -115,7 +115,7 @@ static int lsdir(const char *path)
 			printk("[DIR ] %s\n", entry.name);
 		} else {
 			printk("[FILE] %s (size = %zu)\n",
-				entry.name, entry.size);
+			       entry.name, entry.size);
 		}
 	}
 

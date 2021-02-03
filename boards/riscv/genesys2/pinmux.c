@@ -10,7 +10,7 @@ static int genesys2_pinmux_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	//const struct device *p = device_get_binding(CONFIG_PINMUX_ARIANE_NAME);
+	// const struct device *p = device_get_binding(CONFIG_PINMUX_ARIANE_NAME);
 
 #ifdef CONFIG_UART_ARIANE
 	/* UART0 RX */
