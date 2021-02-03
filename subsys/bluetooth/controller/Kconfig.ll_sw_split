@@ -40,6 +40,7 @@ config BT_LLL_VENDOR_NORDIC
 	select BT_CTLR_XTAL_ADVANCED_SUPPORT
 	select BT_CTLR_SCHED_ADVANCED_SUPPORT
 	select BT_CTLR_TIFS_HW_SUPPORT
+	select BT_CTLR_ULL_LLL_PRIO_SUPPORT
 
 	default y
 	help
@@ -64,6 +65,9 @@ config BT_CTLR_SCHED_ADVANCED_SUPPORT
 	bool
 
 config BT_CTLR_TIFS_HW_SUPPORT
+	bool
+
+config BT_CTLR_ULL_LLL_PRIO_SUPPORT
 	bool
 
 config BT_CTLR_RX_PRIO_STACK_SIZE
@@ -274,7 +278,7 @@ config BT_CTLR_SCHED_ADVANCED
 	  leading to skipped events amongst active roles.
 
 config BT_CTLR_LLL_PRIO
-	int "Lower Link Layer (Radio) IRQ priority" if !BT_CTLR_ZLI
+	int "Lower Link Layer (Radio) IRQ priority" if (BT_CTLR_ULL_LLL_PRIO_SUPPORT && !BT_CTLR_ZLI)
 	range 0 3 if SOC_SERIES_NRF51X
 	range 0 6 if (SOC_SERIES_NRF52X || SOC_SERIES_NRF53X)
 	default 0
@@ -282,17 +286,17 @@ config BT_CTLR_LLL_PRIO
 	  The interrupt priority for event preparation and radio IRQ.
 
 config BT_CTLR_ULL_HIGH_PRIO
-	int "Upper Link Layer High IRQ priority"
+	int "Upper Link Layer High IRQ priority" if BT_CTLR_ULL_LLL_PRIO_SUPPORT
 	range BT_CTLR_LLL_PRIO 3 if SOC_SERIES_NRF51X
 	range BT_CTLR_LLL_PRIO 6 if (SOC_SERIES_NRF52X || SOC_SERIES_NRF53X)
-	default BT_CTLR_LLL_PRIO if (BT_CTLR_ZLI || BT_CTLR_LOW_LAT)
+	default BT_CTLR_LLL_PRIO if (!BT_CTLR_ULL_LLL_PRIO_SUPPORT || BT_CTLR_ZLI || BT_CTLR_LOW_LAT)
 	default 1
 	help
 	  The interrupt priority for Ticker's Worker IRQ and Upper Link Layer
 	  higher priority functions.
 
 config BT_CTLR_ULL_LOW_PRIO
-	int "Upper Link Layer Low IRQ priority"
+	int "Upper Link Layer Low IRQ priority" if BT_CTLR_ULL_LLL_PRIO_SUPPORT
 	range BT_CTLR_ULL_HIGH_PRIO 3 if SOC_SERIES_NRF51X
 	range BT_CTLR_ULL_HIGH_PRIO 6 if (SOC_SERIES_NRF52X || SOC_SERIES_NRF53X)
 	default BT_CTLR_ULL_HIGH_PRIO
