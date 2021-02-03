@@ -18,9 +18,7 @@ properties:
       type: int
       required: false
       description: i-cache line size
-      default: 0
     d-cache-line-size:
       type: int
       required: false
       description: d-cache line size
-      default: 0
