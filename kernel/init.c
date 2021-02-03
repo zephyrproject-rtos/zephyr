@@ -166,7 +166,7 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 	z_init_static_threads();
 
 #ifdef KERNEL_COHERENCE
-	__ASSERT_NO_MSG(arch_mem_coherent(_kernel));
+	__ASSERT_NO_MSG(arch_mem_coherent(&_kernel));
 #endif
 
 #ifdef CONFIG_SMP
