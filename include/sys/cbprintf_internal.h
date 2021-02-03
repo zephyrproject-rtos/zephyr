@@ -77,8 +77,11 @@ extern "C" {
 #define Z_CBPRINTF_ARG_SIZE(v) \
 	_Generic((v), void *:sizeof(void *), \
 		      float: sizeof(double), \
-		      default: (MAX(sizeof(int), sizeof((v)+0))) + \
-			      _Generic((v) + 0, char *: 1, default: 0))
+		      char *: sizeof(char *) + 1, \
+		      const char *: sizeof(char *) + 1, \
+		      volatile const char *: sizeof(char *) + 1, \
+		      volatile char *: sizeof(char *) + 1, \
+		      default: _Generic((v), void *: 0, default: sizeof((v)+0)))
 
 /** @brief Get storage size in words.
  *
@@ -99,13 +102,9 @@ extern "C" {
  */
 #define Z_CBPRINTF_PACK(__buf, x, _arg_wsize) do {\
 	uint8_t *_buf = __buf; \
-	*_buf = 0; \
-	_buf += _Generic((x), \
-			void *: 0, \
-			default: _Generic((x)+0, \
-					 char *:1, \
-					 volatile char *: 1, \
-					 default: 0)); \
+	_Generic((x)+0, \
+		char *:({*_buf = 0; _buf++;}), \
+		default: ({(void)_buf;})); \
 	double _d = _Generic((x), \
 			float: (x), \
 			default: 0.0); \
@@ -143,15 +142,14 @@ extern "C" {
  *
  * @param _arg argument.
  */
-#define Z_CBPRINTF_PACK_ARG(_buf, _idx, _max, _arg) \
-	do { \
-		uint32_t _arg_size = Z_CBPRINTF_ARG_SIZE(_arg); \
-		uint32_t _arg_wsize = _arg_size / sizeof(uint32_t); \
-		if (_buf && _idx < _max) { \
-			Z_CBPRINTF_PACK(&_buf[_idx], _arg, _arg_wsize); \
-		} \
-		_idx += _arg_size; \
-	} while (0)
+#define Z_CBPRINTF_PACK_ARG(_buf, _idx, _max, _arg) do { \
+	uint32_t _arg_size = Z_CBPRINTF_ARG_SIZE(_arg); \
+	uint32_t _arg_wsize = _arg_size / sizeof(uint32_t); \
+	if (_buf && _idx < _max) { \
+		Z_CBPRINTF_PACK(&_buf[_idx], _arg, _arg_wsize); \
+	} \
+	_idx += _arg_size; \
+} while (0)
 
 /** @brief Package single argument.
  *
@@ -159,11 +157,9 @@ extern "C" {
  *
  * @param arg argument.
  */
-#define Z_CBPRINTF_LOOP_PACK_ARG(arg) \
-	do { \
-		Z_CBPRINTF_PACK_ARG(__package_buf, __package_len, \
-				    __package_max, arg); \
-	} while (0)
+#define Z_CBPRINTF_LOOP_PACK_ARG(arg) do { \
+	Z_CBPRINTF_PACK_ARG(__package_buf, __package_len, __package_max, arg);\
+} while (0)
 
 /** @brief Statically package a formatted string with arguments.
  *
@@ -177,26 +173,34 @@ extern "C" {
  * @param ... String with variable list of arguments.
  */
 #define Z_CBPRINTF_STATIC_PACKAGE(buf, len, fmt_as_ptr, ... /* fmt, ... */) \
-	do { \
-		uint8_t *__package_buf = buf; \
-		size_t __package_max = (buf != NULL) ? len : SIZE_MAX; \
-		size_t __package_len = 0; \
-		FAST_FOR_EACH(Z_CBPRINTF_LOOP_PACK_ARG, (;), \
+do { \
+	_Pragma("GCC diagnostic push") \
+	_Pragma("GCC diagnostic ignored \"-Wpointer-arith\"") \
+	uint8_t *__package_buf = buf; \
+	size_t __package_max = (buf != NULL) ? len : SIZE_MAX; \
+	size_t __package_len = 0; \
+	FAST_FOR_EACH(Z_CBPRINTF_LOOP_PACK_ARG, (;), \
 			IF_ENABLED(fmt_as_ptr, ((uint8_t *)))__VA_ARGS__); \
-		len = __package_len; \
-	} while (0)
+	len = __package_len; \
+	_Pragma("GCC diagnostic pop") \
+} while (0)
 
 #define Z_CBPRINTF_FMT_SIZE(fmt_as_ptr) (sizeof(void *) + (fmt_as_ptr ? 0 : 1))
 
 /** @brief Calculate package size. 0 is retuned if only null pointer is given.*/
-#define Z_CBPRINTF_STATIC_PACKAGE_SIZE(fmt_as_ptr, ...) \
+#define Z_CBPRINTF_STATIC_PACKAGE_SIZE(_name, fmt_as_ptr, ...) \
+	_Pragma("GCC diagnostic push") \
+	_Pragma("GCC diagnostic ignored \"-Wpointer-arith\"") \
+	static const size_t _name = \
 	COND_CODE_0(NUM_VA_ARGS_LESS_1(__VA_ARGS__), \
 		(FAST_GET_ARG_N(1, __VA_ARGS__) == NULL ? \
 			0 : Z_CBPRINTF_FMT_SIZE(fmt_as_ptr)), \
 		(Z_CBPRINTF_FMT_SIZE(fmt_as_ptr) + \
 		 FAST_FOR_EACH(Z_CBPRINTF_ARG_SIZE, \
-				(+), FAST_GET_ARGS_LESS_N(1,__VA_ARGS__))))
+				(+), FAST_GET_ARGS_LESS_N(1,__VA_ARGS__)))); \
+	_Pragma("GCC diagnostic pop")
 
+__attribute__((always_inline))
 static inline void z_cbprintf_wcpy(void *dst, void *src, uint32_t wlen)
 {
 	uint32_t *dst32 = dst;

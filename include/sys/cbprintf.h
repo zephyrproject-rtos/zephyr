@@ -95,6 +95,8 @@ typedef int (*cbprintf_cb)(/* int c, void *ctx */);
 
 /** @brief Calculate package size at compile time.
  *
+ * @param name Name of the variable that will be contain package size.
+ *
  * @param fmt_as_ptr Set to 1 to package format string as void pointer without
  * header. It optimizes package size for read only strings.
  *
@@ -103,8 +105,8 @@ typedef int (*cbprintf_cb)(/* int c, void *ctx */);
  * @return Calculated package size. As it is determined at compile time it can
  * be assigned to a const variable.
  */
-#define CBPRINTF_STATIC_PACKAGE_SIZE(fmt_as_ptr, ... /* fmt, ... */) \
-	Z_CBPRINTF_STATIC_PACKAGE_SIZE(fmt_as_ptr, __VA_ARGS__)
+#define CBPRINTF_STATIC_PACKAGE_SIZE(name, fmt_as_ptr, ... /* fmt, ... */) \
+	Z_CBPRINTF_STATIC_PACKAGE_SIZE(name, fmt_as_ptr, __VA_ARGS__)
 
 /** @brief Capture state required to output formatted data later.
  *
