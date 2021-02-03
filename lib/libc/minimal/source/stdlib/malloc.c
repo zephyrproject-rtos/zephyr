@@ -11,6 +11,8 @@
 #include <sys/math_extras.h>
 #include <string.h>
 #include <app_memory/app_memdomain.h>
+#include <sys/check.h>
+#include <sys/mutex.h>
 #include <sys/sys_heap.h>
 #include <zephyr/types.h>
 
@@ -31,10 +33,17 @@ K_APPMEM_PARTITION_DEFINE(z_malloc_partition);
 #define HEAP_BYTES CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE
 
 Z_GENERIC_SECTION(POOL_SECTION) static struct sys_heap z_malloc_heap;
+Z_GENERIC_SECTION(POOL_SECTION) struct sys_mutex z_malloc_heap_mutex;
 Z_GENERIC_SECTION(POOL_SECTION) static char z_malloc_heap_mem[HEAP_BYTES];
 
 void *malloc(size_t size)
 {
+	int lock_ret = sys_mutex_lock(&z_malloc_heap_mutex, K_FOREVER);
+
+	CHECKIF(lock_ret != 0) {
+		return NULL;
+	}
+
 	void *ret = sys_heap_aligned_alloc(&z_malloc_heap,
 					   __alignof__(z_max_align_t),
 					   size);
@@ -42,6 +51,7 @@ void *malloc(size_t size)
 		errno = ENOMEM;
 	}
 
+	sys_mutex_unlock(&z_malloc_heap_mutex);
 	return ret;
 }
 
@@ -50,12 +60,19 @@ static int malloc_prepare(const struct device *unused)
 	ARG_UNUSED(unused);
 
 	sys_heap_init(&z_malloc_heap, z_malloc_heap_mem, HEAP_BYTES);
+	sys_mutex_init(&z_malloc_heap_mutex);
 
 	return 0;
 }
 
 void *realloc(void *ptr, size_t requested_size)
 {
+	int lock_ret = sys_mutex_lock(&z_malloc_heap_mutex, K_FOREVER);
+
+	CHECKIF(lock_ret != 0) {
+		return NULL;
+	}
+
 	void *ret = sys_heap_aligned_realloc(&z_malloc_heap, ptr,
 					     __alignof__(z_max_align_t),
 					     requested_size);
@@ -63,12 +80,16 @@ void *realloc(void *ptr, size_t requested_size)
 	if (ret == NULL && requested_size != 0) {
 		errno = ENOMEM;
 	}
+
+	sys_mutex_unlock(&z_malloc_heap_mutex);
 	return ret;
 }
 
 void free(void *ptr)
 {
+	sys_mutex_lock(&z_malloc_heap_mutex, K_FOREVER);
 	sys_heap_free(&z_malloc_heap, ptr);
+	sys_mutex_unlock(&z_malloc_heap_mutex);
 }
 
 SYS_INIT(malloc_prepare, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
