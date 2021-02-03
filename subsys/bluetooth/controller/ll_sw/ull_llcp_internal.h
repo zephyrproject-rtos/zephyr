@@ -44,6 +44,9 @@ struct proc_ctx {
 	/* Procedure pause */
 	int pause;
 
+	/* Procedure done */
+	int done;
+
 	/* TX node awaiting ack */
 	struct node_tx * tx_ack;
 

@@ -165,6 +165,7 @@ static struct proc_ctx *create_procedure(enum llcp_proc proc)
 	ctx->proc = proc;
 	ctx->collision = 0U;
 	ctx->pause = 0U;
+	ctx->done = 0U;
 
 	/* Initialize opcodes fields to  known values */
 	ctx->rx_opcode = ULL_LLCP_INVALID_OPCODE;
