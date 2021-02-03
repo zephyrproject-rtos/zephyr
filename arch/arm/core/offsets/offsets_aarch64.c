@@ -58,6 +58,8 @@ GEN_ABSOLUTE_SYM(___esf_t_SIZEOF, sizeof(_esf_t));
 
 GEN_NAMED_OFFSET_SYM(arm_smccc_res_t, a0, a0_a1);
 GEN_NAMED_OFFSET_SYM(arm_smccc_res_t, a2, a2_a3);
+GEN_NAMED_OFFSET_SYM(arm_smccc_res_t, a4, a4_a5);
+GEN_NAMED_OFFSET_SYM(arm_smccc_res_t, a6, a6_a7);
 
 #endif /* CONFIG_HAS_ARM_SMCCC */
 
