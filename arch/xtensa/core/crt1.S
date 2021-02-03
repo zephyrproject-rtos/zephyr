@@ -93,11 +93,21 @@ _start:
 	 */
 #if XCHAL_HAVE_EXCEPTIONS
 # ifdef __XTENSA_CALL0_ABI__
-	/* PS.WOE = 0, PS.UM = 1, PS.EXCM = 0, PS.INTLEVEL = 15 */
-	movi	a3, PS_UM|PS_INTLEVEL(15)
+	/*
+	 * PS.WOE = 0
+	 * PS.UM = 1
+	 * PS.EXCM = 0
+	 * PS.INTLEVEL = XCHAL_EXCM_LEVEL
+	 */
+	movi	a3, PS_UM|PS_INTLEVEL(XCHAL_EXCM_LEVEL)
 # else
-	/* PS.WOE = 1, PS.UM = 1, PS.EXCM = 0, PS.INTLEVEL = 15 */
-	movi	a3, PS_UM|PS_WOE|PS_INTLEVEL(15)
+	/*
+	 * PS.WOE = 1
+	 * PS.UM = 1
+	 * PS.EXCM = 0
+	 * PS.INTLEVEL = XCHAL_EXCM_LEVEL
+	 */
+	movi	a3, PS_UM|PS_WOE|PS_INTLEVEL(XCHAL_EXCM_LEVEL)
 # endif
 	wsr	a3, PS
 	rsync
