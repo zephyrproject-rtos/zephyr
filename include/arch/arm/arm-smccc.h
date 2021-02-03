@@ -9,13 +9,17 @@
 
 /*
  * Result from SMC/HVC call
- * @a0-a3 result values from registers 0 to 3
+ * @a0-a7 result values from registers 0 to 7
  */
 struct arm_smccc_res {
 	unsigned long a0;
 	unsigned long a1;
 	unsigned long a2;
 	unsigned long a3;
+	unsigned long a4;
+	unsigned long a5;
+	unsigned long a6;
+	unsigned long a7;
 };
 
 typedef struct arm_smccc_res arm_smccc_res_t;
