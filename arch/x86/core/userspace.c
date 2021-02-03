@@ -87,7 +87,7 @@ void *z_x86_userspace_prepare_thread(struct k_thread *thread)
 FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 					void *p1, void *p2, void *p3)
 {
-	uint32_t stack_end;
+	size_t stack_end;
 
 	/* Transition will reset stack pointer to initial, discarding
 	 * any old context since this is a one-way operation
@@ -95,6 +95,15 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	stack_end = Z_STACK_PTR_ALIGN(_current->stack_info.start +
 				      _current->stack_info.size -
 				      _current->stack_info.delta);
+
+#ifdef CONFIG_X86_64
+	/* x86_64 SysV ABI requires 16 byte stack alignment, which
+	 * means that on entry to a C function (which follows a CALL
+	 * that pushes 8 bytes) the stack must be MISALIGNED by
+	 * exactly 8 bytes.
+	 */
+	stack_end -= 8;
+#endif
 
 	z_x86_userspace_enter(user_entry, p1, p2, p3, stack_end,
 			      _current->stack_info.start);
