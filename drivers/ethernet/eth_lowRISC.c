@@ -221,7 +221,7 @@ static void lr_isr(struct device *dev)
 	    goto out;
 	}
 
-        assert(lr_eth_recv(priv, priv->rxb, n) == n);
+        lr_eth_recv(priv, priv->rxb, n);
 
         hexdump(priv->rxb, n, "%zd byte(s)", n);
 
@@ -229,6 +229,7 @@ static void lr_isr(struct device *dev)
         	LOG_ERR("Out of memory for received frame");
 		net_pkt_unref(pkt);
 		pkt = NULL;
+		goto out;
 	}
 	net_recv_data(get_iface(priv, vlan_tag), pkt);
    }
