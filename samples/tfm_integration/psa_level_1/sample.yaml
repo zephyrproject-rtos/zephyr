@@ -4,7 +4,7 @@ sample:
     name: TF-M PSA Level 1 example
 tests:
     sample.psa_level_1:
-        tags: introduction
+        tags: introduction tfm
         platform_allow: mps2_an521_nonsecure lpcxpresso55s69_ns nrf5340pdk_nrf5340_cpuappns
           nrf5340dk_nrf5340_cpuappns nrf9160dk_nrf9160ns v2m_musca_s1_nonsecure
         harness: console
