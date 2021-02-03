@@ -511,6 +511,12 @@ uint32_t ull_adv_sync_start(struct ll_adv_set *adv,
 	return ret;
 }
 
+void ull_adv_sync_release(struct ll_adv_sync_set *sync)
+{
+	lll_adv_sync_data_release(&sync->lll);
+	sync_release(sync);
+}
+
 void ull_adv_sync_offset_get(struct ll_adv_set *adv)
 {
 	static memq_link_t link;

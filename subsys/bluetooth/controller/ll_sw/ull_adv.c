@@ -291,9 +291,13 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 	if (is_new_set) {
 		pdu->type = pdu_adv_type[adv_type];
 		is_pdu_type_changed = 1;
+	/* check if new PDU type is different that past one */
 	} else if (pdu->type != pdu_adv_type[adv_type]) {
 		is_pdu_type_changed = 1;
 
+		/* If old PDU was extended advertising PDU, release
+		 * auxiliary and periodic advertising sets.
+		 */
 		if (pdu->type == PDU_ADV_TYPE_EXT_IND) {
 			struct lll_adv_aux *lll_aux = adv->lll.aux;
 
@@ -306,8 +310,14 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 				pdu->len = 0;
 
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
-				/* FIXME: release periodic adv set */
-				LL_ASSERT(!adv->lll.sync);
+				if (adv->lll.sync) {
+					struct ll_adv_sync_set *sync;
+
+					sync = (void *)HDR_LLL2EVT(adv->lll.sync);
+					adv->lll.sync = NULL;
+
+					ull_adv_sync_release(sync);
+				}
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 
 				/* Release auxiliary channel set */

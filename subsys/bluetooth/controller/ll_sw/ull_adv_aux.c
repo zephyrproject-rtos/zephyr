@@ -355,6 +355,9 @@ uint8_t ll_adv_aux_set_remove(uint8_t handle)
 		if (sync->is_enabled) {
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
+		lll->sync = NULL;
+
+		ull_adv_sync_release(sync);
 	}
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 
