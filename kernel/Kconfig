@@ -546,7 +546,7 @@ config ARCH_HAS_CUSTOM_BUSY_WAIT
 config SYS_CLOCK_TICKS_PER_SEC
 	int "System tick frequency (in ticks/second)"
 	default 100 if QEMU_TARGET || SOC_POSIX
-	default 10000 if TICKLESS_CAPABLE
+	default 10000 if TICKLESS_KERNEL
 	default 100
 	help
 	  This option specifies the nominal frequency of the system clock in Hz.
