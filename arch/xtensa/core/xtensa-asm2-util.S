@@ -39,10 +39,10 @@ xtensa_save_high_regs:
 	 * by duplicating the bits twice and shifting down by WINDOWBASE
 	 * bits.  Now the LSB is the register quad at WINDOWBASE.
 	 */
-	rsr.WINDOWSTART a2
+	rsr a2, WINDOWSTART
 	slli a3, a2, (XCHAL_NUM_AREGS / 4)
 	or a2, a2, a3
-	rsr.WINDOWBASE a3
+	rsr a3, WINDOWBASE
 	ssr a3
 	srl a2, a2
 
@@ -147,35 +147,63 @@ _high_restore_done:
  * though...
  */
 
-#define RCTX_EPC_REG		_CONCAT(EPC, XCHAL_NUM_INTLEVELS)
-#define RCTX_EPS_REG		_CONCAT(EPS, XCHAL_NUM_INTLEVELS)
+/*
+ * XCC doesn't like _CONCAT() so we need to spell out
+ * every single one.
+ */
+#if XCHAL_NUM_INTLEVELS == 1
+# define RCTX_EPC_REG		EPC1
+# define RCTX_EPS_REG		EPS1
+#elif XCHAL_NUM_INTLEVELS == 2
+# define RCTX_EPC_REG		EPC2
+# define RCTX_EPS_REG		EPS2
+#elif XCHAL_NUM_INTLEVELS == 3
+# define RCTX_EPC_REG		EPC3
+# define RCTX_EPS_REG		EPS3
+#elif XCHAL_NUM_INTLEVELS == 4
+# define RCTX_EPC_REG		EPC4
+# define RCTX_EPS_REG		EPS4
+#elif XCHAL_NUM_INTLEVELS == 5
+# define RCTX_EPC_REG		EPC5
+# define RCTX_EPS_REG		EPS5
+#elif XCHAL_NUM_INTLEVELS == 6
+# define RCTX_EPC_REG		EPC6
+# define RCTX_EPS_REG		EPS6
+#elif XCHAL_NUM_INTLEVELS == 7
+# define RCTX_EPC_REG		EPC7
+# define RCTX_EPS_REG		EPS7
+#else
+/* Catch all */
+# define RCTX_EPC_REG		_CONCAT(EPC, XCHAL_NUM_INTLEVELS)
+# define RCTX_EPS_REG		_CONCAT(EPS, XCHAL_NUM_INTLEVELS)
+#endif
 
 .global _restore_context
 _restore_context:
 	call0 xtensa_restore_high_regs
 
 	l32i a0, a1, BSA_PC_OFF
-	wsr.RCTX_EPC_REG a0
+	wsr a0, RCTX_EPC_REG
 	l32i a0, a1, BSA_PS_OFF
-	wsr.RCTX_EPS_REG a0
+	wsr a0, RCTX_EPS_REG
 
 	l32i a0, a1, BSA_SAR_OFF
-	wsr.SAR a0
+	wsr a0, SAR
 #if XCHAL_HAVE_LOOPS
 	l32i a0, a1, BSA_LBEG_OFF
-	wsr.LBEG a0
+	wsr a0, LBEG
 	l32i a0, a1, BSA_LEND_OFF
-	wsr.LEND a0
+	wsr a0, LEND
 	l32i a0, a1, BSA_LCOUNT_OFF
-	wsr.LCOUNT a0
+	wsr a0, LCOUNT
 #endif
 #if XCHAL_HAVE_S32C1I
 	l32i a0, a1, BSA_SCOMPARE1_OFF
-	wsr.SCOMPARE1 a0
+	wsr a0, SCOMPARE1
 #endif
 #if XCHAL_HAVE_THREADPTR && defined(CONFIG_THREAD_LOCAL_STORAGE)
 	l32i a0, a1, BSA_THREADPTR_OFF
-	wur.THREADPTR a0
+	wur a0, THREADPTR
 #endif
 	rsync
 
@@ -211,7 +239,7 @@ xtensa_switch:
 	ODD_REG_SAVE
 
 	/* Stash our PS register contents and a "restore" PC. */
-	rsr.PS a0
+	rsr a0, PS
 	s32i a0, a1, BSA_PS_OFF
 	movi a0, _switch_restore_pc
 	s32i a0, a1, BSA_PC_OFF
