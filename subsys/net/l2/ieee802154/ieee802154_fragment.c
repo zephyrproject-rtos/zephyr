@@ -472,6 +472,11 @@ static inline void fragment_reconstruct_packet(struct net_pkt *pkt)
 	fragment_remove_headers(pkt);
 }
 
+static inline bool fragment_packet_valid(struct net_pkt *pkt)
+{
+	return (get_datagram_type(pkt->buffer->data) == NET_6LO_DISPATCH_FRAG1);
+}
+
 /**
  *  Parse size and tag from the fragment, check if we have any cache
  *  related to it. If not create a new cache.
@@ -537,11 +542,14 @@ static inline enum net_verdict fragment_add_to_cache(struct net_pkt *pkt)
 			cache->pkt = NULL;
 		}
 
+		clear_reass_cache(size, tag);
+
+		if (!fragment_packet_valid(pkt)) {
+			NET_ERR("Invalid fragmented packet");
+			return NET_DROP;
+		}
 
 		fragment_reconstruct_packet(pkt);
-
-		/* Once reassemble is done, cache is no longer needed. */
-		clear_reass_cache(size, tag);
 
 		if (!net_6lo_uncompress(pkt)) {
 			NET_ERR("Could not uncompress. Bogus packet?");
