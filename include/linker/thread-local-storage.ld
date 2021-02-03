@@ -1,5 +1,7 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
+#ifdef CONFIG_THREAD_LOCAL_STORAGE
+
 	SECTION_DATA_PROLOGUE(tdata,,)
 	{
 		*(.tdata .tdata.* .gnu.linkonce.td.*);
@@ -27,3 +29,5 @@
 	PROVIDE(__tls_start = __tdata_start);
 	PROVIDE(__tls_end = __tbss_end);
 	PROVIDE(__tls_size = __tbss_end - __tdata_start);
+
+#endif /* CONFIG_THREAD_LOCAL_STORAGE */
