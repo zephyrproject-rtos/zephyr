@@ -453,6 +453,11 @@ class RimageSigner(Signer):
             conf_path_cmd = ['-c', conf_path]
         else:
             log.die('Configuration not found')
+        if '--no-manifest' in args.tool_args:
+            no_manifest = True
+            args.tool_args.remove('--no-manifest')
+        else:
+            no_manifest = False
 
         sign_base = ([tool_path] + args.tool_args +
                      ['-o', out_bin] +  conf_path_cmd + ['-i', '3', '-e'] +
@@ -462,7 +467,10 @@ class RimageSigner(Signer):
             log.inf(quote_sh_list(sign_base))
         subprocess.check_call(sign_base)
 
-        filenames = [out_xman, out_bin]
+        if no_manifest:
+            filenames = [out_bin]
+        else:
+            filenames = [out_xman, out_bin]
         with open(out_tmp, 'wb') as outfile:
             for fname in filenames:
                 with open(fname, 'rb') as infile:
