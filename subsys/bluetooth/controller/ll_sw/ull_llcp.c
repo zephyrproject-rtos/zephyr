@@ -91,7 +91,14 @@ static struct proc_ctx *proc_ctx_acquire(void)
 
 static void proc_ctx_release(struct proc_ctx *ctx)
 {
+	/* TODO(thoh): For debug purpose the enite context is memset to 0xFF */
+	memset(ctx, 0xFF, sizeof(*ctx));
 	mem_release(ctx, &mem_ctx.free);
+}
+
+void ull_cp_priv_proc_ctx_release(struct proc_ctx *ctx)
+{
+	proc_ctx_release(ctx);
 }
 
 bool ull_cp_priv_tx_alloc_is_available(void)

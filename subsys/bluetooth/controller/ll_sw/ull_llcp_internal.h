@@ -171,6 +171,8 @@ static inline bool is_instant_reached_or_passed(uint16_t instant, uint16_t event
 /*
  * LLCP Resource Management
  */
+void ull_cp_priv_proc_ctx_release(struct proc_ctx *ctx);
+
 bool ull_cp_priv_tx_alloc_is_available(void);
 
 static inline bool tx_alloc_is_available(void)
