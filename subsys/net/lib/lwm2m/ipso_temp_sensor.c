@@ -25,23 +25,18 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_resource_ids.h"
 
 #define TEMP_VERSION_MAJOR 1
-#define TEMP_VERSION_MINOR 0
 
-#ifdef CONFIG_LWM2M_IPSO_TEMP_SENSOR_TIMESTAMP
-#define ADD_TIMESTAMPS 1
+#if defined(CONFIG_LWM2M_IPSO_TEMP_SENSOR_VERSION_1_1)
+#define TEMP_VERSION_MINOR 1
+#define TEMP_MAX_ID 12
 #else
-#define ADD_TIMESTAMPS 0
-#endif
-
-#if ADD_TIMESTAMPS
-#define TEMP_MAX_ID		8
-#else  /* !ADD_TIMESTAMPS */
-#define TEMP_MAX_ID		7
-#endif
+#define TEMP_VERSION_MINOR 0
+#define TEMP_MAX_ID 7
+#endif /* defined(CONFIG_LWM2M_IPSO_TEMP_SENSOR_VERSION_1_1) */
 
 #define MAX_INSTANCE_COUNT	CONFIG_LWM2M_IPSO_TEMP_SENSOR_INSTANCE_COUNT
 
-#define TEMP_STRING_SHORT	8
+#define UNIT_STR_MAX_SIZE	8
 
 /*
  * Calculate resource instances as follows:
@@ -52,7 +47,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 /* resource state variables */
 static float32_value_t sensor_value[MAX_INSTANCE_COUNT];
-static char units[MAX_INSTANCE_COUNT][TEMP_STRING_SHORT];
+static char units[MAX_INSTANCE_COUNT][UNIT_STR_MAX_SIZE];
 static float32_value_t min_measured_value[MAX_INSTANCE_COUNT];
 static float32_value_t max_measured_value[MAX_INSTANCE_COUNT];
 static float32_value_t min_range_value[MAX_INSTANCE_COUNT];
@@ -67,8 +62,12 @@ static struct lwm2m_engine_obj_field fields[] = {
 	OBJ_FIELD_DATA(MIN_RANGE_VALUE_RID, R_OPT, FLOAT32),
 	OBJ_FIELD_DATA(MAX_RANGE_VALUE_RID, R_OPT, FLOAT32),
 	OBJ_FIELD_EXECUTE_OPT(RESET_MIN_MAX_MEASURED_VALUES_RID),
-#if ADD_TIMESTAMPS
-	OBJ_FIELD_DATA(TEMP_TIMESTAMP_ID, RW_OPT, TIME),
+#if defined(CONFIG_LWM2M_IPSO_TEMP_SENSOR_VERSION_1_1)
+	OBJ_FIELD_DATA(APPLICATION_TYPE_RID, RW_OPT, STRING),
+	OBJ_FIELD_DATA(TIMESTAMP_RID, R_OPT, TIME),
+	OBJ_FIELD_DATA(FRACTIONAL_TIMESTAMP_RID, R_OPT, FLOAT32),
+	OBJ_FIELD_DATA(MEASUREMENT_QUALITY_INDICATOR_RID, R_OPT, U8),
+	OBJ_FIELD_DATA(MEASUREMENT_QUALITY_LEVEL_RID, R_OPT, U8),
 #endif
 };
 
@@ -201,7 +200,7 @@ static struct lwm2m_engine_obj_inst *temp_sensor_create(uint16_t obj_inst_id)
 		     &sensor_value[index], sizeof(*sensor_value),
 		     NULL, NULL, NULL, sensor_value_write_cb, NULL);
 	INIT_OBJ_RES_DATA(SENSOR_UNITS_RID, res[index], i, res_inst[index], j,
-			  units[index], TEMP_STRING_SHORT);
+			  units[index], UNIT_STR_MAX_SIZE);
 	INIT_OBJ_RES_DATA(MIN_MEASURED_VALUE_RID, res[index], i,
 			  res_inst[index], j, &min_measured_value[index],
 			  sizeof(*min_measured_value));
@@ -216,8 +215,15 @@ static struct lwm2m_engine_obj_inst *temp_sensor_create(uint16_t obj_inst_id)
 			  sizeof(*max_range_value));
 	INIT_OBJ_RES_EXECUTE(RESET_MIN_MAX_MEASURED_VALUES_RID,
 			     res[index], i, reset_min_max_measured_values_cb);
-#if ADD_TIMESTAMPS
-	INIT_OBJ_RES_OPTDATA(TEMP_TIMESTAMP_ID, res[index], i,
+#if defined(CONFIG_LWM2M_IPSO_TEMP_SENSOR_VERSION_1_1)
+	INIT_OBJ_RES_OPTDATA(APPLICATION_TYPE_RID, res[index], i,
+			     res_inst[index], j);
+	INIT_OBJ_RES_OPTDATA(TIMESTAMP_RID, res[index], i, res_inst[index], j);
+	INIT_OBJ_RES_OPTDATA(FRACTIONAL_TIMESTAMP_RID, res[index], i,
+			     res_inst[index], j);
+	INIT_OBJ_RES_OPTDATA(MEASUREMENT_QUALITY_INDICATOR_RID, res[index],
+			     i, res_inst[index], j);
+	INIT_OBJ_RES_OPTDATA(MEASUREMENT_QUALITY_LEVEL_RID, res[index], i,
 			     res_inst[index], j);
 #endif
 
