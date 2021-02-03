@@ -230,7 +230,7 @@ DIR *opendir(const char *dirname)
 		return NULL;
 	}
 
-	(void)memset(&ptr->dir, 0, sizeof(ptr->dir));
+	fs_dir_t_init(&ptr->dir);
 
 	rc = fs_opendir(&ptr->dir, dirname);
 	if (rc < 0) {
