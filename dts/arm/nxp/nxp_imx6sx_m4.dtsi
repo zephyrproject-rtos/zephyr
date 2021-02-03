@@ -64,11 +64,11 @@
 
 	flash:memory@DT_FLASH_ADDR {
 		compatible = "soc-nv-flash";
-		reg = <DT_FLASH_ADDR DT_FLASH_SIZE>;
+		reg = <DT_ADDR(DT_FLASH_ADDR) DT_FLASH_SIZE>;
 	};
 
 	sram:memory@DT_SRAM_ADDR {
-		reg = <DT_SRAM_ADDR DT_SRAM_SIZE>;
+		reg = <DT_ADDR(DT_SRAM_ADDR) DT_SRAM_SIZE>;
 	};
 
 	soc {
