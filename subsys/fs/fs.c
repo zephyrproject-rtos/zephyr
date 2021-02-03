@@ -328,6 +328,11 @@ int fs_opendir(struct fs_dir_t *zdp, const char *abs_path)
 		return -EINVAL;
 	}
 
+	if (zdp->mp != NULL || zdp->dirp != NULL) {
+		return -EBUSY;
+	}
+
+
 	if (strcmp(abs_path, "/") == 0) {
 		/* Open VFS root dir, marked by zdp->mp == NULL */
 		k_mutex_lock(&mutex, K_FOREVER);
@@ -353,6 +358,8 @@ int fs_opendir(struct fs_dir_t *zdp, const char *abs_path)
 	zdp->mp = mp;
 	rc = zdp->mp->fs->opendir(zdp, abs_path);
 	if (rc < 0) {
+		zdp->mp = NULL;
+		zdp->dirp = NULL;
 		LOG_ERR("directory open error (%d)", rc);
 	}
 
@@ -461,6 +468,7 @@ int fs_closedir(struct fs_dir_t *zdp)
 	}
 
 	zdp->mp = NULL;
+	zdp->dirp = NULL;
 	return rc;
 }
 

@@ -78,6 +78,7 @@ void test_main(void)
 			 ztest_unit_test(test_mkdir),
 			 ztest_unit_test(test_opendir),
 			 ztest_unit_test(test_closedir),
+			 ztest_unit_test(test_opendir_closedir),
 			 ztest_unit_test(test_lsdir),
 			 ztest_unit_test(test_file_open),
 			 ztest_unit_test(test_file_write),
