@@ -47,6 +47,13 @@ static struct bt_mesh_model root_models[] = {
 #if defined(CONFIG_BT_MESH_RPR_SRV)
 	BT_MESH_MODEL_RPR_SRV,
 #endif
+
+#if defined(CONFIG_BT_MESH_LARGE_COMP_DATA_SRV)
+	BT_MESH_MODEL_LARGE_COMP_DATA_SRV,
+#endif
+#if defined(CONFIG_BT_MESH_LARGE_COMP_DATA_CLI)
+	BT_MESH_MODEL_LARGE_COMP_DATA_CLI,
+#endif
 };
 
 static struct bt_mesh_elem elements[] = {

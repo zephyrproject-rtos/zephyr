@@ -143,4 +143,11 @@ config BT_MESH_SHELL_RPR_CLI
 	help
 	  Remote Provisioning Client shell support.
 
+config BT_MESH_SHELL_LARGE_COMP_DATA_CLI
+	bool "Support for Large Composition Data Client shell commands"
+	depends on BT_MESH_LARGE_COMP_DATA_CLI
+	default y
+	help
+	  Large Composition Data Client shell support.
+
 endif # BT_MESH_SHELL
