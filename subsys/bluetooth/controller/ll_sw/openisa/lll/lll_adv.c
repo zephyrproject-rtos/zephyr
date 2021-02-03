@@ -7,12 +7,12 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#include <zephyr/types.h>
+#include <toolchain.h>
+#include <soc.h>
+#include <bluetooth/hci.h>
 #include <sys/byteorder.h>
 
-#include <toolchain.h>
-#include <bluetooth/hci.h>
-
+#include "hal/cpu.h"
 #include "hal/ccm.h"
 #include "hal/radio.h"
 #include "hal/ticker.h"
@@ -40,7 +40,6 @@
 
 #define LOG_MODULE_NAME bt_ctlr_llsw_openisa_lll_adv
 #include "common/log.h"
-#include <soc.h>
 #include "hal/debug.h"
 
 static int init_reset(void);
@@ -212,14 +211,11 @@ struct pdu_adv *lll_adv_pdu_alloc(struct lll_adv_pdu *pdu, uint8_t *idx)
 		uint8_t first_latest;
 
 		pdu->last = first;
-		/* FIXME: Ensure that data is synchronized so that an ISR
+		/* NOTE: Ensure that data is synchronized so that an ISR
 		 *        vectored, after pdu->last has been updated, does
-		 *        access the latest value. __DMB() is used in ARM
-		 *        Cortex M4 architectures. Use appropriate
-		 *        instructions on other platforms.
-		 *
-		 *        cpu_dmb();
+		 *        access the latest value.
 		 */
+		cpu_dmb();
 		first_latest = pdu->first;
 		if (first_latest != first) {
 			last++;

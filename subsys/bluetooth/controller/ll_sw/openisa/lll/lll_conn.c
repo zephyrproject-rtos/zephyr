@@ -8,15 +8,16 @@
 #include <stddef.h>
 
 #include <toolchain.h>
-#include <zephyr/types.h>
+#include <soc.h>
 #include <sys/util.h>
+
+#include "hal/cpu.h"
+#include "hal/ccm.h"
+#include "hal/radio.h"
 
 #include "util/mem.h"
 #include "util/memq.h"
 #include "util/mfifo.h"
-
-#include "hal/ccm.h"
-#include "hal/radio.h"
 
 #include "pdu.h"
 
@@ -29,7 +30,6 @@
 
 #define LOG_MODULE_NAME bt_ctlr_llsw_openisa_lll_conn
 #include "common/log.h"
-#include <soc.h>
 #include "hal/debug.h"
 
 static int init_reset(void);
