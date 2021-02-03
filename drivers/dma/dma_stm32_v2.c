@@ -241,21 +241,21 @@ void stm32_dma_dump_stream_irq(DMA_TypeDef *dma, uint32_t id)
 		dma_stm32_is_gi_active(dma, id));
 }
 
-static inline bool stm32_dma_is_tc_irq_active(DMA_TypeDef *dma, uint32_t id)
+bool stm32_dma_is_tc_irq_active(DMA_TypeDef *dma, uint32_t id)
 {
-	return LL_DMA_IsEnabledIT_TC(dma, id) &&
+	return LL_DMA_IsEnabledIT_TC(dma, dma_stm32_id_to_stream(id)) &&
 	       dma_stm32_is_tc_active(dma, id);
 }
 
-static inline bool stm32_dma_is_ht_irq_active(DMA_TypeDef *dma, uint32_t id)
+bool stm32_dma_is_ht_irq_active(DMA_TypeDef *dma, uint32_t id)
 {
-	return LL_DMA_IsEnabledIT_HT(dma, id) &&
+	return LL_DMA_IsEnabledIT_HT(dma, dma_stm32_id_to_stream(id)) &&
 	       dma_stm32_is_ht_active(dma, id);
 }
 
 static inline bool stm32_dma_is_te_irq_active(DMA_TypeDef *dma, uint32_t id)
 {
-	return LL_DMA_IsEnabledIT_TE(dma, id) &&
+	return LL_DMA_IsEnabledIT_TE(dma, dma_stm32_id_to_stream(id)) &&
 	       dma_stm32_is_te_active(dma, id);
 }
 
