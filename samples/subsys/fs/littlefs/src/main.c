@@ -125,7 +125,9 @@ void main(void)
 	rc = fs_close(&file);
 	printk("%s close: %d\n", fname, rc);
 
-	struct fs_dir_t dir = { 0 };
+	struct fs_dir_t dir;
+
+	fs_dir_t_init(&dir);
 
 	rc = fs_opendir(&dir, mp->mnt_point);
 	printk("%s opendir: %d\n", mp->mnt_point, rc);
