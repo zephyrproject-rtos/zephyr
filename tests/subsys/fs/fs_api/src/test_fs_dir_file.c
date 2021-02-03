@@ -305,8 +305,16 @@ void test_opendir(void)
 	ret = fs_opendir(&dirp, "/");
 	zassert_equal(ret, 0, "Fail to open root dir");
 
+	TC_PRINT("Double-open using occupied fs_dir_t object\n");
+	ret = fs_opendir(&dirp, "/not_a_dir");
+	zassert_equal(ret, -EBUSY, "Expected -EBUSY, got %d", ret);
+
 	ret = fs_opendir(&dirp2, TEST_DIR);
 	zassert_equal(ret, 0, "Fail to open dir");
+
+	TC_PRINT("Double-open using occupied fs_dir_t object\n");
+	ret = fs_opendir(&dirp2, "/xD");
+	zassert_equal(ret, -EBUSY, "Expected -EBUSY, got %d", ret);
 
 	mock_opendir_result(-EIO);
 	TC_PRINT("Transfer underlying FS error\n");
@@ -340,6 +348,38 @@ void test_closedir(void)
 	dirp.mp = &test_fs_mnt_no_op;
 	ret = fs_closedir(&dirp);
 	zassert_not_equal(ret, 0, "Filesystem has no closedir interface");
+}
+
+/**
+ * @brief Test Reuse fs_dir_t object from closed directory"
+ *
+ * @ingroup filesystem_api
+ */
+void test_opendir_closedir(void)
+{
+	int ret;
+	struct fs_dir_t dirp;
+
+	TC_PRINT("\nreuse fs_dir_t tests:\n");
+
+	fs_dir_t_init(&dirp);
+
+	TC_PRINT("Test: open root dir, close, open volume dir\n");
+	ret = fs_opendir(&dirp, "/");
+	zassert_equal(ret, 0, "Fail to open root dir");
+
+	ret = fs_closedir(&dirp);
+	zassert_equal(ret, 0, "Fail to close dir");
+
+	ret = fs_opendir(&dirp, TEST_DIR);
+	zassert_equal(ret, 0, "Fail to open dir");
+
+	TC_PRINT("Test: open volume dir, close, open root dir\n");
+	ret = fs_closedir(&dirp);
+	zassert_equal(ret, 0, "Fail to close dir");
+
+	ret = fs_opendir(&dirp, "/");
+	zassert_equal(ret, 0, "Fail to open root dir");
 }
 
 static int _test_lsdir(const char *path)
