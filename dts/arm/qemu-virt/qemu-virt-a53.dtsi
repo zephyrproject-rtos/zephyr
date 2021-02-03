@@ -29,6 +29,20 @@
 		};
 	};
 
+	arch_timer: timer {
+		compatible = "arm,arm-timer";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 14 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 11 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 10 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>;
+		label = "arch_timer";
+	};
+
 	uartclk: apb-pclk {
 		compatible = "fixed-clock";
 		clock-frequency = <24000000>;
@@ -71,19 +85,6 @@
 			 * second flash bank for now
 			 */
 			reg = <0x0 DT_SIZE_M(64) /* 0x4000000 DT_SIZE_M(64) */>;
-		};
-
-		arch_timer: timer {
-			compatible = "arm,arm-timer";
-			interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL
-				      IRQ_DEFAULT_PRIORITY>,
-				     <GIC_PPI 14 IRQ_TYPE_LEVEL
-				      IRQ_DEFAULT_PRIORITY>,
-				     <GIC_PPI 11 IRQ_TYPE_LEVEL
-				      IRQ_DEFAULT_PRIORITY>,
-				     <GIC_PPI 10 IRQ_TYPE_LEVEL
-				      IRQ_DEFAULT_PRIORITY>;
-			label = "arch_timer";
 		};
 	};
 };
