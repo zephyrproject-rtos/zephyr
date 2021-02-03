@@ -292,7 +292,7 @@ struct bt_l2cap_server {
 	 */
 	uint16_t			psm;
 
-	/** Required minimim security level */
+	/** Required minimum security level */
 	bt_security_t		sec_level;
 
 	/** @brief Server accept callback
