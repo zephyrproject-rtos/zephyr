@@ -32,12 +32,20 @@ config LWM2M_IPSO_TEMP_SENSOR_INSTANCE_COUNT
 	  This setting establishes the total count of IPSO Temperature
 	  Sensor instances available to the LWM2M client.
 
-config LWM2M_IPSO_TEMP_SENSOR_TIMESTAMP
-	bool "Add timestamp resources to IPSO temperature objects"
-	default y
-	depends on LWM2M_IPSO_TEMP_SENSOR && LWM2M_IPSO_TIMESTAMP_EXTENSIONS
+choice
+	prompt "IPSO Temperature object version"
+	depends on LWM2M_IPSO_TEMP_SENSOR
+	default LWM2M_IPSO_TEMP_SENSOR_VERSION_1_0
 	help
-	  Add a non-standard timestamp resource to each temperature object.
+	  Select which version of the IPSO Temperature object should be used.
+
+config LWM2M_IPSO_TEMP_SENSOR_VERSION_1_0
+	bool "IPSO Temperature object version 1.0"
+
+config LWM2M_IPSO_TEMP_SENSOR_VERSION_1_1
+	bool "IPSO Temperature object version 1.1"
+
+endchoice
 
 config LWM2M_IPSO_GENERIC_SENSOR
 	bool "IPSO Generic Sensor Support"
