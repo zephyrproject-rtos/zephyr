@@ -34,5 +34,7 @@
 #include <zephyr/bluetooth/mesh/cdb.h>
 #include <zephyr/bluetooth/mesh/rpr_cli.h>
 #include <zephyr/bluetooth/mesh/rpr_srv.h>
+#include <zephyr/bluetooth/mesh/large_comp_data_srv.h>
+#include <zephyr/bluetooth/mesh/large_comp_data_cli.h>
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_MESH_H_ */
