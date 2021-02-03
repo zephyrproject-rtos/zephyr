@@ -8,7 +8,7 @@
  * This file implements the common calling mechanism to be used with the Secure
  * Monitor Call (SMC) and Hypervisor Call (HVC).
  *
- * See http://infocenter.arm.com/help/topic/com.arm.doc.den0028a/index.html
+ * See https://developer.arm.com/docs/den0028/latest
  */
 
 #include <toolchain.h>
