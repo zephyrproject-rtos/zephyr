@@ -46,7 +46,6 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         self.openocd_cmd = [cfg.openocd] + search_args
         # openocd doesn't cope with Windows path names, so convert
         # them to POSIX style just to be sure.
-        self.hex_name = Path(cfg.hex_file).as_posix()
         self.elf_name = Path(cfg.elf_file).as_posix()
         self.pre_init = pre_init or []
         self.pre_load = pre_load or []
@@ -139,7 +138,11 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         if self.verify_cmd is None:
             raise ValueError('Cannot flash; verify command is missing')
 
-        self.logger.info('Flashing file: {}'.format(self.hex_name))
+        # openocd doesn't cope with Windows path names, so convert
+        # them to POSIX style just to be sure.
+        hex_name = Path(self.cfg.hex_file).as_posix()
+
+        self.logger.info('Flashing file: {}'.format(hex_name))
 
         pre_init_cmd = []
         pre_load_cmd = []
@@ -160,9 +163,9 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                pre_init_cmd + ['-c', 'init',
                                 '-c', 'targets'] +
                pre_load_cmd + ['-c', 'reset halt',
-                                '-c', self.load_cmd + ' ' + self.hex_name,
+                                '-c', self.load_cmd + ' ' + hex_name,
                                 '-c', 'reset halt'] +
-               ['-c', self.verify_cmd + ' ' + self.hex_name] +
+               ['-c', self.verify_cmd + ' ' + hex_name] +
                post_verify_cmd +
                ['-c', 'reset run',
                 '-c', 'shutdown'])
