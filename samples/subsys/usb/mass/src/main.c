@@ -84,9 +84,11 @@ static int mount_app_fs(struct fs_mount_t *mnt)
 static void setup_disk(void)
 {
 	struct fs_mount_t *mp = &fs_mnt;
-	struct fs_dir_t dir = { 0 };
+	struct fs_dir_t dir;
 	struct fs_statvfs sbuf;
 	int rc;
+
+	fs_dir_t_init(&dir);
 
 	if (IS_ENABLED(CONFIG_DISK_ACCESS_FLASH)) {
 		rc = setup_flash(mp);
