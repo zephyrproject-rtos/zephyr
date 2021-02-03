@@ -147,6 +147,21 @@ struct proc_ctx *rr_peek(struct ll_conn *conn)
 	return ctx;
 }
 
+static void rr_check_done(struct ll_conn *conn, struct proc_ctx *ctx)
+{
+	if (ctx->done) {
+		/* TODO(thoh): Make sure ctx is actually head of the queue */
+		struct proc_ctx *ctx_head = rr_peek(conn);
+		LL_ASSERT(ctx == ctx_head);
+
+		/* Remove the context from the queue */
+		rr_dequeue(conn);
+
+		/* Release the memory */
+		ull_cp_priv_proc_ctx_release(ctx);
+	}
+}
+
 void ull_cp_priv_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
 {
 	switch (ctx->proc) {
@@ -181,6 +196,8 @@ void ull_cp_priv_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_r
 		/* Unknown procedure */
 		LL_ASSERT(0);
 	}
+
+	rr_check_done(conn, ctx);
 }
 
 void ull_cp_priv_rr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx)
@@ -230,6 +247,8 @@ static void rr_act_run(struct ll_conn *conn)
 		/* Unknown procedure */
 		LL_ASSERT(0);
 	}
+
+	rr_check_done(conn, ctx);
 }
 
 static void rr_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
@@ -268,8 +287,8 @@ static void rr_act_reject(struct ll_conn *conn)
 
 		rr_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_REJECT_IND);
 
-		/* Dequeue pending request that just completed */
-		(void) rr_dequeue(conn);
+		/* Mark procedure that just completed as done */
+		ctx->done = 1U;
 
 		rr_set_state(conn, RR_STATE_IDLE);
 	}
@@ -277,10 +296,13 @@ static void rr_act_reject(struct ll_conn *conn)
 
 static void rr_act_complete(struct ll_conn *conn)
 {
+	struct proc_ctx *ctx;
+
 	rr_set_collision(conn, 0U);
 
-	/* Dequeue pending request that just completed */
-	(void) rr_dequeue(conn);
+	/* Mark procedure that just completed as done */
+	ctx = rr_peek(conn);
+	ctx->done = 1U;
 }
 
 static void rr_act_connect(struct ll_conn *conn)
