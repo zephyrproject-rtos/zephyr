@@ -775,6 +775,10 @@ static inline log_arg_t z_log_do_strdup(uint32_t msk, uint32_t idx,
 			param = (log_arg_t)log_strdup(str);
 		}
 	}
+#else
+	ARG_UNUSED(msk);
+	ARG_UNUSED(idx);
+	ARG_UNUSED(action);
 #endif
 	return param;
 }
