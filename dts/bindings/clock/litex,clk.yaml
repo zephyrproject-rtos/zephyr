@@ -1,7 +1,7 @@
 # Copyright (c) 2020 Antmicro <www.antmicro.com>
 # SPDX-License-Identifier: Apache-2.0
 
-include: base.yaml
+include: [clock-controller.yaml, base.yaml]
 
 description: |
   LiteX Mixed Mode Clock Manager
@@ -21,27 +21,7 @@ properties:
 
   "#clock-cells":
     required: true
-    type: int
-    description: |
-      Number of cells in a clock specifier;
-      Typically 0 for nodes with a single clock output
-      and 1 for nodes with multiple clock outputs.
     const: 1
-
-  "#address-cells":
-    required: true
-    type: int
-    description: |
-      Number of cells that are needed to form the base address
-      part in the reg property.
-    default: 1
-
-  "#size-cells":
-    required: true
-    type: int
-    description: |
-      Used to state how many cells are in each field of a reg property
-    default: 0
 
   clock-output-names:
     required: true
