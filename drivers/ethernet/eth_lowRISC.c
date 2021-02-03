@@ -209,6 +209,8 @@ static void lr_isr(struct device *dev)
    struct net_pkt *pkt = NULL;
    uint16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
 
+   lr_eth_disable_irq(priv);
+
    if ((n = lr_eth_recv_size(priv)) > 0)
    {
 
