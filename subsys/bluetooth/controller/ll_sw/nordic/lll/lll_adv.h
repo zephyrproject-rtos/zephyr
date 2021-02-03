@@ -219,6 +219,15 @@ static inline struct pdu_adv *lll_adv_sync_data_alloc(struct lll_adv_sync *lll,
 #endif /* CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY */
 }
 
+static inline void lll_adv_sync_data_release(struct lll_adv_sync *lll)
+{
+#if IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
+	lll_adv_and_extra_data_release(&lll->data);
+#else
+	lll_adv_data_release(&lll->data);
+#endif /* CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY */
+}
+
 static inline void lll_adv_sync_data_enqueue(struct lll_adv_sync *lll,
 					     uint8_t idx)
 {
