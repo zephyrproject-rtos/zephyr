@@ -214,6 +214,7 @@ static lv_fs_res_t lvgl_fs_dir_open(struct _lv_fs_drv_t *drv, void *dir,
 	 */
 	path--;
 
+	fs_dir_t_init((struct fs_dir_t *)dir);
 	err = fs_opendir((struct fs_dir_t *)dir, path);
 	return errno_to_lv_fs_res(err);
 }
