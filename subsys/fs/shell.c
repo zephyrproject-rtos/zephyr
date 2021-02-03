@@ -137,6 +137,8 @@ static int cmd_ls(const struct shell *shell, size_t argc, char **argv)
 		create_abs_path(argv[1], path, sizeof(path));
 	}
 
+	fs_dir_t_init(&dir);
+
 	err = fs_opendir(&dir, path);
 	if (err) {
 		shell_error(shell, "Unable to open %s (err %d)", path, err);

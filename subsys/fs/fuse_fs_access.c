@@ -169,6 +169,8 @@ static int fuse_fs_access_readdir(const char *path, void *buf,
 		return fuse_fs_access_readmount(buf, filler);
 	}
 
+	fs_dir_t_init(&dir);
+
 	if (is_mount_point(path)) {
 		/* File system API expects trailing slash for a mount point
 		 * directory but FUSE strips the trailing slashes from
