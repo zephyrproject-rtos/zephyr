@@ -36,12 +36,6 @@ if(NOT ZEPHYR_TOOLCHAIN_VARIANT)
   endif()
 endif()
 
-# Until we completely deprecate it
-if("${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "gccarmemb")
-  message(WARNING "gccarmemb is deprecated, please use gnuarmemb instead")
-  set(ZEPHYR_TOOLCHAIN_VARIANT "gnuarmemb")
-endif()
-
 # Host-tools don't unconditionally set TOOLCHAIN_HOME anymore,
 # but in case Zephyr's SDK toolchain is used, set TOOLCHAIN_HOME
 if("${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "zephyr")
