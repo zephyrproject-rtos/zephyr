@@ -229,3 +229,28 @@ void pcie_irq_enable(pcie_bdf_t bdf, unsigned int irq)
 #endif
 	irq_enable(irq);
 }
+
+pcie_bdf_t pcie_bdf_lookup(pcie_id_t id)
+{
+	int bus, dev, func;
+
+	for (bus = 0; bus <= PCIE_MAX_BUS; bus++) {
+		for (dev = 0; dev <= PCIE_MAX_DEV; dev++) {
+			for (func = 0; func <= PCIE_MAX_FUNC; func++) {
+				pcie_bdf_t bdf = PCIE_BDF(bus, dev, func);
+				uint32_t data;
+
+				data = pcie_conf_read(bdf, PCIE_CONF_ID);
+				if (data == PCIE_ID_NONE) {
+					continue;
+				}
+
+				if (data == id) {
+					return bdf;
+				}
+			}
+		}
+	}
+
+	return PCIE_BDF_NONE;
+}
