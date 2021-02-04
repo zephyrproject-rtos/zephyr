@@ -46,6 +46,17 @@ struct pcie_mbar {
  */
 
 /**
+ * @brief Look up the BDF based on PCI(e) vendor & device ID
+ *
+ * This function is used to look up the BDF for a device given its
+ * vendor and device ID.
+ *
+ * @param id PCI(e) vendor & device ID encoded using PCIE_ID()
+ * @return The BDF for the device, or PCIE_BDF_NONE if it was not found
+ */
+extern pcie_bdf_t pcie_bdf_lookup(pcie_id_t id);
+
+/**
  * @brief Read a 32-bit word from an endpoint's configuration space.
  *
  * This function is exported by the arch/SoC/board code.
