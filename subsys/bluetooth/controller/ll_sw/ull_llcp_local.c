@@ -131,6 +131,9 @@ void ull_cp_priv_lr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_r
 	case PROC_TERMINATE:
 		lp_comm_rx(conn, ctx, rx);
 		break;
+	case PROC_DATA_LENGTH_UPDATE:
+		lp_comm_rx(conn, ctx, rx);
+		break;
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
@@ -146,6 +149,9 @@ void ull_cp_priv_lr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct no
 		lp_comm_tx_ack(conn, ctx, tx);
 		break;
 	case PROC_TERMINATE:
+		lp_comm_tx_ack(conn, ctx, tx);
+		break;
+	case PROC_DATA_LENGTH_UPDATE:
 		lp_comm_tx_ack(conn, ctx, tx);
 		break;
 	default:
@@ -188,6 +194,9 @@ static void lr_act_run(struct ll_conn *conn)
 		break;
 	case PROC_CHAN_MAP_UPDATE:
 		lp_chmu_run(conn, ctx, NULL);
+		break;
+	case PROC_DATA_LENGTH_UPDATE:
+		lp_comm_run(conn, ctx, NULL);
 		break;
 	default:
 		/* Unknown procedure */

@@ -17,6 +17,7 @@ enum llcp_proc {
 	PROC_CONN_PARAM_REQ,
 	PROC_TERMINATE,
 	PROC_CHAN_MAP_UPDATE,
+	PROC_DATA_LENGTH_UPDATE
 };
 
 struct llcp_enc {
@@ -296,6 +297,13 @@ static inline void tx_pause_data(struct ll_conn *conn)
 	return ull_cp_priv_tx_pause_data(conn);
 }
 
+void ull_cp_priv_tx_resume_data(struct ll_conn *conn);
+
+static inline void tx_resume_data(struct ll_conn *conn)
+{
+	return ull_cp_priv_tx_resume_data(conn);
+}
+
 void ull_cp_priv_tx_flush(struct ll_conn *conn);
 
 static inline void tx_flush(struct ll_conn *conn)
@@ -338,6 +346,13 @@ static inline void lp_comm_run(struct ll_conn *conn, struct proc_ctx *ctx, void 
 /*
  * LLCP Remote Procedure Common
  */
+void ull_cp_priv_rp_comm_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx);
+
+static inline void rp_comm_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx)
+{
+	return ull_cp_priv_rp_comm_tx_ack(conn, ctx, tx);
+}
+
 void ull_cp_priv_rp_comm_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
 
 static inline void rp_comm_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
@@ -1019,6 +1034,45 @@ void ull_cp_priv_rp_chmu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *p
 static inline void rp_chmu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
 {
 	return ull_cp_priv_rp_chmu_run(conn, ctx, param);
+}
+/*
+ * Data Length Update Procedure Helper
+ */
+void ull_cp_priv_pdu_encode_length_req(struct ll_conn *conn, struct pdu_data *pdu);
+
+static inline void pdu_encode_length_req(struct ll_conn *conn, struct pdu_data *pdu)
+{
+	return ull_cp_priv_pdu_encode_length_req(conn, pdu);
+}
+
+void ull_cp_priv_pdu_encode_length_rsp(struct ll_conn *conn, struct pdu_data *pdu);
+
+static inline void pdu_encode_length_rsp(struct ll_conn *conn, struct pdu_data *pdu)
+{
+	return ull_cp_priv_pdu_encode_length_rsp(conn, pdu);
+}
+
+void ull_cp_priv_pdu_decode_length_req(struct ll_conn *conn, struct pdu_data *pdu);
+
+static inline void pdu_decode_length_req(struct ll_conn *conn, struct pdu_data *pdu)
+{
+	return ull_cp_priv_pdu_decode_length_req(conn, pdu);
+}
+
+void ull_cp_priv_pdu_decode_length_rsp(struct ll_conn *conn, struct pdu_data *pdu);
+
+static inline void pdu_decode_length_rsp(struct ll_conn *conn, struct pdu_data *pdu)
+{
+	return ull_cp_priv_pdu_decode_length_rsp(conn, pdu);
+}
+
+void ull_cp_priv_ntf_encode_length_change(struct ll_conn *conn,
+					struct pdu_data *pdu);
+
+static inline void ntf_encode_length_change(struct ll_conn *conn,
+				    struct pdu_data *pdu)
+{
+	return ull_cp_priv_ntf_encode_length_change(conn, pdu);
 }
 
 #ifdef ZTEST_UNITTEST
