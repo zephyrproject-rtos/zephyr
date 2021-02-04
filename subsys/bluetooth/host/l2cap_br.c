@@ -1489,7 +1489,7 @@ void bt_l2cap_br_recv(struct bt_conn *conn, struct net_buf *buf)
 
 	chan = bt_l2cap_br_lookup_rx_cid(conn, cid);
 	if (!chan) {
-		BT_WARN("Ignoring data for unknown CID 0x%04x", cid);
+		BT_WARN("Ignoring data for unknown channel ID 0x%04x", cid);
 		net_buf_unref(buf);
 		return;
 	}
