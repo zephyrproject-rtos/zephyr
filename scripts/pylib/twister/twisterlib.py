@@ -640,30 +640,28 @@ class DeviceHandler(Handler):
 
         log_out_fp.close()
 
+    def get_available_device(self, instance):
+        device = instance.platform.name
+        for d in self.suite.duts:
+            if d.platform == device and d.available and (d.serial or d.serial_pty):
+                d.available = 0
+                d.counter += 1
+                return d
+
+        return None
+
     def device_is_available(self, instance):
-        ret = False
         device = instance.platform.name
         fixture = instance.testcase.harness_config.get("fixture")
         for d in self.suite.duts:
             if fixture and fixture not in d.fixtures:
                 continue
             if d.platform == device and d.available and (d.serial or d.serial_pty):
-                ret = True
-                break
-
-        return ret
-
-    def get_available_device(self, instance):
-        ret = None
-        device = instance.platform.name
-        for d in self.suite.duts:
-            if d.platform == device and d.available and (d.serial or d.serial_pty):
                 d.available = 0
                 d.counter += 1
-                ret = d
-                break
+                return d
 
-        return ret
+        return None
 
     def make_device_available(self, serial):
         for d in self.suite.duts:
@@ -686,15 +684,15 @@ class DeviceHandler(Handler):
         out_state = "failed"
         runner = None
 
-        while not self.device_is_available(self.instance):
+        hardware = self.device_is_available(self.instance)
+        while not hardware:
             logger.debug("Waiting for device {} to become available".format(self.instance.platform.name))
             time.sleep(1)
+            hardware = self.device_is_available(self.instance)
 
-        hardware = self.get_available_device(self.instance)
-        if hardware:
-            runner = hardware.runner or self.suite.west_runner
-
+        runner = hardware.runner or self.suite.west_runner
         serial_pty = hardware.serial_pty
+
         ser_pty_process = None
         if serial_pty:
             master, slave = pty.openpty()
