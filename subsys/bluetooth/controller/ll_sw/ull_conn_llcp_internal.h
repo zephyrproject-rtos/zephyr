@@ -22,6 +22,9 @@ uint16_t ull_conn_default_tx_time_get(void);
 void ull_conn_default_tx_octets_set(uint16_t tx_octets);
 void ull_conn_default_tx_time_set(uint16_t tx_time);
 uint8_t ull_conn_lll_phy_active(struct ll_conn *conn, uint8_t phy);
+void ull_dle_init(struct ll_conn *conn, uint8_t phy);
+uint8_t ull_dle_update_eff(struct ll_conn *conn);
+void ull_dle_local_tx_update(struct ll_conn *conn, uint16_t tx_octets, uint16_t tx_time);
 uint8_t ull_conn_default_phy_tx_get(void);
 uint8_t ull_conn_default_phy_rx_get(void);
 void ull_conn_default_phy_tx_set(uint8_t tx);
@@ -41,7 +44,6 @@ memq_link_t *ull_conn_ack_by_last_peek(uint8_t last, uint16_t *handle,
 void *ull_conn_ack_dequeue(void);
 void ull_conn_tx_ack(uint16_t handle, memq_link_t *link, struct node_tx *tx);
 uint8_t ull_conn_llcp_req(void *conn);
-
 void *ull_conn_tx_mem_acquire(void);
 void ull_conn_tx_mem_release(void *tx);
 uint8_t ull_conn_mfifo_get_tx(void **lll_tx);
