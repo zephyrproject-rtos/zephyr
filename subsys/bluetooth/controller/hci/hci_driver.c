@@ -513,16 +513,28 @@ static void recv_thread(void *p1, void *p2, void *p3)
 			buf = process_node(node_rx);
 		}
 
-		if (buf) {
-			if (buf->len) {
+		while (buf) {
+			struct net_buf *frag;
+
+			/* Increment ref count, which will be
+			 * unref on call to net_buf_frag_del
+			 */
+			frag = buf;
+			net_buf_ref(frag);
+			buf = net_buf_frag_del(NULL, frag);
+
+			if (frag->len) {
 				BT_DBG("Packet in: type:%u len:%u",
-					bt_buf_get_type(buf), buf->len);
-				bt_recv(buf);
+					bt_buf_get_type(frag),
+					frag->len);
+
+				bt_recv(frag);
 			} else {
-				net_buf_unref(buf);
+				net_buf_unref(frag);
 			}
+
+			k_yield();
 		}
-		k_yield();
 	}
 }
 
