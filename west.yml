@@ -45,7 +45,7 @@ manifest:
       path: modules/lib/civetweb
     - name: hal_espressif
       west-commands: west/west-commands.yml
-      revision: 895d99ed0902e8f3ddde7bdeb3a1fe2fa875b005
+      revision: 416ae58cee8e90a4fddaa9c013ab48b180e1d74a
       path: modules/hal/espressif
     - name: fatfs
       revision: 1d1fcc725aa1cb3c32f366e0c53d7490d0fe1109
