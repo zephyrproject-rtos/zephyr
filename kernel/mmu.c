@@ -142,9 +142,9 @@ void z_page_frames_dump(void)
  * the only guarantee is that such RAM mapping outside of the Zephyr image
  * won't be disturbed by subsequent memory mapping calls.
  *
- * +--------------+ <- Z_VIRT_ADDR_START
+ * +--------------+ <- Z_VIRT_RAM_START
  * | Undefined VM | <- May contain ancillary regions like x86_64's locore
- * +--------------+ <- Z_KERNEL_VIRT_START (often == Z_VIRT_ADDR_START)
+ * +--------------+ <- Z_KERNEL_VIRT_START (often == Z_VIRT_RAM_START)
  * | Mapping for  |
  * | main kernel  |
  * | image        |
@@ -341,7 +341,7 @@ static int map_anon_page(void *addr, uint32_t flags)
 }
 
 void *k_mem_map(size_t size, uint32_t flags)
-{;
+{
 	uint8_t *dst;
 	size_t total_size = size;
 	int ret;
