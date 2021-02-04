@@ -20,6 +20,7 @@
 #include <mmu.h>
 #include <drivers/interrupt_controller/loapic.h>
 #include <mmu.h>
+#include <arch/x86/memmap.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -1704,6 +1705,24 @@ void z_x86_current_stack_perms(void)
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_ARCH_HAS_RESERVED_PAGE_FRAMES
+static void mark_addr_page_reserved(uintptr_t addr, size_t len)
+{
+	uintptr_t pos = ROUND_DOWN(addr, CONFIG_MMU_PAGE_SIZE);
+	uintptr_t end = ROUND_UP(addr + len, CONFIG_MMU_PAGE_SIZE);
+
+	for (; pos < end; pos += CONFIG_MMU_PAGE_SIZE) {
+		if (!z_is_page_frame(pos)) {
+			continue;
+		}
+
+		struct z_page_frame *pf = z_phys_to_page_frame(pos);
+
+		pf->flags |= Z_PAGE_FRAME_RESERVED;
+
+		z_free_page_count--;
+	}
+}
+
 /* Selected on PC-like targets at the SOC level.
  *
  * Best is to do some E820 or similar enumeration to specifically identify
@@ -1713,11 +1732,28 @@ void z_x86_current_stack_perms(void)
  */
 void arch_reserved_pages_update(void)
 {
-	for (uintptr_t pos = 0; pos < (1024 * 1024);
-	     pos += CONFIG_MMU_PAGE_SIZE) {
-		struct z_page_frame *pf = z_phys_to_page_frame(pos);
+	mark_addr_page_reserved(0, MB(1));
 
-		pf->flags |= Z_PAGE_FRAME_RESERVED;
+	for (int i = 0; i < CONFIG_X86_MEMMAP_ENTRIES; i++) {
+		struct x86_memmap_entry *entry = &x86_memmap[i];
+
+		switch (entry->type) {
+		case X86_MEMMAP_ENTRY_UNUSED:
+			__fallthrough;
+		case X86_MEMMAP_ENTRY_RAM:
+			continue;
+
+		case X86_MEMMAP_ENTRY_ACPI:
+			__fallthrough;
+		case X86_MEMMAP_ENTRY_NVS:
+			__fallthrough;
+		case X86_MEMMAP_ENTRY_DEFECTIVE:
+			__fallthrough;
+		default:
+			break;
+		}
+
+		mark_addr_page_reserved(entry->base, entry->length);
 	}
 }
 #endif /* CONFIG_ARCH_HAS_RESERVED_PAGE_FRAMES */
