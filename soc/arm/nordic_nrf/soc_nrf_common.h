@@ -66,14 +66,23 @@
  * @param prop_name human-readable string name for 'prop'
  */
 #define NRF_DT_CHECK_GPIO_CTLR_IS_SOC(node_id, prop, prop_name)		\
-	BUILD_ASSERT(!DT_NODE_HAS_PROP(node_id, prop) ||		\
-		     DT_NODE_HAS_COMPAT(DT_GPIO_CTLR(node_id, prop),	\
-					nordic_nrf_gpio),		\
-		     "Devicetree node " DT_NODE_PATH(node_id)		\
-		     " property " prop_name " must refer to a GPIO "	\
-		     " controller with compatible nordic,nrf-gpio; "	\
-		     "got " DT_NODE_PATH(DT_GPIO_CTLR(node_id, prop))	\
-		     ", which does not have this compatible")
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, prop),			\
+		   (BUILD_ASSERT(DT_NODE_HAS_COMPAT(			\
+					 DT_GPIO_CTLR(node_id, prop),	\
+					 nordic_nrf_gpio),		\
+				 "Devicetree node "			\
+				 DT_NODE_PATH(node_id)			\
+				 " property " prop_name			\
+				 " must refer to a GPIO controller "	\
+				 "with compatible nordic,nrf-gpio; "	\
+				 "got "					\
+				 DT_NODE_PATH(DT_GPIO_CTLR(node_id,	\
+							   prop))	\
+				 ", which does not have this "		\
+				 "compatible")),			\
+		    (BUILD_ASSERT(1,					\
+				  "NRF_DT_CHECK_GPIO_CTLR_IS_SOC: OK")))
+/* Note: allow a trailing ";" either way */
 
 #endif /* !_ASMLANGUAGE */
 
