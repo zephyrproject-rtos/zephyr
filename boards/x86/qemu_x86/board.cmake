@@ -19,8 +19,15 @@ else()
   set(QEMU_CPU_TYPE_${ARCH} qemu32,+nx,+pae)
 endif()
 
+if(CONFIG_XIP)
+  # Extra 4MB to emulate flash area
+  math(EXPR QEMU_MEMORY_SIZE_MB "${CONFIG_SRAM_SIZE} / 1024 + 4")
+else()
+  math(EXPR QEMU_MEMORY_SIZE_MB "${CONFIG_SRAM_SIZE} / 1024")
+endif()
+
 set(QEMU_FLAGS_${ARCH}
-  -m 9
+  -m ${QEMU_MEMORY_SIZE_MB}
   -cpu ${QEMU_CPU_TYPE_${ARCH}}
   -device isa-debug-exit,iobase=0xf4,iosize=0x04
   ${REBOOT_FLAG}
