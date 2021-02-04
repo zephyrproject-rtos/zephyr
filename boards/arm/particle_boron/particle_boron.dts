@@ -27,8 +27,8 @@
 	compatible = "nordic,nrf-twi";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
-	sda-pin = <24>;
-	scl-pin = <41>;
+	sda-gpios = <&gpio0 24 0>;
+	scl-gpios = <&gpio1 9 0>;
 };
 
 &uart1 { /* u-blox SARA-U2 or SARA-R4 */

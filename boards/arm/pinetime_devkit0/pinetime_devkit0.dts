@@ -86,8 +86,8 @@
 &i2c0 {
 	compatible = "nordic,nrf-twim";
 	status = "okay";
-	sda-pin = <6>;
-	scl-pin = <7>;
+	sda-gpios = <&gpio0 6 0>;
+	scl-gpios = <&gpio0 7 0>;
 	clock-frequency = <I2C_BITRATE_FAST>; /* 400KHz */
 
 	/* BOSCH BMA421 Triaxial Acceleration Sensor (1000KHz) */

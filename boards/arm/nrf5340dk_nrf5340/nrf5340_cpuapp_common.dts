@@ -126,8 +126,8 @@
 &i2c1 {
 	compatible = "nordic,nrf-twim";
 	status = "okay";
-	sda-pin = <34>;
-	scl-pin = <35>;
+	sda-gpios = <&gpio1 2 0>;
+	scl-gpios = <&gpio1 3 0>;
 };
 
 &uart0 {

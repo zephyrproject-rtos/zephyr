@@ -127,8 +127,8 @@
 	compatible = "nordic,nrf-twim";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
-	sda-pin = <7>;
-	scl-pin = <8>;
+	sda-gpios = <&gpio0 7 0>;
+	scl-gpios = <&gpio0 8 0>;
 
 	sx1509b: sx1509b@3e {
 		compatible = "semtech,sx1509b";
@@ -173,8 +173,8 @@
 	compatible = "nordic,nrf-twim";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
-	sda-pin = <14>;
-	scl-pin = <15>;
+	sda-gpios = <&gpio0 14 0>;
+	scl-gpios = <&gpio0 15 0>;
 
 	lis2dh12: lis2dh12@19 {
 		compatible = "st,lis2dh12", "st,lis2dh";

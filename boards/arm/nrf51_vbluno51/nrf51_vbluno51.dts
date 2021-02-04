@@ -66,6 +66,6 @@
 &i2c0 {
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
-	sda-pin = <29>;
-	scl-pin = <30>;
+	sda-gpios = <&gpio0 29 0>;
+	scl-gpios = <&gpio0 30 0>;
 };
