@@ -14,6 +14,8 @@ struct ll_conn_iso_stream {
 	struct lll_conn_iso_stream lll;
 	uint32_t sync_delay;
 	uint8_t  cis_id;
+	struct ll_iso_datapath *datapath_in;
+	struct ll_iso_datapath *datapath_out;
 	uint32_t offset;        /* Offset of CIS from ACL event in us */
 	uint8_t  established;	/* 0 if CIS has not yet been established.
 				 * 1 if CIS has been established and host

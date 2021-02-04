@@ -618,7 +618,7 @@ static int hci_le_setup_iso_data_path(struct bt_conn *conn,
 	}
 
 	rp = (void *)rsp->data;
-	if (rp->status || (rp->handle != conn->handle)) {
+	if (rp->status || (sys_le16_to_cpu(rp->handle) != conn->handle)) {
 		err = -EIO;
 	}
 
@@ -649,7 +649,7 @@ static int hci_le_remove_iso_data_path(struct bt_conn *conn, uint8_t dir)
 	}
 
 	rp = (void *)rsp->data;
-	if (rp->status || (rp->handle != conn->handle)) {
+	if (rp->status || (sys_le16_to_cpu(rp->handle) != conn->handle)) {
 		err = -EIO;
 	}
 
