@@ -15,6 +15,15 @@ config FLASH_SIMULATOR
 config KERNEL_VM_SIZE
 	default 0x10000000 if ACPI
 
+config MULTIBOOT
+	default y
+
+config MULTIBOOT_INFO
+	default y if MULTIBOOT
+
+config MULTIBOOT_MEMMAP
+	default y if MULTIBOOT
+
 endif # BOARD_QEMU_X86
 
 if BOARD_QEMU_X86_64
