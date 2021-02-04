@@ -39,6 +39,9 @@ void helper_pdu_encode_terminate_ind(struct pdu_data *pdu, void *param);
 
 void helper_pdu_encode_channel_map_update_ind(struct pdu_data *pdu, void *param);
 
+void helper_pdu_encode_length_req(struct pdu_data *pdu, void *param);
+void helper_pdu_encode_length_rsp(struct pdu_data *pdu, void *param);
+
 void helper_pdu_verify_ping_req(const char *file, uint32_t line, struct pdu_data *pdu, void *param);
 void helper_pdu_verify_ping_rsp(const char *file, uint32_t line, struct pdu_data *pdu, void *param);
 
@@ -84,6 +87,9 @@ void helper_pdu_verify_conn_update_ind(const char *file, uint32_t line, struct p
 void helper_node_verify_conn_update(const char *file, uint32_t line, struct node_rx_pdu *rx, void *param);
 
 
+void helper_pdu_verify_length_req(const char *file, uint32_t line, struct pdu_data *pdu, void *param);
+void helper_pdu_verify_length_rsp(const char *file, uint32_t line, struct pdu_data *pdu, void *param);
+
 typedef enum {
 	LL_VERSION_IND,
 	LL_LE_PING_REQ,
@@ -107,6 +113,8 @@ typedef enum {
 	LL_CONNECTION_PARAM_RSP,
 	LL_TERMINATE_IND,
 	LL_CHAN_MAP_UPDATE_IND,
+	LL_LENGTH_REQ,
+	LL_LENGTH_RSP,
 } helper_pdu_opcode_t;
 
 typedef enum {

@@ -58,6 +58,7 @@
 
 #if (!defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY))
 #include "ll_sw/ull_llcp.h"
+#include "ll_sw/ull_conn_llcp_internal.h"
 #endif
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
@@ -946,6 +947,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 		conn_lll->nesn = 0;
 		conn_lll->empty = 0;
 
+#ifdef CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 		conn_lll->max_tx_octets = PDU_DC_PAYLOAD_SIZE_MIN;
 		conn_lll->max_rx_octets = PDU_DC_PAYLOAD_SIZE_MIN;
@@ -965,7 +967,17 @@ uint8_t ll_adv_enable(uint8_t enable)
 							  lll->phy_s));
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_CTLR_PHY */
+#endif
+#else /* CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY */
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+#if defined(CONFIG_BT_CTLR_PHY) && defined(CONFIG_BT_CTLR_ADV_EXT)
+		const uint8_t phy = lll->phy_s;
+#else
+		const uint8_t phy = PHY_1M;
+#endif
+		ull_dle_init(conn, phy);
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+#endif /* CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY */
 
 #if defined(CONFIG_BT_CTLR_PHY)
 		conn_lll->phy_flags = 0;
@@ -1090,11 +1102,11 @@ uint8_t ll_adv_enable(uint8_t enable)
 		conn->llcp_length.req = conn->llcp_length.ack = 0U;
 		conn->llcp_length.disabled = 0U;
 		conn->llcp_length.cache.tx_octets = 0U;
-#endif /* CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY */
 		conn->default_tx_octets = ull_conn_default_tx_octets_get();
 #if defined(CONFIG_BT_CTLR_PHY)
 		conn->default_tx_time = ull_conn_default_tx_time_get();
 #endif /* CONFIG_BT_CTLR_PHY */
+#endif /* CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY */
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 #if defined(CONFIG_BT_CTLR_PHY)
