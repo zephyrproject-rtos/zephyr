@@ -1926,7 +1926,7 @@ static void le_setup_iso_path(struct net_buf *buf, struct net_buf **evt)
 
 	rp = hci_cmd_complete(evt, sizeof(*rp));
 	rp->status = status;
-	rp->handle = cmd->handle;
+	rp->handle = sys_cpu_to_le16(handle);
 }
 
 static void le_remove_iso_path(struct net_buf *buf, struct net_buf **evt)
@@ -1942,7 +1942,7 @@ static void le_remove_iso_path(struct net_buf *buf, struct net_buf **evt)
 
 	rp = hci_cmd_complete(evt, sizeof(*rp));
 	rp->status = status;
-	rp->handle = cmd->handle;
+	rp->handle = sys_cpu_to_le16(handle);
 }
 
 static void le_iso_receive_test(struct net_buf *buf, struct net_buf **evt)
@@ -6237,6 +6237,11 @@ uint8_t hci_get_class(struct node_rx_pdu *node_rx)
 #endif /* CONFIG_BT_CTLR_PHY */
 			return HCI_CLASS_EVT_CONNECTION;
 #endif /* CONFIG_BT_CONN */
+#if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_SYNC_ISO) || \
+	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) || defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+		case NODE_RX_TYPE_ISO_PDU:
+			return HCI_CLASS_ISO_DATA;
+#endif
 
 #if CONFIG_BT_CTLR_USER_EVT_RANGE > 0
 		case NODE_RX_TYPE_USER_START ... NODE_RX_TYPE_USER_END - 1:
