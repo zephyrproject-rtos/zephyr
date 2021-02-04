@@ -217,30 +217,26 @@ uint32_t ll_length_req_send(uint16_t handle, uint16_t tx_octets, uint16_t tx_tim
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
 
-	/* TODO: get correct info in conn structure
-	 *	if (conn->llcp_length.disabled ||
-	 */
-	if (
-	    !feature_dle(conn)) {
+	if (!feature_dle(conn)) {
 		return BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
 	}
 
-	return BT_HCI_ERR_UNKNOWN_CMD;
+	return ull_cp_data_length_update(conn, tx_octets, tx_time);
 }
 
 void ll_length_max_get(uint16_t *max_tx_octets, uint16_t *max_tx_time,
 		       uint16_t *max_rx_octets, uint16_t *max_rx_time)
 {
+#if defined(CONFIG_BT_CTLR_PHY) && defined(CONFIG_BT_CTLR_PHY_CODED)
+	const uint8_t phy = PHY_CODED;
+#else
+	const uint8_t phy = PHY_1M;
+#endif
+
 	*max_tx_octets = LL_LENGTH_OCTETS_RX_MAX;
 	*max_rx_octets = LL_LENGTH_OCTETS_RX_MAX;
-#if defined(CONFIG_BT_CTLR_PHY)
-	*max_tx_time = PKT_US(LL_LENGTH_OCTETS_RX_MAX, PHY_CODED);
-	*max_rx_time = PKT_US(LL_LENGTH_OCTETS_RX_MAX, PHY_CODED);
-#else /* !CONFIG_BT_CTLR_PHY */
-	/* Default is 1M packet timing */
-	*max_tx_time = PKT_US(LL_LENGTH_OCTETS_RX_MAX, PHY_1M);
-	*max_rx_time = PKT_US(LL_LENGTH_OCTETS_RX_MAX, PHY_1M);
-#endif /* !CONFIG_BT_CTLR_PHY */
+	*max_tx_time = PKT_US(LL_LENGTH_OCTETS_RX_MAX, phy);
+	*max_rx_time = PKT_US(LL_LENGTH_OCTETS_RX_MAX, phy);
 }
 
 
@@ -562,13 +558,7 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	conn_lll->empty = 0;
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-	conn_lll->max_tx_octets = PDU_DC_PAYLOAD_SIZE_MIN;
-	conn_lll->max_rx_octets = PDU_DC_PAYLOAD_SIZE_MIN;
-
-#if defined(CONFIG_BT_CTLR_PHY)
-	conn_lll->max_tx_time = PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
-	conn_lll->max_rx_time = PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
-#endif /* CONFIG_BT_CTLR_PHY */
+	ull_dle_init(conn, PHY_1M);
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 #if defined(CONFIG_BT_CTLR_PHY)
@@ -646,15 +636,6 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	conn_lll->enc_rx = conn_lll->enc_tx = 0U;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
-
-
-#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-	conn->default_tx_octets = ull_conn_default_tx_octets_get();
-
-#if defined(CONFIG_BT_CTLR_PHY)
-	conn->default_tx_time = ull_conn_default_tx_time_get();
-#endif /* CONFIG_BT_CTLR_PHY */
-#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	conn->phy_pref_tx = ull_conn_default_phy_tx_get();
