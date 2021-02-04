@@ -108,8 +108,8 @@
 &i2c1 {
 	compatible = "nordic,nrf-twim";
 	status = "okay";
-	sda-pin = <26>;
-	scl-pin = <27>;
+	sda-gpios = <&gpio0 26 0>;
+	scl-gpios = <&gpio0 27 0>;
 
 	pcf85063a@51 {
 			compatible = "nxp,pcf85063a";

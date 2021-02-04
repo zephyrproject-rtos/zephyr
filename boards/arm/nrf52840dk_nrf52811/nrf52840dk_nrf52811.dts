@@ -109,8 +109,8 @@
 	compatible = "nordic,nrf-twi";
 	status = "okay";
 	/* Arduino compatible PINs */
-	sda-pin = <26>;
-	scl-pin = <27>;
+	sda-gpios = <&gpio0 26 0>;
+	scl-gpios = <&gpio0 27 0>;
 };
 
 &pwm0 {

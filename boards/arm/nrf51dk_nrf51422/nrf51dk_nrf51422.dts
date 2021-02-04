@@ -106,15 +106,15 @@
 
 &i2c0 {
 	status = "okay";
-	sda-pin = <30>;
-	scl-pin = <7>;
+	sda-gpios = <&gpio0 30 0>;
+	scl-gpios = <&gpio0 7 0>;
 };
 
 &i2c1 {
 	/* Cannot be used together with spi1. */
 	/* status = "okay"; */
-	sda-pin = <5>;
-	scl-pin = <6>;
+	sda-gpios = <&gpio0 5 0>;
+	scl-gpios = <&gpio0 6 0>;
 };
 
 &spi0 {

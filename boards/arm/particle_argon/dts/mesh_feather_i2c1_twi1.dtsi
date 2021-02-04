@@ -10,7 +10,7 @@
  * Changes should be made in all instances. */
 &i2c1 { /* feather I2C1 */
 	status = "okay";
-	sda-pin = <33>;
-	scl-pin = <34>;
+	sda-gpios = <&gpio1 1 0>;
+	scl-gpios = <&gpio1 2 0>;
 };
 

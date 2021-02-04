@@ -30,8 +30,8 @@
 
 &i2c0 {
 	status = "okay";
-	sda-pin = <28>;
-	scl-pin = <2>;
+	sda-gpios = <&gpio0 28 0>;
+	scl-gpios = <&gpio0 2 0>;
 };
 
 &uart0 {

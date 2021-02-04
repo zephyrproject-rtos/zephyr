@@ -179,8 +179,8 @@ arduino_i2c: &i2c0 { /* feather I2C */
 	compatible = "nordic,nrf-twi";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
-	sda-pin = <26>;
-	scl-pin = <27>;
+	sda-gpios = <&gpio0 26 0>;
+	scl-gpios = <&gpio0 27 0>;
 };
 
 feather_i2c: &i2c0 { };
