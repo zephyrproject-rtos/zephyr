@@ -171,6 +171,7 @@ static int adxl362_set_power_mode(const struct device *dev, uint8_t mode)
 	return adxl362_set_reg(dev, new_power_ctl, ADXL362_REG_POWER_CTL, 1);
 }
 
+#if defined(CONFIG_ADXL362_ACCEL_ODR_RUNTIME)
 /*
  * Output data rate map with allowed frequencies:
  * freq = freq_int + freq_milli / 1000
@@ -211,7 +212,9 @@ static int adxl362_freq_to_odr_val(uint16_t freq_int, uint16_t freq_milli)
 
 	return -EINVAL;
 }
+#endif /* CONFIG_ADXL362_ACCEL_ODR_RUNTIME */
 
+#if defined(CONFIG_ADXL362_ACCEL_RANGE_RUNTIME)
 static const struct adxl362_range {
 	uint16_t range;
 	uint8_t reg_val;
@@ -233,6 +236,7 @@ static int32_t adxl362_range_to_reg_val(uint16_t range)
 
 	return -EINVAL;
 }
+#endif /* CONFIG_ADXL362_ACCEL_RANGE_RUNTIME */
 
 static int adxl362_set_range(const struct device *dev, uint8_t range)
 {
