@@ -164,6 +164,7 @@ config SOC_MIMXRT1061
 	select HAS_MCUX_FLEXSPI
 	select HAS_MCUX_IGPIO
 	select HAS_MCUX_LPI2C
+	select HAS_MCUX_LPSPI
 	select HAS_MCUX_LPUART
 	select HAS_MCUX_GPT
 	select HAS_MCUX_SEMC
@@ -191,6 +192,7 @@ config SOC_MIMXRT1062
 	select HAS_MCUX_PWM
 	select HAS_MCUX_IGPIO
 	select HAS_MCUX_LPI2C
+	select HAS_MCUX_LPSPI
 	select HAS_MCUX_LPUART
 	select HAS_MCUX_GPT
 	select HAS_MCUX_SEMC
@@ -220,6 +222,7 @@ config SOC_MIMXRT1064
 	select HAS_MCUX_PWM
 	select HAS_MCUX_IGPIO
 	select HAS_MCUX_LPI2C
+	select HAS_MCUX_LPSPI
 	select HAS_MCUX_LPUART
 	select HAS_MCUX_GPT
 	select HAS_MCUX_SEMC
