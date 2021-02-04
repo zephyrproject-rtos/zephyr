@@ -11,10 +11,6 @@
 #include <drivers/pcie/msi.h>
 #endif
 
-#define MAX_BUS (0xFFFFFFFF & PCIE_BDF_BUS_MASK)
-#define MAX_DEV (0xFFFFFFFF & PCIE_BDF_DEV_MASK)
-#define MAX_FUNC (0xFFFFFFFF & PCIE_BDF_FUNC_MASK)
-
 static void show_msi(const struct shell *shell, pcie_bdf_t bdf)
 {
 #ifdef CONFIG_PCIE_MSI
@@ -109,9 +105,9 @@ static int cmd_pcie_ls(const struct shell *shell, size_t argc, char **argv)
 	int dev;
 	int func;
 
-	for (bus = 0; bus <= MAX_BUS; ++bus) {
-		for (dev = 0; dev <= MAX_DEV; ++dev) {
-			for (func = 0; func <= MAX_FUNC; ++func) {
+	for (bus = 0; bus <= PCIE_MAX_BUS; ++bus) {
+		for (dev = 0; dev <= PCIE_MAX_DEV; ++dev) {
+			for (func = 0; func <= PCIE_MAX_FUNC; ++func) {
 				show(shell, PCIE_BDF(bus, dev, func));
 			}
 		}
