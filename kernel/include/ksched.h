@@ -313,4 +313,19 @@ static inline struct k_thread *z_unpend1_no_timeout(_wait_q_t *wait_q)
 	return thread;
 }
 
+#ifdef CONFIG_SCHED_CPU_MASK
+static inline struct k_thread *z_unpend1_no_timeout_mask(_wait_q_t *wait_q,
+							 uint32_t cpu_mask)
+{
+	struct k_thread *thread = z_find_first_thread_to_unpend_mask(wait_q,
+								NULL, cpu_mask);
+
+	if (thread != NULL) {
+		z_unpend_thread_no_timeout(thread);
+	}
+
+	return thread;
+}
+#endif
+
 #endif /* ZEPHYR_KERNEL_INCLUDE_KSCHED_H_ */

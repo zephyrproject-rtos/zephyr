@@ -47,10 +47,12 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 #define z_priq_wait_add		z_priq_rb_add
 #define _priq_wait_remove	z_priq_rb_remove
 #define _priq_wait_best		z_priq_rb_best
+#define _priq_wait_best_mask	z_priq_rb_best_mask
 #elif defined(CONFIG_WAITQ_DUMB)
 #define z_priq_wait_add		z_priq_dumb_add
 #define _priq_wait_remove	z_priq_dumb_remove
 #define _priq_wait_best		z_priq_dumb_best
+#define _priq_wait_best_mask	z_priq_dumb_best_mask
 #endif
 
 /* the only struct z_kernel instance */
@@ -1511,6 +1513,54 @@ int k_thread_cpu_mask_enable(k_tid_t thread, int cpu)
 int k_thread_cpu_mask_disable(k_tid_t thread, int cpu)
 {
 	return cpu_mask_mod(thread, 0, BIT(cpu));
+}
+
+struct k_thread *z_priq_rb_best_mask(struct _priq_rb *pq)
+{
+	struct k_thread *t, *best = NULL;
+
+	RB_FOR_EACH_CONTAINER(&pq->tree, t, base.qnode_rb)
+		if ((t->base.cpu_mask & cpu_mask) &&
+		    (!best || z_is_t1_higher_prio_than_t2(t, best)))
+			best = t;
+
+	return best;
+}
+
+struct k_thread *z_priq_dumb_best_mask(sys_dlist_t *pq, uint32_t cpu_mask)
+{
+	struct k_thread *t;
+
+	SYS_DLIST_FOR_EACH_CONTAINER(pq, t, base.qnode_dlist)
+		if (t->base.cpu_mask & cpu_mask)
+			return t;
+
+	return NULL;
+}
+
+struct k_thread *z_unpend_first_thread_mask(_wait_q_t *wait_q, uint32_t cpu_mask)
+{
+	struct k_thread *thread = z_unpend1_no_timeout_mask(wait_q, cpu_mask);
+
+	if (thread)
+		z_abort_thread_timeout(thread);
+
+	return thread;
+}
+
+struct k_thread *z_find_first_thread_to_unpend_mask(_wait_q_t *wait_q,
+						    struct k_thread *from,
+						    uint32_t cpu_mask)
+{
+	ARG_UNUSED(from);
+
+	struct k_thread *ret = NULL;
+
+	LOCKED(&sched_spinlock) {
+		ret = _priq_wait_best_mask(&wait_q->waitq, cpu_mask);
+	}
+
+	return ret;
 }
 
 #endif /* CONFIG_SCHED_CPU_MASK */

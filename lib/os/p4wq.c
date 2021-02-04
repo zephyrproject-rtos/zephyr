@@ -179,7 +179,9 @@ void k_p4wq_submit(struct k_p4wq *queue, struct k_p4wq_work *item)
 	 * error: we are breaking our promise about run order.
 	 * Complain.
 	 */
-	struct k_thread *th = z_unpend_first_thread(&queue->waitq);
+	struct k_thread *th = w->cpu_mask ?
+		z_unpend_first_thread_mask(&queue->waitq, w->cpu_mask) :
+		z_unpend_first_thread(&queue->waitq);
 
 	if (th == NULL) {
 		LOG_WRN("Out of worker threads, priority guarantee violated");

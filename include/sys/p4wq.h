@@ -30,6 +30,7 @@ struct k_p4wq_work {
 	int32_t priority;
 	int32_t deadline;
 	k_p4wq_handler_t handler;
+	uint32_t cpu_mask;
 
 	/* reserved for implementation */
 	union {
