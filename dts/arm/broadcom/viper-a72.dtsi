@@ -21,8 +21,8 @@
 		};
 	};
 
-	arch_timer: timer {
-		compatible = "arm,arm-timer";
+	timer {
+		compatible = "arm,armv8-timer";
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL
 			      IRQ_DEFAULT_PRIORITY>,
