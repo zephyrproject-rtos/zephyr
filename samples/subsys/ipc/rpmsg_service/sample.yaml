@@ -4,7 +4,7 @@ sample:
     name: RPMsg Service example integration
 tests:
     sample.ipc.rpmsg_service:
-        platform_allow: nrf5340dk_nrf5340_cpuapp mps2_an521 v2m_musca_b1
+        platform_allow: mps2_an521 v2m_musca_b1
         tags: ipm
         harness: console
         harness_config:
@@ -13,3 +13,9 @@ tests:
             - "Master core received a message: 1"
             - "Master core received a message: 99"
             - "RPMsg Service demo ended."
+    sample.ipc.rpmsg_service.nrf:
+        platform_allow: nrf5340dk_nrf5340_cpuapp
+        integration_platforms:
+          - nrf5340dk_nrf5340_cpuapp
+        tags: ipm
+        build_only: true
