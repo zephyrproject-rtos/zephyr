@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_STM32F2X
-	bool "stm32f2x Series MCU"
+	bool "STM32F2x Series MCU"
 	select ARM
 	select CPU_CORTEX_M3
 	select CPU_CORTEX_M_HAS_DWT
