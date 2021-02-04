@@ -427,7 +427,7 @@ static int bap_release(struct bt_audio_chan *chan)
 			if (chan->ep->status.state == BT_ASCS_ASE_STATE_IDLE) {
 				bt_audio_chan_reset(chan);
 			} else {
-				err = bt_audio_ep_release(ep, buf);
+				err = bt_audio_ep_release(tmp->ep, buf);
 				if (err) {
 					return err;
 				}
