@@ -653,6 +653,9 @@ static inline void async_evt_rx_rdy(struct uart_stm32_data *data)
 		.data.rx.offset = data->dma_rx.offset
 	};
 
+	/* update the current pos for new data */
+	data->dma_rx.offset = data->dma_rx.counter;
+
 	/* send event only for new data */
 	if (event.data.rx.len > 0) {
 		async_user_callback(data, &event);
@@ -750,9 +753,6 @@ static void uart_stm32_dma_rx_flush(const struct device *dev)
 			data->dma_rx.counter = rx_rcv_len;
 
 			async_evt_rx_rdy(data);
-
-			/* update the current pos for new data */
-			data->dma_rx.offset = rx_rcv_len;
 		}
 	}
 }
@@ -952,8 +952,6 @@ void uart_stm32_dma_rx_cb(const struct device *dma_dev, void *user_data,
 	data->dma_rx.counter = data->dma_rx.buffer_length;
 
 	async_evt_rx_rdy(data);
-
-	data->dma_rx.offset = data->dma_rx.counter;
 
 	if (data->rx_next_buffer != NULL) {
 		async_evt_rx_buf_release(data);
