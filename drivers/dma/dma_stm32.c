@@ -97,8 +97,6 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 	callback_arg = id + STREAM_OFFSET;
 #endif /* CONFIG_DMAMUX_STM32 */
 
-	dma_stm32_dump_stream_irq(dev, id);
-
 	if (!IS_ENABLED(CONFIG_DMAMUX_STM32)) {
 		stream->busy = false;
 	}
