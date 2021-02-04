@@ -442,17 +442,26 @@ def print_top_level_properties(binding, base_names, string_io):
     #
     # The 'base_names' set contains all the base.yaml properties.
 
-    def prop_table(filter_fn):
+    def prop_table(filter_fn, deprecated):
         # Get a properly formatted and indented table of properties.
         specs = [prop_spec for prop_spec in binding.prop2specs.values()
                  if filter_fn(prop_spec)]
         indent = ' ' * 14
         if specs:
             temp_io = io.StringIO()
-            print_property_table(specs, temp_io)
+            print_property_table(specs, temp_io, deprecated=deprecated)
             return textwrap.indent(temp_io.getvalue(), indent)
 
         return indent + '(None)'
+
+    def node_props_filter(prop_spec):
+        return prop_spec.name not in base_names and not prop_spec.deprecated
+
+    def deprecated_node_props_filter(prop_spec):
+        return prop_spec.name not in base_names and prop_spec.deprecated
+
+    def base_props_filter(prop_spec):
+        return prop_spec.name in base_names
 
     if binding.child_binding:
         print_block('''\
@@ -467,6 +476,7 @@ def print_top_level_properties(binding, base_names, string_io):
             properties in the following sections.
             ''', string_io)
 
+
         print_block(f'''\
         .. tabs::
 
@@ -474,7 +484,13 @@ def print_top_level_properties(binding, base_names, string_io):
 
               Properties not inherited from the base binding file.
 
-{prop_table(lambda prop_spec: prop_spec.name not in base_names)}
+{prop_table(node_props_filter, False)}
+
+           .. group-tab:: Deprecated node specific properties
+
+              Deprecated properties not inherited from the base binding file.
+
+{prop_table(deprecated_node_props_filter, False)}
 
            .. group-tab:: Base properties
 
@@ -482,7 +498,7 @@ def print_top_level_properties(binding, base_names, string_io):
               common properties that may be set on many nodes. Not all of these
               may apply to the "{binding.compatible}" compatible.
 
-{prop_table(lambda prop_spec: prop_spec.name in base_names)}
+{prop_table(base_props_filter, True)}
 
         ''', string_io)
     else:
@@ -505,13 +521,19 @@ def print_child_binding_properties(binding, string_io):
             title = f'{level_string} node properties'
             underline = '=' * len(title)
             print(f'{title}\n{underline}\n', file=string_io)
-            print_property_table(child.prop2specs.values(), string_io)
+            print_property_table(child.prop2specs.values(), string_io,
+                                 deprecated=True)
         child = child.child_binding
         level += 1
 
-def print_property_table(prop_specs, string_io):
+def print_property_table(prop_specs, string_io, deprecated=False):
     # Writes a table of properties based on 'prop_specs', an iterable
     # of edtlib.PropertySpec objects, to 'string_io'.
+    #
+    # If 'deprecated' is true and the property is deprecated, an extra
+    # line is printed mentioning that fact. We allow this to be turned
+    # off for tables where all properties are deprecated, so it's
+    # clear from context.
 
     # Table header.
     print_block('''\
@@ -554,6 +576,9 @@ def print_property_table(prop_specs, string_io):
         if prop_spec.name in DETAILS_IN_IMPORTANT_PROPS:
             details += (f'\n\nSee {zref("dt-important-props")} for more '
                         'information.')
+
+        if deprecated and prop_spec.deprecated:
+            details += '\n\nThis property is **deprecated**.'
 
         return f"""\
    * - ``{prop_spec.name}``
