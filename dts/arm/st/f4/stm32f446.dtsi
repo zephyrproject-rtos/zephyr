@@ -43,6 +43,14 @@
 			status = "disabled";
 			label= "OTGHS";
 		};
+
+		backup_sram: memory@40024000 {
+			compatible = "st,stm32-backup-sram";
+			reg = <0x40024000 DT_SIZE_K(4)>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00040000>;
+			label = "BACKUP_SRAM";
+			status = "disabled";
+		};
 	};
 
 	otghs_fs_phy: otghs_fs_phy {
