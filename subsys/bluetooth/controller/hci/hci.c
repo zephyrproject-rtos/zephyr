@@ -5196,25 +5196,26 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 		}
 
 		hdr_len = ptr - (uint8_t *)p;
-		if (hdr_len <= (PDU_AC_EXT_HEADER_SIZE_MIN +
-				sizeof(struct pdu_adv_ext_hdr))) {
-			hdr_len = PDU_AC_EXT_HEADER_SIZE_MIN;
-			ptr = (uint8_t *)h;
-		}
-
 		hdr_buf_len = PDU_AC_EXT_HEADER_SIZE_MIN + p->ext_hdr_len;
 		if (hdr_len > hdr_buf_len) {
 			BT_WARN("    Header length %u/%u, INVALID.", hdr_len,
 				p->ext_hdr_len);
 		} else {
-			uint8_t acad_len = hdr_buf_len - hdr_len;
+			/* ACAD */
+			uint8_t len = hdr_buf_len - hdr_len;
 
-			if (acad_len) {
-				ptr += acad_len;
-				hdr_len += acad_len;
+			if (len) {
+				/* TODO: Handle ACAD */
 
-				BT_DBG("ACAD: <todo>");
+				ptr += len;
+				hdr_len += len;
 			}
+		}
+
+		if (hdr_len <= (PDU_AC_EXT_HEADER_SIZE_MIN +
+				sizeof(struct pdu_adv_ext_hdr))) {
+			hdr_len = PDU_AC_EXT_HEADER_SIZE_MIN;
+			ptr = (uint8_t *)h;
 		}
 
 no_ext_hdr:
@@ -5502,7 +5503,6 @@ static void le_per_adv_sync_report(struct pdu_data *pdu_data,
 				   struct node_rx_pdu *node_rx,
 				   struct net_buf *buf)
 {
-	struct bt_hci_evt_le_per_advertising_report *sep;
 	int8_t tx_pwr = BT_HCI_LE_ADV_TX_POWER_NO_PREF;
 	struct pdu_adv *adv = (void *)pdu_data;
 	uint8_t cte_type = BT_HCI_LE_NO_CTE;
@@ -5510,13 +5510,17 @@ static void le_per_adv_sync_report(struct pdu_data *pdu_data,
 	struct node_rx_pdu *node_rx_next;
 	uint8_t total_data_len = 0U;
 	uint8_t data_status = 0U;
+	struct net_buf *evt_buf;
 	uint8_t data_len = 0U;
+	uint8_t acad_len = 0U;
 	uint8_t *data = NULL;
+	uint8_t *acad = NULL;
 	uint8_t data_max_len;
 	int8_t rssi;
 
 	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
-	    !(le_event_mask & BT_EVT_MASK_LE_PER_ADVERTISING_REPORT)) {
+	    (!(le_event_mask & BT_EVT_MASK_LE_PER_ADVERTISING_REPORT) &&
+	     !(le_event_mask & BT_EVT_MASK_LE_BIGINFO_ADV_REPORT))) {
 		node_rx_extra_list_release(node_rx->hdr.rx_ftr.extra);
 		return;
 	}
@@ -5605,25 +5609,29 @@ static void le_per_adv_sync_report(struct pdu_data *pdu_data,
 		}
 
 		hdr_len = ptr - (uint8_t *)p;
-		if (hdr_len <= (PDU_AC_EXT_HEADER_SIZE_MIN +
-				sizeof(struct pdu_adv_ext_hdr))) {
-			hdr_len = PDU_AC_EXT_HEADER_SIZE_MIN;
-			ptr = (uint8_t *)h;
-		}
-
 		hdr_buf_len = PDU_AC_EXT_HEADER_SIZE_MIN + p->ext_hdr_len;
 		if (hdr_len > hdr_buf_len) {
 			BT_WARN("    Header length %u/%u, INVALID.", hdr_len,
 				p->ext_hdr_len);
 		} else {
-			uint8_t acad_len = hdr_buf_len - hdr_len;
+			/* ACAD */
+			uint8_t len = hdr_buf_len - hdr_len;
 
-			if (acad_len) {
-				ptr += acad_len;
-				hdr_len += acad_len;
+			if (len) {
+				if (!acad) {
+					acad = ptr;
+					acad_len = len;
+				}
 
-				BT_DBG("ACAD: <todo>");
+				ptr += len;
+				hdr_len += len;
 			}
+		}
+
+		if (hdr_len <= (PDU_AC_EXT_HEADER_SIZE_MIN +
+				sizeof(struct pdu_adv_ext_hdr))) {
+			hdr_len = PDU_AC_EXT_HEADER_SIZE_MIN;
+			ptr = (uint8_t *)h;
 		}
 
 no_ext_hdr:
@@ -5676,7 +5684,7 @@ no_ext_hdr:
 	 */
 	data_max_len = ADV_REPORT_EVT_MAX_LEN -
 		       sizeof(struct bt_hci_evt_le_meta_event) -
-		       sizeof(*sep);
+		       sizeof(struct bt_hci_evt_le_per_advertising_report);
 
 	/* If data complete */
 	if (!data_status) {
@@ -5706,17 +5714,67 @@ no_ext_hdr:
 		}
 	}
 
-	/* Start constructing the event */
-	sep = meta_evt(buf, BT_HCI_EVT_LE_PER_ADVERTISING_REPORT,
-		       sizeof(*sep) + data_len);
+	evt_buf = buf;
+	if (le_event_mask & BT_EVT_MASK_LE_PER_ADVERTISING_REPORT) {
+		struct bt_hci_evt_le_per_advertising_report *sep;
 
-	sep->handle = sys_cpu_to_le16(node_rx->hdr.handle);
-	sep->tx_power = tx_pwr;
-	sep->rssi = rssi;
-	sep->cte_type = cte_type;
-	sep->data_status = data_status;
-	sep->length = data_len;
-	memcpy(&sep->data[0], data, data_len);
+		/* Start constructing periodic advertising report */
+		sep = meta_evt(evt_buf, BT_HCI_EVT_LE_PER_ADVERTISING_REPORT,
+			       sizeof(*sep) + data_len);
+
+		sep->handle = sys_cpu_to_le16(node_rx->hdr.handle);
+		sep->tx_power = tx_pwr;
+		sep->rssi = rssi;
+		sep->cte_type = cte_type;
+		sep->data_status = data_status;
+		sep->length = data_len;
+		memcpy(&sep->data[0], data, data_len);
+
+		evt_buf = NULL;
+	}
+
+	if ((le_event_mask & BT_EVT_MASK_LE_BIGINFO_ADV_REPORT) && acad &&
+	    (acad_len >= (PDU_BIG_INFO_CLEARTEXT_SIZE + 2))) {
+		struct bt_hci_evt_le_biginfo_adv_report *sep;
+		struct pdu_big_info *bi;
+		uint8_t bi_size;
+
+		/* TODO: Parse and find the BIGInfo */
+		bi_size = acad[0];
+		bi = (void *)&acad[2];
+
+		/* Allocate new event buffer if periodic advertising report was
+		 * constructed with the caller supplied buffer.
+		 */
+		if (!evt_buf) {
+			evt_buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
+
+			net_buf_frag_add(buf, evt_buf);
+		}
+
+		/* Start constructing BIGInfo  advertising report */
+		sep = meta_evt(evt_buf, BT_HCI_EVT_LE_BIGINFO_ADV_REPORT,
+			       sizeof(*sep));
+
+		sep->sync_handle = sys_cpu_to_le16(node_rx->hdr.handle);
+		sep->num_bis = bi->num_bis;
+		sep->nse = bi->nse;
+		sep->iso_interval = bi->iso_interval;
+		sep->bn = bi->bn;
+		sep->pto = bi->pto;
+		sep->irc = bi->irc;
+		sep->max_pdu = bi->max_pdu;
+		sys_put_le24(sys_le24_to_cpu(bi->sdu_interval),
+			     sep->sdu_interval);
+		sep->max_sdu = bi->max_sdu;
+		sep->phy = (bi->chm_phy[4] >> 5) + 1;
+		sep->framing = (bi->payload_count_framing[4] >> 7) & 0x01;
+		if (bi_size == (PDU_BIG_INFO_ENCRYPTED_SIZE + 1)) {
+			sep->encryption = 1U;
+		} else {
+			sep->encryption = 0U;
+		}
+	}
 
 	node_rx_extra_list_release(node_rx->hdr.rx_ftr.extra);
 }
