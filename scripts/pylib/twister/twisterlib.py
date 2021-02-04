@@ -2588,6 +2588,7 @@ class TestSuite(DisablePyTestCollectionMixin):
         self.testcases = {}
         self.platforms = []
         self.selected_platforms = []
+        self.filtered_platforms = []
         self.default_platforms = []
         self.outdir = os.path.abspath(outdir)
         self.discards = {}
@@ -2757,9 +2758,9 @@ class TestSuite(DisablePyTestCollectionMixin):
             logger.info("In total {} test cases were executed, {} skipped on {} out of total {} platforms ({:02.2f}%)".format(
                 results.cases - results.skipped_cases,
                 results.skipped_cases,
-                len(self.selected_platforms),
+                len(self.filtered_platforms),
                 self.total_platforms,
-                (100 * len(self.selected_platforms) / len(self.platforms))
+                (100 * len(self.filtered_platforms) / len(self.platforms))
             ))
 
         logger.info(f"{Fore.GREEN}{run}{Fore.RESET} test configurations executed on platforms, \
@@ -3169,6 +3170,9 @@ class TestSuite(DisablePyTestCollectionMixin):
             instance.reason = self.discards[instance]
             instance.status = "skipped"
             instance.fill_results_by_status()
+
+        self.filtered_platforms = set(p.platform.name for p in self.instances.values()
+                                      if p.status != "skipped" )
 
         return discards
 

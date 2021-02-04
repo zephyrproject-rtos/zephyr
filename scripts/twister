@@ -1151,7 +1151,7 @@ def main():
         suite.csv_report(options.save_tests)
         return
 
-    logger.info("%d test suites (%d configurations) selected, %d configurations discarded due to filters." %
+    logger.info("%d test scenarios (%d configurations) selected, %d configurations discarded due to filters." %
                 (len(suite.testcases), len(suite.instances), len(discards)))
 
     if options.device_testing and not options.build_only:
