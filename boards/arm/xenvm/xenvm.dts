@@ -63,7 +63,7 @@
 	};
 
 	timer {
-		compatible = "arm,arm-timer";
+		compatible = "arm,armv8-timer";
 		interrupts = <GIC_PPI 0x0d IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY
 			      GIC_PPI 0x0e IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY
 			      GIC_PPI 0x0b IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
