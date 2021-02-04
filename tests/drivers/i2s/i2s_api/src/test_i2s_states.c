@@ -340,6 +340,12 @@ void test_i2s_state_stopping_neg(void)
 
 	ret = rx_block_read(dev_i2s_rx, 0);
 	zassert_equal(ret, TC_PASS, NULL);
+
+	/* This is incase the RX channel is stuck in STOPPING state.
+	 * Clear out the state before running the next test.
+	 */
+	ret = i2s_trigger(dev_i2s_rx, I2S_DIR_RX, I2S_TRIGGER_DROP);
+	zassert_equal(ret, 0, "RX DROP trigger failed");
 }
 
 /** @brief Verify all failure cases in ERROR state.
@@ -380,14 +386,19 @@ void test_i2s_state_error_neg(void)
 	/* Wait for transmission to finish */
 	k_sleep(K_MSEC(200));
 
-	/* Read all available data blocks in RX queue */
-	for (int i = 0; i < NUM_RX_BLOCKS; i++) {
-		ret = rx_block_read(dev_i2s_rx, 0);
-		zassert_equal(ret, TC_PASS, NULL);
-	}
+	/* Read one data block, expect success even if RX queue is already in
+	 * the error state.
+	 */
+	ret = rx_block_read(dev_i2s_rx, 0);
+	zassert_equal(ret, TC_PASS, NULL);
 
-	/* Attempt to read one more data block, expect an error */
-	ret = i2s_buf_read(dev_i2s_rx, rx_buf, &rx_size);
+	/* Attempt to read more data blocks than are available in the RX queue */
+	for (int i = 0; i < NUM_RX_BLOCKS; i++) {
+		ret = i2s_buf_read(dev_i2s_rx, rx_buf, &rx_size);
+		if (ret != 0) {
+			break;
+		}
+	}
 	zassert_equal(ret, -EIO, "RX overrun error not detected");
 
 	/* Send invalid triggers, expect failure */
