@@ -3890,6 +3890,7 @@ class HardwareMap:
             runner = dut.get('runner')
             serial = dut.get('serial')
             product = dut.get('product')
+            fixtures = dut.get('fixtures', [])
             new_dut = DUT(platform=platform,
                           product=product,
                           runner=runner,
@@ -3899,6 +3900,7 @@ class HardwareMap:
                           pre_script=pre_script,
                           post_script=post_script,
                           post_flash_script=post_flash_script)
+            new_dut.fixtures = fixtures
             new_dut.counter = 0
             self.duts.append(new_dut)
 
