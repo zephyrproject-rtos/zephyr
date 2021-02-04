@@ -168,7 +168,7 @@ API Reference
    :project: Zephyr
 
 Futex API Reference
-*********************************
+*******************
 
 k_futex is a lightweight mutual exclusion primitive designed to minimize
 kernel involvement. Uncontended operation relies only on atomic access
@@ -180,7 +180,7 @@ management mechanism.
    :project: Zephyr
 
 User Mode Mutex API Reference
-*********************************
+*****************************
 
 sys_mutex behaves almost exactly like k_mutex, with the added advantage
 that a sys_mutex instance can reside in user memory. When user mode isn't
