@@ -2037,6 +2037,37 @@ class CMake():
 
         return results
 
+    @staticmethod
+    def run_cmake_script(args=[]):
+
+        logger.debug("Running cmake script %s" % (args[0]))
+
+        cmake_args = ["-D{}".format(a.replace('"', '')) for a in args[1:]]
+        cmake_args.extend(['-P', args[0]])
+
+        logger.debug("Calling cmake with arguments: {}".format(cmake_args))
+        cmake = shutil.which('cmake')
+        cmd = [cmake] + cmake_args
+
+        kwargs = dict()
+        kwargs['stdout'] = subprocess.PIPE
+        # CMake sends the output of message() to stderr unless it's STATUS
+        kwargs['stderr'] = subprocess.STDOUT
+
+        p = subprocess.Popen(cmd, **kwargs)
+        out, _ = p.communicate()
+
+        if p.returncode == 0:
+            msg = "Finished running  %s" % (args[0])
+            logger.debug(msg)
+            results = {"returncode": p.returncode, "msg": msg, "stdout": out}
+
+        else:
+            logger.error("Cmake script failure: %s" % (args[0]))
+            results = {"returncode": p.returncode}
+
+        return results
+
 
 class FilterBuilder(CMake):
 
@@ -2809,13 +2840,17 @@ class TestSuite(DisablePyTestCollectionMixin):
 
     @staticmethod
     def get_toolchain():
-        toolchain = os.environ.get("ZEPHYR_TOOLCHAIN_VARIANT", None)
+        toolchain_script = ZEPHYR_BASE + "/cmake/verify-toolchain.cmake"
+        result = CMake.run_cmake_script([toolchain_script, "FORMAT=json"])
+
         try:
-            if not toolchain:
+            if result['returncode']:
                 raise TwisterRuntimeError("E: Variable ZEPHYR_TOOLCHAIN_VARIANT is not defined")
         except Exception as e:
             print(str(e))
             sys.exit(2)
+        toolchain = json.loads(result['stdout'])['ZEPHYR_TOOLCHAIN_VARIANT']
+        logger.info(f"Using '{toolchain}' toolchain.")
 
         return toolchain
 
