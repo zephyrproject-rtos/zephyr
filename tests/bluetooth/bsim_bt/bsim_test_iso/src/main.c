@@ -175,6 +175,16 @@ static void test_iso_main(void)
 	return;
 }
 
+static const char *phy2str(uint8_t phy)
+{
+	switch (phy) {
+	case 0: return "No packets";
+	case BT_GAP_LE_PHY_1M: return "LE 1M";
+	case BT_GAP_LE_PHY_2M: return "LE 2M";
+	case BT_GAP_LE_PHY_CODED: return "LE Coded";
+	default: return "Unknown";
+	}
+}
 
 static bool is_periodic;
 static uint8_t per_sid;
@@ -188,8 +198,10 @@ static void pa_sync_cb(struct bt_le_per_adv_sync *sync,
 
 	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 
-	printk("PER_ADV_SYNC[%u]: [DEVICE]: %s synced\n",
-	       bt_le_per_adv_sync_get_index(sync), le_addr);
+	printk("PER_ADV_SYNC[%u]: [DEVICE]: %s synced, "
+	       "Interval 0x%04x (%u ms), PHY %s\n",
+	       bt_le_per_adv_sync_get_index(sync), le_addr,
+	       info->interval, info->interval * 5 / 4, phy2str(info->phy));
 
 	is_sync = true;
 }
@@ -227,14 +239,19 @@ static struct bt_le_per_adv_sync_cb sync_cb = {
 	.recv = pa_recv_cb
 };
 
-static const char *phy2str(uint8_t phy)
+#define NAME_LEN 30
+
+static bool data_cb(struct bt_data *data, void *user_data)
 {
-	switch (phy) {
-	case 0: return "No packets";
-	case BT_GAP_LE_PHY_1M: return "LE 1M";
-	case BT_GAP_LE_PHY_2M: return "LE 2M";
-	case BT_GAP_LE_PHY_CODED: return "LE Coded";
-	default: return "Unknown";
+	char *name = user_data;
+
+	switch (data->type) {
+	case BT_DATA_NAME_SHORTENED:
+	case BT_DATA_NAME_COMPLETE:
+		memcpy(name, data->data, MIN(data->data_len, NAME_LEN - 1));
+		return false;
+	default:
+		return true;
 	}
 }
 
@@ -242,14 +259,11 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 		      struct net_buf_simple *buf)
 {
 	char le_addr[BT_ADDR_LE_STR_LEN];
-	char name[30];
-
-	/* We only care for scan results until we find the SID */
-	if (per_sid) {
-		return;
-	}
+	char name[NAME_LEN];
 
 	(void)memset(name, 0, sizeof(name));
+
+	bt_data_parse(buf, data_cb, name);
 
 	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 	printk("[DEVICE]: %s, AD evt type %u, Tx Pwr: %i, RSSI %i %s "
@@ -279,6 +293,14 @@ static struct bt_le_scan_cb scan_callbacks = {
 
 static void test_iso_recv_main(void)
 {
+	struct bt_le_scan_param scan_param = {
+		.type       = BT_HCI_LE_SCAN_ACTIVE,
+		.options    = BT_LE_SCAN_OPT_NONE,
+		.interval   = 0x0004,
+		.window     = 0x0004,
+	};
+	struct bt_le_per_adv_sync_param sync_create_param;
+	struct bt_le_per_adv_sync *sync = NULL;
 	int err;
 
 	printk("\n*ISO broadcast test*\n");
@@ -301,34 +323,24 @@ static void test_iso_recv_main(void)
 
 	printk("Start scanning...");
 	is_periodic = false;
-	err = bt_le_scan_start(BT_LE_SCAN_ACTIVE, NULL);
+	err = bt_le_scan_start(&scan_param, NULL);
 	if (err) {
 		FAIL("Could not start scan: %d\n", err);
 		return;
 	}
 	printk("success.\n");
 
-	struct bt_le_per_adv_sync *sync;
-	uint8_t bis_count = 1; /* TODO: Add support for multiple BIS per BIG */
-	uint8_t bis_handle = 0;
-	struct bt_le_per_adv_sync_param sync_create_param = { 0 };
-
 	while (!is_periodic) {
 		k_sleep(K_MSEC(100));
 	}
-	printk("PA SID found %u\n", per_sid);
-
-	printk("Stop scanning...");
-	err = bt_le_scan_stop();
-	if (err) {
-		FAIL("Could not stop scan: %d\n", err);
-		return;
-	}
-	printk("success.\n");
+	printk("Periodic Advertising found (SID: %u)\n", per_sid);
 
 	printk("Creating Periodic Advertising Sync...");
+	is_sync = false;
 	bt_addr_le_copy(&sync_create_param.addr, &per_addr);
+	sync_create_param.options = 0;
 	sync_create_param.sid = per_sid;
+	sync_create_param.skip = 0;
 	sync_create_param.timeout = 0xa;
 	err = bt_le_per_adv_sync_create(&sync_create_param, &sync);
 	if (err) {
@@ -343,8 +355,18 @@ static void test_iso_recv_main(void)
 		k_sleep(K_MSEC(100));
 	}
 
+	printk("Stop scanning...");
+	err = bt_le_scan_stop();
+	if (err) {
+		FAIL("Could not stop scan: %d\n", err);
+		return;
+	}
+	printk("success.\n");
+
 #if !IS_ENABLED(USE_HOST_API)
 	uint8_t big_handle = 0;
+	uint8_t bis_count = 1; /* TODO: Add support for multiple BIS per BIG */
+	uint8_t bis_handle = 0;
 	uint8_t mse = 0;
 	uint8_t encryption = 0;
 	uint8_t bcode[BT_ISO_BROADCAST_CODE_SIZE] = { 0 };
@@ -360,7 +382,7 @@ static void test_iso_recv_main(void)
 	}
 	printk("success.\n");
 
-	k_sleep(K_MSEC(13800));
+	k_sleep(K_MSEC(5000));
 
 	printk("Terminating BIG Sync...");
 	node_rx = NULL;
@@ -409,7 +431,7 @@ static void test_iso_recv_main(void)
 
 static void test_iso_init(void)
 {
-	bst_ticker_set_next_tick_absolute(30e6);
+	bst_ticker_set_next_tick_absolute(60e6);
 	bst_result = In_progress;
 }
 
