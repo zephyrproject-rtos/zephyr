@@ -71,6 +71,17 @@ extern "C" {
 #define LOG_DBG(...)    Z_LOG(LOG_LEVEL_DBG, __VA_ARGS__)
 
 /**
+ * @brief Unconditionally print raw log message.
+ *
+ * The result is same as if printk was used but it goes through logging
+ * infrastructure thus utilizes logging mode, e.g. deferred mode.
+ *
+ * @param ... A string optionally containing printk valid conversion specifier,
+ * followed by as many values as specifiers.
+ */
+#define LOG_PRINTK(...) Z_LOG_PRINTK(__VA_ARGS__)
+
+/**
  * @brief Writes an ERROR level message associated with the instance to the log.
  *
  * Message is associated with specific instance of the module which has
