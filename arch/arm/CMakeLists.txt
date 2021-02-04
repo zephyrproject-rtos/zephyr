@@ -2,6 +2,7 @@
 
 if(CONFIG_ARM64)
   set_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT elf64-littleaarch64)
+  zephyr_compile_options(-fPIC)
 
   add_subdirectory(core/aarch64)
 else()

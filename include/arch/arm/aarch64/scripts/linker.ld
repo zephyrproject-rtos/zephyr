@@ -196,19 +196,19 @@ SECTIONS
     _image_rodata_size = _image_rodata_end - _image_rodata_start;
     _image_rom_end = .;
 
+    GROUP_END(ROMABLE_REGION)
+
     /*
      * These are here according to 'arm-zephyr-elf-ld --verbose',
      * before data section.
      */
-    /DISCARD/ :
+    SECTION_PROLOGUE(.got,,)
     {
         *(.got.plt)
         *(.igot.plt)
         *(.got)
         *(.igot)
     }
-
-    GROUP_END(ROMABLE_REGION)
 
     GROUP_START(RAMABLE_REGION)
 
