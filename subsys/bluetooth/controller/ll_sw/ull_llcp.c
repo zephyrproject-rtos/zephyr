@@ -27,6 +27,7 @@
 
 #include "ull_internal.h"
 #include "ull_conn_types.h"
+#include "ull_conn_llcp_internal.h"
 #include "ull_llcp.h"
 #include "ull_llcp_internal.h"
 
@@ -128,6 +129,11 @@ void ull_cp_priv_tx_pause_data(struct ll_conn *conn)
 	ull_tx_q_pause_data(&conn->tx_q);
 }
 
+void ull_cp_priv_tx_resume_data(struct ll_conn *conn)
+{
+	ull_tx_q_resume_data(&conn->tx_q);
+}
+
 void ull_cp_priv_tx_flush(struct ll_conn *conn)
 {
 	/* TODO(thoh): do something here to flush the TX Q */
@@ -199,6 +205,9 @@ struct proc_ctx *ull_cp_priv_create_local_procedure(enum llcp_proc proc)
 	case PROC_CHAN_MAP_UPDATE:
 		lp_chmu_init_proc(ctx);
 		break;
+	case PROC_DATA_LENGTH_UPDATE:
+		lp_comm_init_proc(ctx);
+		break;
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
@@ -239,6 +248,9 @@ struct proc_ctx *ull_cp_priv_create_remote_procedure(enum llcp_proc proc)
 		rp_cu_init_proc(ctx);
 		break;
 	case PROC_TERMINATE:
+		rp_comm_init_proc(ctx);
+		break;
+	case PROC_DATA_LENGTH_UPDATE:
 		rp_comm_init_proc(ctx);
 		break;
 	default:
@@ -339,11 +351,6 @@ uint8_t ull_cp_min_used_chans(struct ll_conn *conn, uint8_t phys, uint8_t min_us
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	/* TODO - (erbr):
-	 * Figure out excactly how to store these parameters when
-	 * integrating this into the LL.
-	 * Should it be stored in the conn or in the ctx?
-	 */
 	ctx->data.muc.phys = phys;
 	ctx->data.muc.min_used_chans = min_used_chans;
 
@@ -478,6 +485,7 @@ uint8_t ull_cp_chan_map_update(struct ll_conn *conn, uint8_t chm[5])
 	}
 
 	ctx = create_local_procedure(PROC_CHAN_MAP_UPDATE);
+
 	if (!ctx) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
@@ -486,6 +494,24 @@ uint8_t ull_cp_chan_map_update(struct ll_conn *conn, uint8_t chm[5])
 	 * Should probably be stored in conn when integrated with LL
 	 */
 	memcpy(ctx->data.chmu.chm, chm, sizeof(ctx->data.chmu.chm));
+
+	lr_enqueue(conn, ctx);
+
+	return BT_HCI_ERR_SUCCESS;
+}
+
+uint8_t ull_cp_data_length_update(struct ll_conn *conn, uint16_t max_tx_octets, uint16_t max_tx_time)
+{
+	struct proc_ctx *ctx;
+
+	ctx = create_local_procedure(PROC_DATA_LENGTH_UPDATE);
+
+	if (!ctx) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	// Apply update to local
+	ull_dle_local_tx_update(conn, max_tx_octets, max_tx_time);
 
 	lr_enqueue(conn, ctx);
 
@@ -538,6 +564,16 @@ uint8_t ull_cp_conn_update(struct ll_conn *conn, uint16_t interval_min, uint16_t
 	return BT_HCI_ERR_SUCCESS;
 }
 
+
+uint8_t ull_cp_remote_dle_pending(struct ll_conn *conn)
+{
+	struct proc_ctx *ctx;
+
+	ctx = rr_peek(conn);
+
+	return (ctx && ctx->proc == PROC_DATA_LENGTH_UPDATE);
+}
+
 void ull_cp_conn_param_req_reply(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;
@@ -587,6 +623,12 @@ void ull_cp_tx_ack(struct ll_conn *conn, struct node_tx *tx)
 	if (ctx && ctx->tx_ack == tx) {
 		/* TX ack re. local request */
 		lr_tx_ack(conn, ctx, tx);
+	}
+
+	ctx = rr_peek(conn);
+	if (ctx && ctx->tx_ack == tx) {
+		/* TX ack re. remote response */
+		rr_tx_ack(conn, ctx, tx);
 	}
 }
 

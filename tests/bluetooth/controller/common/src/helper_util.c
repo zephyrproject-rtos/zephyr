@@ -70,6 +70,8 @@ helper_pdu_encode_func_t * const helper_pdu_encode[] = {
 	[LL_CONNECTION_PARAM_RSP]  = helper_pdu_encode_conn_param_rsp,
 	[LL_TERMINATE_IND]         = helper_pdu_encode_terminate_ind,
 	[LL_CHAN_MAP_UPDATE_IND]   = helper_pdu_encode_channel_map_update_ind,
+	[LL_LENGTH_REQ]            = helper_pdu_encode_length_req,
+	[LL_LENGTH_RSP]            = helper_pdu_encode_length_rsp,
 };
 
 helper_pdu_verify_func_t *const helper_pdu_verify[] = {
@@ -95,6 +97,8 @@ helper_pdu_verify_func_t *const helper_pdu_verify[] = {
 	[LL_CONNECTION_PARAM_RSP]  = helper_pdu_verify_conn_param_rsp,
 	[LL_TERMINATE_IND]         = helper_pdu_verify_terminate_ind,
 	[LL_CHAN_MAP_UPDATE_IND]   = helper_pdu_verify_channel_map_update_ind,
+	[LL_LENGTH_REQ]            = helper_pdu_verify_length_req,
+	[LL_LENGTH_RSP]            = helper_pdu_verify_length_rsp,
 };
 
 helper_pdu_ntf_verify_func_t *const helper_pdu_ntf_verify[] = {
@@ -120,6 +124,8 @@ helper_pdu_ntf_verify_func_t *const helper_pdu_ntf_verify[] = {
 	[LL_CONNECTION_PARAM_RSP]  = NULL,
 	[LL_TERMINATE_IND]         = NULL,
 	[LL_CHAN_MAP_UPDATE_IND]   = NULL,
+	[LL_LENGTH_REQ]            = NULL,
+	[LL_LENGTH_RSP]            = NULL,
 };
 
 
