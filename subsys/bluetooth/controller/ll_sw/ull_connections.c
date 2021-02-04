@@ -7,6 +7,7 @@
 #include <stddef.h>
 #include <zephyr.h>
 #include <bluetooth/bluetooth.h>
+#include <bluetooth/hci.h>
 #include <sys/byteorder.h>
 
 #include "hal/cpu.h"
@@ -22,6 +23,7 @@
 #include "ticker/ticker.h"
 
 #include "pdu.h"
+#include "ll_feat.h"
 
 #include "lll.h"
 #include "lll_conn.h"
@@ -31,6 +33,7 @@
 #include "ull_llcp.h"
 
 #include "ull_conn_types.h"
+#include "ull_llcp_features.h"
 #include "ull_internal.h"
 #include "ull_slave_internal.h"
 #include "ull_master_internal.h"
@@ -226,17 +229,145 @@ int ull_conn_reset(void)
 }
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+static inline void dle_max_time_get(struct ll_conn *conn,
+				    uint16_t *max_rx_time, uint16_t *max_tx_time)
+{
+	uint16_t rx_time = 0;
+	uint16_t tx_time = 0;
+	uint8_t phy_select = PHY_1M;
+
+#if defined(CONFIG_BT_CTLR_PHY)
+	if (conn->llcp.fex.valid && feature_phy_coded(conn)) {
+		// If coded PHY is supported on the connection
+		// this will define the max times
+		phy_select = PHY_CODED;
+		// If not, max times should be defined by 1M timing
+	}
+#endif
+
+	rx_time = PKT_US(LL_LENGTH_OCTETS_RX_MAX, phy_select);
+
+#if defined(CONFIG_BT_CTLR_PHY)
+	tx_time = MIN(conn->lll.dle.local.max_tx_time, PKT_US(LL_LENGTH_OCTETS_RX_MAX, phy_select));
+#else /* !CONFIG_BT_CTLR_PHY */
+	tx_time = PKT_US(conn->lll.dle.local.max_tx_octets, phy_select);
+#endif /* !CONFIG_BT_CTLR_PHY */
+
+	/*
+	 * see Vol. 6 Part B chapter 4.5.10
+	 * minimum value for time is 328 us
+	 */
+	rx_time = MAX(PDU_DC_PAYLOAD_TIME_MIN, rx_time);
+	tx_time = MAX(PDU_DC_PAYLOAD_TIME_MIN, tx_time);
+
+	*max_rx_time = rx_time;
+	*max_tx_time = tx_time;
+}
+
 uint16_t ull_conn_default_tx_octets_get(void)
 {
 	return default_tx_octets;
 }
 
-#if defined(CONFIG_BT_CTLR_PHY)
 uint16_t ull_conn_default_tx_time_get(void)
 {
+#if defined(CONFIG_BT_CTLR_PHY)
 	return default_tx_time;
-}
+#else
+	return PKT_US(default_tx_octets, PHY_1M);
 #endif /* CONFIG_BT_CTLR_PHY */
+}
+
+uint8_t ull_dle_update_eff(struct ll_conn *conn)
+{
+	uint8_t dle_changed = 0;
+
+	const uint16_t eff_tx_octets = MIN(conn->lll.dle.local.max_tx_octets, conn->lll.dle.remote.max_rx_octets);
+	const uint16_t eff_rx_octets = MIN(conn->lll.dle.local.max_rx_octets, conn->lll.dle.remote.max_tx_octets);
+#if defined(CONFIG_BT_CTLR_PHY)
+	const uint16_t eff_tx_time = MIN(conn->lll.dle.local.max_tx_time, conn->lll.dle.remote.max_rx_time);
+	const uint16_t eff_rx_time = MIN(conn->lll.dle.local.max_rx_time, conn->lll.dle.remote.max_tx_time);
+
+	if (eff_tx_time != conn->lll.dle.eff.max_tx_time) {
+		conn->lll.dle.eff.max_tx_time = eff_tx_time;
+		dle_changed = 1;
+	}
+	if (eff_rx_time != conn->lll.dle.eff.max_rx_time) {
+		conn->lll.dle.eff.max_rx_time = eff_rx_time;
+		dle_changed = 1;
+	}
+#else
+	conn->lll.dle.eff.max_rx_time = PKT_US(eff_rx_octets, PHY_1M);
+	conn->lll.dle.eff.max_tx_time = PKT_US(eff_tx_octets, PHY_1M);
+#endif
+
+	if (eff_tx_octets != conn->lll.dle.eff.max_tx_octets) {
+		conn->lll.dle.eff.max_tx_octets = eff_tx_octets;
+		dle_changed = 1;
+	}
+	if (eff_rx_octets != conn->lll.dle.eff.max_rx_octets) {
+		conn->lll.dle.eff.max_rx_octets = eff_rx_octets;
+		dle_changed = 1;
+	}
+
+	return dle_changed;
+}
+
+void ull_dle_local_tx_update(struct ll_conn *conn, uint16_t tx_octets, uint16_t tx_time)
+{
+	conn->lll.dle.local.max_tx_octets = tx_octets;
+
+#if defined(CONFIG_BT_CTLR_PHY)
+	conn->lll.dle.local.max_tx_time = tx_time;
+#endif /* CONFIG_BT_CTLR_PHY */
+
+	dle_max_time_get(conn, &conn->lll.dle.local.max_rx_time, &conn->lll.dle.local.max_tx_time);
+}
+
+void ull_dle_init(struct ll_conn *conn, uint8_t phy)
+{
+#if defined(CONFIG_BT_CTLR_PHY)
+	const uint16_t max_time_min = PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, phy);
+	const uint16_t max_time_max = PKT_US(LL_LENGTH_OCTETS_RX_MAX, phy);
+#endif
+
+	// Clear DLE data set
+	memset(&conn->lll.dle, 0, sizeof(conn->lll.dle));
+	// See BT. 5.2 Spec - Vol 6, Part B, Sect 4.5.10
+	// Default to locally max supported rx/tx length/time
+	ull_dle_local_tx_update(conn, ull_conn_default_tx_octets_get(), ull_conn_default_tx_time_get());
+
+	conn->lll.dle.local.max_rx_octets = LL_LENGTH_OCTETS_RX_MAX;
+#if defined(CONFIG_BT_CTLR_PHY)
+	conn->lll.dle.local.max_rx_time = max_time_max;
+#endif /* CONFIG_BT_CTLR_PHY */
+
+	// Default to minimum rx/tx data length/time
+	conn->lll.dle.remote.max_tx_octets = PDU_DC_PAYLOAD_SIZE_MIN;
+	conn->lll.dle.remote.max_rx_octets = PDU_DC_PAYLOAD_SIZE_MIN;
+
+#if defined(CONFIG_BT_CTLR_PHY)
+	conn->lll.dle.remote.max_tx_time = max_time_min;
+	conn->lll.dle.remote.max_rx_time = max_time_min;
+#endif /* CONFIG_BT_CTLR_PHY */
+
+	//
+	ull_dle_update_eff(conn);
+
+	// Check whether the controller should perform a data length update after
+	// connection is established
+#if defined(CONFIG_BT_CTLR_PHY)
+	if ((conn->lll.dle.local.max_rx_time != max_time_min ||
+		 conn->lll.dle.local.max_tx_time != max_time_min)) {
+		conn->lll.dle.update = 1;
+	} else
+#endif
+	if (conn->lll.dle.local.max_tx_octets != PDU_DC_PAYLOAD_SIZE_MIN ||
+		conn->lll.dle.local.max_rx_octets != PDU_DC_PAYLOAD_SIZE_MIN)
+	{
+		conn->lll.dle.update = 1;
+	}
+}
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
@@ -245,12 +376,10 @@ void ull_conn_default_tx_octets_set(uint16_t tx_octets)
        default_tx_octets = tx_octets;
 }
 
-#if defined(CONFIG_BT_CTLR_PHY)
 void ull_conn_default_tx_time_set(uint16_t tx_time)
 {
        default_tx_time = tx_time;
 }
-#endif /* CONFIG_BT_CTLR_PHY */
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 #if defined(CONFIG_BT_CTLR_PHY)
@@ -812,7 +941,7 @@ uint16_t ull_conn_lll_max_tx_octets_get(struct lll_conn *lll)
 		 * Deduct 10 bytes for preamble (1), access address (4),
 		 * header (2), and CRC (3).
 		 */
-		max_tx_octets = (lll->max_tx_time >> 3) - 10;
+		max_tx_octets = (lll->dle.eff.max_tx_time >> 3) - 10;
 		break;
 
 	case PHY_2M:
@@ -820,7 +949,7 @@ uint16_t ull_conn_lll_max_tx_octets_get(struct lll_conn *lll)
 		 * Deduct 11 bytes for preamble (2), access address (4),
 		 * header (2), and CRC (3).
 		 */
-		max_tx_octets = (lll->max_tx_time >> 2) - 11;
+		max_tx_octets = (lll->dle.eff.max_tx_time >> 2) - 11;
 		break;
 
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
@@ -833,7 +962,7 @@ uint16_t ull_conn_lll_max_tx_octets_get(struct lll_conn *lll)
 			 * TERM2 (24), total 592 us.
 			 * Subtract 2 bytes for header.
 			 */
-			max_tx_octets = ((lll->max_tx_time - 592) >>
+			max_tx_octets = ((lll->dle.eff.max_tx_time - 592) >>
 					  6) - 2;
 		} else {
 			/* S2 Coded PHY, 2us = 1 bit, hence divide by
@@ -843,7 +972,7 @@ uint16_t ull_conn_lll_max_tx_octets_get(struct lll_conn *lll)
 			 * TERM2 (6), total 430 us.
 			 * Subtract 2 bytes for header.
 			 */
-			max_tx_octets = ((lll->max_tx_time - 430) >>
+			max_tx_octets = ((lll->dle.eff.max_tx_time - 430) >>
 					  4) - 2;
 		}
 		break;
@@ -857,11 +986,11 @@ uint16_t ull_conn_lll_max_tx_octets_get(struct lll_conn *lll)
 	}
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
-	if (max_tx_octets > lll->max_tx_octets) {
-		max_tx_octets = lll->max_tx_octets;
+	if (max_tx_octets > lll->dle.eff.max_tx_octets) {
+		max_tx_octets = lll->dle.eff.max_tx_octets;
 	}
 #else /* !CONFIG_BT_CTLR_PHY */
-	max_tx_octets = lll->max_tx_octets;
+	max_tx_octets = lll->dle.eff.max_tx_octets;
 #endif /* !CONFIG_BT_CTLR_PHY */
 #else /* !CONFIG_BT_CTLR_DATA_LENGTH */
 	max_tx_octets = PDU_DC_PAYLOAD_SIZE_MIN;

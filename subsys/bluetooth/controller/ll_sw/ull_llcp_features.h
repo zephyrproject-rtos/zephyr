@@ -5,11 +5,15 @@
  */
 
 
+static inline void feature_unmask_features(struct ll_conn *conn, uint64_t ll_feat_mask)
+{
+	conn->llcp.fex.features_used &= ~ll_feat_mask;
+}
 
 static inline bool feature_le_encryption(struct ll_conn *conn)
 {
 #if defined(CONFIG_BT_CTLR_LE_ENC)
-	return conn->llcp.fex.features_peer & LL_FEAT_BIT_ENC;
+	return conn->llcp.fex.features_used & LL_FEAT_BIT_ENC;
 #else
 	return 0;
 #endif
@@ -18,7 +22,7 @@ static inline bool feature_le_encryption(struct ll_conn *conn)
 static inline bool feature_conn_param_req(struct ll_conn *conn)
 {
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
-	return conn->llcp.fex.features_peer & LL_FEAT_BIT_CONN_PARAM_REQ;
+	return conn->llcp.fex.features_used & LL_FEAT_BIT_CONN_PARAM_REQ;
 #else
 	return 0;
 #endif
@@ -27,7 +31,7 @@ static inline bool feature_conn_param_req(struct ll_conn *conn)
 static inline bool feature_ext_rej_ind(struct ll_conn *conn)
 {
 #if defined(CONFIG_BT_CTLR_EXT_REJ_IND)
-	return conn->llcp.fex.features_peer & LL_FEAT_BIT_EXT_REJ_IND;
+	return conn->llcp.fex.features_used & LL_FEAT_BIT_EXT_REJ_IND;
 #else
 	return 0;
 #endif
@@ -36,7 +40,7 @@ static inline bool feature_ext_rej_ind(struct ll_conn *conn)
 static inline bool feature_slave_feat_req(struct ll_conn *conn)
 {
 #if defined(CONFIG_BT_CTLR_SLAVE_FEAT_REQ)
-	return conn->llcp.fex.features_peer & LL_FEAT_BIT_SLAVE_FEAT_REQ;
+	return conn->llcp.fex.features_used & LL_FEAT_BIT_SLAVE_FEAT_REQ;
 #else
 	return 0;
 #endif
@@ -45,7 +49,7 @@ static inline bool feature_slave_feat_req(struct ll_conn *conn)
 static inline bool feature_le_ping(struct ll_conn *conn)
 {
 #if defined(CONFIG_BT_CTLR_LE_PING)
-	return conn->llcp.fex.features_peer & LL_FEAT_BIT_PING;
+	return conn->llcp.fex.features_used & LL_FEAT_BIT_PING;
 #else
 	return 0;
 #endif
@@ -54,7 +58,7 @@ static inline bool feature_le_ping(struct ll_conn *conn)
 static inline bool feature_dle(struct ll_conn *conn)
 {
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH_MAX)
-	return conn->llcp.fex.features_peer & LL_FEAT_BIT_DLE;
+	return conn->llcp.fex.features_used & LL_FEAT_BIT_DLE;
 #else
 	return 0;
 #endif
@@ -63,7 +67,7 @@ static inline bool feature_dle(struct ll_conn *conn)
 static inline bool feature_privacy(struct ll_conn *conn)
 {
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-	return conn->llcp.fex.features_peer & LL_FEAT_BIT_PRIVACY;
+	return conn->llcp.fex.features_used & LL_FEAT_BIT_PRIVACY;
 #else
 	return 0;
 #endif
@@ -72,7 +76,7 @@ static inline bool feature_privacy(struct ll_conn *conn)
 static inline bool feature_ext_scan(struct ll_conn *conn)
 {
 #if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
-	return conn->llcp.fex.features_peer & LL_FEAT_BIT_EXT_SCAN;
+	return conn->llcp.fex.features_used & LL_FEAT_BIT_EXT_SCAN;
 #else
 	return 0;
 #endif
@@ -81,7 +85,7 @@ static inline bool feature_ext_scan(struct ll_conn *conn)
 static inline bool feature_chan_sel_2(struct ll_conn *conn)
 {
 #if defined(CONFIG_BT_CTLR_CHAN_SEL_2)
-	return conn->llcp.fex.features_peer & LL_FEAT_BIT_CHAN_SEL_2;
+	return conn->llcp.fex.features_used & LL_FEAT_BIT_CHAN_SEL_2;
 #else
 	return 0;
 #endif
@@ -90,7 +94,7 @@ static inline bool feature_chan_sel_2(struct ll_conn *conn)
 static inline bool feature_min_used_chan(struct ll_conn *conn)
 {
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
-	return conn->llcp.fex.features_peer & LL_FEAT_BIT_MIN_USED_CHAN;
+	return conn->llcp.fex.features_used & LL_FEAT_BIT_MIN_USED_CHAN;
 #else
 	return 0;
 #endif
@@ -99,7 +103,7 @@ static inline bool feature_min_used_chan(struct ll_conn *conn)
 static inline bool feature_phy_2m(struct ll_conn *conn)
 {
 #if defined(CONFIG_BT_CTLR_PHY_2M)
-	return conn->llcp.fex.features_peer & LL_FEAT_BIT_PHY_2M;
+	return conn->llcp.fex.features_used & LL_FEAT_BIT_PHY_2M;
 #else
 	return 0;
 #endif
@@ -108,7 +112,7 @@ static inline bool feature_phy_2m(struct ll_conn *conn)
 static inline bool feature_phy_coded(struct ll_conn *conn)
 {
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
-	return conn->llcp.fex.features_peer & LL_FEAT_BIT_PHY_CODED;
+	return conn->llcp.fex.features_used & LL_FEAT_BIT_PHY_CODED;
 #else
 	return 0;
 #endif

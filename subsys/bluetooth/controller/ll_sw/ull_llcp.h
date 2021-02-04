@@ -107,6 +107,11 @@ void ull_cp_conn_param_req_reply(struct ll_conn *conn);
 void ull_cp_conn_param_req_neg_reply(struct ll_conn *conn);
 
 /**
+ * @brief Check if a remote data length update is in the works.
+ */
+uint8_t ull_cp_remote_dle_pending(struct ll_conn *conn);
+
+/**
  * @brief Initiate a Termination Procedure.
  */
 uint8_t ull_cp_terminate(struct ll_conn *conn, uint8_t error_code);
@@ -115,3 +120,9 @@ uint8_t ull_cp_terminate(struct ll_conn *conn, uint8_t error_code);
  * @brief Initiate a Channel Map Update Procedure.
  */
 uint8_t ull_cp_chan_map_update(struct ll_conn *conn, uint8_t chm[5]);
+
+/**
+ * @brief Initiate a Data Length Update Procedure.
+ */
+uint8_t ull_cp_data_length_update(struct ll_conn *conn, uint16_t max_tx_octets, uint16_t max_tx_time);
+

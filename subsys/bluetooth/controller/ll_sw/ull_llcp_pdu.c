@@ -447,3 +447,69 @@ void ull_cp_priv_pdu_decode_chan_map_update_ind(struct proc_ctx *ctx, struct pdu
 	ctx->data.chmu.instant = sys_le16_to_cpu(pdu->llctrl.chan_map_ind.instant);
 	memcpy(ctx->data.chmu.chm, pdu->llctrl.chan_map_ind.chm, sizeof(ctx->data.chmu.chm));
 }
+
+/*
+ * Data Length Update Procedure Helpers
+*/
+void ull_cp_priv_pdu_encode_length_req(struct ll_conn *conn, struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_length_req *p = &pdu->llctrl.length_req;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, length_req) +
+		sizeof(struct pdu_data_llctrl_length_req);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_LENGTH_REQ;
+	p->max_rx_octets = sys_cpu_to_le16(conn->lll.dle.local.max_rx_octets);
+	p->max_tx_octets = sys_cpu_to_le16(conn->lll.dle.local.max_tx_octets);
+	p->max_rx_time = sys_cpu_to_le16(conn->lll.dle.local.max_rx_time);
+	p->max_tx_time = sys_cpu_to_le16(conn->lll.dle.local.max_tx_time);
+}
+
+void ull_cp_priv_pdu_encode_length_rsp(struct ll_conn *conn, struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_length_rsp *p = &pdu->llctrl.length_rsp;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, length_rsp) +
+		sizeof(struct pdu_data_llctrl_length_rsp);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_LENGTH_RSP;
+	p->max_rx_octets = sys_cpu_to_le16(conn->lll.dle.local.max_rx_octets);
+	p->max_tx_octets = sys_cpu_to_le16(conn->lll.dle.local.max_tx_octets);
+	p->max_rx_time = sys_cpu_to_le16(conn->lll.dle.local.max_rx_time);
+	p->max_tx_time = sys_cpu_to_le16(conn->lll.dle.local.max_tx_time);
+}
+
+void ull_cp_priv_ntf_encode_length_change(struct ll_conn *conn,
+					struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_length_rsp *p = &pdu->llctrl.length_rsp;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, length_rsp) +
+		sizeof(struct pdu_data_llctrl_length_rsp);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_LENGTH_RSP;
+	p->max_rx_octets = sys_cpu_to_le16(conn->lll.dle.eff.max_rx_octets);
+	p->max_tx_octets = sys_cpu_to_le16(conn->lll.dle.eff.max_tx_octets);
+	p->max_rx_time   = sys_cpu_to_le16(conn->lll.dle.eff.max_rx_time);
+	p->max_tx_time   = sys_cpu_to_le16(conn->lll.dle.eff.max_tx_time);
+}
+
+void ull_cp_priv_pdu_decode_length_req(struct ll_conn *conn,
+					struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_length_req *p = &pdu->llctrl.length_req;
+	conn->lll.dle.remote.max_rx_octets = sys_le16_to_cpu(p->max_rx_octets);
+	conn->lll.dle.remote.max_tx_octets = sys_le16_to_cpu(p->max_tx_octets);
+	conn->lll.dle.remote.max_rx_time = sys_le16_to_cpu(p->max_rx_time);
+	conn->lll.dle.remote.max_tx_time = sys_le16_to_cpu(p->max_tx_time);
+}
+
+void ull_cp_priv_pdu_decode_length_rsp(struct ll_conn *conn,
+					struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_length_rsp *p = &pdu->llctrl.length_rsp;
+	conn->lll.dle.remote.max_rx_octets = sys_le16_to_cpu(p->max_rx_octets);
+	conn->lll.dle.remote.max_tx_octets = sys_le16_to_cpu(p->max_tx_octets);
+	conn->lll.dle.remote.max_rx_time = sys_le16_to_cpu(p->max_rx_time);
+	conn->lll.dle.remote.max_tx_time = sys_le16_to_cpu(p->max_tx_time);
+}
