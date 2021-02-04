@@ -255,6 +255,33 @@ void helper_pdu_encode_channel_map_update_ind(struct pdu_data *pdu, void *param)
 	memcpy(pdu->llctrl.chan_map_ind.chm, p->chm, sizeof(pdu->llctrl.chan_map_ind.chm));
 }
 
+void helper_pdu_encode_length_req(struct pdu_data *pdu, void *param)
+{
+	struct pdu_data_llctrl_length_req *p = param;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, length_req) + sizeof(struct pdu_data_llctrl_length_req);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_LENGTH_REQ;
+
+	pdu->llctrl.length_req.max_rx_octets = p->max_rx_octets;
+	pdu->llctrl.length_req.max_tx_octets = p->max_tx_octets;
+	pdu->llctrl.length_req.max_rx_time = p->max_rx_time;
+	pdu->llctrl.length_req.max_tx_time = p->max_tx_time;
+}
+
+void helper_pdu_encode_length_rsp(struct pdu_data *pdu, void *param)
+{
+	struct pdu_data_llctrl_length_rsp *p = param;
+
+ 	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, length_rsp) + sizeof(struct pdu_data_llctrl_length_rsp);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_LENGTH_RSP;
+
+	pdu->llctrl.length_req.max_rx_octets = p->max_rx_octets;
+	pdu->llctrl.length_req.max_tx_octets = p->max_tx_octets;
+	pdu->llctrl.length_req.max_rx_time = p->max_rx_time;
+	pdu->llctrl.length_req.max_tx_time = p->max_tx_time;
+}
 
 void helper_pdu_verify_version_ind(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
 {
@@ -502,5 +529,29 @@ void helper_pdu_verify_channel_map_update_ind(const char *file, uint32_t line, s
 	zassert_equal(pdu->len, offsetof(struct pdu_data_llctrl, chan_map_ind) + sizeof(struct pdu_data_llctrl_chan_map_ind), "Wrong length.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->llctrl.chan_map_ind.instant, p->instant, "Instant mismatch.\nCalled at %s:%d\n", file, line);
 	zassert_mem_equal(pdu->llctrl.chan_map_ind.chm, p->chm, sizeof(p->chm), "Channel Map mismatch.\nCalled at %s:%d\n", file, line);
+}
+
+void helper_pdu_verify_length_req(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
+{
+	struct pdu_data_llctrl_length_req *p = param;
+	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->len, offsetof(struct pdu_data_llctrl, length_req) + sizeof(struct pdu_data_llctrl_length_req), "Wrong length.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_LENGTH_REQ, "Not a LL_LENGTH_REQ.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.length_req.max_rx_octets, p->max_rx_octets, "max_rx_octets mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.length_req.max_tx_octets, p->max_tx_octets, "max_tx_octets mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.length_req.max_rx_time, p->max_rx_time, "max_rx_time mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.length_req.max_tx_time, p->max_tx_time, "max_tx_time mismatch.\nCalled at %s:%d\n", file, line);
+}
+
+void helper_pdu_verify_length_rsp(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
+{
+	struct pdu_data_llctrl_length_rsp *p = param;
+	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->len, offsetof(struct pdu_data_llctrl, length_rsp) + sizeof(struct pdu_data_llctrl_length_rsp), "Wrong length.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_LENGTH_RSP, "Not a LL_LENGTH_RSP.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.length_rsp.max_rx_octets, p->max_rx_octets, "max_rx_octets mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.length_rsp.max_tx_octets, p->max_tx_octets, "max_tx_octets mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.length_rsp.max_rx_time, p->max_rx_time, "max_rx_time mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.length_rsp.max_tx_time, p->max_tx_time, "max_tx_time mismatch.\nCalled at %s:%d\n", file, line);
 }
 
