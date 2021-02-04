@@ -16,10 +16,6 @@
 #define IVSHMEM_PCIE_REG_BAR_IDX	0
 #define IVSHMEM_PCIE_SHMEM_BAR_IDX	2
 
-#define MAX_BUS				(0xFFFFFFFF & PCIE_BDF_BUS_MASK)
-#define MAX_DEV				(0xFFFFFFFF & PCIE_BDF_DEV_MASK)
-#define MAX_FUNC			(0xFFFFFFFF & PCIE_BDF_FUNC_MASK)
-
 struct ivshmem_param {
 	const struct device *dev;
 	struct k_poll_signal *signal;
