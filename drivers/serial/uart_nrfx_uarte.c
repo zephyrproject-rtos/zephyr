@@ -1535,6 +1535,9 @@ static void uarte_nrfx_set_power_state(const struct device *dev,
 	if (new_state == DEVICE_PM_ACTIVE_STATE) {
 		uarte_nrfx_pins_enable(dev, true);
 		nrf_uarte_enable(uarte);
+
+		data->pm_state = new_state;
+
 #ifdef CONFIG_UART_ASYNC_API
 		if (hw_rx_counting_enabled(get_dev_data(dev))) {
 			nrfx_timer_enable(&get_dev_config(dev)->timer);
@@ -1547,8 +1550,6 @@ static void uarte_nrfx_set_power_state(const struct device *dev,
 			NRF_UARTE_PSEL_DISCONNECTED) {
 			nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STARTRX);
 		}
-
-		data->pm_state = new_state;
 	} else {
 		__ASSERT_NO_MSG(new_state == DEVICE_PM_LOW_POWER_STATE ||
 				new_state == DEVICE_PM_SUSPEND_STATE ||
