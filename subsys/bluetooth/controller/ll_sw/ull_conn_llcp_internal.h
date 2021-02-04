@@ -40,7 +40,7 @@ memq_link_t *ull_conn_ack_by_last_peek(uint8_t last, uint16_t *handle,
 void *ull_conn_ack_dequeue(void);
 void ull_conn_tx_ack(uint16_t handle, memq_link_t *link, struct node_tx *tx);
 uint8_t ull_conn_llcp_req(void *conn);
-
+int ull_conn_tx_data_path_flushed(struct ll_conn *conn);
 void *ull_conn_tx_mem_acquire(void);
 void ull_conn_tx_mem_release(void *tx);
 uint8_t ull_conn_mfifo_get_tx(void *lll_tx);

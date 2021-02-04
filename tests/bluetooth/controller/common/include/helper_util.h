@@ -13,8 +13,9 @@ void event_prepare(struct ll_conn *conn);
 void event_tx_ack(struct ll_conn *conn, struct node_tx *tx);
 void event_done(struct ll_conn *conn);
 uint16_t event_counter(struct ll_conn *conn);
-
-
+void ll_apply_remote_dlu(struct ll_conn *conn);
+void ll_apply_local_dlu(struct ll_conn *conn, uint16_t tx_octets, uint16_t tx_time);
+void ll_get_local_dle(struct ll_conn *conn, uint16_t *rx_octets, uint16_t *rx_time, uint16_t *tx_octets, uint16_t *tx_time);
 
 #define lt_tx(_opcode, _conn, _param) lt_tx_real(__FILE__, __LINE__, _opcode, _conn, _param)
 #define lt_rx(_opcode, _conn, _tx_ref, _param) lt_rx_real(__FILE__, __LINE__, _opcode, _conn, _tx_ref, _param)

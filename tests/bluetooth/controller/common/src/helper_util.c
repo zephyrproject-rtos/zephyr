@@ -69,6 +69,8 @@ helper_pdu_encode_func_t * const helper_pdu_encode[] = {
 	helper_pdu_encode_conn_param_rsp,
 	helper_pdu_encode_terminate_ind,
 	helper_pdu_encode_channel_map_update_ind,
+	helper_pdu_encode_length_req,
+	helper_pdu_encode_length_rsp,
 };
 
 helper_pdu_verify_func_t *const helper_pdu_verify[] = {
@@ -94,6 +96,8 @@ helper_pdu_verify_func_t *const helper_pdu_verify[] = {
 	helper_pdu_verify_conn_param_rsp,
 	helper_pdu_verify_terminate_ind,
 	helper_pdu_verify_channel_map_update_ind,
+	helper_pdu_verify_length_req,
+	helper_pdu_verify_length_rsp,
 };
 
 
@@ -308,4 +312,30 @@ void ut_rx_q_is_empty_real(const char *file, uint32_t line)
 
 	ntf = (struct node_rx_pdu *) sys_slist_get(&ut_rx_q);
 	zassert_is_null(ntf, "Ntf Q not empty.\nCalled at %s:%d\n", file, line);
+}
+
+void ll_apply_local_dlu(struct ll_conn *conn, uint16_t tx_octets, uint16_t tx_time)
+{
+	uint8_t dlu = 1;
+
+	// Do dlu magic as requested locally
+
+	conn->llcp.dlu.dle_changed |= (dlu != 0);
+}
+
+void ll_apply_remote_dlu(struct ll_conn *conn)
+{
+	uint8_t dlu = 1;
+
+	// Do dlu magic as suggested by peer
+
+	conn->llcp.dlu.dle_changed |= (dlu != 0);
+}
+
+void ll_get_local_dle(struct ll_conn *conn, uint16_t *rx_octets, uint16_t *rx_time, uint16_t *tx_octets, uint16_t *tx_time)
+{
+	*rx_octets = 27; //conn->lll.max_rx_octets;
+	*rx_time = 328; //conn->lll.max_rx_time;
+	*tx_octets = 251; //conn->lll.max_tx_octets;
+	*tx_time = 2120; //conn->lll.max_tx_time;
 }

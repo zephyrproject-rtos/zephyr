@@ -4685,9 +4685,7 @@ static inline int length_req_rsp_recv(struct ll_conn *conn, memq_link_t *link,
 	     /* with Local requested and Peer request then complete the
 	      * Peer procedure with response.
 	      */
-	     ((((conn->llcp_length.state == LLCP_LENGTH_STATE_REQ) ||
-		(conn->llcp_length.state == LLCP_LENGTH_STATE_REQ_ACK_WAIT)) &&
-	       tx) ||
+	     ((((conn->llcp_length.state == LLCP_LENGTH_STATE_REQ) || (conn->llcp_length.state == LLCP_LENGTH_STATE_REQ_ACK_WAIT)) && tx) ||
 	      /* with Local waiting for response, and Peer response then
 	       * complete the Local procedure or Peer request then complete the
 	       * Peer procedure with response.

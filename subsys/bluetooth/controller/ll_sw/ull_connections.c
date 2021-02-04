@@ -381,6 +381,13 @@ int ull_conn_llcp(struct ll_conn *conn, uint32_t ticks_at_expire, uint16_t lazy)
 	return 0;
 }
 
+int ull_conn_tx_data_path_flushed(struct ll_conn *conn)
+{
+	// Both ULL->LLL and LLL->RX data paths are empty
+	return !ull_tx_q_peek(&conn->tx_q) &&
+		   !memq_peek(conn->lll.memq_tx.head, conn->lll.memq_tx.tail, NULL);
+}
+
 void ull_conn_done(struct node_rx_event_done *done)
 {
 	struct lll_conn *lll = (void *)HDR_ULL2LLL(done->param);
@@ -447,9 +454,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 				ull_conn_tx_demux(UINT8_MAX);
 			}
 
-			if (ull_tx_q_peek(&conn->tx_q) || memq_peek(lll->memq_tx.head,
-						       lll->memq_tx.tail,
-						       NULL)) {
+			if (ull_conn_tx_data_path_flushed(conn)) {
 				lll->latency_event = 0;
 			} else if (lll->slave.latency_enabled) {
 				lll->latency_event = lll->latency;

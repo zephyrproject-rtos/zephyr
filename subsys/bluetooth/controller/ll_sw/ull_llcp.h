@@ -8,6 +8,7 @@
  * and having to update all the dependencies
  */
 
+
 enum {
 	ULL_CP_CONNECTED,
 	ULL_CP_DISCONNECTED
@@ -115,3 +116,9 @@ uint8_t ull_cp_terminate(struct ll_conn *conn, uint8_t error_code);
  * @brief Initiate a Channel Map Update Procedure.
  */
 uint8_t ull_cp_chan_map_update(struct ll_conn *conn, uint8_t chm[5]);
+
+/**
+ * @brief Initiate a Data Length Update Procedure.
+ */
+uint8_t ull_cp_data_length_update(struct ll_conn *conn, uint16_t max_tx_octets, uint16_t max_tx_time);
+

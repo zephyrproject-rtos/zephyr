@@ -382,7 +382,16 @@ struct llcp_struct {
 		uint8_t ltk[16];
 	} enc;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
+	struct {
+		uint8_t dle_changed;
+		uint8_t disabled;
+		uint8_t rsp_open;
 
+		uint16_t max_tx_octets;
+		uint16_t max_rx_octets;
+		uint16_t max_tx_time;
+		uint16_t max_rx_time;
+	} dlu;
 }; /* struct llcp_struct */
 
 struct ll_conn {
