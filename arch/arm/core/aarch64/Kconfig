@@ -100,6 +100,7 @@ config ARM_MMU
 	default y
 	select MMU
 	select SRAM_REGION_PERMISSIONS
+	select ARCH_MAPS_ALL_RAM
 	help
 	  Memory Management Unit support.
 
