@@ -20,14 +20,6 @@ but Zephyr ignores flags from the environment. Use 'cmake -DEXTRA_${var}=$ENV{${
   endif()
 endforeach()
 
-# Until we completely deprecate it
-if(NOT DEFINED ENV{ZEPHYR_TOOLCHAIN_VARIANT})
-  if(DEFINED ENV{ZEPHYR_GCC_VARIANT})
-    message(WARNING "ZEPHYR_GCC_VARIANT is deprecated, please use ZEPHYR_TOOLCHAIN_VARIANT instead")
-    set(ZEPHYR_TOOLCHAIN_VARIANT $ENV{ZEPHYR_GCC_VARIANT})
-  endif()
-endif()
-
 if(NOT ZEPHYR_TOOLCHAIN_VARIANT)
   if(DEFINED ENV{ZEPHYR_TOOLCHAIN_VARIANT})
     set(ZEPHYR_TOOLCHAIN_VARIANT $ENV{ZEPHYR_TOOLCHAIN_VARIANT})
