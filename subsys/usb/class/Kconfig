@@ -101,10 +101,11 @@ config USB_DEVICE_BLUETOOTH
 	help
 	  USB Bluetooth device class driver
 
+if USB_DEVICE_BLUETOOTH
+
 config USB_DEVICE_BLUETOOTH_VS_H4
 	bool "Enable USB Bluetooth H4 vendor command"
-	depends on USB_DEVICE_BLUETOOTH
-	select BT_HCI_RAW_H4
+	select USB_DEVICE_BT_H4
 	select BT_HCI_RAW_CMD_EXT
 	help
 	  Enables vendor command to switch to H:4 transport using the bulk
@@ -112,12 +113,12 @@ config USB_DEVICE_BLUETOOTH_VS_H4
 
 config USB_DEVICE_BT_H4
 	bool "USB Bluetooth H4 Device Class Driver"
-	select BT
-	select BT_HCI_RAW
 	select BT_HCI_RAW_H4
-	select BT_HCI_RAW_H4_ENABLE
+	select BT_HCI_RAW_H4_ENABLE if !USB_DEVICE_BLUETOOTH_VS_H4
 	help
 	  USB Bluetooth H4 device class driver
+
+endif # USB_DEVICE_BLUETOOTH
 
 config USB_DEVICE_LOOPBACK
 	bool "USB Loopback Function Driver"
