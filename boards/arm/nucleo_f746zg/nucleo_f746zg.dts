@@ -148,3 +148,7 @@
 		     &eth_txd0_pg13
 		     &eth_txd1_pb13>;
 };
+
+&backup_sram {
+	status = "okay";
+};

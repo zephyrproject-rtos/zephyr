@@ -24,3 +24,4 @@ supported:
   - can
   - adc
   - dma
+  - backup_sram
