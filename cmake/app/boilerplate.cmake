@@ -512,6 +512,7 @@ message(STATUS "Cache files will be written to: ${USER_CACHE_DIR}")
 set(CMAKE_C_COMPILER_FORCED   1)
 set(CMAKE_CXX_COMPILER_FORCED 1)
 
+include(${ZEPHYR_BASE}/cmake/verify-toolchain.cmake)
 include(${ZEPHYR_BASE}/cmake/host-tools.cmake)
 
 # Include board specific device-tree flags before parsing.

@@ -20,14 +20,6 @@ but Zephyr ignores flags from the environment. Use 'cmake -DEXTRA_${var}=$ENV{${
   endif()
 endforeach()
 
-if(NOT ZEPHYR_TOOLCHAIN_VARIANT)
-  if(DEFINED ENV{ZEPHYR_TOOLCHAIN_VARIANT})
-    set(ZEPHYR_TOOLCHAIN_VARIANT $ENV{ZEPHYR_TOOLCHAIN_VARIANT})
-  elseif(CROSS_COMPILE OR (DEFINED ENV{CROSS_COMPILE}))
-    set(ZEPHYR_TOOLCHAIN_VARIANT cross-compile)
-  endif()
-endif()
-
 # Host-tools don't unconditionally set TOOLCHAIN_HOME anymore,
 # but in case Zephyr's SDK toolchain is used, set TOOLCHAIN_HOME
 if("${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "zephyr")
@@ -39,13 +31,6 @@ assert(TOOLCHAIN_ROOT "Zephyr toolchain root path invalid: please set the TOOLCH
 
 # Set cached ZEPHYR_TOOLCHAIN_VARIANT.
 set(ZEPHYR_TOOLCHAIN_VARIANT ${ZEPHYR_TOOLCHAIN_VARIANT} CACHE STRING "Zephyr toolchain variant")
-
-# Pick host system's toolchain if we are targeting posix
-if(${ARCH} STREQUAL "posix")
-  if(NOT "${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "llvm")
-    set(ZEPHYR_TOOLCHAIN_VARIANT "host")
-  endif()
-endif()
 
 # Configure the toolchain based on what SDK/toolchain is in use.
 include(${TOOLCHAIN_ROOT}/cmake/toolchain/${ZEPHYR_TOOLCHAIN_VARIANT}/generic.cmake)
