@@ -177,8 +177,6 @@ static int gpio_npcx_pin_interrupt_configure(const struct device *dev,
 					     enum gpio_int_trig trig)
 {
 	const struct gpio_npcx_config *const config = DRV_CONFIG(dev);
-	enum miwu_int_mode miwu_mode = NPCX_MIWU_MODE_DISABLED;
-	enum miwu_int_trig miwu_trig = NPCX_MIWU_TRIG_NONE;
 
 	if (config->wui_maps[pin].table == NPCX_MIWU_TABLE_NONE) {
 		LOG_ERR("Cannot configure GPIO(%x, %d)", config->port, pin);
@@ -190,28 +188,43 @@ static int gpio_npcx_pin_interrupt_configure(const struct device *dev,
 			config->wui_maps[pin].group,
 			config->wui_maps[pin].bit);
 
-	/* Determine interrupt is level or edge mode? */
-	if (mode == GPIO_INT_MODE_LEVEL)
-		miwu_mode = NPCX_MIWU_MODE_LEVEL;
-	else if (mode == GPIO_INT_MODE_EDGE)
-		miwu_mode = NPCX_MIWU_MODE_EDGE;
+	/* Disable irq of wake-up input io-pads before configuring them */
+	npcx_miwu_irq_disable(&config->wui_maps[pin]);
 
-	/* Determine trigger mode is low, high or both? */
-	if (trig == GPIO_INT_TRIG_LOW)
-		miwu_trig = NPCX_MIWU_TRIG_LOW;
-	else if (trig == GPIO_INT_TRIG_HIGH)
-		miwu_trig = NPCX_MIWU_TRIG_HIGH;
-	else if (trig == GPIO_INT_TRIG_BOTH)
-		miwu_trig = NPCX_MIWU_TRIG_BOTH;
+	/* Configure and enable interrupt? */
+	if (mode != GPIO_INT_MODE_DISABLED) {
+		enum miwu_int_mode miwu_mode;
+		enum miwu_int_trig miwu_trig;
+		int ret = 0;
 
-	/* Call MIWU routine to setup interrupt configuration */
-	npcx_miwu_interrupt_configure(&config->wui_maps[pin],
-					miwu_mode, miwu_trig);
+		/* Determine interrupt is level or edge mode? */
+		if (mode == GPIO_INT_MODE_EDGE) {
+			miwu_mode = NPCX_MIWU_MODE_EDGE;
+		} else {
+			miwu_mode = NPCX_MIWU_MODE_LEVEL;
+		}
 
-	/* Enable/Disable irq of wake-up input sources */
-	if (mode == GPIO_INT_MODE_DISABLED) {
-		npcx_miwu_irq_disable(&config->wui_maps[pin]);
-	} else {
+		/* Determine trigger mode is low, high or both? */
+		if (trig == GPIO_INT_TRIG_LOW) {
+			miwu_trig = NPCX_MIWU_TRIG_LOW;
+		} else if (trig == GPIO_INT_TRIG_HIGH) {
+			miwu_trig = NPCX_MIWU_TRIG_HIGH;
+		} else if (trig == GPIO_INT_TRIG_BOTH) {
+			miwu_trig = NPCX_MIWU_TRIG_BOTH;
+		} else {
+			LOG_ERR("Invalid interrupt trigger type %d", trig);
+			return -EINVAL;
+		}
+
+		/* Call MIWU routine to setup interrupt configuration */
+		ret = npcx_miwu_interrupt_configure(&config->wui_maps[pin],
+						miwu_mode, miwu_trig);
+		if (ret != 0) {
+			LOG_ERR("Configure MIWU interrupt failed");
+			return ret;
+		}
+
+		/* Enable it after configuration is completed */
 		npcx_miwu_irq_enable(&config->wui_maps[pin]);
 	}
 
