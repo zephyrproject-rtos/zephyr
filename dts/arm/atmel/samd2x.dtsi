@@ -102,12 +102,32 @@
 			compatible = "atmel,sam0-pinmux";
 			reg = <0x41004400 0x80>;
 			label = "PINMUX_A";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			porta: gpio@41004400 {
+				compatible = "atmel,sam0-gpio";
+				reg = <0x41004400 0x80>;
+				label = "PORTA";
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
 		};
 
 		pinmux_b: pinmux@41004480 {
 			compatible = "atmel,sam0-pinmux";
 			reg = <0x41004480 0x80>;
 			label = "PINMUX_B";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			portb: gpio@41004480 {
+				compatible = "atmel,sam0-gpio";
+				reg = <0x41004480 0x80>;
+				label = "PORTB";
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
 		};
 
 		wdog: watchdog@40001000 {
@@ -163,22 +183,6 @@
 			compatible = "atmel,sam0-tc32";
 			reg = <0x42003000 0x20>;
 			label = "TIMER_4";
-		};
-
-		porta: gpio@41004400 {
-			compatible = "atmel,sam0-gpio";
-			reg = <0x41004400 0x80>;
-			label = "PORTA";
-			gpio-controller;
-			#gpio-cells = <2>;
-		};
-
-		portb: gpio@41004480 {
-			compatible = "atmel,sam0-gpio";
-			reg = <0x41004480 0x80>;
-			label = "PORTB";
-			gpio-controller;
-			#gpio-cells = <2>;
 		};
 
 		rtc: rtc@40001400 {
