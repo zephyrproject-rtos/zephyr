@@ -404,6 +404,20 @@ Drivers and Sensors
 
 * Sensor
 
+  * Fixed current conversion to milliamps in the MAX17055 driver.
+  * Added multi-instance support to the FXOS8700, IIS2DLPC, and IIS2ICLX
+    drivers.
+  * Added Invensense ICM42605 driver.
+  * Added NXP MCUX ACMP driver.
+  * Fixed gyro units in the FXAS21002 driver.
+  * Fixed pressure and temperature registers in the DPS310 driver.
+  * Added I2C support to the BMI160 driver.
+  * Added IIS2ICLX driver.
+  * Aligned ST sensor drivers to stmemsc HAL i/f v1.03.
+  * Fixed temperature units in the IIS2MDC driver.
+  * Added emulator for Bosch BMI160 accelerometer.
+  * Added device power management support to the LIS2MDL driver.
+
 * Serial
 
   * Added ASYNC API support on STM32 family.
