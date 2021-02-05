@@ -296,6 +296,13 @@ config CORTEX_M_DWT
 	help
 	  Enable and use the Data Watchpoint and Trace (DWT) unit for
 	  timing functions.
+
+# Additional stack for tests when building with FPU_SHARING
+# enabled, which may increase ESF stacking requirements for
+# threads.
+config TEST_EXTRA_STACKSIZE
+	default 512 if TEST_ARM_CORTEX_M && FPU_SHARING
+
 endmenu
 
 rsource "mpu/Kconfig"
