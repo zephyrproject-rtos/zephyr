@@ -19,6 +19,13 @@ flash_controller: flash-controller@39000 {
 		erase-block-size = <4096>;
 		write-block-size = <4>;
 	};
+
+	kmu: kmu@39000 {
+		compatible = "nordic,nrf-kmu";
+		reg = <0x39000 0x1000>;
+		interrupts = <57 NRF_DEFAULT_IRQ_PRIORITY>;
+		status = "okay";
+	};
 };
 
 adc: adc@e000 {
@@ -95,13 +102,6 @@ ipc: ipc@2a000 {
 	interrupts = <42 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "okay";
 	label = "IPC";
-};
-
-kmu: kmu@39000 {
-	compatible = "nordic,nrf-kmu";
-	reg = <0x39000 0x1000>;
-	interrupts = <57 NRF_DEFAULT_IRQ_PRIORITY>;
-	status = "okay";
 };
 
 pdm0: pdm@26000 {
@@ -384,13 +384,15 @@ clock: clock@5000 {
 	interrupts = <5 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "okay";
 	label = "CLOCK";
-};
+	#address-cells = <1>;
+	#size-cells = <1>;
 
-power: power@5000 {
-	compatible = "nordic,nrf-power";
-	reg = <0x5000 0x1000>;
-	interrupts = <5 NRF_DEFAULT_IRQ_PRIORITY>;
-	status = "okay";
+	power: power@5000 {
+		compatible = "nordic,nrf-power";
+		reg = <0x5000 0x1000>;
+		interrupts = <5 NRF_DEFAULT_IRQ_PRIORITY>;
+		status = "okay";
+	};
 };
 
 wdt: wdt0: watchdog@18000 {

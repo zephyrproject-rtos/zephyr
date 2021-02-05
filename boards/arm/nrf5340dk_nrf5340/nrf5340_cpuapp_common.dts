@@ -244,14 +244,16 @@ arduino_spi: &spi4 {
 
 		sram0_image: image@20000000 {
 			/* Zephyr image(s) memory */
-		};
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+			sram0_s: image_s@20000000 {
+				/* Secure image memory */
+			};
 
-		sram0_s: image_s@20000000 {
-			/* Secure image memory */
-		};
-
-		sram0_ns: image_ns@20040000 {
-			/* Non-Secure image memory */
+			sram0_ns: image_ns@20040000 {
+				/* Non-Secure image memory */
+			};
 		};
 	};
 };
