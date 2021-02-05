@@ -779,6 +779,7 @@ int npcx_i2c_ctrl_transfer(const struct device *i2c_dev, struct i2c_msg *msgs,
 		if (i2c_ctrl_bus_busy(i2c_dev) ||
 		    data->oper_state == NPCX_I2C_ERROR_RECOVERY) {
 			ret = i2c_ctrl_recovery(i2c_dev);
+			/* Recovery failed, return it immediately */
 			if (ret) {
 				return ret;
 			}
@@ -825,7 +826,14 @@ int npcx_i2c_ctrl_transfer(const struct device *i2c_dev, struct i2c_msg *msgs,
 	}
 
 	if (data->oper_state == NPCX_I2C_ERROR_RECOVERY) {
-		ret = i2c_ctrl_recovery(i2c_dev);
+		int recovery_error = i2c_ctrl_recovery(i2c_dev);
+		/*
+		 * Recovery failed, return it immediately. Otherwise, the upper
+		 * layer still needs to know why the transaction failed.
+		 */
+		if (recovery_error != 0) {
+			return recovery_error;
+		}
 	}
 
 	return ret;
