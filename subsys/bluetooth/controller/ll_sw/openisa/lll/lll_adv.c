@@ -274,8 +274,6 @@ struct pdu_adv *lll_adv_pdu_latest_get(struct lll_adv_pdu *pdu,
 		void *p;
 
 		if (!MFIFO_ENQUEUE_IDX_GET(pdu_free, &free_idx)) {
-			LL_ASSERT(false);
-
 			return NULL;
 		}
 
@@ -790,7 +788,9 @@ static void chan_prepare(struct lll_adv *lll)
 	uint8_t upd = 0U;
 
 	pdu = lll_adv_data_latest_get(lll, &upd);
+	LL_ASSERT(pdu);
 	scan_pdu = lll_adv_scan_rsp_latest_get(lll, &upd);
+	LL_ASSERT(scan_pdu);
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	if (upd) {

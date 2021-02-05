@@ -195,6 +195,9 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 
 	/* Get reference to new tertiary PDU data buffer */
 	ter_pdu = lll_adv_sync_data_alloc(lll_sync, NULL, &ter_idx);
+	if (!ter_pdu) {
+		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+	}
 	ter_pdu->type = ter_pdu_prev->type;
 	ter_pdu->rfu = 0U;
 	ter_pdu->chan_sel = 0U;

@@ -200,6 +200,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	/* FIXME: get latest only when primary PDU without Aux PDUs */
 	sec_pdu = lll_adv_aux_data_latest_get(lll, &upd);
+	LL_ASSERT(sec_pdu);
 
 	/* Get reference to primary PDU */
 	lll_adv = lll->adv;
@@ -270,6 +271,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 		struct pdu_adv *scan_pdu;
 
 		scan_pdu = lll_adv_scan_rsp_latest_get(lll_adv, &upd);
+		LL_ASSERT(scan_pdu);
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 		if (upd) {
@@ -504,6 +506,7 @@ static inline int isr_rx_pdu(struct lll_adv_aux *lll_aux,
 	pdu_rx = (void *)radio_pkt_scratch_get();
 	pdu_adv = lll_adv_data_curr_get(lll);
 	pdu_aux = lll_adv_aux_data_latest_get(lll_aux, &upd);
+	LL_ASSERT(pdu_aux);
 
 	hdr = &pdu_aux->adv_ext_ind.ext_hdr;
 

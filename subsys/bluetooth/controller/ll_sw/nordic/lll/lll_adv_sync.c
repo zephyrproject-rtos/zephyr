@@ -154,6 +154,8 @@ static int prepare_cb(struct lll_prepare_param *p)
 	lll_chan_set(data_chan_use);
 
 	pdu = lll_adv_sync_data_latest_get(lll, &extra_data, &upd);
+	LL_ASSERT(pdu);
+
 #if IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 	if (extra_data) {
 		df_cfg = (struct lll_df_adv_cfg *)extra_data;
