@@ -52,7 +52,6 @@ static int iis2iclx_odr_to_freq_val(uint16_t odr)
 	return iis2iclx_odr_map[ARRAY_SIZE(iis2iclx_odr_map) - 1];
 }
 
-#ifdef IIS2ICLX_ACCEL_FS_RUNTIME
 static const uint16_t iis2iclx_accel_fs_map[] = {500, 3000, 1000, 2000};
 static const uint16_t iis2iclx_accel_fs_sens[] = {1, 8, 2, 4};
 
@@ -68,7 +67,6 @@ static int iis2iclx_accel_range_to_fs_val(int32_t range)
 
 	return -EINVAL;
 }
-#endif
 
 static inline int iis2iclx_reboot(const struct device *dev)
 {
@@ -129,7 +127,6 @@ static int iis2iclx_accel_odr_set(const struct device *dev, uint16_t freq)
 }
 #endif
 
-#ifdef IIS2ICLX_ACCEL_FS_RUNTIME
 static int iis2iclx_accel_range_set(const struct device *dev, int32_t range)
 {
 	int fs;
@@ -148,7 +145,6 @@ static int iis2iclx_accel_range_set(const struct device *dev, int32_t range)
 	data->acc_gain = (iis2iclx_accel_fs_sens[fs] * GAIN_UNIT_XL);
 	return 0;
 }
-#endif
 
 static int iis2iclx_accel_config(const struct device *dev,
 				   enum sensor_channel chan,
@@ -156,10 +152,8 @@ static int iis2iclx_accel_config(const struct device *dev,
 				   const struct sensor_value *val)
 {
 	switch (attr) {
-#ifdef IIS2ICLX_ACCEL_FS_RUNTIME
 	case SENSOR_ATTR_FULL_SCALE:
 		return iis2iclx_accel_range_set(dev, sensor_ms2_to_g(val));
-#endif
 #ifdef IIS2ICLX_ACCEL_ODR_RUNTIME
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
 		return iis2iclx_accel_odr_set(dev, val->val1);
@@ -544,8 +538,10 @@ static const struct sensor_driver_api iis2iclx_driver_api = {
 
 static int iis2iclx_init_chip(const struct device *dev)
 {
+	const struct iis2iclx_config * const cfg = dev->config;
 	struct iis2iclx_data *iis2iclx = dev->data;
 	uint8_t chip_id;
+	uint8_t fs = cfg->range;
 
 	iis2iclx->dev = dev;
 
@@ -568,12 +564,12 @@ static int iis2iclx_init_chip(const struct device *dev)
 
 	k_usleep(100);
 
-	if (iis2iclx_accel_set_fs_raw(dev,
-				     IIS2ICLX_DEFAULT_ACCEL_FULLSCALE) < 0) {
+	LOG_DBG("range is %d", fs);
+	if (iis2iclx_accel_set_fs_raw(dev, fs) < 0) {
 		LOG_ERR("failed to set accelerometer full-scale");
 		return -EIO;
 	}
-	iis2iclx->acc_gain = IIS2ICLX_DEFAULT_ACCEL_SENSITIVITY;
+	iis2iclx->acc_gain = (iis2iclx_accel_fs_sens[fs] * GAIN_UNIT_XL);
 
 	iis2iclx->accel_freq = iis2iclx_odr_to_freq_val(CONFIG_IIS2ICLX_ACCEL_ODR);
 	if (iis2iclx_accel_set_odr_raw(dev, CONFIG_IIS2ICLX_ACCEL_ODR) < 0) {
@@ -709,6 +705,7 @@ static int iis2iclx_init(const struct device *dev)
 		.bus_name = DT_INST_BUS_LABEL(inst),			\
 		.bus_init = iis2iclx_spi_init,				\
 		.bus_cfg = { .spi_cfg = IIS2ICLX_SPI_CFG(inst)	},	\
+		.range = DT_INST_PROP(inst, range),			\
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),	\
 			(IIS2ICLX_CFG_IRQ(inst)), ())			\
 	}
@@ -729,6 +726,7 @@ static int iis2iclx_init(const struct device *dev)
 		.bus_name = DT_INST_BUS_LABEL(inst),			\
 		.bus_init = iis2iclx_i2c_init,				\
 		.bus_cfg = { .i2c_slv_addr = DT_INST_REG_ADDR(inst), },	\
+		.range = DT_INST_PROP(inst, range),			\
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),	\
 			(IIS2ICLX_CFG_IRQ(inst)), ())			\
 	}
