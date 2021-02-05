@@ -790,6 +790,13 @@ int npcx_i2c_ctrl_transfer(const struct device *i2c_dev, struct i2c_msg *msgs,
 	data->trans_err = 0;
 	data->addr = addr;
 
+	/*
+	 * Reset i2c event-completed semaphore before starting transactions.
+	 * Some interrupt events such as BUS_ERROR might change its counter
+	 * when bus is idle.
+	 */
+	k_sem_reset(&data->sync_sem);
+
 	for (i = 0U; i < num_msgs; i++) {
 		struct i2c_msg *msg = msgs + i;
 
