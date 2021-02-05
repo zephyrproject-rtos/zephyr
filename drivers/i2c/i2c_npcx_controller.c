@@ -427,7 +427,7 @@ static int i2c_ctrl_recovery(const struct device *dev)
 	 * - Wait for STOP condition completed
 	 * - Then clear BB (BUS BUSY) bit
 	 */
-	inst_fifo->SMBST |= BIT(NPCX_SMBST_BER) | BIT(NPCX_SMBST_NEGACK);
+	inst_fifo->SMBST = BIT(NPCX_SMBST_BER) | BIT(NPCX_SMBST_NEGACK);
 	ret = i2c_ctrl_wait_stop_completed(dev, I2C_MAX_TIMEOUT);
 	inst_fifo->SMBCST |= BIT(NPCX_SMBCST_BB);
 	if (ret != 0) {
@@ -686,7 +686,7 @@ static void i2c_ctrl_isr(const struct device *dev)
 		i2c_ctrl_stop(dev);
 
 		/* Clear BER Bit */
-		inst_fifo->SMBST |= BIT(NPCX_SMBST_BER);
+		inst_fifo->SMBST = BIT(NPCX_SMBST_BER);
 
 		/* Make sure slave doesn't hold bus by reading FIFO again */
 		tmp = i2c_ctrl_fifo_read(dev);
@@ -705,7 +705,7 @@ static void i2c_ctrl_isr(const struct device *dev)
 		i2c_ctrl_stop(dev);
 
 		/* Clear NEGACK Bit */
-		inst_fifo->SMBST |= BIT(NPCX_SMBST_NEGACK);
+		inst_fifo->SMBST = BIT(NPCX_SMBST_NEGACK);
 
 		/* End transaction */
 		data->oper_state = NPCX_I2C_WAIT_STOP;
