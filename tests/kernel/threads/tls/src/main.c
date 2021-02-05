@@ -14,7 +14,13 @@
 #define NUM_THREADS	3
 #define STACK_SIZE	(512 + CONFIG_TEST_EXTRA_STACKSIZE)
 
-#define STATIC_DATA	0xABCDEF00U
+#define STATIC_DATA8	0x7FU
+#define STATIC_DATA32	0xABCDEF00U
+#define STATIC_DATA64	0x1122334455667788UL
+
+#define PREFIX_8	0x30U
+#define PREFIX_32	0x44668800U
+#define PREFIX_64	0xFFEEDDCC00000000UL
 
 #ifdef CONFIG_USERSPACE
 K_APPMEM_PARTITION_DEFINE(part_common);
@@ -45,10 +51,14 @@ K_APP_BMEM(part_common) static k_tid_t tls_tid[NUM_THREADS];
 K_APP_BMEM(part_common) static enum test_result tls_result[NUM_THREADS];
 
 /* Thread data with initialized values */
-static uint32_t __thread thread_data01 = STATIC_DATA;
+static uint8_t  __thread thread_data8  = STATIC_DATA8;
+static uint32_t __thread thread_data32 = STATIC_DATA32;
+static uint64_t __thread thread_data64 = STATIC_DATA64;
 
 /* Zeroed thread data */
-static uint32_t __thread thread_bss01;
+static uint8_t  __thread thread_bss8;
+static uint32_t __thread thread_bss32;
+static uint64_t __thread thread_bss64;
 
 static void tls_thread_entry(void *p1, void *p2, void *p3)
 {
@@ -57,29 +67,75 @@ static void tls_thread_entry(void *p1, void *p2, void *p3)
 	idx = (uint32_t)POINTER_TO_UINT(p1);
 
 	/* Check if TLS area in stack is initialized correctly */
-	if (thread_data01 != STATIC_DATA) {
+	if (thread_data8 != STATIC_DATA8) {
 		tls_result[idx] = ERR_BAD_STATIC_DATA;
 		goto out;
 	}
 
-	if (thread_bss01 != 0) {
+	if (thread_data32 != STATIC_DATA32) {
+		tls_result[idx] = ERR_BAD_STATIC_DATA;
+		goto out;
+	}
+
+	if (thread_data64 != STATIC_DATA64) {
+		tls_result[idx] = ERR_BAD_STATIC_DATA;
+		goto out;
+	}
+
+	if (thread_bss8 != 0) {
+		tls_result[idx] = ERR_BSS_NOT_ZERO;
+		goto out;
+	}
+
+	if (thread_bss32 != 0) {
+		tls_result[idx] = ERR_BSS_NOT_ZERO;
+		goto out;
+	}
+
+	if (thread_bss64 != 0) {
 		tls_result[idx] = ERR_BSS_NOT_ZERO;
 		goto out;
 	}
 
 	/* Set thread data and see if they remain unchanged */
-	thread_data01 = STATIC_DATA + idx;
-	thread_bss01 = idx;
+	thread_data8 = STATIC_DATA8 + idx;
+	thread_bss8 = PREFIX_8 + idx;
+
+	thread_data32 = STATIC_DATA32 + idx;
+	thread_bss32 = PREFIX_32 + idx;
+
+	thread_data64 = STATIC_DATA64 + idx;
+	thread_bss64 = PREFIX_64 + idx;
 
 	/* Let other threads run */
 	k_sleep(K_MSEC(100));
 
-	if (thread_data01 != (STATIC_DATA + idx)) {
+	if (thread_data8 != (STATIC_DATA8 + idx)) {
 		tls_result[idx] = ERR_DATA_CHANGED_BY_OTHERS;
 		goto out;
 	}
 
-	if (thread_bss01 != idx) {
+	if (thread_data32 != (STATIC_DATA32 + idx)) {
+		tls_result[idx] = ERR_DATA_CHANGED_BY_OTHERS;
+		goto out;
+	}
+
+	if (thread_data64 != (STATIC_DATA64 + idx)) {
+		tls_result[idx] = ERR_DATA_CHANGED_BY_OTHERS;
+		goto out;
+	}
+
+	if (thread_bss8 != (PREFIX_8 + idx)) {
+		tls_result[idx] = ERR_BSS_CHANGED_BY_OTHERS;
+		goto out;
+	}
+
+	if (thread_bss32 != (PREFIX_32 + idx)) {
+		tls_result[idx] = ERR_BSS_CHANGED_BY_OTHERS;
+		goto out;
+	}
+
+	if (thread_bss64 != (PREFIX_64 + idx)) {
 		tls_result[idx] = ERR_BSS_CHANGED_BY_OTHERS;
 		goto out;
 	}
