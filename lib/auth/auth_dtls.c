@@ -159,7 +159,7 @@ static void auth_init_context(struct mbed_tls_context *mbed_ctx)
 
     /* Generate random number as challenge using a cryptographically secure random
 	 * number generator. */
-    sys_csrand_get(mbed_ctx->cookie, sizeof(mbed_ctx->cookie));
+	sys_csrand_get(mbed_ctx->cookie, sizeof(mbed_ctx->cookie));
 }
 
 /**
