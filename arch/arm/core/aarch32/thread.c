@@ -496,6 +496,17 @@ void arch_switch_to_main_thread(struct k_thread *main_thread, char *stack_ptr,
 	z_arm_prepare_switch_to_main();
 
 	_current = main_thread;
+
+#if defined(CONFIG_THREAD_LOCAL_STORAGE) && defined(CONFIG_CPU_CORTEX_M)
+	/* Need to setup the TLS global pointer here as it is only
+	 * set during context switch on CortexM. Or else the main
+	 * thread would not have TLS.
+	 */
+	extern uintptr_t z_arm_tls_ptr;
+
+	z_arm_tls_ptr = main_thread->tls;
+#endif
+
 #ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
 	z_thread_mark_switched_in();
 #endif
