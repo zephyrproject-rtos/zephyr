@@ -192,6 +192,11 @@ Boards & SoC Support
   * Generic LEON3 board configuration for GRLIB FPGA reference designs
   * SPARC QEMU for emulating LEON3 processors and running kernel tests
 
+* Added support for these NXP boards:
+
+  * LPCXpresso55S28
+  * MIMXRT1024-EVK
+
 * Added support for these STM32 boards and SoCs :
 
   * Cortex-M Trace Reference Board V1.2 (SEGGER TRB STM32F407)
@@ -232,6 +237,12 @@ Boards & SoC Support
     (SPE) when building Zephyr for the non-secure domain.
   * SAM4E_XPRO: Added support to SAM-BA ROM bootloader.
   * SAM4S_XPLAINED: Added support to SAM-BA ROM bootloader.
+  * Extended LPCXpresso55S69 to support dual-core.
+  * Enhanced MIMXRT1064-EVK to support QSPI flash storage and LittleFS.
+  * Updated MIMXRT685-EVK to increase the core clock frequency.
+  * Updated NXP i.MX RT, Kinetis, and LPC boards to enable hardware stack
+    protection by default.
+  * Fixed Segger RTT and SystemView support on NXP i.MX RT boards.
 
 * Added support for these following shields:
 
@@ -271,6 +282,8 @@ Drivers and Sensors
 
 * Clock Control
 
+  * Added NXP LPC driver.
+
 * Console
 
 * Counter
@@ -301,6 +314,7 @@ Drivers and Sensors
   * Added support for Distributed Switch Architecture (DSA) devices.
     Currently only ip_k66f board supports DSA.
   * Added support for w5500 Ethernet controller.
+  * Reworked the NXP MCUX driver to use DT_INST_FOREACH.
 
 * Flash
 
@@ -309,6 +323,8 @@ Drivers and Sensors
   * MPU_ALLOW_FLASH_WRITE is now default on STM32 boards when MPU is enabled.
   * Add driver for STM32H7 and STM32L1 SoC series.
   * Add QSPI NOR Flash controller support for STM32 family.
+  * Added NXP LPC legacy flash driver.
+  * Added NXP FlexSPI flash driver for i.MX RT SoCs.
 
 * GPIO
 
@@ -424,6 +440,8 @@ Drivers and Sensors
 
 * SPI
 
+  * Enhanced NXP MCUX Flexcomm driver to support DMA.
+
 * Timer
 
 * USB
@@ -435,6 +453,8 @@ Drivers and Sensors
 * Video
 
 * Watchdog
+
+  * Added NXP i.MX RT driver.
 
 * WiFi
 
