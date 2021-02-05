@@ -1,0 +1,8 @@
+# Copyright (c) 2021 Cobham Gaisler AB
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_GRGPIO2
+	bool "GRLIB GRGPIO revision 2"
+	depends on SOC_SPARC_LEON
+	help
+	  Enable driver for GRLIB GRGPIO revision 2.
