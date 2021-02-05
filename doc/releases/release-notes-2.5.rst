@@ -82,6 +82,9 @@ API Changes
 * :c:type:`fs_tile_t` objects must now be initialized by calling
   :c:func:`fs_file_t_init` before their first use.
 
+* :c:type:`fs_dir_t` objects must now be initialized by calling
+  :c:func:`fs_dir_t_init` before their first use.
+
 Deprecated in this release
 ==========================
 
@@ -606,6 +609,8 @@ Build and Infrastructure
 Libraries / Subsystems
 **********************
 
+* Disk
+
 * File systems
 
   * API
@@ -613,9 +618,8 @@ Libraries / Subsystems
     * Added c:func:`fs_file_t_init` function for initialization of
       c:type:`fs_file_t` objects.
 
-* Disk
-
-* File Systems
+    * Added c:func:`fs_dir_t_init` function for initialization of
+      c:type:`fs_dir_t` objects.
 
   * :option:`CONFIG_FS_LITTLEFS_FC_MEM_POOL` has been deprecated and
     should be replaced by :option:`CONFIG_FS_LITTLEFS_FC_HEAP_SIZE`.
