@@ -150,25 +150,22 @@ static int cmd_fill(const struct shell *shell, size_t argc, char **argv)
 	uint8_t rd_buf[CONFIG_EEPROM_SHELL_BUFFER_SIZE];
 	const struct device *eeprom;
 	unsigned long pattern;
-	off_t offset;
+	size_t addr;
+	size_t initial_offset;
 	size_t len;
+	size_t pending;
+	size_t upto;
 	int err;
 
-	offset = strtoul(argv[args_indx.offset], NULL, 0);
+	initial_offset = strtoul(argv[args_indx.offset], NULL, 0);
 	len = strtoul(argv[args_indx.length], NULL, 0);
-
-	if (len > sizeof(wr_buf)) {
-		shell_error(shell, "Write buffer size (%d bytes) exceeded",
-			    sizeof(wr_buf));
-		return -EINVAL;
-	}
 
 	pattern = strtoul(argv[args_indx.pattern], NULL, 0);
 	if (pattern > UINT8_MAX) {
 		shell_error(shell, "Error parsing pattern byte");
 		return -EINVAL;
 	}
-	memset(wr_buf, pattern, len);
+	memset(wr_buf, pattern, MIN(len, CONFIG_EEPROM_SHELL_BUFFER_SIZE));
 
 	eeprom = device_get_binding(argv[args_indx.device]);
 	if (!eeprom) {
@@ -179,23 +176,36 @@ static int cmd_fill(const struct shell *shell, size_t argc, char **argv)
 	shell_print(shell, "Writing %d bytes of 0x%02x to EEPROM...", len,
 		    pattern);
 
-	err = eeprom_write(eeprom, offset, wr_buf, len);
-	if (err) {
-		shell_error(shell, "EEPROM write failed (err %d)", err);
-		return err;
+	addr = initial_offset;
+
+	for (upto = 0; upto < len; upto += pending) {
+		pending = MIN(len - upto, CONFIG_EEPROM_SHELL_BUFFER_SIZE);
+		err = eeprom_write(eeprom, addr, wr_buf, pending);
+		if (err) {
+			shell_error(shell, "EEPROM write failed (err %d)", err);
+			return err;
+		}
+		addr += pending;
 	}
+
+	addr = initial_offset;
 
 	shell_print(shell, "Verifying...");
 
-	err = eeprom_read(eeprom, offset, rd_buf, len);
-	if (err) {
-		shell_error(shell, "EEPROM read failed (err %d)", err);
-		return err;
-	}
+	for (upto = 0; upto < len; upto += pending) {
+		pending = MIN(len - upto, CONFIG_EEPROM_SHELL_BUFFER_SIZE);
+		err = eeprom_read(eeprom, addr, rd_buf, pending);
+		if (err) {
+			shell_error(shell, "EEPROM read failed (err %d)", err);
+			return err;
+		}
 
-	if (memcmp(wr_buf, rd_buf, len) != 0) {
-		shell_error(shell, "Verify failed");
-		return -EIO;
+		if (memcmp(wr_buf, rd_buf, pending) != 0) {
+			shell_error(shell, "Verify failed");
+			return -EIO;
+		}
+
+		addr += pending;
 	}
 
 	shell_print(shell, "Verify OK");
