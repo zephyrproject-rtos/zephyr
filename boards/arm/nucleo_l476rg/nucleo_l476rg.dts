@@ -20,6 +20,27 @@
 		zephyr,flash = &flash0;
 	};
 
+	power-states {
+		stop0: state0 {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			substate-id = <0>;
+			min-residency-us = <500>;
+		};
+		stop1: state1 {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			substate-id = <1>;
+			min-residency-us = <700>;
+		};
+		stop2: state2 {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			substate-id = <2>;
+			min-residency-us = <1000>;
+		};
+	};
+
 	leds {
 		compatible = "gpio-leds";
 		green_led_2: led_2 {
@@ -40,6 +61,10 @@
 		led0 = &green_led_2;
 		sw0 = &user_button;
 	};
+};
+
+&cpu0 {
+	cpu-power-states = <&stop0 &stop1 &stop2>;
 };
 
 &usart1 {
