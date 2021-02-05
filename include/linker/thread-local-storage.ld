@@ -21,10 +21,12 @@
 	PROVIDE(__tdata_start = LOADADDR(tdata));
 	PROVIDE(__tdata_size = SIZEOF(tdata));
 	PROVIDE(__tdata_end = __tdata_start + __tdata_size);
+	PROVIDE(__tdata_align = ALIGNOF(tdata));
 
 	PROVIDE(__tbss_start = LOADADDR(tbss));
 	PROVIDE(__tbss_size = SIZEOF(tbss));
 	PROVIDE(__tbss_end = __tbss_start + __tbss_size);
+	PROVIDE(__tbss_align = ALIGNOF(tbss));
 
 	PROVIDE(__tls_start = __tdata_start);
 	PROVIDE(__tls_end = __tbss_end);
