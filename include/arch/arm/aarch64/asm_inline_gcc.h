@@ -48,10 +48,9 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 	 */
 	__asm__ volatile("mrs %0, daif;"
 			 "msr daifset, %1;"
-			 "isb"
 			 : "=r" (key)
 			 : "i" (DAIFSET_IRQ)
-			 : "memory", "cc");
+			 : "memory");
 
 	return key;
 }
@@ -59,10 +58,9 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 {
 	__asm__ volatile("msr daif, %0;"
-			 "isb"
 			 :
 			 : "r" (key)
-			 : "memory", "cc");
+			 : "memory");
 }
 
 static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
