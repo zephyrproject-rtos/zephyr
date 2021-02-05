@@ -95,8 +95,12 @@ static void register_signal(const struct device *dev,
 }
 
 #else
+
+static const struct ivshmem_reg no_reg;
+
 #define ivshmem_configure_interrupts(...) true
 #define register_signal(...)
+
 #endif /* CONFIG_IVSHMEM_DOORBELL */
 
 static bool ivshmem_check_on_bdf(pcie_bdf_t bdf)
@@ -142,14 +146,20 @@ static bool ivshmem_configure(const struct device *dev)
 	struct pcie_mbar mbar_regs, mbar_mem;
 
 	if (!pcie_get_mbar(data->bdf, IVSHMEM_PCIE_REG_BAR_IDX, &mbar_regs)) {
+#ifdef CONFIG_IVSHMEM_DOORBELL
 		LOG_ERR("ivshmem regs bar not found");
 		return false;
+#else
+		LOG_DBG("ivshmem regs bar not found");
+		device_map(DEVICE_MMIO_RAM_PTR(dev), (uintptr_t)&no_reg,
+			   sizeof(struct ivshmem_reg), K_MEM_CACHE_NONE);
+#endif /* CONFIG_IVSHMEM_DOORBELL */
+	} else {
+		pcie_set_cmd(data->bdf, PCIE_CONF_CMDSTAT_MEM, true);
+
+		device_map(DEVICE_MMIO_RAM_PTR(dev), mbar_regs.phys_addr,
+			   mbar_regs.size, K_MEM_CACHE_NONE);
 	}
-
-	pcie_set_cmd(data->bdf, PCIE_CONF_CMDSTAT_MEM, true);
-
-	device_map(DEVICE_MMIO_RAM_PTR(dev), mbar_regs.phys_addr,
-		   mbar_regs.size, K_MEM_CACHE_NONE);
 
 	if (!pcie_get_mbar(data->bdf, IVSHMEM_PCIE_SHMEM_BAR_IDX, &mbar_mem)) {
 		LOG_ERR("ivshmem mem bar not found");
