@@ -256,4 +256,110 @@ if (CONFIG_BUILD_WITH_TFM)
   )
 
   zephyr_link_libraries(tfm_api)
+
+  # Set default image versions if not defined elsewhere
+  if (NOT DEFINED TFM_IMAGE_VERSION_S)
+    set(TFM_IMAGE_VERSION_S 0.0.0+0)
+  endif()
+
+  if (NOT DEFINED TFM_IMAGE_VERSION_NS)
+    set(TFM_IMAGE_VERSION_NS 0.0.0+0)
+  endif()
+
+  if (CONFIG_TFM_BL2)
+    set(PREPROCESSED_FILE_S "${CMAKE_BINARY_DIR}/tfm/bl2/ext/mcuboot/CMakeFiles/signing_layout_s.dir/signing_layout_s.o")
+    set(PREPROCESSED_FILE_NS "${CMAKE_BINARY_DIR}/tfm/bl2/ext/mcuboot/CMakeFiles/signing_layout_ns.dir/signing_layout_ns.o")
+    set(TFM_MCUBOOT_DIR "${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/trusted-firmware-m/bl2/ext/mcuboot")
+  endif()
+
+  # Configure which format (full or hash) to include the public key in
+  # the image manifest
+  if(NOT DEFINED TFM_PUBLIC_KEY_FORMAT)
+    set(TFM_PUBLIC_KEY_FORMAT "full")
+  endif()
+
+  function(tfm_sign OUT_ARG SUFFIX PAD INPUT_FILE OUTPUT_FILE)
+    if(PAD)
+      set(pad_args --pad --pad-header)
+    endif()
+    set (${OUT_ARG}
+      ${PYTHON_EXECUTABLE} ${TFM_MCUBOOT_DIR}/scripts/wrapper/wrapper.py
+      --layout ${PREPROCESSED_FILE_${SUFFIX}}
+      -k ${CONFIG_TFM_KEY_FILE_${SUFFIX}}
+      --public-key-format ${TFM_PUBLIC_KEY_FORMAT}
+      --align 1
+      -v ${TFM_IMAGE_VERSION_${SUFFIX}}
+      ${pad_args}
+      ${ADD_${SUFFIX}_IMAGE_MIN_VER}
+      -s auto
+      -H ${CONFIG_ROM_START_OFFSET}
+      ${INPUT_FILE}
+      ${OUTPUT_FILE}
+      PARENT_SCOPE)
+  endfunction()
+
+  set(MERGED_FILE ${CMAKE_BINARY_DIR}/tfm_merged.hex)
+  set(S_NS_FILE ${CMAKE_BINARY_DIR}/tfm_s_zephyr_ns.hex)
+  set(S_NS_SIGNED_FILE ${CMAKE_BINARY_DIR}/tfm_s_zephyr_ns_signed.hex)
+  set(NS_SIGNED_FILE ${CMAKE_BINARY_DIR}/zephyr_ns_signed.hex)
+  set(S_SIGNED_FILE ${CMAKE_BINARY_DIR}/tfm_s_signed.hex)
+
+  if (NOT CONFIG_TFM_BL2)
+    # Merge tfm_s and zephyr (NS) image to a single binary.
+    set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+      COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/mergehex.py
+        -o ${MERGED_FILE}
+        $<TARGET_PROPERTY:tfm,TFM_S_HEX_FILE>
+        ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_HEX_NAME}
+    )
+
+    set_property(GLOBAL APPEND PROPERTY extra_post_build_byproducts
+      ${MERGED_FILE}
+    )
+
+  elseif(CONFIG_TFM_MCUBOOT_IMAGE_NUMBER STREQUAL "1")
+    tfm_sign(sign_cmd NS TRUE ${S_NS_FILE} ${S_NS_SIGNED_FILE})
+
+    set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+      COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/mergehex.py
+        -o ${S_NS_FILE}
+        $<TARGET_PROPERTY:tfm,TFM_S_HEX_FILE>
+        ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_HEX_NAME}
+
+      COMMAND ${sign_cmd}
+
+      COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/mergehex.py
+        -o ${MERGED_FILE}
+        $<TARGET_PROPERTY:tfm,BL2_HEX_FILE>
+        ${S_NS_SIGNED_FILE}
+    )
+
+    set_property(GLOBAL APPEND PROPERTY extra_post_build_byproducts
+      ${S_NS_FILE}
+      ${S_NS_SIGNED_FILE}
+      ${MERGED_FILE}
+    )
+
+  else()
+    tfm_sign(sign_cmd_ns NS FALSE ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_HEX_NAME} ${NS_SIGNED_FILE})
+    tfm_sign(sign_cmd_s S TRUE $<TARGET_PROPERTY:tfm,TFM_S_HEX_FILE> ${S_SIGNED_FILE})
+
+    #Create and sign for concatenated binary image, should align with the TF-M BL2
+    set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+      COMMAND ${sign_cmd_ns}
+      COMMAND ${sign_cmd_s}
+
+      COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/mergehex.py
+        -o ${MERGED_FILE}
+        $<TARGET_PROPERTY:tfm,BL2_HEX_FILE>
+        ${S_SIGNED_FILE}
+        ${NS_SIGNED_FILE}
+    )
+
+    set_property(GLOBAL APPEND PROPERTY extra_post_build_byproducts
+      ${S_SIGNED_FILE}
+      ${NS_SIGNED_FILE}
+      ${MERGED_FILE}
+    )
+  endif()
 endif()
