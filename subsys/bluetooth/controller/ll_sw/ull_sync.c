@@ -52,7 +52,7 @@ static void ticker_update_sync_op_cb(uint32_t status, void *param);
 static void ticker_stop_op_cb(uint32_t status, void *param);
 static void sync_lost(void *param);
 
-static struct ll_sync_set ll_sync_pool[CONFIG_BT_CTLR_SCAN_SYNC_SET];
+static struct ll_sync_set ll_sync_pool[CONFIG_BT_PER_ADV_SYNC_MAX];
 static void *sync_free;
 
 uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
@@ -296,7 +296,7 @@ int ull_sync_reset(void)
 
 struct ll_sync_set *ull_sync_set_get(uint16_t handle)
 {
-	if (handle >= CONFIG_BT_CTLR_SCAN_SYNC_SET) {
+	if (handle >= CONFIG_BT_PER_ADV_SYNC_MAX) {
 		return NULL;
 	}
 
