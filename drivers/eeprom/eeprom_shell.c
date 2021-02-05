@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Vestas Wind Systems A/S
+ * Copyright (c) 2021 Lemonbeat GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,20 +32,15 @@ static const struct args_index args_indx = {
 
 static int cmd_read(const struct shell *shell, size_t argc, char **argv)
 {
-	uint8_t buf[CONFIG_EEPROM_SHELL_BUFFER_SIZE];
 	const struct device *eeprom;
-	off_t offset;
+	size_t addr;
 	size_t len;
+	size_t pending;
+	size_t upto;
 	int err;
 
-	offset = strtoul(argv[args_indx.offset], NULL, 0);
+	addr = strtoul(argv[args_indx.offset], NULL, 0);
 	len = strtoul(argv[args_indx.length], NULL, 0);
-
-	if (len > sizeof(buf)) {
-		shell_error(shell, "Read buffer size (%d bytes) exceeded",
-			    sizeof(buf));
-		return -EINVAL;
-	}
 
 	eeprom = device_get_binding(argv[args_indx.device]);
 	if (!eeprom) {
@@ -53,16 +49,23 @@ static int cmd_read(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	shell_print(shell, "Reading %d bytes from EEPROM, offset %d...", len,
-		    offset);
+		    addr);
 
-	err = eeprom_read(eeprom, offset, buf, len);
-	if (err) {
-		shell_error(shell, "EEPROM read failed (err %d)", err);
-		return err;
+	for (upto = 0; upto < len; upto += pending) {
+		uint8_t data[SHELL_HEXDUMP_BYTES_IN_LINE];
+
+		pending = MIN(len - upto, SHELL_HEXDUMP_BYTES_IN_LINE);
+		err = eeprom_read(eeprom, addr, data, pending);
+		if (err) {
+			shell_error(shell, "EEPROM read failed (err %d)", err);
+			return err;
+		}
+
+		shell_hexdump_line(shell, addr, data, pending);
+		addr += pending;
 	}
 
-	shell_hexdump(shell, buf, len);
-
+	shell_print(shell, "");
 	return 0;
 }
 
