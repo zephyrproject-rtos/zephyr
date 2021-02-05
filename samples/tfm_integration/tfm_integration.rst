@@ -167,5 +167,8 @@ Zephyr application folder, and reference them in the ``prj.conf`` file via the
      lose this key file, you will be unable to sign any future firmware images,
      and it will no longer be possible to update your devices in the field!
 
+After the built-in signing code has run, it creates a tfm_merged.hex file that
+contains all the binaries, bl2, tfm_s, and the zephyr app.
+
 .. _PSA Certified Level 1:
   https://www.psacertified.org/security-certification/psa-certified-level-1/
