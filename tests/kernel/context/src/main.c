@@ -94,13 +94,9 @@
 #endif
 
 /* Cortex-M1, Nios II, and RISCV without CONFIG_RISCV_HAS_CPU_IDLE
- * do have a power saving instruction, so k_cpu_idle() returns immediately.
- *
- * Includes workaround on QEMU aarch64, see
- * https://github.com/zephyrproject-rtos/sdk-ng/issues/255
+ * do have a power saving instruction, so k_cpu_idle() returns immediately
  */
 #if !defined(CONFIG_CPU_CORTEX_M1) && !defined(CONFIG_NIOS2) && \
-	!defined(CONFIG_SOC_QEMU_CORTEX_A53) && \
 	(!defined(CONFIG_RISCV) || defined(CONFIG_RISCV_HAS_CPU_IDLE))
 #define HAS_POWERSAVE_INSTRUCTION
 #endif
