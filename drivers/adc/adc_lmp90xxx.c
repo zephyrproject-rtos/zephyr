@@ -1078,7 +1078,7 @@ static const struct adc_driver_api lmp90xxx_adc_api = {
 
 #define DT_INST_LMP90XXX(inst, t) DT_INST(inst, ti_lmp##t)
 
-#define LMP90XXX_DEVICE(t, n, res, ch) \
+#define LMP90XXX_INIT(t, n, res, ch) \
 	ASSERT_LMP90XXX_CURRENT_VALID(UTIL_AND(	\
 		DT_NODE_HAS_PROP(DT_INST_LMP90XXX(n, t), rtd_current), \
 		DT_PROP(DT_INST_LMP90XXX(n, t),	rtd_current))); \
@@ -1134,60 +1134,58 @@ static const struct adc_driver_api lmp90xxx_adc_api = {
 			 &lmp##t##_data_##n, \
 			 &lmp##t##_config_##n, POST_KERNEL, \
 			 CONFIG_ADC_LMP90XXX_INIT_PRIORITY, \
-			 &lmp90xxx_adc_api)
+			 &lmp90xxx_adc_api);
+
+#define LMP90XXX_FOREACH_STATUS_OKAY(compat, fn)		\
+	COND_CODE_1(DT_HAS_COMPAT_STATUS_OKAY(compat),		\
+		    (UTIL_CAT(DT_FOREACH_OKAY_INST_,		\
+			      compat)(fn)),			\
+		    ())
 
 /*
  * LMP90077: 16 bit, 2 diff/4 se (4 channels), 0 currents
  */
-#if DT_HAS_COMPAT_STATUS_OKAY(ti_lmp90077)
-LMP90XXX_DEVICE(90077, 0, 16, 4);
-#endif
+#define LMP90077_INIT(n) LMP90XXX_INIT(90077, n, 16, 4)
+LMP90XXX_FOREACH_STATUS_OKAY(ti_lmp90077, LMP90077_INIT)
 
 /*
  * LMP90078: 16 bit, 2 diff/4 se (4 channels), 2 currents
  */
-#if DT_HAS_COMPAT_STATUS_OKAY(ti_lmp90078)
-LMP90XXX_DEVICE(90078, 0, 16, 4);
-#endif
+#define LMP90078_INIT(n) LMP90XXX_INIT(90078, n, 16, 4)
+LMP90XXX_FOREACH_STATUS_OKAY(ti_lmp90078, LMP90078_INIT)
 
 /*
  * LMP90079: 16 bit, 4 diff/7 se (7 channels), 0 currents, has VIN3-5
  */
-#if DT_HAS_COMPAT_STATUS_OKAY(ti_lmp90079)
-LMP90XXX_DEVICE(90079, 0, 16, 7);
-#endif
+#define LMP90079_INIT(n) LMP90XXX_INIT(90079, n, 16, 7)
+LMP90XXX_FOREACH_STATUS_OKAY(ti_lmp90079, LMP90079_INIT)
 
 /*
  * LMP90080: 16 bit, 4 diff/7 se (7 channels), 2 currents, has VIN3-5
  */
-#if DT_HAS_COMPAT_STATUS_OKAY(ti_lmp90080)
-LMP90XXX_DEVICE(90080, 0, 16, 7);
-#endif
+#define LMP90080_INIT(n) LMP90XXX_INIT(90080, n, 16, 7)
+LMP90XXX_FOREACH_STATUS_OKAY(ti_lmp90080, LMP90080_INIT)
 
 /*
  * LMP90097: 24 bit, 2 diff/4 se (4 channels), 0 currents
  */
-#if DT_HAS_COMPAT_STATUS_OKAY(ti_lmp90097)
-LMP90XXX_DEVICE(90097, 0, 24, 4);
-#endif
+#define LMP90097_INIT(n) LMP90XXX_INIT(90097, n, 24, 4)
+LMP90XXX_FOREACH_STATUS_OKAY(ti_lmp90097, LMP90097_INIT)
 
 /*
  * LMP90098: 24 bit, 2 diff/4 se (4 channels), 2 currents
  */
-#if DT_HAS_COMPAT_STATUS_OKAY(ti_lmp90098)
-LMP90XXX_DEVICE(90098, 0, 24, 4);
-#endif
+#define LMP90098_INIT(n) LMP90XXX_INIT(90098, n, 24, 4)
+LMP90XXX_FOREACH_STATUS_OKAY(ti_lmp90098, LMP90098_INIT)
 
 /*
  * LMP90099: 24 bit, 4 diff/7 se (7 channels), 0 currents, has VIN3-5
  */
-#if DT_HAS_COMPAT_STATUS_OKAY(ti_lmp90099)
-LMP90XXX_DEVICE(90099, 0, 24, 7);
-#endif
+#define LMP90099_INIT(n) LMP90XXX_INIT(90099, n, 24, 7)
+LMP90XXX_FOREACH_STATUS_OKAY(ti_lmp90099, LMP90099_INIT)
 
 /*
  * LMP90100: 24 bit, 4 diff/7 se (7 channels), 2 currents, has VIN3-5
  */
-#if DT_HAS_COMPAT_STATUS_OKAY(ti_lmp90100)
-LMP90XXX_DEVICE(90100, 0, 24, 7);
-#endif
+#define LMP90100_INIT(n) LMP90XXX_INIT(90100, n, 24, 7)
+LMP90XXX_FOREACH_STATUS_OKAY(ti_lmp90100, LMP90100_INIT)
