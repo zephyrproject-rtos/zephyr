@@ -38,7 +38,7 @@
 /* Boot-time virtual location of the kernel image. */
 #define Z_KERNEL_VIRT_START	((uint8_t *)(&z_mapped_start))
 #define Z_KERNEL_VIRT_END	((uint8_t *)(&z_mapped_end))
-#define Z_KERNEL_VIRT_SIZE	((size_t)(&z_mapped_size))
+#define Z_KERNEL_VIRT_SIZE	(Z_KERNEL_VIRT_END - Z_KERNEL_VIRT_START)
 
 #define Z_VM_OFFSET	 ((CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_VM_OFFSET) - \
 			  CONFIG_SRAM_BASE_ADDRESS)
