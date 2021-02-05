@@ -8,6 +8,7 @@ if (CONFIG_COVERAGE)
 endif ()
 
 zephyr_library_sources(
+  cpu_idle.S
   fatal.c
   irq_init.c
   irq_manage.c
@@ -17,15 +18,6 @@ zephyr_library_sources(
   thread.c
   vector_table.S
 )
-
-# Workaround aarch64 QEMU not responding to host OS signals
-# during 'wfi'.
-# See https://github.com/zephyrproject-rtos/sdk-ng/issues/255
-if (CONFIG_SOC_QEMU_CORTEX_A53)
-  zephyr_library_sources(cpu_idle_qemu.c)
-else ()
-  zephyr_library_sources(cpu_idle.S)
-endif ()
 
 zephyr_library_sources_ifdef(CONFIG_GEN_SW_ISR_TABLE isr_wrapper.S)
 zephyr_library_sources_ifdef(CONFIG_IRQ_OFFLOAD irq_offload.c)
