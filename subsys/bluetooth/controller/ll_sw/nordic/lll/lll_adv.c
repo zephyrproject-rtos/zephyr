@@ -295,8 +295,6 @@ struct pdu_adv *lll_adv_pdu_latest_get(struct lll_adv_pdu *pdu,
 		void *p;
 
 		if (!MFIFO_ENQUEUE_IDX_GET(pdu_free, &free_idx)) {
-			LL_ASSERT(false);
-
 			return NULL;
 		}
 
@@ -405,8 +403,6 @@ struct pdu_adv *lll_adv_pdu_and_extra_data_alloc(struct lll_adv_pdu *pdu,
 		*extra_data = adv_extra_data_allocate(pdu, last);
 	} else {
 		if (adv_extra_data_free(pdu, last)) {
-			LL_ASSERT(false);
-
 			/* There is no release of memory allocated by
 			 * adv_pdu_allocate because there is no memory leak.
 			 * If caller can recover from this error and subsequent
@@ -436,8 +432,6 @@ struct pdu_adv *lll_adv_pdu_and_extra_data_latest_get(struct lll_adv_pdu *pdu,
 		void *p;
 
 		if (!MFIFO_ENQUEUE_IDX_GET(pdu_free, &pdu_free_idx)) {
-			LL_ASSERT(false);
-
 			return NULL;
 		}
 
@@ -446,7 +440,6 @@ struct pdu_adv *lll_adv_pdu_and_extra_data_latest_get(struct lll_adv_pdu *pdu,
 
 		if (ed && (!MFIFO_ENQUEUE_IDX_GET(extra_data_free,
 						  &ed_free_idx))) {
-			LL_ASSERT(false);
 			/* No pdu_free_idx clean up is required, sobsequent
 			 * calls to MFIFO_ENQUEUE_IDX_GET return ther same
 			 * index to memory that is in limbo state.
@@ -646,6 +639,10 @@ static struct pdu_adv *adv_pdu_allocate(struct lll_adv_pdu *pdu, uint8_t last)
 
 	p = MFIFO_DEQUEUE(pdu_free);
 	LL_ASSERT(p);
+	/* If !p then check initial value of sem_pdu_free. It must be the same
+	 * as number of elements in pdu_free store. This may not happen in
+	 * runtime.
+	 */
 
 	pdu->pdu[last] = (void *)p;
 
@@ -701,7 +698,6 @@ static int adv_extra_data_free(struct lll_adv_pdu *pdu, uint8_t last)
 
 	if (ed) {
 		if (!MFIFO_ENQUEUE_IDX_GET(extra_data_free, &ed_free_idx)) {
-			LL_ASSERT(false);
 			/* ToDo what if enqueue fails and assert does not fire?
 			 * pdu_free_idx should be released before return.
 			 */
@@ -1212,6 +1208,7 @@ static struct pdu_adv *chan_prepare(struct lll_adv *lll)
 	/* FIXME: get latest only when primary PDU without Aux PDUs */
 	upd = 0U;
 	pdu = lll_adv_data_latest_get(lll, &upd);
+	LL_ASSERT(pdu);
 
 	radio_pkt_tx_set(pdu);
 
@@ -1221,6 +1218,7 @@ static struct pdu_adv *chan_prepare(struct lll_adv *lll)
 		struct pdu_adv *scan_pdu;
 
 		scan_pdu = lll_adv_scan_rsp_latest_get(lll, &upd);
+		LL_ASSERT(scan_pdu);
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 		if (upd) {
