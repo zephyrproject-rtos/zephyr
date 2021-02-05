@@ -38,6 +38,9 @@ config OPENTHREAD_COAPS
 	bool "Enable Secure CoAP API support"
 	depends on OPENTHREAD_COAP
 
+config OPENTHREAD_COAP_BLOCK
+	bool "Enable CoAP Block-wise option support"
+
 config OPENTHREAD_COAP_OBSERVE
 	bool "Enable CoAP Observe option support"
 
