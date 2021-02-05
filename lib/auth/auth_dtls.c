@@ -157,17 +157,9 @@ static void auth_init_context(struct mbed_tls_context *mbed_ctx)
 	mbedtls_ctr_drbg_init(&mbed_ctx->ctr_drbg);
 	mbedtls_entropy_init(&mbed_ctx->entropy);
 
-#if defined(CONFIG_ENTROPY_HAS_DRIVER)
     /* Generate random number as challenge using a cryptographically secure random
 	 * number generator. */
-	sys_csrand_get(mbed_ctx->cookie, sizeof(mbed_ctx->cookie));
-#else
-    /**
-     * WARNING!!  This rand function should only be used for testing. It is
-     * not recommend for production use.
-     */
-    sys_rand_get(mbed_ctx->cookie, sizeof(mbed_ctx->cookie));
-#endif
+    sys_csrand_get(mbed_ctx->cookie, sizeof(mbed_ctx->cookie));
 }
 
 /**
@@ -636,17 +628,9 @@ static int auth_tls_entropy(void *data, unsigned char *output, size_t len,
 {
 	(void) data;
 
-#if defined(CONFIG_ENTROPY_HAS_DRIVER)
     /* Generate random number as challenge using a cryptographically secure random
 	 * number generator. */
 	sys_csrand_get(output, len);
-#else
-    /**
-     * WARNING!!  This rand function should only be used for testing. It is
-     * not recommend for production use.
-     */
-    sys_rand_get(output, len);
-#endif
 
 	*olen = len;
 

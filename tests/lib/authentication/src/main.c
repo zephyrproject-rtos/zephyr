@@ -83,3 +83,20 @@ void test_main(void)
 
 	ztest_run_test_suite(authentication_tests);
 }
+
+/**
+ * Stub function to mock sys_csrand_get() function which is not available
+ * when running tests.  Resolves link error.
+ *
+ * @param dst   Buffer destination for bytes.
+ * @param len   Number of bytes.
+ *
+ * @return  0 on success.
+ */
+int z_impl_sys_csrand_get(void *dst, size_t len)
+{
+    /* Not random, for testing purposes only. */
+    memset(dst, 42u, len);
+
+    return 0;
+}

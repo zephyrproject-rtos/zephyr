@@ -3,6 +3,7 @@ sample:
   name: Auth Central
 tests:
   sample.central_auth:
+    build_only: true
     harness: bluetooth
-    platform_allow:  qemu_x86
+    platform_allow: nrf52840dk_nrf52840
     tags: bluetooth authentication

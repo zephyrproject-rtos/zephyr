@@ -541,17 +541,9 @@ static int auth_chalresp_client(struct authenticate_conn *auth_conn)
 	struct auth_chalresp_result server_result;
 	enum auth_status status;
 
-#if defined(CONFIG_ENTROPY_HAS_DRIVER)
 	/* Generate random number as challenge using a cryptographically secure random
 	 * number generator. */
 	sys_csrand_get(random_chal, sizeof(random_chal));
-#else
-	/**
-	 * WARNING!!  This rand function should only be used for testing. It is
-	 * not recommend for production use.
-	 */
-    sys_rand_get(random_chal, sizeof(random_chal));
-#endif
 
 	if (!auth_client_send_challenge(auth_conn, random_chal)) {
 		auth_lib_set_status(auth_conn, AUTH_STATUS_FAILED);
@@ -617,18 +609,9 @@ static int auth_chalresp_server(struct authenticate_conn *auth_conn)
 	enum auth_status status;
 	uint8_t random_chal[AUTH_CHALLENGE_LEN];
 
-
-#if defined(CONFIG_ENTROPY_HAS_DRIVER)
     /* Generate random number as challenge using a cryptographically secure random
 	 * number generator. */
 	sys_csrand_get(random_chal, sizeof(random_chal));
-#else
-    /**
-     * WARNING!!  This rand function should only be used for testing. It is
-     * not recommend for production use.
-     */
-    sys_rand_get(random_chal, sizeof(random_chal));
-#endif
 
 	/* Wait for challenge from the Central */
 	if (!auth_server_recv_challenge(auth_conn, random_chal)) {
@@ -726,8 +709,6 @@ int auth_init_chalresp_method(struct authenticate_conn *auth_conn, struct auth_o
  */
 int auth_deinit_chalresp(struct authenticate_conn *auth_conn)
 {
-
-
 
 	if (auth_conn->internal_obj) {
 		auth_chalresp_free_instance((struct chalresp_instance *)auth_conn->internal_obj);

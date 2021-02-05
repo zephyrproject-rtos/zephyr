@@ -3,6 +3,7 @@ sample:
   name: Auth Server Multi Instance
 tests:
   sample.auth_server_multi:
+    build_only: true
     harness: bluetooth
-    platform_allow:  qemu_x86
+    platform_allow: nrf52840dk_nrf52840
     tags: bluetooth authentication
