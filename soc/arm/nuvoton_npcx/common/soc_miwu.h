@@ -34,15 +34,12 @@ enum miwu_group {
 
 /* Interrupt modes supported by npcx miwu modules */
 enum miwu_int_mode {
-	NPCX_MIWU_MODE_DISABLED,
 	NPCX_MIWU_MODE_LEVEL,
 	NPCX_MIWU_MODE_EDGE,
 };
 
 /* Interrupt trigger modes supported by npcx miwu modules */
 enum miwu_int_trig {
-
-	NPCX_MIWU_TRIG_NONE, /** No trigger detection */
 	NPCX_MIWU_TRIG_LOW,  /** Edge failing or active low detection */
 	NPCX_MIWU_TRIG_HIGH, /** Edge rising or active high detection */
 	NPCX_MIWU_TRIG_BOTH, /** Both edge rising and failing detection */
@@ -140,7 +137,7 @@ void npcx_miwu_irq_disable(const struct npcx_wui *wui);
  *
  * @retval 0 if interrupt is disabled, otherwise interrupt is enabled
  */
-unsigned int npcx_miwu_irq_get_state(const struct npcx_wui *wui);
+bool npcx_miwu_irq_get_state(const struct npcx_wui *wui);
 
 /**
  * @brief Configure interrupt type of the wake-up input source
