@@ -262,8 +262,8 @@ static MFIFO_DEFINE(pdu_rx_free, sizeof(void *), PDU_RX_CNT);
 #define BT_CTLR_MAX_CONN        0
 #endif
 
-#if defined(CONFIG_BT_CTLR_SCAN_SYNC_SET)
-#define BT_CTLR_SCAN_SYNC_SET CONFIG_BT_CTLR_SCAN_SYNC_SET
+#if defined(CONFIG_BT_PER_ADV_SYNC_MAX)
+#define BT_CTLR_SCAN_SYNC_SET CONFIG_BT_PER_ADV_SYNC_MAX
 #else
 #define BT_CTLR_SCAN_SYNC_SET 0
 #endif
