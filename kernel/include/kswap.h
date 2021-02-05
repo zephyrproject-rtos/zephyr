@@ -72,24 +72,7 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 		k_spin_release(lock);
 	}
 
-#ifdef CONFIG_SMP
-	/* Null out the switch handle, see wait_for_switch() above.
-	 * Note that we set it back to a non-null value if we are not
-	 * switching!  The value itself doesn't matter, because by
-	 * definition _current is running and has no saved state.
-	 */
-	volatile void **shp = (void *)&old_thread->switch_handle;
-
-	*shp = NULL;
-#endif
-
 	new_thread = z_get_next_ready_thread();
-
-#ifdef CONFIG_SMP
-	if (new_thread == old_thread) {
-		*shp = old_thread;
-	}
-#endif
 
 	if (new_thread != old_thread) {
 #ifdef CONFIG_TIMESLICING
@@ -111,8 +94,10 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 		arch_cohere_stacks(old_thread, NULL, new_thread);
 		_current_cpu->current = new_thread;
 
-		arch_switch(new_thread->switch_handle,
-			     &old_thread->switch_handle);
+		void *newsh = new_thread->switch_handle;
+
+		new_thread->switch_handle = NULL;
+		arch_switch(newsh, &old_thread->switch_handle);
 	}
 
 	if (is_spinlock) {

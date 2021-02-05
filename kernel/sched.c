@@ -941,6 +941,8 @@ void *z_get_next_switch_handle(void *interrupted)
 	z_check_stack_sentinel();
 
 #ifdef CONFIG_SMP
+	void *ret = NULL;
+
 	LOCKED(&sched_spinlock) {
 		struct k_thread *old_thread = _current, *new_thread;
 
@@ -968,12 +970,15 @@ void *z_get_next_switch_handle(void *interrupted)
 #endif
 		}
 		old_thread->switch_handle = interrupted;
+		ret = new_thread->switch_handle;
+		new_thread->switch_handle = NULL;
 	}
+	return ret;
 #else
 	_current->switch_handle = interrupted;
 	set_current(z_get_next_ready_thread());
-#endif
 	return _current->switch_handle;
+#endif
 }
 #endif
 
