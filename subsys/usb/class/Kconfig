@@ -3,23 +3,13 @@
 # Copyright (c) 2016 Wind River Systems, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-config USB_DEVICE_LOOPBACK
-	bool "USB Loopback Function Driver"
-	help
-	  USB Loopback Function Driver
-
-config LOOPBACK_BULK_EP_MPS
-	int
-	depends on USB_DEVICE_LOOPBACK
-	default 64
-	help
-	  Loopback Function bulk endpoint size
-
 source "subsys/usb/class/Kconfig.cdc"
 
 source "subsys/usb/class/Kconfig.msc"
 
 source "subsys/usb/class/Kconfig.bt"
+
+source "subsys/usb/class/Kconfig.test"
 
 source "subsys/usb/class/netusb/Kconfig"
 
