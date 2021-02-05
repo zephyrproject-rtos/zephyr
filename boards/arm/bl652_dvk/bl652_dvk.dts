@@ -91,7 +91,8 @@
 
 &spi0 {
 	compatible = "nordic,nrf-spi";
-	status = "okay";
+	/* Cannot be used together with i2c0. */
+	/* status = "okay"; */
 	sck-pin = <25>;
 	mosi-pin = <23>;
 	miso-pin = <24>;
