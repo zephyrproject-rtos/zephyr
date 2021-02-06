@@ -88,10 +88,14 @@ struct net_buf_simple {
 	/** Pointer to the start of data in the buffer. */
 	uint8_t *data;
 
-	/** Length of the data behind the data pointer. */
+	/**
+	 * Length of the data behind the data pointer.
+	 *
+	 * To determine the max length, use net_buf_simple_max_len(), not #size!
+	 */
 	uint16_t len;
 
-	/** Amount of data that this buffer can store. */
+	/** Amount of data that net_buf_simple#__buf can store. */
 	uint16_t size;
 
 	/** Start of the data storage. Not to be accessed directly
@@ -828,6 +832,17 @@ size_t net_buf_simple_headroom(struct net_buf_simple *buf);
  * @return Number of bytes available at the end of the buffer.
  */
 size_t net_buf_simple_tailroom(struct net_buf_simple *buf);
+
+/**
+ * @brief Check maximum net_buf_simple::len value.
+ *
+ * This value is depending on the number of bytes being reserved as headroom.
+ *
+ * @param buf A valid pointer on a buffer
+ *
+ * @return Number of bytes usable behind the net_buf_simple::data pointer.
+ */
+uint16_t net_buf_simple_max_len(struct net_buf_simple *buf);
 
 /**
  * @brief Parsing state of a buffer.
@@ -2235,6 +2250,20 @@ static inline size_t net_buf_tailroom(struct net_buf *buf)
 static inline size_t net_buf_headroom(struct net_buf *buf)
 {
 	return net_buf_simple_headroom(&buf->b);
+}
+
+/**
+ * @brief Check maximum net_buf::len value.
+ *
+ * This value is depending on the number of bytes being reserved as headroom.
+ *
+ * @param buf A valid pointer on a buffer
+ *
+ * @return Number of bytes usable behind the net_buf::data pointer.
+ */
+static inline uint16_t net_buf_max_len(struct net_buf *buf)
+{
+	return net_buf_simple_max_len(&buf->b);
 }
 
 /**
