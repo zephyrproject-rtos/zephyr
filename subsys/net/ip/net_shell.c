@@ -3951,8 +3951,8 @@ static void net_pkt_buffer_info(const struct shell *shell, struct net_pkt *pkt)
 	}
 
 	while (buf) {
-		PR("%p[%d/%u (%u)]",
-		   buf, atomic_get(&pkt->atomic_ref), buf->len, buf->size);
+		PR("%p[%d/%u (%u/%u)]", buf, atomic_get(&pkt->atomic_ref),
+		   buf->len, net_buf_max_len(buf), buf->size);
 
 		buf = buf->frags;
 		if (buf) {
