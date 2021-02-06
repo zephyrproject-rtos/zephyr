@@ -257,6 +257,29 @@ typedef int16_t device_handle_t;
 #define DEVICE_DT_INST_GET(inst) DEVICE_DT_GET(DT_DRV_INST(inst))
 
 /**
+ * @def DEVICE_DT_GET_ANY
+ *
+ * @brief Obtain a pointer to a device object by devicetree compatible
+ *
+ * If any enabled devicetree node has the given compatible and a
+ * device object was created from it, this returns that device.
+ *
+ * If there no such devices, this returns NULL.
+ *
+ * If there are multiple, this returns an arbitrary one.
+ *
+ * If this returns non-NULL, the device must be checked for readiness
+ * before use, e.g. with device_is_ready().
+ *
+ * @param compat lowercase-and-underscores devicetree compatible
+ * @return a pointer to a device, or NULL
+ */
+#define DEVICE_DT_GET_ANY(compat)			\
+	COND_CODE_1(DT_HAS_COMPAT_STATUS_OKAY(compat),	\
+		    (DEVICE_DT_GET(DT_INST(0, compat))),	\
+		    (NULL))
+
+/**
  * @def DEVICE_GET
  *
  * @brief Obtain a pointer to a device object by name
