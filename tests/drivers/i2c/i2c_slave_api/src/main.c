@@ -175,7 +175,7 @@ void test_eeprom_slave(void)
 		zassert_equal(ret, 0, "Failed to program EEPROM %s", label_1);
 	}
 
-	/* Attach each EEPROM to its owning bus as a follower device. */
+	/* Attach each EEPROM to its owning bus as a slave device. */
 	ret = i2c_slave_driver_register(eeprom_0);
 	zassert_equal(ret, 0, "Failed to register EEPROM %s", label_0);
 
@@ -184,14 +184,14 @@ void test_eeprom_slave(void)
 		zassert_equal(ret, 0, "Failed to register EEPROM %s", label_1);
 	}
 
-	/* The simulated EP0 is configured to be accessed as a follower device
+	/* The simulated EP0 is configured to be accessed as a slave device
 	 * at addr_0 on i2c_0 and should expose eeprom_0_data.  The validation
-	 * uses i2c_1 as a bus leader to access this device, which works because
+	 * uses i2c_1 as a bus master to access this device, which works because
 	 * i2c_0 and i2_c have their SDA (SCL) pins shorted (they are on the
-	 * same physical bus).  Thus in these calls i2c_1 is a leader device
-	 * operating on the follower address addr_0.
+	 * same physical bus).  Thus in these calls i2c_1 is a master device
+	 * operating on the slave address addr_0.
 	 *
-	 * Similarly validation of EP1 uses i2c_0 as a leader with addr_1 and
+	 * Similarly validation of EP1 uses i2c_0 as a master with addr_1 and
 	 * eeprom_1_data for validation.
 	 */
 	ret = run_full_read(i2c_1, addr_0, eeprom_0_data);
