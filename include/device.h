@@ -213,9 +213,6 @@ extern "C" {
  * @details Return the address of a device object created by
  * DEVICE_DT_INIT(), using the dev_name derived from @p node_id
  *
- * @note A declaration for the corresponding device must be in scope;
- * e.g:
- *
  * @param node_id The same as node_id provided to DEVICE_DT_DEFINE()
  *
  * @return A pointer to the device object created by DEVICE_DT_DEFINE()
