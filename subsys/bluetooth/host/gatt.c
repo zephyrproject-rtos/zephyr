@@ -71,6 +71,7 @@ struct gatt_sub {
 #endif /* CONFIG_BT_GATT_CLIENT */
 
 static struct gatt_sub subscriptions[SUB_MAX];
+static sys_slist_t callback_list;
 
 static const uint16_t gap_appearance = CONFIG_BT_DEVICE_APPEARANCE;
 
@@ -1106,6 +1107,8 @@ void bt_gatt_init(void)
 
 	bt_gatt_service_init();
 
+	sys_slist_init(&callback_list);
+
 #if defined(CONFIG_BT_GATT_CACHING)
 	k_work_init_delayable(&db_hash.work, db_hash_process);
 
@@ -1156,6 +1159,11 @@ submit:
 	sc_work_submit(SC_TIMEOUT);
 }
 #endif /* BT_GATT_DYNAMIC_DB || (BT_GATT_CACHING && BT_SETTINGS) */
+
+void bt_gatt_cb_register(struct bt_gatt_cb *cb)
+{
+	sys_slist_append(&callback_list, &cb->node);
+}
 
 #if defined(CONFIG_BT_GATT_DYNAMIC_DB)
 static void db_changed(void)
@@ -4865,6 +4873,17 @@ void bt_gatt_connected(struct bt_conn *conn)
 #if defined(CONFIG_BT_GATT_CLIENT)
 	add_subscriptions(conn);
 #endif /* CONFIG_BT_GATT_CLIENT */
+}
+
+void bt_gatt_att_max_mtu_changed(struct bt_conn *conn, uint16_t tx, uint16_t rx)
+{
+	struct bt_gatt_cb *cb;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&callback_list, cb, node) {
+		if (cb->att_mtu_updated) {
+			cb->att_mtu_updated(conn, tx, rx);
+		}
+	}
 }
 
 void bt_gatt_encrypt_change(struct bt_conn *conn)
