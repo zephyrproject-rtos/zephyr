@@ -72,16 +72,16 @@ Glossary of Terms
       A multi-repo meta-tool developed for the Zephyr project. See :ref:`west`.
 
    west installation
-      A term for a :term:`west workspace` used prior to west 0.7.
+      An obsolete term for a :term:`west workspace` used prior to west 0.7.
 
    west manifest
-      A YAML file named :file:`west.yml` which describes projects, or the Git
-      repositories which make up a :term:`west installation`, along with
+      A YAML file, usually named :file:`west.yml`, which describes projects, or
+      the Git repositories which make up a :term:`west workspace`, along with
       additional metadata. See :ref:`west-multi-repo` for general information
       and :ref:`west-manifests` for details.
 
    west manifest repository
-      The Git repository in a :term:`west installation` which contains the
+      The Git repository in a :term:`west workspace` which contains the
       :term:`west manifest`. Its location is given by the :ref:`manifest.path
       configuration option <west-config-index>`. See :ref:`west-multi-repo`.
 
