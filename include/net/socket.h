@@ -806,6 +806,8 @@ static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
 
 /** sockopt: Timestamp TX packets */
 #define SO_TIMESTAMPING 37
+/** sockopt: Protocol used with the socket */
+#define SO_PROTOCOL 38
 
 /* Socket options for IPPROTO_TCP level */
 /** sockopt: Disable TCP buffering (ignored, for compatibility) */
