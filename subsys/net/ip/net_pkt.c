@@ -344,7 +344,7 @@ void net_pkt_print_frags(struct net_pkt *pkt)
 		frag_size = frag->size;
 
 		NET_INFO("[%d] frag %p len %d max len %u size %d pool %p",
-			 count, frag, frag->len, net_buf_max_len(buf),
+			 count, frag, frag->len, net_buf_max_len(frag),
 			 frag_size, net_buf_pool_get(frag->pool_id));
 
 		count++;
@@ -1020,13 +1020,13 @@ static size_t pkt_estimate_headers_length(struct net_pkt *pkt,
 	return hdr_len;
 }
 
-static size_t pkt_get_size(struct net_pkt *pkt)
+static size_t pkt_get_max_len(struct net_pkt *pkt)
 {
 	struct net_buf *buf = pkt->buffer;
 	size_t size = 0;
 
 	while (buf) {
-		size += buf->size;
+		size += net_buf_max_len(buf);
 		buf = buf->frags;
 	}
 
@@ -1039,7 +1039,7 @@ size_t net_pkt_available_buffer(struct net_pkt *pkt)
 		return 0;
 	}
 
-	return pkt_get_size(pkt) - net_pkt_get_len(pkt);
+	return pkt_get_max_len(pkt) - net_pkt_get_len(pkt);
 }
 
 size_t net_pkt_available_payload_buffer(struct net_pkt *pkt,
@@ -1118,7 +1118,7 @@ int net_pkt_alloc_buffer(struct net_pkt *pkt,
 	}
 
 	/* Verifying existing buffer and take into account free space there */
-	alloc_len = pkt_get_size(pkt) - net_pkt_get_len(pkt);
+	alloc_len = net_pkt_available_buffer(pkt);
 	if (!alloc_len) {
 		/* In case of no free space, it will account for header
 		 * space estimation
@@ -1495,7 +1495,8 @@ static void pkt_cursor_jump(struct net_pkt *pkt, bool write)
 
 	cursor->buf = cursor->buf->frags;
 	while (cursor->buf) {
-		size_t len = write ? cursor->buf->size : cursor->buf->len;
+		const size_t len =
+			write ? net_buf_max_len(cursor->buf) : cursor->buf->len;
 
 		if (!len) {
 			cursor->buf = cursor->buf->frags;
@@ -1520,7 +1521,7 @@ static void pkt_cursor_advance(struct net_pkt *pkt, bool write)
 		return;
 	}
 
-	len = write ? cursor->buf->size : cursor->buf->len;
+	len = write ? net_buf_max_len(cursor->buf) : cursor->buf->len;
 	if ((cursor->pos - cursor->buf->data) == len) {
 		pkt_cursor_jump(pkt, write);
 	}
@@ -1536,9 +1537,10 @@ static void pkt_cursor_update(struct net_pkt *pkt,
 		write = false;
 	}
 
-	len = write ? cursor->buf->size : cursor->buf->len;
+	len = write ? net_buf_max_len(cursor->buf) : cursor->buf->len;
 	if (length + (cursor->pos - cursor->buf->data) == len &&
-	    !(net_pkt_is_being_overwritten(pkt) && len < cursor->buf->size)) {
+	    !(net_pkt_is_being_overwritten(pkt) &&
+	      len < net_buf_max_len(cursor->buf))) {
 		pkt_cursor_jump(pkt, write);
 	} else {
 		cursor->pos += length;
@@ -1563,7 +1565,8 @@ static int net_pkt_cursor_operate(struct net_pkt *pkt,
 		}
 
 		if (write && !net_pkt_is_being_overwritten(pkt)) {
-			d_len = c_op->buf->size - (c_op->pos - c_op->buf->data);
+			d_len = net_buf_max_len(c_op->buf) -
+				(c_op->pos - c_op->buf->data);
 		} else {
 			d_len = c_op->buf->len - (c_op->pos - c_op->buf->data);
 		}
@@ -1693,7 +1696,7 @@ int net_pkt_copy(struct net_pkt *pkt_dst,
 		}
 
 		s_len = c_src->buf->len - (c_src->pos - c_src->buf->data);
-		d_len = c_dst->buf->size - (c_dst->pos - c_dst->buf->data);
+		d_len = net_buf_max_len(c_dst->buf) - (c_dst->pos - c_dst->buf->data);
 		if (length < s_len && length < d_len) {
 			len = length;
 		} else {
