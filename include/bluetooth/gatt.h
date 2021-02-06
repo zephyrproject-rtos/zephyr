@@ -18,6 +18,7 @@
  */
 
 #include <stddef.h>
+#include <sys/slist.h>
 #include <sys/types.h>
 #include <sys/util.h>
 #include <bluetooth/conn.h>
@@ -181,6 +182,22 @@ struct bt_gatt_include {
 	uint16_t end_handle;
 };
 
+/** @brief GATT callback structure. */
+struct bt_gatt_cb {
+	/** @brief The maximum ATT MTU on a connection has changed.
+	 *
+	 *  This callback notifies the application that the maximum TX or RX
+	 *  ATT MTU has increased.
+	 *
+	 *  @param conn Connection object.
+	 *  @param tx Updated TX ATT MTU.
+	 *  @param rx Updated RX ATT MTU.
+	 */
+	void (*att_mtu_updated)(struct bt_conn *conn, uint16_t tx, uint16_t rx);
+
+	sys_snode_t node;
+};
+
 /** Characteristic Properties Bit field values */
 
 /** @def BT_GATT_CHRC_BROADCAST
@@ -313,6 +330,14 @@ struct bt_gatt_cpf {
  * @ingroup bt_gatt
  * @{
  */
+
+/** @brief Register GATT callbacks.
+ *
+ *  Register callbacks to monitor the state of GATT.
+ *
+ *  @param cb Callback struct.
+ */
+void bt_gatt_cb_register(struct bt_gatt_cb *cb);
 
 /** @brief Register GATT service.
  *
