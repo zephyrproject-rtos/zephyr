@@ -541,6 +541,7 @@ struct net_buf b5 = {
 	.data  = b5_data,
 	.len   = 0,
 	.size  = 0,
+	.__buf  = b5_data,
 };
 
 uint8_t b4_data[4] = "mnop";
@@ -550,11 +551,14 @@ struct net_buf b4 = {
 	.data  = b4_data,
 	.len   = sizeof(b4_data) - 2,
 	.size  = sizeof(b4_data),
+	.__buf  = b4_data,
 };
 
 struct net_buf b3 = {
 	.frags = &b4,
 	.ref   = 1,
+	.data  = NULL,
+	.__buf  = NULL,
 };
 
 uint8_t b2_data[8] = "efghijkl";
@@ -564,6 +568,7 @@ struct net_buf b2 = {
 	.data  = b2_data,
 	.len   = 0,
 	.size  = sizeof(b2_data),
+	.__buf  = b2_data,
 };
 
 uint8_t b1_data[4] = "abcd";
@@ -573,6 +578,7 @@ struct net_buf b1 = {
 	.data  = b1_data,
 	.len   = sizeof(b1_data) - 2,
 	.size  = sizeof(b1_data),
+	.__buf  = b1_data,
 };
 
 void test_net_pkt_copy(void)
