@@ -36,6 +36,8 @@ context about the tool.
    release-notes.rst
    troubleshooting.rst
    basics.rst
+   built-in.rst
+   workspaces.rst
    manifest.rst
    config.rst
    extensions.rst

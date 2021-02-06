@@ -56,8 +56,8 @@ settings, and so on.
 
 .. _west-config-cmd:
 
-West ``config`` Command
------------------------
+west config
+-----------
 
 The built-in ``config`` command can be used to get and set configuration
 values. You can pass ``west config`` the options ``--system``, ``--global``, or
