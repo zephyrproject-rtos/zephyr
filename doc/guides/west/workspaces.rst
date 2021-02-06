@@ -189,7 +189,7 @@ A workspace using this topology looks like this:
 
 
 Here is an example :file:`application/west.yml` which uses
-:ref:`west-manifest-import`, available since west 0.7, to import Zephyr v2.2.0
+:ref:`west-manifest-import`, available since west 0.7, to import Zephyr v2.5.0
 and its modules into the application manifest file:
 
 .. code-block:: yaml
@@ -202,7 +202,7 @@ and its modules into the application manifest file:
      projects:
        - name: zephyr
          remote: zephyrproject-rtos
-         revision: v2.2.0
+         revision: v2.5.0
          import: true
      self:
        path: application
@@ -225,7 +225,7 @@ project itself, like this:
        remote: zephyrproject-rtos
      projects:
        - name: zephyr
-         revision: v2.2.0
+         revision: v2.5.0
          west-commands: scripts/west-commands.yml
        - name: net-tools
          revision: some-sha-goes-here
@@ -281,7 +281,7 @@ A workspace using this topology looks like this:
 
 Here is an example T3 :file:`manifest-repo/west.yml` which uses
 :ref:`west-manifest-import`, available since west 0.7, to import Zephyr
-v2.2.0 and its modules, then add the ``app1`` and ``app2`` projects:
+v2.5.0 and its modules, then add the ``app1`` and ``app2`` projects:
 
 .. code-block:: yaml
 
@@ -296,7 +296,7 @@ v2.2.0 and its modules, then add the ``app1`` and ``app2`` projects:
      projects:
        - name: zephyr
          remote: zephyrproject-rtos
-         revision: v2.2.0
+         revision: v2.5.0
          import: true
        - name: app1
          revision: SOME_SHA_OR_BRANCH_OR_TAG
