@@ -704,6 +704,35 @@ void test_v6_sendmsg_recvfrom_connected(void)
 	zassert_equal(rv, 0, "close failed");
 }
 
+void test_so_type(void)
+{
+	struct sockaddr_in bind_addr4;
+	struct sockaddr_in6 bind_addr6;
+	int sock1, sock2, rv;
+	int optval;
+	socklen_t optsize = sizeof(optval);
+
+	prepare_sock_udp_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, 55555,
+			    &sock1, &bind_addr4);
+	prepare_sock_udp_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, 55555,
+			    &sock2, &bind_addr6);
+
+	rv = getsockopt(sock1, SOL_SOCKET, SO_TYPE, &optval, &optsize);
+	zassert_equal(rv, 0, "getsockopt failed (%d)", errno);
+	zassert_equal(optval, SOCK_DGRAM, "getsockopt got invalid type");
+	zassert_equal(optsize, sizeof(optval), "getsockopt got invalid size");
+
+	rv = getsockopt(sock2, SOL_SOCKET, SO_TYPE, &optval, &optsize);
+	zassert_equal(rv, 0, "getsockopt failed (%d)", errno);
+	zassert_equal(optval, SOCK_DGRAM, "getsockopt got invalid type");
+	zassert_equal(optsize, sizeof(optval), "getsockopt got invalid size");
+
+	rv = close(sock1);
+	zassert_equal(rv, 0, "close failed");
+	rv = close(sock2);
+	zassert_equal(rv, 0, "close failed");
+}
+
 void test_so_txtime(void)
 {
 	struct sockaddr_in bind_addr4;
@@ -1028,6 +1057,7 @@ void test_main(void)
 			 ztest_unit_test(test_v6_sendto_recvfrom),
 			 ztest_unit_test(test_v4_bind_sendto),
 			 ztest_unit_test(test_v6_bind_sendto),
+			 ztest_unit_test(test_so_type),
 			 ztest_unit_test(test_so_priority),
 			 ztest_unit_test(test_so_txtime),
 			 ztest_unit_test(test_so_rcvtimeo),
