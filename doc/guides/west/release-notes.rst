@@ -136,7 +136,7 @@ Additional user-visible changes:
 - The "west config" command can now be run outside of a workspace, e.g.
   to run ``west config --global section.key value`` to set a configuration
   option's value globally.
-- There is a new :ref:`west topdir <west-multi-repo-misc>` command, which
+- There is a new :ref:`west topdir <west-built-in-misc>` command, which
   prints the root directory of the current west workspace.
 - The ``west -vv init`` command now prints the git operations being performed,
   and their results.
@@ -225,9 +225,9 @@ The user-visible features in this point release are:
   projects. All of them also now report a nonzero error code from the west
   process if any of these subprocesses fails (this was previously not true of
   ``west forall`` in particular).
-- The :ref:`west manifest <west-multi-repo-misc>` command also handles errors
+- The :ref:`west manifest <west-built-in-misc>` command also handles errors
   better.
-- The :ref:`west list <west-multi-repo-misc>` command now works even when the
+- The :ref:`west list <west-built-in-misc>` command now works even when the
   projects are not cloned, as long as its format string only requires
   information which can be read from the manifest file. It still fails if the
   format string requires data stored in the project repository, e.g. if it

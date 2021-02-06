@@ -79,8 +79,8 @@ repositories in a standardized manner within the project:
 * Enforcement of modularization of the components
 * Out-of-tree development based on subsets of the supported boards and SoCs
 
-See :ref:`west-multi-repo` for a detailed explanation of west's handling of
-multiple repository management.
+See :ref:`west-basics` for information on how west workspaces manage multiple
+git repositories.
 
 .. _west-design-constraints:
 
