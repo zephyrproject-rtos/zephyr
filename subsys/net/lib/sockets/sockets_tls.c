@@ -1028,6 +1028,20 @@ static int tls_opt_sec_tag_list_set(struct tls_context *context,
 	return 0;
 }
 
+static int sock_opt_protocol_get(struct tls_context *context,
+				 void *optval, socklen_t *optlen)
+{
+	int protocol = (int)context->tls_version;
+
+	if (*optlen != sizeof(protocol)) {
+		return -EINVAL;
+	}
+
+	*(int *)optval = protocol;
+
+	return 0;
+}
+
 static int tls_opt_sec_tag_list_get(struct tls_context *context,
 				    void *optval, socklen_t *optlen)
 {
@@ -2034,7 +2048,17 @@ int ztls_getsockopt_ctx(struct tls_context *ctx, int level, int optname,
 		return -1;
 	}
 
-	if (level != SOL_TLS) {
+	if ((level == SOL_SOCKET) && (optname == SO_PROTOCOL)) {
+		/* Protocol type is overridden during socket creation. Its
+		 * value is restored here to return current value.
+		 */
+		err = sock_opt_protocol_get(ctx, optval, optlen);
+		if (err < 0) {
+			errno = -err;
+			return -1;
+		}
+		return err;
+	} else if (level != SOL_TLS) {
 		return zsock_getsockopt(ctx->sock, level, optname,
 					optval, optlen);
 	}

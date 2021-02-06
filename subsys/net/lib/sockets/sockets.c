@@ -1522,6 +1522,20 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 				return 0;
 			}
+			break;
+
+		case SO_PROTOCOL: {
+			int proto = (int)net_context_get_ip_proto(ctx);
+
+			if (*optlen != sizeof(proto)) {
+				errno = EINVAL;
+				return -1;
+			}
+
+			*(int *)optval = proto;
+
+			return 0;
+		}
 		}
 
 		break;
