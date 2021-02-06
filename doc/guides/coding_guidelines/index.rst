@@ -824,6 +824,8 @@ their documentation from being generated. Their absence also prevents use of
 ``if (IS_ENABLED(CONFIG_FOO)) {}`` as an alternative to preprocessor
 conditionals when the code path should change based on the selected options.
 
+.. _coding_guideline_inclusive_language:
+
 Rule A.2: Inclusive Language
 ============================
 
