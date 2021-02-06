@@ -120,3 +120,41 @@ static inline void prepare_sock_tcp_v6(const char *addr, uint16_t port,
 	rv = zsock_inet_pton(AF_INET6, addr, &sockaddr->sin6_addr);
 	zassert_equal(rv, 1, "inet_pton failed");
 }
+
+static inline void prepare_sock_tls_v4(const char *addr, uint16_t port,
+				       int *sock, struct sockaddr_in *sockaddr,
+				       enum net_ip_protocol_secure proto)
+{
+	int rv;
+
+	zassert_not_null(addr, "null addr");
+	zassert_not_null(sock, "null sock");
+	zassert_not_null(sockaddr, "null sockaddr");
+
+	*sock = zsock_socket(AF_INET, SOCK_STREAM, proto);
+	zassert_true(*sock >= 0, "socket open failed");
+
+	sockaddr->sin_family = AF_INET;
+	sockaddr->sin_port = htons(port);
+	rv = zsock_inet_pton(AF_INET, addr, &sockaddr->sin_addr);
+	zassert_equal(rv, 1, "inet_pton failed");
+}
+
+static inline void prepare_sock_tls_v6(const char *addr, uint16_t port,
+				       int *sock, struct sockaddr_in6 *sockaddr,
+				       enum net_ip_protocol_secure proto)
+{
+	int rv;
+
+	zassert_not_null(addr, "null addr");
+	zassert_not_null(sock, "null sock");
+	zassert_not_null(sockaddr, "null sockaddr");
+
+	*sock = zsock_socket(AF_INET6, SOCK_STREAM, proto);
+	zassert_true(*sock >= 0, "socket open failed");
+
+	sockaddr->sin6_family = AF_INET6;
+	sockaddr->sin6_port = htons(port);
+	rv = zsock_inet_pton(AF_INET6, addr, &sockaddr->sin6_addr);
+	zassert_equal(rv, 1, "inet_pton failed");
+}
