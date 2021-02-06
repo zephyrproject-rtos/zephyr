@@ -53,6 +53,36 @@ void test_so_type(void)
 	k_sleep(TCP_TEARDOWN_TIMEOUT);
 }
 
+void test_so_protocol(void)
+{
+	struct sockaddr_in bind_addr4;
+	struct sockaddr_in6 bind_addr6;
+	int sock1, sock2, rv;
+	int optval;
+	socklen_t optlen = sizeof(optval);
+
+	prepare_sock_tls_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, ANY_PORT,
+			    &sock1, &bind_addr4, IPPROTO_TLS_1_2);
+	prepare_sock_tls_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, ANY_PORT,
+			    &sock2, &bind_addr6, IPPROTO_TLS_1_1);
+
+	rv = getsockopt(sock1, SOL_SOCKET, SO_PROTOCOL, &optval, &optlen);
+	zassert_equal(rv, 0, "getsockopt failed (%d)", errno);
+	zassert_equal(optval, IPPROTO_TLS_1_2,
+		      "getsockopt got invalid protocol");
+	zassert_equal(optlen, sizeof(optval), "getsockopt got invalid size");
+
+	rv = getsockopt(sock2, SOL_SOCKET, SO_PROTOCOL, &optval, &optlen);
+	zassert_equal(rv, 0, "getsockopt failed (%d)", errno);
+	zassert_equal(optval, IPPROTO_TLS_1_1,
+		      "getsockopt got invalid protocol");
+	zassert_equal(optlen, sizeof(optval), "getsockopt got invalid size");
+
+	test_close(sock1);
+	test_close(sock2);
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
+}
+
 void test_main(void)
 {
 	if (IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)) {
@@ -64,7 +94,8 @@ void test_main(void)
 
 	ztest_test_suite(
 		socket_tls,
-		ztest_unit_test(test_so_type)
+		ztest_unit_test(test_so_type),
+		ztest_unit_test(test_so_protocol)
 		);
 
 	ztest_run_test_suite(socket_tls);

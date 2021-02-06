@@ -541,6 +541,34 @@ void test_so_type(void)
 	k_sleep(TCP_TEARDOWN_TIMEOUT);
 }
 
+void test_so_protocol(void)
+{
+	struct sockaddr_in bind_addr4;
+	struct sockaddr_in6 bind_addr6;
+	int sock1, sock2, rv;
+	int optval;
+	socklen_t optlen = sizeof(optval);
+
+	prepare_sock_tcp_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, ANY_PORT,
+			    &sock1, &bind_addr4);
+	prepare_sock_tcp_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, ANY_PORT,
+			    &sock2, &bind_addr6);
+
+	rv = getsockopt(sock1, SOL_SOCKET, SO_PROTOCOL, &optval, &optlen);
+	zassert_equal(rv, 0, "getsockopt failed (%d)", errno);
+	zassert_equal(optval, IPPROTO_TCP, "getsockopt got invalid protocol");
+	zassert_equal(optlen, sizeof(optval), "getsockopt got invalid size");
+
+	rv = getsockopt(sock2, SOL_SOCKET, SO_PROTOCOL, &optval, &optlen);
+	zassert_equal(rv, 0, "getsockopt failed (%d)", errno);
+	zassert_equal(optval, IPPROTO_TCP, "getsockopt got invalid protocol");
+	zassert_equal(optlen, sizeof(optval), "getsockopt got invalid size");
+
+	test_close(sock1);
+	test_close(sock2);
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
+}
+
 void test_v4_so_rcvtimeo(void)
 {
 	int c_sock;
@@ -766,6 +794,7 @@ void test_main(void)
 		ztest_unit_test(test_open_close_immediately),
 		ztest_user_unit_test(test_v4_accept_timeout),
 		ztest_unit_test(test_so_type),
+		ztest_unit_test(test_so_protocol),
 		ztest_unit_test(test_v4_so_rcvtimeo),
 		ztest_unit_test(test_v6_so_rcvtimeo),
 		ztest_user_unit_test(test_socket_permission)
