@@ -98,7 +98,7 @@ by Zephyr are found in the parent `GitHub Zephyr project
 <https://github.com/zephyrproject-rtos/>`_.  Because of these
 dependencies, it's convenient to use the Zephyr-created :ref:`west
 <west>` tool to fetch and manage the Zephyr and external module source
-code.  See :ref:`west-multi-repo` for more details.
+code.  See :ref:`west-basics` for more details.
 
 Once your development tools are installed, use :ref:`west` to create,
 initialize, and download sources from the zephyr and external module

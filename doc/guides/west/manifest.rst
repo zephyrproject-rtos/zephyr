@@ -6,7 +6,7 @@ West Manifests
 This page contains detailed information about west's multiple repository model,
 manifest files, and the ``west manifest`` command. For API documentation on the
 ``west.manifest`` module, see :ref:`west-apis-manifest`. For a more general
-introduction and command overview, see :ref:`west-multi-repo`.
+introduction and command overview, see :ref:`west-basics`.
 
 .. only:: html
 
