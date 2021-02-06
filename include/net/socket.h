@@ -793,6 +793,8 @@ static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
 /* Socket options for SOL_SOCKET level */
 /** sockopt: Enable server address reuse (ignored, for compatibility) */
 #define SO_REUSEADDR 2
+/** sockopt: Type of the socket */
+#define SO_TYPE 3
 /** sockopt: Async error (ignored, for compatibility) */
 #define SO_ERROR 4
 

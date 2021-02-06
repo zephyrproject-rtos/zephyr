@@ -1497,6 +1497,19 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 	switch (level) {
 	case SOL_SOCKET:
 		switch (optname) {
+		case SO_TYPE: {
+			int type = (int)net_context_get_type(ctx);
+
+			if (*optlen != sizeof(type)) {
+				errno = EINVAL;
+				return -1;
+			}
+
+			*(int *)optval = type;
+
+			return 0;
+		}
+
 		case SO_TXTIME:
 			if (IS_ENABLED(CONFIG_NET_CONTEXT_TXTIME)) {
 				ret = net_context_get_option(ctx,
