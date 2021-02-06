@@ -1,0 +1,23 @@
+Build like so:
+west build -b genesys2 samples/net/zperf  -- -DOVERLAY_CONFIG=overlay-lowrisc.conf
+
+On linux side: iperf -s
+In zephy shell: zperf tcp upload 192.168.1.9
+
+Results: 
+Setting IP address 192.168.1.78
+Stting destination IP address 192.0.2.2
+
+Connecting to 192.168.1.9
+Duration:       1.00 s
+Packet size:    256 bytes
+Rate:           10 kbps
+Starting...
+New session started
+-
+Upload completed!
+Duration:       1.00 s
+Num packets:    580
+Nm errors:      0 (retry or fail)
+Rate:           113 Mbps
+

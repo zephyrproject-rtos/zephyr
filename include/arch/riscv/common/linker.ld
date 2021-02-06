@@ -70,15 +70,6 @@
 
 MEMORY
 {
-/* Ignore redefine warning for now */
-/*BRETT
-#define ROM_BASE 0x80000000
-#define ROM_SIZE 0x60000
-#define CONFIG_SRAM_SIZE (64  * 1024)
-#define CONFIG_SRAM_BASE_ADDRESS 0x80060000
-*/
-
-#ifdef NEWJUNK
 #ifdef CONFIG_XIP
 #if DT_NODE_HAS_COMPAT_STATUS(DT_CHOSEN(zephyr_flash), soc_nv_flash, okay)
 #define ROM_BASE DT_REG_ADDR(DT_CHOSEN(zephyr_flash))
@@ -92,12 +83,11 @@ MEMORY
 #define ROM_BASE DT_REG_ADDR_BY_IDX(SPI_CTRL, 1)
 #define ROM_SIZE DT_REG_SIZE_BY_IDX(SPI_CTRL, 1)
 #endif
+#endif
 
 #ifndef ROM_BASE
 #define ROM_BASE 0x80000000
 #define ROM_SIZE 0x60000
-#endif
-#endif //NEWJUNK
 
     ROM (rx)  : ORIGIN = ROM_BASE, LENGTH = ROM_SIZE
 #endif

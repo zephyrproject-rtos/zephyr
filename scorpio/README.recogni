@@ -1,0 +1,3 @@
+
+To build:
+west build -b genesys2 scorpio

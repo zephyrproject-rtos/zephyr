@@ -318,8 +318,6 @@ static enum ethernet_hw_caps lr_caps(const struct device *dev)
 }
 
 
-DEVICE_DT_INST_DECLARE(0);
-
 static void lr_iface_init(struct net_if *iface)
 {
    struct net_local_lr *dev = net_if_get_device(iface)->data;

@@ -1,0 +1,8 @@
+sample:
+  name: Scorpio Console
+tests:
+  sample.shell.scorpio_console:
+    filter: ( CONFIG_SERIAL and CONFIG_UART_SHELL_ON_DEV_NAME )
+    tags: shell
+    harness: keyboard
+    min_ram: 40
