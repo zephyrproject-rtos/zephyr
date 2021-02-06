@@ -430,6 +430,7 @@ html_redirect_pages = [
     ('guides/debugging/index', 'guides/flash_debug/index'),
     ('guides/debugging/probes', 'guides/flash_debug/probes'),
     ('guides/debugging/thread-analyzer', 'guides/flash_debug/thread-analyzer'),
+    ('guides/west/repo-tool', 'guides/west/basics'),
     ('introduction/introducing_zephyr', 'introduction/index'),
     ('kernel/kernel', 'reference/kernel/index'),
     ('releases/release-notes', 'releases/index'),
