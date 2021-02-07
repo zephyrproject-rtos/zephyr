@@ -30,7 +30,7 @@ struct can_mcan_rx_fifo_hdr {
 	union {
 		struct {
 			volatile uint32_t ext_id : 29; /* Extended Identifier */
-			volatile uint32_t rtr    :  1; /* Retmote Transmission Request*/
+			volatile uint32_t rtr    :  1; /* Remote Transmission Request*/
 			volatile uint32_t xtd    :  1; /* Extended identifier */
 			volatile uint32_t esi    :  1; /* Error state indicator */
 		};
@@ -63,7 +63,7 @@ struct can_mcan_mm {
 	volatile uint8_t cnt : 3;
 } __packed;
 
-struct can_mcan_tx_fifo_hdr {
+struct can_mcan_tx_buffer_hdr {
 	union {
 		struct {
 			volatile uint32_t ext_id : 29; /* Identifier */
@@ -86,8 +86,8 @@ struct can_mcan_tx_fifo_hdr {
 	struct can_mcan_mm mm; /* Message marker */
 } __packed;
 
-struct can_mcan_tx_fifo {
-	struct can_mcan_tx_fifo_hdr hdr;
+struct can_mcan_tx_buffer {
+	struct can_mcan_tx_buffer_hdr hdr;
 	union {
 		volatile uint8_t  data[64];
 		volatile uint32_t data_32[16];
@@ -152,7 +152,7 @@ struct can_mcan_msg_sram {
 	volatile struct can_mcan_rx_fifo rx_fifo1[NUM_RX_FIFO1_ELEMENTS];
 	volatile struct can_mcan_rx_fifo rx_buffer[NUM_RX_BUF_ELEMENTS];
 	volatile struct can_mcan_tx_event_fifo tx_event_fifo[NUM_TX_BUF_ELEMENTS];
-	volatile struct can_mcan_tx_fifo tx_fifo[NUM_TX_BUF_ELEMENTS];
+	volatile struct can_mcan_tx_buffer tx_buffer[NUM_TX_BUF_ELEMENTS];
 } __packed;
 
 struct can_mcan_data {

@@ -86,6 +86,8 @@ void can_mcan_configure_timing(struct can_mcan_reg  *can,
 				timing->phase_seg2 > 0);
 		__ASSERT_NO_MSG(timing->prescaler <= 0x200 &&
 				timing->prescaler > 0);
+		__ASSERT_NO_MSG(timing->sjw <= 0x80 && timing->sjw > 0);
+
 		can->nbtp = (((uint32_t)timing->phase_seg1 - 1UL) & 0xFF) <<
 				CAN_MCAN_NBTP_NTSEG1_POS |
 			    (((uint32_t)timing->phase_seg2 - 1UL) & 0x7F) <<
@@ -105,6 +107,8 @@ void can_mcan_configure_timing(struct can_mcan_reg  *can,
 				timing_data->phase_seg2 > 0);
 		__ASSERT_NO_MSG(timing_data->prescaler <= 20 &&
 				timing_data->prescaler > 0);
+		__ASSERT_NO_MSG(timing_data->sjw <= 0x80 &&
+				timing_data->sjw > 0);
 
 		can->dbtp = (((uint32_t)timing_data->phase_seg1 - 1UL) & 0x1F) <<
 				CAN_MCAN_DBTP_DTSEG1_POS |
@@ -247,12 +251,12 @@ int can_mcan_init(const struct device *dev, const struct can_mcan_config *cfg,
 	can->txefc = ((uint32_t)msg_ram->tx_event_fifo & CAN_MCAN_TXEFC_EFSA_MSK) |
 		     (ARRAY_SIZE(msg_ram->tx_event_fifo) <<
 		     CAN_MCAN_TXEFC_EFS_POS);
-	can->txbc = ((uint32_t)msg_ram->tx_fifo & CAN_MCAN_TXBC_TBSA) |
-		    (ARRAY_SIZE(msg_ram->tx_fifo) << CAN_MCAN_TXBC_TFQS_POS);
-	if (sizeof(msg_ram->tx_fifo[0].data) <= 24) {
-		can->txesc = (sizeof(msg_ram->tx_fifo[0].data) - 8) / 4;
+	can->txbc = ((uint32_t)msg_ram->tx_buffer & CAN_MCAN_TXBC_TBSA) |
+		    (ARRAY_SIZE(msg_ram->tx_buffer) << CAN_MCAN_TXBC_TFQS_POS);
+	if (sizeof(msg_ram->tx_buffer[0].data) <= 24) {
+		can->txesc = (sizeof(msg_ram->tx_buffer[0].data) - 8) / 4;
 	} else {
-		can->txesc = (sizeof(msg_ram->tx_fifo[0].data) - 32) / 16 + 5;
+		can->txesc = (sizeof(msg_ram->tx_buffer[0].data) - 32) / 16 + 5;
 	}
 
 	if (sizeof(msg_ram->rx_fifo0[0].data) <= 24) {
@@ -612,7 +616,7 @@ int can_mcan_send(const struct can_mcan_config *cfg,
 {
 	struct can_mcan_reg  *can = cfg->can;
 	size_t data_length = can_dlc_to_bytes(frame->dlc);
-	struct can_mcan_tx_fifo_hdr tx_hdr = {
+	struct can_mcan_tx_buffer_hdr tx_hdr = {
 		.rtr = frame->rtr  == CAN_REMOTEREQUEST,
 		.xtd = frame->id_type == CAN_EXTENDED_IDENTIFIER,
 		.esi = 0,
@@ -675,10 +679,10 @@ int can_mcan_send(const struct can_mcan_config *cfg,
 		tx_hdr.ext_id = frame->id;
 	}
 
-	msg_ram->tx_fifo[put_idx].hdr = tx_hdr;
+	msg_ram->tx_buffer[put_idx].hdr = tx_hdr;
 
 	for (src = frame->data_32,
-		dst = msg_ram->tx_fifo[put_idx].data_32,
+		dst = msg_ram->tx_buffer[put_idx].data_32,
 		end = dst + CAN_DIV_CEIL(data_length, sizeof(uint32_t));
 		dst < end;
 		src++, dst++) {
