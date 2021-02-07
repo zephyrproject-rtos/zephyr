@@ -18,6 +18,7 @@
 		zephyr,shell-uart = &lpuart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,can-primary = &can1;
 	};
 
 	leds {
@@ -151,5 +152,16 @@
 
 &adc1 {
 	pinctrl-0 = <&adc1_in1_pa0>;
+	status = "okay";
+};
+
+&can1 {
+	pinctrl-0 = <&fdcan1_rx_pa11 &fdcan1_tx_pa12>;
+	bus-speed = <125000>;
+	sjw = <1>;
+	sample-point = <875>;
+	bus-speed-data = <1000000>;
+	sjw-data = <1>;
+	sample-point-data = <875>;
 	status = "okay";
 };

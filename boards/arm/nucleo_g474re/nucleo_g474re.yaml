@@ -22,3 +22,5 @@ supported:
   - watchdog
   - adc
   - dma
+  - can
+  - canfd
