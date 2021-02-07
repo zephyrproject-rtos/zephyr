@@ -217,7 +217,7 @@ Boards & SoC Support
 
 * Made these global changes in STM32 boards and SoC series:
 
-  * Pin control configuration is now done through device tree and existing
+  * Pin control configuration is now done through devicetree and existing
     macros to configure pins in pinmux.c files are tagged as deprecated.
     The new pin settings are provided thanks to .dtsi files distributed in
     hal_stm32 module.
@@ -264,7 +264,7 @@ Drivers and Sensors
     A user can now specify the timing manually (define prop segment,
     phase segment1, phase segment2, and prescaler) or use a newly introduced
     algorithm to calculate optimal timing values from a bitrate and sample point.
-    The bitrate and sample point can be specified in the device tree too.
+    The bitrate and sample point can be specified in the devicetree too.
     It is possible to change the timing values at runtime now.
 
   * We reworked the zcan_frame struct due to undefined behavior.
@@ -412,7 +412,7 @@ Drivers and Sensors
 * Pinmux
 
   * STM32 pinmux driver has been reworked to allow pin configuration using
-    device tree definitions. The previous C macros are now deprecated.
+    devicetree definitions. The previous C macros are now deprecated.
 
 * PS/2
 
