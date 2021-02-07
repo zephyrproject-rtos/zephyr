@@ -764,6 +764,18 @@ static inline bool net_ipv6_is_ll_addr(const struct in6_addr *addr)
 }
 
 /**
+ * @brief Check if the given IPv6 address is a unique local address.
+ *
+ * @param addr A valid pointer on an IPv6 address
+ *
+ * @return True if it is, false otherwise.
+ */
+static inline bool net_ipv6_is_ula_addr(const struct in6_addr *addr)
+{
+	return addr->s6_addr[0] == 0xFD;
+}
+
+/**
  * @brief Return pointer to any (all bits zeros) IPv6 address.
  *
  * @return Any IPv6 address.
