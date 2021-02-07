@@ -189,16 +189,6 @@ static inline void z_reset_thread_states(struct k_thread *thread,
 	thread->base.thread_state &= ~states;
 }
 
-static inline void z_mark_thread_as_queued(struct k_thread *thread)
-{
-	z_set_thread_states(thread, _THREAD_QUEUED);
-}
-
-static inline void z_mark_thread_as_not_queued(struct k_thread *thread)
-{
-	z_reset_thread_states(thread, _THREAD_QUEUED);
-}
-
 static inline bool z_is_under_prio_ceiling(int prio)
 {
 	return prio >= CONFIG_PRIORITY_CEILING;
