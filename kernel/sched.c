@@ -181,19 +181,54 @@ static ALWAYS_INLINE struct k_thread *_priq_dumb_mask_best(sys_dlist_t *pq)
 }
 #endif
 
+/* _current is never in the run queue until context switch on
+ * SMP configurations, see z_requeue_current()
+ */
+static inline bool should_queue_thread(struct k_thread *th)
+{
+	return !IS_ENABLED(CONFIG_SMP) || th != _current;
+}
+
 static ALWAYS_INLINE void queue_thread(void *pq,
 				       struct k_thread *thread)
 {
 	thread->base.thread_state |= _THREAD_QUEUED;
-	_priq_run_add(pq, thread);
+	if (should_queue_thread(thread)) {
+		_priq_run_add(pq, thread);
+	}
+#ifdef CONFIG_SMP
+	if (thread == _current) {
+		/* add current to end of queue means "yield" */
+		_current_cpu->swap_ok = true;
+	}
+#endif
 }
 
 static ALWAYS_INLINE void dequeue_thread(void *pq,
 					 struct k_thread *thread)
 {
 	thread->base.thread_state &= ~_THREAD_QUEUED;
-	_priq_run_remove(pq, thread);
+	if (should_queue_thread(thread)) {
+		_priq_run_remove(pq, thread);
+	}
 }
+
+#ifdef CONFIG_SMP
+/* Called out of z_swap() when CONFIG_SMP.  The current thread can
+ * never live in the run queue until we are inexorably on the context
+ * switch path on SMP, otherwise there is a deadlock condition where a
+ * set of CPUs pick a cycle of threads to run and wait for them all to
+ * context switch forever.
+ */
+void z_requeue_current(struct k_thread *curr)
+{
+	LOCKED(&sched_spinlock) {
+		if (z_is_thread_queued(curr)) {
+			_priq_run_add(&_kernel.ready_q.runq, curr);
+		}
+	}
+}
+#endif
 
 static ALWAYS_INLINE struct k_thread *next_up(void)
 {
@@ -263,8 +298,12 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 	}
 
 	if (active) {
-		if (!queued &&
-		    !z_is_t1_higher_prio_than_t2(thread, _current)) {
+		bool curr_wins = z_is_t1_higher_prio_than_t2(_current, thread);
+		bool th_wins = z_is_t1_higher_prio_than_t2(thread, _current);
+		bool tie = (!curr_wins && !th_wins);
+
+		/* Ties only switch if state says we yielded */
+		if (curr_wins || (tie && !_current_cpu->swap_ok)) {
 			thread = _current;
 		}
 
@@ -284,6 +323,7 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 		dequeue_thread(&_kernel.ready_q.runq, thread);
 	}
 
+	_current_cpu->swap_ok = false;
 	return thread;
 #endif
 }
@@ -953,7 +993,9 @@ void *z_get_next_switch_handle(void *interrupted)
 	LOCKED(&sched_spinlock) {
 		struct k_thread *old_thread = _current, *new_thread;
 
-		old_thread->switch_handle = NULL;
+		if (IS_ENABLED(CONFIG_SMP)) {
+			old_thread->switch_handle = NULL;
+		}
 		new_thread = next_up();
 
 		if (old_thread != new_thread) {
@@ -975,10 +1017,24 @@ void *z_get_next_switch_handle(void *interrupted)
 			 */
 			z_spin_lock_set_owner(&sched_spinlock);
 #endif
+
+			/* A queued (runnable) old/current thread
+			 * needs to be added back to the run queue
+			 * here, and atomically with its switch handle
+			 * being set below.  This is safe now, as we
+			 * will not return into it.
+			 */
+			if (z_is_thread_queued(old_thread)) {
+				_priq_run_add(&_kernel.ready_q.runq,
+					      old_thread);
+			}
 		}
 		old_thread->switch_handle = interrupted;
 		ret = new_thread->switch_handle;
-		new_thread->switch_handle = NULL;
+		if (IS_ENABLED(CONFIG_SMP)) {
+			/* Active threads MUST have a null here */
+			new_thread->switch_handle = NULL;
+		}
 	}
 	return ret;
 #else
