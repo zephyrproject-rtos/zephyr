@@ -432,13 +432,16 @@ static int unseg_app_sdu_prepare(struct bt_mesh_friend *frnd,
 		return 0;
 	}
 
-	BT_DBG("Re-encrypting friend pdu");
+	BT_DBG("Re-encrypting friend pdu (SeqNum %06x -> %06x)",
+	       meta.crypto.seq_num, bt_mesh.seq);
 
 	err = unseg_app_sdu_decrypt(frnd, buf, &meta);
 	if (err) {
 		BT_WARN("Decryption failed! %d", err);
 		return err;
 	}
+
+	meta.crypto.seq_num = bt_mesh.seq;
 
 	err = unseg_app_sdu_encrypt(frnd, buf, &meta);
 	if (err) {
