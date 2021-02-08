@@ -147,6 +147,18 @@ Architectures
 
 * ARC
 
+  * Fixed execution on ARC HS with one interrupt bank and fast interrupts (FIRQ)
+    enabled
+  * Hardened SMP support
+  * Improved mdb west runner to support simulation on SMP nSIM-based
+    configurations
+  * Improved mdb west runner to support nSIM-based configurations execution
+    on real HW (FPGA-based)
+  * Added documentation page with Zephyr support status on ARC processor
+  * Added coverage support for nSIM-based configurations
+  * Switched to upstream OpenOCD for ARC
+  * Various minor fixes/improvements for ARC MWDT toolchain infrastructure
+
 * ARM
 
   * AARCH32
@@ -181,6 +193,11 @@ Boards & SoC Support
 * Made these changes in other SoC series:
 
 * Changes for ARC boards:
+
+  * Added icount support for ARC QEMU boards
+  * Added MWDT compiler options for HSDK board
+  * Added missing taps into JTAG chain for the dual-core configuration of the
+    HSDK board
 
 * Added support for these ARM boards:
 
