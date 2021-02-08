@@ -2,7 +2,7 @@ common:
   min_flash: 65
   min_ram: 36
   tags: crypto mbedtls userspace
-  timeout: 200
+  timeout: 400
 tests:
   crypto.mbedtls:
     arch_exclude: riscv64
