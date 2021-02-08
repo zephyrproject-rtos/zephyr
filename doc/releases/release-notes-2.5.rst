@@ -183,6 +183,20 @@ Architectures
 
   * AARCH64
 
+    * Fixed registers printing on error and beautified crash dump output
+    * Removed CONFIG_SWITCH_TO_EL1 symbol. By default the execution now drops
+      to EL1 at boot
+    * Deprecated booting from EL2
+    * Improved assembly code and errors catching in EL3 and EL1 during the
+      start routine
+    * Enabled support for EL0 in the page tables
+    * Fixed vector table alignment
+    * Introduced support to boot Zephyr in NS mode
+    * Fixed alignment fault in z_bss_zero
+    * Added PSCI driver
+    * Added ability to generate image header
+    * Improved MMU code and driver
+
 * POSIX
 
 * RISC-V
