@@ -163,6 +163,25 @@ Kernel
     is enabled (together with :option:`CONFIG_ERRNO`). This allow user
     threads to access the value of ``errno`` without making a system call.
 
+* Memory Management
+
+  * Added page frame management for physical memory to keep track of
+    the status of each page frame.
+  * Added :c:func:`k_mem_map` which allows applications to increase
+    the data space available via anonymous memory mappings.
+  * Added :c:func:`k_mem_free_get` which returns the amount of
+    physical anonymous memory remaining.
+  * Paging structure must now be pre-allocated so that there is no need
+    to do memory allocations when mapping memory. Because of this,
+    :c:func:`arch_mem_map` may no longer fail.
+
+* Demand Paging
+
+  * Introduced the framework for demand paging and infrastructure for
+    custom eviction algorithms and implementation of backing stores.
+  * Currently the whole kernel is pinned and remaining physical memory
+    can be used for paging.
+
 Architectures
 *************
 
@@ -229,6 +248,19 @@ Architectures
   * FPU is supported in both shared and unshared FP register mode.
 
 * x86
+
+  * ``CONFIG_X86_MMU_PAGE_POOL_PAGES`` is removed as paging structure
+    must now be pre-allocated.
+  * Mapping of physical memory has changed:
+
+    * This allows a smaller virtual address space thus requiring a smaller
+      paging structure.
+    * Only the kernel image is mapped when :option:`CONFIG_ACPI` is not enabled.
+    * When :option:`CONFIG_ACPI` is enabled, the previous behavior to map
+      all physical memory is retained as platforms with ACPI are usually not
+      memory constrained and can accommodate bigger paging structure.
+
+  * Page fault handler has been extended to support demand paging.
 
 Boards & SoC Support
 ********************
@@ -313,6 +345,7 @@ Boards & SoC Support
   * Updated NXP i.MX RT, Kinetis, and LPC boards to enable hardware stack
     protection by default.
   * Fixed Segger RTT and SystemView support on NXP i.MX RT boards.
+  * Demand paging is turned on by default for ``qemu_x86_tiny``.
 
 * Added support for these following shields:
 
