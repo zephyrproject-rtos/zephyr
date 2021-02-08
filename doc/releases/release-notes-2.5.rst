@@ -142,6 +142,27 @@ Stable API changes in this release
 Kernel
 ******
 
+* Thread Local Storage (TLS)
+
+  * Introduced thread local storage support for the following architectures:
+
+    * ARC
+    * Arm Cortex-M
+    * Arm Cortex-R
+    * AArch64
+    * RISC-V
+    * Sparc
+    * x86 and x86_64
+    * Xtensa
+
+  * This allows variables declared with ``__thread`` keyword to be allocated
+    on a per-thread basis, and every thread has its own copy of these
+    variables.
+  * Enable via :option:`CONFIG_THREAD_LOCAL_STORAGE`.
+  * ``errno`` can be stored inside TLS if :option:`CONFIG_ERRNO_IN_TLS`
+    is enabled (together with :option:`CONFIG_ERRNO`). This allow user
+    threads to access the value of ``errno`` without making a system call.
+
 Architectures
 *************
 
