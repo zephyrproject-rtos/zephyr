@@ -354,7 +354,11 @@ Drivers and Sensors
 
 * I2C
 
+  * Added driver support for lmx6x, it8xxx2, and npcx7 plaforms.
   * Added Atmel SAM4L TWIM driver.
+  * Added I2C slave support in the microchip i2c driver.
+  * Reversed 2.4 decision to downgrade I2C eeprom slave driver to a
+    test.  It's a driver again.
 
 * I2S
 
