@@ -135,7 +135,7 @@ External Connectors
      :alt: BMD-340-EVAL pin-out
 
 .. note::
-	The pin numbers noted below are referenced to 
+	The pin numbers noted below are referenced to
 	the pin 1 markings on the BMD-340-EVAL or
 	BMD-341-EVAL for each header
 
@@ -164,7 +164,6 @@ J-Link Prog Connector (J2)
 +-------+--------------+
 | 10    | IMCU_RESET   |
 +-------+--------------+
-
 
 Debug OUT (J3)
 
@@ -480,7 +479,7 @@ Overlay file naming
 ===================
 
 The file has to be named ``<board>.overlay`` and placed in the app
-main directory to be picked up automatically by the device tree 
+main directory to be picked up automatically by the device tree
 compiler.
 
 Selecting the pins
