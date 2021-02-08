@@ -625,7 +625,7 @@ static int dps310_init(const struct device *dev)
 	uint8_t tmp_coef_srce = 0;
 
 	res = i2c_write_read(data->i2c_master, config->i2c_addr,
-			     &REG_ADDR_COEF_SRCE, 1, &tmp_coef_srce, 18);
+			     &REG_ADDR_COEF_SRCE, 1, &tmp_coef_srce, sizeof(tmp_coef_srce));
 	if (res < 0) {
 		LOG_WRN("I2C error: %d", res);
 		return -EIO;
