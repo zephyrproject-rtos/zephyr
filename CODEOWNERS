@@ -235,6 +235,8 @@
 /drivers/led_strip/                       @mbolivar-nordic
 /drivers/lora/                            @Mani-Sadhasivam
 /drivers/memc/                            @gmarull
+/drivers/misc/                            @tejlmand
+/drivers/misc/ft8xx/                      @hubertmis
 /drivers/modem/*gsm*                      @jukkar
 /drivers/modem/hl7800.c                   @rerickson1
 /drivers/modem/Kconfig.hl7800             @rerickson1

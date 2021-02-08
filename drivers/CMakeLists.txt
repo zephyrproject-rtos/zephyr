@@ -4,6 +4,7 @@ add_definitions(-D__ZEPHYR_SUPERVISOR__)
 
 add_subdirectory(console)
 add_subdirectory(interrupt_controller)
+add_subdirectory(misc)
 add_subdirectory(pcie)
 
 add_subdirectory_ifdef(CONFIG_ADC adc)
