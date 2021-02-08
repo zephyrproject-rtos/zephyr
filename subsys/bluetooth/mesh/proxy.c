@@ -51,7 +51,7 @@
 
 #define PDU_HDR(sar, type) (sar << 6 | (type & BIT_MASK(6)))
 
-#define CLIENT_BUF_SIZE 68
+#define CLIENT_BUF_SIZE 65
 
 #if defined(CONFIG_BT_MESH_DEBUG_USE_ID_ADDR)
 #define ADV_OPT                                                                \
