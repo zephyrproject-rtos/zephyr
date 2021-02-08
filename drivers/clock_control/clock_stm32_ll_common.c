@@ -318,7 +318,20 @@ static inline void stm32_clock_control_mco_init(void)
 #endif /* CONFIG_CLOCK_STM32_MCO2_SRC_NOCLOCK */
 }
 
-static int stm32_clock_control_init(const struct device *dev)
+
+/**
+ * @brief Initialize clocks for the stm32
+ *
+ * This routine is called to enable and configure the clocks and PLL
+ * of the soc on the board. It depends on the board definition.
+ * This function is called on the startup and also to restore the config
+ * when exiting for low power mode.
+ *
+ * @param dev clock device struct
+ *
+ * @return 0
+ */
+int stm32_clock_control_init(const struct device *dev)
 {
 	LL_UTILS_ClkInitTypeDef s_ClkInitStruct;
 	uint32_t hclk_prescaler;
