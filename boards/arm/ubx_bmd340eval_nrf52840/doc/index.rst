@@ -514,4 +514,3 @@ References
 .. target-notes::
 
 .. _u-blox website: https://www.u-blox.com/docs/UBX-19033353
-
