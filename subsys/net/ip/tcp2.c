@@ -1904,10 +1904,21 @@ int net_tcp_listen(struct net_context *context)
 
 int net_tcp_update_recv_wnd(struct net_context *context, int32_t delta)
 {
-	ARG_UNUSED(context);
-	ARG_UNUSED(delta);
+	int32_t new_win;
 
-	return -EPROTONOSUPPORT;
+	if (!context->tcp) {
+		NET_ERR("context->tcp == NULL");
+		return -EPROTOTYPE;
+	}
+
+	new_win = ((struct tcp *)context->tcp)->recv_win + delta;
+	if (new_win < 0 || new_win > UINT16_MAX) {
+		return -EINVAL;
+	}
+
+	((struct tcp *)context->tcp)->recv_win = new_win;
+
+	return 0;
 }
 
 /* net_context queues the outgoing data for the TCP connection */
