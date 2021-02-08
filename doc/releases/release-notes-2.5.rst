@@ -822,6 +822,14 @@ Libraries / Subsystems
 
 * Power management
 
+  * Use a consistent naming convention using **pm_** namespace.
+  * Overhaul power states. New states :c:enum:`pm_state` are more
+    meaningful and ACPI alike.
+  * Move residency information and supported power states to devicetree
+    and remove related Kconfig options.
+  * New power state changes notification API :c:struct:`pm_notifier`
+  * Cleanup build options.
+
 * Logging
 
 * LVGL
