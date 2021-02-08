@@ -149,14 +149,6 @@ config NRF_802154_SER_LOG
 	help
 	  This option enable debug logs of 802.15.4 serialization module.
 
-config NRF_802154_SER_BUFFER_ALLOCATOR_THREAD_SAFE
-	bool
-	# Hidden option
-	default y
-	help
-	  This option specifies if buffers for 802.15.4 serialization are allocated
-	  in a thread-safe manner.
-
 config NRF_802154_SER_DEFAULT_RESPONSE_TIMEOUT
 	int "Default Spinel serialization response timeout in milliseconds"
 	default 500
