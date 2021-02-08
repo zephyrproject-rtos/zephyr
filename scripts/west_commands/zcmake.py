@@ -285,6 +285,10 @@ def _ensure_min_version(cmake, dry_run):
                 'Please install CMake ' + _MIN_CMAKE_VERSION_STR +
                 ' or higher (https://cmake.org/download/).')
     version = lines[0].split()[2]
+    if '-' in version:
+        # Handle semver cases like "3.19.20210206-g1e50ab6"
+        # which Kitware uses for prerelease versions.
+        version = version.split('-', 1)[0]
     if packaging.version.parse(version) < _MIN_CMAKE_VERSION:
         log.die('cmake version', version,
                 'is less than minimum version {};'.
