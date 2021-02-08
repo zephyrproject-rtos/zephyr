@@ -118,7 +118,10 @@ void hci_le_cis_estabilished(struct net_buf *buf)
 		return;
 	}
 
-	__ASSERT(conn->type == BT_CONN_TYPE_ISO, "Invalid connection type");
+	CHECKIF(conn->type != BT_CONN_TYPE_ISO) {
+		BT_DBG("Invalid connection type %u", conn->type);
+		return;
+	}
 
 	if (!evt->status) {
 		/* TODO: Add CIG sync delay */
@@ -257,7 +260,11 @@ void bt_iso_cleanup(struct bt_conn *conn)
 {
 	int i;
 
-	__ASSERT_NO_MSG(conn->type == BT_CONN_TYPE_ISO);
+	CHECKIF(!conn || conn->type != BT_CONN_TYPE_ISO) {
+		BT_DBG("Invalid parameters: conn %p conn->type %u", conn,
+		       conn ? conn->type : 0);
+		return;
+	}
 
 	BT_DBG("%p", conn);
 
@@ -656,7 +663,11 @@ int bt_iso_accept(struct bt_conn *conn)
 	struct bt_iso_chan *chan;
 	int err;
 
-	__ASSERT_NO_MSG(conn->type == BT_CONN_TYPE_ISO);
+	CHECKIF(!conn || conn->type != BT_CONN_TYPE_ISO) {
+		BT_DBG("Invalid parameters: conn %p conn->type %u", conn,
+		       conn ? conn->type : 0);
+		return -EINVAL;
+	}
 
 	BT_DBG("%p", conn);
 
@@ -723,7 +734,11 @@ void bt_iso_connected(struct bt_conn *conn)
 {
 	struct bt_iso_chan *chan;
 
-	__ASSERT_NO_MSG(conn->type == BT_CONN_TYPE_ISO);
+	CHECKIF(!conn || conn->type != BT_CONN_TYPE_ISO) {
+		BT_DBG("Invalid parameters: conn %p conn->type %u", conn,
+		       conn ? conn->type : 0);
+		return;
+	}
 
 	BT_DBG("%p", conn);
 
@@ -776,7 +791,11 @@ void bt_iso_disconnected(struct bt_conn *conn)
 {
 	struct bt_iso_chan *chan, *next;
 
-	__ASSERT_NO_MSG(conn->type == BT_CONN_TYPE_ISO);
+	CHECKIF(!conn || conn->type != BT_CONN_TYPE_ISO) {
+		BT_DBG("Invalid parameters: conn %p conn->type %u", conn,
+		       conn ? conn->type : 0);
+		return;
+	}
 
 	BT_DBG("%p", conn);
 
@@ -793,7 +812,10 @@ void bt_iso_disconnected(struct bt_conn *conn)
 
 int bt_iso_server_register(struct bt_iso_server *server)
 {
-	__ASSERT_NO_MSG(server);
+	CHECKIF(!server) {
+		BT_DBG("Invalid parameter: server %p", server);
+		return -EINVAL;
+	}
 
 	/* Check if controller is ISO capable */
 	if (!BT_FEAT_LE_CIS_SLAVE(bt_dev.le.features)) {
@@ -906,9 +928,11 @@ int bt_iso_chan_bind(struct bt_conn **conns, uint8_t num_conns,
 	int i, err;
 	static uint8_t id;
 
-	__ASSERT_NO_MSG(conns);
-	__ASSERT_NO_MSG(num_conns);
-	__ASSERT_NO_MSG(chans);
+	CHECKIF(!conns || !num_conns || !chans) {
+		BT_DBG("Invalid parameters: conns %p num_conns %u chans %p",
+		       conns, num_conns, chans);
+		return -EINVAL;
+	}
 
 	memset(&param, 0, sizeof(param));
 
@@ -933,7 +957,10 @@ int bt_iso_chan_bind(struct bt_conn **conns, uint8_t num_conns,
 
 int bt_iso_chan_unbind(struct bt_iso_chan *chan)
 {
-	__ASSERT_NO_MSG(chan);
+	CHECKIF(!chan) {
+		BT_DBG("Invalid parameter: chan %p", chan);
+		return -EINVAL;
+	}
 
 	if (!chan->conn || chan->state != BT_ISO_BOUND) {
 		return -EINVAL;
@@ -954,8 +981,11 @@ int bt_iso_chan_connect(struct bt_iso_chan **chans, uint8_t num_chans)
 	struct bt_conn *conns[CONFIG_BT_ISO_MAX_CHAN];
 	int i, err;
 
-	__ASSERT_NO_MSG(chans);
-	__ASSERT_NO_MSG(num_chans);
+	CHECKIF(!chans || !num_chans) {
+		BT_DBG("Invalid parameters: chans %p num_chans %u", chans,
+		       num_chans);
+		return -EINVAL;
+	}
 
 	for (i = 0; i < num_chans; i++) {
 		if (!chans[i]->conn) {
@@ -979,7 +1009,10 @@ int bt_iso_chan_connect(struct bt_iso_chan **chans, uint8_t num_chans)
 
 int bt_iso_chan_disconnect(struct bt_iso_chan *chan)
 {
-	__ASSERT_NO_MSG(chan);
+	CHECKIF(!chan) {
+		BT_DBG("Invalid parameter: chan %p", chan);
+		return -EINVAL;
+	}
 
 	if (!chan->conn) {
 		return -ENOTCONN;
@@ -1129,8 +1162,10 @@ int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf)
 	struct bt_hci_iso_data_hdr *hdr;
 	static uint16_t sn;
 
-	__ASSERT_NO_MSG(chan);
-	__ASSERT_NO_MSG(buf);
+	CHECKIF(!chan || !buf) {
+		BT_DBG("Invalid parameters: chan %p buf %p", chan, buf);
+		return -EINVAL;
+	}
 
 	BT_DBG("chan %p len %zu", chan, net_buf_frags_len(buf));
 
