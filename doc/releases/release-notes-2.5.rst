@@ -620,7 +620,6 @@ Build and Infrastructure
 
 * Devicetree
 
-  * :c:macro:`DT_ENUM_IDX_OR`: new macro
   * Support for legacy devicetree macros via
     ``CONFIG_LEGACY_DEVICETREE_MACROS`` was removed. All devicetree-based code
     should be using the new devicetree API introduced in Zephyr 2.3 and
@@ -629,6 +628,36 @@ Build and Infrastructure
   * It is now possible to resolve at build time the device pointer associated
     with a device that is defined in devicetree, via ``DEVICE_DT_GET``.  See
     :ref:`dt-get-device`.
+  * Enhanced support for enumerated property values via new macros:
+
+    - :c:macro:`DT_ENUM_IDX_OR`
+    - :c:macro:`DT_ENUM_TOKEN`
+    - :c:macro:`DT_ENUM_UPPER_TOKEN`
+
+  * New hardware specific macros:
+
+    - :c:macro:`DT_GPIO_CTLR_BY_IDX`
+    - :c:macro:`DT_GPIO_CTLR`
+    - :c:macro:`DT_MTD_FROM_FIXED_PARTITION`
+
+  * Miscellaneous new node-related macros:
+
+    - :c:macro:`DT_GPARENT`
+    - :c:macro:`DT_INVALID_NODE`
+    - :c:macro:`DT_NODE_PATH`
+    - :c:macro:`DT_SAME_NODE`
+
+  * Property access macro changes:
+
+    - :c:macro:`DT_PROP_BY_PHANDLE_IDX_OR`: new macro
+    - :c:macro:`DT_PROP_HAS_IDX` now expands to a literal 0 or 1, not an
+      expression that evaluates to 0 or 1
+
+  * Dependencies between nodes are now exposed via new macros:
+
+    - :c:macro:`DT_DEP_ORD`, :c:macro:`DT_INST_DEP_ORD`
+    - :c:macro:`DT_REQUIRES_DEP_ORDS`, :c:macro:`DT_INST_REQUIRES_DEP_ORDS`
+    - :c:macro:`DT_SUPPORTS_DEP_ORDS`, :c:macro:`DT_INST_SUPPORTS_DEP_ORDS`
 
 * West
 
