@@ -134,6 +134,10 @@ int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
 		bt_mesh_lpn_group_add(BT_MESH_ADDR_ALL_NODES);
 	}
 
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		bt_mesh_net_pending_net_store();
+	}
+
 	bt_mesh_start();
 
 	return 0;
