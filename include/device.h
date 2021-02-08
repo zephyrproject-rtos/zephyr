@@ -14,6 +14,13 @@
  * @}
  */
 /**
+ * @brief Miscellaneous Drivers APIs
+ * @defgroup misc_interfaces Miscellaneous Drivers APIs
+ * @ingroup io_interfaces
+ * @{
+ * @}
+ */
+/**
  * @brief Device Model APIs
  * @defgroup device_model Device Model APIs
  * @{
