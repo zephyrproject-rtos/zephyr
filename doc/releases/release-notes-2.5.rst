@@ -164,10 +164,22 @@ Architectures
   * AARCH32
 
     * Introduced the functionality for chain-loadable Zephyr
-      fimrmware images to force the initialization of internal
+      firmware images to force the initialization of internal
       architecture state during early system boot (Cortex-M).
     * Changed the default Floating Point Services mode to
       Shared FP registers mode.
+    * Enhanced Cortex-M Shared FP register mode by implementing
+      dynamic lazy FP register stacking in threads.
+    * Added preliminary support for Cortex-R7 variant.
+    * Fixed inline assembly code in Cortex-M system calls.
+    * Enhanced and fixed Cortex-M TCS support.
+    * Enabled interrupts before switching to main in single-thread
+      Cortex-M builds (CONFIG_MULTITHREADING=n).
+    * Fixed vector table relocation in non-XIP Cortex-M builds.
+    * Fixed exception exit routine for fatal error exceptions in
+      Cortex-R.
+    * Fixed interrupt nesting in ARMv7-R architecture.
+
 
   * AARCH64
 
