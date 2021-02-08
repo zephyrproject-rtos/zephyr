@@ -20,9 +20,13 @@ workspace looks like this:
    zephyrproject/                 # west topdir
    ├── .west/                     # marks the location of the topdir
    │   └── config                 # per-workspace local configuration file
-   ├── zephyr/                    # .git/ repo    │ the manifest repository,
-   │   ├── west.yml               # manifest file │ never modified by west
-   │   └── [... other files ...]                  │ after creation
+   │
+   │   # The manifest repository, never modified by west after creation:
+   ├── zephyr/                    # .git/ repo
+   │   ├── west.yml               # manifest file
+   │   └── [... other files ...]
+   │
+   │   # Projects managed by west:
    ├── modules/
    │   └── lib/
    │       └── tinycbor/          # .git/ project
