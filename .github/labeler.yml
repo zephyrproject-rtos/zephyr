@@ -1,3 +1,5 @@
+"Release Notes":
+  - "doc/releases/**/*"
 "area: Modem":
   - "drivers/modem/**/*"
 "area: PWM":
