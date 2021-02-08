@@ -138,11 +138,6 @@ static void msg_cache_add(struct bt_mesh_net_rx *rx)
 	msg_cache_next %= ARRAY_SIZE(msg_cache);
 }
 
-static void store_net(void)
-{
-	bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_NET_PENDING);
-}
-
 static void store_iv(bool only_duration)
 {
 	bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_IV_PENDING);
@@ -198,7 +193,6 @@ int bt_mesh_net_create(uint16_t idx, uint8_t flags, const uint8_t key[16],
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		BT_DBG("Storing network information persistently");
-		store_net();
 		bt_mesh_subnet_store(idx);
 		store_iv(false);
 	}
