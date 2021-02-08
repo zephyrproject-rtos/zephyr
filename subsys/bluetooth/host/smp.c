@@ -1915,8 +1915,12 @@ static int smp_error(struct bt_smp *smp, uint8_t reason)
 	struct bt_smp_pairing_fail *rsp;
 	struct net_buf *buf;
 
-	/* reset context and report */
-	smp_pairing_complete(smp, reason);
+	if (atomic_test_bit(smp->flags, SMP_FLAG_PAIRING) ||
+	    atomic_test_bit(smp->flags, SMP_FLAG_ENC_PENDING) ||
+	    atomic_test_bit(smp->flags, SMP_FLAG_SEC_REQ)) {
+		/* reset context and report */
+		smp_pairing_complete(smp, reason);
+	}
 
 	buf = smp_create_pdu(smp, BT_SMP_CMD_PAIRING_FAIL, sizeof(*rsp));
 	if (!buf) {
