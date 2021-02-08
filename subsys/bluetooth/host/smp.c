@@ -2808,6 +2808,7 @@ bool bt_smp_request_ltk(struct bt_conn *conn, uint64_t rand, uint16_t ediv, uint
 				     BT_SMP_MAX_ENC_KEY_SIZE - enc_size);
 		}
 
+		atomic_set_bit(smp->flags, SMP_FLAG_ENC_PENDING);
 		return true;
 	}
 
