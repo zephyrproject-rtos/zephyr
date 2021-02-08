@@ -236,6 +236,7 @@ Boards & SoC Support
 * Added support for these SoC series:
 
   * Cypress PSoC-63
+  * Intel Elkhart Lake
 
 * Made these changes in other SoC series:
 
@@ -249,6 +250,11 @@ Boards & SoC Support
 * Added support for these ARM boards:
 
   * Cypress CY8CKIT_062_BLE board
+
+*  Added support for these x86 boards:
+
+  * Elkhart Lake CRB board
+  * ACRN configuration on Elkhart Lake CRB board
 
 * Added support for these SPARC boards:
 
