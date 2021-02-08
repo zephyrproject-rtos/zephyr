@@ -335,6 +335,9 @@ Drivers and Sensors
 
 * DAC
 
+  * STM32: Enabled support for G0 and H7 series.
+  * Added TI DACx3608 driver.
+
 * Debug
 
 * Display
