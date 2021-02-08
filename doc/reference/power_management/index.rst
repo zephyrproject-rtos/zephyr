@@ -16,28 +16,17 @@ Terminology
    SOC and provide interfaces to the hardware features. It will abstract
    the SOC specific implementations to the applications and the OS.
 
-:dfn:`SOC Power State`
-   SOC Power State describes processor and device power states implemented at
-   the SOC level. Deep Sleep State is an example of SOC Power State.
-
-:dfn:`Active State`
-   The CPU and clocks are powered on. This is the normal operating state when
-   the system is running.
-
-:dfn:`Sleep State`
-   Some of the SoC clocks are gated. The CPU is stopped but does not lose
-   execution context. Configuration of the peripherals is preserved.
-
-:dfn:`Deep Sleep State`
-   The SoC is power gated and loses context. Most peripherals would also be
-   power gated. RAM may be selectively retained.
-
 :dfn:`Idle Thread`
    A system thread that runs when there are no other threads ready to run.
 
 :dfn:`Power gating`
    Power gating reduces power consumption by shutting off current to blocks of
    the integrated circuit that are not in use.
+
+:dfn:`Power State`
+   SOC Power State describes processor and device power states implemented at
+   the SOC level. Power states are represented by :c:enum:`pm_state` and each
+   one has a different meaning.
 
 Overview
 ********
@@ -107,32 +96,33 @@ tickless idle mode (see :option:`CONFIG_TICKLESS_IDLE`).
 Power States
 ============
 
-The power management subsystem classifies power states into two categories,
-Sleep State and Deep Sleep State, based on whether the CPU loses execution
-context during the power state transition.
+The power management subsystem contains a set of states based on
+power consumption and context retention.
 
-The list of available power states is defined by :code:`enum pm_state`. In
+The list of available power states is defined by :c:enum:`pm_state`. In
 general power states with higher indexes will offer greater power savings and
-have higher wake latencies.
+have higher wake latencies. Following is a thorough list of available states:
 
-Sleep State
------------
+.. doxygenenumvalue:: PM_STATE_ACTIVE
+   :project: Zephyr
 
-CPU is stopped but does not lose execution context. Some of the SoC clocks are
-gated. Configuration of the peripherals is preserved but some of them may be no
-longer functional. Execution will resume at the place it stopped. The wake
-latencies of power states in this category are relatively low.
+.. doxygenenumvalue:: PM_STATE_RUNTIME_IDLE
+   :project: Zephyr
 
-Deep Sleep State
-----------------
+.. doxygenenumvalue:: PM_STATE_SUSPEND_TO_IDLE
+   :project: Zephyr
 
-CPU is power gated and loses execution context. Execution will resume at
-OS startup code or at a resume point determined by a bootloader that supports
-deep sleep resume. Depending on the SOC's implementation of the power saving
-feature, it may turn off power to most devices. RAM may be retained by some
-implementations, while others may remove power from RAM saving considerable
-power. Power states in this category save more power than Sleep states
-and would have higher wake latencies.
+.. doxygenenumvalue:: PM_STATE_STANDBY
+   :project: Zephyr
+
+.. doxygenenumvalue:: PM_STATE_SUSPEND_TO_RAM
+   :project: Zephyr
+
+.. doxygenenumvalue:: PM_STATE_SUSPEND_TO_DISK
+   :project: Zephyr
+
+.. doxygenenumvalue:: PM_STATE_SOFT_OFF
+   :project: Zephyr
 
 Power Management Policies
 =========================
