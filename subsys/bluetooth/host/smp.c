@@ -4506,6 +4506,13 @@ static void bt_smp_disconnected(struct bt_l2cap_chan *chan)
 
 	k_delayed_work_cancel(&smp->work);
 
+	if (atomic_test_bit(smp->flags, SMP_FLAG_PAIRING) ||
+	    atomic_test_bit(smp->flags, SMP_FLAG_ENC_PENDING) ||
+	    atomic_test_bit(smp->flags, SMP_FLAG_SEC_REQ)) {
+		/* reset context and report */
+		smp_pairing_complete(smp, BT_SMP_ERR_UNSPECIFIED);
+	}
+
 	if (keys) {
 		/*
 		 * If debug keys were used for pairing remove them.
