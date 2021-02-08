@@ -94,9 +94,21 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 		arch_cohere_stacks(old_thread, NULL, new_thread);
 		_current_cpu->current = new_thread;
 
+#ifdef CONFIG_SMP
+		/* Add _current back to the run queue HERE. After
+		 * wait_for_switch() we are guaranteed to reach the
+		 * context switch in finite time, avoiding a potential
+		 * deadlock.
+		 */
+		z_requeue_current(old_thread);
+#endif
+
 		void *newsh = new_thread->switch_handle;
 
-		new_thread->switch_handle = NULL;
+		if (IS_ENABLED(CONFIG_SMP)) {
+			/* Active threads MUST have a null here */
+			new_thread->switch_handle = NULL;
+		}
 		arch_switch(newsh, &old_thread->switch_handle);
 	}
 
