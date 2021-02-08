@@ -67,6 +67,20 @@ K_KERNEL_STACK_DEFINE(esp_workq_stack,
 
 struct esp_data esp_driver_data;
 
+static void esp_configure_hostname(struct esp_data *data)
+{
+#if defined(CONFIG_NET_HOSTNAME_ENABLE)
+	char cmd[sizeof("AT+CWHOSTNAME=\"\"") + NET_HOSTNAME_MAX_LEN];
+
+	snprintk(cmd, sizeof(cmd), "AT+CWHOSTNAME=\"%s\"", net_hostname_get());
+	cmd[sizeof(cmd) - 1] = '\0';
+
+	esp_cmd_send(data, NULL, 0, cmd, ESP_CMD_TIMEOUT);
+#else
+	ARG_UNUSED(data);
+#endif
+}
+
 static inline uint8_t esp_mode_from_flags(struct esp_data *data)
 {
 	uint8_t flags = data->flags;
@@ -111,10 +125,25 @@ static int esp_mode_switch(struct esp_data *data, uint8_t mode)
 static int esp_mode_switch_if_needed(struct esp_data *data)
 {
 	uint8_t new_mode = esp_mode_from_flags(data);
+	uint8_t old_mode = data->mode;
+	int err;
 
-	if (data->mode != new_mode) {
-		data->mode = new_mode;
-		return esp_mode_switch(data, new_mode);
+	if (old_mode == new_mode) {
+		return 0;
+	}
+
+	data->mode = new_mode;
+
+	err = esp_mode_switch(data, new_mode);
+	if (err) {
+		return err;
+	}
+
+	if (!(old_mode & ESP_MODE_STA) && (new_mode & ESP_MODE_STA)) {
+		/*
+		 * Hostname change is applied only when STA is enabled.
+		 */
+		esp_configure_hostname(data);
 	}
 
 	return 0;
@@ -877,20 +906,6 @@ static int esp_mgmt_ap_disable(const struct device *dev)
 	return esp_mode_flags_clear(data, EDF_AP_ENABLED);
 }
 
-static void esp_configure_hostname(struct esp_data *data)
-{
-#if defined(CONFIG_NET_HOSTNAME_ENABLE)
-	char cmd[sizeof("AT+CWHOSTNAME=\"\"") + NET_HOSTNAME_MAX_LEN];
-
-	snprintk(cmd, sizeof(cmd), "AT+CWHOSTNAME=\"%s\"", net_hostname_get());
-	cmd[sizeof(cmd) - 1] = '\0';
-
-	esp_cmd_send(data, NULL, 0, cmd, ESP_CMD_TIMEOUT);
-#else
-	ARG_UNUSED(data);
-#endif
-}
-
 static void esp_init_work(struct k_work *work)
 {
 	struct esp_data *dev;
@@ -981,7 +996,16 @@ static void esp_init_work(struct k_work *work)
 	net_if_set_link_addr(dev->net_iface, dev->mac_addr,
 			     sizeof(dev->mac_addr), NET_LINK_ETHERNET);
 
-	esp_configure_hostname(dev);
+	if (IS_ENABLED(CONFIG_WIFI_ESP_AT_VERSION_1_7)) {
+		/* This is the mode entered in above setup commands */
+		dev->mode = ESP_MODE_STA;
+
+		/*
+		 * In case of ESP 1.7 this is the first time CWMODE is entered
+		 * STA mode, so request hostname change now.
+		 */
+		esp_configure_hostname(dev);
+	}
 
 	LOG_INF("ESP Wi-Fi ready");
 
