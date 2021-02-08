@@ -49,6 +49,7 @@ static void tcp_in(struct tcp *conn, struct net_pkt *pkt);
 
 int (*tcp_send_cb)(struct net_pkt *pkt) = NULL;
 size_t (*tcp_recv_cb)(struct tcp *conn, struct net_pkt *pkt) = NULL;
+uint16_t net_tcp_get_recv_mss(const struct tcp *conn);
 
 static uint32_t tcp_get_seq(struct net_buf *buf)
 {
@@ -771,6 +772,11 @@ static int tcp_header_add(struct tcp *conn, struct net_pkt *pkt, uint8_t flags,
 	UNALIGNED_PUT(conn->src.sin.sin_port, &th->th_sport);
 	UNALIGNED_PUT(conn->dst.sin.sin_port, &th->th_dport);
 	th->th_off = 5;
+
+	if (conn->send_options.mss_found) {
+		th->th_off++;
+	}
+
 	UNALIGNED_PUT(flags, &th->th_flags);
 	UNALIGNED_PUT(htons(conn->recv_win), &th->th_win);
 	UNALIGNED_PUT(htonl(seq), &th->th_seq);
@@ -799,13 +805,40 @@ static int ip_header_add(struct tcp *conn, struct net_pkt *pkt)
 	return -EINVAL;
 }
 
+static int net_tcp_set_mss_opt(struct tcp *conn, struct net_pkt *pkt)
+{
+	struct mss_option {
+		uint32_t option;
+	};
+	NET_PKT_DATA_ACCESS_DEFINE(mss_option, struct mss_option);
+	struct mss_option *mss;
+	uint32_t recv_mss;
+
+	mss = net_pkt_get_data(pkt, &mss_option);
+	if (!mss) {
+		return -ENOBUFS;
+	}
+
+	recv_mss = net_tcp_get_recv_mss(conn);
+	recv_mss |= (NET_TCP_MSS_OPT << 24) | (NET_TCP_MSS_SIZE << 16);
+
+	UNALIGNED_PUT(htonl(recv_mss), (uint32_t *)mss);
+
+	return net_pkt_set_data(pkt, &mss_option);
+}
+
 static int tcp_out_ext(struct tcp *conn, uint8_t flags, struct net_pkt *data,
 		       uint32_t seq)
 {
+	size_t alloc_len = sizeof(struct tcphdr);
 	struct net_pkt *pkt;
 	int ret = 0;
 
-	pkt = tcp_pkt_alloc(conn, sizeof(struct tcphdr));
+	if (conn->send_options.mss_found) {
+		alloc_len += sizeof(uint32_t);
+	}
+
+	pkt = tcp_pkt_alloc(conn, alloc_len);
 	if (!pkt) {
 		ret = -ENOBUFS;
 		goto out;
@@ -827,6 +860,14 @@ static int tcp_out_ext(struct tcp *conn, uint8_t flags, struct net_pkt *data,
 	if (ret < 0) {
 		tcp_pkt_unref(pkt);
 		goto out;
+	}
+
+	if (conn->send_options.mss_found) {
+		ret = net_tcp_set_mss_opt(conn, pkt);
+		if (ret < 0) {
+			tcp_pkt_unref(pkt);
+			goto out;
+		}
 	}
 
 	ret = tcp_finalize_pkt(pkt);
@@ -1710,8 +1751,11 @@ next_state:
 	switch (conn->state) {
 	case TCP_LISTEN:
 		if (FL(&fl, ==, SYN)) {
+			/* Make sure our MSS is also sent in the ACK */
+			conn->send_options.mss_found = true;
 			conn_ack(conn, th_seq(th) + 1); /* capture peer's isn */
 			tcp_out(conn, SYN | ACK);
+			conn->send_options.mss_found = false;
 			conn_seq(conn, + 1);
 			next = TCP_SYN_RECEIVED;
 
@@ -1721,7 +1765,9 @@ next_state:
 						    &conn->establish_timer,
 						    ACK_TIMEOUT);
 		} else {
+			conn->send_options.mss_found = true;
 			tcp_out(conn, SYN);
+			conn->send_options.mss_found = false;
 			conn_seq(conn, + 1);
 			next = TCP_SYN_SENT;
 		}
