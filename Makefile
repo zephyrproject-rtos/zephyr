@@ -9,8 +9,8 @@ KCONFIG_TURBO_MODE ?= 0
 
 # Documentation targets
 # ---------------------------------------------------------------------------
-clean:
-	rm -rf ${BUILDDIR}
+
+.PHONY: clean htmldocs htmldocs-fast pdfdocs doxygen
 
 htmldocs-fast:
 	${MAKE} htmldocs KCONFIG_TURBO_MODE=1
@@ -26,4 +26,5 @@ configure:
 		-DSPHINXOPTS=${SPHINXOPTS} \
 		-DKCONFIG_TURBO_MODE=${KCONFIG_TURBO_MODE}
 
-.PHONY: clean htmldocs htmldocs-fast pdfdocs doxygen
+clean:
+	rm -rf ${BUILDDIR}
