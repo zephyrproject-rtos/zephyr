@@ -41,8 +41,12 @@ static K_MEM_SLAB_DEFINE(lfs_dir_pool, sizeof(struct lfs_dir),
  * mem_pool or heap Kconfig options then we need to use a heap.
  * Otherwise we can use a fixed region.
  */
-#define FC_ON_HEAP defined(CONFIG_FS_LITTLEFS_FC_MEM_POOL)	\
+#if defined(CONFIG_FS_LITTLEFS_FC_MEM_POOL)		\
 	|| ((CONFIG_FS_LITTLEFS_FC_HEAP_SIZE - 0) > 0)
+#define FC_ON_HEAP 1
+#else
+#define FC_ON_HEAP 0
+#endif
 
 #if FC_ON_HEAP
 
