@@ -344,26 +344,12 @@ class EDT:
             # if necessary.
             binding = self._binding(raw, binding_path, dt_compats)
 
-            if binding is None:
-                # Either the file is not a binding or it's a binding
-                # whose compatible does not appear in the devicetree
-                # (picked up via some unrelated text in the binding
-                # file that happened to match a compatible).
-                continue
-
-            # Do not allow two different bindings to have the same
-            # 'compatible:'/'on-bus:' combo
-            old_binding = self._compat2binding.get((binding.compatible,
-                                                    binding.on_bus))
-            if old_binding:
-                msg = (f"both {old_binding.path} and {binding_path} have "
-                       f"'compatible: {binding.compatible}'")
-                if binding.on_bus is not None:
-                    msg += f" and 'on-bus: {binding.on_bus}'"
-                _err(msg)
-
-            # Register the binding.
-            self._compat2binding[binding.compatible, binding.on_bus] = binding
+            # Register the binding in self._compat2binding, along with
+            # any child bindings that have their own compatibles.
+            while binding is not None:
+                if binding.compatible:
+                    self._register_binding(binding)
+                binding = binding.child_binding
 
     def _binding(self, raw, binding_path, dt_compats):
         # Convert a 'raw' binding from YAML to a Binding object and return it.
@@ -386,6 +372,21 @@ class EDT:
 
         # Initialize and return the Binding object.
         return Binding(binding_path, self._binding_fname2path, raw=raw)
+
+    def _register_binding(self, binding):
+        # Do not allow two different bindings to have the same
+        # 'compatible:'/'on-bus:' combo
+        old_binding = self._compat2binding.get((binding.compatible,
+                                                binding.on_bus))
+        if old_binding:
+            msg = (f"both {old_binding.path} and {binding.path} have "
+                   f"'compatible: {binding.compatible}'")
+            if binding.on_bus is not None:
+                msg += f" and 'on-bus: {binding.on_bus}'"
+            _err(msg)
+
+        # Register the binding.
+        self._compat2binding[binding.compatible, binding.on_bus] = binding
 
     def _init_nodes(self):
         # Creates a list of edtlib.Node objects from the dtlib.Node objects, in
