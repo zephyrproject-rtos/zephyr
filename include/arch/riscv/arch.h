@@ -279,12 +279,6 @@ typedef struct {
 	uint8_t pmp_attr;
 } k_mem_partition_attr_t;
 
-/*
- * SOC-specific function to get the IRQ number generating the interrupt.
- * __soc_get_irq returns a bitfield of pending IRQs.
- */
-extern uint32_t __soc_get_irq(void);
-
 void arch_irq_enable(unsigned int irq);
 void arch_irq_disable(unsigned int irq);
 int arch_irq_is_enabled(unsigned int irq);
