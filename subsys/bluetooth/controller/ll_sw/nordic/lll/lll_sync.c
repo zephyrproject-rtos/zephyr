@@ -155,12 +155,6 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	radio_phy_set(lll->phy, 1);
 	radio_pkt_configure(8, PDU_AC_PAYLOAD_SIZE_MAX, (lll->phy << 1));
-
-	node_rx = ull_pdu_rx_alloc_peek(1);
-	LL_ASSERT(node_rx);
-
-	radio_pkt_rx_set(node_rx->pdu);
-
 	radio_aa_set(lll->access_addr);
 	radio_crc_configure(((0x5bUL) | ((0x06UL) << 8) | ((0x00UL) << 16)),
 			    (((uint32_t)lll->crc_init[2] << 16) |
@@ -168,6 +162,12 @@ static int prepare_cb(struct lll_prepare_param *p)
 			     ((uint32_t)lll->crc_init[0])));
 
 	lll_chan_set(data_chan_use);
+
+	node_rx = ull_pdu_rx_alloc_peek(1);
+	LL_ASSERT(node_rx);
+	radio_pkt_rx_set(node_rx->pdu);
+
+	radio_isr_set(isr_rx, lll);
 
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
 	struct lll_df_sync_cfg *cfg;
@@ -178,15 +178,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 		lll_df_conf_cte_rx_enable(cfg->slot_durations, cfg->ant_sw_len, cfg->ant_ids,
 					  data_chan_use);
 		cfg->cte_count = 0;
-	}
-#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 
-	radio_isr_set(isr_rx, lll);
-
-	radio_tmr_tifs_set(EVENT_IFS_US);
-
-#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
-	if (cfg->is_enabled) {
 		radio_switch_complete_and_phy_end_disable();
 	} else
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
@@ -361,15 +353,17 @@ isr_rx_done:
 	e->trx_cnt = trx_cnt;
 	e->crc_valid = crc_ok;
 
-	e->drift.preamble_to_addr_us = addr_us_get(lll->phy);
+	if (trx_cnt) {
+		e->drift.preamble_to_addr_us = addr_us_get(lll->phy);
+		e->drift.start_to_address_actual_us =
+			radio_tmr_aa_get() - radio_tmr_ready_get();
+		e->drift.window_widening_event_us =
+			lll->window_widening_event_us;
 
-	e->drift.start_to_address_actual_us = radio_tmr_aa_get() -
-					      radio_tmr_ready_get();
-	e->drift.window_widening_event_us = lll->window_widening_event_us;
-
-	/* Reset window widening, as anchor point sync-ed */
-	lll->window_widening_event_us = 0U;
-	lll->window_size_event_us = 0U;
+		/* Reset window widening, as anchor point sync-ed */
+		lll->window_widening_event_us = 0U;
+		lll->window_size_event_us = 0U;
+	}
 
 	lll_isr_cleanup(param);
 }

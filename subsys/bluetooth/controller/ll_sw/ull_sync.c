@@ -52,8 +52,8 @@ static inline struct ll_sync_set *sync_acquire(void);
 static void timeout_cleanup(struct ll_sync_set *sync);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 		      uint16_t lazy, uint8_t force, void *param);
-static void ticker_op_cb(uint32_t status, void *param);
-static void ticker_update_sync_op_cb(uint32_t status, void *param);
+static void ticker_start_op_cb(uint32_t status, void *param);
+static void ticker_update_op_cb(uint32_t status, void *param);
 static void ticker_stop_op_cb(uint32_t status, void *param);
 static void sync_lost(void *param);
 
@@ -495,7 +495,8 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 			   HAL_TICKER_REMAINDER(interval_us),
 			   TICKER_NULL_LAZY,
 			   (sync->ull.ticks_slot + ticks_slot_overhead),
-			   ticker_cb, sync, ticker_op_cb, (void *)__LINE__);
+			   ticker_cb, sync,
+			   ticker_start_op_cb, (void *)__LINE__);
 	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
 		  (ret == TICKER_STATUS_BUSY));
 }
@@ -589,7 +590,7 @@ void ull_sync_done(struct node_rx_event_done *done)
 					      ticks_drift_plus,
 					      ticks_drift_minus, 0, 0,
 					      lazy, force,
-					      ticker_update_sync_op_cb, sync);
+					      ticker_update_op_cb, sync);
 		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 			  (ticker_status == TICKER_STATUS_BUSY) ||
 			  ((void *)sync == ull_disable_mark_get()));
@@ -716,14 +717,14 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 	DEBUG_RADIO_PREPARE_O(1);
 }
 
-static void ticker_op_cb(uint32_t status, void *param)
+static void ticker_start_op_cb(uint32_t status, void *param)
 {
 	ARG_UNUSED(param);
 
 	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
 }
 
-static void ticker_update_sync_op_cb(uint32_t status, void *param)
+static void ticker_update_op_cb(uint32_t status, void *param)
 {
 	LL_ASSERT(status == TICKER_STATUS_SUCCESS ||
 		  param == ull_disable_mark_get());

@@ -39,3 +39,10 @@ struct lll_sync_iso {
 	uint32_t window_widening_event_us;
 	uint32_t window_size_event_us;
 };
+
+int lll_sync_iso_init(void);
+int lll_sync_iso_reset(void);
+void lll_sync_iso_create_prepare(void *param);
+void lll_sync_iso_prepare(void *param);
+
+extern uint8_t ull_sync_iso_lll_handle_get(struct lll_sync_iso *lll);
