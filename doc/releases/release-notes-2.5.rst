@@ -857,6 +857,10 @@ Libraries / Subsystems
    API implementation already provided by MCUboot codebase and remove
    zephyr's own implementations.
 
+* Crypto
+
+  * mbedTLS updated to 2.16.9
+
 HALs
 ****
 
