@@ -411,7 +411,7 @@ static uint8_t get_pair_method(struct bt_smp *smp, uint8_t remote_io)
 #endif
 }
 
-static enum bt_security_err auth_err_get(uint8_t smp_err)
+static enum bt_security_err security_err_get(uint8_t smp_err)
 {
 	switch (smp_err) {
 	case BT_SMP_ERR_PASSKEY_ENTRY_FAILED:
@@ -1003,7 +1003,7 @@ static void smp_pairing_br_complete(struct bt_smp_br *smp, uint8_t status)
 
 		if (bt_auth && bt_auth->pairing_failed) {
 			bt_auth->pairing_failed(smp->chan.chan.conn,
-						auth_err_get(status));
+						security_err_get(status));
 		}
 	} else {
 		bool bond_flag = atomic_test_bit(smp->flags, SMP_FLAG_BOND);
@@ -1838,7 +1838,7 @@ static void smp_pairing_complete(struct bt_smp *smp, uint8_t status)
 			bt_auth->pairing_complete(conn, bond_flag);
 		}
 	} else {
-		uint8_t auth_err = auth_err_get(status);
+		enum bt_security_err security_err = security_err_get(status);
 
 		/* Clear the key pool entry in case of pairing failure if the
 		 * keys already existed before the pairing procedure or the
@@ -1852,11 +1852,11 @@ static void smp_pairing_complete(struct bt_smp *smp, uint8_t status)
 		}
 
 		if (!atomic_test_bit(smp->flags, SMP_FLAG_KEYS_DISTR)) {
-			bt_conn_security_changed(conn, status, auth_err);
+			bt_conn_security_changed(conn, status, security_err);
 		}
 
 		if (bt_auth && bt_auth->pairing_failed) {
-			bt_auth->pairing_failed(conn, auth_err);
+			bt_auth->pairing_failed(conn, security_err);
 		}
 	}
 
