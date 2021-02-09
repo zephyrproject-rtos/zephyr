@@ -1807,6 +1807,26 @@ static void smp_reset(struct bt_smp *smp)
 	}
 }
 
+static uint8_t hci_err_get(enum bt_security_err err)
+{
+	switch (err) {
+	case BT_SECURITY_ERR_SUCCESS:
+		return BT_HCI_ERR_SUCCESS;
+	case BT_SECURITY_ERR_AUTH_FAIL:
+		return BT_HCI_ERR_AUTH_FAIL;
+	case BT_SECURITY_ERR_PIN_OR_KEY_MISSING:
+		return BT_HCI_ERR_PIN_OR_KEY_MISSING;
+	case BT_SECURITY_ERR_PAIR_NOT_SUPPORTED:
+		return BT_HCI_ERR_PAIRING_NOT_SUPPORTED;
+	case BT_SECURITY_ERR_PAIR_NOT_ALLOWED:
+		return BT_HCI_ERR_PAIRING_NOT_ALLOWED;
+	case BT_SECURITY_ERR_INVALID_PARAM:
+		return BT_HCI_ERR_INVALID_PARAM;
+	default:
+		return BT_HCI_ERR_UNSPECIFIED;
+	}
+}
+
 /* Note: This function not only does set the status but also calls smp_reset
  * at the end which clears any flags previously set.
  */
@@ -1852,7 +1872,9 @@ static void smp_pairing_complete(struct bt_smp *smp, uint8_t status)
 		}
 
 		if (!atomic_test_bit(smp->flags, SMP_FLAG_KEYS_DISTR)) {
-			bt_conn_security_changed(conn, status, security_err);
+			bt_conn_security_changed(conn,
+						 hci_err_get(security_err),
+						 security_err);
 		}
 
 		if (bt_auth && bt_auth->pairing_failed) {
