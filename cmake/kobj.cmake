@@ -14,7 +14,7 @@ function(gen_kobj gen_dir_out)
   file(MAKE_DIRECTORY ${gen_dir})
 
   add_custom_command(
-    OUTPUT ${KOBJ_TYPES} ${KOBJ_OTYPE}
+    OUTPUT ${KOBJ_TYPES} ${KOBJ_OTYPE} ${KOBJ_SIZE}
     COMMAND
     ${PYTHON_EXECUTABLE}
     ${ZEPHYR_BASE}/scripts/gen_kobject_list.py

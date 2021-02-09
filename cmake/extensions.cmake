@@ -2136,3 +2136,27 @@ function(zephyr_get_targets directory types targets)
     endforeach()
     set(${targets} ${${targets}} PARENT_SCOPE)
 endfunction()
+
+# Usage:
+#   target_byproducts(TARGET <target> BYPRODUCTS <file> [<file>...])
+#
+# Specify additional BYPRODUCTS that this target produces.
+#
+# This function allows the build system to specify additional byproducts to
+# target created with `add_executable()`. When linking an executable the linker
+# may produce additional files, like map files. Those files are not known to the
+# build system. This function makes it possible to describe such additional
+# byproducts in an easy manner.
+function(target_byproducts)
+  cmake_parse_arguments(TB "" "TARGET" "BYPRODUCTS" ${ARGN})
+
+  if(NOT DEFINED TB_TARGET)
+    message(FATAL_ERROR "target_byproducts() missing parameter: TARGET <target>")
+  endif()
+
+  add_custom_command(TARGET ${TB_TARGET}
+                     POST_BUILD COMMAND ${CMAKE_COMMAND} -E echo ""
+                     BYPRODUCTS ${TB_BYPRODUCTS}
+                     COMMENT "Logical command for additional byproducts on target: ${TB_TARGET}"
+  )
+endfunction()
