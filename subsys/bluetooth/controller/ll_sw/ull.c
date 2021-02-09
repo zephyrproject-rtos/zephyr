@@ -2684,6 +2684,15 @@ static inline void rx_demux_event_done(memq_link_t *link,
 	case EVENT_DONE_EXTRA_TYPE_SYNC:
 		ull_sync_done(done);
 		break;
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO)
+	case EVENT_DONE_EXTRA_TYPE_SYNC_ISO_ESTAB:
+		ull_sync_iso_estab_done(done);
+		break;
+	case EVENT_DONE_EXTRA_TYPE_SYNC_ISO:
+		ull_sync_iso_done(done);
+		break;
+#endif /* CONFIG_BT_CTLR_SYNC_ISO */
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 #endif /* CONFIG_BT_OBSERVER */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
