@@ -27,6 +27,10 @@ set(QEMU_FLAGS_${ARCH}
   -nographic
   )
 
+if(NOT CONFIG_ACPI)
+  list(APPEND QEMU_FLAGS_${ARCH} -no-acpi)
+endif()
+
 # TODO: Support debug
 # board_set_debugger_ifnset(qemu)
 # debugserver: QEMU_EXTRA_FLAGS += -s -S
