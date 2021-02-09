@@ -635,6 +635,15 @@ descriptor.
 - `PR25804 fix for v2.4
   <https://github.com/zephyrproject-rtos/zephyr/pull/25804>`_
 
+CVE-2020-10136
+-------------------
+
+IP-in-IP protocol routes arbitrary traffic by default zephyrproject
+
+- `CVE-2020-10136 <https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10136>`_
+
+- `Zephyr project bug tracker ZEPSEC-64
+  <https://zephyrprojectsec.atlassian.net/browse/ZEPSEC-64>`_
 
 CVE-2020-13598
 --------------
@@ -670,10 +679,32 @@ app keys from the device.
 - `PR26083 fix for v2.4
   <https://github.com/zephyrproject-rtos/zephyr/pull/26083>`_
 
+CVE-2020-13600
+-------------------
+
+Malformed SPI in response for eswifi can corrupt kernel memory
+
+
+- `CVE-2020-13600 <https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-13600>`_
+
+- `Zephyr project bug tracker ZEPSEC-91
+  <https://zephyrprojectsec.atlassian.net/browse/ZEPSEC-91>`_
+
+- `PR26712 fix for v2.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/26712>`_
+
 CVE-2020-13601
 --------------
 
-Under embargo until 2020/11/18
+Possible read out of bounds in dns read
+
+- `CVE-2020-13601 <https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-13601>`_
+
+- `Zephyr project bug tracker ZEPSEC-92
+  <https://zephyrprojectsec.atlassian.net/browse/ZEPSEC-92>`_
+
+- `PR27774 fix for v2.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/27774>`_
 
 CVE-2020-13602
 --------------
@@ -690,3 +721,22 @@ infinite loop, resulting in a denial of service attack.
 
 - `PR26571 fix for v2.4
   <https://github.com/zephyrproject-rtos/zephyr/pull/26571>`_
+
+
+CVE-2021
+========
+
+CVE-2021-3320
+-------------------
+
+Under embargo until 2021-04-14
+
+CVE-2021-3321
+-------------------
+
+Under embargo until 2021-04-14
+
+CVE-2021-3323
+-------------------
+
+Under embargo until 2021-04-14
