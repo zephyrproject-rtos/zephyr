@@ -102,6 +102,8 @@
   - "**/*bluetooth*"
 "area: Bluetooth Mesh":
   - "subsys/bluetooth/mesh/**/*"
+"area: Bluetooth Audio":
+  - "subsys/bluetooth/audio/**/*"
 "area: Bluetooth Controller":
   - "subsys/bluetooth/controller/**/*"
 "area: Bluetooth Host":
