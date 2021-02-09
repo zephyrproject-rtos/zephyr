@@ -44,9 +44,11 @@
 #if defined(CONFIG_KERNEL_COHERENCE)
 #define __incoherent __in_section_unique(cached)
 #define __stackmem __incoherent
+#define __kstackmem __stackmem
 #else
-#define __incoherent Z_GENERIC_SECTION(.user_stacks)
-#define __stackmem __incoherent
+#define __incoherent
+#define __stackmem Z_GENERIC_SECTION(.user_stacks)
+#define __kstackmem __noinit
 #endif /* CONFIG_KERNEL_COHERENCE */
 
 #endif /* !_ASMLANGUAGE */
