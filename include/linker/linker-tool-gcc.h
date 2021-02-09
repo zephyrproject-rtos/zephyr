@@ -131,8 +131,6 @@
 #define SECTION_DATA_PROLOGUE(name, options, align) name options : align
 #endif
 
-#define SORT_BY_NAME(x) SORT(x)
-
 #define COMMON_SYMBOLS *(COMMON)
 
 #endif /* ZEPHYR_INCLUDE_LINKER_LINKER_TOOL_GCC_H_ */
