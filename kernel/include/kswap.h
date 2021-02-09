@@ -68,7 +68,7 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 
 	z_check_stack_sentinel();
 
-	if (is_spinlock) {
+	if (is_spinlock && lock != NULL) {
 		k_spin_release(lock);
 	}
 
@@ -136,10 +136,7 @@ static inline int z_swap(struct k_spinlock *lock, k_spinlock_key_t key)
 
 static inline void z_swap_unlocked(void)
 {
-	struct k_spinlock lock = {};
-	k_spinlock_key_t key = k_spin_lock(&lock);
-
-	(void) z_swap(&lock, key);
+	(void) do_swap(arch_irq_lock(), NULL, 1);
 }
 
 #else /* !CONFIG_USE_SWITCH */
