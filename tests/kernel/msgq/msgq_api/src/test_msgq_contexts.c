@@ -159,7 +159,7 @@ static void msgq_isr(struct k_msgq *pmsgq)
 
 static void thread_entry_get_data(void *p1, void *p2, void *p3)
 {
-	uint32_t rx_buf[MSGQ_LEN];
+	static uint32_t rx_buf[MSGQ_LEN];
 	int i = 0;
 
 	while (k_msgq_get(p1, &rx_buf[i], K_NO_WAIT) != 0) {
@@ -201,7 +201,7 @@ static void msgq_thread_data_passing(struct k_msgq *pmsgq)
 static void get_empty_entry(void *p1, void *p2, void *p3)
 {
 	int ret;
-	uint32_t rx_buf[MSGQ_LEN];
+	static uint32_t rx_buf[MSGQ_LEN];
 
 	/* make sure there is no message in the queue */
 	ret = k_msgq_peek(p1, rx_buf);
@@ -324,7 +324,7 @@ void test_msgq_user_thread_overflow(void)
  */
 void test_msgq_isr(void)
 {
-	struct k_msgq stack_msgq;
+	static struct k_msgq stack_msgq;
 
 	/**TESTPOINT: init via k_msgq_init*/
 	k_msgq_init(&stack_msgq, tbuffer, MSG_SIZE, MSGQ_LEN);
