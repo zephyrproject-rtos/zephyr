@@ -45,10 +45,14 @@
 
 static int init_reset(void);
 static inline struct ll_sync_iso_set *sync_iso_acquire(void);
+static void timeout_cleanup(struct ll_sync_iso_set *sync_iso);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		      uint32_t remainder, uint16_t lazy, uint8_t force,
 		      void *param);
-static void ticker_op_cb(uint32_t status, void *param);
+static void ticker_start_op_cb(uint32_t status, void *param);
+static void ticker_update_op_cb(uint32_t status, void *param);
+static void ticker_stop_op_cb(uint32_t status, void *param);
+static void sync_lost(void *param);
 
 static memq_link_t link_lll_prepare;
 static struct mayfly mfy_lll_prepare = {0, 0, &link_lll_prepare, NULL, NULL};
@@ -261,8 +265,8 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	uint32_t interval_us;
 	struct pdu_adv *pdu;
 	uint16_t interval;
-	uint16_t handle;
 	uint8_t bi_size;
+	uint8_t handle;
 	uint32_t ret;
 	uint8_t sca;
 
@@ -371,9 +375,132 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 			   HAL_TICKER_REMAINDER(interval_us),
 			   TICKER_NULL_LAZY,
 			   (sync_iso->ull.ticks_slot + ticks_slot_overhead),
-			   ticker_cb, sync_iso, ticker_op_cb, (void *)__LINE__);
+			   ticker_cb, sync_iso,
+			   ticker_start_op_cb, (void *)__LINE__);
 	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
 		  (ret == TICKER_STATUS_BUSY));
+}
+
+void ull_sync_iso_estab_done(struct node_rx_event_done *done)
+{
+	struct ll_sync_iso_set *sync_iso;
+	struct lll_sync_iso *lll;
+	struct node_rx_hdr *rx;
+
+	/* switch to normal prepare */
+	mfy_lll_prepare.fp = lll_sync_iso_prepare;
+
+	/* Get reference to ULL context */
+	sync_iso = CONTAINER_OF(done->param, struct ll_sync_iso_set, ull);
+	lll = &sync_iso->lll;
+
+	/* Prepare BIG Sync Established */
+	rx = sync_iso->sync->iso.node_rx_estab;
+	rx->type = NODE_RX_TYPE_SYNC_ISO;
+	rx->handle = ull_sync_iso_handle_get(sync_iso);
+	rx->rx_ftr.param = sync_iso;
+
+	ll_rx_put(rx->link, rx);
+	ll_rx_sched();
+
+	ull_sync_iso_done(done);
+}
+
+void ull_sync_iso_done(struct node_rx_event_done *done)
+{
+	struct ll_sync_iso_set *sync_iso;
+	uint32_t ticks_drift_minus;
+	uint32_t ticks_drift_plus;
+	struct lll_sync_iso *lll;
+	uint16_t elapsed_event;
+	uint16_t latency_event;
+	uint16_t lazy;
+	uint8_t force;
+
+	/* Get reference to ULL context */
+	sync_iso = CONTAINER_OF(done->param, struct ll_sync_iso_set, ull);
+	lll = &sync_iso->lll;
+
+	/* Events elapsed used in timeout checks below */
+	latency_event = lll->latency_event;
+	elapsed_event = latency_event + 1;
+
+	/* Sync drift compensation and new skip calculation
+	 */
+	ticks_drift_plus = 0U;
+	ticks_drift_minus = 0U;
+	if (done->extra.trx_cnt) {
+		/* Calculate drift in ticks unit */
+		ull_drift_ticks_get(done, &ticks_drift_plus,
+				    &ticks_drift_minus);
+
+		/* Reset latency */
+		lll->latency_event = 0U;
+	}
+
+	/* Reset supervision countdown */
+	if (done->extra.crc_valid) {
+		sync_iso->timeout_expire = 0U;
+	}
+
+	/* if anchor point not sync-ed, start timeout countdown, and break
+	 * latency if any.
+	 */
+	else {
+		if (!sync_iso->timeout_expire) {
+			sync_iso->timeout_expire = sync_iso->timeout_reload;
+		}
+	}
+
+	/* check timeout */
+	force = 0U;
+	if (sync_iso->timeout_expire) {
+		if (sync_iso->timeout_expire > elapsed_event) {
+			sync_iso->timeout_expire -= elapsed_event;
+
+			/* break skip */
+			lll->latency_event = 0U;
+
+			if (latency_event) {
+				force = 1U;
+			}
+		} else {
+			timeout_cleanup(sync_iso);
+
+			return;
+		}
+	}
+
+	/* check if skip needs update */
+	lazy = 0U;
+	if ((force) || (latency_event != lll->latency_event)) {
+		lazy = lll->latency_event + 1U;
+	}
+
+	/* Update Sync ticker instance */
+	if (ticks_drift_plus || ticks_drift_minus || lazy || force) {
+		uint8_t handle = ull_sync_iso_handle_get(sync_iso);
+		uint32_t ticker_status;
+
+		/* Call to ticker_update can fail under the race
+		 * condition where in the periodic sync role is being stopped
+		 * but at the same time it is preempted by periodic sync event
+		 * that gets into close state. Accept failure when periodic sync
+		 * role is being stopped.
+		 */
+		ticker_status = ticker_update(TICKER_INSTANCE_ID_CTLR,
+					      TICKER_USER_ID_ULL_HIGH,
+					      (TICKER_ID_SCAN_SYNC_ISO_BASE +
+					       handle),
+					      ticks_drift_plus,
+					      ticks_drift_minus, 0, 0,
+					      lazy, force,
+					      ticker_update_op_cb,
+					      sync_iso);
+		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
+			  (ticker_status == TICKER_STATUS_BUSY) ||
+			  ((void *)sync_iso == ull_disable_mark_get()));
+	}
 }
 
 static int init_reset(void)
@@ -389,6 +516,19 @@ static int init_reset(void)
 static inline struct ll_sync_iso_set *sync_iso_acquire(void)
 {
 	return mem_acquire(&sync_iso_free);
+}
+
+static void timeout_cleanup(struct ll_sync_iso_set *sync_iso)
+{
+	uint16_t handle = ull_sync_iso_handle_get(sync_iso);
+	uint32_t ret;
+
+	/* Stop Periodic Sync Ticker */
+	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
+			  (TICKER_ID_SCAN_SYNC_ISO_BASE + handle),
+			  ticker_stop_op_cb, (void *)sync_iso);
+	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
+		  (ret == TICKER_STATUS_BUSY));
 }
 
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
@@ -425,9 +565,46 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	DEBUG_RADIO_PREPARE_O(1);
 }
 
-static void ticker_op_cb(uint32_t status, void *param)
+static void ticker_start_op_cb(uint32_t status, void *param)
 {
 	ARG_UNUSED(param);
 
 	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
+}
+
+static void ticker_update_op_cb(uint32_t status, void *param)
+{
+	LL_ASSERT(status == TICKER_STATUS_SUCCESS ||
+		  param == ull_disable_mark_get());
+}
+
+static void ticker_stop_op_cb(uint32_t status, void *param)
+{
+	uint32_t retval;
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, sync_lost};
+
+	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
+
+	mfy.param = param;
+
+	retval = mayfly_enqueue(TICKER_USER_ID_ULL_LOW, TICKER_USER_ID_ULL_HIGH,
+				0, &mfy);
+	LL_ASSERT(!retval);
+}
+
+static void sync_lost(void *param)
+{
+	struct ll_sync_iso_set *sync_iso = param;
+	struct node_rx_pdu *rx;
+
+	/* Generate BIG sync lost */
+	rx = (void *)&sync_iso->node_rx_lost;
+	rx->hdr.handle = ull_sync_iso_handle_get(sync_iso);
+	rx->hdr.type = NODE_RX_TYPE_SYNC_ISO_LOST;
+	rx->hdr.rx_ftr.param = sync_iso;
+
+	/* Enqueue the BIG sync lost towards ULL context */
+	ll_rx_put(rx->hdr.link, rx);
+	ll_rx_sched();
 }
