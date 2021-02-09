@@ -1737,6 +1737,7 @@ void arch_reserved_pages_update(void)
 	mark_addr_page_reserved(0, MB(1));
 #endif /* CONFIG_X86_PC_COMPATIBLE */
 
+#ifdef CONFIG_X86_MEMMAP
 	for (int i = 0; i < CONFIG_X86_MEMMAP_ENTRIES; i++) {
 		struct x86_memmap_entry *entry = &x86_memmap[i];
 
@@ -1758,6 +1759,7 @@ void arch_reserved_pages_update(void)
 
 		mark_addr_page_reserved(entry->base, entry->length);
 	}
+#endif /* CONFIG_X86_MEMMAP */
 }
 #endif /* CONFIG_ARCH_HAS_RESERVED_PAGE_FRAMES */
 
