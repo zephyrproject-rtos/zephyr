@@ -134,7 +134,7 @@ static inline char *z_stack_ptr_align(char *ptr)
  * @param size Size of the stack memory region
  */
 #define K_KERNEL_STACK_DEFINE(sym, size) \
-	struct z_thread_stack_element __noinit \
+	struct z_thread_stack_element __kstackmem \
 		__aligned(Z_KERNEL_STACK_OBJ_ALIGN) \
 		sym[Z_KERNEL_STACK_SIZE_ADJUST(size)]
 
@@ -152,7 +152,7 @@ static inline char *z_stack_ptr_align(char *ptr)
  * @param size Size of the stack memory region
  */
 #define K_KERNEL_STACK_ARRAY_DEFINE(sym, nmemb, size) \
-	struct z_thread_stack_element __noinit \
+	struct z_thread_stack_element __kstackmem \
 		__aligned(Z_KERNEL_STACK_OBJ_ALIGN) \
 		sym[nmemb][Z_KERNEL_STACK_LEN(size)]
 
