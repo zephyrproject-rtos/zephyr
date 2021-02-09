@@ -27,7 +27,7 @@ static enum mmsg_type {
 
 static void msg_sender(struct k_mbox *pmbox, k_timeout_t timeout)
 {
-	struct k_mbox_msg mmsg;
+	static struct k_mbox_msg mmsg;
 
 	(void)memset(&mmsg, 0, sizeof(mmsg));
 
@@ -53,8 +53,8 @@ static void msg_sender(struct k_mbox *pmbox, k_timeout_t timeout)
 static void msg_receiver(struct k_mbox *pmbox, k_tid_t thd_id,
 			 k_timeout_t timeout)
 {
-	struct k_mbox_msg mmsg;
-	char rxdata[MAIL_LEN];
+	static struct k_mbox_msg mmsg;
+	static char rxdata[MAIL_LEN];
 
 	switch (info_type) {
 	case PUT_GET_NULL:

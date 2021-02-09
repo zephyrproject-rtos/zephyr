@@ -385,7 +385,7 @@ void test_queue_poll_race(void)
 void test_multiple_queues(void)
 {
 	/*define multiple queues*/
-	struct k_queue queues[QUEUE_NUM];
+	static struct k_queue queues[QUEUE_NUM];
 
 	for (int i = 0; i < QUEUE_NUM; i++) {
 		k_queue_init(&queues[i]);

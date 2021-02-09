@@ -76,7 +76,7 @@ void test_timeout_order(void)
 		k_timer_start(&timer[ii], K_MSEC(100), K_NO_WAIT);
 	}
 
-	struct k_poll_event poll_events[NUM_TIMEOUTS];
+	static struct k_poll_event poll_events[NUM_TIMEOUTS];
 
 	for (ii = 0; ii < NUM_TIMEOUTS; ii++) {
 		k_poll_event_init(&poll_events[ii], K_POLL_TYPE_SEM_AVAILABLE,
