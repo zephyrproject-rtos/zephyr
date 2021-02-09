@@ -294,6 +294,7 @@ SECTIONS
 
     /* Define linker symbols */
 
+    MMU_ALIGN;
     _image_ram_end = .;
     _end = .; /* end of image */
     z_mapped_end = .;
