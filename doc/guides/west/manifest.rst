@@ -1015,10 +1015,16 @@ Here, ``west update`` will initialize and update all submodules in ``foo``. If
 Option 2: List of mappings
 ==========================
 
-The ``submodules`` key may be a list of mappings. Each element in the list
-defines the name of the submodule to update, and the path -- relative to the
-project's absolute path in the workspace -- to use for the submodule.
-The submodule will be updated recursively.
+The ``submodules`` key may be a list of mappings, one list element for
+each desired submodule. Each submodule listed is updated recursively.
+You can still track and update unlisted submodules with ``git`` commands
+manually; present or not they will be completely ignored by ``west``.
+
+The ``path`` key must match exactly the path of one submodule relative
+to its parent west project, as shown in the output of ``git submodule
+status``. The ``name`` key is optional and not used by west for now;
+it's not passed to ``git submodule`` commands either. The ``name`` key
+was briefly mandatory in west version 0.9.0, but was made optional in 0.9.1.
 
 For example, let's say you have a source code repository ``foo``, which has
 many submodules, and you want ``west update`` to keep some but not all of them
@@ -1032,8 +1038,7 @@ You can do that with this manifest file:
      projects:
        - name: foo
          submodules:
-           - name: foo-first-sub
-             path: path/to/foo-first-sub
+           - path: path/to/foo-first-sub
            - name: foo-second-sub
              path: path/to/foo-second-sub
        - name: bar
