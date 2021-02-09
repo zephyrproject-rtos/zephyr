@@ -19,6 +19,10 @@ Security Vulnerability Related
 
 The following CVEs are addressed by this release:
 
+* CVE-2021-3323: Under embargo until 2021-04-14
+* CVE-2021-3321: Under embargo until 2021-04-14
+* CVE-2021-3320: Under embargo until 2021-04-14
+
 More detailed information can be found in:
 https://docs.zephyrproject.org/latest/security/vulnerabilities.html
 
