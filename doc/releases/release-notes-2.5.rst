@@ -11,6 +11,13 @@ Major enhancements with this release include:
 
 * Introduced support for the SPARC processor architecture and the LEON
   processor implementation.
+* Added Thread Local Storage (TLS) support
+* Added support for per thread runtime statistics
+* Added support for building with LLVM on X86
+* Added new synchronization mechanisms using Condition Variables
+* Add support for demand paging, initial support on X86.
+* Added support for the SPARC architecture, compatible with the SPARC V8
+  specification and the SPARC ABI.
 
 The following sections provide detailed lists of changes by component.
 
@@ -149,6 +156,8 @@ Stable API changes in this release
 Kernel
 ******
 
+* Added support for per thread runtime statistics
+* Added new synchronization mechanisms using Condition Variables
 * Thread Local Storage (TLS)
 
   * Introduced thread local storage support for the following architectures:
@@ -244,9 +253,11 @@ Architectures
     * Added ability to generate image header
     * Improved MMU code and driver
 
-* POSIX
-
 * RISC-V
+
+  * Added support for PMP (Physical Memory Protection).
+    Integrate PMP in Zephyr allow to support userspace (with shared
+    memory) and stack guard features.
 
 * SPARC
 
@@ -256,6 +267,7 @@ Architectures
 
 * x86
 
+  * Enabled soft float support for Zephyr SDK
   * ``CONFIG_X86_MMU_PAGE_POOL_PAGES`` is removed as paging structure
     must now be pre-allocated.
   * Mapping of physical memory has changed:
@@ -363,10 +375,6 @@ Drivers and Sensors
 *******************
 
 * ADC
-
-* Audio
-
-* Bluetooth
 
 * CAN
 
@@ -958,6 +966,7 @@ Tests and Samples
 *****************
 
   * A sample was added to demonstrate how to use the ADC driver API.
+  * Sanitycheck script was renamed to twister
 
 Issue Related Items
 *******************
