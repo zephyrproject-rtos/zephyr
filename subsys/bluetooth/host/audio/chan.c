@@ -26,7 +26,7 @@
 static struct bt_audio_chan *chan_listen;
 
 static void chan_attach(struct bt_conn *conn, struct bt_audio_chan *chan,
-			struct bt_audio_ep *ep, struct bt_audio_cap *cap,
+			struct bt_audio_ep *ep, struct bt_audio_capability *cap,
 			struct bt_codec *codec)
 {
 	BT_DBG("conn %p chan %p ep %p cap %p codec %p", conn, chan, ep, cap,
@@ -41,7 +41,7 @@ static void chan_attach(struct bt_conn *conn, struct bt_audio_chan *chan,
 
 struct bt_audio_chan *bt_audio_chan_config(struct bt_conn *conn,
 					   struct bt_audio_ep *ep,
-					   struct bt_audio_cap *cap,
+					   struct bt_audio_capability *cap,
 					   struct bt_codec *codec)
 {
 	struct bt_audio_chan *chan;
@@ -95,7 +95,7 @@ struct bt_audio_chan *bt_audio_chan_config(struct bt_conn *conn,
 }
 
 int bt_audio_chan_reconfig(struct bt_audio_chan *chan,
-			   struct bt_audio_cap *cap,
+			   struct bt_audio_capability *cap,
 			   struct bt_codec *codec)
 {
 	int err;

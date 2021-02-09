@@ -21,6 +21,7 @@
 
 #include "chan.h"
 #include "endpoint.h"
+#include "capabilities.h"
 #include "pacs_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_BAP)
@@ -28,8 +29,8 @@
 #include "common/log.h"
 
 static struct bap_pac {
-	struct bt_audio_cap	cap;
-	struct bt_codec		codec;
+	struct bt_audio_capability cap;
+	struct bt_codec            codec;
 } cache[CONFIG_BT_MAX_CONN][CONFIG_BT_BAP_PAC_COUNT];
 
 static struct bt_uuid *snk_uuid = BT_UUID_PACS_SNK;
@@ -40,14 +41,13 @@ static struct bt_uuid *cp_uuid = BT_UUID_ASCS_ASE_CP;
 
 static struct bt_audio_chan *bap_config(struct bt_conn *conn,
 					struct bt_audio_ep *ep,
-					struct bt_audio_cap *cap,
+					struct bt_audio_capability *cap,
 					struct bt_codec *codec)
 {
 	sys_slist_t *lst;
-	struct bt_audio_cap *lcap;
+	struct bt_audio_capability *lcap;
 	struct bt_audio_chan *chan;
 	uint8_t type = 0x00;
-	int err;
 
 	BT_DBG("conn %p cap %p codec %p", conn, cap, codec);
 
@@ -61,8 +61,8 @@ static struct bt_audio_chan *bap_config(struct bt_conn *conn,
 	}
 
 	/* Check if there are capabilities for the given direction */
-	err = bt_audio_cap_get(type, &lst, NULL);
-	if (err) {
+	lst = bt_audio_capability_get(type);
+	if (!lst) {
 		BT_ERR("Unable to find matching capability type: 0x%02x", type);
 		return NULL;
 	}
@@ -86,8 +86,8 @@ static struct bt_audio_chan *bap_config(struct bt_conn *conn,
 	return NULL;
 }
 
-static int bap_reconfig(struct bt_audio_chan *chan, struct bt_audio_cap *cap,
-			struct bt_codec *codec)
+static int bap_reconfig(struct bt_audio_chan *chan,
+			struct bt_audio_capability *cap, struct bt_codec *codec)
 {
 	struct bt_audio_ep *ep = chan->ep;
 	struct net_buf_simple *buf;
@@ -447,7 +447,7 @@ static int bap_release(struct bt_audio_chan *chan)
 	return bt_audio_ep_send(chan->conn, ep, buf);
 }
 
-static struct bt_audio_cap_ops cap_ops = {
+static struct bt_audio_capability_ops cap_ops = {
 	.config		= bap_config,
 	.reconfig	= bap_reconfig,
 	.qos		= bap_qos,

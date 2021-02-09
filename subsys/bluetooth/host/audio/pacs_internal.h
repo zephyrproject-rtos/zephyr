@@ -45,5 +45,5 @@ struct bt_pacs_context {
 	uint16_t  src;
 } __packed;
 
-int bt_audio_cap_get(uint8_t type, sys_slist_t **lst,
-		     struct k_work_delayable **work);
+void bt_pacs_add_capability(uint8_t type);
+void bt_pacs_remove_capability(uint8_t type);

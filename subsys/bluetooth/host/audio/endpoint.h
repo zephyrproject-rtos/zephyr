@@ -26,7 +26,7 @@ struct bt_audio_ep {
 	struct bt_ascs_ase_status status;
 	struct bt_gatt_subscribe_params subscribe;
 	struct bt_gatt_discover_params discover;
-	struct bt_audio_cap *cap;
+	struct bt_audio_capability *cap;
 	struct bt_audio_chan *chan;
 	struct bt_codec codec;
 	struct bt_codec_qos qos;
@@ -97,7 +97,7 @@ int bt_audio_ep_set_metadata(struct bt_audio_ep *ep, struct net_buf_simple *buf,
 			     uint8_t len, struct bt_codec *codec);
 
 int bt_audio_ep_config(struct bt_audio_ep *ep, struct net_buf_simple *buf,
-		       struct bt_audio_cap *cap, struct bt_codec *codec);
+		       struct bt_audio_capability *cap, struct bt_codec *codec);
 
 int bt_audio_ep_qos(struct bt_audio_ep *ep, struct net_buf_simple *buf,
 		    uint8_t cig, uint8_t cis, struct bt_codec_qos *qos);

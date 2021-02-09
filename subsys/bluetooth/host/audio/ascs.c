@@ -27,6 +27,7 @@
 
 #include "chan.h"
 #include "endpoint.h"
+#include "capabilities.h"
 #include "pacs_internal.h"
 
 #define ASE_ID(_ase) ase->ep.status.id
@@ -562,7 +563,7 @@ static int ase_config(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
 		      struct net_buf_simple *buf)
 {
 	sys_slist_t *lst;
-	struct bt_audio_cap *cap;
+	struct bt_audio_capability *cap;
 	struct bt_audio_chan *chan;
 	int err;
 
@@ -603,7 +604,8 @@ static int ase_config(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
 	}
 
 	/* Check if there are capabilities for the given direction */
-	if (bt_audio_cap_get(cfg->dir, &lst, NULL) < 0) {
+	lst = bt_audio_capability_get(cfg->dir);
+	if (!lst) {
 		goto not_found;
 	}
 
