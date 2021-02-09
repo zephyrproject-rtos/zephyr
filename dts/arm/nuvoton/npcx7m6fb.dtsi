@@ -93,6 +93,16 @@
 			   &alta_no_kso17_sl>;
 	};
 
+	def_lvol_io_list {
+		compatible = "nuvoton,npcx-lvolctrl-def";
+		/* Put low-voltage io pads into "lvol_io_pads" property if the
+		 * detection level of them is 1.8V, For example, if the bus
+		 * voltage of i2c1_0 port is 1.8V, this property should be:
+		 * lvol_io_pads = <&lvol_io90 &lvol_io87>;
+		 */
+		lvol_io_pads = <>;
+	};
+
 	soc {
 		compatible = "syscon";
 
