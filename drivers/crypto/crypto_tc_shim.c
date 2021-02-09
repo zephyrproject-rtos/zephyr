@@ -25,6 +25,45 @@ LOG_MODULE_REGISTER(tinycrypt);
 
 static struct tc_shim_drv_state tc_driver_state[CRYPTO_MAX_SESSION];
 
+static int do_block_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *op)
+{
+	struct tc_shim_drv_state *data =  ctx->drv_sessn_state;
+
+	/* For security reasons, ECB mode should not be used to encrypt
+	 * more than one block. Use CBC mode instead.
+	 */
+	if (op->in_len > 16) {
+		LOG_ERR("Cannot encrypt more than 1 block");
+		return -EINVAL;
+	}
+
+	if (tc_aes_encrypt(op->out_buf, op->in_buf, &data->session_key) == TC_CRYPTO_FAIL) {
+		LOG_ERR("TC internal error during block encryption");
+		return -EIO;
+	}
+
+	op->out_len = 16;
+	return 0;
+}
+
+static int do_block_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *op)
+{
+	struct tc_shim_drv_state *data =  ctx->drv_sessn_state;
+
+	if (op->in_len > 16) {
+		LOG_ERR("Cannot decrypt more than 1 block");
+		return -EINVAL;
+	}
+
+	if (tc_aes_decrypt(op->out_buf, op->in_buf, &data->session_key) == TC_CRYPTO_FAIL) {
+		LOG_ERR("TC internal error during block decryption");
+		return -EIO;
+	}
+
+	op->out_len = 16;
+	return 0;
+}
+
 static int do_cbc_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *op,
 			  uint8_t *iv)
 {
@@ -221,6 +260,9 @@ static int tc_session_setup(const struct device *dev, struct cipher_ctx *ctx,
 
 	if (op_type == CRYPTO_CIPHER_OP_ENCRYPT) {
 		switch (mode) {
+		case CRYPTO_CIPHER_MODE_ECB:
+			ctx->ops.block_crypt_hndlr = do_block_encrypt;
+			break;
 		case CRYPTO_CIPHER_MODE_CBC:
 			ctx->ops.cbc_crypt_hndlr = do_cbc_encrypt;
 			break;
@@ -241,6 +283,9 @@ static int tc_session_setup(const struct device *dev, struct cipher_ctx *ctx,
 		}
 	} else {
 		switch (mode) {
+		case CRYPTO_CIPHER_MODE_ECB:
+			ctx->ops.block_crypt_hndlr = do_block_decrypt;
+			break;
 		case CRYPTO_CIPHER_MODE_CBC:
 			ctx->ops.cbc_crypt_hndlr = do_cbc_decrypt;
 			break;
