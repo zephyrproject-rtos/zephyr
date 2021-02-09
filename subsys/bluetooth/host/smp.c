@@ -2724,6 +2724,35 @@ static uint8_t get_auth(struct bt_conn *conn, uint8_t auth)
 	return auth;
 }
 
+static uint8_t remote_sec_level_reachable(struct bt_smp *smp)
+{
+	struct bt_conn *conn = smp->chan.chan.conn;
+
+	switch (conn->required_sec_level) {
+	case BT_SECURITY_L1:
+	case BT_SECURITY_L2:
+		return 0;
+
+	case BT_SECURITY_L4:
+		if (get_encryption_key_size(smp) != BT_SMP_MAX_ENC_KEY_SIZE) {
+			return BT_SMP_ERR_ENC_KEY_SIZE;
+		}
+
+		if (!atomic_test_bit(smp->flags, SMP_FLAG_SC)) {
+			return BT_SMP_ERR_AUTH_REQUIREMENTS;
+		}
+		__fallthrough;
+	case BT_SECURITY_L3:
+		if (smp->method == JUST_WORKS) {
+			return BT_SMP_ERR_AUTH_REQUIREMENTS;
+		}
+
+		return 0;
+	default:
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+}
+
 static bool sec_level_reachable(struct bt_conn *conn)
 {
 	switch (conn->required_sec_level) {
@@ -2905,6 +2934,7 @@ static uint8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 	struct bt_conn *conn = smp->chan.chan.conn;
 	struct bt_smp_pairing *req = (void *)buf->data;
 	struct bt_smp_pairing *rsp;
+	uint8_t err;
 
 	BT_DBG("");
 
@@ -2982,15 +3012,17 @@ static uint8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 		return BT_SMP_ERR_AUTH_REQUIREMENTS;
 	}
 
+	err = remote_sec_level_reachable(smp);
+	if (err) {
+		return err;
+	}
+
 	if (!atomic_test_bit(smp->flags, SMP_FLAG_SC)) {
 #if defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
 		return BT_SMP_ERR_AUTH_REQUIREMENTS;
 #else
 		if (IS_ENABLED(CONFIG_BT_SMP_APP_PAIRING_ACCEPT)) {
-			uint8_t err;
-
-			err = smp_pairing_accept_query(smp->chan.chan.conn,
-						      req);
+			err = smp_pairing_accept_query(conn, req);
 			if (err) {
 				return err;
 			}
@@ -3000,22 +3032,8 @@ static uint8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 #endif /* CONFIG_BT_SMP_SC_PAIR_ONLY */
 	}
 
-	if ((IS_ENABLED(CONFIG_BT_SMP_SC_ONLY) ||
-	     conn->required_sec_level == BT_SECURITY_L4) &&
-		smp->method == JUST_WORKS) {
-		return BT_SMP_ERR_AUTH_REQUIREMENTS;
-	}
-
-	if ((IS_ENABLED(CONFIG_BT_SMP_SC_ONLY) ||
-	     conn->required_sec_level == BT_SECURITY_L4) &&
-	       get_encryption_key_size(smp) != BT_SMP_MAX_ENC_KEY_SIZE) {
-		return BT_SMP_ERR_ENC_KEY_SIZE;
-	}
-
 	if (IS_ENABLED(CONFIG_BT_SMP_APP_PAIRING_ACCEPT)) {
-		uint8_t err;
-
-		err = smp_pairing_accept_query(smp->chan.chan.conn, req);
+		err = smp_pairing_accept_query(conn, req);
 		if (err) {
 			return err;
 		}
@@ -3025,7 +3043,7 @@ static uint8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 	    !atomic_test_bit(smp->flags, SMP_FLAG_SEC_REQ) &&
 	    bt_auth && bt_auth->pairing_confirm) {
 		atomic_set_bit(smp->flags, SMP_FLAG_USER);
-		bt_auth->pairing_confirm(smp->chan.chan.conn);
+		bt_auth->pairing_confirm(conn);
 		return 0;
 	}
 
@@ -3151,6 +3169,7 @@ static uint8_t smp_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 	struct bt_conn *conn = smp->chan.chan.conn;
 	struct bt_smp_pairing *rsp = (void *)buf->data;
 	struct bt_smp_pairing *req = (struct bt_smp_pairing *)&smp->preq[1];
+	uint8_t err;
 
 	BT_DBG("");
 
@@ -3191,13 +3210,16 @@ static uint8_t smp_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 		return BT_SMP_ERR_AUTH_REQUIREMENTS;
 	}
 
+	err = remote_sec_level_reachable(smp);
+	if (err) {
+		return err;
+	}
+
 	if (!atomic_test_bit(smp->flags, SMP_FLAG_SC)) {
 #if defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
 		return BT_SMP_ERR_AUTH_REQUIREMENTS;
 #else
 		if (IS_ENABLED(CONFIG_BT_SMP_APP_PAIRING_ACCEPT)) {
-			uint8_t err;
-
 			err = smp_pairing_accept_query(conn, rsp);
 			if (err) {
 				return err;
@@ -3208,24 +3230,10 @@ static uint8_t smp_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 #endif /* CONFIG_BT_SMP_SC_PAIR_ONLY */
 	}
 
-	if ((IS_ENABLED(CONFIG_BT_SMP_SC_ONLY) ||
-	     conn->required_sec_level == BT_SECURITY_L4) &&
-	     smp->method == JUST_WORKS) {
-		return BT_SMP_ERR_AUTH_REQUIREMENTS;
-	}
-
-	if ((IS_ENABLED(CONFIG_BT_SMP_SC_ONLY) ||
-	     conn->required_sec_level == BT_SECURITY_L4) &&
-	     get_encryption_key_size(smp) != BT_SMP_MAX_ENC_KEY_SIZE) {
-		return BT_SMP_ERR_ENC_KEY_SIZE;
-	}
-
 	smp->local_dist &= SEND_KEYS_SC;
 	smp->remote_dist &= RECV_KEYS_SC;
 
 	if (IS_ENABLED(CONFIG_BT_SMP_APP_PAIRING_ACCEPT)) {
-		uint8_t err;
-
 		err = smp_pairing_accept_query(conn, rsp);
 		if (err) {
 			return err;
