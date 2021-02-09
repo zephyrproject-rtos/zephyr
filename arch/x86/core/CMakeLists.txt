@@ -9,10 +9,11 @@ if (CONFIG_COVERAGE)
 endif ()
 
 zephyr_library_sources(cpuhalt.c)
-zephyr_library_sources(memmap.c)
 zephyr_library_sources(prep_c.c)
 zephyr_library_sources(fatal.c)
 zephyr_library_sources(spec_ctrl.c)
+
+zephyr_library_sources_ifdef(CONFIG_X86_MEMMAP memmap.c)
 
 zephyr_library_sources_ifdef(CONFIG_PCIE pcie.c)
 zephyr_library_sources_ifdef(CONFIG_REBOOT_RST_CNT reboot_rst_cnt.c)

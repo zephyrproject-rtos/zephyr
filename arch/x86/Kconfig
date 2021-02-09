@@ -239,8 +239,19 @@ config X86_PC_COMPATIBLE
 	  Hidden option to signal building for PC-compatible platforms
 	  with BIOS, ACPI, etc.
 
+config X86_MEMMAP
+	bool "Use memory map"
+	select ARCH_HAS_RESERVED_PAGE_FRAMES
+	help
+	  Enable the use of memory map to identify regions of memory.
+
+	  The memory map can be populated via Multiboot
+	  (CONFIG_MULTIBOOT=y and CONFIG_MULTIBOOT_MEMMAP=y) or
+	  can be manually defined via x86_memmap[].
+
 config X86_MEMMAP_ENTRIES
 	int "Number of memory map entries"
+	depends on X86_MEMMAP
 	range 1 256
 	default 1 if !MULTIBOOT_MEMMAP
 	default 64 if MULTIBOOT_MEMMAP
@@ -270,6 +281,7 @@ config MULTIBOOT_INFO
 config MULTIBOOT_MEMMAP
 	bool "Use multiboot memory map if provided"
 	select MULTIBOOT_INFO
+	select X86_MEMMAP
 	help
 	  Use the multiboot memory map if the loader provides one.
 
