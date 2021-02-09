@@ -1,7 +1,7 @@
 .. _condvar:
 
-Condition ariables
-####################
+Condition Variables
+###################
 
 A :dfn:`condition variable` is a synchronization primitive
 that enables threads to wait until a particular condition occurs.
@@ -24,16 +24,16 @@ themselves on when some state of execution (i.e., some condition) is not as
 desired (by waiting on the condition). The function
 :c:func:`k_condvar_wait` performs atomically the following steps;
 
-# Releases the last acquired mutex.
-# Puts the current thread in the condition variable queue.
+#. Releases the last acquired mutex.
+#. Puts the current thread in the condition variable queue.
 
 Some other thread, when it changes said state, can then wake one (or more)
 of those waiting threads and thus allow them to continue by signaling on
 the condition using :c:func:`k_condvar_signal` or
 :c:func:`k_condvar_broadcast` then it:
 
-# Re-acquires the mutex previously released.
-# Returns from :c:func:`k_condvar_wait`.
+#. Re-acquires the mutex previously released.
+#. Returns from :c:func:`k_condvar_wait`.
 
 A condition variable must be initialized before it can be used.
 
