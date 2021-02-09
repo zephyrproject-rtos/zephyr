@@ -930,7 +930,7 @@ struct net_buf_simple *bt_audio_ep_create_pdu(uint8_t op)
 }
 
 int bt_audio_ep_config(struct bt_audio_ep *ep, struct net_buf_simple *buf,
-		       struct bt_audio_cap *cap, struct bt_codec *codec)
+		       struct bt_audio_capability *cap, struct bt_codec *codec)
 {
 	struct bt_ascs_config *req;
 	uint8_t cc_len;

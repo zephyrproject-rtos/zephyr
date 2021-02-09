@@ -340,7 +340,7 @@ struct bt_audio_chan {
 	/** Endpoint reference */
 	struct bt_audio_ep *ep;
 	/** Capability reference */
-	struct bt_audio_cap *cap;
+	struct bt_audio_capability *cap;
 	/** Codec Configuration */
 	struct bt_codec *codec;
 	/** QoS Configuration */
@@ -353,7 +353,7 @@ struct bt_audio_chan {
 };
 
 /** @brief Capability operations structure. */
-struct bt_audio_cap_ops {
+struct bt_audio_capability_ops {
 	/** @brief Capability config callback
 	 *
 	 *  Config callback is called whenever a new Audio Channel needs to be
@@ -368,7 +368,7 @@ struct bt_audio_cap_ops {
 	 */
 	struct bt_audio_chan	*(*config)(struct bt_conn *conn,
 					   struct bt_audio_ep *ep,
-					   struct bt_audio_cap *cap,
+					   struct bt_audio_capability *cap,
 					   struct bt_codec *codec);
 
 	/** @brief Capability reconfig callback
@@ -383,8 +383,8 @@ struct bt_audio_cap_ops {
 	 *  @return 0 in case of success or negative value in case of error.
 	 */
 	int			(*reconfig)(struct bt_audio_chan *chan,
-					   struct bt_audio_cap *cap,
-					   struct bt_codec *codec);
+					    struct bt_audio_capability *cap,
+					    struct bt_codec *codec);
 
 	/** @brief Capability QoS callback
 	 *
@@ -531,7 +531,7 @@ struct bt_audio_qos {
  *  Quality of service.
  *
  */
-struct bt_audio_cap {
+struct bt_audio_capability {
 	/** Capability type */
 	uint8_t  type;
 	/** Supported Audio Contexts */
@@ -541,7 +541,7 @@ struct bt_audio_cap {
 	/** Capability QoS */
 	struct bt_audio_qos qos;
 	/** Capability operations reference */
-	struct bt_audio_cap_ops *ops;
+	struct bt_audio_capability_ops *ops;
 	sys_snode_t node;
 };
 
@@ -553,7 +553,7 @@ struct bt_audio_cap {
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_audio_register(struct bt_audio_cap *cap);
+int bt_audio_capability_register(struct bt_audio_capability *cap);
 
 /** @brief Unregister Audio Capability.
  *
@@ -563,7 +563,7 @@ int bt_audio_register(struct bt_audio_cap *cap);
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_audio_unregister(struct bt_audio_cap *cap);
+int bt_audio_capability_unregister(struct bt_audio_capability *cap);
 
 /**
  * @defgroup bt_audio_client Audio Client APIs
@@ -580,7 +580,7 @@ struct bt_audio_discover_params;
  */
 typedef void
 (*bt_audio_discover_func_t)(struct bt_conn *conn,
-			    struct bt_audio_cap *cap,
+			    struct bt_audio_capability *cap,
 			    struct bt_audio_ep *ep,
 			    struct bt_audio_discover_params *params);
 
@@ -627,7 +627,7 @@ int bt_audio_discover(struct bt_conn *conn,
  */
 struct bt_audio_chan *bt_audio_chan_config(struct bt_conn *conn,
 					   struct bt_audio_ep *ep,
-					   struct bt_audio_cap *cap,
+					   struct bt_audio_capability *cap,
 					   struct bt_codec *codec);
 
 /** @brief Reconfigure Audio Channel
@@ -642,7 +642,7 @@ struct bt_audio_chan *bt_audio_chan_config(struct bt_conn *conn,
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_audio_chan_reconfig(struct bt_audio_chan *chan,
-			   struct bt_audio_cap *cap,
+			   struct bt_audio_capability *cap,
 			   struct bt_codec *codec);
 
 /** @brief Configure Audio Channel QoS
