@@ -35,10 +35,6 @@
 #define SENSOR_DEG2RAD_DOUBLE			(SENSOR_PI_DOUBLE / 180)
 #define SENSOR_G_DOUBLE				(SENSOR_G / 1000000.0)
 
-#if (CONFIG_IIS2ICLX_ACCEL_ODR == 0)
-#define IIS2ICLX_ACCEL_ODR_RUNTIME 1
-#endif
-
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 struct iis2iclx_spi_cfg {
 	struct spi_config spi_conf;
@@ -60,6 +56,7 @@ struct iis2iclx_config {
 	char *bus_name;
 	int (*bus_init)(const struct device *dev);
 	const union iis2iclx_bus_cfg bus_cfg;
+	uint8_t odr;
 	uint8_t range;
 #ifdef CONFIG_IIS2ICLX_TRIGGER
 	const char *irq_dev_name;
