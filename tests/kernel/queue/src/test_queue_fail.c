@@ -21,7 +21,7 @@ static struct k_thread tdata;
  */
 void test_queue_get_fail(void)
 {
-	struct k_queue queue;
+	static struct k_queue queue;
 
 	k_queue_init(&queue);
 	/**TESTPOINT: queue get returns NULL*/
@@ -54,7 +54,7 @@ static void tThread_entry(void *p1, void *p2, void *p3)
 void test_queue_append_list_error(void)
 {
 	qdata_t data_l[2];
-	struct k_queue queue;
+	static struct k_queue queue;
 	qdata_t *head = NULL, *tail = &data_l[1];
 
 	k_queue_init(&queue);
@@ -97,7 +97,7 @@ void test_queue_append_list_error(void)
 void test_queue_merge_list_error(void)
 {
 	qdata_t data_sl[2];
-	struct k_queue queue;
+	static struct k_queue queue;
 	sys_slist_t slist;
 
 	k_queue_init(&queue);
