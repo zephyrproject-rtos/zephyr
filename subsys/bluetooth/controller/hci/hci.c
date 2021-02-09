@@ -37,10 +37,10 @@
 #include "lll/lll_adv_types.h"
 #include "ll_sw/lll_adv.h"
 #include "lll/lll_adv_pdu.h"
-#include "ll_sw/lll_sync_iso.h"
 #include "ll_sw/lll_scan.h"
 #include "lll/lll_df_types.h"
 #include "ll_sw/lll_sync.h"
+#include "ll_sw/lll_sync_iso.h"
 #include "ll_sw/lll_conn.h"
 #include "ll_sw/lll_conn_iso.h"
 
@@ -60,6 +60,7 @@
 #include "ll.h"
 #include "ll_feat.h"
 #include "ll_settings.h"
+
 #include "hci_internal.h"
 #include "hci_vendor.h"
 
