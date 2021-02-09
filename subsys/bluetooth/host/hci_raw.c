@@ -129,6 +129,7 @@ struct net_buf *bt_buf_get_tx(enum bt_buf_type type, k_timeout_t timeout,
 			case H4_ISO:
 				type = BT_BUF_ISO_OUT;
 				pool = &hci_iso_pool;
+				break;
 #endif
 			default:
 				LOG_ERR("Unknown H4 type %u", type);
