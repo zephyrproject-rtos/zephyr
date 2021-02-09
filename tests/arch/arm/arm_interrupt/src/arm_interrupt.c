@@ -191,6 +191,15 @@ void arm_isr_handler(const void *args)
 {
 	ARG_UNUSED(args);
 
+#if defined(CONFIG_CPU_CORTEX_M) && defined(CONFIG_FPU) && \
+	defined(CONFIG_FPU_SHARING)
+	/* Clear Floating Point Status and Control Register (FPSCR),
+	 * to prevent from having the interrupt line set to pending again,
+	 * in case FPU IRQ is selected by the test as "Available IRQ line"
+	 */
+	__set_FPSCR(0);
+#endif
+
 	test_flag++;
 
 	if (test_flag == 1) {
