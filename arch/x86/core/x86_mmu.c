@@ -1723,16 +1723,19 @@ static void mark_addr_page_reserved(uintptr_t addr, size_t len)
 	}
 }
 
-/* Selected on PC-like targets at the SOC level.
- *
- * Best is to do some E820 or similar enumeration to specifically identify
- * all page frames which are reserved by the hardware or firmware.
- *
- * For now, just reserve everything in the first megabyte of physical memory.
- */
 void arch_reserved_pages_update(void)
 {
+#ifdef CONFIG_X86_PC_COMPATIBLE
+	/*
+	 * Best is to do some E820 or similar enumeration to specifically
+	 * identify all page frames which are reserved by the hardware or
+	 * firmware. Or use x86_memmap[] with Multiboot if available.
+	 *
+	 * But still, reserve everything in the first megabyte of physical
+	 * memory on PC-compatible platforms.
+	 */
 	mark_addr_page_reserved(0, MB(1));
+#endif /* CONFIG_X86_PC_COMPATIBLE */
 
 	for (int i = 0; i < CONFIG_X86_MEMMAP_ENTRIES; i++) {
 		struct x86_memmap_entry *entry = &x86_memmap[i];

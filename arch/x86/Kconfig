@@ -215,6 +215,7 @@ endchoice
 
 config ACPI
 	bool "ACPI (Advanced Configuration and Power Interface) support"
+	depends on X86_PC_COMPATIBLE
 	select ARCH_MAPS_ALL_RAM
 	help
 	  Allow retrieval of platform configuration at runtime.
@@ -230,6 +231,14 @@ config PCIE_MMIO_CFG
 config KERNEL_VM_SIZE
 	default 0xC0000000 if ACPI
 
+config X86_PC_COMPATIBLE
+	bool
+	default y
+	select ARCH_HAS_RESERVED_PAGE_FRAMES
+	help
+	  Hidden option to signal building for PC-compatible platforms
+	  with BIOS, ACPI, etc.
+
 config X86_MEMMAP_ENTRIES
 	int "Number of memory map entries"
 	range 1 256
@@ -240,6 +249,7 @@ config X86_MEMMAP_ENTRIES
 
 config MULTIBOOT
 	bool "Generate multiboot header"
+	depends on X86_PC_COMPATIBLE
 	default y
 	help
 	  Embed a multiboot header in the output executable. This is used
