@@ -3582,13 +3582,8 @@ done:
 	bt_adv_foreach(adv_unpause_enabled, NULL);
 }
 
-static void update_sec_level(struct bt_conn *conn)
+static bool update_sec_level(struct bt_conn *conn)
 {
-	if (!conn->encrypt) {
-		conn->sec_level = BT_SECURITY_L1;
-		return;
-	}
-
 	if (conn->le.keys && (conn->le.keys->flags & BT_KEYS_AUTHENTICATED)) {
 		if (conn->le.keys->flags & BT_KEYS_SC &&
 		    conn->le.keys->enc_size == BT_SMP_MAX_ENC_KEY_SIZE) {
@@ -3600,10 +3595,7 @@ static void update_sec_level(struct bt_conn *conn)
 		conn->sec_level = BT_SECURITY_L2;
 	}
 
-	if (conn->required_sec_level > conn->sec_level) {
-		BT_ERR("Failed to set required security level");
-		bt_conn_disconnect(conn, BT_HCI_ERR_AUTH_FAIL);
-	}
+	return !(conn->required_sec_level > conn->sec_level);
 }
 #endif /* CONFIG_BT_SMP */
 
@@ -3612,6 +3604,7 @@ static void hci_encrypt_change(struct net_buf *buf)
 {
 	struct bt_hci_evt_encrypt_change *evt = (void *)buf->data;
 	uint16_t handle = sys_le16_to_cpu(evt->handle);
+	uint8_t status = evt->status;
 	struct bt_conn *conn;
 
 	BT_DBG("status 0x%02x handle %u encrypt 0x%02x", evt->status, handle,
@@ -3623,9 +3616,9 @@ static void hci_encrypt_change(struct net_buf *buf)
 		return;
 	}
 
-	if (evt->status) {
-		bt_conn_security_changed(conn, evt->status,
-					 bt_security_err_get(evt->status));
+	if (status) {
+		bt_conn_security_changed(conn, status,
+					 bt_security_err_get(status));
 		bt_conn_unref(conn);
 		return;
 	}
@@ -3645,7 +3638,10 @@ static void hci_encrypt_change(struct net_buf *buf)
 		if (conn->encrypt) {
 			bt_smp_update_keys(conn);
 		}
-		update_sec_level(conn);
+
+		if (!update_sec_level(conn)) {
+			status = BT_HCI_ERR_AUTH_FAIL;
+		}
 	}
 #endif /* CONFIG_BT_SMP */
 #if defined(CONFIG_BT_BREDR)
@@ -3668,7 +3664,12 @@ static void hci_encrypt_change(struct net_buf *buf)
 	}
 #endif /* CONFIG_BT_BREDR */
 
-	bt_conn_security_changed(conn, evt->status, BT_SECURITY_ERR_SUCCESS);
+	bt_conn_security_changed(conn, status, bt_security_err_get(status));
+
+	if (status) {
+		BT_ERR("Failed to set required security level");
+		bt_conn_disconnect(conn, status);
+	}
 
 	bt_conn_unref(conn);
 }
@@ -3676,6 +3677,7 @@ static void hci_encrypt_change(struct net_buf *buf)
 static void hci_encrypt_key_refresh_complete(struct net_buf *buf)
 {
 	struct bt_hci_evt_encrypt_key_refresh_complete *evt = (void *)buf->data;
+	uint8_t status = evt->status;
 	struct bt_conn *conn;
 	uint16_t handle;
 
@@ -3689,9 +3691,9 @@ static void hci_encrypt_key_refresh_complete(struct net_buf *buf)
 		return;
 	}
 
-	if (evt->status) {
-		bt_conn_security_changed(conn, evt->status,
-					 bt_security_err_get(evt->status));
+	if (status) {
+		bt_conn_security_changed(conn, status,
+					 bt_security_err_get(status));
 		bt_conn_unref(conn);
 		return;
 	}
@@ -3705,7 +3707,10 @@ static void hci_encrypt_key_refresh_complete(struct net_buf *buf)
 #if defined(CONFIG_BT_SMP)
 	if (conn->type == BT_CONN_TYPE_LE) {
 		bt_smp_update_keys(conn);
-		update_sec_level(conn);
+
+		if (!update_sec_level(conn)) {
+			status = BT_HCI_ERR_AUTH_FAIL;
+		}
 	}
 #endif /* CONFIG_BT_SMP */
 #if defined(CONFIG_BT_BREDR)
@@ -3717,7 +3722,12 @@ static void hci_encrypt_key_refresh_complete(struct net_buf *buf)
 	}
 #endif /* CONFIG_BT_BREDR */
 
-	bt_conn_security_changed(conn, evt->status, BT_SECURITY_ERR_SUCCESS);
+	bt_conn_security_changed(conn, status, bt_security_err_get(status));
+	if (status) {
+		BT_ERR("Failed to set required security level");
+		bt_conn_disconnect(conn, status);
+	}
+
 	bt_conn_unref(conn);
 }
 #endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR */
