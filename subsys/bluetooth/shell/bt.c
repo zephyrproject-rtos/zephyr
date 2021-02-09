@@ -2653,6 +2653,13 @@ static struct bt_conn_auth_cb auth_cb_oob = {
 	.bond_deleted = bond_deleted,
 };
 
+static struct bt_conn_auth_cb auth_cb_status = {
+	.pairing_failed = auth_pairing_failed,
+	.pairing_complete = auth_pairing_complete,
+#if defined(CONFIG_BT_SMP_APP_PAIRING_ACCEPT)
+	.pairing_accept = pairing_accept,
+#endif
+};
 
 static int cmd_auth(const struct shell *shell, size_t argc, char *argv[])
 {
@@ -2670,6 +2677,8 @@ static int cmd_auth(const struct shell *shell, size_t argc, char *argv[])
 		err = bt_conn_auth_cb_register(&auth_cb_confirm);
 	} else if (!strcmp(argv[1], "oob")) {
 		err = bt_conn_auth_cb_register(&auth_cb_oob);
+	} else if (!strcmp(argv[1], "status")) {
+		err = bt_conn_auth_cb_register(&auth_cb_status);
 	} else if (!strcmp(argv[1], "none")) {
 		err = bt_conn_auth_cb_register(NULL);
 	} else {
@@ -3031,7 +3040,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(connections, NULL, HELP_NONE, cmd_connections, 1, 0),
 	SHELL_CMD_ARG(auth, NULL,
 		      "<method: all, input, display, yesno, confirm, "
-		      "oob, none>",
+		      "oob, status, none>",
 		      cmd_auth, 2, 0),
 	SHELL_CMD_ARG(auth-cancel, NULL, HELP_NONE, cmd_auth_cancel, 1, 0),
 	SHELL_CMD_ARG(auth-passkey, NULL, "<passkey>", cmd_auth_passkey, 2, 0),
