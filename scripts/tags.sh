@@ -204,13 +204,13 @@ fi
 tree="${ZEPHYR_BASE}/"
 
 # List of always explored directories
-COMMON_DIRS="drivers dts ext include kernel lib misc subsys"
+COMMON_DIRS="drivers dts include kernel lib misc subsys"
 
 # Detect if ARCH is set. If not, we look for all archs
 if [ "${ARCH}" = "" ]; then
-	ALLSOURCES="${COMMON_DIRS} arch boards"
+	ALLSOURCES="${COMMON_DIRS} arch boards soc"
 else
-	ALLSOURCES="${COMMON_DIRS} arch/${ARCH} boards/${ARCH}"
+	ALLSOURCES="${COMMON_DIRS} arch/${ARCH} boards/${ARCH} soc/${ARCH}"
 fi
 
 # TODO: detect if BOARD is set so we can select certain files
