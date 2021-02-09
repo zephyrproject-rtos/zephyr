@@ -26,7 +26,6 @@ LOG_MODULE_REGISTER(IIS2ICLX, CONFIG_SENSOR_LOG_LEVEL);
 static const uint16_t iis2iclx_odr_map[] = {0, 12, 26, 52, 104, 208, 416, 833,
 					1660, 3330, 6660};
 
-#if defined(IIS2ICLX_ACCEL_ODR_RUNTIME)
 static int iis2iclx_freq_to_odr_val(uint16_t freq)
 {
 	size_t i;
@@ -39,7 +38,6 @@ static int iis2iclx_freq_to_odr_val(uint16_t freq)
 
 	return -EINVAL;
 }
-#endif
 
 static int iis2iclx_odr_to_freq_val(uint16_t odr)
 {
@@ -108,7 +106,6 @@ static int iis2iclx_accel_set_odr_raw(const struct device *dev, uint8_t odr)
 	return 0;
 }
 
-#ifdef IIS2ICLX_ACCEL_ODR_RUNTIME
 static int iis2iclx_accel_odr_set(const struct device *dev, uint16_t freq)
 {
 	int odr;
@@ -125,7 +122,6 @@ static int iis2iclx_accel_odr_set(const struct device *dev, uint16_t freq)
 
 	return 0;
 }
-#endif
 
 static int iis2iclx_accel_range_set(const struct device *dev, int32_t range)
 {
@@ -154,10 +150,8 @@ static int iis2iclx_accel_config(const struct device *dev,
 	switch (attr) {
 	case SENSOR_ATTR_FULL_SCALE:
 		return iis2iclx_accel_range_set(dev, sensor_ms2_to_g(val));
-#ifdef IIS2ICLX_ACCEL_ODR_RUNTIME
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
 		return iis2iclx_accel_odr_set(dev, val->val1);
-#endif
 	default:
 		LOG_ERR("Accel attribute not supported.");
 		return -ENOTSUP;
@@ -541,6 +535,7 @@ static int iis2iclx_init_chip(const struct device *dev)
 	const struct iis2iclx_config * const cfg = dev->config;
 	struct iis2iclx_data *iis2iclx = dev->data;
 	uint8_t chip_id;
+	uint8_t odr = cfg->odr;
 	uint8_t fs = cfg->range;
 
 	iis2iclx->dev = dev;
@@ -571,8 +566,8 @@ static int iis2iclx_init_chip(const struct device *dev)
 	}
 	iis2iclx->acc_gain = (iis2iclx_accel_fs_sens[fs] * GAIN_UNIT_XL);
 
-	iis2iclx->accel_freq = iis2iclx_odr_to_freq_val(CONFIG_IIS2ICLX_ACCEL_ODR);
-	if (iis2iclx_accel_set_odr_raw(dev, CONFIG_IIS2ICLX_ACCEL_ODR) < 0) {
+	LOG_DBG("odr is %d", odr);
+	if (iis2iclx_accel_set_odr_raw(dev, odr) < 0) {
 		LOG_ERR("failed to set accelerometer sampling rate");
 		return -EIO;
 	}
@@ -705,6 +700,7 @@ static int iis2iclx_init(const struct device *dev)
 		.bus_name = DT_INST_BUS_LABEL(inst),			\
 		.bus_init = iis2iclx_spi_init,				\
 		.bus_cfg = { .spi_cfg = IIS2ICLX_SPI_CFG(inst)	},	\
+		.odr = DT_INST_PROP(inst, odr),				\
 		.range = DT_INST_PROP(inst, range),			\
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),	\
 			(IIS2ICLX_CFG_IRQ(inst)), ())			\
@@ -726,6 +722,7 @@ static int iis2iclx_init(const struct device *dev)
 		.bus_name = DT_INST_BUS_LABEL(inst),			\
 		.bus_init = iis2iclx_i2c_init,				\
 		.bus_cfg = { .i2c_slv_addr = DT_INST_REG_ADDR(inst), },	\
+		.odr = DT_INST_PROP(inst, odr),				\
 		.range = DT_INST_PROP(inst, range),			\
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),	\
 			(IIS2ICLX_CFG_IRQ(inst)), ())			\
