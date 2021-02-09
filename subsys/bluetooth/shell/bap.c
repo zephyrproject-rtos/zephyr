@@ -25,7 +25,7 @@
 #define MAX_PAC 2
 
 static struct bt_audio_chan chans[MAX_PAC];
-static struct bt_audio_cap *rcaps[2][CONFIG_BT_BAP_PAC_COUNT];
+static struct bt_audio_capability *rcaps[2][CONFIG_BT_BAP_PAC_COUNT];
 static struct bt_audio_ep *reps[CONFIG_BT_BAP_ASE_COUNT];
 static struct bt_audio_chan *default_chan;
 
@@ -152,7 +152,7 @@ static void print_codec(struct bt_codec *codec)
 	}
 }
 
-static void discover_cb(struct bt_conn *conn, struct bt_audio_cap *cap,
+static void discover_cb(struct bt_conn *conn, struct bt_audio_capability *cap,
 			struct bt_audio_ep *ep,
 			struct bt_audio_discover_params *params)
 {
@@ -310,7 +310,7 @@ static int cmd_preset(const struct shell *shell, size_t argc, char *argv[])
 static int cmd_config(const struct shell *shell, size_t argc, char *argv[])
 {
 	int32_t ase, dir;
-	struct bt_audio_cap *cap = NULL;
+	struct bt_audio_capability *cap = NULL;
 	struct bt_audio_ep *ep = NULL;
 	struct lc3_preset *preset;
 	int i;
@@ -631,7 +631,7 @@ static int cmd_unlink(const struct shell *shell, size_t argc, char *argv[])
 
 static struct bt_audio_chan *lc3_config(struct bt_conn *conn,
 					struct bt_audio_ep *ep,
-					struct bt_audio_cap *cap,
+					struct bt_audio_capability *cap,
 					struct bt_codec *codec)
 {
 	int i;
@@ -657,7 +657,8 @@ static struct bt_audio_chan *lc3_config(struct bt_conn *conn,
 	return NULL;
 }
 
-static int lc3_reconfig(struct bt_audio_chan *chan, struct bt_audio_cap *cap,
+static int lc3_reconfig(struct bt_audio_chan *chan,
+			struct bt_audio_capability *cap,
 			struct bt_codec *codec)
 {
 	shell_print(ctx_shell, "ASE Codec Reconfig: chan %p cap %p", chan, cap);
@@ -723,7 +724,7 @@ static struct bt_codec lc3_codec = BT_CODEC_LC3(BT_CODEC_LC3_FREQ_ANY,
 						BT_CODEC_META_CONTEXT_MEDIA),
 						BT_CODEC_META_CONTEXT_ANY);
 
-static struct bt_audio_cap_ops lc3_ops = {
+static struct bt_audio_capability_ops lc3_ops = {
 	.config = lc3_config,
 	.reconfig = lc3_reconfig,
 	.qos = lc3_qos,
@@ -733,7 +734,7 @@ static struct bt_audio_cap_ops lc3_ops = {
 	.release = lc3_release,
 };
 
-static struct bt_audio_cap caps[MAX_PAC] = {
+static struct bt_audio_capability caps[MAX_PAC] = {
 	{
 		.type = BT_AUDIO_SOURCE,
 		.qos = BT_AUDIO_QOS(0x00, 0x02, 2u, 60u, 20000u, 40000u),
@@ -761,7 +762,7 @@ static int cmd_init(const struct shell *shell, size_t argc, char *argv[])
 	}
 
 	for (i = 0; i < ARRAY_SIZE(caps); i++) {
-		bt_audio_register(&caps[i]);
+		bt_audio_capability_register(&caps[i]);
 	}
 
 	return 0;
