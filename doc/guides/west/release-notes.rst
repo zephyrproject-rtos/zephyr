@@ -1,6 +1,20 @@
 West Release Notes
 ##################
 
+v0.10.0
+*******
+
+New features:
+
+- A manifest file's ``group-filter`` is now propagated through an ``import``.
+  This is a change from how west v0.9.x handled this. In west v0.9.x, only the
+  top level manifest file's ``group-filter`` had any effect; the group filter
+  lists from any imported manifests were ignored. Starting with west v0.10.0,
+  the group filter lists from imported manifests are also imported. For
+  details, see :ref:`west-group-filter-imports`.
+
+- The ``name`` key in a project's submodules list is now optional.
+
 v0.9.0
 ******
 
@@ -9,6 +23,12 @@ v0.9.0
    The ``west config`` fix described below comes at a cost: any comments or
    other manual edits in configuration files will be removed when setting a
    configuration option via that command or the ``west.configuration`` API.
+
+.. warning::
+
+   Combining the ``group-filter`` feature introduced in this release with
+   manifest imports is discouraged. The resulting behavior has changed in west
+   v0.10.
 
 New features:
 
