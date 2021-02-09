@@ -284,7 +284,7 @@ int z_impl_k_poll(struct k_poll_event *events, int num_events,
 		return -EAGAIN;
 	}
 
-	_wait_q_t wait_q = Z_WAIT_Q_INIT(&wait_q);
+	static _wait_q_t wait_q = Z_WAIT_Q_INIT(&wait_q);
 
 	int swap_rc = z_pend_curr(&lock, key, &wait_q, timeout);
 
