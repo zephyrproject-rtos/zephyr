@@ -29,7 +29,7 @@ struct foo {
 	int baz;
 };
 
-struct foo stest_member_stack;
+__kstackmem struct foo stest_member_stack;
 
 void z_impl_stack_info_get(char **start_addr, size_t *size)
 {
@@ -441,6 +441,14 @@ void no_op_entry(void *p1, void *p2, void *p3)
  */
 void test_idle_stack(void)
 {
+	if (IS_ENABLED(CONFIG_KERNEL_COHERENCE)) {
+		/* Stacks on coherence platforms aren't coherent, and
+		 * the idle stack may have been initialized on a
+		 * different CPU!
+		 */
+		ztest_test_skip();
+	}
+
 	int ret;
 #ifdef CONFIG_SMP
 	/* 1cpu test case, so all other CPUs are spinning with co-op
