@@ -439,7 +439,6 @@ static enum bt_security_err security_err_get(uint8_t smp_err)
 	}
 }
 
-#if defined(CONFIG_BT_SMP_APP_PAIRING_ACCEPT)
 static uint8_t smp_err_get(enum bt_security_err auth_err)
 {
 	switch (auth_err) {
@@ -464,7 +463,6 @@ static uint8_t smp_err_get(enum bt_security_err auth_err)
 		return 0;
 	}
 }
-#endif /* CONFIG_BT_SMP_APP_PAIRING_ACCEPT */
 
 static struct net_buf *smp_create_pdu(struct bt_smp *smp, uint8_t op, size_t len)
 {
@@ -4536,9 +4534,24 @@ static void bt_smp_encrypt_change(struct bt_l2cap_chan *chan,
 	BT_DBG("chan %p conn %p handle %u encrypt 0x%02x hci status 0x%02x",
 	       chan, conn, conn->handle, conn->encrypt, hci_status);
 
-	atomic_clear_bit(smp->flags, SMP_FLAG_ENC_PENDING);
+	if (!atomic_test_and_clear_bit(smp->flags, SMP_FLAG_ENC_PENDING)) {
+		/* We where not waiting for encryption procedure.
+		 * This happens when encrypt change is called to notify that
+		 * security has failed before starting encryption.
+		 */
+		return;
+	}
 
 	if (hci_status) {
+		if (atomic_test_bit(smp->flags, SMP_FLAG_PAIRING)) {
+			uint8_t smp_err = smp_err_get(
+				bt_security_err_get(hci_status));
+
+			/* Fail as if it happened during key distribution */
+			atomic_set_bit(smp->flags, SMP_FLAG_KEYS_DISTR);
+			smp_pairing_complete(smp, smp_err);
+		}
+
 		return;
 	}
 
