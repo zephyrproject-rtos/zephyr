@@ -7,6 +7,7 @@ DT_COMPAT_ST_STM32_I2C_V2 := st,stm32-i2c-v2
 menuconfig I2C_STM32
 	bool "STM32 I2C driver"
 	default $(dt_compat_enabled,$(DT_COMPAT_ST_STM32_I2C_V1)) || $(dt_compat_enabled,$(DT_COMPAT_ST_STM32_I2C_V2))
+	depends on SOC_FAMILY_STM32
 	help
 	  Enable I2C support on the STM32 SoCs
 
