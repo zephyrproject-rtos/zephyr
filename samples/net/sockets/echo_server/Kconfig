@@ -22,6 +22,11 @@ config NET_SAMPLE_IFACE2_MY_IPV4_ADDR
 	help
 	  The value depends on your network setup.
 
+config NET_SAMPLE_IFACE2_MY_IPV4_NETMASK
+	string "My IPv4 netmask for second interface"
+	help
+	  The value depends on your network setup.
+
 config NET_SAMPLE_IFACE2_VLAN_TAG
 	int "VLAN tag for second interface"
 	default 100
@@ -38,6 +43,11 @@ config NET_SAMPLE_IFACE3_MY_IPV6_ADDR
 
 config NET_SAMPLE_IFACE3_MY_IPV4_ADDR
 	string "My IPv4 address for third interface"
+	help
+	  The value depends on your network setup.
+
+config NET_SAMPLE_IFACE3_MY_IPV4_NETMASK
+	string "My IPv4 netmask for third interface"
 	help
 	  The value depends on your network setup.
 
