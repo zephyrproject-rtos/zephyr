@@ -23,6 +23,72 @@ extern "C" {
  */
 
 /**
+ * @brief Get the node identifier for the controller phandle from a
+ *        "clocks" phandle-array property at an index
+ *
+ * Example devicetree fragment:
+ *
+ *     clk1: clock-controller@... { ... };
+ *
+ *     clk2: clock-controller@... { ... };
+ *
+ *     n: node {
+ *             clocks = <&clk1 10 20>, <&clk2 30 40>;
+ *     };
+ *
+ * Example usage:
+ *
+ *     DT_CLOCKS_CTLR_BY_IDX(DT_NODELABEL(n), 0)) // DT_NODELABEL(clk1)
+ *     DT_CLOCKS_CTLR_BY_IDX(DT_NODELABEL(n), 1)) // DT_NODELABEL(clk2)
+ *
+ * @param node_id node identifier
+ * @param idx logical index into "clocks"
+ * @return the node identifier for the clock controller referenced at
+ *         index "idx"
+ * @see DT_PHANDLE_BY_IDX()
+ */
+#define DT_CLOCKS_CTLR_BY_IDX(node_id, idx) \
+	DT_PHANDLE_BY_IDX(node_id, clocks, idx)
+
+/**
+ * @brief Equivalent to DT_CLOCKS_CTLR_BY_IDX(node_id, 0)
+ * @param node_id node identifier
+ * @return a node identifier for the clocks controller at index 0
+ *         in "clocks"
+ * @see DT_CLOCKS_CTLR_BY_IDX()
+ */
+#define DT_CLOCKS_CTLR(node_id) DT_CLOCKS_CTLR_BY_IDX(node_id, 0)
+
+/**
+ * @brief Get the node identifier for the controller phandle from a
+ *        clocks phandle-array property at an index
+ *
+
+ * Example devicetree fragment:
+ *
+ *     clk1: clock-controller@... { ... };
+ *
+ *     clk2: clock-controller@... { ... };
+ *
+ *     n: node {
+ *             clocks = <&clk1 10 20>, <&clk2 30 40>;
+ *             clock-names = "alpha", "beta";
+ *     };
+ *
+ * Example usage:
+ *
+ *     DT_CLOCKS_CTLR_BY_NAME(DT_NODELABEL(n), beta) // DT_NODELABEL(clk2)
+ *
+ * @param node_id node identifier
+ * @param name lowercase-and-underscores name of a clocks element
+ *             as defined by the node's clock-names property
+ * @return the node identifier for the clock controller referenced by name
+ * @see DT_PHANDLE_BY_NAME()
+ */
+#define DT_CLOCKS_CTLR_BY_NAME(node_id, name) \
+	DT_PHANDLE_BY_NAME(node_id, clocks, name)
+
+/**
  * @brief Get a label property from the node referenced by a pwms
  *        property at an index
  *
@@ -177,6 +243,42 @@ extern "C" {
  * @see DT_CLOCKS_CELL_BY_IDX()
  */
 #define DT_CLOCKS_CELL(node_id, cell) DT_CLOCKS_CELL_BY_IDX(node_id, 0, cell)
+
+/**
+ * @brief Get the node identifier for the controller phandle from a
+ *        "clocks" phandle-array property at an index
+ *
+ * @param inst instance number
+ * @param idx logical index into "clocks"
+ * @return the node identifier for the clock controller referenced at
+ *         index "idx"
+ * @see DT_CLOCKS_CTLR_BY_IDX()
+ */
+#define DT_INST_CLOCKS_CTLR_BY_IDX(inst, idx) \
+	DT_CLOCKS_CTLR_BY_IDX(DT_DRV_INST(inst), idx)
+
+/**
+ * @brief Equivalent to DT_INST_CLOCKS_CTLR_BY_IDX(inst, 0)
+ * @param inst instance number
+ * @return a node identifier for the clocks controller at index 0
+ *         in "clocks"
+ * @see DT_CLOCKS_CTLR()
+ */
+#define DT_INST_CLOCKS_CTLR(inst) DT_INST_CLOCKS_CTLR_BY_IDX(inst, 0)
+
+/**
+ * @brief Get the node identifier for the controller phandle from a
+ *        clocks phandle-array property by name
+ *
+ * @param inst instance number
+ * @param name lowercase-and-underscores name of a clocks element
+ *             as defined by the node's clock-names property
+ * @return the node identifier for the clock controller referenced by
+ *         the named element
+ * @see DT_CLOCKS_CTLR_BY_NAME()
+ */
+#define DT_INST_CLOCKS_CTLR_BY_NAME(inst, name) \
+	DT_CLOCKS_CTLR_BY_NAME(DT_DRV_INST(inst), name)
 
 /**
  * @brief Get a label property from a DT_DRV_COMPAT instance's clocks
