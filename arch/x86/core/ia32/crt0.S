@@ -25,6 +25,8 @@
 
 	/* externs */
 	GTEXT(z_x86_prep_c)
+	GTEXT(z_bss_zero)
+	GTEXT(z_data_copy)
 
 	GDATA(_idt_base_address)
 	GDATA(z_interrupt_stacks)
@@ -152,42 +154,17 @@ __csSet:
 	addl	$CONFIG_ISR_STACK_SIZE, %esp
 #endif
 
+	/* Clear BSS */
+	call	z_bss_zero
+
 #ifdef CONFIG_XIP
-	/*
-	 * copy DATA section from ROM to RAM region
-	 *	 DATA is followed by BSS section.
-	 */
-
-	movl	$__data_ram_start, %edi /* DATA in RAM (dest) */
-	movl	$__data_rom_start, %esi /* DATA in ROM (src) */
-	movl	$__data_num_words, %ecx /* Size of DATA in quad bytes */
-
-	call	_x86_data_copy
-
-#ifdef CONFIG_USERSPACE
-	movl	$_app_smem_start, %edi /* DATA in RAM (dest) */
-	movl	$_app_smem_rom_start, %esi /* DATA in ROM (src) */
-	movl	$_app_smem_num_words, %ecx /* Size of DATA in quad bytes */
-
-	call	_x86_data_copy
-#endif /* CONFIG_USERSPACE */
-#endif /* CONFIG_XIP */
-
-	/*
-	 * Clear BSS: bzero (__bss_start, __bss_num_words*4)
+	/* Copy data from flash to RAM.
 	 *
-	 * It's assumed that BSS size will be a multiple of a long (4 bytes),
-	 * and aligned on a double word (32-bit) boundary
+	 * This is a must is CONFIG_GDT_DYNAMIC is enabled,
+	 * as _gdt needs to be in RAM.
 	 */
-	movl	$__bss_start, %edi	/* load BSS start address */
-	movl	$__bss_num_words, %ecx	/* number of quad bytes in .bss */
-	call	_x86_bss_zero
-
-#ifdef CONFIG_COVERAGE_GCOV
-	movl	$__gcov_bss_start, %edi	/* load gcov BSS start address */
-	movl	$__gcov_bss_num_words, %ecx	/* number of quad bytes */
-	call	_x86_bss_zero
-#endif /* CONFIG_COVERAGE_GCOV */
+	call	z_data_copy
+#endif
 
 #ifdef CONFIG_GDT_DYNAMIC
 	/* activate RAM-based Global Descriptor Table (GDT) */
@@ -226,70 +203,6 @@ __csSet:
 
 	pushl	%ebx		/* pointer to multiboot info, or NULL */
 	call	z_x86_prep_c	/* enter kernel; never returns */
-
-_x86_bss_zero:
-	/* ECX = size, EDI = starting address */
-#ifdef CONFIG_X86_SSE
-	/* use XMM register to clear 16 bytes at a time */
-	pxor	%xmm0, %xmm0		/* zero out xmm0 register */
-
-	movl	%ecx, %edx		/* make a copy of # quad bytes */
-	shrl	$2, %ecx		/* How many multiples of 16 byte ? */
-	je	bssWords
-bssDQ:
-	movdqu	%xmm0, (%edi)		/* zero 16 bytes... */
-	addl	$16, %edi
-	loop	bssDQ
-
-	/* fall through to handle the remaining double words (32-bit chunks) */
-
-bssWords:
-	xorl	%eax, %eax		/* fill memory with 0 */
-	movl	%edx, %ecx		/* move # quad bytes into ECX (for rep) */
-	andl	$0x3, %ecx		/* only need to zero at most 3 quad bytes */
-	cld
-	rep
-	stosl				/* zero memory per 4 bytes */
-
-#else /* !CONFIG_X86_SSE */
-
-	/* clear out BSS double words (32-bits at a time) */
-
-	xorl	%eax, %eax		/* fill memory with 0 */
-	cld
-	rep
-	stosl				/* zero memory per 4 bytes */
-
-#endif /* CONFIG_X86_SSE */
-	ret
-
-#ifdef CONFIG_XIP
-_x86_data_copy:
-	/* EDI = dest, ESI = source, ECX = size in 32-bit chunks */
-  #ifdef CONFIG_X86_SSE
-	/* copy 16 bytes at a time using XMM until < 16 bytes remain */
-
-	movl	%ecx ,%edx		/* save number of quad bytes */
-	shrl	$2, %ecx		/* How many 16 bytes? */
-	je	dataWords
-
-dataDQ:
-	movdqu	(%esi), %xmm0
-	movdqu	%xmm0, (%edi)
-	addl	$16, %esi
-	addl	$16, %edi
-	loop	dataDQ
-
-dataWords:
-	movl	%edx, %ecx	/* restore # quad bytes */
-	andl	$0x3, %ecx	/* only need to copy at most 3 quad bytes */
-  #endif /* CONFIG_X86_SSE */
-
-	rep
-	movsl				/* copy data 4 bytes at a time */
-	ret
-#endif /* CONFIG_XIP */
-
 
 #if defined(CONFIG_X86_SSE)
 
