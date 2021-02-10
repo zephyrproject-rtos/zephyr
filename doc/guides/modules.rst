@@ -21,7 +21,7 @@ Modules to be included in the default manifest of the Zephyr project need to
 provide functionality or features endorsed and approved by the project Technical
 Steering Committee and should comply with the
 :ref:`module licensing requirements<modules_licensing>` and
-:ref:`contribute guidelines<modules_contributing>`. They should also have a
+:ref:`contribution guidelines<modules_contributing>`. They should also have a
 Zephyr developer that is committed to maintain the module codebase.
 
 Zephyr depends on several categories of modules, including but not limited to:
