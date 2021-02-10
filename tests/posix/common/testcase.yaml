@@ -86,3 +86,12 @@ tests:
   portability.posix.common.signal.big_nsig:
     extra_configs:
       - CONFIG_POSIX_RTSIG_MAX=1024
+  portability.posix.common.dynamic_stack:
+    integration_platforms:
+      - qemu_x86
+      - qemu_riscv64
+    extra_configs:
+      - CONFIG_DYNAMIC_THREAD=y
+      - CONFIG_THREAD_STACK_INFO=y
+      - CONFIG_DYNAMIC_THREAD_POOL_SIZE=5
+      - CONFIG_HEAP_MEM_POOL_SIZE=16384
