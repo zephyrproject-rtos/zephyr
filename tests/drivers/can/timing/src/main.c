@@ -61,6 +61,8 @@ static void verify_bitrate(struct can_timing  *timing, uint32_t bitrate)
 	uint32_t bitrate_calc;
 	int ret;
 
+	zassert_not_equal(timing->prescaler, 0, "Prescaler is zero");
+
 	ret = can_get_core_clock(can_dev, &core_clock);
 	zassert_equal(ret, 0, "Unable to get core clock");
 
