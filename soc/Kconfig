@@ -36,6 +36,9 @@ config SOC_COMPATIBLE_NRF53X_CPUNET
 config SOC_COMPATIBLE_NRF5340_CPUNET
 	bool
 
+config SOC_COMPATIBLE_BSIM
+	bool
+
 #
 # SOC_*_LD: SoC specific Linker script additions
 #
