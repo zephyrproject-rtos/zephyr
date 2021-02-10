@@ -36,18 +36,26 @@
 #if CONFIG_LOG_BACKEND_SWO_FREQ_HZ == 0
 #define SWO_FREQ_DIV  1
 #else
-#if DT_NODE_HAS_PROP(DT_PATH(cpus, cpu_0), clock_frequency)
-#define CPU_FREQ DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency)
+
+/* Set reference frequency which can be custom or cpu frequency. */
+#if DT_NODE_HAS_PROP(DT_PATH(cpus, cpu_0), swo_ref_frequency)
+#define SWO_REF_FREQ DT_PROP(DT_PATH(cpus, cpu_0), swo_ref_frequency)
+#elif DT_NODE_HAS_PROP(DT_PATH(cpus, cpu_0), clock_frequency)
+#define SWO_REF_FREQ DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency)
 #else
 #error "Missing DT 'clock-frequency' property on cpu@0 node"
 #endif
-#define SWO_FREQ (CPU_FREQ + (CONFIG_LOG_BACKEND_SWO_FREQ_HZ / 2))
-#define SWO_FREQ_DIV  (SWO_FREQ / CONFIG_LOG_BACKEND_SWO_FREQ_HZ)
+
+#define SWO_FREQ_DIV \
+	((SWO_REF_FREQ + (CONFIG_LOG_BACKEND_SWO_FREQ_HZ / 2)) / \
+		CONFIG_LOG_BACKEND_SWO_FREQ_HZ)
+
 #if SWO_FREQ_DIV > 0xFFFF
 #error CONFIG_LOG_BACKEND_SWO_FREQ_HZ is too low. SWO clock divider is 16-bit. \
 	Minimum supported SWO clock frequency is \
-	[CPU Clock Frequency]/2^16.
+	[Reference Clock Frequency]/2^16.
 #endif
+
 #endif
 
 static uint8_t buf[1];
