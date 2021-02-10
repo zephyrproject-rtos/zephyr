@@ -113,6 +113,8 @@ void test_channel_map_update_mas_loc(void)
 	ut_rx_q_is_empty();
 
 	/*TODO verify if new chm is in use... ? */
+
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_channel_map_update_sla_loc(void)
@@ -128,6 +130,8 @@ void test_channel_map_update_sla_loc(void)
 
 	err = ull_cp_chan_map_update(&conn, chm);
 	zassert_equal(err, BT_HCI_ERR_CMD_DISALLOWED, NULL);
+
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_main(void)
