@@ -976,7 +976,7 @@ static int olcp_response_send(struct ots_svc_inst_t *inst,
 			      enum bt_ots_olcp_proc_type req_op_code,
 			      enum bt_ots_olcp_res_code result_code)
 {
-	struct bt_gatt_indicate_params olcp_ind = { 0 };
+	static struct bt_gatt_indicate_params olcp_ind = { 0 };
 
 	net_buf_simple_reset(&gatt_buf);
 
