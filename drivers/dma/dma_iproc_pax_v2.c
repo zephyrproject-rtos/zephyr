@@ -35,8 +35,6 @@ LOG_MODULE_REGISTER(dma_iproc_pax_v2);
 /* Driver runtime data for PAX DMA and RM */
 static struct dma_iproc_pax_data pax_dma_data;
 
-DEVICE_DECLARE(dma_iproc_pax);
-
 /**
  * @brief Opaque/packet id allocator, range 0 to 31
  */
@@ -762,7 +760,7 @@ static int dma_iproc_pax_init(const struct device *dev)
 	IRQ_CONNECT(DT_INST_IRQN(0),
 		    DT_INST_IRQ(0, priority),
 		    rm_isr,
-		    DEVICE_GET(dma_iproc_pax),
+		    DEVICE_DT_INST_GET(0),
 		    0);
 	irq_enable(DT_INST_IRQN(0));
 #else
@@ -1101,9 +1099,9 @@ static const struct dma_iproc_pax_cfg pax_dma_cfg = {
 	.pcie_dev_name = DT_INST_PROP_BY_PHANDLE(0, pcie_ep, label),
 };
 
-DEVICE_AND_API_INIT(dma_iproc_pax,
-		    DT_INST_LABEL(0),
+DEVICE_DT_INST_DEFINE(0,
 		    &dma_iproc_pax_init,
+		    device_pm_control_nop,
 		    &pax_dma_data,
 		    &pax_dma_cfg,
 		    POST_KERNEL,
