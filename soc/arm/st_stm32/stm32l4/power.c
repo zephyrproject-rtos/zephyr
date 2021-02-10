@@ -8,11 +8,13 @@
 #include <soc.h>
 #include <init.h>
 
+#include <stm32l4xx_ll_utils.h>
 #include <stm32l4xx_ll_bus.h>
 #include <stm32l4xx_ll_cortex.h>
 #include <stm32l4xx_ll_pwr.h>
 #include <stm32l4xx_ll_rcc.h>
 #include <stm32l4xx_ll_system.h>
+#include <clock_control/clock_stm32_ll_common.h>
 
 #include <logging/log.h>
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
@@ -104,6 +106,8 @@ void pm_power_state_exit_post_ops(struct pm_state_info info)
 				info.substate_id);
 			break;
 		}
+		/* need to restore the clock */
+		stm32_clock_control_init(NULL);
 	}
 
 	/*
