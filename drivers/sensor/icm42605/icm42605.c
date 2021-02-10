@@ -456,8 +456,9 @@ static const struct sensor_driver_api icm42605_driver_api = {
 #define ICM42605_INIT(index)						\
 	ICM42605_DEFINE_CONFIG(index);					\
 	static struct icm42605_data icm42605_driver_##index;		\
-	DEVICE_AND_API_INIT(icm42605_##index, DT_INST_LABEL(index),	\
-			    icm42605_init, &icm42605_driver_##index,	\
+	DEVICE_DT_INST_DEFINE(index, icm42605_init,			\
+			    device_pm_control_nop,			\
+			    &icm42605_driver_##index,			\
 			    &icm42605_cfg_##index, POST_KERNEL,		\
 			    CONFIG_SENSOR_INIT_PRIORITY,		\
 			    &icm42605_driver_api);
