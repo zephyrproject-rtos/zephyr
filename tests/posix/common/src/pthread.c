@@ -216,6 +216,9 @@ void *thread_top_term(void *p1)
 	}
 
 	if (id >= 2) {
+		if (IS_ENABLED(CONFIG_DYNAMIC_THREAD)) {
+			zassert_false(pthread_detach(self), "failed to set detach state");
+		}
 		ret = pthread_detach(self);
 		if (id == 2) {
 			zassert_equal(ret, EINVAL, "re-detached thread!");
@@ -345,8 +348,13 @@ ZTEST(posix_apis, test_pthread_execution)
 			      getschedparam.sched_priority,
 			      "scheduling priorities do not match!");
 
-		ret = pthread_create(&newthread[i], &attr[i], thread_top_exec,
-				INT_TO_POINTER(i));
+		if (IS_ENABLED(CONFIG_DYNAMIC_THREAD)) {
+			ret = pthread_create(&newthread[i], NULL, thread_top_exec,
+					INT_TO_POINTER(i));
+		} else {
+			ret = pthread_create(&newthread[i], &attr[i], thread_top_exec,
+					INT_TO_POINTER(i));
+		}
 
 		/* TESTPOINT: Check if thread is created successfully */
 		zassert_false(ret, "Number of threads exceed max limit");
@@ -500,8 +508,13 @@ ZTEST(posix_apis, test_pthread_termination)
 		schedparam.sched_priority = 2;
 		pthread_attr_setschedparam(&attr[i], &schedparam);
 		pthread_attr_setstack(&attr[i], &stack_t[i][0], STACKS);
-		ret = pthread_create(&newthread[i], &attr[i], thread_top_term,
-				     INT_TO_POINTER(i));
+		if (IS_ENABLED(CONFIG_DYNAMIC_THREAD)) {
+			ret = pthread_create(&newthread[i], NULL, thread_top_term,
+						INT_TO_POINTER(i));
+		} else {
+			ret = pthread_create(&newthread[i], &attr[i], thread_top_term,
+						INT_TO_POINTER(i));
+		}
 
 		zassert_false(ret, "Not enough space to create new thread");
 	}
@@ -571,8 +584,10 @@ ZTEST(posix_apis, test_pthread_create_negative)
 	pthread_attr_t attr1;
 
 	/* create pthread without attr initialized */
-	ret = pthread_create(&pthread1, NULL, create_thread1, (void *)1);
-	zassert_equal(ret, EINVAL, "create thread with NULL successful");
+	if (!IS_ENABLED(CONFIG_DYNAMIC_THREAD)) {
+		ret = pthread_create(&pthread1, NULL, create_thread1, (void *)1);
+		zassert_equal(ret, EAGAIN, "create thread with NULL successful");
+	}
 
 	/* initialized attr without set stack to create thread */
 	ret = pthread_attr_init(&attr1);
@@ -776,4 +791,24 @@ ZTEST(posix_apis, test_pthread_equal)
 {
 	zassert_true(pthread_equal(pthread_self(), pthread_self()));
 	zassert_false(pthread_equal(pthread_self(), (pthread_t)4242));
+}
+
+static void *fun(void *arg)
+{
+	*((uint32_t *)arg) = 0xB105F00D;
+	return NULL;
+}
+
+ZTEST(posix_apis, test_pthread_dynamic_stacks)
+{
+	pthread_t th;
+	uint32_t x = 0;
+
+	if (!IS_ENABLED(CONFIG_DYNAMIC_THREAD)) {
+		ztest_test_skip();
+	}
+
+	zassert_ok(pthread_create(&th, NULL, fun, &x));
+	zassert_ok(pthread_join(th, NULL));
+	zassert_equal(0xB105F00D, x);
 }
