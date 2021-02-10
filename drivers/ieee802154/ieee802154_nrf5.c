@@ -65,13 +65,21 @@ static struct nrf5_802154_data nrf5_data;
 
 #if defined(CONFIG_IEEE802154_NRF5_UICR_EUI64_ENABLE)
 #if defined(CONFIG_SOC_NRF5340_CPUAPP)
+#if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+#define EUI64_ADDR (NRF_UICR_S->OTP)
+#else
 #define EUI64_ADDR (NRF_UICR->OTP)
+#endif /* CONFIG_TRUSTED_EXECUTION_NONSECURE */
 #else
 #define EUI64_ADDR (NRF_UICR->CUSTOMER)
 #endif /* CONFIG_SOC_NRF5340_CPUAPP */
 #else
 #if defined(CONFIG_SOC_NRF5340_CPUAPP) || defined(CONFIG_SOC_NRF5340_CPUNET)
+#if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+#define EUI64_ADDR (NRF_FICR_S->INFO.DEVICEID)
+#else
 #define EUI64_ADDR (NRF_FICR->INFO.DEVICEID)
+#endif /* CONFIG_TRUSTED_EXECUTION_NONSECURE */
 #else
 #define EUI64_ADDR (NRF_FICR->DEVICEID)
 #endif /* CONFIG_SOC_NRF5340_CPUAPP || CONFIG_SOC_NRF5340_CPUNET */
@@ -114,8 +122,9 @@ static void nrf5_get_eui64(uint8_t *mac)
 	defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 	int ret = -EPERM;
 #if defined(CONFIG_SPM)
-	ret = spm_request_read(&factoryAddress, (uint32_t)EUI64_ADDR,
-				   sizeof(factoryAddress));
+	ret = spm_request_read(&factoryAddress,
+			       (uint32_t)&EUI64_ADDR[EUI64_ADDR_HIGH],
+			       sizeof(factoryAddress));
 #endif
 	if (ret != 0) {
 		LOG_ERR("Unable to read EUI64 from the secure zone.");
