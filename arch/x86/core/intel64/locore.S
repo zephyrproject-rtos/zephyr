@@ -148,16 +148,8 @@ __start:
 
 	/*
 	 * N.B.: if multiboot info struct is present, "common.S"
-	 * has left a pointer to it in EBX. do not clobber (yet).
-	 *
-	 * next, clear the BSS. note we're still in 32-bit mode,
-	 * so the BSS must fit entirely in the first 4GB of RAM.
+	 * has left a pointer to it in EBX.
 	 */
-	cld
-	xorl %eax, %eax
-	movl $__bss_start, %edi
-	movl $__bss_num_dwords, %ecx
-	rep stosl
 
 	movl $x86_cpuboot, %ebp		/* BSP is always logical CPU id 0 */
 	movl %ebx, __x86_cpuboot_t_arg_OFFSET(%ebp)	/* multiboot info */
