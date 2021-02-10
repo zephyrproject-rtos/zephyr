@@ -6,11 +6,18 @@
 
 #include <kernel.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/atomic.h>
 #include <ksched.h>
 #include <wait_q.h>
 #include <posix/pthread.h>
 #include <sys/slist.h>
+
+#ifdef CONFIG_PTHREAD_DYNAMIC_STACK_DEFAULT_SIZE
+#define DYNAMIC_STACK_SIZE CONFIG_PTHREAD_DYNAMIC_STACK_DEFAULT_SIZE
+#else
+#define DYNAMIC_STACK_SIZE 0
+#endif
 
 #define PTHREAD_INIT_FLAGS	PTHREAD_CANCEL_ENABLE
 #define PTHREAD_CANCELED	((void *) -1)
@@ -115,7 +122,10 @@ int pthread_attr_setstack(pthread_attr_t *attr, void *stackaddr,
 static void zephyr_thread_wrapper(void *arg1, void *arg2, void *arg3)
 {
 	void * (*fun_ptr)(void *) = arg3;
-
+	struct _thread_stack_info *stack_info
+		= &k_current_get()->stack_info;
+	stack_info->delta = (size_t)
+			((uint8_t *)stack_info->start - (uint8_t *)arg2);
 	fun_ptr(arg1);
 	pthread_exit(NULL);
 }
@@ -135,15 +145,41 @@ int pthread_create(pthread_t *newthread, const pthread_attr_t *attr,
 	uint32_t pthread_num;
 	pthread_condattr_t cond_attr;
 	struct posix_thread *thread;
+	pthread_attr_t dynamic_attr;
+	k_thread_stack_t *dynamic_stack = NULL;
+	/* a non-const pthread_attr_t* that we can modify, if needed */
+	pthread_attr_t *mattr = (pthread_attr_t *)attr;
 
-	/*
-	 * FIXME: Pthread attribute must be non-null and it provides stack
-	 * pointer and stack size. So even though POSIX 1003.1 spec accepts
-	 * attrib as NULL but zephyr needs it initialized with valid stack.
-	 */
-	if ((attr == NULL) || (attr->initialized == 0U)
-	    || (attr->stack == NULL) || (attr->stacksize == 0)) {
+	if (mattr != NULL && mattr->initialized == 0) {
 		return EINVAL;
+	}
+
+	if (mattr == NULL || mattr->stack == NULL) {
+		if (IS_ENABLED(CONFIG_PTHREAD_DYNAMIC_STACK)) {
+			/*
+			 * We dynamically allocate space when either
+			 * 1) attr == NULL -> use DYNAMIC_STACK_SIZE, or
+			 * 2) attr != NULL && attr->stack == NULL
+			 *    -> allocate attr->stacksize
+			 */
+			if (mattr == NULL) {
+				(void) pthread_attr_init(&dynamic_attr);
+				dynamic_attr.stacksize = DYNAMIC_STACK_SIZE;
+				mattr = &dynamic_attr;
+			}
+
+			dynamic_stack = k_aligned_alloc(ARCH_STACK_PTR_ALIGN,
+				Z_KERNEL_STACK_SIZE_ADJUST(mattr->stacksize));
+			if (dynamic_stack == NULL) {
+				return EAGAIN;
+			}
+
+			__ASSERT_NO_MSG(dynamic_stack != NULL);
+			mattr->stack = dynamic_stack;
+			mattr->flags |= K_STACK_ON_HEAP;
+		} else {
+			return EINVAL;
+		}
 	}
 
 	pthread_mutex_lock(&pthread_pool_lock);
@@ -158,10 +194,14 @@ int pthread_create(pthread_t *newthread, const pthread_attr_t *attr,
 	pthread_mutex_unlock(&pthread_pool_lock);
 
 	if (pthread_num >= CONFIG_MAX_PTHREAD_COUNT) {
+		if (IS_ENABLED(CONFIG_PTHREAD_DYNAMIC_STACK)
+			&& dynamic_stack != NULL) {
+			k_free(dynamic_stack);
+		}
 		return EAGAIN;
 	}
 
-	prio = posix_to_zephyr_priority(attr->priority, attr->schedpolicy);
+	prio = posix_to_zephyr_priority(mattr->priority, mattr->schedpolicy);
 
 	thread = &posix_thread_pool[pthread_num];
 	/*
@@ -172,25 +212,25 @@ int pthread_create(pthread_t *newthread, const pthread_attr_t *attr,
 	(void)pthread_mutex_init(&thread->cancel_lock, NULL);
 
 	pthread_mutex_lock(&thread->cancel_lock);
-	thread->cancel_state = (1 << _PTHREAD_CANCEL_POS) & attr->flags;
+	thread->cancel_state = (1 << _PTHREAD_CANCEL_POS) & mattr->flags;
 	thread->cancel_pending = 0;
 	pthread_mutex_unlock(&thread->cancel_lock);
 
 	pthread_mutex_lock(&thread->state_lock);
-	thread->state = attr->detachstate;
+	thread->state = mattr->detachstate;
 	pthread_mutex_unlock(&thread->state_lock);
 
 	pthread_cond_init(&thread->state_cond, &cond_attr);
 	sys_slist_init(&thread->key_list);
 
-	*newthread = (pthread_t) k_thread_create(&thread->thread, attr->stack,
-						 attr->stacksize,
+	*newthread = (pthread_t) k_thread_create(&thread->thread, mattr->stack,
+						 mattr->stacksize,
 						 (k_thread_entry_t)
 						 zephyr_thread_wrapper,
-						 (void *)arg, NULL,
+						 (void *)arg, dynamic_stack,
 						 threadroutine, prio,
-						 (~K_ESSENTIAL & attr->flags),
-						 K_MSEC(attr->delayedstart));
+						 (~K_ESSENTIAL & mattr->flags),
+						 K_MSEC(mattr->delayedstart));
 	return 0;
 }
 
@@ -347,6 +387,23 @@ int pthread_once(pthread_once_t *once, void (*init_func)(void))
 	return 0;
 }
 
+#ifdef CONFIG_PTHREAD_DYNAMIC_STACK
+static void zephyr_pthread_stack_reclaim(struct k_thread *thread)
+{
+	uint8_t *p = (uint8_t *)thread->stack_info.start;
+
+	p -= thread->stack_info.delta;
+	memset((void *)thread->stack_info.start, 0,
+		thread->stack_info.size);
+	k_free(p);
+}
+#else
+static inline void zephyr_pthread_stack_reclaim(struct k_thread *thread)
+{
+	ARG_UNUSED(thread);
+}
+#endif
+
 /**
  * @brief Terminate calling thread.
  *
@@ -383,6 +440,10 @@ void pthread_exit(void *retval)
 		if ((key_obj->destructor != NULL) && (thread_spec_data != NULL)) {
 			(key_obj->destructor)(thread_spec_data->spec_data);
 		}
+	}
+
+	if ((self->thread.base.user_options & K_STACK_ON_HEAP) != 0) {
+		self->thread.fn_abort = zephyr_pthread_stack_reclaim;
 	}
 
 	pthread_mutex_unlock(&self->state_lock);
@@ -531,6 +592,21 @@ int pthread_attr_setschedpolicy(pthread_attr_t *attr, int policy)
 	}
 
 	attr->schedpolicy = policy;
+	return 0;
+}
+
+/**
+ * @brief Set stack size attribute in thread attributes object.
+ *
+ * See IEEE 1003.1
+ */
+int pthread_attr_setstacksize(pthread_attr_t *attr, size_t stacksize)
+{
+	if ((attr == NULL) || (attr->initialized == 0U)) {
+		return EINVAL;
+	}
+
+	attr->stacksize = stacksize;
 	return 0;
 }
 
