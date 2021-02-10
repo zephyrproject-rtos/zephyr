@@ -3,6 +3,7 @@
 
 config I2C_ITE_IT8XXX2
 	bool "ITE IT8XXX2 I2C driver"
+	depends on SOC_IT8XXX2
 	help
 	  Enable I2C support on it8xxx2_evb.
 	  Supported Speeds: 100kHz, 400kHz and 1MHz.
