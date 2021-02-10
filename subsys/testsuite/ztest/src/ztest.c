@@ -204,6 +204,9 @@ static void run_test_functions(struct unit_test *test)
 	test->setup();
 	phase = TEST_PHASE_TEST;
 	test->test();
+	phase = TEST_PHASE_TEARDOWN;
+	test->teardown();
+	phase = TEST_PHASE_FRAMEWORK;
 }
 
 #ifndef KERNEL
