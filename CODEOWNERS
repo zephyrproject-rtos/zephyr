@@ -656,7 +656,7 @@
 /share/zephyrunittest-package/            @tejlmand
 /subsys/bluetooth/                        @joerchan @jhedberg @Vudentz
 /subsys/bluetooth/audio/                  @joerchan @jhedberg @Vudentz @Thalley @asbjornsabo
-/subsys/bluetooth/controller/             @carlescufi @cvinayak @thoh-ot @kruithofa
+/subsys/bluetooth/controller/             @carlescufi @cvinayak @thoh-ot @kruithofa @erbr-ot @sjanc
 /subsys/bluetooth/mesh/                   @jhedberg @trond-snekvik @joerchan @Vudentz
 /subsys/canbus/                           @alexanderwachter
 /subsys/cpp/                              @vanwinkeljan
@@ -716,7 +716,7 @@
 /tests/benchmarks/cmsis_dsp/              @stephanosio
 /tests/boards/native_posix/               @aescolar @daor-oti
 /tests/boards/intel_s1000_crb/            @dcpleung @sathishkuttan
-/tests/bluetooth/                         @carlescufi @cvinayak @thoh-ot @kruithofa @dagbja
+/tests/bluetooth/                         @carlescufi @cvinayak @thoh-ot @kruithofa @erbr-ot @sjanc
 /tests/bluetooth/bsim_bt/                 @joerchan @jhedberg @Vudentz @aescolar @wopu-ot
 /tests/bluetooth/bsim_bt/bsim_test_audio/ @joerchan @jhedberg @Vudentz @aescolar @wopu-ot @Thalley @asbjornsabo
 /tests/bluetooth/tester/                  @joerchan @jhedberg @Vudentz @sjanc
