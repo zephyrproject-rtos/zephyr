@@ -182,9 +182,6 @@ static int mb_rx_ascii_frame(struct mb_rtu_context *ctx)
 	calc_lrc = mb_ascii_get_lrc(&ctx->uart_buf[1],
 				    (ctx->uart_buf_ctr - 5) / 2);
 
-	ctx->uart_buf_ctr = 0;
-	ctx->uart_buf_ptr = &ctx->uart_buf[0];
-
 	if (calc_lrc != frame_lrc) {
 		LOG_ERR("Calculated LRC does not match received LRC");
 		return -EIO;
@@ -321,9 +318,6 @@ static int mb_rx_rtu_frame(struct mb_rtu_context *ctx)
 	/* Calculate CRC over address, function code, and payload */
 	calc_crc = mb_rtu_crc16(&ctx->uart_buf[0],
 				ctx->uart_buf_ctr - sizeof(ctx->rx_frame.crc));
-
-	ctx->uart_buf_ctr = 0;
-	ctx->uart_buf_ptr = &ctx->uart_buf[0];
 
 	if (ctx->rx_frame.crc != calc_crc) {
 		LOG_WRN("Calculated CRC does not match received CRC");
@@ -472,6 +466,9 @@ static void mb_rx_handler(struct k_work *item)
 	} else {
 		ctx->rx_frame_err = mb_rx_rtu_frame(ctx);
 	}
+
+	ctx->uart_buf_ctr = 0;
+	ctx->uart_buf_ptr = &ctx->uart_buf[0];
 
 	if (ctx->client == true) {
 		k_sem_give(&ctx->client_wait_sem);
