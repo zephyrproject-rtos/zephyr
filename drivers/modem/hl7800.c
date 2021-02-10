@@ -4886,6 +4886,7 @@ static struct net_if_api api_funcs = {
 	.init = offload_iface_init,
 };
 
-NET_DEVICE_OFFLOAD_INIT(modem_hl7800, "MODEM_HL7800", hl7800_init,
-			device_pm_control_nop, &ictx, NULL,
-			CONFIG_MODEM_HL7800_INIT_PRIORITY, &api_funcs, MDM_MTU);
+NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, hl7800_init, device_pm_control_nop,
+				  &ictx, NULL,
+				  CONFIG_MODEM_HL7800_INIT_PRIORITY, &api_funcs,
+				  MDM_MTU);
