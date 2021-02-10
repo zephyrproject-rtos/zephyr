@@ -70,6 +70,8 @@ void main(void)
 		return;
 	}
 
+	LOG_INF("Found USB Headset Device");
+
 	usb_audio_register(hs_dev, &ops);
 
 	ret = usb_enable(NULL);
@@ -77,4 +79,6 @@ void main(void)
 		LOG_ERR("Failed to enable USB");
 		return;
 	}
+
+	LOG_INF("USB enabled");
 }
