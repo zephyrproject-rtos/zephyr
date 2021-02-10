@@ -224,13 +224,6 @@ __csSet:
 	movl %eax, %cr0
 #endif /* CONFIG_X86_MMU */
 
-#ifdef CONFIG_LOAPIC
-	/* For BSP, cpu_number is 0 */
-	xorl	%eax, %eax
-	pushl	%eax
-	call	z_loapic_enable
-#endif
-
 	pushl	%ebx		/* pointer to multiboot info, or NULL */
 	call	z_x86_prep_c	/* enter kernel; never returns */
 
