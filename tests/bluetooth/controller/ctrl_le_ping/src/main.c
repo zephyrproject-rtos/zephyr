@@ -39,8 +39,6 @@ static void setup(void)
 	test_setup(&conn);
 }
 
-
-
 /* +-----+                     +-------+            +-----+
  * | UT  |                     | LL_A  |            | LT  |
  * +-----+                     +-------+            +-----+
@@ -96,6 +94,8 @@ void test_ping_mas_loc(void)
 
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
+
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /* +-----+                     +-------+            +-----+
@@ -153,6 +153,8 @@ void test_ping_sla_loc(void)
 
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
+
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /* +-----+ +-------+            +-----+
@@ -207,6 +209,7 @@ void test_ping_mas_rem(void)
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
 
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /* +-----+ +-------+            +-----+
@@ -261,6 +264,7 @@ void test_ping_sla_rem(void)
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
 
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_main(void)

@@ -41,8 +41,6 @@ static void setup(void)
 	test_setup(&conn);
 }
 
-
-
 /* +-----+                     +-------+            +-----+
  * | UT  |                     | LL_A  |            | LT  |
  * +-----+                     +-------+            +-----+
@@ -106,6 +104,8 @@ void test_version_exchange_mas_loc(void)
 	/* There should be one host notification */
 	ut_rx_pdu(LL_VERSION_IND, &ntf, &remote_version_ind);
 	ut_rx_q_is_empty();
+
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_version_exchange_mas_loc_2(void)
@@ -124,6 +124,8 @@ void test_version_exchange_mas_loc_2(void)
 	}
 
 	zassert_not_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+
+	zassert_equal(ctx_buffers_free(), 0, "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /* +-----+ +-------+            +-----+
@@ -181,6 +183,7 @@ void test_version_exchange_mas_rem(void)
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
 
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /* +-----+                     +-------+            +-----+
@@ -246,6 +249,8 @@ void test_version_exchange_mas_rem_2(void)
 	/* There should be one host notification */
 	ut_rx_pdu(LL_VERSION_IND, &ntf, &remote_version_ind);
 	ut_rx_q_is_empty();
+
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /* +-----+                     +-------+            +-----+
@@ -335,6 +340,9 @@ void test_version_exchange_mas_loc_twice(void)
 	/* There should be one host notification */
 	ut_rx_pdu(LL_VERSION_IND, &ntf, &remote_version_ind);
 	ut_rx_q_is_empty();
+
+	/* Note that one context buffer is not freed for this test */
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM-1, "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_main(void)

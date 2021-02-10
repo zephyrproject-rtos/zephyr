@@ -42,7 +42,6 @@ static void setup(void)
 	test_setup(&conn);
 }
 
-
 /* +-----+                     +-------+              +-----+
  * | UT  |                     | LL_A  |              | LT  |
  * +-----+                     +-------+              +-----+
@@ -141,6 +140,8 @@ void test_encryption_start_mas_loc(void)
 
 	/* Rx Decryption should be enabled */
 	zassert_equal(conn.lll.enc_rx, 1U, NULL);
+
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /* +-----+                     +-------+              +-----+
@@ -284,6 +285,8 @@ void test_encryption_start_mas_loc_limited_memory(void)
 
 	/* Rx Decryption should be enabled */
 	zassert_equal(conn.lll.enc_rx, 1U, NULL);
+
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /* +-----+                     +-------+              +-----+
@@ -367,6 +370,8 @@ void test_encryption_start_mas_loc_no_ltk(void)
 
 	/* Rx Decryption should be disabled */
 	zassert_equal(conn.lll.enc_rx, 0U, NULL);
+
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /* +-----+                +-------+              +-----+
@@ -494,6 +499,8 @@ void test_encryption_start_mas_rem(void)
 
 	/* Tx Encryption should be enabled */
 	zassert_equal(conn.lll.enc_tx, 1U, NULL);
+
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /* +-----+                +-------+              +-----+
@@ -673,6 +680,8 @@ void test_encryption_start_mas_rem_limited_memory(void)
 
 	/* Tx Encryption should be enabled */
 	zassert_equal(conn.lll.enc_tx, 1U, NULL);
+
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /* +-----+                +-------+              +-----+
@@ -766,6 +775,9 @@ void test_encryption_start_mas_rem_no_ltk(void)
 
 	/* Rx Decryption should be disabled */
 	zassert_equal(conn.lll.enc_rx, 0U, NULL);
+
+	/* Note that for this test the context is not released */
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM-1, "Free CTX buffers %d", ctx_buffers_free());
 }
 
 
