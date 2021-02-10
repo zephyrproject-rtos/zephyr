@@ -39,12 +39,12 @@ set(TFM_VALID_PARTITIONS
 #                        IPC
 #                        ISOLATION_LEVEL 2
 #                        REGRESSION
-#                        BL2 True
+#                        BL2
 #                        BUILD_PROFILE profile_small
 #                        ENABLED_PARTITIONS TFM_PARTITION_PLATFORM TFM_PARTITION_CRYPTO)
 function(trusted_firmware_build)
-  set(options IPC REGRESSION)
-  set(oneValueArgs BINARY_DIR BOARD BL2 ISOLATION_LEVEL CMAKE_BUILD_TYPE BUILD_PROFILE
+  set(options IPC REGRESSION BL2)
+  set(oneValueArgs BINARY_DIR BOARD ISOLATION_LEVEL CMAKE_BUILD_TYPE BUILD_PROFILE
     MCUBOOT_IMAGE_NUMBER)
   set(multiValueArgs ENABLED_PARTITIONS)
   cmake_parse_arguments(TFM "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
@@ -58,11 +58,6 @@ function(trusted_firmware_build)
     endif()
     list(APPEND TFM_PARTITIONS_ARGS -D${partition}=${val})
   endforeach()
-
-  if(NOT DEFINED TFM_BL2)
-    set(TFM_BL2 True)
-  endif()
-  set(TFM_BL2_ARG "-DBL2=${TFM_BL2}")
 
   if(TFM_IPC)
     set(TFM_IPC_ARG -DTFM_PSA_API=ON)
@@ -148,7 +143,7 @@ function(trusted_firmware_build)
                -DTFM_PLATFORM=${TFM_BOARD}
                -DCROSS_COMPILE=${TFM_TOOLCHAIN_PATH}/${TFM_TOOLCHAIN_PREFIX}
                ${TFM_CMAKE_BUILD_TYPE_ARG}
-               ${TFM_BL2_ARG}
+               -DBL2=${TFM_BL2}
                ${TFM_IPC_ARG}
                ${TFM_ISOLATION_LEVEL_ARG}
                ${TFM_REGRESSION_ARG}
@@ -217,10 +212,8 @@ if (CONFIG_BUILD_WITH_TFM)
   if (CONFIG_TFM_REGRESSION)
     set(TFM_REGRESSION_ARG REGRESSION)
   endif()
-  if (CONFIG_TFM_BL2_TRUE)
-    set(TFM_BL2_ARG BL2 True)
-  elseif (CONFIG_TFM_BL2_FALSE)
-    set(TFM_BL2_ARG BL2 False)
+  if (CONFIG_TFM_BL2)
+    set(TFM_BL2_ARG BL2)
   endif()
   if (CONFIG_TFM_ISOLATION_LEVEL)
     set(TFM_ISOLATION_LEVEL_ARG ISOLATION_LEVEL ${CONFIG_TFM_ISOLATION_LEVEL})

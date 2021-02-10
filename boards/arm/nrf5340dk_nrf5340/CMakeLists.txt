@@ -17,7 +17,7 @@ if (CONFIG_BUILD_WITH_TFM)
 		set(TFM_IMAGE_VERSION_NS 0.0.0+0)
 	endif()
 
-	if (NOT CONFIG_TFM_BL2_FALSE)
+	if (CONFIG_TFM_BL2)
 		set(PREPROCESSED_FILE_S "${CMAKE_BINARY_DIR}/tfm/bl2/ext/mcuboot/CMakeFiles/signing_layout_s.dir/signing_layout_s.o")
 		set(PREPROCESSED_FILE_NS "${CMAKE_BINARY_DIR}/tfm/bl2/ext/mcuboot/CMakeFiles/signing_layout_ns.dir/signing_layout_ns.o")
 		set(TFM_MCUBOOT_DIR "${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/trusted-firmware-m/bl2/ext/mcuboot")
@@ -39,7 +39,7 @@ if (CONFIG_BUILD_WITH_TFM)
 	    message(FATAL_ERROR "'srec_cat' not found. Please install it, or add it to $PATH.")
 	endif()
 
-	if (CONFIG_TFM_BL2_FALSE)
+	if (NOT CONFIG_TFM_BL2)
 		# Merge tfm_s and zephyr (NS) image to a single binary.
 		set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
 			COMMAND ${SREC_CAT}
