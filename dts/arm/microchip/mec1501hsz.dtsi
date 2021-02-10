@@ -42,27 +42,21 @@
 
 		pinmux_000_036: pinmux-0 {
 			ph-reg = <&gpio_000_036>;
-			label = "PINMUX000_036";
 		};
 		pinmux_040_076: pinmux-1 {
 			ph-reg = <&gpio_040_076>;
-			label = "PINMUX040_076";
 		};
 		pinmux_100_136: pinmux-2 {
 			ph-reg = <&gpio_100_136>;
-			label = "PINMUX100_136";
 		};
 		pinmux_140_176: pinmux-3 {
 			ph-reg = <&gpio_140_176>;
-			label = "PINMUX140_176";
 		};
 		pinmux_200_236: pinmux-4 {
 			ph-reg = <&gpio_200_236>;
-			label = "PINMUX200_236";
 		};
 		pinmux_240_276: pinmux-5 {
 			ph-reg = <&gpio_240_276>;
-			label = "PINMUX240_276";
 		};
 	};
 
