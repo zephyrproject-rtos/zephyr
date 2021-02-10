@@ -233,6 +233,17 @@ extern void k_thread_foreach_unlocked(
  */
 #define K_INHERIT_PERMS (BIT(3))
 
+/**
+ * @brief Callback item state
+ *
+ * @details
+ * This is a single bit of state reserved for "callback manager"
+ * utilities (p4wq initially) who need to track operations invoked
+ * from within a user-provided callback they have been invoked.
+ * Effectively it serves as a tiny bit of zero-overhead TLS data.
+ */
+#define K_CALLBACK_STATE (BIT(4))
+
 #ifdef CONFIG_X86
 /* x86 Bitmask definitions for threads user options */
 
