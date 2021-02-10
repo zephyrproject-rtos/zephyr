@@ -15,11 +15,15 @@ properties:
       type: int
       required: false
       default: 1
-      description: Device INT pin number (1 or 2)
+      enum:
+        - 1 # drdy is generated from INT1
+        - 2 # drdy is generated from INT2
+      description: Select DRDY pin number (1 or 2).
 
         This number represents which of the two interrupt pins
-        (INT1 or INT2) the line is attached to. This property is not
-        mandatory and if not present it defaults to 1.
+        (INT1 or INT2) the drdy line is attached to. This property is not
+        mandatory and if not present it defaults to 1 which is the
+        configuration at power-up.
 
     range:
       type: int
