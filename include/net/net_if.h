@@ -2431,7 +2431,8 @@ struct net_if_api {
  */
 #define NET_DEVICE_DT_OFFLOAD_DEFINE(node_id, init_fn, pm_control_fn,	\
 				   data, cfg, prio, api, mtu)		\
-	Z_NET_DEVICE_OFFLOAD_INIT(node_id, node_id, DT_LABEL(node_id),	\
+	Z_NET_DEVICE_OFFLOAD_INIT(node_id, Z_DEVICE_DT_DEV_NAME(node_id), \
+				  DT_PROP_OR(node_id, label, NULL),	\
 				  init_fn, pm_control_fn, data, cfg,	\
 				  prio, api, mtu)
 
