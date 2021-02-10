@@ -13,9 +13,14 @@ source "soc/arm/st_stm32/stm32l4/Kconfig.defconfig.stm32l4*"
 config SOC_SERIES
 	default "stm32l4"
 
+if PM
+config PM_DEVICE
+	bool
+	default y
+
 config STM32_LPTIM_TIMER
 	bool
 	default y
-	depends on PM
+endif # PM
 
 endif # SOC_SERIES_STM32L4X
