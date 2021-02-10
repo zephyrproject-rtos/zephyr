@@ -17,6 +17,8 @@
 
 #include <zephyr.h>
 
+#include <cache.h>
+
 #include <arch/x86/intel_vtd.h>
 #include <drivers/interrupt_controller/intel_vtd.h>
 #include <drivers/interrupt_controller/ioapic.h>
@@ -71,6 +73,17 @@ static void vtd_send_cmd(const struct device *dev,
 	while (!sys_test_bit((base_address + VTD_GSTS_REG),
 			     status_bit)) {
 		/* Do nothing */
+	}
+}
+
+static void vtd_flush_irte_from_cache(const struct device *dev,
+				      uint8_t irte_idx)
+{
+	struct vtd_ictl_data *data = dev->data;
+
+	if (!data->pwc) {
+		sys_cache_data_range(&data->irte[irte_idx],
+				     sizeof(struct vtd_irte), K_CACHE_WB);
 	}
 }
 
@@ -328,6 +341,8 @@ static int vtd_ictl_remap(const struct device *dev,
 
 	vtd_index_iec_invalidate(dev, irte_idx);
 
+	vtd_flush_irte_from_cache(dev, irte_idx);
+
 	return 0;
 }
 
@@ -416,6 +431,11 @@ static int vtd_ictl_init(const struct device *dev)
 	int ret = 0;
 
 	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
+
+	if (vtd_read_reg64(dev, VTD_ECAP_REG) & VTD_ECAP_C) {
+		printk("Page walk coherency supported\n");
+		data->pwc = true;
+	}
 
 	vtd_fault_event_init(dev);
 
