@@ -1270,6 +1270,18 @@ static void test_enums_required_false(void)
 #define DT_DRV_COMPAT vnd_adc_temp_sensor
 static void test_clocks(void)
 {
+	/* DT_CLOCKS_CTLR_BY_IDX */
+	zassert_true(DT_SAME_NODE(DT_CLOCKS_CTLR_BY_IDX(TEST_TEMP, 1),
+				  DT_NODELABEL(test_fixed_clk)), "");
+
+	/* DT_CLOCKS_CTLR */
+	zassert_true(DT_SAME_NODE(DT_CLOCKS_CTLR(TEST_TEMP),
+				  DT_NODELABEL(test_clk)), "");
+
+	/* DT_CLOCKS_CTLR_BY_NAME */
+	zassert_true(DT_SAME_NODE(DT_CLOCKS_CTLR_BY_NAME(TEST_TEMP, clk_b),
+				  DT_NODELABEL(test_clk)), "");
+
 	/* DT_CLOCKS_LABEL_BY_IDX */
 	zassert_true(!strcmp(DT_CLOCKS_LABEL_BY_IDX(TEST_TEMP, 0),
 			     "TEST_CLOCK"), "");
@@ -1300,6 +1312,18 @@ static void test_clocks(void)
 
 	/* DT_INST */
 	zassert_equal(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT), 1, "");
+
+	/* DT_INST_CLOCKS_CTLR_BY_IDX */
+	zassert_true(DT_SAME_NODE(DT_INST_CLOCKS_CTLR_BY_IDX(0, 1),
+				  DT_NODELABEL(test_fixed_clk)), "");
+
+	/* DT_INST_CLOCKS_CTLR */
+	zassert_true(DT_SAME_NODE(DT_INST_CLOCKS_CTLR(0),
+				  DT_NODELABEL(test_clk)), "");
+
+	/* DT_INST_CLOCKS_CTLR_BY_NAME */
+	zassert_true(DT_SAME_NODE(DT_INST_CLOCKS_CTLR_BY_NAME(0, clk_b),
+				  DT_NODELABEL(test_clk)), "");
 
 	/* DT_INST_CLOCKS_LABEL_BY_IDX */
 	zassert_true(!strcmp(DT_INST_CLOCKS_LABEL_BY_IDX(0, 0),
