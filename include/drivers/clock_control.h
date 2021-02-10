@@ -103,6 +103,10 @@ struct clock_control_driver_api {
 static inline int clock_control_on(const struct device *dev,
 				   clock_control_subsys_t sys)
 {
+	if (!device_is_ready(dev)) {
+		return -ENODEV;
+	}
+
 	const struct clock_control_driver_api *api =
 		(const struct clock_control_driver_api *)dev->api;
 
@@ -122,6 +126,10 @@ static inline int clock_control_on(const struct device *dev,
 static inline int clock_control_off(const struct device *dev,
 				    clock_control_subsys_t sys)
 {
+	if (!device_is_ready(dev)) {
+		return -ENODEV;
+	}
+
 	const struct clock_control_driver_api *api =
 		(const struct clock_control_driver_api *)dev->api;
 
@@ -156,6 +164,10 @@ static inline int clock_control_async_on(const struct device *dev,
 		return -ENOTSUP;
 	}
 
+	if (!device_is_ready(dev)) {
+		return -ENODEV;
+	}
+
 	return api->async_on(dev, sys, cb, user_data);
 }
 
@@ -177,6 +189,10 @@ static inline enum clock_control_status clock_control_get_status(const struct de
 		return CLOCK_CONTROL_STATUS_UNKNOWN;
 	}
 
+	if (!device_is_ready(dev)) {
+		return -ENODEV;
+	}
+
 	return api->get_status(dev, sys);
 }
 
@@ -191,6 +207,10 @@ static inline int clock_control_get_rate(const struct device *dev,
 					 clock_control_subsys_t sys,
 					 uint32_t *rate)
 {
+	if (!device_is_ready(dev)) {
+		return -ENODEV;
+	}
+
 	const struct clock_control_driver_api *api =
 		(const struct clock_control_driver_api *)dev->api;
 
