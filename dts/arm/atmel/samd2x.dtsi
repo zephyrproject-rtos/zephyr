@@ -43,8 +43,6 @@
 	};
 
 	aliases {
-		pinmux-a = &pinmux_a;
-		pinmux-b = &pinmux_b;
 		port-a = &porta;
 		port-b = &portb;
 		adc-0 = &adc;
@@ -101,13 +99,11 @@
 		pinmux_a: pinmux@41004400 {
 			compatible = "atmel,sam0-pinmux";
 			reg = <0x41004400 0x80>;
-			label = "PINMUX_A";
 		};
 
 		pinmux_b: pinmux@41004480 {
 			compatible = "atmel,sam0-pinmux";
 			reg = <0x41004480 0x80>;
-			label = "PINMUX_B";
 		};
 
 		wdog: watchdog@40001000 {

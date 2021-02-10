@@ -36,11 +36,6 @@
 		adc-0 = &adc0;
 		adc-1 = &adc1;
 
-		pinmux-a = &pinmux_a;
-		pinmux-b = &pinmux_b;
-		pinmux-c = &pinmux_c;
-		pinmux-d = &pinmux_d;
-
 		port-a = &porta;
 		port-b = &portb;
 		port-c = &portc;
@@ -142,25 +137,21 @@
 		pinmux_a: pinmux@41008000 {
 			compatible = "atmel,sam0-pinmux";
 			reg = <0x41008000 0x80>;
-			label = "PINMUX_A";
 		};
 
 		pinmux_b: pinmux@41008080 {
 			compatible = "atmel,sam0-pinmux";
 			reg = <0x41008080 0x80>;
-			label = "PINMUX_B";
 		};
 
 		pinmux_c: pinmux@41008100 {
 			compatible = "atmel,sam0-pinmux";
 			reg = <0x41008100 0x80>;
-			label = "PINMUX_C";
 		};
 
 		pinmux_d: pinmux@41008180 {
 			compatible = "atmel,sam0-pinmux";
 			reg = <0x41008180 0x80>;
-			label = "PINMUX_D";
 		};
 
 		wdog: watchdog@40002000 {

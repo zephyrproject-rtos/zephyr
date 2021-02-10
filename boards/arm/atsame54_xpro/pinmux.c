@@ -10,10 +10,15 @@
 
 static int board_pinmux_init(const struct device *dev)
 {
-	const struct device *muxa = device_get_binding("PINMUX_A");
-	const struct device *muxb = device_get_binding("PINMUX_B");
-	const struct device *muxc = device_get_binding("PINMUX_C");
-	const struct device *muxd = device_get_binding("PINMUX_D");
+	const struct device *muxa = DEVICE_DT_GET(DT_NODELABEL(pinmux_a));
+	const struct device *muxb = DEVICE_DT_GET(DT_NODELABEL(pinmux_b));
+	const struct device *muxc = DEVICE_DT_GET(DT_NODELABEL(pinmux_c));
+	const struct device *muxd = DEVICE_DT_GET(DT_NODELABEL(pinmux_d));
+
+	__ASSERT_NO_MSG(device_is_ready(muxa));
+	__ASSERT_NO_MSG(device_is_ready(muxb));
+	__ASSERT_NO_MSG(device_is_ready(muxc));
+	__ASSERT_NO_MSG(device_is_ready(muxd));
 
 	ARG_UNUSED(dev);
 	ARG_UNUSED(muxa);
