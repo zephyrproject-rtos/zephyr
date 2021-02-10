@@ -48,6 +48,14 @@ static void setup(void)
 	test_setup(&conn);
 }
 
+/*
+ * EGON TODO: Currently a placeholder only
+ * to verify that the fix for unittesting works
+ */
+static void teardown(void)
+{
+	ztest_test_pass();
+}
 
 /*
  * +-----+                     +-------+            +-----+
@@ -391,18 +399,18 @@ void test_hci_main(void);
 void test_main(void)
 {
 	ztest_test_suite(feature_exchange_master,
-			 ztest_unit_test_setup_teardown(test_feature_exchange_mas_loc, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_feature_exchange_mas_loc_2, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_feature_exchange_mas_rem, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_feature_exchange_mas_rem_2, setup, unit_test_noop)
+			 ztest_unit_test_setup_teardown(test_feature_exchange_mas_loc, setup, teardown),
+			 ztest_unit_test_setup_teardown(test_feature_exchange_mas_loc_2, setup, teardown),
+			 ztest_unit_test_setup_teardown(test_feature_exchange_mas_rem, setup, teardown),
+			 ztest_unit_test_setup_teardown(test_feature_exchange_mas_rem_2, setup, teardown)
 		);
 
 	ztest_test_suite(feature_exchange_slave,
-			 ztest_unit_test_setup_teardown(test_slave_feature_exchange_sla_loc, setup, unit_test_noop)
+			 ztest_unit_test_setup_teardown(test_slave_feature_exchange_sla_loc, setup, teardown)
 		);
 
 	ztest_test_suite(feature_exchange_unknown,
-			 ztest_unit_test_setup_teardown(test_feature_exchange_sla_loc_unknown_rsp, setup, unit_test_noop)
+			 ztest_unit_test_setup_teardown(test_feature_exchange_sla_loc_unknown_rsp, setup, teardown)
 		);
 
 	ztest_run_test_suite(feature_exchange_master);
