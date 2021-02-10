@@ -12,7 +12,7 @@
 #include "icm42605_reg.h"
 #include "icm42605_spi.h"
 
-LOG_MODULE_REGISTER(ICM42605, CONFIG_SENSOR_LOG_LEVEL);
+LOG_MODULE_DECLARE(ICM42605, CONFIG_SENSOR_LOG_LEVEL);
 
 int icm42605_set_fs(const struct device *dev, uint16_t a_sf, uint16_t g_sf)
 {

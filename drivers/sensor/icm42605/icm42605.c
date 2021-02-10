@@ -66,7 +66,7 @@ static inline void icm42605_convert_temp(struct sensor_value *val,
 
 static int icm42605_channel_get(const struct device *dev,
 				enum sensor_channel chan,
-				const struct sensor_value *val)
+				struct sensor_value *val)
 {
 	const struct icm42605_data *drv_data = dev->data;
 
@@ -124,7 +124,7 @@ static int icm42605_channel_get(const struct device *dev,
 int icm42605_tap_fetch(const struct device *dev)
 {
 	int result = 0;
-	const struct icm42605_data *drv_data = dev->data;
+	struct icm42605_data *drv_data = dev->data;
 
 	if (drv_data->tap_en &&
 	    (drv_data->tap_handler || drv_data->double_tap_handler)) {

@@ -559,3 +559,11 @@ test_spi_iis2iclx: iis2iclx@37 {
 	drdy-gpios = <&test_gpio 0 0>;
 	int-pin = <1>;
 };
+
+test_spi_icm42605: icm42605@38 {
+	compatible = "invensense,icm42605";
+	label = "ICM42605";
+	reg = <0x38>;
+	spi-max-frequency = <0>;
+	int-gpios = <&test_gpio 0 0>;
+};
