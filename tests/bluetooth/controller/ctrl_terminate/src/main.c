@@ -66,6 +66,8 @@ static void test_terminate_rem(uint8_t role)
 
 	/* There should be no host notification */
 	ut_rx_q_is_empty();
+
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_terminate_mas_rem(void)
@@ -115,6 +117,8 @@ void test_terminate_loc(uint8_t role)
 
 	/* There should be no host notification */
 	ut_rx_q_is_empty();
+
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_terminate_mas_loc(void)

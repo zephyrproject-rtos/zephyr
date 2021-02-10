@@ -53,9 +53,7 @@ static void setup(void)
 			 "Could not allocate connection memory", NULL);
 
 	test_setup(conn_from_pool);
-
 }
-
 
 /*
  * +-----+                     +-------+            +-----+
@@ -140,6 +138,7 @@ void test_hci_feature_exchange_mas_loc(void)
 
 
 	}
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_hci_feature_exchange_wrong_handle(void)
@@ -168,7 +167,7 @@ void test_hci_feature_exchange_wrong_handle(void)
 	zassert_equal(err, BT_HCI_ERR_CMD_DISALLOWED,
 		      "Wrong reply for wrong handle\n");
 
-
+	zassert_equal(ctx_buffers_free(), 0, "Free CTX buffers %d", ctx_buffers_free());
 }
 
 

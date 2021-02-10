@@ -137,6 +137,8 @@ void test_phy_update_mas_loc(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
+
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_phy_update_mas_loc_unsupp_feat(void)
@@ -185,6 +187,8 @@ void test_phy_update_mas_loc_unsupp_feat(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
+
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_phy_update_mas_rem(void)
@@ -260,6 +264,8 @@ void test_phy_update_mas_rem(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
+
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_phy_update_sla_loc(void)
@@ -341,6 +347,8 @@ void test_phy_update_sla_loc(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
+
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_phy_update_sla_rem(void)
@@ -420,6 +428,8 @@ void test_phy_update_sla_rem(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
+
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_phy_update_mas_loc_collision(void)
@@ -552,6 +562,8 @@ void test_phy_update_mas_loc_collision(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
+
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_phy_update_mas_rem_collision(void)
@@ -695,6 +707,8 @@ void test_phy_update_mas_rem_collision(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
+
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_phy_update_sla_loc_collision(void)
@@ -806,6 +820,7 @@ void test_phy_update_sla_loc_collision(void)
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
 
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
 }
 
 
@@ -822,7 +837,6 @@ void test_main(void)
 			 ztest_unit_test_setup_teardown(test_phy_update_mas_rem_collision, setup, unit_test_noop),
 			 ztest_unit_test_setup_teardown(test_phy_update_sla_loc_collision, setup, unit_test_noop)
 			);
-
 
 	ztest_run_test_suite(phy);
 }

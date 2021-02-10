@@ -50,15 +50,6 @@ static void setup(void)
 }
 
 /*
- * EGON TODO: Currently a placeholder only
- * to verify that the fix for unittesting works
- */
-static void teardown(void)
-{
-	ztest_test_pass();
-}
-
-/*
  * +-----+                     +-------+            +-----+
  * | UT  |                     | LL_A  |            | LT  |
  * +-----+                     +-------+            +-----+
@@ -130,6 +121,7 @@ void test_feature_exchange_mas_loc(void)
 	}
 	zassert_equal(conn.lll.event_counter, feat_to_test,
 		      "Wrong event-count %d\n", conn.lll.event_counter);
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_feature_exchange_mas_loc_2(void)
@@ -146,8 +138,7 @@ void test_feature_exchange_mas_loc_2(void)
 	}
 
 	zassert_not_equal(err, BT_HCI_ERR_SUCCESS, NULL);
-	zassert_equal(conn.lll.event_counter, 0,
-		      "Wrong event-count %d\n", conn.lll.event_counter);
+	zassert_equal(ctx_buffers_free(), 0, "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /*
@@ -213,6 +204,7 @@ void test_feature_exchange_mas_rem(void)
 	zassert_equal(conn.lll.event_counter,
 		      MAS_REM_NR_OF_EVENTS*(feat_to_test),
 		      "Wrong event-count %d\n", conn.lll.event_counter);
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
 }
 
 #define MAS_REM_2_NR_OF_EVENTS 3
@@ -305,6 +297,7 @@ void test_feature_exchange_mas_rem_2(void)
 	zassert_equal(conn.lll.event_counter,
 		      MAS_REM_2_NR_OF_EVENTS*(feat_to_test),
 		      "Wrong event-count %d\n", conn.lll.event_counter);
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
 }
 
 
@@ -345,6 +338,7 @@ void test_slave_feature_exchange_sla_loc(void)
 	ut_rx_q_is_empty();
 	zassert_equal(conn.lll.event_counter, 1,
 		      "Wrong event-count %d\n", conn.lll.event_counter);
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
 }
 
 
@@ -391,7 +385,7 @@ void test_feature_exchange_sla_loc_unknown_rsp(void)
 	ut_rx_q_is_empty();
 	zassert_equal(conn.lll.event_counter, 2,
 	  	      "Wrong event-count %d\n", conn.lll.event_counter);
-
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
 }
 
 
@@ -400,18 +394,18 @@ void test_hci_main(void);
 void test_main(void)
 {
 	ztest_test_suite(feature_exchange_master,
-			 ztest_unit_test_setup_teardown(test_feature_exchange_mas_loc, setup, teardown),
-			 ztest_unit_test_setup_teardown(test_feature_exchange_mas_loc_2, setup, teardown),
-			 ztest_unit_test_setup_teardown(test_feature_exchange_mas_rem, setup, teardown),
-			 ztest_unit_test_setup_teardown(test_feature_exchange_mas_rem_2, setup, teardown)
+			 ztest_unit_test_setup_teardown(test_feature_exchange_mas_loc, setup, unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_feature_exchange_mas_loc_2, setup, unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_feature_exchange_mas_rem, setup, unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_feature_exchange_mas_rem_2, setup, unit_test_noop)
 		);
 
 	ztest_test_suite(feature_exchange_slave,
-			 ztest_unit_test_setup_teardown(test_slave_feature_exchange_sla_loc, setup, teardown)
+			 ztest_unit_test_setup_teardown(test_slave_feature_exchange_sla_loc, setup, unit_test_noop)
 		);
 
 	ztest_test_suite(feature_exchange_unknown,
-			 ztest_unit_test_setup_teardown(test_feature_exchange_sla_loc_unknown_rsp, setup, teardown)
+			 ztest_unit_test_setup_teardown(test_feature_exchange_sla_loc_unknown_rsp, setup, unit_test_noop)
 		);
 
 	ztest_run_test_suite(feature_exchange_master);
