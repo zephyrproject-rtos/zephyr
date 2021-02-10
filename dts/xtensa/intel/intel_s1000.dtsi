@@ -123,7 +123,6 @@
 		pinmux: pinmux@81c30 {
 			compatible = "intel,s1000-pinmux";
 			reg = <0x00081c30 0xC>;
-			label = "PINMUX";
 		};
 
 		uart0: uart@80800 {
