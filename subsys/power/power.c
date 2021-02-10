@@ -12,7 +12,7 @@
 #include <power/power_state.h>
 #include "policy/pm_policy.h"
 
-#define PM_STATES_LEN (PM_STATE_SOFT_OFF - PM_STATE_ACTIVE)
+#define PM_STATES_LEN (1 + PM_STATE_SOFT_OFF - PM_STATE_ACTIVE)
 #define LOG_LEVEL CONFIG_PM_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(power);
