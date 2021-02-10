@@ -163,8 +163,19 @@ FUNC_NORETURN void z_x86_cpu_init(struct x86_cpuboot *cpuboot)
 {
 	x86_sse_init(NULL);
 
+#if CONFIG_MP_NUM_CPUS > 1
 	/* The internal cpu_number is the index to x86_cpuboot[] */
-	z_loapic_enable((unsigned char)(cpuboot - x86_cpuboot));
+	unsigned char cpu_num = (unsigned char)(cpuboot - x86_cpuboot);
+
+	if (cpu_num > 0) {
+		/*
+		 * For CPU #0, z_loapic_enable(0) will be done
+		 * inside z_x86_prep_c() so there is no need to do it
+		 * here.
+		 */
+		z_loapic_enable(cpu_num);
+	}
+#endif
 
 #ifdef CONFIG_USERSPACE
 	/* Set landing site for 'syscall' instruction */
