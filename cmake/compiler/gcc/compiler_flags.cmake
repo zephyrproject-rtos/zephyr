@@ -34,6 +34,10 @@ set_compiler_property(PROPERTY warning_base
     -Wno-main
 )
 
+if (CONFIG_ATOMIC_OPERATIONS_BUILTIN_SYNC)
+  set_compiler_property(APPEND PROPERTY warning_base -Wno-sync-nand)
+endif()
+
 check_set_compiler_property(APPEND PROPERTY warning_base -Wno-pointer-sign)
 
 # Prohibit void pointer arithmetic. Illegal in C99

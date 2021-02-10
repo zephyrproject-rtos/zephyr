@@ -50,6 +50,12 @@ static inline bool atomic_cas(atomic_t *target, atomic_val_t old_value,
 					   0, __ATOMIC_SEQ_CST,
 					   __ATOMIC_SEQ_CST);
 }
+#elif defined(CONFIG_ATOMIC_OPERATIONS_BUILTIN_SYNC)
+static inline bool atomic_cas(atomic_t *target, atomic_val_t old_value,
+			  atomic_val_t new_value)
+{
+	return __sync_bool_compare_and_swap(target, old_value, new_value);
+}
 #elif defined(CONFIG_ATOMIC_OPERATIONS_C)
 __syscall bool atomic_cas(atomic_t *target, atomic_val_t old_value,
 			 atomic_val_t new_value);
@@ -80,6 +86,12 @@ static inline bool atomic_ptr_cas(atomic_ptr_t *target, void *old_value,
 					   0, __ATOMIC_SEQ_CST,
 					   __ATOMIC_SEQ_CST);
 }
+#elif defined(CONFIG_ATOMIC_OPERATIONS_BUILTIN_SYNC)
+static inline bool atomic_ptr_cas(atomic_ptr_t *target, void *old_value,
+				  void *new_value)
+{
+	return __sync_bool_compare_and_swap(target, old_value, new_value);
+}
 #elif defined(CONFIG_ATOMIC_OPERATIONS_C)
 __syscall bool atomic_ptr_cas(atomic_ptr_t *target, void *old_value,
 			      void *new_value);
@@ -104,6 +116,11 @@ static inline atomic_val_t atomic_add(atomic_t *target, atomic_val_t value)
 {
 	return __atomic_fetch_add(target, value, __ATOMIC_SEQ_CST);
 }
+#elif defined(CONFIG_ATOMIC_OPERATIONS_BUILTIN_SYNC)
+static inline atomic_val_t atomic_add(atomic_t *target, atomic_val_t value)
+{
+	return __sync_fetch_and_add(target, value);
+}
 #elif defined(CONFIG_ATOMIC_OPERATIONS_C)
 __syscall atomic_val_t atomic_add(atomic_t *target, atomic_val_t value);
 #else
@@ -126,6 +143,11 @@ static inline atomic_val_t atomic_sub(atomic_t *target, atomic_val_t value)
 {
 	return __atomic_fetch_sub(target, value, __ATOMIC_SEQ_CST);
 }
+#elif defined(CONFIG_ATOMIC_OPERATIONS_BUILTIN_SYNC)
+static inline atomic_val_t atomic_sub(atomic_t *target, atomic_val_t value)
+{
+	return __sync_fetch_and_sub(target, value);
+}
 #elif defined(CONFIG_ATOMIC_OPERATIONS_C)
 __syscall atomic_val_t atomic_sub(atomic_t *target, atomic_val_t value);
 #else
@@ -142,7 +164,9 @@ extern atomic_val_t atomic_sub(atomic_t *target, atomic_val_t value);
  *
  * @return Previous value of @a target.
  */
-#if defined(CONFIG_ATOMIC_OPERATIONS_BUILTIN) || defined (CONFIG_ATOMIC_OPERATIONS_C)
+#if defined(CONFIG_ATOMIC_OPERATIONS_BUILTIN) || \
+	defined(CONFIG_ATOMIC_OPERATIONS_C)   || \
+	defined(CONFIG_ATOMIC_OPERATIONS_BUILTIN_SYNC)
 static inline atomic_val_t atomic_inc(atomic_t *target)
 {
 	return atomic_add(target, 1);
@@ -161,7 +185,9 @@ extern atomic_val_t atomic_inc(atomic_t *target);
  *
  * @return Previous value of @a target.
  */
-#if defined(CONFIG_ATOMIC_OPERATIONS_BUILTIN) || defined (CONFIG_ATOMIC_OPERATIONS_C)
+#if defined(CONFIG_ATOMIC_OPERATIONS_BUILTIN) || \
+	defined(CONFIG_ATOMIC_OPERATIONS_C)   || \
+	defined(CONFIG_ATOMIC_OPERATIONS_BUILTIN_SYNC)
 static inline atomic_val_t atomic_dec(atomic_t *target)
 {
 	return atomic_sub(target, 1);
@@ -180,7 +206,7 @@ extern atomic_val_t atomic_dec(atomic_t *target);
  *
  * @return Value of @a target.
  */
-#ifdef CONFIG_ATOMIC_OPERATIONS_BUILTIN
+#if defined(CONFIG_ATOMIC_OPERATIONS_BUILTIN) || defined(CONFIG_ATOMIC_OPERATIONS_BUILTIN_SYNC)
 static inline atomic_val_t atomic_get(const atomic_t *target)
 {
 	return __atomic_load_n(target, __ATOMIC_SEQ_CST);
@@ -199,7 +225,7 @@ extern atomic_val_t atomic_get(const atomic_t *target);
  *
  * @return Value of @a target.
  */
-#ifdef CONFIG_ATOMIC_OPERATIONS_BUILTIN
+#if defined(CONFIG_ATOMIC_OPERATIONS_BUILTIN) || defined(CONFIG_ATOMIC_OPERATIONS_BUILTIN_SYNC)
 static inline void *atomic_ptr_get(const atomic_ptr_t *target)
 {
 	return __atomic_load_n(target, __ATOMIC_SEQ_CST);
@@ -229,6 +255,11 @@ static inline atomic_val_t atomic_set(atomic_t *target, atomic_val_t value)
 	 */
 	return __atomic_exchange_n(target, value, __ATOMIC_SEQ_CST);
 }
+#elif defined(CONFIG_ATOMIC_OPERATIONS_BUILTIN_SYNC)
+static inline atomic_val_t atomic_set(atomic_t *target, atomic_val_t value)
+{
+	return __sync_lock_test_and_set(target, value);
+}
 #elif defined(CONFIG_ATOMIC_OPERATIONS_C)
 __syscall atomic_val_t atomic_set(atomic_t *target, atomic_val_t value);
 #else
@@ -252,6 +283,11 @@ static inline void *atomic_ptr_set(atomic_ptr_t *target, void *value)
 {
 	return __atomic_exchange_n(target, value, __ATOMIC_SEQ_CST);
 }
+#elif defined(CONFIG_ATOMIC_OPERATIONS_BUILTIN_SYNC)
+static inline void *atomic_ptr_set(atomic_ptr_t *target, void *value)
+{
+	return __sync_lock_test_and_set(target, value);
+}
 #elif defined(CONFIG_ATOMIC_OPERATIONS_C)
 __syscall void *atomic_ptr_set(atomic_ptr_t *target, void *value);
 #else
@@ -269,7 +305,9 @@ extern void *atomic_ptr_set(atomic_ptr_t *target, void *value);
  *
  * @return Previous value of @a target.
  */
-#if defined(CONFIG_ATOMIC_OPERATIONS_BUILTIN) || defined (CONFIG_ATOMIC_OPERATIONS_C)
+#if defined(CONFIG_ATOMIC_OPERATIONS_BUILTIN) || \
+	defined(CONFIG_ATOMIC_OPERATIONS_C)   || \
+	defined(CONFIG_ATOMIC_OPERATIONS_BUILTIN_SYNC)
 static inline atomic_val_t atomic_clear(atomic_t *target)
 {
 	return atomic_set(target, 0);
@@ -290,7 +328,8 @@ extern atomic_val_t atomic_clear(atomic_t *target);
  * @return Previous value of @a target.
  */
 #if defined(CONFIG_ATOMIC_OPERATIONS_BUILTIN) || \
-	defined (CONFIG_ATOMIC_OPERATIONS_C)
+	defined(CONFIG_ATOMIC_OPERATIONS_C)   || \
+	defined(CONFIG_ATOMIC_OPERATIONS_BUILTIN_SYNC)
 static inline void *atomic_ptr_clear(atomic_ptr_t *target)
 {
 	return atomic_ptr_set(target, NULL);
@@ -316,9 +355,13 @@ static inline atomic_val_t atomic_or(atomic_t *target, atomic_val_t value)
 {
 	return __atomic_fetch_or(target, value, __ATOMIC_SEQ_CST);
 }
+#elif defined(CONFIG_ATOMIC_OPERATIONS_BUILTIN_SYNC)
+static inline atomic_val_t atomic_or(atomic_t *target, atomic_val_t value)
+{
+	return __sync_fetch_and_or(target, value);
+}
 #elif defined(CONFIG_ATOMIC_OPERATIONS_C)
 __syscall atomic_val_t atomic_or(atomic_t *target, atomic_val_t value);
-
 #else
 extern atomic_val_t atomic_or(atomic_t *target, atomic_val_t value);
 #endif
@@ -339,6 +382,11 @@ extern atomic_val_t atomic_or(atomic_t *target, atomic_val_t value);
 static inline atomic_val_t atomic_xor(atomic_t *target, atomic_val_t value)
 {
 	return __atomic_fetch_xor(target, value, __ATOMIC_SEQ_CST);
+}
+#elif defined(CONFIG_ATOMIC_OPERATIONS_BUILTIN_SYNC)
+static inline atomic_val_t atomic_xor(atomic_t *target, atomic_val_t value)
+{
+	return __sync_fetch_and_xor(target, value);
 }
 #elif defined(CONFIG_ATOMIC_OPERATIONS_C)
 __syscall atomic_val_t atomic_xor(atomic_t *target, atomic_val_t value);
@@ -363,6 +411,11 @@ static inline atomic_val_t atomic_and(atomic_t *target, atomic_val_t value)
 {
 	return __atomic_fetch_and(target, value, __ATOMIC_SEQ_CST);
 }
+#elif defined(CONFIG_ATOMIC_OPERATIONS_BUILTIN_SYNC)
+static inline atomic_val_t atomic_and(atomic_t *target, atomic_val_t value)
+{
+	return __sync_fetch_and_and(target, value);
+}
 #elif defined(CONFIG_ATOMIC_OPERATIONS_C)
 __syscall atomic_val_t atomic_and(atomic_t *target, atomic_val_t value);
 #else
@@ -385,6 +438,11 @@ extern atomic_val_t atomic_and(atomic_t *target, atomic_val_t value);
 static inline atomic_val_t atomic_nand(atomic_t *target, atomic_val_t value)
 {
 	return __atomic_fetch_nand(target, value, __ATOMIC_SEQ_CST);
+}
+#elif defined(CONFIG_ATOMIC_OPERATIONS_BUILTIN_SYNC)
+static inline atomic_val_t atomic_nand(atomic_t *target, atomic_val_t value)
+{
+	return __sync_fetch_and_nand(target, value);
 }
 #elif defined(CONFIG_ATOMIC_OPERATIONS_C)
 __syscall atomic_val_t atomic_nand(atomic_t *target, atomic_val_t value);
