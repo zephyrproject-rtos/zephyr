@@ -1179,10 +1179,10 @@ error:
 }
 
 /* Register the device with the Networking stack. */
-NET_DEVICE_OFFLOAD_INIT(modem_gb9x, DT_INST_LABEL(0),
-			modem_init, device_pm_control_nop, &mdata, NULL,
-			CONFIG_MODEM_QUECTEL_BG9X_INIT_PRIORITY, &api_funcs,
-			MDM_MAX_DATA_LENGTH);
+NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, modem_init, device_pm_control_nop,
+				  &mdata, NULL,
+				  CONFIG_MODEM_QUECTEL_BG9X_INIT_PRIORITY,
+				  &api_funcs, MDM_MAX_DATA_LENGTH);
 
 /* Register NET sockets. */
 NET_SOCKET_REGISTER(quectel_bg9x, AF_UNSPEC, offload_is_supported, offload_socket);
