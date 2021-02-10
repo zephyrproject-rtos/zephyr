@@ -1154,7 +1154,7 @@ error:
 	return ret;
 }
 
-NET_DEVICE_OFFLOAD_INIT(wifi_esp, CONFIG_WIFI_ESP_NAME,
-			esp_init, device_pm_control_nop, &esp_driver_data, NULL,
-			CONFIG_WIFI_INIT_PRIORITY, &esp_api,
-			ESP_MTU);
+NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, esp_init, device_pm_control_nop,
+				  &esp_driver_data, NULL,
+				  CONFIG_WIFI_INIT_PRIORITY, &esp_api,
+				  ESP_MTU);

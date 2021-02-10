@@ -12,10 +12,6 @@ menuconfig WIFI_ESP
 
 if WIFI_ESP
 
-config WIFI_ESP_NAME
-	string "Driver name"
-	default "esp-wifi-modem"
-
 config WIFI_ESP_RX_STACK_SIZE
 	int "Stack size for the Espressif esp wifi driver RX thread"
 	default 1024
