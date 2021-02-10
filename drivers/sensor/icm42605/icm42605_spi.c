@@ -9,12 +9,12 @@
 #include <logging/log.h>
 #include <sys/__assert.h>
 
-LOG_MODULE_REGISTER(ICM42605, CONFIG_SENSOR_LOG_LEVEL);
+LOG_MODULE_DECLARE(ICM42605, CONFIG_SENSOR_LOG_LEVEL);
 
-struct device *spi_dev;
-static struct spi_config *spi_cfg;
+static const struct device *spi_dev;
+static const struct spi_config *spi_cfg;
 
-int inv_spi_single_write(uint8_t reg, const uint8_t *data)
+int inv_spi_single_write(uint8_t reg, uint8_t *data)
 {
 	int result;
 

@@ -16,9 +16,10 @@
 #include "icm42605_reg.h"
 
 typedef void (*tap_fetch_t)(const struct device *dev);
+int icm42605_tap_fetch(const struct device *dev);
 
 struct icm42605_data {
-	struct device *spi;
+	const struct device *spi;
 
 	uint8_t fifo_data[HARDWARE_FIFO_SIZE];
 
@@ -44,8 +45,8 @@ struct icm42605_data {
 
 	bool sensor_started;
 
-	struct device *dev;
-	struct device *gpio;
+	const struct device *dev;
+	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 
 	struct sensor_trigger data_ready_trigger;
