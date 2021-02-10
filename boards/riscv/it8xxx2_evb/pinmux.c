@@ -13,8 +13,9 @@ static int it8xxx2_evb_pinmux_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	const struct device *p =
-		device_get_binding(CONFIG_PINMUX_ITE_IT8XXX2_NAME);
+	const struct device *p = DEVICE_DT_GET(DT_NODELABEL(pinmux));
+
+	__ASSERT_NO_MSG(device_is_ready(p));
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(uart1), okay)
 	pinmux_pin_set(p, 0, IT8XXX2_PINMUX_IOF1);

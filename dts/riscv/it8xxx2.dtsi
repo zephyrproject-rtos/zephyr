@@ -45,7 +45,6 @@
 		pinmux: pinmux@f016f0 {
 			compatible = "ite,it8xxx2-pinmux";
 			reg = <0x00f016f0 0x0010>;
-			label = "PINMUX";
 		};
 		sram0: memory@80080000 {
 			compatible = "mmio-sram";
