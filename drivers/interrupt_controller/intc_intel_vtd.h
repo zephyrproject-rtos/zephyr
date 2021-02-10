@@ -114,6 +114,7 @@ struct vtd_ictl_data {
 	uint16_t fault_record_num;
 	uint16_t qi_tail;
 	uint8_t fault_vector;
+	bool pwc;
 };
 
 struct vtd_ictl_cfg {

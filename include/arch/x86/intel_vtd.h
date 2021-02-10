@@ -96,6 +96,9 @@
 #define VTD_CAP_FRO(cap)					\
 	(((uint64_t)cap & VTD_CAP_FRO_MASK) >> VTD_CAP_FRO_POS)
 
+/* Extended Capability Register details */
+#define VTD_ECAP_C		BIT(0)
+
 /* Global Command Register details */
 #define VTD_GCMD_CFI		23
 #define VTD_GCMD_SIRTP		24
