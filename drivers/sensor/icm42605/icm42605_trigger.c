@@ -74,10 +74,9 @@ static void icm42605_gpio_callback(const struct device *dev,
 	k_sem_give(&drv_data->gpio_sem);
 }
 
-static void icm42605_thread_cb(void *arg)
+static void icm42605_thread_cb(const struct device *dev)
 {
-	const struct device *dev = arg;
-	const struct icm42605_data *drv_data = dev->data;
+	struct icm42605_data *drv_data = dev->data;
 	const struct icm42605_config *cfg = dev->config;
 
 	if (drv_data->data_ready_handler != NULL) {
@@ -97,7 +96,7 @@ static void icm42605_thread_cb(void *arg)
 static void icm42605_thread(int dev_ptr, int unused)
 {
 	const struct device *dev = INT_TO_POINTER(dev_ptr);
-	const struct icm42605_data *drv_data = dev->data;
+	struct icm42605_data *drv_data = dev->data;
 
 	ARG_UNUSED(unused);
 
@@ -140,7 +139,7 @@ int icm42605_init_interrupt(const struct device *dev)
 
 	k_thread_create(&drv_data->thread, drv_data->thread_stack,
 			CONFIG_ICM42605_THREAD_STACK_SIZE,
-			(k_thread_entry_t)icm42605_thread, dev,
+			(k_thread_entry_t)icm42605_thread, drv_data,
 			0, NULL, K_PRIO_COOP(CONFIG_ICM42605_THREAD_PRIORITY),
 			0, K_NO_WAIT);
 
