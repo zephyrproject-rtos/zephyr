@@ -21,6 +21,8 @@
  * edac inject error_type                 Show / Set EDAC error type
  * edac inject trigger                    Trigger injection
  *
+ * edac inject test_default               Set default injection parameters
+ *
  * edac disable_nmi                       Experimental disable NMI
  * edac enable_nmi                        Experimental enable NMI
  *
@@ -248,6 +250,23 @@ static int cmd_inject_error_type_uc(const struct shell *shell, size_t argc,
 	return set_error_type(shell, EDAC_ERROR_TYPE_DRAM_UC);
 }
 
+static int cmd_inject_test(const struct shell *shell, size_t argc, char **argv)
+{
+	const struct device *dev;
+
+	dev = device_get_binding(DEVICE_NAME);
+	if (!dev) {
+		shell_error(shell, "IBECC device not found");
+		return -ENODEV;
+	}
+	edac_inject_set_param1(dev, 0x1000);
+	edac_inject_set_param2(dev, INJ_ADDR_BASE_MASK_MASK);
+	edac_inject_set_error_type(dev, EDAC_ERROR_TYPE_DRAM_COR);
+	edac_inject_error_trigger(dev);
+
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_inject_error_type_cmds,
 	SHELL_CMD(correctable, NULL, "Set correctable error type",
 		  cmd_inject_error_type_cor),
@@ -267,6 +286,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_inject_cmds,
 		  cmd_inject_error_type_show),
 	SHELL_CMD(disable_nmi, NULL, "Disable NMI", cmd_inject_disable_nmi),
 	SHELL_CMD(enable_nmi, NULL, "Enable NMI", cmd_inject_enable_nmi),
+	SHELL_CMD_ARG(test_default, NULL, "Test default injection parameters",
+		      cmd_inject_test, 1, 0),
 	SHELL_SUBCMD_SET_END /* Array terminated */
 );
 #endif /* CONFIG_EDAC_ERROR_INJECT */
