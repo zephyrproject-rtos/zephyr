@@ -150,6 +150,7 @@ int lll_adv_data_init(struct lll_adv_pdu *pdu)
 		return -ENOMEM;
 	}
 
+	p->len = 0U;
 	pdu->pdu[0] = (void *)p;
 
 	return 0;
