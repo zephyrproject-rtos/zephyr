@@ -36,6 +36,21 @@ static bool rb_lessthan(struct rbnode *a, struct rbnode *b)
 	return (uintptr_t)a < (uintptr_t)b;
 }
 
+static void thread_set_requeued(struct k_thread *th)
+{
+	th->base.user_options |= K_CALLBACK_STATE;
+}
+
+static void thread_clear_requeued(struct k_thread *th)
+{
+	th->base.user_options &= ~K_CALLBACK_STATE;
+}
+
+static bool thread_was_requeued(struct k_thread *th)
+{
+	return !!(th->base.user_options & K_CALLBACK_STATE);
+}
+
 /* Slightly different semantics: rb_lessthan must be perfectly
  * symmetric (to produce a single tree structure) and will use the
  * pointer value to break ties where priorities are equal, here we
@@ -70,6 +85,7 @@ static FUNC_NORETURN void p4wq_loop(void *p0, void *p1, void *p2)
 			w->thread = _current;
 			sys_dlist_append(&queue->active, &w->dlnode);
 			set_prio(_current, w);
+			thread_clear_requeued(_current);
 
 			k_spin_unlock(&queue->lock, k);
 			w->handler(w);
@@ -78,7 +94,7 @@ static FUNC_NORETURN void p4wq_loop(void *p0, void *p1, void *p2)
 			/* Remove from the active list only if it
 			 * wasn't resubmitted already
 			 */
-			if (w->thread == _current) {
+			if (!thread_was_requeued(_current)) {
 				sys_dlist_remove(&w->dlnode);
 				w->thread = NULL;
 			}
@@ -142,6 +158,7 @@ void k_p4wq_submit(struct k_p4wq *queue, struct k_p4wq_work *item)
 	/* Resubmission from within handler?  Remove from active list */
 	if (item->thread == _current) {
 		sys_dlist_remove(&item->dlnode);
+		thread_set_requeued(_current);
 		item->thread = NULL;
 	}
 	__ASSERT_NO_MSG(item->thread == NULL);
