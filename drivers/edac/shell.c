@@ -16,22 +16,23 @@
 /**
  * EDAC Error Injection interface
  *
- * edac inject addr [value]		- Physical memory address base
- * edac inject mask [value]		- Physical memory address mask
- * edac inject ctrl			- EDAC Injection control
+ * edac inject addr [value]               Physical memory address base
+ * edac inject mask [value]               Physical memory address mask
+ * edac inject error_type                 Show / Set EDAC error type
+ * edac inject trigger                    Trigger injection
  *
- * edac disable_nmi			- Experimental disable NMI
- * edac enable_nmi			- Experimental enable NMI
+ * edac disable_nmi                       Experimental disable NMI
+ * edac enable_nmi                        Experimental enable NMI
  *
  * EDAC Report interface
  *
- * edac info				- Show EDAC ECC / Parity error info
- * edac info ecc_error [show|clear]	- Show ECC Errors
- * edac info parity_error [show|clear]	- Show Parity Errors
+ * edac info                              Show EDAC ECC / Parity error info
+ * edac info ecc_error [show|clear]       Show ECC Errors
+ * edac info parity_error [show|clear]    Show Parity Errors
  *
  * Physical memory access interface
  *
- * edac mem address [width [value]]	- Physical memory read / write
+ * edac mem address [width [value]]       Physical memory read / write
  */
 
 static void decode_ecc_error(const struct shell *shell, uint64_t ecc_error)
