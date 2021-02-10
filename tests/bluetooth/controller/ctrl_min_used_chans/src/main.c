@@ -41,8 +41,6 @@ static void setup(void)
 	test_setup(&conn);
 }
 
-
-
 /* +-----+                     +-------+                  +-----+
  * | UT  |                     | LL_A  |                  | LT  |
  * +-----+                     +-------+                  +-----+
@@ -103,6 +101,8 @@ void test_min_used_chans_sla_loc(void)
 
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
+
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM-1, "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_min_used_chans_mas_loc(void)
@@ -118,6 +118,8 @@ void test_min_used_chans_mas_loc(void)
 	/* Initiate an LE Ping Procedure */
 	err = ull_cp_min_used_chans(&conn, 1, 2);
 	zassert_equal(err, BT_HCI_ERR_CMD_DISALLOWED, NULL);
+
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_min_used_chans_mas_rem(void)
@@ -154,14 +156,15 @@ void test_min_used_chans_mas_rem(void)
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
 
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM-1, "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_main(void)
 {
 	ztest_test_suite(muc,
-			ztest_unit_test_setup_teardown(test_min_used_chans_sla_loc, setup, unit_test_noop),
-			ztest_unit_test_setup_teardown(test_min_used_chans_mas_loc, setup, unit_test_noop),
-			ztest_unit_test_setup_teardown(test_min_used_chans_mas_rem, setup, unit_test_noop)
+			 ztest_unit_test_setup_teardown(test_min_used_chans_sla_loc, setup, unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_min_used_chans_mas_loc, setup, unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_min_used_chans_mas_rem, setup, unit_test_noop)
 			);
 
 	ztest_run_test_suite(muc);
