@@ -41,6 +41,7 @@ void z_move_thread_to_end_of_prio_q(struct k_thread *thread);
 void z_remove_thread_from_ready_q(struct k_thread *thread);
 int z_is_thread_time_slicing(struct k_thread *thread);
 void z_unpend_thread_no_timeout(struct k_thread *thread);
+struct k_thread *z_unpend1_no_timeout(_wait_q_t *wait_q);
 int z_pend_curr(struct k_spinlock *lock, k_spinlock_key_t key,
 	       _wait_q_t *wait_q, k_timeout_t timeout);
 int z_pend_curr_irqlock(uint32_t key, _wait_q_t *wait_q, k_timeout_t timeout);
@@ -300,17 +301,6 @@ static ALWAYS_INLINE bool z_is_thread_timeout_expired(struct k_thread *thread)
 #else
 	return 0;
 #endif
-}
-
-static inline struct k_thread *z_unpend1_no_timeout(_wait_q_t *wait_q)
-{
-	struct k_thread *thread = z_find_first_thread_to_unpend(wait_q, NULL);
-
-	if (thread != NULL) {
-		z_unpend_thread_no_timeout(thread);
-	}
-
-	return thread;
 }
 
 #endif /* ZEPHYR_KERNEL_INCLUDE_KSCHED_H_ */
