@@ -4,12 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT snps_creg_gpio_mux_hsdk
+
 #include <errno.h>
 #include <device.h>
 #include <drivers/pinmux.h>
 #include <soc.h>
 
-#define creg_gpio_mux_reg	(*(volatile uint32_t *)CREG_GPIO_MUX_BASE_ADDR)
+#define creg_gpio_mux_reg	(*(volatile uint32_t *)DT_INST_REG_ADDR(0))
 
 void _arc_sync(void)
 {
@@ -68,7 +70,7 @@ static const struct pinmux_driver_api pinmux_hsdk_driver_api = {
 	.input = pinmux_hsdk_input,
 };
 
-DEVICE_DEFINE(pinmux_hsdk, CONFIG_PINMUX_NAME,
+DEVICE_DT_INST_DEFINE(0,
 		&pinmux_hsdk_init, device_pm_control_nop, NULL, NULL,
 		PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&pinmux_hsdk_driver_api);
