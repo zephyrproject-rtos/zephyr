@@ -12,8 +12,8 @@
 #include <drivers/clock_control.h>
 #include <dt-bindings/clock/stm32_clock.h>
 
-/* common clock control device name for all STM32 chips */
-#define STM32_CLOCK_CONTROL_NAME DT_LABEL(DT_NODELABEL(rcc))
+/* common clock control device node for all STM32 chips */
+#define STM32_CLOCK_CONTROL_NODE DT_NODELABEL(rcc)
 
 struct stm32_pclken {
 	uint32_t bus;

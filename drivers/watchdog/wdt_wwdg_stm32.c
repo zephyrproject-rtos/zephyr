@@ -68,11 +68,9 @@ static void wwdg_stm32_irq_config(const struct device *dev);
 
 static uint32_t wwdg_stm32_get_pclk(const struct device *dev)
 {
-	const struct device *clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
+	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	const struct wwdg_stm32_config *cfg = WWDG_STM32_CFG(dev);
 	uint32_t pclk_rate;
-
-	__ASSERT_NO_MSG(clk);
 
 	if (clock_control_get_rate(clk, (clock_control_subsys_t *) &cfg->pclken,
 			       &pclk_rate) < 0) {
@@ -250,10 +248,8 @@ static const struct wdt_driver_api wwdg_stm32_api = {
 
 static int wwdg_stm32_init(const struct device *dev)
 {
-	const struct device *clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
+	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	const struct wwdg_stm32_config *cfg = WWDG_STM32_CFG(dev);
-
-	__ASSERT_NO_MSG(clk);
 
 	clock_control_on(clk, (clock_control_subsys_t *) &cfg->pclken);
 

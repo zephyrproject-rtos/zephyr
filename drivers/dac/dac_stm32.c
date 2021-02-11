@@ -121,8 +121,7 @@ static int dac_stm32_init(const struct device *dev)
 	int err;
 
 	/* enable clock for subsystem */
-	const struct device *clk =
-		device_get_binding(STM32_CLOCK_CONTROL_NAME);
+	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
 	if (clock_control_on(clk,
 			     (clock_control_subsys_t *) &cfg->pclken) != 0) {

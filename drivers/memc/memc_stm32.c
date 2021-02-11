@@ -37,8 +37,7 @@ static int memc_stm32_init(const struct device *dev)
 	}
 
 	/* enable FMC peripheral clock */
-	clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
-	__ASSERT_NO_MSG(clk);
+	clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
 	r = clock_control_on(clk, (clock_control_subsys_t *)&config->pclken);
 	if (r < 0) {

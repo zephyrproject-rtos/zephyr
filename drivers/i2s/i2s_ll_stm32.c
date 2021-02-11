@@ -100,8 +100,7 @@ static int i2s_stm32_enable_clock(const struct device *dev)
 	const struct device *clk;
 	int ret;
 
-	clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
-	__ASSERT_NO_MSG(clk);
+	clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
 	ret = clock_control_on(clk, (clock_control_subsys_t *) &cfg->pclken);
 	if (ret != 0) {
