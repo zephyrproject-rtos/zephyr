@@ -46,6 +46,29 @@ bool flash_stm32_valid_range(const struct device *dev, off_t offset,
 		flash_stm32_range_exists(dev, offset, len);
 }
 
+static inline void flush_cache(FLASH_TypeDef *regs)
+{
+	if (regs->ACR & FLASH_ACR_DCEN) {
+		regs->ACR &= ~FLASH_ACR_DCEN;
+		/* Datasheet: DCRST: Data cache reset
+		 * This bit can be written only when thes data cache is disabled
+		 */
+		regs->ACR |= FLASH_ACR_DCRST;
+		regs->ACR &= ~FLASH_ACR_DCRST;
+		regs->ACR |= FLASH_ACR_DCEN;
+	}
+
+	if (regs->ACR & FLASH_ACR_ICEN) {
+		regs->ACR &= ~FLASH_ACR_ICEN;
+		/* Datasheet: ICRST: Instruction cache reset :
+		 * This bit can be written only when the instruction cache
+		 * is disabled
+		 */
+		regs->ACR |= FLASH_ACR_ICRST;
+		regs->ACR &= ~FLASH_ACR_ICRST;
+		regs->ACR |= FLASH_ACR_ICEN;
+	}
+}
 
 static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 {
@@ -158,6 +181,8 @@ static int erase_page(const struct device *dev, unsigned int offset)
 
 	/* Wait for the BSY bit */
 	rc = flash_stm32_wait_flash_idle(dev);
+
+	flush_cache(regs);
 
 #ifdef FLASH_OPTR_DBANK
 	regs->CR &= ~(FLASH_CR_PER | FLASH_CR_BKER);
