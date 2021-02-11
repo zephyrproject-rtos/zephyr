@@ -306,45 +306,45 @@ static int uart_stm32_configure(const struct device *dev,
 	const uint32_t flowctrl = uart_stm32_cfg2ll_hwctrl(cfg->flow_ctrl);
 
 	/* Hardware doesn't support mark or space parity */
-	if ((UART_CFG_PARITY_MARK == cfg->parity) ||
-	    (UART_CFG_PARITY_SPACE == cfg->parity)) {
+	if ((cfg->parity == UART_CFG_PARITY_MARK) ||
+	    (cfg->parity == UART_CFG_PARITY_SPACE)) {
 		return -ENOTSUP;
 	}
 
 #if defined(LL_USART_STOPBITS_0_5) && HAS_LPUART_1
 	if (IS_LPUART_INSTANCE(UartInstance) &&
-	    UART_CFG_STOP_BITS_0_5 == cfg->stop_bits) {
+	    (cfg->stop_bits == UART_CFG_STOP_BITS_0_5)) {
 		return -ENOTSUP;
 	}
 #else
-	if (UART_CFG_STOP_BITS_0_5 == cfg->stop_bits) {
+	if (cfg->stop_bits == UART_CFG_STOP_BITS_0_5) {
 		return -ENOTSUP;
 	}
 #endif
 
 #if defined(LL_USART_STOPBITS_1_5) && HAS_LPUART_1
 	if (IS_LPUART_INSTANCE(UartInstance) &&
-	    UART_CFG_STOP_BITS_1_5 == cfg->stop_bits) {
+	    (cfg->stop_bits == UART_CFG_STOP_BITS_1_5)) {
 		return -ENOTSUP;
 	}
 #else
-	if (UART_CFG_STOP_BITS_1_5 == cfg->stop_bits) {
+	if (cfg->stop_bits == UART_CFG_STOP_BITS_1_5) {
 		return -ENOTSUP;
 	}
 #endif
 
 	/* Driver doesn't support 5 or 6 databits and potentially 7 or 9 */
-	if ((UART_CFG_DATA_BITS_5 == cfg->data_bits) ||
-	    (UART_CFG_DATA_BITS_6 == cfg->data_bits)
+	if ((cfg->data_bits == UART_CFG_DATA_BITS_5) ||
+	    (cfg->data_bits == UART_CFG_DATA_BITS_6)
 #ifndef LL_USART_DATAWIDTH_7B
-	    || (UART_CFG_DATA_BITS_7 == cfg->data_bits)
+	    || (cfg->data_bits == UART_CFG_DATA_BITS_7)
 #endif /* LL_USART_DATAWIDTH_7B */
-	    || (UART_CFG_DATA_BITS_9 == cfg->data_bits)) {
+	    || (cfg->data_bits == UART_CFG_DATA_BITS_9)) {
 		return -ENOTSUP;
 	}
 
 	/* Driver supports only RTS CTS flow control */
-	if (UART_CFG_FLOW_CTRL_NONE != cfg->flow_ctrl) {
+	if (cfg->flow_ctrl != UART_CFG_FLOW_CTRL_NONE) {
 		if (!IS_UART_HWFLOW_INSTANCE(UartInstance) ||
 		    UART_CFG_FLOW_CTRL_RTS_CTS != cfg->flow_ctrl) {
 			return -ENOTSUP;
