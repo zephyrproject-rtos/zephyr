@@ -302,7 +302,7 @@ Boards & SoC Support
 
   * Cypress CY8CKIT_062_BLE board
 
-*  Added support for these x86 boards:
+* Added support for these x86 boards:
 
   * Elkhart Lake CRB board
   * ACRN configuration on Elkhart Lake CRB board
