@@ -5,7 +5,6 @@
 
 config SOC_FAMILY_INTEL_ADSP
 	bool
-	select ARCH_HAS_COHERENCE
 
 if SOC_FAMILY_INTEL_ADSP
 
