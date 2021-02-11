@@ -43,4 +43,28 @@ config IEEE802154_NRF5_EXT_IRQ_MGMT
 	  the system. One example of external radio IRQ provider could be
 	  a radio arbiter used in dynamic multiprotocol applications.
 
+config IEEE802154_NRF5_UICR_EUI64_ENABLE
+	bool "Enables using EUI64 value stored in UICR registers"
+	depends on !IEEE802154_VENDOR_OUI_ENABLE
+	depends on SOC_SERIES_NRF52X || SOC_SERIES_NRF53X
+	help
+	  This option enables setting custom vendor EUI64 value
+	  stored in User information configuration registers (UICR).
+	  Notice that this disables the default setting of EUI64
+	  value from Factory information configuration registers
+	  (FICR).
+
+if IEEE802154_NRF5_UICR_EUI64_ENABLE
+
+config IEEE802154_NRF5_UICR_EUI64_REG
+	int "UICR base register for the EUI64 value"
+	range 0 30 if SOC_SERIES_NRF52X
+	range 0 190 if SOC_SERIES_NRF53X
+	default 0
+	help
+	  Base of the two consecutive registers from the UICR customer
+	  section in which custom EUI64 is stored.
+
+endif # IEEE802154_NRF5_UICR_EUI64_ENABLE
+
 endif

@@ -58,11 +58,27 @@ static struct nrf5_802154_data nrf5_data;
 #define FRAME_PENDING_BIT (1 << 4)
 #define TXTIME_OFFSET_US  (5 * USEC_PER_MSEC)
 
+#if defined(CONFIG_IEEE802154_NRF5_UICR_EUI64_ENABLE)
+#if defined(CONFIG_SOC_NRF5340_CPUAPP)
+#define EUI64_ADDR (NRF_UICR->OTP)
+#else
+#define EUI64_ADDR (NRF_UICR->CUSTOMER)
+#endif /* CONFIG_SOC_NRF5340_CPUAPP */
+#else
 #if defined(CONFIG_SOC_NRF5340_CPUAPP) || defined(CONFIG_SOC_NRF5340_CPUNET)
 #define EUI64_ADDR (NRF_FICR->INFO.DEVICEID)
 #else
 #define EUI64_ADDR (NRF_FICR->DEVICEID)
-#endif
+#endif /* CONFIG_SOC_NRF5340_CPUAPP || CONFIG_SOC_NRF5340_CPUNET */
+#endif /* CONFIG_IEEE802154_NRF5_UICR_EUI64_ENABLE */
+
+#if defined(CONFIG_IEEE802154_NRF5_UICR_EUI64_ENABLE)
+#define EUI64_ADDR_HIGH CONFIG_IEEE802154_NRF5_UICR_EUI64_REG
+#define EUI64_ADDR_LOW (CONFIG_IEEE802154_NRF5_UICR_EUI64_REG + 1)
+#else
+#define EUI64_ADDR_HIGH 0
+#define EUI64_ADDR_LOW 1
+#endif /* CONFIG_IEEE802154_NRF5_UICR_EUI64_ENABLE */
 
 /* Convenience defines for RADIO */
 #define NRF5_802154_DATA(dev) \
@@ -82,18 +98,20 @@ static void nrf5_get_eui64(uint8_t *mac)
 	uint64_t factoryAddress;
 	uint32_t index = 0;
 
+#if !defined(CONFIG_IEEE802154_NRF5_UICR_EUI64_ENABLE)
 	/* Set the MAC Address Block Larger (MA-L) formerly called OUI. */
 	mac[index++] = (IEEE802154_NRF5_VENDOR_OUI >> 16) & 0xff;
 	mac[index++] = (IEEE802154_NRF5_VENDOR_OUI >> 8) & 0xff;
 	mac[index++] = IEEE802154_NRF5_VENDOR_OUI & 0xff;
+#endif
 
 #if defined(CONFIG_SOC_NRF5340_CPUAPP) && \
 	defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 #error Accessing EUI64 on the non-secure mode is not supported at the moment
 #else
 	/* Use device identifier assigned during the production. */
-	factoryAddress = (uint64_t)EUI64_ADDR[0] << 32;
-	factoryAddress |= EUI64_ADDR[1];
+	factoryAddress = (uint64_t)EUI64_ADDR[EUI64_ADDR_HIGH] << 32;
+	factoryAddress |= EUI64_ADDR[EUI64_ADDR_LOW];
 #endif
 	memcpy(mac + index, &factoryAddress, sizeof(factoryAddress) - index);
 }
