@@ -1,4 +1,5 @@
 # Utility functions used in conf.py
+# SPDX-License-Identifier: Apache-2.0
 #
 # Copyright 2017 Espressif Systems (Shanghai) PTE LTD
 #

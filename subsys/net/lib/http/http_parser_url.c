@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: MIT */
+
 /* Based on src/http/ngx_http_parse.c from NGINX copyright Igor Sysoev
  *
  * Additional changes are licensed under the same terms as NGINX and
