@@ -33,16 +33,32 @@ static const struct device *levels[] = {
 	__device_end,
 };
 
+static const char *get_device_name(const struct device *dev,
+				   char *buf,
+				   size_t len)
+{
+	const char *name = dev->name;
+
+	if ((name == NULL) || (name[0] == 0)) {
+		snprintf(buf, len, "[%p]", dev);
+		name = buf;
+	}
+
+	return name;
+}
+
 static bool device_get_config_level(const struct shell *shell, int level)
 {
 	const struct device *dev;
 	bool devices = false;
+	char buf[20];
 
 	for (dev = levels[level]; dev < levels[level+1]; dev++) {
 		if (device_is_ready(dev)) {
 			devices = true;
 
-			shell_fprintf(shell, SHELL_NORMAL, "- %s\n", dev->name);
+			shell_fprintf(shell, SHELL_NORMAL, "- %s\n",
+				      get_device_name(dev, buf, sizeof(buf)));
 		}
 	}
 	return devices;
@@ -54,18 +70,6 @@ static int cmd_device_levels(const struct shell *shell,
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 	bool ret;
-
-	shell_fprintf(shell, SHELL_NORMAL, "POST_KERNEL:\n");
-	ret = device_get_config_level(shell, _SYS_INIT_LEVEL_POST_KERNEL);
-	if (ret == false) {
-		shell_fprintf(shell, SHELL_NORMAL, "- None\n");
-	}
-
-	shell_fprintf(shell, SHELL_NORMAL, "APPLICATION:\n");
-	ret = device_get_config_level(shell, _SYS_INIT_LEVEL_APPLICATION);
-	if (ret == false) {
-		shell_fprintf(shell, SHELL_NORMAL, "- None\n");
-	}
 
 	shell_fprintf(shell, SHELL_NORMAL, "PRE KERNEL 1:\n");
 	ret = device_get_config_level(shell, _SYS_INIT_LEVEL_PRE_KERNEL_1);
@@ -79,21 +83,27 @@ static int cmd_device_levels(const struct shell *shell,
 		shell_fprintf(shell, SHELL_NORMAL, "- None\n");
 	}
 
-	return 0;
-}
-
-static const char *get_device_name(const struct device *dev,
-				   char *buf,
-				   size_t len)
-{
-	const char *name = dev->name;
-
-	if ((name == NULL) || (name[0] == 0)) {
-		snprintf(buf, len, "[%p]", dev);
-		name = buf;
+	shell_fprintf(shell, SHELL_NORMAL, "POST_KERNEL:\n");
+	ret = device_get_config_level(shell, _SYS_INIT_LEVEL_POST_KERNEL);
+	if (ret == false) {
+		shell_fprintf(shell, SHELL_NORMAL, "- None\n");
 	}
 
-	return name;
+	shell_fprintf(shell, SHELL_NORMAL, "APPLICATION:\n");
+	ret = device_get_config_level(shell, _SYS_INIT_LEVEL_APPLICATION);
+	if (ret == false) {
+		shell_fprintf(shell, SHELL_NORMAL, "- None\n");
+	}
+
+#ifdef CONFIG_SMP
+	shell_fprintf(shell, SHELL_NORMAL, "SMP:\n");
+	ret = device_get_config_level(shell, _SYS_INIT_LEVEL_SMP);
+	if (ret == false) {
+		shell_fprintf(shell, SHELL_NORMAL, "- None\n");
+	}
+#endif /* CONFIG_SMP */
+
+	return 0;
 }
 
 static int cmd_device_list(const struct shell *shell,
