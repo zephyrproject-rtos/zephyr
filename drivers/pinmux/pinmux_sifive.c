@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT sifive_iof
+
 /**
  * @brief PINMUX driver for the SiFive Freedom Processor
  */
@@ -94,10 +96,10 @@ static const struct pinmux_driver_api pinmux_sifive_driver_api = {
 };
 
 static const struct pinmux_sifive_config pinmux_sifive_0_config = {
-	.base = SIFIVE_PINMUX_0_BASE_ADDR,
+	.base = DT_INST_REG_ADDR(0),
 };
 
-DEVICE_DEFINE(pinmux_sifive_0, CONFIG_PINMUX_SIFIVE_0_NAME,
+DEVICE_DT_INST_DEFINE(0,
 		    &pinmux_sifive_init, device_pm_control_nop, NULL,
 		    &pinmux_sifive_0_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
