@@ -162,6 +162,21 @@ uint32_t crc32_ieee(const uint8_t *data, size_t len);
 uint32_t crc32_ieee_update(uint32_t crc, const uint8_t *data, size_t len);
 
 /**
+ * @brief Calculate CRC32C (Castagnoli) checksum.
+ *
+ * @param crc       CRC32C checksum that needs to be updated.
+ * @param *data     Pointer to data on which the CRC should be calculated.
+ * @param len       Data length.
+ * @param first_pkt Whether this is the first packet in the stream.
+ * @param last_pkt  Whether this is the last packet in the stream.
+ *
+ * @return CRC32 value.
+ *
+ */
+uint32_t crc32_c(uint32_t crc, const uint8_t *data,
+		 size_t len, bool first_pkt, bool last_pkt);
+
+/**
  * @brief Compute CCITT variant of CRC 8
  *
  * Normal CCITT variant of CRC 8 is using 0x07.
