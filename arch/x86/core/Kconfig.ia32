@@ -144,34 +144,6 @@ config X86_FP_USE_SOFT_FLOAT
 
 endmenu
 
-config DCACHE_LINE_SIZE
-	default 64 if CPU_ATOM
-
-config CLFLUSH_INSTRUCTION_SUPPORTED
-	bool "CLFLUSH instruction supported"
-	depends on !CLFLUSH_DETECT && CACHE_MANAGEMENT
-	help
-	  An implementation of sys_cache_flush() that uses CLFLUSH is made
-	  available, instead of the one using WBINVD.
-
-	  This option should only be enabled if it is known in advance that the
-	  CPU supports the CLFLUSH instruction. It disables runtime detection of
-	  CLFLUSH support thereby reducing both memory footprint and boot time.
-
-config CLFLUSH_DETECT
-	bool "Detect support of CLFLUSH instruction at runtime"
-	depends on CACHE_MANAGEMENT
-	help
-	  This option should be enabled if it is not known in advance whether the
-	  CPU supports the CLFLUSH instruction or not.
-
-	  The CPU is queried at boot time to determine which of the multiple
-	  implementations of sys_cache_flush() linked into the image is the
-	  correct one to use.
-
-	  If the CPU's support (or lack thereof) of CLFLUSH is known in advance, then
-	  disable this option and set CLFLUSH_INSTRUCTION_SUPPORTED as appropriate.
-
 config X86_DYNAMIC_IRQ_STUBS
 	int "Number of dynamic interrupt stubs"
 	depends on DYNAMIC_INTERRUPTS

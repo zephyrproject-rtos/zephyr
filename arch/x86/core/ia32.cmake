@@ -9,8 +9,6 @@ elseif(CMAKE_C_COMPILER_ID STREQUAL "GNU")
 endif()
 
 zephyr_library_sources(
-  ia32/cache.c
-  ia32/cache_s.S
   ia32/crt0.S
   ia32/excstub.S
   ia32/intstub.S
