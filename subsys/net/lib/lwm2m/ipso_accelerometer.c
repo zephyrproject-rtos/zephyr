@@ -20,6 +20,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "lwm2m_object.h"
 #include "lwm2m_engine.h"
+#include "lwm2m_resource_ids.h"
 
 #define ACCEL_VERSION_MAJOR 1
 #define ACCEL_VERSION_MINOR 0
@@ -29,16 +30,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #else
 #define ADD_TIMESTAMPS 0
 #endif
-/* Server resource IDs */
-#define ACCEL_X_VALUE_ID			5702
-#define ACCEL_Y_VALUE_ID			5703
-#define ACCEL_Z_VALUE_ID			5704
-#define ACCEL_SENSOR_UNITS_ID			5701
-#define ACCEL_MIN_RANGE_VALUE_ID		5603
-#define ACCEL_MAX_RANGE_VALUE_ID		5604
-#if ADD_TIMESTAMPS
-#define ACCEL_TIMESTAMP_ID			5518
 
+#if ADD_TIMESTAMPS
 #define ACCEL_MAX_ID		7
 #else
 #define ACCEL_MAX_ID		6
@@ -65,14 +58,14 @@ static struct ipso_accel_data accel_data[MAX_INSTANCE_COUNT];
 
 static struct lwm2m_engine_obj accel;
 static struct lwm2m_engine_obj_field fields[] = {
-	OBJ_FIELD_DATA(ACCEL_X_VALUE_ID, R, FLOAT32),
-	OBJ_FIELD_DATA(ACCEL_Y_VALUE_ID, R_OPT, FLOAT32),
-	OBJ_FIELD_DATA(ACCEL_Z_VALUE_ID, R_OPT, FLOAT32),
-	OBJ_FIELD_DATA(ACCEL_SENSOR_UNITS_ID, R_OPT, STRING),
-	OBJ_FIELD_DATA(ACCEL_MIN_RANGE_VALUE_ID, R_OPT, FLOAT32),
-	OBJ_FIELD_DATA(ACCEL_MAX_RANGE_VALUE_ID, R_OPT, FLOAT32),
+	OBJ_FIELD_DATA(X_VALUE_RID, R, FLOAT32),
+	OBJ_FIELD_DATA(Y_VALUE_RID, R_OPT, FLOAT32),
+	OBJ_FIELD_DATA(Z_VALUE_RID, R_OPT, FLOAT32),
+	OBJ_FIELD_DATA(SENSOR_UNITS_RID, R_OPT, STRING),
+	OBJ_FIELD_DATA(MIN_RANGE_VALUE_RID, R_OPT, FLOAT32),
+	OBJ_FIELD_DATA(MAX_RANGE_VALUE_RID, R_OPT, FLOAT32),
 #if ADD_TIMESTAMPS
-	OBJ_FIELD_DATA(ACCEL_TIMESTAMP_ID, RW_OPT, TIME),
+	OBJ_FIELD_DATA(TIMESTAMP_RID, RW_OPT, TIME),
 #endif
 };
 
@@ -113,27 +106,25 @@ static struct lwm2m_engine_obj_inst *accel_create(uint16_t obj_inst_id)
 	init_res_instance(res_inst[avail], ARRAY_SIZE(res_inst[avail]));
 
 	/* initialize instance resource data */
-	INIT_OBJ_RES_DATA(ACCEL_X_VALUE_ID, res[avail], i, res_inst[avail], j,
+	INIT_OBJ_RES_DATA(X_VALUE_RID, res[avail], i, res_inst[avail], j,
 			  &accel_data[avail].x_value,
 			  sizeof(accel_data[avail].x_value));
-	INIT_OBJ_RES_DATA(ACCEL_Y_VALUE_ID, res[avail], i, res_inst[avail], j,
+	INIT_OBJ_RES_DATA(Y_VALUE_RID, res[avail], i, res_inst[avail], j,
 			  &accel_data[avail].y_value,
 			  sizeof(accel_data[avail].y_value));
-	INIT_OBJ_RES_DATA(ACCEL_Z_VALUE_ID, res[avail], i, res_inst[avail], j,
+	INIT_OBJ_RES_DATA(Z_VALUE_RID, res[avail], i, res_inst[avail], j,
 			  &accel_data[avail].z_value,
 			  sizeof(accel_data[avail].z_value));
-	INIT_OBJ_RES_OPTDATA(ACCEL_SENSOR_UNITS_ID, res[avail], i,
+	INIT_OBJ_RES_OPTDATA(SENSOR_UNITS_RID, res[avail], i,
 			     res_inst[avail], j);
-	INIT_OBJ_RES_DATA(ACCEL_MIN_RANGE_VALUE_ID, res[avail], i,
-			  res_inst[avail], j,
-			  &accel_data[avail].min_range,
+	INIT_OBJ_RES_DATA(MIN_RANGE_VALUE_RID, res[avail], i, res_inst[avail],
+			  j, &accel_data[avail].min_range,
 			  sizeof(accel_data[avail].min_range));
-	INIT_OBJ_RES_DATA(ACCEL_MAX_RANGE_VALUE_ID, res[avail], i,
-			  res_inst[avail], j,
-			  &accel_data[avail].max_range,
+	INIT_OBJ_RES_DATA(MAX_RANGE_VALUE_RID, res[avail], i, res_inst[avail],
+			  j, &accel_data[avail].max_range,
 			  sizeof(accel_data[avail].max_range));
 #if ADD_TIMESTAMPS
-	INIT_OBJ_RES_OPTDATA(ACCEL_TIMESTAMP_ID, res[avail], i,
+	INIT_OBJ_RES_OPTDATA(TIMESTAMP_RID, res[avail], i,
 			     res_inst[avail], j);
 #endif
 
