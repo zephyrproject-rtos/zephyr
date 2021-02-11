@@ -14,7 +14,7 @@
 
 		cpu@0 {
 			device_type = "cpu";
-			compatible = "atom";
+			compatible = "intel,atom";
 			d-cache-line-size = <64>;
 			reg = <0>;
 		};
