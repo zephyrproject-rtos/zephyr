@@ -20,20 +20,10 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "lwm2m_object.h"
 #include "lwm2m_engine.h"
+#include "lwm2m_resource_ids.h"
 
 #define BUZZER_VERSION_MAJOR 1
 #define BUZZER_VERSION_MINOR 0
-
-/* resource IDs */
-#define BUZZER_ON_OFF_ID		5850
-#define BUZZER_LEVEL_ID			5548
-#define BUZZER_DELAY_DURATION_ID	5521
-#define BUZZER_MINIMUM_OFF_TIME_ID	5525
-#define BUZZER_APPLICATION_TYPE_ID	5750
-/* This field is actually not in the spec, so nothing sets it except here
- * users can listen for post_write events to it for buzzer on/off events
- */
-#define BUZZER_DIGITAL_STATE_ID		5500
 
 #define BUZZER_MAX_ID			6
 
@@ -64,12 +54,16 @@ static struct ipso_buzzer_data buzzer_data[MAX_INSTANCE_COUNT];
 
 static struct lwm2m_engine_obj buzzer;
 static struct lwm2m_engine_obj_field fields[] = {
-	OBJ_FIELD_DATA(BUZZER_ON_OFF_ID, RW, BOOL),
-	OBJ_FIELD_DATA(BUZZER_LEVEL_ID, RW_OPT, FLOAT32),
-	OBJ_FIELD_DATA(BUZZER_DELAY_DURATION_ID, RW_OPT, FLOAT64),
-	OBJ_FIELD_DATA(BUZZER_MINIMUM_OFF_TIME_ID, RW, FLOAT64),
-	OBJ_FIELD_DATA(BUZZER_APPLICATION_TYPE_ID, RW_OPT, STRING),
-	OBJ_FIELD_DATA(BUZZER_DIGITAL_STATE_ID, R, BOOL),
+	OBJ_FIELD_DATA(ON_OFF_RID, RW, BOOL),
+	OBJ_FIELD_DATA(LEVEL_RID, RW_OPT, FLOAT32),
+	OBJ_FIELD_DATA(DELAY_DURATION_RID, RW_OPT, FLOAT64),
+	OBJ_FIELD_DATA(MINIMUM_OFF_TIME_RID, RW, FLOAT64),
+	OBJ_FIELD_DATA(APPLICATION_TYPE_RID, RW_OPT, STRING),
+	/* This field is actually not in the spec, so nothing sets it except
+	 * here users can listen for post_write events to it for buzzer on/off
+	 * events
+	 */
+	OBJ_FIELD_DATA(DIGITAL_INPUT_STATE_RID, R, BOOL),
 };
 
 static struct lwm2m_engine_obj_inst inst[MAX_INSTANCE_COUNT];
@@ -121,7 +115,7 @@ static int start_buzzer(struct ipso_buzzer_data *buzzer)
 
 	buzzer->trigger_offset = k_uptime_get();
 	snprintk(path, MAX_RESOURCE_LEN, "%d/%u/%d", IPSO_OBJECT_BUZZER_ID,
-		 buzzer->obj_inst_id, BUZZER_DIGITAL_STATE_ID);
+		 buzzer->obj_inst_id, DIGITAL_INPUT_STATE_RID);
 	lwm2m_engine_set_bool(path, true);
 
 	float2ms(&buzzer->delay_duration, &temp);
@@ -140,7 +134,7 @@ static int stop_buzzer(struct ipso_buzzer_data *buzzer, bool cancel)
 	}
 
 	snprintk(path, MAX_RESOURCE_LEN, "%d/%u/%d", IPSO_OBJECT_BUZZER_ID,
-		 buzzer->obj_inst_id, BUZZER_DIGITAL_STATE_ID);
+		 buzzer->obj_inst_id, DIGITAL_INPUT_STATE_RID);
 	lwm2m_engine_set_bool(path, false);
 
 	if (cancel) {
@@ -215,27 +209,23 @@ static struct lwm2m_engine_obj_inst *buzzer_create(uint16_t obj_inst_id)
 	init_res_instance(res_inst[avail], ARRAY_SIZE(res_inst[avail]));
 
 	/* initialize instance resource data */
-	INIT_OBJ_RES(BUZZER_ON_OFF_ID, res[avail], i,
-		     res_inst[avail], j, 1, false, true,
-		     &buzzer_data[avail].onoff,
+	INIT_OBJ_RES(ON_OFF_RID, res[avail], i, res_inst[avail], j, 1, false,
+		     true, &buzzer_data[avail].onoff,
 		     sizeof(buzzer_data[avail].onoff),
 		     NULL, NULL, NULL, onoff_post_write_cb, NULL);
-	INIT_OBJ_RES_DATA(BUZZER_LEVEL_ID, res[avail], i, res_inst[avail], j,
+	INIT_OBJ_RES_DATA(LEVEL_RID, res[avail], i, res_inst[avail], j,
 			  &buzzer_data[avail].level,
 			  sizeof(buzzer_data[avail].level));
-	INIT_OBJ_RES_DATA(BUZZER_DELAY_DURATION_ID, res[avail], i,
-			  res_inst[avail], j,
+	INIT_OBJ_RES_DATA(DELAY_DURATION_RID, res[avail], i, res_inst[avail], j,
 			  &buzzer_data[avail].delay_duration,
 			  sizeof(buzzer_data[avail].delay_duration));
-	INIT_OBJ_RES_DATA(BUZZER_MINIMUM_OFF_TIME_ID, res[avail], i,
-			  res_inst[avail], j,
-			  &buzzer_data[avail].min_off_time,
+	INIT_OBJ_RES_DATA(MINIMUM_OFF_TIME_RID, res[avail], i, res_inst[avail],
+			  j, &buzzer_data[avail].min_off_time,
 			  sizeof(buzzer_data[avail].min_off_time));
-	INIT_OBJ_RES_OPTDATA(BUZZER_APPLICATION_TYPE_ID, res[avail], i,
+	INIT_OBJ_RES_OPTDATA(APPLICATION_TYPE_RID, res[avail], i,
 			     res_inst[avail], j);
-	INIT_OBJ_RES_DATA(BUZZER_DIGITAL_STATE_ID, res[avail], i,
-			  res_inst[avail], j,
-			  &buzzer_data[avail].active,
+	INIT_OBJ_RES_DATA(DIGITAL_INPUT_STATE_RID, res[avail], i,
+			  res_inst[avail], j, &buzzer_data[avail].active,
 			  sizeof(buzzer_data[avail].active));
 
 	inst[avail].resources = res[avail];

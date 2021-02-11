@@ -22,19 +22,10 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "lwm2m_object.h"
 #include "lwm2m_engine.h"
+#include "lwm2m_resource_ids.h"
 
 #define LIGHT_VERSION_MAJOR 1
 #define LIGHT_VERSION_MINOR 0
-
-/* Server resource IDs */
-#define LIGHT_ON_OFF_ID				5850
-#define LIGHT_DIMMER_ID				5851
-#define LIGHT_ON_TIME_ID			5852
-#define LIGHT_CUMULATIVE_ACTIVE_POWER_ID	5805
-#define LIGHT_POWER_FACTOR_ID			5820
-#define LIGHT_COLOUR_ID				5706
-#define LIGHT_SENSOR_UNITS_ID			5701
-#define LIGHT_APPLICATION_TYPE_ID		5750
 
 #define LIGHT_MAX_ID		8
 
@@ -61,14 +52,14 @@ static char units[MAX_INSTANCE_COUNT][LIGHT_STRING_SHORT];
 
 static struct lwm2m_engine_obj light_control;
 static struct lwm2m_engine_obj_field fields[] = {
-	OBJ_FIELD_DATA(LIGHT_ON_OFF_ID, RW, BOOL),
-	OBJ_FIELD_DATA(LIGHT_DIMMER_ID, RW_OPT, U8),
-	OBJ_FIELD_DATA(LIGHT_ON_TIME_ID, RW_OPT, S32),
-	OBJ_FIELD_DATA(LIGHT_CUMULATIVE_ACTIVE_POWER_ID, R_OPT, FLOAT32),
-	OBJ_FIELD_DATA(LIGHT_POWER_FACTOR_ID, R_OPT, FLOAT32),
-	OBJ_FIELD_DATA(LIGHT_COLOUR_ID, RW_OPT, STRING),
-	OBJ_FIELD_DATA(LIGHT_SENSOR_UNITS_ID, R_OPT, STRING),
-	OBJ_FIELD_DATA(LIGHT_APPLICATION_TYPE_ID, RW_OPT, STRING),
+	OBJ_FIELD_DATA(ON_OFF_RID, RW, BOOL),
+	OBJ_FIELD_DATA(DIMMER_RID, RW_OPT, U8),
+	OBJ_FIELD_DATA(ON_TIME_RID, RW_OPT, S32),
+	OBJ_FIELD_DATA(CUMULATIVE_ACTIVE_POWER_RID, R_OPT, FLOAT32),
+	OBJ_FIELD_DATA(POWER_FACTOR_RID, R_OPT, FLOAT32),
+	OBJ_FIELD_DATA(COLOUR_RID, RW_OPT, STRING),
+	OBJ_FIELD_DATA(SENSOR_UNITS_RID, R_OPT, STRING),
+	OBJ_FIELD_DATA(APPLICATION_TYPE_RID, RW_OPT, STRING),
 };
 
 static struct lwm2m_engine_obj_inst inst[MAX_INSTANCE_COUNT];
@@ -169,29 +160,24 @@ static struct lwm2m_engine_obj_inst *light_control_create(uint16_t obj_inst_id)
 	init_res_instance(res_inst[avail], ARRAY_SIZE(res_inst[avail]));
 
 	/* initialize instance resource data */
-	INIT_OBJ_RES_DATA(LIGHT_ON_OFF_ID, res[avail], i, res_inst[avail], j,
+	INIT_OBJ_RES_DATA(ON_OFF_RID, res[avail], i, res_inst[avail], j,
 			  &on_off_value[avail], sizeof(*on_off_value));
-	INIT_OBJ_RES_DATA(LIGHT_DIMMER_ID, res[avail], i, res_inst[avail], j,
+	INIT_OBJ_RES_DATA(DIMMER_RID, res[avail], i, res_inst[avail], j,
 			  &dimmer_value[avail], sizeof(*dimmer_value));
-	INIT_OBJ_RES(LIGHT_ON_TIME_ID, res[avail], i,
-		     res_inst[avail], j, 1, false, true,
-		     &on_time_value[avail], sizeof(*on_time_value),
+	INIT_OBJ_RES(ON_TIME_RID, res[avail], i, res_inst[avail], j, 1, false,
+		     true, &on_time_value[avail], sizeof(*on_time_value),
 		     on_time_read_cb, NULL, NULL, on_time_post_write_cb, NULL);
-	INIT_OBJ_RES_DATA(LIGHT_CUMULATIVE_ACTIVE_POWER_ID, res[avail], i,
-			  res_inst[avail], j,
-			  &cumulative_active_value[avail],
+	INIT_OBJ_RES_DATA(CUMULATIVE_ACTIVE_POWER_RID, res[avail], i,
+			  res_inst[avail], j, &cumulative_active_value[avail],
 			  sizeof(*cumulative_active_value));
-	INIT_OBJ_RES_DATA(LIGHT_POWER_FACTOR_ID, res[avail], i,
-			  res_inst[avail], j,
+	INIT_OBJ_RES_DATA(POWER_FACTOR_RID, res[avail], i, res_inst[avail], j,
 			  &power_factor_value[avail],
 			  sizeof(*power_factor_value));
-	INIT_OBJ_RES_DATA(LIGHT_COLOUR_ID, res[avail], i,
-			  res_inst[avail], j,
+	INIT_OBJ_RES_DATA(COLOUR_RID, res[avail], i, res_inst[avail], j,
 			  colour[avail], LIGHT_STRING_LONG);
-	INIT_OBJ_RES_DATA(LIGHT_SENSOR_UNITS_ID, res[avail], i,
-			  res_inst[avail], j,
+	INIT_OBJ_RES_DATA(SENSOR_UNITS_RID, res[avail], i, res_inst[avail], j,
 			  units[avail], LIGHT_STRING_SHORT);
-	INIT_OBJ_RES_OPTDATA(LIGHT_APPLICATION_TYPE_ID, res[avail], i,
+	INIT_OBJ_RES_OPTDATA(APPLICATION_TYPE_RID, res[avail], i,
 			     res_inst[avail], j);
 
 	inst[avail].resources = res[avail];
