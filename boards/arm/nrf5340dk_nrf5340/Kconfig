@@ -1,4 +1,4 @@
-# nRF5340 (P)DK board configuration
+# nRF5340 DK board configuration
 
 # Copyright (c) 2019 - 2021 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
@@ -39,7 +39,7 @@ config IPM_MSG_CH_1_RX
 
 endif # RPMSG_SERVICE_DUAL_IPM_SUPPORT
 
-if BOARD_NRF5340PDK_NRF5340_CPUAPP || BOARD_NRF5340PDK_NRF5340_CPUAPPNS || BOARD_NRF5340DK_NRF5340_CPUAPP || BOARD_NRF5340DK_NRF5340_CPUAPPNS
+if BOARD_NRF5340DK_NRF5340_CPUAPP || BOARD_NRF5340DK_NRF5340_CPUAPPNS
 
 config BOARD_ENABLE_DCDC_APP
 	bool "Enable Application MCU DCDC converter"
@@ -82,7 +82,6 @@ config BOARD_ENABLE_CPUNET
 
 config DOMAIN_CPUNET_BOARD
 	string
-	default "nrf5340pdk_nrf5340_cpunet" if BOARD_NRF5340PDK_NRF5340_CPUAPP || BOARD_NRF5340PDK_NRF5340_CPUAPPNS
 	default "nrf5340dk_nrf5340_cpunet" if BOARD_NRF5340DK_NRF5340_CPUAPP || BOARD_NRF5340DK_NRF5340_CPUAPPNS
 	depends on BOARD_ENABLE_CPUNET
 	help
@@ -91,9 +90,9 @@ config DOMAIN_CPUNET_BOARD
 	  another board. For example hci_rpmsg on the nRF5340_cpunet for
 	  Bluetooth applications.
 
-endif # BOARD_NRF5340PDK_NRF5340_CPUAPP || BOARD_NRF5340PDK_NRF5340_CPUAPPNS || BOARD_NRF5340DK_NRF5340_CPUAPP || BOARD_NRF5340DK_NRF5340_CPUAPPNS
+endif #  BOARD_NRF5340DK_NRF5340_CPUAPP || BOARD_NRF5340DK_NRF5340_CPUAPPNS
 
-if BOARD_NRF5340PDK_NRF5340_CPUNET || BOARD_NRF5340DK_NRF5340_CPUNET
+if BOARD_NRF5340DK_NRF5340_CPUNET
 
 # BT_CTLR depends on BT. When BT is enabled we should default to also
 # enabling the controller.
@@ -105,11 +104,10 @@ config BT_ECC
 
 config DOMAIN_CPUAPP_BOARD
 	string
-	default "nrf5340pdk_nrf5340_cpuapp" if BOARD_NRF5340PDK_NRF5340_CPUNET
 	default "nrf5340dk_nrf5340_cpuapp" if BOARD_NRF5340DK_NRF5340_CPUNET
 	help
 	  The board which will be used for CPUAPP domain when creating a multi
 	  image application where one or more images should be located on
 	  another board.
 
-endif # BOARD_NRF5340PDK_NRF5340_CPUNET || BOARD_NRF5340DK_NRF5340_CPUNET
+endif # BOARD_NRF5340DK_NRF5340_CPUNET
