@@ -326,6 +326,6 @@ References
 .. _IDAU:
    https://developer.arm.com/docs/100690/latest/attribution-units-sau-and-idau
 .. _nRF5340 DK website:
-   https://www.nordicsemi.com/Software-and-tools/Development-Kits/nRF5340-PDK
+   https://www.nordicsemi.com/Software-and-tools/Development-Kits/nRF5340-DK
 .. _Nordic Semiconductor Infocenter: https://infocenter.nordicsemi.com
 .. _Trusted Firmware M: https://www.trustedfirmware.org/projects/tf-m/
