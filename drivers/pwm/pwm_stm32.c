@@ -117,8 +117,7 @@ static int get_tim_clk(const struct stm32_pclken *pclken, uint32_t *tim_clk)
 	const struct device *clk;
 	uint32_t bus_clk, apb_psc;
 
-	clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
-	__ASSERT_NO_MSG(clk);
+	clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
 	r = clock_control_get_rate(clk, (clock_control_subsys_t *)pclken,
 				   &bus_clk);
@@ -284,8 +283,7 @@ static int pwm_stm32_init(const struct device *dev)
 	LL_TIM_InitTypeDef init;
 
 	/* enable clock and store its speed */
-	clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
-	__ASSERT_NO_MSG(clk);
+	clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
 	r = clock_control_on(clk, (clock_control_subsys_t *)&cfg->pclken);
 	if (r < 0) {

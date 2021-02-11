@@ -455,7 +455,7 @@ static int spi_stm32_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	if (clock_control_get_rate(device_get_binding(STM32_CLOCK_CONTROL_NAME),
+	if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 			(clock_control_subsys_t) &cfg->pclken, &clock) < 0) {
 		LOG_ERR("Failed call clock_control_get_rate");
 		return -EIO;
@@ -802,9 +802,7 @@ static int spi_stm32_init(const struct device *dev)
 	const struct spi_stm32_config *cfg = dev->config;
 	int err;
 
-	__ASSERT_NO_MSG(device_get_binding(STM32_CLOCK_CONTROL_NAME));
-
-	if (clock_control_on(device_get_binding(STM32_CLOCK_CONTROL_NAME),
+	if (clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 			       (clock_control_subsys_t) &cfg->pclken) != 0) {
 		LOG_ERR("Could not enable SPI clock");
 		return -EIO;

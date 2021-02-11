@@ -635,8 +635,7 @@ static int eth_initialize(const struct device *dev)
 	__ASSERT_NO_MSG(dev_data != NULL);
 	__ASSERT_NO_MSG(cfg != NULL);
 
-	dev_data->clock = device_get_binding(STM32_CLOCK_CONTROL_NAME);
-	__ASSERT_NO_MSG(dev_data->clock != NULL);
+	dev_data->clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
 	/* enable clock */
 	ret = clock_control_on(dev_data->clock,

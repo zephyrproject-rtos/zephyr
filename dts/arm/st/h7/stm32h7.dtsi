@@ -53,7 +53,6 @@
 			compatible = "st,stm32-rcc";
 			#clock-cells = <2>;
 			reg = <0x58024400 0x400>;
-			label = "STM32_CLK_RCC";
 		};
 
 		pinctrl: pin-controller@58020000 {

@@ -56,7 +56,6 @@
 			clocks-controller;
 			#clock-cells = <2>;
 			reg = <0x40021000 0x400>;
-			label = "STM32_CLK_RCC";
 		};
 
 		pinctrl: pin-controller@42020000 {

@@ -66,10 +66,7 @@ static int stm32_sdmmc_clock_enable(struct stm32_sdmmc_priv *priv)
 	LL_RCC_SetSDMMCClockSource(LL_RCC_SDMMC1_CLKSOURCE_PLLSAI1);
 #endif
 
-	clock = device_get_binding(STM32_CLOCK_CONTROL_NAME);
-	if (!clock) {
-		return -ENODEV;
-	}
+	clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
 	/* Enable the APB clock for stm32_sdmmc */
 	return clock_control_on(clock, (clock_control_subsys_t *)&priv->pclken);
@@ -79,10 +76,7 @@ static int stm32_sdmmc_clock_disable(struct stm32_sdmmc_priv *priv)
 {
 	const struct device *clock;
 
-	clock = device_get_binding(STM32_CLOCK_CONTROL_NAME);
-	if (!clock) {
-		return -ENODEV;
-	}
+	clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
 	return clock_control_off(clock,
 				 (clock_control_subsys_t *)&priv->pclken);

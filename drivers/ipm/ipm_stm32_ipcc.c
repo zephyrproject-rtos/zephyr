@@ -247,8 +247,7 @@ static int stm32_ipcc_mailbox_init(const struct device *dev)
 	const struct device *clk;
 	uint32_t i;
 
-	clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
-	__ASSERT_NO_MSG(clk);
+	clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
 	/* enable clock */
 	if (clock_control_on(clk,

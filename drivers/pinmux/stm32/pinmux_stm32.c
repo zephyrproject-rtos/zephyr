@@ -90,7 +90,7 @@ static int enable_port(uint32_t port, const struct device *clk)
 {
 	/* enable port clock */
 	if (!clk) {
-		clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
+		clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	}
 
 	struct stm32_pclken pclken;
@@ -150,7 +150,7 @@ int stm32_dt_pinctrl_configure(const struct soc_gpio_pinctrl *pinctrl,
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl) */
 
 	/* make sure to enable port clock first */
-	clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
+	clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
 	for (int i = 0; i < list_size; i++) {
 		mux = pinctrl[i].pinmux;
@@ -470,7 +470,7 @@ void stm32_setup_pins(const struct pin_config *pinconf,
 	const struct device *clk;
 	int i;
 
-	clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
+	clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
 	for (i = 0; i < pins; i++) {
 		z_pinmux_stm32_set(pinconf[i].pin_num,
