@@ -306,6 +306,7 @@ Boards & SoC Support
 
   * Elkhart Lake CRB board
   * ACRN configuration on Elkhart Lake CRB board
+  * Slim Bootloader configuration on Elkhart Lake CRB board
 
 * Added support for these SPARC boards:
 
@@ -365,6 +366,11 @@ Boards & SoC Support
     protection by default.
   * Fixed Segger RTT and SystemView support on NXP i.MX RT boards.
   * Demand paging is turned on by default for ``qemu_x86_tiny``.
+  * Updated zefi.py to use cross-compiler while building Zephyr.
+  * Enabled code coverage report for ``qemu_x86_64``.
+  * Removed support for legacy APIC timer driver.
+  * Added common memory linker for x86 SoCs.
+  * Enabled configuration to reserve the first megabyte in x86 SoCs.
 
 * Added support for these following shields:
 
