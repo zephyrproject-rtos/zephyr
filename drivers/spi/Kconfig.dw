@@ -16,6 +16,74 @@ menuconfig SPI_DW
 
 if SPI_DW
 
+config SPI_0
+	bool "SPI port 0"
+	help
+	  Enable SPI controller port 0.
+
+config SPI_0_OP_MODES
+	int "Port 0 supported operation modes (master/slave/both)"
+	default 1
+	range 1 3
+	depends on SPI_0
+	help
+	  This sets the supported operation modes at runtime, by the SPI
+	  port 0, where:
+	  1 is MASTER mode only (default)
+	  2 is SLAVE mode only
+	  3 is both modes are available.
+
+config SPI_1
+	bool "SPI port 1"
+	help
+	  Enable SPI controller port 1.
+
+config SPI_1_OP_MODES
+	int "Port 1 supported operation modes (master/slave/both)"
+	default 1
+	range 1 3
+	depends on SPI_1
+	help
+	  This sets the supported operation modes at runtime, by the SPI
+	  port 1, where:
+	  1 is MASTER mode only (default)
+	  2 is SLAVE mode only
+	  3 is both modes are available.
+
+config SPI_2
+	bool "SPI port 2"
+	help
+	  Enable SPI controller port 2.
+
+config SPI_2_OP_MODES
+	int "Port 2 supported operation modes (master/slave/both)"
+	default 1
+	range 1 3
+	depends on SPI_2
+	help
+	  This sets the supported operation modes at runtime, by the SPI
+	  port 2, where:
+	  1 is MASTER mode only (default)
+	  2 is SLAVE mode only
+	  3 is both modes are available.
+
+config SPI_3
+	bool "SPI port 3"
+	help
+	  Enable SPI controller port 3.
+
+config SPI_3_OP_MODES
+	int "Port 3 supported operation modes (master/slave/both)"
+	default 1
+	range 1 3
+	depends on SPI_3
+	help
+	  This sets the supported operation modes at runtime, by the SPI
+	  port 3, where:
+	  1 is MASTER mode only (default)
+	  2 is SLAVE mode only
+	  3 is both modes are available.
+
 config SPI_DW_ARC_AUX_REGS
 	bool "Registers are part of ARC auxiliary registers"
 	depends on ARC
