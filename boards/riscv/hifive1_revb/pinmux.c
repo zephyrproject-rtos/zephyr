@@ -12,7 +12,9 @@ static int hifive1_revb_pinmux_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	const struct device *p = device_get_binding(CONFIG_PINMUX_SIFIVE_0_NAME);
+	const struct device *p = DEVICE_DT_GET(DT_NODELABEL(pinctrl));
+
+	__ASSERT_NO_MSG(device_is_ready(p));
 
 #ifdef CONFIG_UART_SIFIVE
 #ifdef CONFIG_UART_SIFIVE_PORT_0
