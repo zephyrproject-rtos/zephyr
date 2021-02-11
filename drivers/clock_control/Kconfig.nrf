@@ -56,7 +56,6 @@ endchoice
 config CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION
 	bool "Enable LF clock calibration"
 	depends on !SOC_SERIES_NRF91X && CLOCK_CONTROL_NRF_K32SRC_RC
-	default n if BOARD_NRF5340PDK_NRF5340_CPUAPP || BOARD_NRF5340PDK_NRF5340_CPUAPPNS
 	default y
 	help
 	  If calibration is disabled when RC is used for low frequency clock then
