@@ -1,9 +1,0 @@
-identifier: v2m_musca_nonsecure
-name: ARM V2M MUSCA NonSecure
-type: mcu
-arch: arm
-toolchain:
-  - gnuarmemb
-  - xtools
-  - zephyr
-ram: 64
