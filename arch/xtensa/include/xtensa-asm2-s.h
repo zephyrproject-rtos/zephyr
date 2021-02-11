@@ -194,6 +194,7 @@
 
 	/* Recover the interrupted SP from the BSA */
 	l32i a1, a1, 0
+	l32i a0, a1, BSA_A0_OFF
 	addi a1, a1, BASE_SAVE_AREA_SIZE
 
 	call4 _xstack_call0_\@
@@ -323,6 +324,7 @@ _do_call_\@:
 	 */
 	beq a6, a1, _restore_\@
 	l32i a1, a1, 0
+	l32i a0, a1, BSA_A0_OFF
 	addi a1, a1, BASE_SAVE_AREA_SIZE
 	SPILL_ALL_WINDOWS
 	mov a1, a6
