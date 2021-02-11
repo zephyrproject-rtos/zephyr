@@ -61,12 +61,19 @@ config LWM2M_IPSO_GENERIC_SENSOR_INSTANCE_COUNT
 	  This setting establishes the total count of IPSO Generic
 	  Sensor instances available to the LWM2M client.
 
-config LWM2M_IPSO_GENERIC_SENSOR_TIMESTAMP
-	bool "Add timestamp resources to IPSO objects"
-	default y
-	depends on LWM2M_IPSO_TIMESTAMP_EXTENSIONS
+choice
+	prompt "IPSO Generic Sensor object version"
+	default LWM2M_IPSO_GENERIC_SENSOR_VERSION_1_0
 	help
-	  Add a non-standard timestamp resource to each object.
+	  Select which version of the IPSO Generic Sensor object should be used.
+
+config LWM2M_IPSO_GENERIC_SENSOR_VERSION_1_0
+	bool "IPSO Generic Sensor object version 1.0"
+
+config LWM2M_IPSO_GENERIC_SENSOR_VERSION_1_1
+	bool "IPSO Generic Sensor object version 1.1"
+
+endchoice
 
 config LWM2M_IPSO_GENERIC_SENSOR_NAME
 	string "Name that will show up in debug output when object is created"
