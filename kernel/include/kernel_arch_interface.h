@@ -78,50 +78,55 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		     void *p1, void *p2, void *p3);
 
 #ifdef CONFIG_USE_SWITCH
-/**
- * Cooperatively context switch
+/** Cooperative context switch primitive
  *
- * Architectures have considerable leeway on what the specific semantics of
- * the switch handles are, but optimal implementations should do the following
- * if possible:
+ * The action of arch_switch() should be to switch to a new context
+ * passed in the first argument, and save a pointer to the current
+ * context into the address passed in the second argument.
  *
- * 1) Push all thread state relevant to the context switch to the current stack
- * 2) Update the switched_from parameter to contain the current stack pointer,
- *    after all context has been saved. switched_from is used as an output-
- *    only parameter and its current value is ignored (and can be NULL, see
- *    below).
- * 3) Set the stack pointer to the value provided in switch_to
- * 4) Pop off all thread state from the stack we switched to and return.
+ * The actual type and interpretation of the switch handle is specified
+ * by the architecture.  It is the same data structure stored in the
+ * "switch_handle" field of a newly-created thread in arch_new_thread(),
+ * and passed to the kernel as the "interrupted" argument to
+ * z_get_next_switch_handle().
  *
- * Some arches may implement thread->switch handle as a pointer to the
- * thread itself, and save context somewhere in thread->arch. In this
- * case, on initial context switch from the dummy thread,
- * thread->switch handle for the outgoing thread is NULL. Instead of
- * dereferencing switched_from all the way to get the thread pointer,
- * subtract ___thread_t_switch_handle_OFFSET to obtain the thread
- * pointer instead.  That is, such a scheme would have behavior like
- * (in C pseudocode):
+ * Note that on SMP systems, the kernel uses the store through the
+ * second pointer as a synchronization point to detect when a thread
+ * context is completely saved (so another CPU can know when it is
+ * safe to switch).  This store must be done AFTER all relevant state
+ * is saved, and must include whatever memory barriers or cache
+ * management code is required to be sure another CPU will see the
+ * result correctly.
  *
- * void arch_switch(void *switch_to, void **switched_from)
- * {
- *     struct k_thread *new = switch_to;
- *     struct k_thread *old = CONTAINER_OF(switched_from, struct k_thread,
- *                                         switch_handle);
+ * The simplest implementation of arch_switch() is generally to push
+ * state onto the thread stack and use the resulting stack pointer as the
+ * switch handle.  Some architectures may instead decide to use a pointer
+ * into the thread struct as the "switch handle" type.  These can legally
+ * assume that the second argument to arch_switch() is the address of the
+ * switch_handle field of struct thread_base and can use an offset on
+ * this value to find other parts of the thread struct.  For example a (C
+ * pseudocode) implementation of arch_switch() might look like:
  *
- *     // save old context...
- *     *switched_from = old;
- *     // restore new context...
- * }
+ *   void arch_switch(void *switch_to, void **switched_from)
+ *   {
+ *       struct k_thread *new = switch_to;
+ *       struct k_thread *old = CONTAINER_OF(switched_from, struct k_thread,
+ *                                           switch_handle);
  *
- * Note that, regardless of the underlying handle representation, the
- * incoming switched_from pointer MUST be written through with a
- * non-NULL value after all relevant thread state has been saved.  The
- * kernel uses this as a synchronization signal to be able to wait for
- * switch completion from another CPU.
+ *       // save old context...
+ *       *switched_from = old;
+ *       // restore new context...
+ *   }
+ *
+ * Note that the kernel manages the switch_handle field for
+ * synchronization as described above.  So it is not legal for
+ * architecture code to assume that it has any particular value at any
+ * other time.  In particular it is not legal to read the field from the
+ * address passed in the second argument.
  *
  * @param switch_to Incoming thread's switch handle
  * @param switched_from Pointer to outgoing thread's switch handle storage
- *        location, which may be updated.
+ *        location, which must be updated.
  */
 static inline void arch_switch(void *switch_to, void **switched_from);
 #else
