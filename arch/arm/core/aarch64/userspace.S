@@ -50,6 +50,42 @@ strlen_done:
 	ret
 
 /*
+ * int arch_buffer_validate(void *addr, size_t size, int write)
+ */
+
+GTEXT(arch_buffer_validate)
+SECTION_FUNC(TEXT, arch_buffer_validate)
+
+	add	x1, x1, x0
+	mrs	x3, DAIF
+	msr	DAIFSET, #DAIFSET_IRQ_BIT
+
+abv_loop:
+	cbnz	w2, 1f
+	at	S1E0R, x0
+	b	2f
+1:	at	S1E0W, x0
+
+2:	orr	x0, x0, #(CONFIG_MMU_PAGE_SIZE - 1)
+	add	x0, x0, #1
+
+	isb
+	mrs	x4, PAR_EL1
+	tbnz	x4, #0, abv_fail
+
+	cmp	x0, x1
+	blo	abv_loop
+
+	msr	DAIF, x3
+	mov	x0, #0
+	ret
+
+abv_fail:
+	msr	DAIF, x3
+	mov	x0, #-1
+	ret
+
+/*
  * Routine to jump into userspace
  *
  * We leverage z_arm64_exit_exc() to pop out the entry function and parameters
