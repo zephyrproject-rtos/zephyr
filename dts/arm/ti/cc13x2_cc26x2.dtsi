@@ -48,7 +48,6 @@
 		pinmux: pinmux@40081000 {
 			compatible = "ti,cc13xx-cc26xx-pinmux";
 			reg = <0x40081000 0x1000>;
-			label = "PINMUX";
 		};
 
 		gpio0: gpio@40022000 {
