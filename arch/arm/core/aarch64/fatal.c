@@ -23,7 +23,7 @@ static void dump_esr(uint64_t esr, bool *dump_far)
 {
 	const char *err;
 
-	switch (ESR_EC(esr)) {
+	switch (GET_ESR_EC(esr)) {
 	case 0b000000: /* 0x00 */
 		err = "Unknown reason";
 		break;
@@ -142,9 +142,9 @@ static void dump_esr(uint64_t esr, bool *dump_far)
 	}
 
 	LOG_ERR("ESR_ELn: 0x%016llx", esr);
-	LOG_ERR("  EC:  0x%llx (%s)", ESR_EC(esr), err);
-	LOG_ERR("  IL:  0x%llx", ESR_IL(esr));
-	LOG_ERR("  ISS: 0x%llx", ESR_ISS(esr));
+	LOG_ERR("  EC:  0x%llx (%s)", GET_ESR_EC(esr), err);
+	LOG_ERR("  IL:  0x%llx", GET_ESR_IL(esr));
+	LOG_ERR("  ISS: 0x%llx", GET_ESR_ISS(esr));
 }
 
 static void esf_dump(const z_arch_esf_t *esf)

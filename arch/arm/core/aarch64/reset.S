@@ -77,10 +77,10 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 	 * Disable access traps to EL3 for CPACR, Trace, FP, ASIMD,
 	 * SVE from lower EL.
 	 */
-	mov_imm	x0, CPTR_EL3_RES_VAL
-	mov_imm	x1, (CPTR_EL3_TTA | CPTR_EL3_TFP | CPTR_EL3_TCPAC)
+	mov_imm	x0, CPTR_EL3_RES0
+	mov_imm	x1, (CPTR_EL3_TTA_BIT | CPTR_EL3_TFP_BIT | CPTR_EL3_TCPAC_BIT)
 	bic	x0, x0, x1
-	orr	x0, x0, #(CPTR_EL3_EZ)
+	orr	x0, x0, #(CPTR_EL3_EZ_BIT)
 	msr	cptr_el3, x0
 	isb
 
@@ -89,9 +89,9 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 
 	/* Enable access control configuration from lower EL */
 	mrs	x0, actlr_el3
-	orr     x0, x0, #(ACTLR_EL3_L2ACTLR | ACTLR_EL3_L2ECTLR \
-			 | ACTLR_EL3_L2CTLR)
-	orr     x0, x0, #(ACTLR_EL3_CPUACTLR | ACTLR_EL3_CPUECTLR)
+	orr     x0, x0, #(ACTLR_EL3_L2ACTLR_BIT | ACTLR_EL3_L2ECTLR_BIT \
+			 | ACTLR_EL3_L2CTLR_BIT)
+	orr     x0, x0, #(ACTLR_EL3_CPUACTLR_BIT | ACTLR_EL3_CPUECTLR_BIT)
 	msr	actlr_el3, x0
 
 	/* Initialize SCTLR_EL1 to reset value */
@@ -100,14 +100,11 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 
 	/* Disable EA/IRQ/FIQ routing to EL3 and set EL1 to AArch64 */
 	mov	x0, xzr
-	orr	x0, x0, #(SCR_EL3_RW)
+	orr	x0, x0, #(SCR_RW_BIT)
 	msr	scr_el3, x0
 
 	/* On eret return to secure EL1h with DAIF masked */
-	mov	x0, xzr
-	orr	x0, x0, #(DAIF_MASK)
-	orr	x0, x0, #(SPSR_EL3_TO_EL1)
-	orr	x0, x0, #(SPSR_EL3_h)
+	mov_imm	x0, (SPSR_DAIF_MASK | SPSR_MODE_EL1H)
 	msr	spsr_el3, x0
 
 	adr	x0, 1f
@@ -135,7 +132,7 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 	msr	cpacr_el1, x0
 
 	/* Enable the instruction cache and EL1 stack alignment check. */
-	mov_imm	x1, (SCTLR_I | SCTLR_SA)
+	mov_imm	x1, (SCTLR_I_BIT | SCTLR_SA_BIT)
 	mrs	x0, sctlr_el1
 	orr	x0, x0, x1
 	msr	sctlr_el1, x0
@@ -144,6 +141,6 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 	isb
 
 	/* Enable the SError interrupt */
-	msr	daifclr, #(DAIFSET_ABT)
+	msr	daifclr, #(DAIFCLR_ABT_BIT)
 
 	bl	z_arm64_prep_c

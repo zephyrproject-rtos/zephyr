@@ -49,7 +49,7 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 	__asm__ volatile("mrs %0, daif;"
 			 "msr daifset, %1;"
 			 : "=r" (key)
-			 : "i" (DAIFSET_IRQ)
+			 : "i" (DAIFSET_IRQ_BIT)
 			 : "memory");
 
 	return key;
@@ -66,7 +66,7 @@ static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
 {
 	/* We only check the (I)RQ bit on the DAIF register */
-	return (key & DAIF_IRQ) == 0;
+	return (key & DAIF_IRQ_BIT) == 0;
 }
 
 #ifdef __cplusplus
