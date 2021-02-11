@@ -66,7 +66,7 @@ static inline void arch_switch(void *switch_to, void **switched_from)
 /* FIXME: we don't have a framework for including this from the SoC
  * layer, so we define it in the arch code here.
  */
-#ifdef CONFIG_SOC_FAMILY_INTEL_ADSP
+#if defined(CONFIG_SOC_FAMILY_INTEL_ADSP) && defined(CONFIG_KERNEL_COHERENCE)
 static inline bool arch_mem_coherent(void *ptr)
 {
 	size_t addr = (size_t) ptr;
