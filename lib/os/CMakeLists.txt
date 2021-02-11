@@ -4,6 +4,7 @@ zephyr_sources_ifdef(CONFIG_BASE64 base64.c)
 
 zephyr_sources(
   cbprintf.c
+  crc32c_sw.c
   crc32_sw.c
   crc16_sw.c
   crc8_sw.c
