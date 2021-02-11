@@ -41,9 +41,6 @@ endif # APIC_TIMER_TSC
 
 endif # APIC_TIMER
 
-config CLFLUSH_DETECT
-	default y if CACHE_MANAGEMENT
-
 config X86_DYNAMIC_IRQ_STUBS
 	default 16
 	depends on DYNAMIC_INTERRUPTS
