@@ -16,11 +16,6 @@ menuconfig SPI_DW
 
 if SPI_DW
 
-config SPI_0
-	bool "SPI port 0"
-	help
-	  Enable SPI controller port 0.
-
 config SPI_0_OP_MODES
 	int "Port 0 supported operation modes (master/slave/both)"
 	default 1
@@ -32,11 +27,6 @@ config SPI_0_OP_MODES
 	  1 is MASTER mode only (default)
 	  2 is SLAVE mode only
 	  3 is both modes are available.
-
-config SPI_1
-	bool "SPI port 1"
-	help
-	  Enable SPI controller port 1.
 
 config SPI_1_OP_MODES
 	int "Port 1 supported operation modes (master/slave/both)"
@@ -50,11 +40,6 @@ config SPI_1_OP_MODES
 	  2 is SLAVE mode only
 	  3 is both modes are available.
 
-config SPI_2
-	bool "SPI port 2"
-	help
-	  Enable SPI controller port 2.
-
 config SPI_2_OP_MODES
 	int "Port 2 supported operation modes (master/slave/both)"
 	default 1
@@ -66,11 +51,6 @@ config SPI_2_OP_MODES
 	  1 is MASTER mode only (default)
 	  2 is SLAVE mode only
 	  3 is both modes are available.
-
-config SPI_3
-	bool "SPI port 3"
-	help
-	  Enable SPI controller port 3.
 
 config SPI_3_OP_MODES
 	int "Port 3 supported operation modes (master/slave/both)"
