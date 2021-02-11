@@ -30,3 +30,7 @@ properties:
         Sample point in permille for the data phase.
         This param is required if segments are not given.
         If the sample point is given, the segments are ignored.
+    tx-delay-comp-offset:
+      type: int
+      required: false
+      default: 0
