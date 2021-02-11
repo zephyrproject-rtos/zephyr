@@ -563,9 +563,10 @@ Drivers and Sensors
 
 * USB
 
-  * Made USB DFU class compatible with the target configuration that does not
-    have a secondary image slot.
-  * Support to use USB DFU within MCUBoot with single application slot mode.
+  * Reworked nrfx driver to use mem_slab for event elements and
+    and static memory for OUT endpoints.
+  * Fixed ZLP handling for nrfx driver.
+  * Added support for USB Device mode on STM32F105xx parts.
 
 * Video
 
@@ -729,6 +730,35 @@ Bluetooth
 * BLE split software Controller
 
 * HCI Driver
+
+USB
+***
+
+* USB synchronous transfer
+
+  * Fixed possible deadlock in usb_transfer_sync().
+  * Check added to prevent starting new transfer if an other transfer is
+    already ongoing on same endpoint.
+
+* USB DFU class
+
+  * Made USB DFU class compatible with the target configuration that does not
+    have a secondary image slot.
+  * Support to use USB DFU within MCUBoot with single application slot mode.
+  * Separate PID for DFU mode added to avoid problems caused by the host OS
+    caching the remaining descriptors when switching to DFU mode.
+  * Added timer for appDETACH state and revised descriptor handling to
+    to meet specification requirements.
+
+* USB HID class
+
+  * Reworked transfer handling after suspend and resume events.
+
+* Samples
+
+  * Reworked disk and FS configuration in MSC sample. MSC sample can be
+    built with none or one of two supported file systems, LittleFS or FATFS.
+    Disk subsystem can be flash or RAM based.
 
 Build and Infrastructure
 ************************
