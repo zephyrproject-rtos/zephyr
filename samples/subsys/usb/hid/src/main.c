@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016-2018 Intel Corporation.
- * Copyright (c) 2018 Nordic Semiconductor ASA
+ * Copyright (c) 2018-2021 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,11 +17,23 @@ LOG_MODULE_REGISTER(main);
 #define REPORT_ID_1	0x01
 #define REPORT_ID_2	0x02
 
-static struct k_delayed_work delayed_report_send;
-
 static const struct device *hdev;
+static struct k_work report_send;
+static ATOMIC_DEFINE(hid_ep_in_busy, 1);
 
-#define REPORT_TIMEOUT K_SECONDS(2)
+#define HID_EP_BUSY_FLAG	0
+#define REPORT_PERIOD		K_SECONDS(2)
+
+static struct report {
+	uint8_t id;
+	uint8_t value;
+} __packed report_1 = {
+	.id = REPORT_ID_1,
+	.value = 0,
+};
+
+static void report_event_handler(struct k_timer *dummy);
+static K_TIMER_DEFINE(event_timer, report_event_handler, NULL);
 
 /* Some HID sample Report Descriptor */
 static const uint8_t hid_report_desc[] = {
@@ -61,46 +73,49 @@ static const uint8_t hid_report_desc[] = {
 
 static void send_report(struct k_work *work)
 {
-	static uint8_t report_1[2] = { REPORT_ID_1, 0x00 };
 	int ret, wrote;
 
-	ret = hid_int_ep_write(hdev, report_1, sizeof(report_1), &wrote);
-
-	LOG_DBG("Wrote %d bytes with ret %d", wrote, ret);
-
-	/* Increment reported data */
-	report_1[1]++;
-}
-
-static void in_ready_cb(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	k_delayed_work_submit(&delayed_report_send, REPORT_TIMEOUT);
-}
-
-static void status_cb(enum usb_dc_status_code status, const uint8_t *param)
-{
-	switch (status) {
-	case USB_DC_CONFIGURED:
-		in_ready_cb(hdev);
-		break;
-	case USB_DC_SOF:
-		break;
-	default:
-		LOG_DBG("status %u unhandled", status);
-		break;
+	if (!atomic_test_and_set_bit(hid_ep_in_busy, HID_EP_BUSY_FLAG)) {
+		ret = hid_int_ep_write(hdev, (uint8_t *)&report_1,
+				       sizeof(report_1), &wrote);
+		if (ret != 0) {
+			/*
+			 * Do nothing and wait until host has reset the device
+			 * and hid_ep_in_busy is cleared.
+			 */
+			LOG_ERR("Failed to submit report");
+		} else {
+			LOG_DBG("Report submitted");
+		}
+	} else {
+		LOG_DBG("HID IN endpoint busy");
 	}
 }
 
-static void idle_cb(const struct device *dev, uint16_t report_id)
+static void int_in_ready_cb(const struct device *dev)
 {
-	static uint8_t report_1[2] = { 0x00, 0xEB };
-	int ret, wrote;
+	ARG_UNUSED(dev);
+	if (!atomic_test_and_clear_bit(hid_ep_in_busy, HID_EP_BUSY_FLAG)) {
+		LOG_WRN("IN endpoint callback without preceding buffer write");
+	}
+}
 
-	ret = hid_int_ep_write(dev, report_1, sizeof(report_1), &wrote);
+/*
+ * On Idle callback is available here as an example even if actual use is
+ * very limited. In contrast to report_event_handler(),
+ * report value is not incremented here.
+ */
+static void on_idle_cb(const struct device *dev, uint16_t report_id)
+{
+	LOG_DBG("On idle callback");
+	k_work_submit(&report_send);
+}
 
-	LOG_DBG("Idle callback: wrote %d bytes with ret %d", wrote, ret);
+static void report_event_handler(struct k_timer *dummy)
+{
+	/* Increment reported data */
+	report_1.value++;
+	k_work_submit(&report_send);
 }
 
 static void protocol_cb(const struct device *dev, uint8_t protocol)
@@ -110,10 +125,24 @@ static void protocol_cb(const struct device *dev, uint8_t protocol)
 }
 
 static const struct hid_ops ops = {
-	.int_in_ready = in_ready_cb,
-	.on_idle = idle_cb,
+	.int_in_ready = int_in_ready_cb,
+	.on_idle = on_idle_cb,
 	.protocol_change = protocol_cb,
 };
+
+static void status_cb(enum usb_dc_status_code status, const uint8_t *param)
+{
+	switch (status) {
+	case USB_DC_CONFIGURED:
+		int_in_ready_cb(hdev);
+		break;
+	case USB_DC_SOF:
+		break;
+	default:
+		LOG_DBG("status %u unhandled", status);
+		break;
+	}
+}
 
 void main(void)
 {
@@ -127,7 +156,7 @@ void main(void)
 		return;
 	}
 
-	k_delayed_work_init(&delayed_report_send, send_report);
+	k_work_init(&report_send, send_report);
 }
 
 static int composite_pre_init(const struct device *dev)
@@ -142,6 +171,9 @@ static int composite_pre_init(const struct device *dev)
 
 	usb_hid_register_device(hdev, hid_report_desc, sizeof(hid_report_desc),
 				&ops);
+
+	atomic_set_bit(hid_ep_in_busy, HID_EP_BUSY_FLAG);
+	k_timer_start(&event_timer, REPORT_PERIOD, REPORT_PERIOD);
 
 	return usb_hid_init(hdev);
 }
