@@ -645,6 +645,12 @@ static int clk_init(const struct device *dev)
 		z_nrf_clock_calibration_init(data->mgr);
 	}
 
+#if defined(CONFIG_SOC_NRF5340_CPUAPP) && !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+	if (IS_ENABLED(CONFIG_SOC_CLOCK_128MHZ_NRF53X_APP)) {
+		nrfx_clock_divider_set(NRF_CLOCK_DOMAIN_HFCLK, NRF_CLOCK_HFCLK_DIV_1);
+	}
+#endif
+
 	nrfx_clock_enable();
 
 	for (enum clock_control_nrf_type i = 0;

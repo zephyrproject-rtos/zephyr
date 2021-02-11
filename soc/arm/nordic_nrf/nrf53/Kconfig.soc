@@ -132,6 +132,11 @@ config SOC_DCDC_NRF53X_HV
 	help
 	  Enable nRF53 series System on Chip High Voltage DC/DC converter.
 
+config SOC_CLOCK_128MHZ_NRF53X_APP
+	bool
+	help
+	  Run nRF53 series app core at 128MHz.
+
 config SOC_ENABLE_LFXO
 	bool "Enable LFXO"
 	default y
