@@ -26,11 +26,20 @@ static ALWAYS_INLINE void arch_kernel_init(void)
 {
 }
 
-void z_sparc_arch_switch(void *switch_to, void **switched_from);
+void z_sparc_context_switch(struct k_thread *newt, struct k_thread *oldt);
 
+/*
+ * In this implementation, the thread->switch_handle is the thread itself, so
+ * the parameter "switched_from" is assumed to be the address of
+ * thread->switch_handle.
+ */
 static inline void arch_switch(void *switch_to, void **switched_from)
 {
-	z_sparc_arch_switch(switch_to, switched_from);
+	struct k_thread *newt = switch_to;
+	struct k_thread *oldt = CONTAINER_OF(switched_from, struct k_thread,
+					     switch_handle);
+
+	z_sparc_context_switch(newt, oldt);
 }
 
 FUNC_NORETURN void z_sparc_fatal_error(unsigned int reason,

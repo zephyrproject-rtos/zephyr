@@ -13,12 +13,16 @@ GTEXT(z_sparc_arch_switch)
 GTEXT(z_sparc_context_switch)
 GTEXT(z_thread_entry_wrapper)
 
-/* In this implementation, switch_handle is the thread itself. */
-SECTION_FUNC(TEXT, z_sparc_arch_switch)
-	ba	z_sparc_context_switch
-	 sub	%o1, ___thread_t_switch_handle_OFFSET, %o1
-
 /*
+ * The routine z_sparc_context_switch() is called from arch_switch(), or from
+ * the interrupt trap handler in case of preemption. The subtraction to get the
+ * "old" thread from "switched_from" has already been performed and the "old"
+ * thread is now in register %o1. We can address old->switch_handle in assembly
+ * as: [%o1 + ___thread_t_switch_handle_OFFSET].
+ *
+ * The switch_handle is written in z_sparc_context_switch() after the old
+ * context has been saved.
+ *
  * This is a leaf function, so only out registers
  * can be used without saving their context first.
  *
@@ -100,6 +104,15 @@ SECTION_FUNC(TEXT, z_sparc_context_switch)
 	nop
 	nop
 	nop
+
+	/*
+	 * We have finished saving the "old" context and are also back in the
+	 * register window for which z_sparc_context_switch() was called.
+	 *
+	 * Now write the old thread into switch handle.
+	 * "old->switch_handle = old".
+	 */
+	st	%o1, [%o1 + ___thread_t_switch_handle_OFFSET]
 
 	ldd	[%o0 + _thread_offset_to_y], %o4
 	mov	%o4, %y
