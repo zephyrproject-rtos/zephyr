@@ -11,12 +11,6 @@ menuconfig PINMUX
 
 if PINMUX
 
-config PINMUX_NAME
-	string "Pinmux driver name"
-	default "PINMUX"
-	help
-	  The name of the pinmux driver.
-
 config PINMUX_INIT_PRIORITY
 	int "Init priority"
 	default 45
