@@ -20,22 +20,10 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "lwm2m_object.h"
 #include "lwm2m_engine.h"
+#include "lwm2m_resource_ids.h"
 
 #define TIMER_VERSION_MAJOR 1
 #define TIMER_VERSION_MINOR 0
-
-/* Server resource IDs */
-#define TIMER_DELAY_DURATION_ID		5521
-#define TIMER_REMAINING_TIME_ID		5538
-#define TIMER_MINIMUM_OFF_TIME_ID	5525
-#define TIMER_TRIGGER_ID		5523
-#define TIMER_ON_OFF_ID			5850
-#define TIMER_DIGITAL_INPUT_COUNTER_ID	5501
-#define TIMER_CUMULATIVE_TIME_ID	5544
-#define TIMER_DIGITAL_STATE_ID		5543
-#define TIMER_COUNTER_ID		5534
-#define TIMER_MODE_ID			5526
-#define TIMER_APPLICATION_TYPE_ID	5750
 
 #define TIMER_MAX_ID		11
 
@@ -79,17 +67,17 @@ static struct ipso_timer_data timer_data[MAX_INSTANCE_COUNT];
 
 static struct lwm2m_engine_obj timer;
 static struct lwm2m_engine_obj_field fields[] = {
-	OBJ_FIELD_DATA(TIMER_DELAY_DURATION_ID, RW, FLOAT64),
-	OBJ_FIELD_DATA(TIMER_REMAINING_TIME_ID, R_OPT, FLOAT64),
-	OBJ_FIELD_DATA(TIMER_MINIMUM_OFF_TIME_ID, RW_OPT, FLOAT64),
-	OBJ_FIELD_EXECUTE_OPT(TIMER_TRIGGER_ID),
-	OBJ_FIELD_DATA(TIMER_ON_OFF_ID, RW_OPT, BOOL),
-	OBJ_FIELD_DATA(TIMER_DIGITAL_INPUT_COUNTER_ID, RW_OPT, U32), /* TODO */
-	OBJ_FIELD_DATA(TIMER_CUMULATIVE_TIME_ID, RW_OPT, FLOAT64),
-	OBJ_FIELD_DATA(TIMER_DIGITAL_STATE_ID, R_OPT, BOOL),
-	OBJ_FIELD_DATA(TIMER_COUNTER_ID, R_OPT, U32),
-	OBJ_FIELD_DATA(TIMER_MODE_ID, RW_OPT, U8),
-	OBJ_FIELD_DATA(TIMER_APPLICATION_TYPE_ID, RW_OPT, STRING),
+	OBJ_FIELD_DATA(DELAY_DURATION_RID, RW, FLOAT64),
+	OBJ_FIELD_DATA(REMAINING_TIME_RID, R_OPT, FLOAT64),
+	OBJ_FIELD_DATA(MINIMUM_OFF_TIME_RID, RW_OPT, FLOAT64),
+	OBJ_FIELD_EXECUTE_OPT(TRIGGER_RID),
+	OBJ_FIELD_DATA(ON_OFF_RID, RW_OPT, BOOL),
+	OBJ_FIELD_DATA(DIGITAL_INPUT_COUNTER_RID, RW_OPT, U32), /* TODO */
+	OBJ_FIELD_DATA(CUMULATIVE_TIME_RID, RW_OPT, FLOAT64),
+	OBJ_FIELD_DATA(DIGITAL_STATE_RID, R_OPT, BOOL),
+	OBJ_FIELD_DATA(COUNTER_RID, R_OPT, U32),
+	OBJ_FIELD_DATA(TIMER_MODE_RID, RW_OPT, U8),
+	OBJ_FIELD_DATA(APPLICATION_TYPE_RID, RW_OPT, STRING),
 };
 
 static struct lwm2m_engine_obj_inst inst[MAX_INSTANCE_COUNT];
@@ -152,7 +140,7 @@ static int start_timer(struct ipso_timer_data *timer)
 	timer->trigger_counter += 1U;
 
 	snprintk(path, MAX_RESOURCE_LEN, "%d/%u/%d", IPSO_OBJECT_TIMER_ID,
-		 timer->obj_inst_id, TIMER_DIGITAL_STATE_ID);
+		 timer->obj_inst_id, DIGITAL_STATE_RID);
 	lwm2m_engine_set_bool(path, true);
 
 	float2ms(&timer->delay_duration, &temp);
@@ -172,7 +160,7 @@ static int stop_timer(struct ipso_timer_data *timer, bool cancel)
 
 	timer->cumulative_time_ms += k_uptime_get() - timer->trigger_offset;
 	snprintk(path, MAX_RESOURCE_LEN, "%d/%u/%d", IPSO_OBJECT_TIMER_ID,
-		 timer->obj_inst_id, TIMER_DIGITAL_STATE_ID);
+		 timer->obj_inst_id, DIGITAL_STATE_RID);
 	lwm2m_engine_set_bool(path, false);
 
 	if (cancel) {
@@ -340,42 +328,37 @@ static struct lwm2m_engine_obj_inst *timer_create(uint16_t obj_inst_id)
 	init_res_instance(res_inst[avail], ARRAY_SIZE(res_inst[avail]));
 
 	/* initialize instance resource data */
-	INIT_OBJ_RES_DATA(TIMER_DELAY_DURATION_ID, res[avail], i,
+	INIT_OBJ_RES_DATA(DELAY_DURATION_RID, res[avail], i,
 			  res_inst[avail], j, &timer_data[avail].delay_duration,
 			  sizeof(timer_data[avail].delay_duration));
-	INIT_OBJ_RES(TIMER_REMAINING_TIME_ID, res[avail], i,
-		     res_inst[avail], j, 1, false, true,
-		     &timer_data[avail].remaining_time,
+	INIT_OBJ_RES(REMAINING_TIME_RID, res[avail], i, res_inst[avail], j, 1,
+		     false, true, &timer_data[avail].remaining_time,
 		     sizeof(timer_data[avail].remaining_time),
 		     remaining_time_read_cb, NULL, NULL, NULL, NULL);
-	INIT_OBJ_RES_DATA(TIMER_MINIMUM_OFF_TIME_ID, res[avail], i,
+	INIT_OBJ_RES_DATA(MINIMUM_OFF_TIME_RID, res[avail], i,
 			  res_inst[avail], j, &timer_data[avail].min_off_time,
 			  sizeof(timer_data[avail].min_off_time));
-	INIT_OBJ_RES_EXECUTE(TIMER_TRIGGER_ID, res[avail], i,
-			     timer_trigger_cb);
-	INIT_OBJ_RES(TIMER_ON_OFF_ID, res[avail], i,
-		     res_inst[avail], j, 1, false, true,
-		     &timer_data[avail].enabled,
+	INIT_OBJ_RES_EXECUTE(TRIGGER_RID, res[avail], i, timer_trigger_cb);
+	INIT_OBJ_RES(ON_OFF_RID, res[avail], i, res_inst[avail], j, 1, false,
+		     true, &timer_data[avail].enabled,
 		     sizeof(timer_data[avail].enabled),
 		     NULL, NULL, NULL, enabled_post_write_cb, NULL);
-	INIT_OBJ_RES(TIMER_CUMULATIVE_TIME_ID, res[avail], i,
-		     res_inst[avail], j, 1, false, true,
-		     &timer_data[avail].cumulative_time,
+	INIT_OBJ_RES(CUMULATIVE_TIME_RID, res[avail], i, res_inst[avail], j, 1,
+		     false, true, &timer_data[avail].cumulative_time,
 		     sizeof(timer_data[avail].cumulative_time),
 		     cumulative_time_read_cb, NULL, NULL,
 		     cumulative_time_post_write_cb, NULL);
-	INIT_OBJ_RES_DATA(TIMER_DIGITAL_STATE_ID, res[avail], i,
+	INIT_OBJ_RES_DATA(DIGITAL_STATE_RID, res[avail], i,
 			  res_inst[avail], j, &timer_data[avail].active,
 			  sizeof(timer_data[avail].active));
-	INIT_OBJ_RES(TIMER_COUNTER_ID, res[avail], i,
-		     res_inst[avail], j, 1, false, true,
-		     &timer_data[avail].trigger_counter,
+	INIT_OBJ_RES(COUNTER_RID, res[avail], i, res_inst[avail], j, 1, false,
+		     true, &timer_data[avail].trigger_counter,
 		     sizeof(timer_data[avail].trigger_counter),
 		     NULL, NULL, NULL, trigger_counter_post_write_cb, NULL);
-	INIT_OBJ_RES_DATA(TIMER_MODE_ID, res[avail], i, res_inst[avail], j,
+	INIT_OBJ_RES_DATA(TIMER_MODE_RID, res[avail], i, res_inst[avail], j,
 			  &timer_data[avail].timer_mode,
 			  sizeof(timer_data[avail].timer_mode));
-	INIT_OBJ_RES_OPTDATA(TIMER_APPLICATION_TYPE_ID, res[avail], i,
+	INIT_OBJ_RES_OPTDATA(APPLICATION_TYPE_RID, res[avail], i,
 			     res_inst[avail], j);
 
 	inst[avail].resources = res[avail];

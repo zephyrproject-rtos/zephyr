@@ -20,6 +20,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "lwm2m_object.h"
 #include "lwm2m_engine.h"
+#include "lwm2m_resource_ids.h"
 
 #define BUTTON_VERSION_MAJOR 1
 #define BUTTON_VERSION_MINOR 0
@@ -30,13 +31,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define ADD_TIMESTAMPS 0
 #endif
 
-/* resource IDs */
-#define BUTTON_DIGITAL_STATE_ID		5500
-#define BUTTON_DIGITAL_INPUT_COUNTER_ID	5501
-#define BUTTON_APPLICATION_TYPE_ID	5750
 #if ADD_TIMESTAMPS
-#define BUTTON_TIMESTAMP_ID		5518
-
 #define BUTTON_MAX_ID			4
 #else
 #define BUTTON_MAX_ID			3
@@ -62,11 +57,11 @@ static struct ipso_button_data button_data[MAX_INSTANCE_COUNT];
 
 static struct lwm2m_engine_obj onoff_switch;
 static struct lwm2m_engine_obj_field fields[] = {
-	OBJ_FIELD_DATA(BUTTON_DIGITAL_STATE_ID, R, BOOL),
-	OBJ_FIELD_DATA(BUTTON_DIGITAL_INPUT_COUNTER_ID, R_OPT, U64),
-	OBJ_FIELD_DATA(BUTTON_APPLICATION_TYPE_ID, RW_OPT, STRING),
+	OBJ_FIELD_DATA(DIGITAL_INPUT_STATE_RID, R, BOOL),
+	OBJ_FIELD_DATA(DIGITAL_INPUT_COUNTER_RID, R_OPT, U64),
+	OBJ_FIELD_DATA(APPLICATION_TYPE_RID, RW_OPT, STRING),
 #if ADD_TIMESTAMPS
-	OBJ_FIELD_DATA(BUTTON_TIMESTAMP_ID, RW_OPT, TIME),
+	OBJ_FIELD_DATA(TIMESTAMP_RID, RW_OPT, TIME),
 #endif
 };
 
@@ -145,20 +140,18 @@ static struct lwm2m_engine_obj_inst *button_create(uint16_t obj_inst_id)
 	init_res_instance(res_inst[avail], ARRAY_SIZE(res_inst[avail]));
 
 	/* initialize instance resource data */
-	INIT_OBJ_RES(BUTTON_DIGITAL_STATE_ID, res[avail], i,
-		     res_inst[avail], j, 1, false, true,
-		     &button_data[avail].state,
+	INIT_OBJ_RES(DIGITAL_INPUT_STATE_RID, res[avail], i, res_inst[avail],
+		     j, 1, false, true, &button_data[avail].state,
 		     sizeof(button_data[avail].state),
 		     NULL, NULL, NULL, state_post_write_cb, NULL);
-	INIT_OBJ_RES_DATA(BUTTON_DIGITAL_INPUT_COUNTER_ID, res[avail], i,
+	INIT_OBJ_RES_DATA(DIGITAL_INPUT_COUNTER_RID, res[avail], i,
 			  res_inst[avail], j,
 			  &button_data[avail].counter,
 			  sizeof(button_data[avail].counter));
-	INIT_OBJ_RES_OPTDATA(BUTTON_APPLICATION_TYPE_ID, res[avail], i,
+	INIT_OBJ_RES_OPTDATA(APPLICATION_TYPE_RID, res[avail], i,
 			     res_inst[avail], j);
 #if ADD_TIMESTAMPS
-	INIT_OBJ_RES_OPTDATA(BUTTON_TIMESTAMP_ID, res[avail], i,
-			     res_inst[avail], j);
+	INIT_OBJ_RES_OPTDATA(TIMESTAMP_RID, res[avail], i, res_inst[avail], j);
 #endif
 
 	inst[avail].resources = res[avail];

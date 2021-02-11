@@ -22,6 +22,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "lwm2m_object.h"
 #include "lwm2m_engine.h"
+#include "lwm2m_resource_ids.h"
 
 #define TEMP_VERSION_MAJOR 1
 #define TEMP_VERSION_MINOR 0
@@ -32,17 +33,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define ADD_TIMESTAMPS 0
 #endif
 
-/* Server resource IDs */
-#define TEMP_SENSOR_VALUE_ID			5700
-#define TEMP_UNITS_ID				5701
-#define TEMP_MIN_MEASURED_VALUE_ID		5601
-#define TEMP_MAX_MEASURED_VALUE_ID		5602
-#define TEMP_MIN_RANGE_VALUE_ID			5603
-#define TEMP_MAX_RANGE_VALUE_ID			5604
-#define TEMP_RESET_MIN_MAX_MEASURED_VALUES_ID	5605
 #if ADD_TIMESTAMPS
-#define TEMP_TIMESTAMP_ID			5518
-
 #define TEMP_MAX_ID		8
 #else  /* !ADD_TIMESTAMPS */
 #define TEMP_MAX_ID		7
@@ -69,13 +60,13 @@ static float32_value_t max_range_value[MAX_INSTANCE_COUNT];
 
 static struct lwm2m_engine_obj temp_sensor;
 static struct lwm2m_engine_obj_field fields[] = {
-	OBJ_FIELD_DATA(TEMP_SENSOR_VALUE_ID, R, FLOAT32),
-	OBJ_FIELD_DATA(TEMP_UNITS_ID, R_OPT, STRING),
-	OBJ_FIELD_DATA(TEMP_MIN_MEASURED_VALUE_ID, R_OPT, FLOAT32),
-	OBJ_FIELD_DATA(TEMP_MAX_MEASURED_VALUE_ID, R_OPT, FLOAT32),
-	OBJ_FIELD_DATA(TEMP_MIN_RANGE_VALUE_ID, R_OPT, FLOAT32),
-	OBJ_FIELD_DATA(TEMP_MAX_RANGE_VALUE_ID, R_OPT, FLOAT32),
-	OBJ_FIELD_EXECUTE_OPT(TEMP_RESET_MIN_MAX_MEASURED_VALUES_ID),
+	OBJ_FIELD_DATA(SENSOR_VALUE_RID, R, FLOAT32),
+	OBJ_FIELD_DATA(SENSOR_UNITS_RID, R_OPT, STRING),
+	OBJ_FIELD_DATA(MIN_MEASURED_VALUE_RID, R_OPT, FLOAT32),
+	OBJ_FIELD_DATA(MAX_MEASURED_VALUE_RID, R_OPT, FLOAT32),
+	OBJ_FIELD_DATA(MIN_RANGE_VALUE_RID, R_OPT, FLOAT32),
+	OBJ_FIELD_DATA(MAX_RANGE_VALUE_RID, R_OPT, FLOAT32),
+	OBJ_FIELD_EXECUTE_OPT(RESET_MIN_MAX_MEASURED_VALUES_RID),
 #if ADD_TIMESTAMPS
 	OBJ_FIELD_DATA(TEMP_TIMESTAMP_ID, RW_OPT, TIME),
 #endif
@@ -91,7 +82,7 @@ static void update_min_measured(uint16_t obj_inst_id, int index)
 	min_measured_value[index].val1 = sensor_value[index].val1;
 	min_measured_value[index].val2 = sensor_value[index].val2;
 	NOTIFY_OBSERVER(IPSO_OBJECT_TEMP_SENSOR_ID, obj_inst_id,
-			TEMP_MIN_MEASURED_VALUE_ID);
+			MIN_MEASURED_VALUE_RID);
 }
 
 static void update_max_measured(uint16_t obj_inst_id, int index)
@@ -99,7 +90,7 @@ static void update_max_measured(uint16_t obj_inst_id, int index)
 	max_measured_value[index].val1 = sensor_value[index].val1;
 	max_measured_value[index].val2 = sensor_value[index].val2;
 	NOTIFY_OBSERVER(IPSO_OBJECT_TEMP_SENSOR_ID, obj_inst_id,
-			TEMP_MAX_MEASURED_VALUE_ID);
+			MAX_MEASURED_VALUE_RID);
 }
 
 static int reset_min_max_measured_values_cb(uint16_t obj_inst_id,
@@ -205,25 +196,25 @@ static struct lwm2m_engine_obj_inst *temp_sensor_create(uint16_t obj_inst_id)
 	init_res_instance(res_inst[index], ARRAY_SIZE(res_inst[index]));
 
 	/* initialize instance resource data */
-	INIT_OBJ_RES(TEMP_SENSOR_VALUE_ID, res[index], i,
+	INIT_OBJ_RES(SENSOR_VALUE_RID, res[index], i,
 		     res_inst[index], j, 1, false, true,
 		     &sensor_value[index], sizeof(*sensor_value),
 		     NULL, NULL, NULL, sensor_value_write_cb, NULL);
-	INIT_OBJ_RES_DATA(TEMP_UNITS_ID, res[index], i, res_inst[index], j,
+	INIT_OBJ_RES_DATA(SENSOR_UNITS_RID, res[index], i, res_inst[index], j,
 			  units[index], TEMP_STRING_SHORT);
-	INIT_OBJ_RES_DATA(TEMP_MIN_MEASURED_VALUE_ID, res[index], i,
+	INIT_OBJ_RES_DATA(MIN_MEASURED_VALUE_RID, res[index], i,
 			  res_inst[index], j, &min_measured_value[index],
 			  sizeof(*min_measured_value));
-	INIT_OBJ_RES_DATA(TEMP_MAX_MEASURED_VALUE_ID, res[index], i,
+	INIT_OBJ_RES_DATA(MAX_MEASURED_VALUE_RID, res[index], i,
 			  res_inst[index], j, &max_measured_value[index],
 			  sizeof(*max_measured_value));
-	INIT_OBJ_RES_DATA(TEMP_MIN_RANGE_VALUE_ID, res[index], i,
+	INIT_OBJ_RES_DATA(MIN_RANGE_VALUE_RID, res[index], i,
 			  res_inst[index], j, &min_range_value[index],
 			  sizeof(*min_range_value));
-	INIT_OBJ_RES_DATA(TEMP_MAX_RANGE_VALUE_ID, res[index], i,
+	INIT_OBJ_RES_DATA(MAX_RANGE_VALUE_RID, res[index], i,
 			  res_inst[index], j, &max_range_value[index],
 			  sizeof(*max_range_value));
-	INIT_OBJ_RES_EXECUTE(TEMP_RESET_MIN_MAX_MEASURED_VALUES_ID,
+	INIT_OBJ_RES_EXECUTE(RESET_MIN_MAX_MEASURED_VALUES_RID,
 			     res[index], i, reset_min_max_measured_values_cb);
 #if ADD_TIMESTAMPS
 	INIT_OBJ_RES_OPTDATA(TEMP_TIMESTAMP_ID, res[index], i,
