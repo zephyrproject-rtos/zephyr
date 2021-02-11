@@ -1163,7 +1163,7 @@ static void uarte_nrfx_poll_out(const struct device *dev, unsigned char c)
 			key = irq_lock();
 			if (is_tx_ready(dev)) {
 #if CONFIG_UART_ASYNC_API
-				if (data->async->tx_size &&
+				if (data->async && data->async->tx_size &&
 					data->async->tx_amount < 0) {
 					data->async->tx_amount =
 						nrf_uarte_tx_amount_get(uarte);
