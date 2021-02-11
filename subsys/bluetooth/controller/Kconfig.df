@@ -76,7 +76,7 @@ config BT_CTLR_DF_ANT_SWITCH_TX
 
 config BT_CTLR_DF_ANT_SWITCH_RX
 	bool "Enable antenna switching during CTE reception (AoA) feature"
-	depends on BT_CTLR_DF_ANT_SWITCH_2US_SUPPORT
+	depends on BT_CTLR_DF_CTE_RX && BT_CTLR_DF_ANT_SWITCH_2US_SUPPORT
 	default y
 	help
 	  Enable support for antenna switching during CTE reception.
