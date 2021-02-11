@@ -1,15 +1,9 @@
-# nRF5340 (P)DK NRF5340 board configuration
+# nRF5340 DK NRF5340 board configuration
 
 # Copyright (c) 2019-2020 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_NRF5340_CPUAPP_QKAA
-
-config BOARD_NRF5340PDK_NRF5340_CPUAPP
-	bool "nRF5340 PDK nRF5340 Application MCU"
-
-config BOARD_NRF5340PDK_NRF5340_CPUAPPNS
-	bool "nRF5340 PDK nRF5340 Application MCU non-secure"
 
 config BOARD_NRF5340DK_NRF5340_CPUAPP
 	bool "nRF5340 DK nRF5340 Application MCU"
@@ -18,10 +12,6 @@ config BOARD_NRF5340DK_NRF5340_CPUAPPNS
 	bool "nRF5340 DK nRF5340 Application MCU non-secure"
 
 endif # SOC_NRF5340_CPUAPP_QKAA
-
-config BOARD_NRF5340PDK_NRF5340_CPUNET
-	bool "nRF5340 PDK NRF5340 Network MCU"
-	depends on SOC_NRF5340_CPUNET_QKAA
 
 config BOARD_NRF5340DK_NRF5340_CPUNET
 	bool "nRF5340 DK NRF5340 Network MCU"

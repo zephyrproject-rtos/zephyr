@@ -52,12 +52,6 @@ More information about the board can be found at the
 The `Nordic Semiconductor Infocenter`_
 contains the processor's information and the datasheet.
 
-.. note::
-
-   nRF5340 PDK (preview development kit) is an earlier version of the
-   nRF5340 DK. nRF5340 PDK board is deprecated and is replaced by nRF5340 DK.
-   The support for nRF5340 PDK will be removed in Zephyr v2.6.0 release.
-
 
 Hardware
 ********
