@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# SPDX-License-Identifier: BSD-2-Clause
 #
 # Contributors Listed Below - COPYRIGHT 2016
 # [+] International Business Machines Corp.

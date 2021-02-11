@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: BSD-3-Clause */
+
 /*    $NetBSD: fnmatch.c,v 1.26 2014/10/12 22:32:33 christos Exp $    */
 
 /*

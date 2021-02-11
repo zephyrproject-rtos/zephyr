@@ -1,6 +1,8 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_NIOS2_NIOS2_H_
 #define ZEPHYR_INCLUDE_ARCH_NIOS2_NIOS2_H_
 
+/* SPDX-License-Identifier: Xnet */
+
 /******************************************************************************
 *                                                                             *
 * License Agreement                                                           *
