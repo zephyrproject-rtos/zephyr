@@ -23,7 +23,7 @@ SECTION_FUNC(TEXT, arch_cpu_idle)
 #endif
 	dsb	sy
 	wfi
-	msr	daifclr, #(DAIFSET_IRQ)
+	msr	daifclr, #(DAIFCLR_IRQ_BIT)
 	ret
 
 GTEXT(arch_cpu_atomic_idle)
@@ -33,11 +33,11 @@ SECTION_FUNC(TEXT, arch_cpu_atomic_idle)
 	bl	sys_trace_idle
 	ldp	x0, x30, [sp], #16
 #endif
-	msr	daifset, #(DAIFSET_IRQ)
+	msr	daifset, #(DAIFSET_IRQ_BIT)
 	isb
 	wfe
-	tst	x0, #(DAIF_IRQ)
+	tst	x0, #(DAIF_IRQ_BIT)
 	beq	_irq_disabled
-	msr	daifclr, #(DAIFSET_IRQ)
+	msr	daifclr, #(DAIFCLR_IRQ_BIT)
 _irq_disabled:
 	ret

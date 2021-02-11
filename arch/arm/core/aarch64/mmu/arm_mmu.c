@@ -511,7 +511,7 @@ static void enable_mmu_el1(struct arm_mmu_ptables *ptables, unsigned int flags)
 	__asm__ volatile("mrs %0, sctlr_el1" : "=r" (val));
 	__asm__ volatile("msr sctlr_el1, %0"
 			:
-			: "r" (val | SCTLR_M | SCTLR_C)
+			: "r" (val | SCTLR_M_BIT | SCTLR_C_BIT)
 			: "memory", "cc");
 
 	/* Ensure the MMU enable takes effect immediately */
@@ -546,7 +546,7 @@ void z_arm64_mmu_init(void)
 
 	/* Ensure that MMU is already not enabled */
 	__asm__ volatile("mrs %0, sctlr_el1" : "=r" (val));
-	__ASSERT((val & SCTLR_M) == 0, "MMU is already enabled\n");
+	__ASSERT((val & SCTLR_M_BIT) == 0, "MMU is already enabled\n");
 
 	kernel_ptables.base_xlat_table = new_table();
 	setup_page_tables(&kernel_ptables);

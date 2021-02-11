@@ -211,13 +211,13 @@ static void gicv3_cpuif_init(void)
 	 */
 	icc_sre = read_sysreg(ICC_SRE_EL1);
 
-	if (!(icc_sre & ICC_SRE_ELx_SRE)) {
-		icc_sre = (icc_sre | ICC_SRE_ELx_SRE |
-			   ICC_SRE_ELx_DIB | ICC_SRE_ELx_DFB);
+	if (!(icc_sre & ICC_SRE_ELx_SRE_BIT)) {
+		icc_sre = (icc_sre | ICC_SRE_ELx_SRE_BIT |
+			   ICC_SRE_ELx_DIB_BIT | ICC_SRE_ELx_DFB_BIT);
 		write_sysreg(icc_sre, ICC_SRE_EL1);
 		icc_sre = read_sysreg(ICC_SRE_EL1);
 
-		__ASSERT_NO_MSG(icc_sre & ICC_SRE_ELx_SRE);
+		__ASSERT_NO_MSG(icc_sre & ICC_SRE_ELx_SRE_BIT);
 	}
 
 	write_sysreg(GIC_IDLE_PRIO, ICC_PMR_EL1);

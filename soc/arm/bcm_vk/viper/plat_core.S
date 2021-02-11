@@ -22,8 +22,8 @@ SECTION_FUNC(TEXT, z_arch_el3_plat_init)
 
 	mov	x20, x30
 	/* Enable GIC v3 system interface */
-	mov_imm	x0, (ICC_SRE_ELx_DFB | ICC_SRE_ELx_DIB | \
-		     ICC_SRE_ELx_SRE | ICC_SRE_EL3_EN)
+	mov_imm	x0, (ICC_SRE_ELx_DFB_BIT | ICC_SRE_ELx_DIB_BIT | \
+		     ICC_SRE_ELx_SRE_BIT | ICC_SRE_EL3_EN_BIT)
 	msr	ICC_SRE_EL3, x0
 	/* L2 config */
 	bl	plat_l2_init
@@ -38,7 +38,7 @@ SECTION_FUNC(TEXT,plat_l2_init)
 	 */
 	/* Disable cluster coherency */
 	mrs	x0, CORTEX_A72_L2ACTLR_EL1
-	orr	x0, x0, #CORTEX_A72_L2ACTLR_DISABLE_ACE_SH_OR_CHI
+	orr	x0, x0, #CORTEX_A72_L2ACTLR_DISABLE_ACE_SH_OR_CHI_BIT
 	msr	CORTEX_A72_L2ACTLR_EL1, x0
 
 	/* Set L2 Control Register */

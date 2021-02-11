@@ -9,64 +9,129 @@
 
 #include <sys/util.h>
 
-#define DAIFSET_FIQ		BIT(0)
-#define DAIFSET_IRQ		BIT(1)
-#define DAIFSET_ABT		BIT(2)
-#define DAIFSET_DBG		BIT(3)
+#define DAIFSET_FIQ_BIT		BIT(0)
+#define DAIFSET_IRQ_BIT		BIT(1)
+#define DAIFSET_ABT_BIT		BIT(2)
+#define DAIFSET_DBG_BIT		BIT(3)
 
-#define DAIF_FIQ		BIT(6)
-#define DAIF_IRQ		BIT(7)
-#define DAIF_ABT		BIT(8)
-#define DAIF_DBG		BIT(9)
-#define DAIF_MASK		(0xf << 6)
+#define DAIFCLR_FIQ_BIT		BIT(0)
+#define DAIFCLR_IRQ_BIT		BIT(1)
+#define DAIFCLR_ABT_BIT		BIT(2)
+#define DAIFCLR_DBG_BIT		BIT(3)
+
+#define DAIF_FIQ_BIT		BIT(6)
+#define DAIF_IRQ_BIT		BIT(7)
+#define DAIF_ABT_BIT		BIT(8)
+#define DAIF_DBG_BIT		BIT(9)
+
+#define SPSR_DAIF_SHIFT		(6)
+#define SPSR_DAIF_MASK		(0xf << SPSR_DAIF_SHIFT)
 
 #define SPSR_MODE_EL0T		(0x0)
 #define SPSR_MODE_EL1T		(0x4)
 #define SPSR_MODE_EL1H		(0x5)
+#define SPSR_MODE_EL2T		(0x8)
+#define SPSR_MODE_EL2H		(0x9)
+
 
 #define SCTLR_EL3_RES1		(BIT(29) | BIT(28) | BIT(23) | \
-				BIT(22) | BIT(18) | BIT(16) | \
-				BIT(11) | BIT(5) | BIT(4))
+				 BIT(22) | BIT(18) | BIT(16) | \
+				 BIT(11) | BIT(5)  | BIT(4))
+
+#define SCTLR_EL2_RES1		(BIT(29) | BIT(28) | BIT(23) | \
+				 BIT(22) | BIT(18) | BIT(16) | \
+				 BIT(11) | BIT(5)  | BIT(4))
 
 #define SCTLR_EL1_RES1		(BIT(29) | BIT(28) | BIT(23) | \
-				BIT(22) | BIT(20) | BIT(11))
-#define SCTLR_M			BIT(0)
-#define SCTLR_A			BIT(1)
-#define SCTLR_C			BIT(2)
-#define SCTLR_SA		BIT(3)
-#define SCTLR_I			BIT(12)
+				 BIT(22) | BIT(20) | BIT(11))
+
+#define SCTLR_M_BIT		BIT(0)
+#define SCTLR_A_BIT		BIT(1)
+#define SCTLR_C_BIT		BIT(2)
+#define SCTLR_SA_BIT		BIT(3)
+#define SCTLR_I_BIT		BIT(12)
 
 #define CPACR_EL1_FPEN_NOTRAP	(0x3 << 20)
 
-#define SCR_EL3_NS		BIT(0)
-#define SCR_EL3_IRQ		BIT(1)
-#define SCR_EL3_FIQ		BIT(2)
-#define SCR_EL3_EA		BIT(3)
-#define SCR_EL3_RW		BIT(10)
+#define SCR_NS_BIT		BIT(0)
+#define SCR_IRQ_BIT		BIT(1)
+#define SCR_FIQ_BIT		BIT(2)
+#define SCR_EA_BIT		BIT(3)
+#define SCR_SMD_BIT		BIT(7)
+#define SCR_HCE_BIT		BIT(8)
+#define SCR_RW_BIT		BIT(10)
+#define SCR_ST_BIT		BIT(11)
+
+#define SCR_RES1		(BIT(4) | BIT(5))
+
+/* MPIDR */
+#define MPIDR_AFFLVL_MASK	(0xff)
+
+#define MPIDR_AFF0_SHIFT	(0)
+#define MPIDR_AFF1_SHIFT	(8)
+#define MPIDR_AFF2_SHIFT	(16)
+#define MPIDR_AFF3_SHIFT	(32)
+
+#define MPIDR_AFFLVL(mpidr, aff_level) \
+		(((mpidr) >> MPIDR_AFF##aff_level##_SHIFT) & MPIDR_AFFLVL_MASK)
+
+#define GET_MPIDR()		read_sysreg(mpidr_el1)
+#define MPIDR_TO_CORE(mpidr)	MPIDR_AFFLVL(mpidr, 0)
+
+#define MODE_EL_SHIFT		(0x2)
+#define MODE_EL_MASK		(0x3)
+
+#define MODE_EL3		(0x3)
+#define MODE_EL2		(0x2)
+#define MODE_EL1		(0x1)
+#define MODE_EL0		(0x0)
+
+#define GET_EL(_mode)		(((_mode) >> MODE_EL_SHIFT) & MODE_EL_MASK)
+
+#define ESR_EC_SHIFT		(26)
+#define ESR_EC_MASK		BIT_MASK(6)
+#define ESR_ISS_SHIFT		(0)
+#define ESR_ISS_MASK		BIT_MASK(25)
+#define ESR_IL_SHIFT		(25)
+#define ESR_IL_MASK		BIT_MASK(1)
+
+#define GET_ESR_EC(esr)		(((esr) >> ESR_EC_SHIFT) & ESR_EC_MASK)
+#define GET_ESR_IL(esr)		(((esr) >> ESR_IL_SHIFT) & ESR_IL_MASK)
+#define GET_ESR_ISS(esr)	(((esr) >> ESR_ISS_SHIFT) & ESR_ISS_MASK)
+
+#define CNTV_CTL_ENABLE_BIT	BIT(0)
+#define CNTV_CTL_IMASK_BIT	BIT(1)
+
+#define ID_AA64PFR0_EL0_SHIFT	(0)
+#define ID_AA64PFR0_EL1_SHIFT	(4)
+#define ID_AA64PFR0_EL2_SHIFT	(8)
+#define ID_AA64PFR0_EL3_SHIFT	(12)
+#define ID_AA64PFR0_ELX_MASK	(0xf)
+#define ID_AA64PFR0_SEL2_SHIFT	(36)
+#define ID_AA64PFR0_SEL2_MASK	(0xf)
 
 /*
  * TODO: ACTLR is of class implementation defined. All core implementations
  * in armv8a have the same implementation so far w.r.t few controls.
  * When there will be differences we have to create core specific headers.
  */
-#define ACTLR_EL3_CPUACTLR	BIT(0)
-#define ACTLR_EL3_CPUECTLR	BIT(1)
-#define ACTLR_EL3_L2CTLR	BIT(4)
-#define ACTLR_EL3_L2ECTLR	BIT(5)
-#define ACTLR_EL3_L2ACTLR	BIT(6)
+#define ACTLR_EL3_CPUACTLR_BIT	BIT(0)
+#define ACTLR_EL3_CPUECTLR_BIT	BIT(1)
+#define ACTLR_EL3_L2CTLR_BIT	BIT(4)
+#define ACTLR_EL3_L2ECTLR_BIT	BIT(5)
+#define ACTLR_EL3_L2ACTLR_BIT	BIT(6)
 
-#define CPTR_EL3_RES_VAL	(0x0)
-#define CPTR_EL3_EZ		BIT(8)
-#define CPTR_EL3_TFP		BIT(9)
-#define CPTR_EL3_TTA		BIT(20)
-#define CPTR_EL3_TCPAC		BIT(31)
+#define CPTR_EZ_BIT		BIT(8)
+#define CPTR_TFP_BIT		BIT(10)
+#define CPTR_TTA_BIT		BIT(20)
+#define CPTR_TCPAC_BIT		BIT(31)
 
-#define HCR_EL2_FMO		BIT(3)
-#define HCR_EL2_IMO		BIT(4)
-#define HCR_EL2_AMO		BIT(5)
+#define CPTR_EL2_RES1		BIT(13) | BIT(12) | BIT(9) | (0xff)
 
-#define SPSR_EL3_h		BIT(0)
-#define SPSR_EL3_TO_EL1		(0x2 << 1)
+#define HCR_FMO_BIT		BIT(3)
+#define HCR_IMO_BIT		BIT(4)
+#define HCR_AMO_BIT		BIT(5)
+#define HCR_RW_BIT		BIT(31)
 
 /* System register interface to GICv3 */
 #define ICC_IGRPEN1_EL1		S3_0_C12_C12_7
@@ -89,23 +154,22 @@
 #define ICC_SGI0R_EL1		S3_0_C12_C11_7
 
 /* register constants */
-#define ICC_SRE_ELx_SRE		BIT(0)
-#define ICC_SRE_ELx_DFB		BIT(1)
-#define ICC_SRE_ELx_DIB		BIT(2)
-#define ICC_SRE_EL3_EN		BIT(3)
+#define ICC_SRE_ELx_SRE_BIT	BIT(0)
+#define ICC_SRE_ELx_DFB_BIT	BIT(1)
+#define ICC_SRE_ELx_DIB_BIT	BIT(2)
+#define ICC_SRE_EL3_EN_BIT	BIT(3)
 
 /* ICC SGI macros */
-#define SGIR_TGT_MASK		0xffff
-#define SGIR_AFF1_SHIFT		16
-#define SGIR_INTID_SHIFT	24
-#define SGIR_INTID_MASK		0xf
-#define SGIR_AFF2_SHIFT		32
-#define SGIR_IRM_SHIFT		40
-#define SGIR_IRM_MASK		0x1
-#define SGIR_AFF3_SHIFT		48
-#define SGIR_AFF_MASK		0xf
-
-#define SGIR_IRM_TO_AFF		0
+#define SGIR_TGT_MASK		(0xffff)
+#define SGIR_AFF1_SHIFT		(16)
+#define SGIR_AFF2_SHIFT		(32)
+#define SGIR_AFF3_SHIFT		(48)
+#define SGIR_AFF_MASK		(0xf)
+#define SGIR_INTID_SHIFT	(24)
+#define SGIR_INTID_MASK		(0xf)
+#define SGIR_IRM_SHIFT		(40)
+#define SGIR_IRM_MASK		(0x1)
+#define SGIR_IRM_TO_AFF		(0)
 
 #define GICV3_SGIR_VALUE(_aff3, _aff2, _aff1, _intid, _irm, _tgt)	\
 	((((uint64_t) (_aff3) & SGIR_AFF_MASK) << SGIR_AFF3_SHIFT) |	\
@@ -119,26 +183,26 @@
 #if defined(CONFIG_CPU_CORTEX_A72)
 
 #define CORTEX_A72_L2CTLR_EL1				S3_1_C11_C0_2
-#define CORTEX_A72_L2CTLR_DATA_RAM_LATENCY_SHIFT	0
-#define CORTEX_A72_L2CTLR_DATA_RAM_SETUP_SHIFT		5
-#define CORTEX_A72_L2CTLR_TAG_RAM_LATENCY_SHIFT		6
-#define CORTEX_A72_L2CTLR_TAG_RAM_SETUP_SHIFT		9
+#define CORTEX_A72_L2CTLR_DATA_RAM_LATENCY_SHIFT	(0)
+#define CORTEX_A72_L2CTLR_DATA_RAM_SETUP_SHIFT		(5)
+#define CORTEX_A72_L2CTLR_TAG_RAM_LATENCY_SHIFT		(6)
+#define CORTEX_A72_L2CTLR_TAG_RAM_SETUP_SHIFT		(9)
 
-#define CORTEX_A72_L2_DATA_RAM_LATENCY_3_CYCLES		2
-#define CORTEX_A72_L2_DATA_RAM_LATENCY_MASK		7
-#define CORTEX_A72_L2_DATA_RAM_SETUP_1_CYCLE		1
-#define CORTEX_A72_L2_TAG_RAM_LATENCY_2_CYCLES		1
-#define CORTEX_A72_L2_TAG_RAM_LATENCY_3_CYCLES		2
-#define CORTEX_A72_L2_TAG_RAM_LATENCY_MASK		7
-#define CORTEX_A72_L2_TAG_RAM_SETUP_1_CYCLE		1
-
+#define CORTEX_A72_L2_DATA_RAM_LATENCY_3_CYCLES		(2)
+#define CORTEX_A72_L2_DATA_RAM_LATENCY_MASK		(0x7)
+#define CORTEX_A72_L2_DATA_RAM_SETUP_1_CYCLE		(1)
+#define CORTEX_A72_L2_TAG_RAM_LATENCY_2_CYCLES		(1)
+#define CORTEX_A72_L2_TAG_RAM_LATENCY_3_CYCLES		(2)
+#define CORTEX_A72_L2_TAG_RAM_LATENCY_MASK		(0x7)
+#define CORTEX_A72_L2_TAG_RAM_SETUP_1_CYCLE		(1)
 
 #define CORTEX_A72_L2ACTLR_EL1				S3_1_C15_C0_0
+#define CORTEX_A72_L2ACTLR_DISABLE_ACE_SH_OR_CHI_BIT	BIT(6)
 
-#define CORTEX_A72_L2ACTLR_DISABLE_ACE_SH_OR_CHI	(1 << 6)
 #endif /* CONFIG_CPU_CORTEX_A72 */
 
 #ifndef _ASMLANGUAGE
+
 /* Core sysreg macros */
 #define read_sysreg(reg) ({					\
 	uint64_t val;						\
@@ -152,31 +216,4 @@
 
 #endif  /* !_ASMLANGUAGE */
 
-#define MODE_EL_SHIFT		(0x2)
-#define MODE_EL_MASK		(0x3)
-
-#define MODE_EL3		(0x3)
-#define MODE_EL2		(0x2)
-#define MODE_EL1		(0x1)
-#define MODE_EL0		(0x0)
-
-#define GET_EL(_mode)		(((_mode) >> MODE_EL_SHIFT) & MODE_EL_MASK)
-
-#define ESR_EC(esr)		(((esr) >> 26) & BIT_MASK(6))
-#define ESR_IL(esr)		(((esr) >> 25) & BIT_MASK(1))
-#define ESR_ISS(esr)		((esr) & BIT_MASK(25))
-
-/* mpidr */
-#define MPIDR_AFFLVL_MASK	0xff
-
-#define MPIDR_AFF0_SHIFT	0
-#define MPIDR_AFF1_SHIFT	8
-#define MPIDR_AFF2_SHIFT	16
-#define MPIDR_AFF3_SHIFT	32
-
-#define MPIDR_AFFLVL(mpidr, aff_level) \
-		(((mpidr) >> MPIDR_AFF##aff_level##_SHIFT) & MPIDR_AFFLVL_MASK)
-
-#define GET_MPIDR()		read_sysreg(mpidr_el1)
-#define MPIDR_TO_CORE(mpidr)	MPIDR_AFFLVL(mpidr, 0)
 #endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH64_CPU_H_ */

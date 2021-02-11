@@ -23,8 +23,8 @@ SECTION_FUNC(TEXT, z_arch_el3_plat_init)
 
 #ifdef CONFIG_GIC_V3
 	/* Enable GIC v3 system interface */
-	mov_imm	x0, (ICC_SRE_ELx_DFB | ICC_SRE_ELx_DIB | \
-		     ICC_SRE_ELx_SRE | ICC_SRE_EL3_EN)
+	mov_imm	x0, (ICC_SRE_ELx_DFB_BIT | ICC_SRE_ELx_DIB_BIT | \
+		     ICC_SRE_ELx_SRE_BIT | ICC_SRE_EL3_EN_BIT)
 	msr	ICC_SRE_EL3, x0
 #endif
 

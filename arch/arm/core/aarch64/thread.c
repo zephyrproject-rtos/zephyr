@@ -41,7 +41,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 * - SPSR_ELn: to enable IRQs (we are masking FIQs).
 	 */
 	pInitCtx->elr = (uint64_t)z_thread_entry;
-	pInitCtx->spsr = SPSR_MODE_EL1T | DAIF_FIQ;
+	pInitCtx->spsr = SPSR_MODE_EL1T | DAIF_FIQ_BIT;
 
 	/*
 	 * We are saving SP to pop out entry and parameters when going through
