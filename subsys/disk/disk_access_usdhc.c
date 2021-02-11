@@ -378,7 +378,7 @@ enum usdhc_endian_mode {
 
 struct usdhc_config {
 	USDHC_Type *base;
-	char *clock_name;
+	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	uint8_t nusdhc;
 
@@ -461,7 +461,6 @@ struct usdhc_priv {
 	enum host_detect_type detect_type;
 	bool inserted;
 
-	const struct device *clock_dev;
 	uint32_t src_clk_hz;
 
 	const struct usdhc_config *config;
@@ -2668,18 +2667,13 @@ static int usdhc_access_init(const struct device *dev)
 	memset((char *)priv, 0, sizeof(struct usdhc_priv));
 	priv->config = config;
 
-	priv->clock_dev = device_get_binding(config->clock_name);
-	if (priv->clock_dev == NULL) {
-		return -EINVAL;
-	}
-
 	if (!config->base) {
 		k_mutex_unlock(&z_usdhc_init_lock);
 
 		return -ENODEV;
 	}
 
-	if (clock_control_get_rate(priv->clock_dev,
+	if (clock_control_get_rate(config->clock_dev,
 				   config->clock_subsys,
 				   &priv->src_clk_hz)) {
 		return -EINVAL;
@@ -2829,7 +2823,7 @@ static int disk_usdhc_init(const struct device *dev)
 #define DISK_ACCESS_USDHC_INIT(n)					\
 	static const struct usdhc_config usdhc_config_##n = {		\
 		.base = (USDHC_Type  *) DT_INST_REG_ADDR(n),		\
-		.clock_name = DT_INST_CLOCKS_LABEL(n),			\
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	\
 		.clock_subsys =						\
 		(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),	\
 		.nusdhc = n,						\
