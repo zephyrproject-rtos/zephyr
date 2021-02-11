@@ -63,7 +63,7 @@ endchoice
 config HEAP_MEM_POOL_SIZE
 	default 4096 if BT_RPMSG
 
-config BT_HAS_HCI_VS
+config BT_HCI_VS
 	default y if BT
 
 config BOARD_ENABLE_CPUNET
