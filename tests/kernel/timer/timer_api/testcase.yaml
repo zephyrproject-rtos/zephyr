@@ -7,5 +7,5 @@ tests:
     arch_exclude: nios2 posix
     platform_exclude: qemu_x86_coverage
       litex_vexriscv rv32m1_vega_zero_riscy rv32m1_vega_ri5cy
-      nrf5340dk_nrf5340_cpunet nrf5340pdk_nrf5340_cpunet
+      nrf5340dk_nrf5340_cpunet
     tags: kernel timer userspace
