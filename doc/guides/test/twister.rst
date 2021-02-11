@@ -607,11 +607,11 @@ example::
       fixtures:
         - gpio_loopback
       id: 000683290670
-      notes: An nrf5340pdk_nrf5340 is detected as an nrf52840dk_nrf52840 with no serial
+      notes: An nrf5340dk_nrf5340 is detected as an nrf52840dk_nrf52840 with no serial
         port, and three serial ports with an unknown platform.  The board id of the serial
         ports is not the same as the board id of the the development kit.  If you regenerate
         this file you will need to update serial to reference the third port, and platform
-        to nrf5340pdk_nrf5340_cpuapp or another supported board target.
+        to nrf5340dk_nrf5340_cpuapp or another supported board target.
       platform: nrf52840dk_nrf52840
       product: J-Link
       runner: jlink

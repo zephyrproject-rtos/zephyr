@@ -6,7 +6,7 @@ tests:
     # provide a timer driver.  Other platforms are excluded because
     # they lack some other required feature.
     platform_exclude: rv32m1_vega_ri5cy rv32m1_vega_zero_riscy litex_vexriscv
-       nrf5340dk_nrf5340_cpunet nrf5340pdk_nrf5340_cpunet
+       nrf5340dk_nrf5340_cpunet
     integration_platforms:
       - qemu_x86
       - mps2_an385
