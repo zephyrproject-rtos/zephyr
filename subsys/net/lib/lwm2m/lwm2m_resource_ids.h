@@ -37,6 +37,7 @@
 #define SENSOR_TYPE_RID                   5751
 #define CUMULATIVE_ACTIVE_POWER_RID       5805
 #define POWER_FACTOR_RID                  5820
+#define CURRENT_CALIBRATION_RID           5821
 #define ON_OFF_RID                        5850
 #define DIMMER_RID                        5851
 #define ON_TIME_RID                       5852
