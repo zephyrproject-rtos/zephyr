@@ -4,8 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Performs steps related with DF antennae configuration. */
-void radio_df_ant_configure(void);
+/* Function configures Radio with information about GPIO pins that may be
+ * used to drive antenna switching during CTE Tx/RX.
+ */
+void radio_df_ant_switching_pin_sel_cfg(void);
 /* Provides number of available antennas for Direction Finding. */
 uint8_t radio_df_ant_num_get(void);
 

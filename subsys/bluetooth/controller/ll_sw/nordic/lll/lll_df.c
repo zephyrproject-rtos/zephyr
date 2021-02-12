@@ -23,11 +23,8 @@ static int init_reset(void);
  */
 int lll_df_init(void)
 {
-	radio_df_ant_configure();
-
 	return init_reset();
 }
-
 
 /* @brief Function performs Direction Finding reset
  *
@@ -67,7 +64,10 @@ void lll_df_conf_cte_tx_enable(uint8_t type, uint8_t length,
 {
 	if (type == BT_HCI_LE_AOA_CTE) {
 		radio_df_mode_set_aoa();
-	} else {
+	}
+#if defined(CONFIG_BT_CTLR_DF_ANT_SWITCH_TX) || \
+	defined(CONFIG_BT_CTLR_DF_ANT_SWITCH_RX)
+	else {
 		radio_df_mode_set_aod();
 
 		if (type == BT_HCI_LE_AOD_CTE_1US) {
@@ -76,6 +76,7 @@ void lll_df_conf_cte_tx_enable(uint8_t type, uint8_t length,
 			radio_df_ant_switch_spacing_set_4us();
 		}
 
+		radio_df_ant_switching_pin_sel_cfg();
 		radio_df_ant_switch_pattern_clear();
 		/* DFE extension in radio uses SWITCHPATTER[0] for guard period
 		 * SWITCHPATTER[1] for reference period. Bluetooth specification
@@ -89,6 +90,7 @@ void lll_df_conf_cte_tx_enable(uint8_t type, uint8_t length,
 			radio_df_ant_switch_pattern_set(ant_ids[idx]);
 		}
 	}
+#endif /* CONFIG_BT_CTLR_DF_ANT_SWITCH_TX || CONFIG_BT_CTLR_DF_ANT_SWITCH_RX */
 
 	radio_df_cte_length_set(length);
 }
