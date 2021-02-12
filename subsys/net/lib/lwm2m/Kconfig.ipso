@@ -101,12 +101,20 @@ config LWM2M_IPSO_HUMIDITY_SENSOR_INSTANCE_COUNT
 	  This setting establishes the total count of IPSO Humidity
 	  Sensor instances available to the LWM2M client.
 
-config LWM2M_IPSO_HUMIDITY_SENSOR_TIMESTAMP
-	bool "Add timestamp resources to IPSO objects"
-	default y
-	depends on LWM2M_IPSO_TIMESTAMP_EXTENSIONS
+choice
+	prompt "IPSO Humidity Sensor object version"
+	default LWM2M_IPSO_HUMIDITY_SENSOR_VERSION_1_0
 	help
-	  Add a non-standard timestamp resource to each object.
+	  Select which version of the IPSO Humidity Sensor object should be
+	  used.
+
+config LWM2M_IPSO_HUMIDITY_SENSOR_VERSION_1_0
+	bool "IPSO Humidity Sensor object version 1.0"
+
+config LWM2M_IPSO_HUMIDITY_SENSOR_VERSION_1_1
+	bool "IPSO Humidity Sensor object version 1.1"
+
+endchoice
 
 endif # LWM2M_IPSO_HUMIDITY_SENSOR
 
