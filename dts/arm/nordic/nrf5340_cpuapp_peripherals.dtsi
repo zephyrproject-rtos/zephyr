@@ -112,6 +112,22 @@ pdm0: pdm@26000 {
 	label = "PDM_0";
 };
 
+qdec0: qdec@33000 {
+	compatible = "nordic,nrf-qdec";
+	reg = <0x33000 0x1000>;
+	interrupts = <51 NRF_DEFAULT_IRQ_PRIORITY>;
+	status = "disabled";
+	label = "QDEC_0";
+};
+
+qdec1: qdec@34000 {
+	compatible = "nordic,nrf-qdec";
+	reg = <0x34000 0x1000>;
+	interrupts = <52 NRF_DEFAULT_IRQ_PRIORITY>;
+	status = "disabled";
+	label = "QDEC_1";
+};
+
 regulators: regulator@4000 {
 	compatible = "nordic,nrf-regulators";
 	reg = <0x4000 0x1000>;

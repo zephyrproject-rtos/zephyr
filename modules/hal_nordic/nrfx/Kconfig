@@ -129,7 +129,7 @@ config NRFX_PWM3
 
 config NRFX_QDEC
 	bool "Enable QDEC driver"
-	depends on HAS_HW_NRF_QDEC
+	depends on HAS_HW_NRF_QDEC || HAS_HW_NRF_QDEC0
 
 config NRFX_QSPI
 	bool "Enable QSPI driver"
