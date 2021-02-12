@@ -2212,11 +2212,12 @@ struct id_list_t {
 	uint16_t cnt;
 };
 
-static void decode_current_group(struct net_buf *buff, struct id_list_t *ids)
+static void decode_current_group(struct net_buf_simple *buff,
+				 struct id_list_t *ids)
 {
 	while ((buff->len) && (ids->cnt < CONFIG_BT_MCC_GROUP_RECORDS_MAX)) {
-		ids->ids[ids->cnt].type = net_buf_pull_u8(buff);
-		ids->ids[ids->cnt++].id = net_buf_pull_le48(buff);
+		ids->ids[ids->cnt].type = net_buf_simple_pull_u8(buff);
+		ids->ids[ids->cnt++].id = net_buf_simple_pull_le48(buff);
 	}
 }
 
@@ -2304,10 +2305,16 @@ int on_group_content(struct bt_conn *conn, uint32_t offset, uint32_t len,
 	BT_INFO("Received Current Group content, %i bytes at offset %i",
 		len, offset);
 
-	net_buf_add_mem(cur_mcs_inst->otc_obj_buff, data_p, len);
+	if (len > net_buf_simple_tailroom(&otc_obj_buf)) {
+		BT_DBG("Can not fit whole object");
+	}
+
+	net_buf_simple_add_mem(&otc_obj_buf, data_p,
+			       MIN(net_buf_simple_tailroom(&otc_obj_buf), len));
+
 	if (is_complete) {
 		BT_INFO("Current Group object received");
-		decode_current_group(cur_mcs_inst->otc_obj_buff, &group);
+		decode_current_group(&otc_obj_buf, &group);
 		for (int i = 0; i < group.cnt; i++) {
 			char t[UINT48_STR_LEN];
 
@@ -2315,6 +2322,10 @@ int on_group_content(struct bt_conn *conn, uint32_t offset, uint32_t len,
 			BT_DBG("Object type: %d, object  ID: 0x%s",
 			       group.ids[i].type, log_strdup(t));
 		}
+		/* Reset buf in case the same object is read again without */
+		/* calling select in between */
+		net_buf_simple_reset(&otc_obj_buf);
+		/* TODO: Remove these two lines when otc_obj_buff is removed */
 		BT_INFO("Unreference the object's content memory");
 		net_buf_unref(cur_mcs_inst->otc_obj_buff);
 	}
