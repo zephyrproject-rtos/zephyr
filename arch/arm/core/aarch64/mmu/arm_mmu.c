@@ -148,19 +148,13 @@ static void populate_table(uint64_t *table, uint64_t desc, unsigned int level)
 }
 
 static int set_mapping(struct arm_mmu_ptables *ptables,
-		       uintptr_t phys, uintptr_t virt, size_t size,
+		       uintptr_t virt, size_t size,
 		       uint64_t desc, bool may_overwrite)
 {
 	uint64_t *pte, *ptes[XLAT_LAST_LEVEL + 1];
 	uint64_t level_size;
 	uint64_t *table = ptables->base_xlat_table;
 	unsigned int level = BASE_XLAT_LEVEL;
-
-	/* check minimum alignment requirement for given mmap region */
-	__ASSERT(((virt | phys | size) & (CONFIG_MMU_PAGE_SIZE - 1)) == 0,
-		 "address/size are not page aligned\n");
-
-	desc |= phys;
 
 	while (size) {
 		__ASSERT(level <= XLAT_LAST_LEVEL,
@@ -326,14 +320,19 @@ static int add_map(struct arm_mmu_ptables *ptables, const char *name,
 
 	MMU_DEBUG("mmap [%s]: virt %lx phys %lx size %lx attr %llx\n",
 		  name, virt, phys, size, desc);
-	return set_mapping(ptables, phys, virt, size, desc, may_overwrite);
+	__ASSERT(((virt | phys | size) & (CONFIG_MMU_PAGE_SIZE - 1)) == 0,
+		 "address/size are not page aligned\n");
+	desc |= phys;
+	return set_mapping(ptables, virt, size, desc, may_overwrite);
 }
 
 static int remove_map(struct arm_mmu_ptables *ptables, const char *name,
 		      uintptr_t virt, size_t size)
 {
 	MMU_DEBUG("unmmap [%s]: virt %lx size %lx\n", name, virt, size);
-	return set_mapping(ptables, 0, virt, size, 0, true);
+	__ASSERT(((virt | size) & (CONFIG_MMU_PAGE_SIZE - 1)) == 0,
+		 "address/size are not page aligned\n");
+	return set_mapping(ptables, virt, size, 0, true);
 }
 
 /* zephyr execution regions with appropriate attributes */
