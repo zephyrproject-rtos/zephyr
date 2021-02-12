@@ -136,6 +136,31 @@ static ALWAYS_INLINE void disable_fiq(void)
 #define __DMB() dmb()
 #define __DSB() dsb()
 
+static inline bool is_el_implemented(unsigned int el)
+{
+	unsigned int shift;
+
+	if (el > 3) {
+		return false;
+	}
+
+	shift = ID_AA64PFR0_EL1_SHIFT * el;
+
+	return (((read_id_aa64pfr0_el1() >> shift) & ID_AA64PFR0_ELX_MASK) != 0U);
+}
+
+static inline bool is_el2_sec_supported(void)
+{
+	return (((read_id_aa64pfr0_el1() >> ID_AA64PFR0_SEL2_SHIFT) &
+		ID_AA64PFR0_SEL2_MASK) != 0U);
+}
+
+static inline bool is_in_secure_state(void)
+{
+	/* We cannot read SCR_EL3 from EL2 or EL1 */
+	return !IS_ENABLED(CONFIG_ARMV8_A_NS);
+}
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH64_LIB_HELPERS_H_ */
