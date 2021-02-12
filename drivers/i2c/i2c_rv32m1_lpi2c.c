@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(rv32m1_lpi2c);
 
 struct rv32m1_lpi2c_config {
 	LPI2C_Type *base;
-	char *clock_controller;
+	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	clock_ip_name_t clock_ip_name;
 	uint32_t clock_ip_src;
@@ -39,7 +39,6 @@ static int rv32m1_lpi2c_configure(const struct device *dev,
 				  uint32_t dev_config)
 {
 	const struct rv32m1_lpi2c_config *config = dev->config;
-	const struct device *clk;
 	uint32_t baudrate;
 	uint32_t clk_freq;
 	int err;
@@ -79,14 +78,7 @@ static int rv32m1_lpi2c_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	clk = device_get_binding(config->clock_controller);
-	if (!clk) {
-		LOG_ERR("Could not get clock controller '%s'",
-			config->clock_controller);
-		return -EINVAL;
-	}
-
-	err = clock_control_get_rate(clk, config->clock_subsys, &clk_freq);
+	err = clock_control_get_rate(config->clock_dev, config->clock_subsys, &clk_freq);
 	if (err) {
 		LOG_ERR("Could not get clock frequency (err %d)", err);
 		return -EINVAL;
@@ -213,26 +205,18 @@ static int rv32m1_lpi2c_init(const struct device *dev)
 	const struct rv32m1_lpi2c_config *config = dev->config;
 	struct rv32m1_lpi2c_data *data = dev->data;
 	lpi2c_master_config_t master_config;
-	const struct device *clk;
 	uint32_t clk_freq, dev_cfg;
 	int err;
 
 	CLOCK_SetIpSrc(config->clock_ip_name, config->clock_ip_src);
 
-	clk = device_get_binding(config->clock_controller);
-	if (!clk) {
-		LOG_ERR("Could not get clock controller '%s'",
-			config->clock_controller);
-		return -EINVAL;
-	}
-
-	err = clock_control_on(clk, config->clock_subsys);
+	err = clock_control_on(config->clock_dev, config->clock_subsys);
 	if (err) {
 		LOG_ERR("Could not turn on clock (err %d)", err);
 		return -EINVAL;
 	}
 
-	err = clock_control_get_rate(clk, config->clock_subsys, &clk_freq);
+	err = clock_control_get_rate(config->clock_dev, config->clock_subsys, &clk_freq);
 	if (err) {
 		LOG_ERR("Could not get clock frequency (err %d)", err);
 		return -EINVAL;
@@ -266,7 +250,7 @@ static const struct i2c_driver_api rv32m1_lpi2c_driver_api = {
 	static const struct rv32m1_lpi2c_config rv32m1_lpi2c_##id##_config = { \
 		.base =                                                        \
 		(LPI2C_Type *)DT_INST_REG_ADDR(id),                            \
-		.clock_controller = DT_INST_CLOCKS_LABEL(id),                  \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),	       \
 		.clock_subsys =                                                \
 			(clock_control_subsys_t) DT_INST_CLOCKS_CELL(id, name),\
 		.clock_ip_name = INST_DT_CLOCK_IP_NAME(id),                    \
