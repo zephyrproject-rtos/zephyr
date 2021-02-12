@@ -104,9 +104,6 @@ struct mcs_instance_t {
 #ifdef CONFIG_BT_OTC
 	struct bt_otc_instance_t otc[CONFIG_BT_MCC_MAX_OTS_INST];
 	uint8_t otc_inst_cnt;
-
-	/* TODO: Replace with net_buf_simple */
-	struct net_buf *otc_obj_buff;
 #endif /* CONFIG_BT_OTC */
 };
 
@@ -2263,9 +2260,6 @@ int on_track_segments_content(struct bt_conn *conn, uint32_t offset,
 		/* Reset buf in case the same object is read again without */
 		/* calling select in between */
 		net_buf_simple_reset(&otc_obj_buf);
-		/* TODO: Remove these two lines when otc_obj_buff is removed */
-		BT_INFO("Unreference the object's content memory");
-		net_buf_unref(cur_mcs_inst->otc_obj_buff);
 		track_segments.cnt = 0;
 	}
 
@@ -2325,16 +2319,10 @@ int on_group_content(struct bt_conn *conn, uint32_t offset, uint32_t len,
 		/* Reset buf in case the same object is read again without */
 		/* calling select in between */
 		net_buf_simple_reset(&otc_obj_buf);
-		/* TODO: Remove these two lines when otc_obj_buff is removed */
-		BT_INFO("Unreference the object's content memory");
-		net_buf_unref(cur_mcs_inst->otc_obj_buff);
 	}
 
 	return BT_OTC_CONTINUE;
 }
-
-NET_BUF_POOL_VAR_DEFINE(otc_objects_pool, 7,
-			CONFIG_BT_MCC_TOTAL_OBJ_CONTENT_MEM, NULL);
 
 void on_object_metadata(struct bt_conn *conn, int err,
 			struct bt_otc_instance_t *otc_inst,
@@ -2345,22 +2333,6 @@ void on_object_metadata(struct bt_conn *conn, int err,
 
 	if (otc_inst->cur_object.current_size > otc_obj_buf.size) {
 		BT_DBG("Object larger than allocated buffer");
-	}
-
-	if (cur_mcs_inst) {
-		if (cur_mcs_inst->otc_obj_buff) {
-			net_buf_unref(cur_mcs_inst->otc_obj_buff);
-		}
-		cur_mcs_inst->otc_obj_buff =
-			net_buf_alloc_len(&otc_objects_pool,
-					  otc_inst->cur_object.current_size,
-					  K_NO_WAIT);
-		if (!cur_mcs_inst->otc_obj_buff) {
-			BT_WARN("Not possible to allocate memory to receive "
-				"selected object's content");
-		}
-	} else {
-		BT_WARN("cur_mcs_inst is NULL");
 	}
 
 	bt_otc_metadata_display(&otc_inst->cur_object, 1);
