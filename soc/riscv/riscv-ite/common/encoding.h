@@ -1,8 +1,9 @@
 /*
+ * Copyright (c) 2020 Michael Schaffner
  * Copyright (c) 2020 ITE Corporation. All Rights Reserved.
  *
+ * SPDX-License-Identifier: SHL-0.51
  * SPDX-License-Identifier: Apache-2.0
- *
  */
 
 #ifndef RISCV_CSR_ENCODING_H
