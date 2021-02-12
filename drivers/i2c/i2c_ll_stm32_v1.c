@@ -619,12 +619,10 @@ int32_t stm32_i2c_msg_write(const struct device *dev, struct i2c_msg *msg,
 {
 	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
 	struct i2c_stm32_data *data = DEV_DATA(dev);
-	I2C_TypeDef *i2c = cfg->i2c;
 
 	msg_init(dev, msg, next_msg_flags, saddr, I2C_REQUEST_WRITE);
 
 	stm32_i2c_enable_transfer_interrupts(dev);
-	LL_I2C_EnableIT_TX(i2c);
 
 	if (k_sem_take(&data->device_sync_sem,
 			K_MSEC(STM32_I2C_TRANSFER_TIMEOUT_MSEC)) != 0) {
