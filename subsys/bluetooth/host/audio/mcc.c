@@ -2166,7 +2166,7 @@ struct track_segs_t {
 
 
 
-static void decode_track_segments(struct net_buf *buff,
+static void decode_track_segments(struct net_buf_simple *buff,
 				  struct track_segs_t *track_segs)
 {
 	uint16_t i;
@@ -2179,7 +2179,7 @@ static void decode_track_segments(struct net_buf *buff,
 		i = track_segs->cnt++;
 		seg = &track_segs->segs[i];
 
-		seg->name_len =  net_buf_pull_u8(buff);
+		seg->name_len =  net_buf_simple_pull_u8(buff);
 		if (seg->name_len + sizeof(int32_t) > buff->len) {
 			BT_WARN("Segment too long");
 			return;
@@ -2187,7 +2187,7 @@ static void decode_track_segments(struct net_buf *buff,
 
 		if (seg->name_len) {
 
-			name = net_buf_pull_mem(buff, seg->name_len);
+			name = net_buf_simple_pull_mem(buff, seg->name_len);
 
 			if (seg->name_len >= CONFIG_BT_MCS_SEGMENT_NAME_MAX) {
 				seg->name_len =
@@ -2197,7 +2197,7 @@ static void decode_track_segments(struct net_buf *buff,
 		}
 		seg->name[seg->name_len] = '\0';
 
-		track_segs->segs[i].pos = (int32_t)net_buf_pull_le32(buff);
+		track_segs->segs[i].pos = (int32_t)net_buf_simple_pull_le32(buff);
 	}
 }
 
@@ -2243,18 +2243,26 @@ int on_track_segments_content(struct bt_conn *conn, uint32_t offset,
 	BT_INFO("Received Segments content, %i bytes at offset %i",
 		len, offset);
 
-	net_buf_add_mem(cur_mcs_inst->otc_obj_buff, data_p, len);
+	if (len > net_buf_simple_tailroom(&otc_obj_buf)) {
+		BT_DBG("Can not fit whole object");
+	}
+
+	net_buf_simple_add_mem(&otc_obj_buf, data_p,
+			       MIN(net_buf_simple_tailroom(&otc_obj_buf), len));
 
 	if (is_complete) {
 		BT_INFO("Track segment object received");
-		decode_track_segments(cur_mcs_inst->otc_obj_buff,
-				      &track_segments);
+		decode_track_segments(&otc_obj_buf, &track_segments);
 		for (int i = 0; i < track_segments.cnt; i++) {
 			BT_DBG("Track segment %i:", i);
 			BT_DBG("\t-Name\t:%s",
 			       log_strdup(track_segments.segs[i].name));
 			BT_DBG("\t-Position\t:%d", track_segments.segs[i].pos);
 		}
+		/* Reset buf in case the same object is read again without */
+		/* calling select in between */
+		net_buf_simple_reset(&otc_obj_buf);
+		/* TODO: Remove these two lines when otc_obj_buff is removed */
 		BT_INFO("Unreference the object's content memory");
 		net_buf_unref(cur_mcs_inst->otc_obj_buff);
 		track_segments.cnt = 0;
