@@ -338,6 +338,38 @@ size_t z_device_get_all_static(const struct device * *devices);
  */
 bool z_device_ready(const struct device *dev);
 
+/** @brief Determine whether a device is ready for use
+ *
+ * This is the implementation underlying `device_usable_check()`, without the
+ * overhead of a syscall wrapper.
+ *
+ * @param dev pointer to the device in question.
+ *
+ * @return a non-positive integer as documented in device_usable_check().
+ */
+static inline int z_device_usable_check(const struct device *dev)
+{
+	return z_device_ready(dev) ? 0 : -ENODEV;
+}
+
+/** @brief Determine whether a device is ready for use.
+ *
+ * This checks whether a device can be used, returning 0 if it can, and
+ * distinct error values that identify the reason if it cannot.
+ *
+ * @retval 0 if the device is usable.
+ * @retval -ENODEV if the device has not been initialized, or the
+ * initialization failed.
+ * @retval other negative error codes to indicate additional conditions that
+ * make the device unusable.
+ */
+__syscall int device_usable_check(const struct device *dev);
+
+static inline int z_impl_device_usable_check(const struct device *dev)
+{
+	return z_device_usable_check(dev);
+}
+
 /** @brief Verify that a device is ready for use.
  *
  * Indicates whether the provided device pointer is for a device known to be
@@ -353,7 +385,10 @@ bool z_device_ready(const struct device *dev);
  * @retval true if the device is ready for use.
  * @retval false if the device is not ready for use.
  */
-__syscall bool device_is_ready(const struct device *dev);
+static inline bool device_is_ready(const struct device *dev)
+{
+	return device_usable_check(dev) == 0;
+}
 
 static inline bool z_impl_device_is_ready(const struct device *dev)
 {
