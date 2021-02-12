@@ -2,8 +2,8 @@
 
 .. _zephyr_2.5:
 
-Zephyr 2.5.0 (Working Draft)
-############################
+Zephyr 2.5.0
+#############
 
 We are pleased to announce the release of Zephyr RTOS version 2.5.0.
 
@@ -16,8 +16,6 @@ Major enhancements with this release include:
 * Added support for building with LLVM on X86
 * Added new synchronization mechanisms using Condition Variables
 * Add support for demand paging, initial support on X86.
-* Added support for the SPARC architecture, compatible with the SPARC V8
-  specification and the SPARC ABI.
 
 The following sections provide detailed lists of changes by component.
 
@@ -411,20 +409,10 @@ Drivers and Sensors
 
   * Added NXP LPC driver.
 
-* Console
-
-* Counter
-
-* Crypto
-
 * DAC
 
   * STM32: Enabled support for G0 and H7 series.
   * Added TI DACx3608 driver.
-
-* Debug
-
-* Display
 
 * DMA
 
@@ -434,10 +422,6 @@ Drivers and Sensors
 
   * Marked the EEPROM API as stable.
   * Added support for AT24Cxx devices.
-
-* Entropy
-
-* ESPI
 
 * Ethernet
 
@@ -494,16 +478,6 @@ Drivers and Sensors
 
   * Added Cypress PSoC-6 Cortex-M0+ interrupt multiplexer driver.
 
-* IPM
-
-* Keyboard Scan
-
-* LED
-
-* LED Strip
-
-* LoRa
-
 * memc
 
   * Added FMC/SDRAM memory controller for STM32 family
@@ -549,8 +523,6 @@ Drivers and Sensors
 
   * STM32 pinmux driver has been reworked to allow pin configuration using
     devicetree definitions. The previous C macros are now deprecated.
-
-* PS/2
 
 * PWM
 
@@ -841,8 +813,6 @@ Build and Infrastructure
 Libraries / Subsystems
 **********************
 
-* Disk
-
 * File systems
 
   * API
@@ -893,22 +863,14 @@ Libraries / Subsystems
   * New power state changes notification API :c:struct:`pm_notifier`
   * Cleanup build options.
 
-* Logging
-
 * LVGL
 
   * Library has been updated to minor release v7.6.1
-
-* Shell
 
 * Storage
 
   * flash_map: Added API to get the value of an erased byte in the flash_area,
     see ``flash_area_erased_val()``.
-
-* Tracing
-
-* Debug
 
 * DFU
 
