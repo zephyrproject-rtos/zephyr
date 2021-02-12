@@ -33,10 +33,12 @@ static void test_ibecc_initialized(void)
 
 }
 
-static volatile int interrupt;
-static volatile uint32_t error_type;
-static volatile uint64_t error_address;
-static volatile uint16_t error_syndrome;
+K_APPMEM_PARTITION_DEFINE(default_part);
+
+K_APP_BMEM(default_part) static volatile int interrupt;
+K_APP_BMEM(default_part) static volatile uint32_t error_type;
+K_APP_BMEM(default_part) static volatile uint64_t error_address;
+K_APP_BMEM(default_part) static volatile uint16_t error_syndrome;
 
 static void callback(const struct device *d, void *data)
 {
@@ -182,7 +184,24 @@ static void test_inject(uint64_t addr, uint64_t mask, uint8_t type)
 		 error_type, error_address, error_syndrome);
 }
 
-static void test_ibecc_error_inject_test(void)
+static int check_values(void *p1, void *p2, void *p3)
+{
+	intptr_t address = (intptr_t)p1;
+	intptr_t type = (intptr_t)p2;
+
+#if defined(CONFIG_USERSPACE)
+	TC_PRINT("Test communication in user mode thread\n");
+	zassert_true(_is_user_context(), "thread left in kernel mode");
+#endif
+
+	/* Verify page address and error type */
+	zassert_equal(error_address, address, "Error address wrong");
+	zassert_equal(error_type, type, "Error type wrong");
+
+	return 0;
+}
+
+static void test_ibecc_error_inject_test_cor(void)
 {
 	int ret;
 
@@ -192,19 +211,44 @@ static void test_ibecc_error_inject_test(void)
 	/* Test injecting correctable error at address TEST_ADDRESS1 */
 	test_inject(TEST_ADDRESS1, TEST_ADDRESS_MASK, EDAC_ERROR_TYPE_DRAM_COR);
 
-	/* Verify page address and error type */
-	zassert_equal(error_address, TEST_ADDRESS1, "Error address wrong");
-	zassert_equal(error_type, EDAC_ERROR_TYPE_DRAM_COR, "Error type wrong");
+#if defined(CONFIG_USERSPACE)
+	k_thread_user_mode_enter((k_thread_entry_t)check_values,
+				 (void *)TEST_ADDRESS1,
+				 (void *)EDAC_ERROR_TYPE_DRAM_COR,
+				 NULL);
+#else
+	check_values((void *)TEST_ADDRESS1, (void *)EDAC_ERROR_TYPE_DRAM_COR,
+		     NULL);
+#endif
+}
 
-	/* Test injecting uncorrectable error ad address TEST_ADDRESS2 */
+static void test_ibecc_error_inject_test_uc(void)
+{
+	int ret;
+
+	ret = edac_notify_callback_set(dev, callback);
+	zassert_equal(ret, 0, "Error setting notification callback");
+
+	/* Test injecting uncorrectable error at address TEST_ADDRESS2 */
 	test_inject(TEST_ADDRESS2, TEST_ADDRESS_MASK, EDAC_ERROR_TYPE_DRAM_UC);
 
-	/* Verify page address and error type */
-	zassert_equal(error_address, TEST_ADDRESS2, "Error address wrong");
-	zassert_equal(error_type, EDAC_ERROR_TYPE_DRAM_UC, "Error type wrong");
+#if defined(CONFIG_USERSPACE)
+	k_thread_user_mode_enter((k_thread_entry_t)check_values,
+				 (void *)TEST_ADDRESS2,
+				 (void *)EDAC_ERROR_TYPE_DRAM_UC,
+				 NULL);
+#else
+	check_values((void *)TEST_ADDRESS2, (void *)EDAC_ERROR_TYPE_DRAM_UC,
+		     NULL);
+#endif
 }
 #else
-static void test_ibecc_error_inject_test(void)
+static void test_ibecc_error_inject_test_cor(void)
+{
+	ztest_test_skip();
+}
+
+static void test_ibecc_error_inject_test_uc(void)
 {
 	ztest_test_skip();
 }
@@ -212,11 +256,16 @@ static void test_ibecc_error_inject_test(void)
 
 void test_main(void)
 {
+#if defined(CONFIG_USERSPACE)
+	k_mem_domain_add_partition(&k_mem_domain_default, &default_part);
+#endif
+
 	ztest_test_suite(ibecc,
 			 ztest_unit_test(test_ibecc_initialized),
 			 ztest_unit_test(test_ibecc_api),
 			 ztest_unit_test(test_ibecc_error_inject_api),
-			 ztest_unit_test(test_ibecc_error_inject_test)
+			 ztest_unit_test(test_ibecc_error_inject_test_cor),
+			 ztest_unit_test(test_ibecc_error_inject_test_uc)
 			);
 	ztest_run_test_suite(ibecc);
 }
