@@ -19,23 +19,20 @@
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
-static uint64_t kernel_xlat_tables[CONFIG_MAX_XLAT_TABLES * Ln_XLAT_NUM_ENTRIES]
+static uint64_t xlat_tables[CONFIG_MAX_XLAT_TABLES * Ln_XLAT_NUM_ENTRIES]
 		__aligned(Ln_XLAT_NUM_ENTRIES * sizeof(uint64_t));
+static uint16_t xlat_use_count[CONFIG_MAX_XLAT_TABLES];
 
-static struct arm_mmu_ptables kernel_ptables = {
-	.xlat_tables = kernel_xlat_tables,
-};
-
-/* Returns a new preallocated table */
-static uint64_t *new_prealloc_table(struct arm_mmu_ptables *ptables)
+/* Returns a reference to a free table */
+static uint64_t *new_table(void)
 {
 	unsigned int i;
 
-	/* Look for a free table. Table 0 is always allocated. */
-	for (i = 1; i < CONFIG_MAX_XLAT_TABLES; i++) {
-		if (ptables->use_count[i] == 0) {
-			ptables->use_count[i] = 1;
-			return &ptables->xlat_tables[i * Ln_XLAT_NUM_ENTRIES];
+	/* Look for a free table. */
+	for (i = 0; i < CONFIG_MAX_XLAT_TABLES; i++) {
+		if (xlat_use_count[i] == 0) {
+			xlat_use_count[i] = 1;
+			return &xlat_tables[i * Ln_XLAT_NUM_ENTRIES];
 		}
 	}
 
@@ -43,30 +40,30 @@ static uint64_t *new_prealloc_table(struct arm_mmu_ptables *ptables)
 	return NULL;
 }
 
-static void free_prealloc_table(struct arm_mmu_ptables *ptables, uint64_t *table)
+/* Makes a table free for reuse. */
+static void free_table(uint64_t *table)
 {
-	unsigned int i = (table - ptables->xlat_tables) / Ln_XLAT_NUM_ENTRIES;
+	unsigned int i = (table - xlat_tables) / Ln_XLAT_NUM_ENTRIES;
 
 	__ASSERT(i < CONFIG_MAX_XLAT_TABLES, "table out of range");
-	__ASSERT(ptables->use_count[i] == 1, "table still in use");
-	ptables->use_count[i] = 0;
+	__ASSERT(xlat_use_count[i] == 1, "table still in use");
+	xlat_use_count[i] = 0;
 }
 
-static int prealloc_table_usage(struct arm_mmu_ptables *ptables,
-				uint64_t *table, int adjustment)
+/* Adjusts usage count and returns current count. */
+static int table_usage(uint64_t *table, int adjustment)
 {
-	unsigned int i = (table - ptables->xlat_tables) / Ln_XLAT_NUM_ENTRIES;
+	unsigned int i = (table - xlat_tables) / Ln_XLAT_NUM_ENTRIES;
 
 	__ASSERT(i < CONFIG_MAX_XLAT_TABLES, "table out of range");
-	ptables->use_count[i] += adjustment;
-	__ASSERT(ptables->use_count[i] > 0, "usage count underflow");
-	return ptables->use_count[i];
+	xlat_use_count[i] += adjustment;
+	__ASSERT(xlat_use_count[i] > 0, "usage count underflow");
+	return xlat_use_count[i];
 }
 
-static inline bool is_prealloc_table_unused(struct arm_mmu_ptables *ptables,
-					    uint64_t *table)
+static inline bool is_table_unused(uint64_t *table)
 {
-	return prealloc_table_usage(ptables, table, 0) == 1;
+	return table_usage(table, 0) == 1;
 }
 
 static uint64_t get_region_desc(uint32_t attrs)
@@ -222,7 +219,7 @@ static int set_mapping(struct arm_mmu_ptables *ptables,
 {
 	uint64_t *pte, *ptes[XLAT_LAST_LEVEL + 1];
 	uint64_t level_size;
-	uint64_t *table = ptables->xlat_tables;
+	uint64_t *table = ptables->base_xlat_table;
 	unsigned int level = BASE_XLAT_LEVEL;
 
 	/* check minimum alignment requirement for given mmap region */
@@ -267,7 +264,7 @@ static int set_mapping(struct arm_mmu_ptables *ptables,
 
 		if ((size < level_size) || (virt & (level_size - 1))) {
 			/* Range doesn't fit, create subtable */
-			table = new_prealloc_table(ptables);
+			table = new_table();
 			if (!table) {
 				return -ENOMEM;
 			}
@@ -276,12 +273,12 @@ static int set_mapping(struct arm_mmu_ptables *ptables,
 			 * then we need to reflect that in the new table.
 			 */
 			if (is_block_desc(*pte)) {
-				prealloc_table_usage(ptables, table, Ln_XLAT_NUM_ENTRIES);
+				table_usage(table, Ln_XLAT_NUM_ENTRIES);
 				populate_table(table, *pte, level + 1);
 			}
 			/* Adjust usage count for parent table */
 			if (is_free_desc(*pte)) {
-				prealloc_table_usage(ptables, pte, 1);
+				table_usage(pte, 1);
 			}
 			/* And link it. */
 			set_pte_table_desc(pte, table, level);
@@ -291,21 +288,21 @@ static int set_mapping(struct arm_mmu_ptables *ptables,
 
 		/* Adjust usage count for corresponding table */
 		if (is_free_desc(*pte)) {
-			prealloc_table_usage(ptables, pte, 1);
+			table_usage(pte, 1);
 		}
 		if (!desc) {
-			prealloc_table_usage(ptables, pte, -1);
+			table_usage(pte, -1);
 		}
 		/* Create (or erase) block/page descriptor */
 		set_pte_block_desc(pte, desc, level);
 
 		/* recursively free unused tables if any */
 		while (level != BASE_XLAT_LEVEL &&
-		       is_prealloc_table_unused(ptables, pte)) {
-			free_prealloc_table(ptables, pte);
+		       is_table_unused(pte)) {
+			free_table(pte);
 			pte = ptes[--level];
 			set_pte_block_desc(pte, 0, level);
-			prealloc_table_usage(ptables, pte, -1);
+			table_usage(pte, -1);
 		}
 
 move_on:
@@ -314,7 +311,7 @@ move_on:
 		size -= level_size;
 
 		/* Range is mapped, start again for next range */
-		table = ptables->xlat_tables;
+		table = ptables->base_xlat_table;
 		level = BASE_XLAT_LEVEL;
 	}
 
@@ -379,8 +376,7 @@ static void setup_page_tables(struct arm_mmu_ptables *ptables)
 
 	MMU_DEBUG("xlat tables:\n");
 	for (index = 0; index < CONFIG_MAX_XLAT_TABLES; index++)
-		MMU_DEBUG("%d: %p\n", index, (uint64_t *)(ptables->xlat_tables +
-					(index * Ln_XLAT_NUM_ENTRIES)));
+		MMU_DEBUG("%d: %p\n", index, xlat_tables + index * Ln_XLAT_NUM_ENTRIES);
 
 	for (index = 0; index < mmu_config.num_regions; index++) {
 		region = &mmu_config.mmu_regions[index];
@@ -453,7 +449,7 @@ static void enable_mmu_el1(struct arm_mmu_ptables *ptables, unsigned int flags)
 			: "memory", "cc");
 	__asm__ volatile("msr ttbr0_el1, %0"
 			:
-			: "r" ((uint64_t)ptables->xlat_tables)
+			: "r" ((uint64_t)ptables->base_xlat_table)
 			: "memory", "cc");
 
 	/* Ensure these changes are seen before MMU is enabled */
@@ -473,6 +469,8 @@ static void enable_mmu_el1(struct arm_mmu_ptables *ptables, unsigned int flags)
 }
 
 /* ARM MMU Driver Initial Setup */
+
+static struct arm_mmu_ptables kernel_ptables;
 
 /*
  * @brief MMU default configuration
@@ -498,6 +496,7 @@ static int arm_mmu_init(const struct device *arg)
 	__asm__ volatile("mrs %0, sctlr_el1" : "=r" (val));
 	__ASSERT((val & SCTLR_M) == 0, "MMU is already enabled\n");
 
+	kernel_ptables.base_xlat_table = new_table();
 	setup_page_tables(&kernel_ptables);
 
 	/* currently only EL1 is supported */
