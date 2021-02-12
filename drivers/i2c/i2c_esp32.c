@@ -62,7 +62,6 @@ struct i2c_esp32_data {
 
 	struct k_sem fifo_sem;
 	struct k_sem transfer_sem;
-	const struct device *clock_dev;
 };
 
 typedef void (*irq_connect_cb)(void);
@@ -71,7 +70,7 @@ struct i2c_esp32_config {
 	int index;
 
 	irq_connect_cb connect_irq;
-	const char *clock_name;
+	const struct device *clock_dev;
 
 	const struct {
 		int sda_out;
@@ -141,7 +140,6 @@ static int i2c_esp32_configure_speed(const struct device *dev,
 	};
 
 	const struct i2c_esp32_config *config = dev->config;
-	struct i2c_esp32_data *data = dev->data;
 
 	uint32_t sys_clk_freq = 0;
 	uint32_t freq_hz = speed_to_freq_tbl[speed];
@@ -151,7 +149,7 @@ static int i2c_esp32_configure_speed(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	if (clock_control_get_rate(data->clock_dev,
+	if (clock_control_get_rate(config->clock_dev,
 				   config->peripheral_id,
 				   &sys_clk_freq)) {
 		return -EINVAL;
@@ -205,7 +203,7 @@ static int i2c_esp32_configure(const struct device *dev, uint32_t dev_config)
 		return ret;
 	}
 
-	clock_control_on(data->clock_dev, config->peripheral_id);
+	clock_control_on(config->clock_dev, config->peripheral_id);
 
 	/* MSB or LSB first is configurable for both TX and RX */
 	if (config->mode.tx_lsb_first) {
@@ -588,7 +586,7 @@ static void i2c_esp32_connect_irq_0(void)
 static const struct i2c_esp32_config i2c_esp32_config_0 = {
 	.index = 0,
 	.connect_irq = i2c_esp32_connect_irq_0,
-	.clock_name = DT_INST_CLOCKS_LABEL(0),
+	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0)),
 	.peripheral_id = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(0, offset),
 	.sig = {
 		.sda_out = I2CEXT0_SDA_OUT_IDX,
@@ -632,7 +630,7 @@ static void i2c_esp32_connect_irq_1(void)
 static const struct i2c_esp32_config i2c_esp32_config_1 = {
 	.index = 1,
 	.connect_irq = i2c_esp32_connect_irq_1,
-	.clock_name = DT_INST_CLOCKS_LABEL(1),
+	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(1)),
 	.peripheral_id = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(1, offset),
 	.sig = {
 		.sda_out = I2CEXT1_SDA_OUT_IDX,
@@ -671,9 +669,6 @@ static int i2c_esp32_init(const struct device *dev)
 	const struct i2c_esp32_config *config = dev->config;
 	struct i2c_esp32_data *data = dev->data;
 	uint32_t bitrate_cfg = i2c_map_dt_bitrate(config->bitrate);
-	data->clock_dev = device_get_binding(config->clock_name);
-
-	__ASSERT_NO_MSG(data->clock_dev);
 
 	unsigned int key = irq_lock();
 
