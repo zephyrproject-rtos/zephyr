@@ -14,7 +14,7 @@
 
 / {
 	model = "ehl_crb";
-	compatible = "intel,elkhart_lake";
+	compatible = "intel,elkhart_lake_crb";
 
 	chosen {
 		zephyr,sram = &dram0;

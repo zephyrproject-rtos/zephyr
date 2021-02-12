@@ -15,8 +15,8 @@
 #include <ia32.dtsi>
 
 / {
-	model = "QEMU X86";
-	compatible = "intel,ia32";
+	model = "QEMU X86 emulator";
+	compatible = "qemu,x86_emulator";
 
 	flash0: flash@500000 {
 		compatible = "soc-nv-flash";
