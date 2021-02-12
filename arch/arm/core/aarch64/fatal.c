@@ -181,18 +181,18 @@ void z_arm64_fatal_error(unsigned int reason, z_arch_esf_t *esf)
 	uint64_t el;
 
 	if (reason != K_ERR_SPURIOUS_IRQ) {
-		__asm__ volatile("mrs %0, CurrentEL" : "=r" (el));
+		el = read_currentel();
 
 		switch (GET_EL(el)) {
 		case MODE_EL1:
-			__asm__ volatile("mrs %0, esr_el1" : "=r" (esr));
-			__asm__ volatile("mrs %0, far_el1" : "=r" (far));
-			__asm__ volatile("mrs %0, elr_el1" : "=r" (elr));
+			esr = read_esr_el1();
+			far = read_far_el1();
+			elr = read_elr_el1();
 			break;
 		case MODE_EL3:
-			__asm__ volatile("mrs %0, esr_el3" : "=r" (esr));
-			__asm__ volatile("mrs %0, far_el3" : "=r" (far));
-			__asm__ volatile("mrs %0, elr_el3" : "=r" (elr));
+			esr = read_esr_el3();
+			far = read_far_el3();
+			elr = read_elr_el3();
 			break;
 		}
 

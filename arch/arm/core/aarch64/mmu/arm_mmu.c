@@ -11,6 +11,7 @@
 #include <kernel_arch_interface.h>
 #include <logging/log.h>
 #include <arch/arm/aarch64/cpu.h>
+#include <arch/arm/aarch64/lib_helpers.h>
 #include <arch/arm/aarch64/arm_mmu.h>
 #include <linker/linker-defs.h>
 #include <sys/util.h>
@@ -491,31 +492,19 @@ static void enable_mmu_el1(struct arm_mmu_ptables *ptables, unsigned int flags)
 	uint64_t val;
 
 	/* Set MAIR, TCR and TBBR registers */
-	__asm__ volatile("msr mair_el1, %0"
-			:
-			: "r" (MEMORY_ATTRIBUTES)
-			: "memory", "cc");
-	__asm__ volatile("msr tcr_el1, %0"
-			:
-			: "r" (get_tcr(1))
-			: "memory", "cc");
-	__asm__ volatile("msr ttbr0_el1, %0"
-			:
-			: "r" ((uint64_t)ptables->base_xlat_table)
-			: "memory", "cc");
+	write_mair_el1(MEMORY_ATTRIBUTES);
+	write_tcr_el1(get_tcr(1));
+	write_ttbr0_el1((uint64_t)ptables->base_xlat_table);
 
 	/* Ensure these changes are seen before MMU is enabled */
-	__ISB();
+	isb();
 
 	/* Enable the MMU and data cache */
-	__asm__ volatile("mrs %0, sctlr_el1" : "=r" (val));
-	__asm__ volatile("msr sctlr_el1, %0"
-			:
-			: "r" (val | SCTLR_M_BIT | SCTLR_C_BIT)
-			: "memory", "cc");
+	val = read_sctlr_el1();
+	write_sctlr_el1(val | SCTLR_M_BIT | SCTLR_C_BIT);
 
 	/* Ensure the MMU enable takes effect immediately */
-	__ISB();
+	isb();
 
 	MMU_DEBUG("MMU enabled with dcache\n");
 }
@@ -532,21 +521,16 @@ static struct arm_mmu_ptables kernel_ptables;
  */
 void z_arm64_mmu_init(void)
 {
-	uint64_t val;
 	unsigned int flags = 0;
-
-	/* Current MMU code supports only EL1 */
-	__asm__ volatile("mrs %0, CurrentEL" : "=r" (val));
 
 	__ASSERT(CONFIG_MMU_PAGE_SIZE == KB(4),
 		 "Only 4K page size is supported\n");
 
-	__ASSERT(GET_EL(val) == MODE_EL1,
+	__ASSERT(GET_EL(read_currentel()) == MODE_EL1,
 		 "Exception level not EL1, MMU not enabled!\n");
 
 	/* Ensure that MMU is already not enabled */
-	__asm__ volatile("mrs %0, sctlr_el1" : "=r" (val));
-	__ASSERT((val & SCTLR_M_BIT) == 0, "MMU is already enabled\n");
+	__ASSERT((read_sctlr_el1() & SCTLR_M_BIT) == 0, "MMU is already enabled\n");
 
 	kernel_ptables.base_xlat_table = new_table();
 	setup_page_tables(&kernel_ptables);
