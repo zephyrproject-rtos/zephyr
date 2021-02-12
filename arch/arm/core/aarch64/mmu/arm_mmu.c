@@ -66,72 +66,6 @@ static inline bool is_table_unused(uint64_t *table)
 	return table_usage(table, 0) == 1;
 }
 
-static uint64_t get_region_desc(uint32_t attrs)
-{
-	unsigned int mem_type;
-	uint64_t desc = 0;
-
-	/* NS bit for security memory access from secure state */
-	desc |= (attrs & MT_NS) ? PTE_BLOCK_DESC_NS : 0;
-
-	/*
-	 * AP bits for EL0 / ELh Data access permission
-	 *
-	 *   AP[2:1]   ELh  EL0
-	 * +--------------------+
-	 *     00      RW   NA
-	 *     01      RW   RW
-	 *     10      RO   NA
-	 *     11      RO   RO
-	 */
-
-	/* AP bits for Data access permission */
-	desc |= (attrs & MT_RW) ? PTE_BLOCK_DESC_AP_RW : PTE_BLOCK_DESC_AP_RO;
-
-	/* Mirror permissions to EL0 */
-	desc |= (attrs & MT_RW_AP_ELx) ?
-		 PTE_BLOCK_DESC_AP_ELx : PTE_BLOCK_DESC_AP_EL_HIGHER;
-
-	/* the access flag */
-	desc |= PTE_BLOCK_DESC_AF;
-
-	/* memory attribute index field */
-	mem_type = MT_TYPE(attrs);
-	desc |= PTE_BLOCK_DESC_MEMTYPE(mem_type);
-
-	switch (mem_type) {
-	case MT_DEVICE_nGnRnE:
-	case MT_DEVICE_nGnRE:
-	case MT_DEVICE_GRE:
-		/* Access to Device memory and non-cacheable memory are coherent
-		 * for all observers in the system and are treated as
-		 * Outer shareable, so, for these 2 types of memory,
-		 * it is not strictly needed to set shareability field
-		 */
-		desc |= PTE_BLOCK_DESC_OUTER_SHARE;
-		/* Map device memory as execute-never */
-		desc |= PTE_BLOCK_DESC_PXN;
-		desc |= PTE_BLOCK_DESC_UXN;
-		break;
-	case MT_NORMAL_NC:
-	case MT_NORMAL:
-		/* Make Normal RW memory as execute never */
-		if ((attrs & MT_RW) || (attrs & MT_P_EXECUTE_NEVER))
-			desc |= PTE_BLOCK_DESC_PXN;
-
-		if (((attrs & MT_RW) && (attrs & MT_RW_AP_ELx)) ||
-		     (attrs & MT_U_EXECUTE_NEVER))
-			desc |= PTE_BLOCK_DESC_UXN;
-
-		if (mem_type == MT_NORMAL)
-			desc |= PTE_BLOCK_DESC_INNER_SHARE;
-		else
-			desc |= PTE_BLOCK_DESC_OUTER_SHARE;
-	}
-
-	return desc;
-}
-
 static inline bool is_free_desc(uint64_t desc)
 {
 	return (desc & PTE_DESC_TYPE_MASK) == PTE_INVALID_DESC;
@@ -316,6 +250,72 @@ move_on:
 	}
 
 	return 0;
+}
+
+static uint64_t get_region_desc(uint32_t attrs)
+{
+	unsigned int mem_type;
+	uint64_t desc = 0;
+
+	/* NS bit for security memory access from secure state */
+	desc |= (attrs & MT_NS) ? PTE_BLOCK_DESC_NS : 0;
+
+	/*
+	 * AP bits for EL0 / ELh Data access permission
+	 *
+	 *   AP[2:1]   ELh  EL0
+	 * +--------------------+
+	 *     00      RW   NA
+	 *     01      RW   RW
+	 *     10      RO   NA
+	 *     11      RO   RO
+	 */
+
+	/* AP bits for Data access permission */
+	desc |= (attrs & MT_RW) ? PTE_BLOCK_DESC_AP_RW : PTE_BLOCK_DESC_AP_RO;
+
+	/* Mirror permissions to EL0 */
+	desc |= (attrs & MT_RW_AP_ELx) ?
+		 PTE_BLOCK_DESC_AP_ELx : PTE_BLOCK_DESC_AP_EL_HIGHER;
+
+	/* the access flag */
+	desc |= PTE_BLOCK_DESC_AF;
+
+	/* memory attribute index field */
+	mem_type = MT_TYPE(attrs);
+	desc |= PTE_BLOCK_DESC_MEMTYPE(mem_type);
+
+	switch (mem_type) {
+	case MT_DEVICE_nGnRnE:
+	case MT_DEVICE_nGnRE:
+	case MT_DEVICE_GRE:
+		/* Access to Device memory and non-cacheable memory are coherent
+		 * for all observers in the system and are treated as
+		 * Outer shareable, so, for these 2 types of memory,
+		 * it is not strictly needed to set shareability field
+		 */
+		desc |= PTE_BLOCK_DESC_OUTER_SHARE;
+		/* Map device memory as execute-never */
+		desc |= PTE_BLOCK_DESC_PXN;
+		desc |= PTE_BLOCK_DESC_UXN;
+		break;
+	case MT_NORMAL_NC:
+	case MT_NORMAL:
+		/* Make Normal RW memory as execute never */
+		if ((attrs & MT_RW) || (attrs & MT_P_EXECUTE_NEVER))
+			desc |= PTE_BLOCK_DESC_PXN;
+
+		if (((attrs & MT_RW) && (attrs & MT_RW_AP_ELx)) ||
+		     (attrs & MT_U_EXECUTE_NEVER))
+			desc |= PTE_BLOCK_DESC_UXN;
+
+		if (mem_type == MT_NORMAL)
+			desc |= PTE_BLOCK_DESC_INNER_SHARE;
+		else
+			desc |= PTE_BLOCK_DESC_OUTER_SHARE;
+	}
+
+	return desc;
 }
 
 static int add_map(struct arm_mmu_ptables *ptables, const char *name,
