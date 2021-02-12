@@ -677,7 +677,7 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 
 	conn_interval_us = lll->interval * CONN_INT_UNIT_US;
 	conn_offset_us = ftr->radio_end_us;
-	conn_offset_us += HAL_TICKER_TICKS_TO_US(1);
+	conn_offset_us += EVENT_TICKER_RES_MARGIN_US;
 	conn_offset_us -= EVENT_OVERHEAD_START_US;
 
 #if defined(CONFIG_BT_CTLR_PHY)
