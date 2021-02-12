@@ -165,8 +165,7 @@ struct arm_mmu_config {
 };
 
 struct arm_mmu_ptables {
-	uint64_t *xlat_tables;
-	uint16_t use_count[CONFIG_MAX_XLAT_TABLES];
+	uint64_t *base_xlat_table;
 };
 
 /* Convenience macros to represent the ARMv8-A-specific
