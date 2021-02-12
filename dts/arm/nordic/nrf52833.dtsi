@@ -394,6 +394,7 @@
 			interrupts = <1 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "okay";
 			dfe-ant-num = <0>;
+			dfe-pdu-antenna = <0xFF>;
 		};
 	};
 

@@ -38,6 +38,17 @@ properties:
         Value zero means no antenna available. If provided value different than
         zero, it must be greater or equal to two.
 
+    dfe-pdu-antenna:
+      type: int
+      required: true
+      description: |
+        Antenna switch pattern to be used for transmission of PDU before start
+        of transmission of Constant Tone Extension.
+
+        This pattern is stored in SWITCHPATTERN[0] before store actual antenna
+        switching patterns. This pattern will be also used to drive GPIOs
+        when Radio releases control of GPIOs used to switch antenna.
+
     dfegpio0-gpios:
       type: phandle-array
       required: false
