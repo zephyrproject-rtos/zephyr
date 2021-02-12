@@ -409,6 +409,66 @@ void k_object_free(void *obj)
 	}
 }
 
+int z_impl_k_alloc_thread_stack(size_t size, k_thread_stack_t **stack)
+{
+	struct z_object *zo;
+	struct dyn_obj *dyn;
+	struct dyn_obj *adjusted_dyn;
+	k_spinlock_key_t key;
+	const size_t align = Z_THREAD_STACK_OBJ_ALIGN(size);
+	/* We want to append the dyn_obj to the end of the stack area. However,
+	 * z_dynamic_object_aligned_create() does not allocate additional padding to
+	 * suitably align it there. Here we simultaneously adjust for
+	 * 1. Any guard bands for the stack
+	 * 2. possible padding to align dyn
+	 */
+	const size_t adjusted_size = Z_THREAD_STACK_SIZE_ADJUST(ALIGN_UP(size, __alignof(*dyn)));
+
+	zo = z_dynamic_object_aligned_create(align, adjusted_size);
+	if (zo == NULL) {
+		return -ENOMEM;
+	}
+
+	dyn = CONTAINER_OF(zo, struct dyn_obj, kobj);
+
+	/* for pedanticness */
+	__ASSERT_NO_MSG(((__alignof(*dyn) - 1) & (uintptr_t)dyn) == 0);
+
+	adjusted_dyn = (struct dyn_obj *)ALIGN_UP((uintptr_t)dyn + size, __alignof(*dyn));
+
+	LOG_DBG("align: %zu size: %zu adjusted_size: %zu dyn: %p adjusted_dyn: %p", align, size,
+		adjusted_size, dyn, adjusted_dyn);
+
+	/* backup dyn to stack end, to make use of aligned stack */
+	*stack = (k_thread_stack_t *)dyn;
+	memmove(adjusted_dyn, dyn, sizeof(*dyn));
+
+	key = k_spin_lock(&lists_lock);
+	/* remove old, invalid nodes */
+	rb_remove(&obj_rb_tree, &dyn->node);
+	sys_dlist_remove(&dyn->dobj_list);
+
+	/* update dyn to point to stack end */
+	dyn = adjusted_dyn;
+
+	/* insert new, valid nodes */
+	rb_insert(&obj_rb_tree, &dyn->node);
+	sys_dlist_append(&obj_list, &dyn->dobj_list);
+	k_spin_unlock(&lists_lock, key);
+
+	/* dynamic object housekeeping */
+	dyn->kobj.name = *stack;
+	dyn->kobj.type = K_OBJ_THREAD_STACK_ELEMENT;
+	dyn->kobj.data.stack_size = size;
+	z_thread_perms_set(&dyn->kobj, _current);
+	dyn->kobj.flags |= K_OBJ_FLAG_ALLOC;
+
+	LOG_DBG("stack: %zu@%p dyn: %p for thread %p (%s)", size, *stack, dyn, _current,
+		_current->name);
+
+	return 0;
+}
+
 struct z_object *z_object_find(const void *obj)
 {
 	struct z_object *ret;

@@ -184,6 +184,16 @@ void z_thread_monitor_exit(struct k_thread *thread)
 }
 #endif
 
+#ifdef CONFIG_USERSPACE
+static inline int z_vrfy_k_alloc_thread_stack(size_t size, k_thread_stack_t **stack)
+{
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(stack, sizeof(*stack)));
+
+	return z_impl_k_alloc_thread_stack(size, stack);
+}
+#include <syscalls/k_alloc_thread_stack_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
 int z_impl_k_thread_name_set(struct k_thread *thread, const char *value)
 {
 #ifdef CONFIG_THREAD_NAME

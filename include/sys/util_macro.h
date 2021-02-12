@@ -621,6 +621,17 @@ extern "C" {
 #define MACRO_MAP_CAT_N(N, ...) MACRO_MAP_CAT_N_(N, __VA_ARGS__)
 
 /**
+ * @brief Align a @p value up by to @p alignment
+ *
+ * Note, @p alignemnt should be a power-of-two
+ * 
+ * @param value the value to align up
+ * @param alignemnt the required alignemnt
+ * @return @p value aligned up to @p alignment
+ */
+#define ALIGN_UP(value, alignment) ((((uintptr_t)value) + (alignment)-1) & ~((alignment)-1))
+
+/**
  * @}
  */
 
