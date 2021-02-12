@@ -47,8 +47,8 @@
  * been remapped or paged out. Never use this unless you know exactly what you
  * are doing.
  */
-#define Z_BOOT_VIRT_TO_PHYS(virt) ((uintptr_t)(((uint8_t *)virt) + Z_VM_OFFSET))
-#define Z_BOOT_PHYS_TO_VIRT(phys) ((uint8_t *)(((uintptr_t)phys) - Z_VM_OFFSET))
+#define Z_BOOT_VIRT_TO_PHYS(virt) ((uintptr_t)(((uint8_t *)virt) - Z_VM_OFFSET))
+#define Z_BOOT_PHYS_TO_VIRT(phys) ((uint8_t *)(((uintptr_t)phys) + Z_VM_OFFSET))
 
 #ifdef CONFIG_ARCH_MAPS_ALL_RAM
 #define Z_FREE_VM_START	Z_BOOT_PHYS_TO_VIRT(Z_PHYS_RAM_END)
