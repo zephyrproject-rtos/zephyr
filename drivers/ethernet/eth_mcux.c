@@ -122,7 +122,6 @@ struct eth_context {
 	 */
 	struct net_if *iface;
 #if defined(CONFIG_NET_POWER_MANAGEMENT)
-	const char *clock_name;
 	clock_ip_name_t clock;
 	const struct device *clock_dev;
 #endif
@@ -1001,7 +1000,6 @@ static int eth_init(const struct device *dev)
 	const uint32_t inst = ENET_GetInstance(context->base);
 
 	context->clock = enet_clocks[inst];
-	context->clock_dev = device_get_binding(context->clock_name);
 #endif
 
 	k_sem_init(&context->tx_buf_sem,
@@ -1315,7 +1313,7 @@ static void eth_mcux_err_isr(const struct device *dev)
 		    (ETH_MCUX_MAC_ADDR_GENERATE(n)))
 
 #define ETH_MCUX_POWER_INIT(n)						\
-	.clock_name = DT_INST_CLOCKS_LABEL(n),				\
+	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),		\
 
 #define ETH_MCUX_POWER(n)						\
 	COND_CODE_1(CONFIG_NET_POWER_MANAGEMENT,			\
