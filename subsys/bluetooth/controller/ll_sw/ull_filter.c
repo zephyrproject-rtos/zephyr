@@ -757,10 +757,10 @@ bool ull_filter_lll_rl_addr_allowed(uint8_t id_addr_type, uint8_t *id_addr, uint
 {
 	uint8_t i, j;
 
-	/* If AR is disabled or we matched an IRK then we're all set. No hw
+	/* We matched an IRK then we're all set. No hw
 	 * filters are used in this case.
 	 */
-	if (!rl_enable || *rl_idx != FILTER_IDX_NONE) {
+	if (*rl_idx != FILTER_IDX_NONE) {
 		return true;
 	}
 
