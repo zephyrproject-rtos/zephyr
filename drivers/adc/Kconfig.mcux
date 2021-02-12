@@ -6,18 +6,21 @@
 config ADC_MCUX_ADC12
 	bool "MCUX ADC12 driver"
 	depends on HAS_MCUX_ADC12
+	imply MCUX_ADC12
 	help
 	  Enable the MCUX ADC12 driver.
 
 config ADC_MCUX_ADC16
 	bool "MCUX ADC16 driver"
 	depends on HAS_MCUX_ADC16
+	imply MCUX_ADC16
 	help
 	  Enable the MCUX ADC16 driver.
 
 config ADC_MCUX_LPADC
 	bool "MCUX LPADC driver"
 	depends on HAS_MCUX_LPADC
+	imply MCUX_LPADC
 	help
 	  Enable the MCUX LPADC driver.
 

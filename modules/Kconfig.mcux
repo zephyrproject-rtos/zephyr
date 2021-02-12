@@ -256,4 +256,280 @@ config HAS_MCUX_PWT
 	help
 	  Set if the PWT module is present on the SoC.
 
+menuconfig MCUX
+	bool "MCUXpresso SDK"
+	default y
+	help
+	  Build MCUXpresso SDK drivers in the hal_nxp module.
+
+if MCUX
+
+config MCUX_ADC12
+	bool "ADC12"
+	depends on HAS_MCUX_ADC12
+	help
+	  Build the MCUX ADC12 driver in the hal_nxp module.
+
+config MCUX_ADC16
+	bool "ADC16"
+	depends on HAS_MCUX_ADC16
+	help
+	  Build the MCUX ADC16 driver in the hal_nxp module.
+
+config MCUX_CACHE
+	bool "CACHE"
+	depends on HAS_MCUX_CACHE
+	default y
+	help
+	  Build the MCUX CACHE driver in the hal_nxp module.
+
+config MCUX_CSI
+	bool "CSI"
+	depends on HAS_MCUX_CSI
+	help
+	  Build the MCUX CSI driver in the hal_nxp module.
+
+config MCUX_DAC
+	bool "DAC"
+	depends on HAS_MCUX_DAC
+	help
+	  Build the MCUX DAC driver in the hal_nxp module.
+
+config MCUX_DAC32
+	bool "DAC32"
+	depends on HAS_MCUX_DAC32
+	help
+	  Build the MCUX DAC32 driver in the hal_nxp module.
+
+config MCUX_DSPI
+	bool "DSPI"
+	help
+	  Build the MCUX DSPI driver in the hal_nxp module.
+
+config MCUX_EDMA
+	bool "EDMA"
+	depends on HAS_MCUX_EDMA
+	help
+	  Build the MCUX EDMA driver in the hal_nxp module.
+
+config MCUX_ELCDIF
+	bool "ELCDIF"
+	depends on HAS_MCUX_ELCDIF
+	help
+	  Build the MCUX ELCDIF driver in the hal_nxp module.
+
+config MCUX_ENET
+	bool "ENET"
+	depends on HAS_MCUX_ENET
+	help
+	  Build the MCUX ENET driver in the hal_nxp module.
+
+config MCUX_FLASHIAP
+	bool "FLASHIAP"
+	depends on HAS_MCUX_IAP_LEGACY
+	help
+	  Build the MCUX FLASHIAP driver in the hal_nxp module.
+
+config MCUX_FLEXCAN
+	bool "FLEXCAN"
+	depends on HAS_MCUX_FLEXCAN
+	help
+	  Build the MCUX FLEXCAN driver in the hal_nxp module.
+
+config MCUX_FLEXCOMM_I2C
+	bool "FLEXCOMM I2C"
+	depends on HAS_MCUX_FLEXCOMM
+	help
+	  Build the MCUX FLEXCOMM I2C driver in the hal_nxp module.
+
+config MCUX_FLEXCOMM_SPI
+	bool "FLEXCOMM SPI"
+	depends on HAS_MCUX_FLEXCOMM
+	help
+	  Build the MCUX FLEXCOMM SPI driver in the hal_nxp module.
+
+config MCUX_FLEXCOMM_UART
+	bool "FLEXCOMM UART"
+	depends on HAS_MCUX_FLEXCOMM
+	help
+	  Build the MCUX FLEXCOMM UART driver in the hal_nxp module.
+
+config MCUX_FLEXSPI
+	bool "FLEXSPI"
+	depends on HAS_MCUX_FLEXSPI
+	help
+	  Build the MCUX FLEXSPI driver in the hal_nxp module.
+
+config MCUX_FTFX
+	bool "FTFX"
+	depends on HAS_MCUX_FTFX
+	help
+	  Build the MCUX FTFX driver in the hal_nxp module.
+
+config MCUX_FTM
+	bool "FTM"
+	depends on HAS_MCUX_FTM
+	help
+	  Build the MCUX FTM driver in the hal_nxp module.
+
+config MCUX_GPT
+	bool "GPT"
+	depends on HAS_MCUX_GPT
+	help
+	  Build the MCUX GPT driver in the hal_nxp module.
+
+config MCUX_I2C
+	bool "I2C"
+	help
+	  Build the MCUX I2C driver in the hal_nxp module.
+
+config MCUX_IAP
+	bool "IAP"
+	depends on HAS_MCUX_IAP
+	help
+	  Build the MCUX IAP driver in the hal_nxp module.
+
+config MCUX_IGPIO
+	bool "IGPIO"
+	depends on HAS_MCUX_IGPIO
+	help
+	  Build the MCUX IGPIO driver in the hal_nxp module.
+
+config MCUX_IUART
+	bool "IUART"
+	help
+	  Build the MCUX IUART driver in the hal_nxp module.
+
+config MCUX_LPADC
+	bool "LPADC"
+	depends on HAS_MCUX_LPADC
+	help
+	  Build the MCUX LPADC driver in the hal_nxp module.
+
+config MCUX_LPC_DMA
+	bool "LPC DMA"
+	depends on HAS_MCUX_LPC_DMA
+	help
+	  Build the MCUX LPC DMA driver in the hal_nxp module.
+
+config MCUX_LPC_GPIO
+	bool "LPC GPIO"
+	help
+	  Build the MCUX LPC GPIO driver in the hal_nxp module.
+
+config MCUX_LPI2C
+	bool "LPI2C"
+	depends on HAS_MCUX_LPI2C
+	help
+	  Build the MCUX LPI2C driver in the hal_nxp module.
+
+config MCUX_LPSCI
+	bool "LPSCI"
+	depends on HAS_MCUX_LPSCI
+	help
+	  Build the MCUX LPSCI driver in the hal_nxp module.
+
+config MCUX_LPSPI
+	bool "LPSPI"
+	depends on HAS_MCUX_LPSPI
+	help
+	  Build the MCUX LPSPI driver in the hal_nxp module.
+
+config MCUX_LPTMR
+	bool "LPTMR"
+	depends on HAS_MCUX_LPTMR
+	help
+	  Build the MCUX LPTMR driver in the hal_nxp module.
+
+config MCUX_LPUART
+	bool "LPUART"
+	depends on HAS_MCUX_LPUART
+	help
+	  Build the MCUX LPUART driver in the hal_nxp module.
+
+config MCUX_PIT
+	bool "PIT"
+	depends on HAS_MCUX_PIT
+	help
+	  Build the MCUX PIT driver in the hal_nxp module.
+
+config MCUX_PWM
+	bool "PWM"
+	depends on HAS_MCUX_PWM
+	help
+	  Build the MCUX PWM driver in the hal_nxp module.
+
+config MCUX_PWT
+	bool "PWT"
+	depends on HAS_MCUX_PWT
+	help
+	  Build the MCUX PWT driver in the hal_nxp module.
+
+config MCUX_RDC
+	bool "RDC"
+	depends on HAS_MCUX_RDC
+	default y
+	help
+	  Build the MCUX RDC driver in the hal_nxp module.
+
+config MCUX_RNG
+	bool "RNG"
+	depends on HAS_MCUX_RNG
+	help
+	  Build the MCUX RNG driver in the hal_nxp module.
+
+config MCUX_RNGA
+	bool "RNGA"
+	depends on HAS_MCUX_RNGA
+	help
+	  Build the MCUX RNGA driver in the hal_nxp module.
+
+config MCUX_RTC
+	bool "RTC"
+	depends on HAS_MCUX_RTC
+	help
+	  Build the MCUX RTC driver in the hal_nxp module.
+
+config MCUX_SMC
+	bool "SMC"
+	depends on HAS_MCUX_SMC
+	help
+	  Build the MCUX SMC driver in the hal_nxp module.
+
+config MCUX_TPM
+	bool "TPM"
+	depends on HAS_MCUX_TPM
+	help
+	  Build the MCUX TPM driver in the hal_nxp module.
+
+config MCUX_TRNG
+	bool "TRNG"
+	depends on HAS_MCUX_TRNG
+	help
+	  Build the MCUX TRNG driver in the hal_nxp module.
+
+config MCUX_UART
+	bool "UART"
+	help
+	  Build the MCUX UART driver in the hal_nxp module.
+
+config MCUX_WDOG
+	bool "WDOG"
+	help
+	  Build the MCUX WDOG driver in the hal_nxp module.
+
+config MCUX_WDOG32
+	bool "WDOG32"
+	depends on HAS_MCUX_WDOG32
+	help
+	  Build the MCUX WDOG32 driver in the hal_nxp module.
+
+config MCUX_WWDT
+	bool "WWDT"
+	depends on HAS_MCUX_WWDT
+	help
+	  Build the MCUX WWDT driver in the hal_nxp module.
+
+endif # MCUX
+
 endif # HAS_MCUX

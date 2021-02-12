@@ -4,6 +4,7 @@
 menuconfig DISPLAY_MCUX_ELCDIF
 	bool "MCUX eLCDIF driver"
 	depends on HAS_MCUX_ELCDIF
+	imply MCUX_ELCDIF
 	help
 	  Enable support for mcux eLCDIF driver.
 

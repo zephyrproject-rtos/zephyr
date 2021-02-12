@@ -6,5 +6,6 @@
 config COUNTER_MCUX_RTC
 	bool "MCUX RTC driver"
 	depends on HAS_MCUX_RTC
+	imply MCUX_RTC
 	help
 	  Enable support for mcux rtc driver.
