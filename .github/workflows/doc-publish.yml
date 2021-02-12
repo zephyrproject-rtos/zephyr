@@ -9,7 +9,9 @@ on:
     - cron:  '50 22 * * *'
   push:
     tags:
-    - '*'
+      # only publish v* tags, do not care about zephyr-v* which point to the
+      # same commit
+      - 'v*'
 
 jobs:
   doc-publish:
@@ -100,13 +102,15 @@ jobs:
            aws s3 sync  --quiet doc/_build/html s3://docs.zephyrproject.org/latest --delete
            echo "success sync of latest docs"
         else
-           DOC_RELEASE=${RELEASE}.0
+           # we want just the version, without the leading 'v'
+           DOC_RELEASE=${RELEASE:1}
            echo "publish release docs: ${DOC_RELEASE}"
            aws s3 sync  --quiet doc/_build/html s3://docs.zephyrproject.org/${DOC_RELEASE}
            echo "success sync of rel docs"
         fi
         if [ -d doc/_build/doxygen/html ]; then
-           echo "publish doxygen"
-           aws s3 sync  --quiet doc/_build/doxygen/html s3://docs.zephyrproject.org/apidoc/${RELEASE} --delete
+           API_RELEASE=${RELEASE:1}
+           echo "publish doxygen to apidoc/${API_RELEASE}"
+           aws s3 sync  --quiet doc/_build/doxygen/html s3://docs.zephyrproject.org/apidoc/${API_RELEASE} --delete
            echo "success publish of doxygen"
         fi
