@@ -382,6 +382,9 @@ Drivers and Sensors
 
 * ADC
 
+  * Added support for ADC on STM32G0 Series.
+  * Introduced the ``adc_sequence_options::user_data`` field.
+
 * CAN
 
   * We reworked the configuration API.
@@ -452,6 +455,8 @@ Drivers and Sensors
   * Add QSPI NOR Flash controller support for STM32 family.
   * Added NXP LPC legacy flash driver.
   * Added NXP FlexSPI flash driver for i.MX RT SoCs.
+  * Added support for nRF53 Series SoCs in the nRF QSPI NOR flash driver
+    (nrf_qspi_nor).
 
 * GPIO
 
@@ -548,6 +553,12 @@ Drivers and Sensors
 * PS/2
 
 * PWM
+
+  * Added support for generating PWM signal based on RTC in the pwm_nrf5_sw
+    driver.
+  * Added optional API for capturing the PWM pulse width and period.
+  * Added PWM capture driver for the NXP Kinetis Pulse Width Timer (PWT).
+  * Removed the DesignWare and PCA9685 controller drivers.
 
 * Sensor
 
