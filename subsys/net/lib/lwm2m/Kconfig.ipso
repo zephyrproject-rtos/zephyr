@@ -233,12 +233,20 @@ config LWM2M_IPSO_ONOFF_SWITCH_INSTANCE_COUNT
 	  This setting establishes the total count of IPSO On/Off Switch
 	  instances available to the LWM2M client.
 
-config LWM2M_IPSO_ONOFF_SWITCH_TIMESTAMP
-	bool "Add a timestamp resource to IPSO on/off switch objects"
-	default y
-	depends on LWM2M_IPSO_ONOFF_SWITCH && LWM2M_IPSO_TIMESTAMP_EXTENSIONS
+choice
+	prompt "IPSO On/Off Switch object version"
+	depends on LWM2M_IPSO_ONOFF_SWITCH
+	default LWM2M_IPSO_ONOFF_SWITCH_VERSION_1_0
 	help
-	  Add a non-standard timestamp resource to each on/off switch object.
+	  Select which version of the IPSO On/Off Switch object should be used.
+
+config LWM2M_IPSO_ONOFF_SWITCH_VERSION_1_0
+	bool "IPSO On/Off Switch object version 1.0"
+
+config LWM2M_IPSO_ONOFF_SWITCH_VERSION_1_1
+	bool "IPSO On/Off Switch object version 1.1"
+
+endchoice
 
 config LWM2M_IPSO_PUSH_BUTTON
 	bool "IPSO Push Button Support"

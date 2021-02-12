@@ -23,19 +23,14 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_resource_ids.h"
 
 #define SWITCH_VERSION_MAJOR 1
+
+#if defined(CONFIG_LWM2M_IPSO_ONOFF_SWITCH_VERSION_1_1)
+#define SWITCH_VERSION_MINOR 1
+#define SWITCH_MAX_ID 7
+#else
 #define SWITCH_VERSION_MINOR 0
-
-#ifdef CONFIG_LWM2M_IPSO_ONOFF_SWITCH_TIMESTAMP
-#define ADD_TIMESTAMPS 1
-#else
-#define ADD_TIMESTAMPS 0
-#endif
-
-#if ADD_TIMESTAMPS
-#define SWITCH_MAX_ID			6
-#else
-#define SWITCH_MAX_ID			5
-#endif
+#define SWITCH_MAX_ID 5
+#endif /* defined(CONFIG_LWM2M_IPSO_ONOFF_SWITCH_VERSION_1_1) */
 
 #define MAX_INSTANCE_COUNT	CONFIG_LWM2M_IPSO_ONOFF_SWITCH_INSTANCE_COUNT
 
@@ -65,8 +60,9 @@ static struct lwm2m_engine_obj_field fields[] = {
 	OBJ_FIELD_DATA(ON_TIME_RID, RW_OPT, U64),
 	OBJ_FIELD_DATA(OFF_TIME_RID, RW_OPT, U64),
 	OBJ_FIELD_DATA(APPLICATION_TYPE_RID, RW_OPT, STRING),
-#if ADD_TIMESTAMPS
-	OBJ_FIELD_DATA(TIMESTAMP_RID, RW_OPT, TIME),
+#if defined(CONFIG_LWM2M_IPSO_ONOFF_SWITCH_VERSION_1_1)
+	OBJ_FIELD_DATA(TIMESTAMP_RID, R_OPT, TIME),
+	OBJ_FIELD_DATA(FRACTIONAL_TIMESTAMP_RID, R_OPT, FLOAT32),
 #endif
 };
 
@@ -221,8 +217,10 @@ static struct lwm2m_engine_obj_inst *switch_create(uint16_t obj_inst_id)
 			 off_time_read_cb, NULL, NULL, time_post_write_cb, NULL);
 	INIT_OBJ_RES_OPTDATA(APPLICATION_TYPE_RID, res[avail], i,
 			     res_inst[avail], j);
-#if ADD_TIMESTAMPS
+#if defined(CONFIG_LWM2M_IPSO_ONOFF_SWITCH_VERSION_1_1)
 	INIT_OBJ_RES_OPTDATA(TIMESTAMP_RID, res[avail], i, res_inst[avail], j);
+	INIT_OBJ_RES_OPTDATA(FRACTIONAL_TIMESTAMP_RID, res[avail], i,
+			     res_inst[avail], j);
 #endif
 
 	inst[avail].resources = res[avail];
