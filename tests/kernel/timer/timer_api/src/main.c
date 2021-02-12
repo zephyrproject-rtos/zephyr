@@ -17,8 +17,8 @@ struct timer_data {
 #define DURATION 100
 #define PERIOD 50
 #define EXPIRE_TIMES 4
-#define WITHIN_ERROR(var, target, epsilon)       \
-		(((var) >= (target)) && ((var) <= (target) + (epsilon)))
+#define WITHIN_ERROR(var, target, epsilon) (abs((target) - (var)) <= (epsilon))
+
 /* ms can be converted precisely to ticks only when a ms is exactly
  * represented by an integral number of ticks.  If the conversion is
  * not precise, then the reverse conversion of a difference in ms can
@@ -81,6 +81,31 @@ static void init_timer_data(void)
 {
 	tdata.expire_cnt = 0;
 	tdata.stop_cnt = 0;
+
+	k_usleep(1); /* align to tick */
+	tdata.timestamp = k_uptime_get();
+}
+
+static bool interval_check(int64_t interval, int64_t desired)
+{
+	int64_t slop = INEXACT_MS_CONVERT ? 1 : 0;
+
+	/* Tickless kernels will advance time inside of an ISR, so it
+	 * is always possible (especially with high tick rates and
+	 * slow CPUs) for us to arrive at the uptime check above too
+	 * late to see a full period elapse before the next period.
+	 * We can alias at both sides of the interval, so two
+	 * one-ticks deltas (NOT one two-tick delta!)
+	 */
+	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		slop += 2 * k_ticks_to_ms_ceil32(1);
+	}
+
+	if (abs(interval - desired) > slop) {
+		return false;
+	}
+
+	return true;
 }
 
 /* entry routines */
@@ -91,13 +116,9 @@ static void duration_expire(struct k_timer *timer)
 
 	tdata.expire_cnt++;
 	if (tdata.expire_cnt == 1) {
-		TIMER_ASSERT((interval >= DURATION)
-			     || (INEXACT_MS_CONVERT
-				 && (interval == DURATION - 1)), timer);
+		TIMER_ASSERT(interval_check(interval, DURATION), timer);
 	} else {
-		TIMER_ASSERT((interval >= PERIOD)
-			     || (INEXACT_MS_CONVERT
-				 && (interval == PERIOD - 1)), timer);
+		TIMER_ASSERT(interval_check(interval, PERIOD), timer);
 	}
 
 	if (tdata.expire_cnt >= EXPIRE_TIMES) {
@@ -165,9 +186,7 @@ void test_timer_duration_period(void)
 {
 	init_timer_data();
 	/** TESTPOINT: init timer via k_timer_init */
-	k_usleep(1); /* align to tick */
 	k_timer_start(&duration_timer, K_MSEC(DURATION), K_MSEC(PERIOD));
-	tdata.timestamp = k_uptime_get();
 	busy_wait_ms(DURATION + PERIOD * EXPIRE_TIMES + PERIOD / 2);
 	/** TESTPOINT: check expire and stop times */
 	TIMER_ASSERT(tdata.expire_cnt == EXPIRE_TIMES, &duration_timer);
@@ -236,7 +255,6 @@ void test_timer_period_0(void)
 			      - BUSY_SLEW_THRESHOLD_TICKS(DURATION
 							  * USEC_PER_MSEC)),
 		      K_NO_WAIT);
-	tdata.timestamp = k_uptime_get();
 	busy_wait_ms(DURATION + 1);
 
 	/** TESTPOINT: ensure it is one-short timer */
@@ -454,6 +472,7 @@ void test_timer_status_sync(void)
 		TIMER_ASSERT(tdata.expire_cnt == (i + 1), &status_sync_timer);
 	}
 
+	init_timer_data();
 	k_timer_start(&status_sync_timer, K_MSEC(DURATION), K_MSEC(PERIOD));
 	busy_wait_ms(PERIOD*2);
 	zassert_true(k_timer_status_sync(&status_sync_timer), NULL);
@@ -482,9 +501,7 @@ void test_timer_k_define(void)
 {
 	init_timer_data();
 	/** TESTPOINT: init timer via k_timer_init */
-	k_usleep(1); /* align to tick */
 	k_timer_start(&ktimer, K_MSEC(DURATION), K_MSEC(PERIOD));
-	tdata.timestamp = k_uptime_get();
 	busy_wait_ms(DURATION + PERIOD * EXPIRE_TIMES + PERIOD / 2);
 
 	/** TESTPOINT: check expire and stop times */
@@ -620,7 +637,6 @@ void test_timer_remaining(void)
 
 
 	init_timer_data();
-	k_usleep(1); /* align to tick */
 	k_timer_start(&remain_timer, K_MSEC(DURATION), K_NO_WAIT);
 	busy_wait_ms(DURATION / 2);
 	rem_ticks = k_timer_remaining_ticks(&remain_timer);
@@ -700,7 +716,7 @@ void test_timeout_abs(void)
 	 * ticks, so we have to check that at least one case is
 	 * satisfied.
 	 */
-	k_usleep(1); /* align to tick */
+	init_timer_data();
 	k_timer_start(&remain_timer, t, K_FOREVER);
 	cap_ticks = k_uptime_ticks();
 	rem_ticks = k_timer_remaining_ticks(&remain_timer);
