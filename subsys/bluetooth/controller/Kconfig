@@ -606,7 +606,7 @@ endif # BT_CTLR
 
 config BT_CTLR_DEBUG_PINS_CPUAPP
 	bool "Bluetooth Controller Debug Pins"
-	depends on BOARD_NRF5340PDK_NRF5340_CPUAPP || BOARD_NRF5340DK_NRF5340_CPUAPP
+	depends on BOARD_NRF5340DK_NRF5340_CPUAPP
 	help
 	  Route debug GPIO toggling for the BLE Controller. Enable this when
 	  using Bluetooth Controller Debug Pins in co-processor and the main
