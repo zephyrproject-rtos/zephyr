@@ -263,11 +263,19 @@ config LWM2M_IPSO_PUSH_BUTTON_INSTANCE_COUNT
 	  This setting establishes the total count of IPSO Push Button
 	  instances available to the LWM2M client.
 
-config LWM2M_IPSO_PUSH_BUTTON_TIMESTAMP
-	bool "Add a timestamp resource to IPSO Push Button objects"
-	default y
-	depends on LWM2M_IPSO_PUSH_BUTTON && LWM2M_IPSO_TIMESTAMP_EXTENSIONS
+choice
+	prompt "IPSO Push Button object version"
+	depends on LWM2M_IPSO_PUSH_BUTTON
+	default LWM2M_IPSO_PUSH_BUTTON_VERSION_1_0
 	help
-	  Add a non-standard timestamp resource to each Push Button object.
+	  Select which version of the IPSO Push Button object should be used.
+
+config LWM2M_IPSO_PUSH_BUTTON_VERSION_1_0
+	bool "IPSO Push Button object version 1.0"
+
+config LWM2M_IPSO_PUSH_BUTTON_VERSION_1_1
+	bool "IPSO Push Button object version 1.1"
+
+endchoice
 
 endif # LWM2M_LWM2M_IPSO_SUPPORT
