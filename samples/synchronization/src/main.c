@@ -95,8 +95,37 @@ void threadA(void *dummy1, void *dummy2, void *dummy3)
 	ARG_UNUSED(dummy2);
 	ARG_UNUSED(dummy3);
 
+	/* invoke routine to ping-pong hello messages with threadB */
+	helloLoop(__func__, &threadA_sem, &threadB_sem);
+}
+
+K_THREAD_STACK_DEFINE(threadA_stack_area, STACKSIZE);
+static struct k_thread threadA_data;
+
+void main(void)
+{
+	__ASSERT_NO_MSG(arch_mem_coherent(&threadB_sem));
+	__ASSERT_NO_MSG(arch_mem_coherent(&threadA_sem));
+
+	__ASSERT_NO_MSG(arch_mem_coherent(&threadB_data));
+	__ASSERT_NO_MSG(arch_mem_coherent(&threadA_data));
+
+	printk("sync start on %d\n", arch_curr_cpu()->id);
+
+	/* spawn threadA */
+	k_tid_t tid = k_thread_create(&threadA_data, threadA_stack_area,
+			STACKSIZE, threadA, NULL, NULL, NULL,
+			PRIORITY, 0, K_FOREVER);
+
+	k_thread_name_set(tid, "thread_a");
+#if CONFIG_SCHED_CPU_MASK
+	k_thread_cpu_mask_disable(&threadA_data, 0);
+	k_thread_cpu_mask_enable(&threadA_data, 1);
+#endif
+	k_thread_start(&threadA_data);
+
 	/* spawn threadB */
-	k_tid_t tid = k_thread_create(&threadB_data, threadB_stack_area,
+	tid = k_thread_create(&threadB_data, threadB_stack_area,
 			STACKSIZE, threadB, NULL, NULL, NULL,
 			PRIORITY, 0, K_FOREVER);
 
@@ -106,10 +135,4 @@ void threadA(void *dummy1, void *dummy2, void *dummy3)
 	k_thread_cpu_mask_enable(&threadB_data, 0);
 #endif
 	k_thread_start(&threadB_data);
-
-	/* invoke routine to ping-pong hello messages with threadB */
-	helloLoop(__func__, &threadA_sem, &threadB_sem);
 }
-
-K_THREAD_DEFINE(thread_a, STACKSIZE, threadA, NULL, NULL, NULL,
-		PRIORITY, 0, 0);
