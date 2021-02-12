@@ -9,8 +9,35 @@
 #include "../../../lib/os/crc8_sw.c"
 #include "../../../lib/os/crc16_sw.c"
 #include "../../../lib/os/crc32_sw.c"
+#include "../../../lib/os/crc32c_sw.c"
 #include "../../../lib/os/crc7_sw.c"
 
+void test_crc32c(void)
+{
+	uint8_t test1[] = { 'A' };
+	uint8_t test2[] = { '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+	uint8_t test3[] = { 'Z', 'e', 'p', 'h', 'y', 'r' };
+
+	/* Single streams */
+	zassert_equal(crc32_c(0, test1, sizeof(test1), true, true),
+			0xE16DCDEE, NULL);
+	zassert_equal(crc32_c(0, test2, sizeof(test2), true, true),
+			0xE3069283, NULL);
+	zassert_equal(crc32_c(0, test3, sizeof(test3), true, true),
+			0xFCDEB58D, NULL);
+
+	/* Continuous streams - test1, test2 and test3 are considered part
+	 * of one big stream whose CRC needs to be calculated. Note that the
+	 * CRC of the first string is passed over to the second crc calculation,
+	 * second to third and so on.
+	 */
+	zassert_equal(crc32_c(0, test1, sizeof(test1), true, false),
+			0x1E923211, NULL);
+	zassert_equal(crc32_c(0x1E923211, test2, sizeof(test2), false, false),
+			0xB2983B83, NULL);
+	zassert_equal(crc32_c(0xB2983B83, test3, sizeof(test3), false, true),
+			0x7D4F9D21, NULL);
+}
 
 void test_crc32_ieee(void)
 {
@@ -205,6 +232,7 @@ void test_crc8(void)
 void test_main(void)
 {
 	ztest_test_suite(test_crc,
+			 ztest_unit_test(test_crc32c),
 			 ztest_unit_test(test_crc32_ieee),
 			 ztest_unit_test(test_crc16),
 			 ztest_unit_test(test_crc16_ansi),
