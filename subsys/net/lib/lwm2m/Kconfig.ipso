@@ -207,6 +207,21 @@ config LWM2M_IPSO_BUZZER_INSTANCE_COUNT
 	  This setting establishes the total count of IPSO Buzzer
 	  instances available to the LWM2M client.
 
+choice
+	prompt "IPSO Buzzer object version"
+	depends on LWM2M_IPSO_BUZZER
+	default LWM2M_IPSO_BUZZER_VERSION_1_0
+	help
+	  Select which version of the IPSO Buzzer object should be used.
+
+config LWM2M_IPSO_BUZZER_VERSION_1_0
+	bool "IPSO Buzzer object version 1.0"
+
+config LWM2M_IPSO_BUZZER_VERSION_1_1
+	bool "IPSO Buzzer object version 1.1"
+
+endchoice
+
 config LWM2M_IPSO_TIMER
 	bool "IPSO Light Control Support"
 	help
