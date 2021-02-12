@@ -109,6 +109,12 @@ config HAS_HW_NRF_PWM3
 config HAS_HW_NRF_QDEC
 	bool
 
+config HAS_HW_NRF_QDEC0
+	bool
+
+config HAS_HW_NRF_QDEC1
+	bool
+
 config HAS_HW_NRF_QSPI
 	bool
 

@@ -31,6 +31,8 @@ config SOC_NRF5340_CPUAPP
 	select HAS_HW_NRF_PWM1
 	select HAS_HW_NRF_PWM2
 	select HAS_HW_NRF_PWM3
+	select HAS_HW_NRF_QDEC0
+	select HAS_HW_NRF_QDEC1
 	select HAS_HW_NRF_QSPI
 	select HAS_HW_NRF_RTC0
 	select HAS_HW_NRF_RTC1
