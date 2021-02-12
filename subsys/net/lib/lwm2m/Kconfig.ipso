@@ -178,12 +178,20 @@ config LWM2M_IPSO_ACCELEROMETER_INSTANCE_COUNT
 	  This setting establishes the total count of IPSO Accelerometer
 	  instances available to the LWM2M client.
 
-config LWM2M_IPSO_ACCELEROMETER_TIMESTAMP
-	bool "Add timestamp resources to IPSO accelerometer objects"
-	default y
-	depends on LWM2M_IPSO_ACCELEROMETER && LWM2M_IPSO_TIMESTAMP_EXTENSIONS
+choice
+	prompt "IPSO Accelerometer object version"
+	depends on LWM2M_IPSO_ACCELEROMETER
+	default LWM2M_IPSO_ACCELEROMETER_VERSION_1_0
 	help
-	  Add a non-standard timestamp resource to each accelerometer object.
+	  Select which version of the IPSO Accelerometer object should be used.
+
+config LWM2M_IPSO_ACCELEROMETER_VERSION_1_0
+	bool "IPSO Accelerometer object version 1.0"
+
+config LWM2M_IPSO_ACCELEROMETER_VERSION_1_1
+	bool "IPSO Accelerometer object version 1.1"
+
+endchoice
 
 config LWM2M_IPSO_BUZZER
 	bool "IPSO Buzzer Support"

@@ -23,19 +23,14 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_resource_ids.h"
 
 #define ACCEL_VERSION_MAJOR 1
+
+#if defined(CONFIG_LWM2M_IPSO_ACCELEROMETER_VERSION_1_1)
+#define ACCEL_VERSION_MINOR 1
+#define ACCEL_MAX_ID 11
+#else
 #define ACCEL_VERSION_MINOR 0
-
-#ifdef CONFIG_LWM2M_IPSO_ACCELEROMETER_TIMESTAMP
-#define ADD_TIMESTAMPS 1
-#else
-#define ADD_TIMESTAMPS 0
-#endif
-
-#if ADD_TIMESTAMPS
-#define ACCEL_MAX_ID		7
-#else
-#define ACCEL_MAX_ID		6
-#endif
+#define ACCEL_MAX_ID 6
+#endif /* defined(CONFIG_LWM2M_IPSO_ACCELEROMETER_VERSION_1_1) */
 
 #define MAX_INSTANCE_COUNT	CONFIG_LWM2M_IPSO_ACCELEROMETER_INSTANCE_COUNT
 
@@ -64,8 +59,12 @@ static struct lwm2m_engine_obj_field fields[] = {
 	OBJ_FIELD_DATA(SENSOR_UNITS_RID, R_OPT, STRING),
 	OBJ_FIELD_DATA(MIN_RANGE_VALUE_RID, R_OPT, FLOAT32),
 	OBJ_FIELD_DATA(MAX_RANGE_VALUE_RID, R_OPT, FLOAT32),
-#if ADD_TIMESTAMPS
-	OBJ_FIELD_DATA(TIMESTAMP_RID, RW_OPT, TIME),
+#if defined(CONFIG_LWM2M_IPSO_ACCELEROMETER_VERSION_1_1)
+	OBJ_FIELD_DATA(APPLICATION_TYPE_RID, RW_OPT, STRING),
+	OBJ_FIELD_DATA(TIMESTAMP_RID, R_OPT, TIME),
+	OBJ_FIELD_DATA(FRACTIONAL_TIMESTAMP_RID, R_OPT, FLOAT32),
+	OBJ_FIELD_DATA(MEASUREMENT_QUALITY_INDICATOR_RID, R_OPT, U8),
+	OBJ_FIELD_DATA(MEASUREMENT_QUALITY_LEVEL_RID, R_OPT, U8),
 #endif
 };
 
@@ -123,8 +122,15 @@ static struct lwm2m_engine_obj_inst *accel_create(uint16_t obj_inst_id)
 	INIT_OBJ_RES_DATA(MAX_RANGE_VALUE_RID, res[avail], i, res_inst[avail],
 			  j, &accel_data[avail].max_range,
 			  sizeof(accel_data[avail].max_range));
-#if ADD_TIMESTAMPS
-	INIT_OBJ_RES_OPTDATA(TIMESTAMP_RID, res[avail], i,
+#if defined(CONFIG_LWM2M_IPSO_ACCELEROMETER_VERSION_1_1)
+	INIT_OBJ_RES_OPTDATA(APPLICATION_TYPE_RID, res[avail], i,
+			     res_inst[avail], j);
+	INIT_OBJ_RES_OPTDATA(TIMESTAMP_RID, res[avail], i, res_inst[avail], j);
+	INIT_OBJ_RES_OPTDATA(FRACTIONAL_TIMESTAMP_RID, res[avail], i,
+			     res_inst[avail], j);
+	INIT_OBJ_RES_OPTDATA(MEASUREMENT_QUALITY_INDICATOR_RID, res[avail],
+			     i, res_inst[avail], j);
+	INIT_OBJ_RES_OPTDATA(MEASUREMENT_QUALITY_LEVEL_RID, res[avail], i,
 			     res_inst[avail], j);
 #endif
 
