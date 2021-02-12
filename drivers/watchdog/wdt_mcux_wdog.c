@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(wdt_mcux_wdog);
 
 struct mcux_wdog_config {
 	WDOG_Type *base;
-	char *clock_name;
+	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	void (*irq_config_func)(const struct device *dev);
 };
@@ -71,7 +71,6 @@ static int mcux_wdog_install_timeout(const struct device *dev,
 {
 	const struct mcux_wdog_config *config = dev->config;
 	struct mcux_wdog_data *data = dev->data;
-	const struct device *clock_dev;
 	uint32_t clock_freq;
 
 	if (data->timeout_valid) {
@@ -79,12 +78,7 @@ static int mcux_wdog_install_timeout(const struct device *dev,
 		return -ENOMEM;
 	}
 
-	clock_dev = device_get_binding(config->clock_name);
-	if (clock_dev == NULL) {
-		return -EINVAL;
-	}
-
-	if (clock_control_get_rate(clock_dev, config->clock_subsys,
+	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
 				   &clock_freq)) {
 		return -EINVAL;
 	}
@@ -167,7 +161,7 @@ static void mcux_wdog_config_func_0(const struct device *dev);
 
 static const struct mcux_wdog_config mcux_wdog_config_0 = {
 	.base = (WDOG_Type *) DT_INST_REG_ADDR(0),
-	.clock_name = DT_INST_CLOCKS_LABEL(0),
+	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0)),
 	.clock_subsys = (clock_control_subsys_t)
 		DT_INST_CLOCKS_CELL(0, name),
 	.irq_config_func = mcux_wdog_config_func_0,

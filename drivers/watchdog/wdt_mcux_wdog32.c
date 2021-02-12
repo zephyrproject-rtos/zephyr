@@ -24,7 +24,7 @@ struct mcux_wdog32_config {
 #if DT_NODE_HAS_PROP(DT_INST_PHANDLE(0, clocks), clock_frequency)
 	uint32_t clock_frequency;
 #else /* !DT_NODE_HAS_PROP(DT_INST_PHANDLE(0, clocks), clock_frequency) */
-	char *clock_name;
+	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 #endif /* !DT_NODE_HAS_PROP(DT_INST_PHANDLE(0, clocks), clock_frequency) */
 	wdog32_clock_source_t clk_source;
@@ -93,12 +93,7 @@ static int mcux_wdog32_install_timeout(const struct device *dev,
 #if DT_NODE_HAS_PROP(DT_INST_PHANDLE(0, clocks), clock_frequency)
 	clock_freq = config->clock_frequency;
 #else /* !DT_NODE_HAS_PROP(DT_INST_PHANDLE(0, clocks), clock_frequency) */
-	const struct device *clock_dev = device_get_binding(config->clock_name);
-	if (clock_dev == NULL) {
-		return -EINVAL;
-	}
-
-	if (clock_control_get_rate(clock_dev, config->clock_subsys,
+	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
 				   &clock_freq)) {
 		return -EINVAL;
 	}
@@ -194,7 +189,7 @@ static const struct mcux_wdog32_config mcux_wdog32_config_0 = {
 #if DT_NODE_HAS_PROP(DT_INST_PHANDLE(0, clocks), clock_frequency)
 	.clock_frequency = DT_INST_PROP_BY_PHANDLE(0, clocks, clock_frequency),
 #else /* !DT_NODE_HAS_PROP(DT_INST_PHANDLE(0, clocks), clock_frequency) */
-	.clock_name = DT_INST_CLOCKS_LABEL(0),
+	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0)),
 	.clock_subsys = (clock_control_subsys_t)
 		DT_INST_CLOCKS_CELL(0, name),
 #endif /* DT_NODE_HAS_PROP(DT_INST_PHANDLE(0, clocks), clock_frequency) */
