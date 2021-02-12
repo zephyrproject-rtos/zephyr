@@ -16,6 +16,9 @@
  * world application would likely use the static approach for both threads.
  */
 
+#define PIN_THREADS (IS_ENABLED(CONFIG_SMP)		  \
+		     && IS_ENABLED(CONFIG_SCHED_CPU_MASK) \
+		     && (CONFIG_MP_NUM_CPUS > 1))
 
 /* size of stack area used by each thread */
 #define STACKSIZE 1024
@@ -84,6 +87,9 @@ void threadB(void *dummy1, void *dummy2, void *dummy3)
 	helloLoop(__func__, &threadB_sem, &threadA_sem);
 }
 
+K_THREAD_STACK_DEFINE(threadA_stack_area, STACKSIZE);
+static struct k_thread threadA_data;
+
 K_THREAD_STACK_DEFINE(threadB_stack_area, STACKSIZE);
 static struct k_thread threadB_data;
 
@@ -95,21 +101,32 @@ void threadA(void *dummy1, void *dummy2, void *dummy3)
 	ARG_UNUSED(dummy2);
 	ARG_UNUSED(dummy3);
 
-	/* spawn threadB */
-	k_tid_t tid = k_thread_create(&threadB_data, threadB_stack_area,
-			STACKSIZE, threadB, NULL, NULL, NULL,
-			PRIORITY, 0, K_FOREVER);
-
-	k_thread_name_set(tid, "thread_b");
-#if CONFIG_SCHED_CPU_MASK
-	k_thread_cpu_mask_disable(&threadB_data, 1);
-	k_thread_cpu_mask_enable(&threadB_data, 0);
-#endif
-	k_thread_start(&threadB_data);
-
 	/* invoke routine to ping-pong hello messages with threadB */
 	helloLoop(__func__, &threadA_sem, &threadB_sem);
 }
 
-K_THREAD_DEFINE(thread_a, STACKSIZE, threadA, NULL, NULL, NULL,
-		PRIORITY, 0, 0);
+void main(void)
+{
+	k_thread_create(&threadA_data, threadA_stack_area,
+			K_THREAD_STACK_SIZEOF(threadA_stack_area),
+			threadA, NULL, NULL, NULL,
+			PRIORITY, 0, K_FOREVER);
+	k_thread_name_set(&threadA_data, "thread_a");
+#if PIN_THREADS
+	k_thread_cpu_mask_clear(&threadA_data);
+	k_thread_cpu_mask_enable(&threadA_data, 0);
+#endif
+
+	k_thread_create(&threadB_data, threadB_stack_area,
+			K_THREAD_STACK_SIZEOF(threadB_stack_area),
+			threadB, NULL, NULL, NULL,
+			PRIORITY, 0, K_FOREVER);
+	k_thread_name_set(&threadB_data, "thread_b");
+#if PIN_THREADS
+	k_thread_cpu_mask_clear(&threadB_data);
+	k_thread_cpu_mask_enable(&threadB_data, 1);
+#endif
+
+	k_thread_start(&threadA_data);
+	k_thread_start(&threadB_data);
+}
