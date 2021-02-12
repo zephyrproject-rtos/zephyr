@@ -142,6 +142,27 @@ static void relay_status(struct bt_mesh_model *model,
 	k_sem_give(&cli->op_sync);
 }
 
+static void net_transmit_status(struct bt_mesh_model *model,
+				struct bt_mesh_msg_ctx *ctx,
+				struct net_buf_simple *buf)
+{
+	uint8_t *status;
+
+	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
+	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
+	       bt_hex(buf->data, buf->len));
+
+	if (cli->op_pending != OP_NET_TRANSMIT_STATUS) {
+		BT_WARN("Unexpected Net Transmit Status message");
+		return;
+	}
+
+	status = cli->op_param;
+	*status = net_buf_simple_pull_u8(buf);
+
+	k_sem_give(&cli->op_sync);
+}
+
 struct net_key_param {
 	uint8_t *status;
 	uint16_t net_idx;
@@ -699,6 +720,7 @@ const struct bt_mesh_model_op bt_mesh_cfg_cli_op[] = {
 	{ OP_FRIEND_STATUS,          1,   friend_status },
 	{ OP_GATT_PROXY_STATUS,      1,   gatt_proxy_status },
 	{ OP_RELAY_STATUS,           2,   relay_status },
+	{ OP_NET_TRANSMIT_STATUS,    1,   net_transmit_status },
 	{ OP_NET_KEY_STATUS,         3,   net_key_status },
 	{ OP_NET_KEY_LIST,           0,   net_key_list },
 	{ OP_APP_KEY_STATUS,         4,   app_key_status },
