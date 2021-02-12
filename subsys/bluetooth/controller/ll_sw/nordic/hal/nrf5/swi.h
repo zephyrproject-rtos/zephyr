@@ -21,8 +21,7 @@
 #elif defined(CONFIG_SOC_SERIES_NRF53X)
 
 /* nRF53 Series Engineering D and Revision 1 IRQ mapping */
-#if defined(CONFIG_SOC_NRF5340_CPUNET) && \
-	!defined(CONFIG_BOARD_NRF5340PDK_NRF5340_CPUNET)
+#if defined(CONFIG_SOC_NRF5340_CPUNET)
 
 #define HAL_SWI_RADIO_IRQ  SWI2_IRQn
 #define HAL_SWI_WORKER_IRQ RTC0_IRQn
@@ -34,21 +33,7 @@
 #define HAL_SWI_JOB_IRQ    SWI3_IRQn
 #endif
 
-/* nRF53 Series Engineering A IRQ mapping */
-#elif defined(CONFIG_BOARD_NRF5340PDK_NRF5340_CPUNET)
-
-/* NOTE: nRF5340 Engineering A Errata [29] SWI: SWIRQ is not functional */
-#define HAL_SWI_RADIO_IRQ  EGU0_IRQn
-#define HAL_SWI_WORKER_IRQ RTC0_IRQn
-
-#if !defined(CONFIG_BT_CTLR_LOW_LAT) && \
-	(CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
-#define HAL_SWI_JOB_IRQ    HAL_SWI_WORKER_IRQ
-#else
-#error "Use an unused IRQ line to implement a second SW IRQ."
-#endif
-
-#endif /* CONFIG_BOARD_NRF5340PDK_NRF5340_CPUNET */
+#endif /* CONFIG_SOC_NRF5340_CPUNET */
 
 #endif /* CONFIG_SOC_SERIES_NRF53X */
 
