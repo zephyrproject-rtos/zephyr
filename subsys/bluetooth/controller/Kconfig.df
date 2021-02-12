@@ -120,4 +120,16 @@ config BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN
 	  For general use cases Bluetooth Core 5.1 spec. required the value
 	  to be within range 2 up to 75.
 
+config BT_CTLR_DF_INIT_ANT_SEL_GPIOS
+	bool "Enable initialization of GPIOs responsible for antenna switching"
+	depends on BT_CTLR_DF_ANT_SWITCH_TX || BT_CTLR_DF_ANT_SWITCH_RX
+	default y
+	help
+	  Enable implicit initialization of GPIOs responsible for antenna
+	  switching during Radio initialization.
+	  If this feature is not enabled, the Radio initialization procedure will
+	  not initialize GPIOs pins selected to drive antenna switching.
+	  In such case application is responsible for appropriate GPIOs
+	  initialization.
+
 endif # BT_CTLR_DF
