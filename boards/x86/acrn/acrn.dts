@@ -15,7 +15,7 @@
 
 / {
 	model = "ACRN";
-	compatible = "intel,ia32";
+	compatible = "acrn";
 
 	aliases {
 		uart-0 = &uart0;
