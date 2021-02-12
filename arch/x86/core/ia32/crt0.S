@@ -206,6 +206,27 @@ __csSet:
 	movl %eax, %cr0
 #endif /* CONFIG_X86_MMU */
 
+#if (Z_X86_PHYS_ADDR(0x1000) != 0x1000)
+	/*
+	 * Page table loaded so we can start executing in
+	 * virtual address space.
+	 *
+	 * Note that __prep_c and z_x86_prep_c() must be
+	 * mapped in virtual address space in gen_mmu.py.
+	 *
+	 * This jump must be done due to relative
+	 * addressing code emitted by the toolchain
+	 * (think EIP + offset). If we are not already in
+	 * virtual address space, everything afterwards
+	 * would still be referenced via physical addresses
+	 * and will crash if we have a kernel bigger than
+	 * physical memory with demand paging (for example).
+	 */
+	ljmp	$CODE_SEG, $__prep_c
+
+__prep_c:
+#endif
+
 	pushl	%ebx		/* pointer to multiboot info, or NULL */
 	call	z_x86_prep_c	/* enter kernel; never returns */
 
