@@ -34,6 +34,7 @@ static struct bt_mcc_cb_t mcc_cb;
 
 uint64_t g_current_track_object_id;
 uint64_t g_track_segments_object_id;
+uint64_t g_current_group_object_id;
 
 CREATE_FLAG(ble_is_initialized);
 CREATE_FLAG(ble_link_is_ready);
@@ -41,6 +42,7 @@ CREATE_FLAG(mcc_is_initialized);
 CREATE_FLAG(discovery_done);
 CREATE_FLAG(current_track_object_id_read);
 CREATE_FLAG(track_segments_object_id_read);
+CREATE_FLAG(current_group_object_id_read);
 CREATE_FLAG(object_selected);
 CREATE_FLAG(metadata_read);
 
@@ -93,6 +95,19 @@ static void mcc_segments_obj_id_read_cb(struct bt_conn *conn, int err,
 	SET_FLAG(track_segments_object_id_read);
 }
 
+static void mcc_current_group_obj_id_read_cb(struct bt_conn *conn, int err,
+					     uint64_t id)
+{
+	if (err) {
+		FAIL("Current Group Object ID read failed (%d)\n", err);
+		return;
+	}
+
+	printk("Current Group Object ID read succeeded\n");
+	g_current_group_object_id = id;
+	SET_FLAG(current_group_object_id_read);
+}
+
 static void mcc_otc_obj_selected_cb(struct bt_conn *conn, int err)
 {
 	if (err) {
@@ -123,6 +138,7 @@ int do_mcc_init(void)
 	mcc_cb.discover_mcs     = &mcc_discover_mcs_cb;
 	mcc_cb.current_track_obj_id_read = &mcc_current_track_obj_id_read_cb;
 	mcc_cb.segments_obj_id_read      = &mcc_segments_obj_id_read_cb;
+	mcc_cb.current_group_obj_id_read = &mcc_current_group_obj_id_read_cb;
 	mcc_cb.otc_obj_selected = &mcc_otc_obj_selected_cb;
 	mcc_cb.otc_obj_metadata = &mcc_otc_obj_metadata_cb;
 
@@ -295,6 +311,54 @@ void test_main(void)
 	/* object was actually returned to us. */
 
 	printk("Succeeded to read track segments object\n");
+
+
+	/* Read current group object ******************************************/
+	err = bt_mcc_read_current_group_obj_id(default_conn);
+	if (err) {
+		FAIL("Failed to read current group object ID: %d", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(current_group_object_id_read);
+
+	/* TODO: Fix the instance pointer - it is neither valid nor used */
+	err = bt_otc_select_id(default_conn, bt_mcc_otc_inst(0),
+			       g_current_group_object_id);
+	if (err) {
+		FAIL("Failed to select current group object\n");
+		return;
+	}
+
+	WAIT_FOR_FLAG(object_selected);
+	UNSET_FLAG(object_selected);
+
+	/* TODO: Fix the instance pointer - it is neither valid nor used */
+	err = bt_otc_obj_metadata_read(default_conn, bt_mcc_otc_inst(0),
+				       BT_OTC_METADATA_REQ_ALL);
+	if (err) {
+		FAIL("Failed to read current group object metadata\n");
+		return;
+	}
+
+	WAIT_FOR_FLAG(metadata_read);
+	UNSET_FLAG(metadata_read);
+
+	err = bt_mcc_otc_read_current_group_object(default_conn);
+
+	if (err) {
+		FAIL("Failed to read current group object\n");
+		return;
+	}
+
+	/* TODO */
+	/* In principle, this should also result in a callback. */
+	/* But there is no application level callback for reading the current */
+	/* track yet. */
+	/* Therefore, the test ends here for now, without verifying that the */
+	/* object was actually returned to us. */
+
+	printk("Succeeded to read the current group object\n");
 
 	PASS("MCC passed\n");
 }
