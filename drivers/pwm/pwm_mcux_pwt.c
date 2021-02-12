@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(pwm_mcux_pwt, CONFIG_PWM_LOG_LEVEL);
 
 struct mcux_pwt_config {
 	PWT_Type *base;
-	char *clock_name;
+	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	pwt_clock_source_t pwt_clock_source;
 	pwt_clock_prescale_t prescale;
@@ -279,15 +279,8 @@ static int mcux_pwt_init(const struct device *dev)
 	const struct mcux_pwt_config *config = dev->config;
 	struct mcux_pwt_data *data = dev->data;
 	pwt_config_t *pwt_config = &data->pwt_config;
-	const struct device *clock_dev;
 
-	clock_dev = device_get_binding(config->clock_name);
-	if (clock_dev == NULL) {
-		LOG_ERR("could not get clock device");
-		return -EINVAL;
-	}
-
-	if (clock_control_get_rate(clock_dev, config->clock_subsys,
+	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
 				   &data->clock_freq)) {
 		LOG_ERR("could not get clock frequency");
 		return -EINVAL;
@@ -319,7 +312,7 @@ static const struct pwm_driver_api mcux_pwt_driver_api = {
 									\
 	static const struct mcux_pwt_config mcux_pwt_config_##n = {	\
 		.base = (PWT_Type *)DT_INST_REG_ADDR(n),		\
-		.clock_name = DT_INST_CLOCKS_LABEL(n),			\
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	\
 		.clock_subsys =						\
 		(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),	\
 		.pwt_clock_source = kPWT_BusClock,			\

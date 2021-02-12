@@ -27,7 +27,7 @@ LOG_MODULE_REGISTER(pwm_mcux_ftm);
 
 struct mcux_ftm_config {
 	FTM_Type *base;
-	char *clock_name;
+	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	ftm_clock_source_t ftm_clock_source;
 	ftm_clock_prescale_t prescale;
@@ -388,7 +388,6 @@ static int mcux_ftm_init(const struct device *dev)
 	const struct mcux_ftm_config *config = dev->config;
 	struct mcux_ftm_data *data = dev->data;
 	ftm_chnl_pwm_config_param_t *channel = data->channel;
-	const struct device *clock_dev;
 	ftm_config_t ftm_config;
 	int i;
 
@@ -397,13 +396,7 @@ static int mcux_ftm_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	clock_dev = device_get_binding(config->clock_name);
-	if (clock_dev == NULL) {
-		LOG_ERR("Could not get clock device");
-		return -EINVAL;
-	}
-
-	if (clock_control_get_rate(clock_dev, config->clock_subsys,
+	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
 				   &data->clock_freq)) {
 		LOG_ERR("Could not get clock frequency");
 		return -EINVAL;
@@ -468,7 +461,7 @@ static void mcux_ftm_config_func_##n(const struct device *dev) \
 #define FTM_DECLARE_CFG(n, CAPTURE_INIT) \
 static const struct mcux_ftm_config mcux_ftm_config_##n = { \
 	.base = (FTM_Type *)DT_INST_REG_ADDR(n),\
-	.clock_name = DT_INST_CLOCKS_LABEL(n), \
+	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)), \
 	.clock_subsys = (clock_control_subsys_t) \
 		DT_INST_CLOCKS_CELL(n, name), \
 	.ftm_clock_source = kFTM_FixedClock, \
