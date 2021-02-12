@@ -77,7 +77,7 @@ LOG_MODULE_REGISTER(can_mcux_flexcan);
 
 struct mcux_flexcan_config {
 	CAN_Type *base;
-	char *clock_name;
+	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	int clk_source;
 	uint32_t bitrate;
@@ -123,14 +123,8 @@ struct mcux_flexcan_data {
 static int mcux_flexcan_get_core_clock(const struct device *dev, uint32_t *rate)
 {
 	const struct mcux_flexcan_config *config = dev->config;
-	const struct device *clock_dev;
 
-	clock_dev = device_get_binding(config->clock_name);
-	if (clock_dev == NULL) {
-		return -EIO;
-	}
-
-	return clock_control_get_rate(clock_dev, config->clock_subsys, rate);
+	return clock_control_get_rate(config->clock_dev, config->clock_subsys, rate);
 }
 
 static int mcux_flexcan_set_timing(const struct device *dev,
@@ -784,7 +778,7 @@ static const struct can_driver_api mcux_flexcan_driver_api = {
 									\
 	static const struct mcux_flexcan_config mcux_flexcan_config_##id = { \
 		.base = (CAN_Type *)DT_INST_REG_ADDR(id),		\
-		.clock_name = DT_INST_CLOCKS_LABEL(id),			\
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),	\
 		.clock_subsys = (clock_control_subsys_t)		\
 			DT_INST_CLOCKS_CELL(id, name),			\
 		.clk_source = DT_INST_PROP(id, clk_source),		\
