@@ -165,11 +165,13 @@ static int rtc_stm32_set_alarm(const struct device *dev, uint8_t chan_id,
 		 * that tick+1 event occurs before alarm setting is finished.
 		 */
 		ticks += now + 1;
+		alarm_val = (time_t)(counter_ticks_to_us(dev, ticks) / USEC_PER_SEC)
+			+ T_TIME_OFFSET;
+	} else {
+		alarm_val = (time_t)(counter_ticks_to_us(dev, ticks) / USEC_PER_SEC);
 	}
 
 	LOG_DBG("Set Alarm: %d\n", ticks);
-
-	alarm_val = (time_t)(counter_ticks_to_us(dev, ticks) / USEC_PER_SEC);
 
 	gmtime_r(&alarm_val, &alarm_tm);
 
