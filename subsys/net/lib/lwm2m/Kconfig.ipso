@@ -8,14 +8,6 @@ menuconfig LWM2M_IPSO_SUPPORT
 
 if LWM2M_IPSO_SUPPORT
 
-config LWM2M_IPSO_TIMESTAMP_EXTENSIONS
-	bool "Nonstandard IPSO object Timestamp resources"
-	help
-	  If you enable this option, various IPSO objects supported below
-	  will optionally include timestamp resources (ID 5518).
-	  This is an LWM2M protocol extension which can be useful to associate
-	  times with events. If unsure, leave at the default n.
-
 config LWM2M_IPSO_TEMP_SENSOR
 	bool "IPSO Temperature Sensor Support"
 	help
