@@ -1117,6 +1117,10 @@ static inline bool isr_scan_init_adva_check(struct lll_scan *lll,
 	/* Only applies to initiator with no whitelist */
 	if (rl_idx != FILTER_IDX_NONE) {
 		return (rl_idx == lll->rl_idx);
+	} else if (!ull_filter_lll_rl_addr_allowed(pdu->tx_addr,
+						   pdu->adv_ind.addr,
+						   &rl_idx)) {
+		return false;
 	}
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 	return ((lll->adv_addr_type == pdu->tx_addr) &&
