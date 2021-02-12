@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(mcux_gpt, CONFIG_COUNTER_LOG_LEVEL);
 struct mcux_gpt_config {
 	/* info must be first element */
 	struct counter_config_info info;
-	char *clock_name;
+	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	GPT_Type *base;
 	clock_name_t clock_source;
@@ -172,16 +172,10 @@ static uint32_t mcux_gpt_get_max_relative_alarm(const struct device *dev)
 static int mcux_gpt_init(const struct device *dev)
 {
 	const struct mcux_gpt_config *config = dev->config;
-	const struct device *clock_dev;
 	gpt_config_t gptConfig;
 	uint32_t clock_freq;
 
-	clock_dev = device_get_binding(config->clock_name);
-	if (clock_dev == NULL) {
-		return -EINVAL;
-	}
-
-	if (clock_control_get_rate(clock_dev, config->clock_subsys,
+	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
 				   &clock_freq)) {
 		return -EINVAL;
 	}
@@ -219,7 +213,7 @@ static const struct counter_driver_api mcux_gpt_driver_api = {
 									\
 	static const struct mcux_gpt_config mcux_gpt_config_ ## n = {	\
 		.base = (void *)DT_INST_REG_ADDR(n),			\
-		.clock_name = DT_INST_CLOCKS_LABEL(n),			\
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	\
 		.clock_subsys =						\
 			(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
 		.info = {						\
