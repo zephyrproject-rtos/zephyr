@@ -170,7 +170,7 @@ extern "C" {
 #define DEVICE_DT_DEFINE(node_id, init_fn, pm_control_fn,		\
 			 data_ptr, cfg_ptr, level, prio, api_ptr)	\
 	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_NAME(node_id),		\
-			DT_PROP_OR(node_id, label, NULL), init_fn,	\
+			DT_PROP_OR(node_id, label, ""), init_fn,	\
 			pm_control_fn,					\
 			data_ptr, cfg_ptr, level, prio, api_ptr)
 

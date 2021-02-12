@@ -712,7 +712,7 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
 #define ETH_NET_DEVICE_DT_DEFINE(node_id, init_fn, pm_control_fn, data,	\
 			       cfg, prio, api, mtu)			\
 	Z_ETH_NET_DEVICE_INIT(node_id, Z_DEVICE_DT_DEV_NAME(node_id),	\
-			      DT_PROP_OR(node_id, label, NULL),		\
+			      DT_PROP_OR(node_id, label, ""),		\
 			      init_fn, pm_control_fn, data, cfg, prio,	\
 			      api, mtu)
 
