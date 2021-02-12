@@ -201,19 +201,4 @@
 
 #endif /* CONFIG_CPU_CORTEX_A72 */
 
-#ifndef _ASMLANGUAGE
-
-/* Core sysreg macros */
-#define read_sysreg(reg) ({					\
-	uint64_t val;						\
-	__asm__ volatile("mrs %0, " STRINGIFY(reg) : "=r" (val));\
-	val;							\
-})
-
-#define write_sysreg(val, reg) ({				\
-	__asm__ volatile("msr " STRINGIFY(reg) ", %0" : : "r" (val));\
-})
-
-#endif  /* !_ASMLANGUAGE */
-
 #endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH64_CPU_H_ */
