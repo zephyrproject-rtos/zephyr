@@ -85,6 +85,9 @@ ZTEST_BMEM struct scenario_data {
 
 	/* Whether this stack is part of an array of thread stacks */
 	bool is_array;
+
+	/* Whether the stack was allocated dynamically */
+	bool is_dynamic;
 } scenario_data;
 
 void stack_buffer_scenarios(void)
@@ -98,14 +101,9 @@ void stack_buffer_scenarios(void)
 	volatile char *pos;
 	int ret, expected;
 	uintptr_t base = (uintptr_t)stack_obj;
-	bool is_usermode;
+	bool is_usermode = k_is_user_context();
 	long int end_space;
 
-#ifdef CONFIG_USERSPACE
-	is_usermode = arch_is_user_context();
-#else
-	is_usermode = false;
-#endif
 	/* Dump interesting information */
 	stack_info_get(&stack_start, &stack_size);
 	printk("   - Thread reports buffer %p size %zu\n", stack_start,
@@ -114,7 +112,11 @@ void stack_buffer_scenarios(void)
 #ifdef CONFIG_USERSPACE
 	if (scenario_data.is_user) {
 		reserved = K_THREAD_STACK_RESERVED;
-		stack_buf = Z_THREAD_STACK_BUFFER(stack_obj);
+		if (scenario_data.is_dynamic) {
+			stack_buf = (char *)stack_obj;
+		} else {
+			stack_buf = Z_THREAD_STACK_BUFFER(stack_obj);
+		}
 		alignment = Z_THREAD_STACK_OBJ_ALIGN(stack_size);
 	} else
 #endif
@@ -124,11 +126,15 @@ void stack_buffer_scenarios(void)
 		alignment = Z_KERNEL_STACK_OBJ_ALIGN;
 	}
 
-	stack_end = stack_start + stack_size;
-	obj_end = (char *)stack_obj + obj_size;
-	obj_start = (char *)stack_obj;
-
-
+	if (scenario_data.is_dynamic) {
+		stack_end = stack_start + stack_size;
+		obj_start = (uint8_t *)ALIGN_UP(stack_end, 16);
+		obj_start = obj_start + sizeof(struct z_object) + sizeof(sys_dnode_t) + sizeof(struct rbnode);
+	} else {
+		stack_end = stack_start + stack_size;
+		obj_end = (char *)stack_obj + obj_size;
+		obj_start = (char *)stack_obj;
+	}
 
 	/* Assert that the created stack object, with the reserved data
 	 * removed, can hold a thread buffer of STEST_STACKSIZE
@@ -136,13 +142,19 @@ void stack_buffer_scenarios(void)
 	zassert_true(STEST_STACKSIZE <= (obj_size - reserved),
 		      "bad stack size in object");
 
-	/* Check that the stack info in the thread marks a region
-	 * completely contained within the stack object
-	 */
-	zassert_true(stack_end <= obj_end,
-		     "stack size in thread struct out of bounds (overflow)");
-	zassert_true(stack_start >= obj_start,
+	if (scenario_data.is_dynamic) {
+		/* With dynamic stacks, stack info is after the stack */
+		zassert_true(stack_end <= obj_start,
+			     "stack end is out of bounds(overflow)");
+	} else {
+		/* Check that the stack info in the thread marks a region
+	 	 * completely contained within the stack object
+	 	 */
+		zassert_true(stack_end <= obj_end,
+			     "stack size in thread struct out of bounds (overflow)");
+		zassert_true(stack_start >= obj_start,
 		     "stack size in thread struct out of bounds (underflow)");
+	}
 
 	/* Check that the base of the stack is aligned properly. */
 	zassert_true(base % alignment == 0,
@@ -201,8 +213,12 @@ void stack_buffer_scenarios(void)
 	zassert_true(carveout < stack_size,
 		     "Suspicious carve-out space reported");
 	/* 0 unless this is a stack array */
-	end_space = obj_end - stack_end;
-	printk("   - Unused objects space: %ld\n", end_space);
+	if (scenario_data.is_dynamic) {
+		end_space = obj_end - stack_end;
+	} else {
+		end_space = obj_start - stack_end;
+		printk("   - Unused objects space: %ld\n", end_space);
+	}
 
 	/* For all stacks, when k_thread_create() is called with a stack object,
 	 * it is equivalent to pass either the original requested stack size, or
@@ -311,8 +327,44 @@ void stest_thread_launch(uint32_t flags, bool drop)
 	printk("target thread unused stack space: %zu\n", unused);
 }
 
+struct cb_ctx {
+	void *name;
+	struct z_object *obj;
+};
+
+static void z_object_find_by_name_cb(struct z_object *zobj, void *context)
+{
+	struct cb_ctx *ctx = (struct cb_ctx *)context;
+
+	if (ctx->obj != NULL) {
+		/* only set ctx->obj once */
+		return;
+	}
+
+	if (zobj->name == ctx->name) {
+		ctx->obj = zobj;
+	}
+}
+
+struct z_object *z_impl_find_by_name(void *name)
+{
+	struct cb_ctx ctx = { name, NULL };
+
+	z_object_wordlist_foreach(z_object_find_by_name_cb, &ctx);
+
+	return ctx.obj;
+}
+
+#ifdef CONFIG_USERSPACE
+static inline struct z_object *z_vrfy_find_by_name(void *name)
+{
+	return z_impl_find_by_name(name);
+}
+#include <syscalls/find_by_name_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
 void scenario_entry(void *stack_obj, size_t obj_size, size_t reported_size,
-		    size_t declared_size, bool is_array)
+		    size_t declared_size, bool is_array, bool is_dynamic)
 {
 	bool is_user;
 	size_t metadata_size;
@@ -320,7 +372,12 @@ void scenario_entry(void *stack_obj, size_t obj_size, size_t reported_size,
 #ifdef CONFIG_USERSPACE
 	struct z_object *zo;
 
-	zo = z_object_find(stack_obj);
+	if (is_dynamic) {
+		zo = find_by_name(stack_obj);
+	} else {
+		zo = z_object_find(stack_obj);
+	}
+
 	if (zo != NULL) {
 		is_user = true;
 #ifdef CONFIG_GEN_PRIV_STACKS
@@ -344,6 +401,7 @@ void scenario_entry(void *stack_obj, size_t obj_size, size_t reported_size,
 	scenario_data.reported_size = reported_size;
 	scenario_data.declared_size = declared_size;
 	scenario_data.is_array = is_array;
+	scenario_data.is_dynamic = is_dynamic;
 
 	printk("Stack object %p[%zu]\n", stack_obj, obj_size);
 	printk(" - Testing supervisor mode\n");
@@ -386,33 +444,33 @@ void test_stack_buffer(void)
 
 	printk("\ntesting user_stack\n");
 	scenario_entry(user_stack, sizeof(user_stack), K_THREAD_STACK_SIZEOF(user_stack),
-		       STEST_STACKSIZE, false);
+		       STEST_STACKSIZE, false, false);
 
 	for (int i = 0; i < NUM_STACKS; i++) {
 		printk("\ntesting user_stack_array[%d]\n", i);
 		scenario_entry(user_stack_array[i],
 			       sizeof(user_stack_array[i]),
 			       K_THREAD_STACK_SIZEOF(user_stack_array[i]),
-			       STEST_STACKSIZE, true);
+			       STEST_STACKSIZE, true, false);
 	}
 
 	printk("\ntesting kern_stack\n");
 	scenario_entry(kern_stack, sizeof(kern_stack), K_KERNEL_STACK_SIZEOF(kern_stack),
-		       STEST_STACKSIZE, false);
+		       STEST_STACKSIZE, false, false);
 
 	for (int i = 0; i < NUM_STACKS; i++) {
 		printk("\ntesting kern_stack_array[%d]\n", i);
 		scenario_entry(kern_stack_array[i],
 			       sizeof(kern_stack_array[i]),
 			       K_KERNEL_STACK_SIZEOF(kern_stack_array[i]),
-			       STEST_STACKSIZE, true);
+			       STEST_STACKSIZE, true, false);
 	}
 
 	printk("\ntesting stest_member_stack\n");
 	scenario_entry(&stest_member_stack.stack,
 		       sizeof(stest_member_stack.stack),
 		       K_KERNEL_STACK_SIZEOF(stest_member_stack.stack),
-		       STEST_STACKSIZE, false);
+		       STEST_STACKSIZE, false, false);
 }
 
 void no_op_entry(void *p1, void *p2, void *p3)
@@ -485,14 +543,33 @@ void test_idle_stack(void)
 
 }
 
+static void test_dynamic(void)
+{
+	int ret;
+	k_thread_stack_t *stack;
+
+	printk("checking impossible size\n");
+	ret = k_alloc_thread_stack(SIZE_MAX / 2, &stack);
+	zassert_true(ret == -ENOMEM, "impossible size not detected: %d", ret);
+
+	printk("happy path\n");
+	ret = k_alloc_thread_stack(STEST_STACKSIZE, &stack);
+	zassert_true(ret == 0, "failed to obtain %u bytes of stack space: %d",
+		STEST_STACKSIZE, ret);
+
+	scenario_entry(stack, STEST_STACKSIZE, STEST_STACKSIZE, STEST_STACKSIZE,
+		false, true);
+}
+
 void test_main(void)
 {
 	k_thread_system_pool_assign(k_current_get());
 
 	/* Run a thread that self-exits, triggering idle cleanup */
-	ztest_test_suite(userspace_thread_stack,
+	ztest_test_suite(userspace_thread_stack,/*
 			 ztest_1cpu_unit_test(test_stack_buffer),
-			 ztest_1cpu_unit_test(test_idle_stack)
+			 ztest_1cpu_unit_test(test_idle_stack),*/
+			 ztest_1cpu_unit_test(test_dynamic)
 			 );
 	ztest_run_test_suite(userspace_thread_stack);
 }
