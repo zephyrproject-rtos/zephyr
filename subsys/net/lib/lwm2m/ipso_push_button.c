@@ -23,19 +23,14 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_resource_ids.h"
 
 #define BUTTON_VERSION_MAJOR 1
+
+#if defined(CONFIG_LWM2M_IPSO_PUSH_BUTTON_VERSION_1_1)
+#define BUTTON_VERSION_MINOR 1
+#define BUTTON_MAX_ID 5
+#else
 #define BUTTON_VERSION_MINOR 0
-
-#ifdef CONFIG_LWM2M_IPSO_PUSH_BUTTON_TIMESTAMP
-#define ADD_TIMESTAMPS 1
-#else
-#define ADD_TIMESTAMPS 0
-#endif
-
-#if ADD_TIMESTAMPS
-#define BUTTON_MAX_ID			4
-#else
-#define BUTTON_MAX_ID			3
-#endif
+#define BUTTON_MAX_ID 3
+#endif /* defined(CONFIG_LWM2M_IPSO_PUSH_BUTTON_VERSION_1_1) */
 
 #define MAX_INSTANCE_COUNT	CONFIG_LWM2M_IPSO_PUSH_BUTTON_INSTANCE_COUNT
 
@@ -60,8 +55,9 @@ static struct lwm2m_engine_obj_field fields[] = {
 	OBJ_FIELD_DATA(DIGITAL_INPUT_STATE_RID, R, BOOL),
 	OBJ_FIELD_DATA(DIGITAL_INPUT_COUNTER_RID, R_OPT, U64),
 	OBJ_FIELD_DATA(APPLICATION_TYPE_RID, RW_OPT, STRING),
-#if ADD_TIMESTAMPS
-	OBJ_FIELD_DATA(TIMESTAMP_RID, RW_OPT, TIME),
+#if defined(CONFIG_LWM2M_IPSO_PUSH_BUTTON_VERSION_1_1)
+	OBJ_FIELD_DATA(TIMESTAMP_RID, R_OPT, TIME),
+	OBJ_FIELD_DATA(FRACTIONAL_TIMESTAMP_RID, R_OPT, FLOAT32),
 #endif
 };
 
@@ -150,8 +146,10 @@ static struct lwm2m_engine_obj_inst *button_create(uint16_t obj_inst_id)
 			  sizeof(button_data[avail].counter));
 	INIT_OBJ_RES_OPTDATA(APPLICATION_TYPE_RID, res[avail], i,
 			     res_inst[avail], j);
-#if ADD_TIMESTAMPS
+#if defined(CONFIG_LWM2M_IPSO_PUSH_BUTTON_VERSION_1_1)
 	INIT_OBJ_RES_OPTDATA(TIMESTAMP_RID, res[avail], i, res_inst[avail], j);
+	INIT_OBJ_RES_OPTDATA(FRACTIONAL_TIMESTAMP_RID, res[avail], i,
+			     res_inst[avail], j);
 #endif
 
 	inst[avail].resources = res[avail];
