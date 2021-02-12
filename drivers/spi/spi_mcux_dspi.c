@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(spi_mcux_dspi);
 
 struct spi_mcux_config {
 	SPI_Type *base;
-	char *clock_name;
+	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	void (*irq_config_func)(const struct device *dev);
 	uint32_t pcs_sck_delay;
@@ -131,7 +131,6 @@ static int spi_mcux_configure(const struct device *dev,
 	struct spi_mcux_data *data = dev->data;
 	SPI_Type *base = config->base;
 	dspi_master_config_t master_config;
-	const struct device *clock_dev;
 	uint32_t clock_freq;
 	uint32_t word_size;
 
@@ -180,12 +179,7 @@ static int spi_mcux_configure(const struct device *dev,
 	ctar_config->lastSckToPcsDelayInNanoSec = config->sck_pcs_delay;
 	ctar_config->betweenTransferDelayInNanoSec = config->transfer_delay;
 
-	clock_dev = device_get_binding(config->clock_name);
-	if (clock_dev == NULL) {
-		return -EINVAL;
-	}
-
-	if (clock_control_get_rate(clock_dev, config->clock_subsys,
+	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
 				   &clock_freq)) {
 		return -EINVAL;
 	}
@@ -292,7 +286,7 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 	static void spi_mcux_config_func_##id(const struct device *dev); \
 	static const struct spi_mcux_config spi_mcux_config_##id = {	\
 		.base = (SPI_Type *)DT_INST_REG_ADDR(id),		\
-		.clock_name = DT_INST_CLOCKS_LABEL(id),			\
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),	\
 		.clock_subsys = 					\
 		(clock_control_subsys_t)DT_INST_CLOCKS_CELL(id, name),	\
 		.irq_config_func = spi_mcux_config_func_##id,		\

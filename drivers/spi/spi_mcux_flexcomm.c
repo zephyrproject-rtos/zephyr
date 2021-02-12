@@ -25,7 +25,7 @@ LOG_MODULE_REGISTER(spi_mcux_flexcomm, CONFIG_SPI_LOG_LEVEL);
 
 struct spi_mcux_config {
 	SPI_Type *base;
-	char *clock_name;
+	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	void (*irq_config_func)(const struct device *dev);
 };
@@ -48,7 +48,6 @@ struct stream {
 
 struct spi_mcux_data {
 	const struct device *dev;
-	const struct device *dev_clock;
 	spi_master_handle_t handle;
 	struct spi_context ctx;
 	size_t transfer_len;
@@ -176,7 +175,7 @@ static int spi_mcux_configure(const struct device *dev,
 		SPI_MasterGetDefaultConfig(&master_config);
 
 		/* Get the clock frequency */
-		if (clock_control_get_rate(data->dev_clock,
+		if (clock_control_get_rate(config->clock_dev,
 					   config->clock_subsys, &clock_freq)) {
 			return -EINVAL;
 		}
@@ -684,11 +683,6 @@ static int spi_mcux_init(const struct device *dev)
 	const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->data;
 
-	data->dev_clock = device_get_binding(config->clock_name);
-	if (data->dev_clock == NULL) {
-		return -ENODEV;
-	}
-
 	config->irq_config_func(dev);
 
 	data->dev = dev;
@@ -773,7 +767,7 @@ static void spi_mcux_config_func_##id(const struct device *dev) \
 	static const struct spi_mcux_config spi_mcux_config_##id = {	\
 		.base =							\
 		(SPI_Type *)DT_INST_REG_ADDR(id),			\
-		.clock_name = DT_INST_CLOCKS_LABEL(id),			\
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),	\
 		.clock_subsys =					\
 		(clock_control_subsys_t)DT_INST_CLOCKS_CELL(id, name),\
 		SPI_MCUX_FLEXCOMM_IRQ_HANDLER_FUNC(id)			\
