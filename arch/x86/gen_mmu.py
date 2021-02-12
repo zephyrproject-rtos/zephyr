@@ -267,14 +267,15 @@ class PtXd(Pt):
 class PtableSet(object):
     """Represents a complete set of page tables for any paging mode"""
 
-    def __init__(self, pages_start):
+    def __init__(self, pages_start, offset=0):
         """Instantiate a set of page tables which will be located in the
         image starting at the provided physical memory location"""
-        self.page_pos = pages_start
         self.toplevel = self.levels[0]()
+        self.virt_to_phys_offset = offset
+        self.page_pos = pages_start + offset
 
         debug("%s starting at physical address 0x%x" %
-              (self.__class__.__name__, pages_start))
+              (self.__class__.__name__, self.page_pos))
 
         # Database of page table pages. Maps physical memory address to
         # MMUTable objects, excluding the top-level table which is tracked
@@ -339,7 +340,7 @@ class PtableSet(object):
         for addr in range(virt_base, virt_base + size, scope):
             self.map_page(addr, 0, 0, True)
 
-    def map(self, phys_base, size, flags):
+    def identity_map(self, phys_base, size, flags):
         """Identity map an address range in the page tables, with provided
         access flags.
         """
@@ -353,6 +354,29 @@ class PtableSet(object):
                 continue
 
             self.map_page(addr, addr, flags, False)
+
+    def map(self, virt_base, size, flags):
+        """Map an address range in the page tables, with
+        virtual-to-physical address translation and provided access flags.
+        """
+        if self.virt_to_phys_offset == 0:
+            self.identity_map(virt_base, size, flags)
+        else:
+            phys_base = virt_base + self.virt_to_phys_offset
+
+            debug("Mapping 0x%x (%d) to 0x%x: %s" %
+                  (phys_base, size, virt_base, dump_flags(flags)))
+
+            align_check(phys_base, size)
+            align_check(virt_base, size)
+            for paddr in range(phys_base, phys_base + size, 4096):
+                if paddr == 0:
+                    # Never map the NULL page
+                    continue
+
+                vaddr = virt_base + (paddr - phys_base)
+
+                self.map_page(vaddr, paddr, flags, False)
 
     def set_region_perms(self, name, flags):
         """Set access permissions for a named region that is already mapped
@@ -458,6 +482,18 @@ def main():
 
     vm_base = syms["CONFIG_KERNEL_VM_BASE"]
     vm_size = syms["CONFIG_KERNEL_VM_SIZE"]
+    vm_offset = syms["CONFIG_KERNEL_VM_OFFSET"]
+
+    sram_base = syms["CONFIG_SRAM_BASE_ADDRESS"]
+
+    if isdef("CONFIG_SRAM_OFFSET"):
+        sram_offset = syms["CONFIG_SRAM_OFFSET"]
+    else:
+        sram_offset = 0
+
+    # Figure out if there is any need to do virtual-to-physical
+    # address translation
+    virt_to_phys_offset = (sram_base + sram_offset) - (vm_base + vm_offset)
 
     if isdef("CONFIG_ARCH_MAPS_ALL_RAM"):
         image_base = syms["CONFIG_SRAM_BASE_ADDRESS"]
@@ -467,10 +503,10 @@ def main():
         image_size = syms["z_mapped_size"]
     ptables_phys = syms["z_x86_pagetables_start"]
 
-    debug("Address space: 0x%x - 0x%x size %x" %
+    debug("Address space: 0x%x - 0x%x size 0x%x" %
           (vm_base, vm_base + vm_size, vm_size))
 
-    debug("Zephyr image: 0x%x - 0x%x size %x" %
+    debug("Zephyr image: 0x%x - 0x%x size 0x%x" %
           (image_base, image_base + image_size, image_size))
 
     is_perm_regions = isdef("CONFIG_SRAM_REGION_PERMISSIONS")
@@ -485,7 +521,7 @@ def main():
     else:
         map_flags = FLAG_P
 
-    pt = pclass(ptables_phys)
+    pt = pclass(ptables_phys, offset=virt_to_phys_offset)
     # Instantiate all the paging structures for the address space
     pt.reserve(vm_base, vm_size)
     # Map the zephyr image
