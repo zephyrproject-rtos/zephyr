@@ -2,6 +2,8 @@
  * Copyright 2019 Broadcom
  * The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
  *
+ * Copyright (c) 2021 BayLibre, SAS
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -45,7 +47,7 @@ static inline unsigned int table_index(uint64_t *pte)
 {
 	unsigned int i = (pte - xlat_tables) / Ln_XLAT_NUM_ENTRIES;
 
-	__ASSERT(i < CONFIG_MAX_XLAT_TABLES, "table out of range");
+	__ASSERT(i < CONFIG_MAX_XLAT_TABLES, "table %p out of range", pte);
 	return i;
 }
 
@@ -54,6 +56,7 @@ static void free_table(uint64_t *table)
 {
 	unsigned int i = table_index(table);
 
+	MMU_DEBUG("freeing table [%d]%p\n", i, table);
 	__ASSERT(xlat_use_count[i] == 1, "table still in use");
 	xlat_use_count[i] = 0;
 }
@@ -290,6 +293,194 @@ move_on:
 
 	return 0;
 }
+
+#ifdef CONFIG_USERSPACE
+
+static uint64_t *dup_table(uint64_t *src_table, unsigned int level)
+{
+	uint64_t *dst_table = new_table();
+	int i;
+
+	if (!dst_table) {
+		return NULL;
+	}
+
+	MMU_DEBUG("dup (level %d) [%d]%p to [%d]%p\n", level,
+		  table_index(src_table), src_table,
+		  table_index(dst_table), dst_table);
+
+	for (i = 0; i < Ln_XLAT_NUM_ENTRIES; i++) {
+		dst_table[i] = src_table[i];
+		if (is_table_desc(src_table[i], level)) {
+			table_usage(pte_desc_table(src_table[i]), 1);
+		}
+		if (!is_free_desc(dst_table[i])) {
+			table_usage(dst_table, 1);
+		}
+	}
+
+	return dst_table;
+}
+
+static int privatize_table(uint64_t *dst_table, uint64_t *src_table,
+			   uintptr_t virt, size_t size, unsigned int level)
+{
+	size_t step, level_size = 1ULL << LEVEL_TO_VA_SIZE_SHIFT(level);
+	unsigned int i;
+	int ret;
+
+	for ( ; size; virt += step, size -= step) {
+		step = level_size - (virt & (level_size - 1));
+		if (step > size) {
+			step = size;
+		}
+		i = XLAT_TABLE_VA_IDX(virt, level);
+
+		if (!is_table_desc(dst_table[i], level) ||
+		    !is_table_desc(src_table[i], level)) {
+			/* this entry is already private */
+			continue;
+		}
+
+		uint64_t *dst_subtable = pte_desc_table(dst_table[i]);
+		uint64_t *src_subtable = pte_desc_table(src_table[i]);
+
+		if (dst_subtable == src_subtable) {
+			/* need to make a private copy of this table */
+			dst_subtable = dup_table(src_subtable, level + 1);
+			if (!dst_subtable) {
+				return -ENOMEM;
+			}
+			set_pte_table_desc(&dst_table[i], dst_subtable, level);
+			table_usage(dst_subtable, 1);
+			table_usage(src_subtable, -1);
+		}
+
+		ret = privatize_table(dst_subtable, src_subtable,
+				      virt, step, level + 1);
+		if (ret) {
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+/*
+ * Make the given virtual address range private in dst_pt with regards to
+ * src_pt. By "private" this means that corresponding page tables in dst_pt
+ * will be duplicated so not to share the same table(s) with src_pt.
+ * If corresponding page tables in dst_pt are already distinct from src_pt
+ * then nothing is done. This allows for subsequent mapping changes in that
+ * range to affect only dst_pt.
+ */
+static int privatize_page_range(struct arm_mmu_ptables *dst_pt,
+				struct arm_mmu_ptables *src_pt,
+				uintptr_t virt_start, size_t size,
+				const char *name)
+{
+	MMU_DEBUG("privatize [%s]: virt %lx size %lx\n",
+		  name, virt_start, size);
+	return privatize_table(dst_pt->base_xlat_table, src_pt->base_xlat_table,
+			       virt_start, size, BASE_XLAT_LEVEL);
+}
+
+static void discard_table(uint64_t *table, unsigned int level)
+{
+	unsigned int i;
+
+	for (i = 0; Ln_XLAT_NUM_ENTRIES; i++) {
+		if (is_table_desc(table[i], level)) {
+			table_usage(pte_desc_table(table[i]), -1);
+			discard_table(pte_desc_table(table[i]), level + 1);
+		}
+		if (!is_free_desc(table[i])) {
+			table[i] = 0;
+			table_usage(table, -1);
+		}
+	}
+	free_table(table);
+}
+
+static int globalize_table(uint64_t *dst_table, uint64_t *src_table,
+			   uintptr_t virt, size_t size, unsigned int level)
+{
+	size_t step, level_size = 1ULL << LEVEL_TO_VA_SIZE_SHIFT(level);
+	unsigned int i;
+	int ret;
+
+	for ( ; size; virt += step, size -= step) {
+		step = level_size - (virt & (level_size - 1));
+		if (step > size) {
+			step = size;
+		}
+		i = XLAT_TABLE_VA_IDX(virt, level);
+
+		if (dst_table[i] == src_table[i]) {
+			/* already identical to global table */
+			continue;
+		}
+
+		if (step != level_size) {
+			/* boundary falls in the middle of this pte */
+			__ASSERT(is_table_desc(src_table[i], level),
+				 "can't have partial block pte here");
+			if (!is_table_desc(dst_table[i], level)) {
+				/* we need more fine grained boundaries */
+				if (!expand_to_table(&dst_table[i], level)) {
+					return -ENOMEM;
+				}
+			}
+			ret = globalize_table(pte_desc_table(dst_table[i]),
+					      pte_desc_table(src_table[i]),
+					      virt, step, level + 1);
+			if (ret) {
+				return ret;
+			}
+			continue;
+		}
+
+		/* we discard current pte and replace with global one */
+
+		uint64_t *old_table = is_table_desc(dst_table[i], level) ?
+					pte_desc_table(dst_table[i]) : NULL;
+
+		dst_table[i] = src_table[i];
+		debug_show_pte(&dst_table[i], level);
+		if (is_table_desc(src_table[i], level)) {
+			table_usage(pte_desc_table(src_table[i]), 1);
+		}
+
+		if (old_table) {
+			/* we can discard the whole branch */
+			table_usage(old_table, -1);
+			discard_table(old_table, level + 1);
+		}
+	}
+
+	return 0;
+}
+
+/*
+ * Globalize the given virtual address range in dst_pt from src_pt. We make
+ * it global by sharing as much page table content from src_pt as possible,
+ * including page tables themselves, and corresponding private tables in
+ * dst_pt are then discarded. If page tables in the given range are already
+ * shared then nothing is done. If page table sharing is not possible then
+ * page table entries in dst_pt are synchronized with those from src_pt.
+ */
+static int globalize_page_range(struct arm_mmu_ptables *dst_pt,
+				struct arm_mmu_ptables *src_pt,
+				uintptr_t virt_start, size_t size,
+				const char *name)
+{
+	MMU_DEBUG("globalize [%s]: virt %lx size %lx\n",
+		  name, virt_start, size);
+	return globalize_table(dst_pt->base_xlat_table, src_pt->base_xlat_table,
+			       virt_start, size, BASE_XLAT_LEVEL);
+}
+
+#endif /* CONFIG_USERSPACE */
 
 static uint64_t get_region_desc(uint32_t attrs)
 {
