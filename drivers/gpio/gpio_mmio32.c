@@ -41,7 +41,7 @@ static int gpio_mmio32_config(const struct device *dev,
 
 	if (flags & ~(GPIO_INPUT | GPIO_OUTPUT |
 		      GPIO_OUTPUT_INIT_LOW | GPIO_OUTPUT_INIT_HIGH |
-		      GPIO_ACTIVE_LOW)) {
+		      GPIO_ACTIVE_LOW | GPIO_OUTPUT_INIT_LOGICAL)) {
 		/* We ignore direction and fake polarity, rest is unsupported */
 		return -ENOTSUP;
 	}
