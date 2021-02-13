@@ -490,7 +490,7 @@ DEVICE_DT_INST_DEFINE(0,
 		    &uart_cmsdk_apb_driver_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-#if DT_INST_IRQ_HAS_CELL(0, irq)
+#if DT_NUM_IRQS(DT_DRV_INST(0)) == 1
 static void uart_cmsdk_apb_irq_config_func_0(const struct device *dev)
 {
 	IRQ_CONNECT(DT_INST_IRQN(0),
@@ -555,7 +555,7 @@ DEVICE_DT_INST_DEFINE(1,
 		    &uart_cmsdk_apb_driver_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-#if DT_INST_IRQ_HAS_CELL(1, irq)
+#if DT_NUM_IRQS(DT_DRV_INST(1)) == 1
 static void uart_cmsdk_apb_irq_config_func_1(const struct device *dev)
 {
 	IRQ_CONNECT(DT_INST_IRQN(1),
@@ -620,15 +620,15 @@ DEVICE_DT_INST_DEFINE(2,
 		    &uart_cmsdk_apb_driver_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-#ifdef CMSDK_APB_UART_2_IRQ
+#if DT_NUM_IRQS(DT_DRV_INST(2)) == 1
 static void uart_cmsdk_apb_irq_config_func_2(const struct device *dev)
 {
-	IRQ_CONNECT(CMSDK_APB_UART_2_IRQ,
+	IRQ_CONNECT(DT_INST_IRQN(2),
 		    DT_INST_IRQ_BY_NAME(2, priority, irq),
 		    uart_cmsdk_apb_isr,
 		    DEVICE_DT_INST_GET(2),
 		    0);
-	irq_enable(CMSDK_APB_UART_2_IRQ);
+	irq_enable(DT_INST_IRQN(2));
 }
 #else
 static void uart_cmsdk_apb_irq_config_func_2(const struct device *dev)
@@ -685,15 +685,15 @@ DEVICE_DT_INST_DEFINE(3,
 		    &uart_cmsdk_apb_driver_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-#ifdef CMSDK_APB_UART_3_IRQ
+#if DT_NUM_IRQS(DT_DRV_INST(3)) == 1
 static void uart_cmsdk_apb_irq_config_func_3(const struct device *dev)
 {
-	IRQ_CONNECT(CMSDK_APB_UART_3_IRQ,
-		    DT_INST_IRQ_BY_NAME(3, priority, irq),
+	IRQ_CONNECT(DT_INST_IRQN(3),
+		    DT_INST_IRQ(3, priority),
 		    uart_cmsdk_apb_isr,
 		    DEVICE_DT_INST_GET(3),
 		    0);
-	irq_enable(CMSDK_APB_UART_3_IRQ);
+	irq_enable(DT_INST_IRQN(3));
 }
 #else
 static void uart_cmsdk_apb_irq_config_func_3(const struct device *dev)
@@ -750,15 +750,15 @@ DEVICE_DT_INST_DEFINE(4,
 		    &uart_cmsdk_apb_driver_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-#ifdef CMSDK_APB_UART_4_IRQ
+#if DT_NUM_IRQS(DT_DRV_INST(4)) == 1
 static void uart_cmsdk_apb_irq_config_func_4(const struct device *dev)
 {
-	IRQ_CONNECT(CMSDK_APB_UART_4_IRQ,
+	IRQ_CONNECT(DT_INST_IRQN(4),
 		    DT_INST_IRQ_BY_NAME(4, priority, irq),
 		    uart_cmsdk_apb_isr,
 		    DEVICE_DT_INST_GET(4),
 		    0);
-	irq_enable(CMSDK_APB_UART_4_IRQ);
+	irq_enable(DT_INST_IRQN(4));
 }
 #else
 static void uart_cmsdk_apb_irq_config_func_4(const struct device *dev)
