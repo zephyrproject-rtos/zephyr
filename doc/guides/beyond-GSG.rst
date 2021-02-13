@@ -122,6 +122,20 @@ repo.
    repository, switch branches in it, or perform a ``git bisect`` inside of
    it.
 
+Keeping Zephyr updated
+======================
+
+To update the Zephyr project source code, you need to get the latest
+changes via ``git``. Afterwards, run ``west update`` as mentioned in
+the previous paragraph.
+
+.. code-block:: console
+
+   # replace zephyrproject with the path you gave west init
+   cd zephyrproject/zephyr
+   git pull
+   west update
+
 Export Zephyr CMake package
 ***************************
 
