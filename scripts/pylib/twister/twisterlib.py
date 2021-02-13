@@ -1560,7 +1560,7 @@ class TestCase(DisablePyTestCollectionMixin):
     def __init__(self, testcase_root, workdir, name):
         """TestCase constructor.
 
-        This gets called by TestSuite as it finds and reads test yaml files.
+        This gets called by TestRunner as it finds and reads test yaml files.
         Multiple TestCase instances may be generated from a single testcase.yaml,
         each one corresponds to an entry within that file.
 
@@ -2540,7 +2540,7 @@ class ProjectBuilder(FilterBuilder):
 
         sys.stdout.flush()
 
-class TestSuite(DisablePyTestCollectionMixin):
+class TestRunner(DisablePyTestCollectionMixin):
     config_re = re.compile('(CONFIG_[A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
     dt_re = re.compile('([A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
 
@@ -2587,7 +2587,7 @@ class TestSuite(DisablePyTestCollectionMixin):
         else:
             self.board_roots = board_root_list
 
-        # Testsuite Options
+        # Test runner Options
         self.coverage_platform = []
         self.build_only = False
         self.cmake_only = False
