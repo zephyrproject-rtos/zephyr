@@ -1576,15 +1576,15 @@ class DisablePyTestCollectionMixin(object):
     __test__ = False
 
 
-class TestCase(DisablePyTestCollectionMixin):
+class TestApplication(DisablePyTestCollectionMixin):
     """Class representing a test application
     """
 
     def __init__(self, testcase_root, workdir, name):
-        """TestCase constructor.
+        """TestApplication constructor.
 
         This gets called by TestRunner as it finds and reads test yaml files.
-        Multiple TestCase instances may be generated from a single testcase.yaml,
+        Multiple test scenarios be generated from a single testcase.yaml,
         each one corresponds to an entry within that file.
 
         We need to have a unique name for every single test case. Since
@@ -1757,9 +1757,9 @@ Tests should reference the category and subsystem with a dot as a separator.
 
 
 class TestInstance(DisablePyTestCollectionMixin):
-    """Class representing the execution of a particular TestCase on a platform
+    """Class representing the execution of a test scenario on a platform
 
-    @param test The TestCase object we want to build/execute
+    @param test The TestApplication object we want to build/execute
     @param platform Platform object that we want to build and run against
     @param base_outdir Base directory for all test results. The actual
         out directory used is <outdir>/<platform>/<test case name>
@@ -1924,7 +1924,7 @@ class TestInstance(DisablePyTestCollectionMixin):
             self.results[k] = status_to_verdict[self.status]
 
     def __repr__(self):
-        return "<TestCase %s on %s>" % (self.testcase.name, self.platform.name)
+        return "<TestApplication %s on %s>" % (self.testcase.name, self.platform.name)
 
 
 class CMake():
@@ -2943,7 +2943,7 @@ class TestRunner(DisablePyTestCollectionMixin):
                     workdir = os.path.relpath(tc_path, root)
 
                     for name in parsed_data.tests.keys():
-                        tc = TestCase(root, workdir, name)
+                        tc = TestApplication(root, workdir, name)
 
                         tc_dict = parsed_data.get_test(name, self.testcase_valid_keys)
 
