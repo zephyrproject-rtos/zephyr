@@ -12,7 +12,7 @@ build each test case on one platform per architecture, using a precedence
 list defined in an architecture configuration file, and if possible
 run the tests in any available emulators or simulators on the system.
 
-Test cases are detected by the presence of a 'testcase.yaml' or a sample.yaml
+Test cases are detected by the presence of a 'tests.yaml' or a sample.yaml
 files in the application's project directory. This file may contain one or more
 blocks, each identifying a test scenario. The title of the block is a name for
 the test case, which only needs to be unique for the test cases specified in
@@ -261,7 +261,7 @@ Artificially long but functional example:
       --test      tests/kernel/fifo/fifo_api/kernel.fifo.poll
 
    "kernel.fifo.poll" is one of the test section names in
-                                 __/fifo_api/testcase.yaml
+                                 __/fifo_api/tests.yaml
     """)
 
     parser.add_argument("--force-toolchain", action="store_true",
@@ -314,14 +314,14 @@ Artificially long but functional example:
     test_xor_subtest.add_argument(
         "-s", "--test", action="append",
         help="Run only the specified test cases. These are named by "
-             "<path/relative/to/Zephyr/base/section.name.in.testcase.yaml>")
+             "<path/relative/to/Zephyr/base/section.name.in.tests.yaml>")
 
     test_xor_subtest.add_argument(
         "--sub-test", action="append",
         help="""Recursively find sub-test functions and run the entire
         test section where they were found, including all sibling test
         functions. Sub-tests are named by:
-        section.name.in.testcase.yaml.function_name_without_test_prefix
+        section.name.in.tests.yaml.function_name_without_test_prefix
         Example: kernel.fifo.poll.fifo_loop
         """)
 
@@ -547,11 +547,12 @@ Artificially long but functional example:
         help="Re-use the outdir before building. Will result in "
              "faster compilation since builds will be incremental.")
     case_select.add_argument(
-        "-T", "--testcase-root", action="append", default=[],
-        help="Base directory to recursively search for test cases. All "
-             "testcase.yaml files under here will be processed. May be "
-             "called multiple times. Defaults to the 'samples/' and "
-             "'tests/' directories at the base of the Zephyr tree.")
+            "-T", "--testcase-root", action="append",
+            default=[],
+            help="Base directory to recursively search for tests. All "
+            "tests.yaml files under here will be processed. "
+            "Defaults to the 'samples/' and "
+            "'tests/' directories at the base of the Zephyr tree.")
 
     board_root_list = ["%s/boards" % ZEPHYR_BASE,
                        "%s/scripts/pylib/twister/boards" % ZEPHYR_BASE]
@@ -570,12 +571,12 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
     parser.add_argument(
         "-S", "--enable-slow", action="store_true",
         help="Execute time-consuming test cases that have been marked "
-             "as 'slow' in testcase.yaml. Normally these are only built.")
+             "as 'slow' in tests.yaml. Normally these are only built.")
 
     parser.add_argument(
         "-K", "--force-platform", action="store_true",
         help="""Force testing on selected platforms,
-        even if they are excluded in the test configuration (testcase.yaml)"""
+        even if they are excluded in the test configuration (tests.yaml)"""
     )
 
     parser.add_argument(

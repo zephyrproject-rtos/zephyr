@@ -1584,11 +1584,11 @@ class TestApplication(DisablePyTestCollectionMixin):
         """TestApplication constructor.
 
         This gets called by TestRunner as it finds and reads test yaml files.
-        Multiple test scenarios be generated from a single testcase.yaml,
+        Multiple test scenarios be generated from a single tests.yaml,
         each one corresponds to an entry within that file.
 
         We need to have a unique name for every single test case. Since
-        a testcase.yaml can define multiple tests, the canonical name for
+        a tests.yaml can define multiple tests, the canonical name for
         the test case is <workdir>/<name>.
 
         @param testcase_root os.path.abspath() of one of the --testcase-root
@@ -1598,7 +1598,7 @@ class TestApplication(DisablePyTestCollectionMixin):
             in the test case configuration file. For many test cases that just
             define one test, can be anything and is usually "test". This is
             really only used to distinguish between different cases when
-            the testcase.yaml defines multiple tests
+            the tests.yaml defines multiple tests
         """
 
 
@@ -2613,11 +2613,11 @@ class TestRunner(DisablePyTestCollectionMixin):
                             "twister_last_release.csv")
 
     SAMPLE_FILENAME = 'sample.yaml'
-    TESTCASE_FILENAME = 'testcase.yaml'
+    TESTS_FILENAME = 'tests.yaml'
 
-    def __init__(self, board_root_list=[], testcase_roots=[], outdir=None):
+    def __init__(self, board_root_list=[], test_roots=[], outdir=None):
 
-        self.roots = testcase_roots
+        self.roots = test_roots
         if not isinstance(board_root_list, list):
             self.board_roots = [board_root_list]
         else:
@@ -2926,8 +2926,11 @@ class TestRunner(DisablePyTestCollectionMixin):
             for dirpath, _, filenames in os.walk(root, topdown=True):
                 if self.SAMPLE_FILENAME in filenames:
                     filename = self.SAMPLE_FILENAME
-                elif self.TESTCASE_FILENAME in filenames:
-                    filename = self.TESTCASE_FILENAME
+                elif self.TESTS_FILENAME in filenames:
+                    filename = self.TESTS_FILENAME
+                # backward compatibility
+                elif "testcase.yaml" in filenames:
+                    filename = "testcase.yaml"
                 else:
                     continue
 
