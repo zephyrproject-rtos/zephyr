@@ -206,7 +206,7 @@ except ImportError:
 
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 
-from twisterlib import HardwareMap, TestSuite, SizeCalculator, CoverageTool, ExecutionCounter
+from twisterlib import HardwareMap, TestRunner, SizeCalculator, CoverageTool, ExecutionCounter
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -397,7 +397,7 @@ Artificially long but functional example:
         """)
 
     case_select.add_argument("--test-tree", action="store_true",
-                             help="""Output the testsuite in a tree form""")
+                             help="""Output the tests in a tree form""")
 
     case_select.add_argument("--list-test-duplicates", action="store_true",
                              help="""List tests with duplicate identifiers.
@@ -859,66 +859,66 @@ def main():
     if options.show_footprint or options.compare_report or options.release:
         options.enable_size_report = True
 
-    suite = TestSuite(options.board_root, options.testcase_root, options.outdir)
+    runner = TestRunner(options.board_root, options.testcase_root, options.outdir)
 
     # Check version of zephyr repo
-    suite.check_zephyr_version()
+    runner.check_zephyr_version()
 
-    # Set testsuite options from command line.
-    suite.build_only = options.build_only
-    suite.cmake_only = options.cmake_only
-    suite.cleanup = options.runtime_artifact_cleanup
-    suite.test_only = options.test_only
-    suite.enable_slow = options.enable_slow
-    suite.device_testing = options.device_testing
-    suite.fixtures = options.fixture
-    suite.enable_asan = options.enable_asan
-    suite.enable_lsan = options.enable_lsan
-    suite.enable_ubsan = options.enable_ubsan
-    suite.enable_coverage = options.enable_coverage
-    suite.enable_valgrind = options.enable_valgrind
-    suite.coverage_platform = options.coverage_platform
-    suite.inline_logs = options.inline_logs
-    suite.enable_size_report = options.enable_size_report
-    suite.extra_args = options.extra_args
-    suite.west_flash = options.west_flash
-    suite.west_runner = options.west_runner
-    suite.verbose = VERBOSE
-    suite.warnings_as_errors = not options.disable_warnings_as_errors
-    suite.integration = options.integration
-    suite.overflow_as_errors = options.overflow_as_errors
+    # Set test runner options from command line.
+    runner.build_only = options.build_only
+    runner.cmake_only = options.cmake_only
+    runner.cleanup = options.runtime_artifact_cleanup
+    runner.test_only = options.test_only
+    runner.enable_slow = options.enable_slow
+    runner.device_testing = options.device_testing
+    runner.fixtures = options.fixture
+    runner.enable_asan = options.enable_asan
+    runner.enable_lsan = options.enable_lsan
+    runner.enable_ubsan = options.enable_ubsan
+    runner.enable_coverage = options.enable_coverage
+    runner.enable_valgrind = options.enable_valgrind
+    runner.coverage_platform = options.coverage_platform
+    runner.inline_logs = options.inline_logs
+    runner.enable_size_report = options.enable_size_report
+    runner.extra_args = options.extra_args
+    runner.west_flash = options.west_flash
+    runner.west_runner = options.west_runner
+    runner.verbose = VERBOSE
+    runner.warnings_as_errors = not options.disable_warnings_as_errors
+    runner.integration = options.integration
+    runner.overflow_as_errors = options.overflow_as_errors
 
     if options.ninja:
-        suite.generator_cmd = "ninja"
-        suite.generator = "Ninja"
+        runner.generator_cmd = "ninja"
+        runner.generator = "Ninja"
     else:
-        suite.generator_cmd = "make"
-        suite.generator = "Unix Makefiles"
+        runner.generator_cmd = "make"
+        runner.generator = "Unix Makefiles"
 
     # Set number of jobs
     if options.jobs:
-        suite.jobs = options.jobs
+        runner.jobs = options.jobs
     elif options.build_only:
-        suite.jobs = multiprocessing.cpu_count() * 2
+        runner.jobs = multiprocessing.cpu_count() * 2
     else:
-        suite.jobs = multiprocessing.cpu_count()
-    logger.info("JOBS: %d" % suite.jobs)
+        runner.jobs = multiprocessing.cpu_count()
+    logger.info("JOBS: %d" % runner.jobs)
 
     run_individual_tests = []
 
     if options.test:
         run_individual_tests = options.test
 
-    num = suite.add_testcases(testcase_filter=run_individual_tests)
+    num = runner.add_testcases(testcase_filter=run_individual_tests)
     if num == 0:
         logger.error("No test cases found at the specified location...")
         sys.exit(1)
-    suite.add_configurations()
+    runner.add_configurations()
 
     if options.device_testing:
         if options.hardware_map:
             hwm.load(options.hardware_map)
-            suite.duts = hwm.duts
+            runner.duts = hwm.duts
             if not options.platform:
                 options.platform = []
                 for d in hwm.duts:
@@ -940,18 +940,18 @@ def main():
                                                  options.pre_script,
                                                  True)
 
-                suite.duts = hwm.duts
+                runner.duts = hwm.duts
             else:
                 logger.error("""When --device-testing is used with
                              --device-serial or --device-serial-pty,
                              only one platform is allowed""")
 
-    if suite.load_errors:
+    if runner.load_errors:
         sys.exit(1)
 
     if options.list_tags:
         tags = set()
-        for _, tc in suite.testcases.items():
+        for _, tc in runner.testcases.items():
             tags = tags.union(tc.tags)
 
         for t in tags:
@@ -962,7 +962,7 @@ def main():
     if not options.platform and (options.list_tests or options.test_tree or options.list_test_duplicates \
         or options.sub_test or options.export_tests):
         cnt = 0
-        all_tests = suite.get_all_tests()
+        all_tests = runner.get_all_tests()
 
         if options.export_tests:
             export_tests(options.export_tests, all_tests)
@@ -975,7 +975,7 @@ def main():
                 print("Tests with duplicate identifiers:")
                 for dupe in dupes:
                     print("- {}".format(dupe))
-                    for dc in suite.get_testcase(dupe):
+                    for dc in runner.get_testcase(dupe):
                         print("  - {}".format(dc))
             else:
                 print("No duplicates found.")
@@ -983,7 +983,7 @@ def main():
 
         if options.sub_test:
             for st in options.sub_test:
-                subtests = suite.get_testcase(st)
+                subtests = runner.get_testcase(st)
                 for sti in subtests:
                     run_individual_tests.append(sti.name)
 
@@ -1051,11 +1051,11 @@ def main():
         suite.quarantine_verify = options.quarantine_verify
 
     if options.only_failed:
-        suite.load_from_file(last_run, filter_status=['skipped', 'passed'])
-        suite.selected_platforms = set(p.platform.name for p in suite.instances.values())
+        runner.load_from_file(last_run, filter_status=['skipped', 'passed'])
+        runner.selected_platforms = set(p.platform.name for p in runner.instances.values())
     elif options.load_tests:
-        suite.load_from_file(options.load_tests, filter_status=['skipped', 'error'])
-        suite.selected_platforms = set(p.platform.name for p in suite.instances.values())
+        runner.load_from_file(options.load_tests, filter_status=['skipped', 'error'])
+        runner.selected_platforms = set(p.platform.name for p in runner.instances.values())
     elif options.test_only:
         # Get list of connected hardware and filter tests to only be run on connected hardware
         # in cases where no platform was specified when runn the tests.
@@ -1066,11 +1066,11 @@ def main():
                 if connected['connected']:
                     connected_list.append(connected['platform'])
 
-        suite.load_from_file(last_run, filter_status=['skipped', 'error'],
+        runner.load_from_file(last_run, filter_status=['skipped', 'error'],
                              filter_platform=connected_list)
-        suite.selected_platforms = set(p.platform.name for p in suite.instances.values())
+        runner.selected_platforms = set(p.platform.name for p in runner.instances.values())
     else:
-        discards = suite.apply_filters(
+        discards = runner.apply_filters(
             enable_slow=options.enable_slow,
             platform=options.platform,
             exclude_platform=options.exclude_platform,
@@ -1093,7 +1093,7 @@ def main():
             return
 
         for p in options.platform:
-            inst = suite.get_platform_instances(p)
+            inst = runner.get_platform_instances(p)
             if options.export_tests:
                 tests = [x.testcase.cases for x in inst.values()]
                 merged = list(itertools.chain(*tests))
@@ -1127,9 +1127,9 @@ def main():
                     reason))
 
     if options.report_excluded:
-        all_tests = suite.get_all_tests()
+        all_tests = runner.get_all_tests()
         to_be_run = set()
-        for i, p in suite.instances.items():
+        for i, p in runner.instances.items():
             to_be_run.update(p.testcase.cases)
 
         if all_tests - to_be_run:
@@ -1147,10 +1147,10 @@ def main():
         # in parallel, it is more efficient to run in the order:
         # "plat1-testA, plat2-testA, ..., plat1-testB, plat2-testB, ..."
         if options.device_testing:
-            suite.instances = OrderedDict(sorted(suite.instances.items(),
+            runner.instances = OrderedDict(sorted(runner.instances.items(),
                                 key=lambda x: x[0][x[0].find("/") + 1:]))
         else:
-            suite.instances = OrderedDict(sorted(suite.instances.items()))
+            runner.instances = OrderedDict(sorted(runner.instances.items()))
 
         # Do calculation based on what is actually going to be run and evaluated
         # at runtime, ignore the cases we already know going to be skipped.
@@ -1187,15 +1187,15 @@ def main():
             suite.instances.update(errors)
 
     if options.save_tests:
-        suite.csv_report(options.save_tests)
+        runner.csv_report(options.save_tests)
         return
 
     logger.info("%d test scenarios (%d configurations) selected, %d configurations discarded due to filters." %
-                (len(suite.testcases), len(suite.instances), len(discards)))
+                (len(runner.testcases), len(runner.instances), len(discards)))
 
     if options.device_testing and not options.build_only:
         print("\nDevice testing on:")
-        hwm.dump(filtered=suite.selected_platforms)
+        hwm.dump(filtered=runner.selected_platforms)
         print("")
 
     if options.dry_run:
@@ -1210,12 +1210,12 @@ def main():
     manager = BaseManager()
     manager.start()
 
-    results = ExecutionCounter(total=len(suite.instances))
+    results = ExecutionCounter(total=len(runner.instances))
     pipeline = manager.LifoQueue()
     done_queue = manager.LifoQueue()
 
-    suite.update_counting(results, initial=True)
-    suite.start_time = start_time
+    runner.update_counting(results, initial=True)
+    runner.start_time = start_time
 
     while True:
         completed += 1
@@ -1226,7 +1226,7 @@ def main():
             results.done = results.total - results.failed
             results.failed = results.error
 
-        results = suite.execute(pipeline, done_queue, results)
+        results = runner.execute(pipeline, done_queue, results)
 
         while True:
             try:
@@ -1237,7 +1237,7 @@ def main():
                 inst.metrics.update(suite.instances[inst.name].metrics)
                 inst.metrics["handler_time"] = inst.handler.duration if inst.handler else 0
                 inst.metrics["unrecognized"] = []
-                suite.instances[inst.name] = inst
+                runner.instances[inst.name] = inst
 
         print("")
 
@@ -1253,25 +1253,25 @@ def main():
     elif options.last_metrics:
         report_to_use = previous_results_file
     else:
-        report_to_use = suite.RELEASE_DATA
+        report_to_use = runner.RELEASE_DATA
 
-    suite.footprint_reports(report_to_use,
+    runner.footprint_reports(report_to_use,
                             options.show_footprint,
                             options.all_deltas,
                             options.footprint_threshold,
                             options.last_metrics)
 
-    suite.duration = time.time() - start_time
-    suite.update_counting(results)
+    runner.duration = time.time() - start_time
+    runner.update_counting(results)
 
-    suite.summary(results, options.disable_unrecognized_section_test)
+    runner.summary(results, options.disable_unrecognized_section_test)
 
     if options.coverage:
         if not options.gcov_tool:
             use_system_gcov = False
 
             for plat in options.coverage_platform:
-                ts_plat = suite.get_platform(plat)
+                ts_plat = runner.get_platform(plat)
                 if ts_plat and (ts_plat.type in {"native", "unit"}):
                     use_system_gcov = True
 
@@ -1295,12 +1295,12 @@ def main():
         table = []
         header = ['Board', 'ID', 'Counter']
         for d in hwm.duts:
-            if d.connected and d.platform in suite.selected_platforms:
+            if d.connected and d.platform in runner.selected_platforms:
                 row = [d.platform, d.id, d.counter]
                 table.append(row)
         print(tabulate(table, headers=header, tablefmt="github"))
 
-    suite.save_reports(options.report_name,
+    runner.save_reports(options.report_name,
                        options.report_suffix,
                        options.report_dir,
                        options.no_update,
@@ -1314,7 +1314,7 @@ def main():
     #logger.info(f"failed: {results.failed}, cases: {results.cases}, skipped configurations: {results.skipped_configs}, skipped_cases: {results.skipped_cases}, skipped(runtime): {results.skipped_runtime}, passed: {results.passed}, total: {results.total}, done: {results.done}")
 
     logger.info("Run completed")
-    if results.failed or (suite.warnings and options.warnings_as_errors):
+    if results.failed or (runner.warnings and options.warnings_as_errors):
         sys.exit(1)
 
 
