@@ -92,13 +92,15 @@ config ARM_ARCH_TIMER
 DT_COMPAT_ARM_V6M_SYSTICK := arm,armv6m-systick
 DT_COMPAT_ARM_V7M_SYSTICK := arm,armv7m-systick
 DT_COMPAT_ARM_V8M_SYSTICK := arm,armv8m-systick
+DT_COMPAT_ARM_V8_1M_SYSTICK := arm,armv8.1m-systick
 
 config CORTEX_M_SYSTICK
 	bool "Cortex-M SYSTICK timer"
 	depends on CPU_CORTEX_M_HAS_SYSTICK
 	default $(dt_compat_enabled,$(DT_COMPAT_ARM_V6M_SYSTICK)) || \
 		$(dt_compat_enabled,$(DT_COMPAT_ARM_V7M_SYSTICK)) || \
-		$(dt_compat_enabled,$(DT_COMPAT_ARM_V8M_SYSTICK))
+		$(dt_compat_enabled,$(DT_COMPAT_ARM_V8M_SYSTICK)) || \
+		$(dt_compat_enabled,$(DT_COMPAT_ARM_V8_1M_SYSTICK))
 	select TICKLESS_CAPABLE
 	help
 	  This module implements a kernel device driver for the Cortex-M processor
