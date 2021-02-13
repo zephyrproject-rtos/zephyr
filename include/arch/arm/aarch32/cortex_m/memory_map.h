@@ -65,7 +65,9 @@
 #define _PPB_INT_RSVD_1           0xE0003000
 #define _PPB_INT_SCS              0xE000E000
 #define _PPB_INT_RSVD_2           0xE000F000
-#elif defined(CONFIG_CPU_CORTEX_M23) || defined(CONFIG_CPU_CORTEX_M33)
+#elif defined(CONFIG_CPU_CORTEX_M23) || \
+	defined(CONFIG_CPU_CORTEX_M33) || \
+	defined(CONFIG_CPU_CORTEX_M55)
 #define _PPB_INT_RSVD_0           0xE0000000
 #define _PPB_INT_SCS              0xE000E000
 #define _PPB_INT_SCB              0xE000ED00
@@ -86,7 +88,7 @@
 #define _PPB_EXT_PPB              0xE0042000
 #define _PPB_EXT_ROM_TABLE        0xE00FF000
 #define _PPB_EXT_END_ADDR         0xE00FFFFF
-#elif defined(CONFIG_CPU_CORTEX_M33)
+#elif defined(CONFIG_CPU_CORTEX_M33) || defined(CONFIG_CPU_CORTEX_M55)
 #undef  _PPB_EXT_BASE_ADDR
 #define _PPB_EXT_BASE_ADDR        0xE0044000
 #define _PPB_EXT_ROM_TABLE        0xE00FF000
