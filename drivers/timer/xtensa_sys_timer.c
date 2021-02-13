@@ -6,7 +6,6 @@
 #include <drivers/timer/system_timer.h>
 #include <sys_clock.h>
 #include <spinlock.h>
-#include <arch/xtensa/xtensa_rtos.h>
 
 #define TIMER_IRQ UTIL_CAT(XCHAL_TIMER,		\
 			   UTIL_CAT(CONFIG_XTENSA_TIMER_ID, _INTERRUPT))

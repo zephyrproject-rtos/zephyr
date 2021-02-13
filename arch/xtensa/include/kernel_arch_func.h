@@ -12,19 +12,13 @@
 
 #ifndef _ASMLANGUAGE
 #include <kernel_internal.h>
-#include <kernel_arch_data.h>
 #include <string.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern void FatalErrorHandler(void);
-extern void ReservedInterruptHandler(unsigned int intNo);
 extern void z_xtensa_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
-
-/* Defined in xtensa_context.S */
-extern void z_xt_coproc_init(void);
 
 extern K_KERNEL_STACK_ARRAY_DEFINE(z_interrupt_stacks, CONFIG_MP_NUM_CPUS,
 				   CONFIG_ISR_STACK_SIZE);
@@ -117,14 +111,14 @@ static inline void arch_cohere_stacks(struct k_thread *old_thread,
 }
 #endif
 
-#ifdef __cplusplus
-}
-#endif
-
 static inline bool arch_is_in_isr(void)
 {
 	return arch_curr_cpu()->nested != 0U;
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _ASMLANGUAGE */
 
