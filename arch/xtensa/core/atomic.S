@@ -3,7 +3,46 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <arch/xtensa/xtensa_context.h>
+/*
+ * MACROS TO HANDLE ABI SPECIFICS OF FUNCTION ENTRY AND RETURN
+ *
+ * Convenient where the frame size requirements are the same for both ABIs.
+ * ENTRY(sz), RET(sz) are for framed functions (have locals or make calls).
+ * ENTRY0,    RET0    are for frameless functions (no locals, no calls).
+ *
+ * where size = size of stack frame in bytes (must be >0 and aligned to 16).
+ * For framed functions the frame is created and the return address saved at
+ * base of frame (Call0 ABI) or as determined by hardware (Windowed ABI).  For
+ * frameless functions, there is no frame and return address remains in
+ * a0.
+ *
+ * Note: Because CPP macros expand to a single line, macros requiring
+ * multi-line expansions are implemented as assembler macros.
+ */
+
+#ifdef __XTENSA_CALL0_ABI__
+/* Call0 */
+#define ENTRY(sz)     entry1  sz
+.macro  entry1 size=0x10
+addi    sp, sp, -\size
+s32i    a0, sp, 0
+.endm
+#define ENTRY0
+#define RET(sz)       ret1    sz
+.macro  ret1 size=0x10
+l32i    a0, sp, 0
+addi    sp, sp, \size
+ret
+.endm
+#define RET0          ret
+#else
+/* Windowed */
+#define ENTRY(sz)     entry   sp, sz
+#define ENTRY0        entry   sp, 0x10
+#define RET(sz)       retw
+#define RET0          retw
+#endif /* __XTENSA_CALL0_ABI__ */
+
 /**
  *
  * @brief Atomically clear a memory location

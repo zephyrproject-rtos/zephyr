@@ -7,7 +7,6 @@
 #include <drivers/timer/system_timer.h>
 #include <sys_clock.h>
 #include <spinlock.h>
-#include <arch/xtensa/xtensa_rtos.h>
 
 /**
  * @file

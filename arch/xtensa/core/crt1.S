@@ -7,7 +7,7 @@
  * Control arrives here at _start from the reset vector or from crt0-app.S.
  */
 
-#include <arch/xtensa/xtensa_rtos.h>
+#include <xtensa/coreasm.h>
 
 /* Exports */
 .global _start
