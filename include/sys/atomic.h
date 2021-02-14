@@ -1,7 +1,6 @@
-/* atomic operations */
-
 /*
  * Copyright (c) 1997-2015, Wind River Systems, Inc.
+ * Copyright (c) 2021 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,375 +22,29 @@ typedef int atomic_t;
 typedef atomic_t atomic_val_t;
 typedef void *atomic_ptr_t;
 
+/* Low-level primitives come in several styles: */
+
+#if defined(CONFIG_ATOMIC_OPERATIONS_BUILTIN)
+/* Default.  See this file for the Doxygen reference: */
+#include <sys/atomic_builtin.h>
+#elif defined(CONFIG_ATOMIC_OPERATIONS_ARCH)
+/* Some architectures need their own implementation */
+# ifdef CONFIG_XTENSA
+/* Not all Xtensa toolchains support GCC-style atomic intrinsics */
+# include <arch/xtensa/atomic_xtensa.h>
+# endif
+#else
+/* Generic-but-slow implementation based on kernel locking and syscalls */
+#include <sys/atomic_c.h>
+#endif
+
+/* Portable higher-level utilities: */
+
 /**
  * @defgroup atomic_apis Atomic Services APIs
  * @ingroup kernel_apis
  * @{
  */
-
-/**
- * @brief Atomic compare-and-set.
- *
- * This routine performs an atomic compare-and-set on @a target. If the current
- * value of @a target equals @a old_value, @a target is set to @a new_value.
- * If the current value of @a target does not equal @a old_value, @a target
- * is left unchanged.
- *
- * @param target Address of atomic variable.
- * @param old_value Original value to compare against.
- * @param new_value New value to store.
- * @return true if @a new_value is written, false otherwise.
- */
-#ifdef CONFIG_ATOMIC_OPERATIONS_BUILTIN
-static inline bool atomic_cas(atomic_t *target, atomic_val_t old_value,
-			  atomic_val_t new_value)
-{
-	return __atomic_compare_exchange_n(target, &old_value, new_value,
-					   0, __ATOMIC_SEQ_CST,
-					   __ATOMIC_SEQ_CST);
-}
-#elif defined(CONFIG_ATOMIC_OPERATIONS_C)
-__syscall bool atomic_cas(atomic_t *target, atomic_val_t old_value,
-			 atomic_val_t new_value);
-
-#else
-extern bool atomic_cas(atomic_t *target, atomic_val_t old_value,
-		      atomic_val_t new_value);
-#endif
-
-/**
- * @brief Atomic compare-and-set with pointer values
- *
- * This routine performs an atomic compare-and-set on @a target. If the current
- * value of @a target equals @a old_value, @a target is set to @a new_value.
- * If the current value of @a target does not equal @a old_value, @a target
- * is left unchanged.
- *
- * @param target Address of atomic variable.
- * @param old_value Original value to compare against.
- * @param new_value New value to store.
- * @return true if @a new_value is written, false otherwise.
- */
-#ifdef CONFIG_ATOMIC_OPERATIONS_BUILTIN
-static inline bool atomic_ptr_cas(atomic_ptr_t *target, void *old_value,
-				  void *new_value)
-{
-	return __atomic_compare_exchange_n(target, &old_value, new_value,
-					   0, __ATOMIC_SEQ_CST,
-					   __ATOMIC_SEQ_CST);
-}
-#elif defined(CONFIG_ATOMIC_OPERATIONS_C)
-__syscall bool atomic_ptr_cas(atomic_ptr_t *target, void *old_value,
-			      void *new_value);
-#else
-extern bool atomic_ptr_cas(atomic_ptr_t *target, void *old_value,
-			   void *new_value);
-#endif
-
-/**
- *
- * @brief Atomic addition.
- *
- * This routine performs an atomic addition on @a target.
- *
- * @param target Address of atomic variable.
- * @param value Value to add.
- *
- * @return Previous value of @a target.
- */
-#ifdef CONFIG_ATOMIC_OPERATIONS_BUILTIN
-static inline atomic_val_t atomic_add(atomic_t *target, atomic_val_t value)
-{
-	return __atomic_fetch_add(target, value, __ATOMIC_SEQ_CST);
-}
-#elif defined(CONFIG_ATOMIC_OPERATIONS_C)
-__syscall atomic_val_t atomic_add(atomic_t *target, atomic_val_t value);
-#else
-extern atomic_val_t atomic_add(atomic_t *target, atomic_val_t value);
-#endif
-
-/**
- *
- * @brief Atomic subtraction.
- *
- * This routine performs an atomic subtraction on @a target.
- *
- * @param target Address of atomic variable.
- * @param value Value to subtract.
- *
- * @return Previous value of @a target.
- */
-#ifdef CONFIG_ATOMIC_OPERATIONS_BUILTIN
-static inline atomic_val_t atomic_sub(atomic_t *target, atomic_val_t value)
-{
-	return __atomic_fetch_sub(target, value, __ATOMIC_SEQ_CST);
-}
-#elif defined(CONFIG_ATOMIC_OPERATIONS_C)
-__syscall atomic_val_t atomic_sub(atomic_t *target, atomic_val_t value);
-#else
-extern atomic_val_t atomic_sub(atomic_t *target, atomic_val_t value);
-#endif
-
-/**
- *
- * @brief Atomic increment.
- *
- * This routine performs an atomic increment by 1 on @a target.
- *
- * @param target Address of atomic variable.
- *
- * @return Previous value of @a target.
- */
-#if defined(CONFIG_ATOMIC_OPERATIONS_BUILTIN) || defined (CONFIG_ATOMIC_OPERATIONS_C)
-static inline atomic_val_t atomic_inc(atomic_t *target)
-{
-	return atomic_add(target, 1);
-}
-#else
-extern atomic_val_t atomic_inc(atomic_t *target);
-#endif
-
-/**
- *
- * @brief Atomic decrement.
- *
- * This routine performs an atomic decrement by 1 on @a target.
- *
- * @param target Address of atomic variable.
- *
- * @return Previous value of @a target.
- */
-#if defined(CONFIG_ATOMIC_OPERATIONS_BUILTIN) || defined (CONFIG_ATOMIC_OPERATIONS_C)
-static inline atomic_val_t atomic_dec(atomic_t *target)
-{
-	return atomic_sub(target, 1);
-}
-#else
-extern atomic_val_t atomic_dec(atomic_t *target);
-#endif
-
-/**
- *
- * @brief Atomic get.
- *
- * This routine performs an atomic read on @a target.
- *
- * @param target Address of atomic variable.
- *
- * @return Value of @a target.
- */
-#ifdef CONFIG_ATOMIC_OPERATIONS_BUILTIN
-static inline atomic_val_t atomic_get(const atomic_t *target)
-{
-	return __atomic_load_n(target, __ATOMIC_SEQ_CST);
-}
-#else
-extern atomic_val_t atomic_get(const atomic_t *target);
-#endif
-
-/**
- *
- * @brief Atomic get a pointer value
- *
- * This routine performs an atomic read on @a target.
- *
- * @param target Address of pointer variable.
- *
- * @return Value of @a target.
- */
-#ifdef CONFIG_ATOMIC_OPERATIONS_BUILTIN
-static inline void *atomic_ptr_get(const atomic_ptr_t *target)
-{
-	return __atomic_load_n(target, __ATOMIC_SEQ_CST);
-}
-#else
-extern void *atomic_ptr_get(const atomic_ptr_t *target);
-#endif
-
-/**
- *
- * @brief Atomic get-and-set.
- *
- * This routine atomically sets @a target to @a value and returns
- * the previous value of @a target.
- *
- * @param target Address of atomic variable.
- * @param value Value to write to @a target.
- *
- * @return Previous value of @a target.
- */
-#ifdef CONFIG_ATOMIC_OPERATIONS_BUILTIN
-static inline atomic_val_t atomic_set(atomic_t *target, atomic_val_t value)
-{
-	/* This builtin, as described by Intel, is not a traditional
-	 * test-and-set operation, but rather an atomic exchange operation. It
-	 * writes value into *ptr, and returns the previous contents of *ptr.
-	 */
-	return __atomic_exchange_n(target, value, __ATOMIC_SEQ_CST);
-}
-#elif defined(CONFIG_ATOMIC_OPERATIONS_C)
-__syscall atomic_val_t atomic_set(atomic_t *target, atomic_val_t value);
-#else
-extern atomic_val_t atomic_set(atomic_t *target, atomic_val_t value);
-#endif
-
-/**
- *
- * @brief Atomic get-and-set for pointer values
- *
- * This routine atomically sets @a target to @a value and returns
- * the previous value of @a target.
- *
- * @param target Address of atomic variable.
- * @param value Value to write to @a target.
- *
- * @return Previous value of @a target.
- */
-#ifdef CONFIG_ATOMIC_OPERATIONS_BUILTIN
-static inline void *atomic_ptr_set(atomic_ptr_t *target, void *value)
-{
-	return __atomic_exchange_n(target, value, __ATOMIC_SEQ_CST);
-}
-#elif defined(CONFIG_ATOMIC_OPERATIONS_C)
-__syscall void *atomic_ptr_set(atomic_ptr_t *target, void *value);
-#else
-extern void *atomic_ptr_set(atomic_ptr_t *target, void *value);
-#endif
-
-/**
- *
- * @brief Atomic clear.
- *
- * This routine atomically sets @a target to zero and returns its previous
- * value. (Hence, it is equivalent to atomic_set(target, 0).)
- *
- * @param target Address of atomic variable.
- *
- * @return Previous value of @a target.
- */
-#if defined(CONFIG_ATOMIC_OPERATIONS_BUILTIN) || defined (CONFIG_ATOMIC_OPERATIONS_C)
-static inline atomic_val_t atomic_clear(atomic_t *target)
-{
-	return atomic_set(target, 0);
-}
-#else
-extern atomic_val_t atomic_clear(atomic_t *target);
-#endif
-
-/**
- *
- * @brief Atomic clear of a pointer value
- *
- * This routine atomically sets @a target to zero and returns its previous
- * value. (Hence, it is equivalent to atomic_set(target, 0).)
- *
- * @param target Address of atomic variable.
- *
- * @return Previous value of @a target.
- */
-#if defined(CONFIG_ATOMIC_OPERATIONS_BUILTIN) || \
-	defined (CONFIG_ATOMIC_OPERATIONS_C)
-static inline void *atomic_ptr_clear(atomic_ptr_t *target)
-{
-	return atomic_ptr_set(target, NULL);
-}
-#else
-extern void *atomic_ptr_clear(atomic_ptr_t *target);
-#endif
-
-/**
- *
- * @brief Atomic bitwise inclusive OR.
- *
- * This routine atomically sets @a target to the bitwise inclusive OR of
- * @a target and @a value.
- *
- * @param target Address of atomic variable.
- * @param value Value to OR.
- *
- * @return Previous value of @a target.
- */
-#ifdef CONFIG_ATOMIC_OPERATIONS_BUILTIN
-static inline atomic_val_t atomic_or(atomic_t *target, atomic_val_t value)
-{
-	return __atomic_fetch_or(target, value, __ATOMIC_SEQ_CST);
-}
-#elif defined(CONFIG_ATOMIC_OPERATIONS_C)
-__syscall atomic_val_t atomic_or(atomic_t *target, atomic_val_t value);
-
-#else
-extern atomic_val_t atomic_or(atomic_t *target, atomic_val_t value);
-#endif
-
-/**
- *
- * @brief Atomic bitwise exclusive OR (XOR).
- *
- * This routine atomically sets @a target to the bitwise exclusive OR (XOR) of
- * @a target and @a value.
- *
- * @param target Address of atomic variable.
- * @param value Value to XOR
- *
- * @return Previous value of @a target.
- */
-#ifdef CONFIG_ATOMIC_OPERATIONS_BUILTIN
-static inline atomic_val_t atomic_xor(atomic_t *target, atomic_val_t value)
-{
-	return __atomic_fetch_xor(target, value, __ATOMIC_SEQ_CST);
-}
-#elif defined(CONFIG_ATOMIC_OPERATIONS_C)
-__syscall atomic_val_t atomic_xor(atomic_t *target, atomic_val_t value);
-#else
-extern atomic_val_t atomic_xor(atomic_t *target, atomic_val_t value);
-#endif
-
-/**
- *
- * @brief Atomic bitwise AND.
- *
- * This routine atomically sets @a target to the bitwise AND of @a target
- * and @a value.
- *
- * @param target Address of atomic variable.
- * @param value Value to AND.
- *
- * @return Previous value of @a target.
- */
-#ifdef CONFIG_ATOMIC_OPERATIONS_BUILTIN
-static inline atomic_val_t atomic_and(atomic_t *target, atomic_val_t value)
-{
-	return __atomic_fetch_and(target, value, __ATOMIC_SEQ_CST);
-}
-#elif defined(CONFIG_ATOMIC_OPERATIONS_C)
-__syscall atomic_val_t atomic_and(atomic_t *target, atomic_val_t value);
-#else
-extern atomic_val_t atomic_and(atomic_t *target, atomic_val_t value);
-#endif
-
-/**
- *
- * @brief Atomic bitwise NAND.
- *
- * This routine atomically sets @a target to the bitwise NAND of @a target
- * and @a value. (This operation is equivalent to target = ~(target & value).)
- *
- * @param target Address of atomic variable.
- * @param value Value to NAND.
- *
- * @return Previous value of @a target.
- */
-#ifdef CONFIG_ATOMIC_OPERATIONS_BUILTIN
-static inline atomic_val_t atomic_nand(atomic_t *target, atomic_val_t value)
-{
-	return __atomic_fetch_nand(target, value, __ATOMIC_SEQ_CST);
-}
-#elif defined(CONFIG_ATOMIC_OPERATIONS_C)
-__syscall atomic_val_t atomic_nand(atomic_t *target, atomic_val_t value);
-#else
-extern atomic_val_t atomic_nand(atomic_t *target, atomic_val_t value);
-#endif
-
 
 /**
  * @brief Initialize an atomic variable.
@@ -555,11 +208,7 @@ static inline void atomic_set_bit_to(atomic_t *target, int bit, bool val)
  */
 
 #ifdef __cplusplus
-}
-#endif
-
-#ifdef CONFIG_ATOMIC_OPERATIONS_C
-#include <syscalls/atomic.h>
+} /* extern "C" */
 #endif
 
 #endif /* ZEPHYR_INCLUDE_SYS_ATOMIC_H_ */
