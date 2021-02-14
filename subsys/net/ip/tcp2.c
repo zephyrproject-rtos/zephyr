@@ -2503,6 +2503,24 @@ void net_tcp_foreach(net_tcp_cb_t cb, void *user_data)
 	k_mutex_unlock(&tcp_lock);
 }
 
+void net_tcp_send_pending(struct net_if *iface)
+{
+	struct tcp *conn;
+	struct tcp *tmp;
+
+	k_mutex_lock(&tcp_lock, K_FOREVER);
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&tcp_conns, conn, tmp, next) {
+
+		if ((atomic_get(&conn->ref_count) > 0) && conn->iface == iface) {
+			NET_DBG("[%p] sending pending data", conn);
+			(void)tcp_send_queued_data(conn);
+		}
+	}
+
+	k_mutex_unlock(&tcp_lock);
+}
+
 uint16_t net_tcp_get_recv_mss(const struct tcp *conn)
 {
 	sa_family_t family = net_context_get_family(conn->context);

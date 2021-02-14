@@ -850,6 +850,20 @@ static inline int net_tcp_put(struct net_context *context)
 }
 #endif
 
+/**
+ * @brief Send any pending data to a specific interface.
+ *
+ * @param iface Network interface.
+ */
+#if defined(CONFIG_NET_NATIVE_TCP) && defined(CONFIG_NET_TCP2)
+void net_tcp_send_pending(struct net_if *iface);
+#else
+static inline void net_tcp_send_pending(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
+}
+#endif
+
 #define NET_TCP_MAX_OPT_SIZE  8
 
 #if defined(CONFIG_NET_NATIVE_TCP)

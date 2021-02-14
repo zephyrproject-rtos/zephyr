@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(net_if, CONFIG_NET_IF_LOG_LEVEL);
 #include "net_private.h"
 #include "ipv6.h"
 #include "ipv4_autoconf_internal.h"
+#include "tcp_internal.h"
 
 #include "net_stats.h"
 
@@ -3476,6 +3477,11 @@ done:
 		iface_ipv6_start(iface);
 
 		net_ipv4_autoconf_start(iface);
+	}
+
+	/* Flush sending queue for any pending data */
+	if (IS_ENABLED(CONFIG_NET_TCP)) {
+		net_tcp_send_pending(iface);
 	}
 
 exit:
