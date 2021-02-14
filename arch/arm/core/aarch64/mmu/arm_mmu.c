@@ -316,7 +316,7 @@ static int add_map(struct arm_mmu_ptables *ptables, const char *name,
 		   uintptr_t phys, uintptr_t virt, size_t size, uint32_t attrs)
 {
 	uint64_t desc = get_region_desc(attrs);
-	bool may_overwrite = (attrs & MT_OVERWRITE);
+	bool may_overwrite = !(attrs & MT_NO_OVERWRITE);
 
 	MMU_DEBUG("mmap [%s]: virt %lx phys %lx size %lx attr %llx\n",
 		  name, virt, phys, size, desc);
@@ -361,10 +361,11 @@ static const struct arm_mmu_region mmu_zephyr_regions[] = {
 };
 
 static inline void add_arm_mmu_region(struct arm_mmu_ptables *ptables,
-				      const struct arm_mmu_region *region)
+				      const struct arm_mmu_region *region,
+				      uint32_t extra_flags)
 {
 	add_map(ptables, region->name, region->base_pa, region->base_va,
-		region->size, region->attrs);
+		region->size, region->attrs | extra_flags);
 }
 
 static void setup_page_tables(struct arm_mmu_ptables *ptables)
@@ -388,19 +389,23 @@ static void setup_page_tables(struct arm_mmu_ptables *ptables)
 	__ASSERT(max_pa <= (1ULL << CONFIG_ARM64_PA_BITS),
 		 "Maximum PA not supported\n");
 
-	/* create translation tables for user provided platform regions */
-	for (index = 0; index < mmu_config.num_regions; index++) {
-		region = &mmu_config.mmu_regions[index];
-		if (region->size || region->attrs)
-			add_arm_mmu_region(ptables, region);
-	}
-
 	/* setup translation table for zephyr execution regions */
 	for (index = 0; index < ARRAY_SIZE(mmu_zephyr_regions); index++) {
 		region = &mmu_zephyr_regions[index];
 		if (region->size || region->attrs)
-			add_arm_mmu_region(ptables, region);
+			add_arm_mmu_region(ptables, region, 0);
 	}
+
+	/*
+	 * Create translation tables for user provided platform regions.
+	 * Those must not conflict with our default mapping.
+	 */
+	for (index = 0; index < mmu_config.num_regions; index++) {
+		region = &mmu_config.mmu_regions[index];
+		if (region->size || region->attrs)
+			add_arm_mmu_region(ptables, region, MT_NO_OVERWRITE);
+	}
+
 }
 
 /* Translation table control register settings */
@@ -515,7 +520,7 @@ SYS_INIT(arm_mmu_init, PRE_KERNEL_1,
 static int __arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 {
 	struct arm_mmu_ptables *ptables;
-	uint32_t entry_flags = MT_SECURE | MT_P_RX_U_NA | MT_OVERWRITE;
+	uint32_t entry_flags = MT_SECURE | MT_P_RX_U_NA;
 
 	/* Always map in the kernel page tables */
 	ptables = &kernel_ptables;
