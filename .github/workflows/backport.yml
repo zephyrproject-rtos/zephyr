@@ -4,6 +4,8 @@ on:
     types:
       - closed
       - labeled
+    branches:
+      - master
 
 jobs:
   backport:
