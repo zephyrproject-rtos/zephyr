@@ -8,6 +8,8 @@ on:
   schedule:
     - cron:  '50 22 * * *'
   push:
+    paths:
+      - 'VERSION'
     tags:
       # only publish v* tags, do not care about zephyr-v* which point to the
       # same commit
