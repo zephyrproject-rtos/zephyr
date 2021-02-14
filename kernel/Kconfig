@@ -415,7 +415,7 @@ config ATOMIC_OPERATIONS_BUILTIN
 	  the preferred method. However, support for all arches in GCC is
 	  incomplete.
 
-config ATOMIC_OPERATIONS_CUSTOM
+config ATOMIC_OPERATIONS_ARCH
 	bool
 	help
 	  Use when there isn't support for compiler built-ins, but you have
