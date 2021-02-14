@@ -21,6 +21,8 @@ manifest:
   remotes:
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
+    - name: nxpmicro
+      url-base: https://github.com/nxpmicro
 
   #
   # Please add items below based on alphabetical order
@@ -105,6 +107,10 @@ manifest:
     - name: hal_nxp
       revision: pull/78/head
       path: modules/hal/nxp
+    - name: mcux-sdk
+      remote: nxpmicro
+      revision: pull/6/head
+      path: modules/hal/nxp-mcux-sdk
     - name: open-amp
       revision: de1b85a13032a2de1d8b6695ae5f800b613e739d
       path: modules/lib/open-amp
