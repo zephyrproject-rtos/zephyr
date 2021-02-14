@@ -953,6 +953,19 @@ Issue Related Items
 These GitHub issues were addressed since the previous 2.4.0 tagged
 release:
 
+* :github:`32221` - Sporadic kernel panics on stm32g4 flash erase/writes
+* :github:`32203` - Cannot set static address when using hci_usb or hci_uart on nRF5340 attached to Linux Host
+* :github:`32181` - samples: tests: Tests from samples/boards/nrf/nrfx fail
+* :github:`32179` - samples: tests: Tests from samples/subsys/usb/audio fail
+* :github:`32112` - intel_adsp_cavs15: a part of testcases run failed with same error
+* :github:`31819` - intel_adsp_cavs15: signing not correct thus download firmware failed
+* :github:`31675` - [Coverity CID :216790] Division or modulo by zero in tests/drivers/can/timing/src/main.c
+* :github:`31607` - Bluetooth: host: bt_conn_auth_cb callbacks are not called when pairing to BLE 4.1 central in BT_SECURITY_L4 mode.
+* :github:`28685` - Bluetooth: Characteristic unsubscribe under indication load results in ATT timeout
+* :github:`26495` - Make k_poll work with KERNEL_COHERENCE
+* :github:`21033` - Read out heap space used and unallocated
+* :github:`19655` - Milestones toward generalized representation of timeouts
+* :github:`12028` - Enable 16550 UART driver on x86_64
 * :github:`32206` - CMSIS-DSP support seems broken on link
 * :github:`32194` - Source files missing specification of SPDX-License-Identifier in comments
 * :github:`32167` - Bluetooth: controller: conformance testcase failures
@@ -1002,7 +1015,6 @@ release:
 * :github:`31876` - west signing seems to be broken on windows
 * :github:`31867` - samples/scheduler/metairq_dispatc failed on iotdk boards
 * :github:`31858` - xtensa crt1.S hard coding
-* :github:`31854` - undefined reference to ``sys_arch_reboot``
 * :github:`31853` - Devicetree API - Getting GPIO details from pin
 * :github:`31847` - BT ISO channel. error value set, but not returned.
 * :github:`31836` - Correct values of _msg_len arg in BT_MESH_MODEL_PUB_DEFINE macro
@@ -1944,6 +1956,8 @@ release:
 * :github:`6040` - Implement flash driver for LPC54114
 * :github:`5626` - Building samples failed
 * :github:`4420` - net: tcp: RST handling is weak
+* :github:`3675` - LE Adv. Ext.: Extended Scan with PHY selection for non-conn non-scan un-directed without aux packets
+* :github:`3674` - LE Adv. Ext.: Non-Connectable and Non-Scannable Undirected without auxiliary packet
 * :github:`3893` - Enhance k_stack_push() to check k_stack->top to avoid corruption
 * :github:`3719` - Multiple consoles support.
 * :github:`3441` - IP stack: No TCP send window handling
