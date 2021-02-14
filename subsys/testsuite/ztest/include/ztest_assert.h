@@ -190,7 +190,7 @@ static inline void z_zassert(bool cond,
  * @param msg Optional message to print if the assertion fails
  */
 #define zassert_within(a, b, d, msg, ...)			     \
-	zassert(((a) > ((b) - (d))) && ((a) < ((b) + (d))),	     \
+	zassert(((a) >= ((b) - (d))) && ((a) <= ((b) + (d))),	     \
 		#a " not within " #b " +/- " #d,		     \
 		msg, ##__VA_ARGS__)
 
