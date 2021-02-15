@@ -349,7 +349,7 @@ foreach(root ${BOARD_ROOT})
         )
 
       # search for shield/shield.conf file
-      if(EXISTS ${shield_dir}/${s_dir}/${s}.conf)
+      if(EXISTS ${SHIELD_DIR_${s}}/${s}.conf)
         # add shield.conf to the shield config list
         list(APPEND
           shield_conf_files
