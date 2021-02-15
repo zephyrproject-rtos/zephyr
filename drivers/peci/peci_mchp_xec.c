@@ -21,10 +21,13 @@ LOG_MODULE_REGISTER(peci_mchp_xec, CONFIG_PECI_LOG_LEVEL);
 #define PECI_IDLE_DELAY     100u
 /* 5 ms */
 #define PECI_IDLE_TIMEOUT   50u
-/* 10 us */
-#define PECI_IO_DELAY       10
+/* Maximum retries */
+#define PECI_TIMEOUT_RETRIES 3u
 /* Maximum read buffer fill wait retries */
 #define PECI_RX_BUF_FILL_WAIT_RETRY 100u
+
+/* 10 us */
+#define PECI_IO_DELAY       10
 
 #define OPT_BIT_TIME_MSB_OFS 8u
 
