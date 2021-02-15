@@ -365,7 +365,7 @@ void test_hci_terminate(void)
 	err = ll_terminate_ind_send(conn_handle+1,reason);
 	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID, "Errorcode %d", err);
 	err = ll_terminate_ind_send(conn_handle,reason);
-	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CMD, "Errorcode %d", err);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS, "Errorcode %d", err);
 }
 
 void test_hci_conn_update(void)
