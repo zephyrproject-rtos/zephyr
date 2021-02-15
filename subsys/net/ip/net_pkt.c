@@ -1959,6 +1959,13 @@ uint16_t net_pkt_get_current_offset(struct net_pkt *pkt)
 
 bool net_pkt_is_contiguous(struct net_pkt *pkt, size_t size)
 {
+	size_t len = net_pkt_get_contiguous_len(pkt);
+
+	return len >= size;
+}
+
+size_t net_pkt_get_contiguous_len(struct net_pkt *pkt)
+{
 	pkt_cursor_advance(pkt, !net_pkt_is_being_overwritten(pkt));
 
 	if (pkt->cursor.buf && pkt->cursor.pos) {
@@ -1967,12 +1974,10 @@ bool net_pkt_is_contiguous(struct net_pkt *pkt, size_t size)
 		len = net_pkt_is_being_overwritten(pkt) ?
 			pkt->cursor.buf->len : pkt->cursor.buf->size;
 		len -= pkt->cursor.pos - pkt->cursor.buf->data;
-		if (len >= size) {
-			return true;
-		}
+		return len;
 	}
 
-	return false;
+	return 0;
 }
 
 void *net_pkt_get_data(struct net_pkt *pkt,

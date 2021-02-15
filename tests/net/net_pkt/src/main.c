@@ -912,6 +912,68 @@ void test_net_pkt_headroom_copy(void)
 	net_pkt_unref(pkt_src);
 }
 
+static void test_net_pkt_get_contiguous_len(void)
+{
+	size_t cont_len;
+	int res;
+	/* Allocate pkt with 2 fragments */
+	struct net_pkt *pkt = net_pkt_rx_alloc_with_buffer(
+					   NULL, CONFIG_NET_BUF_DATA_SIZE * 2,
+					   AF_UNSPEC, 0, K_NO_WAIT);
+
+	zassert_not_null(pkt, "Pkt not allocated");
+
+	net_pkt_cursor_init(pkt);
+
+	cont_len = net_pkt_get_contiguous_len(pkt);
+	zassert_equal(CONFIG_NET_BUF_DATA_SIZE, cont_len,
+		      "Expected one complete available net_buf");
+
+	net_pkt_set_overwrite(pkt, false);
+
+	/* now write 3 byte into the pkt */
+	for (int i = 0; i < 3; ++i) {
+		res = net_pkt_write_u8(pkt, 0xAA);
+		zassert_equal(0, res, "Write packet failed");
+	}
+
+	cont_len = net_pkt_get_contiguous_len(pkt);
+	zassert_equal(CONFIG_NET_BUF_DATA_SIZE - 3, cont_len,
+		      "Expected a three byte reduction");
+
+	/* Fill the first fragment up until only 3 bytes are free */
+	for (int i = 0; i < CONFIG_NET_BUF_DATA_SIZE - 6; ++i) {
+		res = net_pkt_write_u8(pkt, 0xAA);
+		zassert_equal(0, res, "Write packet failed");
+	}
+
+	cont_len = net_pkt_get_contiguous_len(pkt);
+	zassert_equal(3, cont_len, "Expected only three bytes are available");
+
+	/* Fill the complete first fragment, so the cursor points to the second
+	 * fragment.
+	 */
+	for (int i = 0; i < 3; ++i) {
+		res = net_pkt_write_u8(pkt, 0xAA);
+		zassert_equal(0, res, "Write packet failed");
+	}
+
+	cont_len = net_pkt_get_contiguous_len(pkt);
+	zassert_equal(CONFIG_NET_BUF_DATA_SIZE, cont_len,
+		      "Expected next full net_buf is available");
+
+	/* Fill the last fragment */
+	for (int i = 0; i < CONFIG_NET_BUF_DATA_SIZE; ++i) {
+		res = net_pkt_write_u8(pkt, 0xAA);
+		zassert_equal(0, res, "Write packet failed");
+	}
+
+	cont_len = net_pkt_get_contiguous_len(pkt);
+	zassert_equal(0, cont_len, "Expected no available space");
+
+	net_pkt_unref(pkt);
+}
+
 void test_main(void)
 {
 	eth_if = net_if_get_default();
@@ -926,7 +988,8 @@ void test_main(void)
 			 ztest_unit_test(test_net_pkt_pull),
 			 ztest_unit_test(test_net_pkt_clone),
 			 ztest_unit_test(test_net_pkt_headroom),
-			 ztest_unit_test(test_net_pkt_headroom_copy)
+			 ztest_unit_test(test_net_pkt_headroom_copy),
+			 ztest_unit_test(test_net_pkt_get_contiguous_len)
 		);
 
 	ztest_run_test_suite(net_pkt_tests);
