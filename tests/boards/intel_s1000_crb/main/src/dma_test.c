@@ -190,10 +190,10 @@ static int test_task(uint32_t chan_id, uint32_t blen, uint32_t block_count)
 		printk("*** timed out waiting for dma to complete ***\n");
 	}
 
-	xthal_dcache_region_invalidate(rx_data, RX_BUFF_SIZE);
-	xthal_dcache_region_invalidate(rx_data2, RX_BUFF_SIZE);
-	xthal_dcache_region_invalidate(rx_data3, RX_BUFF_SIZE);
-	xthal_dcache_region_invalidate(rx_data4, RX_BUFF_SIZE);
+	z_xtensa_cache_inv(rx_data, RX_BUFF_SIZE);
+	z_xtensa_cache_inv(rx_data2, RX_BUFF_SIZE);
+	z_xtensa_cache_inv(rx_data3, RX_BUFF_SIZE);
+	z_xtensa_cache_inv(rx_data4, RX_BUFF_SIZE);
 
 	/* Intentionally break has been omitted (fall-through) */
 	switch (block_count) {

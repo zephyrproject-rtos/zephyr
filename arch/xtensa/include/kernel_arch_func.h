@@ -13,6 +13,7 @@
 #ifndef _ASMLANGUAGE
 #include <kernel_internal.h>
 #include <string.h>
+#include <arch/xtensa/cache.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,7 +32,7 @@ static ALWAYS_INLINE void arch_kernel_init(void)
 	/* Make sure we don't have live data for unexpected cached
 	 * regions due to boot firmware
 	 */
-	xthal_dcache_all_writeback_inv();
+	z_xtensa_cache_flush_inv_all();
 #endif
 
 	cpu0->nested = 0;
@@ -82,7 +83,7 @@ static inline void arch_cohere_stacks(struct k_thread *old_thread,
 	size_t nsz    = new_thread->stack_info.size;
 	size_t nsp    = (size_t) new_thread->switch_handle;
 
-	xthal_dcache_region_invalidate((void *)nsp, (nstack + nsz) - nsp);
+	z_xtensa_cache_inv((void *)nsp, (nstack + nsz) - nsp);
 
 	/* FIXME: dummy initializion threads don't have stack info set
 	 * up and explode the logic above.  Find a way to get this
@@ -98,8 +99,7 @@ static inline void arch_cohere_stacks(struct k_thread *old_thread,
 	 * calculate the boundary for it.
 	 */
 	if (old_switch_handle != NULL) {
-		xthal_dcache_region_writeback((void *)osp,
-					      (ostack + osz) - osp);
+		z_xtensa_cache_flush((void *)osp, (ostack + osz) - osp);
 	} else {
 		/* FIXME: hardcoding EXCSAVE3 is bad, should be
 		 * configurable a-la XTENSA_KERNEL_CPU_PTR_SR.

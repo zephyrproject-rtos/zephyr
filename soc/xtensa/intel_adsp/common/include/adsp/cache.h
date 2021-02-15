@@ -7,13 +7,13 @@
 #ifndef __COMMON_ADSP_CACHE_H__
 #define __COMMON_ADSP_CACHE_H__
 
-#include <xtensa/hal.h>
+#include <arch/xtensa/cache.h>
 
 /* macros for data cache operations */
 #define SOC_DCACHE_FLUSH(addr, size)		\
-	xthal_dcache_region_writeback((addr), (size))
+	z_xtensa_cache_flush((addr), (size))
 #define SOC_DCACHE_INVALIDATE(addr, size)	\
-	xthal_dcache_region_invalidate((addr), (size))
+	z_xtensa_cache_inv((addr), (size))
 
 /**
  * @brief Return uncached pointer to a RAM address

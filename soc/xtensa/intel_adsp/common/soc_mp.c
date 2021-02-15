@@ -18,6 +18,7 @@
 LOG_MODULE_REGISTER(soc_mp, CONFIG_SOC_LOG_LEVEL);
 
 #include <soc.h>
+#include <arch/xtensa/cache.h>
 #include <adsp/io.h>
 
 #include <soc/shim.h>
@@ -125,7 +126,7 @@ void z_mp_entry(void)
 	 * isn't using yet.  Manual inspection of generated code says
 	 * we're safe, but really we need a better solution here.
 	 */
-	xthal_dcache_all_writeback_inv();
+	z_xtensa_cache_flush_inv_all();
 
 	/* Copy over VECBASE from the main CPU for an initial value
 	 * (will need to revisit this if we ever allow a user API to

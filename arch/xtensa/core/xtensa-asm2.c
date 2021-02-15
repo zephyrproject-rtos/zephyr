@@ -61,7 +61,7 @@ void *xtensa_init_stack(struct k_thread *thread, int *stack_top,
 	ret = &bsa[-9];
 
 #ifdef CONFIG_KERNEL_COHERENCE
-	xthal_dcache_region_writeback(ret, (char *)stack_top - (char *)ret);
+	z_xtensa_cache_flush(ret, (char *)stack_top - (char *)ret);
 #endif
 	return ret;
 }

@@ -10,6 +10,7 @@
 #include <kernel_structs.h>
 #include <sys/sys_io.h>
 #include <sys/__assert.h>
+#include <xtensa/corebits.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(soc_mp, CONFIG_SOC_LOG_LEVEL);
