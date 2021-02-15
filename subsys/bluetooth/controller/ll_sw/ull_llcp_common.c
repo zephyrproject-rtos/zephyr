@@ -168,11 +168,6 @@ static void lp_comm_ntf_version_ind(struct ll_conn *conn,  struct proc_ctx *ctx,
 	}
 }
 
-static void lp_comm_ntf_terminate_ind(struct ll_conn *conn, struct proc_ctx *ctx, struct pdu_data *pdu)
-{
-	ntf_encode_terminate_ind(ctx, pdu);
-}
-
 static void lp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 {
 	struct node_rx_pdu *ntf;
@@ -192,9 +187,6 @@ static void lp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 		break;
 	case PROC_VERSION_EXCHANGE:
 		lp_comm_ntf_version_ind(conn, ctx, pdu);
-		break;
-	case PROC_TERMINATE:
-		lp_comm_ntf_terminate_ind(conn, ctx, pdu);
 		break;
 	default:
 		LL_ASSERT(0);
@@ -243,13 +235,12 @@ static void lp_comm_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		}
 		break;
 	case PROC_TERMINATE:
-		if (!ntf_alloc_is_available()) {
-			ctx->state = LP_COMMON_STATE_WAIT_NTF;
-		} else {
-			lp_comm_ntf(conn, ctx);
-			lr_complete(conn);
-			ctx->state = LP_COMMON_STATE_IDLE;
-		}
+		/* No notification */
+		lr_complete(conn);
+		ctx->state = LP_COMMON_STATE_IDLE;
+
+		/* Mark the connection for termination */
+		conn->terminate.reason = BT_HCI_ERR_LOCALHOST_TERM_CONN;
 		break;
 	default:
 		/* Unknown procedure */
@@ -386,9 +377,9 @@ static void lp_comm_rx_decode(struct ll_conn *conn, struct proc_ctx *ctx, struct
 		break;
 	case PDU_DATA_LLCTRL_TYPE_TERMINATE_IND:
 		/* No response expected */
+		LL_ASSERT(0);
 		break;
 	default:
-
 		/* Unknown opcode */
 		LL_ASSERT(0);
 	}
@@ -534,38 +525,6 @@ static void rp_comm_st_idle(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t 
 	}
 }
 
-static void rp_comm_ntf_terminate_ind(struct ll_conn *conn, struct proc_ctx *ctx, struct pdu_data *pdu)
-{
-	ntf_encode_terminate_ind(ctx, pdu);
-}
-
-static void rp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
-{
-	struct node_rx_pdu *ntf;
-	struct pdu_data *pdu;
-
-	/* Allocate ntf node */
-	ntf = ntf_alloc();
-	LL_ASSERT(ntf);
-
-	ntf->hdr.type = NODE_RX_TYPE_DC_PDU;
-	ntf->hdr.handle = conn->lll.handle;
-	pdu = (struct pdu_data *) ntf->pdu;
-
-	switch (ctx->proc) {
-	case PROC_TERMINATE:
-		rp_comm_ntf_terminate_ind(conn, ctx, pdu);
-		break;
-	default:
-		LL_ASSERT(0);
-		break;
-	}
-
-	/* Enqueue notification towards LL */
-	ll_rx_put(ntf->hdr.link, ntf);
-	ll_rx_sched();
-}
-
 static void rp_comm_send_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	switch (ctx->proc) {
@@ -615,14 +574,12 @@ static void rp_comm_send_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		ctx->state = RP_COMMON_STATE_IDLE;
 		break;
 	case PROC_TERMINATE:
-		if (!ntf_alloc_is_available()) {
-			ctx->state = RP_COMMON_STATE_WAIT_NTF;
-		} else {
-			rp_comm_ntf(conn, ctx);
-			rr_complete(conn);
-			ctx->state = RP_COMMON_STATE_IDLE;
-		}
+		/* No response */
+		rr_complete(conn);
+		ctx->state = RP_COMMON_STATE_IDLE;
 
+		/* Mark the connection for termination */
+		conn->terminate.reason = ctx->data.term.error_code;
 		break;
 	default:
 		/* Unknown procedure */
@@ -635,11 +592,7 @@ static void rp_comm_st_wait_rx(struct ll_conn *conn, struct proc_ctx *ctx, uint8
 	switch (evt) {
 	case RP_COMMON_EVT_REQUEST:
 		rp_comm_rx_decode(conn, ctx, (struct pdu_data *) param);
-		if (ctx->pause) {
-			ctx->state = RP_COMMON_STATE_WAIT_TX;
-		} else {
-			rp_comm_send_rsp(conn, ctx, evt, param);
-		}
+		rp_comm_send_rsp(conn, ctx, evt, param);
 		break;
 	default:
 		/* Ignore other evts */

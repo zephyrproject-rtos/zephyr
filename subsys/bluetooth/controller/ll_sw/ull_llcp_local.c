@@ -42,7 +42,8 @@ static struct proc_ctx *lr_dequeue(struct ll_conn *conn);
 enum lr_state {
 	LR_STATE_IDLE,
 	LR_STATE_ACTIVE,
-	LR_STATE_DISCONNECT
+	LR_STATE_DISCONNECT,
+	LR_STATE_TERMINATE,
 };
 
 /* LLCP Local Request FSM Event */
@@ -242,11 +243,17 @@ static void lr_st_disconnect(struct ll_conn *conn, uint8_t evt, void *param)
 
 static void lr_st_idle(struct ll_conn *conn, uint8_t evt, void *param)
 {
+	struct proc_ctx *ctx;
+
 	switch (evt) {
 	case LR_EVT_RUN:
-		if (lr_peek(conn)) {
+		if ((ctx = lr_peek(conn))) {
 			lr_act_run(conn);
-			lr_set_state(conn, LR_STATE_ACTIVE);
+			if (ctx->proc != PROC_TERMINATE) {
+				lr_set_state(conn, LR_STATE_ACTIVE);
+			} else {
+				lr_set_state(conn, LR_STATE_TERMINATE);
+			}
 		}
 		break;
 	case LR_EVT_DISCONNECT:
@@ -281,6 +288,28 @@ static void lr_st_active(struct ll_conn *conn, uint8_t evt, void *param)
 	}
 }
 
+static void lr_st_terminate(struct ll_conn *conn, uint8_t evt, void *param)
+{
+	switch (evt) {
+	case LR_EVT_RUN:
+		if (lr_peek(conn)) {
+			lr_act_run(conn);
+		}
+		break;
+	case LR_EVT_COMPLETE:
+		lr_act_complete(conn);
+		lr_set_state(conn, LR_STATE_IDLE);
+		break;
+	case LR_EVT_DISCONNECT:
+		lr_act_disconnect(conn);
+		lr_set_state(conn, LR_STATE_DISCONNECT);
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
+}
+
 static void lr_execute_fsm(struct ll_conn *conn, uint8_t evt, void *param)
 {
 	switch (conn->llcp.local.state) {
@@ -292,6 +321,9 @@ static void lr_execute_fsm(struct ll_conn *conn, uint8_t evt, void *param)
 		break;
 	case LR_STATE_ACTIVE:
 		lr_st_active(conn, evt, param);
+		break;
+	case LR_STATE_TERMINATE:
+		lr_st_terminate(conn, evt, param);
 		break;
 	default:
 		/* Unknown state */
@@ -322,6 +354,22 @@ void ull_cp_priv_lr_connect(struct ll_conn *conn)
 void ull_cp_priv_lr_disconnect(struct ll_conn *conn)
 {
 	lr_execute_fsm(conn, LR_EVT_DISCONNECT, NULL);
+}
+
+void ull_cp_priv_lr_abort(struct ll_conn *conn)
+{
+	struct proc_ctx *ctx;
+
+	/* Flush all pending procedures */
+	ctx = lr_dequeue(conn);
+	while (ctx) {
+		proc_ctx_release(ctx);
+		ctx = lr_dequeue(conn);
+	}
+
+	/* TODO(thoh): Whats missing here ??? */
+	rr_set_incompat(conn, 0U);
+	lr_set_state(conn, LR_STATE_IDLE);
 }
 
 #ifdef ZTEST_UNITTEST
