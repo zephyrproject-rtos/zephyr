@@ -67,6 +67,7 @@ void lll_df_conf_cte_tx_enable(uint8_t type, uint8_t length,
 {
 	if (type == BT_HCI_LE_AOA_CTE) {
 		radio_df_mode_set_aoa();
+		radio_df_cte_tx_aoa_set(length);
 	}
 #if defined(CONFIG_BT_CTLR_DF_ANT_SWITCH_TX) || \
 	defined(CONFIG_BT_CTLR_DF_ANT_SWITCH_RX)
@@ -74,9 +75,9 @@ void lll_df_conf_cte_tx_enable(uint8_t type, uint8_t length,
 		radio_df_mode_set_aod();
 
 		if (type == BT_HCI_LE_AOD_CTE_1US) {
-			radio_df_ant_switch_spacing_set_2us();
+			radio_df_cte_tx_aod_2us_set(length);
 		} else {
-			radio_df_ant_switch_spacing_set_4us();
+			radio_df_cte_tx_aod_4us_set(length);
 		}
 
 		radio_df_ant_switching_pin_sel_cfg();
@@ -84,8 +85,6 @@ void lll_df_conf_cte_tx_enable(uint8_t type, uint8_t length,
 		radio_df_ant_switch_pattern_set(ant_ids, ant_num);
 	}
 #endif /* CONFIG_BT_CTLR_DF_ANT_SWITCH_TX || CONFIG_BT_CTLR_DF_ANT_SWITCH_RX */
-
-	radio_df_cte_length_set(length);
 }
 
 void lll_df_conf_cte_tx_disable(void)
