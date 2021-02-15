@@ -432,6 +432,13 @@ config NET_TCP_RECV_QUEUE_TIMEOUT
 	  SEQ 2. But if we receive SEQs 5,4,3,7 then the SEQ 7 is discarded
 	  because the list would not be sequential as number 6 is be missing.
 
+config NET_TCP_WORKQ_STACK_SIZE
+	int "TCP work queue thread stack size"
+	default 1024
+	depends on NET_TCP
+	help
+	  Set the TCP work queue thread stack size in bytes.
+
 choice
 	prompt "Select TCP stack"
 	depends on NET_TCP
