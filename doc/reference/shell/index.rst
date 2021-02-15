@@ -30,6 +30,7 @@ interaction is required. This module is a Unix-like shell with these features:
 * Built-in handler to display help for the commands.
 * Support for wildcards: ``*`` and ``?``.
 * Support for meta keys.
+* Support for getopt.
 * Kconfig configuration to optimize memory usage.
 
 .. note::
@@ -479,6 +480,28 @@ The shell module supports the following meta keys:
      - Moves the cursor forward one word.
 
 This feature is activated by :option:`CONFIG_SHELL_METAKEYS` set to ``y``.
+
+Getopt Feature
+*****************
+
+Some shell users apart from subcommands might need to use options as well.
+the arguments string, looking for supported options. Typically, this task
+is accomplished by the ``getopt`` function.
+
+For this purpose shell supports the getopt library available
+in the FreeBSD project. I was modified so that it can be used
+by all instances of the shell at the same time, hence its call requires
+one more parameter.
+
+An example usage:
+
+.. code-block:: c
+
+  while ((char c = shell_getopt(shell, argc, argv, "abhc:")) != -1) {
+     /* some code */
+  }
+
+This module is activated by :option:`CONFIG_SHELL_GETOPT` set to ``y``.
 
 Shell Logger Backend Feature
 ****************************
