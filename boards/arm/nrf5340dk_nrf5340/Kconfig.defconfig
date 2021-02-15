@@ -22,6 +22,21 @@ config BOARD
 config BUILD_WITH_TFM
 	default y if BOARD_NRF5340DK_NRF5340_CPUAPPNS || BOARD_NRF5340PDK_NRF5340_CPUAPPNS
 
+if BUILD_WITH_TFM
+
+# By default, force building TF-M without bootloader support,
+# when running tests. This will allow twister to automate the
+# flashing and execution of Zephyr tests for the Non-Secure
+# board version (applicable for nRF5340 Application core).
+
+choice TFM_BL2
+	bool
+	prompt "BL2 configuration, should TFM build with MCUboot support"
+	default TFM_BL2_FALSE if TEST_ARM_CORTEX_M
+endchoice
+
+endif # BUILD_WITH_TFM
+
 # Code Partition:
 #
 # For the secure version of the board the firmware is linked at the beginning
