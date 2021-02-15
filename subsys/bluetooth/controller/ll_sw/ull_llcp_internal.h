@@ -574,6 +574,12 @@ static inline void lr_disconnect(struct ll_conn *conn)
 	return ull_cp_priv_lr_disconnect(conn);
 }
 
+void ull_cp_priv_lr_abort(struct ll_conn *conn);
+
+static inline void lr_abort(struct ll_conn *conn)
+{
+	return ull_cp_priv_lr_abort(conn);
+}
 
 /*
  * LLCP Remote Request

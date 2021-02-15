@@ -443,6 +443,8 @@ uint8_t ull_cp_terminate(struct ll_conn *conn, uint8_t error_code)
 {
 	struct proc_ctx *ctx;
 
+	lr_abort(conn);
+
 	ctx = create_local_procedure(PROC_TERMINATE);
 	if (!ctx) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
@@ -577,6 +579,11 @@ static bool pdu_is_reject(struct pdu_data *pdu, struct proc_ctx *ctx)
 	return (((pdu->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND) && (ctx->tx_opcode == pdu->llctrl.reject_ext_ind.reject_opcode)) || (pdu->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_REJECT_IND));
 }
 
+static bool pdu_is_terminate(struct pdu_data *pdu)
+{
+	return pdu->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_TERMINATE_IND;
+}
+
 void ull_cp_tx_ack(struct ll_conn *conn, struct node_tx *tx)
 {
 	struct proc_ctx *ctx;
@@ -595,18 +602,23 @@ void ull_cp_rx(struct ll_conn *conn, struct node_rx_pdu *rx)
 
 	pdu = (struct pdu_data *) rx->pdu;
 
-	ctx = lr_peek(conn);
-	if (ctx && (pdu_is_expected(pdu, ctx) || pdu_is_unknown(pdu, ctx) || pdu_is_reject(pdu, ctx))) {
-		/* Response on local procedure */
-		lr_rx(conn, ctx, rx);
-		return;
-	}
+	if (!pdu_is_terminate(pdu)) {
+		/* Process non LL_TERMINATE_IND PDU's as responses to active
+		 * procedures */
 
-	ctx = rr_peek(conn);
-	if (ctx && (pdu_is_expected(pdu, ctx) || pdu_is_unknown(pdu, ctx) || pdu_is_reject(pdu, ctx))) {
-		/* Response on remote procedure */
-		rr_rx(conn, ctx, rx);
-		return;
+		ctx = lr_peek(conn);
+		if (ctx && (pdu_is_expected(pdu, ctx) || pdu_is_unknown(pdu, ctx) || pdu_is_reject(pdu, ctx))) {
+			/* Response on local procedure */
+			lr_rx(conn, ctx, rx);
+			return;
+		}
+
+		ctx = rr_peek(conn);
+		if (ctx && (pdu_is_expected(pdu, ctx) || pdu_is_unknown(pdu, ctx) || pdu_is_reject(pdu, ctx))) {
+			/* Response on remote procedure */
+			rr_rx(conn, ctx, rx);
+			return;
+		}
 	}
 
 	/* New remote request */
