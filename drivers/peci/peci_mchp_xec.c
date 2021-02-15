@@ -23,6 +23,8 @@ LOG_MODULE_REGISTER(peci_mchp_xec, CONFIG_PECI_LOG_LEVEL);
 #define PECI_IDLE_TIMEOUT   50u
 /* Maximum retries */
 #define PECI_TIMEOUT_RETRIES 3u
+/* Maximum read buffer fill wait retries */
+#define PECI_RX_BUF_FILL_WAIT_RETRY 100u
 
 /* 10 us */
 #define PECI_IO_DELAY       10
@@ -223,26 +225,36 @@ static int peci_xec_read(const struct device *dev, struct peci_msg *msg)
 	int ret;
 	uint8_t tx_fcs;
 	uint8_t bytes_rcvd;
+	uint8_t wait_timeout_cnt;
 	struct peci_buf *rx_buf = &msg->rx_buffer;
 	PECI_Type *base = peci_xec_config.base;
 
 	/* Attempt to read data from RX FIFO */
 	bytes_rcvd = 0;
 	for (i = 0; i < (rx_buf->len + PECI_FCS_LEN); i++) {
-		/* Check if data available */
-		if (!(base->STATUS2 & MCHP_PECI_STS2_RFE)) {
-			if (i == 0) {
-				/* Get write block FCS just for debug */
-				tx_fcs = base->RD_DATA;
-				LOG_DBG("TX FCS %x", tx_fcs);
-			} else if (i == (rx_buf->len + 1)) {
-				/* Get read block FCS, but don't count it */
-				rx_buf->buf[i-1] = base->RD_DATA;
-			} else {
-				/* Get response */
-				rx_buf->buf[i-1] = base->RD_DATA;
-				bytes_rcvd++;
+		/* Worst case timeout will be 1msec (100 * 10usec) */
+		wait_timeout_cnt = PECI_RX_BUF_FILL_WAIT_RETRY;
+		/* Wait for read buffer to fill up */
+		while (base->STATUS2 & MCHP_PECI_STS2_RFE) {
+			k_usleep(PECI_IO_DELAY);
+			wait_timeout_cnt--;
+			if (!wait_timeout_cnt) {
+				LOG_WRN("Rx buffer empty");
+				return -ETIMEDOUT;
 			}
+		}
+
+		if (i == 0) {
+			/* Get write block FCS just for debug */
+			tx_fcs = base->RD_DATA;
+			LOG_DBG("TX FCS %x", tx_fcs);
+		} else if (i == (rx_buf->len + 1)) {
+			/* Get read block FCS, but don't count it */
+			rx_buf->buf[i-1] = base->RD_DATA;
+		} else {
+			/* Get response */
+			rx_buf->buf[i-1] = base->RD_DATA;
+			bytes_rcvd++;
 		}
 	}
 
