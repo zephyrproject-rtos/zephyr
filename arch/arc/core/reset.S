@@ -122,12 +122,13 @@ invalidate_dcache:
 done_cache_invalidate:
 
 /*
- * ARC Custom Initialization
+ * Init ARC internal architecture state
+ * Force to initialize internal architecture state to reset values
  * For scenarios where board hardware is not re-initialized between tests,
  * some settings need to be restored to its default initial states as a
  * substitution of normal hardware reset sequence.
  */
-#if defined(CONFIG_ARC_CUSTOM_INIT)
+#ifdef CONFIG_INIT_ARCH_HW_AT_BOOT
 	/* Set MPU (v3) registers to default */
 #if CONFIG_ARC_MPU_VER == 3
 	/* Set default reset value to _ARC_V2_MPU_EN register */
@@ -151,11 +152,6 @@ mpu_regions_reset:
 	b_s mpu_regions_reset
 done_mpu_regions_reset:
 #endif
-#endif
-
-#if defined(CONFIG_SYS_POWER_DEEP_SLEEP_STATES) && \
-	!defined(CONFIG_BOOTLOADER_CONTEXT_RESTORE)
-        jl @_sys_resume_from_deep_sleep
 #endif
 
 #if defined(CONFIG_SMP) || CONFIG_MP_NUM_CPUS  > 1

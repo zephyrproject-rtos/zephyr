@@ -15,7 +15,6 @@ menuconfig UPDATEHUB
 	select NET_SOCKETS
 	select NET_SOCKETS_POSIX_NAMES
 	select COAP
-	select NET_CONFIG_SETTINGS
 	select DNS_RESOLVER
 	select JSON_LIBRARY
 	select TINYCRYPT
@@ -28,18 +27,17 @@ menuconfig UPDATEHUB
 	  (FOTA) updates with maximum security and efficiency, while you
 	  focus in adding value to your product.
 
+if UPDATEHUB
 config UPDATEHUB_POLL_INTERVAL
 	int "Time to poll interval (in minutes)"
 	default 1440
 	range 0 43200
-	depends on UPDATEHUB
 	help
 	  Set the interval that the UpdateHub update server will be polled.
 	  This time interval is zero and 43200 minutes(30 days).
 
 config UPDATEHUB_PRODUCT_UID
 	string "Product Unique Identifier (UID)"
-	depends on UPDATEHUB
 	help
 	  The product unique identifier is used when communicating
 	  with the UpdateHub server.
@@ -48,14 +46,12 @@ config UPDATEHUB_SUPPORTED_HARDWARE_MAX
 	int "Max number of supported hardware"
 	default 1
 	range 1 100
-	depends on UPDATEHUB
 	help
 	  Configure the max number of supported hardware
 	  by the same image.
 
 config UPDATEHUB_CE
 	bool "Use UpdateHub Community Edition Sever"
-	depends on UPDATEHUB
 	help
 	  Allow the use of UpdateHub Community
 	  Server (updatehub-ce) as alternative to the
@@ -70,7 +66,6 @@ config UPDATEHUB_SERVER
 
 config UPDATEHUB_SHELL
 	bool "Enable UpdateHub shell utilities"
-	depends on UPDATEHUB
 	depends on SHELL
 	select KERNEL_SHELL
 	help
@@ -78,7 +73,6 @@ config UPDATEHUB_SHELL
 
 config UPDATEHUB_DTLS
 	bool"Activate communication CoAPS/DTLS"
-	depends on UPDATEHUB
 	select MBEDTLS
 	select MBEDTLS_ENABLE_HEAP
 	select NET_SOCKETS_SOCKOPT_TLS
@@ -91,7 +85,6 @@ config UPDATEHUB_COAP_CONN_TIMEOUT
 	int "CoAP connection timeout in seconds"
 	default 10
 	range 1 360
-	depends on UPDATEHUB
 	help
 	  Set the CoAP connection timeout value.
 
@@ -99,7 +92,6 @@ config UPDATEHUB_COAP_MAX_RETRY
 	int "Maximum retries attempts to download a packet"
 	default 10
 	range 3 10
-	depends on UPDATEHUB
 	help
 	  Set the maximum number of retries attempts to download a packet
 	  before abort a current update.
@@ -108,7 +100,6 @@ config UPDATEHUB_COAP_BLOCK_SIZE_EXP
 	int "Max CoAP block size defined as 2^(4 + EXP)"
 	default 6
 	range 0 6
-	depends on UPDATEHUB
 	help
 	  Configure the max size of a data payload were value:
 	    0 - COAP_BLOCK_16
@@ -123,7 +114,6 @@ config UPDATEHUB_COAP_BLOCK_SIZE_EXP
 
 choice
 	prompt "Firmware verification"
-	depends on UPDATEHUB
 	default UPDATEHUB_DOWNLOAD_STORAGE_SHA256_VERIFICATION
 
 config UPDATEHUB_DOWNLOAD_SHA256_VERIFICATION
@@ -163,3 +153,5 @@ module = UPDATEHUB
 module-str = Log level for UpdateHub
 module-help = Enables logging for UpdateHub code.
 source "subsys/logging/Kconfig.template.log_config"
+
+endif

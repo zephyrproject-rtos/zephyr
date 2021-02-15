@@ -1,5 +1,7 @@
 // memctl_default.S  - Default startup value for MEMCTL register.
 
+// SPDX-License-Identifier: MIT
+
 // Copyright (c) 1998-2015 Cadence Design Systems, Inc.
 //
 // Permission is hereby granted, free of charge, to any person obtaining

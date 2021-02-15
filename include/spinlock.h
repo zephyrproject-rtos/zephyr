@@ -11,6 +11,10 @@
 #include <stdbool.h>
 #include <arch/cpu.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct z_spinlock_key {
 	int key;
 };
@@ -61,7 +65,12 @@ struct k_spinlock {
 bool z_spin_lock_valid(struct k_spinlock *l);
 bool z_spin_unlock_valid(struct k_spinlock *l);
 void z_spin_lock_set_owner(struct k_spinlock *l);
-BUILD_ASSERT(CONFIG_MP_NUM_CPUS < 4, "Too many CPUs for mask");
+BUILD_ASSERT(CONFIG_MP_NUM_CPUS <= 4, "Too many CPUs for mask");
+
+# ifdef CONFIG_KERNEL_COHERENCE
+bool z_spin_lock_mem_coherent(struct k_spinlock *l);
+# endif /* CONFIG_KERNEL_COHERENCE */
+
 #endif /* CONFIG_SPIN_VALIDATE */
 
 /**
@@ -118,8 +127,8 @@ static ALWAYS_INLINE k_spinlock_key_t k_spin_lock(struct k_spinlock *l)
 
 #ifdef CONFIG_SPIN_VALIDATE
 	__ASSERT(z_spin_lock_valid(l), "Recursive spinlock %p", l);
-# ifdef KERNEL_COHERENCE
-	__ASSERT_NO_MSG(arch_mem_coherent(l));
+# ifdef CONFIG_KERNEL_COHERENCE
+	__ASSERT_NO_MSG(z_spin_lock_mem_coherent(l));
 # endif
 #endif
 
@@ -190,5 +199,8 @@ static ALWAYS_INLINE void k_spin_release(struct k_spinlock *l)
 #endif
 }
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZEPHYR_INCLUDE_SPINLOCK_H_ */

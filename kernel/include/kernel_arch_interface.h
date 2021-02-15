@@ -78,50 +78,55 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		     void *p1, void *p2, void *p3);
 
 #ifdef CONFIG_USE_SWITCH
-/**
- * Cooperatively context switch
+/** Cooperative context switch primitive
  *
- * Architectures have considerable leeway on what the specific semantics of
- * the switch handles are, but optimal implementations should do the following
- * if possible:
+ * The action of arch_switch() should be to switch to a new context
+ * passed in the first argument, and save a pointer to the current
+ * context into the address passed in the second argument.
  *
- * 1) Push all thread state relevant to the context switch to the current stack
- * 2) Update the switched_from parameter to contain the current stack pointer,
- *    after all context has been saved. switched_from is used as an output-
- *    only parameter and its current value is ignored (and can be NULL, see
- *    below).
- * 3) Set the stack pointer to the value provided in switch_to
- * 4) Pop off all thread state from the stack we switched to and return.
+ * The actual type and interpretation of the switch handle is specified
+ * by the architecture.  It is the same data structure stored in the
+ * "switch_handle" field of a newly-created thread in arch_new_thread(),
+ * and passed to the kernel as the "interrupted" argument to
+ * z_get_next_switch_handle().
  *
- * Some arches may implement thread->switch handle as a pointer to the
- * thread itself, and save context somewhere in thread->arch. In this
- * case, on initial context switch from the dummy thread,
- * thread->switch handle for the outgoing thread is NULL. Instead of
- * dereferencing switched_from all the way to get the thread pointer,
- * subtract ___thread_t_switch_handle_OFFSET to obtain the thread
- * pointer instead.  That is, such a scheme would have behavior like
- * (in C pseudocode):
+ * Note that on SMP systems, the kernel uses the store through the
+ * second pointer as a synchronization point to detect when a thread
+ * context is completely saved (so another CPU can know when it is
+ * safe to switch).  This store must be done AFTER all relevant state
+ * is saved, and must include whatever memory barriers or cache
+ * management code is required to be sure another CPU will see the
+ * result correctly.
  *
- * void arch_switch(void *switch_to, void **switched_from)
- * {
- *     struct k_thread *new = switch_to;
- *     struct k_thread *old = CONTAINER_OF(switched_from, struct k_thread,
- *                                         switch_handle);
+ * The simplest implementation of arch_switch() is generally to push
+ * state onto the thread stack and use the resulting stack pointer as the
+ * switch handle.  Some architectures may instead decide to use a pointer
+ * into the thread struct as the "switch handle" type.  These can legally
+ * assume that the second argument to arch_switch() is the address of the
+ * switch_handle field of struct thread_base and can use an offset on
+ * this value to find other parts of the thread struct.  For example a (C
+ * pseudocode) implementation of arch_switch() might look like:
  *
- *     // save old context...
- *     *switched_from = old;
- *     // restore new context...
- * }
+ *   void arch_switch(void *switch_to, void **switched_from)
+ *   {
+ *       struct k_thread *new = switch_to;
+ *       struct k_thread *old = CONTAINER_OF(switched_from, struct k_thread,
+ *                                           switch_handle);
  *
- * Note that, regardless of the underlying handle representation, the
- * incoming switched_from pointer MUST be written through with a
- * non-NULL value after all relevant thread state has been saved.  The
- * kernel uses this as a synchronization signal to be able to wait for
- * switch completion from another CPU.
+ *       // save old context...
+ *       *switched_from = old;
+ *       // restore new context...
+ *   }
+ *
+ * Note that the kernel manages the switch_handle field for
+ * synchronization as described above.  So it is not legal for
+ * architecture code to assume that it has any particular value at any
+ * other time.  In particular it is not legal to read the field from the
+ * address passed in the second argument.
  *
  * @param switch_to Incoming thread's switch handle
  * @param switched_from Pointer to outgoing thread's switch handle storage
- *        location, which may be updated.
+ *        location, which must be updated.
  */
 static inline void arch_switch(void *switch_to, void **switched_from);
 #else
@@ -241,21 +246,22 @@ static inline bool arch_is_in_isr(void);
  * to this API are assumed to be serialized, and indeed all usage will
  * originate from kernel/mm.c which handles virtual memory management.
  *
+ * Architectures are expected to pre-allocate page tables for the entire
+ * address space, as defined by CONFIG_KERNEL_VM_BASE and
+ * CONFIG_KERNEL_VM_SIZE. This operation should never require any kind of
+ * allocation for paging structures.
+ *
+ * Validation of arguments should be done via assertions.
+ *
  * This API is part of infrastructure still under development and may
  * change.
- *
- * @see z_mem_map()
  *
  * @param dest Page-aligned Destination virtual address to map
  * @param addr Page-aligned Source physical address to map
  * @param size Page-aligned size of the mapped memory region in bytes
  * @param flags Caching, access and control flags, see K_MAP_* macros
- * @retval 0 Success
- * @retval -ENOTSUP Unsupported cache mode with no suitable fallback, or
- *	   unsupported flags
- * @retval -ENOMEM Memory for additional paging structures unavailable
  */
-int arch_mem_map(void *dest, uintptr_t addr, size_t size, uint32_t flags);
+void arch_mem_map(void *dest, uintptr_t addr, size_t size, uint32_t flags);
 
 /**
  * Remove mappings for a provided virtual address range
@@ -284,6 +290,199 @@ int arch_mem_map(void *dest, uintptr_t addr, size_t size, uint32_t flags);
  * @param size Page-aligned region size
  */
 void arch_mem_unmap(void *addr, size_t size);
+
+#ifdef CONFIG_ARCH_HAS_RESERVED_PAGE_FRAMES
+/**
+ * Update page frame database with reserved pages
+ *
+ * Some page frames within system RAM may not be available for use. A good
+ * example of this is reserved regions in the first megabyte on PC-like systems.
+ *
+ * Implementations of this function should mark all relavent entries in
+ * z_page_frames with K_PAGE_FRAME_RESERVED. This function is called at
+ * early system initialization with mm_lock held.
+ */
+void arch_reserved_pages_update(void);
+#endif /* ARCH_HAS_RESERVED_PAGE_FRAMES */
+
+#ifdef CONFIG_DEMAND_PAGING
+/**
+ * Update all page tables for a paged-out data page
+ *
+ * This function:
+ * - Sets the data page virtual address to trigger a fault if accessed that
+ *   can be distinguished from access violations or un-mapped pages.
+ * - Saves the provided location value so that it can retrieved for that
+ *   data page in the page fault handler.
+ * - The location value semantics are undefined here but the value will be
+ *   always be page-aligned. It could be 0.
+ *
+ * If multiple page tables are in use, this must update all page tables.
+ * This function is called with interrupts locked.
+ *
+ * Calling this function on data pages which are already paged out is
+ * undefined behavior.
+ *
+ * This API is part of infrastructure still under development and may change.
+ */
+void arch_mem_page_out(void *addr, uintptr_t location);
+
+/**
+ * Update all page tables for a paged-in data page
+ *
+ * This function:
+ * - Maps the specified virtual data page address to the provided physical
+ *   page frame address, such that future memory accesses will function as
+ *   expected. Access and caching attributes are undisturbed.
+ * - Clears any accounting for "accessed" and "dirty" states.
+ *
+ * If multiple page tables are in use, this must update all page tables.
+ * This function is called with interrupts locked.
+ *
+ * Calling this function on data pages which are already paged in is
+ * undefined behavior.
+ *
+ * This API is part of infrastructure still under development and may change.
+ */
+void arch_mem_page_in(void *addr, uintptr_t phys);
+
+/**
+ * Update current page tables for a temporary mapping
+ *
+ * Map a physical page frame address to a special virtual address
+ * Z_SCRATCH_PAGE, with read/write access to supervisor mode, such that
+ * when this function returns, the calling context can read/write the page
+ * frame's contents from the Z_SCRATCH_PAGE address.
+ *
+ * This mapping only needs to be done on the current set of page tables,
+ * as it is only used for a short period of time exclusively by the caller.
+ * This function is called with interrupts locked.
+ *
+ * This API is part of infrastructure still under development and may change.
+ */
+void arch_mem_scratch(uintptr_t phys);
+
+enum arch_page_location {
+	ARCH_PAGE_LOCATION_PAGED_OUT,
+	ARCH_PAGE_LOCATION_PAGED_IN,
+	ARCH_PAGE_LOCATION_BAD
+};
+
+/**
+ * Fetch location information about a page at a particular address
+ *
+ * The function only needs to query the current set of page tables as
+ * the information it reports must be common to all of them if multiple
+ * page tables are in use. If multiple page tables are active it is unnecessary
+ * to iterate over all of them. This may allow certain types of optimizations
+ * (such as reverse page table mapping on x86).
+ *
+ * This function is called with interrupts locked, so that the reported
+ * information can't become stale while decisions are being made based on it.
+ *
+ * Unless otherwise specified, virtual data pages have the same mappings
+ * across all page tables. Calling this function on data pages that are
+ * exceptions to this rule (such as the scratch page) is undefined behavior.
+ * Just check the currently installed page tables and return the information
+ * in that.
+ *
+ * @param addr Virtual data page address that took the page fault
+ * @param [out] location In the case of ARCH_PAGE_FAULT_PAGED_OUT, the backing
+ *        store location value used to retrieve the data page. In the case of
+ *        ARCH_PAGE_FAULT_PAGED_IN, the physical address the page is mapped to.
+ * @retval ARCH_PAGE_FAULT_PAGED_OUT The page was evicted to the backing store.
+ * @retval ARCH_PAGE_FAULT_PAGED_IN The data page is resident in memory.
+ * @retval ARCH_PAGE_FAULT_BAD The page is un-mapped or otherwise has had
+ *         invalid access
+ */
+enum arch_page_location arch_page_location_get(void *addr, uintptr_t *location);
+
+/**
+ * @def ARCH_DATA_PAGE_ACCESSED
+ *
+ * Bit indicating the data page was accessed since the value was last cleared.
+ *
+ * Used by marking eviction algorithms. Safe to set this if uncertain.
+ *
+ * This bit is undefined if ARCH_DATA_PAGE_LOADED is not set.
+ */
+
+ /**
+  * @def ARCH_DATA_PAGE_DIRTY
+  *
+  * Bit indicating the data page, if evicted, will need to be paged out.
+  *
+  * Set if the data page was modified since it was last paged out, or if
+  * it has never been paged out before. Safe to set this if uncertain.
+  *
+  * This bit is undefined if ARCH_DATA_PAGE_LOADED is not set.
+  */
+
+ /**
+  * @def ARCH_DATA_PAGE_LOADED
+  *
+  * Bit indicating that the data page is loaded into a physical page frame.
+  *
+  * If un-set, the data page is paged out or not mapped.
+  */
+
+/**
+ * @def ARCH_DATA_PAGE_NOT_MAPPED
+ *
+ * If ARCH_DATA_PAGE_LOADED is un-set, this will indicate that the page
+ * is not mapped at all. This bit is undefined if ARCH_DATA_PAGE_LOADED is set.
+ */
+
+/**
+ * Retrieve page characteristics from the page table(s)
+ *
+ * The architecture is responsible for maintaining "accessed" and "dirty"
+ * states of data pages to support marking eviction algorithms. This can
+ * either be directly supported by hardware or emulated by modifying
+ * protection policy to generate faults on reads or writes. In all cases
+ * the architecture must maintain this information in some way.
+ *
+ * For the provided virtual address, report the logical OR of the accessed
+ * and dirty states for the relevant entries in all active page tables in
+ * the system if the page is mapped and not paged out.
+ *
+ * If clear_accessed is true, the ARCH_DATA_PAGE_ACCESSED flag will be reset.
+ * This function will report its prior state. If multiple page tables are in
+ * use, this function clears accessed state in all of them.
+ *
+ * This function is called with interrupts locked, so that the reported
+ * information can't become stale while decisions are being made based on it.
+ *
+ * The return value may have other bits set which the caller must ignore.
+ *
+ * Clearing accessed state for data pages that are not ARCH_DATA_PAGE_LOADED
+ * is undefined behavior.
+ *
+ * ARCH_DATA_PAGE_DIRTY and ARCH_DATA_PAGE_ACCESSED bits in the return value
+ * are only significant if ARCH_DATA_PAGE_LOADED is set, otherwise ignore
+ * them.
+ *
+ * ARCH_DATA_PAGE_NOT_MAPPED bit in the return value is only significant
+ * if ARCH_DATA_PAGE_LOADED is un-set, otherwise ignore it.
+ *
+ * Unless otherwise specified, virtual data pages have the same mappings
+ * across all page tables. Calling this function on data pages that are
+ * exceptions to this rule (such as the scratch page) is undefined behavior.
+ *
+ * This API is part of infrastructure still under development and may change.
+ *
+ * @param addr Virtual address to look up in page tables
+ * @param [out] location If non-NULL, updated with either physical page frame
+ *                   address or backing store location depending on
+ *                   ARCH_DATA_PAGE_LOADED state. This is not touched if
+ *                   ARCH_DATA_PAGE_NOT_MAPPED.
+ * @param clear_accessed Whether to clear ARCH_DATA_PAGE_ACCESSED state
+ * @retval Value with ARCH_DATA_PAGE_* bits set reflecting the data page
+ *         configuration
+ */
+uintptr_t arch_page_info_get(void *addr, uintptr_t *location,
+			     bool clear_accessed);
+#endif /* CONFIG_DEMAND_PAGING */
 #endif /* CONFIG_MMU */
 /** @} */
 

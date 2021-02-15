@@ -9,4 +9,4 @@ tests:
     tags: device
     platform_exclude: mec15xxevb_assy6853
     extra_configs:
-      - CONFIG_DEVICE_POWER_MANAGEMENT=y
+      - CONFIG_PM_DEVICE=y

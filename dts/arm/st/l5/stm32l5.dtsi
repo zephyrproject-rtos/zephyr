@@ -8,6 +8,7 @@
 #include <arm/armv8-m.dtsi>
 #include <dt-bindings/clock/stm32_clock.h>
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/i2c/i2c.h>
 #include <dt-bindings/pwm/pwm.h>
 
 / {
@@ -189,6 +190,30 @@
 			interrupts = <66 0>;
 			status = "disabled";
 			label = "LPUART_1";
+		};
+
+		i2c1: i2c@40005400 {
+			compatible = "st,stm32-i2c-v2";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40005400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00200000>;
+			interrupts = <55 0>, <56 0>;
+			interrupt-names = "event", "error";
+			status = "disabled";
+			label= "I2C_1";
+		};
+
+		spi1: spi@40013000 {
+			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40013000 0x400>;
+			interrupts = <59 5>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00001000>;
+			status = "disabled";
+			label = "SPI_1";
 		};
 	};
 };

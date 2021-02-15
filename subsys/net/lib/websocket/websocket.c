@@ -502,7 +502,7 @@ int websocket_send_msg(int ws_sock, const uint8_t *payload, size_t payload_len,
 	/* Websocket unit test does not use socket layer but feeds
 	 * the data directly here when testing this function.
 	 */
-	ctx = INT_TO_POINTER(ws_sock);
+	ctx = UINT_TO_POINTER((unsigned int) ws_sock);
 #else
 	ctx = z_get_fd_obj(ws_sock, NULL, 0);
 	if (ctx == NULL) {
@@ -675,7 +675,8 @@ int websocket_recv_msg(int ws_sock, uint8_t *buf, size_t buf_len,
 		struct websocket_context *ctx;
 	};
 
-	struct test_data *test_data = INT_TO_POINTER(ws_sock);
+	struct test_data *test_data =
+	    UINT_TO_POINTER((unsigned int) ws_sock);
 
 	ctx = test_data->ctx;
 #else

@@ -218,7 +218,7 @@ uint32_t ht16k33_get_pending_int(const struct device *dev)
 	err = i2c_write_read(data->i2c, config->i2c_addr, &cmd, sizeof(cmd),
 			     &flag, sizeof(flag));
 	if (err) {
-		LOG_ERR("Failed to to read HT16K33 IRQ flag");
+		LOG_ERR("Failed to read HT16K33 IRQ flag");
 		return 0;
 	}
 
@@ -473,8 +473,8 @@ static const struct led_driver_api ht16k33_leds_api = {
 									\
 	static struct ht16k33_data ht16k33_##id##_data;			\
 									\
-	DEVICE_AND_API_INIT(ht16k33_##id, DT_INST_LABEL(id),		\
-			    &ht16k33_init, &ht16k33_##id##_data,	\
+	DEVICE_DT_INST_DEFINE(id, &ht16k33_init, device_pm_control_nop,	\
+			    &ht16k33_##id##_data,			\
 			    &ht16k33_##id##_cfg, POST_KERNEL,		\
 			    CONFIG_LED_INIT_PRIORITY, &ht16k33_leds_api)
 
@@ -493,8 +493,8 @@ static const struct led_driver_api ht16k33_leds_api = {
 									\
 	static struct ht16k33_data ht16k33_##id##_data;			\
 									\
-	DEVICE_AND_API_INIT(ht16k33_##id, DT_INST_LABEL(id),		\
-			    &ht16k33_init, &ht16k33_##id##_data,	\
+	DEVICE_DT_INST_DEFINE(id, &ht16k33_init, device_pm_control_nop,	\
+			    &ht16k33_##id##_data,			\
 			    &ht16k33_##id##_cfg, POST_KERNEL,		\
 			    CONFIG_LED_INIT_PRIORITY, &ht16k33_leds_api)
 #else /* ! CONFIG_HT16K33_KEYSCAN */

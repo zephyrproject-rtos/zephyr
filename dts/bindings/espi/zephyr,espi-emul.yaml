@@ -1,0 +1,12 @@
+# Copyright 2020 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: Zephyr eSPI Emulation controller
+
+compatible: "zephyr,espi-emul-controller"
+
+include: espi-controller.yaml
+
+properties:
+    reg:
+      required: true

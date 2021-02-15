@@ -179,6 +179,16 @@ extern "C" {
 #endif
 
 /**
+ * @def CLAMP
+ * @brief Clamp a value to a given range.
+ * @note Arguments are evaluated multiple times.
+ */
+#ifndef CLAMP
+/* Use Z_CLAMP for a GCC-only, single evaluation version */
+#define CLAMP(val, low, high) (((val) <= (low)) ? (low) : MIN(val, high))
+#endif
+
+/**
  * @brief Is @p x a power of two?
  * @param x value to check
  * @return true if @p x is a power of two, false otherwise
@@ -327,7 +337,13 @@ uint8_t u8_to_dec(char *buf, uint8_t buflen, uint8_t value);
  * @brief Bit mask with bits 0 through <tt>n-1</tt> (inclusive) set,
  * or 0 if @p n is 0.
  */
-#define BIT_MASK(n) (BIT(n) - 1)
+#define BIT_MASK(n) (BIT(n) - 1UL)
+
+/**
+ * @brief 64-bit bit mask with bits 0 through <tt>n-1</tt> (inclusive) set,
+ * or 0 if @p n is 0.
+ */
+#define BIT64_MASK(n) (BIT64(n) - 1ULL)
 
 /**
  * @}

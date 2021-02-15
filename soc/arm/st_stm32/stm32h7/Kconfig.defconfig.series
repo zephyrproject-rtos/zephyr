@@ -12,9 +12,9 @@ source "soc/arm/st_stm32/stm32h7/Kconfig.defconfig.stm32h7*"
 config SOC_SERIES
 	default "stm32h7"
 
-config DMA_STM32_V1
-	default y
-	depends on DMA_STM32
+config ROM_START_OFFSET
+	default 0x400 if BOOTLOADER_MCUBOOT
+	default 0x0   if !BOOTLOADER_MCUBOOT
 
 if ENTROPY_GENERATOR
 

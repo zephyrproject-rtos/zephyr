@@ -880,6 +880,7 @@ ssize_t bt_gatt_attr_read_cpf(struct bt_conn *conn,
 /** @brief Notification complete result callback.
  *
  *  @param conn Connection object.
+ *  @param user_data Data passed in by the user.
  */
 typedef void (*bt_gatt_complete_func_t) (struct bt_conn *conn, void *user_data);
 
@@ -999,16 +1000,22 @@ static inline int bt_gatt_notify_uuid(struct bt_conn *conn,
 	return bt_gatt_notify_cb(conn, &params);
 }
 
+/* Forward declaration of the bt_gatt_indicate_params structure */
+struct bt_gatt_indicate_params;
+
 /** @typedef bt_gatt_indicate_func_t
  *  @brief Indication complete result callback.
  *
  *  @param conn Connection object.
- *  @param attr Attribute object.
+ *  @param params Indication params object.
  *  @param err ATT error code
  */
 typedef void (*bt_gatt_indicate_func_t)(struct bt_conn *conn,
-					const struct bt_gatt_attr *attr,
+					struct bt_gatt_indicate_params *params,
 					uint8_t err);
+
+typedef void (*bt_gatt_indicate_params_destroy_t)(
+		struct bt_gatt_indicate_params *params);
 
 /** @brief GATT Indicate Value parameters */
 struct bt_gatt_indicate_params {
@@ -1018,10 +1025,14 @@ struct bt_gatt_indicate_params {
 	const struct bt_gatt_attr *attr;
 	/** Indicate Value callback */
 	bt_gatt_indicate_func_t func;
+	/** Indicate operation complete callback */
+	bt_gatt_indicate_params_destroy_t destroy;
 	/** Indicate Value data*/
 	const void *data;
 	/** Indicate Value length*/
 	uint16_t len;
+	/** Private reference counter */
+	uint8_t _ref;
 };
 
 /** @brief Indicate attribute value change.
@@ -1043,7 +1054,8 @@ struct bt_gatt_indicate_params {
  *  start range when looking up for possible matches.
  *
  *  @note This procedure is asynchronous therefore the parameters need to
- *        remains valid while it is active.
+ *        remains valid while it is active. The procedure is active until
+ *        the destroy callback is run.
  *
  *  @param conn Connection object.
  *  @param params Indicate parameters.

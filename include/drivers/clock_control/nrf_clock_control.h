@@ -22,6 +22,9 @@ enum clock_control_nrf_type {
 #if NRF_CLOCK_HAS_HFCLK192M
 	CLOCK_CONTROL_NRF_TYPE_HFCLK192M,
 #endif
+#if NRF_CLOCK_HAS_HFCLKAUDIO
+	CLOCK_CONTROL_NRF_TYPE_HFCLKAUDIO,
+#endif
 	CLOCK_CONTROL_NRF_TYPE_COUNT
 };
 
@@ -34,6 +37,8 @@ enum clock_control_nrf_type {
 	((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_LFCLK)
 #define CLOCK_CONTROL_NRF_SUBSYS_HF192M \
 	((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_HFCLK192M)
+#define CLOCK_CONTROL_NRF_SUBSYS_HFAUDIO \
+	((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_HFCLKAUDIO)
 
 /** @brief LF clock start modes. */
 enum nrf_lfclk_start_mode {

@@ -25,7 +25,7 @@ struct lll_sync {
 	uint32_t window_size_event_us;
 
 	uint8_t phy:3;
-	uint8_t is_enabled:1;
+	uint8_t is_rx_enabled:1;
 };
 
 int lll_sync_init(void);

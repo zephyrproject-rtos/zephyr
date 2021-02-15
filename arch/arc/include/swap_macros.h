@@ -304,7 +304,7 @@
 .macro _check_and_inc_int_nest_counter, reg1, reg2
 #ifdef CONFIG_SMP
 	_get_cpu_id MACRO_ARG(reg1)
-	ld.as MACRO_ARG(reg1), [@_curr_cpu, MACRO_ARG(reg1)]
+	ld.as MACRO_ARG(reg1), [_curr_cpu, MACRO_ARG(reg1)]
 	ld MACRO_ARG(reg2), [MACRO_ARG(reg1), ___cpu_t_nested_OFFSET]
 #else
 	mov MACRO_ARG(reg1), _kernel
@@ -326,7 +326,7 @@
 .macro _dec_int_nest_counter, reg1, reg2
 #ifdef CONFIG_SMP
 	_get_cpu_id MACRO_ARG(reg1)
-	ld.as MACRO_ARG(reg1), [@_curr_cpu, MACRO_ARG(reg1)]
+	ld.as MACRO_ARG(reg1), [_curr_cpu, MACRO_ARG(reg1)]
 	ld MACRO_ARG(reg2), [MACRO_ARG(reg1), ___cpu_t_nested_OFFSET]
 #else
 	mov MACRO_ARG(reg1), _kernel
@@ -371,7 +371,7 @@
 .macro _get_curr_cpu_irq_stack, irq_sp
 #ifdef CONFIG_SMP
 	_get_cpu_id MACRO_ARG(irq_sp)
-	ld.as MACRO_ARG(irq_sp), [@_curr_cpu, MACRO_ARG(irq_sp)]
+	ld.as MACRO_ARG(irq_sp), [_curr_cpu, MACRO_ARG(irq_sp)]
 	ld MACRO_ARG(irq_sp), [MACRO_ARG(irq_sp), ___cpu_t_irq_stack_OFFSET]
 #else
 	mov MACRO_ARG(irq_sp), _kernel

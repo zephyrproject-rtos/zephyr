@@ -331,6 +331,11 @@ void SX126xSetOperatingMode(RadioOperatingModes_t mode)
 		sx126x_set_rx_enable(1);
 		break;
 
+	case MODE_SLEEP:
+		/* Additionally disable the DIO1 interrupt to save power */
+		gpio_pin_interrupt_configure(dev_data.dio1, GPIO_DIO1_PIN,
+					     GPIO_INT_DISABLE);
+		__fallthrough;
 	default:
 		sx126x_set_rx_enable(0);
 		sx126x_set_tx_enable(0);
@@ -385,6 +390,8 @@ void SX126xReset(void)
 	k_sleep(K_MSEC(20));
 	gpio_pin_set(dev_data.reset, GPIO_RESET_PIN, 0);
 	k_sleep(K_MSEC(10));
+	/* Device transitions to standby on reset */
+	dev_data.mode = MODE_STDBY_RC;
 }
 
 void SX126xSetRfTxPower(int8_t power)
@@ -403,6 +410,10 @@ void SX126xWaitOnBusy(void)
 void SX126xWakeup(void)
 {
 	int ret;
+
+	/* Reenable DIO1 when waking up */
+	gpio_pin_interrupt_configure(dev_data.dio1, GPIO_DIO1_PIN,
+				     GPIO_INT_EDGE_TO_ACTIVE);
 
 	uint8_t req[] = { RADIO_GET_STATUS, 0 };
 	const struct spi_buf tx_buf = {
@@ -425,6 +436,11 @@ void SX126xWakeup(void)
 	LOG_DBG("Waiting for device...");
 	SX126xWaitOnBusy();
 	LOG_DBG("Device ready");
+	/* This function is only called from sleep mode
+	 * All edges on the SS SPI pin will transition the modem to
+	 * standby mode (via startup)
+	 */
+	dev_data.mode = MODE_STDBY_RC;
 }
 
 static void sx126x_dio1_irq_work_handler(struct k_work *work)
@@ -473,9 +489,6 @@ static int sx126x_lora_init(const struct device *dev)
 		return -EIO;
 	}
 
-	gpio_pin_interrupt_configure(dev_data.dio1, GPIO_DIO1_PIN,
-				     GPIO_INT_EDGE_TO_ACTIVE);
-
 	dev_data.spi = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (!dev_data.spi) {
 		LOG_ERR("Cannot get pointer to %s device",
@@ -500,7 +513,6 @@ static int sx126x_lora_init(const struct device *dev)
 	dev_data.spi_cfg.frequency = DT_INST_PROP(0, spi_max_frequency);
 	dev_data.spi_cfg.slave = DT_INST_REG_ADDR(0);
 
-	dev_data.mode = MODE_SLEEP;
 
 	ret = sx12xx_init(dev);
 	if (ret < 0) {
@@ -518,7 +530,6 @@ static const struct lora_driver_api sx126x_lora_api = {
 	.test_cw = sx12xx_lora_test_cw,
 };
 
-DEVICE_AND_API_INIT(sx126x_lora, DT_INST_LABEL(0),
-		    &sx126x_lora_init, NULL,
+DEVICE_DT_INST_DEFINE(0, &sx126x_lora_init, device_pm_control_nop, NULL,
 		    NULL, POST_KERNEL, CONFIG_LORA_INIT_PRIORITY,
 		    &sx126x_lora_api);

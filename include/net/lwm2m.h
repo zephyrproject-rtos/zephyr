@@ -26,6 +26,7 @@
 #include <kernel.h>
 #include <sys/mutex.h>
 #include <net/coap.h>
+#include <net/lwm2m_path.h>
 
 /**
  * @brief LwM2M Objects managed by OMA for LwM2M tech specification.  Objects
@@ -63,6 +64,8 @@
 #define IPSO_OBJECT_PUSH_BUTTON_ID          3347
 /* clang-format on */
 
+typedef void (*lwm2m_socket_fault_cb_t)(int error);
+
 /**
  * @brief LwM2M context structure to maintain information for a single
  * LwM2M connection.
@@ -76,6 +79,13 @@ struct lwm2m_ctx {
 	struct coap_reply replies[CONFIG_LWM2M_ENGINE_MAX_REPLIES];
 	struct k_delayed_work retransmit_work;
 	struct sys_mutex send_lock;
+
+	/** A pointer to currently processed request, for internal LwM2M engine
+	 *  use. The underlying type is ``struct lwm2m_message``, but since it's
+	 *  declared in a private header and not exposed to the application,
+	 *  it's stored as a void pointer.
+	 */
+	void *processed_req;
 
 #if defined(CONFIG_LWM2M_DTLS_SUPPORT)
 	/** TLS tag is set by client as a reference used when the
@@ -107,15 +117,13 @@ struct lwm2m_ctx {
 	 */
 	bool bootstrap_mode;
 
-	/** This flag enables the context to handle an initial ACK after
-	 *  requesting a block of data, but a follow-up packet will contain
-	 *  actual data block.
-	 *  NOTE: This is required for CoAP proxy use-case.
-	 */
-	bool handle_separate_response;
-
 	/** Socket File Descriptor */
 	int sock_fd;
+
+	/** Socket fault callback. LwM2M processing thread will call this
+	 *  callback in case of socket errors on receive.
+	 */
+	lwm2m_socket_fault_cb_t fault_cb;
 };
 
 
@@ -178,10 +186,9 @@ typedef int (*lwm2m_engine_set_data_cb_t)(uint16_t obj_inst_id,
  *
  * Various object instance and resource-based events in the LwM2M engine
  * can trigger a callback of this function type: object instance create,
- * object instance delete and resource execute.
+ * and object instance delete.
  *
  * Register a function of this type via:
- * lwm2m_engine_register_exec_callback()
  * lwm2m_engine_register_create_callback()
  * lwm2m_engine_register_delete_callback()
  *
@@ -191,6 +198,25 @@ typedef int (*lwm2m_engine_set_data_cb_t)(uint16_t obj_inst_id,
  *         reason of failure or 0 for success.
  */
 typedef int (*lwm2m_engine_user_cb_t)(uint16_t obj_inst_id);
+
+/**
+ * @brief Asynchronous execute notification callback.
+ *
+ * Resource executes trigger a callback of this type.
+ *
+ * Register a function of this type via:
+ * lwm2m_engine_register_exec_callback()
+ *
+ * @param[in] obj_inst_id Object instance ID generating the callback.
+ * @param[in] args Pointer to execute arguments payload. (This can be
+ *            NULL if no arguments are provided)
+ * @param[in] args_len Length of argument payload in bytes.
+ *
+ * @return Callback returns a negative error code (errno.h) indicating
+ *         reason of failure or 0 for success.
+ */
+typedef int (*lwm2m_engine_execute_cb_t)(uint16_t obj_inst_id,
+					 uint8_t *args, uint16_t args_len);
 
 /**
  * @brief Power source types used for the "Available Power Sources" resource of
@@ -300,14 +326,14 @@ lwm2m_engine_set_data_cb_t lwm2m_firmware_get_write_cb(void);
  *
  * @param[in] cb A callback function to receive the execute event.
  */
-void lwm2m_firmware_set_update_cb(lwm2m_engine_user_cb_t cb);
+void lwm2m_firmware_set_update_cb(lwm2m_engine_execute_cb_t cb);
 
 /**
  * @brief Get the event callback for firmware update execute events.
  *
  * @return A registered callback function to receive the execute event.
  */
-lwm2m_engine_user_cb_t lwm2m_firmware_get_update_cb(void);
+lwm2m_engine_execute_cb_t lwm2m_firmware_get_update_cb(void);
 
 /**
  * @brief Get the block context of the current firmware block.
@@ -718,7 +744,7 @@ int lwm2m_engine_register_post_write_callback(char *pathstr,
  * @return 0 for success or negative in case of error.
  */
 int lwm2m_engine_register_exec_callback(char *pathstr,
-					lwm2m_engine_user_cb_t cb);
+					lwm2m_engine_execute_cb_t cb);
 
 /**
  * @brief Set object instance create event callback
@@ -831,6 +857,19 @@ int lwm2m_engine_delete_res_inst(char *pathstr);
 int lwm2m_engine_start(struct lwm2m_ctx *client_ctx);
 
 /**
+ * @brief Acknowledge the currently processed request with an empty ACK.
+ *
+ * LwM2M engine by default sends piggybacked responses for requests.
+ * This function allows to send an empty ACK for a request earlier (from the
+ * application callback). The LwM2M engine will then send the actual response
+ * as a separate CON message after all callbacks are executed.
+ *
+ * @param[in] client_ctx LwM2M context
+ *
+ */
+void lwm2m_acknowledge(struct lwm2m_ctx *client_ctx);
+
+/**
  * @brief LwM2M RD client events
  *
  * LwM2M client events are passed back to the event_cb function in
@@ -848,6 +887,7 @@ enum lwm2m_rd_client_event {
 	LWM2M_RD_CLIENT_EVENT_DEREGISTER_FAILURE,
 	LWM2M_RD_CLIENT_EVENT_DISCONNECT,
 	LWM2M_RD_CLIENT_EVENT_QUEUE_MODE_RX_OFF,
+	LWM2M_RD_CLIENT_EVENT_NETWORK_ERROR,
 };
 
 /*

@@ -89,7 +89,7 @@ check_set_compiler_property(APPEND PROPERTY warning_dw_3
                             -Wvla
 )
 
-set_compiler_property(PROPERTY warning_extended -Wno-unused-but-set-variable)
+check_set_compiler_property(PROPERTY warning_extended -Wno-unused-but-set-variable)
 
 check_set_compiler_property(PROPERTY warning_error_implicit_int -Werror=implicit-int)
 
@@ -111,6 +111,7 @@ set_compiler_property(PROPERTY cstd -std=)
 
 if (NOT CONFIG_NEWLIB_LIBC AND
     NOT COMPILER STREQUAL "xcc" AND
+    NOT ZEPHYR_TOOLCHAIN_VARIANT STREQUAL "espressif" AND
     NOT CONFIG_NATIVE_APPLICATION)
   set_compiler_property(PROPERTY nostdinc -nostdinc)
   set_compiler_property(APPEND PROPERTY nostdinc_include ${NOSTDINC})
@@ -124,7 +125,8 @@ set_property(TARGET compiler-cpp PROPERTY dialect_cpp98 "-std=c++98")
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp11 "-std=c++11" "-Wno-register")
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp14 "-std=c++14" "-Wno-register")
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp17 "-std=c++17" "-Wno-register")
-set_property(TARGET compiler-cpp PROPERTY dialect_cpp2a "-std=c++2a" "-Wno-register")
+set_property(TARGET compiler-cpp PROPERTY dialect_cpp2a "-std=c++2a"
+  "-Wno-register" "-Wno-volatile")
 
 # Disable exeptions flag in C++
 set_property(TARGET compiler-cpp PROPERTY no_exceptions "-fno-exceptions")

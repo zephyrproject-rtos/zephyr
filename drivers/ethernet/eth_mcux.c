@@ -34,8 +34,10 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #if defined(CONFIG_PTP_CLOCK_MCUX)
 #include <ptp_clock.h>
 #include <net/gptp.h>
+#endif
 
-#define PTP_INST_NODEID(n) DT_CHILD(DT_DRV_INST(n), ptp)
+#if IS_ENABLED(CONFIG_NET_DSA)
+#include <net/dsa.h>
 #endif
 
 #include "fsl_enet.h"
@@ -53,7 +55,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define FREESCALE_OUI_B2 0x9f
 
 #define ETH_MCUX_FIXED_LINK_NODE \
-	DT_CHILD(DT_ALIAS(eth), fixed_link)
+	DT_CHILD(DT_NODELABEL(enet), fixed_link)
 #define ETH_MCUX_FIXED_LINK \
 	DT_NODE_EXISTS(ETH_MCUX_FIXED_LINK_NODE)
 #define ETH_MCUX_FIXED_LINK_SPEED \
@@ -708,6 +710,7 @@ static void eth_rx(struct eth_context *context)
 {
 	uint16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
 	uint32_t frame_length = 0U;
+	struct net_if *iface;
 	struct net_pkt *pkt;
 	status_t status;
 	unsigned int imask;
@@ -809,7 +812,11 @@ static void eth_rx(struct eth_context *context)
 
 	irq_unlock(imask);
 
-	if (net_recv_data(get_iface(context, vlan_tag), pkt) < 0) {
+	iface = get_iface(context, vlan_tag);
+#if IS_ENABLED(CONFIG_NET_DSA)
+	iface = dsa_net_recv(iface, &pkt);
+#endif
+	if (net_recv_data(iface, pkt) < 0) {
 		net_pkt_unref(pkt);
 		goto error;
 	}
@@ -1060,6 +1067,9 @@ static void eth_iface_init(struct net_if *iface)
 		context->iface = iface;
 	}
 
+#if IS_ENABLED(CONFIG_NET_DSA)
+	dsa_register_master_tx(iface, &eth_tx);
+#endif
 	ethernet_init(iface);
 	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
 
@@ -1073,6 +1083,9 @@ static enum ethernet_hw_caps eth_mcux_get_capabilities(const struct device *dev)
 	return ETHERNET_HW_VLAN | ETHERNET_LINK_10BASE_T |
 #if defined(CONFIG_PTP_CLOCK_MCUX)
 		ETHERNET_PTP |
+#endif
+#if IS_ENABLED(CONFIG_NET_DSA)
+		ETHERNET_DSA_MASTER_PORT |
 #endif
 #if defined(CONFIG_ETH_MCUX_HW_ACCELERATION)
 		ETHERNET_HW_TX_CHKSUM_OFFLOAD |
@@ -1126,7 +1139,11 @@ static const struct ethernet_api api_funcs = {
 #endif
 	.get_capabilities	= eth_mcux_get_capabilities,
 	.set_config		= eth_mcux_set_config,
+#if IS_ENABLED(CONFIG_NET_DSA)
+	.send                   = dsa_tx,
+#else
 	.send			= eth_tx,
+#endif
 };
 
 #if defined(CONFIG_PTP_CLOCK_MCUX)
@@ -1139,7 +1156,7 @@ static void eth_mcux_ptp_isr(const struct device *dev)
 #endif
 
 #if DT_INST_IRQ_HAS_NAME(0, common) || DT_INST_IRQ_HAS_NAME(1, common)
-static void eth_mcux_dispacher_isr(const struct device *dev)
+static void eth_mcux_common_isr(const struct device *dev)
 {
 	struct eth_context *context = dev->data;
 	uint32_t EIR = ENET_GetInterruptStatus(context->base);
@@ -1178,8 +1195,8 @@ static void eth_mcux_tx_isr(const struct device *dev)
 }
 #endif
 
-#if DT_INST_IRQ_HAS_NAME(0, err_misc) || DT_INST_IRQ_HAS_NAME(1, err_misc)
-static void eth_mcux_error_isr(const struct device *dev)
+#if DT_INST_IRQ_HAS_NAME(0, err) || DT_INST_IRQ_HAS_NAME(1, err)
+static void eth_mcux_err_isr(const struct device *dev)
 {
 	struct eth_context *context = dev->data;
 	uint32_t pending = ENET_GetInterruptStatus(context->base);
@@ -1191,329 +1208,203 @@ static void eth_mcux_error_isr(const struct device *dev)
 }
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
-
-#if DT_INST_PROP(0, zephyr_random_mac_address) && \
-	NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(0))
-#error Conflict between 'local-mac-address' and 'zephyr,random-mac-address'
+#if defined(CONFIG_NOCACHE_MEMORY)
+#define NOCACHE __nocache
+#else
+#define NOCACHE
 #endif
 
-#if !NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(0))
-static void generate_eth0_mac(uint8_t *mac_addr)
-{
-#if DT_INST_PROP(0, zephyr_random_mac_address)
-	gen_random_mac(mac_addr,
-		       FREESCALE_OUI_B0, FREESCALE_OUI_B1, FREESCALE_OUI_B2);
-#else
-	/* Generate_unique_mac */
-	mac_addr[0] = FREESCALE_OUI_B0;
-	mac_addr[1] = FREESCALE_OUI_B1;
-	mac_addr[2] = FREESCALE_OUI_B2;
-	/* Trivially "hash" up to 128 bits of MCU unique identifier */
 #if defined(CONFIG_SOC_SERIES_IMX_RT)
-	uint32_t id = OCOTP->CFG1 ^ OCOTP->CFG2;
+#define ETH_MCUX_UNIQUE_ID	(OCOTP->CFG1 ^ OCOTP->CFG2)
 #elif defined(CONFIG_SOC_SERIES_KINETIS_K6X)
-	uint32_t id = SIM->UIDH ^ SIM->UIDMH ^ SIM->UIDML ^ SIM->UIDL;
+#define ETH_MCUX_UNIQUE_ID	(SIM->UIDH ^ SIM->UIDMH ^ SIM->UIDML ^ SIM->UIDL)
 #else
 #error "Unsupported SOC"
 #endif
-	mac_addr[0] |= 0x02; /* force LAA bit */
 
-	mac_addr[3] = id >> 8;
-	mac_addr[4] = id >> 16;
-	mac_addr[5] = id >> 0;
+#define ETH_MCUX_NONE
 
-	mac_addr[5] += 0;
-#endif /* zephyr_random_mac_address */
-}
-#endif
+#define ETH_MCUX_IRQ_INIT(n, name)					\
+	do {								\
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, name, irq),		\
+			    DT_INST_IRQ_BY_NAME(n, name, priority),	\
+			    eth_mcux_##name##_isr,			\
+			    DEVICE_DT_INST_GET(n),			\
+			    0);						\
+		irq_enable(DT_INST_IRQ_BY_NAME(n, name, irq));		\
+	} while (0)
 
-static void eth0_config_func(void);
-
-static struct eth_context eth0_context = {
-	.base = (ENET_Type *)DT_INST_REG_ADDR(0),
-#if defined(CONFIG_NET_POWER_MANAGEMENT)
-	.clock_name = DT_INST_CLOCKS_LABEL(0),
-#endif
-	.config_func = eth0_config_func,
-	.phy_addr = 0U,
-	.phy_duplex = kPHY_FullDuplex,
-	.phy_speed = kPHY_Speed100M,
-#if NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(0))
-	.mac_addr = DT_INST_PROP(0, local_mac_address),
-	.generate_mac = NULL,
-#else
-	.generate_mac = generate_eth0_mac,
-#endif
-};
-
-#if defined(CONFIG_HAS_MCUX_CACHE)
-static __nocache enet_rx_bd_struct_t __aligned(ENET_BUFF_ALIGNMENT)
-	eth0_rx_buffer_desc[CONFIG_ETH_MCUX_RX_BUFFERS];
-static __nocache enet_tx_bd_struct_t __aligned(ENET_BUFF_ALIGNMENT)
-	eth0_tx_buffer_desc[CONFIG_ETH_MCUX_TX_BUFFERS];
-#else
-static enet_rx_bd_struct_t __aligned(ENET_BUFF_ALIGNMENT)
-	eth0_rx_buffer_desc[CONFIG_ETH_MCUX_RX_BUFFERS];
-
-static enet_tx_bd_struct_t __aligned(ENET_BUFF_ALIGNMENT)
-	eth0_tx_buffer_desc[CONFIG_ETH_MCUX_TX_BUFFERS];
-#endif
-
-static uint8_t __aligned(ENET_BUFF_ALIGNMENT)
-	eth0_rx_buffer[CONFIG_ETH_MCUX_RX_BUFFERS][ETH_MCUX_BUFFER_SIZE];
-
-static uint8_t __aligned(ENET_BUFF_ALIGNMENT)
-	eth0_tx_buffer[CONFIG_ETH_MCUX_TX_BUFFERS][ETH_MCUX_BUFFER_SIZE];
+#define ETH_MCUX_IRQ(n, name)						\
+	COND_CODE_1(DT_INST_IRQ_HAS_NAME(n, name),			\
+		    (ETH_MCUX_IRQ_INIT(n, name)),			\
+		    (ETH_MCUX_NONE))
 
 #if defined(CONFIG_PTP_CLOCK_MCUX)
-/*
- * Array to get transmit frame information on completion of frame transmit.
- * This will hold the transmit timestamp.
- */
-static enet_frame_info_t eth0_tx_frameinfo_array[CONFIG_ETH_MCUX_TX_BUFFERS];
-#endif
+#define PTP_INST_NODEID(n) DT_CHILD(DT_DRV_INST(n), ptp)
 
-static const enet_buffer_config_t eth0_buffer_config = {
-	.rxBdNumber = CONFIG_ETH_MCUX_RX_BUFFERS,
-	.txBdNumber = CONFIG_ETH_MCUX_TX_BUFFERS,
-	.rxBuffSizeAlign = ETH_MCUX_BUFFER_SIZE,
-	.txBuffSizeAlign = ETH_MCUX_BUFFER_SIZE,
-	.rxBdStartAddrAlign = eth0_rx_buffer_desc,
-	.txBdStartAddrAlign = eth0_tx_buffer_desc,
-	.rxBufferAlign = eth0_rx_buffer[0],
-	.txBufferAlign = eth0_tx_buffer[0],
-	.rxMaintainEnable = true,
-	.txMaintainEnable = true,
-#if defined(CONFIG_PTP_CLOCK_MCUX)
-	.txFrameInfo = eth0_tx_frameinfo_array,
+#define ETH_MCUX_IRQ_PTP_INIT(n)							\
+	do {										\
+		IRQ_CONNECT(DT_IRQ_BY_NAME(PTP_INST_NODEID(n), ieee1588_tmr, irq),	\
+			    DT_IRQ_BY_NAME(PTP_INST_NODEID(n), ieee1588_tmr, priority),	\
+			    eth_mcux_ptp_isr,						\
+			    DEVICE_DT_INST_GET(n),					\
+			    0);								\
+		irq_enable(DT_IRQ_BY_NAME(PTP_INST_NODEID(n), ieee1588_tmr, irq));	\
+	} while (0)
+
+#define ETH_MCUX_IRQ_PTP(n)						\
+	COND_CODE_1(DT_NODE_HAS_STATUS(PTP_INST_NODEID(n), okay),	\
+		    (ETH_MCUX_IRQ_PTP_INIT(n)),				\
+		    (ETH_MCUX_NONE))
+
+#define ETH_MCUX_PTP_FRAMEINFO_ARRAY(n)					\
+	static enet_frame_info_t					\
+		eth##n##_tx_frameinfo_array[CONFIG_ETH_MCUX_TX_BUFFERS];
+
+#define ETH_MCUX_PTP_FRAMEINFO(n)					\
+	.txFrameInfo = eth##n##_tx_frameinfo_array,
 #else
+#define ETH_MCUX_IRQ_PTP(n)
+
+#define ETH_MCUX_PTP_FRAMEINFO_ARRAY(n)
+
+#define ETH_MCUX_PTP_FRAMEINFO(n)					\
 	.txFrameInfo = NULL,
 #endif
-};
 
-ETH_NET_DEVICE_INIT(eth_mcux_0,
-		    DT_INST_LABEL(0),
-		    eth_init,
-		    ETH_MCUX_PM_FUNC,
-		    &eth0_context,
-		    &eth0_buffer_config,
-		    CONFIG_ETH_INIT_PRIORITY,
-		    &api_funcs,
-		    NET_ETH_MTU);
+#define ETH_MCUX_GENERATE_MAC_RANDOM(n)					\
+	static void generate_eth##n##_mac(uint8_t *mac_addr)		\
+	{								\
+		gen_random_mac(mac_addr,				\
+			       FREESCALE_OUI_B0,			\
+			       FREESCALE_OUI_B1,			\
+			       FREESCALE_OUI_B2);			\
+	}
 
-static void eth0_config_func(void)
-{
-#if DT_INST_IRQ_HAS_NAME(0, rx)
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, rx, irq),
-		    DT_INST_IRQ_BY_NAME(0, rx, priority),
-		    eth_mcux_rx_isr,
-		    DEVICE_GET(eth_mcux_0),
-		    0);
-	irq_enable(DT_INST_IRQ_BY_NAME(0, rx, irq));
-#endif
+#define ETH_MCUX_GENERATE_MAC_UNIQUE(n)					\
+	static void generate_eth##n##_mac(uint8_t *mac_addr)		\
+	{								\
+		uint32_t id = ETH_MCUX_UNIQUE_ID;			\
+									\
+		mac_addr[0] = FREESCALE_OUI_B0;				\
+		mac_addr[0] |= 0x02; /* force LAA bit */		\
+		mac_addr[1] = FREESCALE_OUI_B1;				\
+		mac_addr[2] = FREESCALE_OUI_B2;				\
+		mac_addr[3] = id >> 8;					\
+		mac_addr[4] = id >> 16;					\
+		mac_addr[5] = id >> 0;					\
+		mac_addr[5] += n;					\
+	}
 
-#if DT_INST_IRQ_HAS_NAME(0, tx)
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, tx, irq),
-		    DT_INST_IRQ_BY_NAME(0, tx, priority),
-		    eth_mcux_tx_isr,
-		    DEVICE_GET(eth_mcux_0),
-		    0);
-	irq_enable(DT_INST_IRQ_BY_NAME(0, tx, irq));
-#endif
+#define ETH_MCUX_GENERATE_MAC(n)					\
+	COND_CODE_1(DT_INST_PROP(n, zephyr_random_mac_address),		\
+		    (ETH_MCUX_GENERATE_MAC_RANDOM(n)),			\
+		    (ETH_MCUX_GENERATE_MAC_UNIQUE(n)))
 
-#if DT_INST_IRQ_HAS_NAME(0, err_misc)
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, err_misc, irq),
-		    DT_INST_IRQ_BY_NAME(0, err_misc, priority),
-		    eth_mcux_error_isr,
-		    DEVICE_GET(eth_mcux_0),
-		    0);
-	irq_enable(DT_INST_IRQ_BY_NAME(0, err_misc, irq));
-#endif
-
-#if DT_INST_IRQ_HAS_NAME(0, common)
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, common, irq),
-		    DT_INST_IRQ_BY_NAME(0, common, priority),
-		    eth_mcux_dispacher_isr,
-		    DEVICE_GET(eth_mcux_0),
-		    0);
-	irq_enable(DT_INST_IRQ_BY_NAME(0, common, irq));
-#endif
-
-#if defined(CONFIG_PTP_CLOCK_MCUX)
-#if DT_NODE_HAS_STATUS(PTP_INST_NODEID(0), okay)
-	IRQ_CONNECT(DT_IRQ_BY_NAME(PTP_INST_NODEID(0), ieee1588_tmr, irq),
-		    DT_IRQ_BY_NAME(PTP_INST_NODEID(0), ieee1588_tmr, priority),
-		    eth_mcux_ptp_isr,
-		    DEVICE_GET(eth_mcux_0),
-		    0);
-	irq_enable(DT_IRQ_BY_NAME(PTP_INST_NODEID(0), ieee1588_tmr, irq));
-#endif
-#endif
-}
-#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay) */
-
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay)
-
-#if DT_INST_PROP(1, zephyr_random_mac_address) && \
-	NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(1))
-#error Conflict between 'local-mac-address' and 'zephyr,random-mac-address'
-#endif
-
-#if !NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(1))
-static void generate_eth1_mac(uint8_t *mac_addr)
-{
-#if DT_INST_PROP(1, zephyr_random_mac_address)
-	gen_random_mac(mac_addr,
-		       FREESCALE_OUI_B0, FREESCALE_OUI_B1, FREESCALE_OUI_B2);
-#else
-	/* Generate_unique_mac */
-	mac_addr[0] = FREESCALE_OUI_B0;
-	mac_addr[1] = FREESCALE_OUI_B1;
-	mac_addr[2] = FREESCALE_OUI_B2;
-	/* Trivially "hash" up to 128 bits of MCU unique identifier */
-#if defined(CONFIG_SOC_SERIES_IMX_RT)
-	uint32_t id = OCOTP->CFG1 ^ OCOTP->CFG2;
-#elif defined(CONFIG_SOC_SERIES_KINETIS_K6X)
-	uint32_t id = SIM->UIDH ^ SIM->UIDMH ^ SIM->UIDML ^ SIM->UIDL;
-#else
-#error "Unsupported SOC"
-#endif
-	mac_addr[0] |= 0x02; /* force LAA bit */
-
-	mac_addr[3] = id >> 8;
-	mac_addr[4] = id >> 16;
-	mac_addr[5] = id >> 0;
-
-	mac_addr[5] += 1;
-#endif /* zephyr_random_mac_address */
-}
-#endif
-
-static void eth1_config_func(void);
-
-static struct eth_context eth1_context = {
-	.base = (ENET_Type *)DT_INST_REG_ADDR(1),
-#if defined(CONFIG_NET_POWER_MANAGEMENT)
-	.clock_name = DT_INST_CLOCKS_LABEL(1),
-#endif
-	.config_func = eth1_config_func,
-	.phy_addr = 0U,
-	.phy_duplex = kPHY_FullDuplex,
-	.phy_speed = kPHY_Speed100M,
-#if NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(1))
-	.mac_addr = DT_INST_PROP(1, local_mac_address),
+#define ETH_MCUX_MAC_ADDR_LOCAL(n)					\
+	.mac_addr = DT_INST_PROP(n, local_mac_address),			\
 	.generate_mac = NULL,
-#else
-	.generate_mac = generate_eth1_mac,
-#endif
-};
 
-#if defined(CONFIG_HAS_MCUX_CACHE)
-static __nocache enet_rx_bd_struct_t __aligned(ENET_BUFF_ALIGNMENT)
-	eth1_rx_buffer_desc[CONFIG_ETH_MCUX_RX_BUFFERS];
-static __nocache enet_tx_bd_struct_t __aligned(ENET_BUFF_ALIGNMENT)
-	eth1_tx_buffer_desc[CONFIG_ETH_MCUX_TX_BUFFERS];
-#else
-static enet_rx_bd_struct_t __aligned(ENET_BUFF_ALIGNMENT)
-	eth1_rx_buffer_desc[CONFIG_ETH_MCUX_RX_BUFFERS];
+#define ETH_MCUX_MAC_ADDR_GENERATE(n)					\
+	.mac_addr = {0},						\
+	.generate_mac = generate_eth##n##_mac,
 
-static enet_tx_bd_struct_t __aligned(ENET_BUFF_ALIGNMENT)
-	eth1_tx_buffer_desc[CONFIG_ETH_MCUX_TX_BUFFERS];
-#endif
+#define ETH_MCUX_MAC_ADDR(n)						\
+	COND_CODE_1(ETH_MCUX_MAC_ADDR_TO_BOOL(n),			\
+		    (ETH_MCUX_MAC_ADDR_LOCAL(n)),			\
+		    (ETH_MCUX_MAC_ADDR_GENERATE(n)))
 
-static uint8_t __aligned(ENET_BUFF_ALIGNMENT)
-	eth1_rx_buffer[CONFIG_ETH_MCUX_RX_BUFFERS][ETH_MCUX_BUFFER_SIZE];
+#define ETH_MCUX_POWER_INIT(n)						\
+	.clock_name = DT_INST_CLOCKS_LABEL(n),				\
 
-static uint8_t __aligned(ENET_BUFF_ALIGNMENT)
-	eth1_tx_buffer[CONFIG_ETH_MCUX_TX_BUFFERS][ETH_MCUX_BUFFER_SIZE];
+#define ETH_MCUX_POWER(n)						\
+	COND_CODE_1(CONFIG_NET_POWER_MANAGEMENT,			\
+		    (ETH_MCUX_POWER_INIT(n)),				\
+		    (ETH_MCUX_NONE))
+#define ETH_MCUX_GEN_MAC(n)                                             \
+	COND_CODE_0(ETH_MCUX_MAC_ADDR_TO_BOOL(n),                       \
+		    (ETH_MCUX_GENERATE_MAC(n)),                         \
+		    (ETH_MCUX_NONE))
 
-#if defined(CONFIG_PTP_CLOCK_MCUX)
 /*
- * Array to get transmit frame information on completion of frame transmit.
- * This will hold the transmit timestamp.
+ * In the below code we explicitly define
+ * ETH_MCUX_MAC_ADDR_TO_BOOL_0 for the '0' instance of enet driver.
+ *
+ * For instance N one shall add definition for ETH_MCUX_MAC_ADDR_TO_BOOL_N
  */
-static enet_frame_info_t eth1_tx_frameinfo_array[CONFIG_ETH_MCUX_TX_BUFFERS];
-#endif
-
-static const enet_buffer_config_t eth1_buffer_config = {
-	.rxBdNumber = CONFIG_ETH_MCUX_RX_BUFFERS,
-	.txBdNumber = CONFIG_ETH_MCUX_TX_BUFFERS,
-	.rxBuffSizeAlign = ETH_MCUX_BUFFER_SIZE,
-	.txBuffSizeAlign = ETH_MCUX_BUFFER_SIZE,
-	.rxBdStartAddrAlign = eth1_rx_buffer_desc,
-	.txBdStartAddrAlign = eth1_tx_buffer_desc,
-	.rxBufferAlign = eth1_rx_buffer[0],
-	.txBufferAlign = eth1_tx_buffer[0],
-	.rxMaintainEnable = true,
-	.txMaintainEnable = true,
-#if defined(CONFIG_PTP_CLOCK_MCUX)
-	.txFrameInfo = eth1_tx_frameinfo_array,
+#if (NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(0))) == 0
+#define ETH_MCUX_MAC_ADDR_TO_BOOL_0 0
 #else
-	.txFrameInfo = NULL,
+#define ETH_MCUX_MAC_ADDR_TO_BOOL_0 1
 #endif
-};
+#define ETH_MCUX_MAC_ADDR_TO_BOOL(n) ETH_MCUX_MAC_ADDR_TO_BOOL_##n
 
-ETH_NET_DEVICE_INIT(eth_mcux_1,
-		    DT_INST_LABEL(1),
-		    eth_init,
-		    ETH_MCUX_PM_FUNC,
-		    &eth1_context,
-		    &eth1_buffer_config,
-		    CONFIG_ETH_INIT_PRIORITY,
-		    &api_funcs,
-		    NET_ETH_MTU);
+#define ETH_MCUX_INIT(n)						\
+	ETH_MCUX_GEN_MAC(n)                                             \
+									\
+	static void eth##n##_config_func(void);				\
+									\
+	static struct eth_context eth##n##_context = {			\
+		.base = (ENET_Type *)DT_INST_REG_ADDR(n),		\
+		.config_func = eth##n##_config_func,			\
+		.phy_addr = 0U,						\
+		.phy_duplex = kPHY_FullDuplex,				\
+		.phy_speed = kPHY_Speed100M,				\
+		ETH_MCUX_MAC_ADDR(n)					\
+		ETH_MCUX_POWER(n)					\
+	};								\
+									\
+	static NOCACHE __aligned(ENET_BUFF_ALIGNMENT)			\
+		enet_rx_bd_struct_t					\
+		eth##n##_rx_buffer_desc[CONFIG_ETH_MCUX_RX_BUFFERS];	\
+									\
+	static NOCACHE __aligned(ENET_BUFF_ALIGNMENT)			\
+		enet_tx_bd_struct_t					\
+		eth##n##_tx_buffer_desc[CONFIG_ETH_MCUX_TX_BUFFERS];	\
+									\
+	static uint8_t __aligned(ENET_BUFF_ALIGNMENT)			\
+		eth##n##_rx_buffer[CONFIG_ETH_MCUX_RX_BUFFERS]		\
+				  [ETH_MCUX_BUFFER_SIZE];		\
+									\
+	static uint8_t __aligned(ENET_BUFF_ALIGNMENT)			\
+		eth##n##_tx_buffer[CONFIG_ETH_MCUX_TX_BUFFERS]		\
+				  [ETH_MCUX_BUFFER_SIZE];		\
+									\
+	ETH_MCUX_PTP_FRAMEINFO_ARRAY(n)					\
+									\
+	static const enet_buffer_config_t eth##n##_buffer_config = {	\
+		.rxBdNumber = CONFIG_ETH_MCUX_RX_BUFFERS,		\
+		.txBdNumber = CONFIG_ETH_MCUX_TX_BUFFERS,		\
+		.rxBuffSizeAlign = ETH_MCUX_BUFFER_SIZE,		\
+		.txBuffSizeAlign = ETH_MCUX_BUFFER_SIZE,		\
+		.rxBdStartAddrAlign = eth##n##_rx_buffer_desc,		\
+		.txBdStartAddrAlign = eth##n##_tx_buffer_desc,		\
+		.rxBufferAlign = eth##n##_rx_buffer[0],			\
+		.txBufferAlign = eth##n##_tx_buffer[0],			\
+		.rxMaintainEnable = true,				\
+		.txMaintainEnable = true,				\
+		ETH_MCUX_PTP_FRAMEINFO(n)				\
+	};								\
+									\
+	ETH_NET_DEVICE_DT_INST_DEFINE(n,					\
+			    eth_init,					\
+			    ETH_MCUX_PM_FUNC,				\
+			    &eth##n##_context,				\
+			    &eth##n##_buffer_config,			\
+			    CONFIG_ETH_INIT_PRIORITY,			\
+			    &api_funcs,					\
+			    NET_ETH_MTU);				\
+									\
+	static void eth##n##_config_func(void)				\
+	{								\
+		ETH_MCUX_IRQ(n, rx);					\
+		ETH_MCUX_IRQ(n, tx);					\
+		ETH_MCUX_IRQ(n, err);					\
+		ETH_MCUX_IRQ(n, common);				\
+		ETH_MCUX_IRQ_PTP(n);					\
+	}								\
 
-static void eth1_config_func(void)
-{
-#if DT_INST_IRQ_HAS_NAME(1, rx)
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(1, rx, irq),
-		    DT_INST_IRQ_BY_NAME(1, rx, priority),
-		    eth_mcux_rx_isr,
-		    DEVICE_GET(eth_mcux_1),
-		    0);
-	irq_enable(DT_INST_IRQ_BY_NAME(1, rx, irq));
-#endif
-
-#if DT_INST_IRQ_HAS_NAME(1, tx)
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(1, tx, irq),
-		    DT_INST_IRQ_BY_NAME(1, tx, priority),
-		    eth_mcux_tx_isr,
-		    DEVICE_GET(eth_mcux_1),
-		    0);
-	irq_enable(DT_INST_IRQ_BY_NAME(1, tx, irq));
-#endif
-
-#if DT_INST_IRQ_HAS_NAME(1, err_misc)
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(1, err_misc, irq),
-		    DT_INST_IRQ_BY_NAME(1, err_misc, priority),
-		    eth_mcux_error_isr,
-		    DEVICE_GET(eth_mcux_1),
-		    0);
-	irq_enable(DT_INST_IRQ_BY_NAME(1, err_misc, irq));
-#endif
-
-#if DT_INST_IRQ_HAS_NAME(1, common)
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(1, common, irq),
-		    DT_INST_IRQ_BY_NAME(1, common, priority),
-		    eth_mcux_dispacher_isr,
-		    DEVICE_GET(eth_mcux_1),
-		    0);
-	irq_enable(DT_INST_IRQ_BY_NAME(1, common, irq));
-#endif
-
-#if defined(CONFIG_PTP_CLOCK_MCUX)
-#if DT_NODE_HAS_STATUS(PTP_INST_NODEID(1), okay)
-	IRQ_CONNECT(DT_IRQ_BY_NAME(PTP_INST_NODEID(1), ieee1588_tmr, irq),
-		    DT_IRQ_BY_NAME(PTP_INST_NODEID(1), ieee1588_tmr, priority),
-		    eth_mcux_ptp_isr,
-		    DEVICE_GET(eth_mcux_1),
-		    0);
-	irq_enable(DT_IRQ_BY_NAME(PTP_INST_NODEID(1), ieee1588_tmr, irq));
-#endif
-#endif
-}
-#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay) */
+DT_INST_FOREACH_STATUS_OKAY(ETH_MCUX_INIT)
 
 #if defined(CONFIG_PTP_CLOCK_MCUX)
 struct ptp_context {
@@ -1636,7 +1527,7 @@ static const struct ptp_clock_driver_api api = {
 
 static int ptp_mcux_init(const struct device *port)
 {
-	const struct device *eth_dev = DEVICE_GET(eth_mcux_0);
+	const struct device *eth_dev = DEVICE_DT_GET(DT_NODELABEL(enet));
 	struct eth_context *context = eth_dev->data;
 	struct ptp_context *ptp_context = port->data;
 
@@ -1646,8 +1537,8 @@ static int ptp_mcux_init(const struct device *port)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(mcux_ptp_clock_0, PTP_CLOCK_NAME, ptp_mcux_init,
-		    &ptp_mcux_0_context, NULL, POST_KERNEL,
-		    CONFIG_APPLICATION_INIT_PRIORITY, &api);
+DEVICE_DEFINE(mcux_ptp_clock_0, PTP_CLOCK_NAME, ptp_mcux_init,
+		device_pm_control_nop, &ptp_mcux_0_context, NULL, POST_KERNEL,
+		CONFIG_APPLICATION_INIT_PRIORITY, &api);
 
 #endif /* CONFIG_PTP_CLOCK_MCUX */

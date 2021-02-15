@@ -5,6 +5,8 @@
  */
 
 #include <soc.h>
+#include <stm32_ll_bus.h>
+#include <stm32_ll_rcc.h>
 #include <drivers/clock_control.h>
 #include <sys/util.h>
 #include <drivers/clock_control/stm32_clock_control.h>
@@ -409,8 +411,9 @@ static int stm32_clock_control_init(const struct device *dev)
  * @brief RCC device, note that priority is intentionally set to 1 so
  * that the device init runs just after SOC init
  */
-DEVICE_AND_API_INIT(rcc_stm32, STM32_CLOCK_CONTROL_NAME,
+DEVICE_DT_DEFINE(DT_NODELABEL(rcc),
 		    &stm32_clock_control_init,
+		    device_pm_control_nop,
 		    NULL, NULL,
 		    PRE_KERNEL_1,
 		    CONFIG_CLOCK_CONTROL_STM32_DEVICE_INIT_PRIORITY,

@@ -250,9 +250,9 @@ static const struct gpio_driver_api gpio_stellaris_driver_api = {
 		.config_func = port_## n ##_stellaris_config_func,			\
 	};										\
 											\
-	DEVICE_AND_API_INIT(gpio_stellaris_port_## n,					\
-			    DT_INST_LABEL(n),						\
+	DEVICE_DT_INST_DEFINE(n,							\
 			    gpio_stellaris_init,					\
+			    device_pm_control_nop,					\
 			    &port_## n ##_stellaris_runtime,				\
 			    &gpio_stellaris_port_## n ##_config,			\
 			    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,		\
@@ -263,7 +263,7 @@ static const struct gpio_driver_api gpio_stellaris_driver_api = {
 		IRQ_CONNECT(DT_INST_IRQN(n),			\
 			    DT_INST_IRQ(n, priority),		\
 			    gpio_stellaris_isr,						\
-			    DEVICE_GET(gpio_stellaris_port_## n), 0);			\
+			    DEVICE_DT_INST_GET(n), 0);					\
 											\
 		irq_enable(DT_INST_IRQN(n));			\
 	}

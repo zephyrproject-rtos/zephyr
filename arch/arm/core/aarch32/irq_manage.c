@@ -27,6 +27,7 @@
 #include <sw_isr_table.h>
 #include <irq.h>
 #include <tracing/tracing.h>
+#include <power/power.h>
 
 extern void z_arm_reserved(void);
 
@@ -161,7 +162,7 @@ void z_irq_spurious(const void *unused)
 	z_arm_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
 }
 
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
+#ifdef CONFIG_PM
 void _arch_isr_direct_pm(void)
 {
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) \
@@ -184,7 +185,7 @@ void _arch_isr_direct_pm(void)
 		int32_t idle_val = _kernel.idle;
 
 		_kernel.idle = 0;
-		z_sys_power_save_idle_exit(idle_val);
+		z_pm_save_idle_exit(idle_val);
 	}
 
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) \

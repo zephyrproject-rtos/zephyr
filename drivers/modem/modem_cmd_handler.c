@@ -107,7 +107,7 @@ static inline struct net_buf *read_rx_allocator(k_timeout_t timeout,
 
 /* return scanned length for params */
 static int parse_params(struct modem_cmd_handler_data *data,  size_t match_len,
-			struct modem_cmd *cmd,
+			const struct modem_cmd *cmd,
 			uint8_t **argv, size_t argv_len, uint16_t *argc)
 {
 	int i, count = 0;
@@ -134,7 +134,7 @@ static int parse_params(struct modem_cmd_handler_data *data,  size_t match_len,
 			}
 		}
 
-		if (count >= cmd->arg_count) {
+		if (count >= cmd->arg_count_max) {
 			break;
 		}
 
@@ -158,7 +158,7 @@ static int parse_params(struct modem_cmd_handler_data *data,  size_t match_len,
 	}
 
 	/* missing arguments */
-	if (*argc < cmd->arg_count) {
+	if (*argc < cmd->arg_count_min) {
 		return -EAGAIN;
 	}
 
@@ -170,7 +170,7 @@ static int parse_params(struct modem_cmd_handler_data *data,  size_t match_len,
 }
 
 /* process a "matched" command */
-static int process_cmd(struct modem_cmd *cmd, size_t match_len,
+static int process_cmd(const struct modem_cmd *cmd, size_t match_len,
 			struct modem_cmd_handler_data *data)
 {
 	int parsed_len = 0, ret = 0;
@@ -181,7 +181,7 @@ static int process_cmd(struct modem_cmd *cmd, size_t match_len,
 	memset(argv, 0, sizeof(argv[0]) * ARRAY_SIZE(argv));
 
 	/* do we need to parse arguments? */
-	if (cmd->arg_count > 0U) {
+	if (cmd->arg_count_max > 0U) {
 		/* returns < 0 on error and > 0 for parsed len */
 		parsed_len = parse_params(data, match_len, cmd,
 					  argv, ARRAY_SIZE(argv), &argc);
@@ -212,7 +212,8 @@ static int process_cmd(struct modem_cmd *cmd, size_t match_len,
  * - unsolicited handlers[1]
  * - current assigned handlers[2]
  */
-static struct modem_cmd *find_cmd_match(struct modem_cmd_handler_data *data)
+static const struct modem_cmd *find_cmd_match(
+		struct modem_cmd_handler_data *data)
 {
 	int j, i;
 
@@ -234,7 +235,7 @@ static struct modem_cmd *find_cmd_match(struct modem_cmd_handler_data *data)
 	return NULL;
 }
 
-static struct modem_cmd *find_cmd_direct_match(
+static const struct modem_cmd *find_cmd_direct_match(
 		struct modem_cmd_handler_data *data)
 {
 	int j, i;
@@ -307,7 +308,7 @@ static int cmd_handler_process_iface_data(struct modem_cmd_handler_data *data,
 
 static void cmd_handler_process_rx_buf(struct modem_cmd_handler_data *data)
 {
-	struct modem_cmd *cmd;
+	const struct modem_cmd *cmd;
 	struct net_buf *frag = NULL;
 	size_t match_len;
 	int ret;
@@ -449,7 +450,7 @@ int modem_cmd_handler_set_error(struct modem_cmd_handler_data *data,
 }
 
 int modem_cmd_handler_update_cmds(struct modem_cmd_handler_data *data,
-				  struct modem_cmd *handler_cmds,
+				  const struct modem_cmd *handler_cmds,
 				  size_t handler_cmds_len,
 				  bool reset_error_flag)
 {
@@ -468,7 +469,7 @@ int modem_cmd_handler_update_cmds(struct modem_cmd_handler_data *data,
 
 static int _modem_cmd_send(struct modem_iface *iface,
 			   struct modem_cmd_handler *handler,
-			   struct modem_cmd *handler_cmds,
+			   const struct modem_cmd *handler_cmds,
 			   size_t handler_cmds_len,
 			   const uint8_t *buf, struct k_sem *sem,
 			   k_timeout_t timeout, bool no_tx_lock)
@@ -480,6 +481,14 @@ static int _modem_cmd_send(struct modem_iface *iface,
 		return -EINVAL;
 	}
 
+	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+		/* semaphore is not needed if there is no timeout */
+		sem = NULL;
+	} else if (!sem) {
+		/* cannot respect timeout without semaphore */
+		return -EINVAL;
+	}
+
 	data = (struct modem_cmd_handler_data *)(handler->cmd_handler_data);
 	if (!no_tx_lock) {
 		k_sem_take(&data->sem_tx_lock, K_FOREVER);
@@ -488,7 +497,7 @@ static int _modem_cmd_send(struct modem_iface *iface,
 	ret = modem_cmd_handler_update_cmds(data, handler_cmds,
 					    handler_cmds_len, true);
 	if (ret < 0) {
-		goto exit;
+		goto unlock_tx_lock;
 	}
 
 #if defined(CONFIG_MODEM_CONTEXT_VERBOSE_DEBUG)
@@ -505,31 +514,27 @@ static int _modem_cmd_send(struct modem_iface *iface,
 		LOG_DBG("EOL not set!!!");
 	}
 #endif
+	if (sem) {
+		k_sem_reset(sem);
+	}
+
 	iface->write(iface, buf, strlen(buf));
 	iface->write(iface, data->eol, data->eol_len);
 
-	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
-		ret = 0;
-		goto exit;
+	if (sem) {
+		ret = k_sem_take(sem, timeout);
+
+		if (ret == 0) {
+			ret = data->last_error;
+		} else if (ret == -EAGAIN) {
+			ret = -ETIMEDOUT;
+		}
 	}
 
-	if (!sem) {
-		ret = -EINVAL;
-		goto exit;
-	}
-
-	k_sem_reset(sem);
-	ret = k_sem_take(sem, timeout);
-
-	if (ret == 0) {
-		ret = data->last_error;
-	} else if (ret == -EAGAIN) {
-		ret = -ETIMEDOUT;
-	}
-
-exit:
 	/* unset handlers and ignore any errors */
 	(void)modem_cmd_handler_update_cmds(data, NULL, 0U, false);
+
+unlock_tx_lock:
 	if (!no_tx_lock) {
 		k_sem_give(&data->sem_tx_lock);
 	}
@@ -539,7 +544,7 @@ exit:
 
 int modem_cmd_send_nolock(struct modem_iface *iface,
 			  struct modem_cmd_handler *handler,
-			  struct modem_cmd *handler_cmds,
+			  const struct modem_cmd *handler_cmds,
 			  size_t handler_cmds_len,
 			  const uint8_t *buf, struct k_sem *sem,
 			  k_timeout_t timeout)
@@ -550,8 +555,9 @@ int modem_cmd_send_nolock(struct modem_iface *iface,
 
 int modem_cmd_send(struct modem_iface *iface,
 		   struct modem_cmd_handler *handler,
-		   struct modem_cmd *handler_cmds, size_t handler_cmds_len,
-		   const uint8_t *buf, struct k_sem *sem, k_timeout_t timeout)
+		   const struct modem_cmd *handler_cmds,
+		   size_t handler_cmds_len, const uint8_t *buf,
+		   struct k_sem *sem, k_timeout_t timeout)
 {
 	return _modem_cmd_send(iface, handler, handler_cmds, handler_cmds_len,
 			       buf, sem, timeout, false);
@@ -560,7 +566,7 @@ int modem_cmd_send(struct modem_iface *iface,
 /* run a set of AT commands */
 int modem_cmd_handler_setup_cmds(struct modem_iface *iface,
 				 struct modem_cmd_handler *handler,
-				 struct setup_cmd *cmds, size_t cmds_len,
+				 const struct setup_cmd *cmds, size_t cmds_len,
 				 struct k_sem *sem, k_timeout_t timeout)
 {
 	int ret = 0, i;
@@ -594,8 +600,9 @@ int modem_cmd_handler_setup_cmds(struct modem_iface *iface,
 /* run a set of AT commands, without lock */
 int modem_cmd_handler_setup_cmds_nolock(struct modem_iface *iface,
 					struct modem_cmd_handler *handler,
-					struct setup_cmd *cmds, size_t cmds_len,
-					struct k_sem *sem, k_timeout_t timeout)
+					const struct setup_cmd *cmds,
+					size_t cmds_len, struct k_sem *sem,
+					k_timeout_t timeout)
 {
 	int ret = 0, i;
 

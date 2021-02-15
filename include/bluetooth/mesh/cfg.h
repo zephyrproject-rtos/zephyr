@@ -35,6 +35,171 @@ enum bt_mesh_feat_state {
 	BT_MESH_FEATURE_NOT_SUPPORTED,
 };
 
+/* Legacy feature defines */
+#define BT_MESH_RELAY_DISABLED              BT_MESH_FEATURE_DISABLED
+#define BT_MESH_RELAY_ENABLED               BT_MESH_FEATURE_ENABLED
+#define BT_MESH_RELAY_NOT_SUPPORTED         BT_MESH_FEATURE_NOT_SUPPORTED
+
+#define BT_MESH_BEACON_DISABLED             BT_MESH_FEATURE_DISABLED
+#define BT_MESH_BEACON_ENABLED              BT_MESH_FEATURE_ENABLED
+
+#define BT_MESH_GATT_PROXY_DISABLED         BT_MESH_FEATURE_DISABLED
+#define BT_MESH_GATT_PROXY_ENABLED          BT_MESH_FEATURE_ENABLED
+#define BT_MESH_GATT_PROXY_NOT_SUPPORTED    BT_MESH_FEATURE_NOT_SUPPORTED
+
+#define BT_MESH_FRIEND_DISABLED             BT_MESH_FEATURE_DISABLED
+#define BT_MESH_FRIEND_ENABLED              BT_MESH_FEATURE_ENABLED
+#define BT_MESH_FRIEND_NOT_SUPPORTED        BT_MESH_FEATURE_NOT_SUPPORTED
+
+#define BT_MESH_NODE_IDENTITY_STOPPED       BT_MESH_FEATURE_DISABLED
+#define BT_MESH_NODE_IDENTITY_RUNNING       BT_MESH_FEATURE_ENABLED
+#define BT_MESH_NODE_IDENTITY_NOT_SUPPORTED BT_MESH_FEATURE_NOT_SUPPORTED
+
+/** @brief Enable or disable sending of the Secure Network Beacon.
+ *
+ *  @param beacon New Secure Network Beacon state.
+ */
+void bt_mesh_beacon_set(bool beacon);
+
+/** @brief Get the current Secure Network Beacon state.
+ *
+ *  @returns Whether the Secure Network Beacon feature is enabled.
+ */
+bool bt_mesh_beacon_enabled(void);
+
+/** @brief Set the default TTL value.
+ *
+ *  The default TTL value is used when no explicit TTL value is set. Models will
+ *  use the default TTL value when @ref bt_mesh_msg_ctx::send_ttl is
+ *  @ref BT_MESH_TTL_DEFAULT.
+ *
+ *  @param default_ttl The new default TTL value. Valid values are 0x00 and 0x02
+ *                     to @ref BT_MESH_TTL_MAX.
+ *
+ *  @retval 0       Successfully set the default TTL value.
+ *  @retval -EINVAL Invalid TTL value.
+ */
+int bt_mesh_default_ttl_set(uint8_t default_ttl);
+
+/** @brief Get the current default TTL value.
+ *
+ *  @return The current default TTL value.
+ */
+uint8_t bt_mesh_default_ttl_get(void);
+
+/** @brief Set the Network Transmit parameters.
+ *
+ *  The Network Transmit parameters determine the parameters local messages are
+ *  transmitted with.
+ *
+ *  @see BT_MESH_TRANSMIT
+ *
+ *  @param xmit New Network Transmit parameters. Use @ref BT_MESH_TRANSMIT for
+ *              encoding.
+ */
+void bt_mesh_net_transmit_set(uint8_t xmit);
+
+/** @brief Get the current Network Transmit parameters.
+ *
+ *  The @ref BT_MESH_TRANSMIT_COUNT and @ref BT_MESH_TRANSMIT_INT macros can be
+ *  used to decode the Network Transmit parameters.
+ *
+ *  @return The current Network Transmit parameters.
+ */
+uint8_t bt_mesh_net_transmit_get(void);
+
+/** @brief Configure the Relay feature.
+ *
+ *  Enable or disable the Relay feature, and configure the parameters to
+ *  transmit relayed messages with.
+ *
+ *  Support for the Relay feature must be enabled through the
+ *  @c CONFIG_BT_MESH_RELAY configuration option.
+ *
+ *  @see BT_MESH_TRANSMIT
+ *
+ *  @param relay New Relay feature state. Must be one of
+ *               @ref BT_MESH_FEATURE_ENABLED and
+ *               @ref BT_MESH_FEATURE_DISABLED.
+ *  @param xmit  New Relay retransmit parameters. Use @ref BT_MESH_TRANSMIT for
+ *               encoding.
+ *
+ *  @retval 0         Successfully changed the Relay configuration.
+ *  @retval -ENOTSUP  The Relay feature is not supported.
+ *  @retval -EINVAL   Invalid parameter.
+ *  @retval -EALREADY Already using the given parameters.
+ */
+int bt_mesh_relay_set(enum bt_mesh_feat_state relay, uint8_t xmit);
+
+/** @brief Get the current Relay feature state.
+ *
+ *  @returns The Relay feature state.
+ */
+enum bt_mesh_feat_state bt_mesh_relay_get(void);
+
+/** @brief Get the current Relay Retransmit parameters.
+ *
+ *  The @ref BT_MESH_TRANSMIT_COUNT and @ref BT_MESH_TRANSMIT_INT macros can be
+ *  used to decode the Relay Retransmit parameters.
+ *
+ *  @return The current Relay Retransmit parameters, or 0 if relay is not
+ *          supported.
+ */
+uint8_t bt_mesh_relay_retransmit_get(void);
+
+/** @brief Enable or disable the GATT Proxy feature.
+ *
+ *  Support for the GATT Proxy feature must be enabled through the
+ *  @c CONFIG_BT_MESH_GATT_PROXY configuration option.
+ *
+ *  @note The GATT Proxy feature only controls a Proxy node's ability to relay
+ *        messages to the mesh network. A node that supports GATT Proxy will
+ *        still advertise Connectable Proxy beacons, even if the feature is
+ *        disabled. The Proxy feature can only be fully disabled through compile
+ *        time configuration.
+ *
+ *  @param gatt_proxy New GATT Proxy state. Must be one of
+ *                    @ref BT_MESH_FEATURE_ENABLED and
+ *                    @ref BT_MESH_FEATURE_DISABLED.
+ *
+ *  @retval 0         Successfully changed the GATT Proxy feature state.
+ *  @retval -ENOTSUP  The GATT Proxy feature is not supported.
+ *  @retval -EINVAL   Invalid parameter.
+ *  @retval -EALREADY Already in the given state.
+ */
+int bt_mesh_gatt_proxy_set(enum bt_mesh_feat_state gatt_proxy);
+
+/** @brief Get the current GATT Proxy state.
+ *
+ *  @returns The GATT Proxy feature state.
+ */
+enum bt_mesh_feat_state bt_mesh_gatt_proxy_get(void);
+
+/** @brief Enable or disable the Friend feature.
+ *
+ *  Any active friendships will be terminated immediately if the Friend feature
+ *  is disabled.
+ *
+ *  Support for the Friend feature must be enabled through the
+ *  @c CONFIG_BT_MESH_FRIEND configuration option.
+ *
+ *  @param friendship New Friend feature state. Must be one of
+ *                    @ref BT_MESH_FEATURE_ENABLED and
+ *                    @ref BT_MESH_FEATURE_DISABLED.
+ *
+ *  @retval 0        Successfully changed the Friend feature state.
+ *  @retval -ENOTSUP The Friend feature is not supported.
+ *  @retval -EINVAL  Invalid parameter.
+ *  @retval -EALREADY Already in the given state.
+ */
+int bt_mesh_friend_set(enum bt_mesh_feat_state friendship);
+
+/** @brief Get the current Friend state.
+ *
+ *  @returns The Friend feature state.
+ */
+enum bt_mesh_feat_state bt_mesh_friend_get(void);
+
 /**
  * @brief Bluetooth Mesh Subnet Configuration
  * @defgroup bt_mesh_cfg_subnet Bluetooth Mesh Subnet Configuration

@@ -1,11 +1,13 @@
 /*
  * Copyright (c) 2017 Linaro Limited
+ * Copyright (c) 2020 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /* libc headers */
 #include <stdlib.h>
+#include <string.h>
 #include <ctype.h>
 
 /* Zephyr headers */
@@ -13,22 +15,31 @@
 LOG_MODULE_REGISTER(net_sock_addr, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <kernel.h>
+#include <net/net_ip.h>
 #include <net/socket.h>
 #include <net/socket_offload.h>
 #include <syscall_handler.h>
 
 #define AI_ARR_MAX	2
 
-#if defined(CONFIG_DNS_RESOLVER)
+#if defined(CONFIG_DNS_RESOLVER) || \
+	defined(CONFIG_NET_IPV6) || defined(CONFIG_NET_IPV4)
+#define ANY_RESOLVER
 
-/* Helper macros which take into account the fact that ai_family as passed
- * into getaddrinfo() may take values AF_INET, AF_INET6, or AF_UNSPEC, where
- * AF_UNSPEC means resolve both AF_INET and AF_INET6.
+/* Initialize static fields of addrinfo structure. A macro to let it work
+ * with any sockaddr_* type.
  */
-#define RESOLVE_IPV4(ai_family) \
-	(IS_ENABLED(CONFIG_NET_IPV4) && (ai_family) != AF_INET6)
-#define RESOLVE_IPV6(ai_family) \
-	(IS_ENABLED(CONFIG_NET_IPV6) && (ai_family) != AF_INET)
+#define INIT_ADDRINFO(addrinfo, sockaddr) { \
+		(addrinfo)->ai_addr = &(addrinfo)->_ai_addr; \
+		(addrinfo)->ai_addrlen = sizeof(*(sockaddr)); \
+		(addrinfo)->ai_canonname = (addrinfo)->_ai_canonname; \
+		(addrinfo)->_ai_canonname[0] = '\0'; \
+		(addrinfo)->ai_next = NULL; \
+	}
+
+#endif
+
+#if defined(CONFIG_DNS_RESOLVER)
 
 struct getaddrinfo_state {
 	const struct zsock_addrinfo *hints;
@@ -38,17 +49,6 @@ struct getaddrinfo_state {
 	uint16_t port;
 	struct zsock_addrinfo *ai_arr;
 };
-
-/* Initialize static fields of addrinfo structure. A macro to let it work
- * with any sockaddr_* type.
- */
-#define INIT_ADDRINFO(addrinfo, sockaddr) { \
-		(addrinfo)->ai_addr = &(addrinfo)->_ai_addr; \
-		(addrinfo)->ai_addrlen = sizeof(*sockaddr); \
-		(addrinfo)->ai_canonname = (addrinfo)->_ai_canonname; \
-		(addrinfo)->_ai_canonname[0] = '\0'; \
-		(addrinfo)->ai_next = NULL; \
-	}
 
 static void dns_resolve_cb(enum dns_resolve_status status,
 			   struct dns_addrinfo *info, void *user_data)
@@ -118,20 +118,37 @@ static int exec_query(const char *host, int family,
 static int getaddrinfo_null_host(int port, const struct zsock_addrinfo *hints,
 				struct zsock_addrinfo *res)
 {
-	if (hints && (hints->ai_flags & AI_PASSIVE)) {
-		struct sockaddr_in *addr =
-		    (struct sockaddr_in *)&res->_ai_addr;
+	if (!hints || !(hints->ai_flags & AI_PASSIVE)) {
+		return DNS_EAI_FAIL;
+	}
+
+	/* For AF_UNSPEC, should we default to IPv6 or IPv4? */
+	if (hints->ai_family == AF_INET || hints->ai_family == AF_UNSPEC) {
+		struct sockaddr_in *addr = net_sin(&res->_ai_addr);
 		addr->sin_addr.s_addr = INADDR_ANY;
 		addr->sin_port = htons(port);
 		addr->sin_family = AF_INET;
 		INIT_ADDRINFO(res, addr);
 		res->ai_family = AF_INET;
-		res->ai_socktype = SOCK_STREAM;
-		res->ai_protocol = IPPROTO_TCP;
-		return 0;
+	} else if (hints->ai_family == AF_INET6) {
+		struct sockaddr_in6 *addr6 = net_sin6(&res->_ai_addr);
+		addr6->sin6_addr = in6addr_any;
+		addr6->sin6_port = htons(port);
+		addr6->sin6_family = AF_INET6;
+		INIT_ADDRINFO(res, addr6);
+		res->ai_family = AF_INET6;
+	} else {
+		return DNS_EAI_FAIL;
 	}
 
-	return DNS_EAI_FAIL;
+	if (hints->ai_socktype == SOCK_DGRAM) {
+		res->ai_socktype = SOCK_DGRAM;
+		res->ai_protocol = IPPROTO_UDP;
+	} else {
+		res->ai_socktype = SOCK_STREAM;
+		res->ai_protocol = IPPROTO_TCP;
+	}
+	return 0;
 }
 
 int z_impl_z_zsock_getaddrinfo_internal(const char *host, const char *service,
@@ -151,6 +168,13 @@ int z_impl_z_zsock_getaddrinfo_internal(const char *host, const char *service,
 		ai_flags = hints->ai_flags;
 	}
 
+	if (ai_flags & AI_NUMERICHOST) {
+		/* Asked to resolve host as numeric, but it wasn't possible
+		 * to do that.
+		 */
+		return DNS_EAI_FAIL;
+	}
+
 	if (service) {
 		port = strtol(service, NULL, 10);
 		if (port < 1 || port > 65535) {
@@ -166,35 +190,6 @@ int z_impl_z_zsock_getaddrinfo_internal(const char *host, const char *service,
 		}
 
 		return getaddrinfo_null_host(port, hints, res);
-	}
-
-#define SIN_ADDR(ptr) (net_sin(ptr)->sin_addr)
-
-	/* Check for IPv4 numeric address. Start with a quick heuristic check,
-	 * of first char of the address, then do long validating inet_pton()
-	 * call if needed.
-	 */
-	if (RESOLVE_IPV4(family) &&
-	    isdigit((int)*host) &&
-	    zsock_inet_pton(AF_INET, host,
-			    &SIN_ADDR(&res->_ai_addr)) == 1) {
-		struct sockaddr_in *addr =
-			(struct sockaddr_in *)&res->_ai_addr;
-
-		addr->sin_port = htons(port);
-		addr->sin_family = AF_INET;
-		INIT_ADDRINFO(res, addr);
-		res->ai_family = AF_INET;
-		res->ai_socktype = SOCK_STREAM;
-		res->ai_protocol = IPPROTO_TCP;
-		return 0;
-	}
-
-	if (ai_flags & AI_NUMERICHOST) {
-		/* Asked to resolve host as numeric, but it wasn't possible
-		 * to do that.
-		 */
-		return DNS_EAI_FAIL;
 	}
 
 	ai_state.hints = hints;
@@ -323,6 +318,84 @@ out:
 
 #endif /* defined(CONFIG_DNS_RESOLVER) */
 
+#if defined(CONFIG_NET_IPV6) || defined(CONFIG_NET_IPV4)
+static int try_resolve_literal_addr(const char *host, const char *service,
+				    const struct zsock_addrinfo *hints,
+				    struct zsock_addrinfo *res)
+{
+	int family = AF_UNSPEC;
+	int resolved_family = AF_UNSPEC;
+	long port = 0;
+	bool result;
+	int socktype = SOCK_STREAM;
+	int protocol = IPPROTO_TCP;
+
+	if (!host) {
+		return DNS_EAI_NONAME;
+	}
+
+	if (hints) {
+		family = hints->ai_family;
+		if (hints->ai_socktype == SOCK_DGRAM) {
+			socktype = SOCK_DGRAM;
+			protocol = IPPROTO_UDP;
+		}
+	}
+
+	result = net_ipaddr_parse(host, strlen(host), &res->_ai_addr);
+
+	if (!result) {
+		return DNS_EAI_NONAME;
+	}
+
+	resolved_family = res->_ai_addr.sa_family;
+
+	if ((family != AF_UNSPEC) && (resolved_family != family)) {
+		return DNS_EAI_NONAME;
+	}
+
+	if (service) {
+		port = strtol(service, NULL, 10);
+		if (port < 1 || port > 65535) {
+			return DNS_EAI_NONAME;
+		}
+	}
+
+	res->ai_family = resolved_family;
+	res->ai_socktype = socktype;
+	res->ai_protocol = protocol;
+
+	switch (resolved_family) {
+	case AF_INET:
+	{
+		struct sockaddr_in *addr =
+			(struct sockaddr_in *)&res->_ai_addr;
+
+		INIT_ADDRINFO(res, addr);
+		addr->sin_port = htons(port);
+		addr->sin_family = AF_INET;
+		break;
+	}
+
+	case AF_INET6:
+	{
+		struct sockaddr_in6 *addr =
+			(struct sockaddr_in6 *)&res->_ai_addr;
+
+		INIT_ADDRINFO(res, addr);
+		addr->sin6_port = htons(port);
+		addr->sin6_family = AF_INET6;
+		break;
+	}
+
+	default:
+		return DNS_EAI_NONAME;
+	}
+
+	return 0;
+}
+#endif /* defined(CONFIG_NET_IPV6) || defined(CONFIG_NET_IPV4) */
+
 int zsock_getaddrinfo(const char *host, const char *service,
 		      const struct zsock_addrinfo *hints,
 		      struct zsock_addrinfo **res)
@@ -331,22 +404,36 @@ int zsock_getaddrinfo(const char *host, const char *service,
 		return socket_offload_getaddrinfo(host, service, hints, res);
 	}
 
-#if defined(CONFIG_DNS_RESOLVER)
-	int ret;
+	int ret = DNS_EAI_FAIL;
 
+#if defined(ANY_RESOLVER)
 	*res = calloc(AI_ARR_MAX, sizeof(struct zsock_addrinfo));
 	if (!(*res)) {
 		return DNS_EAI_MEMORY;
 	}
-	ret = z_zsock_getaddrinfo_internal(host, service, hints, *res);
+#endif
+
+#if defined(CONFIG_NET_IPV6) || defined(CONFIG_NET_IPV4)
+	/* Resolve literal address even if DNS is not available */
+	if (ret) {
+		ret = try_resolve_literal_addr(host, service, hints, *res);
+	}
+#endif
+
+#if defined(CONFIG_DNS_RESOLVER)
+	if (ret) {
+		ret = z_zsock_getaddrinfo_internal(host, service, hints, *res);
+	}
+#endif
+
+#if defined(ANY_RESOLVER)
 	if (ret) {
 		free(*res);
 		*res = NULL;
 	}
-	return ret;
 #endif
 
-	return DNS_EAI_FAIL;
+	return ret;
 }
 
 void zsock_freeaddrinfo(struct zsock_addrinfo *ai)

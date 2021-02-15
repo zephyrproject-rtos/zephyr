@@ -54,8 +54,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define LITEETH_IRQ		DT_INST_IRQN(0)
 #define LITEETH_IRQ_PRIORITY	CONFIG_ETH_LITEETH_0_IRQ_PRI
 
-/* label */
-#define LITEETH_LABEL		DT_INST_LABEL(0)
+#define MAX_TX_FAILURE 100
 
 struct eth_liteeth_dev_data {
 	struct net_if *iface;
@@ -88,6 +87,7 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 	struct eth_liteeth_dev_data *context = dev->data;
 
 	key = irq_lock();
+	int attempts = 0;
 
 	/* get data from packet and send it */
 	len = net_pkt_get_len(pkt);
@@ -99,7 +99,10 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 
 	/* wait for the device to be ready to transmit */
 	while (sys_read8(LITEETH_TX_READY) == 0) {
-		;
+		if (attempts++ == MAX_TX_FAILURE) {
+			goto error;
+		}
+		k_sleep(K_MSEC(1));
 	}
 
 	/* start transmitting */
@@ -111,6 +114,10 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 	irq_unlock(key);
 
 	return 0;
+error:
+	irq_unlock(key);
+	LOG_ERR("TX fifo failed");
+	return -1;
 }
 
 static void eth_rx(const struct device *port)
@@ -211,8 +218,11 @@ static void eth_iface_init(struct net_if *iface)
 #endif
 
 	/* set MAC address */
-	net_if_set_link_addr(iface, context->mac_addr, sizeof(context->mac_addr),
-			     NET_LINK_ETHERNET);
+	if (net_if_set_link_addr(iface, context->mac_addr, sizeof(context->mac_addr),
+			     NET_LINK_ETHERNET) < 0) {
+		LOG_ERR("setting mac failed");
+		return;
+	}
 
 	/* clear pending events */
 	sys_write8(LITEETH_EV_TX, LITEETH_TX_EV_PENDING);
@@ -244,14 +254,14 @@ static const struct ethernet_api eth_api = {
 	.send = eth_tx
 };
 
-NET_DEVICE_INIT(eth0, LITEETH_LABEL, eth_initialize, device_pm_control_nop,
+NET_DEVICE_DT_INST_DEFINE(0, eth_initialize, device_pm_control_nop,
 		&eth_data, &eth_config, CONFIG_ETH_INIT_PRIORITY, &eth_api,
 		ETHERNET_L2, NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU);
 
 static void eth_irq_config(void)
 {
 	IRQ_CONNECT(LITEETH_IRQ, LITEETH_IRQ_PRIORITY, eth_irq_handler,
-		    DEVICE_GET(eth0), 0);
+		    DEVICE_DT_INST_GET(0), 0);
 	irq_enable(LITEETH_IRQ);
 	sys_write8(1, LITEETH_RX_EV_ENABLE);
 }

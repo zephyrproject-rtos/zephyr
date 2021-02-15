@@ -7,62 +7,65 @@
 #include <kernel.h>
 #include <string.h>
 #include <sys/math_extras.h>
+#include <sys/util.h>
 
-void k_mem_pool_free(struct k_mem_block *block)
+static void *z_heap_aligned_alloc(struct k_heap *heap, size_t align, size_t size)
 {
-	k_mem_pool_free_id(&block->id);
-}
-
-void *k_mem_pool_malloc(struct k_mem_pool *pool, size_t size)
-{
-	struct k_mem_block block;
+	void *mem;
+	struct k_heap **heap_ref;
+	size_t __align;
 
 	/*
-	 * get a block large enough to hold an initial (hidden) block
-	 * descriptor, as well as the space the caller requested
+	 * Adjust the size to make room for our heap reference.
+	 * Merge a rewind bit with align value (see sys_heap_aligned_alloc()).
+	 * This allows for storing the heap pointer right below the aligned
+	 * boundary without wasting any memory.
 	 */
-	if (size_add_overflow(size, WB_UP(sizeof(struct k_mem_block_id)),
-			      &size)) {
+	if (size_add_overflow(size, sizeof(heap_ref), &size)) {
 		return NULL;
 	}
-	if (k_mem_pool_alloc(pool, &block, size, K_NO_WAIT) != 0) {
+	__align = align | sizeof(heap_ref);
+
+	mem = k_heap_aligned_alloc(heap, __align, size, K_NO_WAIT);
+	if (mem == NULL) {
 		return NULL;
 	}
 
-	/* save the block descriptor info at the start of the actual block */
-	(void)memcpy(block.data, &block.id, sizeof(struct k_mem_block_id));
+	heap_ref = mem;
+	*heap_ref = heap;
+	mem = ++heap_ref;
+	__ASSERT(align == 0 || ((uintptr_t)mem & (align - 1)) == 0,
+		 "misaligned memory at %p (align = %zu)", mem, align);
 
-	/* return address of the user area part of the block to the caller */
-	return (char *)block.data + WB_UP(sizeof(struct k_mem_block_id));
+	return mem;
 }
 
 void k_free(void *ptr)
 {
-	if (ptr != NULL) {
-		/* point to hidden block descriptor at start of block */
-		ptr = (char *)ptr - WB_UP(sizeof(struct k_mem_block_id));
+	struct k_heap **heap_ref;
 
-		/* return block to the heap memory pool */
-		k_mem_pool_free_id(ptr);
+	if (ptr != NULL) {
+		heap_ref = ptr;
+		ptr = --heap_ref;
+		k_heap_free(*heap_ref, ptr);
 	}
 }
 
 #if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
 
-/*
- * Heap is defined using HEAP_MEM_POOL_SIZE configuration option.
- *
- * This module defines the heap memory pool and the _HEAP_MEM_POOL symbol
- * that has the address of the associated memory pool struct.
- */
+K_HEAP_DEFINE(_system_heap, CONFIG_HEAP_MEM_POOL_SIZE);
+#define _SYSTEM_HEAP (&_system_heap)
 
-K_MEM_POOL_DEFINE(_heap_mem_pool, CONFIG_HEAP_MEM_POOL_MIN_SIZE,
-		  CONFIG_HEAP_MEM_POOL_SIZE, 1, 4);
-#define _HEAP_MEM_POOL (&_heap_mem_pool)
-
-void *k_malloc(size_t size)
+void *k_aligned_alloc(size_t align, size_t size)
 {
-	return k_mem_pool_malloc(_HEAP_MEM_POOL, size);
+	__ASSERT(align / sizeof(void *) >= 1
+		&& (align % sizeof(void *)) == 0,
+		"align must be a multiple of sizeof(void *)");
+
+	__ASSERT((align & (align - 1)) == 0,
+		"align must be a power of 2");
+
+	return z_heap_aligned_alloc(_SYSTEM_HEAP, align, size);
 }
 
 void *k_calloc(size_t nmemb, size_t size)
@@ -83,25 +86,25 @@ void *k_calloc(size_t nmemb, size_t size)
 
 void k_thread_system_pool_assign(struct k_thread *thread)
 {
-	thread->resource_pool = _HEAP_MEM_POOL;
+	thread->resource_pool = _SYSTEM_HEAP;
 }
 #else
-#define _HEAP_MEM_POOL	NULL
+#define _SYSTEM_HEAP	NULL
 #endif
 
-void *z_thread_malloc(size_t size)
+void *z_thread_aligned_alloc(size_t align, size_t size)
 {
 	void *ret;
-	struct k_mem_pool *pool;
+	struct k_heap *heap;
 
 	if (k_is_in_isr()) {
-		pool = _HEAP_MEM_POOL;
+		heap = _SYSTEM_HEAP;
 	} else {
-		pool = _current->resource_pool;
+		heap = _current->resource_pool;
 	}
 
-	if (pool) {
-		ret = k_mem_pool_malloc(pool, size);
+	if (heap) {
+		ret = z_heap_aligned_alloc(heap, align, size);
 	} else {
 		ret = NULL;
 	}

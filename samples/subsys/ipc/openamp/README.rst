@@ -18,6 +18,14 @@ Building the application for lpcxpresso54114_m4
    :board: lpcxpresso54114_m4
    :goals: debug
 
+Building the application for lpcxpresso55s69_cpu0
+*************************************************
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/ipc/openamp
+   :board: lpcxpresso55s69_cpu0
+   :goals: debug
+
 Building the application for mps2_an521
 ***************************************
 

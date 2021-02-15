@@ -276,15 +276,48 @@ static CO_SDO_abortCode_t canopen_odf_1f51(CO_ODF_arg_t *odf_arg)
 }
 
 #ifdef CONFIG_BOOTLOADER_MCUBOOT
+/** @brief Calculate crc for region in flash
+ *
+ * @param flash_area Flash area to read from, must be open
+ * @offset Offset to read from
+ * @size Number of bytes to include in calculation
+ * @pcrc Pointer to uint32_t where crc will be written if return value is 0
+ *
+ * @return 0 if successful, negative errno on failure
+ */
+static int flash_crc(const struct flash_area *flash_area,
+		off_t offset, size_t size, uint32_t *pcrc)
+{
+	uint32_t crc = 0;
+	uint8_t buffer[32];
+
+	while (size > 0) {
+		size_t len = MIN(size, sizeof(buffer));
+
+		int err = flash_area_read(flash_area, offset, buffer, len);
+
+		if (err) {
+			return err;
+		}
+
+		crc = crc32_ieee_update(crc, buffer, len);
+
+		offset += len;
+		size -= len;
+	}
+
+	*pcrc = crc;
+
+	return 0;
+}
+
 static CO_SDO_abortCode_t canopen_odf_1f56(CO_ODF_arg_t *odf_arg)
 {
 	const struct flash_area *flash_area;
 	struct mcuboot_img_header header;
 	off_t offset = 0;
 	uint32_t crc = 0;
-	size_t size;
 	uint8_t fa_id;
-	uint32_t data;
 	uint32_t len;
 	int err;
 
@@ -297,6 +330,14 @@ static CO_SDO_abortCode_t canopen_odf_1f56(CO_ODF_arg_t *odf_arg)
 		memcpy(odf_arg->data, odf_arg->ODdataStorage, sizeof(uint32_t));
 		return CO_SDO_AB_READONLY;
 	}
+
+	/* Reading from flash and calculating crc can take 100ms or more, and
+	 * this function is called with the can od lock taken.
+	 *
+	 * Release the lock before performing time consuming work, and reacquire
+	 * before return.
+	 */
+	CO_UNLOCK_OD();
 
 	/*
 	 * Calculate the CRC32 of the image that is running or will be
@@ -312,6 +353,8 @@ static CO_SDO_abortCode_t canopen_odf_1f56(CO_ODF_arg_t *odf_arg)
 	if (err) {
 		LOG_WRN("failed to read bank header (err %d)", err);
 		CO_setUint32(odf_arg->data, 0U);
+
+		CO_LOCK_OD();
 		return CO_SDO_AB_NONE;
 	}
 
@@ -319,6 +362,8 @@ static CO_SDO_abortCode_t canopen_odf_1f56(CO_ODF_arg_t *odf_arg)
 		LOG_WRN("unsupported mcuboot header version %d",
 			header.mcuboot_version);
 		CO_setUint32(odf_arg->data, 0U);
+
+		CO_LOCK_OD();
 		return CO_SDO_AB_NONE;
 	}
 	len = header.h.v1.image_size;
@@ -328,29 +373,27 @@ static CO_SDO_abortCode_t canopen_odf_1f56(CO_ODF_arg_t *odf_arg)
 		LOG_ERR("failed to open flash area (err %d)", err);
 		CO_errorReport(ctx.em, CO_EM_NON_VOLATILE_MEMORY,
 			       CO_EMC_HARDWARE, err);
+
+		CO_LOCK_OD();
 		return CO_SDO_AB_HW;
 	}
 
-	while (len) {
-		size = (len >= sizeof(data)) ? sizeof(data) : len;
-		err = flash_area_read(flash_area, offset, &data, size);
-		if (err) {
-			LOG_ERR("failed to read flash (err %d)", err);
-			CO_errorReport(ctx.em, CO_EM_NON_VOLATILE_MEMORY,
-				       CO_EMC_HARDWARE, err);
-			flash_area_close(flash_area);
-			return CO_SDO_AB_HW;
-		}
-
-		crc = crc32_ieee_update(crc, (uint8_t *)&data, size);
-		len -= size;
-		offset += size;
-	}
+	err = flash_crc(flash_area, offset, len, &crc);
 
 	flash_area_close(flash_area);
 
+	if (err) {
+		LOG_ERR("failed to read flash (err %d)", err);
+		CO_errorReport(ctx.em, CO_EM_NON_VOLATILE_MEMORY,
+			       CO_EMC_HARDWARE, err);
+
+		CO_LOCK_OD();
+		return CO_SDO_AB_HW;
+	}
+
 	CO_setUint32(odf_arg->data, crc);
 
+	CO_LOCK_OD();
 	return CO_SDO_AB_NONE;
 }
 #endif /* CONFIG_BOOTLOADER_MCUBOOT */

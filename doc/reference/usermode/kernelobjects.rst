@@ -162,13 +162,13 @@ ways to do this.
 
 * A thread that has permission on an object, or is running in supervisor mode,
   may grant permission on that object to another thread via the
-  :c:func:`k_object_access_grant` API. The convenience function
-  :c:func:`k_thread_access_grant` may also be used, which accepts a
-  NULL-terminated list of kernel objects and calls
+  :c:func:`k_object_access_grant` API. The convenience pseudo-function
+  :c:func:`k_thread_access_grant` may also be used, which accepts an arbitrary
+  number of pointers to kernel objects and calls
   :c:func:`k_object_access_grant` on each of them. The thread being granted
-  permission, or the object whose access is being granted, do not need to be in
-  an initialized state. If the caller is from user mode, the caller must have
-  permissions on both the kernel object and the target thread object.
+  permission, or the object whose access is being granted, do not need to be
+  in an initialized state. If the caller is from user mode, the caller must
+  have permissions on both the kernel object and the target thread object.
 
 * Supervisor threads may declare a particular kernel object to be a public
   object, usable by all current and future threads with the

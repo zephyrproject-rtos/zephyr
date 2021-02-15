@@ -4,9 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @file
- * @brief Reset handler
+/*
+ * Reset handler
  *
  * Reset handler that prepares the system for running C code.
  */
@@ -22,15 +21,15 @@ _ASM_FILE_PROLOGUE
 /*
  * Platform may do platform specific init at EL3.
  * The function implementation must preserve callee saved registers as per
- * Aarch64 ABI PCS.
+ * AArch64 ABI PCS.
  */
+
 WTEXT(z_arch_el3_plat_init)
 SECTION_FUNC(TEXT,z_arch_el3_plat_init)
 ret
 
-/**
- *
- * @brief Reset vector
+/*
+ * Reset vector
  *
  * Ran when the system comes out of reset. The processor is in thread mode with
  * privileged level. At this point, neither SP_EL0 nor SP_ELx point to a valid
@@ -38,18 +37,11 @@ ret
  *
  * When these steps are completed, jump to z_arm64_prep_c(), which will finish
  * setting up the system for running C code.
- *
- * @return N/A
  */
+
 GTEXT(__reset)
 SECTION_SUBSEC_FUNC(TEXT,_reset_section,__reset)
 
-/*
- * The entry point is located at the __reset symbol, which is fetched by a XIP
- * image playing the role of a bootloader, which jumps to it, not through the
- * reset vector mechanism. Such bootloaders might want to search for a __start
- * symbol instead, so create that alias here.
- */
 GTEXT(__start)
 SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 
@@ -58,16 +50,23 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 
 	switch_el x1, 3f, 2f, 1f
 3:
+	/*
+	 * Zephyr entry happened in EL3. Do EL3 specific init before
+	 * dropping to lower EL.
+	 */
+
 	/* Initialize VBAR */
 	msr	vbar_el3, x19
 	isb
 
-	/* Setup a stack for EL3 (SP_ELx) */
+	/* Switch to SP_EL0 and setup the stack */
+	msr	spsel, #0
+
 	ldr	x0, =(z_interrupt_stacks)
 	add	x0, x0, #(CONFIG_ISR_STACK_SIZE)
 	mov	sp, x0
 
-	/* Initialize sctlr_el3 to reset value */
+	/* Initialize SCTLR_EL3 to reset value */
 	mov_imm	x1, SCTLR_EL3_RES1
 	mrs     x0, sctlr_el3
 	orr	x0, x0, x1
@@ -75,9 +74,9 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 	isb
 
 	/*
-	* Disable access traps to EL3 for CPACR, Trace, FP, ASIMD,
-	* SVE from lower EL.
-	*/
+	 * Disable access traps to EL3 for CPACR, Trace, FP, ASIMD,
+	 * SVE from lower EL.
+	 */
 	mov_imm	x0, CPTR_EL3_RES_VAL
 	mov_imm	x1, (CPTR_EL3_TTA | CPTR_EL3_TFP | CPTR_EL3_TCPAC)
 	bic	x0, x0, x1
@@ -88,10 +87,6 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 	/* Platform specific configurations needed in EL3 */
 	bl	z_arch_el3_plat_init
 
-	/*
-	* Zephyr entry happened in EL3. Do EL3 specific init before
-	* dropping to lower EL.
-	*/
 	/* Enable access control configuration from lower EL */
 	mrs	x0, actlr_el3
 	orr     x0, x0, #(ACTLR_EL3_L2ACTLR | ACTLR_EL3_L2ECTLR \
@@ -99,7 +94,7 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 	orr     x0, x0, #(ACTLR_EL3_CPUACTLR | ACTLR_EL3_CPUECTLR)
 	msr	actlr_el3, x0
 
-	/* Initialize sctlr_el1 to reset value */
+	/* Initialize SCTLR_EL1 to reset value */
 	mov_imm	x0, SCTLR_EL1_RES1
 	msr	sctlr_el1, x0
 
@@ -128,19 +123,19 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 	msr	vbar_el1, x19
 	isb
 
-	/* Setup the stack (SP_ELx) */
+	/* Switch to SP_EL0 and setup the stack */
+	msr	spsel, #0
+
 	ldr	x0, =(z_interrupt_stacks)
 	add	x0, x0, #(CONFIG_ISR_STACK_SIZE)
 	mov	sp, x0
 
 	/* Disable access trapping in EL1 for NEON/FP */
-	mov	x0, #(CPACR_EL1_FPEN_NOTRAP)
+	mov_imm	x0, CPACR_EL1_FPEN_NOTRAP
 	msr	cpacr_el1, x0
 
-	/*
-	 * Enable the instruction cache and el1 stack alignment check.
-	 */
-	mov	x1, #(SCTLR_I_BIT | SCTLR_SA_BIT)
+	/* Enable the instruction cache and EL1 stack alignment check. */
+	mov_imm	x1, (SCTLR_I | SCTLR_SA)
 	mrs	x0, sctlr_el1
 	orr	x0, x0, x1
 	msr	sctlr_el1, x0

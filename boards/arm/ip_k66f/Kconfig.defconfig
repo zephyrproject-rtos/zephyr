@@ -36,17 +36,11 @@ config ETH_MCUX_NO_PHY_SMI
 
 endif # NETWORKING
 
-if PINMUX_MCUX
+if NET_DSA
 
-config PINMUX_MCUX_PORTA
-	default y
+config DSA_KSZ8794
+	default y if SPI
 
-config PINMUX_MCUX_PORTB
-	default y if "$(dt_nodelabel_enabled,spi1)" && SPI
-
-config PINMUX_MCUX_PORTE
-	default y if "$(dt_nodelabel_enabled,enet)" && NET_L2_ETHERNET
-
-endif # PINMUX_MCUX
+endif # NET_DSA
 
 endif # BOARD_IP_K66F

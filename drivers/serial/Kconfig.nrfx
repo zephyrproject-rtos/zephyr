@@ -91,7 +91,7 @@ config UART_0_NRF_HW_ASYNC_TIMER
 
 config UART_0_GPIO_MANAGEMENT
 	bool "Enable GPIO management on port 0"
-	depends on DEVICE_POWER_MANAGEMENT
+	depends on PM_DEVICE
 	default y
 	help
 	  If enabled, the driver will configure the GPIOs used by the uart to
@@ -162,7 +162,7 @@ config UART_1_NRF_HW_ASYNC_TIMER
 
 config UART_1_GPIO_MANAGEMENT
 	bool "Enable GPIO management on port 1"
-	depends on DEVICE_POWER_MANAGEMENT
+	depends on PM_DEVICE
 	default y
 	help
 	  If enabled, the driver will configure the GPIOs used by the uart to
@@ -232,7 +232,7 @@ config UART_2_NRF_HW_ASYNC_TIMER
 
 config UART_2_GPIO_MANAGEMENT
 	bool "Enable GPIO management on port 2"
-	depends on DEVICE_POWER_MANAGEMENT
+	depends on PM_DEVICE
 	default y
 	help
 	  If enabled, the driver will configure the GPIOs used by the uart to
@@ -302,7 +302,7 @@ config UART_3_NRF_HW_ASYNC_TIMER
 
 config UART_3_GPIO_MANAGEMENT
 	bool "Enable GPIO management on port 3"
-	depends on DEVICE_POWER_MANAGEMENT
+	depends on PM_DEVICE
 	default y
 	help
 	  If enabled, the driver will configure the GPIOs used by the uart to

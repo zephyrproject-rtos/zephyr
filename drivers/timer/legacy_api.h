@@ -30,13 +30,13 @@ extern uint64_t z_clock_uptime(void);
 
 void z_clock_set_timeout(int32_t ticks, bool idle)
 {
-#ifdef CONFIG_TICKLESS_KERNEL
+#if defined(CONFIG_TICKLESS_IDLE) && defined(CONFIG_TICKLESS_KERNEL)
 	if (idle) {
 		z_timer_idle_enter(ticks);
 	} else {
 		z_set_time(ticks == K_TICKS_FOREVER ? 0 : ticks);
 	}
-#endif
+#endif	/* TICKLESS_IDLE && TICKLESS_KERNEL */
 }
 
 /* The old driver "now" API would return a full uptime value.  The new

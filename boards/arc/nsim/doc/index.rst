@@ -6,8 +6,9 @@ DesignWare(R) ARC(R) Emulation (nsim)
 Overview
 ********
 
-This board configuration will use `Designware ARC nSIM`_ to emulate a virtual
-ARC EM or ARC HS based board including the following features:
+This board configuration can be used to run ARC EM / ARC HS based images in
+simulation with `Designware ARC nSIM`_ or run same images on FPGA based HW
+platform `HAPS`_. The board includes the following features:
 
 * ARC EM or ARC HS processor
 * ARC internal timer
@@ -53,8 +54,14 @@ Programming and Debugging
 Required Hardware and Software
 ==============================
 
-To use Zephyr RTOS applications on this board, `Designware ARC nSIM`_ or
-`Designware ARC nSIM Lite`_ is required.
+To run single-core Zephyr RTOS applications in simulation on this board,
+`Designware ARC nSIM`_ or `Designware ARC nSIM Lite`_ is required.
+
+To run multi-core Zephyr RTOS applications in simulation on this board,
+`Designware ARC nSIM`_ and MetaWare Debugger from `ARC MWDT`_ are required.
+
+To run Zephyr RTOS applications on FPGA-based `HAPS`_ platform,
+MetaWare Debugger from `ARC MWDT`_ is required.
 
 Building Sample Applications
 ==============================
@@ -82,6 +89,14 @@ nsim, and display the following console output:
 
 .. note::
    To exit the simulator, use Ctrl+], then Ctrl+c
+
+Use this configuration to run same application on `HAPS`_ platform:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/synchronization
+   :host-os: unix
+   :board: nsim_em
+   :goals: flash --runner mdb-hw
 
 Debugging
 =========
@@ -121,3 +136,5 @@ References
 
 .. _Designware ARC nSIM: https://www.synopsys.com/dw/ipdir.php?ds=sim_nsim
 .. _Designware ARC nSIM Lite: https://www.synopsys.com/cgi-bin/dwarcnsim/req1.cgi
+.. _HAPS: https://www.synopsys.com/verification/prototyping/haps.html
+.. _ARC MWDT: https://www.synopsys.com/dw/ipdir.php?ds=sw_metaware

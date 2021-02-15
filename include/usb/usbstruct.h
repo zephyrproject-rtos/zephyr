@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: BSD-3-Clause */
+
 /*
  *  LPCUSB, an USB device driver for LPC microcontrollers
  *  Copyright (C) 2006 Bertrik Sikken (bertrik@sikken.nl)

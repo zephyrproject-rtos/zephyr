@@ -114,10 +114,10 @@ _switch_return_from_coop:
 	pop_s r3    /* status32 into r3 */
 	kflag r3    /* write status32 */
 
-#ifdef CONFIG_TRACING
+#ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
 	push_s blink
 
-	bl sys_trace_thread_switched_in
+	bl z_thread_mark_switched_in
 
 	pop_s blink
 #endif
@@ -150,10 +150,10 @@ _switch_return_from_firq:
 #else
 	sr r3, [_ARC_V2_AUX_IRQ_ACT]
 #endif
-#ifdef CONFIG_TRACING
+#ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
 	push_s blink
 
-	bl sys_trace_thread_switched_in
+	bl z_thread_mark_switched_in
 
 	pop_s blink
 #endif

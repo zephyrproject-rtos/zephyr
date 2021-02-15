@@ -44,20 +44,9 @@ extern void test_socketpair_poll_delayed_data(void);
 extern void test_socketpair_poll_close_remote_end_POLLIN(void);
 extern void test_socketpair_poll_close_remote_end_POLLOUT(void);
 
-/* work queue for tests that need an async event */
-static K_THREAD_STACK_DEFINE(test_socketpair_work_q_stack, 512);
-struct k_work_q test_socketpair_work_q;
-
 void test_main(void)
 {
 	k_thread_system_pool_assign(k_current_get());
-
-	k_thread_access_grant(k_current_get(),
-		&test_socketpair_work_q.queue);
-
-	k_work_q_start(&test_socketpair_work_q, test_socketpair_work_q_stack,
-		K_THREAD_STACK_SIZEOF(test_socketpair_work_q_stack),
-		CONFIG_MAIN_THREAD_PRIORITY);
 
 	ztest_test_suite(
 		socketpair,
@@ -73,8 +62,8 @@ void test_main(void)
 		ztest_user_unit_test(test_socketpair_read_nonblock),
 		ztest_user_unit_test(test_socketpair_write_nonblock),
 
-		ztest_user_unit_test(test_socketpair_read_block),
-		ztest_user_unit_test(test_socketpair_write_block),
+		ztest_unit_test(test_socketpair_read_block),
+		ztest_unit_test(test_socketpair_write_block),
 
 		ztest_user_unit_test(
 			test_socketpair_close_one_end_and_read_from_the_other),
@@ -85,12 +74,10 @@ void test_main(void)
 		ztest_user_unit_test(
 			test_socketpair_poll_timeout_nonblocking),
 		ztest_user_unit_test(test_socketpair_poll_immediate_data),
-		ztest_user_unit_test(test_socketpair_poll_delayed_data),
+		ztest_unit_test(test_socketpair_poll_delayed_data),
 
-		ztest_user_unit_test(
-			test_socketpair_poll_close_remote_end_POLLIN),
-		ztest_user_unit_test(
-			test_socketpair_poll_close_remote_end_POLLOUT)
+		ztest_unit_test(test_socketpair_poll_close_remote_end_POLLIN),
+		ztest_unit_test(test_socketpair_poll_close_remote_end_POLLOUT)
 	);
 
 	ztest_run_test_suite(socketpair);

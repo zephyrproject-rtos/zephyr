@@ -15,8 +15,20 @@
  */
 
 #include <kernel_internal.h>
+#include <linker/linker-defs.h>
 
 extern FUNC_NORETURN void z_cstart(void);
+
+static inline void z_arm64_bss_zero(void)
+{
+	uint64_t *p = (uint64_t *)__bss_start;
+	uint64_t *end = (uint64_t *)__bss_end;
+
+	while (p < end) {
+		*p++ = 0;
+	}
+}
+
 /**
  *
  * @brief Prepare to and run C code
@@ -27,7 +39,7 @@ extern FUNC_NORETURN void z_cstart(void);
  */
 void z_arm64_prep_c(void)
 {
-	z_bss_zero();
+	z_arm64_bss_zero();
 	z_arm64_interrupt_init();
 	z_cstart();
 

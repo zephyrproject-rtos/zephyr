@@ -27,6 +27,10 @@
 
 /* thread_arch_t member offsets */
 GEN_OFFSET_SYM(_thread_arch_t, swap_return_value);
+#if defined(CONFIG_USERSPACE)
+GEN_OFFSET_SYM(_thread_arch_t, priv_stack_start);
+GEN_OFFSET_SYM(_thread_arch_t, user_sp);
+#endif
 
 /* struct coop member offsets */
 GEN_OFFSET_SYM(_callee_saved_t, sp);

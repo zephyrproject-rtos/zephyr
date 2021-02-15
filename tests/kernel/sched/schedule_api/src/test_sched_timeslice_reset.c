@@ -51,6 +51,8 @@ static void thread_time_slice(void *p1, void *p2, void *p3)
 {
 	uint32_t t = cycles_delta(&elapsed_slice);
 	uint32_t expected_slice_min, expected_slice_max;
+	uint32_t switch_tolerance_ticks =
+		k_ms_to_ticks_ceil32(TASK_SWITCH_TOLERANCE);
 
 	if (thread_idx == 0) {
 		/*
@@ -70,11 +72,11 @@ static void thread_time_slice(void *p1, void *p2, void *p3)
 		 */
 		expected_slice_min =
 			(k_ms_to_ticks_ceil32(SLICE_SIZE)
-			 - TASK_SWITCH_TOLERANCE)
+			 - switch_tolerance_ticks)
 			* k_ticks_to_cyc_floor32(1);
 		expected_slice_max =
 			(k_ms_to_ticks_ceil32(SLICE_SIZE)
-			 + TASK_SWITCH_TOLERANCE)
+			 + switch_tolerance_ticks)
 			* k_ticks_to_cyc_floor32(1);
 	}
 
@@ -82,6 +84,12 @@ static void thread_time_slice(void *p1, void *p2, void *p3)
 	TC_PRINT("thread[%d] elapsed slice: %d, expected: <%d, %d>\n",
 		 thread_idx, t, expected_slice_min, expected_slice_max);
 #endif
+
+	/* Before the assert, otherwise in case of fail the output
+	 * will give the impression that the same thread ran more than
+	 * once
+	 */
+	thread_idx = (thread_idx + 1) % NUM_THREAD;
 
 	/** TESTPOINT: timeslice should be reset for each preemptive thread */
 #ifndef CONFIG_COVERAGE
@@ -94,7 +102,6 @@ static void thread_time_slice(void *p1, void *p2, void *p3)
 #else
 	(void)t;
 #endif /* CONFIG_COVERAGE */
-	thread_idx = (thread_idx + 1) % NUM_THREAD;
 
 	/* Keep the current thread busy for more than one slice, even though,
 	 * when timeslice used up the next thread should be scheduled in.
@@ -128,6 +135,17 @@ void test_slice_reset(void)
 	/* disable timeslice */
 	k_sched_time_slice_set(0, K_PRIO_PREEMPT(0));
 
+	/* The slice size needs to be set in ms (which get converted
+	 * into ticks internally), but we want to loop over a half
+	 * slice in cycles. That requires a bit of care to be sure the
+	 * value divides properly.
+	 */
+	uint32_t slice_ticks = k_ms_to_ticks_ceil32(SLICE_SIZE);
+	uint32_t half_slice_cyc = k_ticks_to_cyc_ceil32(slice_ticks / 2);
+
+	__ASSERT(slice_ticks % 2 == 0,
+		 "timeslice in ticks much be divisible by two");
+
 	for (int j = 0; j < 2; j++) {
 		k_sem_reset(&sema);
 
@@ -153,14 +171,14 @@ void test_slice_reset(void)
 
 		/* current thread (ztest native) consumed a half timeslice */
 		t32 = k_cycle_get_32();
-		while (k_cycle_get_32() - t32 < HALF_SLICE_SIZE_CYCLES) {
+		while (k_cycle_get_32() - t32 < half_slice_cyc) {
 #if defined(CONFIG_ARCH_POSIX)
 			k_busy_wait(50);
 #endif
 		}
 
 		/* relinquish CPU and wait for each thread to complete */
-		k_msleep(SLICE_SIZE * (NUM_THREAD + 1));
+		k_sleep(K_TICKS(slice_ticks * (NUM_THREAD + 1)));
 		for (int i = 0; i < NUM_THREAD; i++) {
 			k_sem_take(&sema, K_FOREVER);
 		}

@@ -11,6 +11,7 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/i2c/i2c.h>
 #include <dt-bindings/pwm/pwm.h>
+#include <dt-bindings/memory-controller/stm32-fmc-sdram.h>
 
 / {
 	chosen {
@@ -39,7 +40,7 @@
 
 	soc {
 		flash: flash-controller@52002000 {
-			compatible = "st,stm32-flash-controller", "st,stm32h7-flash-controller";
+			compatible = "st,stm32h7-flash-controller";
 			label = "FLASH_CTRL";
 			reg = <0x52002000 0x400>;
 			interrupts = <4 0>;
@@ -235,6 +236,15 @@
 			label = "UART_8";
 		};
 
+		lpuart1: serial@58000c00 {
+			compatible = "st,stm32-lpuart", "st,stm32-uart";
+			reg = <0x58000c00 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB4 0x00000008>;
+			interrupts = <142 0>;
+			status = "disabled";
+			label = "LPUART_1";
+		};
+
 		rtc: rtc@58004000 {
 			compatible = "st,stm32-rtc";
 			reg = <0x58004000 0x400>;
@@ -295,6 +305,72 @@
 			interrupt-names = "event", "error";
 			status = "disabled";
 			label = "I2C_4";
+		};
+
+		spi1: spi@40013000 {
+			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40013000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00001000>;
+			interrupts = <35 0>;
+			status = "disabled";
+			label = "SPI_1";
+		};
+
+		spi2: spi@40003800 {
+			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40003800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00004000>;
+			interrupts = <36 0>;
+			status = "disabled";
+			label = "SPI_2";
+		};
+
+		spi3: spi@40003c00 {
+			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40003c00 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00008000>;
+			interrupts = <51 0>;
+			status = "disabled";
+			label = "SPI_3";
+		};
+
+		spi4: spi@40013400 {
+			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40013400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00002000>;
+			interrupts = <84 0>;
+			status = "disabled";
+			label = "SPI_4";
+		};
+
+		spi5: spi@40015000 {
+			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40015000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00100000>;
+			interrupts = <85 0>;
+			status = "disabled";
+			label = "SPI_5";
+		};
+
+		spi6: spi@58001400 {
+			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x58001400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB4 0x00000020>;
+			interrupts = <86 0>;
+			status = "disabled";
+			label = "SPI_6";
 		};
 
 		timers1: timers@40010000 {
@@ -590,24 +666,35 @@
 			#io-channel-cells = <1>;
 		};
 
+		dac1: dac@40007400 {
+			compatible = "st,stm32-dac";
+			reg = <0x40007400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x20000000>;
+			status = "disabled";
+			label = "DAC_1";
+			#io-channel-cells = <1>;
+		};
+
 		dma1: dma@40020000 {
-			compatible = "st,stm32-dma";
+			compatible = "st,stm32-dma-v1";
 			#dma-cells = <4>;
 			reg = <0x40020000 0x400>;
 			interrupts = <11 0>, <12 0>, <13 0>, <14 0>, <15 0>, <16 0>,
 						 <17 0>, <47 0>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000020>;
+			st,mem2mem;
 			status = "disabled";
 			label = "DMA_1";
 		};
 
 		dma2: dma@40020400 {
-			compatible = "st,stm32-dma";
+			compatible = "st,stm32-dma-v1";
 			#dma-cells = <4>;
 			reg = <0x40020400 0x400>;
-			interrupts = <11 0>, <12 0>, <13 0>, <14 0>, <15 0>, <16 0>,
-						 <17 0>, <47 0>;
+			interrupts = <56 0>, <57 0>, <58 0>, <59 0>, <60 0>, <68 0>,
+						<69 0>, <70 0>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000020>;
+			st,mem2mem;
 			status = "disabled";
 			label = "DMA_2";
 		};
@@ -630,6 +717,30 @@
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00008000>,
 				 <&rcc STM32_CLOCK_BUS_AHB1 0x00010000>,
 				 <&rcc STM32_CLOCK_BUS_AHB1 0x00020000>;
+			status = "disabled";
+		};
+
+		fmc: memory-controller@52004000 {
+			compatible = "st,stm32-fmc";
+			reg = <0x52004000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00001000>;
+			label = "STM32_FMC";
+			status = "disabled";
+
+			sdram: sdram {
+				compatible = "st,stm32-fmc-sdram";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				label = "STM32_FMC_SDRAM";
+				status = "disabled";
+			};
+		};
+
+		backup_sram: memory@38800000 {
+			compatible = "st,stm32-backup-sram";
+			reg = <0x38800000 DT_SIZE_K(4)>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x10000000>;
+			label = "BACKUP_SRAM";
 			status = "disabled";
 		};
 	};

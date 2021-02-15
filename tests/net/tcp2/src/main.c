@@ -25,11 +25,35 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_TCP_LOG_LEVEL);
 #include "ipv6.h"
 #include "tcp2.h"
 #include "tcp2_priv.h"
+#include "net_stats.h"
 
 #include <ztest.h>
 
 #define MY_PORT 4242
 #define PEER_PORT 4242
+
+/* Data (1280 bytes) to be sent */
+static const char lorem_ipsum[] =
+	"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris id "
+	"sodales lacus. Proin vel rhoncus sapien. Morbi semper, enim in "
+	"ullamcorper luctus, urna mi efficitur ex, laoreet eleifend massa "
+	"felis ac dui. Duis ut magna convallis, tristique leo eu, ornare "
+	"eros. Mauris a neque dictum, lobortis quam ut, rutrum erat. Vivamus "
+	"vulputate neque vel auctor porta. Duis consectetur justo ac molestie "
+	"tristique. In hac habitasse platea dictumst. Cras augue metus, "
+	"aliquet sodales elit eget suscipit rutrum tellus. Nulla ante purus, "
+	"dictum id tellus at, mattis cursus lectus. Mauris fringilla eros "
+	"lorem, in auctor erat consequat nec. Ut pharetra sollicitudin dolor "
+	"vel laoreet. Praesent eu lectus a dolor fringilla aliquet varius "
+	"eget erat. Ut vitae mauris commodo, feugiat arcu non vehicula nunc. "
+	"Nam ac enim elit. Praesent sit amet erat massa. Suspendisse potenti. "
+	"Etiam diam justo, tempus vel lobortis tincidunt, scelerisque vitae "
+	"mauris. Aenean vestibulum venenatis dapibus. Curabitur id ullamcorper"
+	" diam. Ut eu turpis mauris. Aliquam et ligula est. Proin a velit non "
+	"velit interdum vulputate. Proin vehicula eleifend suscipit. Cras "
+	"condimentum non massa egestas tempor. Donec quis scelerisque est, id "
+	"suscipit neque. Ut lobortis cursus ultrices. Aenean malesuada, nibh "
+	"ut laoreet.";
 
 static struct in_addr my_addr  = { { { 192, 0, 2, 1 } } };
 static struct sockaddr_in my_addr_s = {
@@ -94,12 +118,15 @@ static void handle_server_test(sa_family_t af, struct tcphdr *th);
 static void handle_syn_resend(void);
 static void handle_client_fin_wait_2_test(sa_family_t af, struct tcphdr *th);
 static void handle_client_closing_test(sa_family_t af, struct tcphdr *th);
+static void handle_server_recv_out_of_order(struct net_pkt *pkt);
 
 static void verify_flags(struct tcphdr *th, uint8_t flags,
 			 const char *fun, int line)
 {
 	if (!(th && FL(&th->th_flags, ==, flags))) {
-		zassert_true(false, "%s:%d flags mismatch", fun, line);
+		zassert_true(false,
+			     "%s:%d flags mismatch (0x%04x vs 0x%04x)",
+			     fun, line, th->th_flags, flags);
 	}
 }
 
@@ -181,8 +208,10 @@ static uint8_t tcp_options[20] = {
 	0x03, 0x03, 0x07 /* Win scale*/ };
 
 static struct net_pkt *tester_prepare_tcp_pkt(sa_family_t af,
-					      uint16_t src_port, uint16_t dst_port,
-					      uint8_t flags, uint8_t *data,
+					      uint16_t src_port,
+					      uint16_t dst_port,
+					      uint8_t flags,
+					      const uint8_t *data,
 					      size_t len)
 {
 	NET_PKT_DATA_ACCESS_DEFINE(tcp_access, struct tcphdr);
@@ -301,7 +330,8 @@ static struct net_pkt *prepare_ack_packet(sa_family_t af, uint16_t src_port,
 }
 
 static struct net_pkt *prepare_data_packet(sa_family_t af, uint16_t src_port,
-					   uint16_t dst_port, uint8_t *data,
+					   uint16_t dst_port,
+					   const uint8_t *data,
 					   size_t len)
 {
 	return tester_prepare_tcp_pkt(af, src_port, dst_port, PSH | ACK, data,
@@ -319,6 +349,12 @@ static struct net_pkt *prepare_fin_packet(sa_family_t af, uint16_t src_port,
 					  uint16_t dst_port)
 {
 	return tester_prepare_tcp_pkt(af, src_port, dst_port, FIN, NULL, 0U);
+}
+
+static struct net_pkt *prepare_rst_packet(sa_family_t af, uint16_t src_port,
+					  uint16_t dst_port)
+{
+	return tester_prepare_tcp_pkt(af, src_port, dst_port, RST, NULL, 0U);
 }
 
 static int read_tcp_header(struct net_pkt *pkt, struct tcphdr *th)
@@ -374,6 +410,9 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 		break;
 	case 8:
 		handle_client_closing_test(net_pkt_family(pkt), &th);
+		break;
+	case 9:
+		handle_server_recv_out_of_order(pkt);
 		break;
 	default:
 		zassert_true(false, "Undefined test case");
@@ -596,8 +635,6 @@ static void handle_server_test(sa_family_t af, struct tcphdr *th)
 
 	switch (t_state) {
 	case T_SYN:
-		seq = 0U;
-		ack = 0U;
 		reply = prepare_syn_packet(af, htons(MY_PORT),
 					   htons(PEER_PORT));
 		t_state = T_SYN_ACK;
@@ -1165,6 +1202,282 @@ static void test_client_closing_ipv6(void)
 	k_sleep(K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY));
 }
 
+static struct net_context *create_server_socket(uint32_t my_seq,
+						uint32_t my_ack)
+{
+	struct net_context *ctx;
+	int ret;
+
+	t_state = T_SYN;
+	test_case_no = 5;
+	seq = my_seq;
+	ack = my_ack;
+
+	ret = net_context_get(AF_INET6, SOCK_STREAM, IPPROTO_TCP, &ctx);
+	if (ret < 0) {
+		zassert_true(false, "Failed to get net_context");
+	}
+
+	ret = net_context_bind(ctx, (struct sockaddr *)&my_addr_v6_s,
+			       sizeof(struct sockaddr_in6));
+	if (ret < 0) {
+		zassert_true(false, "Failed to bind net_context");
+	}
+
+	ret = net_context_listen(ctx, 1);
+	if (ret < 0) {
+		zassert_true(false, "Failed to listen on net_context");
+	}
+
+	/* Trigger the peer to send SYN  */
+	k_delayed_work_submit(&test_server, K_NO_WAIT);
+
+	ret = net_context_accept(ctx, test_tcp_accept_cb, K_FOREVER, NULL);
+	if (ret < 0) {
+		zassert_true(false, "Failed to set accept on net_context");
+	}
+
+	/* test_tcp_accept_cb will release the semaphone after succesfull
+	 * connection.
+	 */
+	test_sem_take(K_MSEC(100), __LINE__);
+
+	return ctx;
+}
+
+static void check_rst_fail(uint32_t seq_value)
+{
+	struct net_pkt *reply;
+	int rsterr_before, rsterr_after;
+	int ret;
+
+	rsterr_before = GET_STAT(iface, tcp.rsterr);
+
+	/* Invalid seq in the RST packet */
+	seq = seq_value;
+
+	reply = prepare_rst_packet(AF_INET6, htons(MY_PORT), htons(PEER_PORT));
+
+	ret = net_recv_data(iface, reply);
+	zassert_true(ret == 0, "recv data failed (%d)", ret);
+
+	/* Let the receiving thread run */
+	k_msleep(50);
+
+	rsterr_after = GET_STAT(iface, tcp.rsterr);
+
+	zassert_equal(rsterr_before + 1, rsterr_after,
+		      "RST packet not skipped (before %d, after %d)",
+		      rsterr_before, rsterr_after);
+}
+
+static void check_rst_succeed(struct net_context *ctx,
+			      uint32_t seq_value)
+{
+	struct net_pkt *reply;
+	int rsterr_before, rsterr_after;
+	int ret;
+
+	/* Make sure that various other corner cases work */
+	if (ctx == NULL) {
+		ctx = create_server_socket(0, 0);
+	}
+
+	/* Another valid seq in the RST packet */
+	seq = ack + seq_value;
+
+	reply = prepare_rst_packet(AF_INET6, htons(MY_PORT), htons(PEER_PORT));
+
+	rsterr_before = GET_STAT(iface, tcp.rsterr);
+
+	ret = net_recv_data(iface, reply);
+	zassert_true(ret == 0, "recv data failed (%d)", ret);
+
+	/* Let the receiving thread run */
+	k_msleep(50);
+
+	rsterr_after = GET_STAT(iface, tcp.rsterr);
+
+	zassert_equal(rsterr_before, rsterr_after,
+		      "RST packet skipped (before %d, after %d)",
+		      rsterr_before, rsterr_after);
+
+	net_tcp_put(ctx);
+}
+
+static void test_client_invalid_rst(void)
+{
+	struct net_context *ctx;
+	struct tcp *conn;
+	uint16_t wnd;
+
+	ctx = create_server_socket(0, 0);
+
+	conn = ctx->tcp;
+	wnd = conn->recv_win;
+
+	/* Failure cases, the RST packets should be dropped */
+	check_rst_fail(ack - 1);
+	check_rst_fail(ack + wnd);
+
+	/* Then send a valid seq in the RST packet */
+	check_rst_succeed(ctx, wnd - 1);
+	check_rst_succeed(NULL, 0);
+	check_rst_succeed(NULL, 1);
+
+	net_tcp_put(ctx);
+}
+
+#define MAX_DATA 100
+static uint32_t expected_ack = MAX_DATA + 1 - 15;
+static struct net_context *ooo_ctx;
+
+static void handle_server_recv_out_of_order(struct net_pkt *pkt)
+{
+	struct tcphdr th;
+	int ret;
+
+	ret = read_tcp_header(pkt, &th);
+	if (ret < 0) {
+		goto fail;
+	}
+
+	/* Verify that we received all the queued data */
+	zassert_equal(expected_ack, ntohl(th.th_ack),
+		      "Not all pending data received. "
+		      "Expected ACK %u but got %u",
+		      expected_ack, ntohl(th.th_ack));
+
+	test_sem_give();
+
+	return;
+
+fail:
+	zassert_true(false, "%s failed", __func__);
+	net_pkt_unref(pkt);
+}
+
+static void test_server_recv_out_of_order_data(void)
+{
+	const uint8_t *data = lorem_ipsum + 10;
+	struct net_pkt *pkt;
+	int ret, i;
+
+	/* Only run the tests if queueing is enabled */
+	if (CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT == 0) {
+		return;
+	}
+
+	/* Start the sequence numbering so that we will wrap it (just for
+	 * testing purposes)
+	 */
+	ooo_ctx = create_server_socket(-15U, -15U);
+
+	/* This will force the packet to be routed to our checker func
+	 * handle_server_recv_out_of_order()
+	 */
+	test_case_no = 9;
+
+	/* First packet will be out-of-order */
+	seq += MAX_DATA - 20;
+	pkt = prepare_data_packet(AF_INET6, htons(MY_PORT), htons(PEER_PORT),
+				  &data[seq], 10);
+	zassert_not_null(pkt, "Cannot create pkt");
+
+	ret = net_recv_data(iface, pkt);
+	zassert_true(ret == 0, "recv data failed (%d)", ret);
+
+	/* Let the IP stack to process the packet properly */
+	k_msleep(1);
+
+	/* Then we send a packet that is after the previous packet */
+	seq += 10;
+
+	pkt = prepare_data_packet(AF_INET6, htons(MY_PORT), htons(PEER_PORT),
+				  &data[seq], 10);
+	zassert_not_null(pkt, "Cannot create pkt");
+
+	ret = net_recv_data(iface, pkt);
+	zassert_true(ret == 0, "recv data failed (%d)", ret);
+
+	k_msleep(1);
+
+	/* Then send packets that are before the first packet. The final packet
+	 * will flush the receive queue as the seq will be 1
+	 */
+	for (i = MAX_DATA - 10; i > 0; i -= 10) {
+		seq -= 10;
+
+		pkt = prepare_data_packet(AF_INET6, htons(MY_PORT),
+					  htons(PEER_PORT),
+					  &data[i], 10);
+		zassert_not_null(pkt, "Cannot create pkt");
+
+		ret = net_recv_data(iface, pkt);
+		zassert_true(ret == 0, "recv data failed (%d)", ret);
+
+		k_msleep(1);
+	}
+
+	/* Then the final packet that will flush the receive queue */
+	pkt = prepare_data_packet(AF_INET6, htons(MY_PORT),
+				  htons(PEER_PORT),
+				  &data[i], 10);
+	zassert_not_null(pkt, "Cannot create pkt");
+
+	ret = net_recv_data(iface, pkt);
+	zassert_true(ret == 0, "recv data failed (%d)", ret);
+
+	/* Peer will release the semaphone after it sends proper ACK to the
+	 * queued data.
+	 */
+	test_sem_take(K_MSEC(1000), __LINE__);
+}
+
+/* This test expects that the system is in correct state after a call to
+ * test_server_recv_out_of_order_data(), so this test must be run after that
+ * test.
+ */
+static void test_server_timeout_out_of_order_data(void)
+{
+	const uint8_t *data = lorem_ipsum + 10;
+	struct net_pkt *pkt;
+	int ret, i;
+
+	if (CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT == 0) {
+		return;
+	}
+
+	k_sem_reset(&test_sem);
+
+	/* The +1 will cause the seq to be not sequential thus we should
+	 * get a timeout.
+	 */
+	seq = expected_ack + MAX_DATA + 1;
+
+	/* Then special handling to send out-of-order TCP segments */
+	for (i = MAX_DATA; i > 10; i -= 10) {
+		seq -= 10;
+
+		pkt = prepare_data_packet(AF_INET6, htons(MY_PORT),
+					  htons(PEER_PORT),
+					  &data[i], 10);
+		zassert_not_null(pkt, "Cannot create pkt");
+
+		ret = net_recv_data(iface, pkt);
+		zassert_true(ret == 0, "recv data failed (%d)", ret);
+	}
+
+	/* Because the pending seq values are not sequential,
+	 * the recv queue in tcp2 should timeout.
+	 */
+	ret = k_sem_take(&test_sem,
+			 K_MSEC(CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT + 10));
+	zassert_equal(ret, -EAGAIN, "semaphore did not time out (%d)", ret);
+
+	net_tcp_put(ooo_ctx);
+}
+
 /** Test case main entry */
 void test_main(void)
 {
@@ -1177,7 +1490,10 @@ void test_main(void)
 			 ztest_unit_test(test_server_ipv6),
 			 ztest_unit_test(test_client_syn_resend),
 			 ztest_unit_test(test_client_fin_wait_2_ipv4),
-			 ztest_unit_test(test_client_closing_ipv6)
+			 ztest_unit_test(test_client_closing_ipv6),
+			 ztest_unit_test(test_client_invalid_rst),
+			 ztest_unit_test(test_server_recv_out_of_order_data),
+			 ztest_unit_test(test_server_timeout_out_of_order_data)
 			 );
 
 	ztest_run_test_suite(test_tcp_fn);

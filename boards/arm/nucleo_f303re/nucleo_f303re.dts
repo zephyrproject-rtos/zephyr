@@ -18,6 +18,7 @@
 		zephyr,shell-uart = &usart2;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,can-primary = &can1;
 	};
 
 	leds {
@@ -48,6 +49,22 @@
 	status = "okay";
 };
 
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	current-speed = <115200>;
+	status = "okay";
+};
+
 &rtc {
+	status = "okay";
+};
+
+&can1 {
+	pinctrl-0 = <&can_rx_pb8 &can_tx_pb9>;
+	bus-speed = <125000>;
+	sjw = <1>;
+	prop-seg = <0>;
+	phase-seg1 = <6>;
+	phase-seg2 = <5>;
 	status = "okay";
 };

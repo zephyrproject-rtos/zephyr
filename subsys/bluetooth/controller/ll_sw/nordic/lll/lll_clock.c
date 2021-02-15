@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/types.h>
 #include <soc.h>
 #include <device.h>
+
 #include <drivers/clock_control.h>
 #include <drivers/clock_control/nrf_clock_control.h>
 
@@ -66,10 +66,27 @@ int lll_clock_init(void)
 
 int lll_clock_wait(void)
 {
-	struct onoff_manager *mgr =
-		z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_LF);
+	struct onoff_manager *mgr;
+	static bool done;
+	int err;
 
-	return blocking_on(mgr, LFCLOCK_TIMEOUT_MS);
+	if (done) {
+		return 0;
+	}
+	done = true;
+
+	mgr = z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_LF);
+	err = blocking_on(mgr, LFCLOCK_TIMEOUT_MS);
+	if (err) {
+		return err;
+	}
+
+	err = onoff_release(mgr);
+	if (err != ONOFF_STATE_ON) {
+		return -EIO;
+	}
+
+	return 0;
 }
 
 int lll_hfclock_on(void)

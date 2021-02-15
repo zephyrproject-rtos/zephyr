@@ -12,3 +12,4 @@ config BOARD_QEMU_X86_64
 	depends on SOC_IA32
 	select QEMU_TARGET
 	select X86_64
+	select HAS_COVERAGE_SUPPORT

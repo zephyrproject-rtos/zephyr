@@ -58,9 +58,19 @@ static int bt_dev_index = -1;
 
 static struct net_buf *get_rx(const uint8_t *buf)
 {
+	bool discardable = false;
+	k_timeout_t timeout = K_FOREVER;
+
 	switch (buf[0]) {
 	case H4_EVT:
-		return bt_buf_get_evt(buf[1], false, K_FOREVER);
+		if (buf[1] == BT_HCI_EVT_LE_META_EVENT &&
+		    (buf[3] == BT_HCI_EVT_LE_ADVERTISING_REPORT ||
+		     buf[3] == BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT)) {
+			discardable = true;
+			timeout = K_NO_WAIT;
+		}
+
+		return bt_buf_get_evt(buf[1], discardable, timeout);
 	case H4_ACL:
 		return bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
 	case H4_ISO:
@@ -116,6 +126,11 @@ static void rx_thread(void *p1, void *p2, void *p3)
 		}
 
 		buf = get_rx(frame);
+		if (!buf) {
+			BT_DBG("Discard adv report due to insufficient buf");
+			continue;
+		}
+
 		net_buf_add_mem(buf, &frame[1], len - 1);
 
 		BT_DBG("Calling bt_recv(%p)", buf);

@@ -40,6 +40,11 @@ static inline bool arch_is_in_isr(void)
 	return _kernel.cpus[0].nested != 0U;
 }
 
+extern FUNC_NORETURN void z_riscv_userspace_enter(k_thread_entry_t user_entry,
+						 void *p1, void *p2, void *p3,
+						 uint32_t stack_end,
+						 uint32_t stack_start);
+
 #ifdef CONFIG_IRQ_OFFLOAD
 int z_irq_do_offload(void);
 #endif

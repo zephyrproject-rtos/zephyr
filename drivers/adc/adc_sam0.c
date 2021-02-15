@@ -602,8 +602,8 @@ do {									\
 		ADC_CONTEXT_INIT_LOCK(adc_sam_data_##n, ctx),		\
 		ADC_CONTEXT_INIT_SYNC(adc_sam_data_##n, ctx),		\
 	};								\
-	DEVICE_AND_API_INIT(adc0_sam_##n, DT_INST_LABEL(n),		\
-			    adc_sam0_init, &adc_sam_data_##n,		\
+	DEVICE_DT_INST_DEFINE(n, adc_sam0_init, device_pm_control_nop,	\
+			    &adc_sam_data_##n,				\
 			    &adc_sam_cfg_##n, POST_KERNEL,		\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 			    &adc_sam0_api);				\
@@ -612,7 +612,7 @@ do {									\
 		IRQ_CONNECT(DT_INST_IRQN(n),				\
 			    DT_INST_IRQ(n, priority),			\
 			    adc_sam0_isr,				\
-			    DEVICE_GET(adc0_sam_##n), 0);		\
+			    DEVICE_DT_INST_GET(n), 0);			\
 		irq_enable(DT_INST_IRQN(n));				\
 		ADC_SAM0_CONFIGURE(n);					\
 	}

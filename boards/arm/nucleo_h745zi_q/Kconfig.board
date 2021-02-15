@@ -1,7 +1,6 @@
 # STM32H745ZI Nucleo board configuration
 
-# Copyright (c) 2020 Alexander Kozhinov
-# AlexanderKozhinov@yandex.com
+# Copyright (c) 2020 Alexander Kozhinov <AlexanderKozhinov@yandex.com>
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_NUCLEO_H745ZI_Q_M7

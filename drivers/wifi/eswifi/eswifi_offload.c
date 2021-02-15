@@ -85,6 +85,7 @@ static void eswifi_off_connect_work(struct k_work *work)
 	err = __eswifi_off_start_client(eswifi, socket);
 	if (!err) {
 		socket->state = ESWIFI_SOCKET_STATE_CONNECTED;
+		net_context_set_state(socket->context, NET_CONTEXT_CONNECTED);
 	} else {
 		socket->state = ESWIFI_SOCKET_STATE_NONE;
 	}

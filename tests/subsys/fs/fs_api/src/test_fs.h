@@ -32,6 +32,11 @@ struct test_fs_data {
 	int reserve;
 };
 
+void mock_opendir_result(int ret);
+
+void test_opendir_closedir(void);
+void test_fs_dir_t_init(void);
+void test_fs_file_t_init(void);
 void test_fs_register(void);
 void test_mount(void);
 void test_file_statvfs(void);
@@ -42,6 +47,7 @@ void test_lsdir(void);
 void test_file_open(void);
 void test_file_write(void);
 void test_file_read(void);
+void test_file_seek(void);
 void test_file_truncate(void);
 void test_file_close(void);
 void test_file_sync(void);
@@ -49,4 +55,5 @@ void test_file_rename(void);
 void test_file_stat(void);
 void test_file_unlink(void);
 void test_unmount(void);
+void test_mount_flags(void);
 #endif

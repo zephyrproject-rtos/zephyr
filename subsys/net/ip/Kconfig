@@ -1,6 +1,7 @@
 # IP stack config
 
 # Copyright (c) 2016 Intel Corporation.
+# Copyright (c) 2021 Nordic Semiconductor
 # SPDX-License-Identifier: Apache-2.0
 
 menu "IP stack"
@@ -140,6 +141,7 @@ config NET_SHELL_DYN_CMD_COMPLETION
 config NET_TC_TX_COUNT
 	int "How many Tx traffic classes to have for each network device"
 	default 1
+	range 1 NET_TC_NUM_PRIORITIES if NET_TC_NUM_PRIORITIES<=8
 	range 1 8
 	help
 	  Define how many Tx traffic classes (queues) the system should have
@@ -155,6 +157,7 @@ config NET_TC_TX_COUNT
 config NET_TC_RX_COUNT
 	int "How many Rx traffic classes to have for each network device"
 	default 1
+	range 1 NET_TC_NUM_PRIORITIES if NET_TC_NUM_PRIORITIES<=8
 	range 1 8
 	help
 	  Define how many Rx traffic classes (queues) the system should have
@@ -166,6 +169,31 @@ config NET_TC_RX_COUNT
 	  The default value is 1 which means that all the network traffic is
 	  handled equally. In this implementation, the higher traffic class
 	  value corresponds to lower thread priority.
+
+choice NET_TC_THREAD_TYPE
+	prompt "How the network RX/TX threads should work"
+	help
+	  Please select the RX/TX threads to be either pre-emptive or
+	  co-operative.
+
+config NET_TC_THREAD_COOPERATIVE
+	bool "Use co-operative TX/RX threads"
+	depends on COOP_ENABLED
+	help
+	  With co-operative threads, the thread cannot be pre-empted.
+
+config NET_TC_THREAD_PREEMPTIVE
+	bool "Use pre-emptive TX/RX threads [EXPERIMENTAL]"
+	depends on PREEMPT_ENABLED
+	help
+	  With pre-emptive threads, the thread can be pre-empted.
+
+endchoice
+
+config NET_TC_NUM_PRIORITIES
+	int
+	default NUM_COOP_PRIORITIES if NET_TC_THREAD_COOPERATIVE
+	default NUM_PREEMPT_PRIORITIES if NET_TC_THREAD_PREEMPTIVE
 
 choice
 	prompt "Priority to traffic class mapping"
@@ -387,6 +415,23 @@ config NET_TCP_MAX_SEND_WINDOW_SIZE
 	  size. The default value 0 lets the TCP stack select the value
 	  according to amount of network buffers configured in the system.
 
+config NET_TCP_RECV_QUEUE_TIMEOUT
+	int "How long to queue received data (in ms)"
+	depends on NET_TCP2
+	default 100
+	range 0 10000
+	help
+	  If we receive out-of-order TCP data, we queue it. This value tells
+	  how long the data is kept before it is discarded if we have not been
+	  able to pass the data to the application. If set to 0, then receive
+	  queing is not enabled. The value is in milliseconds.
+	  Note that we only queue data sequentially in current version i.e.,
+	  there should be no holes in the queue. For example, if we receive
+	  SEQs 5,4,3,6 and are waiting SEQ 2, the data in segments 3,4,5,6 is
+	  queued (in this order), and then given to application when we receive
+	  SEQ 2. But if we receive SEQs 5,4,3,7 then the SEQ 7 is discarded
+	  because the list would not be sequential as number 6 is be missing.
+
 choice
 	prompt "Select TCP stack"
 	depends on NET_TCP
@@ -506,6 +551,14 @@ config NET_CONTEXT_TXTIME
 	  It is possible to add information when the outgoing network packet
 	  should be sent. The TX time information should be placed into
 	  ancillary data field in sendmsg call.
+
+config NET_CONTEXT_RCVTIMEO
+	bool "Add RCVTIMEO support to net_context"
+	help
+	  It is possible to time out receiving a network packet. The timeout
+	  time is configurable run-time in the application code. For network
+	  sockets timeout is configured per socket with
+	  setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, ...) function.
 
 config NET_TEST
 	bool "Network Testing"

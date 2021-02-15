@@ -17,6 +17,7 @@ menuconfig THREAD_ANALYZER
 	select INIT_STACKS
 	select THREAD_MONITOR
 	select THREAD_STACK_INFO
+	select THREAD_RUNTIME_STATS
 	help
 	  Enable thread analyzer functionality and all the required modules.
 	  This module may be used to debug thread configuration issues, e.g.
@@ -221,7 +222,7 @@ config ASSERT_LEVEL
 config SPIN_VALIDATE
 	bool "Enable spinlock validation"
 	depends on ASSERT
-	depends on MP_NUM_CPUS < 4
+	depends on MP_NUM_CPUS <= 4
 	default y if !FLASH || FLASH_SIZE > 32
 	help
 	  There's a spinlock validation framework available when asserts are
@@ -232,7 +233,7 @@ config FORCE_NO_ASSERT
 	bool "Force-disable no assertions"
 	help
 	  This boolean option disables Zephyr assertion testing even
-	  in circumstances (sanitycheck) where it is enabled via
+	  in circumstances (twister) where it is enabled via
 	  CFLAGS and not Kconfig.  Added solely to be able to work
 	  around compiler bugs for specific tests.
 

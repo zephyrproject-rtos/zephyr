@@ -14,6 +14,8 @@
 
 #if DT_NODE_HAS_STATUS(DT_INST(0, jedec_spi_nor), okay)
 #define FLASH_DEVICE DT_LABEL(DT_INST(0, jedec_spi_nor))
+#elif DT_NODE_HAS_STATUS(DT_INST(0, nordic_qspi_nor), okay)
+#define FLASH_DEVICE DT_LABEL(DT_INST(0, nordic_qspi_nor))
 #else
 #error Unsupported flash driver
 #define FLASH_DEVICE ""
@@ -174,6 +176,51 @@ static void summarize_dw14(const struct jesd216_param_header *php,
 	       dw14.exit_delay_ns, dw14.poll_options);
 }
 
+static void summarize_dw15(const struct jesd216_param_header *php,
+			   const struct jesd216_bfp *bfp)
+{
+	struct jesd216_bfp_dw15 dw15;
+
+	if (jesd216_bfp_decode_dw15(php, bfp, &dw15) != 0) {
+		return;
+	}
+	printf("HOLD or RESET Disable: %ssupported\n",
+	       dw15.hold_reset_disable ? "" : "un");
+	printf("QER: %u\n", dw15.qer);
+	if (dw15.support_044) {
+		printf("0-4-4 Mode methods: entry 0x%01x ; exit 0x%02x\n",
+		       dw15.entry_044, dw15.exit_044);
+	} else {
+		printf("0-4-4 Mode: not supported");
+	}
+	printf("4-4-4 Mode sequences: enable 0x%02x ; disable 0x%01x\n",
+	       dw15.enable_444, dw15.disable_444);
+}
+
+static void summarize_dw16(const struct jesd216_param_header *php,
+			   const struct jesd216_bfp *bfp)
+{
+	struct jesd216_bfp_dw16 dw16;
+
+	if (jesd216_bfp_decode_dw16(php, bfp, &dw16) != 0) {
+		return;
+	}
+
+	uint32_t dw1 = sys_le32_to_cpu(bfp->dw1);
+	uint8_t addr_support = (dw1 & JESD216_SFDP_BFP_DW1_ADDRBYTES_MASK)
+		>> JESD216_SFDP_BFP_DW1_ADDRBYTES_SHFT;
+
+	/* Don't display bits when 4-byte addressing is not supported. */
+	if (addr_support != JESD216_SFDP_BFP_DW1_ADDRBYTES_VAL_3B) {
+		printf("4-byte addressing support: enter 0x%02x, exit 0x%03x\n",
+		       dw16.enter_4ba, dw16.exit_4ba);
+	}
+	printf("Soft Reset and Rescue Sequence support: 0x%02x\n",
+	       dw16.srrs_support);
+	printf("Status Register 1 support: 0x%02x\n",
+	       dw16.sr1_interface);
+}
+
 /* Indexed from 1 to match JESD216 data word numbering */
 static const dw_extractor extractor[] = {
 	[1] = summarize_dw1,
@@ -182,13 +229,15 @@ static const dw_extractor extractor[] = {
 	[11] = summarize_dw11,
 	[12] = summarize_dw12,
 	[14] = summarize_dw14,
+	[15] = summarize_dw15,
+	[16] = summarize_dw16,
 };
 
 static void dump_bfp(const struct jesd216_param_header *php,
 		     const struct jesd216_bfp *bfp)
 {
 	uint8_t dw = 1;
-	uint8_t limit = MIN(php->len_dw, ARRAY_SIZE(extractor));
+	uint8_t limit = MIN(1U + php->len_dw, ARRAY_SIZE(extractor));
 
 	printf("Summary of BFP content:\n");
 	while (dw < limit) {

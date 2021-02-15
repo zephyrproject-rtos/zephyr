@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2020 Nordic Semiconductor ASA
  * Copyright (c) 2015 Runtime Inc
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -10,8 +10,11 @@
 
 #include "fcb_test.h"
 #include <storage/flash_map.h>
+#include <drivers/flash.h>
+#include <device.h>
 
 struct fcb test_fcb;
+uint8_t fcb_test_erase_value;
 
 /* Sectors for FCB are defined far from application code
  * area. This test suite is the non bootable application so 1. image slot is
@@ -107,6 +110,7 @@ void fcb_tc_pretest(int sectors)
 	test_fcb_wipe();
 	fcb = &test_fcb;
 	(void)memset(fcb, 0, sizeof(*fcb));
+	fcb->f_erase_value = fcb_test_erase_value;
 	fcb->f_sector_cnt = sectors;
 	fcb->f_sectors = test_fcb_sector; /* XXX */
 
@@ -132,6 +136,32 @@ void teardown_nothing(void)
 {
 }
 
+/*
+ * This actually is not a test; the function gets erase value from flash
+ * parameters, of the flash device that is used by tests, and stores it in
+ * global fcb_test_erase_value.
+ */
+void test_get_flash_erase_value(void)
+{
+	const struct flash_area *fa;
+	const struct flash_parameters *fp;
+	const struct device *dev;
+	int rc = 0;
+
+	rc = flash_area_open(TEST_FCB_FLASH_AREA_ID, &fa);
+	zassert_equal(rc, 0, "Failed top open flash area");
+
+	dev = device_get_binding(fa->fa_dev_name);
+	flash_area_close(fa);
+
+	zassert_true(dev != NULL, "Failed to obtain device");
+
+	fp = flash_get_parameters(dev);
+	zassert_true(fp != NULL, "Failed to get flash device parameters");
+
+	fcb_test_erase_value = fp->erase_value;
+}
+
 void test_fcb_len(void);
 void test_fcb_init(void);
 void test_fcb_empty_walk(void);
@@ -146,6 +176,7 @@ void test_fcb_last_of_n(void);
 void test_main(void)
 {
 	ztest_test_suite(test_fcb,
+			 ztest_unit_test(test_get_flash_erase_value),
 			 ztest_unit_test_setup_teardown(test_fcb_len,
 							fcb_pretest_2_sectors,
 							teardown_nothing),

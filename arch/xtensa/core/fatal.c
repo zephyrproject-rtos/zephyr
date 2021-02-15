@@ -10,8 +10,13 @@
 #include <kernel_arch_data.h>
 #include <xtensa/config/specreg.h>
 #include <xtensa-asm2-context.h>
+#if defined(CONFIG_XTENSA_ENABLE_BACKTRACE)
+#if XCHAL_HAVE_WINDOWED
+#include <xtensa_backtrace.h>
+#endif
+#endif
 #include <logging/log.h>
-LOG_MODULE_DECLARE(os);
+LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #ifdef XT_SIMULATOR
 #include <xtensa/simcall.h>
@@ -92,7 +97,11 @@ void z_xtensa_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 	if (esf) {
 		z_xtensa_dump_stack(esf);
 	}
-
+#if defined(CONFIG_XTENSA_ENABLE_BACKTRACE)
+#if XCHAL_HAVE_WINDOWED
+	z_xtensa_backtrace_print(100, (int *)esf);
+#endif
+#endif
 	z_fatal_error(reason, esf);
 }
 

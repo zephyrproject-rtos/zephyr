@@ -5,6 +5,7 @@
  */
 
 #include <soc.h>
+#include <stm32_ll_utils.h>
 #include <drivers/hwinfo.h>
 #include <string.h>
 #include <sys/byteorder.h>

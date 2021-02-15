@@ -28,10 +28,12 @@
 #include <sys/check.h>
 #include <random/rand32.h>
 #include <sys/atomic.h>
-
-#define LOG_LEVEL CONFIG_KERNEL_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_DECLARE(os);
+LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
+
+#ifdef CONFIG_THREAD_RUNTIME_STATS
+k_thread_runtime_stats_t threads_runtime_stats;
+#endif
 
 #ifdef CONFIG_THREAD_MONITOR
 /* This lock protects the linked list of active threads; i.e. the
@@ -405,10 +407,6 @@ static void schedule_new_thread(struct k_thread *thread, k_timeout_t delay)
 	if (K_TIMEOUT_EQ(delay, K_NO_WAIT)) {
 		k_thread_start(thread);
 	} else {
-#ifdef CONFIG_LEGACY_TIMEOUT_API
-		delay = _TICK_ALIGN + k_ms_to_ticks_ceil32(delay);
-#endif
-
 		z_add_thread_timeout(thread, delay);
 	}
 #else
@@ -569,7 +567,7 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	z_init_thread_base(&new_thread->base, prio, _THREAD_PRESTART, options);
 	stack_ptr = setup_thread_stack(new_thread, stack, stack_size);
 
-#ifdef KERNEL_COHERENCE
+#ifdef CONFIG_KERNEL_COHERENCE
 	/* Check that the thread object is safe, but that the stack is
 	 * still cached!
 	 */
@@ -639,6 +637,10 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 #endif
 	new_thread->resource_pool = _current->resource_pool;
 	sys_trace_thread_create(new_thread);
+
+#ifdef CONFIG_THREAD_RUNTIME_STATS
+	memset(&new_thread->rt_stats, 0, sizeof(new_thread->rt_stats));
+#endif
 
 	return stack_ptr;
 }
@@ -881,6 +883,14 @@ void z_spin_lock_set_owner(struct k_spinlock *l)
 {
 	l->thread_cpu = _current_cpu->id | (uintptr_t)_current;
 }
+
+#ifdef CONFIG_KERNEL_COHERENCE
+bool z_spin_lock_mem_coherent(struct k_spinlock *l)
+{
+	return arch_mem_coherent((void *)l);
+}
+#endif /* CONFIG_KERNEL_COHERENCE */
+
 #endif /* CONFIG_SPIN_VALIDATE */
 
 int z_impl_k_float_disable(struct k_thread *thread)
@@ -902,7 +912,10 @@ static inline int z_vrfy_k_float_disable(struct k_thread *thread)
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_IRQ_OFFLOAD
-static K_SEM_DEFINE(offload_sem, 1, 1);
+/* Make offload_sem visible outside under testing, in order to release
+ * it outside when error happened.
+ */
+K_SEM_DEFINE(offload_sem, 1, 1);
 
 void irq_offload(irq_offload_routine_t routine, const void *parameter)
 {
@@ -1001,7 +1014,7 @@ int z_vrfy_k_thread_stack_space_get(const struct k_thread *thread,
 
 #ifdef CONFIG_USERSPACE
 static inline k_ticks_t z_vrfy_k_thread_timeout_remaining_ticks(
-						    struct k_thread *t)
+						    const struct k_thread *t)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(t, K_OBJ_THREAD));
 	return z_impl_k_thread_timeout_remaining_ticks(t);
@@ -1009,10 +1022,102 @@ static inline k_ticks_t z_vrfy_k_thread_timeout_remaining_ticks(
 #include <syscalls/k_thread_timeout_remaining_ticks_mrsh.c>
 
 static inline k_ticks_t z_vrfy_k_thread_timeout_expires_ticks(
-						  struct k_thread *t)
+						  const struct k_thread *t)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(t, K_OBJ_THREAD));
 	return z_impl_k_thread_timeout_expires_ticks(t);
 }
 #include <syscalls/k_thread_timeout_expires_ticks_mrsh.c>
 #endif
+
+#ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
+void z_thread_mark_switched_in(void)
+{
+#ifdef CONFIG_TRACING
+	sys_trace_thread_switched_in();
+#endif
+
+#ifdef CONFIG_THREAD_RUNTIME_STATS
+	struct k_thread *thread;
+
+	thread = k_current_get();
+#ifdef CONFIG_THREAD_RUNTIME_STATS_USE_TIMING_FUNCTIONS
+	thread->rt_stats.last_switched_in = timing_counter_get();
+#else
+	thread->rt_stats.last_switched_in = k_cycle_get_32();
+#endif /* CONFIG_THREAD_RUNTIME_STATS_USE_TIMING_FUNCTIONS */
+
+#endif /* CONFIG_THREAD_RUNTIME_STATS */
+}
+
+void z_thread_mark_switched_out(void)
+{
+#ifdef CONFIG_THREAD_RUNTIME_STATS
+#ifdef CONFIG_THREAD_RUNTIME_STATS_USE_TIMING_FUNCTIONS
+	timing_t now;
+#else
+	uint32_t now;
+#endif /* CONFIG_THREAD_RUNTIME_STATS_USE_TIMING_FUNCTIONS */
+
+	uint64_t diff;
+	struct k_thread *thread;
+
+	thread = k_current_get();
+
+	if (unlikely(thread->rt_stats.last_switched_in == 0)) {
+		/* Has not run before */
+		return;
+	}
+
+	if (unlikely(thread->base.thread_state == _THREAD_DUMMY)) {
+		/* dummy thread has no stat struct */
+		return;
+	}
+
+#ifdef CONFIG_THREAD_RUNTIME_STATS_USE_TIMING_FUNCTIONS
+	now = timing_counter_get();
+	diff = timing_cycles_get(&thread->rt_stats.last_switched_in, &now);
+#else
+	now = k_cycle_get_32();
+	diff = (uint64_t)now - thread->rt_stats.last_switched_in;
+	thread->rt_stats.last_switched_in = 0;
+#endif /* CONFIG_THREAD_RUNTIME_STATS_USE_TIMING_FUNCTIONS */
+
+	thread->rt_stats.stats.execution_cycles += diff;
+
+	threads_runtime_stats.execution_cycles += diff;
+#endif /* CONFIG_THREAD_RUNTIME_STATS */
+
+#ifdef CONFIG_TRACING
+	sys_trace_thread_switched_out();
+#endif
+}
+
+#ifdef CONFIG_THREAD_RUNTIME_STATS
+int k_thread_runtime_stats_get(k_tid_t thread,
+			       k_thread_runtime_stats_t *stats)
+{
+	if ((thread == NULL) || (stats == NULL)) {
+		return -EINVAL;
+	}
+
+	(void)memcpy(stats, &thread->rt_stats.stats,
+		     sizeof(thread->rt_stats.stats));
+
+	return 0;
+}
+
+int k_thread_runtime_stats_all_get(k_thread_runtime_stats_t *stats)
+{
+	if (stats == NULL) {
+		return -EINVAL;
+	}
+
+	(void)memcpy(stats, &threads_runtime_stats,
+		     sizeof(threads_runtime_stats));
+
+	return 0;
+}
+#endif /* CONFIG_THREAD_RUNTIME_STATS */
+
+#endif /* CONFIG_INSTRUMENT_THREAD_SWITCHING */

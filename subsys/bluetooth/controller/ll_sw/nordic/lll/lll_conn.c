@@ -4,20 +4,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
 
 #include <toolchain.h>
-#include <zephyr/types.h>
+#include <soc.h>
+
 #include <sys/util.h>
-#include <drivers/clock_control/nrf_clock_control.h>
+
+#include "hal/cpu.h"
+#include "hal/ccm.h"
+#include "hal/radio.h"
 
 #include "util/mem.h"
 #include "util/memq.h"
 #include "util/mfifo.h"
-
-#include "hal/ccm.h"
-#include "hal/radio.h"
 
 #include "pdu.h"
 
@@ -32,7 +34,6 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_lll_conn
 #include "common/log.h"
-#include <soc.h>
 #include "hal/debug.h"
 
 static int init_reset(void);
@@ -710,7 +711,8 @@ static inline int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 			lll->empty = 0;
 
 			pdu_data_tx = (void *)radio_pkt_empty_get();
-			if (IS_ENABLED(CONFIG_BT_CENTRAL) && !lll->role) {
+			if (IS_ENABLED(CONFIG_BT_CENTRAL) && !lll->role &&
+			    !pdu_data_rx->md) {
 				*is_done = !pdu_data_tx->md;
 			}
 
@@ -755,7 +757,8 @@ static inline int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 				FORCE_MD_CNT_SET();
 			}
 
-			if (IS_ENABLED(CONFIG_BT_CENTRAL) && !lll->role) {
+			if (IS_ENABLED(CONFIG_BT_CENTRAL) && !lll->role &&
+			    !pdu_data_rx->md) {
 				*is_done = !pdu_data_tx->md;
 			}
 		}

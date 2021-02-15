@@ -4,7 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if defined(CONFIG_WIFI_ESWIFI_BUS_UART)
+#define DT_DRV_COMPAT inventek_eswifi_uart
+#else
 #define DT_DRV_COMPAT inventek_eswifi
+#endif
+
 #include "eswifi_log.h"
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
@@ -637,7 +642,7 @@ static int eswifi_init(const struct device *dev)
 	eswifi->role = ESWIFI_ROLE_CLIENT;
 	k_mutex_init(&eswifi->mutex);
 
-	eswifi->bus = &eswifi_bus_ops_spi;
+	eswifi->bus = eswifi_get_bus();
 	eswifi->bus->init(eswifi);
 
 	eswifi->resetn.dev = device_get_binding(
@@ -684,6 +689,8 @@ static const struct net_wifi_mgmt_offload eswifi_offload_api = {
 	.ap_disable	= eswifi_mgmt_ap_disable,
 };
 
-NET_DEVICE_OFFLOAD_INIT(eswifi_mgmt, CONFIG_WIFI_ESWIFI_NAME,
-			eswifi_init, device_pm_control_nop, &eswifi0, NULL,
-			CONFIG_WIFI_INIT_PRIORITY, &eswifi_offload_api, 1500);
+NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, eswifi_init, device_pm_control_nop,
+				  &eswifi0, NULL,
+				  CONFIG_WIFI_INIT_PRIORITY,
+				  &eswifi_offload_api,
+				  1500);

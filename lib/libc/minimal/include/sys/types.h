@@ -37,6 +37,8 @@ typedef int off_t;
 typedef int off_t;
 #elif defined(__XTENSA__)
 typedef int off_t;
+#elif defined(__sparc__)
+typedef int off_t;
 #else
 #error "The minimal libc library does not recognize the architecture!\n"
 #endif

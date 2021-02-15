@@ -74,7 +74,7 @@ static FUNC_NORETURN void smp_init_top(void *arg)
 	smp_timer_init();
 	z_swap_unlocked();
 
-	CODE_UNREACHABLE;
+	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 }
 #endif
 

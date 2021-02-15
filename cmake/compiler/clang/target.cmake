@@ -32,7 +32,7 @@ if(NOT "${ARCH}" STREQUAL "posix")
     include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_arm.cmake)
   endif()
 
-  foreach(file_name include/stddef.h include-fixed/limits.h)
+  foreach(file_name include/stddef.h)
     execute_process(
       COMMAND ${CMAKE_C_COMPILER} --print-file-name=${file_name}
       OUTPUT_VARIABLE _OUTPUT
@@ -47,6 +47,14 @@ if(NOT "${ARCH}" STREQUAL "posix")
     list(APPEND isystem_include_flags -isystem ${isystem_include_dir})
   endforeach()
 
+  if(CONFIG_X86)
+    if(CONFIG_64BIT)
+      string(APPEND TOOLCHAIN_C_FLAGS "-m64")
+    else()
+      string(APPEND TOOLCHAIN_C_FLAGS "-m32")
+    endif()
+  endif()
+
   # This libgcc code is partially duplicated in compiler/*/target.cmake
   execute_process(
     COMMAND ${CMAKE_C_COMPILER} ${TOOLCHAIN_C_FLAGS} --print-libgcc-file-name
@@ -54,16 +62,14 @@ if(NOT "${ARCH}" STREQUAL "posix")
     OUTPUT_STRIP_TRAILING_WHITESPACE
     )
 
-  assert_exists(LIBGCC_FILE_NAME)
-
   get_filename_component(LIBGCC_DIR ${LIBGCC_FILE_NAME} DIRECTORY)
 
-  assert_exists(LIBGCC_DIR)
-
   list(APPEND LIB_INCLUDE_DIR "-L\"${LIBGCC_DIR}\"")
-  list(APPEND TOOLCHAIN_LIBS gcc)
+  if(LIBGCC_DIR)
+    list(APPEND TOOLCHAIN_LIBS gcc)
+  endif()
 
-  set(CMAKE_REQUIRED_FLAGS -nostartfiles -nostdlib ${isystem_include_flags} -Wl,--unresolved-symbols=ignore-in-object-files)
+  set(CMAKE_REQUIRED_FLAGS -nostartfiles -nostdlib ${isystem_include_flags})
   string(REPLACE ";" " " CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")
 
 endif()

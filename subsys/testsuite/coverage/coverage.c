@@ -20,9 +20,7 @@
 #endif
 
 
-K_MEM_POOL_DEFINE(gcov_heap_mem_pool,
-		  MALLOC_MIN_BLOCK_SIZE,
-		  MALLOC_MAX_HEAP_SIZE, 1, 4);
+K_HEAP_DEFINE(gcov_heap, MALLOC_MAX_HEAP_SIZE);
 
 
 static struct gcov_info *gcov_info_head;
@@ -225,6 +223,7 @@ void gcov_coverage_dump(void)
 	uint8_t *buffer;
 	size_t size;
 	size_t written_size;
+	struct gcov_info *gcov_list_first = gcov_info_head;
 	struct gcov_info *gcov_list = gcov_info_head;
 
 	k_sched_lock();
@@ -233,7 +232,7 @@ void gcov_coverage_dump(void)
 
 		size = calculate_buff_size(gcov_list);
 
-		buffer = (uint8_t *) k_mem_pool_malloc(&gcov_heap_mem_pool, size);
+		buffer = k_heap_alloc(&gcov_heap, size, K_NO_WAIT);
 		if (!buffer) {
 			printk("No Mem available to continue dump\n");
 			goto coverage_dump_end;
@@ -247,8 +246,11 @@ void gcov_coverage_dump(void)
 
 		dump_on_console(gcov_list->filename, buffer, size);
 
-		k_free(buffer);
+		k_heap_free(&gcov_heap, buffer);
 		gcov_list = gcov_list->next;
+		if (gcov_list_first == gcov_list) {
+			goto coverage_dump_end;
+		}
 	}
 coverage_dump_end:
 	printk("\nGCOV_COVERAGE_DUMP_END\n");
@@ -260,9 +262,9 @@ coverage_dump_end:
 /* Initialize the gcov by calling the required constructors */
 void gcov_static_init(void)
 {
-	extern uint32_t __init_array_start, __init_array_end;
-	uint32_t func_pointer_start = (uint32_t) &__init_array_start;
-	uint32_t func_pointer_end = (uint32_t) &__init_array_end;
+	extern uintptr_t __init_array_start, __init_array_end;
+	uintptr_t func_pointer_start = (uintptr_t) &__init_array_start;
+	uintptr_t func_pointer_end = (uintptr_t) &__init_array_end;
 
 	while (func_pointer_start < func_pointer_end) {
 		void (**p)(void);

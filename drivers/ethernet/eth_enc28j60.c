@@ -846,7 +846,7 @@ static const struct eth_enc28j60_config eth_enc28j60_0_config = {
 	.timeout = CONFIG_ETH_ENC28J60_TIMEOUT,
 };
 
-ETH_NET_DEVICE_INIT(enc28j60_0, DT_INST_LABEL(0),
+ETH_NET_DEVICE_DT_INST_DEFINE(0,
 		    eth_enc28j60_init, device_pm_control_nop,
 		    &eth_enc28j60_0_runtime, &eth_enc28j60_0_config,
 		    CONFIG_ETH_INIT_PRIORITY, &api_funcs, NET_ETH_MTU);

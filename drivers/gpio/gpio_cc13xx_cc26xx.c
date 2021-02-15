@@ -70,11 +70,32 @@ static int gpio_cc13xx_cc26xx_config(const struct device *port,
 		return -ENOTSUP;
 	}
 
-	config |= IOC_CURRENT_2MA | IOC_STRENGTH_AUTO | IOC_SLEW_DISABLE |
-		 IOC_NO_WAKE_UP;
+	config |= IOC_SLEW_DISABLE | IOC_NO_WAKE_UP;
 
 	config |= (flags & GPIO_INT_DEBOUNCE) ? IOC_HYST_ENABLE :
 							IOC_HYST_DISABLE;
+
+	/*
+	 * The GPIO_DS_ALT_HIGH and GPIO_DS_ALT_LOW flags are for setting
+	 * the highest drive strength for a GPIO in the output HIGH and
+	 * output LOW states, respectively. Since only 1 drive strength
+	 * setting is available for a GPIO (irrespective of output state),
+	 * require both flags to be set for highest drive strength, default
+	 * to low/auto drive strength.
+	 * Not all GPIO support 8ma, but setting that bit will use the highest
+	 * supported drive strength.
+	 */
+	switch (flags & (GPIO_DS_ALT_HIGH | GPIO_DS_ALT_LOW)) {
+	case 0:
+		config |= IOC_CURRENT_2MA | IOC_STRENGTH_AUTO;
+		break;
+	case (GPIO_DS_ALT_HIGH | GPIO_DS_ALT_LOW):
+		config |= IOC_CURRENT_8MA | IOC_STRENGTH_MAX;
+		break;
+	case GPIO_DS_ALT_HIGH:
+	case GPIO_DS_ALT_LOW:
+		return -ENOTSUP;
+	}
 
 	switch (flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) {
 	case 0:
@@ -196,8 +217,6 @@ static uint32_t gpio_cc13xx_cc26xx_get_pending_int(const struct device *dev)
 	return GPIO_getEventMultiDio(GPIO_DIO_ALL_MASK);
 }
 
-DEVICE_DECLARE(gpio_cc13xx_cc26xx);
-
 static void gpio_cc13xx_cc26xx_isr(const struct device *dev)
 {
 	struct gpio_cc13xx_cc26xx_data *data = dev->data;
@@ -211,7 +230,7 @@ static void gpio_cc13xx_cc26xx_isr(const struct device *dev)
 
 static int gpio_cc13xx_cc26xx_init(const struct device *dev)
 {
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
+#ifdef CONFIG_PM
 	/* Set dependency on gpio resource to turn on power domains */
 	Power_setDependency(PowerCC26XX_PERIPH_GPIO);
 #else
@@ -237,7 +256,7 @@ static int gpio_cc13xx_cc26xx_init(const struct device *dev)
 	/* Enable IRQ */
 	IRQ_CONNECT(DT_INST_IRQN(0),
 		    DT_INST_IRQ(0, priority),
-		    gpio_cc13xx_cc26xx_isr, DEVICE_GET(gpio_cc13xx_cc26xx), 0);
+		    gpio_cc13xx_cc26xx_isr, DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQN(0));
 
 	/* Peripheral should not be accessed until power domain is on. */
@@ -261,8 +280,8 @@ static const struct gpio_driver_api gpio_cc13xx_cc26xx_driver_api = {
 	.get_pending_int = gpio_cc13xx_cc26xx_get_pending_int
 };
 
-DEVICE_AND_API_INIT(gpio_cc13xx_cc26xx, DT_INST_LABEL(0),
-		    gpio_cc13xx_cc26xx_init, &gpio_cc13xx_cc26xx_data_0,
+DEVICE_DT_INST_DEFINE(0, gpio_cc13xx_cc26xx_init,
+		    device_pm_control_nop, &gpio_cc13xx_cc26xx_data_0,
 		    &gpio_cc13xx_cc26xx_cfg_0,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &gpio_cc13xx_cc26xx_driver_api);

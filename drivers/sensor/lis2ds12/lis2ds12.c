@@ -325,6 +325,6 @@ static int lis2ds12_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(lis2ds12, DT_INST_LABEL(0), lis2ds12_init,
+DEVICE_DT_INST_DEFINE(0, lis2ds12_init, device_pm_control_nop,
 		    &lis2ds12_data, &lis2ds12_config, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &lis2ds12_api_funcs);

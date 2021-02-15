@@ -20,14 +20,14 @@ extern void test_poll_grant_access(void);
 #define MAX_SZ	128
 #endif
 
-K_MEM_POOL_DEFINE(test_pool, 128, MAX_SZ, 4, 4);
+K_HEAP_DEFINE(test_heap, MAX_SZ * 4);
 
 /*test case main entry*/
 void test_main(void)
 {
 	test_poll_grant_access();
 
-	k_thread_resource_pool_assign(k_current_get(), &test_pool);
+	k_thread_heap_assign(k_current_get(), &test_heap);
 
 	ztest_test_suite(poll_api,
 			 ztest_1cpu_user_unit_test(test_poll_no_wait),

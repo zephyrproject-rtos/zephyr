@@ -134,6 +134,7 @@ config MODEM_SIM_NUMBERS
 
 
 source "drivers/modem/Kconfig.ublox-sara-r4"
+source "drivers/modem/Kconfig.quectel-bg9x"
 source "drivers/modem/Kconfig.wncm14a2a"
 source "drivers/modem/Kconfig.gsm"
 

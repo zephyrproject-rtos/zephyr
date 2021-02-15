@@ -326,13 +326,11 @@ static const struct i2c_driver_api i2c_sam_twihs_driver_api = {
 };
 
 #define I2C_TWIHS_SAM_INIT(n)						\
-	DEVICE_DECLARE(i2c##n##_sam);		\
-									\
 	static void i2c##n##_sam_irq_config(void)			\
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),	\
 			    i2c_sam_twihs_isr,				\
-			    DEVICE_GET(i2c##n##_sam), 0);		\
+			    DEVICE_DT_INST_GET(n), 0);			\
 	}								\
 									\
 	static const struct soc_gpio_pin pins_twihs##n[] =		\
@@ -350,8 +348,8 @@ static const struct i2c_driver_api i2c_sam_twihs_driver_api = {
 									\
 	static struct i2c_sam_twihs_dev_data i2c##n##_sam_data;		\
 									\
-	DEVICE_AND_API_INIT(i2c##n##_sam, DT_INST_LABEL(n),		\
-			    &i2c_sam_twihs_initialize,			\
+	DEVICE_DT_INST_DEFINE(n, &i2c_sam_twihs_initialize, 		\
+			    device_pm_control_nop,			\
 			    &i2c##n##_sam_data, &i2c##n##_sam_config,	\
 			    POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,	\
 			    &i2c_sam_twihs_driver_api);

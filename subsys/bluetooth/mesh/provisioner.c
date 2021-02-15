@@ -549,7 +549,7 @@ static void prov_complete(const uint8_t *data)
 	       node->addr);
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		bt_mesh_store_cdb_node(node);
+		bt_mesh_cdb_node_store(node);
 	}
 
 	prov_device.node = NULL;

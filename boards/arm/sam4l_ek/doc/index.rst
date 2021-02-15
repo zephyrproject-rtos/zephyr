@@ -62,6 +62,8 @@ The sam4l_ek board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
 +===========+============+=====================================+
+| GPIO      | on-chip    | gpio                                |
++-----------+------------+-------------------------------------+
 | HWINFO    | on-chip    | Unique 120 bit serial number        |
 +-----------+------------+-------------------------------------+
 | MPU       | on-chip    | arch/arm                            |
@@ -73,6 +75,8 @@ The sam4l_ek board configuration supports the following hardware features:
 | SYSTICK   | on-chip    | systick                             |
 +-----------+------------+-------------------------------------+
 | TRNG      | on-chip    | 32-bit True Random Number Generator |
++-----------+------------+-------------------------------------+
+| TWIM      | on-chip    | i2c master port-interrupt           |
 +-----------+------------+-------------------------------------+
 | USART     | on-chip    | serial port                         |
 +-----------+------------+-------------------------------------+

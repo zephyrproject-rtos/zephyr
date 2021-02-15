@@ -323,6 +323,53 @@ static inline bool is_handshake_complete(struct tls_context *ctx)
 	return k_sem_count_get(&ctx->tls_established) != 0;
 }
 
+/*
+ * Copied from include/mbedtls/ssl_internal.h
+ *
+ * Maximum length we can advertise as our max content length for
+ * RFC 6066 max_fragment_length extension negotiation purposes
+ * (the lesser of both sizes, if they are unequal.)
+ */
+#define MBEDTLS_TLS_EXT_ADV_CONTENT_LEN (                            \
+	(MBEDTLS_SSL_IN_CONTENT_LEN > MBEDTLS_SSL_OUT_CONTENT_LEN)   \
+	? (MBEDTLS_SSL_OUT_CONTENT_LEN)				     \
+	: (MBEDTLS_SSL_IN_CONTENT_LEN)				     \
+	)
+
+#if defined(CONFIG_NET_SOCKETS_TLS_SET_MAX_FRAGMENT_LENGTH) &&	\
+	defined(MBEDTLS_SSL_MAX_FRAGMENT_LENGTH) &&		\
+	(MBEDTLS_TLS_EXT_ADV_CONTENT_LEN < 16384)
+
+BUILD_ASSERT(MBEDTLS_TLS_EXT_ADV_CONTENT_LEN >= 512,
+	     "Too small content length!");
+
+static inline unsigned char tls_mfl_code_from_content_len(void)
+{
+	size_t len = MBEDTLS_TLS_EXT_ADV_CONTENT_LEN;
+
+	if (len >= 4096) {
+		return MBEDTLS_SSL_MAX_FRAG_LEN_4096;
+	} else if (len >= 2048) {
+		return MBEDTLS_SSL_MAX_FRAG_LEN_2048;
+	} else if (len >= 1024) {
+		return MBEDTLS_SSL_MAX_FRAG_LEN_1024;
+	} else if (len >= 512) {
+		return MBEDTLS_SSL_MAX_FRAG_LEN_512;
+	} else {
+		return MBEDTLS_SSL_MAX_FRAG_LEN_INVALID;
+	}
+}
+
+static inline void tls_set_max_frag_len(mbedtls_ssl_config *config)
+{
+	unsigned char mfl_code = tls_mfl_code_from_content_len();
+
+	mbedtls_ssl_conf_max_frag_len(config, mfl_code);
+}
+#else
+static inline void tls_set_max_frag_len(mbedtls_ssl_config *config) {}
+#endif
+
 /* Allocate TLS context. */
 static struct tls_context *tls_alloc(void)
 {
@@ -351,6 +398,7 @@ static struct tls_context *tls_alloc(void)
 
 		mbedtls_ssl_init(&tls->ssl);
 		mbedtls_ssl_config_init(&tls->config);
+		tls_set_max_frag_len(&tls->config);
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
 		mbedtls_ssl_cookie_init(&tls->cookie);
 #endif
@@ -1251,12 +1299,12 @@ static int ztls_socket(int family, int type, int proto)
 	ctx = tls_alloc();
 	if (ctx == NULL) {
 		errno = ENOMEM;
-		goto error;
+		goto free_fd;
 	}
 
 	sock = zsock_socket(family, type, proto);
 	if (sock < 0) {
-		goto error;
+		goto release_tls;
 	}
 
 	ctx->tls_version = tls_proto;
@@ -1268,7 +1316,10 @@ static int ztls_socket(int family, int type, int proto)
 
 	return fd;
 
-error:
+release_tls:
+	(void)tls_release(ctx);
+
+free_fd:
 	z_free_fd(fd);
 
 	return -1;

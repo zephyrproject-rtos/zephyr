@@ -1,7 +1,25 @@
 # Copyright (c) 2019 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-description: Nordic nRF family TWIM (TWI master with EasyDMA)
+description: |
+  Nordic nRF family TWIM (TWI master with EasyDMA).
+
+  This binding can be used for nodes which can represent TWIM
+  peripherals. A single SoC peripheral ID is often associated with
+  multiple I2C peripherals, like a TWIM and a TWIS. You can choose
+  TWIM by setting the node's "compatible" to "nordic,nrf-twim"
+  and "status" to "okay", e.g. using an overlay file like this one:
+
+      /* This is for TWIM0 -- change to "i2c1" for TWIM1, etc. */
+      &i2c0 {
+              compatible = "nordic,nrf-twim";
+              status = "okay";
+              /* other property settings can go here */
+      };
+
+  This works on any supported SoC, for all TWIM instances.
+
+  Note: on nRF51 SoCs, use the "nordic,nrf-twi" binding instead.
 
 compatible: "nordic,nrf-twim"
 

@@ -31,13 +31,21 @@ extern "C" {
 #endif /* filesystem selection */
 #endif /* CONFIG_FILE_SYSTEM_MAX_FILE_NAME */
 
+
 /* Type for fs_open flags */
 typedef uint8_t fs_mode_t;
 
 struct fs_mount_t;
 
 /**
+ * @addtogroup file_system_api
+ * @{
+ */
+
+/**
  * @brief File object representing an open file
+ *
+ * The object needs to be initialized with function fs_file_t_init().
  *
  * @param Pointer to FATFS file object structure
  * @param mp Pointer to mount point structure
@@ -51,6 +59,8 @@ struct fs_file_t {
 /**
  * @brief Directory object representing an open directory
  *
+ * The object needs to be initialized with function fs_dir_t_init().
+ *
  * @param dirp Pointer to directory object structure
  * @param mp Pointer to mount point structure
  */
@@ -58,6 +68,10 @@ struct fs_dir_t {
 	void *dirp;
 	const struct fs_mount_t *mp;
 };
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }

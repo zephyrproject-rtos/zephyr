@@ -59,7 +59,6 @@
 		reg = <0>;
 		spi-max-frequency = <80000000>;
 		size = <0x200000>;
-		has-be32k;
 		has-dpd;
 		t-enter-dpd = <20000>;
 		t-exit-dpd = <100000>;
@@ -77,5 +76,6 @@
 };
 
 &usbotg_fs {
+	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
 	status = "okay";
 };

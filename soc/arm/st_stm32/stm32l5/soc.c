@@ -11,6 +11,8 @@
 
 #include <device.h>
 #include <init.h>
+#include <stm32_ll_bus.h>
+#include <stm32_ll_pwr.h>
 #include <arch/cpu.h>
 #include <arch/arm/aarch32/cortex_m/cmsis.h>
 

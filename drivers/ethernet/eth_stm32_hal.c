@@ -836,6 +836,9 @@ static int eth_stm32_hal_set_config(const struct device *dev,
 			(dev_data->mac_addr[2] << 16) |
 			(dev_data->mac_addr[1] << 8) |
 			dev_data->mac_addr[0];
+		net_if_set_link_addr(dev_data->iface, dev_data->mac_addr,
+				     sizeof(dev_data->mac_addr),
+				     NET_LINK_ETHERNET);
 		return 0;
 	default:
 		break;
@@ -852,12 +855,10 @@ static const struct ethernet_api eth_api = {
 	.send = eth_tx,
 };
 
-DEVICE_DECLARE(eth0_stm32_hal);
-
 static void eth0_irq_config(void)
 {
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), eth_isr,
-		    DEVICE_GET(eth0_stm32_hal), 0);
+		    DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQN(0));
 }
 
@@ -908,6 +909,6 @@ static struct eth_stm32_hal_dev_data eth0_data = {
 	},
 };
 
-ETH_NET_DEVICE_INIT(eth0_stm32_hal, DT_INST_LABEL(0), eth_initialize,
+ETH_NET_DEVICE_DT_INST_DEFINE(0, eth_initialize,
 		    device_pm_control_nop, &eth0_data, &eth0_config,
 		    CONFIG_ETH_INIT_PRIORITY, &eth_api, ETH_STM32_HAL_MTU);

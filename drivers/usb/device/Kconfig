@@ -54,7 +54,6 @@ menuconfig USB_NRFX
 	select USB_DEVICE_DRIVER
 	select NRFX_USBD
 	select NRFX_POWER
-	select USB_DEVICE_DISABLE_ZLP_EPIN_HANDLING
 	help
 	  nRF USB Device Controller Driver
 

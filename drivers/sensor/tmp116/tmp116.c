@@ -36,27 +36,37 @@ static int tmp116_reg_read(const struct device *dev, uint8_t reg,
 	return 0;
 }
 
+static int tmp116_reg_write(const struct device *dev, uint8_t reg,
+			    uint16_t val)
+{
+	struct tmp116_data *drv_data = dev->data;
+	const struct tmp116_dev_config *cfg = dev->config;
+	uint8_t tx_buf[3] = {reg, val >> 8, val & 0xFF};
+
+	return i2c_write(drv_data->i2c, tx_buf, sizeof(tx_buf),
+			cfg->i2c_addr);
+}
+
 /**
  * @brief Check the Device ID
  *
  * @param[in]   dev     Pointer to the device structure
+ * @param[in]	id	Pointer to the variable for storing the device id
  *
- * @retval 0 On success
+ * @retval 0 on success
  * @retval -EIO Otherwise
  */
-static inline int tmp116_device_id_check(const struct device *dev)
+static inline int tmp116_device_id_check(const struct device *dev, uint16_t *id)
 {
-	uint16_t value;
-
-	if (tmp116_reg_read(dev, TMP116_REG_DEVICE_ID, &value) != 0) {
+	if (tmp116_reg_read(dev, TMP116_REG_DEVICE_ID, id) != 0) {
 		LOG_ERR("%s: Failed to get Device ID register!",
-			DT_INST_LABEL(0));
+			dev->name);
 		return -EIO;
 	}
 
-	if ((value != TMP116_DEVICE_ID) && (value != TMP117_DEVICE_ID)) {
+	if ((*id != TMP116_DEVICE_ID) && (*id != TMP117_DEVICE_ID)) {
 		LOG_ERR("%s: Failed to match the device IDs!",
-			DT_INST_LABEL(0));
+			dev->name);
 		return -EINVAL;
 	}
 
@@ -80,7 +90,7 @@ static int tmp116_sample_fetch(const struct device *dev,
 	rc = tmp116_reg_read(dev, TMP116_REG_TEMP, &value);
 	if (rc < 0) {
 		LOG_ERR("%s: Failed to read from TEMP register!",
-			DT_INST_LABEL(0));
+			dev->name);
 		return rc;
 	}
 
@@ -112,7 +122,40 @@ static int tmp116_channel_get(const struct device *dev,
 	return 0;
 }
 
+static int tmp116_attr_set(const struct device *dev,
+			   enum sensor_channel chan,
+			   enum sensor_attribute attr,
+			   const struct sensor_value *val)
+{
+	struct tmp116_data *drv_data = dev->data;
+	int16_t value;
+
+	if (chan != SENSOR_CHAN_AMBIENT_TEMP) {
+		return -ENOTSUP;
+	}
+
+	switch (attr) {
+	case SENSOR_ATTR_OFFSET:
+		if (drv_data->id != TMP117_DEVICE_ID) {
+			LOG_ERR("%s: Offset is only supported by TMP117",
+			dev->name);
+			return -EINVAL;
+		}
+		/*
+		 * The offset is encoded into the temperature register format.
+		 */
+		value = (((val->val1) * 10000000) + ((val->val2) * 10))
+						/ (int32_t)TMP116_RESOLUTION;
+
+		return tmp116_reg_write(dev, TMP117_REG_TEMP_OFFSET, value);
+
+	default:
+		return -ENOTSUP;
+	}
+}
+
 static const struct sensor_driver_api tmp116_driver_api = {
+	.attr_set = tmp116_attr_set,
 	.sample_fetch = tmp116_sample_fetch,
 	.channel_get = tmp116_channel_get
 };
@@ -120,31 +163,37 @@ static const struct sensor_driver_api tmp116_driver_api = {
 static int tmp116_init(const struct device *dev)
 {
 	struct tmp116_data *drv_data = dev->data;
+	const struct tmp116_dev_config *cfg = dev->config;
 	int rc;
+	uint16_t id;
 
 	/* Bind to the I2C bus that the sensor is connected */
-	drv_data->i2c = device_get_binding(DT_INST_BUS_LABEL(0));
+	drv_data->i2c = device_get_binding(cfg->i2c_bus_label);
 	if (!drv_data->i2c) {
 		LOG_ERR("Cannot bind to %s device!",
-			DT_INST_BUS_LABEL(0));
+			cfg->i2c_bus_label);
 		return -EINVAL;
 	}
 
 	/* Check the Device ID */
-	rc = tmp116_device_id_check(dev);
+	rc = tmp116_device_id_check(dev, &id);
 	if (rc < 0) {
 		return rc;
 	}
+	LOG_DBG("Got device ID: %x", id);
+	drv_data->id = id;
 
 	return 0;
 }
 
-static struct tmp116_data tmp116_data;
+#define DEFINE_TMP116(_num) \
+	static struct tmp116_data tmp116_data_##_num; \
+	static const struct tmp116_dev_config tmp116_config_##_num = { \
+		.i2c_addr = DT_INST_REG_ADDR(_num), \
+		.i2c_bus_label = DT_INST_BUS_LABEL(_num) \
+	}; \
+	DEVICE_DT_INST_DEFINE(_num, tmp116_init, device_pm_control_nop, \
+		&tmp116_data_##_num, &tmp116_config_##_num, POST_KERNEL, \
+		CONFIG_SENSOR_INIT_PRIORITY, &tmp116_driver_api)
 
-static const struct tmp116_dev_config tmp116_config = {
-	.i2c_addr = DT_INST_REG_ADDR(0),
-};
-
-DEVICE_AND_API_INIT(hdc1080, DT_INST_LABEL(0), tmp116_init,
-		    &tmp116_data, &tmp116_config, POST_KERNEL,
-		    CONFIG_SENSOR_INIT_PRIORITY, &tmp116_driver_api);
+DT_INST_FOREACH_STATUS_OKAY(DEFINE_TMP116);

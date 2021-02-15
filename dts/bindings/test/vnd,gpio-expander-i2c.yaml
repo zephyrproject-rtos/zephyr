@@ -5,4 +5,4 @@ description: GPIO expander via I2C
 
 compatible: "vnd,gpio-expander"
 
-include: i2c-device.yaml
+include: ["vnd,gpio-expander-common.yaml", i2c-device.yaml]

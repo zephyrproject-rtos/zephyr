@@ -1,0 +1,52 @@
+common:
+  tags: prf
+  type: unit
+
+tests:
+  utilities.prf.m32v00: # REDUCED
+    extra_args: M64_MODE=0 EXTRA_CPPFLAGS=-DVIA_TWISTER=0x00
+
+  utilities.prf.m32v01: # FULL
+    extra_args: M64_MODE=0 EXTRA_CPPFLAGS=-DVIA_TWISTER=0x01
+
+  utilities.prf.m32v02: # REDUCED + FP
+    extra_args: M64_MODE=0 EXTRA_CPPFLAGS=-DVIA_TWISTER=0x02
+
+  utilities.prf.m32v03: # FULL + FP
+    extra_args: M64_MODE=0 EXTRA_CPPFLAGS=-DVIA_TWISTER=0x03
+
+  utilities.prf.m32v07: # FULL + FP + FP_A
+    extra_args: M64_MODE=0 EXTRA_CPPFLAGS=-DVIA_TWISTER=0x07
+
+  utilities.prf.m32v08: # %n
+    extra_args: M64_MODE=0 EXTRA_CPPFLAGS=-DVIA_TWISTER=0x08
+
+  utilities.prf.m32v80: # NANO
+    extra_args: M64_MODE=0 EXTRA_CPPFLAGS=-DVIA_TWISTER=0x80
+
+  utilities.prf.m32v101: # FULL + LIBC
+    extra_args: M64_MODE=0 EXTRA_CPPFLAGS=-DVIA_TWISTER=0x101
+
+  utilities.prf.m32v181: # NANO + FULL + LIBC
+    extra_args: M64_MODE=0 EXTRA_CPPFLAGS=-DVIA_TWISTER=0x181
+
+  utilities.prf.m64v00: # m64
+    extra_args: M64_MODE=1 EXTRA_CPPFLAGS=-DVIA_TWISTER=0x00
+
+  utilities.prf.m64v01: # m64 FULL
+    extra_args: M64_MODE=1 EXTRA_CPPFLAGS=-DVIA_TWISTER=0x01
+
+  utilities.prf.m64v03: # m64 FULL & FP
+    extra_args: M64_MODE=1 EXTRA_CPPFLAGS=-DVIA_TWISTER=0x03
+
+  utilities.prf.m64v17: # m64 FULL & FP & FP_A
+    extra_args: M64_MODE=1 EXTRA_CPPFLAGS=-DVIA_TWISTER=0x07
+
+  utilities.prf.m64v80: # NANO
+    extra_args: M64_MODE=1 EXTRA_CPPFLAGS=-DVIA_TWISTER=0x80
+
+  utilities.prf.m64v101: # FULL + LIBC
+    extra_args: M64_MODE=1 EXTRA_CPPFLAGS=-DVIA_TWISTER=0x101
+
+  utilities.prf.m64v181: # NANO + FULL + LIBC
+    extra_args: M64_MODE=1 EXTRA_CPPFLAGS=-DVIA_TWISTER=0x181

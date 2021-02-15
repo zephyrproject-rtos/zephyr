@@ -113,7 +113,7 @@ struct bt_l2cap_chan {
 
 /** @brief LE L2CAP Endpoint structure. */
 struct bt_l2cap_le_endpoint {
-	/** Endpoint CID */
+	/** Endpoint Channel Identifier (CID) */
 	uint16_t				cid;
 	/** Endpoint Maximum Transmission Unit */
 	uint16_t				mtu;
@@ -160,7 +160,7 @@ struct bt_l2cap_le_chan {
 
 /** @brief BREDR L2CAP Endpoint structure. */
 struct bt_l2cap_br_endpoint {
-	/** Endpoint CID */
+	/** Endpoint Channel Identifier (CID) */
 	uint16_t				cid;
 	/** Endpoint Maximum Transmission Unit */
 	uint16_t				mtu;

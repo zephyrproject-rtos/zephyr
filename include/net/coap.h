@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Intel Corporation
+ * Copyright (c) 2021 Nordic Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -76,6 +77,8 @@ enum coap_method {
 
 #define COAP_REQUEST_MASK 0x07
 
+#define COAP_VERSION_1 1U
+
 /**
  * @brief CoAP packets may be of one of these types.
  */
@@ -146,6 +149,23 @@ enum coap_response_code {
 };
 
 #define COAP_CODE_EMPTY (0)
+
+#define COAP_TOKEN_MAX_LEN 8UL
+
+/**
+ * @brief Set of Content-Format option values for CoAP.
+ *
+ * To be used when encoding or decoding a Content-Format option.
+ */
+enum coap_content_format {
+	COAP_CONTENT_FORMAT_TEXT_PLAIN = 0, /* charset=urf-8 */
+	COAP_CONTENT_FORMAT_APP_LINK_FORMAT = 40,
+	COAP_CONTENT_FORMAT_APP_XML = 41,
+	COAP_CONTENT_FORMAT_APP_OCTET_STREAM = 42,
+	COAP_CONTENT_FORMAT_APP_EXI = 47,
+	COAP_CONTENT_FORMAT_APP_JSON = 50,
+	COAP_CONTENT_FORMAT_APP_CBOR = 60,
+};
 
 /* block option helper */
 #define GET_BLOCK_NUM(v)        ((v) >> 4)
@@ -233,6 +253,9 @@ typedef int (*coap_reply_t)(const struct coap_packet *response,
 			    struct coap_reply *reply,
 			    const struct sockaddr *from);
 
+#define COAP_DEFAULT_MAX_RETRANSMIT 4
+#define COAP_DEFAULT_ACK_RANDOM_FACTOR 1.5
+
 /**
  * @brief Represents a request awaiting for an acknowledgment (ACK).
  */
@@ -243,6 +266,7 @@ struct coap_pending {
 	uint16_t id;
 	uint8_t *data;
 	uint16_t len;
+	uint8_t retries;
 };
 
 /**
@@ -280,9 +304,10 @@ uint8_t coap_header_get_type(const struct coap_packet *cpkt);
  * @brief Returns the token (if any) in the CoAP packet.
  *
  * @param cpkt CoAP packet representation
- * @param token Where to store the token
+ * @param token Where to store the token, must point to a buffer containing
+ *              at least COAP_TOKEN_MAX_LEN bytes
  *
- * @return Token length in the CoAP packet.
+ * @return Token length in the CoAP packet (0 - COAP_TOKEN_MAX_LEN).
  */
 uint8_t coap_header_get_token(const struct coap_packet *cpkt, uint8_t *token);
 
@@ -349,7 +374,25 @@ int coap_packet_parse(struct coap_packet *cpkt, uint8_t *data, uint16_t len,
  */
 int coap_packet_init(struct coap_packet *cpkt, uint8_t *data, uint16_t max_len,
 		     uint8_t ver, uint8_t type, uint8_t token_len,
-		     uint8_t *token, uint8_t code, uint16_t id);
+		     const uint8_t *token, uint8_t code, uint16_t id);
+
+/**
+ * @brief Create a new CoAP Acknowledgment message for given request.
+ *
+ * This function works like @ref coap_packet_init, filling CoAP header type,
+ * CoAP header token, and CoAP header message id fields according to
+ * acknowledgment rules.
+ *
+ * @param cpkt New packet to be initialized using the storage from @a data.
+ * @param req CoAP request packet that is being acknowledged
+ * @param data Data that will contain a CoAP packet information
+ * @param max_len Maximum allowable length of data
+ * @param code CoAP header code
+ *
+ * @return 0 in case of success or negative in case of error.
+ */
+int coap_ack_init(struct coap_packet *cpkt, const struct coap_packet *req,
+		  uint8_t *data, uint16_t max_len, uint8_t code);
 
 /**
  * @brief Returns a randomly generated array of 8 bytes, that can be
@@ -446,7 +489,7 @@ int coap_packet_append_payload_marker(struct coap_packet *cpkt);
  *
  * @return 0 in case of success or negative in case of error.
  */
-int coap_packet_append_payload(struct coap_packet *cpkt, uint8_t *payload,
+int coap_packet_append_payload(struct coap_packet *cpkt, const uint8_t *payload,
 			       uint16_t payload_len);
 
 /**
@@ -687,12 +730,14 @@ void coap_reply_init(struct coap_reply *reply,
  * confirmation message, initialized with data from @a request
  * @param request Message waiting for confirmation
  * @param addr Address to send the retransmission
+ * @param retries Maximum number of retransmissions of the message.
  *
  * @return 0 in case of success or negative in case of error.
  */
 int coap_pending_init(struct coap_pending *pending,
 		      const struct coap_packet *request,
-		      const struct sockaddr *addr);
+		      const struct sockaddr *addr,
+		      uint8_t retries);
 
 /**
  * @brief Returns the next available pending struct, that can be used

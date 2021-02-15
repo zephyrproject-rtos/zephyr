@@ -11,10 +11,10 @@
 /** @brief Alternates between light and deep sleep cycles.
  *
  * For light sleep, the test sleeps in main thread for 500 ms longer than
- * CONFIG_SYS_PM_MIN_RESIDENCY_SLEEP_1.
+ * SUSPEND_TO_IDLE residency.
  *
  * Similarly for deep sleep, the test sleeps in the main thread for 500 ms
- * longer than CONFIG_SYS_PM_MIN_RESIDENCY_DEEP_SLEEP_1.
+ * longer than STANDBY residency.
  *
  * @param use_logging test progress will be reported using logging,
  *        otherwise printk.

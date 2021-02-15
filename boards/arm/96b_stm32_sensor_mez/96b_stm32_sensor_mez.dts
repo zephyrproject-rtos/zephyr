@@ -109,7 +109,8 @@
 &spi2 {
 	pinctrl-0 = <&spi2_nss_pb9 &spi2_sck_pd3
 		     &spi2_miso_pb14 &spi2_mosi_pb15>;
-	status = "okay";
+	/* Cannot be used together with i2s2. */
+	/* status = "okay"; */
 };
 
 &spi4_nss_pe11 { slew-rate = "very-high-speed"; };
@@ -125,7 +126,7 @@
 
 	pwm3: pwm {
 		status = "okay";
-		pinctrl-0 = <&tim3_ch1_pwm_pb4 &tim3_ch3_pwm_pc8>;
+		pinctrl-0 = <&tim3_ch1_pb4 &tim3_ch3_pc8>;
 	};
 };
 
@@ -134,7 +135,7 @@
 
 	pwm4: pwm {
 		status = "okay";
-		pinctrl-0 = <&tim4_ch3_pwm_pd14 &tim4_ch4_pwm_pd15>;
+		pinctrl-0 = <&tim4_ch3_pd14 &tim4_ch4_pd15>;
 	};
 };
 
@@ -143,7 +144,7 @@
 
 	pwm9: pwm {
 		status = "okay";
-		pinctrl-0 = <&tim9_ch1_pwm_pe5 &tim9_ch2_pwm_pe6>;
+		pinctrl-0 = <&tim9_ch1_pe5 &tim9_ch2_pe6>;
 	};
 };
 

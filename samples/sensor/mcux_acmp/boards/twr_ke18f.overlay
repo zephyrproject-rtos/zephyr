@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2020 Vestas Wind Systems A/S
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&cmp2 {
+	status = "okay";
+};

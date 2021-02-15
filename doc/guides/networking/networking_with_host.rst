@@ -13,6 +13,7 @@ Networking with the host system
    usbnet_setup.rst
    qemu_user_setup.rst
    networking_with_multiple_instances.rst
+   qemu_802154_setup.rst
 
 While developing networking software, it is usually necessary to connect and
 exchange data with the host system like a Linux desktop computer.
@@ -61,3 +62,9 @@ possible:
   * If you have multiple Zephyr instances, either QEMU or native_posix ones,
     and want to create a connection between them, see
     :ref:`networking_with_multiple_instances` for details.
+
+* Simulating IEEE 802.15.4 network between two QEMUs.
+
+  * Here, two Zephyr instances are running and there is IEEE 802.15.4 link layer
+    run over an UART between them.
+    See :ref:`networking_with_ieee802154_qemu` for details.

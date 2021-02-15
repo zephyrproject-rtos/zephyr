@@ -232,6 +232,7 @@ int testfs_build(struct testfs_path *root,
 		if (TESTFS_BCMD_IS_FILE(cp)) {
 			struct fs_file_t file;
 
+			fs_file_t_init(&file);
 			rc = fs_open(&file,
 				     testfs_path_extend(root,
 							cp->name,
@@ -296,6 +297,7 @@ static int check_layout_entry(struct testfs_path *pp,
 	if (statp->type == FS_DIR_ENTRY_FILE) {
 		struct fs_file_t file;
 
+		fs_file_t_init(&file);
 		rc = fs_open(&file, pp->path, FS_O_CREATE | FS_O_RDWR);
 		if (rc < 0) {
 			TC_PRINT("%s: content check open failed: %d\n",
@@ -351,6 +353,8 @@ int testfs_bcmd_verify_layout(struct testfs_path *pp,
 		cp->matched = false;
 		++cp;
 	}
+
+	fs_dir_t_init(&dir);
 
 	int rc = fs_opendir(&dir, pp->path);
 

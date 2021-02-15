@@ -5,8 +5,8 @@ Devicetree access from C/C++
 
 This guide describes Zephyr's ``<devicetree.h>`` API for reading the devicetree
 from C source files. It assumes you're familiar with the concepts in
-:ref:`devicetree-intro` and :ref:`dt-bindings`. See :ref:`devicetree_api` for
-API reference documentation.
+:ref:`devicetree-intro` and :ref:`dt-bindings`. See :ref:`devicetree` for
+reference material.
 
 A note for Linux developers
 ***************************
@@ -303,8 +303,9 @@ See :ref:`dt-get-device` for ways to do that.
 
 Another common use case is accessing specifier values in a phandle array. The
 general purpose APIs for this are :c:func:`DT_PHA_BY_IDX` and :c:func:`DT_PHA`.
-There are also hardware-specific shorthands like :c:func:`DT_GPIO_LABEL_BY_IDX`,
-:c:func:`DT_GPIO_LABEL`, :c:func:`DT_GPIO_PIN_BY_IDX`, :c:func:`DT_GPIO_PIN`,
+There are also hardware-specific shorthands like :c:func:`DT_GPIO_CTLR_BY_IDX`,
+:c:func:`DT_GPIO_CTLR`, :c:func:`DT_GPIO_LABEL_BY_IDX`, :c:func:`DT_GPIO_LABEL`,
+:c:func:`DT_GPIO_PIN_BY_IDX`, :c:func:`DT_GPIO_PIN`,
 :c:func:`DT_GPIO_FLAGS_BY_IDX`, and :c:func:`DT_GPIO_FLAGS`.
 
 See :c:func:`DT_PHA_HAS_CELL_AT_IDX` and :c:func:`DT_PROP_HAS_IDX` for ways to

@@ -1,0 +1,89 @@
+/*
+ * Copyright (c) ITE, All Rights Reserved
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <it8xxx2.dtsi>
+
+/ {
+	model = "IT8XXX2 EV-Board";
+	compatible = "riscv, it8xxx2_evb";
+	chosen {
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,bt-uart = &uart2;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,flash-controller = &flashctrl;
+		zephyr,code-partition = &slot0_partition;
+	};
+};
+&gpiob {
+	status = "okay";
+};
+&gpiof {
+	status = "okay";
+};
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+&i2c1 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+&i2c2 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+&i2c3 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+&i2c4 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+&i2c5 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	clock-frequency = <1804800>;
+};
+&uart2 {
+	status = "okay";
+	current-speed = <460800>;
+	clock-frequency = <1804800>;
+};
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x20000>;
+		};
+		slot0_partition: partition@20000 {
+			label = "image-0";
+			reg = <0x00020000 0x20000>;
+		};
+		slot1_partition: partition@40000 {
+			label = "image-1";
+			reg = <0x00040000 0x10000>;
+		};
+		scratch_partition: partition@50000 {
+			label = "image-scratch";
+			reg = <0x00050000 0x10000>;
+		};
+		storage_partition: partition@60000 {
+			label = "storage";
+			reg = <0x00060000 0x20000>;
+		};
+	};
+};

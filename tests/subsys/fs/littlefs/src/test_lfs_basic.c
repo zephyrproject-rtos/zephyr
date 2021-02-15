@@ -77,6 +77,7 @@ static int create_write_hello(const struct fs_mount_t *mp)
 	struct testfs_path path;
 	struct fs_file_t file;
 
+	fs_file_t_init(&file);
 	TC_PRINT("creating and writing file\n");
 
 	zassert_equal(fs_open(&file,
@@ -144,6 +145,7 @@ static int verify_hello(const struct fs_mount_t *mp)
 	struct testfs_path path;
 	struct fs_file_t file;
 
+	fs_file_t_init(&file);
 	TC_PRINT("opening and verifying file\n");
 
 	zassert_equal(fs_open(&file,
@@ -175,6 +177,7 @@ static int seek_within_hello(const struct fs_mount_t *mp)
 	struct testfs_path path;
 	struct fs_file_t file;
 
+	fs_file_t_init(&file);
 	TC_PRINT("seek and tell in file\n");
 
 	zassert_equal(fs_open(&file,
@@ -242,6 +245,7 @@ static int truncate_hello(const struct fs_mount_t *mp)
 	struct testfs_path path;
 	struct fs_file_t file;
 
+	fs_file_t_init(&file);
 	TC_PRINT("truncate in file\n");
 
 	zassert_equal(fs_open(&file,
@@ -332,6 +336,7 @@ static int sync_goodbye(const struct fs_mount_t *mp)
 	struct testfs_path path;
 	struct fs_file_t file;
 
+	fs_file_t_init(&file);
 	TC_PRINT("sync goodbye\n");
 
 	zassert_equal(fs_open(&file,
@@ -395,6 +400,7 @@ static int verify_goodbye(const struct fs_mount_t *mp)
 	struct testfs_path path;
 	struct fs_file_t file;
 
+	fs_file_t_init(&file);
 	TC_PRINT("verify goodbye\n");
 
 	zassert_equal(fs_open(&file,
@@ -479,6 +485,106 @@ static int check_large(void)
 	return TC_PASS;
 }
 
+static int num_files(struct fs_mount_t *mp)
+{
+	struct testfs_path path;
+	char name[2] = { 0 };
+	const char *pstr;
+	struct fs_file_t files[CONFIG_FS_LITTLEFS_NUM_FILES];
+	size_t fi = 0;
+	int rc;
+
+	memset(files, 0, sizeof(files));
+
+	TC_PRINT("CONFIG_FS_LITTLEFS_NUM_FILES=%u\n", CONFIG_FS_LITTLEFS_NUM_FILES);
+	while (fi < ARRAY_SIZE(files)) {
+		struct fs_file_t *const file = &files[fi];
+
+		name[0] = 'A' + fi;
+		pstr = testfs_path_init(&path, mp,
+					name,
+					TESTFS_PATH_END);
+
+		TC_PRINT("opening %s\n", pstr);
+		rc = fs_open(file, pstr, FS_O_CREATE | FS_O_RDWR);
+		zassert_equal(rc, 0, "open %s failed: %d", pstr, rc);
+
+		rc = testfs_write_incrementing(file, 0, TESTFS_BUFFER_SIZE);
+		zassert_equal(rc, TESTFS_BUFFER_SIZE, "write %s failed: %d", pstr, rc);
+
+		++fi;
+	}
+
+	while (fi-- != 0)  {
+		struct fs_file_t *const file = &files[fi];
+
+		name[0] = 'A' + fi;
+		pstr = testfs_path_init(&path, mp,
+					name,
+					TESTFS_PATH_END);
+
+		TC_PRINT("Close and unlink %s\n", pstr);
+
+		rc = fs_close(file);
+		zassert_equal(rc, 0, "close %s failed: %d", pstr, rc);
+
+		rc = fs_unlink(pstr);
+		zassert_equal(rc, 0, "unlink %s failed: %d", pstr, rc);
+	}
+
+	return TC_PASS;
+}
+
+static int num_dirs(struct fs_mount_t *mp)
+{
+	struct testfs_path path;
+	char name[3] = "Dx";
+	const char *pstr;
+	struct fs_dir_t dirs[CONFIG_FS_LITTLEFS_NUM_DIRS];
+	size_t di = 0;
+	int rc;
+
+	memset(dirs, 0, sizeof(dirs));
+
+	TC_PRINT("CONFIG_FS_LITTLEFS_NUM_DIRS=%u\n", CONFIG_FS_LITTLEFS_NUM_DIRS);
+	while (di < ARRAY_SIZE(dirs)) {
+		struct fs_dir_t *const dir = &dirs[di];
+
+		name[1] = 'A' + di;
+		pstr = testfs_path_init(&path, mp,
+					name,
+					TESTFS_PATH_END);
+
+		TC_PRINT("making and opening directory %s\n", pstr);
+		rc = fs_mkdir(pstr);
+		zassert_equal(rc, 0, "mkdir %s failed: %d", pstr, rc);
+
+		rc = fs_opendir(dir, pstr);
+		zassert_equal(rc, 0, "opendir %s failed: %d", name, rc);
+
+		++di;
+	}
+
+	while (di-- != 0)  {
+		struct fs_dir_t *const dir = &dirs[di];
+
+		name[1] = 'A' + di;
+		pstr = testfs_path_init(&path, mp,
+					name,
+					TESTFS_PATH_END);
+
+		TC_PRINT("Close and rmdir %s\n", pstr);
+
+		rc = fs_closedir(dir);
+		zassert_equal(rc, 0, "closedir %s failed: %d", name, rc);
+
+		rc = fs_unlink(pstr);
+		zassert_equal(rc, 0, "unlink %s failed: %d", name, rc);
+	}
+
+	return TC_PASS;
+}
+
 void test_lfs_basic(void)
 {
 	struct fs_mount_t *mp = &testfs_small_mnt;
@@ -510,6 +616,12 @@ void test_lfs_basic(void)
 	zassert_equal(sync_goodbye(mp), TC_PASS,
 		      "sync goodbye failed");
 
+	zassert_equal(num_files(mp), TC_PASS,
+		      "num_files failed");
+
+	zassert_equal(num_dirs(mp), TC_PASS,
+		      "num_dirs failed");
+
 	TC_PRINT("unmounting %s\n", mp->mnt_point);
 	zassert_equal(fs_unmount(mp), 0,
 		      "unmount small failed");
@@ -528,10 +640,11 @@ void test_lfs_basic(void)
 	zassert_equal(fs_unmount(mp), 0,
 		      "unmount2 small failed");
 
-	zassert_equal(check_medium(), TC_PASS,
-		      "check medium failed");
+	if (IS_ENABLED(CONFIG_APP_TEST_CUSTOM)) {
+		zassert_equal(check_medium(), TC_PASS,
+			      "check medium failed");
 
-	zassert_equal(check_large(), TC_PASS,
-		      "check large failed");
-
+		zassert_equal(check_large(), TC_PASS,
+			      "check large failed");
+	}
 }

@@ -175,9 +175,9 @@ static struct spi_driver_api spi_litespi_api = {
 	static struct spi_litespi_cfg spi_litespi_cfg_##n = { \
 		.base = DT_INST_REG_ADDR_BY_NAME(n, control), \
 	}; \
-	DEVICE_AND_API_INIT(spi_##n, \
-			DT_INST_LABEL(n), \
+	DEVICE_DT_INST_DEFINE(n, \
 			spi_litespi_init, \
+			device_pm_control_nop, \
 			&spi_litespi_data_##n, \
 			&spi_litespi_cfg_##n, \
 			POST_KERNEL, \

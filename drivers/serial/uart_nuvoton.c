@@ -198,8 +198,9 @@ static struct uart_numicro_data uart_numicro_data_##index = {		\
 	},								\
 };									\
 									\
-DEVICE_AND_API_INIT(uart_numicro_##index, DT_INST_LABEL(index),		\
+DEVICE_DT_INST_DEFINE(index,						\
 		    &uart_numicro_init,					\
+		    device_pm_control_nop,				\
 		    &uart_numicro_data_##index,				\
 		    &uart_numicro_cfg_##index,				\
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\

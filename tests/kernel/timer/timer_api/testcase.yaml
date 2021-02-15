@@ -1,9 +1,11 @@
 tests:
   kernel.timer:
     tags: kernel timer userspace
-    platform_exclude: qemu_x86_coverage qemu_arc_em qemu_arc_hs
+    platform_exclude: qemu_x86_coverage
   kernel.timer.tickless:
     extra_args: CONF_FILE="prj_tickless.conf"
-    arch_exclude: riscv32 nios2 posix
-    platform_exclude: qemu_x86_coverage qemu_arc_em qemu_arc_hs
+    arch_exclude: nios2 posix
+    platform_exclude: qemu_x86_coverage
+      litex_vexriscv rv32m1_vega_zero_riscy rv32m1_vega_ri5cy
+      nrf5340dk_nrf5340_cpunet
     tags: kernel timer userspace

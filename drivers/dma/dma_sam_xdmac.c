@@ -347,12 +347,10 @@ static const struct dma_driver_api sam_xdmac_driver_api = {
 
 /* DMA0 */
 
-DEVICE_DECLARE(dma0_sam);
-
 static void dma0_sam_irq_config(void)
 {
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), sam_xdmac_isr,
-		    DEVICE_GET(dma0_sam), 0);
+		    DEVICE_DT_INST_GET(0), 0);
 }
 
 static const struct sam_xdmac_dev_cfg dma0_sam_config = {
@@ -364,6 +362,6 @@ static const struct sam_xdmac_dev_cfg dma0_sam_config = {
 
 static struct sam_xdmac_dev_data dma0_sam_data;
 
-DEVICE_AND_API_INIT(dma0_sam, DT_INST_LABEL(0), &sam_xdmac_initialize,
+DEVICE_DT_INST_DEFINE(0, &sam_xdmac_initialize, device_pm_control_nop,
 		    &dma0_sam_data, &dma0_sam_config, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &sam_xdmac_driver_api);

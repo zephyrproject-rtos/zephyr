@@ -14,6 +14,15 @@
  * All regions not listed here are shared by secure world and normal world.
  */
 static struct arc_mpu_region mpu_regions[] = {
+
+#if defined(CONFIG_COVERAGE_GCOV) && defined(CONFIG_USERSPACE)
+	/* Region Coverage */
+	MPU_REGION_ENTRY("COVERAGE",
+			 (uint32_t)&(__gcov_bss_start),
+			 (uint32_t)&__gcov_bss_size,
+			 REGION_IO_ATTR),
+#endif /* CONFIG_COVERAGE_GCOV && CONFIG_USERSPACE */
+
 #if DT_REG_SIZE(DT_INST(0, arc_iccm)) > 0
 	/* Region ICCM */
 	MPU_REGION_ENTRY("ICCM",

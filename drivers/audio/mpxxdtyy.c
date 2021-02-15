@@ -165,6 +165,6 @@ static int mpxxdtyy_initialize(const struct device *dev)
 
 static struct mpxxdtyy_data mpxxdtyy_data;
 
-DEVICE_AND_API_INIT(mpxxdtyy, DT_INST_LABEL(0), mpxxdtyy_initialize,
+DEVICE_DT_INST_DEFINE(0, mpxxdtyy_initialize, device_pm_control_nop,
 		&mpxxdtyy_data, NULL, POST_KERNEL,
 		CONFIG_AUDIO_DMIC_INIT_PRIORITY, &mpxxdtyy_driver_api);

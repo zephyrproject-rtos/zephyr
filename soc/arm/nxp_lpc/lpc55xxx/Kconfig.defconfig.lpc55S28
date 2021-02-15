@@ -1,0 +1,39 @@
+# NXP LPC55S28 platform configuration options
+
+# Copyright (c) 2020 Lemonbeat GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_LPC55S28
+
+config SOC
+	default "lpc55S28"
+
+config PINMUX_MCUX_LPC
+	default y
+	depends on PINMUX
+
+config GPIO_MCUX_LPC
+	default y
+	depends on GPIO
+
+config UART_MCUX_FLEXCOMM
+	default y
+	depends on SERIAL
+
+config SOC_FLASH_MCUX
+	default y
+	depends on FLASH
+
+config WDT_MCUX_WWDT
+	default y
+	depends on WATCHDOG
+
+config ADC_MCUX_LPADC
+	default y
+	depends on ADC
+
+config DMA_MCUX_LPC
+	default y
+	depends on DMA
+
+endif # SOC_LPC55S28

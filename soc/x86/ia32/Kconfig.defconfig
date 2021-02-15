@@ -9,10 +9,6 @@ config SOC
 	default "ia32"
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 150000000 if LOAPIC_TIMER
 	default 25000000  if HPET_TIMER
-
-config CLFLUSH_DETECT
-	default y if CACHE_FLUSHING
 
 endif

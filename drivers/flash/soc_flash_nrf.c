@@ -15,8 +15,13 @@
 #include <drivers/flash.h>
 #include <string.h>
 #include <nrfx_nvmc.h>
+#include <nrf_erratas.h>
 
 #include "soc_flash_nrf.h"
+
+#define LOG_LEVEL CONFIG_FLASH_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(flash_nrf);
 
 #if DT_NODE_HAS_STATUS(DT_INST(0, nordic_nrf51_flash_controller), okay)
 #define DT_DRV_COMPAT nordic_nrf51_flash_controller
@@ -69,6 +74,17 @@ static struct k_sem sem_lock;
 #define SYNC_UNLOCK()
 #endif
 
+#if NRF52_ERRATA_242_PRESENT
+#include <hal/nrf_power.h>
+static int suspend_pofwarn(void);
+static void restore_pofwarn(void);
+
+#define SUSPEND_POFWARN() suspend_pofwarn()
+#define RESUME_POFWARN()  restore_pofwarn()
+#else
+#define SUSPEND_POFWARN() 0
+#define RESUME_POFWARN()
+#endif /* NRF52_ERRATA_242_PRESENT */
 
 static int write(off_t addr, const void *data, size_t len);
 static int erase(uint32_t addr, uint32_t size);
@@ -121,6 +137,8 @@ static int flash_nrf_read(const struct device *dev, off_t addr,
 	if (is_regular_addr_valid(addr, len)) {
 		addr += DT_REG_ADDR(SOC_NV_FLASH_NODE);
 	} else if (!is_uicr_addr_valid(addr, len)) {
+		LOG_ERR("invalid address: 0x%08lx:%zu",
+				(unsigned long)addr, len);
 		return -EINVAL;
 	}
 
@@ -141,11 +159,15 @@ static int flash_nrf_write(const struct device *dev, off_t addr,
 	if (is_regular_addr_valid(addr, len)) {
 		addr += DT_REG_ADDR(SOC_NV_FLASH_NODE);
 	} else if (!is_uicr_addr_valid(addr, len)) {
+		LOG_ERR("invalid address: 0x%08lx:%zu",
+				(unsigned long)addr, len);
 		return -EINVAL;
 	}
 
 #if !IS_ENABLED(CONFIG_SOC_FLASH_NRF_EMULATE_ONE_BYTE_WRITE_ACCESS)
 	if (!is_aligned_32(addr) || (len % sizeof(uint32_t))) {
+		LOG_ERR("not word-aligned: 0x%08lx:%zu",
+				(unsigned long)addr, len);
 		return -EINVAL;
 	}
 #endif
@@ -179,6 +201,8 @@ static int flash_nrf_erase(const struct device *dev, off_t addr, size_t size)
 	if (is_regular_addr_valid(addr, size)) {
 		/* Erase can only be done per page */
 		if (((addr % pg_size) != 0) || ((size % pg_size) != 0)) {
+			LOG_ERR("unaligned address: 0x%08lx:%zu",
+					(unsigned long)addr, size);
 			return -EINVAL;
 		}
 
@@ -189,10 +213,14 @@ static int flash_nrf_erase(const struct device *dev, off_t addr, size_t size)
 		addr += DT_REG_ADDR(SOC_NV_FLASH_NODE);
 #ifdef CONFIG_SOC_FLASH_NRF_UICR
 	} else if (addr != (off_t)NRF_UICR || size != sizeof(*NRF_UICR)) {
+		LOG_ERR("invalid address: 0x%08lx:%zu",
+				(unsigned long)addr, size);
 		return -EINVAL;
 	}
 #else
 	} else {
+		LOG_ERR("invalid address: 0x%08lx:%zu",
+				(unsigned long)addr, size);
 		return -EINVAL;
 	}
 #endif /* CONFIG_SOC_FLASH_NRF_UICR */
@@ -265,9 +293,10 @@ static int nrf_flash_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(nrf_flash, DT_INST_LABEL(0), nrf_flash_init,
-		NULL, NULL, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		&flash_nrf_api);
+DEVICE_DT_INST_DEFINE(0, nrf_flash_init, device_pm_control_nop,
+		 NULL, NULL,
+		 POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		 &flash_nrf_api);
 
 #ifndef CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE
 
@@ -326,12 +355,20 @@ static int erase_op(void *context)
 
 #ifdef CONFIG_SOC_FLASH_NRF_UICR
 	if (e_ctx->flash_addr == (off_t)NRF_UICR) {
+		if (SUSPEND_POFWARN()) {
+			return -ECANCELED;
+		}
+
 		(void)nrfx_nvmc_uicr_erase();
+		RESUME_POFWARN();
 		return FLASH_OP_DONE;
 	}
 #endif
 
 	do {
+		if (SUSPEND_POFWARN()) {
+			return -ECANCELED;
+		}
 
 #if defined(CONFIG_SOC_FLASH_NRF_PARTIAL_ERASE)
 		if (e_ctx->flash_addr == e_ctx->flash_addr_next) {
@@ -349,6 +386,8 @@ static int erase_op(void *context)
 		e_ctx->len -= pg_size;
 		e_ctx->flash_addr += pg_size;
 #endif /* CONFIG_SOC_FLASH_NRF_PARTIAL_ERASE */
+
+		RESUME_POFWARN();
 
 #ifndef CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE
 		i++;
@@ -393,10 +432,15 @@ static int write_op(void *context)
 			count = w_ctx->len;
 		}
 
+		if (SUSPEND_POFWARN()) {
+			return -ECANCELED;
+		}
+
 		nrfx_nvmc_bytes_write(w_ctx->flash_addr,
 				      (const void *)w_ctx->data_addr,
 				      count);
 
+		RESUME_POFWARN();
 		shift_write_context(count, w_ctx);
 
 #ifndef CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE
@@ -411,9 +455,13 @@ static int write_op(void *context)
 #endif /* CONFIG_SOC_FLASH_NRF_EMULATE_ONE_BYTE_WRITE_ACCESS */
 	/* Write all the 4-byte aligned data */
 	while (w_ctx->len >= sizeof(uint32_t)) {
+		if (SUSPEND_POFWARN()) {
+			return -ECANCELED;
+		}
+
 		nrfx_nvmc_word_write(w_ctx->flash_addr,
 				     UNALIGNED_GET((uint32_t *)w_ctx->data_addr));
-
+		RESUME_POFWARN();
 		shift_write_context(sizeof(uint32_t), w_ctx);
 
 #ifndef CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE
@@ -430,10 +478,14 @@ static int write_op(void *context)
 #if IS_ENABLED(CONFIG_SOC_FLASH_NRF_EMULATE_ONE_BYTE_WRITE_ACCESS)
 	/* Write remaining unaligned data */
 	if (w_ctx->len) {
+		if (SUSPEND_POFWARN()) {
+			return -ECANCELED;
+		}
+
 		nrfx_nvmc_bytes_write(w_ctx->flash_addr,
 				      (const void *)w_ctx->data_addr,
 				      w_ctx->len);
-
+		RESUME_POFWARN();
 		shift_write_context(w_ctx->len, w_ctx);
 	}
 #endif /* CONFIG_SOC_FLASH_NRF_EMULATE_ONE_BYTE_WRITE_ACCESS */
@@ -471,3 +523,50 @@ static int write(off_t addr, const void *data, size_t len)
 
 	return write_op(&context);
 }
+
+#if NRF52_ERRATA_242_PRESENT
+/* Disable POFWARN by writing POFCON before a write or erase operation.
+ * Do not attempt to write or erase if EVENTS_POFWARN is already asserted.
+ */
+static bool pofcon_enabled;
+
+static int suspend_pofwarn(void)
+{
+	if (!nrf52_errata_242()) {
+		return 0;
+	}
+
+	bool enabled;
+	nrf_power_pof_thr_t pof_thr;
+
+	pof_thr = nrf_power_pofcon_get(NRF_POWER, &enabled);
+
+	if (enabled) {
+		nrf_power_pofcon_set(NRF_POWER, false, pof_thr);
+
+		/* This check need to be reworked once POFWARN event will be
+		 * served by zephyr.
+		 */
+		if (nrf_power_event_check(NRF_POWER, NRF_POWER_EVENT_POFWARN)) {
+			nrf_power_pofcon_set(NRF_POWER, true, pof_thr);
+			return -ECANCELED;
+		}
+
+		pofcon_enabled = enabled;
+	}
+
+	return 0;
+}
+
+static void restore_pofwarn(void)
+{
+	nrf_power_pof_thr_t pof_thr;
+
+	if (pofcon_enabled) {
+		pof_thr = nrf_power_pofcon_get(NRF_POWER, NULL);
+
+		nrf_power_pofcon_set(NRF_POWER, true, pof_thr);
+		pofcon_enabled = false;
+	}
+}
+#endif  /* NRF52_ERRATA_242_PRESENT */

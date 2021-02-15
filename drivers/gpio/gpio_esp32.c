@@ -270,7 +270,12 @@ static int gpio_esp32_init(const struct device *device)
 	struct gpio_esp32_data *data = device->data;
 	static bool isr_connected;
 
-	data->pinmux = device_get_binding(CONFIG_PINMUX_NAME);
+	data->pinmux = DEVICE_DT_GET(DT_NODELABEL(pinmux));
+	if ((data->pinmux != NULL)
+	    && !device_is_ready(data->pinmux)) {
+		data->pinmux = NULL;
+	}
+
 	if (!data->pinmux) {
 		return -ENOTSUP;
 	}
@@ -335,9 +340,9 @@ static struct gpio_esp32_data gpio_1_data = { /* 32..39 */
 	static struct gpio_driver_config gpio_##_id##_cfg = { \
 		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(_id),  \
 	}; \
-	DEVICE_AND_API_INIT(gpio_esp32_##_id,				\
-			    DT_INST_LABEL(_id),	\
+	DEVICE_DT_INST_DEFINE(_id,					\
 			    gpio_esp32_init,				\
+			    device_pm_control_nop,			\
 			    &gpio_##_id##_data, &gpio_##_id##_cfg,	\
 			    POST_KERNEL,				\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
@@ -359,10 +364,10 @@ static void gpio_esp32_isr(const void *param)
 {
 
 #if defined(CONFIG_GPIO_ESP32_0)
-	gpio_esp32_fire_callbacks(DEVICE_GET(gpio_esp32_0));
+	gpio_esp32_fire_callbacks(DEVICE_DT_INST_GET(0));
 #endif
 #if defined(CONFIG_GPIO_ESP32_1)
-	gpio_esp32_fire_callbacks(DEVICE_GET(gpio_esp32_1));
+	gpio_esp32_fire_callbacks(DEVICE_DT_INST_GET(1));
 #endif
 
 	ARG_UNUSED(param);

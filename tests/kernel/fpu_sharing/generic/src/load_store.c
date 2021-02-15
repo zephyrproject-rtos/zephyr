@@ -62,6 +62,8 @@
 #else
 #include "float_regs_riscv_other.h"
 #endif /* __GNUC__ */
+#elif defined(CONFIG_SPARC)
+#include "float_regs_sparc.h"
 #endif
 
 #include "float_context.h"

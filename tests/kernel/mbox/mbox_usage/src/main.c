@@ -10,9 +10,6 @@
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define MAIL_LEN 64
 
-K_MEM_POOL_DEFINE(mpooltx, 8, MAIL_LEN, 1, 4);
-K_MEM_POOL_DEFINE(mpoolrx, 8, MAIL_LEN, 1, 4);
-
 static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 
 static struct k_thread tdata;
@@ -30,7 +27,7 @@ static enum mmsg_type {
 
 static void msg_sender(struct k_mbox *pmbox, k_timeout_t timeout)
 {
-	struct k_mbox_msg mmsg;
+	static struct k_mbox_msg mmsg;
 
 	(void)memset(&mmsg, 0, sizeof(mmsg));
 
@@ -56,8 +53,8 @@ static void msg_sender(struct k_mbox *pmbox, k_timeout_t timeout)
 static void msg_receiver(struct k_mbox *pmbox, k_tid_t thd_id,
 			 k_timeout_t timeout)
 {
-	struct k_mbox_msg mmsg;
-	char rxdata[MAIL_LEN];
+	static struct k_mbox_msg mmsg;
+	static char rxdata[MAIL_LEN];
 
 	switch (info_type) {
 	case PUT_GET_NULL:

@@ -1,4 +1,4 @@
 tests:
   kernel.memory_protection.stackprot:
-    arch_exclude: nios2 xtensa posix
+    arch_exclude: nios2 xtensa posix sparc
     tags: kernel ignore_faults userspace

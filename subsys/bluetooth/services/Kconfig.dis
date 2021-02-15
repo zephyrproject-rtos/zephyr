@@ -10,6 +10,7 @@ if BT_DIS
 
 config BT_DIS_SETTINGS
 	bool "Enable Settings usage in Device Information Service"
+	select SETTINGS
 	help
 	  Enable Settings usage in Device Information Service.
 

@@ -74,10 +74,15 @@ static void vnd_ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 	simulate_vnd = (value == BT_GATT_CCC_INDICATE) ? 1 : 0;
 }
 
-static void indicate_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			uint8_t err)
+static void indicate_cb(struct bt_conn *conn,
+			struct bt_gatt_indicate_params *params, uint8_t err)
 {
 	printk("Indication %s\n", err != 0U ? "fail" : "success");
+}
+
+static void indicate_destroy(struct bt_gatt_indicate_params *params)
+{
+	printk("Indication complete\n");
 	indicating = 0U;
 }
 
@@ -356,6 +361,7 @@ void main(void)
 
 			ind_params.attr = &vnd_svc.attrs[2];
 			ind_params.func = indicate_cb;
+			ind_params.destroy = indicate_destroy;
 			ind_params.data = &indicating;
 			ind_params.len = sizeof(indicating);
 

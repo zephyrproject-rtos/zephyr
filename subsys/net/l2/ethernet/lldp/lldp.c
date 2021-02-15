@@ -66,7 +66,7 @@ static void lldp_submit_work(uint32_t timeout)
 static bool lldp_check_timeout(int64_t start, uint32_t time, int64_t timeout)
 {
 	start += time;
-	start = abs(start);
+	start = llabs(start);
 
 	if (start > timeout) {
 		return false;

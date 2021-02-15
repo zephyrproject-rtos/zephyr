@@ -16,12 +16,22 @@
 #define MCUX_IPM_DATA_REGS 1
 #define MCUX_IPM_MAX_ID_VAL 0
 
+#if (defined(LPC55S69_cm33_core0_SERIES) || defined(LPC55S69_cm33_core1_SERIES))
+#ifdef LPC55S69_cm33_core0_SERIES
+#define MAILBOX_ID_THIS_CPU kMAILBOX_CM33_Core0
+#define MAILBOX_ID_OTHER_CPU kMAILBOX_CM33_Core1
+#else
+#define MAILBOX_ID_THIS_CPU kMAILBOX_CM33_Core1
+#define MAILBOX_ID_OTHER_CPU kMAILBOX_CM33_Core0
+#endif
+#else
 #if defined(__CM4_CMSIS_VERSION)
 #define MAILBOX_ID_THIS_CPU kMAILBOX_CM4
 #define MAILBOX_ID_OTHER_CPU kMAILBOX_CM0Plus
 #else
 #define MAILBOX_ID_THIS_CPU kMAILBOX_CM0Plus
 #define MAILBOX_ID_OTHER_CPU kMAILBOX_CM4
+#endif
 #endif
 
 struct mcux_mailbox_config {
@@ -162,8 +172,9 @@ static const struct mcux_mailbox_config mcux_mailbox_0_config = {
 
 static struct mcux_mailbox_data mcux_mailbox_0_data;
 
-DEVICE_AND_API_INIT(mailbox_0, DT_INST_LABEL(0),
+DEVICE_DT_INST_DEFINE(0,
 		    &mcux_mailbox_init,
+		    device_pm_control_nop,
 		    &mcux_mailbox_0_data, &mcux_mailbox_0_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &mcux_mailbox_driver_api);
@@ -173,7 +184,7 @@ static void mcux_mailbox_config_func_0(const struct device *dev)
 {
 	IRQ_CONNECT(DT_INST_IRQN(0),
 		    DT_INST_IRQ(0, priority),
-		    mcux_mailbox_isr, DEVICE_GET(mailbox_0), 0);
+		    mcux_mailbox_isr, DEVICE_DT_INST_GET(0), 0);
 
 	irq_enable(DT_INST_IRQN(0));
 }

@@ -5,7 +5,9 @@ on:
 
 jobs:
   stale:
+    name: Find Stale issues and PRs
     runs-on: ubuntu-latest
+    if: github.repository == 'zephyrproject-rtos/zephyr'
     steps:
     - uses: actions/stale@v3
       with:

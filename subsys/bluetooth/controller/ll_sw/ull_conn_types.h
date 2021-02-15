@@ -59,21 +59,37 @@ struct ll_conn {
 	union {
 		struct {
 			uint8_t fex_valid:1;
+#if defined(CONFIG_BT_CTLR_CONN_META)
+			uint8_t is_must_expire:1;
+#endif /* CONFIG_BT_CTLR_CONN_META */
 		} common;
 
 #if defined(CONFIG_BT_PERIPHERAL)
 		struct {
 			uint8_t  fex_valid:1;
+#if defined(CONFIG_BT_CTLR_CONN_META)
+			uint8_t  is_must_expire:1;
+#endif /* CONFIG_BT_CTLR_CONN_META */
 			uint8_t  latency_cancel:1;
 			uint8_t  sca:3;
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+			uint8_t  llcp_type;
+#endif /* CONFIG_BT_CTLR_LE_ENC */
+#if defined(CONFIG_BT_CTLR_CONN_RANDOM_FORCE)
 			uint32_t force;
+#endif /* CONFIG_BT_CTLR_CONN_RANDOM_FORCE */
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 			uint32_t ticks_to_offset;
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 		} slave;
 #endif /* CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_CENTRAL)
 		struct {
 			uint8_t fex_valid:1;
+#if defined(CONFIG_BT_CTLR_CONN_META)
+			uint8_t is_must_expire:1;
+#endif /* CONFIG_BT_CTLR_CONN_META */
 			uint8_t terminate_ack:1;
 		} master;
 #endif /* CONFIG_BT_CENTRAL */
@@ -81,30 +97,33 @@ struct ll_conn {
 
 	uint8_t llcp_req;
 	uint8_t llcp_ack;
+
 	uint8_t llcp_type;
 
-	union {
-		struct {
-			uint16_t instant;
-			uint16_t *pdu_win_offset;
-			uint32_t ticks_anchor;
-		} conn_upd;
+	struct {
+		union {
+			struct {
+				uint16_t instant;
+				uint16_t *pdu_win_offset;
+				uint32_t ticks_anchor;
+			} conn_upd;
 
-		struct {
-			uint8_t  initiate:1;
-			uint8_t  chm[5];
-			uint16_t instant;
-		} chan_map;
+			struct {
+				uint8_t  initiate:1;
+				uint8_t  chm[5];
+				uint16_t instant;
+			} chan_map;
 
 #if defined(CONFIG_BT_CTLR_PHY)
-		struct {
-			uint8_t initiate:1;
-			uint8_t cmd:1;
-			uint8_t tx:3;
-			uint8_t rx:3;
-			uint16_t instant;
-		} phy_upd_ind;
+			struct {
+				uint8_t initiate:1;
+				uint8_t cmd:1;
+				uint8_t tx:3;
+				uint8_t rx:3;
+				uint16_t instant;
+			} phy_upd_ind;
 #endif /* CONFIG_BT_CTLR_PHY */
+		};
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 		struct {
@@ -127,8 +146,11 @@ struct ll_conn {
 		enum {
 			LLCP_CUI_STATE_INPROG,
 			LLCP_CUI_STATE_USE,
-			LLCP_CUI_STATE_SELECT
-		} state:2 __packed;
+			LLCP_CUI_STATE_SELECT,
+			LLCP_CUI_STATE_OFFS_REQ,
+			LLCP_CUI_STATE_OFFS_RDY,
+			LLCP_CUI_STATE_REJECT,
+		} state:3 __packed;
 		uint8_t  cmd:1;
 		uint16_t interval;
 		uint16_t latency;
@@ -159,9 +181,17 @@ struct ll_conn {
 		uint8_t ack;
 		uint8_t reason_own;
 		uint8_t reason_peer;
+		/* node rx type with memory aligned storage for terminate
+		 * reason.
+		 * HCI will reference the value using the pdu member of
+		 * struct node_rx_pdu.
+		 */
 		struct {
 			struct node_rx_hdr hdr;
-			uint8_t reason;
+			union {
+				uint8_t    pdu[0] __aligned(4);
+				uint8_t    reason;
+			};
 		} node_rx;
 	} llcp_terminate;
 
@@ -188,7 +218,9 @@ struct ll_conn {
 			LLCP_CPR_STATE_APP_REQ,
 			LLCP_CPR_STATE_APP_WAIT,
 			LLCP_CPR_STATE_RSP_WAIT,
-			LLCP_CPR_STATE_UPD
+			LLCP_CPR_STATE_UPD,
+			LLCP_CPR_STATE_OFFS_REQ,
+			LLCP_CPR_STATE_OFFS_RDY,
 		} state:3 __packed;
 		uint8_t  cmd:1;
 		uint8_t  disabled:1;
@@ -257,7 +289,6 @@ struct ll_conn {
 	} llcp_phy;
 
 	uint8_t phy_pref_tx:3;
-	uint8_t phy_pref_flags:1;
 	uint8_t phy_pref_rx:3;
 #endif /* CONFIG_BT_CTLR_PHY */
 

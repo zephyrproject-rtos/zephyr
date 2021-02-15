@@ -1,0 +1,32 @@
+# Common fields for CAN-FD controllers
+
+include: can-controller.yaml
+
+properties:
+    bus-speed-data:
+      type: int
+      required: true
+      description: data phase bus speed in Baud/s
+    sjw-data:
+      type: int
+      required: true
+      description: Resynchronization jump width for the data phase. (ISO11898-1:2015)
+    prop-seg-data:
+      type: int
+      required: false
+      description: Time quantums of propagation segment for the data phase. (ISO11898-1:2015)
+    phase-seg1-data:
+      type: int
+      required: false
+      description: Time quantums of phase buffer 1 segment for the data phase. (ISO11898-1:2015)
+    phase-seg2-data:
+      type: int
+      required: false
+      description: Time quantums of phase buffer 2 segment for the data phase. (ISO11898-1:2015)
+    sample-point-data:
+      type: int
+      required: false
+      description: >
+        Sample point in permille for the data phase.
+        This param is required if segments are not given.
+        If the sample point is given, the segments are ignored.

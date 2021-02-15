@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(app_b);
 /* Resource pool for allocations made by the kernel on behalf of system
  * calls. Needed for k_queue_alloc_append()
  */
-K_MEM_POOL_DEFINE(app_b_resource_pool, 32, 256, 4, 4);
+K_HEAP_DEFINE(app_b_resource_pool, 256 * 4 + 128);
 
 /* Define app_b_partition, where all globals for this app will be routed.
  * The partition starting address and size are populated by build system
@@ -86,7 +86,7 @@ void app_b_entry(void *p1, void *p2, void *p3)
 	/* Assign a resource pool to serve for kernel-side allocations on
 	 * behalf of application A. Needed for k_queue_alloc_append().
 	 */
-	k_thread_resource_pool_assign(k_current_get(), &app_b_resource_pool);
+	k_thread_heap_assign(k_current_get(), &app_b_resource_pool);
 
 	/* We are about to drop to user mode and become the monitor thread.
 	 * Grant ourselves access to the kernel objects we need for

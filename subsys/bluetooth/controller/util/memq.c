@@ -32,8 +32,11 @@
  *   where A[b] means the A'th link-element, whose mem pointer is b.
  */
 
-#include <zephyr/types.h>
 #include <stddef.h>
+
+#include <soc.h>
+
+#include "hal/cpu.h"
 
 #include "memq.h"
 
@@ -97,7 +100,8 @@ memq_link_t *memq_enqueue(memq_link_t *link, void *mem, memq_link_t **tail)
 	/* Update the tail-pointer to point to the new tail element.
 	 * The new tail-element is not expected to point to anything sensible
 	 */
-	*tail = link;
+	cpu_dmb(); /* Ensure data accesses are synchronized */
+	*tail = link; /* Commit: enqueue of memq node */
 
 	return link;
 }

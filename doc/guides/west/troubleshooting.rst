@@ -5,6 +5,42 @@ Troubleshooting West
 
 This page covers common issues with west and how to solve them.
 
+``west update`` fetching failures
+*********************************
+
+One good way to troubleshoot fetching issues is to run ``west update`` in
+verbose mode, like this:
+
+.. code-block:: shell
+
+   west -v update
+
+The output includes Git commands run by west and their outputs. Look for
+something like this:
+
+.. code-block:: none
+
+   === updating your_project (path/to/your/project):
+   west.manifest: your_project: checking if cloned
+   [...other west.manifest logs...]
+   --- your_project: fetching, need revision SOME_SHA
+   west.manifest: running 'git fetch ... https://github.com/your-username/your_project ...' in /some/directory
+
+The ``git fetch`` command example in the last line above is what needs to
+succeed.
+
+One strategy is to go to ``/some/directory``, copy/paste and run the entire
+``git fetch`` command, then debug from there using the documentation for your
+credential storage helper.
+
+If you're behind a corporate firewall and may have proxy or other issues,
+``curl -v FETCH_URL`` (for HTTPS URLs) or ``ssh -v FETCH_URL`` (for SSH URLs)
+may be helpful.
+
+If you can get the ``git fetch`` command to run successfully without prompting
+for a password when you run it directly, you will be able to run ``west
+update`` without entering your password in that same shell.
+
 "'west' is not recognized as an internal or external command, operable program or batch file.'
 **********************************************************************************************
 

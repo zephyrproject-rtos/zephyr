@@ -168,7 +168,7 @@ int spi_sifive_transceive(const struct device *dev,
 	bool hw_cs_control = false;
 
 	/* Lock the SPI Context */
-	spi_context_lock(&SPI_DATA(dev)->ctx, false, NULL);
+	spi_context_lock(&SPI_DATA(dev)->ctx, false, NULL, config);
 
 	/* Configure the SPI bus */
 	SPI_DATA(dev)->ctx.config = config;
@@ -248,9 +248,9 @@ static struct spi_driver_api spi_sifive_api = {
 		.base = DT_INST_REG_ADDR_BY_NAME(n, control), \
 		.f_sys = DT_INST_PROP(n, clock_frequency), \
 	}; \
-	DEVICE_AND_API_INIT(spi_##n, \
-			DT_INST_LABEL(n), \
+	DEVICE_DT_INST_DEFINE(n, \
 			spi_sifive_init, \
+			device_pm_control_nop, \
 			&spi_sifive_data_##n, \
 			&spi_sifive_cfg_##n, \
 			POST_KERNEL, \

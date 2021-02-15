@@ -194,6 +194,8 @@ struct intel_gna_data {
 	struct k_msgq			response_queue;
 	struct intel_gna_pending_resp	responses[GNA_REQUEST_QUEUE_LEN];
 	enum gna_state			state;
+
+	struct gna_config		config;
 };
 
 #ifdef __cplusplus

@@ -22,18 +22,11 @@ LOG_MODULE_REGISTER(lis2dh, CONFIG_SENSOR_LOG_LEVEL);
  * Use values for low-power mode in DS "Mechanical (Sensor) characteristics",
  * multiplied by 100.
  */
-static const uint32_t lis2dh_reg_val_to_scale[] = {
-#if DT_NODE_HAS_STATUS(DT_INST(0, st_lsm303agr_accel), okay)
-	ACCEL_SCALE(1563),
-	ACCEL_SCALE(3126),
-	ACCEL_SCALE(6252),
-	ACCEL_SCALE(18758),
-#else
+static uint32_t lis2dh_reg_val_to_scale[] = {
 	ACCEL_SCALE(1600),
 	ACCEL_SCALE(3200),
 	ACCEL_SCALE(6400),
 	ACCEL_SCALE(19200),
-#endif
 };
 
 static void lis2dh_convert(int16_t raw_val, uint32_t scale,
@@ -295,7 +288,15 @@ int lis2dh_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(DT_INST_PROP(0, disconnect_sdo_sa0_pull_up))) {
+	/* Fix LSM303AGR_ACCEL device scale values */
+	if (cfg->is_lsm303agr_dev) {
+		lis2dh_reg_val_to_scale[0] = ACCEL_SCALE(1563);
+		lis2dh_reg_val_to_scale[1] = ACCEL_SCALE(3126);
+		lis2dh_reg_val_to_scale[2] = ACCEL_SCALE(6252);
+		lis2dh_reg_val_to_scale[3] = ACCEL_SCALE(18758);
+	}
+
+	if (cfg->disc_pull_up) {
 		status = lis2dh->hw_tf->update_reg(dev, LIS2DH_REG_CTRL0,
 						   LIS2DH_SDO_PU_DISC_MASK,
 						   LIS2DH_SDO_PU_DISC_MASK);
@@ -358,14 +359,20 @@ int lis2dh_init(const struct device *dev)
  */
 
 #define LIS2DH_DEVICE_INIT(inst)					\
-	DEVICE_AND_API_INIT(lis2dh_##inst,				\
-			    DT_INST_LABEL(inst),			\
+	DEVICE_DT_INST_DEFINE(inst,					\
 			    lis2dh_init,				\
+			    device_pm_control_nop,			\
 			    &lis2dh_data_##inst,			\
 			    &lis2dh_config_##inst,			\
 			    POST_KERNEL,				\
 			    CONFIG_SENSOR_INIT_PRIORITY,		\
 			    &lis2dh_driver_api);
+
+#define IS_LSM303AGR_DEV(inst) \
+	DT_NODE_HAS_COMPAT(DT_DRV_INST(inst), st_lsm303agr_accel)
+
+#define DISC_PULL_UP(inst) \
+	DT_INST_PROP(inst, disconnect_sdo_sa0_pull_up)
 
 /*
  * Instantiation macros used when a device is on a SPI bus.
@@ -409,11 +416,41 @@ int lis2dh_init(const struct device *dev)
 		.cs_gpios_label = LIS2DH_SPI_CS_LABEL(inst),		\
 	})
 
+#ifdef CONFIG_LIS2DH_TRIGGER
+#define LIS2DH_HAS_IRQ_IDX(inst, idx)					\
+		DT_INST_PROP_HAS_IDX(inst, irq_gpios, idx)
+
+#define LIS2DH_CFG_INT(inst) \
+	.irq1_dev_name = COND_CODE_1(LIS2DH_HAS_IRQ_IDX(inst, 0),	\
+		(DT_INST_GPIO_LABEL_BY_IDX(inst, irq_gpios, 0)),	\
+		(NULL)),						\
+	.irq1_pin = COND_CODE_1(LIS2DH_HAS_IRQ_IDX(inst, 0),		\
+		(DT_INST_GPIO_PIN_BY_IDX(inst, irq_gpios, 0)),		\
+		(0)),						\
+	.irq1_flags = COND_CODE_1(LIS2DH_HAS_IRQ_IDX(inst, 0),		\
+		(DT_INST_GPIO_FLAGS_BY_IDX(inst, irq_gpios, 0)),	\
+		(0)),						\
+	.irq2_dev_name = COND_CODE_1(LIS2DH_HAS_IRQ_IDX(inst, 1),	\
+		(DT_INST_GPIO_LABEL_BY_IDX(inst, irq_gpios, 1)),	\
+		(NULL)),						\
+	.irq2_pin = COND_CODE_1(LIS2DH_HAS_IRQ_IDX(inst, 1),		\
+		(DT_INST_GPIO_PIN_BY_IDX(inst, irq_gpios, 1)),		\
+		(0)),						\
+	.irq2_flags = COND_CODE_1(LIS2DH_HAS_IRQ_IDX(inst, 1),		\
+		(DT_INST_GPIO_FLAGS_BY_IDX(inst, irq_gpios, 1)),	\
+		(0)),
+#else
+#define LIS2DH_CFG_INT(inst)
+#endif /* CONFIG_LIS2DH_TRIGGER */
+
 #define LIS2DH_CONFIG_SPI(inst)						\
 	{								\
 		.bus_name = DT_INST_BUS_LABEL(inst),			\
 		.bus_init = lis2dh_spi_init,				\
-		.bus_cfg = { .spi_cfg = LIS2DH_SPI_CFG(inst)	}	\
+		.bus_cfg = { .spi_cfg = LIS2DH_SPI_CFG(inst)	},	\
+		.is_lsm303agr_dev = IS_LSM303AGR_DEV(inst),		\
+		.disc_pull_up = DISC_PULL_UP(inst),			\
+		LIS2DH_CFG_INT(inst)					\
 	}
 
 #define LIS2DH_DEFINE_SPI(inst)						\
@@ -431,7 +468,10 @@ int lis2dh_init(const struct device *dev)
 	{								\
 		.bus_name = DT_INST_BUS_LABEL(inst),			\
 		.bus_init = lis2dh_i2c_init,				\
-		.bus_cfg = { .i2c_slv_addr = DT_INST_REG_ADDR(inst), }	\
+		.bus_cfg = { .i2c_slv_addr = DT_INST_REG_ADDR(inst), },	\
+		.is_lsm303agr_dev = IS_LSM303AGR_DEV(inst),		\
+		.disc_pull_up = DISC_PULL_UP(inst),			\
+		LIS2DH_CFG_INT(inst)					\
 	}
 
 #define LIS2DH_DEFINE_I2C(inst)						\

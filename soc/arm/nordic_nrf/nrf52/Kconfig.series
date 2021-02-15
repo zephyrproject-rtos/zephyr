@@ -10,9 +10,9 @@ config SOC_SERIES_NRF52X
 	select CPU_CORTEX_M4
 	select CPU_HAS_ARM_MPU
 	select SOC_FAMILY_NRF
-	select HAS_SYS_POWER_STATE_DEEP_SLEEP_1
 	select XIP
 	select HAS_NRFX
+	select HAS_NORDIC_DRIVERS
 	select HAS_SEGGER_RTT
 	help
 	  Enable support for NRF52 MCU series

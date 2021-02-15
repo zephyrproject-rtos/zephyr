@@ -5,16 +5,12 @@ menuconfig NORDIC_QSPI_NOR
 	bool "QSPI NOR Flash"
 	select FLASH_HAS_DRIVER_ENABLED
 	select NRFX_QSPI
+	select FLASH_JESD216
 	depends on HAS_HW_NRF_QSPI
-	depends on MULTITHREADING
 	help
 	  Enable support for nrfx QSPI driver with EasyDMA.
 
 if NORDIC_QSPI_NOR
-
-config NORDIC_QSPI_NOR_QE_BIT
-	int "Quad Enable bit number in Status Register"
-	default 6
 
 config NORDIC_QSPI_NOR_INIT_PRIORITY
 	int

@@ -1,3 +1,7 @@
+common:
+  harness: ztest
+  harness_config:
+    fixture: gpio_loopback
 tests:
   drivers.uart.uart_mix_poll:
     tags: drivers

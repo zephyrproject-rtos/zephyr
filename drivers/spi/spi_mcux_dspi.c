@@ -214,7 +214,7 @@ static int transceive(const struct device *dev,
 	struct spi_mcux_data *data = dev->data;
 	int ret;
 
-	spi_context_lock(&data->ctx, asynchronous, signal);
+	spi_context_lock(&data->ctx, asynchronous, signal, spi_cfg);
 
 	ret = spi_mcux_configure(dev, spi_cfg);
 	if (ret) {
@@ -310,9 +310,9 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 		SPI_CONTEXT_INIT_LOCK(spi_mcux_data_##id, ctx),		\
 		SPI_CONTEXT_INIT_SYNC(spi_mcux_data_##id, ctx),		\
 	};								\
-	DEVICE_AND_API_INIT(spi_mcux_##id,				\
-			    DT_INST_LABEL(id),				\
+	DEVICE_DT_INST_DEFINE(id,					\
 			    &spi_mcux_init,				\
+			    device_pm_control_nop,			\
 			    &spi_mcux_data_##id,			\
 			    &spi_mcux_config_##id,			\
 			    POST_KERNEL,				\
@@ -322,7 +322,7 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(id),				\
 			    DT_INST_IRQ(id, priority),			\
-			    spi_mcux_isr, DEVICE_GET(spi_mcux_##id),	\
+			    spi_mcux_isr, DEVICE_DT_INST_GET(id),	\
 			    0);						\
 		irq_enable(DT_INST_IRQN(id));				\
 	}

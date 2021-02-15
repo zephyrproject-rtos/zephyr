@@ -228,7 +228,7 @@ static int scan_start(void)
 	 */
 	struct bt_le_scan_param scan_param = {
 		.type       = BT_LE_SCAN_TYPE_ACTIVE,
-		.filter_dup = BT_LE_SCAN_OPT_FILTER_DUPLICATE,
+		.options    = BT_LE_SCAN_OPT_FILTER_DUPLICATE,
 		.interval   = BT_GAP_SCAN_FAST_INTERVAL,
 		.window     = BT_GAP_SCAN_FAST_WINDOW,
 	};

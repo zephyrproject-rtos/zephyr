@@ -20,6 +20,7 @@
 
 import argparse
 from collections import defaultdict
+import logging
 import os
 import pathlib
 import pickle
@@ -28,11 +29,24 @@ import sys
 
 import edtlib
 
+class LogFormatter(logging.Formatter):
+    '''A log formatter that prints the level name in lower case,
+    for compatibility with earlier versions of edtlib.'''
+
+    def __init__(self):
+        super().__init__(fmt='%(levelnamelower)s: %(message)s')
+
+    def format(self, record):
+        record.levelnamelower = record.levelname.lower()
+        return super().format(record)
+
 def main():
     global header_file
     global flash_area_num
 
     args = parse_args()
+
+    setup_edtlib_logging()
 
     try:
         edt = edtlib.EDT(args.dts, args.bindings_dirs,
@@ -81,6 +95,9 @@ def main():
         for node in sorted(edt.nodes, key=lambda node: node.dep_ordinal):
             write_node_comment(node)
 
+            out_comment(f"Node's full path:")
+            out_dt_define(f"{node.z_path_id}_PATH", f'"{escape(node.path)}"')
+
             if node.parent is not None:
                 out_comment(f"Node parent ({node.parent.path}) identifier:")
                 out_dt_define(f"{node.z_path_id}_PARENT",
@@ -96,9 +113,47 @@ def main():
         write_chosen(edt)
         write_global_compat_info(edt)
 
+        write_device_extern_header(args.device_header_out, edt)
+
     if args.edt_pickle_out:
         write_pickled_edt(edt, args.edt_pickle_out)
 
+
+def write_device_extern_header(device_header_out, edt):
+    # Generate header that will extern devicetree struct device's
+
+    with open(device_header_out, "w", encoding="utf-8") as dev_header_file:
+        print("#ifndef DEVICE_EXTERN_GEN_H", file=dev_header_file)
+        print("#define DEVICE_EXTERN_GEN_H", file=dev_header_file)
+        print("", file=dev_header_file)
+        print("#ifdef __cplusplus", file=dev_header_file)
+        print('extern "C" {', file=dev_header_file)
+        print("#endif", file=dev_header_file)
+        print("", file=dev_header_file)
+
+        for node in sorted(edt.nodes, key=lambda node: node.dep_ordinal):
+            print(f"extern const struct device DEVICE_DT_NAME_GET(DT_{node.z_path_id}); /* dts_ord_{node.dep_ordinal} */",
+                  file=dev_header_file)
+
+        print("", file=dev_header_file)
+        print("#ifdef __cplusplus", file=dev_header_file)
+        print("}", file=dev_header_file)
+        print("#endif", file=dev_header_file)
+        print("", file=dev_header_file)
+        print("#endif /* DEVICE_EXTERN_GEN_H */", file=dev_header_file)
+
+
+def setup_edtlib_logging():
+    # The edtlib module emits logs using the standard 'logging' module.
+    # Configure it so that warnings and above are printed to stderr,
+    # using the LogFormatter class defined above to format each message.
+
+    handler = logging.StreamHandler(sys.stderr)
+    handler.setFormatter(LogFormatter())
+
+    logger = logging.getLogger('edtlib')
+    logger.setLevel(logging.WARNING)
+    logger.addHandler(handler)
 
 def node_z_path_id(node):
     # Return the node specific bit of the node's path identifier:
@@ -134,6 +189,8 @@ def parse_args():
     parser.add_argument("--dts-out", required=True,
                         help="path to write merged DTS source code to (e.g. "
                              "as a debugging aid)")
+    parser.add_argument("--device-header-out", required=True,
+                        help="path to write device struct extern header to")
     parser.add_argument("--edt-pickle-out",
                         help="path to write pickled edtlib.EDT object to")
 
@@ -192,11 +249,19 @@ Binding (compatible = {node.matching_compat}):
 """
 
     if node.description:
-        # Indent description by two spaces
-        s += "\nDescription:\n" + \
-            "\n".join("  " + line for line in
-                      node.description.splitlines()) + \
-            "\n"
+        # We used to put descriptions in the generated file, but
+        # devicetree bindings now have pages in the HTML
+        # documentation. Let users who are accustomed to digging
+        # around in the generated file where to find the descriptions
+        # now.
+        #
+        # Keeping them here would mean that the descriptions
+        # themselves couldn't contain C multi-line comments, which is
+        # inconvenient when we want to do things like quote snippets
+        # of .dtsi files within the descriptions, or otherwise
+        # include the string "*/".
+        s += ("\n(Descriptions have moved to the Devicetree Bindings Index\n"
+              "in the documentation.)\n")
 
     out_comment(s)
 
@@ -423,16 +488,29 @@ def write_vanilla_props(node):
         if prop.enum_index is not None:
             # DT_N_<node-id>_P_<prop-id>_ENUM_IDX
             macro2val[macro + "_ENUM_IDX"] = prop.enum_index
+            spec = prop.spec
+
+            if spec.enum_tokenizable:
+                as_token = prop.val_as_token
+
+                # DT_N_<node-id>_P_<prop-id>_ENUM_TOKEN
+                macro2val[macro + "_ENUM_TOKEN"] = as_token
+
+                if spec.enum_upper_tokenizable:
+                    # DT_N_<node-id>_P_<prop-id>_ENUM_UPPER_TOKEN
+                    macro2val[macro + "_ENUM_UPPER_TOKEN"] = as_token.upper()
 
         if "phandle" in prop.type:
             macro2val.update(phandle_macros(prop, macro))
         elif "array" in prop.type:
             # DT_N_<node-id>_P_<prop-id>_IDX_<i>
+            # DT_N_<node-id>_P_<prop-id>_IDX_<i>_EXISTS
             for i, subval in enumerate(prop.val):
                 if isinstance(subval, str):
                     macro2val[macro + f"_IDX_{i}"] = quote_str(subval)
                 else:
                     macro2val[macro + f"_IDX_{i}"] = subval
+                macro2val[macro + f"_IDX_{i}_EXISTS"] = 1
 
         plen = prop_len(prop)
         if plen is not None:
@@ -542,11 +620,20 @@ def phandle_macros(prop, macro):
     if prop.type == "phandle":
         # A phandle is treated as a phandles with fixed length 1.
         ret[f"{macro}_IDX_0_PH"] = f"DT_{prop.val.z_path_id}"
+        ret[f"{macro}_IDX_0_EXISTS"] = 1
     elif prop.type == "phandles":
         for i, node in enumerate(prop.val):
             ret[f"{macro}_IDX_{i}_PH"] = f"DT_{node.z_path_id}"
+            ret[f"{macro}_IDX_{i}_EXISTS"] = 1
     elif prop.type == "phandle-array":
         for i, entry in enumerate(prop.val):
+            if entry is None:
+                # Unspecified element. The phandle-array at this index
+                # does not point at a ControllerAndData value, but
+                # subsequent indices in the array may.
+                ret[f"{macro}_IDX_{i}_EXISTS"] = 0
+                continue
+
             ret.update(controller_and_data_macros(entry, i, macro))
 
     return ret
@@ -562,6 +649,8 @@ def controller_and_data_macros(entry, i, macro):
     ret = {}
     data = entry.data
 
+    # DT_N_<node-id>_P_<prop-id>_IDX_<i>_EXISTS
+    ret[f"{macro}_IDX_{i}_EXISTS"] = 1
     # DT_N_<node-id>_P_<prop-id>_IDX_<i>_PH
     ret[f"{macro}_IDX_{i}_PH"] = f"DT_{entry.controller.z_path_id}"
     # DT_N_<node-id>_P_<prop-id>_IDX_<i>_VAL_<VAL>

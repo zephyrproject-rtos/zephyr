@@ -19,6 +19,7 @@ int test_mkdir(const char *dir_path, const char *file)
 	struct fs_file_t filep;
 	char file_path[PATH_MAX] = { 0 };
 
+	fs_file_t_init(&filep);
 	res = sprintf(file_path, "%s/%s", dir_path, file);
 	__ASSERT_NO_MSG(res < sizeof(file_path));
 
@@ -48,6 +49,7 @@ int test_mkdir(const char *dir_path, const char *file)
 	TC_PRINT("Testing write to file %s\n", file_path);
 	res = test_file_write(&filep, "NOTHING");
 	if (res) {
+		fs_close(&filep);
 		return res;
 	}
 
@@ -69,6 +71,8 @@ int test_lsdir(const char *path)
 	struct fs_dirent entry;
 
 	TC_PRINT("\nlsdir tests:\n");
+
+	fs_dir_t_init(&dirp);
 
 	/* Verify fs_opendir() */
 	res = fs_opendir(&dirp, path);
@@ -106,6 +110,8 @@ int test_rmdir(const char *dir_path)
 	int res;
 	struct fs_dir_t dirp;
 	static struct fs_dirent entry;
+
+	fs_dir_t_init(&dirp);
 
 	if (!check_file_dir_exists(dir_path)) {
 		TC_PRINT("%s doesn't exist\n", dir_path);

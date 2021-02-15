@@ -239,11 +239,9 @@ static int adc_nrfx_read_async(const struct device *dev,
 }
 #endif /* CONFIG_ADC_ASYNC */
 
-DEVICE_DECLARE(adc_0);
-
 static void event_handler(const nrfx_adc_evt_t *p_event)
 {
-	const struct device *dev = DEVICE_GET(adc_0);
+	const struct device *dev = DEVICE_DT_INST_GET(0);
 
 	if (p_event->type == NRFX_ADC_EVT_DONE) {
 		adc_context_on_sampling_done(&m_data.ctx, dev);
@@ -291,8 +289,8 @@ static const struct adc_driver_api adc_nrfx_driver_api = {
 #define ADC_INIT(inst)							\
 	BUILD_ASSERT((inst) == 0,					\
 		     "multiple instances not supported");		\
-	DEVICE_AND_API_INIT(adc_0, DT_INST_LABEL(0),			\
-			    init_adc, NULL, NULL,			\
+	DEVICE_DT_INST_DEFINE(0,					\
+			    init_adc, device_pm_control_nop, NULL, NULL,\
 			    POST_KERNEL,				\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 			    &adc_nrfx_driver_api);

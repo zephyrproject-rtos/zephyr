@@ -16,12 +16,15 @@ There are various points in time when the scheduler is given an
 opportunity to change the identity of the current thread.  These points
 are called **reschedule points**. Some potential reschedule points are:
 
+- transition of a thread from running state to a suspended or waiting
+  state, for example by :c:func:`k_sem_take` or :c:func:`k_sleep`.
 - transition of a thread to the :ref:`ready state <thread_states>`, for
   example by :c:func:`k_sem_give` or :c:func:`k_thread_start`
-- transition of a thread from running state to a suspended or waiting
-  state, for example by :c:func:`k_sem_take` or :c:func:`k_sleep`
 - return to thread context after processing an interrupt
 - when a running thread invokes :c:func:`k_yield`
+
+A thread **sleeps** when it voluntarily initiates an operation that
+transitions itself to a suspended or waiting state.
 
 Whenever the scheduler changes the identity of the current thread,
 or when execution of the current thread is replaced by an ISR,
@@ -177,9 +180,7 @@ only when dealing with lower priority threads that are less time-sensitive.
    The kernel's time slicing algorithm does *not* ensure that a set
    of equal-priority threads receive an equitable amount of CPU time,
    since it does not measure the amount of time a thread actually gets to
-   execute. For example, a thread may become the current thread just before
-   the end of a time slice and then immediately have to yield the CPU.
-   However, the algorithm *does* ensure that a thread never executes
+   execute. However, the algorithm *does* ensure that a thread never executes
    for longer than a single time slice without being required to yield.
 
 Scheduler Locking

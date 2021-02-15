@@ -383,12 +383,12 @@ int jesd216_bfp_decode_dw11(const struct jesd216_param_header *php,
 			    const struct jesd216_bfp *bfp,
 			    struct jesd216_bfp_dw11 *res);
 
-/* Decode data from JESD216 DW14 */
+/* Decoded data from JESD216 DW14 */
 struct jesd216_bfp_dw14 {
-	/* Instruct used to enter deep power-down */
+	/* Instruction used to enter deep power-down */
 	uint8_t enter_dpd_instr;
 
-	/* Instruct used to exit deep power-down */
+	/* Instruction used to exit deep power-down */
 	uint8_t exit_dpd_instr;
 
 	/* Bits defining ways busy status may be polled. */
@@ -414,5 +414,95 @@ struct jesd216_bfp_dw14 {
 int jesd216_bfp_decode_dw14(const struct jesd216_param_header *php,
 			    const struct jesd216_bfp *bfp,
 			    struct jesd216_bfp_dw14 *res);
+
+/* DW15 Quad Enable Requirements specifies status register QE bits.
+ *
+ * Two common configurations are summarized; see the specification for
+ * full details of how to use these values.
+ */
+enum jesd216_dw15_qer_type {
+	/* No QE status required for 1-1-4 or 1-4-4 mode */
+	JESD216_DW15_QER_NONE = 0,
+	JESD216_DW15_QER_S2B1v1 = 1,
+	/* Bit 6 of SR byte must be set to enable 1-1-4 or 1-4-4 mode.
+	 * SR is one byte.
+	 */
+	JESD216_DW15_QER_S1B6 = 2,
+	JESD216_DW15_QER_S2B7 = 3,
+	JESD216_DW15_QER_S2B1v4 = 4,
+	JESD216_DW15_QER_S2B1v5 = 5,
+	JESD216_DW15_QER_S2B1v6 = 6,
+};
+
+/* Decoded data from JESD216 DW15 */
+struct jesd216_bfp_dw15 {
+	/* If true clear NVECR bit 4 to disable HOLD/RESET */
+	bool hold_reset_disable: 1;
+	/* Encoded jesd216_qer_type */
+	unsigned int qer: 3;
+	/* 0-4-4 mode entry method */
+	unsigned int entry_044: 4;
+	/* 0-4-4 mode exit method */
+	unsigned int exit_044: 6;
+	/* True if 0-4-4 mode is supported */
+	bool support_044: 1;
+	/* 4-4-4 mode enable sequences */
+	unsigned int enable_444: 5;
+	/* 4-4-4 mode disable sequences */
+	unsigned int disable_444: 4;
+};
+
+/* Get data from BFP DW15.
+ *
+ * @param php pointer to the BFP header.
+ *
+ * @param bfp pointer to the BFP table.
+ *
+ * @param res pointer to where to store the decoded data.
+ *
+ * @retval -ENOTSUP if this information is not available from this BFP table.
+ * @retval 0 on successful storage into @c *res.
+ */
+int jesd216_bfp_decode_dw15(const struct jesd216_param_header *php,
+			    const struct jesd216_bfp *bfp,
+			    struct jesd216_bfp_dw15 *res);
+
+/* Decoded data from JESD216_DW16 */
+struct jesd216_bfp_dw16 {
+	/* Bits specifying supported modes of entering 4-byte
+	 * addressing.
+	 */
+	unsigned int enter_4ba: 8;
+
+	/* Bits specifying supported modes of exiting 4-byte
+	 * addressing.
+	 */
+	unsigned int exit_4ba: 10;
+
+	/* Bits specifying the soft reset and rescue sequence to
+	 * restore the device to its power-on state.
+	 */
+	unsigned int srrs_support: 6;
+
+	/* Bits specifying how to modify status register 1, and which
+	 * bits are non-volatile.
+	 */
+	unsigned int sr1_interface: 7;
+};
+
+/* Get data from BFP DW16.
+ *
+ * @param php pointer to the BFP header.
+ *
+ * @param bfp pointer to the BFP table.
+ *
+ * @param res pointer to where to store the decoded data.
+ *
+ * @retval -ENOTSUP if this information is not available from this BFP table.
+ * @retval 0 on successful storage into @c *res.
+ */
+int jesd216_bfp_decode_dw16(const struct jesd216_param_header *php,
+			    const struct jesd216_bfp *bfp,
+			    struct jesd216_bfp_dw16 *res);
 
 #endif /* ZEPHYR_DRIVERS_FLASH_JESD216_H_ */

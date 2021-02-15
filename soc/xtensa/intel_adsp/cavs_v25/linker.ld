@@ -27,7 +27,7 @@ PROVIDE(_MemErrorHandler = 0x00000000);
 
 #define RAMABLE_REGION ram :ram_phdr
 #define ROMABLE_REGION ram :ram_phdr
-#define LPRAM_REGION lpram
+#define LP_SRAM_REGION lpram
 
 MEMORY
 {
@@ -103,8 +103,8 @@ MEMORY
 	len = IDT_SIZE
 #endif
   lpram :
-	org = LPRAM_BASE,
-	len = LPRAM_SIZE
+	org = LP_SRAM_BASE,
+	len = LP_SRAM_SIZE
 
   static_uuid_entries_seg (!ari) :
         org = UUID_ENTRY_ELF_BASE,
@@ -112,6 +112,9 @@ MEMORY
   static_log_entries_seg (!ari) :
         org = LOG_ENTRY_ELF_BASE,
         len = LOG_ENTRY_ELF_SIZE
+  fw_metadata_seg (!ari) :
+        org = EXT_MANIFEST_ELF_BASE,
+        len = EXT_MANIFEST_ELF_SIZE
 
   lpsram_alt_reset_vec_seg :
         org = LP_SRAM_ALT_RESET_VEC_BASE,
@@ -154,6 +157,7 @@ PHDRS
 
   static_uuid_entries_phdr PT_NOTE;
   static_log_entries_phdr PT_NOTE;
+  metadata_entries_phdr PT_NOTE;
 
   lpsram_mem_phdr PT_LOAD;
   sram_alt_fw_reset_vec_phdr PT_LOAD;
@@ -214,6 +218,11 @@ _memmap_cacheattr_intel_cavs25_adsp = 0xFF22FFF2;
 #endif
 
 PROVIDE(_memmap_cacheattr_reset = _memmap_cacheattr_intel_cavs25_adsp);
+
+_EXT_MAN_ALIGN_ = 16;
+EXTERN(ext_man_fw_ver)
+EXTERN(ext_man_cavs_config)
+
 SECTIONS
 {
 
@@ -533,7 +542,8 @@ SECTIONS
     _dma_buf_start = ABSOLUTE(.);
     *(.dma_buffers)
     _dma_buf_end = ABSOLUTE(.);
-  } >LPRAM_REGION
+  } >LP_SRAM_REGION
+
   _heap_sentry = L2_SRAM_BASE + L2_SRAM_SIZE;
   .comment  0 :  { *(.comment) }
   .debug 0 : { *(.debug) }
@@ -600,4 +610,10 @@ SECTIONS
   {
     *(*.static_log*)
   } > static_log_entries_seg :static_log_entries_phdr
+
+  .fw_metadata (COPY) : ALIGN(1024)
+  {
+    KEEP (*(.fw_metadata))
+    . = ALIGN(_EXT_MAN_ALIGN_);
+  } >fw_metadata_seg :metadata_entries_phdr
 }

@@ -1,0 +1,19 @@
+identifier: nucleo_h723zg
+name: ST Nucleo H723ZG
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 372
+flash: 1024
+supported:
+  - arduino_gpio
+  - arduino_i2c
+  - uart
+  - gpio
+  - counter
+  - i2c
+  - pwm
+  - netif:eth

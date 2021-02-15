@@ -134,5 +134,5 @@ static int si7060_init(const struct device *dev)
 
 static struct si7060_data si_data;
 
-DEVICE_AND_API_INIT(si7060, DT_INST_LABEL(0), si7060_init,
+DEVICE_DT_INST_DEFINE(0, si7060_init, device_pm_control_nop,
 	&si_data, NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &si7060_api);

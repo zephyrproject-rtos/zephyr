@@ -21,7 +21,7 @@ static inline int z_vrfy_ipm_send(const struct device *dev, int wait,
 static inline int z_vrfy_ipm_max_data_size_get(const struct device *dev)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_IPM(dev, max_data_size_get));
-	return z_impl_max_data_size_get((const struct device *)dev);
+	return z_impl_ipm_max_data_size_get((const struct device *)dev);
 }
 #include <syscalls/ipm_max_data_size_get_mrsh.c>
 

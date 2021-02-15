@@ -26,6 +26,10 @@
 extern void arm_core_mpu_disable(void);
 #endif
 
+#if defined(CONFIG_RISCV)
+#include <../arch/riscv/include/core_pmp.h>
+#endif
+
 #define INFO(fmt, ...) printk(fmt, ##__VA_ARGS__)
 #define PIPE_LEN 1
 #define BYTES_TO_READ_WRITE 1
@@ -143,6 +147,12 @@ static void test_write_control(void)
 		"lr %0, [0x402]\n"
 		: "=r" (er_status)::
 	);
+#elif defined(CONFIG_RISCV)
+	unsigned int status;
+
+	set_fault(K_ERR_CPU_EXCEPTION);
+
+	__asm__ volatile("csrr %0, mstatus" : "=r" (status));
 #else
 #error "Not implemented for this architecture"
 	zassert_unreachable("Write to control register did not fault");
@@ -174,13 +184,26 @@ static void test_disable_mmu_mpu(void)
 		);
 #endif
 #elif defined(CONFIG_ARM)
+#ifndef CONFIG_TRUSTED_EXECUTION_NONSECURE
 	set_fault(K_ERR_CPU_EXCEPTION);
 
 	arm_core_mpu_disable();
+#else
+	/* Disabling MPU from unprivileged code
+	 * generates BusFault which is not banked
+	 * between Security states. Do not execute
+	 * this scenario for Non-Secure Cortex-M.
+	 */
+	return;
+#endif /* !CONFIG_TRUSTED_EXECUTION_NONSECURE */
 #elif defined(CONFIG_ARC)
 	set_fault(K_ERR_CPU_EXCEPTION);
 
 	arc_core_mpu_disable();
+#elif defined(CONFIG_RISCV)
+	set_fault(K_ERR_CPU_EXCEPTION);
+
+	z_riscv_pmp_clear_config();
 #else
 #error "Not implemented for this architecture"
 #endif
@@ -305,7 +328,7 @@ static void test_read_priv_stack(void)
 
 	s[0] = 0;
 	priv_stack_ptr = (char *)&s[0] - size;
-#elif defined(CONFIG_ARM) || defined(CONFIG_X86)
+#elif defined(CONFIG_ARM) || defined(CONFIG_X86) || defined(CONFIG_RISCV)
 	/* priv_stack_ptr set by test_main() */
 #else
 #error "Not implemented for this architecture"
@@ -329,7 +352,7 @@ static void test_write_priv_stack(void)
 
 	s[0] = 0;
 	priv_stack_ptr = (char *)&s[0] - size;
-#elif defined(CONFIG_ARM) || defined(CONFIG_X86)
+#elif defined(CONFIG_ARM) || defined(CONFIG_X86) || defined(CONFIG_RISCV)
 	/* priv_stack_ptr set by test_main() */
 #else
 #error "Not implemented for this architecture"
@@ -395,6 +418,7 @@ static void test_start_kernel_thread(void)
 	zassert_unreachable("Create a kernel thread did not fault");
 }
 
+#ifndef CONFIG_MMU
 static void uthread_read_body(void *p1, void *p2, void *p3)
 {
 	unsigned int *vptr = p1;
@@ -402,6 +426,15 @@ static void uthread_read_body(void *p1, void *p2, void *p3)
 	set_fault(K_ERR_CPU_EXCEPTION);
 	printk("%u\n", *vptr);
 	zassert_unreachable("Read from other thread stack did not fault");
+}
+
+static void uthread_write_body(void *p1, void *p2, void *p3)
+{
+	unsigned int *vptr = p1;
+
+	set_fault(K_ERR_CPU_EXCEPTION);
+	*vptr = 2U;
+	zassert_unreachable("Write to other thread stack did not fault");
 }
 
 /**
@@ -422,14 +455,6 @@ static void test_read_other_stack(void)
 	k_thread_join(&test_thread, K_FOREVER);
 }
 
-static void uthread_write_body(void *p1, void *p2, void *p3)
-{
-	unsigned int *vptr = p1;
-
-	set_fault(K_ERR_CPU_EXCEPTION);
-	*vptr = 2U;
-	zassert_unreachable("Write to other thread stack did not fault");
-}
 
 /**
  * @brief Test to write to other thread's stack
@@ -447,6 +472,17 @@ static void test_write_other_stack(void)
 			K_NO_WAIT);
 	k_thread_join(&test_thread, K_FOREVER);
 }
+#else
+static void test_read_other_stack(void)
+{
+	ztest_test_skip();
+}
+
+static void test_write_other_stack(void)
+{
+	ztest_test_skip();
+}
+#endif /* CONFIG_MMU */
 
 /**
  * @brief Test to revoke access to kobject without permission
@@ -606,7 +642,7 @@ static void test_init_and_access_other_memdomain(void)
 	spawn_user(&default_bool);
 }
 
-#if defined(CONFIG_ARM)
+#if defined(CONFIG_ARM) || (defined(CONFIG_GEN_PRIV_STACKS) && defined(CONFIG_RISCV))
 extern uint8_t *z_priv_stack_find(void *obj);
 #endif
 extern k_thread_stack_t ztest_thread_stack[];
@@ -890,6 +926,15 @@ void test_main(void)
 	hdr = ((struct z_x86_thread_stack_header *)ztest_thread_stack);
 	priv_stack_ptr = (((char *)&hdr->privilege_stack) +
 			  (sizeof(hdr->privilege_stack) - 1));
+#elif defined(CONFIG_RISCV)
+#if defined(CONFIG_GEN_PRIV_STACKS)
+	priv_stack_ptr = (char *)z_priv_stack_find(ztest_thread_stack);
+#else
+	struct _thread_arch *thread_struct;
+
+	thread_struct = ((struct _thread_arch *) ztest_thread_stack);
+	priv_stack_ptr = (char *)thread_struct->priv_stack_start + 1;
+#endif
 #endif
 	k_thread_access_grant(k_current_get(),
 			      &test_thread, &test_stack,

@@ -883,9 +883,10 @@ void uart_mux_foreach(uart_mux_cb_t cb, void *user_data)
 	};
 
 #define DEFINE_UART_MUX_DEVICE(x, _)					  \
-	DEVICE_AND_API_INIT(uart_mux_##x,				  \
+	DEVICE_DEFINE(uart_mux_##x,					  \
 			    CONFIG_UART_MUX_DEVICE_NAME "_" #x,		  \
 			    &uart_mux_init,				  \
+			    device_pm_control_nop,			  \
 			    &uart_mux_dev_data_##x,			  \
 			    &uart_mux_config_##x,			  \
 			    POST_KERNEL,				  \

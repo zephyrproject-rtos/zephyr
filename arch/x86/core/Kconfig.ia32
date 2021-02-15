@@ -86,27 +86,22 @@ config X86_PAE
 	  more memory for paging structures.
 
 menu "Architecture Floating Point Options"
-depends on CPU_HAS_FPU
+
+if CPU_HAS_FPU
 
 config SSE
 	bool "SSE registers"
 	depends on FPU
+	select X86_SSE
 	help
-	  This option enables the use of SSE registers by threads.
+	  This option is deprecated. Please use CONFIG_X86_SSE instead.
 
 config SSE_FP_MATH
 	bool "Compiler-generated SSEx instructions"
-	depends on SSE
+	depends on X86_SSE
+	select X86_SSE_FP_MATH
 	help
-	  This option allows the compiler to generate SSEx instructions for
-	  performing floating point math. This can greatly improve performance
-	  when exactly the same operations are to be performed on multiple
-	  data objects; however, it can also significantly reduce performance
-	  when preemptive task switches occur because of the larger register
-	  set that must be saved and restored.
-
-	  Disabling this option means that the compiler utilizes only the
-	  x87 instruction set for floating point operations.
+	  This option is deprecated. Please use CONFIG_X86_SSE_FP_MATH instead.
 
 config EAGER_FPU_SHARING
 	bool
@@ -138,64 +133,16 @@ config LAZY_FPU_SHARING
 	  malware to read the contents of all floating point registers, see
 	  CVE-2018-3665.
 
-endmenu
+endif # CPU_HAS_FPU
 
-config CACHE_LINE_SIZE_DETECT
-	bool "Detect cache line size at runtime"
-	default y
-	help
-	  This option enables querying the CPUID register for finding the cache line
-	  size at the expense of taking more memory and code and a slightly increased
-	  boot time.
-
-	  If the CPU's cache line size is known in advance, disable this option and
-	  manually enter the value for CACHE_LINE_SIZE.
-
-config CACHE_LINE_SIZE
-	int "Cache line size" if !CACHE_LINE_SIZE_DETECT
-	default 64 if CPU_ATOM
-	default 0
-	help
-	  Size in bytes of a CPU cache line.
-
-	  Detect automatically at runtime by selecting CACHE_LINE_SIZE_DETECT.
-
-config CLFLUSH_INSTRUCTION_SUPPORTED
-	bool "CLFLUSH instruction supported"
-	depends on !CLFLUSH_DETECT && CACHE_FLUSHING
-	help
-	  An implementation of sys_cache_flush() that uses CLFLUSH is made
-	  available, instead of the one using WBINVD.
-
-	  This option should only be enabled if it is known in advance that the
-	  CPU supports the CLFLUSH instruction. It disables runtime detection of
-	  CLFLUSH support thereby reducing both memory footprint and boot time.
-
-config CLFLUSH_DETECT
-	bool "Detect support of CLFLUSH instruction at runtime"
-	depends on CACHE_FLUSHING
-	help
-	  This option should be enabled if it is not known in advance whether the
-	  CPU supports the CLFLUSH instruction or not.
-
-	  The CPU is queried at boot time to determine which of the multiple
-	  implementations of sys_cache_flush() linked into the image is the
-	  correct one to use.
-
-	  If the CPU's support (or lack thereof) of CLFLUSH is known in advance, then
-	  disable this option and set CLFLUSH_INSTRUCTION_SUPPORTED as appropriate.
-
-config ARCH_CACHE_FLUSH_DETECT
+config X86_FP_USE_SOFT_FLOAT
 	bool
-	default y
-	depends on CLFLUSH_DETECT
-
-config CACHE_FLUSHING
-	bool "Enable cache flushing mechanism"
+	prompt "Use Software Floating Point Operations" if !(NEWLIB_LIBC && !FPU)
+	default y if NEWLIB_LIBC && !FPU
 	help
-	  This links in the sys_cache_flush() function. A mechanism for flushing the
-	  cache must be selected as well. By default, that mechanism is discovered at
-	  runtime.
+	  Enable using software floating point operations.
+
+endmenu
 
 config X86_DYNAMIC_IRQ_STUBS
 	int "Number of dynamic interrupt stubs"

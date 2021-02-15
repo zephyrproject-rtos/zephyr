@@ -47,6 +47,14 @@ static void np_timer_isr(const void *arg)
 	z_clock_announce(elapsed_ticks);
 }
 
+/**
+ * This function exists only to enable tests to call into the timer ISR
+ */
+void np_timer_isr_test_hook(const void *arg)
+{
+	np_timer_isr(NULL);
+}
+
 /*
  * @brief Initialize system timer driver
  *
@@ -114,40 +122,6 @@ uint32_t z_clock_elapsed(void)
 	return (hwm_get_time() - last_tick_time)/tick_period;
 }
 
-
-#if defined(CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT)
-/**
- * Replacement to the kernel k_busy_wait()
- * Will block this thread (and therefore the whole zephyr) during usec_to_wait
- *
- * Note that interrupts may be received in the meanwhile and that therefore this
- * thread may loose context
- *
- * This special arch_busy_wait() is necessary due to how the POSIX arch/SOC INF
- * models a CPU. Conceptually it could be thought as if the MCU was running
- * at an infinitely high clock, and therefore no simulated time passes while
- * executing instructions(*1).
- * Therefore to be able to busy wait this function does the equivalent of
- * programming a dedicated timer which will raise a non-maskable interrupt,
- * and halting the CPU.
- *
- * (*1) In reality simulated time is simply not advanced just due to the "MCU"
- * running. Meaning, the SW running on the MCU is assumed to take 0 time.
- */
-void arch_busy_wait(uint32_t usec_to_wait)
-{
-	uint64_t time_end = hwm_get_time() + usec_to_wait;
-
-	while (hwm_get_time() < time_end) {
-		/*
-		 * There may be wakes due to other interrupts including
-		 * other threads calling arch_busy_wait
-		 */
-		hwtimer_wake_in_time(time_end);
-		posix_halt_cpu();
-	}
-}
-#endif
 
 #if defined(CONFIG_SYSTEM_CLOCK_DISABLE)
 /**

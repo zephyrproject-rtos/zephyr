@@ -19,6 +19,13 @@
 		zephyr,flash = &flash0;
 		zephyr,flash-controller = &flash0;
 	};
+
+	dmic: dmic {
+		compatible = "intel,dmic";
+		label = "PDM";
+
+		status = "okay";
+	};
 };
 
 &cpu0 {

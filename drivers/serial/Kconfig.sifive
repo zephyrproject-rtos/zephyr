@@ -20,13 +20,6 @@ menuconfig UART_SIFIVE_PORT_0
 	  This tells the driver to configure the UART port at boot, depending on
 	  the additional configure options below.
 
-config UART_SIFIVE_PORT_0_IRQ_PRIORITY
-	int "Port 0 Interrupt Priority"
-	default 1
-	depends on UART_SIFIVE_PORT_0
-	help
-	  Port 0 Interrupt Priority
-
 config UART_SIFIVE_PORT_0_RXCNT_IRQ
 	int "Port 0 RX Interrupt Threshold Count"
 	default 0
@@ -49,13 +42,6 @@ menuconfig UART_SIFIVE_PORT_1
 	help
 	  This tells the driver to configure the UART port at boot, depending on
 	  the additional configure options below.
-
-config UART_SIFIVE_PORT_1_IRQ_PRIORITY
-	int "Port 1 Interrupt Priority"
-	default 1
-	depends on UART_SIFIVE_PORT_1
-	help
-	  Port 1 Interrupt Priority
 
 config UART_SIFIVE_PORT_1_RXCNT_IRQ
 	int "Port 0 RX Interrupt Threshold Count"

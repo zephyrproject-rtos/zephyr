@@ -140,6 +140,16 @@ config MDNS_RESPONDER_INIT_PRIO
 	  Note that if NET_CONFIG_AUTO_INIT is enabled, then this value
 	  should be bigger than its value.
 
+config MDNS_RESPONDER_DNS_SD
+	bool "Enable DNS Service Discovery via mDNS"
+	default y
+	depends on DNS_SD
+	help
+	  Selecting this option ensures that the MDNS Responder
+	  processes PTR, SRV, and TXT records according to RFC 6763.
+	  By doing so, Zephyr network services are discoverable
+	  using e.g. 'avahi-browse -t -r _greybus._tcp'.
+
 module = MDNS_RESPONDER
 module-dep = NET_LOG
 module-str = Log level for mDNS responder
@@ -198,3 +208,21 @@ config LLMNR_RESOLVER_ADDITIONAL_BUF_CTR
 	  Number of additional buffers available for the LLMNR responder.
 
 endif # LLMNR_RESPONDER
+
+config DNS_SD
+	bool "Enable DNS Service Discovery"
+	help
+	  This option enables DNS Service Discovery for Zephyr. It can
+	  be enabled for virtually any network service with only a few
+	  lines of code and works for both Unicast and Multicast DNS.
+	  See RFC 6763 for more details about DNS-SD.
+
+if DNS_SD
+
+module = DNS_SD
+module-dep = NET_LOG
+module-str = Log level for DNS-SD
+module-help = Enables DNS Service Discovery code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+endif # DNS_SD

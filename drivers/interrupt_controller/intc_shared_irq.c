@@ -136,8 +136,8 @@ const struct shared_irq_config shared_irq_config_0 = {
 
 struct shared_irq_runtime shared_irq_0_runtime;
 
-DEVICE_AND_API_INIT(shared_irq_0, DT_INST_LABEL(0),
-		shared_irq_initialize, &shared_irq_0_runtime,
+DEVICE_DT_INST_DEFINE(0, shared_irq_initialize,
+		device_pm_control_nop, &shared_irq_0_runtime,
 		&shared_irq_config_0, POST_KERNEL,
 		CONFIG_SHARED_IRQ_INIT_PRIORITY, &api_funcs);
 
@@ -145,7 +145,7 @@ void shared_irq_config_0_irq(void)
 {
 	IRQ_CONNECT(DT_INST_IRQN(0),
 		    DT_INST_IRQ(0, priority),
-		    shared_irq_isr, DEVICE_GET(shared_irq_0),
+		    shared_irq_isr, DEVICE_DT_INST_GET(0),
 		    DT_INST_IRQ(0, sense));
 }
 
@@ -162,8 +162,8 @@ const struct shared_irq_config shared_irq_config_1 = {
 
 struct shared_irq_runtime shared_irq_1_runtime;
 
-DEVICE_AND_API_INIT(shared_irq_1, DT_INST_LABEL(1),
-		shared_irq_initialize, &shared_irq_1_runtime,
+DEVICE_DT_INST_DEFINE(1, shared_irq_initialize,
+		device_pm_control_nop, &shared_irq_1_runtime,
 		&shared_irq_config_1, POST_KERNEL,
 		CONFIG_SHARED_IRQ_INIT_PRIORITY, &api_funcs);
 
@@ -171,7 +171,7 @@ void shared_irq_config_1_irq(void)
 {
 	IRQ_CONNECT(DT_INST_IRQN(1),
 		    DT_INST_IRQ(1, priority),
-		    shared_irq_isr, DEVICE_GET(shared_irq_1),
+		    shared_irq_isr, DEVICE_DT_INST_GET(1),
 		    DT_INST_IRQ(1, sense));
 }
 

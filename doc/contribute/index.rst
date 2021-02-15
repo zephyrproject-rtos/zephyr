@@ -221,7 +221,7 @@ every Pull Request (PR) in order to verify several aspects of the PR:
 
 * Git commit formatting
 * Coding Style
-* Sanity Check builds for multiple architectures and boards
+* Twister builds for multiple architectures and boards
 * Documentation build to verify any doc changes
 
 CI is run on the ``shippable`` cloud service and it uses the same tools
@@ -293,23 +293,23 @@ Note, gitlint only checks HEAD (the most recent commit), so you should run it
 after each commit, or use the ``--commits`` option to specify a commit range
 covering all the development patches to be submitted.
 
-sanitycheck
-===========
+twister
+=======
 
 .. note::
-   sanitycheck does not currently run on Windows.
+   twister does not currently run on Windows.
 
 To verify that your changes did not break any tests or samples, please run the
-``sanitycheck`` script locally before submitting your pull request to GitHub. To
+``twister`` script locally before submitting your pull request to GitHub. To
 run the same tests the CI system runs, follow these steps from within your
 local Zephyr source working directory:
 
 .. code-block:: console
 
     source zephyr-env.sh
-    ./scripts/sanitycheck
+    ./scripts/twister
 
-The above will execute the basic sanitycheck script, which will run various
+The above will execute the basic twister script, which will run various
 kernel tests using the QEMU emulator.  It will also do some build tests on
 various samples with advanced features that can't run in QEMU.
 
@@ -474,7 +474,7 @@ workflow here:
      git checkout -b fix_out_of_date_patch origin/net
 
 #. Make changes, test locally, change, test, test again, ...  (Check out the
-   prior chapter on `sanitycheck`_ as well).
+   prior chapter on `twister`_ as well).
 
 #. When things look good, start the pull request process by adding your changed
    files::

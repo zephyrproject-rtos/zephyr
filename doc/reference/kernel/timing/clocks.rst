@@ -66,6 +66,8 @@ multiples of each other and where the output fits within a single
 word, these conversions expand to a 2-4 operation sequence, requiring
 full precision only where actually required and requested.
 
+.. _kernel_timing_uptime:
+
 Uptime
 ======
 
@@ -248,38 +250,6 @@ value passed to :c:func:`z_clock_set_timeout` may be clamped to a
 smaller value than the current next timeout when a time sliced thread
 is currently scheduled.
 
-Legacy Usage and Porting Guide
-==============================
-
-In earlier versions of Zephyr, the :c:type:`k_timeout_t` abstraction
-did not exist and timeouts were presented to the kernel as signed
-integer values specified in milliseconds.  The :c:macro:`K_FOREVER`
-value was defined with a value of -1.
-
-In general, application code that uses the pre-existing constructor
-macros (:c:macro:`K_MSEC()` et. al.) will continue to work without
-change.  Code that presents raw milliseconds to the calls can simply
-wrap the argument in :c:macro:`K_MSEC()`.
-
-Some Zephyr subsystem code, however, was written originally to present
-their own APIs to the user which accept millisecond values (including
-:c:macro:`K_FOREVER`) and take actions like storing the value for
-later, or performing arithmetic on the value.  This will no longer
-work unmodified in the new scheme.
-
-One option in the immediate term is to use the
-:c:option:`CONFIG_LEGACY_TIMEOUT_API` kconfig.  This redefines the
-:c:type:`k_timeout_t` type to be a 32 bit integer and preserves source
-code compatibility with the older APIs.  This comes at the cost of
-disabling newer features like absolute timeouts and 64 bit precision.
-This kconfig exists for application code, however, and will be going
-away in a forthcoming release.
-
-A better scheme is to port the subsystem to the new timeout scheme
-directly.  There are two broad architectures for doing this: using
-:cpp:type:`k_timeout_t` naturally as an application API, or preserving the
-millisecond subsystem API and converting internally.
-
 Subsystems that keep millisecond APIs
 -------------------------------------
 
@@ -352,13 +322,13 @@ expire.  So such a loop might look like:
         /* Compute the end time from the timeout */
         uint64_t end = z_timeout_end_calc(timeout_in_ms);
 
-        while (end < k_uptime_ticks()) {
-                if (is_event_complete(obj)) {
-                    return;
-                }
+        while (end > k_uptime_ticks()) {
+            if (is_event_complete(obj)) {
+                return;
+            }
 
-                /* Wait for notification of state change */
-                k_sem_take(obj->sem, timeout_in_ms);
+            /* Wait for notification of state change */
+            k_sem_take(obj->sem, timeout_in_ms);
         }
     }
 

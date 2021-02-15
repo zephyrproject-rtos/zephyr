@@ -2,4 +2,3 @@ tests:
   kernel.workqueue.api:
     min_flash: 34
     tags: kernel userspace
-    filter: not CONFIG_KERNEL_COHERENCE

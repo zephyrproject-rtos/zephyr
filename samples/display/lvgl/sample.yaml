@@ -30,3 +30,12 @@ tests:
     platform_allow: nrf52840dk_nrf52840
     extra_args: SHIELD=buydisplay_2_8_tft_touch_arduino
     tags: shield
+  sample.display.dummy:
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_DUMMY_DISPLAY=y
+      - CONFIG_DUMMY_DISPLAY_DEV_NAME="DISPLAY"
+      - CONFIG_KSCAN=n
+      - CONFIG_SDL_DISPLAY=n
+    tags: samples display gui

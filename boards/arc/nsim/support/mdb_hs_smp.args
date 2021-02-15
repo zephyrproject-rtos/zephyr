@@ -49,4 +49,4 @@
 	-on=nsim_print-sys-arch
 	-noprofile
 	-nogoifmain
-	-instrs_per_pass=10
+	-instrs_per_pass=512

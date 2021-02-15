@@ -128,9 +128,9 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
             self.debug_debugserver(command, **kwargs)
 
     def flash(self, **kwargs):
-        if os.path.isfile(self.hex_name):
+        if self.hex_name is not None and os.path.isfile(self.hex_name):
             fname = self.hex_name
-        elif os.path.isfile(self.bin_name):
+        elif self.bin_name is not None and os.path.isfile(self.bin_name):
             self.logger.warning(
                 'hex file ({}) does not exist; falling back on .bin ({}). '.
                 format(self.hex_name, self.bin_name) +

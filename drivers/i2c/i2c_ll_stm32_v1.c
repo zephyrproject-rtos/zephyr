@@ -13,6 +13,7 @@
 #include <sys/util.h>
 #include <kernel.h>
 #include <soc.h>
+#include <stm32_ll_i2c.h>
 #include <errno.h>
 #include <drivers/i2c.h>
 #include "i2c_ll_stm32.h"
@@ -616,14 +617,11 @@ end:
 int32_t stm32_i2c_msg_write(const struct device *dev, struct i2c_msg *msg,
 			    uint8_t *next_msg_flags, uint16_t saddr)
 {
-	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
 	struct i2c_stm32_data *data = DEV_DATA(dev);
-	I2C_TypeDef *i2c = cfg->i2c;
 
 	msg_init(dev, msg, next_msg_flags, saddr, I2C_REQUEST_WRITE);
 
 	stm32_i2c_enable_transfer_interrupts(dev);
-	LL_I2C_EnableIT_TX(i2c);
 
 	if (k_sem_take(&data->device_sync_sem,
 			K_MSEC(STM32_I2C_TRANSFER_TIMEOUT_MSEC)) != 0) {

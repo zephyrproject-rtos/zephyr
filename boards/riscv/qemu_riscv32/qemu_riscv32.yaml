@@ -1,14 +1,12 @@
 identifier: qemu_riscv32
-name: QEMU Emulation for RISC V
+name: QEMU Emulation for RISC-V 32-bit
 type: qemu
 simulation: qemu
 arch: riscv32
-ram: 16
 toolchain:
   - zephyr
   - xtools
+supported:
+  - netif
 testing:
   default: true
-  ignore_tags:
-    - net
-    - bluetooth

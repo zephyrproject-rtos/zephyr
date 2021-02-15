@@ -5,8 +5,7 @@
  */
 
 #include <arm/armv8-m.dtsi>
-#include <dt-bindings/i2c/i2c.h>
-#include <dt-bindings/gpio/gpio.h>
+#include "nrf_common.dtsi"
 
 / {
 	cpus {
@@ -59,8 +58,4 @@
 
 &nvic {
 	arm,num-irq-priority-bits = <3>;
-};
-
-&systick {
-	status = "disabled";
 };

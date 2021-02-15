@@ -41,9 +41,6 @@ endif # APIC_TIMER_TSC
 
 endif # APIC_TIMER
 
-config CLFLUSH_DETECT
-	default y if CACHE_FLUSHING
-
 config X86_DYNAMIC_IRQ_STUBS
 	default 16
 	depends on DYNAMIC_INTERRUPTS
@@ -51,6 +48,10 @@ config X86_DYNAMIC_IRQ_STUBS
 config I2C_DW
 	default y
 	depends on I2C
+
+config I2C_DW_MAX_INSTANCES
+	default 8
+	depends on I2C_DW
 
 config GPIO_INTEL_APL
 	default y

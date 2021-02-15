@@ -106,6 +106,33 @@
 	status = "okay";
 
 	clock-frequency = <44000000>;
+	cs-gpios = <&gpioe 4 GPIO_ACTIVE_LOW>;
+
+	ksz8794: dsa@0 {
+		compatible = "microchip,ksz8794";
+		reg = <0>;
+
+		label = "dsa";
+		spi-max-frequency = <44000000>;
+		reset-gpios = <&gpiob 22 GPIO_ACTIVE_LOW>;
+
+		spi-cpol;
+		spi-cpha;
+		dsa-master-port = <&enet>;
+		dsa-slave-ports = <3>;
+
+		lan3: lan_3 {
+			label = "lan3";
+		};
+
+		lan2: lan_2 {
+			label = "lan2";
+		};
+
+		lan1: lan_1 {
+			label = "lan1";
+		};
+	};
 };
 
 &gpioa {

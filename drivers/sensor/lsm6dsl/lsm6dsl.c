@@ -823,9 +823,9 @@ static int lsm6dsl_init(const struct device *dev)
  */
 
 #define LSM6DSL_DEVICE_INIT(inst)					\
-	DEVICE_AND_API_INIT(lsm6dsl_##inst,				\
-			    DT_INST_LABEL(inst),			\
+	DEVICE_DT_INST_DEFINE(inst,					\
 			    lsm6dsl_init,				\
+			    device_pm_control_nop,			\
 			    &lsm6dsl_data_##inst,			\
 			    &lsm6dsl_config_##inst,			\
 			    POST_KERNEL,				\
@@ -875,23 +875,22 @@ static int lsm6dsl_init(const struct device *dev)
 	})
 
 #ifdef CONFIG_LSM6DSL_TRIGGER
+#define LSM6DSL_CFG_IRQ(inst) \
+		.irq_dev_name = DT_INST_GPIO_LABEL(inst, irq_gpios),	\
+		.irq_pin = DT_INST_GPIO_PIN(inst, irq_gpios),		\
+		.irq_flags = DT_INST_GPIO_FLAGS(inst, irq_gpios),
+#else
+#define LSM6DSL_CFG_IRQ(inst)
+#endif /* CONFIG_LSM6DSL_TRIGGER */
+
 #define LSM6DSL_CONFIG_SPI(inst)					\
 	{								\
 		.bus_name = DT_INST_BUS_LABEL(inst),			\
 		.bus_init = lsm6dsl_spi_init,				\
 		.bus_cfg = { .spi_cfg = LSM6DSL_SPI_CFG(inst)	},	\
-		.irq_dev_name = DT_INST_GPIO_LABEL(inst, irq_gpios),	\
-		.irq_pin = DT_INST_GPIO_PIN(inst, irq_gpios),		\
-		.irq_flags = DT_INST_GPIO_FLAGS(inst, irq_gpios),	\
+		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),	\
+		(LSM6DSL_CFG_IRQ(inst)), ())				\
 	}
-#else
-#define LSM6DSL_CONFIG_SPI(inst)					\
-	{								\
-		.bus_name = DT_INST_BUS_LABEL(inst),			\
-		.bus_init = lsm6dsl_spi_init,				\
-		.bus_cfg = { .spi_cfg = LSM6DSL_SPI_CFG(inst)	}	\
-	}
-#endif /* CONFIG_LSM6DSL_TRIGGER */
 
 #define LSM6DSL_DEFINE_SPI(inst)					\
 	static struct lsm6dsl_data lsm6dsl_data_##inst =		\
@@ -904,24 +903,14 @@ static int lsm6dsl_init(const struct device *dev)
  * Instantiation macros used when a device is on an I2C bus.
  */
 
-#ifdef CONFIG_LSM6DSL_TRIGGER
 #define LSM6DSL_CONFIG_I2C(inst)					\
 	{								\
 		.bus_name = DT_INST_BUS_LABEL(inst),			\
 		.bus_init = lsm6dsl_i2c_init,				\
 		.bus_cfg = { .i2c_slv_addr = DT_INST_REG_ADDR(inst), },	\
-		.irq_dev_name = DT_INST_GPIO_LABEL(inst, irq_gpios),	\
-		.irq_pin = DT_INST_GPIO_PIN(inst, irq_gpios),		\
-		.irq_flags = DT_INST_GPIO_FLAGS(inst, irq_gpios),	\
+		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),	\
+		(LSM6DSL_CFG_IRQ(inst)), ())				\
 	}
-#else
-#define LSM6DSL_CONFIG_I2C(inst)					\
-	{								\
-		.bus_name = DT_INST_BUS_LABEL(inst),			\
-		.bus_init = lsm6dsl_i2c_init,				\
-		.bus_cfg = { .i2c_slv_addr = DT_INST_REG_ADDR(inst), }	\
-	}
-#endif /* CONFIG_LSM6DSL_TRIGGER */
 
 #define LSM6DSL_DEFINE_I2C(inst)					\
 	static struct lsm6dsl_data lsm6dsl_data_##inst;			\

@@ -7,6 +7,7 @@ config PWM_STM32
 	bool "STM32 MCU PWM driver"
 	depends on SOC_FAMILY_STM32
 	select USE_STM32_LL_TIM
+	select USE_STM32_LL_RCC if SOC_SERIES_STM32F4X || SOC_SERIES_STM32F7X || SOC_SERIES_STM32H7X
 	help
 	  This option enables the PWM driver for STM32 family of
 	  processors. Say y if you wish to use PWM port on STM32

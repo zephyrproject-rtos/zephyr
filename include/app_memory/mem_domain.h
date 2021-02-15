@@ -12,14 +12,11 @@
 #include <stddef.h>
 #include <sys/dlist.h>
 #include <toolchain.h>
+#include <kernel/thread.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/* Forward declaration */
-struct k_thread;
-typedef struct k_thread *k_tid_t;
 
 /**
  * @defgroup mem_domain_apis Memory domain APIs
@@ -27,7 +24,7 @@ typedef struct k_thread *k_tid_t;
  * @{
  */
 
-#ifdef CONFIG_MEMORY_PROTECTION
+#ifdef CONFIG_USERSPACE
 /**
  * @def K_MEM_PARTITION_DEFINE
  *
@@ -63,12 +60,7 @@ struct k_mem_partition {
 	/** attribute of memory partition */
 	k_mem_partition_attr_t attr;
 };
-#else
-/* To support use of IS_ENABLED for the APIs below */
-struct k_mem_partition;
-#endif /* CONFIG_MEMORY_PROTECTION */
 
-#ifdef CONFIG_USERSPACE
 /**
  * @brief Memory Domain
  *
@@ -86,15 +78,15 @@ struct k_mem_partition;
  * and read-only data.
  */
 struct k_mem_domain {
+#ifdef CONFIG_ARCH_MEM_DOMAIN_DATA
+	struct arch_mem_domain arch;
+#endif /* CONFIG_ARCH_MEM_DOMAIN_DATA */
 	/** partitions in the domain */
 	struct k_mem_partition partitions[CONFIG_MAX_DOMAIN_PARTITIONS];
 	/** Doubly linked list of member threads */
 	sys_dlist_t mem_domain_q;
 	/** number of active partitions in the domain */
 	uint8_t num_partitions;
-#ifdef CONFIG_ARCH_MEM_DOMAIN_DATA
-	struct arch_mem_domain arch;
-#endif /* CONFIG_ARCH_MEM_DOMAIN_DATA */
 };
 
 /**
@@ -111,6 +103,7 @@ extern struct k_mem_domain k_mem_domain_default;
 #else
 /* To support use of IS_ENABLED for the APIs below */
 struct k_mem_domain;
+struct k_mem_partition;
 #endif /* CONFIG_USERSPACE */
 
 /**
@@ -152,8 +145,6 @@ extern void k_mem_domain_destroy(struct k_mem_domain *domain);
  * Add a memory partition into a memory domain. Partitions must conform to
  * the following constraints:
  *
- * - Partition bounds must be within system RAM boundaries on MMU-based
- *   systems.
  * - Partitions in the same memory domain may not overlap each other.
  * - Partitions must not be defined which expose private kernel
  *   data structures or kernel objects.

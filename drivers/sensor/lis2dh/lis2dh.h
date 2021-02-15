@@ -163,21 +163,6 @@
 /* sample buffer size includes status register */
 #define LIS2DH_BUF_SZ			7
 
-#if DT_INST_PROP_HAS_IDX(0, irq_gpios, 1)
-/* INT1 and INT2 are configured */
-#define LIS2DH_INT1_GPIOS_PIN		DT_INST_GPIO_PIN_BY_IDX(0, irq_gpios, 0)
-#define LIS2DH_INT1_GPIOS_FLAGS		DT_INST_GPIO_FLAGS_BY_IDX(0, irq_gpios, 0)
-#define LIS2DH_INT1_GPIO_DEV_NAME	DT_INST_GPIO_LABEL_BY_IDX(0, irq_gpios, 0)
-#define LIS2DH_INT2_GPIOS_PIN		DT_INST_GPIO_PIN_BY_IDX(0, irq_gpios, 1)
-#define LIS2DH_INT2_GPIOS_FLAGS		DT_INST_GPIO_FLAGS_BY_IDX(0, irq_gpios, 1)
-#define LIS2DH_INT2_GPIO_DEV_NAME	DT_INST_GPIO_LABEL_BY_IDX(0, irq_gpios, 1)
-#else
-/* INT1 only */
-#define LIS2DH_INT1_GPIOS_PIN		DT_INST_GPIO_PIN(0, irq_gpios)
-#define LIS2DH_INT1_GPIOS_FLAGS		DT_INST_GPIO_FLAGS(0, irq_gpios)
-#define LIS2DH_INT1_GPIO_DEV_NAME	DT_INST_GPIO_LABEL(0, irq_gpios)
-#endif
-
 union lis2dh_sample {
 	uint8_t raw[LIS2DH_BUF_SZ];
 	struct {
@@ -207,6 +192,16 @@ struct lis2dh_config {
 	const char *bus_name;
 	int (*bus_init)(const struct device *dev);
 	const union lis2dh_bus_cfg bus_cfg;
+#ifdef CONFIG_LIS2DH_TRIGGER
+	const char *irq1_dev_name;
+	gpio_pin_t irq1_pin;
+	gpio_dt_flags_t irq1_flags;
+	const char *irq2_dev_name;
+	gpio_pin_t irq2_pin;
+	gpio_dt_flags_t irq2_flags;
+#endif /* CONFIG_LIS2DH_TRIGGER */
+	bool is_lsm303agr_dev;
+	bool disc_pull_up;
 };
 
 struct lis2dh_transfer_function {

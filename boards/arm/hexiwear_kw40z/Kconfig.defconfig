@@ -17,18 +17,4 @@ config MCG_FRDIV
 config MCG_FCRDIV
 	default 0
 
-if PINMUX_MCUX
-
-config PINMUX_MCUX_PORTA
-	default y
-
-config PINMUX_MCUX_PORTB
-	default y if "$(dt_nodelabel_enabled,adc0)" && ADC
-
-config PINMUX_MCUX_PORTC
-	default y if "$(dt_nodelabel_enabled,lpuart0)" && SERIAL
-	default y if "$(dt_nodelabel_enabled,i2c1)" && I2C
-
-endif # PINMUX_MCUX
-
 endif # BOARD_HEXIWEAR_KW40Z

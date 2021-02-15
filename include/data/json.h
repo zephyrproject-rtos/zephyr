@@ -91,7 +91,7 @@ struct json_obj_descr {
  * encoding JSON data.
  *
  * @param bytes Contents to write to the output
- * @param len Number of bytes in @param bytes to append to output
+ * @param len Number of bytes to append to output
  * @param data User-provided pointer
  *
  * @return This callback function should return a negative number on

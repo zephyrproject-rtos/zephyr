@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 
-zephyr_get_compile_options_for_lang(ASM ASM_compile_options)
-zephyr_get_compile_options_for_lang(C C_compile_options)
-zephyr_get_compile_options_for_lang(CXX CXX_compile_options)
+zephyr_get_compile_options_for_lang_as_string(ASM ASM_compile_options)
+zephyr_get_compile_options_for_lang_as_string(C C_compile_options)
+zephyr_get_compile_options_for_lang_as_string(CXX CXX_compile_options)
 
 set(exports
   "

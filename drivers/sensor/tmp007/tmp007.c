@@ -129,7 +129,7 @@ int tmp007_init(const struct device *dev)
 
 struct tmp007_data tmp007_driver;
 
-DEVICE_AND_API_INIT(tmp007, DT_INST_LABEL(0), tmp007_init,
+DEVICE_DT_INST_DEFINE(0, tmp007_init, device_pm_control_nop,
 		    &tmp007_driver,
 		    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &tmp007_driver_api);

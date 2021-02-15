@@ -39,6 +39,16 @@ config NATIVE_UART_0_ON_STDINOUT
 
 endchoice
 
+config UART_NATIVE_WAIT_PTS_READY_ENABLE
+	bool "Support waiting for pseudo terminal client readiness"
+	depends on NATIVE_UART_0_ON_OWN_PTY || UART_NATIVE_POSIX_PORT_1_ENABLE
+	help
+	  When this option is selected a new command line switch is provided:
+	  ``--wait_uart``
+	  When ``--wait_uart`` is used, writes to the UART will be held until a
+	  client has connected to the slave side of the pseudoterminal.
+	  Otherwise writes are sent irrespectively.
+
 config UART_NATIVE_POSIX_PORT_1_ENABLE
 	bool "Enable second UART port"
 	help

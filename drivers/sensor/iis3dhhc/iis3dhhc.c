@@ -253,6 +253,6 @@ static const struct iis3dhhc_config iis3dhhc_config = {
 #endif
 };
 
-DEVICE_AND_API_INIT(iis3dhhc, DT_INST_LABEL(0), iis3dhhc_init,
+DEVICE_DT_INST_DEFINE(0, iis3dhhc_init, device_pm_control_nop,
 		    &iis3dhhc_data, &iis3dhhc_config, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &iis3dhhc_api_funcs);

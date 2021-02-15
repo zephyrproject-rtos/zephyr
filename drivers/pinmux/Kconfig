@@ -11,12 +11,6 @@ menuconfig PINMUX
 
 if PINMUX
 
-config PINMUX_NAME
-	string "Pinmux driver name"
-	default "PINMUX"
-	help
-	  The name of the pinmux driver.
-
 config PINMUX_INIT_PRIORITY
 	int "Init priority"
 	default 45
@@ -39,6 +33,8 @@ source "drivers/pinmux/Kconfig.esp32"
 source "drivers/pinmux/Kconfig.hsdk"
 
 source "drivers/pinmux/Kconfig.intel_s1000"
+
+source "drivers/pinmux/Kconfig.it8xxx2"
 
 source "drivers/pinmux/Kconfig.lpc11u6x"
 

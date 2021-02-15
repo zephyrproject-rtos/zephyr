@@ -309,9 +309,9 @@ static struct spi_driver_api spi_gecko_api = {
 	    .loc_tx = DT_INST_PROP_BY_IDX(n, location_tx, 0), \
 	    .loc_clk = DT_INST_PROP_BY_IDX(n, location_clk, 0), \
 	}; \
-	DEVICE_AND_API_INIT(spi_##n, \
-			DT_INST_LABEL(n), \
+	DEVICE_DT_INST_DEFINE(n, \
 			spi_gecko_init, \
+			device_pm_control_nop, \
 			&spi_gecko_data_##n, \
 			&spi_gecko_cfg_##n, \
 			POST_KERNEL, \

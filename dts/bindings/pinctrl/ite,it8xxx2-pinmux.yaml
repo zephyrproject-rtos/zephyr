@@ -1,0 +1,15 @@
+# Copyright (c) 2020 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ITE IT8XXX2 pinmux node
+
+compatible: "ite,it8xxx2-pinmux"
+
+include: base.yaml
+
+properties:
+    reg:
+      required: true
+
+    label:
+      required: true

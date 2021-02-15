@@ -153,9 +153,10 @@ const struct led_pwm_config led_pwm_config_##id = {		\
 static struct led_pwm_data					\
 	led_pwm_data_##id[ARRAY_SIZE(led_pwm_##id)];		\
 								\
-DEVICE_AND_API_INIT(led_pwm_##id,				\
+DEVICE_DEFINE(led_pwm_##id,					\
 		    DT_INST_PROP_OR(id, label, "LED_PWM_"#id),	\
 		    &led_pwm_init,				\
+		    device_pm_control_nop,			\
 		    &led_pwm_data_##id,				\
 		    &led_pwm_config_##id,			\
 		    POST_KERNEL, CONFIG_LED_INIT_PRIORITY,	\

@@ -16,23 +16,40 @@ properties:
 
     a-pin:
       type: int
-      description: A pin
       required: true
+      description: |
+        The A pin to use.
+
+        For pins P0.0 through P0.31, use the pin number. For example,
+        to use P0.16 for the A pin, set:
+
+            a-pin = <16>;
+
+        For pins P1.0 through P1.31, add 32 to the pin number. For
+        example, to use P1.2 for the A pin, set:
+
+            a-pin = <34>;  /* 32 + 2 */
 
     b-pin:
       type: int
-      description: B pin
       required: true
+      description: |
+        The B pin to use. The pin numbering scheme is the same as
+        the a-pin property's.
 
     led-pin:
       type: int
-      description: LED pin for light based QDEC device
       required: false
+      description: |
+        The LED pin to use for a light based QDEC device. The pin
+        numbering scheme is the same as the a-pin property's.
 
     enable-pin:
       type: int
-      description: Enables connected QDEC device
       required: false
+      description: |
+        The enable pin to use, to enable a connected QDEC device. The
+        pin numbering scheme is the same as the a-pin property's.
 
     led-pre:
       type: int

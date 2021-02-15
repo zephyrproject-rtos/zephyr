@@ -50,7 +50,7 @@ static inline uintptr_t arch_syscall_invoke6(uintptr_t arg1, uintptr_t arg2,
 	register uint32_t r6 __asm__("r6") = call_id;
 
 	__asm__ volatile("svc %[svid]\n"
-			 : "=r"(ret)
+			 : "=r"(ret), "=r"(r1), "=r"(r2), "=r"(r3)
 			 : [svid] "i" (_SVC_CALL_SYSTEM_CALL),
 			   "r" (ret), "r" (r1), "r" (r2), "r" (r3),
 			   "r" (r4), "r" (r5), "r" (r6)
@@ -72,7 +72,7 @@ static inline uintptr_t arch_syscall_invoke5(uintptr_t arg1, uintptr_t arg2,
 	register uint32_t r6 __asm__("r6") = call_id;
 
 	__asm__ volatile("svc %[svid]\n"
-			 : "=r"(ret)
+			 : "=r"(ret), "=r"(r1), "=r"(r2), "=r"(r3)
 			 : [svid] "i" (_SVC_CALL_SYSTEM_CALL),
 			   "r" (ret), "r" (r1), "r" (r2), "r" (r3),
 			   "r" (r4), "r" (r6)
@@ -92,7 +92,7 @@ static inline uintptr_t arch_syscall_invoke4(uintptr_t arg1, uintptr_t arg2,
 	register uint32_t r6 __asm__("r6") = call_id;
 
 	__asm__ volatile("svc %[svid]\n"
-			 : "=r"(ret)
+			 : "=r"(ret), "=r"(r1), "=r"(r2), "=r"(r3)
 			 : [svid] "i" (_SVC_CALL_SYSTEM_CALL),
 			   "r" (ret), "r" (r1), "r" (r2), "r" (r3),
 			   "r" (r6)
@@ -111,7 +111,7 @@ static inline uintptr_t arch_syscall_invoke3(uintptr_t arg1, uintptr_t arg2,
 	register uint32_t r6 __asm__("r6") = call_id;
 
 	__asm__ volatile("svc %[svid]\n"
-			 : "=r"(ret)
+			 : "=r"(ret), "=r"(r1), "=r"(r2)
 			 : [svid] "i" (_SVC_CALL_SYSTEM_CALL),
 			   "r" (ret), "r" (r1), "r" (r2), "r" (r6)
 			 : "r8", "memory", "r3", "ip");
@@ -127,7 +127,7 @@ static inline uintptr_t arch_syscall_invoke2(uintptr_t arg1, uintptr_t arg2,
 	register uint32_t r6 __asm__("r6") = call_id;
 
 	__asm__ volatile("svc %[svid]\n"
-			 : "=r"(ret)
+			 : "=r"(ret), "=r"(r1)
 			 : [svid] "i" (_SVC_CALL_SYSTEM_CALL),
 			   "r" (ret), "r" (r1), "r" (r6)
 			 : "r8", "memory", "r2", "r3", "ip");

@@ -19,7 +19,6 @@
 
 #include <stdbool.h>
 #include <string.h>
-#include <sys/printk.h>
 #include <sys/util.h>
 #include <net/buf.h>
 #include <bluetooth/gap.h>
@@ -164,9 +163,11 @@ const char *bt_get_name(void);
  * At the moment, the given address must be a static random address. In the
  * future support for public addresses may be added.
  *
+ * @deprecated in 2.5 release, replace with bt_id_create before bt_enable.
+ *
  * @return Zero on success or (negative) error code otherwise.
  */
-int bt_set_id_addr(const bt_addr_le_t *addr);
+__deprecated int bt_set_id_addr(const bt_addr_le_t *addr);
 
 /**
  * @brief Get the currently configured identities.
@@ -201,6 +202,9 @@ void bt_id_get(bt_addr_le_t *addrs, size_t *count);
  * the address from and will be able to repeat the procedure on every power
  * cycle, i.e. it would be redundant to also store the information in flash.
  *
+ * Generating random static address or random IRK is not supported when calling
+ * this function before bt_enable().
+ *
  * If the application wants to have the stack randomly generate identities
  * and store them in flash for later recovery, the way to do it would be
  * to first initialize the stack (using bt_enable), then call settings_load(),
@@ -209,8 +213,8 @@ void bt_id_get(bt_addr_le_t *addrs, size_t *count);
  * call bt_id_create() to create new ones.
  *
  * @param addr Address to use for the new identity. If NULL or initialized
- *             to BT_ADDR_LE_ANY the stack will generate a new static
- *             random address for the identity and copy it to the given
+ *             to BT_ADDR_LE_ANY the stack will generate a new random
+ *             static address for the identity and copy it to the given
  *             parameter upon return from this function (in case the
  *             parameter was non-NULL).
  * @param irk  Identity Resolving Key (16 bytes) to be used with this
@@ -379,8 +383,7 @@ enum {
 	 * @brief Directed advertising to privacy-enabled peer.
 	 *
 	 * Enable use of Resolvable Private Address (RPA) as the target address
-	 * in directed advertisements when @option{CONFIG_BT_PRIVACY} is not
-	 * enabled.
+	 * in directed advertisements.
 	 * This is required if the remote device is privacy-enabled and
 	 * supports address resolution of the target address in directed
 	 * advertisement.
@@ -520,10 +523,22 @@ struct bt_le_adv_param {
 	/** Bit-field of advertising options */
 	uint32_t options;
 
-	/** Minimum Advertising Interval (N * 0.625) */
+	/** Minimum Advertising Interval (N * 0.625 milliseconds)
+	 * Minimum Advertising Interval shall be less than or equal to the
+	 * Maximum Advertising Interval. The Minimum Advertising Interval and
+	 * Maximum Advertising Interval should not be the same value (as stated
+	 * in Bluetooth Core Spec 5.2, section 7.8.5)
+	 * Range: 0x0020 to 0x4000
+	 */
 	uint32_t interval_min;
 
-	/** Maximum Advertising Interval (N * 0.625) */
+	/** Maximum Advertising Interval (N * 0.625 milliseconds)
+	 * Minimum Advertising Interval shall be less than or equal to the
+	 * Maximum Advertising Interval. The Minimum Advertising Interval and
+	 * Maximum Advertising Interval should not be the same value (as stated
+	 * in Bluetooth Core Spec 5.2, section 7.8.5)
+	 * Range: 0x0020 to 0x4000
+	 */
 	uint32_t interval_max;
 
 	/**
@@ -637,6 +652,75 @@ struct bt_le_per_adv_param {
 						 BT_GAP_ADV_FAST_INT_MIN_2, \
 						 BT_GAP_ADV_FAST_INT_MAX_2, \
 						 NULL)
+
+/** Non-connectable extended advertising with private address */
+#define BT_LE_EXT_ADV_NCONN BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV, \
+					    BT_GAP_ADV_FAST_INT_MIN_2, \
+					    BT_GAP_ADV_FAST_INT_MAX_2, NULL)
+
+/** Non-connectable extended advertising with @ref BT_LE_ADV_OPT_USE_NAME */
+#define BT_LE_EXT_ADV_NCONN_NAME BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV | \
+						 BT_LE_ADV_OPT_USE_NAME, \
+						 BT_GAP_ADV_FAST_INT_MIN_2, \
+						 BT_GAP_ADV_FAST_INT_MAX_2, \
+						 NULL)
+
+/** Non-connectable extended advertising with @ref BT_LE_ADV_OPT_USE_IDENTITY */
+#define BT_LE_EXT_ADV_NCONN_IDENTITY \
+		BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV | \
+				BT_LE_ADV_OPT_USE_IDENTITY, \
+				BT_GAP_ADV_FAST_INT_MIN_2, \
+				BT_GAP_ADV_FAST_INT_MAX_2, NULL)
+
+/** Non-connectable extended advertising on coded PHY with private address */
+#define BT_LE_EXT_ADV_CODED_NCONN BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV | \
+						  BT_LE_ADV_OPT_CODED, \
+						  BT_GAP_ADV_FAST_INT_MIN_2, \
+						  BT_GAP_ADV_FAST_INT_MAX_2, \
+						  NULL)
+
+/** Non-connectable extended advertising on coded PHY with
+ *  @ref BT_LE_ADV_OPT_USE_NAME
+ */
+#define BT_LE_EXT_ADV_CODED_NCONN_NAME \
+		BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV | BT_LE_ADV_OPT_CODED | \
+				BT_LE_ADV_OPT_USE_NAME, \
+				BT_GAP_ADV_FAST_INT_MIN_2, \
+				BT_GAP_ADV_FAST_INT_MAX_2, NULL)
+
+/** Non-connectable extended advertising on coded PHY with
+ *  @ref BT_LE_ADV_OPT_USE_IDENTITY
+ */
+#define BT_LE_EXT_ADV_CODED_NCONN_IDENTITY \
+		BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV | BT_LE_ADV_OPT_CODED | \
+				BT_LE_ADV_OPT_USE_IDENTITY, \
+				BT_GAP_ADV_FAST_INT_MIN_2, \
+				BT_GAP_ADV_FAST_INT_MAX_2, NULL)
+
+/**
+ * Helper to initialize extended advertising start parameters inline
+ *
+ * @param _timeout Advertiser timeout
+ * @param _n_evts  Number of advertising events
+ */
+#define BT_LE_EXT_ADV_START_PARAM_INIT(_timeout, _n_evts) \
+{ \
+	.timeout = (_timeout), \
+	.num_events = (_n_evts), \
+}
+
+/**
+ * Helper to declare extended advertising start parameters inline
+ *
+ * @param _timeout Advertiser timeout
+ * @param _n_evts  Number of advertising events
+ */
+#define BT_LE_EXT_ADV_START_PARAM(_timeout, _n_evts) \
+	((struct bt_le_ext_adv_start_param[]) { \
+		BT_LE_EXT_ADV_START_PARAM_INIT((_timeout), (_n_evts)) \
+	})
+
+#define BT_LE_EXT_ADV_START_DEFAULT BT_LE_EXT_ADV_START_PARAM(0, 0)
 
 /**
  * Helper to declare periodic advertising parameters inline
@@ -982,6 +1066,21 @@ struct bt_le_per_adv_sync_synced_info {
 
 	/** True if receiving periodic advertisements, false otherwise. */
 	bool recv_enabled;
+
+	/**
+	 * @brief Service Data provided by the peer when sync is transferred
+	 *
+	 * Will always be 0 when the sync is locally created.
+	 */
+	uint16_t service_data;
+
+	/**
+	 * @brief Peer that transferred the periodic advertising sync
+	 *
+	 * Will always be 0 when the sync is locally created.
+	 *
+	 */
+	struct bt_conn *conn;
 };
 
 struct bt_le_per_adv_sync_term_info {
@@ -1176,6 +1275,10 @@ int bt_le_per_adv_sync_create(const struct bt_le_per_adv_sync_param *param,
  * cancelled. If the sync has been established, it is terminated. The
  * periodic advertising sync object will be invalidated afterwards.
  *
+ * If the state of the sync object is syncing, then a new periodic advertising
+ * sync object may not be created until the controller has finished canceling
+ * this object.
+ *
  * @param per_adv_sync The periodic advertising sync object.
  *
  * @return Zero on success or (negative) error code otherwise.
@@ -1217,6 +1320,161 @@ int bt_le_per_adv_sync_recv_enable(struct bt_le_per_adv_sync *per_adv_sync);
  */
 int bt_le_per_adv_sync_recv_disable(struct bt_le_per_adv_sync *per_adv_sync);
 
+/** Periodic Advertising Sync Transfer options */
+enum {
+	/** Convenience value when no options are specified. */
+	BT_LE_PER_ADV_SYNC_TRANSFER_OPT_NONE = 0,
+
+	/**
+	 * @brief No Angle of Arrival (AoA)
+	 *
+	 * Do not sync with Angle of Arrival (AoA) constant tone extension
+	 **/
+	BT_LE_PER_ADV_SYNC_TRANSFER_OPT_SYNC_NO_AOA = BIT(0),
+
+	/**
+	 * @brief No Angle of Departure (AoD) 1 us
+	 *
+	 * Do not sync with Angle of Departure (AoD) 1 us
+	 * constant tone extension
+	 */
+	BT_LE_PER_ADV_SYNC_TRANSFER_OPT_SYNC_NO_AOD_1US = BIT(1),
+
+	/**
+	 * @brief No Angle of Departure (AoD) 2
+	 *
+	 * Do not sync with Angle of Departure (AoD) 2 us
+	 * constant tone extension
+	 */
+	BT_LE_PER_ADV_SYNC_TRANSFER_OPT_SYNC_NO_AOD_2US = BIT(2),
+
+	/** Only sync to packets with constant tone extension */
+	BT_LE_PER_ADV_SYNC_TRANSFER_OPT_SYNC_ONLY_CTE = BIT(3),
+};
+
+struct bt_le_per_adv_sync_transfer_param {
+	/**
+	 * @brief Maximum event skip
+	 *
+	 * The number of periodic advertising packets that can be skipped
+	 * after a successful receive.
+	 */
+	uint16_t skip;
+
+	/**
+	 * @brief Synchronization timeout (N * 10 ms)
+	 *
+	 * Synchronization timeout for the periodic advertising sync.
+	 * Range 0x000A to 0x4000 (100 ms to 163840 ms)
+	 */
+	uint16_t timeout;
+
+	/** Periodic Advertising Sync Transfer options */
+	uint32_t options;
+};
+
+/**
+ * @brief Transfer the periodic advertising sync information to a peer device.
+ *
+ * This will allow another device to quickly synchronize to the same periodic
+ * advertising train that this device is currently synced to.
+ *
+ * @param per_adv_sync  The periodic advertising sync to transfer.
+ * @param conn          The peer device that will receive the sync information.
+ * @param service_data  Application service data provided to the remote host.
+ *
+ * @return Zero on success or (negative) error code otherwise.
+ */
+int bt_le_per_adv_sync_transfer(const struct bt_le_per_adv_sync *per_adv_sync,
+				const struct bt_conn *conn,
+				uint16_t service_data);
+
+
+/**
+ * @brief Transfer the information about a periodic advertising set.
+ *
+ * This will allow another device to quickly synchronize to periodic
+ * advertising set from this device.
+ *
+ * @param adv           The periodic advertising set to transfer info of.
+ * @param conn          The peer device that will receive the information.
+ * @param service_data  Application service data provided to the remote host.
+ *
+ * @return Zero on success or (negative) error code otherwise.
+ */
+int bt_le_per_adv_set_info_transfer(const struct bt_le_ext_adv *adv,
+				    const struct bt_conn *conn,
+				    uint16_t service_data);
+
+/**
+ * @brief Subscribe to periodic advertising sync transfers (PASTs).
+ *
+ * Sets the parameters and allow other devices to transfer periodic advertising
+ * syncs.
+ *
+ * @param conn    The connection to set the parameters for. If NULL default
+ *                parameters for all connections will be set. Parameters set
+ *                for specific connection will always have precedence.
+ * @param param   The periodic advertising sync transfer parameters.
+ *
+ * @return Zero on success or (negative) error code otherwise.
+ */
+int bt_le_per_adv_sync_transfer_subscribe(
+	const struct bt_conn *conn,
+	const struct bt_le_per_adv_sync_transfer_param *param);
+
+/**
+ * @brief Unsubscribe from periodic advertising sync transfers (PASTs).
+ *
+ * Remove the parameters that allow other devices to transfer periodic
+ * advertising syncs.
+ *
+ * @param conn    The connection to remove the parameters for. If NULL default
+ *                parameters for all connections will be removed. Unsubscribing
+ *                for a specific device, will still allow other devices to
+ *                transfer periodic advertising syncs.
+ *
+ * @return Zero on success or (negative) error code otherwise.
+ */
+int bt_le_per_adv_sync_transfer_unsubscribe(const struct bt_conn *conn);
+
+/**
+ * @brief Add a device to the periodic advertising list.
+ *
+ * Add peer device LE address to the periodic advertising list. This will make
+ * it possibly to automatically create a periodic advertising sync to this
+ * device.
+ *
+ * @param addr Bluetooth LE identity address.
+ * @param sid  The advertising set ID. This value is obtained from the
+ *             @ref bt_le_scan_recv_info in the scan callback.
+ *
+ * @return Zero on success or (negative) error code otherwise.
+ */
+int bt_le_per_adv_list_add(const bt_addr_le_t *addr, uint8_t sid);
+
+/**
+ * @brief Remove a device from the periodic advertising list.
+ *
+ * Removes peer device LE address from the periodic advertising list.
+ *
+ * @param addr Bluetooth LE identity address.
+ * @param sid  The advertising set ID. This value is obtained from the
+ *             @ref bt_le_scan_recv_info in the scan callback.
+ *
+ * @return Zero on success or (negative) error code otherwise.
+ */
+int bt_le_per_adv_list_remove(const bt_addr_le_t *addr, uint8_t sid);
+
+/**
+ * @brief Clear the periodic advertising list.
+ *
+ * Clears the entire periodic advertising list.
+ *
+ * @return Zero on success or (negative) error code otherwise.
+ */
+int bt_le_per_adv_list_clear(void);
+
 enum {
 	/** Convenience value when no options are specified. */
 	BT_LE_SCAN_OPT_NONE = 0,
@@ -1236,11 +1494,6 @@ enum {
 	 * @note Requires @ref BT_LE_SCAN_OPT_CODED.
 	 */
 	BT_LE_SCAN_OPT_NO_1M = BIT(3),
-
-	BT_LE_SCAN_FILTER_DUPLICATE __deprecated =
-		BT_LE_SCAN_OPT_FILTER_DUPLICATE,
-	BT_LE_SCAN_FILTER_WHITELIST __deprecated =
-		BT_LE_SCAN_OPT_FILTER_WHITELIST,
 };
 
 enum {
@@ -1256,13 +1509,8 @@ struct bt_le_scan_param {
 	/** Scan type (BT_LE_SCAN_TYPE_ACTIVE or BT_LE_SCAN_TYPE_PASSIVE) */
 	uint8_t  type;
 
-	union {
-		/** Bit-field of scanning filter options. */
-		uint32_t filter_dup __deprecated;
-
-		/** Bit-field of scanning options. */
-		uint32_t options;
-	};
+	/** Bit-field of scanning options. */
+	uint32_t options;
 
 	/** Scan interval (N * 0.625 ms) */
 	uint16_t interval;
@@ -1384,7 +1632,9 @@ struct bt_le_scan_cb {
 		BT_LE_SCAN_PARAM_INIT(_type, _options, _interval, _window) \
 	 })
 
-/** Helper macro to enable active scanning to discover new devices. */
+/**
+ * @brief Helper macro to enable active scanning to discover new devices.
+ */
 #define BT_LE_SCAN_ACTIVE BT_LE_SCAN_PARAM(BT_LE_SCAN_TYPE_ACTIVE, \
 					   BT_LE_SCAN_OPT_FILTER_DUPLICATE, \
 					   BT_GAP_SCAN_FAST_INTERVAL, \
@@ -1400,6 +1650,31 @@ struct bt_le_scan_cb {
 					    BT_LE_SCAN_OPT_FILTER_DUPLICATE, \
 					    BT_GAP_SCAN_FAST_INTERVAL, \
 					    BT_GAP_SCAN_FAST_WINDOW)
+
+/**
+ * @brief Helper macro to enable active scanning to discover new devices.
+ * Include scanning on Coded PHY in addition to 1M PHY.
+ */
+#define BT_LE_SCAN_CODED_ACTIVE \
+		BT_LE_SCAN_PARAM(BT_LE_SCAN_TYPE_ACTIVE, \
+				 BT_LE_SCAN_OPT_CODED | \
+				 BT_LE_SCAN_OPT_FILTER_DUPLICATE, \
+				 BT_GAP_SCAN_FAST_INTERVAL, \
+				 BT_GAP_SCAN_FAST_WINDOW)
+
+/**
+ * @brief Helper macro to enable passive scanning to discover new devices.
+ * Include scanning on Coded PHY in addition to 1M PHY.
+ *
+ * This macro should be used if information required for device identification
+ * (e.g., UUID) are known to be placed in Advertising Data.
+ */
+#define BT_LE_SCAN_CODED_PASSIVE \
+		BT_LE_SCAN_PARAM(BT_LE_SCAN_TYPE_PASSIVE, \
+				 BT_LE_SCAN_OPT_CODED | \
+				 BT_LE_SCAN_OPT_FILTER_DUPLICATE, \
+				 BT_GAP_SCAN_FAST_INTERVAL, \
+				 BT_GAP_SCAN_FAST_WINDOW)
 
 /**
  * @brief Start (LE) scanning
@@ -1445,6 +1720,15 @@ int bt_le_scan_stop(void);
  * @param cb Callback struct. Must point to memory that remains valid.
  */
 void bt_le_scan_cb_register(struct bt_le_scan_cb *cb);
+
+/**
+ * @brief Unregister scanner packet callbacks.
+ *
+ * Remove the callback structure from the list of scanner callbacks.
+ *
+ * @param cb Callback struct. Must point to memory that remains valid.
+ */
+void bt_le_scan_cb_unregister(struct bt_le_scan_cb *cb);
 
 /**
  * @brief Add device (LE) to whitelist.
@@ -1688,106 +1972,6 @@ struct bt_br_oob {
  */
 int bt_br_oob_get_local(struct bt_br_oob *oob);
 
-/**
- * @def BT_ADDR_STR_LEN
- *
- * @brief Recommended length of user string buffer for Bluetooth address
- *
- * @details The recommended length guarantee the output of address
- * conversion will not lose valuable information about address being
- * processed.
- */
-#define BT_ADDR_STR_LEN 18
-
-/**
- * @def BT_ADDR_LE_STR_LEN
- *
- * @brief Recommended length of user string buffer for Bluetooth LE address
- *
- * @details The recommended length guarantee the output of address
- * conversion will not lose valuable information about address being
- * processed.
- */
-#define BT_ADDR_LE_STR_LEN 30
-
-/**
- * @brief Converts binary Bluetooth address to string.
- *
- * @param addr Address of buffer containing binary Bluetooth address.
- * @param str Address of user buffer with enough room to store formatted
- * string containing binary address.
- * @param len Length of data to be copied to user string buffer. Refer to
- * BT_ADDR_STR_LEN about recommended value.
- *
- * @return Number of successfully formatted bytes from binary address.
- */
-static inline int bt_addr_to_str(const bt_addr_t *addr, char *str, size_t len)
-{
-	return snprintk(str, len, "%02X:%02X:%02X:%02X:%02X:%02X",
-			addr->val[5], addr->val[4], addr->val[3],
-			addr->val[2], addr->val[1], addr->val[0]);
-}
-
-/**
- * @brief Converts binary LE Bluetooth address to string.
- *
- * @param addr Address of buffer containing binary LE Bluetooth address.
- * @param str Address of user buffer with enough room to store
- * formatted string containing binary LE address.
- * @param len Length of data to be copied to user string buffer. Refer to
- * BT_ADDR_LE_STR_LEN about recommended value.
- *
- * @return Number of successfully formatted bytes from binary address.
- */
-static inline int bt_addr_le_to_str(const bt_addr_le_t *addr, char *str,
-				    size_t len)
-{
-	char type[10];
-
-	switch (addr->type) {
-	case BT_ADDR_LE_PUBLIC:
-		strcpy(type, "public");
-		break;
-	case BT_ADDR_LE_RANDOM:
-		strcpy(type, "random");
-		break;
-	case BT_ADDR_LE_PUBLIC_ID:
-		strcpy(type, "public-id");
-		break;
-	case BT_ADDR_LE_RANDOM_ID:
-		strcpy(type, "random-id");
-		break;
-	default:
-		snprintk(type, sizeof(type), "0x%02x", addr->type);
-		break;
-	}
-
-	return snprintk(str, len, "%02X:%02X:%02X:%02X:%02X:%02X (%s)",
-			addr->a.val[5], addr->a.val[4], addr->a.val[3],
-			addr->a.val[2], addr->a.val[1], addr->a.val[0], type);
-}
-
-/**
- * @brief Convert Bluetooth address from string to binary.
- *
- * @param[in]  str   The string representation of a Bluetooth address.
- * @param[out] addr  Address of buffer to store the Bluetooth address
- *
- * @return Zero on success or (negative) error code otherwise.
- */
-int bt_addr_from_str(const char *str, bt_addr_t *addr);
-
-/**
- * @brief Convert LE Bluetooth address from string to binary.
- *
- * @param[in]  str   The string representation of an LE Bluetooth address.
- * @param[in]  type  The string representation of the LE Bluetooth address
- *                   type.
- * @param[out] addr  Address of buffer to store the LE Bluetooth address
- *
- * @return Zero on success or (negative) error code otherwise.
- */
-int bt_addr_le_from_str(const char *str, const char *type, bt_addr_le_t *addr);
 
 /**
  * @brief Enable/disable set controller in discoverable state.

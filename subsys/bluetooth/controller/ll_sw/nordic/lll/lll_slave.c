@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdbool.h>
+#include <stdint.h>
 
 #include <toolchain.h>
-#include <zephyr/types.h>
+
 #include <sys/util.h>
 
 #include "hal/ccm.h"

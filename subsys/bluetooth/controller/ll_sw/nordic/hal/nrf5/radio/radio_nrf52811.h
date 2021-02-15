@@ -412,22 +412,10 @@ static inline uint32_t hal_radio_phy_mode_get(uint8_t phy, uint8_t flags)
 	case BIT(0):
 	default:
 		mode = RADIO_MODE_MODE_Ble_1Mbit;
-
-#if defined(CONFIG_BT_CTLR_PHY_CODED)
-		/* Workaround: nRF52811 Engineering A Errata ID 164 */
-		*(volatile uint32_t *)0x4000173c &= ~0x80000000;
-#endif /* CONFIG_BT_CTLR_PHY_CODED */
-
 		break;
 
 	case BIT(1):
 		mode = RADIO_MODE_MODE_Ble_2Mbit;
-
-#if defined(CONFIG_BT_CTLR_PHY_CODED)
-		/* Workaround: nRF52811 Engineering A Errata ID 164 */
-		*(volatile uint32_t *)0x4000173c &= ~0x80000000;
-#endif /* CONFIG_BT_CTLR_PHY_CODED */
-
 		break;
 
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
@@ -437,12 +425,6 @@ static inline uint32_t hal_radio_phy_mode_get(uint8_t phy, uint8_t flags)
 		} else {
 			mode = RADIO_MODE_MODE_Ble_LR500Kbit;
 		}
-
-		/* Workaround: nRF52811 Engineering A Errata ID 164 */
-		*(volatile uint32_t *)0x4000173c |= 0x80000000;
-		*(volatile uint32_t *)0x4000173c =
-				((*(volatile uint32_t *)0x4000173c) & 0xFFFFFF00) |
-				0x5C;
 		break;
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
 	}

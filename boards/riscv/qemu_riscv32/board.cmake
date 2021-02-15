@@ -7,6 +7,8 @@ set(QEMU_CPU_TYPE_${ARCH} riscv32)
 
 set(QEMU_FLAGS_${ARCH}
   -nographic
-  -machine sifive_e
+  -machine virt
+  -bios none
+  -m 256
   )
 board_set_debugger_ifnset(qemu)

@@ -104,6 +104,24 @@ struct lorawan_join_config {
 };
 
 /**
+ * @brief Add battery level callback function.
+ *
+ * Provide the LoRaWAN stack with a function to be called whenever a battery
+ * level needs to be read. As per LoRaWAN specification the callback needs to
+ * return "0:      node is connected to an external power source,
+ *         1..254: battery level, where 1 is the minimum and 254 is the maximum
+ *                 value,
+ *         255: the node was not able to measure the battery level"
+ *
+ * Should no callback be provided the lorawan backend will report 255.
+ *
+ * @param battery_lvl_cb Pointer to the battery level function
+ *
+ * @return 0 if successful, negative errno code if failure
+ */
+int lorawan_set_battery_level_callback(uint8_t (*battery_lvl_cb)(void));
+
+/**
  * @brief Join the LoRaWAN network
  *
  * Join the LoRaWAN network using OTAA or AWB.

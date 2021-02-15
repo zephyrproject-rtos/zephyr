@@ -1,0 +1,24 @@
+# Copyright (c) 2020 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MCUBOOT_BOOTUTIL_LIB
+	bool "MCUboot utility library"
+	help
+	  Enable MCUboot utility library which implements functions
+	  required by the chain-loaded application and the MCUboot.
+
+if MCUBOOT_BOOTUTIL_LIB
+
+# hiden option for disabling module-own log configuration
+# while building MCUboot bootloader
+config MCUBOOT_BOOTUTIL_LIB_OWN_LOG
+	bool
+	default y
+
+if MCUBOOT_BOOTUTIL_LIB_OWN_LOG
+module = MCUBOOT_UTIL
+module-str = MCUboot bootutil
+source "subsys/logging/Kconfig.template.log_config"
+endif
+
+endif # MCUBOOT_BOOTUTIL_LIB

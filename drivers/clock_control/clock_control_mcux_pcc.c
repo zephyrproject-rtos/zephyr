@@ -74,8 +74,9 @@ static const struct clock_control_driver_api mcux_pcc_api = {
 		.base_address = DT_INST_REG_ADDR(inst)			\
 	};								\
 									\
-	DEVICE_AND_API_INIT(mcux_pcc##inst, DT_INST_LABEL(inst),	\
+	DEVICE_DT_INST_DEFINE(inst,					\
 			    &mcux_pcc_init,				\
+			    device_pm_control_nop,			\
 			    NULL, &mcux_pcc##inst##_config,		\
 			    PRE_KERNEL_1,				\
 			    CONFIG_KERNEL_INIT_PRIORITY_OBJECTS,	\

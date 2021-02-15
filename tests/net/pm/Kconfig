@@ -7,6 +7,6 @@ mainmenu "Network Power-Management test"
 
 config FAKE_DEV
 	def_bool y
-	select NET_POWER_MANAGEMENT if DEVICE_POWER_MANAGEMENT
+	select NET_POWER_MANAGEMENT if PM_DEVICE
 
 source "Kconfig.zephyr"

@@ -1,3 +1,5 @@
+"Release Notes":
+  - "doc/releases/**/*"
 "area: Modem":
   - "drivers/modem/**/*"
 "area: PWM":
@@ -100,6 +102,11 @@
   - "**/*bluetooth*"
 "area: Bluetooth Mesh":
   - "subsys/bluetooth/mesh/**/*"
+"area: Bluetooth Controller":
+  - "subsys/bluetooth/controller/**/*"
+"area: Bluetooth Host":
+  - "subsys/bluetooth/host/**/*"
+  - "subsys/bluetooth/services/**/*"
 "area: API":
   - "include/**/*"
 "area: Samples":
@@ -119,9 +126,9 @@
   - "scripts/kconfig/**/*"
   - "Kconfig"
   - "Kconfig.zephyr"
-"area: Sanitycheck":
-  - "scripts/sanitycheck"
-  - "scripts/sanity_chk/**/*"
+"area: Twister":
+  - "scripts/twister"
+  - "scripts/pylib/twister/**/*"
 "area: Modules":
   - "west.yml"
   - "modules/**/*"

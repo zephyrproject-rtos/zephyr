@@ -37,6 +37,9 @@ properties:
     phandle-array-foos:
         type: phandle-array
 
+    phandle-array-foo-names:
+        type: string-array
+
     # There's some slight special-casing for GPIOs in that 'foo-gpios = ...'
     # gets resolved to #gpio-cells rather than #foo-gpio-cells, so test that
     # too

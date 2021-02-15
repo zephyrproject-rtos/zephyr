@@ -49,16 +49,16 @@ GDATA(z_arm_tls_ptr)
  * For Cortex-M, z_arm_pendsv() is invoked with no arguments.
  *
  * For Cortex-R, PendSV exception is not supported by the architecture and this
- * function is directly called either by _IntExit in case of preemption, or
- * z_arm_svc in case of cooperative switching.
+ * function is directly called either by z_arm_{exc,int}_exit in case of
+ * preemption, or z_arm_svc in case of cooperative switching.
  */
 
 SECTION_FUNC(TEXT, z_arm_pendsv)
 
-#ifdef CONFIG_TRACING
+#ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
     /* Register the context switch */
     push {r0, lr}
-    bl sys_trace_thread_switched_out
+    bl z_thread_mark_switched_out
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
     pop {r0, r1}
     mov lr, r1
@@ -366,10 +366,10 @@ _thread_irq_disabled:
     pop {r2, lr}
 #endif /* CONFIG_BUILTIN_STACK_GUARD */
 
-#ifdef CONFIG_TRACING
+#ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
     /* Register the context switch */
     push {r0, lr}
-    bl sys_trace_thread_switched_in
+    bl z_thread_mark_switched_in
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
     pop {r0, r1}
     mov lr, r1
@@ -380,7 +380,7 @@ _thread_irq_disabled:
 
     /*
      * Cortex-M: return from PendSV exception
-     * Cortex-R: return to the caller (_IntExit or z_arm_svc)
+     * Cortex-R: return to the caller (z_arm_{exc,int}_exit, or z_arm_svc)
      */
     bx lr
 
@@ -609,6 +609,12 @@ SECTION_FUNC(TEXT, z_arm_svc)
     cps #MODE_SYS
     push {r0-r3, r12, lr}
     cps #MODE_SVC
+
+    /*
+     * Store lr_svc to the SVC mode stack. This value will be restored prior to
+     * exiting the SVC call in z_arm_int_exit.
+     */
+    push {lr}
 
     /* Align stack at double-word boundary */
     and r3, sp, #4

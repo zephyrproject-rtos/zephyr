@@ -84,6 +84,8 @@ static int lsdir(const char *path)
 	struct fs_dir_t dirp;
 	static struct fs_dirent entry;
 
+	fs_dir_t_init(&dirp);
+
 	/* Verify fs_opendir() */
 	res = fs_opendir(&dirp, path);
 	if (res) {

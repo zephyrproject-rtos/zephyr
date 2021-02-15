@@ -1,0 +1,8 @@
+sample:
+  description: Allows Zephyr to provide 802.15.4 connectivity
+    for nRF devices via RPMsg.
+  name: 802.15.4 RPMsg serialization
+tests:
+  sample.boards.nrf.802154_rpmsg:
+    build_only: true
+    platform_allow: nrf5340dk_nrf5340_cpunet

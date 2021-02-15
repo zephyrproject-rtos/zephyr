@@ -13,6 +13,8 @@
 #endif
 
 #ifdef CONFIG_PCIE_MSI
+#include <kernel_arch_func.h>
+#include <device.h>
 #include <drivers/pcie/msi.h>
 #endif
 
@@ -155,19 +157,162 @@ void pcie_conf_write(pcie_bdf_t bdf, unsigned int reg, uint32_t data)
 
 #ifdef CONFIG_PCIE_MSI
 
+#ifdef CONFIG_INTEL_VTD_ICTL
+
+#include <drivers/interrupt_controller/intel_vtd.h>
+
+static const struct device *vtd;
+
+static bool get_vtd(void)
+{
+	if (vtd != NULL) {
+		return true;
+	}
+#define DT_DRV_COMPAT intel_vt_d
+	vtd = device_get_binding(DT_INST_LABEL(0));
+#undef DT_DRV_COMPAT
+
+	return vtd == NULL ? false : true;
+}
+
+#endif /* CONFIG_INTEL_VTD_ICTL */
+
 /* these functions are explained in include/drivers/pcie/msi.h */
 
-uint32_t pcie_msi_map(unsigned int irq)
+uint32_t pcie_msi_map(unsigned int irq,
+		      msi_vector_t *vector)
 {
+	uint32_t map;
+
 	ARG_UNUSED(irq);
-	return 0xFEE00000U;  /* standard delivery to BSP local APIC */
-}
-
-uint16_t pcie_msi_mdr(unsigned int irq)
-{
-	unsigned char vector = Z_IRQ_TO_INTERRUPT_VECTOR(irq);
-
-	return 0x4000U | vector;  /* edge triggered */
-}
-
+#if defined(CONFIG_INTEL_VTD_ICTL)
+#if !defined(CONFIG_PCIE_MSI_X)
+	if (vector != NULL) {
+		map = vtd_remap_msi(vtd, vector);
+	} else
+#else
+	if (vector != NULL && !vector->msix) {
+		map = vtd_remap_msi(vtd, vector);
+	} else
 #endif
+#endif
+	{
+		map = 0xFEE00000U; /* standard delivery to BSP local APIC */
+	}
+
+	return map;
+}
+
+uint16_t pcie_msi_mdr(unsigned int irq,
+		      msi_vector_t *vector)
+{
+#ifdef CONFIG_PCIE_MSI_X
+	if ((vector != NULL) && (vector->msix)) {
+		return 0x4000U | vector->arch.vector;
+	}
+#endif
+
+	if (vector == NULL) {
+		/* edge triggered */
+		return 0x4000U | Z_IRQ_TO_INTERRUPT_VECTOR(irq);
+	}
+
+	/* VT-D requires it to be 0, so let's return 0 by default */
+	return 0;
+}
+
+#if defined(CONFIG_INTEL_VTD_ICTL) || defined(CONFIG_PCIE_MSI_X)
+
+static inline uint32_t _read_pcie_irq_data(pcie_bdf_t bdf)
+{
+	uint32_t data;
+
+	data = pcie_conf_read(bdf, PCIE_CONF_INTR);
+
+	pcie_conf_write(bdf, PCIE_CONF_INTR, data | PCIE_CONF_INTR_IRQ_NONE);
+
+	return data;
+}
+
+static inline void _write_pcie_irq_data(pcie_bdf_t bdf, uint32_t data)
+{
+	pcie_conf_write(bdf, PCIE_CONF_INTR, data);
+}
+
+uint8_t arch_pcie_msi_vectors_allocate(unsigned int priority,
+				       msi_vector_t *vectors,
+				       uint8_t n_vector)
+{
+	if (n_vector > 1) {
+		int prev_vector = -1;
+		int i;
+#ifdef CONFIG_INTEL_VTD_ICTL
+#ifdef CONFIG_PCIE_MSI_X
+		if (!vectors[0].msix)
+#endif
+		{
+			int irte;
+
+			if (!get_vtd()) {
+				return 0;
+			}
+
+			irte = vtd_allocate_entries(vtd, n_vector);
+			if (irte < 0) {
+				return 0;
+			}
+
+			for (i = irte; i < (irte + n_vector); i++) {
+				vectors[i].arch.irte = i;
+				vectors[i].arch.remap = true;
+			}
+		}
+#endif /* CONFIG_INTEL_VTD_ICTL */
+
+		for (i = 0; i < n_vector; i++) {
+			uint32_t data;
+
+			data = _read_pcie_irq_data(vectors[i].bdf);
+
+			vectors[i].arch.irq = pcie_alloc_irq(vectors[i].bdf);
+
+			_write_pcie_irq_data(vectors[i].bdf, data);
+
+			vectors[i].arch.vector =
+				z_x86_allocate_vector(priority, prev_vector);
+			if (vectors[i].arch.vector < 0) {
+				return 0;
+			}
+
+			prev_vector = vectors[i].arch.vector;
+		}
+	} else {
+		vectors[0].arch.vector = z_x86_allocate_vector(priority, -1);
+	}
+
+	return n_vector;
+}
+
+bool arch_pcie_msi_vector_connect(msi_vector_t *vector,
+				  void (*routine)(const void *parameter),
+				  const void *parameter,
+				  uint32_t flags)
+{
+#ifdef CONFIG_INTEL_VTD_ICTL
+	if (vector->arch.remap) {
+		if (!get_vtd()) {
+			return false;
+		}
+
+		vtd_remap(vtd, vector);
+	}
+#endif /* CONFIG_INTEL_VTD_ICTL */
+
+	z_x86_irq_connect_on_vector(vector->arch.irq, vector->arch.vector,
+				    routine, parameter, flags);
+
+	return true;
+}
+
+#endif /* CONFIG_INTEL_VTD_ICTL || CONFIG_PCIE_MSI_X */
+#endif /* CONFIG_PCIE_MSI */

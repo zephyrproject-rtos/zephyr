@@ -31,7 +31,7 @@ GEN_OFFSET_SYM(_cpu_t, irq_stack);
 GEN_OFFSET_SYM(_kernel_t, threads);
 #endif
 
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
+#ifdef CONFIG_PM
 GEN_OFFSET_SYM(_kernel_t, idle);
 #endif
 

@@ -14,8 +14,8 @@ fixed-size data items.
 Concepts
 ********
 
-Any number of message queues can be defined. Each message queue is referenced
-by its memory address.
+Any number of message queues can be defined (limited only by available RAM).
+Each message queue is referenced by its memory address.
 
 A message queue has the following key properties:
 

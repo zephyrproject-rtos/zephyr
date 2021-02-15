@@ -29,6 +29,7 @@ from runners import qemu
 from runners import stm32flash
 from runners import xtensa
 from runners import mdb
+from runners import stm32cubeprogrammer
 
 def get_runner_cls(runner):
     '''Get a runner's class object, given its name.'''

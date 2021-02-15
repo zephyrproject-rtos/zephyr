@@ -19,13 +19,13 @@
  *		};
  *	};
  *
- * Example usage: *
- *      const struct npcx_clk_cfg clk_cfg = DT_NPCX_CLK_CFG_ITEM(inst);
+ * Example usage:
+ *      const struct npcx_clk_cfg clk_cfg = NPCX_DT_CLK_CFG_ITEM(inst);
  *
  * @param inst instance number for compatible defined in DT_DRV_COMPAT.
  * @return npcx_clk_cfg item.
  */
-#define DT_NPCX_CLK_CFG_ITEM(inst)                                             \
+#define NPCX_DT_CLK_CFG_ITEM(inst)                                             \
 	{                                                                      \
 	  .bus  = DT_PHA(DT_DRV_INST(inst), clocks, bus),                      \
 	  .ctrl = DT_PHA(DT_DRV_INST(inst), clocks, ctl),                      \
@@ -39,7 +39,7 @@
  * @param i index of clocks prop which type is 'phandle-array'
  * @return npcx_clk_cfg item from 'clocks' property at index 'i'
  */
-#define DT_NPCX_CLK_CFG_ITEM_BY_IDX(inst, i)                                   \
+#define NPCX_DT_CLK_CFG_ITEM_BY_IDX(inst, i)                                   \
 	{                                                                      \
 	  .bus  = DT_CLOCKS_CELL_BY_IDX(DT_DRV_INST(inst), i, bus),            \
 	  .ctrl = DT_CLOCKS_CELL_BY_IDX(DT_DRV_INST(inst), i, ctl),            \
@@ -52,7 +52,7 @@
  * @param inst instance number for compatible defined in DT_DRV_COMPAT.
  * @return length of 'clocks' property which type is 'phandle-array'
  */
-#define DT_NPCX_CLK_CFG_ITEMS_LEN(inst) DT_INST_PROP_LEN(inst, clocks)
+#define NPCX_DT_CLK_CFG_ITEMS_LEN(inst) DT_INST_PROP_LEN(inst, clocks)
 
 /**
  * @brief Macro function to construct npcx_clk_cfg item in UTIL_LISTIFY
@@ -62,8 +62,8 @@
  * @param inst instance number for compatible defined in DT_DRV_COMPAT.
  * @return macro function to construct a npcx_clk_cfg structure.
  */
-#define DT_NPCX_CLK_CFG_ITEMS_FUC(child, inst) \
-					DT_NPCX_CLK_CFG_ITEM_BY_IDX(inst, child)
+#define NPCX_DT_CLK_CFG_ITEMS_FUNC(child, inst) \
+					NPCX_DT_CLK_CFG_ITEM_BY_IDX(inst, child)
 
 /**
  * @brief Macro function to construct a list of npcx_clk_cfg items by
@@ -79,15 +79,15 @@
  *				 <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 7>;
  *			...
  *		};
- * Example usage: *
- *	const struct npcx_clk_cfg clk_cfg[] = DT_NPCX_CLK_CFG_ITEMS_LIST(0);
+ * Example usage:
+ *	const struct npcx_clk_cfg clk_cfg[] = NPCX_DT_CLK_CFG_ITEMS_LIST(0);
  *
  * @param inst instance number for compatible defined in DT_DRV_COMPAT.
  * @return an array of npcx_clk_cfg items.
  */
-#define DT_NPCX_CLK_CFG_ITEMS_LIST(inst) {             \
-	UTIL_LISTIFY(DT_NPCX_CLK_CFG_ITEMS_LEN(inst),  \
-		     DT_NPCX_CLK_CFG_ITEMS_FUC,        \
+#define NPCX_DT_CLK_CFG_ITEMS_LIST(inst) {             \
+	UTIL_LISTIFY(NPCX_DT_CLK_CFG_ITEMS_LEN(inst),  \
+		     NPCX_DT_CLK_CFG_ITEMS_FUNC,       \
 		     inst)                             \
 	}
 
@@ -96,24 +96,24 @@
  *        'i'
  *
  * @param inst instance number for compatible defined in DT_DRV_COMPAT.
- * @param i index of pinctrl-0 prop which type is 'phandles'
+ * @param i index of 'pinctrl-0' prop which type is 'phandles'
  * @return phandle from 'pinctrl-0' prop at index 'i'
  */
-#define DT_PHANDLE_FROM_PINCTRL(inst, i) \
+#define NPCX_DT_PHANDLE_FROM_PINCTRL(inst, i) \
 	DT_INST_PHANDLE_BY_IDX(inst, pinctrl_0, i)
 
 /**
  * @brief Construct a npcx_alt structure from 'pinctrl-0' property at index 'i'
  *
  * @param inst instance number for compatible defined in DT_DRV_COMPAT.
- * @param i index of pinctrl-0 prop which type is 'phandles'
+ * @param i index of 'pinctrl-0' prop which type is 'phandles'
  * @return npcx_alt item from 'pinctrl-0' property at index 'i'
  */
-#define DT_NPCX_ALT_ITEM_BY_IDX(inst, i)                                       \
+#define NPCX_DT_ALT_ITEM_BY_IDX(inst, i)                                       \
 	{                                                                      \
-	  .group    = DT_PHA(DT_PHANDLE_FROM_PINCTRL(inst, i), alts, group),   \
-	  .bit      = DT_PHA(DT_PHANDLE_FROM_PINCTRL(inst, i), alts, bit),     \
-	  .inverted = DT_PHA(DT_PHANDLE_FROM_PINCTRL(inst, i), alts, inv),     \
+	 .group = DT_PHA(NPCX_DT_PHANDLE_FROM_PINCTRL(inst, i), alts, group),  \
+	  .bit = DT_PHA(NPCX_DT_PHANDLE_FROM_PINCTRL(inst, i), alts, bit),     \
+	  .inverted = DT_PHA(NPCX_DT_PHANDLE_FROM_PINCTRL(inst, i), alts, inv),\
 	},
 
 /**
@@ -122,7 +122,7 @@
  * @param inst instance number for compatible defined in DT_DRV_COMPAT.
  * @return length of 'pinctrl-0' property which type is 'phandles'
  */
-#define DT_NPCX_ALT_ITEMS_LEN(inst) DT_INST_PROP_LEN(inst, pinctrl_0)
+#define NPCX_DT_ALT_ITEMS_LEN(inst) DT_INST_PROP_LEN(inst, pinctrl_0)
 
 /**
  * @brief Macro function to construct npcx_alt item in UTIL_LISTIFY extension.
@@ -131,11 +131,11 @@
  * @param inst instance number for compatible defined in DT_DRV_COMPAT.
  * @return macro function to construct a npcx_alt structure.
  */
-#define DT_NPCX_ALT_ITEMS_FUC(child, inst) DT_NPCX_ALT_ITEM_BY_IDX(inst, child)
+#define NPCX_DT_ALT_ITEMS_FUNC(child, inst) NPCX_DT_ALT_ITEM_BY_IDX(inst, child)
 
 /**
- * @brief Macro function to construct a list of npcx_alt items by UTIL_LISTIFY
- * func
+ * @brief Macro function to construct a list of npcx_alt items with compatible
+ * defined in DT_DRV_COMPAT by UTIL_LISTIFY func
  *
  * Example devicetree fragment:
  *    / {
@@ -143,8 +143,107 @@
  *			pinctrl-0 = <&alta_uart1_sl1>;
  *			...
  *		};
+ *	};
  *
- *		host_sub: lpc@400c1000 {
+ * Example usage:
+ *      const struct npcx_alt uart_alts[] = NPCX_DT_ALT_ITEMS_LIST(inst);
+ *
+ * @param inst instance number for compatible defined in DT_DRV_COMPAT.
+ * @return an array of npcx_alt items.
+ */
+#define NPCX_DT_ALT_ITEMS_LIST(inst) {             \
+	UTIL_LISTIFY(NPCX_DT_ALT_ITEMS_LEN(inst),  \
+		     NPCX_DT_ALT_ITEMS_FUNC,       \
+		     inst)                         \
+	}
+
+/**
+ * @brief Node identifier for an instance of a specific compatible
+ *
+ * @param compat specific compatible of devices in device-tree file
+ * @param inst instance number
+ * @return a node identifier for the node with "io_comp" compatible and
+ *         instance number "inst"
+ */
+#define NPCX_DT_COMP_INST(compat, inst) DT_INST(inst, compat)
+
+/**
+ * @brief Get a specific compatible instance's node identifier for a phandle in
+ * a property.
+ *
+ * @param compat specific compatible of devices in device-tree file
+ * @param inst instance number
+ * @param prop lowercase-and-underscores property name in "inst"
+ *             with type "phandle", "phandles" or "phandle-array"
+ * @param idx index into "prop"
+ * @return a node identifier for the phandle at index "idx" in "prop"
+ */
+#define NPCX_DT_COMP_INST_PHANDLE_BY_IDX(compat, inst, prop, idx) \
+	DT_PHANDLE_BY_IDX(NPCX_DT_COMP_INST(compat, inst), prop, idx)
+
+/**
+ * @brief Get phandle from 'pinctrl-0' prop which type is 'phandles' at index
+ *        'i' from io-pads device with specific compatible.
+ *
+ * @param io_comp compatible string in devicetree file for io-pads device
+ * @param inst instance number for compatible defined in io_comp.
+ * @param i index of 'pinctrl-0' prop which type is 'phandles'
+ * @return phandle from 'pinctrl-0' prop at index 'i'
+ */
+#define NPCX_DT_IO_PHANDLE_FROM_PINCTRL(io_comp, inst, i) \
+	NPCX_DT_COMP_INST_PHANDLE_BY_IDX(io_comp, inst, pinctrl_0, i)
+
+/**
+ * @brief Construct a npcx_alt structure from 'pinctrl-0' property at index 'i'
+ *        from io-pads device with specific compatible.
+ *
+ * @param io_comp compatible string in devicetree file for io-pads device
+ * @param inst instance number for compatible defined in io_comp.
+ * @param i index of 'pinctrl_0' prop which type is 'phandles'
+ * @return npcx_alt item from 'pinctrl-0' property at index 'i'
+ */
+#define NPCX_DT_IO_ALT_ITEM_BY_IDX(io_comp, inst, i)                           \
+	{                                                                      \
+	  .group = DT_PHA(NPCX_DT_IO_PHANDLE_FROM_PINCTRL(io_comp, inst, i),   \
+								alts, group),  \
+	  .bit = DT_PHA(NPCX_DT_IO_PHANDLE_FROM_PINCTRL(io_comp, inst, i),     \
+								alts, bit),    \
+	  .inverted = DT_PHA(NPCX_DT_IO_PHANDLE_FROM_PINCTRL(io_comp, inst, i),\
+								alts, inv),    \
+	},
+
+/**
+ * @brief Length of npcx_alt structures in 'pinctrl-0' property of specific
+ *        compatible io-pads device
+ *
+ * @param io_comp compatible string in devicetree file for io-pads device
+ * @param inst instance number for compatible defined in io_comp.
+ * @return length of 'pinctrl-0' property which type is 'phandles'
+ */
+#define NPCX_DT_IO_ALT_ITEMS_LEN(io_comp, inst) \
+			DT_PROP_LEN(NPCX_DT_COMP_INST(io_comp, inst), pinctrl_0)
+
+/**
+ * @brief Macro function to construct npcx_alt item with specific compatible
+ *        string in UTIL_LISTIFY extension.
+ *
+ * @param child child index in UTIL_LISTIFY extension.
+ * @param inst instance number for compatible defined in io_comp.
+ * @param io_comp compatible string in devicetree file for io-pads device
+ * @return macro function to construct a npcx_alt structure.
+ */
+#define NPCX_DT_IO_ALT_ITEMS_FUNC(child, inst, io_comp) \
+			NPCX_DT_IO_ALT_ITEM_BY_IDX(io_comp, inst, child)
+
+/**
+ * @brief Macro function to construct a list of npcx_alt items with specific
+ *        compatible string by UTIL_LISTIFY func
+ *
+ * Example devicetree fragment:
+ *    / {
+ *		host_uart: io_host_uart {
+ *			compatible = "nuvoton,npcx-host-uart";
+ *
  *			pinctrl-0 = <&altb_rxd_sl &altb_txd_sl
  *				   &altb_rts_sl &altb_cts_sl
  *				   &altb_ri_sl &altb_dtr_bout_sl
@@ -153,17 +252,17 @@
  *		};
  *	};
  *
- * Example usage: *
- *      const struct npcx_alt uart_alts[] = DT_NPCX_ALT_ITEMS_LIST(inst);
- *      const struct npcx_alt host_uart_alts[] = DT_NPCX_ALT_ITEMS_LIST(inst);
- *
- * @param inst instance number for compatible defined in DT_DRV_COMPAT.
+ * Example usage:
+ *      const struct npcx_alt host_uart_alts[] =
+ *                   NPCX_DT_IO_ALT_ITEMS_LIST(nuvoton_npcx_host_uart, 0);
+ * @param io_comp compatible string in devicetree file for io-pads device
+ * @param inst instance number for compatible defined in io_comp.
  * @return an array of npcx_alt items.
  */
-#define DT_NPCX_ALT_ITEMS_LIST(inst) {             \
-	UTIL_LISTIFY(DT_NPCX_ALT_ITEMS_LEN(inst),  \
-		     DT_NPCX_ALT_ITEMS_FUC,        \
-		     inst)                         \
+#define NPCX_DT_IO_ALT_ITEMS_LIST(io_comp, inst) {             \
+	UTIL_LISTIFY(NPCX_DT_IO_ALT_ITEMS_LEN(io_comp, inst),  \
+		     NPCX_DT_IO_ALT_ITEMS_FUNC,                \
+		     inst, io_comp)                            \
 	}
 
 /**
@@ -173,7 +272,7 @@
  * @param name property 'name' which type is 'phandle' and contains wui info.
  * @return phandle from 'name' property.
  */
-#define DT_PHANDLE_FROM_WUI_NAME(inst, name) \
+#define NPCX_DT_PHANDLE_FROM_WUI_NAME(inst, name) \
 	DT_INST_PHANDLE(inst, name)
 
 /**
@@ -183,12 +282,14 @@
  * @param name property 'name'which type is 'phandle' and contains wui info.
  * @return npcx_wui item from 'name' property.
  */
-#define DT_NPCX_WUI_ITEM_BY_NAME(inst, name)				       \
+#define NPCX_DT_WUI_ITEM_BY_NAME(inst, name)				       \
 	{                                                                      \
-	  .table = DT_PROP(DT_PHANDLE(DT_PHANDLE_FROM_WUI_NAME(inst, name),    \
-					miwus), index),                        \
-	  .group = DT_PHA(DT_PHANDLE_FROM_WUI_NAME(inst, name), miwus, group), \
-	  .bit   = DT_PHA(DT_PHANDLE_FROM_WUI_NAME(inst, name), miwus, bit),   \
+	  .table = DT_PROP(DT_PHANDLE(NPCX_DT_PHANDLE_FROM_WUI_NAME(inst,      \
+					name), miwus), index),                 \
+	  .group = DT_PHA(NPCX_DT_PHANDLE_FROM_WUI_NAME(inst, name), miwus,    \
+					group),                                \
+	  .bit   = DT_PHA(NPCX_DT_PHANDLE_FROM_WUI_NAME(inst, name), miwus,    \
+					bit),                                  \
 	}
 
 /**
@@ -198,7 +299,7 @@
  * @param i index of 'wui_maps' prop which type is 'phandles'
  * @return phandle from 'wui_maps' prop at index 'i'
  */
-#define DT_PHANDLE_FROM_WUI_MAPS(inst, i) \
+#define NPCX_DT_PHANDLE_FROM_WUI_MAPS(inst, i) \
 	DT_INST_PHANDLE_BY_IDX(inst, wui_maps, i)
 
 /**
@@ -208,12 +309,13 @@
  * @param i index of 'wui_maps' prop which type is 'phandles'
  * @return npcx_wui item at index 'i'
  */
-#define DT_NPCX_WUI_ITEM_BY_IDX(inst, i) \
+#define NPCX_DT_WUI_ITEM_BY_IDX(inst, i) \
 	{                                                                      \
-	  .table = DT_PROP(DT_PHANDLE(DT_PHANDLE_FROM_WUI_MAPS(inst, i),       \
+	  .table = DT_PROP(DT_PHANDLE(NPCX_DT_PHANDLE_FROM_WUI_MAPS(inst, i),  \
 					miwus), index),                        \
-	  .group = DT_PHA(DT_PHANDLE_FROM_WUI_MAPS(inst, i), miwus, group),    \
-	  .bit   = DT_PHA(DT_PHANDLE_FROM_WUI_MAPS(inst, i), miwus, bit),      \
+	  .group = DT_PHA(NPCX_DT_PHANDLE_FROM_WUI_MAPS(inst, i), miwus,       \
+							group),                \
+	  .bit = DT_PHA(NPCX_DT_PHANDLE_FROM_WUI_MAPS(inst, i), miwus, bit),   \
 	},
 
 /**
@@ -222,7 +324,7 @@
  * @param inst instance number for compatible defined in DT_DRV_COMPAT.
  * @return length of 'wui_maps' prop which type is 'phandles'
  */
-#define DT_NPCX_WUI_ITEMS_LEN(inst) DT_INST_PROP_LEN(inst, wui_maps)
+#define NPCX_DT_WUI_ITEMS_LEN(inst) DT_INST_PROP_LEN(inst, wui_maps)
 
 /**
  * @brief Macro function to construct a list of npcx_wui items by UTIL_LISTIFY
@@ -231,7 +333,7 @@
  * @param inst instance number for compatible defined in DT_DRV_COMPAT.
  * @return macro function to construct a npcx_wui structure.
  */
-#define DT_NPCX_WUI_ITEMS_FUC(child, inst) DT_NPCX_WUI_ITEM_BY_IDX(inst, child)
+#define NPCX_DT_WUI_ITEMS_FUNC(child, inst) NPCX_DT_WUI_ITEM_BY_IDX(inst, child)
 
 /**
  * @brief Macro function to construct a list of npcx_wui items by UTIL_LISTIFY
@@ -251,16 +353,16 @@
  *		};
  *	};
  *
- * Example usage: *
- *      const struct npcx_wui wui_map = DT_PHANDLE_FROM_WUI_NAME(inst, uart_rx);
- *      const struct npcx_wui wui_maps[] = DT_NPCX_WUI_ITEMS_LIST(inst);
+ * Example usage:
+ * const struct npcx_wui wui_map = NPCX_DT_PHANDLE_FROM_WUI_NAME(inst, uart_rx);
+ * const struct npcx_wui wui_maps[] = NPCX_DT_WUI_ITEMS_LIST(inst);
  *
  * @param inst instance number for compatible defined in DT_DRV_COMPAT.
  * @return an array of npcx_wui items.
  */
-#define DT_NPCX_WUI_ITEMS_LIST(inst) {             \
-	UTIL_LISTIFY(DT_NPCX_WUI_ITEMS_LEN(inst),  \
-		     DT_NPCX_WUI_ITEMS_FUC,        \
+#define NPCX_DT_WUI_ITEMS_LIST(inst) {             \
+	UTIL_LISTIFY(NPCX_DT_WUI_ITEMS_LEN(inst),  \
+		     NPCX_DT_WUI_ITEMS_FUNC,       \
 		     inst)                         \
 	}
 
@@ -270,8 +372,8 @@
  * @param i index of npcx miwu devices
  * @return node identifier with that path.
  */
-#define DT_NODE_FROM_MIWU_MAP(i)  DT_PATH(npcx7_miwus_int_map, \
-					  map_miwu##i##_groups)
+#define NPCX_DT_NODE_FROM_MIWU_MAP(i)  DT_PATH(npcx7_miwus_int_map, \
+						map_miwu##i##_groups)
 /**
  * @brief Get the index prop from parent MIWU device node.
  *
@@ -279,7 +381,7 @@
  * @return 'index' prop value of the node which compatible type is
  * "nuvoton,npcx-miwu".
  */
-#define DT_MIWU_IRQ_TABLE_IDX(child) \
+#define NPCX_DT_MIWU_IRQ_TABLE_IDX(child) \
 	DT_PROP(DT_PHANDLE(DT_PARENT(child), parent), index)
 
 /**
@@ -290,15 +392,18 @@
  * @return implementation to initialize interrupts of MIWU groups and enable
  * them.
  */
-#define DT_MIWU_IRQ_CONNECT_IMPL_CHILD_FUNC(child) \
-	{                                                                      \
+#define NPCX_DT_MIWU_IRQ_CONNECT_IMPL_CHILD_FUNC(child) \
+	NPCX_DT_MIWU_IRQ_CONNECT_IMPL_CHILD_FUNC_OBJ(child);
+
+#define NPCX_DT_MIWU_IRQ_CONNECT_IMPL_CHILD_FUNC_OBJ(child) \
+	do {                                                                   \
 		IRQ_CONNECT(DT_PROP(child, irq),		               \
 			DT_PROP(child, irq_prio),		               \
-			NPCX_MIWU_ISR_FUNC(DT_MIWU_IRQ_TABLE_IDX(child)),      \
+			NPCX_MIWU_ISR_FUNC(NPCX_DT_MIWU_IRQ_TABLE_IDX(child)), \
 			DT_PROP(child, group_mask),                            \
 			0);						       \
 		irq_enable(DT_PROP(child, irq));                               \
-	}
+	} while (0)
 
 /**
  * @brief Get a child node from path '/npcx7_espi_vws_map/name'.
@@ -306,7 +411,8 @@
  * @param name a path which name is /npcx7_espi_vws_map/'name'.
  * @return child node identifier with that path.
  */
-#define DT_NODE_FROM_VWTABLE(name) DT_CHILD(DT_PATH(npcx7_espi_vws_map), name)
+#define NPCX_DT_NODE_FROM_VWTABLE(name) DT_CHILD(DT_PATH(npcx7_espi_vws_map),  \
+									name)
 
 /**
  * @brief Get phandle from wui_map property of child node with that path.
@@ -314,7 +420,8 @@
  * @param name path which name is /npcx7_espi_vws_map/'name'.
  * @return phandle from "wui_map" prop of child node with that path.
  */
-#define DT_PHANDLE_VW_WUI(name) DT_PHANDLE(DT_NODE_FROM_VWTABLE(name), wui_map)
+#define NPCX_DT_PHANDLE_VW_WUI(name) DT_PHANDLE(NPCX_DT_NODE_FROM_VWTABLE(     \
+								name), wui_map)
 
 /**
  * @brief Construct a npcx_wui structure from wui_map property of a child node
@@ -323,11 +430,12 @@
  * @param name a path which name is /npcx7_espi_vws_map/'name'.
  * @return npcx_wui item with that path.
  */
-#define DT_NPCX_VW_WUI_ITEM(name)			                       \
+#define NPCX_DT_VW_WUI_ITEM(name)			                       \
 	{                                                                      \
-	  .table = DT_PROP(DT_PHANDLE(DT_PHANDLE_VW_WUI(name), miwus),  index),\
-	  .group = DT_PHA(DT_PHANDLE_VW_WUI(name), miwus, group),              \
-	  .bit   = DT_PHA(DT_PHANDLE_VW_WUI(name), miwus, bit),                \
+	  .table = DT_PROP(DT_PHANDLE(NPCX_DT_PHANDLE_VW_WUI(name), miwus),    \
+									index),\
+	  .group = DT_PHA(NPCX_DT_PHANDLE_VW_WUI(name), miwus, group),         \
+	  .bit = DT_PHA(NPCX_DT_PHANDLE_VW_WUI(name), miwus, bit),             \
 	}
 
 /**
@@ -338,12 +446,14 @@
  * @param name a path which name is /npcx7_espi_vws_map/'name'.
  * @return npcx_vw_in_config item with that path.
  */
-#define DT_NPCX_VW_IN_CONF(signal, name)                                       \
+#define NPCX_DT_VW_IN_CONF(signal, name)                                       \
 	{                                                                      \
 	  .sig = signal,                                                       \
-	  .reg_idx = DT_PROP_BY_IDX(DT_NODE_FROM_VWTABLE(name), vw_reg, 0),    \
-	  .bitmask = DT_PROP_BY_IDX(DT_NODE_FROM_VWTABLE(name), vw_reg, 1),    \
-	  .vw_wui  = DT_NPCX_VW_WUI_ITEM(name),                                \
+	  .reg_idx = DT_PROP_BY_IDX(NPCX_DT_NODE_FROM_VWTABLE(name), vw_reg,   \
+									0),    \
+	  .bitmask = DT_PROP_BY_IDX(NPCX_DT_NODE_FROM_VWTABLE(name), vw_reg,   \
+									1),    \
+	  .vw_wui  = NPCX_DT_VW_WUI_ITEM(name),                                \
 	}
 
 /**
@@ -354,11 +464,82 @@
  * @param name a path which name is /npcx7_espi_vws_map/'name'.
  * @return npcx_vw_in_config item with that path.
  */
-#define DT_NPCX_VW_OUT_CONF(signal, name)                                      \
+#define NPCX_DT_VW_OUT_CONF(signal, name)                                      \
 	{                                                                      \
 	  .sig = signal,                                                       \
-	  .reg_idx = DT_PROP_BY_IDX(DT_NODE_FROM_VWTABLE(name), vw_reg, 0),    \
-	  .bitmask = DT_PROP_BY_IDX(DT_NODE_FROM_VWTABLE(name), vw_reg, 1),    \
+	  .reg_idx = DT_PROP_BY_IDX(NPCX_DT_NODE_FROM_VWTABLE(name), vw_reg,   \
+									0),    \
+	  .bitmask = DT_PROP_BY_IDX(NPCX_DT_NODE_FROM_VWTABLE(name), vw_reg,   \
+									1),    \
+	}
+
+/**
+ * @brief Get a node from path '/def_lvol_io_list' which has a property
+ *        'lvol_io_pads' contains low-voltage configurations and need to set
+ *        by default.
+ *
+ * @return node identifier with that path.
+ */
+#define NPCX_DT_NODE_DEF_LVOL_LIST  DT_PATH(def_lvol_io_list)
+
+/**
+ * @brief Length of npcx_lvol structures in 'lvol_io_pads' property
+ *
+ * @return length of 'lvol_io_pads' prop which type is 'phandles'
+ */
+#define NPCX_DT_LVOL_ITEMS_LEN DT_PROP_LEN(NPCX_DT_NODE_DEF_LVOL_LIST, \
+								lvol_io_pads)
+
+/**
+ * @brief Get phandle from 'lvol_io_pads' prop which type is 'phandles' at index
+ *        'i'
+ *
+ * @param i index of 'lvol_io_pads' prop which type is 'phandles'
+ * @return phandle from 'lvol_io_pads' prop at index 'i'
+ */
+#define NPCX_DT_PHANDLE_FROM_LVOL_IO_PADS(i) \
+	DT_PHANDLE_BY_IDX(NPCX_DT_NODE_DEF_LVOL_LIST, lvol_io_pads, i)
+
+/**
+ * @brief Construct a npcx_lvol structure from 'lvol_io_pads' property at index
+ *        'i'.
+ *
+ * @param i index of 'lvol_io_pads' prop which type is 'phandles'
+ * @return npcx_lvol item from 'lvol_io_pads' property at index 'i'
+ */
+#define NPCX_DT_LVOL_ITEMS_BY_IDX(i, _)                                        \
+	{                                                                      \
+	  .io_port = DT_PHA(NPCX_DT_PHANDLE_FROM_LVOL_IO_PADS(i),              \
+							lvols, io_port),       \
+	  .io_bit = DT_PHA(NPCX_DT_PHANDLE_FROM_LVOL_IO_PADS(i),               \
+							lvols, io_bit),        \
+	  .ctrl = DT_PHA(NPCX_DT_PHANDLE_FROM_LVOL_IO_PADS(i),                 \
+							lvols, ctrl),          \
+	  .bit = DT_PHA(NPCX_DT_PHANDLE_FROM_LVOL_IO_PADS(i),                  \
+							lvols, bit),           \
+	},
+
+/**
+ * @brief Macro function to construct a list of npcx_lvol items by UTIL_LISTIFY
+ *        func.
+ *
+ * Example devicetree fragment:
+ *    / {
+ *          def_lvol_io_list {
+ *              compatible = "nuvoton,npcx-lvolctrl-def";
+ *              lvol_io_pads = <&lvol_io90   // I2C1_SCL0 1.8V support
+ *                              &lvol_io87>; // I2C1_SDA0 1,8V support
+ *          };
+ *	};
+ *
+ * Example usage:
+ * static const struct npcx_lvol def_lvols[] = NPCX_DT_IO_LVOL_ITEMS_DEF_LIST;
+ *
+ * @return an array of npcx_lvol items which configure low-voltage support
+ */
+#define NPCX_DT_IO_LVOL_ITEMS_DEF_LIST {                \
+		UTIL_LISTIFY(NPCX_DT_LVOL_ITEMS_LEN,    \
+			NPCX_DT_LVOL_ITEMS_BY_IDX, _)   \
 	}
 
 #endif /* _NUVOTON_NPCX_SOC_DT_H_ */

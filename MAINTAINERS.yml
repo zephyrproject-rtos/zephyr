@@ -156,7 +156,11 @@ Bluetooth:
         - include/bluetooth/
         - include/drivers/bluetooth/
         - samples/bluetooth/
-        - subsys/bluetooth/
+        - subsys/bluetooth/*
+        - subsys/bluetooth/common/
+        - subsys/bluetooth/host/
+        - subsys/bluetooth/services/
+        - subsys/bluetooth/shell/
         - tests/bluetooth/
     labels:
         - "area: Bluetooth"
@@ -170,9 +174,10 @@ Bluetooth controller:
         - thoh-ot
     files:
         - subsys/bluetooth/controller/
+    labels:
+        - "area: Bluetooth Controller"
 
 Bluetooth Mesh:
-    # Provisional entry, subject to approval
     status: maintained
     maintainers:
         - trond-snekvik
@@ -181,6 +186,7 @@ Bluetooth Mesh:
     files:
         - subsys/bluetooth/mesh/
         - include/bluetooth/mesh/
+        - tests/bluetooth/mesh*/
     labels:
         - "area: Bluetooth Mesh"
 
@@ -192,9 +198,11 @@ Build system:
         - nashif
     files:
         - cmake/
-    files-regex:
-        - CMakeLists.txt$
-        - \.cmake$
+        - CMakeLists.txt
+        - scripts/zephyr_module.py
+        - share/
+        - doc/guides/build/
+        - doc/guides/modules.rst
     labels:
         - "area: Build System"
 
@@ -202,7 +210,6 @@ C library:
     status: orphaned
     collaborators:
          - nashif
-         - andrewboie
     files:
          - lib/libc/
          - tests/lib/c_lib/
@@ -215,11 +222,14 @@ CMSIS API layer:
          - nashif
     files:
          - lib/cmsis_rtos_v*/
+    labels:
+        - "area: Portability"
 
 Common arch:
     status: maintained
-    maintainers:
-        - andrewboie
+    collaborators:
+        - dcpleung
+        - nashif
     files:
         - arch/common/
         - include/arch/common/
@@ -227,7 +237,6 @@ Common arch:
         - "area: Architectures"
 
 Console:
-    # Provisional entry, subject to approval
     status: maintained
     maintainers:
         - pfalcon
@@ -241,11 +250,30 @@ Debug:
     status: maintained
     maintainers:
         - nashif
+    collaborators:
+        - dcpleung
     files:
         - include/debug/
         - subsys/debug/
+        - tests/subsys/debug/
     labels:
         - "area: Debugging"
+
+Device Driver Model:
+    status: maintained
+    maintainers:
+        - tbursztyka
+    collaborators:
+        - dcpleung
+        - nashif
+    files:
+        - include/device.h
+        - kernel/device.c
+        - include/init.h
+        - tests/kernel/device/
+        - doc/reference/drivers/
+    labels:
+        - "area: Device Model"
 
 DFU:
     status: maintained
@@ -255,6 +283,8 @@ DFU:
         - include/dfu/
         - subsys/dfu/
         - tests/subsys/dfu/
+    labels:
+        - "area: DFU"
 
 Devicetree:
     status: maintained
@@ -266,8 +296,12 @@ Devicetree:
         - scripts/dts/
         - dts/bindings/
         - dts/common/
+        - tests/lib/devicetree/
+        - dts/bindings/test/
+        - doc/guides/dts/
+        - include/devicetree/
     labels:
-        - "area: Device Tree"
+        - "area: Devicetree"
 
 Disk:
     status: orphaned
@@ -282,7 +316,7 @@ Display drivers:
     maintainers:
         - vanwinkeljan
     collaborators:
-        - jfischer-phytec-iot
+        - jfischer-no
     files:
         - drivers/display/
         - dts/bindings/display/
@@ -291,26 +325,29 @@ Display drivers:
         - include/drivers/display.h
         - lib/gui/
         - subsys/fb/
+        - samples/display/
     labels:
         - "area: Display"
 
 Documentation:
-    # Provisional entry, subject to approval
     status: maintained
     maintainers:
         - carlescufi
     collaborators:
         - nashif
+        - utzig
     files:
-        - doc/
-    files-regex:
-        - \.rst$
-        - /doc/
+        - doc/*
+        - doc/static/
+        - doc/templates/
+        - doc/custom-doxygen/
+        - doc/scripts/
+        - README.rst
+        - Makefile
     labels:
         - "area: Documentation"
 
 "Drivers: ADC":
-    # Provisional entry, subject to approval
     status: maintained
     maintainers:
         - anangl
@@ -318,16 +355,24 @@ Documentation:
         - drivers/adc/
         - include/drivers/adc.h
         - tests/drivers/adc/
+        - samples/drivers/adc/
     labels:
         - "area: ADC"
 
 "Drivers: Audio":
     status: maintained
     maintainers:
-        - Vudentz
+        - andyross
+    collaborators:
+        - nashif
+        - lyakh
+        - lgirdwood
     files:
         - drivers/audio/
         - include/audio/
+        - samples/audio/
+    labels:
+        - "area: Audio"
 
 "Drivers: CAN":
     status: maintained
@@ -338,15 +383,20 @@ Documentation:
         - karstenkoenig
     files:
         - drivers/can/
+        - include/canbus/
+        - subsys/canbus/
+        - subsys/net/l2/canbus/
+        - tests/subsys/canbus/
         - dts/bindings/can/
         - include/drivers/can.h
         - samples/drivers/can/
         - tests/drivers/can/
+        - samples/subsys/canbus/
+        - doc/reference/networking/can_api.rst
     labels:
         - "area: CAN"
 
 "Drivers: Clock control":
-    # Provisional entry, subject to approval
     status: maintained
     maintainers:
        - nordic-krch
@@ -392,7 +442,6 @@ Documentation:
         - "area: Crypto / RNG"
 
 "Drivers: DAC":
-    # Provisional entry, subject to approval
     status: maintained
     maintainers:
         - martinjaeger
@@ -400,6 +449,7 @@ Documentation:
         - drivers/dac/
         - include/drivers/dac.h
         - tests/drivers/dac/
+        - samples/drivers/dac/
     labels:
         - "area: DAC"
 
@@ -413,7 +463,6 @@ Documentation:
         - "area: DMA"
 
 "Drivers: EEPROM":
-    # Provisional entry, subject to approval
     status: maintained
     maintainers:
         - henrikbrixandersen
@@ -426,7 +475,6 @@ Documentation:
         - "area: EEPROM"
 
 "Drivers: Entropy":
-    # Provisional entry, subject to approval
     status: maintained
     maintainers:
         - ceolin
@@ -435,15 +483,22 @@ Documentation:
         - include/drivers/entropy.h
         - samples/drivers/entropy/
         - tests/drivers/entropy/
+    labels:
+        - "area: Crypto / RNG"
 
 "Drivers: ESPI":
-    status: orphaned
+    status: maintained
+    maintainers:
+      - albertofloyd
+    collaborators:
+      - VenkatKotakonda
+      - scottwcpg
     files:
         - drivers/espi/
         - include/drivers/espi.h
         - samples/drivers/espi/
     labels:
-        - "eSPI"
+        - "area: eSPI"
 
 "Drivers: Ethernet":
     status: maintained
@@ -466,6 +521,7 @@ Documentation:
         - dts/bindings/flash_controller/
         - include/drivers/flash.h
         - samples/drivers/flash_shell/
+        - tests/drivers/flash/
     labels:
         - "area: Flash"
 
@@ -485,7 +541,6 @@ Documentation:
         - "area: GPIO"
 
 "Drivers: HW Info":
-    # Provisional entry, subject to approval
     status: maintained
     maintainers:
         - alexanderwachter
@@ -498,7 +553,6 @@ Documentation:
         - "area: HWINFO"
 
 "Drivers: I2C":
-    # Provisional entry, subject to approval
     status: maintained
     maintainers:
         - pabigot
@@ -510,7 +564,6 @@ Documentation:
         - "area: I2C"
 
 "Drivers: I2S":
-    # Provisional entry, subject to approval
     status: maintained
     maintainers:
         - anangl
@@ -531,6 +584,8 @@ Documentation:
         - jukkar
     files:
         - drivers/ieee802154/
+    labels:
+        - "area: IEEE 802.15.4"
 
 "Drivers: Interrupt controllers":
     status: orphaned
@@ -539,15 +594,19 @@ Documentation:
         - dts/bindings/interrupt-controller/
         - include/drivers/interrupt_controller/
         - include/dt-bindings/interrupt-controller/
+    labels:
+        - "area: Interrupt Controller"
 
 "Drivers: IPM":
     status: maintained
-    maintainers:
-        - andrewboie
+    collaborators:
+        - dcpleung
     files:
         - drivers/ipm/
     description: >-
         Inter-processor mailboxes
+    labels:
+        - "area: IPM"
 
 "Drivers: kscan":
     status: orphaned
@@ -556,9 +615,10 @@ Documentation:
         - include/drivers/kscan.h
         - samples/drivers/espi/
         - tests/drivers/kscan/
+    labels:
+        - "area: Kscan"
 
 "Drivers: LED":
-    # Provisional entry, subject to approval
     status: maintained
     maintainers:
         - Mani-Sadhasivam
@@ -578,9 +638,10 @@ Documentation:
         - drivers/led_strip/
         - dts/bindings/led_strip/
         - include/drivers/led_strip.h
+    labels:
+        - "area: LED"
 
 "Drivers: lora":
-    # Provisional entry, subject to approval
     status: maintained
     maintainers:
         - Mani-Sadhasivam
@@ -588,39 +649,48 @@ Documentation:
         - drivers/lora/
         - include/drivers/lora.h
         - samples/drivers/lora/
+        - include/lorawan/
+        - subsys/lorawan/
+        - samples/lorawan/
+    labels:
+        - "area: LoRa"
 
 "Drivers: Modem":
-    status: maintained
-    maintainers:
-        - mike-scott
+    status: orphaned
     files:
         - drivers/modem/
     labels:
         - "area: Modem"
 
-"Drivers: Neural networking":
+"Drivers: Neural Networks":
     status: orphaned
     files:
         - drivers/neural_net/
+    labels:
+        - "area: Neural Networks"
 
 "Drivers: PCI":
     status: maintained
     maintainers:
         - dcpleung
     collaborators:
-        - andrewboie
+        - jhedberg
+        - finikorg
+        - tbursztyka
     files:
         - drivers/pcie/
         - include/drivers/pcie/
     labels:
         - "area: PCI"
 
-"Drivers: peci":
+"Drivers: PECI":
     status: orphaned
     files:
         - drivers/peci/
         - include/drivers/peci.h
         - samples/drivers/peci/
+    labels:
+        - "area: PECI"
 
 "Drivers: Pinmux":
     status: maintained
@@ -634,24 +704,37 @@ Documentation:
         - "area: Pinmux"
 
 "Drivers: PTP Clock":
-    # Provisional entry, subject to approval
     status: maintained
     maintainers:
         - jukkar
     files:
         - drivers/ptp_clock/
         - include/ptp_clock.h
+    labels:
+        - "area: Clocks"
+
+"Drivers: PSCI":
+    status: maintained
+    maintainers:
+        - carlocaione
+    files:
+        - drivers/psci/
+        - include/drivers/psci.h
+        - include/arch/arm/arm-smccc.h
+    labels:
+        - "area: PSCI"
 
 "Drivers: PWM":
-    # Provisional entry, subject to approval
     status: maintained
     maintainers:
         - anangl
+    collaborators:
+        - henrikbrixandersen
     files:
         - drivers/pwm/
         - dts/bindings/pwm/
-        - include/drivers/pwm.h
         - tests/drivers/pwm/
+        - include/*/pwms.h
     labels:
         - "area: PWM"
 
@@ -661,7 +744,10 @@ Documentation:
         - dcpleung
     files:
         - drivers/serial/
+        - include/drivers/uart.h
+        - include/drivers/uart/
         - dts/bindings/serial/
+        - tests/drivers/uart/
     labels:
         - "area: UART"
 
@@ -675,6 +761,8 @@ Documentation:
         - drivers/sensor/
         - include/drivers/sensor.h
         - samples/sensor/
+        - tests/drivers/sensor/
+        - dts/bindings/sensor/
     labels:
         - "area: Sensors"
 
@@ -712,6 +800,8 @@ Documentation:
 
 "Drivers: Watchdog":
     status: orphaned
+    collaborators:
+        - katsuster
     files:
         - doc/reference/peripherals/watchdog.rst
         - drivers/watchdog/
@@ -743,8 +833,10 @@ Documentation:
     description: >-
         Inventek es-WiFi
 
+    labels:
+        - "area: Wifi"
+
 Filesystems:
-    # Provisional entry, subject to approval
     status: maintained
     maintainers:
         - nvlsianpu
@@ -754,7 +846,6 @@ Filesystems:
         - nashif
         - pabigot
         - vanwinkeljan
-        - wentongwu
     files:
         - include/fs/
         - samples/subsys/fs/
@@ -770,13 +861,14 @@ JSON Web Token:
     files:
         - subsys/jwt/
 
+    labels:
+        - "area: JSON"
+
 Kconfig:
-    # Provisional entry, subject to approval
     status: orphaned
     files:
         - scripts/kconfig/
-    files-regex:
-        - Kconfig[\w._-]*$
+        - doc/guides/kconfig/
     labels:
         - "area: Kconfig"
     description: >-
@@ -788,17 +880,33 @@ Kernel:
     maintainers:
         - andyross
     collaborators:
-        - andrewboie
+        - nashif
+        - ceolin
+        - dcpleung
+        - pabigot
     files:
         - doc/reference/kernel/
         - include/kernel*.h
         - kernel/
         - tests/kernel/
+        - include/sys_clock.h
     labels:
         - "area: Kernel"
 
+Base OS:
+    status: maintained
+    maintainers:
+        - andyross
+    collaborators:
+        - dcpleung
+        - nashif
+    files:
+        - include/sys/
+        - lib/os/
+    labels:
+        - "area: Base OS"
+
 Little FS:
-    # Provisional entry, subject to approval
     status: maintained
     maintainers:
         - pabigot
@@ -808,6 +916,9 @@ Little FS:
         - tests/subsys/fs/littlefs/
     description: >-
        Little FS
+
+    labels:
+        - "area: File System"
 
 Logging:
     status: maintained
@@ -822,7 +933,6 @@ Logging:
         - "area: Logging"
 
 MAINTAINERS file:
-    # Provisional entry, subject to approval
     status: maintained
     maintainers:
         - MaureenHelm
@@ -836,7 +946,6 @@ MAINTAINERS file:
         Zephyr Maintainers File
 
 MCU Manager:
-    # Provisional entry, subject to approval
     status: maintained
     maintainers:
         - de-nordic
@@ -924,8 +1033,10 @@ Networking:
         - subsys/net/buf.c
         - tests/net/buf/
 
+    labels:
+        - "area: Networking"
+
 "Networking: CoAP":
-    # Provisional entry, subject to approval
     status: maintained
     maintainers:
         - rlubos
@@ -935,9 +1046,9 @@ Networking:
         - subsys/net/lib/coap/
         - samples/net/sockets/coap_*/
         - tests/net/lib/coap/
-
+    labels:
+        - "area: Networking"
 "Networking: LWM2M":
-    # Provisional entry, subject to approval
     status: maintained
     maintainers:
         - rlubos
@@ -959,6 +1070,8 @@ Networking:
         - subsys/net/lib/mqtt/
         - tests/net/lib/mqtt_packet/
         - samples/net/mqtt_publisher/
+    labels:
+        - "area: Networking"
 
 NIOS-2 arch:
     status: maintained
@@ -980,8 +1093,8 @@ nRF52 BSIM:
         - "platform: nrf52_bsim"
 
 POSIX API layer:
-    status: maintained
-    maintainers:
+    status: orphaned
+    collaborators:
         - pfalcon
     files:
         - include/posix/
@@ -991,38 +1104,44 @@ POSIX API layer:
         - "area: POSIX"
 
 Power management:
-    # Provisional entry, subject to approval
     status: maintained
     maintainers:
-        - wentongwu
+        - ceolin
+    collaborators:
+        - nashif
+        - pabigot
     files:
         - include/power/power.h
         - samples/subsys/power/
         - subsys/power/
+        - tests/subsys/power/
     labels:
         - "area: Power Management"
 
 RISCV arch:
-    # Provisional entry, subject to approval
     status: orphaned
     collaborators:
         - mgielda
-        - nategraff-sifive
+        - katsuster
     files:
         - arch/riscv/
+        - boards/riscv/
+        - dts/bindings/riscv/
         - include/arch/riscv/
+        - soc/riscv/
     labels:
         - "area: RISCV"
 
-Sanitycheck:
+Twister:
     status: maintained
     maintainers:
         - nashif
     files:
-        - scripts/sanitycheck
-        - scripts/sanity_chk/
+        - scripts/twister
+        - scripts/pylib/twister/
+        - scripts/tests/twister/
     labels:
-        - "area: Sanitycheck"
+        - "area: Twister"
 
 Settings:
     status: maintained
@@ -1045,7 +1164,6 @@ Shell:
         - include/shell/
         - samples/subsys/shell/
         - subsys/shell/
-        - tests/shell/
         - tests/subsys/shell/
     labels:
         - "area: Shell"
@@ -1056,13 +1174,139 @@ Shields:
         - erwango
     collaborators:
         - avisconti
-        - jfischer-phytec-iot
+        - jfischer-no
     files:
         - boards/shields/
+        - doc/guides/porting/shields.rst
     labels:
         - "area: Shields"
 
-STM32:
+SPARC arch:
+    status: maintained
+    collaborators:
+        - martin-aberg
+    files:
+        - arch/sparc/
+        - include/arch/sparc/
+    labels:
+        - "area: SPARC"
+
+Synopsys Platforms:
+    status: maintained
+    maintainers:
+        - ruudw
+    collaborators:
+        - abrodkin
+        - evgeniy-paltsev
+        - IRISZZW
+    files:
+        - soc/arc/
+        - boards/arc/
+    labels:
+        - "platform: Synopsys"
+
+Nuvoton Platforms:
+    status: maintained
+    collaborators:
+        - MulinChao
+        - sjg20
+        - jackrosenthal
+    files:
+        - soc/arm/nuvoton/
+        - boards/arm/npcx*/
+        - dts/arm/nuvoton/
+        - dts/bindings/*/nuvoton/*
+        - drivers/*/*_npcx*
+    labels:
+        - "platform: Nuvoton"
+
+SiLabs Platforms:
+    status: maintained
+    collaborators:
+        - chrta
+    files:
+        - soc/arm/silabs_*/
+        - boards/arm/ef*/
+        - dts/arm/silabs/
+        - dts/bindings/*/silabs*
+        - drivers/*/*_gecko*
+    labels:
+        - "platform: SiLabs"
+
+Intel Platforms (X86):
+    status: maintained
+    maintainers:
+        - jenmwms
+    collaborators:
+        - jhedberg
+        - aasthagr
+    files:
+        - boards/x86/
+        - soc/x86/
+    labels:
+        - "platform: X86"
+
+Intel Platforms (Xtensa):
+    status: maintained
+    maintainers:
+        - nashif
+    collaborators:
+        - andyross
+        - dcpleung
+    files:
+        - boards/xtensa/intel_*/
+        - soc/xtensa/intel_*/
+        - samples/boards/intel_s1000_crb/
+    labels:
+        - "platform: Intel CAVS"
+
+NXP Platforms:
+  status: maintained
+  maintainers:
+    - MaureenHelm
+  files:
+    - boards/arm/mimx*/
+    - boards/arm/frdm_k*/
+    - boards/arm/lpcxpress*/
+    - boards/arm/twr_*
+    - soc/arm/nxp_*/
+    - drivers/*/*imx*
+    - drivers/*/*lpc*
+    - drivers/*/*mcux*
+    - dts/arm/nxp/
+    - dts/bindings/*/nxp*
+  labels:
+    - "platform: NXP"
+
+Microchip Platforms:
+  status: maintained
+  maintainers:
+    - scottwcpg
+  collaborators:
+    - VenkatKotakonda
+    - albertofloyd
+  files:
+    - boards/arm/mec*/
+    - dts/arm/microchip/
+    - soc/arm/microchip_mec/
+    - drivers/*/*mchp*
+  labels:
+    - "platform: Microchip"
+
+nRF Platforms:
+    status: maintained
+    maintainers:
+        - ioannisg
+    files:
+        - boards/arm/*nrf*/
+        - drivers/*/*nrfx*
+        - soc/arm/nordic_nrf/
+        - samples/boards/nrf/
+        - dts/arm/nordic/
+    labels:
+        - "platform: nRF"
+
+STM32 Platforms:
     status: maintained
     maintainers:
         - erwango
@@ -1071,6 +1315,7 @@ STM32:
         - boards/arm/stm32*_disco/
         - boards/arm/stm32*_eval/
         - drivers/*/*stm32*/
+        - drivers/*/*stm32*
         - drivers/*/*/*stm32*
         - dts/arm/st/
         - dts/bindings/*/*stm32*
@@ -1082,7 +1327,6 @@ STM32:
         boards.
 
 Storage:
-    # Provisional entry, subject to approval
     status: maintained
     maintainers:
         - nvlsianpu
@@ -1094,7 +1338,6 @@ Storage:
         - "area: Storage"
 
 TF-M Integration:
-    # Provisional entry, subject to approval
     status: maintained
     maintainers:
         - microbuilder
@@ -1109,19 +1352,20 @@ Tracing:
     status: maintained
     maintainers:
         - nashif
-    collaborators:
-        - wentongwu
     files:
         - subsys/tracing/
         - include/tracing/
+        - subsys/timing/
+        - samples/subsys/tracing/
+        - doc/guides/tracing/
+        - tests/subsys/tracing/
     labels:
         - "area: tracing"
 
 USB:
-    # Provisional entry, subject to approval
     status: maintained
     maintainers:
-        - jfischer-phytec-iot
+        - jfischer-no
     collaborators:
         - finikorg
     files:
@@ -1137,17 +1381,27 @@ USB:
 
 Userspace:
     status: maintained
-    maintainers:
-        - andrewboie
+    collaborators:
+        - dcpleung
+        - ioannisg
     files:
         - doc/reference/usermode/kernelobjects.rst
         - include/app_memory/
         - include/linker/app_smem*.ld
+        - tests/kernel/mem_protect/
+        - samples/userspace/
+        - include/syscall.h
+        - kernel/userspace*
+        - scripts/gen_app_partitions.py
+        - scripts/gen_kobject_list.py
+        - scripts/gen_syscalls.py
+        - scripts/process_gperf.py
+        - scripts/gen_relocate_app.py
+        - include/sys/kobject.h
     labels:
         - "area: Userspace"
 
 VFS:
-    # Provisional entry, subject to approval
     status: maintained
     maintainers:
         - de-nordic
@@ -1156,6 +1410,10 @@ VFS:
         - tests/subsys/fs/fat_fs_api/
     description: >-
        VFS implementation
+
+    labels:
+        - "area: File System"
+
 
 West:
     status: maintained
@@ -1175,7 +1433,7 @@ Xtensa arch:
         - dcpleung
     collaborators:
         - andyross
-        - andrewboie
+        - nashif
     files:
         - arch/xtensa/
         - include/arch/xtensa/
@@ -1187,15 +1445,34 @@ Xtensa arch:
 x86 arch:
     status: maintained
     maintainers:
-        - ceolin
+        - jhedberg
     collaborators:
         - andyross
+        - nashif
+        - dcpleung
+        - ceolin
+        - jenmwms
+        - aasthagr
     files:
         - arch/x86/
         - include/arch/x86/
         - tests/arch/x86/
     labels:
         - "area: X86"
+
+CI:
+    status: maintained
+    maintainers:
+        - nashif
+        - galak
+    files:
+        - .github/
+        - .buildkite/
+        - scripts/ci/
+        - .checkpatch.conf
+        - scripts/gitlint/
+    labels:
+        - "area: Continuous Integration"
 
 ZTest:
     status: maintained

@@ -13,11 +13,14 @@
  * Gaussian Mixture Model and Neural Network Accelerator (GNA)
  */
 
+#define DT_DRV_COMPAT intel_gna
+
 #include <kernel.h>
 #include <string.h>
 #include <device.h>
 #include <drivers/gna.h>
 
+#include <memory.h>
 #include "intel_gna.h"
 
 #define LOG_LEVEL CONFIG_NEURAL_NET_LOG_LEVEL
@@ -210,7 +213,7 @@ static int intel_gna_initialize(const struct device *dev)
 			DEV_NAME(dev), &gna_config_desc);
 
 	/* register interrupt handler */
-	IRQ_CONNECT(INTEL_GNA_IRQ_ID, INTEL_GNA_IRQ_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
 			intel_gna_interrupt_handler, DEVICE_GET(gna), 0);
 	/* enable interrupt */
 	irq_enable(INTEL_GNA_IRQ_ID);
@@ -222,7 +225,6 @@ static int intel_gna_initialize(const struct device *dev)
 static int intel_gna_configure(const struct device *dev,
 			       struct gna_config *cfg)
 {
-	const struct intel_gna_config *const dev_cfg = DEV_CFG(dev);
 	struct intel_gna_data *const gna = DEV_DATA(dev);
 	volatile struct intel_gna_regs *regs = gna->regs;
 
@@ -237,7 +239,7 @@ static int intel_gna_configure(const struct device *dev,
 		return -EINVAL;
 	}
 
-	dev_cfg->config = *cfg;
+	gna->config = *cfg;
 
 	regs->gnactrl |= GNA_CTRL_OPER_MODEL_XNN |
 		GNA_CTRL_ERR_INTR_ENABLE | GNA_CTRL_COMPL_INTR_ENABLE;
@@ -283,7 +285,7 @@ static int intel_gna_register_model(const struct device *dev,
 	struct intel_gna_data *const gna = DEV_DATA(dev);
 	struct intel_gna_model *gna_model;
 	struct gna_model_header *header;
-	uint32_t ro_size, rw_size;
+	uint32_t ro_size, rw_size = 0;
 	void *virtual_base;
 	void *ro_region;
 
@@ -518,12 +520,12 @@ static const struct gna_driver_api gna_driver_api = {
 	.infer			= intel_gna_infer,
 };
 
-static struct intel_gna_config intel_gna_config;
 static struct intel_gna_data intel_gna_driver_data = {
-	.regs = (volatile struct intel_gna_regs *)INTEL_GNA_BASE_ADDR,
+	.regs = (volatile struct intel_gna_regs *)DT_INST_REG_ADDR(0),
 };
 
-DEVICE_AND_API_INIT(gna, CONFIG_INTEL_GNA_NAME, intel_gna_initialize,
-		    (void *)&intel_gna_driver_data, &intel_gna_config,
-		    POST_KERNEL, CONFIG_INTEL_GNA_INIT_PRIORITY,
-		    &gna_driver_api);
+DEVICE_DT_INST_DEFINE(0, intel_gna_initialize,
+		      device_pm_control_nop,
+		      (void *)&intel_gna_driver_data, NULL,
+		      POST_KERNEL, CONFIG_INTEL_GNA_INIT_PRIORITY,
+		      &gna_driver_api);

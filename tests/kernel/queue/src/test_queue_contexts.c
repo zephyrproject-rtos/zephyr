@@ -11,8 +11,8 @@
 /**TESTPOINT: init via K_QUEUE_DEFINE*/
 K_QUEUE_DEFINE(kqueue);
 
-K_MEM_POOL_DEFINE(mem_pool_fail, 4, _MPOOL_MINBLK, 1, 4);
-K_MEM_POOL_DEFINE(mem_pool_pass, 4, 64, 4, 4);
+K_HEAP_DEFINE(mem_pool_fail, 8 + 128);
+K_HEAP_DEFINE(mem_pool_pass, 64 * 4 + 128);
 
 struct k_queue queue;
 static qdata_t data[LIST_LEN];
@@ -252,7 +252,7 @@ void test_queue_get_2threads(void)
 
 static void tqueue_alloc(struct k_queue *pqueue)
 {
-	k_thread_resource_pool_assign(k_current_get(), NULL);
+	k_thread_heap_assign(k_current_get(), NULL);
 
 	/* Alloc append without resource pool */
 	k_queue_alloc_append(pqueue, (void *)&data_append);
@@ -261,7 +261,7 @@ static void tqueue_alloc(struct k_queue *pqueue)
 	zassert_false(k_queue_remove(pqueue, &data_append), NULL);
 
 	/* Assign resource pool of lower size */
-	k_thread_resource_pool_assign(k_current_get(), &mem_pool_fail);
+	k_thread_heap_assign(k_current_get(), &mem_pool_fail);
 
 	/* Prepend to the queue, but fails because of
 	 * insufficient memory
@@ -276,8 +276,7 @@ static void tqueue_alloc(struct k_queue *pqueue)
 	zassert_true(k_queue_is_empty(pqueue), NULL);
 
 	/* Assign resource pool of sufficient size */
-	k_thread_resource_pool_assign(k_current_get(),
-				      &mem_pool_pass);
+	k_thread_heap_assign(k_current_get(), &mem_pool_pass);
 
 	zassert_false(k_queue_alloc_prepend(pqueue, (void *)&data_prepend),
 		      NULL);
@@ -293,19 +292,17 @@ static void tqueue_alloc(struct k_queue *pqueue)
  * @brief Test queue alloc append and prepend
  * @ingroup kernel_queue_tests
  * @see k_queue_alloc_append(), k_queue_alloc_prepend(),
- * k_thread_resource_pool_assign(), k_queue_is_empty(),
+ * z_thread_resource_pool_assign(), k_queue_is_empty(),
  * k_queue_get(), k_queue_remove()
  */
 void test_queue_alloc(void)
 {
-	struct k_mem_block block;
-
 	/* The mem_pool_fail pool is supposed to be too small to
 	 * succeed any allocations, but in fact with the heap backend
 	 * there's some base minimal memory in there that can be used.
 	 * Make sure it's really truly full.
 	 */
-	while (k_mem_pool_alloc(&mem_pool_fail, &block, 1, K_NO_WAIT) == 0) {
+	while (k_heap_alloc(&mem_pool_fail, 1, K_NO_WAIT) != NULL) {
 	}
 
 	k_queue_init(&queue);
@@ -388,7 +385,7 @@ void test_queue_poll_race(void)
 void test_multiple_queues(void)
 {
 	/*define multiple queues*/
-	struct k_queue queues[QUEUE_NUM];
+	static struct k_queue queues[QUEUE_NUM];
 
 	for (int i = 0; i < QUEUE_NUM; i++) {
 		k_queue_init(&queues[i]);
@@ -397,4 +394,39 @@ void test_multiple_queues(void)
 		tqueue_append(&queues[i]);
 		tqueue_get(&queues[i]);
 	}
+}
+
+void user_access_queue_private_data(void *p1, void *p2, void *p3)
+{
+	ztest_set_fault_valid(true);
+	/* try to access to private kernel data, will happen kernel oops */
+	k_queue_is_empty(&queue);
+}
+
+/**
+ * @brief Test access kernel object with private data using system call
+ *
+ * @details
+ * - When defining system calls, it is very important to ensure that
+ *   access to the API’s private data is done exclusively through system call
+ *   interfaces. Private kernel data should never be made available to user mode
+ *   threads directly. For example, the k_queue APIs were intentionally not made
+ *   available as they store bookkeeping information about the queue directly
+ *   in the queue buffers which are visible from user mode.
+ * - Current test makes user thread try to access private kernel data within
+ *   their associated data structures. Kernel will track that system call
+ *   access to these object with the kernel object permission system.
+ *   Current user thread doesn't have permission on it, trying to access
+ *   &pqueue kernel object will happen kernel oops, because current user
+ *   thread doesn't have permission on k_queue object with private kernel data.
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+void test_access_kernel_obj_with_priv_data(void)
+{
+	k_queue_init(&queue);
+	k_queue_insert(&queue, k_queue_peek_tail(&queue), (void *)&data[0]);
+	k_thread_create(&tdata, tstack, STACK_SIZE, user_access_queue_private_data,
+					NULL, NULL, NULL, 0, K_USER, K_NO_WAIT);
+	k_thread_join(&tdata, K_FOREVER);
 }

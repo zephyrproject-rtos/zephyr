@@ -10,7 +10,7 @@
  * This header needs lots of types and macros, instead of relaying on
  * good inclusion order let's pull them through soc.h
  */
-#include "soc.h"
+#include <soc.h>
 
 /* NRF Radio HW timing constants
  * - provided in US and NS (for higher granularity)
@@ -232,19 +232,25 @@ static inline uint32_t hal_radio_tx_power_min_get(void)
 
 static inline uint32_t hal_radio_tx_power_max_get(void)
 {
+#if defined(RADIO_TXPOWER_TXPOWER_Pos4dBm)
 	return RADIO_TXPOWER_TXPOWER_Pos4dBm;
+#else
+	return RADIO_TXPOWER_TXPOWER_0dBm;
+#endif
 }
 
 static inline uint32_t hal_radio_tx_power_floor(int8_t tx_power_lvl)
 {
+#if defined(RADIO_TXPOWER_TXPOWER_Pos4dBm)
 	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_Pos4dBm) {
 		return RADIO_TXPOWER_TXPOWER_Pos4dBm;
 	}
-
+#endif
+#if defined(RADIO_TXPOWER_TXPOWER_Pos3dBm)
 	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_Pos3dBm) {
 		return RADIO_TXPOWER_TXPOWER_Pos3dBm;
 	}
-
+#endif
 	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_0dBm) {
 		return RADIO_TXPOWER_TXPOWER_0dBm;
 	}

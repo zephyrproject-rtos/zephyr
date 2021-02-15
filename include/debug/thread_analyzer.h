@@ -29,6 +29,10 @@ struct thread_analyzer_info {
 	size_t stack_size;
 	/** Stack size in used */
 	size_t stack_used;
+
+#ifdef CONFIG_THREAD_RUNTIME_STATS
+	unsigned int utilization;
+#endif
 };
 
 /** @brief Thread analyzer stack size callback function

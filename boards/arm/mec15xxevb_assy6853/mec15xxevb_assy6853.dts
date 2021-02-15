@@ -54,6 +54,24 @@
 			label = "LED 4";
 		};
 	};
+
+	power-states {
+		idle: idle {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			min-residency-us = <1000000>;
+		};
+
+		suspend_to_ram: suspend_to_ram {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-ram";
+			min-residency-us = <2000000>;
+		};
+	};
+};
+
+&cpu0 {
+	cpu-power-states = <&idle &suspend_to_ram>;
 };
 
 &uart2 {
@@ -75,7 +93,7 @@
 		label = "GPIO_P0";
 
 		/* Depends on JP53 for device address.
-		 * Pin 1-2 = A2, pin 3-4 = A1, pin 5-6 = A0.
+		 * Pin 1-2 = A0, pin 3-4 = A1, pin 5-6 = A2.
 		 * Address is: 0100<A2><A1><A0>b.
 		 *
 		 * Default has pin 1-2 on JP53 connected,

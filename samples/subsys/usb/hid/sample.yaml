@@ -4,6 +4,7 @@ tests:
   sample.usb.hid:
     depends_on: usb_device
     tags: usb
+    platform_exclude: native_posix native_posix_64
     harness: console
     harness_config:
       type: multi_line
@@ -15,9 +16,15 @@ tests:
     extra_configs:
       - CONFIG_USB_COMPOSITE_DEVICE=y
     tags: usb
+    platform_exclude: native_posix native_posix_64
     harness: console
     harness_config:
       type: multi_line
       regex:
         - "composite_pre_init: HID Device: dev"
         - "main: Starting application"
+  sample.usb.hid.buildonly:
+    depends_on: usb_device
+    tags: usb
+    platform_allow: native_posix native_posix_64
+    build_only: true

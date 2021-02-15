@@ -68,6 +68,13 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	 */
 	cps #MODE_SVC
 
+	/*
+	 * Preserve lr_svc which may contain the branch return address of the
+	 * interrupted context in case of a nested interrupt. This value will
+	 * be restored prior to exiting the interrupt in z_arm_int_exit.
+	 */
+	push {lr}
+
 	/* Align stack at double-word boundary */
 	and r3, sp, #4
 	sub sp, sp, r3
@@ -84,13 +91,13 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	bl sys_trace_isr_enter
 #endif
 
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
+#ifdef CONFIG_PM
 	/*
 	 * All interrupts are disabled when handling idle wakeup.  For tickless
 	 * idle, this ensures that the calculation and programming of the
 	 * device for the next timer deadline is not interrupted.  For
 	 * non-tickless idle, this ensures that the clearing of the kernel idle
-	 * state is not interrupted.  In each case, z_sys_power_save_idle_exit
+	 * state is not interrupted.  In each case, z_pm_save_idle_exit
 	 * is called with interrupts disabled.
 	 */
 
@@ -115,7 +122,7 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	movs.n r1, #0
 	/* clear kernel idle state */
 	str r1, [r2, #_kernel_offset_to_idle]
-	bl z_sys_power_save_idle_exit
+	bl z_pm_save_idle_exit
 _idle_state_cleared:
 
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
@@ -123,13 +130,13 @@ _idle_state_cleared:
 	movne	r1, #0
 		/* clear kernel idle state */
 		strne	r1, [r2, #_kernel_offset_to_idle]
-		blne	z_sys_power_save_idle_exit
+		blne	z_pm_save_idle_exit
 #elif defined(CONFIG_ARMV7_R)
 	beq _idle_state_cleared
 	movs r1, #0
 	/* clear kernel idle state */
 	str r1, [r2, #_kernel_offset_to_idle]
-	bl z_sys_power_save_idle_exit
+	bl z_pm_save_idle_exit
 _idle_state_cleared:
 #else
 #error Unknown ARM architecture
@@ -139,7 +146,7 @@ _idle_state_cleared:
 	cpsie i		/* re-enable interrupts (PRIMASK = 0) */
 #endif
 
-#endif /* CONFIG_SYS_POWER_MANAGEMENT */
+#endif /* CONFIG_PM */
 
 #if defined(CONFIG_CPU_CORTEX_M)
 	mrs r0, IPSR	/* get exception number */

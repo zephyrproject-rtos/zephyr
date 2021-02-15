@@ -1,3 +1,7 @@
 tests:
   driver.sensor:
+    extra_args: CONF_FILE=prj.conf
+    tags: driver sensor subsys
+  driver.sensor.fpu:
+    extra_args: CONF_FILE=prj_fpu.conf
     tags: driver sensor subsys

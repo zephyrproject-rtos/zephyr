@@ -47,7 +47,9 @@ LOG_MODULE_REGISTER(usb_dc_sam);
 
 #define NUM_OF_EP_MAX		DT_INST_PROP(0, num_bidir_endpoints)
 #if DT_INST_NODE_HAS_PROP(0, maximum_speed)
-#define USB_MAXIMUM_SPEED	DT_INST_PROP(0, maximum_speed)
+#define USB_MAXIMUM_SPEED	DT_ENUM_IDX(DT_DRV_INST(0), maximum_speed)
+#else
+#define USB_MAXIMUM_SPEED	2 /* Default to high-speed */
 #endif
 
 struct usb_device_ep_data {
@@ -310,23 +312,19 @@ int usb_dc_attach(void)
 
 	/* Select the speed */
 	regval = USBHS_DEVCTRL_DETACH;
-#ifdef USB_MAXIMUM_SPEED
-	if (!strncmp(USB_MAXIMUM_SPEED, "high-speed", 10)) {
-		regval |= USBHS_DEVCTRL_SPDCONF_NORMAL;
-	} else if (!strncmp(USB_MAXIMUM_SPEED, "full-speed", 10)) {
-		regval |= USBHS_DEVCTRL_SPDCONF_LOW_POWER;
-	} else if (!strncmp(USB_MAXIMUM_SPEED, "low-speed", 9)) {
-		regval |= USBHS_DEVCTRL_LS;
-		regval |= USBHS_DEVCTRL_SPDCONF_LOW_POWER;
-	} else {
-		regval |= USBHS_DEVCTRL_SPDCONF_NORMAL;
-		LOG_WRN("Unsupported maximum speed defined in device tree. "
-			"USB controller will default to its maximum HW "
-			"capability");
-	}
-#else
+#if USB_MAXIMUM_SPEED == 0
+	/* low-speed */
+	regval |= USBHS_DEVCTRL_LS;
+	regval |= USBHS_DEVCTRL_SPDCONF_LOW_POWER;
+#elif USB_MAXIMUM_SPEED == 1
+	/* full-speed */
+	regval |= USBHS_DEVCTRL_SPDCONF_LOW_POWER;
+#elif USB_MAXIMUM_SPEED == 2
+	/* high-speed */
 	regval |= USBHS_DEVCTRL_SPDCONF_NORMAL;
-#endif /* USB_MAXIMUM_SPEED */
+#else
+#error "Unsupported maximum speed defined in device tree."
+#endif
 	USBHS->USBHS_DEVCTRL = regval;
 
 	/* Enable the USB clock */

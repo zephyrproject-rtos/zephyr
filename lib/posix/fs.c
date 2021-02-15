@@ -107,7 +107,7 @@ int open(const char *name, int flags, ...)
 		return -1;
 	}
 
-	(void)memset(&ptr->file, 0, sizeof(ptr->file));
+	fs_file_t_init(&ptr->file);
 
 	rc = fs_open(&ptr->file, name, zmode);
 
@@ -230,7 +230,7 @@ DIR *opendir(const char *dirname)
 		return NULL;
 	}
 
-	(void)memset(&ptr->dir, 0, sizeof(ptr->dir));
+	fs_dir_t_init(&ptr->dir);
 
 	rc = fs_opendir(&ptr->dir, dirname);
 	if (rc < 0) {

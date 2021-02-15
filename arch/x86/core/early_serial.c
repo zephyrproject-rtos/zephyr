@@ -27,7 +27,7 @@ static mm_reg_t mmio;
 /* Still other devices use a MMIO region containing packed byte
  * registers
  */
-#if DEVICE_MMIO_IS_IN_RAM
+#ifdef DEVICE_MMIO_IS_IN_RAM
 static mm_reg_t mmio;
 #define BASE mmio
 #else
@@ -60,6 +60,9 @@ static mm_reg_t mmio;
 #define FCR_XMITCLR BIT(2)  /* clear XMIT FIFO           */
 #define FCR_FIFO_1  0       /* 1 byte in RCVR FIFO       */
 
+static bool early_serial_init_done;
+static uint32_t suppressed_chars;
+
 static void serout(int c)
 {
 	while ((IN(REG_LSR) & LSR_THRE) == 0) {
@@ -69,6 +72,11 @@ static void serout(int c)
 
 int arch_printk_char_out(int c)
 {
+	if (!early_serial_init_done) {
+		suppressed_chars++;
+		return c;
+	}
+
 	if (c == '\n') {
 		serout('\r');
 	}
@@ -79,15 +87,15 @@ int arch_printk_char_out(int c)
 void z_x86_early_serial_init(void)
 {
 #if defined(DEVICE_MMIO_IS_IN_RAM) && !defined(UART_NS16550_ACCESS_IOPORT)
-	uintptr_t phys;
-
 #ifdef X86_SOC_EARLY_SERIAL_PCIDEV
-	phys = pcie_get_mbar(X86_SOC_EARLY_SERIAL_PCIDEV, 0);
+	struct pcie_mbar mbar;
+	pcie_get_mbar(X86_SOC_EARLY_SERIAL_PCIDEV, 0, &mbar);
 	pcie_set_cmd(X86_SOC_EARLY_SERIAL_PCIDEV, PCIE_CONF_CMDSTAT_MEM, true);
+	device_map(&mmio, mbar.phys_addr, mbar.size, K_MEM_CACHE_NONE);
 #else
-	phys = X86_SOC_EARLY_SERIAL_MMIO8_ADDR;
+	device_map(&mmio, X86_SOC_EARLY_SERIAL_MMIO8_ADDR, 0x1000, K_MEM_CACHE_NONE);
 #endif
-	device_map(&mmio, phys, 0x1000, K_MEM_CACHE_NONE);
+
 #endif /* DEVICE_MMIO_IS_IN_RAM */
 
 	OUT(REG_IER, IER_DISABLE);     /* Disable interrupts */
@@ -99,4 +107,11 @@ void z_x86_early_serial_init(void)
 
 	/* Turn on FIFO. Some hardware needs this before transmitting */
 	OUT(REG_FCR, FCR_FIFO | FCR_FIFO_1 | FCR_RCVRCLR | FCR_XMITCLR);
+
+	early_serial_init_done = true;
+
+	if (suppressed_chars) {
+		printk("WARNING: %u chars lost before early serial init\n",
+		       suppressed_chars);
+	}
 }

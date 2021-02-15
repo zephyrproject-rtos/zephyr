@@ -36,16 +36,6 @@ config PINMUX_STM32
 	default y
 	depends on PINMUX
 
-if WATCHDOG
-
-config IWDG_STM32
-	default y
-
-config WWDG_STM32
-	default n
-
-endif # WATCHDOG
-
 config PWM_STM32
 	default y
 	depends on PWM
@@ -75,10 +65,10 @@ if DMA
 config DMA_STM32
 	default y
 
-config HEAP_MEM_POOL_SIZE
-	default 1024
-	depends on DMAMUX_STM32
-
 endif # DMA
+
+config MEMC_STM32
+	default y
+	depends on MEMC
 
 endif # SOC_FAMILY_STM32

@@ -66,6 +66,9 @@ struct z_heap {
 
 static inline bool big_heap_chunks(size_t chunks)
 {
+	if (IS_ENABLED(CONFIG_SYS_HEAP_ALWAYS_BIG_MODE)) {
+		return 1;
+	}
 	return sizeof(void *) > 4U || chunks > 0x7fffU;
 }
 
@@ -227,6 +230,16 @@ static inline int bucket_idx(struct z_heap *h, size_t sz)
 {
 	size_t usable_sz = sz - min_chunk_size(h) + 1;
 	return 31 - __builtin_clz(usable_sz);
+}
+
+static inline bool size_too_big(struct z_heap *h, size_t bytes)
+{
+	/*
+	 * Quick check to bail out early if size is too big.
+	 * Also guards against potential arithmetic overflows elsewhere.
+	 * There is a minimum of one chunk always in use by the heap header.
+	 */
+	return (bytes / CHUNK_UNIT) >= h->len;
 }
 
 /* For debugging */

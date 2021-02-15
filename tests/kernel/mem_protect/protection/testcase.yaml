@@ -1,5 +1,5 @@
 tests:
   kernel.memory_protection.protection:
     platform_exclude: twr_ke18f
-    filter: CONFIG_MEMORY_PROTECTION
+    filter: CONFIG_SRAM_REGION_PERMISSIONS
     tags: kernel security ignore_faults

@@ -98,8 +98,8 @@ static const struct pinmux_mcux_lpc_config pinmux_mcux_lpc_port0_config = {
 	.port_no = PORT0_IDX,
 };
 
-DEVICE_AND_API_INIT(pinmux_port0, CONFIG_PINMUX_MCUX_LPC_PORT0_NAME,
-		    &pinmux_mcux_lpc_init,
+DEVICE_DEFINE(pinmux_port0, CONFIG_PINMUX_MCUX_LPC_PORT0_NAME,
+		    &pinmux_mcux_lpc_init, device_pm_control_nop,
 		    NULL, &pinmux_mcux_lpc_port0_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &pinmux_mcux_driver_api);
@@ -116,8 +116,8 @@ static const struct pinmux_mcux_lpc_config pinmux_mcux_lpc_port1_config = {
 	.port_no = PORT1_IDX,
 };
 
-DEVICE_AND_API_INIT(pinmux_port1, CONFIG_PINMUX_MCUX_LPC_PORT1_NAME,
-		    &pinmux_mcux_lpc_init,
+DEVICE_DEFINE(pinmux_port1, CONFIG_PINMUX_MCUX_LPC_PORT1_NAME,
+		    &pinmux_mcux_lpc_init, device_pm_control_nop,
 		    NULL, &pinmux_mcux_lpc_port1_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &pinmux_mcux_driver_api);

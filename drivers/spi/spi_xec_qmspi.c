@@ -517,7 +517,7 @@ static int qmspi_transceive(const struct device *dev,
 	uint32_t descr, last_didx;
 	int err;
 
-	spi_context_lock(&data->ctx, false, NULL);
+	spi_context_lock(&data->ctx, false, NULL, config);
 
 	err = qmspi_configure(dev, config);
 	if (err != 0) {
@@ -674,9 +674,8 @@ static struct spi_qmspi_data spi_qmspi_0_dev_data = {
 	SPI_CONTEXT_INIT_SYNC(spi_qmspi_0_dev_data, ctx)
 };
 
-DEVICE_AND_API_INIT(spi_xec_qmspi_0,
-		    DT_INST_LABEL(0),
-		    &qmspi_init, &spi_qmspi_0_dev_data,
+DEVICE_DT_INST_DEFINE(0,
+		    &qmspi_init, device_pm_control_nop, &spi_qmspi_0_dev_data,
 		    &spi_qmspi_0_config, POST_KERNEL,
 		    CONFIG_SPI_INIT_PRIORITY, &spi_qmspi_driver_api);
 

@@ -93,6 +93,7 @@ static int pinmux_set(const struct device *dev, uint32_t pin, uint32_t func)
 
 static int pinmux_get(const struct device *dev, uint32_t pin, uint32_t *func)
 {
+	ARG_UNUSED(dev);
 	volatile uint32_t *reg = reg_for_pin(pin);
 
 	if (!reg) {
@@ -101,12 +102,13 @@ static int pinmux_get(const struct device *dev, uint32_t pin, uint32_t *func)
 
 	*func = (*reg & MCU_SEL_M) >> MCU_SEL_S;
 
-	ARG_UNUSED(dev);
 	return 0;
 }
 
 static int pinmux_pullup(const struct device *dev, uint32_t pin, uint8_t func)
 {
+	ARG_UNUSED(dev);
+
 	switch (func) {
 	case PINMUX_PULLUP_DISABLE:
 		return set_reg(pin, FUN_PU, FUN_PD);
@@ -114,13 +116,14 @@ static int pinmux_pullup(const struct device *dev, uint32_t pin, uint8_t func)
 		return set_reg(pin, FUN_PD, FUN_PU);
 	}
 
-	ARG_UNUSED(dev);
 	return -EINVAL;
 }
 
 #define CFG(id)   ((GPIO_ ## id ## _REG) & 0xff)
 static int pinmux_input(const struct device *dev, uint32_t pin, uint8_t func)
 {
+	ARG_UNUSED(dev);
+
 	static const uint8_t offs[2][3] = {
 		{ CFG(ENABLE1_W1TC), CFG(ENABLE1_W1TS), 32 },
 		{ CFG(ENABLE_W1TC), CFG(ENABLE_W1TS), 0 },
@@ -153,7 +156,6 @@ static int pinmux_input(const struct device *dev, uint32_t pin, uint8_t func)
 
 	*reg = BIT(pin - line[2]);
 
-	ARG_UNUSED(dev);
 	return 0;
 }
 #undef CFG
@@ -167,20 +169,24 @@ static struct pinmux_driver_api api_funcs = {
 
 static int pinmux_initialize(const struct device *device)
 {
+	ARG_UNUSED(device);
+
+#if !CONFIG_BOOTLOADER_ESP_IDF
 	uint32_t pin;
 
 	for (pin = 0U; pin < ARRAY_SIZE(pin_mux_off); pin++) {
 		pinmux_set(NULL, pin, 0);
 	}
 
-	ARG_UNUSED(device);
+#endif
+
 	return 0;
 }
 
 /* Initialize using PRE_KERNEL_1 priority so that GPIO can use the pin
  * mux driver.
  */
-DEVICE_AND_API_INIT(pmux_dev, CONFIG_PINMUX_NAME,
-		    &pinmux_initialize, NULL, NULL,
+DEVICE_DT_INST_DEFINE(0, &pinmux_initialize,
+		    device_pm_control_nop, NULL, NULL,
 		    PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &api_funcs);

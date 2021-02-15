@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2020 Steven Daglish <s.c.daglish@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/l0/stm32l0.dtsi>
+
+/ {
+	soc {
+		timers22: timers@40011400 {
+			compatible = "st,stm32-timers";
+			reg = <0x40011400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000020>;
+			interrupts = <22 0>;
+			interrupt-names = "global";
+			status = "disabled";
+			label = "TIMERS_22";
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				status = "disabled";
+				st,prescaler = <0>;
+				label = "PWM_22";
+				#pwm-cells = <3>;
+			};
+		};
+
+		eeprom: eeprom@8080000{
+			reg = <0x08080000 DT_SIZE_K(1)>;
+		};
+	};
+};

@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <sys/ring_buffer.h>
 #include <sys/atomic.h>
 
-#ifdef CONFIG_OPENTHREAD_NCP_SPINEL_ON_UART_ACM
+#ifdef CONFIG_OPENTHREAD_COPROCESSOR_SPINEL_ON_UART_ACM
 #include <usb/usb_device.h>
 #endif
 
@@ -41,7 +41,7 @@ struct openthread_uart {
 		.rx_ringbuf = &_name##_rx_ringbuf, \
 	}
 
-OT_UART_DEFINE(ot_uart, CONFIG_OPENTHREAD_NCP_UART_RING_BUFFER_SIZE);
+OT_UART_DEFINE(ot_uart, CONFIG_OPENTHREAD_COPROCESSOR_UART_RING_BUFFER_SIZE);
 
 #define RX_FIFO_SIZE 128
 
@@ -148,7 +148,7 @@ void platformUartProcess(otInstance *aInstance)
 otError otPlatUartEnable(void)
 {
 	ot_uart.dev = device_get_binding(
-		CONFIG_OPENTHREAD_NCP_SPINEL_ON_UART_DEV_NAME);
+		CONFIG_OPENTHREAD_COPROCESSOR_SPINEL_ON_UART_DEV_NAME);
 
 	if ((&ot_uart)->dev == NULL) {
 		LOG_ERR("UART device not found");
@@ -165,7 +165,7 @@ otError otPlatUartEnable(void)
 
 otError otPlatUartDisable(void)
 {
-#ifdef CONFIG_OPENTHREAD_NCP_SPINEL_ON_UART_ACM
+#ifdef CONFIG_OPENTHREAD_COPROCESSOR_SPINEL_ON_UART_ACM
 	int ret = usb_disable();
 
 	if (ret) {

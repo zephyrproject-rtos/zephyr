@@ -38,12 +38,7 @@ CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
 
 # Enable MPU
-# Issue #27809
-# TFM integration sample tfm_ipc doesn't work when the MPU is enabled.
-# In TF-M, for the nucleo_l552ze_q, TFM_BOOT_MPU_PROTECTION configures and
-# enables a secure MPU and a non secure MPU. Either CONFIG_ARM_MPU or
-# TFM_BOOT_MPU_PROTECTION must be disabled.
-#CONFIG_ARM_MPU=y
+CONFIG_ARM_MPU=y
 
 CONFIG_ARM_TRUSTZONE_M=y
 CONFIG_CORTEX_M_SYSTICK=y

@@ -441,8 +441,9 @@ static int mcp23s17_init(const struct device *dev)
 	};								\
 									\
 	/* This has to init after SPI master */				\
-	DEVICE_AND_API_INIT(mcp23s17_##inst, DT_INST_LABEL(inst),	\
-			    mcp23s17_init, &mcp23s17_##inst##_drvdata,	\
+	DEVICE_DT_INST_DEFINE(inst, mcp23s17_init,			\
+			    device_pm_control_nop,			\
+			    &mcp23s17_##inst##_drvdata,			\
 			    &mcp23s17_##inst##_config,			\
 			    POST_KERNEL,				\
 			    CONFIG_GPIO_MCP23S17_INIT_PRIORITY,		\

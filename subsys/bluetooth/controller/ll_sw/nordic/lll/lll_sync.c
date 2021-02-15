@@ -187,33 +187,20 @@ static int prepare_cb(struct lll_prepare_param *p)
 	       ((EVENT_JITTER_US + EVENT_TICKER_RES_MARGIN_US +
 		 lll->window_widening_event_us) << 1) +
 	       lll->window_size_event_us;
-
-#if defined(CONFIG_BT_CTLR_PHY)
 	hcto += radio_rx_ready_delay_get(lll->phy, 1);
 	hcto += addr_us_get(lll->phy);
 	hcto += radio_rx_chain_delay_get(lll->phy, 1);
-#else /* !CONFIG_BT_CTLR_PHY */
-	hcto += radio_rx_ready_delay_get(0, 0);
-	hcto += addr_us_get(0);
-	hcto += radio_rx_chain_delay_get(0, 0);
-#endif /* !CONFIG_BT_CTLR_PHY */
-
 	radio_tmr_hcto_configure(hcto);
+
 	radio_tmr_end_capture();
 	radio_rssi_measure();
 
 #if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
 	radio_gpio_lna_setup();
 
-#if defined(CONFIG_BT_CTLR_PHY)
 	radio_gpio_pa_lna_enable(remainder_us +
 				 radio_rx_ready_delay_get(lll->phy_rx, 1) -
 				 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
-#else /* !CONFIG_BT_CTLR_PHY */
-	radio_gpio_pa_lna_enable(remainder_us +
-				 radio_rx_ready_delay_get(0, 0) -
-				 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
-#endif /* !CONFIG_BT_CTLR_PHY */
 #endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
 
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED) && \
@@ -273,9 +260,28 @@ static void isr_rx(void *param)
 
 	/* Check CRC and generate Periodic Advertising Report */
 	if (crc_ok) {
-		/* TODO: */
-		BT_INFO("CRC OK, Periodic event sync-ed, report generation"
-			" is unsupported, work in progress.");
+		struct node_rx_pdu *node_rx;
+
+		node_rx = ull_pdu_rx_alloc_peek(3);
+		if (node_rx) {
+			struct node_rx_ftr *ftr;
+
+			ull_pdu_rx_alloc();
+
+			node_rx->hdr.type = NODE_RX_TYPE_SYNC_REPORT;
+
+			ftr = &(node_rx->hdr.rx_ftr);
+			ftr->param = lll;
+			ftr->rssi = (rssi_ready) ? radio_rssi_get() :
+						   BT_HCI_LE_RSSI_NOT_AVAILABLE;
+			ftr->ticks_anchor = radio_tmr_start_get();
+			ftr->radio_end_us = radio_tmr_end_get() -
+					    radio_rx_chain_delay_get(lll->phy,
+								     1);
+
+			ull_rx_put(node_rx->hdr.link, node_rx);
+			ull_rx_sched();
+		}
 	}
 
 isr_rx_done:
@@ -287,11 +293,7 @@ isr_rx_done:
 	e->trx_cnt = trx_cnt;
 	e->crc_valid = crc_ok;
 
-#if defined(CONFIG_BT_CTLR_PHY)
 	e->drift.preamble_to_addr_us = addr_us_get(lll->phy);
-#else /* !CONFIG_BT_CTLR_PHY */
-	e->drift.preamble_to_addr_us = addr_us_get(0);
-#endif /* !CONFIG_BT_CTLR_PHY */
 
 	e->drift.start_to_address_actual_us = radio_tmr_aa_get() -
 					      radio_tmr_ready_get();

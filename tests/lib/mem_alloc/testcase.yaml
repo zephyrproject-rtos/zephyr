@@ -13,5 +13,5 @@ tests:
     tags: clib newlib userspace
   libraries.libc.newlibnano:
     extra_args: CONF_FILE=prj_newlibnano.conf
-    toolchain_allow: gnuarmemb
+    filter: CONFIG_HAS_NEWLIB_LIBC_NANO
     tags: clib newlib userspace

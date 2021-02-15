@@ -20,26 +20,6 @@ config MCG_VDIV0
 config MCG_FCRDIV
 	default 1
 
-if PINMUX_MCUX
-
-config PINMUX_MCUX_PORTA
-	default y
-
-config PINMUX_MCUX_PORTB
-	default y
-
-config PINMUX_MCUX_PORTC
-	default y
-
-config PINMUX_MCUX_PORTD
-	default y if "$(dt_nodelabel_enabled,spi0)" && SPI
-	default y if "$(dt_nodelabel_enabled,uart2)" && SERIAL
-
-config PINMUX_MCUX_PORTE
-	default y
-
-endif # PINMUX_MCUX
-
 config TEMP_KINETIS
 	default y if "$(dt_nodelabel_enabled,adc1)"
 	depends on SENSOR && ADC

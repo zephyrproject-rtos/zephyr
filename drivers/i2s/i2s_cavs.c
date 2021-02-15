@@ -12,6 +12,8 @@
  *   enabled) and "interrupt on full transfer completion" mode.
  */
 
+#define DT_DRV_COMPAT intel_cavs_i2s
+
 #include <errno.h>
 #include <string.h>
 #include <sys/__assert.h>
@@ -27,79 +29,6 @@
 #define LOG_LEVEL CONFIG_I2S_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(LOG_DOMAIN);
-
-#define I2S_IRQ_CONNECT(i2s_id)					\
-	IRQ_CONNECT(I2S##i2s_id##_CAVS_IRQ,			\
-			CONFIG_I2S_CAVS_IRQ_PRI,		\
-			i2s_cavs_isr,				\
-			DEVICE_GET(i2s##i2s_id##_cavs), 0)
-
-#define I2S_DEVICE_NAME(i2s_id)		i2s##i2s_id##_cavs
-#define I2S_DEVICE_DATA_NAME(i2s_id)	i2s##i2s_id##_cavs_data
-#define I2S_DEVICE_CONFIG_NAME(i2s_id)	i2s##i2s_id##_cavs_config
-
-#define I2S_DEVICE_CONFIG_DEFINE(i2s_id)				\
-	static const struct i2s_cavs_config i2s##i2s_id##_cavs_config = {\
-		.regs = (struct i2s_cavs_ssp *)SSP_BASE(i2s_id),	\
-		.mn_regs = (struct i2s_cavs_mn_div *)SSP_MN_DIV_BASE(i2s_id),\
-		.irq_id = I2S##i2s_id##_CAVS_IRQ,		\
-		.irq_connect = i2s##i2s_id##_cavs_irq_connect,	\
-	}
-
-#define I2S_DMA_CHANNEL(i2s_id, dir)				\
-		CONFIG_I2S_CAVS_##i2s_id##_DMA_##dir##_CHANNEL
-
-#define I2S_DEVICE_OBJECT_DECLARE(i2s_id)			\
-	DEVICE_DECLARE(I2S_DEVICE_NAME(i2s_id))
-
-#define I2S_DEVICE_OBJECT(i2s_id)				\
-		DEVICE_GET(I2S_DEVICE_NAME(i2s_id))
-
-#define I2S_DEVICE_DATA_DEFINE(i2s_id)				\
-	static struct i2s_cavs_dev_data i2s##i2s_id##_cavs_data = {\
-		.tx = {						\
-			.dma_channel = I2S_DMA_CHANNEL(i2s_id, TX),	\
-			.dma_cfg = {				\
-				.source_burst_length = CAVS_I2S_DMA_BURST_SIZE,\
-				.dest_burst_length = CAVS_I2S_DMA_BURST_SIZE,\
-				.dma_callback = i2s_dma_tx_callback,	\
-				.user_data = (void *)I2S_DEVICE_OBJECT(i2s_id),\
-				.complete_callback_en = 1,	\
-				.error_callback_en = 1,		\
-				.block_count = 1,		\
-				.head_block =			\
-				&i2s##i2s_id##_cavs_data.tx.dma_block,\
-				.channel_direction = MEMORY_TO_PERIPHERAL,\
-				.dma_slot = DMA_HANDSHAKE_SSP##i2s_id##_TX,\
-			},					\
-		},						\
-		.rx = {						\
-			.dma_channel = I2S_DMA_CHANNEL(i2s_id, RX),	\
-			.dma_cfg = {				\
-				.source_burst_length = CAVS_I2S_DMA_BURST_SIZE,\
-				.dest_burst_length = CAVS_I2S_DMA_BURST_SIZE,\
-				.dma_callback = i2s_dma_rx_callback,\
-				.user_data = (void *)I2S_DEVICE_OBJECT(i2s_id),\
-				.complete_callback_en = 1,	\
-				.error_callback_en = 1,		\
-				.block_count = 1,		\
-				.head_block =			\
-				&i2s##i2s_id##_cavs_data.rx.dma_block,\
-				.channel_direction = PERIPHERAL_TO_MEMORY,\
-				.dma_slot = DMA_HANDSHAKE_SSP##i2s_id##_RX,\
-				},				\
-		},						\
-	}
-
-#define I2S_DEVICE_AND_API_INIT(i2s_id)				\
-	DEVICE_AND_API_INIT(I2S_DEVICE_NAME(i2s_id),		\
-			CONFIG_I2S_CAVS_##i2s_id##_NAME,	\
-			i2s_cavs_initialize,			\
-			&I2S_DEVICE_DATA_NAME(i2s_id),		\
-			&I2S_DEVICE_CONFIG_NAME(i2s_id),	\
-			POST_KERNEL,				\
-			CONFIG_I2S_INIT_PRIORITY,		\
-			&i2s_cavs_driver_api)
 
 /* length of the buffer queue */
 #define I2S_CAVS_BUF_Q_LEN			2
@@ -146,6 +75,7 @@ struct i2s_cavs_config {
 	struct i2s_cavs_mn_div *mn_regs;
 	uint32_t irq_id;
 	void (*irq_connect)(void);
+	const char *dma_name;
 };
 
 /* Device run time data */
@@ -161,10 +91,6 @@ struct i2s_cavs_dev_data {
 	((const struct i2s_cavs_config *const)(dev)->config)
 #define DEV_DATA(dev) \
 	((struct i2s_cavs_dev_data *const)(dev)->data)
-
-I2S_DEVICE_OBJECT_DECLARE(1);
-I2S_DEVICE_OBJECT_DECLARE(2);
-I2S_DEVICE_OBJECT_DECLARE(3);
 
 static void i2s_dma_tx_callback(const struct device *, void *, uint32_t, int);
 static void i2s_tx_stream_disable(struct i2s_cavs_dev_data *,
@@ -847,9 +773,9 @@ static int i2s_cavs_initialize(const struct device *dev)
 	const struct i2s_cavs_config *const dev_cfg = DEV_CFG(dev);
 	struct i2s_cavs_dev_data *const dev_data = DEV_DATA(dev);
 
-	dev_data->dev_dma = device_get_binding(CONFIG_I2S_CAVS_DMA_NAME);
+	dev_data->dev_dma = device_get_binding(dev_cfg->dma_name);
 	if (!dev_data->dev_dma) {
-		LOG_ERR("%s device not found", CONFIG_I2S_CAVS_DMA_NAME);
+		LOG_ERR("%s device not found", dev_cfg->dma_name);
 		return -ENODEV;
 	}
 
@@ -881,29 +807,79 @@ static const struct i2s_driver_api i2s_cavs_driver_api = {
 	.trigger = i2s_cavs_trigger,
 };
 
-static void i2s1_cavs_irq_connect(void)
-{
-	I2S_IRQ_CONNECT(1);
-}
+#define I2S_CAVS_DEVICE_INIT(n)						\
+	static void i2s_cavs_irq_connect_##n(void)			\
+	{								\
+		IRQ_CONNECT(DT_INST_IRQN(n),				\
+			    DT_INST_IRQ(n, priority),			\
+			    i2s_cavs_isr,				\
+			    DEVICE_DT_INST_GET(n), 0);			\
+									\
+		irq_enable(DT_INST_IRQN(n));				\
+	}								\
+									\
+	static const struct i2s_cavs_config i2s_cavs_config_##n = {	\
+		.regs = (struct i2s_cavs_ssp *)				\
+				DT_INST_REG_ADDR_BY_IDX(n, 0),		\
+		.mn_regs = (struct i2s_cavs_mn_div *)			\
+				DT_INST_REG_ADDR_BY_IDX(n, 1),		\
+		.irq_id = DT_INST_IRQN(n),				\
+		.irq_connect = i2s_cavs_irq_connect_##n,		\
+		.dma_name = DT_INST_DMAS_LABEL_BY_NAME(n, tx),		\
+	};								\
+									\
+	static struct i2s_cavs_dev_data i2s_cavs_data_##n = {		\
+		.tx = {							\
+			.dma_channel =					\
+				DT_INST_DMAS_CELL_BY_NAME(n, tx, channel),\
+			.dma_cfg = {					\
+				.source_burst_length =			\
+					CAVS_I2S_DMA_BURST_SIZE,	\
+				.dest_burst_length =			\
+					CAVS_I2S_DMA_BURST_SIZE,	\
+				.dma_callback = i2s_dma_tx_callback,	\
+				.user_data =				\
+					(void *)DEVICE_DT_INST_GET(n),	\
+				.complete_callback_en = 1,		\
+				.error_callback_en = 1,			\
+				.block_count = 1,			\
+				.head_block =				\
+					&i2s_cavs_data_##n.tx.dma_block,\
+				.channel_direction =			\
+					MEMORY_TO_PERIPHERAL,\
+				.dma_slot =				\
+					DT_INST_DMAS_CELL_BY_NAME(n, tx, channel),\
+			},						\
+		},							\
+		.rx = {							\
+			.dma_channel =					\
+				DT_INST_DMAS_CELL_BY_NAME(n, rx, channel),\
+			.dma_cfg = {					\
+				.source_burst_length =			\
+					CAVS_I2S_DMA_BURST_SIZE,	\
+				.dest_burst_length =			\
+					CAVS_I2S_DMA_BURST_SIZE,	\
+				.dma_callback = i2s_dma_rx_callback,	\
+				.user_data =				\
+					(void *)DEVICE_DT_INST_GET(n),	\
+				.complete_callback_en = 1,		\
+				.error_callback_en = 1,			\
+				.block_count = 1,			\
+				.head_block =				\
+					&i2s_cavs_data_##n.rx.dma_block,\
+				.channel_direction =			\
+					PERIPHERAL_TO_MEMORY,\
+				.dma_slot =				\
+					DT_INST_DMAS_CELL_BY_NAME(n, rx, channel),\
+			},						\
+		},							\
+	};								\
+									\
+	DEVICE_DT_INST_DEFINE(n,					\
+			i2s_cavs_initialize, device_pm_control_nop,	\
+			&i2s_cavs_data_##n,				\
+			&i2s_cavs_config_##n,				\
+			POST_KERNEL, CONFIG_I2S_INIT_PRIORITY,		\
+			&i2s_cavs_driver_api);
 
-I2S_DEVICE_CONFIG_DEFINE(1);
-I2S_DEVICE_DATA_DEFINE(1);
-I2S_DEVICE_AND_API_INIT(1);
-
-static void i2s2_cavs_irq_connect(void)
-{
-	I2S_IRQ_CONNECT(2);
-}
-
-I2S_DEVICE_CONFIG_DEFINE(2);
-I2S_DEVICE_DATA_DEFINE(2);
-I2S_DEVICE_AND_API_INIT(2);
-
-static void i2s3_cavs_irq_connect(void)
-{
-	I2S_IRQ_CONNECT(3);
-}
-
-I2S_DEVICE_CONFIG_DEFINE(3);
-I2S_DEVICE_DATA_DEFINE(3);
-I2S_DEVICE_AND_API_INIT(3);
+DT_INST_FOREACH_STATUS_OKAY(I2S_CAVS_DEVICE_INIT)

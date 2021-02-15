@@ -395,7 +395,7 @@ def create_dict_wrt_mem():
     if args.input_rel_dict == '':
         sys.exit("Disable CONFIG_CODE_DATA_RELOCATION if no file needs relocation")
     for line in args.input_rel_dict.split(';'):
-        mem_region, file_name = line.split(':')
+        mem_region, file_name = line.split(':', 1)
 
         file_name_list = glob.glob(file_name)
         if not file_name_list:

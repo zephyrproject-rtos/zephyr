@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT zephyr_mmc_spi_slot
+
 #include <logging/log.h>
 
 LOG_MODULE_REGISTER(sdhc_spi, CONFIG_DISK_LOG_LEVEL);
@@ -20,7 +22,7 @@ LOG_MODULE_REGISTER(sdhc_spi, CONFIG_DISK_LOG_LEVEL);
 /* Clock speed used after initialisation */
 #define SDHC_SPI_SPEED 4000000
 
-#define SPI_SDHC_NODE DT_INST(0, zephyr_mmc_spi_slot)
+#define SPI_SDHC_NODE DT_DRV_INST(0)
 
 #if !DT_NODE_HAS_STATUS(SPI_SDHC_NODE, okay)
 #warning NO SDHC slot specified on board
@@ -38,8 +40,6 @@ struct sdhc_spi_data {
 	int trace_dir;
 #endif
 };
-
-DEVICE_DECLARE(sdhc_spi_0);
 
 /* Traces card traffic for LOG_LEVEL_DBG */
 static int sdhc_spi_trace(struct sdhc_spi_data *data, int dir, int err,
@@ -977,8 +977,7 @@ static int disk_spi_sdhc_init(const struct device *dev)
 
 static struct sdhc_spi_data sdhc_spi_data_0;
 
-DEVICE_AND_API_INIT(sdhc_spi_0,
-	DT_LABEL(SPI_SDHC_NODE),
-	sdhc_spi_init, &sdhc_spi_data_0, NULL,
+DEVICE_DT_INST_DEFINE(0, sdhc_spi_init, device_pm_control_nop,
+	&sdhc_spi_data_0, NULL,
 	APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
 #endif

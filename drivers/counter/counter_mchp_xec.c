@@ -330,8 +330,9 @@ static int counter_xec_init(const struct device *dev)
 		.girq_bit = DT_INST_PROP(inst, girq_bit),		\
 	};								\
 									\
-	DEVICE_AND_API_INIT(counter_xec_##inst, DT_INST_LABEL(inst),	\
+	DEVICE_DT_INST_DEFINE(inst,					\
 			    counter_xec_init,				\
+			    device_pm_control_nop,			\
 			    &counter_xec_dev_data_##inst,		\
 			    &counter_xec_dev_config_##inst,		\
 			    POST_KERNEL,				\
@@ -343,7 +344,7 @@ static int counter_xec_init(const struct device *dev)
 		IRQ_CONNECT(DT_INST_IRQN(inst),				\
 			    DT_INST_IRQ(inst, priority),		\
 			    counter_xec_isr,				\
-			    DEVICE_GET(counter_xec_##inst), 0);		\
+			    DEVICE_DT_INST_GET(inst), 0);		\
 		irq_enable(DT_INST_IRQN(inst));				\
 	}
 

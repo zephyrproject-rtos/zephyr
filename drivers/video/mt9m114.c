@@ -411,7 +411,7 @@ static int mt9m114_init_0(const struct device *dev)
 	return mt9m114_init(dev);
 }
 
-DEVICE_AND_API_INIT(mt9m114, DT_INST_LABEL(0), &mt9m114_init_0,
+DEVICE_DT_INST_DEFINE(0, &mt9m114_init_0, device_pm_control_nop,
 		    &mt9m114_data_0, NULL,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &mt9m114_driver_api);

@@ -423,7 +423,7 @@ void test_main(void)
 
 	can_dev = device_get_binding(CAN_DEVICE_NAME);
 	zassert_not_null(can_dev, "CAN device not not found");
-	ret = can_configure(can_dev, CAN_LOOPBACK_MODE, 0);
+	ret = can_set_mode(can_dev, CAN_LOOPBACK_MODE);
 	zassert_equal(ret, 0, "Configuring loopback mode failed (%d)", ret);
 
 	ztest_test_suite(isotp,

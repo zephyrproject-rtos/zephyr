@@ -4,12 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @file
- * @brief Thread context switching for ARM64 Cortex-A
+/*
+ * Thread context switching for ARM64 Cortex-A (AArch64)
  *
  * This module implements the routines necessary for thread context switching
- * on ARM64 Cortex-A.
+ * on ARM64 Cortex-A (AArch64)
  */
 
 #include <toolchain.h>
@@ -23,11 +22,11 @@ _ASM_FILE_PROLOGUE
 
 GDATA(_kernel)
 
-/**
- * @brief Routine to handle context switches
+/*
+ * Routine to handle context switches
  *
  * This function is directly called either by _isr_wrapper() in case of
- * preemption, or z_arm64_svc() in case of cooperative switching.
+ * preemption, or z_arm64_sync_exc() in case of cooperative switching.
  */
 
 GTEXT(z_arm64_context_switch)
@@ -36,17 +35,15 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 	ldr	x2, =_thread_offset_to_callee_saved
 	add	x2, x2, x1
 
-	/* Store rest of process context including x30 */
-	stp	x19, x20, [x2], #16
-	stp	x21, x22, [x2], #16
-	stp	x23, x24, [x2], #16
-	stp	x25, x26, [x2], #16
-	stp	x27, x28, [x2], #16
-	stp	x29, xzr, [x2], #16
-
 	/* Save the current SP */
 	mov	x1, sp
-	str	x1, [x2]
+
+	stp	x19, x20, [x2, ___callee_saved_t_x19_x20_OFFSET]
+	stp	x21, x22, [x2, ___callee_saved_t_x21_x22_OFFSET]
+	stp	x23, x24, [x2, ___callee_saved_t_x23_x24_OFFSET]
+	stp	x25, x26, [x2, ___callee_saved_t_x25_x26_OFFSET]
+	stp	x27, x28, [x2, ___callee_saved_t_x27_x28_OFFSET]
+	stp	x29, x1, [x2, ___callee_saved_t_x29_sp_OFFSET]
 
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
 	/* Grab the TLS pointer */
@@ -65,39 +62,35 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 	ldr	x2, =_thread_offset_to_callee_saved
 	add	x2, x2, x0
 
-	/* Restore x19-x29 */
-	ldp	x19, x20, [x2], #16
-	ldp	x21, x22, [x2], #16
-	ldp	x23, x24, [x2], #16
-	ldp	x25, x26, [x2], #16
-	ldp	x27, x28, [x2], #16
-	ldp	x29, xzr, [x2], #16
+	ldp	x19, x20, [x2, ___callee_saved_t_x19_x20_OFFSET]
+	ldp	x21, x22, [x2, ___callee_saved_t_x21_x22_OFFSET]
+	ldp	x23, x24, [x2, ___callee_saved_t_x23_x24_OFFSET]
+	ldp	x25, x26, [x2, ___callee_saved_t_x25_x26_OFFSET]
+	ldp	x27, x28, [x2, ___callee_saved_t_x27_x28_OFFSET]
+	ldp	x29, x1, [x2, ___callee_saved_t_x29_sp_OFFSET]
 
-	ldr	x1, [x2]
 	mov	sp, x1
 
-#ifdef CONFIG_TRACING
+#ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
 	stp	xzr, x30, [sp, #-16]!
-	bl	sys_trace_thread_switched_in
+	bl	z_thread_mark_switched_in
 	ldp	xzr, x30, [sp], #16
 #endif
 
-	/* Return to z_arm64_svc() or _isr_wrapper() */
+	/* Return to z_arm64_sync_exc() or _isr_wrapper() */
 	ret
 
-/**
- * @brief Service call handler
+/*
+ * Synchronous exceptions handler
  *
  * The service call (SVC) is used in the following occasions:
  * - Cooperative context switching
  * - IRQ offloading
- *
- * @return N/A
  */
 
-GTEXT(z_arm64_svc)
-SECTION_FUNC(TEXT, z_arm64_svc)
-	z_arm64_enter_exc x2, x3, x4
+GTEXT(z_arm64_sync_exc)
+SECTION_FUNC(TEXT, z_arm64_sync_exc)
+	z_arm64_enter_exc x2, x3
 
 	mrs	x0, esr_el1
 	lsr	x1, x0, #26
@@ -107,8 +100,12 @@ SECTION_FUNC(TEXT, z_arm64_svc)
 
 	/* Demux the SVC call */
 	and	x1, x0, #0xff
+
 	cmp	x1, #_SVC_CALL_CONTEXT_SWITCH
 	beq	context_switch
+
+	cmp	x1, #_SVC_CALL_RUNTIME_EXCEPT
+	beq	oops
 
 #ifdef CONFIG_IRQ_OFFLOAD
 	cmp	x1, #_SVC_CALL_IRQ_OFFLOAD
@@ -126,13 +123,18 @@ offload:
 #endif
 	b	inv
 
+oops:
+	mov	x0, sp
+	b	z_arm64_do_kernel_oops
+
 context_switch:
 	/*
 	 * Retrieve x0 and x1 from the stack:
+	 *
 	 *  - x0 = new_thread->switch_handle = switch_to thread
-	 *  - x1 = x1 = &old_thread->switch_handle = current thread
+	 *  - x1 = &old_thread->switch_handle = current thread
 	 */
-	ldp	x0, x1, [sp, #(16 * 10)]
+	ldp	x0, x1, [sp, ___esf_t_x0_x1_OFFSET]
 
 	/* Get old thread from x1 */
 	sub	x1, x1, ___thread_t_switch_handle_OFFSET
@@ -141,12 +143,15 @@ context_switch:
 	bl	z_arm64_context_switch
 
 exit:
-	z_arm64_exit_exc x0, x1, x2
+	z_arm64_exit_exc x0, x1
 
 inv:
 	mov	x0, #0 /* K_ERR_CPU_EXCEPTION */
 	mov	x1, sp
-	b	z_arm64_fatal_error
+	bl	z_arm64_fatal_error
+
+	/* Return here only in case of recoverable error */
+	z_arm64_exit_exc x0, x1
 
 GTEXT(z_arm64_call_svc)
 SECTION_FUNC(TEXT, z_arm64_call_svc)

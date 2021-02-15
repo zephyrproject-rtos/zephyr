@@ -149,7 +149,7 @@ Debugging
 =========
 
 The board can be debugged by installing the included 100 mil (0.1 inch) header,
-andattaching an SWD debugger to the 3V3 (3.3V), GND, SCK, and DIO
+and attaching an SWD debugger to the 3V3 (3.3V), GND, SCK, and DIO
 pins on that header.
 
 References

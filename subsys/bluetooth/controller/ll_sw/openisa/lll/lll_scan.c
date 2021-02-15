@@ -149,10 +149,10 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	/* TODO: if coded we use S8? */
 	radio_phy_set(lll->phy, 1);
-	radio_pkt_configure(8, PDU_AC_PAYLOAD_SIZE_MAX, (lll->phy << 1));
+	radio_pkt_configure(8, PDU_AC_LEG_PAYLOAD_SIZE_MAX, (lll->phy << 1));
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
 	radio_phy_set(0, 0);
-	radio_pkt_configure(8, PDU_AC_PAYLOAD_SIZE_MAX, 0);
+	radio_pkt_configure(8, PDU_AC_LEG_PAYLOAD_SIZE_MAX, 0);
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
 
 	node_rx = ull_pdu_rx_alloc_peek(1);
@@ -702,7 +702,7 @@ static inline uint32_t isr_rx_pdu(struct lll_scan *lll, uint8_t devmatch_ok,
 			uint32_t scan_interval_us;
 
 			/* FIXME: is this correct for continuous scanning? */
-			scan_interval_us = lll->interval * 625U;
+			scan_interval_us = lll->interval * SCAN_INT_UNIT_US;
 			pdu_end_us %= scan_interval_us;
 		}
 		evt = HDR_LLL2EVT(lll);
@@ -751,8 +751,10 @@ static inline uint32_t isr_rx_pdu(struct lll_scan *lll, uint8_t devmatch_ok,
 		       &lll_conn->crc_init[0], 3);
 		pdu_tx->connect_ind.win_size = 1;
 
-		conn_interval_us = (uint32_t)lll_conn->interval * 1250U;
-		conn_offset_us = radio_tmr_end_get() + 502 + 1250;
+		conn_interval_us = (uint32_t)lll_conn->interval *
+			CONN_INT_UNIT_US;
+		conn_offset_us = radio_tmr_end_get() + 502 +
+			CONN_INT_UNIT_US;
 
 		if (!IS_ENABLED(CONFIG_BT_CTLR_SCHED_ADVANCED) ||
 		    lll->conn_win_offset_us == 0U) {
@@ -766,7 +768,8 @@ static inline uint32_t isr_rx_pdu(struct lll_scan *lll, uint8_t devmatch_ok,
 			}
 			pdu_tx->connect_ind.win_offset =
 				sys_cpu_to_le16((conn_space_us -
-						 conn_offset_us) / 1250U);
+						 conn_offset_us) /
+					CONN_INT_UNIT_US);
 			pdu_tx->connect_ind.win_size++;
 		}
 
@@ -1012,6 +1015,10 @@ static inline bool isr_scan_init_adva_check(struct lll_scan *lll,
 	/* Only applies to initiator with no whitelist */
 	if (rl_idx != FILTER_IDX_NONE) {
 		return (rl_idx == lll->rl_idx);
+	} else if (!ull_filter_lll_rl_addr_allowed(pdu->tx_addr,
+						   pdu->adv_ind.addr,
+						   &rl_idx)) {
+		return false;
 	}
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 	return ((lll->adv_addr_type == pdu->tx_addr) &&
@@ -1096,11 +1103,11 @@ static uint32_t isr_rx_scan_report(struct lll_scan *lll, uint8_t rssi_ready,
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	} else if (lll->phy) {
 		switch (lll->phy) {
-		case BIT(0):
+		case PHY_1M:
 			node_rx->hdr.type = NODE_RX_TYPE_EXT_1M_REPORT;
 			break;
 
-		case BIT(2):
+		case PHY_CODED:
 			node_rx->hdr.type = NODE_RX_TYPE_EXT_CODED_REPORT;
 			break;
 

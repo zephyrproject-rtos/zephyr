@@ -18,23 +18,21 @@
 #define I2C_READREG_RTC(block, reg_add)	\
 	esp32_rom_i2c_readReg(block, block##_HOSTID,  reg_add)
 
-
-# define XTHAL_GET_CCOUNT()     ({ int __ccount;					     \
-				   __asm__ __volatile__ ("rsr.ccount %0" : "=a" (__ccount)); \
-				   __ccount; })
-
-# define XTHAL_SET_CCOUNT(v)    do { int __ccount = (int)(v);						   \
-				     __asm__ __volatile__ ("wsr.ccount %0" : : "a" (__ccount) : "memory"); \
-				} while (0)
-
 /*
  * Get voltage level for CPU to run at 240 MHz, or for flash/PSRAM to run at 80 MHz.
  * 0x0: level 7; 0x1: level 6; 0x2: level 5; 0x3: level 4. (RO)
  */
-#define GET_HP_VOLTAGE          (RTC_CNTL_DBIAS_1V25 - ((EFUSE_BLK0_RDATA5_REG >> 22) & 0x3))
-#define DIG_DBIAS_240M          GET_HP_VOLTAGE
-#define DIG_DBIAS_80M_160M      RTC_CNTL_DBIAS_1V10     /* FIXME: This macro should be GET_HP_VOLTAGE in case of 80Mhz flash frequency */
-#define DIG_DBIAS_XTAL          RTC_CNTL_DBIAS_1V10
+#define RTC_CNTL_DBIAS_HP_VOLT          (RTC_CNTL_DBIAS_1V25 - (REG_GET_FIELD(EFUSE_BLK0_RDATA5_REG, EFUSE_RD_VOL_LEVEL_HP_INV)))
+#ifdef CONFIG_ESPTOOLPY_FLASHFREQ_80M
+#define DIG_DBIAS_80M_160M  RTC_CNTL_DBIAS_HP_VOLT
+#else
+#define DIG_DBIAS_80M_160M  RTC_CNTL_DBIAS_1V10
+#endif
+#define DIG_DBIAS_240M      RTC_CNTL_DBIAS_HP_VOLT
+#define DIG_DBIAS_XTAL      RTC_CNTL_DBIAS_1V10
+#define DIG_DBIAS_2M        RTC_CNTL_DBIAS_1V00
+
+#define DELAY_PLL_DBIAS_RAISE   3
 
 /**
  * Register definitions for digital PLL (BBPLL)
@@ -64,5 +62,9 @@
 #define BBPLL_OC_ENB_FCAL_VAL       0x9a
 #define BBPLL_OC_ENB_VCON_VAL       0x00
 #define BBPLL_BBADC_CAL_7_0_VAL     0x00
+
+extern uint32_t esp32_rom_g_ticks_per_us_pro;
+extern uint32_t esp32_rom_g_ticks_per_us_app;
+extern void esp32_rom_ets_delay_us(uint32_t us);
 
 #endif /* ZEPHYR_DRIVERS_CLOCK_CONTROL_ESP32_CLOCK_H_ */

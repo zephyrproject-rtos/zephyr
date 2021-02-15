@@ -9,6 +9,8 @@ set(REMOTE_ZEPHYR_DIR ${CMAKE_CURRENT_BINARY_DIR}/openamp_remote-prefix/src/open
 
 if("${BOARD}" STREQUAL "lpcxpresso54114_m4")
   set(BOARD_REMOTE "lpcxpresso54114_m0")
+elseif("${BOARD}" STREQUAL "lpcxpresso55s69_cpu0")
+  set(BOARD_REMOTE "lpcxpresso55s69_cpu1")
 elseif("${BOARD}" STREQUAL "mps2_an521")
   set(QEMU_EXTRA_FLAGS "-device;loader,file=${REMOTE_ZEPHYR_DIR}/zephyr.elf")
   set(BOARD_REMOTE "mps2_an521_nonsecure")
@@ -41,9 +43,5 @@ ExternalProject_Add(
   # NB: Do we need to pass on more CMake variables?
   BUILD_ALWAYS True
 )
-
-if(("${BOARD}" STREQUAL "lpcxpresso54114_m4"))
-	add_dependencies(core_m0_inc_target openamp_remote)
-endif()
 
 target_include_directories(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

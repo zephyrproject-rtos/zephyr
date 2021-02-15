@@ -1,0 +1,26 @@
+# i.MX RT1024
+
+# Copyright (c) 2020, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_MIMXRT1024
+
+config SOC
+	default "mimxrt1024"
+
+config NUM_IRQS
+	default 142
+
+config ARM_DIV
+	default 0
+
+config AHB_DIV
+	default 0
+
+config IPG_DIV
+	default 3
+
+config GPIO
+	default y
+
+endif # SOC_MIMXRT1024

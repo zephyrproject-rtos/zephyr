@@ -267,12 +267,37 @@ __syscall void *k_object_alloc(enum k_objects otype);
  * and may be freed later by passing the actual object pointer (found
  * in the returned z_object's 'name' member) to k_object_free().
  *
+ * @param align Required memory alignment for the allocated object
  * @param size Size of the allocated object
  * @return NULL on insufficient memory
  * @return A pointer to the associated z_object that is installed in the
  *	kernel object tables
  */
-struct z_object *z_dynamic_object_create(size_t size);
+struct z_object *z_dynamic_object_aligned_create(size_t align, size_t size);
+
+/**
+ * Allocate memory and install as a generic kernel object
+ *
+ * This is a low-level function to allocate some memory, and register that
+ * allocated memory in the kernel object lookup tables with type K_OBJ_ANY.
+ * Initialization state and thread permissions will be cleared. The
+ * returned z_object's data value will be uninitialized.
+ *
+ * Most users will want to use k_object_alloc() instead.
+ *
+ * Memory allocated will be drawn from the calling thread's reasource pool
+ * and may be freed later by passing the actual object pointer (found
+ * in the returned z_object's 'name' member) to k_object_free().
+ *
+ * @param size Size of the allocated object
+ * @return NULL on insufficient memory
+ * @return A pointer to the associated z_object that is installed in the
+ *	kernel object tables
+ */
+static inline struct z_object *z_dynamic_object_create(size_t size)
+{
+	return z_dynamic_object_aligned_create(0, size);
+}
 
 /**
  * Free a kernel object previously allocated with k_object_alloc()
@@ -289,6 +314,15 @@ void k_object_free(void *obj);
 static inline void *z_impl_k_object_alloc(enum k_objects otype)
 {
 	ARG_UNUSED(otype);
+
+	return NULL;
+}
+
+static inline struct z_object *z_dynamic_object_aligned_create(size_t align,
+							       size_t size)
+{
+	ARG_UNUSED(align);
+	ARG_UNUSED(size);
 
 	return NULL;
 }

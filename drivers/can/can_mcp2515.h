@@ -46,9 +46,9 @@ struct mcp2515_data {
 
 	/* filter data */
 	uint32_t filter_usage;
-	can_rx_callback_t rx_cb[CONFIG_CAN_MCP2515_MAX_FILTER];
-	void *cb_arg[CONFIG_CAN_MCP2515_MAX_FILTER];
-	struct zcan_filter filter[CONFIG_CAN_MCP2515_MAX_FILTER];
+	can_rx_callback_t rx_cb[CONFIG_CAN_MAX_FILTER];
+	void *cb_arg[CONFIG_CAN_MAX_FILTER];
+	struct zcan_filter filter[CONFIG_CAN_MAX_FILTER];
 	can_state_change_isr_t state_change_isr;
 
 	/* general data */
@@ -78,7 +78,14 @@ struct mcp2515_config {
 	uint8_t tq_bs2;
 	uint32_t bus_speed;
 	uint32_t osc_freq;
+	uint16_t sample_point;
 };
+
+/*
+ * Startup time of 128 OSC1 clock cycles at 1MHz (minimum clock in frequency)
+ * see MCP2515 datasheet section 8.1 Oscillator Start-up Timer
+ */
+#define MCP2515_OSC_STARTUP_US		128U
 
 /* MCP2515 Opcodes */
 #define MCP2515_OPCODE_WRITE            0x02

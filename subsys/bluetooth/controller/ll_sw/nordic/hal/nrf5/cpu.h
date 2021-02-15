@@ -16,12 +16,25 @@ static inline void cpu_sleep(void)
 #endif
 }
 
-static inline void cpu_dsb(void)
+static inline void cpu_dmb(void)
 {
-#if defined(CONFIG_CPU_CORTEX_M0) || defined(CONFIG_ARCH_POSIX)
-	/* No need of data synchronization barrier */
-#elif defined(CONFIG_CPU_CORTEX_M4) || defined(CONFIG_CPU_CORTEX_M33)
-	__DSB();
+#if defined(CONFIG_CPU_CORTEX_M)
+	/* NOTE: Refer to ARM Cortex-M Programming Guide to Memory Barrier
+	 *       Instructions, Section 4.1 Normal access in memories
+	 *
+	 *       Implementation: In the Cortex-M processors data transfers are
+	 *       carried out in the programmed order.
+	 *
+	 * Hence, there is no need to use a memory barrier instruction between
+	 * each access. Only a compiler memory clobber is sufficient.
+	 */
+	__asm__ volatile ("" : : : "memory");
+#elif defined(CONFIG_ARCH_POSIX)
+	/* FIXME: Add necessary host machine required Data Memory Barrier
+	 *        instruction alongwith the below defined compiler memory
+	 *        clobber.
+	 */
+	__asm__ volatile ("" : : : "memory");
 #else
 #error "Unsupported CPU."
 #endif

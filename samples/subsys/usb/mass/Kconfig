@@ -1,4 +1,4 @@
-# Copyright (c) 2019 Nordic Semiconductor ASA
+# Copyright (c) 2019-2020 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
 config USB_DEVICE_PID
@@ -8,5 +8,86 @@ config APP_WIPE_STORAGE
 	bool "Option to clear the flash area before mounting"
 	help
 	  Use this to force an existing file system to be created.
+
+choice
+	prompt "Storage and file system type used by the application"
+	default APP_MSC_STORAGE_NONE
+	help
+	  Specify the type of storage and file system.
+
+config APP_MSC_STORAGE_NONE
+	bool "Use RAM disk as block device"
+	imply DISK_ACCESS_RAM
+
+config APP_MSC_STORAGE_RAM
+	bool "Use RAM disk and FAT file system"
+	imply DISK_ACCESS_RAM
+	imply FILE_SYSTEM
+	imply FAT_FILESYSTEM_ELM
+
+config APP_MSC_STORAGE_FLASH_FATFS
+	bool "Use FLASH disk and FAT file system"
+	imply DISK_ACCESS_FLASH
+	imply FILE_SYSTEM
+	imply FAT_FILESYSTEM_ELM
+
+config APP_MSC_STORAGE_FLASH_LITTLEFS
+	bool "Use FLASH disk and LittleFS"
+	imply DISK_ACCESS_FLASH
+	imply FILE_SYSTEM
+	imply FILE_SYSTEM_LITTLEFS
+
+endchoice
+
+config DISK_RAM_VOLUME_SIZE
+	default 32 if APP_MSC_STORAGE_NONE
+
+config MASS_STORAGE_DISK_NAME
+	default "NAND" if DISK_ACCESS_FLASH
+	default "RAM" if DISK_ACCESS_RAM
+
+if DISK_ACCESS_FLASH
+
+config FLASH_MAP
+	default y
+
+config FLASH_PAGE_LAYOUT
+	default y
+
+config DISK_FLASH_START
+	default 0x0
+
+config FLASH_LOG_LEVEL
+	default 3
+
+DT_COMPAT_QSPI_NOR := nordic,qspi-nor
+
+config NORDIC_QSPI_NOR
+	default $(dt_compat_enabled,$(DT_COMPAT_QSPI_NOR))
+
+if NORDIC_QSPI_NOR
+
+config NORDIC_QSPI_NOR_FLASH_LAYOUT_PAGE_SIZE
+	default 4096
+
+config DISK_FLASH_DEV_NAME
+	default "MX25R64" if "$(dt_nodelabel_enabled,mx25r64)"
+	default "GD25Q16" if "$(dt_nodelabel_enabled,gd25q16)"
+
+config DISK_VOLUME_SIZE
+	default 0x20000
+
+config DISK_FLASH_MAX_RW_SIZE
+	default 4096
+
+config DISK_FLASH_ERASE_ALIGNMENT
+	default 0x1000
+
+config DISK_ERASE_BLOCK_SIZE
+	default 0x1000
+
+endif # NORDIC_QSPI_NOR
+
+endif # DISK_ACCESS_FLASH
 
 source "Kconfig.zephyr"

@@ -1,7 +1,44 @@
 # Copyright (c) 2019 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-description: Nordic nRF family TWI (TWI master)
+description: |
+  Nordic nRF family TWI (TWI master).
+
+  This binding can be used for nodes which can represent TWI
+  peripherals. When a single SoC peripheral ID corresponds to multiple
+  I2C peripherals (like TWI or TWIM), the corresponding devicetree
+  nodes must be set up to select TWI before use.
+
+  To select TWI, set the node's "compatible" to "nordic,nrf-twi" and
+  its "status" to "okay", e.g. using an overlay file like this:
+
+      /* This is for TWI0 -- change to "i2c1" for TWI1. */
+      &i2c0 {
+              compatible = "nordic,nrf-twi";
+              status = "okay";
+              /* other property settings can go here */
+      };
+
+  You can use either of these options to check TWI availability on
+  your SoC:
+
+      1. Check the peripheral Instantiation table in the Memory
+         section of your SoC's Product Specification document.
+         A "TWI0" instance in the table means "i2c0" in the devicetree
+         can be used with this binding, and similarly for "TWI1".
+
+      2. Open your SoC's .dtsi file and look for a node definition that
+         documents TWI support, like this:
+
+             i2c0: i2c@40003000 {
+                     /*
+                      * This i2c node can be TWI, [...].
+                      */
+                     ...
+             };
+
+   If your SoC only has TWIM and TWIS I2C peripherals, you cannot use
+   this binding. See the "nordic,nrf-twim" binding instead.
 
 compatible: "nordic,nrf-twi"
 

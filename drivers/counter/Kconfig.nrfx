@@ -10,44 +10,49 @@ config COUNTER_NRF_RTC
 config COUNTER_TIMER0
 	bool "Enable Counter on TIMER0"
 	depends on HAS_HW_NRF_TIMER0
-	depends on !BT_LL_SW_SPLIT
+	depends on !NRF_HW_TIMER0_RESERVED
 	select COUNTER_NRF_TIMER
 
 config COUNTER_TIMER1
 	bool "Enable Counter on TIMER1"
 	depends on HAS_HW_NRF_TIMER1
+	depends on !NRF_HW_TIMER1_RESERVED
 	select COUNTER_NRF_TIMER
 
 config COUNTER_TIMER2
 	bool "Enable Counter on TIMER2"
 	depends on HAS_HW_NRF_TIMER2
+	depends on !NRF_HW_TIMER2_RESERVED
 	select COUNTER_NRF_TIMER
 
 config COUNTER_TIMER3
 	bool "Enable Counter on TIMER3"
 	depends on HAS_HW_NRF_TIMER3
+	depends on !NRF_HW_TIMER3_RESERVED
 	select COUNTER_NRF_TIMER
 
 config COUNTER_TIMER4
 	bool "Enable Counter on TIMER4"
 	depends on HAS_HW_NRF_TIMER4
+	depends on !NRF_HW_TIMER4_RESERVED
 	select COUNTER_NRF_TIMER
 
 config COUNTER_RTC0
 	bool "Enable Counter on RTC0"
 	depends on HAS_HW_NRF_RTC0
-	depends on !BT_LL_SW_SPLIT
+	depends on !NRF_HW_RTC0_RESERVED
 	select COUNTER_NRF_RTC
 
 config COUNTER_RTC1
 	bool "Enable Counter on RTC1"
 	depends on HAS_HW_NRF_RTC1
-	depends on !NRF_RTC_TIMER
+	depends on !NRF_HW_RTC1_RESERVED
 	select COUNTER_NRF_RTC
 
 config COUNTER_RTC2
 	bool "Enable Counter on RTC2"
 	depends on HAS_HW_NRF_RTC2
+	depends on !NRF_HW_RTC2_RESERVED
 	select COUNTER_NRF_RTC
 
 # Internal flag which detects if PPI wrap feature is enabled for any instance

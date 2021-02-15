@@ -8,10 +8,13 @@
 
 #include <bluetooth/bluetooth.h>
 
+#include <assert.h>
 #include <errno.h>
 #include <bluetooth/mesh.h>
 #include <bluetooth/testing.h>
+#include <bluetooth/mesh/cfg.h>
 #include <sys/byteorder.h>
+#include <app_keys.h>
 
 #include <logging/log.h>
 #define LOG_MODULE_NAME bttester_mesh
@@ -20,7 +23,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "bttester.h"
 
 #define CONTROLLER_INDEX 0
-#define CID_LOCAL 0xffff
+#define CID_LOCAL 0x05F1
 
 /* Health server data */
 #define CUR_FAULTS_MAX 4
@@ -44,6 +47,8 @@ static uint8_t static_auth[16];
 
 /* Vendor Model data */
 #define VND_MODEL_ID_1 0x1234
+static uint8_t vnd_app_key[16];
+static uint16_t vnd_app_key_idx = 0x000f;
 
 /* Model send data */
 #define MODEL_BOUNDS_MAX 2
@@ -99,26 +104,6 @@ static void supported_commands(uint8_t *data, uint16_t len)
 	tester_send(BTP_SERVICE_ID_MESH, MESH_READ_SUPPORTED_COMMANDS,
 		    CONTROLLER_INDEX, buf->data, buf->len);
 }
-
-static struct bt_mesh_cfg_srv cfg_srv = {
-	.relay = BT_MESH_RELAY_ENABLED,
-	.beacon = BT_MESH_BEACON_ENABLED,
-#if defined(CONFIG_BT_MESH_FRIEND)
-	.frnd = BT_MESH_FRIEND_ENABLED,
-#else
-	.frnd = BT_MESH_FRIEND_NOT_SUPPORTED,
-#endif
-#if defined(CONFIG_BT_MESH_GATT_PROXY)
-	.gatt_proxy = BT_MESH_GATT_PROXY_ENABLED,
-#else
-	.gatt_proxy = BT_MESH_GATT_PROXY_NOT_SUPPORTED,
-#endif
-	.default_ttl = 7,
-
-	/* 3 transmissions with 20ms interval */
-	.net_transmit = BT_MESH_TRANSMIT(2, 20),
-	.relay_retransmit = BT_MESH_TRANSMIT(2, 20),
-};
 
 static void get_faults(uint8_t *faults, uint8_t faults_size, uint8_t *dst, uint8_t *count)
 {
@@ -233,7 +218,7 @@ static struct bt_mesh_health_cli health_cli = {
 };
 
 static struct bt_mesh_model root_models[] = {
-	BT_MESH_MODEL_CFG_SRV(&cfg_srv),
+	BT_MESH_MODEL_CFG_SRV,
 	BT_MESH_MODEL_CFG_CLI(&cfg_cli),
 	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),
 	BT_MESH_MODEL_HEALTH_CLI(&health_cli),
@@ -447,9 +432,6 @@ static void init(uint8_t *data, uint16_t len)
 		}
 	}
 
-	/* Set device key for vendor model */
-	vnd_models[0].keys[0] = BT_MESH_KEY_DEV;
-
 rsp:
 	tester_rsp(BTP_SERVICE_ID_MESH, MESH_INIT, CONTROLLER_INDEX,
 		   status);
@@ -582,7 +564,7 @@ static void net_send(uint8_t *data, uint16_t len)
 	NET_BUF_SIMPLE_DEFINE(msg, UINT8_MAX);
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net.net_idx,
-		.app_idx = BT_MESH_KEY_DEV,
+		.app_idx = vnd_app_key_idx,
 		.addr = sys_le16_to_cpu(cmd->dst),
 		.send_ttl = cmd->ttl,
 	};
@@ -590,6 +572,12 @@ static void net_send(uint8_t *data, uint16_t len)
 
 	LOG_DBG("ttl 0x%02x dst 0x%04x payload_len %d", ctx.send_ttl,
 		ctx.addr, cmd->payload_len);
+
+	if (!bt_mesh_app_key_exists(vnd_app_key_idx)) {
+		(void)bt_mesh_app_key_add(vnd_app_key_idx, net.net_idx,
+					  vnd_app_key);
+		vnd_models[0].keys[0] = vnd_app_key_idx;
+	}
 
 	net_buf_simple_add_mem(&msg, cmd->payload, cmd->payload_len);
 
@@ -914,6 +902,78 @@ static struct bt_test_cb bt_test_cb = {
 	.mesh_model_unbound = model_unbound_cb,
 	.mesh_prov_invalid_bearer = invalid_bearer_cb,
 	.mesh_trans_incomp_timer_exp = incomp_timer_exp_cb,
+};
+
+static void friend_established(uint16_t net_idx, uint16_t lpn_addr,
+			       uint8_t recv_delay, uint32_t polltimeout)
+{
+	struct mesh_frnd_established_ev ev = { net_idx, lpn_addr, recv_delay,
+					       polltimeout };
+
+	LOG_DBG("Friendship (as Friend) established with "
+			"LPN 0x%04x Receive Delay %u Poll Timeout %u",
+			lpn_addr, recv_delay, polltimeout);
+
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_EV_FRND_ESTABLISHED,
+		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
+}
+
+static void friend_terminated(uint16_t net_idx, uint16_t lpn_addr)
+{
+	struct mesh_frnd_terminated_ev ev = { net_idx, lpn_addr };
+
+	LOG_DBG("Friendship (as Friend) lost with LPN "
+			"0x%04x", lpn_addr);
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_EV_FRND_TERMINATED,
+		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
+}
+
+BT_MESH_FRIEND_CB_DEFINE(friend_cb) = {
+	.established = friend_established,
+	.terminated = friend_terminated,
+};
+
+static void lpn_established(uint16_t net_idx, uint16_t friend_addr,
+					uint8_t queue_size, uint8_t recv_win)
+{
+	struct mesh_lpn_established_ev ev = { net_idx, friend_addr, queue_size,
+					      recv_win };
+
+	LOG_DBG("Friendship (as LPN) established with "
+			"Friend 0x%04x Queue Size %d Receive Window %d",
+			friend_addr, queue_size, recv_win);
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_EV_LPN_ESTABLISHED,
+		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
+}
+
+static void lpn_terminated(uint16_t net_idx, uint16_t friend_addr)
+{
+	struct mesh_lpn_polled_ev ev = { net_idx, friend_addr };
+
+	LOG_DBG("Friendship (as LPN) lost with Friend "
+			"0x%04x", friend_addr);
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_EV_LPN_TERMINATED,
+		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
+}
+
+static void lpn_polled(uint16_t net_idx, uint16_t friend_addr, bool retry)
+{
+	struct mesh_lpn_polled_ev ev = { net_idx, friend_addr, (uint8_t)retry };
+
+	LOG_DBG("LPN polled 0x%04x %s", friend_addr, retry ? "(retry)" : "");
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_EV_LPN_POLLED,
+		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
+}
+
+BT_MESH_LPN_CB_DEFINE(lpn_cb) = {
+	.established = lpn_established,
+	.terminated = lpn_terminated,
+	.polled = lpn_polled,
 };
 
 uint8_t tester_init_mesh(void)

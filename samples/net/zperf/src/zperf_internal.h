@@ -37,32 +37,6 @@
 
 #define PACKET_SIZE_MAX      1024
 
-#define HW_CYCLES_TO_USEC(__hw_cycle__) \
-	( \
-		((uint64_t)(__hw_cycle__) * (uint64_t)USEC_PER_SEC) / \
-		((uint64_t)sys_clock_hw_cycles_per_sec())		\
-	)
-
-#define HW_CYCLES_TO_SEC(__hw_cycle__) \
-	( \
-		((uint64_t)(HW_CYCLES_TO_USEC(__hw_cycle__))) / \
-		((uint64_t)USEC_PER_SEC) \
-	)
-
-#define USEC_TO_HW_CYCLES(__usec__) \
-	( \
-	 ((uint64_t)(__usec__) * (uint64_t)sys_clock_hw_cycles_per_sec()) /	\
-		((uint64_t)USEC_PER_SEC) \
-	)
-
-#define SEC_TO_HW_CYCLES(__sec__) \
-	USEC_TO_HW_CYCLES((uint64_t)(__sec__) * \
-	(uint64_t)USEC_PER_SEC)
-
-#define MSEC_TO_HW_CYCLES(__msec__) \
-		USEC_TO_HW_CYCLES((uint64_t)(__msec__) * \
-		(uint64_t)MSEC_PER_SEC)
-
 struct zperf_udp_datagram {
 	int32_t id;
 	uint32_t tv_sec;

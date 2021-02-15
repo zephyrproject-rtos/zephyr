@@ -281,9 +281,9 @@ static const struct gpio_driver_api gpio_xlnx_axi_driver_api = {
 		.all_outputs = DT_INST_PROP_OR(n, xlnx_all_outputs2, 0),\
 	};								\
 									\
-	DEVICE_AND_API_INIT(gpio_xlnx_axi_##n##_2,			\
-			DT_LABEL(DT_CHILD(DT_DRV_INST(n), gpio2)),	\
+	DEVICE_DT_DEFINE(DT_CHILD(DT_DRV_INST(n), gpio2),		\
 			&gpio_xlnx_axi_init,				\
+			device_pm_control_nop,				\
 			&gpio_xlnx_axi_##n##_2_data,			\
 			&gpio_xlnx_axi_##n##_2_config,			\
 			POST_KERNEL,					\
@@ -309,8 +309,9 @@ static const struct gpio_driver_api gpio_xlnx_axi_driver_api = {
 		.all_outputs = DT_INST_PROP_OR(n, xlnx_all_outputs, 0),	\
 	};								\
 									\
-	DEVICE_AND_API_INIT(gpio_xlnx_axi_##n, DT_INST_LABEL(n),	\
+	DEVICE_DT_INST_DEFINE(n,					\
 			&gpio_xlnx_axi_init,				\
+			device_pm_control_nop,				\
 			&gpio_xlnx_axi_##n##_data,			\
 			&gpio_xlnx_axi_##n##_config,			\
 			POST_KERNEL,					\

@@ -16,3 +16,4 @@ supported:
   - counter
   - adc
   - dac
+  - backup_sram

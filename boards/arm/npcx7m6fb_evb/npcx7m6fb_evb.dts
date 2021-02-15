@@ -22,6 +22,8 @@
 		pwm-led0 = &pwm_led0_green;
 		/* For pwm test suites */
 		pwm-0 = &pwm6;
+		/* For i2c test suites */
+		i2c-0 = &i2c0_0;
 	};
 
 	pwmleds {
@@ -31,6 +33,7 @@
 			label = "User D7 green";
 		};
 	};
+
 };
 
 /* Overwirte default device properties with overlays in board dt file here. */
@@ -44,6 +47,16 @@
 	status = "okay";
 };
 
+&adc0 {
+	/* ADC pinmux is changed only if related channel is configured. */
+	status = "okay";
+};
+
 &espi0 {
 	status = "okay";
+};
+
+&i2c0_0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
 };

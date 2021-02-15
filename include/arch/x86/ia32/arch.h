@@ -28,6 +28,7 @@
 
 #include <arch/common/addr_types.h>
 #include <arch/x86/ia32/segmentation.h>
+#include <power/power.h>
 
 #endif /* _ASMLANGUAGE */
 
@@ -233,20 +234,14 @@ typedef struct s_isrList {
 				   (flags_p)); \
 }
 
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
-/*
- * FIXME: z_sys_power_save_idle_exit is defined in kernel.h, which cannot be
- *	  included here due to circular dependency
- */
-extern void z_sys_power_save_idle_exit(int32_t ticks);
-
+#ifdef CONFIG_PM
 static inline void arch_irq_direct_pm(void)
 {
 	if (_kernel.idle) {
 		int32_t idle_val = _kernel.idle;
 
 		_kernel.idle = 0;
-		z_sys_power_save_idle_exit(idle_val);
+		z_pm_save_idle_exit(idle_val);
 	}
 }
 
@@ -447,8 +442,27 @@ extern struct task_state_segment _main_tss;
 		: \
 		: [vector] "i" (Z_X86_OOPS_VECTOR), \
 		  [reason] "i" (reason_p)); \
-	CODE_UNREACHABLE; \
+	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */ \
 } while (false)
+
+/*
+ * Dynamic thread object memory alignment.
+ *
+ * If support for SSEx extensions is enabled a 16 byte boundary is required,
+ * since the 'fxsave' and 'fxrstor' instructions require this. In all other
+ * cases a 4 byte boundary is sufficient.
+ */
+#if defined(CONFIG_EAGER_FPU_SHARING) || defined(CONFIG_LAZY_FPU_SHARING)
+#ifdef CONFIG_SSE
+#define ARCH_DYMANIC_OBJ_K_THREAD_ALIGNMENT	16
+#else
+#define ARCH_DYMANIC_OBJ_K_THREAD_ALIGNMENT	(sizeof(void *))
+#endif
+#else
+/* No special alignment requirements, simply align on pointer size. */
+#define ARCH_DYMANIC_OBJ_K_THREAD_ALIGNMENT	(sizeof(void *))
+#endif /* CONFIG_*_FP_SHARING */
+
 
 #ifdef __cplusplus
 }

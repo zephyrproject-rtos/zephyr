@@ -37,6 +37,11 @@ with open(elffile, "rb") as fd:
             fixup.append(s.name)
 
 for s in fixup:
-    cmd = f"{objcopy_bin} --change-section-address {s}+0x20000000 {elffile}"
-    print(cmd)
+    # Note redirect: the sof-derived linker scripts currently emit
+    # some zero-length sections at address zero.  This is benign, and
+    # the linker is happy, but objcopy will emit an unsilenceable
+    # error (no --quiet option, no -Werror=no-whatever, nothing).
+    # Just swallow the error stream for now pending rework to the
+    # linker framework.
+    cmd = f"{objcopy_bin} --change-section-address {s}+0x20000000 {elffile} 2>/dev/null"
     os.system(cmd)

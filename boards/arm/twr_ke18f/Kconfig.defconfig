@@ -18,27 +18,13 @@ config SPI_1
 
 endif # SPI_MCUX_LPSPI
 
-if PINMUX_MCUX
-
-config PINMUX_MCUX_PORTA
-	default y
-
-config PINMUX_MCUX_PORTB
-	default y
-
-config PINMUX_MCUX_PORTC
-	default y
-
-config PINMUX_MCUX_PORTD
-	default y
-
-config PINMUX_MCUX_PORTE
-	default y
-
-endif # PINMUX_MCUX
-
 config TEMP_KINETIS
 	default y if "$(dt_nodelabel_enabled,adc0)"
 	depends on SENSOR && ADC
+
+# The KE1xF has 8 MPU regions, which is not enough for both HW stack protection
+# and userspace. Only enable HW stack protection if userspace is not enabled.
+config HW_STACK_PROTECTION
+	default y if !USERSPACE
 
 endif # BOARD_TWR_KE18F

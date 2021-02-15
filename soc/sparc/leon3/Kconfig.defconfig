@@ -1,0 +1,12 @@
+# Copyright (c) 2019-2020 Cobham Gaisler AB
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_LEON3
+
+config SOC
+	default "leon3"
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 40000000
+
+endif

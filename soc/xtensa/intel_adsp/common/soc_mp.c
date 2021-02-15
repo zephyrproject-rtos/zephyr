@@ -25,7 +25,7 @@ LOG_MODULE_REGISTER(soc_mp, CONFIG_SOC_LOG_LEVEL);
 #include <drivers/ipm.h>
 #include <ipm/ipm_cavs_idc.h>
 
-#if CONFIG_MP_NUM_CPUS > 1 && !defined(CONFIG_IPM_CAVS_IDC)
+#if CONFIG_MP_NUM_CPUS > 1 && !defined(CONFIG_IPM_CAVS_IDC) && defined(CONFIG_SMP)
 #error Need to enable the IPM driver for multiprocessing
 #endif
 

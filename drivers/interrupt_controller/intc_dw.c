@@ -143,15 +143,15 @@ static const struct irq_next_level_api dw_ictl_apis = {
 	.intr_get_line_state = dw_ictl_intr_get_line_state,
 };
 
-DEVICE_AND_API_INIT(dw_ictl, DT_INST_LABEL(0),
-		    dw_ictl_initialize, NULL, &dw_config,
-		    PRE_KERNEL_1, CONFIG_DW_ICTL_INIT_PRIORITY, &dw_ictl_apis);
+DEVICE_DT_INST_DEFINE(0, dw_ictl_initialize, device_pm_control_nop,
+		NULL, &dw_config, PRE_KERNEL_1,
+		CONFIG_DW_ICTL_INIT_PRIORITY, &dw_ictl_apis);
 
 static void dw_ictl_config_irq(const struct device *port)
 {
 	IRQ_CONNECT(DT_INST_IRQN(0),
 		    DT_INST_IRQ(0, priority),
 		    dw_ictl_isr,
-		    DEVICE_GET(dw_ictl),
+		    DEVICE_DT_INST_GET(0),
 		    DT_INST_IRQ(0, sense));
 }

@@ -14,6 +14,11 @@
 /* Redistributor base addresses for each core */
 mem_addr_t gic_rdists[GIC_NUM_CPU_IF];
 
+#ifdef CONFIG_ARMV8_A_NS
+#define IGROUPR_VAL	0xFFFFFFFFU
+#else
+#define IGROUPR_VAL	0x0U
+#endif
 /*
  * Wait for register write pending
  * TODO: add timed wait
@@ -180,12 +185,11 @@ static void gicv3_cpuif_init(void)
 	/* Clear pending */
 	sys_write32(BIT_MASK(GIC_NUM_INTR_PER_REG), ICPENDR(base, 0));
 
-	/* Configure all SGIs/PPIs as G1S.
-	 * TODO: G1S or G1NS dependending on Zephyr is run in EL1S
-	 * or EL1NS respectively.
+	/* Configure all SGIs/PPIs as G1S or G1NS depending on Zephyr
+	 * is run in EL1S or EL1NS respectively.
 	 * All interrupts will be delivered as irq
 	 */
-	sys_write32(0, IGROUPR(base, 0));
+	sys_write32(IGROUPR_VAL, IGROUPR(base, 0));
 	sys_write32(BIT_MASK(GIC_NUM_INTR_PER_REG), IGROUPMODR(base, 0));
 
 	/*
@@ -236,6 +240,10 @@ static void gicv3_dist_init(void)
 	num_ints &= GICD_TYPER_ITLINESNUM_MASK;
 	num_ints = (num_ints + 1) << 5;
 
+	/* Disable the distributor */
+	sys_write32(0, GICD_CTLR);
+	gic_wait_rwp(GIC_SPI_INT_BASE);
+
 	/*
 	 * Default configuration of all SPIs
 	 */
@@ -248,8 +256,7 @@ static void gicv3_dist_init(void)
 		/* Clear pending */
 		sys_write32(BIT_MASK(GIC_NUM_INTR_PER_REG),
 			    ICPENDR(base, idx));
-		/* All SPIs are G1S and owned by Zephyr */
-		sys_write32(0, IGROUPR(base, idx));
+		sys_write32(IGROUPR_VAL, IGROUPR(base, idx));
 		sys_write32(BIT_MASK(GIC_NUM_INTR_PER_REG),
 			    IGROUPMODR(base, idx));
 
@@ -270,13 +277,21 @@ static void gicv3_dist_init(void)
 		sys_write32(0, ICFGR(base, idx));
 	}
 
+#ifdef CONFIG_ARMV8_A_NS
+	/* Enable distributor with ARE */
+	sys_write32(BIT(GICD_CTRL_ARE_NS) | BIT(GICD_CTLR_ENABLE_G1NS),
+		    GICD_CTLR);
+#else
 	/* enable Group 1 secure interrupts */
 	sys_set_bit(GICD_CTLR, GICD_CTLR_ENABLE_G1S);
+#endif
 }
 
 /* TODO: add arm_gic_secondary_init() for multicore support */
-int arm_gic_init(void)
+int arm_gic_init(const struct device *unused)
 {
+	ARG_UNUSED(unused);
+
 	gicv3_dist_init();
 
 	/* Fixme: populate each redistributor */
@@ -288,3 +303,5 @@ int arm_gic_init(void)
 
 	return 0;
 }
+
+SYS_INIT(arm_gic_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

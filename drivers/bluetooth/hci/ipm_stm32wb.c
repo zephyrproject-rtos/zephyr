@@ -44,6 +44,8 @@ static void sysevt_received(void *pdata);
 #define HCI_SCO                 0x03
 #define HCI_EVT                 0x04
 
+#define STM32WB_C2_LOCK_TIMEOUT K_MSEC(500)
+
 static K_SEM_DEFINE(c2_started, 0, 1);
 static K_SEM_DEFINE(ble_sys_wait_cmd_rsp, 0, 1);
 static K_SEM_DEFINE(acl_data_ack, 1, 1);
@@ -150,10 +152,13 @@ void TM_EvtReceivedCb(TL_EvtPacket_t *hcievt)
 static void bt_ipm_rx_thread(void)
 {
 	while (true) {
+		bool discardable = false;
+		k_timeout_t timeout = K_FOREVER;
 		static TL_EvtPacket_t *hcievt;
 		struct net_buf *buf = NULL;
 		struct bt_hci_acl_hdr acl_hdr;
 		TL_AclDataSerial_t *acl;
+		struct bt_hci_evt_le_meta_event *mev;
 
 		hcievt = k_fifo_get(&ipm_rx_events_fifo, K_FOREVER);
 
@@ -171,10 +176,23 @@ static void bt_ipm_rx_thread(void)
 				TL_MM_EvtDone(hcievt);
 				goto end_loop;
 			default:
+				mev = (void *)&hcievt->evtserial.evt.payload;
+				if (hcievt->evtserial.evt.evtcode == BT_HCI_EVT_LE_META_EVENT &&
+				    (mev->subevent == BT_HCI_EVT_LE_ADVERTISING_REPORT ||
+				     mev->subevent == BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT)) {
+					discardable = true;
+					timeout = K_NO_WAIT;
+				}
+
 				buf = bt_buf_get_evt(
 					hcievt->evtserial.evt.evtcode,
-					false, K_FOREVER);
+					discardable, timeout);
+				if (!buf) {
+					BT_DBG("Discard adv report due to insufficient buf");
+					goto end_loop;
+				}
 			}
+
 			tryfix_event(&hcievt->evtserial.evt);
 			net_buf_add_mem(buf, &hcievt->evtserial.evt,
 					hcievt->evtserial.evt.plen + 2);
@@ -490,30 +508,12 @@ static int bt_ipm_open(void)
 {
 	int err;
 
-	/* Start RX thread */
-	k_thread_create(&ipm_rx_thread_data, ipm_rx_stack,
-			K_KERNEL_STACK_SIZEOF(ipm_rx_stack),
-			(k_thread_entry_t)bt_ipm_rx_thread, NULL, NULL, NULL,
-			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO),
-			0, K_NO_WAIT);
-
-	/* Take BLE out of reset */
-	ipcc_reset();
-
-	transport_init();
-
-	/* Device will let us know when it's ready */
-	k_sem_take(&c2_started, K_FOREVER);
-	BT_DBG("C2 unlocked");
-
-	stm32wb_start_ble();
-
-	BT_DBG("IPM Channel Open Completed");
-
 	err = bt_ipm_ble_init();
 	if (err) {
 		return err;
 	}
+
+	BT_DBG("IPM Channel Open Completed");
 
 	return 0;
 }
@@ -533,6 +533,27 @@ static int _bt_ipm_init(const struct device *unused)
 	bt_hci_driver_register(&drv);
 
 	start_ble_rf();
+
+	/* Start RX thread */
+	k_thread_create(&ipm_rx_thread_data, ipm_rx_stack,
+			K_KERNEL_STACK_SIZEOF(ipm_rx_stack),
+			(k_thread_entry_t)bt_ipm_rx_thread, NULL, NULL, NULL,
+			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO),
+			0, K_NO_WAIT);
+
+	/* Take BLE out of reset */
+	ipcc_reset();
+
+	transport_init();
+
+	/* Device will let us know when it's ready */
+	if (k_sem_take(&c2_started, STM32WB_C2_LOCK_TIMEOUT)) {
+		return -ETIMEDOUT;
+	}
+	BT_DBG("C2 unlocked");
+
+	stm32wb_start_ble();
+
 	return 0;
 }
 

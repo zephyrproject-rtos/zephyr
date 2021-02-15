@@ -215,6 +215,11 @@ void ieee802154_fragment(struct ieee802154_fragment_ctx *ctx,
 	ctx->offset = ctx->processed >> 3;
 }
 
+static inline uint8_t get_datagram_type(uint8_t *ptr)
+{
+	return ptr[0] & NET_FRAG_DISPATCH_MASK;
+}
+
 static inline uint16_t get_datagram_size(uint8_t *ptr)
 {
 	return ((ptr[0] & 0x1F) << 8) | ptr[1];
@@ -344,8 +349,7 @@ static inline struct frag_cache *get_reass_cache(uint16_t size, uint16_t tag)
 
 static inline void fragment_append(struct net_pkt *pkt, struct net_buf *frag)
 {
-	if ((frag->data[0] & NET_FRAG_DISPATCH_MASK) ==
-	    NET_6LO_DISPATCH_FRAG1) {
+	if (get_datagram_type(frag->data) == NET_6LO_DISPATCH_FRAG1) {
 		/* Always make sure first fragment is inserted first
 		 * This will be useful for fragment_cached_pkt_len()
 		 */
@@ -367,8 +371,7 @@ static inline size_t fragment_cached_pkt_len(struct net_pkt *pkt)
 	while (frag) {
 		uint16_t hdr_len = NET_6LO_FRAGN_HDR_LEN;
 
-		if ((frag->data[0] & NET_FRAG_DISPATCH_MASK) ==
-		    NET_6LO_DISPATCH_FRAG1) {
+		if (get_datagram_type(frag->data) == NET_6LO_DISPATCH_FRAG1) {
 			hdr_len = NET_6LO_FRAG1_HDR_LEN;
 		}
 
@@ -396,8 +399,7 @@ static inline size_t fragment_cached_pkt_len(struct net_pkt *pkt)
 
 static inline uint16_t fragment_offset(struct net_buf *frag)
 {
-	if ((frag->data[0] & NET_FRAG_DISPATCH_MASK) ==
-		    NET_6LO_DISPATCH_FRAG1) {
+	if (get_datagram_type(frag->data) == NET_6LO_DISPATCH_FRAG1) {
 		return 0;
 	}
 
@@ -435,8 +437,7 @@ static inline void fragment_remove_headers(struct net_pkt *pkt)
 	while (frag) {
 		uint16_t hdr_len = NET_6LO_FRAGN_HDR_LEN;
 
-		if ((frag->data[0] & NET_FRAG_DISPATCH_MASK) ==
-		    NET_6LO_DISPATCH_FRAG1) {
+		if (get_datagram_type(frag->data) == NET_6LO_DISPATCH_FRAG1) {
 			hdr_len = NET_6LO_FRAG1_HDR_LEN;
 		}
 
@@ -471,6 +472,11 @@ static inline void fragment_reconstruct_packet(struct net_pkt *pkt)
 	fragment_remove_headers(pkt);
 }
 
+static inline bool fragment_packet_valid(struct net_pkt *pkt)
+{
+	return (get_datagram_type(pkt->buffer->data) == NET_6LO_DISPATCH_FRAG1);
+}
+
 /**
  *  Parse size and tag from the fragment, check if we have any cache
  *  related to it. If not create a new cache.
@@ -486,18 +492,28 @@ static inline enum net_verdict fragment_add_to_cache(struct net_pkt *pkt)
 	struct net_buf *frag;
 	uint16_t size;
 	uint16_t tag;
+	uint8_t type;
+
+	frag = pkt->buffer;
+	type = get_datagram_type(frag->data);
+
+	if ((type == NET_6LO_DISPATCH_FRAG1 &&
+	     frag->len < NET_6LO_FRAG1_HDR_LEN) ||
+	    (type == NET_6LO_DISPATCH_FRAGN &&
+	     frag->len < NET_6LO_FRAGN_HDR_LEN)) {
+		return NET_DROP;
+	}
 
 	/* Parse total size of packet */
-	size = get_datagram_size(pkt->buffer->data);
+	size = get_datagram_size(frag->data);
 
 	/* Parse the datagram tag */
-	tag = get_datagram_tag(pkt->buffer->data +
+	tag = get_datagram_tag(frag->data +
 			       NET_6LO_FRAG_DATAGRAM_SIZE_LEN);
 
 	/* If there are no fragments in the cache means this frag
 	 * is the first one. So cache Rx pkt otherwise not.
 	 */
-	frag = pkt->buffer;
 	pkt->buffer = NULL;
 
 	cache = get_reass_cache(size, tag);
@@ -515,14 +531,25 @@ static inline enum net_verdict fragment_add_to_cache(struct net_pkt *pkt)
 	fragment_append(cache->pkt, frag);
 
 	if (fragment_cached_pkt_len(cache->pkt) == cache->size) {
-		/* Assign buffer back to input packet. */
-		pkt->buffer = cache->pkt->buffer;
-		cache->pkt->buffer = NULL;
+		if (!first_frag) {
+			/* Assign buffer back to input packet. */
+			pkt->buffer = cache->pkt->buffer;
+			cache->pkt->buffer = NULL;
+		} else {
+			/* in case pkt == cache->pkt, we don't want
+			 * to unref it while clearing the cach.
+			 */
+			cache->pkt = NULL;
+		}
+
+		clear_reass_cache(size, tag);
+
+		if (!fragment_packet_valid(pkt)) {
+			NET_ERR("Invalid fragmented packet");
+			return NET_DROP;
+		}
 
 		fragment_reconstruct_packet(pkt);
-
-		/* Once reassemble is done, cache is no longer needed. */
-		clear_reass_cache(size, tag);
 
 		if (!net_6lo_uncompress(pkt)) {
 			NET_ERR("Could not uncompress. Bogus packet?");
@@ -556,8 +583,7 @@ enum net_verdict ieee802154_reassemble(struct net_pkt *pkt)
 		return NET_DROP;
 	}
 
-	if ((pkt->buffer->data[0] & NET_FRAG_DISPATCH_MASK) >=
-	    NET_6LO_DISPATCH_FRAG1) {
+	if (get_datagram_type(pkt->buffer->data) >= NET_6LO_DISPATCH_FRAG1) {
 		return fragment_add_to_cache(pkt);
 	} else {
 		NET_DBG("No frag dispatch (%02x)", pkt->buffer->data[0]);

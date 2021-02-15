@@ -32,6 +32,7 @@ doc/samples
 doc/latex
 doc/themes/zephyr-docs-theme
 sanity-out*
+twister-out*
 bsim_bt_out
 scripts/grub
 doc/reference/kconfig/*.rst

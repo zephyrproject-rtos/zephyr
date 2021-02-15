@@ -351,8 +351,8 @@ static const struct leuart_gecko_config leuart_gecko_0_config = {
 
 static struct leuart_gecko_data leuart_gecko_0_data;
 
-DEVICE_AND_API_INIT(leuart_0, DT_INST_LABEL(0),
-		    &leuart_gecko_init, &leuart_gecko_0_data,
+DEVICE_DT_INST_DEFINE(0, &leuart_gecko_init,
+		    device_pm_control_nop, &leuart_gecko_0_data,
 		    &leuart_gecko_0_config, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &leuart_gecko_driver_api);
@@ -362,7 +362,7 @@ static void leuart_gecko_config_func_0(const struct device *dev)
 {
 	IRQ_CONNECT(DT_INST_IRQN(0),
 		    DT_INST_IRQ(0, priority),
-		    leuart_gecko_isr, DEVICE_GET(leuart_0), 0);
+		    leuart_gecko_isr, DEVICE_DT_INST_GET(0), 0);
 
 	irq_enable(DT_INST_IRQN(0));
 }
@@ -404,8 +404,8 @@ static const struct leuart_gecko_config leuart_gecko_1_config = {
 
 static struct leuart_gecko_data leuart_gecko_1_data;
 
-DEVICE_AND_API_INIT(leuart_1, DT_INST_LABEL(1),
-		    &leuart_gecko_init, &leuart_gecko_1_data,
+DEVICE_DT_INST_DEFINE(1, &leuart_gecko_init,
+		    device_pm_control_nop, &leuart_gecko_1_data,
 		    &leuart_gecko_1_config, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &leuart_gecko_driver_api);
@@ -415,7 +415,7 @@ static void leuart_gecko_config_func_1(const struct device *dev)
 {
 	IRQ_CONNECT(DT_INST_IRQN(1),
 		    DT_INST_IRQ(1, priority),
-		    leuart_gecko_isr, DEVICE_GET(leuart_1), 0);
+		    leuart_gecko_isr, DEVICE_DT_INST_GET(1), 0);
 
 	irq_enable(DT_INST_IRQN(1));
 }

@@ -65,6 +65,22 @@ config SHELL_ARGC_MAX
 	help
 	  Maximum number of arguments that can build a command.
 
+config SHELL_TAB
+	bool "Enable the Tab button supporort in shell"
+	default y
+	help
+	  Enable using the Tab button in the shell. The button
+	  can be used for prompting commands, or for autocompletion.
+	  This feature has high impact on flash usage.
+
+config SHELL_TAB_AUTOCOMPLETION
+	bool "Enable commands autocompletion with the Tab button"
+	depends on SHELL_TAB
+	default y
+	help
+	  Enable commands and subcommands autocompletion with the Tab
+	  key. This function can be deactivated to save some flash.
+
 config SHELL_WILDCARD
 	bool "Enable wildcard support in shell"
 	select FNMATCH
@@ -109,7 +125,7 @@ config SHELL_HISTORY
 	select RING_BUFFER
 	help
 	  Enable commands history. History can be accessed using up and down
-	  arrows.
+	  arrows or Ctrl+n and Ctrl+p meta keys.
 
 config SHELL_HISTORY_BUFFER
 	int "History buffer in bytes"

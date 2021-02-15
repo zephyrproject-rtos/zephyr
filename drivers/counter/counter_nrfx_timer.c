@@ -397,11 +397,10 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 	BUILD_ASSERT(TIMER_PROP(idx, prescaler) <=			       \
 			TIMER_PRESCALER_PRESCALER_Msk,			       \
 		     "TIMER prescaler out of range");			       \
-	DEVICE_DECLARE(timer_##idx);					       \
 	static int counter_##idx##_init(const struct device *dev)		       \
 	{								       \
 		IRQ_CONNECT(DT_IRQN(TIMER(idx)), DT_IRQ(TIMER(idx), priority), \
-			    irq_handler, DEVICE_GET(timer_##idx), 0);	       \
+			    irq_handler, DEVICE_DT_GET(TIMER(idx)), 0);	       \
 		static const struct counter_timer_config config = {	       \
 			.freq = TIMER_PROP(idx, prescaler),		       \
 			.mode = NRF_TIMER_MODE_TIMER,			       \
@@ -428,9 +427,9 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 		.timer = (NRF_TIMER_Type *)DT_REG_ADDR(TIMER(idx)),	       \
 		LOG_INSTANCE_PTR_INIT(log, LOG_MODULE_NAME, idx)	       \
 	};								       \
-	DEVICE_AND_API_INIT(timer_##idx,				       \
-			    DT_LABEL(TIMER(idx)),			       \
+	DEVICE_DT_DEFINE(TIMER(idx),					       \
 			    counter_##idx##_init,			       \
+			    device_pm_control_nop,			       \
 			    &counter_##idx##_data,			       \
 			    &nrfx_counter_##idx##_config.info,		       \
 			    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,  \

@@ -11,33 +11,6 @@
 #include <dt-bindings/i2c/i2c.h>
 
 / {
-	aliases {
-		eth = &enet;
-		gpio-1 = &gpio1;
-		gpio-2 = &gpio2;
-		gpio-3 = &gpio3;
-		gpio-4 = &gpio4;
-		gpio-5 = &gpio5;
-		i2c-1 = &lpi2c1;
-		i2c-2 = &lpi2c2;
-		i2c-3 = &lpi2c3;
-		i2c-4 = &lpi2c4;
-		spi-1 = &lpspi1;
-		spi-2 = &lpspi2;
-		spi-3 = &lpspi3;
-		spi-4 = &lpspi4;
-		uart-1 = &lpuart1;
-		uart-2 = &lpuart2;
-		uart-3 = &lpuart3;
-		uart-4 = &lpuart4;
-		uart-5 = &lpuart5;
-		uart-6 = &lpuart6;
-		uart-7 = &lpuart7;
-		uart-8 = &lpuart8;
-		usbd-1 = &usb1;
-		usbd-2 = &usb2;
-	};
-
 	chosen {
 		zephyr,entropy = &trng;
 	};
@@ -99,6 +72,9 @@
 			label = "FLEXSPI";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			ahb-bufferable;
+			ahb-cacheable;
+			status = "disabled";
 		};
 
 		flexspi2: spi@402a4000 {
@@ -108,6 +84,9 @@
 			label = "FLEXSPI1";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			ahb-bufferable;
+			ahb-cacheable;
+			status = "disabled";
 		};
 
 		semc: semc0@402f0000 {
@@ -123,6 +102,8 @@
 			compatible = "nxp,imx-gpt";
 			reg = <0x401ec000 0x4000>;
 			interrupts = <100 0>;
+			gptfreq = <25000000>;
+			clocks = <&ccm IMX_CCM_GPT_CLK 0x6C 20>;
 			label = "GPT1";
 		};
 
@@ -130,6 +111,8 @@
 			compatible = "nxp,imx-gpt";
 			reg = <0x401f0000 0x4000>;
 			interrupts = <101 0>;
+			gptfreq = <25000000>;
+			clocks = <&ccm IMX_CCM_GPT_CLK 0x68 24>;
 			label = "GPT2";
 		};
 
@@ -619,7 +602,7 @@
 				<16 0>;
 			clocks = <&ccm IMX_CCM_EDMA_CLK 0x7C 0x000000C0>;
 			status = "disabled";
-			label = "EDMA0";
+			label = "DMA_0";
 		};
 
 		flexcan1: can@401d0000 {

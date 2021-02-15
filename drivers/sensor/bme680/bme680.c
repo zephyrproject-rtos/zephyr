@@ -428,6 +428,6 @@ static const struct sensor_driver_api bme680_api_funcs = {
 
 static struct bme680_data bme680_data;
 
-DEVICE_AND_API_INIT(bme680, DT_INST_LABEL(0), bme680_init, &bme680_data,
+DEVICE_DT_INST_DEFINE(0, bme680_init, device_pm_control_nop, &bme680_data,
 		    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &bme680_api_funcs);

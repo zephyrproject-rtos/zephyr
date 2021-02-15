@@ -17,6 +17,7 @@ struct fs_mount_t testfs_small_mnt = {
 	.mnt_point = TESTFS_MNT_POINT_SMALL,
 };
 
+#if CONFIG_APP_TEST_CUSTOM
 FS_LITTLEFS_DECLARE_CUSTOM_CONFIG(medium, MEDIUM_IO_SIZE, MEDIUM_IO_SIZE,
 				  MEDIUM_CACHE_SIZE, MEDIUM_LOOKAHEAD_SIZE);
 struct fs_mount_t testfs_medium_mnt = {
@@ -47,6 +48,8 @@ struct fs_mount_t testfs_large_mnt = {
 	.storage_dev = (void *)FLASH_AREA_ID(large),
 	.mnt_point = TESTFS_MNT_POINT_LARGE,
 };
+
+#endif /* CONFIG_APP_TEST_CUSTOM */
 
 int testfs_lfs_wipe_partition(const struct fs_mount_t *mp)
 {

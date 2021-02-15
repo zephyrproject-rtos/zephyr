@@ -22,6 +22,11 @@ extern "C" {
  * @{
  */
 
+#define NET_HOSTNAME_MAX_LEN				\
+	(sizeof(CONFIG_NET_HOSTNAME) - 1 +		\
+	 (IS_ENABLED(CONFIG_NET_HOSTNAME_UNIQUE) ?	\
+	  sizeof("0011223344556677") - 1 : 0))
+
 /**
  * @brief Get the device hostname
  *

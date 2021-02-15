@@ -47,6 +47,14 @@ extern "C" {
 typedef struct __esf _esf_t;
 typedef struct __basic_sf _basic_sf_t;
 
+#ifdef CONFIG_ARM_MPU
+struct z_arm_mpu_partition {
+	uintptr_t start;
+	size_t size;
+	k_mem_partition_attr_t attr;
+};
+#endif
+
 #ifdef __cplusplus
 }
 #endif

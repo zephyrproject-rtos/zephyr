@@ -260,6 +260,7 @@ void hwtimer_wake_in_time(uint64_t time)
 	if (hw_timer_awake_timer > time) {
 		hw_timer_awake_timer = time;
 		hwtimer_update_timer();
+		hwm_find_next_timer();
 	}
 }
 

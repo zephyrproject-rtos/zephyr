@@ -1,5 +1,5 @@
 identifier: intel_adsp_cavs15
-name: Up Squared Audio DSP using CAVS (Connected Audio Voice and Speech)
+name: CAVS 1.5 Audio DSP (Connected Audio Voice and Speech)
 type: mcu
 arch: xtensa
 toolchain:
@@ -7,3 +7,4 @@ toolchain:
 testing:
   only_tags:
      - kernel
+     - sof

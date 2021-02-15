@@ -1,8 +1,8 @@
 /** @file
  * @brief Advance Audio Distribution Profile - SBC Codec header.
  */
-
 /*
+ * SPDX-License-Identifier: Apache-2.0
  * Copyright (c) 2015-2016 Intel Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");

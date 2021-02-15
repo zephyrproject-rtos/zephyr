@@ -524,7 +524,7 @@ static bool dps310_measure_psr(struct dps310_data *data,
 
 	/* read pressure raw values in one continuous read */
 	int res = i2c_write_read(data->i2c_master, config->i2c_addr,
-				 &REG_ADDR_TMP_B2, 1, &value_raw,
+				 &REG_ADDR_PSR_B2, 1, &value_raw,
 				 sizeof(value_raw));
 	if (res < 0) {
 		LOG_WRN("I2C error: %d", res);
@@ -553,7 +553,7 @@ static bool dps310_measure_tmp(struct dps310_data *data,
 
 	/* read temperature raw values in one continuous read */
 	int res = i2c_write_read(data->i2c_master, config->i2c_addr,
-				 &REG_ADDR_PSR_B2, 1, &value_raw,
+				 &REG_ADDR_TMP_B2, 1, &value_raw,
 				 sizeof(value_raw));
 	if (res < 0) {
 		LOG_WRN("I2C error: %d", res);
@@ -625,7 +625,7 @@ static int dps310_init(const struct device *dev)
 	uint8_t tmp_coef_srce = 0;
 
 	res = i2c_write_read(data->i2c_master, config->i2c_addr,
-			     &REG_ADDR_COEF_SRCE, 1, &tmp_coef_srce, 18);
+			     &REG_ADDR_COEF_SRCE, 1, &tmp_coef_srce, sizeof(tmp_coef_srce));
 	if (res < 0) {
 		LOG_WRN("I2C error: %d", res);
 		return -EIO;
@@ -732,7 +732,7 @@ static const struct dps310_cfg dps310_cfg_0 = {
 	.i2c_addr = DT_INST_REG_ADDR(0)
 };
 
-DEVICE_AND_API_INIT(dps310, DT_INST_LABEL(0), dps310_init,
+DEVICE_DT_INST_DEFINE(0, dps310_init, device_pm_control_nop,
 		    &dps310_data_0, &dps310_cfg_0, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &dps310_api_funcs);
 #endif
@@ -744,7 +744,7 @@ static const struct dps310_cfg dps310_cfg_1 = {
 	.i2c_addr = DT_INST_REG_ADDR(1)
 };
 
-DEVICE_AND_API_INIT(dps310, DT_INST_LABEL(1), dps310_init,
+DEVICE_DT_INST_DEFINE(1, dps310_init, device_pm_control_nop,
 		    &dps310_data_1, &dps310_cfg_1, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &dps310_api_funcs);
 #endif

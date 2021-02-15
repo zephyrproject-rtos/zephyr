@@ -4,14 +4,19 @@
 
 #include <mem.h>
 
+#ifndef DT_DRAM_BASE
+#define DT_DRAM_BASE		0
+#endif
+#ifndef DT_DRAM_SIZE
 #define DT_DRAM_SIZE		DT_SIZE_K(4096)
+#endif
 #define DT_FLASH_SIZE		DT_SIZE_K(4096)
 
 #include <ia32.dtsi>
 
 / {
-	model = "QEMU X86";
-	compatible = "intel,ia32";
+	model = "QEMU X86 emulator";
+	compatible = "qemu,x86_emulator";
 
 	flash0: flash@500000 {
 		compatible = "soc-nv-flash";

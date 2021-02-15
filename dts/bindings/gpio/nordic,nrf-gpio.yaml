@@ -17,6 +17,18 @@ properties:
     "#gpio-cells":
       const: 2
 
+    port:
+      type: int
+      required: true
+      description: |
+        The GPIO port number. GPIO port P0 has:
+
+          port = <0>;
+
+        And P1 has:
+
+          port = <1>;
+
 gpio-cells:
   - pin
   - flags

@@ -1,0 +1,17 @@
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Synopsys DesignWare PWM node
+
+compatible: "snps,designware-pwm"
+
+include: base.yaml
+
+properties:
+    reg:
+      required: true
+
+    channels:
+      type: int
+      required: true
+      description: Number of PWM channels

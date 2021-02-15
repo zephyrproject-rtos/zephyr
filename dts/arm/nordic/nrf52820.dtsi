@@ -5,9 +5,7 @@
  */
 
 #include <arm/armv7-m.dtsi>
-#include <dt-bindings/i2c/i2c.h>
-#include <dt-bindings/gpio/gpio.h>
-#include "nrf5_common.dtsi"
+#include "nrf_common.dtsi"
 
 / {
 
@@ -53,16 +51,24 @@
 		clock: clock@40000000 {
 			compatible = "nordic,nrf-clock";
 			reg = <0x40000000 0x1000>;
-			interrupts = <0 1>;
+			interrupts = <0 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "okay";
 			label = "CLOCK";
+		};
+
+		ecb: ecb@4000e000 {
+			compatible = "nordic,nrf-ecb";
+			reg = <0x4000e000 0x1000>;
+			interrupts = <14 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "okay";
+			label = "ECB";
 		};
 
 		uart0: uart@40002000 {
 			/* uart can be either UART or UARTE, for the user to pick */
 			/* compatible = "nordic,nrf-uarte" or "nordic,nrf-uart"; */
 			reg = <0x40002000 0x1000>;
-			interrupts = <2 1>;
+			interrupts = <2 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "disabled";
 			label = "UART_0";
 		};
@@ -83,6 +89,7 @@
 			#gpio-cells = <2>;
 			label = "GPIO_0";
 			status = "disabled";
+			port = <0>;
 		};
 
 		i2c0: i2c@40003000 {
@@ -97,7 +104,7 @@
 			#size-cells = <0>;
 			reg = <0x40003000 0x1000>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
-			interrupts = <3 1>;
+			interrupts = <3 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "disabled";
 			label = "I2C_0";
 		};
@@ -114,7 +121,7 @@
 			#size-cells = <0>;
 			reg = <0x40004000 0x1000>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
-			interrupts = <4 1>;
+			interrupts = <4 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "disabled";
 			label = "I2C_1";
 		};
@@ -122,7 +129,7 @@
 		qdec: qdec@40012000 {
 			compatible = "nordic,nrf-qdec";
 			reg = <0x40012000 0x1000>;
-			interrupts = <18 1>;
+			interrupts = <18 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "disabled";
 			label = "QDEC";
 		};
@@ -130,7 +137,7 @@
 		rng: random@4000d000 {
 			compatible = "nordic,nrf-rng";
 			reg = <0x4000d000 0x1000>;
-			interrupts = <13 1>;
+			interrupts = <13 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "okay";
 			label = "RNG";
 		};
@@ -146,7 +153,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40003000 0x1000>;
-			interrupts = <3 1>;
+			interrupts = <3 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "disabled";
 			label = "SPI_0";
 		};
@@ -162,7 +169,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40004000 0x1000>;
-			interrupts = <4 1>;
+			interrupts = <4 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "disabled";
 			label = "SPI_1";
 		};
@@ -170,7 +177,8 @@
 		rtc0: rtc@4000b000 {
 			compatible = "nordic,nrf-rtc";
 			reg = <0x4000b000 0x1000>;
-			interrupts = <11 1>;
+			cc-num = <3>;
+			interrupts = <11 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "okay";
 			clock-frequency = <32768>;
 			prescaler = <1>;
@@ -180,7 +188,8 @@
 		rtc1: rtc@40011000 {
 			compatible = "nordic,nrf-rtc";
 			reg = <0x40011000 0x1000>;
-			interrupts = <17 1>;
+			cc-num = <4>;
+			interrupts = <17 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "okay";
 			clock-frequency = <32768>;
 			prescaler = <1>;
@@ -191,7 +200,8 @@
 			compatible = "nordic,nrf-timer";
 			status = "okay";
 			reg = <0x40008000 0x1000>;
-			interrupts = <8 1>;
+			cc-num = <4>;
+			interrupts = <8 NRF_DEFAULT_IRQ_PRIORITY>;
 			prescaler = <0>;
 			label = "TIMER_0";
 		};
@@ -200,7 +210,8 @@
 			compatible = "nordic,nrf-timer";
 			status = "okay";
 			reg = <0x40009000 0x1000>;
-			interrupts = <9 1>;
+			cc-num = <4>;
+			interrupts = <9 NRF_DEFAULT_IRQ_PRIORITY>;
 			prescaler = <0>;
 			label = "TIMER_1";
 		};
@@ -209,7 +220,8 @@
 			compatible = "nordic,nrf-timer";
 			status = "okay";
 			reg = <0x4000a000 0x1000>;
-			interrupts = <10 1>;
+			cc-num = <4>;
+			interrupts = <10 NRF_DEFAULT_IRQ_PRIORITY>;
 			prescaler = <0>;
 			label = "TIMER_2";
 		};
@@ -217,7 +229,7 @@
 		temp: temp@4000c000 {
 			compatible = "nordic,nrf-temp";
 			reg = <0x4000c000 0x1000>;
-			interrupts = <12 1>;
+			interrupts = <12 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "okay";
 			label = "TEMP_0";
 		};
@@ -225,7 +237,7 @@
 		usbd: usbd@40027000 {
 			compatible = "nordic,nrf-usbd";
 			reg = <0x40027000 0x1000>;
-			interrupts = <39 1>;
+			interrupts = <39 NRF_DEFAULT_IRQ_PRIORITY>;
 			num-bidir-endpoints = <1>;
 			num-in-endpoints = <7>;
 			num-out-endpoints = <7>;
@@ -238,22 +250,37 @@
 		wdt0: wdt: watchdog@40010000 {
 			compatible = "nordic,nrf-watchdog";
 			reg = <0x40010000 0x1000>;
-			interrupts = <16 1>;
+			interrupts = <16 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "okay";
 			label = "WDT";
 		};
+
+		ficr: ficr@10000000 {
+			compatible = "nordic,nrf-ficr";
+			reg = <0x10000000 0x1000>;
+			status = "okay";
+		};
+
+		uicr: uicr@10001000 {
+			compatible = "nordic,nrf-uicr";
+			reg = <0x10001000 0x1000>;
+			status = "okay";
+		};
+	};
+
+	sw_pwm: sw-pwm {
+		compatible = "nordic,nrf-sw-pwm";
+		status = "disabled";
+		label = "SW_PWM";
+		generator = <&timer2>;
+		channel-count = <3>;
+		clock-prescaler = <0>;
+		ppi-base = <0>;
+		gpiote-base = <0>;
+		#pwm-cells = <1>;
 	};
 };
 
 &nvic {
 	arm,num-irq-priority-bits = <3>;
-};
-
-&sw_pwm {
-	timer-instance = <2>;
-	channel-count = <3>;
-	clock-prescaler = <0>;
-	ppi-base = <14>;
-	gpiote-base = <0>;
-	#pwm-cells = <1>;
 };

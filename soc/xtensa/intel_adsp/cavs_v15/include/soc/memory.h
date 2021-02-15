@@ -17,13 +17,8 @@
 #define L2_SRAM_BASE (DT_REG_ADDR(DT_NODELABEL(sram0)))
 #define L2_SRAM_SIZE (DT_REG_SIZE(DT_NODELABEL(sram0)))
 
-#ifdef CONFIG_BOOTLOADER_MCUBOOT
-#define SRAM_BASE (L2_SRAM_BASE + CONFIG_BOOTLOADER_SRAM_SIZE * 1K)
-#define SRAM_SIZE (L2_SRAM_SIZE - CONFIG_BOOTLOADER_SRAM_SIZE * 1K)
-#else
 #define SRAM_BASE (L2_SRAM_BASE)
 #define SRAM_SIZE (L2_SRAM_SIZE)
-#endif
 
 /* The reset vector address in SRAM and its size */
 #define XCHAL_RESET_VECTOR0_PADDR_SRAM		SRAM_BASE
@@ -97,10 +92,6 @@
 /* size of the Interrupt Descriptor Table (IDT) */
 #define IDT_SIZE				0x2000
 
-/* low power ram where DMA buffers are typically placed */
-#define LPRAM_BASE (DT_REG_ADDR(DT_NODELABEL(sram1)))
-#define LPRAM_SIZE (DT_REG_SIZE(DT_NODELABEL(sram1)))
-
 /* bootloader */
 
 #define HP_SRAM_BASE	0xbe000000
@@ -142,6 +133,8 @@
 #define LOG_ENTRY_ELF_BASE	0x20000000
 #define LOG_ENTRY_ELF_SIZE	0x2000000
 
+#define EXT_MANIFEST_ELF_BASE	(LOG_ENTRY_ELF_BASE + LOG_ENTRY_ELF_SIZE)
+#define EXT_MANIFEST_ELF_SIZE	0x2000000
 
 #define SRAM_ALIAS_BASE		0x9E000000
 #define SRAM_ALIAS_MASK		0xFF000000
@@ -217,5 +210,9 @@
 
 /* Host page size */
 #define HOST_PAGE_SIZE		4096
+
+/* low power ram where DMA buffers are typically placed */
+#define LP_SRAM_BASE (DT_REG_ADDR(DT_NODELABEL(sram1)))
+#define LP_SRAM_SIZE (DT_REG_SIZE(DT_NODELABEL(sram1)))
 
 #endif /* __INC_MEMORY_H */

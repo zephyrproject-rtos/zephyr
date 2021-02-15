@@ -6,7 +6,7 @@ toolchain:
   - gnuarmemb
   - xtools
   - zephyr
-ram: 384
+ram: 192
 flash: 192
 supported:
   - i2c

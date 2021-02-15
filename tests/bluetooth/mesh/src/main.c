@@ -17,30 +17,6 @@
 
 static bool has_reg_fault = true;
 
-static struct bt_mesh_cfg_srv cfg_srv = {
-	.relay = BT_MESH_RELAY_DISABLED,
-	.beacon = BT_MESH_BEACON_DISABLED,
-#if defined(CONFIG_BT_MESH_FRIEND)
-#if defined(CONFIG_BT_MESH_LOW_POWER)
-	.frnd = BT_MESH_FRIEND_DISABLED,
-#else
-	.frnd = BT_MESH_FRIEND_ENABLED,
-#endif
-#else
-	.frnd = BT_MESH_FRIEND_NOT_SUPPORTED,
-#endif
-#if defined(CONFIG_BT_MESH_GATT_PROXY)
-	.gatt_proxy = BT_MESH_GATT_PROXY_ENABLED,
-#else
-	.gatt_proxy = BT_MESH_GATT_PROXY_NOT_SUPPORTED,
-#endif
-	.default_ttl = 7,
-
-	/* 3 transmissions with 20ms interval */
-	.net_transmit = BT_MESH_TRANSMIT(2, 20),
-	.relay_retransmit = BT_MESH_TRANSMIT(2, 20),
-};
-
 static int fault_get_cur(struct bt_mesh_model *model, uint8_t *test_id,
 			 uint16_t *company_id, uint8_t *faults, uint8_t *fault_count)
 {
@@ -117,7 +93,7 @@ static struct bt_mesh_health_srv health_srv = {
 BT_MESH_HEALTH_PUB_DEFINE(health_pub, MAX_FAULT);
 
 static struct bt_mesh_model root_models[] = {
-	BT_MESH_MODEL_CFG_SRV(&cfg_srv),
+	BT_MESH_MODEL_CFG_SRV,
 	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),
 };
 

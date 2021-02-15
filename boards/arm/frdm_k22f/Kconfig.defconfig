@@ -20,25 +20,6 @@ config MCG_VDIV0
 config MCG_FCRDIV
 	default 0
 
-if PINMUX_MCUX
-
-config PINMUX_MCUX_PORTA
-	default y
-
-config PINMUX_MCUX_PORTB
-	default y
-
-config PINMUX_MCUX_PORTC
-	default y
-
-config PINMUX_MCUX_PORTD
-	default y
-
-config PINMUX_MCUX_PORTE
-	default y if "$(dt_nodelabel_enabled,uart1)" && SERIAL
-
-endif # PINMUX_MCUX
-
 config SPI_0
 	default y
 	depends on SPI

@@ -193,9 +193,9 @@ static const struct gpio_driver_api gpio_ht16k33_api = {
 									\
 	static struct gpio_ht16k33_data gpio_ht16k33_##id##_data;	\
 									\
-	DEVICE_AND_API_INIT(gpio_ht16k33_##id,				\
-			    DT_INST_LABEL(id),	\
+	DEVICE_DT_INST_DEFINE(id,					\
 			    &gpio_ht16k33_init,				\
+			    device_pm_control_nop,			\
 			    &gpio_ht16k33_##id##_data,			\
 			    &gpio_ht16k33_##id##_cfg, POST_KERNEL,	\
 			    CONFIG_GPIO_HT16K33_INIT_PRIORITY,		\

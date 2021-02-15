@@ -30,7 +30,7 @@ Build and run the mdns-responder sample application like this:
    :goals: build
    :compact:
 
-After the mdns-responder sample application is started, it will wait queries
+After the mdns-responder sample application is started, it will await queries
 from the network.
 
 Open a terminal window in your host and type:
@@ -56,3 +56,20 @@ If the query is successful, then following information is printed:
 .. code-block:: console
 
     zephyr.local	2001:db8::1
+
+Lastly, resolve services using DNS Service Discovery:
+
+.. code-block:: console
+
+    $ avahi-browse -t -r _zephyr._tcp
+
+If the query is successful, then the following information is printed:
+
+.. code-block:: console
+
+    +   zeth IPv6 zephyr                                        _zephyr._tcp         local
+    =   zeth IPv6 zephyr                                        _zephyr._tcp         local
+       hostname = [zephyr.local]
+       address = [192.0.2.1]
+       port = [4242]
+       txt = []

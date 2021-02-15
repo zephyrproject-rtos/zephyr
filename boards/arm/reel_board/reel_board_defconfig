@@ -10,9 +10,6 @@ CONFIG_ARM_MPU=y
 # enable GPIO
 CONFIG_GPIO=y
 
-# enable SPI
-CONFIG_SPI=y
-
 # enable uart driver
 CONFIG_SERIAL=y
 

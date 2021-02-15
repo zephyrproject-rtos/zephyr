@@ -1,0 +1,148 @@
+/*
+ * Copyright (c) 2020 Lingao Meng
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf52833_qiaa.dtsi>
+
+/ {
+	model = "BBC Micro:bit V2";
+	compatible = "bbc,microbit-v2";
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		sw0 = &buttonA;
+		sw1 = &buttonB;
+	};
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,bt-mon-uart = &uart0;
+		zephyr,bt-c2h-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		buttonA: button_0 {
+			label = "BTN_A";
+			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+		};
+
+		buttonB: button_1 {
+			label = "BTN_B";
+			gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	edge_connector: connector {
+		compatible = "microbit,edge-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio0 2 0>,	/* P0 */
+			   <1 0 &gpio0 3 0>,	/* P1 */
+			   <2 0 &gpio0 4 0>,	/* P2 */
+			   <3 0 &gpio0 31 0>,	/* P3 */
+			   <4 0 &gpio0 28 0>,	/* P4 */
+			   <5 0 &gpio0 14 0>,	/* P5 */
+			   <6 0 &gpio1 5 0>,	/* P6 */
+			   <7 0 &gpio0 11 0>,	/* P7 */
+			   <8 0 &gpio0 10 0>,	/* P8 */
+			   <9 0 &gpio0 9 0>,	/* P9 */
+			   <10 0 &gpio0 30 0>,	/* P10 */
+			   <11 0 &gpio0 23 0>,	/* P11 */
+			   <12 0 &gpio0 12 0>,	/* P12 */
+			   <13 0 &gpio0 17 0>,	/* P13 */
+			   <14 0 &gpio0 1 0>,	/* P14 */
+			   <15 0 &gpio0 13 0>,	/* P15 */
+			   <16 0 &gpio1 2 0>,	/* P16 */
+			   <19 0 &gpio0 26 0>,	/* P19 */
+			   <20 0 &gpio1 0 0>;	/* P20 */
+	};
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&uart0 {
+	compatible = "nordic,nrf-uart";
+	status = "okay";
+	current-speed = <115200>;
+	tx-pin = <6>;
+	rx-pin = <40>;
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	sda-pin = <16>;
+	scl-pin = <8>;
+
+	/* See https://tech.microbit.org/hardware/i2c/ for board variants */
+
+	lsm303agr-magn@1e {
+		compatible = "st,lis2mdl", "st,lsm303agr-magn";
+		status = "okay";
+		reg = <0x1e>;
+		label = "LSM303AGR-MAGN";
+		irq-gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;	/* A3 */
+	};
+
+	lsm303agr-accel@19 {
+		compatible = "st,lis2dh", "st,lsm303agr-accel";
+		status = "okay";
+		reg = <0x19>;
+		label = "LSM303AGR-ACCEL";
+		irq-gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&flash0 {
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x000000000 0xC000>;
+		};
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000C000 0x32000>;
+		};
+		slot1_partition: partition@3e000 {
+			label = "image-1";
+			reg = <0x0003E000 0x32000>;
+		};
+		scratch_partition: partition@70000 {
+			label = "image-scratch";
+			reg = <0x00070000 0xA000>;
+		};
+		storage_partition: partition@7a000 {
+			label = "storage";
+			reg = <0x0007A000 0x00006000>;
+		};
+	};
+};
+
+&usbd {
+	compatible = "nordic,nrf-usbd";
+	status = "okay";
+};

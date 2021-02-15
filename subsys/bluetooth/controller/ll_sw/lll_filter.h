@@ -4,12 +4,25 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define WL_SIZE            8
-#define FILTER_IDX_NONE    0xFF
+#if defined(CONFIG_BT_CTLR_WL_SIZE)
+#define WL_SIZE CONFIG_BT_CTLR_WL_SIZE
+#else
+#define WL_SIZE 8
+#endif /* CONFIG_BT_CTLR_WL_SIZE */
+
+#define FILTER_IDX_NONE        0xFF
+#define LLL_FILTER_BITMASK_ALL (BIT(WL_SIZE) - 1)
 
 struct lll_filter {
+#if (WL_SIZE <= 8)
 	uint8_t  enable_bitmask;
 	uint8_t  addr_type_bitmask;
+#elif (WL_SIZE <= 16)
+	uint16_t enable_bitmask;
+	uint16_t addr_type_bitmask;
+#else
+#error WL_SIZE must be <= 16
+#endif
 	uint8_t  bdaddr[WL_SIZE][BDADDR_SIZE];
 };
 

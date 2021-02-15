@@ -15,8 +15,8 @@ access to the resource.
 Concepts
 ********
 
-Any number of mutexes can be defined. Each mutex is referenced by its memory
-address.
+Any number of mutexes can be defined (limited only by available RAM). Each mutex
+is referenced by its memory address.
 
 A mutex has the following key properties:
 
@@ -165,4 +165,26 @@ API Reference
 *************
 
 .. doxygengroup:: mutex_apis
+   :project: Zephyr
+
+Futex API Reference
+*******************
+
+k_futex is a lightweight mutual exclusion primitive designed to minimize
+kernel involvement. Uncontended operation relies only on atomic access
+to shared memory. k_futex are tracked as kernel objects and can live in
+user memory so that any access bypasses the kernel object permission
+management mechanism.
+
+.. doxygengroup:: futex_apis
+   :project: Zephyr
+
+User Mode Mutex API Reference
+*****************************
+
+sys_mutex behaves almost exactly like k_mutex, with the added advantage
+that a sys_mutex instance can reside in user memory. When user mode isn't
+enabled, sys_mutex behaves like k_mutex.
+
+.. doxygengroup:: user_mutex_apis
    :project: Zephyr

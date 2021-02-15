@@ -34,6 +34,8 @@ def parse_args():
                         help="Get latest published version")
     parser.add_argument('-w', '--weekly', action="store_true",
                         help="Mark as weekly")
+    parser.add_argument('-v', '--verbose', action="store_true",
+                        help="Verbose output")
     return parser.parse_args()
 
 
@@ -65,13 +67,16 @@ def show_versions():
         is_weekly = item_compat.get('weekly', False)
         wstr = ""
         datestr = ""
-        if is_weekly:
-            wstr = "(marked for weekly testing)"
-        if item_compat.get('date'):
-            pdate = datetime.strptime(item_compat['date'], '%Y-%m-%dT%H:%M:%S.%f')
-            date = pdate.strftime("%b %d %Y %H:%M:%S")
-            datestr = f"published on {date}"
-        print(f"- {item_compat['version']} {datestr} {wstr}")
+        if args.verbose:
+            if is_weekly:
+                wstr = "(marked for weekly testing)"
+            if item_compat.get('date'):
+                pdate = datetime.strptime(item_compat['date'], '%Y-%m-%dT%H:%M:%S.%f')
+                date = pdate.strftime("%b %d %Y %H:%M:%S")
+                datestr = f"published on {date}"
+            print(f"- {item_compat['version']} {datestr} {wstr}")
+        else:
+            print(f"{item_compat['version']}")
 
 
 def show_latest():
@@ -85,17 +90,26 @@ def show_latest():
     datestr = ""
     if date:
         datestr = f"published on {date}"
-    print(f"Latest version is {ver} {datestr}")
-    if is_weekly:
+    if args.verbose:
+        print(f"Latest version is {ver} {datestr}")
+    if args.verbose and is_weekly:
         print("This version is marked for weekly testing.")
+
+    if not args.verbose:
+        print(f"{ver}")
 
 
 def update(git_tree, is_weekly=False):
     g = Git(git_tree)
     today = datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')
-    version = g.describe()
+    version = g.describe("--abbrev=12")
     published = False
     data = get_versions()
+
+    if not is_weekly:
+        wday = datetime.today().strftime('%A')
+        if wday == 'Monday':
+            is_weekly = True
 
     found = list(filter(lambda item: (isinstance(item, dict) and
                         item.get('version') == version) or item == version, data))
@@ -115,6 +129,8 @@ def update(git_tree, is_weekly=False):
             json.dump(data, versions)
 
 def main():
+    global args
+
     args = parse_args()
     if args.update:
         update(args.update, args.weekly)

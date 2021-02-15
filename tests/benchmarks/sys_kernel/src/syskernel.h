@@ -15,7 +15,12 @@
 #include <toolchain.h>
 
 #define STACK_SIZE 2048
+#if CONFIG_SRAM_SIZE <= 32
+#define NUMBER_OF_LOOPS 100
+#else
 #define NUMBER_OF_LOOPS 1000
+#endif
+
 
 extern K_THREAD_STACK_DEFINE(thread_stack1, STACK_SIZE);
 extern K_THREAD_STACK_DEFINE(thread_stack2, STACK_SIZE);
@@ -51,6 +56,7 @@ int sema_test(void);
 int lifo_test(void);
 int fifo_test(void);
 int stack_test(void);
+int mem_slab_test(void);
 void begin_test(void);
 
 static inline uint32_t BENCH_START(void)

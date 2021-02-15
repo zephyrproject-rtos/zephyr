@@ -206,7 +206,7 @@ static bool olcp_command_len_verify(enum bt_gatt_ots_olcp_proc_type type,
 }
 
 static void olcp_ind_cb(struct bt_conn *conn,
-		const struct bt_gatt_attr *attr,
+		struct bt_gatt_indicate_params *params,
 		uint8_t err)
 {
 	LOG_DBG("Received OLCP Indication ACK with status: 0x%04X", err);

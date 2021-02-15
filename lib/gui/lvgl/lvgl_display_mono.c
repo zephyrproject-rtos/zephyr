@@ -85,11 +85,16 @@ void lvgl_rounder_cb_mono(struct _disp_drv_t *disp_drv,
 
 	display_get_capabilities(display_dev, &cap);
 
-	if (cap.screen_info & SCREEN_INFO_MONO_VTILED) {
-		area->y1 &= ~0x7;
-		area->y2 |= 0x7;
+	if (cap.screen_info & SCREEN_INFO_X_ALIGNMENT_WIDTH) {
+		area->x1 = 0;
+		area->x2 = cap.x_resolution - 1;
 	} else {
-		area->x1 &= ~0x7;
-		area->x2 |= 0x7;
+		if (cap.screen_info & SCREEN_INFO_MONO_VTILED) {
+			area->y1 &= ~0x7;
+			area->y2 |= 0x7;
+		} else {
+			area->x1 &= ~0x7;
+			area->x2 |= 0x7;
+		}
 	}
 }

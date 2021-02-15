@@ -57,6 +57,12 @@ config BT_CTLR_SYNC_ISO_SUPPORT
 	depends on BT_CTLR_SYNC_PERIODIC_SUPPORT
 	bool
 
+config BT_CTLR_CENTRAL_ISO_SUPPORT
+	bool
+
+config BT_CTLR_PERIPHERAL_ISO_SUPPORT
+	bool
+
 config BT_CTLR_CHAN_SEL_2_SUPPORT
 	bool
 
@@ -91,6 +97,8 @@ config BT_LL_SW_SPLIT
 	bool "Software-based BLE Link Layer"
 	select BT_RECV_IS_RX_THREAD
 	select ENTROPY_GENERATOR
+	select NRF_HW_TIMER0_RESERVED
+	select NRF_HW_RTC0_RESERVED
 	help
 	  Use Zephyr software BLE Link Layer ULL LLL split implementation.
 
@@ -187,6 +195,23 @@ config BT_CTLR_TX_BUFFER_SIZE
 	  Maximum is set to 251 due to implementation limitations (use of
 	  uint8_t for length field in PDU buffer structure).
 
+config BT_CTLR_ISO_TX_BUFFERS
+	int "Number of Isochronous Tx buffers"
+	default 3
+	range 1 19
+	depends on BT_CTLR_ADV_ISO || BT_CTLR_SYNC_ISO || BT_CTLR_CENTRAL_ISO || BT_CTLR_PERIPHERAL_ISO
+	help
+	  Set the number of Isochronous Tx PDUs to be queued for transmission
+	  in the controller.
+
+config BT_CTLR_ISO_TX_BUFFER_SIZE
+	int "Isochronous Tx buffer size"
+	range 1 4095
+	default 27
+	help
+	  Size of the Isochronous Tx buffers and the value returned in HCI LE
+	  Read Buffer Size V2 command response.
+
 choice BT_CTLR_TX_PWR
 	prompt "Tx Power"
 	default BT_CTLR_TX_PWR_0
@@ -195,19 +220,19 @@ choice BT_CTLR_TX_PWR
 
 config BT_CTLR_TX_PWR_PLUS_8
 	bool "+8 dBm"
-	depends on SOC_NRF52840
+	depends on HAS_HW_NRF_RADIO_TX_PWR_HIGH
 
 config BT_CTLR_TX_PWR_PLUS_7
 	bool "+7 dBm"
-	depends on SOC_NRF52840
+	depends on HAS_HW_NRF_RADIO_TX_PWR_HIGH
 
 config BT_CTLR_TX_PWR_PLUS_6
 	bool "+6 dBm"
-	depends on SOC_NRF52840
+	depends on HAS_HW_NRF_RADIO_TX_PWR_HIGH
 
 config BT_CTLR_TX_PWR_PLUS_5
 	bool "+5 dBm"
-	depends on SOC_NRF52840
+	depends on HAS_HW_NRF_RADIO_TX_PWR_HIGH
 
 config BT_CTLR_TX_PWR_PLUS_4
 	bool "+4 dBm"
@@ -219,7 +244,7 @@ config BT_CTLR_TX_PWR_PLUS_3
 
 config BT_CTLR_TX_PWR_PLUS_2
 	bool "+2 dBm"
-	depends on SOC_NRF52840
+	depends on HAS_HW_NRF_RADIO_TX_PWR_HIGH
 
 config BT_CTLR_TX_PWR_0
 	bool "0 dBm"
@@ -365,6 +390,17 @@ config BT_CTLR_PRIVACY
 	  Enable support for Bluetooth v4.2 LE Controller-based Privacy feature
 	  in the Controller.
 
+config BT_CTLR_WL_SIZE
+	int "LE Controller-based Privacy White List size"
+	depends on BT_CTLR_FILTER
+	default 8
+	range 1 8  if  (SOC_COMPATIBLE_NRF || SOC_OPENISA_RV32M1_RISCV32)
+	range 1 16 if !(SOC_COMPATIBLE_NRF || SOC_OPENISA_RV32M1_RISCV32)
+	help
+	  Set the size of the White List for LE Controller-based Privacy.
+	  On nRF5x-based controllers, the hardware imposes a limit of 8 devices.
+	  On OpenISA-based controllers, the hardware imposes a limit of 8 devices.
+
 config BT_CTLR_RL_SIZE
 	int "LE Controller-based Privacy Resolving List size"
 	depends on BT_CTLR_PRIVACY
@@ -394,7 +430,7 @@ config BT_CTLR_PHY_2M
 config BT_CTLR_PHY_CODED
 	bool "Coded PHY Support"
 	depends on (BT_CTLR_PHY || BT_CTLR_ADV_EXT) && BT_CTLR_PHY_CODED_SUPPORT
-	default y
+	default y if BT_HCI_RAW
 	help
 	  Enable support for Bluetooth 5.0 Coded PHY in the Controller.
 
@@ -466,11 +502,19 @@ config BT_CTLR_ADV_ISO
 
 config BT_CTLR_SYNC_ISO
 	bool "LE Broadcast Isochronous Channel advertising sync" if !BT_LL_SW_SPLIT
-	depends on BT_BROADCASTER && BT_CTLR_ADV_ISO_SUPPORT
+	depends on BT_OBSERVER && BT_CTLR_SYNC_ISO_SUPPORT
 	select BT_CTLR_SYNC_PERIODIC
 	help
 	  Enable support for Bluetooth 5.2 LE Isochronous Advertising sync in
 	  the Controller.
+
+config BT_CTLR_ADV_ISO_SET
+	int "LE Isochronous Channel advertising sets"
+	depends on BT_CTLR_ADV_ISO
+	range 1 32
+	default 1
+	help
+	  Maximum supported advertising sets.
 
 config BT_CTLR_SYNC_ISO
 	bool "LE Broadcast Isochronous Channel advertising sync [EXPERIMENTAL]" if BT_LL_SW_SPLIT
@@ -482,6 +526,33 @@ config BT_CTLR_ADV_DATA_LEN_MAX
 	  Maximum Extended Advertising Data Length.
 
 endif # BT_CTLR_ADV_EXT
+
+config BT_CTLR_SET_HOST_FEATURE
+	bool "LE Set Host Feature Command [EXPERIMENTAL]"
+	help
+	  Enables optional LE Set Host Feature Command
+
+config BT_CTLR_CENTRAL_ISO
+	bool "LE Connected Isochronous Stream Central" if !BT_LL_SW_SPLIT
+	depends on BT_CTLR_CENTRAL_ISO_SUPPORT && BT_CENTRAL
+	help
+	  Enable support for Bluetooth 5.2 LE Connected Isochronous Stream
+	  Central role in the Controller.
+
+config BT_CTLR_CENTRAL_ISO
+	bool "LE Connected Isochronous Stream Central [EXPERIMENTAL]" if BT_LL_SW_SPLIT
+	select BT_CTLR_SET_HOST_FEATURE
+
+config BT_CTLR_PERIPHERAL_ISO
+	bool "LE Connected Isochronous Stream Peripheral" if !BT_LL_SW_SPLIT
+	depends on BT_CTLR_PERIPHERAL_ISO_SUPPORT && BT_PERIPHERAL
+	help
+	  Enable support for Bluetooth 5.2 LE Connected Isochronous Stream
+	  Peripheral role in the Controller.
+
+config BT_CTLR_PERIPHERAL_ISO
+	bool "LE Connected Isochronous Stream Peripheral [EXPERIMENTAL]" if BT_LL_SW_SPLIT
+	select BT_CTLR_SET_HOST_FEATURE
 
 config BT_CTLR_DTM
 	bool
@@ -513,6 +584,13 @@ config BT_CTLR_SMI_TX_SETTING
 	help
 	  Enable support for Bluetooth 5.0 SMI TX through a system setting.
 
+config BT_CTLR_HCI_CODEC_AND_DELAY_INFO
+	bool "Codecs and controller delay information commands"
+	help
+	  Enable HCI commands to read information about supported
+	  codecs, codec capabilities, and controller delay.
+
+source "subsys/bluetooth/controller/Kconfig.df"
 source "subsys/bluetooth/controller/Kconfig.ll_sw_split"
 
 config BT_CTLR_ASSERT_HANDLER
@@ -528,7 +606,7 @@ endif # BT_CTLR
 
 config BT_CTLR_DEBUG_PINS_CPUAPP
 	bool "Bluetooth Controller Debug Pins"
-	depends on BOARD_NRF5340PDK_NRF5340_CPUAPP || BOARD_NRF5340DK_NRF5340_CPUAPP
+	depends on BOARD_NRF5340DK_NRF5340_CPUAPP
 	help
 	  Route debug GPIO toggling for the BLE Controller. Enable this when
 	  using Bluetooth Controller Debug Pins in co-processor and the main

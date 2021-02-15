@@ -10,7 +10,6 @@ struct lll_scan {
 #if defined(CONFIG_BT_CENTRAL)
 	/* NOTE: conn context has to be after lll_hdr */
 	struct lll_conn *conn;
-	uint32_t conn_ticks_slot;
 	uint32_t conn_win_offset_us;
 	uint16_t conn_timeout;
 #endif /* CONFIG_BT_CENTRAL */

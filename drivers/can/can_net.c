@@ -50,16 +50,16 @@ static inline uint8_t can_get_frame_datalength(struct zcan_frame *frame)
 
 static inline uint16_t can_get_lladdr_src(struct zcan_frame *frame)
 {
-	return (frame->ext_id >> CAN_NET_IF_ADDR_SRC_POS) &
+	return (frame->id >> CAN_NET_IF_ADDR_SRC_POS) &
 	       CAN_NET_IF_ADDR_MASK;
 }
 
 static inline uint16_t can_get_lladdr_dest(struct zcan_frame *frame)
 {
-	uint16_t addr = (frame->ext_id >> CAN_NET_IF_ADDR_DEST_POS) &
+	uint16_t addr = (frame->id >> CAN_NET_IF_ADDR_DEST_POS) &
 		     CAN_NET_IF_ADDR_MASK;
 
-	if (frame->ext_id & CAN_NET_IF_ADDR_MCAST_MASK) {
+	if (frame->id & CAN_NET_IF_ADDR_MCAST_MASK) {
 		addr |= CAN_NET_IF_IS_MCAST_BIT;
 	}
 
@@ -106,7 +106,7 @@ static void net_can_recv(struct zcan_frame *frame, void *arg)
 	struct net_pkt *pkt;
 	int ret;
 
-	NET_DBG("Frame with ID 0x%x received", frame->ext_id);
+	NET_DBG("Frame with ID 0x%x received", frame->id);
 	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, pkt_size, AF_UNSPEC, 0,
 					   K_NO_WAIT);
 	if (!pkt) {
@@ -147,14 +147,14 @@ static inline int attach_mcast_filter(struct net_can_context *ctx,
 		.id_type = CAN_EXTENDED_IDENTIFIER,
 		.rtr = CAN_DATAFRAME,
 		.rtr_mask = 1,
-		.ext_id_mask = CAN_NET_IF_ADDR_MCAST_MASK |
+		.id_mask = CAN_NET_IF_ADDR_MCAST_MASK |
 			       CAN_NET_IF_ADDR_DEST_MASK
 	};
 	const uint16_t group =
 		sys_be16_to_cpu(UNALIGNED_GET((&addr->s6_addr16[7])));
 	int filter_id;
 
-	filter.ext_id = CAN_NET_IF_ADDR_MCAST_MASK |
+	filter.id = CAN_NET_IF_ADDR_MCAST_MASK |
 			((group & CAN_NET_IF_ADDR_MASK) <<
 			 CAN_NET_IF_ADDR_DEST_POS);
 
@@ -242,13 +242,13 @@ static inline int can_attach_unicast_filter(struct net_can_context *ctx)
 		.id_type = CAN_EXTENDED_IDENTIFIER,
 		.rtr = CAN_DATAFRAME,
 		.rtr_mask = 1,
-		.ext_id_mask = CAN_NET_IF_ADDR_DEST_MASK
+		.id_mask = CAN_NET_IF_ADDR_DEST_MASK
 	};
 	const uint8_t *link_addr = net_if_get_link_addr(ctx->iface)->addr;
 	const uint16_t dest = sys_be16_to_cpu(UNALIGNED_GET((uint16_t *) link_addr));
 	int filter_id;
 
-	filter.ext_id = (dest << CAN_NET_IF_ADDR_DEST_POS);
+	filter.id = (dest << CAN_NET_IF_ADDR_DEST_POS);
 
 	filter_id = can_attach_isr(ctx->can_dev, net_can_recv,
 				   ctx, &filter);
@@ -269,8 +269,8 @@ static inline int can_attach_eth_bridge_filter(struct net_can_context *ctx)
 		.id_type = CAN_EXTENDED_IDENTIFIER,
 		.rtr = CAN_DATAFRAME,
 		.rtr_mask = 1,
-		.ext_id_mask = CAN_NET_IF_ADDR_DEST_MASK,
-		.ext_id = (NET_CAN_ETH_TRANSLATOR_ADDR <<
+		.id_mask = CAN_NET_IF_ADDR_DEST_MASK,
+		.id = (NET_CAN_ETH_TRANSLATOR_ADDR <<
 			   CAN_NET_IF_ADDR_DEST_POS)
 	};
 
@@ -294,8 +294,8 @@ static inline int can_attach_all_mcast_filter(struct net_can_context *ctx)
 		.id_type = CAN_EXTENDED_IDENTIFIER,
 		.rtr = CAN_DATAFRAME,
 		.rtr_mask = 1,
-		.ext_id_mask = CAN_NET_IF_ADDR_MCAST_MASK,
-		.ext_id = CAN_NET_IF_ADDR_MCAST_MASK
+		.id_mask = CAN_NET_IF_ADDR_MCAST_MASK,
+		.id = CAN_NET_IF_ADDR_MCAST_MASK
 	};
 
 	int filter_id;

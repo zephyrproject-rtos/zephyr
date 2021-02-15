@@ -32,9 +32,12 @@ void test_main(void)
 		ztest_unit_test(test_mem_domain_remove_add_partition),
 		ztest_unit_test(test_mem_domain_api_supervisor_only),
 		ztest_unit_test(test_mem_domain_boot_threads),
+		ztest_unit_test(test_mem_domain_migration),
+		ztest_unit_test(test_mem_part_overlap),
+		ztest_unit_test(test_mem_domain_init_fail),
+		ztest_unit_test(test_mem_domain_remove_part_fail),
 
 		/* mem_partition.c */
-		ztest_unit_test(test_macros_obtain_names_data_bss),
 		ztest_user_unit_test(test_mem_part_assign_bss_vars_zero),
 		ztest_unit_test(test_mem_part_auto_determ_size),
 

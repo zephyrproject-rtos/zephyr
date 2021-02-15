@@ -69,7 +69,7 @@
 
 	pwm4: pwm {
 		status = "okay";
-		pinctrl-0 = <&tim4_ch1_pwm_pd12>;
+		pinctrl-0 = <&tim4_ch1_pd12>;
 	};
 };
 
@@ -84,5 +84,6 @@
 };
 
 &usbotg_fs {
+	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
 	status = "okay";
 };

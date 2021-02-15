@@ -16,10 +16,6 @@ config SOC_SERIES
 config STM32_LPTIM_TIMER
 	bool
 	default y
-	depends on SYS_POWER_MANAGEMENT
-
-config DMA_STM32_V2
-	default y
-	depends on DMA_STM32
+	depends on PM
 
 endif # SOC_SERIES_STM32L4X

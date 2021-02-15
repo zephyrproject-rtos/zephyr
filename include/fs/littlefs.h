@@ -57,7 +57,7 @@ struct fs_littlefs {
  * values are consistent with littlefs requirements.
  *
  * @note If you use a non-default configuration for cache size, you
- * must also select @option{CONFIG_FS_LITTLEFS_FC_MEM_POOL} to relax
+ * must also select @option{CONFIG_FS_LITTLEFS_FC_HEAP_SIZE} to relax
  * the size constraints on per-file cache allocations.
  *
  * @param name the name for the structure.  The defined object has

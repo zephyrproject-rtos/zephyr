@@ -60,4 +60,15 @@ config SEGGER_RTT_MODE
 config SEGGER_RTT_MEMCPY_USE_BYTELOOP
 	bool "Use a simple byte-loop instead of standard memcpy"
 
+choice SEGGER_RTT_SECTION
+	prompt "Choose RTT data linker section"
+
+config SEGGER_RTT_SECTION_NONE
+	bool "Place RTT data in the default linker section"
+
+config SEGGER_RTT_SECTION_DTCM
+	bool "Place RTT data in the DTCM linker section"
+
+endchoice
+
 endif

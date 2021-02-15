@@ -66,9 +66,9 @@
  */
 
 SECTION_FUNC(TEXT, arch_swap)
-#if defined(CONFIG_TRACING)
+#if defined(CONFIG_INSTRUMENT_THREAD_SWITCHING)
 	pushl	%eax
-	call	sys_trace_thread_switched_out
+	call	z_thread_mark_switched_out
 	popl	%eax
 #endif
 	/*
@@ -131,18 +131,18 @@ SECTION_FUNC(TEXT, arch_swap)
 	 * switch.
 	 */
 	/* Save outgpoing thread context */
-#ifdef CONFIG_SSE
+#ifdef CONFIG_X86_SSE
 	fxsave	_thread_offset_to_preempFloatReg(%edx)
 	fninit
 #else
 	fnsave	 _thread_offset_to_preempFloatReg(%edx)
 #endif
 	/* Restore incoming thread context */
-#ifdef CONFIG_SSE
+#ifdef CONFIG_X86_SSE
 	fxrstor _thread_offset_to_preempFloatReg(%eax)
 #else
 	frstor _thread_offset_to_preempFloatReg(%eax)
-#endif /* CONFIG_SSE */
+#endif /* CONFIG_X86_SSE */
 #elif defined(CONFIG_LAZY_FPU_SHARING)
 	/*
 	 * Clear the CR0[TS] bit (in the event the current thread
@@ -206,7 +206,7 @@ SECTION_FUNC(TEXT, arch_swap)
 	je	restoreContext_NoFloatSave
 
 
-#ifdef CONFIG_SSE
+#ifdef CONFIG_X86_SSE
 	testb	$K_SSE_REGS, _thread_offset_to_user_options(%ebx)
 	je	x87FloatSave
 
@@ -221,7 +221,7 @@ SECTION_FUNC(TEXT, arch_swap)
 	jmp	floatSaveDone
 
 x87FloatSave:
-#endif /* CONFIG_SSE */
+#endif /* CONFIG_X86_SSE */
 
 	/* 'fnsave' performs an implicit 'fninit' after saving state! */
 
@@ -245,7 +245,7 @@ restoreContext_NoFloatSave:
 	testb   $X86_THREAD_FLAG_ALL, _thread_offset_to_flags(%eax)
 	je 	restoreContext_NoFloatRestore
 
-#ifdef CONFIG_SSE
+#ifdef CONFIG_X86_SSE
 	testb	$K_SSE_REGS, _thread_offset_to_user_options(%eax)
 	je	x87FloatRestore
 
@@ -254,7 +254,7 @@ restoreContext_NoFloatSave:
 
 x87FloatRestore:
 
-#endif /* CONFIG_SSE */
+#endif /* CONFIG_X86_SSE */
 
 	frstor	_thread_offset_to_preempFloatReg(%eax)
 
@@ -344,9 +344,9 @@ CROHandlingDone:
 	pushl	4(%esp)
 	popfl
 
-#if defined(CONFIG_TRACING)
+#if defined(CONFIG_INSTRUMENT_THREAD_SWITCHING)
 	pushl	%eax
-	call	sys_trace_thread_switched_in
+	call	z_thread_mark_switched_in
 	popl	%eax
 #endif
 	ret

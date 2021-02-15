@@ -1,5 +1,5 @@
 This folder contains tests meant to be run with BabbleSim's physical layer
-simulation, and therefore cannot be run directly from sanitycheck
+simulation, and therefore cannot be run directly from twister
 
 The compile.sh and run_parallel.sh scripts are used by the CI system to build
 the needed images and execute these tests in batch.

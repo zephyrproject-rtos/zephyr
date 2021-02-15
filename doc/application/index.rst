@@ -486,6 +486,36 @@ following procedure:
 #. Rebuild the application normally following the steps specified
    in :ref:`build_an_application` above.
 
+.. _application_board_version:
+
+Building for a board revision
+=============================
+
+The Zephyr build system has support for specifying multiple hardware revisions
+of a single board with small variations. Using revisions allows the board
+support files to make minor adjustments to a board configuration without
+duplicating all the files described in :ref:`create-your-board-directory` for
+each revision.
+
+To build for a particular revision, use ``<board>@<revision>`` instead of plain
+``<board>``. For example:
+
+.. zephyr-app-commands::
+   :tool: all
+   :cd-into:
+   :board: <board>@<revision>
+   :goals: build
+   :compact:
+
+Check your board's documentation for details on whether it has multiple
+revisions, and what revisions are supported.
+
+When targeting a board revision, the active revision will be printed at CMake
+configure time, like this:
+
+.. code-block:: console
+
+   -- Board: plank, Revision: 1.5.0
 
 .. _application_run:
 

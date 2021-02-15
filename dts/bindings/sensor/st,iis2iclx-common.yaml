@@ -1,0 +1,57 @@
+# Copyright (c) 2020 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+properties:
+    drdy-gpios:
+      type: phandle-array
+      required: false
+      description: DRDY pin
+
+        This pin defaults to active high when produced by the sensor.
+        The property value should ensure the flags properly describe
+        the signal that is presented to the driver.
+
+    int-pin:
+      type: int
+      required: false
+      default: 1
+      enum:
+        - 1 # drdy is generated from INT1
+        - 2 # drdy is generated from INT2
+      description: Select DRDY pin number (1 or 2).
+
+        This number represents which of the two interrupt pins
+        (INT1 or INT2) the drdy line is attached to. This property is not
+        mandatory and if not present it defaults to 1 which is the
+        configuration at power-up.
+
+    range:
+      type: int
+      required: false
+      default: 3
+      description: Range in g. Default is power-up configuration.
+      enum:
+        - 0 # 500mg (0.015 mg/LSB)
+        - 1 # 3g    (0.122 mg/LSB)
+        - 2 # 1g    (0.031 mg/LSB)
+        - 3 # 2g    (0.061 mg/LSB)
+
+    odr:
+      type: int
+      required: false
+      default: 0
+      description:
+          Specify the default accelerometer output data rate expressed in samples per second (Hz).
+          Default is power-up configuration.
+      enum:
+        - 0  # Power-Down
+        - 1  # 12.5Hz
+        - 2  # 26Hz
+        - 3  # 52Hz
+        - 4  # 104Hz
+        - 5  # 208Hz
+        - 6  # 416Hz
+        - 7  # 833Hz
+        - 8  # 1660Hz
+        - 9  # 3330Hz
+        - 10 # 6660Hz

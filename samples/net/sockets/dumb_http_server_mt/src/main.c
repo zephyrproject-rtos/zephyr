@@ -14,6 +14,10 @@ LOG_MODULE_REGISTER(net_dumb_http_srv_mt_sample);
 #include <net/socket.h>
 #include <net/tls_credentials.h>
 
+#include <net/net_mgmt.h>
+#include <net/net_event.h>
+#include <net/net_conn_mgr.h>
+
 #define MY_PORT 8080
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
@@ -32,10 +36,18 @@ static const unsigned char private_key[] = {
 #else
 #define STACK_SIZE 1024
 #endif
-#define THREAD_PRIORITY K_PRIO_COOP(0)
+#if IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)
+#define THREAD_PRIORITY K_PRIO_COOP(CONFIG_NUM_COOP_PRIORITIES - 1)
+#else
+#define THREAD_PRIORITY K_PRIO_PREEMPT(8)
+#endif
 
 static const char content[] = {
+#if defined(CONFIG_NET_SAMPLE_SERVE_LARGE_FILE)
+    #include "response_100k.html.bin.inc"
+#else
     #include "response_big.html.bin.inc"
+#endif
 };
 
 #define MAX_CLIENT_QUEUE CONFIG_NET_SAMPLE_NUM_HANDLERS
@@ -54,6 +66,12 @@ static struct k_thread tcp6_handler_thread[CONFIG_NET_SAMPLE_NUM_HANDLERS];
 static k_tid_t tcp6_handler_tid[CONFIG_NET_SAMPLE_NUM_HANDLERS];
 #endif
 
+static struct net_mgmt_event_callback mgmt_cb;
+static bool connected;
+K_SEM_DEFINE(run_app, 0, 1);
+K_SEM_DEFINE(quit_lock, 0, 1);
+static bool running_status;
+static bool want_to_quit;
 static int tcp4_listen_sock;
 static int tcp4_accepted[CONFIG_NET_SAMPLE_NUM_HANDLERS];
 static int tcp6_listen_sock;
@@ -69,6 +87,44 @@ K_THREAD_DEFINE(tcp4_thread_id, STACK_SIZE,
 K_THREAD_DEFINE(tcp6_thread_id, STACK_SIZE,
 		process_tcp6, NULL, NULL, NULL,
 		THREAD_PRIORITY, 0, -1);
+
+#define EVENT_MASK (NET_EVENT_L4_CONNECTED | \
+		    NET_EVENT_L4_DISCONNECTED)
+
+static void event_handler(struct net_mgmt_event_callback *cb,
+			  uint32_t mgmt_event, struct net_if *iface)
+{
+	if ((mgmt_event & EVENT_MASK) != mgmt_event) {
+		return;
+	}
+
+	if (want_to_quit) {
+		k_sem_give(&run_app);
+		want_to_quit = false;
+	}
+
+	if (mgmt_event == NET_EVENT_L4_CONNECTED) {
+		LOG_INF("Network connected");
+
+		connected = true;
+		k_sem_give(&run_app);
+
+		return;
+	}
+
+	if (mgmt_event == NET_EVENT_L4_DISCONNECTED) {
+		if (connected == false) {
+			LOG_INF("Waiting network to be connected");
+		} else {
+			LOG_INF("Network disconnected");
+			connected = false;
+		}
+
+		k_sem_reset(&run_app);
+
+		return;
+	}
+}
 
 static ssize_t sendall(int sock, const void *buf, size_t len)
 {
@@ -170,7 +226,19 @@ static void client_conn_handler(void *ptr1, void *ptr2, void *ptr3)
 		}
 	} while (true);
 
-	(void)sendall(client, content, sizeof(content));
+	/* We received status from the client */
+	if (strstr(buf, "\r\n\r\nOK")) {
+		running_status = true;
+		want_to_quit = true;
+		k_sem_give(&quit_lock);
+	} else if (strstr(buf, "\r\n\r\nFAIL")) {
+		running_status = false;
+		want_to_quit = true;
+		k_sem_give(&quit_lock);
+	} else {
+		(void)sendall(client, content, sizeof(content));
+	}
+
 	(void)close(client);
 
 	*sock = -1;
@@ -277,7 +345,7 @@ static void process_tcp4(void)
 	LOG_DBG("Waiting for IPv4 HTTP connections on port %d, sock %d",
 		MY_PORT, tcp4_listen_sock);
 
-	while (ret == 0) {
+	while (ret == 0 || !want_to_quit) {
 		ret = process_tcp(&tcp4_listen_sock, tcp4_accepted);
 		if (ret < 0) {
 			return;
@@ -303,7 +371,7 @@ static void process_tcp6(void)
 	LOG_DBG("Waiting for IPv6 HTTP connections on port %d, sock %d",
 		MY_PORT, tcp6_listen_sock);
 
-	while (ret == 0) {
+	while (ret == 0 || !want_to_quit) {
 		ret = process_tcp(&tcp6_listen_sock, tcp6_accepted);
 		if (ret != 0) {
 			return;
@@ -354,5 +422,33 @@ void main(void)
 	}
 #endif
 
+	if (IS_ENABLED(CONFIG_NET_CONNECTION_MANAGER)) {
+		net_mgmt_init_event_callback(&mgmt_cb,
+					     event_handler, EVENT_MASK);
+		net_mgmt_add_event_callback(&mgmt_cb);
+
+		net_conn_mgr_resend_status();
+	}
+
+	if (!IS_ENABLED(CONFIG_NET_CONNECTION_MANAGER)) {
+		/* If the config library has not been configured to start the
+		 * app only after we have a connection, then we can start
+		 * it right away.
+		 */
+		k_sem_give(&run_app);
+	}
+
+	/* Wait for the connection. */
+	k_sem_take(&run_app, K_FOREVER);
+
 	start_listener();
+
+	k_sem_take(&quit_lock, K_FOREVER);
+
+	if (running_status) {
+		/* No issues, let the testing system know about this */
+		exit(0);
+	} else {
+		exit(1);
+	}
 }

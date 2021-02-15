@@ -23,13 +23,20 @@ properties:
       description: Resynchronization jump width (ISO 11898-1)
     prop-seg:
       type: int
-      required: true
+      required: false
       description: Time quantums of propagation segment (ISO 11898-1)
     phase-seg1:
       type: int
-      required: true
+      required: false
       description: Time quantums of phase buffer 1 segment (ISO 11898-1)
     phase-seg2:
       type: int
-      required: true
+      required: false
       description: Time quantums of phase buffer 2 segment (ISO 11898-1)
+    sample-point:
+      type: int
+      required: false
+      description: >
+        Sample point in permille.
+        This param is required if segments are not given.
+        If the sample point is given, the segments are ignored.

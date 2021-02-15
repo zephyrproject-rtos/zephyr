@@ -144,8 +144,8 @@ static inline uint32_t arch_k_cycle_get_32(void);
  * @brief Power save idle routine
  *
  * This function will be called by the kernel idle loop or possibly within
- * an implementation of z_sys_power_save_idle in the kernel when the
- * '_sys_power_save_flag' variable is non-zero.
+ * an implementation of z_pm_save_idle in the kernel when the
+ * '_pm_save_flag' variable is non-zero.
  *
  * Architectures that do not implement power management instructions may
  * immediately return, otherwise a power-saving instruction should be
@@ -190,7 +190,7 @@ void arch_cpu_atomic_idle(unsigned int key);
 /**
  * Per-cpu entry function
  *
- * @param context parameter, implementation specific
+ * @param data context parameter, implementation specific
  */
 typedef FUNC_NORETURN void (*arch_cpustart_t)(void *data);
 
@@ -249,6 +249,15 @@ static inline bool arch_irq_unlocked(unsigned int key);
 
 /**
  * Disable the specified interrupt line
+ *
+ * @note: The behavior of interrupts that arrive after this call
+ * returns and before the corresponding call to arch_irq_enable() is
+ * undefined.  The hardware is not required to latch and deliver such
+ * an interrupt, though on some architectures that may work.  Other
+ * architectures will simply lose such an interrupt and never deliver
+ * it.  Many drivers and subsystems are not tolerant of such dropped
+ * interrupts and it is the job of the application layer to ensure
+ * that behavior remains correct.
  *
  * @see irq_disable()
  */
@@ -816,34 +825,232 @@ void arch_gdb_step(void);
  * @{
  */
 
-#ifdef CONFIG_CACHE_FLUSHING
+#ifdef CONFIG_CACHE_MANAGEMENT
 /**
  *
- * @brief Flush d-cache lines to main memory
+ * @brief Enable d-cache
  *
- * @see sys_cache_flush
+ * @see arch_dcache_enable
  */
-void arch_dcache_flush(void *addr, size_t size);
+void arch_dcache_enable(void);
 
 /**
  *
- * @brief Invalidate d-cache lines
+ * @brief Disable d-cache
  *
- * @see sys_cache_invd
+ * @see arch_dcache_disable
  */
-void arch_dcache_invd(void *addr, size_t size);
+void arch_dcache_disable(void);
 
-#ifndef CONFIG_CACHE_LINE_SIZE
+/**
+ *
+ * @brief Enable i-cache
+ *
+ * @see arch_icache_enable
+ */
+void arch_icache_enable(void);
+
+/**
+ *
+ * @brief Enable i-cache
+ *
+ * @see arch_dcache_disable
+ */
+void arch_dcache_disable(void);
+
+/**
+ *
+ * @brief Write-back / Invalidate / Write-back + Invalidate all d-cache
+ *
+ * @see arch_dcache_all
+ */
+int arch_dcache_all(int op);
+
+/**
+ *
+ * @brief Write-back / Invalidate / Write-back + Invalidate d-cache lines
+ *
+ * @see arch_dcache_range
+ */
+int arch_dcache_range(void *addr, size_t size, int op);
+
+/**
+ *
+ * @brief Write-back / Invalidate / Write-back + Invalidate all i-cache
+ *
+ * @see arch_icache_all
+ */
+int arch_icache_all(int op);
+
+/**
+ *
+ * @brief Write-back / Invalidate / Write-back + Invalidate i-cache lines
+ *
+ * @see arch_icache_range
+ */
+int arch_icache_range(void *addr, size_t size, int op);
+
+#ifdef CONFIG_DCACHE_LINE_SIZE_DETECT
 /**
  *
  * @brief Get d-cache line size
  *
- * @see sys_cache_line_size_get
+ * @see sys_dcache_line_size_get
  */
-size_t arch_cache_line_size_get(void);
-#endif
-#endif
+size_t arch_dcache_line_size_get(void);
+#endif /* CONFIG_DCACHE_LINE_SIZE_DETECT */
+
+#ifdef CONFIG_ICACHE_LINE_SIZE_DETECT
+/**
+ *
+ * @brief Get i-cache line size
+ *
+ * @see sys_icache_line_size_get
+ */
+size_t arch_icache_line_size_get(void);
+#endif /* CONFIG_ICACHE_LINE_SIZE_DETECT */
+
+#endif /* CONFIG_CACHE_MANAGEMENT */
+
 /** @} */
+
+#ifdef CONFIG_TIMING_FUNCTIONS
+#include <timing/types.h>
+
+/**
+ * @ingroup arch-interface timing_api
+ */
+
+/**
+ * @brief Initialize the timing subsystem.
+ *
+ * Perform the necessary steps to initialize the timing subsystem.
+ *
+ * @see timing_init()
+ */
+void arch_timing_init(void);
+
+/**
+ * @brief Signal the start of the timing information gathering.
+ *
+ * Signal to the timing subsystem that timing information
+ * will be gathered from this point forward.
+ *
+ * @see timing_start()
+ */
+void arch_timing_start(void);
+
+/**
+ * @brief Signal the end of the timing information gathering.
+ *
+ * Signal to the timing subsystem that timing information
+ * is no longer being gathered from this point forward.
+ *
+ * @see timing_stop()
+ */
+void arch_timing_stop(void);
+
+/**
+ * @brief Return timing counter.
+ *
+ * @return Timing counter.
+ *
+ * @see timing_counter_get()
+ */
+timing_t arch_timing_counter_get(void);
+
+/**
+ * @brief Get number of cycles between @p start and @p end.
+ *
+ * For some architectures or SoCs, the raw numbers from counter
+ * need to be scaled to obtain actual number of cycles.
+ *
+ * @param start Pointer to counter at start of a measured execution.
+ * @param end Pointer to counter at stop of a measured execution.
+ * @return Number of cycles between start and end.
+ *
+ * @see timing_cycles_get()
+ */
+uint64_t arch_timing_cycles_get(volatile timing_t *const start,
+				volatile timing_t *const end);
+
+/**
+ * @brief Get frequency of counter used (in Hz).
+ *
+ * @return Frequency of counter used for timing in Hz.
+ *
+ * @see timing_freq_get()
+ */
+uint64_t arch_timing_freq_get(void);
+
+/**
+ * @brief Convert number of @p cycles into nanoseconds.
+ *
+ * @param cycles Number of cycles
+ * @return Converted time value
+ *
+ * @see timing_cycles_to_ns()
+ */
+uint64_t arch_timing_cycles_to_ns(uint64_t cycles);
+
+/**
+ * @brief Convert number of @p cycles into nanoseconds with averaging.
+ *
+ * @param cycles Number of cycles
+ * @param count Times of accumulated cycles to average over
+ * @return Converted time value
+ *
+ * @see timing_cycles_to_ns_avg()
+ */
+uint64_t arch_timing_cycles_to_ns_avg(uint64_t cycles, uint32_t count);
+
+/**
+ * @brief Get frequency of counter used (in MHz).
+ *
+ * @return Frequency of counter used for timing in MHz.
+ *
+ * @see timing_freq_get_mhz()
+ */
+uint32_t arch_timing_freq_get_mhz(void);
+
+/* @} */
+
+#endif /* CONFIG_TIMING_FUNCTIONS */
+
+#ifdef CONFIG_PCIE_MSI_MULTI_VECTOR
+
+struct msi_vector;
+typedef struct msi_vector msi_vector_t;
+
+/**
+ * @brief Allocate vector(s) for the endpoint MSI message(s).
+ *
+ * @param priority the MSI vectors base interrupt priority
+ * @param vectors an array to fill with allocated MSI vectors
+ * @param n_vector the size of MSI vectors array
+ *
+ * @return The number of allocated MSI vectors
+ */
+uint8_t arch_pcie_msi_vectors_allocate(unsigned int priority,
+				       msi_vector_t *vectors,
+				       uint8_t n_vector);
+
+/**
+ * @brief Connect an MSI vector to the given routine
+ *
+ * @param vector The MSI vector to connect to
+ * @param routine Interrupt service routine
+ * @param parameter ISR parameter
+ * @param flags Arch-specific IRQ configuration flag
+ *
+ * @return True on success, false otherwise
+ */
+bool arch_pcie_msi_vector_connect(msi_vector_t *vector,
+				  void (*routine)(const void *parameter),
+				  const void *parameter,
+				  uint32_t flags);
+
+#endif /* CONFIG_PCIE_MSI_MULTI_VECTOR */
 
 #ifdef __cplusplus
 }

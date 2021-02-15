@@ -13,19 +13,9 @@
 #include <device.h>
 
 #define RAMDISK_SECTOR_SIZE 512
-
-#if defined(CONFIG_USB_MASS_STORAGE)
-/* A 16KB initialized RAMdisk which will fit on most target's RAM. It
- * is initialized with a valid file system for validating USB mass storage.
- */
-#include "fat12_ramdisk.h"
-#else
-/* RAM Disk of configurable size. Fit for qemu testing (as it may exceed
- * target's RAM limits).
- */
 #define RAMDISK_VOLUME_SIZE (CONFIG_DISK_RAM_VOLUME_SIZE * 1024)
+
 static uint8_t ramdisk_buf[RAMDISK_VOLUME_SIZE];
-#endif
 
 static void *lba_to_address(uint32_t lba)
 {

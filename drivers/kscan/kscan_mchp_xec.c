@@ -62,8 +62,6 @@ static KSCAN_Type *base = (KSCAN_Type *)
 
 static struct kscan_xec_data kbd_data;
 
-DEVICE_DECLARE(kscan_xec);
-
 static void drive_keyboard_column(int data)
 {
 	if (data == KEYBOARD_COLUMN_DRIVE_ALL) {
@@ -295,7 +293,7 @@ void polling_task(void *dummy1, void *dummy2, void *dummy3)
 		while (atomic_get(&kbd_data.enable_scan) == 1U) {
 			uint32_t start_period_cycles = k_cycle_get_32();
 
-			if (check_key_events(DEVICE_GET(kscan_xec))) {
+			if (check_key_events(DEVICE_DT_INST_GET(0))) {
 				local_poll_timeout = kbd_data.poll_timeout;
 				start_poll_cycles = k_cycle_get_32();
 			} else if (!poll_expired(start_poll_cycles,
@@ -374,8 +372,9 @@ static const struct kscan_driver_api kscan_xec_driver_api = {
 
 static int kscan_xec_init(const struct device *dev);
 
-DEVICE_AND_API_INIT(kscan_xec, DT_INST_LABEL(0),
+DEVICE_DT_INST_DEFINE(0,
 		    &kscan_xec_init,
+		    device_pm_control_nop,
 		    NULL, NULL,
 		    POST_KERNEL, CONFIG_KSCAN_INIT_PRIORITY,
 		    &kscan_xec_driver_api);

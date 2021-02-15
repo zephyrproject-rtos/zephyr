@@ -15,9 +15,6 @@ while using the nRF52840 Development Kit (PCA10056).
 See :ref:`nrf52840dk_nrf52840` for more information about the development board
 and `nRF52811 website`_ for the official reference on the IC itself.
 
-.. note::
-
-   In earlier Zephyr releases this board was known as ``nrf52811_pca10056``.
 
 References
 **********

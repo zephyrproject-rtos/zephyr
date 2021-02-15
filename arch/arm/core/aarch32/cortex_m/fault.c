@@ -17,7 +17,7 @@
 #include <inttypes.h>
 #include <exc_handle.h>
 #include <logging/log.h>
-LOG_MODULE_DECLARE(os);
+LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #if defined(CONFIG_PRINTK) || defined(CONFIG_LOG)
 #define PR_EXC(...) LOG_ERR(__VA_ARGS__)
@@ -230,9 +230,10 @@ static uint32_t mem_manage_fault(z_arch_esf_t *esf, int from_hard_fault,
 		 * Software must follow this sequence because another higher
 		 * priority exception might change the MMFAR value.
 		 */
-		mmfar = SCB->MMFAR;
+		uint32_t temp = SCB->MMFAR;
 
 		if ((SCB->CFSR & SCB_CFSR_MMARVALID_Msk) != 0) {
+			mmfar = temp;
 			PR_EXC("  MMFAR Address: 0x%x", mmfar);
 			if (from_hard_fault) {
 				/* clear SCB_MMAR[VALID] to reset */
@@ -248,15 +249,23 @@ static uint32_t mem_manage_fault(z_arch_esf_t *esf, int from_hard_fault,
 		PR_FAULT_INFO(
 			"  Floating-point lazy state preservation error");
 	}
-#endif /* !defined(CONFIG_ARMV7_M_ARMV8_M_FP) */
+#endif /* CONFIG_ARMV7_M_ARMV8_M_FP */
 
 	/* When stack protection is enabled, we need to assess
 	 * if the memory violation error is a stack corruption.
 	 *
 	 * By design, being a Stacking MemManage fault is a necessary
 	 * and sufficient condition for a thread stack corruption.
+	 * [Cortex-M process stack pointer is always descending and
+	 * is never modified by code (except for the context-switch
+	 * routine), therefore, a stacking error implies the PSP has
+	 * crossed into an area beyond the thread stack.]
+	 *
+	 * Data Access Violation errors may or may not be caused by
+	 * thread stack overflows.
 	 */
-	if (SCB->CFSR & SCB_CFSR_MSTKERR_Msk) {
+	if ((SCB->CFSR & SCB_CFSR_MSTKERR_Msk) ||
+		(SCB->CFSR & SCB_CFSR_DACCVIOL_Msk)) {
 #if defined(CONFIG_MPU_STACK_GUARD) || defined(CONFIG_USERSPACE)
 		/* MemManage Faults are always banked between security
 		 * states. Therefore, we can safely assume the fault
@@ -309,7 +318,7 @@ static uint32_t mem_manage_fault(z_arch_esf_t *esf, int from_hard_fault,
 
 				reason = K_ERR_STACK_CHK_FAIL;
 			} else {
-				__ASSERT(0,
+				__ASSERT(!(SCB->CFSR & SCB_CFSR_MSTKERR_Msk),
 					"Stacking error not a stack fail\n");
 			}
 		}

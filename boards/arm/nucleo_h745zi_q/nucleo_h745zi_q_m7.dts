@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2020 Alexander Kozhinov
- * AlexanderKozhinov@yandex.com
+ * Copyright (c) 2020 Alexander Kozhinov <AlexanderKozhinov@yandex.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -67,7 +66,7 @@
 
 	pwm12: pwm {
 		status = "okay";
-		pinctrl-0 = <&tim12_ch1_pwm_pb14>;
+		pinctrl-0 = <&tim12_ch1_pb14>;
 	};
 };
 

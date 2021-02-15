@@ -6,6 +6,7 @@ name: Documentation GitHub Workflow
 on:
   pull_request:
     paths:
+    - 'Makefile'
     - 'doc/**'
     - '**.rst'
     - 'include/**'
@@ -13,15 +14,20 @@ on:
     - 'lib/libc/**'
     - 'subsys/testsuite/ztest/include/**'
     - 'tests/**'
+    - '.known-issues/doc/**'
+    - '**/Kconfig*'
+    - 'west.yml'
+    - '.github/workflows/doc-build.yml'
 
 jobs:
-  build:
+  doc-build:
+    name: "Documentation Build"
     runs-on: ubuntu-latest
 
     steps:
     - name: Update PATH for west
       run: |
-        echo "::add-path::$HOME/.local/bin"
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
 
     - name: checkout
       uses: actions/checkout@v2
@@ -38,9 +44,10 @@ jobs:
 
     - name: install-pip
       run: |
-        pip3 install setuptools
+        pip3 install setuptools wheel
         pip3 install -r scripts/requirements-base.txt
         pip3 install -r scripts/requirements-doc.txt
+        pip3 install west==0.9.0
 
     - name: west setup
       run: |

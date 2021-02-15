@@ -21,8 +21,8 @@ first-in-first-out order. Two content data modes are supported:
 Concepts
 ********
 
-Any number of ring buffers can be defined. Each ring buffer is referenced
-by its memory address.
+Any number of ring buffers can be defined (limited only by available RAM). Each
+ring buffer is referenced by its memory address.
 
 A ring buffer has the following key properties:
 
@@ -102,9 +102,6 @@ shouldn't be needed.
 
 Internal Operation
 ==================
-
-The ring buffer always maintains an empty 32-bit word (byte in bytes mode) in
-its data buffer to allow it to distinguish between empty and full states.
 
 If the size of the data buffer is a power of two, the ring buffer
 uses efficient masking operations instead of expensive modulo operations
@@ -303,6 +300,13 @@ operations on the ring buffer's memory.  For example:
         /* proc_size exceeds amount of valid data in a ring buffer. */
 	...
     }
+
+Configuration Options
+*********************
+
+Related configuration options:
+
+* :option:`CONFIG_RING_BUFFER`: Enable ring buffer.
 
 API Reference
 *************

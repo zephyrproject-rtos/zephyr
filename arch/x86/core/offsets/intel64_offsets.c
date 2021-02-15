@@ -30,11 +30,14 @@ GEN_OFFSET_SYM(_thread_arch_t, sse);
 GEN_OFFSET_SYM(_thread_arch_t, ss);
 GEN_OFFSET_SYM(_thread_arch_t, cs);
 GEN_OFFSET_SYM(_thread_arch_t, psp);
+#ifndef CONFIG_X86_COMMON_PAGE_TABLE
 GEN_OFFSET_SYM(_thread_arch_t, ptables);
+#endif
 #endif /* CONFIG_USERSPACE */
 
 GEN_OFFSET_SYM(x86_tss64_t, ist1);
 GEN_OFFSET_SYM(x86_tss64_t, ist2);
+GEN_OFFSET_SYM(x86_tss64_t, ist6);
 GEN_OFFSET_SYM(x86_tss64_t, ist7);
 GEN_OFFSET_SYM(x86_tss64_t, cpu);
 #ifdef CONFIG_USERSPACE

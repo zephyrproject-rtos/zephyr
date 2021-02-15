@@ -396,13 +396,11 @@ static int dma_sam0_get_status(const struct device *dev, uint32_t channel,
 	return 0;
 }
 
-DEVICE_DECLARE(dma_sam0_0);
-
 #define DMA_SAM0_IRQ_CONNECT(n)						 \
 	do {								 \
 		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, n, irq),		 \
 			    DT_INST_IRQ_BY_IDX(0, n, priority),		 \
-			    dma_sam0_isr, DEVICE_GET(dma_sam0_0), 0);	 \
+			    dma_sam0_isr, DEVICE_DT_INST_GET(0), 0);	 \
 		irq_enable(DT_INST_IRQ_BY_IDX(0, n, irq));		 \
 	} while (0)
 
@@ -459,6 +457,6 @@ static const struct dma_driver_api dma_sam0_api = {
 	.get_status = dma_sam0_get_status,
 };
 
-DEVICE_AND_API_INIT(dma_sam0_0, DT_INST_LABEL(0), &dma_sam0_init,
+DEVICE_DT_INST_DEFINE(0, &dma_sam0_init, device_pm_control_nop,
 		    &dmac_data, NULL, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &dma_sam0_api);

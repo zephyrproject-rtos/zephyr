@@ -172,11 +172,15 @@ static inline int ipv6_handle_ext_hdr_options(struct net_pkt *pkt,
 	uint16_t exthdr_len = 0U;
 	uint16_t length = 0U;
 
-	if (net_pkt_read_u8(pkt, (uint8_t *)&exthdr_len)) {
-		return -ENOBUFS;
+	{
+		uint8_t val = 0U;
+
+		if (net_pkt_read_u8(pkt, &val)) {
+			return -ENOBUFS;
+		}
+		exthdr_len = val * 8U + 8;
 	}
 
-	exthdr_len = exthdr_len * 8U + 8;
 	if (exthdr_len > pkt_len) {
 		NET_DBG("Corrupted packet, extension header %d too long "
 			"(max %d bytes)", exthdr_len, pkt_len);

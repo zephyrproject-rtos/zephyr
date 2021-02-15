@@ -50,7 +50,8 @@ dummy_test(test_msgq_user_purge_when_put);
 #else
 #define MAX_SZ	128
 #endif
-K_MEM_POOL_DEFINE(test_pool, 128, MAX_SZ, 2, 4);
+
+K_HEAP_DEFINE(test_pool, MAX_SZ * 2);
 
 extern struct k_msgq kmsgq;
 extern struct k_msgq msgq;
@@ -64,7 +65,7 @@ void test_main(void)
 	k_thread_access_grant(k_current_get(), &kmsgq, &msgq, &end_sema,
 			      &tdata, &tstack);
 
-	k_thread_resource_pool_assign(k_current_get(), &test_pool);
+	k_thread_heap_assign(k_current_get(), &test_pool);
 
 	ztest_test_suite(msgq_api,
 			 ztest_1cpu_unit_test(test_msgq_thread),

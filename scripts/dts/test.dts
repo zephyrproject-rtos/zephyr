@@ -249,7 +249,6 @@
 		path = &{/ctrl-1};
 	};
 
-
 	ctrl-1 {
 		compatible = "phandle-array-controller-1";
 		#phandle-array-foo-cells = <1>;
@@ -263,9 +262,9 @@
 
 	props-2 {
 		compatible = "props";
-		phandle-array-foos = < &{/ctrl-0-1} &{/ctrl-0-2} >;
+		phandle-array-foos = < &{/ctrl-0-1} 0 &{/ctrl-0-2} >;
+		phandle-array-foo-names = "a", "missing", "b";
 	};
-
 
 	ctrl-0-1 {
 		compatible = "phandle-array-controller-0";
@@ -312,6 +311,19 @@
 	};
 
 	//
+	// For testing 'enum:'
+	//
+
+	enums {
+		compatible = "enums";
+		int-enum = <1>;
+		string-enum = "foo_bar";
+		tokenizable-enum = "123 is ok";
+		tokenizable-lower-enum = "bar";
+		no-enum = "baz";
+	};
+
+	//
 	// For testing 'bus:' and 'on-bus:'
 	//
 
@@ -320,11 +332,14 @@
 		// they appear on different buses
 		foo-bus {
 			compatible = "foo-bus";
-			node {
-				compatible = "on-bus";
+			node1 {
+				compatible = "on-bus", "on-any-bus";
 				nested {
 					compatible = "on-bus";
 				};
+			};
+			node2 {
+				compatible = "on-any-bus", "on-bus";
 			};
 		};
 		bar-bus {
@@ -332,6 +347,9 @@
 			node {
 				compatible = "on-bus";
 			};
+		};
+		no-bus-node {
+			compatible = "on-any-bus";
 		};
 	};
 

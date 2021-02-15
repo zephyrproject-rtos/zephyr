@@ -21,16 +21,21 @@ interaction is required. This module is a Unix-like shell with these features:
 * Smart command completion with the :kbd:`Tab` key.
 * Built-in commands: :command:`clear`, :command:`shell`, :command:`colors`,
   :command:`echo`, :command:`history` and :command:`resize`.
-* Viewing recently executed commands using keys: :kbd:`↑` :kbd:`↓`.
+* Viewing recently executed commands using keys: :kbd:`↑` :kbd:`↓` or meta keys.
 * Text edition using keys: :kbd:`←`, :kbd:`→`, :kbd:`Backspace`,
   :kbd:`Delete`, :kbd:`End`, :kbd:`Home`, :kbd:`Insert`.
 * Support for ANSI escape codes: ``VT100`` and ``ESC[n~`` for cursor control
   and color printing.
-* Support for multiline commands.
+* Support for editing multiline commands.
 * Built-in handler to display help for the commands.
 * Support for wildcards: ``*`` and ``?``.
 * Support for meta keys.
 * Kconfig configuration to optimize memory usage.
+
+Some of these features have a significant impact on RAM and flash usage,
+but many can be disabled when not needed.  A configuration that should
+produce the minimum useful feature set is in
+:zephyr_file:`samples/subsys/shell/shell_module/prj_minimal.conf`.
 
 The module can be connected to any transport for command input and output.
 At this point, the following transport layers are implemented:
@@ -40,7 +45,7 @@ At this point, the following transport layers are implemented:
 * Telnet
 * UART
 * USB
-* DUMMY - not a physical transport layer
+* DUMMY - not a physical transport layer.
 
 Connecting to Segger RTT via TCP (on macOS, for example)
 ========================================================
@@ -355,6 +360,8 @@ commands or the parent commands, depending on how you index ``argv``.
 Built-in commands
 =================
 
+These commands are activated by :option:`CONFIG_SHELL_CMDS` set to ``y``.
+
 * :command:`clear` - Clears the screen.
 * :command:`history` - Shows the recently entered commands.
 * :command:`resize` - Must be executed when terminal width is different than 80
@@ -366,6 +373,11 @@ Built-in commands
 	* :command:`default` - Shell will send terminal width = 80 to the
 	  terminal and assume successful delivery.
 
+  These command needs extra activation:
+  :option:`CONFIG_SHELL_CMDS_RESIZE` set to ``y``.
+* :command:`select` - It can be used to set new root command. Exit to main
+  command tree is with alt+r. This command needs extra activation:
+  :option:`CONFIG_SHELL_CMDS_SELECT` set to ``y``.
 * :command:`shell` - Root command with useful shell-related subcommands like:
 
 	* :command:`echo` - Toggles shell echo.
@@ -373,8 +385,38 @@ Built-in commands
           case of Bluetooth shell to limit the amount of transferred bytes.
 	* :command:`stats` - Shows shell statistics.
 
-Wildcards
-*********
+
+Tab Feature
+***********
+
+The Tab button can be used to suggest commands or subcommands. This feature
+is enabled by :option:`CONFIG_SHELL_TAB` set to ``y``.
+It can also be used for partial or complete auto-completion of commands.
+This feature is activated by
+:option:`CONFIG_SHELL_TAB_AUTOCOMPLETION` set to ``y``.
+When user starts writing a command and presses the :kbd:`Tab` button then
+the shell will do one of 3 possible things:
+
+* Autocomplete the command.
+* Prompts available commands and if possible partly completes the command.
+* Will not do anything if there are no available or matching commands.
+
+.. image:: images/tab_prompt.png
+      :align: center
+      :alt: Tab Feature usage example
+
+History Feature
+***************
+
+This feature enables commands history in the shell. It is activated by:
+:option:`CONFIG_SHELL_HISTORY` set to ``y``. History can be accessed
+using keys: :kbd:`↑` :kbd:`↓` or :kbd:`Ctrl + n` and :kbd:`Ctrl + p`
+if meta keys are active.
+Number of commands that can be stored depends on size
+of :option:`CONFIG_SHELL_HISTORY_BUFFER` parameter.
+
+Wildcards Feature
+*****************
 
 The shell module can handle wildcards. Wildcards are interpreted correctly
 when expanded command and its subcommands do not have a handler. For example,
@@ -389,8 +431,10 @@ modules you can execute the following command:
       :align: center
       :alt: Wildcard usage example
 
-Meta keys
-*********
+This feature is activated by :option:`CONFIG_SHELL_WILDCARD` set to ``y``.
+
+Meta Keys Feature
+*****************
 
 The shell module supports the following meta keys:
 
@@ -431,6 +475,37 @@ The shell module supports the following meta keys:
      - Moves the cursor backward one word.
    * - :kbd:`Alt + f`
      - Moves the cursor forward one word.
+
+This feature is activated by :option:`CONFIG_SHELL_METAKEYS` set to ``y``.
+
+Shell Logger Backend Feature
+****************************
+
+Shell instance can act as the :ref:`logging_api` backend. Shell ensures that log
+messages are correctly multiplexed with shell output. Log messages from logger
+thread are enqueued and processed in the shell thread. Logger thread will block
+for configurable amount of time if queue is full, blocking logger thread context
+for that time. Oldest log message is removed from the queue after timeout and
+new message is enqueued. Use the ``shell stats show`` command to retrieve
+number of log messages dropped by the shell instance. Log queue size and timeout
+are :c:macro:`SHELL_DEFINE` arguments.
+
+This feature is activated by: :option:`CONFIG_SHELL_LOG_BACKEND` set to ``y``.
+
+.. warning::
+	Enqueuing timeout must be set carefully when multiple backends are used
+	in the system. The shell instance could	have a slow transport or could
+	block, for example, by a UART with hardware flow control. If timeout is
+	set too high, the logger thread could be blocked and impact other logger
+	backends.
+
+.. warning::
+	As the shell is a complex logger backend, it can not output logs if
+	the application crashes before the shell thread is running. In this
+	situation, you can enable one of the simple logging backends instead,
+	such as UART (:option:`CONFIG_LOG_BACKEND_UART`) or
+	RTT (:option:`CONFIG_LOG_BACKEND_RTT`), which are available earlier
+	during system initialization.
 
 Usage
 *****
@@ -514,33 +589,6 @@ the shell will only print the subcommands registered for this command:
 .. code-block:: none
 
 	  params  ping
-
-Shell as the logger backend
-***************************
-
-Shell instance can act as the :ref:`logging_api` backend. Shell ensures that log
-messages are correctly multiplexed with shell output. Log messages from logger
-thread are enqueued and processed in the shell thread. Logger thread will block
-for configurable amount of time if queue is full, blocking logger thread context
-for that time. Oldest log message is removed from the queue after timeout and
-new message is enqueued. Use the ``shell stats show`` command to retrieve
-number of log messages dropped by the shell instance. Log queue size and timeout
-are :c:macro:`SHELL_DEFINE` arguments.
-
-.. warning::
-	Enqueuing timeout must be set carefully when multiple backends are used
-	in the system. The shell instance could	have a slow transport or could
-	block, for example, by a UART with hardware flow control. If timeout is
-	set too high, the logger thread could be blocked and impact other logger
-	backends.
-
-.. warning::
-	As the shell is a complex logger backend, it can not output logs if
-	the application crashes before the shell thread is running. In this
-	situation, you can enable one of the simple logging backends instead,
-	such as UART (:option:`CONFIG_LOG_BACKEND_UART`) or
-	RTT (:option:`CONFIG_LOG_BACKEND_RTT`), which are available earlier
-	during system initialization.
 
 API Reference
 *************

@@ -23,6 +23,10 @@ properties:
   size:
     required: true
 
+  # Match original driver NORDIC_QSPI_NOR_QE_BIT Kconfig default.
+  quad-enable-requirements:
+    default: "S1B6"
+
   readoc:
     type: string
     required: false

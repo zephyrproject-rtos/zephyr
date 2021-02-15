@@ -6,10 +6,12 @@
 
 #include <ztest.h>
 #include <irq_offload.h>
+#include <ztest_error_hook.h>
 
 /* Macro declarations */
 #define SEM_INIT_VAL (0U)
 #define SEM_MAX_VAL  (10U)
+#define THREAD_TEST_PRIORITY 0
 
 #define sem_give_from_isr(sema) irq_offload(isr_sem_give, (const void *)sema)
 #define sem_take_from_isr(sema) irq_offload(isr_sem_take, (const void *)sema)
@@ -19,6 +21,12 @@
 #define TOTAL_THREADS_WAITING (5)
 
 #define SEC2MS(s) ((s) * 1000)
+
+extern void test_sem_give_null(void);
+extern void test_sem_init_null(void);
+extern void test_sem_take_null(void);
+extern void test_sem_reset_null(void);
+extern void test_sem_count_get_null(void);
 
 /* global variable for mutual exclusion test */
 uint32_t critical_var;
@@ -1199,6 +1207,191 @@ void test_sem_queue_mutual_exclusion(void)
 	k_sem_give(&mut_sem);
 }
 
+#ifdef CONFIG_USERSPACE
+static void thread_sem_give_null(void *p1, void *p2, void *p3)
+{
+	ztest_set_fault_valid(true);
+	k_sem_give(NULL);
+
+	/* should not go here*/
+	ztest_test_fail();
+}
+
+/**
+ * @brief Test k_sem_give() API
+ *
+ * @details Create a thread and set k_sem_give() input to NULL
+ *
+ * @ingroup kernel_semaphore_tests
+ *
+ * @see k_sem_give()
+ */
+void test_sem_give_null(void)
+{
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+			(k_thread_entry_t)thread_sem_give_null,
+			NULL, NULL, NULL,
+			K_PRIO_PREEMPT(THREAD_TEST_PRIORITY),
+			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+
+	k_thread_join(tid, K_FOREVER);
+}
+#else
+void test_sem_give_null(void)
+{
+	/* For those platform not support userspace, we skip it. */
+	ztest_test_skip();
+}
+#endif
+
+#ifdef CONFIG_USERSPACE
+static void thread_sem_init_null(void *p1, void *p2, void *p3)
+{
+	ztest_set_fault_valid(true);
+	k_sem_init(NULL, 0, 1);
+
+	/* should not go here*/
+	ztest_test_fail();
+}
+
+/**
+ * @brief Test k_sem_init() API
+ *
+ * @details Create a thread and set k_sem_init() input to NULL
+ *
+ * @ingroup kernel_semaphore_tests
+ *
+ * @see k_sem_init()
+ */
+void test_sem_init_null(void)
+{
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+			(k_thread_entry_t)thread_sem_init_null,
+			NULL, NULL, NULL,
+			K_PRIO_PREEMPT(THREAD_TEST_PRIORITY),
+			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+
+	k_thread_join(tid, K_FOREVER);
+}
+#else
+void test_sem_init_null(void)
+{
+	/* For those platform not support userspace, we skip it. */
+	ztest_test_skip();
+}
+#endif
+
+#ifdef CONFIG_USERSPACE
+static void thread_sem_take_null(void *p1, void *p2, void *p3)
+{
+	ztest_set_fault_valid(true);
+	k_sem_take(NULL, K_MSEC(1));
+
+	/* should not go here*/
+	ztest_test_fail();
+}
+
+/**
+ * @brief Test k_sem_take() API
+ *
+ * @details Create a thread and set k_sem_take() input to NULL
+ *
+ * @ingroup kernel_semaphore_tests
+ *
+ * @see k_sem_take()
+ */
+void test_sem_take_null(void)
+{
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+			(k_thread_entry_t)thread_sem_take_null,
+			NULL, NULL, NULL,
+			K_PRIO_PREEMPT(THREAD_TEST_PRIORITY),
+			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+
+	k_thread_join(tid, K_FOREVER);
+}
+#else
+void test_sem_take_null(void)
+{
+	/* For those platform not support userspace, we skip it. */
+	ztest_test_skip();
+}
+#endif
+
+#ifdef CONFIG_USERSPACE
+static void thread_sem_reset_null(void *p1, void *p2, void *p3)
+{
+	ztest_set_fault_valid(true);
+	k_sem_reset(NULL);
+
+	/* should not go here*/
+	ztest_test_fail();
+}
+
+/**
+ * @brief Test k_sem_reset() API
+ *
+ * @details Create a thread and set k_sem_reset() input to NULL
+ *
+ * @ingroup kernel_semaphore_tests
+ *
+ * @see k_sem_reset()
+ */
+void test_sem_reset_null(void)
+{
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+			(k_thread_entry_t)thread_sem_reset_null,
+			NULL, NULL, NULL,
+			K_PRIO_PREEMPT(THREAD_TEST_PRIORITY),
+			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+
+	k_thread_join(tid, K_FOREVER);
+}
+#else
+void test_sem_reset_null(void)
+{
+	/* For those platform not support userspace, we skip it. */
+	ztest_test_skip();
+}
+#endif
+
+#ifdef CONFIG_USERSPACE
+static void thread_sem_count_get_null(void *p1, void *p2, void *p3)
+{
+	ztest_set_fault_valid(true);
+	k_sem_count_get(NULL);
+
+	/* should not go here*/
+	ztest_test_fail();
+}
+
+/**
+ * @brief Test k_sem_count_get() API
+ *
+ * @details Create a thread and set k_sem_count_get() input to NULL
+ *
+ * @ingroup kernel_semaphore_tests
+ *
+ * @see k_sem_count_get()
+ */
+void test_sem_count_get_null(void)
+{
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+			(k_thread_entry_t)thread_sem_count_get_null,
+			NULL, NULL, NULL,
+			K_PRIO_PREEMPT(THREAD_TEST_PRIORITY),
+			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+
+	k_thread_join(tid, K_FOREVER);
+}
+#else
+void test_sem_count_get_null(void)
+{
+	/* For those platform not support userspace, we skip it. */
+	ztest_test_skip();
+}
+#endif
+
 /* ztest main entry*/
 void test_main(void)
 {
@@ -1233,6 +1426,11 @@ void test_main(void)
 			 ztest_unit_test(test_sem_measure_timeout_from_thread),
 			 ztest_1cpu_unit_test(test_sem_multiple_take_and_timeouts),
 			 ztest_unit_test(test_sem_multi_take_timeout_diff_sem),
+			 ztest_user_unit_test(test_sem_give_null),
+			 ztest_user_unit_test(test_sem_init_null),
+			 ztest_user_unit_test(test_sem_take_null),
+			 ztest_user_unit_test(test_sem_reset_null),
+			 ztest_user_unit_test(test_sem_count_get_null),
 			 ztest_1cpu_unit_test(test_sem_queue_mutual_exclusion));
 	ztest_run_test_suite(test_semaphore);
 }

@@ -1,0 +1,139 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Processing"
+
+if !LOG_MINIMAL
+
+config LOG_PRINTK
+	bool "Process printk messages"
+	help
+	  LOG_PRINTK messages are formatted in place and logged unconditionally.
+
+config LOG_PRINTK_MAX_STRING_LENGTH
+	int "Maximum string length supported by LOG_PRINTK"
+	depends on LOG_PRINTK
+	depends on (!LOG_IMMEDIATE || USERSPACE)
+	default 128
+	help
+	  Array is allocated on the stack.
+
+if !LOG_IMMEDIATE
+
+config LOG_MODE_OVERFLOW
+	bool "Drop oldest message when full"
+	default y
+	help
+	  If enabled, then if there is no space to log a new message, the
+	  oldest one is dropped. If disabled, current message is dropped.
+
+config LOG_BLOCK_IN_THREAD
+	bool "Block in thread context on full"
+	help
+	  When enabled logger will block (if in the thread context) when
+	  internal logger buffer is full and new message cannot be allocated.
+
+config LOG_BLOCK_IN_THREAD_TIMEOUT_MS
+	int "Maximum time (in milliseconds) thread can be blocked"
+	default 1000
+	range -1 10000
+	depends on LOG_BLOCK_IN_THREAD
+	help
+	  If new buffer for a log message cannot be allocated in that time, log
+	  message is dropped. Forever blocking (-1) is possible however may lead
+	  to the logger deadlock if logging is enabled in threads used for
+	  logging (e.g. logger or shell thread).
+
+config LOG_PROCESS_TRIGGER_THRESHOLD
+	int "Number of buffered log messages before flushing"
+	default 10
+	help
+	  When number of buffered messages reaches the threshold thread is waken
+	  up. Log processing thread ID is provided during log initialization.
+	  Set 0 to disable the feature. If LOG_PROCESS_THREAD is enabled then
+	  this threshold is used by the internal thread.
+
+config LOG_PROCESS_THREAD
+	bool "Use internal thread for log processing"
+	depends on MULTITHREADING
+	default y
+	help
+	  When enabled thread is created by the logger subsystem. Thread is
+	  waken up periodically (see LOG_PROCESS_THREAD_SLEEP_MS) and whenever
+	  number of buffered messages exceeds the threshold (see
+	  LOG_PROCESS_TRIGGER_THR).
+
+if LOG_PROCESS_THREAD
+
+config LOG_PROCESS_THREAD_SLEEP_MS
+	int "Set internal log processing thread sleep period"
+	default 1000
+	help
+	  Log processing thread sleeps for requested period given in
+	  milliseconds. When waken up, thread process any buffered messages.
+
+config LOG_PROCESS_THREAD_STACK_SIZE
+	int "Stack size for the internal log processing thread"
+	default 2048 if COVERAGE_GCOV
+	default 1024 if NO_OPTIMIZATIONS
+	default 1024 if XTENSA
+	default 4096 if (X86 && X86_64)
+	default 4096 if ARM64
+	default 4096 if SPARC
+	default 2048 if (RISCV && 64BIT)
+	default 768
+	help
+	  Set the internal stack size for log processing thread.
+
+endif # LOG_PROCESS_THREAD
+
+config LOG_BUFFER_SIZE
+	int "Number of bytes dedicated for the logger internal buffer"
+	default 1024
+	range 128 65536
+	help
+	  Number of bytes dedicated for the logger internal buffer.
+
+endif # !LOG_IMMEDIATE
+
+if LOG_MODE_DEFERRED
+
+config LOG_DETECT_MISSED_STRDUP
+	bool "Detect missed handling of transient strings"
+	default y if !LOG_IMMEDIATE
+	help
+	  If enabled, logger will assert and log error message is it detects
+	  that string format specifier (%s) and string address which is not from
+	  read only memory section and not from pool used for string duplicates.
+	  String argument must be duplicated in that case using log_strdup().
+	  Detection is performed during log processing thus it does not impact
+	  logging timing.
+
+config LOG_STRDUP_MAX_STRING
+	int "Longest string that can be duplicated using log_strdup()"
+	default 46 if NETWORKING
+	default 32
+	help
+	  Longer strings are truncated.
+
+config LOG_STRDUP_BUF_COUNT
+	int "Number of buffers in the pool used by log_strdup()"
+	default 4
+	help
+	  Number of calls to log_strdup() which can be pending before flushed
+	  to output. If "<log_strdup alloc failed>" message is seen in the log
+	  output, it means this value is too small and should be increased.
+	  Each entry takes CONFIG_LOG_STRDUP_MAX_STRING bytes of memory plus
+	  some additional fixed overhead.
+
+config LOG_STRDUP_POOL_PROFILING
+	bool "Enable profiling of pool used for log_strdup()"
+	help
+	  When enabled, maximal utilization of the pool is tracked. It can
+	  be read out using shell command.
+
+endif # LOG_MODE_DEFERRED
+
+endif # !LOG_MINIMAL
+
+endmenu

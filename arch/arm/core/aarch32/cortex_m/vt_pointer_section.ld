@@ -1,3 +1,7 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 /* Copied from linker.ld */
 
 /* Reserved 4 bytes to save vector table base address */

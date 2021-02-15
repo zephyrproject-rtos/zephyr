@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT fsl_imx7d_i2c
+#define DT_DRV_COMPAT fsl_imx21_i2c
 
 #include <errno.h>
 #include <drivers/i2c.h>
@@ -48,7 +48,7 @@ struct i2c_imx_data {
 };
 
 static bool i2c_imx_write(const struct device *dev, uint8_t *txBuffer,
-			  uint8_t txSize)
+			  uint32_t txSize)
 {
 	I2C_Type *base = DEV_BASE(dev);
 	struct i2c_imx_data *data = DEV_DATA(dev);
@@ -82,7 +82,7 @@ static bool i2c_imx_write(const struct device *dev, uint8_t *txBuffer,
 }
 
 static void i2c_imx_read(const struct device *dev, uint8_t *rxBuffer,
-			 uint8_t rxSize)
+			 uint32_t rxSize)
 {
 	I2C_Type *base = DEV_BASE(dev);
 	struct i2c_imx_data *data = DEV_DATA(dev);
@@ -191,7 +191,6 @@ static int i2c_imx_transfer(const struct device *dev, struct i2c_msg *msgs,
 	I2C_Type *base = DEV_BASE(dev);
 	struct i2c_imx_data *data = DEV_DATA(dev);
 	struct i2c_master_transfer *transfer = &data->transfer;
-	uint8_t *buf, *buf_end;
 	uint16_t timeout = UINT16_MAX;
 	int result = -EIO;
 
@@ -233,13 +232,13 @@ static int i2c_imx_transfer(const struct device *dev, struct i2c_msg *msgs,
 		}
 
 		/* Transfer data */
-		buf = msgs->buf;
-		buf_end = buf + msgs->len;
-		if ((msgs->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
-			i2c_imx_read(dev, msgs->buf, msgs->len);
-		} else {
-			if (!i2c_imx_write(dev, msgs->buf, msgs->len)) {
-				goto finish; /* No ACK received */
+		if (msgs->len) {
+			if ((msgs->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
+				i2c_imx_read(dev, msgs->buf, msgs->len);
+			} else {
+				if (!i2c_imx_write(dev, msgs->buf, msgs->len)) {
+					goto finish; /* No ACK received */
+				}
 			}
 		}
 
@@ -372,8 +371,9 @@ static const struct i2c_driver_api i2c_imx_driver_api = {
 									\
 	static struct i2c_imx_data i2c_imx_data_##n;			\
 									\
-	DEVICE_AND_API_INIT(i2c_imx_##n, DT_INST_LABEL(n),		\
+	DEVICE_DT_INST_DEFINE(n,					\
 				&i2c_imx_init,				\
+				device_pm_control_nop,			\
 				&i2c_imx_data_##n, &i2c_imx_config_##n,	\
 				POST_KERNEL,				\
 				CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
@@ -385,7 +385,7 @@ static const struct i2c_driver_api i2c_imx_driver_api = {
 									\
 		IRQ_CONNECT(DT_INST_IRQN(n),				\
 			    DT_INST_IRQ(n, priority),			\
-			    i2c_imx_isr, DEVICE_GET(i2c_imx_##n), 0);	\
+			    i2c_imx_isr, DEVICE_DT_INST_GET(n), 0);	\
 									\
 		irq_enable(DT_INST_IRQN(n));				\
 	}

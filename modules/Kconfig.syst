@@ -6,3 +6,18 @@ config MIPI_SYST_LIB
 	select REQUIRES_FULL_LIBC
 	help
 	  This option enables the MIPI SyS-T Library
+
+if MIPI_SYST_LIB
+
+config MIPI_SYST_STP
+	bool "STP Transport Layer for MIPI SyS-T"
+	help
+	  This option enables support for the STP
+	  Transport Layer for MIPI SyS-T
+
+config MIPI_SYST_RAW_DATA
+	bool "output MIPI SyS-T raw data packet"
+	help
+	  This option outputs MIPI SyS-T raw data packet
+
+endif

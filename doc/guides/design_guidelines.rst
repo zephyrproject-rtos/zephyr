@@ -87,8 +87,9 @@ practices should be followed.
   enabled should be provided unconditionally.  Add a note in the
   description that the function is available only when the specified
   feature is enabled, referencing the required Kconfig symbol by name.
-  (In cases where the function is used but not enabled a link-time error
-  will be generated.)
+  In the cases where the function is used but not enabled the definition
+  of the function shall be excluded from compilation, so references to
+  the unsupported API will result in a link-time error.
 * Where code specific to the feature is isolated in a source file that
   has no other content that file should be conditionally included in
   ``CMakeLists.txt``::

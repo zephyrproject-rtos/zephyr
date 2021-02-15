@@ -20,8 +20,105 @@
 #include <ztest.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <time.h>
 
 #define BUF_LEN 10
+
+
+/* The access test allocates objects of this type and dereferences members. */
+union aligntest {
+	long long       thelonglong;
+	double          thedouble;
+	uintmax_t       theuintmax_t;
+	void            (*thepfunc)(void);
+	time_t          thetime_t;
+};
+
+/* Make sure we can access some built-in types. */
+static void do_the_access(volatile union aligntest *aptr)
+{
+	aptr->thelonglong = 2;
+	aptr->thelonglong;
+
+	if (IS_ENABLED(CONFIG_FPU)) {
+		aptr->thedouble = 3.0;
+		aptr->thedouble;
+	}
+
+	aptr->theuintmax_t = 4;
+	aptr->theuintmax_t;
+
+	aptr->thepfunc = test_main;
+	aptr->thepfunc;
+
+	aptr->thetime_t = 3;
+	aptr->thetime_t;
+}
+
+#define PRINT_TYPE_INFO(_t) \
+	TC_PRINT("    %-14s  %4zu  %5zu\n", #_t, sizeof(_t), __alignof__(_t))
+
+void test_malloc_align(void)
+{
+	char *ptr[64] = { NULL };
+
+	TC_PRINT("  Compiler type info for " CONFIG_ARCH " " CONFIG_BOARD "\n");
+	TC_PRINT("    TYPE            SIZE  ALIGN\n");
+	PRINT_TYPE_INFO(int);
+	PRINT_TYPE_INFO(long);
+	PRINT_TYPE_INFO(long long);
+	PRINT_TYPE_INFO(double);
+	PRINT_TYPE_INFO(size_t);
+	PRINT_TYPE_INFO(void *);
+	PRINT_TYPE_INFO(void (*)(void));
+	PRINT_TYPE_INFO(time_t);
+
+	/* Tries to use the malloc() implementation when in different states. */
+	for (size_t i = 0; i < ARRAY_SIZE(ptr); i++) {
+		union aligntest *aptr = NULL;
+
+		ptr[i] = malloc(sizeof *(ptr[i]));
+		aptr = malloc(sizeof(*aptr));
+		if (aptr) {
+			do_the_access(aptr);
+		}
+		free(aptr);
+	}
+	for (size_t i = 0; i < ARRAY_SIZE(ptr); i++) {
+		free(ptr[i]);
+		ptr[i] = NULL;
+	}
+
+	for (size_t n = 0; n < ARRAY_SIZE(ptr); n++) {
+		union aligntest *aptr = NULL;
+
+		for (size_t i = 0; i < n; i++) {
+			ptr[i] = malloc(sizeof *(ptr[i]));
+		}
+		aptr = malloc(sizeof(*aptr));
+		if (aptr) {
+			do_the_access(aptr);
+		}
+		free(aptr);
+		for (size_t i = 0; i < n; i++) {
+			free(ptr[i]);
+			ptr[i] = NULL;
+		}
+	}
+
+	for (size_t n = 0; n < ARRAY_SIZE(ptr); n++) {
+		union aligntest *aptr = NULL;
+
+		ptr[n] = malloc(n);
+		aptr = malloc(sizeof(*aptr));
+		if (aptr) {
+			do_the_access(aptr);
+		}
+		free(aptr);
+		free(ptr[n]);
+		ptr[n] = NULL;
+	}
+}
 
 /**
  * @brief Test dynamic memory allocation using malloc
@@ -97,7 +194,6 @@ void test_realloc(void)
 	reloc_ptr = realloc(ptr, new_size);
 
 	zassert_not_null(reloc_ptr, "realloc failed, errno: %d", errno);
-	zassert_not_null((ptr), "malloc/realloc failed, errno: %d", errno);
 	ptr = reloc_ptr;
 
 	(void)memset(filled_buf, 'p', BUF_LEN);
@@ -169,7 +265,6 @@ void test_memalloc_all(void)
 
 	reloc_ptr = realloc(mlc_ptr, new_size);
 	zassert_not_null(reloc_ptr, "realloc failed, errno: %d", errno);
-	zassert_not_null((mlc_ptr), "malloc/realloc failed, errno: %d", errno);
 	mlc_ptr = reloc_ptr;
 
 	free(mlc_ptr);
@@ -199,6 +294,7 @@ __no_optimization void test_memalloc_max(void)
 void test_main(void)
 {
 	ztest_test_suite(test_c_lib_dynamic_memalloc,
+			 ztest_user_unit_test(test_malloc_align),
 			 ztest_user_unit_test(test_malloc),
 			 ztest_user_unit_test(test_free),
 			 ztest_user_unit_test(test_calloc),

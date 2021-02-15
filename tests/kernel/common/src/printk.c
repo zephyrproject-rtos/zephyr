@@ -15,21 +15,7 @@ void __printk_hook_install(int (*fn)(int));
 void *__printk_get_hook(void);
 int (*_old_char_out)(int);
 
-#ifndef CONFIG_PRINTK64
-
-char *expected = "22 113 10000 32768 40000 22\n"
-		 "p 112 -10000 -32768 -40000 -22\n"
-		 "0x1 0x01 0x0001 0x00000001 0x0000000000000001\n"
-		 "0x1 0x 1 0x   1 0x       1\n"
-		 "42 42 0042 00000042\n"
-		 "-42 -42 -042 -0000042\n"
-		 "42 42   42       42\n"
-		 "42 42 0042 00000042\n"
-		 "255     42    abcdef        42\n"
-		 "ERR -1 ERR ffffffffffffffff\n"
-;
-#else
-
+#if defined(CONFIG_CBPRINTF_FULL_INTEGRAL)
 char *expected = "22 113 10000 32768 40000 22\n"
 		 "p 112 -10000 -32768 -40000 -22\n"
 		 "0x1 0x01 0x0001 0x00000001 0x0000000000000001\n"
@@ -40,17 +26,34 @@ char *expected = "22 113 10000 32768 40000 22\n"
 		 "42 42 0042 00000042\n"
 		 "255     42    abcdef        42\n"
 		 "68719476735 -1 18446744073709551615 ffffffffffffffff\n"
+		 "0xcafebabe 0xbeef 0x2a\n"
 ;
-#endif
-
-#ifndef CONFIG_64BIT
-
-char *expected2 = "0xcafebabe 0x0000beef 0x0000002a\n";
-
-#else
-
-char *expected2 = "0xcafebabe 0x000000000000beef 0x000000000000002a\n";
-
+#elif defined(CONFIG_CBPRINTF_COMPLETE)
+char *expected = "22 113 10000 32768 40000 %llu\n"
+		 "p 112 -10000 -32768 -40000 %lld\n"
+		 "0x1 0x01 0x0001 0x00000001 0x0000000000000001\n"
+		 "0x1 0x 1 0x   1 0x       1\n"
+		 "42 42 0042 00000042\n"
+		 "-42 -42 -042 -0000042\n"
+		 "42 42   42       42\n"
+		 "42 42 0042 00000042\n"
+		 "255     42    abcdef        42\n"
+		 "%lld %lld %llu %llx\n"
+		 "0xcafebabe 0xbeef 0x2a\n"
+;
+#elif defined(CONFIG_CBPRINTF_NANO)
+char *expected = "22 113 10000 32768 40000 22\n"
+		 "p 112 -10000 -32768 -40000 -22\n"
+		 "0x1 0x01 0x0001 0x00000001 0x0000000000000001\n"
+		 "0x1 0x 1 0x   1 0x       1\n"
+		 "42 42 0042 00000042\n"
+		 "-42 -42 -042 -0000042\n"
+		 "42 42   42       42\n"
+		 "42 42 0042 00000042\n"
+		 "255     42    abcdef        42\n"
+		 "ERR -1 4294967295 ffffffff\n"
+		 "0xcafebabe 0xbeef 0x2a\n"
+;
 #endif
 
 size_t stv = 22;
@@ -97,6 +100,10 @@ void test_printk(void)
 {
 	int count;
 
+	if (IS_ENABLED(CONFIG_LOG_PRINTK)) {
+		ztest_test_skip();
+	}
+
 	_old_char_out = __printk_get_hook();
 	__printk_hook_install(ram_console_out);
 
@@ -110,18 +117,10 @@ void test_printk(void)
 	printk("%u %02u %04u %08u\n", 42, 42, 42, 42);
 	printk("%-8u%-6d%-4x  %8d\n", 0xFF, 42, 0xABCDEF, 42);
 	printk("%lld %lld %llu %llx\n", 0xFFFFFFFFFULL, -1LL, -1ULL, -1ULL);
+	printk("0x%x %p %-2p\n", hex, ptr, (char *)42);
 
 	pk_console[pos] = '\0';
 	zassert_true((strcmp(pk_console, expected) == 0), "printk failed");
-
-	/*
-	 * Test %p separately as its width depends on sizeof(void *)
-	 * regardless of CONFIG_PRINTK64.
-	 */
-	pos = 0;
-	printk("0x%x %p %-2p\n", hex, ptr, (char *)42);
-	pk_console[pos] = '\0';
-	zassert_true((strcmp(pk_console, expected2) == 0), "printk failed");
 
 	(void)memset(pk_console, 0, sizeof(pk_console));
 	count = 0;
@@ -149,6 +148,8 @@ void test_printk(void)
 	count += snprintk(pk_console + count, sizeof(pk_console) - count,
 			  "%lld %lld %llu %llx\n",
 			  0xFFFFFFFFFULL, -1LL, -1ULL, -1ULL);
+	count += snprintk(pk_console + count, sizeof(pk_console) - count,
+			  "0x%x %p %-2p\n", hex, ptr, (char *)42);
 	pk_console[count] = '\0';
 	zassert_true((strcmp(pk_console, expected) == 0), "snprintk failed");
 }

@@ -21,10 +21,15 @@
  */
 #define ESPI_XEC_VWIRE_SEND_TIMEOUT 100ul
 
-/* 100ms */
-#define MAX_OOB_TIMEOUT             100ul
+/* 200ms */
+#define MAX_OOB_TIMEOUT             200ul
 /* 1s */
 #define MAX_FLASH_TIMEOUT           1000ul
+
+/* While issuing flash erase command, it should be ensured that the transfer
+ * length specified is non-zero.
+ */
+#define ESPI_FLASH_ERASE_DUMMY	    0x01ul
 
 /* OOB maximum address configuration */
 #define ESPI_XEC_OOB_ADDR_MSW       0x1FFFul
@@ -524,25 +529,23 @@ static int espi_xec_send_oob(const struct device *dev,
 static int espi_xec_receive_oob(const struct device *dev,
 				struct espi_oob_packet *pckt)
 {
-	int ret;
 	uint8_t err_mask = MCHP_ESPI_OOB_RX_STS_IBERR |
 			MCHP_ESPI_OOB_RX_STS_OVRUN;
-	struct espi_xec_data *data = (struct espi_xec_data *)(dev->data);
 
 	if (ESPI_OOB_REGS->TX_STS & err_mask) {
 		return -EIO;
 	}
 
-	/* Enable Rx only when we want to receive data */
-	ESPI_OOB_REGS->RX_IEN |= MCHP_ESPI_OOB_RX_IEN;
-	ESPI_OOB_REGS->RX_CTRL |= MCHP_ESPI_OOB_RX_CTRL_AVAIL;
+#ifndef CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC
+	int ret;
+	struct espi_xec_data *data = (struct espi_xec_data *)(dev->data);
 
 	/* Wait until ISR or timeout */
 	ret = k_sem_take(&data->rx_lock, K_MSEC(MAX_OOB_TIMEOUT));
 	if (ret == -EAGAIN) {
 		return -ETIMEDOUT;
 	}
-
+#endif
 	/* Check if buffer passed to driver can fit the received buffer */
 	uint32_t rcvd_len = ESPI_OOB_REGS->RX_LEN & MCHP_ESPI_OOB_RX_LEN_MASK;
 
@@ -553,6 +556,12 @@ static int espi_xec_receive_oob(const struct device *dev,
 
 	pckt->len = rcvd_len;
 	memcpy(pckt->buf, slave_rx_mem, pckt->len);
+	memset(slave_rx_mem, 0, pckt->len);
+
+	/* Only after data has been copied from SRAM, indicate channel
+	 * is available for next packet
+	 */
+	ESPI_OOB_REGS->RX_CTRL |= MCHP_ESPI_OOB_RX_CTRL_AVAIL;
 
 	return 0;
 }
@@ -651,7 +660,55 @@ static int espi_xec_flash_write(const struct device *dev,
 		return -EIO;
 	}
 
-	memcpy(pckt->buf, slave_rx_mem, pckt->len);
+	return 0;
+}
+
+static int espi_xec_flash_erase(const struct device *dev,
+				struct espi_flash_packet *pckt)
+{
+	int ret;
+	uint32_t status;
+	uint32_t err_mask = MCHP_ESPI_FC_STS_IBERR |
+			MCHP_ESPI_FC_STS_OVRUN |
+			MCHP_ESPI_FC_STS_FAIL |
+			MCHP_ESPI_FC_STS_BADREQ;
+
+	struct espi_xec_data *data = (struct espi_xec_data *)(dev->data);
+
+	LOG_DBG("%s", __func__);
+
+	if (!(ESPI_FC_REGS->STS & MCHP_ESPI_FC_STS_CHAN_EN)) {
+		LOG_ERR("Flash channel is disabled");
+		return -EIO;
+	}
+
+	if ((ESPI_FC_REGS->CFG & MCHP_ESPI_FC_CFG_BUSY)) {
+		LOG_ERR("Flash channel is busy");
+		return -EBUSY;
+	}
+
+	/* Clear status register */
+	status = ESPI_FC_REGS->STS;
+	ESPI_FC_REGS->STS = status;
+
+	ESPI_FC_REGS->FL_ADDR_MSW = 0;
+	ESPI_FC_REGS->FL_ADDR_LSW = pckt->flash_addr;
+	ESPI_FC_REGS->XFR_LEN = ESPI_FLASH_ERASE_DUMMY;
+	ESPI_FC_REGS->CTRL = MCHP_ESPI_FC_CTRL_FUNC(MCHP_ESPI_FC_CTRL_ERS0);
+	ESPI_FC_REGS->CTRL |= MCHP_ESPI_FC_CTRL_START;
+
+	/* Wait until ISR or timeout */
+	ret = k_sem_take(&data->flash_lock, K_MSEC(MAX_FLASH_TIMEOUT));
+	if (ret == -EAGAIN) {
+		LOG_ERR("%s timeout", __func__);
+		return -ETIMEDOUT;
+	}
+
+	if (ESPI_FC_REGS->STS & err_mask) {
+		LOG_ERR("%s err: %x", __func__, err_mask);
+		ESPI_FC_REGS->STS = err_mask;
+		return -EIO;
+	}
 
 	return 0;
 }
@@ -699,6 +756,12 @@ static void espi_init_oob(const struct device *dev)
 	/* Enable OOB Tx channel enable change status interrupt */
 	ESPI_OOB_REGS->TX_IEN |= MCHP_ESPI_OOB_TX_IEN_CHG_EN |
 				MCHP_ESPI_OOB_TX_IEN_DONE;
+
+	/* Enable Rx channel to receive data any time
+	 * there are case where OOB is not initiated by a previous OOB Tx
+	 */
+	ESPI_OOB_REGS->RX_IEN |= MCHP_ESPI_OOB_RX_IEN;
+	ESPI_OOB_REGS->RX_CTRL |= MCHP_ESPI_OOB_RX_CTRL_AVAIL;
 }
 #endif
 
@@ -709,6 +772,10 @@ static void espi_init_flash(const struct device *dev)
 	    (struct espi_xec_config *)(dev->config);
 
 	LOG_DBG("%s", __func__);
+
+	/* Need to clear status done when ROM boots in MAF */
+	LOG_DBG("%s ESPI_FC_REGS->CFG %X", __func__, ESPI_FC_REGS->CFG);
+	ESPI_FC_REGS->STS = MCHP_ESPI_FC_STS_DONE;
 
 	/* Enable interrupts */
 	MCHP_GIRQ_ENSET(config->bus_girq_id) = BIT(MCHP_ESPI_FC_GIRQ_POS);
@@ -891,6 +958,11 @@ static void espi_oob_down_isr(const struct device *dev)
 {
 	uint32_t status;
 	struct espi_xec_data *data = (struct espi_xec_data *)(dev->data);
+#ifdef CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC
+	struct espi_event evt = { .evt_type = ESPI_BUS_EVENT_OOB_RECEIVED,
+				  .evt_details = 0,
+				  .evt_data = 0 };
+#endif
 
 	status = ESPI_OOB_REGS->RX_STS;
 
@@ -899,10 +971,12 @@ static void espi_oob_down_isr(const struct device *dev)
 		/* Register is write-on-clear, ensure only 1 bit is affected */
 		ESPI_OOB_REGS->RX_STS = MCHP_ESPI_OOB_RX_STS_DONE;
 
-		/* Disable Rx interrupt */
-		ESPI_OOB_REGS->RX_IEN &= ~MCHP_ESPI_OOB_RX_IEN;
-
+#ifndef CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC
 		k_sem_give(&data->rx_lock);
+#else
+		evt.evt_details = ESPI_OOB_REGS->RX_LEN & MCHP_ESPI_OOB_RX_LEN_MASK;
+		espi_send_callbacks(&data->callbacks, dev, evt);
+#endif
 	}
 }
 
@@ -1275,6 +1349,7 @@ static const struct espi_driver_api espi_xec_driver_api = {
 	.receive_oob = espi_xec_receive_oob,
 	.flash_read = espi_xec_flash_read,
 	.flash_write = espi_xec_flash_write,
+	.flash_erase = espi_xec_flash_erase,
 	.manage_callback = espi_xec_manage_callback,
 	.read_lpc_request = espi_xec_read_lpc_request,
 	.write_lpc_request = espi_xec_write_lpc_request,
@@ -1289,8 +1364,8 @@ static const struct espi_xec_config espi_xec_config = {
 	.pc_girq_id = DT_INST_PROP(0, pc_girq),
 };
 
-DEVICE_AND_API_INIT(espi_xec_0, DT_INST_LABEL(0),
-		    &espi_xec_init, &espi_xec_data, &espi_xec_config,
+DEVICE_DT_INST_DEFINE(0, &espi_xec_init, device_pm_control_nop,
+		    &espi_xec_data, &espi_xec_config,
 		    PRE_KERNEL_2, CONFIG_ESPI_INIT_PRIORITY,
 		    &espi_xec_driver_api);
 
@@ -1318,7 +1393,9 @@ static int espi_xec_init(const struct device *dev)
 	ESPI_CAP_REGS->OOB_CAP |= MCHP_ESPI_OOB_CAP_MAX_PLD_SZ_73;
 
 	k_sem_init(&data->tx_lock, 0, 1);
+#ifndef CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC
 	k_sem_init(&data->rx_lock, 0, 1);
+#endif /* CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC */
 #else
 	ESPI_CAP_REGS->GLB_CAP0 &= ~MCHP_ESPI_GBL_CAP0_OOB_SUPP;
 #endif
@@ -1387,7 +1464,7 @@ static int espi_xec_init(const struct device *dev)
 	IRQ_CONNECT(DT_INST_IRQN(0),
 		    DT_INST_IRQ(0, priority),
 		    espi_xec_bus_isr,
-		    DEVICE_GET(espi_xec_0), 0);
+		    DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQN(0));
 
 	/* Enable aggregated interrupt block for eSPI VWire events */
@@ -1395,7 +1472,7 @@ static int espi_xec_init(const struct device *dev)
 	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 1, irq),
 		    DT_INST_IRQ_BY_IDX(0, 1, priority),
 		    espi_xec_vw_isr,
-		    DEVICE_GET(espi_xec_0), 0);
+		    DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQ_BY_IDX(0, 1, irq));
 
 	/* Enable aggregated interrupt block for eSPI peripheral channel */
@@ -1403,7 +1480,7 @@ static int espi_xec_init(const struct device *dev)
 	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 2, irq),
 		    DT_INST_IRQ_BY_IDX(0, 2, priority),
 		    espi_xec_periph_isr,
-		    DEVICE_GET(espi_xec_0), 0);
+		    DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQ_BY_IDX(0, 2, irq));
 
 	return 0;

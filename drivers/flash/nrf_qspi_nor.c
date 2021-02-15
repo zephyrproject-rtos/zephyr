@@ -13,8 +13,10 @@
 #include <logging/log.h>
 
 #include "spi_nor.h"
+#include "jesd216.h"
 #include "flash_priv.h"
 #include <nrfx_qspi.h>
+#include <hal/nrf_clock.h>
 
 struct qspi_nor_config {
        /* JEDEC id from devicetree */
@@ -24,8 +26,6 @@ struct qspi_nor_config {
        uint32_t size;
 };
 
-#define QSPI_NOR_MAX_ID_LEN SPI_NOR_MAX_ID_LEN
-
 /* Status register bits */
 #define QSPI_SECTOR_SIZE SPI_NOR_SECTOR_SIZE
 #define QSPI_BLOCK_SIZE SPI_NOR_BLOCK_SIZE
@@ -33,10 +33,22 @@ struct qspi_nor_config {
 /* instance 0 flash size in bytes */
 #define INST_0_BYTES (DT_INST_PROP(0, size) / 8)
 
+#define INST_0_SCK_FREQUENCY DT_INST_PROP(0, sck_frequency)
+BUILD_ASSERT(INST_0_SCK_FREQUENCY >= (NRF_QSPI_BASE_CLOCK_FREQ / 16),
+	     "Unsupported SCK frequency.");
+
 /* for accessing devicetree properties of the bus node */
 #define QSPI_NODE DT_BUS(DT_DRV_INST(0))
 #define QSPI_PROP_AT(prop, idx) DT_PROP_BY_IDX(QSPI_NODE, prop, idx)
 #define QSPI_PROP_LEN(prop) DT_PROP_LEN(QSPI_NODE, prop)
+
+#define INST_0_QER _CONCAT(JESD216_DW15_QER_, \
+			   DT_ENUM_TOKEN(DT_DRV_INST(0), \
+					 quad_enable_requirements))
+
+BUILD_ASSERT(((INST_0_QER == JESD216_DW15_QER_NONE)
+	      || (INST_0_QER == JESD216_DW15_QER_S1B6)),
+	     "Driver only supports NONE or S1B6 for quad-enable-requirements");
 
 #define WORD_SIZE 4
 
@@ -77,14 +89,22 @@ struct qspi_cmd {
 
 /**
  * @brief Structure for defining the QSPI NOR access
- * @param sem The semaphore to access to the flash
- * @param sync The semaphore to ensure that transfer has finished
- * @param write_protection Indicates if write protection for flash
- *  device is enabled
  */
 struct qspi_nor_data {
+#ifdef CONFIG_MULTITHREADING
+	/* The semaphore to control exclusive access to the device. */
 	struct k_sem sem;
+	/* The semaphore to indicate that transfer has completed. */
 	struct k_sem sync;
+#else /* CONFIG_MULTITHREADING */
+	/* A flag that signals completed transfer when threads are
+	 * not enabled.
+	 */
+	volatile bool ready;
+#endif /* CONFIG_MULTITHREADING */
+	/* Indicates if write protection for flash device is
+	 * enabled.
+	 */
 	bool write_protection;
 };
 
@@ -101,7 +121,7 @@ static inline int qspi_get_mode(bool cpol, bool cpha)
 	return ret;
 }
 
-static inline bool qspi_is_used_write_quad_mode(nrf_qspi_writeoc_t lines)
+static inline bool qspi_write_is_quad(nrf_qspi_writeoc_t lines)
 {
 	switch (lines) {
 	case NRF_QSPI_WRITEOC_PP4IO:
@@ -112,7 +132,7 @@ static inline bool qspi_is_used_write_quad_mode(nrf_qspi_writeoc_t lines)
 	}
 }
 
-static inline bool qspi_is_used_read_quad_mode(nrf_qspi_readoc_t lines)
+static inline bool qspi_read_is_quad(nrf_qspi_readoc_t lines)
 {
 	switch (lines) {
 	case NRF_QSPI_READOC_READ4IO:
@@ -174,30 +194,6 @@ static inline int qspi_get_lines_read(uint8_t lines)
 	return ret;
 }
 
-/**
- * @brief Get QSPI prescaler
- * Get supported frequency prescaler not exceeding the requested one.
- *
- * @param frequency - desired QSPI bus frequency
- * @retval NRF_SPI_PRESCALER in case of success or;
- *		   -EINVAL in case of failure
- */
-static inline nrf_qspi_frequency_t get_nrf_qspi_prescaler(uint32_t frequency)
-{
-	register int ret = -EINVAL;
-
-	if (frequency < 2000000UL) {
-		ret = -EINVAL;
-	} else if (frequency >= 32000000UL) {
-		ret = NRF_QSPI_FREQ_32MDIV1;
-	} else {
-		ret = (nrf_qspi_frequency_t)((32000000UL / frequency) - 1);
-	}
-
-	__ASSERT(ret != -EINVAL, "Invalid QSPI frequency");
-	return ret;
-}
-
 static inline nrf_qspi_addrmode_t qspi_get_address_size(bool addr_size)
 {
 	return addr_size ? NRF_QSPI_ADDRMODE_32BIT : NRF_QSPI_ADDRMODE_24BIT;
@@ -213,8 +209,10 @@ static inline nrf_qspi_addrmode_t qspi_get_address_size(bool addr_size)
  * @brief Main configuration structure
  */
 static struct qspi_nor_data qspi_nor_memory_data = {
+#ifdef CONFIG_MULTITHREADING
 	.sem = Z_SEM_INITIALIZER(qspi_nor_memory_data.sem, 1, 1),
 	.sync = Z_SEM_INITIALIZER(qspi_nor_memory_data.sync, 0, 1),
+#endif /* CONFIG_MULTITHREADING */
 };
 
 /**
@@ -244,16 +242,24 @@ static inline struct qspi_nor_data *get_dev_data(const struct device *dev)
 
 static inline void qspi_lock(const struct device *dev)
 {
+#ifdef CONFIG_MULTITHREADING
 	struct qspi_nor_data *dev_data = get_dev_data(dev);
 
 	k_sem_take(&dev_data->sem, K_FOREVER);
+#else /* CONFIG_MULTITHREADING */
+	ARG_UNUSED(dev);
+#endif /* CONFIG_MULTITHREADING */
 }
 
 static inline void qspi_unlock(const struct device *dev)
 {
+#ifdef CONFIG_MULTITHREADING
 	struct qspi_nor_data *dev_data = get_dev_data(dev);
 
 	k_sem_give(&dev_data->sem);
+#else /* CONFIG_MULTITHREADING */
+	ARG_UNUSED(dev);
+#endif /* CONFIG_MULTITHREADING */
 }
 
 static inline void qspi_wait_for_completion(const struct device *dev,
@@ -262,13 +268,28 @@ static inline void qspi_wait_for_completion(const struct device *dev,
 	struct qspi_nor_data *dev_data = get_dev_data(dev);
 
 	if (res == NRFX_SUCCESS) {
+#ifdef CONFIG_MULTITHREADING
 		k_sem_take(&dev_data->sync, K_FOREVER);
+#else /* CONFIG_MULTITHREADING */
+		unsigned int key = irq_lock();
+
+		while (!dev_data->ready) {
+			k_cpu_atomic_idle(key);
+			key = irq_lock();
+		}
+		dev_data->ready = false;
+		irq_unlock(key);
+#endif /* CONFIG_MULTITHREADING */
 	}
 }
 
 static inline void qspi_complete(struct qspi_nor_data *dev_data)
 {
+#ifdef CONFIG_MULTITHREADING
 	k_sem_give(&dev_data->sync);
+#else /* CONFIG_MULTITHREADING */
+	dev_data->ready = true;
+#endif /* CONFIG_MULTITHREADING */
 }
 
 /**
@@ -288,37 +309,97 @@ static void qspi_handler(nrfx_qspi_evt_t event, void *p_context)
 }
 
 
-/* QSPI send custom command */
-static int qspi_send_cmd(const struct device *dev, const struct qspi_cmd *cmd)
+/* QSPI send custom command.
+ *
+ * If this is used for both send and receive the buffer sizes must be
+ * equal and cover the whole transaction.
+ */
+static int qspi_send_cmd(const struct device *dev, const struct qspi_cmd *cmd,
+			 bool wren)
 {
 	/* Check input parameters */
 	if (!cmd) {
 		return -EINVAL;
 	}
 
-	qspi_lock(dev);
+	const void *tx_buf = NULL;
+	size_t tx_len = 0;
+	void *rx_buf = NULL;
+	size_t rx_len = 0;
+	size_t xfer_len = sizeof(cmd->op_code);
+
+	if (cmd->tx_buf) {
+		tx_buf = cmd->tx_buf->buf;
+		tx_len = cmd->tx_buf->len;
+	}
+
+	if (cmd->rx_buf) {
+		rx_buf = cmd->rx_buf->buf;
+		rx_len = cmd->rx_buf->len;
+	}
+
+	if ((rx_len != 0) && (tx_len != 0)) {
+		if (rx_len != tx_len) {
+			return -EINVAL;
+		}
+
+		xfer_len += tx_len;
+	} else {
+		/* At least one of these is zero. */
+		xfer_len += tx_len + rx_len;
+	}
+
+	if (xfer_len > NRF_QSPI_CINSTR_LEN_9B) {
+		LOG_WRN("cinstr %02x transfer too long: %zu",
+			cmd->op_code, xfer_len);
+		return -EINVAL;
+	}
 
 	nrf_qspi_cinstr_conf_t cinstr_cfg = {
 		.opcode = cmd->op_code,
+		.length = xfer_len,
 		.io2_level = true,
 		.io3_level = true,
 		.wipwait = false,
-		.wren = true,
+		.wren = wren,
 	};
-	cinstr_cfg.length = sizeof(cmd->op_code);
-	if ((cmd->tx_buf != 0) && (cmd->rx_buf != 0)) {
-		cinstr_cfg.length += cmd->tx_buf->len + cmd->rx_buf->len;
-	} else if ((cmd->tx_buf != 0) && (cmd->rx_buf == 0)) {
-		cinstr_cfg.length += cmd->tx_buf->len;
-	} else if ((cmd->tx_buf == 0) && (cmd->rx_buf != 0)) {
-		cinstr_cfg.length += cmd->rx_buf->len;
-	}
 
-	int res = nrfx_qspi_cinstr_xfer(&cinstr_cfg, cmd->tx_buf->buf,
-					cmd->rx_buf->buf);
+	qspi_lock(dev);
+
+	int res = nrfx_qspi_cinstr_xfer(&cinstr_cfg, tx_buf, rx_buf);
 
 	qspi_unlock(dev);
 	return qspi_get_zephyr_ret_code(res);
+}
+
+/* RDSR wrapper.  Negative value is error. */
+static int qspi_rdsr(const struct device *dev)
+{
+	uint8_t sr = -1;
+	const struct qspi_buf sr_buf = {
+		.buf = &sr,
+		.len = sizeof(sr),
+	};
+	struct qspi_cmd cmd = {
+		.op_code = SPI_NOR_CMD_RDSR,
+		.rx_buf = &sr_buf,
+	};
+	int ret = qspi_send_cmd(dev, &cmd, false);
+
+	return (ret < 0) ? ret : sr;
+}
+
+/* Wait until RDSR confirms write is not in progress. */
+static int qspi_wait_while_writing(const struct device *dev)
+{
+	int ret;
+
+	do {
+		ret = qspi_rdsr(dev);
+	} while ((ret >= 0)
+		 && ((ret & SPI_NOR_WIP_BIT) != 0U));
+
+	return (ret < 0) ? ret : 0;
 }
 
 /* QSPI erase */
@@ -423,7 +504,9 @@ static inline void qspi_fill_init_struct(nrfx_qspi_config_t *initstruct)
 
 	/* Configure physical interface */
 	initstruct->phy_if.sck_freq =
-		get_nrf_qspi_prescaler(DT_INST_PROP(0, sck_frequency));
+		(INST_0_SCK_FREQUENCY > NRF_QSPI_BASE_CLOCK_FREQ)
+		? NRF_QSPI_FREQ_DIV1
+		: (NRF_QSPI_BASE_CLOCK_FREQ / INST_0_SCK_FREQUENCY) - 1;
 	initstruct->phy_if.sck_delay = DT_INST_PROP(0, sck_delay);
 	initstruct->phy_if.spi_mode = qspi_get_mode(DT_INST_PROP(0, cpol),
 						    DT_INST_PROP(0, cpha));
@@ -445,35 +528,128 @@ static int qspi_nrfx_configure(const struct device *dev)
 	qspi_fill_init_struct(&QSPIconfig);
 
 	nrfx_err_t res = nrfx_qspi_init(&QSPIconfig, qspi_handler, dev_data);
+	int ret = qspi_get_zephyr_ret_code(res);
 
-	if (res == NRFX_SUCCESS) {
-		/* If quad transfer was chosen - enable it now */
-		if ((qspi_is_used_write_quad_mode(QSPIconfig.prot_if.writeoc))
-		    || (qspi_is_used_read_quad_mode(QSPIconfig.prot_if.readoc))) {
+	if ((ret == 0)
+	    && (INST_0_QER != JESD216_DW15_QER_NONE)) {
+		/* Set QE to match transfer mode.  If not using quad
+		 * it's OK to leave QE set, but doing so prevents use
+		 * of WP#/RESET#/HOLD# which might be useful.
+		 *
+		 * Note build assert above ensures QER is S1B6.  Other
+		 * options require more logic.
+		 */
 
-			/* WRITE ENABLE has to be sent before QUAR ENABLE */
-			struct qspi_cmd cmd = { .op_code = SPI_NOR_CMD_WREN };
+		ret = qspi_rdsr(dev);
+		if (ret < 0) {
+			LOG_ERR("RDSR failed: %d", ret);
+			return ret;
+		}
 
-			if (qspi_send_cmd(dev, &cmd) != 0) {
-				return -EIO;
+		uint8_t sr = (uint8_t)ret;
+		bool qe_value =
+			(qspi_write_is_quad(QSPIconfig.prot_if.writeoc))
+			|| (qspi_read_is_quad(QSPIconfig.prot_if.readoc));
+		const uint8_t qe_mask = BIT(6); /* only S1B6 */
+		bool qe_state = ((sr & qe_mask) != 0U);
+
+		LOG_DBG("RDSR %02x QE %d need %d: %s", sr, qe_state, qe_value,
+			(qe_state != qe_value) ? "updating" : "no-change");
+
+		ret = 0;
+		if (qe_state != qe_value) {
+			const struct qspi_buf sr_buf = {
+				.buf = &sr,
+				.len = sizeof(sr),
+			};
+			struct qspi_cmd cmd = {
+				.op_code = SPI_NOR_CMD_WRSR,
+				.tx_buf = &sr_buf,
+			};
+
+			sr ^= qe_mask;
+			ret = qspi_send_cmd(dev, &cmd, true);
+
+			/* Writing SR can take some time, and further
+			 * commands sent while it's happening can be
+			 * corrupted.  Wait.
+			 */
+			if (ret == 0) {
+				ret = qspi_wait_while_writing(dev);
 			}
+		}
 
-			uint8_t tx = BIT(CONFIG_NORDIC_QSPI_NOR_QE_BIT);
-
-			const struct qspi_buf tx_buff = { .buf = &tx, .len = sizeof(tx), };
-
-			cmd.op_code = SPI_NOR_CMD_WRSR;
-			cmd.tx_buf = &tx_buff;
-			cmd.rx_buf = NULL;
-
-			if (qspi_send_cmd(dev, &cmd) != 0) {
-				return -EIO;
-			}
+		if (ret < 0) {
+			LOG_ERR("QE %s failed: %d", qe_value ? "set" : "clear",
+				ret);
 		}
 	}
 
+	return ret;
+}
+
+static int qspi_read_jedec_id(const struct device *dev,
+				     uint8_t *id)
+{
+	const struct qspi_buf rx_buf = {
+		.buf = id,
+		.len = 3
+	};
+	const struct qspi_cmd cmd = {
+		.op_code = SPI_NOR_CMD_RDID,
+		.rx_buf = &rx_buf,
+	};
+
+	return qspi_send_cmd(dev, &cmd, false);
+}
+
+#if defined(CONFIG_FLASH_JESD216_API)
+
+static int qspi_sfdp_read(const struct device *dev, off_t offset,
+			  void *data, size_t len)
+{
+	__ASSERT(data != NULL, "null destination");
+
+	uint8_t addr_buf[] = {
+		offset >> 16,
+		offset >> 8,
+		offset,
+		0,		/* wait state */
+	};
+	nrf_qspi_cinstr_conf_t cinstr_cfg = {
+		.opcode = JESD216_CMD_READ_SFDP,
+		.length = NRF_QSPI_CINSTR_LEN_1B,
+		.io2_level = true,
+		.io3_level = true,
+	};
+
+	qspi_lock(dev);
+
+	int res = nrfx_qspi_lfm_start(&cinstr_cfg);
+
+	if (res != NRFX_SUCCESS) {
+		LOG_DBG("lfm_start: %x", res);
+		goto out;
+	}
+
+	res = nrfx_qspi_lfm_xfer(addr_buf, NULL, sizeof(addr_buf), false);
+	if (res != NRFX_SUCCESS) {
+		LOG_DBG("lfm_xfer addr: %x", res);
+		goto out;
+	}
+
+	res = nrfx_qspi_lfm_xfer(NULL, data, len, true);
+	if (res != NRFX_SUCCESS) {
+		LOG_DBG("lfm_xfer read: %x", res);
+		goto out;
+	}
+
+out:
+	qspi_unlock(dev);
 	return qspi_get_zephyr_ret_code(res);
 }
+
+#endif /* CONFIG_FLASH_JESD216_API */
 
 /**
  * @brief Retrieve the Flash JEDEC ID and compare it with the one expected
@@ -486,25 +662,17 @@ static int qspi_nrfx_configure(const struct device *dev)
 static inline int qspi_nor_read_id(const struct device *dev,
 				   const struct qspi_nor_config *const flash_id)
 {
-	uint8_t rx_b[QSPI_NOR_MAX_ID_LEN];
-	const struct qspi_buf q_rx_buf = {
-		.buf = rx_b,
-		.len = QSPI_NOR_MAX_ID_LEN
-	};
-	const struct qspi_cmd cmd = {
-		.op_code = SPI_NOR_CMD_RDID,
-		.rx_buf = &q_rx_buf,
-		.tx_buf = NULL
-	};
+	uint8_t id[SPI_NOR_MAX_ID_LEN];
+	int ret = qspi_read_jedec_id(dev, id);
 
-	if (qspi_send_cmd(dev, &cmd) != 0) {
+	if (ret != 0) {
 		return -EIO;
 	}
 
-	if (memcmp(flash_id->id, rx_b, QSPI_NOR_MAX_ID_LEN) != 0) {
-		LOG_ERR("flash id error. Extected: [%d %d %d], got: [%d %d %d]",
-			flash_id->id[0], flash_id->id[1], flash_id->id[2],
-			rx_b[0], rx_b[1], rx_b[2]);
+	if (memcmp(flash_id->id, id, SPI_NOR_MAX_ID_LEN) != 0) {
+		LOG_ERR("JEDEC id [%02x %02x %02x] expect [%02x %02x %02x]",
+			id[0], id[1], id[2],
+			flash_id->id[0], flash_id->id[1], flash_id->id[2]);
 		return -ENODEV;
 	}
 
@@ -716,7 +884,7 @@ static int qspi_nor_write(const struct device *dev, off_t addr,
 
 	if (size < 4U) {
 		res = write_sub_word(dev, addr, src, size);
-	} else if (((uintptr_t)src < CONFIG_SRAM_BASE_ADDRESS)) {
+	} else if (!nrfx_is_in_ram(src)) {
 		res = write_from_nvmc(dev, addr, src, size);
 	} else {
 		res = nrfx_qspi_write(src, size, addr);
@@ -763,7 +931,7 @@ static int qspi_nor_write_protection_set(const struct device *dev,
 
 	driver_data->write_protection = write_protect;
 
-	if (qspi_send_cmd(dev, &cmd) != 0) {
+	if (qspi_send_cmd(dev, &cmd, false) != 0) {
 		ret = -EIO;
 	}
 
@@ -803,6 +971,14 @@ static int qspi_nor_configure(const struct device *dev)
  */
 static int qspi_nor_init(const struct device *dev)
 {
+#if defined(CONFIG_SOC_SERIES_NRF53X)
+	/* Make sure the PCLK192M clock, from which the SCK frequency is
+	 * derived, is not prescaled (the default setting after reset is
+	 * "divide by 4").
+	 */
+	nrf_clock_hfclk192m_div_set(NRF_CLOCK, NRF_CLOCK_HFCLK_DIV_1);
+#endif
+
 	IRQ_CONNECT(DT_IRQN(QSPI_NODE), DT_IRQ(QSPI_NODE, priority),
 		    nrfx_isr, nrfx_qspi_irq_handler, 0);
 	return qspi_nor_configure(dev);
@@ -851,6 +1027,10 @@ static const struct flash_driver_api qspi_nor_api = {
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = qspi_nor_pages_layout,
 #endif
+#if defined(CONFIG_FLASH_JESD216_API)
+	.sfdp_read = qspi_sfdp_read,
+	.read_jedec_id = qspi_read_jedec_id,
+#endif /* CONFIG_FLASH_JESD216_API */
 };
 
 
@@ -859,7 +1039,7 @@ static const struct qspi_nor_config flash_id = {
 	.size = INST_0_BYTES,
 };
 
-DEVICE_AND_API_INIT(qspi_flash_memory, DT_INST_LABEL(0),
-		    &qspi_nor_init, &qspi_nor_memory_data,
-		    &flash_id, POST_KERNEL, CONFIG_NORDIC_QSPI_NOR_INIT_PRIORITY,
-		    &qspi_nor_api);
+DEVICE_DT_INST_DEFINE(0, &qspi_nor_init, device_pm_control_nop,
+		&qspi_nor_memory_data, &flash_id,
+		POST_KERNEL, CONFIG_NORDIC_QSPI_NOR_INIT_PRIORITY,
+		&qspi_nor_api);

@@ -7,6 +7,7 @@ import argparse
 import os
 import pathlib
 import pickle
+import platform
 import shutil
 import subprocess
 import sys
@@ -109,6 +110,8 @@ class Sign(Forceable):
                            are currently supported''')
         group.add_argument('-p', '--tool-path', default=None,
                            help='''path to the tool itself, if needed''')
+        group.add_argument('-D', '--tool-data', default=None,
+                           help='''path to tool data/configuration directory, if needed''')
         group.add_argument('tool_args', nargs='*', metavar='tool_opt',
                            help='extra option(s) to pass to the signing tool')
 
@@ -211,7 +214,7 @@ class ImgtoolSigner(Signer):
         args = command.args
         b = pathlib.Path(build_dir)
 
-        tool_path = self.find_imgtool(command, args)
+        imgtool = self.find_imgtool(command, args)
         # The vector table offset is set in Kconfig:
         vtoff = self.get_cfg(command, bcfg, 'CONFIG_ROM_START_OFFSET')
         # Flash device write alignment and the partition's slot size
@@ -257,11 +260,11 @@ class ImgtoolSigner(Signer):
         # We provide a default --version in case the user is just
         # messing around and doesn't want to set one. It will be
         # overridden if there is a --version in args.tool_args.
-        sign_base = [tool_path, 'sign',
-                     '--version', '0.0.0+0',
-                     '--align', str(align),
-                     '--header-size', str(vtoff),
-                     '--slot-size', str(size)]
+        sign_base = imgtool + ['sign',
+                               '--version', '0.0.0+0',
+                               '--align', str(align),
+                               '--header-size', str(vtoff),
+                               '--slot-size', str(size)]
         sign_base.extend(args.tool_args)
 
         if not args.quiet:
@@ -286,16 +289,25 @@ class ImgtoolSigner(Signer):
     @staticmethod
     def find_imgtool(command, args):
         if args.tool_path:
-            command.check_force(shutil.which(args.tool_path),
-                                '--tool-path {}: not an executable'.
-                                format(args.tool_path))
-            tool_path = args.tool_path
+            imgtool = args.tool_path
+            if not os.path.isfile(imgtool):
+                log.die(f'--tool-path {imgtool}: no such file')
         else:
-            tool_path = shutil.which('imgtool') or shutil.which('imgtool.py')
-            if not tool_path:
+            imgtool = shutil.which('imgtool') or shutil.which('imgtool.py')
+            if not imgtool:
                 log.die('imgtool not found; either install it',
                         '(e.g. "pip3 install imgtool") or provide --tool-path')
-        return tool_path
+
+        if platform.system() == 'Windows' and imgtool.endswith('.py'):
+            # Windows users may not be able to run .py files
+            # as executables in subprocesses, regardless of
+            # what the mode says. Always run imgtool as
+            # 'python path/to/imgtool.py' instead of
+            # 'path/to/imgtool.py' in these cases.
+            # https://github.com/zephyrproject-rtos/zephyr/issues/31876
+            return [sys.executable, imgtool]
+
+        return [imgtool]
 
     @staticmethod
     def get_cfg(command, bcfg, item):
@@ -399,7 +411,6 @@ class RimageSigner(Signer):
 
         log.die('Signing not supported for board ' + board)
 
-
     def sign(self, command, build_dir, bcfg, formats):
         args = command.args
 
@@ -420,7 +431,8 @@ class RimageSigner(Signer):
         board = cache['CACHED_BOARD']
         log.inf('Signing for board ' + board)
         target = self.edt_get_rimage_target(board)
-        log.inf('Signing for SOC target ' + target)
+        conf = target + '.toml'
+        log.inf('Signing for SOC target ' + target + ' using ' + conf)
 
         if not args.quiet:
             log.inf('Signing with tool {}'.format(tool_path))
@@ -428,11 +440,41 @@ class RimageSigner(Signer):
         bootloader = str(b / 'zephyr' / 'bootloader.elf.mod')
         kernel = str(b / 'zephyr' / 'zephyr.elf.mod')
         out_bin = str(b / 'zephyr' / 'zephyr.ri')
+        out_xman = str(b / 'zephyr' / 'zephyr.ri.xman')
+        out_tmp = str(b / 'zephyr' / 'zephyr.rix')
+        conf_path_cmd = []
+        if cache.get('RIMAGE_CONFIG_PATH') and not args.tool_data:
+            rimage_conf = pathlib.Path(cache['RIMAGE_CONFIG_PATH'])
+            conf_path = str(rimage_conf / conf)
+            conf_path_cmd = ['-c', conf_path]
+        elif args.tool_data:
+            conf_dir = pathlib.Path(args.tool_data)
+            conf_path = str(conf_dir / conf)
+            conf_path_cmd = ['-c', conf_path]
+        else:
+            log.die('Configuration not found')
+        if '--no-manifest' in args.tool_args:
+            no_manifest = True
+            args.tool_args.remove('--no-manifest')
+        else:
+            no_manifest = False
 
         sign_base = ([tool_path] + args.tool_args +
-                     ['-o', out_bin, '-m', target, '-i', '3'] +
+                     ['-o', out_bin] +  conf_path_cmd + ['-i', '3', '-e'] +
                      [bootloader, kernel])
 
         if not args.quiet:
             log.inf(quote_sh_list(sign_base))
         subprocess.check_call(sign_base)
+
+        if no_manifest:
+            filenames = [out_bin]
+        else:
+            filenames = [out_xman, out_bin]
+        with open(out_tmp, 'wb') as outfile:
+            for fname in filenames:
+                with open(fname, 'rb') as infile:
+                    outfile.write(infile.read())
+
+        os.remove(out_bin)
+        os.rename(out_tmp, out_bin)

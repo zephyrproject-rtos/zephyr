@@ -19,6 +19,15 @@ config DEBUG_COREDUMP_BACKEND_LOGGING
 	help
 	  Core dump is done via logging subsystem.
 
+config DEBUG_COREDUMP_BACKEND_FLASH_PARTITION
+	bool "Use flash partition for coredump"
+	depends on FLASH
+	select FLASH_MAP
+	select STREAM_FLASH
+	help
+	  Core dump is saved to a flash partition with DTS alias
+	  "coredump-partition".
+
 endchoice
 
 choice
@@ -46,5 +55,12 @@ config DEBUG_COREDUMP_MEMORY_DUMP_LINKER_RAM
 	  This is the default.
 
 endchoice
+
+config DEBUG_COREDUMP_SHELL
+	bool "Enable Coredump shell"
+	default y
+	depends on SHELL
+	help
+	  This shell provides access to coredump and its backends.
 
 endif # DEBUG_COREDUMP

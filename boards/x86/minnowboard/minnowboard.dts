@@ -10,7 +10,7 @@
 
 / {
 	model = "minnowboard";
-	compatible = "intel,atom";
+	compatible = "minnowboard,minnowboard";
 
 	aliases {
 		uart-0 = &uart0;

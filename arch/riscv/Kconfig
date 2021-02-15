@@ -17,11 +17,19 @@ config FLOAT_HARD
 	bool "Enable hard-float calling convention"
 	default y
 	depends on FPU
-	select COMPRESSED_ISA
 	help
 	  This option enables the hard-float calling convention.
 
 menu "RISCV Processor Options"
+
+config CORE_E31
+	bool "Use E31 core"
+	select RISCV_PMP
+	select ARCH_HAS_USERSPACE
+	select ARCH_HAS_STACK_PROTECTION if PMP_STACK_GUARD
+	default n
+	help
+	  This option signifies the use of a core of the E31 family.
 
 config INCLUDE_RESET_VECTOR
 	bool "Include Reset vector"
@@ -104,6 +112,36 @@ config GEN_IRQ_VECTOR_TABLE
 config NUM_IRQS
 	int
 
+menuconfig RISCV_PMP
+	bool "RISC-V PMP Support"
+	default n
+	select THREAD_STACK_INFO
+	select CPU_HAS_MPU
+	select MPU
+	select SRAM_REGION_PERMISSIONS
+	select ARCH_MEM_DOMAIN_SYNCHRONOUS_API if USERSPACE
+	select PMP_POWER_OF_TWO_ALIGNMENT if USERSPACE
+	help
+	  MCU implements Physical Memory Protection.
+	  Memory protection against read-only area writing
+	  is natively supported on real HW.
+
+if RISCV_PMP
+source "arch/riscv/core/pmp/Kconfig"
+endif #RISCV_PMP
+
 endmenu
+
+config MAIN_STACK_SIZE
+	default 4096 if 64BIT
+
+config TEST_EXTRA_STACKSIZE
+	default 1024 if 64BIT
+
+config CMSIS_THREAD_MAX_STACK_SIZE
+	default 1024 if 64BIT
+
+config CMSIS_V2_THREAD_MAX_STACK_SIZE
+	default 1024 if 64BIT
 
 endmenu

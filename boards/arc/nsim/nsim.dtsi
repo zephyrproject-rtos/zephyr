@@ -14,7 +14,7 @@
 #endif
 
 #ifndef ICCM_SIZE
-#define ICCM_SIZE DT_SIZE_K(512)
+#define ICCM_SIZE DT_SIZE_K(1024)
 #endif
 
 #ifndef DCCM_ADDR
@@ -22,7 +22,7 @@
 #endif
 
 #ifndef DCCM_SIZE
-#define DCCM_SIZE DT_SIZE_K(512)
+#define DCCM_SIZE DT_SIZE_K(1024)
 #endif
 
 / {
@@ -49,7 +49,7 @@
 
 	uart0: uart@f0000000 {
 		compatible = "ns16550";
-		clock-frequency = <10000000>;
+		clock-frequency = <50000000>;
 		reg = <0xf0000000 0x400>;
 		current-speed = <115200>;
 		label = "UART_0";

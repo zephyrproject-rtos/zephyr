@@ -226,11 +226,17 @@ elseif(QEMU_NET_STACK)
     set_ifndef(NET_TOOLS ${ZEPHYR_BASE}/../net-tools) # Default if not set
 
     list(APPEND PRE_QEMU_COMMANDS_FOR_server
-      COMMAND ${NET_TOOLS}/monitor_15_4
-  ${PCAP}
-  /tmp/ip-stack-server
+      COMMAND
+      #This command is run in the background using '&'. This prevents
+      #chaining other commands with '&&'. The command is enclosed in '{}'
+      #to fix this.
+      {
+      ${NET_TOOLS}/monitor_15_4
+      ${PCAP}
+      /tmp/ip-stack-server
       /tmp/ip-stack-client
       > /dev/null &
+      }
       # TODO: Support cleanup of the monitor_15_4 process
       )
   endif()
@@ -283,6 +289,20 @@ if(CONFIG_X86_64)
   list(APPEND QEMU_EXTRA_FLAGS
     "-device;loader,file=${ZEPHYR_BINARY_DIR}/zephyr-qemu-main.elf"
     )
+endif()
+
+if(CONFIG_IVSHMEM)
+  if(CONFIG_IVSHMEM_DOORBELL)
+    list(APPEND QEMU_FLAGS
+      -device ivshmem-doorbell,vectors=${CONFIG_IVSHMEM_MSI_X_VECTORS},chardev=ivshmem
+      -chardev socket,path=/tmp/ivshmem_socket,id=ivshmem
+    )
+  else()
+    list(APPEND QEMU_FLAGS
+      -device ivshmem-plain,memdev=hostmem
+      -object memory-backend-file,size=${CONFIG_QEMU_IVSHMEM_PLAIN_MEM_SIZE}M,share,mem-path=/dev/shm/ivshmem,id=hostmem
+    )
+  endif()
 endif()
 
 if(NOT QEMU_PIPE)

@@ -2139,47 +2139,45 @@ static const struct ethernet_api eth_api = {
 #endif
 };
 
-DEVICE_DECLARE(eth0_sam_gmac);
-
 static void eth0_irq_config(void)
 {
 	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, gmac, irq),
 		    DT_INST_IRQ_BY_NAME(0, gmac, priority),
-		    queue0_isr, DEVICE_GET(eth0_sam_gmac), 0);
+		    queue0_isr, DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQ_BY_NAME(0, gmac, irq));
 
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 1
 	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, q1, irq),
 		    DT_INST_IRQ_BY_NAME(0, q1, priority),
-		    queue1_isr, DEVICE_GET(eth0_sam_gmac), 0);
+		    queue1_isr, DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQ_BY_NAME(0, q1, irq));
 #endif
 
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 2
 	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, q2, irq),
 		    DT_INST_IRQ_BY_NAME(0, q1, priority),
-		    queue2_isr, DEVICE_GET(eth0_sam_gmac), 0);
+		    queue2_isr, DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQ_BY_NAME(0, q2, irq));
 #endif
 
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 3
 	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, q3, irq),
 		    DT_INST_IRQ_BY_NAME(0, q3, priority),
-		    queue3_isr, DEVICE_GET(eth0_sam_gmac), 0);
+		    queue3_isr, DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQ_BY_NAME(0, q3, irq));
 #endif
 
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 4
 	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, q4, irq),
 		    DT_INST_IRQ_BY_NAME(0, q4, priority),
-		    queue4_isr, DEVICE_GET(eth0_sam_gmac), 0);
+		    queue4_isr, DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQ_BY_NAME(0, q4, irq));
 #endif
 
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 5
 	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, q5, irq),
 		    DT_INST_IRQ_BY_NAME(0, q5, priority),
-		    queue5_isr, DEVICE_GET(eth0_sam_gmac), 0);
+		    queue5_isr, DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQ_BY_NAME(0, q5, irq));
 #endif
 }
@@ -2366,7 +2364,7 @@ static struct eth_sam_dev_data eth0_data = {
 	},
 };
 
-ETH_NET_DEVICE_INIT(eth0_sam_gmac, DT_INST_LABEL(0),
+ETH_NET_DEVICE_DT_INST_DEFINE(0,
 		    eth_initialize, device_pm_control_nop, &eth0_data,
 		    &eth0_config, CONFIG_ETH_INIT_PRIORITY, &eth_api,
 		    GMAC_MTU);
@@ -2439,7 +2437,7 @@ static const struct ptp_clock_driver_api ptp_api = {
 
 static int ptp_gmac_init(const struct device *port)
 {
-	const struct device *eth_dev = DEVICE_GET(eth0_sam_gmac);
+	const struct device *eth_dev = DEVICE_DT_INST_GET(0);
 	struct eth_sam_dev_data *dev_data = eth_dev->data;
 	struct ptp_context *ptp_context = port->data;
 
@@ -2449,8 +2447,8 @@ static int ptp_gmac_init(const struct device *port)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(gmac_ptp_clock_0, PTP_CLOCK_NAME, ptp_gmac_init,
-		    &ptp_gmac_0_context, NULL, POST_KERNEL,
-		    CONFIG_APPLICATION_INIT_PRIORITY, &ptp_api);
+DEVICE_DEFINE(gmac_ptp_clock_0, PTP_CLOCK_NAME, ptp_gmac_init,
+		device_pm_control_nop, &ptp_gmac_0_context, NULL, POST_KERNEL,
+		CONFIG_APPLICATION_INIT_PRIORITY, &ptp_api);
 
 #endif /* CONFIG_PTP_CLOCK_SAM_GMAC */

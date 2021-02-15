@@ -17,6 +17,19 @@
 				    CONFIG_BT_MESH_IVU_DIVIDER)
 #define BT_MESH_IVU_TIMEOUT        K_HOURS(BT_MESH_IVU_HOURS)
 
+/* Minimum valid Mesh Network PDU length. The Network headers
+ * themselves take up 9 bytes. After that there is a minimum of 1 byte
+ * payload for both CTL=1 and CTL=0 PDUs (smallest OpCode is 1 byte). CTL=1
+ * PDUs must use a 64-bit (8 byte) NetMIC, whereas CTL=0 PDUs have at least
+ * a 32-bit (4 byte) NetMIC and AppMIC giving again a total of 8 bytes.
+ */
+#define BT_MESH_NET_MIN_PDU_LEN (BT_MESH_NET_HDR_LEN + 1 + 8)
+/* Maximum valid Mesh Network PDU length. The longest packet can either be a
+ * transport control message (CTL=1) of 12 bytes + 8 bytes of NetMIC, or an
+ * access message (CTL=0) of 16 bytes + 4 bytes of NetMIC.
+ */
+#define BT_MESH_NET_MAX_PDU_LEN (BT_MESH_NET_HDR_LEN + 16 + 4)
+
 struct bt_mesh_net_cred;
 
 struct bt_mesh_node {
@@ -163,16 +176,11 @@ enum {
 	BT_MESH_IVU_TEST,        /* IV Update test mode */
 	BT_MESH_IVU_PENDING,     /* Update blocked by SDU in progress */
 
-	/* pending storage actions, must reside within first 32 flags */
-	BT_MESH_RPL_PENDING,
-	BT_MESH_KEYS_PENDING,
-	BT_MESH_NET_PENDING,
-	BT_MESH_IV_PENDING,
-	BT_MESH_SEQ_PENDING,
-	BT_MESH_HB_PUB_PENDING,
-	BT_MESH_CFG_PENDING,
-	BT_MESH_MOD_PENDING,
-	BT_MESH_VA_PENDING,
+	/* Feature flags */
+	BT_MESH_RELAY,
+	BT_MESH_BEACON,
+	BT_MESH_GATT_PROXY,
+	BT_MESH_FRIEND,
 
 	/* Don't touch - intentionally last */
 	BT_MESH_FLAG_COUNT,
@@ -199,6 +207,10 @@ struct bt_mesh_net {
 
 	/* Number of hours in current IV Update state */
 	uint8_t  ivu_duration;
+
+	uint8_t net_xmit;
+	uint8_t relay_xmit;
+	uint8_t default_ttl;
 
 	/* Timer to track duration in current IV Update state */
 	struct k_delayed_work ivu_timer;
@@ -273,6 +285,11 @@ uint32_t bt_mesh_next_seq(void);
 void bt_mesh_net_init(void);
 void bt_mesh_net_header_parse(struct net_buf_simple *buf,
 			      struct bt_mesh_net_rx *rx);
+void bt_mesh_net_pending_net_store(void);
+void bt_mesh_net_pending_iv_store(void);
+void bt_mesh_net_pending_seq_store(void);
+void bt_mesh_net_clear(void);
+void bt_mesh_net_settings_commit(void);
 
 static inline void send_cb_finalize(const struct bt_mesh_send_cb *cb,
 				    void *cb_data)

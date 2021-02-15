@@ -1,4 +1,10 @@
+common:
+  depends_on: netif
+  tags: net tcp2
 tests:
   net.tcp2.simple:
-    depends_on: netif
-    tags: net tcp2
+    extra_configs:
+      - CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT=1000
+  net.tcp2.no_recv_queue:
+    extra_configs:
+      - CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT=0

@@ -17,6 +17,10 @@
 #include <arch/cpu.h>
 #include <sys/util.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Using typedef deliberately here, this is quite intended to be an opaque
  * type.
  *
@@ -103,6 +107,11 @@ static inline char *z_stack_ptr_align(char *ptr)
 #define K_KERNEL_STACK_EXTERN(sym) extern k_thread_stack_t sym[]
 
 /**
+ * @addtogroup stack_apis
+ * @{
+ */
+
+/**
  * @def K_KERNEL_STACK_DEFINE
  * @brief Define a toplevel kernel stack memory region
  *
@@ -125,7 +134,7 @@ static inline char *z_stack_ptr_align(char *ptr)
  * @param size Size of the stack memory region
  */
 #define K_KERNEL_STACK_DEFINE(sym, size) \
-	struct z_thread_stack_element __noinit \
+	struct z_thread_stack_element __kstackmem \
 		__aligned(Z_KERNEL_STACK_OBJ_ALIGN) \
 		sym[Z_KERNEL_STACK_SIZE_ADJUST(size)]
 
@@ -143,7 +152,7 @@ static inline char *z_stack_ptr_align(char *ptr)
  * @param size Size of the stack memory region
  */
 #define K_KERNEL_STACK_ARRAY_DEFINE(sym, nmemb, size) \
-	struct z_thread_stack_element __noinit \
+	struct z_thread_stack_element __kstackmem \
 		__aligned(Z_KERNEL_STACK_OBJ_ALIGN) \
 		sym[nmemb][Z_KERNEL_STACK_LEN(size)]
 
@@ -163,6 +172,8 @@ static inline char *z_stack_ptr_align(char *ptr)
 		sym[Z_KERNEL_STACK_SIZE_ADJUST(size)]
 
 #define K_KERNEL_STACK_SIZEOF(sym) (sizeof(sym) - K_KERNEL_STACK_RESERVED)
+
+/** @} */
 
 static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
 {
@@ -277,6 +288,11 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
 #define K_THREAD_STACK_EXTERN(sym) extern k_thread_stack_t sym[]
 
 /**
+ * @addtogroup stack_apis
+ * @{
+ */
+
+/**
  * @brief Return the size in bytes of a stack memory region
  *
  * Convenience macro for passing the desired stack size to k_thread_create()
@@ -381,6 +397,8 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
 		__aligned(Z_THREAD_STACK_OBJ_ALIGN(size)) \
 		sym[Z_THREAD_STACK_SIZE_ADJUST(size)]
 
+/** @} */
+
 /**
  * @brief Get a pointer to the physical stack buffer
  *
@@ -399,6 +417,12 @@ static inline char *Z_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
 {
 	return (char *)sym + K_THREAD_STACK_RESERVED;
 }
+
 #endif /* CONFIG_USERSPACE */
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* _ASMLANGUAGE */
 #endif /* ZEPHYR_INCLUDE_SYS_THREAD_STACK_H */

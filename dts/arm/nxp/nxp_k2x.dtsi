@@ -18,21 +18,6 @@
 	};
 
 	aliases {
-		adc-0 = &adc0;
-		i2c-0 = &i2c0;
-		i2c-1 = &i2c1;
-		pinmux-a = &porta;
-		pinmux-b = &portb;
-		pinmux-c = &portc;
-		pinmux-d = &portd;
-		pinmux-e = &porte;
-		spi-0 = &spi0;
-		spi-1 = &spi1;
-		uart-0 = &uart0;
-		uart-1 = &uart1;
-		uart-2 = &uart2;
-		uart-3 = &uart3;
-		usbd-0 = &usbotg;
 		watchdog0 = &wdog;
 	};
 
@@ -75,11 +60,10 @@
 		};
 
 		mcg: clock-controller@40064000 {
-			compatible = "nxp,k22f-mcg";
+			compatible = "nxp,kinetis-mcg";
 			reg = <0x40064000 0xd>;
-			system-clock-frequency = <120000000>;
-
-			clock-controller;
+			label = "MCG";
+			#clock-cells = <1>;
 		};
 
 		osc: clock-controller@40065000 {
@@ -194,30 +178,35 @@
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x40049000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 9>;
+			label = "porta";
 		};
 
 		portb: pinmux@4004a000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004a000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 10>;
+			label = "portb";
 		};
 
 		portc: pinmux@4004b000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004b000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 11>;
+			label = "portc";
 		};
 
 		portd: pinmux@4004c000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004c000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 12>;
+			label = "portd";
 		};
 
 		porte: pinmux@4004d000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004d000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 13>;
+			label = "porte";
 		};
 
 		gpioa: gpio@400ff000 {
@@ -308,6 +297,8 @@
 			compatible = "nxp,kinetis-ftm";
 			reg = <0x40038000 0x98>;
 			interrupts = <42 0>;
+			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>,
+					 <&sim KINETIS_SIM_BUS_CLK 0x103C 24>;
 			prescaler = <16>;
 			label = "FTM_0";
 			status = "disabled";
@@ -317,6 +308,8 @@
 			compatible = "nxp,kinetis-ftm";
 			reg = <0x40039000 0x98>;
 			interrupts = <43 0>;
+			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>,
+					 <&sim KINETIS_SIM_BUS_CLK 0x103C 25>;
 			prescaler = <16>;
 			label = "FTM_1";
 			status = "disabled";
@@ -326,6 +319,8 @@
 			compatible = "nxp,kinetis-ftm";
 			reg = <0x4003a000 0x98>;
 			interrupts = <44 0>;
+			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>,
+					 <&sim KINETIS_SIM_BUS_CLK 0x103C 26>;
 			prescaler = <16>;
 			label = "FTM_2";
 			status = "disabled";
@@ -335,6 +330,8 @@
 			compatible = "nxp,kinetis-ftm";
 			reg = <0x400b9000 0x98>;
 			interrupts = <71 0>;
+			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>,
+					 <&sim KINETIS_SIM_BUS_CLK 0x103C 6>;
 			prescaler = <16>;
 			label = "FTM_3";
 			status = "disabled";

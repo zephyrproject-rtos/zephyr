@@ -18,8 +18,9 @@
 	};
 
 	chosen {
-		zephyr,sram = &sram1;
+		zephyr,sram = &sram3;
 		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot1_partition;
 		zephyr,entropy = &rng;
 	};
 };
@@ -33,5 +34,9 @@
 };
 
 &blue_led {
+	status = "okay";
+};
+
+&mailbox0 {
 	status = "okay";
 };

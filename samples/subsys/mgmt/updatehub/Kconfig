@@ -1,23 +1,32 @@
-#  Copyright (c) 2018 O.S.Systems
+#  Copyright (c) 2018-2020 O.S.Systems
 #  SPDX-License-Identifier: Apache-2.0
 
 mainmenu "Sample app Configuration"
 
-config UPDATEHUB_MANUAL
+config UPDATEHUB_SAMPLE_MANUAL
 	bool "UpdateHub manual mode"
 	help
 	  Manual mode requires the user to call the server probe and then, if
 	  there is an available update, also requires the user to decide if
 	  it is appropriate to update now or later.
 
-if !UPDATEHUB_MANUAL
-config UPDATEHUB_POLLING
+if !UPDATEHUB_SAMPLE_MANUAL
+config UPDATEHUB_SAMPLE_POLLING
 	bool "UpdateHub polling mode"
 	default y
 	help
 	  Polling mode runs automatically on a predefined period, probing the
 	  server for updates and installing them without requiring user
 	  intervention.
-endif #!UPDATEHUB_MANUAL
+endif #!UPDATEHUB_SAMPLE_MANUAL
+
+if WIFI
+config UPDATEHUB_SAMPLE_WIFI_SSID
+	string "WIFI SSID - Network name"
+	default "my_network"
+config UPDATEHUB_SAMPLE_WIFI_PSK
+	string "WIFI PSK - Network password key"
+	default "secret_passwd"
+endif
 
 source "Kconfig.zephyr"

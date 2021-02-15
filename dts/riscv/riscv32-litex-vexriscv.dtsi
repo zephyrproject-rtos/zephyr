@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 - 2019 Antmicro <www.antmicro.com>
+ * Copyright (c) 2018 - 2020 Antmicro <www.antmicro.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -159,6 +159,72 @@
 			reg-names = "control", "fifo";
 			fifo_depth = <256>;
 			label = "i2s_tx";
+			status = "disabled";
+		};
+		clock-outputs {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clk0: clock-controller@0 {
+				#clock-cells = <1>;
+				reg = <0>;
+				compatible = "litex,clkout";
+				clock-output-names = "CLK_0";
+				litex,clock-frequency = <100000000>;
+				litex,clock-phase = <0>;
+				litex,clock-duty-num = <1>;
+				litex,clock-duty-den = <2>;
+				litex,clock-margin = <1>;
+				litex,clock-margin-exp = <2>;
+				status = "disabled";
+			};
+			clk1: clock-controller@1 {
+				#clock-cells = <1>;
+				reg = <1>;
+				compatible = "litex,clkout";
+				clock-output-names = "CLK_1";
+				litex,clock-frequency = <100000000>;
+				litex,clock-phase = <0>;
+				litex,clock-duty-num = <1>;
+				litex,clock-duty-den = <2>;
+				litex,clock-margin = <1>;
+				litex,clock-margin-exp = <2>;
+				status = "disabled";
+			};
+		};
+		clock0: clock@82005000 {
+			compatible = "litex,clk";
+			label = "clock0";
+			reg = <0x82005000 0x1
+			       0x82005004 0x1
+			       0x82005008 0x1
+			       0x8200500c 0x1
+			       0x82005010 0x1
+			       0x82005014 0x1
+			       0x82005018 0x2
+			       0x82005020 0x2>;
+			reg-names = "drp_reset",
+				    "drp_locked",
+				    "drp_read",
+				    "drp_write",
+				    "drp_drdy",
+				    "drp_adr",
+				    "drp_dat_w",
+				    "drp_dat_r";
+			#clock-cells = <1>;
+			clocks = <&clk0 0>, <&clk1 1>;
+			clock-output-names = "CLK_0", "CLK_1";
+			litex,lock-timeout = <10>;
+			litex,drdy-timeout = <10>;
+			litex,sys-clock-frequency = <100000000>;
+			litex,divclk-divide-min = <1>;
+			litex,divclk-divide-max = <107>;
+			litex,clkfbout-mult-min = <2>;
+			litex,clkfbout-mult-max = <65>;
+			litex,vco-freq-min = <600000000>;
+			litex,vco-freq-max = <1200000000>;
+			litex,clkout-divide-min = <1>;
+			litex,clkout-divide-max = <126>;
+			litex,vco-margin = <0>;
 			status = "disabled";
 		};
 	};

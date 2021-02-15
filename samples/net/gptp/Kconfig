@@ -52,6 +52,12 @@ config NET_SAMPLE_IFACE3_VLAN_TAG
 	  Set VLAN (virtual LAN) tag (id) that is used in the sample
 	  application.
 
+config NET_SAMPLE_RUN_DURATION
+	int "Run the application this many seconds"
+	default 0
+	help
+	  A value of zero means that the sample application is run forever.
+
 endif
 
 

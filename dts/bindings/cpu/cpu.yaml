@@ -10,3 +10,15 @@ properties:
       type: int
       required: false
       description: Clock frequency in Hz
+    cpu-power-states:
+       type: phandles
+       required: false
+       description: List of power management states supported by this cpu
+    i-cache-line-size:
+      type: int
+      required: false
+      description: i-cache line size
+    d-cache-line-size:
+      type: int
+      required: false
+      description: d-cache line size

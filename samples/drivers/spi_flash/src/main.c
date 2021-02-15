@@ -19,6 +19,9 @@
 	DT_NODE_HAS_STATUS(DT_INST(0, nordic_qspi_nor), okay)
 #define FLASH_DEVICE DT_LABEL(DT_INST(0, nordic_qspi_nor))
 #define FLASH_NAME "JEDEC QSPI-NOR"
+#elif DT_NODE_HAS_STATUS(DT_INST(0, st_stm32_qspi_nor), okay)
+#define FLASH_DEVICE DT_LABEL(DT_INST(0, st_stm32_qspi_nor))
+#define FLASH_NAME "JEDEC QSPI-NOR"
 #else
 #error Unsupported flash driver
 #endif

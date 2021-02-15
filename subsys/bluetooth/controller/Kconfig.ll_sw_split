@@ -29,6 +29,9 @@ config BT_LLL_VENDOR_NORDIC
 	select BT_CTLR_ADV_EXT_SUPPORT
 	select BT_CTLR_ADV_PERIODIC_SUPPORT
 	select BT_CTLR_SYNC_PERIODIC_SUPPORT
+	select BT_CTLR_ADV_ISO_SUPPORT
+	select BT_CTLR_SYNC_ISO_SUPPORT
+	select BT_CTLR_DF_SUPPORT if HAS_HW_NRF_RADIO_BLE_DF
 	select BT_CTLR_CHAN_SEL_2_SUPPORT
 	select BT_CTLR_MIN_USED_CHAN_SUPPORT
 	select BT_CTLR_DTM_HCI_SUPPORT
@@ -37,6 +40,8 @@ config BT_LLL_VENDOR_NORDIC
 	select BT_CTLR_XTAL_ADVANCED_SUPPORT
 	select BT_CTLR_SCHED_ADVANCED_SUPPORT
 	select BT_CTLR_TIFS_HW_SUPPORT
+	select BT_CTLR_ULL_LLL_PRIO_SUPPORT
+
 	default y
 	help
 	  Use Nordic Lower Link Layer implementation.
@@ -60,6 +65,9 @@ config BT_CTLR_SCHED_ADVANCED_SUPPORT
 	bool
 
 config BT_CTLR_TIFS_HW_SUPPORT
+	bool
+
+config BT_CTLR_ULL_LLL_PRIO_SUPPORT
 	bool
 
 config BT_CTLR_RX_PRIO_STACK_SIZE
@@ -157,6 +165,30 @@ config BT_CTLR_ADV_SYNC_SET
 	help
 	  Maximum supported periodic advertising sets.
 
+config BT_CTLR_ADV_DATA_BUF_MAX
+	int "Advertising Data Maximum Buffers"
+	depends on BT_BROADCASTER
+	range 1 64 if BT_CTLR_ADV_EXT
+	range 1 1 if !BT_CTLR_ADV_EXT
+	default 1
+	help
+	  Maximum number of buffered Advertising Data payload across enabled
+	  advertising sets.
+
+config BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY
+	bool
+	depends on BT_CTLR_ADV_EXT
+	help
+	  Add additional memory to advertising PDU storage. The memory is a
+	  general purpose storage for data that should be send from ULL to LLL.
+	  The data stored in the memory are in synchoronization with content
+	  of PDU memory.
+
+	  For example, the extra data memory is used for storage for parameters
+	  to configure Radio peripheral to transmit CTE. The configuration data
+	  must be synchronized with CTEInfo field in extended advertising header
+	  that is part of PDU data.
+
 config BT_CTRL_ADV_ADI_IN_SCAN_RSP
 	bool "Include ADI in AUX_SCAN_RSP PDU"
 	depends on BT_BROADCASTER && BT_CTLR_ADV_EXT
@@ -171,17 +203,25 @@ config BT_CTLR_SCAN_AUX_SET
 	help
 	  Maximum supported auxiliary channel scan sets.
 
-config BT_CTLR_SCAN_SYNC_SET
-	int "LE Periodic Sync Sets"
-	depends on BT_CTLR_SYNC_PERIODIC
+config BT_CTLR_SCAN_SYNC_ISO_SET
+	int "LE ISO Broadcast Isochronous Groups Sync Sets"
+	depends on BT_CTLR_SYNC_ISO
 	range 1 64
 	default 1
 	help
-	  Maximum supported periodic sync sets.
+	  Maximum supported broadcast isochronous groups (BIGs) sync sets.
+
+config BT_CTLR_SCAN_ENABLE_STRICT
+	bool "Enforce Strict Scan Enable/Disable"
+	depends on BT_OBSERVER
+	help
+	  Enforce returning HCI Error Command Disallowed on enabling/disabling
+	  already enabled/disabled scanning.
 
 config BT_CTLR_ZLI
 	bool "Use Zero Latency IRQs"
 	depends on ZERO_LATENCY_IRQS
+	default y
 	help
 	  Enable support for use of Zero Latency IRQ feature. Note, applications
 	  shall not use Zero Latency IRQ themselves when this option is selected,
@@ -244,7 +284,7 @@ config BT_CTLR_SCHED_ADVANCED
 	  leading to skipped events amongst active roles.
 
 config BT_CTLR_LLL_PRIO
-	int "Lower Link Layer (Radio) IRQ priority"
+	int "Lower Link Layer (Radio) IRQ priority" if (BT_CTLR_ULL_LLL_PRIO_SUPPORT && !BT_CTLR_ZLI)
 	range 0 3 if SOC_SERIES_NRF51X
 	range 0 6 if (SOC_SERIES_NRF52X || SOC_SERIES_NRF53X)
 	default 0
@@ -252,16 +292,17 @@ config BT_CTLR_LLL_PRIO
 	  The interrupt priority for event preparation and radio IRQ.
 
 config BT_CTLR_ULL_HIGH_PRIO
-	int "Upper Link Layer High IRQ priority"
+	int "Upper Link Layer High IRQ priority" if BT_CTLR_ULL_LLL_PRIO_SUPPORT
 	range BT_CTLR_LLL_PRIO 3 if SOC_SERIES_NRF51X
 	range BT_CTLR_LLL_PRIO 6 if (SOC_SERIES_NRF52X || SOC_SERIES_NRF53X)
-	default BT_CTLR_LLL_PRIO
+	default BT_CTLR_LLL_PRIO if (!BT_CTLR_ULL_LLL_PRIO_SUPPORT || BT_CTLR_ZLI || BT_CTLR_LOW_LAT)
+	default 1
 	help
 	  The interrupt priority for Ticker's Worker IRQ and Upper Link Layer
 	  higher priority functions.
 
 config BT_CTLR_ULL_LOW_PRIO
-	int "Upper Link Layer Low IRQ priority"
+	int "Upper Link Layer Low IRQ priority" if BT_CTLR_ULL_LLL_PRIO_SUPPORT
 	range BT_CTLR_ULL_HIGH_PRIO 3 if SOC_SERIES_NRF51X
 	range BT_CTLR_ULL_HIGH_PRIO 6 if (SOC_SERIES_NRF52X || SOC_SERIES_NRF53X)
 	default BT_CTLR_ULL_HIGH_PRIO
@@ -414,6 +455,20 @@ config BT_CTLR_FORCE_MD_AUTO
 	  Force MD bit in transmitted PDU based on runtime incoming transmit
 	  data throughput.
 
+config BT_CTLR_CONN_RANDOM_FORCE
+	bool "Enable random forced scheduling for peripheral on missed anchor point"
+	depends on BT_PERIPHERAL
+	default y
+	help
+	  When enabled, controller will have legacy behavior and randomly force
+	  priority at next ticker scheduling for peripheral role, if anchor point is
+	  missed.
+	  Two or more connections with similar interval on a device connected
+	  to a peer device having two or more connections at its end with same
+	  interval could lock to a round robin pattern where in neither of the central
+	  nor peripheral event would be in sync at either end. Randomness allows
+	  to break this locked round robin pattern permitting an anchor point sync.
+
 config BT_CTLR_CONN_RSSI_EVENT
 	bool "Connection RSSI event"
 	depends on BT_CTLR_CONN_RSSI
@@ -515,6 +570,13 @@ config BT_RX_USER_PDU_LEN
 	  header and payload. It does not account for HCI event headers as these
 	  PDUs are assumed to not go across HCI.
 
+config BT_CTLR_USER_CPR_INTERVAL_MIN
+	bool "Enable proprietary Connection Parameter Request minimum interval"
+	depends on BT_CTLR_USER_EXT
+	help
+	  When enabled, controller will accept Connection Parameter Request
+	  intervals down to a proprietary minimum value.
+
 endmenu
 
 comment "BLE Controller hardware configuration"
@@ -602,7 +664,7 @@ config BT_CTLR_PROFILE_ISR
 
 config BT_CTLR_DEBUG_PINS
 	bool "Bluetooth Controller Debug Pins"
-	depends on BOARD_NRF51DK_NRF51422 || BOARD_NRF52DK_NRF52832 || BOARD_NRF52DK_NRF52810 || BOARD_NRF52840DK_NRF52840 || BOARD_NRF5340PDK_NRF5340_CPUNET || BOARD_NRF5340DK_NRF5340_CPUNET || BOARD_RV32M1_VEGA
+	depends on BOARD_NRF51DK_NRF51422 || BOARD_NRF52DK_NRF52832 || BOARD_NRF52DK_NRF52810 || BOARD_NRF52840DK_NRF52840 || BOARD_NRF5340DK_NRF5340_CPUNET || BOARD_RV32M1_VEGA
 	help
 	  Turn on debug GPIO toggling for the BLE Controller. This is useful
 	  when debugging with a logic analyzer or profiling certain sections of

@@ -589,7 +589,7 @@ static void test_prefix_timeout_long(void)
 	net_if_ipv6_prefix_set_lf(ifprefix, false);
 	net_if_ipv6_prefix_set_timer(ifprefix, lifetime);
 
-	zassert_equal(ifprefix->lifetime.wrap_counter, 2000,
+	zassert_equal(ifprefix->lifetime.wrap_counter, 1999,
 		      "Wrap counter wrong (%d)",
 		      ifprefix->lifetime.wrap_counter);
 	remaining = MSEC_PER_SEC * (uint64_t)lifetime -

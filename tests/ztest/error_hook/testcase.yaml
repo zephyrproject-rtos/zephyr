@@ -1,0 +1,9 @@
+tests:
+  testing.ztest.error_hook:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    tags: test_framework userspace ignore_faults
+
+  testing.ztest.error_hook.no_userspace:
+    extra_args: CONF_FILE=prj_no_userspace.conf
+    filter: not CONFIG_ARCH_HAS_USERSPACE
+    tags: test_framework ignore_faults

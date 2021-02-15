@@ -1,0 +1,8 @@
+# Copyright 2020 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP FlexSPI HyperFlash
+
+compatible: "nxp,imx-flexspi-hyperflash"
+
+include: nxp,imx-flexspi-device.yaml

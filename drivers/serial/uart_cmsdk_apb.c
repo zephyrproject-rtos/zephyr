@@ -481,9 +481,9 @@ static struct uart_cmsdk_apb_dev_data uart_cmsdk_apb_dev_data_0 = {
 			.device = DT_INST_REG_ADDR(0),},
 };
 
-DEVICE_AND_API_INIT(uart_cmsdk_apb_0,
-		    DT_INST_LABEL(0),
+DEVICE_DT_INST_DEFINE(0,
 		    &uart_cmsdk_apb_init,
+		    device_pm_control_nop,
 		    &uart_cmsdk_apb_dev_data_0,
 		    &uart_cmsdk_apb_dev_cfg_0, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -496,7 +496,7 @@ static void uart_cmsdk_apb_irq_config_func_0(const struct device *dev)
 	IRQ_CONNECT(DT_INST_IRQN(0),
 		    DT_INST_IRQ(0, priority),
 		    uart_cmsdk_apb_isr,
-		    DEVICE_GET(uart_cmsdk_apb_0),
+		    DEVICE_DT_INST_GET(0),
 		    0);
 	irq_enable(DT_INST_IRQN(0));
 }
@@ -506,14 +506,14 @@ static void uart_cmsdk_apb_irq_config_func_0(const struct device *dev)
 	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, tx, irq),
 		    DT_INST_IRQ_BY_NAME(0, tx, priority),
 		    uart_cmsdk_apb_isr,
-		    DEVICE_GET(uart_cmsdk_apb_0),
+		    DEVICE_DT_INST_GET(0),
 		    0);
 	irq_enable(DT_INST_IRQ_BY_NAME(0, tx, irq));
 
 	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, rx, irq),
 		    DT_INST_IRQ_BY_NAME(0, rx, priority),
 		    uart_cmsdk_apb_isr,
-		    DEVICE_GET(uart_cmsdk_apb_0),
+		    DEVICE_DT_INST_GET(0),
 		    0);
 	irq_enable(DT_INST_IRQ_BY_NAME(0, rx, irq));
 }
@@ -546,9 +546,9 @@ static struct uart_cmsdk_apb_dev_data uart_cmsdk_apb_dev_data_1 = {
 			.device = DT_INST_REG_ADDR(1),},
 };
 
-DEVICE_AND_API_INIT(uart_cmsdk_apb_1,
-		    DT_INST_LABEL(1),
+DEVICE_DT_INST_DEFINE(1,
 		    &uart_cmsdk_apb_init,
+		    device_pm_control_nop,
 		    &uart_cmsdk_apb_dev_data_1,
 		    &uart_cmsdk_apb_dev_cfg_1, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -561,7 +561,7 @@ static void uart_cmsdk_apb_irq_config_func_1(const struct device *dev)
 	IRQ_CONNECT(DT_INST_IRQN(1),
 		    DT_INST_IRQ(1, priority),
 		    uart_cmsdk_apb_isr,
-		    DEVICE_GET(uart_cmsdk_apb_1),
+		    DEVICE_DT_INST_GET(1),
 		    0);
 	irq_enable(DT_INST_IRQN(1));
 }
@@ -571,14 +571,14 @@ static void uart_cmsdk_apb_irq_config_func_1(const struct device *dev)
 	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(1, tx, irq),
 		    DT_INST_IRQ_BY_NAME(1, tx, priority),
 		    uart_cmsdk_apb_isr,
-		    DEVICE_GET(uart_cmsdk_apb_1),
+		    DEVICE_DT_INST_GET(1),
 		    0);
 	irq_enable(DT_INST_IRQ_BY_NAME(1, tx, irq));
 
 	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(1, rx, irq),
 		    DT_INST_IRQ_BY_NAME(1, rx, priority),
 		    uart_cmsdk_apb_isr,
-		    DEVICE_GET(uart_cmsdk_apb_1),
+		    DEVICE_DT_INST_GET(1),
 		    0);
 	irq_enable(DT_INST_IRQ_BY_NAME(1, rx, irq));
 }
@@ -611,9 +611,9 @@ static struct uart_cmsdk_apb_dev_data uart_cmsdk_apb_dev_data_2 = {
 			.device = DT_INST_REG_ADDR(2),},
 };
 
-DEVICE_AND_API_INIT(uart_cmsdk_apb_2,
-		    DT_INST_LABEL(2),
+DEVICE_DT_INST_DEFINE(2,
 		    &uart_cmsdk_apb_init,
+		    device_pm_control_nop,
 		    &uart_cmsdk_apb_dev_data_2,
 		    &uart_cmsdk_apb_dev_cfg_2, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -626,7 +626,7 @@ static void uart_cmsdk_apb_irq_config_func_2(const struct device *dev)
 	IRQ_CONNECT(CMSDK_APB_UART_2_IRQ,
 		    DT_INST_IRQ_BY_NAME(2, priority, irq),
 		    uart_cmsdk_apb_isr,
-		    DEVICE_GET(uart_cmsdk_apb_2),
+		    DEVICE_DT_INST_GET(2),
 		    0);
 	irq_enable(CMSDK_APB_UART_2_IRQ);
 }
@@ -636,14 +636,14 @@ static void uart_cmsdk_apb_irq_config_func_2(const struct device *dev)
 	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(2, tx, irq),
 		    DT_INST_IRQ_BY_NAME(2, tx, priority),
 		    uart_cmsdk_apb_isr,
-		    DEVICE_GET(uart_cmsdk_apb_2),
+		    DEVICE_DT_INST_GET(2),
 		    0);
 	irq_enable(DT_INST_IRQ_BY_NAME(2, tx, irq));
 
 	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(2, rx, irq),
 		    DT_INST_IRQ_BY_NAME(2, rx, priority),
 		    uart_cmsdk_apb_isr,
-		    DEVICE_GET(uart_cmsdk_apb_2),
+		    DEVICE_DT_INST_GET(2),
 		    0);
 	irq_enable(DT_INST_IRQ_BY_NAME(2, rx, irq));
 }
@@ -676,9 +676,9 @@ static struct uart_cmsdk_apb_dev_data uart_cmsdk_apb_dev_data_3 = {
 			.device = DT_INST_REG_ADDR(3),},
 };
 
-DEVICE_AND_API_INIT(uart_cmsdk_apb_3,
-		    DT_INST_LABEL(3),
+DEVICE_DT_INST_DEFINE(3,
 		    &uart_cmsdk_apb_init,
+		    device_pm_control_nop,
 		    &uart_cmsdk_apb_dev_data_3,
 		    &uart_cmsdk_apb_dev_cfg_3, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -691,7 +691,7 @@ static void uart_cmsdk_apb_irq_config_func_3(const struct device *dev)
 	IRQ_CONNECT(CMSDK_APB_UART_3_IRQ,
 		    DT_INST_IRQ_BY_NAME(3, priority, irq),
 		    uart_cmsdk_apb_isr,
-		    DEVICE_GET(uart_cmsdk_apb_3),
+		    DEVICE_DT_INST_GET(3),
 		    0);
 	irq_enable(CMSDK_APB_UART_3_IRQ);
 }
@@ -701,14 +701,14 @@ static void uart_cmsdk_apb_irq_config_func_3(const struct device *dev)
 	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(3, tx, irq),
 		    DT_INST_IRQ_BY_NAME(3, tx, priority),
 		    uart_cmsdk_apb_isr,
-		    DEVICE_GET(uart_cmsdk_apb_3),
+		    DEVICE_DT_INST_GET(3),
 		    0);
 	irq_enable(DT_INST_IRQ_BY_NAME(3, tx, irq));
 
 	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(3, rx, irq),
 		    DT_INST_IRQ_BY_NAME(3, rx, priority),
 		    uart_cmsdk_apb_isr,
-		    DEVICE_GET(uart_cmsdk_apb_3),
+		    DEVICE_DT_INST_GET(3),
 		    0);
 	irq_enable(DT_INST_IRQ_BY_NAME(3, rx, irq));
 }
@@ -741,9 +741,9 @@ static struct uart_cmsdk_apb_dev_data uart_cmsdk_apb_dev_data_4 = {
 			.device = DT_INST_REG_ADDR(4),},
 };
 
-DEVICE_AND_API_INIT(uart_cmsdk_apb_4,
-		    DT_INST_LABEL(4),
+DEVICE_DT_INST_DEFINE(4,
 		    &uart_cmsdk_apb_init,
+		    device_pm_control_nop,
 		    &uart_cmsdk_apb_dev_data_4,
 		    &uart_cmsdk_apb_dev_cfg_4, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -756,7 +756,7 @@ static void uart_cmsdk_apb_irq_config_func_4(const struct device *dev)
 	IRQ_CONNECT(CMSDK_APB_UART_4_IRQ,
 		    DT_INST_IRQ_BY_NAME(4, priority, irq),
 		    uart_cmsdk_apb_isr,
-		    DEVICE_GET(uart_cmsdk_apb_4),
+		    DEVICE_DT_INST_GET(4),
 		    0);
 	irq_enable(CMSDK_APB_UART_4_IRQ);
 }
@@ -766,14 +766,14 @@ static void uart_cmsdk_apb_irq_config_func_4(const struct device *dev)
 	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(4, tx, irq),
 		    DT_INST_IRQ_BY_NAME(4, tx, priority),
 		    uart_cmsdk_apb_isr,
-		    DEVICE_GET(uart_cmsdk_apb_4),
+		    DEVICE_DT_INST_GET(4),
 		    0);
 	irq_enable(DT_INST_IRQ_BY_NAME(4, tx, irq));
 
 	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(4, rx, irq),
 		    DT_INST_IRQ_BY_NAME(4, rx, priority),
 		    uart_cmsdk_apb_isr,
-		    DEVICE_GET(uart_cmsdk_apb_4),
+		    DEVICE_DT_INST_GET(4),
 		    0);
 	irq_enable(DT_INST_IRQ_BY_NAME(4, rx, irq));
 }

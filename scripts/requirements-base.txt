@@ -7,13 +7,17 @@
 pyelftools>=0.26
 
 # used by dts generation to parse binding YAMLs, also used by
-# sanitycheck to parse YAMLs
+# twister to parse YAMLs, by west, zephyr_module,...
 PyYAML>=5.1
+
+# YAML validation. Used by zephyr_module.
+pykwalify
 
 # used by west_commands
 canopen
 packaging
 progress
+psutil
 
 # for ram/rom reports
 anytree

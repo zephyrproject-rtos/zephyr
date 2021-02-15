@@ -574,7 +574,7 @@ static int i2c_sam0_set_apply_bitrate(const struct device *dev,
 		/* 2:1 low:high ratio */
 		baud_high = baud;
 		baud_high /= 3U;
-		baud_high = MAX(MIN(baud_high, 255U), 1U);
+		baud_high = CLAMP(baud_high, 1U, 255U);
 		baud_low = baud - baud_high;
 		if (baud_low < 1U && baud_high > 1U) {
 			--baud_high;
@@ -605,7 +605,7 @@ static int i2c_sam0_set_apply_bitrate(const struct device *dev,
 		/* 2:1 low:high ratio */
 		baud_high = baud;
 		baud_high /= 3U;
-		baud_high = MAX(MIN(baud_high, 255U), 1U);
+		baud_high = CLAMP(baud_high, 1U, 255U);
 		baud_low = baud - baud_high;
 		if (baud_low < 1U && baud_high > 1U) {
 			--baud_high;
@@ -751,7 +751,7 @@ static const struct i2c_driver_api i2c_sam0_driver_api = {
 		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, m, irq),		\
 			    DT_INST_IRQ_BY_IDX(n, m, priority),		\
 			    i2c_sam0_isr,				\
-			    DEVICE_GET(i2c_sam0_##n), 0);		\
+			    DEVICE_DT_INST_GET(n), 0);			\
 		irq_enable(DT_INST_IRQ_BY_IDX(n, m, irq));		\
 	} while (0)
 
@@ -799,9 +799,9 @@ static const struct i2c_sam0_dev_config i2c_sam0_dev_config_##n = {	\
 	static void i2c_sam0_irq_config_##n(const struct device *dev);	\
 	I2C_SAM0_CONFIG(n);						\
 	static struct i2c_sam0_dev_data i2c_sam0_dev_data_##n;		\
-	DEVICE_AND_API_INIT(i2c_sam0_##n,				\
-			    DT_INST_LABEL(n),				\
+	DEVICE_DT_INST_DEFINE(n,					\
 			    &i2c_sam0_initialize,			\
+			    device_pm_control_nop,			\
 			    &i2c_sam0_dev_data_##n,			\
 			    &i2c_sam0_dev_config_##n, POST_KERNEL,	\
 			    CONFIG_I2C_INIT_PRIORITY,			\

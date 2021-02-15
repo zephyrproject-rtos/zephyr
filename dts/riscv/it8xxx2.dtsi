@@ -1,0 +1,226 @@
+/*
+ * Copyright (c) 2020 ITE Corporation. All Rights Reserved.
+ * Copyright (c) 2019-2020 Jyunlin Chen <jyunlin.chen@ite.com.tw>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <dt-bindings/irq.h>
+#include <dt-bindings/i2c/i2c.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		cpu@0 {
+			compatible = "ite,riscv-ite";
+			device_type = "cpu";
+			reg = <0>;
+		};
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		flashctrl: flash-controller@80000000 {
+			compatible = "ite,it8xxx2-flash-controller";
+			reg = <0x80000000 0x100>;
+			label = "fspi";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@80000000 {
+				compatible = "soc-nv-flash";
+				reg = <0x80000000 DT_SIZE_K(512)>;
+				erase-block-size = <1024>;
+				write-block-size = <1>;
+			};
+		};
+		pinmux: pinmux@f016f0 {
+			compatible = "ite,it8xxx2-pinmux";
+			reg = <0x00f016f0 0x0010>;
+			label = "PINMUX";
+		};
+		sram0: memory@80080000 {
+			compatible = "mmio-sram";
+			reg = <0x80080000 DT_SIZE_K(60)>;
+		};
+		intc: interrupt-controller@f03f00 {
+			#interrupt-cells = <2>;
+			compatible = "ite,it8xxx2-intc";
+			interrupt-controller;
+			reg = <0x00f03f00 0x0100>;
+		};
+		uart1: uart@f02700 {
+			compatible = "ns16550";
+			reg = <0x00f02700 0x0020>;
+			label = "console";
+			current-speed = <115200>;
+			clock-frequency = <1804800>;
+			interrupts = <38 IRQ_TYPE_EDGE_RISING>;
+			interrupt-parent = <&intc>;
+		};
+		uart2: uart@f02800 {
+			compatible = "ns16550";
+			reg = <0x00f02800 0x0020>;
+			label = "UART_2";
+			current-speed = <460800>;
+			clock-frequency = <1804800>;
+			interrupts = <39 IRQ_TYPE_EDGE_RISING>;
+			interrupt-parent = <&intc>;
+		};
+		timer: timer@f01f00 {
+			compatible = "ite,it8xxx2-timer";
+			reg = <0x00f01f00 0x0062>;
+			label = "sys_clock";
+			interrupts = <0 IRQ_TYPE_NONE
+				30 IRQ_TYPE_EDGE_RISING
+				58 IRQ_TYPE_EDGE_RISING
+				155 IRQ_TYPE_EDGE_FALLING
+				156 IRQ_TYPE_EDGE_FALLING
+				157 IRQ_TYPE_EDGE_FALLING
+				158 IRQ_TYPE_EDGE_FALLING
+				159 IRQ_TYPE_EDGE_FALLING
+				80 IRQ_TYPE_EDGE_RISING>;
+			interrupt-parent = <&intc>;
+		};
+		gpiob: gpio@f01602 {
+			compatible = "ite,it8xxx2-gpio";
+			reg = <0x00f01602 0x0001>;
+			ngpios = <8>;
+			label = "GPDRB";
+			status = "disabled";
+			gpio-controller;
+			interrupts = <106 IRQ_TYPE_LEVEL_HIGH
+				107 IRQ_TYPE_LEVEL_HIGH
+				92 IRQ_TYPE_LEVEL_HIGH
+				108 IRQ_TYPE_LEVEL_HIGH
+				99 IRQ_TYPE_LEVEL_HIGH
+				109 IRQ_TYPE_LEVEL_HIGH
+				110 IRQ_TYPE_LEVEL_HIGH
+				111 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			#gpio-cells = <2>;
+		};
+		gpiof: gpio@f01606 {
+			compatible = "ite,it8xxx2-gpio";
+			reg = <0x00f01606 0x0001>;
+			ngpios = <8>;
+			label = "GPDRF";
+			status = "disabled";
+			gpio-controller;
+			interrupts = <101 IRQ_TYPE_LEVEL_HIGH
+				102 IRQ_TYPE_LEVEL_HIGH
+				103 IRQ_TYPE_LEVEL_HIGH
+				104 IRQ_TYPE_LEVEL_HIGH
+				52 IRQ_TYPE_LEVEL_HIGH
+				53 IRQ_TYPE_LEVEL_HIGH
+				54 IRQ_TYPE_LEVEL_HIGH
+				55 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			#gpio-cells = <2>;
+		};
+		gpiom: gpio@f0160D {
+			compatible = "ite,it8xxx2-gpio";
+			reg = <0x00f0160D 0x0001>;
+			ngpios = <8>;
+			label = "GPDRM";
+			status = "disabled";
+			gpio-controller;
+			interrupt-parent = <&intc>;
+			#gpio-cells = <2>;
+		};
+		spi0:spi@f02600  {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "ite,it8xxx2-sspi";
+			reg = <0x00f02600 0x40>;
+			label = "SPI0";
+			interrupt-parent = <&intc>;
+			interrupts = <37 IRQ_TYPE_EDGE_RISING>;
+			clock-frequency = <115200>;
+		};
+		spi1:spi@f02640  {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "ite,it8xxx2-sspi";
+			reg = <0x00f02640 0x40>;
+			label = "SPI1";
+			interrupts = <37 IRQ_TYPE_EDGE_RISING>;
+			interrupt-parent = <&intc>;
+			status = "okay";
+		};
+		i2c0: i2c@f01c40 {
+			compatible = "ite,it8xxx2-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00f01c40 0x0040>;
+			interrupts = <9 IRQ_TYPE_EDGE_FALLING>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+			label = "I2C_0";
+			port-num = <0>;
+		};
+		i2c1: i2c@f01c80 {
+			compatible = "ite,it8xxx2-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00f01c80 0x0040>;
+			interrupts = <10 IRQ_TYPE_EDGE_FALLING>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+			label = "I2C_1";
+			port-num = <1>;
+		};
+		i2c2: i2c@f01cc0 {
+			compatible = "ite,it8xxx2-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00f01cc0 0x0040>;
+			interrupts = <16 IRQ_TYPE_EDGE_FALLING>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+			label = "I2C_2";
+			port-num = <2>;
+		};
+		i2c3: i2c@f03680 {
+			compatible = "ite,it8xxx2-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00f03680 0x0080>;
+			interrupts = <4 IRQ_TYPE_EDGE_FALLING>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+			label = "I2C_3";
+			port-num = <3>;
+		};
+		i2c4: i2c@f03500 {
+			compatible = "ite,it8xxx2-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00f03500 0x0080>;
+			interrupts = <152 IRQ_TYPE_EDGE_FALLING>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+			label = "I2C_4";
+			port-num = <4>;
+		};
+		i2c5: i2c@f03580 {
+			compatible = "ite,it8xxx2-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00f03580 0x0080>;
+			interrupts = <153 IRQ_TYPE_EDGE_FALLING>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+			label = "I2C_5";
+			port-num = <5>;
+		};
+	};
+};

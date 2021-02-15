@@ -1,8 +1,0 @@
-tests:
-  kernel.memory_pool:
-    tags: kernel mem_pool
-  kernel.memory_pool.legacy:
-    min_ram: 32
-    tags: kernel mem_pool
-    extra_configs:
-      - CONFIG_MEM_POOL_HEAP_BACKEND=n

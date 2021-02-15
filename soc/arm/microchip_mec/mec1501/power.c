@@ -12,8 +12,6 @@
 #include <soc.h>
 #include "device_power.h"
 
-#if defined(CONFIG_SYS_POWER_DEEP_SLEEP_STATES)
-
 /*
  * Deep Sleep
  * Pros:
@@ -71,15 +69,12 @@ static void z_power_soc_deep_sleep(void)
 	soc_deep_sleep_periph_restore();
 
 	/*
-	 * _sys_pm_power_state_exit_post_ops() is not being called
+	 * pm_power_state_exit_post_ops() is not being called
 	 * after exiting deep sleep, so need to unmask exceptions
 	 * and interrupts here.
 	 */
 	__set_PRIMASK(0);
 }
-#endif
-
-#ifdef CONFIG_SYS_POWER_SLEEP_STATES
 
 /*
  * Light Sleep
@@ -100,44 +95,35 @@ static void z_power_soc_sleep(void)
 	__NOP();
 	__NOP();
 }
-#endif
 
 /*
- * Called from _sys_suspend(int32_t ticks) in subsys/power.c
- * For deep sleep _sys_suspend has executed all the driver
+ * Called from pm_system_suspend(int32_t ticks) in subsys/power.c
+ * For deep sleep pm_system_suspend has executed all the driver
  * power management call backs.
  */
-void sys_set_power_state(enum power_states state)
+void pm_power_state_set(struct pm_state_info info)
 {
-	switch (state) {
-#if (defined(CONFIG_SYS_POWER_SLEEP_STATES))
-	case SYS_POWER_STATE_SLEEP_1:
+	switch (info.state) {
+	case PM_STATE_SUSPEND_TO_IDLE:
 		z_power_soc_sleep();
 		break;
-#endif
-#if (defined(CONFIG_SYS_POWER_DEEP_SLEEP_STATES))
-	case SYS_POWER_STATE_DEEP_SLEEP_1:
+	case PM_STATE_SUSPEND_TO_RAM:
 		z_power_soc_deep_sleep();
 		break;
-#endif
 	default:
 		break;
 	}
 }
 
-void _sys_pm_power_state_exit_post_ops(enum power_states state)
+void pm_power_state_exit_post_ops(struct pm_state_info info)
 {
-	switch (state) {
-#if (defined(CONFIG_SYS_POWER_SLEEP_STATES))
-	case SYS_POWER_STATE_SLEEP_1:
+	switch (info.state) {
+	case PM_STATE_SUSPEND_TO_IDLE:
 		__enable_irq();
 		break;
-#endif
-#if (defined(CONFIG_SYS_POWER_DEEP_SLEEP_STATES))
-	case SYS_POWER_STATE_DEEP_SLEEP_1:
+	case PM_STATE_SUSPEND_TO_RAM:
 		__enable_irq();
 		break;
-#endif
 	default:
 		break;
 	}

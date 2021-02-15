@@ -110,6 +110,8 @@
 	rsr.LCOUNT a0
 	s32i a0, a1, BSA_LCOUNT_OFF
 #endif
+	rsr.exccause a0
+	s32i a0, a1, BSA_EXCCAUSE_OFF
 #if XCHAL_HAVE_S32C1I
 	rsr.SCOMPARE1 a0
 	s32i a0, a1, BSA_SCOMPARE1_OFF

@@ -28,7 +28,7 @@
 #include <drivers/interrupt_controller/ioapic.h>
 #endif
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 #include <power/power.h>
 #endif
 
@@ -424,7 +424,7 @@ static inline int gpio_dw_manage_callback(const struct device *port,
 	return gpio_manage_callback(&context->callbacks, callback, set);
 }
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 static void gpio_dw_set_power_state(const struct device *port,
 				    uint32_t power_state)
 {
@@ -574,18 +574,10 @@ static struct gpio_dw_runtime gpio_0_runtime = {
 	.base_addr = DT_INST_REG_ADDR(0),
 };
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-
-DEVICE_DEFINE(gpio_dw_0, DT_INST_LABEL(0),
+DEVICE_DT_INST_DEFINE(0,
 	      gpio_dw_initialize, gpio_dw_device_ctrl, &gpio_0_runtime,
 	      &gpio_config_0, POST_KERNEL, CONFIG_GPIO_DW_INIT_PRIORITY,
 	      &api_funcs);
-#else
-DEVICE_AND_API_INIT(gpio_dw_0, DT_INST_LABEL(0),
-		    gpio_dw_initialize, &gpio_0_runtime, &gpio_config_0,
-		    POST_KERNEL, CONFIG_GPIO_DW_INIT_PRIORITY,
-		    &api_funcs);
-#endif
 
 #if DT_INST_IRQ_HAS_CELL(0, flags)
 #define INST_0_IRQ_FLAGS DT_INST_IRQ(0, flags)
@@ -600,7 +592,7 @@ static void gpio_config_0_irq(const struct device *port)
 #ifdef CONFIG_GPIO_DW_0_IRQ_DIRECT
 	IRQ_CONNECT(DT_INST_IRQN(0),
 		    DT_INST_IRQ(0, priority), gpio_dw_isr,
-		    DEVICE_GET(gpio_dw_0),
+		    DEVICE_DT_INST_GET(0),
 		    INST_0_IRQ_FLAGS);
 	irq_enable(config->irq_num);
 #elif defined(CONFIG_GPIO_DW_0_IRQ_SHARED)
@@ -644,18 +636,10 @@ static struct gpio_dw_runtime gpio_1_runtime = {
 	.base_addr = DT_INST_REG_ADDR(1),
 };
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-DEVICE_DEFINE(gpio_dw_1, DT_INST_LABEL(1),
+DEVICE_DT_INST_DEFINE(1,
 	      gpio_dw_initialize, gpio_dw_device_ctrl, &gpio_1_runtime,
 	      &gpio_dw_config_1, POST_KERNEL, CONFIG_GPIO_DW_INIT_PRIORITY,
 	      &api_funcs);
-#else
-DEVICE_AND_API_INIT(gpio_dw_1, DT_INST_LABEL(1),
-		    gpio_dw_initialize, &gpio_1_runtime, &gpio_dw_config_1,
-		    POST_KERNEL, CONFIG_GPIO_DW_INIT_PRIORITY,
-		    &api_funcs);
-#endif
-
 
 #if DT_INST_IRQ_HAS_CELL(1, flags)
 #define INST_1_IRQ_FLAGS DT_INST_IRQ(1, flags)
@@ -670,7 +654,7 @@ static void gpio_config_1_irq(const struct device *port)
 #ifdef CONFIG_GPIO_DW_1_IRQ_DIRECT
 	IRQ_CONNECT(DT_INST_IRQN(1),
 		    DT_INST_IRQ(1, priority), gpio_dw_isr,
-		    DEVICE_GET(gpio_dw_1),
+		    DEVICE_DT_INST_GET(1),
 		    INST_1_IRQ_FLAGS);
 	irq_enable(config->irq_num);
 #elif defined(CONFIG_GPIO_DW_1_IRQ_SHARED)
@@ -713,17 +697,10 @@ static struct gpio_dw_runtime gpio_2_runtime = {
 	.base_addr = DT_INST_REG_ADDR(2),
 };
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-DEVICE_DEFINE(gpio_dw_2, DT_INST_LABEL(2),
+DEVICE_DT_INST_DEFINE(2,
 	      gpio_dw_initialize, gpio_dw_device_ctrl, &gpio_2_runtime,
 	      &gpio_dw_config_2, POST_KERNEL, CONFIG_GPIO_DW_INIT_PRIORITY,
 	      &api_funcs);
-#else
-DEVICE_AND_API_INIT(gpio_dw_2, DT_INST_LABEL(2),
-		    gpio_dw_initialize, &gpio_2_runtime, &gpio_dw_config_2,
-		    POST_KERNEL, CONFIG_GPIO_DW_INIT_PRIORITY,
-		    &api_funcs);
-#endif
 
 #if DT_INST_IRQ_HAS_CELL(2, flags)
 #define INST_2_IRQ_FLAGS DT_INST_IRQ(2, flags)
@@ -738,7 +715,7 @@ static void gpio_config_2_irq(const struct device *port)
 #ifdef CONFIG_GPIO_DW_2_IRQ_DIRECT
 	IRQ_CONNECT(DT_INST_IRQN(2),
 		    DT_INST_IRQ(2, priority), gpio_dw_isr,
-		    DEVICE_GET(gpio_dw_2),
+		    DEVICE_DT_INST_GET(2),
 		    INST_2_IRQ_FLAGS);
 	irq_enable(config->irq_num);
 #elif defined(CONFIG_GPIO_DW_2_IRQ_SHARED)
@@ -781,17 +758,10 @@ static struct gpio_dw_runtime gpio_3_runtime = {
 	.base_addr = DT_INST_REG_ADDR(3),
 };
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-DEVICE_DEFINE(gpio_dw_3, DT_INST_LABEL(3),
+DEVICE_DT_INST_DEFINE(3,
 	      gpio_dw_initialize, gpio_dw_device_ctrl, &gpio_3_runtime,
 	      &gpio_dw_config_3, POST_KERNEL, CONFIG_GPIO_DW_INIT_PRIORITY,
 	      &api_funcs);
-#else
-DEVICE_AND_API_INIT(gpio_dw_3, DT_INST_LABEL(3),
-		    gpio_dw_initialize, &gpio_3_runtime, &gpio_dw_config_3,
-		    POST_KERNEL, CONFIG_GPIO_DW_INIT_PRIORITY,
-		    &api_funcs);
-#endif
 
 #if DT_INST_IRQ_HAS_CELL(3, flags)
 #define INST_3_IRQ_FLAGS DT_INST_IRQ(3, flags)
@@ -806,7 +776,7 @@ static void gpio_config_3_irq(const struct device *port)
 #ifdef CONFIG_GPIO_DW_3_IRQ_DIRECT
 	IRQ_CONNECT(DT_INST_IRQN(3),
 		    DT_INST_IRQ(3, priority), gpio_dw_isr,
-		    DEVICE_GET(gpio_dw_3),
+		    DEVICE_DT_INST_GET(3),
 		    INST_3_IRQ_FLAGS);
 	irq_enable(config->irq_num);
 #elif defined(CONFIG_GPIO_DW_3_IRQ_SHARED)

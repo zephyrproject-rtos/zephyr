@@ -1,0 +1,3 @@
+tests:
+  lib.p4wq:
+      tags: p4wq

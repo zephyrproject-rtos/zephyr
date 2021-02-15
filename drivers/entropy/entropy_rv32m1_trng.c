@@ -42,8 +42,9 @@ static struct rv32m1_entropy_config entropy_rv32m1_config = {
 
 static int entropy_rv32m1_trng_init(const struct device *);
 
-DEVICE_AND_API_INIT(entropy_rv32m1_trng, DT_INST_LABEL(0),
-		    entropy_rv32m1_trng_init, NULL, &entropy_rv32m1_config,
+DEVICE_DT_INST_DEFINE(0,
+		    entropy_rv32m1_trng_init, device_pm_control_nop,
+		    NULL, &entropy_rv32m1_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &entropy_rv32m1_trng_api_funcs);
 

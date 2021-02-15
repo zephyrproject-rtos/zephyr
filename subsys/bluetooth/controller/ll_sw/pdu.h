@@ -5,8 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <toolchain.h>
-
 /*
  * PDU fields sizes
  */
@@ -27,33 +25,44 @@
 #define INITA_SIZE    BDADDR_SIZE
 #define TARGETA_SIZE  BDADDR_SIZE
 #define LLDATA_SIZE   22
-#define CTE_INFO_SIZE 1
-#define TX_PWR_SIZE   1
-#define ACAD_SIZE     0
+
+/* Constant offsets in extended header (TargetA is present in PDUs with AdvA) */
+#define ADVA_OFFSET   0
+#define TGTA_OFFSET   (ADVA_OFFSET + BDADDR_SIZE)
 
 #define BYTES2US(bytes, phy) (((bytes)<<3)/BIT((phy&0x3)>>1))
 
 /* Advertisement channel maximum legacy payload size */
-#define PDU_AC_PAYLOAD_SIZE_MAX 37
+#define PDU_AC_LEG_PAYLOAD_SIZE_MAX 37
 /* Advertisement channel maximum extended payload size */
-#define PDU_AC_EXT_PAYLOAD_SIZE_MAX 251
-/* Advertisement channel minimum extended payload size */
-#define PDU_AC_EXT_PAYLOAD_SIZE_MIN (offsetof(pdu_adv_com_ext_adv, \
-					      ext_hdr_adi_adv_data) + \
-				     ADVA_SIZE + \
-				     TARGETA_SIZE + \
-				     CTE_INFO_SIZE + \
-				     sizeof(struct pdu_adv_adi) + \
-				     sizeof(struct pdu_adv_aux_ptr) + \
-				     sizeof(struct pdu_adv_sync_info) + \
-				     TX_PWR_SIZE + \
-				     ACAD_SIZE)
+#define PDU_AC_EXT_PAYLOAD_SIZE_MAX 255
+
+/* Advertisement channel maximum payload size */
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+#define PDU_AC_EXT_HEADER_SIZE_MAX  63
+/* TODO: PDU_AC_EXT_PAYLOAD_OVERHEAD can be reduced based on supported
+ *       features, like omitting support for periodic advertising will reduce
+ *       18 octets in the Common Extended Advertising Payload Format.
+ */
+#define PDU_AC_EXT_PAYLOAD_OVERHEAD (offsetof(struct pdu_adv_com_ext_adv, \
+					      ext_hdr_adv_data) + \
+				     PDU_AC_EXT_HEADER_SIZE_MAX)
+#define PDU_AC_PAYLOAD_SIZE_MAX     MAX(MIN((PDU_AC_EXT_PAYLOAD_OVERHEAD + \
+					     CONFIG_BT_CTLR_ADV_DATA_LEN_MAX), \
+					    PDU_AC_EXT_PAYLOAD_SIZE_MAX), \
+					PDU_AC_LEG_PAYLOAD_SIZE_MAX)
+#else
+#define PDU_AC_PAYLOAD_SIZE_MAX     PDU_AC_LEG_PAYLOAD_SIZE_MAX
+#endif
 
 /* Link Layer header size of Adv PDU. Assumes pdu_adv is packed */
 #define PDU_AC_LL_HEADER_SIZE  (offsetof(struct pdu_adv, payload))
 
 /* Link Layer Advertisement channel maximum PDU buffer size */
 #define PDU_AC_LL_SIZE_MAX     (PDU_AC_LL_HEADER_SIZE + PDU_AC_PAYLOAD_SIZE_MAX)
+
+/* Advertisement channel maximum legacy advertising/scan data size */
+#define PDU_AC_DATA_SIZE_MAX 31
 
 /* Advertisement channel Access Address */
 #define PDU_AC_ACCESS_ADDR     0x8e89bed6
@@ -80,6 +89,11 @@
 /* Offset Units field encoding */
 #define OFFS_UNIT_30_US         30
 #define OFFS_UNIT_300_US        300
+
+/* transmitWindowDelay times (us) */
+#define WIN_DELAY_LEGACY     1250
+#define WIN_DELAY_UNCODED    2500
+#define WIN_DELAY_CODED      3750
 
 /*
  * Macros to return correct Data Channel PDU time
@@ -163,7 +177,7 @@
 
 struct pdu_adv_adv_ind {
 	uint8_t addr[BDADDR_SIZE];
-	uint8_t data[31];
+	uint8_t data[PDU_AC_DATA_SIZE_MAX];
 } __packed;
 
 struct pdu_adv_direct_ind {
@@ -173,7 +187,7 @@ struct pdu_adv_direct_ind {
 
 struct pdu_adv_scan_rsp {
 	uint8_t addr[BDADDR_SIZE];
-	uint8_t data[31];
+	uint8_t data[PDU_AC_DATA_SIZE_MAX];
 } __packed;
 
 struct pdu_adv_scan_req {
@@ -206,6 +220,31 @@ struct pdu_adv_connect_ind {
 	} __packed;
 } __packed;
 
+struct pdu_adv_ext_hdr {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+	uint8_t adv_addr:1;
+	uint8_t tgt_addr:1;
+	uint8_t cte_info:1;
+	uint8_t adi:1;
+	uint8_t aux_ptr:1;
+	uint8_t sync_info:1;
+	uint8_t tx_pwr:1;
+	uint8_t rfu1:1;
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+	uint8_t rfu1:1;
+	uint8_t tx_pwr:1;
+	uint8_t sync_info:1;
+	uint8_t aux_ptr:1;
+	uint8_t adi:1;
+	uint8_t cte_info:1;
+	uint8_t tgt_addr:1;
+	uint8_t adv_addr:1;
+#else
+#error "Unsupported endianness"
+#endif
+	uint8_t data[0];
+} __packed;
+
 struct pdu_adv_com_ext_adv {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 	uint8_t ext_hdr_len:6;
@@ -216,7 +255,10 @@ struct pdu_adv_com_ext_adv {
 #else
 #error "Unsupported endianness"
 #endif
-	uint8_t ext_hdr_adi_adv_data[254];
+	union {
+		struct pdu_adv_ext_hdr ext_hdr;
+		uint8_t ext_hdr_adv_data[254];
+	};
 } __packed;
 
 enum pdu_adv_mode {
@@ -224,30 +266,6 @@ enum pdu_adv_mode {
 	EXT_ADV_MODE_CONN_NON_SCAN = 0x01,
 	EXT_ADV_MODE_NON_CONN_SCAN = 0x02,
 };
-
-struct pdu_adv_hdr {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-	uint8_t adv_addr:1;
-	uint8_t tgt_addr:1;
-	uint8_t rfu0:1;
-	uint8_t adi:1;
-	uint8_t aux_ptr:1;
-	uint8_t sync_info:1;
-	uint8_t tx_pwr:1;
-	uint8_t rfu1:1;
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-	uint8_t rfu1:1;
-	uint8_t tx_pwr:1;
-	uint8_t sync_info:1;
-	uint8_t aux_ptr:1;
-	uint8_t adi:1;
-	uint8_t rfu0:1;
-	uint8_t tgt_addr:1;
-	uint8_t adv_addr:1;
-#else
-#error "Unsupported endianness"
-#endif
-} __packed;
 
 struct pdu_adv_adi {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
@@ -293,6 +311,20 @@ enum pdu_adv_aux_phy {
 	EXT_ADV_AUX_PHY_LE_1M  = 0x00,
 	EXT_ADV_AUX_PHY_LE_2M  = 0x01,
 	EXT_ADV_AUX_PHY_LE_COD = 0x02,
+};
+
+struct pdu_cte_info {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+	uint8_t  time:5;
+	uint8_t  rfu:1;
+	uint8_t  type:2;
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+	uint8_t  type:2;
+	uint8_t  rfu:1;
+	uint8_t  time:5;
+#else
+#error "Unsupported endianness"
+#endif
 };
 
 struct pdu_adv_sync_info {
@@ -592,6 +624,10 @@ struct profile {
 	uint8_t cur;
 	uint8_t min;
 	uint8_t max;
+	uint8_t radio;
+	uint8_t lll;
+	uint8_t ull_high;
+	uint8_t ull_low;
 } __packed;
 #endif /* CONFIG_BT_CTLR_PROFILE_ISR */
 
@@ -683,6 +719,17 @@ struct pdu_big_ctrl {
 	} __packed;
 } __packed;
 
+enum pdu_bis_llid {
+	/** Unframed complete or end fragment */
+	PDU_BIS_LLID_COMPLETE_END = 0x00,
+	/** Unframed start or continuation fragment */
+	PDU_BIS_LLID_START_CONTINUE = 0x01,
+	/** Framed; one or more segments of a SDU */
+	PDU_BIS_LLID_FRAMED = 0x02,
+	/** BIG Control PDU */
+	PDU_BIS_LLID_CTRL = 0x03,
+};
+
 struct pdu_bis {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 	uint8_t ll_id:2;
@@ -702,4 +749,60 @@ struct pdu_bis {
 		uint8_t payload[0];
 		struct pdu_big_ctrl ctrl;
 	} __packed;
+} __packed;
+
+struct pdu_biginfo {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+	uint32_t offset:14;
+	uint32_t offset_units:1;
+	uint32_t iso_interval:12;
+	uint32_t num_bis:5;
+
+	uint32_t nse:5;
+	uint32_t bn:3;
+	uint32_t sub_interval:20;
+	uint32_t pto:4;
+
+	uint32_t spacing:20;
+	uint32_t irc:4;
+	uint32_t max_pdu:8;
+
+	uint8_t  rfu;
+
+	uint32_t seed_access_addr;
+
+	uint32_t sdu_interval:20;
+	uint32_t max_sdu:12;
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+	uint32_t num_bis:5;
+	uint32_t iso_interval:12;
+	uint32_t offset_units:1;
+	uint32_t offset:14;
+
+	uint32_t pto:4;
+	uint32_t sub_interval:20;
+	uint32_t bn:3;
+	uint32_t nse:5;
+
+	uint32_t max_pdu:8;
+	uint32_t irc:4;
+	uint32_t spacing:20;
+
+	uint8_t  rfu;
+
+	uint32_t seed_access_addr;
+
+	uint32_t max_sdu:12;
+	uint32_t sdu_interval:20;
+#else
+#error "Unsupported endianness"
+#endif /* __BYTE_ORDER__ */
+
+	uint16_t base_crc_init;
+
+	uint8_t chm_phy[5]; /* 37 bit chm; 3 bit phy */
+	uint8_t payload_count_framing[5]; /* 39 bit count; 1 bit framing */
+
+	uint8_t giv; /* encryption required */
+	uint16_t gskd; /* encryption required */
 } __packed;

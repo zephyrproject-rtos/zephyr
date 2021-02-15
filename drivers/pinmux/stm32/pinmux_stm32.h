@@ -21,6 +21,11 @@
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl) */
 #include "pinmux/pinmux.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 /**
  * @brief structure to convey pinctrl information for stm32 soc
  * value
@@ -202,6 +207,10 @@ int stm32_dt_pinctrl_remap(const struct soc_gpio_pinctrl *pinctrl,
 #include "pinmux_stm32mp1x.h"
 #elif CONFIG_SOC_SERIES_STM32WBX
 #include "pinmux_stm32wbx.h"
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif  /* ZEPHYR_DRIVERS_PINMUX_STM32_PINMUX_STM32_H_ */

@@ -647,7 +647,7 @@ static int spi_nor_process_bfp(const struct device *dev,
 	struct jesd216_erase_type *etp = data->erase_types;
 	const size_t flash_size = jesd216_bfp_density(bfp) / 8U;
 
-	LOG_INF("%s: %u MiBy flash", dev->name, (uint32_t)(flash_size >> 23));
+	LOG_INF("%s: %u MiBy flash", dev->name, (uint32_t)(flash_size >> 20));
 
 	/* Copy over the erase types, preserving their order.  (The
 	 * Sector Map Parameter table references them by index.)
@@ -704,10 +704,10 @@ static int spi_nor_process_sfdp(const struct device *dev)
 	}
 
 	LOG_INF("%s: SFDP v %u.%u AP %x with %u PH", dev->name,
-		hp->rev_major, hp->rev_minor, hp->access, hp->nph);
+		hp->rev_major, hp->rev_minor, hp->access, 1 + hp->nph);
 
 	const struct jesd216_param_header *php = hp->phdr;
-	const struct jesd216_param_header *phpe = php + MIN(decl_nph, hp->nph);
+	const struct jesd216_param_header *phpe = php + MIN(decl_nph, 1 + hp->nph);
 
 	while (php != phpe) {
 		uint16_t id = jesd216_param_id(php);
@@ -1039,7 +1039,7 @@ static const struct spi_nor_config spi_nor_config_0 = {
 
 static struct spi_nor_data spi_nor_data_0;
 
-DEVICE_AND_API_INIT(spi_flash_memory, DT_INST_LABEL(0),
-		    &spi_nor_init, &spi_nor_data_0, &spi_nor_config_0,
-		    POST_KERNEL, CONFIG_SPI_NOR_INIT_PRIORITY,
-		    &spi_nor_api);
+DEVICE_DT_INST_DEFINE(0, &spi_nor_init, device_pm_control_nop,
+		 &spi_nor_data_0, &spi_nor_config_0,
+		 POST_KERNEL, CONFIG_SPI_NOR_INIT_PRIORITY,
+		 &spi_nor_api);

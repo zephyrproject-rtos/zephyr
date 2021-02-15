@@ -16,6 +16,8 @@ LOG_MODULE_REGISTER(net_gptp_sample, LOG_LEVEL_DBG);
 #include <net/ethernet.h>
 #include <net/gptp.h>
 
+extern void init_testing(void);
+
 static struct gptp_phase_dis_cb phase_dis;
 
 #if defined(CONFIG_NET_GPTP_VLAN)
@@ -75,7 +77,7 @@ static int setup_iface(struct net_if *iface, const char *ipv6_addr,
 	}
 
 	if (net_addr_pton(AF_INET, ipv4_addr, &addr4)) {
-		LOG_ERR("Invalid address: %s", ipv6_addr);
+		LOG_ERR("Invalid address: %s", ipv4_addr);
 		return -EINVAL;
 	}
 
@@ -158,4 +160,6 @@ static int init_app(void)
 void main(void)
 {
 	init_app();
+
+	init_testing();
 }

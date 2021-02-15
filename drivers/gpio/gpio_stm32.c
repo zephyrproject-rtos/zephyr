@@ -11,6 +11,11 @@
 #include <kernel.h>
 #include <device.h>
 #include <soc.h>
+#include <stm32_ll_bus.h>
+#include <stm32_ll_exti.h>
+#include <stm32_ll_gpio.h>
+#include <stm32_ll_pwr.h>
+#include <stm32_ll_system.h>
 #include <drivers/gpio.h>
 #include <drivers/clock_control/stm32_clock_control.h>
 #include <pinmux/stm32/pinmux_stm32.h>
@@ -553,7 +558,7 @@ static int gpio_stm32_init(const struct device *device)
 	return 0;
 }
 
-#define GPIO_DEVICE_INIT(__name, __suffix, __base_addr, __port, __cenr, __bus) \
+#define GPIO_DEVICE_INIT(__node, __suffix, __base_addr, __port, __cenr, __bus) \
 	static const struct gpio_stm32_config gpio_stm32_cfg_## __suffix = {   \
 		.common = {						       \
 			 .port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(16U), \
@@ -563,9 +568,9 @@ static int gpio_stm32_init(const struct device *device)
 		.pclken = { .bus = __bus, .enr = __cenr }		       \
 	};								       \
 	static struct gpio_stm32_data gpio_stm32_data_## __suffix;	       \
-	DEVICE_AND_API_INIT(gpio_stm32_## __suffix,			       \
-			    __name,					       \
+	DEVICE_DT_DEFINE(__node,					       \
 			    gpio_stm32_init,				       \
+			    device_pm_control_nop,			       \
 			    &gpio_stm32_data_## __suffix,		       \
 			    &gpio_stm32_cfg_## __suffix,		       \
 			    POST_KERNEL,				       \
@@ -573,7 +578,7 @@ static int gpio_stm32_init(const struct device *device)
 			    &gpio_stm32_driver)
 
 #define GPIO_DEVICE_INIT_STM32(__suffix, __SUFFIX)			\
-	GPIO_DEVICE_INIT(DT_LABEL(DT_NODELABEL(gpio##__suffix)),	\
+	GPIO_DEVICE_INIT(DT_NODELABEL(gpio##__suffix),	\
 			 __suffix,					\
 			 DT_REG_ADDR(DT_NODELABEL(gpio##__suffix)),	\
 			 STM32_PORT##__SUFFIX,				\
@@ -649,6 +654,6 @@ static int gpio_stm32_afio_init(const struct device *device)
 	return 0;
 }
 
-DEVICE_INIT(gpio_stm32_afio, "", gpio_stm32_afio_init, NULL, NULL, PRE_KERNEL_2, 0);
+SYS_DEVICE_DEFINE("gpio_stm32_afio", gpio_stm32_afio_init, NULL, PRE_KERNEL_2, 0);
 
 #endif /* CONFIG_SOC_SERIES_STM32F1X */

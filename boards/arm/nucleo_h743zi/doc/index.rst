@@ -94,27 +94,33 @@ Supported Features
 The Zephyr nucleo_h743zi board configuration supports the following hardware
 features:
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| RNG       | on-chip    | True Random number generator        |
-+-----------+------------+-------------------------------------+
++-------------+------------+-------------------------------------+
+| Interface   | Controller | Driver/Component                    |
++=============+============+=====================================+
+| NVIC        | on-chip    | nested vector interrupt controller  |
++-------------+------------+-------------------------------------+
+| UART        | on-chip    | serial port                         |
++-------------+------------+-------------------------------------+
+| PINMUX      | on-chip    | pinmux                              |
++-------------+------------+-------------------------------------+
+| GPIO        | on-chip    | gpio                                |
++-------------+------------+-------------------------------------+
+| RTC         | on-chip    | counter                             |
++-------------+------------+-------------------------------------+
+| I2C         | on-chip    | i2c                                 |
++-------------+------------+-------------------------------------+
+| PWM         | on-chip    | pwm                                 |
++-------------+------------+-------------------------------------+
+| ADC         | on-chip    | adc                                 |
++-------------+------------+-------------------------------------+
+| RNG         | on-chip    | True Random number generator        |
++-------------+------------+-------------------------------------+
+| ETHERNET    | on-chip    | ethernet                            |
++-------------+------------+-------------------------------------+
+| SPI         | on-chip    | spi                                 |
++-------------+------------+-------------------------------------+
+| Backup SRAM | on-chip    | Backup SRAM                         |
++-------------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -136,6 +142,8 @@ and a ST morpho connector. Board is configured as follows:
 - LD3 : PB14
 - I2C : PB8, PB9
 - ADC1_INP15 : PA3
+- ETH : PA1, PA2, PA7, PB13, PC1, PC4, PC5, PG11, PG13
+- SPI1 SCK/MISO/MOSI : PA5/PA6/PB5 (Arduino SPI)
 
 System Clock
 ------------
@@ -150,6 +158,12 @@ Serial Port
 Nucleo H743ZI board has 4 UARTs and 4 USARTs. The Zephyr console output is
 assigned to UART3. Default settings are 115200 8N1.
 
+Backup SRAM
+-----------
+
+In order to test backup SRAM you may want to disconnect VBAT from VDD. You can
+do it by removing ``SB156`` jumper on the back side of the board.
+
 Programming and Debugging
 *************************
 
@@ -160,7 +174,8 @@ flashed in the usual way (see :ref:`build_an_application` and
 .. note::
 
    If using OpenOCD you will need a recent development version as the last
-   official release does not support H7 series yet.
+   official release does not support H7 series yet. You can also choose the
+   ``stm32cubeprogrammer`` runner.
 
 Flashing
 ========

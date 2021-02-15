@@ -204,9 +204,129 @@ static void test_big_heap(void)
 	log_result(BIG_HEAP_SZ, &result);
 }
 
+/* Simple clobber detection */
+void realloc_fill_block(uint8_t *p, size_t sz)
+{
+	uint8_t val = (uint8_t)((uintptr_t)p >> 3);
+
+	for (int i = 0; i < sz; i++) {
+		p[i] = (uint8_t)(val + i);
+	}
+}
+
+bool realloc_check_block(uint8_t *data, uint8_t *orig, size_t sz)
+{
+	uint8_t val = (uint8_t)((uintptr_t)orig >> 3);
+
+	for (int i = 0; i < sz; i++) {
+		if (data[i] != (uint8_t)(val + i)) {
+			return false;
+		}
+	}
+	return true;
+}
+
+static void test_realloc(void)
+{
+	struct sys_heap heap;
+	void *p1, *p2, *p3;
+
+	/* Note whitebox assumption: allocation goes from low address
+	 * to high in an empty heap.
+	 */
+
+	sys_heap_init(&heap, heapmem, SMALL_HEAP_SZ);
+
+	/* Allocate from an empty heap, then expand, validate that it
+	 * happens in place.
+	 */
+	p1 = sys_heap_alloc(&heap, 64);
+	realloc_fill_block(p1, 64);
+	p2 = sys_heap_realloc(&heap, p1, 128);
+
+	zassert_true(sys_heap_validate(&heap), "invalid heap");
+	zassert_true(p1 == p2,
+		     "Realloc should have expanded in place %p -> %p",
+		     p1, p2);
+	zassert_true(realloc_check_block(p2, p1, 64), "data changed");
+
+	/* Allocate two blocks, then expand the first, validate that
+	 * it moves.
+	 */
+	p1 = sys_heap_alloc(&heap, 64);
+	realloc_fill_block(p1, 64);
+	p2 = sys_heap_alloc(&heap, 64);
+	realloc_fill_block(p2, 64);
+	p3 = sys_heap_realloc(&heap, p1, 128);
+
+	zassert_true(sys_heap_validate(&heap), "invalid heap");
+	zassert_true(p1 != p2,
+		     "Realloc should have moved %p", p1);
+	zassert_true(realloc_check_block(p2, p2, 64), "data changed");
+	zassert_true(realloc_check_block(p3, p1, 64), "data changed");
+
+	/* Allocate, then shrink.  Validate that it does not move. */
+	p1 = sys_heap_alloc(&heap, 128);
+	realloc_fill_block(p1, 128);
+	p2 = sys_heap_realloc(&heap, p1, 64);
+
+	zassert_true(sys_heap_validate(&heap), "invalid heap");
+	zassert_true(p1 == p2,
+		     "Realloc should have shrunk in place %p -> %p",
+		     p1, p2);
+	zassert_true(realloc_check_block(p2, p1, 64), "data changed");
+
+	/* Allocate two blocks, then expand the first within a chunk.
+	 * validate that it doesn't move. We assume CHUNK_UNIT == 8.
+	 */
+	p1 = sys_heap_alloc(&heap, 61);
+	realloc_fill_block(p1, 61);
+	p2 = sys_heap_alloc(&heap, 80);
+	realloc_fill_block(p2, 80);
+	p3 = sys_heap_realloc(&heap, p1, 64);
+
+	zassert_true(sys_heap_validate(&heap), "invalid heap");
+	zassert_true(p1 == p3,
+		     "Realloc should have expanded in place %p -> %p",
+		     p1, p3);
+	zassert_true(realloc_check_block(p3, p1, 61), "data changed");
+
+	/* Corner case with sys_heap_aligned_realloc() on 32-bit targets
+	 * where actual memory doesn't match with given pointer
+	 * (align_gap != 0).
+	 */
+	p1 = sys_heap_aligned_alloc(&heap, 8, 32);
+	realloc_fill_block(p1, 32);
+	p2 = sys_heap_alloc(&heap, 32);
+	realloc_fill_block(p2, 32);
+	p3 = sys_heap_aligned_realloc(&heap, p1, 8, 36);
+
+	zassert_true(sys_heap_validate(&heap), "invalid heap");
+	zassert_true(realloc_check_block(p3, p1, 32), "data changed");
+	zassert_true(realloc_check_block(p2, p2, 32), "data changed");
+	realloc_fill_block(p3, 36);
+	zassert_true(sys_heap_validate(&heap), "invalid heap");
+	zassert_true(p1 != p3,
+		     "Realloc should have moved %p", p1);
+
+	/* Test realloc with increasing alignment */
+	p1 = sys_heap_aligned_alloc(&heap, 32, 32);
+	p2 = sys_heap_aligned_alloc(&heap, 8, 32);
+	p3 = sys_heap_aligned_realloc(&heap, p2, 8, 16);
+	zassert_true(sys_heap_validate(&heap), "invalid heap");
+	zassert_true(p2 == p3,
+		     "Realloc should have expanded in place %p -> %p",
+		     p2, p3);
+	p3 = sys_heap_aligned_alloc(&heap, 32, 8);
+	zassert_true(sys_heap_validate(&heap), "invalid heap");
+	zassert_true(p2 != p3,
+		     "Realloc should have moved %p", p2);
+}
+
 void test_main(void)
 {
 	ztest_test_suite(lib_heap_test,
+			 ztest_unit_test(test_realloc),
 			 ztest_unit_test(test_small_heap),
 			 ztest_unit_test(test_fragmentation),
 			 ztest_unit_test(test_big_heap)

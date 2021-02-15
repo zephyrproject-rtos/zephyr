@@ -20,7 +20,7 @@
 static bool enter_low_power;
 static bool notify_app_entry;
 static bool notify_app_exit;
-static bool set_sys_power;
+static bool set_pm;
 static bool leave_idle;
 static bool idle_entered;
 
@@ -30,12 +30,12 @@ static struct dummy_driver_api *api;
  * Weak power hook functions. Used on systems that have not implemented
  * power management.
  */
-__weak void sys_set_power_state(enum power_states state)
+__weak void pm_power_state_set(struct pm_state_info info)
 {
-	/* at this point, sys_pm_notify_power_state_entry() implemented in
-	 * this file has been called and set_sys_power should have been set
+	/* at this point, notify_pm_state_entry() implemented in
+	 * this file has been called and set_pm should have been set
 	 */
-	zassert_true(set_sys_power == true,
+	zassert_true(set_pm == true,
 		     "Notification to enter suspend was not sent to the App");
 
 	/* this function is called after devices enter low power state */
@@ -45,29 +45,29 @@ __weak void sys_set_power_state(enum power_states state)
 	zassert_false(device_power_state == DEVICE_PM_ACTIVE_STATE, NULL);
 
 	/* this function is called when system entering low power state, so
-	 * parameter state should not be SYS_POWER_STATE_ACTIVE
+	 * parameter state should not be POWER_STATE_ACTIVE
 	 */
-	zassert_false(state == SYS_POWER_STATE_ACTIVE,
+	zassert_false(info.state == PM_STATE_ACTIVE,
 		      "Entering low power state with a wrong parameter");
 }
 
-__weak void _sys_pm_power_state_exit_post_ops(enum power_states state)
+__weak void pm_power_state_exit_post_ops(struct pm_state_info info)
 {
-	/* _sys_suspend is entered with irq locked
-	 * unlock irq before leave _sys_suspend
+	/* pm_system_suspend is entered with irq locked
+	 * unlock irq before leave pm_system_suspend
 	 */
 	irq_unlock(0);
 }
 
-__weak bool sys_pm_policy_low_power_devices(enum power_states pm_state)
+__weak bool pm_policy_low_power_devices(enum pm_state state)
 {
-	return sys_pm_is_sleep_state(pm_state);
+	return pm_is_sleep_state(state);
 }
 
 /* Our PM policy handler */
-enum power_states sys_pm_policy_next_state(int ticks)
+struct pm_state_info pm_policy_next_state(int ticks)
 {
-	enum power_states state;
+	struct pm_state_info info = {};
 
 	/* make sure this is idle thread */
 	zassert_true(z_is_idle_thread_object(_current), NULL);
@@ -77,18 +77,18 @@ enum power_states sys_pm_policy_next_state(int ticks)
 	if (enter_low_power) {
 		enter_low_power = false;
 		notify_app_entry = true;
-		state = SYS_POWER_STATE_SLEEP_1;
+		info.state = PM_STATE_RUNTIME_IDLE;
 	} else {
-		/* only test sys_pm_policy_next_state()
+		/* only test pm_policy_next_state()
 		 * no PM operation done
 		 */
-		state = SYS_POWER_STATE_ACTIVE;
+		info.state = PM_STATE_ACTIVE;
 	}
-	return state;
+	return info;
 }
 
 /* implement in application, called by idle thread */
-void sys_pm_notify_power_state_entry(enum power_states state)
+static void notify_pm_state_entry(enum pm_state state)
 {
 	uint32_t device_power_state;
 
@@ -96,17 +96,17 @@ void sys_pm_notify_power_state_entry(enum power_states state)
 	zassert_true(notify_app_entry == true,
 		     "Notification to enter suspend was not sent to the App");
 	zassert_true(z_is_idle_thread_object(_current), NULL);
-	zassert_equal(state, SYS_POWER_STATE_SLEEP_1, NULL);
+	zassert_equal(state, PM_STATE_RUNTIME_IDLE, NULL);
 
 	/* at this point, devices are active */
 	device_get_power_state(dev, &device_power_state);
 	zassert_equal(device_power_state, DEVICE_PM_ACTIVE_STATE, NULL);
-	set_sys_power = true;
+	set_pm = true;
 	notify_app_exit = true;
 }
 
 /* implement in application, called by idle thread */
-void sys_pm_notify_power_state_exit(enum power_states state)
+static void notify_pm_state_exit(enum pm_state state)
 {
 	uint32_t device_power_state;
 
@@ -114,7 +114,7 @@ void sys_pm_notify_power_state_exit(enum power_states state)
 	zassert_true(notify_app_exit == true,
 		     "Notification to leave suspend was not sent to the App");
 	zassert_true(z_is_idle_thread_object(_current), NULL);
-	zassert_equal(state, SYS_POWER_STATE_SLEEP_1, NULL);
+	zassert_equal(state, PM_STATE_RUNTIME_IDLE, NULL);
 
 	/* at this point, devices are active again*/
 	device_get_power_state(dev, &device_power_state);
@@ -130,11 +130,11 @@ void sys_pm_notify_power_state_exit(enum power_states state)
  *  - The global idle routine executes when no other work is available
  *  - The idle routine provide a timeout parameter to the suspend routine
  *    indicating the amount of time guaranteed to expire before the next
- *    timeout, sys_pm_policy_next_state() handle this parameter.
- *  - In this case, sys_pm_policy_next_sate() return SYS_POWER_STATE_ACTIVE,
+ *    timeout, pm_policy_next_state() handle this parameter.
+ *  - In this case, pm_policy_next_sate() return POWER_STATE_ACTIVE,
  *    so there is no low power operation happen.
  *
- * @see sys_pm_policy_next_state()
+ * @see pm_policy_next_state()
  *
  * @ingroup power_tests
  */
@@ -152,9 +152,9 @@ void test_power_idle(void)
  *  - The system support control of power state ordering between
  *    subsystems and devices
  *  - The application can control system power state transitions in idle thread
- *    through sys_pm_notify_power_state_entry and sys_pm_notify_power_state_exit
+ *    through pm_notify_pm_state_entry and pm_notify_pm_state_exit
  *
- * @see sys_pm_notify_power_state_entry(), sys_pm_notify_power_state_exit()
+ * @see pm_notify_pm_state_entry(), pm_notify_pm_state_exit()
  *
  * @ingroup power_tests
  */
@@ -211,6 +211,13 @@ void test_teardown(void)
 
 void test_main(void)
 {
+	struct pm_notifier notifier = {
+		.state_entry = notify_pm_state_entry,
+		.state_exit = notify_pm_state_exit,
+	};
+
+	pm_notifier_register(&notifier);
+
 	ztest_test_suite(power_management_test,
 			 ztest_1cpu_unit_test(test_power_idle),
 			 ztest_unit_test_setup_teardown(test_power_state_trans,
@@ -221,4 +228,5 @@ void test_main(void)
 						test_setup,
 						test_teardown));
 	ztest_run_test_suite(power_management_test);
+	pm_notifier_unregister(&notifier);
 }

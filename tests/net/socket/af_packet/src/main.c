@@ -95,7 +95,7 @@ static int setup_socket(struct net_if *iface, int type, int proto)
 {
 	int sock;
 
-	sock = socket(AF_PACKET, type, htons(proto));
+	sock = socket(AF_PACKET, type, proto);
 	zassert_true(sock >= 0, "Cannot create packet socket (%d)", -errno);
 
 	return sock;
@@ -158,27 +158,126 @@ static void setblocking(int fd, bool val)
 	zassert_not_equal(fl, -1, "Fail to set fcntl");
 }
 
-static void test_packet_sockets(void)
+#define SRC_PORT 4240
+#define DST_PORT 4242
+static int prepare_udp_socket(struct sockaddr_in *sockaddr, uint16_t local_port)
+{
+	int sock, ret;
+
+	sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	zassert_true(sock >= 0, "Cannot create DGRAM (UDP) socket (%d)", sock);
+
+	sockaddr->sin_family = AF_INET;
+	sockaddr->sin_port = htons(local_port);
+	ret = inet_pton(AF_INET, CONFIG_NET_CONFIG_MY_IPV4_ADDR,
+			&sockaddr->sin_addr);
+	zassert_equal(ret, 1, "inet_pton failed");
+
+	/* Bind UDP socket to local port */
+	ret = bind(sock, (struct sockaddr *) sockaddr, sizeof(*sockaddr));
+	zassert_equal(ret, 0, "Cannot bind DGRAM (UDP) socket (%d)", -errno);
+
+	return sock;
+}
+
+static void __test_packet_sockets(int *sock1, int *sock2)
 {
 	struct user_data ud = { 0 };
-	int ret, sock1, sock2;
+	int ret;
 
 	net_if_foreach(iface_cb, &ud);
 
 	zassert_not_null(ud.first, "1st Ethernet interface not found");
 	zassert_not_null(ud.second, "2nd Ethernet interface not found");
 
-	sock1 = setup_socket(ud.first, SOCK_RAW, ETH_P_ALL);
-	zassert_true(sock1 >= 0, "Cannot create 1st socket (%d)", sock1);
+	*sock1 = setup_socket(ud.first, SOCK_RAW, ETH_P_ALL);
+	zassert_true(*sock1 >= 0, "Cannot create 1st socket (%d)", *sock1);
 
-	sock2 = setup_socket(ud.second, SOCK_RAW, ETH_P_ALL);
-	zassert_true(sock2 >= 0, "Cannot create 2nd socket (%d)", sock2);
+	*sock2 = setup_socket(ud.second, SOCK_RAW, ETH_P_ALL);
+	zassert_true(*sock2 >= 0, "Cannot create 2nd socket (%d)", *sock2);
 
-	ret = bind_socket(sock1, ud.first);
+	ret = bind_socket(*sock1, ud.first);
 	zassert_equal(ret, 0, "Cannot bind 1st socket (%d)", -errno);
 
-	ret = bind_socket(sock2, ud.second);
+	ret = bind_socket(*sock2, ud.second);
 	zassert_equal(ret, 0, "Cannot bind 2nd socket (%d)", -errno);
+}
+
+#define IP_HDR_SIZE 20
+#define UDP_HDR_SIZE 8
+#define HDR_SIZE (IP_HDR_SIZE + UDP_HDR_SIZE)
+static void test_raw_packet_sockets(void)
+{
+	uint8_t data_to_send[] = { 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 };
+	uint8_t data_to_receive[sizeof(data_to_send) + HDR_SIZE];
+	struct sockaddr_ll src;
+	struct sockaddr_in sockaddr;
+	int ret, sock1, sock2, sock3, sock4;
+	socklen_t addrlen;
+	ssize_t sent = 0;
+
+	__test_packet_sockets(&sock1, &sock2);
+
+	/* Prepare UDP socket which will read data */
+	sock3 = prepare_udp_socket(&sockaddr, DST_PORT);
+
+	/* Prepare UDP socket from which data are going to be sent */
+	sock4 = prepare_udp_socket(&sockaddr, SRC_PORT);
+	/* Properly set destination port for UDP packet */
+	sockaddr.sin_port = htons(DST_PORT);
+
+	/*
+	 * Send UDP datagram to us - as check_ip_addr() in net_send_data()
+	 * returns 1 - the packet is processed immediately in the net stack
+	 */
+	sent = sendto(sock4, data_to_send, sizeof(data_to_send),
+		      0, (struct sockaddr *)&sockaddr, sizeof(sockaddr));
+	zassert_equal(sent, sizeof(data_to_send), "sendto failed");
+
+	k_msleep(10); /* Let the packet enter the system */
+
+	setblocking(sock3, false);
+	memset(&data_to_receive, 0, sizeof(data_to_receive));
+	errno = 0;
+
+	/* Check if UDP packets can be read after being sent */
+	addrlen = sizeof(sockaddr);
+	ret = recvfrom(sock3, data_to_receive, sizeof(data_to_receive),
+		       0, (struct sockaddr *)&sockaddr, &addrlen);
+	zassert_equal(ret, sizeof(data_to_send), "Cannot receive all data (%d)",
+		      -errno);
+	zassert_mem_equal(data_to_receive, data_to_send, sizeof(data_to_send),
+			  "Sent and received buffers do not match");
+
+	/* And if the packet has been also passed to RAW socket */
+	setblocking(sock1, false);
+	memset(&data_to_receive, 0, sizeof(data_to_receive));
+	memset(&src, 0, sizeof(src));
+	addrlen = sizeof(src);
+	errno = 0;
+
+	/* The recvfrom reads the the whole received packet - including its
+	 * IP (20B) and UDP (8) headers. After those we can expect payload,
+	 * which have been sent.
+	 */
+	ret = recvfrom(sock1, data_to_receive, sizeof(data_to_receive), 0,
+		       (struct sockaddr *)&src, &addrlen);
+	zassert_equal(ret, sizeof(data_to_send) + HDR_SIZE,
+		      "Cannot receive all data (%d vs %zd) (%d)",
+		      ret, sizeof(data_to_send), -errno);
+	zassert_mem_equal(&data_to_receive[HDR_SIZE], data_to_send,
+			  sizeof(data_to_send),
+			  "Sent and received buffers do not match");
+
+	close(sock3);
+	close(sock4);
+}
+
+static void test_packet_sockets(void)
+{
+	int sock1, sock2;
+
+	__test_packet_sockets(&sock1, &sock2);
 }
 
 static void test_packet_sockets_dgram(void)
@@ -267,6 +366,7 @@ void test_main(void)
 {
 	ztest_test_suite(socket_packet,
 			 ztest_unit_test(test_packet_sockets),
+			 ztest_unit_test(test_raw_packet_sockets),
 			 ztest_unit_test(test_packet_sockets_dgram));
 	ztest_run_test_suite(socket_packet);
 }

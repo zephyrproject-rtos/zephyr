@@ -37,6 +37,13 @@ NPCX_REG_OFFSET_CHECK(scfg_reg, DEV_CTL4, 0x006);
 NPCX_REG_OFFSET_CHECK(scfg_reg, DEVALT0, 0x010);
 NPCX_REG_OFFSET_CHECK(scfg_reg, LV_GPIO_CTL0, 0x02a);
 
+/* GLUE register structure check */
+NPCX_REG_SIZE_CHECK(glue_reg, 0x028);
+NPCX_REG_OFFSET_CHECK(glue_reg, SMB_EEN, 0x003);
+NPCX_REG_OFFSET_CHECK(glue_reg, SDPD0, 0x010);
+NPCX_REG_OFFSET_CHECK(glue_reg, SMB_SEL, 0x021);
+NPCX_REG_OFFSET_CHECK(glue_reg, PSL_CTS, 0x027);
+
 /* UART register structure check */
 NPCX_REG_SIZE_CHECK(uart_reg, 0x027);
 NPCX_REG_OFFSET_CHECK(uart_reg, UPSR, 0x00e);
@@ -52,6 +59,18 @@ NPCX_REG_SIZE_CHECK(pwm_reg, 0x00e);
 NPCX_REG_OFFSET_CHECK(pwm_reg, PWMCTL, 0x004);
 NPCX_REG_OFFSET_CHECK(pwm_reg, DCR, 0x006);
 NPCX_REG_OFFSET_CHECK(pwm_reg, PWMCTLEX, 0x00c);
+
+/* ADC register structure check */
+NPCX_REG_SIZE_CHECK(adc_reg, 0x54);
+NPCX_REG_OFFSET_CHECK(adc_reg, THRCTL1, 0x014);
+NPCX_REG_OFFSET_CHECK(adc_reg, ADCCNF2, 0x020);
+NPCX_REG_OFFSET_CHECK(adc_reg, CHNDAT, 0x040);
+
+/* TWD register structure check */
+NPCX_REG_SIZE_CHECK(twd_reg, 0x012);
+NPCX_REG_OFFSET_CHECK(twd_reg, T0CSR, 0x006);
+NPCX_REG_OFFSET_CHECK(twd_reg, TWMWD, 0x00e);
+NPCX_REG_OFFSET_CHECK(twd_reg, WDCP, 0x010);
 
 /* ESPI register structure check */
 NPCX_REG_SIZE_CHECK(espi_reg, 0x500);
@@ -105,3 +124,16 @@ NPCX_REG_SIZE_CHECK(c2h_reg, 0x00c);
 NPCX_REG_OFFSET_CHECK(c2h_reg, LKSIOHA, 0x004);
 NPCX_REG_OFFSET_CHECK(c2h_reg, CRSMAE, 0x008);
 NPCX_REG_OFFSET_CHECK(c2h_reg, SIBCTRL, 0x00a);
+
+/* SMB register structure check */
+NPCX_REG_SIZE_CHECK(smb_reg, 0x020);
+NPCX_REG_OFFSET_CHECK(smb_reg, SMBCTL1, 0x006);
+NPCX_REG_OFFSET_CHECK(smb_reg, SMBT_OUT, 0x00f);
+NPCX_REG_OFFSET_CHECK(smb_reg, SMBADDR6, 0x016);
+NPCX_REG_OFFSET_CHECK(smb_reg, SMBSCLHT, 0x01e);
+
+NPCX_REG_SIZE_CHECK(smb_fifo_reg, 0x020);
+NPCX_REG_OFFSET_CHECK(smb_fifo_reg, SMBT_OUT, 0x00f);
+NPCX_REG_OFFSET_CHECK(smb_fifo_reg, SMBCST2, 0x018);
+NPCX_REG_OFFSET_CHECK(smb_fifo_reg, SMBTXF_STS, 0x01a);
+NPCX_REG_OFFSET_CHECK(smb_fifo_reg, SMBRXF_CTL, 0x01e);

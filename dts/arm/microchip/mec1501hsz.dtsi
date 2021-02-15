@@ -13,7 +13,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu@0 {
+		cpu0: cpu@0 {
 			device_type = "cpu";
 			compatible = "arm,cortex-m4";
 			reg = <0>;
@@ -42,27 +42,21 @@
 
 		pinmux_000_036: pinmux-0 {
 			ph-reg = <&gpio_000_036>;
-			label = "PINMUX000_036";
 		};
 		pinmux_040_076: pinmux-1 {
 			ph-reg = <&gpio_040_076>;
-			label = "PINMUX040_076";
 		};
 		pinmux_100_136: pinmux-2 {
 			ph-reg = <&gpio_100_136>;
-			label = "PINMUX100_136";
 		};
 		pinmux_140_176: pinmux-3 {
 			ph-reg = <&gpio_140_176>;
-			label = "PINMUX140_176";
 		};
 		pinmux_200_236: pinmux-4 {
 			ph-reg = <&gpio_200_236>;
-			label = "PINMUX200_236";
 		};
 		pinmux_240_276: pinmux-5 {
 			ph-reg = <&gpio_240_276>;
-			label = "PINMUX240_276";
 		};
 	};
 
@@ -164,50 +158,65 @@
 			compatible = "microchip,xec-i2c";
 			reg = <0x40004000 0x80>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupts = <20 1>;
 			label = "I2C_SMB_0";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
+			girq = <13>;
+			girq-bit = <0>;
 		};
 
 		i2c_smb_1: i2c@40004400 {
 			compatible = "microchip,xec-i2c";
 			reg = <0x40004400 0x80>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupts = <21 1>;
 			label = "I2C_SMB_1";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
+			girq = <13>;
+			girq-bit = <1>;
 		};
 
 		i2c_smb_2: i2c@40004800 {
 			compatible = "microchip,xec-i2c";
 			reg = <0x40004800 0x80>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupts = <22 1>;
 			label = "I2C_SMB_2";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
+			girq = <13>;
+			girq-bit = <2>;
 		};
 
 		i2c_smb_3: i2c@40004c00 {
 			compatible = "microchip,xec-i2c";
 			reg = <0x40004C00 0x80>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupts = <23 1>;
 			label = "I2C_SMB_3";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
+			girq = <13>;
+			girq-bit = <3>;
 		};
 
 		i2c_smb_4: i2c@40005000 {
 			compatible = "microchip,xec-i2c";
 			reg = <0x40005000 0x80>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupts = <158 1>;
 			label = "I2C_SMB_4";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
+			girq = <13>;
+			girq-bit = <4>;
 		};
 
 		espi0: espi@400f3400 {
@@ -219,6 +228,17 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
+		espi_saf0: espi@40008000 {
+			compatible = "microchip,xec-espi-saf";
+			reg = < 0x40008000 0x400
+				0x40070000 0x400
+				0x40071000 0x400>;
+			label = "ESPI_SAF_0";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
 		timer0: timer@40000c00 {
 			compatible = "microchip,xec-timer";
 			clock-frequency = <48000000>;

@@ -4,6 +4,7 @@
 menuconfig SPI_FLASH_AT45
 	bool "AT45 family flash driver"
 	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
 	depends on SPI
 	help
 	  This driver can handle several instances of AT45 family chips that

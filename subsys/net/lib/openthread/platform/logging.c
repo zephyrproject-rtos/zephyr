@@ -32,12 +32,12 @@ void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion,
 	 */
 
 
-#ifdef OPENTHREAD_CONFIG_PLAT_LOG_FUNCTION__COUNT_ARGS
+#ifdef OPENTHREAD_CONFIG_PLAT_LOG_MACRO_NAME__COUNT_ARGS
 	/* The arguments number has been counted by macro at compile time,
 	 * and the value has been passed in unused (now) aLogRegion.
 	 * If LogRegion value from OT is needed, rewrite macro
-	 * OPENTHREAD_CONFIG_PLAT_LOG_FUNCTION__COUNT_ARGS and use higher bits.
-	 * to pass args_num.
+	 * OPENTHREAD_CONFIG_PLAT_LOG_MACRO_NAME__COUNT_ARGS and use higher
+	 * bits to pass args_num.
 	 */
 	uint32_t args_num = (uint32_t) aLogRegion;
 #else

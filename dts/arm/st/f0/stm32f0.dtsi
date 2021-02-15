@@ -193,7 +193,7 @@
 			reg = <0x40012c00 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000800>;
 			interrupts = <13 0>, <14 0>;
-			interrupt-names = "brk", "cc";
+			interrupt-names = "brk_up_trg_com", "cc";
 			status = "disabled";
 			label = "TIMERS_1";
 
@@ -343,7 +343,7 @@
 		};
 
 		dma1: dma@40020000 {
-			compatible = "st,stm32-dma";
+			compatible = "st,stm32-dma-v2";
 			#dma-cells = <4>;
 			reg = <0x40020000 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x1>;

@@ -21,6 +21,7 @@
 		compatible = "st,iis2dlpc";
 		reg = <0x19>;
 		drdy-gpios =  <&arduino_header 4 GPIO_ACTIVE_HIGH>; /* A4 - INT2 */
+		drdy-int =  <2>;
 		label = "IIS2DLPC";
 	};
 

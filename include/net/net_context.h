@@ -6,6 +6,7 @@
 
 /*
  * Copyright (c) 2016 Intel Corporation
+ * Copyright (c) 2021 Nordic Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -121,7 +122,7 @@ typedef void (*net_context_send_cb_t)(struct net_context *context,
  * context is used here. Keep processing in the callback minimal to reduce the
  * time spent blocked while handling packets.
  *
- * @param context The context to use.
+ * @param new_context The context to use.
  * @param addr The peer address.
  * @param addrlen Length of the peer address.
  * @param status The status code, 0 on success, < 0 otherwise
@@ -303,6 +304,9 @@ __net_socket struct net_context {
 			struct sockaddr addr;
 			socklen_t addrlen;
 		} proxy;
+#endif
+#if defined(CONFIG_NET_CONTEXT_RCVTIMEO)
+		k_timeout_t rcvtimeo;
 #endif
 	} options;
 
@@ -1043,6 +1047,7 @@ enum net_context_option {
 	NET_OPT_TIMESTAMP	= 2,
 	NET_OPT_TXTIME		= 3,
 	NET_OPT_SOCKS5		= 4,
+	NET_OPT_RCVTIMEO        = 5,
 };
 
 /**
@@ -1124,6 +1129,22 @@ static inline void net_context_setup_pools(struct net_context *context,
 #else
 #define net_context_setup_pools(context, tx_pool, data_pool)
 #endif
+
+/**
+ * @brief Check if a port is in use (bound)
+ *
+ * This function checks if a port is bound with respect to the specified
+ * @p ip_proto and @p local_addr.
+ *
+ * @param ip_proto the IP protocol
+ * @param local_port the port to check
+ * @param local_addr the network address
+ *
+ * @return true if the port is bound
+ * @return false if the port is not bound
+ */
+bool net_context_port_in_use(enum net_ip_protocol ip_proto,
+	uint16_t local_port, const struct sockaddr *local_addr);
 
 #ifdef __cplusplus
 }

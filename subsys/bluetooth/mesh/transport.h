@@ -10,9 +10,6 @@
 
 #define BT_MESH_SDU_UNSEG_MAX          11
 #define BT_MESH_CTL_SEG_SDU_MAX        8
-#define BT_MESH_APP_SEG_SDU_MAX        12
-#define BT_MESH_TX_SDU_MAX (CONFIG_BT_MESH_TX_SEG_MAX * BT_MESH_APP_SEG_SDU_MAX)
-#define BT_MESH_RX_SDU_MAX (CONFIG_BT_MESH_RX_SEG_MAX * BT_MESH_APP_SEG_SDU_MAX)
 #define BT_MESH_RX_CTL_MAX (CONFIG_BT_MESH_RX_SEG_MAX * BT_MESH_CTL_SEG_SDU_MAX)
 
 #define TRANS_SEQ_ZERO_MASK            ((uint16_t)BIT_MASK(13))
@@ -79,15 +76,6 @@ struct bt_mesh_ctl_friend_sub_confirm {
 	uint8_t xact;
 } __packed;
 
-struct bt_mesh_va {
-	uint16_t ref:15,
-		 changed:1;
-	uint16_t addr;
-	uint8_t  uuid[16];
-};
-
-void bt_mesh_set_hb_sub_dst(uint16_t addr);
-
 bool bt_mesh_tx_in_progress(void);
 
 void bt_mesh_rx_reset(void);
@@ -115,14 +103,10 @@ void bt_mesh_trans_init(void);
 
 void bt_mesh_trans_reset(void);
 
-int bt_mesh_heartbeat_send(const struct bt_mesh_send_cb *cb, void *cb_data);
-
-struct bt_mesh_va *bt_mesh_va_get(uint16_t index);
-
-struct bt_mesh_va *bt_mesh_va_find(uint8_t uuid[16]);
-
 uint8_t bt_mesh_va_add(uint8_t uuid[16], uint16_t *addr);
 
 uint8_t bt_mesh_va_del(uint8_t uuid[16], uint16_t *addr);
 
 uint8_t *bt_mesh_va_label_get(uint16_t addr);
+
+void bt_mesh_va_pending_store(void);

@@ -1,0 +1,10 @@
+# OV7725
+
+# Copyright (c) 2020 FrankLi Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_OV7725
+	bool "OV7725 CMOS digital image sensor"
+	depends on I2C
+	help
+	  Enable driver for OV7725 CMOS digital image sensor device.

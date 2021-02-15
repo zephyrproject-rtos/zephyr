@@ -57,6 +57,8 @@ node-macro =/ %s"DT_N" path-id %s"_STATUS_" dt-name
 ; The node's dependency ordinal. This is a non-negative integer
 ; value that is used to represent dependency information.
 node-macro =/ %s"DT_N" path-id %s"_ORD"
+; The node's path, as a string literal
+node-macro =/ %s"DT_N" path-id %s"_PATH"
 ; The dependency ordinals of a node's requirements (direct dependencies).
 node-macro =/ %s"DT_N" path-id %s"_REQUIRES_ORDS"
 ; The dependency ordinals of a node supports (reverse direct dependencies).

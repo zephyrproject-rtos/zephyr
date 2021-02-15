@@ -16,9 +16,22 @@ properties:
     sda-pin:
       type: int
       required: true
-      description: SDA pin
+      description: |
+        The SDA pin to use.
+
+        For pins P0.0 through P0.31, use the pin number. For example,
+        to use P0.16 for SDA, set:
+
+            sda-pin = <16>;
+
+        For pins P1.0 through P1.31, add 32 to the pin number. For
+        example, to use P1.2 for SDA, set:
+
+            sda-pin = <34>;  /* 32 + 2 */
 
     scl-pin:
       type: int
       required: true
-      description: SCL pin
+      description: |
+        The SCL pin to use. The pin numbering scheme is the same as
+        the sda-pin property's.

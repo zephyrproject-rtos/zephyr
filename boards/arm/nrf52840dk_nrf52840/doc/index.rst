@@ -36,9 +36,6 @@ More information about the board can be found at the `nRF52840 DK website`_.
 The `Nordic Semiconductor Infocenter`_ contains the processor's information
 and the datasheet.
 
-.. note::
-
-   In earlier Zephyr releases this board was known as ``nrf52840_pca10056``.
 
 Hardware
 ********
@@ -115,9 +112,9 @@ Programming and Debugging
 *************************
 
 Applications for the ``nrf52840dk_nrf52840`` board configuration can be
-built and flashed in the usual way (see :ref:`build_an_application`
-and :ref:`application_run` for more details); however, the standard
-debugging targets are not currently available.
+built, flashed, and debugged in the usual way. See
+:ref:`build_an_application` and :ref:`application_run` for more details on
+building and running.
 
 Flashing
 ========
@@ -191,11 +188,7 @@ more than one UART for connecting peripheral devices:
 
 2. Use the UART1 as ``device_get_binding(DT_LABEL(DT_NODELABEL(uart1)))``
 
-Overlay file naming
-===================
-
-The file has to be named ``<board>.overlay`` and placed in the app main directory to be
-picked up automatically by the build system.
+See :ref:`set-devicetree-overlays` for further details.
 
 Selecting the pins
 ==================

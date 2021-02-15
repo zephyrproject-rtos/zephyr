@@ -22,6 +22,7 @@ This sample application supports the following mcumgr transports by default:
     * ``img_mgmt``
     * ``os_mgmt``
     * ``stat_mgmt``
+    * ``shell_mgmt``
 
 Caveats
 *******
@@ -109,7 +110,7 @@ Zephyr. The ``smp_svr`` sample comes in different flavours.
 
    .. group-tab:: Serial
 
-      To build the serial sample with file-system support:
+      To build the serial sample with file-system and shell management support:
 
       .. code-block:: console
 
@@ -117,7 +118,7 @@ Zephyr. The ``smp_svr`` sample comes in different flavours.
             -b frdm_k64f \
             samples/subsys/mgmt/mcumgr/smp_svr \
             -- \
-            -DOVERLAY_CONFIG='overlay-serial.conf;overlay-fs.conf'
+            -DOVERLAY_CONFIG='overlay-serial.conf;overlay-fs.conf;overlay-shell-mgmt.conf'
 
    .. group-tab:: USB CDC_ACM
 

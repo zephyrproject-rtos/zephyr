@@ -15,6 +15,8 @@
 #include <drivers/flash.h>
 #include <init.h>
 #include <soc.h>
+#include <stm32_ll_bus.h>
+#include <stm32_ll_rcc.h>
 #include <logging/log.h>
 
 #include "flash_stm32.h"
@@ -39,6 +41,9 @@ LOG_MODULE_REGISTER(flash_stm32, CONFIG_FLASH_LOG_LEVEL);
 #define STM32_FLASH_MAX_ERASE_TIME	4000
 /* STM32L0: maximum erase time of 3.2ms for a 128B page */
 #elif defined(CONFIG_SOC_SERIES_STM32L0X)
+#define STM32_FLASH_MAX_ERASE_TIME	4
+/* STM32L1: maximum erase time of 3.94ms for a 128B half-page */
+#elif defined(CONFIG_SOC_SERIES_STM32L1X)
 #define STM32_FLASH_MAX_ERASE_TIME	4
 /* STM32L4: maximum erase time of 24.47ms for a 2K sector */
 #elif defined(CONFIG_SOC_SERIES_STM32L4X)
@@ -69,6 +74,12 @@ static const struct flash_parameters flash_stm32_parameters = {
 	.erase_value = 0xff,
 #endif
 };
+
+
+int __weak flash_stm32_check_configuration(void)
+{
+	return 0;
+}
 
 #if defined(CONFIG_MULTITHREADING)
 /*
@@ -346,6 +357,7 @@ static const struct flash_driver_api flash_stm32_api = {
 
 static int stm32_flash_init(const struct device *dev)
 {
+	int rc;
 #if defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32F0X) || \
 	defined(CONFIG_SOC_SERIES_STM32F1X) || \
@@ -383,6 +395,12 @@ static int stm32_flash_init(const struct device *dev)
 	LOG_DBG("Flash initialized. BS: %zu",
 		flash_stm32_parameters.write_block_size);
 
+	/* Check Flash configuration */
+	rc = flash_stm32_check_configuration();
+	if (rc < 0) {
+		return rc;
+	}
+
 #if ((CONFIG_FLASH_LOG_LEVEL >= LOG_LEVEL_DBG) && CONFIG_FLASH_PAGE_LAYOUT)
 	const struct flash_pages_layout *layout;
 	size_t layout_size;
@@ -397,6 +415,6 @@ static int stm32_flash_init(const struct device *dev)
 	return flash_stm32_write_protection(dev, false);
 }
 
-DEVICE_AND_API_INIT(stm32_flash, DT_INST_LABEL(0),
-		    stm32_flash_init, &flash_data, NULL, POST_KERNEL,
+DEVICE_DT_INST_DEFINE(0, stm32_flash_init, device_pm_control_nop,
+		    &flash_data, NULL, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &flash_stm32_api);

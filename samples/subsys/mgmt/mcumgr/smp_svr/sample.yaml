@@ -4,6 +4,8 @@ sample:
 common:
     harness: bluetooth
     tags: bluetooth
+    integration_platforms:
+        - nrf52840dk_nrf52840
 tests:
   sample.mcumg.smp_svr.bt_tiny:
     extra_args: OVERLAY_CONFIG="overlay-bt-tiny.conf"
@@ -17,3 +19,18 @@ tests:
   sample.mcumg.smp_svr.cdc:
     extra_args: OVERLAY_CONFIG="overlay-cdc.conf"
     platform_allow: nrf52833dk_nrf52820 nrf52833dk_nrf52833 nrf52840dk_nrf52840 nrf5340dk_nrf5340_cpuapp
+  sample.mcumg.smp_svr.serial:
+    extra_args: OVERLAY_CONFIG="overlay-serial.conf"
+    platform_allow: nrf52840dk_nrf52840
+  sample.mcumg.smp_svr.serial:
+    extra_args: OVERLAY_CONFIG="overlay-serial-console.conf"
+    platform_allow: nrf52840dk_nrf52840
+  sample.mcumg.smp_svr.shell:
+    extra_args: OVERLAY_CONFIG="overlay-shell.conf"
+    platform_allow: nrf52840dk_nrf52840
+  sample.mcumg.smp_svr.shell_mgmt:
+    extra_args: OVERLAY_CONFIG="overlay-shell-mgmt.conf"
+    platform_allow: nrf52840dk_nrf52840
+  sample.mcumg.smp_svr.fs:
+    extra_args: OVERLAY_CONFIG="overlay-fs.conf"
+    platform_allow: nrf52840dk_nrf52840

@@ -26,7 +26,7 @@
 		 * instruction.  See include/sw_isr_table.h.
 		 */
 		. = ALIGN(CONFIG_ARCH_SW_ISR_TABLE_ALIGN);
-		*(_SW_ISR_TABLE_SECTION_NAME)
+		*(_SW_ISR_TABLE_SECTION_SYMS)
 	} GROUP_LINK_IN(ROMABLE_REGION)
 #endif
 
@@ -105,6 +105,8 @@
 #if defined(CONFIG_BT_MESH)
 	Z_ITERABLE_SECTION_ROM(bt_mesh_subnet_cb, 4)
 	Z_ITERABLE_SECTION_ROM(bt_mesh_app_key_cb, 4)
+
+	Z_ITERABLE_SECTION_ROM(bt_mesh_hb_cb, 4)
 #endif
 
 #if defined(CONFIG_BT_MESH_FRIEND)
@@ -123,14 +125,29 @@
 	Z_ITERABLE_SECTION_ROM(settings_handler_static, 4)
 #endif
 
+	Z_ITERABLE_SECTION_ROM(k_p4wq_initparam, 4)
+
 #if defined(CONFIG_EMUL)
-	SECTION_DATA_PROLOGUE(log_const_sections,,)
+	SECTION_DATA_PROLOGUE(emulators_section,,)
 	{
 		__emul_list_start = .;
 		KEEP(*(SORT_BY_NAME(".emulators")));
 		__emul_list_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
 #endif /* CONFIG_EMUL */
+
+#if defined(CONFIG_DNS_SD)
+	Z_ITERABLE_SECTION_ROM(dns_sd_rec, 4)
+#endif
+
+#if defined(CONFIG_PCIE)
+	SECTION_DATA_PROLOGUE(irq_alloc,,)
+	{
+		__irq_alloc_start = .;
+		KEEP(*(SORT_BY_NAME("._irq_alloc*")));
+		__irq_alloc_end = .;
+	} GROUP_LINK_IN(ROMABLE_REGION)
+#endif /* CONFIG_PCIE */
 
 	SECTION_DATA_PROLOGUE(log_const_sections,,)
 	{

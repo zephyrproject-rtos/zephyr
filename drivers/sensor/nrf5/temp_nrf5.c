@@ -108,8 +108,6 @@ static const struct sensor_driver_api temp_nrf5_driver_api = {
 	.channel_get = temp_nrf5_channel_get,
 };
 
-DEVICE_DECLARE(temp_nrf5);
-
 static int temp_nrf5_init(const struct device *dev)
 {
 	struct temp_nrf5_data *data = dev->data;
@@ -128,7 +126,7 @@ static int temp_nrf5_init(const struct device *dev)
 		DT_INST_IRQN(0),
 		DT_INST_IRQ(0, priority),
 		temp_nrf5_isr,
-		DEVICE_GET(temp_nrf5),
+		DEVICE_DT_INST_GET(0),
 		0);
 	irq_enable(DT_INST_IRQN(0));
 
@@ -139,9 +137,9 @@ static int temp_nrf5_init(const struct device *dev)
 
 static struct temp_nrf5_data temp_nrf5_driver;
 
-DEVICE_AND_API_INIT(temp_nrf5,
-		    DT_INST_LABEL(0),
+DEVICE_DT_INST_DEFINE(0,
 		    temp_nrf5_init,
+		    device_pm_control_nop,
 		    &temp_nrf5_driver,
 		    NULL,
 		    POST_KERNEL,

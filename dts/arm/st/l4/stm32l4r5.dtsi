@@ -235,6 +235,27 @@
 			status = "disabled";
 			label= "OTGFS";
 		};
+
+		dma1: dma@40020000 {
+			dma-offset = <0>;
+		};
+
+		dma2: dma@40020400 {
+			dma-offset = <7>;
+		};
+
+		dmamux1: dmamux@40020800 {
+			compatible = "st,stm32-dmamux";
+			#dma-cells = <4>;
+			reg = <0x40020800 0x400>;
+			interrupts = <94 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x4>;
+			dma-channels = <14>;
+			dma-generators = <4>;
+			dma-requests= <89>;
+			status = "disabled";
+			label = "DMAMUX_1";
+		};
 	};
 
 	otgfs_phy: otgfs_phy {

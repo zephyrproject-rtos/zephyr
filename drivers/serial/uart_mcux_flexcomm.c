@@ -182,7 +182,7 @@ static int mcux_flexcomm_irq_rx_full(const struct device *dev)
 	return (flags & kUSART_RxFifoNotEmptyFlag) != 0U;
 }
 
-static int mcux_flexcomm_irq_rx_ready(const struct device *dev)
+static int mcux_flexcomm_irq_rx_pending(const struct device *dev)
 {
 	const struct mcux_flexcomm_config *config = dev->config;
 	uint32_t mask = kUSART_RxLevelInterruptEnable;
@@ -214,7 +214,7 @@ static void mcux_flexcomm_irq_err_disable(const struct device *dev)
 static int mcux_flexcomm_irq_is_pending(const struct device *dev)
 {
 	return (mcux_flexcomm_irq_tx_ready(dev)
-		|| mcux_flexcomm_irq_rx_ready(dev));
+		|| mcux_flexcomm_irq_rx_pending(dev));
 }
 
 static int mcux_flexcomm_irq_update(const struct device *dev)
@@ -288,7 +288,7 @@ static const struct uart_driver_api mcux_flexcomm_driver_api = {
 	.irq_tx_ready = mcux_flexcomm_irq_tx_ready,
 	.irq_rx_enable = mcux_flexcomm_irq_rx_enable,
 	.irq_rx_disable = mcux_flexcomm_irq_rx_disable,
-	.irq_rx_ready = mcux_flexcomm_irq_rx_ready,
+	.irq_rx_ready = mcux_flexcomm_irq_rx_full,
 	.irq_err_enable = mcux_flexcomm_irq_err_enable,
 	.irq_err_disable = mcux_flexcomm_irq_err_disable,
 	.irq_is_pending = mcux_flexcomm_irq_is_pending,
@@ -304,7 +304,7 @@ static const struct uart_driver_api mcux_flexcomm_driver_api = {
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(n),				\
 			    DT_INST_IRQ(n, priority),			\
-			    mcux_flexcomm_isr, DEVICE_GET(uart_##n), 0);\
+			    mcux_flexcomm_isr, DEVICE_DT_INST_GET(n), 0);\
 									\
 		irq_enable(DT_INST_IRQN(n));				\
 	}
@@ -336,8 +336,9 @@ static const struct mcux_flexcomm_config mcux_flexcomm_##n##_config = {	\
 									\
 	static const struct mcux_flexcomm_config mcux_flexcomm_##n##_config;\
 									\
-	DEVICE_AND_API_INIT(uart_##n, DT_INST_LABEL(n),			\
+	DEVICE_DT_INST_DEFINE(n,					\
 			    &mcux_flexcomm_init,			\
+			    device_pm_control_nop,			\
 			    &mcux_flexcomm_##n##_data,			\
 			    &mcux_flexcomm_##n##_config,		\
 			    PRE_KERNEL_1,				\

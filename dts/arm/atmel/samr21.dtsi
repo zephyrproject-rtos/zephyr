@@ -8,7 +8,6 @@
 
 / {
 	aliases {
-		pinmux-c = &pinmux_c;
 		port-c = &portc;
 	};
 
@@ -41,7 +40,6 @@
 		pinmux_c: pinmux@41004500 {
 			compatible = "atmel,sam0-pinmux";
 			reg = <0x41004500 0x80>;
-			label = "PINMUX_C";
 		};
 
 		tcc0: tcc@42002000 {

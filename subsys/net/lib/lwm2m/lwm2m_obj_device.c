@@ -128,7 +128,8 @@ static struct lwm2m_engine_res_inst *error_code_ri;
 
 /* callbacks */
 
-static int reset_error_list_cb(uint16_t obj_inst_id)
+static int reset_error_list_cb(uint16_t obj_inst_id,
+			       uint8_t *args, uint16_t args_len)
 {
 	int i;
 
@@ -226,9 +227,8 @@ static struct lwm2m_engine_obj_inst *device_create(uint16_t obj_inst_id)
 				error_code_list, sizeof(*error_code_list));
 	INIT_OBJ_RES_EXECUTE(DEVICE_RESET_ERROR_CODE_ID, res, i,
 			     reset_error_list_cb);
-	INIT_OBJ_RES_OPT(DEVICE_CURRENT_TIME_ID, res, i, res_inst, j, 1, true,
-			 current_time_read_cb,
-			 current_time_pre_write_cb,
+	INIT_OBJ_RES_OPT(DEVICE_CURRENT_TIME_ID, res, i, res_inst, j, 1, false,
+			 true, current_time_read_cb, current_time_pre_write_cb,
 			 current_time_post_write_cb, NULL);
 	INIT_OBJ_RES_OPTDATA(DEVICE_UTC_OFFSET_ID, res, i, res_inst, j);
 	INIT_OBJ_RES_OPTDATA(DEVICE_TIMEZONE_ID, res, i, res_inst, j);

@@ -642,9 +642,7 @@ static int dns_read(struct dns_resolve_context *ctx,
 		goto quit;
 	}
 
-	if (k_delayed_work_remaining_get(&ctx->queries[query_idx].timer) > 0) {
-		k_delayed_work_cancel(&ctx->queries[query_idx].timer);
-	}
+	k_delayed_work_cancel(&ctx->queries[query_idx].timer);
 
 	/* Marks the end of the results */
 	ctx->queries[query_idx].cb(ret, NULL,
@@ -745,9 +743,7 @@ quit:
 		goto free_buf;
 	}
 
-	if (k_delayed_work_remaining_get(&ctx->queries[i].timer) > 0) {
-		k_delayed_work_cancel(&ctx->queries[i].timer);
-	}
+	k_delayed_work_cancel(&ctx->queries[i].timer);
 
 	/* Marks the end of the results */
 	ctx->queries[i].cb(ret, NULL, ctx->queries[i].user_data);
@@ -855,9 +851,7 @@ static int dns_resolve_cancel_with_hash(struct dns_resolve_context *ctx,
 		log_strdup(query_name), ctx->queries[i].query_type,
 		query_hash);
 
-	if (k_delayed_work_remaining_get(&ctx->queries[i].timer) > 0) {
-		k_delayed_work_cancel(&ctx->queries[i].timer);
-	}
+	k_delayed_work_cancel(&ctx->queries[i].timer);
 
 	ctx->queries[i].cb(DNS_EAI_CANCELED, NULL, ctx->queries[i].user_data);
 	ctx->queries[i].cb = NULL;
@@ -1124,11 +1118,7 @@ try_resolve:
 quit:
 	if (ret < 0) {
 		if (i >= 0) {
-			if (k_delayed_work_remaining_get(
-				    &ctx->queries[i].timer) > 0) {
-				k_delayed_work_cancel(&ctx->queries[i].timer);
-			}
-
+			k_delayed_work_cancel(&ctx->queries[i].timer);
 			ctx->queries[i].cb = NULL;
 		}
 

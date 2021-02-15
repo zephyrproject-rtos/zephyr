@@ -12,11 +12,11 @@
 	leds {
 		compatible = "gpio-leds";
 		red_led_9: led_9 {
-			gpios = <&gpiod 3 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpiod 3 GPIO_ACTIVE_LOW>;
 			label = "User LD9";
 		};
 		green_led_10: led_10 {
-			gpios = <&gpiog 12 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpiog 12 GPIO_ACTIVE_LOW>;
 			label = "User LD10";
 		};
 	};
@@ -34,4 +34,32 @@
 	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
 	current-speed = <115200>;
 	status = "okay";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	lsm6dso@6a {
+		compatible = "st,lsm6dso";
+		reg = <0x6a>;
+		irq-gpios = <&gpiof 3 GPIO_ACTIVE_HIGH>;
+		label = "LSM6DSO";
+	};
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_sck_pg2 &spi1_miso_pg3 &spi1_mosi_pg4>;
+	cs-gpios = <&gpiog 5 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+	status = "okay";
+
+	spbtle-rf@0 {
+		compatible = "zephyr,bt-hci-spi";
+		reg = <0>;
+		irq-gpios = <&gpiog 6 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		reset-gpios = <&gpiog 8 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		spi-max-frequency = <2000000>;
+		label = "SPBTLE-RF";
+	};
 };

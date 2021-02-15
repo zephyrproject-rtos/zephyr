@@ -6,10 +6,12 @@
 
 #include <stddef.h>
 #include <zephyr.h>
+#include <soc.h>
 #include <device.h>
 #include <bluetooth/bluetooth.h>
 #include <sys/byteorder.h>
 
+#include "hal/cpu.h"
 #include "hal/ecb.h"
 #include "hal/ccm.h"
 #include "hal/ticker.h"
@@ -44,12 +46,23 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_ull_conn
 #include "common/log.h"
-#include <soc.h>
 #include "hal/debug.h"
 
 #if defined(CONFIG_BT_CTLR_USER_EXT)
 #include "ull_vendor.h"
 #endif /* CONFIG_BT_CTLR_USER_EXT */
+
+/**
+ *  User CPR Interval
+ */
+#if !defined(CONFIG_BT_CTLR_USER_CPR_INTERVAL_MIN)
+/* Bluetooth defined CPR Interval Minimum (7.5ms) */
+#define CONN_INTERVAL_MIN(x) (6)
+#else /* CONFIG_BT_CTLR_USER_CPR_INTERVAL_MIN */
+/* Proprietary user defined CPR Interval Minimum */
+extern uint16_t ull_conn_interval_min_get(struct ll_conn *conn);
+#define CONN_INTERVAL_MIN(x) (MAX(ull_conn_interval_min_get(x), 1))
+#endif /* CONFIG_BT_CTLR_USER_CPR_INTERVAL_MIN */
 
 inline void ull_conn_upd_curr_reset(void);
 
@@ -81,7 +94,9 @@ static inline void event_ch_map_prep(struct ll_conn *conn,
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 static bool is_enc_req_pause_tx(struct ll_conn *conn);
 static inline void event_enc_prep(struct ll_conn *conn);
+#if defined(CONFIG_BT_PERIPHERAL)
 static int enc_rsp_send(struct ll_conn *conn);
+#endif /* CONFIG_BT_PERIPHERAL */
 static int start_enc_rsp_send(struct ll_conn *conn,
 			      struct pdu_data *pdu_ctrl_tx);
 static inline bool ctrl_is_unexpected(struct ll_conn *conn, uint8_t opcode);
@@ -410,9 +425,29 @@ uint8_t ll_chm_get(uint16_t handle, uint8_t *chm)
 	return 0;
 }
 
+static bool is_valid_disconnect_reason(uint8_t reason)
+{
+	switch (reason) {
+	case BT_HCI_ERR_AUTH_FAIL:
+	case BT_HCI_ERR_REMOTE_USER_TERM_CONN:
+	case BT_HCI_ERR_REMOTE_LOW_RESOURCES:
+	case BT_HCI_ERR_REMOTE_POWER_OFF:
+	case BT_HCI_ERR_UNSUPP_REMOTE_FEATURE:
+	case BT_HCI_ERR_PAIRING_NOT_SUPPORTED:
+	case BT_HCI_ERR_UNACCEPT_CONN_PARAM:
+		return true;
+	default:
+		return false;
+	}
+}
+
 uint8_t ll_terminate_ind_send(uint16_t handle, uint8_t reason)
 {
 	struct ll_conn *conn;
+
+	if (!is_valid_disconnect_reason(reason)) {
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
 
 	conn = ll_connected_get(handle);
 	if (!conn) {
@@ -605,8 +640,7 @@ uint8_t ll_phy_req_send(uint16_t handle, uint8_t tx, uint8_t flags, uint8_t rx)
 		return BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
 	}
 
-	if ((conn->llcp_req != conn->llcp_ack) ||
-	    (conn->llcp_phy.req != conn->llcp_phy.ack)) {
+	if (conn->llcp_phy.req != conn->llcp_phy.ack) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
@@ -666,7 +700,8 @@ uint8_t ll_apto_set(uint16_t handle, uint16_t apto)
 	}
 
 	conn->apto_reload = RADIO_CONN_EVENTS(apto * 10U * 1000U,
-					      conn->lll.interval * 1250);
+					      conn->lll.interval *
+					      CONN_INT_UNIT_US);
 
 	return 0;
 }
@@ -772,7 +807,7 @@ int ull_conn_rx(memq_link_t *link, struct node_rx_pdu **rx)
 	conn = ll_connected_get((*rx)->hdr.handle);
 	if (!conn) {
 		/* Mark for buffer for release */
-		(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+		(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 
 		return 0;
 	}
@@ -796,7 +831,7 @@ int ull_conn_rx(memq_link_t *link, struct node_rx_pdu **rx)
 				BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL;
 
 			/* Mark for buffer for release */
-			(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+			(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 		}
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 		break;
@@ -813,7 +848,7 @@ int ull_conn_rx(memq_link_t *link, struct node_rx_pdu **rx)
 		/* Invalid LL id, drop it. */
 
 		/* Mark for buffer for release */
-		(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+		(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 
 		break;
 	}
@@ -829,6 +864,9 @@ int ull_conn_llcp(struct ll_conn *conn, uint32_t ticks_at_expire, uint16_t lazy)
 	 */
 	if ((conn->llcp_ack == conn->llcp_req) &&
 #if defined(CONFIG_BT_CTLR_LE_ENC)
+#if defined(CONFIG_BT_PERIPHERAL)
+	    (!conn->lll.role || (conn->slave.llcp_type == LLCP_NONE)) &&
+#endif /* CONFIG_BT_PERIPHERAL */
 	    !conn->llcp_enc.pause_rx) {
 #else /* !CONFIG_BT_CTLR_LE_ENC */
 	    1) {
@@ -961,6 +999,56 @@ int ull_conn_llcp(struct ll_conn *conn, uint32_t ticks_at_expire, uint16_t lazy)
 		}
 	}
 
+#if defined(CONFIG_BT_PERIPHERAL) && defined(CONFIG_BT_CTLR_LE_ENC)
+	/* Run any pending local peripheral role initiated procedure stored when
+	 * peer central initiated a encryption procedure
+	 */
+	if (conn->lll.role && (conn->slave.llcp_type != LLCP_NONE)) {
+		switch (conn->slave.llcp_type) {
+		case LLCP_CONN_UPD:
+		{
+			if (event_conn_upd_prep(conn, lazy,
+						ticks_at_expire) == 0) {
+				return -ECANCELED;
+			}
+		}
+		break;
+
+		case LLCP_CHAN_MAP:
+		{
+			struct lll_conn *lll = &conn->lll;
+			uint16_t event_counter;
+
+			/* Calculate current event counter */
+			event_counter = lll->event_counter +
+					lll->latency_prepare + lazy;
+
+			event_ch_map_prep(conn, event_counter);
+		}
+		break;
+
+#if defined(CONFIG_BT_CTLR_PHY)
+		case LLCP_PHY_UPD:
+		{
+			struct lll_conn *lll = &conn->lll;
+			uint16_t event_counter;
+
+			/* Calculate current event counter */
+			event_counter = lll->event_counter +
+					lll->latency_prepare + lazy;
+
+			event_phy_upd_ind_prep(conn, event_counter);
+		}
+		break;
+#endif /* CONFIG_BT_CTLR_PHY */
+
+		default:
+			LL_ASSERT(0);
+			break;
+		}
+	}
+#endif /* CONFIG_BT_PERIPHERAL && CONFIG_BT_CTLR_LE_ENC */
+
 	/* Terminate Procedure Request */
 	if (conn->llcp_terminate.ack != conn->llcp_terminate.req) {
 		struct node_tx *tx;
@@ -1084,7 +1172,14 @@ void ull_conn_done(struct node_rx_event_done *done)
 	}
 
 	/* Events elapsed used in timeout checks below */
+#if defined(CONFIG_BT_CTLR_CONN_META)
+	/* If event has shallow expiry do not add latency, but rely on
+	 * accumulated lazy count.
+	 */
+	latency_event = conn->common.is_must_expire ? 0 : lll->latency_event;
+#else
 	latency_event = lll->latency_event;
+#endif
 	elapsed_event = latency_event + 1;
 
 	/* Slave drift compensation calc and new latency or
@@ -1164,7 +1259,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 			if (conn->supervision_expire <= 6U) {
 				force = 1U;
 			}
-#if defined(CONFIG_BT_PERIPHERAL)
+#if defined(CONFIG_BT_CTLR_CONN_RANDOM_FORCE)
 			/* use randomness to force slave role when anchor
 			 * points are being missed.
 			 */
@@ -1181,7 +1276,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 					}
 				}
 			}
-#endif /* CONFIG_BT_PERIPHERAL */
+#endif /* CONFIG_BT_CTLR_CONN_RANDOM_FORCE */
 		} else {
 			conn_cleanup(conn, BT_HCI_ERR_CONN_TIMEOUT);
 
@@ -1515,7 +1610,7 @@ uint16_t ull_conn_lll_max_tx_octets_get(struct lll_conn *lll)
 #if defined(CONFIG_BT_CTLR_PHY)
 	switch (lll->phy_tx_time) {
 	default:
-	case BIT(0):
+	case PHY_1M:
 		/* 1M PHY, 1us = 1 bit, hence divide by 8.
 		 * Deduct 10 bytes for preamble (1), access address (4),
 		 * header (2), and CRC (3).
@@ -1523,7 +1618,7 @@ uint16_t ull_conn_lll_max_tx_octets_get(struct lll_conn *lll)
 		max_tx_octets = (lll->max_tx_time >> 3) - 10;
 		break;
 
-	case BIT(1):
+	case PHY_2M:
 		/* 2M PHY, 1us = 2 bits, hence divide by 4.
 		 * Deduct 11 bytes for preamble (2), access address (4),
 		 * header (2), and CRC (3).
@@ -1532,7 +1627,7 @@ uint16_t ull_conn_lll_max_tx_octets_get(struct lll_conn *lll)
 		break;
 
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
-	case BIT(2):
+	case PHY_CODED:
 		if (lll->phy_flags & 0x01) {
 			/* S8 Coded PHY, 8us = 1 bit, hence divide by
 			 * 64.
@@ -1609,17 +1704,17 @@ static int init_reset(void)
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	/* Initialize the PHY defaults */
-	default_phy_tx = BIT(0);
-	default_phy_rx = BIT(0);
+	default_phy_tx = PHY_1M;
+	default_phy_rx = PHY_1M;
 
 #if defined(CONFIG_BT_CTLR_PHY_2M)
-	default_phy_tx |= BIT(1);
-	default_phy_rx |= BIT(1);
+	default_phy_tx |= PHY_2M;
+	default_phy_rx |= PHY_2M;
 #endif /* CONFIG_BT_CTLR_PHY_2M */
 
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
-	default_phy_tx |= BIT(2);
-	default_phy_rx |= BIT(2);
+	default_phy_tx |= PHY_CODED;
+	default_phy_rx |= PHY_CODED;
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
 #endif /* CONFIG_BT_CTLR_PHY */
 
@@ -1675,30 +1770,16 @@ static void ticker_op_stop_cb(uint32_t status, void *param)
 
 static inline void disable(uint16_t handle)
 {
-	uint32_t volatile ret_cb;
 	struct ll_conn *conn;
-	void *mark;
-	uint32_t ret;
+	int err;
 
 	conn = ll_conn_get(handle);
 
-	mark = ull_disable_mark(conn);
-	LL_ASSERT(mark == conn);
-
-	ret_cb = TICKER_STATUS_BUSY;
-	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
-			  TICKER_ID_CONN_BASE + handle,
-			  ull_ticker_status_give, (void *)&ret_cb);
-	ret = ull_ticker_status_take(ret, &ret_cb);
-	if (!ret) {
-		ret = ull_disable(&conn->lll);
-		LL_ASSERT(!ret);
-	}
+	err = ull_ticker_stop_with_mark(TICKER_ID_CONN_BASE + handle,
+					conn, &conn->lll);
+	LL_ASSERT(err == 0 || err == -EALREADY);
 
 	conn->lll.link_tx_free = NULL;
-
-	mark = ull_disable_unmark(conn);
-	LL_ASSERT(mark == conn);
 }
 
 static void conn_cleanup(struct ll_conn *conn, uint8_t reason)
@@ -1706,6 +1787,11 @@ static void conn_cleanup(struct ll_conn *conn, uint8_t reason)
 	struct lll_conn *lll = &conn->lll;
 	struct node_rx_pdu *rx;
 	uint32_t ticker_status;
+
+	/* reset mutex */
+	if (conn == conn_upd_curr) {
+		ull_conn_upd_curr_reset();
+	}
 
 	/* Only termination structure is populated here in ULL context
 	 * but the actual enqueue happens in the LLL context in
@@ -1728,7 +1814,7 @@ static void conn_cleanup(struct ll_conn *conn, uint8_t reason)
 		rx = hdr->link->mem;
 
 		/* Mark for buffer for release */
-		hdr->type = NODE_RX_TYPE_DC_PDU_RELEASE;
+		hdr->type = NODE_RX_TYPE_RELEASE;
 
 		/* enqueue rx node towards Thread */
 		ll_rx_put(hdr->link, hdr);
@@ -2112,12 +2198,6 @@ static inline void event_conn_upd_init(struct ll_conn *conn,
 				       struct mayfly *mfy_sched_offset,
 				       void (*fp_mfy_select_or_use)(void *))
 {
-	/* move to in progress */
-	conn->llcp_cu.state = LLCP_CUI_STATE_INPROG;
-
-	/* set instant */
-	conn->llcp.conn_upd.instant = event_counter + conn->lll.latency + 6;
-
 	/* place the conn update req packet as next in tx queue */
 	pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
 	pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, conn_update_ind) +
@@ -2125,17 +2205,19 @@ static inline void event_conn_upd_init(struct ll_conn *conn,
 	pdu_ctrl_tx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND;
 	pdu_ctrl_tx->llctrl.conn_update_ind.win_size = conn->llcp_cu.win_size;
 	pdu_ctrl_tx->llctrl.conn_update_ind.win_offset =
-		sys_cpu_to_le16(conn->llcp_cu.win_offset_us / 1250U);
+		sys_cpu_to_le16(conn->llcp_cu.win_offset_us /
+			CONN_INT_UNIT_US);
 	pdu_ctrl_tx->llctrl.conn_update_ind.interval =
 		sys_cpu_to_le16(conn->llcp_cu.interval);
 	pdu_ctrl_tx->llctrl.conn_update_ind.latency =
 		sys_cpu_to_le16(conn->llcp_cu.latency);
 	pdu_ctrl_tx->llctrl.conn_update_ind.timeout =
 		sys_cpu_to_le16(conn->llcp_cu.timeout);
-	pdu_ctrl_tx->llctrl.conn_update_ind.instant =
-		sys_cpu_to_le16(conn->llcp.conn_upd.instant);
 
 #if defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
+	/* move to offset calculation requested state */
+	conn->llcp_cu.state = LLCP_CUI_STATE_OFFS_REQ;
+
 	{
 		uint32_t retval;
 
@@ -2171,6 +2253,9 @@ static inline void event_conn_upd_init(struct ll_conn *conn,
 	ARG_UNUSED(ticks_at_expire);
 	ARG_UNUSED(mfy_sched_offset);
 	ARG_UNUSED(fp_mfy_select_or_use);
+
+	/* move to in progress */
+	conn->llcp_cu.state = LLCP_CUI_STATE_INPROG;
 #endif /* !CONFIG_BT_CTLR_SCHED_ADVANCED */
 }
 
@@ -2195,15 +2280,69 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 	instant_latency = (event_counter - conn->llcp.conn_upd.instant) &
 			  0xffff;
 	if (conn->llcp_cu.state != LLCP_CUI_STATE_INPROG) {
+		struct pdu_data *pdu_ctrl_tx;
+		struct node_rx_pdu *rx;
+		struct node_tx *tx;
 #if defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
 		static memq_link_t s_link;
 		static struct mayfly s_mfy_sched_offset = {0, 0,
 			&s_link, 0, 0 };
 		void (*fp_mfy_select_or_use)(void *) = NULL;
-#endif /* CONFIG_BT_CTLR_SCHED_ADVANCED */
-		struct pdu_data *pdu_ctrl_tx;
-		struct node_rx_pdu *rx;
-		struct node_tx *tx;
+
+		switch (conn->llcp_cu.state) {
+		case LLCP_CUI_STATE_USE:
+			fp_mfy_select_or_use = ull_sched_mfy_win_offset_use;
+			break;
+
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+		case LLCP_CUI_STATE_SELECT:
+			fp_mfy_select_or_use = ull_sched_mfy_win_offset_select;
+			break;
+
+		case LLCP_CUI_STATE_REJECT:
+			/* procedure request acked */
+			conn->llcp_ack = conn->llcp_req;
+			conn->llcp_cu.ack = conn->llcp_cu.req;
+			conn->llcp_conn_param.ack = conn->llcp_conn_param.req;
+
+			/* reset mutex */
+			ull_conn_upd_curr_reset();
+
+			/* enqueue control PDU */
+			pdu_ctrl_tx =
+				CONTAINER_OF(conn->llcp.conn_upd.pdu_win_offset,
+					     struct pdu_data,
+					     llctrl.conn_update_ind.win_offset);
+			tx = CONTAINER_OF(pdu_ctrl_tx, struct node_tx, pdu);
+			ctrl_tx_enqueue(conn, tx);
+			return -ECANCELED;
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
+
+		case LLCP_CUI_STATE_OFFS_REQ:
+			return -EBUSY;
+
+		case LLCP_CUI_STATE_OFFS_RDY:
+			/* set instant */
+			conn->llcp.conn_upd.instant = event_counter +
+						      conn->lll.latency + 6;
+			pdu_ctrl_tx =
+				CONTAINER_OF(conn->llcp.conn_upd.pdu_win_offset,
+					     struct pdu_data,
+					     llctrl.conn_update_ind.win_offset);
+			pdu_ctrl_tx->llctrl.conn_update_ind.instant =
+				sys_cpu_to_le16(conn->llcp.conn_upd.instant);
+			/* move to in progress */
+			conn->llcp_cu.state = LLCP_CUI_STATE_INPROG;
+			/* enqueue control PDU */
+			tx = CONTAINER_OF(pdu_ctrl_tx, struct node_tx, pdu);
+			ctrl_tx_enqueue(conn, tx);
+			return -EINPROGRESS;
+
+		default:
+			LL_ASSERT(0);
+			break;
+		}
+#endif /* !CONFIG_BT_CTLR_SCHED_ADVANCED */
 
 		rx = ll_pdu_rx_alloc_peek(1);
 		if (!rx) {
@@ -2222,32 +2361,20 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 		pdu_ctrl_tx = (void *)tx->pdu;
 
 #if defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
-		switch (conn->llcp_cu.state) {
-		case LLCP_CUI_STATE_USE:
-			fp_mfy_select_or_use = ull_sched_mfy_win_offset_use;
-			break;
-
-#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
-		case LLCP_CUI_STATE_SELECT:
-			fp_mfy_select_or_use = ull_sched_mfy_win_offset_select;
-			break;
-#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
-
-		default:
-			LL_ASSERT(0);
-			break;
-		}
-
 		event_conn_upd_init(conn, event_counter, ticks_at_expire,
 				    pdu_ctrl_tx, &s_mfy_sched_offset,
 				    fp_mfy_select_or_use);
 #else /* !CONFIG_BT_CTLR_SCHED_ADVANCED */
 		event_conn_upd_init(conn, event_counter, ticks_at_expire,
 				    pdu_ctrl_tx, NULL, NULL);
-#endif /* !CONFIG_BT_CTLR_SCHED_ADVANCED */
-
+		/* set instant */
+		conn->llcp.conn_upd.instant = event_counter +
+					      conn->lll.latency + 6;
+		pdu_ctrl_tx->llctrl.conn_update_ind.instant =
+			sys_cpu_to_le16(conn->llcp.conn_upd.instant);
+		/* enqueue control PDU */
 		ctrl_tx_enqueue(conn, tx);
-
+#endif /* !CONFIG_BT_CTLR_SCHED_ADVANCED */
 	} else if (instant_latency <= 0x7FFF) {
 		uint32_t ticks_win_offset = 0;
 		uint32_t ticks_slot_overhead;
@@ -2260,9 +2387,22 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 		uint32_t periodic_us;
 		uint16_t latency;
 
+#if defined(CONFIG_BT_PERIPHERAL) && defined(CONFIG_BT_CTLR_LE_ENC)
+		if (conn->lll.role && (conn->slave.llcp_type != LLCP_NONE)) {
+			/* Local peripheral initiated connection update
+			 * completed while a remote central had initiated
+			 * encryption procedure
+			 */
+			conn->slave.llcp_type = LLCP_NONE;
+		} else
+#endif /* CONFIG_BT_PERIPHERAL && CONFIG_BT_CTLR_LE_ENC */
+		{
+			/* procedure request acked */
+			conn->llcp_ack = conn->llcp_req;
+		}
+
 		/* procedure request acked */
 		conn->llcp_cu.ack = conn->llcp_cu.req;
-		conn->llcp_ack = conn->llcp_req;
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 		if ((conn->llcp_conn_param.req != conn->llcp_conn_param.ack) &&
@@ -2290,7 +2430,7 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 		if ((conn->llcp_cu.interval != lll->interval) ||
 		    (conn->llcp_cu.latency != lll->latency) ||
 		    (RADIO_CONN_EVENTS(conn->llcp_cu.timeout * 10000U,
-				       lll->interval * 1250) !=
+				       lll->interval * CONN_INT_UNIT_US) !=
 		     conn->supervision_reload)) {
 			struct node_rx_cu *cu;
 
@@ -2305,7 +2445,7 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 			cu->timeout = conn->llcp_cu.timeout;
 		} else {
 			/* Mark for buffer for release */
-			rx->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+			rx->hdr.type = NODE_RX_TYPE_RELEASE;
 		}
 
 		/* enqueue rx node towards Thread */
@@ -2331,10 +2471,12 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 		conn_interval_new = latency * conn->llcp_cu.interval;
 		if (conn_interval_new > conn_interval_old) {
 			ticks_at_expire += HAL_TICKER_US_TO_TICKS(
-				(conn_interval_new - conn_interval_old) * 1250U);
+				(conn_interval_new - conn_interval_old) *
+				CONN_INT_UNIT_US);
 		} else {
 			ticks_at_expire -= HAL_TICKER_US_TO_TICKS(
-				(conn_interval_old - conn_interval_new) * 1250U);
+				(conn_interval_old - conn_interval_new) *
+				CONN_INT_UNIT_US);
 		}
 		lll->latency_prepare += lazy;
 		lll->latency_prepare -= (instant_latency - latency);
@@ -2350,7 +2492,8 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 		}
 
 		/* calculate the window widening and interval */
-		conn_interval_us = conn->llcp_cu.interval * 1250U;
+		conn_interval_us = conn->llcp_cu.interval *
+			CONN_INT_UNIT_US;
 		periodic_us = conn_interval_us;
 
 		if (0) {
@@ -2367,8 +2510,11 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 			lll->slave.window_widening_max_us =
 				(conn_interval_us >> 1) - EVENT_IFS_US;
 			lll->slave.window_size_prepare_us =
-				conn->llcp_cu.win_size * 1250U;
+				conn->llcp_cu.win_size * CONN_INT_UNIT_US;
+
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 			conn->slave.ticks_to_offset = 0U;
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 			lll->slave.window_widening_prepare_us +=
 				lll->slave.window_widening_periodic_us *
@@ -2383,7 +2529,8 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 				lll->slave.window_widening_periodic_us *
 				latency);
 			ticks_win_offset = HAL_TICKER_US_TO_TICKS(
-				(conn->llcp_cu.win_offset_us / 1250U) * 1250U);
+				(conn->llcp_cu.win_offset_us /
+				CONN_INT_UNIT_US) * CONN_INT_UNIT_US);
 			periodic_us -= lll->slave.window_widening_periodic_us;
 #endif /* CONFIG_BT_PERIPHERAL */
 
@@ -2456,11 +2603,11 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 				     ticks_at_expire, ticks_win_offset,
 				     HAL_TICKER_US_TO_TICKS(periodic_us),
 				     HAL_TICKER_REMAINDER(periodic_us),
-#if defined(CONFIG_BT_CTLR_CONN_META)
-				     TICKER_LAZY_MUST_EXPIRE,
-#else
+#if defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
 				     TICKER_NULL_LAZY,
-#endif /* CONFIG_BT_CTLR_CONN_META */
+#else
+				     TICKER_LAZY_MUST_EXPIRE_KEEP,
+#endif
 				     (ticks_slot_overhead +
 				      conn->evt.ticks_slot),
 #if defined(CONFIG_BT_PERIPHERAL) && defined(CONFIG_BT_CENTRAL)
@@ -2528,8 +2675,19 @@ static inline void event_ch_map_prep(struct ll_conn *conn,
 			    <= 0x7FFF) {
 		struct lll_conn *lll = &conn->lll;
 
-		/* procedure request acked */
-		conn->llcp_ack = conn->llcp_req;
+#if defined(CONFIG_BT_PERIPHERAL) && defined(CONFIG_BT_CTLR_LE_ENC)
+		if (conn->lll.role && (conn->slave.llcp_type != LLCP_NONE)) {
+			/* Local peripheral initiated channel map update
+			 * completed while a remote central had initiated
+			 * encryption procedure
+			 */
+			conn->slave.llcp_type = LLCP_NONE;
+		} else
+#endif /* CONFIG_BT_PERIPHERAL && CONFIG_BT_CTLR_LE_ENC */
+		{
+			/* procedure request acked */
+			conn->llcp_ack = conn->llcp_req;
+		}
 
 		/* copy to active channel map */
 		memcpy(&lll->data_chan_map[0],
@@ -2584,7 +2742,7 @@ static inline void event_enc_prep(struct ll_conn *conn)
 	struct node_tx *tx;
 
 	if (conn->llcp.encryption.state) {
-#if !defined(CONFIG_BT_CTLR_FAST_ENC)
+#if defined(CONFIG_BT_PERIPHERAL) && !defined(CONFIG_BT_CTLR_FAST_ENC)
 		if (lll->role &&
 		    (conn->llcp.encryption.state == LLCP_ENC_STATE_INIT)) {
 			struct node_rx_pdu *rx;
@@ -2627,7 +2785,7 @@ static inline void event_enc_prep(struct ll_conn *conn)
 			/* Wait for LTK reply */
 			conn->llcp.encryption.state = LLCP_ENC_STATE_LTK_WAIT;
 		}
-#endif /* !CONFIG_BT_CTLR_FAST_ENC */
+#endif /* CONFIG_BT_PERIPHERAL && !CONFIG_BT_CTLR_FAST_ENC */
 
 		return;
 	}
@@ -2917,9 +3075,6 @@ static inline void event_conn_param_req(struct ll_conn *conn,
 		return;
 	}
 
-	/* move to wait for conn_update/rsp/rej */
-	conn->llcp_conn_param.state = LLCP_CPR_STATE_RSP_WAIT;
-
 	/* place the conn param req packet as next in tx queue */
 	pdu_ctrl_tx = (void *)tx->pdu;
 	pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
@@ -2932,15 +3087,12 @@ static inline void event_conn_param_req(struct ll_conn *conn,
 	p->latency = sys_cpu_to_le16(conn->llcp_conn_param.latency);
 	p->timeout = sys_cpu_to_le16(conn->llcp_conn_param.timeout);
 	p->preferred_periodicity = 0U;
-	p->reference_conn_event_count = sys_cpu_to_le16(event_counter);
 	p->offset0 = sys_cpu_to_le16(0x0000);
 	p->offset1 = sys_cpu_to_le16(0xffff);
 	p->offset2 = sys_cpu_to_le16(0xffff);
 	p->offset3 = sys_cpu_to_le16(0xffff);
 	p->offset4 = sys_cpu_to_le16(0xffff);
 	p->offset5 = sys_cpu_to_le16(0xffff);
-
-	ctrl_tx_enqueue(conn, tx);
 
 	/* set CUI/CPR mutex */
 	conn_upd_curr = conn;
@@ -2951,6 +3103,9 @@ static inline void event_conn_param_req(struct ll_conn *conn,
 	conn->procedure_expire = conn->procedure_reload;
 
 #if defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
+	/* move to wait for offset calculations */
+	conn->llcp_conn_param.state = LLCP_CPR_STATE_OFFS_REQ;
+
 	{
 		static memq_link_t s_link;
 		static struct mayfly s_mfy_sched_offset = {0, 0, &s_link, NULL,
@@ -2982,6 +3137,13 @@ static inline void event_conn_param_req(struct ll_conn *conn,
 	}
 #else /* !CONFIG_BT_CTLR_SCHED_ADVANCED */
 	ARG_UNUSED(ticks_at_expire);
+
+	/* set reference counter value */
+	p->reference_conn_event_count = sys_cpu_to_le16(event_counter);
+	/* move to wait for conn_update_rsp/rej */
+	conn->llcp_conn_param.state = LLCP_CPR_STATE_RSP_WAIT;
+	/* enqueue control PDU */
+	ctrl_tx_enqueue(conn, tx);
 #endif /* !CONFIG_BT_CTLR_SCHED_ADVANCED */
 }
 
@@ -3167,6 +3329,32 @@ static inline void event_conn_param_prep(struct ll_conn *conn,
 		/* Do nothing */
 		break;
 
+#if defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
+	case LLCP_CPR_STATE_OFFS_REQ:
+		/* Do nothing */
+		break;
+
+	case LLCP_CPR_STATE_OFFS_RDY:
+	{
+		struct pdu_data *pdu_ctrl_tx;
+		struct node_tx *tx;
+
+		/* set reference counter value */
+		pdu_ctrl_tx =
+			CONTAINER_OF(conn->llcp_conn_param.pdu_win_offset0,
+				     struct pdu_data,
+				     llctrl.conn_param_req.offset0);
+		pdu_ctrl_tx->llctrl.conn_param_req.reference_conn_event_count =
+			sys_cpu_to_le16(event_counter);
+		/* move to wait for conn_update_rsp/rej */
+		conn->llcp_conn_param.state = LLCP_CPR_STATE_RSP_WAIT;
+		/* enqueue control PDU */
+		tx = CONTAINER_OF(pdu_ctrl_tx, struct node_tx, pdu);
+		ctrl_tx_enqueue(conn, tx);
+	}
+	break;
+#endif /* CONFIG_BT_CTLR_SCHED_ADVANCED */
+
 	default:
 		LL_ASSERT(0);
 		break;
@@ -3235,9 +3423,9 @@ static inline void dle_max_time_get(const struct ll_conn *conn,
 	    (!feature_coded_phy && !feature_phy_2m)) {
 		rx_time = PKT_US(LL_LENGTH_OCTETS_RX_MAX, PHY_1M);
 #if defined(CONFIG_BT_CTLR_PHY)
-		tx_time = MAX(MIN(PKT_US(LL_LENGTH_OCTETS_RX_MAX, PHY_1M),
-				  conn->default_tx_time),
-			      PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M));
+		tx_time = CLAMP(conn->default_tx_time,
+				PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M),
+				PKT_US(LL_LENGTH_OCTETS_RX_MAX, PHY_1M));
 #else /* !CONFIG_BT_CTLR_PHY */
 		tx_time = PKT_US(conn->default_tx_octets, PHY_1M);
 #endif /* !CONFIG_BT_CTLR_PHY */
@@ -3462,7 +3650,7 @@ static inline void event_phy_req_prep(struct ll_conn *conn)
 		/* update preferred phy */
 		conn->phy_pref_tx = conn->llcp_phy.tx;
 		conn->phy_pref_rx = conn->llcp_phy.rx;
-		conn->phy_pref_flags = conn->llcp_phy.flags;
+		conn->lll.phy_flags = conn->llcp_phy.flags;
 
 		/* place the phy req packet as next in tx queue */
 		pdu_ctrl_tx = (void *)tx->pdu;
@@ -3496,23 +3684,23 @@ static inline void event_phy_req_prep(struct ll_conn *conn)
 		conn->llcp_phy.ack = conn->llcp_phy.req;
 
 		/* select only one tx phy, prefer 2M */
-		if (conn->llcp_phy.tx & BIT(1)) {
-			conn->llcp_phy.tx = BIT(1);
-		} else if (conn->llcp_phy.tx & BIT(0)) {
-			conn->llcp_phy.tx = BIT(0);
-		} else if (conn->llcp_phy.tx & BIT(2)) {
-			conn->llcp_phy.tx = BIT(2);
+		if (conn->llcp_phy.tx & PHY_2M) {
+			conn->llcp_phy.tx = PHY_2M;
+		} else if (conn->llcp_phy.tx & PHY_1M) {
+			conn->llcp_phy.tx = PHY_1M;
+		} else if (conn->llcp_phy.tx & PHY_CODED) {
+			conn->llcp_phy.tx = PHY_CODED;
 		} else {
 			conn->llcp_phy.tx = 0U;
 		}
 
 		/* select only one rx phy, prefer 2M */
-		if (conn->llcp_phy.rx & BIT(1)) {
-			conn->llcp_phy.rx = BIT(1);
-		} else if (conn->llcp_phy.rx & BIT(0)) {
-			conn->llcp_phy.rx = BIT(0);
-		} else if (conn->llcp_phy.rx & BIT(2)) {
-			conn->llcp_phy.rx = BIT(2);
+		if (conn->llcp_phy.rx & PHY_2M) {
+			conn->llcp_phy.rx = PHY_2M;
+		} else if (conn->llcp_phy.rx & PHY_1M) {
+			conn->llcp_phy.rx = PHY_1M;
+		} else if (conn->llcp_phy.rx & PHY_CODED) {
+			conn->llcp_phy.rx = PHY_CODED;
 		} else {
 			conn->llcp_phy.rx = 0U;
 		}
@@ -3645,8 +3833,18 @@ static inline void event_phy_upd_ind_prep(struct ll_conn *conn,
 		struct node_rx_pdu *rx;
 		uint8_t old_tx, old_rx;
 
-		/* procedure request acked */
-		conn->llcp_ack = conn->llcp_req;
+#if defined(CONFIG_BT_PERIPHERAL) && defined(CONFIG_BT_CTLR_LE_ENC)
+		if (conn->lll.role && (conn->slave.llcp_type != LLCP_NONE)) {
+			/* Local peripheral initiated PHY update completed while
+			 * a remote central had initiated encryption procedure
+			 */
+			conn->slave.llcp_type = LLCP_NONE;
+		} else
+#endif /* CONFIG_BT_PERIPHERAL && CONFIG_BT_CTLR_LE_ENC */
+		{
+			/* procedure request acked */
+			conn->llcp_ack = conn->llcp_req;
+		}
 
 		/* apply new phy */
 		old_tx = lll->phy_tx;
@@ -3680,7 +3878,6 @@ static inline void event_phy_upd_ind_prep(struct ll_conn *conn,
 
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 		}
-		lll->phy_flags = conn->phy_pref_flags;
 
 		/* Acquire Rx node */
 		rx = conn->llcp_rx;
@@ -3691,7 +3888,7 @@ static inline void event_phy_upd_ind_prep(struct ll_conn *conn,
 		if (!conn->llcp.phy_upd_ind.cmd && (lll->phy_tx == old_tx) &&
 		    (lll->phy_rx == old_rx)) {
 			/* Mark for buffer for release */
-			rx->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+			rx->hdr.type = NODE_RX_TYPE_RELEASE;
 
 			/* enqueue rx node towards Thread */
 			ll_rx_put(rx->hdr.link, rx);
@@ -3703,7 +3900,7 @@ static inline void event_phy_upd_ind_prep(struct ll_conn *conn,
 				conn->llcp_rx = rx->hdr.link->mem;
 
 				/* Mark for buffer for release */
-				rx->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+				rx->hdr.type = NODE_RX_TYPE_RELEASE;
 
 				/* enqueue rx node towards Thread */
 				ll_rx_put(rx->hdr.link, rx);
@@ -3737,7 +3934,7 @@ static inline void event_phy_upd_ind_prep(struct ll_conn *conn,
 		    (eff_rx_time <= lll->max_rx_time) &&
 		    (lll->max_rx_time <= max_rx_time)) {
 			/* Mark buffer for release */
-			rx->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+			rx->hdr.type = NODE_RX_TYPE_RELEASE;
 
 			/* enqueue rx node towards Thread */
 			ll_rx_put(rx->hdr.link, rx);
@@ -3775,6 +3972,7 @@ static inline void event_phy_upd_ind_prep(struct ll_conn *conn,
 }
 #endif /* CONFIG_BT_CTLR_PHY */
 
+#if defined(CONFIG_BT_PERIPHERAL)
 static uint8_t conn_upd_recv(struct ll_conn *conn, memq_link_t *link,
 			  struct node_rx_pdu **rx, struct pdu_data *pdu)
 {
@@ -3783,7 +3981,7 @@ static uint8_t conn_upd_recv(struct ll_conn *conn, memq_link_t *link,
 	instant = sys_le16_to_cpu(pdu->llctrl.conn_update_ind.instant);
 	if (((instant - conn->lll.event_counter) & 0xFFFF) > 0x7FFF) {
 		/* Mark for buffer for release */
-		(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+		(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 
 		return BT_HCI_ERR_INSTANT_PASSED;
 	}
@@ -3791,7 +3989,7 @@ static uint8_t conn_upd_recv(struct ll_conn *conn, memq_link_t *link,
 	/* different transaction collision */
 	if (((conn->llcp_req - conn->llcp_ack) & 0x03) == 0x02) {
 		/* Mark for buffer for release */
-		(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+		(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 
 		return BT_HCI_ERR_DIFF_TRANS_COLLISION;
 	}
@@ -3807,7 +4005,8 @@ static uint8_t conn_upd_recv(struct ll_conn *conn, memq_link_t *link,
 
 	conn->llcp_cu.win_size = pdu->llctrl.conn_update_ind.win_size;
 	conn->llcp_cu.win_offset_us =
-		sys_le16_to_cpu(pdu->llctrl.conn_update_ind.win_offset) * 1250;
+		sys_le16_to_cpu(pdu->llctrl.conn_update_ind.win_offset) *
+			CONN_INT_UNIT_US;
 	conn->llcp_cu.interval =
 		sys_le16_to_cpu(pdu->llctrl.conn_update_ind.interval);
 	conn->llcp_cu.latency =
@@ -3865,10 +4064,11 @@ static uint8_t chan_map_upd_recv(struct ll_conn *conn, struct node_rx_pdu *rx,
 
 chan_map_upd_recv_exit:
 	/* Mark for buffer for release */
-	rx->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+	rx->hdr.type = NODE_RX_TYPE_RELEASE;
 
 	return err;
 }
+#endif /* CONFIG_BT_PERIPHERAL */
 
 static void terminate_ind_recv(struct ll_conn *conn, struct node_rx_pdu *rx,
 			      struct pdu_data *pdu)
@@ -3877,10 +4077,11 @@ static void terminate_ind_recv(struct ll_conn *conn, struct node_rx_pdu *rx,
 	conn->llcp_terminate.reason_peer = pdu->llctrl.terminate_ind.error_code;
 
 	/* Mark for buffer for release */
-	rx->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+	rx->hdr.type = NODE_RX_TYPE_RELEASE;
 }
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
+#if defined(CONFIG_BT_CENTRAL)
 static void enc_req_reused_send(struct ll_conn *conn, struct node_tx **tx)
 {
 	struct pdu_data *pdu_ctrl_tx;
@@ -3914,7 +4115,9 @@ static void enc_req_reused_send(struct ll_conn *conn, struct node_tx **tx)
 	/* dont release ctrl PDU memory */
 	*tx = NULL;
 }
+#endif /* CONFIG_BT_CENTRAL */
 
+#if defined(CONFIG_BT_PERIPHERAL)
 static int enc_rsp_send(struct ll_conn *conn)
 {
 	struct pdu_data *pdu_ctrl_tx;
@@ -3956,6 +4159,7 @@ static int enc_rsp_send(struct ll_conn *conn)
 
 	return 0;
 }
+#endif /* CONFIG_BT_PERIPHERAL */
 
 static int start_enc_rsp_send(struct ll_conn *conn,
 			      struct pdu_data *pdu_ctrl_tx)
@@ -4043,7 +4247,7 @@ static int unknown_rsp_send(struct ll_conn *conn, struct node_rx_pdu *rx,
 	ctrl_tx_enqueue(conn, tx);
 
 	/* Mark for buffer for release */
-	rx->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+	rx->hdr.type = NODE_RX_TYPE_RELEASE;
 
 	return 0;
 }
@@ -4120,11 +4324,12 @@ static int feature_rsp_send(struct ll_conn *conn, struct node_rx_pdu *rx,
 	ctrl_tx_sec_enqueue(conn, tx);
 
 	/* Mark for buffer for release */
-	rx->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+	rx->hdr.type = NODE_RX_TYPE_RELEASE;
 
 	return 0;
 }
 
+#if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_CTLR_SLAVE_FEAT_REQ)
 static void feature_rsp_recv(struct ll_conn *conn, struct pdu_data *pdu_rx)
 {
 	struct pdu_data_llctrl_feature_rsp *rsp;
@@ -4148,6 +4353,7 @@ static void feature_rsp_recv(struct ll_conn *conn, struct pdu_data *pdu_rx)
 	conn->llcp_feature.ack = conn->llcp_feature.req;
 	conn->procedure_expire = 0U;
 }
+#endif /* CONFIG_BT_CENTRAL || CONFIG_BT_CTLR_SLAVE_FEAT_REQ */
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 static int pause_enc_rsp_send(struct ll_conn *conn, struct node_rx_pdu *rx,
@@ -4197,7 +4403,7 @@ static int pause_enc_rsp_send(struct ll_conn *conn, struct node_rx_pdu *rx,
 
 pause_enc_rsp_send_exit:
 	/* Mark for buffer for release */
-	rx->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+	rx->hdr.type = NODE_RX_TYPE_RELEASE;
 
 	return 0;
 }
@@ -4232,7 +4438,7 @@ static int version_ind_send(struct ll_conn *conn, struct node_rx_pdu *rx,
 		ctrl_tx_sec_enqueue(conn, tx);
 
 		/* Mark for buffer for release */
-		rx->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+		rx->hdr.type = NODE_RX_TYPE_RELEASE;
 	} else if (!conn->llcp_version.rx) {
 		/* procedure request acked */
 		conn->llcp_version.ack = conn->llcp_version.req;
@@ -4243,7 +4449,7 @@ static int version_ind_send(struct ll_conn *conn, struct node_rx_pdu *rx,
 		/* Tx-ed and Rx-ed before, ignore this invalid Rx. */
 
 		/* Mark for buffer for release */
-		rx->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+		rx->hdr.type = NODE_RX_TYPE_RELEASE;
 
 		return 0;
 	}
@@ -4282,7 +4488,7 @@ static int reject_ext_ind_send(struct ll_conn *conn, struct node_rx_pdu *rx,
 	ctrl_tx_enqueue(conn, tx);
 
 	/* Mark for buffer for release */
-	rx->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+	rx->hdr.type = NODE_RX_TYPE_RELEASE;
 
 	return 0;
 }
@@ -4520,7 +4726,7 @@ static inline void reject_ind_recv(struct ll_conn *conn, struct node_rx_pdu *rx,
 
 	if (err) {
 		/* Mark for buffer for release */
-		rx->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+		rx->hdr.type = NODE_RX_TYPE_RELEASE;
 	}
 }
 
@@ -4573,7 +4779,7 @@ static inline void reject_ext_ind_recv(struct ll_conn *conn,
 
 	if (err) {
 		/* Mark for buffer for release */
-		rx->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+		rx->hdr.type = NODE_RX_TYPE_RELEASE;
 	}
 }
 
@@ -4768,7 +4974,7 @@ static inline int length_req_rsp_recv(struct ll_conn *conn, memq_link_t *link,
 #endif /* CONFIG_BT_CTLR_PHY */
 			    (1)) {
 				/* Mark for buffer for release */
-				(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+				(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 
 				goto send_length_resp;
 			}
@@ -4876,7 +5082,7 @@ static int ping_resp_send(struct ll_conn *conn, struct node_rx_pdu *rx)
 	ctrl_tx_sec_enqueue(conn, tx);
 
 	/* Mark for buffer for release */
-	rx->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+	rx->hdr.type = NODE_RX_TYPE_RELEASE;
 
 	return 0;
 }
@@ -4932,7 +5138,7 @@ static int phy_rsp_send(struct ll_conn *conn, struct node_rx_pdu *rx,
 	ctrl_tx_enqueue(conn, tx);
 
 	/* Mark for buffer for release */
-	rx->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+	rx->hdr.type = NODE_RX_TYPE_RELEASE;
 
 	return 0;
 }
@@ -4952,7 +5158,7 @@ static inline uint8_t phy_upd_ind_recv(struct ll_conn *conn, memq_link_t *link,
 		if ((conn->llcp_phy.ack == conn->llcp_phy.req) ||
 		    (conn->llcp_phy.state != LLCP_PHY_STATE_RSP_WAIT)) {
 			/* Mark for buffer for release */
-			(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+			(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 
 			return 0;
 		}
@@ -4968,7 +5174,7 @@ static inline uint8_t phy_upd_ind_recv(struct ll_conn *conn, memq_link_t *link,
 		/* Ignore event generation if not local cmd initiated */
 		if (!conn->llcp_phy.cmd) {
 			/* Mark for buffer for release */
-			(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+			(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 
 			return 0;
 		}
@@ -4988,7 +5194,7 @@ static inline uint8_t phy_upd_ind_recv(struct ll_conn *conn, memq_link_t *link,
 	instant = sys_le16_to_cpu(ind->instant);
 	if (((instant - conn->lll.event_counter) & 0xffff) > 0x7fff) {
 		/* Mark for buffer for release */
-		(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+		(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 
 		return BT_HCI_ERR_INSTANT_PASSED;
 	}
@@ -4996,7 +5202,7 @@ static inline uint8_t phy_upd_ind_recv(struct ll_conn *conn, memq_link_t *link,
 	/* different transaction collision */
 	if (((conn->llcp_req - conn->llcp_ack) & 0x03) == 0x02) {
 		/* Mark for buffer for release */
-		(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+		(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 
 		return BT_HCI_ERR_DIFF_TRANS_COLLISION;
 	}
@@ -5051,10 +5257,13 @@ static inline void ctrl_tx_pre_ack(struct ll_conn *conn,
 			break;
 		}
 		__fallthrough;
-
+#if defined(CONFIG_BT_CENTRAL)
 	case PDU_DATA_LLCTRL_TYPE_ENC_REQ:
-	case PDU_DATA_LLCTRL_TYPE_ENC_RSP:
 	case PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ:
+#endif /* CONFIG_BT_CENTRAL */
+#if defined(CONFIG_BT_PERIPHERAL)
+	case PDU_DATA_LLCTRL_TYPE_ENC_RSP:
+#endif /* CONFIG_BT_PERIPHERAL */
 		/* pause data packet tx */
 		conn->llcp_enc.pause_tx = 1U;
 		break;
@@ -5062,7 +5271,9 @@ static inline void ctrl_tx_pre_ack(struct ll_conn *conn,
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	case PDU_DATA_LLCTRL_TYPE_PHY_REQ:
+#if defined(CONFIG_BT_PERIPHERAL)
 	case PDU_DATA_LLCTRL_TYPE_PHY_RSP:
+#endif /* CONFIG_BT_PERIPHERAL */
 		/* pause data packet tx */
 		conn->llcp_phy.pause_tx = 1U;
 		break;
@@ -5090,6 +5301,7 @@ static inline void ctrl_tx_ack(struct ll_conn *conn, struct node_tx **tx,
 	break;
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
+#if defined(CONFIG_BT_CENTRAL)
 	case PDU_DATA_LLCTRL_TYPE_ENC_REQ:
 		/* things from master stored for session key calculation */
 		memcpy(&conn->llcp.encryption.skd[0],
@@ -5109,7 +5321,9 @@ static inline void ctrl_tx_ack(struct ll_conn *conn, struct node_tx **tx,
 		/* Reset enc req queued state */
 		conn->llcp_enc.ack = conn->llcp_enc.req;
 		break;
+#endif /* CONFIG_BT_CENTRAL */
 
+#if defined(CONFIG_BT_PERIPHERAL)
 	case PDU_DATA_LLCTRL_TYPE_ENC_RSP:
 		/* pause data packet tx */
 		conn->llcp_enc.pause_tx = 1U;
@@ -5121,7 +5335,9 @@ static inline void ctrl_tx_ack(struct ll_conn *conn, struct node_tx **tx,
 		 * alongwith this tx ack at this point in time.
 		 */
 		break;
+#endif /* CONFIG_BT_PERIPHERAL */
 
+#if defined(CONFIG_BT_CENTRAL)
 	case PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ:
 		/* pause data packet tx */
 		conn->llcp_enc.pause_tx = 1U;
@@ -5138,12 +5354,16 @@ static inline void ctrl_tx_ack(struct ll_conn *conn, struct node_tx **tx,
 		/* Reset enc req queued state */
 		conn->llcp_enc.ack = conn->llcp_enc.req;
 		break;
+#endif /* CONFIG_BT_CENTRAL */
 
 	case PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_RSP:
+#if defined(CONFIG_BT_CENTRAL)
 		if (!conn->lll.role) {
 			/* reused tx-ed PDU and send enc req */
 			enc_req_reused_send(conn, tx);
-		} else {
+		} else
+#endif /* CONFIG_BT_CENTRAL */
+		{
 			/* pause data packet tx */
 			conn->llcp_enc.pause_tx = 1U;
 		}
@@ -5229,14 +5449,16 @@ static inline void ctrl_tx_ack(struct ll_conn *conn, struct node_tx **tx,
 		conn->llcp_phy.state = LLCP_PHY_STATE_RSP_WAIT;
 		__fallthrough;
 
+#if defined(CONFIG_BT_PERIPHERAL)
 	case PDU_DATA_LLCTRL_TYPE_PHY_RSP:
 		if (conn->lll.role) {
 			/* select the probable PHY with longest Tx time, which
 			 * will be restricted to fit current
 			 * connEffectiveMaxTxTime.
 			 */
-			uint8_t phy_tx_time[8] = {BIT(0), BIT(0), BIT(1), BIT(0),
-					       BIT(2), BIT(2), BIT(2), BIT(2)};
+			uint8_t phy_tx_time[8] = {PHY_1M, PHY_1M, PHY_2M,
+						  PHY_1M, PHY_CODED, PHY_CODED,
+						  PHY_CODED, PHY_CODED};
 			struct lll_conn *lll = &conn->lll;
 			uint8_t phys;
 
@@ -5247,12 +5469,15 @@ static inline void ctrl_tx_ack(struct ll_conn *conn, struct node_tx **tx,
 		/* resume data packet tx */
 		conn->llcp_phy.pause_tx = 0U;
 		break;
+#endif /* CONFIG_BT_PERIPHERAL */
 
+#if defined(CONFIG_BT_CENTRAL)
 	case PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND:
 		conn->lll.phy_tx_time = conn->llcp.phy_upd_ind.tx;
 		/* resume data packet tx */
 		conn->llcp_phy.pause_tx = 0U;
 		break;
+#endif /* CONFIG_BT_CENTRAL */
 #endif /* CONFIG_BT_CTLR_PHY */
 
 	default:
@@ -5336,13 +5561,14 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 			BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL;
 
 		/* Mark for buffer for release */
-		(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+		(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 
 		return 0;
 	}
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
 	switch (opcode) {
+#if defined(CONFIG_BT_PERIPHERAL)
 	case PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND:
 	{
 		uint8_t err;
@@ -5381,6 +5607,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 		}
 	}
 	break;
+#endif /* CONFIG_BT_PERIPHERAL */
 
 	case PDU_DATA_LLCTRL_TYPE_TERMINATE_IND:
 		if (!pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_TERMINATE_IND,
@@ -5392,11 +5619,29 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 		break;
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
+#if defined(CONFIG_BT_PERIPHERAL)
 	case PDU_DATA_LLCTRL_TYPE_ENC_REQ:
 		if (!conn->lll.role ||
 		    !pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_ENC_REQ, pdu_rx->len)) {
 			goto ull_conn_rx_unknown_rsp_send;
 		}
+
+#if defined(CONFIG_BT_CTLR_PHY)
+		/* LL_ENC_REQ was received while local peripheral initiated
+		 * procedure is in progress.
+		 */
+		if (unlikely(((conn->llcp_req - conn->llcp_ack) & 0x03) ==
+			     0x02)) {
+			/* Adjust ack due to decrement below, to prevent
+			 * failures
+			 */
+			conn->llcp_ack += 2U;
+
+			/* Store the local peripheral initiated procedure */
+			LL_ASSERT(conn->slave.llcp_type == LLCP_NONE);
+			conn->slave.llcp_type = conn->llcp_type;
+		}
+#endif /* CONFIG_BT_CTLR_PHY */
 
 #if defined(CONFIG_BT_CTLR_FAST_ENC)
 		/* TODO: BT Spec. text: may finalize the sending of additional
@@ -5421,7 +5666,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 		conn->llcp.encryption.state = LLCP_ENC_STATE_INIT;
 
 		/* Mark for buffer for release */
-		(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+		(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 #endif /* CONFIG_BT_CTLR_FAST_ENC */
 
 		/* Enc Setup state machine active */
@@ -5443,7 +5688,9 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 		conn->procedure_expire = conn->procedure_reload;
 
 		break;
+#endif /* CONFIG_BT_PERIPHERAL */
 
+#if defined(CONFIG_BT_CENTRAL)
 	case PDU_DATA_LLCTRL_TYPE_ENC_RSP:
 		if (conn->lll.role ||
 		    !pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_ENC_RSP, pdu_rx->len)) {
@@ -5460,7 +5707,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 		conn->llcp_enc.pause_rx = 1U;
 
 		/* Mark for buffer for release */
-		(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+		(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 
 		break;
 
@@ -5476,9 +5723,10 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 		conn->llcp.encryption.state = LLCP_ENC_STATE_INPROG;
 
 		/* Mark for buffer for release */
-		(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+		(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 
 		break;
+#endif /* CONFIG_BT_CENTRAL */
 
 	case PDU_DATA_LLCTRL_TYPE_START_ENC_RSP:
 		if (!pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_START_ENC_RSP,
@@ -5531,6 +5779,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 		break;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
+#if defined(CONFIG_BT_PERIPHERAL)
 	case PDU_DATA_LLCTRL_TYPE_FEATURE_REQ:
 		if (!conn->lll.role ||
 		    !pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_FEATURE_REQ,
@@ -5540,8 +5789,9 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 
 		nack = feature_rsp_send(conn, *rx, pdu_rx);
 		break;
+#endif /* CONFIG_BT_PERIPHERAL */
 
-#if defined(CONFIG_BT_CTLR_SLAVE_FEAT_REQ)
+#if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_CTLR_SLAVE_FEAT_REQ)
 	case PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ:
 		if (conn->lll.role ||
 		    !pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ,
@@ -5551,8 +5801,9 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 
 		nack = feature_rsp_send(conn, *rx, pdu_rx);
 		break;
-#endif /* CONFIG_BT_CTLR_SLAVE_FEAT_REQ */
+#endif /* CONFIG_BT_CENTRAL && CONFIG_BT_CTLR_SLAVE_FEAT_REQ */
 
+#if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_CTLR_SLAVE_FEAT_REQ)
 	case PDU_DATA_LLCTRL_TYPE_FEATURE_RSP:
 		if ((!IS_ENABLED(CONFIG_BT_CTLR_SLAVE_FEAT_REQ) &&
 		     conn->lll.role) ||
@@ -5563,8 +5814,10 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 
 		feature_rsp_recv(conn, pdu_rx);
 		break;
+#endif /* CONFIG_BT_CENTRAL || CONFIG_BT_CTLR_SLAVE_FEAT_REQ */
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
+#if defined(CONFIG_BT_PERIPHERAL)
 	case PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ:
 		if (!conn->lll.role ||
 		    !pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ,
@@ -5574,6 +5827,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 
 		nack = pause_enc_rsp_send(conn, *rx, 1);
 		break;
+#endif /* CONFIG_BT_PERIPHERAL */
 
 	case PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_RSP:
 		if (!pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_RSP,
@@ -5679,7 +5933,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 					cpr->preferred_periodicity;
 
 				/* Invalid parameters */
-				if ((interval_min < 6) ||
+				if ((interval_min < CONN_INTERVAL_MIN(conn)) ||
 				    (interval_max > 3200) ||
 				    (interval_min > interval_max) ||
 				    (latency > 499) ||
@@ -5729,7 +5983,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 				    (RADIO_CONN_EVENTS(conn->llcp_conn_param.timeout *
 						       10000U,
 						       lll->interval *
-						       1250) !=
+						       CONN_INT_UNIT_US) !=
 				     conn->supervision_reload)) {
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 					/* postpone CP request event if under
@@ -5740,7 +5994,8 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 							LLCP_CPR_STATE_APP_REQ;
 
 						/* Mark for buffer for release */
-						(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+						(*rx)->hdr.type =
+							NODE_RX_TYPE_RELEASE;
 					} else
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 					{
@@ -5755,7 +6010,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 
 					/* Mark for buffer for release */
 					(*rx)->hdr.type =
-						NODE_RX_TYPE_DC_PDU_RELEASE;
+						NODE_RX_TYPE_RELEASE;
 				}
 
 				conn->llcp_conn_param.ack--;
@@ -5784,7 +6039,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 				cpr->preferred_periodicity;
 
 			/* Invalid parameters */
-			if ((interval_min < 6) ||
+			if ((interval_min < CONN_INTERVAL_MIN(conn)) ||
 			    (interval_max > 3200) ||
 			    (interval_min > interval_max) ||
 			    (latency > 499) ||
@@ -5831,7 +6086,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 			    (RADIO_CONN_EVENTS(conn->llcp_conn_param.timeout *
 					       10000U,
 					       lll->interval *
-					       1250) !=
+					       CONN_INT_UNIT_US) !=
 			     conn->supervision_reload)) {
 				conn->llcp_conn_param.state =
 					LLCP_CPR_STATE_APP_WAIT;
@@ -5842,7 +6097,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 					LLCP_CPR_STATE_RSP;
 
 				/* Mark for buffer for release */
-				(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+				(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 			}
 
 			conn->llcp_conn_param.ack--;
@@ -5856,6 +6111,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 		}
 		break;
 
+#if defined(CONFIG_BT_CENTRAL)
 	case PDU_DATA_LLCTRL_TYPE_CONN_PARAM_RSP:
 		if (conn->lll.role ||
 		    !pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_CONN_PARAM_RSP,
@@ -5880,7 +6136,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 				cpr->preferred_periodicity;
 
 			/* Invalid parameters */
-			if ((interval_min < 6) ||
+			if ((interval_min < CONN_INTERVAL_MIN(conn)) ||
 			    (interval_max > 3200) ||
 			    (interval_min > interval_max) ||
 			    (latency > 499) ||
@@ -5925,9 +6181,10 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 		}
 
 		/* Mark for buffer for release */
-		(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+		(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 
 		break;
+#endif /* CONFIG_BT_CENTRAL */
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 	case PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND:
@@ -5957,7 +6214,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 		conn->procedure_expire = 0U;
 
 		/* Mark for buffer for release */
-		(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+		(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 
 		break;
 #endif /* CONFIG_BT_CTLR_LE_PING */
@@ -6003,7 +6260,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 				conn->llcp_cu.ack--;
 
 				/* Mark for buffer for release */
-				(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+				(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 
 				break;
 			}
@@ -6019,7 +6276,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 			/* skip event generation if not cmd initiated */
 			if (!conn->llcp_conn_param.cmd) {
 				/* Mark for buffer for release */
-				(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+				(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 
 				break;
 			}
@@ -6080,7 +6337,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 				p->rx = lll->phy_rx;
 			} else {
 				/* Mark for buffer for release */
-				(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+				(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 			}
 #endif /* CONFIG_BT_CTLR_PHY */
 
@@ -6094,7 +6351,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 				 */
 
 				/* Mark for buffer for release */
-				(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+				(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 				break;
 #endif /* CONFIG_BT_CTLR_LE_PING */
 
@@ -6202,13 +6459,14 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 				conn->llcp_phy.pause_tx = 1U;
 
 				/* Mark for buffer for release */
-				(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+				(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 			}
 		} else {
 			nack = phy_rsp_send(conn, *rx, pdu_rx);
 		}
 		break;
 
+#if defined(CONFIG_BT_CENTRAL)
 	case PDU_DATA_LLCTRL_TYPE_PHY_RSP:
 		if (conn->lll.role ||
 		    !pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_PHY_RSP, pdu_rx->len)) {
@@ -6239,10 +6497,12 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 		}
 
 		/* Mark for buffer for release */
-		(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+		(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 
 		break;
+#endif /* CONFIG_BT_CENTRAL */
 
+#if defined(CONFIG_BT_PERIPHERAL)
 	case PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND:
 	{
 		uint8_t err;
@@ -6259,9 +6519,11 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 		}
 	}
 	break;
+#endif /* CONFIG_BT_PERIPHERAL */
 #endif /* CONFIG_BT_CTLR_PHY */
 
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
+#if defined(CONFIG_BT_CENTRAL)
 	case PDU_DATA_LLCTRL_TYPE_MIN_USED_CHAN_IND:
 		if (conn->lll.role ||
 		    !pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_MIN_USED_CHAN_IND,
@@ -6296,9 +6558,10 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 		}
 
 		/* Mark for buffer for release */
-		(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+		(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 
 		break;
+#endif  /* CONFIG_BT_CENTRAL */
 #endif /* CONFIG_BT_CTLR_MIN_USED_CHAN */
 
 	default:
@@ -6315,6 +6578,7 @@ static uint8_t force_md_cnt_calc(struct lll_conn *lll_conn, uint32_t tx_rate)
 {
 	uint32_t time_incoming, time_outgoing;
 	uint8_t force_md_cnt;
+	uint8_t mic_size;
 	uint8_t phy;
 
 #if defined(CONFIG_BT_CTLR_PHY)
@@ -6323,10 +6587,15 @@ static uint8_t force_md_cnt_calc(struct lll_conn *lll_conn, uint32_t tx_rate)
 	phy = PHY_1M;
 #endif /* !CONFIG_BT_CTLR_PHY */
 
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+	mic_size = PDU_MIC_SIZE * lll_conn->enc_tx;
+#else /* !CONFIG_BT_CTLR_LE_ENC */
+	mic_size = 0U;
+#endif /* !CONFIG_BT_CTLR_LE_ENC */
+
 	time_incoming = (LL_LENGTH_OCTETS_RX_MAX << 3) *
 			1000000UL / tx_rate;
-	time_outgoing = PKT_DC_US(LL_LENGTH_OCTETS_RX_MAX,
-				  (PDU_MIC_SIZE * lll_conn->enc_tx), phy) +
+	time_outgoing = PKT_DC_US(LL_LENGTH_OCTETS_RX_MAX, mic_size, phy) +
 			PKT_DC_US(0U, 0U, phy) +
 			(EVENT_IFS_US << 1);
 

@@ -159,7 +159,12 @@ The application configuration can come from the sources below. By default,
 4. Otherwise, if :file:`boards/<BOARD>.conf` exists in the application
    directory, the result of merging it with :file:`prj.conf` is used.
 
-5. Otherwise, :file:`prj.conf` is used if it exists in the application
+5. Otherwise, if board revisions are used and
+   :file:`boards/<BOARD>_<revision>.conf` exists in the application
+   directory, the result of merging it with :file:`prj.conf` and
+   :file:`boards/<BOARD>.conf` is used.
+
+6. Otherwise, :file:`prj.conf` is used if it exists in the application
    directory
 
 If a symbol is assigned both in :file:`<BOARD>_defconfig` and in the

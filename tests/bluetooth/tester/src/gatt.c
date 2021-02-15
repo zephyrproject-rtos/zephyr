@@ -734,8 +734,8 @@ struct set_value {
 
 struct bt_gatt_indicate_params indicate_params;
 
-static void indicate_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			uint8_t err)
+static void indicate_cb(struct bt_conn *conn,
+			struct bt_gatt_indicate_params *params, uint8_t err)
 {
 	if (err != 0U) {
 		LOG_ERR("Indication fail");
@@ -781,6 +781,7 @@ static uint8_t alloc_value(struct bt_gatt_attr *attr, struct set_value *data)
 			indicate_params.data = value->data;
 			indicate_params.len = value->len;
 			indicate_params.func = indicate_cb;
+			indicate_params.destroy = NULL;
 
 			bt_gatt_indicate(NULL, &indicate_params);
 		}

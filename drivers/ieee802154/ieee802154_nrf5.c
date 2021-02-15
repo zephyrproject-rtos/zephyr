@@ -42,6 +42,10 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "ieee802154_nrf5.h"
 #include "nrf_802154.h"
 
+#ifdef CONFIG_NRF_802154_SER_HOST
+#include "nrf_802154_serialization_error.h"
+#endif
+
 struct nrf5_802154_config {
 	void (*irq_config_func)(const struct device *dev);
 };
@@ -52,6 +56,13 @@ static struct nrf5_802154_data nrf5_data;
 #define ACK_REQUEST_BIT (1 << 5)
 #define FRAME_PENDING_BYTE 1
 #define FRAME_PENDING_BIT (1 << 4)
+#define TXTIME_OFFSET_US  (5 * USEC_PER_MSEC)
+
+#if defined(CONFIG_SOC_NRF5340_CPUAPP) || defined(CONFIG_SOC_NRF5340_CPUNET)
+#define EUI64_ADDR (NRF_FICR->INFO.DEVICEID)
+#else
+#define EUI64_ADDR (NRF_FICR->DEVICEID)
+#endif
 
 /* Convenience defines for RADIO */
 #define NRF5_802154_DATA(dev) \
@@ -76,9 +87,14 @@ static void nrf5_get_eui64(uint8_t *mac)
 	mac[index++] = (IEEE802154_NRF5_VENDOR_OUI >> 8) & 0xff;
 	mac[index++] = IEEE802154_NRF5_VENDOR_OUI & 0xff;
 
+#if defined(CONFIG_SOC_NRF5340_CPUAPP) && \
+	defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+#error Accessing EUI64 on the non-secure mode is not supported at the moment
+#else
 	/* Use device identifier assigned during the production. */
-	factoryAddress = (uint64_t)NRF_FICR->DEVICEID[0] << 32;
-	factoryAddress |= NRF_FICR->DEVICEID[1];
+	factoryAddress = (uint64_t)EUI64_ADDR[0] << 32;
+	factoryAddress |= EUI64_ADDR[1];
+#endif
 	memcpy(mac + index, &factoryAddress, sizeof(factoryAddress) - index);
 }
 
@@ -117,12 +133,14 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 
 		LOG_DBG("Frame received");
 
-		pkt = net_pkt_alloc_with_buffer(nrf5_radio->iface, pkt_len,
-						AF_UNSPEC, 0, K_NO_WAIT);
-		if (!pkt) {
-			LOG_ERR("No pkt available");
-			goto drop;
-		}
+		/* Block the RX thread until net_pkt is available, so that we
+		 * don't drop already ACKed frame in case of temporary net_pkt
+		 * scarcity. The nRF 802154 radio driver will accumulate any
+		 * incoming frames until it runs out of internal buffers (and
+		 * thus stops acknowledging consecutive frames).
+		 */
+		pkt = net_pkt_rx_alloc_with_buffer(nrf5_radio->iface, pkt_len,
+						   AF_UNSPEC, 0, K_FOREVER);
 
 		if (net_pkt_write(pkt, rx_frame->psdu + 1, pkt_len)) {
 			goto drop;
@@ -169,14 +187,27 @@ drop:
 	}
 }
 
+static void nrf5_get_capabilities_at_boot(void)
+{
+	nrf_802154_capabilities_t caps = nrf_802154_capabilities_get();
+
+	nrf5_data.capabilities =
+		IEEE802154_HW_FCS |
+		IEEE802154_HW_PROMISC |
+		IEEE802154_HW_FILTER |
+		((caps & NRF_802154_CAPABILITY_CSMA) ? IEEE802154_HW_CSMA : 0UL) |
+		IEEE802154_HW_2_4_GHZ |
+		IEEE802154_HW_TX_RX_ACK |
+		IEEE802154_HW_ENERGY_SCAN |
+		((caps & NRF_802154_CAPABILITY_DELAYED_TX) ? IEEE802154_HW_TXTIME : 0UL) |
+		IEEE802154_HW_SLEEP_TO_TX;
+}
+
 /* Radio device API */
 
 static enum ieee802154_hw_caps nrf5_get_capabilities(const struct device *dev)
 {
-	return IEEE802154_HW_FCS | IEEE802154_HW_FILTER |
-	       IEEE802154_HW_CSMA | IEEE802154_HW_2_4_GHZ |
-	       IEEE802154_HW_TX_RX_ACK | IEEE802154_HW_ENERGY_SCAN |
-	       IEEE802154_HW_SLEEP_TO_TX;
+	return nrf5_data.capabilities;
 }
 
 static int nrf5_cca(const struct device *dev)
@@ -364,6 +395,25 @@ static void nrf5_tx_started(const struct device *dev,
 	}
 }
 
+/* This function cannot be used in the serialized version yet. */
+#if defined(CONFIG_NET_PKT_TXTIME) && !defined(CONFIG_NRF_802154_SER_HOST)
+static bool nrf5_tx_at(struct net_pkt *pkt, bool cca)
+{
+	uint32_t tx_at = net_pkt_txtime(pkt) / NSEC_PER_USEC;
+	bool ret;
+
+	ret = nrf_802154_transmit_raw_at(nrf5_data.tx_psdu,
+					 cca,
+					 tx_at - TXTIME_OFFSET_US,
+					 TXTIME_OFFSET_US,
+					 nrf_802154_channel_get());
+	if (nrf5_data.event_handler) {
+		LOG_WRN("TX_STARTED event will be triggered without delay");
+	}
+	return ret;
+}
+#endif /* CONFIG_NET_PKT_TXTIME */
+
 static int nrf5_tx(const struct device *dev,
 		   enum ieee802154_tx_mode mode,
 		   struct net_pkt *pkt,
@@ -392,8 +442,15 @@ static int nrf5_tx(const struct device *dev,
 	case IEEE802154_TX_MODE_CSMA_CA:
 		nrf_802154_transmit_csma_ca_raw(nrf5_radio->tx_psdu);
 		break;
+/* This function cannot be used in the serialized version yet. */
+#if defined(CONFIG_NET_PKT_TXTIME) && !defined(CONFIG_NRF_802154_SER_HOST)
 	case IEEE802154_TX_MODE_TXTIME:
 	case IEEE802154_TX_MODE_TXTIME_CCA:
+		__ASSERT_NO_MSG(pkt);
+		ret = nrf5_tx_at(pkt,
+				 mode == IEEE802154_TX_MODE_TXTIME_CCA);
+		break;
+#endif /* CONFIG_NET_PKT_TXTIME */
 	default:
 		NET_ERR("TX mode %d not supported", mode);
 		return -ENOTSUP;
@@ -524,6 +581,7 @@ static void nrf5_iface_init(struct net_if *iface)
 	nrf5_radio->iface = iface;
 
 	ieee802154_init(iface);
+	nrf5_get_capabilities_at_boot();
 }
 
 static int nrf5_configure(const struct device *dev,
@@ -728,6 +786,13 @@ void nrf_802154_energy_detection_failed(nrf_802154_ed_error_t error)
 	}
 }
 
+#ifdef CONFIG_NRF_802154_SER_HOST
+void nrf_802154_serialization_error(const nrf_802154_ser_err_data_t *p_err)
+{
+	__ASSERT(false, "802.15.4 serialization error");
+}
+#endif
+
 static const struct nrf5_802154_config nrf5_radio_cfg = {
 	.irq_config_func = nrf5_irq_config,
 };
@@ -764,8 +829,8 @@ NET_DEVICE_INIT(nrf5_154_radio, CONFIG_IEEE802154_NRF5_DRV_NAME,
 		&nrf5_radio_api, L2,
 		L2_CTX_TYPE, MTU);
 #else
-DEVICE_AND_API_INIT(nrf5_154_radio, CONFIG_IEEE802154_NRF5_DRV_NAME,
-		    nrf5_init, &nrf5_data, &nrf5_radio_cfg,
-		    POST_KERNEL, CONFIG_IEEE802154_NRF5_INIT_PRIO,
-		    &nrf5_radio_api);
+DEVICE_DEFINE(nrf5_154_radio, CONFIG_IEEE802154_NRF5_DRV_NAME,
+		nrf5_init, device_pm_control_nop, &nrf5_data, &nrf5_radio_cfg,
+		POST_KERNEL, CONFIG_IEEE802154_NRF5_INIT_PRIO,
+		&nrf5_radio_api);
 #endif

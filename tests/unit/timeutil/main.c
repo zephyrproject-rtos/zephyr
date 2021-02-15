@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Peter Bigot Consulting
+ * Copyright 2019-2020 Peter Bigot Consulting
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -58,7 +58,8 @@ void test_main(void)
 	ztest_test_suite(test_timeutil_api,
 			 ztest_unit_test(test_gmtime),
 			 ztest_unit_test(test_s32),
-			 ztest_unit_test(test_s64)
+			 ztest_unit_test(test_s64),
+			 ztest_unit_test(test_sync)
 			 );
 	ztest_run_test_suite(test_timeutil_api);
 }

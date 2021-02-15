@@ -16,6 +16,16 @@
  * public documentation.
  */
 
+#define COREDUMP_BEGIN_STR	"BEGIN#"
+#define COREDUMP_END_STR	"END#"
+#define COREDUMP_ERROR_STR	"ERROR CANNOT DUMP#"
+
+/*
+ * Need to prefix coredump strings to make it easier to parse
+ * as log module adds its own prefixes.
+ */
+#define COREDUMP_PREFIX_STR	"#CD:"
+
 struct z_coredump_memory_region_t {
 	uintptr_t	start;
 	uintptr_t	end;
@@ -43,15 +53,13 @@ void z_coredump_start(void);
  */
 void z_coredump_end(void);
 
-/**
- * @brief Signal to coredump subsys there is an error.
- */
-void z_coredump_error(void);
-
 typedef void (*z_coredump_backend_start_t)(void);
 typedef void (*z_coredump_backend_end_t)(void);
-typedef void (*z_coredump_backend_error_t)(void);
-typedef int (*z_coredump_backend_buffer_output_t)(uint8_t *buf, size_t buflen);
+typedef void (*z_coredump_backend_buffer_output_t)(uint8_t *buf, size_t buflen);
+typedef int (*coredump_backend_query_t)(enum coredump_query_id query_id,
+					void *arg);
+typedef int (*coredump_backend_cmd_t)(enum coredump_cmd_id cmd_id,
+				      void *arg);
 
 struct z_coredump_backend_api {
 	/* Signal to backend of the start of coredump. */
@@ -60,11 +68,14 @@ struct z_coredump_backend_api {
 	/* Signal to backend of the end of coredump. */
 	z_coredump_backend_end_t		end;
 
-	/* Signal to backend an error has been encountered. */
-	z_coredump_backend_error_t		error;
-
 	/* Raw buffer output */
 	z_coredump_backend_buffer_output_t	buffer_output;
+
+	/* Perform query on backend */
+	coredump_backend_query_t		query;
+
+	/* Perform command on backend */
+	coredump_backend_cmd_t			cmd;
 };
 
 /**

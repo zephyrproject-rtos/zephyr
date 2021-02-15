@@ -112,7 +112,8 @@ int z_impl_sys_csrand_get(void *dst, uint32_t outlen)
 	if (unlikely(!entropy_driver)) {
 		ret = ctr_drbg_initialize();
 		if (ret != 0) {
-			return ret;
+			ret = -EIO;
+			goto end;
 		}
 	}
 
@@ -130,8 +131,12 @@ int z_impl_sys_csrand_get(void *dst, uint32_t outlen)
 		ret = 0;
 	} else if (ret == TC_CTR_PRNG_RESEED_REQ) {
 
-		entropy_get_entropy(entropy_driver,
+		ret = entropy_get_entropy(entropy_driver,
 				    (void *)&entropy, sizeof(entropy));
+		if (ret != 0) {
+			ret = -EIO;
+			goto end;
+		}
 
 		ret = tc_ctr_prng_reseed(&ctr_ctx,
 					entropy,
@@ -147,6 +152,7 @@ int z_impl_sys_csrand_get(void *dst, uint32_t outlen)
 		ret = -EIO;
 	}
 #endif
+end:
 	irq_unlock(key);
 
 	return ret;

@@ -73,21 +73,23 @@ Supported Features
 
 The Zephyr nucleo_f446re board configuration supports the following hardware features:
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
++-------------+------------+-------------------------------------+
+| Interface   | Controller | Driver/Component                    |
++=============+============+=====================================+
+| NVIC        | on-chip    | nested vector interrupt controller  |
++-------------+------------+-------------------------------------+
+| UART        | on-chip    | serial port                         |
++-------------+------------+-------------------------------------+
+| PINMUX      | on-chip    | pinmux                              |
++-------------+------------+-------------------------------------+
+| GPIO        | on-chip    | gpio                                |
++-------------+------------+-------------------------------------+
+| PWM         | on-chip    | pwm                                 |
++-------------+------------+-------------------------------------+
+| I2C         | on-chip    | i2c                                 |
++-------------+------------+-------------------------------------+
+| Backup SRAM | on-chip    | Backup SRAM                         |
++-------------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -155,6 +157,11 @@ Serial Port
 Nucleo F446RE board has 2 UARTs and 4 USARTs. The Zephyr console output is assigned to UART2.
 Default settings are 115200 8N1.
 
+Backup SRAM
+-----------
+
+In order to test backup SRAM you may want to disconnect VBAT from VDD. You can
+do it by removing ``SB45`` jumper on the back side of the board.
 
 Programming and Debugging
 *************************

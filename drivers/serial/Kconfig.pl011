@@ -20,4 +20,12 @@ config UART_PL011_PORT1
 	help
 	  Build the driver to utilize UART controller Port 1.
 
+config UART_PL011_SBSA
+	bool "Enable SBSA UART"
+	help
+	  Enable SBSA mode for PL011 driver. SBSA stands for
+	  Server Based System Architecture. This specification
+	  among other things defines simplified UART interface
+	  which is subset of PL011 interface.
+
 endif # UART_PL011

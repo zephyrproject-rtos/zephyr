@@ -8,11 +8,8 @@ common:
         - "thread_b: Hello World from (.*)!"
 tests:
   tracing.format.sysview:
-    platform_allow: nrf52840dk_nrf52840
-    extra_configs:
-      - CONFIG_TRACING=y
-      - CONFIG_SEGGER_SYSTEMVIEW=y
-      - CONFIG_USE_SEGGER_RTT=y
+    platform_allow: nrf52840dk_nrf52840 mimxrt1050_evk mimxrt1064_evk
+    extra_args: CONF_FILE="prj_sysview.conf"
   tracing.format.cpu_stats:
     platform_allow: nrf52840dk_nrf52840
     extra_configs:

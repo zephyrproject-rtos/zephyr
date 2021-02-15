@@ -34,9 +34,8 @@ K_APPMEM_PARTITION_DEFINE(z_libc_partition);
 K_APPMEM_PARTITION_DEFINE(k_mbedtls_partition);
 #endif
 
-#define LOG_LEVEL CONFIG_KERNEL_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_DECLARE(os);
+LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 /* The originally synchronization strategy made heavy use of recursive
  * irq_locking, which ports poorly to spinlocks which are
@@ -111,11 +110,35 @@ uint8_t *z_priv_stack_find(k_thread_stack_t *stack)
 #endif /* CONFIG_GEN_PRIV_STACKS */
 
 #ifdef CONFIG_DYNAMIC_OBJECTS
+
+/*
+ * Note that dyn_obj->data is where the kernel object resides
+ * so it is the one that actually needs to be aligned.
+ * Due to the need to get the the fields inside struct dyn_obj
+ * from kernel object pointers (i.e. from data[]), the offset
+ * from data[] needs to be fixed at build time. Therefore,
+ * data[] is declared with __aligned(), such that when dyn_obj
+ * is allocated with alignment, data[] is also aligned.
+ * Due to this requirement, data[] needs to be aligned with
+ * the maximum alignment needed for all kernel objects
+ * (hence the following DYN_OBJ_DATA_ALIGN).
+ */
+#ifdef ARCH_DYMANIC_OBJ_K_THREAD_ALIGNMENT
+#define DYN_OBJ_DATA_ALIGN_K_THREAD	(ARCH_DYMANIC_OBJ_K_THREAD_ALIGNMENT)
+#else
+#define DYN_OBJ_DATA_ALIGN_K_THREAD	(sizeof(void *))
+#endif
+
+#define DYN_OBJ_DATA_ALIGN		\
+	MAX(DYN_OBJ_DATA_ALIGN_K_THREAD, (sizeof(void *)))
+
 struct dyn_obj {
 	struct z_object kobj;
 	sys_dnode_t obj_list;
 	struct rbnode node; /* must be immediately before data member */
-	uint8_t data[]; /* The object itself */
+
+	/* The object itself */
+	uint8_t data[] __aligned(DYN_OBJ_DATA_ALIGN_K_THREAD);
 };
 
 extern struct z_object *z_object_gperf_find(const void *obj);
@@ -157,6 +180,26 @@ static size_t obj_size_get(enum k_objects otype)
 	return ret;
 }
 
+static size_t obj_align_get(enum k_objects otype)
+{
+	size_t ret;
+
+	switch (otype) {
+	case K_OBJ_THREAD:
+#ifdef ARCH_DYMANIC_OBJ_K_THREAD_ALIGNMENT
+		ret = ARCH_DYMANIC_OBJ_K_THREAD_ALIGNMENT;
+#else
+		ret = sizeof(void *);
+#endif
+		break;
+	default:
+		ret = sizeof(void *);
+		break;
+	}
+
+	return ret;
+}
+
 static bool node_lessthan(struct rbnode *a, struct rbnode *b)
 {
 	return a < b;
@@ -165,6 +208,13 @@ static bool node_lessthan(struct rbnode *a, struct rbnode *b)
 static inline struct dyn_obj *node_to_dyn_obj(struct rbnode *node)
 {
 	return CONTAINER_OF(node, struct dyn_obj, node);
+}
+
+static inline struct rbnode *dyn_obj_to_node(void *obj)
+{
+	struct dyn_obj *dobj = CONTAINER_OF(obj, struct dyn_obj, data);
+
+	return &dobj->node;
 }
 
 static struct dyn_obj *dyn_object_find(void *obj)
@@ -177,7 +227,7 @@ static struct dyn_obj *dyn_object_find(void *obj)
 	 * so just a little arithmetic is necessary to locate the
 	 * corresponding struct rbnode
 	 */
-	node = (struct rbnode *)((char *)obj - sizeof(struct rbnode));
+	node = dyn_obj_to_node(obj);
 
 	k_spinlock_key_t key = k_spin_lock(&lists_lock);
 	if (rb_contains(&obj_rb_tree, node)) {
@@ -253,11 +303,11 @@ static void thread_idx_free(uintptr_t tidx)
 	sys_bitfield_set_bit((mem_addr_t)_thread_idx_map, tidx);
 }
 
-struct z_object *z_dynamic_object_create(size_t size)
+struct z_object *z_dynamic_object_aligned_create(size_t align, size_t size)
 {
 	struct dyn_obj *dyn;
 
-	dyn = z_thread_malloc(sizeof(*dyn) + size);
+	dyn = z_thread_aligned_alloc(align, sizeof(*dyn) + size);
 	if (dyn == NULL) {
 		LOG_ERR("could not allocate kernel object, out of memory");
 		return NULL;
@@ -307,7 +357,8 @@ void *z_impl_k_object_alloc(enum k_objects otype)
 		break;
 	}
 
-	zo = z_dynamic_object_create(obj_size_get(otype));
+	zo = z_dynamic_object_aligned_create(obj_align_get(otype),
+					     obj_size_get(otype));
 	if (zo == NULL) {
 		return NULL;
 	}

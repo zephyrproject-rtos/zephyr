@@ -24,6 +24,48 @@ extern "C" {
  */
 
 /**
+ * @brief Get the node identifier for the controller phandle from a
+ *        gpio phandle-array property at an index
+ *
+ * Example devicetree fragment:
+ *
+ *     gpio1: gpio@... { };
+ *
+ *     gpio2: gpio@... { };
+ *
+ *     n: node {
+ *             gpios = <&gpio1 10 GPIO_ACTIVE_LOW>,
+ *                     <&gpio2 30 GPIO_ACTIVE_HIGH>;
+ *     };
+ *
+ * Example usage:
+ *
+ *     DT_GPIO_CTLR_BY_IDX(DT_NODELABEL(n), gpios, 1) // DT_NODELABEL(gpio2)
+ *
+ * @param node_id node identifier
+ * @param gpio_pha lowercase-and-underscores GPIO property with
+ *        type "phandle-array"
+ * @param idx logical index into "gpio_pha"
+ * @return the node identifier for the gpio controller referenced at
+ *         index "idx"
+ * @see DT_PHANDLE_BY_IDX()
+ */
+#define DT_GPIO_CTLR_BY_IDX(node_id, gpio_pha, idx) \
+	DT_PHANDLE_BY_IDX(node_id, gpio_pha, idx)
+
+/**
+ * @brief Equivalent to DT_GPIO_CTLR_BY_IDX(node_id, gpio_pha, 0)
+ * @param node_id node identifier
+ * @param gpio_pha lowercase-and-underscores GPIO property with
+ *        type "phandle-array"
+ * @return a node identifier for the gpio controller at index 0
+ *         in "gpio_pha"
+ * @see DT_GPIO_CTLR_BY_IDX()
+ */
+#define DT_GPIO_CTLR(node_id, gpio_pha) \
+	DT_GPIO_CTLR_BY_IDX(node_id, gpio_pha, 0)
+
+/**
  * @brief Get a label property from a gpio phandle-array property
  *        at an index
  *
@@ -58,7 +100,7 @@ extern "C" {
  * @see DT_PHANDLE_BY_IDX()
  */
 #define DT_GPIO_LABEL_BY_IDX(node_id, gpio_pha, idx) \
-	DT_PROP_BY_PHANDLE_IDX(node_id, gpio_pha, idx, label)
+	DT_PROP(DT_GPIO_CTLR_BY_IDX(node_id, gpio_pha, idx), label)
 
 /**
  * @brief Equivalent to DT_GPIO_LABEL_BY_IDX(node_id, gpio_pha, 0)

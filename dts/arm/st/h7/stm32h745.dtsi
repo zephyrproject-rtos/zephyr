@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2020 Alexander Kozhinov
- * AlexanderKozhinov@yandex.com
+ * Copyright (c) 2020 Alexander Kozhinov <AlexanderKozhinov@yandex.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,24 +7,39 @@
 #include <st/h7/stm32h7_dualcore.dtsi>
 
 / {
+	soc {
+		flash-controller@52002000 {
+			flash0: flash@8000000 {
+				compatible = "soc-nv-flash";
+				write-block-size = <32>;
+				erase-block-size = <DT_SIZE_K(128)>;
+			};
+			flash1: flash@8100000 {
+				compatible = "soc-nv-flash";
+				write-block-size = <32>;
+				erase-block-size = <DT_SIZE_K(128)>;
+			};
+		};
+	};
 	/*
 	* The RAM memories placed here can be used by both cores M4/M7
 	* For more information see reference manual and datasheet to STM32H745
+	* (RM0399 Rev 3)
 	*/
 
-	/* system data RAM accessible over over AXI bus */
+	/* System data RAM accessible over AXI bus: AXI SRAM in D1 domain */
 	sram0: memory@24000000 {
 		reg = <0x24000000 DT_SIZE_K(512)>;
 		compatible = "mmio-sram";
 	};
 
-	/* system data RAM accessible over over AHB bus */
+	/* System data RAM accessible over AHB bus: SRAM1 in D2 domain */
 	sram1: memory@30000000 {
 		reg = <0x30000000 DT_SIZE_K(288)>;
 		compatible = "mmio-sram";
 	};
 
-	/* system data RAM accessible over over AHB bus */
+	/* System data RAM accessible over AHB bus: SRAM4 in D2 domain  */
 	sram4: memory@38000000 {
 		reg = <0x38000000 DT_SIZE_K(64)>;
 		compatible = "mmio-sram";

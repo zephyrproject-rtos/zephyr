@@ -73,7 +73,7 @@ static int test_build_empty_pdu(void)
 	}
 
 	r = coap_packet_init(&cpkt, data, COAP_BUF_SIZE,
-			     1, COAP_TYPE_CON, 0, NULL,
+			     COAP_VERSION_1, COAP_TYPE_CON, 0, NULL,
 			     COAP_METHOD_GET, 0);
 	if (r < 0) {
 		TC_PRINT("Could not initialize packet\n");
@@ -103,12 +103,11 @@ done:
 static int test_build_simple_pdu(void)
 {
 	uint8_t result_pdu[] = { 0x55, 0xA5, 0x12, 0x34, 't', 'o', 'k', 'e',
-				 'n', 0xC1, 0x00, 0xFF, 'p', 'a', 'y', 'l',
+				 'n', 0xC0, 0xFF, 'p', 'a', 'y', 'l',
 				 'o', 'a', 'd', 0x00 };
 	struct coap_packet cpkt;
 	const char token[] = "token";
 	uint8_t *data;
-	uint8_t format = 0U;
 	int result = TC_FAIL;
 	int r;
 
@@ -118,8 +117,8 @@ static int test_build_simple_pdu(void)
 	}
 
 	r = coap_packet_init(&cpkt, data, COAP_BUF_SIZE,
-			     1, COAP_TYPE_NON_CON,
-			     strlen(token), (uint8_t *)token,
+			     COAP_VERSION_1, COAP_TYPE_NON_CON,
+			     strlen(token), token,
 			     COAP_RESPONSE_CODE_PROXYING_NOT_SUPPORTED,
 			     0x1234);
 	if (r < 0) {
@@ -127,8 +126,8 @@ static int test_build_simple_pdu(void)
 		goto done;
 	}
 
-	r = coap_packet_append_option(&cpkt, COAP_OPTION_CONTENT_FORMAT,
-				      &format, sizeof(format));
+	r = coap_append_option_int(&cpkt, COAP_OPTION_CONTENT_FORMAT,
+				   COAP_CONTENT_FORMAT_TEXT_PLAIN);
 	if (r < 0) {
 		TC_PRINT("Could not append option\n");
 		goto done;
@@ -356,7 +355,8 @@ static int test_parse_simple_pdu(void)
 		goto done;
 	}
 
-	if (((uint8_t *)options[0].value)[0] != 0U) {
+	if (((uint8_t *)options[0].value)[0] !=
+			COAP_CONTENT_FORMAT_TEXT_PLAIN) {
 		TC_PRINT("Option value doesn't match the reference\n");
 		goto done;
 	}
@@ -523,6 +523,124 @@ done:
 	return result;
 }
 
+static int test_parse_req_build_ack(void)
+{
+	uint8_t pdu[] = { 0x45, 0xA5, 0x12, 0x34, 't', 'o', 'k', 'e', 'n',
+		       0x00, 0xc1, 0x00, 0xff, 'p', 'a', 'y', 'l', 'o',
+		       'a', 'd', 0x00 };
+	uint8_t ack_pdu[] = { 0x65, 0x80, 0x12, 0x34, 't', 'o', 'k', 'e', 'n' };
+	struct coap_packet cpkt;
+	struct coap_packet ack_cpkt;
+	uint8_t *data = NULL;
+	uint8_t *ack_data = NULL;
+	int result = TC_FAIL;
+	int r;
+
+	data = (uint8_t *)k_malloc(COAP_BUF_SIZE);
+	if (!data) {
+		goto done;
+	}
+
+	memcpy(data, pdu, sizeof(pdu));
+
+	r = coap_packet_parse(&cpkt, data, sizeof(pdu), NULL, 0);
+	if (r) {
+		TC_PRINT("Could not parse packet\n");
+		goto done;
+	}
+
+	ack_data = (uint8_t *)k_malloc(COAP_BUF_SIZE);
+	if (!ack_data) {
+		goto done;
+	}
+
+	r = coap_ack_init(&ack_cpkt, &cpkt, ack_data, COAP_BUF_SIZE,
+			  COAP_RESPONSE_CODE_BAD_REQUEST);
+	if (r < 0) {
+		TC_PRINT("Could not initialize ACK packet\n");
+		goto done;
+	}
+
+	if (ack_cpkt.offset != sizeof(ack_pdu)) {
+		TC_PRINT("Different size from the reference packet\n");
+		goto done;
+	}
+
+	if (memcmp(ack_pdu, ack_cpkt.data, ack_cpkt.offset)) {
+		TC_PRINT("Built packet doesn't match reference packet\n");
+		goto done;
+	}
+
+	result = TC_PASS;
+
+done:
+	k_free(data);
+	k_free(ack_data);
+
+	TC_END_RESULT(result);
+
+	return result;
+}
+
+static int test_parse_req_build_empty_ack(void)
+{
+	uint8_t pdu[] = { 0x45, 0xA5, 0xDE, 0xAD, 't', 'o', 'k', 'e', 'n',
+		       0x00, 0xc1, 0x00, 0xff, 'p', 'a', 'y', 'l', 'o',
+		       'a', 'd', 0x00 };
+	uint8_t ack_pdu[] = { 0x60, 0x00, 0xDE, 0xAD };
+	struct coap_packet cpkt;
+	struct coap_packet ack_cpkt;
+	uint8_t *data = NULL;
+	uint8_t *ack_data = NULL;
+	int result = TC_FAIL;
+	int r;
+
+	data = (uint8_t *)k_malloc(COAP_BUF_SIZE);
+	if (!data) {
+		goto done;
+	}
+
+	memcpy(data, pdu, sizeof(pdu));
+
+	r = coap_packet_parse(&cpkt, data, sizeof(pdu), NULL, 0);
+	if (r) {
+		TC_PRINT("Could not parse packet\n");
+		goto done;
+	}
+
+	ack_data = (uint8_t *)k_malloc(COAP_BUF_SIZE);
+	if (!ack_data) {
+		goto done;
+	}
+
+	r = coap_ack_init(&ack_cpkt, &cpkt, ack_data, COAP_BUF_SIZE,
+			  COAP_CODE_EMPTY);
+	if (r < 0) {
+		TC_PRINT("Could not initialize ACK packet\n");
+		goto done;
+	}
+
+	if (ack_cpkt.offset != sizeof(ack_pdu)) {
+		TC_PRINT("Different size from the reference packet\n");
+		goto done;
+	}
+
+	if (memcmp(ack_pdu, ack_cpkt.data, ack_cpkt.offset)) {
+		TC_PRINT("Built packet doesn't match reference packet\n");
+		goto done;
+	}
+
+	result = TC_PASS;
+
+done:
+	k_free(data);
+	k_free(ack_data);
+
+	TC_END_RESULT(result);
+
+	return result;
+}
+
 static int test_match_path_uri(void)
 {
 	int result = TC_FAIL;
@@ -615,9 +733,9 @@ static int prepare_block1_request(struct coap_packet *req,
 		goto done;
 	}
 
-	r = coap_packet_init(req, data, COAP_BUF_SIZE, 1,
+	r = coap_packet_init(req, data, COAP_BUF_SIZE, COAP_VERSION_1,
 			     COAP_TYPE_CON, strlen(token),
-			     (uint8_t *) token, COAP_METHOD_POST,
+			     token, COAP_METHOD_POST,
 			     coap_next_id());
 	if (r < 0) {
 		TC_PRINT("Unable to initialize request\n");
@@ -687,7 +805,7 @@ static int prepare_block1_response(struct coap_packet *rsp,
 	id = coap_header_get_id(req);
 	tkl = coap_header_get_token(req, token);
 
-	r = coap_packet_init(rsp, data, COAP_BUF_SIZE, 1,
+	r = coap_packet_init(rsp, data, COAP_BUF_SIZE, COAP_VERSION_1,
 			     COAP_TYPE_ACK, tkl, token,
 			     COAP_RESPONSE_CODE_CREATED, id);
 	if (r < 0) {
@@ -850,9 +968,9 @@ static int prepare_block2_request(struct coap_packet *req,
 		goto done;
 	}
 
-	r = coap_packet_init(req, data, COAP_BUF_SIZE, 1,
+	r = coap_packet_init(req, data, COAP_BUF_SIZE, COAP_VERSION_1,
 			     COAP_TYPE_CON, strlen(token),
-			     (uint8_t *) token, COAP_METHOD_GET,
+			     token, COAP_METHOD_GET,
 			     coap_next_id());
 	if (r < 0) {
 		TC_PRINT("Unable to initialize request\n");
@@ -900,7 +1018,7 @@ static int prepare_block2_response(struct coap_packet *rsp,
 	id = coap_header_get_id(req);
 	tkl = coap_header_get_token(req, token);
 
-	r = coap_packet_init(rsp, data, COAP_BUF_SIZE, 1,
+	r = coap_packet_init(rsp, data, COAP_BUF_SIZE, COAP_VERSION_1,
 			     COAP_TYPE_ACK, tkl, token,
 			     COAP_RESPONSE_CODE_CONTENT, id);
 	if (r < 0) {
@@ -1085,8 +1203,8 @@ static int test_retransmit_second_round(void)
 
 	id = coap_next_id();
 
-	r = coap_packet_init(&cpkt, data, COAP_BUF_SIZE,
-			     1, COAP_TYPE_CON, 0, coap_next_token(),
+	r = coap_packet_init(&cpkt, data, COAP_BUF_SIZE, COAP_VERSION_1,
+			     COAP_TYPE_CON, 0, coap_next_token(),
 			     COAP_METHOD_GET, id);
 	if (r < 0) {
 		TC_PRINT("Could not initialize packet\n");
@@ -1099,7 +1217,8 @@ static int test_retransmit_second_round(void)
 		goto done;
 	}
 
-	r = coap_pending_init(pending, &cpkt, (struct sockaddr *) &dummy_addr);
+	r = coap_pending_init(pending, &cpkt, (struct sockaddr *) &dummy_addr,
+			      COAP_DEFAULT_MAX_RETRANSMIT);
 	if (r < 0) {
 		TC_PRINT("Could not initialize packet\n");
 		goto done;
@@ -1124,7 +1243,7 @@ static int test_retransmit_second_round(void)
 	}
 
 	r = coap_packet_init(&rsp, rsp_data, COAP_BUF_SIZE,
-			     1, COAP_TYPE_ACK, 0, NULL,
+			     COAP_VERSION_1, COAP_TYPE_ACK, 0, NULL,
 			     COAP_METHOD_GET, id);
 	if (r < 0) {
 		TC_PRINT("Could not initialize packet\n");
@@ -1227,7 +1346,7 @@ static int server_resource_1_get(struct coap_resource *resource,
 	}
 
 	r = coap_packet_init(&response, data, COAP_BUF_SIZE,
-			     1, COAP_TYPE_ACK, tkl, token,
+			     COAP_VERSION_1, COAP_TYPE_ACK, tkl, token,
 			     COAP_RESPONSE_CODE_OK, id);
 	if (r < 0) {
 		TC_PRINT("Unable to initialize packet.\n");
@@ -1376,8 +1495,8 @@ static int test_observer_client(void)
 	}
 
 	r = coap_packet_init(&req, data, COAP_BUF_SIZE,
-			     1, COAP_TYPE_CON,
-			     strlen(token), (uint8_t *)token,
+			     COAP_VERSION_1, COAP_TYPE_CON,
+			     strlen(token), token,
 			     COAP_METHOD_GET, coap_next_id());
 	if (r < 0) {
 		TC_PRINT("Unable to initialize request\n");
@@ -1470,6 +1589,9 @@ static const struct {
 		test_parse_malformed_opt_len_ext },
 	{ "Parse malformed empty payload with marker",
 		test_parse_malformed_marker, },
+	{ "Parse request and build ack ", test_parse_req_build_ack, },
+	{ "Parse request and build empty ack ",
+		test_parse_req_build_empty_ack, },
 	{ "Test match path uri", test_match_path_uri, },
 	{ "Test block sized 1 transfer", test_block1_size, },
 	{ "Test block sized 2 transfer", test_block2_size, },

@@ -1,0 +1,12 @@
+# Copyright (C) 2020 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Description of pre-defined file systems.
+
+    This is a container for child nodes that provide at minimum the
+    properties described in zephyr,fstab-common.yaml.
+
+compatible: "zephyr,fstab"
+
+include: base.yaml

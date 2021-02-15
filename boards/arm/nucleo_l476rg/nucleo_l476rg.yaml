@@ -9,8 +9,10 @@ toolchain:
 supported:
   - arduino_gpio
   - arduino_i2c
+  - arduino_spi
   - pwm
   - gpio
+  - dma
   - spi
   - i2c
   - counter

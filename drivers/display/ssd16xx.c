@@ -717,7 +717,7 @@ static struct display_driver_api ssd16xx_driver_api = {
 };
 
 
-DEVICE_AND_API_INIT(ssd16xx, DT_INST_LABEL(0), ssd16xx_init,
+DEVICE_DT_INST_DEFINE(0, ssd16xx_init, device_pm_control_nop,
 		    &ssd16xx_driver, NULL,
 		    POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY,
 		    &ssd16xx_driver_api);

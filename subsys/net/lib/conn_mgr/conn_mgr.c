@@ -16,6 +16,12 @@ LOG_MODULE_REGISTER(conn_mgr, CONFIG_NET_CONNECTION_MANAGER_LOG_LEVEL);
 
 #include <conn_mgr.h>
 
+#if IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)
+#define THREAD_PRIORITY K_PRIO_COOP(CONFIG_NUM_COOP_PRIORITIES - 1)
+#else
+#define THREAD_PRIORITY K_PRIO_PREEMPT(7)
+#endif
+
 uint16_t iface_states[CONN_MGR_IFACE_MAX];
 
 K_SEM_DEFINE(conn_mgr_lock, 1, UINT_MAX);
@@ -172,7 +178,7 @@ static void conn_mgr_handler(void)
 
 K_THREAD_DEFINE(conn_mgr, CONFIG_NET_CONNECTION_MANAGER_STACK_SIZE,
 		(k_thread_entry_t)conn_mgr_handler, NULL, NULL, NULL,
-		K_PRIO_COOP(2), 0, 0);
+		THREAD_PRIORITY, 0, 0);
 
 void net_conn_mgr_resend_status(void)
 {

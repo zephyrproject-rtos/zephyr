@@ -1,0 +1,8 @@
+tests:
+  drivers.can.timing:
+    tags: driver can
+    depends_on: can
+  drivers.can.timing_loopback:
+    tags: driver can
+    platform_allow: native_posix
+    extra_args: CONF_FILE="prj_loopback.conf"

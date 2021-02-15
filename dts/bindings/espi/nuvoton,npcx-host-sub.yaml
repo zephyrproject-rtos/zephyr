@@ -16,11 +16,6 @@ properties:
         required: true
         description: configurations of device source clock controller
 
-    pinctrl-0:
-        type: phandles
-        required: true
-        description: configurations of host uart pinmux controllers
-
     host_acc_wui:
         type: phandle
         required: true

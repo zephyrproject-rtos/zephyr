@@ -76,7 +76,6 @@ enum evt_t {
 
 struct app_evt_t {
 	sys_snode_t node;
-	struct k_mem_block block;
 	enum evt_t event_type;
 };
 
@@ -85,12 +84,11 @@ struct app_evt_t {
 #define FIFO_ELEM_COUNT         255
 #define FIFO_ELEM_ALIGN         sizeof(unsigned int)
 
-K_MEM_POOL_DEFINE(event_elem_pool, FIFO_ELEM_MIN_SZ, FIFO_ELEM_MAX_SZ,
-		  FIFO_ELEM_COUNT, FIFO_ELEM_ALIGN);
+K_HEAP_DEFINE(event_elem_pool, FIFO_ELEM_MAX_SZ * FIFO_ELEM_COUNT + 256);
 
 static inline void app_evt_free(struct app_evt_t *ev)
 {
-	k_mem_pool_free(&ev->block);
+	k_heap_free(&event_elem_pool, ev);
 }
 
 static inline void app_evt_put(struct app_evt_t *ev)
@@ -117,30 +115,25 @@ static inline void app_evt_flush(void)
 
 static inline struct app_evt_t *app_evt_alloc(void)
 {
-	int ret;
 	struct app_evt_t *ev;
-	struct k_mem_block block;
 
-	ret = k_mem_pool_alloc(&event_elem_pool, &block,
-			       sizeof(struct app_evt_t),
-			       K_NO_WAIT);
-	if (ret < 0) {
+	ev = k_heap_alloc(&event_elem_pool,
+			  sizeof(struct app_evt_t),
+			  K_NO_WAIT);
+	if (ev == NULL) {
 		LOG_ERR("APP event allocation failed!");
 		app_evt_flush();
 
-		ret = k_mem_pool_alloc(&event_elem_pool, &block,
-				       sizeof(struct app_evt_t),
-				       K_NO_WAIT);
-		if (ret < 0) {
+		ev = k_heap_alloc(&event_elem_pool,
+				  sizeof(struct app_evt_t),
+				  K_NO_WAIT);
+		if (ev == NULL) {
 			LOG_ERR("APP event memory corrupted.");
 			__ASSERT_NO_MSG(0);
 			return NULL;
 		}
 		return NULL;
 	}
-
-	ev = (struct app_evt_t *)block.data;
-	ev->block = block;
 
 	return ev;
 }

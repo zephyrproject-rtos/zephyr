@@ -134,6 +134,12 @@ arduino_spi: &spi0 {
 	status = "okay";
 };
 
+&ftm0 {
+	status = "okay";
+	compatible = "nxp,kinetis-ftm-pwm";
+	#pwm-cells = <3>;
+};
+
 &ftm3 {
 	status = "okay";
 	compatible = "nxp,kinetis-ftm-pwm";

@@ -185,7 +185,6 @@ void test_queue_alloc_append_user(void)
 /**
  * @brief Test to verify free of allocated elements of queue
  * @ingroup kernel_queue_tests
- * @see k_mem_pool_alloc(), k_mem_pool_free()
  */
 void test_auto_free(void)
 {
@@ -196,20 +195,12 @@ void test_auto_free(void)
 	 * threads with permissions exit.
 	 */
 
-	struct k_mem_block b[4];
+	void *b[4];
 	int i;
 
 	for (i = 0; i < 4; i++) {
-		zassert_false(k_mem_pool_alloc(&test_pool, &b[i], 64,
-					       K_FOREVER),
-			      "memory not auto released!");
-	}
-
-	/* Free everything so that the pool is back to a pristine state in
-	 * case we want to use it again.
-	 */
-	for (i = 0; i < 4; i++) {
-		k_mem_pool_free(&b[i]);
+		b[i] = k_heap_alloc(&test_pool, 64, K_FOREVER);
+		zassert_true(b[i] != NULL, "memory not auto released!");
 	}
 }
 

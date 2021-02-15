@@ -66,7 +66,7 @@ static struct k_sem end_sema;
 
 
 
-K_MEM_POOL_DEFINE(test_pool, 128, 128, 2, 4);
+K_HEAP_DEFINE(test_pool, 128 * 3);
 
 extern struct k_stack kstack;
 extern struct k_stack stack;
@@ -77,9 +77,16 @@ extern void test_stack_thread2isr(void);
 extern void test_stack_pop_fail(void);
 extern void test_stack_alloc_thread2thread(void);
 extern void test_stack_pop_can_wait(void);
+extern void test_stack_cleanup_error(void);
+extern void test_stack_push_full(void);
 #ifdef CONFIG_USERSPACE
 extern void test_stack_user_thread2thread(void);
 extern void test_stack_user_pop_fail(void);
+extern void test_stack_user_init_null(void);
+extern void test_stack_user_init_invalid_value(void);
+extern void test_stack_user_push_null(void);
+extern void test_stack_user_pop_null(void);
+extern void test_stack_user_pop_permission(void);
 #else
 #define dummy_test(_name)	   \
 	static void _name(void)	   \
@@ -89,6 +96,11 @@ extern void test_stack_user_pop_fail(void);
 
 dummy_test(test_stack_user_thread2thread);
 dummy_test(test_stack_user_pop_fail);
+dummy_test(test_stack_user_init_null);
+dummy_test(test_stack_user_init_invalid_value);
+dummy_test(test_stack_user_push_null);
+dummy_test(test_stack_user_pop_null);
+dummy_test(test_stack_user_pop_permission);
 #endif /* CONFIG_USERSPACE */
 
 /* entry of contexts */
@@ -335,14 +347,21 @@ void test_main(void)
 			      &end_sema, &threadstack, &kstack, &stack, &thread_data1,
 			      &end_sema1, &threadstack1);
 
-	k_thread_resource_pool_assign(k_current_get(), &test_pool);
+	k_thread_heap_assign(k_current_get(), &test_pool);
 
 	ztest_test_suite(test_stack_usage,
 			 ztest_unit_test(test_stack_thread2thread),
 			 ztest_user_unit_test(test_stack_user_thread2thread),
 			 ztest_unit_test(test_stack_thread2isr),
 			 ztest_unit_test(test_stack_pop_fail),
+			 ztest_unit_test(test_stack_cleanup_error),
+			 ztest_unit_test(test_stack_push_full),
 			 ztest_user_unit_test(test_stack_user_pop_fail),
+			 ztest_user_unit_test(test_stack_user_init_null),
+			 ztest_user_unit_test(test_stack_user_init_invalid_value),
+			 ztest_user_unit_test(test_stack_user_push_null),
+			 ztest_user_unit_test(test_stack_user_pop_null),
+			 ztest_user_unit_test(test_stack_user_pop_permission),
 			 ztest_unit_test(test_stack_alloc_thread2thread),
 			 ztest_user_unit_test(test_single_stack_play),
 			 ztest_1cpu_user_unit_test(test_dual_stack_play),

@@ -39,6 +39,9 @@ static inline int npcx_clock_control_on(const struct device *dev,
 	struct npcx_clk_cfg *clk_cfg = (struct npcx_clk_cfg *)(sub_system);
 	const uint32_t pmc_base = DRV_CONFIG(dev)->base_pmc;
 
+	if (clk_cfg->ctrl >= NPCX_PWDWN_CTL_COUNT || clk_cfg->bit >= 8)
+		return -EINVAL;
+
 	/* Clear related PD (Power-Down) bit of module to turn on clock */
 	NPCX_PWDWN_CTL(pmc_base, clk_cfg->ctrl) &= ~(BIT(clk_cfg->bit));
 	return 0;
@@ -50,6 +53,9 @@ static inline int npcx_clock_control_off(const struct device *dev,
 	ARG_UNUSED(dev);
 	struct npcx_clk_cfg *clk_cfg = (struct npcx_clk_cfg *)(sub_system);
 	const uint32_t pmc_base = DRV_CONFIG(dev)->base_pmc;
+
+	if (clk_cfg->ctrl >= NPCX_PWDWN_CTL_COUNT || clk_cfg->bit >= 8)
+		return -EINVAL;
 
 	/* Set related PD (Power-Down) bit of module to turn off clock */
 	NPCX_PWDWN_CTL(pmc_base, clk_cfg->ctrl) |= BIT(clk_cfg->bit);
@@ -154,8 +160,9 @@ const struct npcx_pcc_config pcc_config = {
 	.base_pmc  = DT_INST_REG_ADDR_BY_NAME(0, pmc),
 };
 
-DEVICE_AND_API_INIT(npcx_cdcg, NPCX_CLK_CTRL_NAME,
+DEVICE_DT_INST_DEFINE(0,
 		    &npcx_clock_control_init,
+		    device_pm_control_nop,
 		    NULL, &pcc_config,
 		    PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_OBJECTS,

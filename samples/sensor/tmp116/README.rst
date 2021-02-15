@@ -7,12 +7,13 @@ Description
 ***********
 
 This sample application periodically takes temperature readings using the ti_tmp116
-sensor driver. The result is written to the console.
+sensor driver. The result is written to the console. This sample also included the code
+to use the  features provided by TMP117, which is a sensor similar to TMP116
 
 Requirements
 ************
 
-This sample needs a TI TMP116 sensor connected to the target board's I2C
+This sample needs a TI TMP116 or TI TMP117 sensor connected to the target board's I2C
 connector.
 
 

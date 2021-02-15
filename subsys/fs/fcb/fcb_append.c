@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2020 Nordic Semiconductor ASA
  * Copyright (c) 2015 Runtime Inc
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -65,7 +65,7 @@ fcb_append(struct fcb *fcb, uint16_t len, struct fcb_entry *append_loc)
 	int rc;
 	uint8_t tmp_str[8];
 
-	cnt = fcb_put_len(tmp_str, len);
+	cnt = fcb_put_len(fcb, tmp_str, len);
 	if (cnt < 0) {
 		return cnt;
 	}

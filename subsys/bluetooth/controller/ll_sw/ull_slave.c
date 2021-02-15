@@ -67,6 +67,7 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	uint32_t ticker_status;
 	uint8_t peer_addr_type;
 	uint16_t win_offset;
+	uint16_t win_delay_us;
 	uint16_t timeout;
 	uint16_t interval;
 	uint8_t chan_sel;
@@ -97,7 +98,20 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	lll->latency = sys_le16_to_cpu(pdu_adv->connect_ind.latency);
 
 	win_offset = sys_le16_to_cpu(pdu_adv->connect_ind.win_offset);
-	conn_interval_us = interval * 1250U;
+	conn_interval_us = interval * CONN_INT_UNIT_US;
+
+	if (0) {
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	} else if (adv->lll.aux) {
+		if (adv->lll.phy_s & BIT(2)) {
+			win_delay_us = WIN_DELAY_CODED;
+		} else {
+			win_delay_us = WIN_DELAY_UNCODED;
+		}
+#endif
+	} else {
+		win_delay_us = WIN_DELAY_LEGACY;
+	}
 
 	/* calculate the window widening */
 	conn->slave.sca = pdu_adv->connect_ind.sca;
@@ -107,7 +121,8 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 		  conn_interval_us) + (1000000 - 1)) / 1000000U;
 	lll->slave.window_widening_max_us = (conn_interval_us >> 1) -
 					    EVENT_IFS_US;
-	lll->slave.window_size_event_us = pdu_adv->connect_ind.win_size * 1250U;
+	lll->slave.window_size_event_us = pdu_adv->connect_ind.win_size *
+		CONN_INT_UNIT_US;
 
 	/* procedure timeouts */
 	timeout = sys_le16_to_cpu(pdu_adv->connect_ind.timeout);
@@ -135,7 +150,14 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	peer_addr_type = pdu_adv->tx_addr;
 	memcpy(peer_addr, pdu_adv->connect_ind.init_addr, BDADDR_SIZE);
 
-	chan_sel = pdu_adv->chan_sel;
+	if (0) {
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	} else if (adv->lll.aux) {
+		chan_sel = 1U;
+#endif
+	} else {
+		chan_sel = pdu_adv->chan_sel;
+	}
 
 	cc = (void *)pdu_adv;
 	cc->status = 0U;
@@ -275,7 +297,8 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	conn_interval_us -= lll->slave.window_widening_periodic_us;
 
 	conn_offset_us = ftr->radio_end_us;
-	conn_offset_us += ((uint64_t)win_offset + 1) * 1250U;
+	conn_offset_us += win_offset * CONN_INT_UNIT_US;
+	conn_offset_us += win_delay_us;
 	conn_offset_us -= EVENT_OVERHEAD_START_US;
 	conn_offset_us -= EVENT_TICKER_RES_MARGIN_US;
 	conn_offset_us -= EVENT_JITTER_US;
@@ -286,6 +309,26 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	 * being stopped if no tickers active.
 	 */
 	mayfly_enable(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_ULL_LOW, 0);
+#endif
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT) && (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
+	struct lll_adv_aux *lll_aux = adv->lll.aux;
+
+	if (lll_aux) {
+		struct ll_adv_aux_set *aux;
+
+		aux = (void *)HDR_LLL2EVT(lll_aux);
+
+		ticker_id_adv = TICKER_ID_ADV_AUX_BASE +
+				ull_adv_aux_handle_get(aux);
+		ticker_status = ticker_stop(TICKER_INSTANCE_ID_CTLR,
+					    TICKER_USER_ID_ULL_HIGH,
+					    ticker_id_adv,
+					    ticker_op_stop_adv_cb, aux);
+		ticker_op_stop_adv_cb(ticker_status, aux);
+
+		aux->is_started = 0U;
+	}
 #endif
 
 	/* Stop Advertiser */
@@ -314,11 +357,7 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 				     HAL_TICKER_US_TO_TICKS(conn_offset_us),
 				     HAL_TICKER_US_TO_TICKS(conn_interval_us),
 				     HAL_TICKER_REMAINDER(conn_interval_us),
-#if defined(CONFIG_BT_CTLR_CONN_META)
-				     TICKER_LAZY_MUST_EXPIRE,
-#else
 				     TICKER_NULL_LAZY,
-#endif /* CONFIG_BT_CTLR_CONN_META */
 				     (conn->evt.ticks_slot +
 				      ticks_slot_overhead),
 				     ull_slave_ticker_cb, conn, ticker_op_cb,
@@ -375,6 +414,9 @@ void ull_slave_ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 		return;
 	}
 
+#if defined(CONFIG_BT_CTLR_CONN_META)
+	conn->common.is_must_expire = (lazy == TICKER_LAZY_MUST_EXPIRE);
+#endif
 	/* If this is a must-expire callback, LLCP state machine does not need
 	 * to know. Will be called with lazy > 0 when scheduled in air.
 	 */

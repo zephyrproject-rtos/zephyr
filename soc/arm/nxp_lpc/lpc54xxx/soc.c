@@ -129,9 +129,9 @@ static int nxp_lpc54114_init(const struct device *arg)
 SYS_INIT(nxp_lpc54114_init, PRE_KERNEL_1, 0);
 
 
-#ifdef CONFIG_SLAVE_CORE_MCUX
+#ifdef CONFIG_SECOND_CORE_MCUX
 
-#define CORE_M0_BOOT_ADDRESS (void *)CONFIG_SLAVE_BOOT_ADDRESS_MCUX
+#define CORE_M0_BOOT_ADDRESS ((void *)CONFIG_SECOND_CORE_BOOT_ADDRESS_MCUX)
 
 static const char core_m0[] = {
 #include "core-m0.inc"
@@ -184,4 +184,4 @@ int _slave_init(const struct device *arg)
 
 SYS_INIT(_slave_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
-#endif /*CONFIG_SLAVE_CORE_MCUX*/
+#endif /*CONFIG_SECOND_CORE_MCUX*/

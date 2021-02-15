@@ -24,13 +24,15 @@ def test_runner_imports():
                     'hifive1',
                     'intel_s1000',
                     'jlink',
-                    'mdb',
+                    'mdb-nsim',
+                    'mdb-hw',
                     'misc-flasher',
                     'nios2',
                     'nrfjprog',
                     'openocd',
                     'pyocd',
                     'qemu',
+                    'stm32cubeprogrammer',
                     'stm32flash',
                     'xtensa'))
     assert runner_names == expected

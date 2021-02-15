@@ -150,6 +150,7 @@ config SCHED_CPU_MASK
 config MAIN_STACK_SIZE
 	int "Size of stack for initialization and main thread"
 	default 2048 if COVERAGE_GCOV
+	default 1024 if TEST_ARM_CORTEX_M
 	default 512 if ZTEST && !(RISCV || X86)
 	default 1024
 	help
@@ -165,7 +166,7 @@ config IDLE_STACK_SIZE
 	default 1024 if XTENSA
 	default 512 if RISCV
 	default 384 if DYNAMIC_OBJECTS
-	default 320 if ARC || (ARM && CPU_HAS_FPU)
+	default 320 if ARC || (ARM && CPU_HAS_FPU) || (X86 && MMU)
 	default 256
 	help
 	  Depending on the work that the idle task must do, most likely due to
@@ -351,6 +352,32 @@ config THREAD_MAX_NAME_LEN
 	  Thread names get stored in the k_thread struct. Indicate the max
 	  name length, including the terminating NULL byte. Reduce this value
 	  to conserve memory.
+
+config INSTRUMENT_THREAD_SWITCHING
+	bool
+
+menuconfig THREAD_RUNTIME_STATS
+	bool "Thread runtime statistics"
+	select INSTRUMENT_THREAD_SWITCHING
+	help
+	  Gather thread runtime statistics.
+
+	  For example:
+	    - Thread total execution cycles
+
+if THREAD_RUNTIME_STATS
+
+config THREAD_RUNTIME_STATS_USE_TIMING_FUNCTIONS
+	bool "Use timing functions to gather statistics"
+	select TIMING_FUNCTIONS
+	help
+	  Use timing functions to gather thread runtime statistics.
+
+	  Note that timing functions may use a different timer than
+	  the default timer for OS timekeeping.
+
+endif # THREAD_RUNTIME_STATS
+
 endmenu
 
 menu "Work Queue Options"
@@ -438,6 +465,12 @@ endmenu
 
 menu "Other Kernel Object Options"
 
+config MEM_SLAB_TRACE_MAX_UTILIZATION
+	bool "Enable getting maximum slab utilization"
+	help
+	  This adds variable to the k_mem_slab structure to hold
+	  maximum utilization of the slab.
+
 config NUM_MBOX_ASYNC_MSGS
 	int "Maximum number of in-flight asynchronous mailbox messages"
 	default 10
@@ -470,16 +503,6 @@ config KERNEL_MEM_POOL
 
 if KERNEL_MEM_POOL
 
-config MEM_POOL_HEAP_BACKEND
-	bool "Use k_heap as the backend for k_mem_pool"
-	default y
-	help
-	  This selects a backend implementation for k_mem_pool based
-	  on the sys_heap abstraction instead of the legacy
-	  sys_mem_pool.  This backend has significantly better
-	  performance and memory utilization for general purpose
-	  workloads.
-
 config HEAP_MEM_POOL_SIZE
 	int "Heap memory pool size (in bytes)"
 	default 0 if !POSIX_MQUEUE
@@ -489,15 +512,6 @@ config HEAP_MEM_POOL_SIZE
 	  dynamically allocating memory using k_malloc(). The maximum size of
 	  the memory pool is only limited to available memory. A size of zero
 	  means that no heap memory pool is defined.
-
-config HEAP_MEM_POOL_MIN_SIZE
-	int "The smallest blocks in the heap memory pool (in bytes)"
-	depends on HEAP_MEM_POOL_SIZE != 0
-	default 64
-	help
-	  This option specifies the size of the smallest block in the pool.
-	  Option must be a power of 2 and lower than or equal to the size
-	  of the entire pool.
 
 endif # KERNEL_MEM_POOL
 
@@ -532,29 +546,23 @@ config ARCH_HAS_CUSTOM_BUSY_WAIT
 config SYS_CLOCK_TICKS_PER_SEC
 	int "System tick frequency (in ticks/second)"
 	default 100 if QEMU_TARGET || SOC_POSIX
-	default 10000 if TICKLESS_CAPABLE
+	default 10000 if TICKLESS_KERNEL
 	default 100
 	help
 	  This option specifies the nominal frequency of the system clock in Hz.
 
-	  Depending on the choice made, an amount of possibly expensive math must
-	  occur when converting ticks to milliseconds and vice-versa. Some values
-	  are optimized, and yield significantly less math.
+	  For asynchronous timekeeping, the kernel defines a "ticks" concept. A
+	  "tick" is the internal count in which the kernel does all its internal
+	  uptime and timeout bookeeping. Interrupts are expected to be delivered
+	  on tick boundaries to the extent practical, and no fractional ticks
+	  are tracked.
 
-	  The optimal values from a computational point-of-view are 1000, 500,
-	  250 and 125, since in these cases there is either no computation
-	  required, or it is all done via bit-shifting. These also give a
-	  granularity from 1ms to 8ms.
-
-	  Other good values are 100, 50, 25, 20 and 10. In this case, some math
-	  is required but is minimized. These are also values that necessitate a
-	  reduced number of clock interrupts per second, at the cost of
-	  granularity (10ms to 100ms).
-
-	  All other values require some extensive 64-bit math, and in some
-	  configurations even require calls to compiler built-in functions, and
-	  can require a non-trivial extra amount of stack space (e.g. around 80
-	  bytes on x86).
+	  The choice of tick rate is configurable by this option. Also the number
+	  of cycles per tick should be chosen so that 1 millisecond is exactly
+	  represented by an integral number of ticks. Defaults on most hardware
+	  platforms (ones that support setting arbitrary interrupt timeouts) are
+	  expected to be in the range of 10 kHz, with software emulation
+	  platforms and legacy drivers using a more traditional 100 Hz value.
 
 	  Note that when available and enabled, in "tickless" mode
 	  this config variable specifies the minimum available timing
@@ -579,18 +587,8 @@ config SYS_CLOCK_EXISTS
 	  this is disabled.  Obviously timeout-related APIs will not
 	  work.
 
-config LEGACY_TIMEOUT_API
-	bool "Support legacy k_timeout_t API"
-	help
-	  The k_timeout_t API has changed to become an opaque type
-	  that must be initialized with macros.  Older applications
-	  can choose this to continue using the old style of timeouts
-	  (which were int32_t counts of milliseconds), at the cost of
-	  not being able to use new features.
-
 config TIMEOUT_64BIT
 	bool "Store kernel timeouts in 64 bit precision"
-	depends on !LEGACY_TIMEOUT_API
 	default y
 	help
 	  When this option is true, the k_ticks_t values passed to
@@ -816,7 +814,8 @@ config TRACE_SCHED_IPI
 
 config KERNEL_COHERENCE
 	bool "Place all shared data into coherent memory"
-	default y if ARCH_HAS_COHERENCE && SMP && MP_NUM_CPUS > 1
+	depends on ARCH_HAS_COHERENCE
+	default y if SMP && MP_NUM_CPUS > 1
 	select THREAD_STACK_INFO
 	help
 	  When available and selected, the kernel will build in a mode
@@ -837,7 +836,7 @@ config TICKLESS_IDLE
 	# NB: This option is deprecated, see TICKLESS_KERNEL and
 	# https://github.com/zephyrproject-rtos/zephyr/pull/12234
 	bool "Tickless idle"
-	default y if SYS_POWER_MANAGEMENT || TICKLESS_CAPABLE
+	default y if PM || TICKLESS_CAPABLE
 	help
 	  This option suppresses periodic system clock interrupts whenever the
 	  kernel becomes idle. This permits the system to remain in a power
@@ -857,6 +856,7 @@ config TICKLESS_IDLE_THRESH
 config TICKLESS_KERNEL
 	bool "Tickless kernel"
 	default y if TICKLESS_CAPABLE
+	depends on TICKLESS_CAPABLE
 	help
 	  This option enables a fully event driven kernel. Periodic system
 	  clock interrupt generation would be stopped at all times.

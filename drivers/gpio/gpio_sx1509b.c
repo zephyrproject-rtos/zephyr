@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 Aapo Vienamo
  * Copyright (c) 2018 Peter Bigot Consulting, LLC
- * Copyright (c) 2019 Nordic Semiconductor ASA
+ * Copyright (c) 2019-2020 Nordic Semiconductor ASA
  * Copyright (c) 2020 ZedBlox Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -15,6 +15,7 @@
 #include <device.h>
 #include <init.h>
 #include <drivers/gpio.h>
+#include <drivers/gpio/gpio_sx1509b.h>
 #include <drivers/i2c.h>
 #include <sys/byteorder.h>
 #include <sys/util.h>
@@ -62,6 +63,7 @@ struct sx1509b_drv_data {
 	struct gpio_driver_data common;
 	const struct device *i2c_master;
 	struct sx1509b_pin_state pin_state;
+	uint16_t led_drv_enable;
 	struct sx1509b_debounce_state debounce_state;
 	struct k_sem lock;
 
@@ -110,6 +112,14 @@ enum {
 	SX1509B_REG_CLOCK_FOSC_INT_2MHZ = 2 << 5,
 };
 
+/* Register bits for SX1509B_REG_MISC */
+enum {
+	SX1509B_REG_MISC_LOG_A          = 1 << 3,
+	SX1509B_REG_MISC_LOG_B          = 1 << 7,
+	/* ClkX = fOSC */
+	SX1509B_REG_MISC_FREQ           = 1 << 4,
+};
+
 /* Pin configuration register addresses */
 enum {
 	SX1509B_REG_INPUT_DISABLE       = 0x00,
@@ -123,6 +133,8 @@ enum {
 	SX1509B_REG_INTERRUPT_SENSE_B   = 0x14,
 	SX1509B_REG_INTERRUPT_SENSE_A   = 0x16,
 	SX1509B_REG_INTERRUPT_SOURCE    = 0x18,
+	SX1509B_REG_MISC                = 0x1f,
+	SX1509B_REG_LED_DRV_ENABLE      = 0x20,
 	SX1509B_REG_DEBOUNCE_CONFIG     = 0x22,
 	SX1509B_REG_DEBOUNCE_ENABLE     = 0x23,
 };
@@ -134,6 +146,12 @@ enum {
 	SX1509B_EDGE_FALLING  = 0x02,
 	SX1509B_EDGE_BOTH     = 0x03,
 };
+
+/* Intensity register addresses for all 16 pins */
+static const uint8_t intensity_registers[16] = { 0x2a, 0x2d, 0x30, 0x33,
+						 0x36, 0x3b, 0x40, 0x45,
+						 0x4a, 0x4d, 0x50, 0x53,
+						 0x56, 0x5b, 0x60, 0x65 };
 
 /**
  * @brief Write a big-endian word to an internal address of an I2C slave.
@@ -230,6 +248,44 @@ static void sx1509_int_cb(const struct device *dev,
 }
 #endif
 
+static int write_pin_state(const struct sx1509b_config *cfg,
+			   struct sx1509b_drv_data *drv_data,
+			   struct sx1509b_pin_state *pins, bool data_first)
+{
+	struct {
+		uint8_t reg;
+		struct sx1509b_pin_state pins;
+	} __packed pin_buf;
+	int rc;
+
+	pin_buf.reg = SX1509B_REG_INPUT_DISABLE;
+	pin_buf.pins.input_disable = sys_cpu_to_be16(pins->input_disable);
+	pin_buf.pins.long_slew = sys_cpu_to_be16(pins->long_slew);
+	pin_buf.pins.low_drive = sys_cpu_to_be16(pins->low_drive);
+	pin_buf.pins.pull_up = sys_cpu_to_be16(pins->pull_up);
+	pin_buf.pins.pull_down = sys_cpu_to_be16(pins->pull_down);
+	pin_buf.pins.open_drain = sys_cpu_to_be16(pins->open_drain);
+	pin_buf.pins.polarity = sys_cpu_to_be16(pins->polarity);
+	pin_buf.pins.dir = sys_cpu_to_be16(pins->dir);
+	pin_buf.pins.data = sys_cpu_to_be16(pins->data);
+
+	if (data_first) {
+		rc = i2c_reg_write_word_be(drv_data->i2c_master,
+					   cfg->i2c_slave_addr,
+					   SX1509B_REG_DATA, pins->data);
+		if (rc == 0) {
+			rc = i2c_write(drv_data->i2c_master, &pin_buf.reg,
+				       sizeof(pin_buf) - sizeof(pins->data),
+				       cfg->i2c_slave_addr);
+		}
+	} else {
+		rc = i2c_write(drv_data->i2c_master, &pin_buf.reg,
+			       sizeof(pin_buf), cfg->i2c_slave_addr);
+	}
+
+	return rc;
+}
+
 static int sx1509b_config(const struct device *dev,
 			  gpio_pin_t pin,
 			  gpio_flags_t flags)
@@ -237,10 +293,6 @@ static int sx1509b_config(const struct device *dev,
 	const struct sx1509b_config *cfg = dev->config;
 	struct sx1509b_drv_data *drv_data = dev->data;
 	struct sx1509b_pin_state *pins = &drv_data->pin_state;
-	struct {
-		uint8_t reg;
-		struct sx1509b_pin_state pins;
-	} __packed pin_buf;
 	struct sx1509b_debounce_state *debounce = &drv_data->debounce_state;
 	int rc = 0;
 	bool data_first = false;
@@ -266,6 +318,19 @@ static int sx1509b_config(const struct device *dev,
 	}
 
 	k_sem_take(&drv_data->lock, K_FOREVER);
+
+	if (drv_data->led_drv_enable & BIT(pin)) {
+		/* Disable LED driver */
+		drv_data->led_drv_enable &= ~BIT(pin);
+		rc = i2c_reg_write_word_be(drv_data->i2c_master,
+					   cfg->i2c_slave_addr,
+					   SX1509B_REG_LED_DRV_ENABLE,
+					   drv_data->led_drv_enable);
+
+		if (rc) {
+			goto out;
+		}
+	}
 
 	pins->open_drain &= ~BIT(pin);
 	if ((flags & GPIO_SINGLE_ENDED) != 0) {
@@ -314,37 +379,12 @@ static int sx1509b_config(const struct device *dev,
 		debounce->debounce_enable &= ~BIT(pin);
 	}
 
-	pin_buf.reg = SX1509B_REG_INPUT_DISABLE;
-	pin_buf.pins.input_disable = sys_cpu_to_be16(pins->input_disable);
-	pin_buf.pins.long_slew = sys_cpu_to_be16(pins->long_slew);
-	pin_buf.pins.low_drive = sys_cpu_to_be16(pins->low_drive);
-	pin_buf.pins.pull_up = sys_cpu_to_be16(pins->pull_up);
-	pin_buf.pins.pull_down = sys_cpu_to_be16(pins->pull_down);
-	pin_buf.pins.open_drain = sys_cpu_to_be16(pins->open_drain);
-	pin_buf.pins.polarity = sys_cpu_to_be16(pins->polarity);
-	pin_buf.pins.dir = sys_cpu_to_be16(pins->dir);
-	pin_buf.pins.data = sys_cpu_to_be16(pins->data);
-
 	LOG_DBG("CFG %u %x : ID %04x ; PU %04x ; PD %04x ; DIR %04x ; DAT %04x",
 		pin, flags,
 		pins->input_disable, pins->pull_up, pins->pull_down,
 		pins->dir, pins->data);
-	if (data_first) {
-		rc = i2c_reg_write_word_be(drv_data->i2c_master,
-					   cfg->i2c_slave_addr,
-					   SX1509B_REG_DATA, pins->data);
-		if (rc == 0) {
-			rc = i2c_write(drv_data->i2c_master,
-				       &pin_buf.reg,
-				       sizeof(pin_buf) - sizeof(pins->data),
-				       cfg->i2c_slave_addr);
-		}
-	} else {
-		rc = i2c_write(drv_data->i2c_master,
-			       &pin_buf.reg,
-			       sizeof(pin_buf),
-			       cfg->i2c_slave_addr);
-	}
+
+	rc = write_pin_state(cfg, drv_data, pins, data_first);
 
 	if (rc == 0) {
 		struct {
@@ -611,8 +651,12 @@ static int sx1509b_init(const struct device *dev)
 					   SX1509B_REG_DIR,
 					   drv_data->pin_state.dir);
 	}
-	if (rc != 0) {
-		goto out;
+	if (rc == 0) {
+		rc = i2c_reg_write_byte_be(
+			drv_data->i2c_master, cfg->i2c_slave_addr,
+			SX1509B_REG_MISC,
+			SX1509B_REG_MISC_LOG_A | SX1509B_REG_MISC_LOG_B |
+				SX1509B_REG_MISC_FREQ);
 	}
 
 out:
@@ -649,6 +693,80 @@ static const struct gpio_driver_api api_table = {
 #endif
 };
 
+int sx1509b_led_intensity_pin_configure(const struct device *dev,
+					gpio_pin_t pin)
+{
+	const struct sx1509b_config *cfg = dev->config;
+	struct sx1509b_drv_data *drv_data = dev->data;
+	struct sx1509b_pin_state *pins = &drv_data->pin_state;
+	int rc;
+
+	/* Can't do I2C bus operations from an ISR */
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
+	if (pin >= ARRAY_SIZE(intensity_registers)) {
+		return -ERANGE;
+	}
+
+	k_sem_take(&drv_data->lock, K_FOREVER);
+
+	/* Enable LED driver */
+	drv_data->led_drv_enable |= BIT(pin);
+	rc = i2c_reg_write_word_be(drv_data->i2c_master, cfg->i2c_slave_addr,
+				   SX1509B_REG_LED_DRV_ENABLE,
+				   drv_data->led_drv_enable);
+
+	/* Set intensity to 0 */
+	if (rc == 0) {
+		rc = i2c_reg_write_byte_be(drv_data->i2c_master,
+					   cfg->i2c_slave_addr,
+					   intensity_registers[pin], 0);
+	} else {
+		goto out;
+	}
+
+	pins->input_disable |= BIT(pin);
+	pins->pull_up &= ~BIT(pin);
+	pins->dir &= ~BIT(pin);
+	pins->data &= ~BIT(pin);
+
+	if (rc == 0) {
+		rc = write_pin_state(cfg, drv_data, pins, false);
+	}
+
+out:
+	k_sem_give(&drv_data->lock);
+	return rc;
+}
+
+int sx1509b_led_intensity_pin_set(const struct device *dev, gpio_pin_t pin,
+				  uint8_t intensity_val)
+{
+	const struct sx1509b_config *cfg = dev->config;
+	struct sx1509b_drv_data *drv_data = dev->data;
+	int rc;
+
+	/* Can't do I2C bus operations from an ISR */
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
+	if (pin >= ARRAY_SIZE(intensity_registers)) {
+		return -ERANGE;
+	}
+
+	k_sem_take(&drv_data->lock, K_FOREVER);
+
+	rc = i2c_reg_write_byte_be(drv_data->i2c_master, cfg->i2c_slave_addr,
+				   intensity_registers[pin], intensity_val);
+
+	k_sem_give(&drv_data->lock);
+
+	return rc;
+}
+
 static const struct sx1509b_config sx1509b_cfg = {
 	.common = {
 		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(0),
@@ -666,7 +784,7 @@ static struct sx1509b_drv_data sx1509b_drvdata = {
 	.lock = Z_SEM_INITIALIZER(sx1509b_drvdata.lock, 1, 1),
 };
 
-DEVICE_AND_API_INIT(sx1509b, DT_INST_LABEL(0),
-		    sx1509b_init, &sx1509b_drvdata, &sx1509b_cfg,
-		    POST_KERNEL, CONFIG_GPIO_SX1509B_INIT_PRIORITY,
-		    &api_table);
+DEVICE_DT_INST_DEFINE(0, sx1509b_init, device_pm_control_nop,
+		 &sx1509b_drvdata, &sx1509b_cfg,
+		 POST_KERNEL, CONFIG_GPIO_SX1509B_INIT_PRIORITY,
+		 &api_table);

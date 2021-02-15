@@ -454,7 +454,7 @@ foreach(module_name ${ZEPHYR_MODULE_NAMES})
   # this binary_dir is created but stays empty. Object files land in
   # the main binary dir instead.
   # https://cmake.org/pipermail/cmake/2019-June/069547.html
-  string(TOUPPER ${module_name} MODULE_NAME_UPPER)
+  zephyr_string(SANITIZE TOUPPER MODULE_NAME_UPPER ${module_name})
   if(NOT ${ZEPHYR_${MODULE_NAME_UPPER}_CMAKE_DIR} STREQUAL "")
     set(ZEPHYR_CURRENT_MODULE_DIR ${ZEPHYR_${MODULE_NAME_UPPER}_MODULE_DIR})
     set(ZEPHYR_CURRENT_CMAKE_DIR ${ZEPHYR_${MODULE_NAME_UPPER}_CMAKE_DIR})
@@ -573,6 +573,24 @@ add_custom_command(
   )
 
 add_custom_target(${SYSCALL_LIST_H_TARGET} DEPENDS ${syscall_list_h})
+
+# This only works for CMake version >=3.15, but as the property is ignored on
+# older CMake versions there is no reason to check for version.
+set_property(TARGET ${SYSCALL_LIST_H_TARGET}
+             APPEND PROPERTY
+             ADDITIONAL_CLEAN_FILES
+             ${CMAKE_CURRENT_BINARY_DIR}/include/generated/syscalls
+)
+
+# Only works with make.
+if(${CMAKE_VERSION} VERSION_LESS 3.15)
+  set_property(DIRECTORY
+               APPEND PROPERTY
+               ADDITIONAL_MAKE_CLEAN_FILES
+               ${CMAKE_CURRENT_BINARY_DIR}/include/generated/syscalls
+  )
+endif()
+
 add_custom_target(${PARSE_SYSCALLS_TARGET}
   DEPENDS
   ${syscalls_json}
@@ -725,7 +743,7 @@ if(CONFIG_GEN_ISR_TABLES)
   # isr_tables.c is generated from ${ZEPHYR_PREBUILT_EXECUTABLE} by
   # gen_isr_tables.py
   add_custom_command(
-    OUTPUT isr_tables.c
+    OUTPUT isr_tables.c isrList.bin
     COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
             $<TARGET_PROPERTY:bintools,elfconvert_flag>
             $<TARGET_PROPERTY:bintools,elfconvert_flag_intarget>${OUTPUT_FORMAT}
@@ -754,7 +772,7 @@ if(CONFIG_CODE_DATA_RELOCATION)
 endif()
 
 if(CONFIG_USERSPACE)
-  zephyr_get_compile_options_for_lang(C compiler_flags_priv)
+  zephyr_get_compile_options_for_lang_as_string(C compiler_flags_priv)
   string(REPLACE "$<TARGET_PROPERTY:compiler,coverage>" ""
          NO_COVERAGE_FLAGS "${compiler_flags_priv}"
   )
@@ -981,6 +999,9 @@ if(CONFIG_USERSPACE)
     LIBRARIES_POST_SCRIPT ""
     DEPENDENCIES          ${CODE_RELOCATION_DEP}
   )
+  target_byproducts(TARGET app_smem_unaligned_prebuilt
+                    BYPRODUCTS ${PROJECT_BINARY_DIR}/app_smem_unaligned_prebuilt.map
+  )
   set_property(TARGET   app_smem_unaligned_prebuilt PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker_app_smem_unaligned.cmd)
   add_dependencies(     app_smem_unaligned_prebuilt linker_app_smem_unaligned_script ${OFFSETS_LIB})
 
@@ -1011,6 +1032,9 @@ toolchain_ld_link_elf(
   LIBRARIES_PRE_SCRIPT  ""
   LINKER_SCRIPT         ${PROJECT_BINARY_DIR}/linker.cmd
   DEPENDENCIES          ${CODE_RELOCATION_DEP}
+)
+target_byproducts(TARGET ${ZEPHYR_PREBUILT_EXECUTABLE}
+                  BYPRODUCTS ${PROJECT_BINARY_DIR}/${ZEPHYR_PREBUILT_EXECUTABLE}.map
 )
 set_property(TARGET   ${ZEPHYR_PREBUILT_EXECUTABLE} PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker.cmd)
 add_dependencies(     ${ZEPHYR_PREBUILT_EXECUTABLE} ${LINKER_SCRIPT_TARGET} ${OFFSETS_LIB})
@@ -1054,6 +1078,9 @@ else()
     LIBRARIES_POST_SCRIPT ""
     DEPENDENCIES          ${CODE_RELOCATION_DEP}
   )
+  target_byproducts(TARGET ${ZEPHYR_FINAL_EXECUTABLE}
+                    BYPRODUCTS ${PROJECT_BINARY_DIR}/${ZEPHYR_FINAL_EXECUTABLE}.map
+  )
   set_property(TARGET   ${ZEPHYR_FINAL_EXECUTABLE} PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker_pass_final.cmd)
   add_dependencies(     ${ZEPHYR_FINAL_EXECUTABLE} ${LINKER_PASS_FINAL_SCRIPT_TARGET})
 
@@ -1079,6 +1106,7 @@ list(APPEND
   COMMAND
   ${CMAKE_COMMAND} -E rename ${logical_target_for_zephyr_elf}.map ${KERNEL_MAP_NAME}
 )
+list(APPEND post_build_byproducts ${KERNEL_MAP_NAME})
 
 if(NOT CONFIG_BUILD_NO_GAP_FILL)
   # Use ';' as separator to get proper space in resulting command.
@@ -1086,7 +1114,7 @@ if(NOT CONFIG_BUILD_NO_GAP_FILL)
 endif()
 
 if(CONFIG_OUTPUT_PRINT_MEMORY_USAGE)
-  target_link_libraries(${ZEPHYR_PREBUILT_EXECUTABLE} $<TARGET_PROPERTY:linker,memusage>)
+  target_link_libraries(${logical_target_for_zephyr_elf} $<TARGET_PROPERTY:linker,memusage>)
 
   get_property(memusage_build_command TARGET bintools PROPERTY memusage_command)
   if(memusage_build_command)

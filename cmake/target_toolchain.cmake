@@ -52,14 +52,3 @@ include(${TOOLCHAIN_ROOT}/cmake/compiler/${COMPILER}/target.cmake OPTIONAL)
 include(${TOOLCHAIN_ROOT}/cmake/linker/${LINKER}/target.cmake OPTIONAL)
 include(${CMAKE_CURRENT_LIST_DIR}/bintools/bintools_template.cmake)
 include(${TOOLCHAIN_ROOT}/cmake/bintools/${BINTOOLS}/target.cmake OPTIONAL)
-
-# Uniquely identify the toolchain wrt. it's capabilities.
-#
-# What we are looking for, is a signature definition that is defined
-# like this:
-#  * Toolchains with the same signature will always support the same set
-#    of flags.
-# It is not clear how this signature should be constructed. The
-# strategy chosen is to md5sum the CC binary.
-file(MD5 ${CMAKE_C_COMPILER} CMAKE_C_COMPILER_MD5_SUM)
-set(TOOLCHAIN_SIGNATURE ${CMAKE_C_COMPILER_MD5_SUM})

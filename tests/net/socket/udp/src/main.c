@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Linaro Limited
+ * Copyright (c) 2021 Nordic Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -752,6 +753,69 @@ void test_so_txtime(void)
 	zassert_equal(rv, 0, "close failed");
 }
 
+void test_so_rcvtimeo(void)
+{
+	struct sockaddr_in bind_addr4;
+	struct sockaddr_in6 bind_addr6;
+	int sock1, sock2, rv;
+	ssize_t recved = 0;
+	struct sockaddr addr;
+	socklen_t addrlen;
+	uint32_t start_time, time_diff;
+
+	struct timeval optval = {
+		.tv_sec = 2,
+		.tv_usec = 500000,
+	};
+
+	prepare_sock_udp_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, 55555,
+			    &sock1, &bind_addr4);
+	prepare_sock_udp_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, 55555,
+			    &sock2, &bind_addr6);
+
+	rv = bind(sock1, (struct sockaddr *)&bind_addr4, sizeof(bind_addr4));
+	zassert_equal(rv, 0, "bind failed");
+
+	rv = bind(sock2, (struct sockaddr *)&bind_addr6, sizeof(bind_addr6));
+	zassert_equal(rv, 0, "bind failed");
+
+	rv = setsockopt(sock1, SOL_SOCKET, SO_RCVTIMEO, &optval,
+			sizeof(optval));
+	zassert_equal(rv, 0, "setsockopt failed (%d)", errno);
+
+	optval.tv_usec = 0;
+	rv = setsockopt(sock2, SOL_SOCKET, SO_RCVTIMEO, &optval,
+			sizeof(optval));
+	zassert_equal(rv, 0, "setsockopt failed (%d)", errno);
+
+	addrlen = sizeof(addr);
+	clear_buf(rx_buf);
+	start_time = k_uptime_get_32();
+	recved = recvfrom(sock1, rx_buf, sizeof(rx_buf),
+			  0, &addr, &addrlen);
+	time_diff = k_uptime_get_32() - start_time;
+
+	zassert_equal(recved, -1, "Unexpected return code");
+	zassert_equal(errno, EAGAIN, "Unexpected errno value: %d", errno);
+	zassert_true(time_diff >= 2500, "Expected timeout after 2500ms but "
+			"was %dms", time_diff);
+
+	start_time = k_uptime_get_32();
+	recved = recvfrom(sock2, rx_buf, sizeof(rx_buf),
+			  0, &addr, &addrlen);
+	time_diff = k_uptime_get_32() - start_time;
+
+	zassert_equal(recved, -1, "Unexpected return code");
+	zassert_equal(errno, EAGAIN, "Unexpected errno value: %d", errno);
+	zassert_true(time_diff >= 2000, "Expected timeout after 2000ms but "
+			"was %dms", time_diff);
+
+	rv = close(sock1);
+	zassert_equal(rv, 0, "close failed");
+	rv = close(sock2);
+	zassert_equal(rv, 0, "close failed");
+}
+
 static void comm_sendmsg_with_txtime(int client_sock,
 				     struct sockaddr *client_addr,
 				     socklen_t client_addrlen,
@@ -966,6 +1030,7 @@ void test_main(void)
 			 ztest_unit_test(test_v6_bind_sendto),
 			 ztest_unit_test(test_so_priority),
 			 ztest_unit_test(test_so_txtime),
+			 ztest_unit_test(test_so_rcvtimeo),
 			 ztest_unit_test(test_v4_sendmsg_recvfrom),
 			 ztest_user_unit_test(test_v4_sendmsg_recvfrom),
 			 ztest_unit_test(test_v4_sendmsg_recvfrom_no_aux_data),

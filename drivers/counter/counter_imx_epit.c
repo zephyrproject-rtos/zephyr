@@ -162,8 +162,9 @@ static const struct imx_epit_config imx_epit_##idx##z_config = {	       \
 	.prescaler = DT_INST_PROP(idx, prescaler),			       \
 };									       \
 static struct imx_epit_data imx_epit_##idx##_data;			       \
-DEVICE_AND_API_INIT(epit_##idx, DT_INST_LABEL(idx),			       \
+DEVICE_DT_INST_DEFINE(idx,						       \
 		    &imx_epit_config_func_##idx,			       \
+		    device_pm_control_nop,				       \
 		    &imx_epit_##idx##_data, &imx_epit_##idx##z_config.info,    \
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	       \
 		    &imx_epit_driver_api);				       \
@@ -172,7 +173,7 @@ static int imx_epit_config_func_##idx(const struct device *dev)		       \
 	imx_epit_init(dev);						       \
 	IRQ_CONNECT(DT_INST_IRQN(idx),					       \
 		    DT_INST_IRQ(idx, priority),				       \
-		    imx_epit_isr, DEVICE_GET(epit_##idx), 0);		       \
+		    imx_epit_isr, DEVICE_DT_INST_GET(idx), 0);		       \
 	irq_enable(DT_INST_IRQN(idx));					       \
 	return 0;							       \
 }

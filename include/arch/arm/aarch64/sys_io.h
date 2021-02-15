@@ -23,9 +23,21 @@ extern "C" {
 
 /* Memory mapped registers I/O functions */
 
+/*
+ * We need to use explicit assembler instruction there, because with classic
+ * "volatile pointer" approach compiler might generate instruction with
+ * immediate value like
+ *
+ * str     w4, [x1], #4
+ *
+ * Such instructions produce invalid syndrome in HSR register, so hypervisor
+ * can't emulate MMIO  when it traps memory access.
+ */
 static ALWAYS_INLINE uint8_t sys_read8(mem_addr_t addr)
 {
-	uint8_t val = *(volatile uint8_t *)addr;
+	uint8_t val;
+
+	__asm__ volatile("ldrb %w0, [%1]" : "=r" (val) : "r" (addr));
 
 	__DMB();
 	return val;
@@ -34,12 +46,14 @@ static ALWAYS_INLINE uint8_t sys_read8(mem_addr_t addr)
 static ALWAYS_INLINE void sys_write8(uint8_t data, mem_addr_t addr)
 {
 	__DMB();
-	*(volatile uint8_t *)addr = data;
+	__asm__ volatile("strb %w0, [%1]" : : "r" (data), "r" (addr));
 }
 
 static ALWAYS_INLINE uint16_t sys_read16(mem_addr_t addr)
 {
-	uint16_t val = *(volatile uint16_t *)addr;
+	uint16_t val;
+
+	__asm__ volatile("ldrh %w0, [%1]" : "=r" (val) : "r" (addr));
 
 	__DMB();
 	return val;
@@ -48,12 +62,14 @@ static ALWAYS_INLINE uint16_t sys_read16(mem_addr_t addr)
 static ALWAYS_INLINE void sys_write16(uint16_t data, mem_addr_t addr)
 {
 	__DMB();
-	*(volatile uint16_t *)addr = data;
+	__asm__ volatile("strh %w0, [%1]" : : "r" (data), "r" (addr));
 }
 
 static ALWAYS_INLINE uint32_t sys_read32(mem_addr_t addr)
 {
-	uint32_t val = *(volatile uint32_t *)addr;
+	uint32_t val;
+
+	__asm__ volatile("ldr %w0, [%1]" : "=r" (val) : "r" (addr));
 
 	__DMB();
 	return val;
@@ -62,7 +78,7 @@ static ALWAYS_INLINE uint32_t sys_read32(mem_addr_t addr)
 static ALWAYS_INLINE void sys_write32(uint32_t data, mem_addr_t addr)
 {
 	__DMB();
-	*(volatile uint32_t *)addr = data;
+	__asm__ volatile("str %w0, [%1]" : : "r" (data), "r" (addr));
 }
 
 #ifdef __cplusplus

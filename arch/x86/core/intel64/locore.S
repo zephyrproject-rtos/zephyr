@@ -39,7 +39,9 @@
 	movl %eax, %cr4
 	clts
 
-	/* Page tables created at build time by gen_mmu.py */
+	/* Page tables created at build time by gen_mmu.py
+	 * NOTE: Presumes phys=virt
+	 */
 	movl $z_x86_kernel_ptables, %eax
 	movl %eax, %cr3
 
@@ -61,6 +63,7 @@
 	movq %rax, %cr4
 	clts
 
+	/* NOTE: Presumes phys=virt */
 	movq $z_x86_kernel_ptables, %rax
 	movq %rax, %cr3
 
@@ -178,6 +181,15 @@ enter_code64:
 	movw %ax, %es
 	movw %ax, %ss
 	movw %ax, %fs
+
+	/* On Intel processors, if GS is not zero and is being set to
+	 * zero, GS_BASE is also being set to zero. This would interfere
+	 * with the actual use of GS_BASE for usespace. To avoid accidentally
+	 * clearing GS_BASE, simply set GS to 0 at boot, so any subsequent
+	 * clearing of GS will not clear GS_BASE.
+	 */
+	mov $0, %eax
+	movw %ax, %gs
 
 	movw __x86_cpuboot_t_tr_OFFSET(%rbp), %ax
 	ltr %ax
@@ -325,7 +337,7 @@ z_x86_switch:
 
 __resume:
 #if (!defined(CONFIG_X86_KPTI) && defined(CONFIG_USERSPACE)) \
-		|| defined(CONFIG_TRACING)
+		|| defined(CONFIG_INSTRUMENT_THREAD_SWITCHING)
 	pushq %rdi	/* Caller-saved, stash it */
 #if !defined(CONFIG_X86_KPTI) && defined(CONFIG_USERSPACE)
 	/* If KPTI is enabled we're always on the kernel's page tables in
@@ -334,11 +346,12 @@ __resume:
 	 */
 	call z_x86_swap_update_page_tables
 #endif
-#ifdef CONFIG_TRACING
-	call sys_trace_thread_switched_in
+#ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
+	call z_thread_mark_switched_in
 #endif
 	popq %rdi
-#endif /* (!CONFIG_X86_KPTI && CONFIG_USERSPACE) || CONFIG_TRACING */
+#endif /* (!CONFIG_X86_KPTI && CONFIG_USERSPACE) || \
+	   CONFIG_INSTRUMENT_THREAD_SWITCHING */
 
 #ifdef CONFIG_USERSPACE
 	/* Set up exception return stack frame */
@@ -428,10 +441,20 @@ __resume:
 	iretq
 
 
-
-
+#ifdef CONFIG_X86_KPTI
+#define EXCEPT_CODE(nr, ist)						\
+	vector_ ## nr: pushq %gs:__x86_tss64_t_ist ## ist ## _OFFSET;	\
+	pushq $nr;							\
+	jmp except
+#define EXCEPT(nr, ist)							\
+	vector_ ## nr: pushq $0;					\
+	pushq %gs:__x86_tss64_t_ist ## ist ## _OFFSET;			\
+	pushq $nr; \
+	jmp except
+#else
 #define EXCEPT_CODE(nr) vector_ ## nr: pushq $nr; jmp except
 #define EXCEPT(nr)	vector_ ## nr: pushq $0; pushq $nr; jmp except
+#endif
 
 /*
  * When we arrive at 'except' from one of the EXCEPT(X) stubs,
@@ -444,6 +467,7 @@ __resume:
  *   CS
  *   RIP
  *   Error Code if pushed by CPU, else 0
+ *   IST index in TSS
  *   Vector number <- RSP points here
  *
  */
@@ -457,11 +481,11 @@ except: /*
 
 #ifdef CONFIG_USERSPACE
 	/* Swap GS register values and page tables if we came from user mode */
-	testb $0x3, 32(%rsp)
+	testb $0x3, 40(%rsp)
 	jz 1f
 	swapgs
 #ifdef CONFIG_X86_KPTI
-	/* Load kernel's page table */
+	/* Load kernel's page table. NOTE: Presumes phys=virt */
 	movq $z_x86_kernel_ptables, %r11
 	movq %r11, %cr3
 #endif /* CONFIG_X86_KPTI */
@@ -474,18 +498,18 @@ except: /*
 	/* Save old trampoline stack pointer in R11 */
 	movq %rsp, %r11
 
-	/* Switch to the exception stack */
-	movq %gs:__x86_tss64_t_ist7_OFFSET, %rsp
+	/* Switch to the correct stack */
+	movq 16(%r11), %rsp
 
 	/* Transplant trampoline stack contents */
-	pushq 56(%r11)	/* SS */
-	pushq 48(%r11)	/* RSP */
-	pushq 40(%r11)	/* RFLAGS */
-	pushq 32(%r11)	/* CS */
-	pushq 24(%r11)	/* RIP */
-	pushq 16(%r11)	/* Error code */
+	pushq 64(%r11)	/* SS */
+	pushq 56(%r11)	/* RSP */
+	pushq 48(%r11)	/* RFLAGS */
+	pushq 40(%r11)	/* CS */
+	pushq 32(%r11)	/* RIP */
+	pushq 24(%r11)	/* Error code */
 	pushq 8(%r11)	/* Vector */
-	pushq (%r11)	/* Stashed R15 */
+	pushq (%r11)	/* Stashed R11 */
 	movq $0, (%r11) /* Cover our tracks */
 
 	/* We're done, it's safe to re-enable interrupts. */
@@ -561,6 +585,21 @@ except: /*
 
 	iretq
 
+#ifdef CONFIG_X86_KPTI
+EXCEPT      ( 0, 7); EXCEPT      ( 1, 7); EXCEPT       (2, 6); EXCEPT      ( 3, 7)
+EXCEPT      ( 4, 7); EXCEPT      ( 5, 7); EXCEPT       (6, 7); EXCEPT      ( 7, 7)
+EXCEPT_CODE ( 8, 7); EXCEPT      ( 9, 7); EXCEPT_CODE (10, 7); EXCEPT_CODE (11, 7)
+EXCEPT_CODE (12, 7); EXCEPT_CODE (13, 7); EXCEPT_CODE (14, 7); EXCEPT      (15, 7)
+EXCEPT      (16, 7); EXCEPT_CODE (17, 7); EXCEPT      (18, 7); EXCEPT      (19, 7)
+EXCEPT      (20, 7); EXCEPT      (21, 7); EXCEPT      (22, 7); EXCEPT      (23, 7)
+EXCEPT      (24, 7); EXCEPT      (25, 7); EXCEPT      (26, 7); EXCEPT      (27, 7)
+EXCEPT      (28, 7); EXCEPT      (29, 7); EXCEPT      (30, 7); EXCEPT      (31, 7)
+
+/* Vector reserved for handling a kernel oops; treat as an exception
+ * and not an interrupt
+ */
+EXCEPT(Z_X86_OOPS_VECTOR, 7);
+#else
 EXCEPT      ( 0); EXCEPT      ( 1); EXCEPT      ( 2); EXCEPT      ( 3)
 EXCEPT      ( 4); EXCEPT      ( 5); EXCEPT      ( 6); EXCEPT      ( 7)
 EXCEPT_CODE ( 8); EXCEPT      ( 9); EXCEPT_CODE (10); EXCEPT_CODE (11)
@@ -574,6 +613,7 @@ EXCEPT      (28); EXCEPT      (29); EXCEPT      (30); EXCEPT      (31)
  * and not an interrupt
  */
 EXCEPT(Z_X86_OOPS_VECTOR);
+#endif /* CONFIG_X86_KPTI */
 
 /*
  * When we arrive at 'irq' from one of the IRQ(X) stubs,
@@ -600,7 +640,7 @@ irq:
 	jz 1f
 	swapgs
 #ifdef CONFIG_X86_KPTI
-	/* Load kernel's page table */
+	/* Load kernel's page table. NOTE: presumes phys=virt */
 	movq $z_x86_kernel_ptables, %rsi
 	movq %rsi, %cr3
 #endif /* CONFIG_X86_KPTI */
@@ -820,16 +860,18 @@ IRQ(248); IRQ(249); IRQ(250); IRQ(251); IRQ(252); IRQ(253); IRQ(254); IRQ(255)
 #define	IRQ_STACK	2
 #define EXC_STACK	2
 #define BAD_STACK	2
+#define NMI_STACK	2
 #else
 #define	IRQ_STACK	1
+#define NMI_STACK	6 /* NMI stack */
 #define EXC_STACK	7
-#define BAD_STACK	7 /* Horrible things: NMIs, double faults, MCEs */
+#define BAD_STACK	7 /* Horrible things: double faults, MCEs */
 #endif
 
 .align 16
 idt:
 	IDT(  0, TRAP, EXC_STACK); IDT(  1, TRAP, EXC_STACK)
-	IDT(  2, TRAP, BAD_STACK); IDT(  3, TRAP, EXC_STACK)
+	IDT(  2, TRAP, NMI_STACK); IDT(  3, TRAP, EXC_STACK)
 	IDT(  4, TRAP, EXC_STACK); IDT(  5, TRAP, EXC_STACK)
 	IDT(  6, TRAP, EXC_STACK); IDT(  7, TRAP, EXC_STACK)
 	IDT(  8, TRAP, BAD_STACK); IDT(  9, TRAP, EXC_STACK)
@@ -1036,29 +1078,45 @@ gdt80:  /* LGDT descriptor for long mode */
  * Known-good stack for handling CPU exceptions.
  */
 
-.global _exception_stack
+.global z_x86_exception_stack
 .align 16
-_exception_stack:
+z_x86_exception_stack:
+	.fill CONFIG_X86_EXCEPTION_STACK_SIZE, 1, 0xAA
+.global z_x86_nmi_stack
+.align 16
+z_x86_nmi_stack:
 	.fill CONFIG_X86_EXCEPTION_STACK_SIZE, 1, 0xAA
 
 #if CONFIG_MP_NUM_CPUS > 1
-.global _exception_stack1
+.global z_x86_exception_stack1
 .align 16
-_exception_stack1:
+z_x86_exception_stack1:
+	.fill CONFIG_X86_EXCEPTION_STACK_SIZE, 1, 0xAA
+.global z_x86_nmi_stack1
+.align 16
+z_x86_nmi_stack1:
 	.fill CONFIG_X86_EXCEPTION_STACK_SIZE, 1, 0xAA
 #endif
 
 #if CONFIG_MP_NUM_CPUS > 2
-.global _exception_stack2
+.global z_x86_exception_stack2
 .align 16
-_exception_stack2:
+z_x86_exception_stack2:
+	.fill CONFIG_X86_EXCEPTION_STACK_SIZE, 1, 0xAA
+.global z_x86_nmi_stack2
+.align 16
+z_x86_nmi_stack2:
 	.fill CONFIG_X86_EXCEPTION_STACK_SIZE, 1, 0xAA
 #endif
 
 #if CONFIG_MP_NUM_CPUS > 3
-.global _exception_stack3
+.global z_x86_exception_stack3
 .align 16
-_exception_stack3:
+z_x86_exception_stack3:
+	.fill CONFIG_X86_EXCEPTION_STACK_SIZE, 1, 0xAA
+.global z_x86_nmi_stack3
+.align 16
+z_x86_nmi_stack3:
 	.fill CONFIG_X86_EXCEPTION_STACK_SIZE, 1, 0xAA
 #endif
 

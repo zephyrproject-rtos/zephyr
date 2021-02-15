@@ -11,6 +11,8 @@
 #include <drivers/i2s.h>
 #include <dt-bindings/dma/stm32_dma.h>
 #include <soc.h>
+#include <stm32_ll_rcc.h>
+#include <stm32_ll_spi.h>
 #include <drivers/clock_control/stm32_clock_control.h>
 #include <drivers/clock_control.h>
 #include <pinmux/stm32/pinmux_stm32.h>
@@ -896,8 +898,6 @@ static const struct device *get_dev_from_tx_dma_channel(uint32_t dma_channel)
 }
 
 #define I2S_INIT(index, clk_sel)					\
-DEVICE_DECLARE(i2s_stm32_##index);					\
-									\
 static const struct soc_gpio_pinctrl i2s_pins_##index[] =		\
 				     ST_STM32_DT_INST_PINCTRL(index, 0);\
 									\
@@ -924,9 +924,9 @@ static struct i2s_stm32_data i2s_stm32_data_##index = {			\
 	UTIL_AND(DT_DMAS_HAS_NAME(DT_NODELABEL(i2s##index), tx),	\
 		I2S_DMA_CHANNEL_INIT(index, tx, TX, MEMORY, PERIPHERAL)),\
 };									\
-DEVICE_AND_API_INIT(i2s_stm32_##index,					\
-		    DT_LABEL(DT_NODELABEL(i2s##index)),			\
-		    &i2s_stm32_initialize, &i2s_stm32_data_##index,	\
+DEVICE_DT_DEFINE(DT_NODELABEL(i2s##index),				\
+		    &i2s_stm32_initialize, device_pm_control_nop,	\
+		    &i2s_stm32_data_##index,				\
 		    &i2s_stm32_config_##index, POST_KERNEL,		\
 		    CONFIG_I2S_INIT_PRIORITY, &i2s_stm32_driver_api);	\
 									\
@@ -934,7 +934,7 @@ static void i2s_stm32_irq_config_func_##index(const struct device *dev)	\
 {									\
 	IRQ_CONNECT(DT_IRQN(DT_NODELABEL(i2s##index)),			\
 		    DT_IRQ(DT_NODELABEL(i2s##index), priority),		\
-		    i2s_stm32_isr, DEVICE_GET(i2s_stm32_##index), 0);	\
+		    i2s_stm32_isr, DEVICE_DT_GET(DT_NODELABEL(i2s##index)), 0);\
 	irq_enable(DT_IRQN(DT_NODELABEL(i2s##index)));			\
 }
 

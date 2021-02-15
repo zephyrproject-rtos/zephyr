@@ -9,14 +9,14 @@
 #include "shell_ops.h"
 #include <logging/log_ctrl.h>
 
-int shell_log_backend_output_func(uint8_t *data, size_t length, void *ctx)
+int z_shell_log_backend_output_func(uint8_t *data, size_t length, void *ctx)
 {
-	shell_print_stream(ctx, data, length);
+	z_shell_print_stream(ctx, data, length);
 	return length;
 }
 
-void shell_log_backend_enable(const struct shell_log_backend *backend,
-			      void *ctx, uint32_t init_log_level)
+void z_shell_log_backend_enable(const struct shell_log_backend *backend,
+				void *ctx, uint32_t init_log_level)
 {
 	int err = 0;
 
@@ -117,7 +117,7 @@ static void msg_to_fifo(const struct shell *shell,
 	}
 }
 
-void shell_log_backend_disable(const struct shell_log_backend *backend)
+void z_shell_log_backend_disable(const struct shell_log_backend *backend)
 {
 	fifo_flush(backend);
 	log_backend_disable(backend->backend);
@@ -139,7 +139,7 @@ static void msg_process(const struct log_output *log_output,
 	log_msg_put(msg);
 }
 
-bool shell_log_backend_process(const struct shell_log_backend *backend)
+bool z_shell_log_backend_process(const struct shell_log_backend *backend)
 {
 	uint32_t dropped;
 	const struct shell *shell =
@@ -157,14 +157,14 @@ bool shell_log_backend_process(const struct shell_log_backend *backend)
 		struct shell_vt100_colors col;
 
 		if (colors) {
-			shell_vt100_colors_store(shell, &col);
-			shell_vt100_color_set(shell, SHELL_VT100_COLOR_RED);
+			z_shell_vt100_colors_store(shell, &col);
+			z_shell_vt100_color_set(shell, SHELL_VT100_COLOR_RED);
 		}
 
 		log_output_dropped_process(backend->log_output, dropped);
 
 		if (colors) {
-			shell_vt100_colors_restore(shell, &col);
+			z_shell_vt100_colors_restore(shell, &col);
 		}
 	}
 
@@ -193,7 +193,7 @@ static void put(const struct log_backend *const backend, struct log_msg *msg)
 
 		break;
 	case SHELL_LOG_BACKEND_PANIC:
-		shell_cmd_line_erase(shell);
+		z_shell_cmd_line_erase(shell);
 		msg_process(shell->log_backend->log_output, msg, colors);
 
 		break;
@@ -221,13 +221,13 @@ static void put_sync_string(const struct log_backend *const backend,
 	}
 
 	key = irq_lock();
-	if (!flag_cmd_ctx_get(shell)) {
-		shell_cmd_line_erase(shell);
+	if (!z_flag_cmd_ctx_get(shell)) {
+		z_shell_cmd_line_erase(shell);
 	}
 	log_output_string(shell->log_backend->log_output, src_level, timestamp,
 			  fmt, ap, flags);
-	if (!flag_cmd_ctx_get(shell)) {
-		shell_print_prompt_and_cmd(shell);
+	if (!z_flag_cmd_ctx_get(shell)) {
+		z_shell_print_prompt_and_cmd(shell);
 	}
 	irq_unlock(key);
 }
@@ -247,13 +247,13 @@ static void put_sync_hexdump(const struct log_backend *const backend,
 	}
 
 	key = irq_lock();
-	if (!flag_cmd_ctx_get(shell)) {
-		shell_cmd_line_erase(shell);
+	if (!z_flag_cmd_ctx_get(shell)) {
+		z_shell_cmd_line_erase(shell);
 	}
 	log_output_hexdump(shell->log_backend->log_output, src_level, timestamp,
 			   metadata, data, length, flags);
-	if (!flag_cmd_ctx_get(shell)) {
-		shell_print_prompt_and_cmd(shell);
+	if (!z_flag_cmd_ctx_get(shell)) {
+		z_shell_print_prompt_and_cmd(shell);
 	}
 	irq_unlock(key);
 }
@@ -274,18 +274,18 @@ static void panic(const struct log_backend *const backend)
 							SHELL_LOG_BACKEND_PANIC;
 
 		/* Move to the start of next line. */
-		shell_multiline_data_calc(&shell->ctx->vt100_ctx.cons,
-						  shell->ctx->cmd_buff_pos,
-						  shell->ctx->cmd_buff_len);
-		shell_op_cursor_vert_move(shell, -1);
-		shell_op_cursor_horiz_move(shell,
+		z_shell_multiline_data_calc(&shell->ctx->vt100_ctx.cons,
+					    shell->ctx->cmd_buff_pos,
+					    shell->ctx->cmd_buff_len);
+		z_shell_op_cursor_vert_move(shell, -1);
+		z_shell_op_cursor_horiz_move(shell,
 					   -shell->ctx->vt100_ctx.cons.cur_x);
 
-		while (shell_log_backend_process(shell->log_backend)) {
+		while (z_shell_log_backend_process(shell->log_backend)) {
 			/* empty */
 		}
 	} else {
-		shell_log_backend_disable(shell->log_backend);
+		z_shell_log_backend_disable(shell->log_backend);
 	}
 }
 

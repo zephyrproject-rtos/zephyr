@@ -329,9 +329,9 @@ static struct i2c_driver_api i2c_sifive_api = {
 		.f_sys = DT_INST_PROP(n, input_frequency), \
 		.f_bus = DT_INST_PROP(n, clock_frequency), \
 	}; \
-	DEVICE_AND_API_INIT(i2c_##n, \
-			    DT_INST_LABEL(n), \
+	DEVICE_DT_INST_DEFINE(n, \
 			    i2c_sifive_init, \
+			    device_pm_control_nop, \
 			    NULL, \
 			    &i2c_sifive_cfg_##n, \
 			    POST_KERNEL, \

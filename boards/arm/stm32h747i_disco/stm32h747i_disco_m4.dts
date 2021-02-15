@@ -52,5 +52,5 @@
 &uart8 {
 	pinctrl-0 = <&uart8_tx_pj8 &uart8_rx_pj9>;
 	current-speed = <115200>;
-	/* status = "okay"; */
+	status = "okay";
 };

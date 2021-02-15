@@ -7,14 +7,13 @@
 #define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_M_MPU_ARM_CORE_MPU_DEV_H_
 
 #include <zephyr/types.h>
+#include <kernel_arch_data.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #if defined(CONFIG_ARM_MPU)
-struct k_mem_domain;
-struct k_mem_partition;
 struct k_thread;
 
 #if defined(CONFIG_USERSPACE)
@@ -133,8 +132,9 @@ struct k_thread;
  *   requirements of the MPU hardware.
  */
 void arm_core_mpu_configure_static_mpu_regions(
-	const struct k_mem_partition *static_regions[], const uint8_t regions_num,
-	const uint32_t background_area_start, const uint32_t background_area_end);
+	const struct z_arm_mpu_partition static_regions[],
+	const uint8_t regions_num, const uint32_t background_area_start,
+	const uint32_t background_area_end);
 
 #if defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS)
 
@@ -153,7 +153,7 @@ void arm_core_mpu_configure_static_mpu_regions(
  *
  * The function shall be invoked once, upon system initialization.
  *
- * @param dyn_region_areas an array of k_mem_partition objects declaring the
+ * @param dyn_region_areas an array of z_arm_mpu_partition objects declaring the
  *                             eligible memory areas for dynamic programming
  * @param dyn_region_areas_num the number of eligible areas for dynamic
  *                             programming.
@@ -164,7 +164,7 @@ void arm_core_mpu_configure_static_mpu_regions(
  * arm_core_mpu_configure_static_mpu_regions().
  */
 void arm_core_mpu_mark_areas_for_dynamic_regions(
-	const struct k_mem_partition dyn_region_areas[],
+	const struct z_arm_mpu_partition dyn_region_areas[],
 	const uint8_t dyn_region_areas_num);
 
 #endif /* CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS */
@@ -185,7 +185,8 @@ void arm_core_mpu_mark_areas_for_dynamic_regions(
  * not exceed the number of (currently) available MPU indices.
  */
 void arm_core_mpu_configure_dynamic_mpu_regions(
-	const struct k_mem_partition *dynamic_regions[], uint8_t regions_num);
+	const struct z_arm_mpu_partition dynamic_regions[],
+	uint8_t regions_num);
 
 #if defined(CONFIG_USERSPACE)
 /**
@@ -203,7 +204,7 @@ void arm_core_mpu_configure_dynamic_mpu_regions(
  * successfully (e.g. the given partition can not be found).
  */
 void arm_core_mpu_mem_partition_config_update(
-	struct k_mem_partition *partition,
+	struct z_arm_mpu_partition *partition,
 	k_mem_partition_attr_t *new_attr);
 
 #endif /* CONFIG_USERSPACE */
@@ -238,7 +239,7 @@ void arm_core_mpu_configure_user_context(struct k_thread *thread);
  * @param   part        memory partition info
  */
 void arm_core_mpu_configure_mem_partition(uint32_t part_index,
-					  struct k_mem_partition *part);
+					  struct z_arm_mpu_partition *part);
 
 /**
  * @brief Reset MPU region for a single memory partition

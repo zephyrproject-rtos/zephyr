@@ -1,0 +1,205 @@
+/*
+ * Copyright (c) 2020 Alexander Kozhinov <AlexanderKozhinov@yandex.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+html, body {
+	border: 0;
+	padding: 0;
+	margin: 0;
+	height: calc(100% - 45px);
+}
+
+.frame {
+	display: block;
+	padding: 5px;
+	border: 2px solid #000;
+	margin-top: 5px;
+	margin-left: 5px;
+	margin-right: 5px;
+	width: auto;
+	box-sizing: border-box;
+	width: auto;
+	height: calc(100% - 5px);
+}
+
+.controls {
+	border: 2px solid #000;
+	height: 150px;
+	box-sizing: border-box;
+	margin-bottom: 5px;
+}
+
+.log {
+	padding: 5px;
+	border: 2px solid #000;
+	box-sizing: border-box;
+	width: 100%;
+	height: calc(100% - 155px);
+	overflow: auto;
+	position: relative;
+}
+
+.log #btn_clear_log {
+	position: absolute;
+	top: 10px;
+	right: 10px;
+	z-index: 1;
+}
+
+.log .entries {
+	display: table;
+	box-sizing: border-box;
+	width: 100%;
+}
+
+.log .entry {
+	display: table-row;
+	padding-top: 5px;
+}
+
+.log .entry .publisher,
+.log .entry .content {
+	display: table-cell;
+	vertical-align: top;
+	padding: 5px;
+	font-size: 16px;
+	line-height: 20px;
+}
+
+.log .entry .publisher .timestamp {
+	font-weight: normal;
+	font-size: 10px;
+	color: black;
+}
+
+.log .entry .publisher {
+	font-weight: bold;
+	text-align: right;
+	width: 80px;
+	text-transform: uppercase;
+	padding-right: 10px;
+}
+
+.log .entry .publisher.system {
+	color: red;
+}
+
+.log .entry .publisher.system:before {
+	content: 'SYSTEM';
+}
+
+.log .entry .publisher.console {
+	color: orange;
+}
+
+.log .entry .publisher.console:before {
+	content: 'CONSOLE';
+}
+
+.log .entry .publisher.local {
+	color: grey;
+}
+
+.log .entry .publisher.local:before {
+	content: 'LOCAL';
+}
+
+.log .entry .publisher.remote {
+	color: green;
+}
+
+.log .entry .publisher.remote:before {
+	content: 'REMOTE';
+}
+
+.log .entry .content.text {
+	font-family: 'Source Code Pro', 'Courier New', monospace;
+	font-size: 15px;
+	white-space: pre-wrap;
+}
+
+.log .entry .content.binary {
+	font-family: 'Source Code Pro', 'Courier New', monospace;
+	font-size: 15px;
+	white-space: pre-wrap;
+	color: orange;
+}
+
+.controls .status {
+	font-weight: bold;
+	text-transform: uppercase;
+}
+
+.controls.closed .status {
+	color: red;
+}
+
+.controls.closed .status:after {
+	content: 'DISCONNECTED';
+}
+
+.controls.open .status {
+	color: green;
+}
+
+.controls.open .status:after {
+	content: 'CONNECTED';
+}
+
+.controls.connecting .status {
+	color: orange;
+}
+
+.controls.connecting .status:after {
+	content: 'CONNECTING';
+}
+
+.controls.closing .status {
+	color: red;
+}
+
+.controls.closing .status:after {
+	content: 'CLOSING';
+}
+
+.controls .control-pane {
+	display: block;
+	float: left;
+	border-left: 1px solid #000;
+	height: 100%;
+	box-sizing: border-box;
+	padding: 5px;
+}
+
+.controls .control-pane:first-child {
+	border-left: none;
+}
+
+.controls table {
+	padding: 0;
+	margin: 0;
+	border-collapse: collapse;
+}
+
+.controls table th {
+	text-align: right;
+	padding: 3px;
+}
+
+.controls table td {
+	padding: 3px;
+}
+
+.controls #message_text {
+	min-width: 300px;
+	min-height: 60px;
+}
+
+.copyright {
+	font-size: 10px;
+	line-height: 10px;
+	text-align: right;
+	color: grey;
+}

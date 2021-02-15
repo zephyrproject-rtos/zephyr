@@ -14,8 +14,5 @@ config SOC_SERIES_STM32L4X
 	select HAS_STM32CUBE
 	select CPU_HAS_ARM_MPU
 	select HAS_SWO
-	select HAS_SYS_POWER_STATE_SLEEP_1
-	select HAS_SYS_POWER_STATE_SLEEP_2
-	select HAS_SYS_POWER_STATE_SLEEP_3
 	help
 	  Enable support for STM32L4 MCU series

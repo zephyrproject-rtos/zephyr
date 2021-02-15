@@ -16,9 +16,6 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_GIC_H_
 #define ZEPHYR_INCLUDE_DRIVERS_GIC_H_
 
-#include <zephyr/types.h>
-#include <device.h>
-
 /*
  * GIC Register Interface Base Addresses
  */
@@ -210,18 +207,6 @@
 
 #endif /* CONFIG_GIC_VER <= 2 */
 
-#if defined(CONFIG_GIC_V3)
-/**
- * @brief raise SGI to target cores
- *
- * @param sgi_id      SGI ID 0 to 15
- * @param target_aff  target affinity in mpidr form.
- *                    Aff level 1 2 3 will be extracted by api.
- * @param target_list bitmask of target cores
- */
-void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff,
-		   uint16_t target_list);
-#endif
 
 /* GICD_ICFGR */
 #define GICD_ICFGR_MASK			BIT_MASK(2)
@@ -273,16 +258,12 @@ void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff,
 
 #ifndef _ASMLANGUAGE
 
+#include <zephyr/types.h>
+#include <device.h>
+
 /*
  * GIC Driver Interface Functions
  */
-
-/**
- * @brief Initialise ARM GIC driver
- *
- * @return 0 if successful
- */
-int arm_gic_init(void);
 
 /**
  * @brief Enable interrupt
@@ -330,6 +311,19 @@ unsigned int arm_gic_get_active(void);
  */
 void arm_gic_eoi(unsigned int irq);
 
+#if defined(CONFIG_GIC_V3)
+/**
+ * @brief raise SGI to target cores
+ *
+ * @param sgi_id      SGI ID 0 to 15
+ * @param target_aff  target affinity in mpidr form.
+ *                    Aff level 1 2 3 will be extracted by api.
+ * @param target_list bitmask of target cores
+ */
+void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff,
+		   uint16_t target_list);
+
+#endif /* CONFIG_GIC_V3 */
 #endif /* !_ASMLANGUAGE */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_GIC_H_ */

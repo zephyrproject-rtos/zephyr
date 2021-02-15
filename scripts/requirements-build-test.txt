@@ -1,16 +1,13 @@
 # BUILD-TEST: required to do build tests of zephyr
 #
-# things used by sanitycheck or other things like code coverage or python
+# things used by twister or other things like code coverage or python
 # testing
 
-# used by sanitycheck for ansi color
+# used by twister for ansi color
 colorama
 
-# python lex/yex used by sanitycheck
+# python lex/yex used by twister
 ply>=3.10
-
-# optional, but used for validation of YAML
-pykwalify
 
 # used for code coverage
 gcovr>=4.2

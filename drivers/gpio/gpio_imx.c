@@ -220,8 +220,9 @@ static const struct gpio_driver_api imx_gpio_driver_api = {
 									\
 	static struct imx_gpio_data imx_gpio_##n##_data;		\
 									\
-	DEVICE_AND_API_INIT(imx_gpio_##n, DT_INST_LABEL(n),		\
+	DEVICE_DT_INST_DEFINE(n,					\
 			    imx_gpio_##n##_init,			\
+			    device_pm_control_nop,			\
 			    &imx_gpio_##n##_data,			\
 			    &imx_gpio_##n##_config,			\
 			    POST_KERNEL,				\
@@ -233,14 +234,14 @@ static const struct gpio_driver_api imx_gpio_driver_api = {
 		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, 0, irq),		\
 			    DT_INST_IRQ_BY_IDX(n, 0, priority),		\
 			    imx_gpio_port_isr,				\
-			    DEVICE_GET(imx_gpio_##n), 0);		\
+			    DEVICE_DT_INST_GET(n), 0);			\
 									\
 		irq_enable(DT_INST_IRQ_BY_IDX(n, 0, irq));		\
 									\
 		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, 1, irq),		\
 			    DT_INST_IRQ_BY_IDX(n, 1, priority),		\
 			    imx_gpio_port_isr,				\
-			    DEVICE_GET(imx_gpio_##n), 0);		\
+			    DEVICE_DT_INST_GET(n), 0);			\
 									\
 		irq_enable(DT_INST_IRQ_BY_IDX(n, 1, irq));		\
 									\

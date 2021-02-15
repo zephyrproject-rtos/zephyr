@@ -83,7 +83,10 @@ static int is_flash_locked(FLASH_TypeDef *regs)
 
 static void write_enable(FLASH_TypeDef *regs)
 {
+	/* Only used for half-page programming on L1x */
+#if !defined(CONFIG_SOC_SERIES_STM32L1X)
 	regs->PECR |= FLASH_PECR_PROG;
+#endif
 }
 
 static void write_disable(FLASH_TypeDef *regs)

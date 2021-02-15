@@ -23,7 +23,7 @@
 
 extern void *_VectorTable;
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 #include <power/power.h>
 #include <kernel_structs.h>
 
@@ -87,7 +87,7 @@ static int arc_v2_irq_unit_init(const struct device *unused)
 	return 0;
 }
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 
 /*
  * @brief Suspend the interrupt unit device driver
@@ -223,4 +223,4 @@ SYS_DEVICE_DEFINE("arc_v2_irq_unit", arc_v2_irq_unit_init,
 #else
 SYS_INIT(arc_v2_irq_unit_init, PRE_KERNEL_1,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
-#endif   /* CONFIG_DEVICE_POWER_MANAGEMENT */
+#endif   /* CONFIG_PM_DEVICE */

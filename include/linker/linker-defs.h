@@ -182,6 +182,12 @@ extern char __data_ram_start[];
 extern char __data_ram_end[];
 #endif /* CONFIG_XIP */
 
+#ifdef CONFIG_MMU
+/* Virtual addresses of page-aligned kernel image mapped into RAM at boot */
+extern char z_mapped_start[];
+extern char z_mapped_end[];
+#endif /* CONFIG_MMU */
+
 /* Includes text and rodata */
 extern char _image_rom_start[];
 extern char _image_rom_end[];
@@ -228,6 +234,13 @@ extern char __ccm_bss_end[];
 extern char __ccm_noinit_start[];
 extern char __ccm_noinit_end[];
 extern char __ccm_end[];
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_itcm), okay)
+extern char __itcm_start[];
+extern char __itcm_end[];
+extern char __itcm_size[];
+extern char __itcm_rom_start[];
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
@@ -289,15 +302,18 @@ extern char z_priv_stacks_ram_start[];
 extern char z_priv_stacks_ram_end[];
 extern char z_user_stacks_start[];
 extern char z_user_stacks_end[];
+extern char z_kobject_data_begin[];
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
 extern char __tdata_start[];
 extern char __tdata_end[];
 extern char __tdata_size[];
+extern char __tdata_align[];
 extern char __tbss_start[];
 extern char __tbss_end[];
 extern char __tbss_size[];
+extern char __tbss_align[];
 extern char __tls_start[];
 extern char __tls_end[];
 extern char __tls_size[];

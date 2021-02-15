@@ -53,9 +53,9 @@ extern "C" {
 /**
  * @brief Prototype of the function processing output data.
  *
- * @param data Data.
- * @param length Data length.
- * @param ctx  User context.
+ * @param buf The buffer data.
+ * @param size The buffer size.
+ * @param ctx User context.
  *
  * @return Number of bytes processed, dropped or discarded.
  *

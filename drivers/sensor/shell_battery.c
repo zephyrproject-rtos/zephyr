@@ -38,10 +38,12 @@ static int get_channels(const struct device *dev, ...)
 		val = va_arg(ptr, struct sensor_value *);
 		err = sensor_channel_get(dev, chan, val);
 		if (err < 0) {
+			va_end(ptr);
 			return err;
 		}
 	}
 
+	va_end(ptr);
 	return 0;
 }
 

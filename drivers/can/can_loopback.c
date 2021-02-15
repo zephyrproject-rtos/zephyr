@@ -33,9 +33,7 @@ static void dispatch_frame(const struct zcan_frame *frame,
 	struct zcan_frame frame_tmp = *frame;
 
 	LOG_DBG("Receiving %d bytes. Id: 0x%x, ID type: %s %s",
-		frame->dlc,
-		frame->id_type == CAN_STANDARD_IDENTIFIER ?
-				  frame->std_id : frame->ext_id,
+		frame->dlc, frame->id,
 		frame->id_type == CAN_STANDARD_IDENTIFIER ?
 				  "standard" : "extended",
 		frame->rtr == CAN_DATAFRAME ? "" : ", RTR frame");
@@ -46,16 +44,8 @@ static void dispatch_frame(const struct zcan_frame *frame,
 static inline int check_filter_match(const struct zcan_frame *frame,
 				     const struct zcan_filter *filter)
 {
-	uint32_t id, mask, frame_id;
-
-	frame_id = frame->id_type == CAN_STANDARD_IDENTIFIER ?
-			frame->std_id : frame->ext_id;
-	id = filter->id_type == CAN_STANDARD_IDENTIFIER ?
-			filter->std_id : filter->ext_id;
-	mask = filter->id_type == CAN_STANDARD_IDENTIFIER ?
-			filter->std_id_mask : filter->ext_id_mask;
-
-	return ((id & mask) == (frame_id & mask));
+	return ((filter->id & filter->id_mask) ==
+		(frame->id & filter->id_mask));
 }
 
 void tx_thread(void *data_arg, void *arg2, void *arg3)
@@ -99,9 +89,7 @@ int can_loopback_send(const struct device *dev,
 	struct k_sem tx_sem;
 
 	LOG_DBG("Sending %d bytes on %s. Id: 0x%x, ID type: %s %s",
-		frame->dlc, dev->name,
-		frame->id_type == CAN_STANDARD_IDENTIFIER ?
-				  frame->std_id : frame->ext_id,
+		frame->dlc, dev->name, frame->id,
 		frame->id_type == CAN_STANDARD_IDENTIFIER ?
 				  "standard" : "extended",
 		frame->rtr == CAN_DATAFRAME ? "" : ", RTR frame");
@@ -153,14 +141,14 @@ int can_loopback_attach_isr(const struct device *dev, can_rx_callback_t isr,
 	struct can_loopback_filter *loopback_filter;
 	int filter_id;
 
-	LOG_DBG("Setting filter ID: 0x%x, mask: 0x%x", filter->ext_id,
-		    filter->ext_id_mask);
+	LOG_DBG("Setting filter ID: 0x%x, mask: 0x%x", filter->id,
+		    filter->id_mask);
 	LOG_DBG("Filter type: %s ID %s mask",
-		    filter->id_type == CAN_STANDARD_IDENTIFIER ?
-			"standard" : "extended",
-		     ((filter->id_type && (filter->std_id_mask == CAN_STD_ID_MASK)) ||
-		     (!filter->id_type && (filter->ext_id_mask == CAN_EXT_ID_MASK))) ?
-			"with" : "without");
+		filter->id_type == CAN_STANDARD_IDENTIFIER ?
+				   "standard" : "extended",
+		((filter->id_type && (filter->id_mask == CAN_STD_ID_MASK)) ||
+		(!filter->id_type && (filter->id_mask == CAN_EXT_ID_MASK))) ?
+		"with" : "without");
 
 	k_mutex_lock(&data->mtx, K_FOREVER);
 	filter_id = get_free_filter(data->filters);
@@ -193,14 +181,21 @@ void can_loopback_detach(const struct device *dev, int filter_id)
 	k_mutex_unlock(&data->mtx);
 }
 
-int can_loopback_configure(const struct device *dev, enum can_mode mode,
-				uint32_t bitrate)
+int can_loopback_set_mode(const struct device *dev, enum can_mode mode)
 {
 	struct can_loopback_data *data = DEV_DATA(dev);
 
-	ARG_UNUSED(bitrate);
-
 	data->loopback = mode == CAN_LOOPBACK_MODE ? 1 : 0;
+	return 0;
+}
+
+int can_loopback_set_timing(const struct device *dev,
+			 const struct can_timing *timing,
+			 const struct can_timing *timing_data)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(timing);
+	ARG_UNUSED(timing_data);
 	return 0;
 }
 
@@ -234,8 +229,16 @@ static void can_loopback_register_state_change_isr(const struct device *dev,
 	ARG_UNUSED(isr);
 }
 
+int can_loopback_get_core_clock(const struct device *dev, uint32_t *rate)
+{
+	/* Return 16MHz as an realistic value for the testcases */
+	*rate = 16000000;
+	return 0;
+}
+
 static const struct can_driver_api can_api_funcs = {
-	.configure = can_loopback_configure,
+	.set_mode = can_loopback_set_mode,
+	.set_timing = can_loopback_set_timing,
 	.send = can_loopback_send,
 	.attach_isr = can_loopback_attach_isr,
 	.detach = can_loopback_detach,
@@ -243,9 +246,23 @@ static const struct can_driver_api can_api_funcs = {
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
 	.recover = can_loopback_recover,
 #endif
-	.register_state_change_isr = can_loopback_register_state_change_isr
+	.register_state_change_isr = can_loopback_register_state_change_isr,
+	.get_core_clock = can_loopback_get_core_clock,
+	.timing_min = {
+		.sjw = 0x1,
+		.prop_seg = 0x01,
+		.phase_seg1 = 0x01,
+		.phase_seg2 = 0x01,
+		.prescaler = 0x01
+	},
+	.timing_max = {
+		.sjw = 0x0F,
+		.prop_seg = 0x0F,
+		.phase_seg1 = 0x0F,
+		.phase_seg2 = 0x0F,
+		.prescaler = 0xFFFF
+	}
 };
-
 
 static int can_loopback_init(const struct device *dev)
 {
@@ -275,8 +292,8 @@ static int can_loopback_init(const struct device *dev)
 
 static struct can_loopback_data can_loopback_dev_data_1;
 
-DEVICE_AND_API_INIT(can_loopback_1, CONFIG_CAN_LOOPBACK_DEV_NAME,
-		    &can_loopback_init,
+DEVICE_DEFINE(can_loopback_1, CONFIG_CAN_LOOPBACK_DEV_NAME,
+		    &can_loopback_init, device_pm_control_nop,
 		    &can_loopback_dev_data_1, NULL,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &can_api_funcs);
@@ -285,6 +302,8 @@ DEVICE_AND_API_INIT(can_loopback_1, CONFIG_CAN_LOOPBACK_DEV_NAME,
 #if defined(CONFIG_NET_SOCKETS_CAN)
 
 #include "socket_can_generic.h"
+
+static struct socket_can_context socket_can_context_1;
 
 static int socket_can_init_1(const struct device *dev)
 {

@@ -5,6 +5,7 @@
  */
 #ifndef _TRACE_SYSVIEW_H
 #define _TRACE_SYSVIEW_H
+#include <string.h>
 #include <kernel.h>
 #include <init.h>
 
@@ -24,24 +25,9 @@ void sys_trace_semaphore_give(struct k_sem *sem);
 void sys_trace_mutex_init(struct k_mutex *mutex);
 void sys_trace_mutex_lock(struct k_mutex *mutex);
 void sys_trace_mutex_unlock(struct k_mutex *mutex);
+void sys_trace_thread_info(struct k_thread *thread);
 
 #define sys_trace_thread_priority_set(thread)
-
-static inline void sys_trace_thread_info(struct k_thread *thread)
-{
-	char name[20];
-
-	snprintk(name, sizeof(name), "T%pE%p", thread, &thread->entry);
-
-	SEGGER_SYSVIEW_TASKINFO Info;
-
-	Info.TaskID = (uint32_t)(uintptr_t)thread;
-	Info.sName = name;
-	Info.Prio = thread->base.prio;
-	Info.StackBase = thread->stack_info.size;
-	Info.StackSize = thread->stack_info.start;
-	SEGGER_SYSVIEW_SendTaskInfo(&Info);
-}
 
 #define sys_trace_thread_create(thread)				       \
 	do {							       \

@@ -11,7 +11,6 @@
 #define DT_DRV_COMPAT st_iis2iclx
 
 #include <string.h>
-#include <drivers/i2c.h>
 #include <logging/log.h>
 
 #include "iis2iclx.h"
@@ -23,18 +22,20 @@ LOG_MODULE_DECLARE(IIS2ICLX, CONFIG_SENSOR_LOG_LEVEL);
 static int iis2iclx_i2c_read(struct iis2iclx_data *data, uint8_t reg_addr,
 			       uint8_t *value, uint8_t len)
 {
-	const struct iis2iclx_config *cfg = data->dev->config;
+	const struct device *dev = data->dev;
+	const struct iis2iclx_config *cfg = dev->config;
 
-	return i2c_burst_read(data->bus, cfg->i2c_slv_addr,
+	return i2c_burst_read(data->bus, cfg->bus_cfg.i2c_slv_addr,
 			      reg_addr, value, len);
 }
 
 static int iis2iclx_i2c_write(struct iis2iclx_data *data, uint8_t reg_addr,
 				uint8_t *value, uint8_t len)
 {
-	const struct iis2iclx_config *cfg = data->dev->config;
+	const struct device *dev = data->dev;
+	const struct iis2iclx_config *cfg = dev->config;
 
-	return i2c_burst_write(data->bus, cfg->i2c_slv_addr,
+	return i2c_burst_write(data->bus, cfg->bus_cfg.i2c_slv_addr,
 			       reg_addr, value, len);
 }
 

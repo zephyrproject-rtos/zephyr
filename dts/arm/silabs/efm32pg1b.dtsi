@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2021 Rafael Dias Menezes <rdmeneze@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <silabs/efm32_pg_1b.dtsi>
+
+/ {
+	cpus {
+		cpu0: cpu@0 {
+			compatible = "arm,cortex-m4f";
+			reg = <0>;
+		};
+	};
+};

@@ -283,8 +283,8 @@ static const struct adc_driver_api mcux_adc12_driver_api = {
 		ADC_CONTEXT_INIT_SYNC(mcux_adc12_data_##n, ctx),	\
 	};								\
 									\
-	DEVICE_AND_API_INIT(mcux_adc12_##n, DT_INST_LABEL(n),		\
-			    &mcux_adc12_init, &mcux_adc12_data_##n,	\
+	DEVICE_DT_INST_DEFINE(n, &mcux_adc12_init,			\
+			    device_pm_control_nop, &mcux_adc12_data_##n,\
 			    &mcux_adc12_config_##n, POST_KERNEL,	\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 			    &mcux_adc12_driver_api);			\
@@ -293,7 +293,7 @@ static const struct adc_driver_api mcux_adc12_driver_api = {
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(n),				\
 			    DT_INST_IRQ(n, priority), mcux_adc12_isr,	\
-			    DEVICE_GET(mcux_adc12_##n), 0);		\
+			    DEVICE_DT_INST_GET(n), 0);			\
 									\
 		irq_enable(DT_INST_IRQN(n));				\
 	}

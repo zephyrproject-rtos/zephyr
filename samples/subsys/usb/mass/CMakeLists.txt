@@ -5,7 +5,7 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(mass)
 
 if((NOT CONFIG_DISK_ACCESS_FLASH) AND (NOT CONFIG_DISK_ACCESS_RAM))
-	message( FATAL_ERROR "No disk access settings detected. Enable one of overlays: overlay-flash-disk.conf or overlay-ram-disk.conf" )
+	message( FATAL_ERROR "No disk access settings detected." )
 endif()
 
 FILE(GLOB app_sources src/*.c)

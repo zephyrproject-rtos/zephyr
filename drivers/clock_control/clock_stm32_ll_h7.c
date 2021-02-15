@@ -7,6 +7,10 @@
  */
 
 #include <soc.h>
+#include <stm32_ll_bus.h>
+#include <stm32_ll_pwr.h>
+#include <stm32_ll_rcc.h>
+#include <stm32_ll_utils.h>
 #include <drivers/clock_control.h>
 #include <sys/util.h>
 #include <drivers/clock_control/stm32_clock_control.h>
@@ -62,20 +66,6 @@
 #define PLLSRC_FREQ 0
 #endif
 
-#define VCO_FREQ	(PLLSRC_FREQ / CONFIG_CLOCK_STM32_PLL_M_DIVISOR)
-
-#if (1000000UL <= VCO_FREQ && VCO_FREQ <= 2000000UL)
-#define VCO_INPUT_RANGE LL_RCC_PLLINPUTRANGE_1_2
-#elif (2000000UL < VCO_FREQ && VCO_FREQ <= 4000000UL)
-#define VCO_INPUT_RANGE LL_RCC_PLLINPUTRANGE_2_4
-#elif (4000000UL < VCO_FREQ && VCO_FREQ <= 8000000UL)
-#define VCO_INPUT_RANGE LL_RCC_PLLINPUTRANGE_4_8
-#elif (8000000UL < VCO_FREQ && VCO_FREQ <= 16000000UL)
-#define VCO_INPUT_RANGE LL_RCC_PLLINPUTRANGE_8_16
-#else
-#error "PLL1 VCO frequency input range out of range"
-#endif
-
 /* Given source clock and dividers, computed the output frequency of PLLP */
 #define PLLP_FREQ(pllsrc_freq, divm, divn, divp)	(((pllsrc_freq)*\
 							(divn))/((divm)*(divp)))
@@ -107,32 +97,47 @@
 #define APB4_FREQ	((AHB_FREQ)/(CONFIG_CLOCK_STM32_D3PPRE))
 
 /* Datasheet maximum frequency definitions */
-#define SYSCLK_FREQ_MAX	480000000UL
-#define AHB_FREQ_MAX	240000000UL
-#define APBx_FREQ_MAX	120000000UL
+#if defined(CONFIG_SOC_STM32H743XX) ||\
+    defined(CONFIG_SOC_STM32H745XX) ||\
+    defined(CONFIG_SOC_STM32H747XX) ||\
+    defined(CONFIG_SOC_STM32H750XX)
+/* All h7 SoC with maximum 480MHz SYSCLK */
+#define SYSCLK_FREQ_MAX		480000000UL
+#define AHB_FREQ_MAX		240000000UL
+#define APBx_FREQ_MAX		120000000UL
+#elif defined(CONFIG_SOC_STM32H723XX)
+/* All h7 SoC with maximum 550MHz SYSCLK */
+#define SYSCLK_FREQ_MAX		550000000UL
+#define AHB_FREQ_MAX		275000000UL
+#define APBx_FREQ_MAX		137500000UL
+#else
+/* Default: All h7 SoC with maximum 280MHz SYSCLK */
+#define SYSCLK_FREQ_MAX		280000000UL
+#define AHB_FREQ_MAX		140000000UL
+#define APBx_FREQ_MAX		70000000UL
+#endif
 
 #if SYSCLK_FREQ > SYSCLK_FREQ_MAX
-#error "SYSCLK frequency is too high, max is 480MHz"
+#error "SYSCLK frequency is too high!"
 #endif
 #if AHB_FREQ > AHB_FREQ_MAX
-#error "AHB frequency is too high, max is 240MHz"
+#error "AHB frequency is too high!"
 #endif
 #if APB1_FREQ > APBx_FREQ_MAX
-#error "APB1 frequency is too high, max is 120MHz"
+#error "APB1 frequency is too high!"
 #endif
 #if APB2_FREQ > APBx_FREQ_MAX
-#error "APB2 frequency is too high, max is 120MHz"
+#error "APB2 frequency is too high!"
 #endif
 #if APB3_FREQ > APBx_FREQ_MAX
-#error "APB3 frequency is too high, max is 120MHz"
+#error "APB3 frequency is too high!"
 #endif
 #if APB4_FREQ > APBx_FREQ_MAX
-#error "APB4 frequency is too high, max is 120MHz"
+#error "APB4 frequency is too high!"
 #endif
 
 #if SYSCLK_FREQ != CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
-#error "Calculated CPU clock frequency (SYS clock) for M7 core doesn't match \
-CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC"
+#error "SYS clock frequency for M7 core doesn't match CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC"
 #endif
 
 /* end of clock feasability check */
@@ -276,9 +281,31 @@ static int32_t optimize_regulator_voltage_scale(uint32_t sysclk_freq)
 
 #if defined(CONFIG_CLOCK_STM32_PLL_SRC_HSE) || \
 	defined(CONFIG_CLOCK_STM32_PLL_SRC_HSI) || \
-	defined(CONFIG_CLOCK_STM32_PLL_SRC_CSI)
+	defined(CONFIG_CLOCK_STM32_PLL_SRC_CSI) || \
+	defined(CONFIG_CLOCK_STM32_PLL3_ENABLE)
 
-static int32_t get_vco_output_range(uint32_t vco_input_range)
+static int get_vco_input_range(uint32_t m_div, uint32_t *range)
+{
+	uint32_t vco_freq;
+
+	vco_freq = PLLSRC_FREQ / m_div;
+
+	if (MHZ(1) <= vco_freq && vco_freq <= MHZ(2)) {
+		*range = LL_RCC_PLLINPUTRANGE_1_2;
+	} else if (MHZ(2) < vco_freq && vco_freq <= MHZ(4)) {
+		*range = LL_RCC_PLLINPUTRANGE_2_4;
+	} else if (MHZ(4) < vco_freq && vco_freq <= MHZ(8)) {
+		*range = LL_RCC_PLLINPUTRANGE_4_8;
+	} else if (MHZ(8) < vco_freq && vco_freq <= MHZ(16)) {
+		*range = LL_RCC_PLLINPUTRANGE_8_16;
+	} else {
+		return -ERANGE;
+	}
+
+	return 0;
+}
+
+static uint32_t get_vco_output_range(uint32_t vco_input_range)
 {
 	if (vco_input_range == LL_RCC_PLLINPUTRANGE_1_2) {
 		return LL_RCC_PLLVCORANGE_MEDIUM;
@@ -457,9 +484,12 @@ static int stm32_clock_control_init(const struct device *dev)
 
 #if defined(CONFIG_CLOCK_STM32_PLL_SRC_HSE) || \
 	defined(CONFIG_CLOCK_STM32_PLL_SRC_HSI) || \
-	defined(CONFIG_CLOCK_STM32_PLL_SRC_CSI)
+	defined(CONFIG_CLOCK_STM32_PLL_SRC_CSI) || \
+	defined(CONFIG_CLOCK_STM32_PLL3_ENABLE)
 
-	int32_t vco_output_range = 0;
+	int r;
+	uint32_t vco_input_range;
+	uint32_t vco_output_range;
 #endif /* CONFIG_CLOCK_STM32_PLL_SRC_* */
 
 #endif /* ! CONFIG_CPU_CORTEX_M4 */
@@ -542,7 +572,12 @@ static int stm32_clock_control_init(const struct device *dev)
 	defined(CONFIG_CLOCK_STM32_PLL_SRC_HSI) || \
 	defined(CONFIG_CLOCK_STM32_PLL_SRC_CSI)
 
-	vco_output_range = get_vco_output_range(VCO_INPUT_RANGE);
+	r = get_vco_input_range(CONFIG_CLOCK_STM32_PLL_M_DIVISOR, &vco_input_range);
+	if (r < 0) {
+		return r;
+	}
+
+	vco_output_range = get_vco_output_range(vco_input_range);
 
 	/* Configure PLL1 */
 	/* According to the RM0433 datasheet */
@@ -552,7 +587,7 @@ static int stm32_clock_control_init(const struct device *dev)
 	/* Config PLL */
 
 	/* VCO sel, VCO range */
-	LL_RCC_PLL1_SetVCOInputRange(VCO_INPUT_RANGE);
+	LL_RCC_PLL1_SetVCOInputRange(vco_input_range);
 	LL_RCC_PLL1_SetVCOOutputRange(vco_output_range);
 
 	/* FRACN disable DIVP,DIVQ,DIVR enable*/
@@ -650,6 +685,41 @@ static int stm32_clock_control_init(const struct device *dev)
 
 #endif /* CONFIG_CPU_CORTEX_M4 */
 
+#if defined(CONFIG_CLOCK_STM32_PLL3_ENABLE)
+	/* Initialize PLL 3 */
+	r = get_vco_input_range(CONFIG_CLOCK_STM32_PLL3_M_DIVISOR, &vco_input_range);
+	if (r < 0) {
+		return r;
+	}
+
+	vco_output_range = get_vco_output_range(vco_input_range);
+
+	LL_RCC_PLL3FRACN_Disable();
+
+	LL_RCC_PLL3_SetM(CONFIG_CLOCK_STM32_PLL3_M_DIVISOR);
+	LL_RCC_PLL3_SetN(CONFIG_CLOCK_STM32_PLL3_N_MULTIPLIER);
+
+	LL_RCC_PLL3_SetVCOInputRange(vco_input_range);
+	LL_RCC_PLL3_SetVCOOutputRange(vco_output_range);
+
+#if defined(CONFIG_CLOCK_STM32_PLL3_P_ENABLE)
+	LL_RCC_PLL3P_Enable();
+	LL_RCC_PLL3_SetP(CONFIG_CLOCK_STM32_PLL3_P_DIVISOR);
+#endif /* CONFIG_CLOCK_STM32_PLL3_P_ENABLE */
+#if defined(CONFIG_CLOCK_STM32_PLL3_Q_ENABLE)
+	LL_RCC_PLL3Q_Enable();
+	LL_RCC_PLL3_SetQ(CONFIG_CLOCK_STM32_PLL3_Q_DIVISOR);
+#endif /* CONFIG_CLOCK_STM32_PLL3_Q_ENABLE */
+#if defined(CONFIG_CLOCK_STM32_PLL3_R_ENABLE)
+	LL_RCC_PLL3R_Enable();
+	LL_RCC_PLL3_SetR(CONFIG_CLOCK_STM32_PLL3_R_DIVISOR);
+#endif /* CONFIG_CLOCK_STM32_PLL3_R_ENABLE */
+
+	LL_RCC_PLL3_Enable();
+	while (LL_RCC_PLL3_IsReady() != 1U) {
+	}
+#endif /* CONFIG_CLOCK_STM32_PLL3_ENABLE */
+
 	/* Set systick to 1ms */
 	SysTick_Config(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / 1000);
 	/* Update CMSIS variable */
@@ -662,8 +732,9 @@ static int stm32_clock_control_init(const struct device *dev)
  * @brief RCC device, note that priority is intentionally set to 1 so
  * that the device init runs just after SOC init
  */
-DEVICE_AND_API_INIT(rcc_stm32, STM32_CLOCK_CONTROL_NAME,
+DEVICE_DT_DEFINE(DT_NODELABEL(rcc),
 		    &stm32_clock_control_init,
+		    device_pm_control_nop,
 		    NULL, NULL,
 		    PRE_KERNEL_1,
 		    CONFIG_CLOCK_CONTROL_STM32_DEVICE_INIT_PRIORITY,

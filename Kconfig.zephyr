@@ -4,12 +4,6 @@
 # Copyright (c) 2016 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-menu "Modules"
-
-source "$(KCONFIG_BINARY_DIR)/Kconfig.modules"
-source "modules/Kconfig"
-
-endmenu
 
 # Include Kconfig.defconfig files first so that they can override defaults and
 # other symbol/choice properties by adding extra symbol/choice definitions.
@@ -20,9 +14,15 @@ endmenu
 # precedence over SoC defaults, so include them in that order.
 #
 # $ARCH and $BOARD_DIR will be glob patterns when building documentation.
-source "boards/shields/*/Kconfig.defconfig"
+source "$(KCONFIG_BINARY_DIR)/Kconfig.shield.defconfig"
 source "$(BOARD_DIR)/Kconfig.defconfig"
 source "$(KCONFIG_BINARY_DIR)/Kconfig.soc.defconfig"
+
+menu "Modules"
+
+source "modules/Kconfig"
+
+endmenu
 
 source "boards/Kconfig"
 source "soc/Kconfig"
@@ -317,6 +317,20 @@ config BUILD_OUTPUT_BIN
 	  Build a "raw" binary zephyr/zephyr.bin in the build directory.
 	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
 
+config BUILD_OUTPUT_EFI
+	bool "Build as an EFI application"
+	default n
+	depends on X86_64
+	help
+	  Build as an EFI application.
+
+	  This works by creating a "zephyr.efi" EFI binary containing a zephyr
+	  image extracted from a built zephyr.elf file.  EFI applications are
+	  relocatable, and cannot be placed at specific locations in memory.
+	  Instead, the stub code will copy the embedded zephyr sections to the
+	  appropriate locations at startup, clear any zero-filled (BSS, etc...)
+	  areas, then jump into the 64 bit entry point.
+
 config BUILD_OUTPUT_EXE
 	bool "Build a binary in ELF format with .exe extension"
 	help
@@ -381,9 +395,16 @@ config BOOTLOADER_SRAM_SIZE
 	  - Zephyr is a !XIP image, which implicitly assumes existence of a
 	  bootloader that loads the Zephyr !XIP image onto SRAM.
 
+config MCUBOOT
+	bool
+	help
+	  Hidden option used to indicate that the current image is MCUBoot
+
 config BOOTLOADER_MCUBOOT
 	bool "MCUboot bootloader support"
 	select USE_DT_CODE_PARTITION
+	imply INIT_ARCH_HW_AT_BOOT if ARCH_SUPPORTS_ARCH_HW_INIT
+	depends on !MCUBOOT
 	help
 	  This option signifies that the target uses MCUboot as a bootloader,
 	  or in other words that the image is to be chain-loaded by MCUboot.
@@ -396,6 +417,11 @@ config BOOTLOADER_MCUBOOT
 	    * Activating SW_VECTOR_RELAY_CLIENT on Cortex-M0
 	      (or Armv8-M baseline) targets with no built-in vector relocation
 	      mechanisms
+
+	  By default, this option instructs Zephyr to initialize the core
+	  architecture HW registers during boot, when this is supported by
+	  the application. This removes the need by MCUboot to reset
+	  the core registers' state itself.
 
 if BOOTLOADER_MCUBOOT
 
@@ -488,15 +514,6 @@ config BOOTLOADER_BOSSA_ADAFRUIT_UF2
 	  0xf01669ef as the magic value to enter the bootloader.
 
 endchoice
-
-config BOOTLOADER_CONTEXT_RESTORE
-	bool "Boot loader has context restore support"
-	default y
-	depends on SYS_POWER_DEEP_SLEEP_STATES && BOOTLOADER_CONTEXT_RESTORE_SUPPORTED
-	help
-	  This option signifies that the target has a bootloader
-	  that restores CPU context upon resuming from deep sleep
-	  power state.
 
 config REBOOT
 	bool "Reboot functionality"

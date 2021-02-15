@@ -330,27 +330,12 @@ static int format_attributes(const char * const *attributes,
 	bool res;
 
 	if (!attributes) {
-		goto terminator;
+		*more = false;
+		return 0;
 	}
 
-	for (attr = attributes; *attr; ) {
-		int attr_len = strlen(*attr);
-
-		res = append_to_coap_pkt(response, *attr, attr_len,
-					 remaining, offset, current);
-		if (!res) {
-			return -ENOMEM;
-		}
-
-		if (!*remaining) {
-			*more = true;
-			return 0;
-		}
-
-		attr++;
-		if (!*attr) {
-			continue;
-		}
+	for (attr = attributes; *attr; attr++) {
+		int attr_len;
 
 		res = append_to_coap_pkt(response, ";", 1,
 					 remaining, offset, current);
@@ -362,21 +347,22 @@ static int format_attributes(const char * const *attributes,
 			*more = true;
 			return 0;
 		}
-	}
 
-terminator:
-	res = append_to_coap_pkt(response, ";", 1, remaining, offset, current);
-	if (!res) {
-		return -ENOMEM;
-	}
+		attr_len = strlen(*attr);
 
-	if (!*remaining) {
-		*more = true;
-		return 0;
+		res = append_to_coap_pkt(response, *attr, attr_len,
+					 remaining, offset, current);
+		if (!res) {
+			return -ENOMEM;
+		}
+
+		if (*(attr + 1) && !*remaining) {
+			*more = true;
+			return 0;
+		}
 	}
 
 	*more = false;
-
 	return 0;
 }
 
@@ -456,11 +442,10 @@ int coap_well_known_core_get(struct coap_resource *resource,
 	struct coap_option query;
 	unsigned int num_queries;
 	size_t offset;
-	uint8_t token[8];
+	uint8_t token[COAP_TOKEN_MAX_LEN];
 	uint16_t remaining;
 	uint16_t id;
 	uint8_t tkl;
-	uint8_t format;
 	int r;
 	bool more = false;
 
@@ -496,16 +481,14 @@ int coap_well_known_core_get(struct coap_resource *resource,
 
 	num_queries = r;
 
-	r = coap_packet_init(response, data, len, 1, COAP_TYPE_ACK,
+	r = coap_packet_init(response, data, len, COAP_VERSION_1, COAP_TYPE_ACK,
 			     tkl, token, COAP_RESPONSE_CODE_CONTENT, id);
 	if (r < 0) {
 		goto end;
 	}
 
-	format = 40U; /* application/link-format */
-
-	r = coap_packet_append_option(response, COAP_OPTION_CONTENT_FORMAT,
-				      &format, sizeof(format));
+	r = coap_append_option_int(response, COAP_OPTION_CONTENT_FORMAT,
+				   COAP_CONTENT_FORMAT_APP_LINK_FORMAT);
 	if (r < 0) {
 		goto end;
 	}
@@ -537,6 +520,14 @@ int coap_well_known_core_get(struct coap_resource *resource,
 				    ctx.current, &more);
 		if (r < 0) {
 			goto end;
+		}
+
+		if ((resource + 1) && (resource + 1)->path) {
+			r = append_to_coap_pkt(response, ",", 1, &remaining,
+					       &offset, ctx.current);
+			if (!r) {
+				goto end;
+			}
 		}
 	}
 
@@ -604,28 +595,19 @@ static int format_attributes(const char * const *attributes,
 	bool res;
 
 	if (!attributes) {
-		goto terminator;
+		return 0;
 	}
 
-	for (attr = attributes; *attr; ) {
-		res = append(response, (uint8_t *) *attr, strlen(*attr));
+	for (attr = attributes; *attr; attr++) {
+		res = append_u8(response, (uint8_t) ';');
 		if (!res) {
 			return -ENOMEM;
 		}
 
-		attr++;
-		if (*attr) {
-			res = append_u8(response, (uint8_t) ';');
-			if (!res) {
-				return -ENOMEM;
-			}
+		res = append(response, (uint8_t *) *attr, strlen(*attr));
+		if (!res) {
+			return -ENOMEM;
 		}
-	}
-
-terminator:
-	res = append_u8(response, (uint8_t) ';');
-	if (!res) {
-		return -ENOMEM;
 	}
 
 	return 0;
@@ -656,10 +638,9 @@ int coap_well_known_core_get(struct coap_resource *resource,
 			     uint8_t *data, uint16_t len)
 {
 	struct coap_option query;
-	uint8_t token[8];
+	uint8_t token[COAP_TOKEN_MAX_LEN];
 	uint16_t id;
 	uint8_t tkl;
-	uint8_t format;
 	uint8_t num_queries;
 	int r;
 
@@ -680,15 +661,14 @@ int coap_well_known_core_get(struct coap_resource *resource,
 
 	num_queries = r;
 
-	r = coap_packet_init(response, data, len, 1, COAP_TYPE_ACK,
+	r = coap_packet_init(response, data, len, COAP_VERSION_1, COAP_TYPE_ACK,
 			     tkl, token, COAP_RESPONSE_CODE_CONTENT, id);
 	if (r < 0) {
 		return r;
 	}
 
-	format = 40U; /* application/link-format */
-	r = coap_packet_append_option(response, COAP_OPTION_CONTENT_FORMAT,
-				      &format, sizeof(format));
+	r = coap_append_option_int(response, COAP_OPTION_CONTENT_FORMAT,
+				   COAP_CONTENT_FORMAT_APP_LINK_FORMAT);
 	if (r < 0) {
 		return -EINVAL;
 	}
@@ -706,6 +686,13 @@ int coap_well_known_core_get(struct coap_resource *resource,
 		r = format_resource(resource, response);
 		if (r < 0) {
 			return r;
+		}
+
+		if ((resource + 1) && (resource + 1)->path) {
+			r = append_u8(response, (uint8_t) ',');
+			if (!r) {
+				return -ENOMEM;
+			}
 		}
 	}
 

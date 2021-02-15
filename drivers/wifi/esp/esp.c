@@ -1,14 +1,14 @@
 /*
  * Copyright (c) 2019 Tobias Svehagen
+ * Copyright (c) 2020 Grinn
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #define DT_DRV_COMPAT espressif_esp
 
-#define LOG_LEVEL CONFIG_WIFI_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(wifi_esp);
+LOG_MODULE_REGISTER(wifi_esp, CONFIG_WIFI_LOG_LEVEL);
 
 #include <kernel.h>
 #include <ctype.h>
@@ -21,7 +21,9 @@ LOG_MODULE_REGISTER(wifi_esp);
 #include <drivers/gpio.h>
 #include <drivers/uart.h>
 
+#include <net/dns_resolve.h>
 #include <net/net_if.h>
+#include <net/net_ip.h>
 #include <net/net_offload.h>
 #include <net/wifi_mgmt.h>
 
@@ -64,6 +66,117 @@ K_KERNEL_STACK_DEFINE(esp_workq_stack,
 		      CONFIG_WIFI_ESP_WORKQ_STACK_SIZE);
 
 struct esp_data esp_driver_data;
+
+static void esp_configure_hostname(struct esp_data *data)
+{
+#if defined(CONFIG_NET_HOSTNAME_ENABLE)
+	char cmd[sizeof("AT+CWHOSTNAME=\"\"") + NET_HOSTNAME_MAX_LEN];
+
+	snprintk(cmd, sizeof(cmd), "AT+CWHOSTNAME=\"%s\"", net_hostname_get());
+	cmd[sizeof(cmd) - 1] = '\0';
+
+	esp_cmd_send(data, NULL, 0, cmd, ESP_CMD_TIMEOUT);
+#else
+	ARG_UNUSED(data);
+#endif
+}
+
+static inline uint8_t esp_mode_from_flags(struct esp_data *data)
+{
+	uint8_t flags = data->flags;
+	uint8_t mode = 0;
+
+	if (flags & (EDF_STA_CONNECTED | EDF_STA_LOCK)) {
+		mode |= ESP_MODE_STA;
+	}
+
+	if (flags & EDF_AP_ENABLED) {
+		mode |= ESP_MODE_AP;
+	}
+
+	/*
+	 * ESP AT 1.7 does not allow to disable radio, so enter STA mode
+	 * instead.
+	 */
+	if (IS_ENABLED(CONFIG_WIFI_ESP_AT_VERSION_1_7) &&
+	    mode == ESP_MODE_NONE) {
+		mode = ESP_MODE_STA;
+	}
+
+	return mode;
+}
+
+static int esp_mode_switch(struct esp_data *data, uint8_t mode)
+{
+	char cmd[] = "AT+"_CWMODE"=X";
+	int err;
+
+	cmd[sizeof(cmd) - 2] = ('0' + mode);
+	LOG_DBG("Switch to mode %hhu", mode);
+
+	err = esp_cmd_send(data, NULL, 0, cmd, ESP_CMD_TIMEOUT);
+	if (err) {
+		LOG_WRN("Failed to switch to mode %d: %d", (int) mode, err);
+	}
+
+	return err;
+}
+
+static int esp_mode_switch_if_needed(struct esp_data *data)
+{
+	uint8_t new_mode = esp_mode_from_flags(data);
+	uint8_t old_mode = data->mode;
+	int err;
+
+	if (old_mode == new_mode) {
+		return 0;
+	}
+
+	data->mode = new_mode;
+
+	err = esp_mode_switch(data, new_mode);
+	if (err) {
+		return err;
+	}
+
+	if (!(old_mode & ESP_MODE_STA) && (new_mode & ESP_MODE_STA)) {
+		/*
+		 * Hostname change is applied only when STA is enabled.
+		 */
+		esp_configure_hostname(data);
+	}
+
+	return 0;
+}
+
+static void esp_mode_switch_submit_if_needed(struct esp_data *data)
+{
+	if (data->mode != esp_mode_from_flags(data)) {
+		k_work_submit_to_queue(&data->workq, &data->mode_switch_work);
+	}
+}
+
+static void esp_mode_switch_work(struct k_work *work)
+{
+	struct esp_data *data =
+		CONTAINER_OF(work, struct esp_data, mode_switch_work);
+
+	(void)esp_mode_switch_if_needed(data);
+}
+
+static inline int esp_mode_flags_set(struct esp_data *data, uint8_t flags)
+{
+	esp_flags_set(data, flags);
+
+	return esp_mode_switch_if_needed(data);
+}
+
+static inline int esp_mode_flags_clear(struct esp_data *data, uint8_t flags)
+{
+	esp_flags_clear(data, flags);
+
+	return esp_mode_switch_if_needed(data);
+}
 
 /*
  * Modem Response Command Handlers
@@ -172,7 +285,84 @@ MODEM_CMD_DEFINE(on_cmd_cwlap)
 	return 0;
 }
 
-static struct modem_cmd response_cmds[] = {
+static void esp_dns_work(struct k_work *work)
+{
+	struct esp_data *data = CONTAINER_OF(work, struct esp_data, dns_work);
+	struct dns_resolve_context *dnsctx;
+	struct sockaddr_in *addrs = data->dns_addresses;
+	const struct sockaddr *dns_servers[ESP_MAX_DNS + 1] = {};
+	size_t i;
+	int err;
+
+	for (i = 0; i < ESP_MAX_DNS; i++) {
+		if (!addrs[i].sin_addr.s_addr) {
+			break;
+		}
+		dns_servers[i] = (struct sockaddr *) &addrs[i];
+	}
+
+	dnsctx = dns_resolve_get_default();
+	for (i = 0; i < CONFIG_DNS_NUM_CONCUR_QUERIES; i++) {
+		if (!dnsctx->queries[i].cb) {
+			continue;
+		}
+
+		dns_resolve_cancel(dnsctx, dnsctx->queries[i].id);
+	}
+
+	dns_resolve_close(dnsctx);
+
+	err = dns_resolve_init(dnsctx, NULL, dns_servers);
+	if (err) {
+		LOG_ERR("Could not set DNS servers: %d", err);
+	}
+
+	LOG_DBG("DNS resolver reconfigured");
+}
+
+/* +CIPDNS:enable[,"DNS IP1"[,"DNS IP2"[,"DNS IP3"]]] */
+MODEM_CMD_DEFINE(on_cmd_cipdns)
+{
+	struct esp_data *dev = CONTAINER_OF(data, struct esp_data,
+					    cmd_handler_data);
+	struct sockaddr_in *addrs = dev->dns_addresses;
+	char **servers = (char **)argv + 1;
+	size_t num_servers = argc - 1;
+	size_t valid_servers = 0;
+	size_t i;
+	int err;
+
+	for (i = 0; i < ESP_MAX_DNS; i++) {
+		if (i >= num_servers) {
+			addrs[i].sin_addr.s_addr = 0;
+			break;
+		}
+
+		servers[i] = str_unquote(servers[i]);
+		LOG_DBG("DNS[%zu]: %s", i, log_strdup(servers[i]));
+
+		err = net_addr_pton(AF_INET, servers[i], &addrs[i].sin_addr);
+		if (err) {
+			LOG_ERR("Invalid DNS address: %s",
+				log_strdup(servers[i]));
+			addrs[i].sin_addr.s_addr = 0;
+			break;
+		}
+
+		addrs[i].sin_family = AF_INET;
+		addrs[i].sin_port = htons(53);
+
+		valid_servers++;
+	}
+
+	if (valid_servers) {
+		k_work_submit(&dev->dns_work);
+	}
+
+	return 0;
+}
+
+static const struct modem_cmd response_cmds[] = {
 	MODEM_CMD("OK", on_cmd_ok, 0U, ""), /* 3GPP */
 	MODEM_CMD("ERROR", on_cmd_error, 0U, ""), /* 3GPP */
 };
@@ -182,11 +372,11 @@ MODEM_CMD_DEFINE(on_cmd_wifi_connected)
 	struct esp_data *dev = CONTAINER_OF(data, struct esp_data,
 					    cmd_handler_data);
 
-	if (esp_flag_is_set(dev, EDF_STA_CONNECTED)) {
+	if (esp_flags_are_set(dev, EDF_STA_CONNECTED)) {
 		return 0;
 	}
 
-	esp_flag_set(dev, EDF_STA_CONNECTED);
+	esp_flags_set(dev, EDF_STA_CONNECTED);
 	wifi_mgmt_raise_connect_result_event(dev->net_iface, 0);
 
 	return 0;
@@ -197,11 +387,13 @@ MODEM_CMD_DEFINE(on_cmd_wifi_disconnected)
 	struct esp_data *dev = CONTAINER_OF(data, struct esp_data,
 					    cmd_handler_data);
 
-	if (!esp_flag_is_set(dev, EDF_STA_CONNECTED)) {
+	if (!esp_flags_are_set(dev, EDF_STA_CONNECTED)) {
 		return 0;
 	}
 
-	esp_flag_clear(dev, EDF_STA_CONNECTED);
+	esp_flags_clear(dev, EDF_STA_CONNECTED);
+	esp_mode_switch_submit_if_needed(dev);
+
 	net_if_ipv4_addr_rm(dev->net_iface, &dev->ip);
 	wifi_mgmt_raise_disconnect_result_event(dev->net_iface, 0);
 
@@ -240,13 +432,15 @@ static void esp_ip_addr_work(struct k_work *work)
 					    ip_addr_work);
 	int ret;
 
-	struct modem_cmd cmds[] = {
+	static const struct modem_cmd cmds[] = {
 		MODEM_CMD("+"_CIPSTA":", on_cmd_cipsta, 2U, ":"),
 	};
+	static const struct modem_cmd dns_cmds[] = {
+		MODEM_CMD_ARGS_MAX("+CIPDNS:", on_cmd_cipdns, 1U, 3U, ","),
+	};
 
-	ret = modem_cmd_send(&dev->mctx.iface, &dev->mctx.cmd_handler,
-			     cmds, ARRAY_SIZE(cmds), "AT+"_CIPSTA"?",
-			     &dev->sem_response, ESP_CMD_TIMEOUT);
+	ret = esp_cmd_send(dev, cmds, ARRAY_SIZE(cmds), "AT+"_CIPSTA"?",
+			   ESP_CMD_TIMEOUT);
 	if (ret < 0) {
 		LOG_WRN("Failed to query IP settings: ret %d", ret);
 		k_delayed_work_submit_to_queue(&dev->workq, &dev->ip_addr_work,
@@ -257,7 +451,19 @@ static void esp_ip_addr_work(struct k_work *work)
 	/* update interface addresses */
 	net_if_ipv4_set_gw(dev->net_iface, &dev->gw);
 	net_if_ipv4_set_netmask(dev->net_iface, &dev->nm);
+#if defined(CONFIG_WIFI_ESP_IP_STATIC)
+	net_if_ipv4_addr_add(dev->net_iface, &dev->ip, NET_ADDR_MANUAL, 0);
+#else
 	net_if_ipv4_addr_add(dev->net_iface, &dev->ip, NET_ADDR_DHCP, 0);
+#endif
+
+	if (IS_ENABLED(CONFIG_WIFI_ESP_DNS_USE)) {
+		ret = esp_cmd_send(dev, dns_cmds, ARRAY_SIZE(dns_cmds),
+				   "AT+CIPDNS?", ESP_CMD_TIMEOUT);
+		if (ret) {
+			LOG_WRN("DNS fetch failed: %d", ret);
+		}
+	}
 }
 
 MODEM_CMD_DEFINE(on_cmd_got_ip)
@@ -280,10 +486,13 @@ MODEM_CMD_DEFINE(on_cmd_connect)
 	link_id = data->match_buf[0] - '0';
 
 	dev = CONTAINER_OF(data, struct esp_data, cmd_handler_data);
-	sock = esp_socket_from_link_id(dev, link_id);
-	if (sock == NULL) {
+	sock = esp_socket_ref_from_link_id(dev, link_id);
+	if (!sock) {
 		LOG_ERR("No socket for link %d", link_id);
+		return 0;
 	}
+
+	esp_socket_unref(sock);
 
 	return 0;
 }
@@ -293,170 +502,161 @@ MODEM_CMD_DEFINE(on_cmd_closed)
 	struct esp_socket *sock;
 	struct esp_data *dev;
 	uint8_t link_id;
+	atomic_val_t old_flags;
 
 	link_id = data->match_buf[0] - '0';
 
 	dev = CONTAINER_OF(data, struct esp_data, cmd_handler_data);
-	sock = esp_socket_from_link_id(dev, link_id);
-	if (sock == NULL) {
+	sock = esp_socket_ref_from_link_id(dev, link_id);
+	if (!sock) {
 		LOG_ERR("No socket for link %d", link_id);
 		return 0;
 	}
 
-	if (!esp_socket_connected(sock)) {
-		LOG_WRN("Link %d already closed", link_id);
-		return 0;
+	old_flags = esp_socket_flags_clear_and_set(sock,
+				ESP_SOCK_CONNECTED, ESP_SOCK_CLOSE_PENDING);
+
+	if (!(old_flags & ESP_SOCK_CONNECTED)) {
+		LOG_DBG("Link %d already closed", link_id);
+		goto socket_unref;
 	}
 
-	sock->flags &= ~(ESP_SOCK_CONNECTED);
-	k_work_submit_to_queue(&dev->workq, &sock->recv_work);
+	if (!(old_flags & ESP_SOCK_CLOSE_PENDING)) {
+		esp_socket_work_submit(sock, &sock->close_work);
+	}
+
+socket_unref:
+	esp_socket_unref(sock);
 
 	return 0;
-}
-
-struct net_pkt *esp_prepare_pkt(struct esp_data *dev, struct net_buf *src,
-				size_t offset, size_t len)
-{
-	struct net_buf *frag;
-	struct net_pkt *pkt;
-	size_t to_copy;
-
-	pkt = net_pkt_rx_alloc_with_buffer(dev->net_iface, len, AF_UNSPEC,
-					   0, K_MSEC(100));
-	if (!pkt) {
-		return NULL;
-	}
-
-	frag = src;
-
-	/* find the right fragment to start copying from */
-	while (frag && offset >= frag->len) {
-		offset -= frag->len;
-		frag = frag->frags;
-	}
-
-	/* traverse the fragment chain until len bytes are copied */
-	while (frag && len > 0) {
-		to_copy = MIN(len, frag->len - offset);
-		if (net_pkt_write(pkt, frag->data + offset, to_copy) != 0) {
-			net_pkt_unref(pkt);
-			return NULL;
-		}
-
-		/* to_copy is always <= len */
-		len -= to_copy;
-		frag = frag->frags;
-
-		/* after the first iteration, this value will be 0 */
-		offset = 0;
-	}
-
-	net_pkt_cursor_init(pkt);
-
-	return pkt;
 }
 
 /*
  * Passive mode: "+IPD,<id>,<len>\r\n"
  * Other:        "+IPD,<id>,<len>:<data>"
  */
-#define MIN_IPD_LEN (sizeof("+IPD,I,LE") - 1)
-#define MAX_IPD_LEN (sizeof("+IPD,I,LLLLE") - 1)
-MODEM_CMD_DIRECT_DEFINE(on_cmd_ipd)
+#define MIN_IPD_LEN (sizeof("+IPD,I,0E") - 1)
+#define MAX_IPD_LEN (sizeof("+IPD,I,4294967295E") - 1)
+
+static int cmd_ipd_parse_hdr(struct net_buf *buf, uint16_t len,
+			     uint8_t *link_id,
+			     int *data_offset, int *data_len,
+			     char *end)
 {
-	char *endptr, end, ipd_buf[MAX_IPD_LEN + 1];
-	int data_offset, data_len, ret;
-	size_t match_len, frags_len;
-	struct esp_socket *sock;
-	struct esp_data *dev;
-	struct net_pkt *pkt;
-	uint8_t link_id;
+	char *endptr, ipd_buf[MAX_IPD_LEN + 1];
+	size_t frags_len;
+	size_t match_len;
 
-	dev = CONTAINER_OF(data, struct esp_data, cmd_handler_data);
-
-	frags_len = net_buf_frags_len(data->rx_buf);
+	frags_len = net_buf_frags_len(buf);
 
 	/* Wait until minimum cmd length is available */
 	if (frags_len < MIN_IPD_LEN) {
-		ret = -EAGAIN;
-		goto out;
+		return -EAGAIN;
 	}
 
 	match_len = net_buf_linearize(ipd_buf, MAX_IPD_LEN,
-				      data->rx_buf, 0, MAX_IPD_LEN);
+				      buf, 0, MAX_IPD_LEN);
 
 	ipd_buf[match_len] = 0;
 	if (ipd_buf[len] != ',' || ipd_buf[len + 2] != ',') {
 		LOG_ERR("Invalid IPD: %s", log_strdup(ipd_buf));
-		ret = len;
-		goto out;
+		return -EBADMSG;
 	}
 
-	link_id = ipd_buf[len + 1] - '0';
-	sock = esp_socket_from_link_id(dev, link_id);
-	if (sock == NULL) {
-		LOG_ERR("No socket for link %d", link_id);
-		ret = len;
-		goto out;
-	}
+	*link_id = ipd_buf[len + 1] - '0';
 
-	/* When using passive mode, the +IPD command ends with \r\n */
-	if (ESP_PROTO_PASSIVE(sock->ip_proto)) {
-		end = '\r';
-	} else {
-		end = ':';
-	}
+	*data_len = strtol(&ipd_buf[len + 3], &endptr, 10);
 
-	data_len = strtol(&ipd_buf[len + 3], &endptr, 10);
 	if (endptr == &ipd_buf[len + 3] ||
 	    (*endptr == 0 && match_len >= MAX_IPD_LEN)) {
-		/* Invalid */
 		LOG_ERR("Invalid IPD len: %s", log_strdup(ipd_buf));
-		ret = len;
-		goto out;
+		return -EBADMSG;
 	} else if (*endptr == 0) {
-		ret = -EAGAIN;
-		goto out;
-	} else if (*endptr != end) {
-		LOG_ERR("Invalid cmd end 0x%02x, expected 0x%02x", *endptr,
-			end);
-		ret = len;
-		goto out;
+		return -EAGAIN;
 	}
 
-	*endptr = 0;
-	data_offset = strlen(ipd_buf) + 1;
+	*end = *endptr;
+	*data_offset = (endptr - ipd_buf) + 1;
+
+	return 0;
+}
+
+static int cmd_ipd_check_hdr_end(struct esp_socket *sock, char actual)
+{
+	char expected;
+
+	/* When using passive mode, the +IPD command ends with \r\n */
+	if (ESP_PROTO_PASSIVE(esp_socket_ip_proto(sock))) {
+		expected = '\r';
+	} else {
+		expected = ':';
+	}
+
+	if (expected != actual) {
+		LOG_ERR("Invalid cmd end 0x%02x, expected 0x%02x", actual,
+			expected);
+		return -EBADMSG;
+	}
+
+	return 0;
+}
+
+MODEM_CMD_DIRECT_DEFINE(on_cmd_ipd)
+{
+	struct esp_data *dev = CONTAINER_OF(data, struct esp_data,
+					    cmd_handler_data);
+	struct esp_socket *sock;
+	int data_offset, data_len;
+	uint8_t link_id;
+	char cmd_end;
+	int err;
+	int ret;
+
+	err = cmd_ipd_parse_hdr(data->rx_buf, len, &link_id, &data_offset,
+				&data_len, &cmd_end);
+	if (err) {
+		if (err == -EAGAIN) {
+			return -EAGAIN;
+		}
+
+		return len;
+	}
+
+	sock = esp_socket_ref_from_link_id(dev, link_id);
+	if (!sock) {
+		LOG_ERR("No socket for link %d", link_id);
+		return len;
+	}
+
+	err = cmd_ipd_check_hdr_end(sock, cmd_end);
+	if (err) {
+		ret = len;
+		goto socket_unref;
+	}
 
 	/*
 	 * When using passive TCP, the data itself is not included in the +IPD
 	 * command but must be polled with AT+CIPRECVDATA.
 	 */
-	if (ESP_PROTO_PASSIVE(sock->ip_proto)) {
-		sock->bytes_avail = data_len;
-		k_work_submit_to_queue(&dev->workq, &sock->recvdata_work);
+	if (ESP_PROTO_PASSIVE(esp_socket_ip_proto(sock))) {
+		esp_socket_work_submit(sock, &sock->recvdata_work);
 		ret = data_offset;
-		goto out;
+		goto socket_unref;
 	}
 
 	/* Do we have the whole message? */
-	if (data_offset + data_len > frags_len) {
+	if (data_offset + data_len > net_buf_frags_len(data->rx_buf)) {
 		ret = -EAGAIN;
-		goto out;
+		goto socket_unref;
 	}
 
-	ret = data_offset + data_len; /* Skip */
+	esp_socket_rx(sock, data->rx_buf, data_offset, data_len);
 
-	pkt = esp_prepare_pkt(dev, data->rx_buf, data_offset, data_len);
-	if (!pkt) {
-		/* FIXME: Should probably terminate connection */
-		LOG_ERR("Failed to get net_pkt: len %d", data_len);
-		goto out;
-	}
+	ret = data_offset + data_len;
 
-	k_fifo_put(&sock->fifo_rx_pkt, pkt);
-	k_work_submit_to_queue(&dev->workq, &sock->recv_work);
+socket_unref:
+	esp_socket_unref(sock);
 
-out:
 	return ret;
 }
 
@@ -487,13 +687,14 @@ MODEM_CMD_DEFINE(on_cmd_ready)
 		LOG_ERR("Unexpected reset");
 	}
 
-	if (esp_flag_is_set(dev, EDF_STA_CONNECTING)) {
-		esp_flag_clear(dev, EDF_STA_CONNECTING);
+	if (esp_flags_are_set(dev, EDF_STA_CONNECTING)) {
 		wifi_mgmt_raise_connect_result_event(dev->net_iface, -1);
-	} else if (esp_flag_is_set(dev, EDF_STA_CONNECTED)) {
-		esp_flag_clear(dev, EDF_STA_CONNECTED);
+	} else if (esp_flags_are_set(dev, EDF_STA_CONNECTED)) {
 		wifi_mgmt_raise_disconnect_result_event(dev->net_iface, 0);
 	}
+
+	dev->flags = 0;
+	dev->mode = 0;
 
 	net_if_ipv4_addr_rm(dev->net_iface, &dev->ip);
 	k_work_submit_to_queue(&dev->workq, &dev->init_work);
@@ -501,7 +702,7 @@ MODEM_CMD_DEFINE(on_cmd_ready)
 	return 0;
 }
 
-static struct modem_cmd unsol_cmds[] = {
+static const struct modem_cmd unsol_cmds[] = {
 	MODEM_CMD("WIFI CONNECTED", on_cmd_wifi_connected, 0U, ""),
 	MODEM_CMD("WIFI DISCONNECT", on_cmd_wifi_disconnected, 0U, ""),
 	MODEM_CMD("WIFI GOT IP", on_cmd_got_ip, 0U, ""),
@@ -525,19 +726,24 @@ static void esp_mgmt_scan_work(struct k_work *work)
 {
 	struct esp_data *dev;
 	int ret;
-	struct modem_cmd cmds[] = {
+	static const struct modem_cmd cmds[] = {
 		MODEM_CMD("+CWLAP:", on_cmd_cwlap, 4U, ","),
 	};
 
 	dev = CONTAINER_OF(work, struct esp_data, scan_work);
 
-	ret = modem_cmd_send(&dev->mctx.iface, &dev->mctx.cmd_handler,
-			     cmds, ARRAY_SIZE(cmds), "AT+CWLAP",
-			     &dev->sem_response, ESP_SCAN_TIMEOUT);
+	ret = esp_mode_flags_set(dev, EDF_STA_LOCK);
+	if (ret < 0) {
+		goto out;
+	}
+	ret = esp_cmd_send(dev, cmds, ARRAY_SIZE(cmds), "AT+CWLAP",
+			   ESP_SCAN_TIMEOUT);
+	esp_mode_flags_clear(dev, EDF_STA_LOCK);
 	if (ret < 0) {
 		LOG_ERR("Failed to scan: ret %d", ret);
 	}
 
+out:
 	dev->scan_cb(dev->net_iface, 0, NULL);
 	dev->scan_cb = NULL;
 }
@@ -576,33 +782,40 @@ static void esp_mgmt_connect_work(struct k_work *work)
 {
 	struct esp_data *dev;
 	int ret;
-	struct modem_cmd cmds[] = {
+	static const struct modem_cmd cmds[] = {
 		MODEM_CMD("FAIL", on_cmd_fail, 0U, ""),
 	};
 
 	dev = CONTAINER_OF(work, struct esp_data, connect_work);
 
-	ret = modem_cmd_send(&dev->mctx.iface, &dev->mctx.cmd_handler,
-			     cmds, ARRAY_SIZE(cmds), dev->conn_cmd,
-			     &dev->sem_response, ESP_CONNECT_TIMEOUT);
+	ret = esp_mode_flags_set(dev, EDF_STA_LOCK);
+	if (ret < 0) {
+		goto out;
+	}
+
+	ret = esp_cmd_send(dev, cmds, ARRAY_SIZE(cmds), dev->conn_cmd,
+			   ESP_CONNECT_TIMEOUT);
 
 	memset(dev->conn_cmd, 0, sizeof(dev->conn_cmd));
 
 	if (ret < 0) {
-		if (esp_flag_is_set(dev, EDF_STA_CONNECTED)) {
-			esp_flag_clear(dev, EDF_STA_CONNECTED);
+		if (esp_flags_are_set(dev, EDF_STA_CONNECTED)) {
+			esp_flags_clear(dev, EDF_STA_CONNECTED);
 			wifi_mgmt_raise_disconnect_result_event(dev->net_iface,
 								0);
 		} else {
 			wifi_mgmt_raise_connect_result_event(dev->net_iface,
 							     ret);
 		}
-	} else if (!esp_flag_is_set(dev, EDF_STA_CONNECTED)) {
-		esp_flag_set(dev, EDF_STA_CONNECTED);
+	} else if (!esp_flags_are_set(dev, EDF_STA_CONNECTED)) {
+		esp_flags_set(dev, EDF_STA_CONNECTED);
 		wifi_mgmt_raise_connect_result_event(dev->net_iface, 0);
 	}
 
-	esp_flag_clear(dev, EDF_STA_CONNECTING);
+	esp_mode_flags_clear(dev, EDF_STA_LOCK);
+
+out:
+	esp_flags_clear(dev, EDF_STA_CONNECTING);
 }
 
 static int esp_mgmt_connect(const struct device *dev,
@@ -615,12 +828,11 @@ static int esp_mgmt_connect(const struct device *dev,
 		return -EIO;
 	}
 
-	if (esp_flag_is_set(data, EDF_STA_CONNECTED) ||
-	    esp_flag_is_set(data, EDF_STA_CONNECTING)) {
+	if (esp_flags_are_set(data, EDF_STA_CONNECTED | EDF_STA_CONNECTING)) {
 		return -EALREADY;
 	}
 
-	esp_flag_set(data, EDF_STA_CONNECTING);
+	esp_flags_set(data, EDF_STA_CONNECTING);
 
 	len = snprintk(data->conn_cmd, sizeof(data->conn_cmd),
 		       "AT+"_CWJAP"=\"");
@@ -647,9 +859,7 @@ static int esp_mgmt_disconnect(const struct device *dev)
 	struct esp_data *data = dev->data;
 	int ret;
 
-	ret = modem_cmd_send(&data->mctx.iface, &data->mctx.cmd_handler,
-			     NULL, 0, "AT+CWQAP", &data->sem_response,
-			     ESP_CMD_TIMEOUT);
+	ret = esp_cmd_send(data, NULL, 0, "AT+CWQAP", ESP_CMD_TIMEOUT);
 
 	return ret;
 }
@@ -662,9 +872,7 @@ static int esp_mgmt_ap_enable(const struct device *dev,
 	struct esp_data *data = dev->data;
 	int ecn = 0, len, ret;
 
-	ret = modem_cmd_send(&data->mctx.iface, &data->mctx.cmd_handler,
-			     NULL, 0, "AT+"_CWMODE"=3", &data->sem_response,
-			     ESP_CMD_TIMEOUT);
+	ret = esp_mode_flags_set(data, EDF_AP_ENABLED);
 	if (ret < 0) {
 		LOG_ERR("Failed to enable AP mode, ret %d", ret);
 		return ret;
@@ -686,9 +894,7 @@ static int esp_mgmt_ap_enable(const struct device *dev,
 	snprintk(&cmd[len], sizeof(cmd) - len, "\",%d,%d", params->channel,
 		 ecn);
 
-	ret = modem_cmd_send(&data->mctx.iface, &data->mctx.cmd_handler,
-			     NULL, 0, cmd, &data->sem_response,
-			     ESP_CMD_TIMEOUT);
+	ret = esp_cmd_send(data, NULL, 0, cmd, ESP_CMD_TIMEOUT);
 
 	return ret;
 }
@@ -696,36 +902,45 @@ static int esp_mgmt_ap_enable(const struct device *dev,
 static int esp_mgmt_ap_disable(const struct device *dev)
 {
 	struct esp_data *data = dev->data;
-	int ret;
 
-	ret = modem_cmd_send(&data->mctx.iface, &data->mctx.cmd_handler,
-			     NULL, 0, "AT+"_CWMODE"=1", &data->sem_response,
-			     ESP_CMD_TIMEOUT);
-
-	return ret;
+	return esp_mode_flags_clear(data, EDF_AP_ENABLED);
 }
 
 static void esp_init_work(struct k_work *work)
 {
 	struct esp_data *dev;
 	int ret;
-	static struct setup_cmd setup_cmds[] = {
+	static const struct setup_cmd setup_cmds[] = {
 		SETUP_CMD_NOHANDLE("AT"),
 		/* turn off echo */
 		SETUP_CMD_NOHANDLE("ATE0"),
 		SETUP_CMD_NOHANDLE("AT+UART_CUR="_UART_CUR),
 #if DT_INST_NODE_HAS_PROP(0, target_speed)
 	};
-	static struct setup_cmd setup_cmds_target_baudrate[] = {
+	static const struct setup_cmd setup_cmds_target_baudrate[] = {
 		SETUP_CMD_NOHANDLE("AT"),
 #endif
-		SETUP_CMD_NOHANDLE("AT+"_CWMODE"=1"),
+#if defined(CONFIG_WIFI_ESP_AT_VERSION_1_7)
+		SETUP_CMD_NOHANDLE(ESP_CMD_CWMODE(STA)),
+#endif
+#if defined(CONFIG_WIFI_ESP_IP_STATIC)
+		/* enable Static IP Config */
+		SETUP_CMD_NOHANDLE(ESP_CMD_DHCP_ENABLE(STATION, 0)),
+		SETUP_CMD_NOHANDLE(ESP_CMD_SET_IP(CONFIG_WIFI_ESP_IP_ADDRESS,
+						  CONFIG_WIFI_ESP_IP_GATEWAY,
+						  CONFIG_WIFI_ESP_IP_MASK)),
+#else
+		/* enable DHCP */
+		SETUP_CMD_NOHANDLE(ESP_CMD_DHCP_ENABLE(STATION, 1)),
+#endif
 		/* enable multiple socket support */
 		SETUP_CMD_NOHANDLE("AT+CIPMUX=1"),
 		/* only need ecn,ssid,rssi,channel */
 		SETUP_CMD_NOHANDLE("AT+CWLAPOPT=0,23"),
 #if defined(CONFIG_WIFI_ESP_AT_VERSION_2_0)
+		SETUP_CMD_NOHANDLE(ESP_CMD_CWMODE(STA)),
 		SETUP_CMD_NOHANDLE("AT+CWAUTOCONN=0"),
+		SETUP_CMD_NOHANDLE(ESP_CMD_CWMODE(NONE)),
 #endif
 #if defined(CONFIG_WIFI_ESP_PASSIVE_MODE)
 		SETUP_CMD_NOHANDLE("AT+CIPRECVMODE=1"),
@@ -780,6 +995,17 @@ static void esp_init_work(struct k_work *work)
 
 	net_if_set_link_addr(dev->net_iface, dev->mac_addr,
 			     sizeof(dev->mac_addr), NET_LINK_ETHERNET);
+
+	if (IS_ENABLED(CONFIG_WIFI_ESP_AT_VERSION_1_7)) {
+		/* This is the mode entered in above setup commands */
+		dev->mode = ESP_MODE_STA;
+
+		/*
+		 * In case of ESP 1.7 this is the first time CWMODE is entered
+		 * STA mode, so request hostname change now.
+		 */
+		esp_configure_hostname(dev);
+	}
 
 	LOG_INF("ESP Wi-Fi ready");
 
@@ -864,6 +1090,10 @@ static int esp_init(const struct device *dev)
 	k_delayed_work_init(&data->ip_addr_work, esp_ip_addr_work);
 	k_work_init(&data->scan_work, esp_mgmt_scan_work);
 	k_work_init(&data->connect_work, esp_mgmt_connect_work);
+	k_work_init(&data->mode_switch_work, esp_mode_switch_work);
+	if (IS_ENABLED(CONFIG_WIFI_ESP_DNS_USE)) {
+		k_work_init(&data->dns_work, esp_dns_work);
+	}
 
 	esp_socket_init(data);
 
@@ -924,7 +1154,7 @@ error:
 	return ret;
 }
 
-NET_DEVICE_OFFLOAD_INIT(wifi_esp, CONFIG_WIFI_ESP_NAME,
-			esp_init, device_pm_control_nop, &esp_driver_data, NULL,
-			CONFIG_WIFI_INIT_PRIORITY, &esp_api,
-			ESP_MTU);
+NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, esp_init, device_pm_control_nop,
+				  &esp_driver_data, NULL,
+				  CONFIG_WIFI_INIT_PRIORITY, &esp_api,
+				  ESP_MTU);

@@ -44,4 +44,6 @@ source "drivers/counter/Kconfig.native_posix"
 
 source "drivers/counter/Kconfig.mcux_pit"
 
+source "drivers/counter/Kconfig.xlnx"
+
 endif # COUNTER

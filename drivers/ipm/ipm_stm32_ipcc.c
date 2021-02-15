@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <drivers/ipm.h>
 #include <soc.h>
+#include <stm32_ll_ipcc.h>
 
 #include <drivers/clock_control/stm32_clock_control.h>
 
@@ -294,8 +295,9 @@ static const struct stm32_ipcc_mailbox_config stm32_ipcc_mailbox_0_config = {
 
 };
 
-DEVICE_AND_API_INIT(mailbox_0, DT_INST_LABEL(0),
+DEVICE_DT_INST_DEFINE(0,
 		    &stm32_ipcc_mailbox_init,
+		    device_pm_control_nop,
 		    &stm32_IPCC_data, &stm32_ipcc_mailbox_0_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &stm32_ipcc_mailbox_driver_api);
@@ -304,11 +306,11 @@ static void stm32_ipcc_mailbox_config_func(const struct device *dev)
 {
 	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, rxo, irq),
 		    DT_INST_IRQ_BY_NAME(0, rxo, priority),
-		    stm32_ipcc_mailbox_rx_isr, DEVICE_GET(mailbox_0), 0);
+		    stm32_ipcc_mailbox_rx_isr, DEVICE_DT_INST_GET(0), 0);
 
 	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, txf, irq),
 		    DT_INST_IRQ_BY_NAME(0, txf, priority),
-		    stm32_ipcc_mailbox_tx_isr, DEVICE_GET(mailbox_0), 0);
+		    stm32_ipcc_mailbox_tx_isr, DEVICE_DT_INST_GET(0), 0);
 
 	irq_enable(DT_INST_IRQ_BY_NAME(0, rxo, irq));
 	irq_enable(DT_INST_IRQ_BY_NAME(0, txf, irq));

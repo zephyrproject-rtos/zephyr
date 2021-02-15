@@ -141,6 +141,8 @@ void test_fs_open_flags(void)
 	};
 	int block = 1;
 
+	fs_file_t_init(&ts.file);
+
 	ZBEGIN("Attempt open non-existent");
 	ZOPEN(&ts, 0, -ENOENT);
 	ZOPEN(&ts, FS_O_WRITE, -ENOENT);

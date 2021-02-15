@@ -54,6 +54,22 @@ config NET_SOCKETS_SOCKOPT_TLS
 	  Enable TLS socket option support which automatically establishes
 	  a TLS connection to the remote host.
 
+config NET_SOCKETS_TLS_SET_MAX_FRAGMENT_LENGTH
+	bool "Set Maximum Fragment Length (MFL)"
+	default y
+	help
+	  Call mbedtls_ssl_conf_max_frag_len() on created TLS context
+	  configuration, so that Maximum Fragment Length (MFL) will be sent to
+	  peer using RFC 6066 max_fragment_length extension.
+
+	  Maximum Fragment Length (MFL) value is automatically chosen based on
+	  MBEDTLS_SSL_OUT_CONTENT_LEN and MBEDTLS_SSL_IN_CONTENT_LEN mbed TLS
+	  macros (which are configured by CONFIG_MBEDTLS_SSL_MAX_CONTENT_LEN in
+	  case of default mbed TLS config).
+
+	  This is mostly useful for TLS client side to tell TLS server what is
+	  the maximum supported receive record length.
+
 config NET_SOCKETS_ENABLE_DTLS
 	bool "Enable DTLS socket support [EXPERIMENTAL]"
 	depends on NET_SOCKETS_SOCKOPT_TLS

@@ -35,7 +35,7 @@
 				    "control_regs";
 			microcode = <0x63b00000  0x1000>;
 			dma-channels = <8>;
-			#dma-cells = <0>;
+			#dma-cells = <1>;
 			label = "PL330";
 		};
 	};
@@ -52,6 +52,24 @@
 			reg-names = "iproc_pcie_regs", "map_lowmem",
 				    "map_highmem";
 			label = "PCIE_0";
+			dmas = <&pl330 0>, <&pl330 1>;
+			dma-names = "txdma", "rxdma";
+		};
+
+		paxdma: paxdma@4e100800 {
+			compatible = "brcm,iproc-pax-dma-v2";
+			label = "pax_dma";
+			reg = <0x0 0x4e100800 0x0 0x2100>,
+			      <0x0 0x4f000000 0x0 0x200000>,
+			      <0x0 0x4f200000 0x0 0x10000>;
+			reg-names = "dme_regs", "rm_ring_regs",
+				    "rm_comm_regs";
+			dma-channels = <4>;
+			#dma-cells = <1>;
+			bd-memory = <0x63b00000 0x100000>;
+			scr-addr-loc = <0x200061f0>;
+			scr-size-loc = <0x200061f8>;
+			pcie-ep = <&pcie0_ep>;
 		};
 	};
 };

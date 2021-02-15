@@ -5,9 +5,4 @@ description: STMicroelectronics LIS2DH12 3-axis accelerometer
 
 compatible: "st,lis2dh12"
 
-include: i2c-device.yaml
-
-properties:
-    irq-gpios:
-      required: false
-      type: phandle-array
+include: ["i2c-device.yaml", "st,lis2dh-common.yaml"]

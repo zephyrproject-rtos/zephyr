@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: Apache-2.0
+
+CONFIG_SOC_SERIES_NRF52X=y
+CONFIG_SOC_NRF52840_QIAA=y
+CONFIG_BOARD_ARDUINO_NANO_33_BLE=y
+
+# Enable MPU
+CONFIG_ARM_MPU=y
+CONFIG_HW_STACK_PROTECTION=y
+
+# enable peripherals
+CONFIG_GPIO=y
+CONFIG_SERIAL=y
+CONFIG_CONSOLE=y
+
+# enable flashing and linker options
+CONFIG_USE_DT_CODE_PARTITION=y
+
+# additional board options
+CONFIG_GPIO_AS_PINRESET=y

@@ -1,0 +1,46 @@
+type: seq
+sequence:
+  - type: map
+    required: no
+    mapping:
+      "available":
+        type: bool
+        required: false
+      "connected":
+        type: bool
+        required: true
+      "id":
+        type: str
+        required: true
+      "notes":
+        type: str
+        required: false
+      "platform":
+        type: str
+        required: true
+      "probe_id":
+        type: str
+        required: false
+      "product":
+        type: str
+        required: true
+      "runner":
+        type: str
+        required: true
+      "serial":
+        type: str
+        required: false
+      "post_script":
+        type: str
+        required: false
+      "post_flash_script":
+        type: str
+        required: false
+      "pre_script":
+        type: str
+        required: false
+      "fixtures":
+        type: seq
+        required: no
+        sequence:
+          - type: str

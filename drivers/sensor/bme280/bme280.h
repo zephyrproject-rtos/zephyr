@@ -25,6 +25,7 @@
 #define BMP280_CHIP_ID_SAMPLE_2         0x57
 #define BMP280_CHIP_ID_MP               0x58
 #define BME280_CHIP_ID                  0x60
+#define BME280_MODE_SLEEP               0x00
 #define BME280_MODE_FORCED              0x01
 #define BME280_MODE_NORMAL              0x03
 #define BME280_SPI_3W_DISABLE           0x00
@@ -107,5 +108,10 @@
 #define BME280_CONFIG_VAL               (BME280_STANDBY | \
 					 BME280_FILTER |  \
 					 BME280_SPI_3W_DISABLE)
+
+
+#define BME280_CTRL_MEAS_OFF_VAL		(BME280_PRESS_OVER | \
+					 BME280_TEMP_OVER |  \
+					 BME280_MODE_SLEEP)
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_BME280_BME280_H_ */

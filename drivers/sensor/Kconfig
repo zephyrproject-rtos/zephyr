@@ -23,6 +23,7 @@ config SENSOR_INIT_PRIORITY
 config SENSOR_SHELL
 	bool "Enable sensor shell"
 	depends on SHELL
+	select CBPRINTF_FP_SUPPORT
 	default y
 	help
 	  This shell provides access to basic sensor data.
@@ -90,6 +91,8 @@ source "drivers/sensor/hmc5883l/Kconfig"
 source "drivers/sensor/hp206c/Kconfig"
 
 source "drivers/sensor/hts221/Kconfig"
+
+source "drivers/sensor/icm42605/Kconfig"
 
 source "drivers/sensor/iis2dh/Kconfig"
 
@@ -188,5 +191,7 @@ source "drivers/sensor/vl53l0x/Kconfig"
 source "drivers/sensor/nxp_kinetis_temp/Kconfig"
 
 source "drivers/sensor/wsen_itds/Kconfig"
+
+source "drivers/sensor/mcux_acmp/Kconfig"
 
 endif # SENSOR

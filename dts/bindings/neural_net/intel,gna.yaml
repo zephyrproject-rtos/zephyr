@@ -1,0 +1,19 @@
+# Copyright (c) 2021 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Intel Gaussian Mixture Model and Neural Network Accelerator (GNA)
+
+compatible: "intel,gna"
+
+include: [base.yaml]
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    interrupt-parent:
+      required: true

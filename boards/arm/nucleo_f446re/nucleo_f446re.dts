@@ -82,6 +82,10 @@
 	status = "okay";
 };
 
+&backup_sram {
+	status = "okay";
+};
+
 &flash0 {
 
 	partitions {

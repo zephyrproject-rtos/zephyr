@@ -18,6 +18,28 @@ config PCIE_MSI
 	  runtime) to use them. This is typically required for PCIe devices
 	  to generate interrupts at all.
 
+if PCIE_MSI
+
+config PCIE_MSI_MULTI_VECTOR
+	bool "Enable MSI multi-vector support"
+	help
+	  MSI can support up to 32 different messages. This will enable the
+	  support of such capability so each message can get a vector
+	  assigned to it. This will require for the selected architecture
+	  to provide the necessary logic to make it work. Disable this if
+	  the vectors cannot be managed by the hardware or if none of the
+	  peripheral require this.
+
+config PCIE_MSI_X
+	bool "Enable MSI-X support"
+	help
+	  If one or more device support MSI-X, you'll need to enable this.
+	  If a device exposes support for both MSI-X and MSI, MSI-X will be
+	  used and MSI disabled on that device. Enable PCIE_MSI_MULTI_VECTOR
+	  if you want to support multi-vector on MSI-X as well.
+
+endif # PCIE_MSI
+
 config PCIE_SHELL
 	bool "Enable PCIe/new PCI Shell"
 	default y

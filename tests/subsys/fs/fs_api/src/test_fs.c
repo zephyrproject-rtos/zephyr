@@ -22,6 +22,7 @@ static char *cur = buffer;
 static int file_length;
 static struct fs_mount_t *mp[FS_TYPE_EXTERNAL_BASE];
 static bool nospace;
+static int opendir_result;
 
 static
 int temp_open(struct fs_file_t *zfp, const char *file_name, fs_mode_t flags)
@@ -208,17 +209,21 @@ static int temp_mkdir(struct fs_mount_t *mountp, const char *path)
 	return 0;
 }
 
+void mock_opendir_result(int ret)
+{
+	opendir_result = ret;
+}
+
 static int temp_opendir(struct fs_dir_t *zdp, const char *path)
 {
 	if (zdp == NULL || path == NULL) {
 		return -EINVAL;
 	}
 
-	if (zdp->dirp) {
-		if (strcmp(zdp->dirp, path) == 0) {
-			return -EIO;
-		}
+	if (opendir_result) {
+		return opendir_result;
 	}
+
 	zdp->dirp = (char *)path;
 	return 0;
 }
@@ -248,6 +253,11 @@ static int temp_readdir(struct fs_dir_t *zdp, struct fs_dirent *entry)
 	case 2:
 		strcpy(entry->name, "test.txt");
 		entry->type = FS_DIR_ENTRY_FILE;
+		i++;
+		break;
+	case 3:
+		strcpy(entry->name, "..");
+		entry->type = FS_DIR_ENTRY_DIR;
 		i++;
 		break;
 	default:
@@ -295,11 +305,11 @@ static int temp_statvfs(struct fs_mount_t *mountp,
 
 static int temp_mount(struct fs_mount_t *mountp)
 {
-	size_t len = strlen(mountp->mnt_point);
-
 	if (mountp == NULL) {
 		return -EINVAL;
 	}
+
+	size_t len = strlen(mountp->mnt_point);
 
 	if (mountp->mnt_point[len - 1] != ':') {
 		return -EINVAL;

@@ -64,8 +64,17 @@ void test_deadline(void)
 		 * deadlines end up in the opposite order due to the
 		 * changing "now" between calls to
 		 * k_thread_deadline_set().
+		 *
+		 * Use only 30 bits of significant value.  The API
+		 * permits 31 (strictly: the deadline time of the
+		 * "first" runnable thread in any given priority and
+		 * the "last" must be less than 2^31), but because the
+		 * time between our generation here and the set of the
+		 * deadline below takes non-zero time, it's possible
+		 * to see rollovers.  Easier than using a modulus test
+		 * or whatnot to restrict the values.
 		 */
-		thread_deadlines[i] = sys_rand32_get() & 0x7fffff00;
+		thread_deadlines[i] = sys_rand32_get() & 0x3fffff00;
 	}
 
 	zassert_true(n_exec == 0, "threads ran too soon");

@@ -106,7 +106,7 @@ static const struct dac_driver_api api_sam0_driver_api = {
 		.refsel = UTIL_CAT(SAM0_DAC_REFSEL_, SAM0_DAC_REFSEL(n)),      \
 	};								       \
 									       \
-	DEVICE_AND_API_INIT(dac_##n, DT_INST_LABEL(n), &dac_sam0_init, NULL,   \
+	DEVICE_DT_INST_DEFINE(n, &dac_sam0_init, device_pm_control_nop, NULL,  \
 			    &dac_sam0_cfg_##n, POST_KERNEL,		       \
 			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	       \
 			    &api_sam0_driver_api)

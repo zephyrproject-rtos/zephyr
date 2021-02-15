@@ -1482,7 +1482,7 @@ int bt_mesh_cfg_mod_app_get_vnd(uint16_t net_idx, uint16_t addr, uint16_t elem_a
 	}
 
 	return mod_member_list_get(OP_VND_MOD_APP_GET, OP_VND_MOD_APP_LIST,
-				   net_idx, addr, elem_addr, mod_id, CID_NVAL,
+				   net_idx, addr, elem_addr, mod_id, cid,
 				   status, apps, app_cnt);
 }
 
@@ -1525,6 +1525,11 @@ static int mod_sub(uint32_t op, uint16_t net_idx, uint16_t addr, uint16_t elem_a
 		BT_ERR("model_send() failed (err %d)", err);
 		cli_reset();
 		return err;
+	}
+
+	if (!status) {
+		cli_reset();
+		return 0;
 	}
 
 	return cli_wait();
@@ -1721,7 +1726,7 @@ int bt_mesh_cfg_mod_sub_get_vnd(uint16_t net_idx, uint16_t addr, uint16_t elem_a
 	}
 
 	return mod_member_list_get(OP_MOD_SUB_GET_VND, OP_MOD_SUB_LIST_VND,
-				   net_idx, addr, elem_addr, mod_id, CID_NVAL,
+				   net_idx, addr, elem_addr, mod_id, cid,
 				   status, subs, sub_cnt);
 }
 

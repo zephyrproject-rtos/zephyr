@@ -20,6 +20,7 @@ zephyr_library_sources_ifdef(CONFIG_MULTIBOOT multiboot.c)
 zephyr_library_sources_ifdef(CONFIG_ACPI acpi.c)
 zephyr_library_sources_ifdef(CONFIG_X86_MMU x86_mmu.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE userspace.c)
+zephyr_library_sources_ifdef(CONFIG_CACHE_MANAGEMENT cache.c)
 
 zephyr_library_sources_ifdef(CONFIG_X86_VERY_EARLY_CONSOLE early_serial.c)
 

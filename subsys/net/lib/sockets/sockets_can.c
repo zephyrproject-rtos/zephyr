@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Intel Corporation
+ * Copyright (c) 2021 Nordic Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -262,6 +263,8 @@ static ssize_t zcan_recvfrom_ctx(struct net_context *ctx, void *buf,
 
 	if ((flags & ZSOCK_MSG_DONTWAIT) || sock_is_nonblock(ctx)) {
 		timeout = K_NO_WAIT;
+	} else {
+		net_context_get_option(ctx, NET_OPT_RCVTIMEO, &timeout, NULL);
 	}
 
 	if (flags & ZSOCK_MSG_PEEK) {

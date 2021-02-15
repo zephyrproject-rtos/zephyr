@@ -1,0 +1,9 @@
+# Copyright (c) 2020 ATL Electronics
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_PSOC6
+	bool "Cypress PSoC-6 GPIO driver"
+	default y
+	depends on SOC_FAMILY_PSOC6
+	help
+	  Enable support for the Cypress PSoC-6 GPIO controllers.

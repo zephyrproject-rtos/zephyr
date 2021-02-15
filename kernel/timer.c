@@ -113,10 +113,6 @@ void z_impl_k_timer_start(struct k_timer *timer, k_timeout_t duration,
 		return;
 	}
 
-#ifdef CONFIG_LEGACY_TIMEOUT_API
-	duration = k_ms_to_ticks_ceil32(duration);
-	period = k_ms_to_ticks_ceil32(period);
-#else
 	/* z_add_timeout() always adds one to the incoming tick count
 	 * to round up to the next tick (by convention it waits for
 	 * "at least as long as the specified timeout"), but the
@@ -136,7 +132,6 @@ void z_impl_k_timer_start(struct k_timer *timer, k_timeout_t duration,
 	if (Z_TICK_ABS(duration.ticks) < 0) {
 		duration.ticks = MAX(duration.ticks - 1, 0);
 	}
-#endif
 
 	(void)z_abort_timeout(&timer->timeout);
 	timer->period = period;
@@ -242,14 +237,16 @@ static inline uint32_t z_vrfy_k_timer_status_sync(struct k_timer *timer)
 }
 #include <syscalls/k_timer_status_sync_mrsh.c>
 
-static inline k_ticks_t z_vrfy_k_timer_remaining_ticks(struct k_timer *timer)
+static inline k_ticks_t z_vrfy_k_timer_remaining_ticks(
+						const struct k_timer *timer)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(timer, K_OBJ_TIMER));
 	return z_impl_k_timer_remaining_ticks(timer);
 }
 #include <syscalls/k_timer_remaining_ticks_mrsh.c>
 
-static inline k_ticks_t z_vrfy_k_timer_expires_ticks(struct k_timer *timer)
+static inline k_ticks_t z_vrfy_k_timer_expires_ticks(
+						const struct k_timer *timer)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(timer, K_OBJ_TIMER));
 	return z_impl_k_timer_expires_ticks(timer);

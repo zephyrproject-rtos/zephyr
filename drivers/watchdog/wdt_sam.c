@@ -34,8 +34,6 @@ struct wdt_sam_dev_cfg {
 	Wdt *regs;
 };
 
-DEVICE_DECLARE(wdt_sam);
-
 struct wdt_sam_dev_data {
 	wdt_callback_t cb;
 	uint32_t mode;
@@ -237,7 +235,7 @@ static void wdt_sam_irq_config(void)
 {
 	IRQ_CONNECT(DT_INST_IRQN(0),
 		    DT_INST_IRQ(0, priority), wdt_sam_isr,
-		    DEVICE_GET(wdt_sam), 0);
+		    DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQN(0));
 }
 
@@ -251,6 +249,6 @@ static int wdt_sam_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(wdt_sam, DT_INST_LABEL(0), wdt_sam_init,
+DEVICE_DT_INST_DEFINE(0, wdt_sam_init, device_pm_control_nop,
 		    &wdt_sam_data, &wdt_sam_cfg, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &wdt_sam_api);

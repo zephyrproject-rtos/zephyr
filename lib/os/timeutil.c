@@ -12,6 +12,7 @@
 
 #include <zephyr/types.h>
 #include <errno.h>
+#include <stddef.h>
 #include <sys/timeutil.h>
 
 /** Convert a civil (proleptic Gregorian) date to days relative to
@@ -66,5 +67,112 @@ time_t timeutil_timegm(const struct tm *tm)
 		errno = ERANGE;
 		rv = -1;
 	}
+
 	return rv;
+}
+
+int timeutil_sync_state_update(struct timeutil_sync_state *tsp,
+			       const struct timeutil_sync_instant *inst)
+{
+	int rv = -EINVAL;
+
+	if (((tsp->base.ref == 0) && (inst->ref > 0))
+	    || ((inst->ref > tsp->base.ref)
+		&& (inst->local > tsp->base.local))) {
+		if (tsp->base.ref == 0) {
+			tsp->base = *inst;
+			tsp->latest = (struct timeutil_sync_instant){};
+			tsp->skew = 1.0;
+			rv = 0;
+		} else {
+			tsp->latest = *inst;
+			rv = 1;
+		}
+	}
+
+	return rv;
+}
+
+int timeutil_sync_state_set_skew(struct timeutil_sync_state *tsp, float skew,
+				 const struct timeutil_sync_instant *base)
+{
+	int rv = -EINVAL;
+
+	if (skew > 0) {
+		tsp->skew = skew;
+		if (base != NULL) {
+			tsp->base = *base;
+			tsp->latest = (struct timeutil_sync_instant){};
+		}
+		rv = 0;
+	}
+
+	return rv;
+}
+
+float timeutil_sync_estimate_skew(const struct timeutil_sync_state *tsp)
+{
+	float rv = 0;
+
+	if ((tsp->base.ref != 0) && (tsp->latest.ref != 0)
+	    && (tsp->latest.local > tsp->base.local)) {
+		const struct timeutil_sync_config *cfg = tsp->cfg;
+		double ref_delta = tsp->latest.ref - tsp->base.ref;
+		double local_delta = tsp->latest.local - tsp->base.local;
+
+		rv = ref_delta * cfg->local_Hz / local_delta / cfg->ref_Hz;
+	}
+
+	return rv;
+}
+
+int timeutil_sync_ref_from_local(const struct timeutil_sync_state *tsp,
+				 uint64_t local, uint64_t *refp)
+{
+	int rv = -EINVAL;
+
+	if ((tsp->skew > 0) && (tsp->base.ref > 0) && (refp != NULL)) {
+		const struct timeutil_sync_config *cfg = tsp->cfg;
+		int64_t local_delta = local - tsp->base.local;
+		int64_t ref_delta = (int64_t)(tsp->skew * local_delta) *
+			cfg->ref_Hz / cfg->local_Hz;
+		int64_t ref_abs = (int64_t)tsp->base.ref + ref_delta;
+
+		if (ref_abs < 0) {
+			rv = -ERANGE;
+		} else {
+			*refp = ref_abs;
+			rv = (int)(tsp->skew != 1.0);
+		}
+	}
+
+	return rv;
+}
+
+int timeutil_sync_local_from_ref(const struct timeutil_sync_state *tsp,
+				 uint64_t ref, int64_t *localp)
+{
+	int rv = -EINVAL;
+
+	if ((tsp->skew > 0) && (tsp->base.ref > 0) && (localp != NULL)) {
+		const struct timeutil_sync_config *cfg = tsp->cfg;
+		int64_t ref_delta = (int64_t)(ref - tsp->base.ref);
+		double local_delta = (ref_delta * cfg->local_Hz) / cfg->ref_Hz
+			/ tsp->skew;
+		int64_t local_abs = (int64_t)tsp->base.local
+			+ (int64_t)local_delta;
+
+		*localp = local_abs;
+		rv = (int)(tsp->skew != 1.0);
+	}
+
+	return rv;
+}
+
+int32_t timeutil_sync_skew_to_ppb(float skew)
+{
+	int64_t ppb64 = (int64_t)((1.0 - skew) * 1E9);
+	int32_t ppb32 = (int32_t)ppb64;
+
+	return (ppb64 == ppb32) ? ppb32 : INT32_MIN;
 }

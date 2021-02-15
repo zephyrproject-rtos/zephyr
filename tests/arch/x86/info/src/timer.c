@@ -36,9 +36,7 @@ void timer(void)
 {
 	const struct device *cmos;
 
-#if defined(CONFIG_LOAPIC_TIMER)
-	printk("TIMER: legacy local APIC");
-#elif defined(CONFIG_APIC_TIMER)
+#if defined(CONFIG_APIC_TIMER)
 	printk("TIMER: new local APIC");
 #elif defined(CONFIG_HPET_TIMER)
 	printk("TIMER: HPET");

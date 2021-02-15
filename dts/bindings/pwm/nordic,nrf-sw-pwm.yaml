@@ -5,19 +5,36 @@ compatible: "nordic,nrf-sw-pwm"
 include: [pwm-controller.yaml, base.yaml]
 
 properties:
+    generator:
+      type: phandle
+      description: |
+        Reference to TIMER or RTC instance for generating PWM output signals
+      required: false
+
     timer-instance:
       type: int
-      description: Timer instance to use for generating the PWM output signals
-      required: true
+      description: |
+        Timer instance to use for generating the PWM output signals. Deprecated
+        in favour of 'generator' property.
+      required: false
+      deprecated: true
 
     channel-count:
       type: int
-      description: Number of PWM channels. Limited by timer instance compare registers minus 1.
+      description: |
+        Number of PWM channels. Limited by RTC/TIMER instance compare registers
+        minus 1.
       required: true
 
     clock-prescaler:
       type: int
-      description: Clock prescaler for timer used for generating the PWM output signals with frequency = 16 MHz / 2^prescaler
+      description: |
+        Clock prescaler for RTC or TIMER used for generating PWM output signals.
+
+        RTC: needs to be set to 0, which gives 32768 Hz base clock for PWM
+        generation.
+
+        TIMER: 16 MHz / 2^prescaler base clock is used for PWM generation.
       required: true
 
     ppi-base:

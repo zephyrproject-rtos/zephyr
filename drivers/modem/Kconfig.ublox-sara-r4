@@ -39,10 +39,6 @@ config MODEM_UBLOX_SARA_AUTODETECT_VARIANT
 
 endchoice
 
-config MODEM_UBLOX_SARA_R4_NAME
-	string "Driver name"
-	default "MODEM_SARA"
-
 config MODEM_UBLOX_SARA_R4_RX_STACK_SIZE
 	int "Stack size for the u-blox SARA-R4 modem driver RX thread"
 	default 1028
@@ -111,5 +107,18 @@ config MODEM_UBLOX_SARA_R4_NET_STATUS_PIN
 	  and how they map to pin numbers.
 
 endif # MODEM_UBLOX_SARA_R4_NET_STATUS
+
+config MODEM_UBLOX_SARA_RSSI_WORK
+	bool "Enable RSSI polling work"
+	default y
+	help
+	  u-blox SARA-R4 device is configured to poll for RSSI
+
+config MODEM_UBLOX_SARA_RSSI_WORK_PERIOD
+	int "Configure RSSI WORK polling frequency"
+	depends on MODEM_UBLOX_SARA_RSSI_WORK
+	default 30
+	help
+	  This settings is used to configure the period of RSSI polling
 
 endif # MODEM_UBLOX_SARA

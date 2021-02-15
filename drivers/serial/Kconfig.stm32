@@ -3,10 +3,18 @@
 # Copyright (c) 2016 Open-RnD Sp. z o.o.
 # SPDX-License-Identifier: Apache-2.0
 
+DT_COMPAT_ST_STM32_DMA_V1 := st,stm32-dma-v1
+DT_COMPAT_ST_STM32_DMA_V2 := st,stm32-dma-v2
+
 config UART_STM32
 	bool "STM32 MCU serial driver"
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
+	# the ASYNC implementation requires a DMA controller
+	select SERIAL_SUPPORT_ASYNC \
+		if $(dt_compat_enabled,$(DT_COMPAT_ST_STM32_DMA_V1)) || \
+		   $(dt_compat_enabled,$(DT_COMPAT_ST_STM32_DMA_V2))
+	select DMA if UART_ASYNC_API
 	depends on SOC_FAMILY_STM32
 	help
 	  This option enables the UART driver for STM32 family of

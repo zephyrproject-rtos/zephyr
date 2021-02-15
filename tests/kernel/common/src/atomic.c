@@ -24,6 +24,7 @@
  * Test techniques:
  * - Dynamic analysis and testing
  * - Functional and black box testing
+ * - Interface testing
  *
  * Prerequisite Conditions:
  * - N/A
@@ -114,12 +115,22 @@ void test_atomic(void)
 	value = 2;
 	zassert_true((atomic_add(&target, value) == 1), "atomic_add");
 	zassert_true((target == 3), "atomic_add");
+	/* Test the atomic_add() function parameters can be negative */
+	target = 2;
+	value = -4;
+	zassert_true((atomic_add(&target, value) == 2), "atomic_add");
+	zassert_true((target == -2), "atomic_add");
 
 	/* atomic_sub() */
 	target = 10;
 	value = 2;
 	zassert_true((atomic_sub(&target, value) == 10), "atomic_sub");
 	zassert_true((target == 8), "atomic_sub");
+	/* Test the atomic_sub() function parameters can be negative */
+	target = 5;
+	value = -4;
+	zassert_true((atomic_sub(&target, value) == 5), "atomic_sub");
+	zassert_true((target == 9), "atomic_sub");
 
 	/* atomic_inc() */
 	target = 5;

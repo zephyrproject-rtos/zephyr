@@ -341,7 +341,7 @@ static const struct uart_driver_api usart_sam_driver_api = {
 		IRQ_CONNECT(DT_INST_IRQN(n),				\
 			    DT_INST_IRQ(n, priority),			\
 			    usart_sam_isr,				\
-			    DEVICE_GET(usart##n##_sam), 0);		\
+			    DEVICE_DT_INST_GET(n), 0);			\
 		irq_enable(DT_INST_IRQN(n));				\
 	}
 #define USART_SAM_IRQ_CFG_FUNC_INIT(n)					\
@@ -362,8 +362,9 @@ static const struct uart_driver_api usart_sam_driver_api = {
 									\
 	static const struct usart_sam_dev_cfg usart##n##_sam_config;	\
 									\
-	DEVICE_AND_API_INIT(usart##n##_sam, DT_INST_LABEL(n),		\
-			    &usart_sam_init, &usart##n##_sam_data,	\
+	DEVICE_DT_INST_DEFINE(n,					\
+			    &usart_sam_init, device_pm_control_nop,	\
+			    &usart##n##_sam_data,			\
 			    &usart##n##_sam_config, PRE_KERNEL_1,	\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 			    &usart_sam_driver_api);			\

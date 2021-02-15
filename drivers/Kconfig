@@ -101,4 +101,12 @@ source "drivers/peci/Kconfig"
 
 source "drivers/regulator/Kconfig"
 
+source "drivers/memc/Kconfig"
+
+source "drivers/virtualization/Kconfig"
+
+source "drivers/psci/Kconfig"
+
+source "drivers/edac/Kconfig"
+
 endmenu

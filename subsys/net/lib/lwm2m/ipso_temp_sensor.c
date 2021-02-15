@@ -99,7 +99,8 @@ static void update_max_measured(uint16_t obj_inst_id, int index)
 			TEMP_MAX_MEASURED_VALUE_ID);
 }
 
-static int reset_min_max_measured_values_cb(uint16_t obj_inst_id)
+static int reset_min_max_measured_values_cb(uint16_t obj_inst_id,
+					    uint8_t *args, uint16_t args_len)
 {
 	int i;
 
@@ -202,7 +203,7 @@ static struct lwm2m_engine_obj_inst *temp_sensor_create(uint16_t obj_inst_id)
 
 	/* initialize instance resource data */
 	INIT_OBJ_RES(TEMP_SENSOR_VALUE_ID, res[index], i,
-		     res_inst[index], j, 1, true,
+		     res_inst[index], j, 1, false, true,
 		     &sensor_value[index], sizeof(*sensor_value),
 		     NULL, NULL, sensor_value_write_cb, NULL);
 	INIT_OBJ_RES_DATA(TEMP_UNITS_ID, res[index], i, res_inst[index], j,

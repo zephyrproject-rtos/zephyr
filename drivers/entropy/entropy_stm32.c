@@ -18,6 +18,10 @@
 #include <sys/util.h>
 #include <errno.h>
 #include <soc.h>
+#include <stm32_ll_bus.h>
+#include <stm32_ll_rcc.h>
+#include <stm32_ll_rng.h>
+#include <stm32_ll_system.h>
 #include <sys/printk.h>
 #include <drivers/clock_control.h>
 #include <drivers/clock_control/stm32_clock_control.h>
@@ -444,8 +448,8 @@ static const struct entropy_driver_api entropy_stm32_rng_api = {
 	.get_entropy_isr = entropy_stm32_rng_get_entropy_isr
 };
 
-DEVICE_AND_API_INIT(entropy_stm32_rng, DT_INST_LABEL(0),
-		    entropy_stm32_rng_init,
+DEVICE_DT_INST_DEFINE(0,
+		    entropy_stm32_rng_init, device_pm_control_nop,
 		    &entropy_stm32_rng_data, &entropy_stm32_rng_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &entropy_stm32_rng_api);

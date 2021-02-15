@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_UP_SQUARED_ADSP
+if BOARD_INTEL_ADSP_CAVS15
 
 config BOARD
 	default "intel_adsp_cavs15"
@@ -43,4 +43,4 @@ config I2S_CAVS
 	default y
 	depends on I2S
 
-endif # BOARD_UP_SQUARED_ADSP
+endif # BOARD_INTEL_ADSP_CAVS15

@@ -14,6 +14,7 @@
 #include <drivers/gpio.h>
 #include <logging/log.h>
 #include <soc.h>
+#include <stm32_ll_rcc.h>
 
 LOG_MODULE_REGISTER(stm32_sdmmc);
 
@@ -433,8 +434,7 @@ static struct stm32_sdmmc_priv stm32_sdmmc_priv_1 = {
 	}
 };
 
-DEVICE_AND_API_INIT(stm32_sdmmc_dev1,
-		    DT_INST_LABEL(0), disk_stm32_sdmmc_init,
+DEVICE_DT_INST_DEFINE(0, disk_stm32_sdmmc_init, device_pm_control_nop,
 		    &stm32_sdmmc_priv_1, NULL, APPLICATION,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    NULL);

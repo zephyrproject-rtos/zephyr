@@ -13,5 +13,8 @@ tests:
   sample.subsys.canbus.canopen:
     tags: introduction
   sample.subsys.canbus.canopen.program_download:
+    build_only: true
     extra_configs:
       - CONFIG_BOOTLOADER_MCUBOOT=y
+  sample.subsys.canbus.canopen.no_storage:
+    extra_args: CONF_FILE=prj_no_storage.conf

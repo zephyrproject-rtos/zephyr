@@ -16,6 +16,7 @@
 #include <kernel_arch_data.h>
 #include <arch/cpu.h>
 #include <arch/x86/multiboot.h>
+#include <x86_mmu.h>
 
 	/* exports (private APIs) */
 
@@ -33,12 +34,8 @@
 #endif
 
 
-#if defined(CONFIG_SSE)
+#if defined(CONFIG_X86_SSE)
 	GDATA(_sse_mxcsr_default_value)
-#endif
-
-#ifdef CONFIG_SYS_POWER_DEEP_SLEEP_STATES
-	GTEXT(_sys_resume_from_deep_sleep)
 #endif
 
 SECTION_FUNC(TEXT_START, __start)
@@ -104,7 +101,7 @@ __csSet:
 
 	fninit				/* set x87 FPU to its default state */
 
-  #if defined(CONFIG_SSE)
+  #if defined(CONFIG_X86_SSE)
 	/*
 	 * Permit use of SSE instructions
 	 *
@@ -119,7 +116,7 @@ __csSet:
 
 	ldmxcsr _sse_mxcsr_default_value   /* initialize SSE control/status reg */
 
-  #endif /* CONFIG_SSE */
+  #endif /* CONFIG_X86_SSE */
 
 #endif /* !CONFIG_FPU */
 
@@ -133,15 +130,6 @@ __csSet:
 	 * kernel/init.c enforces that the z_interrupt_stacks pointer and
 	 * the ISR stack size are some multiple of ARCH_STACK_PTR_ALIGN, which
 	 * is at least 4.
-	 *
-	 * This is also used to call the _sys_resume_from_deep_sleep()
-	 * routine to avoid memory corruption if the system is resuming from
-	 * deep sleep. It is important that _sys_resume_from_deep_sleep()
-	 * restores the stack pointer to what it was at deep sleep before
-         * enabling interrupts.  This is necessary to avoid
-	 * interfering with interrupt handler use of this stack.
-	 * If it is a cold boot then _sys_resume_from_deep_sleep() should
-	 * not do anything and must return immediately.
 	 */
 #ifdef CONFIG_INIT_STACKS
 	movl $0xAAAAAAAA, %eax
@@ -162,23 +150,6 @@ __csSet:
 	addl	$(CONFIG_ISR_STACK_SIZE + 4096), %esp
 #else
 	addl	$CONFIG_ISR_STACK_SIZE, %esp
-#endif
-#if defined(CONFIG_SYS_POWER_DEEP_SLEEP_STATES) && \
-             !defined(CONFIG_BOOTLOADER_CONTEXT_RESTORE)
-	/*
-	 * Invoke _sys_resume_from_deep_sleep() hook to handle resume from
-	 * deep sleep. It should first check whether system is recovering from
-	 * deep sleep state. If it is, then this function should restore
-	 * states and resume at the point system went to deep sleep.
-	 * In this case this function will never return.
-	 *
-	 * If system is not recovering from deep sleep then it is a
-	 * cold boot.  In this case, this function would immediately
-	 * return and execution falls through to cold boot path.
-	 */
-
-	call _sys_resume_from_deep_sleep
-
 #endif
 
 #ifdef CONFIG_XIP
@@ -231,7 +202,7 @@ __csSet:
 
 #ifdef CONFIG_X86_MMU
 	/* Install page tables */
-	movl $z_x86_kernel_ptables, %eax
+	movl $Z_X86_PHYS_ADDR(z_x86_kernel_ptables), %eax
 	movl %eax, %cr3
 
 #ifdef CONFIG_X86_PAE
@@ -265,7 +236,7 @@ __csSet:
 
 _x86_bss_zero:
 	/* ECX = size, EDI = starting address */
-#ifdef CONFIG_SSE
+#ifdef CONFIG_X86_SSE
 	/* use XMM register to clear 16 bytes at a time */
 	pxor	%xmm0, %xmm0		/* zero out xmm0 register */
 
@@ -287,7 +258,7 @@ bssWords:
 	rep
 	stosl				/* zero memory per 4 bytes */
 
-#else /* !CONFIG_SSE */
+#else /* !CONFIG_X86_SSE */
 
 	/* clear out BSS double words (32-bits at a time) */
 
@@ -296,13 +267,13 @@ bssWords:
 	rep
 	stosl				/* zero memory per 4 bytes */
 
-#endif /* CONFIG_SSE */
+#endif /* CONFIG_X86_SSE */
 	ret
 
 #ifdef CONFIG_XIP
 _x86_data_copy:
 	/* EDI = dest, ESI = source, ECX = size in 32-bit chunks */
-  #ifdef CONFIG_SSE
+  #ifdef CONFIG_X86_SSE
 	/* copy 16 bytes at a time using XMM until < 16 bytes remain */
 
 	movl	%ecx ,%edx		/* save number of quad bytes */
@@ -319,7 +290,7 @@ dataDQ:
 dataWords:
 	movl	%edx, %ecx	/* restore # quad bytes */
 	andl	$0x3, %ecx	/* only need to copy at most 3 quad bytes */
-  #endif /* CONFIG_SSE */
+  #endif /* CONFIG_X86_SSE */
 
 	rep
 	movsl				/* copy data 4 bytes at a time */
@@ -327,14 +298,14 @@ dataWords:
 #endif /* CONFIG_XIP */
 
 
-#if defined(CONFIG_SSE)
+#if defined(CONFIG_X86_SSE)
 
 	/* SSE control & status register initial value */
 
 _sse_mxcsr_default_value:
 	.long	0x1f80			/* all SSE exceptions clear & masked */
 
-#endif /* CONFIG_SSE */
+#endif /* CONFIG_X86_SSE */
 
 	 /* Interrupt Descriptor Table (IDT) definition */
 

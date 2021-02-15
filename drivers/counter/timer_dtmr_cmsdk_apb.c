@@ -191,9 +191,9 @@ static int dtmr_cmsdk_apb_init(const struct device *dev)
 		.load = UINT_MAX,					\
 	};								\
 									\
-	DEVICE_AND_API_INIT(dtmr_cmsdk_apb_##inst,			\
-			    DT_INST_LABEL(inst),			\
+	DEVICE_DT_INST_DEFINE(inst,					\
 			    dtmr_cmsdk_apb_init,			\
+			    device_pm_control_nop,			\
 			    &dtmr_cmsdk_apb_dev_data_##inst,		\
 			    &dtmr_cmsdk_apb_cfg_##inst, POST_KERNEL,	\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
@@ -204,7 +204,7 @@ static int dtmr_cmsdk_apb_init(const struct device *dev)
 		IRQ_CONNECT(DT_INST_IRQN(inst),				\
 			    DT_INST_IRQ(inst, priority),		\
 			    dtmr_cmsdk_apb_isr,				\
-			    DEVICE_GET(dtmr_cmsdk_apb_##inst),		\
+			    DEVICE_DT_INST_GET(inst),			\
 			    0);						\
 		irq_enable(DT_INST_IRQN(inst));				\
 	}

@@ -119,7 +119,7 @@ static int spi_sam0_configure(const struct device *dev,
 
 	/* Use the requested or next highest possible frequency */
 	div = (SOC_ATMEL_SAM0_GCLK0_FREQ_HZ / config->frequency) / 2U - 1;
-	div = MAX(0, MIN(UINT8_MAX, div));
+	div = CLAMP(div, 0, UINT8_MAX);
 
 	/* Update the configuration only if it has changed */
 	if (regs->CTRLA.reg != ctrla.reg || regs->CTRLB.reg != ctrlb.reg ||
@@ -396,7 +396,7 @@ static int spi_sam0_transceive(const struct device *dev,
 	SercomSpi *regs = cfg->regs;
 	int err;
 
-	spi_context_lock(&data->ctx, false, NULL);
+	spi_context_lock(&data->ctx, false, NULL, config);
 
 	err = spi_sam0_configure(dev, config);
 	if (err != 0) {
@@ -638,7 +638,7 @@ static int spi_sam0_transceive_async(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	spi_context_lock(&data->ctx, true, async);
+	spi_context_lock(&data->ctx, true, async, config);
 
 	retval = spi_sam0_configure(dev, config);
 	if (retval != 0) {
@@ -770,9 +770,8 @@ static const struct spi_sam0_config spi_sam0_config_##n = {		\
 		SPI_CONTEXT_INIT_LOCK(spi_sam0_dev_data_##n, ctx),	\
 		SPI_CONTEXT_INIT_SYNC(spi_sam0_dev_data_##n, ctx),	\
 	};								\
-	DEVICE_AND_API_INIT(spi_sam0_##n,				\
-			    DT_INST_LABEL(n),				\
-			    &spi_sam0_init, &spi_sam0_dev_data_##n,	\
+	DEVICE_DT_INST_DEFINE(n, &spi_sam0_init, device_pm_control_nop,	\
+			    &spi_sam0_dev_data_##n,			\
 			    &spi_sam0_config_##n, POST_KERNEL,		\
 			    CONFIG_SPI_INIT_PRIORITY,			\
 			    &spi_sam0_driver_api);

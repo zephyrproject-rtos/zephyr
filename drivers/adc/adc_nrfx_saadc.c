@@ -390,8 +390,6 @@ static void saadc_irq_handler(const struct device *dev)
 	}
 }
 
-DEVICE_DECLARE(adc_0);
-
 static int init_saadc(const struct device *dev)
 {
 	nrf_saadc_event_clear(NRF_SAADC, NRF_SAADC_EVENT_END);
@@ -401,7 +399,7 @@ static int init_saadc(const struct device *dev)
 	NRFX_IRQ_ENABLE(DT_INST_IRQN(0));
 
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
-		    saadc_irq_handler, DEVICE_GET(adc_0), 0);
+		    saadc_irq_handler, DEVICE_DT_INST_GET(0), 0);
 
 	adc_context_unlock_unconditionally(&m_data.ctx);
 
@@ -429,9 +427,9 @@ static const struct adc_driver_api adc_nrfx_driver_api = {
 #define SAADC_INIT(inst)						\
 	BUILD_ASSERT((inst) == 0,					\
 		     "multiple instances not supported");		\
-	DEVICE_AND_API_INIT(adc_0,					\
-			    DT_INST_LABEL(0),				\
+	DEVICE_DT_INST_DEFINE(0,					\
 			    init_saadc,					\
+			    device_pm_control_nop,			\
 			    NULL,					\
 			    NULL,					\
 			    POST_KERNEL,				\

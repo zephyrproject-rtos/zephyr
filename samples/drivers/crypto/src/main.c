@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(main);
 #elif CONFIG_CRYPTO_STM32
 #define CRYPTO_DRV_NAME DT_LABEL(DT_INST(0, st_stm32_cryp))
 #elif CONFIG_CRYPTO_NRF_ECB
-#define CRYPTO_DRV_NAME CONFIG_CRYPTO_NRF_ECB_DRV_NAME
+#define CRYPTO_DRV_NAME DT_LABEL(DT_INST(0, nordic_nrf_ecb))
 #else
 #error "You need to enable one crypto device"
 #endif

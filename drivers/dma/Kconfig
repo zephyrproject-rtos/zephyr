@@ -60,4 +60,6 @@ source "drivers/dma/Kconfig.mcux_lpc"
 
 source "drivers/dma/Kconfig.dma_pl330"
 
+source "drivers/dma/Kconfig.iproc_pax"
+
 endif # DMA

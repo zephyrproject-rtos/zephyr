@@ -571,9 +571,9 @@ static const struct gpio_intel_apl_config				\
 									\
 static struct gpio_intel_apl_data gpio_intel_apl_data_##n;		\
 									\
-DEVICE_AND_API_INIT(gpio_intel_apl_##n,					\
-		    DT_INST_LABEL(n),					\
+DEVICE_DT_INST_DEFINE(n,						\
 		    gpio_intel_apl_init,				\
+		    device_pm_control_nop,				\
 		    &gpio_intel_apl_data_##n,				\
 		    &gpio_intel_apl_cfg_##n,				\
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\

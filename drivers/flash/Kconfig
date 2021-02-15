@@ -62,6 +62,8 @@ source "drivers/flash/Kconfig.at45"
 
 source "drivers/flash/Kconfig.nrf"
 
+source "drivers/flash/Kconfig.lpc"
+
 source "drivers/flash/Kconfig.mcux"
 
 source "drivers/flash/Kconfig.nios2_qspi"
@@ -71,6 +73,8 @@ source "drivers/flash/Kconfig.gecko"
 source "drivers/flash/Kconfig.nor"
 
 source "drivers/flash/Kconfig.stm32"
+
+source "drivers/flash/Kconfig.stm32_qspi"
 
 source "drivers/flash/Kconfig.sam0"
 

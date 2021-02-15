@@ -9,9 +9,18 @@ menuconfig UART_NS16550
 	  This driver can be used for the serial hardware
 	  available on x86 boards.
 
+if UART_NS16550
+
+config UART_NS16550_MAX_INSTANCES
+	int "Maximum number of supported driver instances"
+	range 1 32
+	default 4
+	help
+	  The maximum number of supported driver instances in device tree.
+
 config UART_NS16550_LINE_CTRL
 	bool "Enable Serial Line Control for Apps"
-	depends on UART_LINE_CTRL && UART_NS16550
+	depends on UART_LINE_CTRL
 	help
 	  This enables the API for apps to control the serial line,
 	  such as CTS and RTS.
@@ -20,7 +29,7 @@ config UART_NS16550_LINE_CTRL
 
 config UART_NS16550_DRV_CMD
 	bool "Enable Driver Commands"
-	depends on UART_DRV_CMD && UART_NS16550
+	depends on UART_DRV_CMD
 	help
 	  This enables the API for apps to send commands to driver.
 
@@ -28,15 +37,15 @@ config UART_NS16550_DRV_CMD
 
 config UART_NS16750
 	bool "Enable UART 16750 (64-bytes FIFO and auto flow control)"
-	depends on UART_NS16550
 	help
 	  This enables support for 64-bytes FIFO and automatic hardware
 	  flow control if UART controller is 16750.
 
 config UART_NS16550_ACCESS_WORD_ONLY
 	bool "NS16550 only allows word access"
-	depends on UART_NS16550
 	help
 	  In some case, e.g. ARC HS Development kit, the peripheral space of ns
 	  16550 (DesignWare UART) only allows word access, byte access will raise
 	  exception.
+
+endif # UART_NS16550

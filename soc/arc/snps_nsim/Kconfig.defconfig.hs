@@ -24,7 +24,7 @@ config HARVARD
 config ARC_FIRQ
 	default y
 
-config CACHE_FLUSHING
+config CACHE_MANAGEMENT
 	default y
 
 endif # SOC_NSIM_HS

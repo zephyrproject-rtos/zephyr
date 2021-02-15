@@ -1,6 +1,0 @@
-sample:
-  description: Civetweb HTTP API sample
-  name: civetweb
-tests:
-  sample.net.sockets.civetweb:
-    platform_allow: sam_e70_xplained

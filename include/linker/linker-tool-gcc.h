@@ -49,6 +49,8 @@
 	/* Not needed */
 #elif defined(CONFIG_ARCH_POSIX)
 	/* Not needed */
+#elif defined(CONFIG_SPARC)
+	OUTPUT_FORMAT("elf32-sparc")
 #else
 	#error Arch not supported.
 #endif
@@ -128,8 +130,6 @@
 #else
 #define SECTION_DATA_PROLOGUE(name, options, align) name options : align
 #endif
-
-#define SORT_BY_NAME(x) SORT(x)
 
 #define COMMON_SYMBOLS *(COMMON)
 

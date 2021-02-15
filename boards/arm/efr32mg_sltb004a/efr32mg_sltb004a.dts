@@ -110,6 +110,7 @@
 };
 
 &i2c1 {
+	/* This set selects for CCS811_I2C supporting CCS811 */
 	location-sda = <GECKO_LOCATION(6) GECKO_PORT_B GECKO_PIN(6)>;
 	location-scl = <GECKO_LOCATION(6) GECKO_PORT_B GECKO_PIN(7)>;
 
@@ -117,9 +118,22 @@
 		compatible = "ams,ccs811";
 		reg = <0x5a>;
 		label = "CCS811";
+		supply-gpios = <&gpiof 14 GPIO_ACTIVE_HIGH>;
 		irq-gpios = <&gpiof 13 GPIO_ACTIVE_LOW>;
 		wake-gpios = <&gpiof 15 GPIO_ACTIVE_LOW>;
 	};
+
+	/* This set selects for ENV_I2C supporting Si7021, Si11330, BMP280 */
+	/*
+	location-sda = <GECKO_LOCATION(17) GECKO_PORT_C GECKO_PIN(4)>;
+	location-scl = <GECKO_LOCATION(17) GECKO_PORT_C GECKO_PIN(5)>;
+	*/
+
+	/* This set selects for HALL_I2C supporting Si7210 */
+	/*
+	location-sda = <GECKO_LOCATION(8) GECKO_PORT_B GECKO_PIN(8)>;
+	location-scl = <GECKO_LOCATION(8) GECKO_PORT_B GECKO_PIN(9)>;
+	*/
 };
 
 &rtcc0 {

@@ -377,21 +377,21 @@ static int cmd_write(const struct shell *shell, size_t argc, char *argv[])
 	handle = strtoul(argv[1], NULL, 16);
 	offset = strtoul(argv[2], NULL, 16);
 
-	write_params.data = gatt_write_buf;
-	write_params.handle = handle;
-	write_params.offset = offset;
-	write_params.func = write_func;
-
 	write_params.length = hex2bin(argv[3], strlen(argv[3]),
 				      gatt_write_buf, sizeof(gatt_write_buf));
-
 	if (write_params.length == 0) {
 		shell_error(shell, "No data set");
 		return -ENOEXEC;
 	}
 
+	write_params.data = gatt_write_buf;
+	write_params.handle = handle;
+	write_params.offset = offset;
+	write_params.func = write_func;
+
 	err = bt_gatt_write(default_conn, &write_params);
 	if (err) {
+		write_params.func = NULL;
 		shell_error(shell, "Write failed (err %d)", err);
 	} else {
 		shell_print(shell, "Write pending");

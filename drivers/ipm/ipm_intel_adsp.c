@@ -205,8 +205,9 @@ static const struct ipm_adsp_config ipm_adsp_config = {
 
 static struct ipm_adsp_data ipm_adsp_data;
 
-DEVICE_AND_API_INIT(ipm_adsp, DT_INST_LABEL(0),
+DEVICE_DT_INST_DEFINE(0,
 		    &ipm_adsp_init,
+		    device_pm_control_nop,
 		    &ipm_adsp_data, &ipm_adsp_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &ipm_adsp_driver_api);
@@ -215,7 +216,7 @@ static void ipm_adsp_config_func(const struct device *dev)
 {
 	IRQ_CONNECT(DT_INST_IRQN(0),
 		    DT_INST_IRQ(0, priority),
-		    ipm_adsp_isr, DEVICE_GET(ipm_adsp), 0);
+		    ipm_adsp_isr, DEVICE_DT_INST_GET(0), 0);
 
 	irq_enable(DT_INST_IRQN(0));
 }

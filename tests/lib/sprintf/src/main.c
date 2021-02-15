@@ -27,6 +27,12 @@
 #define DEADBEEF_OCTAL_ALT_STR "033653337357"
 #define DEADBEEF_PTR_STR       "0xdeadbeef"
 
+#define IS_MINIMAL_LIBC_NANO (IS_ENABLED(CONFIG_MINIMAL_LIBC) \
+	      && IS_ENABLED(CONFIG_CBPRINTF_NANO))
+
+#define IS_MINIMAL_LIBC_NOFP (IS_ENABLED(CONFIG_MINIMAL_LIBC) \
+	      && !IS_ENABLED(CONFIG_CBPRINTF_FP_SUPPORT))
+
 /*
  * A really long string (330 characters + NULL).
  * The underlying sprintf() architecture will truncate it.
@@ -45,13 +51,23 @@
 	"66666666666666666666666666666666"   \
 	"666666666666666666666666666666666"
 
+#ifdef CONFIG_BIG_ENDIAN
 union raw_double_u {
 	double d;
 	struct {
-		uint32_t u1;       /* This part contains the exponent */
-		uint32_t u2;       /* This part contains the fraction */
+		uint32_t fraction;
+		uint32_t exponent;
 	};
 };
+#else
+union raw_double_u {
+	double d;
+	struct {
+		uint32_t exponent;
+		uint32_t fraction;
+	};
+};
+#endif
 
 /**
  *
@@ -64,13 +80,21 @@ void test_sprintf_double(void)
 	char buffer[400];
 	union raw_double_u var;
 
-#ifndef CONFIG_FPU
-	ztest_test_skip();
-	return;
-#endif
 
-	var.u1 = 0x00000000;
-	var.u2 = 0x7ff00000;    /* Bit pattern for +INF (double) */
+	/* Conversion not supported with minimal_libc without
+	 * CBPRINTF_FP_SUPPORT.
+	 *
+	 * Conversion not supported without FPU except on native POSIX.
+	 */
+	if (IS_MINIMAL_LIBC_NOFP
+	    || !(IS_ENABLED(CONFIG_FPU)
+		 || IS_ENABLED(CONFIG_BOARD_NATIVE_POSIX))) {
+		ztest_test_skip();
+		return;
+	}
+
+	var.exponent = 0x00000000;
+	var.fraction = 0x7ff00000; /* Bit pattern for +INF (double) */
 	sprintf(buffer, "%e", var.d);
 	zassert_true((strcmp(buffer, "inf") == 0),
 		     "sprintf(inf) - incorrect output '%s'\n", buffer);
@@ -95,8 +119,8 @@ void test_sprintf_double(void)
 	zassert_true((strcmp(buffer, "INF") == 0),
 		     "sprintf(INF) - incorrect output '%s'\n", buffer);
 
-	var.u1 = 0x00000000;
-	var.u2 = 0xfff00000;    /* Bit pattern for -INF (double) */
+	var.exponent = 0x00000000;
+	var.fraction = 0xfff00000; /* Bit pattern for -INF (double) */
 	sprintf(buffer, "%e", var.d);
 	zassert_true((strcmp(buffer, "-inf") == 0),
 		     "sprintf(-INF) - incorrect output '%s'\n", buffer);
@@ -125,8 +149,8 @@ void test_sprintf_double(void)
 	zassert_true((strcmp(buffer, "      -inf") == 0),
 		     "sprintf(      +inf) - incorrect output '%s'\n", buffer);
 
-	var.u1 = 0x00000000;
-	var.u2 = 0x7ff80000;    /* Bit pattern for NaN (double) */
+	var.exponent = 0x00000000;
+	var.fraction = 0x7ff80000; /* Bit pattern for NaN (double) */
 	sprintf(buffer, "%e", var.d);
 	zassert_true((strcmp(buffer, "nan") == 0),
 		     "sprintf(nan) - incorrect output '%s'\n", buffer);
@@ -155,8 +179,8 @@ void test_sprintf_double(void)
 	zassert_true((strcmp(buffer, "    +nan") == 0),
 		     "sprintf(    +nan) - incorrect output '%s'\n", buffer);
 
-	var.u1 = 0x00000000;
-	var.u2 = 0xfff80000;    /* Bit pattern for -NaN (double) */
+	var.exponent = 0x00000000;
+	var.fraction = 0xfff80000; /* Bit pattern for -NaN (double) */
 	sprintf(buffer, "%e", var.d);
 	zassert_true((strcmp(buffer, "-nan") == 0),
 		     "sprintf(-nan) - incorrect output '%s'\n", buffer);
@@ -244,10 +268,14 @@ void test_sprintf_double(void)
 		      buffer[241]);
 
 	var.d = 0x1p-400;
+
+	/* 3.872E-121 expressed as " 0.0...387" */
 	sprintf(buffer, "% .380f", var.d);
 	zassert_true((strlen(buffer) == 383),
 		     "sprintf(<large output>) - incorrect length %d\n",
 		     strlen(buffer));
+	zassert_equal(strncmp(&buffer[119], "00003872", 8), 0,
+		      "sprintf(<large output>) - misplaced value\n");
 	buffer[10] = 0;  /* log facility doesn't support %.10s */
 	zassert_true((strcmp(buffer, " 0.0000000") == 0),
 		     "sprintf(<large output>) - starts with \"%s\" "
@@ -323,8 +351,8 @@ void test_sprintf_double(void)
 		     "sprintf(0.0001505) - incorrect "
 		     "output '%s'\n", buffer);
 
-	var.u1 = 0x00000001;
-	var.u2 = 0x00000000;    /* smallest denormal value */
+	var.exponent = 0x00000001;
+	var.fraction = 0x00000000; /* smallest denormal value */
 	sprintf(buffer, "%g", var.d);
 	zassert_true((strcmp(buffer, "4.94066e-324") == 0),
 		     "sprintf(4.94066e-324) - incorrect "
@@ -497,31 +525,37 @@ void test_sprintf_misc(void)
 	zassert_false((strcmp(buffer, DEADBEEF_PTR_STR) != 0),
 		      "sprintf(%%p).  Expected '%s', got '%s'", DEADBEEF_PTR_STR, buffer);
 	/*******************/
-	sprintf(buffer, "test data %n test data", &count);
-	zassert_false((count != 10), "sprintf(%%n).  Expected count to be %d, not %d",
-		      10, count);
+	if (IS_MINIMAL_LIBC_NANO) {
+		TC_PRINT(" MINIMAL_LIBC+CPBPRINTF skipped tests\n");
+	} else {
+		sprintf(buffer, "test data %n test data", &count);
+		zassert_false((count != 10),
+			      "sprintf(%%n).  Expected count to be %d, not %d",
+			      10, count);
 
-	zassert_false((strcmp(buffer, "test data  test data") != 0),
-		      "sprintf(%%p).  Expected '%s', got '%s'",
-		      "test data  test data", buffer);
+		zassert_false((strcmp(buffer, "test data  test data") != 0),
+			      "sprintf(%%p).  Expected '%s', got '%s'",
+			      "test data  test data", buffer);
 
-	/*******************/
-	sprintf(buffer, "%*d", 10, 1234);
-	zassert_true((strcmp(buffer, "      1234") == 0),
-		     "sprintf(%%p).  Expected '%s', got '%s'",
-		     "      1234", buffer);
 
-	/*******************/
-	sprintf(buffer, "%*d", -10, 1234);
-	zassert_true((strcmp(buffer, "1234      ") == 0),
-		     "sprintf(%%p).  Expected '%s', got '%s'",
-		     "1234      ", buffer);
+		/*******************/
+		sprintf(buffer, "%*d", 10, 1234);
+		zassert_true((strcmp(buffer, "      1234") == 0),
+			     "sprintf(%%p).  Expected '%s', got '%s'",
+			     "      1234", buffer);
 
-	/*******************/
-	sprintf(buffer, "% d", 1234);
-	zassert_true((strcmp(buffer, " 1234") == 0),
-		     "sprintf(%% d). Expected '%s', got '%s'",
-		     " 1234", buffer);
+		/*******************/
+		sprintf(buffer, "%*d", -10, 1234);
+		zassert_true((strcmp(buffer, "1234      ") == 0),
+			     "sprintf(%%p).  Expected '%s', got '%s'",
+			     "1234      ", buffer);
+
+		/*******************/
+		sprintf(buffer, "% d", 1234);
+		zassert_true((strcmp(buffer, " 1234") == 0),
+			     "sprintf(%% d). Expected '%s', got '%s'",
+			     " 1234", buffer);
+	}
 
 	/*******************/
 	sprintf(buffer, "%hx", (unsigned short)1234);
@@ -572,9 +606,12 @@ void test_sprintf_integer(void)
 		     "sprintf(%%X).  Expected %zu bytes written, not %d\n",
 		     strlen(DEADBEEF_UHEX_STR), len);
 
-	zassert_true((strcmp(buffer, DEADBEEF_UHEX_STR) == 0),
-		     "sprintf(%%X).  Expected '%s', got '%s'\n",
-		     DEADBEEF_UHEX_STR, buffer);
+	/* no upper-case hex support */
+	if (!IS_MINIMAL_LIBC_NANO) {
+		zassert_true((strcmp(buffer, DEADBEEF_UHEX_STR) == 0),
+			     "sprintf(%%X).  Expected '%s', got '%s'\n",
+			     DEADBEEF_UHEX_STR, buffer);
+	}
 
 	/*******************/
 	len = sprintf(buffer, "%u", DEADBEEF);
@@ -596,15 +633,11 @@ void test_sprintf_integer(void)
 		     "sprintf(%%d).  Expected '%s', got '%s'\n",
 		     DEADBEEF_SIGNED_STR, buffer);
 
-	/*******************/
-	len = sprintf(buffer, "%o", DEADBEEF);
-	zassert_true((len == strlen(DEADBEEF_OCTAL_STR)),
-		     "sprintf(%%o).  Expected %zu bytes written, not %d\n",
-		     strlen(DEADBEEF_OCTAL_STR), len);
-
-	zassert_true((strcmp(buffer, DEADBEEF_OCTAL_STR) == 0),
-		     "sprintf(%%o).  Expected '%s', got '%s'\n",
-		     DEADBEEF_OCTAL_STR, buffer);
+	/* MINIMAL_LIBC+NANO doesn't support the following tests */
+	if (IS_MINIMAL_LIBC_NANO) {
+		TC_PRINT(" MINIMAL_LIBC+CBPRINTF_NANO skipped tests\n");
+		return;
+	}
 
 	/*******************/
 	len = sprintf(buffer, "%#o", DEADBEEF);
@@ -615,6 +648,16 @@ void test_sprintf_integer(void)
 	zassert_true((strcmp(buffer, DEADBEEF_OCTAL_ALT_STR) == 0),
 		     "sprintf(%%#o).  Expected '%s', got '%s'\n",
 		     DEADBEEF_OCTAL_ALT_STR, buffer);
+
+	/*******************/
+	len = sprintf(buffer, "%o", DEADBEEF);
+	zassert_true((len == strlen(DEADBEEF_OCTAL_STR)),
+		     "sprintf(%%#o).  Expected %zu bytes written, not %d\n",
+		     strlen(DEADBEEF_OCTAL_STR), len);
+
+	zassert_true((strcmp(buffer, DEADBEEF_OCTAL_STR) == 0),
+		     "sprintf(%%o).  Expected '%s', got '%s'\n",
+		     DEADBEEF_OCTAL_STR, buffer);
 
 	/*******************/
 	len = sprintf(buffer, "%#x", DEADBEEF);

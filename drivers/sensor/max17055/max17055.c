@@ -42,6 +42,18 @@ static int max17055_reg_read(struct max17055_data *priv, int reg_addr,
 }
 
 /**
+ * @brief Convert current in MAX17055 units to milliamps
+ *
+ * @param rsense_mohms Value of Rsense in milliohms
+ * @param val Value to convert (taken from a MAX17055 register)
+ * @return corresponding value in milliamps
+ */
+static int current_to_ma(unsigned int rsense_mohms, int16_t val)
+{
+	return (val * 1.5625) / rsense_mohms;
+}
+
+/**
  * @brief Convert capacity in MAX17055 units to milliamps
  *
  * @param rsense_mohms Value of Rsense in milliohms
@@ -91,11 +103,11 @@ static int max17055_channel_get(const struct device *dev,
 		valp->val2 = tmp % 1000000;
 		break;
 	case SENSOR_CHAN_GAUGE_AVG_CURRENT: {
-		int cap_ma;
+		int current_ma;
 
-		cap_ma = capacity_to_ma(config->rsense_mohms,
-					priv->avg_current);
-		set_millis(valp, cap_ma);
+		current_ma = current_to_ma(config->rsense_mohms,
+					   priv->avg_current);
+		set_millis(valp, current_ma);
 		break;
 	}
 	case SENSOR_CHAN_GAUGE_STATE_OF_CHARGE:
@@ -230,8 +242,9 @@ static const struct sensor_driver_api max17055_battery_driver_api = {
 			DT_INST_PROP(index, desired_charging_current),	\
 	};								\
 									\
-	DEVICE_AND_API_INIT(max17055_##index, DT_INST_LABEL(index),	\
-			    &max17055_gauge_init, &max17055_driver_##index, \
+	DEVICE_DT_INST_DEFINE(index, &max17055_gauge_init,		\
+			    device_pm_control_nop,			\
+			    &max17055_driver_##index,			\
 			    &max17055_config_##index, POST_KERNEL,	\
 			    CONFIG_SENSOR_INIT_PRIORITY,		\
 			    &max17055_battery_driver_api)

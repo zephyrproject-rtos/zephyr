@@ -41,6 +41,26 @@ config PWM_NPCX
 	help
 	  Enable support for NPCX PWM driver.
 
+config ADC_NPCX
+	default y
+	depends on ADC
+	help
+	  Enable support for NPCX ADC driver. In NPCX7 series, it includes a
+	  10-bit resolution Analog-to-Digital Converter (ADC). Up to 10 voltage
+	  inputs can be measured and a internal voltage reference (VREF), 2.816V
+	  (typical) is used for measurement.
+
+config WDT_NPCX
+	default y
+	depends on WATCHDOG
+	help
+	  Enable support for NPCX Watchdog driver. Besides watchdog
+	  functionality, it also provides the protection mechanism over software
+	  execution. After setting the configuration registers, the software can
+	  lock it to provide a higher level of protection against subsequent
+	  erroneous software action. Once a section of the TWD is locked, only
+	  reset or the unlock sequence releases it.
+
 config ESPI_NPCX
 	default y
 	depends on ESPI
@@ -52,6 +72,16 @@ config ESPI_NPCX
 	  channel support. It will be supported in the future. Please refer
 	  https://www.intel.com/content/www/us/en/support/articles/000020952/
 	  software/chipset-software.html for more detail.
+
+config I2C_NPCX
+	default y
+	depends on I2C
+	help
+	  Enable support for NPCX I2C driver. The NPCX SMB/I2C modules provides
+	  full support for a two-wire SMBus/I2C synchronous serial interface.
+	  Each interface is a two-wire serial interface that is compatible with
+	  both Intel SMBus and Philips I2C physical layer. There are 8 SMBus
+	  modules and 10 buses in NPCX7 series.
 
 source "soc/arm/nuvoton_npcx/npcx7/Kconfig.defconfig.npcx7*"
 

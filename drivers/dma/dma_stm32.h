@@ -8,6 +8,7 @@
 #define DMA_STM32_H_
 
 #include <soc.h>
+#include <stm32_ll_dma.h>
 #include <drivers/dma.h>
 #include <drivers/clock_control/stm32_clock_control.h>
 
@@ -20,6 +21,7 @@ struct dma_stm32_stream {
 	int mux_channel; /* stores the dmamux channel */
 #endif /* CONFIG_DMAMUX_STM32 */
 	bool source_periph;
+	bool hal_override;
 	volatile bool busy;
 	uint32_t src_size;
 	uint32_t dst_size;
@@ -36,6 +38,9 @@ struct dma_stm32_config {
 	bool support_m2m;
 	uint32_t base;
 	uint32_t max_streams;
+#ifdef CONFIG_DMAMUX_STM32
+	uint8_t offset; /* position in the list of dmamux channel list */
+#endif
 	struct dma_stm32_stream *streams;
 };
 
@@ -76,6 +81,8 @@ void dma_stm32_clear_gi(DMA_TypeDef *DMAx, uint32_t id);
 #endif
 
 bool stm32_dma_is_irq_active(DMA_TypeDef *dma, uint32_t id);
+bool stm32_dma_is_ht_irq_active(DMA_TypeDef *dma, uint32_t id);
+bool stm32_dma_is_tc_irq_active(DMA_TypeDef *dma, uint32_t id);
 
 void stm32_dma_dump_stream_irq(DMA_TypeDef *dma, uint32_t id);
 void stm32_dma_clear_stream_irq(DMA_TypeDef *dma, uint32_t id);
@@ -102,6 +109,8 @@ int dma_stm32_reload(const struct device *dev, uint32_t id,
 			uint32_t src, uint32_t dst, size_t size);
 int dma_stm32_start(const struct device *dev, uint32_t id);
 int dma_stm32_stop(const struct device *dev, uint32_t id);
+int dma_stm32_get_status(const struct device *dev, uint32_t id,
+				struct dma_status *stat);
 #else
 #define DMA_STM32_EXPORT_API static
 #endif /* CONFIG_DMAMUX_STM32 */

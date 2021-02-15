@@ -1,3 +1,5 @@
+common:
+  filter: TOOLCHAIN_HAS_NEWLIB == 1
 sample:
   name: I2S Audio Sample
 tests:

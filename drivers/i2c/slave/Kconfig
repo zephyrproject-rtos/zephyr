@@ -6,11 +6,19 @@
 #
 # I2C options
 #
-config I2C_SLAVE
+menuconfig I2C_SLAVE
 	bool "I2C Slave Drivers"
 	help
 	  Enable I2C Slave Driver Configuration
 
 if I2C_SLAVE
+
+config I2C_SLAVE_INIT_PRIORITY
+	int "Init priority"
+	default 60
+	help
+	  I2C Slave device driver initialization priority.
+
+source "drivers/i2c/slave/Kconfig.eeprom"
 
 endif # I2C_SLAVE

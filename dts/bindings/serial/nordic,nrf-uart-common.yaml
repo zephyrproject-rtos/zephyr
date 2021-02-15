@@ -1,0 +1,45 @@
+include: uart-controller.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    tx-pin:
+      type: int
+      required: true
+      description: |
+        The TX pin to use.
+
+        For pins P0.0 through P0.31, use the pin number. For example,
+        to use P0.16 for TX, set:
+
+            tx-pin = <16>;
+
+        For pins P1.0 through P1.31, add 32 to the pin number. For
+        example, to use P1.2 for TX, set:
+
+            tx-pin = <34>;  /* 32 + 2 */
+
+    rx-pin:
+      type: int
+      required: false
+      description: |
+        The RX pin to use. The pin numbering scheme is the same as the
+        tx-pin property's.
+
+    rts-pin:
+      type: int
+      required: false
+      description: |
+        The RTS pin to use. The pin numbering scheme is the same as the
+        tx-pin property's.
+
+    cts-pin:
+      type: int
+      required: false
+      description: |
+        The CTS pin to use. The pin numbering scheme is the same as the
+        tx-pin property's.

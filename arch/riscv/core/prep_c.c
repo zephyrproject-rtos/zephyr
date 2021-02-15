@@ -19,6 +19,7 @@
 #include <toolchain.h>
 #include <kernel_structs.h>
 #include <kernel_internal.h>
+#include <core_pmp.h>
 
 /**
  *
@@ -37,6 +38,9 @@ void _PrepC(void)
 #endif
 #if defined(CONFIG_RISCV_SOC_INTERRUPT_INIT)
 	soc_interrupt_init();
+#endif
+#ifdef CONFIG_PMP_STACK_GUARD
+	z_riscv_configure_interrupt_stack_guard();
 #endif
 	z_cstart();
 	CODE_UNREACHABLE;

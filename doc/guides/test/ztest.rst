@@ -15,11 +15,11 @@ Quick start - Integration testing
 
 A simple working base is located at :zephyr_file:`samples/testing/integration`.  Just
 copy the files to ``tests/`` and edit them for your needs. The test will then
-be automatically built and run by the sanitycheck script. If you are testing
+be automatically built and run by the twister script. If you are testing
 the **bar** component of **foo**, you should copy the sample folder to
 ``tests/foo/bar``. It can then be tested with::
 
-    ./scripts/sanitycheck -s tests/foo/bar/test-identifier
+    ./scripts/twister -s tests/foo/bar/test-identifier
 
 
 In the example above ``tests/foo/bar`` signifies the path to the test and the
@@ -27,7 +27,7 @@ In the example above ``tests/foo/bar`` signifies the path to the test and the
 
 To run all tests defined in a test project, run::
 
-    ./scripts/sanitycheck -T tests/foo/bar/
+    ./scripts/twister -T tests/foo/bar/
 
 The sample contains the following files:
 
@@ -95,14 +95,14 @@ Listing Tests
 
 Tests (test projects) in the Zephyr tree consist of many testcases that run as
 part of a project and test similar functionality, for example an API or a
-feature. The ``sanitycheck`` script can parse the testcases in all
+feature. The ``twister`` script can parse the testcases in all
 test projects or a subset of them, and can generate reports on a granular
 level, i.e. if cases have passed or failed or if they were blocked or skipped.
 
-Sanitycheck parses the source files looking for test case names, so you
+Twister parses the source files looking for test case names, so you
 can list all kernel test cases, for example, by entering::
 
-        sanitycheck --list-tests -T tests/kernel
+        twister --list-tests -T tests/kernel
 
 Skipping Tests
 ==============
@@ -161,7 +161,7 @@ that interaction.
 Best practices for declaring the test suite
 ===========================================
 
-*sanitycheck* and other validation tools need to obtain the list of
+*twister* and other validation tools need to obtain the list of
 subcases that a Zephyr *ztest* test image will expose.
 
 .. admonition:: Rationale
@@ -207,7 +207,7 @@ Here is a generic template for a test showing the expected use of
    	ztest_run_test_suite(common);
    }
 
-For *sanitycheck* to parse source files and create a list of subcases,
+For *twister* to parse source files and create a list of subcases,
 the declarations of :func:`ztest_test_suite` must follow a few rules:
 
 - one declaration per line

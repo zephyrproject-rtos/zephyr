@@ -14,7 +14,7 @@
  * usually within DDR.
  */
 #define DT_FLASH_SIZE	DT_SIZE_K(512)
-#define DT_FLASH_ADDR	0x84000000
+#define DT_FLASH_ADDR	84000000 /* DT_ADDR will add leading 0x where needed */
 
 /*
  * Determines the address and size for data memory which will be applied
@@ -22,7 +22,7 @@
  * usually within DDR.
  */
 #define DT_SRAM_SIZE	DT_SIZE_K(128)
-#define DT_SRAM_ADDR	0x84080000
+#define DT_SRAM_ADDR	84080000 /* DT_ADDR will add leading 0x where needed */
 
 #include <nxp/nxp_imx6sx_m4.dtsi>
 

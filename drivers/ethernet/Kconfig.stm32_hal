@@ -17,10 +17,6 @@ menuconfig ETH_STM32_HAL
 
 if ETH_STM32_HAL
 
-config ETH_STM32_HAL_NAME
-	string "Device name"
-	default "ETH_0"
-
 config ETH_STM32_HAL_IRQ_PRI
 	int "Controller interrupt priority"
 	default 0

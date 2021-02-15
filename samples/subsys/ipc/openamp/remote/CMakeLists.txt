@@ -6,10 +6,11 @@ cmake_minimum_required(VERSION 3.13.1)
 #
 
 if(("${BOARD}" STREQUAL "lpcxpresso54114_m0")
+	OR "${BOARD}" STREQUAL "lpcxpresso55s69_cpu1"
 	OR "${BOARD}" STREQUAL "mps2_an521_nonsecure"
 	OR "${BOARD}" STREQUAL "v2m_musca_nonsecure"
 	OR "${BOARD}" STREQUAL "v2m_musca_b1_nonsecure")
-	message(INFO " ${BOARD} compile as slave in this sample")
+	message(INFO " ${BOARD} compiles as remote in this sample")
 else()
 	message(FATAL_ERROR "${BOARD} was not supported for this sample")
 endif()

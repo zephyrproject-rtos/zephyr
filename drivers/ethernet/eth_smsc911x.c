@@ -658,13 +658,11 @@ done:
 
 /* Bindings to the platform */
 
-DEVICE_DECLARE(eth_smsc911x_0);
-
 int eth_init(const struct device *dev)
 {
 	IRQ_CONNECT(DT_INST_IRQN(0),
 		    DT_INST_IRQ(0, priority),
-		    eth_smsc911x_isr, DEVICE_GET(eth_smsc911x_0), 0);
+		    eth_smsc911x_isr, DEVICE_DT_INST_GET(0), 0);
 
 	int ret = smsc_init();
 
@@ -680,7 +678,7 @@ int eth_init(const struct device *dev)
 
 static struct eth_context eth_0_context;
 
-ETH_NET_DEVICE_INIT(eth_smsc911x_0, "smsc911x_0",
+ETH_NET_DEVICE_DT_INST_DEFINE(0,
 		eth_init, device_pm_control_nop, &eth_0_context,
 		NULL /*&eth_config_0*/, CONFIG_ETH_INIT_PRIORITY, &api_funcs,
 		NET_ETH_MTU /*MTU*/);

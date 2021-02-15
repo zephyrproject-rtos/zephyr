@@ -21,6 +21,7 @@
 		segment-remap;
 		com-invdir;
 		prechargep = <0x22>;
-		data_cmd-gpios = <&arduino_header 16 0>;
+		data_cmd-gpios = <&arduino_header 15 0>;
+		/* reset-gpios = <&arduino_header 14 GPIO_ACTIVE_LOW>; */
 	};
 };

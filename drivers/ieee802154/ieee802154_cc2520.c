@@ -1150,10 +1150,10 @@ static struct ieee802154_radio_api cc2520_radio_api = {
 };
 
 #if defined(CONFIG_IEEE802154_RAW_MODE)
-DEVICE_AND_API_INIT(cc2520, CONFIG_IEEE802154_CC2520_DRV_NAME,
-		    cc2520_init, &cc2520_context_data, NULL,
-		    POST_KERNEL, CONFIG_IEEE802154_CC2520_INIT_PRIO,
-		    &cc2520_radio_api);
+DEVICE_DEFINE(cc2520, CONFIG_IEEE802154_CC2520_DRV_NAME,
+		cc2520_init, device_pm_control_nop, &cc2520_context_data, NULL,
+		POST_KERNEL, CONFIG_IEEE802154_CC2520_INIT_PRIO,
+		&cc2520_radio_api);
 #else
 NET_DEVICE_INIT(cc2520, CONFIG_IEEE802154_CC2520_DRV_NAME,
 		cc2520_init, device_pm_control_nop,
@@ -1485,9 +1485,9 @@ struct crypto_driver_api cc2520_crypto_api = {
 	.crypto_async_callback_set	= NULL
 };
 
-DEVICE_AND_API_INIT(cc2520_crypto, CONFIG_IEEE802154_CC2520_CRYPTO_DRV_NAME,
-		    cc2520_crypto_init, &cc2520_context_data, NULL,
-		    POST_KERNEL, CONFIG_IEEE802154_CC2520_CRYPTO_INIT_PRIO,
-		    &cc2520_crypto_api);
+DEVICE_DEFINE(cc2520_crypto, CONFIG_IEEE802154_CC2520_CRYPTO_DRV_NAME,
+		cc2520_crypto_init, device_pm_control_nop,
+		&cc2520_context_data, NULL, POST_KERNEL,
+		CONFIG_IEEE802154_CC2520_CRYPTO_INIT_PRIO, &cc2520_crypto_api);
 
 #endif /* CONFIG_IEEE802154_CC2520_CRYPTO */

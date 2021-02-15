@@ -9,7 +9,7 @@
 /* Include esp-idf headers first to avoid redefining BIT() macro */
 #include <soc/dport_reg.h>
 #include <soc/i2c_reg.h>
-#include <rom/gpio.h>
+#include <esp32/rom/gpio.h>
 #include <soc/gpio_sig_map.h>
 
 #include <soc.h>
@@ -579,12 +579,10 @@ static const struct i2c_driver_api i2c_esp32_driver_api = {
 };
 
 #if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
-DEVICE_DECLARE(i2c_esp32_0);
-
 static void i2c_esp32_connect_irq_0(void)
 {
 	IRQ_CONNECT(CONFIG_I2C_ESP32_0_IRQ, 1, i2c_esp32_isr,
-		    DEVICE_GET(i2c_esp32_0), 0);
+		    DEVICE_DT_INST_GET(0), 0);
 }
 
 static const struct i2c_esp32_config i2c_esp32_config_0 = {
@@ -618,19 +616,17 @@ static const struct i2c_esp32_config i2c_esp32_config_0 = {
 
 static struct i2c_esp32_data i2c_esp32_data_0;
 
-DEVICE_AND_API_INIT(i2c_esp32_0, DT_INST_LABEL(0), &i2c_esp32_init,
+DEVICE_DT_INST_DEFINE(0, &i2c_esp32_init, device_pm_control_nop,
 		    &i2c_esp32_data_0, &i2c_esp32_config_0,
 		    POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,
 		    &i2c_esp32_driver_api);
 #endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay) */
 
 #if DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay)
-DEVICE_DECLARE(i2c_esp32_1);
-
 static void i2c_esp32_connect_irq_1(void)
 {
 	IRQ_CONNECT(CONFIG_I2C_ESP32_1_IRQ, 1, i2c_esp32_isr,
-		    DEVICE_GET(i2c_esp32_1), 0);
+		    DEVICE_DT_INST_GET(1), 0);
 }
 
 static const struct i2c_esp32_config i2c_esp32_config_1 = {
@@ -664,7 +660,7 @@ static const struct i2c_esp32_config i2c_esp32_config_1 = {
 
 static struct i2c_esp32_data i2c_esp32_data_1;
 
-DEVICE_AND_API_INIT(i2c_esp32_1, DT_INST_LABEL(1), &i2c_esp32_init,
+DEVICE_DT_INST_DEFINE(1, &i2c_esp32_init, device_pm_control_nop,
 		    &i2c_esp32_data_1, &i2c_esp32_config_1,
 		    POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,
 		    &i2c_esp32_driver_api);

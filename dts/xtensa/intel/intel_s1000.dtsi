@@ -163,7 +163,7 @@
 
 		dma0: dma@7c000 {
 			compatible = "snps,designware-dma";
-			#dma-cells = <8>;
+			#dma-cells = <1>;
 			reg = <0x0007C000 0x1000>;
 			interrupts = <0x10 0 0>;
 			interrupt-parent = <&cavs3>;
@@ -174,7 +174,7 @@
 
 		dma1: dma@7d000 {
 			compatible = "snps,designware-dma";
-			#dma-cells = <8>;
+			#dma-cells = <1>;
 			reg = <0x0007D000 0x1000>;
 			interrupts = <0x00 0 0>;
 			interrupt-parent = <&cavs1>;
@@ -185,7 +185,7 @@
 
 		dma2: dma@7e000 {
 			compatible = "snps,designware-dma";
-			#dma-cells = <8>;
+			#dma-cells = <1>;
 			reg = <0x0007E000 0x1000>;
 			interrupts = <0x00 0 0>;
 			interrupt-parent = <&cavs2>;
@@ -203,6 +203,63 @@
 			label = "USB_0";
 
 			status = "disabled";
+		};
+
+		i2s1: i2s@77200 {
+			compatible = "intel,cavs-i2s";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00077200 0x200
+			       0x00078D08 0x008>;
+			interrupts = <0x01 0 0>;
+			interrupt-parent = <&cavs3>;
+			dmas = <&dma0 2
+				&dma0 3>;
+			dma-names = "tx", "rx";
+			label = "I2S_1";
+
+			status = "okay";
+		};
+
+		i2s2: i2s@77400 {
+			compatible = "intel,cavs-i2s";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00077400 0x200
+			       0x00078D10 0x008>;
+			interrupts = <0x02 0 0>;
+			interrupt-parent = <&cavs3>;
+			dmas = <&dma0 4
+				&dma0 5>;
+			dma-names = "tx", "rx";
+			label = "I2S_2";
+
+			status = "okay";
+		};
+
+		i2s3: i2s@77600 {
+			compatible = "intel,cavs-i2s";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00077600 0x200
+			       0x00078D18 0x008>;
+			interrupts = <0x03 0 0>;
+			interrupt-parent = <&cavs3>;
+			dmas = <&dma0 6
+				&dma0 7>;
+			dma-names = "tx", "rx";
+			label = "I2S_3";
+
+			status = "okay";
+		};
+
+		gna: gna@e800 {
+			compatible = "intel,gna";
+			reg = <0x0000E800 0x100>;
+			interrupt-controller;
+			interrupts = <5 0 0>;
+			interrupt-parent = <&cavs0>;
+			label = "GNA0";
 		};
 	};
 };

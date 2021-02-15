@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_MUSCA
-	bool "ARM v2m MUSCA MCU Series"
+	bool "Arm v2m MUSCA MCU Series"
 	select ARM
 	select SOC_FAMILY_ARM
 	select BUILD_OUTPUT_HEX

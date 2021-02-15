@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # A script to generate a list of tests that have changed or added and create an
-# arguments file for sanitycheck to allow running those tests with --all
+# arguments file for twister to allow running those tests with --all
 
 import os
 import sh
@@ -41,7 +41,7 @@ def init_logs():
 
 def parse_args():
     parser = argparse.ArgumentParser(
-                description="Generate a sanitycheck argument for for tests "
+                description="Generate a twister argument for for tests "
                             " that have changed")
     parser.add_argument('-c', '--commits', default=None,
             help="Commit range in the form: a..b")

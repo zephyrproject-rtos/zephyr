@@ -123,6 +123,7 @@ static inline void mfifo_by_idx_enqueue(uint8_t *fifo, uint8_t size, uint8_t idx
 	void **p = (void **)(fifo + (*last) * size); /* buffer preceding idx */
 	*p = mem; /* store the payload which for API 2 is only a void-ptr */
 
+	cpu_dmb(); /* Ensure data accesses are synchronized */
 	*last = idx; /* Commit: Update write index */
 }
 
@@ -189,6 +190,7 @@ static inline uint8_t mfifo_enqueue_get(uint8_t *fifo, uint8_t size, uint8_t cou
  */
 static inline void mfifo_enqueue(uint8_t idx, uint8_t *last)
 {
+	cpu_dmb(); /* Ensure data accesses are synchronized */
 	*last = idx; /* Commit: Update write index */
 }
 

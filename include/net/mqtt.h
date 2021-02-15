@@ -727,10 +727,10 @@ int mqtt_live(struct mqtt_client *client);
  * @param[in] client Client instance for which the procedure is requested.
  *
  * @return Time in milliseconds until next keep alive message is expected to
- *         be sent. Function will return UINT32_MAX if keep alive messages are
+ *         be sent. Function will return -1 if keep alive messages are
  *         not enabled.
  */
-uint32_t mqtt_keepalive_time_left(const struct mqtt_client *client);
+int mqtt_keepalive_time_left(const struct mqtt_client *client);
 
 /**
  * @brief Receive an incoming MQTT packet. The registered callback will be

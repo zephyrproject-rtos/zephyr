@@ -10,10 +10,12 @@ if(CONFIG_WIFI_ESWIFI)
 
   zephyr_sources(
     eswifi_core.c
-    eswifi_bus_spi.c
     eswifi_offload.c
     eswifi_socket.c
     )
+
+  zephyr_sources_ifdef(CONFIG_WIFI_ESWIFI_BUS_SPI eswifi_bus_spi.c)
+  zephyr_sources_ifdef(CONFIG_WIFI_ESWIFI_BUS_UART eswifi_bus_uart.c)
 
   zephyr_sources_ifdef(CONFIG_WIFI_ESWIFI_SHELL eswifi_shell.c)
 

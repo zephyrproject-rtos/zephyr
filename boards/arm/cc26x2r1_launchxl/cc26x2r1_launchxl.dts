@@ -59,10 +59,25 @@
 			label = "Push button 2";
 		};
 	};
+
+	power-states {
+		idle: idle {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			min-residency-us = <1000>;
+		};
+
+		standby: standby {
+			compatible = "zephyr,power-state";
+			power-state-name = "standby";
+			min-residency-us = <5000>;
+		};
+	};
 };
 
 &cpu0 {
 	clock-frequency = <48000000>;
+	cpu-power-states = <&idle &standby>;
 };
 
 &trng {

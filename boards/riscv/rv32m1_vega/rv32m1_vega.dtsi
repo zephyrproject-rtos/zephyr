@@ -145,7 +145,6 @@ arduino_spi: &lpspi0 {
 		label = "MX25R32";
 		jedec-id = [c2 28 16];
 		size = <33554432>;
-		has-be32k;
 	};
 };
 

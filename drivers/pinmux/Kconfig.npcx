@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config PINMUX_NPCX
-	bool "Nuvoton NPCX embedd controller (EC) pinmux driver"
+	bool "Nuvoton NPCX embedded controller (EC) pinmux driver"
 	depends on SOC_FAMILY_NPCX
 	help
 	  This option enables the pin-mux driver for NPCX family

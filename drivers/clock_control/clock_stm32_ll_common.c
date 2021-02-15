@@ -7,6 +7,11 @@
  */
 
 #include <soc.h>
+#include <stm32_ll_bus.h>
+#include <stm32_ll_pwr.h>
+#include <stm32_ll_rcc.h>
+#include <stm32_ll_system.h>
+#include <stm32_ll_utils.h>
 #include <drivers/clock_control.h>
 #include <sys/util.h>
 #include <sys/__assert.h>
@@ -43,7 +48,7 @@
  * So, changing this prescaler is not allowed until it is made possible to
  * use them independently in zephyr clock subsystem.
  */
-#error "AHB presacler can't be higher than 1"
+#error "AHB prescaler can't be higher than 1"
 #endif
 
 /**
@@ -66,10 +71,11 @@ static void config_bus_clk_init(LL_UTILS_ClkInitTypeDef *clk_init)
 	clk_init->APB1CLKDivider = apb1_prescaler(
 					CONFIG_CLOCK_STM32_APB1_PRESCALER);
 
-#if !defined (CONFIG_SOC_SERIES_STM32F0X) && !defined (CONFIG_SOC_SERIES_STM32G0X)
+#if !defined (CONFIG_SOC_SERIES_STM32F0X) && \
+	!defined (CONFIG_SOC_SERIES_STM32G0X)
 	clk_init->APB2CLKDivider = apb2_prescaler(
 					CONFIG_CLOCK_STM32_APB2_PRESCALER);
-#endif /* CONFIG_SOC_SERIES_STM32F0X && CONFIG_SOC_SERIES_STM32G0X */
+#endif
 }
 
 static uint32_t get_bus_clock(uint32_t clock, uint32_t prescaler)
@@ -90,13 +96,24 @@ static inline int stm32_clock_control_on(const struct device *dev,
 		break;
 #if defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32L5X) || \
-	defined(CONFIG_SOC_SERIES_STM32F4X) || \
+	defined(CONFIG_SOC_SERIES_STM32F4X) && defined(RCC_AHB2_SUPPORT) || \
 	defined(CONFIG_SOC_SERIES_STM32F7X) || \
 	defined(CONFIG_SOC_SERIES_STM32F2X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X)
 	case STM32_CLOCK_BUS_AHB2:
 		LL_AHB2_GRP1_EnableClock(pclken->enr);
+		break;
+#endif /* CONFIG_SOC_SERIES_STM32_* */
+#if defined(CONFIG_SOC_SERIES_STM32L4X) || \
+	defined(CONFIG_SOC_SERIES_STM32L5X) || \
+	defined(CONFIG_SOC_SERIES_STM32F4X) && defined(RCC_AHB3_SUPPORT) || \
+	defined(CONFIG_SOC_SERIES_STM32F7X) || \
+	defined(CONFIG_SOC_SERIES_STM32F2X) || \
+	defined(CONFIG_SOC_SERIES_STM32WBX) || \
+	defined(CONFIG_SOC_SERIES_STM32G4X)
+	case STM32_CLOCK_BUS_AHB3:
+		LL_AHB3_GRP1_EnableClock(pclken->enr);
 		break;
 #endif /* CONFIG_SOC_SERIES_STM32_* */
 	case STM32_CLOCK_BUS_APB1:
@@ -115,12 +132,13 @@ static inline int stm32_clock_control_on(const struct device *dev,
 	case STM32_CLOCK_BUS_APB2:
 		LL_APB2_GRP1_EnableClock(pclken->enr);
 		break;
-#endif /* CONFIG_SOC_SERIES_STM32F0X */
-#if defined (CONFIG_SOC_SERIES_STM32L0X) || defined (CONFIG_SOC_SERIES_STM32G0X)
+#endif
+#if defined (CONFIG_SOC_SERIES_STM32L0X) || \
+	defined (CONFIG_SOC_SERIES_STM32G0X)
 	case STM32_CLOCK_BUS_IOP:
 		LL_IOP_GRP1_EnableClock(pclken->enr);
 		break;
-#endif /* CONFIG_SOC_SERIES_STM32L0X || CONFIG_SOC_SERIES_STM32G0X */
+#endif
 	default:
 		return -ENOTSUP;
 	}
@@ -142,12 +160,24 @@ static inline int stm32_clock_control_off(const struct device *dev,
 		break;
 #if defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32L5X) || \
-	defined(CONFIG_SOC_SERIES_STM32F4X) || \
+	defined(CONFIG_SOC_SERIES_STM32F4X) && defined(RCC_AHB2_SUPPORT) || \
 	defined(CONFIG_SOC_SERIES_STM32F7X) || \
 	defined(CONFIG_SOC_SERIES_STM32F2X) || \
+	defined(CONFIG_SOC_SERIES_STM32WBX) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X)
 	case STM32_CLOCK_BUS_AHB2:
 		LL_AHB2_GRP1_DisableClock(pclken->enr);
+		break;
+#endif /* CONFIG_SOC_SERIES_STM32_* */
+#if defined(CONFIG_SOC_SERIES_STM32L4X) || \
+	defined(CONFIG_SOC_SERIES_STM32L5X) || \
+	defined(CONFIG_SOC_SERIES_STM32F4X) && defined(RCC_AHB3_SUPPORT) || \
+	defined(CONFIG_SOC_SERIES_STM32F7X) || \
+	defined(CONFIG_SOC_SERIES_STM32F2X) || \
+	defined(CONFIG_SOC_SERIES_STM32WBX) || \
+	defined(CONFIG_SOC_SERIES_STM32G4X)
+	case STM32_CLOCK_BUS_AHB3:
+		LL_AHB3_GRP1_EnableClock(pclken->enr);
 		break;
 #endif /* CONFIG_SOC_SERIES_STM32_* */
 	case STM32_CLOCK_BUS_APB1:
@@ -166,12 +196,13 @@ static inline int stm32_clock_control_off(const struct device *dev,
 	case STM32_CLOCK_BUS_APB2:
 		LL_APB2_GRP1_DisableClock(pclken->enr);
 		break;
-#endif /* CONFIG_SOC_SERIES_STM32F0X */
-#ifdef CONFIG_SOC_SERIES_STM32L0X
+#endif
+#if defined (CONFIG_SOC_SERIES_STM32L0X) || \
+	defined (CONFIG_SOC_SERIES_STM32G0X)
 	case STM32_CLOCK_BUS_IOP:
 		LL_IOP_GRP1_DisableClock(pclken->enr);
 		break;
-#endif /* CONFIG_SOC_SERIES_STM32L0X */
+#endif
 	default:
 		return -ENOTSUP;
 	}
@@ -194,19 +225,22 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 	uint32_t ahb_clock = SystemCoreClock;
 	uint32_t apb1_clock = get_bus_clock(ahb_clock,
 				CONFIG_CLOCK_STM32_APB1_PRESCALER);
-#if !defined (CONFIG_SOC_SERIES_STM32F0X) && !defined (CONFIG_SOC_SERIES_STM32G0X)
+#if !defined (CONFIG_SOC_SERIES_STM32F0X) && \
+	!defined (CONFIG_SOC_SERIES_STM32G0X)
 	uint32_t apb2_clock = get_bus_clock(ahb_clock,
 				CONFIG_CLOCK_STM32_APB2_PRESCALER);
-#endif /* CONFIG_SOC_SERIES_STM32F0X && CONFIG_SOC_SERIES_STM32G0X */
+#endif
 
 	ARG_UNUSED(clock);
 
 	switch (pclken->bus) {
 	case STM32_CLOCK_BUS_AHB1:
 	case STM32_CLOCK_BUS_AHB2:
-#ifdef CONFIG_SOC_SERIES_STM32L0X
+	case STM32_CLOCK_BUS_AHB3:
+#if defined (CONFIG_SOC_SERIES_STM32L0X) || \
+	defined (CONFIG_SOC_SERIES_STM32G0X)
 	case STM32_CLOCK_BUS_IOP:
-#endif /* CONFIG_SOC_SERIES_STM32L0X */
+#endif
 		*rate = ahb_clock;
 		break;
 	case STM32_CLOCK_BUS_APB1:
@@ -226,11 +260,12 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 #endif /* CONFIG_SOC_SERIES_STM32G0X */
 		*rate = apb1_clock;
 		break;
-#if !defined (CONFIG_SOC_SERIES_STM32F0X) && !defined (CONFIG_SOC_SERIES_STM32G0X)
+#if !defined (CONFIG_SOC_SERIES_STM32F0X) && \
+	!defined (CONFIG_SOC_SERIES_STM32G0X)
 	case STM32_CLOCK_BUS_APB2:
 		*rate = apb2_clock;
 		break;
-#endif /* CONFIG_SOC_SERIES_STM32F0X && CONFIG_SOC_SERIES_STM32G0X */
+#endif
 	default:
 		return -ENOTSUP;
 	}
@@ -444,9 +479,10 @@ static int stm32_clock_control_init(const struct device *dev)
 
 	/* Set APB1 & APB2 prescaler*/
 	LL_RCC_SetAPB1Prescaler(s_ClkInitStruct.APB1CLKDivider);
-#if !defined (CONFIG_SOC_SERIES_STM32F0X) && !defined (CONFIG_SOC_SERIES_STM32G0X)
+#if !defined (CONFIG_SOC_SERIES_STM32F0X) && \
+	!defined (CONFIG_SOC_SERIES_STM32G0X)
 	LL_RCC_SetAPB2Prescaler(s_ClkInitStruct.APB2CLKDivider);
-#endif /* CONFIG_SOC_SERIES_STM32F0X && CONFIG_SOC_SERIES_STM32G0X */
+#endif
 
 	/* If freq not increased, set flash latency after all clock setting */
 	if (new_hclk_freq <= old_hclk_freq) {
@@ -537,7 +573,8 @@ static int stm32_clock_control_init(const struct device *dev)
 
 	/* Set APB1 & APB2 prescaler*/
 	LL_RCC_SetAPB1Prescaler(s_ClkInitStruct.APB1CLKDivider);
-#if !defined (CONFIG_SOC_SERIES_STM32F0X) && !defined (CONFIG_SOC_SERIES_STM32G0X)
+#if !defined (CONFIG_SOC_SERIES_STM32F0X) && \
+	!defined (CONFIG_SOC_SERIES_STM32G0X)
 	LL_RCC_SetAPB2Prescaler(s_ClkInitStruct.APB2CLKDivider);
 #endif /* CONFIG_SOC_SERIES_STM32F0X && CONFIG_SOC_SERIES_STM32G0X */
 
@@ -562,8 +599,9 @@ static int stm32_clock_control_init(const struct device *dev)
  * @brief RCC device, note that priority is intentionally set to 1 so
  * that the device init runs just after SOC init
  */
-DEVICE_AND_API_INIT(rcc_stm32, STM32_CLOCK_CONTROL_NAME,
+DEVICE_DT_DEFINE(DT_NODELABEL(rcc),
 		    &stm32_clock_control_init,
+		    device_pm_control_nop,
 		    NULL, NULL,
 		    PRE_KERNEL_1,
 		    CONFIG_CLOCK_CONTROL_STM32_DEVICE_INIT_PRIORITY,

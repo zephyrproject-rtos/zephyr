@@ -4,10 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&arduino_spi {
-	status = "okay";
-	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>;	/* D10 */
+#include "waveshare_epaper_common.dtsi"
 
+&arduino_spi {
 	ssd16xxfb@0 {
 		compatible = "solomon,ssd16xxfb", "gooddisplay,gdeh0213b72";
 		label = "SSD16XX";

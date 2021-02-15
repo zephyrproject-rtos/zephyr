@@ -12,14 +12,23 @@
 #define MIN3(_a, _b, _c) MIN((_a), MIN((_b), (_c)))
 #endif
 
+#define th_sport(_x) UNALIGNED_GET(&(_x)->th_sport)
+#define th_dport(_x) UNALIGNED_GET(&(_x)->th_dport)
 #define th_seq(_x) ntohl(UNALIGNED_GET(&(_x)->th_seq))
 #define th_ack(_x) ntohl(UNALIGNED_GET(&(_x)->th_ack))
+#define th_off(_x) ((_x)->th_off)
+#define th_flags(_x) UNALIGNED_GET(&(_x)->th_flags)
+#define th_win(_x) UNALIGNED_GET(&(_x)->th_win)
 
-#define tcp_slist(_slist, _op, _type, _link)				\
+#define tcp_slist(_conn, _slist, _op, _type, _link)			\
 ({									\
+	k_mutex_lock(&conn->lock, K_FOREVER);				\
+									\
 	sys_snode_t *_node = sys_slist_##_op(_slist);			\
 									\
 	_type * _x = _node ? CONTAINER_OF(_node, _type, _link) : NULL;	\
+									\
+	k_mutex_unlock(&conn->lock);					\
 									\
 	_x;								\
 })
@@ -68,6 +77,26 @@
 	_pkt;								\
 })
 
+#define tcp_rx_pkt_alloc(_conn, _len)					\
+({									\
+	struct net_pkt *_pkt;						\
+									\
+	if ((_len) > 0) {						\
+		_pkt = net_pkt_rx_alloc_with_buffer(			\
+			(_conn)->iface,					\
+			(_len),						\
+			net_context_get_family((_conn)->context),	\
+			IPPROTO_TCP,					\
+			TCP_PKT_ALLOC_TIMEOUT);				\
+	} else {							\
+		_pkt = net_pkt_rx_alloc(TCP_PKT_ALLOC_TIMEOUT);		\
+	}								\
+									\
+	tp_pkt_alloc(_pkt, tp_basename(__FILE__), __LINE__);		\
+									\
+	_pkt;								\
+})
+
 
 #if IS_ENABLED(CONFIG_NET_TEST_PROTOCOL)
 #define conn_seq(_conn, _req) \
@@ -83,7 +112,7 @@
 
 #define conn_mss(_conn)					\
 	((_conn)->recv_options.mss_found ?		\
-	 (_conn)->recv_options.mss : NET_IPV6_MTU)
+	 (_conn)->recv_options.mss : (uint16_t)NET_IPV6_MTU)
 
 #define conn_state(_conn, _s)						\
 ({									\
@@ -99,7 +128,7 @@
 		"send_win=%hu, mss=%hu",				\
 		(_conn), net_pkt_get_len((_conn)->send_data),		\
 		conn->unacked_len, conn->send_win,			\
-		conn_mss((_conn)));					\
+		(uint16_t)conn_mss((_conn)));				\
 	NET_DBG("conn: %p send_data_timer=%hu, send_data_retries=%hu",	\
 		(_conn),						\
 		(bool)k_delayed_work_remaining_get(&(_conn)->send_data_timer),\
@@ -133,7 +162,7 @@ struct tcphdr {
 	uint16_t th_win;
 	uint16_t th_sum;
 	uint16_t th_urp;
-};
+} __packed;
 
 enum th_flags {
 	FIN = 1,
@@ -182,6 +211,7 @@ struct tcp { /* TCP connection */
 	sys_snode_t next;
 	struct net_context *context;
 	struct net_pkt *send_data;
+	struct net_pkt *queue_recv_data;
 	struct net_if *iface;
 	void *recv_user_data;
 	sys_slist_t send_queue;
@@ -194,9 +224,17 @@ struct tcp { /* TCP connection */
 	struct k_fifo recv_data;  /* temp queue before passing data to app */
 	struct tcp_options recv_options;
 	struct k_delayed_work send_timer;
+	struct k_delayed_work recv_queue_timer;
 	struct k_delayed_work send_data_timer;
 	struct k_delayed_work timewait_timer;
-	struct k_delayed_work fin_timer;
+	union {
+		/* Because FIN and establish timers are never happening
+		 * at the same time, share the timer between them to
+		 * save memory.
+		 */
+		struct k_delayed_work fin_timer;
+		struct k_delayed_work establish_timer;
+	};
 	union tcp_endpoint src;
 	union tcp_endpoint dst;
 	size_t send_data_total;
@@ -230,3 +268,5 @@ struct tcp { /* TCP connection */
 
 #define FL(_fl, _op, _mask, _args...)					\
 	_flags(_fl, _op, _mask, strlen("" #_args) ? _args : true)
+
+typedef void (*net_tcp_cb_t)(struct tcp *conn, void *user_data);

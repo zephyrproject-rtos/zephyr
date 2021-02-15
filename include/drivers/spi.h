@@ -320,10 +320,16 @@ static inline int spi_write(const struct device *dev,
 	return spi_transceive(dev, config, tx_bufs, NULL);
 }
 
+/* Doxygen defines this so documentation is generated. */
+#ifdef CONFIG_SPI_ASYNC
+
 /**
  * @brief Read/write the specified amount of data from the SPI driver.
  *
- * Note: This function is asynchronous.
+ * @note This function is asynchronous.
+ *
+ * @note This function is available only if @option{CONFIG_SPI_ASYNC}
+ * is selected.
  *
  * @param dev Pointer to the device structure for the driver instance
  * @param config Pointer to a valid spi_config structure instance.
@@ -348,26 +354,19 @@ static inline int spi_transceive_async(const struct device *dev,
 				       const struct spi_buf_set *rx_bufs,
 				       struct k_poll_signal *async)
 {
-#ifdef CONFIG_SPI_ASYNC
 	const struct spi_driver_api *api =
 		(const struct spi_driver_api *)dev->api;
 
 	return api->transceive_async(dev, config, tx_bufs, rx_bufs, async);
-#else
-	ARG_UNUSED(dev);
-	ARG_UNUSED(config);
-	ARG_UNUSED(tx_bufs);
-	ARG_UNUSED(rx_bufs);
-	ARG_UNUSED(async);
-
-	return -ENOTSUP;
-#endif /* CONFIG_SPI_ASYNC */
 }
 
 /**
  * @brief Read the specified amount of data from the SPI driver.
  *
- * Note: This function is asynchronous.
+ * @note This function is asynchronous.
+ *
+ * @note This function is available only if @option{CONFIG_SPI_ASYNC}
+ * is selected.
  *
  * @param dev Pointer to the device structure for the driver instance
  * @param config Pointer to a valid spi_config structure instance.
@@ -394,7 +393,10 @@ static inline int spi_read_async(const struct device *dev,
 /**
  * @brief Write the specified amount of data from the SPI driver.
  *
- * Note: This function is asynchronous.
+ * @note This function is asynchronous.
+ *
+ * @note This function is available only if @option{CONFIG_SPI_ASYNC}
+ * is selected.
  *
  * @param dev Pointer to the device structure for the driver instance
  * @param config Pointer to a valid spi_config structure instance.
@@ -417,6 +419,7 @@ static inline int spi_write_async(const struct device *dev,
 {
 	return spi_transceive_async(dev, config, tx_bufs, NULL, async);
 }
+#endif /* CONFIG_SPI_ASYNC */
 
 /**
  * @brief Release the SPI device locked on by the current config

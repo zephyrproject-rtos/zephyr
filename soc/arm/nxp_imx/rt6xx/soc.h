@@ -24,13 +24,6 @@
 
 #endif /* !_ASMLANGUAGE */
 
-/*!< Board System oscillator settling time in us */
-#define BOARD_SYSOSC_SETTLING_US 260U
-/*!< Board xtal32K frequency in Hz */
-#define BOARD_XTAL32K_CLK_HZ 32768U
-/*!< Board xtal frequency in Hz */
-#define BOARD_XTAL_SYS_CLK_HZ 24000000U
-
 /*!<@brief Analog mux is disabled */
 #define IOPCTL_PIO_ANAMUX_DI 0x00u
 /*!<@brief Analog mux is enabled */

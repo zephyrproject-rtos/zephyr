@@ -19,6 +19,7 @@
  */
 #include <device.h>
 #include <soc.h>
+#include <stm32_ll_exti.h>
 #include <sys/__assert.h>
 #include <drivers/interrupt_controller/exti_stm32.h>
 
@@ -51,6 +52,15 @@ const IRQn_Type exti_irq_table[] = {
 	EXTI4_IRQn, EXTI9_5_IRQn, EXTI9_5_IRQn, EXTI9_5_IRQn,
 	EXTI9_5_IRQn, EXTI9_5_IRQn, EXTI15_10_IRQn, EXTI15_10_IRQn,
 	EXTI15_10_IRQn, EXTI15_10_IRQn, EXTI15_10_IRQn, EXTI15_10_IRQn
+};
+#elif defined(CONFIG_SOC_STM32F410RX) /* STM32F410RX has no OTG_FS_WKUP_IRQn */
+const IRQn_Type exti_irq_table[] = {
+	EXTI0_IRQn, EXTI1_IRQn, EXTI2_IRQn, EXTI3_IRQn,
+	EXTI4_IRQn, EXTI9_5_IRQn, EXTI9_5_IRQn, EXTI9_5_IRQn,
+	EXTI9_5_IRQn, EXTI9_5_IRQn, EXTI15_10_IRQn, EXTI15_10_IRQn,
+	EXTI15_10_IRQn, EXTI15_10_IRQn, EXTI15_10_IRQn, EXTI15_10_IRQn,
+	PVD_IRQn, 0xFF, 0xFF, 0xFF,
+	0xFF, TAMP_STAMP_IRQn, RTC_WKUP_IRQn
 };
 #elif defined(CONFIG_SOC_SERIES_STM32F2X) || \
 	defined(CONFIG_SOC_SERIES_STM32F4X)
@@ -402,9 +412,10 @@ static int stm32_exti_init(const struct device *dev)
 }
 
 static struct stm32_exti_data exti_data;
-DEVICE_INIT(exti_stm32, STM32_EXTI_NAME, stm32_exti_init,
-	    &exti_data, NULL,
-	    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_DEFINE(exti_stm32, STM32_EXTI_NAME, stm32_exti_init,
+	      NULL, &exti_data, NULL,
+	      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+	      NULL);
 
 /**
  * @brief set & unset for the interrupt callbacks
@@ -558,10 +569,12 @@ static void __stm32_exti_connect_irqs(const struct device *dev)
 		CONFIG_EXTI_STM32_PVD_IRQ_PRI,
 		__stm32_exti_isr_16, DEVICE_GET(exti_stm32),
 		0);
+#if !defined(CONFIG_SOC_STM32F410RX)
 	IRQ_CONNECT(OTG_FS_WKUP_IRQn,
 		CONFIG_EXTI_STM32_OTG_FS_WKUP_IRQ_PRI,
 		__stm32_exti_isr_18, DEVICE_GET(exti_stm32),
 		0);
+#endif
 	IRQ_CONNECT(TAMP_STAMP_IRQn,
 		CONFIG_EXTI_STM32_TAMP_STAMP_IRQ_PRI,
 		__stm32_exti_isr_21, DEVICE_GET(exti_stm32),

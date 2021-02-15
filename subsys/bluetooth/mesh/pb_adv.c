@@ -460,7 +460,7 @@ static void gen_prov_start(struct prov_rx *rx, struct net_buf_simple *buf)
 	link.rx.last_seg = START_LAST_SEG(rx->gpc);
 
 	if ((link.rx.seg & BIT(0)) &&
-	    (find_msb_set(~link.rx.seg) >= link.rx.last_seg)) {
+	    (find_msb_set((~link.rx.seg) & SEG_NVAL) - 1 > link.rx.last_seg)) {
 		BT_ERR("Invalid segment index %u", seg);
 		prov_failed(PROV_ERR_NVAL_FMT);
 		return;
@@ -816,7 +816,15 @@ void bt_mesh_pb_adv_recv(struct net_buf_simple *buf)
 static int prov_link_open(const uint8_t uuid[16], k_timeout_t timeout,
 			  const struct prov_bearer_cb *cb, void *cb_data)
 {
+	int err;
+
 	BT_DBG("uuid %s", bt_hex(uuid, 16));
+
+	err = bt_mesh_adv_enable();
+	if (err) {
+		BT_ERR("Failed enabling advertiser");
+		return err;
+	}
 
 	if (atomic_test_and_set_bit(link.flags, ADV_LINK_ACTIVE)) {
 		return -EBUSY;
@@ -839,6 +847,14 @@ static int prov_link_open(const uint8_t uuid[16], k_timeout_t timeout,
 
 static int prov_link_accept(const struct prov_bearer_cb *cb, void *cb_data)
 {
+	int err;
+
+	err = bt_mesh_adv_enable();
+	if (err) {
+		BT_ERR("Failed enabling advertiser");
+		return err;
+	}
+
 	if (atomic_test_bit(link.flags, ADV_LINK_ACTIVE)) {
 		return -EBUSY;
 	}

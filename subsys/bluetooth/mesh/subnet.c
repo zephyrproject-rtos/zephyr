@@ -9,6 +9,7 @@
 #include <string.h>
 #include <errno.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <sys/atomic.h>
 #include <sys/util.h>
 #include <sys/byteorder.h>
@@ -37,6 +38,26 @@
 #include "settings.h"
 #include "prov.h"
 
+/* Tracking of what storage changes are pending for Net Keys. We track this in
+ * a separate array here instead of within the respective bt_mesh_subnet
+ * struct itselve, since once a key gets deleted its struct becomes invalid
+ * and may be reused for other keys.
+ */
+struct net_key_update {
+	uint16_t key_idx:12,    /* NetKey Index */
+		 valid:1,       /* 1 if this entry is valid, 0 if not */
+		 clear:1;       /* 1 if key needs clearing, 0 if storing */
+};
+
+/* NetKey storage information */
+struct net_key_val {
+	uint8_t kr_flag:1,
+		kr_phase:7;
+	uint8_t val[2][16];
+} __packed;
+
+static struct net_key_update net_key_updates[CONFIG_BT_MESH_SUBNET_COUNT];
+
 static struct bt_mesh_subnet subnets[CONFIG_BT_MESH_SUBNET_COUNT] = {
 	[0 ... (CONFIG_BT_MESH_SUBNET_COUNT - 1)] = {
 		.net_idx = BT_MESH_KEY_UNUSED,
@@ -48,6 +69,77 @@ static void subnet_evt(struct bt_mesh_subnet *sub, enum bt_mesh_key_evt evt)
 	Z_STRUCT_SECTION_FOREACH(bt_mesh_subnet_cb, cb) {
 		cb->evt_handler(sub, evt);
 	}
+}
+
+static void clear_net_key(uint16_t net_idx)
+{
+	char path[20];
+	int err;
+
+	BT_DBG("NetKeyIndex 0x%03x", net_idx);
+
+	snprintk(path, sizeof(path), "bt/mesh/NetKey/%x", net_idx);
+	err = settings_delete(path);
+	if (err) {
+		BT_ERR("Failed to clear NetKeyIndex 0x%03x", net_idx);
+	} else {
+		BT_DBG("Cleared NetKeyIndex 0x%03x", net_idx);
+	}
+}
+
+static void store_subnet(uint16_t net_idx)
+{
+	const struct bt_mesh_subnet *sub;
+	struct net_key_val key;
+	char path[20];
+	int err;
+
+	sub = bt_mesh_subnet_get(net_idx);
+	if (!sub) {
+		BT_WARN("NetKeyIndex 0x%03x not found", net_idx);
+		return;
+	}
+
+	BT_DBG("NetKeyIndex 0x%03x", net_idx);
+
+	snprintk(path, sizeof(path), "bt/mesh/NetKey/%x", net_idx);
+
+	memcpy(&key.val[0], sub->keys[0].net, 16);
+	memcpy(&key.val[1], sub->keys[1].net, 16);
+	key.kr_flag = 0U; /* Deprecated */
+	key.kr_phase = sub->kr_phase;
+
+	err = settings_save_one(path, &key, sizeof(key));
+	if (err) {
+		BT_ERR("Failed to store NetKey value");
+	} else {
+		BT_DBG("Stored NetKey value");
+	}
+}
+
+static struct net_key_update *net_key_update_find(uint16_t key_idx,
+					struct net_key_update **free_slot)
+{
+	struct net_key_update *match;
+	int i;
+
+	match = NULL;
+	*free_slot = NULL;
+
+	for (i = 0; i < ARRAY_SIZE(net_key_updates); i++) {
+		struct net_key_update *update = &net_key_updates[i];
+
+		if (!update->valid) {
+			*free_slot = update;
+			continue;
+		}
+
+		if (update->key_idx == key_idx) {
+			match = update;
+		}
+	}
+
+	return match;
 }
 
 uint8_t bt_mesh_net_flags(struct bt_mesh_subnet *sub)
@@ -63,6 +155,42 @@ uint8_t bt_mesh_net_flags(struct bt_mesh_subnet *sub)
 	}
 
 	return flags;
+}
+
+static void update_subnet_settings(uint16_t net_idx, bool store)
+{
+	struct net_key_update *update, *free_slot;
+	uint8_t clear = store ? 0U : 1U;
+
+	BT_DBG("NetKeyIndex 0x%03x", net_idx);
+
+	update = net_key_update_find(net_idx, &free_slot);
+	if (update) {
+		update->clear = clear;
+		bt_mesh_settings_store_schedule(
+			BT_MESH_SETTINGS_NET_KEYS_PENDING);
+		return;
+	}
+
+	if (!free_slot) {
+		if (store) {
+			store_subnet(net_idx);
+		} else {
+			clear_net_key(net_idx);
+		}
+		return;
+	}
+
+	free_slot->valid = 1U;
+	free_slot->key_idx = net_idx;
+	free_slot->clear = clear;
+
+	bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_NET_KEYS_PENDING);
+}
+
+void bt_mesh_subnet_store(uint16_t net_idx)
+{
+	update_subnet_settings(net_idx, true);
 }
 
 static void key_refresh(struct bt_mesh_subnet *sub, uint8_t new_phase)
@@ -82,6 +210,10 @@ static void key_refresh(struct bt_mesh_subnet *sub, uint8_t new_phase)
 		break;
 	/* Revoking keys */
 	case BT_MESH_KR_PHASE_3:
+		if (sub->kr_phase == BT_MESH_KR_NORMAL) {
+			return;
+		}
+		__fallthrough;
 	case BT_MESH_KR_NORMAL:
 		sub->kr_phase = BT_MESH_KR_NORMAL;
 		memcpy(&sub->keys[0], &sub->keys[1], sizeof(sub->keys[0]));
@@ -92,7 +224,7 @@ static void key_refresh(struct bt_mesh_subnet *sub, uint8_t new_phase)
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		BT_DBG("Storing Updated NetKey persistently");
-		bt_mesh_store_subnet(sub->net_idx);
+		bt_mesh_subnet_store(sub->net_idx);
 	}
 }
 
@@ -134,7 +266,7 @@ static struct bt_mesh_subnet *subnet_alloc(uint16_t net_idx)
 static void subnet_del(struct bt_mesh_subnet *sub)
 {
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		bt_mesh_clear_subnet(sub->net_idx);
+		update_subnet_settings(sub->net_idx, false);
 	}
 
 	bt_mesh_net_loopback_clear(sub->net_idx);
@@ -237,7 +369,7 @@ uint8_t bt_mesh_subnet_add(uint16_t net_idx, const uint8_t key[16])
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		BT_DBG("Storing NetKey persistently");
-		bt_mesh_store_subnet(sub->net_idx);
+		bt_mesh_subnet_store(sub->net_idx);
 	}
 
 	return STATUS_SUCCESS;
@@ -330,7 +462,7 @@ uint8_t bt_mesh_subnet_kr_phase_set(uint16_t net_idx, uint8_t *phase)
 {
 	/* Table in Bluetooth Mesh Profile Specification Section 4.2.14: */
 	const uint8_t valid_transitions[] = {
-		0x00, /* Normal phase: KR is started by key update */
+		BIT(BT_MESH_KR_PHASE_3), /* Normal phase: KR is started by key update */
 		BIT(BT_MESH_KR_PHASE_2) | BIT(BT_MESH_KR_PHASE_3), /* Phase 1 */
 		BIT(BT_MESH_KR_PHASE_3), /* Phase 2 */
 		/* Subnet is never in Phase 3 */
@@ -587,9 +719,8 @@ bool bt_mesh_net_cred_find(struct bt_mesh_net_rx *rx, struct net_buf_simple *in,
 
 	BT_DBG("");
 
-	rx->friend_cred = 1U;
 #if defined(CONFIG_BT_MESH_LOW_POWER)
-	if (bt_mesh_lpn_established()) {
+	if (bt_mesh_lpn_waiting_update()) {
 		rx->sub = bt_mesh.lpn.sub;
 
 		for (j = 0; j < ARRAY_SIZE(bt_mesh.lpn.cred); j++) {
@@ -599,6 +730,8 @@ bool bt_mesh_net_cred_find(struct bt_mesh_net_rx *rx, struct net_buf_simple *in,
 
 			if (cb(rx, in, out, &bt_mesh.lpn.cred[j])) {
 				rx->new_key = (j > 0);
+				rx->friend_cred = 1U;
+				rx->ctx.net_idx = rx->sub->net_idx;
 				return true;
 			}
 		}
@@ -615,10 +748,6 @@ bool bt_mesh_net_cred_find(struct bt_mesh_net_rx *rx, struct net_buf_simple *in,
 	for (i = 0; i < ARRAY_SIZE(bt_mesh.frnd); i++) {
 		struct bt_mesh_friend *frnd = &bt_mesh.frnd[i];
 
-		if (!frnd->established) {
-			continue;
-		}
-
 		if (!frnd->subnet) {
 			continue;
 		}
@@ -632,6 +761,8 @@ bool bt_mesh_net_cred_find(struct bt_mesh_net_rx *rx, struct net_buf_simple *in,
 
 			if (cb(rx, in, out, &frnd->cred[j])) {
 				rx->new_key = (j > 0);
+				rx->friend_cred = 1U;
+				rx->ctx.net_idx = rx->sub->net_idx;
 				return true;
 			}
 		}
@@ -651,10 +782,61 @@ bool bt_mesh_net_cred_find(struct bt_mesh_net_rx *rx, struct net_buf_simple *in,
 
 			if (cb(rx, in, out, &rx->sub->keys[j].msg)) {
 				rx->new_key = (j > 0);
+				rx->friend_cred = 0U;
+				rx->ctx.net_idx = rx->sub->net_idx;
 				return true;
 			}
 		}
 	}
 
 	return false;
+}
+
+static int net_key_set(const char *name, size_t len_rd,
+		       settings_read_cb read_cb, void *cb_arg)
+{
+	struct net_key_val key;
+	int err;
+	uint16_t net_idx;
+
+	if (!name) {
+		BT_ERR("Insufficient number of arguments");
+		return -ENOENT;
+	}
+
+	net_idx = strtol(name, NULL, 16);
+	err = bt_mesh_settings_set(read_cb, cb_arg, &key, sizeof(key));
+	if (err) {
+		BT_ERR("Failed to set \'net-key\'");
+		return err;
+	}
+
+	BT_DBG("NetKeyIndex 0x%03x recovered from storage", net_idx);
+
+	return bt_mesh_subnet_set(
+		net_idx, key.kr_phase, key.val[0],
+		(key.kr_phase != BT_MESH_KR_NORMAL) ? key.val[1] : NULL);
+}
+
+BT_MESH_SETTINGS_DEFINE(subnet, "NetKey", net_key_set);
+
+void bt_mesh_subnet_pending_store(void)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(net_key_updates); i++) {
+		struct net_key_update *update = &net_key_updates[i];
+
+		if (!update->valid) {
+			continue;
+		}
+
+		if (update->clear) {
+			clear_net_key(update->key_idx);
+		} else {
+			store_subnet(update->key_idx);
+		}
+
+		update->valid = 0U;
+	}
 }

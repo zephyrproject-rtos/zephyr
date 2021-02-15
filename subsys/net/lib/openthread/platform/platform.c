@@ -30,7 +30,7 @@ void otSysProcessDrivers(otInstance *aInstance)
 	platformRadioProcess(aInstance);
 	platformAlarmProcess(aInstance);
 
-	if (IS_ENABLED(CONFIG_OPENTHREAD_NCP)) {
+	if (IS_ENABLED(CONFIG_OPENTHREAD_COPROCESSOR)) {
 		platformUartProcess(aInstance);
 	}
 }

@@ -38,8 +38,7 @@
 #ifndef LWM2M_RD_CLIENT_H
 #define LWM2M_RD_CLIENT_H
 
-void engine_trigger_restart(void);
-void engine_trigger_update(void);
+void engine_trigger_update(bool update_objects);
 #if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
 void engine_bootstrap_finish(void);
 #endif

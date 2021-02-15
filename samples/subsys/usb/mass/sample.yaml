@@ -1,10 +1,10 @@
 sample:
   name: Mass Storage
 tests:
-  sample.usb.mass_flash:
-    min_ram: 32
-    depends_on: usb_device flash
-    extra_args: OVERLAY_CONFIG="overlay-flash-disk.conf"
+  sample.usb.mass_ram_none:
+    min_ram: 64
+    depends_on: usb_device
+    platform_exclude: native_posix native_posix_64
     extra_configs:
         - CONFIG_LOG_DEFAULT_LEVEL=3
     tags: msd usb
@@ -13,12 +13,39 @@ tests:
       type: one_line
       regex:
         - "The device is put in USB mass storage mode."
-  sample.usb.mass_ram:
-    min_ram: 32
-    depends_on: usb_device gpio
-    extra_args: OVERLAY_CONFIG="overlay-ram-disk.conf"
+  sample.usb.mass_ram_fat:
+    min_ram: 128
+    depends_on: usb_device
+    platform_exclude: native_posix native_posix_64
     extra_configs:
         - CONFIG_LOG_DEFAULT_LEVEL=3
+        - CONFIG_APP_MSC_STORAGE_RAM=y
+    tags: msd usb
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "The device is put in USB mass storage mode."
+  sample.usb.mass_flash_fatfs:
+    min_ram: 32
+    depends_on: usb_device
+    filter: dt_compat_enabled("nordic,qspi-nor")
+    extra_configs:
+        - CONFIG_LOG_DEFAULT_LEVEL=3
+        - CONFIG_APP_MSC_STORAGE_FLASH_LITTLEFS=y
+    tags: msd usb
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "The device is put in USB mass storage mode."
+  sample.usb.mass_flash_littlefs:
+    min_ram: 32
+    depends_on: usb_device
+    filter: dt_compat_enabled("nordic,qspi-nor")
+    extra_configs:
+        - CONFIG_LOG_DEFAULT_LEVEL=3
+        - CONFIG_APP_MSC_STORAGE_FLASH_FATFS=y
     tags: msd usb
     harness: console
     harness_config:

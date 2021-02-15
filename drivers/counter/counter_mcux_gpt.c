@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT nxp_imx_gpt
 
 #include <drivers/counter.h>
+#include <drivers/clock_control.h>
 #include <fsl_gpt.h>
 #include <logging/log.h>
 
@@ -15,6 +16,8 @@ LOG_MODULE_REGISTER(mcux_gpt, CONFIG_COUNTER_LOG_LEVEL);
 struct mcux_gpt_config {
 	/* info must be first element */
 	struct counter_config_info info;
+	char *clock_name;
+	clock_control_subsys_t clock_subsys;
 	GPT_Type *base;
 	clock_name_t clock_source;
 };
@@ -169,13 +172,24 @@ static uint32_t mcux_gpt_get_max_relative_alarm(const struct device *dev)
 static int mcux_gpt_init(const struct device *dev)
 {
 	const struct mcux_gpt_config *config = dev->config;
+	const struct device *clock_dev;
 	gpt_config_t gptConfig;
 	uint32_t clock_freq;
 
+	clock_dev = device_get_binding(config->clock_name);
+	if (clock_dev == NULL) {
+		return -EINVAL;
+	}
+
+	if (clock_control_get_rate(clock_dev, config->clock_subsys,
+				   &clock_freq)) {
+		return -EINVAL;
+	}
+
 	/* Adjust divider to match expected freq */
-	clock_freq = CLOCK_GetFreq(config->clock_source);
 	if (clock_freq % config->info.freq) {
 		LOG_ERR("Cannot Adjust GPT freq to %u\n", config->info.freq);
+		LOG_ERR("clock src is %u\n", clock_freq);
 		return -EINVAL;
 	}
 
@@ -205,19 +219,21 @@ static const struct counter_driver_api mcux_gpt_driver_api = {
 									\
 	static const struct mcux_gpt_config mcux_gpt_config_ ## n = {	\
 		.base = (void *)DT_INST_REG_ADDR(n),			\
-		.clock_source = kCLOCK_PerClk,				\
+		.clock_name = DT_INST_CLOCKS_LABEL(n),			\
+		.clock_subsys =						\
+			(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
 		.info = {						\
 			.max_top_value = UINT32_MAX,			\
-			.freq = 25000000,				\
+			.freq = DT_INST_PROP(n, gptfreq),           \
 			.channels = 1,					\
 			.flags = COUNTER_CONFIG_INFO_COUNT_UP,		\
 		},							\
 	};								\
 									\
 	static int mcux_gpt_## n ##_init(const struct device *dev);	\
-	DEVICE_AND_API_INIT(mcux_gpt ## n,				\
-			    DT_INST_LABEL(n),				\
+	DEVICE_DT_INST_DEFINE(n,					\
 			    mcux_gpt_## n ##_init,			\
+			    device_pm_control_nop,			\
 			    &mcux_gpt_data_ ## n,			\
 			    &mcux_gpt_config_ ## n,			\
 			    POST_KERNEL,				\
@@ -228,7 +244,7 @@ static const struct counter_driver_api mcux_gpt_driver_api = {
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(n),				\
 			    DT_INST_IRQ(n, priority),			\
-			    mcux_gpt_isr, DEVICE_GET(mcux_gpt ## n), 0);\
+			    mcux_gpt_isr, DEVICE_DT_INST_GET(n), 0);	\
 		irq_enable(DT_INST_IRQN(n));				\
 		return mcux_gpt_init(dev);				\
 	}								\

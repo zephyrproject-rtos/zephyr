@@ -15,7 +15,7 @@ zephyr_library_sources(adsp.c)
 zephyr_library_sources(main_entry.S)
 zephyr_library_sources(soc.c)
 zephyr_library_sources(soc_mp.c)
-zephyr_library_sources(printk_out.c)
+zephyr_library_sources(trace_out.c)
 
 zephyr_library_link_libraries(INTEL_ADSP_COMMON)
 
@@ -27,7 +27,5 @@ if(CONFIG_SOC_SERIES_INTEL_CAVS_V15 OR
    CONFIG_SOC_SERIES_INTEL_CAVS_V18 OR
    CONFIG_SOC_SERIES_INTEL_CAVS_V20 OR
    CONFIG_SOC_SERIES_INTEL_CAVS_V25)
-	zephyr_library_sources(soc.c)
-	zephyr_library_sources(soc_mp.c)
 	include(bootloader.cmake)
 endif()

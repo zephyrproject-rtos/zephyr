@@ -989,8 +989,10 @@ int osdp_cp_send_command(int pd, struct osdp_cmd *cmd)
 	case OSDP_CMD_COMSET:
 		cmd_id = CMD_COMSET;
 		break;
+#ifdef CONFIG_OSDP_SC_ENABLED
 	case OSDP_CMD_KEYSET:
 		return osdp_cp_send_command_keyset(&cmd->keyset);
+#endif
 	default:
 		LOG_ERR(TAG "Invalid command ID %d", cmd->id);
 		return -1;

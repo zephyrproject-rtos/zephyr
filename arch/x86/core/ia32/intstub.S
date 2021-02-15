@@ -31,8 +31,8 @@
 
 	GTEXT(arch_swap)
 
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
-	GTEXT(z_sys_power_save_idle_exit)
+#ifdef CONFIG_PM
+	GTEXT(z_pm_save_idle_exit)
 #endif
 
 /**
@@ -144,11 +144,11 @@ SECTION_FUNC(TEXT, _interrupt_enter)
 
 	pushl	%edi			/* Save stack pointer */
 
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
+#ifdef CONFIG_PM
 	cmpl	$0, _kernel_offset_to_idle(%ecx)
 	jne	handle_idle
 	/* fast path is !idle, in the pipeline */
-#endif /* CONFIG_SYS_POWER_MANAGEMENT */
+#endif /* CONFIG_PM */
 
 	/* fall through to nested case */
 
@@ -297,29 +297,29 @@ nestedInterrupt:
 	KPTI_IRET
 
 
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
+#ifdef CONFIG_PM
 handle_idle:
 	pushl	%eax
 	pushl	%edx
-	/* Populate 'ticks' argument to z_sys_power_save_idle_exit */
+	/* Populate 'ticks' argument to z_pm_save_idle_exit */
 	push	_kernel_offset_to_idle(%ecx)
 	/* Zero out _kernel.idle */
 	movl	$0, _kernel_offset_to_idle(%ecx)
 
 	/*
-	 * Beware that a timer driver's z_sys_power_save_idle_exit() implementation might
+	 * Beware that a timer driver's z_pm_save_idle_exit() implementation might
 	 * expect that interrupts are disabled when invoked.  This ensures that
 	 * the calculation and programming of the device for the next timer
 	 * deadline is not interrupted.
 	 */
 
-	call	z_sys_power_save_idle_exit
+	call	z_pm_save_idle_exit
 	/* discard 'ticks' argument passed on the stack */
 	add	$0x4, %esp
 	popl	%edx
 	popl	%eax
 	jmp	alreadyOnIntStack
-#endif /* CONFIG_SYS_POWER_MANAGEMENT */
+#endif /* CONFIG_PM */
 
 /**
  *

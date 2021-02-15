@@ -71,10 +71,14 @@
 #define WDT_NODE DT_ALIAS(watchdog0)
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_window_watchdog)
 #define WDT_NODE DT_INST(0, st_stm32_window_watchdog)
+#define TIMEOUTS 0
+#define WDT_TEST_MAX_WINDOW 200
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_watchdog)
 #define WDT_NODE DT_INST(0, st_stm32_watchdog)
+#define TIMEOUTS 0
 #elif DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_watchdog)
 #define WDT_NODE DT_INST(0, nordic_nrf_watchdog)
+#define TIMEOUTS 2
 #elif DT_HAS_COMPAT_STATUS_OKAY(espressif_esp32_watchdog)
 #define WDT_NODE DT_INST(0, espressif_esp32_watchdog)
 #elif DT_HAS_COMPAT_STATUS_OKAY(silabs_gecko_wdog)
@@ -83,6 +87,8 @@
 #define WDT_NODE DT_INST(0, nxp_kinetis_wdog32)
 #elif DT_HAS_COMPAT_STATUS_OKAY(microchip_xec_watchdog)
 #define WDT_NODE DT_INST(0, microchip_xec_watchdog)
+#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_npcx_watchdog)
+#define WDT_NODE DT_INST(0, nuvoton_npcx_watchdog)
 #endif
 
 #ifdef WDT_NODE
@@ -98,11 +104,11 @@
 #define WDT_TEST_CB0_TEST_VALUE    0x0CB0
 #define WDT_TEST_CB1_TEST_VALUE    0x0CB1
 
-#ifdef CONFIG_WDT_NRFX
-#define TIMEOUTS                   2
-#elif defined(CONFIG_IWDG_STM32)
-#define TIMEOUTS                   0
-#else
+#ifndef WDT_TEST_MAX_WINDOW
+#define WDT_TEST_MAX_WINDOW                2000U
+#endif
+
+#ifndef TIMEOUTS
 #define TIMEOUTS                   1
 #endif
 
@@ -185,7 +191,7 @@ static int test_wdt_no_callback(void)
 
 	m_cfg_wdt0.callback = NULL;
 	m_cfg_wdt0.flags = WDT_FLAG_RESET_SOC;
-	m_cfg_wdt0.window.max = 2000U;
+	m_cfg_wdt0.window.max = WDT_TEST_MAX_WINDOW;
 	err = wdt_install_timeout(wdt, &m_cfg_wdt0);
 	if (err < 0) {
 		TC_PRINT("Watchdog install error\n");
@@ -231,7 +237,7 @@ static int test_wdt_callback_1(void)
 	m_testvalue = 0U;
 	m_cfg_wdt0.flags = WDT_FLAG_RESET_SOC;
 	m_cfg_wdt0.callback = wdt_int_cb0;
-	m_cfg_wdt0.window.max = 2000U;
+	m_cfg_wdt0.window.max = WDT_TEST_MAX_WINDOW;
 	err = wdt_install_timeout(wdt, &m_cfg_wdt0);
 	if (err < 0) {
 		if (err == -ENOTSUP) {
@@ -287,7 +293,7 @@ static int test_wdt_callback_2(void)
 	m_testvalue = 0U;
 	m_cfg_wdt0.callback = wdt_int_cb0;
 	m_cfg_wdt0.flags = WDT_FLAG_RESET_SOC;
-	m_cfg_wdt0.window.max = 2000U;
+	m_cfg_wdt0.window.max = WDT_TEST_MAX_WINDOW;
 	err = wdt_install_timeout(wdt, &m_cfg_wdt0);
 
 	if (err < 0) {
@@ -297,7 +303,7 @@ static int test_wdt_callback_2(void)
 
 	m_cfg_wdt1.callback = wdt_int_cb1;
 	m_cfg_wdt1.flags = WDT_FLAG_RESET_SOC;
-	m_cfg_wdt1.window.max = 2000U;
+	m_cfg_wdt1.window.max = WDT_TEST_MAX_WINDOW;
 	err = wdt_install_timeout(wdt, &m_cfg_wdt1);
 	if (err < 0) {
 		TC_PRINT("Watchdog install error\n");

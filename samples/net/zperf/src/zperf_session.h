@@ -49,7 +49,7 @@ struct session {
 	uint32_t outorder;
 	uint32_t error;
 	uint64_t length;
-	uint32_t start_time;
+	int64_t start_time;
 	uint32_t last_time;
 	int32_t jitter;
 	int32_t last_transit_time;

@@ -236,10 +236,6 @@
 #define LSRMCTL			0x71D54
 #define LSPGISTS		0x71D58
 
-#define SHIM_LSPGCTL		0x50
-#define SHIM_LSPGISTS		0x58
-
-
 #define SHIM_L2_MECS		(SHIM_BASE + 0xd0)
 
 /** \brief LDO Control */

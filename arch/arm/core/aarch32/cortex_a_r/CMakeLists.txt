@@ -11,4 +11,5 @@ zephyr_library_sources(
   irq_init.c
   reboot.c
   stacks.c
+  tcm.c
   )

@@ -12,25 +12,6 @@
 
 / {
 	aliases {
-		adc-0 = &adc0;
-		i2c-0 = &i2c0;
-		i2c-1 = &i2c1;
-		i2c-2 = &i2c2;
-		i2c-3 = &i2c3;
-		pinmux-a = &porta;
-		pinmux-b = &portb;
-		pinmux-c = &portc;
-		pinmux-d = &portd;
-		pinmux-e = &porte;
-		spi-0 = &spi0;
-		spi-1 = &spi1;
-		spi-2 = &spi2;
-		uart-0 = &lpuart0;
-		uart-1 = &lpuart1;
-		uart-2 = &lpuart2;
-		uart-3 = &lpuart3;
-		uart-4 = &lpuart4;
-		usbd-0 = &usbotg;
 		watchdog0 = &wdog;
 	};
 
@@ -249,30 +230,35 @@
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x40049000 0x1000>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 9>;
+			label = "porta";
 		};
 
 		portb: pinmux@4004a000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004a000 0x1000>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 10>;
+			label = "portb";
 		};
 
 		portc: pinmux@4004b000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004b000 0x1000>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 11>;
+			label = "portc";
 		};
 
 		portd: pinmux@4004c000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004c000 0x1000>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 12>;
+			label = "portd";
 		};
 
 		porte: pinmux@4004d000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004d000 0x1000>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 13>;
+			label = "porte";
 		};
 
 		ftm0: ftm@40038000 {

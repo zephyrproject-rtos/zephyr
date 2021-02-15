@@ -50,8 +50,6 @@ struct rv32m1_intmux_config {
 
 #define DEV_REGS(dev) (DEV_CFG(dev)->regs)
 
-DEVICE_DECLARE(intmux);
-
 /*
  * <irq_nextlevel.h> API
  */
@@ -111,7 +109,7 @@ static int rv32m1_intmux_get_line_state(const struct device *dev,
 
 static void rv32m1_intmux_isr(const void *arg)
 {
-	const struct device *dev = DEVICE_GET(intmux);
+	const struct device *dev = DEVICE_DT_INST_GET(0);
 	INTMUX_Type *regs = DEV_REGS(dev);
 	uint32_t channel = POINTER_TO_UINT(arg);
 	uint32_t line = (regs->CHANNEL[channel].CHn_VEC >> 2);
@@ -220,7 +218,6 @@ static int rv32m1_intmux_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(intmux, DT_INST_LABEL(0),
-		    &rv32m1_intmux_init, NULL,
+DEVICE_DT_INST_DEFINE(0, &rv32m1_intmux_init, device_pm_control_nop, NULL,
 		    &rv32m1_intmux_cfg, PRE_KERNEL_1,
 		    CONFIG_RV32M1_INTMUX_INIT_PRIORITY, &rv32m1_intmux_apis);

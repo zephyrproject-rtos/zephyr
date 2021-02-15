@@ -94,7 +94,7 @@ static int spi_sam_configure(const struct device *dev,
 
 	/* Use the requested or next highest possible frequency */
 	div = SOC_ATMEL_SAM_MCK_FREQ_HZ / config->frequency;
-	div = MAX(1, MIN(UINT8_MAX, div));
+	div = CLAMP(div, 1, UINT8_MAX);
 	spi_csr |= SPI_CSR_SCBR(div);
 
 	regs->SPI_CR = SPI_CR_SPIDIS; /* Disable SPI */
@@ -366,7 +366,7 @@ static int spi_sam_transceive(const struct device *dev,
 	Spi *regs = cfg->regs;
 	int err;
 
-	spi_context_lock(&data->ctx, false, NULL);
+	spi_context_lock(&data->ctx, false, NULL, config);
 
 	err = spi_sam_configure(dev, config);
 	if (err != 0) {
@@ -467,9 +467,8 @@ static const struct spi_driver_api spi_sam_driver_api = {
 		SPI_CONTEXT_INIT_LOCK(spi_sam_dev_data_##n, ctx),	\
 		SPI_CONTEXT_INIT_SYNC(spi_sam_dev_data_##n, ctx),	\
 	};								\
-	DEVICE_AND_API_INIT(spi_sam_##n,				\
-			    DT_INST_LABEL(n),				\
-			    &spi_sam_init, &spi_sam_dev_data_##n,	\
+	DEVICE_DT_INST_DEFINE(n, &spi_sam_init, device_pm_control_nop,	\
+			    &spi_sam_dev_data_##n,			\
 			    &spi_sam_config_##n, POST_KERNEL,		\
 			    CONFIG_SPI_INIT_PRIORITY, &spi_sam_driver_api);
 

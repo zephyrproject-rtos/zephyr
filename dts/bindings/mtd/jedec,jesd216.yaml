@@ -1,0 +1,64 @@
+# Copyright (c) 2018 Peter Bigot Consulting, LLC
+# Copyright (c) 2019-2020 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# Common properties used by nodes describing serial flash devices that
+# are compatible with the JESD216 Serial Flash Discoverable Parameters
+# specification.
+#
+# This allows encoding the entire BFP block in devicetree to avoid
+# reading at runtime, while still allowing the driver to pull out extra
+# data of interest, such as erase sizes.
+#
+# Alternatively the BFP block can be absent, but critical fields like
+# size can be provided directly along with the JEDEC ID of the expected
+# device to verify its presence at runtime.
+#
+# Only properties supported by parameter tables documented in the
+# JESD216 standards should be listed in this binding include file.
+
+properties:
+  jedec-id:
+    type: uint8-array
+    required: false
+    description: JEDEC ID as manufacturer ID, memory type, memory density
+
+  size:
+    type: int
+    required: false
+    description: flash capacity in bits
+
+  sfdp-bfp:
+    type: uint8-array
+    required: false
+    description: |
+      Contains the 32-bit words in little-endian byte order from the
+      JESD216 Serial Flash Discoverable Parameters Basic Flash
+      Parameters table.  This provides flash-specific configuration
+      information in cases were runtime retrieval of SFDP data
+      is not desired.
+
+  has-be32k:
+    type: boolean
+    required: false
+    deprecated: true
+    description: Not used after Zephyr 2.3.0
+
+  quad-enable-requirements:
+    type: string
+    enum:
+      - "NONE"
+      - "S2B1v1"
+      - "S1B6"
+      - "S2B7"
+      - "S2B1v4"
+      - "S2B1v5"
+      - "S2B1v6"
+    required: false
+    description: |
+      Quad Enable Requirements value from JESD216 BFP DW15.
+
+      Use NONE if the device detects 1-1-4 and 1-4-4 modes by the
+      instruction.  Use S1B6 if QE is bit 6 of the first status register
+      byte, and can be configured by reading then writing one byte with
+      RDSR and WRSR.  For other fields see the specification.

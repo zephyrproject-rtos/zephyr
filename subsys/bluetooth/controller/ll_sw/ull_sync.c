@@ -27,6 +27,7 @@
 #include "lll_clock.h"
 #include "lll_scan.h"
 #include "lll_sync.h"
+#include "lll_sync_iso.h"
 
 #include "ull_scan_types.h"
 #include "ull_sync_types.h"
@@ -43,7 +44,6 @@
 
 static int init_reset(void);
 static inline struct ll_sync_set *sync_acquire(void);
-static struct ll_sync_set *is_enabled_get(uint16_t handle);
 static void timeout_cleanup(struct ll_sync_set *sync);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 		      uint16_t lazy, void *param);
@@ -52,7 +52,7 @@ static void ticker_update_sync_op_cb(uint32_t status, void *param);
 static void ticker_stop_op_cb(uint32_t status, void *param);
 static void sync_lost(void *param);
 
-static struct ll_sync_set ll_sync_pool[CONFIG_BT_CTLR_SCAN_SYNC_SET];
+static struct ll_sync_set ll_sync_pool[CONFIG_BT_PER_ADV_SYNC_MAX];
 static void *sync_free;
 
 uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
@@ -108,9 +108,9 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 	}
 
-	scan->per_scan.state = LL_SYNC_STATE_IDLE;
 	node_rx->link = link_sync_estab;
 	scan->per_scan.node_rx_estab = node_rx;
+	scan->per_scan.state = LL_SYNC_STATE_IDLE;
 	scan->per_scan.filter_policy = options & BIT(0);
 	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
 		scan_coded->per_scan.state = LL_SYNC_STATE_IDLE;
@@ -142,6 +142,13 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 	/* Initialize sync context */
 	sync->timeout_reload = 0U;
 	sync->timeout_expire = 0U;
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO)
+	/* Reset Broadcast Isochronous Group Sync Establishment */
+	sync->iso.sync_iso = NULL;
+#endif /* CONFIG_BT_CTLR_SYNC_ISO */
+
+	/* Initialize sync LLL context */
 	lll_sync = &sync->lll;
 	lll_sync->skip_prepare = 0U;
 	lll_sync->skip_event = 0U;
@@ -150,10 +157,10 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 	lll_sync->window_widening_event_us = 0U;
 
 	/* Reporting initially enabled/disabled */
-	lll_sync->is_enabled = options & BIT(1);
+	lll_sync->is_rx_enabled = options & BIT(1);
 
 	/* sync_lost node_rx */
-	sync->node_rx_lost.link = link_sync_lost;
+	sync->node_rx_lost.hdr.link = link_sync_lost;
 
 	/* Initialise ULL and LLL headers */
 	ull_hdr_init(&sync->ull);
@@ -190,22 +197,22 @@ uint8_t ll_sync_create_cancel(void **rx)
 		}
 	}
 
+	/* Check for race condition where in sync is established when sync
+	 * context was set to NULL.
+	 */
 	sync = scan->per_scan.sync;
+	if (!sync || sync->timeout_reload) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
 	scan->per_scan.sync = NULL;
 	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
 		scan_coded->per_scan.sync = NULL;
 	}
 
-	/* Check for race condition where in sync is established when sync
-	 * context was set to NULL.
-	 */
-	if (!sync || sync->timeout_reload) {
-		return BT_HCI_ERR_CMD_DISALLOWED;
-	}
-
 	node_rx = (void *)scan->per_scan.node_rx_estab;
 	link_sync_estab = node_rx->hdr.link;
-	link_sync_lost = sync->node_rx_lost.link;
+	link_sync_lost = sync->node_rx_lost.hdr.link;
 
 	ll_rx_link_release(link_sync_lost);
 	ll_rx_link_release(link_sync_estab);
@@ -214,9 +221,17 @@ uint8_t ll_sync_create_cancel(void **rx)
 	node_rx = (void *)&sync->node_rx_lost;
 	node_rx->hdr.type = NODE_RX_TYPE_SYNC;
 	node_rx->hdr.handle = 0xffff;
-	node_rx->hdr.rx_ftr.param = sync;
+
+	/* NOTE: struct node_rx_lost has uint8_t member following the
+	 *       struct node_rx_hdr to store the reason.
+	 */
 	se = (void *)node_rx->pdu;
 	se->status = BT_HCI_ERR_OP_CANCELLED_BY_HOST;
+
+	/* NOTE: Since NODE_RX_TYPE_SYNC is only generated from ULL context,
+	 *       pass ULL context as parameter.
+	 */
+	node_rx->hdr.rx_ftr.param = sync;
 
 	*rx = node_rx;
 
@@ -227,34 +242,21 @@ uint8_t ll_sync_terminate(uint16_t handle)
 {
 	memq_link_t *link_sync_lost;
 	struct ll_sync_set *sync;
-	uint32_t volatile ret_cb;
-	uint32_t ret;
-	void *mark;
+	int err;
 
-	sync = is_enabled_get(handle);
+	sync = ull_sync_is_enabled_get(handle);
 	if (!sync) {
 		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
 	}
 
-	mark = ull_disable_mark(sync);
-	LL_ASSERT(mark == sync);
-
-	ret_cb = TICKER_STATUS_BUSY;
-	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
-			  TICKER_ID_SCAN_SYNC_BASE + handle,
-			  ull_ticker_status_give, (void *)&ret_cb);
-	ret = ull_ticker_status_take(ret, &ret_cb);
-	if (ret) {
-		mark = ull_disable_mark(sync);
-		LL_ASSERT(mark == sync);
-
+	err = ull_ticker_stop_with_mark(TICKER_ID_SCAN_SYNC_BASE + handle,
+					sync, &sync->lll);
+	LL_ASSERT(err == 0 || err == -EALREADY);
+	if (err) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	mark = ull_disable_unmark(sync);
-	LL_ASSERT(mark == sync);
-
-	link_sync_lost = sync->node_rx_lost.link;
+	link_sync_lost = sync->node_rx_lost.hdr.link;
 	ll_rx_link_release(link_sync_lost);
 
 	ull_sync_release(sync);
@@ -294,11 +296,23 @@ int ull_sync_reset(void)
 
 struct ll_sync_set *ull_sync_set_get(uint16_t handle)
 {
-	if (handle >= CONFIG_BT_CTLR_SCAN_SYNC_SET) {
+	if (handle >= CONFIG_BT_PER_ADV_SYNC_MAX) {
 		return NULL;
 	}
 
 	return &ll_sync_pool[handle];
+}
+
+struct ll_sync_set *ull_sync_is_enabled_get(uint16_t handle)
+{
+	struct ll_sync_set *sync;
+
+	sync = ull_sync_set_get(handle);
+	if (!sync || !sync->timeout_reload) {
+		return NULL;
+	}
+
+	return sync;
 }
 
 uint16_t ull_sync_handle_get(struct ll_sync_set *sync)
@@ -367,7 +381,7 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 
 	sca = si->sca_chm[4] >> 5;
 	interval = sys_le16_to_cpu(si->interval);
-	interval_us = interval * 1250U;
+	interval_us = interval * CONN_INT_UNIT_US;
 
 	sync->timeout_reload = RADIO_SYNC_EVENTS((sync->timeout * 10U * 1000U),
 						 interval_us);
@@ -551,18 +565,6 @@ static int init_reset(void)
 static inline struct ll_sync_set *sync_acquire(void)
 {
 	return mem_acquire(&sync_free);
-}
-
-static struct ll_sync_set *is_enabled_get(uint16_t handle)
-{
-	struct ll_sync_set *sync;
-
-	sync = ull_sync_set_get(handle);
-	if (!sync || !sync->timeout_reload) {
-		return NULL;
-	}
-
-	return sync;
 }
 
 static void timeout_cleanup(struct ll_sync_set *sync)

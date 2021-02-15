@@ -318,7 +318,6 @@ static int hp206c_init(const struct device *dev)
 
 static struct hp206c_device_data hp206c_data;
 
-DEVICE_AND_API_INIT(hp206c, DT_INST_LABEL(0),
-		    hp206c_init, &hp206c_data,
+DEVICE_DT_INST_DEFINE(0, hp206c_init, device_pm_control_nop, &hp206c_data,
 		    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &hp206c_api);

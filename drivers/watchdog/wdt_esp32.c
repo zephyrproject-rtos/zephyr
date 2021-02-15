@@ -225,7 +225,6 @@ static const struct wdt_driver_api wdt_api = {
 };
 
 #define ESP32_WDT_INIT(idx)										   \
-	DEVICE_DECLARE(wdt_esp32_##idx);								   \
 	static void wdt_esp32_connect_irq_func##idx(void)						   \
 	{												   \
 		esp32_rom_intr_matrix_set(0, ETS_TG##idx##_WDT_LEVEL_INTR_SOURCE,			   \
@@ -233,7 +232,7 @@ static const struct wdt_driver_api wdt_api = {
 		IRQ_CONNECT(CONFIG_WDT##idx##_ESP32_IRQ,						   \
 			    4,										   \
 			    wdt_esp32_isr,								   \
-			    DEVICE_GET(wdt_esp32_##idx),						   \
+			    DEVICE_DT_INST_GET(idx),							   \
 			    0);										   \
 	}												   \
 													   \
@@ -251,8 +250,9 @@ static const struct wdt_driver_api wdt_api = {
 		.connect_irq = wdt_esp32_connect_irq_func##idx						   \
 	};												   \
 													   \
-	DEVICE_AND_API_INIT(wdt_esp32_##idx, DT_INST_LABEL(idx),		   \
+	DEVICE_DT_INST_DEFINE(idx,									   \
 			    wdt_esp32_init,								   \
+			    device_pm_control_nop,							   \
 			    &wdt##idx##_data,								   \
 			    &wdt_esp32_config##idx,							   \
 			    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,				   \

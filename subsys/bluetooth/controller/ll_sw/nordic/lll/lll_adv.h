@@ -4,13 +4,33 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if defined(CONFIG_BT_CTLR_ADV_SET)
+#define BT_CTLR_ADV_SET CONFIG_BT_CTLR_ADV_SET
+#else /* CONFIG_BT_CTLR_ADV_SET */
+#define BT_CTLR_ADV_SET 1
+#endif /* CONFIG_BT_CTLR_ADV_SET */
+
+/* Structure used to double buffer pointers of AD Data PDU buffer.
+ * The first and last members are used to make modification to AD data to be
+ * context safe. Thread always appends or updates the buffer pointed to
+ * the array element indexed by the member last.
+ * LLL in the ISR context, checks, traverses to the valid pointer indexed
+ * by the member first, such that the buffer is the latest committed by
+ * the thread context.
+ */
 struct lll_adv_pdu {
 	uint8_t volatile first;
 	uint8_t          last;
-	/* TODO: use,
-	 * struct pdu_adv *pdu[DOUBLE_BUFFER_SIZE];
+	uint8_t          *pdu[DOUBLE_BUFFER_SIZE];
+#if IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
+	/* This is a storage for LLL configuration that may be
+	 * changed while LLL advertising role is started.
+	 * Also it makes the configuration data to be in sync
+	 * with extended advertising PDU e.g. CTE TX configuration
+	 * and CTEInfo field.
 	 */
-	uint8_t pdu[DOUBLE_BUFFER_SIZE][PDU_AC_LL_SIZE_MAX];
+	void             *extra_data[DOUBLE_BUFFER_SIZE];
+#endif /* CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY */
 };
 
 struct lll_adv_aux {
@@ -26,9 +46,16 @@ struct lll_adv_aux {
 #endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
 };
 
+struct lll_adv_iso {
+	struct lll_hdr hdr;
+};
+
 struct lll_adv_sync {
 	struct lll_hdr hdr;
 	struct lll_adv *adv;
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
+	struct lll_adv_iso *adv_iso;
+#endif /* CONFIG_BT_CTLR_ADV_ISO */
 
 	uint8_t access_addr[4];
 	uint8_t crc_init[3];
@@ -48,6 +75,13 @@ struct lll_adv_sync {
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
 	int8_t tx_pwr_lvl;
 #endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
+
+#if IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+	/* This flag is used only by LLL. It holds information if CTE
+	 * transmission was started by LLL.
+	 */
+	uint8_t cte_started:1;
+#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 };
 
 struct lll_adv {
@@ -102,39 +136,22 @@ struct lll_adv {
 
 int lll_adv_init(void);
 int lll_adv_reset(void);
-
+int lll_adv_data_init(struct lll_adv_pdu *pdu);
+int lll_adv_data_reset(struct lll_adv_pdu *pdu);
+int lll_adv_data_release(struct lll_adv_pdu *pdu);
+struct pdu_adv *lll_adv_pdu_alloc(struct lll_adv_pdu *pdu, uint8_t *idx);
 void lll_adv_prepare(void *param);
 
-static inline struct pdu_adv *lll_adv_pdu_alloc(struct lll_adv_pdu *pdu,
-						uint8_t *idx)
-{
-	uint8_t first, last;
-
-	first = pdu->first;
-	last = pdu->last;
-	if (first == last) {
-		last++;
-		if (last == DOUBLE_BUFFER_SIZE) {
-			last = 0U;
-		}
-	} else {
-		uint8_t first_latest;
-
-		pdu->last = first;
-		cpu_dsb();
-		first_latest = pdu->first;
-		if (first_latest != first) {
-			last++;
-			if (last == DOUBLE_BUFFER_SIZE) {
-				last = 0U;
-			}
-		}
-	}
-
-	*idx = last;
-
-	return (void *)pdu->pdu[last];
-}
+#if IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
+int lll_adv_and_extra_data_init(struct lll_adv_pdu *pdu);
+int lll_adv_and_extra_data_release(struct lll_adv_pdu *pdu);
+struct pdu_adv *lll_adv_pdu_and_extra_data_alloc(struct lll_adv_pdu *pdu,
+						 void **extra_data,
+						 uint8_t *idx);
+struct pdu_adv *lll_adv_pdu_and_extra_data_latest_get(struct lll_adv_pdu *pdu,
+						      void **extra_data,
+						      uint8_t *is_modified);
+#endif /* CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY */
 
 static inline void lll_adv_pdu_enqueue(struct lll_adv_pdu *pdu, uint8_t idx)
 {
@@ -192,9 +209,23 @@ static inline struct pdu_adv *lll_adv_aux_data_peek(struct lll_adv_aux *lll)
 
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
 static inline struct pdu_adv *lll_adv_sync_data_alloc(struct lll_adv_sync *lll,
-						     uint8_t *idx)
+						      void **extra_data,
+						      uint8_t *idx)
 {
+#if IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
+	return lll_adv_pdu_and_extra_data_alloc(&lll->data, extra_data, idx);
+#else
 	return lll_adv_pdu_alloc(&lll->data, idx);
+#endif /* CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY */
+}
+
+static inline void lll_adv_sync_data_release(struct lll_adv_sync *lll)
+{
+#if IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
+	lll_adv_and_extra_data_release(&lll->data);
+#else
+	lll_adv_data_release(&lll->data);
+#endif /* CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY */
 }
 
 static inline void lll_adv_sync_data_enqueue(struct lll_adv_sync *lll,
@@ -203,9 +234,18 @@ static inline void lll_adv_sync_data_enqueue(struct lll_adv_sync *lll,
 	lll_adv_pdu_enqueue(&lll->data, idx);
 }
 
-static inline struct pdu_adv *lll_adv_sync_data_peek(struct lll_adv_sync *lll)
+static inline struct pdu_adv *lll_adv_sync_data_peek(struct lll_adv_sync *lll,
+						     void **extra_data)
 {
-	return (void *)lll->data.pdu[lll->data.last];
+	uint8_t last = lll->data.last;
+
+#if IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
+	if (extra_data) {
+		*extra_data = lll->data.extra_data[last];
+	}
+#endif /* CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY */
+
+	return (void *)lll->data.pdu[last];
 }
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */

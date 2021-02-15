@@ -362,8 +362,6 @@ static const struct dma_driver_api dw_dma_driver_api = {
 
 #define DW_DMAC_INIT(inst)						\
 									\
-	DEVICE_DECLARE(dw_dma##inst);		\
-									\
 	static struct dw_drv_plat_data dmac##inst = {			\
 		.chan[0] = {						\
 			.class  = 6,					\
@@ -410,8 +408,9 @@ static const struct dma_driver_api dw_dma_driver_api = {
 		.channel_data = &dmac##inst,				\
 	};								\
 									\
-	DEVICE_AND_API_INIT(dw_dma##inst, DT_INST_LABEL(inst),		\
+	DEVICE_DT_INST_DEFINE(inst,					\
 			    &dw_dma_init,				\
+			    device_pm_control_nop,			\
 			    &dw_dma##inst##_data,			\
 			    &dw_dma##inst##_config, POST_KERNEL,	\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
@@ -421,7 +420,7 @@ static const struct dma_driver_api dw_dma_driver_api = {
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(inst),				\
 			    DT_INST_IRQ(inst, priority), dw_dma_isr,	\
-			    DEVICE_GET(dw_dma##inst),			\
+			    DEVICE_DT_INST_GET(inst),			\
 			    DT_INST_IRQ(inst, sense));			\
 		irq_enable(DT_INST_IRQN(inst));				\
 	}

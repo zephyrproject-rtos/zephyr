@@ -16,8 +16,8 @@ to read its status.
 Concepts
 ********
 
-Any number of timers can be defined. Each timer is referenced by its
-memory address.
+Any number of timers can be defined (limited only by available RAM). Each timer
+is referenced by its memory address.
 
 A timer has the following key properties:
 

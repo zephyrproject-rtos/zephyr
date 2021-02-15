@@ -30,7 +30,9 @@
 #ifndef _COVERAGE_H_
 #define _COVERAGE_H_
 
-#if (__GNUC__ >= 8)
+#if (__GNUC__ >= 10)
+#define GCOV_COUNTERS 8U
+#elif (__GNUC__ >= 8)
 #define GCOV_COUNTERS 9U
 #else
 #define GCOV_COUNTERS 10U

@@ -3,28 +3,17 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Common properties used by nodes describing M25P80-compatible SPI NOR
-# serial flash devices.
+# serial flash devices, regardless of which Zephyr driver is being used.
+#
+# This extends JESD216-defined features with additional functionality
+# that may be specific to the vendor of a M25P80-compatible device and
+# only supported in certain drivers.  Any information that can be
+# obtained from standardized SFDP parameter blocks should be in
+# jedec,jesd216.yaml instead.
+
+include: "jedec,jesd216.yaml"
 
 properties:
-  jedec-id:
-    type: uint8-array
-    required: false
-    description: JEDEC ID as manufacturer ID, memory type, memory density
-
-  sfdp-bfp:
-    type: uint8-array
-    required: false
-    description: |
-      Contains the 32-bit words in little-endian byte order from the
-      JESD216 Serial Flash Discoverable Parameters Basic Flash
-      Parameters table.  This provides flash-specific configuration
-      information in cases were runtime configuration is not desired.
-
-  has-be32k:
-    type: boolean
-    required: false
-    description: Not used after Zephyr 2.3.0
-
   requires-ulbpr:
     type: boolean
     required: false
@@ -89,8 +78,3 @@ properties:
       deep power down and be ready to receive additional commands.
 
       If not provided the driver does not enforce a delay.
-
-  size:
-    type: int
-    required: false
-    description: flash capacity in bits

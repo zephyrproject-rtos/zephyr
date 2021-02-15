@@ -609,19 +609,19 @@ static int i2c_dw_initialize(const struct device *dev)
 	struct i2c_dw_dev_config * const dw = dev->data;
 	volatile struct i2c_dw_registers *regs;
 
-#ifdef I2C_DW_PCIE_ENABLED
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
 	if (rom->pcie) {
-		uintptr_t mmio_phys_addr;
+		struct pcie_mbar mbar;
 
 		if (!pcie_probe(rom->pcie_bdf, rom->pcie_id)) {
 			return -EINVAL;
 		}
 
-		mmio_phys_addr = pcie_get_mbar(rom->pcie_bdf, 0);
+		pcie_get_mbar(rom->pcie_bdf, 0, &mbar);
 		pcie_set_cmd(rom->pcie_bdf, PCIE_CONF_CMDSTAT_MEM, true);
 
-		device_map(DEVICE_MMIO_RAM_PTR(dev), mmio_phys_addr,
-			   0x1000, K_MEM_CACHE_NONE);
+		device_map(DEVICE_MMIO_RAM_PTR(dev), mbar.phys_addr,
+			   mbar.size, K_MEM_CACHE_NONE);
 	} else
 #endif
 	{
@@ -665,34 +665,8 @@ static int i2c_dw_initialize(const struct device *dev)
 	return 0;
 }
 
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
+/* The instance-specific header files are chained together (each instance
+ * includes the next one, unless it's the last instance) so we only need to
+ * include the first instance.
+ */
 #include <i2c_dw_port_0.h>
-#endif
-
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay)
-#include <i2c_dw_port_1.h>
-#endif
-
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(2), okay)
-#include <i2c_dw_port_2.h>
-#endif
-
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(3), okay)
-#include <i2c_dw_port_3.h>
-#endif
-
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(4), okay)
-#include <i2c_dw_port_4.h>
-#endif
-
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(5), okay)
-#include <i2c_dw_port_5.h>
-#endif
-
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(6), okay)
-#include <i2c_dw_port_6.h>
-#endif
-
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(7), okay)
-#include <i2c_dw_port_7.h>
-#endif

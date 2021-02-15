@@ -52,8 +52,6 @@ BUILD_ASSERT((PROP(hw_flow_control) && HW_FLOW_CONTROL_AVAILABLE) ||
 
 static NRF_UART_Type *const uart0_addr = (NRF_UART_Type *)DT_INST_REG_ADDR(0);
 
-DEVICE_DECLARE(uart_nrfx_uart0);
-
 /* Device data structure */
 struct uart_nrfx_data {
 	struct uart_config uart_config;
@@ -755,7 +753,7 @@ void uart_nrfx_isr(const struct device *uart)
 
 static void rx_timeout(struct k_timer *timer)
 {
-	rx_rdy_evt(DEVICE_GET(uart_nrfx_uart0));
+	rx_rdy_evt(DEVICE_DT_GET(DT_DRV_INST(0)));
 }
 
 #if HW_FLOW_CONTROL_AVAILABLE
@@ -772,7 +770,7 @@ static void tx_timeout(struct k_timer *timer)
 	evt.data.tx.len = uart0_cb.tx_buffer_length;
 	uart0_cb.tx_buffer_length = 0;
 	uart0_cb.tx_counter = 0;
-	user_callback(DEVICE_GET(uart_nrfx_uart0), &evt);
+	user_callback(DEVICE_DT_GET(DT_DRV_INST(0)), &evt);
 }
 #endif
 
@@ -1042,7 +1040,7 @@ static int uart_nrfx_init(const struct device *dev)
 	IRQ_CONNECT(IRQN,
 		    IRQ_PRIO,
 		    uart_nrfx_isr,
-		    DEVICE_GET(uart_nrfx_uart0),
+		    DEVICE_DT_GET(DT_DRV_INST(0)),
 		    0);
 	irq_enable(IRQN);
 #endif
@@ -1091,7 +1089,7 @@ static const struct uart_driver_api uart_nrfx_uart_driver_api = {
 #endif /* CONFIG_UART_0_INTERRUPT_DRIVEN */
 };
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 
 static void uart_nrfx_pins_enable(const struct device *dev, bool enable)
 {
@@ -1178,7 +1176,7 @@ static int uart_nrfx_pm_control(const struct device *dev,
 
 	return 0;
 }
-#endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
+#endif /* CONFIG_PM_DEVICE */
 
 static struct uart_nrfx_data uart_nrfx_uart0_data = {
 	.uart_config = {
@@ -1195,8 +1193,7 @@ static struct uart_nrfx_data uart_nrfx_uart0_data = {
 	}
 };
 
-DEVICE_DEFINE(uart_nrfx_uart0,
-	      DT_INST_LABEL(0),
+DEVICE_DT_INST_DEFINE(0,
 	      uart_nrfx_init,
 	      uart_nrfx_pm_control,
 	      &uart_nrfx_uart0_data,

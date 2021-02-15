@@ -79,6 +79,12 @@ config DISK_ERASE_BLOCK_SIZE
 	  is erased at one time in flash storage.
 	  Typically it is equal to the flash memory page size.
 
+config DISK_FLASH_SECTOR_SIZE
+	int "Flash device sector size"
+	default 512
+	help
+	  This is the file system sector size in bytes.
+
 config DISK_VOLUME_SIZE
 	hex "Flash device volume size in hex"
 	help

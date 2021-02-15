@@ -25,7 +25,7 @@ OUTPUT_ARCH(xtensa)
 PROVIDE(__memctl_default = 0x00000000);
 PROVIDE(_MemErrorHandler = 0x00000000);
 
-#define LPRAM_REGION lpram
+#define LP_SRAM_REGION lpram
 
 /* DSP RAM regions (all of them) are mapped twice on the DSP: once in
  * a 512MB region from 0x80000000-0x9fffffff and again from
@@ -123,8 +123,8 @@ MEMORY
 	len = IDT_SIZE
 #endif
   lpram :
-	org = LPRAM_BASE,
-	len = LPRAM_SIZE
+	org = LP_SRAM_BASE,
+	len = LP_SRAM_SIZE
 
   static_uuid_entries_seg (!ari) :
         org = UUID_ENTRY_ELF_BASE,
@@ -132,6 +132,9 @@ MEMORY
   static_log_entries_seg (!ari) :
         org = LOG_ENTRY_ELF_BASE,
         len = LOG_ENTRY_ELF_SIZE
+  fw_metadata_seg (!ari) :
+        org = EXT_MANIFEST_ELF_BASE,
+        len = EXT_MANIFEST_ELF_SIZE
 }
 
 PHDRS
@@ -161,6 +164,7 @@ PHDRS
   ucram_phdr PT_LOAD;
   static_uuid_entries_phdr PT_NOTE;
   static_log_entries_phdr PT_NOTE;
+  metadata_entries_phdr PT_NOTE;
 }
 _rom_store_table = 0;
 PROVIDE(_memmap_vecbase_reset = XCHAL_VECBASE_RESET_PADDR_SRAM);
@@ -205,6 +209,11 @@ _memmap_cacheattr_bp_allvalid = 0x22222222;
 _memmap_cacheattr_intel_cavs15_adsp = 0xFF42FFF2;
 
 PROVIDE(_memmap_cacheattr_reset = _memmap_cacheattr_intel_cavs15_adsp);
+
+_EXT_MAN_ALIGN_ = 16;
+EXTERN(ext_man_fw_ver)
+EXTERN(ext_man_cavs_config)
+
 SECTIONS
 {
 
@@ -411,12 +420,6 @@ SECTIONS
     KEEP (*(.fw_ready_metadata))
   } >ram :ram_phdr
 
-  .noinit : ALIGN(4)
-  {
-    *(.noinit)
-    *(.noinit.*)
-  } >ram :ram_phdr
-
   .lit4 : ALIGN(4)
   {
     _lit4_start = ABSOLUTE(.);
@@ -445,6 +448,12 @@ SECTIONS
     *(.gna_model)
     _data_end = ABSOLUTE(.);
     . = ALIGN(4096);
+  } >ucram :ucram_phdr
+
+  .noinit : ALIGN(4)
+  {
+    *(.noinit)
+    *(.noinit.*)
   } >ucram :ucram_phdr
 
 /* These values need to change in our scheme, where the common-ram
@@ -500,7 +509,7 @@ SECTIONS
     _dma_buf_start = ABSOLUTE(.);
     *(.dma_buffers)
     _dma_buf_end = ABSOLUTE(.);
-  } >LPRAM_REGION
+  } >LP_SRAM_REGION
   _heap_sentry = L2_SRAM_BASE + L2_SRAM_SIZE;
   .comment  0 :  { *(.comment) }
   .debug 0 : { *(.debug) }
@@ -567,4 +576,10 @@ SECTIONS
   {
     *(*.static_log*)
   } > static_log_entries_seg :static_log_entries_phdr
+
+  .fw_metadata (COPY) : ALIGN(1024)
+  {
+    KEEP (*(.fw_metadata))
+    . = ALIGN(_EXT_MAN_ALIGN_);
+  } >fw_metadata_seg :metadata_entries_phdr
 }

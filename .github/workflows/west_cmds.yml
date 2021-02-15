@@ -8,13 +8,16 @@ on:
     paths:
     - 'scripts/west-commands.yml'
     - 'scripts/west_commands/**'
+    - '.github/workflows/west_cmds.yml'
   pull_request:
     paths:
     - 'scripts/west-commands.yml'
     - 'scripts/west_commands/**'
+    - '.github/workflows/west_cmds.yml'
 
 jobs:
-  build:
+  west-commnads:
+    name: West Command Tests
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -55,7 +58,7 @@ jobs:
     - name: install pytest
       run: |
         pip3 install wheel
-        pip3 install pytest west pyelftools canopen progress mypy intelhex
+        pip3 install pytest west pyelftools canopen progress mypy intelhex psutil
     - name: run pytest-win
       if: runner.os == 'Windows'
       run: |

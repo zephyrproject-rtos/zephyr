@@ -1,0 +1,28 @@
+name: Manifest
+on:
+  pull_request_target:
+    paths:
+      - 'west.yml'
+
+jobs:
+  contribs:
+    runs-on: ubuntu-latest
+    name: Manifest
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v2
+        with:
+          path: zephyrproject/zephyr
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Manifest
+        uses: zephyrproject-rtos/action-manifest@main
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          manifest-path: 'west.yml'
+          checkout-path: 'zephyrproject/zephyr'
+          label-prefix: 'manifest-'
+          verbosity-level: '1'
+          labels: 'manifest, west'
+          dnm-labels: 'DNM'

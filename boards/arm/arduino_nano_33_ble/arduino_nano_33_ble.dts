@@ -1,0 +1,125 @@
+/*
+ * Copyright (c) 2020 Jefferson Lee
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/dts-v1/;
+#include <nordic/nrf52840_qiaa.dtsi>
+
+/ {
+	model = "Arduino Nano 33 BLE (Sense)";
+	compatible = "arduino,arduino_nano_33_ble";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+		zephyr,bt-mon-uart = &uart0;
+		zephyr,bt-c2h-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &code_partition;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpio0 24 0>;
+			label = "Red LED";
+		};
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led0;
+		spi = &spi2;
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		code_partition: partition@10000 {
+			label = "code";
+			reg = <0x10000 0xf0000>;
+			read-only;
+		};
+	};
+};
+
+/*
+ * guide specifying pin numbers: https://docs.zephyrproject.org/latest/boards/arm/nrf52840dk_nrf52840/doc/index.html
+ * Given Pin PB.A:
+ * pin_no = B*32 + A
+ * ex. P1.0 => 32
+ */
+&adc {
+	status = "okay";
+};
+&uart0 {
+	compatible = "nordic,nrf-uart";
+	current-speed = <115200>;
+	status = "okay";
+	tx-pin = <35>; //P1.03
+	rx-pin = <42>; //P1.10
+};
+&i2c0 {
+	compatible = "nordic,nrf-twim";
+	status = "okay";
+	sda-pin = <31>; //P0.31
+	scl-pin = <2>; //P0.02
+};
+&i2c1 {
+	compatible = "nordic,nrf-twim";
+	status = "okay";
+	sda-pin = <14>; //P0.14
+	scl-pin = <15>; //P0.15
+};
+// we use SPI2 because SPI1/0 shares conflicts with I2C1/0
+&spi2 {
+	compatible = "nordic,nrf-spim";
+	status = "okay";
+	sck-pin = <13>; //P0.13
+	mosi-pin = <33>; //P1.01
+	miso-pin = <40>; //P1.08
+};
+&gpio0 {
+	status = "okay";
+};
+&gpio1 {
+	status = "okay";
+};
+&usbd {
+	compatible = "nordic,nrf-usbd";
+	status = "okay";
+};
+// All PWM's should be enaled
+&pwm0 {
+	status = "okay";
+};
+&pwm1 {
+	status = "okay";
+};
+&pwm2 {
+	status = "okay";
+};
+&pwm3 {
+	status = "okay";
+};
+/*
+ * NOTE: curiously, there is no PDM (microphone) interface in the
+ * nordic DTSI file.
+ * You'll need to use the nordic-specific PDM libraries.
+ */
+
+/*
+ * the following sets up the peripherals according to this file:
+ * https://github.com/arduino/ArduinoCore-nRF528x-mbedos/blob/19ddd214d255ca20b233eefa76662b360595c146/variants/ARDUINO_NANO33BLE/variant.cpp#L136
+ * The bootloader will conflict with RTC1
+ */
+&rtc1 {
+	status = "disabled";
+};

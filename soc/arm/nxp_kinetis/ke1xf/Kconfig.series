@@ -28,5 +28,7 @@ config SOC_SERIES_KINETIS_KE1XF
 	select HAS_MCUX_LPTMR
 	select HAS_MCUX_DAC32
 	select HAS_MCUX_EDMA
+	select HAS_MCUX_ACMP
+	select HAS_MCUX_PWT
 	help
 	  Enable support for Kinetis KE1xF MCU series

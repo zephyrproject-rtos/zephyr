@@ -8,11 +8,4 @@ if BOARD_SAM4S_XPLAINED
 config BOARD
 	default "sam4s_xplained"
 
-if I2C
-
-config I2C_SAM_TWI
-	default y
-
-endif # I2C
-
 endif # BOARD_SAM4S_XPLAINED

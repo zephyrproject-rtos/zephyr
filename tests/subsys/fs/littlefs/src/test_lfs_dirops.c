@@ -62,6 +62,7 @@ static int check_mkdir(struct fs_mount_t *mp)
 	struct fs_file_t file;
 	struct testfs_path fpath;
 
+	fs_file_t_init(&file);
 	zassert_equal(fs_open(&file,
 			      testfs_path_extend(testfs_path_copy(&fpath,
 								  &dpath),

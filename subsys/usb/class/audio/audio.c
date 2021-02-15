@@ -935,9 +935,9 @@ void usb_audio_register(const struct device *dev,
 		.num_endpoints = ARRAY_SIZE(dev##_usb_audio_ep_data_##i), \
 		.endpoint = dev##_usb_audio_ep_data_##i,		  \
 	};								  \
-	DEVICE_AND_API_INIT(dev##_usb_audio_device_##i,			  \
-			    DT_LABEL(DT_INST(i, COMPAT_##dev)),		  \
+	DEVICE_DT_DEFINE(DT_INST(i, COMPAT_##dev),			  \
 			    &usb_audio_device_init,			  \
+			    device_pm_control_nop,			  \
 			    &dev##_audio_dev_data_##i,			  \
 			    &dev##_audio_config_##i, APPLICATION,	  \
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		  \

@@ -9,3 +9,4 @@ zephyr_library_sources_ifdef(CONFIG_EMUL_BMI160		emul_bmi160.c)
 
 add_subdirectory(i2c)
 add_subdirectory(spi)
+add_subdirectory(espi)

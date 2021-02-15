@@ -46,17 +46,30 @@ As you pull changes in the zephyr repository, you will also need to
 maintain those additional repositories, adding new ones as necessary
 and keeping existing ones up to date at the latest revisions.
 
-Specifying Modules
-------------------
+Building applications
+---------------------
 
-If you have west installed, the Zephyr build system will use it to set
-:ref:`ZEPHYR_MODULES <important-build-vars>`. If you don't have west
-installed and your application does not need any of these
-repositories, the build will still work.
+You can build a Zephyr application using CMake and Ninja (or make) directly
+without west installed if you specify any modules manually.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :tool: cmake
+   :goals: build
+   :gen-args: -DZEPHYR_MODULES=module1;module2;...
+   :compact:
+
+When building with west installed, the Zephyr build system will use it to set
+:ref:`ZEPHYR_MODULES <important-build-vars>`.
+
+If you don't have west installed and your application does not need any of
+these repositories, the build will still work.
 
 If you don't have west installed and your application *does* need one
 of these repositories, you must set :makevar:`ZEPHYR_MODULES`
-yourself. See :ref:`modules` for details.
+yourself as shown above.
+
+See :ref:`modules` for more details.
 
 Flashing and Debugging
 ----------------------
@@ -66,7 +79,7 @@ etc. is just a call to the corresponding :ref:`west command
 <west-build-flash-debug>`. For example, ``ninja flash`` calls ``west
 flash``\ [#wbninja]_. If you don't have west installed on your system, running
 those targets will fail. You can of course still flash and debug using
-any :ref:`debug-host-tools` which work for your board (and which those
+any :ref:`flash-debug-host-tools` which work for your board (and which those
 west commands wrap).
 
 If you want to use these build system targets but do not want to

@@ -61,3 +61,20 @@
 	cs-gpios = <&gpioa 2 GPIO_ACTIVE_LOW>,
 		   <&gpioc 0 GPIO_ACTIVE_LOW>;
 };
+
+&twim0 {
+	status = "okay";
+
+	std-clk-slew-lim = <0>;
+	std-clk-strength-low = "0.5";
+	std-data-slew-lim = <0>;
+	std-data-strength-low = "0.5";
+
+	hs-clk-slew-lim = <0>;
+	hs-clk-strength-high = "0.5";
+	hs-clk-strength-low = "0.5";
+	hs-data-slew-lim = <0>;
+	hs-data-strength-low = "0.5";
+
+	hs-master-code = <0>;
+};

@@ -7,7 +7,9 @@
 #include <zephyr.h>
 #include <syscall_handler.h>
 #include <ztest.h>
+#include <linker/linker-defs.h>
 #include "test_syscalls.h"
+#include <mmu.h>
 
 #define BUF_SIZE	32
 #define SLEEP_MS_LONG	15000
@@ -16,8 +18,8 @@
 	|| defined(CONFIG_BOARD_NUCLEO_L073RZ)
 #define FAULTY_ADDRESS 0x0FFFFFFF
 #elif CONFIG_MMU
-/* Just past the permanent RAM mapping should be a non-present page */
-#define FAULTY_ADDRESS (CONFIG_SRAM_BASE_ADDRESS + (CONFIG_SRAM_SIZE * 1024UL))
+/* Just past the zephyr image mapping should be a non-present page */
+#define FAULTY_ADDRESS Z_FREE_VM_START
 #else
 #define FAULTY_ADDRESS 0xFFFFFFF0
 #endif
@@ -150,6 +152,30 @@ static inline uint64_t z_vrfy_syscall_arg64_big(uint32_t arg1, uint32_t arg2,
 }
 #include <syscalls/syscall_arg64_big_mrsh.c>
 
+uint32_t z_impl_more_args(uint32_t arg1, uint32_t arg2, uint32_t arg3,
+			  uint32_t arg4, uint32_t arg5, uint32_t arg6,
+			  uint32_t arg7)
+{
+	uint32_t ret = 0x4ef464cc;
+	uint32_t args[] = { arg1, arg2, arg3, arg4, arg5, arg6, arg7 };
+
+	for (int i = 0; i < ARRAY_SIZE(args); i++) {
+		ret += args[i];
+		ret = (ret << 11) | (ret >> 5);
+	}
+
+	return ret;
+}
+
+static inline uint32_t z_vrfy_more_args(uint32_t arg1, uint32_t arg2,
+					uint32_t arg3, uint32_t arg4,
+					uint32_t arg5, uint32_t arg6,
+					uint32_t arg7)
+{
+	return z_impl_more_args(arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+}
+#include <syscalls/more_args_mrsh.c>
+
 /**
  * @brief Test to demonstrate usage of z_user_string_nlen()
  *
@@ -185,8 +211,16 @@ void test_string_nlen(void)
 	 * this address doesn't fault
 	 * Also skip this scenario for em_starterkit_7d, which won't generate
 	 * exceptions when unmapped address is accessed.
+	 *
+	 * In addition to the above, skip the scenario for Non-Secure Cortex-M
+	 * builds; Zephyr running in Non-Secure mode will generate SecureFault
+	 * if it attempts to access any address outside the image Flash or RAM
+	 * boundaries, and the program will hang.
 	 */
-#if !((defined(CONFIG_BOARD_NSIM) && defined(CONFIG_SOC_NSIM_SEM)) || defined(CONFIG_SOC_EMSK_EM7D))
+#if !((defined(CONFIG_BOARD_NSIM) && defined(CONFIG_SOC_NSIM_SEM)) || \
+	defined(CONFIG_SOC_EMSK_EM7D) || \
+	(defined(CONFIG_CPU_CORTEX_M) && \
+		defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)))
 	/* Try to blow up the kernel */
 	ret = string_nlen((char *)FAULTY_ADDRESS, BUF_SIZE, &err);
 	zassert_equal(err, -1, "nonsense string address did not fault");
@@ -271,6 +305,13 @@ void test_arg64(void)
 
 	zassert_equal(syscall_arg64_big(1, 2, 3, 4, 5, 6),
 		      z_impl_syscall_arg64_big(1, 2, 3, 4, 5, 6),
+		      "syscall didn't match impl");
+}
+
+void test_more_args(void)
+{
+	zassert_equal(more_args(1, 2, 3, 4, 5, 6, 7),
+		      z_impl_more_args(1, 2, 3, 4, 5, 6, 7),
 		      "syscall didn't match impl");
 }
 
@@ -383,13 +424,13 @@ void test_syscall_context(void)
 	k_thread_user_mode_enter(test_syscall_context_user, NULL, NULL, NULL);
 }
 
-K_MEM_POOL_DEFINE(test_pool, BUF_SIZE, BUF_SIZE, 4 * NR_THREADS, 4);
+K_HEAP_DEFINE(test_heap, BUF_SIZE * (4 * NR_THREADS));
 
 void test_main(void)
 {
 	sprintf(kernel_string, "this is a kernel string");
 	sprintf(user_string, "this is a user string");
-	k_thread_resource_pool_assign(k_current_get(), &test_pool);
+	k_thread_heap_assign(k_current_get(), &test_heap);
 
 	ztest_test_suite(syscalls,
 			 ztest_unit_test(test_string_nlen),
@@ -398,6 +439,7 @@ void test_main(void)
 			 ztest_user_unit_test(test_user_string_copy),
 			 ztest_user_unit_test(test_user_string_alloc_copy),
 			 ztest_user_unit_test(test_arg64),
+			 ztest_user_unit_test(test_more_args),
 			 ztest_unit_test(test_syscall_torture),
 			 ztest_unit_test(test_syscall_context)
 			 );

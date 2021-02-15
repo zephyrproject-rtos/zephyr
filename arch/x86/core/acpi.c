@@ -7,6 +7,8 @@
 
 static struct acpi_rsdp *rsdp;
 bool is_rdsp_searched = false;
+static struct acpi_dmar *dmar;
+bool is_dmar_searched;
 
 static bool check_sum(struct acpi_sdt *t)
 {
@@ -33,7 +35,7 @@ static void find_rsdp(void)
 	}
 
 	if (zero_page_base == NULL) {
-		z_mem_map(&zero_page_base, 0, 4096, K_MEM_PERM_RW);
+		z_phys_map(&zero_page_base, 0, 4096, K_MEM_PERM_RW);
 	}
 
 	/* Physical (real mode!) address 0000:040e stores a (real
@@ -158,4 +160,121 @@ struct acpi_cpu *z_acpi_get_cpu(int n)
 	}
 
 	return NULL;
+}
+
+static void find_dmar(void)
+{
+	if (is_dmar_searched) {
+		return;
+	}
+
+	dmar = z_acpi_find_table(ACPI_DMAR_SIGNATURE);
+	is_dmar_searched = true;
+}
+
+struct acpi_dmar *z_acpi_find_dmar(void)
+{
+	find_dmar();
+	return dmar;
+}
+
+struct acpi_drhd *z_acpi_find_drhds(int *n)
+{
+	struct acpi_drhd *drhds = NULL;
+	uintptr_t offset;
+	uintptr_t base;
+
+	find_dmar();
+
+	if (dmar == NULL) {
+		return NULL;
+	}
+
+	*n = 0;
+	base = POINTER_TO_UINT(dmar);
+
+	offset = POINTER_TO_UINT(dmar->remap_entries) - base;
+	while (offset < dmar->sdt.length) {
+		struct acpi_dmar_entry *entry;
+
+		entry = (struct acpi_dmar_entry *)(offset + base);
+		if (entry->type == ACPI_DMAR_TYPE_DRHD) {
+			if (*n == 0) {
+				drhds = (struct acpi_drhd *)entry;
+			}
+
+			(*n)++;
+		} else {
+			/* DMAR entries are found packed by type so
+			 * if type is not DRHD, we will not encounter one,
+			 * anymore.
+			 */
+			break;
+		}
+
+		offset += entry->length;
+	}
+
+	return drhds;
+}
+
+struct acpi_dmar_dev_scope *z_acpi_get_drhd_dev_scopes(struct acpi_drhd *drhd,
+						       int *n)
+{
+	uintptr_t offset;
+	uintptr_t base;
+
+	if (drhd->entry.length <= ACPI_DRHD_MIN_SIZE) {
+		return NULL;
+	}
+
+	*n = 0;
+	base = POINTER_TO_UINT(drhd);
+
+	offset = POINTER_TO_UINT(drhd->device_scope) - base;
+	while (offset < drhd->entry.length) {
+		struct acpi_dmar_dev_scope *dev_scope;
+
+		dev_scope = (struct acpi_dmar_dev_scope *)(offset + base);
+
+		(*n)++;
+
+		offset += dev_scope->length;
+	}
+
+	return (*n == 0) ? NULL : drhd->device_scope;
+}
+
+struct acpi_dmar_dev_path *
+z_acpi_get_dev_scope_paths(struct acpi_dmar_dev_scope *dev_scope, int *n)
+{
+	switch (dev_scope->type) {
+	case ACPI_DRHD_DEV_SCOPE_PCI_EPD:
+		/* Fall through */
+	case ACPI_DRHD_DEV_SCOPE_PCI_SUB_H:
+		/* Fall through */
+	case ACPI_DRHD_DEV_SCOPE_IOAPIC:
+		if (dev_scope->length < (ACPI_DMAR_DEV_SCOPE_MIN_SIZE +
+					 ACPI_DMAR_DEV_PATH_SIZE)) {
+			return NULL;
+		}
+
+		break;
+	case ACPI_DRHD_DEV_SCOPE_MSI_CAP_HPET:
+		/* Fall through */
+	case ACPI_DRHD_DEV_SCOPE_NAMESPACE_DEV:
+		if (dev_scope->length != (ACPI_DMAR_DEV_SCOPE_MIN_SIZE +
+					  ACPI_DMAR_DEV_PATH_SIZE)) {
+			return NULL;
+		}
+
+		break;
+	default:
+		return NULL;
+	}
+
+	*n = (dev_scope->length - ACPI_DMAR_DEV_SCOPE_MIN_SIZE) /
+		ACPI_DMAR_DEV_PATH_SIZE;
+
+	return dev_scope->path;
 }

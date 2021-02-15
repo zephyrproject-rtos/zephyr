@@ -49,6 +49,12 @@ int lsm6dsl_trigger_set(const struct device *dev,
 
 	__ASSERT_NO_MSG(trig->type == SENSOR_TRIG_DATA_READY);
 
+	/* If irq_gpio is not configured in DT just return error */
+	if (!drv_data->gpio) {
+		LOG_ERR("triggers not supported");
+		return -ENOTSUP;
+	}
+
 	setup_irq(drv_data, config->irq_pin, false);
 
 	drv_data->data_ready_handler = handler;
@@ -69,9 +75,9 @@ int lsm6dsl_trigger_set(const struct device *dev,
 static void lsm6dsl_gpio_callback(const struct device *dev,
 				  struct gpio_callback *cb, uint32_t pins)
 {
-	const struct lsm6dsl_config *config = dev->config;
 	struct lsm6dsl_data *drv_data =
 		CONTAINER_OF(cb, struct lsm6dsl_data, gpio_cb);
+	const struct lsm6dsl_config *config = drv_data->dev->config;
 
 	ARG_UNUSED(pins);
 
@@ -119,8 +125,8 @@ int lsm6dsl_init_interrupt(const struct device *dev)
 	/* setup data ready gpio interrupt */
 	drv_data->gpio = device_get_binding(config->irq_dev_name);
 	if (drv_data->gpio == NULL) {
-		LOG_ERR("Cannot get pointer to %s.", config->irq_dev_name);
-		return -EINVAL;
+		LOG_INF("Cannot get pointer for irq_dev_name");
+		goto end;
 	}
 
 	gpio_pin_configure(drv_data->gpio, config->irq_pin,
@@ -161,5 +167,6 @@ int lsm6dsl_init_interrupt(const struct device *dev)
 
 	setup_irq(drv_data, config->irq_pin, true);
 
+end:
 	return 0;
 }

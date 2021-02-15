@@ -4,7 +4,7 @@
 choice
 	prompt "Intel CAVS SoC Selection"
 
-	config SOC_INTEL_CAVS_APL
+	config SOC_INTEL_CAVS_V15
 		bool "Apollo Lake"
 		depends on SOC_SERIES_INTEL_CAVS_V15
 

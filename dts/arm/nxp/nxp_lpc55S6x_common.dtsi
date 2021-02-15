@@ -12,8 +12,6 @@
 
 / {
 	aliases {
-		gpio-0 = &gpio0;
-		gpio-1 = &gpio1;
 		watchdog0 = &wwdt0;
 	};
 
@@ -74,7 +72,6 @@
 	};
 
 	sram4: memory@20040000 {
-		/* Conencted to USB bus*/
 		compatible = "mmio-sram";
 		reg = <0x20040000 DT_SIZE_K(16)>;
 	};
@@ -86,7 +83,7 @@
 
 	syscon: syscon@0 {
 		compatible = "nxp,lpc-syscon";
-		reg = <0x0 0x4000>;
+		reg = <0x0 0x1000>;
 		label = "SYSCON";
 		#clock-cells = <1>;
 	};
@@ -94,7 +91,7 @@
 	iap: flash-controller@34000 {
 		compatible = "nxp,lpc-iap";
 		label = "FLASH_IAP";
-		reg = <0x34000 0x18>;
+		reg = <0x34000 0x1000>;
 		#address-cells = <1>;
 		#size-cells = <1>;
 		flash0: flash@0 {
@@ -151,6 +148,14 @@
 		label = "DMA_1";
 		status = "disabled";
 		#dma-cells = <1>;
+	};
+
+	mailbox0:mailbox@8b000 {
+		compatible = "nxp,lpc-mailbox";
+		reg = <0x8b000 0xEC>;
+		interrupts = <31 0>;
+		label = "MAILBOX_0";
+		status = "disabled";
 	};
 
 	flexcomm0: flexcomm@86000 {
@@ -260,7 +265,7 @@
 
 	adc0: adc@A0000 {
 		compatible = "nxp,lpc-lpadc";
-		reg = <0xA0000 0x580>;
+		reg = <0xA0000 0x1000>;
 		interrupts = <22 0>;
 		status = "disabled";
 		clk-divider = <8>;

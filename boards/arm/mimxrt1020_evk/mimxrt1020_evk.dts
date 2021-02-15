@@ -19,6 +19,7 @@
 
 	chosen {
 		zephyr,sram = &sdram0;
+		zephyr,itcm = &itcm;
 		zephyr,dtcm = &dtcm;
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
@@ -81,7 +82,7 @@ arduino_serial: &lpuart2 {};
 &flexspi {
 	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(8)>;
 	is25wp064: is25wp064@0 {
-		compatible = "issi,is25wp064", "jedec,spi-nor";
+		compatible = "nxp,imx-flexspi-nor";
 		size = <67108864>;
 		label = "IS25WP064";
 		reg = <0>;

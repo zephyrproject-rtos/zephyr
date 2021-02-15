@@ -35,7 +35,9 @@ GEN_OFFSET_SYM(_thread_arch_t, excNestCount);
 
 #ifdef CONFIG_USERSPACE
 GEN_OFFSET_SYM(_thread_arch_t, psp);
+#ifndef CONFIG_X86_COMMON_PAGE_TABLE
 GEN_OFFSET_SYM(_thread_arch_t, ptables);
+#endif
 #endif
 
 GEN_OFFSET_SYM(_thread_arch_t, preempFloatReg);

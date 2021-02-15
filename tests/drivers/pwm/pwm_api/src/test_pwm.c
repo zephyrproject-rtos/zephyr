@@ -42,6 +42,12 @@
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_pwm)
 #define PWM_DEV_NAME DT_LABEL(DT_INST(0, st_stm32_pwm))
 
+#elif DT_HAS_COMPAT_STATUS_OKAY(xlnx_xps_timer_1_00_a_pwm)
+#define PWM_DEV_NAME DT_LABEL(DT_INST(0, xlnx_xps_timer_1_00_a_pwm))
+
+#elif DT_HAS_COMPAT_STATUS_OKAY(nxp_kinetis_ftm_pwm)
+#define PWM_DEV_NAME DT_LABEL(DT_INST(0, nxp_kinetis_ftm_pwm))
+
 #else
 #error "Define a PWM device"
 #endif
@@ -70,6 +76,15 @@
 #elif defined CONFIG_BOARD_ADAFRUIT_ITSYBITSY_M4_EXPRESS
 #define DEFAULT_PWM_PORT 2 /* TCC1/WO[2] on PA18 (D7) */
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_pwm)
+/* Default port should be adapted per board to fit the channel
+ * associated to the PWM pin. For intsance, for following device,
+ *      pwm1: pwm {
+ *              status = "okay";
+ *              pinctrl-0 = <&tim1_ch3_pe13>;
+ *      };
+ * the following should be used:
+ * #define DEFAULT_PWM_PORT 3
+ */
 #define DEFAULT_PWM_PORT 1
 #else
 #define DEFAULT_PWM_PORT 0
@@ -79,12 +94,17 @@
 #define UNIT_USECS	1
 #define UNIT_NSECS	2
 
+const struct device *get_pwm_device(void)
+{
+	return device_get_binding(PWM_DEV_NAME);
+}
+
 static int test_task(uint32_t port, uint32_t period, uint32_t pulse, uint8_t unit)
 {
 	TC_PRINT("[PWM]: %" PRIu8 ", [period]: %" PRIu32 ", [pulse]: %" PRIu32 "\n",
 		port, period, pulse);
 
-	const struct device *pwm_dev = device_get_binding(PWM_DEV_NAME);
+	const struct device *pwm_dev = get_pwm_device();
 
 	if (!pwm_dev) {
 		TC_PRINT("Cannot get PWM device\n");

@@ -94,7 +94,7 @@ class Build(Forceable):
             description=self.description,
             usage=BUILD_USAGE)
 
-        # Remember to update scripts/west-completion.bash if you add or remove
+        # Remember to update west-completion.bash if you add or remove
         # flags
 
         parser.add_argument('-b', '--board', help='board to build for')
@@ -110,8 +110,8 @@ class Build(Forceable):
         group.add_argument('--cmake-only', action='store_true',
                            help="just run cmake; don't build (implies -c)")
         group.add_argument('-t', '--target',
-                           help='''run this build system target (try "-t usage"
-                           or "-t help")''')
+                           help='''run build system target TARGET
+                           (try "-t usage")''')
         group.add_argument('-o', '--build-opt', default=[], action='append',
                            help='''options to pass to the build tool
                            (make or ninja); may be given more than once''')
@@ -150,7 +150,7 @@ class Build(Forceable):
             pristine = args.pristine
         else:
             # Load the pristine={auto, always, never} configuration value
-            pristine = config_get('pristine', 'auto')
+            pristine = config_get('pristine', 'never')
             if pristine not in ['auto', 'always', 'never']:
                 log.wrn(
                     'treating unknown build.pristine value "{}" as "never"'.
@@ -190,7 +190,13 @@ class Build(Forceable):
         if self.cmake_cache:
             board, origin = (self.cmake_cache.get('CACHED_BOARD'),
                              'CMakeCache.txt')
-        elif self.args.board:
+
+            # A malformed CMake cache may exist, but not have a board.
+            # This happens if there's a build error from a previous run.
+            if board is not None:
+                return (board, origin)
+
+        if self.args.board:
             board, origin = self.args.board, 'command line'
         elif 'BOARD' in os.environ:
             board, origin = os.environ['BOARD'], 'env'
@@ -421,7 +427,13 @@ class Build(Forceable):
                     'Zephyr build system')
 
         cache = CMakeCache.from_build_dir(self.build_dir)
-        cmake_args = ['-P', cache['ZEPHYR_BASE'] + '/cmake/pristine.cmake']
+
+        app_src_dir = cache.get('APPLICATION_SOURCE_DIR')
+        app_bin_dir = cache.get('APPLICATION_BINARY_DIR')
+
+        cmake_args = [f'-DBINARY_DIR={app_bin_dir}',
+                      f'-DSOURCE_DIR={app_src_dir}',
+                      '-P', cache['ZEPHYR_BASE'] + '/cmake/pristine.cmake']
         run_cmake(cmake_args, cwd=self.build_dir, dry_run=self.args.dry_run)
 
     def _run_build(self, target):

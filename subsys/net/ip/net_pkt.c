@@ -973,7 +973,7 @@ static size_t pkt_buffer_length(struct net_pkt *pkt,
 #if defined (CONFIG_NET_L2_ETHERNET)
 		if (net_if_l2(net_pkt_iface(pkt)) ==
 		    &NET_L2_GET_NAME(ETHERNET)) {
-			max_len += sizeof(struct net_eth_hdr);
+			max_len += NET_ETH_MAX_HDR_SIZE;
 		} else
 #endif /* CONFIG_NET_L2_ETHERNET */
 		{

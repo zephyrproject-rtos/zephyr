@@ -8,12 +8,15 @@ on:
   push:
     paths:
     - 'scripts/dts/**'
+    - '.github/workflows/devicetree_checks.yml'
   pull_request:
     paths:
     - 'scripts/dts/**'
+    - '.github/workflows/devicetree_checks.yml'
 
 jobs:
-  build:
+  devicetree-checks:
+    name: Devicetree script tests
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:

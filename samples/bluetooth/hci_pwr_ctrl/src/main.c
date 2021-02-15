@@ -34,7 +34,7 @@ static const struct bt_data ad[] = {
 #define DEVICE_BEACON_TXPOWER_NUM  8
 
 static struct k_thread pwr_thread_data;
-static K_THREAD_STACK_DEFINE(pwr_thread_stack, 320);
+static K_THREAD_STACK_DEFINE(pwr_thread_stack, 512);
 
 static const int8_t txp[DEVICE_BEACON_TXPOWER_NUM] = {4, 0, -3, -8,
 						    -15, -18, -23, -30};

@@ -13,21 +13,21 @@ static int hexiwear_k64_pinmux_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-#ifdef CONFIG_PINMUX_MCUX_PORTB
-	const struct device *portb =
-		device_get_binding(CONFIG_PINMUX_MCUX_PORTB_NAME);
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(portb), okay)
+	__unused const struct device *portb =
+		device_get_binding(DT_LABEL(DT_NODELABEL(portb)));
 #endif
-#ifdef CONFIG_PINMUX_MCUX_PORTC
-	const struct device *portc =
-		device_get_binding(CONFIG_PINMUX_MCUX_PORTC_NAME);
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(portc), okay)
+	__unused const struct device *portc =
+		device_get_binding(DT_LABEL(DT_NODELABEL(portc)));
 #endif
-#ifdef CONFIG_PINMUX_MCUX_PORTD
-	const struct device *portd =
-		device_get_binding(CONFIG_PINMUX_MCUX_PORTD_NAME);
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(portd), okay)
+	__unused const struct device *portd =
+		device_get_binding(DT_LABEL(DT_NODELABEL(portd)));
 #endif
-#ifdef CONFIG_PINMUX_MCUX_PORTE
-	const struct device *porte =
-		device_get_binding(CONFIG_PINMUX_MCUX_PORTE_NAME);
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(porte), okay)
+	__unused const struct device *porte =
+		device_get_binding(DT_LABEL(DT_NODELABEL(porte)));
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ftm3), nxp_kinetis_ftm_pwm, okay) && CONFIG_PWM
@@ -85,7 +85,7 @@ static int hexiwear_k64_pinmux_init(const struct device *dev)
 
 #if defined(CONFIG_MAX30101) && DT_NODE_HAS_STATUS(DT_NODELABEL(gpioa), okay)
 	const struct device *porta =
-		device_get_binding(CONFIG_PINMUX_MCUX_PORTA_NAME);
+		device_get_binding(DT_LABEL(DT_NODELABEL(porta)));
 
 	/* LDO - MAX30101 power supply */
 	pinmux_pin_set(porta, 29, PORT_PCR_MUX(kPORT_MuxAsGpio));

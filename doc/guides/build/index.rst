@@ -92,11 +92,11 @@ loading/flashing on the desired target board (:file:`zephyr.elf`,
 into four stages: the pre-build, first-pass binary, final binary, and
 post-processing.
 
-Pre-build occurs before any source files are compiled, because during
-this phase header files used by the source files are generated.
-
 Pre-build
 =========
+
+Pre-build occurs before any source files are compiled, because during
+this phase header files used by the source files are generated.
 
 Offset generation
    Access to high-level data structures and members is sometimes
@@ -127,7 +127,7 @@ generated during the configuration phase and the pre-build stage).
 If memory protection is enabled, then:
 
 Partition grouping
-   The gen_app_partitions.py script scans all the
+   The *gen_app_partitions.py* script scans all the
    generated archives and outputs linker scripts to ensure that
    application partitions are properly grouped and aligned for the
    target’s memory protection hardware.
@@ -263,5 +263,12 @@ The following is a detailed description of the scripts used during the build pro
 ========================================
 
 .. include:: ../../../scripts/process_gperf.py
+   :start-after: """
+   :end-before: """
+
+:zephyr_file:`scripts/gen_app_partitions.py`
+============================================
+
+.. include:: ../../../scripts/gen_app_partitions.py
    :start-after: """
    :end-before: """

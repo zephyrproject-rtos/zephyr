@@ -8,6 +8,12 @@ if BOARD_MIMXRT685_EVK
 config BOARD
 	default "mimxrt685_evk_cm33"
 
+config XTAL_SYS_CLK_HZ
+	default 24000000
+
+config SYSOSC_SETTLING_US
+	default 260
+
 if PINMUX_MCUX_LPC
 
 config PINMUX_MCUX_LPC_PORT0

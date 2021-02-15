@@ -6,7 +6,7 @@
 menuconfig STM32_LPTIM_TIMER
 	bool "STM32 Low Power Timer [EXPERIMENTAL]"
 	depends on (SOC_SERIES_STM32L4X || SOC_SERIES_STM32WBX)
-	depends on CLOCK_CONTROL && SYS_POWER_MANAGEMENT
+	depends on CLOCK_CONTROL && PM
 	select TICKLESS_CAPABLE
 	help
 	  This module implements a kernel device driver for the LowPower Timer

@@ -71,6 +71,7 @@ struct can_stm32_config {
 	CAN_TypeDef *can;   /*!< CAN Registers*/
 	CAN_TypeDef *master_can;   /*!< CAN Registers for shared filter */
 	uint32_t bus_speed;
+	uint16_t sample_point;
 	uint8_t sjw;
 	uint8_t prop_ts1;
 	uint8_t ts2;

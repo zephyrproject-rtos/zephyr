@@ -16,6 +16,9 @@ config DISK_ACCESS_USDHC1
 	default y
 	depends on DISK_ACCESS_USDHC
 
+config FLASH_MCUX_FLEXSPI_NOR
+	default y if FLASH
+
 config I2C
 	default y if KSCAN
 

@@ -31,9 +31,6 @@ the `Nordic Low power cellular IoT`_ website.
 The `Nordic Semiconductor Infocenter`_
 contains the processor's information and the datasheet.
 
-.. note::
-
-   In previous Zephyr releases this board was named *nrf52840_pca10090*.
 
 Hardware
 ********

@@ -13,6 +13,7 @@
 #include <sys/byteorder.h>
 #include <sys/__assert.h>
 
+#include <bluetooth/buf.h>
 #include <bluetooth/sdp.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_SDP)

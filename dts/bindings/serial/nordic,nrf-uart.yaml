@@ -1,32 +1,10 @@
-description: Nordic UART
+description: |
+  Nordic nRF family UART.
+
+  This is the binding for the peripheral without EasyDMA support.
+  See the "nordic,nrf-uarte" binding for UARTE, i.e. UART with
+  EasyDMA.
 
 compatible: "nordic,nrf-uart"
 
-include: uart-controller.yaml
-
-properties:
-    reg:
-      required: true
-
-    interrupts:
-      required: true
-
-    tx-pin:
-      type: int
-      description: TX pin
-      required: true
-
-    rx-pin:
-      type: int
-      description: RX pin
-      required: false
-
-    rts-pin:
-      type: int
-      description: RTS pin
-      required: false
-
-    cts-pin:
-      type: int
-      description: CTS pin
-      required: false
+include: nordic,nrf-uart-common.yaml

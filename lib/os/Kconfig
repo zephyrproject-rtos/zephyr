@@ -46,22 +46,20 @@ config SYS_HEAP_ALLOC_LOOPS
 	  keeps the maximum runtime at a tight bound so that the heap
 	  is useful in locked or ISR contexts.
 
-config PRINTK64
-	bool
-	prompt "Enable 64 bit printk conversions" if !64BIT
-	default y
+config SYS_HEAP_ALWAYS_BIG_MODE
+	bool "Always use the heap big chunks mode"
 	help
-	  When true, 64 bit values will be printable on 32 bit systems
-	  using the "ll" flag to the %d, %i, %u, %x and %X specifiers.
-	  When false, these values will be correctly parsed from the
-	  function arguments, but will print "ERR" if their value is
-	  unrepresentable in 32 bits.  This setting is always true on
-	  64 bit systems.  Note that setting this =n does not produce
-	  significant code savings within the printk library code
-	  itself.  Instead, it suppresses the use of the
-	  toolchain-provided 64 bit division implementation, which may
-	  reduce code size if it is unused elsewhere in the
-	  application.  Most apps should leave this set to y.
+	  The sys_heap allocator by default returns pointers to blocks
+	  which are guaranteed to be aligned to the pointer size.
+	  By enabling the "big chunks" mode, the returned blocks are
+	  guaranteed to be 8 byte aligned, also on 32-bit platforms.
+	  If this option is enabled, the "big chunks" mode will always
+	  be used by sys_heap.
+
+config PRINTK64
+	bool "Enable 64 bit printk conversions (DEPRECATED)"
+	help
+	  Replace with CBPRINTF_FULL_INTEGRAL.
 
 config PRINTK_SYNC
 	bool "Serialize printk() calls"
@@ -71,5 +69,7 @@ config PRINTK_SYNC
 	  single printk() call, preventing the output data from
 	  interleaving with concurrent usage from another CPU or an
 	  preempting interrupt.
+
+rsource "Kconfig.cbprintf"
 
 endmenu

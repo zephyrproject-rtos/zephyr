@@ -81,6 +81,18 @@ Add
      void net_buf_add_le16(struct net_buf *buf, uint16_t value);
      void net_buf_add_le32(struct net_buf *buf, uint32_t value);
 
+Remove
+  Remove data from the end of the buffer. Modifies the data length value
+  while leaving the actual data pointer intact. Some examples of APIs for
+  removing data:
+
+  .. code-block:: c
+
+     void *net_buf_remove_mem(struct net_buf *buf, size_t len);
+     uint8_t net_buf_remove_u8(struct net_buf *buf);
+     uint16_t net_buf_remove_le16(struct net_buf *buf);
+     uint32_t net_buf_remove_le32(struct net_buf *buf);
+
 Push
   Prepend data to the beginning of the buffer. Modifies both the data
   length value as well as the data pointer. Requires that there is
@@ -89,6 +101,7 @@ Push
   .. code-block:: c
 
      void *net_buf_push(struct net_buf *buf, size_t len);
+     void *net_buf_push_mem(struct net_buf *buf, const void *mem, size_t len);
      void net_buf_push_u8(struct net_buf *buf, uint8_t value);
      void net_buf_push_le16(struct net_buf *buf, uint16_t value);
 
@@ -106,7 +119,8 @@ Pull
      uint32_t net_buf_pull_le32(struct net_buf *buf);
 
 The Add and Push operations are used when encoding data into the buffer,
-whereas Pull is used when decoding data from a buffer.
+whereas the Remove and Pull operations are used when decoding data from a
+buffer.
 
 Reference Counting
 ******************

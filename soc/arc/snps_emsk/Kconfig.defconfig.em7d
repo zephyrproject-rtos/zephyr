@@ -35,7 +35,7 @@ config ARC_FIRQ
 	default n if BOARD_EM_STARTERKIT_R23
 	default y if BOARD_EM_STARTERKIT_R22
 
-config CACHE_FLUSHING
+config CACHE_MANAGEMENT
 	default y
 
 if (ARC_MPU_VER = 2)

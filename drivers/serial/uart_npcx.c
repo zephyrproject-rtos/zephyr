@@ -294,20 +294,25 @@ static int uart_npcx_init(const struct device *dev)
 	const struct device *const clk_dev =
 					device_get_binding(NPCX_CLK_CTRL_NAME);
 	uint32_t uart_rate;
+	int ret;
 
-	/* Turn on device clock first */
-	if (clock_control_on(clk_dev,
-		(clock_control_subsys_t *) &config->clk_cfg) != 0) {
-		return -EIO;
+	/* Turn on device clock first and get source clock freq. */
+	ret = clock_control_on(clk_dev, (clock_control_subsys_t *)
+							&config->clk_cfg);
+	if (ret < 0) {
+		LOG_ERR("Turn on UART clock fail %d", ret);
+		return ret;
 	}
 
 	/*
 	 * If apb2's clock is not 15MHz, we need to find the other optimized
 	 * values of UPSR and UBAUD for baud rate 115200.
 	 */
-	if (clock_control_get_rate(clk_dev,
-		(clock_control_subsys_t *) &config->clk_cfg, &uart_rate) < 0) {
-		LOG_ERR("UART clock rate get error.");
+	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t *)
+			&config->clk_cfg, &uart_rate);
+	if (ret < 0) {
+		LOG_ERR("Get UART clock rate error %d", ret);
+		return ret;
 	}
 	__ASSERT(uart_rate == 15000000, "Unsupported apb2 clock for UART!");
 
@@ -339,7 +344,7 @@ static int uart_npcx_init(const struct device *dev)
 	config->uconf.irq_config_func(dev);
 #endif
 
-#if defined(CONFIG_SYS_POWER_DEEP_SLEEP_STATES)
+#if defined(CONFIG_PM)
 	/*
 	 * Configure the UART wake-up event triggered from a falling edge
 	 * on CR_SIN pin. No need for callback function.
@@ -369,7 +374,7 @@ static int uart_npcx_init(const struct device *dev)
 		IRQ_CONNECT(DT_INST_IRQN(inst),		                       \
 			DT_INST_IRQ(inst, priority),                           \
 			uart_npcx_isr,                                         \
-			DEVICE_GET(uart_npcx_##inst),                          \
+			DEVICE_DT_INST_GET(inst),                              \
 			0);                                                    \
 		irq_enable(DT_INST_IRQN(inst));		                       \
 	}
@@ -383,15 +388,15 @@ static int uart_npcx_init(const struct device *dev)
 	NPCX_UART_IRQ_CONFIG_FUNC_DECL(inst);	                               \
 									       \
 	static const struct npcx_alt uart_alts##inst[] =		       \
-					DT_NPCX_ALT_ITEMS_LIST(inst);	       \
+					NPCX_DT_ALT_ITEMS_LIST(inst);	       \
 									       \
 	static const struct uart_npcx_config uart_npcx_cfg_##inst = {	       \
 		.uconf = {                                                     \
 			.base = (uint8_t *)DT_INST_REG_ADDR(inst),             \
 			NPCX_UART_IRQ_CONFIG_FUNC_INIT(inst)                   \
 		},                                                             \
-		.clk_cfg = DT_NPCX_CLK_CFG_ITEM(inst),                         \
-		.uart_rx_wui = DT_NPCX_WUI_ITEM_BY_NAME(0, uart_rx),           \
+		.clk_cfg = NPCX_DT_CLK_CFG_ITEM(inst),                         \
+		.uart_rx_wui = NPCX_DT_WUI_ITEM_BY_NAME(0, uart_rx),           \
 		.alts_size = ARRAY_SIZE(uart_alts##inst),                      \
 		.alts_list = uart_alts##inst,                                  \
 	};                                                                     \
@@ -400,8 +405,9 @@ static int uart_npcx_init(const struct device *dev)
 		.baud_rate = DT_INST_PROP(inst, current_speed)                 \
 	};                                                                     \
 									       \
-	DEVICE_AND_API_INIT(uart_npcx_##inst, DT_INST_LABEL(inst),             \
+	DEVICE_DT_INST_DEFINE(inst,					       \
 			&uart_npcx_init,                                       \
+			device_pm_control_nop,				       \
 			&uart_npcx_data_##inst, &uart_npcx_cfg_##inst,         \
 			PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,      \
 			&uart_npcx_driver_api);                                \

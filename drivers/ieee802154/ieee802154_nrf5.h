@@ -8,7 +8,7 @@
 #ifndef ZEPHYR_DRIVERS_IEEE802154_IEEE802154_NRF5_H_
 #define ZEPHYR_DRIVERS_IEEE802154_IEEE802154_NRF5_H_
 
-#include "nrf_802154_config.h"
+#include "ieee802154_radio.h"
 
 #define NRF5_FCS_LENGTH   (2)
 #define NRF5_PSDU_LENGTH  (125)
@@ -42,7 +42,7 @@ struct nrf5_802154_data {
 	/* Buffers for passing received frame pointers and data to the
 	 * RX thread via rx_fifo object.
 	 */
-	struct nrf5_802154_rx_frame rx_frames[NRF_802154_RX_BUFFERS];
+	struct nrf5_802154_rx_frame rx_frames[CONFIG_NRF_802154_RX_BUFFERS];
 
 	/* Frame pending bit value in ACK sent for the last received frame. */
 	bool last_frame_ack_fpb;
@@ -80,6 +80,9 @@ struct nrf5_802154_data {
 	 * Can be NULL if event notification is not needed.
 	 */
 	ieee802154_event_cb_t event_handler;
+
+	/* Capabilities of the network interface. */
+	enum ieee802154_hw_caps capabilities;
 };
 
 #endif /* ZEPHYR_DRIVERS_IEEE802154_IEEE802154_NRF5_H_ */

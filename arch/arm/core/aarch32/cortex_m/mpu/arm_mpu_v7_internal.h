@@ -46,7 +46,7 @@ static void region_init(const uint32_t index,
  * @param part Pointer to the data structure holding the partition
  *             information (must be valid).
  */
-static int mpu_partition_is_valid(const struct k_mem_partition *part)
+static int mpu_partition_is_valid(const struct z_arm_mpu_partition *part)
 {
 	/* Partition size must be power-of-two,
 	 * and greater or equal to the minimum
@@ -96,7 +96,7 @@ static inline uint32_t size_to_mpu_rasr_size(uint32_t size)
  * region attribute configuration and size and fill-in a driver-specific
  * structure with the correct MPU region configuration.
  */
-static inline void get_region_attr_from_k_mem_partition_info(
+static inline void get_region_attr_from_mpu_partition_info(
 	arm_mpu_region_attr_t *p_attr,
 	const k_mem_partition_attr_t *attr, uint32_t base, uint32_t size)
 {
@@ -283,10 +283,10 @@ static inline int mpu_buffer_validate(void *addr, size_t size, int write)
 #endif /* CONFIG_USERSPACE */
 
 static int mpu_configure_region(const uint8_t index,
-	const struct k_mem_partition *new_region);
+	const struct z_arm_mpu_partition *new_region);
 
-static int mpu_configure_regions(const struct k_mem_partition
-	*regions[], uint8_t regions_num, uint8_t start_reg_index,
+static int mpu_configure_regions(const struct z_arm_mpu_partition
+	regions[], uint8_t regions_num, uint8_t start_reg_index,
 	bool do_sanity_check);
 
 /* This internal function programs the static MPU regions.
@@ -297,8 +297,8 @@ static int mpu_configure_regions(const struct k_mem_partition
  * If the static MPU regions configuration has not been successfully
  * performed, the error signal is propagated to the caller of the function.
  */
-static int mpu_configure_static_mpu_regions(const struct k_mem_partition
-	*static_regions[], const uint8_t regions_num,
+static int mpu_configure_static_mpu_regions(const struct z_arm_mpu_partition
+	static_regions[], const uint8_t regions_num,
 	const uint32_t background_area_base,
 	const uint32_t background_area_end)
 {
@@ -326,8 +326,8 @@ static int mpu_configure_static_mpu_regions(const struct k_mem_partition
  * If the dynamic MPU regions configuration has not been successfully
  * performed, the error signal is propagated to the caller of the function.
  */
-static int mpu_configure_dynamic_mpu_regions(const struct k_mem_partition
-	*dynamic_regions[], uint8_t regions_num)
+static int mpu_configure_dynamic_mpu_regions(const struct z_arm_mpu_partition
+	dynamic_regions[], uint8_t regions_num)
 {
 	int mpu_reg_index = static_regions_num;
 

@@ -9,7 +9,7 @@
 		 * instruction.  See include/sw_isr_table.h.
 		 */
 		. = ALIGN(CONFIG_ARCH_SW_ISR_TABLE_ALIGN);
-		*(_SW_ISR_TABLE_SECTION_NAME)
+		*(_SW_ISR_TABLE_SECTION_SYMS)
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 #endif
 
@@ -30,7 +30,7 @@
 		. = . + DEVICE_BITFIELD_SIZE;	\
 		__device_init_status_end = .;
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 #define DEVICE_BUSY_BITFIELD()			\
 		FILL(0x00);			\
 		__device_busy_start = .;	\
@@ -102,6 +102,7 @@
 	Z_ITERABLE_SECTION_RAM_GC_ALLOWED(k_pipe, 4)
 	Z_ITERABLE_SECTION_RAM_GC_ALLOWED(k_sem, 4)
 	Z_ITERABLE_SECTION_RAM_GC_ALLOWED(k_queue, 4)
+	Z_ITERABLE_SECTION_RAM_GC_ALLOWED(k_condvar, 4)
 
 	SECTION_DATA_PROLOGUE(_net_buf_pool_area,,SUBALIGN(4))
 	{

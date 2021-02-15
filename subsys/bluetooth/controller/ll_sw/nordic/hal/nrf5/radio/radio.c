@@ -6,13 +6,13 @@
  */
 
 #include <sys/dlist.h>
-#include <sys/mempool_base.h>
 #include <toolchain.h>
 
-#include <nrfx/hal/nrf_radio.h>
-#include <nrfx/hal/nrf_rtc.h>
-#include <nrfx/hal/nrf_timer.h>
-#include <nrfx/hal/nrf_ccm.h>
+#include <hal/nrf_radio.h>
+#include <hal/nrf_rtc.h>
+#include <hal/nrf_timer.h>
+#include <hal/nrf_ccm.h>
+#include <hal/nrf_aar.h>
 
 #include "util/mem.h"
 #include "hal/ccm.h"
@@ -26,7 +26,7 @@
 #define NRF_GPIO_PA     NRF_P1
 #define NRF_GPIO_PA_PIN ((CONFIG_BT_CTLR_GPIO_PA_PIN) - 32)
 #else
-#define NRF_GPIO_PA     NRF_GPIO
+#define NRF_GPIO_PA     NRF_P0
 #define NRF_GPIO_PA_PIN CONFIG_BT_CTLR_GPIO_PA_PIN
 #endif
 #endif /* CONFIG_BT_CTLR_GPIO_PA_PIN */
@@ -36,7 +36,7 @@
 #define NRF_GPIO_LNA     NRF_P1
 #define NRF_GPIO_LNA_PIN ((CONFIG_BT_CTLR_GPIO_LNA_PIN) - 32)
 #else
-#define NRF_GPIO_LNA     NRF_GPIO
+#define NRF_GPIO_LNA     NRF_P0
 #define NRF_GPIO_LNA_PIN CONFIG_BT_CTLR_GPIO_LNA_PIN
 #endif
 #endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
@@ -117,6 +117,10 @@ void radio_reset(void)
 
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
 	hal_radio_sw_switch_ppi_group_setup();
+#endif
+
+#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN) || defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
+	hal_palna_ppi_setup();
 #endif
 }
 
@@ -207,20 +211,20 @@ void radio_pkt_configure(uint8_t bits_len, uint8_t max_len, uint8_t flags)
 
 	phy = (flags >> 1) & 0x07; /* phy */
 	switch (phy) {
-	case BIT(0):
+	case PHY_1M:
 	default:
 		extra |= (RADIO_PCNF0_PLEN_8bit << RADIO_PCNF0_PLEN_Pos) &
 			 RADIO_PCNF0_PLEN_Msk;
 		break;
 
-	case BIT(1):
+	case PHY_2M:
 		extra |= (RADIO_PCNF0_PLEN_16bit << RADIO_PCNF0_PLEN_Pos) &
 			 RADIO_PCNF0_PLEN_Msk;
 		break;
 
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 #if defined(CONFIG_HAS_HW_NRF_RADIO_BLE_CODED)
-	case BIT(2):
+	case PHY_CODED:
 		extra |= (RADIO_PCNF0_PLEN_LongRange << RADIO_PCNF0_PLEN_Pos) &
 			 RADIO_PCNF0_PLEN_Msk;
 		extra |= (2UL << RADIO_PCNF0_CILEN_Pos) & RADIO_PCNF0_CILEN_Msk;
@@ -471,7 +475,7 @@ static void sw_switch(uint8_t dir, uint8_t phy_curr, uint8_t flags_curr, uint8_t
 			HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(
 			    sw_tifs_toggle);
 
-		if (phy_curr & BIT(2)) {
+		if (phy_curr & PHY_CODED) {
 			/* Switching to TX after RX on LE Coded PHY. */
 
 			uint8_t cc_s2 =
@@ -1023,9 +1027,6 @@ void radio_gpio_lna_off(void)
 void radio_gpio_pa_lna_enable(uint32_t trx_us)
 {
 	nrf_timer_cc_set(EVENT_TIMER, 2, trx_us);
-
-	hal_enable_palna_ppi_config();
-	hal_disable_palna_ppi_config();
 	hal_radio_nrf_ppi_channels_enable(BIT(HAL_ENABLE_PALNA_PPI) |
 				BIT(HAL_DISABLE_PALNA_PPI));
 }
@@ -1034,6 +1035,7 @@ void radio_gpio_pa_lna_disable(void)
 {
 	hal_radio_nrf_ppi_channels_disable(BIT(HAL_ENABLE_PALNA_PPI) |
 				 BIT(HAL_DISABLE_PALNA_PPI));
+	NRF_GPIOTE->CONFIG[CONFIG_BT_CTLR_PA_LNA_GPIOTE_CHAN] = 0;
 }
 #endif /* CONFIG_BT_CTLR_GPIO_PA_PIN || CONFIG_BT_CTLR_GPIO_LNA_PIN */
 
@@ -1056,13 +1058,13 @@ void *radio_ccm_rx_pkt_set(struct ccm *ccm, uint8_t phy, void *pkt)
 	/* Select CCM data rate based on current PHY in use. */
 	switch (phy) {
 	default:
-	case BIT(0):
+	case PHY_1M:
 		mode |= (CCM_MODE_DATARATE_1Mbit <<
 			 CCM_MODE_DATARATE_Pos) &
 			CCM_MODE_DATARATE_Msk;
 		break;
 
-	case BIT(1):
+	case PHY_2M:
 		mode |= (CCM_MODE_DATARATE_2Mbit <<
 			 CCM_MODE_DATARATE_Pos) &
 			CCM_MODE_DATARATE_Msk;
@@ -1070,7 +1072,7 @@ void *radio_ccm_rx_pkt_set(struct ccm *ccm, uint8_t phy, void *pkt)
 
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 #if defined(CONFIG_HAS_HW_NRF_RADIO_BLE_CODED)
-	case BIT(2):
+	case PHY_CODED:
 		mode |= (CCM_MODE_DATARATE_125Kbps <<
 			 CCM_MODE_DATARATE_Pos) &
 			CCM_MODE_DATARATE_Msk;
@@ -1169,20 +1171,51 @@ uint32_t radio_ccm_mic_is_valid(void)
 
 static uint8_t MALIGN(4) _aar_scratch[3];
 
-void radio_ar_configure(uint32_t nirk, void *irk)
+void radio_ar_configure(uint32_t nirk, void *irk, uint8_t flags)
 {
+	uint32_t addrptr;
+	uint8_t bcc;
+	uint8_t phy;
+
+	/* Flags provide hint on how to setup AAR:
+	 * ....Xb - legacy PDU
+	 * ...X.b - extended PDU
+	 * XXX..b = RX PHY
+	 * 00000b = default case mapped to 00101b (legacy, 1M)
+	 *
+	 * If neither legacy not extended bit is set, legacy PDU is selected for
+	 * 1M PHY and extended PDU otherwise.
+	 */
+
+	phy = flags >> 2;
+
+	/* Check if extended PDU or non-1M and not legacy PDU */
+	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT) &&
+	    ((flags & BIT(1)) || (!(flags & BIT(0)) && (phy > PHY_1M)))) {
+		addrptr = NRF_RADIO->PACKETPTR + 1;
+		bcc = 80;
+	} else {
+		addrptr = NRF_RADIO->PACKETPTR - 1;
+		bcc = 64;
+	}
+
+	/* For Coded PHY adjust for CI and TERM1 */
+	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED) && (phy == PHY_CODED)) {
+		bcc += 5;
+	}
+
 	NRF_AAR->ENABLE = (AAR_ENABLE_ENABLE_Enabled << AAR_ENABLE_ENABLE_Pos) &
 			  AAR_ENABLE_ENABLE_Msk;
 	NRF_AAR->NIRK = nirk;
 	NRF_AAR->IRKPTR = (uint32_t)irk;
-	NRF_AAR->ADDRPTR = (uint32_t)NRF_RADIO->PACKETPTR - 1;
+	NRF_AAR->ADDRPTR = addrptr;
 	NRF_AAR->SCRATCHPTR = (uint32_t)&_aar_scratch[0];
 
 	NRF_AAR->EVENTS_END = 0;
 	NRF_AAR->EVENTS_RESOLVED = 0;
 	NRF_AAR->EVENTS_NOTRESOLVED = 0;
 
-	radio_bc_configure(64);
+	radio_bc_configure(bcc);
 	radio_bc_status_reset();
 
 	hal_trigger_aar_ppi_config();
@@ -1200,6 +1233,8 @@ void radio_ar_status_reset(void)
 
 	NRF_AAR->ENABLE = (AAR_ENABLE_ENABLE_Disabled << AAR_ENABLE_ENABLE_Pos) &
 			  AAR_ENABLE_ENABLE_Msk;
+
+	hal_radio_nrf_ppi_channels_disable(BIT(HAL_TRIGGER_AAR_PPI));
 }
 
 uint32_t radio_ar_has_match(void)
@@ -1208,4 +1243,26 @@ uint32_t radio_ar_has_match(void)
 		NRF_AAR->EVENTS_END &&
 		NRF_AAR->EVENTS_RESOLVED &&
 		!NRF_AAR->EVENTS_NOTRESOLVED);
+}
+
+void radio_ar_resolve(uint8_t *addr)
+{
+	NRF_AAR->ENABLE = (AAR_ENABLE_ENABLE_Enabled << AAR_ENABLE_ENABLE_Pos) &
+			  AAR_ENABLE_ENABLE_Msk;
+
+	NRF_AAR->ADDRPTR = (uint32_t)addr - 3;
+
+	NRF_AAR->EVENTS_END = 0;
+	NRF_AAR->EVENTS_RESOLVED = 0;
+	NRF_AAR->EVENTS_NOTRESOLVED = 0;
+
+	nrf_aar_task_trigger(NRF_AAR, NRF_AAR_TASK_START);
+
+	nrf_aar_int_enable(NRF_AAR, AAR_INTENSET_END_Msk);
+	while (NRF_AAR->EVENTS_END == 0) {
+		__WFE();
+		__SEV();
+		__WFE();
+	}
+	nrf_aar_int_disable(NRF_AAR, AAR_INTENCLR_END_Msk);
 }

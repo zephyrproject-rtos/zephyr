@@ -9,7 +9,7 @@
 /* Include esp-idf headers first to avoid redefining BIT() macro */
 #include <esp_intr_alloc.h>
 #include <soc/dport_reg.h>
-#include <rom/gpio.h>
+#include <esp32/rom/gpio.h>
 #include <soc/gpio_sig_map.h>
 #include <soc/ledc_reg.h>
 
@@ -519,7 +519,7 @@ const static struct pwm_led_esp32_config pwm_led_esp32_config = {
 	},
 };
 
-DEVICE_AND_API_INIT(pwm_led_esp32_0, CONFIG_PWM_LED_ESP32_DEV_NAME_0,
-		    pwm_led_esp32_init, NULL, &pwm_led_esp32_config,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &pwm_led_esp32_api);
+DEVICE_DEFINE(pwm_led_esp32_0, CONFIG_PWM_LED_ESP32_DEV_NAME_0,
+		pwm_led_esp32_init, device_pm_control_nop, NULL,
+		&pwm_led_esp32_config, POST_KERNEL,
+		CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &pwm_led_esp32_api);

@@ -27,7 +27,11 @@
 
 _MainEntry:
 
+#ifdef CONFIG_RESET_VECTOR_IN_BOOTLOADER
+	j	_start
+#else
 	j	__start
+#endif
 
 	.size	_MainEntry, . - _MainEntry
 

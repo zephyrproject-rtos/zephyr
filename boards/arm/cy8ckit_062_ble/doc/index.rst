@@ -99,6 +99,8 @@ The board configuration supports the following hardware features:
 +-----------+------------+----------------------+
 | SYSTICK   | on-chip    | system clock         |
 +-----------+------------+----------------------+
+| GPIO      | on-chip    | gpio                 |
++-----------+------------+----------------------+
 | UART      | on-chip    | serial port-polling  |
 +-----------+------------+----------------------+
 

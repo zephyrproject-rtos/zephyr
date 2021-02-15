@@ -14,6 +14,8 @@
 
 LOG_MODULE_REGISTER(usb_transfer, CONFIG_USB_DEVICE_LOG_LEVEL);
 
+#define USB_TRANSFER_SYNC_TIMEOUT 100
+
 struct usb_transfer_sync_priv {
 	int tsize;
 	struct k_sem sem;
@@ -49,7 +51,7 @@ static struct usb_transfer_data ut_data[CONFIG_USB_MAX_NUM_TRANSFERS];
 static struct usb_transfer_data *usb_ep_get_transfer(uint8_t ep)
 {
 	for (int i = 0; i < ARRAY_SIZE(ut_data); i++) {
-		if (ut_data[i].ep == ep) {
+		if (ut_data[i].ep == ep && ut_data[i].status != 0) {
 			return &ut_data[i];
 		}
 	}
@@ -198,6 +200,11 @@ int usb_transfer(uint8_t ep, uint8_t *data, size_t dlen, unsigned int flags,
 	struct usb_transfer_data *trans = NULL;
 	int i, key, ret = 0;
 
+	/* Parallel transfer to same endpoint is not supported. */
+	if (usb_transfer_is_busy(ep)) {
+		return -EBUSY;
+	}
+
 	LOG_DBG("Transfer start, ep 0x%02x, data %p, dlen %zd",
 		ep, data, dlen);
 
@@ -313,8 +320,23 @@ int usb_transfer_sync(uint8_t ep, uint8_t *data, size_t dlen, unsigned int flags
 		return ret;
 	}
 
-	/* Semaphore will be released by the transfer completion callback */
-	k_sem_take(&pdata.sem, K_FOREVER);
+	/* Semaphore will be released by the transfer completion callback
+	 * which might not be called when transfer was cancelled
+	 */
+	while (1) {
+		struct usb_transfer_data *trans;
+
+		ret = k_sem_take(&pdata.sem, K_MSEC(USB_TRANSFER_SYNC_TIMEOUT));
+		if (ret == 0) {
+			break;
+		}
+
+		trans = usb_ep_get_transfer(ep);
+		if (!trans || trans->status != -EBUSY) {
+			LOG_WRN("Sync transfer cancelled, ep 0x%02x", ep);
+			return -ECANCELED;
+		}
+	}
 
 	return pdata.tsize;
 }

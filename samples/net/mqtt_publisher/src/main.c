@@ -482,7 +482,7 @@ static int publisher(void)
 	return r;
 }
 
-static void start_app(void)
+static int start_app(void)
 {
 	int r = 0, i = 0;
 
@@ -494,18 +494,24 @@ static void start_app(void)
 			k_sleep(K_MSEC(5000));
 		}
 	}
+
+	return r;
 }
 
 #if defined(CONFIG_USERSPACE)
 #define STACK_SIZE 2048
-#define THREAD_PRIORITY K_PRIO_COOP(8)
+
+#if IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)
+#define THREAD_PRIORITY K_PRIO_COOP(CONFIG_NUM_COOP_PRIORITIES - 1)
+#else
+#define THREAD_PRIORITY K_PRIO_PREEMPT(8)
+#endif
 
 K_THREAD_DEFINE(app_thread, STACK_SIZE,
 		start_app, NULL, NULL, NULL,
 		THREAD_PRIORITY, K_USER, -1);
 
-static K_MEM_POOL_DEFINE(app_mem_pool, sizeof(uintptr_t), 1024,
-			 2, sizeof(uintptr_t));
+static K_HEAP_DEFINE(app_mem_pool, 1024 * 2);
 #endif
 
 void main(void)
@@ -527,11 +533,11 @@ void main(void)
 
 	k_mem_domain_init(&app_domain, ARRAY_SIZE(parts), parts);
 	k_mem_domain_add_thread(&app_domain, app_thread);
-	k_thread_resource_pool_assign(app_thread, &app_mem_pool);
+	k_thread_heap_assign(app_thread, &app_mem_pool);
 
 	k_thread_start(app_thread);
 	k_thread_join(app_thread, K_FOREVER);
 #else
-	start_app();
+	exit(start_app());
 #endif
 }

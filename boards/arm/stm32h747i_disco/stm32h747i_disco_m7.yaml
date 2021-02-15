@@ -11,3 +11,5 @@ flash: 1024
 supported:
   - arduino_gpio
   - gpio
+  - netif:eth
+  - memc

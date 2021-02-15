@@ -34,6 +34,10 @@
 #define GICD_CTLR_ENABLE_G0		0
 #define GICD_CTLR_ENABLE_G1NS		1
 #define GICD_CTLR_ENABLE_G1S		2
+#define GICD_CTRL_ARE_S			4
+#define GICD_CTRL_ARE_NS		5
+#define GICD_CTRL_NS			6
+#define GICD_CGRL_E1NWF			7
 
 /* GICD_CTLR Register write progress bit */
 #define GICD_CTLR_RWP			31

@@ -318,14 +318,12 @@ static int eth_stellaris_dev_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DECLARE(eth_stellaris);
-
 static void eth_stellaris_irq_config(const struct device *dev)
 {
 	/* Enable Interrupt. */
 	IRQ_CONNECT(DT_INST_IRQN(0),
 		    DT_INST_IRQ(0, priority),
-		    eth_stellaris_isr, DEVICE_GET(eth_stellaris), 0);
+		    eth_stellaris_isr, DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQN(0));
 }
 
@@ -349,7 +347,7 @@ static const struct ethernet_api eth_stellaris_apis = {
 #endif
 };
 
-NET_DEVICE_INIT(eth_stellaris, DT_INST_LABEL(0),
+NET_DEVICE_DT_INST_DEFINE(0,
 		eth_stellaris_dev_init, device_pm_control_nop,
 		&eth_data, &eth_cfg, CONFIG_ETH_INIT_PRIORITY,
 		&eth_stellaris_apis, ETHERNET_L2,

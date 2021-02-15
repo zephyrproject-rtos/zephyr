@@ -47,3 +47,8 @@
 	interrupt-names = "perst", "perst_inband", "flr",
 			  "snoop_irq1", "pcie_pmon_lite";
 };
+
+&paxdma {
+	interrupt-parent = <&nvic>;
+	interrupts = <226 3>;
+};

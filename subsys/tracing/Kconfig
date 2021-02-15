@@ -10,6 +10,7 @@ config TRACING
 	imply THREAD_NAME
 	imply THREAD_STACK_INFO
 	imply THREAD_MONITOR
+	select INSTRUMENT_THREAD_SWITCHING
 	help
 	  Enable system tracing. This requires a backend such as SEGGER
 	  Systemview to be enabled as well.
@@ -36,6 +37,7 @@ config SEGGER_SYSTEMVIEW
 	select CONSOLE
 	select RTT_CONSOLE
 	select USE_SEGGER_RTT
+	select THREAD_MONITOR
 
 config TRACING_CTF
 	bool "Tracing via Common Trace Format support"

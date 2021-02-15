@@ -8,6 +8,11 @@ else()
   string(PREPEND CMAKE_ASM_FLAGS "-m32 ")
   string(PREPEND CMAKE_C_FLAGS   "-m32 ")
   string(PREPEND CMAKE_CXX_FLAGS "-m32 ")
+
+  if(CONFIG_X86_FP_USE_SOFT_FLOAT)
+    list(APPEND TOOLCHAIN_C_FLAGS  -msoft-float)
+    list(APPEND TOOLCHAIN_LD_FLAGS -msoft-float)
+  endif()
 endif()
 
 # GNU Assembler, by default on non-Linux targets, treats slashes as

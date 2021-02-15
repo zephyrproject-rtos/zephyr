@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2020 TDK Invensense
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&spi0 {
+	compatible = "nordic,nrf-spi";
+	status = "okay";
+	sck-pin = <27>;
+	mosi-pin = <26>;
+	miso-pin = <23>;
+	cs-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
+	icm42605@0 {
+		compatible = "invensense,icm42605";
+		spi-max-frequency = <24000000>;
+		reg = <0>;
+		label = "ICM42605";
+		int-gpios = <&gpio0 18 GPIO_ACTIVE_HIGH>;
+	};
+};

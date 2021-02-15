@@ -127,7 +127,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         ver_re = re.compile(r'\s+V([.0-9]+)[a-zA-Z]*\s+', re.IGNORECASE)
         cmd = ([self.commander] + ['-bogus-argument-that-does-not-exist'])
         try:
-            self.check_output(cmd, timeout=0.1)
+            self.check_output(cmd, timeout=1)
         except TimeoutExpired as e:
             ver_m = ver_re.search(e.output.decode('utf-8'))
             if ver_m:
@@ -179,8 +179,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
 
     def flash(self, **kwargs):
         self.require(self.commander)
-        if self.bin_name is None:
-            raise ValueError('Cannot flash; bin_name is missing')
+        self.ensure_output('bin')
 
         lines = ['r'] # Reset and halt the target
 

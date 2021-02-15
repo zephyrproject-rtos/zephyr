@@ -1,14 +1,27 @@
 # SPDX-License-Identifier: Apache-2.0
 
-# This cmake file provides functionality to import additional out-of-tree, OoT
-# CMakeLists.txt and Kconfig files into Zephyr build system.
-# It uses -DZEPHYR_MODULES=<oot-path-to-module>[;<additional-oot-module(s)>]
-# given to CMake for a list of folders to search.
-# It looks for: <oot-module>/zephyr/module.yml or
-#               <oot-module>/zephyr/CMakeLists.txt
-# to load the oot-module into Zephyr build system.
+# This cmake file provides functionality to import CMakeLists.txt and Kconfig
+# files for Zephyr modules into Zephyr build system.
+#
+# CMakeLists.txt and Kconfig files can reside directly in the module or in a
+# MODULE_EXT_ROOT.
+# The `<module>/zephyr/module.yml` file specifies whether the build files are
+# located in the module or in a MODULE_EXT_ROOT.
+#
+# A list of Zephyr modules can be provided to the build system using:
+#   -DZEPHYR_MODULES=<module-path>[;<additional-module(s)-path>]
+#
+# It looks for: <module>/zephyr/module.yml or
+#               <module>/zephyr/CMakeLists.txt
+# to load the module into Zephyr build system.
 # If west is available, it uses `west list` to obtain a list of projects to
 # search for zephyr/module.yml
+#
+# If the module.yml file specifies that build files are located in a
+# MODULE_EXT_ROOT then the variables:
+# - `ZEPHYR_<MODULE_NAME>_CMAKE_DIR` is used for inclusion of the CMakeLists.txt
+# - `ZEPHYR_<MODULE_NAME>_KCONFIG` is used for inclusion of the Kconfig
+# files into the build system.
 
 if(ZEPHYR_MODULES)
   set(ZEPHYR_MODULES_ARG "--modules" ${ZEPHYR_MODULES})
@@ -56,9 +69,24 @@ if(WEST OR ZEPHYR_MODULES)
       # lazy regexes (it supports greedy only).
       string(REGEX REPLACE "\"(.*)\":\".*\"" "\\1" key ${setting})
       string(REGEX REPLACE "\".*\":\"(.*)\"" "\\1" value ${setting})
-      list(APPEND ${key} ${value})
+      # MODULE_EXT_ROOT is process order which means module roots processed
+      # later wins. To ensure ZEPHYR_BASE stays first, and command line settings
+      # are processed last, we insert at position 1.
+      if ("${key}" STREQUAL "MODULE_EXT_ROOT")
+        list(INSERT ${key} 1 ${value})
+      else()
+        list(APPEND ${key} ${value})
+      endif()
     endforeach()
   endif()
+
+  foreach(root ${MODULE_EXT_ROOT})
+    if(NOT EXISTS ${root})
+      message(FATAL_ERROR "No `modules.cmake` found in module root `${root}`.")
+    endif()
+
+    include(${root}/modules/modules.cmake)
+  endforeach()
 
   if(EXISTS ${CMAKE_BINARY_DIR}/zephyr_modules.txt)
     file(STRINGS ${CMAKE_BINARY_DIR}/zephyr_modules.txt ZEPHYR_MODULES_TXT
@@ -69,13 +97,14 @@ if(WEST OR ZEPHYR_MODULES)
       # Match "<name>":"<path>" for each line of file, each corresponding to
       # one module. The use of quotes is required due to CMake not supporting
       # lazy regexes (it supports greedy only).
+      string(CONFIGURE ${module} module)
       string(REGEX REPLACE "\"(.*)\":\".*\":\".*\"" "\\1" module_name ${module})
       string(REGEX REPLACE "\".*\":\"(.*)\":\".*\"" "\\1" module_path ${module})
       string(REGEX REPLACE "\".*\":\".*\":\"(.*)\"" "\\1" cmake_path ${module})
 
       list(APPEND ZEPHYR_MODULE_NAMES ${module_name})
 
-      string(TOUPPER ${module_name} MODULE_NAME_UPPER)
+      zephyr_string(SANITIZE TOUPPER MODULE_NAME_UPPER ${module_name})
       if(NOT ${MODULE_NAME_UPPER} STREQUAL CURRENT)
         set(ZEPHYR_${MODULE_NAME_UPPER}_MODULE_DIR ${module_path})
         set(ZEPHYR_${MODULE_NAME_UPPER}_CMAKE_DIR ${cmake_path})
@@ -93,3 +122,5 @@ else()
     )
 
 endif()
+
+list(REMOVE_DUPLICATES ZEPHYR_MODULE_NAMES)

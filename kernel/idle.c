@@ -14,7 +14,7 @@
 #include <logging/log.h>
 #include <ksched.h>
 
-LOG_MODULE_DECLARE(os);
+LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #ifdef CONFIG_TICKLESS_IDLE_THRESH
 #define IDLE_THRESH CONFIG_TICKLESS_IDLE_THRESH
@@ -29,31 +29,27 @@ LOG_MODULE_DECLARE(os);
 #define SMP_FALLBACK 0
 #endif
 
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
+#ifdef CONFIG_PM
 /*
- * Used to allow _sys_suspend() implementation to control notification
+ * Used to allow pm_system_suspend() implementation to control notification
  * of the event that caused exit from kernel idling after pm operations.
  */
-unsigned char sys_pm_idle_exit_notify;
+unsigned char pm_idle_exit_notify;
 
 
 /* LCOV_EXCL_START
  * These are almost certainly overidden and in any event do nothing
  */
-#if defined(CONFIG_SYS_POWER_SLEEP_STATES)
-void __attribute__((weak)) _sys_resume(void)
+void __attribute__((weak)) pm_system_resume(void)
 {
 }
-#endif
 
-#if defined(CONFIG_SYS_POWER_DEEP_SLEEP_STATES)
-void __attribute__((weak)) _sys_resume_from_deep_sleep(void)
+void __attribute__((weak)) pm_system_resume_from_deep_sleep(void)
 {
 }
-#endif
 /* LCOV_EXCL_STOP */
 
-#endif /* CONFIG_SYS_POWER_MANAGEMENT */
+#endif /* CONFIG_PM */
 
 /**
  *
@@ -66,38 +62,17 @@ void __attribute__((weak)) _sys_resume_from_deep_sleep(void)
  *
  * @return N/A
  */
-#if !SMP_FALLBACK
-static void set_kernel_idle_time_in_ticks(int32_t ticks)
+#if !SMP_FALLBACK && CONFIG_PM
+static enum pm_state pm_save_idle(int32_t ticks)
 {
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
-	_kernel.idle = ticks;
-#endif
-}
+	static enum pm_state idle_state = PM_STATE_ACTIVE;
 
-static void sys_power_save_idle(void)
-{
-	int32_t ticks = z_get_next_timeout_expiry();
-
-	/* The documented behavior of CONFIG_TICKLESS_IDLE_THRESH is
-	 * that the system should not enter a tickless idle for
-	 * periods less than that.  This seems... silly, given that it
-	 * saves no power and does not improve latency.  But it's an
-	 * API we need to honor...
-	 */
-#ifdef CONFIG_SYS_CLOCK_EXISTS
-	z_set_timeout_expiry((ticks < IDLE_THRESH) ? 1 : ticks, true);
-#endif
-
-	set_kernel_idle_time_in_ticks(ticks);
-#if (defined(CONFIG_SYS_POWER_SLEEP_STATES) || \
-	defined(CONFIG_SYS_POWER_DEEP_SLEEP_STATES))
-
-	sys_pm_idle_exit_notify = 1U;
+	pm_idle_exit_notify = 1U;
 
 	/*
 	 * Call the suspend hook function of the soc interface to allow
 	 * entry into a low power state. The function returns
-	 * SYS_POWER_STATE_ACTIVE if low power state was not entered, in which
+	 * POWER_STATE_ACTIVE if low power state was not entered, in which
 	 * case, kernel does normal idle processing.
 	 *
 	 * This function is entered with interrupts disabled. If a low power
@@ -107,30 +82,30 @@ static void sys_power_save_idle(void)
 	 * idle processing re-enables interrupts which is essential for
 	 * the kernel's scheduling logic.
 	 */
-	if (_sys_suspend(ticks) == SYS_POWER_STATE_ACTIVE) {
-		sys_pm_idle_exit_notify = 0U;
-		k_cpu_idle();
+	idle_state = pm_system_suspend(ticks);
+	if (idle_state == PM_STATE_ACTIVE) {
+		pm_idle_exit_notify = 0U;
 	}
-#else
-	k_cpu_idle();
-#endif
-}
-#endif
 
-void z_sys_power_save_idle_exit(int32_t ticks)
+	return idle_state;
+
+}
+#endif /* !SMP_FALLBACK */
+
+
+void z_pm_save_idle_exit(int32_t ticks)
 {
-#if defined(CONFIG_SYS_POWER_SLEEP_STATES)
+#ifdef CONFIG_PM
 	/* Some CPU low power states require notification at the ISR
 	 * to allow any operations that needs to be done before kernel
 	 * switches task or processes nested interrupts. This can be
-	 * disabled by calling _sys_pm_idle_exit_notification_disable().
+	 * disabled by calling pm_idle_exit_notification_disable().
 	 * Alternatively it can be simply ignored if not required.
 	 */
-	if (sys_pm_idle_exit_notify) {
-		_sys_resume();
+	if (pm_idle_exit_notify) {
+		pm_system_resume();
 	}
-#endif
-
+#endif	/* CONFIG_PM */
 	z_clock_idle_exit();
 }
 
@@ -154,7 +129,7 @@ void idle(void *p1, void *unused2, void *unused3)
 	extern uint32_t z_timestamp_idle;
 
 	z_timestamp_idle = k_cycle_get_32();
-#endif
+#endif /* CONFIG_BOOT_TIME_MEASUREMENT */
 
 	while (true) {
 		/* Lock interrupts to atomically check if to_abort is non-NULL,
@@ -188,14 +163,40 @@ void idle(void *p1, void *unused2, void *unused3)
 			z_reschedule_unlocked();
 			continue;
 		}
-		arch_irq_unlock(key);
+
 #if SMP_FALLBACK
+		arch_irq_unlock(key);
+
 		k_busy_wait(100);
 		k_yield();
 #else
-		(void)arch_irq_lock();
-		sys_power_save_idle();
+
+#ifdef CONFIG_SYS_CLOCK_EXISTS
+		int32_t ticks = z_get_next_timeout_expiry();
+
+		/* The documented behavior of CONFIG_TICKLESS_IDLE_THRESH is
+		 * that the system should not enter a tickless idle for
+		 * periods less than that.  This seems... silly, given that it
+		 * saves no power and does not improve latency.  But it's an
+		 * API we need to honor...
+		 */
+		z_set_timeout_expiry((ticks < IDLE_THRESH) ? 1 : ticks, true);
+#ifdef CONFIG_PM
+		_kernel.idle = ticks;
+		/* Check power policy and decide if we are going to sleep or
+		 * just idle.
+		 */
+		if (pm_save_idle(ticks) == PM_STATE_ACTIVE) {
+			k_cpu_idle();
+		}
+#else /* CONFIG_PM */
+		k_cpu_idle();
+#endif /* CONFIG_PM */
+#else /* CONFIG_SYS_CLOCK_EXISTS */
+		k_cpu_idle();
+#endif /* CONFIG_SYS_CLOCK_EXISTS */
+
 		IDLE_YIELD_IF_COOP();
-#endif
+#endif /* SMP_FALLBACK */
 	}
 }

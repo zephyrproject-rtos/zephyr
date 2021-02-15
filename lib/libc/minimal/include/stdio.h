@@ -31,11 +31,6 @@ typedef int  FILE;
 #define stdout ((FILE *) 2)
 #define stderr ((FILE *) 3)
 
-/*
- * NOTE: This libc implementation does not define the routines
- * declared below.
- */
-
 int __printf_like(1, 2) printf(const char *_MLIBC_RESTRICT fmt, ...);
 int __printf_like(3, 4) snprintf(char *_MLIBC_RESTRICT s, size_t len,
 				 const char *_MLIBC_RESTRICT fmt, ...);
@@ -61,6 +56,14 @@ int fputc(int c, FILE *stream);
 int fputs(const char *_MLIBC_RESTRICT s, FILE *_MLIBC_RESTRICT stream);
 size_t fwrite(const void *_MLIBC_RESTRICT ptr, size_t size, size_t nitems,
 	      FILE *_MLIBC_RESTRICT stream);
+static inline int putc(int c, FILE *stream)
+{
+	return fputc(c, stream);
+}
+static inline int putchar(int c)
+{
+	return putc(c, stdout);
+}
 
 #ifdef __cplusplus
 }

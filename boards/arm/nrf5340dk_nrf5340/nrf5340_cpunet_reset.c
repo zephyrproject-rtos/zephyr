@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020 Nordic Semiconductor ASA.
+ * Copyright (c) 2019-2021 Nordic Semiconductor ASA.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,25 +10,12 @@
 
 #include <soc.h>
 
-LOG_MODULE_REGISTER(nrf5340pdk_nrf5340_cpuapp, CONFIG_LOG_DEFAULT_LEVEL);
-
-/* Shared memory definitions */
-#if DT_HAS_CHOSEN(zephyr_ipc_shm)
-#define SHM_NODE            DT_CHOSEN(zephyr_ipc_shm)
-#define SHM_BASE_ADDRESS    DT_REG_ADDR(SHM_NODE)
-#define SHM_SIZE            DT_REG_SIZE(SHM_NODE)
-#endif
+LOG_MODULE_REGISTER(nrf5340dk_nrf5340_cpuapp, CONFIG_LOG_DEFAULT_LEVEL);
 
 #if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 
 /* This should come from DTS, possibly an overlay. */
-#if defined(CONFIG_BOARD_NRF5340PDK_NRF5340_CPUAPP)
-#define CPUNET_UARTE_PIN_TX  25
-#define CPUNET_UARTE_PIN_RX  26
-#define CPUNET_UARTE_PORT_TRX NRF_P0
-#define CPUNET_UARTE_PIN_RTS 10
-#define CPUNET_UARTE_PIN_CTS 12
-#elif defined(CONFIG_BOARD_NRF5340DK_NRF5340_CPUAPP)
+#if defined(CONFIG_BOARD_NRF5340DK_NRF5340_CPUAPP)
 #define CPUNET_UARTE_PIN_TX  1
 #define CPUNET_UARTE_PIN_RX  0
 #define CPUNET_UARTE_PORT_TRX NRF_P1
@@ -49,13 +36,13 @@ static void remoteproc_mgr_config(void)
 	 * nRF5340 Network MCU.
 	 */
 	CPUNET_UARTE_PORT_TRX->PIN_CNF[CPUNET_UARTE_PIN_TX] =
-	GPIO_PIN_CNF_MCUSEL_NetworkMCU << GPIO_PIN_CNF_MCUSEL_Pos;
+		GPIO_PIN_CNF_MCUSEL_NetworkMCU << GPIO_PIN_CNF_MCUSEL_Pos;
 	CPUNET_UARTE_PORT_TRX->PIN_CNF[CPUNET_UARTE_PIN_RX] =
-	GPIO_PIN_CNF_MCUSEL_NetworkMCU << GPIO_PIN_CNF_MCUSEL_Pos;
+		GPIO_PIN_CNF_MCUSEL_NetworkMCU << GPIO_PIN_CNF_MCUSEL_Pos;
 	NRF_P0->PIN_CNF[CPUNET_UARTE_PIN_RTS] =
-	GPIO_PIN_CNF_MCUSEL_NetworkMCU << GPIO_PIN_CNF_MCUSEL_Pos;
+		GPIO_PIN_CNF_MCUSEL_NetworkMCU << GPIO_PIN_CNF_MCUSEL_Pos;
 	NRF_P0->PIN_CNF[CPUNET_UARTE_PIN_CTS] =
-	GPIO_PIN_CNF_MCUSEL_NetworkMCU << GPIO_PIN_CNF_MCUSEL_Pos;
+		GPIO_PIN_CNF_MCUSEL_NetworkMCU << GPIO_PIN_CNF_MCUSEL_Pos;
 
 	/* Route Bluetooth Controller Debug Pins */
 	DEBUG_SETUP();
@@ -83,14 +70,6 @@ static int remoteproc_mgr_boot(const struct device *dev)
 	 * this case do the remainder of actions to properly configure and
 	 * boot the Network MCU.
 	 */
-#if defined(SHM_BASE_ADDRESS) && (SHM_BASE_ADDRESS != 0)
-
-	/* Initialize inter-processor shared memory block to zero. It is
-	 * assumed that the application image has access to the shared
-	 * memory at this point (see #24147).
-	 */
-	memset((void *) SHM_BASE_ADDRESS, 0, SHM_SIZE);
-#endif
 
 	/* Release the Network MCU, 'Release force off signal' */
 	NRF_RESET->NETWORK.FORCEOFF = RESET_NETWORK_FORCEOFF_FORCEOFF_Release;

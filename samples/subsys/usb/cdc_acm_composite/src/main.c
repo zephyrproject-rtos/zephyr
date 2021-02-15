@@ -53,12 +53,12 @@ static void interrupt_handler(const struct device *dev, void *user_data)
 			if (read) {
 				wrote = ring_buf_put(ringbuf, buf, read);
 				if (wrote < read) {
-					LOG_ERR("Drop %u bytes", read - wrote);
+					LOG_ERR("Drop %zu bytes", read - wrote);
 				}
 
 				uart_irq_tx_enable(dev_data->peer);
 
-				LOG_DBG("dev %p -> dev %p send %u bytes",
+				LOG_DBG("dev %p -> dev %p send %zu bytes",
 					dev, peer, wrote);
 			}
 		}
@@ -74,7 +74,7 @@ static void interrupt_handler(const struct device *dev, void *user_data)
 				uart_irq_tx_disable(dev);
 			} else {
 				wrote = uart_fifo_fill(dev, buf, len);
-				LOG_DBG("dev %p wrote len %d", dev, wrote);
+				LOG_DBG("dev %p wrote len %zu", dev, wrote);
 			}
 		}
 	}

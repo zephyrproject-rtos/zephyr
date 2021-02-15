@@ -321,7 +321,7 @@ static int xlnx_quadspi_transceive(const struct device *dev,
 	struct spi_context *ctx = &data->ctx;
 	int ret;
 
-	spi_context_lock(ctx, async, signal);
+	spi_context_lock(ctx, async, signal, spi_cfg);
 
 	ret = xlnx_quadspi_configure(dev, spi_cfg);
 	if (ret) {
@@ -477,8 +477,9 @@ static const struct spi_driver_api xlnx_quadspi_driver_api = {
 		SPI_CONTEXT_INIT_SYNC(xlnx_quadspi_data_##n, ctx),	\
 	};								\
 									\
-	DEVICE_AND_API_INIT(xlnx_quadspi_##n, DT_INST_LABEL(n),		\
-			    &xlnx_quadspi_init, &xlnx_quadspi_data_##n,	\
+	DEVICE_DT_INST_DEFINE(n, &xlnx_quadspi_init,			\
+			    device_pm_control_nop,			\
+			    &xlnx_quadspi_data_##n,			\
 			    &xlnx_quadspi_config_##n, POST_KERNEL,	\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 			    &xlnx_quadspi_driver_api);			\
@@ -487,7 +488,7 @@ static const struct spi_driver_api xlnx_quadspi_driver_api = {
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),	\
 			    xlnx_quadspi_isr,				\
-			    DEVICE_GET(xlnx_quadspi_##n), 0);		\
+			    DEVICE_DT_INST_GET(n), 0);			\
 		irq_enable(DT_INST_IRQN(n));				\
 	}
 

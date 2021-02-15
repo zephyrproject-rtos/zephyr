@@ -82,6 +82,13 @@ __EXIT_INT:
 	add sp, sp, r3
 
 	/*
+	 * Restore lr_svc stored into the SVC mode stack by the mode entry
+	 * function. This ensures that the return address of the interrupted
+	 * context is preserved in case of interrupt nesting.
+	 */
+	pop {lr}
+
+	/*
 	 * Restore r0-r3, r12 and lr_irq stored into the process stack by the
 	 * mode entry function. These registers are saved by _isr_wrapper for
 	 * IRQ mode and z_arm_svc for SVC mode.
@@ -131,10 +138,18 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, z_arm_exc_exit)
 	/* Clean up exception stack frame */
 	add sp, #32
 
-	/* Switch in the next scheduled thread */
+	/*
+	 * Switch in the next scheduled thread.
+	 *
+	 * Note that z_arm_pendsv must be called in the SVC mode because it
+	 * switches to the SVC mode during context switch and returns to the
+	 * caller using lr_svc.
+	 */
+	cps #MODE_SVC
 	bl z_arm_pendsv
 
 	/* Decrement exception nesting count */
+	ldr r3, =_kernel
 	ldr r0, [r3, #_kernel_offset_to_nested]
 	sub r0, r0, #1
 	str r0, [r3, #_kernel_offset_to_nested]

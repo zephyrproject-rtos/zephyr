@@ -56,8 +56,8 @@ settings, and so on.
 
 .. _west-config-cmd:
 
-West ``config`` Command
------------------------
+west config
+-----------
 
 The built-in ``config`` command can be used to get and set configuration
 values. You can pass ``west config`` the options ``--system``, ``--global``, or
@@ -135,6 +135,16 @@ commands are documented in the pages for those commands.
        stdout is a terminal.
    * - ``commands.allow_extensions``
      - Boolean, default ``true``, disables :ref:`west-extensions` if ``false``
+   * - ``manifest.file``
+     - String, default ``west.yml``. Relative path from the manifest repository
+       root directory to the manifest file used by ``west init`` and other
+       commands which parse the manifest.
+   * - ``manifest.group-filter``
+     - String, default empty. A comma-separated list of project groups to
+       enable and disable within the workspace. Prefix enabled groups with
+       ``+`` and disabled groups with ``-``. For example, the value
+       ``"+foo,-bar"`` enables group ``foo`` and disables ``bar``. See
+       :ref:`west-manifest-groups`.
    * - ``manifest.path``
      - String, relative path from the :term:`west workspace` root directory
        to the manifest repository used by ``west update`` and other commands
@@ -142,7 +152,7 @@ commands are documented in the pages for those commands.
    * - ``update.fetch``
      - String, one of ``"smart"`` (the default behavior starting in v0.6.1) or
        ``"always"`` (the previous behavior). If set to ``"smart"``, the
-       :ref:`west update <west-multi-repo-cmds>` command will skip fetching
+       :ref:`west-update` command will skip fetching
        from project remotes when those projects' revisions in the manifest file
        are SHAs or tags which are already available locally. The ``"always"``
        behavior is to unconditionally fetch from the remote.

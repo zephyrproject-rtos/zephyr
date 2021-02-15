@@ -67,9 +67,9 @@ extern void USB_DeviceEhciIsrFunction(void *deviceHandle);
 /* The max MPS is 1023 for FS, 1024 for HS. */
 #if defined(CONFIG_NOCACHE_MEMORY)
 #define EP_BUF_NONCACHED
-__nocache K_MEM_POOL_DEFINE(ep_buf_pool, 16, 1024, EP_BUF_NUMOF_BLOCKS, 4);
+__nocache K_HEAP_DEFINE(ep_buf_pool, 1024 * EP_BUF_NUMOF_BLOCKS);
 #else
-K_MEM_POOL_DEFINE(ep_buf_pool, 16, 1024, EP_BUF_NUMOF_BLOCKS, 4);
+K_HEAP_DEFINE(ep_buf_pool, 1024 * EP_BUF_NUMOF_BLOCKS);
 #endif
 
 static usb_ep_ctrl_data_t s_ep_ctrl[NUM_OF_EP_MAX];
@@ -78,8 +78,8 @@ static usb_device_struct_t dev_data;
 #if ((defined(USB_DEVICE_CONFIG_EHCI)) && (USB_DEVICE_CONFIG_EHCI > 0U))
 /* EHCI device driver interface */
 static const usb_device_controller_interface_struct_t ehci_iface = {
-	USB_DeviceEhciInit, USB_DeviceEhciDeinit, USB_DeviceEhciSend,
-	USB_DeviceEhciRecv, USB_DeviceEhciCancel, USB_DeviceEhciControl
+								    USB_DeviceEhciInit, USB_DeviceEhciDeinit, USB_DeviceEhciSend,
+								    USB_DeviceEhciRecv, USB_DeviceEhciCancel, USB_DeviceEhciControl
 };
 #endif
 
@@ -207,11 +207,12 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 
 	block = &(eps->block);
 	if (block->data) {
-		k_mem_pool_free(block);
+		k_heap_free(&ep_buf_pool, block->data);
 		block->data = NULL;
 	}
 
-	if (k_mem_pool_alloc(&ep_buf_pool, block, cfg->ep_mps, K_MSEC(10))) {
+	block->data = k_heap_alloc(&ep_buf_pool, cfg->ep_mps, K_MSEC(10));
+	if (block->data == NULL) {
 		LOG_ERR("Memory allocation time-out");
 		return -ENOMEM;
 	}

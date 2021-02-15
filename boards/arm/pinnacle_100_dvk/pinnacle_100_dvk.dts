@@ -169,7 +169,6 @@
 		label = "MX25R64";
 		jedec-id = [c2 28 17];
 		size = <67108864>;
-		has-be32k;
 		has-dpd;
 		t-enter-dpd = <10000>;
 		t-exit-dpd = <35000>;

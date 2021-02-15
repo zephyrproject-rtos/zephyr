@@ -14,7 +14,7 @@ properties:
     "#size-cells":
       required: true
       const: 0
-    clock-frequency :
+    clock-frequency:
       type: int
       required: false
       description: Initial clock frequency in Hz

@@ -29,7 +29,6 @@ struct cavs_idc_data {
 	void		*user_data;
 };
 
-DEVICE_DECLARE(cavs_idc);
 static struct cavs_idc_data cavs_idc_device_data;
 
 static void cavs_idc_isr(const struct device *dev)
@@ -209,7 +208,7 @@ static int cavs_idc_init(const struct device *dev)
 {
 	IRQ_CONNECT(DT_INST_IRQN(0),
 		    DT_INST_IRQ(0, priority),
-		    cavs_idc_isr, DEVICE_GET(cavs_idc), 0);
+		    cavs_idc_isr, DEVICE_DT_INST_GET(0), 0);
 
 	irq_enable(DT_INST_IRQN(0));
 
@@ -224,9 +223,8 @@ static const struct ipm_driver_api cavs_idc_driver_api = {
 	.set_enabled = cavs_idc_set_enabled,
 };
 
-DEVICE_AND_API_INIT(IPM_CAVS_IDC_DEV_NAME,
-		    DT_INST_LABEL(0),
-		    &cavs_idc_init, &cavs_idc_device_data, NULL,
+DEVICE_DT_INST_DEFINE(0, &cavs_idc_init, device_pm_control_nop,
+		    &cavs_idc_device_data, NULL,
 		    PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &cavs_idc_driver_api);
 

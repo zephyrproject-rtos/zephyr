@@ -123,6 +123,18 @@ struct fp_non_volatile_register_set {
 #define SIZEOF_FP_VOLATILE_REGISTER_SET sizeof(struct fp_volatile_register_set)
 #define SIZEOF_FP_NON_VOLATILE_REGISTER_SET 0
 
+#elif defined(CONFIG_SPARC)
+
+struct fp_volatile_register_set {
+	double d[16];
+};
+
+struct fp_non_volatile_register_set {
+};
+
+#define SIZEOF_FP_VOLATILE_REGISTER_SET sizeof(struct fp_volatile_register_set)
+#define SIZEOF_FP_NON_VOLATILE_REGISTER_SET 0
+
 #else
 
 #error  "Architecture must provide the following definitions:\n"

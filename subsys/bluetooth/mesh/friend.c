@@ -178,6 +178,7 @@ static void friend_clear(struct bt_mesh_friend *frnd)
 		}
 	}
 
+	frnd->counter++;
 	frnd->subnet = NULL;
 	frnd->established = 0U;
 	frnd->pending_buf = 0U;
@@ -349,7 +350,12 @@ static int unseg_app_sdu_unpack(struct bt_mesh_friend *frnd,
 				struct unseg_app_sdu_meta *meta)
 {
 	uint16_t app_idx = FRIEND_ADV(buf)->app_idx;
-	struct bt_mesh_net_rx net;
+	struct bt_mesh_net_rx net = {
+		.ctx = {
+			.app_idx = app_idx,
+			.net_idx = frnd->subnet->net_idx,
+		},
+	};
 	int err;
 
 	meta->subnet = frnd->subnet;
@@ -426,11 +432,16 @@ static int unseg_app_sdu_prepare(struct bt_mesh_friend *frnd,
 		return 0;
 	}
 
+	BT_DBG("Re-encrypting friend pdu (SeqNum %06x -> %06x)",
+	       meta.crypto.seq_num, bt_mesh.seq);
+
 	err = unseg_app_sdu_decrypt(frnd, buf, &meta);
 	if (err) {
 		BT_WARN("Decryption failed! %d", err);
 		return err;
 	}
+
+	meta.crypto.seq_num = bt_mesh.seq;
 
 	err = unseg_app_sdu_encrypt(frnd, buf, &meta);
 	if (err) {
@@ -568,9 +579,11 @@ static void enqueue_sub_cfm(struct bt_mesh_friend *frnd, uint8_t xact)
 
 static void friend_recv_delay(struct bt_mesh_friend *frnd)
 {
+	int32_t delay = recv_delay(frnd);
+
 	frnd->pending_req = 1U;
-	k_delayed_work_submit(&frnd->timer, K_MSEC(recv_delay(frnd)));
-	BT_DBG("Waiting RecvDelay of %d ms", recv_delay(frnd));
+	k_delayed_work_submit(&frnd->timer, K_MSEC(delay));
+	BT_DBG("Waiting RecvDelay of %d ms", delay);
 }
 
 int bt_mesh_friend_sub_add(struct bt_mesh_net_rx *rx,
@@ -861,6 +874,10 @@ static void enqueue_offer(struct bt_mesh_friend *frnd, int8_t rssi)
 	off->queue_size = CONFIG_BT_MESH_FRIEND_QUEUE_SIZE,
 	off->sub_list_size = ARRAY_SIZE(frnd->sub_list),
 	off->rssi = rssi,
+
+	/* The Counter may be used in the later key update procedure. Therefore
+	 * we should postpone the update of counter until we terminated friendship.
+	 */
 	off->frnd_counter = sys_cpu_to_be16(frnd->counter);
 
 	buf = encode_friend_ctl(frnd, TRANS_CTL_OP_FRIEND_OFFER, &sdu);
@@ -872,8 +889,6 @@ static void enqueue_offer(struct bt_mesh_friend *frnd, int8_t rssi)
 	if (encrypt_friend_pdu(frnd, buf, true)) {
 		return;
 	}
-
-	frnd->counter++;
 
 	if (frnd->last) {
 		net_buf_unref(frnd->last);
@@ -916,6 +931,7 @@ int bt_mesh_friend_req(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 	struct bt_mesh_ctl_friend_req *msg = (void *)buf->data;
 	struct bt_mesh_friend *frnd = NULL;
 	uint32_t poll_to;
+	int32_t delay;
 	int i, err;
 
 	if (rx->net_if == BT_MESH_NET_IF_LOCAL) {
@@ -1005,9 +1021,8 @@ init_friend:
 		clear_procedure_start(frnd);
 	}
 
-	k_delayed_work_submit(&frnd->timer,
-			      K_MSEC(offer_delay(frnd, rx->ctx.recv_rssi,
-						 msg->criteria)));
+	delay = offer_delay(frnd, rx->ctx.recv_rssi, msg->criteria);
+	k_delayed_work_submit(&frnd->timer, K_MSEC(delay));
 
 	enqueue_offer(frnd, rx->ctx.recv_rssi);
 
@@ -1250,9 +1265,9 @@ static void subnet_evt(struct bt_mesh_subnet *sub, enum bt_mesh_key_evt evt)
 				BT_ERR("Failed updating friend cred for 0x%04x",
 				       frnd->lpn);
 				friend_clear(frnd);
-				break;
 			}
-
+			break;
+		case BT_MESH_KEY_SWAPPED:
 			enqueue_update(frnd, 0);
 			break;
 		case BT_MESH_KEY_REVOKED:
@@ -1615,6 +1630,11 @@ void bt_mesh_friend_enqueue_rx(struct bt_mesh_net_rx *rx,
 
 		if (!friend_lpn_matches(frnd, rx->sub->net_idx,
 					rx->ctx.recv_dst)) {
+			continue;
+		}
+
+		if (friend_lpn_matches(frnd, rx->sub->net_idx,
+					rx->ctx.addr)) {
 			continue;
 		}
 

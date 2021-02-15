@@ -175,10 +175,8 @@ MAINTAINERS File
 
 Generic guidelines for deciding and filling in the Maintainers' list
 
-* The MAINTAINERS file shall coexist with the CODEOWNERS file.
-  MAINTAINERS file is used to set assignees, CODEOWNERS file is used for
-  more granularity and to add reviewers down to the file level.
-  CODEOWNERS file entries do not signify maintainership.
+* The MAINTAINERS file shall replace the CODEOWNERS file and will be used
+  for both setting assignees and reviewers.
 * We should keep the granularity of code maintainership at a manageable level
 * We should be looking for maintainers for areas of code that
   are orphaned (i.e. without an explicit maintainer)
@@ -196,7 +194,17 @@ Generic guidelines for deciding and filling in the Maintainers' list
 
   * Re-assigned by original assignee (see “Assignee” slide)
 
-* Updates to the MAINTAINERS file should be in a standalone PRs
+* In general, updates to the MAINTAINERS file should be
+  in a standalone commit alongside other changes introducing new files and
+  directories to the tree.
+* Major changes to the file, including the addition of new areas with new maintainers
+  should come in as standalone pull-requests and require TSC review.
+* If additional review by the TSC is required, the maintainers of the file
+  should send the requested changes to the TSC and give members of the TSC two
+  (2) days to object to any of the changes to maintainership of areas or the
+  addition of new maintainers or areas.
+* Path, collaborator and name changes do not require a review by the TSC.
+* Addition of new areas without a maintainer do not require review by the TSC.
 * The MAINTAINERS file itself shall have a maintainer
 * Architectures, core components, sub-systems, samples, tests
 
@@ -228,7 +236,7 @@ Merge Criteria
   * License
   * Checkpatch (Coding Style)
   * Pylint
-  * Sanitycheck + Other Unit tests
+  * Integration Tests (Via twister) on emulation/simulation platforms
   * Simulated Bluetooth Tests
 
 * Planned

@@ -287,7 +287,8 @@ static void timer_work_cb(struct k_work *work)
 	stop_timer(timer, false);
 }
 
-static int timer_trigger_cb(uint16_t obj_inst_id)
+static int timer_trigger_cb(uint16_t obj_inst_id,
+			    uint8_t *args, uint16_t args_len)
 {
 	int i;
 
@@ -340,7 +341,7 @@ static struct lwm2m_engine_obj_inst *timer_create(uint16_t obj_inst_id)
 			  res_inst[avail], j, &timer_data[avail].delay_duration,
 			  sizeof(timer_data[avail].delay_duration));
 	INIT_OBJ_RES(TIMER_REMAINING_TIME_ID, res[avail], i,
-		     res_inst[avail], j, 1, true,
+		     res_inst[avail], j, 1, false, true,
 		     &timer_data[avail].remaining_time,
 		     sizeof(timer_data[avail].remaining_time),
 		     remaining_time_read_cb, NULL, NULL, NULL);
@@ -350,12 +351,12 @@ static struct lwm2m_engine_obj_inst *timer_create(uint16_t obj_inst_id)
 	INIT_OBJ_RES_EXECUTE(TIMER_TRIGGER_ID, res[avail], i,
 			     timer_trigger_cb);
 	INIT_OBJ_RES(TIMER_ON_OFF_ID, res[avail], i,
-		     res_inst[avail], j, 1, true,
+		     res_inst[avail], j, 1, false, true,
 		     &timer_data[avail].enabled,
 		     sizeof(timer_data[avail].enabled),
 		     NULL, NULL, enabled_post_write_cb, NULL);
 	INIT_OBJ_RES(TIMER_CUMULATIVE_TIME_ID, res[avail], i,
-		     res_inst[avail], j, 1, true,
+		     res_inst[avail], j, 1, false, true,
 		     &timer_data[avail].cumulative_time,
 		     sizeof(timer_data[avail].cumulative_time),
 		     cumulative_time_read_cb, NULL,
@@ -364,7 +365,7 @@ static struct lwm2m_engine_obj_inst *timer_create(uint16_t obj_inst_id)
 			  res_inst[avail], j, &timer_data[avail].active,
 			  sizeof(timer_data[avail].active));
 	INIT_OBJ_RES(TIMER_COUNTER_ID, res[avail], i,
-		     res_inst[avail], j, 1, true,
+		     res_inst[avail], j, 1, false, true,
 		     &timer_data[avail].trigger_counter,
 		     sizeof(timer_data[avail].trigger_counter),
 		     NULL, NULL, trigger_counter_post_write_cb, NULL);

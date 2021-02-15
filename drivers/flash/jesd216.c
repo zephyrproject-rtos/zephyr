@@ -286,3 +286,44 @@ int jesd216_bfp_decode_dw14(const struct jesd216_param_header *php,
 
 	return 0;
 }
+
+int jesd216_bfp_decode_dw15(const struct jesd216_param_header *php,
+			    const struct jesd216_bfp *bfp,
+			    struct jesd216_bfp_dw15 *res)
+{
+	/* DW15 introduced in JESD216A */
+	if (php->len_dw < 15) {
+		return -ENOTSUP;
+	}
+
+	uint32_t dw15 = sys_le32_to_cpu(bfp->dw10[5]);
+
+	res->hold_reset_disable = (dw15 & BIT(23)) != 0U;
+	res->qer = (dw15 >> 20) & 0x07;
+	res->entry_044 = (dw15 >> 16) & 0x0F;
+	res->exit_044 = (dw15 >> 10) & 0x3F;
+	res->support_044 = (dw15 & BIT(9)) != 0U;
+	res->enable_444 = (dw15 >> 4) & 0x1F;
+	res->disable_444 = (dw15 >> 0) & 0x0F;
+
+	return 0;
+}
+
+int jesd216_bfp_decode_dw16(const struct jesd216_param_header *php,
+			    const struct jesd216_bfp *bfp,
+			    struct jesd216_bfp_dw16 *res)
+{
+	/* DW16 introduced in JESD216A */
+	if (php->len_dw < 16) {
+		return -ENOTSUP;
+	}
+
+	uint32_t dw16 = sys_le32_to_cpu(bfp->dw10[6]);
+
+	res->enter_4ba = (dw16 >> 24) & 0xFF;
+	res->exit_4ba = (dw16 >> 14) & 0x3FF;
+	res->srrs_support = (dw16 >> 8) & 0x3F;
+	res->sr1_interface = (dw16 >> 0) & 0x7F;
+
+	return 0;
+}

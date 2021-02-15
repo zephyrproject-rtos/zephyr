@@ -1,6 +1,6 @@
 # EXTRAS: optional or useful for development/developers workflow
 
-# used by sanitycheck for --test-tree option
+# used by twister for --test-tree option
 anytree
 
 # helper for developers - check git commit messages
@@ -14,3 +14,6 @@ lpc_checksum
 
 # used by scripts/gen_cfb_font_header.py - helper script for user
 Pillow
+
+# can be used to sign a Zephyr application binary for consumption by a bootloader
+imgtool>=1.7.1

@@ -4,10 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/types.h>
-#include <bluetooth/hci.h>
+#include <stdint.h>
+
 #include <sys/byteorder.h>
 #include <sys/util.h>
+
+#include <bluetooth/hci.h>
 
 #include "hal/ccm.h"
 #include "hal/radio.h"
@@ -131,12 +133,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	/* setup tIFS switching */
 	radio_tmr_tifs_set(EVENT_IFS_US);
-
-#if defined(CONFIG_BT_CTLR_PHY)
 	radio_switch_complete_and_tx(lll->phy, 0, lll->phy, 1);
-#else /* !CONFIG_BT_CTLR_PHY */
-	radio_switch_complete_and_tx(0, 0, 0, 0);
-#endif /* !CONFIG_BT_CTLR_PHY */
 
 	/* TODO: privacy */
 
@@ -152,17 +149,9 @@ static int prepare_cb(struct lll_prepare_param *p)
 	remainder_us = radio_tmr_start(0, ticks_at_start, remainder);
 
 	hcto = remainder_us + lll->window_size_us;
-
-#if defined(CONFIG_BT_CTLR_PHY)
 	hcto += radio_rx_ready_delay_get(lll->phy, 1);
 	hcto += addr_us_get(lll->phy);
 	hcto += radio_rx_chain_delay_get(lll->phy, 1);
-#else /* !CONFIG_BT_CTLR_PHY */
-	hcto += radio_rx_ready_delay_get(0, 0);
-	hcto += addr_us_get(0);
-	hcto += radio_rx_chain_delay_get(0, 0);
-#endif /* !CONFIG_BT_CTLR_PHY */
-
 	radio_tmr_hcto_configure(hcto);
 
 	/* capture end of Rx-ed PDU, extended scan to schedule auxiliary
@@ -176,15 +165,9 @@ static int prepare_cb(struct lll_prepare_param *p)
 #if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
 	radio_gpio_lna_setup();
 
-#if defined(CONFIG_BT_CTLR_PHY)
 	radio_gpio_pa_lna_enable(remainder_us +
 				 radio_rx_ready_delay_get(lll->phy, 1) -
 				 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
-#else /* !CONFIG_BT_CTLR_PHY */
-	radio_gpio_pa_lna_enable(remainder_us +
-				 radio_rx_ready_delay_get(0, 0) -
-				 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
-#endif /* !CONFIG_BT_CTLR_PHY */
 #endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
 
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED) && \
@@ -303,23 +286,7 @@ static int isr_rx_pdu(struct lll_scan_aux *lll, uint8_t rssi_ready)
 
 	trx_cnt++;
 
-	switch (lll->phy) {
-	case BIT(0):
-		node_rx->hdr.type = NODE_RX_TYPE_EXT_1M_REPORT;
-		break;
-
-	case BIT(1):
-		node_rx->hdr.type = NODE_RX_TYPE_EXT_2M_REPORT;
-		break;
-
-	case BIT(2):
-		node_rx->hdr.type = NODE_RX_TYPE_EXT_CODED_REPORT;
-		break;
-
-	default:
-		LL_ASSERT(0);
-		break;
-	}
+	node_rx->hdr.type = NODE_RX_TYPE_EXT_AUX_REPORT;
 
 	ftr = &(node_rx->hdr.rx_ftr);
 	ftr->param = lll;
@@ -327,7 +294,8 @@ static int isr_rx_pdu(struct lll_scan_aux *lll, uint8_t rssi_ready)
 	ftr->radio_end_us = radio_tmr_end_get() -
 			    radio_rx_chain_delay_get(lll->phy, 1);
 
-	ftr->rssi = (rssi_ready) ? (radio_rssi_get() & 0x7f) : 0x7f;
+	ftr->rssi = (rssi_ready) ? radio_rssi_get() :
+				   BT_HCI_LE_RSSI_NOT_AVAILABLE;
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	/* TODO: Use correct rl_idx value when privacy support is added */

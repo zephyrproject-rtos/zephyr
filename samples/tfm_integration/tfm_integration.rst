@@ -96,6 +96,35 @@ For Windows-based systems, please make sure you have a copy of the utility
 available on your system path. See, for example:
 `SRecord for Windows <http://srecord.sourceforge.net/windows.html>`_
 
+Images Created by the TF-M Build
+================================
+
+The TF-M build system creates executable files:
+
+* tfm_s - the secure firmware
+* tfm_ns - a nonsecure app which is discarded in favor of the Zephyr app
+* bl2 - mcuboot, if enabled
+
+For each of these, it creates .bin, .hex, .elf, and .axf files.
+
+The TF-M build system also creates signed variants of tfm_s and tfm_ns, and a file which combines them:
+
+* tfm_s_signed
+* tfm_ns_signed
+* tfm_s_ns_signed
+
+For each of these, only .bin files are created.
+The Zephyr build system usually signs both tfm_s and the Zephyr app itself, see below.
+
+The 'tfm' target contains properties for all these paths.
+For example, the following will resolve to ``<path>/tfm_s.hex``:
+
+   .. code-block::
+
+      $<TARGET_PROPERTY:tfm,TFM_S_HEX_FILE>
+
+See the top level CMakeLists.txt file in the tfm module for an overview of all the properties.
+
 Signing Images
 ==============
 

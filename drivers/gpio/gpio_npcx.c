@@ -102,7 +102,7 @@ static int gpio_npcx_config(const struct device *dev,
 		inst->PPULL &= ~mask;
 	}
 
-	/* Set level 0:low 1:high*/
+	/* Set level 0:low 1:high */
 	if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0)
 		inst->PDOUT |= mask;
 	else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0)
@@ -177,8 +177,6 @@ static int gpio_npcx_pin_interrupt_configure(const struct device *dev,
 					     enum gpio_int_trig trig)
 {
 	const struct gpio_npcx_config *const config = DRV_CONFIG(dev);
-	enum miwu_int_mode miwu_mode = NPCX_MIWU_MODE_DISABLED;
-	enum miwu_int_trig miwu_trig = NPCX_MIWU_TRIG_NONE;
 
 	if (config->wui_maps[pin].table == NPCX_MIWU_TABLE_NONE) {
 		LOG_ERR("Cannot configure GPIO(%x, %d)", config->port, pin);
@@ -190,28 +188,43 @@ static int gpio_npcx_pin_interrupt_configure(const struct device *dev,
 			config->wui_maps[pin].group,
 			config->wui_maps[pin].bit);
 
-	/* Determine interrupt is level or edge mode? */
-	if (mode == GPIO_INT_MODE_LEVEL)
-		miwu_mode = NPCX_MIWU_MODE_LEVEL;
-	else if (mode == GPIO_INT_MODE_EDGE)
-		miwu_mode = NPCX_MIWU_MODE_EDGE;
+	/* Disable irq of wake-up input io-pads before configuring them */
+	npcx_miwu_irq_disable(&config->wui_maps[pin]);
 
-	/* Determine trigger mode is low, high or both? */
-	if (trig == GPIO_INT_TRIG_LOW)
-		miwu_trig = NPCX_MIWU_TRIG_LOW;
-	else if (trig == GPIO_INT_TRIG_HIGH)
-		miwu_trig = NPCX_MIWU_TRIG_HIGH;
-	else if (trig == GPIO_INT_TRIG_BOTH)
-		miwu_trig = NPCX_MIWU_TRIG_BOTH;
+	/* Configure and enable interrupt? */
+	if (mode != GPIO_INT_MODE_DISABLED) {
+		enum miwu_int_mode miwu_mode;
+		enum miwu_int_trig miwu_trig;
+		int ret = 0;
 
-	/* Call MIWU routine to setup interrupt configuration */
-	npcx_miwu_interrupt_configure(&config->wui_maps[pin],
-					miwu_mode, miwu_trig);
+		/* Determine interrupt is level or edge mode? */
+		if (mode == GPIO_INT_MODE_EDGE) {
+			miwu_mode = NPCX_MIWU_MODE_EDGE;
+		} else {
+			miwu_mode = NPCX_MIWU_MODE_LEVEL;
+		}
 
-	/* Enable/Disable irq of wake-up input sources */
-	if (mode == GPIO_INT_MODE_DISABLED) {
-		npcx_miwu_irq_disable(&config->wui_maps[pin]);
-	} else {
+		/* Determine trigger mode is low, high or both? */
+		if (trig == GPIO_INT_TRIG_LOW) {
+			miwu_trig = NPCX_MIWU_TRIG_LOW;
+		} else if (trig == GPIO_INT_TRIG_HIGH) {
+			miwu_trig = NPCX_MIWU_TRIG_HIGH;
+		} else if (trig == GPIO_INT_TRIG_BOTH) {
+			miwu_trig = NPCX_MIWU_TRIG_BOTH;
+		} else {
+			LOG_ERR("Invalid interrupt trigger type %d", trig);
+			return -EINVAL;
+		}
+
+		/* Call MIWU routine to setup interrupt configuration */
+		ret = npcx_miwu_interrupt_configure(&config->wui_maps[pin],
+						miwu_mode, miwu_trig);
+		if (ret != 0) {
+			LOG_ERR("Configure MIWU interrupt failed");
+			return ret;
+		}
+
+		/* Enable it after configuration is completed */
 		npcx_miwu_irq_enable(&config->wui_maps[pin]);
 	}
 
@@ -273,15 +286,15 @@ int gpio_npcx_init(const struct device *dev)
 		},                                                             \
 		.base = DT_INST_REG_ADDR(inst),                                \
 		.port = inst,                                                  \
-		.wui_size = DT_NPCX_WUI_ITEMS_LEN(inst),                       \
-		.wui_maps = DT_NPCX_WUI_ITEMS_LIST(inst)                       \
+		.wui_size = NPCX_DT_WUI_ITEMS_LEN(inst),                       \
+		.wui_maps = NPCX_DT_WUI_ITEMS_LIST(inst)                       \
 	};                                                                     \
 									       \
 	static struct gpio_npcx_data gpio_npcx_data_##inst;	               \
 									       \
-	DEVICE_AND_API_INIT(gpio_npcx_##inst,                                  \
-			    DT_INST_LABEL(inst),                               \
+	DEVICE_DT_INST_DEFINE(inst,					       \
 			    gpio_npcx_init,                                    \
+			    device_pm_control_nop,			       \
 			    &gpio_npcx_data_##inst,                            \
 			    &gpio_npcx_cfg_##inst,                             \
 			    POST_KERNEL,                                       \
@@ -291,7 +304,7 @@ int gpio_npcx_init(const struct device *dev)
 DT_INST_FOREACH_STATUS_OKAY(NPCX_GPIO_DEVICE_INIT)
 
 /* GPIO module instances */
-#define NPCX_GPIO_DEV(inst) DEVICE_GET(gpio_npcx_##inst),
+#define NPCX_GPIO_DEV(inst) DEVICE_DT_INST_GET(inst),
 static const struct device *gpio_devs[] = {
 	DT_INST_FOREACH_STATUS_OKAY(NPCX_GPIO_DEV)
 };

@@ -47,7 +47,7 @@ CAN_DEFINE_MSGQ(can_msgq, 5);
 struct zcan_frame test_std_msg = {
 	.id_type = CAN_STANDARD_IDENTIFIER,
 	.rtr     = CAN_DATAFRAME,
-	.std_id  = TEST_CAN_STD_ID,
+	.id  = TEST_CAN_STD_ID,
 	.dlc     = 8,
 	.data    = {1, 2, 3, 4, 5, 6, 7, 8}
 };
@@ -55,33 +55,33 @@ struct zcan_frame test_std_msg = {
 const struct zcan_filter test_std_filter = {
 	.id_type = CAN_STANDARD_IDENTIFIER,
 	.rtr = CAN_DATAFRAME,
-	.std_id = TEST_CAN_STD_ID,
+	.id = TEST_CAN_STD_ID,
 	.rtr_mask = 1,
-	.std_id_mask = CAN_STD_ID_MASK
+	.id_mask = CAN_STD_ID_MASK
 };
 
 const struct zcan_filter test_ext_filter = {
 	.id_type = CAN_EXTENDED_IDENTIFIER,
 	.rtr = CAN_DATAFRAME,
-	.ext_id = TEST_CAN_EXT_ID,
+	.id = TEST_CAN_EXT_ID,
 	.rtr_mask = 1,
-	.ext_id_mask = CAN_EXT_ID_MASK
+	.id_mask = CAN_EXT_ID_MASK
 };
 
 const struct zcan_filter test_ext_masked_filter = {
 	.id_type = CAN_EXTENDED_IDENTIFIER,
 	.rtr = CAN_DATAFRAME,
-	.ext_id = TEST_CAN_EXT_ID,
+	.id = TEST_CAN_EXT_ID,
 	.rtr_mask = 1,
-	.ext_id_mask = TEST_CAN_EXT_MASK
+	.id_mask = TEST_CAN_EXT_MASK
 };
 
 const struct zcan_filter test_std_some_filter = {
 	.id_type = CAN_STANDARD_IDENTIFIER,
 	.rtr = CAN_DATAFRAME,
-	.std_id = TEST_CAN_SOME_STD_ID,
+	.id = TEST_CAN_SOME_STD_ID,
 	.rtr_mask = 1,
-	.std_id_mask = CAN_STD_ID_MASK
+	.id_mask = CAN_STD_ID_MASK
 };
 
 static inline void check_msg(struct zcan_frame *msg1, struct zcan_frame *msg2)
@@ -94,13 +94,7 @@ static inline void check_msg(struct zcan_frame *msg1, struct zcan_frame *msg2)
 	zassert_equal(msg1->rtr, msg2->rtr,
 		      "RTR bit does not match");
 
-	if (msg2->id_type == CAN_STANDARD_IDENTIFIER) {
-		zassert_equal(msg1->std_id, msg2->std_id,
-			      "ID does not match");
-	} else {
-		zassert_equal(msg1->ext_id, msg2->ext_id,
-			      "ID does not match");
-	}
+	zassert_equal(msg1->id, msg2->id, "ID does not match");
 
 	zassert_equal(msg1->dlc, msg2->dlc,
 		      "DLC does not match");
@@ -133,7 +127,7 @@ static void test_filter_handling(void)
 
 	can_dev = device_get_binding(DT_CHOSEN_ZEPHYR_CAN_PRIMARY_LABEL);
 
-	ret = can_configure(can_dev, CAN_LOOPBACK_MODE, 0);
+	ret = can_set_mode(can_dev, CAN_LOOPBACK_MODE);
 
 	filter_id_1 = can_attach_msgq(can_dev, &can_msgq, &test_ext_masked_filter);
 	zassert_not_equal(filter_id_1, CAN_NO_FREE_FILTER,

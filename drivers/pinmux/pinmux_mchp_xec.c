@@ -129,9 +129,9 @@ static const struct pinmux_xec_config pinmux_xec_port000_036_config = {
 	.port_num = MCHP_GPIO_000_036,
 };
 
-DEVICE_AND_API_INIT(pinmux_xec_port000_036,
-		    DT_LABEL(DT_NODELABEL(pinmux_000_036)),
+DEVICE_DT_DEFINE(DT_NODELABEL(pinmux_000_036),
 		    &pinmux_xec_init,
+		    device_pm_control_nop,
 		    NULL, &pinmux_xec_port000_036_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &pinmux_xec_driver_api);
@@ -143,9 +143,9 @@ static const struct pinmux_xec_config pinmux_xec_port040_076_config = {
 	.port_num = MCHP_GPIO_040_076,
 };
 
-DEVICE_AND_API_INIT(pinmux_xec_port040_076,
-		    DT_LABEL(DT_NODELABEL(pinmux_040_076)),
+DEVICE_DT_DEFINE(DT_NODELABEL(pinmux_040_076),
 		    &pinmux_xec_init,
+		    device_pm_control_nop,
 		    NULL, &pinmux_xec_port040_076_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &pinmux_xec_driver_api);
@@ -157,9 +157,9 @@ static const struct pinmux_xec_config pinmux_xec_port100_136_config = {
 	.port_num = MCHP_GPIO_100_136,
 };
 
-DEVICE_AND_API_INIT(pinmux_xec_port100_136,
-		    DT_LABEL(DT_NODELABEL(pinmux_100_136)),
+DEVICE_DT_DEFINE(DT_NODELABEL(pinmux_100_136),
 		    &pinmux_xec_init,
+		    device_pm_control_nop,
 		    NULL, &pinmux_xec_port100_136_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &pinmux_xec_driver_api);
@@ -171,9 +171,9 @@ static const struct pinmux_xec_config pinmux_xec_port140_176_config = {
 	.port_num = MCHP_GPIO_140_176,
 };
 
-DEVICE_AND_API_INIT(pinmux_xec_port140_176,
-		    DT_LABEL(DT_NODELABEL(pinmux_140_176)),
+DEVICE_DT_DEFINE(DT_NODELABEL(pinmux_140_176),
 		    &pinmux_xec_init,
+		    device_pm_control_nop,
 		    NULL, &pinmux_xec_port140_176_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &pinmux_xec_driver_api);
@@ -185,9 +185,9 @@ static const struct pinmux_xec_config pinmux_xec_port200_236_config = {
 	.port_num = MCHP_GPIO_200_236,
 };
 
-DEVICE_AND_API_INIT(pinmux_xec_port200_236,
-		    DT_LABEL(DT_NODELABEL(pinmux_200_236)),
+DEVICE_DT_DEFINE(DT_NODELABEL(pinmux_200_236),
 		    &pinmux_xec_init,
+		    device_pm_control_nop,
 		    NULL, &pinmux_xec_port200_236_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &pinmux_xec_driver_api);
@@ -199,9 +199,9 @@ static const struct pinmux_xec_config pinmux_xec_port240_276_config = {
 	.port_num = MCHP_GPIO_240_276,
 };
 
-DEVICE_AND_API_INIT(pinmux_xec_port240_276,
-		    DT_LABEL(DT_NODELABEL(pinmux_240_276)),
+DEVICE_DT_DEFINE(DT_NODELABEL(pinmux_240_276),
 		    &pinmux_xec_init,
+		    device_pm_control_nop,
 		    NULL, &pinmux_xec_port240_276_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &pinmux_xec_driver_api);

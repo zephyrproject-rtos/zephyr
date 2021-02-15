@@ -7,12 +7,14 @@
 #include <ksched.h>
 #include <arch/cpu.h>
 #include <kernel_arch_data.h>
+#include <kernel_arch_func.h>
 #include <drivers/interrupt_controller/sysapic.h>
 #include <drivers/interrupt_controller/loapic.h>
 #include <irq.h>
 #include <logging/log.h>
+#include <x86_mmu.h>
 
-LOG_MODULE_DECLARE(os);
+LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 unsigned char _irq_to_interrupt_vector[CONFIG_MAX_IRQ_LINES];
 
@@ -41,25 +43,26 @@ void x86_64_irq_init(void)
 	}
 }
 
-/*
- * Find a free IRQ vector at the specified priority, or return -1 if none left.
- */
-
-static int allocate_vector(unsigned int priority)
+int z_x86_allocate_vector(unsigned int priority, int prev_vector)
 {
 	const int VECTORS_PER_PRIORITY = 16;
 	const int MAX_PRIORITY = 13;
-
-	int vector;
+	int vector = prev_vector;
 	int i;
 
 	if (priority >= MAX_PRIORITY) {
 		priority = MAX_PRIORITY;
 	}
 
-	vector = (priority * VECTORS_PER_PRIORITY) + IV_IRQS;
+	if (vector == -1) {
+		vector = (priority * VECTORS_PER_PRIORITY) + IV_IRQS;
+	}
 
 	for (i = 0; i < VECTORS_PER_PRIORITY; ++i, ++vector) {
+		if (prev_vector != 1 && vector == prev_vector) {
+			continue;
+		}
+
 #ifdef CONFIG_IRQ_OFFLOAD
 		if (vector == CONFIG_IRQ_OFFLOAD_VECTOR) {
 			continue;
@@ -68,12 +71,24 @@ static int allocate_vector(unsigned int priority)
 		if (vector == Z_X86_OOPS_VECTOR) {
 			continue;
 		}
+
 		if (x86_irq_funcs[vector - IV_IRQS] == irq_spurious) {
 			return vector;
 		}
 	}
 
 	return -1;
+}
+
+void z_x86_irq_connect_on_vector(unsigned int irq,
+				 uint8_t vector,
+				 void (*func)(const void *arg),
+				 const void *arg, uint32_t flags)
+{
+	_irq_to_interrupt_vector[irq] = vector;
+	z_irq_controller_irq_config(vector, irq, flags);
+	x86_irq_funcs[vector - IV_IRQS] = func;
+	x86_irq_args[vector - IV_IRQS] = arg;
 }
 
 /*
@@ -93,12 +108,9 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 
 	key = irq_lock();
 
-	vector = allocate_vector(priority);
+	vector = z_x86_allocate_vector(priority, -1);
 	if (vector >= 0) {
-		_irq_to_interrupt_vector[irq] = vector;
-		z_irq_controller_irq_config(vector, irq, flags);
-		x86_irq_funcs[vector - IV_IRQS] = func;
-		x86_irq_args[vector - IV_IRQS] = arg;
+		z_x86_irq_connect_on_vector(irq, vector, func, arg, flags);
 	}
 
 	irq_unlock(key);
@@ -130,6 +142,9 @@ void z_x86_ipi_setup(void)
 
 	x86_irq_funcs[CONFIG_SCHED_IPI_VECTOR - IV_IRQS] =
 		(void *) z_sched_ipi;
+
+	/* TLB shootdown handling */
+	x86_irq_funcs[CONFIG_TLB_IPI_VECTOR - IV_IRQS] = z_x86_tlb_ipi;
 }
 
 /*

@@ -4,3 +4,6 @@ CONFIG_SOC_POSIX=y
 CONFIG_BOARD_NATIVE_POSIX_32BIT=y
 CONFIG_CONSOLE=y
 CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=1000000
+# For native_posix we can log synchronously without any problem
+# Doing so will be nicer for debugging
+CONFIG_LOG_MODE_IMMEDIATE=y

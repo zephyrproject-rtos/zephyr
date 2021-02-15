@@ -1,0 +1,57 @@
+#
+# Schema to validate a YAML file describing a Zephyr test platform
+#
+# We load this with pykwalify
+# (http://pykwalify.readthedocs.io/en/unstable/validation-rules.html),
+# a YAML structure validator, to validate the YAML files that describe
+# Zephyr test platforms
+#
+# The original spec comes from Zephyr's twister script
+#
+
+type: map
+mapping:
+  "identifier":
+    type: str
+  "name":
+    type: str
+  "type":
+    type: str
+    enum: ["mcu", "qemu", "sim", "unit", "native"]
+  "simulation":
+    type: str
+    enum: ["qemu", "simics", "xt-sim", "renode", "nsim", "mdb-nsim", "tsim"]
+  "arch":
+    type: str
+  "toolchain":
+    type: seq
+    seq:
+      - type: str
+  "env":
+    type: seq
+    seq:
+      - type: str
+  "ram":
+    type: int
+  "flash":
+    type: int
+  "twister":
+    type: bool
+  "supported":
+    type: seq
+    seq:
+      - type: str
+  "testing":
+    type: map
+    mapping:
+      "default":
+        type: bool
+      "only_tags":
+        type: seq
+        seq:
+          -
+            type: str
+      "ignore_tags":
+        type: seq
+        seq:
+          - type: str

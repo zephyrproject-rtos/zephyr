@@ -1,0 +1,10 @@
+# Copyright (c) 2019-2020 Cobham Gaisler AB
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_APBUART
+	bool "ABPUART serial driver"
+	depends on SOC_SPARC_LEON
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  This option enables the APBUART driver for LEON processors.

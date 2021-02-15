@@ -92,7 +92,7 @@ DEVICE_MMIO_TOPLEVEL_STATIC(ioapic_regs, DT_DRV_INST(0));
  */
 #define DEFAULT_RTE_DEST	(0xFF << 24)
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 #include <power/power.h>
 uint32_t ioapic_suspend_buf[SUSPEND_BITS_REQD / 32] = {0};
 static uint32_t ioapic_device_power_state = DEVICE_PM_ACTIVE_STATE;
@@ -179,7 +179,7 @@ void z_ioapic_irq_disable(unsigned int irq)
 }
 
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 
 void store_flags(unsigned int irq, uint32_t flags)
 {
@@ -317,7 +317,7 @@ static int ioapic_device_ctrl(const struct device *device,
 }
 
 
-#endif  /*CONFIG_DEVICE_POWER_MANAGEMENT*/
+#endif  /*CONFIG_PM_DEVICE*/
 
 /**
  *
@@ -477,7 +477,7 @@ static void IoApicRedUpdateLo(unsigned int irq,
 }
 
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 SYS_DEVICE_DEFINE("ioapic", ioapic_init, ioapic_device_ctrl, PRE_KERNEL_1,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #else

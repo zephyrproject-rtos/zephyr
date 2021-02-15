@@ -96,3 +96,11 @@ arduino_serial: &usart6 {};
 		     &eth_txd0_pg13
 		     &eth_txd1_pg14>;
 };
+
+&sdmmc2 {
+	status = "okay";
+	pinctrl-0 = <&sdmmc2_d0_pg9 &sdmmc2_d1_pg10
+		     &sdmmc2_d2_pb3 &sdmmc2_d3_pb4
+		     &sdmmc2_ck_pd6 &sdmmc2_cmd_pd7>;
+	cd-gpios = <&gpioi 15 GPIO_ACTIVE_LOW>;
+};

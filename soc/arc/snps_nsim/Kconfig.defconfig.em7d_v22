@@ -30,7 +30,7 @@ config HARVARD
 config ARC_FIRQ
 	default y
 
-config CACHE_FLUSHING
+config CACHE_MANAGEMENT
 	default y
 
 if (ARC_MPU_VER = 2)

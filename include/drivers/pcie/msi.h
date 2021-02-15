@@ -7,41 +7,69 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_PCIE_MSI_H_
 #define ZEPHYR_INCLUDE_DRIVERS_PCIE_MSI_H_
 
-#include <drivers/pcie/pcie.h>
+#include <kernel.h>
 #include <zephyr/types.h>
 #include <stdbool.h>
+
+#include <drivers/pcie/pcie.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+struct msix_vector {
+	uint32_t msg_addr;
+	uint32_t msg_up_addr;
+	uint32_t msg_data;
+	uint32_t vector_ctrl;
+};
+
+struct msi_vector {
+	pcie_bdf_t bdf;
+	arch_msi_vector_t arch;
+#ifdef CONFIG_PCIE_MSI_X
+	struct msix_vector *msix_vector;
+	bool msix;
+#endif /* CONFIG_PCIE_MSI_X */
+};
+
+typedef struct msi_vector msi_vector_t;
+
+#ifdef CONFIG_PCIE_MSI_MULTI_VECTOR
+
 /**
- * @brief Find a PCI(e) capability in an endpoint's configuration space.
+ * @brief Allocate vector(s) for the endpoint MSI message(s)
  *
- * @param bdf the PCI endpoint to examine
- * @param cap_id the capability ID of interest
- * @return the index of the configuration word, or 0 if no capability.
+ * @param bdf the target PCI endpoint
+ * @param priority the MSI vectors base interrupt priority
+ * @param vectors an array for storing allocated MSI vectors
+ * @param n_vector the size of the MSI vectors array
  *
- * Note: PCI(e) capabilities are only used in the MSI code, so for
- * now, capabilities-related code is only included when MSI is. It
- * can easily be separated out if/when its use spreads.
+ * @return the number of allocated MSI vectors.
  */
-extern uint32_t pcie_get_cap(pcie_bdf_t bdf, uint32_t cap_id);
+extern uint8_t pcie_msi_vectors_allocate(pcie_bdf_t bdf,
+					 unsigned int priority,
+					 msi_vector_t *vectors,
+					 uint8_t n_vector);
 
-/*
- * Configuration word 13 contains the head of the capabilities list.
+/**
+ * @brief Connect the MSI vector to the handler
+ *
+ * @param bdf the target PCI endpoint
+ * @param vector the MSI vector to connect
+ * @param routine Interrupt service routine
+ * @param parameter ISR parameter
+ * @param flags Arch-specific IRQ configuration flag
+ *
+ * @return True on success, false otherwise
  */
+extern bool pcie_msi_vector_connect(pcie_bdf_t bdf,
+				    msi_vector_t *vector,
+				    void (*routine)(const void *parameter),
+				    const void *parameter,
+				    uint32_t flags);
 
-#define PCIE_CONF_CAPPTR	13U	/* capabilities pointer */
-#define PCIE_CONF_CAPPTR_FIRST(w)	(((w) >> 2) & 0x3FU)
-
-/*
- * The first word of every capability contains a capability identifier,
- * and a link to the next capability (or 0) in configuration space.
- */
-
-#define PCIE_CONF_CAP_ID(w)		((w) & 0xFFU)
-#define PCIE_CONF_CAP_NEXT(w)		(((w) >> 10) & 0x3FU)
+#endif /* CONFIG_PCIE_MSI_MULTI_VECTOR */
 
 /**
  * @brief Compute the target address for an MSI posted write.
@@ -49,9 +77,11 @@ extern uint32_t pcie_get_cap(pcie_bdf_t bdf, uint32_t cap_id);
  * This function is exported by the arch, board or SoC code.
  *
  * @param irq The IRQ we wish to trigger via MSI.
+ * @param vector The vector for which you want the address (or NULL)
  * @return A (32-bit) value for the MSI MAP register.
  */
-extern uint32_t pcie_msi_map(unsigned int irq);
+extern uint32_t pcie_msi_map(unsigned int irq,
+			     msi_vector_t *vector);
 
 /**
  * @brief Compute the data for an MSI posted write.
@@ -59,18 +89,23 @@ extern uint32_t pcie_msi_map(unsigned int irq);
  * This function is exported by the arch, board or SoC code.
  *
  * @param irq The IRQ we wish to trigger via MSI.
+ * @param vector The vector for which you want the data (or NULL)
  * @return A (16-bit) value for MSI MDR register.
  */
-extern uint16_t pcie_msi_mdr(unsigned int irq);
+extern uint16_t pcie_msi_mdr(unsigned int irq,
+			     msi_vector_t *vector);
 
 /**
  * @brief Configure the given PCI endpoint to generate MSIs.
  *
  * @param bdf the target PCI endpoint
- * @param irq the IRQ which should be generated
+ * @param vectors an array of allocated vector(s)
+ * @param n_vector the size of the vector array
  * @return true if the endpoint supports MSI, false otherwise.
  */
-extern bool pcie_set_msi(pcie_bdf_t bdf, unsigned int irq);
+extern bool pcie_msi_enable(pcie_bdf_t bdf,
+			    msi_vector_t *vectors,
+			    uint8_t n_vector);
 
 /*
  * MSI capability IDs in the PCI configuration capability list.
@@ -87,7 +122,10 @@ extern bool pcie_set_msi(pcie_bdf_t bdf, unsigned int irq);
 #define PCIE_MSI_MCR		0U
 
 #define PCIE_MSI_MCR_EN		0x00010000U  /* enable MSI */
+#define PCIE_MSI_MCR_MMC	0x000E0000U  /* Multi Messages Capable mask */
+#define PCIE_MSI_MCR_MMC_SHIFT	17
 #define PCIE_MSI_MCR_MME	0x00700000U  /* mask of # of enabled IRQs */
+#define PCIE_MSI_MCR_MME_SHIFT	20
 #define PCIE_MSI_MCR_64		0x00800000U  /* 64-bit MSI */
 
 /*
@@ -99,6 +137,28 @@ extern bool pcie_set_msi(pcie_bdf_t bdf, unsigned int irq);
 #define PCIE_MSI_MAP1_64	2U
 #define PCIE_MSI_MDR_32		2U
 #define PCIE_MSI_MDR_64		3U
+
+/*
+ * As for MSI, he first word of the MSI-X capability is shared
+ * with the capability ID and list link.  The high 16 bits are the MCR.
+ */
+
+#define PCIE_MSIX_MCR			0U
+
+#define PCIE_MSIX_MCR_EN		0x80000000U /* Enable MSI-X */
+#define PCIE_MSIX_MCR_FMASK		0x40000000U /* Function Mask */
+#define PCIE_MSIX_MCR_TSIZE		0x07FF0000U /* Table size mask */
+#define PCIE_MSIX_MCR_TSIZE_SHIFT	16
+#define PCIE_MSIR_TABLE_ENTRY_SIZE	16
+
+#define PCIE_MSIX_TR			1U
+#define PCIE_MSIX_TR_BIR		0x00000007U /* BIR mask */
+#define PCIE_MSIX_TR_OFFSET		0xFFFFFFF8U /* Offset mask */
+
+#define PCIE_VTBL_MA			0U /* Msg Address offset */
+#define PCIE_VTBL_MUA			4U /* Msg Upper Address offset */
+#define PCIE_VTBL_MD			8U /* Msg Data offset */
+#define PCIE_VTBL_VCTRL			12U /* Vector control offset */
 
 #ifdef __cplusplus
 }

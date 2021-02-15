@@ -66,9 +66,18 @@ A bit has the length of Sync_Seg plus Prop_Seg plus Phase_Seg1 plus Phase_Seg2
 multiplied by the time of single time quantum.
 The bit-rate is the inverse of the length of a single bit.
 
+A bit is sampled at the sampling point.
+The sample point is between Phase_Seg1 and PhaseSeg2 and therefore is a
+parameter that the user needs to choose.
+The CiA recommends setting the sample point to 87.5% of the bit.
+
 The resynchronization jump width (SJW) defines the amount of time quantum the
-sample point can be moved. The sample point is moved when resynchronization
-is needed.
+sample point can be moved.
+The sample point is moved when resynchronization is needed.
+
+The timing parameters (SJW, bitrate and sampling point, or bitrate, Prop_Seg,
+Phase_Seg1and Phase_Seg2) are initially set from the device-tree and can be
+changed at run-time from the timing-API.
 
 CAN uses so-called identifiers to identify the frame instead of addresses to
 identify a node.
@@ -145,13 +154,12 @@ a mailbox. When a transmitting mailbox is assigned, sending cannot be canceled.
   struct zcan_frame frame = {
           .id_type = CAN_STANDARD_IDENTIFIER,
           .rtr = CAN_DATAFRAME,
-          .ext_id = 0x123,
-          .dlc = 8
+          .id = 0x123,
+          .dlc = 8,
+          .data = {1,2,3,4,5,6,7,8}
   };
-  struct device *can_dev;
+  const struct device *can_dev;
   int ret;
-
-  frame.data = {1,2,3,4,5,6,7,8};
 
   can_dev = device_get_binding("CAN_0");
 
@@ -183,11 +191,13 @@ occurred. It does not block until the message is sent like the example above.
           struct zcan_frame frame = {
                   .id_type = CAN_EXTENDED_IDENTIFIER,
                   .rtr = CAN_DATAFRAME,
-                  .ext_id = 0x1234567,
+                  .id = 0x1234567,
                   .dlc = 2
           };
 
-          frame.data = {1,2};
+          frame.data[0] = 1;
+          frame.data[1] = 2;
+
           return can_send(can_dev, &frame, K_FOREVER, tx_irq_callback, "Sender 1");
   }
 
@@ -221,12 +231,12 @@ The filter for this example is configured to match the identifier 0x123 exactly.
   const struct zcan_filter my_filter = {
           .id_type = CAN_STANDARD_IDENTIFIER,
           .rtr = CAN_DATAFRAME,
-          .std_id = 0x123,
+          .id = 0x123,
           .rtr_mask = 1,
-          .std_id_mask = CAN_STD_ID_MASK
+          .id_mask = CAN_STD_ID_MASK
   };
   int filter_id;
-  struct device *can_dev;
+  const struct device *can_dev;
 
   can_dev = device_get_binding("CAN_0");
 
@@ -252,13 +262,13 @@ The filter for this example is configured to match a filter range from
   const struct zcan_filter my_filter = {
           .id_type = CAN_STANDARD_IDENTIFIER,
           .rtr = CAN_DATAFRAME,
-          .std_id = 0x120,
+          .id = 0x120,
           .rtr_mask = 1,
-          .std_id_mask = 0x7F0
+          .id_mask = 0x7F0
   };
   struct zcan_work rx_work;
   int filter_id;
-  struct device *can_dev;
+  const struct device *can_dev;
 
   can_dev = device_get_binding("CAN_0");
 
@@ -280,14 +290,14 @@ The filter for this example is configured to match the extended identifier
   const struct zcan_filter my_filter = {
           .id_type = CAN_EXTENDED_IDENTIFIER,
           .rtr = CAN_DATAFRAME,
-          .std_id = 0x1234567,
+          .id = 0x1234567,
           .rtr_mask = 1,
-          .std_id_mask = CAN_EXT_ID_MASK
+          .id_mask = CAN_EXT_ID_MASK
   };
   CAN_DEFINE_MSGQ(my_can_msgq, 2);
   struct zcan_frame rx_frame;
   int filter_id;
-  struct device *can_dev;
+  const struct device *can_dev;
 
   can_dev = device_get_binding("CAN_0");
 
@@ -307,6 +317,41 @@ The filter for this example is configured to match the extended identifier
 .. code-block:: C
 
   can_detach(can_dev, filter_id);
+
+Setting the bitrate
+*******************
+
+The bitrate and sampling point is initially set at runtime. To change it from
+the application, one can use the `can_set_timing` API. This function takes three
+arguments. The first timing parameter sets the timing for classic CAN and
+arbitration phase for CAN-FD. The second parameter sets the timing of the data
+phase for CAN-FD. For classic CAN, you can use only the first parameter and put
+NULL to the second one. The `can_calc_timing` function can calculate timing from
+a bitrate and sampling point in permille. The following example sets the bitrate
+to 250k baud with the sampling point at 87.5%.
+
+.. code-block:: C
+
+  struct can_timing timing;
+  const struct device *can_dev;
+  int ret;
+
+  can_dev = device_get_binding("CAN_0");
+
+  ret = can_calc_timing(can_dev, &timing, 250000, 875);
+  if (ret > 0) {
+    LOG_INF("Sample-Point error: %d", ret);
+  }
+
+  if (ret < 0) {
+    LOG_ERR("Failed to calc a valid timing");
+    return;
+  }
+
+  ret = can_set_timing(can_dev, &timing, NULL);
+  if (ret != 0) {
+    LOG_ERR("Failed to set timing");
+  }
 
 SocketCAN
 *********

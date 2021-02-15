@@ -98,7 +98,7 @@ static inline void vector_to_irq(int irq_nbr, int *may_swap)
 			*may_swap |= ((direct_irq_f_ptr)
 					irq_vector_table[irq_nbr].func)();
 		} else {
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
+#ifdef CONFIG_PM
 			posix_irq_check_idle_exit();
 #endif
 			((normal_irq_f_ptr)irq_vector_table[irq_nbr].func)

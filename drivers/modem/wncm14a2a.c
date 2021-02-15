@@ -1654,13 +1654,15 @@ static int offload_connect(struct net_context *context,
 	 * AT@SOCKCONN timeout param has minimum value of 30 seconds and
 	 * maximum value of 360 seconds, otherwise an error is generated
 	 */
-	timeout_sec = MIN(360, MAX(timeout_sec, 30));
+	timeout_sec = CLAMP(timeout_sec, 30, 360);
 
 	snprintk(buf, sizeof(buf), "AT@SOCKCONN=%d,\"%s\",%d,%d",
 		 sock->socket_id, wncm14a2a_sprint_ip_addr(addr),
 		 dst_port, timeout_sec);
 	ret = send_at_cmd(sock, buf, MDM_CMD_CONN_TIMEOUT);
-	if (ret < 0) {
+	if (!ret) {
+		net_context_set_state(sock->context, NET_CONTEXT_CONNECTED);
+	} else {
 		LOG_ERR("AT@SOCKCONN ret:%d", ret);
 	}
 
@@ -1791,9 +1793,6 @@ static int offload_put(struct net_context *context)
 	/* clear last_socket_id */
 	ictx.last_socket_id = 0;
 
-	sock->context->connect_cb = NULL;
-	sock->context->recv_cb = NULL;
-	sock->context->send_cb = NULL;
 	socket_put(sock);
 	net_context_unref(context);
 	if (sock->type == SOCK_STREAM) {
@@ -1849,7 +1848,8 @@ static struct net_if_api api_funcs = {
 	.init	= offload_iface_init,
 };
 
-NET_DEVICE_OFFLOAD_INIT(modem_wncm14a2a, "MODEM_WNCM14A2A",
-			wncm14a2a_init, device_pm_control_nop, &ictx,
-			NULL, CONFIG_MODEM_WNCM14A2A_INIT_PRIORITY, &api_funcs,
-			MDM_MAX_DATA_LENGTH);
+NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, wncm14a2a_init, device_pm_control_nop,
+				  &ictx, NULL,
+				  CONFIG_MODEM_WNCM14A2A_INIT_PRIORITY,
+				  &api_funcs,
+				  MDM_MAX_DATA_LENGTH);

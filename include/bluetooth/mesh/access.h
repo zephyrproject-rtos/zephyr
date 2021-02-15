@@ -47,8 +47,22 @@ extern "C" {
 #define BT_MESH_KEY_DEV_REMOTE    0xfffd
 #define BT_MESH_KEY_DEV_ANY       0xfffc
 
+#define BT_MESH_ADDR_IS_UNICAST(addr) ((addr) && (addr) < 0x8000)
+#define BT_MESH_ADDR_IS_GROUP(addr) ((addr) >= 0xc000 && (addr) <= 0xff00)
+#define BT_MESH_ADDR_IS_VIRTUAL(addr) ((addr) >= 0x8000 && (addr) < 0xc000)
+#define BT_MESH_ADDR_IS_RFU(addr) ((addr) >= 0xff00 && (addr) <= 0xfffb)
+
 #define BT_MESH_IS_DEV_KEY(key) (key == BT_MESH_KEY_DEV_LOCAL || \
 				 key == BT_MESH_KEY_DEV_REMOTE)
+
+/** Maximum payload size of an access message (in octets). */
+#define BT_MESH_APP_SEG_SDU_MAX   12
+/** Maximum possible payload size of an outgoing access message (in octets). */
+#define BT_MESH_TX_SDU_MAX        (CONFIG_BT_MESH_TX_SEG_MAX * \
+				  BT_MESH_APP_SEG_SDU_MAX)
+/** Maximum possible payload size of an incoming access message (in octets). */
+#define BT_MESH_RX_SDU_MAX        (CONFIG_BT_MESH_RX_SEG_MAX * \
+				  BT_MESH_APP_SEG_SDU_MAX)
 
 /** Helper to define a mesh element within an array.
  *

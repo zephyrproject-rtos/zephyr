@@ -10,7 +10,7 @@
 
 / {
 	model = "WeAct Studio Black Pill V2.0 Board";
-	compatible = "weact,blackpill-f411ce","st,stm32f411";
+	compatible = "weact,blackpill-f411ce";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -80,7 +80,7 @@
 
 	pwm4: pwm {
 		status = "okay";
-		pinctrl-0 = <&tim4_ch1_pwm_pb6 &tim4_ch2_pwm_pb7>;
+		pinctrl-0 = <&tim4_ch1_pb6 &tim4_ch2_pb7>;
 	};
 };
 
@@ -107,6 +107,7 @@
 };
 
 &usbotg_fs {
+	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
 	status = "okay";
 };
 

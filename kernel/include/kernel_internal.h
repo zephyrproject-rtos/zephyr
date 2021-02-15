@@ -47,6 +47,22 @@ extern char *z_setup_new_thread(struct k_thread *new_thread,
 				int prio, uint32_t options, const char *name);
 
 /**
+ * @brief Allocate aligned memory from the current thread's resource pool
+ *
+ * Threads may be assigned a resource pool, which will be used to allocate
+ * memory on behalf of certain kernel and driver APIs. Memory reserved
+ * in this way should be freed with k_free().
+ *
+ * If called from an ISR, the k_malloc() system heap will be used if it exists.
+ *
+ * @param align Required memory alignment
+ * @param size Memory allocation size
+ * @return A pointer to the allocated memory, or NULL if there is insufficient
+ * RAM in the pool or there is no pool to draw memory from
+ */
+void *z_thread_aligned_alloc(size_t align, size_t size);
+
+/**
  * @brief Allocate some memory from the current thread's resource pool
  *
  * Threads may be assigned a resource pool, which will be used to allocate
@@ -59,7 +75,10 @@ extern char *z_setup_new_thread(struct k_thread *new_thread,
  * @return A pointer to the allocated memory, or NULL if there is insufficient
  * RAM in the pool or there is no pool to draw memory from
  */
-void *z_thread_malloc(size_t size);
+static inline void *z_thread_malloc(size_t size)
+{
+	return z_thread_aligned_alloc(0, size);
+}
 
 /* set and clear essential thread flag */
 
@@ -155,6 +174,31 @@ struct gdb_ctx;
 extern int z_gdb_main_loop(struct gdb_ctx *ctx, bool start);
 #endif
 
+#ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
+void z_thread_mark_switched_in(void);
+void z_thread_mark_switched_out(void);
+#else
+
+/**
+ * @brief Called after a thread has been selected to run
+ */
+#define z_thread_mark_switched_in()
+
+/**
+ * @brief Called before a thread has been selected to run
+ */
+
+#define z_thread_mark_switched_out()
+
+#endif /* CONFIG_INSTRUMENT_THREAD_SWITCHING */
+
+/* Init hook for page frame management, invoked immediately upon entry of
+ * main thread, before POST_KERNEL tasks
+ */
+void z_mem_manage_init(void);
+
+/* Workaround for build-time page table mapping of the kernel */
+void z_kernel_map_fixup(void);
 
 #ifdef __cplusplus
 }

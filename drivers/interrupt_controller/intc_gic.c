@@ -196,8 +196,10 @@ static void gic_cpu_init(void)
 #define GIC_PARENT_IRQ 0
 #define GIC_PARENT_IRQ_PRI 0
 #define GIC_PARENT_IRQ_FLAGS 0
-int arm_gic_init(void)
+int arm_gic_init(const struct device *unused)
 {
+	ARG_UNUSED(unused);
+
 	/* Init of Distributor interface registers */
 	gic_dist_init();
 
@@ -206,3 +208,5 @@ int arm_gic_init(void)
 
 	return 0;
 }
+
+SYS_INIT(arm_gic_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

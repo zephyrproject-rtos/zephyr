@@ -36,9 +36,10 @@ int foo_single_init(const struct device *device)
 }
 
 /* fake API pointer, we don't use it at all for this suite */
-DEVICE_AND_API_INIT(foo0, "foo0", foo_single_init, &foo0_data, &foo0_config,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    (void *)0xDEADBEEF);
+DEVICE_DEFINE(foo0, "foo0", foo_single_init, device_pm_control_nop,
+		&foo0_data, &foo0_config,
+		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+		(void *)0xDEADBEEF);
 
 /**
  * @brief Test DEVICE_MMIO_* macros
@@ -129,9 +130,10 @@ int foo_mult_init(const struct device *device)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(foo12, "foo12", foo_mult_init, &foo12_data, &foo12_config,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    (void *)0xDEADBEEF);
+DEVICE_DEFINE(foo12, "foo12", foo_mult_init, device_pm_control_nop,
+		&foo12_data, &foo12_config,
+		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+		(void *)0xDEADBEEF);
 
 /**
  * @brief Test DEVICE_MMIO_NAMED_* macros

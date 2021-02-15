@@ -7,6 +7,7 @@
 
 /*
  * Copyright (c) 2017-2018 Linaro Limited
+ * Copyright (c) 2021 Nordic Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -794,6 +795,12 @@ static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
 #define SO_REUSEADDR 2
 /** sockopt: Async error (ignored, for compatibility) */
 #define SO_ERROR 4
+
+/**
+ * sockopt: Receive timeout
+ * Applies to receive functions like recv(), but not to connect()
+ */
+#define SO_RCVTIMEO 20
 
 /** sockopt: Timestamp TX packets */
 #define SO_TIMESTAMPING 37

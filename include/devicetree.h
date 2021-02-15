@@ -28,15 +28,6 @@
  * @}
  */
 
-/**
- * @brief Name for an invalid node identifier
- *
- * This supports cases where factored macros can be invoked from paths where
- * devicetree data may or may not be available.  It is a preprocessor identifier
- * that does not match any valid devicetree node identifier.
- */
-#define DT_INVALID_NODE _
-
 /*
  * Property suffixes
  * -----------------
@@ -49,8 +40,12 @@
  * are missing from this list, please add them. It should be complete.
  *
  * _ENUM_IDX: property's value as an index into bindings enum
+ * _ENUM_TOKEN: property's value as a token into bindings enum (string
+ *              enum values are identifiers)
+ * _ENUM_UPPER_TOKEN: like _ENUM_TOKEN, but uppercased
  * _EXISTS: property is defined
  * _IDX_<i>: logical index into property
+ * _IDX_<i>_EXISTS: logical index into property is defined
  * _IDX_<i>_PH: phandle array's phandle by index (or phandle, phandles)
  * _IDX_<i>_VAL_<val>: phandle array's specifier value by index
  * _IDX_<i>_VAL_<val>_EXISTS: cell value exists, by index
@@ -61,10 +56,19 @@
  */
 
 /**
- * @defgroup devicetree-generic-id Node identifiers
+ * @defgroup devicetree-generic-id Node identifiers and helpers
  * @ingroup devicetree
  * @{
  */
+
+/**
+ * @brief Name for an invalid node identifier
+ *
+ * This supports cases where factored macros can be invoked from paths where
+ * devicetree data may or may not be available.  It is a preprocessor identifier
+ * that does not match any valid devicetree node identifier.
+ */
+#define DT_INVALID_NODE _
 
 /**
  * @brief Node identifier for the root node in the devicetree
@@ -73,6 +77,9 @@
 
 /**
  * @brief Get a node identifier for a devicetree path
+ *
+ * (This macro returns a node identifier from path components. To get
+ * a path string from a node identifier, use DT_NODE_PATH() instead.)
  *
  * The arguments to this macro are the names of non-root nodes in the
  * tree required to reach the desired node, starting from the root.
@@ -314,6 +321,27 @@
 #define DT_PARENT(node_id) UTIL_CAT(node_id, _PARENT)
 
 /**
+ * @brief Get a node identifier for a grandparent node
+ *
+ * Example devicetree fragment:
+ *
+ *     gparent: grandparent-node {
+ *             parent: parent-node {
+ *                     child: child-node { ... }
+ *             };
+ *     };
+ *
+ * The following are equivalent ways to get the same node identifier:
+ *
+ *     DT_GPARENT(DT_NODELABEL(child))
+ *     DT_PARENT(DT_PARENT(DT_NODELABEL(child))
+ *
+ * @param node_id node identifier
+ * @return a node identifier for the node's parent's parent
+ */
+#define DT_GPARENT(node_id) DT_PARENT(DT_PARENT(node_id))
+
+/**
  * @brief Get a node identifier for a child node
  *
  * Example devicetree fragment:
@@ -345,6 +373,52 @@
  * @return node identifier for the node with the name referred to by 'child'
  */
 #define DT_CHILD(node_id, child) UTIL_CAT(node_id, DT_S_PREFIX(child))
+
+/**
+ * @brief Get a devicetree node's full path as a string literal
+ *
+ * This returns the path to a node from a node identifier. To get a
+ * node identifier from path components instead, use DT_PATH().
+ *
+ * Example devicetree fragment:
+ *
+ *     / {
+ *             soc {
+ *                     node: my-node@12345678 { ... };
+ *             };
+ *     };
+ *
+ * Example usage:
+ *
+ *    DT_NODE_PATH(DT_NODELABEL(node)) // "/soc/my-node@12345678"
+ *    DT_NODE_PATH(DT_PATH(soc))       // "/soc"
+ *    DT_NODE_PATH(DT_ROOT)            // "/"
+ *
+ * @param node_id node identifier
+ * @return the node's full path in the devicetree
+ */
+#define DT_NODE_PATH(node_id) DT_CAT(node_id, _PATH)
+
+/**
+ * @brief Do node_id1 and node_id2 refer to the same node?
+ *
+ * Both "node_id1" and "node_id2" must be node identifiers for nodes
+ * that exist in the devicetree (if unsure, you can check with
+ * DT_NODE_EXISTS()).
+ *
+ * The expansion evaluates to 0 or 1, but may not be a literal integer
+ * 0 or 1.
+ *
+ * @param node_id1 first node identifer
+ * @param node_id2 second node identifier
+ * @return an expression that evaluates to 1 if the node identifiers
+ *         refer to the same node, and evaluates to 0 otherwise
+ */
+#define DT_SAME_NODE(node_id1, node_id2) \
+	(DT_DEP_ORD(node_id1) == (DT_DEP_ORD(node_id2)))
+
+/* Implementation note: distinct nodes have distinct node identifiers.
+ * See include/devicetree/ordinals.h. */
 
 /**
  * @}
@@ -418,6 +492,24 @@
 #define DT_PROP_LEN(node_id, prop) DT_PROP(node_id, prop##_LEN)
 
 /**
+ * @brief Like DT_PROP_LEN(), but with a fallback to default_value
+ *
+ * If the property is defined (as determined by DT_NODE_HAS_PROP()),
+ * this expands to DT_PROP_LEN(node_id, prop). The default_value
+ * parameter is not expanded in this case.
+ *
+ * Otherwise, this expands to default_value.
+ *
+ * @param node_id node identifier
+ * @param prop a lowercase-and-underscores property with a logical length
+ * @param default_value a fallback value to expand to
+ * @return the property's length or the given default value
+ */
+#define DT_PROP_LEN_OR(node_id, prop, default_value) \
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, prop), \
+		    (DT_PROP_LEN(node_id, prop)), (default_value))
+
+/**
  * @brief Is index "idx" valid for an array type property?
  *
  * If this returns 1, then DT_PROP_BY_IDX(node_id, prop, idx) or
@@ -438,7 +530,7 @@
  *         into the given property, and 0 otherwise.
  */
 #define DT_PROP_HAS_IDX(node_id, prop, idx) \
-	((idx) < DT_PROP_LEN(node_id, prop))
+	IS_ENABLED(DT_CAT6(node_id, _P_, prop, _IDX_, idx, _EXISTS))
 
 /**
  * @brief Get the value at index "idx" in an array type property
@@ -545,6 +637,129 @@
 	COND_CODE_1(DT_NODE_HAS_PROP(node_id, prop), \
 		    (DT_ENUM_IDX(node_id, prop)), (default_idx_value))
 
+/**
+ * @brief Get an enumeration property's value as a token.
+ *
+ * This allows you to "remove the quotes" from some string-valued
+ * properties. That can be useful, for example, when pasting the
+ * values onto some other token to form an enum in C using the @p ##
+ * preprocessor operator.
+ *
+ * DT_ENUM_TOKEN() can only be used for properties with string type
+ * whose binding has an "enum:". The values in the binding's "enum:"
+ * list must be unique after converting non-alphanumeric characters to
+ * underscores.
+ *
+ * It is an error to use DT_ENUM_TOKEN() in other circumstances.
+ *
+ * Example devicetree fragment:
+ *
+ *     n1: node-1 {
+ *             prop = "foo";
+ *     };
+ *     n2: node-2 {
+ *             prop = "FOO";
+ *     }
+ *     n3: node-3 {
+ *             prop = "123 foo";
+ *     };
+ *
+ * Example bindings fragment:
+ *
+ *     properties:
+ *       prop:
+ *         type: string
+ *         enum:
+ *            - "foo"
+ *            - "FOO"
+ *            - "123 foo"
+ *
+ * Example usage:
+ *
+ *     DT_ENUM_TOKEN((DT_NODELABEL(n1), prop) // foo
+ *     DT_ENUM_TOKEN((DT_NODELABEL(n2), prop) // FOO
+ *     DT_ENUM_TOKEN((DT_NODELABEL(n3), prop) // 123_foo
+ *
+ * Notice how:
+ *
+ * - Unlike C identifiers, the property values may begin with a
+ *   number. It's the user's responsibility not to use such values as
+ *   the name of a C identifier.
+ *
+ * - The uppercased "FOO" in the DTS remains @p FOO as a token. It is
+     *not* converted to @p foo.
+ *
+ * - The whitespace in the DTS "123 foo" string is converted to @p
+ *   123_foo as a token.
+ *
+ * @param node_id node identifier
+ * @param prop lowercase-and-underscores property name with suitable
+ *             enumeration of values in its binding
+ * @return the value of @p prop as a token, i.e. without any quotes
+ *         and with special characters converted to underscores
+ */
+#define DT_ENUM_TOKEN(node_id, prop) \
+	DT_CAT4(node_id, _P_, prop, _ENUM_TOKEN)
+
+/**
+ * @brief Like DT_ENUM_TOKEN(), but uppercased
+ *
+ * This allows you to "remove the quotes and capitalize" some string-valued
+ * properties.
+ *
+ * DT_ENUM_UPPER_TOKEN() can only be used for properties with string type
+ * whose binding has an "enum:". The values in the binding's "enum:"
+ * list must be unique after converting non-alphanumeric characters to
+ * underscores and capitalizating any letters.
+ *
+ * It is an error to use DT_ENUM_UPPER_TOKEN() in other circumstances.
+ *
+ * Example devicetree fragment:
+ *
+ *     n1: node-1 {
+ *             prop = "foo";
+ *     };
+ *     n2: node-2 {
+ *             prop = "123 foo";
+ *     };
+ *
+ * Example bindings fragment:
+ *
+ *     properties:
+ *       prop:
+ *         type: string
+ *         enum:
+ *            - "foo"
+ *            - "123 foo"
+ *
+ * Example usage:
+ *
+ *     DT_ENUM_TOKEN((DT_NODELABEL(n1), prop) // FOO
+ *     DT_ENUM_TOKEN((DT_NODELABEL(n2), prop) // 123_FOO
+ *
+ * Notice how:
+ *
+ * - Unlike C identifiers, the property values may begin with a
+ *   number. It's the user's responsibility not to use such values as
+ *   the name of a C identifier.
+ *
+ * - The lowercased "foo" in the DTS becomes @p FOO as a token, i.e.
+ *   it is uppercased.
+ *
+ * - The whitespace in the DTS "123 foo" string is converted to @p
+ *   123_FOO as a token, i.e. it is uppercased and whitespace becomes
+ *   an underscore.
+ *
+ * @param node_id node identifier
+ * @param prop lowercase-and-underscores property name with suitable
+ *             enumeration of values in its binding
+ * @return the value of @p prop as a capitalized token, i.e. upper case,
+ *         without any quotes, and with special characters converted to
+ *         underscores
+ */
+#define DT_ENUM_UPPER_TOKEN(node_id, prop) \
+	DT_CAT4(node_id, _P_, prop, _ENUM_UPPER_TOKEN)
+
 /*
  * phandle properties
  *
@@ -594,6 +809,28 @@
  */
 #define DT_PROP_BY_PHANDLE_IDX(node_id, phs, idx, prop) \
 	DT_PROP(DT_PHANDLE_BY_IDX(node_id, phs, idx), prop)
+
+/**
+ * @brief Like DT_PROP_BY_PHANDLE_IDX(), but with a fallback to
+ * default_value.
+ *
+ * If the value exists, this expands to DT_PROP_BY_PHANDLE_IDX(node_id, phs,
+ * idx, prop). The default_value parameter is not expanded in this
+ * case.
+ *
+ * Otherwise, this expands to default_value.
+ *
+ * @param node_id node identifier
+ * @param phs lowercase-and-underscores property with type "phandle",
+ *            "phandles", or "phandle-array"
+ * @param idx logical index into "phs", which must be zero if "phs"
+ *            has type "phandle"
+ * @param prop lowercase-and-underscores property of the phandle's node
+ * @param default_value a fallback value to expand to
+ * @return the property's value
+ */
+#define DT_PROP_BY_PHANDLE_IDX_OR(node_id, phs, idx, prop, default_value) \
+	DT_PROP_OR(DT_PHANDLE_BY_IDX(node_id, phs, idx), prop, default_value)
 
 /**
  * @brief Get a property value from a phandle's node
@@ -1921,8 +2158,35 @@
 	UTIL_CAT(DT_ROOT, MACRO_MAP_CAT(DT_S_PREFIX, __VA_ARGS__))
 /** @internal helper for DT_PATH(): prepends _S_ to a node name */
 #define DT_S_PREFIX(name) _S_##name
-/** @internal concatenation helper, sometimes used to force expansion */
-#define DT_CAT(node_id, prop_suffix) node_id##prop_suffix
+
+/**
+ * @internal concatenation helper, 2 arguments
+ *
+ * This and the following macros are used to paste things together
+ * with "##" *after* forcing expansion on each argument.
+ *
+ * We could try to use something like UTIL_CAT(), but the compiler
+ * error messages from the util macros can be extremely long when they
+ * are misused. This unfortunately happens often with devicetree.h,
+ * since its macro-based API is fiddly and can be hard to get right.
+ *
+ * Keeping things brutally simple here hopefully makes some errors
+ * easier to read.
+ */
+#define DT_CAT(a1, a2) a1 ## a2
+/** @internal concatenation helper, 3 arguments */
+#define DT_CAT3(a1, a2, a3) a1 ## a2 ## a3
+/** @internal concatenation helper, 4 arguments */
+#define DT_CAT4(a1, a2, a3, a4) a1 ## a2 ## a3 ## a4
+/** @internal concatenation helper, 5 arguments */
+#define DT_CAT5(a1, a2, a3, a4, a5) a1 ## a2 ## a3 ## a4 ## a5
+/** @internal concatenation helper, 6 arguments */
+#define DT_CAT6(a1, a2, a3, a4, a5, a6) a1 ## a2 ## a3 ## a4 ## a5 ## a6
+/*
+ * If you need to define a bigger DT_CATN(), do so here. Don't leave
+ * any "holes" of undefined macros, please.
+ */
+
 /** @internal helper for node identifier macros to expand args */
 #define DT_DASH(...) MACRO_MAP_CAT(DT_DASH_PREFIX, __VA_ARGS__)
 /** @internal helper for DT_DASH(): prepends _ to a name */

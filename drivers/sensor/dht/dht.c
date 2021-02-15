@@ -247,6 +247,6 @@ static const struct dht_config dht_config = {
 	.pin = DT_INST_GPIO_PIN(0, dio_gpios),
 };
 
-DEVICE_AND_API_INIT(dht_dev, DT_INST_LABEL(0), &dht_init,
+DEVICE_DT_INST_DEFINE(0, &dht_init, device_pm_control_nop,
 		    &dht_data, &dht_config,
 		    POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &dht_api);

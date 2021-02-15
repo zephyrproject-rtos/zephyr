@@ -9,6 +9,7 @@
 #include <zephyr.h>
 #include <errno.h>
 #include <string.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/util.h>
 #include <sys/byteorder.h>
@@ -35,6 +36,7 @@
 #include "access.h"
 #include "foundation.h"
 #include "settings.h"
+#include "heartbeat.h"
 #include "transport.h"
 
 #define AID_MASK                    ((uint8_t)(BIT_MASK(6)))
@@ -75,6 +77,20 @@
 		 SEG_RETRANSMIT_TIMEOUT_GROUP)
 /* How long to wait for available buffers before giving up */
 #define BUF_TIMEOUT                 K_NO_WAIT
+
+struct virtual_addr {
+	uint16_t ref:15,
+		 changed:1;
+	uint16_t addr;
+	uint8_t  uuid[16];
+};
+
+/* Virtual Address information for persistent storage. */
+struct va_val {
+	uint16_t ref;
+	uint16_t addr;
+	uint8_t uuid[16];
+} __packed;
 
 static struct seg_tx {
 	struct bt_mesh_subnet *sub;
@@ -122,14 +138,7 @@ static struct seg_rx {
 
 K_MEM_SLAB_DEFINE(segs, BT_MESH_APP_SEG_SDU_MAX, CONFIG_BT_MESH_SEG_BUFS, 4);
 
-static struct bt_mesh_va virtual_addrs[CONFIG_BT_MESH_LABEL_COUNT];
-
-static uint16_t hb_sub_dst = BT_MESH_ADDR_UNASSIGNED;
-
-void bt_mesh_set_hb_sub_dst(uint16_t addr)
-{
-	hb_sub_dst = addr;
-}
+static struct virtual_addr virtual_addrs[CONFIG_BT_MESH_LABEL_COUNT];
 
 static int send_unseg(struct bt_mesh_net_tx *tx, struct net_buf_simple *sdu,
 		      const struct bt_mesh_send_cb *cb, void *cb_data,
@@ -498,12 +507,7 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
 	tx->blocked = blocked;
 	tx->started = 0;
 	tx->ctl = !!ctl_op;
-
-	if (net_tx->ctx->send_ttl == BT_MESH_TTL_DEFAULT) {
-		tx->ttl = bt_mesh_default_ttl_get();
-	} else {
-		tx->ttl = net_tx->ctx->send_ttl;
-	}
+	tx->ttl = net_tx->ctx->send_ttl;
 
 	BT_DBG("SeqZero 0x%04x (segs: %u)",
 	       (uint16_t)(tx->seq_auth & TRANS_SEQ_ZERO_MASK), tx->nack_count);
@@ -597,8 +601,8 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
 	return 0;
 }
 
-int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
-		       const struct bt_mesh_send_cb *cb, void *cb_data)
+static int trans_encrypt(const struct bt_mesh_net_tx *tx, const uint8_t *key,
+			 struct net_buf_simple *msg)
 {
 	struct bt_mesh_app_crypto_ctx crypto = {
 		.dev_key = BT_MESH_IS_DEV_KEY(tx->ctx->app_idx),
@@ -608,6 +612,17 @@ int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
 		.seq_num = bt_mesh.seq,
 		.iv_index = BT_MESH_NET_IVI_TX,
 	};
+
+	if (BT_MESH_ADDR_IS_VIRTUAL(tx->ctx->addr)) {
+		crypto.ad = bt_mesh_va_label_get(tx->ctx->addr);
+	}
+
+	return bt_mesh_app_encrypt(key, &crypto, msg);
+}
+
+int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
+		       const struct bt_mesh_send_cb *cb, void *cb_data)
+{
 	const uint8_t *key;
 	uint8_t aid;
 	int err;
@@ -627,8 +642,22 @@ int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
 		return -EINVAL;
 	}
 
+	if (tx->ctx->send_ttl == BT_MESH_TTL_DEFAULT) {
+		tx->ctx->send_ttl = bt_mesh_default_ttl_get();
+	} else if (tx->ctx->send_ttl > BT_MESH_TTL_MAX) {
+		BT_ERR("TTL too large (max 127)");
+		return -EINVAL;
+	}
+
 	if (msg->len > BT_MESH_SDU_UNSEG_MAX) {
 		tx->ctx->send_rel = true;
+	}
+
+	if (tx->ctx->addr == BT_MESH_ADDR_UNASSIGNED ||
+	    (!BT_MESH_ADDR_IS_UNICAST(tx->ctx->addr) &&
+	     BT_MESH_IS_DEV_KEY(tx->ctx->app_idx))) {
+		BT_ERR("Invalid destination address");
+		return -EINVAL;
 	}
 
 	BT_DBG("net_idx 0x%04x app_idx 0x%04x dst 0x%04x", tx->sub->net_idx,
@@ -649,11 +678,7 @@ int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
 		tx->aszmic = 1U;
 	}
 
-	if (BT_MESH_ADDR_IS_VIRTUAL(tx->ctx->addr)) {
-		crypto.ad = bt_mesh_va_label_get(tx->ctx->addr);
-	}
-
-	err = bt_mesh_app_encrypt(key, &crypto, msg);
+	err = trans_encrypt(tx, key, msg);
 	if (err) {
 		return err;
 	}
@@ -717,7 +742,7 @@ static int sdu_recv(struct bt_mesh_net_rx *rx, uint8_t hdr, uint8_t aszmic,
 			.aszmic = aszmic,
 			.src = rx->ctx.addr,
 			.dst = rx->ctx.recv_dst,
-			.seq_num = rx->seq,
+			.seq_num = seg ? (seg->seq_auth & 0xffffff) : rx->seq,
 			.iv_index = BT_MESH_NET_IVI_RX(rx),
 		},
 		.buf = buf,
@@ -855,36 +880,6 @@ static int trans_ack(struct bt_mesh_net_rx *rx, uint8_t hdr,
 	return 0;
 }
 
-static int trans_heartbeat(struct bt_mesh_net_rx *rx,
-			   struct net_buf_simple *buf)
-{
-	uint8_t init_ttl, hops;
-	uint16_t feat;
-
-	if (buf->len < 3) {
-		BT_ERR("Too short heartbeat message");
-		return -EINVAL;
-	}
-
-	if (rx->ctx.recv_dst != hb_sub_dst) {
-		BT_WARN("Ignoring heartbeat to non-subscribed destination");
-		return 0;
-	}
-
-	init_ttl = (net_buf_simple_pull_u8(buf) & 0x7f);
-	feat = net_buf_simple_pull_be16(buf);
-
-	hops = (init_ttl - rx->ctx.recv_ttl + 1);
-
-	BT_DBG("src 0x%04x TTL %u InitTTL %u (%u hop%s) feat 0x%04x",
-	       rx->ctx.addr, rx->ctx.recv_ttl, init_ttl, hops,
-	       (hops == 1U) ? "" : "s", feat);
-
-	bt_mesh_heartbeat(rx->ctx.addr, rx->ctx.recv_dst, hops, feat);
-
-	return 0;
-}
-
 static int ctl_recv(struct bt_mesh_net_rx *rx, uint8_t hdr,
 		    struct net_buf_simple *buf, uint64_t *seq_auth)
 {
@@ -896,7 +891,7 @@ static int ctl_recv(struct bt_mesh_net_rx *rx, uint8_t hdr,
 	case TRANS_CTL_OP_ACK:
 		return trans_ack(rx, hdr, buf, seq_auth);
 	case TRANS_CTL_OP_HEARTBEAT:
-		return trans_heartbeat(rx, buf);
+		return bt_mesh_hb_recv(rx, buf);
 	}
 
 	/* Only acks and heartbeats may need processing without local_match */
@@ -1017,6 +1012,13 @@ int bt_mesh_ctl_send(struct bt_mesh_net_tx *tx, uint8_t ctl_op, void *data,
 {
 	struct net_buf_simple buf;
 
+	if (tx->ctx->send_ttl == BT_MESH_TTL_DEFAULT) {
+		tx->ctx->send_ttl = bt_mesh_default_ttl_get();
+	} else if (tx->ctx->send_ttl > BT_MESH_TTL_MAX) {
+		BT_ERR("TTL too large (max 127)");
+		return -EINVAL;
+	}
+
 	net_buf_simple_init_with_data(&buf, data, data_len);
 
 	if (data_len > BT_MESH_SDU_UNSEG_MAX) {
@@ -1024,6 +1026,12 @@ int bt_mesh_ctl_send(struct bt_mesh_net_tx *tx, uint8_t ctl_op, void *data,
 	}
 
 	tx->ctx->app_idx = BT_MESH_KEY_UNUSED;
+
+	if (tx->ctx->addr == BT_MESH_ADDR_UNASSIGNED ||
+	    BT_MESH_ADDR_IS_VIRTUAL(tx->ctx->addr)) {
+		BT_ERR("Invalid destination address");
+		return -EINVAL;
+	}
 
 	BT_DBG("src 0x%04x dst 0x%04x ttl 0x%02x ctl 0x%02x", tx->src,
 	       tx->ctx->addr, tx->ctx->send_ttl, ctl_op);
@@ -1117,6 +1125,7 @@ static void seg_rx_reset(struct seg_rx *rx, bool full_reset)
 static void seg_ack(struct k_work *work)
 {
 	struct seg_rx *rx = CONTAINER_OF(work, struct seg_rx, ack);
+	int32_t timeout;
 
 	BT_DBG("rx %p", rx);
 
@@ -1134,7 +1143,8 @@ static void seg_ack(struct k_work *work)
 	send_ack(rx->sub, rx->dst, rx->src, rx->ttl, &rx->seq_auth,
 		 rx->block, rx->obo);
 
-	k_delayed_work_submit(&rx->ack, K_MSEC(ack_timeout(rx)));
+	timeout = ack_timeout(rx);
+	k_delayed_work_submit(&rx->ack, K_MSEC(timeout));
 }
 
 static inline bool sdu_len_is_ok(bool ctl, uint8_t seg_n)
@@ -1416,7 +1426,9 @@ found_rx:
 
 	if (!k_delayed_work_remaining_get(&rx->ack) &&
 	    !bt_mesh_lpn_established()) {
-		k_delayed_work_submit(&rx->ack, K_MSEC(ack_timeout(rx)));
+		int32_t timeout = ack_timeout(rx);
+
+		k_delayed_work_submit(&rx->ack, K_MSEC(timeout));
 	}
 
 	/* Allocated segment here */
@@ -1449,9 +1461,6 @@ found_rx:
 	k_delayed_work_cancel(&rx->ack);
 	send_ack(net_rx->sub, net_rx->ctx.recv_dst, net_rx->ctx.addr,
 		 net_rx->ctx.send_ttl, seq_auth, rx->block, rx->obo);
-
-	/* Decrypt with seqAuth */
-	net_rx->seq = (rx->seq_auth & 0xffffff);
 
 	if (net_rx->ctl) {
 		NET_BUF_SIMPLE_DEFINE(sdu, BT_MESH_RX_CTL_MAX);
@@ -1581,6 +1590,11 @@ void bt_mesh_rx_reset(void)
 	}
 }
 
+static void store_va_label(void)
+{
+	bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_VA_PENDING);
+}
+
 void bt_mesh_trans_reset(void)
 {
 	int i;
@@ -1603,7 +1617,7 @@ void bt_mesh_trans_reset(void)
 	bt_mesh_rpl_clear();
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		bt_mesh_store_label();
+		store_va_label();
 	}
 }
 
@@ -1620,78 +1634,17 @@ void bt_mesh_trans_init(void)
 	}
 }
 
-int bt_mesh_heartbeat_send(const struct bt_mesh_send_cb *cb, void *cb_data)
-{
-	struct bt_mesh_cfg_srv *cfg = bt_mesh_cfg_get();
-	uint16_t feat = 0U;
-	struct __packed {
-		uint8_t  init_ttl;
-		uint16_t feat;
-	} hb;
-	struct bt_mesh_msg_ctx ctx = {
-		.net_idx = cfg->hb_pub.net_idx,
-		.app_idx = BT_MESH_KEY_UNUSED,
-		.addr = cfg->hb_pub.dst,
-		.send_ttl = cfg->hb_pub.ttl,
-	};
-	struct bt_mesh_net_tx tx = {
-		.sub = bt_mesh_subnet_get(cfg->hb_pub.net_idx),
-		.ctx = &ctx,
-		.src = bt_mesh_model_elem(cfg->model)->addr,
-		.xmit = bt_mesh_net_transmit_get(),
-	};
-
-	/* Do nothing if heartbeat publication is not enabled */
-	if (cfg->hb_pub.dst == BT_MESH_ADDR_UNASSIGNED) {
-		return 0;
-	}
-
-	hb.init_ttl = cfg->hb_pub.ttl;
-
-	if (bt_mesh_relay_get() == BT_MESH_RELAY_ENABLED) {
-		feat |= BT_MESH_FEAT_RELAY;
-	}
-
-	if (bt_mesh_gatt_proxy_get() == BT_MESH_GATT_PROXY_ENABLED) {
-		feat |= BT_MESH_FEAT_PROXY;
-	}
-
-	if (bt_mesh_friend_get() == BT_MESH_FRIEND_ENABLED) {
-		feat |= BT_MESH_FEAT_FRIEND;
-	}
-
-	if (bt_mesh_lpn_established()) {
-		feat |= BT_MESH_FEAT_LOW_POWER;
-	}
-
-	hb.feat = sys_cpu_to_be16(feat);
-
-	BT_DBG("InitTTL %u feat 0x%04x", cfg->hb_pub.ttl, feat);
-
-	return bt_mesh_ctl_send(&tx, TRANS_CTL_OP_HEARTBEAT, &hb, sizeof(hb),
-				cb, cb_data);
-}
-
-struct bt_mesh_va *bt_mesh_va_get(uint16_t index)
-{
-	if (index >= ARRAY_SIZE(virtual_addrs)) {
-		return NULL;
-	}
-
-	return &virtual_addrs[index];
-}
-
-static inline void va_store(struct bt_mesh_va *store)
+static inline void va_store(struct virtual_addr *store)
 {
 	store->changed = 1U;
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		bt_mesh_store_label();
+		store_va_label();
 	}
 }
 
 uint8_t bt_mesh_va_add(uint8_t uuid[16], uint16_t *addr)
 {
-	struct bt_mesh_va *va = NULL;
+	struct virtual_addr *va = NULL;
 	int err;
 
 	for (int i = 0; i < ARRAY_SIZE(virtual_addrs); i++) {
@@ -1726,12 +1679,14 @@ uint8_t bt_mesh_va_add(uint8_t uuid[16], uint16_t *addr)
 	va->ref = 1;
 	va_store(va);
 
+	*addr = va->addr;
+
 	return STATUS_SUCCESS;
 }
 
 uint8_t bt_mesh_va_del(uint8_t uuid[16], uint16_t *addr)
 {
-	struct bt_mesh_va *va = NULL;
+	struct virtual_addr *va = NULL;
 
 	for (int i = 0; i < ARRAY_SIZE(virtual_addrs); i++) {
 		if (virtual_addrs[i].ref &&
@@ -1755,19 +1710,6 @@ uint8_t bt_mesh_va_del(uint8_t uuid[16], uint16_t *addr)
 	return STATUS_SUCCESS;
 }
 
-struct bt_mesh_va *bt_mesh_va_find(uint8_t uuid[16])
-{
-	for (int i = 0; i < ARRAY_SIZE(virtual_addrs); i++) {
-		if (virtual_addrs[i].ref &&
-		    !memcmp(uuid, virtual_addrs[i].uuid,
-			    ARRAY_SIZE(virtual_addrs[i].uuid))) {
-			return &virtual_addrs[i];
-		}
-	}
-
-	return NULL;
-}
-
 uint8_t *bt_mesh_va_label_get(uint16_t addr)
 {
 	int i;
@@ -1785,4 +1727,104 @@ uint8_t *bt_mesh_va_label_get(uint16_t addr)
 	BT_WARN("No matching Label UUID for 0x%04x", addr);
 
 	return NULL;
+}
+
+static struct virtual_addr *bt_mesh_va_get(uint16_t index)
+{
+	if (index >= ARRAY_SIZE(virtual_addrs)) {
+		return NULL;
+	}
+
+	return &virtual_addrs[index];
+}
+
+#if CONFIG_BT_MESH_LABEL_COUNT > 0
+static int va_set(const char *name, size_t len_rd,
+		  settings_read_cb read_cb, void *cb_arg)
+{
+	struct va_val va;
+	struct virtual_addr *lab;
+	uint16_t index;
+	int err;
+
+	if (!name) {
+		BT_ERR("Insufficient number of arguments");
+		return -ENOENT;
+	}
+
+	index = strtol(name, NULL, 16);
+
+	if (len_rd == 0) {
+		BT_WARN("Mesh Virtual Address length = 0");
+		return 0;
+	}
+
+	err = bt_mesh_settings_set(read_cb, cb_arg, &va, sizeof(va));
+	if (err) {
+		BT_ERR("Failed to set \'virtual address\'");
+		return err;
+	}
+
+	if (va.ref == 0) {
+		BT_WARN("Ignore Mesh Virtual Address ref = 0");
+		return 0;
+	}
+
+	lab = bt_mesh_va_get(index);
+	if (lab == NULL) {
+		BT_WARN("Out of labels buffers");
+		return -ENOBUFS;
+	}
+
+	memcpy(lab->uuid, va.uuid, 16);
+	lab->addr = va.addr;
+	lab->ref = va.ref;
+
+	BT_DBG("Restored Virtual Address, addr 0x%04x ref 0x%04x",
+	       lab->addr, lab->ref);
+
+	return 0;
+}
+
+BT_MESH_SETTINGS_DEFINE(va, "Va", va_set);
+#endif /* CONFIG_BT_MESH_LABEL_COUNT > 0 */
+
+#define IS_VA_DEL(_label)	((_label)->ref == 0)
+void bt_mesh_va_pending_store(void)
+{
+	struct virtual_addr *lab;
+	struct va_val va;
+	char path[18];
+	uint16_t i;
+	int err;
+
+	for (i = 0; (lab = bt_mesh_va_get(i)) != NULL; i++) {
+		if (!lab->changed) {
+			continue;
+		}
+
+		lab->changed = 0U;
+
+		snprintk(path, sizeof(path), "bt/mesh/Va/%x", i);
+
+		if (IS_VA_DEL(lab)) {
+			err = settings_delete(path);
+		} else {
+			va.ref = lab->ref;
+			va.addr = lab->addr;
+			memcpy(va.uuid, lab->uuid, 16);
+
+			err = settings_save_one(path, &va, sizeof(va));
+		}
+
+		if (err) {
+			BT_ERR("Failed to %s %s value (err %d)",
+			       IS_VA_DEL(lab) ? "delete" : "store",
+			       log_strdup(path), err);
+		} else {
+			BT_DBG("%s %s value",
+			       IS_VA_DEL(lab) ? "Deleted" : "Stored",
+			       log_strdup(path));
+		}
+	}
 }

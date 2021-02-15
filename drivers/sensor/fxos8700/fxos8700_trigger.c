@@ -119,7 +119,7 @@ static int fxos8700_handle_motion_int(const struct device *dev)
 #ifdef CONFIG_FXOS8700_MAG_VECM
 static int fxos8700_handle_m_vecm_int(const struct device *dev)
 {
-	struct fxos8700_data *data = dev->driver_data;
+	struct fxos8700_data *data = dev->data;
 
 	struct sensor_trigger m_vecm_trig = {
 		.type = FXOS8700_TRIG_M_VECM,
@@ -368,8 +368,8 @@ static int fxos8700_motion_init(const struct device *dev)
 #ifdef CONFIG_FXOS8700_MAG_VECM
 static int fxos8700_m_vecm_init(const struct device *dev)
 {
-	const struct fxos8700_config *config = dev->config_info;
-	struct fxos8700_data *data = dev->driver_data;
+	const struct fxos8700_config *config = dev->config;
+	struct fxos8700_data *data = dev->data;
 	uint8_t m_vecm_cfg = config->mag_vecm_cfg;
 
 	/* Route the interrupt to INT1 pin */

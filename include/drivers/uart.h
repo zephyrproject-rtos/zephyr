@@ -43,44 +43,51 @@ enum uart_line_ctrl {
  *
  * Receiving:
  * 1. To start receiving, uart_rx_enable has to be called with first buffer
- * 2. When receiving starts to current buffer, UART_RX_BUF_REQUEST will be
- *    generated, in response to that user can either:
+ * 2. When receiving starts to current buffer,
+ *    @ref uart_event_type::UART_RX_BUF_REQUEST will be generated, in response
+ *    to that user can either:
  *
  *    - Provide second buffer using uart_rx_buf_rsp, when first buffer is
  *      filled, receiving will automatically start to second buffer.
- *    - Ignore the event, this way when current buffer is filled UART_RX_DONE
- *      event will be generated and receiving will be stopped.
+ *    - Ignore the event, this way when current buffer is filled
+ *      @ref uart_event_type::UART_RX_RDY event will be generated and
+ *      receiving will be stopped.
  *
- * 3. If some data was received and timeout occurred UART_RX_RDY event will be
- *    generated. It can happen multiples times for the same buffer. RX timeout
- *    is counted from last byte received i.e. if no data was received, there
- *    won't be any timeout event.
- * 4. After buffer is filled UART_RX_RDY will be generated, immediately
- *    followed by UART_RX_BUF_RELEASED indicating that current buffer is no
- *    longer used.
+ * 3. If some data was received and timeout occurred
+ *    @ref uart_event_type::UART_RX_RDY event will be generated. It can happen
+ *    multiples times for the same buffer. RX timeout is counted from last byte
+ *    received i.e. if no data was received, there won't be any timeout event.
+ * 4. After buffer is filled @ref uart_event_type::UART_RX_RDY will be
+ *    generated, immediately followed by
+ *    @ref uart_event_type::UART_RX_BUF_RELEASED indicating that current buffer
+ *    is no longer used.
  * 5. If there was second buffer provided, it will become current buffer and
  *    we start again at point 2.
  *    If no second buffer was specified receiving is stopped and
- *    UART_RX_DISABLED event is generated. After that whole process can be
- *    repeated.
+ *    @ref uart_event_type::UART_RX_DISABLED event is generated. After that
+ *    whole process can be repeated.
  *
- * Any time during reception UART_RX_STOPPED event can occur. if there is any
- * data received, UART_RX_RDY event will be generated. It will be followed by
- * UART_RX_BUF_RELEASED event for every buffer currently passed to driver and
- * finally by UART_RX_DISABLED event.
+ * Any time during reception @ref uart_event_type::UART_RX_STOPPED event can
+ * occur. if there is any data received, @ref uart_event_type::UART_RX_RDY
+ * event will be generated. It will be followed by
+ * @ref uart_event_type::UART_RX_BUF_RELEASED event for every buffer currently
+ * passed to driver and finally by @ref uart_event_type::UART_RX_DISABLED event.
  *
  * Receiving can be disabled using uart_rx_disable, after calling that
- * function, if there is any data received, UART_RX_RDY event will be generated.
- * UART_RX_BUF_RELEASED event will be generated for every buffer currently
- * passed to driver and finally UART_RX_DISABLED event will occur.
+ * function, if there is any data received,
+ * @ref uart_event_type::UART_RX_RDY event will be generated.
+ * @ref uart_event_type::UART_RX_BUF_RELEASED event will be generated for every
+ * buffer currently passed to driver and finally
+ * @ref uart_event_type::UART_RX_DISABLED event will occur.
  *
  * Transmitting:
  * 1. Transmitting starts by uart_tx function.
- * 2. If whole buffer was transmitted UART_TX_DONE is generated.
- *    If timeout occurred UART_TX_ABORTED will be generated.
+ * 2. If whole buffer was transmitted @ref uart_event_type::UART_TX_DONE is
+ *    generated. If timeout occurred @ref uart_event_type::UART_TX_ABORTED will
+ *    be generated.
  *
- * Transmitting can be aborted using uart_tx_abort, after calling that
- * function UART_TX_ABORTED event will be generated.
+ * Transmitting can be aborted using @ref uart_tx_abort, after calling that
+ * function @ref uart_event_type::UART_TX_ABORTED event will be generated.
  *
  */
 enum uart_event_type {
@@ -102,7 +109,8 @@ enum uart_event_type {
 	 *   This can happen multiple times in the same buffer.
 	 * - When provided buffer is full.
 	 * - After uart_rx_disable().
-	 * - After stopping due to external event (UART_RX_STOPPED).
+	 * - After stopping due to external event
+	 *   (@ref uart_event_type::UART_RX_STOPPED).
 	 */
 	UART_RX_RDY,
 	/**
@@ -204,13 +212,17 @@ struct uart_event {
 	enum uart_event_type type;
 	/** @brief Event data */
 	union uart_event_data {
-		/** @brief UART_TX_DONE and UART_TX_ABORTED events data. */
+		/** @brief @ref uart_event_type::UART_TX_DONE and
+		 *	   @ref uart_event_type::UART_TX_ABORTED events data.
+		 */
 		struct uart_event_tx tx;
-		/** @brief UART_RX_RDY event data. */
+		/** @brief @ref uart_event_type::UART_RX_RDY event data. */
 		struct uart_event_rx rx;
-		/** @brief UART_RX_BUF_RELEASED event data. */
+		/** @brief @ref uart_event_type::UART_RX_BUF_RELEASED event
+		 *	   data.
+		 */
 		struct uart_event_rx_buf rx_buf;
-		/** @brief UART_RX_STOPPED event data. */
+		/** @brief @ref uart_event_type::UART_RX_STOPPED event data. */
 		struct uart_event_rx_stop rx_stop;
 	} data;
 };
@@ -483,7 +495,8 @@ static inline int z_impl_uart_tx(const struct device *dev, const uint8_t *buf,
 /**
  * @brief Abort current TX transmission.
  *
- * UART_TX_DONE event will be generated with amount of data sent.
+ * @ref uart_event_type::UART_TX_DONE event will be generated with amount of
+ * data sent.
  *
  * @param dev UART device structure.
  *
@@ -510,12 +523,16 @@ static inline int z_impl_uart_tx_abort(const struct device *dev)
  *
  * Function sets given buffer as first buffer for receiving and returns
  * immediately. After that event handler, set using @ref uart_callback_set,
- * is called with UART_RX_RDY or UART_RX_BUF_REQUEST events.
+ * is called with @ref uart_event_type::UART_RX_RDY or
+ * @ref uart_event_type::UART_RX_BUF_REQUEST events.
  *
  * @param dev     UART device structure.
  * @param buf     Pointer to receive buffer.
  * @param len     Buffer length.
- * @param timeout Timeout in milliseconds. @ref SYS_FOREVER_MS disables timeout.
+ * @param timeout Inactivity period after receiving at least a byte which
+ *		  triggers  @ref uart_event_type::UART_RX_RDY event. Given in
+ *		  milliseconds. @ref SYS_FOREVER_MS disables timeout. See
+ *		  @ref uart_event_type for details.
  *
  * @retval -ENOTSUP If not supported.
  * @retval -EBUSY   RX already in progress.
@@ -541,7 +558,8 @@ static inline int z_impl_uart_rx_enable(const struct device *dev,
 }
 
 /**
- * @brief Provide receive buffer in response to UART_RX_BUF_REQUEST event.
+ * @brief Provide receive buffer in response to
+ * @ref uart_event_type::UART_RX_BUF_REQUEST event.
  *
  * Provide pointer to RX buffer, which will be used when current buffer is
  * filled.
@@ -576,10 +594,11 @@ static inline int uart_rx_buf_rsp(const struct device *dev, uint8_t *buf,
 /**
  * @brief Disable RX
  *
- * UART_RX_BUF_RELEASED event will be generated for every buffer scheduled,
- * after that UART_RX_DISABLED event will be generated. Additionally, if there
- * is any pending received data, the UART_RX_RDY event for that data will be
- * generated before the UART_RX_BUF_RELEASED events.
+ * @ref uart_event_type::UART_RX_BUF_RELEASED event will be generated for every
+ * buffer scheduled, after that @ref uart_event_type::UART_RX_DISABLED event
+ * will be generated. Additionally, if there is any pending received data, the
+ * @ref uart_event_type::UART_RX_RDY event for that data will be generated
+ * before the @ref uart_event_type::UART_RX_BUF_RELEASED events.
  *
  * @param dev UART device structure.
  *

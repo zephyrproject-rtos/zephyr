@@ -5,6 +5,7 @@ zephyr_library_link_libraries(subsys__bluetooth)
 
 zephyr_library_sources_ifdef(CONFIG_BT_MESH
     main.c
+    cfg.c
     adv.c
     beacon.c
     net.c
@@ -12,11 +13,16 @@ zephyr_library_sources_ifdef(CONFIG_BT_MESH
     app_keys.c
     transport.c
     rpl.c
+    heartbeat.c
     crypto.c
     access.c
     cfg_srv.c
     health_srv.c
 )
+
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_ADV_LEGACY adv_legacy.c)
+
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_ADV_EXT adv_ext.c)
 
 zephyr_library_sources_ifdef(CONFIG_BT_SETTINGS settings.c)
 

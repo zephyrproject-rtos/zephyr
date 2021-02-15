@@ -66,6 +66,55 @@
 			};
 		};
 
+		twim0: twim@40018000 {
+			compatible = "atmel,sam-i2c-twim";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			reg = <0x40018000 0x4000>;
+			interrupts = <61 0>;
+			peripheral-id = <4>;
+			label = "TWIM_0";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			pinctrl-0 = <&pa23b_twi0_twd0 &pa24b_twi0_twck0>;
+		};
+		twim1: twim@4001c000 {
+			compatible = "atmel,sam-i2c-twim";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			reg = <0x4001c000 0x4000>;
+			interrupts = <63 0>;
+			peripheral-id = <6>;
+			label = "TWIM_1";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			pinctrl-0 = <&pb0a_twi1_twd1 &pb1a_twi1_twck1>;
+		};
+		twim2: twim@40078000 {
+			compatible = "atmel,sam-i2c-twim";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			reg = <0x40078000 0x4000>;
+			interrupts = <77 0>;
+			peripheral-id = <21>;
+			label = "TWIM_2";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			pinctrl-0 = <&pa21e_twi2_twd2 &pa22e_twi2_twck2>;
+		};
+		twim3: twim@4007c000 {
+			compatible = "atmel,sam-i2c-twim";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			reg = <0x4007c000 0x4000>;
+			interrupts = <78 0>;
+			peripheral-id = <22>;
+			label = "TWIM_3";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			pinctrl-0 = <&pb14c_twi3_twd3 &pb15c_twi3_twck3>;
+		};
+
 		spi0: spi@40008000 {
 			compatible = "atmel,sam-spi";
 			reg = <0x40008000 0x4000>;
@@ -117,7 +166,7 @@
 			ranges = <0x400e1000 0x400e1000 0x800>;
 
 			gpioa: gpio@400e1000 {
-				compatible = "atmel,sam-gpio";
+				compatible = "atmel,sam4l-gpio";
 				reg = <0x400e1000 0x200>;
 				interrupts = <25 1>, <26 1>, <27 1>, <28 1>;
 				peripheral-id = <68>;
@@ -127,7 +176,7 @@
 				#atmel,pin-cells = <2>;
 			};
 			gpiob: gpio@400e1200 {
-				compatible = "atmel,sam-gpio";
+				compatible = "atmel,sam4l-gpio";
 				reg = <0x400e1200 0x200>;
 				interrupts = <29 1>, <30 1>, <31 1>, <32 1>;
 				peripheral-id = <68>;
@@ -137,7 +186,7 @@
 				#atmel,pin-cells = <2>;
 			};
 			gpioc: gpio@400e1400 {
-				compatible = "atmel,sam-gpio";
+				compatible = "atmel,sam4l-gpio";
 				reg = <0x400e1400 0x200>;
 				interrupts = <33 1>, <34 1>, <35 1>, <36 1>;
 				peripheral-id = <68>;
@@ -157,9 +206,9 @@
 			label = "TRNG";
 		};
 
-		uid: device_uid@0080020c {
+		uid: device_uid@80020c {
 			compatible = "atmel,sam4l-uid";
-			reg = <0x0080020c 0xf>;
+			reg = <0x80020c 0xf>;
 			status = "okay";
 		};
 	};

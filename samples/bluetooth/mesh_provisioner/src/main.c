@@ -20,17 +20,6 @@ static uint8_t node_uuid[16];
 K_SEM_DEFINE(sem_unprov_beacon, 0, 1);
 K_SEM_DEFINE(sem_node_added, 0, 1);
 
-static struct bt_mesh_cfg_srv cfg_srv = {
-	.relay = BT_MESH_RELAY_ENABLED,
-	.beacon = BT_MESH_BEACON_DISABLED,
-	.frnd = BT_MESH_FRIEND_NOT_SUPPORTED,
-	.default_ttl = 7,
-
-	/* 3 transmissions with 20ms interval */
-	.net_transmit = BT_MESH_TRANSMIT(2, 20),
-	.relay_retransmit = BT_MESH_TRANSMIT(3, 20),
-};
-
 static struct bt_mesh_cfg_cli cfg_cli = {
 };
 
@@ -61,7 +50,7 @@ static struct bt_mesh_health_cli health_cli = {
 };
 
 static struct bt_mesh_model root_models[] = {
-	BT_MESH_MODEL_CFG_SRV(&cfg_srv),
+	BT_MESH_MODEL_CFG_SRV,
 	BT_MESH_MODEL_CFG_CLI(&cfg_cli),
 	BT_MESH_MODEL_HEALTH_CLI(&health_cli),
 };

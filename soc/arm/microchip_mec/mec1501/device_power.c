@@ -47,9 +47,6 @@ void soc_lite_sleep_enable(void)
  * a minimum of 3ms to lock. During this time the main clock
  * will be ramping up from ~16 to 24 MHz.
  */
-
-#if defined(CONFIG_SYS_POWER_DEEP_SLEEP_STATES)
-
 void soc_deep_sleep_enable(void)
 {
 	SCB->SCR = (1ul << 2); /* Cortex-M4 SLEEPDEEP */
@@ -227,5 +224,3 @@ void soc_deep_sleep_periph_restore(void)
 }
 
 #endif /* DEEP_SLEEP_PERIPH_SAVE_RESTORE */
-
-#endif /* CONFIG_SYS_POWER_DEEP_SLEEP_STATES */

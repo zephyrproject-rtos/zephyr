@@ -775,8 +775,8 @@ int iis2iclx_shub_init(const struct device *dev)
 	}
 
 	if (num_ext_dev == 0) {
-		LOG_ERR("shub: no slave devices found");
-		return -EINVAL;
+		LOG_WRN("shub: no slave devices found");
+		return -ENOTSUP;
 	}
 
 	/* init external devices */

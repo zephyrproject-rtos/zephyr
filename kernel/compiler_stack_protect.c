@@ -37,7 +37,7 @@ void _StackCheckHandler(void)
 	/* Stack canary error is a software fatal condition; treat it as such.
 	 */
 	z_except_reason(K_ERR_STACK_CHK_FAIL);
-	CODE_UNREACHABLE;
+	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 }
 
 /* Global variable */

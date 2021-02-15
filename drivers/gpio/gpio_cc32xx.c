@@ -250,7 +250,7 @@ static const struct gpio_driver_api api_funcs = {
 		ARG_UNUSED(dev);					     \
 									     \
 		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),	     \
-			gpio_cc32xx_port_isr, DEVICE_GET(gpio_cc32xx_a##n),  \
+			gpio_cc32xx_port_isr, DEVICE_DT_INST_GET(n),         \
 			0);						     \
 									     \
 		MAP_IntPendClear(DT_INST_IRQN(n) + 16);			     \
@@ -260,8 +260,8 @@ static const struct gpio_driver_api api_funcs = {
 	}
 
 #define GPIO_CC32XX_DEVICE_INIT(n)					     \
-	DEVICE_AND_API_INIT(gpio_cc32xx_a##n, DT_INST_LABEL(n),		     \
-			&gpio_cc32xx_a##n##_init, &gpio_cc32xx_a##n##_data,  \
+	DEVICE_DT_INST_DEFINE(n, &gpio_cc32xx_a##n##_init,		     \
+			device_pm_control_nop, &gpio_cc32xx_a##n##_data,     \
 			&gpio_cc32xx_a##n##_config,			     \
 			POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,     \
 			&api_funcs)
@@ -275,7 +275,6 @@ static const struct gpio_driver_api api_funcs = {
 		.port_num = n						     \
 	};								     \
 									     \
-	DEVICE_DECLARE(gpio_cc32xx_a##n);		     \
 	static struct gpio_cc32xx_data gpio_cc32xx_a##n##_data;		     \
 									     \
 	GPIO_CC32XX_INIT_FUNC(n)					     \

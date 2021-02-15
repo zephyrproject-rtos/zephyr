@@ -29,6 +29,20 @@
 		};
 	};
 
+	timer {
+		compatible = "arm,armv8-timer";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 14 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 11 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 10 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>;
+		label = "arch_timer";
+	};
+
 	uartclk: apb-pclk {
 		compatible = "fixed-clock";
 		clock-frequency = <24000000>;
@@ -37,6 +51,11 @@
 
 	soc {
 		interrupt-parent = <&gic>;
+
+		sram0: memory@40000000 {
+			compatible = "mmio-sram";
+			reg = <0x40000000 DT_SIZE_M(128)>;
+		};
 
 		gic: interrupt-controller@8000000 {
 			compatible = "arm,gic";
@@ -66,19 +85,6 @@
 			 * second flash bank for now
 			 */
 			reg = <0x0 DT_SIZE_M(64) /* 0x4000000 DT_SIZE_M(64) */>;
-		};
-
-		arch_timer: timer {
-			compatible = "arm,arm-timer";
-			interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL
-				      IRQ_DEFAULT_PRIORITY>,
-				     <GIC_PPI 14 IRQ_TYPE_LEVEL
-				      IRQ_DEFAULT_PRIORITY>,
-				     <GIC_PPI 11 IRQ_TYPE_LEVEL
-				      IRQ_DEFAULT_PRIORITY>,
-				     <GIC_PPI 10 IRQ_TYPE_LEVEL
-				      IRQ_DEFAULT_PRIORITY>;
-			label = "arch_timer";
 		};
 	};
 };

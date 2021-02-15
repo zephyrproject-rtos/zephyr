@@ -15,6 +15,7 @@
 #include <fcntl.h>
 #include <sys/select.h>
 #include <unistd.h>
+#include <poll.h>
 
 #include <drivers/uart.h>
 #include "cmdline.h" /* native_posix command line options header */
@@ -46,6 +47,7 @@ static void np_uart_poll_out(const struct device *dev,
 				      unsigned char out_char);
 
 static bool auto_attach;
+static bool wait_pts;
 static const char default_cmd[] = CONFIG_NATIVE_UART_AUTOATTACH_DEFAULT_CMD;
 static char *auto_attach_cmd;
 
@@ -184,6 +186,15 @@ static int open_tty(struct native_uart_status *driver_data,
 	posix_print_trace("%s connected to pseudotty: %s\n",
 			  uart_name, slave_pty_name);
 
+	if (wait_pts) {
+		/*
+		 * This trick sets the HUP flag on the tty master, making it
+		 * possible to detect a client connection using poll.
+		 * The connection of the client would cause the HUP flag to be
+		 * cleared, and in turn set again at disconnect.
+		 */
+		close(open(slave_pty_name, O_RDWR | O_NOCTTY));
+	}
 	if (do_auto_attach) {
 		attach_to_tty(slave_pty_name);
 	}
@@ -261,14 +272,25 @@ static void np_uart_poll_out(const struct device *dev,
 				      unsigned char out_char)
 {
 	int ret;
-	struct native_uart_status *d;
+	struct native_uart_status *d = (struct native_uart_status *)dev->data;
 
-	d = (struct native_uart_status *)dev->data;
-	ret = write(d->out_fd, &out_char, 1);
+	if (wait_pts) {
+		struct pollfd pfd = { .fd = d->out_fd, .events = POLLHUP };
 
-	if (ret != 1) {
-		WARN("%s: a character could not be output\n", __func__);
+		while (1) {
+			poll(&pfd, 1, 0);
+			if (!(pfd.revents & POLLHUP)) {
+				/* There is now a reader on the slave side */
+				break;
+			}
+			k_sleep(K_MSEC(100));
+		}
 	}
+
+	/* The return value of write() cannot be ignored (there is a warning)
+	 * but we do not need the return value for anything.
+	 */
+	ret = write(d->out_fd, &out_char, 1);
 }
 
 /**
@@ -342,15 +364,16 @@ static int np_uart_tty_poll_in(const struct device *dev,
 	return 0;
 }
 
-DEVICE_AND_API_INIT(uart_native_posix0,
-	    DT_INST_LABEL(0), &np_uart_0_init,
+DEVICE_DT_INST_DEFINE(0,
+	    &np_uart_0_init, device_pm_control_nop,
 	    (void *)&native_uart_status_0, NULL,
 	    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 	    &np_uart_driver_api_0);
 
 #if defined(CONFIG_UART_NATIVE_POSIX_PORT_1_ENABLE)
-DEVICE_AND_API_INIT(uart_native_posix1,
+DEVICE_DEFINE(uart_native_posix1,
 	    CONFIG_UART_NATIVE_POSIX_PORT_1_NAME, &np_uart_1_init,
+	    device_pm_control_nop,
 	    (void *)&native_uart_status_1, NULL,
 	    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 	    &np_uart_driver_api_1);
@@ -379,7 +402,13 @@ static void np_add_uart_options(void)
 		(void *)&auto_attach_cmd, NULL,
 		"Command used to automatically attach to the terminal, by "
 		"default: '" CONFIG_NATIVE_UART_AUTOATTACH_DEFAULT_CMD "'"},
-
+		IF_ENABLED(CONFIG_UART_NATIVE_WAIT_PTS_READY_ENABLE, (
+			{false, false, true,
+			"wait_uart", "", 'b',
+			(void *)&wait_pts, NULL,
+			"Hold writes to the uart/pts until a client is "
+			"connected/ready"},)
+		)
 		ARG_TABLE_ENDMARKER
 	};
 

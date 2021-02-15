@@ -14,13 +14,8 @@
 #define L2_SRAM_BASE			(DT_REG_ADDR(DT_NODELABEL(sram0)))
 #define L2_SRAM_SIZE			(DT_REG_SIZE(DT_NODELABEL(sram0)))
 
-#ifdef CONFIG_BOOTLOADER_MCUBOOT
-#define SRAM_BASE (L2_SRAM_BASE + CONFIG_BOOTLOADER_SRAM_SIZE * 1K)
-#define SRAM_SIZE (L2_SRAM_SIZE - CONFIG_BOOTLOADER_SRAM_SIZE * 1K)
-#else
 #define SRAM_BASE (L2_SRAM_BASE)
 #define SRAM_SIZE (L2_SRAM_SIZE)
-#endif
 
 /* The reset vector address in SRAM and its size */
 #define XCHAL_RESET_VECTOR0_PADDR_SRAM		SRAM_BASE
@@ -94,14 +89,12 @@
 /* size of the Interrupt Descriptor Table (IDT) */
 #define IDT_SIZE				0x2000
 
-/* low power ram where DMA buffers are typically placed */
-#define LPRAM_BASE (DT_REG_ADDR(DT_NODELABEL(sram1)))
-#define LPRAM_SIZE (DT_REG_SIZE(DT_NODELABEL(sram1)))
+#define SRAM_BANK_SIZE	(64 * 1024)
 
 /* bootloader */
 
 #define HP_SRAM_BASE	0xbe000000
-#define HP_SRAM_SIZE	(3008 * 1024)
+#define HP_SRAM_SIZE	(30 * SRAM_BANK_SIZE)
 #define SOF_STACK_BASE	(HP_SRAM_BASE + HP_SRAM_SIZE)
 
 /* boot loader in IMR */
@@ -127,7 +120,7 @@
 #define BOOT_LDR_STACK_SIZE		(4 * 0x1000)
 
 /* Manifest base address in IMR - used by boot loader copy procedure. */
-#define IMR_BOOT_LDR_MANIFEST_BASE	0xB0004000
+#define IMR_BOOT_LDR_MANIFEST_BASE	0xB0032000
 
 /* Manifest size (seems unused). */
 #define IMR_BOOT_LDR_MANIFEST_SIZE	0x6000
@@ -139,6 +132,8 @@
 #define LOG_ENTRY_ELF_BASE	0x20000000
 #define LOG_ENTRY_ELF_SIZE	0x2000000
 
+#define EXT_MANIFEST_ELF_BASE	(LOG_ENTRY_ELF_BASE + LOG_ENTRY_ELF_SIZE)
+#define EXT_MANIFEST_ELF_SIZE	0x2000000
 
 #define SRAM_ALIAS_BASE		0x9E000000
 #define SRAM_ALIAS_MASK		0xFF000000
@@ -174,29 +169,8 @@
 
 /* HP SRAM windows */
 
-/* window 3 */
-#define SRAM_TRACE_BASE		0xbe000000
-#define SRAM_TRACE_SIZE		0x2000
-
-#define HP_SRAM_WIN3_BASE       SRAM_TRACE_BASE
-#define HP_SRAM_WIN3_SIZE       SRAM_TRACE_SIZE
-
-/* window 2 */
-#define SRAM_DEBUG_BASE		(SRAM_TRACE_BASE + SRAM_TRACE_SIZE)
-#define SRAM_DEBUG_SIZE		0x800
-
-#define SRAM_EXCEPT_BASE	(SRAM_DEBUG_BASE + SRAM_DEBUG_SIZE)
-#define SRAM_EXCEPT_SIZE	0x800
-
-#define SRAM_STREAM_BASE	(SRAM_EXCEPT_BASE + SRAM_EXCEPT_SIZE)
-#define SRAM_STREAM_SIZE	0x1000
-
-/* window 1 */
-#define SRAM_INBOX_BASE		(SRAM_STREAM_BASE + SRAM_STREAM_SIZE)
-#define SRAM_INBOX_SIZE		0x2000
-
 /* window 0 */
-#define SRAM_SW_REG_BASE	(SRAM_INBOX_BASE + SRAM_INBOX_SIZE)
+#define SRAM_SW_REG_BASE	(HP_SRAM_BASE + 0x4000)
 #define SRAM_SW_REG_SIZE	0x1000
 
 #define SRAM_OUTBOX_BASE	(SRAM_SW_REG_BASE + SRAM_SW_REG_SIZE)
@@ -205,6 +179,26 @@
 #define HP_SRAM_WIN0_BASE	SRAM_SW_REG_BASE
 #define HP_SRAM_WIN0_SIZE	(SRAM_SW_REG_SIZE + SRAM_OUTBOX_SIZE)
 
+/* window 1 */
+#define SRAM_INBOX_BASE		(SRAM_OUTBOX_BASE + SRAM_OUTBOX_SIZE)
+#define SRAM_INBOX_SIZE		0x2000
+
+/* window 2 */
+#define SRAM_DEBUG_BASE		(SRAM_INBOX_BASE + SRAM_INBOX_SIZE)
+#define SRAM_DEBUG_SIZE		0x800
+
+#define SRAM_EXCEPT_BASE	(SRAM_DEBUG_BASE + SRAM_DEBUG_SIZE)
+#define SRAM_EXCEPT_SIZE	0x800
+
+#define SRAM_STREAM_BASE	(SRAM_EXCEPT_BASE + SRAM_EXCEPT_SIZE)
+#define SRAM_STREAM_SIZE	0x1000
+
+/* window 3 */
+#define SRAM_TRACE_BASE		(SRAM_STREAM_BASE + SRAM_STREAM_SIZE)
+#define SRAM_TRACE_SIZE		0x2000
+
+#define HP_SRAM_WIN3_BASE	SRAM_TRACE_BASE
+#define HP_SRAM_WIN3_SIZE	SRAM_TRACE_SIZE
 
 #define SOF_TEXT_START	0xbe010400
 
@@ -219,12 +213,9 @@
 /* Host page size */
 #define HOST_PAGE_SIZE		4096
 
-#define SRAM_BANK_SIZE                  (64 * 1024)
-
-/* LP SRAM */
-#define LP_SRAM_BASE			0xBE800000
-
-#define LP_SRAM_SIZE		(0x10000 * 2)
+/* low power RAM where DMA buffers are typically placed, used by linker.ld */
+#define LP_SRAM_BASE (DT_REG_ADDR(DT_NODELABEL(sram1)))
+#define LP_SRAM_SIZE (DT_REG_SIZE(DT_NODELABEL(sram1)))
 
 /* alternate reset vector */
 #define LP_SRAM_ALT_RESET_VEC_BASE	LP_SRAM_BASE

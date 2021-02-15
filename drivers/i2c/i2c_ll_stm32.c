@@ -10,6 +10,8 @@
 #include <sys/util.h>
 #include <kernel.h>
 #include <soc.h>
+#include <stm32_ll_i2c.h>
+#include <stm32_ll_rcc.h>
 #include <errno.h>
 #include <drivers/i2c.h>
 #include <drivers/pinmux.h>
@@ -273,7 +275,7 @@ static int i2c_stm32_init(const struct device *dev)
 		IRQ_CONNECT(DT_IRQN(DT_NODELABEL(name)),		\
 			    DT_IRQ(DT_NODELABEL(name), priority),	\
 			    stm32_i2c_combined_isr,			\
-			    DEVICE_GET(i2c_stm32_##name), 0);		\
+			    DEVICE_DT_GET(DT_NODELABEL(name)), 0);	\
 		irq_enable(DT_IRQN(DT_NODELABEL(name)));		\
 	} while (0)
 #else
@@ -283,14 +285,14 @@ static int i2c_stm32_init(const struct device *dev)
 			    DT_IRQ_BY_NAME(DT_NODELABEL(name), event,	\
 								priority),\
 			    stm32_i2c_event_isr,			\
-			    DEVICE_GET(i2c_stm32_##name), 0);		\
+			    DEVICE_DT_GET(DT_NODELABEL(name)), 0);	\
 		irq_enable(DT_IRQ_BY_NAME(DT_NODELABEL(name), event, irq));\
 									\
 		IRQ_CONNECT(DT_IRQ_BY_NAME(DT_NODELABEL(name), error, irq),\
 			    DT_IRQ_BY_NAME(DT_NODELABEL(name), error,	\
 								priority),\
 			    stm32_i2c_error_isr,			\
-			    DEVICE_GET(i2c_stm32_##name), 0);		\
+			    DEVICE_DT_GET(DT_NODELABEL(name)), 0);	\
 		irq_enable(DT_IRQ_BY_NAME(DT_NODELABEL(name), error, irq));\
 	} while (0)
 #endif /* CONFIG_I2C_STM32_COMBINED_INTERRUPT */
@@ -347,8 +349,8 @@ static const struct i2c_stm32_config i2c_stm32_cfg_##name = {		\
 									\
 static struct i2c_stm32_data i2c_stm32_dev_data_##name;			\
 									\
-DEVICE_AND_API_INIT(i2c_stm32_##name, DT_LABEL(DT_NODELABEL(name)),	\
-		    &i2c_stm32_init, &i2c_stm32_dev_data_##name,	\
+DEVICE_DT_DEFINE(DT_NODELABEL(name), &i2c_stm32_init,			\
+		    device_pm_control_nop, &i2c_stm32_dev_data_##name,	\
 		    &i2c_stm32_cfg_##name,				\
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
 		    &api_funcs);					\

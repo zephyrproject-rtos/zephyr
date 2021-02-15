@@ -35,8 +35,12 @@ static int soc_pcr_init(void)
  * External single ended crystal connected to XTAL2 pin.
  * External 32KHz square wave from Host chipset/board on 32KHZ_IN pin.
  * NOTES:
- *   PLL can take up to 3 ms to lock. Before lock the PLL output
- *   will be ramping up from ~20MHz.
+ *   FW Program new value to VBAT CLK32 Enable register.
+ *   HW if new value != current value
+ *   HW endif
+ *   FW spin until PCR PLL lock is set.
+ *   32K stable and PLL locked.
+ *   PLL POR or clock source change can take up to 3ms to lock.
  *   32KHZ_IN pin must be configured for 32KHZ_IN function.
  *   Crystals vary and may take longer time to stabilize this will
  *   affect PLL lock time.
@@ -48,24 +52,12 @@ static int soc_pcr_init(void)
  */
 static void clk32_change(uint8_t new_clk32)
 {
-	new_clk32 &= MCHP_VBATR_CLKEN_MASK;
+	/* Program new value. */
+	VBATR_REGS->CLK32_EN = new_clk32 & MCHP_VBATR_CLKEN_MASK;
 
-	if ((VBATR_REGS->CLK32_EN & MCHP_VBATR_CLKEN_MASK)
-		== (uint32_t)new_clk32) {
-		return;
-	}
-
-	if (new_clk32 == MCHP_VBATR_USE_SIL_OSC) {
-		VBATR_REGS->CLK32_EN = new_clk32;
-	} else {
-		/* 1. switch to internal oscillator */
-		VBATR_REGS->CLK32_EN = MCHP_VBATR_USE_SIL_OSC;
-		/* 2. delay for PLL */
-		while ((PCR_REGS->OSC_ID & MCHP_PCR_OSC_ID_PLL_LOCK) == 0)
-			;
-		/* 3. switch to desired source */
-		VBATR_REGS->CLK32_EN = new_clk32;
-	}
+	/* Wait for PLL lock. HW state machine is configuring PLL. */
+	while ((PCR_REGS->OSC_ID & MCHP_PCR_OSC_ID_PLL_LOCK) == 0)
+		;
 }
 
 static int soc_clk32_init(void)
@@ -87,9 +79,12 @@ static int soc_clk32_init(void)
 	/* Use internal 32KHz +/-2% silicon oscillator
 	 * if required performed OTP value override
 	 */
-	if (MCHP_REVISION_ID() == MCHP_GCFG_REV_B0) {
-		VBATR_REGS->CKK32_TRIM = 0x06;
+	if (MCHP_DEVICE_ID() == 0x0020U) { /* MEC150x ? */
+		if (MCHP_REVISION_ID() == MCHP_GCFG_REV_B0) {
+			VBATR_REGS->CKK32_TRIM = 0x06U;
+		}
 	}
+
 	new_clk32 = MCHP_VBATR_USE_SIL_OSC;
 #endif
 	clk32_change(new_clk32);

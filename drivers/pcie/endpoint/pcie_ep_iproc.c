@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <drivers/dma.h>
 #include <drivers/pcie/endpoint/pcie_ep.h>
 
 #define LOG_LEVEL CONFIG_PCIE_EP_LOG_LEVEL
@@ -118,18 +119,6 @@ static void iproc_pcie_unmap_addr(const struct device *dev,
 
 	key = k_spin_lock(&ctx->ob_map_lock);
 
-	/*
-	 * When doing Host writes using PCIe outbound window, it is seen
-	 * that before the writes gets completed using the existing outbound
-	 * window mapping, next mapping is overwriting it, causing few bytes
-	 * write failure with former mapping.
-	 *
-	 * To safeguard outbound window mapping, perform PCIe read in unmap,
-	 * which ensures that all PCIe writes before the read
-	 * are completed with this window.
-	 */
-	sys_read8(mapped_addr);
-
 	if (mapped_addr >> 32) {
 		ctx->highmem_in_use = false;
 	} else {
@@ -182,6 +171,55 @@ static int iproc_pcie_register_reset_cb(const struct device *dev,
 	ctx->reset_data[reset] = arg;
 
 	return 0;
+}
+
+static int iproc_pcie_pl330_dma_xfer(const struct device *dev,
+				     uint64_t mapped_addr,
+				     uintptr_t local_addr, uint32_t size,
+				     const enum xfer_direction dir)
+{
+	const struct iproc_pcie_ep_config *cfg = dev->config;
+	struct dma_config dma_cfg = { 0 };
+	struct dma_block_config dma_block_cfg = { 0 };
+	const struct device *pl330_dev;
+	uint32_t chan_id;
+	int ret = -EINVAL;
+
+	pl330_dev = device_get_binding(cfg->pl330_dev_name);
+	if (!pl330_dev) {
+		LOG_ERR("Cannot get dma controller\n");
+		goto out;
+	}
+
+	/* configure DMA */
+	dma_cfg.channel_direction = MEMORY_TO_MEMORY;
+	dma_cfg.block_count = 1U;
+	dma_cfg.head_block = &dma_block_cfg;
+
+	dma_block_cfg.block_size = size;
+	if (dir == DEVICE_TO_HOST) {
+		dma_block_cfg.source_address = local_addr;
+		dma_block_cfg.dest_address = mapped_addr;
+		chan_id = cfg->pl330_tx_chan_id;
+	} else {
+		dma_block_cfg.source_address = mapped_addr;
+		dma_block_cfg.dest_address = local_addr;
+		chan_id = cfg->pl330_rx_chan_id;
+	}
+
+	ret = dma_config(pl330_dev, chan_id,  &dma_cfg);
+	if (ret) {
+		LOG_ERR("DMA config failed\n");
+		goto out;
+	}
+
+	/* start DMA */
+	ret = dma_start(pl330_dev, chan_id);
+	if (ret) {
+		LOG_ERR("DMA transfer failed\n");
+	}
+out:
+	return ret;
 }
 
 #if DT_INST_IRQ_HAS_NAME(0, perst)
@@ -260,8 +298,6 @@ static void iproc_pcie_flr(const struct device *dev)
 	iproc_pcie_conf_write(dev, PCIE_DEV_CTRL_OFFSET, data);
 }
 #endif
-
-DEVICE_DECLARE(iproc_pcie_ep_0);
 
 static void iproc_pcie_reset_config(const struct device *dev)
 {
@@ -440,6 +476,9 @@ static struct iproc_pcie_ep_config iproc_pcie_ep_config_0 = {
 	.map_low_size = DT_INST_REG_SIZE_BY_NAME(0, map_lowmem),
 	.map_high_base = DT_INST_REG_ADDR_BY_NAME(0, map_highmem),
 	.map_high_size = DT_INST_REG_SIZE_BY_NAME(0, map_highmem),
+	.pl330_dev_name = DT_INST_DMAS_LABEL_BY_IDX(0, 0),
+	.pl330_tx_chan_id = DT_INST_DMAS_CELL_BY_NAME(0, txdma, channel),
+	.pl330_rx_chan_id = DT_INST_DMAS_CELL_BY_NAME(0, rxdma, channel),
 };
 
 static struct pcie_ep_driver_api iproc_pcie_ep_api = {
@@ -449,10 +488,11 @@ static struct pcie_ep_driver_api iproc_pcie_ep_api = {
 	.unmap_addr = iproc_pcie_unmap_addr,
 	.raise_irq = iproc_pcie_raise_irq,
 	.register_reset_cb = iproc_pcie_register_reset_cb,
+	.dma_xfer = iproc_pcie_pl330_dma_xfer,
 };
 
-DEVICE_AND_API_INIT(iproc_pcie_ep_0, DT_INST_LABEL(0),
-		    &iproc_pcie_ep_init, &iproc_pcie_ep_ctx_0,
+DEVICE_DT_INST_DEFINE(0, &iproc_pcie_ep_init, device_pm_control_nop,
+		    &iproc_pcie_ep_ctx_0,
 		    &iproc_pcie_ep_config_0,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &iproc_pcie_ep_api);

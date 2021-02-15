@@ -772,9 +772,9 @@ static struct gpio_pca95xx_drv_data gpio_pca95xx_##inst##_drvdata = {	\
 	))								\
 };									\
 									\
-DEVICE_AND_API_INIT(gpio_pca95xx_##inst,				\
-	DT_INST_LABEL(inst),				\
+DEVICE_DT_INST_DEFINE(inst,						\
 	gpio_pca95xx_init,						\
+	device_pm_control_nop,						\
 	&gpio_pca95xx_##inst##_drvdata,					\
 	&gpio_pca95xx_##inst##_cfg,					\
 	POST_KERNEL, CONFIG_GPIO_PCA95XX_INIT_PRIORITY,			\

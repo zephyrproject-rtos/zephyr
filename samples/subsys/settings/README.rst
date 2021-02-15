@@ -8,7 +8,7 @@ Overview
 
 This is a simple application demonstrating use of the settings runtime
 configuration module. In this application some configuration values are loaded
-form persistient storage and exported to persistent storage using different
+from persistent storage and exported to persistent storage using different
 settings method. The example shows how to implement module handlers, how to
 register them.
 

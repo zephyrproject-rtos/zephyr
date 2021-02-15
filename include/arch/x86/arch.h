@@ -27,6 +27,21 @@
 extern "C" {
 #endif
 
+#ifdef CONFIG_PCIE_MSI
+
+struct x86_msi_vector {
+	unsigned int irq;
+	uint8_t vector;
+#ifdef CONFIG_INTEL_VTD_ICTL
+	bool remap;
+	uint8_t irte;
+#endif
+};
+
+typedef struct x86_msi_vector arch_msi_vector_t;
+
+#endif /* CONFIG_PCIE_MSI */
+
 static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 {
 	if ((key & 0x00000200U) != 0U) { /* 'IF' bit */

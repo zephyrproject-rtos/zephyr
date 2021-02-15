@@ -332,11 +332,9 @@ static const struct counter_driver_api counter_gecko_driver_api = {
 
 /* RTCC0 */
 
-DEVICE_DECLARE(counter_gecko_0);
-
 ISR_DIRECT_DECLARE(counter_gecko_isr_0)
 {
-	const struct device *dev = DEVICE_GET(counter_gecko_0);
+	const struct device *dev = DEVICE_DT_INST_GET(0);
 	struct counter_gecko_data *const dev_data = DEV_DATA(dev);
 	counter_alarm_callback_t alarm_callback;
 	uint32_t count = RTCC_CounterGet();
@@ -392,7 +390,7 @@ static const struct counter_gecko_config counter_gecko_0_config = {
 
 static struct counter_gecko_data counter_gecko_0_data;
 
-DEVICE_AND_API_INIT(counter_gecko_0, DT_INST_LABEL(0),
-	counter_gecko_init, &counter_gecko_0_data, &counter_gecko_0_config,
+DEVICE_DT_INST_DEFINE(0, counter_gecko_init, device_pm_control_nop,
+	&counter_gecko_0_data, &counter_gecko_0_config,
 	PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 	&counter_gecko_driver_api);

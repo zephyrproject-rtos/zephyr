@@ -486,7 +486,7 @@
 			compatible = "st,stm32-rtc";
 			reg = <0x40002800 0x400>;
 			interrupts = <41 0>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000400>;
 			prescaler = <32768>;
 			status = "disabled";
 			label = "RTC_0";
@@ -512,6 +512,37 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00800000>;
 			status = "disabled";
 			label= "USB";
+		};
+
+		dma1: dma@40020000 {
+			compatible = "st,stm32-dma-v2";
+			#dma-cells = <4>;
+			reg = <0x40020000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x1>;
+			dma-offset = <0>;
+			status = "disabled";
+			label = "DMA_1";
+		};
+
+		dma2: dma@40020400 {
+			compatible = "st,stm32-dma-v2";
+			#dma-cells = <4>;
+			reg = <0x40020400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x2>;
+			status = "disabled";
+			label = "DMA_2";
+		};
+
+		dmamux1: dmamux@40020800 {
+			compatible = "st,stm32-dmamux";
+			#dma-cells = <4>;
+			reg = <0x40020800 0x400>;
+			interrupts = <94 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x4>;
+			dma-generators = <4>;
+			dma-requests= <21>;
+			status = "disabled";
+			label = "DMAMUX_1";
 		};
 
 	};

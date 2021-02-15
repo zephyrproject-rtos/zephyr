@@ -55,10 +55,10 @@
 	nsim_isa_dc_feature_level=2
 	icache=16384,32,2,a
 	nsim_isa_ic_feature_level=2
-	dccm_size=0x80000
+	dccm_size=0x100000
 	dccm_base=0x80000000
 	nsim_isa_dccm_interleave=1
-	iccm0_size=0x80000
+	iccm0_size=0x100000
 	iccm0_base=0x00000000
 	nsim_isa_pct_counters=8
 	nsim_isa_dmac_option=1

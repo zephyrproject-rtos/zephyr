@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config NPCX_MIWU
-	bool "Nuvoton NPCX embedd controller (EC) miwu driver"
+	bool "Nuvoton NPCX embedded controller (EC) miwu driver"
 	default y
 	depends on SOC_FAMILY_NPCX
 	help

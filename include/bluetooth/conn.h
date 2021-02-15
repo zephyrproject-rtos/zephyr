@@ -197,9 +197,12 @@ struct bt_conn_le_data_len_param {
  *
  *  Increment the reference count of a connection object.
  *
+ *  @note Will return NULL if the reference count is zero.
+ *
  *  @param conn Connection object.
  *
- *  @return Connection object with incremented reference count.
+ *  @return Connection object with incremented reference count, or NULL if the
+ *          reference count is zero.
  */
 struct bt_conn *bt_conn_ref(struct bt_conn *conn);
 
@@ -367,6 +370,32 @@ struct bt_conn_remote_info {
 	};
 };
 
+enum bt_conn_le_tx_power_phy {
+	/** Convenience macro for when no PHY is set. */
+	BT_CONN_LE_TX_POWER_PHY_NONE,
+	/** LE 1M PHY */
+	BT_CONN_LE_TX_POWER_PHY_1M,
+	 /** LE 2M PHY */
+	BT_CONN_LE_TX_POWER_PHY_2M,
+	/** LE Coded PHY using S=8 coding. */
+	BT_CONN_LE_TX_POWER_PHY_CODED_S8,
+	/** LE Coded PHY using S=2 coding. */
+	BT_CONN_LE_TX_POWER_PHY_CODED_S2,
+};
+
+/** LE Transmit Power Level Structure */
+struct bt_conn_le_tx_power {
+
+	/** Input: 1M, 2M, Coded S2 or Coded S8 */
+	uint8_t phy;
+
+	/** Output: current transmit power level */
+	int8_t current_level;
+
+	/** Output: maximum transmit power level */
+	int8_t max_level;
+};
+
 /** @brief Get connection info
  *
  *  @param conn Connection object.
@@ -393,6 +422,17 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info);
  */
 int bt_conn_get_remote_info(struct bt_conn *conn,
 			    struct bt_conn_remote_info *remote_info);
+
+/** @brief Get connection transmit power level.
+ *
+ *  @param conn           Connection object.
+ *  @param tx_power_level Transmit power level descriptor.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ *  @return -ENOBUFS HCI command buffer is not available.
+ */
+int bt_conn_le_get_tx_power_level(struct bt_conn *conn,
+				  struct bt_conn_le_tx_power *tx_power_level);
 
 /** @brief Update the connection parameters.
  *
@@ -435,6 +475,18 @@ int bt_conn_le_phy_update(struct bt_conn *conn,
  *
  *  Disconnect an active connection with the specified reason code or cancel
  *  pending outgoing connection.
+ *
+ *  The disconnect reason for a normal disconnect should be:
+ *  @ref BT_HCI_ERR_REMOTE_USER_TERM_CONN.
+ *
+ *  The following disconnect reasons are accepted:
+ *   - @ref BT_HCI_ERR_AUTH_FAIL
+ *   - @ref BT_HCI_ERR_REMOTE_USER_TERM_CONN
+ *   - @ref BT_HCI_ERR_REMOTE_LOW_RESOURCES
+ *   - @ref BT_HCI_ERR_REMOTE_POWER_OFF
+ *   - @ref BT_HCI_ERR_UNSUPP_REMOTE_FEATURE
+ *   - @ref BT_HCI_ERR_PAIRING_NOT_SUPPORTED
+ *   - @ref BT_HCI_ERR_UNACCEPT_CONN_PARAM
  *
  *  @param conn Connection to disconnect.
  *  @param reason Reason code for the disconnection.
@@ -490,7 +542,7 @@ struct bt_conn_le_create_param {
 	 *  Set zero to use the default @option{CONFIG_BT_CREATE_CONN_TIMEOUT}
 	 *  timeout.
 	 *
-	 *  @note Unused in @ref bt_conn_create_auto_le
+	 *  @note Unused in @ref bt_conn_le_create_auto
 	 */
 	uint16_t timeout;
 };
@@ -560,24 +612,6 @@ int bt_conn_le_create(const bt_addr_le_t *peer,
 		      const struct bt_le_conn_param *conn_param,
 		      struct bt_conn **conn);
 
-__deprecated static inline
-struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
-				  const struct bt_le_conn_param *conn_param)
-{
-	struct bt_conn *conn;
-	struct bt_conn_le_create_param param = BT_CONN_LE_CREATE_PARAM_INIT(
-						BT_CONN_LE_OPT_NONE,
-						BT_GAP_SCAN_FAST_INTERVAL,
-						BT_GAP_SCAN_FAST_INTERVAL);
-
-	if (bt_conn_le_create(peer, &param, conn_param,
-			      &conn)) {
-		return NULL;
-	}
-
-	return conn;
-}
-
 /** @brief Automatically connect to remote devices in whitelist.
  *
  *  This uses the Auto Connection Establishment procedure.
@@ -595,17 +629,6 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
  */
 int bt_conn_le_create_auto(const struct bt_conn_le_create_param *create_param,
 			   const struct bt_le_conn_param *conn_param);
-
-__deprecated static inline
-int bt_conn_create_auto_le(const struct bt_le_conn_param *conn_param)
-{
-	struct bt_conn_le_create_param param = BT_CONN_LE_CREATE_PARAM_INIT(
-						BT_CONN_LE_OPT_NONE,
-						BT_GAP_SCAN_FAST_INTERVAL,
-						BT_GAP_SCAN_FAST_WINDOW);
-
-	return bt_conn_le_create_auto(&param, conn_param);
-}
 
 /** @brief Stop automatic connect creation.
  *
@@ -630,45 +653,6 @@ int bt_conn_create_auto_stop(void);
 int bt_le_set_auto_conn(const bt_addr_le_t *addr,
 			const struct bt_le_conn_param *param);
 
-/** @brief Initiate directed advertising to a remote device
- *
- *  Allows initiating a new LE connection to remote peer with the remote
- *  acting in central role and the local device in peripheral role.
- *
- *  The advertising type will either be BT_LE_ADV_DIRECT_IND, or
- *  BT_LE_ADV_DIRECT_IND_LOW_DUTY if the BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY
- *  option was used as part of the advertising parameters.
- *
- *  In case of high duty cycle this will result in a callback with
- *  connected() with a new connection or with an error.
- *
- *  The advertising may be canceled with bt_conn_disconnect().
- *
- *  The caller gets a new reference to the connection object which must be
- *  released with bt_conn_unref() once done using the object.
- *
- *  @param peer  Remote address.
- *  @param param Directed advertising parameters.
- *
- *  @return Valid connection object on success or NULL otherwise.
- */
-__deprecated static inline
-struct bt_conn *bt_conn_create_slave_le(const bt_addr_le_t *peer,
-					const struct bt_le_adv_param *param)
-{
-	struct bt_le_adv_param adv_param = *param;
-
-	adv_param.options |= (BT_LE_ADV_OPT_CONNECTABLE |
-			      BT_LE_ADV_OPT_ONE_TIME);
-	adv_param.peer = peer;
-
-	if (!bt_le_adv_start(&adv_param, NULL, 0, NULL, 0)) {
-		return NULL;
-	}
-
-	return bt_conn_lookup_addr_le(param->id, peer);
-}
-
 /** Security level. */
 typedef enum __packed {
 	/** Level 0: Only for BR/EDR special cases, like SDP */
@@ -681,13 +665,6 @@ typedef enum __packed {
 	BT_SECURITY_L3,
 	/** Level 4: Authenticated Secure Connections and 128-bit key. */
 	BT_SECURITY_L4,
-
-	BT_SECURITY_NONE   __deprecated = BT_SECURITY_L0,
-	BT_SECURITY_LOW    __deprecated = BT_SECURITY_L1,
-	BT_SECURITY_MEDIUM __deprecated = BT_SECURITY_L2,
-	BT_SECURITY_HIGH   __deprecated = BT_SECURITY_L3,
-	BT_SECURITY_FIPS   __deprecated = BT_SECURITY_L4,
-
 	/** Bit to force new pairing procedure, bit-wise OR with requested
 	 *  security level.
 	 */
@@ -696,14 +673,15 @@ typedef enum __packed {
 
 /** @brief Set security level for a connection.
  *
- *  This function enable security (encryption) for a connection. If device is
- *  already paired with sufficiently strong key encryption will be enabled. If
- *  link is already encrypted with sufficiently strong key this function does
- *  nothing.
+ *  This function enable security (encryption) for a connection. If the device
+ *  has bond information for the peer with sufficiently strong key encryption
+ *  will be enabled. If the connection is already encrypted with sufficiently
+ *  strong key this function does nothing.
  *
- *  If device is not paired pairing will be initiated. If device is paired and
- *  keys are too weak but input output capabilities allow for strong enough keys
- *  pairing will be initiated.
+ *  If the device has no bond information for the peer and is not already paired
+ *  then the pairing procedure will be initiated. If the device has bond
+ *  information or is already paired and the keys are too weak then the pairing
+ *  procedure will be initiated.
  *
  *  This function may return error if required level of security is not possible
  *  to achieve due to local or remote device limitation (e.g., input output
@@ -730,12 +708,6 @@ int bt_conn_set_security(struct bt_conn *conn, bt_security_t sec);
  *  @return Connection security level
  */
 bt_security_t bt_conn_get_security(struct bt_conn *conn);
-
-static inline int __deprecated bt_conn_security(struct bt_conn *conn,
-						bt_security_t sec)
-{
-	return bt_conn_set_security(conn, sec);
-}
 
 /** @brief Get encryption key size.
  *
@@ -799,7 +771,7 @@ struct bt_conn_cb {
 	 *
 	 *  @p err can mean either of the following:
 	 *  - @ref BT_HCI_ERR_UNKNOWN_CONN_ID Creating the connection started by
-	 *    @ref bt_conn_create_le was canceled either by the user through
+	 *    @ref bt_conn_le_create was canceled either by the user through
 	 *    @ref bt_conn_disconnect or by the timeout in the host through
 	 *    @ref bt_conn_le_create_param timeout parameter, which defaults to
 	 *    @option{CONFIG_BT_CREATE_CONN_TIMEOUT} seconds.
@@ -881,8 +853,15 @@ struct bt_conn_cb {
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
 	/** @brief The security level of a connection has changed.
 	 *
-	 *  This callback notifies the application that the security level
-	 *  of a connection has changed.
+	 *  This callback notifies the application that the security of a
+	 *  connection has changed.
+	 *
+	 *  The security level of the connection can either have been increased
+	 *  or remain unchanged. An increased security level means that the
+	 *  pairing procedure has been performed or the bond information from
+	 *  a previous connection has been applied. If the security level
+	 *  remains unchanged this means that the encryption key has been
+	 *  refreshed for the connection.
 	 *
 	 *  @param conn Connection object.
 	 *  @param level New security level of the connection.
@@ -1276,13 +1255,14 @@ struct bt_conn_auth_cb {
 	void (*pincode_entry)(struct bt_conn *conn, bool highsec);
 #endif
 
-	/** @brief notify that pairing process was complete.
+	/** @brief notify that pairing procedure was complete.
 	 *
-	 *  This callback notifies the application that the pairing process
+	 *  This callback notifies the application that the pairing procedure
 	 *  has been completed.
 	 *
 	 *  @param conn Connection object.
-	 *  @param bonded pairing is bonded or not.
+	 *  @param bonded Bond information has been distributed during the
+	 *                pairing procedure.
 	 */
 	void (*pairing_complete)(struct bt_conn *conn, bool bonded);
 

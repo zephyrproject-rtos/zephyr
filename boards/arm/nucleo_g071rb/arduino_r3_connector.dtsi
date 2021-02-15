@@ -34,3 +34,6 @@
 			   <21 0 &gpiob 8 0>;	/* D15 */
 	};
 };
+
+arduino_i2c: &i2c1 {};
+arduino_spi: &spi1 {};

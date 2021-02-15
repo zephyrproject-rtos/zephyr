@@ -1,7 +1,7 @@
 common:
   # There is nothing hw specific to be tested here
-  # so let's limit the test to qemu_x86
-  platform_allow: qemu_x86
+  # so let's limit the test to a few platforms.
+  platform_allow: qemu_x86 qemu_leon3 qemu_riscv32 qemu_riscv64
   depends_on: netif
 tests:
   net.pm:

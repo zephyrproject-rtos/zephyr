@@ -35,12 +35,16 @@ zephyr_library_sources_ifdef(CONFIG_UART_XLNX_PS uart_xlnx_ps.c)
 zephyr_library_sources_ifdef(CONFIG_UART_XLNX_UARTLITE uart_xlnx_uartlite.c)
 zephyr_library_sources_ifdef(CONFIG_UART_XMC4XXX uart_xmc4xxx.c)
 zephyr_library_sources_ifdef(CONFIG_UART_NPCX uart_npcx.c)
+zephyr_library_sources_ifdef(CONFIG_UART_APBUART uart_apbuart.c)
+zephyr_library_sources_ifdef(CONFIG_USB_CDC_ACM ${ZEPHYR_BASE}/misc/empty_file.c)
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE   uart_handlers.c)
 
 if(CONFIG_UART_NS16550)
   zephyr_library_sources(uart_ns16550.c)
-  foreach(NUM RANGE 0 3)
+  math(EXPR max_index "${CONFIG_UART_NS16550_MAX_INSTANCES} - 1")
+  foreach(NUM RANGE 0 ${max_index})
+    math(EXPR NEXT_NUM "${NUM} + 1")
     configure_file(
       uart_ns16550_port_x.h
       ${PROJECT_BINARY_DIR}/include/generated/uart_ns16550_port_${NUM}.h

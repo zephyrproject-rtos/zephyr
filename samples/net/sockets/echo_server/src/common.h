@@ -13,8 +13,15 @@
 #else
 #define STACK_SIZE 1024
 #endif
-#define THREAD_PRIORITY K_PRIO_COOP(8)
+
+#if IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)
+#define THREAD_PRIORITY K_PRIO_COOP(CONFIG_NUM_COOP_PRIORITIES - 1)
+#else
+#define THREAD_PRIORITY K_PRIO_PREEMPT(8)
+#endif
+
 #define RECV_BUFFER_SIZE 1280
+#define STATS_TIMER 60 /* How often to print statistics (in seconds) */
 
 #if defined(CONFIG_USERSPACE)
 #include <app_memory/app_memdomain.h>
@@ -34,10 +41,14 @@ struct data {
 		int sock;
 		char recv_buffer[RECV_BUFFER_SIZE];
 		uint32_t counter;
+		atomic_t bytes_received;
+		struct k_delayed_work stats_print;
 	} udp;
 
 	struct {
 		int sock;
+		atomic_t bytes_received;
+		struct k_delayed_work stats_print;
 
 		struct {
 			int sock;

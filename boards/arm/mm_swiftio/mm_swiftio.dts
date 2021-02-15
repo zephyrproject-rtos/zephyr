@@ -20,6 +20,7 @@
 
 	chosen {
 		zephyr,sram = &sdram0;
+		zephyr,itcm = &itcm;
 		zephyr,dtcm = &dtcm;
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
@@ -54,7 +55,7 @@
 &flexspi {
 	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(8)>;
 	is25wp064: is25wp064@0 {
-		compatible = "issi,is25wp064", "jedec,spi-nor";
+		compatible = "nxp,imx-flexspi-nor";
 		size = <67108864>;
 		label = "IS25WP064";
 		reg = <0>;
@@ -95,6 +96,21 @@
 
 &lpi2c3 {
 	status = "okay";
+
+	ov7725@21 {
+		compatible = "ovti,ov7725";
+		reg = <0x21>;
+		label = "OV7725";
+		status = "okay";
+
+		reset-gpios = <&gpio2 20 GPIO_ACTIVE_HIGH>;
+
+		port {
+			ov7725_ep_out: endpoint {
+				remote-endpoint = <&csi_ep_in>;
+			};
+		};
+	};
 };
 
 &lpspi3 {
@@ -154,4 +170,15 @@
 &usdhc1 {
 	status = "okay";
 	cd-gpios = <&gpio2 28 GPIO_ACTIVE_LOW>;
+};
+
+&csi {
+	status = "okay";
+	sensor-label = "OV7725";
+
+	port {
+		csi_ep_in: endpoint {
+			remote-endpoint = <&ov7725_ep_out>;
+		};
+	};
 };

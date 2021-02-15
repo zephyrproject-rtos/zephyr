@@ -12,10 +12,8 @@
 #include <stdbool.h>
 #include <spinlock.h>
 #include <sys/libc-hooks.h>
-
-#define LOG_LEVEL CONFIG_KERNEL_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_DECLARE(os);
+LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 struct k_spinlock z_mem_domain_lock;
 static uint8_t max_partitions;
@@ -269,6 +267,7 @@ void k_mem_domain_add_thread(struct k_mem_domain *domain, k_tid_t thread)
 	k_spin_unlock(&z_mem_domain_lock, key);
 }
 
+/* LCOV_EXCL_START */
 void k_mem_domain_remove_thread(k_tid_t thread)
 {
 	k_mem_domain_add_thread(&k_mem_domain_default, thread);
@@ -299,6 +298,7 @@ void k_mem_domain_destroy(struct k_mem_domain *domain)
 
 	k_spin_unlock(&z_mem_domain_lock, key);
 }
+/* LCOV_EXCL_STOP */
 
 static int init_mem_domain_module(const struct device *arg)
 {

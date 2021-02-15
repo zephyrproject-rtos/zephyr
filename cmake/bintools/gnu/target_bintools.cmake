@@ -68,7 +68,7 @@ set_property(TARGET bintools PROPERTY disassembly_flag_inline_source -S)
 set_property(TARGET bintools PROPERTY disassembly_flag_all -SDz)
 
 set_property(TARGET bintools PROPERTY disassembly_flag_infile "")
-set_property(TARGET bintools PROPERTY disassembly_flag_outfile > )
+set_property(TARGET bintools PROPERTY disassembly_flag_outfile ">;" )
 
 #
 # - strip: Name of command for stripping symbols
@@ -114,7 +114,7 @@ set_property(TARGET bintools PROPERTY readelf_flag_final "")
 set_property(TARGET bintools PROPERTY readelf_flag_headers -e)
 
 set_property(TARGET bintools PROPERTY readelf_flag_infile "")
-set_property(TARGET bintools PROPERTY readelf_flag_outfile > )
+set_property(TARGET bintools PROPERTY readelf_flag_outfile ">;" )
 
 # Example on how to support dwarfdump instead of readelf
 #set_property(TARGET bintools PROPERTY readelf_command dwarfdump)

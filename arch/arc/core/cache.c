@@ -25,14 +25,8 @@
 #include <init.h>
 #include <stdbool.h>
 
-#if (CONFIG_CACHE_LINE_SIZE == 0) && !defined(CONFIG_CACHE_LINE_SIZE_DETECT)
-#error Cannot use this implementation with a cache line size of 0
-#endif
-
-#if defined(CONFIG_CACHE_LINE_SIZE_DETECT)
-#define DCACHE_LINE_SIZE sys_cache_line_size
-#else
-#define DCACHE_LINE_SIZE CONFIG_CACHE_LINE_SIZE
+#if defined(CONFIG_DCACHE_LINE_SIZE_DETECT)
+size_t sys_cache_line_size;
 #endif
 
 #define DC_CTRL_DC_ENABLE            0x0  /* enable d-cache */
@@ -62,24 +56,25 @@ static void dcache_dc_ctrl(uint32_t dcache_en_mask)
 	}
 }
 
-static void dcache_enable(void)
+void arch_dcache_enable(void)
 {
 	dcache_dc_ctrl(DC_CTRL_DC_ENABLE);
 }
 
-void arch_dcache_flush(void *start_addr_ptr, size_t size)
+static void arch_dcache_flush(void *start_addr_ptr, size_t size)
 {
+	size_t line_size = sys_dcache_line_size_get();
 	uintptr_t start_addr = (uintptr_t)start_addr_ptr;
 	uintptr_t end_addr;
 	unsigned int key;
 
-	if (!dcache_available() || (size == 0U)) {
+	if (!dcache_available() || (size == 0U) || line_size == 0U) {
 		return;
 	}
 
 	end_addr = start_addr + size;
 
-	start_addr = ROUND_DOWN(start_addr, DCACHE_LINE_SIZE);
+	start_addr = ROUND_DOWN(start_addr, line_size);
 
 	key = arch_irq_lock(); /* --enter critical section-- */
 
@@ -95,24 +90,25 @@ void arch_dcache_flush(void *start_addr_ptr, size_t size)
 				break;
 			}
 		} while (1);
-		start_addr += DCACHE_LINE_SIZE;
+		start_addr += line_size;
 	} while (start_addr < end_addr);
 
 	arch_irq_unlock(key); /* --exit critical section-- */
 
 }
 
-void arch_dcache_invd(void *start_addr_ptr, size_t size)
+static void arch_dcache_invd(void *start_addr_ptr, size_t size)
 {
+	size_t line_size = sys_dcache_line_size_get();
 	uintptr_t start_addr = (uintptr_t)start_addr_ptr;
 	uintptr_t end_addr;
 	unsigned int key;
 
-	if (!dcache_available() || (size == 0U)) {
+	if (!dcache_available() || (size == 0U) || line_size == 0U) {
 		return;
 	}
 	end_addr = start_addr + size;
-	start_addr = ROUND_DOWN(start_addr, DCACHE_LINE_SIZE);
+	start_addr = ROUND_DOWN(start_addr, line_size);
 
 	key = arch_irq_lock(); /* -enter critical section- */
 
@@ -121,13 +117,29 @@ void arch_dcache_invd(void *start_addr_ptr, size_t size)
 		__builtin_arc_nop();
 		__builtin_arc_nop();
 		__builtin_arc_nop();
-		start_addr += DCACHE_LINE_SIZE;
+		start_addr += line_size;
 	} while (start_addr < end_addr);
 	irq_unlock(key); /* -exit critical section- */
 }
 
-#if defined(CONFIG_CACHE_LINE_SIZE_DETECT)
-size_t sys_cache_line_size;
+int arch_dcache_range(void *addr, size_t size, int op)
+{
+	if (op == K_CACHE_INVD) {
+		/*
+		 * TODO: On invalidate we can contextually flush by setting the
+		 * DC_CTRL_INVALID_FLUSH bit
+		 */
+		arch_dcache_invd(addr, size);
+	} else if (op == K_CACHE_WB) {
+		arch_dcache_flush(addr, size);
+	} else {
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+#if defined(CONFIG_DCACHE_LINE_SIZE_DETECT)
 static void init_dcache_line_size(void)
 {
 	uint32_t val;
@@ -138,24 +150,20 @@ static void init_dcache_line_size(void)
 	val *= 16U;
 	sys_cache_line_size = (size_t) val;
 }
-#endif
 
-size_t arch_cache_line_size_get(void)
+size_t arch_dcache_line_size_get(void)
 {
-#if defined(CONFIG_CACHE_LINE_SIZE_DETECT)
 	return sys_cache_line_size;
-#else
-	return 0;
-#endif
 }
+#endif
 
 static int init_dcache(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 
-	dcache_enable();
+	arch_dcache_enable();
 
-#if defined(CONFIG_CACHE_LINE_SIZE_DETECT)
+#if defined(CONFIG_DCACHE_LINE_SIZE_DETECT)
 	init_dcache_line_size();
 #endif
 

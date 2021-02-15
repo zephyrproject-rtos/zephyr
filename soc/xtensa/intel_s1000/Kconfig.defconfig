@@ -12,6 +12,10 @@ config SOC_SERIES
 	string
 	default "intel_s1000"
 
+config SOC_TOOLCHAIN_NAME
+	string
+	default "intel_s1000"
+
 config IRQ_OFFLOAD_INTNUM
 	default 0
 

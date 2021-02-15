@@ -14,13 +14,13 @@ static K_THREAD_STACK_DEFINE(child_stack, 512 + CONFIG_TEST_EXTRA_STACKSIZE);
 static struct k_mem_domain test_domain;
 
 #define PARTS_USED	2
-/* Maximum number of alloable memory partitions defined by the build */
+/* Maximum number of allowable memory partitions defined by the build */
 #define NUM_RW_PARTS	(CONFIG_MAX_DOMAIN_PARTITIONS - PARTS_USED)
 
 /* Max number of allowable partitions, derived at runtime. Might be less. */
 ZTEST_BMEM int num_rw_parts;
 
-/* Set of read-write buffers each in their own partrition */
+/* Set of read-write buffers each in their own partition */
 static volatile uint8_t __aligned(MEM_REGION_ALLOC)
 	rw_bufs[NUM_RW_PARTS][MEM_REGION_ALLOC];
 static struct k_mem_partition rw_parts[NUM_RW_PARTS];
@@ -29,6 +29,9 @@ static struct k_mem_partition rw_parts[NUM_RW_PARTS];
 static volatile uint8_t __aligned(MEM_REGION_ALLOC) ro_buf[MEM_REGION_ALLOC];
 K_MEM_PARTITION_DEFINE(ro_part, ro_buf, sizeof(ro_buf),
 		       K_MEM_PARTITION_P_RO_U_RO);
+/* A partition to test overlap that has same ro_buf as a partition ro_part */
+K_MEM_PARTITION_DEFINE(overlap_part, ro_buf, sizeof(ro_buf),
+		       K_MEM_PARTITION_P_RW_U_RW);
 
 /* Static thread, used by a couple tests */
 static void zzz_entry(void *p1, void *p2, void *p3)
@@ -264,4 +267,192 @@ void test_mem_domain_boot_threads(void)
 		     z_main_thread.mem_domain_info.mem_domain);
 
 	k_thread_abort(zzz_thread);
+}
+
+static ZTEST_BMEM volatile bool spin_done;
+static K_SEM_DEFINE(spin_sem, 0, 1);
+
+static void spin_entry(void *p1, void *p2, void *p3)
+{
+	printk("spin thread entry\n");
+	k_sem_give(&spin_sem);
+
+	while (!spin_done) {
+		k_busy_wait(1);
+	}
+	printk("spin thread completed\n");
+}
+
+/**
+ * @brief Show that moving a thread from one domain to another works
+ *
+ * Start a thread and have it spin. Then while it is spinning, show that
+ * adding it to another memory domain doesn't cause any faults.
+ *
+ * This test is of particular importance on SMP systems where the child
+ * thread is spinning on a different CPU concurrently with the migration
+ * operation.
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see k_mem_domain_add_thread()
+ */
+
+#if CONFIG_MP_NUM_CPUS > 1
+#define PRIO	K_PRIO_COOP(0)
+#else
+#define PRIO	K_PRIO_PREEMPT(1)
+#endif
+
+void test_mem_domain_migration(void)
+{
+	int ret;
+
+	set_fault_valid(false);
+
+	k_thread_create(&child_thread, child_stack,
+			K_THREAD_STACK_SIZEOF(child_stack), spin_entry,
+			NULL, NULL, NULL,
+			PRIO, K_USER | K_INHERIT_PERMS, K_FOREVER);
+	k_thread_name_set(&child_thread, "child_thread");
+	k_object_access_grant(&spin_sem, &child_thread);
+	k_thread_start(&child_thread);
+
+	/* Ensure that the child thread has started */
+	ret = k_sem_take(&spin_sem, K_FOREVER);
+	zassert_equal(ret, 0, "k_sem_take failed");
+
+	/* Now move it to test_domain. This domain also has the ztest partition,
+	 * so the child thread should keep running and not explode
+	 */
+	printk("migrate to new domain\n");
+	k_mem_domain_add_thread(&test_domain, &child_thread);
+
+	/**TESTPOINT: add to existing domain will do nothing */
+	k_mem_domain_add_thread(&test_domain, &child_thread);
+
+	/* set spin_done so the child thread completes */
+	printk("set test completion\n");
+	spin_done = true;
+
+	k_thread_join(&child_thread, K_FOREVER);
+}
+
+/**
+ * @brief Test system assert when new partition overlaps the existing partition
+ *
+ * @details
+ * Test Objective:
+ * - Test assertion if the new partition overlaps existing partition in domain
+ *
+ * Testing techniques:
+ * - System testing
+ *
+ * Prerequisite Conditions:
+ * - N/A
+ *
+ * Input Specifications:
+ * - N/A
+ *
+ * Test Procedure:
+ * -# Define testing memory partition overlap_part with the same start ro_buf
+ *  as has the existing memory partition ro_part
+ * -# Try to add overlap_part to the memory domain. When adding the new
+ *  partition to the memory domain the system will assert that new partition
+ *  overlaps with the existing partition ro_part .
+ *
+ * Expected Test Result:
+ * - Must happen an assertion error indicating that the new partition overlaps
+ *   the existing one.
+ *
+ * Pass/Fail Criteria:
+ * - Success if the overlap assertion will happen.
+ * - Failure if the overlap assertion will not happen.
+ *
+ * Assumptions and Constraints:
+ * - N/A
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see k_mem_domain_add_partition()
+ */
+void test_mem_part_overlap(void)
+{
+	set_fault_valid(true);
+
+	k_mem_domain_add_partition(&test_domain, &overlap_part);
+}
+
+
+extern struct k_spinlock z_mem_domain_lock;
+
+static ZTEST_BMEM bool need_recover_spinlock;
+
+static struct k_mem_domain test_domain_fail;
+
+void post_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
+{
+	if (need_recover_spinlock) {
+		k_spin_release(&z_mem_domain_lock);
+
+		need_recover_spinlock = false;
+	}
+}
+
+#if defined(CONFIG_ASSERT)
+static volatile uint8_t __aligned(MEM_REGION_ALLOC) misc_buf[MEM_REGION_ALLOC];
+K_MEM_PARTITION_DEFINE(find_no_part, misc_buf, sizeof(misc_buf),
+		       K_MEM_PARTITION_P_RO_U_RO);
+
+/**
+ * @brief Test error case of removing memory partition fail
+ *
+ * @details Try to remove a partition not in the domain will cause
+ * assertion, then triggher an expected fatal error.
+ * And while the fatal error happened, the memory domain spinlock
+ * is held, we need to release them to make other follow test case.
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+void test_mem_domain_remove_part_fail(void)
+{
+	struct k_mem_partition *no_parts = &find_no_part;
+
+	need_recover_spinlock = true;
+	set_fault_valid(true);
+	k_mem_domain_remove_partition(&test_domain, no_parts);
+}
+#else
+void test_mem_domain_remove_part_fail(void)
+{
+	ztest_test_skip();
+}
+#endif
+
+/**
+ * @brief Test error case of initializing memory domain fail
+ *
+ * @details Try to initialize a domain with invalid partition, then see
+ * if an expected fatal error happens.
+ * And while the fatal error happened, the memory domain spinlock
+ * is held, we need to release them to make other follow test case.
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+void test_mem_domain_init_fail(void)
+{
+	struct k_mem_partition *no_parts[] = {&ro_part, 0};
+
+	/* init another domain fail, expected fault happened */
+	need_recover_spinlock = true;
+	set_fault_valid(true);
+	k_mem_domain_init(&test_domain_fail, ARRAY_SIZE(no_parts),
+			no_parts);
+
+	/* For acrh which not CONFIG_ARCH_MEM_DOMAIN_DATA, if assert is off,
+	 * it will reach here.
+	 */
+#if !defined(CONFIG_ASSERT) && defined(CONFIG_ARCH_MEM_DOMAIN_DATA)
+	zassert_unreachable("should not be here");
+#endif
 }

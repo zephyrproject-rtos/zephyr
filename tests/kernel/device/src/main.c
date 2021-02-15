@@ -51,7 +51,7 @@ extern void test_mmio_device_map(void);
  * @ingroup kernel_device_tests
  *
  * @see device_get_binding(), device_busy_set(), device_busy_clear(),
- * DEVICE_AND_API_INIT()
+ * DEVICE_DEFINE()
  */
 void test_dummy_device(void)
 {
@@ -80,7 +80,7 @@ void test_dummy_device(void)
  *
  * Validates device binding for an existing device object.
  *
- * @see device_get_binding(), DEVICE_AND_API_INIT()
+ * @see device_get_binding(), DEVICE_DEFINE()
  */
 static void test_dynamic_name(void)
 {
@@ -98,7 +98,7 @@ static void test_dynamic_name(void)
  * Validates binding of a random device driver(non-defined driver) named
  * "ANOTHER_BOGUS_NAME".
  *
- * @see device_get_binding(), DEVICE_AND_API_INIT()
+ * @see device_get_binding(), DEVICE_DEFINE()
  */
 static void test_bogus_dynamic_name(void)
 {
@@ -108,6 +108,26 @@ static void test_bogus_dynamic_name(void)
 	snprintk(name, sizeof(name), "ANOTHER_BOGUS_NAME");
 	mux = device_get_binding(name);
 	zassert_true(mux == NULL, NULL);
+}
+
+/**
+ * @brief Test device binding for passing null name
+ *
+ * Validates device binding for device object when given dynamic name is null.
+ *
+ * @see device_get_binding(), DEVICE_DEFINE()
+ */
+static void test_null_dynamic_name(void)
+{
+#if CONFIG_USERSPACE
+	const struct device *mux;
+	char *drv_name = NULL;
+
+	mux = device_get_binding(drv_name);
+	zassert_equal(mux, 0,  NULL);
+#else
+	ztest_test_skip();
+#endif
 }
 
 static struct init_record {
@@ -152,6 +172,15 @@ SYS_INIT(pre2_fn, PRE_KERNEL_2, 0);
 SYS_INIT(post_fn, POST_KERNEL, 0);
 SYS_INIT(app_fn, APPLICATION, 0);
 
+/* This is an error case which driver initializes failed in SYS_INIT .*/
+static int null_driver_init(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	return -EINVAL;
+}
+
+SYS_INIT(null_driver_init, POST_KERNEL, 0);
+
 /**
  * @brief Test detection of initialization before kernel services available.
  *
@@ -185,7 +214,7 @@ void test_pre_kernel_detection(void)
 	}
 }
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 /**
  * @brief Test system device list query API with PM enabled.
  *
@@ -446,6 +475,7 @@ void test_main(void)
 			 ztest_unit_test(test_enable_and_disable_automatic_idle_pm),
 			 ztest_unit_test(test_pre_kernel_detection),
 			 ztest_user_unit_test(test_bogus_dynamic_name),
+			 ztest_user_unit_test(test_null_dynamic_name),
 			 ztest_user_unit_test(test_dynamic_name),
 			 ztest_unit_test(test_device_init_level),
 			 ztest_unit_test(test_device_init_priority),

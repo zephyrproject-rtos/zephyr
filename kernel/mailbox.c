@@ -181,9 +181,7 @@ static void mbox_message_dispose(struct k_mbox_msg *rx_msg)
 		return;
 	}
 
-	/* release sender's memory pool block */
 	if (rx_msg->tx_block.data != NULL) {
-		k_mem_pool_free(&rx_msg->tx_block);
 		rx_msg->tx_block.data = NULL;
 	}
 
@@ -349,40 +347,6 @@ void k_mbox_data_get(struct k_mbox_msg *rx_msg, void *buffer)
 		(void)memcpy(buffer, rx_msg->tx_data, rx_msg->size);
 	}
 	mbox_message_dispose(rx_msg);
-}
-
-int k_mbox_data_block_get(struct k_mbox_msg *rx_msg, struct k_mem_pool *pool,
-			  struct k_mem_block *block, k_timeout_t timeout)
-{
-	int result;
-
-	/* handle case where data is to be discarded */
-	if (pool == NULL) {
-		rx_msg->size = 0;
-		mbox_message_dispose(rx_msg);
-		return 0;
-	}
-
-	/* handle case where data is already in a memory pool block */
-	if (rx_msg->tx_block.data != NULL) {
-		/* give ownership of the block to receiver */
-		*block = rx_msg->tx_block;
-		rx_msg->tx_block.data = NULL;
-
-		/* now dispose of message */
-		mbox_message_dispose(rx_msg);
-		return 0;
-	}
-
-	/* allocate memory pool block (even when message size is 0!) */
-	result = k_mem_pool_alloc(pool, block, rx_msg->size, timeout);
-	if (result != 0) {
-		return result;
-	}
-
-	/* retrieve non-block data into new block, then dispose of message */
-	k_mbox_data_get(rx_msg, block->data);
-	return 0;
 }
 
 /**

@@ -3,7 +3,7 @@ sample:
 tests:
   sample.drivers.spi.flash:
     tags: spi flash
-    filter: dt_compat_enabled("jedec,spi-nor")
+    filter: dt_compat_enabled("jedec,spi-nor") or dt_compat_enabled("st,stm32-qspi-nor")
     harness: console
     harness_config:
         type: multi_line

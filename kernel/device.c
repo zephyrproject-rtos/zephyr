@@ -25,7 +25,7 @@ extern const struct device __device_end[];
 
 extern uint32_t __device_init_status_start[];
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 extern uint32_t __device_busy_start[];
 extern uint32_t __device_busy_end[];
 #define DEVICE_BUSY_SIZE (__device_busy_end - __device_busy_start)
@@ -127,7 +127,7 @@ bool z_device_ready(const struct device *dev)
 					(dev - __device_start)));
 }
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 int device_pm_control_nop(const struct device *unused_device,
 			  uint32_t unused_ctrl_command,
 			  void *unused_context,
@@ -162,7 +162,7 @@ int device_busy_check(const struct device *chk_dev)
 
 void device_busy_set(const struct device *busy_dev)
 {
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 	atomic_set_bit((atomic_t *) __device_busy_start,
 		       (busy_dev - __device_start));
 #else
@@ -172,7 +172,7 @@ void device_busy_set(const struct device *busy_dev)
 
 void device_busy_clear(const struct device *busy_dev)
 {
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 	atomic_clear_bit((atomic_t *) __device_busy_start,
 			 (busy_dev - __device_start));
 #else

@@ -13,8 +13,9 @@ independently executable threads of instructions.
 A :dfn:`thread` is a kernel object that is used for application processing
 that is too lengthy or too complex to be performed by an ISR.
 
-Any number of threads can be defined by an application. Each thread is
-referenced by a :dfn:`thread id` that is assigned when the thread is spawned.
+Any number of threads can be defined by an application (limited only by
+available RAM). Each thread is referenced by a :dfn:`thread id` that is assigned
+when the thread is spawned.
 
 A thread has the following key properties:
 
@@ -81,15 +82,21 @@ A thread that terminates is responsible for releasing any shared resources
 it may own (such as mutexes and dynamically allocated memory)
 prior to returning, since the kernel does *not* reclaim them automatically.
 
-.. note::
-    The kernel does not currently make any claims regarding an application's
-    ability to respawn a thread that terminates.
-
 In some cases a thread may want to sleep until another thread terminates.
 This can be accomplished with the :c:func:`k_thread_join` API. This
 will block the calling thread until either the timeout expires, the target
 thread self-exits, or the target thread aborts (either due to a
 k_thread_abort() call or triggering a fatal error).
+
+Once a thread has terminated, the kernel guarantees that no use will
+be made of the thread struct.  The memory of such a struct can then be
+re-used for any purpose, including spawning a new thread.  Note that
+the thread must be fully terminated, which presents race conditions
+where a thread's own logic signals completion which is seen by another
+thread before the kernel processing is complete.  Under normal
+circumstances, application code should use :c:func:`k_thread_join` or
+:c:func:`k_thread_abort` to synchronize on thread termination state
+and not rely on signaling from within application logic.
 
 Thread Aborting
 ===============
@@ -477,6 +484,28 @@ The following code illustrates the ways a thread can terminate.
 
 If CONFIG_USERSPACE is enabled, aborting a thread will additionally mark the
 thread and stack objects as uninitialized so that they may be re-used.
+
+Runtime Statistics
+******************
+
+Thread runtime statistics can be gathered and retrieved if
+:option:`CONFIG_THREAD_RUNTIME_STATS` is enabled, for example, total number of
+execution cycles of a thread.
+
+By default, the runtime statistics are gathered using the default kernel
+timer. For some architectures, SoCs or boards, there are timers with higher
+resolution available via timing functions. Using of these timers can be
+enabled via :option:`CONFIG_THREAD_RUNTIME_STATS_USE_TIMING_FUNCTIONS`.
+
+Here is an example:
+
+.. code-block:: c
+
+   k_thread_runtime_stats_t rt_stats_thread;
+
+   k_thread_runtime_stats_get(k_current_get(), &rt_stats_thread);
+
+   printk("Cycles: %llu\n", rt_stats_thread.execution_cycles);
 
 Suggested Uses
 **************

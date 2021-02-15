@@ -8,4 +8,7 @@ config BUILD_OUTPUT_BIN
 config BOARD
 	default "qemu_riscv32"
 
+config COMPRESSED_ISA
+	default y
+
 endif

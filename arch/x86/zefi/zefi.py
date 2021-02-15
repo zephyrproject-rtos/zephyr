@@ -8,8 +8,6 @@ import elftools.elf.elffile
 import argparse
 
 ENTRY_SYM = "__start64"
-GCC = "gcc"
-OBJCOPY = "objcopy"
 
 def verbose(msg):
     if args.verbose:
@@ -108,14 +106,14 @@ def build_elf(elf_file):
     #  + We need pic to enforce that the linker adds no relocations
     #  + UEFI can take interrupts on our stack, so no red zone
     #  + UEFI API assumes 16-bit wchar_t
-    cmd = [GCC, "-shared", "-Wall", "-Werror", "-I.",
+    cmd = [args.compiler, "-shared", "-Wall", "-Werror", "-I.",
         "-fno-stack-protector", "-fpic", "-mno-red-zone", "-fshort-wchar",
         "-Wl,-nostdlib", "-T", ldscript, "-o", "zefi.elf", cfile]
     verbose(" ".join(cmd))
     subprocess.run(cmd, check = True)
 
     # Extract the .data segment and append our extra blob
-    cmd = [OBJCOPY, "-O", "binary", "-j", ".data", "zefi.elf", "data.dat"]
+    cmd = [args.objcopy, "-O", "binary", "-j", ".data", "zefi.elf", "data.dat"]
     verbose(" ".join(cmd))
     subprocess.run(cmd, check = True)
 
@@ -125,11 +123,11 @@ def build_elf(elf_file):
     df.close()
 
     # FIXME: this generates warnings about our unused trash section having to be moved to make room.  Set its address far away...
-    subprocess.run([OBJCOPY, "--update-section", ".data=data.dat",
+    subprocess.run([args.objcopy, "--update-section", ".data=data.dat",
                     "zefi.elf"], check = True)
 
     # Convert it to a PE-COFF DLL.
-    cmd = [OBJCOPY, "--target=efi-app-x86_64",
+    cmd = [args.objcopy, "--target=efi-app-x86_64",
         "-j", ".text", "-j", ".reloc", "-j", ".data",
         "zefi.elf", "zephyr.efi"]
     verbose(" ".join(cmd))
@@ -143,6 +141,8 @@ def parse_args():
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
 
+    parser.add_argument("-c", "--compiler", required=True, help="Compiler to be used")
+    parser.add_argument("-o", "--objcopy", required=True, help="objcopy to be used")
     parser.add_argument("-f", "--elf-file", required=True, help="Input file")
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
 

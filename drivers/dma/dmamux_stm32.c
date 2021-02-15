@@ -12,6 +12,7 @@
  */
 
 #include <soc.h>
+#include <stm32_ll_dmamux.h>
 #include <init.h>
 #include <drivers/dma.h>
 #include <drivers/clock_control.h>
@@ -137,6 +138,27 @@ int dmamux_stm32_reload(const struct device *dev, uint32_t id,
 	return 0;
 }
 
+int dmamux_stm32_get_status(const struct device *dev, uint32_t id,
+				struct dma_status *stat)
+{
+	const struct dmamux_stm32_config *dev_config = dev->config;
+	struct dmamux_stm32_data *data = dev->data;
+
+	/* check if this channel is valid */
+	if (id >= dev_config->channel_nb) {
+		LOG_ERR("channel ID %d is too big.", id);
+		return -EINVAL;
+	}
+
+	if (dma_stm32_get_status(data->mux_channels[id].dev_dma,
+		data->mux_channels[id].dma_id, stat) != 0) {
+		LOG_ERR("cannot get the status of dmamux channel %d.", id);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static int dmamux_stm32_init(const struct device *dev)
 {
 	struct dmamux_stm32_data *data = dev->data;
@@ -150,13 +172,6 @@ static int dmamux_stm32_init(const struct device *dev)
 		return -EIO;
 	}
 
-	int size_stream =
-		sizeof(struct dmamux_stm32_channel) * config->channel_nb;
-	data->mux_channels = k_malloc(size_stream);
-	if (!data->mux_channels) {
-		LOG_ERR("HEAP_MEM_POOL_SIZE is too small");
-		return -ENOMEM;
-	}
 	for (int i = 0; i < config->channel_nb; i++) {
 		/*
 		 * associates the dmamux channel
@@ -184,27 +199,32 @@ static const struct dma_driver_api dma_funcs = {
 	.config		 = dmamux_stm32_configure,
 	.start		 = dmamux_stm32_start,
 	.stop		 = dmamux_stm32_stop,
+	.get_status	 = dmamux_stm32_get_status,
 };
 
-#define DMAMUX_INIT(index) \
-								\
-const struct dmamux_stm32_config dmamux_stm32_config_##index = {\
-	.pclken = { .bus = DT_INST_CLOCKS_CELL(index, bus),	\
-		    .enr = DT_INST_CLOCKS_CELL(index, bits) },	\
-	.base = DT_INST_REG_ADDR(index),			\
-	.channel_nb = DT_INST_PROP(index, dma_channels),	\
-	.gen_nb = DT_INST_PROP(index, dma_generators),		\
-	.req_nb = DT_INST_PROP(index, dma_requests),		\
-};								\
-								\
-static struct dmamux_stm32_data dmamux_stm32_data_##index = {	\
-	.mux_channels = NULL,					\
-};								\
-								\
-DEVICE_AND_API_INIT(dmamux_##index, DT_INST_LABEL(index),	\
-		    &dmamux_stm32_init,				\
+#define DMAMUX_INIT(index)						\
+									\
+const struct dmamux_stm32_config dmamux_stm32_config_##index = {	\
+	.pclken = { .bus = DT_INST_CLOCKS_CELL(index, bus),		\
+		    .enr = DT_INST_CLOCKS_CELL(index, bits) },		\
+	.base = DT_INST_REG_ADDR(index),				\
+	.channel_nb = DT_INST_PROP(index, dma_channels),		\
+	.gen_nb = DT_INST_PROP(index, dma_generators),			\
+	.req_nb = DT_INST_PROP(index, dma_requests),			\
+};									\
+									\
+static struct dmamux_stm32_channel					\
+	dmamux_stm32_channels_##index[DT_INST_PROP(index, dma_channels)]; \
+									\
+static struct dmamux_stm32_data dmamux_stm32_data_##index = {		\
+	.mux_channels = dmamux_stm32_channels_##index,			\
+};									\
+									\
+DEVICE_DT_INST_DEFINE(index,						\
+		    &dmamux_stm32_init,					\
+		    device_pm_control_nop,				\
 		    &dmamux_stm32_data_##index, &dmamux_stm32_config_##index,\
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,\
+		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
 		    &dma_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(DMAMUX_INIT)

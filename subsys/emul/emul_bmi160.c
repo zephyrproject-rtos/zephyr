@@ -60,18 +60,21 @@ static const char *const pmu_name[] = {"acc", "gyr", "mag", "INV"};
 
 static void sample_read(struct bmi160_emul_data *data, union bmi160_sample *buf)
 {
-	int i;
+	/*
+	 * Use hard-coded scales to get values just above 0, 1, 2 and
+	 * 3, 4, 5. Values are stored in little endianess.
+	 * gyr[x] = 0x0b01  // 3 * 1000000 / BMI160_GYR_SCALE(2000) + 1
+	 * gyr[y] = 0x0eac  // 4 * 1000000 / BMI160_GYR_SCALE(2000) + 1
+	 * gyr[z] = 0x1257  // 5 * 1000000 / BMI160_GYR_SCALE(2000) + 1
+	 * acc[x] = 0x0001  // 0 * 1000000 / BMI160_ACC_SCALE(2) + 1
+	 * acc[y] = 0x0689  // 1 * 1000000 / BMI160_ACC_SCALE(2) + 1
+	 * acc[z] = 0x0d11  // 2 * 1000000 / BMI160_ACC_SCALE(2) + 1
+	 */
+	static uint8_t raw_data[] = { 0x01, 0x0b, 0xac, 0x0e, 0x57, 0x12, 0x01, 0x00,
+							0x89, 0x06, 0x11, 0x0d };
 
 	LOG_INF("Sample read");
-	buf->dummy_byte = 0;
-	for (i = 0; i < BMI160_AXES; i++) {
-		/*
-		 * Use hard-coded scales to get values just above 0, 1, 2 and
-		 * 3, 4, 5.
-		  */
-		buf->acc[i] = sys_cpu_to_le16(i * 1000000 / 598 + 1);
-		buf->gyr[i] = sys_cpu_to_le16((i + 3) * 1000000 / 1065 + 1);
-	}
+	memcpy(buf->raw, raw_data, ARRAY_SIZE(raw_data));
 }
 
 static void reg_write(const struct bmi160_emul_cfg *cfg, int regn, int val)
@@ -161,6 +164,12 @@ static int reg_read(const struct bmi160_emul_cfg *cfg, int regn)
 	case BMI160_SPI_START:
 		LOG_INF("   * Bus start");
 		break;
+	case BMI160_REG_ACC_RANGE:
+		LOG_INF("   * acc range");
+		break;
+	case BMI160_REG_GYR_RANGE:
+		LOG_INF("   * gyr range");
+		break;
 	default:
 		LOG_INF("Unknown read %x", regn);
 	}
@@ -197,6 +206,10 @@ static int bmi160_emul_io_spi(struct spi_emul *emul,
 		switch (tx->len) {
 		case 1:
 			regn = *(uint8_t *)tx->buf;
+			if ((regn & BMI160_REG_READ) && rxd == NULL) {
+				LOG_ERR("Cannot read without rxd");
+				return -EPERM;
+			}
 			switch (txd->len) {
 			case 1:
 				if (regn & BMI160_REG_READ) {

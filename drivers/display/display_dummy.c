@@ -123,7 +123,8 @@ static const struct display_driver_api dummy_display_api = {
 	.set_pixel_format = dummy_display_set_pixel_format,
 };
 
-DEVICE_AND_API_INIT(dummy_display, CONFIG_DUMMY_DISPLAY_DEV_NAME,
-		    &dummy_display_init, &dummy_display_data, NULL,
+DEVICE_DEFINE(dummy_display, CONFIG_DUMMY_DISPLAY_DEV_NAME,
+		    &dummy_display_init, device_pm_control_nop,
+		    &dummy_display_data, NULL,
 		    APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY,
 		    &dummy_display_api);

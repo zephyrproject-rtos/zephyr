@@ -51,7 +51,7 @@ enum websocket_opcode  {
  * @typedef websocket_connect_cb_t
  * @brief Callback called after Websocket connection is established.
  *
- * @param sock Websocket id
+ * @param ws_sock Websocket id
  * @param req HTTP handshake request
  * @param user_data A valid pointer on some user data or NULL
  *

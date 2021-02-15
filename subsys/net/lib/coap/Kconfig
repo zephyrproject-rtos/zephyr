@@ -54,10 +54,20 @@ config COAP_EXTENDED_OPTIONS_LEN_VALUE
 
 config COAP_INIT_ACK_TIMEOUT_MS
 	int "base length of the random generated initial ACK timeout in ms"
-	default 2345
-	range 2345 100000
+	default 2000
+	range 1000 100000
 	help
 	  This value is used as a base value to retry pending CoAP packets.
+
+config COAP_RANDOMIZE_ACK_TIMEOUT
+	bool "Randomize initial ACK timeout, as specified in RFC 7252"
+	default y
+	help
+	  If enabled, the initial ACK timeout will be randomized, as specified
+	  in RFC 7252, i.e. will be a random number between ACK_TIMEOUT and
+	  ACK_TIMEOUT * ACK_RANDOM_FACTOR (where ACK_TIMEOUT is specified by
+	  COAP_INIT_ACK_TIMEOUT_MS option). Otherwise, the initial ACK timeout
+	  will be fixed to the value of COAP_INIT_ACK_TIMEOUT_MS option.
 
 config COAP_URI_WILDCARD
 	bool "Enable wildcards in CoAP resource path"

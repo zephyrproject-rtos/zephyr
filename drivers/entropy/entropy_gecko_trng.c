@@ -99,7 +99,8 @@ static struct entropy_driver_api entropy_gecko_trng_api_funcs = {
 	.get_entropy_isr = entropy_gecko_trng_get_entropy_isr
 };
 
-DEVICE_AND_API_INIT(entropy_gecko_trng, DT_INST_LABEL(0),
-			entropy_gecko_trng_init, NULL, NULL,
+DEVICE_DT_INST_DEFINE(0,
+			entropy_gecko_trng_init, device_pm_control_nop,
+			NULL, NULL,
 			PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 			&entropy_gecko_trng_api_funcs);
