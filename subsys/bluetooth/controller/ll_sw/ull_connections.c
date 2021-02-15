@@ -62,6 +62,7 @@ static void ticker_op_stop_cb(uint32_t status, void *param);
 
 static inline void disable(uint16_t handle);
 static void conn_cleanup(struct ll_conn *conn, uint8_t reason);
+static struct node_tx *tx_ull_dequeue(struct ll_conn *conn);
 static void tx_ull_flush(struct ll_conn *conn);
 static void tx_lll_flush(void *param);
 
@@ -323,6 +324,8 @@ int ull_conn_rx(memq_link_t *link, struct node_rx_pdu **rx)
 	case PDU_DATA_LLID_CTRL:
 	{
 		ull_cp_rx(conn, *rx);
+		/* Mark buffer for release */
+		(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 		return 0;
 	}
 
@@ -372,6 +375,8 @@ int ull_conn_rx(memq_link_t *link, struct node_rx_pdu **rx)
 int ull_conn_llcp(struct ll_conn *conn, uint32_t ticks_at_expire, uint16_t lazy)
 {
 	LL_ASSERT(conn->lll.handle != ULL_HANDLE_NOT_CONNECTED);
+
+	ull_cp_run(conn);
 
 	return 0;
 }
@@ -652,8 +657,6 @@ void ull_conn_tx_demux(uint8_t count)
 			}
 #endif /* CONFIG_BT_CTLR_LLID_DATA_START_EMPTY */
 
-			/* TODO(thoh): Is this assignment needed? */
-			tx->next = NULL;
 			ull_tx_q_enqueue_data(&conn->tx_q, tx);
 		} else {
 			struct node_tx *tx = lll_tx->node;
@@ -677,7 +680,7 @@ void ull_conn_tx_lll_enqueue(struct ll_conn *conn, uint8_t count)
 		struct node_tx *tx;
 		memq_link_t *link;
 
-		tx = ull_tx_q_dequeue(&conn->tx_q);
+		tx = tx_ull_dequeue(conn);
 		if (!tx) {
 			/* No more tx nodes available */
 			break;
@@ -769,7 +772,9 @@ void ull_conn_tx_ack(uint16_t handle, memq_link_t *link, struct node_tx *tx)
 			ull_cp_tx_ack(conn, tx);
 		}
 
-		/* release ctrl mem if points to itself */
+		/* If the link's next pointer points to the tx node itself,
+		 * then the tx node belong to the ctrl pool and should be
+		 * free'ed (see tx_ull_dequeue) */
 		if (link->next == (void *)tx) {
 			LL_ASSERT(link->next);
 			ull_cp_release_tx(tx);
@@ -980,8 +985,41 @@ static void conn_cleanup(struct ll_conn *conn, uint8_t reason)
 	ull_conn_tx_demux(UINT8_MAX);
 }
 
+static struct node_tx *tx_ull_dequeue(struct ll_conn *conn)
+{
+	struct node_tx *tx = NULL;
+	tx = ull_tx_q_dequeue(&conn->tx_q);
+	if (tx) {
+		struct pdu_data *pdu_tx;
+
+		pdu_tx = (void *)tx->pdu;
+		if (pdu_tx->ll_id == PDU_DATA_LLID_CTRL) {
+			/* Mark the tx node as belonging to the ctrl pool */
+			tx->next = tx;
+		} else {
+			/* Mark the tx node as belonging to the data pool */
+			tx->next = NULL;
+		}
+	}
+	return tx;
+}
+
 static void tx_ull_flush(struct ll_conn *conn)
 {
+	struct node_tx *tx;
+
+	tx = tx_ull_dequeue(conn);
+	while (tx) {
+		memq_link_t *link;
+
+		link = mem_acquire(&mem_link_tx.free);
+		LL_ASSERT(link);
+
+		/* Enqueue towards LLL */
+		memq_enqueue(link, tx, &conn->lll.memq_tx.tail);
+
+		tx = tx_ull_dequeue(conn);
+	}
 }
 
 static void tx_lll_flush(void *param)
