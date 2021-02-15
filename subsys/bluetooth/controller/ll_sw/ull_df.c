@@ -37,6 +37,7 @@
 #include "common/log.h"
 #include "hal/debug.h"
 
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 /* ToDo:
  * - Add release of df_adv_cfg when adv_sync is released.
  *   Open question, should df_adv_cfg be released when Adv. CTE is disabled?
@@ -46,6 +47,7 @@
 
 static struct lll_df_adv_cfg lll_df_adv_cfg_pool[CONFIG_BT_CTLR_ADV_AUX_SET];
 static void *df_adv_cfg_free;
+#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 
 /* @brief Function performs common steps for initialization and reset
  * of Direction Finding ULL module.
@@ -54,6 +56,7 @@ static void *df_adv_cfg_free;
  */
 static int init_reset(void);
 
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 /* @brief Function acquires memory for DF advertising configuration.
  *
  * The memory is acquired from private @ref lll_df_adv_cfg_pool memory store.
@@ -61,6 +64,7 @@ static int init_reset(void);
  * @return Pointer to lll_df_adv_cfg or NULL if there is no more free memory.
  */
 static struct lll_df_adv_cfg *df_adv_cfg_acquire(void);
+#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 
 /* @brief Function performs ULL Direction Finding initialization
  *
@@ -96,11 +100,12 @@ int ull_df_reset(void)
 
 static int init_reset(void)
 {
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 	/* Initialize advertising DF memory configuration pool. */
 	mem_init(lll_df_adv_cfg_pool, sizeof(struct lll_df_adv_cfg),
 		 sizeof(lll_df_adv_cfg_pool) / sizeof(struct lll_df_adv_cfg),
 		 &df_adv_cfg_free);
-
+#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 	return 0;
 }
 
