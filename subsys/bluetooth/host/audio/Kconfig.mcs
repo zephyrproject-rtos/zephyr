@@ -60,6 +60,15 @@ config BT_MCC_MAX_OTS_INST
 	  Sets the maximum number of Object Transfer Service (OTS)
 	  instances to setup and use for the Media Control Service client.
 
+config BT_MCC_OTC_OBJ_BUF_SIZE
+	int "The size of the buffer used for OTC object in MCC"
+	default 512
+	range 1 65536
+	help
+	  Sets the size (in octets) of the buffer used for receiving the content
+	  of objects.
+	  Should be set large enough to fit any expected object.
+
 config BT_MCC_TOTAL_OBJ_CONTENT_MEM
 	int "Total memory size to use for storing the content of objects"
 	default 1
