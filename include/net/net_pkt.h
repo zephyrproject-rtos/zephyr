@@ -1904,6 +1904,16 @@ uint16_t net_pkt_get_current_offset(struct net_pkt *pkt);
  */
 bool net_pkt_is_contiguous(struct net_pkt *pkt, size_t size);
 
+/**
+ * Get the contiguous buffer space
+ *
+ * @param pkt Network packet
+ *
+ * @return The available contiguous buffer space in bytes starting from the
+ *         current cursor position. 0 in case of an error.
+ */
+size_t net_pkt_get_contiguous_len(struct net_pkt *pkt);
+
 struct net_pkt_data_access {
 #if !defined(CONFIG_NET_HEADERS_ALWAYS_CONTIGUOUS)
 	void *data;
