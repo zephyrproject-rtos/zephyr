@@ -48,6 +48,10 @@
 
 #include "ll.h"
 
+#if (!defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY))
+#include "ll_sw/ull_llcp.h"
+#endif
+
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_ull_slave
 #include "common/log.h"
@@ -195,6 +199,11 @@ void ull_slave_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 	} else {
 		win_delay_us = WIN_DELAY_LEGACY;
 	}
+
+#if (!defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY))
+	/* Set LLCP as connection-wise connected */
+	ull_cp_state_set(conn, ULL_CP_CONNECTED);
+#endif /* CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY */
 
 	/* calculate the window widening */
 	conn->slave.sca = pdu_adv->connect_ind.sca;
