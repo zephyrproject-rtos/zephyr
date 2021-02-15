@@ -135,7 +135,7 @@ static int on_cmd_sockread_common(int socket_fd,
 	struct modem_socket	 *sock = NULL;
 	struct socket_read_data	 *sock_data;
 	int ret, i;
-	int socket_data_length = find_len(data->rx_buf->data);
+	int socket_data_length;
 	int bytes_to_skip;
 
 	if (!len) {
@@ -148,6 +148,8 @@ static int on_cmd_sockread_common(int socket_fd,
 		LOG_ERR("Incorrect format! Ignoring data!");
 		return -EINVAL;
 	}
+
+	socket_data_length = find_len(data->rx_buf->data);
 
 	/* No (or not enough) data available on the socket. */
 	bytes_to_skip = digits(socket_data_length) + 2 + 4;
