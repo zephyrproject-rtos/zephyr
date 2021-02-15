@@ -57,6 +57,13 @@
 			reg = <0x40021000 0x400>;
 		};
 
+		exti: interrupt-controller@40010400 {
+			compatible = "st,stm32-exti";
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			reg = <0x40010400 0x400>;
+		};
+
 		pinctrl: pin-controller@40010800 {
 			compatible = "st,stm32f1-pinctrl";
 			#address-cells = <1>;

@@ -1,0 +1,9 @@
+description: STMicroelectronics STM32 family External Interrupt Controller
+
+compatible: "st,stm32-exti"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
