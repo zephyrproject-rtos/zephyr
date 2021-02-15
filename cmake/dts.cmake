@@ -220,6 +220,7 @@ if(SUPPORTS_DTS)
   --device-header-out ${DEVICE_EXTERN_H}
   --dts-out ${ZEPHYR_DTS} # As a debugging aid
   --edt-pickle-out ${EDT_PICKLE}
+  ${EXTRA_GEN_DEFINES_ARGS}
   )
 
   execute_process(
