@@ -14,14 +14,12 @@
 #define LOG_LEVEL LOG_LEVEL_DBG
 LOG_MODULE_REGISTER(main);
 
-#define REPORT_ID_1	0x01
-#define REPORT_ID_2	0x02
-
 static const struct device *hdev;
 static struct k_work report_send;
 static ATOMIC_DEFINE(hid_ep_in_busy, 1);
 
 #define HID_EP_BUSY_FLAG	0
+#define REPORT_ID_1		0x01
 #define REPORT_PERIOD		K_SECONDS(2)
 
 static struct report {
@@ -35,39 +33,24 @@ static struct report {
 static void report_event_handler(struct k_timer *dummy);
 static K_TIMER_DEFINE(event_timer, report_event_handler, NULL);
 
-/* Some HID sample Report Descriptor */
+/*
+ * Simple HID Report Descriptor
+ * Report ID is present for completeness, although it can be omitted.
+ * Output of "usbhid-dump -d 2fe3:0006 -e descriptor":
+ *  05 01 09 00 A1 01 15 00    26 FF 00 85 01 75 08 95
+ *  01 09 00 81 02 C0
+ */
 static const uint8_t hid_report_desc[] = {
-	/* 0x05, 0x01,		USAGE_PAGE (Generic Desktop)		*/
 	HID_USAGE_PAGE(HID_USAGE_GEN_DESKTOP),
-	/* 0x09, 0x00,		USAGE (Undefined)			*/
 	HID_USAGE(HID_USAGE_GEN_DESKTOP_UNDEFINED),
-	/* 0xa1, 0x01,		COLLECTION (Application)		*/
 	HID_COLLECTION(HID_COLLECTION_APPLICATION),
-	/* 0x15, 0x00,			LOGICAL_MINIMUM one-byte (0)	*/
 	HID_LOGICAL_MIN8(0x00),
-	/* 0x26, 0xff, 0x00,		LOGICAL_MAXIMUM two-bytes (255)	*/
 	HID_LOGICAL_MAX16(0xFF, 0x00),
-	/* 0x85, 0x01,			REPORT_ID (1)			*/
 	HID_REPORT_ID(REPORT_ID_1),
-	/* 0x75, 0x08,			REPORT_SIZE (8) in bits		*/
 	HID_REPORT_SIZE(8),
-	/* 0x95, 0x01,			REPORT_COUNT (1)		*/
 	HID_REPORT_COUNT(1),
-	/* 0x09, 0x00,			USAGE (Undefined)		*/
 	HID_USAGE(HID_USAGE_GEN_DESKTOP_UNDEFINED),
-	/* v0x81, 0x82,			INPUT (Data,Var,Abs,Vol)	*/
 	HID_INPUT(0x02),
-	/* 0x85, 0x02,			REPORT_ID (2)			*/
-	HID_REPORT_ID(REPORT_ID_2),
-	/* 0x75, 0x08,			REPORT_SIZE (8) in bits		*/
-	HID_REPORT_SIZE(8),
-	/* 0x95, 0x01,			REPORT_COUNT (1)		*/
-	HID_REPORT_COUNT(1),
-	/* 0x09, 0x00,			USAGE (Undefined)		*/
-	HID_USAGE(HID_USAGE_GEN_DESKTOP_UNDEFINED),
-	/* 0x91, 0x82,			OUTPUT (Data,Var,Abs,Vol)	*/
-	HID_OUTPUT(0x82),
-	/* 0xc0			END_COLLECTION			*/
 	HID_END_COLLECTION,
 };
 
