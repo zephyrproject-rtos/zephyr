@@ -54,7 +54,9 @@ def main():
                          warn_reg_unit_address_mismatch=
                              "-Wno-simple_bus_reg" not in args.dtc_flags,
                          default_prop_types=True,
-                         infer_binding_for_paths=["/zephyr,user"])
+                         infer_binding_for_paths=["/zephyr,user"],
+                         err_on_deprecated_properties=
+                         args.err_on_deprecated_properties)
     except edtlib.EDTError as e:
         sys.exit(f"devicetree error: {e}")
 
@@ -197,6 +199,8 @@ def parse_args():
                         help="path to write device struct extern header to")
     parser.add_argument("--edt-pickle-out",
                         help="path to write pickled edtlib.EDT object to")
+    parser.add_argument("--err-on-deprecated-properties", action="store_true",
+                        help="if set, deprecated property usage is an error")
 
     return parser.parse_args()
 
