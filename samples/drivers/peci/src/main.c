@@ -90,7 +90,7 @@ int peci_get_tjmax(uint8_t *tjmax)
 		k_sleep(K_MSEC(1));
 		printk("\npeci_resp %x\n", peci_resp);
 		retries--;
-	} while ((peci_resp != PECI_RW_PKG_CFG_RSP_PASS) && (retries > 0));
+	} while ((peci_resp != PECI_CC_RSP_SUCCESS) && (retries > 0));
 
 	*tjmax = packet.rx_buffer.buf[3];
 
