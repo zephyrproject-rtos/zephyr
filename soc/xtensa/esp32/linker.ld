@@ -60,6 +60,8 @@ PROVIDE ( esp32_rom_ets_printf = ets_printf );
 PROVIDE ( esp32_rom_g_ticks_per_us_app = g_ticks_per_us_app );
 PROVIDE ( esp32_rom_g_ticks_per_us_pro = g_ticks_per_us_app );
 PROVIDE ( esp32_rom_ets_delay_us = ets_delay_us );
+PROVIDE ( TIMERG0 = 0x3ff5F000 );
+PROVIDE ( TIMERG1 = 0x3ff60000 );
 
 /* __udivdi3 is exported using assignment, which declares strong symbols */
 __udivdi3 = 0x4000cff8;

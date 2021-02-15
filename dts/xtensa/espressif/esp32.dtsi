@@ -167,6 +167,37 @@
 			status = "disabled";
 		};
 
+		timer0: counter@3ff5f000 {
+			compatible = "espressif,esp32-timer";
+			reg = <0x3ff5f000 DT_SIZE_K(4)>;
+			/* interrupts = <13>; - FIXME: Enable when irq controller is supported */
+			label = "TIMG0_T0";
+			status = "disabled";
+		};
+
+		timer1: counter@3ff5f024 {
+			compatible = "espressif,esp32-timer";
+			reg = <0x3ff5f024 DT_SIZE_K(4)>;
+			/* interrupts = <17>; - FIXME: Enable when irq controller is supported */
+			label = "TIMG0_T1";
+			status = "disabled";
+		};
+
+		timer2: counter@3ff60000 {
+			compatible = "espressif,esp32-timer";
+			reg = <0x3ff60000 DT_SIZE_K(4)>;
+			/* interrupts = <18>; - FIXME: Enable when irq controller is supported */
+			label = "TIMG1_T0";
+			status = "disabled";
+		};
+
+		timer3: counter@3ff60024 {
+			compatible = "espressif,esp32-timer";
+			reg = <0x3ff60024 DT_SIZE_K(4)>;
+			/* interrupts = <20>; - FIXME: Enable when irq controller is supported */
+			label = "TIMG1_T1";
+			status = "disabled";
+		};
 	};
 
 };
