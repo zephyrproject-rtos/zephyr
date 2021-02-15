@@ -144,6 +144,7 @@ config DISK_ACCESS_STM32_SDMMC
 	bool "STM32 SDMMC driver"
 	depends on HAS_STM32CUBE
 	select USE_STM32_HAL_SD
+	select USE_STM32_HAL_SD_EX if SOC_SERIES_STM32L4X
 	select USE_STM32_LL_SDMMC
 	default $(dt_compat_enabled,$(DT_COMPAT_ST_STM32_SDMMC))
 	help
