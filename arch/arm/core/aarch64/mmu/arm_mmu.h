@@ -8,9 +8,6 @@
 /* Set below flag to get debug prints */
 #define MMU_DEBUG_PRINTS	0
 
-/* To get prints from MMU driver, it has to initialized after console driver */
-#define MMU_DEBUG_PRIORITY	70
-
 #if MMU_DEBUG_PRINTS
 /* To dump page table entries while filling them, set DUMP_PTE macro */
 #define DUMP_PTE		0
