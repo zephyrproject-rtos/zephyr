@@ -272,11 +272,7 @@ uint8_t ll_terminate_ind_send(uint16_t handle, uint8_t reason)
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
 
-	/*
-	 * EGON: TODO: fill connection structure with place for reason
-	 */
-
-	return BT_HCI_ERR_UNKNOWN_CMD;
+	return ull_cp_terminate(conn, reason);
 }
 
 
