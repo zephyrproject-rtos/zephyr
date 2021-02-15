@@ -466,6 +466,7 @@ struct ll_conn {
  * EGON TODO: all the following comes from the legacy LL llcp structure
  * and/or needs to be properly integrated in the control procedures
  */
+	union {
 #if defined(CONFIG_BT_PERIPHERAL)
 		struct {
 			uint8_t  latency_cancel:1;
@@ -474,6 +475,13 @@ struct ll_conn {
 			uint32_t ticks_to_offset;
 		} slave;
 #endif /* CONFIG_BT_PERIPHERAL */
+
+#if defined(CONFIG_BT_CENTRAL)
+		struct {
+			uint8_t terminate_ack:1;
+		} master;
+#endif /* CONFIG_BT_CENTRAL */
+	};
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
 	uint16_t appto_reload;
