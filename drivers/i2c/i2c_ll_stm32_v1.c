@@ -617,7 +617,6 @@ end:
 int32_t stm32_i2c_msg_write(const struct device *dev, struct i2c_msg *msg,
 			    uint8_t *next_msg_flags, uint16_t saddr)
 {
-	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
 	struct i2c_stm32_data *data = DEV_DATA(dev);
 
 	msg_init(dev, msg, next_msg_flags, saddr, I2C_REQUEST_WRITE);
