@@ -14,6 +14,7 @@
 #define LOG_LEVEL LOG_LEVEL_INF
 LOG_MODULE_REGISTER(main);
 
+static bool configured;
 static const struct device *hdev;
 static struct k_work report_send;
 static ATOMIC_DEFINE(hid_ep_in_busy, 1);
@@ -116,8 +117,14 @@ static const struct hid_ops ops = {
 static void status_cb(enum usb_dc_status_code status, const uint8_t *param)
 {
 	switch (status) {
+	case USB_DC_RESET:
+		configured = false;
+		break;
 	case USB_DC_CONFIGURED:
-		int_in_ready_cb(hdev);
+		if (!configured) {
+			int_in_ready_cb(hdev);
+			configured = true;
+		}
 		break;
 	case USB_DC_SOF:
 		break;
