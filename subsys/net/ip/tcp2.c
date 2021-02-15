@@ -38,6 +38,9 @@ static K_MUTEX_DEFINE(tcp_lock);
 static K_MEM_SLAB_DEFINE(tcp_conns_slab, sizeof(struct tcp),
 				CONFIG_NET_MAX_CONTEXTS, 4);
 
+static struct k_work_q tcp_work_q;
+static K_KERNEL_STACK_DEFINE(work_q_stack, CONFIG_NET_TCP_WORKQ_STACK_SIZE);
+
 static void tcp_in(struct tcp *conn, struct net_pkt *pkt);
 
 int (*tcp_send_cb)(struct net_pkt *pkt) = NULL;
@@ -480,7 +483,8 @@ static bool tcp_send_process_no_lock(struct tcp *conn)
 	}
 
 	if (conn->in_retransmission) {
-		k_delayed_work_submit(&conn->send_timer, K_MSEC(tcp_rto));
+		k_delayed_work_submit_to_queue(&tcp_work_q, &conn->send_timer,
+					       K_MSEC(tcp_rto));
 	}
 
 out:
@@ -524,7 +528,8 @@ static void tcp_send_timer_cancel(struct tcp *conn)
 		conn->in_retransmission = false;
 	} else {
 		conn->send_retries = tcp_retries;
-		k_delayed_work_submit(&conn->send_timer, K_MSEC(tcp_rto));
+		k_delayed_work_submit_to_queue(&tcp_work_q, &conn->send_timer,
+					       K_MSEC(tcp_rto));
 	}
 }
 
@@ -988,7 +993,9 @@ static int tcp_send_queued_data(struct tcp *conn)
 
 	if (subscribe) {
 		conn->send_data_retries = 0;
-		k_delayed_work_submit(&conn->send_data_timer, K_MSEC(tcp_rto));
+		k_delayed_work_submit_to_queue(&tcp_work_q,
+					       &conn->send_data_timer,
+					       K_MSEC(tcp_rto));
 	}
  out:
 	return ret;
@@ -1037,7 +1044,9 @@ static void tcp_resend_data(struct k_work *work)
 			NET_DBG("TCP connection in active close, "
 				"not disposing yet (waiting %dms)",
 				FIN_TIMEOUT_MS);
-			k_delayed_work_submit(&conn->fin_timer, FIN_TIMEOUT);
+			k_delayed_work_submit_to_queue(&tcp_work_q,
+						       &conn->fin_timer,
+						       FIN_TIMEOUT);
 
 			conn_state(conn, TCP_FIN_WAIT_1);
 
@@ -1051,7 +1060,8 @@ static void tcp_resend_data(struct k_work *work)
 		}
 	}
 
-	k_delayed_work_submit(&conn->send_data_timer, K_MSEC(tcp_rto));
+	k_delayed_work_submit_to_queue(&tcp_work_q, &conn->send_data_timer,
+				       K_MSEC(tcp_rto));
 
  out:
 	k_mutex_unlock(&conn->lock);
@@ -1452,8 +1462,9 @@ static void tcp_queue_recv_data(struct tcp *conn, struct net_pkt *pkt,
 		pkt->buffer = NULL;
 
 		if (!k_delayed_work_pending(&conn->recv_queue_timer)) {
-			k_delayed_work_submit(&conn->recv_queue_timer,
-				   K_MSEC(CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT));
+			k_delayed_work_submit_to_queue(&tcp_work_q,
+						       &conn->recv_queue_timer,
+						       K_MSEC(CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT));
 		}
 	}
 }
@@ -1579,8 +1590,9 @@ next_state:
 
 			/* Close the connection if we do not receive ACK on time.
 			 */
-			k_delayed_work_submit(&conn->establish_timer,
-					      ACK_TIMEOUT);
+			k_delayed_work_submit_to_queue(&tcp_work_q,
+						       &conn->establish_timer,
+						       ACK_TIMEOUT);
 		} else {
 			tcp_out(conn, SYN);
 			conn_seq(conn, + 1);
@@ -1786,8 +1798,9 @@ next_state:
 		}
 		break;
 	case TCP_TIME_WAIT:
-		k_delayed_work_submit(&conn->timewait_timer,
-				      K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY));
+		k_delayed_work_submit_to_queue(&tcp_work_q,
+					       &conn->timewait_timer,
+					       K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY));
 		break;
 	default:
 		NET_ASSERT(false, "%s is unimplemented",
@@ -1863,14 +1876,17 @@ int net_tcp_put(struct net_context *context)
 
 			/* How long to wait until all the data has been sent?
 			 */
-			k_delayed_work_submit(&conn->send_data_timer,
-					      K_MSEC(tcp_rto));
+			k_delayed_work_submit_to_queue(&tcp_work_q,
+						       &conn->send_data_timer,
+						       K_MSEC(tcp_rto));
 		} else {
 			int ret;
 
 			NET_DBG("TCP connection in active close, not "
 				"disposing yet (waiting %dms)", FIN_TIMEOUT_MS);
-			k_delayed_work_submit(&conn->fin_timer, FIN_TIMEOUT);
+			k_delayed_work_submit_to_queue(&tcp_work_q,
+						       &conn->fin_timer,
+						       FIN_TIMEOUT);
 
 			ret = tcp_out_ext(conn, FIN | ACK, NULL,
 				    conn->seq + conn->unacked_len);
@@ -2560,4 +2576,20 @@ void net_tcp_init(void)
 
 	tcp_recv_cb = tp_tcp_recv_cb;
 #endif
+
+#if IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)
+/* Lowest priority cooperative thread */
+#define THREAD_PRIORITY K_PRIO_COOP(CONFIG_NUM_COOP_PRIORITIES - 1)
+#else
+#define THREAD_PRIORITY K_PRIO_PREEMPT(CONFIG_NUM_PREEMPT_PRIORITIES - 1)
+#endif
+
+	/* Use private workqueue in order not to block the system work queue.
+	 */
+	k_work_q_start(&tcp_work_q, work_q_stack,
+		       K_KERNEL_STACK_SIZEOF(work_q_stack),
+		       THREAD_PRIORITY);
+
+	k_thread_name_set(&tcp_work_q.thread, "tcp_work");
+	NET_DBG("Workq started. Thread ID: %p", &tcp_work_q.thread);
 }
