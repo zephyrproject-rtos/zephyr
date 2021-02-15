@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2021 Nordic Semiconductor ASA
+ * Copyright (c) 2018-2020 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -54,6 +54,10 @@
 #include "ll.h"
 #include "ll_feat.h"
 #include "ll_settings.h"
+
+#if (!defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY))
+#include "ll_sw/ull_llcp.h"
+#endif
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_ull_central
@@ -816,6 +820,11 @@ void ull_central_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 	conn = lll->hdr.parent;
 	lll->handle = ll_conn_handle_get(conn);
 	rx->handle = lll->handle;
+
+#if (!defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY))
+	/* Set LLCP as connection-wise connected */
+	ull_cp_state_set(conn, ULL_CP_CONNECTED);
+#endif /* CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY */
 
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
 	lll->tx_pwr_lvl = RADIO_TXP_DEFAULT;
