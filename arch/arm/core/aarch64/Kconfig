@@ -129,6 +129,7 @@ config MMU_PAGE_SIZE
 
 config MAX_XLAT_TABLES
 	int "Maximum numbers of translation tables"
+	default 16 if USERSPACE
 	default 8
 	help
 	  This option specifies the maximum numbers of translation tables.
