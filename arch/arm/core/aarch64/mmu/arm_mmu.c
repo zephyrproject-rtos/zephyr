@@ -530,7 +530,7 @@ static struct arm_mmu_ptables kernel_ptables;
  * This function provides the default configuration mechanism for the Memory
  * Management Unit (MMU).
  */
-static int arm_mmu_init(const struct device *arg)
+void z_arm64_mmu_init(void)
 {
 	uint64_t val;
 	unsigned int flags = 0;
@@ -553,17 +553,7 @@ static int arm_mmu_init(const struct device *arg)
 
 	/* currently only EL1 is supported */
 	enable_mmu_el1(&kernel_ptables, flags);
-
-	return 0;
 }
-
-SYS_INIT(arm_mmu_init, PRE_KERNEL_1,
-#if MMU_DEBUG_PRINTS
-	 MMU_DEBUG_PRIORITY
-#else
-	 CONFIG_KERNEL_INIT_PRIORITY_DEVICE
-#endif
-);
 
 static int __arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 {
