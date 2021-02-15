@@ -6,7 +6,8 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_XTENSA_XTENSA_IRQ_H_
 #define ZEPHYR_INCLUDE_ARCH_XTENSA_XTENSA_IRQ_H_
 
-#include <xtensa/xtruntime.h>
+#include <toolchain.h>
+#include <xtensa/config/core-isa.h>
 
 #define CONFIG_GEN_IRQ_START_VECTOR 0
 
@@ -105,13 +106,17 @@ static ALWAYS_INLINE void z_xtensa_irq_disable(uint32_t irq)
 
 static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 {
-	unsigned int key = XTOS_SET_INTLEVEL(XCHAL_EXCM_LEVEL);
+	unsigned int key;
+
+	__asm__ volatile("rsil %0, %1"
+			 : "=r"(key) : "i"(XCHAL_EXCM_LEVEL) : "memory");
 	return key;
 }
 
 static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 {
-	XTOS_RESTORE_INTLEVEL(key);
+	__asm__ volatile("wsr.ps %0; rsync"
+			 :: "r"(key) : "memory");
 }
 
 static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
