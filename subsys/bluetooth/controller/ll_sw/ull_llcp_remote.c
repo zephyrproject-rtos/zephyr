@@ -38,13 +38,15 @@
 
 static void rr_check_done(struct ll_conn *conn, struct proc_ctx *ctx);
 static struct proc_ctx *rr_dequeue(struct ll_conn *conn);
+static void rr_abort(struct ll_conn *conn);
 
 /* LLCP Remote Request FSM State */
 enum rr_state {
 	RR_STATE_IDLE,
 	RR_STATE_REJECT,
 	RR_STATE_ACTIVE,
-	RR_STATE_DISCONNECT
+	RR_STATE_DISCONNECT,
+	RR_STATE_TERMINATE,
 };
 
 /* LLCP Remote Request FSM Event */
@@ -355,7 +357,13 @@ static void rr_st_idle(struct ll_conn *conn, uint8_t evt, void *param)
 			const bool master = !!(conn->lll.role == BT_HCI_ROLE_MASTER);
 			const bool with_instant = proc_with_instant(ctx);
 
-			if (incompat == INCOMPAT_NO_COLLISION) {
+			if (ctx->proc == PROC_TERMINATE) {
+				/* Peer terminate overrides all */
+
+				/* Run remote procedure */
+				rr_act_run(conn);
+				rr_set_state(conn, RR_STATE_TERMINATE);
+			} else if (incompat == INCOMPAT_NO_COLLISION) {
 				/* No collision
 				 * => Run procedure
 				 *
@@ -438,6 +446,28 @@ static void rr_st_active(struct ll_conn *conn, uint8_t evt, void *param)
 	}
 }
 
+static void rr_st_terminate(struct ll_conn *conn, uint8_t evt, void *param)
+{
+	switch (evt) {
+	case RR_EVT_RUN:
+		if (rr_peek(conn)) {
+			rr_act_run(conn);
+		}
+		break;
+	case RR_EVT_COMPLETE:
+		rr_act_complete(conn);
+		rr_set_state(conn, RR_STATE_IDLE);
+		break;
+	case RR_EVT_DISCONNECT:
+		rr_act_disconnect(conn);
+		rr_set_state(conn, RR_STATE_DISCONNECT);
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
+}
+
 static void rr_execute_fsm(struct ll_conn *conn, uint8_t evt, void *param)
 {
 	switch (conn->llcp.remote.state) {
@@ -452,6 +482,9 @@ static void rr_execute_fsm(struct ll_conn *conn, uint8_t evt, void *param)
 		break;
 	case RR_STATE_ACTIVE:
 		rr_st_active(conn, evt, param);
+		break;
+	case RR_STATE_TERMINATE:
+		rr_st_terminate(conn, evt, param);
 		break;
 	default:
 		/* Unknown state */
@@ -532,6 +565,10 @@ void ull_cp_priv_rr_new(struct ll_conn *conn, struct node_rx_pdu *rx)
 		break;
 	}
 
+	if (proc == PROC_TERMINATE) {
+		rr_abort(conn);
+	}
+
 	ctx = create_remote_procedure(proc);
 	if (!ctx) {
 		return;
@@ -548,6 +585,22 @@ void ull_cp_priv_rr_new(struct ll_conn *conn, struct node_rx_pdu *rx)
 	if (ctx) {
 		rr_rx(conn, ctx, rx);
 	}
+}
+
+static void rr_abort(struct ll_conn *conn)
+{
+	struct proc_ctx *ctx;
+
+	/* Flush all pending procedures */
+	ctx = rr_dequeue(conn);
+	while (ctx) {
+		proc_ctx_release(ctx);
+		ctx = rr_dequeue(conn);
+	}
+
+	/* TODO(thoh): Whats missing here ??? */
+	rr_set_collision(conn, 0U);
+	rr_set_state(conn, RR_STATE_IDLE);
 }
 
 #ifdef ZTEST_UNITTEST

@@ -48,7 +48,6 @@ static void test_terminate_rem(uint8_t role)
 	struct pdu_data_llctrl_terminate_ind remote_terminate_ind = {
 		.error_code = 0x05,
 	};
-	struct node_rx_pdu *ntf;
 
 	/* Role */
 	test_set_role(&conn, role);
@@ -65,8 +64,7 @@ static void test_terminate_rem(uint8_t role)
 	/* Done */
 	event_done(&conn);
 
-	/* There should be one host notification */
-	ut_rx_pdu(LL_TERMINATE_IND, &ntf, &remote_terminate_ind);
+	/* There should be no host notification */
 	ut_rx_q_is_empty();
 }
 
@@ -84,7 +82,6 @@ void test_terminate_loc(uint8_t role)
 {
 	uint8_t err;
 	struct node_tx *tx;
-	struct node_rx_pdu *ntf;
 
 	struct pdu_data_llctrl_terminate_ind local_terminate_ind = {
 		.error_code = 0x06,
@@ -116,8 +113,8 @@ void test_terminate_loc(uint8_t role)
 	/* Release tx node */
 	ull_cp_release_tx(tx);
 
-	/* There should be one host notification */
-	ut_rx_pdu(LL_TERMINATE_IND, &ntf, &local_terminate_ind);
+	/* There should be no host notification */
+	ut_rx_q_is_empty();
 }
 
 void test_terminate_mas_loc(void)
