@@ -189,41 +189,132 @@ void radio_df_mode_set_aod(void)
 	radio_df_mode_set(NRF_RADIO_DFE_OP_MODE_AOD);
 }
 
-void radio_df_cte_inline_set(uint8_t enable)
+/* @brief Function configures CTE inline register to start sampling of CTE
+ *        according to information parsed from CTEInfo filed of received PDU.
+ *
+ * @param[in] cte_info_in_s1    Informs where to expect CTEInfo filed in PDU:
+ *                              in S1 for data pdu, not in S1 for adv. PDU
+ */
+void radio_df_cte_inline_set_enabled(bool cte_info_in_s1)
+{
+	const nrf_radio_cteinline_conf_t inline_conf = {
+		.enable = true,
+		/* Indicates whether CTEInfo is in S1 byte or not. */
+		.info_in_s1 = cte_info_in_s1,
+		/* Disable switching and sampling when CRC is not OK.
+		 *
+		 * ToDo consider if is it required to sample PDUs with wrong CRC?
+		 * BT 5.2 Spec Vol 4, Part E section 7.7.65.21 LE Connectionless
+		 * IQ Report event allows to report CTEs sampled for PDUs that
+		 * have wrong CRC.
+		 */
+		.err_handling = false,
+		/* Maximum range of CTE time. 20 * 8us according to BT spec.*/
+		.time_range = NRF_RADIO_CTEINLINE_TIME_RANGE_20,
+		/* Spacing between samples for 1us AoD or AoA is set to 2us. */
+		.rx1us = NRF_RADIO_CTEINLINE_RX_MODE_2US,
+		/* Spacing between samples for 2us AoD or AoA is set to 4us. */
+		.rx2us = NRF_RADIO_CTEINLINE_RX_MODE_4US,
+		/**< S0 bit pattern to match all types of adv. PDUs */
+		.s0_pattern = 0x0,
+		/**< S0 bit mask set to don't match any bit in SO octet */
+		.s0_mask = 0x0
+	};
+
+	nrf_radio_cteinline_configure(NRF_RADIO, &inline_conf);
+}
+
+static void radio_df_cte_inline_set_disabled(void)
 {
 	NRF_RADIO->CTEINLINECONF &= ~RADIO_CTEINLINECONF_CTEINLINECTRLEN_Msk;
-	NRF_RADIO->CTEINLINECONF |= ((enable <<
+	NRF_RADIO->CTEINLINECONF |= ((RADIO_CTEINLINECONF_CTEINLINECTRLEN_Disabled <<
 				      RADIO_CTEINLINECONF_CTEINLINECTRLEN_Pos)
 				     & RADIO_CTEINLINECONF_CTEINLINECTRLEN_Msk);
 }
 
-void radio_df_cte_length_set(uint8_t value)
+static inline void radio_df_ctrl_set(uint8_t cte_len,
+				     uint8_t switch_spacing,
+				     uint8_t sample_spacing)
 {
-	NRF_RADIO->DFECTRL1 &= ~RADIO_DFECTRL1_NUMBEROF8US_Msk;
-	NRF_RADIO->DFECTRL1 |= ((value << RADIO_DFECTRL1_NUMBEROF8US_Pos)
-				& RADIO_DFECTRL1_NUMBEROF8US_Msk);
+	uint32_t conf;
+
+	/* Complete setup is done on purpose, to be sure that there isn't left
+	 * any unexpected state in the register.
+	 */
+	conf = ((((uint32_t)cte_len << RADIO_DFECTRL1_NUMBEROF8US_Pos) &
+				       RADIO_DFECTRL1_NUMBEROF8US_Msk) |
+		((uint32_t)RADIO_DFECTRL1_DFEINEXTENSION_CRC <<
+			RADIO_DFECTRL1_DFEINEXTENSION_Pos) |
+		((uint32_t)switch_spacing << RADIO_DFECTRL1_TSWITCHSPACING_Pos) |
+		((uint32_t)NRF_RADIO_DFECTRL_SAMPLE_SPACING_1US <<
+			RADIO_DFECTRL1_TSAMPLESPACINGREF_Pos) |
+		((uint32_t)NRF_RADIO_DFECTRL_SAMPLE_TYPE_IQ <<
+			RADIO_DFECTRL1_SAMPLETYPE_Pos) |
+		((uint32_t)sample_spacing << RADIO_DFECTRL1_TSAMPLESPACING_Pos) |
+		(((uint32_t)0 << RADIO_DFECTRL1_AGCBACKOFFGAIN_Pos) &
+				 RADIO_DFECTRL1_AGCBACKOFFGAIN_Msk));
+
+	NRF_RADIO->DFECTRL1 = conf;
+}
+
+void radio_df_cte_tx_aod_2us_set(uint8_t cte_len)
+{
+	/* Sample spacing does not matter for AoD Tx. It is set to value
+	 * that is in DFECTRL1 register after reset. That is done instead of
+	 * adding conditions on the value and and masking of the field before
+	 * storing configuration in the register.
+	 */
+	radio_df_ctrl_set(cte_len, RADIO_DFECTRL1_TSWITCHSPACING_2us,
+			  RADIO_DFECTRL1_TSAMPLESPACINGREF_2us);
+}
+
+void radio_df_cte_tx_aod_4us_set(uint8_t cte_len)
+{
+	/* Sample spacing does not matter for AoD Tx. It is set to value
+	 * that is in DFECTRL1 register after reset. That is done instead of
+	 * adding conditions on the value and and masking of the field before
+	 * storing configuration in the register.
+	 */
+	radio_df_ctrl_set(cte_len, RADIO_DFECTRL1_TSWITCHSPACING_4us,
+			  RADIO_DFECTRL1_TSAMPLESPACINGREF_2us);
+}
+
+void radio_df_cte_tx_aoa_set(uint8_t cte_len)
+{
+	/* Switch and sample spacing does not matter for AoA Tx. It is set to
+	 * value that is in DFECTRL1 register after reset. That is done instead
+	 * of adding conditions on the value and and masking of the field before
+	 * storing configuration in the register.
+	 */
+	radio_df_ctrl_set(cte_len, RADIO_DFECTRL1_TSWITCHSPACING_4us,
+			  RADIO_DFECTRL1_TSAMPLESPACINGREF_2us);
+}
+
+void radio_df_cte_rx_2us_switching(void)
+{
+	/* BT spec requires single sample for a single switching slot, so
+	 * spacing for slot and samples is the same.
+	 * CTE duation is used only when CTEINLINE config is disabled.
+	 */
+	radio_df_ctrl_set(0, RADIO_DFECTRL1_TSWITCHSPACING_2us,
+			  RADIO_DFECTRL1_TSAMPLESPACINGREF_2us);
+	radio_df_cte_inline_set_enabled(false);
+}
+
+void radio_df_cte_rx_4us_switching(void)
+{
+	/* BT spec requires single sample for a single switching slot, so
+	 * spacing for slot and samples is the same.
+	 * CTE duation is used only when CTEINLINE config is disabled.
+	 */
+	radio_df_ctrl_set(0, RADIO_DFECTRL1_TSWITCHSPACING_4us,
+			  RADIO_DFECTRL1_TSAMPLESPACINGREF_4us);
+	radio_df_cte_inline_set_enabled(false);
 }
 
 void radio_df_ant_switch_pattern_clear(void)
 {
 	NRF_RADIO->CLEARPATTERN = RADIO_CLEARPATTERN_CLEARPATTERN_Clear;
-}
-
-static inline void radio_df_ant_switch_spacing_set(uint8_t spacing)
-{
-	NRF_RADIO->DFECTRL1 &= ~RADIO_DFECTRL1_TSWITCHSPACING_Msk;
-	NRF_RADIO->DFECTRL1 |= ((spacing << RADIO_DFECTRL1_TSWITCHSPACING_Pos)
-				& RADIO_DFECTRL1_TSWITCHSPACING_Msk);
-}
-
-void radio_df_ant_switch_spacing_set_2us(void)
-{
-	radio_df_ant_switch_spacing_set(RADIO_DFECTRL1_TSWITCHSPACING_2us);
-}
-
-void radio_df_ant_switch_spacing_set_4us(void)
-{
-	radio_df_ant_switch_spacing_set(RADIO_DFECTRL1_TSWITCHSPACING_4us);
 }
 
 void radio_df_ant_switch_pattern_set(uint8_t *patterns, uint8_t len)
@@ -251,7 +342,7 @@ void radio_df_ant_switch_pattern_set(uint8_t *patterns, uint8_t len)
 void radio_df_reset(void)
 {
 	radio_df_mode_set(RADIO_DFEMODE_DFEOPMODE_Disabled);
-	radio_df_cte_inline_set(RADIO_CTEINLINECONF_CTEINLINECTRLEN_Disabled);
+	radio_df_cte_inline_set_disabled();
 	radio_df_ant_switch_pattern_clear();
 }
 
@@ -263,4 +354,14 @@ void radio_switch_complete_and_phy_end_disable(void)
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
 	hal_radio_sw_switch_disable();
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
+}
+
+void radio_df_iq_data_packet_set(uint8_t *buffer, size_t len)
+{
+	nrf_radio_dfe_buffer_set(NRF_RADIO, (uint32_t *)buffer, len);
+}
+
+uint32_t radio_df_iq_samples_amount_get(void)
+{
+	return nrf_radio_dfe_amount_get(NRF_RADIO);
 }

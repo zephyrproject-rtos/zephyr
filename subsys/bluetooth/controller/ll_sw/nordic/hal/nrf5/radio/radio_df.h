@@ -21,14 +21,20 @@ void radio_df_mode_set_aoa(void);
 void radio_df_mode_set_aod(void);
 /* Sets inline configuration enabled or disabled for receive of CTE. */
 void radio_df_cte_inline_set(uint8_t eanble);
-/* Sets length of the CTE for transmission. */
-void radio_df_cte_length_set(uint8_t value);
+
+/* Configure CTE transmission with 2us antenna switching for AoD. */
+void radio_df_cte_tx_aod_2us_set(uint8_t cte_len);
+/* Configure CTE transmission with 4us antenna switching for AoD. */
+void radio_df_cte_tx_aod_4us_set(uint8_t cte_len);
+/* Configure CTE transmission with for AoA. */
+void radio_df_cte_tx_aoa_set(uint8_t cte_len);
+/* Configure CTE reception with optionall AoA mode and 2us antenna switching. */
+void radio_df_cte_rx_2us_switching(void);
+/* Configure CTE reception with optionall AoA mode and 4us antenna switching. */
+void radio_df_cte_rx_4us_switching(void);
+
 /* Clears antenna switch pattern. */
 void radio_df_ant_switch_pattern_clear(void);
-/* Set antenna switch spacing to 2[us] */
-void radio_df_ant_switch_spacing_set_2us(void);
-/* Set antenna switch spacing to 4[us] */
-void radio_df_ant_switch_spacing_set_4us(void);
 /* Set antenna switch pattern. Pay attention, paterns are added to
  * Radio internal list. Before start of new patterns clear the list
  * by call to @ref radio_df_ant_switch_pattern_clear.
@@ -39,3 +45,12 @@ void radio_df_reset(void);
 
 /* Completes switching and enables shortcut between PHYEND and DISABLE events */
 void radio_switch_complete_and_phy_end_disable(void);
+
+/* Enables CTE inline configuration to automatically setup sampling and
+ * switching according to CTEInfo in received PDU.
+ */
+void radio_df_cte_inline_set_enabled(bool cte_info_in_s1);
+/* Set buffer to store IQ samples collected during CTE sampling */
+void radio_df_iq_data_packet_set(uint8_t *buffer, size_t len);
+/* Get number of stored IQ samples during CTE receive */
+uint32_t radio_df_iq_samples_amount_get(void);
