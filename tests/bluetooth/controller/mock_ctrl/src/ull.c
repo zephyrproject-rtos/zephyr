@@ -218,6 +218,16 @@ int ull_disable(void *lll)
 	return 0;
 }
 
+void ull_rx_put(memq_link_t *link, void *rx)
+{
+
+}
+
+void ull_rx_sched(void)
+{
+
+}
+
 /* Forward declaration */
 struct node_rx_event_done;
 void ull_drift_ticks_get(struct node_rx_event_done *done,
