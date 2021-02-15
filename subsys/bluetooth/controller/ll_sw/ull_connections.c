@@ -58,9 +58,12 @@ extern uint16_t ull_conn_interval_min_get(struct ll_conn *conn);
 static int init_reset(void);
 
 static void ticker_update_conn_op_cb(uint32_t status, void *param);
+static void ticker_op_stop_cb(uint32_t status, void *param);
 
 static inline void disable(uint16_t handle);
 static void conn_cleanup(struct ll_conn *conn, uint8_t reason);
+static void tx_ull_flush(struct ll_conn *conn);
+static void tx_lll_flush(void *param);
 
 #if defined(CONFIG_BT_CTLR_LLID_DATA_START_EMPTY)
 static int empty_data_start_release(struct ll_conn *conn, struct node_tx *tx);
@@ -381,12 +384,34 @@ void ull_conn_done(struct node_rx_event_done *done)
 	uint32_t ticks_drift_plus;
 	uint16_t latency_event;
 	uint16_t elapsed_event;
-	uint8_t reason_peer;
+	uint8_t reason;
 	uint16_t lazy;
 	uint8_t force;
 
 	/* Skip if connection terminated by local host */
 	if (unlikely(lll->handle == 0xFFFF)) {
+		return;
+	}
+
+	/* Master transmitted ack for the received terminate ind or
+	 * Slave received terminate ind or MIC failure
+	 */
+	reason = conn->terminate.reason;
+	if (reason && (
+#if defined(CONFIG_BT_PERIPHERAL)
+			    lll->role ||
+#else /* CONFIG_BT_PERIPHERAL */
+			    0 ||
+#endif /* CONFIG_BT_PERIPHERAL */
+#if defined(CONFIG_BT_CENTRAL)
+			    conn->master.terminate_ack ||
+			    (reason == BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL)
+#else /* CONFIG_BT_CENTRAL */
+			    1
+#endif /* CONFIG_BT_CENTRAL */
+			    )) {
+		conn_cleanup(conn, reason);
+
 		return;
 	}
 
@@ -427,8 +452,8 @@ void ull_conn_done(struct node_rx_event_done *done)
 #endif /* CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_CENTRAL)
-		} else if (reason_peer) {
-			/*conn->master.terminate_ack = 1;*/
+		} else if (reason) {
+			conn->master.terminate_ack = 1;
 #endif /* CONFIG_BT_CENTRAL */
 
 		}
@@ -887,6 +912,21 @@ static void ticker_update_conn_op_cb(uint32_t status, void *param)
 		  param == ull_disable_mark_get());
 }
 
+static void ticker_op_stop_cb(uint32_t status, void *param)
+{
+	uint32_t retval;
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, tx_lll_flush};
+
+	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
+
+	mfy.param = param;
+
+	/* Flush pending tx PDUs in LLL (using a mayfly) */
+	retval = mayfly_enqueue(TICKER_USER_ID_ULL_LOW, TICKER_USER_ID_LLL, 0,
+				&mfy);
+	LL_ASSERT(!retval);
+}
 
 static inline void disable(uint16_t handle)
 {
@@ -907,8 +947,89 @@ static inline void disable(uint16_t handle)
 
 static void conn_cleanup(struct ll_conn *conn, uint8_t reason)
 {
+	struct lll_conn *lll = &conn->lll;
+	struct node_rx_pdu *rx;
+	uint32_t ticker_status;
+
+	/* Only termination structure is populated here in ULL context
+	 * but the actual enqueue happens in the LLL context in
+	 * tx_lll_flush. The reason being to avoid passing the reason
+	 * value and handle through the mayfly scheduling of the
+	 * tx_lll_flush.
+	 */
+	rx = (void *)&conn->terminate.node_rx;
+	rx->hdr.handle = conn->lll.handle;
+	rx->hdr.type = NODE_RX_TYPE_TERMINATE;
+	*((uint8_t *)rx->pdu) = reason;
+
+	/* flush demux-ed Tx buffer still in ULL context */
+	tx_ull_flush(conn);
+
+	/* Stop Master or Slave role ticker */
+	ticker_status = ticker_stop(TICKER_INSTANCE_ID_CTLR,
+				    TICKER_USER_ID_ULL_HIGH,
+				    TICKER_ID_CONN_BASE + lll->handle,
+				    ticker_op_stop_cb, (void *)lll);
+	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
+		  (ticker_status == TICKER_STATUS_BUSY));
+
+	/* Invalidate the connection context */
+	lll->handle = 0xFFFF;
+
+	/* Demux and flush Tx PDUs that remain enqueued in thread context */
+	ull_conn_tx_demux(UINT8_MAX);
 }
 
+static void tx_ull_flush(struct ll_conn *conn)
+{
+}
+
+static void tx_lll_flush(void *param)
+{
+	struct ll_conn *conn = (void *)HDR_LLL2EVT(param);
+	uint16_t handle = ll_conn_handle_get(conn);
+	struct lll_conn *lll = param;
+	struct node_rx_pdu *rx;
+	struct node_tx *tx;
+	memq_link_t *link;
+
+	lll_conn_flush(handle, lll);
+
+	link = memq_dequeue(lll->memq_tx.tail, &lll->memq_tx.head,
+			    (void **)&tx);
+	while (link) {
+		struct lll_tx *lll_tx;
+		uint8_t idx;
+
+		idx = MFIFO_ENQUEUE_GET(conn_ack, (void **)&lll_tx);
+		LL_ASSERT(lll_tx);
+
+		lll_tx->handle = 0xFFFF;
+		lll_tx->node = tx;
+
+		/* TX node UPSTREAM, i.e. Tx node ack path */
+		link->next = tx->next; /* Indicates ctrl pool or data pool */
+		tx->next = link;
+
+		MFIFO_ENQUEUE(conn_ack, idx);
+
+		link = memq_dequeue(lll->memq_tx.tail, &lll->memq_tx.head,
+				    (void **)&tx);
+	}
+
+	/* Get the terminate structure reserved in the connection context.
+	 * The terminate reason and connection handle should already be
+	 * populated before this mayfly function was scheduled.
+	 */
+	rx = (void *)&conn->terminate.node_rx;
+	LL_ASSERT(rx->hdr.link);
+	link = rx->hdr.link;
+	rx->hdr.link = NULL;
+
+	/* Enqueue the terminate towards ULL context */
+	ull_rx_put(link, rx);
+	ull_rx_sched();
+}
 
 #if defined(CONFIG_BT_CTLR_LLID_DATA_START_EMPTY)
 static int empty_data_start_release(struct ll_conn *conn, struct node_tx *tx)
