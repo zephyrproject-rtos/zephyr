@@ -627,13 +627,13 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const ep_cfg)
 	uint8_t ep = ep_cfg->ep_addr;
 	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
 
-	LOG_DBG("ep 0x%02x, previous ep_mps %u, ep_mps %u, ep_type %u",
-		ep_cfg->ep_addr, ep_state->ep_mps, ep_cfg->ep_mps,
-		ep_cfg->ep_type);
-
 	if (!ep_state) {
 		return -EINVAL;
 	}
+
+	LOG_DBG("ep 0x%02x, previous ep_mps %u, ep_mps %u, ep_type %u",
+		ep_cfg->ep_addr, ep_state->ep_mps, ep_cfg->ep_mps,
+		ep_cfg->ep_type);
 
 #ifdef USB
 	if (ep_cfg->ep_mps > ep_state->ep_pma_buf_len) {
