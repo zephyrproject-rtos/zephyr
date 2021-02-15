@@ -32,7 +32,6 @@
 #define FIRST_HANDLE			0x0001
 #define LAST_HANDLE			0xFFFF
 
-
 struct mcs_instance_t {
 	uint16_t start_handle;
 	uint16_t end_handle;
@@ -123,6 +122,7 @@ static struct bt_mcc_cb_t *mcc_cb;
 static bool subscribe_all;
 
 #ifdef CONFIG_BT_OTC
+NET_BUF_SIMPLE_DEFINE_STATIC(otc_obj_buf, CONFIG_BT_MCC_OTC_OBJ_BUF_SIZE);
 static struct bt_otc_instance_t *cur_otc_inst;
 static struct bt_otc_cb otc_cb;
 #endif /* CONFIG_BT_OTC */
@@ -2139,6 +2139,11 @@ void on_obj_selected(struct bt_conn *conn, int result,
 	/* TODO: Read metadata here? */
 	/* For now: Left to the application */
 
+	/* Only one object at a time is selected in OTS */
+	/* When the selected callback comes, a new object is selected */
+	/* Reset the object buffer */
+	net_buf_simple_reset(&otc_obj_buf);
+
 #if CONFIG_BT_DEBUG_MCC
 	if (mcc_cb && mcc_cb->otc_obj_selected) {
 		mcc_cb->otc_obj_selected(conn, OLCP_RESULT_TO_ERROR(result));
@@ -2318,6 +2323,10 @@ void on_object_metadata(struct bt_conn *conn, int err,
 {
 	BT_INFO("Object's meta data:");
 	BT_INFO("\tCurrent size\t:%u", otc_inst->cur_object.current_size);
+
+	if (otc_inst->cur_object.current_size > otc_obj_buf.size) {
+		BT_DBG("Object larger than allocated buffer");
+	}
 
 	if (cur_mcs_inst) {
 		if (cur_mcs_inst->otc_obj_buff) {
