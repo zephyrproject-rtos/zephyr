@@ -6,6 +6,8 @@
 #ifndef __INC_SOC_H
 #define __INC_SOC_H
 
+#include <arch/xtensa/cache.h>
+
 /* macros related to interrupt handling */
 #define XTENSA_IRQ_NUM_SHIFT			0
 #define CAVS_IRQ_NUM_SHIFT			8
@@ -216,9 +218,9 @@ struct soc_global_regs {
 
 /* macros for data cache operations */
 #define SOC_DCACHE_FLUSH(addr, size)		\
-	xthal_dcache_region_writeback((addr), (size))
+	z_xtensa_cache_flush((addr), (size))
 #define SOC_DCACHE_INVALIDATE(addr, size)	\
-	xthal_dcache_region_invalidate((addr), (size))
+	z_xtensa_cache_inv((addr), (size))
 
 extern void z_soc_irq_enable(uint32_t irq);
 extern void z_soc_irq_disable(uint32_t irq);

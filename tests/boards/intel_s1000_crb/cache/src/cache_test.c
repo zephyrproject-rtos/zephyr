@@ -51,7 +51,7 @@ static void cache_flush_test(void)
 	}
 
 	LOG_INF("Flushing cache to commit contents to main memory ...");
-	xthal_dcache_region_writeback(cached_buffer->flush,
+	z_xtensa_cache_flush(cached_buffer->flush,
 			CACHE_TEST_BUFFER_SIZE);
 
 	LOG_INF("Comparing contents of cached memory vs main memory ...");
@@ -80,7 +80,7 @@ static void cache_invalidation_test(void)
 	}
 
 	LOG_INF("Invalidating cache to read contents from main memory ...");
-	xthal_dcache_region_invalidate(cached_buffer->invalidate,
+	z_xtensa_cache_inv(cached_buffer->invalidate,
 			CACHE_TEST_BUFFER_SIZE);
 
 	LOG_INF("Comparing contents of cached memory vs main memory ...");

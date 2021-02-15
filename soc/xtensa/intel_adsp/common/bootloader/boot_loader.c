@@ -15,6 +15,7 @@
 #include <soc/shim.h>
 #include <adsp/io.h>
 #include <soc.h>
+#include <arch/xtensa/cache.h>
 #include "manifest.h"
 
 #if CONFIG_SOC_INTEL_S1000
@@ -70,7 +71,7 @@ static inline void bmemcpy(void *dest, void *src, size_t bytes)
 	for (i = 0; i < (bytes >> 2); i++)
 		d[i] = s[i];
 
-	SOC_DCACHE_FLUSH(dest, bytes);
+	z_xtensa_cache_flush(dest, bytes);
 }
 
 /* bzero used by bootloader */
@@ -82,7 +83,7 @@ static inline void bbzero(void *dest, size_t bytes)
 	for (i = 0; i < (bytes >> 2); i++)
 		d[i] = 0;
 
-	SOC_DCACHE_FLUSH(dest, bytes);
+	z_xtensa_cache_flush(dest, bytes);
 }
 
 static void parse_module(struct sof_man_fw_header *hdr,
