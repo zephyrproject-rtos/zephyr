@@ -626,10 +626,13 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 
 	conn->llcp.fex.valid = 0U;
 
+	/* Reset terminate reason */
+	conn->terminate.reason = 0U;
+
 	/* NOTE: use allocated link for generating dedicated
 	 * terminate ind rx node
 	 */
-	conn->llcp.terminate.node_rx.hdr.link = link;
+	conn->terminate.node_rx.hdr.link = link;
 
 	conn->llcp.fex.features_used = LL_FEAT;
 	conn->llcp.fex.features_peer = 0;
@@ -766,7 +769,7 @@ uint8_t ll_connect_disable(void **rx)
 		struct node_rx_pdu *cc;
 		memq_link_t *link;
 
-		cc = (void *)&conn->llcp.terminate.node_rx;
+		cc = (void *)&conn->terminate.node_rx;
 		link = cc->hdr.link;
 		LL_ASSERT(link);
 
@@ -909,7 +912,7 @@ static inline void conn_release(struct ll_scan_set *scan)
 
 	conn = (void *)HDR_LLL2EVT(lll);
 
-	cc = (void *)&conn->llcp.terminate.node_rx;
+	cc = (void *)&conn->terminate.node_rx;
 	link = cc->hdr.link;
 	LL_ASSERT(link);
 
