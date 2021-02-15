@@ -403,14 +403,7 @@ struct llcp_struct {
 		uint16_t *pdu_win_offset;
 		uint32_t ticks_anchor;
 	} conn_upd;
-	struct {
-		uint8_t reason_own;
-		uint8_t reason_peer;
-		struct {
-			struct node_rx_hdr hdr;
-			uint8_t reason;
-		} node_rx;
-	} terminate;
+
 	struct {
 		uint8_t  cmd:1;
 		uint8_t  disabled:1;
@@ -454,6 +447,20 @@ struct ll_conn {
 
 	struct ull_tx_q tx_q;
 	struct llcp_struct llcp;
+
+	/* TODO(thoh): Describe what this structure does */
+	struct {
+		uint8_t reason;
+		/* node rx type with memory aligned storage for terminate
+		 * reason.
+		 * HCI will reference the value using the pdu member of
+		 * struct node_rx_pdu.
+		 */
+		struct {
+			struct node_rx_hdr hdr;
+			uint8_t reason __aligned(4);
+		} node_rx;
+	} terminate;
 
 /*
  * EGON TODO: all the following comes from the legacy LL llcp structure

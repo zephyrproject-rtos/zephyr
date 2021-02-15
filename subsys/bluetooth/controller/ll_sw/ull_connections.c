@@ -330,7 +330,7 @@ int ull_conn_rx(memq_link_t *link, struct node_rx_pdu **rx)
 		 * EGON TODO: use correct data structure
 		 */
 		if (conn->llcp.enc.pause_rx) {
-			conn->llcp.terminate.reason_peer =
+			conn->terminate.reason =
 				BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL;
 
 			/* Mark for buffer for release */
@@ -347,7 +347,7 @@ int ull_conn_rx(memq_link_t *link, struct node_rx_pdu **rx)
 		 * or more likely this is handled in ull_llcp.c
 		 */
 		if (conn->llcp.enc.pause_rx) {
-			conn->llcp.terminate.reason_peer =
+			conn->terminate.reason =
 				BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL;
 		}
 #endif /* CONFIG_BT_CTLR_LE_ENC */

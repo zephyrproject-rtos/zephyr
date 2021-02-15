@@ -56,6 +56,10 @@
 #include "ll_feat.h"
 #include "ll_settings.h"
 
+#if (!defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY))
+#include "ll_sw/ull_llcp.h"
+#endif
+
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_ull_adv
 #include "common/log.h"
@@ -1051,7 +1055,11 @@ uint8_t ll_adv_enable(uint8_t enable)
 		conn->llcp.fex.features_used = LL_FEAT;
 		conn->llcp.fex.features_peer = 0;
 		conn->llcp.vex.valid = 0;
-		conn->llcp.terminate.reason_peer = 0;
+		conn->terminate.reason = 0;
+		/* NOTE: use allocated link for generating dedicated
+		 * terminate ind rx node
+		 */
+		conn->terminate.node_rx.hdr.link = link;
 #endif /* CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY */
 
 #ifdef CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY
@@ -1561,6 +1569,10 @@ int ull_adv_reset(void)
 	}
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
+
+	for (handle = 0U; handle < BT_CTLR_ADV_SET; handle++) {
+		(void)disable(handle);
+	}
 
 	return 0;
 }
