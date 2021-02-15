@@ -11,7 +11,7 @@
 #include <usb/usb_device.h>
 #include <usb/class/usb_hid.h>
 
-#define LOG_LEVEL LOG_LEVEL_DBG
+#define LOG_LEVEL LOG_LEVEL_INF
 LOG_MODULE_REGISTER(main);
 
 static const struct device *hdev;
@@ -103,7 +103,7 @@ static void report_event_handler(struct k_timer *dummy)
 
 static void protocol_cb(const struct device *dev, uint8_t protocol)
 {
-	LOG_DBG("New protocol: %s", protocol == HID_PROTOCOL_BOOT ?
+	LOG_INF("New protocol: %s", protocol == HID_PROTOCOL_BOOT ?
 		"boot" : "report");
 }
 
@@ -131,7 +131,7 @@ void main(void)
 {
 	int ret;
 
-	LOG_DBG("Starting application");
+	LOG_INF("Starting application");
 
 	ret = usb_enable(status_cb);
 	if (ret != 0) {
@@ -150,7 +150,7 @@ static int composite_pre_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	LOG_DBG("HID Device: dev %p", hdev);
+	LOG_INF("HID Device: dev %p", hdev);
 
 	usb_hid_register_device(hdev, hid_report_desc, sizeof(hid_report_desc),
 				&ops);
