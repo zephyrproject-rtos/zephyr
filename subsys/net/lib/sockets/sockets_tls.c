@@ -73,7 +73,7 @@ struct dtls_timing_context {
 };
 
 /** TLS context information. */
-struct tls_context {
+__net_socket struct tls_context {
 	/** Information whether TLS context is used. */
 	bool is_used;
 
