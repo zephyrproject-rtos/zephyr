@@ -149,7 +149,8 @@ class EDT:
                  warn_reg_unit_address_mismatch=True,
                  default_prop_types=True,
                  support_fixed_partitions_on_any_bus=True,
-                 infer_binding_for_paths=None):
+                 infer_binding_for_paths=None,
+                 err_on_deprecated_properties=False):
         """EDT constructor.
 
         dts:
@@ -178,11 +179,15 @@ class EDT:
           should be inferred from the node content.  (Child nodes are not
           processed.)  Pass none if no nodes should support inferred bindings.
 
+        err_on_deprecated_properties (default: False):
+          If True and 'dts' has any deprecated properties set, raise an error.
+
         """
         self._warn_reg_unit_address_mismatch = warn_reg_unit_address_mismatch
         self._default_prop_types = default_prop_types
         self._fixed_partitions_no_bus = support_fixed_partitions_on_any_bus
         self._infer_binding_for_paths = set(infer_binding_for_paths or [])
+        self._err_on_deprecated_properties = bool(err_on_deprecated_properties)
 
         self.dts_path = dts
         self.bindings_dirs = bindings_dirs
@@ -412,7 +417,9 @@ class EDT:
             # These depend on all Node objects having been created, because
             # they (either always or sometimes) reference other nodes, so we
             # run them separately
-            node._init_props(default_prop_types=self._default_prop_types)
+            node._init_props(default_prop_types=self._default_prop_types,
+                             err_on_deprecated=
+                             self._err_on_deprecated_properties)
             node._init_interrupts()
             node._init_pinctrls()
 
@@ -880,7 +887,7 @@ class Node:
         # Same bus node as parent (possibly None)
         return self.parent.bus_node
 
-    def _init_props(self, default_prop_types=False):
+    def _init_props(self, default_prop_types=False, err_on_deprecated=False):
         # Creates self.props. See the class docstring. Also checks that all
         # properties on the node are declared in its binding.
 
@@ -895,17 +902,18 @@ class Node:
         # Initialize self.props
         if prop2specs:
             for prop_spec in prop2specs.values():
-                self._init_prop(prop_spec)
+                self._init_prop(prop_spec, err_on_deprecated)
             self._check_undeclared_props()
         elif default_prop_types:
             for name in node.props:
                 if name not in _DEFAULT_PROP_SPECS:
                     continue
                 prop_spec = _DEFAULT_PROP_SPECS[name]
-                val = self._prop_val(name, prop_spec.type, False, False, None)
+                val = self._prop_val(name, prop_spec.type, False, False, None,
+                                     err_on_deprecated)
                 self.props[name] = Property(prop_spec, val, self)
 
-    def _init_prop(self, prop_spec):
+    def _init_prop(self, prop_spec, err_on_deprecated):
         # _init_props() helper for initializing a single property.
         # 'prop_spec' is a PropertySpec object from the node's binding.
 
@@ -915,7 +923,8 @@ class Node:
             _err("'{}' in {} lacks 'type'".format(name, self.binding_path))
 
         val = self._prop_val(name, prop_type, prop_spec.deprecated,
-                             prop_spec.required, prop_spec.default)
+                             prop_spec.required, prop_spec.default,
+                             err_on_deprecated)
 
         if val is None:
             # 'required: false' property that wasn't there, or a property type
@@ -943,7 +952,8 @@ class Node:
 
         self.props[name] = Property(prop_spec, val, self)
 
-    def _prop_val(self, name, prop_type, deprecated, required, default):
+    def _prop_val(self, name, prop_type, deprecated, required, default,
+                  err_on_deprecated):
         # _init_prop() helper for getting the property's value
         #
         # name:
@@ -961,13 +971,20 @@ class Node:
         # default:
         #   Default value to use when the property doesn't exist, or None if
         #   the binding doesn't give a default value
+        #
+        # err_on_deprecated:
+        #   If True, a deprecated property is an error instead of warning.
 
         node = self._node
         prop = node.props.get(name)
 
         if prop and deprecated:
-            _LOG.warning(f"'{name}' is marked as deprecated in 'properties:' "
-                         f"in {self.binding_path} for node {node.path}.")
+            msg = (f"'{name}' is marked as deprecated in 'properties:' "
+                   f"in {self.binding_path} for node {node.path}.")
+            if err_on_deprecated:
+                _err(msg)
+            else:
+                _LOG.warning(msg)
 
         if not prop:
             if required and self.status == "okay":
