@@ -50,6 +50,10 @@
 #include "ull_conn_internal.h"
 #include "ull_master_internal.h"
 
+#if (!defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY))
+#include "ll_sw/ull_llcp.h"
+#endif
+
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_ull_master
 #include "common/log.h"
@@ -615,6 +619,11 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 
 	lll->handle = ll_conn_handle_get(conn);
 	rx->handle = lll->handle;
+
+#if (!defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY))
+	/* Set LLCP as connection-wise connected */
+	ull_cp_state_set(conn, ULL_CP_CONNECTED);
+#endif /* CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY */
 
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
 	lll->tx_pwr_lvl = RADIO_TXP_DEFAULT;
