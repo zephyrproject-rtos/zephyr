@@ -1653,29 +1653,26 @@ For this example, west resolves imports in this order:
 Manifest Import Details
 =======================
 
-This section describes how west imports a manifest file a bit more formally.
+This section describes how west resolves a manifest file that uses ``import`` a
+bit more formally.
 
 Overview
 --------
 
-A west manifest's ``projects`` and ``self`` sections can have ``import`` keys,
-like so:
+The ``import`` key can appear in a west manifest's ``projects`` and ``self``
+sections. The general case looks like this:
 
 .. code-block:: yaml
 
-   # Top-level west.yml.
+   # Top-level manifest file.
    manifest:
-     # ...
      projects:
        - name: foo
-         revision: rev-1
          import: import-1
        - name: bar
-         revision: rev-2
          import: import-2
        # ...
        - name: baz
-         revision: rev-N
          import: import-N
      self:
        import: self-import
@@ -1683,17 +1680,39 @@ like so:
 Import keys are optional. If any of ``import-1, ..., import-N`` are missing,
 west will not import additional manifest data from that project. If
 ``self-import`` is missing, no additional files in the manifest repository
-(beyond the top-level west.yml) are imported.
+(beyond the top-level file) are imported.
 
-The ultimate outcome of resolving manifest imports is a final list of projects,
-which is produced by combining the ``projects`` defined in the top-level file
-with those defined in imported files. Importing is done in this order:
+The ultimate outcomes of resolving manifest imports are:
+
+- a ``projects`` list, which is produced by combining the ``projects`` defined
+  in the top-level file with those defined in imported files
+
+- a set of extension commands, which are drawn from the the ``west-commands``
+  keys in in the top-level file and any imported files
+
+Importing is done in this order:
 
 #. Manifests from ``self-import`` are imported first.
-#. The top-level manifest file's ``projects`` are added in next.
+#. The top-level manifest file's definitions are handled next.
 #. Manifests from ``import-1``, ..., ``import-N``, are imported in that order.
 
-This process recurses if necessary.
+When an individual ``import`` key refers to multiple manifest files, they are
+processed in this order:
+
+- If the value is a relative path naming a directory (or a map whose ``file``
+  is a directory), the manifest files it contains are processed in
+  lexicographic order -- i.e., sorted by file name.
+- If the value is a sequence, its elements are recursively imported in the
+  order they appear.
+
+This process recurses if necessary. E.g., if ``import-1`` produces a manifest
+file that contains an ``import`` key, it is resolved recursively using the same
+rules before its contents are processed further.
+
+Projects
+--------
+
+This section describes how the final ``projects`` list is created.
 
 Projects are identified by name. If the same name occurs in multiple manifests,
 the first definition is used, and subsequent definitions are ignored. For
@@ -1727,19 +1746,16 @@ extra projects shouldn't take too much time unless it's really needed. See the
 documentation for the :ref:`update.fetch <west-config-index>` configuration
 option for more information.
 
+Extensions
+----------
+
+All extension commands defined using ``west-commands`` keys discovered while
+handling imports are available in the resolved manifest.
+
 If an imported manifest file has a ``west-commands:`` definition in its
 ``self:`` section, the extension commands defined there are added to the set of
 available extensions at the time the manifest is imported. They will thus take
 precedence over any extension commands with the same names added later on.
-
-When an individual ``import`` key refers to multiple manifest files, they are
-processed in this order:
-
-- If the value is a relative path naming a directory (or a map whose ``file``
-  is a directory), the manifest files it contains are processed in
-  lexicographic order -- i.e., sorted by file name.
-- If the value is a sequence, its elements are recursively imported in the
-  order they appear.
 
 .. _west-manifest-cmd:
 
