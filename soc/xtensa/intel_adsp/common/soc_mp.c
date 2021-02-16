@@ -74,9 +74,7 @@ struct cpustart_rec {
 static __aligned(XCHAL_DCACHE_LINESIZE)
 struct cpustart_rec start_rec;
 
-static void *mp_top;
-
-static void mp_entry2(void)
+void z_mp_entry(void)
 {
 	volatile int ie;
 	uint32_t idc_reg;
@@ -127,35 +125,6 @@ static void mp_entry2(void)
 #endif
 }
 
-/* Defines a locally callable "function" named mp_stack_switch().  The
- * first argument (in register a2 post-ENTRY) is the new stack pointer
- * to go into register a1.  The second (a3) is the entry point.
- * Because this never returns, a0 is used as a scratch register then
- * set to zero for the called function (a null return value is the
- * signal for "top of stack" to the debugger).
- */
-void mp_stack_switch(void *stack, void *entry);
-__asm__("\n"
-	".align 4		\n"
-	"mp_stack_switch:	\n\t"
-
-	"entry a1, 16		\n\t"
-
-	"movi a0, 0		\n\t"
-
-	"jx a3			\n\t");
-
-/* Carefully constructed to use no stack beyond compiler-generated ABI
- * instructions. Stack pointer is pointing to __stack at this point.
- */
-void z_mp_entry(void)
-{
-	*(uint32_t *)CONFIG_SRAM_BASE_ADDRESS = 0xDEADBEEF;
-	SOC_DCACHE_FLUSH((uint32_t *)CONFIG_SRAM_BASE_ADDRESS, 64);
-
-	mp_stack_switch(mp_top, mp_entry2);
-}
-
 void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 		    arch_cpustart_t fn, void *arg)
 {
@@ -173,8 +142,6 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	start_rec.arg = arg;
 	start_rec.vecbase = vecbase;
 	start_rec.alive = 0;
-
-	mp_top = Z_THREAD_STACK_BUFFER(stack) + sz;
 
 	SOC_DCACHE_FLUSH(&start_rec, sizeof(start_rec));
 
