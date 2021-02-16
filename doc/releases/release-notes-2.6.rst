@@ -74,6 +74,8 @@ Architectures
 
   * AARCH32
 
+    * Added support for null pointer dereferencing detection in Cortex-M.
+
   * AARCH64
 
 * POSIX
