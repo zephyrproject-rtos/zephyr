@@ -1296,5 +1296,5 @@ BT_GATT_SERVICE_DEFINE(ascs_svc,
 			       BT_GATT_PERM_WRITE_ENCRYPT,
 			       NULL, ascs_cp_write, NULL),
 	BT_GATT_CCC(ascs_cp_cfg_changed,
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT),
+		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT)
 );
