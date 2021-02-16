@@ -4277,6 +4277,8 @@ static inline uint64_t feat_land_octet0(uint64_t feat_to_keep, uint64_t feat_oct
 	return feat_result;
 }
 
+#if defined(CONFIG_BT_PERIPHERAL) || \
+	(defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_CTLR_SLAVE_FEAT_REQ))
 static int feature_rsp_send(struct ll_conn *conn, struct node_rx_pdu *rx,
 			    struct pdu_data *pdu_rx)
 {
@@ -4327,6 +4329,7 @@ static int feature_rsp_send(struct ll_conn *conn, struct node_rx_pdu *rx,
 
 	return 0;
 }
+#endif /* PERIPHERAL || (CENTRAL && SLAVE_FEAT_REQ) */
 
 #if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_CTLR_SLAVE_FEAT_REQ)
 static void feature_rsp_recv(struct ll_conn *conn, struct pdu_data *pdu_rx)
