@@ -102,11 +102,13 @@ static inline uint32_t arch_k_cycle_get_32(void)
 
 
 struct __esf {
+	uint32_t out[8];
+	uint32_t global[8];
+	uint32_t psr;
 	uint32_t pc;
 	uint32_t npc;
-	uint32_t psr;
+	uint32_t wim;
 	uint32_t tbr;
-	uint32_t sp;
 	uint32_t y;
 };
 
