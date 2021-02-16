@@ -544,6 +544,20 @@ do {                                                                    \
 	})
 
 /**
+ * @brief Is @p X a power of two?
+ *
+ * Macro ensures that expressions are evaluated only once. See @ref Z_MAX for
+ * macro limitations.
+ * Arguably redundant with is_power_of_two.
+ */
+#define Z_IS_POWER_OF_TWO(X) ({ \
+		/* random suffix to avoid naming conflict */ \
+		__typeof__(X) _value_x_ = (X); \
+		(((_value_x_) != 0U) && \
+		(((_value_x_) & ((_value_x_) - 1U)) == 0U)); \
+	})
+
+/**
  * @brief Calculate power of two ceiling for some nonzero value
  *
  * @param x Nonzero unsigned long value
