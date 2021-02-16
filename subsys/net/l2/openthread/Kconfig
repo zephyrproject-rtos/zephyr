@@ -222,12 +222,6 @@ config OPENTHREAD_COPROCESSOR_VENDOR_HOOK_SOURCE
 	help
 	  Provides path to compile vendor hook file.
 
-config OPENTHREAD_NCP_BUFFER_SIZE
-	int "The size of the NCP buffers"
-	default 2048
-	help
-	  The size of the NCP buffers.
-
 endif # OPENTHREAD_COPROCESSOR
 
 config OPENTHREAD_PLATFORM_INFO
