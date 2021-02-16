@@ -319,6 +319,14 @@ static void alt_thread_entry(void)
 	 */
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 	__asm__ volatile (
+		"push {r4,r5,r6,r7};\n\t"
+		"mov r4, r8;\n\t"
+		"mov r5, r9;\n\t"
+		"push {r4, r5};\n\t"
+		"mov r4, r10;\n\t"
+		"mov r5, r11;\n\t"
+		"push {r4, r5};\n\t"
+		"push {r0, r1};\n\t"
 		"mov r1, r7;\n\t"
 		"mov r0, %0;\n\t"
 		"ldmia r0!, {r4-r7};\n\t"
@@ -328,14 +336,18 @@ static void alt_thread_entry(void)
 		"mov r10, r6;\n\t"
 		"mov r11, r7;\n\t"
 		"mov r7, r1;\n\t"
+		"pop {r0, r1};\n\t"
 		:	: "r" (&ztest_thread_callee_saved_regs_container)
 		: "memory"
 	);
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	__asm__ volatile (
+		"push {v1-v8};\n\t"
+		"push {r0, r1};\n\t"
 		"mov r0, r7;\n\t"
 		"ldmia %0, {v1-v8};\n\t"
 		"mov r7, r0;\n\t"
+		"pop {r0, r1};\n\t"
 		: : "r" (&ztest_thread_callee_saved_regs_container)
 		: "memory"
 	);
@@ -347,6 +359,24 @@ static void alt_thread_entry(void)
 	__DMB();
 	SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
 	irq_unlock(0);
+
+	/* Restore stacked callee-saved registers */
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+	__asm__ volatile (
+		"pop {r4, r5, r6, r7};\n\t"
+		"mov r8, r4;\n\t"
+		"mov r9, r5;\n\t"
+		"mov r10, r6;\n\t"
+		"mov r11, r7;\n\t"
+		"pop {r4, r5, r6, r7};\n\t"
+		: : :
+	);
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+	__asm__ volatile (
+		"pop {v1-v8};\n\t"
+		: : :
+	);
+#endif
 
 	/* Verify that the main test thread has managed to resume, before
 	 * we return to the alternative thread (we verify this by checking
