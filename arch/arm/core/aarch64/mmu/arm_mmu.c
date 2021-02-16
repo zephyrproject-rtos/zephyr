@@ -336,41 +336,65 @@ static int remove_map(struct arm_mmu_ptables *ptables, const char *name,
 }
 
 /* zephyr execution regions with appropriate attributes */
-static const struct arm_mmu_region mmu_zephyr_regions[] = {
+
+struct arm_mmu_flat_range {
+	char *name;
+	void *start;
+	void *end;
+	uint32_t attrs;
+};
+
+static const struct arm_mmu_flat_range mmu_zephyr_ranges[] = {
 
 	/* Mark the zephyr execution regions (data, bss, noinit, etc.)
 	 * cacheable, read-write
 	 * Note: read-write region is marked execute-never internally
 	 */
-	MMU_REGION_FLAT_ENTRY("zephyr_data",
-			      (uintptr_t)__kernel_ram_start,
-			      (uintptr_t)__kernel_ram_size,
-			      MT_NORMAL | MT_P_RW_U_NA | MT_DEFAULT_SECURE_STATE),
+	{ .name  = "zephyr_data",
+	  .start = __kernel_ram_start,
+	  .end   = __kernel_ram_end,
+	  .attrs = MT_NORMAL | MT_P_RW_U_NA | MT_DEFAULT_SECURE_STATE },
 
 	/* Mark text segment cacheable,read only and executable */
-	MMU_REGION_FLAT_ENTRY("zephyr_code",
-			      (uintptr_t)_image_text_start,
-			      (uintptr_t)_image_text_size,
-			      MT_NORMAL | MT_P_RX_U_NA | MT_DEFAULT_SECURE_STATE),
+	{ .name  = "zephyr_code",
+	  .start = _image_text_start,
+	  .end   = _image_text_end,
+	  .attrs = MT_NORMAL | MT_P_RX_U_NA | MT_DEFAULT_SECURE_STATE },
 
 	/* Mark rodata segment cacheable, read only and execute-never */
-	MMU_REGION_FLAT_ENTRY("zephyr_rodata",
-			      (uintptr_t)_image_rodata_start,
-			      (uintptr_t)_image_rodata_size,
-			      MT_NORMAL | MT_P_RO_U_NA | MT_DEFAULT_SECURE_STATE),
+	{ .name  = "zephyr_rodata",
+	  .start = _image_rodata_start,
+	  .end   = _image_rodata_end,
+	  .attrs = MT_NORMAL | MT_P_RO_U_NA | MT_DEFAULT_SECURE_STATE },
 };
+
+static inline void add_arm_mmu_flat_range(struct arm_mmu_ptables *ptables,
+					  const struct arm_mmu_flat_range *range,
+					  uint32_t extra_flags)
+{
+	uintptr_t address = (uintptr_t)range->start;
+	size_t size = (uintptr_t)range->end - address;
+
+	if (size) {
+		add_map(ptables, range->name, address, address,
+			size, range->attrs | extra_flags);
+	}
+}
 
 static inline void add_arm_mmu_region(struct arm_mmu_ptables *ptables,
 				      const struct arm_mmu_region *region,
 				      uint32_t extra_flags)
 {
-	add_map(ptables, region->name, region->base_pa, region->base_va,
-		region->size, region->attrs | extra_flags);
+	if (region->size || region->attrs) {
+		add_map(ptables, region->name, region->base_pa, region->base_va,
+			region->size, region->attrs | extra_flags);
+	}
 }
 
 static void setup_page_tables(struct arm_mmu_ptables *ptables)
 {
 	unsigned int index;
+	const struct arm_mmu_flat_range *range;
 	const struct arm_mmu_region *region;
 	uintptr_t max_va = 0, max_pa = 0;
 
@@ -390,10 +414,9 @@ static void setup_page_tables(struct arm_mmu_ptables *ptables)
 		 "Maximum PA not supported\n");
 
 	/* setup translation table for zephyr execution regions */
-	for (index = 0; index < ARRAY_SIZE(mmu_zephyr_regions); index++) {
-		region = &mmu_zephyr_regions[index];
-		if (region->size || region->attrs)
-			add_arm_mmu_region(ptables, region, 0);
+	for (index = 0; index < ARRAY_SIZE(mmu_zephyr_ranges); index++) {
+		range = &mmu_zephyr_ranges[index];
+		add_arm_mmu_flat_range(ptables, range, 0);
 	}
 
 	/*
@@ -402,10 +425,8 @@ static void setup_page_tables(struct arm_mmu_ptables *ptables)
 	 */
 	for (index = 0; index < mmu_config.num_regions; index++) {
 		region = &mmu_config.mmu_regions[index];
-		if (region->size || region->attrs)
-			add_arm_mmu_region(ptables, region, MT_NO_OVERWRITE);
+		add_arm_mmu_region(ptables, region, MT_NO_OVERWRITE);
 	}
-
 }
 
 /* Translation table control register settings */
