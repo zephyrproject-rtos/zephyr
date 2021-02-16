@@ -1,0 +1,27 @@
+# Copyright (c) 2021 Caspar Friedrich <c.s.w.friedrich@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: 256-Kbit (32K × 8) Serial (SPI) F-RAM
+
+compatible: "cypress,fm25w256"
+
+include: [eeprom-base.yaml, spi-device.yaml]
+
+properties:
+  wp-gpios:
+    type: phandle-array
+    required: false
+    description: Active low. Set to enable write protection on status register.
+
+  spi-mode:
+    type: int
+    required: false
+    default: 0
+    enum:
+      - 0
+      - 3
+    description: |
+      Set the SPI mode. Modes 0 and 3 are available.
+
+      - SPI Mode 0: CPOL = 0, CPHA = 0
+      - SPI Mode 3: CPOL = 1, CPHA = 1
