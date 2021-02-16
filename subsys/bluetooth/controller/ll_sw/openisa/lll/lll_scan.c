@@ -24,6 +24,7 @@
 
 #include "lll.h"
 #include "lll_vendor.h"
+#include "lll_clock.h"
 #include "lll_scan.h"
 #include "lll_conn.h"
 #include "lll_chan.h"
