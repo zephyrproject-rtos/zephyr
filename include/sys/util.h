@@ -21,6 +21,25 @@
  */
 #include <stdbool.h>
 
+/* Needs to be outside _ASMLANGUAGE so it can be used in
+ * preprocessor expressions for asm or linker scripts.
+ * Needs to be defined before is_power_of_two, below.
+ */
+
+/**
+ * @brief Is @p X a power of two?
+ * @param X value to check
+ * @note Argument is evaluated multiple times.
+ */
+#ifndef IS_POWER_OF_TWO
+/* Use Z_IS_POWER_OF_TWO for a GCC-only, single evaluation version */
+#if defined(_ASMLANGUAGE)
+#define IS_POWER_OF_TWO(X) (((X) != 0) && (((X) & ((X) - 1)) == 0U))
+#else
+#define IS_POWER_OF_TWO(X) (((X) != 0U) && (((X) & ((X) - 1U)) == 0U))
+#endif
+#endif
+
 #ifndef _ASMLANGUAGE
 
 #include <zephyr/types.h>
@@ -195,7 +214,7 @@ extern "C" {
  */
 static inline bool is_power_of_two(unsigned int x)
 {
-	return (x != 0U) && ((x & (x - 1U)) == 0U);
+	return IS_POWER_OF_TWO(x);
 }
 
 /**
