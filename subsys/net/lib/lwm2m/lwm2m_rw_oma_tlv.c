@@ -982,7 +982,7 @@ int do_write_op_tlv(struct lwm2m_message *msg)
 
 #ifdef CONFIG_LWM2M_RD_CLIENT_SUPPORT
 				if (!msg->ctx->bootstrap_mode) {
-					engine_trigger_update();
+					engine_trigger_update(true);
 				}
 #endif
 			}
