@@ -119,18 +119,11 @@ static void test_bogus_dynamic_name(void)
  */
 static void test_null_dynamic_name(void)
 {
-	/* Supplying a NULL dynamic name may trigger a SecureFault and
-	 * lead to system crash in TrustZone enabled Non-Secure builds.
-	 */
-#if defined(CONFIG_USERSPACE) && !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 	const struct device *mux;
 	char *drv_name = NULL;
 
 	mux = device_get_binding(drv_name);
 	zassert_equal(mux, 0,  NULL);
-#else
-	ztest_test_skip();
-#endif
 }
 
 static struct init_record {
