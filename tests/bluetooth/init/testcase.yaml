@@ -76,7 +76,7 @@ tests:
   bluetooth.init.test_ctlr:
     extra_args: CONF_FILE=prj_ctlr.conf
     platform_allow: nrf52840dk_nrf52840 nrf52dk_nrf52832
-      nrf51dk_nrf51422
+      nrf51dk_nrf51422 rv32m1_vega_ri5cy
   bluetooth.init.test_ctlr_4_0:
     extra_args: CONF_FILE=prj_ctlr_4_0.conf
     platform_allow: nrf52840dk_nrf52840 nrf52dk_nrf52832
@@ -92,19 +92,19 @@ tests:
   bluetooth.init.test_ctlr_broadcaster:
     extra_args: CONF_FILE=prj_ctlr_broadcaster.conf
     platform_allow: nrf52840dk_nrf52840 nrf52dk_nrf52832
-      nrf51dk_nrf51422
+      nrf51dk_nrf51422 rv32m1_vega_ri5cy
   bluetooth.init.test_ctlr_peripheral:
     extra_args: CONF_FILE=prj_ctlr_peripheral.conf
     platform_allow: nrf52840dk_nrf52840 nrf52dk_nrf52832
-      nrf51dk_nrf51422
+      nrf51dk_nrf51422 rv32m1_vega_ri5cy
   bluetooth.init.test_ctlr_observer:
     extra_args: CONF_FILE=prj_ctlr_observer.conf
     platform_allow: nrf52840dk_nrf52840 nrf52dk_nrf52832
-      nrf51dk_nrf51422
+      nrf51dk_nrf51422 rv32m1_vega_ri5cy
   bluetooth.init.test_ctlr_central:
     extra_args: CONF_FILE=prj_ctlr_central.conf
     platform_allow: nrf52840dk_nrf52840 nrf52dk_nrf52832
-      nrf51dk_nrf51422
+      nrf51dk_nrf51422 rv32m1_vega_ri5cy
   bluetooth.init.test_ctlr_broadcaster_ext:
     extra_args: CONF_FILE=prj_ctlr_broadcaster_ext.conf
     platform_allow: nrf52840dk_nrf52840 nrf52dk_nrf52832
