@@ -312,7 +312,7 @@ config NATIVE_POSIX_CONSOLE_INIT_PRIORITY
 config SEMIHOST_CONSOLE
 	bool "Use semihosting for console"
 	select CONSOLE_HAS_DRIVER
-	depends on CPU_CORTEX_M
+	depends on CPU_CORTEX_M || ARM64
 	help
 	  Enable this option to use semihosting for console.
 	  Semihosting is a mechanism that enables code running on an ARM target
