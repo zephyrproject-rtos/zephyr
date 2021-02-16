@@ -1,0 +1,14 @@
+# Copyright (c) 2021 Caspar Friedrich <c.s.w.friedrich@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: 256-Kbit (32K × 8) Serial (I2C) F-RAM
+
+compatible: "cypress,fm24w256"
+
+include: [eeprom-base.yaml, i2c-device.yaml]
+
+properties:
+  wp-gpios:
+    type: phandle-array
+    required: false
+    description: Active high. Set to enable write protection on all addresses.
