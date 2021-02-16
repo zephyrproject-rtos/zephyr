@@ -75,94 +75,6 @@ static void ticker_op_cb(uint32_t status, void *param);
 static struct ll_adv_sync_set ll_adv_sync_pool[CONFIG_BT_CTLR_ADV_SYNC_SET];
 static void *adv_sync_free;
 
-/* @brief Set or clear fields in extended advertising header and store
- *        extra_data if requested.
- *
- * @param[in]  adv              Advertising set.
- * @param[in]  hdr_add_fields   Flag with information which fields add.
- * @param[in]  hdr_rem_fields   Flag with information which fields remove.
- * @param[in]  data             Pointer to data to be added to header and
- *                              extra_data. Content depends on the value of
- *                              @p hdr_add_fields.
- * @param[out] ter_idx          Index of new PDU.
- *
- * @Note
- * @p data content depends on the flag provided by @p hdr_add_fields:
- * - ULL_ADV_PDU_HDR_FIELD_CTE_INFO:
- *   # @p data->field_data points to single byte with CTEInfo field
- *   # @p data->extra_data points to memory where is struct lll_df_adv_cfg
- *     for LLL.
- * - ULL_ADV_PDU_HDR_FIELD_AD_DATA:
- *   # @p data->field_data points to memory where first byte
- *     is size of advertising data, following byte is a pointer to actual
- *     advertising data.
- *   # @p data->extra_data is NULL
- * - ULL_ADV_PDU_HDR_FIELD_AUX_PTR: # @p data parameter is not used
- *
- * @return Zero in case of success, other value in case of failure.
- */
-uint8_t ull_adv_sync_pdu_set_clear(struct ll_adv_set *adv,
-				   uint16_t hdr_add_fields,
-				   uint16_t hdr_rem_fields,
-				   struct adv_pdu_field_data *data,
-				   uint8_t *ter_idx)
-{
-	struct pdu_adv *pdu_prev, *pdu_new;
-	struct lll_adv_sync *lll_sync;
-	void *extra_data_prev;
-#if IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
-	void *extra_data;
-#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
-	int err;
-
-	lll_sync = adv->lll.sync;
-	if (!lll_sync) {
-		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
-	}
-
-	/* Get reference to previous periodic advertising PDU data */
-	pdu_prev = lll_adv_sync_data_peek(lll_sync, &extra_data_prev);
-
-#if IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
-	/* Get reference to new periodic advertising PDU data buffer */
-	if ((hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_CTE_INFO) ||
-	    (!(hdr_rem_fields & ULL_ADV_PDU_HDR_FIELD_CTE_INFO) &&
-	    extra_data_prev)) {
-		/* If there was an extra data in past PDU data or it is required
-		 * by the hdr_add_fields then allocate memmory for it.
-		 */
-		pdu_new = lll_adv_sync_data_alloc(lll_sync, &extra_data, ter_idx);
-		if (!pdu_new) {
-			return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
-		}
-	} else {
-		extra_data = NULL;
-#else
-	{
-#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
-		pdu_new = lll_adv_sync_data_alloc(lll_sync, NULL, ter_idx);
-		if (!pdu_new) {
-			return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
-		}
-	}
-
-	err = adv_sync_hdr_set_clear(lll_sync, pdu_prev, pdu_new,
-				     hdr_add_fields, hdr_rem_fields,
-				     (data ? data->field_data : NULL));
-	if (err) {
-		return err;
-	}
-
-#if IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
-	if (extra_data) {
-		adv_sync_extra_data_set_clear(extra_data_prev, extra_data,
-					      hdr_add_fields, hdr_rem_fields,
-					      (data ? data->extra_data : NULL));
-	}
-#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
-	return 0;
-}
-
 uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 {
 	struct pdu_adv_ext_hdr *ter_hdr, ter_hdr_prev;
@@ -547,6 +459,96 @@ void ull_adv_sync_update(struct ll_adv_sync_set *sync, uint32_t slot_plus_us,
 		  (ret == TICKER_STATUS_BUSY));
 }
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
+
+/* @brief Set or clear fields in extended advertising header and store
+ *        extra_data if requested.
+ *
+ * @param[in]  adv              Advertising set.
+ * @param[in]  hdr_add_fields   Flag with information which fields add.
+ * @param[in]  hdr_rem_fields   Flag with information which fields remove.
+ * @param[in]  data             Pointer to data to be added to header and
+ *                              extra_data. Content depends on the value of
+ *                              @p hdr_add_fields.
+ * @param[out] ter_idx          Index of new PDU.
+ *
+ * @Note
+ * @p data content depends on the flag provided by @p hdr_add_fields:
+ * - ULL_ADV_PDU_HDR_FIELD_CTE_INFO:
+ *   # @p data->field_data points to single byte with CTEInfo field
+ *   # @p data->extra_data points to memory where is struct lll_df_adv_cfg
+ *     for LLL.
+ * - ULL_ADV_PDU_HDR_FIELD_AD_DATA:
+ *   # @p data->field_data points to memory where first byte
+ *     is size of advertising data, following byte is a pointer to actual
+ *     advertising data.
+ *   # @p data->extra_data is NULL
+ * - ULL_ADV_PDU_HDR_FIELD_AUX_PTR: # @p data parameter is not used
+ *
+ * @return Zero in case of success, other value in case of failure.
+ */
+uint8_t ull_adv_sync_pdu_set_clear(struct ll_adv_set *adv,
+				   uint16_t hdr_add_fields,
+				   uint16_t hdr_rem_fields,
+				   struct adv_pdu_field_data *data,
+				   uint8_t *ter_idx)
+{
+	struct pdu_adv *pdu_prev, *pdu_new;
+	struct lll_adv_sync *lll_sync;
+	void *extra_data_prev;
+#if IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+	void *extra_data;
+#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
+	int err;
+
+	lll_sync = adv->lll.sync;
+	if (!lll_sync) {
+		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
+	}
+
+	/* Get reference to previous periodic advertising PDU data */
+	pdu_prev = lll_adv_sync_data_peek(lll_sync, &extra_data_prev);
+
+#if IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+	/* Get reference to new periodic advertising PDU data buffer */
+	if ((hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_CTE_INFO) ||
+	    (!(hdr_rem_fields & ULL_ADV_PDU_HDR_FIELD_CTE_INFO) &&
+	    extra_data_prev)) {
+		/* If there was an extra data in past PDU data or it is required
+		 * by the hdr_add_fields then allocate memmory for it.
+		 */
+		pdu_new = lll_adv_sync_data_alloc(lll_sync, &extra_data,
+						  ter_idx);
+		if (!pdu_new) {
+			return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+		}
+	} else {
+		extra_data = NULL;
+#else
+	{
+#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
+		pdu_new = lll_adv_sync_data_alloc(lll_sync, NULL, ter_idx);
+		if (!pdu_new) {
+			return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+		}
+	}
+
+	err = adv_sync_hdr_set_clear(lll_sync, pdu_prev, pdu_new,
+				     hdr_add_fields, hdr_rem_fields,
+				     (data ? data->field_data : NULL));
+	if (err) {
+		return err;
+	}
+
+#if IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+	if (extra_data) {
+		adv_sync_extra_data_set_clear(extra_data_prev, extra_data,
+					      hdr_add_fields, hdr_rem_fields,
+					      (data ? data->extra_data : NULL));
+	}
+#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
+
+	return 0;
+}
 
 static int init_reset(void)
 {
