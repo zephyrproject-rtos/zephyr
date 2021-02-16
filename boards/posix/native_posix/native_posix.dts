@@ -131,6 +131,16 @@
 		current-speed = <0>;
 	};
 
+	uart1: uart_1 {
+		status = "okay";
+		compatible = "zephyr,native-posix-uart";
+		label = "UART_1";
+		/* Dummy current-speed entry to comply with serial
+		 * DTS binding
+		 */
+		current-speed = <0>;
+	};
+
 	rng: rng {
 		status = "okay";
 		compatible = "zephyr,native-posix-rng";

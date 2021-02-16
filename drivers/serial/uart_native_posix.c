@@ -253,7 +253,7 @@ static int np_uart_1_init(const struct device *dev)
 
 	d = (struct native_uart_status *)dev->data;
 
-	tty_fn = open_tty(d, CONFIG_UART_NATIVE_POSIX_PORT_1_NAME, false);
+	tty_fn = open_tty(d, DT_INST_LABEL(1), false);
 
 	d->in_fd = tty_fn;
 	d->out_fd = tty_fn;
@@ -371,9 +371,8 @@ DEVICE_DT_INST_DEFINE(0,
 	    &np_uart_driver_api_0);
 
 #if defined(CONFIG_UART_NATIVE_POSIX_PORT_1_ENABLE)
-DEVICE_DEFINE(uart_native_posix1,
-	    CONFIG_UART_NATIVE_POSIX_PORT_1_NAME, &np_uart_1_init,
-	    device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(1,
+	    &np_uart_1_init, device_pm_control_nop,
 	    (void *)&native_uart_status_1, NULL,
 	    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 	    &np_uart_driver_api_1);
