@@ -172,16 +172,6 @@
 #define RADIO_CONFIG_SRC_MATCH_EXT_ENTRY_NUM 0
 
 /**
- * @def OPENTHREAD_CONFIG_NCP_BUFFER_SIZE
- *
- * The size of the NCP buffers.
- *
- */
-#ifdef CONFIG_OPENTHREAD_NCP_BUFFER_SIZE
-#define OPENTHREAD_CONFIG_NCP_BUFFER_SIZE CONFIG_OPENTHREAD_NCP_BUFFER_SIZE
-#endif
-
-/**
  * @def OPENTHREAD_CONFIG_PLAT_LOG_MACRO_NAME
  *
  * The platform logging function for openthread.
