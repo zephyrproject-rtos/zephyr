@@ -351,8 +351,8 @@ static const struct arm_mmu_flat_range mmu_zephyr_ranges[] = {
 	 * Note: read-write region is marked execute-never internally
 	 */
 	{ .name  = "zephyr_data",
-	  .start = __kernel_ram_start,
-	  .end   = __kernel_ram_end,
+	  .start = _image_ram_start,
+	  .end   = _image_ram_end,
 	  .attrs = MT_NORMAL | MT_P_RW_U_NA | MT_DEFAULT_SECURE_STATE },
 
 	/* Mark text segment cacheable,read only and executable */
