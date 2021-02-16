@@ -71,6 +71,24 @@ set(__build_dir ${CMAKE_CURRENT_BINARY_DIR}/zephyr)
 
 set(PROJECT_BINARY_DIR ${__build_dir})
 
+if(${CMAKE_VERSION} VERSION_EQUAL 3.19.0 OR
+   ${CMAKE_VERSION} VERSION_EQUAL 3.19.1)
+  message(WARNING "CMake 3.19.0/3.19.1 contains a bug regarding Toolchain/compiler "
+          "testing. Consider switching to a different CMake version.\n"
+          "See more here: \n"
+          "- https://github.com/zephyrproject-rtos/zephyr/issues/30232\n"
+          "- https://gitlab.kitware.com/cmake/cmake/-/issues/21497")
+  # This is a workaround for #30232.
+  # During Zephyr CMake invocation a plain C compiler is used for DTS.
+  # This results in the internal `CheckCompilerFlag.cmake` being included by CMake
+  # Later, when the full toolchain is configured, then `CMakeCheckCompilerFlag.cmake` is included.
+  # This overloads the `cmake_check_compiler_flag()` function, thus causing #30232.
+  # By manualy loading `CMakeCheckCompilerFlag.cmake` then `CheckCompilerFlag.cmake` will overload
+  # the functions (and thus win the battle), and because `include_guard(GLOBAL)` is used in
+  # `CMakeCheckCompilerFlag.cmake` this file will not be re-included later.
+  include(${CMAKE_ROOT}/Modules/Internal/CMakeCheckCompilerFlag.cmake)
+endif()
+
 message(STATUS "Application: ${APPLICATION_SOURCE_DIR}")
 
 add_custom_target(code_data_relocation_target)

@@ -196,39 +196,6 @@ cleanup:
 	return ret;
 }
 
-static int transfer_empty_ack(uint16_t mid)
-{
-	struct lwm2m_message *msg;
-	int ret;
-
-	msg = lwm2m_get_message(&firmware_ctx);
-	if (!msg) {
-		LOG_ERR("Unable to get a lwm2m message!");
-		return -ENOMEM;
-	}
-
-	msg->type = COAP_TYPE_ACK;
-	msg->code = COAP_CODE_EMPTY;
-	msg->mid = mid;
-
-	ret = lwm2m_init_message(msg);
-	if (ret) {
-		goto cleanup;
-	}
-
-	ret = lwm2m_send_message(msg);
-	if (ret < 0) {
-		LOG_ERR("Error sending LWM2M packet (err:%d).", ret);
-		goto cleanup;
-	}
-
-	return 0;
-
-cleanup:
-	lwm2m_reset_message(msg, true);
-	return ret;
-}
-
 static int
 do_firmware_transfer_reply_cb(const struct coap_packet *response,
 			      struct coap_reply *reply,
@@ -254,7 +221,8 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 		return 0;
 	} else if (coap_header_get_type(response) == COAP_TYPE_CON) {
 		/* Send back ACK so the server knows we received the pkt */
-		ret = transfer_empty_ack(coap_header_get_id(check_response));
+		ret = lwm2m_send_empty_ack(&firmware_ctx,
+					   coap_header_get_id(check_response));
 		if (ret < 0) {
 			LOG_ERR("Error transmitting ACK");
 			goto error;
@@ -421,11 +389,11 @@ static void firmware_transfer(struct k_work *work)
 	ret = lwm2m_parse_peerinfo(server_addr, &firmware_ctx.remote_addr,
 				   &firmware_ctx.use_dtls);
 	if (ret < 0) {
+		LOG_ERR("Failed to parse server URI.");
 		goto error;
 	}
 
 	lwm2m_engine_context_init(&firmware_ctx);
-	firmware_ctx.handle_separate_response = true;
 	ret = lwm2m_socket_start(&firmware_ctx);
 	if (ret < 0) {
 		LOG_ERR("Cannot start a firmware-pull connection:%d", ret);
@@ -464,6 +432,7 @@ int lwm2m_firmware_start_transfer(char *package_uri)
 	}
 
 	(void)memset(&firmware_ctx, 0, sizeof(struct lwm2m_ctx));
+	firmware_ctx.sock_fd = -1;
 	firmware_retry = 0;
 	k_work_init(&firmware_work, firmware_transfer);
 	lwm2m_firmware_set_update_state(STATE_DOWNLOADING);

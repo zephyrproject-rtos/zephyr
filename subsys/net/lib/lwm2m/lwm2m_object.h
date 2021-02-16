@@ -443,6 +443,9 @@ struct lwm2m_message {
 
 	/** Counter for message re-send / abort handling */
 	uint8_t send_attempts;
+
+	/* Information whether the message was acknowledged. */
+	bool acknowledged : 1;
 };
 
 /* LWM2M format writer for the various formats supported */
