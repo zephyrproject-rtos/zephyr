@@ -66,13 +66,28 @@ struct cpustart_rec {
 	uint32_t		vecbase;
 
 	uint32_t		alive;
-
-	/* padding to cache line */
-	uint8_t		padding[XCHAL_DCACHE_LINESIZE - 6 * 4];
 };
 
-static __aligned(XCHAL_DCACHE_LINESIZE)
-struct cpustart_rec start_rec;
+#ifdef CONFIG_KERNEL_COHERENCE
+/* Coherence guarantees that normal .data will be coherent and that it
+ * won't overlap any cached memory.
+ */
+static struct {
+	struct cpustart_rec cpustart;
+} cpustart_mem;
+#else
+/* If .data RAM is by default incoherent, then the start record goes
+ * into its own dedicated cache line(s)
+ */
+static __aligned(XCHAL_DCACHE_LINESIZE) union {
+	struct cpustart_rec cpustart;
+	char pad[XCHAL_DCACHE_LINESIZE];
+} cpustart_mem;
+#endif
+
+#define start_rec \
+	(*((volatile struct cpustart_rec *) \
+	   z_soc_uncached_ptr(&cpustart_mem.cpustart)))
 
 void z_mp_entry(void)
 {
@@ -80,7 +95,13 @@ void z_mp_entry(void)
 	uint32_t idc_reg;
 
 	/* We don't know what the boot ROM might have touched and we
-	 * don't care.  Make sure it's not in our local cache.
+	 * don't care.  Make sure it's not in our local cache to be
+	 * flushed accidentally later.
+	 *
+	 * Note that technically this is dropping our own (cached)
+	 * stack memory, which we don't have a guarantee the compiler
+	 * isn't using yet.  Manual inspection of generated code says
+	 * we're safe, but really we need a better solution here.
 	 */
 	xthal_dcache_all_writeback_inv();
 
@@ -109,7 +130,6 @@ void z_mp_entry(void)
 #endif /* CONFIG_IPM_CAVS_IDC */
 
 	start_rec.alive = 1;
-	SOC_DCACHE_FLUSH(&start_rec, sizeof(start_rec));
 
 	start_rec.fn(start_rec.arg);
 
@@ -143,8 +163,6 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	start_rec.vecbase = vecbase;
 	start_rec.alive = 0;
 
-	SOC_DCACHE_FLUSH(&start_rec, sizeof(start_rec));
-
 #ifdef CONFIG_IPM_CAVS_IDC
 	idc = device_get_binding(DT_LABEL(DT_INST(0, intel_cavs_idc)));
 #endif
@@ -169,9 +187,8 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	sys_clear_bit(DT_REG_ADDR(DT_NODELABEL(cavs0)) + 0x04 +
 		      CAVS_ICTL_INT_CPU_OFFSET(cpu_num), 8);
 
-	do {
-		SOC_DCACHE_INVALIDATE(&start_rec, sizeof(start_rec));
-	} while (start_rec.alive == 0);
+	while (start_rec.alive == 0) {
+	}
 
 	/* Clear done bit from responding the power up message */
 	idc_reg = idc_read(IPC_IDCIETC(cpu_num), 0) | IPC_IDCIETC_DONE;
