@@ -259,6 +259,18 @@ static void test_CLAMP(void)
 		      0xffffffffaULL, "Unexpected clamp result");
 }
 
+static void test_IS_POWER_OF_TWO(void)
+{
+	zassert_equal(IS_POWER_OF_TWO(0x00000000), false, "Unexpected macro result");
+	zassert_equal(IS_POWER_OF_TWO(0x00000001), true, "Unexpected macro result");
+	zassert_equal(IS_POWER_OF_TWO(0x00000002), true, "Unexpected macro result");
+	zassert_equal(IS_POWER_OF_TWO(0x00000003), false, "Unexpected macro result");
+	zassert_equal(IS_POWER_OF_TWO(0x80000000), true, "Unexpected macro result");
+	zassert_equal(IS_POWER_OF_TWO(0x80000001), false, "Unexpected macro result");
+	zassert_equal(IS_POWER_OF_TWO(0xC0000000), false, "Unexpected macro result");
+	zassert_equal(IS_POWER_OF_TWO(0xFFFFFFFF), false, "Unexpected macro result");
+}
+
 static void test_FOR_EACH(void)
 {
 	#define FOR_EACH_MACRO_TEST(arg) *buf++ = arg
@@ -477,6 +489,7 @@ void test_cc(void)
 			 ztest_unit_test(test_MACRO_MAP_CAT),
 			 ztest_unit_test(test_z_max_z_min_z_clamp_z_is_power_of_two),
 			 ztest_unit_test(test_CLAMP),
+			 ztest_unit_test(test_IS_POWER_OF_TWO),
 			 ztest_unit_test(test_FOR_EACH),
 			 ztest_unit_test(test_FOR_EACH_NONEMPTY_TERM),
 			 ztest_unit_test(test_FOR_EACH_FIXED_ARG),
