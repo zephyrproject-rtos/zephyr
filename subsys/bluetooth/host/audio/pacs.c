@@ -308,7 +308,7 @@ BT_GATT_SERVICE_DEFINE(pacs_svc,
 			       BT_GATT_PERM_READ_ENCRYPT,
 			       supported_context_read, NULL, NULL),
 	BT_GATT_CCC(supported_context_cfg_changed,
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT),
+		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT)
 );
 #endif /* CONFIG_BT_PAC_SNK || CONFIG_BT_PAC_SRC */
 
