@@ -204,7 +204,12 @@ _start:
 	rsr     a3, PRID
 	extui   a3, a3, 0, 8	/* extract core ID */
 	beqz    a3, 2f
-	CALL    z_mp_entry
+
+	/* Load our stack pointer set up for us by the SOC layer */
+	movi    a1, z_mp_stack_top
+	l32i    a1, a1, 0
+
+	call4 z_mp_entry
 
 2:
 #endif
