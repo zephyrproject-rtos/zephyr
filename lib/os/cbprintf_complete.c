@@ -1525,10 +1525,14 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 				value->uint = (unsigned short)value->uint;
 			}
 		} else if (specifier_cat == SPECIFIER_FP) {
-			if (length_mod == LENGTH_UPPER_L) {
-				value->ldbl = va_arg(ap, long double);
+			if (IS_ENABLED(CONFIG_CBPRINTF_FP_SUPPORT)) {
+				if (length_mod == LENGTH_UPPER_L) {
+					value->ldbl = va_arg(ap, long double);
+				} else {
+					value->dbl = va_arg(ap, double);
+				}
 			} else {
-				value->dbl = va_arg(ap, double);
+				CODE_UNREACHABLE;
 			}
 		} else if (specifier_cat == SPECIFIER_PTR) {
 			value->ptr = va_arg(ap, void *);
