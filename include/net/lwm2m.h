@@ -107,13 +107,6 @@ struct lwm2m_ctx {
 	 */
 	bool bootstrap_mode;
 
-	/** This flag enables the context to handle an initial ACK after
-	 *  requesting a block of data, but a follow-up packet will contain
-	 *  actual data block.
-	 *  NOTE: This is required for CoAP proxy use-case.
-	 */
-	bool handle_separate_response;
-
 	/** Socket File Descriptor */
 	int sock_fd;
 };

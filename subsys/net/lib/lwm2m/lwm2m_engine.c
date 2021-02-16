@@ -1036,6 +1036,39 @@ int lwm2m_send_message(struct lwm2m_message *msg)
 	return 0;
 }
 
+int lwm2m_send_empty_ack(struct lwm2m_ctx *client_ctx, uint16_t mid)
+{
+	struct lwm2m_message *msg;
+	int ret;
+
+	msg = lwm2m_get_message(client_ctx);
+	if (!msg) {
+		LOG_ERR("Unable to get a lwm2m message!");
+		return -ENOMEM;
+	}
+
+	msg->type = COAP_TYPE_ACK;
+	msg->code = COAP_CODE_EMPTY;
+	msg->mid = mid;
+
+	ret = lwm2m_init_message(msg);
+	if (ret) {
+		goto cleanup;
+	}
+
+	ret = lwm2m_send_message(msg);
+	if (ret < 0) {
+		LOG_ERR("Error sending LWM2M packet (err:%d).", ret);
+		goto cleanup;
+	}
+
+	return 0;
+
+cleanup:
+	lwm2m_reset_message(msg, true);
+	return ret;
+}
+
 uint16_t lwm2m_get_rd_data(uint8_t *client_data, uint16_t size)
 {
 	struct lwm2m_engine_obj *obj;
@@ -2805,7 +2838,7 @@ static int lwm2m_delete_handler(struct lwm2m_message *msg)
 	ret = lwm2m_delete_obj_inst(msg->path.obj_id, msg->path.obj_inst_id);
 #if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT)
 	if (!ret && !msg->ctx->bootstrap_mode) {
-		engine_trigger_update();
+		engine_trigger_update(true);
 	}
 #endif
 
@@ -3206,7 +3239,7 @@ int lwm2m_get_or_create_engine_obj(struct lwm2m_message *msg,
 
 #if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT)
 		if (!msg->ctx->bootstrap_mode) {
-			engine_trigger_update();
+			engine_trigger_update(true);
 		}
 #endif
 	}
@@ -3677,14 +3710,30 @@ static void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx,
 	tkl = coap_header_get_token(&response, token);
 	pending = coap_pending_received(&response, client_ctx->pendings,
 					CONFIG_LWM2M_ENGINE_MAX_PENDING);
-	/*
-	 * Clear pending pointer because coap_pending_received() calls
-	 * coap_pending_clear, and later when we call lwm2m_reset_message()
-	 * it will try and call coap_pending_clear() again if msg->pending
-	 * is != NULL.
-	 */
-	if (pending) {
+	if (pending && coap_header_get_type(&response) == COAP_TYPE_ACK) {
 		msg = find_msg(pending, NULL);
+		if (msg == NULL) {
+			LOG_DBG("Orphaned pending %p.", pending);
+			return;
+		}
+
+		msg->acknowledged = true;
+
+		if (msg->reply == NULL) {
+			/* No response expected, release the message. */
+			lwm2m_reset_message(msg, true);
+			return;
+		}
+
+		/* If the original message was a request and an empty
+		 * ACK was received, expect separate response later.
+		 */
+		if ((msg->code >= COAP_METHOD_GET) &&
+			(msg->code <= COAP_METHOD_DELETE) &&
+			(coap_header_get_code(&response) == COAP_CODE_EMPTY)) {
+			LOG_DBG("Empty ACK, expect separate response.");
+			return;
+		}
 	}
 
 	LOG_DBG("checking for reply from [%s]",
@@ -3693,28 +3742,16 @@ static void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx,
 				       client_ctx->replies,
 				       CONFIG_LWM2M_ENGINE_MAX_REPLIES);
 	if (reply) {
-		/*
-		 * Separate response is composed of 2 messages, empty ACK with
-		 * no token and an additional message with a matching token id
-		 * (based on the token used by the CON request).
-		 *
-		 * Since the ACK received by the notify CON messages are also
-		 * empty with no token (consequence of always using the same
-		 * token id for all notifications), we have to use an
-		 * additional flag to decide when to clear the reply callback.
-		 */
-		if (client_ctx->handle_separate_response && !tkl &&
-			coap_header_get_type(&response) == COAP_TYPE_ACK) {
-			LOG_DBG("separated response, not removing reply");
-			return;
+		msg = find_msg(NULL, reply);
+
+		if (coap_header_get_type(&response) == COAP_TYPE_CON) {
+			r = lwm2m_send_empty_ack(client_ctx,
+						 coap_header_get_id(&response));
+			if (r < 0) {
+				LOG_ERR("Error transmitting ACK");
+			}
 		}
 
-		if (!msg) {
-			msg = find_msg(pending, reply);
-		}
-	}
-
-	if (reply || pending) {
 		/* skip release if reply->user_data has error condition */
 		if (reply && reply->user_data != COAP_REPLY_STATUS_NONE) {
 			/* reset reply->user_data for next time */
@@ -3809,6 +3846,13 @@ static void retransmit_request(struct k_work *work)
 		 * which balances the ref we made in coap_pending_cycle()
 		 */
 		lwm2m_reset_message(msg, true);
+		goto next;
+	}
+
+	if (msg->acknowledged) {
+		/* No need to retransmit, just keep the timer running to
+		 * timeout in case no response arrives.
+		 */
 		goto next;
 	}
 
