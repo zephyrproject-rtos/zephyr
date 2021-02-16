@@ -572,9 +572,10 @@ static inline int gpio_pin_configure(const struct device *port,
 	if (((flags & GPIO_OUTPUT_INIT_LOGICAL) != 0)
 	    && ((flags & (GPIO_OUTPUT_INIT_LOW | GPIO_OUTPUT_INIT_HIGH)) != 0)
 	    && ((flags & GPIO_ACTIVE_LOW) != 0)) {
-		flags ^= GPIO_OUTPUT_INIT_LOW | GPIO_OUTPUT_INIT_HIGH
-			| GPIO_OUTPUT_INIT_LOGICAL;
+		flags ^= GPIO_OUTPUT_INIT_LOW | GPIO_OUTPUT_INIT_HIGH;
 	}
+
+	flags &= ~GPIO_OUTPUT_INIT_LOGICAL;
 
 	(void)cfg;
 	__ASSERT((cfg->port_pin_mask & (gpio_port_pins_t)BIT(pin)) != 0U,
