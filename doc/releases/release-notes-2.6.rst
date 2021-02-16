@@ -63,11 +63,20 @@ Boards & SoC Support
 
 * Added support for these SoC series:
 
+* Removed support for these SoC series:
+
+   * ARM Musca-A
+
 * Made these changes in other SoC series:
 
 * Changes for ARC boards:
 
 * Added support for these ARM boards:
+
+* Removed support for these ARM boards:
+
+   * ARM V2M Musca-A
+   * Nordic nRF5340 PDK
 
 * Made these changes in other boards:
 
