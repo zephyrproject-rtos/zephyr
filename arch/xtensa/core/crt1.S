@@ -148,13 +148,6 @@ _start:
 	movi	a0, 0
 # endif
 
-# if CONFIG_MP_NUM_CPUS > 1
-	/* Only clear BSS when running on core 0 */
-	rsr	a3, PRID
-	extui	a3, a3, 0, 8	/* extract core ID */
-	bnez	a3, .L3zte
-# endif
-
 	/*
 	 *  Clear the BSS (uninitialized data) segments.
 	 *  This code supports multiple zeroed sections (*.bss).
@@ -195,24 +188,6 @@ _start:
 .L3zte:
 
 #endif /* !XCHAL_HAVE_BOOTLOADER */
-
-#if CONFIG_MP_NUM_CPUS > 1
-	/*
-	 * z_cstart() is only for CPU #0.
-	 * Other CPUs have different entry point.
-	 */
-	rsr     a3, PRID
-	extui   a3, a3, 0, 8	/* extract core ID */
-	beqz    a3, 2f
-
-	/* Load our stack pointer set up for us by the SOC layer */
-	movi    a1, z_mp_stack_top
-	l32i    a1, a1, 0
-
-	call4 z_mp_entry
-
-2:
-#endif
 
 	/* Enter C domain, never returns from here */
 	CALL	z_cstart

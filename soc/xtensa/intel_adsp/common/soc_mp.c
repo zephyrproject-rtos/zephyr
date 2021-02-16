@@ -55,8 +55,6 @@ LOG_MODULE_REGISTER(soc_mp, CONFIG_SOC_LOG_LEVEL);
 static const struct device *idc;
 #endif
 
-extern void __start(void);
-
 struct cpustart_rec {
 	uint32_t		cpu;
 
@@ -89,6 +87,29 @@ static __aligned(XCHAL_DCACHE_LINESIZE) union {
 #define start_rec \
 	(*((volatile struct cpustart_rec *) \
 	   z_soc_uncached_ptr(&cpustart_mem.cpustart)))
+
+/* Tiny assembly stub for calling z_mp_entry() on the auxiliary CPUs.
+ * Mask interrupts, clear the register window state and set the stack
+ * pointer.  This represents the minimum work required to run C code
+ * safely.
+ *
+ * Note that alignment is absolutely required: the IDC protocol passes
+ * only the upper 30 bits of the address to the second CPU.
+ */
+void z_soc_mp_asm_entry(void);
+__asm__(".align 4                   \n\t"
+	".global z_soc_mp_asm_entry \n\t"
+	"z_soc_mp_asm_entry:        \n\t"
+	"  rsil  a0, 5              \n\t" /* 5 == XCHAL_EXCM_LEVEL */
+	"  movi  a0, 0              \n\t"
+	"  wsr   a0, WINDOWBASE     \n\t"
+	"  movi  a0, 1              \n\t"
+	"  wsr   a0, WINDOWSTART    \n\t"
+	"  rsync                    \n\t"
+	"  movi  a1, z_mp_stack_top \n\t"
+	"  l32i  a1, a1, 0          \n\t"
+	"  call4 z_mp_entry         \n\t");
+BUILD_ASSERT(XCHAL_EXCM_LEVEL == 5);
 
 void z_mp_entry(void)
 {
@@ -177,7 +198,9 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 		    CAVS_ICTL_INT_CPU_OFFSET(cpu_num), 8);
 
 	/* Send power up message to the other core */
-	idc_write(IPC_IDCIETC(cpu_num), 0, IDC_MSG_POWER_UP_EXT(RAM_BASE));
+	uint32_t ietc = IDC_MSG_POWER_UP_EXT((long) z_soc_mp_asm_entry);
+
+	idc_write(IPC_IDCIETC(cpu_num), 0, ietc);
 	idc_write(IPC_IDCITC(cpu_num), 0, IDC_MSG_POWER_UP | IPC_IDCITC_BUSY);
 
 	/* Disable IDC interrupt on other core so IPI won't cause
