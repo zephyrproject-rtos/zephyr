@@ -1713,16 +1713,19 @@ which defines a project ``P``, must be up to date in order for west to update
 ``P`` itself. For example, this means ``west update P`` would update
 ``manifest-rev`` in the ``baz`` project if :file:`baz/west.yml` defines ``P``,
 as well as updating the ``manifest-rev`` branch in the local git clone of
-``P``. Confusingly, the update of ``baz`` may result in the removal of ``P``
-from :file:`baz/west.yml`, which would cause ``west update P`` to fail with an
+``P``. Confusingly, updating ``baz`` may result in the removal of ``P``
+from :file:`baz/west.yml`, which "should" cause ``west update P`` to fail with an
 unrecognized project!
 
-For this reason, it's usually best to run plain ``west update`` to avoid errors
-if you use manifest imports. By default, west won't fetch any project data over
-the network if a project's revision is a SHA or tag which is already available
-locally, so updating the extra projects shouldn't take too much time unless
-it's really needed. See the documentation for the :ref:`update.fetch
-<west-config-index>` configuration option for more information.
+For this reason, it's not possible to run ``west update P`` if ``P`` is defined
+in an imported manifest; you must update this project along with all the others
+with a plain ``west update``.
+
+By default, west won't fetch any project data over the network if a project's
+revision is a SHA or tag which is already available locally, so updating the
+extra projects shouldn't take too much time unless it's really needed. See the
+documentation for the :ref:`update.fetch <west-config-index>` configuration
+option for more information.
 
 If an imported manifest file has a ``west-commands:`` definition in its
 ``self:`` section, the extension commands defined there are added to the set of
