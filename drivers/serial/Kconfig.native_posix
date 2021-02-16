@@ -56,14 +56,6 @@ config UART_NATIVE_POSIX_PORT_1_ENABLE
 	  This is used for example in PPP (Point-to-Point Protocol)
 	  implementation.
 
-config UART_NATIVE_POSIX_PORT_1_NAME
-	string "Port 1 Device Name"
-	default "UART_1"
-	depends on UART_NATIVE_POSIX_PORT_1_ENABLE
-	help
-	  This is the device name for UART, and is included in the device
-	  struct.
-
 config NATIVE_UART_AUTOATTACH_DEFAULT_CMD
 	string "Default command to attach the UART to a new terminal"
 	default "xterm -e screen %s &"
