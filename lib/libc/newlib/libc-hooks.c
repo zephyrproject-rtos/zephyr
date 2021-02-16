@@ -17,6 +17,7 @@
 #include <init.h>
 #include <sys/sem.h>
 #include <sys/mem_manage.h>
+#include <sys/time.h>
 
 #define LIBC_BSS	K_APP_BMEM(z_libc_partition)
 #define LIBC_DATA	K_APP_DMEM(z_libc_partition)
@@ -396,12 +397,7 @@ void *_sbrk_r(struct _reent *r, int count)
 }
 #endif /* CONFIG_XTENSA */
 
-struct timeval;
-
 int _gettimeofday(struct timeval *__tp, void *__tzp)
 {
-	ARG_UNUSED(__tp);
-	ARG_UNUSED(__tzp);
-
-	return -1;
+	return gettimeofday(__tp, __tzp);
 }
