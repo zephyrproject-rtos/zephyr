@@ -39,11 +39,13 @@ GEN_OFFSET_SYM(_callee_saved_t, o6);
 GEN_OFFSET_SYM(_callee_saved_t, o7);
 
 /* esf member offsets */
+GEN_OFFSET_SYM(z_arch_esf_t, out);
+GEN_OFFSET_SYM(z_arch_esf_t, global);
 GEN_OFFSET_SYM(z_arch_esf_t, pc);
 GEN_OFFSET_SYM(z_arch_esf_t, npc);
 GEN_OFFSET_SYM(z_arch_esf_t, psr);
+GEN_OFFSET_SYM(z_arch_esf_t, wim);
 GEN_OFFSET_SYM(z_arch_esf_t, tbr);
-GEN_OFFSET_SYM(z_arch_esf_t, sp);
 GEN_OFFSET_SYM(z_arch_esf_t, y);
 GEN_ABSOLUTE_SYM(__z_arch_esf_t_SIZEOF, STACK_ROUND_UP(sizeof(z_arch_esf_t)));
 

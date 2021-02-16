@@ -31,8 +31,13 @@ GTEXT(__sparc_trap_fault)
 SECTION_FUNC(TEXT, __sparc_trap_except_reason)
 	mov	%g1, %l7
 .Ldoit:
+	/* %g2, %g3 are used at manual window overflow so save temporarily */
+	mov	%g2, %l4
+	mov	%g3, %l5
+
 	/* We may have trapped into the invalid window. If so, make it valid. */
 	rd	%wim, %g2
+	mov	%g2, %l3
 	srl	%g2, %l0, %g3
 	cmp	%g3, 1
 	bne	.Lwodone
@@ -63,6 +68,9 @@ SECTION_FUNC(TEXT, __sparc_trap_except_reason)
 	restore
 
 .Lwodone:
+	mov	%l4, %g2
+	mov	%l5, %g3
+
 	/* Allocate an ABI stack frame and exception stack frame */
 	sub	%fp, 96 + __z_arch_esf_t_SIZEOF, %sp
 	/*
@@ -72,13 +80,20 @@ SECTION_FUNC(TEXT, __sparc_trap_except_reason)
 
 	mov	%l7, %o0
 	/* Fill in the content of the exception stack frame */
-	st	%l1, [%sp + 96 + __z_arch_esf_t_pc_OFFSET]
-	st	%l2, [%sp + 96 + __z_arch_esf_t_npc_OFFSET]
-	st	%l0, [%sp + 96 + __z_arch_esf_t_psr_OFFSET]
-	st	%l6, [%sp + 96 + __z_arch_esf_t_tbr_OFFSET]
-	st	%fp, [%sp + 96 + __z_arch_esf_t_sp_OFFSET]
-	rd	%y, %g1
-	st	%g1, [%sp + 96 + __z_arch_esf_t_y_OFFSET]
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO)
+	std	%i0, [%sp + 96 + __z_arch_esf_t_out_OFFSET + 0x00]
+	std	%i2, [%sp + 96 + __z_arch_esf_t_out_OFFSET + 0x08]
+	std	%i4, [%sp + 96 + __z_arch_esf_t_out_OFFSET + 0x10]
+	std	%i6, [%sp + 96 + __z_arch_esf_t_out_OFFSET + 0x18]
+	std	%g0, [%sp + 96 + __z_arch_esf_t_global_OFFSET + 0x00]
+	std	%g2, [%sp + 96 + __z_arch_esf_t_global_OFFSET + 0x08]
+	std	%g4, [%sp + 96 + __z_arch_esf_t_global_OFFSET + 0x10]
+	std	%g6, [%sp + 96 + __z_arch_esf_t_global_OFFSET + 0x18]
+#endif
+	std	%l0, [%sp + 96 + __z_arch_esf_t_psr_OFFSET] /* psr pc */
+	std	%l2, [%sp + 96 + __z_arch_esf_t_npc_OFFSET] /* npc wim */
+	rd	%y, %l7
+	std	%l6, [%sp + 96 + __z_arch_esf_t_tbr_OFFSET] /* tbr y */
 
 	/* Enable traps, raise PIL to mask all maskable interrupts. */
 	or	%l0, PSR_PIL, %o2
@@ -86,6 +101,17 @@ SECTION_FUNC(TEXT, __sparc_trap_except_reason)
 	nop
 	nop
 	nop
+
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO)
+	/* Flush all register windows to the stack. */
+	.rept CONFIG_SPARC_NWIN-1
+	save	%sp, -64, %sp
+	.endr
+	.rept CONFIG_SPARC_NWIN-1
+	restore
+	.endr
+#endif
+
 	/*
 	 * reason is the first argument.
 	 * Exception stack frame prepared earlier is the second argument.
