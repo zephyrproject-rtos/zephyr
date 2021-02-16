@@ -292,14 +292,14 @@ to build Zephyr applications.
          .. code-block:: bash
 
             cd ~
-            wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.12.2/zephyr-sdk-0.12.2-x86_64-linux-setup.run
+            wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.12.3/zephyr-sdk-0.12.3-x86_64-linux-setup.run
 
-      #. Run the installer, installing the SDK in :file:`~/zephyr-sdk-0.12.2`:
+      #. Run the installer, installing the SDK in :file:`~/zephyr-sdk-0.12.3`:
 
          .. code-block:: bash
 
-            chmod +x zephyr-sdk-0.12.2-x86_64-linux-setup.run
-            ./zephyr-sdk-0.12.2-x86_64-linux-setup.run -- -d ~/zephyr-sdk-0.12.2
+            chmod +x zephyr-sdk-0.12.3-x86_64-linux-setup.run
+            ./zephyr-sdk-0.12.3-x86_64-linux-setup.run -- -d ~/zephyr-sdk-0.12.3
 
          .. note::
             It is recommended to install the Zephyr SDK at one of the following locations:
@@ -312,7 +312,7 @@ to build Zephyr applications.
             * ``/usr/zephyr-sdk[-x.y.z]``
             * ``/usr/local/zephyr-sdk[-x.y.z]``
 
-            where ``[-x.y.z]`` is optional text, and can be any text, for example ``-0.12.2``.
+            where ``[-x.y.z]`` is optional text, and can be any text, for example ``-0.12.3``.
 
             If installing the Zephyr SDK outside any of those locations, please read: :ref:`zephyr_sdk`
 
@@ -323,7 +323,7 @@ to build Zephyr applications.
 
          .. code-block:: bash
 
-            sudo cp ~/zephyr-sdk-0.12.2/sysroots/x86_64-pokysdk-linux/usr/share/openocd/contrib/60-openocd.rules /etc/udev/rules.d
+            sudo cp ~/zephyr-sdk-0.12.3/sysroots/x86_64-pokysdk-linux/usr/share/openocd/contrib/60-openocd.rules /etc/udev/rules.d
             sudo udevadm control --reload
 
    .. group-tab:: macOS
