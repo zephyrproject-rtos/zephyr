@@ -165,12 +165,8 @@ uint8_t ull_adv_sync_pdu_set_clear(struct ll_adv_set *adv,
 
 uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 {
-	struct pdu_adv_ext_hdr *ter_hdr, ter_hdr_prev;
-	struct pdu_adv_com_ext_adv *ter_com_hdr;
-	uint8_t *ter_dptr_prev, *ter_dptr;
 	struct lll_adv_sync *lll_sync;
 	struct ll_adv_sync_set *sync;
-	struct pdu_adv *ter_pdu;
 	struct ll_adv_set *adv;
 	uint8_t err, ter_idx;
 
@@ -181,7 +177,11 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 
 	lll_sync = adv->lll.sync;
 	if (!lll_sync) {
+		struct pdu_adv_com_ext_adv *ter_com_hdr;
+		struct pdu_adv_ext_hdr *ter_hdr;
+		struct pdu_adv *ter_pdu;
 		struct lll_adv *lll;
+		uint8_t *ter_dptr;
 		int err;
 
 		sync = sync_acquire();
@@ -233,9 +233,7 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 		ter_com_hdr = (void *)&ter_pdu->adv_ext_ind;
 		ter_hdr = (void *)ter_com_hdr->ext_hdr_adv_data;
 		ter_dptr = ter_hdr->data;
-		ter_hdr_prev = *ter_hdr;
 		*(uint8_t *)ter_hdr = 0U;
-		ter_dptr_prev = ter_dptr;
 
 		/* Non-connectable and Non-scannable adv mode */
 		ter_com_hdr->adv_mode = 0U;
