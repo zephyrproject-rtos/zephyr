@@ -50,6 +50,9 @@ struct spi_stm32_data {
 	struct stream dma_rx;
 	struct stream dma_tx;
 #endif
+#ifdef CONFIG_PM_DEVICE
+	uint32_t pm_state;
+#endif /* CONFIG_PM_DEVICE */
 };
 
 static inline uint32_t ll_func_tx_is_empty(SPI_TypeDef *spi)

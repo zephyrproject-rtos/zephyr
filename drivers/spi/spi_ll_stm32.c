@@ -844,6 +844,71 @@ static int spi_stm32_init(const struct device *dev)
 	return 0;
 }
 
+
+#ifdef CONFIG_PM_DEVICE
+static int spi_stm32_set_power_state(const struct device *dev,
+					      uint32_t new_state)
+{
+	const struct spi_stm32_config *config = DEV_CFG(dev);
+	SPI_TypeDef *spi = config->spi;
+
+	/* setting a low power mode */
+	if (new_state != DEVICE_PM_ACTIVE_STATE) {
+		/* 1. Wait until FTLVL[1:0] = 00 (no more data to transmit). */
+		while (LL_SPI_GetTxFIFOLevel(spi) != LL_SPI_TX_FIFO_EMPTY) {
+		}
+		/* 2. Wait until BSY=0 (the last data frame is processed). */
+		while (LL_SPI_IsActiveFlag_BSY(spi) != 0) {
+		}
+		/* 3. Disable the SPI (SPE=0). */
+		LL_SPI_Disable(spi);
+		/* 4. Read data until FRLVL[1:0] = 00 (read all the received data). */
+		while (LL_SPI_GetRxFIFOLevel(spi) != LL_SPI_RX_FIFO_EMPTY) {
+		}
+		/* pins are not changed */
+	} else{
+		/* pins are not changed */
+		LL_SPI_Enable(spi);
+	}
+	return 0;
+}
+
+/**
+ * @brief disable the SPI channel
+ *
+ * This routine is called to put the device in low power mode.
+ *
+ * @param dev SPI device struct
+ *
+ * @return 0
+ */
+static int spi_stm32_pm_control(const struct device *dev,
+					 uint32_t ctrl_command,
+					 void *context, device_pm_cb cb,
+					 void *arg)
+{
+	struct spi_stm32_data *data = DEV_DATA(dev);
+
+	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
+		uint32_t new_state = *((const uint32_t *)context);
+
+		if (new_state != data->pm_state) {
+			spi_stm32_set_power_state(dev, new_state);
+			data->pm_state = new_state;
+		}
+	} else {
+		__ASSERT_NO_MSG(ctrl_command == DEVICE_PM_GET_POWER_STATE);
+		*((uint32_t *)context) = data->pm_state;
+	}
+
+	if (cb) {
+		cb(dev, 0, context, arg);
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
+
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 #define STM32_SPI_IRQ_HANDLER_DECL(id)					\
 	static void spi_stm32_irq_config_func_##id(const struct device *dev)
@@ -938,7 +1003,8 @@ static struct spi_stm32_data spi_stm32_dev_data_##id = {		\
 	SPI_DMA_STATUS_SEM(id)						\
 };									\
 									\
-DEVICE_DT_INST_DEFINE(id, &spi_stm32_init, device_pm_control_nop,	\
+DEVICE_DT_INST_DEFINE(id, &spi_stm32_init,					\
+		    &spi_stm32_pm_control,							\
 		    &spi_stm32_dev_data_##id, &spi_stm32_cfg_##id,	\
 		    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,		\
 		    &api_funcs);					\
