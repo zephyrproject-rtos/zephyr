@@ -61,12 +61,13 @@ struct cpustart_rec {
 	uint32_t		cpu;
 
 	arch_cpustart_t	fn;
-	char		*stack_top;
 	void		*arg;
 	uint32_t		vecbase;
 
 	uint32_t		alive;
 };
+
+char *z_mp_stack_top;
 
 #ifdef CONFIG_KERNEL_COHERENCE
 /* Coherence guarantees that normal .data will be coherent and that it
@@ -158,10 +159,11 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 
 	start_rec.cpu = cpu_num;
 	start_rec.fn = fn;
-	start_rec.stack_top = Z_THREAD_STACK_BUFFER(stack) + sz;
 	start_rec.arg = arg;
 	start_rec.vecbase = vecbase;
 	start_rec.alive = 0;
+
+	z_mp_stack_top = Z_THREAD_STACK_BUFFER(stack) + sz;
 
 #ifdef CONFIG_IPM_CAVS_IDC
 	idc = device_get_binding(DT_LABEL(DT_INST(0, intel_cavs_idc)));
