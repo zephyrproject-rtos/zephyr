@@ -94,6 +94,7 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 		struct pdu_adv *ter_pdu;
 		struct lll_adv *lll;
 		uint8_t *ter_dptr;
+		uint8_t ter_len;
 		int err;
 
 		sync = sync_acquire();
@@ -139,9 +140,6 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 		ter_pdu->tx_addr = 0U;
 		ter_pdu->rx_addr = 0U;
 
-		ter_pdu->len = offsetof(struct pdu_adv_com_ext_adv,
-					ext_hdr_adv_data);
-
 		ter_com_hdr = (void *)&ter_pdu->adv_ext_ind;
 		ter_hdr = (void *)ter_com_hdr->ext_hdr_adv_data;
 		ter_dptr = ter_hdr->data;
@@ -149,6 +147,12 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 
 		/* Non-connectable and Non-scannable adv mode */
 		ter_com_hdr->adv_mode = 0U;
+
+		/* Calc tertiary PDU len */
+		ter_len = ull_adv_aux_hdr_len_calc(ter_com_hdr, &ter_dptr);
+		ull_adv_aux_hdr_len_fill(ter_com_hdr, ter_len);
+
+		ter_pdu->len = ter_len;
 	} else {
 		sync = (void *)HDR_LLL2EVT(lll_sync);
 	}
