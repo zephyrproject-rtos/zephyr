@@ -203,11 +203,13 @@ static int inc_func(void)
 	return a++;
 }
 
-/* Test checks if @ref Z_MAX, @ref Z_MIN and @ref Z_CLAMP return correct result
+/* Test checks if @ref Z_MAX, @ref Z_MIN, @ref Z_CLAMP, and
+ * @ref Z_IS_POWER_OF_TWO return correct result
  * and perform single evaluation of input arguments.
  */
-static void test_z_max_z_min_z_clamp(void)
+static void test_z_max_z_min_z_clamp_z_is_power_of_two(void)
 {
+	int i;
 	zassert_equal(Z_MAX(inc_func(), 0), 1, "Unexpected macro result");
 	/* Z_MAX should have call inc_func only once */
 	zassert_equal(inc_func(), 2, "Unexpected return value");
@@ -224,6 +226,21 @@ static void test_z_max_z_min_z_clamp(void)
 		      "Unexpected macro result");
 	/* Z_CLAMP should have call inc_func only once */
 	zassert_equal(inc_func(), 8, "Unexpected return value");
+
+	/* We want to check Z_IS_POWER_OF_TWO for a power of two too */
+	for (i = 9; i < 14; i++) {
+		zassert_equal(inc_func(), i, "Unexpected return value");
+	}
+
+	zassert_equal(Z_IS_POWER_OF_TWO(inc_func()), false,
+				  "Unexpected macro result");
+	/* Z_IS_POWER_OF_TWO should have call inc_func only once */
+	zassert_equal(inc_func(), 15, "Unexpected return value");
+
+	zassert_equal(Z_IS_POWER_OF_TWO(inc_func()), true,
+				  "Unexpected macro result");
+	/* Z_IS_POWER_OF_TWO should have call inc_func only once */
+	zassert_equal(inc_func(), 17, "Unexpected return value");
 }
 
 static void test_CLAMP(void)
@@ -458,7 +475,7 @@ void test_cc(void)
 			 ztest_unit_test(test_IF_ENABLED),
 			 ztest_unit_test(test_UTIL_LISTIFY),
 			 ztest_unit_test(test_MACRO_MAP_CAT),
-			 ztest_unit_test(test_z_max_z_min_z_clamp),
+			 ztest_unit_test(test_z_max_z_min_z_clamp_z_is_power_of_two),
 			 ztest_unit_test(test_CLAMP),
 			 ztest_unit_test(test_FOR_EACH),
 			 ztest_unit_test(test_FOR_EACH_NONEMPTY_TERM),
