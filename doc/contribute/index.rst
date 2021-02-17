@@ -59,7 +59,7 @@ By carefully reviewing potential contributions and also enforcing a
 the Zephyr community can develop products with the Zephyr Project
 without concerns over patent or copyright issues.
 
-See :ref:`contribute_non-Apache` for more information about
+See :ref:`external-contributions` for more information about
 this contributing and review process for imported components.
 
 .. only:: latex
@@ -685,12 +685,10 @@ present)::
 
     Origin: Original
 
-In cases where the file is imported from an external project, the commit
-message shall contain details regarding the original project, the location of
-the project, the SHA-id of the origin commit for the file, the intended
-purpose, and if the file will be maintained by the Zephyr project,
-(whether or not the Zephyr project will contain a localized branch or if
-it is a downstream copy).
+In cases where the file is :ref:`imported from an external project
+<external-contributions>`, the commit message shall contain details regarding
+the original project, the location of the project, the SHA-id of the origin
+commit for the file and the intended purpose.
 
 For example, a copy of a locally maintained import::
 
@@ -699,100 +697,22 @@ For example, a copy of a locally maintained import::
     URL: http://www.contiki-os.org/
     commit: 853207acfdc6549b10eb3e44504b1a75ae1ad63a
     Purpose: Introduction of networking stack.
-    Maintained-by: Zephyr
 
-For example, a copy of an externally maintained import::
+For example, a copy of an externally maintained import in a module repository::
 
     Origin: Tiny Crypt
     License: BSD 3-Clause
     URL: https://github.com/01org/tinycrypt
     commit: 08ded7f21529c39e5133688ffb93a9d0c94e5c6e
     Purpose: Introduction of TinyCrypt
-    Maintained-by: External
 
-.. _contribute_non-Apache:
+Contributing External Components
+********************************
 
-Contributing non-Apache 2.0 licensed components
-***********************************************
+.. toctree::
+   :maxdepth: 1
 
-Importing code into the Zephyr OS from other projects that use a license
-other than the Apache 2.0 license needs to be fully understood in
-context and approved by the `Zephyr governing board`_. The board will
-automatically reject licenses that have not been approved by the `Open Source
-Initiative (OSI)`_.
-
-.. _Zephyr governing board:
-   https://www.zephyrproject.org/governance/
-
-.. _Open Source Initiative (OSI):
-   https://opensource.org/licenses/alphabetical
-
-By carefully reviewing potential contributions and also enforcing a
-:ref:`DCO` for contributed code, we ensure that
-the Zephyr community can develop products with the Zephyr Project
-without concerns over patent or copyright issues.
-
-Submission and review process
-=============================
-
-All contributions to the Zephyr project are submitted through GitHub
-pull requests (PR) following the Zephyr Project's :ref:`Contribution workflow`.
-
-Before you begin working on including a new component to the Zephyr
-Project (Apache-2.0 licensed or not), you should start up a conversation
-on the `developer mailing list <https://lists.zephyrproject.org/g/devel>`_
-to see what the Zephyr community thinks about the idea.  Maybe there's
-someone else working on something similar you can collaborate with, or a
-different approach may make the new component unnecessary.
-
-If the conclusion is that including a new component is the best
-solution, and this new component uses a license other than Apache-2.0,
-these additional steps must be followed:
-
-#. Complete a README for your code component and add it to your source
-   code pull request (PR).  A recommended README template can be found in
-   :zephyr_file:`doc/contribute/code_component_README` (and included
-   `below`_ for reference)
-
-#. The Zephyr Technical Steering Committee (TSC) will evaluate the code
-   component README as part of the PR
-   commit and vote on accepting it using the GitHub PR review tools.
-
-   - If rejected by the TSC, a TSC member will communicate this to
-     the contributor and the PR will be closed.
-
-   - If approved by the TSC, the TSC chair will forward the README to
-     the Zephyr governing board for further review.
-
-#. The Zephyr governing board has two weeks to review and ask questions:
-
-   - If there are no objections, the matter is closed. Approval can be
-     accelerated by unanimous approval of the board before the two
-     weeks are up.
-
-   - If a governing board member raises an objection that cannot be resolved
-     via email, the board will meet to discuss whether to override the
-     TSC approval or identify other approaches that can resolve the
-     objections.
-
-#. On approval of the Zephyr TSC and governing board, final review of
-   the PR may be made to ensure its proper placement in the
-   Zephyr Project :ref:`source_tree_v2`, (in the ``ext`` folder), and
-   inclusion in the :ref:`zephyr_licensing` document.
-
-.. note::
-
-   External components not under the Apache-2.0 license **cannot** be
-   included in a Zephyr OS release without approval of both the Zephyr TSC
-   and the Zephyr governing board.
-
-.. _below:
-
-Code component README template
-==============================
-
-.. literalinclude:: code_component_README
-
+   external.rst
 
 Contribution Roles and Responsibilities
 ***************************************
