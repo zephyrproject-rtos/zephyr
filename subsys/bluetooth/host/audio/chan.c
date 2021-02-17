@@ -98,8 +98,6 @@ int bt_audio_chan_reconfig(struct bt_audio_chan *chan,
 			   struct bt_audio_capability *cap,
 			   struct bt_codec *codec)
 {
-	int err;
-
 	BT_DBG("chan %p cap %p codec %p", chan, cap, codec);
 
 	if (!chan || !chan->ep || !cap || !cap->ops || !codec) {
@@ -126,7 +124,7 @@ int bt_audio_chan_reconfig(struct bt_audio_chan *chan,
 	}
 
 	if (cap->ops->reconfig) {
-		err = cap->ops->reconfig(chan, cap, codec);
+		int err = cap->ops->reconfig(chan, cap, codec);
 		if (err) {
 			return err;
 		}
