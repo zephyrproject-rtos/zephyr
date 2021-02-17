@@ -538,15 +538,6 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 {
 	char *stack_ptr;
 
-#if __ASSERT_ON
-	atomic_val_t old_val = atomic_set(&new_thread->base.cookie,
-					  THREAD_COOKIE);
-	/* Must be garbage or 0, never already set. Cleared at the end of
-	 * z_thread_single_abort()
-	 */
-	__ASSERT(old_val != THREAD_COOKIE,
-		 "re-use of active thread object %p detected", new_thread);
-#endif
 	Z_ASSERT_VALID_PRIO(prio, entry);
 
 #ifdef CONFIG_USERSPACE
@@ -561,7 +552,6 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	/* Any given thread has access to itself */
 	k_object_access_grant(new_thread, new_thread);
 #endif
-	z_waitq_init(&new_thread->base.join_waiters);
 
 	/* Initialize various struct k_thread members */
 	z_init_thread_base(&new_thread->base, prio, _THREAD_PRESTART, options);
@@ -579,7 +569,6 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 
 	/* static threads overwrite it afterwards with real value */
 	new_thread->init_data = NULL;
-	new_thread->fn_abort = NULL;
 
 #ifdef CONFIG_USE_SWITCH
 	/* switch_handle must be non-null except when inside z_swap()

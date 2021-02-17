@@ -21,7 +21,6 @@ list(APPEND kernel_files
   stack.c
   system_work_q.c
   thread.c
-  thread_abort.c
   version.c
   work_q.c
   condvar.c
