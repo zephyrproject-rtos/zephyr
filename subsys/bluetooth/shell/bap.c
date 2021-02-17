@@ -690,6 +690,13 @@ static int lc3_enable(struct bt_audio_chan *chan,
 	return 0;
 }
 
+static int lc3_start(struct bt_audio_chan *chan)
+{
+	shell_print(ctx_shell, "Start: chan %p", chan);
+
+	return 0;
+}
+
 static int lc3_metadata(struct bt_audio_chan *chan,
 			uint8_t meta_count, struct bt_codec_data *meta)
 {
@@ -702,6 +709,13 @@ static int lc3_metadata(struct bt_audio_chan *chan,
 static int lc3_disable(struct bt_audio_chan *chan)
 {
 	shell_print(ctx_shell, "Disable: chan %p", chan);
+
+	return 0;
+}
+
+static int lc3_stop(struct bt_audio_chan *chan)
+{
+	shell_print(ctx_shell, "Stop: chan %p", chan);
 
 	return 0;
 }
@@ -729,8 +743,10 @@ static struct bt_audio_capability_ops lc3_ops = {
 	.reconfig = lc3_reconfig,
 	.qos = lc3_qos,
 	.enable = lc3_enable,
+	.start = lc3_start,
 	.metadata = lc3_metadata,
 	.disable = lc3_disable,
+	.stop = lc3_stop,
 	.release = lc3_release,
 };
 
