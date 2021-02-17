@@ -544,7 +544,7 @@ int bt_otc_select_id(struct bt_conn *conn, struct bt_otc_instance_t *otc_inst,
 
 		/* TODO: Should not update this before ID is read */
 		otc_inst->cur_object.id = obj_id;
-		u64_to_uint48array(obj_id, param);
+		sys_put_le48(obj_id, param);
 
 		return write_olcp(inst, conn, BT_OTS_OLCP_PROC_GOTO,
 				  param, BT_OTS_OBJ_ID_SIZE);
