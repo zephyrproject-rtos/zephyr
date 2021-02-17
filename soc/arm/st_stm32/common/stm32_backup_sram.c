@@ -23,11 +23,9 @@ static int stm32_backup_sram_init(const struct device *dev)
 	const struct stm32_backup_sram_config *config = dev->config;
 
 	int ret;
-	const struct device *clk;
 
-	/* enable backup SRAM clock */
-	clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
-	__ASSERT_NO_MSG(clk);
+	/* enable clock for subsystem */
+	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
 	ret = clock_control_on(clk, (clock_control_subsys_t *)&config->pclken);
 	if (ret < 0) {
