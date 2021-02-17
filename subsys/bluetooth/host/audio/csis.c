@@ -145,7 +145,6 @@ static void notify_lock_value(struct bt_conn *conn)
 
 static void notify_client(struct bt_conn *conn, void *data)
 {
-	bt_addr_le_t *addr;
 	struct bt_conn *excluded_conn = (struct bt_conn *)data;
 
 	if (excluded_conn && conn == excluded_conn) {
@@ -155,7 +154,8 @@ static void notify_client(struct bt_conn *conn, void *data)
 	notify_lock_value(conn);
 
 	for (int i = 0; i < ARRAY_SIZE(csis_inst.pend_notify); i++) {
-		addr = &csis_inst.pend_notify[i].addr;
+		bt_addr_le_t *addr = &csis_inst.pend_notify[i].addr;
+
 		if (csis_inst.pend_notify[i].pending &&
 		    !bt_addr_le_cmp(bt_conn_get_dst(conn), addr)) {
 			csis_inst.pend_notify[i].pending = false;
@@ -241,10 +241,11 @@ static int generate_sirk(uint32_t seed, uint8_t sirk_dest[16])
 
 static int generate_prand(uint32_t *dest)
 {
-	int res;
 	bool valid = false;
 
 	do {
+		int res;
+
 		*dest = 0;
 		res = bt_rand(dest, BT_CSIS_SIH_PRAND_SIZE);
 		if (res) {
@@ -535,14 +536,13 @@ static void set_lock_timer_handler(struct k_work *work)
 static void csis_security_changed(struct bt_conn *conn, bt_security_t level,
 				  enum bt_security_err err)
 {
-	bt_addr_le_t *addr;
-
 	if (!is_bonded(conn)) {
 		return;
 	}
 
 	for (int i = 0; i < ARRAY_SIZE(csis_inst.pend_notify); i++) {
-		addr = &csis_inst.pend_notify[i].addr;
+		bt_addr_le_t *addr = &csis_inst.pend_notify[i].addr;
+
 		if (csis_inst.pend_notify[i].pending &&
 		    !bt_addr_le_cmp(bt_conn_get_dst(conn), addr)) {
 			notify_lock_value(conn);
@@ -707,8 +707,6 @@ static bool conn_based_timeout;
 static void adv_timeout(struct bt_le_ext_adv *adv,
 			struct bt_le_ext_adv_sent_info *info)
 {
-	int err;
-
 	__ASSERT(adv == csis_inst.adv, "Wrong adv set");
 
 	if (conn_based_timeout) {
@@ -718,7 +716,7 @@ static void adv_timeout(struct bt_le_ext_adv *adv,
 
 	/* Restart to update RSI value with new private address */
 	if (csis_inst.adv_enabled) {
-		err = csis_adv_resume();
+		int err = csis_adv_resume();
 
 		if (err) {
 			BT_ERR("Timeout: Could not restart advertising: %d",
