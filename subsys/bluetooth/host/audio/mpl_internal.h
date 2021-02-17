@@ -19,8 +19,8 @@
 #define BT_DBG_OBJ_ID(text, id64) \
 	do { \
 		if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) { \
-			char t[UINT48_STR_LEN]; \
-			u64_to_uint48array_str(id64, t); \
+			char t[BT_OTS_OBJ_ID_STR_LEN]; \
+			(void)bt_ots_obj_id_to_str(id64, t, sizeof(t)); \
 			BT_DBG(text "0x%s", log_strdup(t)); \
 		} \
 	} while (0)
