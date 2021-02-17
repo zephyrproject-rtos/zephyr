@@ -9,6 +9,7 @@
 #include <sys/util.h>
 
 #include "mpl.h"
+#include "mpl_internal.h"
 #include "uint48_util.h"
 #include "ots.h"
 
@@ -917,18 +918,6 @@ int mpl_init(void)
 /* and do_prev_group() with a generic do_prev() command that can be used at */
 /* all levels.	Similarly for do_next, do_prev, and so on. */
 
-/* Debug output of 48 bit Object ID value */
-/* (Zephyr does not yet support debug output of more than 32 bit values.) */
-/* Takes a text and a 64-bit integer as input */
-#define BT_DBG_UINT48(text, id64) \
-	do { \
-		if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) { \
-			char t[UINT48_STR_LEN]; \
-			u64_to_uint48array_str(id64, t); \
-			BT_DBG(text "0x%s", log_strdup(t)); \
-		} \
-	} while (0)
-
 void do_prev_segment(struct mpl_mediaplayer_t *pl)
 {
 	BT_DBG("Segment name before: %s",
@@ -1027,7 +1016,7 @@ static bool do_prev_track(struct mpl_mediaplayer_t *pl)
 	bool track_changed = false;
 
 #ifdef CONFIG_BT_OTS_TEMP
-	BT_DBG_UINT48("Track ID before: ", pl->group->track->id);
+	BT_DBG_OBJ_ID("Track ID before: ", pl->group->track->id);
 #endif /* CONFIG_BT_OTS_TEMP */
 
 	if (pl->group->track->prev != NULL) {
@@ -1036,7 +1025,7 @@ static bool do_prev_track(struct mpl_mediaplayer_t *pl)
 	}
 
 #ifdef CONFIG_BT_OTS_TEMP
-	BT_DBG_UINT48("Track ID after: ", pl->group->track->id);
+	BT_DBG_OBJ_ID("Track ID after: ", pl->group->track->id);
 #endif /* CONFIG_BT_OTS_TEMP */
 
 	return track_changed;
@@ -1047,7 +1036,7 @@ static bool do_next_track(struct mpl_mediaplayer_t *pl)
 	bool track_changed = false;
 
 #ifdef CONFIG_BT_OTS_TEMP
-	BT_DBG_UINT48("Track ID before: ", pl->group->track->id);
+	BT_DBG_OBJ_ID("Track ID before: ", pl->group->track->id);
 #endif /* CONFIG_BT_OTS_TEMP */
 
 	if (pl->group->track->next != NULL) {
@@ -1056,7 +1045,7 @@ static bool do_next_track(struct mpl_mediaplayer_t *pl)
 	}
 
 #ifdef CONFIG_BT_OTS_TEMP
-	BT_DBG_UINT48("Track ID after: ", pl->group->track->id);
+	BT_DBG_OBJ_ID("Track ID after: ", pl->group->track->id);
 #endif /* CONFIG_BT_OTS_TEMP */
 
 	return track_changed;
@@ -1067,7 +1056,7 @@ static bool do_first_track(struct mpl_mediaplayer_t *pl)
 	bool track_changed = false;
 
 #ifdef CONFIG_BT_OTS_TEMP
-	BT_DBG_UINT48("Track ID before: ", pl->group->track->id);
+	BT_DBG_OBJ_ID("Track ID before: ", pl->group->track->id);
 #endif /* CONFIG_BT_OTS_TEMP */
 
 	if (pl->group->track->prev != NULL) {
@@ -1079,7 +1068,7 @@ static bool do_first_track(struct mpl_mediaplayer_t *pl)
 	}
 
 #ifdef CONFIG_BT_OTS_TEMP
-	BT_DBG_UINT48("Track ID after: ", pl->group->track->id);
+	BT_DBG_OBJ_ID("Track ID after: ", pl->group->track->id);
 #endif /* CONFIG_BT_OTS_TEMP */
 
 	return track_changed;
@@ -1090,7 +1079,7 @@ static bool do_last_track(struct mpl_mediaplayer_t *pl)
 	bool track_changed = false;
 
 #ifdef CONFIG_BT_OTS_TEMP
-	BT_DBG_UINT48("Track ID before: ", pl->group->track->id);
+	BT_DBG_OBJ_ID("Track ID before: ", pl->group->track->id);
 #endif /* CONFIG_BT_OTS_TEMP */
 
 	if (pl->group->track->next != NULL) {
@@ -1102,7 +1091,7 @@ static bool do_last_track(struct mpl_mediaplayer_t *pl)
 	}
 
 #ifdef CONFIG_BT_OTS_TEMP
-	BT_DBG_UINT48("Track ID after: ", pl->group->track->id);
+	BT_DBG_OBJ_ID("Track ID after: ", pl->group->track->id);
 #endif /* CONFIG_BT_OTS_TEMP */
 
 	return track_changed;
@@ -1114,7 +1103,7 @@ static bool do_goto_track(struct mpl_mediaplayer_t *pl, int32_t tracknum)
 	int32_t k;
 
 #ifdef CONFIG_BT_OTS_TEMP
-	BT_DBG_UINT48("Track ID before: ", pl->group->track->id);
+	BT_DBG_OBJ_ID("Track ID before: ", pl->group->track->id);
 #endif /* CONFIG_BT_OTS_TEMP */
 
 	if (tracknum > 0) {
@@ -1148,7 +1137,7 @@ static bool do_goto_track(struct mpl_mediaplayer_t *pl, int32_t tracknum)
 	}
 
 #ifdef CONFIG_BT_OTS_TEMP
-	BT_DBG_UINT48("Track ID after: ", pl->group->track->id);
+	BT_DBG_OBJ_ID("Track ID after: ", pl->group->track->id);
 #endif /* CONFIG_BT_OTS_TEMP */
 
 	/* The track has changed if we have moved more in one direction */
@@ -1162,7 +1151,7 @@ static bool do_prev_group(struct mpl_mediaplayer_t *pl)
 	bool group_changed = false;
 
 #ifdef CONFIG_BT_OTS_TEMP
-	BT_DBG_UINT48("Group ID before: ", pl->group->id);
+	BT_DBG_OBJ_ID("Group ID before: ", pl->group->id);
 #endif /* CONFIG_BT_OTS_TEMP */
 
 	if (pl->group->prev != NULL) {
@@ -1171,7 +1160,7 @@ static bool do_prev_group(struct mpl_mediaplayer_t *pl)
 	}
 
 #ifdef CONFIG_BT_OTS_TEMP
-	BT_DBG_UINT48("Group ID after: ", pl->group->id);
+	BT_DBG_OBJ_ID("Group ID after: ", pl->group->id);
 #endif /* CONFIG_BT_OTS_TEMP */
 
 	return group_changed;
@@ -1182,7 +1171,7 @@ static bool do_next_group(struct mpl_mediaplayer_t *pl)
 	bool group_changed = false;
 
 #ifdef CONFIG_BT_OTS_TEMP
-	BT_DBG_UINT48("Group ID before: ", pl->group->id);
+	BT_DBG_OBJ_ID("Group ID before: ", pl->group->id);
 #endif /* CONFIG_BT_OTS_TEMP */
 
 	if (pl->group->next != NULL) {
@@ -1191,7 +1180,7 @@ static bool do_next_group(struct mpl_mediaplayer_t *pl)
 	}
 
 #ifdef CONFIG_BT_OTS_TEMP
-	BT_DBG_UINT48("Group ID after: ", pl->group->id);
+	BT_DBG_OBJ_ID("Group ID after: ", pl->group->id);
 #endif /* CONFIG_BT_OTS_TEMP */
 
 	return group_changed;
@@ -1202,7 +1191,7 @@ static bool do_first_group(struct mpl_mediaplayer_t *pl)
 	bool group_changed = false;
 
 #ifdef CONFIG_BT_OTS_TEMP
-	BT_DBG_UINT48("Group ID before: ", pl->group->id);
+	BT_DBG_OBJ_ID("Group ID before: ", pl->group->id);
 #endif /* CONFIG_BT_OTS_TEMP */
 
 	if (pl->group->prev != NULL) {
@@ -1214,7 +1203,7 @@ static bool do_first_group(struct mpl_mediaplayer_t *pl)
 	}
 
 #ifdef CONFIG_BT_OTS_TEMP
-	BT_DBG_UINT48("Group ID after: ", pl->group->id);
+	BT_DBG_OBJ_ID("Group ID after: ", pl->group->id);
 #endif /* CONFIG_BT_OTS_TEMP */
 
 	return group_changed;
@@ -1225,7 +1214,7 @@ static bool do_last_group(struct mpl_mediaplayer_t *pl)
 	bool group_changed = false;
 
 #ifdef CONFIG_BT_OTS_TEMP
-	BT_DBG_UINT48("Group ID before: ", pl->group->id);
+	BT_DBG_OBJ_ID("Group ID before: ", pl->group->id);
 #endif /* CONFIG_BT_OTS_TEMP */
 
 	if (pl->group->next != NULL) {
@@ -1237,7 +1226,7 @@ static bool do_last_group(struct mpl_mediaplayer_t *pl)
 	}
 
 #ifdef CONFIG_BT_OTS_TEMP
-	BT_DBG_UINT48("Group ID after: ", pl->group->id);
+	BT_DBG_OBJ_ID("Group ID after: ", pl->group->id);
 #endif /* CONFIG_BT_OTS_TEMP */
 
 	return group_changed;
@@ -1249,7 +1238,7 @@ static bool  do_goto_group(struct mpl_mediaplayer_t *pl, int32_t groupnum)
 	int32_t k;
 
 #ifdef CONFIG_BT_OTS_TEMP
-	BT_DBG_UINT48("Group ID before: ", pl->group->id);
+	BT_DBG_OBJ_ID("Group ID before: ", pl->group->id);
 #endif /* CONFIG_BT_OTS_TEMP */
 
 	if (groupnum > 0) {
@@ -1283,7 +1272,7 @@ static bool  do_goto_group(struct mpl_mediaplayer_t *pl, int32_t groupnum)
 	}
 
 #ifdef CONFIG_BT_OTS_TEMP
-	BT_DBG_UINT48("Group ID after: ", pl->group->id);
+	BT_DBG_OBJ_ID("Group ID after: ", pl->group->id);
 #endif /* CONFIG_BT_OTS_TEMP */
 
 	/* The group has changed if we have moved more in one direction */
