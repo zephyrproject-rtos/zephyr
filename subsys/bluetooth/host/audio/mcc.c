@@ -95,7 +95,7 @@ struct mcs_instance_t {
 #ifdef CONFIG_BT_OTC
 	char write_buf[SEARCH_LEN_MAX];
 #else
-	char write_buf[UINT48_LEN];
+	char write_buf[BT_OTS_OBJ_ID_SIZE];
 #endif /* CONFIG_BT_OTC */
 
 	struct bt_gatt_write_params     write_params;
@@ -187,7 +187,7 @@ static uint8_t mcc_read_icon_obj_id_cb(struct bt_conn *conn, uint8_t err,
 	BT_DBG("err: 0x%02x, length: %d, data: %p", err, length, data);
 	if (err) {
 		BT_DBG("err: 0x%02x", err);
-	} else if ((!pid) || (length != UINT48_LEN)) {
+	} else if ((!pid) || (length != BT_OTS_OBJ_ID_SIZE)) {
 		cb_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	} else {
 		BT_HEXDUMP_DBG(pid, length, "Icon Object ID");
@@ -429,7 +429,7 @@ static uint8_t mcc_read_segments_obj_id_cb(struct bt_conn *conn, uint8_t err,
 	mcs_inst.busy = false;
 	if (err) {
 		BT_DBG("err: 0x%02x", err);
-	} else if ((!pid) || (length != UINT48_LEN)) {
+	} else if ((!pid) || (length != BT_OTS_OBJ_ID_SIZE)) {
 		BT_DBG("length: %d, data: %p", length, data);
 		cb_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	} else {
@@ -461,7 +461,7 @@ static uint8_t mcc_read_current_track_obj_id_cb(struct bt_conn *conn, uint8_t er
 	mcs_inst.busy = false;
 	if (err) {
 		BT_DBG("err: 0x%02x", err);
-	} else if ((!pid) || (length != UINT48_LEN)) {
+	} else if ((!pid) || (length != BT_OTS_OBJ_ID_SIZE)) {
 		BT_DBG("length: %d, data: %p", length, data);
 		cb_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	} else {
@@ -494,7 +494,7 @@ static uint8_t mcc_read_next_track_obj_id_cb(struct bt_conn *conn, uint8_t err,
 	mcs_inst.busy = false;
 	if (err) {
 		BT_DBG("err: 0x%02x", err);
-	} else if (!pid || (length != UINT48_LEN)) {
+	} else if (!pid || (length != BT_OTS_OBJ_ID_SIZE)) {
 		BT_DBG("length: %d, data: %p", length, data);
 		cb_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	} else {
@@ -526,7 +526,7 @@ static uint8_t mcc_read_current_group_obj_id_cb(struct bt_conn *conn, uint8_t er
 	mcs_inst.busy = false;
 	if (err) {
 		BT_DBG("err: 0x%02x", err);
-	} else if (!pid || (length != UINT48_LEN)) {
+	} else if (!pid || (length != BT_OTS_OBJ_ID_SIZE)) {
 		BT_DBG("length: %d, data: %p", length, data);
 		cb_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	} else {
@@ -559,7 +559,7 @@ static uint8_t mcc_read_parent_group_obj_id_cb(struct bt_conn *conn, uint8_t err
 	mcs_inst.busy = false;
 	if (err) {
 		BT_DBG("err: 0x%02x", err);
-	} else if (!pid || (length != UINT48_LEN)) {
+	} else if (!pid || (length != BT_OTS_OBJ_ID_SIZE)) {
 		BT_DBG("length: %d, data: %p", length, data);
 		cb_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	} else {
@@ -784,7 +784,7 @@ static uint8_t mcc_read_search_results_obj_id_cb(struct bt_conn *conn, uint8_t e
 		/* OK - this characteristic may be zero length */
 		/* cb_err and id already have correct values */
 		BT_DBG("Zero-length Search Results Object ID");
-	} else if (!pid || (length != UINT48_LEN)) {
+	} else if (!pid || (length != BT_OTS_OBJ_ID_SIZE)) {
 		BT_DBG("length: %d, pid: %p", length, pid);
 		cb_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	} else {

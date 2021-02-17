@@ -1047,7 +1047,7 @@ static enum bt_ots_olcp_res_code decode_olcp_command(
 		res_code = BT_OTS_OLCP_RES_SUCCESS;
 		break;
 	case BT_OTS_OLCP_PROC_GOTO:
-		if (len != sizeof(p_proc->type) + UINT48_LEN) {
+		if (len != sizeof(p_proc->type) + BT_OTS_OBJ_ID_SIZE) {
 			return BT_OTS_OLCP_RES_INVALID_PARAMETER;
 		}
 		p_proc->goto_id = net_buf_simple_pull_le48(&net_buf);

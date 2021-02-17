@@ -67,7 +67,7 @@ static ssize_t icon_id_read(struct bt_conn *conn,
 	}
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &icon_id,
-				 UINT48_LEN);
+				 BT_OTS_OBJ_ID_SIZE);
 }
 #endif /* CONFIG_BT_OTS_TEMP */
 
@@ -241,7 +241,7 @@ static ssize_t track_segments_id_read(struct bt_conn *conn,
 	}
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset,
-				 &track_segments_id, UINT48_LEN);
+				 &track_segments_id, BT_OTS_OBJ_ID_SIZE);
 }
 
 static ssize_t current_track_id_read(struct bt_conn *conn,
@@ -258,7 +258,7 @@ static ssize_t current_track_id_read(struct bt_conn *conn,
 	}
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &track_id,
-				 UINT48_LEN);
+				 BT_OTS_OBJ_ID_SIZE);
 }
 
 static ssize_t current_track_id_write(struct bt_conn *conn,
@@ -271,7 +271,7 @@ static ssize_t current_track_id_write(struct bt_conn *conn,
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
-	if (len != UINT48_LEN) {
+	if (len != BT_OTS_OBJ_ID_SIZE) {
 		BT_DBG("Invalid length");
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
@@ -285,7 +285,7 @@ static ssize_t current_track_id_write(struct bt_conn *conn,
 
 	mpl_current_track_id_set(uint48array_to_u64((uint8_t *)buf));
 
-	return UINT48_LEN;
+	return BT_OTS_OBJ_ID_SIZE;
 }
 
 static void current_track_id_cfg_changed(const struct bt_gatt_attr *attr,
@@ -308,7 +308,7 @@ static ssize_t next_track_id_read(struct bt_conn *conn,
 	}
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &track_id,
-				 UINT48_LEN);
+				 BT_OTS_OBJ_ID_SIZE);
 }
 
 static ssize_t next_track_id_write(struct bt_conn *conn,
@@ -321,7 +321,7 @@ static ssize_t next_track_id_write(struct bt_conn *conn,
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
-	if (len != UINT48_LEN) {
+	if (len != BT_OTS_OBJ_ID_SIZE) {
 		BT_DBG("Invalid length");
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
@@ -335,7 +335,7 @@ static ssize_t next_track_id_write(struct bt_conn *conn,
 
 	mpl_next_track_id_set(uint48array_to_u64((uint8_t *)buf));
 
-	return UINT48_LEN;
+	return BT_OTS_OBJ_ID_SIZE;
 }
 
 static void next_track_id_cfg_changed(const struct bt_gatt_attr *attr,
@@ -358,7 +358,7 @@ static ssize_t group_id_read(struct bt_conn *conn,
 	}
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &group_id,
-				 UINT48_LEN);
+				 BT_OTS_OBJ_ID_SIZE);
 }
 
 static ssize_t group_id_write(struct bt_conn *conn,
@@ -371,7 +371,7 @@ static ssize_t group_id_write(struct bt_conn *conn,
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
-	if (len != UINT48_LEN) {
+	if (len != BT_OTS_OBJ_ID_SIZE) {
 		BT_DBG("Invalid length");
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
@@ -385,7 +385,7 @@ static ssize_t group_id_write(struct bt_conn *conn,
 
 	mpl_group_id_set(uint48array_to_u64((uint8_t *)buf));
 
-	return UINT48_LEN;
+	return BT_OTS_OBJ_ID_SIZE;
 }
 
 static void group_id_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
@@ -407,7 +407,7 @@ static ssize_t parent_group_id_read(struct bt_conn *conn,
 	}
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &group_id,
-				 UINT48_LEN);
+				 BT_OTS_OBJ_ID_SIZE);
 }
 
 static void parent_group_id_cfg_changed(const struct bt_gatt_attr *attr,
@@ -606,7 +606,7 @@ static ssize_t search_results_id_read(struct bt_conn *conn,
 					 NULL, 0);
 	} else {
 		return bt_gatt_attr_read(conn, attr, buf, len, offset,
-					 &search_id, UINT48_LEN);
+					 &search_id, BT_OTS_OBJ_ID_SIZE);
 	}
 }
 
@@ -909,7 +909,7 @@ void mpl_current_track_id_cb(uint64_t id)
 		u64_to_uint48array_str(id, t);
 		BT_DBG("Notifying current track ID: 0x%s", log_strdup(t));
 	}
-	notify(BT_UUID_MCS_CURRENT_TRACK_OBJ_ID, &id, UINT48_LEN);
+	notify(BT_UUID_MCS_CURRENT_TRACK_OBJ_ID, &id, BT_OTS_OBJ_ID_SIZE);
 }
 
 void mpl_next_track_id_cb(uint64_t id)
@@ -919,7 +919,7 @@ void mpl_next_track_id_cb(uint64_t id)
 		u64_to_uint48array_str(id, t);
 		BT_DBG("Notifying next track ID: 0x%s", log_strdup(t));
 	}
-	notify(BT_UUID_MCS_NEXT_TRACK_OBJ_ID, &id, UINT48_LEN);
+	notify(BT_UUID_MCS_NEXT_TRACK_OBJ_ID, &id, BT_OTS_OBJ_ID_SIZE);
 }
 
 void mpl_group_id_cb(uint64_t id)
@@ -929,7 +929,7 @@ void mpl_group_id_cb(uint64_t id)
 		u64_to_uint48array_str(id, t);
 		BT_DBG("Notifying group ID: 0x%s", log_strdup(t));
 	}
-	notify(BT_UUID_MCS_GROUP_OBJ_ID, &id, UINT48_LEN);
+	notify(BT_UUID_MCS_GROUP_OBJ_ID, &id, BT_OTS_OBJ_ID_SIZE);
 }
 
 
@@ -940,7 +940,7 @@ void mpl_parent_group_id_cb(uint64_t id)
 		u64_to_uint48array_str(id, t);
 		BT_DBG("Notifying group ID: 0x%s", log_strdup(t));
 	}
-	notify(BT_UUID_MCS_PARENT_GROUP_OBJ_ID, &id, UINT48_LEN);
+	notify(BT_UUID_MCS_PARENT_GROUP_OBJ_ID, &id, BT_OTS_OBJ_ID_SIZE);
 }
 
 void mpl_playing_order_cb(uint8_t order)
@@ -984,5 +984,5 @@ void mpl_search_results_id_cb(uint64_t id)
 		u64_to_uint48array_str(id, t);
 		BT_DBG("Notifying search results ID: 0x%s", log_strdup(t));
 	}
-	notify(BT_UUID_MCS_SEARCH_RESULTS_OBJ_ID, &id, UINT48_LEN);
+	notify(BT_UUID_MCS_SEARCH_RESULTS_OBJ_ID, &id, BT_OTS_OBJ_ID_SIZE);
 }

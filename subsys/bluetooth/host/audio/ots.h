@@ -31,7 +31,7 @@ struct ots_svc_inst_t;
 
 #define BT_OTS_MAX_OLCP_SIZE    7
 #define BT_OTS_DIRLISTING_ID    0x000000000000
-#define BT_OTS_ID_LEN           (UINT48_LEN)
+#define BT_OTS_ID_LEN           (BT_OTS_OBJ_ID_SIZE)
 
 
 #define SET_OR_CLEAR_BIT(var, bit_val, set) \

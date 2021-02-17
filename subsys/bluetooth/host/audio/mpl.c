@@ -387,7 +387,7 @@ static uint32_t setup_group_object(struct mpl_group_t *group)
 {
 	struct mpl_track_t *track = group->track;
 	uint8_t type = MPL_GROUP_OBJECT_TRACK_TYPE;
-	uint8_t record_size = sizeof(type) + UINT48_LEN;
+	uint8_t record_size = sizeof(type) + BT_OTS_OBJ_ID_SIZE;
 	int next_size = record_size;
 
 	net_buf_simple_reset(obj.content);
@@ -425,7 +425,7 @@ static uint32_t setup_parent_group_object(struct mpl_group_t *group)
 	/* the parent group to a group of tracks. */
 
 	uint8_t type = MPL_GROUP_OBJECT_GROUP_TYPE;
-	uint8_t record_size = sizeof(type) + UINT48_LEN;
+	uint8_t record_size = sizeof(type) + BT_OTS_OBJ_ID_SIZE;
 	int next_size = record_size;
 
 	net_buf_simple_reset(obj.content);
@@ -2435,7 +2435,7 @@ void mpl_group_id_set(uint64_t id)
 	/* bit variables */
 	uint8_t k, tmp;
 
-	for (k = 0; k < UINT48_LEN; k++) {
+	for (k = 0; k < BT_OTS_OBJ_ID_SIZE; k++) {
 		tmp = (id >> k*8) & 0xff;
 		BT_DBG("Byte %d = %x", k, tmp);
 	}
