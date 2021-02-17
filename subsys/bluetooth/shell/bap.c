@@ -28,6 +28,7 @@ static struct bt_audio_chan chans[MAX_PAC];
 static struct bt_audio_capability *rcaps[2][CONFIG_BT_BAP_PAC_COUNT];
 static struct bt_audio_ep *reps[CONFIG_BT_BAP_ASE_COUNT];
 static struct bt_audio_chan *default_chan;
+static bool connecting;
 
 #define LC3_PRESET(_name, _codec, _qos) \
 	{ \
@@ -669,6 +670,17 @@ static int lc3_reconfig(struct bt_audio_chan *chan,
 		set_channel(chan);
 	}
 
+	if (connecting) {
+		int err;
+
+		err = bt_audio_chan_qos(chan, &default_preset->qos);
+		if (err) {
+			shell_error(ctx_shell, "Unable to setup QoS");
+			connecting = false;
+			return -ENOEXEC;
+		}
+	}
+
 	return 0;
 }
 
@@ -677,6 +689,20 @@ static int lc3_qos(struct bt_audio_chan *chan, struct bt_codec_qos *qos)
 	shell_print(ctx_shell, "QoS: chan %p", chan, qos);
 
 	print_qos(qos);
+
+	if (connecting) {
+		int err;
+
+		connecting = false;
+
+		err = bt_audio_chan_enable(chan,
+					   default_preset->codec.meta_count,
+					   default_preset->codec.meta);
+		if (err) {
+			shell_error(ctx_shell, "Unable to enable Channel");
+			return -ENOEXEC;
+		}
+	}
 
 	return 0;
 }
@@ -727,6 +753,8 @@ static int lc3_release(struct bt_audio_chan *chan)
 	if (chan == default_chan) {
 		default_chan = NULL;
 	}
+
+	connecting = false;
 
 	return 0;
 }
@@ -784,6 +812,20 @@ static int cmd_init(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_connect(const struct shell *shell, size_t argc, char *argv[])
+{
+	int err;
+
+	err = cmd_config(shell, argc, argv);
+	if (err) {
+		return err;
+	}
+
+	connecting = true;
+
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(bap_cmds,
 	SHELL_CMD_ARG(init, NULL, NULL, cmd_init, 1, 0),
 	SHELL_CMD_ARG(discover, NULL, "<type: sink, source>",
@@ -804,6 +846,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bap_cmds,
 	SHELL_CMD_ARG(select, NULL, "<ase>", cmd_select, 2, 0),
 	SHELL_CMD_ARG(link, NULL, "<ase1> <ase2>", cmd_link, 3, 0),
 	SHELL_CMD_ARG(unlink, NULL, "<ase1> <ase2>", cmd_unlink, 3, 0),
+	SHELL_CMD_ARG(connect, NULL,
+		      "<ase> <direction: sink, source> [codec] [preset]",
+		      cmd_connect, 3, 2),
 	SHELL_SUBCMD_SET_END
 );
 
