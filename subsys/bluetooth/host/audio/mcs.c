@@ -21,6 +21,7 @@
 #include <bluetooth/gatt.h>
 
 #include "mpl.h"
+#include "mpl_internal.h"
 #include "uint48_util.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_MCS)
@@ -59,13 +60,7 @@ static ssize_t icon_id_read(struct bt_conn *conn,
 {
 	uint64_t icon_id = mpl_icon_id_get();
 
-	/* BT_DBG does not support printing 64 bit types */
-	if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) {
-		char t[UINT48_STR_LEN];
-		u64_to_uint48array_str(icon_id, t);
-		BT_DBG("Icon object read: 0x%s", log_strdup(t));
-	}
-
+	BT_DBG_OBJ_ID("Icon object read: ", icon_id);
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &icon_id,
 				 BT_OTS_OBJ_ID_SIZE);
 }
@@ -233,13 +228,7 @@ static ssize_t track_segments_id_read(struct bt_conn *conn,
 {
 	uint64_t track_segments_id = mpl_track_segments_id_get();
 
-	/* BT_DBG does not support printing 64 bit types */
-	if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) {
-		char t[UINT48_STR_LEN];
-		u64_to_uint48array_str(track_segments_id, t);
-		BT_DBG("Track segments ID read: 0x%s", log_strdup(t));
-	}
-
+	BT_DBG_OBJ_ID("Track segments ID read: ", track_segments_id);
 	return bt_gatt_attr_read(conn, attr, buf, len, offset,
 				 &track_segments_id, BT_OTS_OBJ_ID_SIZE);
 }
@@ -250,13 +239,7 @@ static ssize_t current_track_id_read(struct bt_conn *conn,
 {
 	uint64_t track_id = mpl_current_track_id_get();
 
-	/* BT_DBG does not support printing 64 bit types */
-	if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) {
-		char t[UINT48_STR_LEN];
-		u64_to_uint48array_str(track_id, t);
-		BT_DBG("Current track ID read: 0x%s", log_strdup(t));
-	}
-
+	BT_DBG_OBJ_ID("Current track ID read: ", track_id);
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &track_id,
 				 BT_OTS_OBJ_ID_SIZE);
 }
@@ -300,13 +283,7 @@ static ssize_t next_track_id_read(struct bt_conn *conn,
 {
 	uint64_t track_id = mpl_next_track_id_get();
 
-	/* BT_DBG does not support printing 64 bit types */
-	if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) {
-		char t[UINT48_STR_LEN];
-		u64_to_uint48array_str(track_id, t);
-		BT_DBG("Next track read: 0x%s", log_strdup(t));
-	}
-
+	BT_DBG_OBJ_ID("Next track read: ", track_id);
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &track_id,
 				 BT_OTS_OBJ_ID_SIZE);
 }
@@ -350,13 +327,7 @@ static ssize_t group_id_read(struct bt_conn *conn,
 {
 	uint64_t group_id = mpl_group_id_get();
 
-	/* BT_DBG does not support printing 64 bit types */
-	if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) {
-		char t[UINT48_STR_LEN];
-		u64_to_uint48array_str(group_id, t);
-		BT_DBG("Group read: 0x%s", log_strdup(t));
-	}
-
+	BT_DBG_OBJ_ID("Group read: ", group_id);
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &group_id,
 				 BT_OTS_OBJ_ID_SIZE);
 }
@@ -399,13 +370,7 @@ static ssize_t parent_group_id_read(struct bt_conn *conn,
 {
 	uint64_t group_id = mpl_parent_group_id_get();
 
-	/* BT_DBG does not support printing 64 bit types */
-	if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) {
-		char t[UINT48_STR_LEN];
-		u64_to_uint48array_str(group_id, t);
-		BT_DBG("Parent group read: 0x%s", log_strdup(t));
-	}
-
+	BT_DBG_OBJ_ID("Parent group read: ", group_id);
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &group_id,
 				 BT_OTS_OBJ_ID_SIZE);
 }
@@ -585,12 +550,7 @@ static ssize_t search_results_id_read(struct bt_conn *conn,
 {
 	uint64_t search_id = mpl_search_results_id_get();
 
-	/* BT_DBG does not support printing 64 bit types */
-	if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) {
-		char t[UINT48_STR_LEN];
-		u64_to_uint48array_str(search_id, t);
-		BT_DBG("Search results id read: 0x%s", log_strdup(t));
-	}
+	BT_DBG_OBJ_ID("Search results id read: ", search_id);
 
 	/* TODO: The permanent solution here should be that the call to */
 	/* mpl should fill the UUID in a pointed-to value, and return a */
@@ -904,42 +864,26 @@ void mpl_seeking_speed_cb(int8_t speed)
 
 void mpl_current_track_id_cb(uint64_t id)
 {
-	if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) {
-		char t[UINT48_STR_LEN];
-		u64_to_uint48array_str(id, t);
-		BT_DBG("Notifying current track ID: 0x%s", log_strdup(t));
-	}
+	BT_DBG_OBJ_ID("Notifying current track ID: ", id);
 	notify(BT_UUID_MCS_CURRENT_TRACK_OBJ_ID, &id, BT_OTS_OBJ_ID_SIZE);
 }
 
 void mpl_next_track_id_cb(uint64_t id)
 {
-	if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) {
-		char t[UINT48_STR_LEN];
-		u64_to_uint48array_str(id, t);
-		BT_DBG("Notifying next track ID: 0x%s", log_strdup(t));
-	}
+	BT_DBG_OBJ_ID("Notifying next track ID: ", id);
 	notify(BT_UUID_MCS_NEXT_TRACK_OBJ_ID, &id, BT_OTS_OBJ_ID_SIZE);
 }
 
 void mpl_group_id_cb(uint64_t id)
 {
-	if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) {
-		char t[UINT48_STR_LEN];
-		u64_to_uint48array_str(id, t);
-		BT_DBG("Notifying group ID: 0x%s", log_strdup(t));
-	}
+	BT_DBG_OBJ_ID("Notifying group ID: ", id);
 	notify(BT_UUID_MCS_GROUP_OBJ_ID, &id, BT_OTS_OBJ_ID_SIZE);
 }
 
 
 void mpl_parent_group_id_cb(uint64_t id)
 {
-	if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) {
-		char t[UINT48_STR_LEN];
-		u64_to_uint48array_str(id, t);
-		BT_DBG("Notifying group ID: 0x%s", log_strdup(t));
-	}
+	BT_DBG_OBJ_ID("Notifying group ID: ", id);
 	notify(BT_UUID_MCS_PARENT_GROUP_OBJ_ID, &id, BT_OTS_OBJ_ID_SIZE);
 }
 
@@ -979,10 +923,6 @@ void mpl_search_cb(uint8_t result_code)
 
 void mpl_search_results_id_cb(uint64_t id)
 {
-	if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) {
-		char t[UINT48_STR_LEN];
-		u64_to_uint48array_str(id, t);
-		BT_DBG("Notifying search results ID: 0x%s", log_strdup(t));
-	}
+	BT_DBG_OBJ_ID("Notifying search results ID: ", id);
 	notify(BT_UUID_MCS_SEARCH_RESULTS_OBJ_ID, &id, BT_OTS_OBJ_ID_SIZE);
 }
