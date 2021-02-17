@@ -432,6 +432,8 @@
 /drivers/i2c/i2c_dw*                      @dcpleung
 /drivers/i2c/*tca954x*                    @kurddt
 /drivers/*/*xec*                          @franciscomunoz @albertofloyd @sjvasanth1
+/drivers/mipi_dsi/                        @gmarull
+/drivers/mipi_dsi/mipi_dsi.c              @gmarull
 /drivers/watchdog/*gecko*                 @oanerer
 /drivers/watchdog/*sifive*                @katsuster
 /drivers/watchdog/wdt_handlers.c          @dcpleung @nashif
