@@ -213,7 +213,7 @@ static struct lwm2m_engine_obj_inst *server_create(uint16_t obj_inst_id)
 			  &server_id[index], sizeof(*server_id));
 	INIT_OBJ_RES(SERVER_LIFETIME_ID, res[index], i, res_inst[index], j,
 		     1U, false, true, &lifetime[index], sizeof(*lifetime),
-		     NULL, NULL, lifetime_write_cb, NULL);
+		     NULL, NULL, NULL, lifetime_write_cb, NULL);
 	INIT_OBJ_RES_DATA(SERVER_DEFAULT_MIN_PERIOD_ID, res[index], i,
 			  res_inst[index], j,
 			  &default_min_period[index],

@@ -198,13 +198,14 @@ struct lwm2m_engine_obj {
 
 /* Resource macros */
 #define _INIT_OBJ_RES(_id, _r_ptr, _r_idx, _ri_ptr, _ri_count, _multi_ri, \
-		      _r_cb, _pre_w_cb, _post_w_cb, _ex_cb) \
+		      _r_cb, _pre_w_cb, _val_cb, _post_w_cb, _ex_cb) \
 	_r_ptr[_r_idx].res_id = _id; \
 	_r_ptr[_r_idx].res_instances = _ri_ptr; \
 	_r_ptr[_r_idx].res_inst_count = _ri_count; \
 	_r_ptr[_r_idx].multi_res_inst = _multi_ri; \
 	_r_ptr[_r_idx].read_cb = _r_cb; \
 	_r_ptr[_r_idx].pre_write_cb = _pre_w_cb; \
+	_r_ptr[_r_idx].validate_cb = _val_cb; \
 	_r_ptr[_r_idx].post_write_cb = _post_w_cb; \
 	_r_ptr[_r_idx].execute_cb = _ex_cb
 
@@ -253,11 +254,11 @@ struct lwm2m_engine_obj {
 #define INIT_OBJ_RES(_id, _r_ptr, _r_idx, \
 		     _ri_ptr, _ri_idx, _ri_count, _multi_ri, _ri_create, \
 		     _data_ptr, _data_len, \
-		     _r_cb, _pre_w_cb, _post_w_cb, _ex_cb) \
+		     _r_cb, _pre_w_cb, _val_cb, _post_w_cb, _ex_cb) \
 	do { \
 		_INIT_OBJ_RES(_id, _r_ptr, _r_idx, \
 			      (_ri_ptr + _ri_idx), _ri_count, _multi_ri, \
-			      _r_cb, _pre_w_cb, _post_w_cb, _ex_cb); \
+			      _r_cb, _pre_w_cb, _val_cb, _post_w_cb, _ex_cb); \
 		_INIT_OBJ_RES_INST(_ri_ptr, _ri_idx, _ri_count, _ri_create, \
 				   _data_ptr, _data_len); \
 	++_r_idx; \
@@ -266,11 +267,11 @@ struct lwm2m_engine_obj {
 
 #define INIT_OBJ_RES_OPT(_id, _r_ptr, _r_idx, \
 			 _ri_ptr, _ri_idx, _ri_count, _multi_ri, _ri_create, \
-			 _r_cb, _pre_w_cb, _post_w_cb, _ex_cb) \
+			 _r_cb, _pre_w_cb, _val_cb, _post_w_cb, _ex_cb) \
 	do { \
 		_INIT_OBJ_RES(_id, _r_ptr, _r_idx, \
 			      (_ri_ptr + _ri_idx), _ri_count, _multi_ri, \
-			      _r_cb, _pre_w_cb, _post_w_cb, _ex_cb); \
+			      _r_cb, _pre_w_cb, _val_cb, _post_w_cb, _ex_cb); \
 		_INIT_OBJ_RES_INST_OPT(_ri_ptr, _ri_idx, _ri_count, _ri_create); \
 		++_r_idx; \
 	} while (false)
@@ -280,27 +281,27 @@ struct lwm2m_engine_obj {
 				_data_ptr, _data_len) \
 	INIT_OBJ_RES(_id, _r_ptr, _r_idx, \
 		     _ri_ptr, _ri_idx, _ri_count, true, _ri_create, \
-		     _data_ptr, _data_len, NULL, NULL, NULL, NULL)
+		     _data_ptr, _data_len, NULL, NULL, NULL, NULL, NULL)
 
 #define INIT_OBJ_RES_MULTI_OPTDATA(_id, _r_ptr, _r_idx, \
 				   _ri_ptr, _ri_idx, _ri_count, _ri_create) \
 	INIT_OBJ_RES_OPT(_id, _r_ptr, _r_idx, \
 			 _ri_ptr, _ri_idx, _ri_count, true, _ri_create, \
-			 NULL, NULL, NULL, NULL)
+			 NULL, NULL, NULL, NULL, NULL)
 
 #define INIT_OBJ_RES_DATA(_id, _r_ptr, _r_idx, _ri_ptr, _ri_idx, \
 			  _data_ptr, _data_len) \
 	INIT_OBJ_RES(_id, _r_ptr, _r_idx, _ri_ptr, _ri_idx, 1U, false, true, \
-		     _data_ptr, _data_len, NULL, NULL, NULL, NULL)
+		     _data_ptr, _data_len, NULL, NULL, NULL, NULL, NULL)
 
 #define INIT_OBJ_RES_OPTDATA(_id, _r_ptr, _r_idx, _ri_ptr, _ri_idx) \
 	INIT_OBJ_RES_OPT(_id, _r_ptr, _r_idx, _ri_ptr, _ri_idx, 1U, false, \
-			 true, NULL, NULL, NULL, NULL)
+			 true, NULL, NULL, NULL, NULL, NULL)
 
 #define INIT_OBJ_RES_EXECUTE(_id, _r_ptr, _r_idx, _ex_cb) \
 	do { \
 		_INIT_OBJ_RES(_id, _r_ptr, _r_idx, NULL, 0, false, \
-			      NULL, NULL, NULL, _ex_cb); \
+			      NULL, NULL, NULL, NULL, _ex_cb); \
 		++_r_idx; \
 	} while (false)
 
@@ -336,6 +337,7 @@ struct lwm2m_engine_res_inst {
 struct lwm2m_engine_res {
 	lwm2m_engine_get_data_cb_t		read_cb;
 	lwm2m_engine_get_data_cb_t		pre_write_cb;
+	lwm2m_engine_set_data_cb_t		validate_cb;
 	lwm2m_engine_set_data_cb_t		post_write_cb;
 	lwm2m_engine_execute_cb_t		execute_cb;
 

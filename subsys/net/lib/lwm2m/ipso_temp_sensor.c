@@ -205,7 +205,7 @@ static struct lwm2m_engine_obj_inst *temp_sensor_create(uint16_t obj_inst_id)
 	INIT_OBJ_RES(TEMP_SENSOR_VALUE_ID, res[index], i,
 		     res_inst[index], j, 1, false, true,
 		     &sensor_value[index], sizeof(*sensor_value),
-		     NULL, NULL, sensor_value_write_cb, NULL);
+		     NULL, NULL, NULL, sensor_value_write_cb, NULL);
 	INIT_OBJ_RES_DATA(TEMP_UNITS_ID, res[index], i, res_inst[index], j,
 			  units[index], TEMP_STRING_SHORT);
 	INIT_OBJ_RES_DATA(TEMP_MIN_MEASURED_VALUE_ID, res[index], i,
