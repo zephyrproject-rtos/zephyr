@@ -283,7 +283,7 @@ static ssize_t current_track_id_write(struct bt_conn *conn,
 		       offset, len, log_strdup(str));
 	}
 
-	mpl_current_track_id_set(uint48array_to_u64((uint8_t *)buf));
+	mpl_current_track_id_set(sys_get_le48((uint8_t *)buf));
 
 	return BT_OTS_OBJ_ID_SIZE;
 }
@@ -333,7 +333,7 @@ static ssize_t next_track_id_write(struct bt_conn *conn,
 		       offset, len, log_strdup(str));
 	}
 
-	mpl_next_track_id_set(uint48array_to_u64((uint8_t *)buf));
+	mpl_next_track_id_set(sys_get_le48((uint8_t *)buf));
 
 	return BT_OTS_OBJ_ID_SIZE;
 }
@@ -383,7 +383,7 @@ static ssize_t group_id_write(struct bt_conn *conn,
 		       offset, len, log_strdup(str));
 	}
 
-	mpl_group_id_set(uint48array_to_u64((uint8_t *)buf));
+	mpl_group_id_set(sys_get_le48((uint8_t *)buf));
 
 	return BT_OTS_OBJ_ID_SIZE;
 }
