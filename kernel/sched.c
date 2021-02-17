@@ -765,16 +765,21 @@ ALWAYS_INLINE void z_unpend_thread_no_timeout(struct k_thread *thread)
 /* Timeout handler for *_thread_timeout() APIs */
 void z_thread_timeout(struct _timeout *timeout)
 {
-	LOCKED(&sched_spinlock) {
-		struct k_thread *thread = CONTAINER_OF(timeout,
-						struct k_thread, base.timeout);
+	struct k_thread *thread = CONTAINER_OF(timeout,
+					       struct k_thread, base.timeout);
 
-		if (thread->base.pended_on != NULL) {
-			unpend_thread_no_timeout(thread);
+	LOCKED(&sched_spinlock) {
+		bool killed = ((thread->base.thread_state & _THREAD_DEAD) ||
+			       (thread->base.thread_state & _THREAD_ABORTING));
+
+		if (!killed) {
+			if (thread->base.pended_on != NULL) {
+				unpend_thread_no_timeout(thread);
+			}
+			z_mark_thread_as_started(thread);
+			z_mark_thread_as_not_suspended(thread);
+			ready_thread(thread);
 		}
-		z_mark_thread_as_started(thread);
-		z_mark_thread_as_not_suspended(thread);
-		ready_thread(thread);
 	}
 }
 #endif
