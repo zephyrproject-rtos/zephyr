@@ -660,14 +660,14 @@ int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
 		return -EINVAL;
 	}
 
-	BT_DBG("net_idx 0x%04x app_idx 0x%04x dst 0x%04x", tx->sub->net_idx,
-	       tx->ctx->app_idx, tx->ctx->addr);
-	BT_DBG("len %u: %s", msg->len, bt_hex(msg->data, msg->len));
-
 	err = bt_mesh_keys_resolve(tx->ctx, &tx->sub, &key, &aid);
 	if (err) {
 		return err;
 	}
+
+	BT_DBG("net_idx 0x%04x app_idx 0x%04x dst 0x%04x", tx->sub->net_idx,
+	       tx->ctx->app_idx, tx->ctx->addr);
+	BT_DBG("len %u: %s", msg->len, bt_hex(msg->data, msg->len));
 
 	tx->xmit = bt_mesh_net_transmit_get();
 	tx->aid = aid;
