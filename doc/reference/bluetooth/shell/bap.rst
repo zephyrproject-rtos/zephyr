@@ -33,11 +33,77 @@ Commands
      link      :<ase1> <ase2>
      unlink    :<ase1> <ase2>
 
+.. csv-table:: State Machine Transitions
+   :header: "Command", "Depends", "Allowed States", "Next States"
+   :widths: auto
+
+   "init","none","any","none"
+   "discover","init","any","any"
+   "config","discover","idle/codec-configured/qos-configured","codec-configured"
+   "qos","config","codec-configured/qos-configured","qos-configured"
+   "enable","qos","qos-configured","enabling"
+   "[start]","enable","enabling","streaming"
+   "disable","enable", "enabling/streaming","disabling"
+   "[stop]","disable","disabling","qos-configure/idle"
+   "release","config","any","releasing/codec-configure/idle"
+   "list","none","any","none"
+   "select","none","any","none"
+   "link","config","any","none"
+   "unlink","link","any","none"
+
+Example Central
+***************
+
+Connect and estabilish a stream:
+
+.. code-block:: console
+
+   uart:~$ bt init
+   uart:~$ bap init
+   uart:~$ bt connect <address>
+   uart:~$ gatt exchange-mtu
+   uart:~$ bap discover 0x01
+   uart:~$ bap config 0x01 0x01
+   uart:~$ bap qos
+   uart:~$ bap enable
+
+Disconnect and release:
+
+.. code-block:: console
+
+   uart:~$ bap disable
+   uart:~$ bap release
+
+
+Example Peripheral
+******************
+
+Listen:
+
+.. code-block:: console
+
+   uart:~$ bt init
+   uart:~$ bap init
+   uart:~$ bt advertise on
+
+Server initiated disable and release:
+
+.. code-block:: console
+
+   uart:~$ bap disable
+   uart:~$ bap release
+
 Init
 ****
 
 This command register local PAC records which are necessary to be able to
 configure stream and properly manage capabilities in use.
+
+.. csv-table:: State Machine Transitions
+   :header: "Depends", "Allowed States", "Next States"
+   :widths: auto
+
+   "none","any","none"
 
 .. code-block:: console
 
@@ -49,8 +115,16 @@ Discover PAC(s) and ASE(s)
 Once connected this commands discover PAC records and ASE characteristics
 representing remote endpoints.
 
-Note: Use command :code:`gatt exchange-mtu` to make sure the MTU is configured
-properly.
+.. csv-table:: State Machine Transitions
+   :header: "Depends", "Allowed States", "Next States"
+   :widths: auto
+
+   "init","any","any"
+
+.. note::
+
+   Use command :code:`gatt exchange-mtu` to make sure the MTU is configured
+   properly.
 
 .. code-block:: console
 
@@ -107,8 +181,11 @@ This command attempts to configure a stream for the given direction using a
 preset codec configuration which can either be passed directly or in case it is
 omitted the default preset is used.
 
-Note: Discovery must be complete first in order to locate ASE(s) which is
-required by this command.
+.. csv-table:: State Machine Transitions
+   :header: "Depends", "Allowed States", "Next States"
+   :widths: auto
+
+   "discover","idle/codec-configured/qos-configured","codec-configured"
 
 .. code-block:: console
 
@@ -135,7 +212,11 @@ This command attempts to configure the stream QoS using the preset
 configuration, each individual QoS parameter can be set with use optional
 parameters.
 
-Note: Configure Codec must be complete first before attempting this command.
+.. csv-table:: State Machine Transitions
+   :header: "Depends", "Allowed States", "Next States"
+   :widths: auto
+
+   "config","qos-configured/codec-configured","qos-configured"
 
 .. code-block:: console
 
@@ -149,7 +230,11 @@ Enable
 This command attempts to enable the stream previously configured, if the
 remote peer accepts then the ISO connection proceedure is also initiated.
 
-Note: Configure QoS must be complete first before attempting this command.
+.. csv-table:: State Machine Transitions
+   :header: "Depends", "Allowed States", "Next States"
+   :widths: auto
+
+   "qos","qos-configured","enabling"
 
 .. code-block:: console
 
@@ -161,7 +246,11 @@ Start [sink only]
 This command is only necessary when acting as a sink as it indicates to the
 source the stack is ready to start receiving data.
 
-Note: Enable must be complete first before attempting this command.
+.. csv-table:: State Machine Transitions
+   :header: "Depends", "Allowed States", "Next States"
+   :widths: auto
+
+   "enable","enabling","streaming"
 
 .. code-block:: console
 
@@ -173,7 +262,11 @@ Disable
 This command attempts to disable the stream previously enabled, if the
 remote peer accepts then the ISO disconnection proceedure is also initiated.
 
-Note: Enable/Start must be complete first before attempting this command.
+.. csv-table:: State Machine Transitions
+   :header: "Depends", "Allowed States", "Next States"
+   :widths: auto
+
+   "enable","enabling/streaming","disabling"
 
 .. code-block:: console
 
@@ -185,7 +278,11 @@ Stop [sink only]
 This command is only necessary when acting as a sink as it indicates to the
 source the stack is ready to stop receiving data.
 
-Note: Disable must be complete first before attempting this command.
+.. csv-table:: State Machine Transitions
+   :header: "Depends", "Allowed States", "Next States"
+   :widths: auto
+
+   "disable","disabling","qos-configure/idle"
 
 .. code-block:: console
 
@@ -196,6 +293,12 @@ Release
 
 This command releases the current stream and its configuration.
 
+.. csv-table:: State Machine Transitions
+   :header: "Depends", "Allowed States", "Next States"
+   :widths: auto
+
+   "config","any","releasing/codec-configure/idle"
+
 .. code-block:: console
 
    uart:~$ bap release
@@ -204,6 +307,12 @@ List
 ****
 
 This command list the available streams.
+
+.. csv-table:: State Machine Transitions
+   :header: "Depends", "Allowed States", "Next States"
+   :widths: auto
+
+   "none","any","none"
 
 .. code-block:: console
 
@@ -214,6 +323,12 @@ Select
 ******
 
 This command set a stream as default.
+
+.. csv-table:: State Machine Transitions
+   :header: "Depends", "Allowed States", "Next States"
+   :widths: auto
+
+   "none","any","none"
 
 .. code-block:: console
 
@@ -227,6 +342,12 @@ Link
 This command link streams so any command send to either of them is send to the
 other as well, causing their state machine to be synchronized.
 
+.. csv-table:: State Machine Transitions
+   :header: "Depends", "Allowed States", "Next States"
+   :widths: auto
+
+   "config","any","none"
+
 .. code-block:: console
 
    uart:~$ bap link <ase1> <ase2>
@@ -237,6 +358,12 @@ Unlink
 ******
 
 This command unlink streams which were previously linked.
+
+.. csv-table:: State Machine Transitions
+   :header: "Depends", "Allowed States", "Next States"
+   :widths: auto
+
+   "link","any","none"
 
 .. code-block:: console
 
