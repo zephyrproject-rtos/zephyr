@@ -214,17 +214,17 @@ static struct lwm2m_engine_obj_inst *switch_create(uint16_t obj_inst_id)
 		     res_inst[avail], j, 1, false, true,
 		     &switch_data[avail].state,
 		     sizeof(switch_data[avail].state),
-		     NULL, NULL, state_post_write_cb, NULL);
+		     NULL, NULL, NULL, state_post_write_cb, NULL);
 	INIT_OBJ_RES_DATA(SWITCH_DIGITAL_INPUT_COUNTER_ID, res[avail], i,
 			  res_inst[avail], j,
 			  &switch_data[avail].counter,
 			  sizeof(switch_data[avail].counter));
 	INIT_OBJ_RES_OPT(SWITCH_ON_TIME_ID, res[avail], i,
 		     res_inst[avail], j, 1, false, true,
-		     on_time_read_cb, NULL, time_post_write_cb, NULL);
+		     on_time_read_cb, NULL, NULL, time_post_write_cb, NULL);
 	INIT_OBJ_RES_OPT(SWITCH_OFF_TIME_ID, res[avail], i,
 		     res_inst[avail], j, 1, false, true,
-		     off_time_read_cb, NULL, time_post_write_cb, NULL);
+		     off_time_read_cb, NULL, NULL, time_post_write_cb, NULL);
 	INIT_OBJ_RES_OPTDATA(SWITCH_APPLICATION_TYPE_ID, res[avail], i,
 			     res_inst[avail], j);
 #if ADD_TIMESTAMPS

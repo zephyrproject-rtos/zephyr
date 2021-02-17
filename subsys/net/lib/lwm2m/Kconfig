@@ -56,6 +56,16 @@ config LWM2M_ENGINE_MESSAGE_HEADER_SIZE
 	help
 	  Extra room allocated to handle CoAP header data
 
+config LWM2M_ENGINE_VALIDATION_BUFFER_SIZE
+	int "Size of the validation buffer for the incoming data"
+	default 64
+	help
+	  LwM2M will use the validation buffer during the write operation, to
+	  decode the resource value before validating it (applies for resources
+	  for which validation callback has been registered). Set this value to
+	  the maximum expected size of the resources that need to be validated
+	  (and thus have validation callback registered).
+
 config LWM2M_ENGINE_MAX_PENDING
 	int "LWM2M engine max. pending objects"
 	default 5

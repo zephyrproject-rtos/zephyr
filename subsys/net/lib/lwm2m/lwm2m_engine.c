@@ -1500,6 +1500,15 @@ static int lwm2m_engine_set(char *pathstr, void *value, uint16_t len)
 		changed = true;
 	}
 
+	if (res->validate_cb) {
+		ret = res->validate_cb(obj_inst->obj_inst_id, res->res_id,
+				       res_inst->res_inst_id, value,
+				       len, false, 0);
+		if (ret < 0) {
+			return -EINVAL;
+		}
+	}
+
 	switch (obj_field->data_type) {
 
 	case LWM2M_RES_TYPE_OPAQUE:
@@ -2103,6 +2112,21 @@ int lwm2m_engine_register_pre_write_callback(char *pathstr,
 	return 0;
 }
 
+int lwm2m_engine_register_validate_callback(char *pathstr,
+					    lwm2m_engine_set_data_cb_t cb)
+{
+	int ret;
+	struct lwm2m_engine_res *res = NULL;
+
+	ret = lwm2m_engine_get_resource(pathstr, &res);
+	if (ret < 0) {
+		return ret;
+	}
+
+	res->validate_cb = cb;
+	return 0;
+}
+
 int lwm2m_engine_register_post_write_callback(char *pathstr,
 					 lwm2m_engine_set_data_cb_t cb)
 {
@@ -2350,7 +2374,7 @@ size_t lwm2m_engine_get_opaque_more(struct lwm2m_input_context *in,
 static int lwm2m_write_handler_opaque(struct lwm2m_engine_obj_inst *obj_inst,
 				      struct lwm2m_engine_res *res,
 				      struct lwm2m_engine_res_inst *res_inst,
-				      struct lwm2m_input_context *in,
+				      struct lwm2m_message *msg,
 				      void *data_ptr, size_t data_len)
 {
 	size_t len = 1;
@@ -2358,22 +2382,51 @@ static int lwm2m_write_handler_opaque(struct lwm2m_engine_obj_inst *obj_inst,
 	int ret = 0;
 	bool last_block = true;
 	struct lwm2m_opaque_context opaque_ctx = { 0 };
+	void *write_buf;
+	size_t write_buf_len;
 
-	if (in->block_ctx != NULL) {
-		last_block = in->block_ctx->last_block;
+	if (msg->in.block_ctx != NULL) {
+		last_block = msg->in.block_ctx->last_block;
 
 		/* Restore the opaque context from the block context, if used.
 		*/
-		opaque_ctx = in->block_ctx->opaque;
+		opaque_ctx = msg->in.block_ctx->opaque;
+	}
+
+	/* In case validation callback is present, write data to the temporary
+	 * buffer first, for validation. Otherwise, write to the data buffer
+	 * directly.
+	 */
+	if (res->validate_cb) {
+		write_buf = msg->ctx->validate_buf;
+		write_buf_len = sizeof(msg->ctx->validate_buf);
+	} else {
+		write_buf = data_ptr;
+		write_buf_len = data_len;
 	}
 
 	while (!last_pkt_block && len > 0) {
-		len = engine_get_opaque(in, (uint8_t *)data_ptr,
-					data_len, &opaque_ctx, &last_pkt_block);
+		len = engine_get_opaque(&msg->in, write_buf,
+					MIN(data_len, write_buf_len),
+					&opaque_ctx, &last_pkt_block);
 		if (len == 0) {
 			/* ignore empty content and continue */
 			return 0;
 		}
+
+		if (res->validate_cb) {
+			ret = res->validate_cb(
+				obj_inst->obj_inst_id, res->res_id,
+				res_inst->res_inst_id, write_buf, len,
+				last_pkt_block && last_block, opaque_ctx.len);
+			if (ret < 0) {
+				/* -EEXIST will generate Bad Request LWM2M response. */
+				return -EEXIST;
+			}
+
+			memcpy(data_ptr, write_buf, len);
+		}
+
 		if (res->post_write_cb) {
 			ret = res->post_write_cb(
 				obj_inst->obj_inst_id, res->res_id,
@@ -2385,8 +2438,8 @@ static int lwm2m_write_handler_opaque(struct lwm2m_engine_obj_inst *obj_inst,
 		}
 	}
 
-	if (in->block_ctx != NULL) {
-		in->block_ctx->opaque = opaque_ctx;
+	if (msg->in.block_ctx != NULL) {
+		msg->in.block_ctx->opaque = opaque_ctx;
 	}
 
 	return opaque_ctx.len;
@@ -2407,6 +2460,8 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 	int32_t temp32 = 0;
 	int ret = 0;
 	bool last_block = true;
+	void *write_buf;
+	size_t write_buf_len;
 
 	if (!obj_inst || !res || !res_inst || !obj_field || !msg) {
 		return -EINVAL;
@@ -2427,7 +2482,7 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 					     &data_len);
 	}
 
-	if (res->post_write_cb) {
+	if (res->post_write_cb || res->validate_cb) {
 		if (msg->in.block_ctx != NULL) {
 			/* Get block_ctx for total_size (might be zero) */
 			total_size = msg->in.block_ctx->ctx.total_size;
@@ -2439,12 +2494,24 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 		}
 	}
 
+	/* In case validation callback is present, write data to the temporary
+	 * buffer first, for validation. Otherwise, write to the data buffer
+	 * directly.
+	 */
+	if (res->validate_cb) {
+		write_buf = msg->ctx->validate_buf;
+		write_buf_len = sizeof(msg->ctx->validate_buf);
+	} else {
+		write_buf = data_ptr;
+		write_buf_len = data_len;
+	}
+
 	if (data_ptr && data_len > 0) {
 		switch (obj_field->data_type) {
 
 		case LWM2M_RES_TYPE_OPAQUE:
 			ret = lwm2m_write_handler_opaque(obj_inst, res,
-							 res_inst, &msg->in,
+							 res_inst, msg,
 							 data_ptr, data_len);
 			if (ret < 0) {
 				return ret;
@@ -2454,77 +2521,77 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 			break;
 
 		case LWM2M_RES_TYPE_STRING:
-			engine_get_string(&msg->in, (uint8_t *)data_ptr, data_len);
-			len = strlen((char *)data_ptr);
+			engine_get_string(&msg->in, write_buf, write_buf_len);
+			len = strlen((char *)write_buf);
 			break;
 
 		case LWM2M_RES_TYPE_U64:
 			engine_get_s64(&msg->in, &temp64);
-			*(uint64_t *)data_ptr = temp64;
+			*(uint64_t *)write_buf = temp64;
 			len = 8;
 			break;
 
 		case LWM2M_RES_TYPE_U32:
 		case LWM2M_RES_TYPE_TIME:
 			engine_get_s32(&msg->in, &temp32);
-			*(uint32_t *)data_ptr = temp32;
+			*(uint32_t *)write_buf = temp32;
 			len = 4;
 			break;
 
 		case LWM2M_RES_TYPE_U16:
 			engine_get_s32(&msg->in, &temp32);
-			*(uint16_t *)data_ptr = temp32;
+			*(uint16_t *)write_buf = temp32;
 			len = 2;
 			break;
 
 		case LWM2M_RES_TYPE_U8:
 			engine_get_s32(&msg->in, &temp32);
-			*(uint8_t *)data_ptr = temp32;
+			*(uint8_t *)write_buf = temp32;
 			len = 1;
 			break;
 
 		case LWM2M_RES_TYPE_S64:
-			engine_get_s64(&msg->in, (int64_t *)data_ptr);
+			engine_get_s64(&msg->in, (int64_t *)write_buf);
 			len = 8;
 			break;
 
 		case LWM2M_RES_TYPE_S32:
-			engine_get_s32(&msg->in, (int32_t *)data_ptr);
+			engine_get_s32(&msg->in, (int32_t *)write_buf);
 			len = 4;
 			break;
 
 		case LWM2M_RES_TYPE_S16:
 			engine_get_s32(&msg->in, &temp32);
-			*(int16_t *)data_ptr = temp32;
+			*(int16_t *)write_buf = temp32;
 			len = 2;
 			break;
 
 		case LWM2M_RES_TYPE_S8:
 			engine_get_s32(&msg->in, &temp32);
-			*(int8_t *)data_ptr = temp32;
+			*(int8_t *)write_buf = temp32;
 			len = 1;
 			break;
 
 		case LWM2M_RES_TYPE_BOOL:
-			engine_get_bool(&msg->in, (bool *)data_ptr);
+			engine_get_bool(&msg->in, (bool *)write_buf);
 			len = 1;
 			break;
 
 		case LWM2M_RES_TYPE_FLOAT32:
 			engine_get_float32fix(&msg->in,
-					      (float32_value_t *)data_ptr);
+					      (float32_value_t *)write_buf);
 			len = sizeof(float32_value_t);
 			break;
 
 		case LWM2M_RES_TYPE_FLOAT64:
 			engine_get_float64fix(&msg->in,
-					      (float64_value_t *)data_ptr);
+					      (float64_value_t *)write_buf);
 			len = sizeof(float64_value_t);
 			break;
 
 		case LWM2M_RES_TYPE_OBJLNK:
 			engine_get_objlnk(&msg->in,
-					  (struct lwm2m_objlnk *)data_ptr);
+					  (struct lwm2m_objlnk *)write_buf);
 			len = sizeof(struct lwm2m_objlnk);
 			break;
 
@@ -2538,15 +2605,39 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 		return -ENOENT;
 	}
 
-	res_inst->data_len = len;
+	if (obj_field->data_type != LWM2M_RES_TYPE_OPAQUE) {
+		if (res->validate_cb) {
+			ret = res->validate_cb(
+				obj_inst->obj_inst_id, res->res_id,
+				res_inst->res_inst_id, write_buf, len,
+				last_block, total_size);
+			if (ret < 0) {
+				/* -EEXIST will generate Bad Request LWM2M response. */
+				return -EEXIST;
+			}
 
-	if (res->post_write_cb &&
-	    obj_field->data_type != LWM2M_RES_TYPE_OPAQUE) {
-		ret = res->post_write_cb(obj_inst->obj_inst_id,
-					 res->res_id, res_inst->res_inst_id,
-					 data_ptr, len,
-					 last_block, total_size);
+			if (len > data_len) {
+				LOG_ERR("Received data won't fit into provided "
+					"bufffer");
+				return -ENOMEM;
+			}
+
+			if (obj_field->data_type == LWM2M_RES_TYPE_STRING) {
+				strncpy(data_ptr, write_buf, data_len);
+			} else {
+				memcpy(data_ptr, write_buf, len);
+			}
+		}
+
+		if (res->post_write_cb) {
+			ret = res->post_write_cb(
+				obj_inst->obj_inst_id, res->res_id,
+				res_inst->res_inst_id, data_ptr, len,
+				last_block, total_size);
+		}
 	}
+
+	res_inst->data_len = len;
 
 	NOTIFY_OBSERVER_PATH(&msg->path);
 
