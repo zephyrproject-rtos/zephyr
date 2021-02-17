@@ -28,7 +28,6 @@ CONFIG_CLOCK_STM32_PLL_SRC_HSE=y
 # the 8MHz clock signal coming from integrated STLink
 CONFIG_CLOCK_STM32_HSE_BYPASS=y
 # produce 72MHz clock at PLL output
-CONFIG_CLOCK_STM32_PLL_XTPRE=n
 CONFIG_CLOCK_STM32_PLL_MULTIPLIER=9
 CONFIG_CLOCK_STM32_AHB_PRESCALER=1
 # APB1 clock must not to exceed 36MHz limit
