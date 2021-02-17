@@ -117,6 +117,8 @@ extern "C" {
 
 /* Media control point supported opcodes values*/
 /* These will need to be updated as the spec is completed */
+#define OPCODES_SUPPORTED_LEN 4
+
 #define MPL_OPC_SUP_PLAY          0x00000001
 #define MPL_OPC_SUP_PAUSE         0x00000002
 #define MPL_OPC_SUP_FAST_REWIND   0X00000004
