@@ -40,12 +40,19 @@ static uint64_t *new_table(void)
 	return NULL;
 }
 
+static inline unsigned int table_index(uint64_t *pte)
+{
+	unsigned int i = (pte - xlat_tables) / Ln_XLAT_NUM_ENTRIES;
+
+	__ASSERT(i < CONFIG_MAX_XLAT_TABLES, "table out of range");
+	return i;
+}
+
 /* Makes a table free for reuse. */
 static void free_table(uint64_t *table)
 {
-	unsigned int i = (table - xlat_tables) / Ln_XLAT_NUM_ENTRIES;
+	unsigned int i = table_index(table);
 
-	__ASSERT(i < CONFIG_MAX_XLAT_TABLES, "table out of range");
 	__ASSERT(xlat_use_count[i] == 1, "table still in use");
 	xlat_use_count[i] = 0;
 }
@@ -53,9 +60,8 @@ static void free_table(uint64_t *table)
 /* Adjusts usage count and returns current count. */
 static int table_usage(uint64_t *table, int adjustment)
 {
-	unsigned int i = (table - xlat_tables) / Ln_XLAT_NUM_ENTRIES;
+	unsigned int i = table_index(table);
 
-	__ASSERT(i < CONFIG_MAX_XLAT_TABLES, "table out of range");
 	xlat_use_count[i] += adjustment;
 	__ASSERT(xlat_use_count[i] > 0, "usage count underflow");
 	return xlat_use_count[i];
@@ -97,14 +103,50 @@ static inline bool is_desc_superset(uint64_t desc1, uint64_t desc2,
 	return (desc1 & mask) == (desc2 & mask);
 }
 
+#if DUMP_PTE
+static void debug_show_pte(uint64_t *pte, unsigned int level)
+{
+	MMU_DEBUG("%.*s", level * 2, ". . . ");
+	MMU_DEBUG("[%d]%p: ", table_index(pte), pte);
+
+	if (is_free_desc(*pte)) {
+		MMU_DEBUG("---\n");
+		return;
+	}
+
+	if (is_table_desc(*pte, level)) {
+		uint64_t *table = pte_desc_table(*pte);
+
+		MMU_DEBUG("[Table] [%d]%p\n", table_index(table), table);
+		return;
+	}
+
+	if (is_block_desc(*pte)) {
+		MMU_DEBUG("[Block] ");
+	} else {
+		MMU_DEBUG("[Page] ");
+	}
+
+	uint8_t mem_type = (*pte >> 2) & MT_TYPE_MASK;
+
+	MMU_DEBUG((mem_type == MT_NORMAL) ? "MEM" :
+		  ((mem_type == MT_NORMAL_NC) ? "NC" : "DEV"));
+	MMU_DEBUG((*pte & PTE_BLOCK_DESC_AP_RO) ? "-RO" : "-RW");
+	MMU_DEBUG((*pte & PTE_BLOCK_DESC_NS) ? "-NS" : "-S");
+	MMU_DEBUG((*pte & PTE_BLOCK_DESC_AP_ELx) ? "-ELx" : "-ELh");
+	MMU_DEBUG((*pte & PTE_BLOCK_DESC_PXN) ? "-PXN" : "-PX");
+	MMU_DEBUG((*pte & PTE_BLOCK_DESC_UXN) ? "-UXN" : "-UX");
+	MMU_DEBUG("\n");
+}
+#else
+static inline void debug_show_pte(uint64_t *pte, unsigned int level) { }
+#endif
+
 static void set_pte_table_desc(uint64_t *pte, uint64_t *table, unsigned int level)
 {
-#if DUMP_PTE
-	MMU_DEBUG("%s", XLAT_TABLE_LEVEL_SPACE(level));
-	MMU_DEBUG("%p: [Table] %p\n", pte, table);
-#endif
 	/* Point pte to new table */
 	*pte = PTE_TABLE_DESC | (uint64_t)table;
+	debug_show_pte(pte, level);
 }
 
 static void set_pte_block_desc(uint64_t *pte, uint64_t desc, unsigned int level)
@@ -112,23 +154,8 @@ static void set_pte_block_desc(uint64_t *pte, uint64_t desc, unsigned int level)
 	if (desc) {
 		desc |= (level == XLAT_LAST_LEVEL) ? PTE_PAGE_DESC : PTE_BLOCK_DESC;
 	}
-
-#if DUMP_PTE
-	uint8_t mem_type = (desc >> 2) & MT_TYPE_MASK;
-
-	MMU_DEBUG("%s", XLAT_TABLE_LEVEL_SPACE(level));
-	MMU_DEBUG("%p: ", pte);
-	MMU_DEBUG((mem_type == MT_NORMAL) ? "MEM" :
-		  ((mem_type == MT_NORMAL_NC) ? "NC" : "DEV"));
-	MMU_DEBUG((desc & PTE_BLOCK_DESC_AP_RO) ? "-RO" : "-RW");
-	MMU_DEBUG((desc & PTE_BLOCK_DESC_NS) ? "-NS" : "-S");
-	MMU_DEBUG((desc & PTE_BLOCK_DESC_AP_ELx) ? "-ELx" : "-ELh");
-	MMU_DEBUG((desc & PTE_BLOCK_DESC_PXN) ? "-PXN" : "-PX");
-	MMU_DEBUG((desc & PTE_BLOCK_DESC_UXN) ? "-UXN" : "-UX");
-	MMU_DEBUG("\n");
-#endif
-
 	*pte = desc;
+	debug_show_pte(pte, level);
 }
 
 static void populate_table(uint64_t *table, uint64_t desc, unsigned int level)
