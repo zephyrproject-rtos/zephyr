@@ -240,4 +240,12 @@ struct gpio_stm32_data {
  */
 int gpio_stm32_configure(uint32_t *base_addr, int pin, int conf, int altf);
 
+/**
+ * @brief Enable / disable GPIO port clock.
+ *
+ * @param dev GPIO port device pointer
+ * @param on boolean for on/off clock request
+ */
+int gpio_stm32_clock_request(const struct device *dev, bool on);
+
 #endif /* ZEPHYR_DRIVERS_GPIO_GPIO_STM32_H_ */
