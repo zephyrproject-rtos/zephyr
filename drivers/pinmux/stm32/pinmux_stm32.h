@@ -125,8 +125,7 @@ clock_control_subsys_t stm32_get_port_clock(int port);
  * @param clk clock control device, for enabling/disabling clock gate
  * for the port
  */
-int z_pinmux_stm32_set(uint32_t pin, uint32_t func,
-		      const struct device *clk);
+int z_pinmux_stm32_set(uint32_t pin, uint32_t func);
 
 /**
  * @brief helper for obtaining pin configuration for the board
