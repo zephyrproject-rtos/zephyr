@@ -94,8 +94,9 @@ manifest:
       revision: 3fc59410b633a6d83bbb534e43aac43160f9bd32
       path: bootloader/mcuboot
     - name: mcumgr
-      revision: 43845e883ff3a6cdaae22e23f3e60b5fcf78c6ba
+      revision: pull/112/head
       path: modules/lib/mcumgr
+      url: https://github.com/apache/mynewt-mcumgr
     - name: net-tools
       revision: 41132e9220f8bc1223084975350c5e5f3b492afe
       path: tools/net-tools
