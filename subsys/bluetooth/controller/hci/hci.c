@@ -5318,6 +5318,31 @@ static void le_per_adv_sync_lost(struct pdu_data *pdu_data,
 	sep->handle = sys_cpu_to_le16(node_rx->hdr.handle);
 }
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+#endif /* CONFIG_BT_OBSERVER */
+
+#if defined(CONFIG_BT_BROADCASTER)
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+static void le_adv_ext_terminate(struct pdu_data *pdu_data,
+				    struct node_rx_pdu *node_rx,
+				    struct net_buf *buf)
+{
+	struct bt_hci_evt_le_adv_set_terminated *sep;
+
+	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
+	    !(le_event_mask & BT_EVT_MASK_LE_ADV_SET_TERMINATED)) {
+		return;
+	}
+
+	sep = meta_evt(buf, BT_HCI_EVT_LE_ADV_SET_TERMINATED, sizeof(*sep));
+	sep->status = node_rx->hdr.rx_ftr.param_adv_term.status;
+	sep->adv_handle = ll_adv_set_hci_handle_get(node_rx->hdr.handle & 0xff);
+	sep->conn_handle =
+		sys_cpu_to_le16(node_rx->hdr.rx_ftr.param_adv_term.conn_handle);
+	sep->num_completed_ext_adv_evts =
+		node_rx->hdr.rx_ftr.param_adv_term.num_events;
+}
+
 #if defined(CONFIG_BT_CTLR_ADV_ISO)
 static void le_big_complete(struct pdu_data *pdu_data,
 			    struct node_rx_pdu *node_rx,
@@ -5361,31 +5386,7 @@ static void le_big_complete(struct pdu_data *pdu_data,
 }
 #endif /* CONFIG_BT_CTLR_ADV_ISO */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
-#endif /* CONFIG_BT_OBSERVER */
-
-#if defined(CONFIG_BT_BROADCASTER)
-#if defined(CONFIG_BT_CTLR_ADV_EXT)
-static void le_adv_ext_terminate(struct pdu_data *pdu_data,
-				    struct node_rx_pdu *node_rx,
-				    struct net_buf *buf)
-{
-	struct bt_hci_evt_le_adv_set_terminated *sep;
-
-	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
-	    !(le_event_mask & BT_EVT_MASK_LE_ADV_SET_TERMINATED)) {
-		return;
-	}
-
-	sep = meta_evt(buf, BT_HCI_EVT_LE_ADV_SET_TERMINATED, sizeof(*sep));
-	sep->status = node_rx->hdr.rx_ftr.param_adv_term.status;
-	sep->adv_handle = ll_adv_set_hci_handle_get(node_rx->hdr.handle & 0xff);
-	sep->conn_handle =
-		sys_cpu_to_le16(node_rx->hdr.rx_ftr.param_adv_term.conn_handle);
-	sep->num_completed_ext_adv_evts =
-		node_rx->hdr.rx_ftr.param_adv_term.num_events;
-}
 #endif /* CONFIG_BT_BROADCASTER */
-#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 #if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
 static void le_scan_req_received(struct pdu_data *pdu_data,
@@ -5723,17 +5724,15 @@ static void encode_control(struct node_rx_pdu *node_rx,
 	case NODE_RX_TYPE_SYNC:
 		le_per_adv_sync_established(pdu_data, node_rx, buf);
 		break;
+
 	case NODE_RX_TYPE_SYNC_REPORT:
 		le_per_adv_sync_report(pdu_data, node_rx, buf);
 		break;
+
 	case NODE_RX_TYPE_SYNC_LOST:
 		le_per_adv_sync_lost(pdu_data, node_rx, buf);
 		break;
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
-#if defined(CONFIG_BT_CTLR_ADV_ISO)
-	case NODE_RX_TYPE_BIG_COMPLETE:
-		le_big_complete(pdu_data, node_rx, buf);
-#endif /* CONFIG_BT_CTLR_ADV_ISO */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_OBSERVER */
 
@@ -5742,6 +5741,12 @@ static void encode_control(struct node_rx_pdu *node_rx,
 	case NODE_RX_TYPE_EXT_ADV_TERMINATE:
 		le_adv_ext_terminate(pdu_data, node_rx, buf);
 		break;
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
+	case NODE_RX_TYPE_BIG_COMPLETE:
+		le_big_complete(pdu_data, node_rx, buf);
+		break;
+#endif /* CONFIG_BT_CTLR_ADV_ISO */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_BROADCASTER */
 
