@@ -313,8 +313,7 @@ struct device {
  * it can use this function to retrieve the device structure of the lower level
  * driver by the name the driver exposes to the system.
  *
- * @param name device name to search for.  A null pointer, or a pointer to an
- * empty string, will cause NULL to be returned.
+ * @param name device name to search for.
  *
  * @return pointer to device structure; NULL if not found or cannot be used.
  */
