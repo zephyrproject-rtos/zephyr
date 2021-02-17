@@ -111,6 +111,7 @@ config LOG_DETECT_MISSED_STRDUP
 
 config LOG_STRDUP_MAX_STRING
 	int "Longest string that can be duplicated using log_strdup()"
+	default 66 if BT
 	default 46 if NETWORKING
 	default 32
 	help
@@ -118,6 +119,7 @@ config LOG_STRDUP_MAX_STRING
 
 config LOG_STRDUP_BUF_COUNT
 	int "Number of buffers in the pool used by log_strdup()"
+	default 8 if BT
 	default 4
 	help
 	  Number of calls to log_strdup() which can be pending before flushed
