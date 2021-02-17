@@ -737,9 +737,9 @@ static ssize_t obj_id_read(struct bt_conn *conn,
 
 	/* BT_DBG does not support printing 64 bit types */
 	if (IS_ENABLED(CONFIG_BT_DEBUG_OTS)) {
-		char t[UINT48_STR_LEN];
+		char t[BT_OTS_OBJ_ID_STR_LEN];
 
-		u64_to_uint48array_str(inst->cur_obj_p->id, t);
+		(void)bt_ots_obj_id_to_str(inst->cur_obj_p->id, t, sizeof(t));
 		BT_DBG("Current ObjId read: 0x%s", log_strdup(t));
 	}
 
