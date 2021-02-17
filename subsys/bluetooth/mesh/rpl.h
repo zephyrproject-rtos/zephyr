@@ -8,12 +8,16 @@
  */
 
 struct bt_mesh_rpl {
-	uint16_t src;
-	bool  old_iv;
-#if defined(CONFIG_BT_SETTINGS)
-	bool  store;
-#endif
-	uint32_t seq;
+	uint64_t src:15,
+		 old_iv:1,
+		 seq:24,
+		 /** Sequence authentication value for the previous segmented
+		  *  message received from this address.
+		  *
+		  *  This value is used to manage the parallel RPL of the
+		  *  SeqAuth values in transport.
+		  */
+		 seg:24;
 };
 
 typedef void (*bt_mesh_rpl_func_t)(struct bt_mesh_rpl *rpl,
