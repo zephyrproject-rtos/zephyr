@@ -43,6 +43,7 @@ enum clock_control_status {
 	CLOCK_CONTROL_STATUS_STARTING,
 	CLOCK_CONTROL_STATUS_OFF,
 	CLOCK_CONTROL_STATUS_ON,
+	CLOCK_CONTROL_STATUS_UNAVAILABLE,
 	CLOCK_CONTROL_STATUS_UNKNOWN
 };
 
@@ -190,7 +191,7 @@ static inline enum clock_control_status clock_control_get_status(const struct de
 	}
 
 	if (!device_is_ready(dev)) {
-		return -ENODEV;
+		return CLOCK_CONTROL_STATUS_UNAVAILABLE;
 	}
 
 	return api->get_status(dev, sys);
