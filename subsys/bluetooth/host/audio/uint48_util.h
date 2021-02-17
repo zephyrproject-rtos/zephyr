@@ -16,7 +16,6 @@
 
 #define UINT48_LEN 6
 #define UINT48_STR_LEN ((2*UINT48_LEN)+1)
-#define OPCODES_SUPPORTED_LEN 4
 
 /** @brief Convert from UINT48 (six byte) LSB first array to uint64_t */
 uint64_t uint48array_to_u64(uint8_t arr[]);
