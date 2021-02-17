@@ -89,6 +89,8 @@
 #define WDT_NODE DT_INST(0, microchip_xec_watchdog)
 #elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_npcx_watchdog)
 #define WDT_NODE DT_INST(0, nuvoton_npcx_watchdog)
+#elif DT_HAS_COMPAT_STATUS_OKAY(ti_cc32xx_watchdog)
+#define WDT_NODE DT_INST(0, ti_cc32xx_watchdog)
 #endif
 
 #ifdef WDT_NODE
