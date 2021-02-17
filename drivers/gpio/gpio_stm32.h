@@ -227,12 +227,12 @@ struct gpio_stm32_data {
 /**
  * @brief helper for configuration of GPIO pin
  *
- * @param base_addr GPIO port base address
+ * @param GPIO port device pointer
  * @param pin IO pin
  * @param func GPIO mode
  * @param altf Alternate function
  */
-int gpio_stm32_configure(uint32_t *base_addr, int pin, int conf, int altf);
+int gpio_stm32_configure(const struct device *dev, int pin, int conf, int altf);
 
 /**
  * @brief GPIO port clock handling
