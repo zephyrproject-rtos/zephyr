@@ -302,6 +302,7 @@
 /drivers/watchdog/*gecko*                 @oanerer
 /drivers/watchdog/*sifive*                @katsuster
 /drivers/watchdog/wdt_handlers.c          @dcpleung @nashif
+/drivers/watchdog/*cc32xx*                @pavlohamov
 /drivers/wifi/                            @jukkar @tbursztyka @pfalcon
 /drivers/wifi/esp/                        @mniestroj
 /drivers/wifi/eswifi/                     @loicpoulain @nandojve

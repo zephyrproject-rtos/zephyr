@@ -12,6 +12,7 @@
 #define INT_ADCCH1              31          // ADC channel 1
 #define INT_ADCCH2              32          // ADC channel 2
 #define INT_ADCCH3              33          // ADC channel 3
+#define INT_WDT                 34          // Watchdog Timer
 
 /* Note: Zephyr uses exception numbers, vs the IRQ #s used by the CC32XX SDK */
 /* which are offset by 16: */
@@ -22,6 +23,7 @@
 #define EXP_ADCCH1 (INT_ADCCH1 - 16)
 #define EXP_ADCCH2 (INT_ADCCH2 - 16)
 #define EXP_ADCCH3 (INT_ADCCH3 - 16)
+#define EXP_WDT    (INT_WDT - 16)
 #define EXC_GPIOA0  0  /* (INT_GPIOA0 - 16) = (16-16) */
 #define EXC_GPIOA1  1  /* (INT_GPIOA1 - 16) = (17-16) */
 #define EXC_GPIOA2  2  /* (INT_GPIOA2 - 16) = (18-16) */
@@ -127,6 +129,14 @@
 			status = "disabled";
 			label = "ADC_0";
 			#io-channel-cells = <1>;
+		};
+
+		wdt0: watchdog@40000000 {
+			compatible = "ti,cc32xx-watchdog";
+			reg = <0x40000000 0x1000>;
+			interrupts = <EXP_WDT 0>;
+			label = "WDT_0";
+			status = "disabled";
 		};
 	};
 };
