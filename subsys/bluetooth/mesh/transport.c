@@ -1259,6 +1259,7 @@ static int trans_seg(struct net_buf_simple *buf, struct bt_mesh_net_rx *net_rx,
 	struct seg_rx *rx;
 	uint8_t *hdr = buf->data;
 	uint16_t seq_zero;
+	uint32_t auth_seqnum;
 	uint8_t seg_n;
 	uint8_t seg_o;
 	int err;
@@ -1309,7 +1310,7 @@ static int trans_seg(struct net_buf_simple *buf, struct bt_mesh_net_rx *net_rx,
 			     (net_rx->seq -
 			      ((((net_rx->seq & BIT_MASK(14)) - seq_zero)) &
 			       BIT_MASK(13))));
-
+	auth_seqnum = *seq_auth & BIT_MASK(24);
 	*seg_count = seg_n + 1;
 
 	/* Look for old RX sessions */
@@ -1375,6 +1376,28 @@ static int trans_seg(struct net_buf_simple *buf, struct bt_mesh_net_rx *net_rx,
 			 net_rx->ctx.send_ttl, seq_auth, 0,
 			 net_rx->friend_match);
 		return -ENOBUFS;
+	}
+
+	/* Keep track of the received SeqAuth values received from this address
+	 * and discard segmented messages that are not newer, as described in
+	 * the Bluetooth Mesh specification section 3.5.3.4.
+	 *
+	 * The logic on the first segmented receive is a bit special, since the
+	 * initial value of rpl->seg is 0, which would normally fail the
+	 * comparison check with auth_seqnum:
+	 * - If this is the first time we receive from this source, rpl->src
+	 *   will be 0, and we can skip this check.
+	 * - If this is the first time we receive from this source on the new IV
+	 *   index, rpl->old_iv will be set, and the check is also skipped.
+	 * - If this is the first segmented message on the new IV index, but we
+	 *   have received an unsegmented message already, the unsegmented
+	 *   message will have reset rpl->seg to 0, and this message's SeqAuth
+	 *   cannot be zero.
+	 */
+	if (rpl && rpl->src && auth_seqnum <= rpl->seg &&
+	    (!rpl->old_iv || net_rx->old_iv)) {
+		BT_WARN("Ignoring old SeqAuth 0x%06x", auth_seqnum);
+		return -EALREADY;
 	}
 
 	/* Look for free slot for a new RX session */
@@ -1454,6 +1477,12 @@ found_rx:
 
 	if (rpl) {
 		bt_mesh_rpl_update(rpl, net_rx);
+		/* Update the seg, unless it has already been surpassed:
+		 * This needs to happen after rpl_update to ensure that the IV
+		 * update reset logic inside rpl_update doesn't overwrite the
+		 * change.
+		 */
+		rpl->seg = MAX(rpl->seg, auth_seqnum);
 	}
 
 	*pdu_type = BT_MESH_FRIEND_PDU_COMPLETE;
