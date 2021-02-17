@@ -112,9 +112,10 @@ static inline uint32_t stm32_pinval_get(int pin)
 /**
  * @brief Configure the hardware.
  */
-int gpio_stm32_configure(uint32_t *base_addr, int pin, int conf, int altf)
+int gpio_stm32_configure(const struct device *dev, int pin, int conf, int altf)
 {
-	GPIO_TypeDef *gpio = (GPIO_TypeDef *)base_addr;
+	const struct gpio_stm32_config *cfg = dev->config;
+	GPIO_TypeDef *gpio = (GPIO_TypeDef *)cfg->base;
 
 	int pin_ll = stm32_pinval_get(pin);
 
@@ -457,7 +458,6 @@ static int gpio_stm32_port_toggle_bits(const struct device *dev,
 static int gpio_stm32_config(const struct device *dev,
 			     gpio_pin_t pin, gpio_flags_t flags)
 {
-	const struct gpio_stm32_config *cfg = dev->config;
 	int err = 0;
 	int pincfg;
 
@@ -477,7 +477,7 @@ static int gpio_stm32_config(const struct device *dev,
 		}
 	}
 
-	gpio_stm32_configure(cfg->base, pin, pincfg, 0);
+	gpio_stm32_configure(dev, pin, pincfg, 0);
 
 exit:
 	return err;
