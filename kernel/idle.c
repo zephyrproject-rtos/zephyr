@@ -118,8 +118,6 @@ void z_pm_save_idle_exit(int32_t ticks)
 
 void idle(void *p1, void *unused2, void *unused3)
 {
-	struct _cpu *cpu = p1;
-
 	ARG_UNUSED(unused2);
 	ARG_UNUSED(unused3);
 
@@ -132,41 +130,7 @@ void idle(void *p1, void *unused2, void *unused3)
 #endif /* CONFIG_BOOT_TIME_MEASUREMENT */
 
 	while (true) {
-		/* Lock interrupts to atomically check if to_abort is non-NULL,
-		 * and if so clear it
-		 */
-		int key = arch_irq_lock();
-		struct k_thread *to_abort = cpu->pending_abort;
-
-		if (to_abort) {
-			cpu->pending_abort = NULL;
-			arch_irq_unlock(key);
-
-			/* Safe to unlock interrupts here. We've atomically
-			 * checked and stashed cpu->pending_abort into a stack
-			 * variable. If we get preempted here and another
-			 * thread aborts, cpu->pending abort will get set
-			 * again and we'll handle it when the loop iteration
-			 * is continued below.
-			 */
-			LOG_DBG("idle %p aborting thread %p",
-				_current, to_abort);
-
-			z_thread_single_abort(to_abort);
-
-			/* We have to invoke this scheduler now. If we got
-			 * here, the idle thread preempted everything else
-			 * in order to abort the thread, and we now need to
-			 * figure out what to do next, it's not necessarily
-			 * the case that there are no other runnable threads.
-			 */
-			z_reschedule_unlocked();
-			continue;
-		}
-
 #if SMP_FALLBACK
-		arch_irq_unlock(key);
-
 		k_busy_wait(100);
 		k_yield();
 #else

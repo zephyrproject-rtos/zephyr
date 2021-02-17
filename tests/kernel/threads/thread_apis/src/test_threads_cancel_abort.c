@@ -107,51 +107,6 @@ void test_threads_abort_repeat(void)
 bool abort_called;
 void *block;
 
-static void abort_function(struct k_thread *aborted)
-{
-	printk("Child thread's abort handler called\n");
-	abort_called = true;
-
-	zassert_equal(aborted, &tdata, "wrong thread pointer");
-	zassert_not_equal(k_current_get(), aborted,
-			  "fn_abort ran on its own thread");
-	k_free(block);
-}
-
-static void uthread_entry(void)
-{
-	block = k_malloc(BLOCK_SIZE);
-	zassert_true(block != NULL, NULL);
-	printk("Child thread is running\n");
-	k_msleep(2);
-}
-
-/**
- * @ingroup kernel_thread_tests
- * @brief Test to validate the call of abort handler
- * specified by thread when it is aborted
- *
- * @see k_thread_abort(), #k_thread.fn_abort
- */
-void test_abort_handler(void)
-{
-	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
-				      (k_thread_entry_t)uthread_entry, NULL, NULL, NULL,
-				      0, 0, K_NO_WAIT);
-
-	tdata.fn_abort = &abort_function;
-
-	k_msleep(1);
-
-	abort_called = false;
-
-	printk("Calling abort of child from parent\n");
-	k_thread_abort(tid);
-
-	zassert_true(abort_called == true, "Abort handler"
-		     " is not called");
-}
-
 static void delayed_thread_entry(void *p1, void *p2, void *p3)
 {
 	execute_flag = 1;

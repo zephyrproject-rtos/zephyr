@@ -112,14 +112,6 @@ struct _thread_base {
 	/* this thread's entry in a timeout queue */
 	struct _timeout timeout;
 #endif
-
-	_wait_q_t join_waiters;
-#if __ASSERT_ON
-	/* For detecting calls to k_thread_create() on threads that are
-	 * already active
-	 */
-	atomic_t cookie;
-#endif
 };
 
 typedef struct _thread_base _thread_base_t;
@@ -211,29 +203,6 @@ struct k_thread {
 
 	/** static thread init data */
 	void *init_data;
-
-	/**
-	 * abort function
-	 *
-	 * This function pointer, if non-NULL, will be run once after the
-	 * thread has completely exited. It may run in the context of:
-	 *   - the idle thread if the thread self-exited
-	 *   - another thread calling k_thread_abort()
-	 *   - a fatal exception handler on a special stack
-	 *
-	 * It will never run in the context of the thread itself.
-	 *
-	 * A pointer to the thread object that was aborted is provided. At the
-	 * time this runs, this thread object has completely exited. It may
-	 * be re-used with k_thread_create() or return it to a heap or slab
-	 * pool.
-	 *
-	 * This function does not run with any kind of lock active and
-	 * there is the possibility of races leading to undefined behavior
-	 * if other threads are attempting to free or recycle this object
-	 * concurrently.
-	 */
-	void (*fn_abort)(struct k_thread *aborted);
 
 #if defined(CONFIG_POLL)
 	struct z_poller poller;

@@ -18,13 +18,6 @@
 #include <sys/atomic.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
-/* Maximum time between the time a self-aborting thread flags itself
- * DEAD and the last read or write to its stack memory (i.e. the time
- * of its next swap()).  In theory this might be tuned per platform,
- * but in practice this conservative value should be safe.
- */
-#define THREAD_ABORT_DELAY_US 500
-
 #if defined(CONFIG_SCHED_DUMB)
 #define _priq_run_add		z_priq_dumb_add
 #define _priq_run_remove	z_priq_dumb_remove
@@ -227,13 +220,6 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 {
 	struct k_thread *thread;
 
-	/* If a thread self-aborted we need the idle thread to clean it up
-	 * before any other thread can run on this CPU
-	 */
-	if (_current_cpu->pending_abort != NULL) {
-		return _current_cpu->idle_thread;
-	}
-
 	thread = _priq_run_best(&_kernel.ready_q.runq);
 
 #if (CONFIG_NUM_METAIRQ_PRIORITIES > 0) && (CONFIG_NUM_COOP_PRIORITIES > 0)
@@ -252,16 +238,6 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 		}
 	}
 #endif
-
-	/* If the current thread is marked aborting, mark it
-	 * dead so it will not be scheduled again.
-	 */
-	if (_current->base.thread_state & _THREAD_ABORTING) {
-		_current->base.thread_state |= _THREAD_DEAD;
-#ifdef CONFIG_SMP
-		_current_cpu->swap_ok = true;
-#endif
-	}
 
 #ifndef CONFIG_SMP
 	/* In uniprocessor mode, we can leave the current thread in
@@ -585,121 +561,6 @@ static _wait_q_t *pended_on(struct k_thread *thread)
 	__ASSERT_NO_MSG(thread->base.pended_on);
 
 	return thread->base.pended_on;
-}
-
-void z_thread_single_abort(struct k_thread *thread)
-{
-	void (*fn_abort)(struct k_thread *aborted) = NULL;
-
-	__ASSERT(!(thread->base.user_options & K_ESSENTIAL),
-		 "essential thread aborted");
-	__ASSERT(thread != _current || arch_is_in_isr(),
-		 "self-abort detected");
-
-	/* Prevent any of the further logic in this function from running more
-	 * than once
-	 */
-	k_spinlock_key_t key = k_spin_lock(&sched_spinlock);
-	if ((thread->base.thread_state &
-	     (_THREAD_ABORTING | _THREAD_DEAD)) != 0) {
-		LOG_DBG("Thread %p already dead or on the way out", thread);
-		k_spin_unlock(&sched_spinlock, key);
-		return;
-	}
-	thread->base.thread_state |= _THREAD_ABORTING;
-	k_spin_unlock(&sched_spinlock, key);
-
-	(void)z_abort_thread_timeout(thread);
-
-	if (IS_ENABLED(CONFIG_SMP)) {
-		z_sched_abort(thread);
-	}
-
-	LOCKED(&sched_spinlock) {
-		LOG_DBG("Cleanup aborting thread %p", thread);
-		struct k_thread *waiter;
-
-		if (z_is_thread_ready(thread)) {
-			if (z_is_thread_queued(thread)) {
-				dequeue_thread(&_kernel.ready_q.runq,
-						 thread);
-			}
-			update_cache(thread == _current);
-		} else {
-			if (z_is_thread_pending(thread)) {
-				_priq_wait_remove(&pended_on(thread)->waitq,
-						  thread);
-				z_mark_thread_as_not_pending(thread);
-				thread->base.pended_on = NULL;
-			}
-		}
-
-		/* Wake everybody up who was trying to join with this thread.
-		 * A reschedule is invoked later by k_thread_abort().
-		 */
-		while ((waiter = z_waitq_head(&thread->base.join_waiters)) !=
-		       NULL) {
-			(void)z_abort_thread_timeout(waiter);
-			_priq_wait_remove(&pended_on(waiter)->waitq, waiter);
-			z_mark_thread_as_not_pending(waiter);
-			waiter->base.pended_on = NULL;
-			arch_thread_return_value_set(waiter, 0);
-			ready_thread(waiter);
-		}
-
-		if (z_is_idle_thread_object(_current)) {
-			update_cache(1);
-		}
-
-		thread->base.thread_state |= _THREAD_DEAD;
-
-		/* Read this here from the thread struct now instead of
-		 * after we unlock
-		 */
-		fn_abort = thread->fn_abort;
-
-		/* Keep inside the spinlock as these may use the contents
-		 * of the thread object. As soon as we release this spinlock,
-		 * the thread object could be destroyed at any time.
-		 */
-		sys_trace_thread_abort(thread);
-		z_thread_monitor_exit(thread);
-
-#ifdef CONFIG_USERSPACE
-		/* Remove this thread from its memory domain, which takes
-		 * it off the domain's thread list and possibly also arch-
-		 * specific tasks.
-		 */
-		z_mem_domain_exit_thread(thread);
-
-		/* Revoke permissions on thread's ID so that it may be
-		 * recycled
-		 */
-		z_thread_perms_all_clear(thread);
-
-		/* Clear initialized state so that this thread object may be
-		 * re-used and triggers errors if API calls are made on it from
-		 * user threads
-		 */
-		z_object_uninit(thread->stack_obj);
-		z_object_uninit(thread);
-#endif
-		/* Kernel should never look at the thread object again past
-		 * this point unless another thread API is called. If the
-		 * object doesn't get corrupted, we'll catch other
-		 * k_thread_abort()s on this object, although this is
-		 * somewhat undefined behavoir. It must be safe to call
-		 * k_thread_create() or free the object at this point.
-		 */
-#if __ASSERT_ON
-		atomic_clear(&thread->base.cookie);
-#endif
-	}
-
-	if (fn_abort != NULL) {
-		/* Thread object provided to be freed or recycled */
-		fn_abort(thread);
-	}
 }
 
 static void unready_thread(struct k_thread *thread)
@@ -1472,43 +1333,6 @@ void z_sched_ipi(void)
 	z_trace_sched_ipi();
 #endif
 }
-
-void z_sched_abort(struct k_thread *thread)
-{
-	k_spinlock_key_t key;
-
-	if (thread == _current) {
-		z_remove_thread_from_ready_q(thread);
-		return;
-	}
-
-	/* First broadcast an IPI to the other CPUs so they can stop
-	 * it locally.  Not all architectures support that, alas.  If
-	 * we don't have it, we need to wait for some other interrupt.
-	 */
-#ifdef CONFIG_SCHED_IPI_SUPPORTED
-	arch_sched_ipi();
-#endif
-
-	/* Wait for it to be flagged dead either by the CPU it was
-	 * running on or because we caught it idle in the queue
-	 */
-	while ((thread->base.thread_state & _THREAD_DEAD) == 0U) {
-		key = k_spin_lock(&sched_spinlock);
-		if (z_is_thread_prevented_from_running(thread)) {
-			__ASSERT(!z_is_thread_queued(thread), "");
-			thread->base.thread_state |= _THREAD_DEAD;
-			k_spin_unlock(&sched_spinlock, key);
-		} else if (z_is_thread_queued(thread)) {
-			dequeue_thread(&_kernel.ready_q.runq, thread);
-			thread->base.thread_state |= _THREAD_DEAD;
-			k_spin_unlock(&sched_spinlock, key);
-		} else {
-			k_spin_unlock(&sched_spinlock, key);
-			k_busy_wait(100);
-		}
-	}
-}
 #endif
 
 #ifdef CONFIG_USERSPACE
@@ -1602,44 +1426,6 @@ int k_thread_cpu_mask_disable(k_tid_t thread, int cpu)
 }
 
 #endif /* CONFIG_SCHED_CPU_MASK */
-
-int z_impl_k_thread_join(struct k_thread *thread, k_timeout_t timeout)
-{
-	k_spinlock_key_t key;
-	int ret;
-
-	__ASSERT(((arch_is_in_isr() == false) ||
-		  K_TIMEOUT_EQ(timeout, K_NO_WAIT)), "");
-
-	key = k_spin_lock(&sched_spinlock);
-
-	if ((thread->base.pended_on == &_current->base.join_waiters) ||
-	    (thread == _current)) {
-		ret = -EDEADLK;
-		goto out;
-	}
-
-	if ((thread->base.thread_state & _THREAD_DEAD) != 0) {
-		ret = 0;
-		goto out;
-	}
-
-	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
-		ret = -EBUSY;
-		goto out;
-	}
-
-#if defined(CONFIG_TIMESLICING) && defined(CONFIG_SWAP_NONATOMIC)
-	pending_current = _current;
-#endif
-	add_to_waitq_locked(_current, &thread->base.join_waiters);
-	add_thread_timeout(_current, timeout);
-
-	return z_swap(&sched_spinlock, key);
-out:
-	k_spin_unlock(&sched_spinlock, key);
-	return ret;
-}
 
 #ifdef CONFIG_USERSPACE
 /* Special case: don't oops if the thread is uninitialized.  This is because

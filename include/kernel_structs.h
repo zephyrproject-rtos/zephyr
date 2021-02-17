@@ -109,9 +109,6 @@ struct _cpu {
 	/* one assigned idle thread per CPU */
 	struct k_thread *idle_thread;
 
-	/* If non-null, self-aborted thread that needs cleanup */
-	struct k_thread *pending_abort;
-
 #if (CONFIG_NUM_METAIRQ_PRIORITIES > 0) && (CONFIG_NUM_COOP_PRIORITIES > 0)
 	/* Coop thread preempted by current metairq, or NULL */
 	struct k_thread *metairq_preempted;

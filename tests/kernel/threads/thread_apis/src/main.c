@@ -29,7 +29,6 @@ extern void test_threads_suspend_resume_preemptible(void);
 extern void test_threads_abort_self(void);
 extern void test_threads_abort_others(void);
 extern void test_threads_abort_repeat(void);
-extern void test_abort_handler(void);
 extern void test_essential_thread_operation(void);
 extern void test_threads_priority_set(void);
 extern void test_delayed_thread_abort(void);
@@ -499,7 +498,6 @@ void test_main(void)
 			 ztest_user_unit_test(test_threads_abort_self),
 			 ztest_user_unit_test(test_threads_abort_others),
 			 ztest_1cpu_unit_test(test_threads_abort_repeat),
-			 ztest_unit_test(test_abort_handler),
 			 ztest_1cpu_unit_test(test_delayed_thread_abort),
 			 ztest_unit_test(test_essential_thread_operation),
 			 ztest_unit_test(test_essential_thread_abort),
