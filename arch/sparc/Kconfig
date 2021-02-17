@@ -13,10 +13,6 @@ config SPARC_NWIN
 	help
 	  Number of implemented register windows.
 
-# ISA requires 8-byte alignment for 64-bit data access
-config SYS_HEAP_ALWAYS_BIG_MODE
-	default y
-
 config GEN_ISR_TABLES
 	default y
 

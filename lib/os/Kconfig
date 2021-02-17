@@ -46,16 +46,6 @@ config SYS_HEAP_ALLOC_LOOPS
 	  keeps the maximum runtime at a tight bound so that the heap
 	  is useful in locked or ISR contexts.
 
-config SYS_HEAP_ALWAYS_BIG_MODE
-	bool "Always use the heap big chunks mode"
-	help
-	  The sys_heap allocator by default returns pointers to blocks
-	  which are guaranteed to be aligned to the pointer size.
-	  By enabling the "big chunks" mode, the returned blocks are
-	  guaranteed to be 8 byte aligned, also on 32-bit platforms.
-	  If this option is enabled, the "big chunks" mode will always
-	  be used by sys_heap.
-
 config PRINTK64
 	bool "Enable 64 bit printk conversions (DEPRECATED)"
 	help
