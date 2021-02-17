@@ -170,6 +170,11 @@ struct bt_audio_ep *bt_audio_ep_get(struct bt_conn *conn, uint16_t handle)
 
 static void ep_idle(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 {
+	/* Notify local capability */
+	if (ep->cap && ep->cap->ops && ep->cap->ops->release) {
+		ep->cap->ops->release(ep->chan);
+	}
+
 	bt_audio_chan_reset(ep->chan);
 }
 
@@ -227,6 +232,11 @@ static void ep_config(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 			      sys_le16_to_cpu(cfg->codec.cid),
 			      sys_le16_to_cpu(cfg->codec.vid),
 			      buf, cfg->cc_len, NULL);
+
+	/* Notify local capability */
+	if (ep->cap && ep->cap->ops && ep->cap->ops->reconfig) {
+		ep->cap->ops->reconfig(ep->chan, ep->cap, ep->chan->codec);
+	}
 }
 
 static void ep_qos(struct bt_audio_ep *ep, struct net_buf_simple *buf)
@@ -266,6 +276,11 @@ static void ep_qos(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 	}
 
 	bt_audio_chan_set_state(ep->chan, BT_AUDIO_CHAN_CONFIGURED);
+
+	/* Notify local capability */
+	if (ep->cap && ep->cap->ops && ep->cap->ops->qos) {
+		ep->cap->ops->qos(ep->chan, ep->chan->qos);
+	}
 }
 
 static void ep_enabling(struct bt_audio_ep *ep, struct net_buf_simple *buf)
@@ -288,6 +303,12 @@ static void ep_enabling(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 	       ep->cig, ep->cis);
 
 	bt_audio_ep_set_metadata(ep, buf, enable->metadata_len, NULL);
+
+	/* Notify local capability */
+	if (ep->cap && ep->cap->ops && ep->cap->ops->enable) {
+		ep->cap->ops->enable(ep->chan, ep->codec.meta_count,
+				     ep->codec.meta);
+	}
 
 	bt_audio_chan_start(ep->chan);
 }
@@ -312,6 +333,11 @@ static void ep_streaming(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 	       ep->cig, ep->cis);
 
 	bt_audio_chan_set_state(ep->chan, BT_AUDIO_CHAN_STREAMING);
+
+	/* Notify local capability */
+	if (ep->cap && ep->cap->ops && ep->cap->ops->start) {
+		ep->cap->ops->start(ep->chan);
+	}
 }
 
 static void ep_disabling(struct bt_audio_ep *ep, struct net_buf_simple *buf)
@@ -333,6 +359,11 @@ static void ep_disabling(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 	BT_DBG("dir 0x%02x cig 0x%02x cis 0x%02x", ep->chan->cap->type,
 	       ep->cig, ep->cis);
 
+	/* Notify local capability */
+	if (ep->cap && ep->cap->ops && ep->cap->ops->disable) {
+		ep->cap->ops->disable(ep->chan);
+	}
+
 	bt_audio_chan_stop(ep->chan);
 }
 
@@ -344,6 +375,11 @@ static void ep_releasing(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 	}
 
 	BT_DBG("dir 0x%02x", ep->chan->cap->type);
+
+	/* Notify local capability */
+	if (ep->cap && ep->cap->ops && ep->cap->ops->stop) {
+		ep->cap->ops->stop(ep->chan);
+	}
 
 	/* The Unicast Client shall terminate any CIS established for that ASE
 	 * by following the Connected Isochronous Stream Terminate procedure
