@@ -2310,10 +2310,11 @@ int on_group_content(struct bt_conn *conn, uint32_t offset, uint32_t len,
 		BT_INFO("Current Group object received");
 		decode_current_group(&otc_obj_buf, &group);
 		for (int i = 0; i < group.cnt; i++) {
-			char t[UINT48_STR_LEN];
+			char t[BT_OTS_OBJ_ID_STR_LEN];
 
-			u64_to_uint48array_str(group.ids[i].id, t);
-			BT_DBG("Object type: %d, object  ID: 0x%s",
+			(void)bt_ots_obj_id_to_str(group.ids[i].id, t,
+						   BT_OTS_OBJ_ID_STR_LEN);
+			BT_DBG("Object type: %d, object  ID: %s",
 			       group.ids[i].type, log_strdup(t));
 		}
 		/* Reset buf in case the same object is read again without */
