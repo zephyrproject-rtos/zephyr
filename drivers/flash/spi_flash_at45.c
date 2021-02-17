@@ -11,6 +11,8 @@
 
 LOG_MODULE_REGISTER(spi_flash_at45, CONFIG_FLASH_LOG_LEVEL);
 
+#define DT_DRV_COMPAT atmel_at45
+
 /* AT45 commands used by this driver: */
 /* - Continuous Array Read (Low Power Mode) */
 #define CMD_READ		0x01
@@ -42,7 +44,6 @@ LOG_MODULE_REGISTER(spi_flash_at45, CONFIG_FLASH_LOG_LEVEL);
 #define STATUS_REG_LSB_RDY_BUSY_BIT	0x80
 #define STATUS_REG_LSB_PAGE_SIZE_BIT	0x01
 
-
 #define DEF_BUF_SET(_name, _buf_array) \
 	const struct spi_buf_set _name = { \
 		.buffers = _buf_array, \
@@ -64,6 +65,9 @@ struct spi_flash_at45_config {
 	const char *cs_gpio;
 	gpio_pin_t cs_pin;
 	gpio_dt_flags_t cs_dt_flags;
+	const struct device *reset_gpio;
+	gpio_pin_t reset_pin;
+	gpio_dt_flags_t reset_dt_flags;
 #if IS_ENABLED(CONFIG_FLASH_PAGE_LAYOUT)
 	struct flash_pages_layout pages_layout;
 #endif
@@ -534,6 +538,16 @@ static int spi_flash_at45_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+	if (dev_config->reset_gpio) {
+		if (gpio_pin_configure(dev_config->reset_gpio,
+					dev_config->reset_pin,
+					GPIO_OUTPUT_ACTIVE | dev_config->reset_dt_flags)) {
+			LOG_ERR("Couldn't configure reset pin");
+			return -ENODEV;
+		}
+		gpio_pin_set(dev_config->reset_gpio, dev_config->reset_pin, 0);
+	}
+
 	if (dev_config->cs_gpio) {
 		dev_data->spi_cs.gpio_dev =
 			device_get_binding(dev_config->cs_gpio);
@@ -636,8 +650,6 @@ static const struct flash_driver_api spi_flash_at45_api = {
 #endif
 };
 
-#define DT_DRV_COMPAT atmel_at45
-
 #define SPI_FLASH_AT45_INST(idx)					     \
 	enum {								     \
 		INST_##idx##_BYTES = (DT_INST_PROP(idx, size) / 8),	     \
@@ -662,6 +674,11 @@ static const struct flash_driver_api spi_flash_at45_api = {
 			.cs_gpio = DT_INST_SPI_DEV_CS_GPIOS_LABEL(idx),      \
 			.cs_pin  = DT_INST_SPI_DEV_CS_GPIOS_PIN(idx),	     \
 			.cs_dt_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(idx),)) \
+		IF_ENABLED(DT_INST_NODE_HAS_PROP(idx, reset_gpios), (		     \
+			.reset_gpio = DEVICE_DT_GET(DT_GPIO_CTLR(DT_DRV_INST(idx), \
+								reset_gpios)),      \
+			.reset_pin  = DT_INST_GPIO_PIN(idx, reset_gpios),	     \
+			.reset_dt_flags = DT_INST_GPIO_FLAGS(idx, reset_gpios),)) \
 		IF_ENABLED(CONFIG_FLASH_PAGE_LAYOUT, (			     \
 			.pages_layout = {				     \
 				.pages_count = INST_##idx##_PAGES,	     \
