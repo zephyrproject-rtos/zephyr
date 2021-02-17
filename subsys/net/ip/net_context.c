@@ -1397,6 +1397,7 @@ static int context_sendto(struct net_context *context,
 			  bool sendto)
 {
 	const struct msghdr *msghdr = NULL;
+	struct net_if *iface;
 	struct net_pkt *pkt;
 	size_t tmp_len;
 	int ret;
@@ -1471,7 +1472,6 @@ static int context_sendto(struct net_context *context,
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
 		   net_context_get_family(context) == AF_PACKET) {
 		struct sockaddr_ll *ll_addr = (struct sockaddr_ll *)dst_addr;
-		struct net_if *iface;
 
 		if (msghdr) {
 			ll_addr = msghdr->msg_name;
@@ -1520,7 +1520,6 @@ static int context_sendto(struct net_context *context,
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
 		   net_context_get_family(context) == AF_CAN) {
 		struct sockaddr_can *can_addr = (struct sockaddr_can *)dst_addr;
-		struct net_if *iface;
 
 		if (msghdr) {
 			can_addr = msghdr->msg_name;
@@ -1569,6 +1568,11 @@ static int context_sendto(struct net_context *context,
 		for (i = 0; i < msghdr->msg_iovlen; i++) {
 			len += msghdr->msg_iov[i].iov_len;
 		}
+	}
+
+	iface = net_context_get_iface(context);
+	if (iface && !net_if_is_up(iface)) {
+		return -ENETDOWN;
 	}
 
 	pkt = context_alloc_pkt(context, len, PKT_WAIT_TIME);
