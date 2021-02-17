@@ -8,6 +8,7 @@
 #include <device.h>
 #include <sys/atomic.h>
 #include <syscall_handler.h>
+#include <sys/check.h>
 
 extern const struct init_entry __init_start[];
 extern const struct init_entry __init_PRE_KERNEL_1_start[];
@@ -78,6 +79,10 @@ void z_sys_init_run_level(int32_t level)
 const struct device *z_impl_device_get_binding(const char *name)
 {
 	const struct device *dev;
+
+	CHECKIF((name == NULL) || (*name == 0)) {
+		return NULL;
+	}
 
 	/* Split the search into two loops: in the common scenario, where
 	 * device names are stored in ROM (and are referenced by the user
