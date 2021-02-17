@@ -785,6 +785,8 @@ static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
 #define EAI_MEMORY DNS_EAI_MEMORY
 #define EAI_SYSTEM DNS_EAI_SYSTEM
 #define EAI_SERVICE DNS_EAI_SERVICE
+#define EAI_SOCKTYPE DNS_EAI_SOCKTYPE
+#define EAI_FAMILY DNS_EAI_FAMILY
 #endif /* defined(CONFIG_NET_SOCKETS_POSIX_NAMES) */
 
 /** sockopt: Socket-level option */
