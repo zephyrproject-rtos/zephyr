@@ -197,7 +197,7 @@ static uint8_t mcc_read_icon_obj_id_cb(struct bt_conn *conn, uint8_t err,
 			uint48array_str(pid, str);
 			BT_DBG("Icon Object ID: 0x%s", log_strdup(str));
 		}
-		id = uint48array_to_u64(pid);
+		id = sys_get_le48(pid);
 	}
 
 	if (mcc_cb && mcc_cb->icon_obj_id_read) {
@@ -440,7 +440,7 @@ static uint8_t mcc_read_segments_obj_id_cb(struct bt_conn *conn, uint8_t err,
 			uint48array_str(pid, str);
 			BT_DBG("Segments Object ID: 0x%s", log_strdup(str));
 		}
-		id = uint48array_to_u64(pid);
+		id = sys_get_le48(pid);
 	}
 
 	if (mcc_cb && mcc_cb->segments_obj_id_read) {
@@ -473,7 +473,7 @@ static uint8_t mcc_read_current_track_obj_id_cb(struct bt_conn *conn, uint8_t er
 			BT_DBG("Current Track Object ID: 0x%s",
 			       log_strdup(str));
 		}
-		id = uint48array_to_u64(pid);
+		id = sys_get_le48(pid);
 	}
 
 	if (mcc_cb && mcc_cb->current_track_obj_id_read) {
@@ -505,7 +505,7 @@ static uint8_t mcc_read_next_track_obj_id_cb(struct bt_conn *conn, uint8_t err,
 			uint48array_str(pid, str);
 			BT_DBG("Next Track Object ID: 0x%s", log_strdup(str));
 		}
-		id = uint48array_to_u64(pid);
+		id = sys_get_le48(pid);
 	}
 
 	if (mcc_cb && mcc_cb->next_track_obj_id_read) {
@@ -538,7 +538,7 @@ static uint8_t mcc_read_current_group_obj_id_cb(struct bt_conn *conn, uint8_t er
 			BT_DBG("Current Group Object ID: 0x%s",
 			       log_strdup(str));
 		}
-		id = uint48array_to_u64(pid);
+		id = sys_get_le48(pid);
 	}
 
 	if (mcc_cb && mcc_cb->current_group_obj_id_read) {
@@ -571,7 +571,7 @@ static uint8_t mcc_read_parent_group_obj_id_cb(struct bt_conn *conn, uint8_t err
 			BT_DBG("Parent Group Object ID: 0x%s",
 			       log_strdup(str));
 		}
-		id = uint48array_to_u64(pid);
+		id = sys_get_le48(pid);
 	}
 
 	if (mcc_cb && mcc_cb->parent_group_obj_id_read) {
@@ -794,7 +794,7 @@ static uint8_t mcc_read_search_results_obj_id_cb(struct bt_conn *conn, uint8_t e
 			BT_DBG("Search Results Object ID: 0x%s",
 				   log_strdup(str));
 		}
-		id = uint48array_to_u64(pid);
+		id = sys_get_le48(pid);
 	}
 
 	if (mcc_cb && mcc_cb->search_results_obj_id_read) {
