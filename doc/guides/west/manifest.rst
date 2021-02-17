@@ -432,7 +432,10 @@ projects unless explicitly requested not to.
 
 The next section introduces project groups; the following sections describe
 :ref:`west-enabled-disabled-groups` and :ref:`west-active-inactive-projects`.
-Finally, there are :ref:`west-project-group-examples`.
+There are some basic examples in :ref:`west-project-group-examples`.
+
+Finally, :ref:`west-group-filter-imports` provides a simplified overview of how
+``group-filter`` interacts with the :ref:`west-manifest-import` feature.
 
 Project Groups
 ==============
@@ -477,49 +480,45 @@ avoids some edge cases whose semantics are difficult to specify.)
 Enabled and Disabled Project Groups
 ===================================
 
-You can enable or disable project groups in both your manifest file and
-:ref:`west-config`.
+All project groups are enabled by default. You can enable or disable groups in
+both your manifest file and :ref:`west-config`.
 
-All groups are enabled by default.
+Within a manifest file, ``manifest: group-filter:`` is a YAML list of groups to
+enable and disable.
 
-Within the manifest file, the top level ``manifest: group-filter:`` value can
-be used to disable project groups. To disable a group, prefix its name with a
-dash (-). For example, in this manifest fragment:
+To enable a group, prefix its name with a plus sign (+). For example,
+``groupA`` is enabled in this manifest fragment:
+
+.. code-block:: yaml
+
+   manifest:
+     group-filter: [+groupA]
+
+Although this is redundant for groups that are already enabled by default, it
+can be used to override settings in an imported manifest file. See
+:ref:`west-group-filter-imports` for more information.
+
+To disable a group, prefix its name with a dash (-). For example, ``groupA``
+and ``groupB`` are disabled in this manifest fragment:
 
 .. code-block:: yaml
 
    manifest:
      group-filter: [-groupA,-groupB]
 
-The groups named ``groupA`` and ``groupB`` are disabled by this
-``group-filter`` value.
+.. note::
 
-The ``group-filter`` list is an ordinary YAML list, so you could have also
-written this fragment like this:
+   Since ``group-filter`` is a YAML list, you could have written this fragment
+   as follows:
 
-.. code-block:: yaml
+   .. code-block:: yaml
 
-   manifest:
-     group-filter:
-       - -groupA
-       - -groupB
+      manifest:
+        group-filter:
+          - -groupA
+          - -groupB
 
-However, this syntax is harder to read and therefore discouraged.
-
-Although it's not an error to enable groups within ``manifest: group-filter:``,
-like this:
-
-.. code-block:: yaml
-
-   manifest:
-     ...
-     group-filter: [+groupA]
-
-doing so is redundant since groups are enabled by default.
-
-Only the **top level manifest file's** ``manifest: group-filter:`` value has
-any effect. The ``manifest: group-filter:`` values in any
-:ref:`imported manifests <west-manifest-import>` are ignored.
+   However, this syntax is harder to read and therefore discouraged.
 
 In addition to the manifest file, you can control which groups are enabled and
 disabled using the ``manifest.group-filter`` configuration option. This option
@@ -787,6 +786,175 @@ manifest.group-filter -- "-groupA,-groupB"``).
 In this case, both ``groupA`` and ``groupB`` are disabled.
 
 Therefore, projects ``foo`` and ``bar`` are both inactive.
+
+.. _west-group-filter-imports:
+
+Group Filters and Imports
+=========================
+
+This section provides a simplified description of how the ``manifest:
+group-filter:`` value behaves when combined with :ref:`west-manifest-import`.
+For complete details, see :ref:`west-manifest-formal`.
+
+.. warning::
+
+   The below semantics apply to west v0.10.0 and later. West v0.9.x semantics
+   are different, and combining ``group-filter`` with ``import`` in west v0.9.x
+   is discouraged.
+
+In short:
+
+- if you only import one manifest, any groups it disables in its
+  ``group-filter`` are also disabled in your manifest
+- you can override this in your manifest file's ``manifest: group-filter:``
+  value, your workspace's ``manifest.group-filter`` configuration option, or
+  both
+
+Here are some examples.
+
+Example 1: no overrides
+-----------------------
+
+You are using this :file:`parent/west.yml` manifest:
+
+.. code-block:: yaml
+
+   # parent/west.yml:
+   manifest:
+     projects:
+       - name: child
+         url: https://git.example.com/child
+         import: true
+       - name: project-1
+         url: https://git.example.com/project-1
+         groups:
+           - unstable
+
+And :file:`child/west.yml` contains:
+
+.. code-block:: yaml
+
+   # child/west.yml:
+   manifest:
+     group-filter: [-unstable]
+     projects:
+       - name: project-2
+         url: https://git.example.com/project-2
+       - name: project-3
+         url: https://git.example.com/project-3
+         groups:
+           - unstable
+
+Only ``child`` and ``project-2`` are active in the resolved manifest.
+
+The ``unstable`` group is disabled in :file:`child/west.yml`, and that is not
+overridden in :file:`parent/west.yml`. Therefore, the final ``group-filter``
+for the resolved manifest is ``[-unstable]``.
+
+Since ``project-1`` and ``project-3`` are in the ``unstable`` group and are not
+in any other group, they are inactive.
+
+Example 2: overriding an imported ``group-filter`` via manifest
+---------------------------------------------------------------
+
+You are using this :file:`parent/west.yml` manifest:
+
+.. code-block:: yaml
+
+   # parent/west.yml:
+   manifest:
+     group-filter: [+unstable,-optional]
+     projects:
+       - name: child
+         url: https://git.example.com/child
+         import: true
+       - name: project-1
+         url: https://git.example.com/project-1
+         groups:
+           - unstable
+
+And :file:`child/west.yml` contains:
+
+.. code-block:: yaml
+
+   # child/west.yml:
+   manifest:
+     group-filter: [-unstable]
+     projects:
+       - name: project-2
+         url: https://git.example.com/project-2
+         groups:
+           - optional
+       - name: project-3
+         url: https://git.example.com/project-3
+         groups:
+           - unstable
+
+Only the ``child``, ``project-1``, and ``project-3`` projects are active.
+
+The ``[-unstable]`` group filter in :file:`child/west.yml` is overridden in
+:file:`parent/west.yml`, so the ``unstable`` group is enabled. Since
+``project-1`` and ``project-3`` are in the ``unstable`` group, they are active.
+
+The same :file:`parent/west.yml` file disables the ``optional`` group, so
+``project-2`` is inactive.
+
+The final group filter specified by :file:`parent/west.yml` is
+``[+unstable,-optional]``.
+
+Example 3: overriding an imported ``group-filter`` via configuration
+--------------------------------------------------------------------
+
+You are using this :file:`parent/west.yml` manifest:
+
+.. code-block:: yaml
+
+   # parent/west.yml:
+   manifest:
+     projects:
+       - name: child
+         url: https://git.example.com/child
+         import: true
+       - name: project-1
+         url: https://git.example.com/project-1
+         groups:
+           - unstable
+
+And :file:`child/west.yml` contains:
+
+.. code-block:: yaml
+
+   # child/west.yml:
+   manifest:
+     group-filter: [-unstable]
+     projects:
+       - name: project-2
+         url: https://git.example.com/project-2
+         groups:
+           - optional
+       - name: project-3
+         url: https://git.example.com/project-3
+         groups:
+           - unstable
+
+If you run:
+
+.. code-block:: shell
+
+   west config manifest.group-filter +unstable,-optional
+
+Then only the ``child``, ``project-1``, and ``project-3`` projects are active.
+
+The ``-unstable`` group filter in :file:`child/west.yml` is overridden in the
+``manifest.group-filter`` configuration option, so the ``unstable`` group is
+enabled. Since ``project-1`` and ``project-3`` are in the ``unstable`` group,
+they are active.
+
+The same configuration option disables the ``optional`` group, so ``project-2``
+is inactive.
+
+The final group filter specified by :file:`parent/west.yml` and the
+``manifest.group-filter`` configuration option is ``[+unstable,-optional]``.
 
 .. _west-manifest-submodules:
 
@@ -1690,6 +1858,9 @@ The ultimate outcomes of resolving manifest imports are:
 - a set of extension commands, which are drawn from the the ``west-commands``
   keys in in the top-level file and any imported files
 
+- a ``group-filter`` list, which is produced by combining the top-level and any
+  imported filters
+
 Importing is done in this order:
 
 #. Manifests from ``self-import`` are imported first.
@@ -1756,6 +1927,43 @@ If an imported manifest file has a ``west-commands:`` definition in its
 ``self:`` section, the extension commands defined there are added to the set of
 available extensions at the time the manifest is imported. They will thus take
 precedence over any extension commands with the same names added later on.
+
+Group filters
+-------------
+
+The resolved manifest has a ``group-filter`` value which is the result of
+concatenating the ``group-filter`` values in the top-level manifest and any
+imported manifests.
+
+Manifest files which appear earlier in the import order have higher precedence
+and are therefore concatenated later into the final ``group-filter``.
+
+In other words, let:
+
+- the submanifest resolved from ``self-import`` have group filter ``self-filter``
+- the top-level manifest file have group filter ``top-filter``
+- the submanifests resolved from ``import-1`` through ``import-N`` have group
+  filters ``filter-1`` through ``filter-N`` respectively
+
+The final resolved ``group-filter`` value is then ``filter1 + filter-2 + ... +
+filter-N + top-filter + self-filter``, where ``+`` here refers to list
+concatenation.
+
+.. important::
+
+   The order that filters appear in the above list matters.
+
+   The last filter element in the final concatenated list "wins" and determines
+   if the group is enabled or disabled.
+
+For example, in ``[-foo] + [+foo]``, group ``foo`` is *enabled*.
+However, in ``[+foo] + [-foo]``, group ``foo`` is *disabled*.
+
+For simplicity, west and this documentation may elide concatenated group filter
+elements which are redundant using these rules. For example, ``[+foo] +
+[-foo]`` could be written more simply as ``[-foo]``, for the reasons given
+above. As another example, ``[-foo] + [+foo]`` could be written as the empty
+list ``[]``, since all groups are enabled by default.
 
 .. _west-manifest-cmd:
 
