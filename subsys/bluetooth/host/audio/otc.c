@@ -520,7 +520,7 @@ int bt_otc_select_id(struct bt_conn *conn, struct bt_otc_instance_t *otc_inst,
 	struct bt_otc_internal_instance_t *inst;
 
 	if (OTS_CLIENT_INST_COUNT > 0) {
-		uint8_t param[UINT48_LEN];
+		uint8_t param[BT_OTS_OBJ_ID_SIZE];
 
 		if (!conn) {
 			BT_WARN("Invalid Connection");
@@ -547,7 +547,7 @@ int bt_otc_select_id(struct bt_conn *conn, struct bt_otc_instance_t *otc_inst,
 		u64_to_uint48array(obj_id, param);
 
 		return write_olcp(inst, conn, BT_OTS_OLCP_PROC_GOTO,
-				  param, UINT48_LEN);
+				  param, BT_OTS_OBJ_ID_SIZE);
 	}
 
 	BT_DBG("Not supported");
@@ -1286,7 +1286,7 @@ static int decode_record(struct net_buf_simple *buf,
 		return -EINVAL;
 	}
 
-	if ((start_len - buf->len) + UINT48_LEN > rec->len) {
+	if ((start_len - buf->len) + BT_OTS_OBJ_ID_SIZE > rec->len) {
 		BT_WARN("incorrect DirListing record, reclen %u too short, "
 			"includes only record length",
 			rec->len);
