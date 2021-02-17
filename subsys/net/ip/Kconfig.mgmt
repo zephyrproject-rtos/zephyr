@@ -27,14 +27,6 @@ config NET_MGMT_EVENT_STACK_SIZE
 	  Set the internal stack size for NM to run registered callbacks
 	  on events.
 
-config NET_MGMT_EVENT_THREAD_PRIO
-	int "Inner thread priority (use with care)"
-	default -1 if NET_TC_THREAD_COOPERATIVE
-	default 7
-	help
-	  Set the network management event core's inner thread priority.
-	  Do not change this unless you know what you are doing.
-
 config NET_MGMT_EVENT_QUEUE_SIZE
 	int "Size of event queue"
 	default 16 if NET_MGMT_EVENT_MONITOR
