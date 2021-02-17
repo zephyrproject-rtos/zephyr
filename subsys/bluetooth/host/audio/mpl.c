@@ -800,10 +800,10 @@ static uint32_t on_object_send(struct ots_svc_inst_t *ots, struct bt_conn *conn,
 	obj.busy = true;
 
 	if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) {
-		char t[UINT48_STR_LEN];
-		u64_to_uint48array_str(id, t);
-		BT_DBG("Object Id 0x%s, offset %i, length %i", log_strdup(t),
-			   offset, len);
+		char t[BT_OTS_OBJ_ID_STR_LEN];
+		(void)bt_ots_obj_id_to_str(id, t, sizeof(t));
+		BT_DBG("Object Id %s, offset %i, length %i", log_strdup(t),
+		       offset, len);
 	}
 
 	if (id != obj.selected_id) {
@@ -2546,7 +2546,7 @@ uint8_t mpl_content_ctrl_id_get(void)
 void mpl_debug_dump_state(void)
 {
 #if CONFIG_BT_OTS_TEMP
-	char t[UINT48_STR_LEN];
+	char t[BT_OTS_OBJ_ID_STR_LEN];
 	struct mpl_group_t *group;
 	struct mpl_track_t *track;
 #endif /* CONFIG_BT_OTS_TEMP */
@@ -2554,8 +2554,8 @@ void mpl_debug_dump_state(void)
 	BT_DBG("Mediaplayer name: %s", log_strdup(pl.name));
 
 #if CONFIG_BT_OTS_TEMP
-	u64_to_uint48array_str(pl.icon_id, t);
-	BT_DBG("Icon ID: 0x%s", log_strdup(t));
+	(void)bt_ots_obj_id_to_str(pl.icon_id, t, sizeof(t));
+	BT_DBG("Icon ID: %s", log_strdup(t));
 #endif /* CONFIG_BT_OTS_TEMP */
 
 	BT_DBG("Icon URI: %s", log_strdup(pl.icon_uri));
@@ -2569,25 +2569,26 @@ void mpl_debug_dump_state(void)
 	BT_DBG("Content control ID: %d", pl.content_ctrl_id);
 
 #if CONFIG_BT_OTS_TEMP
-	u64_to_uint48array_str(pl.group->id, t);
-	BT_DBG("Current group: 0x%s", log_strdup(t));
+	(void)bt_ots_obj_id_to_str(pl.group->id, t, sizeof(t));
+	BT_DBG("Current group: %s", log_strdup(t));
 
-	u64_to_uint48array_str(pl.group->parent->id, t);
-	BT_DBG("Current group's parent: 0x%s", log_strdup(t));
+	(void)bt_ots_obj_id_to_str(pl.group->parent->id, t, sizeof(t));
+	BT_DBG("Current group's parent: %s", log_strdup(t));
 
-	u64_to_uint48array_str(pl.group->track->id, t);
-	BT_DBG("Current track: 0x%s", log_strdup(t));
+	(void)bt_ots_obj_id_to_str(pl.group->track->id, t, sizeof(t));
+	BT_DBG("Current track: %s", log_strdup(t));
 
 	if (pl.group->track->next) {
-		u64_to_uint48array_str(pl.group->track->next->id, t);
-		BT_DBG("Next track: 0x%s", log_strdup(t));
+		(void)bt_ots_obj_id_to_str(pl.group->track->next->id, t,
+					   sizeof(t));
+		BT_DBG("Next track: %s", log_strdup(t));
 	} else {
 		BT_DBG("No next track");
 	}
 
 	if (pl.search_results_id) {
-		u64_to_uint48array_str(pl.search_results_id, t);
-		BT_DBG("Search results: 0x%s", log_strdup(t));
+		(void)bt_ots_obj_id_to_str(pl.search_results_id, t, sizeof(t));
+		BT_DBG("Search results: %s", log_strdup(t));
 	} else {
 		BT_DBG("No search results");
 	}
@@ -2600,12 +2601,12 @@ void mpl_debug_dump_state(void)
 	}
 
 	while (group) {
-		u64_to_uint48array_str(group->id, t);
-		BT_DBG("Group: 0x%s, %s", log_strdup(t),
+		(void)bt_ots_obj_id_to_str(group->id, t, sizeof(t));
+		BT_DBG("Group: %s, %s", log_strdup(t),
 		       log_strdup(group->title));
 
-		u64_to_uint48array_str(group->parent->id, t);
-		BT_DBG("\tParent: 0x%s, %s", log_strdup(t),
+		(void)bt_ots_obj_id_to_str(group->parent->id, t, sizeof(t));
+		BT_DBG("\tParent: %s, %s", log_strdup(t),
 		       log_strdup(group->parent->title));
 
 		track = group->track;
@@ -2614,8 +2615,8 @@ void mpl_debug_dump_state(void)
 		}
 
 		while (track) {
-			u64_to_uint48array_str(track->id, t);
-			BT_DBG("\tTrack: 0x%s, %s, duration: %d", log_strdup(t),
+			(void)bt_ots_obj_id_to_str(track->id, t, sizeof(t));
+			BT_DBG("\tTrack: %s, %s, duration: %d", log_strdup(t),
 			       log_strdup(track->title), track->duration);
 			track = track->next;
 		}
