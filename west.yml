@@ -148,6 +148,10 @@ manifest:
       repo-path: mcuboot
       path: modules/tee/tfm-mcuboot
       revision: 1.7.0-rc1
+    - name: hello-world
+      path: rte/hello
+      url: https://github.com/SpooniSpoon/hello-world
+      revision: 639a7d7a326aa6a4ac1d11d51b27029cfd43154e
 
   self:
     path: zephyr
