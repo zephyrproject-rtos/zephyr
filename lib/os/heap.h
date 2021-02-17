@@ -66,9 +66,6 @@ struct z_heap {
 
 static inline bool big_heap_chunks(size_t chunks)
 {
-	if (IS_ENABLED(CONFIG_SYS_HEAP_ALWAYS_BIG_MODE)) {
-		return 1;
-	}
 	return sizeof(void *) > 4U || chunks > 0x7fffU;
 }
 
