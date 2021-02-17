@@ -556,19 +556,31 @@ static void i2c_ctrl_handle_read_int_event(const struct device *dev)
 		size_t rx_occupied = i2c_ctrl_fifo_rx_occupied(dev);
 
 		LOG_DBG("rx remains %d, occupied %d", rx_remain, rx_occupied);
-		/*
-		 * Hold SCL line before reading data bytes from FIFO. Or the
-		 * hardware will release bus immediately before the driver
-		 * handles incoming data.
-		 */
-		i2c_ctrl_hold_bus(dev, 1);
+
+		/* Is it the last read transaction with STOP condition? */
+		if (rx_occupied >= rx_remain &&
+			(data->msg->flags & I2C_MSG_STOP) != 0) {
+			/*
+			 * Generate a STOP condition before reading data bytes
+			 * from FIFO. It prevents a glitch on SCL.
+			 */
+			i2c_ctrl_stop(dev);
+		} else {
+			/*
+			 * Hold SCL line here in case the hardware releases bus
+			 * immediately after the driver start to read data from
+			 * FIFO. Then we might lose incoming data from device.
+			 */
+			i2c_ctrl_hold_bus(dev, 1);
+		}
+
 		/* Read data bytes from FIFO */
 		for (int i = 0; i < rx_occupied; i++) {
 			*(data->ptr_msg++) = i2c_ctrl_fifo_read(dev);
 		}
 		rx_remain = i2c_ctrl_calculate_msg_remains(dev);
 
-		/* Setup threshold of RX FIFO next time */
+		/* Setup threshold of RX FIFO if needed */
 		if (rx_remain > 0) {
 			i2c_ctrl_fifo_rx_setup_threshold_nack(dev, rx_remain,
 					(data->msg->flags & I2C_MSG_STOP) != 0);
@@ -578,14 +590,8 @@ static void i2c_ctrl_handle_read_int_event(const struct device *dev)
 		}
 	}
 
-	/* Issue STOP after receiving message? */
+	/* Is the STOP condition issued? */
 	if ((data->msg->flags & I2C_MSG_STOP) != 0) {
-		/* Release bus */
-		i2c_ctrl_hold_bus(dev, 0);
-
-		/* Generate a STOP condition immediately */
-		i2c_ctrl_stop(dev);
-
 		/* Clear rx FIFO threshold and status bits */
 		i2c_ctrl_fifo_clear_status(dev);
 
