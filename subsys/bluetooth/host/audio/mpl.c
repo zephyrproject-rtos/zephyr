@@ -677,12 +677,7 @@ static int add_group_and_track_objects(struct mpl_mediaplayer_t *pl)
 static void on_obj_deleted(struct ots_svc_inst_t *ots, struct bt_conn *conn,
 			   uint64_t id)
 {
-	if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) {
-		char t[UINT48_STR_LEN];
-
-		u64_to_uint48array_str(id, t);
-		BT_DBG("Object Id 0x%s deleted", log_strdup(t));
-	}
+	BT_DBG_OBJ_ID("Object Id deleted: ", id);
 }
 
 static void on_obj_selected(struct ots_svc_inst_t *ots, struct bt_conn *conn,
@@ -696,12 +691,7 @@ static void on_obj_selected(struct ots_svc_inst_t *ots, struct bt_conn *conn,
 	}
 	obj.busy = true;
 
-	if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) {
-		char t[UINT48_STR_LEN];
-
-		u64_to_uint48array_str(id, t);
-		BT_DBG("Object Id 0x%s selected", log_strdup(t));
-	}
+	BT_DBG_OBJ_ID("Object Id selected: ", id);
 
 	if (id == pl.icon_id) {
 		BT_DBG("Icon Object ID");
@@ -735,11 +725,8 @@ static int on_obj_created(struct ots_svc_inst_t *ots, struct bt_conn *conn,
 			  uint64_t id,
 			  const struct bt_ots_obj_metadata *metadata)
 {
+	BT_DBG_OBJ_ID("Object Id created: ", id);
 	if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) {
-		char t[UINT48_STR_LEN];
-
-		u64_to_uint48array_str(id, t);
-		BT_DBG("Object Id 0x%s created", log_strdup(t));
 		bt_ots_dump_metadata((struct bt_ots_obj_metadata *)metadata);
 	}
 
@@ -2367,11 +2354,7 @@ void mpl_current_track_id_set(uint64_t id)
 	/* There is also a matter of what to do with the group, */
 	/* does the track have a corresponding group, or do we create one? */
 
-	if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) {
-		char t[UINT48_STR_LEN];
-		u64_to_uint48array_str(pl.group->track->id, t);
-		BT_DBG("Track ID to set: 0x%s", log_strdup(t));
-	}
+	BT_DBG_OBJ_ID("Track ID to set: ", id);
 
 	/* What we really want to do: Check that we have a track with this ID */
 	/* Set the track to the track with this ID */
@@ -2396,11 +2379,7 @@ uint64_t mpl_next_track_id_get(void)
 
 void mpl_next_track_id_set(uint64_t id)
 {
-	if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) {
-		char t[UINT48_STR_LEN];
-		u64_to_uint48array_str(pl.group->track->id, t);
-		BT_DBG("Track ID to set: 0x%s", log_strdup(t));
-	}
+	BT_DBG_OBJ_ID("Track ID to set: ", id);
 
 	/* What we really want to do: Set the track to the track with this ID */
 	/* Temporarily, we construct a track with this id, and use that */
@@ -2420,15 +2399,7 @@ uint64_t mpl_group_id_get(void)
 
 void mpl_group_id_set(uint64_t id)
 {
-	/* Temporary, since printk() currently does not support 64 */
-	/* bit variables */
-	uint8_t k, tmp;
-
-	for (k = 0; k < BT_OTS_OBJ_ID_SIZE; k++) {
-		tmp = (id >> k*8) & 0xff;
-		BT_DBG("Byte %d = %x", k, tmp);
-	}
-
+	BT_DBG_OBJ_ID("Group ID to set: ", id);
 	pl.group->id = id;
 }
 
