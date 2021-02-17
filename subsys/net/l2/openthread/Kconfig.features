@@ -81,6 +81,9 @@ config OPENTHREAD_DIAG
 config OPENTHREAD_DNS_CLIENT
 	bool "Enable DNS client support"
 
+config OPENTHREAD_DNSSD_SERVER
+	bool "Enable DNS-SD server support"
+
 config OPENTHREAD_DUA
 	bool "Enable Domain Unicast Address support"
 	help
