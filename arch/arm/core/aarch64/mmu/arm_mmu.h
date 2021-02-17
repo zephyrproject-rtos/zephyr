@@ -19,17 +19,6 @@
 #define MMU_DEBUG(...)
 #endif
 
-#if DUMP_PTE
-#define L0_SPACE ""
-#define L1_SPACE ". "
-#define L2_SPACE ". . "
-#define L3_SPACE ". . . "
-#define XLAT_TABLE_LEVEL_SPACE(level)		\
-	(((level) == 0) ? L0_SPACE :		\
-	((level) == 1) ? L1_SPACE :		\
-	((level) == 2) ? L2_SPACE : L3_SPACE)
-#endif
-
 /*
  * 48-bit address with 4KB granule size:
  *
