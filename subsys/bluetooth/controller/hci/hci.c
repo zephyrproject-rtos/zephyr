@@ -6372,6 +6372,29 @@ static void le_per_adv_sync_lost(struct pdu_data *pdu_data,
 	sep = meta_evt(buf, BT_HCI_EVT_LE_PER_ADV_SYNC_LOST, sizeof(*sep));
 	sep->handle = sys_cpu_to_le16(node_rx->hdr.handle);
 }
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO)
+static void le_per_adv_sync_iso_established(struct pdu_data *pdu_data,
+					    struct node_rx_pdu *node_rx,
+					    struct net_buf *buf)
+{
+	printk("Sync ISO Established\n");
+}
+
+static void le_per_adv_sync_iso_pdu(struct pdu_data *pdu_data,
+				    struct node_rx_pdu *node_rx,
+				    struct net_buf *buf)
+{
+	printk("Sync ISO PDU (%u)\n", pdu_data->len);
+}
+
+static void le_per_adv_sync_iso_lost(struct pdu_data *pdu_data,
+				     struct node_rx_pdu *node_rx,
+				     struct net_buf *buf)
+{
+	printk("Sync ISO lost\n");
+}
+#endif /* CONFIG_BT_CTLR_SYNC_ISO */
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_OBSERVER */
@@ -6785,11 +6808,26 @@ static void encode_control(struct node_rx_pdu *node_rx,
 	case NODE_RX_TYPE_SYNC_LOST:
 		le_per_adv_sync_lost(pdu_data, node_rx, buf);
 		break;
+
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
 	case NODE_RX_TYPE_IQ_SAMPLE_REPORT:
 		le_df_connectionless_iq_report(pdu_data, node_rx, buf);
 		break;
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO)
+	case NODE_RX_TYPE_SYNC_ISO:
+		le_per_adv_sync_iso_established(pdu_data, node_rx, buf);
+		break;
+
+	case NODE_RX_TYPE_SYNC_ISO_PDU:
+		le_per_adv_sync_iso_pdu(pdu_data, node_rx, buf);
+		break;
+
+	case NODE_RX_TYPE_SYNC_ISO_LOST:
+		le_per_adv_sync_iso_lost(pdu_data, node_rx, buf);
+		break;
+#endif /* CONFIG_BT_CTLR_SYNC_ISO */
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_OBSERVER */
@@ -7265,9 +7303,17 @@ uint8_t hci_get_class(struct node_rx_pdu *node_rx)
 		case NODE_RX_TYPE_SYNC:
 		case NODE_RX_TYPE_SYNC_REPORT:
 		case NODE_RX_TYPE_SYNC_LOST:
+
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
 		case NODE_RX_TYPE_IQ_SAMPLE_REPORT:
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO)
+			__fallthrough;
+		case NODE_RX_TYPE_SYNC_ISO:
+		case NODE_RX_TYPE_SYNC_ISO_PDU:
+		case NODE_RX_TYPE_SYNC_ISO_LOST:
+#endif /* CONFIG_BT_CTLR_SYNC_ISO */
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 #endif /* CONFIG_BT_OBSERVER */
 
