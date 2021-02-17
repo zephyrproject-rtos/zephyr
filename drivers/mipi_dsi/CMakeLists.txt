@@ -1,0 +1,1 @@
+zephyr_sources_ifdef(CONFIG_MIPI_DSI mipi_dsi.c)
