@@ -115,13 +115,13 @@ static struct csis_instance_t *lookup_instance_by_handle(struct bt_conn *conn,
 							 uint16_t handle)
 {
 	struct set_member_t *member;
-	struct csis_instance_t *inst;
 
 	member = lookup_member_by_conn(conn);
 
 	if (member) {
 		for (int i = 0; i < CONFIG_BT_CSIP_MAX_CSIS_INSTANCES; i++) {
-			inst = &member->csis_insts[i];
+			struct csis_instance_t *inst = &member->csis_insts[i];
+
 			if (handle <= inst->end_handle &&
 			    handle >= inst->start_handle) {
 				return inst;
@@ -135,13 +135,13 @@ static struct csis_instance_t *lookup_instance_by_index(struct bt_conn *conn,
 							uint8_t idx)
 {
 	struct set_member_t *member;
-	struct csis_instance_t *inst;
 
 	member = lookup_member_by_conn(conn);
 
 	if (member) {
 		for (int i = 0; i < CONFIG_BT_CSIP_MAX_CSIS_INSTANCES; i++) {
-			inst = &member->csis_insts[i];
+			struct csis_instance_t *inst = &member->csis_insts[i];
+
 			if (idx == inst->idx) {
 				return inst;
 			}
@@ -186,13 +186,13 @@ static int8_t lookup_index_by_sirk(struct bt_conn *conn,
 				   struct bt_csip_set_sirk_t *sirk)
 {
 	struct set_member_t *member;
-	struct bt_csip_set_sirk_t *set_sirk;
 
 	member = lookup_member_by_conn(conn);
 
 	if (member) {
 		for (int i = 0; i < CONFIG_BT_CSIP_MAX_CSIS_INSTANCES; i++) {
-			set_sirk = &member->sets[i].set_sirk;
+			struct bt_csip_set_sirk_t *set_sirk = &member->sets[i].set_sirk;
+
 			if (!memcmp(sirk->value, set_sirk->value,
 				    sizeof(set_sirk->value))) {
 				return i;
@@ -476,7 +476,6 @@ static uint8_t discover_func(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr,
 			     struct bt_gatt_discover_params *params)
 {
-	int err;
 	struct bt_gatt_chrc *chrc;
 	struct set_member_t *member = lookup_member_by_conn(conn);
 	struct bt_gatt_subscribe_params *sub_params = NULL;
@@ -497,6 +496,8 @@ static uint8_t discover_func(struct bt_conn *conn,
 		(void)memset(params, 0, sizeof(*params));
 
 		if ((cur_inst->idx + 1) < member->inst_count) {
+			int err;
+
 			cur_inst = &member->csis_insts[cur_inst->idx + 1];
 			discover_params.uuid = NULL;
 			discover_params.start_handle =
@@ -579,7 +580,6 @@ static uint8_t primary_discover_func(struct bt_conn *conn,
 				     const struct bt_gatt_attr *attr,
 				     struct bt_gatt_discover_params *params)
 {
-	int err;
 	struct bt_gatt_service_val *prim_service;
 	struct set_member_t *member = lookup_member_by_conn(conn);
 
@@ -600,6 +600,8 @@ static uint8_t primary_discover_func(struct bt_conn *conn,
 		(void)memset(params, 0, sizeof(*params));
 
 		if (member->inst_count) {
+			int err;
+
 			cur_inst = &member->csis_insts[0];
 			discover_params.uuid = NULL;
 			discover_params.start_handle =
@@ -675,11 +677,12 @@ static bool is_discovered(const bt_addr_le_t *addr)
 
 static bool csis_found(struct bt_data *data, void *user_data)
 {
-	char addr_str[BT_ADDR_LE_STR_LEN];
 	bt_addr_le_t *addr = user_data;
 
 	if (data->type == BT_DATA_CSIS_RSI &&
 	    data->data_len == BT_CSIS_PSRI_SIZE) {
+		char addr_str[BT_ADDR_LE_STR_LEN];
+
 		bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
 		BT_DBG("Found CSIS advertiser with address %s",
 		       log_strdup(addr_str));
@@ -985,10 +988,11 @@ static void discover_sets_resume(struct bt_conn *conn, uint16_t sirk_handle,
 
 static void csip_connected(struct bt_conn *conn, uint8_t err)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
 	struct set_member_t *member = lookup_member_by_conn(conn);
 
 	if (member) {
+		char addr[BT_ADDR_LE_STR_LEN];
+
 		bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 		if (err) {
@@ -1011,10 +1015,11 @@ static void csip_connected(struct bt_conn *conn, uint8_t err)
 
 static void csip_disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
 	struct set_member_t *member = lookup_member_by_conn(conn);
 
 	if (member) {
+		char addr[BT_ADDR_LE_STR_LEN];
+
 		bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 		BT_DBG("Disconnected: %s (reason %u)", log_strdup(addr),
@@ -1043,7 +1048,6 @@ static struct bt_le_scan_cb csip_scan_callbacks = {
 
 static void csip_write_lowest_rank(void)
 {
-	int8_t cur_idx;
 	uint8_t min_rank = 0xFF;
 	uint8_t min_idx;
 	struct bt_conn *min_conn = NULL;
@@ -1051,8 +1055,8 @@ static void csip_write_lowest_rank(void)
 	cur_inst = NULL;
 
 	for (int i = 0; i < cur_set.set_size; i++) {
-		cur_idx = lookup_index_by_sirk(set_members[i].conn,
-					       &cur_set.set_sirk);
+		int8_t cur_idx = lookup_index_by_sirk(set_members[i].conn, &cur_set.set_sirk);
+
 		if (cur_idx < 0) {
 			continue;
 		}
@@ -1086,7 +1090,6 @@ static void csip_write_lowest_rank(void)
 
 static void csip_release_highest_rank(void)
 {
-	int8_t cur_idx;
 	uint8_t max_rank = 0;
 	uint8_t max_idx;
 	struct bt_conn *max_conn = NULL;
@@ -1094,8 +1097,8 @@ static void csip_release_highest_rank(void)
 	cur_inst = NULL;
 
 	for (int i = 0; i < cur_set.set_size; i++) {
-		cur_idx = lookup_index_by_sirk(set_members[i].conn,
-					       &cur_set.set_sirk);
+		int8_t cur_idx = lookup_index_by_sirk(set_members[i].conn, &cur_set.set_sirk);
+
 		if (cur_idx < 0) {
 			continue;
 		}
@@ -1181,11 +1184,8 @@ static void csip_lock_set_write_lock_cb(struct bt_conn *conn, uint8_t err,
 
 static bool csip_set_is_locked(void)
 {
-	int8_t cur_idx;
-
 	for (int i = 0; i < cur_set.set_size; i++) {
-		cur_idx = lookup_index_by_sirk(set_members[i].conn,
-					       &cur_set.set_sirk);
+		int8_t cur_idx = lookup_index_by_sirk(set_members[i].conn, &cur_set.set_sirk);
 		if (set_members[i].csis_insts[cur_idx].set_lock ==
 			BT_CSIP_LOCK_VALUE) {
 			return true;

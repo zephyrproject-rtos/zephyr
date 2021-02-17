@@ -232,10 +232,8 @@ static uint8_t char_discover_func(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr,
 			       struct bt_gatt_discover_params *params)
 {
-	struct bt_gatt_chrc *chrc;
 	struct bt_gatt_subscribe_params *sub_params = NULL;
 	int err;
-	uint8_t idx;
 
 	if (!attr) {
 		BT_DBG("Found %u BASS receive states",
@@ -255,14 +253,17 @@ static uint8_t char_discover_func(struct bt_conn *conn,
 	BT_DBG("[ATTRIBUTE] handle 0x%04X", attr->handle);
 
 	if (params->type == BT_GATT_DISCOVER_CHARACTERISTIC) {
-		chrc = (struct bt_gatt_chrc *)attr->user_data;
+		struct bt_gatt_chrc *chrc =
+			(struct bt_gatt_chrc *)attr->user_data;
+
 		if (!bt_uuid_cmp(chrc->uuid, BT_UUID_BASS_CONTROL_POINT)) {
 			BT_DBG("Control Point");
 			bass_client.cp_handle = attr->handle + 1;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_BASS_RECV_STATE)) {
 			if (bass_client.recv_state_cnt <
 				CONFIG_BT_BASS_CLIENT_RECV_STATE_COUNT) {
-				idx = bass_client.recv_state_cnt++;
+				uint8_t idx = bass_client.recv_state_cnt++;
+
 				BT_DBG("Receive State %u",
 				       bass_client.recv_state_cnt);
 				bass_client.recv_state_handles[idx] =

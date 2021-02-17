@@ -1259,10 +1259,10 @@ static uint8_t discover_primary_func(struct bt_conn *conn,
 				     const struct bt_gatt_attr *attr,
 				     struct bt_gatt_discover_params *params)
 {
-	int err;
 	struct bt_gatt_service_val *prim_service;
 
 	if (attr) {
+		int err;
 		/* Found an attribute */
 		BT_DBG("[ATTRIBUTE] handle 0x%04X", attr->handle);
 

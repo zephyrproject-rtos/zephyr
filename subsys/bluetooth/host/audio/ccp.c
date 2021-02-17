@@ -273,16 +273,16 @@ static void current_calls_notify_handler(struct bt_conn *conn,
 					 const void *data, uint16_t length)
 {
 	struct bt_ccp_call_t calls[CONFIG_BT_CCP_MAX_CALLS];
-	struct bt_ccp_call_t *call;
 	uint16_t bytes_parsed = 0;
-	uint8_t item_len;
 	uint8_t call_index = 0;
-	uint8_t uri_len;
 
 	BT_DBG("");
 
 	while (bytes_parsed < length && call_index < CONFIG_BT_CCP_MAX_CALLS) {
 		uint8_t parsed_len;
+		struct bt_ccp_call_t *call;
+		uint8_t item_len;
+		uint8_t uri_len;
 
 		call = &calls[call_index];
 		item_len = ((uint8_t *)data)[bytes_parsed++];
@@ -784,18 +784,14 @@ static uint8_t ccp_read_current_calls_cb(struct bt_conn *conn, uint8_t err,
 				      struct bt_gatt_read_params *params,
 				      const void *data, uint16_t length)
 {
-	uint16_t bytes_processed = 0;
-	uint8_t item_len;
-	uint8_t cnt = 0;
-	uint8_t uri_len;
-	struct bt_ccp_call_t calls[CONFIG_BT_CCP_MAX_CALLS];
-	struct bt_ccp_call_t *call;
-	struct bt_ccp_call_t *cb_val = NULL;
 	struct tbs_instance_t *inst =
 		lookup_instance_by_handle(params->single.handle);
-	struct ccp_read_params *read_params;
 
 	if (inst) {
+		struct bt_ccp_call_t *cb_val = NULL;
+		uint8_t cnt = 0;
+		struct ccp_read_params *read_params;
+
 		if (IS_ENABLED(CONFIG_BT_CCP_GTBS) && inst->gtbs) {
 			BT_DBG("GTBS");
 		} else {
@@ -838,8 +834,15 @@ static uint8_t ccp_read_current_calls_cb(struct bt_conn *conn, uint8_t err,
 		}
 
 		if (read_params->bytes_read) {
+			uint16_t bytes_processed = 0;
+			struct bt_ccp_call_t calls[CONFIG_BT_CCP_MAX_CALLS];
+
 			while (bytes_processed < read_params->bytes_read &&
 			       cnt < CONFIG_BT_CCP_MAX_CALLS) {
+				uint8_t item_len;
+				uint8_t uri_len;
+				struct bt_ccp_call_t *call;
+
 				call = &calls[cnt];
 				memcpy(&item_len,
 				       read_params->buf + bytes_processed,
@@ -1006,17 +1009,16 @@ static uint8_t ccp_read_call_state_cb(struct bt_conn *conn, uint8_t err,
 				   struct bt_gatt_read_params *params,
 				   const void *data, uint16_t length)
 {
-	struct bt_ccp_call_state_t *call_state;
-	struct bt_ccp_call_state_t *cb_val = NULL;
-	uint8_t cnt = 0;
 	struct tbs_instance_t *inst =
 		lookup_instance_by_handle(params->single.handle);
-	uint16_t bytes_parsed = 0;
-	struct ccp_read_params *read_params;
 
 	BT_DBG("");
 
 	if (inst) {
+		struct ccp_read_params *read_params;
+		struct bt_ccp_call_state_t *cb_val = NULL;
+		uint8_t cnt = 0;
+
 		if (IS_ENABLED(CONFIG_BT_CCP_GTBS) && inst->gtbs) {
 			BT_DBG("GTBS");
 		} else {
@@ -1046,12 +1048,16 @@ static uint8_t ccp_read_call_state_cb(struct bt_conn *conn, uint8_t err,
 			       read_params->bytes_read);
 			err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
 		} else if (read_params->bytes_read) {
+			uint16_t bytes_parsed = 0;
+
 			if (sizeof(inst->calls) < read_params->bytes_read) {
 				BT_WARN("Could not store all call states");
 			}
 
 			while (bytes_parsed < read_params->bytes_read &&
 			       cnt < CONFIG_BT_CCP_MAX_CALLS) {
+				struct bt_ccp_call_state_t *call_state;
+
 				call_state = &inst->calls[cnt++];
 				memcpy(call_state,
 				       read_params->buf + bytes_parsed,
@@ -1068,6 +1074,7 @@ static uint8_t ccp_read_call_state_cb(struct bt_conn *conn, uint8_t err,
 		memset(params, 0, sizeof(*params));
 
 		if (ccp_cbs && ccp_cbs->call_state) {
+
 			if (cnt) {
 				cb_val = inst->calls;
 			}
@@ -1547,15 +1554,15 @@ int bt_ccp_originate_call(struct bt_conn *conn, uint8_t inst_index,
 int bt_ccp_join_calls(struct bt_conn *conn, uint8_t inst_index,
 		      const uint8_t *call_indexes, uint8_t count)
 {
-	struct tbs_instance_t *inst;
-	struct bt_tbs_call_cp_join_t *join;
-
 	if (!conn) {
 		return -ENOTCONN;
 	}
 
 	/* Write to call control point */
 	if (call_indexes && count > 1 && count <= CONFIG_BT_CCP_MAX_CALLS) {
+		struct tbs_instance_t *inst;
+		struct bt_tbs_call_cp_join_t *join;
+
 		inst = get_inst_by_index(inst_index);
 		if (!inst) {
 			return -EINVAL;

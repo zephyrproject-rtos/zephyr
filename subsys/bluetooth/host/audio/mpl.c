@@ -321,18 +321,19 @@ static int setup_icon_object(void)
 /* Set up content buffer for a track segments object */
 static uint32_t setup_segments_object(struct mpl_track_t *track)
 {
-	uint32_t tot_size = 0;
-	uint32_t seg_size = 0;
 	struct mpl_tseg_t *seg = track->segment;
 
 	net_buf_simple_reset(obj.content);
 
 	if (seg) {
+		uint32_t tot_size = 0;
+
 		while (seg->prev) {
 			seg = seg->prev;
 		}
 		while (seg) {
-			seg_size = sizeof(seg->name_len);
+			uint32_t seg_size = sizeof(seg->name_len);
+
 			seg_size += seg->name_len;
 			seg_size += sizeof(seg->pos);
 			if (tot_size + seg_size > obj.content->size) {
@@ -618,7 +619,6 @@ static int add_parent_group_object(struct mpl_mediaplayer_t *pl)
 static int add_group_tracks(struct mpl_group_t *group)
 {
 	int ret_overall = 0;
-	int ret;
 	struct mpl_track_t *track = group->track;
 
 	if (track) {
@@ -627,7 +627,8 @@ static int add_group_tracks(struct mpl_group_t *group)
 		}
 
 		while (track) {
-			ret = add_track_object(track);
+			int ret = add_track_object(track);
+
 			if (ret && !ret_overall) {
 				ret_overall = ret;
 			}

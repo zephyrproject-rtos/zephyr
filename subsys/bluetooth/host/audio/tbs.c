@@ -128,14 +128,14 @@ static struct bt_tbs_call_t *lookup_call_in_instance(
  */
 static struct bt_tbs_call_t *lookup_call(uint8_t call_index)
 {
-	struct bt_tbs_call_t *call;
 
 	if (call_index == BT_TBS_FREE_CALL_INDEX) {
 		return NULL;
 	}
 
 	for (int i = 0; i < ARRAY_SIZE(svc_insts); i++) {
-		call = lookup_call_in_instance(&svc_insts[i], call_index);
+		struct bt_tbs_call_t *call = lookup_call_in_instance(&svc_insts[i], call_index);
+
 		if (call) {
 			return call;
 		}
@@ -146,14 +146,13 @@ static struct bt_tbs_call_t *lookup_call(uint8_t call_index)
 static struct tbs_service_inst_t *lookup_instance_by_ccc(
 	const struct bt_gatt_attr *ccc)
 {
-	struct tbs_service_inst_t *inst;
-
 	if (!ccc) {
 		return NULL;
 	}
 
 	for (int i = 0; i < ARRAY_SIZE(svc_insts); i++) {
-		inst = &svc_insts[i];
+		struct tbs_service_inst_t *inst = &svc_insts[i];
+
 		if (!inst->service_p) {
 			continue;
 		}
@@ -297,11 +296,10 @@ static void tbs_set_terminate_reason(struct tbs_service_inst_t *inst,
  */
 static uint8_t next_free_call_index(void)
 {
-	static uint8_t next_call_index = 1;
-	struct bt_tbs_call_t *call;
-
 	for (int i = 0; i < CONFIG_BT_TBS_MAX_CALLS; i++) {
-		call = lookup_call(next_call_index);
+		static uint8_t next_call_index = 1;
+		struct bt_tbs_call_t *call = lookup_call(next_call_index);
+
 		if (call == NULL) {
 			return next_call_index++;
 		}
@@ -905,13 +903,12 @@ static int notify_ccp(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 static void hold_other_calls(struct tbs_service_inst_t *inst,
 			     uint8_t call_index_cnt, uint8_t *call_indexes)
 {
-	uint8_t call_state;
-	bool hold_call;
-
 	held_calls_cnt = 0;
 
 	for (int i = 0; i < ARRAY_SIZE(inst->calls); i++) {
-		hold_call = true;
+		bool hold_call = true;
+		uint8_t call_state;
+
 		for (int j = 0; j < call_index_cnt; j++) {
 			if (inst->calls[i].index == call_indexes[j]) {
 				hold_call = false;
