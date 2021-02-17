@@ -64,7 +64,7 @@ function(trusted_firmware_build)
   endif()
   set(TFM_BL2_ARG "-DBL2=${TFM_BL2}")
 
-  if(DEFINED TFM_IPC)
+  if(TFM_IPC)
     set(TFM_IPC_ARG -DTFM_PSA_API=ON)
     # PSA API awareness for the Non-Secure application
     target_compile_definitions(app PRIVATE "TFM_PSA_API")
@@ -74,7 +74,7 @@ function(trusted_firmware_build)
     set(TFM_ISOLATION_LEVEL_ARG -DTFM_ISOLATION_LEVEL=${TFM_ISOLATION_LEVEL})
   endif()
 
-  if(DEFINED TFM_REGRESSION)
+  if(TFM_REGRESSION)
     set(TFM_REGRESSION_ARG -DTEST_S=ON)
   endif()
 
