@@ -12,6 +12,7 @@
 
 #include <stdbool.h>
 #include <zephyr/types.h>
+#include <sys/byteorder.h>
 #include <bluetooth/gatt.h>
 #include "uint48_util.h"
 
@@ -22,9 +23,16 @@ extern "C" {
 /** Opaque type representing a service instance. */
 struct ots_svc_inst_t;
 
+/** @brief Size of OTS object ID (in bytes). */
+#define BT_OTS_OBJ_ID_SIZE 6
+
+/** @brief Length of OTS object ID string (in bytes). */
+#define BT_OTS_OBJ_ID_STR_LEN 15
+
 #define BT_OTS_MAX_OLCP_SIZE    7
 #define BT_OTS_DIRLISTING_ID    0x000000000000
 #define BT_OTS_ID_LEN           (UINT48_LEN)
+
 
 #define SET_OR_CLEAR_BIT(var, bit_val, set) \
 	((var) = (set) ? ((var) | bit_val) : ((var) & ~bit_val))
@@ -668,6 +676,27 @@ static inline const char *bt_ots_uuid_type_str(struct bt_uuid_16 uuid)
 	default:
 		return "Unknown";
 	}
+}
+
+/** @brief Converts binary OTS Object ID to string.
+ *
+ *  @param obj_id Object ID.
+ *  @param str    Address of user buffer with enough room to store
+ *                formatted string containing binary Object ID.
+ *  @param len    Length of data to be copied to user string buffer.
+ *                Refer to BT_OTS_OBJ_ID_STR_LEN about
+ *                recommended value.
+ *
+ *  @return Number of successfully formatted bytes from binary ID.
+ */
+static inline int bt_ots_obj_id_to_str(uint64_t obj_id, char *str, size_t len)
+{
+	uint8_t id[6];
+
+	sys_put_le48(obj_id, id);
+
+	return snprintk(str, len, "0x%02X%02X%02X%02X%02X%02X",
+			id[5], id[4], id[3], id[2], id[1], id[0]);
 }
 
 #if defined(CONFIG_BT_DEBUG_OTS)
