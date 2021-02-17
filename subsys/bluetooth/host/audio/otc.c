@@ -386,7 +386,6 @@ int bt_otc_register(struct bt_otc_instance_t *otc_inst)
 	static bool l2cap_registered;
 
 	for (int i = 0; i < ARRAY_SIZE(otc_insts); i++) {
-		int err;
 
 		if (otc_insts[i].otc_inst) {
 			continue;
@@ -395,8 +394,7 @@ int bt_otc_register(struct bt_otc_instance_t *otc_inst)
 		BT_DBG("%u", i);
 
 		if (!l2cap_registered) {
-
-			err = bt_l2cap_server_register(&ots_l2cap_coc);
+			int err = bt_l2cap_server_register(&ots_l2cap_coc);
 
 			if (err < 0 && err != -EADDRINUSE) {
 				BT_ERR("Unable to register OTS_psm (0x%4x)",
@@ -431,10 +429,10 @@ int bt_otc_unregister(uint8_t index)
 int bt_otc_read_feature(struct bt_conn *conn,
 			struct bt_otc_instance_t *otc_inst)
 {
-	int err;
-	struct bt_otc_internal_instance_t *inst;
-
 	if (OTS_CLIENT_INST_COUNT > 0) {
+		struct bt_otc_internal_instance_t *inst;
+		int err;
+
 		if (!conn) {
 			BT_WARN("Invalid Connection");
 			return -ENOTCONN;
@@ -517,9 +515,8 @@ static int write_olcp(struct bt_otc_internal_instance_t *inst,
 int bt_otc_select_id(struct bt_conn *conn, struct bt_otc_instance_t *otc_inst,
 		     uint64_t obj_id)
 {
-	struct bt_otc_internal_instance_t *inst;
-
 	if (OTS_CLIENT_INST_COUNT > 0) {
+		struct bt_otc_internal_instance_t *inst;
 		uint8_t param[BT_OTS_OBJ_ID_SIZE];
 
 		if (!conn) {
@@ -557,9 +554,9 @@ int bt_otc_select_id(struct bt_conn *conn, struct bt_otc_instance_t *otc_inst,
 int bt_otc_select_first(struct bt_conn *conn,
 			struct bt_otc_instance_t *otc_inst)
 {
-	struct bt_otc_internal_instance_t *inst;
-
 	if (OTS_CLIENT_INST_COUNT > 0) {
+		struct bt_otc_internal_instance_t *inst;
+
 		if (!conn) {
 			BT_WARN("Invalid Connection");
 			return -ENOTCONN;
@@ -590,9 +587,9 @@ int bt_otc_select_first(struct bt_conn *conn,
 
 int bt_otc_select_last(struct bt_conn *conn, struct bt_otc_instance_t *otc_inst)
 {
-	struct bt_otc_internal_instance_t *inst;
-
 	if (OTS_CLIENT_INST_COUNT > 0) {
+		struct bt_otc_internal_instance_t *inst;
+
 		if (!conn) {
 			BT_WARN("Invalid Connection");
 			return -ENOTCONN;
@@ -624,9 +621,9 @@ int bt_otc_select_last(struct bt_conn *conn, struct bt_otc_instance_t *otc_inst)
 
 int bt_otc_select_next(struct bt_conn *conn, struct bt_otc_instance_t *otc_inst)
 {
-	struct bt_otc_internal_instance_t *inst;
-
 	if (OTS_CLIENT_INST_COUNT > 0) {
+		struct bt_otc_internal_instance_t *inst;
+
 		if (!conn) {
 			BT_WARN("Invalid Connection");
 			return -ENOTCONN;
@@ -657,9 +654,9 @@ int bt_otc_select_next(struct bt_conn *conn, struct bt_otc_instance_t *otc_inst)
 
 int bt_otc_select_prev(struct bt_conn *conn, struct bt_otc_instance_t *otc_inst)
 {
-	struct bt_otc_internal_instance_t *inst;
-
 	if (OTS_CLIENT_INST_COUNT > 0) {
+		struct bt_otc_internal_instance_t *inst;
+
 		if (!conn) {
 			BT_WARN("Invalid Connection");
 			return -ENOTCONN;
