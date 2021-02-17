@@ -21,6 +21,8 @@ manifest:
   remotes:
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
+    - name: mcutools
+      url-base: https://github.com/mcu-tools
 
   #
   # Please add items below based on alphabetical order
@@ -91,7 +93,8 @@ manifest:
       revision: 24d84ecff195fb15c889d9046e44e4804d626c67
       path: modules/crypto/mbedtls
     - name: mcuboot
-      revision: 3fc59410b633a6d83bbb534e43aac43160f9bd32
+      remote: mcutools
+      revision: pull/947/head
       path: bootloader/mcuboot
     - name: mcumgr
       revision: 43845e883ff3a6cdaae22e23f3e60b5fcf78c6ba
