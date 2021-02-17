@@ -366,7 +366,7 @@ struct bt_audio_capability_ops {
 	 *
 	 *  @return Allocated Audio Channel object or NULL in case of error.
 	 */
-	struct bt_audio_chan	*(*config)(struct bt_conn *conn,
+	struct bt_audio_chan    *(*config)(struct bt_conn *conn,
 					   struct bt_audio_ep *ep,
 					   struct bt_audio_capability *cap,
 					   struct bt_codec *codec);
@@ -376,13 +376,13 @@ struct bt_audio_capability_ops {
 	 *  Reconfig callback is called whenever an Audio Channel needs to be
 	 *  reconfigured with different codec configuration.
 	 *
-	 *  @param channel Channel object being reconfigured
+	 *  @param chan Channel object being reconfigured.
 	 *  @param cap Local Audio Capability being reconfigured
 	 *  @param codec Codec configuration
 	 *
 	 *  @return 0 in case of success or negative value in case of error.
 	 */
-	int			(*reconfig)(struct bt_audio_chan *chan,
+	int                     (*reconfig)(struct bt_audio_chan *chan,
 					    struct bt_audio_capability *cap,
 					    struct bt_codec *codec);
 
@@ -391,12 +391,12 @@ struct bt_audio_capability_ops {
 	 *  QoS callback is called whenever an Audio Channel Quality of
 	 *  Service needs to be configured.
 	 *
-	 *  @param channel Channel object being reconfigured
+	 *  @param chan Channel object being reconfigured.
 	 *  @param QoS Quality of Service configuration
 	 *
 	 *  @return 0 in case of success or negative value in case of error.
 	 */
-	int			(*qos)(struct bt_audio_chan *chan,
+	int                     (*qos)(struct bt_audio_chan *chan,
 				       struct bt_codec_qos *qos);
 
 	/** @brief Capability Enable callback
@@ -404,13 +404,13 @@ struct bt_audio_capability_ops {
 	 *  Enable callback is called whenever an Audio Channel is about to be
 	 *  enabled to stream.
 	 *
-	 *  @param channel Channel object being enabled
+	 *  @param chan Channel object being enabled.
 	 *  @param meta_count Number of metadata entries
 	 *  @param meta Metadata entries
 	 *
 	 *  @return 0 in case of success or negative value in case of error.
 	 */
-	int			(*enable)(struct bt_audio_chan *chan,
+	int                     (*enable)(struct bt_audio_chan *chan,
 					  uint8_t meta_count,
 					  struct bt_codec_data *meta);
 
@@ -419,24 +419,24 @@ struct bt_audio_capability_ops {
 	 *  Start callback is called whenever an Audio Channel is about to be
 	 *  start streaming.
 	 *
-	 *  @param channel Channel object
+	 *  @param chan Channel object.
 	 *
 	 *  @return 0 in case of success or negative value in case of error.
 	 */
-	int			(*start)(struct bt_audio_chan *chan);
+	int                     (*start)(struct bt_audio_chan *chan);
 
 	/** @brief Capability Metadata callback
 	 *
 	 *  Metadata callback is called whenever an Audio Channel is needs to
 	 *  update its metadata.
 	 *
-	 *  @param channel Channel object
+	 *  @param chan Channel object.
 	 *  @param meta_count Number of metadata entries
 	 *  @param meta Metadata entries
 	 *
 	 *  @return 0 in case of success or negative value in case of error.
 	 */
-	int			(*metadata)(struct bt_audio_chan *chan,
+	int                     (*metadata)(struct bt_audio_chan *chan,
 					    uint8_t meta_count,
 					    struct bt_codec_data *meta);
 
@@ -445,33 +445,33 @@ struct bt_audio_capability_ops {
 	 *  Disable callback is called whenever an Audio Channel is about to be
 	 *  disabled to stream.
 	 *
-	 *  @param channel Channel object being disabled.
+	 *  @param chan Channel object being disabled.
 	 *
 	 *  @return 0 in case of success or negative value in case of error.
 	 */
-	int			(*disable)(struct bt_audio_chan *chan);
+	int                     (*disable)(struct bt_audio_chan *chan);
 
 	/** @brief Capability Stop callback
 	 *
 	 *  Stop callback is called whenever an Audio Channel is about to be
 	 *  stop streaming.
 	 *
-	 *  @param channel Channel object
+	 *  @param chan Channel object.
 	 *
 	 *  @return 0 in case of success or negative value in case of error.
 	 */
-	int			(*stop)(struct bt_audio_chan *chan);
+	int                     (*stop)(struct bt_audio_chan *chan);
 
 	/** @brief Capability release callback
 	 *
 	 *  Release callback is called whenever a new Audio Channel needs to be
 	 *  deallocated.
 	 *
-	 *  @param channel Channel object
+	 *  @param chan Channel object.
 	 *
 	 *  @return 0 in case of success or negative value in case of error.
 	 */
-	int			(*release)(struct bt_audio_chan *chan);
+	int                     (*release)(struct bt_audio_chan *chan);
 };
 
 /** @brief Audio Capability type */
