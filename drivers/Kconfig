@@ -139,4 +139,6 @@ source "drivers/usbc/Kconfig"
 
 source "drivers/reset/Kconfig"
 
+source "drivers/mipi_dsi/Kconfig"
+
 endmenu
