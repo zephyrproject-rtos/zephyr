@@ -144,8 +144,10 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 			     conn->apto_reload;
 #endif /* CONFIG_BT_CTLR_LE_PING */
 
+#if defined(CONFIG_BT_CTLR_CONN_RANDOM_FORCE)
 	memcpy((void *)&conn->slave.force, &lll->access_addr[0],
 	       sizeof(conn->slave.force));
+#endif /* CONFIG_BT_CTLR_CONN_RANDOM_FORCE */
 
 	peer_addr_type = pdu_adv->tx_addr;
 	memcpy(peer_addr, pdu_adv->connect_ind.init_addr, BDADDR_SIZE);
