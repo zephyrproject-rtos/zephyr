@@ -2,24 +2,16 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
-# TODO: Need to unbind SOF module.
-
 add_library(base_module base_module.c)
 target_include_directories(base_module PUBLIC
   ${SOC_DIR}/${ARCH}/${SOC_PATH}/include
-  ${SOC_DIR}/${ARCH}/${SOC_PATH}/../common/include
-  ${ZEPHYR_BASE}/../modules/hal/xtensa/include
-  ${PROJECT_BINARY_DIR}/include/generated
-  ${ZEPHYR_BASE}/../modules/audio/sof/zephyr/include
+  ../include
   )
 
 add_library(boot_module boot_module.c)
 target_include_directories(boot_module PUBLIC
   ${SOC_DIR}/${ARCH}/${SOC_PATH}/include
-  ${SOC_DIR}/${ARCH}/${SOC_PATH}/../common/include
-  ${ZEPHYR_BASE}/../modules/hal/xtensa/include
-  ${PROJECT_BINARY_DIR}/include/generated
-  ${ZEPHYR_BASE}/../modules/audio/sof/zephyr/include
+  ../include
   )
 
 add_executable(bootloader
@@ -36,16 +28,11 @@ target_sources_ifdef(CONFIG_RESET_VECTOR_IN_BOOTLOADER bootloader PRIVATE
 
 add_dependencies(bootloader ${SYSCALL_LIST_H_TARGET})
 
-set(zephyr_sdk $ENV{ZEPHYR_SDK_INSTALL_DIR})
-
 target_include_directories(bootloader PUBLIC
   ./
-  ${PROJECT_BINARY_DIR}/include
   ${TOOLCHAIN_INCLUDES}
   ${SOC_DIR}/${ARCH}/${SOC_PATH}/
   ${SOC_DIR}/${ARCH}/${SOC_PATH}/include
-  ${PROJECT_BINARY_DIR}/include/generated
-  ${ZEPHYR_BASE}/../modules/audio/sof/zephyr/include
   )
 
 # TODO: pre-process linker script. How do we use toplevel infrastructure ??
