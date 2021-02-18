@@ -410,38 +410,13 @@ struct pdu_adv *lll_adv_pdu_and_extra_data_alloc(struct lll_adv_pdu *pdu,
 						 void **extra_data,
 						 uint8_t *idx)
 {
-	uint8_t first, last;
 	struct pdu_adv *p;
-
-	first = pdu->first;
-	last = pdu->last;
-	if (first == last) {
-		last++;
-		if (last == DOUBLE_BUFFER_SIZE) {
-			last = 0U;
-		}
-	} else {
-		uint8_t first_latest;
-
-		pdu->last = first;
-		cpu_dmb();
-		first_latest = pdu->first;
-		if (first_latest != first) {
-			last++;
-			if (last == DOUBLE_BUFFER_SIZE) {
-				last = 0U;
-			}
-		}
-	}
-
-	*idx = last;
-
-	p = adv_pdu_allocate(pdu, last);
+	p = lll_adv_pdu_alloc(pdu, idx);
 
 	if (extra_data) {
-		*extra_data = adv_extra_data_allocate(pdu, last);
+		*extra_data = adv_extra_data_allocate(pdu, *idx);
 	} else {
-		if (adv_extra_data_free(pdu, last)) {
+		if (adv_extra_data_free(pdu, *idx)) {
 			/* There is no release of memory allocated by
 			 * adv_pdu_allocate because there is no memory leak.
 			 * If caller can recover from this error and subsequent
