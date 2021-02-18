@@ -8,13 +8,13 @@
 
 #include <bluetooth/hci.h>
 
+#include "hal/cpu_vendor_hal.h"
+#include "hal/ccm.h"
+
 #include "util/mem.h"
 #include "util/mfifo.h"
 #include "util/memq.h"
 #include "util.h"
-
-#include "hal/cpu_vendor_hal.h"
-#include "hal/ccm.h"
 
 #include "pdu.h"
 #include "ll.h"
