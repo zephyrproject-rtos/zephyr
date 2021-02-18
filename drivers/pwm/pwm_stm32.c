@@ -51,15 +51,18 @@ struct pwm_stm32_config {
 /** Series F3, F7, G0, G4, H7, L4, MP1 and WB have up to 6 channels, others up
  *  to 4.
  */
-#define TIMER_HAS_6CH                                                          \
-	(defined(CONFIG_SOC_SERIES_STM32F3X) ||                                \
-	 defined(CONFIG_SOC_SERIES_STM32F7X) ||                                \
-	 defined(CONFIG_SOC_SERIES_STM32G0X) ||                                \
-	 defined(CONFIG_SOC_SERIES_STM32G4X) ||                                \
-	 defined(CONFIG_SOC_SERIES_STM32H7X) ||                                \
-	 defined(CONFIG_SOC_SERIES_STM32L4X) ||                                \
-	 defined(CONFIG_SOC_SERIES_STM32MP1X) ||                               \
-	 defined(CONFIG_SOC_SERIES_STM32WBX))
+#if defined(CONFIG_SOC_SERIES_STM32F3X) ||				       \
+	defined(CONFIG_SOC_SERIES_STM32F7X) ||				       \
+	defined(CONFIG_SOC_SERIES_STM32G0X) ||				       \
+	defined(CONFIG_SOC_SERIES_STM32G4X) ||				       \
+	defined(CONFIG_SOC_SERIES_STM32H7X) ||				       \
+	defined(CONFIG_SOC_SERIES_STM32L4X) ||				       \
+	defined(CONFIG_SOC_SERIES_STM32MP1X) ||				       \
+	defined(CONFIG_SOC_SERIES_STM32WBX)
+#define TIMER_HAS_6CH 1
+#else
+#define TIMER_HAS_6CH 0
+#endif
 
 /** Maximum number of timer channels. */
 #if TIMER_HAS_6CH
