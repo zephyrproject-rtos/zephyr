@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define CONFIG_CBPRINTF_LIBC_SUBSTS 1
 
 #include <ztest.h>
 #include <float.h>
