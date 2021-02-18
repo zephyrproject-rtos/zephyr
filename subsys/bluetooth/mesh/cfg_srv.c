@@ -221,6 +221,7 @@ static uint8_t mod_bind(struct bt_mesh_model *model, uint16_t key_idx)
 	}
 
 	for (i = 0; i < model->keys_cnt; i++) {
+		LOG_DBG("model %p id 0x%04x i %d key 0x%03x", model, model->id, i, model->keys[i]);
 		/* Treat existing binding as success */
 		if (model->keys[i] == key_idx) {
 			return STATUS_SUCCESS;

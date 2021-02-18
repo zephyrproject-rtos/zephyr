@@ -38,6 +38,8 @@
 #include <zephyr/bluetooth/mesh/rpr_srv.h>
 #include <zephyr/bluetooth/mesh/sar_cfg_srv.h>
 #include <zephyr/bluetooth/mesh/sar_cfg_cli.h>
+#include <zephyr/bluetooth/mesh/op_agg_srv.h>
+#include <zephyr/bluetooth/mesh/op_agg_cli.h>
 #include <zephyr/bluetooth/mesh/large_comp_data_srv.h>
 #include <zephyr/bluetooth/mesh/large_comp_data_cli.h>
 

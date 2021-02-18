@@ -69,6 +69,12 @@ zephyr_library_sources_ifdef(CONFIG_BT_MESH_SAR_CFG_SRV sar_cfg_srv.c)
 
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_SAR_CFG  sar_cfg.c)
 
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_OP_AGG_SRV  op_agg_srv.c)
+
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_OP_AGG_CLI  op_agg_cli.c)
+
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_OP_AGG op_agg.c)
+
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_LARGE_COMP_DATA_SRV  large_comp_data_srv.c)
 
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_LARGE_COMP_DATA_CLI  large_comp_data_cli.c)

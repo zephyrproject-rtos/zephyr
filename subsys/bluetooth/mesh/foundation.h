@@ -97,6 +97,8 @@
 #define OP_SAR_CFG_RX_GET                  BT_MESH_MODEL_OP_2(0x80, 0x6f)
 #define OP_SAR_CFG_RX_SET                  BT_MESH_MODEL_OP_2(0x80, 0x70)
 #define OP_SAR_CFG_RX_STATUS               BT_MESH_MODEL_OP_2(0x80, 0x71)
+#define OP_OPCODES_AGGREGATOR_SEQUENCE     BT_MESH_MODEL_OP_2(0x80, 0x72)
+#define OP_OPCODES_AGGREGATOR_STATUS       BT_MESH_MODEL_OP_2(0x80, 0x73)
 #define OP_LARGE_COMP_DATA_GET             BT_MESH_MODEL_OP_2(0x80, 0x74)
 #define OP_LARGE_COMP_DATA_STATUS          BT_MESH_MODEL_OP_2(0x80, 0x75)
 #define OP_MODELS_METADATA_GET             BT_MESH_MODEL_OP_2(0x80, 0x76)
@@ -130,6 +132,13 @@
 #define STATUS_CANNOT_SET                  0x0f
 #define STATUS_UNSPECIFIED                 0x10
 #define STATUS_INVALID_BINDING             0x11
+
+#define ACCESS_STATUS_SUCCESS                0x00
+#define ACCESS_STATUS_INVALID_ADDRESS        0x01
+#define ACCESS_STATUS_WRONG_KEY              0x02
+#define ACCESS_STATUS_WRONG_OPCODE           0x03
+#define ACCESS_STATUS_MESSAGE_NOT_UNDERSTOOD 0x04
+#define ACCESS_STATUS_RESPONSE_OVERFLOW      0x05
 
 void bt_mesh_model_reset(void);
 

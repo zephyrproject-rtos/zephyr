@@ -132,6 +132,8 @@ struct bt_mesh_elem {
 #define BT_MESH_MODEL_ID_PRIV_BEACON_CLI           0x000b
 #define BT_MESH_MODEL_ID_SAR_CFG_SRV               0x000e
 #define BT_MESH_MODEL_ID_SAR_CFG_CLI               0x000f
+#define BT_MESH_MODEL_ID_OP_AGG_SRV                0x0010
+#define BT_MESH_MODEL_ID_OP_AGG_CLI                0x0011
 #define BT_MESH_MODEL_ID_LARGE_COMP_DATA_SRV       0x0012
 #define BT_MESH_MODEL_ID_LARGE_COMP_DATA_CLI       0x0013
 
