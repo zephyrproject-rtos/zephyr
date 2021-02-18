@@ -577,8 +577,14 @@ int handle_usb_data(struct usbip_header *hdr)
 
 		LOG_HEXDUMP_DBG(ep_ctrl->buf, ep_ctrl->buf_len, ">");
 
-		/* Indicate data sent */
-		ep_ctrl->cb(ep, USB_DC_EP_DATA_IN);
+		/*
+		 * Call the callback only if data in usb_dc_ep_write()
+		 * is actually written to the intermediate buffer and sent.
+		 */
+		if (ep_ctrl->buf_len != 0) {
+			ep_ctrl->cb(ep, USB_DC_EP_DATA_IN);
+			usbip_ctrl.in_ep_ctrl[ep_idx].buf_len = 0;
+		}
 	}
 
 	return 0;
