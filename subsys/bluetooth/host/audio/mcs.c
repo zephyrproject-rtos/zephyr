@@ -249,6 +249,8 @@ static ssize_t current_track_id_write(struct bt_conn *conn,
 				      const void *buf, uint16_t len, uint16_t offset,
 				      uint8_t flags)
 {
+	uint64_t id;
+
 	if (offset != 0) {
 		BT_DBG("Invalid offset");
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -259,14 +261,16 @@ static ssize_t current_track_id_write(struct bt_conn *conn,
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
+	id = sys_get_le48((uint8_t *)buf);
+
 	if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) {
-		char str[UINT48_STR_LEN];
-		uint48array_str((uint8_t *)(buf), str);
-		BT_DBG("Current track write: offset: %d, len: %d, track ID: 0x%s",
+		char str[BT_OTS_OBJ_ID_STR_LEN];
+		(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
+		BT_DBG("Current track write: offset: %d, len: %d, track ID: %s",
 		       offset, len, log_strdup(str));
 	}
 
-	mpl_current_track_id_set(sys_get_le48((uint8_t *)buf));
+	mpl_current_track_id_set(id);
 
 	return BT_OTS_OBJ_ID_SIZE;
 }
@@ -293,6 +297,8 @@ static ssize_t next_track_id_write(struct bt_conn *conn,
 				   const void *buf, uint16_t len, uint16_t offset,
 				   uint8_t flags)
 {
+	uint64_t id;
+
 	if (offset != 0) {
 		BT_DBG("Invalid offset");
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -303,14 +309,16 @@ static ssize_t next_track_id_write(struct bt_conn *conn,
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
+	id = sys_get_le48((uint8_t *)buf);
+
 	if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) {
-		char str[UINT48_STR_LEN];
-		uint48array_str((uint8_t *)(buf), str);
-		BT_DBG("Next  track write: offset: %d, len: %d, track ID: 0x%s",
+		char str[BT_OTS_OBJ_ID_STR_LEN];
+		(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
+		BT_DBG("Next  track write: offset: %d, len: %d, track ID: %s",
 		       offset, len, log_strdup(str));
 	}
 
-	mpl_next_track_id_set(sys_get_le48((uint8_t *)buf));
+	mpl_next_track_id_set(id);
 
 	return BT_OTS_OBJ_ID_SIZE;
 }
@@ -337,6 +345,8 @@ static ssize_t group_id_write(struct bt_conn *conn,
 			      const void *buf, uint16_t len, uint16_t offset,
 			      uint8_t flags)
 {
+	uint64_t id;
+
 	if (offset != 0) {
 		BT_DBG("Invalid offset");
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -347,14 +357,16 @@ static ssize_t group_id_write(struct bt_conn *conn,
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
+	id = sys_get_le48((uint8_t *)buf);
+
 	if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) {
-		char str[UINT48_STR_LEN];
-		uint48array_str((uint8_t *)(buf), str);
-		BT_DBG("Group ID write: offset: %d, len: %d, track ID: 0x%s",
+		char str[BT_OTS_OBJ_ID_STR_LEN];
+		(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
+		BT_DBG("Group ID write: offset: %d, len: %d, track ID: %s",
 		       offset, len, log_strdup(str));
 	}
 
-	mpl_group_id_set(sys_get_le48((uint8_t *)buf));
+	mpl_group_id_set(id);
 
 	return BT_OTS_OBJ_ID_SIZE;
 }
