@@ -21,6 +21,7 @@
 #include <bluetooth/mcc.h>
 
 #include "mpl.h"
+#include "mpl_internal.h"
 #include "uint48_util.h"
 #include "otc.h"
 #include "otc_internal.h"
@@ -191,13 +192,8 @@ static uint8_t mcc_read_icon_obj_id_cb(struct bt_conn *conn, uint8_t err,
 		cb_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	} else {
 		BT_HEXDUMP_DBG(pid, length, "Icon Object ID");
-
-		if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) {
-			char str[UINT48_STR_LEN];
-			uint48array_str(pid, str);
-			BT_DBG("Icon Object ID: 0x%s", log_strdup(str));
-		}
 		id = sys_get_le48(pid);
+		BT_DBG_OBJ_ID("Icon Object ID: ", id);
 	}
 
 	if (mcc_cb && mcc_cb->icon_obj_id_read) {
@@ -434,13 +430,8 @@ static uint8_t mcc_read_segments_obj_id_cb(struct bt_conn *conn, uint8_t err,
 		cb_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	} else {
 		BT_HEXDUMP_DBG(pid, length, "Segments Object ID");
-
-		if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) {
-			char str[UINT48_STR_LEN];
-			uint48array_str(pid, str);
-			BT_DBG("Segments Object ID: 0x%s", log_strdup(str));
-		}
 		id = sys_get_le48(pid);
+		BT_DBG_OBJ_ID("Segments Object ID: ", id);
 	}
 
 	if (mcc_cb && mcc_cb->segments_obj_id_read) {
@@ -466,14 +457,8 @@ static uint8_t mcc_read_current_track_obj_id_cb(struct bt_conn *conn, uint8_t er
 		cb_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	} else {
 		BT_HEXDUMP_DBG(pid, length, "Current Track Object ID");
-
-		if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) {
-			char str[UINT48_STR_LEN];
-			uint48array_str(pid, str);
-			BT_DBG("Current Track Object ID: 0x%s",
-			       log_strdup(str));
-		}
 		id = sys_get_le48(pid);
+		BT_DBG_OBJ_ID("Current Track Object ID: ", id);
 	}
 
 	if (mcc_cb && mcc_cb->current_track_obj_id_read) {
@@ -499,13 +484,8 @@ static uint8_t mcc_read_next_track_obj_id_cb(struct bt_conn *conn, uint8_t err,
 		cb_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	} else {
 		BT_HEXDUMP_DBG(pid, length, "Next Track Object ID");
-
-		if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) {
-			char str[UINT48_STR_LEN];
-			uint48array_str(pid, str);
-			BT_DBG("Next Track Object ID: 0x%s", log_strdup(str));
-		}
 		id = sys_get_le48(pid);
+		BT_DBG_OBJ_ID("Next Track Object ID: ", id);
 	}
 
 	if (mcc_cb && mcc_cb->next_track_obj_id_read) {
@@ -531,14 +511,8 @@ static uint8_t mcc_read_current_group_obj_id_cb(struct bt_conn *conn, uint8_t er
 		cb_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	} else {
 		BT_HEXDUMP_DBG(pid, length, "Current Group Object ID");
-
-		if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) {
-			char str[UINT48_STR_LEN];
-			uint48array_str(pid, str);
-			BT_DBG("Current Group Object ID: 0x%s",
-			       log_strdup(str));
-		}
 		id = sys_get_le48(pid);
+		BT_DBG_OBJ_ID("Current Group Object ID: ", id);
 	}
 
 	if (mcc_cb && mcc_cb->current_group_obj_id_read) {
@@ -564,14 +538,8 @@ static uint8_t mcc_read_parent_group_obj_id_cb(struct bt_conn *conn, uint8_t err
 		cb_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	} else {
 		BT_HEXDUMP_DBG(pid, length, "Parent Group Object ID");
-
-		if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) {
-			char str[UINT48_STR_LEN];
-			uint48array_str(pid, str);
-			BT_DBG("Parent Group Object ID: 0x%s",
-			       log_strdup(str));
-		}
 		id = sys_get_le48(pid);
+		BT_DBG_OBJ_ID("Parent Group Object ID: ", id);
 	}
 
 	if (mcc_cb && mcc_cb->parent_group_obj_id_read) {
@@ -788,13 +756,8 @@ static uint8_t mcc_read_search_results_obj_id_cb(struct bt_conn *conn, uint8_t e
 		BT_DBG("length: %d, pid: %p", length, pid);
 		cb_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	} else {
-		if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) {
-			char str[UINT48_STR_LEN];
-			uint48array_str(pid, str);
-			BT_DBG("Search Results Object ID: 0x%s",
-				   log_strdup(str));
-		}
 		id = sys_get_le48(pid);
+		BT_DBG_OBJ_ID("Search Results Object ID: ", id);
 	}
 
 	if (mcc_cb && mcc_cb->search_results_obj_id_read) {
