@@ -684,8 +684,6 @@ add_custom_command(
 )
 add_custom_target(${OFFSETS_H_TARGET} DEPENDS ${OFFSETS_H_PATH})
 
-zephyr_include_directories(${TOOLCHAIN_INCLUDES})
-
 zephyr_get_include_directories_for_lang(C ZEPHYR_INCLUDES)
 
 add_subdirectory(kernel)

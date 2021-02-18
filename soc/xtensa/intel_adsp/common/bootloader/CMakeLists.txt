@@ -30,7 +30,6 @@ add_dependencies(bootloader ${SYSCALL_LIST_H_TARGET})
 
 target_include_directories(bootloader PUBLIC
   ./
-  ${TOOLCHAIN_INCLUDES}
   ${SOC_DIR}/${ARCH}/${SOC_PATH}/
   ${SOC_DIR}/${ARCH}/${SOC_PATH}/include
   )
