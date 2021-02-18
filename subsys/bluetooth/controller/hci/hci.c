@@ -797,6 +797,12 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 	/* LE Read TX Power. */
 	rp->commands[38] |= BIT(7);
 
+#if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
+	/* LE Read Buffer Size v2 */
+	rp->commands[41] |= BIT(5);
+
+#endif /* CONFIG_BT_CTLR_ISO || CONFIG_BT_CTLR_CONN_ISO */
+
 #if defined(CONFIG_BT_CTLR_HCI_CODEC_AND_DELAY_INFO)
 	/* Read Supported Codecs */
 	rp->commands[29] |= BIT(5);
@@ -1163,6 +1169,22 @@ static void le_read_buffer_size(struct net_buf *buf, struct net_buf **evt)
 	rp->le_max_len = sys_cpu_to_le16(CONFIG_BT_BUF_ACL_TX_SIZE);
 	rp->le_max_num = CONFIG_BT_BUF_ACL_TX_COUNT;
 }
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
+static void le_read_buffer_size_v2(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_rp_le_read_buffer_size_v2 *rp;
+
+	rp = hci_cmd_complete(evt, sizeof(*rp));
+
+	rp->status = 0x00;
+
+	rp->acl_max_len = sys_cpu_to_le16(CONFIG_BT_BUF_ACL_TX_SIZE);
+	rp->acl_max_num = CONFIG_BT_BUF_ACL_TX_COUNT;
+	rp->iso_max_len = sys_cpu_to_le16(CONFIG_BT_CTLR_ISO_TX_BUFFER_SIZE);
+	rp->iso_max_num = CONFIG_BT_CTLR_ISO_TX_BUFFERS;
+}
+#endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
 static void le_read_local_features(struct net_buf *buf, struct net_buf **evt)
 {
@@ -3360,6 +3382,12 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 	case BT_OCF(BT_HCI_OP_LE_READ_BUFFER_SIZE):
 		le_read_buffer_size(cmd, evt);
 		break;
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
+	case BT_OCF(BT_HCI_OP_LE_READ_BUFFER_SIZE_V2):
+		le_read_buffer_size_v2(cmd, evt);
+		break;
+#endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
 	case BT_OCF(BT_HCI_OP_LE_READ_LOCAL_FEATURES):
 		le_read_local_features(cmd, evt);
