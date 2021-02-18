@@ -32,6 +32,7 @@ Commands
      select    :<ase>
      link      :<ase1> <ase2>
      unlink    :<ase1> <ase2>
+     connect   :<ase> <direction: sink, source> [codec] [preset]
 
 .. csv-table:: State Machine Transitions
    :header: "Command", "Depends", "Allowed States", "Next States"
@@ -50,6 +51,7 @@ Commands
    "select","none","any","none"
    "link","config","any","none"
    "unlink","link","any","none"
+   "connect","discover","idle/codec-configured/qos-configured","codec-configured"
 
 Example Central
 ***************
@@ -66,6 +68,17 @@ Connect and estabilish a stream:
    uart:~$ bap config 0x01 0x01
    uart:~$ bap qos
    uart:~$ bap enable
+
+Or using connect command:
+
+.. code-block:: console
+
+   uart:~$ bt init
+   uart:~$ bap init
+   uart:~$ bt connect <address>
+   uart:~$ gatt exchange-mtu
+   uart:~$ bap discover 0x01
+   uart:~$ bap connect 0x01 0x01
 
 Disconnect and release:
 
@@ -370,3 +383,46 @@ This command unlink streams which were previously linked.
    uart:~$ bap unlink <ase1> <ase2>
    uart:~$ bap unlink 0x01 0x02
    ases 1:2 unlinked
+
+Connect
+*******
+
+This command combines config, qos and enable commands in one so it can be used
+to quickly configure and enable a stream.
+
+.. csv-table:: State Machine Transitions
+   :header: "Depends", "Allowed States", "Next States"
+   :widths: auto
+
+   "discover","idle/codec-configured/qos-configured","streaming"
+
+.. code-block:: console
+
+   uart:~$ bap connect <ase> <direction: sink, source> [codec] [preset]
+   uart:~$ bap connect 0x01 0x01
+   ASE Codec Config: conn 0x17ca40 ep 0x17f860 cap 0x19f6a0
+   codec 0x06 cid 0x0000 vid 0x0000 count 3
+   data #0: type 0x01 len 1
+   00000000: 02                                               |.                |
+   data #1: type 0x02 len 1
+   00000000: 01                                               |.                |
+   data #2: type 0x04 len 2
+   00000000: 28 00                                            |(.               |
+   meta #0: type 0x02 len 2
+   00000000: 02 00                                            |..               |
+   ASE Codec Config chan 0x1851c0
+   Default ase: 1
+   ASE config: preset 16_2_1
+   ASE Codec Reconfig: chan 0x1851c0 cap 0x19f6a0
+   codec 0x06 cid 0x0000 vid 0x0000 count 3
+   data #0: type 0x01 len 1
+   00000000: 02                                               |.                |
+   data #1: type 0x02 len 1
+   00000000: 01                                               |.                |
+   data #2: type 0x04 len 2
+   00000000: 28 00                                            |(.               |
+   meta #0: type 0x02 len 2
+   00000000: 02 00                                            |..               |
+   QoS: chan 0x1851c0
+   QoS: dir 0x02 interval 10000 framing 0x00 phy 0x02 sdu 40 rtn 2 latency 10 pd 40000
+   Start: chan 0x1851c0
