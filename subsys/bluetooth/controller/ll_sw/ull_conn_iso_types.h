@@ -5,7 +5,7 @@
  */
 
  #define LL_CIS_HANDLE_BASE CONFIG_BT_MAX_CONN
-
+ 
  #define LL_CIS_IDX_FROM_HANDLE(_handle) \
 	((_handle) - LL_CIS_HANDLE_BASE)
 
