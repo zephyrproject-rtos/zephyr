@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <st/l4/stm32l496Xg.dtsi>
 #include <st/l4/stm32l496a(e-g)ix-pinctrl.dtsi>
+#include "arduino_r3_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32L496G-DISCO board";
@@ -54,12 +55,13 @@
 	aliases {
 		led0 = &green_led_2;
 		sw0 = &joy_sel;
+		sw1 = &joy_down;
+		sw2 = &joy_right;
+		sw3 = &joy_up;
+		sw4 = &joy_left;
 	};
-};
 
-arduino_i2c: &i2c1 {};
-arduino_spi: &spi1 {};
-arduino_serial: &lpuart1 {};
+};
 
 &usart1 {
 	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pg10>;
