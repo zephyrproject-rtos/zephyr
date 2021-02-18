@@ -67,6 +67,7 @@ void z_ready_thread(struct k_thread *thread);
 void z_thread_single_abort(struct k_thread *thread);
 FUNC_NORETURN void z_self_abort(void);
 void z_requeue_current(struct k_thread *curr);
+struct k_thread *z_swap_next_thread(void);
 
 static inline void z_pend_curr_unlocked(_wait_q_t *wait_q, k_timeout_t timeout)
 {
@@ -77,17 +78,6 @@ static inline void z_reschedule_unlocked(void)
 {
 	(void) z_reschedule_irqlock(arch_irq_lock());
 }
-
-/* find which one is the next thread to run */
-/* must be called with interrupts locked */
-#ifdef CONFIG_SMP
-extern struct k_thread *z_get_next_ready_thread(void);
-#else
-static ALWAYS_INLINE struct k_thread *z_get_next_ready_thread(void)
-{
-	return _kernel.ready_q.cache;
-}
-#endif
 
 static inline bool z_is_idle_thread_entry(void *entry_point)
 {

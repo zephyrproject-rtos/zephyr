@@ -56,7 +56,7 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 /* the only struct z_kernel instance */
 struct z_kernel _kernel;
 
-static struct k_spinlock sched_spinlock;
+struct k_spinlock sched_spinlock;
 
 static void update_cache(int);
 
@@ -217,10 +217,8 @@ static ALWAYS_INLINE void dequeue_thread(void *pq,
  */
 void z_requeue_current(struct k_thread *curr)
 {
-	LOCKED(&sched_spinlock) {
-		if (z_is_thread_queued(curr)) {
-			_priq_run_add(&_kernel.ready_q.runq, curr);
-		}
+	if (z_is_thread_queued(curr)) {
+		_priq_run_add(&_kernel.ready_q.runq, curr);
 	}
 }
 #endif
@@ -914,7 +912,7 @@ static inline bool need_swap(void)
 	struct k_thread *new_thread;
 
 	/* Check if the next ready thread is the same as the current thread */
-	new_thread = z_get_next_ready_thread();
+	new_thread = _kernel.ready_q.cache;
 	return new_thread != _current;
 #endif
 }
@@ -962,18 +960,14 @@ void k_sched_unlock(void)
 #endif
 }
 
-#ifdef CONFIG_SMP
-struct k_thread *z_get_next_ready_thread(void)
+struct k_thread *z_swap_next_thread(void)
 {
-	struct k_thread *ret = 0;
-
-	LOCKED(&sched_spinlock) {
-		ret = next_up();
-	}
-
-	return ret;
-}
+#ifdef CONFIG_SMP
+	return next_up();
+#else
+	return _kernel.ready_q.cache;
 #endif
+}
 
 /* Just a wrapper around _current = xxx with tracing */
 static inline void set_current(struct k_thread *new_thread)
@@ -1039,7 +1033,7 @@ void *z_get_next_switch_handle(void *interrupted)
 	return ret;
 #else
 	_current->switch_handle = interrupted;
-	set_current(z_get_next_ready_thread());
+	set_current(_kernel.ready_q.cache);
 	return _current->switch_handle;
 #endif
 }
