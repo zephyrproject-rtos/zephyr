@@ -32,6 +32,7 @@
 #include "ull_internal.h"
 #include "ull_scan_internal.h"
 #include "ull_sync_internal.h"
+#include "ull_sync_iso_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_ull_scan_aux
@@ -44,6 +45,8 @@ static inline struct ll_scan_aux_set *aux_acquire(void);
 static inline void aux_release(struct ll_scan_aux_set *aux);
 static inline uint8_t aux_handle_get(struct ll_scan_aux_set *aux);
 static inline struct ll_sync_set *sync_create_get(struct ll_scan_set *scan);
+static inline struct ll_sync_iso_set *
+	sync_iso_create_get(struct ll_sync_set *sync);
 static void last_disabled_cb(void *param);
 static void done_disabled_cb(void *param);
 static void flush(struct ll_scan_aux_set *aux, struct node_rx_hdr *rx);
@@ -81,6 +84,7 @@ int ull_scan_aux_reset(void)
 
 void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 {
+	struct ll_sync_iso_set *sync_iso;
 	struct pdu_adv_aux_ptr *aux_ptr;
 	struct pdu_adv_com_ext_adv *p;
 	uint32_t ticks_slot_overhead;
@@ -114,6 +118,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	case NODE_RX_TYPE_EXT_1M_REPORT:
 		lll_aux = NULL;
 		aux = NULL;
+		sync_iso = NULL;
 		lll = ftr->param;
 		scan = HDR_LLL2ULL(lll);
 		sync = sync_create_get(scan);
@@ -122,12 +127,14 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	case NODE_RX_TYPE_EXT_CODED_REPORT:
 		lll_aux = NULL;
 		aux = NULL;
+		sync_iso = NULL;
 		lll = ftr->param;
 		scan = HDR_LLL2ULL(lll);
 		sync = sync_create_get(scan);
 		phy = BT_HCI_LE_EXT_SCAN_PHY_CODED;
 		break;
 	case NODE_RX_TYPE_EXT_AUX_REPORT:
+		sync_iso = NULL;
 		if (ull_scan_aux_is_valid_get(HDR_LLL2ULL(ftr->param))) {
 			/* Node has valid aux context so its scan was scheduled
 			 * from ULL.
@@ -191,6 +198,9 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 			rx->type = NODE_RX_TYPE_SYNC_REPORT;
 			rx->handle = ull_sync_handle_get(sync);
 
+			/* Check if we need to create BIG sync */
+			sync_iso = sync_iso_create_get(sync);
+
 			/* lll_aux and aux are auxiliary channel context,
 			 * reuse the existing aux context to scan the chain.
 			 * hence lll_aux and aux are not released or set to NULL.
@@ -210,6 +220,9 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 			lll_sync = ftr->param;
 			ull_sync = HDR_LLL2ULL(lll_sync);
 			rx->handle = ull_sync_handle_get(ull_sync);
+
+			/* Check if we need to create BIG sync */
+			sync_iso = sync_iso_create_get(ull_sync);
 
 			/* FIXME: we will need lll_scan if chain was scheduled
 			 *        from LLL; should we store lll_scan_set in
@@ -243,7 +256,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	}
 
 	h = (void *)p->ext_hdr_adv_data;
-	if (!h->aux_ptr && !sync) {
+	if (!h->aux_ptr && !sync && !sync_iso) {
 		if (is_scan_req) {
 			LL_ASSERT(aux && aux->rx_last);
 
@@ -297,6 +310,26 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 			ull_sync_setup(scan, aux, rx, si);
 		}
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
+	}
+
+	if (h->tx_pwr) {
+		ptr++;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_ISO) && sync_iso) {
+		uint8_t hdr_len = ptr - (uint8_t *)p;
+
+		if (hdr_len <= (p->ext_hdr_len +
+				offsetof(struct pdu_adv_com_ext_adv,
+					 ext_hdr_adv_data))) {
+			uint8_t len = p->ext_hdr_len +
+				      offsetof(struct pdu_adv_com_ext_adv,
+					       ext_hdr_adv_data) - hdr_len;
+
+			if (len) {
+				ull_sync_iso_setup(sync_iso, rx, ptr, len);
+			}
+		}
 	}
 
 	if (!aux_ptr || !aux_ptr->offs ||
@@ -548,6 +581,16 @@ static inline struct ll_sync_set *sync_create_get(struct ll_scan_set *scan)
 #else /* !CONFIG_BT_CTLR_SYNC_PERIODIC */
 	return NULL;
 #endif /* !CONFIG_BT_CTLR_SYNC_PERIODIC */
+}
+
+static inline struct ll_sync_iso_set *
+	sync_iso_create_get(struct ll_sync_set *sync)
+{
+#if defined(CONFIG_BT_CTLR_SYNC_ISO)
+	return sync->iso.sync_iso;
+#else /* !CONFIG_BT_CTLR_SYNC_ISO */
+	return NULL;
+#endif /* !CONFIG_BT_CTLR_SYNC_ISO */
 }
 
 static void last_disabled_cb(void *param)

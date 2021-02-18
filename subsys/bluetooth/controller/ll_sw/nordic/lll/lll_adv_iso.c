@@ -168,7 +168,7 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	uint8_t crc_init[3];
 	uint8_t data_chan_use;
 	struct pdu_bis *pdu;
-	struct evt_hdr *evt;
+	struct ull_hdr *ull;
 	uint32_t remainder;
 	uint32_t start_us;
 	uint8_t phy;
@@ -253,8 +253,8 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	radio_switch_complete_and_disable();
 
 	ticks_at_event = p->ticks_at_expire;
-	evt = HDR_LLL2EVT(lll);
-	ticks_at_event += lll_evt_offset_get(evt);
+	ull = HDR_LLL2ULL(lll);
+	ticks_at_event += lll_event_offset_get(ull);
 
 	ticks_at_start = ticks_at_event;
 	ticks_at_start += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
@@ -275,7 +275,7 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED) && \
 	(EVENT_OVERHEAD_PREEMPT_US <= EVENT_OVERHEAD_PREEMPT_MIN_US)
 	/* check if preempt to start has changed */
-	} else if (lll_preempt_calc(evt, (TICKER_ID_ADV_ISO_BASE + lll->handle),
+	} else if (lll_preempt_calc(ull, (TICKER_ID_ADV_ISO_BASE + lll->handle),
 				    ticks_at_event)) {
 		radio_isr_set(lll_isr_abort, lll);
 		radio_disable();
