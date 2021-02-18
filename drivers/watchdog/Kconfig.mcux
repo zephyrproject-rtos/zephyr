@@ -5,8 +5,9 @@
 
 config WDT_MCUX_WDOG
 	bool "MCUX WDOG driver"
-	depends on HAS_MCUX && !HAS_MCUX_WDOG32 && CLOCK_CONTROL
+	depends on ((HAS_MCUX && !HAS_MCUX_WDOG32) || HAS_MCUX_SDK_DRIVER_WDOG) && CLOCK_CONTROL
 	imply MCUX_WDOG
+	imply MCUX_SDK_DRIVER_WDOG
 	help
 	  Enable the mcux wdog driver.
 

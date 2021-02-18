@@ -5,8 +5,9 @@
 
 config ENTROPY_MCUX_RNGA
 	bool "MCUX RNGA driver"
-	depends on HAS_MCUX_RNGA
+	depends on HAS_MCUX_RNGA || HAS_MCUX_SDK_DRIVER_RNGA
 	imply MCUX_RNGA
+	imply MCUX_SDK_DRIVER_RNGA
 	select ENTROPY_HAS_DRIVER
 	help
 	  This option enables the random number generator accelerator (RNGA)

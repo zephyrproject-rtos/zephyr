@@ -5,8 +5,9 @@
 
 config UART_MCUX
 	bool "MCUX uart driver"
-	depends on HAS_MCUX && CLOCK_CONTROL
+	depends on (HAS_MCUX || HAS_MCUX_SDK_DRIVER_UART) && CLOCK_CONTROL
 	imply MCUX_UART
+	imply MCUX_SDK_DRIVER_UART
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	help

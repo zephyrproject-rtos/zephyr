@@ -12,8 +12,9 @@ config ADC_MCUX_ADC12
 
 config ADC_MCUX_ADC16
 	bool "MCUX ADC16 driver"
-	depends on HAS_MCUX_ADC16
+	depends on HAS_MCUX_ADC16 || HAS_MCUX_SDK_DRIVER_ADC16
 	imply MCUX_ADC16
+	imply MCUX_SDK_DRIVER_ADC16
 	help
 	  Enable the MCUX ADC16 driver.
 

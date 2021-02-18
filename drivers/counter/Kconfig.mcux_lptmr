@@ -5,7 +5,8 @@
 
 config COUNTER_MCUX_LPTMR
 	bool "MCUX LPTMR driver"
-	depends on HAS_MCUX_LPTMR
+	depends on HAS_MCUX_LPTMR || HAS_MCUX_SDK_DRIVER_LPTMR
 	imply MCUX_LPTMR
+	imply MCUX_SDK_DRIVER_LPTMR
 	help
 	  Enable support for the MCUX Low Power Timer (LPTMR).

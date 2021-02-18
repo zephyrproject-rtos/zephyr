@@ -5,8 +5,11 @@
 
 menuconfig GPIO_MCUX_LPC
 	bool "MCUX LPC GPIO driver"
-	depends on HAS_MCUX
+	depends on HAS_MCUX || HAS_MCUX_SDK_DRIVER_LPC_GPIO
 	imply MCUX_LPC_GPIO
+	imply MCUX_SDK_DRIVER_INPUTMUX
+	imply MCUX_SDK_DRIVER_LPC_GPIO
+	imply MCUX_SDK_DRIVER_PINT
 	help
 	  Enable the MCUX LPC pinmux driver.
 

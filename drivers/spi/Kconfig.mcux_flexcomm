@@ -4,8 +4,9 @@
 
 config SPI_MCUX_FLEXCOMM
 	bool "MCUX FLEXCOMM SPI driver"
-	depends on HAS_MCUX_FLEXCOMM
+	depends on HAS_MCUX_FLEXCOMM || HAS_MCUX_SDK_DRIVER_FLEXCOMM_SPI
 	imply MCUX_FLEXCOMM_SPI
+	imply MCUX_SDK_DRIVER_FLEXCOMM_SPI
 	help
 	  Enable support for mcux flexcomm spi driver.
 

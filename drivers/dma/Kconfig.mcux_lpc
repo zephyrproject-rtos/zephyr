@@ -5,8 +5,9 @@
 
 config DMA_MCUX_LPC
 	bool "Enable MCUX LPC DMAC driver"
-	depends on HAS_MCUX_LPC_DMA
+	depends on HAS_MCUX_LPC_DMA || HAS_MCUX_SDK_DRIVER_LPC_DMA
 	imply MCUX_LPC_DMA
+	imply MCUX_SDK_DRIVER_LPC_DMA
 	help
 	  DMA driver for MCUX LPC MCUs.
 

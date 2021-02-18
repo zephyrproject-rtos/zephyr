@@ -5,8 +5,9 @@
 
 config PWM_MCUX_FTM
 	bool "MCUX FTM PWM driver"
-	depends on HAS_MCUX_FTM
+	depends on HAS_MCUX_FTM || HAS_MCUX_SDK_DRIVER_FTM
 	imply MCUX_FTM
+	imply MCUX_SDK_DRIVER_FTM
 	help
 	  Enable support for mcux ftm pwm driver.
 

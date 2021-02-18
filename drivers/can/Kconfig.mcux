@@ -5,8 +5,9 @@
 
 config CAN_MCUX_FLEXCAN
 	bool "MCUX FlexCAN driver"
-	depends on HAS_MCUX_FLEXCAN && CLOCK_CONTROL
+	depends on (HAS_MCUX_FLEXCAN || HAS_MCUX_SDK_DRIVER_FLEXCAN) && CLOCK_CONTROL
 	imply MCUX_FLEXCAN
+	imply MCUX_SDK_DRIVER_FLEXCAN
 	help
 	  Enable support for mcux flexcan driver.
 

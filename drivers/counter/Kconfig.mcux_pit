@@ -5,7 +5,8 @@
 
 config COUNTER_MCUX_PIT
 	bool "MCUX PIT driver"
-	depends on HAS_MCUX_PIT
+	depends on HAS_MCUX_PIT || HAS_MCUX_SDK_DRIVER_PIT
 	imply MCUX_PIT
+	imply MCUX_SDK_DRIVER_PIT
 	help
 	  Enable support for the MCUX Periodic Interrupt Timer (PIT).

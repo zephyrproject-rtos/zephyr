@@ -6,7 +6,8 @@
 
 config SPI_MCUX_DSPI
 	bool "MCUX SPI driver"
-	depends on HAS_MCUX && CLOCK_CONTROL
+	depends on (HAS_MCUX || HAS_MCUX_SDK_DRIVER_DSPI) && CLOCK_CONTROL
 	imply MCUX_DSPI
+	imply MCUX_SDK_DRIVER_DSPI
 	help
 	  Enable support for mcux spi driver.
