@@ -43,7 +43,7 @@
 /soc/arm/nxp*/                            @MaureenHelm
 /soc/arm/nordic_nrf/                      @ioannisg
 /soc/arm/nuvoton/                         @ssekar15
-/soc/arm/nuvoton_npcx/                    @MulinChao
+/soc/arm/nuvoton_npcx/                    @MulinChao @WealianLiao @ChiHuaL
 /soc/arm/qemu_cortex_a53/                 @carlocaione
 /soc/arm/quicklogic_eos_s3/               @kowalewskijan @kgugala
 /soc/arm/silabs_exx32/efm32pg1b/          @rdmeneze
@@ -99,7 +99,7 @@
 /boards/arm/mimxrt*/doc/                  @MaureenHelm @MeganHansen
 /boards/arm/mps2_an385/                   @fvincenzo
 /boards/arm/msp_exp432p401r_launchxl/     @Mani-Sadhasivam
-/boards/arm/npcx7m6fb_evb/                @MulinChao
+/boards/arm/npcx7m6fb_evb/                @MulinChao @WealianLiao @ChiHuaL
 /boards/arm/nrf*/                         @carlescufi @lemrey @ioannisg
 /boards/arm/nucleo*/                      @erwango @ABOSTM @FRASTM
 /boards/arm/nucleo_f401re/                @idlethread
@@ -164,7 +164,7 @@
 /drivers/*/*stm32*                        @erwango @ABOSTM @FRASTM
 /drivers/*/*native_posix*                 @aescolar @daor-oti
 /drivers/*/*lpc11u6x*                     @mbittan @simonguinot
-/drivers/*/*npcx*                         @MulinChao
+/drivers/*/*npcx*                         @MulinChao @WealianLiao @ChiHuaL
 /drivers/adc/                             @anangl
 /drivers/adc/adc_stm32.c                  @cybertale
 /drivers/bluetooth/                       @joerchan @jhedberg @Vudentz
@@ -322,7 +322,7 @@
 /dts/arm/ti/cc3235*                       @vanti
 /dts/arm/nordic/                          @ioannisg @carlescufi
 /dts/arm/nuvoton/                         @ssekar15
-/dts/arm/nuvoton/npcx/                    @MulinChao
+/dts/arm/nuvoton/npcx/                    @MulinChao @WealianLiao @ChiHuaL
 /dts/arm/nxp/                             @MaureenHelm
 /dts/arm/microchip/                       @franciscomunoz @albertofloyd @scottwcpg
 /dts/arm/silabs/efm32_pg_1b.dtsi          @rdmeneze
@@ -352,7 +352,7 @@
 /dts/bindings/modem/*hl7800.yaml          @rerickson1
 /dts/bindings/serial/ns16550.yaml         @dcpleung @nashif
 /dts/bindings/wifi/*esp.yaml              @mniestroj
-/dts/bindings/*/*npcx*                    @MulinChao
+/dts/bindings/*/*npcx*                    @MulinChao @WealianLiao @ChiHuaL
 /dts/bindings/*/nordic*                   @anangl
 /dts/bindings/*/nxp*                      @MaureenHelm
 /dts/bindings/*/openisa*                  @MaureenHelm
