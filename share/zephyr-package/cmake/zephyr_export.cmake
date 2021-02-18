@@ -34,4 +34,4 @@ else()
   message("~/.cmake/packages/Zephyr\n")
 endif()
 
-file(REMOVE ${CMAKE_CURRENT_LIST_DIR}/ZephyrPackagePath.txt)
+file(REMOVE ${CMAKE_CURRENT_LIST_DIR}/${MD5_INFILE})
