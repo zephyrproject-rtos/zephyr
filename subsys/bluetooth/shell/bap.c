@@ -778,6 +778,15 @@ static struct bt_audio_capability_ops lc3_ops = {
 	.release = lc3_release,
 };
 
+static void audio_recv(struct bt_audio_chan *chan, struct net_buf *buf)
+{
+	shell_print(ctx_shell, "Incoming audio on channel %p len %u\n", chan, buf->len);
+}
+
+static struct bt_audio_chan_ops chan_ops = {
+	.recv = audio_recv
+};
+
 static struct bt_audio_capability caps[MAX_PAC] = {
 	{
 		.type = BT_AUDIO_SOURCE,
@@ -807,6 +816,10 @@ static int cmd_init(const struct shell *shell, size_t argc, char *argv[])
 
 	for (i = 0; i < ARRAY_SIZE(caps); i++) {
 		bt_audio_capability_register(&caps[i]);
+	}
+
+	for (i = 0; i < ARRAY_SIZE(chans); i++) {
+		bt_audio_chan_cb_register(&chans[i], &chan_ops);
 	}
 
 	return 0;
