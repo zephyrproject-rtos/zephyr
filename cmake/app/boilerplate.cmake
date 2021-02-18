@@ -479,7 +479,7 @@ The CACHED_CONF_FILE is internal Zephyr variable used between CMake runs. \
 To change CONF_FILE, use the CONF_FILE variable.")
 unset(CONF_FILE CACHE)
 
-zephyr_file(CONF_FILES ${APPLICATION_SOURCE_DIR}/boards DTS APP_BOARD_DTS)
+zephyr_file(CONF_FILES ${APPLICATION_SOURCE_DIR}/boards DTS APP_BOARD_DTS BUILD ${CONF_FILE_BUILD_TYPE})
 
 if(DTC_OVERLAY_FILE)
   # DTC_OVERLAY_FILE has either been specified on the cmake CLI or is already

@@ -1934,6 +1934,10 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
 
     if(FILE_DTS)
       foreach(filename ${FILENAMES})
+        if(FILE_BUILD)
+          set(filename "${filename}_${FILE_BUILD}")
+        endif()
+
         if(EXISTS ${FILE_CONF_FILES}/${filename}.overlay)
           list(APPEND ${FILE_DTS} ${FILE_CONF_FILES}/${filename}.overlay)
         endif()
