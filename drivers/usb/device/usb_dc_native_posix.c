@@ -510,17 +510,21 @@ int usb_dc_ep_mps(const uint8_t ep)
 int handle_usb_control(struct usbip_header *hdr)
 {
 	uint8_t ep_idx = USB_EP_GET_IDX(ntohl(hdr->common.ep));
-	usb_dc_ep_callback ep_cb = usbip_ctrl.out_ep_ctrl[ep_idx].cb;
+	struct usb_ep_ctrl_prv *ep_ctrl;
 
-	LOG_DBG("ep %x idx %u", ntohl(hdr->common.ep), ep_idx);
+	ep_ctrl = &usbip_ctrl.out_ep_ctrl[ep_idx];
+	if (ep_ctrl->cb == NULL) {
+		LOG_ERR("Control endpoint callback not set");
+		return -EIO;
+	}
 
-	if (ep_cb) {
-		LOG_DBG("Call ep_cb");
-		ep_cb(ntohl(hdr->common.ep), USB_DC_EP_SETUP);
-		if (ntohl(hdr->common.command) == USBIP_CMD_SUBMIT &&
-		    hdr->u.submit.transfer_buffer_length != 0) {
-			ep_cb(ntohl(hdr->common.ep), USB_DC_EP_DATA_OUT);
-		}
+	LOG_DBG("SETUP event ep 0x%02x %u", ep_idx, ep_ctrl->data_len);
+	ep_ctrl->cb(ep_idx, USB_DC_EP_SETUP);
+
+	if (hdr->u.submit.transfer_buffer_length != 0) {
+		LOG_DBG("DATA OUT event ep 0x%02x %u",
+			ep_idx, ep_ctrl->data_len);
+		ep_ctrl->cb(ep_idx, USB_DC_EP_DATA_OUT);
 	}
 
 	return 0;
@@ -529,59 +533,53 @@ int handle_usb_control(struct usbip_header *hdr)
 int handle_usb_data(struct usbip_header *hdr)
 {
 	uint8_t ep_idx = ntohl(hdr->common.ep);
-	usb_dc_ep_callback ep_cb;
+	struct usb_ep_ctrl_prv *ep_ctrl;
 	uint8_t ep;
-
-	LOG_DBG("ep_idx %u", ep_idx);
 
 	if (ntohl(hdr->common.direction) == USBIP_DIR_OUT) {
 		if (ep_idx >= USBIP_OUT_EP_NUM) {
 			return -EINVAL;
 		}
 
+		ep_ctrl = &usbip_ctrl.out_ep_ctrl[ep_idx];
 		ep = ep_idx | USB_EP_DIR_OUT;
-		ep_cb = usbip_ctrl.out_ep_ctrl[ep_idx].cb;
+		LOG_DBG("DATA OUT event ep 0x%02x %u", ep, ep_ctrl->data_len);
 
-		ep_cb(ep, USB_DC_EP_DATA_OUT);
+		ep_ctrl->cb(ep, USB_DC_EP_DATA_OUT);
 
 		/* Send ACK reply */
 		if (!usbip_send_common(ep, 0)) {
 			return -EIO;
 		}
 	} else {
-		uint8_t buf_len = usbip_ctrl.in_ep_ctrl[ep_idx].buf_len;
-		uint8_t *buf = usbip_ctrl.in_ep_ctrl[ep_idx].buf;
-
 		if (ep_idx >= USBIP_IN_EP_NUM) {
 			return -EINVAL;
 		}
 
+		ep_ctrl = &usbip_ctrl.in_ep_ctrl[ep_idx];
 		ep = ep_idx | USB_EP_DIR_IN;
-		ep_cb = usbip_ctrl.in_ep_ctrl[ep_idx].cb;
+		LOG_DBG("DATA IN event ep 0x%02x %u", ep, ep_ctrl->buf_len);
 
 		/* Read USB setup, not handled */
 		if (!usbip_skip_setup()) {
 			return -EIO;
 		}
 
-		LOG_DBG("Send %u bytes", buf_len);
-
 		/* Send queued data */
-		if (!usbip_send_common(ep, buf_len)) {
+		if (!usbip_send_common(ep, ep_ctrl->buf_len)) {
 			return -EIO;
 		}
 
-		if (usbip_send(ep, buf, buf_len) != buf_len) {
+		if (usbip_send(ep, ep_ctrl->buf, ep_ctrl->buf_len) !=
+		    ep_ctrl->buf_len) {
 			return -EIO;
 		}
 
-		LOG_HEXDUMP_DBG(buf, buf_len, ">");
+		LOG_HEXDUMP_DBG(ep_ctrl->buf, ep_ctrl->buf_len, ">");
 
 		/* Indicate data sent */
-		ep_cb(ep, USB_DC_EP_DATA_IN);
+		ep_ctrl->cb(ep, USB_DC_EP_DATA_IN);
 	}
-
-	LOG_DBG("ep %x ep_cb %p", ep, ep_cb);
 
 	return 0;
 }
