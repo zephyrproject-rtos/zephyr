@@ -36,6 +36,7 @@
 #include "ull_llcp.h"
 #include "ull_llcp_internal.h"
 
+#include "ll_feat.h"
 
 #include "helper_pdu.h"
 #include "helper_util.h"
