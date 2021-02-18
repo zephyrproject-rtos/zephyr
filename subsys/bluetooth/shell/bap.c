@@ -826,6 +826,43 @@ static int cmd_connect(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
+#define DATA_MTU CONFIG_BT_ISO_TX_MTU
+NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, DATA_MTU, NULL);
+
+static int cmd_send(const struct shell *shell, size_t argc, char *argv[])
+{
+	static uint8_t data[DATA_MTU - BT_ISO_CHAN_SEND_RESERVE];
+	int ret, len;
+	struct net_buf *buf;
+
+	if (argc > 1) {
+		len = hex2bin(argv[1], strlen(argv[1]), data, sizeof(data));
+		if (len > default_chan->iso->qos->sdu) {
+			shell_print(shell, "Unable to send: len %d > % MTU",
+				    len, default_chan->iso->qos->sdu);
+			return -ENOEXEC;
+		}
+	} else {
+		len = MIN(default_chan->iso->qos->sdu, sizeof(data));
+		memset(data, 0xff, len);
+	}
+
+	buf = net_buf_alloc(&tx_pool, K_FOREVER);
+	net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
+
+	net_buf_add_mem(buf, data, len);
+	ret = bt_audio_chan_send(default_chan, buf);
+	if (ret < 0) {
+		shell_print(shell, "Unable to send: %d", -ret);
+		net_buf_unref(buf);
+		return -ENOEXEC;
+	}
+	shell_print(shell, "Sending:");
+	shell_hexdump(shell, data, len);
+
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(bap_cmds,
 	SHELL_CMD_ARG(init, NULL, NULL, cmd_init, 1, 0),
 	SHELL_CMD_ARG(discover, NULL, "<type: sink, source>",
@@ -849,6 +886,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bap_cmds,
 	SHELL_CMD_ARG(connect, NULL,
 		      "<ase> <direction: sink, source> [codec] [preset]",
 		      cmd_connect, 3, 2),
+	SHELL_CMD_ARG(send, NULL, "Send to Audio Channel [data]",
+		      cmd_send, 1, 1),
 	SHELL_SUBCMD_SET_END
 );
 
