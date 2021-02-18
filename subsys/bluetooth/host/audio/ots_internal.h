@@ -13,7 +13,6 @@
 #include <stdbool.h>
 #include <zephyr/types.h>
 #include <bluetooth/gatt.h>
-#include "uint48_util.h"
 #include "ots.h"
 
 #ifdef __cplusplus

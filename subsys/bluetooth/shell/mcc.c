@@ -17,7 +17,6 @@
 
 #include "bt.h"
 
-#include "../host/audio/uint48_util.h"
 #include "../host/audio/otc.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_MCS)
