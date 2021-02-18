@@ -11,12 +11,13 @@
 #include <zephyr/types.h>
 #include <sys/util.h>
 
+#include "hal/cpu.h"
+#include "hal/ccm.h"
+#include "hal/radio.h"
+
 #include "util/mem.h"
 #include "util/memq.h"
 #include "util/mfifo.h"
-
-#include "hal/ccm.h"
-#include "hal/radio.h"
 
 #include "pdu.h"
 
