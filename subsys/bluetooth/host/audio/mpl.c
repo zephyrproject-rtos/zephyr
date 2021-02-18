@@ -10,7 +10,6 @@
 
 #include "mpl.h"
 #include "mpl_internal.h"
-#include "uint48_util.h"
 #include "ots.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_MCS)

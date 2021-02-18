@@ -22,7 +22,6 @@
 
 #include "mpl.h"
 #include "mpl_internal.h"
-#include "uint48_util.h"
 #include "otc.h"
 #include "otc_internal.h"
 
