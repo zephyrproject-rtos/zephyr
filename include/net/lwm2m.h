@@ -392,6 +392,36 @@ struct lwm2m_objlnk {
 };
 
 /**
+ * @brief Change an observer's pmin value.
+ *
+ * LwM2M clients use this function to modify the pmin attribute
+ * for an observation being made.
+ * Example to update the pmin of a temperature sensor value being observed:
+ * lwm2m_engine_update_observer_min_period("3303/0/5700",5);
+ *
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res"
+ * @param[in] period_s Value of pmin to be given (in seconds).
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_engine_update_observer_min_period(char *pathstr, uint32_t period_s);
+
+/**
+ * @brief Change an observer's pmax value.
+ *
+ * LwM2M clients use this function to modify the pmax attribute
+ * for an observation being made.
+ * Example to update the pmax of a temperature sensor value being observed:
+ * lwm2m_engine_update_observer_max_period("3303/0/5700",5);
+ *
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res"
+ * @param[in] period_s Value of pmax to be given (in seconds).
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_engine_update_observer_max_period(char *pathstr, uint32_t period_s);
+
+/**
  * @brief Create an LwM2M object instance.
  *
  * LwM2M clients use this function to create non-default LwM2M objects:
@@ -842,6 +872,21 @@ int lwm2m_engine_create_res_inst(char *pathstr);
  * @return 0 for success or negative in case of error.
  */
 int lwm2m_engine_delete_res_inst(char *pathstr);
+
+/**
+ * @brief Update the period of a given service.
+ *
+ * Allow the period modification on an existing service created with
+ * lwm2m_engine_add_service().
+ * Example to frequency at which a periodic_service changes it's values :
+ * lwm2m_engine_update_service(device_periodic_service,5*MSEC_PER_SEC);
+ *
+ * @param[in] service Handler of the periodic_service
+ * @param[in] period_ms New period for the periodic_service (in milliseconds)
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_engine_update_service_period(k_work_handler_t service, uint32_t period_ms);
 
 /**
  * @brief Start the LwM2M engine
