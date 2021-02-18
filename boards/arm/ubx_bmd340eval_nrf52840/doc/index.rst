@@ -1,15 +1,17 @@
 .. _ubx_bmd340eval_nrf52840:
 
-u-blox EVK-BMD-34/38: BMD-340-EVAL
-##################################
+u-blox EVK-BMD-34/38: BMD-340-EVAL and BMD-341-EVAL
+###################################################
 
 Overview
 ********
 
 The BMD-340-EVAL and BMD-341-EVAL hardware provides support for the
 u-blox BMD-340 and BMD-341 Bluetooth 5.0 modules, based on the
-Nordic Semiconductor nRF52840 ARM Cortex-M4F CPU and
-the following devices:
+Nordic Semiconductor nRF52840 ARM Cortex-M4F CPU. the BMD-340 and
+BMD-341 are identical in operation except for the antenna. The
+BMD-340 has a PCB antenna while the BMD-341 has a U.FL connector.
+Both support the following devices:
 
 * :abbr:`ADC (Analog to Digital Converter)`
 * CLOCK
