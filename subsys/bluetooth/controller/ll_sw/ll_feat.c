@@ -6,6 +6,8 @@
 
 #include <zephyr.h>
 
+#include "ll_feat.h"
+
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_ll_feat
 #include "common/log.h"
@@ -17,4 +19,9 @@ uint8_t ll_set_host_feature(uint8_t bit_number, uint8_t bit_value)
 	ARG_UNUSED(bit_value);
 
 	return BT_HCI_ERR_CMD_DISALLOWED;
+}
+
+uint64_t ll_feat_get(void)
+{
+	return LL_FEAT;
 }

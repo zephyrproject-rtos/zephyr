@@ -3122,9 +3122,6 @@ static inline void event_fex_prep(struct ll_conn *conn)
 		/* procedure request acked, move to waiting state */
 		conn->llcp_feature.ack--;
 
-		/* use initial feature bitmap */
-		conn->llcp_feature.features_conn = LL_FEAT;
-
 		/* place the feature exchange req packet as next in tx queue */
 		pdu->ll_id = PDU_DATA_LLID_CTRL;
 		pdu->len = offsetof(struct pdu_data_llctrl, feature_req) +
@@ -4434,7 +4431,7 @@ static inline uint64_t feat_get(uint8_t *features)
 {
 	uint64_t feat;
 
-	feat = ~LL_FEAT_BIT_MASK_VALID | sys_get_le64(features);
+	feat = sys_get_le64(features) | ~LL_FEAT_BIT_MASK_VALID;
 	feat &= LL_FEAT_BIT_MASK;
 
 	return feat;
@@ -4444,7 +4441,8 @@ static inline uint64_t feat_get(uint8_t *features)
  * Perform a logical and on octet0 and keep the remaining bits of the
  * first input parameter
  */
-static inline uint64_t feat_land_octet0(uint64_t feat_to_keep, uint64_t feat_octet0)
+static inline uint64_t feat_land_octet0(uint64_t feat_to_keep,
+					uint64_t feat_octet0)
 {
 	uint64_t feat_result;
 
@@ -4481,7 +4479,7 @@ static int feature_rsp_send(struct ll_conn *conn, struct node_rx_pdu *rx,
 	 * See BTCore V5.2, Vol. 6, Part B, chapter 5.1.4
 	 */
 	conn->llcp_feature.features_peer =
-		feat_land_octet0(feat_get(&req->features[0]), LL_FEAT);
+		feat_land_octet0(feat_get(&req->features[0]), ll_feat_get());
 
 	/* features exchanged */
 	conn->common.fex_valid = 1U;
@@ -4498,7 +4496,8 @@ static int feature_rsp_send(struct ll_conn *conn, struct node_rx_pdu *rx,
 	 * On feature response we send the local supported features.
 	 * See BTCore V5.2 VOl 6 Part B, chapter 5.1.4
 	 */
-	feat = feat_land_octet0(LL_FEAT, conn->llcp_feature.features_conn);
+	feat = feat_land_octet0(ll_feat_get(),
+				conn->llcp_feature.features_conn);
 	sys_put_le64(feat, pdu_tx->llctrl.feature_rsp.features);
 
 	ctrl_tx_sec_enqueue(conn, tx);
@@ -4525,7 +4524,7 @@ static void feature_rsp_recv(struct ll_conn *conn, struct pdu_data *pdu_rx)
 	 * See BTCore V5.2, Vol. 6, Part B, chapter 5.1.4
 	 */
 	conn->llcp_feature.features_peer =
-		feat_land_octet0(feat_get(&rsp->features[0]), LL_FEAT);
+		feat_land_octet0(feat_get(&rsp->features[0]), ll_feat_get());
 
 	/* features exchanged */
 	conn->common.fex_valid = 1U;
