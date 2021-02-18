@@ -13,6 +13,8 @@ zephyr_library_sources_ifdef(CONFIG_BT_MESH_SHELL_LARGE_COMP_DATA_CLI large_comp
 
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_SHELL_RPR_CLI rpr.c)
 
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_SHELL_SAR_CFG_CLI sar.c)
+
 if(CONFIG_BT_MESH_SHELL_BLOB_CLI OR CONFIG_BT_MESH_SHELL_BLOB_SRV OR
 	CONFIG_BT_MESH_SHELL_BLOB_IO_FLASH)
 zephyr_library_sources(blob.c)
