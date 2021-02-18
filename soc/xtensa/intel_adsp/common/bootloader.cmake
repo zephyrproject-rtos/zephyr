@@ -3,17 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 set(SOC_FAMILY intel_adsp)
-
-if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/bootloader/CMakeLists.txt)
-  if(USING_OUT_OF_TREE_BOARD)
-    set(build_dir boards/${ARCH}/${BOARD}/bootloader)
-  else()
-    unset(build_dir)
-  endif()
-
-  add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/bootloader ${build_dir})
-endif()
-
+add_subdirectory(bootloader)
 set(ELF_FIX ${SOC_DIR}/${ARCH}/${SOC_FAMILY}/common/fix_elf_addrs.py)
 
 add_custom_target(
