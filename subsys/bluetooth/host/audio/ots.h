@@ -14,7 +14,6 @@
 #include <zephyr/types.h>
 #include <sys/byteorder.h>
 #include <bluetooth/gatt.h>
-#include "uint48_util.h"
 
 #ifdef __cplusplus
 extern "C" {
