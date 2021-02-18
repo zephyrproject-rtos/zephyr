@@ -22,7 +22,6 @@
 
 #include "mpl.h"
 #include "mpl_internal.h"
-#include "uint48_util.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_MCS)
 #define LOG_MODULE_NAME bt_mcs
