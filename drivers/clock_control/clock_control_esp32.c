@@ -259,7 +259,7 @@ static int clock_control_esp32_on(const struct device *dev,
 	uint32_t bank = GET_REG_BANK(sys);
 	uint32_t offset =  GET_REG_OFFSET(sys);
 
-	__ASSERT_NO_MSG(bank >= CLOCK_REGS_BANK_COUNT);
+	__ASSERT_NO_MSG(bank < CLOCK_REGS_BANK_COUNT);
 
 	esp32_set_mask32(BIT(offset), clock_control_regs[bank].clk);
 	esp32_clear_mask32(BIT(offset), clock_control_regs[bank].rst);
@@ -273,7 +273,7 @@ static int clock_control_esp32_off(const struct device *dev,
 	uint32_t bank = GET_REG_BANK(sys);
 	uint32_t offset =  GET_REG_OFFSET(sys);
 
-	__ASSERT_NO_MSG(bank >= CLOCK_REGS_BANK_COUNT);
+	__ASSERT_NO_MSG(bank < CLOCK_REGS_BANK_COUNT);
 
 	esp32_clear_mask32(BIT(offset), clock_control_regs[bank].clk);
 	esp32_set_mask32(BIT(offset), clock_control_regs[bank].rst);
