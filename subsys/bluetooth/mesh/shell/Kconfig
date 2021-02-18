@@ -150,6 +150,13 @@ config BT_MESH_SHELL_LARGE_COMP_DATA_CLI
 	help
 	  Large Composition Data Client shell support.
 
+config BT_MESH_SHELL_OP_AGG_CLI
+	bool "Support for Opcodes Aggregator Client shell commands"
+	depends on BT_MESH_OP_AGG_CLI
+	default y
+	help
+	  Opcodes Aggregator Client shell support.
+
 config BT_MESH_SHELL_SAR_CFG_CLI
 	bool "Support for SAR Configuration Client shell commands"
 	depends on BT_MESH_SAR_CFG_CLI
