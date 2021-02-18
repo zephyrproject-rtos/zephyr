@@ -464,6 +464,15 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_GATT_CPF \
 	BT_UUID_DECLARE_16(BT_UUID_GATT_CPF_VAL)
+/** @def BT_UUID_GATT_CAF_VAL
+ *  @brief GATT Characteristic Aggregated Format UUID value
+ */
+#define BT_UUID_GATT_CAF_VAL 0x2905
+/** @def BT_UUID_GATT_CAF
+ *  @brief GATT Characteristic Aggregated Format
+ */
+#define BT_UUID_GATT_CAF \
+	BT_UUID_DECLARE_16(BT_UUID_GATT_CAF_VAL)
 /** @def BT_UUID_VALID_RANGE_VAL
  *  @brief Valid Range Descriptor UUID value
  */
