@@ -549,7 +549,7 @@ static uint32_t ull_adv_iso_start(struct ll_adv_iso_set *adv_iso,
 	iso_interval_us = adv_iso->lll.sdu_interval;
 
 	ret_cb = TICKER_STATUS_BUSY;
-	ret = ticker_start(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
+	ret = ticker_start(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
 			   (TICKER_ID_ADV_ISO_BASE + adv_iso->lll.handle),
 			   ticks_anchor, 0,
 			   HAL_TICKER_US_TO_TICKS(iso_interval_us),
