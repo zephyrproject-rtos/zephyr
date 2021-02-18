@@ -807,7 +807,7 @@ static int sdu_recv(struct bt_mesh_net_rx *rx, uint8_t hdr, uint8_t aszmic,
 
 	LOG_DBG("Decrypted (AppIdx: 0x%03x)", rx->ctx.app_idx);
 
-	bt_mesh_model_recv(&rx->ctx, sdu);
+	(void)bt_mesh_model_recv(&rx->ctx, sdu);
 
 	return 0;
 }

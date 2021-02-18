@@ -25,6 +25,7 @@
 #include "transport.h"
 #include "access.h"
 #include "foundation.h"
+#include "op_agg.h"
 #include "settings.h"
 
 #define LOG_LEVEL CONFIG_BT_MESH_ACCESS_LOG_LEVEL
@@ -1017,12 +1018,54 @@ static int get_opcode(struct net_buf_simple *buf, uint32_t *opcode)
 	CODE_UNREACHABLE;
 }
 
-void bt_mesh_model_recv(struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf)
+static int element_model_recv(struct bt_mesh_msg_ctx *ctx,
+			      struct net_buf_simple *buf, uint16_t addr,
+			      struct bt_mesh_elem *elem, uint32_t opcode)
 {
-	struct bt_mesh_model *model;
 	const struct bt_mesh_model_op *op;
+	struct bt_mesh_model *model;
+	struct net_buf_simple_state state;
+	int err;
+
+	op = find_op(elem, opcode, &model);
+	if (!op) {
+		LOG_ERR("No OpCode 0x%08x for elem 0x%02x", opcode, elem->addr);
+		return ACCESS_STATUS_WRONG_OPCODE;
+	}
+
+	if (!bt_mesh_model_has_key(model, ctx->app_idx)) {
+		LOG_ERR("Wrong key");
+		return ACCESS_STATUS_WRONG_KEY;
+	}
+
+	if (!model_has_dst(model, addr)) {
+		LOG_ERR("Invalid address 0x%02x", addr);
+		return ACCESS_STATUS_INVALID_ADDRESS;
+	}
+
+	if ((op->len >= 0) && (buf->len < (size_t)op->len)) {
+		LOG_ERR("Too short message for OpCode 0x%08x", opcode);
+		return ACCESS_STATUS_MESSAGE_NOT_UNDERSTOOD;
+	} else if ((op->len < 0) && (buf->len != (size_t)(-op->len))) {
+		LOG_ERR("Invalid message size for OpCode 0x%08x", opcode);
+		return ACCESS_STATUS_MESSAGE_NOT_UNDERSTOOD;
+	}
+
+	net_buf_simple_save(buf, &state);
+	err = op->func(model, ctx, buf);
+	net_buf_simple_restore(buf, &state);
+
+	if (err) {
+		return ACCESS_STATUS_MESSAGE_NOT_UNDERSTOOD;
+	}
+	return ACCESS_STATUS_SUCCESS;
+}
+
+int bt_mesh_model_recv(struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf)
+{
+	int err = ACCESS_STATUS_SUCCESS;
 	uint32_t opcode;
-	int i;
+	uint16_t index;
 
 	LOG_DBG("app_idx 0x%04x src 0x%04x dst 0x%04x", ctx->app_idx, ctx->addr,
 		ctx->recv_dst);
@@ -1035,54 +1078,45 @@ void bt_mesh_model_recv(struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf)
 
 	if (get_opcode(buf, &opcode) < 0) {
 		LOG_WRN("Unable to decode OpCode");
-		return;
+		return ACCESS_STATUS_WRONG_OPCODE;
 	}
 
 	LOG_DBG("OpCode 0x%08x", opcode);
 
-	for (i = 0; i < dev_comp->elem_count; i++) {
-		struct net_buf_simple_state state;
+	if (BT_MESH_ADDR_IS_UNICAST(ctx->recv_dst)) {
+		index = ctx->recv_dst - dev_comp->elem[0].addr;
 
-		op = find_op(&dev_comp->elem[i], opcode, &model);
-		if (!op) {
-			LOG_DBG("No OpCode 0x%08x for elem %d", opcode, i);
-			continue;
+		if (index >= dev_comp->elem_count) {
+			LOG_ERR("Invalid address 0x%02x", ctx->recv_dst);
+			err = ACCESS_STATUS_INVALID_ADDRESS;
+		} else {
+			struct bt_mesh_elem *elem = &dev_comp->elem[index];
+
+			err = element_model_recv(ctx, buf, ctx->recv_dst, elem, opcode);
 		}
+	} else {
+		for (index = 0; index < dev_comp->elem_count; index++) {
+			struct bt_mesh_elem *elem = &dev_comp->elem[index];
 
-		if (!bt_mesh_model_has_key(model, ctx->app_idx)) {
-			continue;
+			(void)element_model_recv(ctx, buf, ctx->recv_dst, elem, opcode);
 		}
-
-		if (!model_has_dst(model, ctx->recv_dst)) {
-			continue;
-		}
-
-		if ((op->len >= 0) && (buf->len < (size_t)op->len)) {
-			LOG_ERR("Too short message for OpCode 0x%08x", opcode);
-			continue;
-		} else if ((op->len < 0) && (buf->len != (size_t)(-op->len))) {
-			LOG_ERR("Invalid message size for OpCode 0x%08x", opcode);
-			continue;
-		}
-
-		/* The callback will likely parse the buffer, so
-		 * store the parsing state in case multiple models
-		 * receive the message.
-		 */
-		net_buf_simple_save(buf, &state);
-		(void)op->func(model, ctx, buf);
-		net_buf_simple_restore(buf, &state);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_MESH_ACCESS_LAYER_MSG) && msg_cb) {
 		msg_cb(opcode, ctx, buf);
 	}
+
+	return err;
 }
 
 int bt_mesh_model_send(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 		       struct net_buf_simple *msg,
 		       const struct bt_mesh_send_cb *cb, void *cb_data)
 {
+	if (IS_ENABLED(CONFIG_BT_MESH_OP_AGG) && bt_mesh_op_agg_accept(ctx)) {
+		return bt_mesh_op_agg_send(model, ctx, msg, cb);
+	}
+
 	if (!bt_mesh_model_has_key(model, ctx->app_idx)) {
 		LOG_ERR("Model not bound to AppKey 0x%04x", ctx->app_idx);
 		return -EINVAL;
