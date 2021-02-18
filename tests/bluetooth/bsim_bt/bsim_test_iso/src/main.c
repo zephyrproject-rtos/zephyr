@@ -62,7 +62,6 @@ static void test_iso_main(void)
 {
 	struct bt_le_ext_adv *adv;
 	int err;
-	uint8_t bis_count = 1; /* TODO: Add support for multiple BIS per BIG */
 
 	printk("\n*ISO broadcast test*\n");
 
@@ -111,11 +110,12 @@ static void test_iso_main(void)
 #if !IS_ENABLED(USE_HOST_API)
 	uint8_t big_handle = 0;
 	uint8_t adv_handle;
+	uint8_t bis_count = 1; /* TODO: Add support for multiple BIS per BIG */
 	uint32_t sdu_interval = 10000; /* us */
 	uint16_t max_sdu = CONFIG_BT_CTLR_ADV_ISO_PDU_LEN_MAX;
 	uint16_t max_latency = 10; /* ms */
 	uint8_t rtn = 0;
-	uint8_t phy = BIT(0);
+	uint8_t phy = BIT(1);
 	uint8_t packing = 0;
 	uint8_t framing = 0;
 	uint8_t encryption = 0;
@@ -167,6 +167,14 @@ static void test_iso_main(void)
 	printk("success.\n");
 
 	k_sleep(K_MSEC(5000));
+
+	printk("Stop Periodic Advertising...\n");
+	err = bt_le_per_adv_stop(adv);
+	if (err) {
+		FAIL("Failed to stop periodic advertising (err %d)\n", err);
+		return;
+	}
+	printk("success.\n");
 #endif /* !USE_HOST_API */
 
 
@@ -233,10 +241,33 @@ static void pa_recv_cb(struct bt_le_per_adv_sync *sync,
 	       info->rssi, info->cte_type, buf->len);
 }
 
+static void pa_biginfo_cb(struct bt_le_per_adv_sync *sync,
+			  const struct bt_iso_biginfo *biginfo)
+{
+	char le_addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(biginfo->addr, le_addr, sizeof(le_addr));
+	printk("BIG INFO[%u]: [DEVICE]: %s, sid 0x%02x, "
+	       "num_bis %u, nse %u, interval 0x%04x (%u ms), "
+	       "bn %u, pto %u, irc %u, max_pdu %u, "
+	       "sdu_interval %u us, max_sdu %u, phy %s, "
+	       "%s framing, %sencrypted\n",
+	       bt_le_per_adv_sync_get_index(sync), le_addr, biginfo->sid,
+	       biginfo->num_bis, biginfo->sub_evt_count,
+	       biginfo->iso_interval,
+	       (biginfo->iso_interval * 5 / 4),
+	       biginfo->burst_number, biginfo->offset,
+	       biginfo->rep_count, biginfo->max_pdu, biginfo->sdu_interval,
+	       biginfo->max_sdu, phy2str(biginfo->phy),
+	       biginfo->framing ? "with" : "without",
+	       biginfo->encryption ? "" : "not ");
+}
+
 static struct bt_le_per_adv_sync_cb sync_cb = {
 	.synced = pa_sync_cb,
 	.term = pa_terminated_cb,
-	.recv = pa_recv_cb
+	.recv = pa_recv_cb,
+	.biginfo = pa_biginfo_cb,
 };
 
 #define NAME_LEN 30
