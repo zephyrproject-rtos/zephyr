@@ -199,9 +199,6 @@ add_custom_target(
 # Dummy add to generate files.
 zephyr_linker_sources(SECTIONS)
 
-zephyr_file(APPLICATION_ROOT BOARD_ROOT)
-list(APPEND BOARD_ROOT ${ZEPHYR_BASE})
-
 # 'BOARD_ROOT' is a prioritized list of directories where boards may
 # be found. It always includes ${ZEPHYR_BASE} at the lowest priority.
 zephyr_file(APPLICATION_ROOT BOARD_ROOT)
