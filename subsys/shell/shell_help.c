@@ -117,8 +117,7 @@ static void help_item_print(const struct shell *shell, const char *item_name,
 	}
 
 	if (!IS_ENABLED(CONFIG_NEWLIB_LIBC) &&
-	    !IS_ENABLED(CONFIG_ARCH_POSIX)  &&
-	    !IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
+	    !IS_ENABLED(CONFIG_ARCH_POSIX)) {
 		/* print option name */
 		z_shell_fprintf(shell, SHELL_NORMAL, "%s%-*s%s:", tabulator,
 				item_name_width, item_name, tabulator);

@@ -301,18 +301,6 @@ static void test_c(void)
 	rc = TEST_PRF("%c", 'a');
 	PRF_CHECK("a", rc);
 
-	if (IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
-		TC_PRINT("short test for nano\n");
-		return;
-	}
-
-	rc = TEST_PRF("%lc", (wint_t)'a');
-	if (ENABLED_USE_LIBC) {
-		PRF_CHECK("a", rc);
-	} else {
-		PRF_CHECK("%lc", rc);
-	}
-
 	rc = prf("/%256c/", 'a');
 
 	const char *bp = buf;
@@ -328,6 +316,18 @@ static void test_c(void)
 	zassert_equal(*bp, 'a', NULL);
 	++bp;
 	zassert_equal(*bp, '/', NULL);
+
+	if (IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
+		TC_PRINT("short test for nano\n");
+		return;
+	}
+
+	rc = TEST_PRF("%lc", (wint_t)'a');
+	if (ENABLED_USE_LIBC) {
+		PRF_CHECK("a", rc);
+	} else {
+		PRF_CHECK("%lc", rc);
+	}
 }
 
 static void test_s(void)
@@ -340,19 +340,15 @@ static void test_s(void)
 	PRF_CHECK("/123/", rc);
 
 	rc = TEST_PRF("/%6s/%-6s/%2s/", s, s, s);
-	if (IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
-		PRF_CHECK("/123/123   /123/", rc);
-	} else {
-		PRF_CHECK("/   123/123   /123/", rc);
-	}
+	PRF_CHECK("/   123/123   /123/", rc);
+
+	rc = TEST_PRF("/%.6s/%.2s/%.s/", s, s, s);
+	PRF_CHECK("/123/12//", rc);
 
 	if (IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
 		TC_PRINT("short test for nano\n");
 		return;
 	}
-
-	rc = TEST_PRF("/%.6s/%.2s/%.s/", s, s, s);
-	PRF_CHECK("/123/12//", rc);
 
 	rc = TEST_PRF("%ls", ws);
 	if (ENABLED_USE_LIBC) {
@@ -381,10 +377,14 @@ static void test_d_length(void)
 	int min = -1234567890;
 	int max = 1876543210;
 	long long svll = 123LL << 48;
+	long long svll2 = -2LL;
 	int rc;
 
 	rc = TEST_PRF("%d/%d", min, max);
 	PRF_CHECK("-1234567890/1876543210", rc);
+
+	rc = TEST_PRF("%u/%u", min, max);
+	PRF_CHECK("3060399406/1876543210", rc);
 
 	if (!IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
 		rc = TEST_PRF("%hd/%hd", min, max);
@@ -403,13 +403,13 @@ static void test_d_length(void)
 		PRF_CHECK("%ld/%ld", rc);
 	}
 
-	rc = TEST_PRF("/%lld/%lld/", svll, -svll);
+	rc = TEST_PRF("/%lld/%lld/%lld/", svll, -svll, svll2);
 	if (IS_ENABLED(CONFIG_CBPRINTF_FULL_INTEGRAL)) {
-		PRF_CHECK("/34621422135410688/-34621422135410688/", rc);
+		PRF_CHECK("/34621422135410688/-34621422135410688/-2/", rc);
 	} else if (IS_ENABLED(CONFIG_CBPRINTF_COMPLETE)) {
-		PRF_CHECK("/%lld/%lld/", rc);
+		PRF_CHECK("/%lld/%lld/%lld/", rc);
 	} else if (IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
-		PRF_CHECK("/ERR/ERR/", rc);
+		PRF_CHECK("/ERR/ERR/-2/", rc);
 	} else {
 		zassert_true(false, "Missed case!");
 	}
@@ -459,11 +459,6 @@ static void test_d_flags(void)
 	int sv = 123;
 	int rc;
 
-	if (IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
-		TC_PRINT("skipped test for nano\n");
-		return;
-	}
-
 	/* Stuff related to sign */
 	rc = TEST_PRF("/%d/%-d/%+d/% d/",
 		      sv, sv, sv, sv);
@@ -512,10 +507,15 @@ static void test_x_length(void)
 	int rc;
 
 	rc = TEST_PRF("%x/%X", min, max);
-	if (IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
-		PRF_CHECK("4c3c2c1c/4d3d2d1d", rc);
-	} else {
+	PRF_CHECK("4c3c2c1c/4D3D2D1D", rc);
+
+	rc = TEST_PRF("%lx/%lX", (unsigned long)min, (unsigned long)max);
+	if (IS_ENABLED(CONFIG_CBPRINTF_FULL_INTEGRAL)
+	    || (sizeof(long) <= 4)
+	    || IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
 		PRF_CHECK("4c3c2c1c/4D3D2D1D", rc);
+	} else {
+		PRF_CHECK("%lx/%lX", rc);
 	}
 
 	if (IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
@@ -528,14 +528,6 @@ static void test_x_length(void)
 
 	rc = TEST_PRF("%hhx/%hhX", min, max);
 	PRF_CHECK("1c/1D", rc);
-
-	rc = TEST_PRF("%lx/%lX", (unsigned long)min, (unsigned long)max);
-	if (IS_ENABLED(CONFIG_CBPRINTF_FULL_INTEGRAL)
-	    || (sizeof(long) <= 4)) {
-		PRF_CHECK("4c3c2c1c/4D3D2D1D", rc);
-	} else {
-		PRF_CHECK("%lx/%lX", rc);
-	}
 
 	if (IS_ENABLED(CONFIG_CBPRINTF_FULL_INTEGRAL)) {
 		rc = TEST_PRF("%llx/%llX", (unsigned long long)min,
@@ -577,11 +569,6 @@ static void test_x_flags(void)
 {
 	unsigned int sv = 0x123;
 	int rc;
-
-	if (IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
-		TC_PRINT("skipped test for nano\n");
-		return;
-	}
 
 	/* Stuff related to sign flags, which have no effect on
 	 * unsigned conversions, and alternate form
@@ -891,11 +878,6 @@ static void test_fp_flags(void)
 
 static void test_star_width(void)
 {
-	if (IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
-		TC_PRINT("skipped test for nano\n");
-		return;
-	}
-
 	int rc;
 
 	rc = TEST_PRF("/%3c/%-3c/", 'a', 'a');
@@ -907,16 +889,16 @@ static void test_star_width(void)
 
 static void test_star_precision(void)
 {
-	if (IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
-		TC_PRINT("skipped test for nano\n");
-		return;
-	}
-
 	int rc;
 
 	rc = TEST_PRF("/%.*x/%10.*x/",
 		      5, 0x12, 5, 0x12);
 	PRF_CHECK("/00012/     00012/", rc);
+
+	if (IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
+		TC_PRINT("short test for nano\n");
+		return;
+	}
 
 	if (IS_ENABLED(CONFIG_CBPRINTF_FP_SUPPORT)) {
 		double dv = 1.2345678;
@@ -1001,20 +983,15 @@ static void test_p(void)
 	rc = TEST_PRF("%p", NULL);
 	PRF_CHECK("(nil)", rc);
 
-	/* Nano doesn't support left-justification of pointer
-	 * values.
-	 */
-	if (!IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
-		reset_out();
-		rc = rawprf("/%12p/", ptr);
-		zassert_equal(rc, 14, NULL);
-		zassert_equal(strncmp("/    0xcafe21/", buf, rc), 0, NULL);
+	reset_out();
+	rc = rawprf("/%12p/", ptr);
+	zassert_equal(rc, 14, NULL);
+	zassert_equal(strncmp("/    0xcafe21/", buf, rc), 0, NULL);
 
-		reset_out();
-		rc = rawprf("/%12p/", NULL);
-		zassert_equal(rc, 14, NULL);
-		zassert_equal(strncmp("/       (nil)/", buf, rc), 0, NULL);
-	}
+	reset_out();
+	rc = rawprf("/%12p/", NULL);
+	zassert_equal(rc, 14, NULL);
+	zassert_equal(strncmp("/       (nil)/", buf, rc), 0, NULL);
 
 	reset_out();
 	rc = rawprf("/%-12p/", ptr);
@@ -1026,14 +1003,10 @@ static void test_p(void)
 	zassert_equal(rc, 14, NULL);
 	zassert_equal(strncmp("/(nil)       /", buf, rc), 0, NULL);
 
-	/* Nano doesn't support zero-padding of pointer values.
-	 */
-	if (!IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
-		reset_out();
-		rc = rawprf("/%.8p/", ptr);
-		zassert_equal(rc, 12, NULL);
-		zassert_equal(strncmp("/0x00cafe21/", buf, rc), 0, NULL);
-	}
+	reset_out();
+	rc = rawprf("/%.8p/", ptr);
+	zassert_equal(rc, 12, NULL);
+	zassert_equal(strncmp("/0x00cafe21/", buf, rc), 0, NULL);
 }
 
 static int out_counter(int c,
