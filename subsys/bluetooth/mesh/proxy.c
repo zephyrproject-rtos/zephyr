@@ -390,7 +390,7 @@ void bt_mesh_proxy_identity_start(struct bt_mesh_subnet *sub)
 void bt_mesh_proxy_identity_stop(struct bt_mesh_subnet *sub)
 {
 	sub->node_id = BT_MESH_NODE_IDENTITY_STOPPED;
-	sub->node_id_start = 0U;
+	sub->node_id_start = k_uptime_get_32();
 }
 
 int bt_mesh_proxy_identity_enable(void)
@@ -1196,7 +1196,8 @@ static k_timeout_t gatt_proxy_advertise(struct bt_mesh_subnet *sub)
 		return K_FOREVER;
 	}
 
-	if (sub->node_id == BT_MESH_NODE_IDENTITY_RUNNING) {
+	if (sub->node_id == BT_MESH_NODE_IDENTITY_RUNNING ||
+		bt_mesh_gatt_proxy_get() == BT_MESH_GATT_PROXY_ENABLED) {
 		uint32_t active = k_uptime_get_32() - sub->node_id_start;
 
 		if (active < NODE_ID_TIMEOUT) {
@@ -1210,7 +1211,7 @@ static k_timeout_t gatt_proxy_advertise(struct bt_mesh_subnet *sub)
 		}
 	}
 
-	if (sub->node_id == BT_MESH_NODE_IDENTITY_STOPPED) {
+	else if (sub->node_id == BT_MESH_NODE_IDENTITY_STOPPED) {
 		net_id_adv(sub);
 	}
 
