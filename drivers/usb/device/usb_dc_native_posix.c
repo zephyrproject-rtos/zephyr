@@ -369,7 +369,8 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
 int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 			uint32_t *read_bytes)
 {
-	uint32_t bytes;
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
+	uint32_t to_copy;
 
 	if (!usbip_ctrl.attached || !usbip_ep_is_valid(ep)) {
 		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
@@ -394,25 +395,18 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 		return -EINVAL;
 	}
 
-	if (!data && !max_data_len) {
-		/* When both buffer and max data to read are zero return
-		 * the available data in buffer
-		 */
-		if (read_bytes) {
-			uint8_t ep_idx = USB_EP_GET_IDX(ep);
-
-			*read_bytes = usbip_ctrl.out_ep_ctrl[ep_idx].data_len;
-		}
-
+	if (data == NULL && max_data_len == 0 && read_bytes != NULL) {
+		/* Return length of the available data in endpoint buffer */
+		*read_bytes = usbip_ctrl.out_ep_ctrl[ep_idx].data_len;
 		return 0;
 	}
 
-	LOG_DBG("ep %x max_data_len %u", ep, max_data_len);
-
-	bytes = usbip_recv(data, max_data_len);
+	to_copy = MIN(usbip_ctrl.out_ep_ctrl[ep_idx].data_len, max_data_len);
+	LOG_DBG("ep 0x%02x, to_copy %u", ep, to_copy);
+	memcpy(data, usbip_ctrl.out_ep_ctrl[ep_idx].buf, to_copy);
 
 	if (read_bytes) {
-		*read_bytes = bytes;
+		*read_bytes = to_copy;
 	}
 
 	return 0;
@@ -518,10 +512,15 @@ int handle_usb_control(struct usbip_header *hdr)
 		return -EIO;
 	}
 
+	ep_ctrl->data_len = 8;
 	LOG_DBG("SETUP event ep 0x%02x %u", ep_idx, ep_ctrl->data_len);
+	usbip_recv(ep_ctrl->buf, ep_ctrl->data_len);
 	ep_ctrl->cb(ep_idx, USB_DC_EP_SETUP);
 
-	if (hdr->u.submit.transfer_buffer_length != 0) {
+	if (ntohl(hdr->common.direction) == USBIP_DIR_OUT) {
+		/* Data OUT stage availably */
+		ep_ctrl->data_len = ntohl(hdr->u.submit.transfer_buffer_length);
+		usbip_recv(ep_ctrl->buf, ep_ctrl->data_len);
 		LOG_DBG("DATA OUT event ep 0x%02x %u",
 			ep_idx, ep_ctrl->data_len);
 		ep_ctrl->cb(ep_idx, USB_DC_EP_DATA_OUT);
@@ -543,6 +542,8 @@ int handle_usb_data(struct usbip_header *hdr)
 
 		ep_ctrl = &usbip_ctrl.out_ep_ctrl[ep_idx];
 		ep = ep_idx | USB_EP_DIR_OUT;
+		ep_ctrl->data_len = ntohl(hdr->u.submit.transfer_buffer_length);
+		usbip_recv(ep_ctrl->buf, ep_ctrl->data_len);
 		LOG_DBG("DATA OUT event ep 0x%02x %u", ep, ep_ctrl->data_len);
 
 		ep_ctrl->cb(ep, USB_DC_EP_DATA_OUT);
