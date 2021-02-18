@@ -568,6 +568,16 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	       PDU_SYNC_INFO_SCA_CHM_SCA_BIT_MASK) >>
 	      PDU_SYNC_INFO_SCA_CHM_SCA_BIT_POS;
 
+	interval = sys_le16_to_cpu(si->interval);
+	interval_us = interval * CONN_INT_UNIT_US;
+
+	sync->timeout_reload = RADIO_SYNC_EVENTS((sync->timeout * 10U * 1000U),
+						 interval_us);
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO)
+	lll->sca = sca;
+#endif /* CONFIG_BT_CTLR_SYNC_ISO */
+
 	lll->window_widening_periodic_us =
 		(((lll_clock_ppm_local_get() + lll_clock_ppm_get(sca)) *
 		  interval_us) + (1000000 - 1)) / 1000000U;
