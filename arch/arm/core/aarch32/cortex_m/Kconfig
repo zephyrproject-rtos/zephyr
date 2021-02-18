@@ -259,6 +259,23 @@ config ZERO_LATENCY_IRQS
 	  higher priority than the rest of the kernel they cannot use any
 	  kernel functionality.
 
+config ZERO_LATENCY_IRQS_ARMV6_M
+	bool "Enable zero-latency interrupts for ARMv6-M architecture"
+	depends on CPU_CORTEX_M0 || CPU_CORTEX_M0PLUS || CPU_CORTEX_M1
+	help
+	  The kernel may reserve some of the highest interrupts priorities in
+	  the system for its own use. These interrupts will not be masked
+	  by interrupt locking.
+	  When connecting interrupts the kernel will offset all interrupts
+	  to lower priority than those reserved by the kernel.
+	  Zero-latency interrupt can be used to set up an interrupt at the
+	  highest interrupt priority which will not be blocked by interrupt
+	  locking.
+	  Since Zero-latency ISRs will run at higher priority than the rest
+	  of the kernel they cannot use any kernel functionality. This is
+	  an extension of the ZERO_LATENCY_IRQS mechanism for the Cortex M0,
+	  M0+ and M1 processors.
+
 config DYNAMIC_DIRECT_INTERRUPTS
 	bool "Enable support for dynamic direct interrupts"
 	depends on DYNAMIC_INTERRUPTS

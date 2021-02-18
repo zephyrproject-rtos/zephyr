@@ -36,6 +36,90 @@ extern void z_arm_reserved(void);
 #define REG_FROM_IRQ(irq) (irq / NUM_IRQS_PER_REG)
 #define BIT_FROM_IRQ(irq) (irq % NUM_IRQS_PER_REG)
 
+#ifdef CONFIG_ZERO_LATENCY_IRQS_ARMV6_M
+/* initialise zero latency irq variables*/
+uint32_t zli_shadow_reg;
+uint32_t zli_mask;
+bool zli_lock_flag;
+
+uint32_t zli_get_shadow_reg(void)
+{
+	return zli_shadow_reg;
+}
+
+void zli_set_shadow_reg(uint32_t new_value)
+{
+	zli_shadow_reg = new_value;
+}
+
+uint32_t zli_get_mask(void)
+{
+	return zli_mask;
+}
+
+bool zli_is_zli(unsigned int irq)
+{
+	return (zli_mask & BIT(BIT_FROM_IRQ(irq))) != 0;
+}
+
+void zli_set_lock_flag(bool new_value)
+{
+	zli_lock_flag = new_value;
+}
+
+bool zli_locked(void)
+{
+	return zli_lock_flag == true;
+}
+
+void zli_set_irq_status(uint32_t irq_status)
+{
+	NVIC->ICER[0U] = ~irq_status;
+	NVIC->ISER[0U] = irq_status;
+}
+
+uint32_t zli_get_irq_status(void)
+{
+	return NVIC->ISER[0U];
+}
+
+void zli_unlock_swap(void)
+{
+	arch_irq_unlock(0);
+}
+
+void zli_lock_swap(void)
+{
+	(void)arch_irq_lock();
+}
+
+void arch_irq_enable(unsigned int irq)
+{
+	/* It's not possible to enable or disable a zero latency interrupt during a lock*/
+	if (zli_locked()) {
+		if (zli_is_zli(irq)) {
+			NVIC_EnableIRQ((IRQn_Type)irq);
+		}
+		zli_shadow_reg |= BIT(BIT_FROM_IRQ(irq));
+	} else {
+		NVIC_EnableIRQ((IRQn_Type)irq);
+	}
+}
+
+void arch_irq_disable(unsigned int irq)
+{
+	if (zli_locked()) {
+		if (zli_is_zli(irq)) {
+			NVIC_DisableIRQ((IRQn_Type)irq);
+		}
+		zli_shadow_reg &= BIT(BIT_FROM_IRQ(irq));
+	} else {
+		NVIC_DisableIRQ((IRQn_Type)irq);
+	}
+}
+
+#else
+
 void arch_irq_enable(unsigned int irq)
 {
 	NVIC_EnableIRQ((IRQn_Type)irq);
@@ -45,6 +129,8 @@ void arch_irq_disable(unsigned int irq)
 {
 	NVIC_DisableIRQ((IRQn_Type)irq);
 }
+
+#endif /* CONFIG_ZERO_LATENCY_IRQS_ARMV6_M */
 
 int arch_irq_is_enabled(unsigned int irq)
 {
@@ -69,7 +155,7 @@ void z_arm_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 	 * of priority levels reserved by the kernel.
 	 */
 
-#if defined(CONFIG_ZERO_LATENCY_IRQS)
+#if defined(CONFIG_ZERO_LATENCY_IRQS) || defined(CONFIG_ZERO_LATENCY_IRQS_ARMV6_M)
 	/* If we have zero latency interrupts, those interrupts will
 	 * run at a priority level which is not masked by irq_lock().
 	 * Our policy is to express priority levels with special properties
@@ -84,6 +170,15 @@ void z_arm_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 	ARG_UNUSED(flags);
 	prio += _IRQ_PRIO_OFFSET;
 #endif
+
+
+#if defined(CONFIG_ZERO_LATENCY_IRQS_ARMV6_M)
+	/* the zero latency irq for the ARMv6_M architecture */
+	if (flags & IRQ_ZERO_LATENCY) {
+		zli_mask |= BIT(BIT_FROM_IRQ(irq));
+	}
+#endif /* CONFIG_ZERO_LATENCY_IRQS_ARMV6_M */
+
 	/* The last priority level is also used by PendSV exception, but
 	 * allow other interrupts to use the same level, even if it ends up
 	 * affecting performance (can still be useful on systems with a
@@ -165,7 +260,13 @@ void z_irq_spurious(const void *unused)
 #ifdef CONFIG_PM
 void _arch_isr_direct_pm(void)
 {
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) \
+#if defined(CONFIG_ZERO_LATENCY_IRQS_ARMV6_M)
+	/* Lock all interrupts. irq_lock() will not necessarily
+	 * disable all interrupts with this configuration.
+	 */
+	__asm__ volatile("cpsid i" : : : "memory");
+
+#elif defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)\
 	|| defined(CONFIG_ARMV7_R)
 	unsigned int key;
 
@@ -188,7 +289,9 @@ void _arch_isr_direct_pm(void)
 		z_pm_save_idle_exit(idle_val);
 	}
 
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) \
+#if defined(CONFIG_ZERO_LATENCY_IRQS_ARMV6_M)
+	__asm__ volatile("cpsie i" : : : "memory");
+#elif defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) \
 	|| defined(CONFIG_ARMV7_R)
 	irq_unlock(key);
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
@@ -273,7 +376,7 @@ int irq_target_state_is_secure(unsigned int irq)
  *   will be ignored.
  *
  * @return N/A
-*/
+ */
 void irq_target_state_set_all_non_secure(void)
 {
 	int i;

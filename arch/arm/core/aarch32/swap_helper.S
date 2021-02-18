@@ -218,16 +218,46 @@ out_fp_endif:
 #endif
 
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
-    /* BASEPRI not available, previous interrupt disable state
+
+#if defined(CONFIG_ZERO_LATENCY_IRQS_ARMV6_M)
+    /* BASEPRI register not aviable. Use information stored in basepri variable
+     * to determine if the irq's of the next thread should be locked or unlocked.
+     */
+
+    cmp r0, #0
+    bne _thread_irq_enabled
+
+    /* Next thread has no irq lock active. unlock the irq's. */
+    push {r2,lr}
+    bl zli_unlock_swap
+    pop {r2-r3}
+    mov lr, r3
+
+    b _thread_irq_enabled_end
+
+_thread_irq_enabled:
+    /* Next thread has irq lock active. lock the irq's. */
+    push {r2,lr}
+    bl zli_lock_swap
+    pop {r2-r3}
+    mov lr, r3
+
+_thread_irq_enabled_end:
+    cpsie i
+
+#else
+     /* BASEPRI not available, previous interrupt disable state
      * maps to PRIMASK.
      *
      * Only enable interrupts if value is 0, meaning interrupts
      * were enabled before irq_lock was called.
      */
+
     cmp r0, #0
     bne _thread_irq_disabled
     cpsie i
 _thread_irq_disabled:
+#endif
 
 #if defined(CONFIG_MPU_STACK_GUARD) || defined(CONFIG_USERSPACE)
     /* Re-program dynamic memory map */
