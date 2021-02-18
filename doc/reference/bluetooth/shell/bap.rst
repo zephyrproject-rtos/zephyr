@@ -52,6 +52,7 @@ Commands
    "link","config","any","none"
    "unlink","link","any","none"
    "connect","discover","idle/codec-configured/qos-configured","codec-configured"
+   "send","enable","streaming","none"
 
 Example Central
 ***************
@@ -426,3 +427,20 @@ to quickly configure and enable a stream.
    QoS: chan 0x1851c0
    QoS: dir 0x02 interval 10000 framing 0x00 phy 0x02 sdu 40 rtn 2 latency 10 pd 40000
    Start: chan 0x1851c0
+
+Send
+****
+
+This command sends data over Audio channel.
+
+.. csv-table:: State Machine Transitions
+   :header: "Depends", "Allowed States", "Next States"
+   :widths: auto
+
+   "enable","streaming","none"
+
+.. code-block:: console
+
+   uart:~$ bap send [count]
+   uart:~$ bap send
+   Audio sending...
