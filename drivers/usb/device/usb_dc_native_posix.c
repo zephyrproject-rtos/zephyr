@@ -369,7 +369,8 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
 int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 			uint32_t *read_bytes)
 {
-	uint32_t bytes;
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
+	uint32_t to_copy;
 
 	if (!usbip_ctrl.attached || !usbip_ep_is_valid(ep)) {
 		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
@@ -394,25 +395,18 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 		return -EINVAL;
 	}
 
-	if (!data && !max_data_len) {
-		/* When both buffer and max data to read are zero return
-		 * the available data in buffer
-		 */
-		if (read_bytes) {
-			uint8_t ep_idx = USB_EP_GET_IDX(ep);
-
-			*read_bytes = usbip_ctrl.out_ep_ctrl[ep_idx].data_len;
-		}
-
+	if (data == NULL && max_data_len == 0 && read_bytes != NULL) {
+		/* Return length of the available data in endpoint buffer */
+		*read_bytes = usbip_ctrl.out_ep_ctrl[ep_idx].data_len;
 		return 0;
 	}
 
-	LOG_DBG("ep %x max_data_len %u", ep, max_data_len);
-
-	bytes = usbip_recv(data, max_data_len);
+	to_copy = MIN(usbip_ctrl.out_ep_ctrl[ep_idx].data_len, max_data_len);
+	LOG_DBG("ep 0x%02x, to_copy %u", ep, to_copy);
+	memcpy(data, usbip_ctrl.out_ep_ctrl[ep_idx].buf, to_copy);
 
 	if (read_bytes) {
-		*read_bytes = bytes;
+		*read_bytes = to_copy;
 	}
 
 	return 0;
@@ -510,17 +504,33 @@ int usb_dc_ep_mps(const uint8_t ep)
 int handle_usb_control(struct usbip_header *hdr)
 {
 	uint8_t ep_idx = USB_EP_GET_IDX(ntohl(hdr->common.ep));
-	usb_dc_ep_callback ep_cb = usbip_ctrl.out_ep_ctrl[ep_idx].cb;
+	struct usb_ep_ctrl_prv *ep_ctrl;
 
-	LOG_DBG("ep %x idx %u", ntohl(hdr->common.ep), ep_idx);
+	ep_ctrl = &usbip_ctrl.out_ep_ctrl[ep_idx];
+	if (ep_ctrl->cb == NULL) {
+		LOG_ERR("Control endpoint callback not set");
+		return -EIO;
+	}
 
-	if (ep_cb) {
-		LOG_DBG("Call ep_cb");
-		ep_cb(ntohl(hdr->common.ep), USB_DC_EP_SETUP);
-		if (ntohl(hdr->common.command) == USBIP_CMD_SUBMIT &&
-		    hdr->u.submit.transfer_buffer_length != 0) {
-			ep_cb(ntohl(hdr->common.ep), USB_DC_EP_DATA_OUT);
-		}
+	if ((ntohl(hdr->common.direction) == USBIP_DIR_IN) ^
+	    (REQTYPE_GET_DIR(hdr->u.submit.bmRequestType) ==
+	     REQTYPE_DIR_TO_HOST)) {
+		LOG_ERR("Failed to verify bmRequestType");
+		return -EIO;
+	}
+
+	ep_ctrl->data_len = 8;
+	LOG_DBG("SETUP event ep 0x%02x %u", ep_idx, ep_ctrl->data_len);
+	memcpy(ep_ctrl->buf, &hdr->u.submit.bmRequestType, ep_ctrl->data_len);
+	ep_ctrl->cb(ep_idx, USB_DC_EP_SETUP);
+
+	if (ntohl(hdr->common.direction) == USBIP_DIR_OUT) {
+		/* Data OUT stage availably */
+		ep_ctrl->data_len = ntohl(hdr->u.submit.transfer_buffer_length);
+		usbip_recv(ep_ctrl->buf, ep_ctrl->data_len);
+		LOG_DBG("DATA OUT event ep 0x%02x %u",
+			ep_idx, ep_ctrl->data_len);
+		ep_ctrl->cb(ep_idx, USB_DC_EP_DATA_OUT);
 	}
 
 	return 0;
@@ -529,59 +539,56 @@ int handle_usb_control(struct usbip_header *hdr)
 int handle_usb_data(struct usbip_header *hdr)
 {
 	uint8_t ep_idx = ntohl(hdr->common.ep);
-	usb_dc_ep_callback ep_cb;
+	struct usb_ep_ctrl_prv *ep_ctrl;
 	uint8_t ep;
-
-	LOG_DBG("ep_idx %u", ep_idx);
 
 	if (ntohl(hdr->common.direction) == USBIP_DIR_OUT) {
 		if (ep_idx >= USBIP_OUT_EP_NUM) {
 			return -EINVAL;
 		}
 
+		ep_ctrl = &usbip_ctrl.out_ep_ctrl[ep_idx];
 		ep = ep_idx | USB_EP_DIR_OUT;
-		ep_cb = usbip_ctrl.out_ep_ctrl[ep_idx].cb;
+		ep_ctrl->data_len = ntohl(hdr->u.submit.transfer_buffer_length);
+		usbip_recv(ep_ctrl->buf, ep_ctrl->data_len);
+		LOG_DBG("DATA OUT event ep 0x%02x %u", ep, ep_ctrl->data_len);
 
-		ep_cb(ep, USB_DC_EP_DATA_OUT);
+		ep_ctrl->cb(ep, USB_DC_EP_DATA_OUT);
 
 		/* Send ACK reply */
 		if (!usbip_send_common(ep, 0)) {
 			return -EIO;
 		}
 	} else {
-		uint8_t buf_len = usbip_ctrl.in_ep_ctrl[ep_idx].buf_len;
-		uint8_t *buf = usbip_ctrl.in_ep_ctrl[ep_idx].buf;
-
 		if (ep_idx >= USBIP_IN_EP_NUM) {
 			return -EINVAL;
 		}
 
+		ep_ctrl = &usbip_ctrl.in_ep_ctrl[ep_idx];
 		ep = ep_idx | USB_EP_DIR_IN;
-		ep_cb = usbip_ctrl.in_ep_ctrl[ep_idx].cb;
-
-		/* Read USB setup, not handled */
-		if (!usbip_skip_setup()) {
-			return -EIO;
-		}
-
-		LOG_DBG("Send %u bytes", buf_len);
+		LOG_DBG("DATA IN event ep 0x%02x %u", ep, ep_ctrl->buf_len);
 
 		/* Send queued data */
-		if (!usbip_send_common(ep, buf_len)) {
+		if (!usbip_send_common(ep, ep_ctrl->buf_len)) {
 			return -EIO;
 		}
 
-		if (usbip_send(ep, buf, buf_len) != buf_len) {
+		if (usbip_send(ep, ep_ctrl->buf, ep_ctrl->buf_len) !=
+		    ep_ctrl->buf_len) {
 			return -EIO;
 		}
 
-		LOG_HEXDUMP_DBG(buf, buf_len, ">");
+		LOG_HEXDUMP_DBG(ep_ctrl->buf, ep_ctrl->buf_len, ">");
 
-		/* Indicate data sent */
-		ep_cb(ep, USB_DC_EP_DATA_IN);
+		/*
+		 * Call the callback only if data in usb_dc_ep_write()
+		 * is actually written to the intermediate buffer and sent.
+		 */
+		if (ep_ctrl->buf_len != 0) {
+			ep_ctrl->cb(ep, USB_DC_EP_DATA_IN);
+			usbip_ctrl.in_ep_ctrl[ep_idx].buf_len = 0;
+		}
 	}
-
-	LOG_DBG("ep %x ep_cb %p", ep, ep_cb);
 
 	return 0;
 }

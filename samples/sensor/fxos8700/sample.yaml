@@ -9,6 +9,8 @@ tests:
     platform_allow: frdm_k64f hexiwear_k64 warp7_m4 frdm_kw41z
                         rv32m1_vega_ri5cy twr_ke18f lpcxpresso55s16_ns
                         mimxrt685_evk_cm33 frdm_k22f
+    integration_platforms:
+      - frdm_k64f
     extra_configs:
       - CONFIG_FXOS8700_PULSE=y
       - CONFIG_FXOS8700_PULSE_INT1=y
@@ -18,4 +20,6 @@ tests:
   sample.sensor.fxos8700.accel:
     platform_allow: frdm_kl25z bbc_microbit lpcxpresso55s69_cpu0 reel_board
                         mimxrt685_evk_cm33
+    integration_platforms:
+      - bbc_microbit
     extra_args: CONF_FILE=prj_accel.conf

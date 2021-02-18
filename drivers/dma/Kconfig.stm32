@@ -31,7 +31,6 @@ config DMA_STM32_V2
 
 config DMAMUX_STM32
 	bool
-	depends on DMA_STM32_V2
 	default $(dt_compat_enabled,$(DT_COMPAT_ST_STM32_DMAMUX))
 	help
 	  Enable DMAMUX support.

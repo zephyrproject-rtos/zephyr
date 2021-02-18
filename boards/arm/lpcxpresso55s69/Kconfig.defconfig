@@ -19,10 +19,6 @@ config GPIO_MCUX_LPC_PORT1
 
 endif # GPIO_MCUX_LPC
 
-config SPI_8
-	default y
-	depends on SPI
-
 config FXOS8700_DRDY_INT1
 	default y
 	depends on FXOS8700_TRIGGER
@@ -56,9 +52,10 @@ config FLASH_LOAD_SIZE
 
 endif # TRUSTED_EXECUTION_NONSECURE || BOARD_LPCXPRESSO55S69_CPU1
 
-config TFM_PROFILE
-	default "profile_medium"
+choice TFM_PROFILE_TYPE
 	depends on BUILD_WITH_TFM
+	default TFM_PROFILE_TYPE_MEDIUM
+endchoice
 
 endif # BOARD_LPCXPRESSO55S69_CPU0 || BOARD_LPCXPRESSO55S69_CPU1
 

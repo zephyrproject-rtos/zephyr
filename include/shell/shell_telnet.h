@@ -45,7 +45,8 @@ struct shell_telnet {
 	 *  been around for "too long". This will prove to be useful
 	 *  to send the shell prompt for instance.
 	 */
-	struct k_delayed_work send_work;
+	struct k_work_delayable send_work;
+	struct k_work_sync work_sync;
 
 	/** If set, no output is sent to the TELNET client. */
 	bool output_lock;

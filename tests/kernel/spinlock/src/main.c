@@ -144,7 +144,7 @@ void test_spinlock_bounce(void)
 void test_spinlock_mutual_exclusion(void)
 {
 	k_spinlock_key_t key;
-	struct k_spinlock lock_runtime;
+	static struct k_spinlock lock_runtime;
 	unsigned int irq_key;
 
 	(void)memset(&lock_runtime, 0, sizeof(lock_runtime));

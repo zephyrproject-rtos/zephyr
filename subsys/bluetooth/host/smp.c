@@ -727,14 +727,8 @@ static uint8_t get_encryption_key_size(struct bt_smp *smp)
 /* Check that if a new pairing procedure with an existing bond will not lower
  * the established security level of the bond.
  */
-static bool update_keys_check(struct bt_smp *smp)
+static bool update_keys_check(struct bt_smp *smp, struct bt_keys *keys)
 {
-	struct bt_conn *conn = smp->chan.chan.conn;
-
-	if (!conn->le.keys) {
-		conn->le.keys = bt_keys_get_addr(conn->id, &conn->le.dst);
-	}
-
 	if (IS_ENABLED(CONFIG_BT_SMP_DISABLE_LEGACY_JW_PASSKEY) &&
 	    !atomic_test_bit(smp->flags, SMP_FLAG_SC) &&
 	    smp->method != LEGACY_OOB) {
@@ -746,27 +740,27 @@ static bool update_keys_check(struct bt_smp *smp)
 		return false;
 	}
 
-	if (!conn->le.keys ||
-	    !(conn->le.keys->keys & (BT_KEYS_LTK_P256 | BT_KEYS_LTK))) {
+	if (!keys ||
+	    !(keys->keys & (BT_KEYS_LTK_P256 | BT_KEYS_LTK))) {
 		return true;
 	}
 
-	if (conn->le.keys->enc_size > get_encryption_key_size(smp)) {
+	if (keys->enc_size > get_encryption_key_size(smp)) {
 		return false;
 	}
 
-	if ((conn->le.keys->keys & BT_KEYS_LTK_P256) &&
+	if ((keys->keys & BT_KEYS_LTK_P256) &&
 	    !atomic_test_bit(smp->flags, SMP_FLAG_SC)) {
 		return false;
 	}
 
-	if ((conn->le.keys->flags & BT_KEYS_AUTHENTICATED) &&
+	if ((keys->flags & BT_KEYS_AUTHENTICATED) &&
 	     smp->method == JUST_WORKS) {
 		return false;
 	}
 
 	if (!IS_ENABLED(CONFIG_BT_SMP_ALLOW_UNAUTH_OVERWRITE) &&
-	    (!(conn->le.keys->flags & BT_KEYS_AUTHENTICATED)
+	    (!(keys->flags & BT_KEYS_AUTHENTICATED)
 	     && smp->method == JUST_WORKS)) {
 		return false;
 	}
@@ -2417,6 +2411,7 @@ static uint8_t legacy_pairing_req(struct bt_smp *smp)
 	}
 
 	atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
+	atomic_set_bit(smp->allowed_cmds, BT_SMP_KEYPRESS_NOTIFICATION);
 	return send_pairing_rsp(smp);
 }
 #endif /* CONFIG_BT_PERIPHERAL */
@@ -2725,9 +2720,16 @@ static uint8_t get_auth(struct bt_conn *conn, uint8_t auth)
 
 static uint8_t remote_sec_level_reachable(struct bt_smp *smp)
 {
-	struct bt_conn *conn = smp->chan.chan.conn;
+	bt_security_t sec = smp->chan.chan.conn->required_sec_level;
 
-	switch (conn->required_sec_level) {
+	if (IS_ENABLED(CONFIG_BT_SMP_SC_ONLY)) {
+		sec = BT_SECURITY_L4;
+	}
+	if (IS_ENABLED(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)) {
+		sec = BT_SECURITY_L3;
+	}
+
+	switch (sec) {
 	case BT_SECURITY_L1:
 	case BT_SECURITY_L2:
 		return 0;
@@ -3007,7 +3009,7 @@ static uint8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 
 	smp->method = get_pair_method(smp, req->io_capability);
 
-	if (!update_keys_check(smp)) {
+	if (!update_keys_check(smp, conn->le.keys)) {
 		return BT_SMP_ERR_AUTH_REQUIREMENTS;
 	}
 
@@ -3205,7 +3207,7 @@ static uint8_t smp_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 
 	smp->method = get_pair_method(smp, rsp->io_capability);
 
-	if (!update_keys_check(smp)) {
+	if (!update_keys_check(smp, conn->le.keys)) {
 		return BT_SMP_ERR_AUTH_REQUIREMENTS;
 	}
 
@@ -3833,6 +3835,18 @@ static uint8_t smp_ident_addr_info(struct bt_smp *smp, struct net_buf *buf)
 		return BT_SMP_ERR_INVALID_PARAMS;
 	}
 
+	if (bt_addr_le_cmp(&conn->le.dst, &req->addr) != 0) {
+		struct bt_keys *keys = bt_keys_find_addr(conn->id, &req->addr);
+
+		if (keys) {
+			if (!update_keys_check(smp, keys)) {
+				return BT_SMP_ERR_UNSPECIFIED;
+			}
+
+			bt_keys_clear(keys);
+		}
+	}
+
 	if (atomic_test_bit(smp->flags, SMP_FLAG_BOND)) {
 		const bt_addr_le_t *dst;
 		struct bt_keys *keys;
@@ -4129,9 +4143,11 @@ static uint8_t smp_public_key_slave(struct bt_smp *smp)
 		}
 
 		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
+		atomic_set_bit(smp->allowed_cmds, BT_SMP_KEYPRESS_NOTIFICATION);
 		break;
 	case PASSKEY_INPUT:
 		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
+		atomic_set_bit(smp->allowed_cmds, BT_SMP_KEYPRESS_NOTIFICATION);
 		atomic_set_bit(smp->flags, SMP_FLAG_USER);
 		bt_auth->passkey_entry(smp->chan.chan.conn);
 		break;
@@ -4708,13 +4724,13 @@ int bt_smp_sign_verify(struct bt_conn *conn, struct net_buf *buf)
 		BT_ERR("Unable to create signature for %s",
 		       bt_addr_le_str(&conn->le.dst));
 		return -EIO;
-	};
+	}
 
 	if (memcmp(sig, net_buf_tail(buf) - sizeof(sig), sizeof(sig))) {
 		BT_ERR("Unable to verify signature for %s",
 		       bt_addr_le_str(&conn->le.dst));
 		return -EBADMSG;
-	};
+	}
 
 	keys->remote_csrk.cnt++;
 

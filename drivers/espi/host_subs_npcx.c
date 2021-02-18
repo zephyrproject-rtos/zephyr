@@ -780,7 +780,7 @@ int npcx_host_periph_read_request(enum lpc_peripheral_opcode op,
 }
 
 int npcx_host_periph_write_request(enum lpc_peripheral_opcode op,
-								uint32_t *data)
+							const uint32_t *data)
 {
 	volatile uint32_t __attribute__((unused)) dummy;
 	struct kbc_reg *const inst_kbc = host_sub_cfg.inst_kbc;
@@ -827,13 +827,11 @@ int npcx_host_periph_write_request(enum lpc_peripheral_opcode op,
 			break;
 		case E8042_SET_FLAG:
 			/* FW shouldn't modify these flags directly */
-			*data &= ~NPCX_KBC_STS_MASK;
-			inst_kbc->HIKMST |= *data;
+			inst_kbc->HIKMST |= *data & ~NPCX_KBC_STS_MASK;
 			break;
 		case E8042_CLEAR_FLAG:
 			/* FW shouldn't modify these flags directly */
-			*data &= ~NPCX_KBC_STS_MASK;
-			inst_kbc->HIKMST &= ~(*data);
+			inst_kbc->HIKMST &= ~(*data | NPCX_KBC_STS_MASK);
 			break;
 		default:
 			return -EINVAL;
@@ -964,6 +962,16 @@ void npcx_host_init_subs_host_domain(void)
 	LOG_DBG("Hos sub-modules configurations are done!");
 }
 
+void npcx_host_enable_access_interrupt(void)
+{
+	npcx_miwu_irq_enable(&host_sub_cfg.host_acc_wui);
+}
+
+void npcx_host_disable_access_interrupt(void)
+{
+	npcx_miwu_irq_disable(&host_sub_cfg.host_acc_wui);
+}
+
 int npcx_host_init_subs_core_domain(const struct device *host_bus_dev,
 							sys_slist_t *callbacks)
 {
@@ -972,6 +980,7 @@ int npcx_host_init_subs_core_domain(const struct device *host_bus_dev,
 	const struct device *const clk_dev =
 					device_get_binding(NPCX_CLK_CTRL_NAME);
 	int i;
+	uint8_t shm_sts;
 
 	host_sub_data.callbacks = callbacks;
 	host_sub_data.host_bus_dev = host_bus_dev;
@@ -998,7 +1007,8 @@ int npcx_host_init_subs_core_domain(const struct device *host_bus_dev,
 	 */
 	inst_shm->SMC_CTL &= BIT(NPCX_SMC_CTL_HOSTWAIT);
 	/* Clear shared memory status */
-	inst_shm->SMC_STS = inst_shm->SMC_STS;
+	shm_sts = inst_shm->SMC_STS;
+	inst_shm->SMC_STS = shm_sts;
 
 	/* host sub-module initialization in core domain */
 #if defined(CONFIG_ESPI_PERIPHERAL_8042_KBC)
@@ -1057,13 +1067,11 @@ int npcx_host_init_subs_core_domain(const struct device *host_bus_dev,
 	if (IS_ENABLED(CONFIG_PM)) {
 		/*
 		 * Configure the host access wake-up event triggered from a host
-		 * transaction on eSPI/LPC bus. No need for callback function.
+		 * transaction on eSPI/LPC bus. Do not enable it here. Or plenty
+		 * of interrupts will jam the system in S0.
 		 */
 		npcx_miwu_interrupt_configure(&host_sub_cfg.host_acc_wui,
 				NPCX_MIWU_MODE_EDGE, NPCX_MIWU_TRIG_HIGH);
-
-		/* Enable irq of interrupt-input module */
-		npcx_miwu_irq_enable(&host_sub_cfg.host_acc_wui);
 	}
 
 	return 0;

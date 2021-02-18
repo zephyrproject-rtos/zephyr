@@ -241,6 +241,8 @@ if(${BOARD}_DEPRECATED)
   message(WARNING "Deprecated BOARD=${BOARD_DEPRECATED} name specified, board automatically changed to: ${BOARD}.")
 endif()
 
+zephyr_boilerplate_watch(BOARD)
+
 foreach(root ${BOARD_ROOT})
   # Check that the board root looks reasonable.
   if(NOT IS_DIRECTORY "${root}/boards")
@@ -292,7 +294,7 @@ if(DEFINED BOARD_REVISION)
 endif()
 
 # Check that SHIELD has not changed.
-zephyr_check_cache(SHIELD)
+zephyr_check_cache(SHIELD WATCH)
 
 if(SHIELD)
   set(BOARD_MESSAGE "${BOARD_MESSAGE}, Shield(s): ${SHIELD}")
@@ -652,8 +654,6 @@ endif()
 #
 # Currently used properties:
 # - COMPILES_OPTIONS: Used by application memory partition feature
-# - ${TARGET}_DEPENDENCIES: additional dependencies for targets that need them
-#   like flash (FLASH_DEPENDENCIES), debug (DEBUG_DEPENDENCIES), etc.
 add_custom_target(zephyr_property_target)
 
 # "app" is a CMake library containing all the application code and is

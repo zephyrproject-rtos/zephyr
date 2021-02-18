@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <platform/gpiote/nrf_802154_gpiote.h>
+#include <platform/nrf_802154_gpiote.h>
 
 #include <stdbool.h>
 #include <stdint.h>

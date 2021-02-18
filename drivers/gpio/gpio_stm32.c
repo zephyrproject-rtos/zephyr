@@ -363,8 +363,13 @@ static int gpio_stm32_enable_int(int port, int pin)
 		.enr = LL_APB2_GRP1_PERIPH_SYSCFG
 #endif /* CONFIG_SOC_SERIES_STM32H7X */
 	};
+	int ret;
+
 	/* Enable SYSCFG clock */
-	clock_control_on(clk, (clock_control_subsys_t *) &pclken);
+	ret = clock_control_on(clk, (clock_control_subsys_t *) &pclken);
+	if (ret != 0) {
+		return ret;
+	}
 #endif
 
 	gpio_stm32_set_exti_source(port, pin);
@@ -566,13 +571,13 @@ static const struct gpio_driver_api gpio_stm32_driver = {
  *
  * @return 0
  */
-static int gpio_stm32_init(const struct device *device)
+static int gpio_stm32_init(const struct device *dev)
 {
-	struct gpio_stm32_data *data = device->data;
+	struct gpio_stm32_data *data = dev->data;
 
-	data->dev = device;
+	data->dev = dev;
 
-	return gpio_stm32_clock_request(device, true);
+	return gpio_stm32_clock_request(dev, true);
 }
 
 #define GPIO_DEVICE_INIT(__node, __suffix, __base_addr, __port, __cenr, __bus) \
@@ -649,9 +654,9 @@ GPIO_DEVICE_INIT_STM32(k, K);
 
 #if defined(CONFIG_SOC_SERIES_STM32F1X)
 
-static int gpio_stm32_afio_init(const struct device *device)
+static int gpio_stm32_afio_init(const struct device *dev)
 {
-	UNUSED(device);
+	UNUSED(dev);
 
 	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_AFIO);
 

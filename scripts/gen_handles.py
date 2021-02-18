@@ -38,11 +38,13 @@ from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 import elftools.elf.enums
 
+# This is needed to load edt.pickle files.
+sys.path.append(os.path.join(os.path.dirname(__file__),
+                             'dts', 'python-devicetree', 'src'))
+from devicetree import edtlib  # pylint: disable=unused-import
+
 if LooseVersion(elftools.__version__) < LooseVersion('0.24'):
     sys.exit("pyelftools is out of date, need version 0.24 or later")
-
-ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
-sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/dts"))
 
 scr = os.path.basename(sys.argv[0])
 
@@ -65,9 +67,23 @@ def parse_args():
 
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="Print extra debugging information")
+
+    parser.add_argument("-z", "--zephyr-base",
+                        help="Path to current Zephyr base. If this argument \
+                        is not provided the environment will be checked for \
+                        the ZEPHYR_BASE environment variable.")
+
     args = parser.parse_args()
     if "VERBOSE" in os.environ:
         args.verbose = 1
+
+    ZEPHYR_BASE = args.zephyr_base or os.getenv("ZEPHYR_BASE")
+
+    if ZEPHYR_BASE is None:
+        sys.exit("-z / --zephyr-base not provided. Please provide "
+                 "--zephyr-base or set ZEPHYR_BASE in environment")
+
+    sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/dts"))
 
 
 def symbol_data(elf, sym):

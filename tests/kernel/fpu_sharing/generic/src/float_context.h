@@ -88,7 +88,7 @@ struct fp_non_volatile_register_set {
 #define SIZEOF_FP_NON_VOLATILE_REGISTER_SET \
 	sizeof(struct fp_non_volatile_register_set)
 
-#elif defined(CONFIG_CPU_ARCV2)
+#elif defined(CONFIG_ISA_ARCV2)
 
 struct fp_volatile_register_set {
 #ifdef CONFIG_FP_FPU_DA

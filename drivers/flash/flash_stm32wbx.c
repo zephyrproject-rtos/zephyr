@@ -45,6 +45,30 @@ static uint32_t get_page(off_t offset)
 	return offset >> STM32WBX_PAGE_SHIFT;
 }
 
+static inline void flush_cache(FLASH_TypeDef *regs)
+{
+	if (regs->ACR & FLASH_ACR_DCEN) {
+		regs->ACR &= ~FLASH_ACR_DCEN;
+		/* Datasheet: DCRST: Data cache reset
+		 * This bit can be written only when thes data cache is disabled
+		 */
+		regs->ACR |= FLASH_ACR_DCRST;
+		regs->ACR &= ~FLASH_ACR_DCRST;
+		regs->ACR |= FLASH_ACR_DCEN;
+	}
+
+	if (regs->ACR & FLASH_ACR_ICEN) {
+		regs->ACR &= ~FLASH_ACR_ICEN;
+		/* Datasheet: ICRST: Instruction cache reset :
+		 * This bit can be written only when the instruction cache
+		 * is disabled
+		 */
+		regs->ACR |= FLASH_ACR_ICRST;
+		regs->ACR &= ~FLASH_ACR_ICRST;
+		regs->ACR |= FLASH_ACR_ICEN;
+	}
+}
+
 static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 {
 	volatile uint32_t *flash = (uint32_t *)(offset + CONFIG_FLASH_BASE_ADDRESS);
@@ -199,6 +223,13 @@ static int erase_page(const struct device *dev, uint32_t page)
 	if (rc < 0) {
 		return rc;
 	}
+
+	/*
+	 * If an erase operation in Flash memory also concerns data in the data
+	 * or instruction cache, the user has to ensure that these data
+	 * are rewritten before they are accessed during code execution.
+	 */
+	flush_cache(regs);
 
 	/* Implementation of STM32 AN5289, proposed in STM32WB Cube Application
 	 * BLE_RfWithFlash

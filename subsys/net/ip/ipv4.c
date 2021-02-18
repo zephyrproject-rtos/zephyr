@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(net_ipv4, CONFIG_NET_IPV4_LOG_LEVEL);
 #include <net/net_pkt.h>
 #include <net/net_stats.h>
 #include <net/net_context.h>
+#include <net/virtual.h>
 #include "net_private.h"
 #include "connection.h"
 #include "net_stats.h"
@@ -27,9 +28,14 @@ LOG_MODULE_REGISTER(net_ipv4, CONFIG_NET_IPV4_LOG_LEVEL);
 /* Timeout for various buffer allocations in this file. */
 #define NET_BUF_TIMEOUT K_MSEC(50)
 
-int net_ipv4_create(struct net_pkt *pkt,
-		    const struct in_addr *src,
-		    const struct in_addr *dst)
+int net_ipv4_create_full(struct net_pkt *pkt,
+			 const struct in_addr *src,
+			 const struct in_addr *dst,
+			 uint8_t tos,
+			 uint16_t id,
+			 uint8_t flags,
+			 uint16_t offset,
+			 uint8_t ttl)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv4_access, struct net_ipv4_hdr);
 	struct net_ipv4_hdr *ipv4_hdr;
@@ -40,15 +46,15 @@ int net_ipv4_create(struct net_pkt *pkt,
 	}
 
 	ipv4_hdr->vhl       = 0x45;
-	ipv4_hdr->tos       = 0x00;
+	ipv4_hdr->tos       = tos;
 	ipv4_hdr->len       = 0U;
-	ipv4_hdr->id[0]     = 0U;
-	ipv4_hdr->id[1]     = 0U;
-	ipv4_hdr->offset[0] = 0U;
-	ipv4_hdr->offset[1] = 0U;
+	ipv4_hdr->id[0]     = id >> 8;
+	ipv4_hdr->id[1]     = id;
+	ipv4_hdr->offset[0] = (offset >> 8) | (flags << 5);
+	ipv4_hdr->offset[1] = offset;
+	ipv4_hdr->ttl       = ttl;
 
-	ipv4_hdr->ttl       = net_pkt_ipv4_ttl(pkt);
-	if (ipv4_hdr->ttl == 0U) {
+	if (ttl == 0U) {
 		ipv4_hdr->ttl = net_if_ipv4_get_ttl(net_pkt_iface(pkt));
 	}
 
@@ -61,6 +67,14 @@ int net_ipv4_create(struct net_pkt *pkt,
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
 
 	return net_pkt_set_data(pkt, &ipv4_access);
+}
+
+int net_ipv4_create(struct net_pkt *pkt,
+		    const struct in_addr *src,
+		    const struct in_addr *dst)
+{
+	return net_ipv4_create_full(pkt, src, dst, 0U, 0U, 0U, 0U,
+				    net_pkt_ipv4_ttl(pkt));
 }
 
 int net_ipv4_finalize(struct net_pkt *pkt, uint8_t next_header_proto)
@@ -210,6 +224,12 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 	uint8_t opts_len;
 	int pkt_len;
 
+#if defined(CONFIG_NET_L2_VIRTUAL)
+	struct net_pkt_cursor hdr_start;
+
+	net_pkt_cursor_backup(pkt, &hdr_start);
+#endif
+
 	net_stats_update_ipv4_recv(net_pkt_iface(pkt));
 
 	hdr = (struct net_ipv4_hdr *)net_pkt_get_data(pkt, &ipv4_access);
@@ -229,6 +249,10 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 	opts_len = hdr_len - sizeof(struct net_ipv4_hdr);
 	if (opts_len > NET_IPV4_HDR_OPTNS_MAX_LEN) {
 		return -EINVAL;
+	}
+
+	if (hdr->ttl == 0) {
+		goto drop;
 	}
 
 	net_pkt_set_ipv4_opts_len(pkt, opts_len);
@@ -314,6 +338,24 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 			verdict = NET_OK;
 		}
 		break;
+
+#if defined(CONFIG_NET_L2_VIRTUAL)
+	case IPPROTO_IPV6:
+	case IPPROTO_IPIP: {
+		struct net_addr remote_addr;
+
+		remote_addr.family = AF_INET;
+		net_ipaddr_copy(&remote_addr.in_addr, &hdr->src);
+
+		/* Get rid of the old IP header */
+		net_pkt_cursor_restore(pkt, &hdr_start);
+		net_pkt_pull(pkt, net_pkt_ip_hdr_len(pkt) +
+			     net_pkt_ipv4_opts_len(pkt));
+
+		return net_virtual_input(net_pkt_iface(pkt), &remote_addr,
+					 pkt);
+	}
+#endif
 	}
 
 	if (verdict == NET_DROP) {

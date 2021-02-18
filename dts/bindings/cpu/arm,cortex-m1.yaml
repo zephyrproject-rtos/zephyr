@@ -5,4 +5,4 @@ description: ARM Cortex-M1 CPU
 
 compatible: "arm,cortex-m1"
 
-include: cpu.yaml
+include: arm,cortex-m.yaml

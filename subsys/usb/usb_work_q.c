@@ -18,10 +18,10 @@ static int z_usb_work_q_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	k_work_q_start(&z_usb_work_q,
-		       z_usb_work_q_stack,
-		       K_KERNEL_STACK_SIZEOF(z_usb_work_q_stack),
-		       CONFIG_USB_WORKQUEUE_PRIORITY);
+	k_work_queue_start(&z_usb_work_q,
+			   z_usb_work_q_stack,
+			   K_KERNEL_STACK_SIZEOF(z_usb_work_q_stack),
+			   CONFIG_USB_WORKQUEUE_PRIORITY, NULL);
 	k_thread_name_set(&z_usb_work_q.thread, "usbworkq");
 
 	return 0;

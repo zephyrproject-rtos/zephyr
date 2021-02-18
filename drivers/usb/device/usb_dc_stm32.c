@@ -198,7 +198,9 @@ static int usb_dc_stm32_clock_enable(void)
 	 * that instead.  Example reference manual RM0360 for
 	 * STM32F030x4/x6/x8/xC and STM32F070x6/xB.
 	 */
-#if defined(RCC_HSI48_SUPPORT) || defined(CONFIG_SOC_SERIES_STM32WBX)
+#if defined(RCC_HSI48_SUPPORT) || \
+	defined(CONFIG_SOC_SERIES_STM32WBX) || \
+	defined(CONFIG_SOC_SERIES_STM32H7X)
 
 	/*
 	 * In STM32L0 series, HSI48 requires VREFINT and its buffer
@@ -321,7 +323,7 @@ static uint32_t usb_dc_stm32_get_maximum_speed(void)
 	if (!strncmp(USB_MAXIMUM_SPEED, "high-speed", 10)) {
 		speed = USB_OTG_SPEED_HIGH;
 	} else if (!strncmp(USB_MAXIMUM_SPEED, "full-speed", 10)) {
-#if USB_OTG_HS_EMB_PHY
+#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(USB_OTG_HS_EMB_PHY)
 		speed = USB_OTG_SPEED_HIGH_IN_FULL;
 #else
 		speed = USB_OTG_SPEED_FULL;
@@ -374,6 +376,27 @@ static int usb_dc_stm32_init(void)
 #ifdef CONFIG_USB_DEVICE_SOF
 	usb_dc_stm32_state.pcd.Init.Sof_enable = 1;
 #endif /* CONFIG_USB_DEVICE_SOF */
+
+#if defined(CONFIG_SOC_SERIES_STM32H7X)
+	/* Currently assuming FS mode. Need to disable the ULPI clock on USB2 and
+	 * enable the FS clock. Need to make this dependent on HS or FS config.
+	 */
+
+	LL_AHB1_GRP1_DisableClock(LL_AHB1_GRP1_PERIPH_USB2OTGHSULPI);
+	LL_AHB1_GRP1_DisableClockSleep(LL_AHB1_GRP1_PERIPH_USB2OTGHSULPI);
+
+	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_USB2OTGHS);
+	LL_AHB1_GRP1_EnableClockSleep(LL_AHB1_GRP1_PERIPH_USB2OTGHS);
+
+	LL_PWR_EnableUSBVoltageDetector();
+
+	/* Per AN2606: USBREGEN not supported when running in FS mode. */
+	LL_PWR_DisableUSBReg();
+	while (!LL_PWR_IsActiveFlag_USB()) {
+		LOG_INF("PWR not active yet");
+		k_sleep(K_MSEC(100));
+	}
+#endif
 
 	LOG_DBG("Pinctrl signals configuration");
 	status = stm32_dt_pinctrl_configure(usb_pinctrl,

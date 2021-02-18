@@ -122,8 +122,8 @@ noted for users who do not want heap allocations within their application:
    dynamically allocated at runtime and a usable pointer to them returned to
    the caller.
 
-The relevant API is :c:func:`k_thread_resource_pool_assign` which assigns
-a k_mem_pool to draw these allocations from for the target thread.
+The relevant API is :c:func:`k_thread_heap_assign` which assigns
+a k_heap to draw these allocations from for the target thread.
 
 If the system heap is enabled, then the system heap may be used with
 :c:func:`k_thread_system_pool_assign`, but it is preferable for different

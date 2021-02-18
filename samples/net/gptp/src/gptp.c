@@ -18,7 +18,7 @@ LOG_MODULE_DECLARE(net_gptp_sample);
 #include "ethernet/gptp/gptp_data_set.h"
 
 static int run_duration = CONFIG_NET_SAMPLE_RUN_DURATION;
-static struct k_delayed_work stop_sample;
+static struct k_work_delayable stop_sample;
 static struct k_sem quit_lock;
 
 static void stop_handler(struct k_work *work)
@@ -82,8 +82,8 @@ void init_testing(void)
 
 	k_sem_init(&quit_lock, 0, K_SEM_MAX_LIMIT);
 
-	k_delayed_work_init(&stop_sample, stop_handler);
-	k_delayed_work_submit(&stop_sample, K_SECONDS(run_duration));
+	k_work_init_delayable(&stop_sample, stop_handler);
+	k_work_reschedule(&stop_sample, K_SECONDS(run_duration));
 
 	k_sem_take(&quit_lock, K_FOREVER);
 

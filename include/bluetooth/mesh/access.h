@@ -12,6 +12,7 @@
 
 #include <settings/settings.h>
 #include <sys/util.h>
+#include <bluetooth/mesh/msg.h>
 
 /* Internal macros used to initialize array members */
 #define BT_MESH_KEY_UNUSED_ELT_(IDX, _) BT_MESH_KEY_UNUSED,
@@ -160,33 +161,6 @@ struct bt_mesh_elem {
 #define BT_MESH_MODEL_ID_LIGHT_LC_SETUPSRV         0x1310
 #define BT_MESH_MODEL_ID_LIGHT_LC_CLI              0x1311
 
-/** Message sending context. */
-struct bt_mesh_msg_ctx {
-	/** NetKey Index of the subnet to send the message on. */
-	uint16_t net_idx;
-
-	/** AppKey Index to encrypt the message with. */
-	uint16_t app_idx;
-
-	/** Remote address. */
-	uint16_t addr;
-
-	/** Destination address of a received message. Not used for sending. */
-	uint16_t recv_dst;
-
-	/** RSSI of received packet. Not used for sending. */
-	int8_t  recv_rssi;
-
-	/** Received TTL value. Not used for sending. */
-	uint8_t  recv_ttl;
-
-	/** Force sending reliably by using segment acknowledgement */
-	bool  send_rel;
-
-	/** TTL, or BT_MESH_TTL_DEFAULT for default TTL. */
-	uint8_t  send_ttl;
-};
-
 /** Model opcode handler. */
 struct bt_mesh_model_op {
 	/** OpCode encoded using the BT_MESH_MODEL_OP_* macros */
@@ -219,56 +193,6 @@ struct bt_mesh_model_op {
 
 /** Helper to define an empty model array */
 #define BT_MESH_MODEL_NONE ((struct bt_mesh_model []){})
-
-/** Length of a short Mesh MIC. */
-#define BT_MESH_MIC_SHORT 4
-/** Length of a long Mesh MIC. */
-#define BT_MESH_MIC_LONG 8
-
-/** @def BT_MESH_MODEL_OP_LEN
- *
- *  @brief Helper to determine the length of an opcode.
- *
- *  @param _op Opcode.
- */
-#define BT_MESH_MODEL_OP_LEN(_op) ((_op) <= 0xff ? 1 : (_op) <= 0xffff ? 2 : 3)
-
-/** @def BT_MESH_MODEL_BUF_LEN
- *
- *  @brief Helper for model message buffer length.
- *
- *  Returns the length of a Mesh model message buffer, including the opcode
- *  length and a short MIC.
- *
- *  @param _op          Opcode of the message.
- *  @param _payload_len Length of the model payload.
- */
-#define BT_MESH_MODEL_BUF_LEN(_op, _payload_len)                               \
-	(BT_MESH_MODEL_OP_LEN(_op) + (_payload_len) + BT_MESH_MIC_SHORT)
-
-/** @def BT_MESH_MODEL_BUF_LEN_LONG_MIC
- *
- *  @brief Helper for model message buffer length.
- *
- *  Returns the length of a Mesh model message buffer, including the opcode
- *  length and a long MIC.
- *
- *  @param _op          Opcode of the message.
- *  @param _payload_len Length of the model payload.
- */
-#define BT_MESH_MODEL_BUF_LEN_LONG_MIC(_op, _payload_len)                      \
-	(BT_MESH_MODEL_OP_LEN(_op) + (_payload_len) + BT_MESH_MIC_LONG)
-
-/** @def BT_MESH_MODEL_BUF_DEFINE
- *
- *  @brief Define a Mesh model message buffer using @ref NET_BUF_SIMPLE_DEFINE.
- *
- *  @param _buf         Buffer name.
- *  @param _op          Opcode of the message.
- *  @param _payload_len Length of the model message payload.
- */
-#define BT_MESH_MODEL_BUF_DEFINE(_buf, _op, _payload_len)                      \
-	NET_BUF_SIMPLE_DEFINE(_buf, BT_MESH_MODEL_BUF_LEN(_op, (_payload_len)))
 
 /** @def BT_MESH_MODEL_CB
  *
@@ -416,17 +340,17 @@ struct bt_mesh_model_pub {
 	/** The model the context belongs to. Initialized by the stack. */
 	struct bt_mesh_model *mod;
 
-	uint16_t addr;         /**< Publish Address. */
-	uint16_t key:12,       /**< Publish AppKey Index. */
-	      cred:1,       /**< Friendship Credentials Flag. */
-	      send_rel:1;   /**< Force reliable sending (segment acks) */
+	uint16_t addr;          /**< Publish Address. */
+	uint16_t key:12,        /**< Publish AppKey Index. */
+		 cred:1,        /**< Friendship Credentials Flag. */
+		 send_rel:1,    /**< Force reliable sending (segment acks) */
+		 fast_period:1; /**< Use FastPeriodDivisor */
 
 	uint8_t  ttl;          /**< Publish Time to Live. */
 	uint8_t  retransmit;   /**< Retransmit Count & Interval Steps. */
 	uint8_t  period;       /**< Publish Period. */
 	uint8_t  period_div:4, /**< Divisor for the Period. */
-	      fast_period:1,/**< Use FastPeriodDivisor */
-	      count:3;      /**< Retransmissions left. */
+		 count:4;      /**< Transmissions left. */
 
 	uint32_t period_start; /**< Start of the current period. */
 
@@ -457,7 +381,7 @@ struct bt_mesh_model_pub {
 	int (*update)(struct bt_mesh_model *mod);
 
 	/** Publish Period Timer. Only for stack-internal use. */
-	struct k_delayed_work timer;
+	struct k_work_delayable timer;
 };
 
 /** @def BT_MESH_MODEL_PUB_DEFINE
@@ -535,16 +459,21 @@ struct bt_mesh_model_cb {
 	void (*const reset)(struct bt_mesh_model *model);
 };
 
+/** Vendor model ID */
+struct bt_mesh_mod_id_vnd {
+	/** Vendor's company ID */
+	uint16_t company;
+	/** Model ID */
+	uint16_t id;
+};
+
 /** Abstraction that describes a Mesh Model instance */
 struct bt_mesh_model {
 	union {
 		/** SIG model ID */
 		const uint16_t id;
 		/** Vendor model ID */
-		struct {
-			uint16_t company; /**< Vendor's company ID */
-			uint16_t id;      /**< Model ID */
-		} vnd;
+		const struct bt_mesh_mod_id_vnd vnd;
 	};
 
 	/* Internal information, mainly for persistent storage */
@@ -594,16 +523,6 @@ struct bt_mesh_send_cb {
 	void (*end)(int err, void *cb_data);
 };
 
-
-/** @brief Initialize a model message.
- *
- *  Clears the message buffer contents, and encodes the given opcode.
- *  The message buffer will be ready for filling in payload data.
- *
- *  @param msg    Message buffer.
- *  @param opcode Opcode to encode.
- */
-void bt_mesh_model_msg_init(struct net_buf_simple *msg, uint32_t opcode);
 
 /** Special TTL value to request using configured default TTL */
 #define BT_MESH_TTL_DEFAULT 0xff

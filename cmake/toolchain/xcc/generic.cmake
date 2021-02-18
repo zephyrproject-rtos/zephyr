@@ -8,7 +8,7 @@ if(NOT EXISTS ${XTENSA_TOOLCHAIN_PATH})
   message(FATAL_ERROR "Nothing found at XTENSA_TOOLCHAIN_PATH: '${XTENSA_TOOLCHAIN_PATH}'")
 endif()
 
-set(TOOLCHAIN_HOME ${XTENSA_TOOLCHAIN_PATH}/XtDevTools/install/tools/$ENV{TOOLCHAIN_VER}/XtensaTools)
+set(TOOLCHAIN_HOME ${XTENSA_TOOLCHAIN_PATH}/$ENV{TOOLCHAIN_VER}/XtensaTools)
 
 set(COMPILER xcc)
 set(LINKER ld)
@@ -23,7 +23,7 @@ set(SYSROOT_DIR    ${TOOLCHAIN_HOME}/${SYSROOT_TARGET})
 # xt-xcc does not support -Og, so make it -O0
 set(OPTIMIZE_FOR_DEBUG_FLAG "-O0")
 
-if(EXISTS ${CROSS_COMPILE}clang)
+if($ENV{XCC_USE_CLANG})
   set(CC clang)
   set(C++ clang++)
 else()

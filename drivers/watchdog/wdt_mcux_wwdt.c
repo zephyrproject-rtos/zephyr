@@ -97,8 +97,9 @@ static int mcux_wwdt_install_timeout(const struct device *dev,
 	}
 
 	if ((data->wwdt_config.timeoutValue < MIN_TIMEOUT) ||
-	    (data->wwdt_config.timeoutValue > data->wwdt_config.windowValue)) {
-		LOG_ERR("Invalid timeout");
+	    ((data->wwdt_config.windowValue != 0xFFFFFFU) &&
+	     (data->wwdt_config.timeoutValue <
+	      data->wwdt_config.windowValue))) {
 		return -EINVAL;
 	}
 

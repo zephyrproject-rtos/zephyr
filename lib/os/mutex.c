@@ -60,12 +60,7 @@ int z_impl_z_sys_mutex_kernel_unlock(struct sys_mutex *mutex)
 		return -EINVAL;
 	}
 
-	if (kernel_mutex->owner != _current) {
-		return -EPERM;
-	}
-
-	k_mutex_unlock(kernel_mutex);
-	return 0;
+	return k_mutex_unlock(kernel_mutex);
 }
 
 static inline int z_vrfy_z_sys_mutex_kernel_unlock(struct sys_mutex *mutex)

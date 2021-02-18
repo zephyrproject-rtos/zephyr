@@ -31,7 +31,7 @@ SECTIONS
 	 * ... there is no 16-bit code yet, but there will be when we add SMP.
 	 */
 
-	.locore : ALIGN(16)
+	SECTION_PROLOGUE(.locore,,)
 	{
 	_locore_start = .;
 	*(.locore)
@@ -85,8 +85,9 @@ SECTIONS
 	 * placed above 1MB to avoid the by memory hole at 0x90000-0xFFFFF).
 	 */
 
-	SECTION_PROLOGUE(_TEXT_SECTION_NAME,,ALIGN(16))
+	SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
 	{
+	. = ALIGN(16);
 	_image_rom_start = .;
 	_image_text_start = .;
 	z_mapped_start = .;
@@ -96,7 +97,7 @@ SECTIONS
 	#include <linker/kobject-text.ld>
 
 	MMU_PAGE_ALIGN_PERM
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 	_image_text_end = .;
 	_image_text_size = _image_text_end - _image_text_start;
@@ -105,8 +106,9 @@ SECTIONS
 	#include <linker/common-rom.ld>
 	#include <linker/thread-local-storage.ld>
 
-	SECTION_PROLOGUE(_RODATA_SECTION_NAME,,ALIGN(16))
+	SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
 	{
+	. = ALIGN(16);
 	*(.rodata)
 	*(.rodata.*)
 
@@ -121,7 +123,7 @@ SECTIONS
 #endif /* CONFIG_X86_MMU */
 
 	#include <linker/kobject-rom.ld>
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 #include <linker/cplusplus-rom.ld>
 
@@ -148,8 +150,9 @@ SECTIONS
  * be put in BSS section. That causes gcov not work properly */
 #include <snippets-ram-sections.ld>
 
-	SECTION_PROLOGUE(_BSS_SECTION_NAME, (NOLOAD), ALIGN(16))
+	SECTION_PROLOGUE(_BSS_SECTION_NAME, (NOLOAD),)
 	{
+	. = ALIGN(16);
 	MMU_PAGE_ALIGN_PERM
 #ifndef CONFIG_USERSPACE
 	_image_ram_start = .;
@@ -161,7 +164,7 @@ SECTIONS
 	*(COMMON)
 	. = ALIGN(4);	/* so __bss_num_dwords is exact */
 	__bss_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
+	} GROUP_NOLOAD_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 	__bss_num_dwords = (__bss_end - __bss_start) >> 2;
 
@@ -169,8 +172,9 @@ SECTIONS
 
 #include <snippets-sections.ld>
 
-	SECTION_PROLOGUE(_DATA_SECTION_NAME,,ALIGN(16))
+	SECTION_PROLOGUE(_DATA_SECTION_NAME,,)
 	{
+	. = ALIGN(16);
 	*(.data)
 	*(.data.*)
 	#include <snippets-rwdata.ld>

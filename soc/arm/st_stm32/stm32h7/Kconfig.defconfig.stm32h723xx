@@ -9,6 +9,6 @@ config SOC
 	default "stm32h723xx"
 
 config NUM_IRQS
-	default 150
+	default 163
 
 endif # SOC_STM32H723XX

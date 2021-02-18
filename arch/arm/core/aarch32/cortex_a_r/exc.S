@@ -61,7 +61,21 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_undef_instruction)
 	 * Store r0-r3, r12, lr, lr_und and spsr_und into the stack to
 	 * construct an exception stack frame.
 	 */
-	srsdb sp, #MODE_UND!
+	srsdb sp!, #MODE_UND
+	stmfd sp, {r0-r3, r12, lr}^
+	sub sp, #24
+
+	/*
+	 * Create new esf struct for exception handler debug.  The first
+	 * time the basic stack frame is saved is for getting in and out
+	 * of the exception.
+	 */
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO)
+	sub sp, #___callee_saved_t_SIZEOF
+	sub sp, #___extra_esf_info_t_SIZEOF
+#endif
+
+	srsdb sp!, #MODE_UND
 	stmfd sp, {r0-r3, r12, lr}^
 	sub sp, #24
 
@@ -71,11 +85,32 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_undef_instruction)
 	add r0, r0, #1
 	str r0, [r2, #_kernel_offset_to_nested]
 
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO)
+	/* Pointer to extra esf info */
+	add r0, sp, #___basic_sf_t_SIZEOF
+	mov r1, #0
+	str r1, [r0, #4]
+	str r1, [r0, #8]
+
+	/* Pointer to callee saved registers */
+	add r1, r0, #___extra_esf_info_t_SIZEOF
+	str r1, [r0]
+
+	cps #MODE_SYS
+	stm r1, {r4-r11, sp}
+	cps #MODE_UND
+#endif
+
 	/* Invoke fault handler */
 	mov r0, sp
 	bl z_arm_fault_undef_instruction
 
 	/* Exit exception */
+	add sp, sp, #___basic_sf_t_SIZEOF
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO)
+	add sp, #___extra_esf_info_t_SIZEOF
+	add sp, #___callee_saved_t_SIZEOF
+#endif
 	b z_arm_exc_exit
 
 /**
@@ -95,7 +130,21 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_prefetch_abort)
 	 * Store r0-r3, r12, lr, lr_abt and spsr_abt into the stack to
 	 * construct an exception stack frame.
 	 */
-	srsdb sp, #MODE_ABT!
+	srsdb sp!, #MODE_ABT
+	stmfd sp, {r0-r3, r12, lr}^
+	sub sp, #24
+
+	/*
+	 * Create new esf struct for exception handler debug.  The first
+	 * time the basic stack frame is saved is for getting in and out
+	 * of the exception.
+	 */
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO)
+	sub sp, #___callee_saved_t_SIZEOF
+	sub sp, #___extra_esf_info_t_SIZEOF
+#endif
+
+	srsdb sp!, #MODE_ABT
 	stmfd sp, {r0-r3, r12, lr}^
 	sub sp, #24
 
@@ -105,11 +154,32 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_prefetch_abort)
 	add r0, r0, #1
 	str r0, [r2, #_kernel_offset_to_nested]
 
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO)
+	/* Pointer to extra esf info */
+	add r0, sp, #___basic_sf_t_SIZEOF
+	mov r1, #0
+	str r1, [r0, #4]
+	str r1, [r0, #8]
+
+	/* Pointer to callee saved registers */
+	add r1, r0, #___extra_esf_info_t_SIZEOF
+	str r1, [r0]
+
+	cps #MODE_SYS
+	stm r1, {r4-r11, sp}
+	cps #MODE_ABT
+#endif
+
 	/* Invoke fault handler */
 	mov r0, sp
 	bl z_arm_fault_prefetch
 
 	/* Exit exception */
+	add sp, sp, #___basic_sf_t_SIZEOF
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO)
+	add sp, #___extra_esf_info_t_SIZEOF
+	add sp, #___callee_saved_t_SIZEOF
+#endif
 	b z_arm_exc_exit
 
 /**
@@ -130,7 +200,21 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_data_abort)
 	 * Store r0-r3, r12, lr, lr_abt and spsr_abt into the stack to
 	 * construct an exception stack frame.
 	 */
-	srsdb sp, #MODE_ABT!
+	srsdb sp!, #MODE_ABT
+	stmfd sp, {r0-r3, r12, lr}^
+	sub sp, #24
+
+	/*
+	 * Create new esf struct for exception handler debug.  The first
+	 * time the basic stack frame is saved is for getting in and out
+	 * of the exception.
+	 */
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO)
+	sub sp, #___callee_saved_t_SIZEOF
+	sub sp, #___extra_esf_info_t_SIZEOF
+#endif
+
+	srsdb sp!, #MODE_ABT
 	stmfd sp, {r0-r3, r12, lr}^
 	sub sp, #24
 
@@ -140,9 +224,30 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_data_abort)
 	add r0, r0, #1
 	str r0, [r2, #_kernel_offset_to_nested]
 
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO)
+	/* Pointer to extra esf info */
+	add r0, sp, #___basic_sf_t_SIZEOF
+	mov r1, #0
+	str r1, [r0, #4]
+	str r1, [r0, #8]
+
+	/* Pointer to callee saved registers */
+	add r1, r0, #___extra_esf_info_t_SIZEOF
+	str r1, [r0]
+
+	cps #MODE_SYS
+	stm r1, {r4-r11, sp}
+	cps #MODE_ABT
+#endif
+
 	/* Invoke fault handler */
 	mov r0, sp
 	bl z_arm_fault_data
 
 	/* Exit exception */
+	add sp, sp, #___basic_sf_t_SIZEOF
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO)
+	add sp, #___extra_esf_info_t_SIZEOF
+	add sp, #___callee_saved_t_SIZEOF
+#endif
 	b z_arm_exc_exit

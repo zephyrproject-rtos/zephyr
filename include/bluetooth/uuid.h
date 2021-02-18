@@ -257,6 +257,24 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_GATT \
 	BT_UUID_DECLARE_16(BT_UUID_GATT_VAL)
+/** @def BT_UUID_IAS_VAL
+ *  @brief Immediate Alert Service UUID value
+ */
+#define BT_UUID_IAS_VAL 0x1802
+/** @def BT_UUID_IAS
+ *  @brief Immediate Alert Service
+ */
+#define BT_UUID_IAS \
+	BT_UUID_DECLARE_16(BT_UUID_IAS_VAL)
+/** @def BT_UUID_LLS_VAL
+ *  @brief Link Loss Service UUID value
+ */
+#define BT_UUID_LLS_VAL 0x1803
+/** @def BT_UUID_LLS
+ *  @brief Link Loss Service
+ */
+#define BT_UUID_LLS \
+	BT_UUID_DECLARE_16(BT_UUID_LLS_VAL)
 /** @def BT_UUID_TPS_VAL
  *  @brief Tx Power Service UUID value
  */
@@ -356,6 +374,15 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_IPSS \
 	BT_UUID_DECLARE_16(BT_UUID_IPSS_VAL)
+/** @def BT_UUID_HPS_VAL
+ *  @brief HTTP Proxy Service UUID value
+ */
+#define BT_UUID_HPS_VAL 0x1823
+/** @def BT_UUID_HPS
+ *  @brief HTTP Proxy Service
+ */
+#define BT_UUID_HPS \
+	BT_UUID_DECLARE_16(BT_UUID_HPS_VAL)
 /** @def BT_UUID_OTS_VAL
  *  @brief Object Transfer Service UUID value
  */
@@ -383,6 +410,24 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_MESH_PROXY \
 	BT_UUID_DECLARE_16(BT_UUID_MESH_PROXY_VAL)
+/** @def BT_UUID_AICS_VAL
+ *  @brief Audio Input Control Service value
+ */
+#define BT_UUID_AICS_VAL 0x1843
+/** @def BT_UUID_AICS
+ *  @brief Audio Input Control Service
+ */
+#define BT_UUID_AICS \
+	BT_UUID_DECLARE_16(BT_UUID_AICS_VAL)
+/** @def BT_UUID_VOCS_VAL
+ *  @brief Volume Offset Control Service value
+ */
+#define BT_UUID_VOCS_VAL 0x1845
+/** @def BT_UUID_VOCS
+ *  @brief Volume Offset Control Service
+ */
+#define BT_UUID_VOCS \
+	BT_UUID_DECLARE_16(BT_UUID_VOCS_VAL)
 /** @def BT_UUID_GATT_PRIMARY_VAL
  *  @brief GATT Primary Service UUID value
  */
@@ -564,6 +609,15 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_GATT_SC \
 	BT_UUID_DECLARE_16(BT_UUID_GATT_SC_VAL)
+/** @def BT_UUID_ALERT_LEVEL_VAL
+ *  @brief Alert Level UUID value
+ */
+#define BT_UUID_ALERT_LEVEL_VAL  0x2a06
+/** @def BT_UUID_ALERT_LEVEL
+ *  @brief Alert Level
+ */
+#define BT_UUID_ALERT_LEVEL \
+	BT_UUID_DECLARE_16(BT_UUID_ALERT_LEVEL_VAL)
 /** @def BT_UUID_TPS_TX_POWER_LEVEL_VAL
  *  @brief TPS Characteristic Tx Power Level UUID value
  */
@@ -1023,6 +1077,60 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_CENTRAL_ADDR_RES \
 	BT_UUID_DECLARE_16(BT_UUID_CENTRAL_ADDR_RES_VAL)
+/** @def BT_UUID_URI_VAL
+ *  @brief URI UUID value
+ */
+#define BT_UUID_URI_VAL 0x2ab6
+/** @def BT_UUID_URI
+ *  @brief URI
+ */
+#define BT_UUID_URI \
+	BT_UUID_DECLARE_16(BT_UUID_URI_VAL)
+/** @def BT_UUID_HTTP_HEADERS_VAL
+ *  @brief HTTP Headers UUID value
+ */
+#define BT_UUID_HTTP_HEADERS_VAL 0x2ab7
+/** @def BT_UUID_HTTP_HEADERS
+ *  @brief HTTP Headers
+ */
+#define BT_UUID_HTTP_HEADERS \
+	BT_UUID_DECLARE_16(BT_UUID_HTTP_HEADERS_VAL)
+/** @def BT_UUID_HTTP_STATUS_CODE_VAL
+ *  @brief HTTP Status Code UUID value
+ */
+#define BT_UUID_HTTP_STATUS_CODE_VAL 0x2ab8
+/** @def BT_UUID_HTTP_STATUS_CODE
+ *  @brief HTTP Status Code
+ */
+#define BT_UUID_HTTP_STATUS_CODE \
+	BT_UUID_DECLARE_16(BT_UUID_HTTP_STATUS_CODE_VAL)
+/** @def BT_UUID_HTTP_ENTITY_BODY_VAL
+ *  @brief HTTP Entity Body UUID value
+ */
+#define BT_UUID_HTTP_ENTITY_BODY_VAL 0x2ab9
+/** @def BT_UUID_HTTP_ENTITY_BODY
+ *  @brief HTTP Entity Body
+ */
+#define BT_UUID_HTTP_ENTITY_BODY \
+	BT_UUID_DECLARE_16(BT_UUID_HTTP_ENTITY_BODY_VAL)
+/** @def BT_UUID_HTTP_CONTROL_POINT_VAL
+ *  @brief HTTP Control Point UUID value
+ */
+#define BT_UUID_HTTP_CONTROL_POINT_VAL 0x2aba
+/** @def BT_UUID_HTTP_CONTROL_POINT
+ *  @brief HTTP Control Point
+ */
+#define BT_UUID_HTTP_CONTROL_POINT \
+	BT_UUID_DECLARE_16(BT_UUID_HTTP_CONTROL_POINT_VAL)
+/** @def BT_UUID_HTTPS_SECURITY_VAL
+ *  @brief HTTPS Security UUID value
+ */
+#define BT_UUID_HTTPS_SECURITY_VAL 0x2abb
+/** @def BT_UUID_HTTPS_SECURITY
+ *  @brief HTTPS Security
+ */
+#define BT_UUID_HTTPS_SECURITY \
+	BT_UUID_DECLARE_16(BT_UUID_HTTPS_SECURITY_VAL)
 /** @def BT_UUID_OTS_FEATURE_VAL
  *  @brief OTS Feature Characteristic UUID value
  */
@@ -1214,6 +1322,96 @@ struct bt_uuid_128 {
 #define BT_UUID_GATT_SERVER_FEATURES      \
 	BT_UUID_DECLARE_16(BT_UUID_GATT_SERVER_FEATURES_VAL)
 
+/** @def BT_UUID_AICS_STATE_VAL
+ *  @brief Audio Input Control Service State value
+ */
+#define BT_UUID_AICS_STATE_VAL 0x2B77
+/** @def BT_UUID_AICS_STATE
+ *  @brief Audio Input Control Service State
+ */
+#define BT_UUID_AICS_STATE \
+	BT_UUID_DECLARE_16(BT_UUID_AICS_STATE_VAL)
+/** @def BT_UUID_AICS_GAIN_SETTINGS_VAL
+ *  @brief Audio Input Control Service Gain Settings Properties value
+ */
+#define BT_UUID_AICS_GAIN_SETTINGS_VAL 0x2B78
+/** @def BT_UUID_AICS_GAIN_SETTINGS
+ *  @brief Audio Input Control Service Gain Settings Properties
+ */
+#define BT_UUID_AICS_GAIN_SETTINGS \
+	BT_UUID_DECLARE_16(BT_UUID_AICS_GAIN_SETTINGS_VAL)
+/** @def BT_UUID_AICS_INPUT_TYPE_VAL
+ *  @brief Audio Input Control Service Input Type value
+ */
+#define BT_UUID_AICS_INPUT_TYPE_VAL 0x2B79
+/** @def BT_UUID_AICS_INPUT_TYPE
+ *  @brief Audio Input Control Service Input Type
+ */
+#define BT_UUID_AICS_INPUT_TYPE \
+	BT_UUID_DECLARE_16(BT_UUID_AICS_INPUT_TYPE_VAL)
+/** @def BT_UUID_AICS_INPUT_STATUS_VAL
+ *  @brief Audio Input Control Service Input Status value
+ */
+#define BT_UUID_AICS_INPUT_STATUS_VAL 0x2B7A
+/** @def BT_UUID_AICS_INPUT_STATUS
+ *  @brief Audio Input Control Service Input Status
+ */
+#define BT_UUID_AICS_INPUT_STATUS \
+	BT_UUID_DECLARE_16(BT_UUID_AICS_INPUT_STATUS_VAL)
+/** @def BT_UUID_AICS_CONTROL_VAL
+ *  @brief Audio Input Control Service Control Point value
+ */
+#define BT_UUID_AICS_CONTROL_VAL 0x2B7B
+/** @def BT_UUID_AICS_CONTROL
+ *  @brief Audio Input Control Service Control Point
+ */
+#define BT_UUID_AICS_CONTROL \
+	BT_UUID_DECLARE_16(BT_UUID_AICS_CONTROL_VAL)
+/** @def BT_UUID_AICS_DESCRIPTION_VAL
+ *  @brief Audio Input Control Service Input Description value
+ */
+#define BT_UUID_AICS_DESCRIPTION_VAL 0x2B7C
+/** @def BT_UUID_AICS_DESCRIPTION
+ *  @brief Audio Input Control Service Input Description
+ */
+#define BT_UUID_AICS_DESCRIPTION \
+	BT_UUID_DECLARE_16(BT_UUID_AICS_DESCRIPTION_VAL)
+/** @def BT_UUID_VOCS_STATE_VAL
+ *  @brief Volume Offset State value
+ */
+#define BT_UUID_VOCS_STATE_VAL 0x2B80
+/** @def BT_UUID_VOCS_STATE
+ *  @brief Volume Offset State
+ */
+#define BT_UUID_VOCS_STATE \
+	BT_UUID_DECLARE_16(BT_UUID_VOCS_STATE_VAL)
+/** @def BT_UUID_VOCS_LOCATION_VAL
+ *  @brief Audio Location value
+ */
+#define BT_UUID_VOCS_LOCATION_VAL 0x2B81
+/** @def BT_UUID_VOCS_LOCATION
+ *  @brief Audio Location
+ */
+#define BT_UUID_VOCS_LOCATION \
+	BT_UUID_DECLARE_16(BT_UUID_VOCS_LOCATION_VAL)
+/** @def BT_UUID_VOCS_CONTROL_VAL
+ *  @brief Volume Offset Control Point value
+ */
+#define BT_UUID_VOCS_CONTROL_VAL 0x2B82
+/** @def BT_UUID_VOCS_CONTROL
+ *  @brief Volume Offset Control Point
+ */
+#define BT_UUID_VOCS_CONTROL \
+	BT_UUID_DECLARE_16(BT_UUID_VOCS_CONTROL_VAL)
+/** @def BT_UUID_VOCS_DESCRIPTION_VAL
+ *  @brief Volume Offset Audio Output Description value
+ */
+#define BT_UUID_VOCS_DESCRIPTION_VAL 0x2B83
+/** @def BT_UUID_VOCS_DESCRIPTION
+ *  @brief Volume Offset Audio Output Description
+ */
+#define BT_UUID_VOCS_DESCRIPTION \
+	BT_UUID_DECLARE_16(BT_UUID_VOCS_DESCRIPTION_VAL)
 /*
  * Protocol UUIDs
  */

@@ -29,6 +29,11 @@ K_THREAD_STACK_DEFINE(t2_stack, T2_STACK_SIZE);
 volatile int t2_count;
 volatile int sync_count = -1;
 
+static int main_thread_id;
+static int child_thread_id;
+volatile int rv;
+
+
 K_SEM_DEFINE(cpuid_sema, 0, 1);
 K_SEM_DEFINE(sema, 0, 1);
 
@@ -476,7 +481,7 @@ static void thread_get_cpu_entry(void *p1, void *p2, void *p3)
 	/* loop forever to ensure running on this CPU */
 	while (1) {
 		k_busy_wait(DELAY_US);
-	};
+	}
 }
 
 /**
@@ -624,6 +629,94 @@ void test_smp_ipi(void)
 	}
 }
 
+void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
+{
+	static int times;
+
+	if (reason != K_ERR_KERNEL_OOPS) {
+		printk("wrong error reason\n");
+		k_fatal_halt(reason);
+	}
+
+	if (times == 0) {
+		main_thread_id = curr_cpu();
+		times++;
+	} else {
+		child_thread_id = curr_cpu();
+	}
+}
+
+void entry_oops(void *p1, void *p2, void *p3)
+{
+	unsigned int key;
+
+	key = irq_lock();
+	k_oops();
+	TC_ERROR("SHOULD NEVER SEE THIS\n");
+	rv = TC_FAIL;
+	irq_unlock(key);
+}
+
+/**
+ * @brief Test fatal error can be triggered on different core
+
+ * @details When macro CONFIG_SMP is enabled, on some multiprocessor
+ * platforms, fatal can be triggered on different core.
+ *
+ * @ingroup kernel_common_tests
+ */
+void test_fatal_on_smp(void)
+{
+	/* Manually trigger the crash in mainthread */
+	entry_oops(NULL, NULL, NULL);
+
+	/* Creat a child thread and trigger a crash */
+	k_tid_t tid = k_thread_create(&t2, t2_stack, T2_STACK_SIZE, entry_oops,
+				      NULL, NULL, NULL,
+				      K_PRIO_PREEMPT(2), 0, K_NO_WAIT);
+
+	/* Verify the fatal was happened on different core */
+	zassert_true(main_thread_id != child_thread_id,
+		"fatal on the same core");
+
+	k_thread_abort(tid);
+}
+
+static void workq_handler(struct k_work *work)
+{
+	child_thread_id = curr_cpu();
+}
+
+/**
+ * @brief Test system workq run on different core
+
+ * @details When macro CONFIG_SMP is enabled, workq can be run
+ * on different core.
+ *
+ * @ingroup kernel_common_tests
+ */
+void test_workq_on_smp(void)
+{
+	struct k_work work;
+
+	k_work_init(&work, workq_handler);
+
+	/* submit work item on system workq */
+	k_work_submit(&work);
+
+	/* Wait for some time to let other core's thread run */
+	k_busy_wait(DELAY_US);
+
+	/* check work have finished */
+	zassert_equal(k_work_busy_get(&work), 0, NULL);
+
+	main_thread_id = curr_cpu();
+
+	/* Verify the ztest thread and system workq run on different core */
+	zassert_true(main_thread_id != child_thread_id,
+		"system workq run on the same core");
+}
+
 void test_main(void)
 {
 	/* Sleep a bit to guarantee that both CPUs enter an idle
@@ -641,7 +734,9 @@ void test_main(void)
 			 ztest_unit_test(test_sleep_threads),
 			 ztest_unit_test(test_wakeup_threads),
 			 ztest_unit_test(test_smp_ipi),
-			 ztest_unit_test(test_get_cpu)
+			 ztest_unit_test(test_get_cpu),
+			 ztest_unit_test(test_fatal_on_smp),
+			 ztest_unit_test(test_workq_on_smp)
 			 );
 	ztest_run_test_suite(smp);
 }

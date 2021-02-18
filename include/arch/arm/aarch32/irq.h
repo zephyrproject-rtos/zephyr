@@ -85,14 +85,12 @@ extern void z_arm_interrupt_init(void);
 #define CONCAT(x, y) DO_CONCAT(x, y)
 
 /* Flags for use with IRQ_CONNECT() */
-#ifdef CONFIG_ZERO_LATENCY_IRQS
 /**
  * Set this interrupt up as a zero-latency IRQ. It has a fixed hardware
  * priority level (discarding what was supplied in the interrupt's priority
  * argument), and will run even if irq_lock() is active. Be careful!
  */
 #define IRQ_ZERO_LATENCY	BIT(0)
-#endif
 
 
 /* All arguments must be computable by the compiler at build time.
@@ -107,12 +105,16 @@ extern void z_arm_interrupt_init(void);
  */
 #define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 { \
+	BUILD_ASSERT(IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS) || !(flags_p & IRQ_ZERO_LATENCY), \
+			"ZLI interrupt registered but feature is disabled"); \
 	Z_ISR_DECLARE(irq_p, 0, isr_p, isr_param_p); \
 	z_arm_irq_priority_set(irq_p, priority_p, flags_p); \
 }
 
 #define ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p) \
 { \
+	BUILD_ASSERT(IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS) || !(flags_p & IRQ_ZERO_LATENCY), \
+			"ZLI interrupt registered but feature is disabled"); \
 	Z_ISR_DECLARE(irq_p, ISR_FLAG_DIRECT, isr_p, NULL); \
 	z_arm_irq_priority_set(irq_p, priority_p, flags_p); \
 }
@@ -147,7 +149,7 @@ static inline void arch_isr_direct_footer(int maybe_swap)
 #ifdef CONFIG_TRACING
 	sys_trace_isr_exit();
 #endif
-	if (maybe_swap) {
+	if (maybe_swap != 0) {
 		z_arm_int_exit();
 	}
 }

@@ -203,6 +203,95 @@ static void lcp_finished(struct ppp_fsm *fsm)
 	ppp_link_terminated(ctx);
 }
 
+#if defined(CONFIG_NET_L2_PPP_OPTION_MRU)
+
+#define MRU_OPTION_LEN 4
+
+static int lcp_add_mru(struct ppp_context *ctx, struct net_pkt *pkt)
+{
+	net_pkt_write_u8(pkt, MRU_OPTION_LEN);
+	return net_pkt_write_be16(pkt, ctx->lcp.my_options.mru);
+}
+
+static int lcp_ack_mru(struct ppp_context *ctx, struct net_pkt *pkt,
+		       uint8_t oplen)
+{
+	int ret;
+	uint16_t mru;
+
+	/* Handle ACK : */
+	if (oplen != sizeof(mru)) {
+		return -EINVAL;
+	}
+
+	ret = net_pkt_read(pkt, &mru, sizeof(mru));
+	if (ret) {
+		return ret;
+	}
+	if (mru != ctx->lcp.my_options.mru) {
+		/* Didn't acked our MRU: */
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int lcp_nak_mru(struct ppp_context *ctx, struct net_pkt *pkt,
+		       uint8_t oplen)
+{
+	int ret;
+	uint16_t mru;
+
+	/* Handle NAK: accept only smaller/equal than ours */
+	if (oplen != sizeof(mru)) {
+		return -EINVAL;
+	}
+
+	ret = net_pkt_read(pkt, &mru, sizeof(mru));
+	if (ret) {
+		return ret;
+	}
+
+	if (mru <= ctx->lcp.my_options.mru) {
+		/* OK, reset the MRU also in our side: */
+		ctx->lcp.my_options.mru = mru;
+	} else {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static const struct ppp_my_option_info lcp_my_options[] = {
+	PPP_MY_OPTION(LCP_OPTION_MRU, lcp_add_mru, lcp_ack_mru, lcp_nak_mru),
+};
+BUILD_ASSERT(ARRAY_SIZE(lcp_my_options) == LCP_NUM_MY_OPTIONS);
+
+static struct net_pkt *lcp_config_info_add(struct ppp_fsm *fsm)
+{
+	return ppp_my_options_add(fsm, MRU_OPTION_LEN);
+}
+
+static int lcp_config_info_nack(struct ppp_fsm *fsm, struct net_pkt *pkt,
+				uint16_t length, bool rejected)
+{
+	struct ppp_context *ctx =
+		CONTAINER_OF(fsm, struct ppp_context, lcp.fsm);
+	int ret;
+
+	ret = ppp_my_options_parse_conf_nak(fsm, pkt, length);
+	if (ret) {
+		return ret;
+	}
+
+	if (!ctx->lcp.my_options.mru) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+#endif
+
 static void lcp_init(struct ppp_context *ctx)
 {
 	NET_DBG("proto %s (0x%04x) fsm %p", ppp_proto2str(PPP_LCP), PPP_LCP,
@@ -213,6 +302,18 @@ static void lcp_init(struct ppp_context *ctx)
 	ppp_fsm_init(&ctx->lcp.fsm, PPP_LCP);
 
 	ppp_fsm_name_set(&ctx->lcp.fsm, ppp_proto2str(PPP_LCP));
+
+#if defined(CONFIG_NET_L2_PPP_OPTION_MRU)
+	ctx->lcp.my_options.mru = PPP_MRU;
+	ctx->lcp.fsm.my_options.info = lcp_my_options;
+	ctx->lcp.fsm.my_options.data = ctx->lcp.my_options_data;
+	ctx->lcp.fsm.my_options.count = ARRAY_SIZE(lcp_my_options);
+
+	ctx->lcp.fsm.cb.config_info_add = lcp_config_info_add;
+	ctx->lcp.fsm.cb.config_info_req = lcp_config_info_req;
+	ctx->lcp.fsm.cb.config_info_nack = lcp_config_info_nack;
+	ctx->lcp.fsm.cb.config_info_rej = ppp_my_options_parse_conf_rej;
+#endif
 
 	ctx->lcp.fsm.cb.up = lcp_up;
 	ctx->lcp.fsm.cb.down = lcp_down;

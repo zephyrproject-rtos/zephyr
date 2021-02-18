@@ -110,7 +110,7 @@ static ALWAYS_INLINE bool z_syscall_trap(void)
  *
  * @return true if the CPU is currently running with user permissions
  */
-static inline bool _is_user_context(void)
+static inline bool k_is_user_context(void)
 {
 #ifdef CONFIG_USERSPACE
 	return arch_is_user_context();

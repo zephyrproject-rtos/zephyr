@@ -484,6 +484,11 @@ struct bt_hci_write_local_name {
 #define BT_BREDR_SCAN_INQUIRY                   0x01
 #define BT_BREDR_SCAN_PAGE                      0x02
 
+#define BT_HCI_OP_WRITE_CLASS_OF_DEVICE         BT_OP(BT_OGF_BASEBAND, 0x0024)
+struct bt_hci_cp_write_class_of_device {
+	uint8_t  class_of_device[3];
+} __packed;
+
 #define BT_TX_POWER_LEVEL_CURRENT               0x00
 #define BT_TX_POWER_LEVEL_MAX                   0x01
 #define BT_HCI_OP_READ_TX_POWER_LEVEL           BT_OP(BT_OGF_BASEBAND, 0x002d)
@@ -661,6 +666,12 @@ struct bt_hci_rp_read_bd_addr {
 /* audio datapath directions */
 #define BT_HCI_DATAPATH_DIR_HOST_TO_CTLR 0x00
 #define BT_HCI_DATAPATH_DIR_CTLR_TO_HOST 0x01
+
+/* audio datapath IDs */
+#define BT_HCI_DATAPATH_ID_HCI      0x00
+#define BT_HCI_DATAPATH_ID_VS       0x01
+#define BT_HCI_DATAPATH_ID_VS_END   0xfe
+#define BT_HCI_DATAPATH_ID_DISABLED 0xff
 
 /* coding format assigned numbers, used for codec IDs */
 #define BT_HCI_CODING_FORMAT_ULAW_LOG    0x00
@@ -2396,6 +2407,7 @@ struct bt_hci_evt_le_big_complete {
 	uint8_t  pto;
 	uint8_t  irc;
 	uint16_t max_pdu;
+	uint16_t iso_interval;
 	uint8_t  num_bis;
 	uint16_t handle[0];
 } __packed;
@@ -2416,6 +2428,7 @@ struct bt_hci_evt_le_big_sync_established {
 	uint8_t  pto;
 	uint8_t  irc;
 	uint16_t max_pdu;
+	uint16_t iso_interval;
 	uint8_t  num_bis;
 	uint16_t handle[0];
 } __packed;

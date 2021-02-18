@@ -162,13 +162,6 @@ static uint32_t mcux_gpt_get_top_value(const struct device *dev)
 	return config->info.max_top_value;
 }
 
-static uint32_t mcux_gpt_get_max_relative_alarm(const struct device *dev)
-{
-	const struct mcux_gpt_config *config = dev->config;
-
-	return config->info.max_top_value;
-}
-
 static int mcux_gpt_init(const struct device *dev)
 {
 	const struct mcux_gpt_config *config = dev->config;
@@ -205,7 +198,6 @@ static const struct counter_driver_api mcux_gpt_driver_api = {
 	.set_top_value = mcux_gpt_set_top_value,
 	.get_pending_int = mcux_gpt_get_pending_int,
 	.get_top_value = mcux_gpt_get_top_value,
-	.get_max_relative_alarm = mcux_gpt_get_max_relative_alarm,
 };
 
 #define GPT_DEVICE_INIT_MCUX(n)						\

@@ -10,6 +10,7 @@ LOG_MODULE_REGISTER(net_l2_canbus, CONFIG_NET_L2_CANBUS_LOG_LEVEL);
 #include <net/net_core.h>
 #include <net/net_l2.h>
 #include <net/net_if.h>
+#include <net/capture.h>
 #include <net/net_pkt.h>
 #include <net/can.h>
 #include "canbus_internal.h"
@@ -1084,6 +1085,8 @@ static int canbus_send(struct net_if *iface, struct net_pkt *pkt)
 	net_pkt_cursor_init(pkt);
 	pkt_len = net_pkt_get_len(pkt);
 
+	net_capture_pkt(iface, pkt);
+
 	NET_DBG("Send CAN frame to 0x%04x%s", dest_addr.addr,
 		mcast ? " (mcast)" : "");
 
@@ -1738,9 +1741,9 @@ void net_6locan_init(struct net_if *iface)
 		thread_priority = K_PRIO_PREEMPT(6);
 	}
 
-	k_work_q_start(&net_canbus_workq, net_canbus_stack,
-		       K_KERNEL_STACK_SIZEOF(net_canbus_stack),
-		       thread_priority);
+	k_work_queue_start(&net_canbus_workq, net_canbus_stack,
+			   K_KERNEL_STACK_SIZEOF(net_canbus_stack),
+			   thread_priority, NULL);
 	k_thread_name_set(&net_canbus_workq.thread, "isotp_work");
 	NET_DBG("Workq started. Thread ID: %p", &net_canbus_workq.thread);
 }

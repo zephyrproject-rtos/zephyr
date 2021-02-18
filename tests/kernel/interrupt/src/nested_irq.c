@@ -6,12 +6,12 @@
  */
 
 #include <ztest.h>
-#include "interrupt_util.h"
+#include <interrupt_util.h>
 
 /*
  * Run the nested interrupt test for the supported platforms only.
  */
-#if defined(CONFIG_CPU_CORTEX_M) || defined(CONFIG_CPU_ARCV2) || \
+#if defined(CONFIG_CPU_CORTEX_M) || defined(CONFIG_ARC) || \
 	defined(CONFIG_GIC)
 #define TEST_NESTED_ISR
 #endif

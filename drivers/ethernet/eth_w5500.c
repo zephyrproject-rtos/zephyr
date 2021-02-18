@@ -157,11 +157,11 @@ static int w5500_writebuf(const struct device *dev, uint16_t offset, uint8_t *bu
 static int w5500_command(const struct device *dev, uint8_t cmd)
 {
 	uint8_t reg;
-	uint64_t end = z_timeout_end_calc(K_MSEC(100));
+	uint64_t end = sys_clock_timeout_end_calc(K_MSEC(100));
 
 	w5500_spi_write(dev, W5500_S0_CR, &cmd, 1);
 	do {
-		int64_t remaining = end - z_tick_get();
+		int64_t remaining = end - sys_clock_tick_get();
 
 		if (remaining <= 0) {
 			return -EIO;

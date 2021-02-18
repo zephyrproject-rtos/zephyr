@@ -46,9 +46,8 @@ int send_set_cl_cte_tx_enable(uint8_t adv_handle, atomic_t *adv_flags,
 	cp->handle = adv_handle;
 	cp->cte_enable = enable ? 1 : 0;
 
-	bt_hci_cmd_state_set_init(&state, adv_flags, BT_PER_ADV_CTE_ENABLED,
+	bt_hci_cmd_state_set_init(buf, &state, adv_flags, BT_PER_ADV_CTE_ENABLED,
 				  enable);
-	bt_hci_cmd_data_state_set(buf, &state);
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_CL_CTE_TX_ENABLE,
 				    buf, NULL);

@@ -39,6 +39,12 @@ struct _slist {
 
 typedef struct _slist sys_slist_t;
 
+ /**
+  * @defgroup single-linked-list_apis Single-linked list
+  * @ingroup datastructure_apis
+  * @{
+  */
+
 /**
  * @brief Provide the primitive to iterate on a list
  * Note: the loop is unsafe and thus __sn should not be removed
@@ -407,6 +413,7 @@ Z_GENLIST_REMOVE(slist, snode)
 static inline bool sys_slist_find_and_remove(sys_slist_t *list,
 					     sys_snode_t *node);
 
+/** @} */
 Z_GENLIST_FIND_AND_REMOVE(slist, snode)
 
 #ifdef __cplusplus

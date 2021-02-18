@@ -108,7 +108,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	uint16_t event_counter;
 	uint8_t data_chan_use;
 	struct pdu_adv *pdu;
-	struct evt_hdr *evt;
+	struct ull_hdr *ull;
 	uint32_t remainder;
 	uint32_t start_us;
 	void *extra_data;
@@ -174,7 +174,6 @@ static int prepare_cb(struct lll_prepare_param *p)
 	radio_pkt_tx_set(pdu);
 
 	/* TODO: chaining */
-	radio_isr_set(lll_isr_done, lll);
 	radio_isr_set(isr_done, lll);
 
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
@@ -187,8 +186,8 @@ static int prepare_cb(struct lll_prepare_param *p)
 	}
 
 	ticks_at_event = p->ticks_at_expire;
-	evt = HDR_LLL2EVT(lll);
-	ticks_at_event += lll_evt_offset_get(evt);
+	ull = HDR_LLL2ULL(lll);
+	ticks_at_event += lll_event_offset_get(ull);
 
 	ticks_at_start = ticks_at_event;
 	ticks_at_start += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
@@ -208,7 +207,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED) && \
 	(EVENT_OVERHEAD_PREEMPT_US <= EVENT_OVERHEAD_PREEMPT_MIN_US)
 	/* check if preempt to start has changed */
-	if (lll_preempt_calc(evt, (TICKER_ID_ADV_SYNC_BASE +
+	if (lll_preempt_calc(ull, (TICKER_ID_ADV_SYNC_BASE +
 				   ull_adv_sync_lll_handle_get(lll)),
 			     ticks_at_event)) {
 		radio_isr_set(lll_isr_abort, lll);

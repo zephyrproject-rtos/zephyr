@@ -5,4 +5,4 @@ description: ARM Cortex-M3 CPU
 
 compatible: "arm,cortex-m3"
 
-include: cpu.yaml
+include: arm,cortex-m.yaml

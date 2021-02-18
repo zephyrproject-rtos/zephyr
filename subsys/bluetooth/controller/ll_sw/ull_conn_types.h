@@ -31,7 +31,6 @@ enum llcp {
 };
 
 struct ll_conn {
-	struct evt_hdr  evt;
 	struct ull_hdr  ull;
 	struct lll_conn lll;
 
@@ -56,9 +55,17 @@ struct ll_conn {
 #endif /* CONFIG_BT_CTLR_PHY */
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
+#if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN)
+	uint8_t own_addr_type:1;
+	uint8_t peer_addr_type:2;
+	uint8_t own_addr[BDADDR_SIZE];
+	uint8_t peer_addr[BDADDR_SIZE];
+#endif /* CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN */
+
 	union {
 		struct {
 			uint8_t fex_valid:1;
+			uint8_t txn_lock:1;
 #if defined(CONFIG_BT_CTLR_CONN_META)
 			uint8_t is_must_expire:1;
 #endif /* CONFIG_BT_CTLR_CONN_META */
@@ -67,6 +74,7 @@ struct ll_conn {
 #if defined(CONFIG_BT_PERIPHERAL)
 		struct {
 			uint8_t  fex_valid:1;
+			uint8_t  txn_lock:1;
 #if defined(CONFIG_BT_CTLR_CONN_META)
 			uint8_t  is_must_expire:1;
 #endif /* CONFIG_BT_CTLR_CONN_META */
@@ -87,6 +95,7 @@ struct ll_conn {
 #if defined(CONFIG_BT_CENTRAL)
 		struct {
 			uint8_t fex_valid:1;
+			uint8_t txn_lock:1;
 #if defined(CONFIG_BT_CTLR_CONN_META)
 			uint8_t is_must_expire:1;
 #endif /* CONFIG_BT_CTLR_CONN_META */
@@ -131,6 +140,7 @@ struct ll_conn {
 				LLCP_ENC_STATE_INPROG,
 				LLCP_ENC_STATE_INIT,
 				LLCP_ENC_STATE_LTK_WAIT,
+				LLCP_ENC_STATE_ENC_WAIT,
 			} state:2 __packed;
 			uint8_t  error_code;
 			uint8_t  skd[16];
@@ -180,7 +190,7 @@ struct ll_conn {
 		uint8_t req;
 		uint8_t ack;
 		uint8_t reason_own;
-		uint8_t reason_peer;
+		uint8_t reason_final;
 		/* node rx type with memory aligned storage for terminate
 		 * reason.
 		 * HCI will reference the value using the pdu member of
@@ -304,6 +314,30 @@ struct ll_conn {
 	struct node_tx *tx_data_last;
 
 	uint8_t chm_updated;
+
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+	struct {
+		uint8_t  req;
+		uint8_t  ack;
+		enum {
+			LLCP_CIS_STATE_REQ,
+			LLCP_CIS_STATE_RSP_WAIT,
+			LLCP_CIS_STATE_IND_WAIT,
+			LLCP_CIS_STATE_INST_WAIT
+		} state:8 __packed;
+		uint8_t  cig_id;
+		uint16_t cis_handle;
+		uint8_t  cis_id;
+		uint32_t c_max_sdu:12;
+		uint32_t p_max_sdu:12;
+		uint32_t framed:1;
+		uint32_t c_sdu_interval;
+		uint32_t p_sdu_interval;
+		uint32_t cis_offset_min;
+		uint32_t cis_offset_max;
+		uint16_t conn_event_count;
+	} llcp_cis;
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
 };
 
 struct node_rx_cc {

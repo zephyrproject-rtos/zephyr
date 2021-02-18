@@ -14,5 +14,17 @@
 
 	flash0: serial-flash@0 {
 		reg = <0x0 DT_SIZE_K(352)>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/* CCFG registers occupy the last 88 bytes of flash */
+			ti_ccfg_partition: partition@57fa8 {
+				label = "ti_ccfg";
+				reg = <0x57fa8 88>;
+			};
+		};
 	};
 };

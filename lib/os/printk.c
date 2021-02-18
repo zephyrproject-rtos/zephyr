@@ -22,7 +22,8 @@
 #include <sys/cbprintf.h>
 #include <sys/types.h>
 
-#ifdef CONFIG_PRINTK_SYNC
+#if defined(CONFIG_PRINTK_SYNC) && \
+	!(defined(CONFIG_LOG_PRINTK) && defined(CONFIG_LOG2))
 static struct k_spinlock lock;
 #endif
 
@@ -76,8 +77,8 @@ void *__printk_get_hook(void)
 }
 #endif /* CONFIG_PRINTK */
 
-
-#ifdef CONFIG_PRINTK
+#if defined(CONFIG_PRINTK) && \
+	!(defined(CONFIG_LOG_PRINTK) && defined(CONFIG_LOG2))
 #ifdef CONFIG_USERSPACE
 struct buf_out_context {
 	int count;
@@ -120,7 +121,7 @@ static int char_out(int c, void *ctx_p)
 #ifdef CONFIG_USERSPACE
 void vprintk(const char *fmt, va_list ap)
 {
-	if (_is_user_context()) {
+	if (k_is_user_context()) {
 		struct buf_out_context ctx = { 0 };
 
 		cbvprintf(buf_char_out, &ctx, fmt, ap);
@@ -204,6 +205,7 @@ static inline void z_vrfy_k_str_out(char *c, size_t n)
  *
  * @return N/A
  */
+
 void printk(const char *fmt, ...)
 {
 	va_list ap;
@@ -217,7 +219,9 @@ void printk(const char *fmt, ...)
 	}
 	va_end(ap);
 }
-#endif /* CONFIG_PRINTK */
+#endif /* defined(CONFIG_PRINTK) && \
+	* !(defined(CONFIG_LOG_PRINTK) && defined(CONFIG_LOG2))
+	*/
 
 struct str_context {
 	char *str;

@@ -375,6 +375,47 @@
 #define DT_CHILD(node_id, child) UTIL_CAT(node_id, DT_S_PREFIX(child))
 
 /**
+ * @brief Get a node identifier for a status "okay" node with a compatible
+ *
+ * Use this if you want to get an arbitrary enabled node with a given
+ * compatible, and you do not care which one you get. If any enabled
+ * nodes with the given compatible exist, a node identifier for one
+ * of them is returned. Otherwise, @p DT_INVALID_NODE is returned.
+ *
+ * Example devicetree fragment:
+ *
+ *	node-a {
+ *		compatible = "vnd,device";
+ *		status = "okay";
+ *	};
+ *
+ *	node-b {
+ *		compatible = "vnd,device";
+ *		status = "okay";
+ *	};
+ *
+ *	node-c {
+ *		compatible = "vnd,device";
+ *		status = "disabled";
+ *	};
+ *
+ * Example usage:
+ *
+ *     DT_COMPAT_GET_ANY_STATUS_OKAY(vnd_device)
+ *
+ * This expands to a node identifier for either @p node-a or @p
+ * node-b. It will not expand to a node identifier for @p node-c,
+ * because that node does not have status "okay".
+ *
+ * @param compat lowercase-and-underscores compatible, without quotes
+ * @return node identifier for a node with that compatible, or DT_INVALID_NODE
+ */
+#define DT_COMPAT_GET_ANY_STATUS_OKAY(compat)			\
+	COND_CODE_1(DT_HAS_COMPAT_STATUS_OKAY(compat),	\
+		    (DT_INST(0, compat)),		\
+		    (DT_INVALID_NODE))
+
+/**
  * @brief Get a devicetree node's full path as a string literal
  *
  * This returns the path to a node from a node identifier. To get a
@@ -1506,7 +1547,7 @@
  * As usual, both a missing status and an "ok" status are treated as
  * "okay".
  *
- * @param compat lowercase-and-underscores version of a compatible
+ * @param compat lowercase-and-underscores compatible, without quotes
  * @return 1 if both of the above conditions are met, 0 otherwise
  */
 #define DT_HAS_COMPAT_STATUS_OKAY(compat) \
@@ -1515,7 +1556,7 @@
 /**
  * @brief Get the number of instances of a given compatible with
  *        status "okay"
- * @param compat lowercase-and-underscores version of a compatible
+ * @param compat lowercase-and-underscores compatible, without quotes
  * @return Number of instances with status "okay"
  */
 #define DT_NUM_INST_STATUS_OKAY(compat)			\
@@ -1541,7 +1582,7 @@
  * on its value, nor does the node's status.
  *
  * @param node_id node identifier
- * @param compat lowercase-and-underscorse compatible value
+ * @param compat lowercase-and-underscores compatible, without quotes
  * @return 1 if the node's compatible property contains compat,
  *         0 otherwise.
  */
@@ -1557,7 +1598,7 @@
  *      DT_NODE_HAS_STATUS(node_id, status))
  *
  * @param node_id node identifier
- * @param compat lowercase-and-underscores compatible
+ * @param compat lowercase-and-underscores compatible, without quotes
  * @param status okay or disabled as a token, not a string
  */
 #define DT_NODE_HAS_COMPAT_STATUS(node_id, compat, status) \

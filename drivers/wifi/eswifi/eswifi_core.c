@@ -669,9 +669,9 @@ static int eswifi_init(const struct device *dev)
 			   DT_INST_GPIO_FLAGS(0, wakeup_gpios) |
 			   GPIO_OUTPUT_ACTIVE);
 
-	k_work_q_start(&eswifi->work_q, eswifi_work_q_stack,
-		       K_KERNEL_STACK_SIZEOF(eswifi_work_q_stack),
-		       CONFIG_SYSTEM_WORKQUEUE_PRIORITY - 1);
+	k_work_queue_start(&eswifi->work_q, eswifi_work_q_stack,
+			   K_KERNEL_STACK_SIZEOF(eswifi_work_q_stack),
+			   CONFIG_SYSTEM_WORKQUEUE_PRIORITY - 1, NULL);
 
 	k_work_init(&eswifi->request_work, eswifi_request_work);
 

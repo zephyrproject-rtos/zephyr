@@ -1,0 +1,8 @@
+# RAKWIRELESS RAK4631 selection
+
+# Copyright (c) 2021 Guillaume Paquet <guillaume.paquet@smile.fr>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_RAK4631_NRF52840
+	bool "RAK4631 DK NRF52840"
+	depends on SOC_NRF52840_QIAA

@@ -1,0 +1,10 @@
+# ST7735R display driver configuration options
+
+# Copyright (c) 2020 Kim Bøndergaard <kim@fam-boendergaard.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config ST7735R
+	bool "ST7735R display driver"
+	depends on SPI
+	help
+	  Enable driver for ST7735R display driver.

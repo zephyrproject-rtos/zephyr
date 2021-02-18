@@ -442,11 +442,8 @@ static void thread_mbox_data_get_null(void *p1, void *p2, void *p3)
 	get_msg.size = 16;
 	get_msg.rx_source_thread = K_ANY;
 	get_msg.tx_block.data = str_data;
-	get_msg._syncing_thread = receiver_tid;
-
-	k_mbox_data_get(&get_msg, NULL);
-
 	get_msg._syncing_thread = NULL;
+
 	k_mbox_data_get(&get_msg, NULL);
 	k_sem_give(&end_sema);
 }

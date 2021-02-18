@@ -224,7 +224,7 @@ void test_pre_kernel_detection(void)
  * It queries the list of devices in the system, used to suspend or
  * resume the devices in PM applications.
  *
- * @see device_list_get()
+ * @see z_device_get_all_static()
  */
 static void test_build_suspend_device_list(void)
 {
@@ -284,7 +284,7 @@ static void test_enable_and_disable_automatic_idle_pm(void)
  *
  * @see device_get_binding(), device_busy_set(), device_busy_clear(),
  * device_busy_check(), device_any_busy_check(),
- * device_list_get(), device_set_power_state()
+ * device_set_power_state()
  */
 void test_dummy_device_pm(void)
 {

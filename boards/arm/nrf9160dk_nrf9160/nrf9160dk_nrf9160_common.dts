@@ -140,8 +140,8 @@
 &i2c2 {
 	compatible = "nordic,nrf-twim";
 	status = "okay";
-	sda-gpios = <&gpio0 30 0>;
-	scl-gpios = <&gpio0 31 0>;
+	sda-pin = <30>;
+	scl-pin = <31>;
 };
 
 &pwm0 {
@@ -214,8 +214,8 @@
 			/* Secure image memory */
 		};
 
-		sram0_bsd: image_bsd@20010000 {
-			/* BSD (shared) memory */
+		sram0_modem: image_modem@20016000 {
+			/* Modem (shared) memory */
 		};
 
 		sram0_ns: image_ns@20020000 {

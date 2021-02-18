@@ -352,7 +352,19 @@ int edac_ibecc_init(const struct device *dev)
 	LOG_INF("EDAC IBECC initialization");
 
 	if (!pcie_probe(bdf, PCIE_ID(PCI_VENDOR_ID_INTEL,
+				     PCI_DEVICE_ID_SKU5)) &&
+	    !pcie_probe(bdf, PCIE_ID(PCI_VENDOR_ID_INTEL,
+				     PCI_DEVICE_ID_SKU6)) &&
+	    !pcie_probe(bdf, PCIE_ID(PCI_VENDOR_ID_INTEL,
 				     PCI_DEVICE_ID_SKU7)) &&
+	    !pcie_probe(bdf, PCIE_ID(PCI_VENDOR_ID_INTEL,
+				     PCI_DEVICE_ID_SKU8)) &&
+	    !pcie_probe(bdf, PCIE_ID(PCI_VENDOR_ID_INTEL,
+				     PCI_DEVICE_ID_SKU9)) &&
+	    !pcie_probe(bdf, PCIE_ID(PCI_VENDOR_ID_INTEL,
+				     PCI_DEVICE_ID_SKU10)) &&
+	    !pcie_probe(bdf, PCIE_ID(PCI_VENDOR_ID_INTEL,
+				     PCI_DEVICE_ID_SKU11)) &&
 	    !pcie_probe(bdf, PCIE_ID(PCI_VENDOR_ID_INTEL,
 				     PCI_DEVICE_ID_SKU12))) {
 		LOG_ERR("PCI Probe failed");

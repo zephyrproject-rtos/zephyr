@@ -13,7 +13,6 @@
 .editorconfig
 .gitattributes
 .gitignore
-.known-issues
 .mailmap
 .uncrustify.cfg
 CODEOWNERS
@@ -52,3 +51,4 @@ scripts/ci/version_mgr.py
 scripts/requirements*
 scripts/checkpatch/*
 scripts/checkpatch.pl
+scripts/ci/pylintrc

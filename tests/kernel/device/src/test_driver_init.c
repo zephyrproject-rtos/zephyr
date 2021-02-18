@@ -150,6 +150,14 @@ DEVICE_DEFINE(my_driver_level_4, MY_DRIVER_LV_4, &my_driver_lv_4_init,
 		device_pm_control_nop, NULL, NULL, APPLICATION,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &funcs_my_drivers);
 
+/* We use priority value of 20 to create a possible sorting conflict with
+ * priority value of 2.  So if the linker sorting isn't woring correctly
+ * we'll find out.
+ */
+DEVICE_DEFINE(my_driver_priority_4, MY_DRIVER_PRI_4,
+		&my_driver_pri_4_init, device_pm_control_nop,
+		NULL, NULL, POST_KERNEL, 20, &funcs_my_drivers);
+
 DEVICE_DEFINE(my_driver_priority_1, MY_DRIVER_PRI_1,
 		&my_driver_pri_1_init, device_pm_control_nop,
 		NULL, NULL, POST_KERNEL, 1, &funcs_my_drivers);
@@ -161,7 +169,3 @@ DEVICE_DEFINE(my_driver_priority_2, MY_DRIVER_PRI_2,
 DEVICE_DEFINE(my_driver_priority_3, MY_DRIVER_PRI_3,
 		&my_driver_pri_3_init, device_pm_control_nop,
 		NULL, NULL, POST_KERNEL, 3, &funcs_my_drivers);
-
-DEVICE_DEFINE(my_driver_priority_4, MY_DRIVER_PRI_4,
-		&my_driver_pri_4_init, device_pm_control_nop,
-		NULL, NULL, POST_KERNEL, 4, &funcs_my_drivers);

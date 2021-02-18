@@ -18,16 +18,20 @@ EXPECTED_COMMAND = {
     (RC_KERNEL_BIN, None):
     [DPCMD_EXE,
      '--auto', RC_KERNEL_BIN,
+     '-x', 'ff',
      '--silent', '--verify'],
+
 
     (RC_KERNEL_BIN, '0'):
     [DPCMD_EXE,
      '--auto', RC_KERNEL_BIN, '--vcc', '0',
+     '-x', 'ff',
      '--silent', '--verify'],
 
     (RC_KERNEL_BIN, '1'):
     [DPCMD_EXE,
      '--auto', RC_KERNEL_BIN, '--vcc', '1',
+     '-x', 'ff',
      '--silent', '--verify'],
 }
 

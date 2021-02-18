@@ -1,0 +1,29 @@
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config DISK_DRIVER_RAM
+	bool "RAM Disk"
+	help
+	  RAM buffer used to emulate storage disk.
+	  This option can be used to test the file
+	  system.
+
+if DISK_DRIVER_RAM
+
+config DISK_RAM_VOLUME_SIZE
+	int "RAM Disk size in kilobytes"
+	default 96
+	help
+	  Size of the RAM Disk.
+
+config DISK_RAM_VOLUME_NAME
+	string "RAM Disk mount point or drive name"
+	default "RAM"
+	help
+	  Disk name as per file system naming guidelines.
+
+module = RAMDISK
+module-str = ramdisk
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # DISK_DRIVER_RAM

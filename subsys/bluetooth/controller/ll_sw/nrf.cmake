@@ -59,6 +59,15 @@ if(CONFIG_BT_LL_SW_SPLIT)
   if(CONFIG_BT_CTLR_DF AND NOT CONFIG_SOC_SERIES_BSIM_NRFXX)
     zephyr_library_sources(ll_sw/nordic/hal/nrf5/radio/radio_df.c)
   endif()
+  if(CONFIG_BT_CTLR_CONN_ISO)
+    zephyr_library_sources(
+      ll_sw/nordic/lll/lll_conn_iso.c
+      )
+  endif()
+  zephyr_library_sources_ifdef(
+    CONFIG_BT_CTLR_PERIPHERAL_ISO
+    ll_sw/nordic/lll/lll_peripheral_iso.c
+    )
 endif()
 
 zephyr_library_sources(

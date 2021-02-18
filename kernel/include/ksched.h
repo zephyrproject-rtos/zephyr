@@ -54,7 +54,7 @@ int z_unpend_all(_wait_q_t *wait_q);
 void z_thread_priority_set(struct k_thread *thread, int prio);
 bool z_set_prio(struct k_thread *thread, int prio);
 void *z_get_next_switch_handle(void *interrupted);
-void idle(void *a, void *b, void *c);
+void idle(void *unused1, void *unused2, void *unused3);
 void z_time_slice(int ticks);
 void z_reset_time_slice(void);
 void z_sched_abort(struct k_thread *thread);
@@ -216,7 +216,7 @@ static inline bool z_is_prio_lower_or_equal(int prio1, int prio2)
 	return z_is_prio1_lower_than_or_equal_to_prio2(prio1, prio2);
 }
 
-int32_t z_sched_prio_cmp(struct k_thread *t1, struct k_thread *t2);
+int32_t z_sched_prio_cmp(struct k_thread *thread_1, struct k_thread *thread_2);
 
 static inline bool _is_valid_prio(int prio, void *entry_point)
 {
@@ -250,7 +250,7 @@ static inline void z_sched_lock(void)
 {
 #ifdef CONFIG_PREEMPT_ENABLED
 	__ASSERT(!arch_is_in_isr(), "");
-	__ASSERT(_current->base.sched_locked != 1, "");
+	__ASSERT(_current->base.sched_locked != 1U, "");
 
 	--_current->base.sched_locked;
 
@@ -263,7 +263,7 @@ static ALWAYS_INLINE void z_sched_unlock_no_reschedule(void)
 {
 #ifdef CONFIG_PREEMPT_ENABLED
 	__ASSERT(!arch_is_in_isr(), "");
-	__ASSERT(_current->base.sched_locked != 0, "");
+	__ASSERT(_current->base.sched_locked != 0U, "");
 
 	compiler_barrier();
 

@@ -93,3 +93,17 @@
 	pinctrl-0 = <&adc1_in0_pa0>;
 	status = "okay";
 };
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Set 2KB of storage at the end of 128KB flash */
+		storage_partition: partition@1f800 {
+			label = "storage";
+			reg = <0x0001f800 0x00000800>;
+		};
+	};
+};

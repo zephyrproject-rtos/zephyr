@@ -47,34 +47,6 @@ The power management features are classified into the following categories.
 * System Power Management
 * Device Power Management
 
-Tickless Idle
-*************
-
-This is the name used to identify the event-based idling mechanism of the
-Zephyr RTOS kernel scheduler. The kernel scheduler can run in two modes. During
-normal operation, when at least one thread is active, it sets up the system
-timer in periodic mode and runs in an interval-based scheduling mode. The
-interval-based mode allows it to time slice between threads. Many times, the
-threads would be waiting on semaphores, timeouts or for events. When there
-are no threads running, it is inefficient for the kernel scheduler to run
-in interval-based mode. This is because, in this mode the timer would trigger
-an interrupt at fixed intervals causing the scheduler to be invoked at each
-interval. The scheduler checks if any thread is ready to run. If no thread
-is ready to run then it is a waste of power because of the unnecessary CPU
-processing. This is avoided by the kernel switching to event-based idling
-mode whenever there is no thread ready to run.
-
-The kernel holds an ordered list of thread timeouts in the system. These are
-the amount of time each thread has requested to wait. When the last active
-thread goes to wait, the idle thread is scheduled. The idle thread programs
-the timer to one-shot mode and programs the count to the earliest timeout
-from the ordered thread timeout list. When the timer expires, a timer event
-is generated. The ISR of this event will invoke the scheduler, which would
-schedule the thread associated with the timeout. Before scheduling the
-thread, the scheduler would switch the timer again to periodic mode. This
-method saves power because the CPU is removed from the wait only when there
-is a thread ready to run or if an external event occurred.
-
 System Power Management
 ***********************
 
@@ -89,9 +61,6 @@ will typically be an interrupt triggered by one of the SoC peripheral modules
 such as a SysTick, RTC, counter, or GPIO. Depending on the power mode entered,
 only some SoC peripheral modules may be active and can be used as a wake up
 source.
-
-Enabling system power management compels the Zephyr kernel scheduler to work in
-tickless idle mode (see :option:`CONFIG_TICKLESS_IDLE`).
 
 Power States
 ============
@@ -124,6 +93,27 @@ have higher wake latencies. Following is a thorough list of available states:
 .. doxygenenumvalue:: PM_STATE_SOFT_OFF
    :project: Zephyr
 
+.. _pm_constraints:
+
+Power States Constraint
+=======================
+
+The power management subsystem allows different Zephyr components and
+applications to set constraints on various power states preventing the
+system to go these states. This can be used by devices when executing
+tasks in background to avoid the system to go to state where it would
+lose context. Constraints can be set, released and checked using the
+follow APIs:
+
+.. doxygenfunction:: pm_constraint_set
+   :project: Zephyr
+
+.. doxygenfunction:: pm_constraint_release
+   :project: Zephyr
+
+.. doxygenfunction:: pm_constraint_get
+   :project: Zephyr
+
 Power Management Policies
 =========================
 
@@ -133,12 +123,20 @@ The power management subsystem supports the following power management policies:
 * Application
 * Dummy
 
+The policy manager is responsible to inform the power subsystem which
+power state the system should go based on states available in the
+platform and possible runtime :ref:`constraints<pm_constraints>`
+
+Information about states can be get from device tree, see
+:zephyr_file:`dts/bindings/power/state.yaml`.
+
 Residency
 ---------
 
 The power management system enters the power state which offers the highest
-power savings, and with a minimum residency value (defined by the respective
-Kconfig option) less than or equal to the scheduled system idle time duration.
+power savings, and with a minimum residency value (in device tree, see
+:zephyr_file:`dts/bindings/power/state.yaml`) less than or equal to
+the scheduled system idle time duration.
 
 Application
 -----------
@@ -149,6 +147,10 @@ the following function.
 .. code-block:: c
 
    struct pm_state_info pm_policy_next_state(int32_t ticks);
+
+In this policy the application is free to decide which power state the
+system should go based on the remaining time for the next scheduled
+timeout.
 
 Dummy
 -----
@@ -178,7 +180,7 @@ in power saving mode. This method allows saving power even when the CPU is
 active. The components that use the devices need to be power aware and should
 be able to make decisions related to managing device power. In this method, the
 SOC interface can enter CPU or SOC power states quickly when
-:code:`sys_suspend()` gets called. This is because it does not need to
+:code:`pm_system_suspend()` gets called. This is because it does not need to
 spend time doing device power management if the devices are already put in
 the appropriate power state by the application or component managing the
 devices.
@@ -187,7 +189,7 @@ Central method
 ==============
 
 In this method device power management is mostly done inside
-:code:`sys_suspend()` along with entering a CPU or SOC power state.
+:code:`pm_system_suspend()` along with entering a CPU or SOC power state.
 
 If a decision to enter deep sleep is made, the implementation would enter it
 only after checking if the devices are not in the middle of a hardware
@@ -305,7 +307,7 @@ Device Set Power State
 
 .. code-block:: c
 
-   int device_set_power_state(const struct device *device, uint32_t device_power_state, device_pm_cb cb, void *arg);
+   int device_set_power_state(const struct device *dev, uint32_t device_power_state, device_pm_cb cb, void *arg);
 
 Calls the :c:func:`device_pm_control()` handler function implemented by the
 device driver with DEVICE_PM_SET_POWER_STATE command.
@@ -315,7 +317,7 @@ Device Get Power State
 
 .. code-block:: c
 
-   int device_get_power_state(const struct device *device, uint32_t * device_power_state);
+   int device_get_power_state(const struct device *dev, uint32_t * device_power_state);
 
 Calls the :c:func:`device_pm_control()` handler function implemented by the
 device driver with DEVICE_PM_GET_POWER_STATE command.
@@ -330,21 +332,21 @@ off, then such transactions would be left in an inconsistent state. This
 infrastructure guards such transactions by indicating to the SOC interface that
 the device is in the middle of a hardware transaction.
 
-When the :code:`sys_suspend()` is called, the SOC interface checks if any device
+When the :code:`pm_system_suspend()` is called, the SOC interface checks if any device
 is busy. The SOC interface can then decide to execute a power management scheme other than deep sleep or
 to defer power management operations until the next call of
-:code:`sys_suspend()`.
+:code:`pm_system_suspend()`.
 
 An alternative to using the busy status mechanism is to use the
 `distributed method`_ of device power management. In such a method where the
 device power management is handled in a distributed manner rather than centrally in
-:code:`sys_suspend()`, the decision to enter deep sleep can be made based
+:code:`pm_system_suspend()`, the decision to enter deep sleep can be made based
 on whether all devices are already turned off.
 
 This feature can be also used to emulate a hardware feature found in some SOCs
 that causes the system to automatically enter deep sleep when all devices are idle.
 In such an usage, the busy status can be set by default and cleared as each
-device becomes idle. When :code:`sys_suspend()` is called, deep sleep can
+device becomes idle. When :code:`pm_system_suspend()` is called, deep sleep can
 be entered if no device is found to be busy.
 
 Here are the APIs used to set, clear, and check the busy status of devices.
@@ -484,10 +486,6 @@ the following configuration flags.
 :option:`CONFIG_PM`
 
    This flag enables the power management subsystem.
-
-:option:`CONFIG_TICKLESS_IDLE`
-
-   This flag enables the tickless idle power saving feature.
 
 :option:`CONFIG_PM_DEVICE`
 

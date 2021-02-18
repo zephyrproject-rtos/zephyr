@@ -59,12 +59,6 @@ config SPI_DW_FIFO_DEPTH
 config SPI_DW_ARC_AUX_REGS
 	default n
 
-config SPI_0
-	default y
-
-config SPI_1
-	default y
-
 endif # SPI_DW
 
 endif # SPI

@@ -1,0 +1,14 @@
+# BMD-300-EVAL, BMD-301-EVAL, and BMD-350-EVAL board configuration
+
+# Copyright (c) 2021 u-blox AG
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_UBX_BMD300EVAL_NRF52832
+
+config BOARD
+	default "ubx_bmd300eval_nrf52832"
+
+config BT_CTLR
+	default BT
+
+endif # BOARD_UBX_BMD300EVAL_NRF52832

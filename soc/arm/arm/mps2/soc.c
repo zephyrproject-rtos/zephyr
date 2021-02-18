@@ -17,7 +17,7 @@
 /* Setup GPIO drivers for accessing FPGAIO registers */
 #define FPGAIO_NODE(n) DT_INST(n, arm_mps2_fpgaio_gpio)
 #define FPGAIO_INIT(n)						\
-	GPIO_MMIO32_INIT(fpgaio_##n, DT_LABEL(FPGAIO_NODE(n)),	\
+	GPIO_MMIO32_INIT(FPGAIO_NODE(n),			\
 			DT_REG_ADDR(FPGAIO_NODE(n)),		\
 			BIT_MASK(DT_PROP(FPGAIO_NODE(n), ngpios)))
 

@@ -320,6 +320,8 @@ int openthread_send(struct net_if *iface, struct net_pkt *pkt)
 		net_pkt_hexdump(pkt, "IPv6 packet to send");
 	}
 
+	net_capture_pkt(iface, pkt);
+
 	if (notify_new_tx_frame(pkt) != 0) {
 		net_pkt_unref(pkt);
 	}

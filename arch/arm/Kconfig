@@ -9,10 +9,6 @@ menu "ARM Options"
 config ARCH
 	default "arm"
 
-config ARM64
-	bool
-	select 64BIT
-
 config CPU_CORTEX
 	bool
 	help
@@ -38,18 +34,6 @@ config ARM_CUSTOM_INTERRUPT_CONTROLLER
 	       family cores. The Cortex-M family cores are always equipped with
 	       the ARM Nested Vectored Interrupt Controller (NVIC).
 
-config HAS_ARM_SMCCC
-	bool
-	help
-	  Include support for the Secure Monitor Call (SMC) and Hypervisor
-	  Call (HVC) instructions on Armv7 and above architectures.
-
-if !ARM64
 rsource "core/aarch32/Kconfig"
-endif
-
-if ARM64
-rsource "core/aarch64/Kconfig"
-endif
 
 endmenu

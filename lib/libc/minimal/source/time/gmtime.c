@@ -78,22 +78,22 @@ static void time_civil_from_days(bigint_type z,
  * applied to @p time before invoking this function.
  */
 struct tm *gmtime_r(const time_t *_MLIBC_RESTRICT timep,
-		    struct tm *_MLIBC_RESTRICT tp)
+		    struct tm *_MLIBC_RESTRICT result)
 {
 	time_t z = *timep;
 	bigint_type days = (z >= 0 ? z : z - 86399) / 86400;
 	unsigned int rem = z - days * 86400;
 
-	*tp = (struct tm){ 0 };
+	*result = (struct tm){ 0 };
 
-	time_civil_from_days(days, tp);
+	time_civil_from_days(days, result);
 
-	tp->tm_hour = rem / 60U / 60U;
-	rem -= tp->tm_hour * 60 * 60;
-	tp->tm_min = rem / 60;
-	tp->tm_sec = rem - tp->tm_min * 60;
+	result->tm_hour = rem / 60U / 60U;
+	rem -= result->tm_hour * 60 * 60;
+	result->tm_min = rem / 60;
+	result->tm_sec = rem - result->tm_min * 60;
 
-	return tp;
+	return result;
 }
 
 struct tm *gmtime(const time_t *timep)

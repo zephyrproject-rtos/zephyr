@@ -14,7 +14,7 @@
 /* Redistributor base addresses for each core */
 mem_addr_t gic_rdists[CONFIG_MP_NUM_CPUS];
 
-#ifdef CONFIG_ARMV8_A_NS
+#if defined(CONFIG_ARMV8_A_NS) || defined(CONFIG_GIC_SINGLE_SECURITY_STATE)
 #define IGROUPR_VAL	0xFFFFFFFFU
 #else
 #define IGROUPR_VAL	0x0U
@@ -243,6 +243,16 @@ static void gicv3_dist_init(void)
 	/* Disable the distributor */
 	sys_write32(0, GICD_CTLR);
 	gic_wait_rwp(GIC_SPI_INT_BASE);
+#ifdef CONFIG_GIC_SINGLE_SECURITY_STATE
+	/*
+	 * Before configuration, we need to check whether
+	 * the GIC single security state mode is supported.
+	 * Make sure GICD_CTRL_NS is 1.
+	 */
+	sys_set_bit(GICD_CTLR, GICD_CTRL_NS);
+	__ASSERT(sys_test_bit(GICD_CTLR, GICD_CTRL_NS),
+		"Current GIC does not support single security state");
+#endif
 
 	/*
 	 * Default configuration of all SPIs
@@ -280,6 +290,19 @@ static void gicv3_dist_init(void)
 #ifdef CONFIG_ARMV8_A_NS
 	/* Enable distributor with ARE */
 	sys_write32(BIT(GICD_CTRL_ARE_NS) | BIT(GICD_CTLR_ENABLE_G1NS),
+		    GICD_CTLR);
+#elif defined(CONFIG_GIC_SINGLE_SECURITY_STATE)
+	/*
+	 * For GIC single security state, the config GIC_SINGLE_SECURITY_STATE
+	 * means the GIC is under single security state which has only two
+	 * groups: group 0 and group 1.
+	 * Then set GICD_CTLR_ARE and GICD_CTLR_ENABLE_G1 to enable Group 1
+	 * interrupt.
+	 * Since the GICD_CTLR_ARE and GICD_CTRL_ARE_S share BIT(4), and
+	 * similarly the GICD_CTLR_ENABLE_G1 and GICD_CTLR_ENABLE_G1NS share
+	 * BIT(1), we can reuse them.
+	 */
+	sys_write32(BIT(GICD_CTRL_ARE_S) | BIT(GICD_CTLR_ENABLE_G1NS),
 		    GICD_CTLR);
 #else
 	/* enable Group 1 secure interrupts */

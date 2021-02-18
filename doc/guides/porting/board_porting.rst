@@ -173,7 +173,6 @@ The optional files are:
      if(CONFIG_PINMUX)
        zephyr_library()
        zephyr_library_sources(pinmux.c)
-       zephyr_library_include_directories(${ZEPHYR_BASE}/drivers)
      endif()
 
 - :file:`doc/index.rst`, :file:`doc/plank.png`: documentation for and a picture
@@ -193,7 +192,7 @@ your board's name). If you're new to devicetree, see :ref:`devicetree-intro`.
 
 In general, :file:`plank.dts` should look like this:
 
-.. code-block:: none
+.. code-block:: DTS
 
    /dts-v1/;
    #include <your_soc_vendor/your_soc.dtsi>

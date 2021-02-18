@@ -48,6 +48,13 @@ properties:
         Combine port A and port B data pins to support octal mode access by
         setting register field MCR0[COMBINATIONEN].
 
+    sck-differential-clock:
+      type: boolean
+      required: false
+      description: |
+        Enable/disable SCKB pad use as SCKA differential clock output,
+        when enabled, Port B flash access is not available.
+
     rx-clock-source:
       type: int
       required: false

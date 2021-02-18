@@ -10,8 +10,8 @@
  * @brief Zephyr testing framework _test.
  */
 
-#ifndef __ZTEST_TEST_H__
-#define __ZTEST_TEST_H__
+#ifndef ZEPHYR_TESTSUITE_ZTEST_TEST_H_
+#define ZEPHYR_TESTSUITE_ZTEST_TEST_H_
 
 #include <app_memory/app_memdomain.h>
 
@@ -213,4 +213,4 @@ extern struct k_mem_partition ztest_mem_partition;
 }
 #endif
 
-#endif /* __ZTEST_ASSERT_H__ */
+#endif /* ZEPHYR_TESTSUITE_ZTEST_TEST_H_ */

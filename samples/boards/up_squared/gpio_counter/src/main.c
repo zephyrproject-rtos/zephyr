@@ -169,5 +169,5 @@ void main(void)
 
 		k_sem_take(&counter_sem, K_FOREVER);
 		val = counter & MASK;
-	};
+	}
 }

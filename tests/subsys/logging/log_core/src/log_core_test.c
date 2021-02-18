@@ -136,10 +136,10 @@ static uint32_t timestamp_get(void)
  *
  * @return Source ID.
  */
-static int log_source_id_get(const char *name)
+static int16_t log_source_id_get(const char *name)
 {
 
-	for (int i = 0; i < log_src_cnt_get(CONFIG_LOG_DOMAIN_ID); i++) {
+	for (int16_t i = 0; i < log_src_cnt_get(CONFIG_LOG_DOMAIN_ID); i++) {
 		if (strcmp(log_source_name_get(CONFIG_LOG_DOMAIN_ID, i), name)
 		    == 0) {
 			return i;
@@ -218,7 +218,7 @@ static void test_log_backend_runtime_filtering(void)
 }
 
 /*
- * When LOG_MOVE_OVERFLOW is enabled, logger should discard oldest messages when
+ * When LOG_MODE_OVERFLOW is enabled, logger should discard oldest messages when
  * there is no room. However, if after discarding all messages there is still no
  * room then current log is discarded.
  */

@@ -176,6 +176,7 @@ static const struct paging_level paging_levels[] = {
 
 #define NUM_LEVELS	ARRAY_SIZE(paging_levels)
 #define PTE_LEVEL	(NUM_LEVELS - 1)
+#define PDE_LEVEL	(NUM_LEVELS - 2)
 
 /*
  * Macros for reserving space for page tables
@@ -208,61 +209,27 @@ static const struct paging_level paging_levels[] = {
 #define VM_ADDR		CONFIG_KERNEL_VM_BASE
 #define VM_SIZE		CONFIG_KERNEL_VM_SIZE
 
-/* Define a range [PT_VIRT_START, PT_VIRT_END) which is the memory range
- * covered by all the page tables needed for the virtual address space
+/* Define a range [PT_START, PT_END) which is the memory range
+ * covered by all the page tables needed for the address space
  */
-#define PT_VIRT_START	((uintptr_t)ROUND_DOWN(VM_ADDR, PT_AREA))
-#define PT_VIRT_END	((uintptr_t)ROUND_UP(VM_ADDR + VM_SIZE, PT_AREA))
+#define PT_START	((uintptr_t)ROUND_DOWN(VM_ADDR, PT_AREA))
+#define PT_END		((uintptr_t)ROUND_UP(VM_ADDR + VM_SIZE, PT_AREA))
 
 /* Number of page tables needed to cover address space. Depends on the specific
  * bounds, but roughly 1 page table per 2MB of RAM
  */
-#define NUM_PT_VIRT	((PT_VIRT_END - PT_VIRT_START) / PT_AREA)
-
-#ifdef CONFIG_KERNEL_LINK_IN_VIRT
-/* When linking in virtual address space, the physical address space
- * also needs to be mapped as platform is booted via physical address
- * and various structures needed by boot (e.g. GDT, IDT) must be
- * available via physical addresses. So the reserved space for
- * page tables needs to be enlarged to accommodate this.
- *
- * Note that this assumes the physical and virtual address spaces
- * do not overlap, hence the simply addition of space.
- */
-#define SRAM_ADDR	CONFIG_SRAM_BASE_ADDRESS
-#define SRAM_SIZE	KB(CONFIG_SRAM_SIZE)
-
-#define PT_PHYS_START	((uintptr_t)ROUND_DOWN(SRAM_ADDR, PT_AREA))
-#define PT_PHYS_END	((uintptr_t)ROUND_UP(SRAM_ADDR + SRAM_SIZE, PT_AREA))
-
-#define NUM_PT_PHYS	((PT_PHYS_END - PT_PHYS_START) / PT_AREA)
-#else
-#define NUM_PT_PHYS	0
-#endif /* CONFIG_KERNEL_LINK_IN_VIRT */
-
-#define NUM_PT		(NUM_PT_VIRT + NUM_PT_PHYS)
+#define NUM_PT	((PT_END - PT_START) / PT_AREA)
 
 #if defined(CONFIG_X86_64) || defined(CONFIG_X86_PAE)
 /* Same semantics as above, but for the page directories needed to cover
  * system RAM.
  */
-#define PD_VIRT_START	((uintptr_t)ROUND_DOWN(VM_ADDR, PD_AREA))
-#define PD_VIRT_END	((uintptr_t)ROUND_UP(VM_ADDR + VM_SIZE, PD_AREA))
+#define PD_START	((uintptr_t)ROUND_DOWN(VM_ADDR, PD_AREA))
+#define PD_END		((uintptr_t)ROUND_UP(VM_ADDR + VM_SIZE, PD_AREA))
 /* Number of page directories needed to cover the address space. Depends on the
  * specific bounds, but roughly 1 page directory per 1GB of RAM
  */
-#define NUM_PD_VIRT	((PD_VIRT_END - PD_VIRT_START) / PD_AREA)
-
-#ifdef CONFIG_KERNEL_LINK_IN_VIRT
-#define PD_PHYS_START	((uintptr_t)ROUND_DOWN(SRAM_ADDR, PD_AREA))
-#define PD_PHYS_END	((uintptr_t)ROUND_UP(SRAM_ADDR + SRAM_SIZE, PD_AREA))
-
-#define NUM_PD_PHYS	((PD_PHYS_END - PD_PHYS_START) / PD_AREA)
-#else
-#define NUM_PD_PHYS	0
-#endif /* CONFIG_KERNEL_LINK_IN_VIRT */
-
-#define NUM_PD		(NUM_PD_VIRT + NUM_PD_PHYS)
+#define NUM_PD	((PD_END - PD_START) / PD_AREA)
 #else
 /* 32-bit page tables just have one toplevel page directory */
 #define NUM_PD	1
@@ -286,11 +253,16 @@ static const struct paging_level paging_levels[] = {
 #define NUM_TABLE_PAGES	(NUM_PT + NUM_PD)
 #endif /* CONFIG_X86_64 */
 
+#define INITIAL_PTABLE_PAGES \
+	(NUM_TABLE_PAGES + CONFIG_X86_EXTRA_PAGE_TABLE_PAGES)
+
 #ifdef CONFIG_X86_PAE
 /* Toplevel PDPT wasn't included as it is not a page in size */
-#define INITIAL_PTABLE_SIZE ((NUM_TABLE_PAGES * CONFIG_MMU_PAGE_SIZE) + 0x20)
+#define INITIAL_PTABLE_SIZE \
+	((INITIAL_PTABLE_PAGES * CONFIG_MMU_PAGE_SIZE) + 0x20)
 #else
-#define INITIAL_PTABLE_SIZE (NUM_TABLE_PAGES * CONFIG_MMU_PAGE_SIZE)
+#define INITIAL_PTABLE_SIZE \
+	(INITIAL_PTABLE_PAGES * CONFIG_MMU_PAGE_SIZE)
 #endif
 
 /* "dummy" pagetables for the first-phase build. The real page tables
@@ -332,7 +304,7 @@ static inline uintptr_t get_entry_phys(pentry_t entry, int level)
 /* Return the virtual address of a linked table stored in the provided entry */
 static inline pentry_t *next_table(pentry_t entry, int level)
 {
-	return z_x86_virt_addr(get_entry_phys(entry, level));
+	return z_mem_virt_addr(get_entry_phys(entry, level));
 }
 
 /* Number of table entries at this level */
@@ -426,12 +398,12 @@ void z_x86_tlb_ipi(const void *arg)
 	 * if KPTI is turned on
 	 */
 	ptables_phys = z_x86_cr3_get();
-	__ASSERT(ptables_phys == z_x86_phys_addr(&z_x86_kernel_ptables), "");
+	__ASSERT(ptables_phys == z_mem_phys_addr(&z_x86_kernel_ptables), "");
 #else
 	/* We might have been moved to another memory domain, so always invoke
 	 * z_x86_thread_page_tables_get() instead of using current CR3 value.
 	 */
-	ptables_phys = z_x86_phys_addr(z_x86_thread_page_tables_get(_current));
+	ptables_phys = z_mem_phys_addr(z_x86_thread_page_tables_get(_current));
 #endif
 	/*
 	 * In the future, we can consider making this smarter, such as
@@ -546,14 +518,17 @@ static void print_entries(pentry_t entries_array[], uint8_t *base, int level,
 		uintptr_t virt =
 			(uintptr_t)base + (get_entry_scope(level) * i);
 
-		if (entry & MMU_P) {
+		if ((entry & MMU_P) != 0U) {
 			if (is_leaf(level, entry)) {
 				if (phys == virt) {
 					/* Identity mappings */
 					COLOR(YELLOW);
-				} else {
-					/* Other mappings */
+				} else if (phys + Z_MEM_VM_OFFSET == virt) {
+					/* Permanent RAM mappings */
 					COLOR(GREEN);
+				} else {
+					/* General mapped pages */
+					COLOR(CYAN);
 				}
 			} else {
 				/* Intermediate entry */
@@ -614,7 +589,8 @@ static void dump_ptables(pentry_t *table, uint8_t *base, int level)
 	}
 #endif
 
-	printk("%s at %p: ", info->name, table);
+	printk("%s at %p (0x%" PRIxPTR "): ", info->name, table,
+	       z_mem_phys_addr(table));
 	if (level == 0) {
 		printk("entire address space\n");
 	} else {
@@ -758,7 +734,7 @@ static inline pentry_t reset_pte(pentry_t old_val)
 	return new_val;
 }
 
-/* Wrapper functionsfor some gross stuff we have to do for Kernel
+/* Wrapper functions for some gross stuff we have to do for Kernel
  * page table isolation. If these are User mode page tables, the user bit
  * isn't set, and this is not the shared page, all the bits in the PTE
  * are flipped. This serves three purposes:
@@ -766,14 +742,15 @@ static inline pentry_t reset_pte(pentry_t old_val)
  *  - Flipping the physical address bits cheaply mitigates L1TF
  *  - State is preserved; to get original PTE, just complement again
  */
-static inline pentry_t pte_finalize_value(pentry_t val, bool user_table)
+static inline pentry_t pte_finalize_value(pentry_t val, bool user_table,
+					  int level)
 {
 #ifdef CONFIG_X86_KPTI
 	static const uintptr_t shared_phys_addr =
-		Z_X86_PHYS_ADDR(POINTER_TO_UINT(&z_shared_kernel_page_start));
+		Z_MEM_PHYS_ADDR(POINTER_TO_UINT(&z_shared_kernel_page_start));
 
 	if (user_table && (val & MMU_US) == 0 && (val & MMU_P) != 0 &&
-	    get_entry_phys(val, PTE_LEVEL) != shared_phys_addr) {
+	    get_entry_phys(val, level) != shared_phys_addr) {
 		val = ~val;
 	}
 #endif
@@ -884,7 +861,7 @@ static inline pentry_t pte_atomic_update(pentry_t *pte, pentry_t update_val,
 				   (update_val & update_mask));
 		}
 
-		new_val = pte_finalize_value(new_val, user_table);
+		new_val = pte_finalize_value(new_val, user_table, PTE_LEVEL);
 	} while (atomic_pte_cas(pte, old_val, new_val) == false);
 
 #ifdef CONFIG_X86_KPTI
@@ -1145,6 +1122,42 @@ void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 			   MASK_ALL, 0);
 }
 
+static void identity_map_remove(void)
+{
+#ifdef Z_VM_KERNEL
+	size_t size, scope = get_entry_scope(0);
+	uint8_t *pos;
+
+	k_mem_region_align((uintptr_t *)&pos, &size,
+			   (uintptr_t)CONFIG_SRAM_BASE_ADDRESS,
+			   (size_t)CONFIG_SRAM_SIZE * 1024U, scope);
+
+	/* We booted with RAM mapped both to its identity and virtual
+	 * mapping starting at CONFIG_KERNEL_VM_BASE. This was done by
+	 * double-linking the relevant tables in the top-level table.
+	 * At this point we don't need the identity mapping(s) any more,
+	 * zero the top-level table entries corresponding to the
+	 * physical mapping.
+	 */
+	while (size != 0U) {
+		pentry_t *entry = get_entry_ptr(z_x86_kernel_ptables, pos, 0);
+
+		/* set_pte */
+		*entry = 0;
+		pos += scope;
+		size -= scope;
+	}
+#endif
+}
+
+/* Invoked to remove the identity mappings in the page tables,
+ * they were only needed to tranisition the instruction pointer at early boot
+ */
+void z_x86_mmu_init(void)
+{
+	identity_map_remove();
+}
+
 #if CONFIG_X86_STACK_PROTECTION
 void z_x86_set_stack_guard(k_thread_stack_t *stack)
 {
@@ -1384,18 +1397,13 @@ void arch_mem_domain_thread_remove(struct k_thread *thread)
 {
 
 }
-
-void arch_mem_domain_destroy(struct k_mem_domain *domain)
-{
-
-}
 #else
 /* Memory domains each have a set of page tables assigned to them */
 
 /*
  * Pool of free memory pages for copying page tables, as needed.
  */
-#define PTABLE_COPY_SIZE	(NUM_TABLE_PAGES * CONFIG_MMU_PAGE_SIZE)
+#define PTABLE_COPY_SIZE	(INITIAL_PTABLE_PAGES * CONFIG_MMU_PAGE_SIZE)
 
 static uint8_t __noinit
 	page_pool[PTABLE_COPY_SIZE * CONFIG_X86_MAX_ADDITIONAL_MEM_DOMAINS]
@@ -1451,7 +1459,8 @@ static int copy_page_table(pentry_t *dst, pentry_t *src, int level)
 	if (level == PTE_LEVEL) {
 		/* Base case: leaf page table */
 		for (int i = 0; i < get_num_entries(level); i++) {
-			dst[i] = pte_finalize_value(reset_pte(src[i]), true);
+			dst[i] = pte_finalize_value(reset_pte(src[i]), true,
+						    PTE_LEVEL);
 		}
 	} else {
 		/* Recursive case: allocate sub-structures as needed and
@@ -1463,6 +1472,13 @@ static int copy_page_table(pentry_t *dst, pentry_t *src, int level)
 
 			if ((src[i] & MMU_P) == 0) {
 				/* Non-present, skip */
+				continue;
+			}
+
+			if ((level == PDE_LEVEL) && ((src[i] & MMU_PS) != 0)) {
+				/* large page: no lower level table */
+				dst[i] = pte_finalize_value(src[i], true,
+							    PDE_LEVEL);
 				continue;
 			}
 
@@ -1479,7 +1495,7 @@ static int copy_page_table(pentry_t *dst, pentry_t *src, int level)
 			 * cast needed for PAE case where sizeof(void *) and
 			 * sizeof(pentry_t) are not the same.
 			 */
-			dst[i] = ((pentry_t)z_x86_phys_addr(child_dst) |
+			dst[i] = ((pentry_t)z_mem_phys_addr(child_dst) |
 				  INT_FLAGS);
 
 			ret = copy_page_table(child_dst,
@@ -1615,11 +1631,6 @@ void arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 		     partition->size);
 }
 
-void arch_mem_domain_destroy(struct k_mem_domain *domain)
-{
-	/* No-op, this is eventually getting removed in 2.5 */
-}
-
 /* Called on thread exit or when moving it to a different memory domain */
 void arch_mem_domain_thread_remove(struct k_thread *thread)
 {
@@ -1675,11 +1686,11 @@ void arch_mem_domain_thread_add(struct k_thread *thread)
 	 * z_x86_current_stack_perms()
 	 */
 	if (is_migration) {
-		old_ptables = z_x86_virt_addr(thread->arch.ptables);
+		old_ptables = z_mem_virt_addr(thread->arch.ptables);
 		set_stack_perms(thread, domain->arch.ptables);
 	}
 
-	thread->arch.ptables = z_x86_phys_addr(domain->arch.ptables);
+	thread->arch.ptables = z_mem_phys_addr(domain->arch.ptables);
 	LOG_DBG("set thread %p page tables to %p", thread,
 		(void *)thread->arch.ptables);
 
@@ -1844,7 +1855,7 @@ uintptr_t arch_page_info_get(void *addr, uintptr_t *phys, bool clear_accessed)
 		 * page table and makes no changes
 		 */
 		mask = 0;
-		options = 0;
+		options = 0U;
 	}
 
 	page_map_set(z_x86_kernel_ptables, addr, 0, &all_pte, mask, options);

@@ -3,7 +3,7 @@ sample:
 tests:
   sample.basic.blinky:
     tags: LED gpio
-    filter: dt_compat_enabled_with_alias("gpio-leds", "led0")
+    filter: dt_enabled_alias_with_parent_compat("led0", "gpio-leds")
     depends_on: gpio
     harness: led
     integration_platforms:

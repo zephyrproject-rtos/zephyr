@@ -108,7 +108,7 @@ enum test_state {
 
 static enum test_state t_state;
 
-static struct k_delayed_work test_server;
+static struct k_work_delayable test_server;
 static void test_server_timeout(struct k_work *work);
 
 static int tester_send(const struct device *dev, struct net_pkt *pkt);
@@ -447,7 +447,7 @@ static void test_presetup(void)
 		zassert_true(false, "Failed to add IPv6 address");
 	}
 
-	k_delayed_work_init(&test_server, test_server_timeout);
+	k_work_init_delayable(&test_server, test_server_timeout);
 }
 
 static void handle_client_test(sa_family_t af, struct tcphdr *th)
@@ -760,7 +760,7 @@ static void test_server_ipv4(void)
 	}
 
 	/* Trigger the peer to send SYN */
-	k_delayed_work_submit(&test_server, K_NO_WAIT);
+	k_work_reschedule(&test_server, K_NO_WAIT);
 
 	ret = net_context_accept(ctx, test_tcp_accept_cb, K_FOREVER, NULL);
 	if (ret < 0) {
@@ -773,7 +773,7 @@ static void test_server_ipv4(void)
 	test_sem_take(K_MSEC(100), __LINE__);
 
 	/* Trigger the peer to send DATA  */
-	k_delayed_work_submit(&test_server, K_NO_WAIT);
+	k_work_reschedule(&test_server, K_NO_WAIT);
 
 	ret = net_context_recv(ctx, test_tcp_recv_cb, K_MSEC(200), NULL);
 	if (ret < 0) {
@@ -781,7 +781,7 @@ static void test_server_ipv4(void)
 	}
 
 	/* Trigger the peer to send FIN after timeout */
-	k_delayed_work_submit(&test_server, K_NO_WAIT);
+	k_work_reschedule(&test_server, K_NO_WAIT);
 
 	net_context_put(ctx);
 }
@@ -823,7 +823,7 @@ static void test_server_with_options_ipv4(void)
 	}
 
 	/* Trigger the peer to send SYN */
-	k_delayed_work_submit(&test_server, K_NO_WAIT);
+	k_work_reschedule(&test_server, K_NO_WAIT);
 
 	ret = net_context_accept(ctx, test_tcp_accept_cb, K_FOREVER, NULL);
 	if (ret < 0) {
@@ -836,7 +836,7 @@ static void test_server_with_options_ipv4(void)
 	test_sem_take(K_MSEC(100), __LINE__);
 
 	/* Trigger the peer to send DATA  */
-	k_delayed_work_submit(&test_server, K_NO_WAIT);
+	k_work_reschedule(&test_server, K_NO_WAIT);
 
 	ret = net_context_recv(ctx, test_tcp_recv_cb, K_MSEC(200), NULL);
 	if (ret < 0) {
@@ -844,7 +844,7 @@ static void test_server_with_options_ipv4(void)
 	}
 
 	/* Trigger the peer to send FIN after timeout */
-	k_delayed_work_submit(&test_server, K_NO_WAIT);
+	k_work_reschedule(&test_server, K_NO_WAIT);
 
 	net_context_put(ctx);
 }
@@ -886,7 +886,7 @@ static void test_server_ipv6(void)
 	}
 
 	/* Trigger the peer to send SYN  */
-	k_delayed_work_submit(&test_server, K_NO_WAIT);
+	k_work_reschedule(&test_server, K_NO_WAIT);
 
 	ret = net_context_accept(ctx, test_tcp_accept_cb, K_FOREVER, NULL);
 	if (ret < 0) {
@@ -899,7 +899,7 @@ static void test_server_ipv6(void)
 	test_sem_take(K_MSEC(100), __LINE__);
 
 	/* Trigger the peer to send DATA  */
-	k_delayed_work_submit(&test_server, K_NO_WAIT);
+	k_work_reschedule(&test_server, K_NO_WAIT);
 
 	ret = net_context_recv(ctx, test_tcp_recv_cb, K_MSEC(200), NULL);
 	if (ret < 0) {
@@ -907,7 +907,7 @@ static void test_server_ipv6(void)
 	}
 
 	/* Trigger the peer to send FIN after timeout */
-	k_delayed_work_submit(&test_server, K_NO_WAIT);
+	k_work_reschedule(&test_server, K_NO_WAIT);
 
 	net_context_put(ctx);
 }
@@ -1230,7 +1230,7 @@ static struct net_context *create_server_socket(uint32_t my_seq,
 	}
 
 	/* Trigger the peer to send SYN  */
-	k_delayed_work_submit(&test_server, K_NO_WAIT);
+	k_work_reschedule(&test_server, K_NO_WAIT);
 
 	ret = net_context_accept(ctx, test_tcp_accept_cb, K_FOREVER, NULL);
 	if (ret < 0) {

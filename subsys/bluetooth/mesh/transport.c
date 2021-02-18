@@ -632,12 +632,12 @@ int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
 		return -EINVAL;
 	}
 
-	if (msg->len > BT_MESH_TX_SDU_MAX) {
-		BT_ERR("Not enough segment buffers for length %u", msg->len);
+	if (msg->len > BT_MESH_TX_SDU_MAX - BT_MESH_MIC_SHORT) {
+		BT_ERR("Message too big: %u", msg->len);
 		return -EMSGSIZE;
 	}
 
-	if (net_buf_simple_tailroom(msg) < 4) {
+	if (net_buf_simple_tailroom(msg) < BT_MESH_MIC_SHORT) {
 		BT_ERR("Insufficient tailroom for Transport MIC");
 		return -EINVAL;
 	}
@@ -660,14 +660,14 @@ int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
 		return -EINVAL;
 	}
 
-	BT_DBG("net_idx 0x%04x app_idx 0x%04x dst 0x%04x", tx->sub->net_idx,
-	       tx->ctx->app_idx, tx->ctx->addr);
-	BT_DBG("len %u: %s", msg->len, bt_hex(msg->data, msg->len));
-
 	err = bt_mesh_keys_resolve(tx->ctx, &tx->sub, &key, &aid);
 	if (err) {
 		return err;
 	}
+
+	BT_DBG("net_idx 0x%04x app_idx 0x%04x dst 0x%04x", tx->sub->net_idx,
+	       tx->ctx->app_idx, tx->ctx->addr);
+	BT_DBG("len %u: %s", msg->len, bt_hex(msg->data, msg->len));
 
 	tx->xmit = bt_mesh_net_transmit_get();
 	tx->aid = aid;
@@ -1259,6 +1259,7 @@ static int trans_seg(struct net_buf_simple *buf, struct bt_mesh_net_rx *net_rx,
 	struct seg_rx *rx;
 	uint8_t *hdr = buf->data;
 	uint16_t seq_zero;
+	uint32_t auth_seqnum;
 	uint8_t seg_n;
 	uint8_t seg_o;
 	int err;
@@ -1309,7 +1310,7 @@ static int trans_seg(struct net_buf_simple *buf, struct bt_mesh_net_rx *net_rx,
 			     (net_rx->seq -
 			      ((((net_rx->seq & BIT_MASK(14)) - seq_zero)) &
 			       BIT_MASK(13))));
-
+	auth_seqnum = *seq_auth & BIT_MASK(24);
 	*seg_count = seg_n + 1;
 
 	/* Look for old RX sessions */
@@ -1375,6 +1376,28 @@ static int trans_seg(struct net_buf_simple *buf, struct bt_mesh_net_rx *net_rx,
 			 net_rx->ctx.send_ttl, seq_auth, 0,
 			 net_rx->friend_match);
 		return -ENOBUFS;
+	}
+
+	/* Keep track of the received SeqAuth values received from this address
+	 * and discard segmented messages that are not newer, as described in
+	 * the Bluetooth Mesh specification section 3.5.3.4.
+	 *
+	 * The logic on the first segmented receive is a bit special, since the
+	 * initial value of rpl->seg is 0, which would normally fail the
+	 * comparison check with auth_seqnum:
+	 * - If this is the first time we receive from this source, rpl->src
+	 *   will be 0, and we can skip this check.
+	 * - If this is the first time we receive from this source on the new IV
+	 *   index, rpl->old_iv will be set, and the check is also skipped.
+	 * - If this is the first segmented message on the new IV index, but we
+	 *   have received an unsegmented message already, the unsegmented
+	 *   message will have reset rpl->seg to 0, and this message's SeqAuth
+	 *   cannot be zero.
+	 */
+	if (rpl && rpl->src && auth_seqnum <= rpl->seg &&
+	    (!rpl->old_iv || net_rx->old_iv)) {
+		BT_WARN("Ignoring old SeqAuth 0x%06x", auth_seqnum);
+		return -EALREADY;
 	}
 
 	/* Look for free slot for a new RX session */
@@ -1454,6 +1477,12 @@ found_rx:
 
 	if (rpl) {
 		bt_mesh_rpl_update(rpl, net_rx);
+		/* Update the seg, unless it has already been surpassed:
+		 * This needs to happen after rpl_update to ensure that the IV
+		 * update reset logic inside rpl_update doesn't overwrite the
+		 * change.
+		 */
+		rpl->seg = MAX(rpl->seg, auth_seqnum);
 	}
 
 	*pdu_type = BT_MESH_FRIEND_PDU_COMPLETE;
@@ -1547,20 +1576,8 @@ int bt_mesh_trans_recv(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx)
 		err = trans_unseg(buf, rx, &seq_auth);
 	}
 
-	/* Notify LPN state machine so a Friend Poll will be sent. If the
-	 * message was a Friend Update it's possible that a Poll was already
-	 * queued for sending, however that's fine since then the
-	 * bt_mesh_lpn_waiting_update() function will return false:
-	 * we still need to go through the actual sending to the bearer and
-	 * wait for ReceiveDelay before transitioning to WAIT_UPDATE state.
-	 * Another situation where we want to notify the LPN state machine
-	 * is if it's configured to use an automatic Friendship establishment
-	 * timer, in which case we want to reset the timer at this point.
-	 *
-	 */
-	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER) &&
-	    (bt_mesh_lpn_timer() ||
-	     (bt_mesh_lpn_established() && bt_mesh_lpn_waiting_update()))) {
+	/* Notify LPN state machine so a Friend Poll will be sent. */
+	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
 		bt_mesh_lpn_msg_received(rx);
 	}
 
@@ -1642,7 +1659,7 @@ static inline void va_store(struct virtual_addr *store)
 	}
 }
 
-uint8_t bt_mesh_va_add(uint8_t uuid[16], uint16_t *addr)
+uint8_t bt_mesh_va_add(const uint8_t uuid[16], uint16_t *addr)
 {
 	struct virtual_addr *va = NULL;
 	int err;
@@ -1684,7 +1701,7 @@ uint8_t bt_mesh_va_add(uint8_t uuid[16], uint16_t *addr)
 	return STATUS_SUCCESS;
 }
 
-uint8_t bt_mesh_va_del(uint8_t uuid[16], uint16_t *addr)
+uint8_t bt_mesh_va_del(const uint8_t uuid[16], uint16_t *addr)
 {
 	struct virtual_addr *va = NULL;
 
@@ -1729,6 +1746,7 @@ uint8_t *bt_mesh_va_label_get(uint16_t addr)
 	return NULL;
 }
 
+#if CONFIG_BT_MESH_LABEL_COUNT > 0
 static struct virtual_addr *bt_mesh_va_get(uint16_t index)
 {
 	if (index >= ARRAY_SIZE(virtual_addrs)) {
@@ -1738,7 +1756,6 @@ static struct virtual_addr *bt_mesh_va_get(uint16_t index)
 	return &virtual_addrs[index];
 }
 
-#if CONFIG_BT_MESH_LABEL_COUNT > 0
 static int va_set(const char *name, size_t len_rd,
 		  settings_read_cb read_cb, void *cb_arg)
 {
@@ -1787,7 +1804,6 @@ static int va_set(const char *name, size_t len_rd,
 }
 
 BT_MESH_SETTINGS_DEFINE(va, "Va", va_set);
-#endif /* CONFIG_BT_MESH_LABEL_COUNT > 0 */
 
 #define IS_VA_DEL(_label)	((_label)->ref == 0)
 void bt_mesh_va_pending_store(void)
@@ -1828,3 +1844,9 @@ void bt_mesh_va_pending_store(void)
 		}
 	}
 }
+#else
+void bt_mesh_va_pending_store(void)
+{
+	/* Do nothing. */
+}
+#endif /* CONFIG_BT_MESH_LABEL_COUNT > 0 */

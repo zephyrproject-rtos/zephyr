@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _PM_POLICY_H_
-#define _PM_POLICY_H_
+#ifndef ZEPHYR_POWER_PM_POLICY_H_
+#define ZEPHYR_POWER_PM_POLICY_H_
 
 #include <power/power.h>
 
@@ -48,4 +48,4 @@ struct pm_state_info pm_policy_next_state(int32_t ticks);
 }
 #endif
 
-#endif /* _PM_POLICY_H_ */
+#endif /* ZEPHYR_POWER_PM_POLICY_H_ */

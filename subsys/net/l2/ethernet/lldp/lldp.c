@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(net_lldp, CONFIG_NET_LLDP_LOG_LEVEL);
 static struct net_mgmt_event_callback cb;
 
 /* Have only one timer in order to save memory */
-static struct k_delayed_work lldp_tx_timer;
+static struct k_work_delayable lldp_tx_timer;
 
 /* Track currently active timers */
 static sys_slist_t lldp_ifaces;
@@ -53,14 +53,12 @@ static int lldp_find(struct ethernet_context *ctx, struct net_if *iface)
 
 static void lldp_submit_work(uint32_t timeout)
 {
-	if (!k_delayed_work_remaining_get(&lldp_tx_timer) ||
-	    timeout < k_delayed_work_remaining_get(&lldp_tx_timer)) {
-		k_delayed_work_cancel(&lldp_tx_timer);
-		k_delayed_work_submit(&lldp_tx_timer, K_MSEC(timeout));
+	k_work_cancel_delayable(&lldp_tx_timer);
+	k_work_reschedule(&lldp_tx_timer, K_MSEC(timeout));
 
-		NET_DBG("Next wakeup in %d ms",
-			k_delayed_work_remaining_get(&lldp_tx_timer));
-	}
+	NET_DBG("Next wakeup in %d ms",
+		k_ticks_to_ms_ceil32(
+			k_work_delayable_remaining_get(&lldp_tx_timer)));
 }
 
 static bool lldp_check_timeout(int64_t start, uint32_t time, int64_t timeout)
@@ -193,7 +191,7 @@ static void lldp_tx_timeout(struct k_work *work)
 	if (timeout_update < (UINT32_MAX - 1)) {
 		NET_DBG("Waiting for %u ms", timeout_update);
 
-		k_delayed_work_submit(&lldp_tx_timer, K_MSEC(timeout_update));
+		k_work_reschedule(&lldp_tx_timer, K_MSEC(timeout_update));
 	}
 }
 
@@ -249,7 +247,7 @@ static int lldp_start(struct net_if *iface, uint32_t mgmt_event)
 					  &ctx->lldp[slot].node);
 
 		if (sys_slist_is_empty(&lldp_ifaces)) {
-			k_delayed_work_cancel(&lldp_tx_timer);
+			k_work_cancel_delayable(&lldp_tx_timer);
 		}
 	} else if (mgmt_event == NET_EVENT_IF_UP) {
 		NET_DBG("Starting timer for iface %p", iface);
@@ -388,7 +386,7 @@ void net_lldp_unset_lldpdu(struct net_if *iface)
 
 void net_lldp_init(void)
 {
-	k_delayed_work_init(&lldp_tx_timer, lldp_tx_timeout);
+	k_work_init_delayable(&lldp_tx_timer, lldp_tx_timeout);
 
 	net_if_foreach(iface_cb, NULL);
 

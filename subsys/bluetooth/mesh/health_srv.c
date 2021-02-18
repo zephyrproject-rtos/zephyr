@@ -222,7 +222,8 @@ static void send_attention_status(struct bt_mesh_model *model,
 	struct bt_mesh_health_srv *srv = model->user_data;
 	uint8_t time;
 
-	time = k_delayed_work_remaining_get(&srv->attn_timer) / 1000;
+	time = k_ticks_to_ms_floor32(
+		k_work_delayable_remaining_get(&srv->attn_timer)) / 1000U;
 	BT_DBG("%u second%s", time, (time == 1U) ? "" : "s");
 
 	bt_mesh_model_msg_init(&msg, OP_ATTENTION_STATUS);
@@ -374,9 +375,10 @@ int bt_mesh_fault_update(struct bt_mesh_elem *elem)
 
 static void attention_off(struct k_work *work)
 {
-	struct bt_mesh_health_srv *srv = CONTAINER_OF(work,
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct bt_mesh_health_srv *srv = CONTAINER_OF(dwork,
 						      struct bt_mesh_health_srv,
-						      attn_timer.work);
+						      attn_timer);
 	BT_DBG("");
 
 	if (srv->cb && srv->cb->attn_off) {
@@ -400,7 +402,7 @@ static int health_srv_init(struct bt_mesh_model *model)
 
 	model->pub->update = health_pub_update;
 
-	k_delayed_work_init(&srv->attn_timer, attention_off);
+	k_work_init_delayable(&srv->attn_timer, attention_off);
 
 	srv->model = model;
 
@@ -431,17 +433,9 @@ void bt_mesh_attention(struct bt_mesh_model *model, uint8_t time)
 		srv = model->user_data;
 	}
 
-	if (time > 0) {
-		if (srv->cb && srv->cb->attn_on) {
-			srv->cb->attn_on(model);
-		}
-
-		k_delayed_work_submit(&srv->attn_timer, K_SECONDS(time));
-	} else {
-		k_delayed_work_cancel(&srv->attn_timer);
-
-		if (srv->cb && srv->cb->attn_off) {
-			srv->cb->attn_off(model);
-		}
+	if ((time > 0) && srv->cb && srv->cb->attn_on) {
+		srv->cb->attn_on(model);
 	}
+
+	k_work_reschedule(&srv->attn_timer, K_SECONDS(time));
 }

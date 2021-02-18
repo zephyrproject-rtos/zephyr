@@ -11,10 +11,6 @@
 
 #include <pinmux/stm32/pinmux_stm32.h>
 
-/* pin assignments for STM32G0316-DISCO board */
-static const struct pin_config pinconf[] = {
-};
-
 static int pinmux_stm32_init(const struct device *port)
 {
 	ARG_UNUSED(port);
@@ -24,8 +20,6 @@ static int pinmux_stm32_init(const struct device *port)
 	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_SYSCFG);
 	LL_SYSCFG_EnablePinRemap(LL_SYSCFG_PIN_RMP_PA11);
 #endif
-
-	stm32_setup_pins(pinconf, ARRAY_SIZE(pinconf));
 
 	return 0;
 }

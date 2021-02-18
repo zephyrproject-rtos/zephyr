@@ -1,0 +1,7 @@
+identifier: bcm958402m2_a72
+name: Broadcom BCM958402M2_A72
+type: mcu
+arch: arm64
+toolchain:
+  - zephyr
+  - cross-compile

@@ -136,16 +136,6 @@ latest data from the internal RAM buffer can be loaded into SystemView::
 .. _SEGGER SystemView: https://www.segger.com/products/development-tools/systemview/
 
 
-CPU Stats
-=========
-
-A special tracing format which provides information about percentage of CPU
-usage based on tracing hooks for threads switching in and out, interrupts enters
-and exits (only distinguishes between idle thread, non idle thread and scheduler).
-
-Enable this format with the :option:`CONFIG_TRACING_CPU_STATS` option.
-
-
 Transport Backends
 ******************
 

@@ -197,7 +197,7 @@ struct wncm14a2a_iface_ctx {
 	struct k_sem response_sem;
 
 	/* RSSI work */
-	struct k_delayed_work rssi_query_work;
+	struct k_work_delayable rssi_query_work;
 
 	/* modem data */
 	char mdm_manufacturer[MDM_MANUFACTURER_LENGTH];
@@ -1145,7 +1145,7 @@ static void wncm14a2a_rx(void)
 
 	while (true) {
 		/* wait for incoming data */
-		k_sem_take(&ictx.mdm_ctx.rx_sem, K_FOREVER);
+		(void)k_sem_take(&ictx.mdm_ctx.rx_sem, K_FOREVER);
 
 		wncm14a2a_read_rx(&rx_buf);
 
@@ -1322,9 +1322,8 @@ static void wncm14a2a_rssi_query_work(struct k_work *work)
 	}
 
 	/* re-start RSSI query work */
-	k_delayed_work_submit_to_queue(&wncm14a2a_workq,
-				       &ictx.rssi_query_work,
-				       K_SECONDS(RSSI_TIMEOUT_SECS));
+	k_work_reschedule_for_queue(&wncm14a2a_workq, &ictx.rssi_query_work,
+				    K_SECONDS(RSSI_TIMEOUT_SECS));
 }
 
 static void wncm14a2a_modem_reset(void)
@@ -1336,7 +1335,7 @@ static void wncm14a2a_modem_reset(void)
 
 restart:
 	/* stop RSSI delay work */
-	k_delayed_work_cancel(&ictx.rssi_query_work);
+	k_work_cancel_delayable(&ictx.rssi_query_work);
 
 	modem_pin_init();
 
@@ -1402,7 +1401,7 @@ restart:
 	       (ictx.mdm_ctx.data_rssi <= -1000 ||
 		ictx.mdm_ctx.data_rssi == 0)) {
 		/* stop RSSI delay work */
-		k_delayed_work_cancel(&ictx.rssi_query_work);
+		k_work_cancel_delayable(&ictx.rssi_query_work);
 		wncm14a2a_rssi_query_work(NULL);
 		k_sleep(K_SECONDS(2));
 	}
@@ -1460,10 +1459,9 @@ static int wncm14a2a_init(const struct device *dev)
 	k_sem_init(&ictx.response_sem, 0, 1);
 
 	/* initialize the work queue */
-	k_work_q_start(&wncm14a2a_workq,
-		       wncm14a2a_workq_stack,
-		       K_KERNEL_STACK_SIZEOF(wncm14a2a_workq_stack),
-		       K_PRIO_COOP(7));
+	k_work_queue_start(&wncm14a2a_workq, wncm14a2a_workq_stack,
+			   K_KERNEL_STACK_SIZEOF(wncm14a2a_workq_stack),
+			   K_PRIO_COOP(7), NULL);
 
 	ictx.last_socket_id = 0;
 
@@ -1503,7 +1501,7 @@ static int wncm14a2a_init(const struct device *dev)
 			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 	/* init RSSI query */
-	k_delayed_work_init(&ictx.rssi_query_work, wncm14a2a_rssi_query_work);
+	k_work_init_delayable(&ictx.rssi_query_work, wncm14a2a_rssi_query_work);
 
 	wncm14a2a_modem_reset();
 

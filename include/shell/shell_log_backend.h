@@ -10,6 +10,7 @@
 #include <zephyr.h>
 #include <logging/log_backend.h>
 #include <logging/log_output.h>
+#include <sys/mpsc_pbuf.h>
 #include <sys/atomic.h>
 #ifdef __cplusplus
 extern "C" {
@@ -38,6 +39,8 @@ struct shell_log_backend {
 	const struct log_output *log_output;
 	struct shell_log_backend_control_block *control_block;
 	uint32_t timeout;
+	const struct mpsc_pbuf_buffer_config *mpsc_buffer_config;
+	struct mpsc_pbuf_buffer *mpsc_buffer;
 };
 
 /** @brief Shell log backend message structure. */
@@ -65,19 +68,33 @@ int z_shell_log_backend_output_func(uint8_t *data, size_t length, void *ctx);
  *  @param _name Shell name.
  */
 #ifdef CONFIG_SHELL_LOG_BACKEND
-#define Z_SHELL_LOG_BACKEND_DEFINE(_name, _buf, _size, _queue_size, _timeout)  \
-	LOG_BACKEND_DEFINE(_name##_backend, log_backend_shell_api, false);     \
-	K_MSGQ_DEFINE(_name##_msgq, sizeof(struct shell_log_backend_msg),      \
-			_queue_size, sizeof(void *));			       \
-	LOG_OUTPUT_DEFINE(_name##_log_output, z_shell_log_backend_output_func, \
-			  _buf, _size);					       \
-	static struct shell_log_backend_control_block _name##_control_block;   \
-	static const struct shell_log_backend _name##_log_backend = {	       \
-		.backend = &_name##_backend,				       \
-		.msgq = &_name##_msgq,					       \
-		.log_output = &_name##_log_output,			       \
-		.control_block = &_name##_control_block,		       \
-		.timeout = _timeout					       \
+#define Z_SHELL_LOG_BACKEND_DEFINE(_name, _buf, _size, _queue_size, _timeout) \
+	LOG_BACKEND_DEFINE(_name##_backend, log_backend_shell_api, false); \
+	K_MSGQ_DEFINE(_name##_msgq, sizeof(struct shell_log_backend_msg), \
+			_queue_size, sizeof(void *)); \
+	LOG_OUTPUT_DEFINE(_name##_log_output, z_shell_log_backend_output_func,\
+			  _buf, _size); \
+	static struct shell_log_backend_control_block _name##_control_block; \
+	static uint32_t _name##_buf[128]; \
+	const struct mpsc_pbuf_buffer_config _name##_mpsc_buffer_config = { \
+		.buf = _name##_buf, \
+		.size = ARRAY_SIZE(_name##_buf), \
+		.notify_drop = NULL, \
+		.get_wlen = log_msg2_generic_get_wlen, \
+		.flags = MPSC_PBUF_MODE_OVERWRITE, \
+	}; \
+	struct mpsc_pbuf_buffer _name##_mpsc_buffer; \
+	static const struct shell_log_backend _name##_log_backend = { \
+		.backend = &_name##_backend, \
+		.msgq = IS_ENABLED(CONFIG_LOG_MODE_DEFERRED) ? \
+			&_name##_msgq : NULL, \
+		.log_output = &_name##_log_output, \
+		.control_block = &_name##_control_block, \
+		.timeout = _timeout, \
+		.mpsc_buffer_config = IS_ENABLED(CONFIG_LOG2_MODE_DEFERRED) ? \
+			&_name##_mpsc_buffer_config : NULL, \
+		.mpsc_buffer = IS_ENABLED(CONFIG_LOG2_MODE_DEFERRED) ? \
+			&_name##_mpsc_buffer : NULL, \
 	}
 
 #define Z_SHELL_LOG_BACKEND_PTR(_name) (&_name##_log_backend)

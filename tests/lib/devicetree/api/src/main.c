@@ -15,6 +15,8 @@
  * - DT_IO_CHANNELS_LABEL_BY_IDX
  * - DT_IO_CHANNELS_LABEL_BY_NAME
  * - DT_IO_CHANNELS_LABEL
+ * - DT_DMAS_LABEL_BY_IDX
+ * - DT_DMAS_LABEL_BY_NAME
  * - DT_INST_CLOCKS_LABEL_BY_IDX
  * - DT_INST_CLOCKS_LABEL_BY_NAME
  * - DT_INST_CLOCKS_LABEL
@@ -24,6 +26,8 @@
  * - DT_INST_IO_CHANNELS_LABEL_BY_IDX
  * - DT_INST_IO_CHANNELS_LABEL_BY_NAME
  * - DT_INST_IO_CHANNELS_LABEL
+ * - DT_INST_DMAS_LABEL_BY_IDX
+ * - DT_INST_DMAS_LABEL_BY_NAME
  */
 #define __DEPRECATED_MACRO
 
@@ -47,6 +51,12 @@
 
 #define TEST_I2C_DEV DT_PATH(test, i2c_11112222, test_i2c_dev_10)
 #define TEST_I2C_BUS DT_BUS(TEST_I2C_DEV)
+
+#define TEST_I2C_MUX DT_NODELABEL(test_i2c_mux)
+#define TEST_I2C_MUX_CTLR_1 DT_CHILD(TEST_I2C_MUX, i2c_mux_ctlr_1)
+#define TEST_I2C_MUX_CTLR_2 DT_CHILD(TEST_I2C_MUX, i2c_mux_ctlr_2)
+#define TEST_MUXED_I2C_DEV_1 DT_NODELABEL(test_muxed_i2c_dev_1)
+#define TEST_MUXED_I2C_DEV_2 DT_NODELABEL(test_muxed_i2c_dev_2)
 
 #define TEST_SPI DT_NODELABEL(test_spi)
 
@@ -299,6 +309,12 @@ static void test_bus(void)
 
 	zassert_equal(DT_SPI_DEV_HAS_CS_GPIOS(TEST_SPI_DEV_0), 1, "");
 	zassert_equal(DT_SPI_DEV_HAS_CS_GPIOS(TEST_SPI_DEV_NO_CS), 0, "");
+
+	/* Test a nested I2C bus using vnd,i2c-mux. */
+	zassert_true(DT_SAME_NODE(TEST_I2C_MUX_CTLR_1,
+				  DT_BUS(TEST_MUXED_I2C_DEV_1)), "");
+	zassert_true(DT_SAME_NODE(TEST_I2C_MUX_CTLR_2,
+				  DT_BUS(TEST_MUXED_I2C_DEV_2)), "");
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT vnd_spi_device_2
@@ -1545,6 +1561,25 @@ static void test_great_grandchild(void)
 	zassert_equal(DT_PROP(DT_NODELABEL(test_ggc), ggc_prop), 42, "");
 }
 
+static void test_compat_get_any_status_okay(void)
+{
+	zassert_true(
+		DT_SAME_NODE(
+			DT_COMPAT_GET_ANY_STATUS_OKAY(vnd_reg_holder),
+			TEST_REG),
+		"");
+
+	/*
+	 * DT_SAME_NODE requires that both its arguments are valid
+	 * node identifiers, so we can't pass it DT_INVALID_NODE,
+	 * which is what this DT_COMPAT_GET_ANY_STATUS_OKAY() expands to.
+	 */
+	zassert_false(
+		DT_NODE_EXISTS(
+			DT_COMPAT_GET_ANY_STATUS_OKAY(this_is_not_a_real_compat)),
+		"");
+}
+
 static bool ord_in_array(unsigned int ord, unsigned int *array,
 			 size_t array_size)
 {
@@ -1756,6 +1791,7 @@ void test_main(void)
 			 ztest_unit_test(test_parent),
 			 ztest_unit_test(test_child_nodes_list),
 			 ztest_unit_test(test_great_grandchild),
+			 ztest_unit_test(test_compat_get_any_status_okay),
 			 ztest_unit_test(test_dep_ord),
 			 ztest_unit_test(test_path),
 			 ztest_unit_test(test_node_name),

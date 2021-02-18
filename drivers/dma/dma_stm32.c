@@ -423,6 +423,7 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device *dev,
 	DMA_InitStruct.PeriphBurst = stm32_dma_get_pburst(config,
 							stream->source_periph);
 
+#if !defined(CONFIG_SOC_SERIES_STM32H7X)
 	if (config->channel_direction != MEMORY_TO_MEMORY) {
 		if (config->dma_slot >= 8) {
 			LOG_ERR("dma slot error.");
@@ -434,7 +435,9 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device *dev,
 			config->dma_slot = 0;
 		}
 	}
+
 	DMA_InitStruct.Channel = dma_stm32_slot_to_channel(config->dma_slot);
+#endif
 
 	DMA_InitStruct.FIFOThreshold = stm32_dma_get_fifo_threshold(
 					config->head_block->fifo_mode_control);
@@ -463,7 +466,11 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device *dev,
 	LL_DMA_Init(dma, dma_stm32_id_to_stream(id), &DMA_InitStruct);
 
 	LL_DMA_EnableIT_TC(dma, dma_stm32_id_to_stream(id));
-	/* Half-Transfer irq is not handled */
+
+	/* Enable Half-Transfer irq if circular mode is enabled */
+	if (config->head_block->source_reload_en) {
+		LL_DMA_EnableIT_HT(dma, dma_stm32_id_to_stream(id));
+	}
 
 #if defined(CONFIG_DMA_STM32_V1)
 	if (DMA_InitStruct.FIFOMode == LL_DMA_FIFOMODE_ENABLE) {
@@ -558,7 +565,7 @@ DMA_STM32_EXPORT_API int dma_stm32_stop(const struct device *dev, uint32_t id)
 		return -EINVAL;
 	}
 
-#ifndef CONFIG_DMAMUX_STM32
+#if !defined(CONFIG_DMAMUX_STM32) || defined(CONFIG_SOC_SERIES_STM32H7X)
 	LL_DMA_DisableIT_TC(dma, dma_stm32_id_to_stream(id));
 #endif /* CONFIG_DMAMUX_STM32 */
 

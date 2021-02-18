@@ -9,8 +9,17 @@
 
 void func_3(uint32_t *addr)
 {
+#if !defined(CONFIG_CPU_CORTEX_M)
 	/* For null pointer reference */
 	*addr = 0;
+#else
+	ARG_UNUSED(addr);
+	/* Dereferencing null-pointer in TrustZone-enabled
+	 * builds may crash the system, so use, instead an
+	 * undefined instruction to trigger a CPU fault.
+	 */
+	__asm__ volatile("udf #0" : : : );
+#endif
 }
 
 void func_2(uint32_t *addr)

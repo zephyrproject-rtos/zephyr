@@ -26,6 +26,11 @@ GEN_ABS_SYM_BEGIN(_OffsetAbsSyms)
 GEN_OFFSET_SYM(_cpu_t, current);
 GEN_OFFSET_SYM(_cpu_t, nested);
 GEN_OFFSET_SYM(_cpu_t, irq_stack);
+GEN_OFFSET_SYM(_cpu_t, arch);
+
+GEN_ABSOLUTE_SYM(___cpu_t_SIZEOF, sizeof(struct _cpu));
+
+GEN_OFFSET_SYM(_kernel_t, cpus);
 
 #if defined(CONFIG_THREAD_MONITOR)
 GEN_OFFSET_SYM(_kernel_t, threads);

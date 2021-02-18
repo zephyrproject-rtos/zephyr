@@ -230,7 +230,7 @@ struct net_buf *net_buf_alloc_len(struct net_buf_pool *pool, size_t size,
 				  k_timeout_t timeout)
 #endif
 {
-	uint64_t end = z_timeout_end_calc(timeout);
+	uint64_t end = sys_clock_timeout_end_calc(timeout);
 	struct net_buf *buf;
 	unsigned int key;
 
@@ -313,7 +313,7 @@ success:
 #endif
 		if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT) &&
 		    !K_TIMEOUT_EQ(timeout, K_FOREVER)) {
-			int64_t remaining = end - z_tick_get();
+			int64_t remaining = end - sys_clock_tick_get();
 
 			if (remaining <= 0) {
 				timeout = K_NO_WAIT;
@@ -574,7 +574,7 @@ struct net_buf *net_buf_ref(struct net_buf *buf)
 
 struct net_buf *net_buf_clone(struct net_buf *buf, k_timeout_t timeout)
 {
-	int64_t end = z_timeout_end_calc(timeout);
+	int64_t end = sys_clock_timeout_end_calc(timeout);
 	struct net_buf_pool *pool;
 	struct net_buf *clone;
 
@@ -600,7 +600,7 @@ struct net_buf *net_buf_clone(struct net_buf *buf, k_timeout_t timeout)
 
 		if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT) &&
 		    !K_TIMEOUT_EQ(timeout, K_FOREVER)) {
-			int64_t remaining = end - z_tick_get();
+			int64_t remaining = end - sys_clock_tick_get();
 
 			if (remaining <= 0) {
 				timeout = K_NO_WAIT;

@@ -1118,9 +1118,9 @@ sub top_of_kernel_tree {
 	my ($root) = @_;
 
 	my @tree_check = (
-		"LICENSE", "CODEOWNERS", "Kconfig", "Makefile",
-		"README.rst", "doc", "arch", "include", "drivers",
-		"boards", "kernel", "lib", "scripts",
+		"LICENSE", "CODEOWNERS", "Kconfig", "README.rst",
+		"doc", "arch", "include", "drivers", "boards",
+		"kernel", "lib", "scripts",
 	);
 
 	foreach my $check (@tree_check) {

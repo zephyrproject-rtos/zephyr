@@ -66,18 +66,12 @@ static void erase_flash(void)
 {
 	int rc;
 
-	rc = flash_write_protection_set(fdev, false);
-	zassert_equal(rc, 0, "should succeed");
-
 	for (int i = 0; i < MAX_NUM_PAGES; i++) {
 		rc = flash_erase(fdev,
 				 FLASH_BASE + (i * layout->pages_size),
 				 layout->pages_size);
 		zassert_equal(rc, 0, "should succeed");
 	}
-
-	rc = flash_write_protection_set(fdev, true);
-	zassert_equal(rc, 0, "should succeed");
 }
 
 

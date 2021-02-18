@@ -52,9 +52,6 @@ static void test_flash_read(void)
 	zassert_true(flash_dev != NULL,
 		     "Simulated flash driver was not found!");
 
-	ret = flash_write_protection_set(flash_dev, false);
-	zassert_equal(0, ret, NULL);
-
 	ret = flash_write(flash_dev, test_base, data, test_size);
 	zassert_equal(0, ret, "flash_write() failed: %d", ret);
 

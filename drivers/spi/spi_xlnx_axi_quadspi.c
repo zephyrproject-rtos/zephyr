@@ -271,7 +271,7 @@ static void xlnx_quadspi_start_tx(const struct device *dev)
 				break;
 			default:
 				__ASSERT(0, "unsupported num_xfer_bytes");
-			};
+			}
 		} else {
 			/* No TX buffer. Use dummy TX data */
 			dtr = 0U;

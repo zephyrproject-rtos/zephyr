@@ -48,7 +48,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #endif
 
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
-#include <ptp_clock.h>
+#include <drivers/ptp_clock.h>
 #include <net/gptp.h>
 #endif
 
@@ -1785,6 +1785,7 @@ static void get_mac_addr_from_i2c_eeprom(uint8_t mac_addr[6])
 {
 	const struct device *dev;
 	uint32_t iaddr = CONFIG_ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS;
+	int ret;
 
 	dev = device_get_binding(CONFIG_ETH_SAM_GMAC_MAC_I2C_DEV_NAME);
 	if (!dev) {
@@ -1792,9 +1793,14 @@ static void get_mac_addr_from_i2c_eeprom(uint8_t mac_addr[6])
 		return;
 	}
 
-	i2c_write_read(dev, CONFIG_ETH_SAM_GMAC_MAC_I2C_SLAVE_ADDRESS,
-		       &iaddr, CONFIG_ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS_SIZE,
-		       mac_addr, 6);
+	ret = i2c_write_read(dev, CONFIG_ETH_SAM_GMAC_MAC_I2C_SLAVE_ADDRESS,
+			   &iaddr, CONFIG_ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS_SIZE,
+			   mac_addr, 6);
+
+	if (ret != 0) {
+		LOG_ERR("I2C: failed to read MAC addr");
+		return;
+	}
 }
 #endif
 
@@ -1846,8 +1852,8 @@ static void monitor_work_handler(struct k_work *work)
 
 finally:
 	/* Submit delayed work */
-	k_delayed_work_submit(&dev_data->monitor_work,
-			      K_MSEC(CONFIG_ETH_SAM_GMAC_MONITOR_PERIOD));
+	k_work_reschedule(&dev_data->monitor_work,
+			  K_MSEC(CONFIG_ETH_SAM_GMAC_MONITOR_PERIOD));
 }
 
 static void eth0_iface_init(struct net_if *iface)
@@ -1964,9 +1970,9 @@ static void eth0_iface_init(struct net_if *iface)
 	}
 
 	/* Initialise monitor */
-	k_delayed_work_init(&dev_data->monitor_work, monitor_work_handler);
-	k_delayed_work_submit(&dev_data->monitor_work,
-			      K_MSEC(CONFIG_ETH_SAM_GMAC_MONITOR_PERIOD));
+	k_work_init_delayable(&dev_data->monitor_work, monitor_work_handler);
+	k_work_reschedule(&dev_data->monitor_work,
+			  K_MSEC(CONFIG_ETH_SAM_GMAC_MONITOR_PERIOD));
 
 	/* Do not start the interface until PHY link is up */
 	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
@@ -2041,6 +2047,29 @@ static int eth_sam_gmac_set_config(const struct device *dev,
 	case ETHERNET_CONFIG_TYPE_QAV_PARAM:
 		return eth_sam_gmac_set_qav_param(dev, type, config);
 #endif
+	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
+	{
+		struct eth_sam_dev_data *const dev_data = DEV_DATA(dev);
+		const struct eth_sam_dev_cfg *const cfg = DEV_CFG(dev);
+
+		memcpy(dev_data->mac_addr,
+		       config->mac_address.addr,
+		       sizeof(dev_data->mac_addr));
+
+		/* Set MAC Address for frame filtering logic */
+		mac_addr_set(cfg->regs, 0, dev_data->mac_addr);
+
+		LOG_INF("%s MAC set to %02x:%02x:%02x:%02x:%02x:%02x",
+			dev->name,
+			dev_data->mac_addr[0], dev_data->mac_addr[1],
+			dev_data->mac_addr[2], dev_data->mac_addr[3],
+			dev_data->mac_addr[4], dev_data->mac_addr[5]);
+
+		/* Register Ethernet MAC Address with the upper layer */
+		net_if_set_link_addr(dev_data->iface, dev_data->mac_addr,
+				     sizeof(dev_data->mac_addr),
+				     NET_LINK_ETHERNET);
+	}
 	default:
 		break;
 	}

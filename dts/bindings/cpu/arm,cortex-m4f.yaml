@@ -5,4 +5,4 @@ description: ARM Cortex-M4F CPU
 
 compatible: "arm,cortex-m4f"
 
-include: cpu.yaml
+include: arm,cortex-m.yaml

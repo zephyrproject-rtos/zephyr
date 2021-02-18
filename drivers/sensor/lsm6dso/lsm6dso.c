@@ -92,7 +92,7 @@ static inline int lsm6dso_reboot(const struct device *dev)
 {
 	struct lsm6dso_data *data = dev->data;
 
-	if (lsm6dso_boot_set(data->ctx, 1) < 0) {
+	if (lsm6dso_boot_set(&data->ctx, 1) < 0) {
 		return -EIO;
 	}
 
@@ -106,7 +106,7 @@ static int lsm6dso_accel_set_fs_raw(const struct device *dev, uint8_t fs)
 {
 	struct lsm6dso_data *data = dev->data;
 
-	if (lsm6dso_xl_full_scale_set(data->ctx, fs) < 0) {
+	if (lsm6dso_xl_full_scale_set(&data->ctx, fs) < 0) {
 		return -EIO;
 	}
 
@@ -119,7 +119,7 @@ static int lsm6dso_accel_set_odr_raw(const struct device *dev, uint8_t odr)
 {
 	struct lsm6dso_data *data = dev->data;
 
-	if (lsm6dso_xl_data_rate_set(data->ctx, odr) < 0) {
+	if (lsm6dso_xl_data_rate_set(&data->ctx, odr) < 0) {
 		return -EIO;
 	}
 
@@ -132,7 +132,7 @@ static int lsm6dso_gyro_set_fs_raw(const struct device *dev, uint8_t fs)
 {
 	struct lsm6dso_data *data = dev->data;
 
-	if (lsm6dso_gy_full_scale_set(data->ctx, fs) < 0) {
+	if (lsm6dso_gy_full_scale_set(&data->ctx, fs) < 0) {
 		return -EIO;
 	}
 
@@ -143,7 +143,7 @@ static int lsm6dso_gyro_set_odr_raw(const struct device *dev, uint8_t odr)
 {
 	struct lsm6dso_data *data = dev->data;
 
-	if (lsm6dso_gy_data_rate_set(data->ctx, odr) < 0) {
+	if (lsm6dso_gy_data_rate_set(&data->ctx, odr) < 0) {
 		return -EIO;
 	}
 
@@ -303,7 +303,7 @@ static int lsm6dso_sample_fetch_accel(const struct device *dev)
 	struct lsm6dso_data *data = dev->data;
 	union axis3bit16_t buf;
 
-	if (lsm6dso_acceleration_raw_get(data->ctx, buf.u8bit) < 0) {
+	if (lsm6dso_acceleration_raw_get(&data->ctx, buf.u8bit) < 0) {
 		LOG_DBG("Failed to read sample");
 		return -EIO;
 	}
@@ -320,7 +320,7 @@ static int lsm6dso_sample_fetch_gyro(const struct device *dev)
 	struct lsm6dso_data *data = dev->data;
 	union axis3bit16_t buf;
 
-	if (lsm6dso_angular_rate_raw_get(data->ctx, buf.u8bit) < 0) {
+	if (lsm6dso_angular_rate_raw_get(&data->ctx, buf.u8bit) < 0) {
 		LOG_DBG("Failed to read sample");
 		return -EIO;
 	}
@@ -338,7 +338,7 @@ static int lsm6dso_sample_fetch_temp(const struct device *dev)
 	struct lsm6dso_data *data = dev->data;
 	union axis1bit16_t buf;
 
-	if (lsm6dso_temperature_raw_get(data->ctx, buf.u8bit) < 0) {
+	if (lsm6dso_temperature_raw_get(&data->ctx, buf.u8bit) < 0) {
 		LOG_DBG("Failed to read sample");
 		return -EIO;
 	}
@@ -680,7 +680,7 @@ static int lsm6dso_channel_get(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api lsm6dso_api_funcs = {
+static const struct sensor_driver_api lsm6dso_driver_api = {
 	.attr_set = lsm6dso_attr_set,
 #if CONFIG_LSM6DSO_TRIGGER
 	.trigger_set = lsm6dso_trigger_set,
@@ -694,7 +694,7 @@ static int lsm6dso_init_chip(const struct device *dev)
 	struct lsm6dso_data *lsm6dso = dev->data;
 	uint8_t chip_id;
 
-	if (lsm6dso_device_id_get(lsm6dso->ctx, &chip_id) < 0) {
+	if (lsm6dso_device_id_get(&lsm6dso->ctx, &chip_id) < 0) {
 		LOG_DBG("Failed reading chip id");
 		return -EIO;
 	}
@@ -707,7 +707,7 @@ static int lsm6dso_init_chip(const struct device *dev)
 	}
 
 	/* reset device */
-	if (lsm6dso_reset_set(lsm6dso->ctx, 1) < 0) {
+	if (lsm6dso_reset_set(&lsm6dso->ctx, 1) < 0) {
 		return -EIO;
 	}
 
@@ -739,12 +739,12 @@ static int lsm6dso_init_chip(const struct device *dev)
 	}
 
 	/* Set FIFO bypass mode */
-	if (lsm6dso_fifo_mode_set(lsm6dso->ctx, LSM6DSO_BYPASS_MODE) < 0) {
+	if (lsm6dso_fifo_mode_set(&lsm6dso->ctx, LSM6DSO_BYPASS_MODE) < 0) {
 		LOG_DBG("failed to set FIFO mode");
 		return -EIO;
 	}
 
-	if (lsm6dso_block_data_update_set(lsm6dso->ctx, 1) < 0) {
+	if (lsm6dso_block_data_update_set(&lsm6dso->ctx, 1) < 0) {
 		LOG_DBG("failed to set BDU mode");
 		return -EIO;
 	}
@@ -752,60 +752,16 @@ static int lsm6dso_init_chip(const struct device *dev)
 	return 0;
 }
 
-static struct lsm6dso_data lsm6dso_data;
-
-static const struct lsm6dso_config lsm6dso_config = {
-	.bus_name = DT_INST_BUS_LABEL(0),
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-	.bus_init = lsm6dso_spi_init,
-	.spi_conf.frequency = DT_INST_PROP(0, spi_max_frequency),
-	.spi_conf.operation = (SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
-			       SPI_MODE_CPHA | SPI_WORD_SET(8) |
-			       SPI_LINES_SINGLE),
-	.spi_conf.slave     = DT_INST_REG_ADDR(0),
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	.gpio_cs_port	    = DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
-	.cs_gpio	    = DT_INST_SPI_DEV_CS_GPIOS_PIN(0),
-	.cs_gpio_flags	    = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0),
-
-	.spi_conf.cs        =  &lsm6dso_data.cs_ctrl,
-#else
-	.spi_conf.cs        = NULL,
-#endif
-#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-	.bus_init = lsm6dso_i2c_init,
-	.i2c_slv_addr = DT_INST_REG_ADDR(0),
-#else
-#error "BUS MACRO NOT DEFINED IN DTS"
-#endif
-#ifdef CONFIG_LSM6DSO_TRIGGER
-	.int_gpio_port = DT_INST_GPIO_LABEL(0, irq_gpios),
-	.int_gpio_pin = DT_INST_GPIO_PIN(0, irq_gpios),
-	.int_gpio_flags = DT_INST_GPIO_FLAGS(0, irq_gpios),
-#if defined(CONFIG_LSM6DSO_INT_PIN_1)
-	.int_pin = 1,
-#elif defined(CONFIG_LSM6DSO_INT_PIN_2)
-	.int_pin = 2,
-#endif /* CONFIG_LSM6DSO_INT_PIN */
-
-#endif /* CONFIG_LSM6DSO_TRIGGER */
-};
-
 static int lsm6dso_init(const struct device *dev)
 {
-	const struct lsm6dso_config * const config = dev->config;
+	const struct lsm6dso_config * const cfg = dev->config;
 	struct lsm6dso_data *data = dev->data;
 
 	data->dev = dev;
 
-	data->bus = device_get_binding(config->bus_name);
-	if (!data->bus) {
-		LOG_DBG("master not found: %s",
-			    config->bus_name);
+	if (cfg->bus_init(dev) < 0) {
 		return -EINVAL;
 	}
-
-	config->bus_init(dev);
 
 #ifdef CONFIG_LSM6DSO_TRIGGER
 	if (lsm6dso_init_interrupt(dev) < 0) {
@@ -829,9 +785,79 @@ static int lsm6dso_init(const struct device *dev)
 	return 0;
 }
 
+#if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0
+#warning "LSM6DSO driver enabled without any devices"
+#endif
 
-static struct lsm6dso_data lsm6dso_data;
+/*
+ * Device creation macro, shared by LSM6DSO_DEFINE_SPI() and
+ * LSM6DSO_DEFINE_I2C().
+ */
 
-DEVICE_DT_INST_DEFINE(0, lsm6dso_init, device_pm_control_nop,
-		    &lsm6dso_data, &lsm6dso_config, POST_KERNEL,
-		    CONFIG_SENSOR_INIT_PRIORITY, &lsm6dso_api_funcs);
+#define LSM6DSO_DEVICE_INIT(inst)					\
+	DEVICE_DT_INST_DEFINE(inst,					\
+			    lsm6dso_init,				\
+			    device_pm_control_nop,			\
+			    &lsm6dso_data_##inst,			\
+			    &lsm6dso_config_##inst,			\
+			    POST_KERNEL,				\
+			    CONFIG_SENSOR_INIT_PRIORITY,		\
+			    &lsm6dso_driver_api);
+
+/*
+ * Instantiation macros used when a device is on a SPI bus.
+ */
+
+#ifdef CONFIG_LSM6DSO_TRIGGER
+#define LSM6DSO_CFG_IRQ(inst) \
+	.gpio_drdy = GPIO_DT_SPEC_GET(DT_DRV_INST(inst), irq_gpios),	\
+	.int_pin = DT_INST_PROP(inst, int_pin)
+#else
+#define LSM6DSO_CFG_IRQ(inst)
+#endif /* CONFIG_LSM6DSO_TRIGGER */
+
+#define LSM6DSO_SPI_OP  (SPI_WORD_SET(8) |				\
+			 SPI_OP_MODE_MASTER |				\
+			 SPI_LINES_SINGLE |				\
+			 SPI_MODE_CPOL |				\
+			 SPI_MODE_CPHA)					\
+
+#define LSM6DSO_CONFIG_SPI(inst)					\
+	{								\
+		.stmemsc_cfg.spi.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),\
+		.stmemsc_cfg.spi.spi_cfg =				\
+			SPI_CONFIG_DT_INST(inst,			\
+					   LSM6DSO_SPI_OP,		\
+					   0),				\
+		.bus_init = lsm6dso_spi_init,				\
+		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),	\
+			(LSM6DSO_CFG_IRQ(inst)), ())			\
+	}
+
+/*
+ * Instantiation macros used when a device is on an I2C bus.
+ */
+
+#define LSM6DSO_CONFIG_I2C(inst)					\
+	{								\
+		.stmemsc_cfg.i2c.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),\
+		.stmemsc_cfg.i2c.i2c_slv_addr = DT_INST_REG_ADDR(inst),	\
+		.bus_init = lsm6dso_i2c_init,				\
+		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),	\
+			(LSM6DSO_CFG_IRQ(inst)), ())			\
+	}
+
+/*
+ * Main instantiation macro. Use of COND_CODE_1() selects the right
+ * bus-specific macro at preprocessor time.
+ */
+
+#define LSM6DSO_DEFINE(inst)						\
+	static struct lsm6dso_data lsm6dso_data_##inst;			\
+	static const struct lsm6dso_config lsm6dso_config_##inst =	\
+		COND_CODE_1(DT_INST_ON_BUS(inst, spi),			\
+			(LSM6DSO_CONFIG_SPI(inst)),			\
+			(LSM6DSO_CONFIG_I2C(inst)));			\
+	LSM6DSO_DEVICE_INIT(inst)
+
+DT_INST_FOREACH_STATUS_OKAY(LSM6DSO_DEFINE)

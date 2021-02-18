@@ -8,8 +8,9 @@
 #include <kernel.h>
 #include <sys_clock.h>
 #include <timing/timing.h>
+#include <app_memory/app_memdomain.h>
 
-static uint64_t tsc_freq;
+K_APP_BMEM(z_libc_partition) static uint64_t tsc_freq;
 
 void arch_timing_x86_init(void)
 {
@@ -82,5 +83,5 @@ uint64_t arch_timing_cycles_to_ns_avg(uint64_t cycles, uint32_t count)
 
 uint32_t arch_timing_freq_get_mhz(void)
 {
-	return (uint32_t)(arch_timing_freq_get() / 1000000);
+	return (uint32_t)(arch_timing_freq_get() / 1000000U);
 }

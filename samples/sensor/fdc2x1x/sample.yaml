@@ -1,0 +1,10 @@
+sample:
+  name: fdc2x1x sample
+  description: FDC2X1X sample application
+tests:
+  sample.sensor.fdc2x1x:
+    harness: sensor
+    tags: sensors
+    platform_allow: nrf9160dk_nrf9160
+    integration_platforms:
+      - nrf9160dk_nrf9160

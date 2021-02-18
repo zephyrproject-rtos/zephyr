@@ -8,6 +8,11 @@ if BOARD_STM32L562E_DK
 config BOARD
 	default "stm32l562e_dk"
 
+choice STM32_LPTIM_CLOCK
+	default STM32_LPTIM_CLOCK_LSE
+	depends on STM32_LPTIM_TIMER
+endchoice
+
 if BT
 
 config SPI
@@ -31,5 +36,13 @@ config BT_HCI_VS_EXT
 	default n
 
 endif # BT
+
+if TRUSTED_EXECUTION_NONSECURE
+
+# Get flash configuration for NS image from dts flash partition
+config USE_DT_CODE_PARTITION
+	default y
+
+endif # TRUSTED_EXECUTION_NONSECURE
 
 endif # BOARD_STM32L562E_DK

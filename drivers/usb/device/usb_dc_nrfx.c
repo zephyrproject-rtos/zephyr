@@ -1598,6 +1598,11 @@ int usb_dc_ep_disable(const uint8_t ep)
 	LOG_DBG("EP disable: 0x%02x", ep);
 
 	nrfx_usbd_ep_disable(ep_addr_to_nrfx(ep));
+	/* Clear write_in_progress as nrfx_usbd_ep_disable()
+	 * terminates endpoint transaction.
+	 */
+	ep_ctx->write_in_progress = false;
+	ep_ctx_reset(ep_ctx);
 	ep_ctx->cfg.en = false;
 
 	return 0;
@@ -1915,10 +1920,10 @@ static int usb_init(const struct device *arg)
 	(void)nrfx_power_init(&power_config);
 	nrfx_power_usbevt_init(&usbevt_config);
 
-	k_work_q_start(&usbd_work_queue,
-		usbd_work_queue_stack,
-		K_KERNEL_STACK_SIZEOF(usbd_work_queue_stack),
-		CONFIG_SYSTEM_WORKQUEUE_PRIORITY);
+	k_work_queue_start(&usbd_work_queue,
+			   usbd_work_queue_stack,
+			   K_KERNEL_STACK_SIZEOF(usbd_work_queue_stack),
+			   CONFIG_SYSTEM_WORKQUEUE_PRIORITY, NULL);
 
 	k_work_init(&ctx->usb_work, usbd_work_handler);
 

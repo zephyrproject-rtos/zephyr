@@ -38,12 +38,16 @@ struct rpl_val {
 };
 
 static struct bt_mesh_rpl replay_list[CONFIG_BT_MESH_CRPL];
+static ATOMIC_DEFINE(store, CONFIG_BT_MESH_CRPL);
+
+static inline int rpl_idx(const struct bt_mesh_rpl *rpl)
+{
+	return rpl - &replay_list[0];
+}
 
 static void schedule_rpl_store(struct bt_mesh_rpl *entry)
 {
-#ifdef CONFIG_BT_SETTINGS
-	entry->store = true;
-#endif
+	atomic_set_bit(store, rpl_idx(entry));
 	bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_RPL_PENDING);
 }
 
@@ -55,6 +59,13 @@ static void schedule_rpl_clear(void)
 void bt_mesh_rpl_update(struct bt_mesh_rpl *rpl,
 		struct bt_mesh_net_rx *rx)
 {
+	/* If this is the first message on the new IV index, we should reset it
+	 * to zero to avoid invalid combinations of IV index and seg.
+	 */
+	if (rpl->old_iv && !rx->old_iv) {
+		rpl->seg = 0;
+	}
+
 	rpl->src = rx->ctx.addr;
 	rpl->seq = rx->seq;
 	rpl->old_iv = rx->old_iv;
@@ -277,20 +288,16 @@ static void clear_rpl(struct bt_mesh_rpl *rpl)
 	}
 
 	(void)memset(rpl, 0, sizeof(*rpl));
+	atomic_clear_bit(store, rpl_idx(rpl));
 }
 
 static void store_pending_rpl(struct bt_mesh_rpl *rpl)
 {
 	BT_DBG("");
 
-#ifdef CONFIG_BT_SETTINGS
-	if (!rpl->store) {
-		return;
+	if (atomic_test_and_clear_bit(store, rpl_idx(rpl))) {
+		store_rpl(rpl);
 	}
-
-	rpl->store = false;
-#endif
-	store_rpl(rpl);
 }
 
 void bt_mesh_rpl_pending_store(void)

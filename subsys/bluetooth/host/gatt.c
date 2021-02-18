@@ -175,7 +175,14 @@ BT_GATT_SERVICE_DEFINE(_2_gap_svc,
 	/* Require pairing for writes to device name */
 	BT_GATT_CHARACTERISTIC(BT_UUID_GAP_DEVICE_NAME,
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE,
-			       BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT,
+			       BT_GATT_PERM_READ |
+#if defined(CONFIG_DEVICE_NAME_GATT_WRITABLE_AUTHEN)
+			       BT_GATT_PERM_WRITE_AUTHEN,
+#elif defined(CONFIG_DEVICE_NAME_GATT_WRITABLE_ENCRYPT)
+			       BT_GATT_PERM_WRITE_ENCRYPT,
+#else
+			       BT_GATT_PERM_WRITE,
+#endif
 			       read_name, write_name, bt_dev.name),
 #else
 	BT_GATT_CHARACTERISTIC(BT_UUID_GAP_DEVICE_NAME, BT_GATT_CHRC_READ,
@@ -3195,6 +3202,82 @@ done:
 	return 0;
 }
 
+static uint16_t parse_read_std_char_desc(struct bt_conn *conn, const void *pdu,
+					 struct bt_gatt_discover_params *params,
+					 uint16_t length)
+{
+	const struct bt_att_read_type_rsp *rsp = pdu;
+	uint16_t handle = 0U;
+	uint16_t uuid_val;
+
+	if (params->uuid->type != BT_UUID_TYPE_16) {
+		goto done;
+	}
+
+	uuid_val = BT_UUID_16(params->uuid)->val;
+
+	/* Parse characteristics found */
+	for (length--, pdu = rsp->data; length >= rsp->len;
+	     length -= rsp->len, pdu = (const uint8_t *)pdu + rsp->len) {
+		union {
+			struct bt_gatt_ccc ccc;
+			struct bt_gatt_cpf cpf;
+			struct bt_gatt_cep cep;
+			struct bt_gatt_scc scc;
+		} value;
+		const struct bt_att_data *data = pdu;
+		struct bt_gatt_attr attr;
+
+		handle = sys_le16_to_cpu(data->handle);
+		/* Handle 0 is invalid */
+		if (!handle) {
+			goto done;
+		}
+
+		switch (uuid_val) {
+		case BT_UUID_GATT_CEP_VAL:
+			value.cep.properties = sys_get_le16(data->value);
+			break;
+		case BT_UUID_GATT_CCC_VAL:
+			value.ccc.flags = sys_get_le16(data->value);
+			break;
+		case BT_UUID_GATT_SCC_VAL:
+			value.scc.flags = sys_get_le16(data->value);
+			break;
+		case BT_UUID_GATT_CPF_VAL:
+		{
+			struct gatt_cpf *cpf = (struct gatt_cpf *)data->value;
+
+			value.cpf.format = cpf->format;
+			value.cpf.exponent = cpf->exponent;
+			value.cpf.unit = sys_le16_to_cpu(cpf->unit);
+			value.cpf.name_space = cpf->name_space;
+			value.cpf.description = sys_le16_to_cpu(cpf->description);
+			break;
+		}
+		default:
+			goto done;
+		}
+
+		attr = (struct bt_gatt_attr)BT_GATT_ATTRIBUTE(
+			params->uuid, 0, NULL, NULL, &value);
+		attr.handle = handle;
+
+		if (params->func(conn, &attr, params) == BT_GATT_ITER_STOP) {
+			return 0;
+		}
+	}
+
+	/* Whole PDU read without error */
+	if (length == 0U && handle) {
+		return handle;
+	}
+
+done:
+	params->func(conn, NULL, params);
+	return 0;
+}
+
 static void gatt_read_type_rsp(struct bt_conn *conn, uint8_t err,
 			       const void *pdu, uint16_t length,
 			       void *user_data)
@@ -3211,8 +3294,10 @@ static void gatt_read_type_rsp(struct bt_conn *conn, uint8_t err,
 
 	if (params->type == BT_GATT_DISCOVER_INCLUDE) {
 		handle = parse_include(conn, pdu, params, length);
-	} else {
+	} else if (params->type == BT_GATT_DISCOVER_CHARACTERISTIC) {
 		handle = parse_characteristic(conn, pdu, params, length);
+	} else {
+		handle = parse_read_std_char_desc(conn, pdu, params, length);
 	}
 
 	if (!handle) {
@@ -3232,10 +3317,17 @@ static int gatt_read_type_encode(struct net_buf *buf, size_t len,
 	req->start_handle = sys_cpu_to_le16(params->start_handle);
 	req->end_handle = sys_cpu_to_le16(params->end_handle);
 
-	if (params->type == BT_GATT_DISCOVER_INCLUDE) {
+	switch (params->type) {
+	case BT_GATT_DISCOVER_INCLUDE:
 		net_buf_add_le16(buf, BT_UUID_GATT_INCLUDE_VAL);
-	} else {
+		break;
+	case BT_GATT_DISCOVER_CHARACTERISTIC:
 		net_buf_add_le16(buf, BT_UUID_GATT_CHRC_VAL);
+		break;
+	default:
+		/* Only 16-bit UUIDs supported */
+		net_buf_add_le16(buf, BT_UUID_16(params->uuid)->val);
+		break;
 	}
 
 	return 0;
@@ -3548,6 +3640,16 @@ int bt_gatt_discover(struct bt_conn *conn,
 			return gatt_find_type(conn, params);
 		}
 		return gatt_read_group(conn, params);
+
+	case BT_GATT_DISCOVER_STD_CHAR_DESC:
+		if (!(params->uuid && params->uuid->type == BT_UUID_TYPE_16 &&
+		      (!bt_uuid_cmp(params->uuid, BT_UUID_GATT_CEP) ||
+		       !bt_uuid_cmp(params->uuid, BT_UUID_GATT_CCC) ||
+		       !bt_uuid_cmp(params->uuid, BT_UUID_GATT_SCC) ||
+		       !bt_uuid_cmp(params->uuid, BT_UUID_GATT_CPF)))) {
+			return -EINVAL;
+		}
+		__fallthrough;
 	case BT_GATT_DISCOVER_INCLUDE:
 	case BT_GATT_DISCOVER_CHARACTERISTIC:
 		return gatt_read_type(conn, params);

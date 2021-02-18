@@ -694,8 +694,10 @@
 			reg = <0x40020000 0x400>;
 			interrupts = <11 0>, <12 0>, <13 0>, <14 0>, <15 0>, <16 0>,
 						 <17 0>, <47 0>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000020>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000001>;
 			st,mem2mem;
+			dma-offset = <0>;
+			dma-requests = <8>;
 			status = "disabled";
 			label = "DMA_1";
 		};
@@ -706,10 +708,29 @@
 			reg = <0x40020400 0x400>;
 			interrupts = <56 0>, <57 0>, <58 0>, <59 0>, <60 0>, <68 0>,
 						<69 0>, <70 0>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000020>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000002>;
 			st,mem2mem;
+			dma-offset = <8>;
+			dma-requests = <8>;
 			status = "disabled";
 			label = "DMA_2";
+		};
+
+		dmamux1: dmamux@40020800 {
+			compatible = "st,stm32-dmamux";
+			#dma-cells = <4>;
+			reg = <0x40020800 0x400>;
+			interrupts = <102 0>;
+			/* dmamux1 has no dedicated clock, so we enable dma1 clock */
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000001>;
+			dma-channels = <16>;
+			dma-generators = <8>;
+			status = "disabled";
+			label = "DMAMUX_1";
+			/*
+			 * dma-requests is different among h7 socs,
+			 * so we set in specific dtsi files
+			 */
 		};
 
 		rng: rng@48021800 {

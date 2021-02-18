@@ -46,6 +46,13 @@ SYS_INIT(init_msgq_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
 #endif /* CONFIG_OBJECT_TRACING */
 
+#ifdef CONFIG_POLL
+static inline void handle_poll_events(struct k_msgq *msgq, uint32_t state)
+{
+	z_handle_obj_poll_events(&msgq->poll_events, state);
+}
+#endif /* CONFIG_POLL */
+
 void k_msgq_init(struct k_msgq *msgq, char *buffer, size_t msg_size,
 		 uint32_t max_msgs)
 {
@@ -59,7 +66,9 @@ void k_msgq_init(struct k_msgq *msgq, char *buffer, size_t msg_size,
 	msgq->flags = 0;
 	z_waitq_init(&msgq->wait_q);
 	msgq->lock = (struct k_spinlock) {};
-
+#ifdef CONFIG_POLL
+	sys_dlist_init(&msgq->poll_events);
+#endif	/* CONFIG_POLL */
 	SYS_TRACING_OBJ_INIT(k_msgq, msgq);
 
 	z_object_init(msgq);
@@ -89,12 +98,12 @@ int z_impl_k_msgq_alloc_init(struct k_msgq *msgq, size_t msg_size,
 }
 
 #ifdef CONFIG_USERSPACE
-int z_vrfy_k_msgq_alloc_init(struct k_msgq *q, size_t msg_size,
+int z_vrfy_k_msgq_alloc_init(struct k_msgq *msgq, size_t msg_size,
 			    uint32_t max_msgs)
 {
-	Z_OOPS(Z_SYSCALL_OBJ_NEVER_INIT(q, K_OBJ_MSGQ));
+	Z_OOPS(Z_SYSCALL_OBJ_NEVER_INIT(msgq, K_OBJ_MSGQ));
 
-	return z_impl_k_msgq_alloc_init(q, msg_size, max_msgs);
+	return z_impl_k_msgq_alloc_init(msgq, msg_size, max_msgs);
 }
 #include <syscalls/k_msgq_alloc_init_mrsh.c>
 #endif
@@ -105,7 +114,7 @@ int k_msgq_cleanup(struct k_msgq *msgq)
 		return -EBUSY;
 	}
 
-	if ((msgq->flags & K_MSGQ_FLAG_ALLOC) != 0) {
+	if ((msgq->flags & K_MSGQ_FLAG_ALLOC) != 0U) {
 		k_free(msgq->buffer_start);
 		msgq->flags &= ~K_MSGQ_FLAG_ALLOC;
 	}
@@ -143,6 +152,9 @@ int z_impl_k_msgq_put(struct k_msgq *msgq, const void *data, k_timeout_t timeout
 				msgq->write_ptr = msgq->buffer_start;
 			}
 			msgq->used_msgs++;
+#ifdef CONFIG_POLL
+			handle_poll_events(msgq, K_POLL_STATE_MSGQ_DATA_AVAILABLE);
+#endif /* CONFIG_POLL */
 		}
 		result = 0;
 	} else if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
@@ -160,13 +172,13 @@ int z_impl_k_msgq_put(struct k_msgq *msgq, const void *data, k_timeout_t timeout
 }
 
 #ifdef CONFIG_USERSPACE
-static inline int z_vrfy_k_msgq_put(struct k_msgq *q, const void *data,
+static inline int z_vrfy_k_msgq_put(struct k_msgq *msgq, const void *data,
 				    k_timeout_t timeout)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(q, K_OBJ_MSGQ));
-	Z_OOPS(Z_SYSCALL_MEMORY_READ(data, q->msg_size));
+	Z_OOPS(Z_SYSCALL_OBJ(msgq, K_OBJ_MSGQ));
+	Z_OOPS(Z_SYSCALL_MEMORY_READ(data, msgq->msg_size));
 
-	return z_impl_k_msgq_put(q, data, timeout);
+	return z_impl_k_msgq_put(msgq, data, timeout);
 }
 #include <syscalls/k_msgq_put_mrsh.c>
 #endif
@@ -179,12 +191,12 @@ void z_impl_k_msgq_get_attrs(struct k_msgq *msgq, struct k_msgq_attrs *attrs)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline void z_vrfy_k_msgq_get_attrs(struct k_msgq *q,
+static inline void z_vrfy_k_msgq_get_attrs(struct k_msgq *msgq,
 					   struct k_msgq_attrs *attrs)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(q, K_OBJ_MSGQ));
+	Z_OOPS(Z_SYSCALL_OBJ(msgq, K_OBJ_MSGQ));
 	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(attrs, sizeof(struct k_msgq_attrs)));
-	z_impl_k_msgq_get_attrs(q, attrs);
+	z_impl_k_msgq_get_attrs(msgq, attrs);
 }
 #include <syscalls/k_msgq_get_attrs_mrsh.c>
 #endif
@@ -199,7 +211,7 @@ int z_impl_k_msgq_get(struct k_msgq *msgq, void *data, k_timeout_t timeout)
 
 	key = k_spin_lock(&msgq->lock);
 
-	if (msgq->used_msgs > 0) {
+	if (msgq->used_msgs > 0U) {
 		/* take first available message from queue */
 		(void)memcpy(data, msgq->read_ptr, msgq->msg_size);
 		msgq->read_ptr += msgq->msg_size;
@@ -242,13 +254,13 @@ int z_impl_k_msgq_get(struct k_msgq *msgq, void *data, k_timeout_t timeout)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline int z_vrfy_k_msgq_get(struct k_msgq *q, void *data,
+static inline int z_vrfy_k_msgq_get(struct k_msgq *msgq, void *data,
 				    k_timeout_t timeout)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(q, K_OBJ_MSGQ));
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(data, q->msg_size));
+	Z_OOPS(Z_SYSCALL_OBJ(msgq, K_OBJ_MSGQ));
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(data, msgq->msg_size));
 
-	return z_impl_k_msgq_get(q, data, timeout);
+	return z_impl_k_msgq_get(msgq, data, timeout);
 }
 #include <syscalls/k_msgq_get_mrsh.c>
 #endif
@@ -260,7 +272,7 @@ int z_impl_k_msgq_peek(struct k_msgq *msgq, void *data)
 
 	key = k_spin_lock(&msgq->lock);
 
-	if (msgq->used_msgs > 0) {
+	if (msgq->used_msgs > 0U) {
 		/* take first available message from queue */
 		(void)memcpy(data, msgq->read_ptr, msgq->msg_size);
 		result = 0;
@@ -275,12 +287,12 @@ int z_impl_k_msgq_peek(struct k_msgq *msgq, void *data)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline int z_vrfy_k_msgq_peek(struct k_msgq *q, void *data)
+static inline int z_vrfy_k_msgq_peek(struct k_msgq *msgq, void *data)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(q, K_OBJ_MSGQ));
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(data, q->msg_size));
+	Z_OOPS(Z_SYSCALL_OBJ(msgq, K_OBJ_MSGQ));
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(data, msgq->msg_size));
 
-	return z_impl_k_msgq_peek(q, data);
+	return z_impl_k_msgq_peek(msgq, data);
 }
 #include <syscalls/k_msgq_peek_mrsh.c>
 #endif
@@ -305,24 +317,24 @@ void z_impl_k_msgq_purge(struct k_msgq *msgq)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline void z_vrfy_k_msgq_purge(struct k_msgq *q)
+static inline void z_vrfy_k_msgq_purge(struct k_msgq *msgq)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(q, K_OBJ_MSGQ));
-	z_impl_k_msgq_purge(q);
+	Z_OOPS(Z_SYSCALL_OBJ(msgq, K_OBJ_MSGQ));
+	z_impl_k_msgq_purge(msgq);
 }
 #include <syscalls/k_msgq_purge_mrsh.c>
 
-static inline uint32_t z_vrfy_k_msgq_num_free_get(struct k_msgq *q)
+static inline uint32_t z_vrfy_k_msgq_num_free_get(struct k_msgq *msgq)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(q, K_OBJ_MSGQ));
-	return z_impl_k_msgq_num_free_get(q);
+	Z_OOPS(Z_SYSCALL_OBJ(msgq, K_OBJ_MSGQ));
+	return z_impl_k_msgq_num_free_get(msgq);
 }
 #include <syscalls/k_msgq_num_free_get_mrsh.c>
 
-static inline uint32_t z_vrfy_k_msgq_num_used_get(struct k_msgq *q)
+static inline uint32_t z_vrfy_k_msgq_num_used_get(struct k_msgq *msgq)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(q, K_OBJ_MSGQ));
-	return z_impl_k_msgq_num_used_get(q);
+	Z_OOPS(Z_SYSCALL_OBJ(msgq, K_OBJ_MSGQ));
+	return z_impl_k_msgq_num_used_get(msgq);
 }
 #include <syscalls/k_msgq_num_used_get_mrsh.c>
 

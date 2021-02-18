@@ -1,7 +1,7 @@
 .. _random_api:
 
-Random
-######
+Random Number Generation
+########################
 
 The random API subsystem provides random number generation APIs in both
 cryptographically and non-cryptographically secure instances. Which

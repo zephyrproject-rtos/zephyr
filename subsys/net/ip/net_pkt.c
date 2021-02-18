@@ -857,7 +857,7 @@ static struct net_buf *pkt_alloc_buffer(struct net_buf_pool *pool,
 					size_t size, k_timeout_t timeout)
 #endif
 {
-	uint64_t end = z_timeout_end_calc(timeout);
+	uint64_t end = sys_clock_timeout_end_calc(timeout);
 	struct net_buf *first = NULL;
 	struct net_buf *current = NULL;
 
@@ -884,7 +884,7 @@ static struct net_buf *pkt_alloc_buffer(struct net_buf_pool *pool,
 
 		if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT) &&
 		    !K_TIMEOUT_EQ(timeout, K_FOREVER)) {
-			int64_t remaining = end - z_tick_get();
+			int64_t remaining = end - sys_clock_tick_get();
 
 			if (remaining <= 0) {
 				break;
@@ -1103,7 +1103,7 @@ int net_pkt_alloc_buffer(struct net_pkt *pkt,
 			 k_timeout_t timeout)
 #endif
 {
-	uint64_t end = z_timeout_end_calc(timeout);
+	uint64_t end = sys_clock_timeout_end_calc(timeout);
 	struct net_buf_pool *pool = NULL;
 	size_t alloc_len = 0;
 	size_t hdr_len = 0;
@@ -1144,7 +1144,7 @@ int net_pkt_alloc_buffer(struct net_pkt *pkt,
 
 	if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT) &&
 	    !K_TIMEOUT_EQ(timeout, K_FOREVER)) {
-		int64_t remaining = end - z_tick_get();
+		int64_t remaining = end - sys_clock_tick_get();
 
 		if (remaining <= 0) {
 			timeout = K_NO_WAIT;
@@ -1375,7 +1375,7 @@ pkt_alloc_with_buffer(struct k_mem_slab *slab,
 		      k_timeout_t timeout)
 #endif
 {
-	uint64_t end = z_timeout_end_calc(timeout);
+	uint64_t end = sys_clock_timeout_end_calc(timeout);
 	struct net_pkt *pkt;
 	int ret;
 
@@ -1395,7 +1395,7 @@ pkt_alloc_with_buffer(struct k_mem_slab *slab,
 
 	if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT) &&
 	    !K_TIMEOUT_EQ(timeout, K_FOREVER)) {
-		int64_t remaining = end - z_tick_get();
+		int64_t remaining = end - sys_clock_tick_get();
 
 		if (remaining <= 0) {
 			timeout = K_NO_WAIT;
@@ -1740,6 +1740,7 @@ static void clone_pkt_attributes(struct net_pkt *pkt, struct net_pkt *clone_pkt)
 	net_pkt_set_timestamp(clone_pkt, net_pkt_timestamp(pkt));
 	net_pkt_set_priority(clone_pkt, net_pkt_priority(pkt));
 	net_pkt_set_orig_iface(clone_pkt, net_pkt_orig_iface(pkt));
+	net_pkt_set_captured(clone_pkt, net_pkt_is_captured(pkt));
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == AF_INET) {
 		net_pkt_set_ipv4_ttl(clone_pkt, net_pkt_ipv4_ttl(pkt));
@@ -1765,9 +1766,16 @@ struct net_pkt *net_pkt_clone(struct net_pkt *pkt, k_timeout_t timeout)
 	struct net_pkt *clone_pkt;
 	struct net_pkt_cursor backup;
 
-	clone_pkt = net_pkt_alloc_with_buffer(net_pkt_iface(pkt),
-					      net_pkt_get_len(pkt),
-					      AF_UNSPEC, 0, timeout);
+#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
+	clone_pkt = pkt_alloc_with_buffer(pkt->slab, net_pkt_iface(pkt),
+					  net_pkt_get_len(pkt),
+					  AF_UNSPEC, 0, timeout,
+					  __func__, __LINE__);
+#else
+	clone_pkt = pkt_alloc_with_buffer(pkt->slab, net_pkt_iface(pkt),
+					  net_pkt_get_len(pkt),
+					  AF_UNSPEC, 0, timeout);
+#endif
 	if (!clone_pkt) {
 		return NULL;
 	}

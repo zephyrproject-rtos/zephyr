@@ -503,6 +503,29 @@ An example usage:
 
 This module is activated by :option:`CONFIG_SHELL_GETOPT` set to ``y``.
 
+Obscured Input Feature
+**********************
+
+With the obscured input feature, the shell can be used for implementing a login
+prompt or other user interaction whereby the characters the user types should
+not be revealed on screen, such as when entering a password.
+
+Once the obscured input has been accepted, it is normally desired to return the
+shell to normal operation.  Such runtime control is possible with the
+``shell_obscure_set`` function.
+
+An example of login and logout commands using this feature is located in
+:zephyr_file:`samples/subsys/shell/shell_module/src/main.c` and the config file
+:zephyr_file:`samples/subsys/shell/shell_module/prj_login.conf`.
+
+This feature is activated upon startup by :option:`CONFIG_SHELL_START_OBSCURED`
+set to ``y``. With this set either way, the option can still be controlled later
+at runtime. :option:`CONFIG_SHELL_CMDS_SELECT` is useful to prevent entry
+of any other command besides a login command, by means of the
+``shell_set_root_cmd`` function. Likewise, :option:`CONFIG_SHELL_PROMPT_UART`
+allows you to set the prompt upon startup, but it can be changed later with the
+``shell_prompt_change`` function.
+
 Shell Logger Backend Feature
 ****************************
 

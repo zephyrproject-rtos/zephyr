@@ -5,7 +5,7 @@
  */
 
 #include <syscall_handler.h>
-#include <ptp_clock.h>
+#include <drivers/ptp_clock.h>
 
 #ifdef CONFIG_USERSPACE
 int z_vrfy_ptp_clock_get(const struct device *dev,

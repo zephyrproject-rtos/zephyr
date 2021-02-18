@@ -69,29 +69,25 @@ void z_arm_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 	 * of priority levels reserved by the kernel.
 	 */
 
-#if defined(CONFIG_ZERO_LATENCY_IRQS)
 	/* If we have zero latency interrupts, those interrupts will
 	 * run at a priority level which is not masked by irq_lock().
 	 * Our policy is to express priority levels with special properties
 	 * via flags
 	 */
-	if (flags & IRQ_ZERO_LATENCY) {
+	if (IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS) && (flags & IRQ_ZERO_LATENCY)) {
 		prio = _EXC_ZERO_LATENCY_IRQS_PRIO;
 	} else {
 		prio += _IRQ_PRIO_OFFSET;
 	}
-#else
-	ARG_UNUSED(flags);
-	prio += _IRQ_PRIO_OFFSET;
-#endif
+
 	/* The last priority level is also used by PendSV exception, but
 	 * allow other interrupts to use the same level, even if it ends up
 	 * affecting performance (can still be useful on systems with a
 	 * reduced set of priorities, like Cortex-M0/M0+).
 	 */
 	__ASSERT(prio <= (BIT(NUM_IRQ_PRIO_BITS) - 1),
-		 "invalid priority %d! values must be less than %lu\n",
-		 prio - _IRQ_PRIO_OFFSET,
+		 "invalid priority %d for %d irq! values must be less than %lu\n",
+		 prio - _IRQ_PRIO_OFFSET, irq,
 		 BIT(NUM_IRQ_PRIO_BITS) - (_IRQ_PRIO_OFFSET));
 	NVIC_SetPriority((IRQn_Type)irq, prio);
 }

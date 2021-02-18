@@ -117,7 +117,7 @@ int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
 		atomic_clear_bit(bt_mesh.flags, BT_MESH_VALID);
 
 		if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT) && pb_gatt_enabled) {
-			bt_mesh_proxy_prov_enable();
+			(void)bt_mesh_proxy_prov_enable();
 		}
 
 		return err;
@@ -227,7 +227,10 @@ static void model_suspend(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
 {
 	if (mod->pub && mod->pub->update) {
 		mod->pub->count = 0U;
-		k_delayed_work_cancel(&mod->pub->timer);
+		/* If this fails, the work handler will check the suspend call
+		 * and exit without transmitting.
+		 */
+		(void)k_work_cancel_delayable(&mod->pub->timer);
 	}
 }
 
@@ -268,8 +271,8 @@ static void model_resume(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
 		int32_t period_ms = bt_mesh_model_pub_period_get(mod);
 
 		if (period_ms) {
-			k_delayed_work_submit(&mod->pub->timer,
-					      K_MSEC(period_ms));
+			k_work_reschedule(&mod->pub->timer,
+					  K_MSEC(period_ms));
 		}
 	}
 }

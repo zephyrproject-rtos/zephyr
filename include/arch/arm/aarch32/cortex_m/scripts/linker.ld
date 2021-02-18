@@ -15,6 +15,7 @@
 #include <linker/sections.h>
 #include <devicetree.h>
 
+#include <linker/devicetree_regions.h>
 #include <linker/linker-defs.h>
 #include <linker/linker-tool.h>
 
@@ -39,17 +40,10 @@
 #define ROM_ADDR (CONFIG_FLASH_BASE_ADDRESS + CONFIG_FLASH_LOAD_OFFSET)
 #endif
 
-#ifdef CONFIG_HAS_TI_CCFG
-#define CCFG_SIZE 88
-#define ROM_SIZE (CONFIG_FLASH_SIZE*1K - CONFIG_FLASH_LOAD_OFFSET - \
-	CCFG_SIZE)
-#define CCFG_ADDR (ROM_ADDR + ROM_SIZE)
-#else
 #if CONFIG_FLASH_LOAD_SIZE > 0
 #define ROM_SIZE CONFIG_FLASH_LOAD_SIZE
 #else
 #define ROM_SIZE (CONFIG_FLASH_SIZE*1K - CONFIG_FLASH_LOAD_OFFSET)
-#endif
 #endif
 
 #if defined(CONFIG_XIP)
@@ -64,21 +58,6 @@
 #else
 #define RAM_SIZE (CONFIG_SRAM_SIZE * 1K - CONFIG_BOOTLOADER_SRAM_SIZE * 1K)
 #define RAM_ADDR CONFIG_SRAM_BASE_ADDRESS
-#endif
-
-#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_ccm), okay)
-#define CCM_SIZE DT_REG_SIZE(DT_CHOSEN(zephyr_ccm))
-#define CCM_ADDR DT_REG_ADDR(DT_CHOSEN(zephyr_ccm))
-#endif
-
-#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_itcm), okay)
-#define ITCM_SIZE DT_REG_SIZE(DT_CHOSEN(zephyr_itcm))
-#define ITCM_ADDR DT_REG_ADDR(DT_CHOSEN(zephyr_itcm))
-#endif
-
-#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
-#define DTCM_SIZE DT_REG_SIZE(DT_CHOSEN(zephyr_dtcm))
-#define DTCM_ADDR DT_REG_ADDR(DT_CHOSEN(zephyr_dtcm))
 #endif
 
 #if defined(CONFIG_CUSTOM_SECTION_ALIGN)
@@ -107,34 +86,21 @@ _region_min_align = 4;
 MEMORY
     {
     FLASH                 (rx) : ORIGIN = ROM_ADDR, LENGTH = ROM_SIZE
-#ifdef CONFIG_HAS_TI_CCFG
-    FLASH_CCFG            (rwx): ORIGIN = CCFG_ADDR, LENGTH = CCFG_SIZE
-#endif
-#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_ccm), okay)
-    CCM                   (rw) : ORIGIN = CCM_ADDR, LENGTH = CCM_SIZE
-#endif
-#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_itcm), okay)
-    ITCM                  (rw) : ORIGIN = ITCM_ADDR, LENGTH = ITCM_SIZE
-#endif
-#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
-    DTCM                  (rw) : ORIGIN = DTCM_ADDR, LENGTH = DTCM_SIZE
-#endif
     SRAM                  (wx) : ORIGIN = RAM_ADDR, LENGTH = RAM_SIZE
-#ifdef CONFIG_BT_STM32_IPM
-    SRAM1                 (rw) : ORIGIN = RAM1_ADDR, LENGTH = RAM1_SIZE
-    SRAM2                 (rw) : ORIGIN = RAM2_ADDR, LENGTH = RAM2_SIZE
-#endif
-#ifdef CONFIG_MEMC_STM32_SDRAM
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(sdram1), okay)
-    SDRAM1                (rw) : ORIGIN = DT_REG_ADDR(DT_NODELABEL(sdram1)), LENGTH = DT_REG_SIZE(DT_NODELABEL(sdram1))
-#endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(sdram2), okay)
-    SDRAM2                (rw) : ORIGIN = DT_REG_ADDR(DT_NODELABEL(sdram2)), LENGTH = DT_REG_SIZE(DT_NODELABEL(sdram2))
-#endif
-#endif
-#ifdef CONFIG_STM32_BACKUP_SRAM
-    BACKUP_SRAM           (rw) : ORIGIN = DT_REG_ADDR(DT_NODELABEL(backup_sram)), LENGTH = DT_REG_SIZE(DT_NODELABEL(backup_sram))
-#endif
+    /* TI CCFG Registers */
+    DT_REGION_FROM_NODE_STATUS_OKAY(FLASH_CCFG, rwx, DT_NODELABEL(ti_ccfg_partition))
+    /* Data & Instruction Tightly Coupled Memory */
+    DT_REGION_FROM_NODE_STATUS_OKAY(ITCM, rw, DT_CHOSEN(zephyr_itcm))
+    DT_REGION_FROM_NODE_STATUS_OKAY(DTCM, rw, DT_CHOSEN(zephyr_dtcm))
+    /* STM32 Core Coupled Memory */
+    DT_REGION_FROM_NODE_STATUS_OKAY(CCM, rw, DT_CHOSEN(zephyr_ccm))
+    /* STM32WB IPC RAM */
+    DT_REGION_FROM_NODE_STATUS_OKAY(SRAM1, rw, DT_NODELABEL(sram1))
+    DT_REGION_FROM_NODE_STATUS_OKAY(SRAM2, rw, DT_NODELABEL(sram2))
+    /* STM32 alternate RAM configurations */
+    DT_REGION_FROM_NODE_STATUS_OKAY(SDRAM1, rw, DT_NODELABEL(sdram1))
+    DT_REGION_FROM_NODE_STATUS_OKAY(SDRAM2, rw, DT_NODELABEL(sdram2))
+    DT_REGION_FROM_NODE_STATUS_OKAY(BACKUP_SRAM, rw, DT_NODELABEL(backup_sram))
     /* Used by and documented in include/linker/intlist.ld */
     IDT_LIST  (wx)      : ORIGIN = (RAM_ADDR + RAM_SIZE), LENGTH = 2K
     }
@@ -265,14 +231,6 @@ SECTIONS
 	_image_rom_end = .;
 
     GROUP_END(ROMABLE_REGION)
-
-/* Some TI SoCs have a special configuration footer, at the end of flash. */
-#ifdef CONFIG_HAS_TI_CCFG
-    SECTION_PROLOGUE(.ti_ccfg,,)
-    {
-    KEEP(*(_TI_CCFG_SECTION_NAME))
-    } > FLASH_CCFG
-#endif
 
     /*
      * These are here according to 'arm-zephyr-elf-ld --verbose',

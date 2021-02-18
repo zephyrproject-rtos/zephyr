@@ -1040,7 +1040,7 @@ static int winc1500_mgmt_connect(const struct device *dev,
 	return 0;
 }
 
-static int winc1500_mgmt_disconnect(const struct device *device)
+static int winc1500_mgmt_disconnect(const struct device *dev)
 {
 	if (!w1500_data.connected) {
 		return -EALREADY;

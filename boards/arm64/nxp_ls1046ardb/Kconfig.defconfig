@@ -1,0 +1,8 @@
+#
+# Copyright 2021 NXP
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config BOARD
+	default "nxp_ls1046ardb"
+	depends on BOARD_NXP_LS1046ARDB

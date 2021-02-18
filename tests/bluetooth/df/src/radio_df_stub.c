@@ -65,3 +65,13 @@ void radio_df_mode_set_aod(void)
 {
 
 }
+
+void radio_df_ant_switching_gpios_cfg(void)
+{
+
+}
+
+void radio_df_ant_switching_pin_sel_cfg(void)
+{
+
+}

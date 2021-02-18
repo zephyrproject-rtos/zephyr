@@ -13,14 +13,34 @@ config BT_OTS
 
 if BT_OTS
 
+config BT_OTS_DIR_LIST_OBJ
+	bool "Enables the Directory Listing Object"
+	help
+	  Enables the Directory Listing Object, which is an object that contains all the metadata
+	  from all other objects, for easy exposure to a client. Enabling this will use one of the
+	  objects given by BT_OTS_MAX_OBJ_CNT.
+
+config BT_OTS_DIR_LIST_OBJ_NAME
+	string "The object name of the Directory Listing Object"
+	default "Directory"
+	depends on BT_OTS_DIR_LIST_OBJ
+	help
+	  The name of the Directory Listing Object when it is read by a client.
+
 config BT_OTS_MAX_INST_CNT
 	int "Maximum number of available OTS instances"
 	default 1
 	range 1 1 if !BT_OTS_SECONDARY_SVC
 
 config BT_OTS_MAX_OBJ_CNT
-	int "Maximum number of objects that each service instance can store"
-	default 5
+	hex "Maximum number of objects that each service instance can store"
+	default 0x05
+	# Given the maximum size of a directory listing record (172) and the maximum size of an
+	# object using the net_buf implementation is 2^16-1, the maximum number of objects is given
+	# by 2^16-1 / 172 = 381 == 0x17D)
+	range 0x02 0x17D if BT_OTS_DIR_LIST_OBJ
+	# Max obj count is otherwise the non-RFU IDs available
+	range 0x01 0xFFFFFFFFFFFFFEFF
 
 config BT_OTS_SECONDARY_SVC
 	bool "Register OTS as Secondary Service"

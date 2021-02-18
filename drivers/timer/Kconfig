@@ -30,12 +30,12 @@ config APIC_TIMER_IRQ_PRIORITY
 	  This option specifies the IRQ priority used by the local APIC timer.
 
 config APIC_TIMER_TSC
-	bool "Use invariant TSC for z_timer_cycle_get_32()"
+	bool "Use invariant TSC for sys_clock_cycle_get_32()"
 	help
 	  If your CPU supports invariant TSC, and you know the ratio of the
 	  TSC frequency to CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC (the local APIC
 	  timer frequency), then enable this for a much faster and more
-	  accurate z_timer_cycle_get_32().
+	  accurate sys_clock_cycle_get_32().
 
 if APIC_TIMER_TSC
 
@@ -92,13 +92,15 @@ config ARM_ARCH_TIMER
 DT_COMPAT_ARM_V6M_SYSTICK := arm,armv6m-systick
 DT_COMPAT_ARM_V7M_SYSTICK := arm,armv7m-systick
 DT_COMPAT_ARM_V8M_SYSTICK := arm,armv8m-systick
+DT_COMPAT_ARM_V8_1M_SYSTICK := arm,armv8.1m-systick
 
 config CORTEX_M_SYSTICK
 	bool "Cortex-M SYSTICK timer"
 	depends on CPU_CORTEX_M_HAS_SYSTICK
 	default $(dt_compat_enabled,$(DT_COMPAT_ARM_V6M_SYSTICK)) || \
 		$(dt_compat_enabled,$(DT_COMPAT_ARM_V7M_SYSTICK)) || \
-		$(dt_compat_enabled,$(DT_COMPAT_ARM_V8M_SYSTICK))
+		$(dt_compat_enabled,$(DT_COMPAT_ARM_V8M_SYSTICK)) || \
+		$(dt_compat_enabled,$(DT_COMPAT_ARM_V8_1M_SYSTICK))
 	select TICKLESS_CAPABLE
 	help
 	  This module implements a kernel device driver for the Cortex-M processor
@@ -189,7 +191,6 @@ config RV32M1_LPTMR_TIMER
 	bool "RV32M1 LPTMR system timer driver"
 	default y
 	depends on SOC_OPENISA_RV32M1_RISCV32
-	depends on !TICKLESS_IDLE
 	depends on RV32M1_INTMUX
 	help
 	  This module implements a kernel device driver for using the LPTMR
@@ -199,7 +200,6 @@ config RV32M1_LPTMR_TIMER
 config LITEX_TIMER
 	bool "LiteX Timer"
 	default y
-	depends on !TICKLESS_IDLE
 	depends on SOC_RISCV32_LITEX_VEXRISCV
 	help
 	  This module implements a kernel device driver for LiteX Timer.
@@ -346,9 +346,9 @@ config TICKLESS_CAPABLE
 	help
 	  Timer drivers should select this flag if they are capable of
 	  supporting tickless operation.  That is, a call to
-	  z_clock_set_timeout() with a number of ticks greater than
+	  sys_clock_set_timeout() with a number of ticks greater than
 	  one should be expected not to produce a call to
-	  z_clock_announce() (really, not to produce an interrupt at
+	  sys_clock_announce() (really, not to produce an interrupt at
 	  all) until the specified expiration.
 
 endmenu

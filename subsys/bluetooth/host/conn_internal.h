@@ -99,10 +99,23 @@ struct bt_conn_sco {
 struct bt_conn_iso {
 	/* Reference to ACL Connection */
 	struct bt_conn          *acl;
-	/* CIG ID */
-	uint8_t			cig_id;
-	/* CIS ID */
-	uint8_t			cis_id;
+	union {
+		/* CIG ID */
+		uint8_t			cig_id;
+		/* BIG handle */
+		uint8_t			big_handle;
+	};
+
+	union {
+		/* CIS ID */
+		uint8_t			cis_id;
+
+		/* BIS ID */
+		uint8_t			bis_id;
+	};
+
+	/** If true, this is a ISO for a BIS, else it is a ISO for a CIS */
+	bool is_bis;
 };
 
 typedef void (*bt_conn_tx_cb_t)(struct bt_conn *conn, void *user_data);
@@ -205,7 +218,13 @@ void bt_conn_reset_rx_state(struct bt_conn *conn);
 /* Process incoming data for a connection */
 void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags);
 
-/* Send data over a connection */
+/* Send data over a connection
+ *
+ * Buffer ownership is transferred to stack in case of success.
+ *
+ * Calling this from RX thread is assumed to never fail so the return can be
+ * ignored.
+ */
 int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
 		    bt_conn_tx_cb_t cb, void *user_data);
 

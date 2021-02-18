@@ -81,6 +81,27 @@ config UART_CONSOLE_MCUMGR
 	  process mcumgr frames, but it hands them up to a higher level module
 	  (e.g., the shell).  If unset, incoming mcumgr frames are dropped.
 
+config UART_CONSOLE_INPUT_EXPIRED
+	bool "Enable support for UART console input expired mechanism"
+	default y
+	depends on UART_CONSOLE && PM
+	help
+	  This option allows a notification to the power management module that
+	  the module for UART console is in use now. If the interval of console
+	  module doesn't receive any input message exceeds expired timeout, such
+	  as UART_CONSOLE_INPUT_EXPIRED_TIMEOUT, the power management module is
+	  allowed to enter sleep/deep sleep state and turn off the clock of UART
+	  console module. This mechanism gives a window in which the users can
+	  organize input message if CONFIG_PM is enabled.
+
+config UART_CONSOLE_INPUT_EXPIRED_TIMEOUT
+	int "Fixed amount of time to keep the UART console in use flag true"
+	default 15000
+	depends on UART_CONSOLE_INPUT_EXPIRED
+	help
+	  Fixed amount of time which unit is milliseconds to keep the UART
+	  console in use flag true.
+
 config USB_UART_CONSOLE
 	bool "Use USB port for console outputs"
 	select UART_CONSOLE

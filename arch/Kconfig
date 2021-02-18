@@ -33,9 +33,21 @@ config ARM
 	# FIXME: current state of the code for all ARM requires this, but
 	# is really only necessary for Cortex-M with ARM MPU!
 	select GEN_PRIV_STACKS
-	select ARCH_HAS_THREAD_LOCAL_STORAGE if ARM64 || CPU_CORTEX_R || CPU_CORTEX_M
+	select ARCH_HAS_THREAD_LOCAL_STORAGE if CPU_CORTEX_R || CPU_CORTEX_M
 	help
 	  ARM architecture
+
+config ARM64
+	bool
+	select ARCH_IS_SET
+	select 64BIT
+	select HAS_DTS
+	select HAS_ARM_SMCCC
+	select ARCH_HAS_THREAD_LOCAL_STORAGE
+	select USE_SWITCH
+	select USE_SWITCH_SUPPORTED
+	help
+	  ARM64 (AArch64) architecture
 
 config SPARC
 	bool
@@ -46,6 +58,7 @@ config SPARC
 	select ATOMIC_OPERATIONS_BUILTIN if SPARC_CASA
 	select ATOMIC_OPERATIONS_C if !SPARC_CASA
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
+	select ARCH_HAS_EXTRA_EXCEPTION_INFO
 	help
 	  SPARC architecture
 
@@ -62,7 +75,9 @@ config X86
 	select ARCH_HAS_TIMING_FUNCTIONS
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
 	select ARCH_HAS_DEMAND_PAGING
-	select CAN_LINK_IN_VIRT
+	select NEED_LIBC_MEM_PARTITION if USERSPACE && TIMING_FUNCTIONS \
+					  && !BOARD_HAS_TIMING_FUNCTIONS \
+					  && !SOC_HAS_TIMING_FUNCTIONS
 	help
 	  x86 architecture
 
@@ -91,7 +106,7 @@ config XTENSA
 	select HAS_DTS
 	select USE_SWITCH
 	select USE_SWITCH_SUPPORTED
-	select ATOMIC_OPERATIONS_ARCH
+	imply ATOMIC_OPERATIONS_ARCH
 	help
 	  Xtensa architecture
 
@@ -162,14 +177,14 @@ config SRAM_BASE_ADDRESS
 	  /chosen/zephyr,sram in devicetree. The user should generally avoid
 	  changing it via menuconfig or in configuration files.
 
-if ARC || ARM || NIOS2 || X86
+if ARC || ARM || ARM64 || NIOS2 || X86
 
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_FLASH := zephyr,flash
 
 config FLASH_SIZE
 	int "Flash Size in kB"
-	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K) if (XIP && ARM) || !ARM
+	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K) if (XIP && (ARM ||ARM64)) || !ARM
 	help
 	  This option specifies the size of the flash in kB.  It is normally set by
 	  the board's defconfig file and the user should generally avoid modifying
@@ -177,13 +192,13 @@ config FLASH_SIZE
 
 config FLASH_BASE_ADDRESS
 	hex "Flash Base Address"
-	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH)) if (XIP && ARM) || !ARM
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH)) if (XIP && (ARM || ARM64)) || !ARM
 	help
 	  This option specifies the base address of the flash on the board. It is
 	  normally set by the board's defconfig file and the user should generally
 	  avoid modifying it via the menu configuration.
 
-endif # ARM || ARC || NIOS2 || X86
+endif # ARM || ARM64 || ARC || NIOS2 || X86
 
 if ARCH_HAS_TRUSTED_EXECUTION
 
@@ -636,7 +651,7 @@ config KERNEL_VM_SIZE
 	  implement a notion of "high" memory in Zephyr to work around physical
 	  RAM size larger than the defined bounds of the virtual address space.
 
-config DEMAND_PAGING
+menuconfig DEMAND_PAGING
 	bool "Enable demand paging [EXPERIMENTAL]"
 	depends on ARCH_HAS_DEMAND_PAGING
 	help
@@ -659,6 +674,52 @@ config DEMAND_PAGING_ALLOW_IRQ
 	  If this option is disabled, the page fault servicing logic
 	  runs with interrupts disabled for the entire operation. However,
 	  ISRs may also page fault.
+
+config DEMAND_PAGING_STATS
+	bool "Gather Demand Paging Statistics"
+	help
+	  This enables gathering various statistics related to demand paging,
+	  e.g. number of pagefaults. This is useful for tuning eviction
+	  algorithms and optimizing backing store.
+
+	  Should say N in production system as this is not without cost.
+
+config DEMAND_PAGING_STATS_USING_TIMING_FUNCTIONS
+	bool "Use Timing Functions to Gather Demand Paging Statistics"
+	select TIMING_FUNCTIONS_NEED_AT_BOOT
+	help
+	  Use timing functions to gather various demand paging statistics.
+
+config DEMAND_PAGING_THREAD_STATS
+	bool "Gather per Thread Demand Paging Statistics"
+	depends on DEMAND_PAGING_STATS
+	help
+	  This enables gathering per thread statistics related to demand
+	  paging.
+
+	  Should say N in production system as this is not without cost.
+
+config DEMAND_PAGING_TIMING_HISTOGRAM
+	bool "Gather Demand Paging Execution Timing Histogram"
+	depends on DEMAND_PAGING_STATS
+	help
+	  This gathers the histogram of execution time on page eviction
+	  selection, and backing store page in and page out.
+
+	  Should say N in production system as this is not without cost.
+
+config DEMAND_PAGING_TIMING_HISTOGRAM_NUM_BINS
+	int "Number of bins (buckets) in Demand Paging Timing Histogrm"
+	depends on DEMAND_PAGING_TIMING_HISTOGRAM
+	default 10
+	help
+	  Defines the number of bins (buckets) in the histogram used for
+	  gathering execution timing information for demand paging.
+
+	  This requires z_eviction_histogram_bounds[] and
+	  z_backing_store_histogram_bounds[] to define the upper bounds
+	  for each bin. See kernel/statistics.c for information.
+
 endif	# DEMAND_PAGING
 endif   # MMU
 

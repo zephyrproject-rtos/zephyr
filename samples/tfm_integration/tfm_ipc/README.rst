@@ -103,33 +103,38 @@ Or, post build:
 
       $ ninja run
 
-On ST Nucleo L552ZE Q:
-======================
+On ST Nucleo L552ZE Q or STM32L562E-DK Discovery:
+=================================================
 
 This sample was tested on Ubuntu 18.04 with Zephyr SDK 0.11.3.
 
 Build Zephyr with a non-secure configuration:
 
+   Example, for building non-secure configuration for Nucleo L552ZE Q
+
    .. code-block:: bash
 
       $ west build -b nucleo_l552ze_q_ns samples/tfm_integration/tfm_ipc/
 
-Two scripts are avalaible in the ``build/tfm`` folder:
+   Example, for building non-secure configuration for STM32L562E-DK Discovery
+
+   .. code-block:: bash
+
+      $ west build -b stm32l562e_dk_ns samples/tfm_integration/tfm_ipc/
+
+The script to initialize the device is avalaible in the ``build/tfm`` folder:
 
   - ``regression.sh``: Sets platform option bytes config and erase platform.
-  - ``TFM_UPDATE.sh``: Writes bl2, secure, and non secure image in target.
 
 Run them in the following order to flash the board:
 
    .. code-block:: bash
 
       $ ./build/tfm/regression.sh
-      $ ./build/tfm/TFM_UPDATE.sh
-
-Reset the board.
+      $ west flash --hex-file build/tfm_merged.hex
 
  .. note::
-      Note that ``arm-none-eabi-gcc`` should be available in the PATH variable and that ``STM32_Programmer_CLI`` is required to run ``regression.sh`` and ``TFM_UPDATE.sh`` (see https://www.st.com/en/development-tools/stm32cubeprog.html). If you are still having trouble running these scripts, check the Programming and Debugging section of the :ref:`nucleo_l552ze_q_board` documentation.
+      Note that ``arm-none-eabi-gcc`` should be available in the PATH variable and that ``STM32_Programmer_CLI`` is required to run ``regression.sh`` (see https://www.st.com/en/development-tools/stm32cubeprog.html). If you are still having trouble running these scripts, check the Programming and Debugging section of the :ref:`nucleo_l552ze_q_board` or :ref:`stm32l562e_dk_board` documentation.
 
 On LPCxpresso55S69:
 ===================

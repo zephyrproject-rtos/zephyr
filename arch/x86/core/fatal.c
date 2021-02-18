@@ -70,7 +70,7 @@ bool z_x86_check_stack_bounds(uintptr_t addr, size_t size, uint16_t cs)
 		    z_interrupt_stacks[cpu_id]);
 		end = start + CONFIG_ISR_STACK_SIZE;
 #ifdef CONFIG_USERSPACE
-	} else if ((cs & 0x3U) == 0 &&
+	} else if ((cs & 0x3U) == 0U &&
 		   (_current->base.user_options & K_USER) != 0) {
 		/* The low two bits of the CS register is the privilege
 		 * level. It will be 0 in supervisor mode and 3 in user mode
@@ -170,7 +170,7 @@ static inline uintptr_t get_cr3(const z_arch_esf_t *esf)
 
 static inline pentry_t *get_ptables(const z_arch_esf_t *esf)
 {
-	return z_x86_virt_addr(get_cr3(esf));
+	return z_mem_virt_addr(get_cr3(esf));
 }
 
 #ifdef CONFIG_X86_64

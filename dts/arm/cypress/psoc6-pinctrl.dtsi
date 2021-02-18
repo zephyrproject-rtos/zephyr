@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2021 ATL Electronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "pinctrl_cypress_psoc6.h"
+
+/ {
+	soc {
+		pinctrl@40310000 {
+			/* instance, signal, port, pin, hsiom [, flag1, ... ] */
+			DT_CYPRESS_HSIOM(uart5,  rx,  5, 0, act_6, input-enable);
+			DT_CYPRESS_HSIOM(uart5,  tx,  5, 1, act_6, drive-push-pull);
+			DT_CYPRESS_HSIOM(uart6,  rx, 13, 0, act_6, input-enable);
+			DT_CYPRESS_HSIOM(uart6,  tx, 13, 1, act_6, drive-push-pull);
+		};
+	};
+};

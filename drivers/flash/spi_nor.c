@@ -80,6 +80,9 @@ struct spi_nor_config {
 	/* Expected JEDEC ID, from jedec-id property */
 	uint8_t jedec_id[SPI_NOR_MAX_ID_LEN];
 
+	/* Optional bits in SR to be cleared on startup */
+	uint8_t has_lock;
+
 #if defined(CONFIG_SPI_NOR_SFDP_DEVICETREE)
 	/* Length of BFP structure, in 32-bit words. */
 	uint8_t bfp_len;
@@ -148,6 +151,9 @@ static const struct jesd216_erase_type minimal_erase_types[JESD216_NUM_ERASE_TYP
 	},
 };
 #endif /* CONFIG_SPI_NOR_SFDP_MINIMAL */
+
+static int spi_nor_write_protection_set(const struct device *dev,
+					bool write_protect);
 
 /* Get pointer to array of supported erase types.  Static const for
  * minimal, data for runtime and devicetree.
@@ -304,9 +310,38 @@ static int spi_nor_access(const struct device *const dev,
 #define spi_nor_cmd_addr_write(dev, opcode, addr, src, length) \
 	spi_nor_access(dev, opcode, true, addr, (void *)src, length, true)
 
+/**
+ * @brief Wait until the flash is ready
+ *
+ * @note The device must be externally acquired before invoking this
+ * function.
+ *
+ * This function should be invoked after every ERASE, PROGRAM, or
+ * WRITE_STATUS operation before continuing.  This allows us to assume
+ * that the device is ready to accept new commands at any other point
+ * in the code.
+ *
+ * @param dev The device structure
+ * @return 0 on success, negative errno code otherwise
+ */
+static int spi_nor_wait_until_ready(const struct device *dev)
+{
+	int ret;
+	uint8_t reg;
+
+	do {
+		ret = spi_nor_cmd_read(dev, SPI_NOR_CMD_RDSR, &reg, sizeof(reg));
+	} while (!ret && (reg & SPI_NOR_WIP_BIT));
+
+	return ret;
+}
+
 #if defined(CONFIG_SPI_NOR_SFDP_RUNTIME) || defined(CONFIG_FLASH_JESD216_API)
 /*
  * @brief Read content from the SFDP hierarchy
+ *
+ * @note The device must be externally acquired before invoking this
+ * function.
  *
  * @param dev Device struct
  * @param addr The address to send
@@ -428,19 +463,48 @@ static void release_device(const struct device *dev)
 }
 
 /**
- * @brief Wait until the flash is ready
+ * @brief Read the status register.
  *
- * @param dev The device structure
- * @return 0 on success, negative errno code otherwise
+ * @note The device must be externally acquired before invoking this
+ * function.
+ *
+ * @param dev Device struct
+ *
+ * @return the non-negative value of the status register, or an error code.
  */
-static int spi_nor_wait_until_ready(const struct device *dev)
+static int spi_nor_rdsr(const struct device *dev)
 {
-	int ret;
 	uint8_t reg;
+	int ret = spi_nor_cmd_read(dev, SPI_NOR_CMD_RDSR, &reg, sizeof(reg));
 
-	do {
-		ret = spi_nor_cmd_read(dev, SPI_NOR_CMD_RDSR, &reg, 1);
-	} while (!ret && (reg & SPI_NOR_WIP_BIT));
+	if (ret == 0) {
+		ret = reg;
+	}
+
+	return ret;
+}
+
+/**
+ * @brief Write the status register.
+ *
+ * @note The device must be externally acquired before invoking this
+ * function.
+ *
+ * @param dev Device struct
+ * @param sr The new value of the status register
+ *
+ * @return 0 on success or a negative error code.
+ */
+static int spi_nor_wrsr(const struct device *dev,
+			uint8_t sr)
+{
+	int ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
+
+	if (ret == 0) {
+		ret = spi_nor_access(dev, SPI_NOR_CMD_WRSR, false, 0, &sr,
+				     sizeof(sr), true);
+		spi_nor_wait_until_ready(dev);
+	}
 
 	return ret;
 }
@@ -457,8 +521,6 @@ static int spi_nor_read(const struct device *dev, off_t addr, void *dest,
 	}
 
 	acquire_device(dev);
-
-	spi_nor_wait_until_ready(dev);
 
 	ret = spi_nor_cmd_addr_read(dev, SPI_NOR_CMD_READ, addr, dest, size);
 
@@ -480,36 +542,43 @@ static int spi_nor_write(const struct device *dev, off_t addr,
 	}
 
 	acquire_device(dev);
+	ret = spi_nor_write_protection_set(dev, false);
+	if (ret == 0) {
+		while (size > 0) {
+			size_t to_write = size;
 
-	while (size > 0) {
-		size_t to_write = size;
+			/* Don't write more than a page. */
+			if (to_write >= page_size) {
+				to_write = page_size;
+			}
 
-		/* Don't write more than a page. */
-		if (to_write >= page_size) {
-			to_write = page_size;
+			/* Don't write across a page boundary */
+			if (((addr + to_write - 1U) / page_size)
+			!= (addr / page_size)) {
+				to_write = page_size - (addr % page_size);
+			}
+
+			spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
+			ret = spi_nor_cmd_addr_write(dev, SPI_NOR_CMD_PP, addr,
+						src, to_write);
+			if (ret != 0) {
+				break;
+			}
+
+			size -= to_write;
+			src = (const uint8_t *)src + to_write;
+			addr += to_write;
+
+			spi_nor_wait_until_ready(dev);
 		}
-
-		/* Don't write across a page boundary */
-		if (((addr + to_write - 1U) / page_size)
-		    != (addr / page_size)) {
-			to_write = page_size - (addr % page_size);
-		}
-
-		spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
-		ret = spi_nor_cmd_addr_write(dev, SPI_NOR_CMD_PP, addr,
-					     src, to_write);
-		if (ret != 0) {
-			goto out;
-		}
-
-		size -= to_write;
-		src = (const uint8_t *)src + to_write;
-		addr += to_write;
-
-		spi_nor_wait_until_ready(dev);
 	}
 
-out:
+	int ret2 = spi_nor_write_protection_set(dev, false);
+
+	if (!ret) {
+		ret = ret2;
+	}
+
 	release_device(dev);
 	return ret;
 }
@@ -535,6 +604,7 @@ static int spi_nor_erase(const struct device *dev, off_t addr, size_t size)
 	}
 
 	acquire_device(dev);
+	ret = spi_nor_write_protection_set(dev, false);
 
 	while ((size > 0) && (ret == 0)) {
 		spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
@@ -573,19 +643,24 @@ static int spi_nor_erase(const struct device *dev, off_t addr, size_t size)
 		spi_nor_wait_until_ready(dev);
 	}
 
+	int ret2 = spi_nor_write_protection_set(dev, true);
+
+	if (!ret) {
+		ret = ret2;
+	}
+
 	release_device(dev);
 
 	return ret;
 }
 
+/* @note The device must be externally acquired before invoking this
+ * function.
+ */
 static int spi_nor_write_protection_set(const struct device *dev,
 					bool write_protect)
 {
 	int ret;
-
-	acquire_device(dev);
-
-	spi_nor_wait_until_ready(dev);
 
 	ret = spi_nor_cmd_write(dev, (write_protect) ?
 	      SPI_NOR_CMD_WRDI : SPI_NOR_CMD_WREN);
@@ -596,8 +671,6 @@ static int spi_nor_write_protection_set(const struct device *dev,
 		ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_ULBPR);
 	}
 
-	release_device(dev);
-
 	return ret;
 }
 
@@ -607,8 +680,6 @@ static int spi_nor_sfdp_read(const struct device *dev, off_t addr,
 			     void *dest, size_t size)
 {
 	acquire_device(dev);
-
-	spi_nor_wait_until_ready(dev);
 
 	int ret = read_sfdp(dev, addr, dest, size);
 
@@ -627,8 +698,6 @@ static int spi_nor_read_jedec_id(const struct device *dev,
 	}
 
 	acquire_device(dev);
-
-	spi_nor_wait_until_ready(dev);
 
 	int ret = spi_nor_cmd_read(dev, SPI_NOR_CMD_RDID, id, SPI_NOR_MAX_ID_LEN);
 
@@ -885,6 +954,25 @@ static int spi_nor_configure(const struct device *dev)
 	}
 #endif
 
+	/* Check for block protect bits that need to be cleared. */
+	if (cfg->has_lock != 0) {
+		acquire_device(dev);
+
+		rc = spi_nor_rdsr(dev);
+
+		/* Only clear if RDSR worked and something's set. */
+		if (rc > 0) {
+			rc = spi_nor_wrsr(dev, rc & ~cfg->has_lock);
+		}
+
+		if (rc != 0) {
+			LOG_ERR("BP clear failed: %d\n", rc);
+			return -ENODEV;
+		}
+
+		release_device(dev);
+	}
+
 #ifndef CONFIG_SPI_NOR_SFDP_MINIMAL
 	/* For devicetree and runtime we need to process BFP data and
 	 * set up or validate page layout.
@@ -963,7 +1051,6 @@ static const struct flash_driver_api spi_nor_api = {
 	.read = spi_nor_read,
 	.write = spi_nor_write,
 	.erase = spi_nor_erase,
-	.write_protection = spi_nor_write_protection_set,
 	.get_parameters = flash_nor_get_parameters,
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = spi_nor_pages_layout,
@@ -1015,6 +1102,14 @@ static const __aligned(4) uint8_t bfp_data_0[] = DT_INST_PROP(0, sfdp_bfp);
 
 #endif /* CONFIG_SPI_NOR_SFDP_RUNTIME */
 
+#if DT_INST_NODE_HAS_PROP(0, has_lock)
+/* Currently we only know of devices where the BP bits are present in
+ * the first byte of the status register.  Complain if that changes.
+ */
+BUILD_ASSERT(DT_INST_PROP(0, has_lock) == (DT_INST_PROP(0, has_lock) & 0xFF),
+	     "Need support for lock clear beyond SR1");
+#endif
+
 static const struct spi_nor_config spi_nor_config_0 = {
 #if !defined(CONFIG_SPI_NOR_SFDP_RUNTIME)
 
@@ -1029,6 +1124,9 @@ static const struct spi_nor_config spi_nor_config_0 = {
 	.flash_size = DT_INST_PROP(0, size) / 8,
 	.jedec_id = DT_INST_PROP(0, jedec_id),
 
+#if DT_INST_NODE_HAS_PROP(0, has_lock)
+	.has_lock = DT_INST_PROP(0, has_lock),
+#endif
 #ifdef CONFIG_SPI_NOR_SFDP_DEVICETREE
 	.bfp_len = sizeof(bfp_data_0) / 4,
 	.bfp = (const struct jesd216_bfp *)bfp_data_0,

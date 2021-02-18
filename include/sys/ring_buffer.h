@@ -59,7 +59,7 @@ struct ring_buf {
 
 /**
  * @defgroup ring_buffer_apis Ring Buffer APIs
- * @ingroup kernel_apis
+ * @ingroup datastructure_apis
  * @{
  */
 
@@ -254,7 +254,7 @@ int ring_buf_item_put(struct ring_buf *buf, uint16_t type, uint8_t value,
  * @param buf Address of ring buffer.
  * @param type Area to store the data item's type identifier.
  * @param value Area to store the data item's integer value.
- * @param data Area to store the data item.
+ * @param data Area to store the data item. Can be NULL to discard data.
  * @param size32 Size of the data item storage area (number of 32-bit chunks).
  *
  * @retval 0 Data item was fetched; @a size32 now contains the number of
@@ -399,7 +399,7 @@ int ring_buf_get_finish(struct ring_buf *buf, uint32_t size);
  * (calls prefixed with ring_buf_item_).
  *
  * @param buf  Address of ring buffer.
- * @param data Address of the output buffer.
+ * @param data Address of the output buffer. Can be NULL to discard data.
  * @param size Data size (in bytes).
  *
  * @retval Number of bytes written to the output buffer.

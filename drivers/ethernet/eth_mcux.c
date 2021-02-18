@@ -32,7 +32,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <ethernet/eth_stats.h>
 
 #if defined(CONFIG_PTP_CLOCK_MCUX)
-#include <ptp_clock.h>
+#include <drivers/ptp_clock.h>
 #include <net/gptp.h>
 #endif
 
@@ -141,7 +141,7 @@ struct eth_context {
 	uint8_t mac_addr[6];
 	void (*generate_mac)(uint8_t *);
 	struct k_work phy_work;
-	struct k_delayed_work delayed_phy_work;
+	struct k_work_delayable delayed_phy_work;
 	/* TODO: FIXME. This Ethernet frame sized buffer is used for
 	 * interfacing with MCUX. How it works is that hardware uses
 	 * DMA scatter buffers to receive a frame, and then public
@@ -381,7 +381,7 @@ void eth_mcux_phy_stop(struct eth_context *context)
 		context->phy_state = eth_mcux_phy_state_closing;
 		break;
 	case eth_mcux_phy_state_wait:
-		k_delayed_work_cancel(&context->delayed_phy_work);
+		k_work_cancel_delayable(&context->delayed_phy_work);
 		/* @todo, actually power downt he PHY ? */
 		context->phy_state = eth_mcux_phy_state_initial;
 		break;
@@ -437,7 +437,7 @@ static void eth_mcux_phy_event(struct eth_context *context)
 		       context->phy_state = eth_mcux_phy_state_reset;
 		}
 
-		k_delayed_work_submit(&context->delayed_phy_work, K_MSEC(1));
+		k_work_reschedule(&context->delayed_phy_work, K_MSEC(1));
 #endif
 		break;
 	case eth_mcux_phy_state_closing:
@@ -520,13 +520,13 @@ static void eth_mcux_phy_event(struct eth_context *context)
 		} else if (!link_up && context->link_up) {
 			LOG_INF("%s link down", eth_name(context->base));
 			context->link_up = link_up;
-			k_delayed_work_submit(&context->delayed_phy_work,
-					K_MSEC(CONFIG_ETH_MCUX_PHY_TICK_MS));
+			k_work_reschedule(&context->delayed_phy_work,
+					  K_MSEC(CONFIG_ETH_MCUX_PHY_TICK_MS));
 			context->phy_state = eth_mcux_phy_state_wait;
 			net_eth_carrier_off(context->iface);
 		} else {
-			k_delayed_work_submit(&context->delayed_phy_work,
-					K_MSEC(CONFIG_ETH_MCUX_PHY_TICK_MS));
+			k_work_reschedule(&context->delayed_phy_work,
+					  K_MSEC(CONFIG_ETH_MCUX_PHY_TICK_MS));
 			context->phy_state = eth_mcux_phy_state_wait;
 		}
 
@@ -555,8 +555,8 @@ static void eth_mcux_phy_event(struct eth_context *context)
 			eth_name(context->base),
 			(phy_speed ? "100" : "10"),
 			(phy_duplex ? "full" : "half"));
-		k_delayed_work_submit(&context->delayed_phy_work,
-				      K_MSEC(CONFIG_ETH_MCUX_PHY_TICK_MS));
+		k_work_reschedule(&context->delayed_phy_work,
+				  K_MSEC(CONFIG_ETH_MCUX_PHY_TICK_MS));
 		context->phy_state = eth_mcux_phy_state_wait;
 		break;
 	}
@@ -1005,8 +1005,8 @@ static int eth_init(const struct device *dev)
 	k_sem_init(&context->tx_buf_sem,
 		   0, CONFIG_ETH_MCUX_TX_BUFFERS);
 	k_work_init(&context->phy_work, eth_mcux_phy_work);
-	k_delayed_work_init(&context->delayed_phy_work,
-			    eth_mcux_delayed_phy_work);
+	k_work_init_delayable(&context->delayed_phy_work,
+			      eth_mcux_delayed_phy_work);
 
 	if (context->generate_mac) {
 		context->generate_mac(context->mac_addr);

@@ -14,9 +14,8 @@
 #include <drivers/spi.h>
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
-#ifdef CONFIG_ESPI_OOB_CHANNEL
+/* OOB operations will be attempted regardless of channel enabled or not */
 #include "espi_oob_handler.h"
-#endif
 LOG_MODULE_DECLARE(espi, CONFIG_ESPI_LOG_LEVEL);
 
 /* eSPI flash parameters */
@@ -778,7 +777,7 @@ int espi_saf_test1(uint32_t spi_addr)
 
 	return rc;
 }
-#endif /* #ifdef CONFIG_ESPI_SAF */
+#endif /* CONFIG_ESPI_SAF */
 
 static void host_warn_handler(uint32_t signal, uint32_t status)
 {

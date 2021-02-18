@@ -17,8 +17,8 @@
  * @}
  */
 
-#ifndef __ZTEST_H__
-#define __ZTEST_H__
+#ifndef ZEPHYR_TESTSUITE_INCLUDE_ZTEST_H_
+#define ZEPHYR_TESTSUITE_INCLUDE_ZTEST_H_
 
 /**
  * @defgroup ztest Zephyr testing suite
@@ -72,4 +72,4 @@ void test_main(void);
 }
 #endif
 
-#endif /* __ZTEST_H__ */
+#endif /* ZEPHYR_TESTSUITE_INCLUDE_ZTEST_H_ */

@@ -61,7 +61,10 @@ struct lll_adv {
 	struct lll_hdr hdr;
 
 #if defined(CONFIG_BT_PERIPHERAL)
-	/* NOTE: conn context has to be after lll_hdr */
+	/* NOTE: conn context SHALL be after lll_hdr,
+	 *       check ull_conn_setup how it access the connection LLL
+	 *       context.
+	 */
 	struct lll_conn *conn;
 	uint8_t is_hdcd:1;
 #endif /* CONFIG_BT_PERIPHERAL */

@@ -63,7 +63,6 @@ void main(void)
 	 * operations.
 	 */
 	printf("\nTest 1: Flash erase\n");
-	flash_write_protection_set(flash_dev, false);
 
 	rc = flash_erase(flash_dev, FLASH_TEST_REGION_OFFSET,
 			 FLASH_SECTOR_SIZE);
@@ -74,7 +73,6 @@ void main(void)
 	}
 
 	printf("\nTest 2: Flash write\n");
-	flash_write_protection_set(flash_dev, false);
 
 	printf("Attempting to write %u bytes\n", len);
 	rc = flash_write(flash_dev, FLASH_TEST_REGION_OFFSET, expected, len);

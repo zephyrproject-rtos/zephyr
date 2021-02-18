@@ -105,9 +105,6 @@ void test_prepare_storage(void)
 
 		dev = flash_area_get_device(fa);
 
-		err = flash_write_protection_set(dev, false);
-		zassert_true(err == 0, "can't unprotect flash");
-
 		(void)memset(new_val, (~ERASED_VAL) & 0xFF,
 			     FLASH_WRITE_BLOCK_SIZE);
 		err = flash_write(dev, (off_t)&prepared_mark, &new_val,

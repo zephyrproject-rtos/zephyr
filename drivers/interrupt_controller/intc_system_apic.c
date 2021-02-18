@@ -18,8 +18,8 @@
 #include <drivers/interrupt_controller/sysapic.h>
 #include <irq.h>
 
-#define IS_IOAPIC_IRQ(irq)  (irq < LOAPIC_IRQ_BASE)
-#define HARDWARE_IRQ_LIMIT ((LOAPIC_IRQ_BASE + LOAPIC_IRQ_COUNT) - 1)
+#define IS_IOAPIC_IRQ(irq)  (irq < z_loapic_irq_base())
+#define HARDWARE_IRQ_LIMIT ((z_loapic_irq_base() + LOAPIC_IRQ_COUNT) - 1)
 
 /**
  *
@@ -33,7 +33,7 @@
  *
  * The Galileo board virtualizes IRQs as follows:
  *
- * - The first CONFIG_IOAPIC_NUM_RTES IRQs are provided by the IOAPIC so the
+ * - The first z_ioapic_num_rtes() IRQs are provided by the IOAPIC so the
  *     IOAPIC is programmed for these IRQs
  * - The remaining IRQs are provided by the LOAPIC and hence the LOAPIC is
  *     programmed.
@@ -51,7 +51,7 @@ void z_irq_controller_irq_config(unsigned int vector, unsigned int irq,
 	if (IS_IOAPIC_IRQ(irq)) {
 		z_ioapic_irq_set(irq, vector, flags);
 	} else {
-		z_loapic_int_vec_set(irq - LOAPIC_IRQ_BASE, vector);
+		z_loapic_int_vec_set(irq - z_loapic_irq_base(), vector);
 	}
 }
 
@@ -77,7 +77,7 @@ void arch_irq_enable(unsigned int irq)
 	if (IS_IOAPIC_IRQ(irq)) {
 		z_ioapic_irq_enable(irq);
 	} else {
-		z_loapic_irq_enable(irq - LOAPIC_IRQ_BASE);
+		z_loapic_irq_enable(irq - z_loapic_irq_base());
 	}
 }
 
@@ -97,6 +97,6 @@ void arch_irq_disable(unsigned int irq)
 	if (IS_IOAPIC_IRQ(irq)) {
 		z_ioapic_irq_disable(irq);
 	} else {
-		z_loapic_irq_disable(irq - LOAPIC_IRQ_BASE);
+		z_loapic_irq_disable(irq - z_loapic_irq_base());
 	}
 }

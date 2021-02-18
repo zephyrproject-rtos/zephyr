@@ -53,7 +53,7 @@ static inline void sync_info_fill(struct lll_adv_sync *lll_sync,
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 static void mfy_aux_offset_get(void *param);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
-		      uint16_t lazy, void *param);
+		      uint16_t lazy, uint8_t force, void *param);
 static void ticker_op_cb(uint32_t status, void *param);
 
 static struct ll_adv_aux_set ll_adv_aux_pool[CONFIG_BT_CTLR_ADV_AUX_SET];
@@ -136,7 +136,7 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 	if (adv->is_enabled) {
 		struct ll_adv_aux_set *aux;
 
-		aux = (void *)HDR_LLL2EVT(adv->lll.aux);
+		aux = HDR_LLL2ULL(adv->lll.aux);
 		if (!aux->is_started) {
 			uint32_t ticks_slot_overhead;
 			uint32_t ticks_anchor;
@@ -351,7 +351,7 @@ uint8_t ll_adv_aux_set_remove(uint8_t handle)
 	if (lll->sync) {
 		struct ll_adv_sync_set *sync;
 
-		sync = (void *)HDR_LLL2EVT(lll->sync);
+		sync = HDR_LLL2ULL(lll->sync);
 
 		if (sync->is_enabled) {
 			return BT_HCI_ERR_CMD_DISALLOWED;
@@ -377,7 +377,7 @@ uint8_t ll_adv_aux_set_remove(uint8_t handle)
 	if (lll->aux) {
 		struct ll_adv_aux_set *aux;
 
-		aux = (void *)HDR_LLL2EVT(lll->aux);
+		aux = HDR_LLL2ULL(lll->aux);
 		lll->aux = NULL;
 
 		ull_adv_aux_release(aux);
@@ -837,16 +837,16 @@ uint32_t ull_adv_aux_evt_init(struct ll_adv_aux_set *aux)
 	slot_us += 1000;
 
 	/* TODO: active_to_start feature port */
-	aux->evt.ticks_active_to_start = 0;
-	aux->evt.ticks_xtal_to_start =
+	aux->ull.ticks_active_to_start = 0;
+	aux->ull.ticks_prepare_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
-	aux->evt.ticks_preempt_to_start =
+	aux->ull.ticks_preempt_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
-	aux->evt.ticks_slot = HAL_TICKER_US_TO_TICKS(slot_us);
+	aux->ull.ticks_slot = HAL_TICKER_US_TO_TICKS(slot_us);
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
-		ticks_slot_overhead = MAX(aux->evt.ticks_active_to_start,
-					  aux->evt.ticks_xtal_to_start);
+		ticks_slot_overhead = MAX(aux->ull.ticks_active_to_start,
+					  aux->ull.ticks_prepare_to_start);
 	} else {
 		ticks_slot_overhead = 0;
 	}
@@ -871,7 +871,7 @@ uint32_t ull_adv_aux_start(struct ll_adv_aux_set *aux, uint32_t ticks_anchor,
 			   HAL_TICKER_US_TO_TICKS((uint64_t)aux->interval *
 						  ADV_INT_UNIT_US),
 			   TICKER_NULL_REMAINDER, TICKER_NULL_LAZY,
-			   (aux->evt.ticks_slot + ticks_slot_overhead),
+			   (aux->ull.ticks_slot + ticks_slot_overhead),
 			   ticker_cb, aux,
 			   ull_ticker_status_give, (void *)&ret_cb);
 	ret = ull_ticker_status_take(ret, &ret_cb);
@@ -1025,7 +1025,7 @@ static inline void sync_info_fill(struct lll_adv_sync *lll_sync,
 	si->offs_adjust = 0U;
 	si->offs = 0U;
 
-	sync = (void *)HDR_LLL2EVT(lll_sync);
+	sync = HDR_LLL2ULL(lll_sync);
 	si->interval = sys_cpu_to_le16(sync->interval);
 	memcpy(si->sca_chm, lll_sync->data_chan_map,
 	       sizeof(si->sca_chm));
@@ -1049,7 +1049,7 @@ static void mfy_aux_offset_get(void *param)
 	uint8_t retry;
 	uint8_t id;
 
-	aux = (void *)HDR_LLL2EVT(adv->lll.aux);
+	aux = HDR_LLL2ULL(adv->lll.aux);
 	ticker_id = TICKER_ID_ADV_AUX_BASE + ull_adv_aux_handle_get(aux);
 
 	id = TICKER_NULL;
@@ -1102,7 +1102,7 @@ static void mfy_aux_offset_get(void *param)
 }
 
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
-		      uint16_t lazy, void *param)
+		      uint16_t lazy, uint8_t force, void *param)
 {
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, lll_adv_aux_prepare};
@@ -1124,6 +1124,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 	p.ticks_at_expire = ticks_at_expire;
 	p.remainder = remainder;
 	p.lazy = lazy;
+	p.force = force;
 	p.param = lll;
 	mfy.param = &p;
 
@@ -1135,11 +1136,11 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
 	struct ll_adv_set *adv;
 
-	adv = (void *)HDR_LLL2EVT(lll->adv);
+	adv = HDR_LLL2ULL(lll->adv);
 	if (adv->lll.sync) {
 		struct ll_adv_sync_set *sync;
 
-		sync  = (void *)HDR_LLL2EVT(adv->lll.sync);
+		sync  = HDR_LLL2ULL(adv->lll.sync);
 		if (sync->is_started) {
 			ull_adv_sync_offset_get(adv);
 		}

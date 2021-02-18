@@ -115,3 +115,19 @@ config CBPRINTF_LIBC_SUBSTS
 
 	  When used with CBPRINTF_NANO this increases the implementation code
 	  size by a small amount.
+
+config CBPRINTF_PACKAGE_LONGDOUBLE
+	bool "Support packaging of long doubles"
+	help
+	  Option impact required alignment for buffers used for packaging
+	  (CBPRINTF_PACKAGE_ALIGNMENT). On most platforms long doubles
+	  requires buffer to be 16 bytes aligned. Long doubles are rarely used
+	  so such alignment is an unnecessary waste. If option is disabled,
+	  then compilation fails if long double is used.
+
+config CBPRINTF_STATIC_PACKAGE_CHECK_ALIGNMENT
+	bool "Validate alignment of a static package buffer"
+	help
+	  When enabled, CBPRINTF_STATIC_PACKAGE asserts when buffer is not
+	  properly aligned. If macro is widely used then assert may impact
+	  memory footprint.

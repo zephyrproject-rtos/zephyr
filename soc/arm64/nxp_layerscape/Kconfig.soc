@@ -1,0 +1,7 @@
+#
+# Copyright 2021 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+source "soc/arm64/nxp_layerscape/*/Kconfig.series"

@@ -44,19 +44,6 @@ static int frdm_kl25z_pinmux_init(const struct device *dev)
 	pinmux_pin_set(porta, 2, PORT_PCR_MUX(kPORT_MuxAlt2));
 #endif
 
-	/* SW0 and SW1 */
-	pinmux_pin_set(porta, 16, PORT_PCR_MUX(kPORT_MuxAsGpio));
-	pinmux_pin_set(porta, 17, PORT_PCR_MUX(kPORT_MuxAsGpio));
-
-	/* Red, green, blue LEDs. */
-	pinmux_pin_set(portd,  1, PORT_PCR_MUX(kPORT_MuxAsGpio));
-	pinmux_pin_set(portb, 18, PORT_PCR_MUX(kPORT_MuxAsGpio));
-	pinmux_pin_set(portb, 19, PORT_PCR_MUX(kPORT_MuxAsGpio));
-
-	/* MMA8451 INT1, INT2 */
-	pinmux_pin_set(porta, 14, PORT_PCR_MUX(kPORT_MuxAsGpio));
-	pinmux_pin_set(porta, 15, PORT_PCR_MUX(kPORT_MuxAsGpio));
-
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c0), okay) && CONFIG_I2C
 	/* I2C0 SCL, SDA */
 	pinmux_pin_set(porte,  24, PORT_PCR_MUX(kPORT_MuxAlt5)

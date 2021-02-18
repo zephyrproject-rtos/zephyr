@@ -124,10 +124,7 @@ static void McpsConfirm(McpsConfirm_t *mcpsConfirm)
 	}
 
 	last_mcps_confirm_status = mcpsConfirm->Status;
-	/* mcps_confirm_sem is only blocked on in the MCPS_CONFIRMED case */
-	if (mcpsConfirm->McpsRequest == MCPS_CONFIRMED) {
-		k_sem_give(&mcps_confirm_sem);
-	}
+	k_sem_give(&mcps_confirm_sem);
 }
 
 static void McpsIndication(McpsIndication_t *mcpsIndication)
@@ -492,26 +489,22 @@ int lorawan_send(uint8_t port, uint8_t *data, uint8_t len, uint8_t flags)
 	}
 
 	/*
-	 * Indicate to the application that the current packet is not sent and
+	 * Always wait for MAC operations to complete.
+	 * We can be sure that the semaphore will be released for
+	 * both success and failure cases after a specific time period.
+	 * So we can use K_FOREVER and no need to check the return val.
+	 */
+	k_sem_take(&mcps_confirm_sem, K_FOREVER);
+	if (last_mcps_confirm_status != LORAMAC_EVENT_INFO_STATUS_OK) {
+		ret = lorawan_eventinfo2errno(last_mcps_confirm_status);
+	}
+
+	/*
+	 * Indicate to the application that the provided data was not sent and
 	 * it has to resend the packet.
 	 */
 	if (empty_frame) {
 		ret = -EAGAIN;
-		goto out;
-	}
-
-	/* Wait for send confirmation */
-	if (flags & LORAWAN_MSG_CONFIRMED) {
-		/*
-		 * We can be sure that the semaphore will be released for
-		 * both success and failure cases after a specific time period.
-		 * So we can use K_FOREVER and no need to check the return val.
-		 */
-		k_sem_take(&mcps_confirm_sem, K_FOREVER);
-
-		if (last_mcps_confirm_status != LORAMAC_EVENT_INFO_STATUS_OK) {
-			ret = lorawan_eventinfo2errno(last_mcps_confirm_status);
-		}
 	}
 
 out:

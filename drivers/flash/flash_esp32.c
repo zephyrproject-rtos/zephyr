@@ -560,11 +560,6 @@ out:
 	return rc;
 }
 
-static int flash_esp32_write_protection(const struct device *dev, bool enable)
-{
-	return 0;
-}
-
 #if CONFIG_FLASH_PAGE_LAYOUT
 static const struct flash_pages_layout flash_esp32_pages_layout = {
 	.pages_count = DT_REG_SIZE(SOC_NV_FLASH_NODE) / FLASH_ERASE_BLK_SZ,
@@ -601,7 +596,6 @@ static const struct flash_driver_api flash_esp32_driver_api = {
 	.read = flash_esp32_read,
 	.write = flash_esp32_write,
 	.erase = flash_esp32_erase,
-	.write_protection = flash_esp32_write_protection,
 	.get_parameters = flash_esp32_get_parameters,
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_esp32_page_layout,

@@ -312,6 +312,7 @@ config BT_CTLR_ULL_LOW_PRIO
 
 config BT_CTLR_LOW_LAT
 	bool "Low latency non-negotiating event preemption"
+	select BT_CTLR_LOW_LAT_ULL_DONE
 	default y if SOC_SERIES_NRF51X
 	help
 	  Use low latency non-negotiating event preemption. This reduces
@@ -327,6 +328,12 @@ config BT_CTLR_LOW_LAT_ULL
 	help
 	  Low latency ULL implementation that uses tailchaining instead of while
 	  loop to demux rx messages from LLL.
+
+config BT_CTLR_LOW_LAT_ULL_DONE
+	prompt "Low latency ULL prepare dequeue"
+	bool
+	help
+	  Done events be processed and dequeued in ULL context.
 
 config BT_CTLR_CONN_META
 	prompt "Enable connection meta data extension"
@@ -475,6 +482,18 @@ config BT_CTLR_CONN_RSSI_EVENT
 	help
 	  Generate events for connection RSSI measurement.
 
+config BT_CTLR_ALLOW_SAME_PEER_CONN
+	bool "Allow connection requests from same peer"
+	depends on BT_MAX_CONN > 1
+	help
+	  Allow connection requests from the same peer. While the
+	  Bluetooth specification does not allow multiple connections
+	  with the same peer, allowing such connections is useful
+	  while debugging multiple connections.
+
+	  WARNING: This option enables behavior that violates the Bluetooth
+	  specification.
+
 endif # BT_CONN
 
 config BT_CTLR_ADV_INDICATION
@@ -517,8 +536,8 @@ config BT_MAYFLY_YIELD_AFTER_CALL
 	  If set to 'n', all pending mayflies for callee are executed before
 	  yielding
 
-config BT_TICKER_COMPATIBILITY_MODE
-	bool "Ticker compatibility mode"
+config BT_TICKER_LOW_LAT
+	bool "Ticker low latency mode"
 	default y if SOC_SERIES_NRF51X
 	help
 	  This option enables legacy ticker scheduling which defers overlapping
@@ -526,15 +545,39 @@ config BT_TICKER_COMPATIBILITY_MODE
 	  radio RX/TX. Enabling this option disables the ticker priority- and
 	  'must expire' features.
 
+config BT_TICKER_LAZY_GET
+	bool "Ticker Next Slot Get with Lazy"
+	default y if BT_CTLR_ADV_PERIODIC
+	help
+	  This option enables ticker interface to iterate through active
+	  ticker nodes, returning tick to expire and lazy count from a reference
+	  tick.
+
 config BT_TICKER_EXT
 	bool "Ticker extensions"
-	depends on !BT_TICKER_COMPATIBILITY_MODE
+	depends on !BT_TICKER_LOW_LAT && !BT_TICKER_SLOT_AGNOSTIC
 	default y
 	help
 	  This option enables ticker extensions such as re-scheduling of
 	  ticker nodes with slot_window set to non-zero. Ticker extensions
 	  are invoked by using available '_ext' versions of ticker interface
 	  functions.
+
+config BT_TICKER_SLOT_AGNOSTIC
+	bool "Slot agnostic ticker mode"
+	help
+	  This option enables slot agnostic ticker mode, which ignores slot
+	  reservations and collision handling, and operates as a simple
+	  multi-instance programmable timer.
+
+config BT_CTLR_JIT_SCHEDULING
+	bool "Just-in-Time Scheduling"
+	select BT_TICKER_SLOT_AGNOSTIC
+	help
+	  This option enables the experimental 'Next Generation' scheduling
+	  feature, which eliminates priorities and collision resolving in the
+	  ticker, and instead relies on just-in-time ("lazy") resolution in
+	  the link layer.
 
 config BT_CTLR_USER_EXT
 	prompt "Enable proprietary extensions in Controller"
@@ -593,7 +636,7 @@ if BT_CTLR_GPIO_PA
 
 config BT_CTLR_GPIO_PA_PIN
 	int "Power Amplifier GPIO pin number"
-	range 0 47 if SOC_NRF52840
+	range 0 47 if SOC_NRF52840 || SOC_NRF5340_CPUNET
 	range 0 31
 	help
 	  GPIO Pin number connected to a Power Amplifier.
@@ -606,9 +649,9 @@ config BT_CTLR_GPIO_PA_POL_INV
 config BT_CTLR_GPIO_PA_OFFSET
 	int "Time from PA ON to Tx ready"
 	default 5
-	range 0 10
+	range 0 15
 	help
-	  Time before Tx ready to turn on PA.
+	  Time before Tx ready to turn on PA in micro seconds.
 
 endif # BT_CTLR_GPIO_PA
 
@@ -624,7 +667,7 @@ if BT_CTLR_GPIO_LNA
 
 config BT_CTLR_GPIO_LNA_PIN
 	int "Low Noise Amplifier GPIO pin number"
-	range 0 47 if SOC_NRF52840
+	range 0 47 if SOC_NRF52840 || SOC_NRF5340_CPUNET
 	range 0 31
 	help
 	  GPIO Pin number connected to a Low Noise Amplifier.
@@ -637,11 +680,56 @@ config BT_CTLR_GPIO_LNA_POL_INV
 config BT_CTLR_GPIO_LNA_OFFSET
 	int "Time from LNA ON to Rx ready"
 	default 5
-	range 0 10
+	range 0 15
 	help
-	  Time before Rx ready to turn on LNA.
+	  Time before Rx ready to turn on LNA in micro seconds.
 
 endif # BT_CTLR_GPIO_LNA
+
+menuconfig BT_CTLR_FEM_NRF21540
+	bool "nRF21540 GPIO interface"
+	depends on !SOC_SERIES_NRF51X
+	select BT_CTLR_GPIO_PA
+	select BT_CTLR_GPIO_LNA
+	help
+	  Enable PDN and CSN GPIO interface for the nRF21540. This allows
+	  hardware designs using the nRF21540 to let the controller toggle
+	  their state based on radio activity.
+
+if BT_CTLR_FEM_NRF21540
+
+config BT_CTLR_GPIO_PDN_PIN
+	int "FEM PDN pin number"
+	range 0 47 if SOC_NRF52840 || SOC_NRF5340_CPUNET
+	range 0 31
+	help
+	  GPIO Pin number connected to the PDN pin of the nRF21540 FEM.
+
+config BT_CTLR_GPIO_PDN_POL_INV
+	bool "Inverted polarity for the PDN pin"
+	help
+	  Enable inverted polarity (active low) for the PDN pin.
+
+config BT_CTLR_GPIO_CSN_PIN
+	int "FEM CSN pin number"
+	range 0 47 if SOC_NRF52840 || SOC_NRF5340_CPUNET
+	range 0 31
+	help
+	  GPIO Pin number connected to the CSN pin of the nRF21540 FEM.
+
+config BT_CTLR_GPIO_CSN_POL_INV
+	bool "Inverted polarity for the CSN pin"
+	default y
+	help
+	  Enable inverted polarity (active low) for the CSN pin.
+
+config BT_CTLR_GPIO_PDN_CSN_OFFSET
+	int "Time from PDN and CSN toggle to PA/LNA pin toggle"
+	range 0 20
+	help
+	  Time from PDN and CSN toggle to PA/LNA pin toggle in micro seconds.
+
+endif # BT_CTLR_FEM_NRF21540
 
 config BT_CTLR_PA_LNA_GPIOTE_CHAN
 	# Hidden "nRF5 GPIO PA/LNA GPIOTE Channel"
@@ -651,6 +739,24 @@ config BT_CTLR_PA_LNA_GPIOTE_CHAN
 	default 0
 	help
 	  Select the nRF5 GPIOTE channel to use for PA/LNA GPIO feature.
+
+config BT_CTLR_PDN_GPIOTE_CHAN
+	# Hidden "nRF5 GPIO FEM PDN GPIOTE Channel"
+	int
+	depends on SOC_FAMILY_NRF && BT_CTLR_FEM_NRF21540
+	default 4 if PWM_NRF5_SW
+	default 1
+	help
+	  Select the nRF5 GPIOTE channel to use for FEM PDN GPIO pin toggle.
+
+config BT_CTLR_CSN_GPIOTE_CHAN
+	# Hidden "nRF5 GPIO FEM CSN GPIOTE Channel"
+	int
+	depends on SOC_FAMILY_NRF && BT_CTLR_FEM_NRF21540
+	default 5 if PWM_NRF5_SW
+	default 2
+	help
+	  Select the nRF5 GPIOTE channel to use for FEM CSN GPIO pin toggle.
 
 comment "BLE Controller debug configuration"
 
@@ -664,7 +770,7 @@ config BT_CTLR_PROFILE_ISR
 
 config BT_CTLR_DEBUG_PINS
 	bool "Bluetooth Controller Debug Pins"
-	depends on BOARD_NRF51DK_NRF51422 || BOARD_NRF52DK_NRF52832 || BOARD_NRF52DK_NRF52810 || BOARD_NRF52840DK_NRF52840 || BOARD_NRF5340DK_NRF5340_CPUNET || BOARD_RV32M1_VEGA
+	depends on BOARD_NRF51DK_NRF51422 || BOARD_NRF52DK_NRF52832 || BOARD_NRF52DK_NRF52810 || BOARD_NRF52840DK_NRF52840 || BOARD_NRF52833DK_NRF52833 || BOARD_NRF5340DK_NRF5340_CPUNET || BOARD_RV32M1_VEGA
 	help
 	  Turn on debug GPIO toggling for the BLE Controller. This is useful
 	  when debugging with a logic analyzer or profiling certain sections of

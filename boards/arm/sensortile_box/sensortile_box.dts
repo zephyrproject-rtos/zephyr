@@ -113,6 +113,7 @@
 		reg = <1>;
 		irq-gpios = <&gpioa 2 GPIO_ACTIVE_HIGH>;
 		label = "LSM6DSO";
+		int-pin = <1>;
 	};
 
 	iis3dhhc@2 {

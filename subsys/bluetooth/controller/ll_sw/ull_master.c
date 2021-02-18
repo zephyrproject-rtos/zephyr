@@ -28,6 +28,7 @@
 #include "lll/lll_adv_types.h"
 #include "lll_adv.h"
 #include "lll/lll_adv_pdu.h"
+#include "lll_chan.h"
 #include "lll_scan.h"
 #include "lll_conn.h"
 #include "lll_master.h"
@@ -220,7 +221,8 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	conn_lll->data_chan_sel = 0;
 	conn_lll->data_chan_use = 0;
 	conn_lll->role = 0;
-	conn_lll->initiated = 0;
+	conn_lll->master.initiated = 0;
+	conn_lll->master.cancelled = 0;
 	/* FIXME: END: Move to ULL? */
 #if defined(CONFIG_BT_CTLR_CONN_META)
 	memset(&conn_lll->conn_meta, 0, sizeof(conn_lll->conn_meta));
@@ -251,6 +253,7 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 #endif /* CONFIG_BT_CTLR_LE_PING */
 
 	conn->common.fex_valid = 0U;
+	conn->common.txn_lock = 0U;
 	conn->master.terminate_ack = 0U;
 
 	conn->llcp_req = conn->llcp_ack = conn->llcp_type = 0U;
@@ -261,7 +264,7 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	conn->llcp_feature.features_peer = 0;
 	conn->llcp_version.req = conn->llcp_version.ack = 0;
 	conn->llcp_version.tx = conn->llcp_version.rx = 0U;
-	conn->llcp_terminate.reason_peer = 0U;
+	conn->llcp_terminate.reason_final = 0U;
 	/* NOTE: use allocated link for generating dedicated
 	 * terminate ind rx node
 	 */
@@ -310,12 +313,12 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 #endif
 
 	/* TODO: active_to_start feature port */
-	conn->evt.ticks_active_to_start = 0U;
-	conn->evt.ticks_xtal_to_start =
+	conn->ull.ticks_active_to_start = 0U;
+	conn->ull.ticks_prepare_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
-	conn->evt.ticks_preempt_to_start =
+	conn->ull.ticks_preempt_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
-	conn->evt.ticks_slot =
+	conn->ull.ticks_slot =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
 				       ready_delay_us +
 				       328 + EVENT_IFS_US + 328);
@@ -427,8 +430,28 @@ uint8_t ll_connect_disable(void **rx)
 		scan_lll = &scan->lll;
 	}
 
+	/* Check if initiator active */
 	conn_lll = scan_lll->conn;
 	if (!conn_lll) {
+		/* Scanning not associated with initiation of a connection or
+		 * connection setup already complete (was set to NULL in
+		 * ull_master_setup), but HCI event not processed by host.
+		 */
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	/* Indicate to LLL that a cancellation is requested */
+	conn_lll->master.cancelled = 1U;
+	cpu_dmb();
+
+	/* Check if connection was established under race condition, i.e.
+	 * before the cancelled flag was set.
+	 */
+	conn_lll = scan_lll->conn;
+	if (!conn_lll) {
+		/* Connection setup completed on race condition with cancelled
+		 * flag, before it was set.
+		 */
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
@@ -443,11 +466,12 @@ uint8_t ll_connect_disable(void **rx)
 	}
 
 	if (!err) {
-		struct ll_conn *conn = (void *)HDR_LLL2EVT(conn_lll);
 		struct node_rx_pdu *node_rx;
 		struct node_rx_cc *cc;
+		struct ll_conn *conn;
 		memq_link_t *link;
 
+		conn = HDR_LLL2ULL(conn_lll);
 		node_rx = (void *)&conn->llcp_terminate.node_rx;
 		link = node_rx->hdr.link;
 		LL_ASSERT(link);
@@ -590,10 +614,8 @@ uint8_t ll_enc_req_send(uint16_t handle, uint8_t const *const rand,
 
 void ull_master_cleanup(struct node_rx_hdr *rx_free)
 {
-	struct node_rx_ftr *ftr = &rx_free->rx_ftr;
-	struct ll_scan_set *scan =
-		(void *)HDR_LLL2EVT(ftr->param);
 	struct lll_conn *conn_lll;
+	struct ll_scan_set *scan;
 	struct ll_conn *conn;
 	memq_link_t *link;
 
@@ -602,6 +624,7 @@ void ull_master_cleanup(struct node_rx_hdr *rx_free)
 	 *       coded PHY scanning context, hence releasing only this one
 	 *       connection context.
 	 */
+	scan = HDR_LLL2ULL(rx_free->rx_ftr.param);
 	conn_lll = scan->lll.conn;
 	LL_ASSERT(conn_lll);
 	scan->lll.conn = NULL;
@@ -612,7 +635,7 @@ void ull_master_cleanup(struct node_rx_hdr *rx_free)
 	LL_ASSERT(link);
 	conn_lll->link_tx_free = link;
 
-	conn = (void *)HDR_LLL2EVT(conn_lll);
+	conn = HDR_LLL2ULL(conn_lll);
 	ll_conn_release(conn);
 
 	/* 1M PHY is disabled here if both 1M and coded PHY was enabled for
@@ -735,13 +758,8 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 		cs = (void *)rx_csa->pdu;
 
 		if (chan_sel) {
-			uint16_t aa_ls = ((uint16_t)lll->access_addr[1] << 8) |
-				      lll->access_addr[0];
-			uint16_t aa_ms = ((uint16_t)lll->access_addr[3] << 8) |
-				      lll->access_addr[2];
-
 			lll->data_chan_sel = 1;
-			lll->data_chan_id = aa_ms ^ aa_ls;
+			lll->data_chan_id = lll_chan_id(lll->access_addr);
 
 			cs->csa = 0x01;
 		} else {
@@ -752,8 +770,8 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	ll_rx_put(link, rx);
 	ll_rx_sched();
 
-	ticks_slot_offset = MAX(conn->evt.ticks_active_to_start,
-				conn->evt.ticks_xtal_to_start);
+	ticks_slot_offset = MAX(conn->ull.ticks_active_to_start,
+				conn->ull.ticks_prepare_to_start);
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
 		ticks_slot_overhead = ticks_slot_offset;
@@ -806,7 +824,7 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 				     HAL_TICKER_US_TO_TICKS(conn_interval_us),
 				     HAL_TICKER_REMAINDER(conn_interval_us),
 				     TICKER_NULL_LAZY,
-				     (conn->evt.ticks_slot +
+				     (conn->ull.ticks_slot +
 				      ticks_slot_overhead),
 				     ull_master_ticker_cb, conn, ticker_op_cb,
 				     (void *)__LINE__);
@@ -822,7 +840,7 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 }
 
 void ull_master_ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t lazy,
-			  void *param)
+			  uint8_t force, void *param)
 {
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, lll_master_prepare};
@@ -874,6 +892,7 @@ void ull_master_ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t
 	p.ticks_at_expire = ticks_at_expire;
 	p.remainder = remainder;
 	p.lazy = lazy;
+	p.force = force;
 	p.param = &conn->lll;
 	mfy.param = &p;
 
@@ -905,17 +924,18 @@ static void ticker_op_cb(uint32_t status, void *params)
 
 static inline void conn_release(struct ll_scan_set *scan)
 {
-	struct lll_conn *lll = scan->lll.conn;
 	struct node_rx_pdu *cc;
+	struct lll_conn *lll;
 	struct ll_conn *conn;
 	memq_link_t *link;
 
+	lll = scan->lll.conn;
 	LL_ASSERT(!lll->link_tx_free);
 	link = memq_deinit(&lll->memq_tx.head, &lll->memq_tx.tail);
 	LL_ASSERT(link);
 	lll->link_tx_free = link;
 
-	conn = (void *)HDR_LLL2EVT(lll);
+	conn = HDR_LLL2ULL(lll);
 
 	cc = (void *)&conn->llcp_terminate.node_rx;
 	link = cc->hdr.link;

@@ -6,7 +6,6 @@ name: Documentation GitHub Workflow
 on:
   pull_request:
     paths:
-    - 'Makefile'
     - 'doc/**'
     - '**.rst'
     - 'include/**'
@@ -14,10 +13,11 @@ on:
     - 'lib/libc/**'
     - 'subsys/testsuite/ztest/include/**'
     - 'tests/**'
-    - '.known-issues/doc/**'
     - '**/Kconfig*'
     - 'west.yml'
     - '.github/workflows/doc-build.yml'
+    - 'scripts/dts/**'
+    - 'scripts/requirements-doc.txt'
 
 jobs:
   doc-build:
@@ -44,10 +44,10 @@ jobs:
 
     - name: install-pip
       run: |
-        pip3 install setuptools wheel
+        sudo pip3 install -U setuptools wheel pip
         pip3 install -r scripts/requirements-base.txt
         pip3 install -r scripts/requirements-doc.txt
-        pip3 install west==0.9.0
+        pip3 install west==0.10.1
 
     - name: west setup
       run: |
@@ -56,7 +56,7 @@ jobs:
     - name: build-docs
       run: |
         source zephyr-env.sh
-        make htmldocs
+        make -C doc htmldocs
         tar cvf htmldocs.tar --directory=./doc/_build html
 
     - name: upload-build
