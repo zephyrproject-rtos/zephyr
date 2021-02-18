@@ -63,6 +63,13 @@ static struct bt_mesh_model root_models[] = {
 	BT_MESH_MODEL_SAR_CFG_CLI(&sar_cfg_cli),
 #endif
 
+#if defined(CONFIG_BT_MESH_OP_AGG_SRV)
+	BT_MESH_MODEL_OP_AGG_SRV,
+#endif
+#if defined(CONFIG_BT_MESH_OP_AGG_CLI)
+	BT_MESH_MODEL_OP_AGG_CLI,
+#endif
+
 #if defined(CONFIG_BT_MESH_LARGE_COMP_DATA_SRV)
 	BT_MESH_MODEL_LARGE_COMP_DATA_SRV,
 #endif
