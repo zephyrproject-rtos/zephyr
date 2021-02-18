@@ -347,6 +347,8 @@ struct bt_audio_chan {
 	struct bt_codec_qos *qos;
 	/** ISO channel reference */
 	struct bt_iso_chan *iso;
+	/** Audio channel operations */
+	struct bt_audio_chan_ops *ops;
 	sys_slist_t links;
 	sys_snode_t node;
 	uint8_t  state;
@@ -474,6 +476,18 @@ struct bt_audio_capability_ops {
 	int                     (*release)(struct bt_audio_chan *chan);
 };
 
+/** @brief Channel operation. */
+struct bt_audio_chan_ops {
+	/** @brief Channel audio HCI receive callback.
+	 *
+	 *  This callback is only used if the ISO data path is HCI.
+	 *
+	 *  @param chan Channel object.
+	 *  @param buf  Buffer containing incoming audio data.
+	 */
+	void                    (*recv)(struct bt_audio_chan *chan, struct net_buf *buf);
+};
+
 /** @brief Audio Capability type */
 enum bt_audio_pac_type {
 	BT_AUDIO_SINK = 0x01,
@@ -564,6 +578,17 @@ int bt_audio_capability_register(struct bt_audio_capability *cap);
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_audio_capability_unregister(struct bt_audio_capability *cap);
+
+/** @brief Register Audio callbacks for a channel.
+ *
+ *  Register Audio callbacks for a channel.
+ *
+ *  @param chan Channel object.
+ *  @param ops  Channel operations structure.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+void bt_audio_chan_cb_register(struct bt_audio_chan *chan, struct bt_audio_chan_ops *ops);
 
 /**
  * @defgroup bt_audio_client Audio Client APIs
