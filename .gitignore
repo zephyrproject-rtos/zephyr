@@ -51,3 +51,4 @@ TAGS
 tags
 
 .idea
+/share/zephyr-package/cmake/current_path.txt
