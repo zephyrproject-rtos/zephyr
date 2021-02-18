@@ -45,7 +45,6 @@ if CPU_HAS_NRF_IDAU
 config NRF_SPU_FLASH_REGION_SIZE
 	hex
 	default 0x8000 if SOC_NRF9160
-	default 0x8000 if SOC_NRF5340_CPUAPP && NRF5340_CPUAPP_ERRATUM19
 	default 0x4000 if SOC_NRF5340_CPUAPP
 	help
 	  FLASH region size for the NRF_SPU peripheral
