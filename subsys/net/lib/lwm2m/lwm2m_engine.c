@@ -1924,6 +1924,58 @@ int lwm2m_engine_get_resource(char *pathstr, struct lwm2m_engine_res **res)
 	return path_to_objs(&path, NULL, NULL, res, NULL);
 }
 
+int lwm2m_engine_update_observer_min_period(char *pathstr, uint32_t period_s)
+{
+	int i, ret;
+	struct lwm2m_obj_path path;
+
+	ret = string_to_path(pathstr, &path, '/');
+	if (ret < 0) {
+		return ret;
+	}
+
+	for (i = 0; i < CONFIG_LWM2M_ENGINE_MAX_OBSERVER; i++) {
+		if (observe_node_data[i].path.level == path.level &&
+		    observe_node_data[i].path.obj_id == path.obj_id &&
+		    (path.level >= 2 ?
+		     observe_node_data[i].path.obj_inst_id == path.obj_inst_id : true) &&
+		    (path.level >= 3 ?
+		     observe_node_data[i].path.res_id == path.res_id : true)) {
+
+			observe_node_data[i].min_period_sec = period_s;
+			return 0;
+		}
+	}
+
+	return -ENOENT;
+}
+
+int lwm2m_engine_update_observer_max_period(char *pathstr, uint32_t period_s)
+{
+	int i, ret;
+	struct lwm2m_obj_path path;
+
+	ret = string_to_path(pathstr, &path, '/');
+	if (ret < 0) {
+		return ret;
+	}
+
+	for (i = 0; i < CONFIG_LWM2M_ENGINE_MAX_OBSERVER; i++) {
+		if (observe_node_data[i].path.level == path.level &&
+		    observe_node_data[i].path.obj_id == path.obj_id &&
+		    (path.level >= 2 ?
+		     observe_node_data[i].path.obj_inst_id == path.obj_inst_id : true) &&
+		    (path.level >= 3 ?
+		     observe_node_data[i].path.res_id == path.res_id : true)) {
+
+			observe_node_data[i].max_period_sec = period_s;
+			return 0;
+		}
+	}
+
+	return -ENOENT;
+}
+
 void lwm2m_engine_get_binding(char *binding)
 {
 	if (IS_ENABLED(CONFIG_LWM2M_QUEUE_MODE_ENABLED)) {
@@ -4393,6 +4445,20 @@ int lwm2m_engine_add_service(k_work_handler_t service, uint32_t period_ms)
 			 &service_node_data[i].node);
 
 	return 0;
+}
+
+int lwm2m_engine_update_service_period(k_work_handler_t service, uint32_t period_ms)
+{
+	int i = 0;
+
+	for (i = 0; i < MAX_PERIODIC_SERVICE; i++) {
+		if (service_node_data[i].service_work == service) {
+			service_node_data[i].min_call_period = period_ms;
+			return 0;
+		}
+	}
+
+	return -ENOENT;
 }
 
 static int lwm2m_engine_service(void)
