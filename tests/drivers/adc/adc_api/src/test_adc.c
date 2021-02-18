@@ -1,4 +1,4 @@
-/*
+CONFIG_BOARD_BMD340EVAL_NRF52840/*
  * Copyright (c) 2018 Nordic Semiconductor ASA
  * Copyright (c) 2016 Intel Corporation
  *
