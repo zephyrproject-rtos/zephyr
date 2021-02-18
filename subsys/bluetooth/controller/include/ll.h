@@ -12,6 +12,8 @@
 int ll_init(struct k_sem *sem_rx);
 void ll_reset(void);
 
+uint64_t ll_feat_get(void);
+
 uint8_t *ll_addr_get(uint8_t addr_type, uint8_t *p_bdaddr);
 uint8_t ll_addr_set(uint8_t addr_type, uint8_t const *const p_bdaddr);
 

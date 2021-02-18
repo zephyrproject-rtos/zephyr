@@ -172,6 +172,7 @@ struct ll_conn {
 	struct {
 		uint8_t  req;
 		uint8_t  ack;
+		/* TODO: 8, 16, 32 or 64 based on local supported features */
 		uint64_t features_conn;
 		uint64_t features_peer;
 	} llcp_feature;
