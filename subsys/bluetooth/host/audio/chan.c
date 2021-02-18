@@ -791,3 +791,22 @@ void bt_audio_chan_reset(struct bt_audio_chan *chan)
 	bt_audio_chan_unlink(chan, NULL);
 	bt_audio_chan_set_state(chan, BT_AUDIO_CHAN_IDLE);
 }
+
+int bt_audio_chan_send(struct bt_audio_chan *chan, struct net_buf *buf)
+{
+	if (!chan || !chan->ep) {
+		return -EINVAL;
+	}
+
+	switch (chan->ep->status.state) {
+	 /* or 0x04 (Streaming) */
+	case BT_ASCS_ASE_STATE_STREAMING:
+		break;
+	default:
+		BT_ERR("Invalid state: %s",
+		       bt_audio_ep_state_str(chan->ep->status.state));
+		return -EBADMSG;
+	}
+
+	return bt_iso_chan_send(chan->iso, buf);
+}
