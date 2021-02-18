@@ -23,7 +23,7 @@ set(SYSROOT_DIR    ${TOOLCHAIN_HOME}/${SYSROOT_TARGET})
 # xt-xcc does not support -Og, so make it -O0
 set(OPTIMIZE_FOR_DEBUG_FLAG "-O0")
 
-if(EXISTS ${CROSS_COMPILE}clang)
+if($ENV{XCC_USE_CLANG})
   set(CC clang)
   set(C++ clang++)
 else()
