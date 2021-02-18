@@ -36,4 +36,10 @@ config DMA_MCUX_LPC
 	default y
 	depends on DMA
 
+config MCUX
+	default n
+
+config MCUX_SDK
+	default !MCUX
+
 endif # SOC_LPC55S69_CPU0
