@@ -50,6 +50,9 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		      void *param);
 static void ticker_op_cb(uint32_t status, void *param);
 
+static memq_link_t link_lll_prepare;
+static struct mayfly mfy_lll_prepare = {0, 0, &link_lll_prepare, NULL, NULL};
+
 static struct ll_sync_iso_set ll_sync_iso[CONFIG_BT_CTLR_SCAN_SYNC_ISO_SET];
 static void *sync_iso_free;
 
@@ -63,6 +66,7 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 	memq_link_t *link_sync_lost;
 	struct node_rx_hdr *node_rx;
 	struct ll_sync_set *sync;
+	struct lll_sync_iso *lll;
 
 	sync = ull_sync_is_enabled_get(sync_handle);
 	if (!sync || sync->iso.sync_iso) {
@@ -109,9 +113,17 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 	sync->iso.node_rx_estab = node_rx;
 	sync_iso->node_rx_lost.hdr.link = link_sync_lost;
 
+	/* Initialize sync LLL context */
+	lll = &sync_iso->lll;
+	lll->latency_prepare = 0U;
+	lll->latency_event = 0U;
+	lll->data_chan_id = 0U;
+	lll->window_widening_prepare_us = 0U;
+	lll->window_widening_event_us = 0U;
+
 	/* Initialize ULL and LLL headers */
 	ull_hdr_init(&sync_iso->ull);
-	lll_hdr_init(&sync_iso->lll, sync);
+	lll_hdr_init(lll, sync_iso);
 
 	/* Enable periodic advertising to establish ISO sync */
 	sync->iso.sync_iso = sync_iso;
@@ -134,7 +146,7 @@ uint8_t ll_big_sync_terminate(uint8_t big_handle, void **rx)
 	}
 
 	sync = sync_iso->sync;
-	if (sync) {
+	if (sync && sync->iso.sync_iso) {
 		struct node_rx_sync_iso *se;
 
 		if (sync->iso.sync_iso != sync_iso) {
@@ -237,44 +249,109 @@ void ull_sync_iso_release(struct ll_sync_iso_set *sync_iso)
 
 void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 			struct node_rx_hdr *node_rx,
-			struct pdu_big_info *big_info)
+			uint8_t *acad, uint8_t acad_len)
 {
 	uint32_t ticks_slot_overhead;
-	struct node_rx_sync_iso *se;
+	uint32_t sync_iso_offset_us;
 	uint32_t ticks_slot_offset;
 	struct lll_sync_iso *lll;
 	struct node_rx_ftr *ftr;
-	uint32_t sync_offset_us;
-	struct node_rx_pdu *rx;
+	struct pdu_big_info *bi;
+	uint32_t ready_delay_us;
 	uint32_t interval_us;
+	struct pdu_adv *pdu;
 	uint16_t interval;
 	uint16_t handle;
+	uint8_t bi_size;
 	uint32_t ret;
+	uint8_t sca;
+
+	if (acad_len < (PDU_BIG_INFO_CLEARTEXT_SIZE + 2)) {
+		return;
+	}
+
+	/* TODO: Parse and find the BIGInfo */
+	bi_size = acad[0];
+	bi = (void *)&acad[2];
 
 	lll = &sync_iso->lll;
-	handle = ull_sync_iso_handle_get(sync_iso);
+	memcpy(lll->seed_access_addr, &bi->seed_access_addr,
+	       sizeof(lll->seed_access_addr));
+	memcpy(lll->base_crc_init, &bi->base_crc_init,
+	       sizeof(lll->base_crc_init));
+	memcpy(lll->payload_count, bi->payload_count_framing,
+	       sizeof(lll->payload_count));
 
-	interval = sys_le16_to_cpu(big_info->iso_interval);
+	memcpy(lll->data_chan_map, bi->chm_phy, sizeof(lll->data_chan_map));
+	lll->data_chan_map[4] &= ~0xE0;
+	lll->data_chan_count = util_ones_count_get(&lll->data_chan_map[0],
+						   sizeof(lll->data_chan_map));
+	if (lll->data_chan_count < 2) {
+		return;
+	}
+
+	/* Reset ISO create BIG flag in the periodic advertising context */
+	sync_iso->sync->iso.sync_iso = NULL;
+
+	lll->phy = BIT(bi->chm_phy[4] >> 5);
+
+	lll->num_bis = bi->num_bis;
+	lll->bn = bi->bn;
+	lll->nse = bi->nse;
+	lll->sub_interval = bi->sub_interval;
+	lll->max_pdu = bi->max_pdu;
+	lll->pto = bi->pto;
+	lll->bis_spacing = bi->spacing;
+	lll->irc = bi->irc;
+	lll->sdu_interval = bi->sdu_interval;
+
+	interval = sys_le16_to_cpu(bi->iso_interval);
 	interval_us = interval * CONN_INT_UNIT_US;
 
-	/* TODO: Populate LLL with information from the BIGINFO */
+	sync_iso->timeout_reload =
+		RADIO_SYNC_EVENTS((sync_iso->timeout * 10U * 1000U),
+				  interval_us);
 
-	rx = (void *)sync_iso->sync->iso.node_rx_estab;
-	rx->hdr.type = NODE_RX_TYPE_SYNC_ISO;
-	rx->hdr.handle = handle;
-	rx->hdr.rx_ftr.param = sync_iso;
-	se = (void *)rx->pdu;
-	se->status = BT_HCI_ERR_SUCCESS;
-	se->interval = interval;
-
-	ll_rx_put(rx->hdr.link, rx);
-	ll_rx_sched();
+	sca = sync_iso->sync->lll.sca;
+	lll->window_widening_periodic_us =
+		(((lll_clock_ppm_local_get() + lll_clock_ppm_get(sca)) *
+		  interval_us) + (1000000 - 1)) / 1000000U;
+	lll->window_widening_max_us = (interval_us >> 1) - EVENT_IFS_US;
+	if (bi->offs_units) {
+		lll->window_size_event_us = 300U;
+	} else {
+		lll->window_size_event_us = 30U;
+	}
 
 	ftr = &node_rx->rx_ftr;
+	pdu = (void *)((struct node_rx_pdu *)node_rx)->pdu;
 
-	/* TODO: Calculate offset */
-	sync_offset_us = 0;
-	ticks_slot_offset = 0;
+	ready_delay_us = lll_radio_rx_ready_delay_get(lll->phy, 1);
+
+	sync_iso_offset_us = ftr->radio_end_us;
+	sync_iso_offset_us += (uint32_t)bi->offs * lll->window_size_event_us;
+	sync_iso_offset_us -= PKT_AC_US(pdu->len, lll->phy);
+	sync_iso_offset_us -= EVENT_OVERHEAD_START_US;
+	sync_iso_offset_us -= EVENT_JITTER_US;
+	sync_iso_offset_us -= ready_delay_us;
+
+	interval_us -= lll->window_widening_periodic_us;
+
+	/* TODO: active_to_start feature port */
+	sync_iso->ull.ticks_active_to_start = 0U;
+	sync_iso->ull.ticks_prepare_to_start =
+		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
+	sync_iso->ull.ticks_preempt_to_start =
+		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
+	sync_iso->ull.ticks_slot =
+		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
+				       ready_delay_us +
+				       PKT_AC_US(PDU_AC_EXT_PAYLOAD_SIZE_MAX,
+						 lll->phy) +
+				       EVENT_OVERHEAD_END_US);
+
+	ticks_slot_offset = MAX(sync_iso->ull.ticks_active_to_start,
+				sync_iso->ull.ticks_prepare_to_start);
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
 		ticks_slot_overhead = ticks_slot_offset;
@@ -282,14 +359,18 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 		ticks_slot_overhead = 0U;
 	}
 
+	/* setup to use ISO create prepare function until sync established */
+	mfy_lll_prepare.fp = lll_sync_iso_create_prepare;
+
+	handle = ull_sync_iso_handle_get(sync_iso);
 	ret = ticker_start(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
 			   (TICKER_ID_SCAN_SYNC_ISO_BASE + handle),
 			   ftr->ticks_anchor - ticks_slot_offset,
-			   HAL_TICKER_US_TO_TICKS(sync_offset_us),
+			   HAL_TICKER_US_TO_TICKS(sync_iso_offset_us),
 			   HAL_TICKER_US_TO_TICKS(interval_us),
 			   HAL_TICKER_REMAINDER(interval_us),
 			   TICKER_NULL_LAZY,
-			   ticks_slot_overhead,
+			   (sync_iso->ull.ticks_slot + ticks_slot_overhead),
 			   ticker_cb, sync_iso, ticker_op_cb, (void *)__LINE__);
 	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
 		  (ret == TICKER_STATUS_BUSY));
@@ -314,22 +395,18 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		      uint32_t remainder, uint16_t lazy, uint8_t force,
 		      void *param)
 {
-	/* TODO: Implement LLL handling */
-#if 0
-	static memq_link_t link;
-	static struct mayfly mfy = {0, 0, &link, NULL, lll_sync_prepare};
 	static struct lll_prepare_param p;
-	struct ll_sync_set *sync = param;
-	struct lll_sync *lll;
+	struct ll_sync_iso_set *sync_iso = param;
+	struct lll_sync_iso *lll;
 	uint32_t ret;
 	uint8_t ref;
 
 	DEBUG_RADIO_PREPARE_O(1);
 
-	lll = &sync->lll;
+	lll = &sync_iso->lll;
 
 	/* Increment prepare reference count */
-	ref = ull_ref_inc(&sync->ull);
+	ref = ull_ref_inc(&sync_iso->ull);
 	LL_ASSERT(ref);
 
 	/* Append timing parameters */
@@ -338,15 +415,14 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	p.lazy = lazy;
 	p.force = force;
 	p.param = lll;
-	mfy.param = &p;
+	mfy_lll_prepare.param = &p;
 
 	/* Kick LLL prepare */
-	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
-			     TICKER_USER_ID_LLL, 0, &mfy);
+	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL, 0,
+			     &mfy_lll_prepare);
 	LL_ASSERT(!ret);
 
 	DEBUG_RADIO_PREPARE_O(1);
-#endif
 }
 
 static void ticker_op_cb(uint32_t status, void *param)

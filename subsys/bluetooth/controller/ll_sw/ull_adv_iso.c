@@ -43,9 +43,6 @@
 #include "common/log.h"
 #include "hal/debug.h"
 
-static struct ll_adv_iso_set ll_adv_iso[BT_CTLR_ADV_SET];
-static void *adv_iso_free;
-
 static uint32_t ull_adv_iso_start(struct ll_adv_iso_set *adv_iso,
 				  uint32_t ticks_anchor);
 static void mfy_iso_offset_get(void *param);
@@ -64,6 +61,9 @@ static void ticker_op_stop_cb(uint32_t status, void *param);
 
 static memq_link_t link_lll_prepare;
 static struct mayfly mfy_lll_prepare = {0, 0, &link_lll_prepare, NULL, NULL};
+
+static struct ll_adv_iso_set ll_adv_iso[BT_CTLR_ADV_SET];
+static void *adv_iso_free;
 
 uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 		      uint32_t sdu_interval, uint16_t max_sdu,
@@ -477,8 +477,9 @@ void ull_adv_iso_done(struct node_rx_event_done *done)
 	/* switch to normal prepare */
 	mfy_lll_prepare.fp = lll_adv_iso_prepare;
 
-	lll = (void *)HDR_ULL2LLL(done->param);
-	adv_iso = (void *)HDR_LLL2EVT(lll);
+	/* Get reference to ULL context */
+	adv_iso = CONTAINER_OF(done->param, struct ll_adv_iso_set, ull);
+	lll = &adv_iso->lll;
 
 	/* Prepare BIG complete event */
 	rx = &adv_iso->node_rx_complete;

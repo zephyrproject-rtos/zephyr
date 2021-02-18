@@ -27,6 +27,10 @@ struct lll_sync {
 	uint8_t filter_policy:1;
 	uint8_t is_aux_sched:1;
 
+#if defined(CONFIG_BT_CTLR_SYNC_ISO)
+	uint8_t sca:3;
+#endif /* CONFIG_BT_CTLR_SYNC_ISO */
+
 	uint16_t skip_prepare;
 	uint16_t skip_event;
 	uint16_t event_counter;
