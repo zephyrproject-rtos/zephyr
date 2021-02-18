@@ -750,6 +750,20 @@ int bt_audio_chan_link(struct bt_audio_chan *chan1,
 int bt_audio_chan_unlink(struct bt_audio_chan *chan1,
 			 struct bt_audio_chan *chan2);
 
+/** @brief Send data to Audio channel
+ *
+ *  Send data from buffer to the channel.
+ *
+ *  @note Data will not be sent to linked channels since linking is only
+ *  consider for procedures affecting the state machine.
+ *
+ *  @param chan Channel object.
+ *  @param buf Buffer containing data to be sent.
+ *
+ *  @return Bytes sent in case of success or negative value in case of error.
+ */
+int bt_audio_chan_send(struct bt_audio_chan *chan, struct net_buf *buf);
+
 /** @} */
 
 #ifdef __cplusplus
