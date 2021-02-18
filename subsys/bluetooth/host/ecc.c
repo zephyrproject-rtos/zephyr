@@ -17,7 +17,7 @@
 #include "common/log.h"
 
 static uint8_t pub_key[64];
-static struct bt_pub_key_cb *pub_key_cb;
+static sys_slist_t pub_key_cb_slist;
 static bt_dh_key_cb_t dh_key_cb;
 
 static const uint8_t debug_public_key[64] = {
@@ -40,6 +40,7 @@ bool bt_pub_key_is_debug(uint8_t *pub_key)
 
 int bt_pub_key_gen(struct bt_pub_key_cb *new_cb)
 {
+	struct bt_pub_key_cb *cb;
 	int err;
 
 	/*
@@ -64,8 +65,18 @@ int bt_pub_key_gen(struct bt_pub_key_cb *new_cb)
 		}
 	}
 
-	new_cb->_next = pub_key_cb;
-	pub_key_cb = new_cb;
+	if (!new_cb) {
+		return -EINVAL;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&pub_key_cb_slist, cb, node) {
+		if (cb == new_cb) {
+			BT_WARN("Callback already registered");
+			return -EALREADY;
+		}
+	}
+
+	sys_slist_prepend(&pub_key_cb_slist, &new_cb->node);
 
 	if (atomic_test_and_set_bit(bt_dev.flags, BT_DEV_PUB_KEY_BUSY)) {
 		return 0;
@@ -75,9 +86,17 @@ int bt_pub_key_gen(struct bt_pub_key_cb *new_cb)
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_P256_PUBLIC_KEY, NULL, NULL);
 	if (err) {
+
 		BT_ERR("Sending LE P256 Public Key command failed");
 		atomic_clear_bit(bt_dev.flags, BT_DEV_PUB_KEY_BUSY);
-		pub_key_cb = NULL;
+
+		SYS_SLIST_FOR_EACH_CONTAINER(&pub_key_cb_slist, cb, node) {
+			if (cb->func) {
+				cb->func(NULL);
+			}
+		}
+
+		sys_slist_init(&pub_key_cb_slist);
 		return err;
 	}
 
@@ -180,11 +199,13 @@ void bt_hci_evt_le_pkey_complete(struct net_buf *buf)
 		atomic_set_bit(bt_dev.flags, BT_DEV_HAS_PUB_KEY);
 	}
 
-	for (cb = pub_key_cb; cb; cb = cb->_next) {
-		cb->func(evt->status ? NULL : pub_key);
+	SYS_SLIST_FOR_EACH_CONTAINER(&pub_key_cb_slist, cb, node) {
+		if (cb->func) {
+			cb->func(evt->status ? NULL : pub_key);
+		}
 	}
 
-	pub_key_cb = NULL;
+	sys_slist_init(&pub_key_cb_slist);
 }
 
 void bt_hci_evt_le_dhkey_complete(struct net_buf *buf)

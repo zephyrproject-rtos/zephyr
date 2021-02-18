@@ -18,7 +18,8 @@ struct bt_pub_key_cb {
 	 */
 	void (*func)(const uint8_t key[64]);
 
-	struct bt_pub_key_cb *_next;
+	/* Internal */
+	sys_snode_t node;
 };
 
 /*  @brief Check if public key is equal to the debug public key.
@@ -34,12 +35,14 @@ bool bt_pub_key_is_debug(uint8_t *pub_key);
 
 /*  @brief Generate a new Public Key.
  *
- *  Generate a new ECC Public Key. The callback will persist even after the
- *  key has been generated, and will be used to notify of new generation
- *  processes (NULL as key).
+ *  Generate a new ECC Public Key. Provided cb must persists until callback
+ *  is called. Callee adds the callback structure to a linked list. Registering
+ *  multiple callbacks requires multiple calls to bt_pub_key_gen() and separate
+ *  callback structures. This method cannot be called directly from result
+ *  callback. After calling all the registered callbacks the linked list
+ *  is cleared.
  *
- *  @param cb Callback to notify the new key, or NULL to request an update
- *            without registering any new callback.
+ *  @param cb Callback to notify the new key.
  *
  *  @return Zero on success or negative error code otherwise
  */
