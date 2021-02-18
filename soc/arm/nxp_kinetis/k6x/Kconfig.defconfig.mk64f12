@@ -84,4 +84,10 @@ config COUNTER_MCUX_RTC
 	default y
 	depends on COUNTER
 
+config MCUX
+	default n
+
+config MCUX_SDK
+	default !MCUX
+
 endif # SOC_MK64F12
