@@ -810,3 +810,8 @@ int bt_audio_chan_send(struct bt_audio_chan *chan, struct net_buf *buf)
 
 	return bt_iso_chan_send(chan->iso, buf);
 }
+
+void bt_audio_chan_cb_register(struct bt_audio_chan *chan, struct bt_audio_chan_ops *ops)
+{
+	chan->ops = ops;
+}
