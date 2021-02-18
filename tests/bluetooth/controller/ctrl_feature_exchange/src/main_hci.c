@@ -35,6 +35,8 @@
 #include "ull_llcp_internal.h"
 #include "ull_conn_llcp_internal.h"
 
+#include "ll_feat.h"
+
 #include "helper_pdu.h"
 #include "helper_util.h"
 #include "helper_features.h"
