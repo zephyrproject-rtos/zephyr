@@ -16,6 +16,11 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/iso.h>
 
+#include "subsys/bluetooth/host/hci_core.h"
+#include "subsys/bluetooth/controller/include/ll.h"
+#include "subsys/bluetooth/controller/util/memq.h"
+#include "subsys/bluetooth/controller/ll_sw/lll.h"
+
 #include "bs_types.h"
 #include "bs_tracing.h"
 #include "time_machine.h"
@@ -34,18 +39,6 @@
 	} while (0)
 
 extern enum bst_result_t bst_result;
-
-/* TODO: The BIG/BIS host API is not yet merged, so forcibly use the controller
- * interface instead of the relying on HCI. Change to use host API once merged.
- */
-#define USE_HOST_API 0
-
-#if !IS_ENABLED(USE_HOST_API)
-#include "subsys/bluetooth/host/hci_core.h"
-#include "subsys/bluetooth/controller/include/ll.h"
-#include "subsys/bluetooth/controller/util/memq.h"
-#include "subsys/bluetooth/controller/ll_sw/lll.h"
-#endif /* !USE_HOST_API */
 
 static uint8_t mfg_data1[] = { 0xff, 0xff, 0x01, 0x02, 0x03, 0x04 };
 static uint8_t mfg_data2[] = { 0xff, 0xff, 0x05 };
@@ -81,7 +74,6 @@ static void test_iso_main(void)
 	}
 	printk("success.\n");
 
-
 	printk("Setting Periodic Advertising parameters...");
 	err = bt_le_per_adv_set_param(adv, BT_LE_PER_ADV_DEFAULT);
 	if (err) {
@@ -107,27 +99,27 @@ static void test_iso_main(void)
 	}
 	printk("success.\n");
 
-#if !IS_ENABLED(USE_HOST_API)
-	uint8_t big_handle = 0;
-	uint8_t adv_handle;
-	uint8_t bis_count = 1; /* TODO: Add support for multiple BIS per BIG */
-	uint32_t sdu_interval = 10000; /* us */
+
+	printk("Creating BIG...");
 	uint16_t max_sdu = CONFIG_BT_CTLR_ADV_ISO_PDU_LEN_MAX;
+	uint8_t bcode[BT_ISO_BROADCAST_CODE_SIZE] = { 0 };
+	uint32_t sdu_interval = 10000; /* us */
 	uint16_t max_latency = 10; /* ms */
-	uint8_t rtn = 0;
+	uint8_t encryption = 0;
+	uint8_t big_handle = 0;
+	uint8_t bis_count = 1; /* TODO: Add support for multiple BIS per BIG */
 	uint8_t phy = BIT(1);
 	uint8_t packing = 0;
 	uint8_t framing = 0;
-	uint8_t encryption = 0;
-	uint8_t bcode[BT_ISO_BROADCAST_CODE_SIZE] = { 0 };
+	uint8_t adv_handle;
+	uint8_t rtn = 0;
 
 	/* Assume that index == handle */
 	adv_handle = bt_le_ext_adv_get_index(adv);
 
-	printk("Creating BIG...");
-	err = ll_big_create(big_handle, adv_handle, bis_count, sdu_interval, max_sdu,
-			    max_latency, rtn, phy, packing, framing, encryption,
-			    bcode);
+	err = ll_big_create(big_handle, adv_handle, bis_count, sdu_interval,
+			    max_sdu, max_latency, rtn, phy, packing, framing,
+			    encryption, bcode);
 	if (err) {
 		FAIL("Could not create BIG: %d\n", err);
 		return;
@@ -168,14 +160,13 @@ static void test_iso_main(void)
 
 	k_sleep(K_MSEC(5000));
 
-	printk("Stop Periodic Advertising...\n");
+	printk("Stop Periodic Advertising...");
 	err = bt_le_per_adv_stop(adv);
 	if (err) {
 		FAIL("Failed to stop periodic advertising (err %d)\n", err);
 		return;
 	}
 	printk("success.\n");
-#endif /* !USE_HOST_API */
 
 
 	PASS("Iso tests Passed\n");
@@ -194,10 +185,11 @@ static const char *phy2str(uint8_t phy)
 	}
 }
 
-static bool is_periodic;
-static uint8_t per_sid;
+static bool volatile is_big_info;
 static bt_addr_le_t per_addr;
 static bool volatile is_sync;
+static bool is_periodic;
+static uint8_t per_sid;
 
 static void pa_sync_cb(struct bt_le_per_adv_sync *sync,
 		     struct bt_le_per_adv_sync_synced_info *info)
@@ -261,6 +253,10 @@ static void pa_biginfo_cb(struct bt_le_per_adv_sync *sync,
 	       biginfo->max_sdu, phy2str(biginfo->phy),
 	       biginfo->framing ? "with" : "without",
 	       biginfo->encryption ? "" : "not ");
+
+	if (!is_big_info) {
+		is_big_info = true;
+	}
 }
 
 static struct bt_le_per_adv_sync_cb sync_cb = {
@@ -394,17 +390,22 @@ static void test_iso_recv_main(void)
 	}
 	printk("success.\n");
 
-#if !IS_ENABLED(USE_HOST_API)
-	uint8_t big_handle = 0;
-	uint8_t bis_count = 1; /* TODO: Add support for multiple BIS per BIG */
-	uint8_t bis_handle = 0;
-	uint8_t mse = 0;
-	uint8_t encryption = 0;
-	uint8_t bcode[BT_ISO_BROADCAST_CODE_SIZE] = { 0 };
-	uint16_t sync_timeout = 0;
-	struct node_rx_hdr *node_rx;
+	printk("Wait for BIG Info Advertising Report...");
+	is_big_info = false;
+	while (!is_big_info) {
+		k_sleep(K_MSEC(100));
+	}
+	printk("success.\n");
 
 	printk("Creating BIG Sync...");
+	uint8_t bcode[BT_ISO_BROADCAST_CODE_SIZE] = { 0 };
+	uint16_t sync_timeout = 10;
+	uint8_t big_handle = 0;
+	uint8_t bis_handle = 0;
+	uint8_t encryption = 0;
+	uint8_t bis_count = 1; /* TODO: Add support for multiple BIS per BIG */
+	uint8_t mse = 0;
+
 	err = ll_big_sync_create(big_handle, sync->handle, encryption, bcode,
 				 mse, sync_timeout, bis_count, &bis_handle);
 	if (err) {
@@ -414,6 +415,39 @@ static void test_iso_recv_main(void)
 	printk("success.\n");
 
 	k_sleep(K_MSEC(5000));
+
+	printk("Deleting Periodic Advertising Sync...");
+	err = bt_le_per_adv_sync_delete(sync);
+	if (err) {
+		FAIL("Failed to delete periodic advertising sync (err %d)\n",
+		     err);
+		return;
+	}
+	printk("success.\n");
+
+	printk("Terminating BIG Sync...");
+	struct node_rx_hdr *node_rx = NULL;
+	err = ll_big_sync_terminate(big_handle, (void **)&node_rx);
+	if (err) {
+		FAIL("Could not terminate BIG sync: %d\n", err);
+		return;
+	}
+	printk("success.\n");
+
+	if (node_rx) {
+		FAIL("Generated Node Rx for synchronized BIG.\n");
+	}
+
+	k_sleep(K_MSEC(5000));
+
+	printk("Creating BIG Sync after terminate...");
+	err = ll_big_sync_create(big_handle, sync->handle, encryption, bcode,
+				 mse, sync_timeout, bis_count, &bis_handle);
+	if (err) {
+		FAIL("Could not create BIG sync: %d\n", err);
+		return;
+	}
+	printk("success.\n");
 
 	printk("Terminating BIG Sync...");
 	node_rx = NULL;
@@ -428,32 +462,6 @@ static void test_iso_recv_main(void)
 		node_rx->next = NULL;
 		ll_rx_mem_release((void **)&node_rx);
 	}
-
-	k_sleep(K_MSEC(5000));
-
-	printk("Creating BIG Sync after terminate...\n");
-	err = ll_big_sync_create(big_handle, sync->handle, encryption, bcode,
-				 mse, sync_timeout, bis_count, &bis_handle);
-	if (err) {
-		FAIL("Could not create BIG sync: %d\n", err);
-		return;
-	}
-	printk("success.\n");
-
-	printk("Terminating BIG Sync...\n");
-	node_rx = NULL;
-	err = ll_big_sync_terminate(big_handle, (void **)&node_rx);
-	if (err) {
-		FAIL("Could not terminate BIG sync: %d\n", err);
-		return;
-	}
-	printk("success.\n");
-
-	if (node_rx) {
-		node_rx->next = NULL;
-		ll_rx_mem_release((void **)&node_rx);
-	}
-#endif /* !USE_HOST_API */
 
 	PASS("ISO recv test Passed\n");
 
