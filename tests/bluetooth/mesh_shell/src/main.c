@@ -20,6 +20,10 @@ static struct bt_mesh_cfg_cli cfg_cli;
 static struct bt_mesh_dfd_srv dfd_srv;
 #endif
 
+#if defined(CONFIG_BT_MESH_SAR_CFG_CLI)
+static struct bt_mesh_sar_cfg_cli sar_cfg_cli;
+#endif
+
 BT_MESH_SHELL_HEALTH_PUB_DEFINE(health_pub);
 
 static struct bt_mesh_model root_models[] = {
@@ -46,6 +50,13 @@ static struct bt_mesh_model root_models[] = {
 #endif
 #if defined(CONFIG_BT_MESH_RPR_SRV)
 	BT_MESH_MODEL_RPR_SRV,
+#endif
+
+#if defined(CONFIG_BT_MESH_SAR_CFG_SRV)
+	BT_MESH_MODEL_SAR_CFG_SRV,
+#endif
+#if defined(CONFIG_BT_MESH_SAR_CFG_CLI)
+	BT_MESH_MODEL_SAR_CFG_CLI(&sar_cfg_cli),
 #endif
 
 #if defined(CONFIG_BT_MESH_LARGE_COMP_DATA_SRV)
