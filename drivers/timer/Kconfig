@@ -308,6 +308,56 @@ config NPCX_ITIM_TIMER
 	  series internal 64/32-bit timers and provides the standard "system
 	  clock driver" interfaces.
 
+config STM32_RTC_TIMER
+	bool "STM32 RTC Timer [EXPERIMENTAL]"
+	depends on SOC_SERIES_STM32L1X
+	depends on CLOCK_CONTROL && PM
+	select TICKLESS_CAPABLE
+	select USE_STM32_LL_RTC
+	help
+	  This module implements a kernel device driver for using the 
+	  STM32 RTC as the system clock. Currently only tested on STM32L1x SoCs 
+	  cat. 2-6 (which support sub-second alarms), see 'AN4759 Rev 5' table 4. 
+	  It provides the standard "system clock driver" interfaces.
+
+if STM32_RTC_TIMER
+
+choice STM32_RTC_TIMER_SRC
+	prompt "RTC source configuration"
+
+config STM32_RTC_TIMER_LSI
+	bool "LSI"
+	help
+	  Use LSI as RTC clock
+
+config STM32_RTC_TIMER_LSE
+	bool "LSE"
+	help
+	  Use LSE as RTC clock
+
+endchoice
+
+if STM32_RTC_TIMER_LSE
+
+config STM32_RTC_TIMER_LSE_BYPASS
+	bool "LSE oscillator bypass"
+	help
+	  Enable LSE bypass
+
+endif # STM32_RTC_TIMER_LSE
+
+config STM32_RTC_TIMER_BACKUP_DOMAIN_RESET
+	bool "Reset RTC clock source before config"
+	default y
+	help
+	   This option resets the RTC clock source configuration
+	   before configuring the clock source. This is important when switching 
+	   clock source, since it won't allow you to set another source before it 
+	   has been reset. 
+	   
+
+endif # STM32_RTC_TIMER
+
 config SYSTEM_CLOCK_DISABLE
 	bool "API to disable system clock"
 	help
