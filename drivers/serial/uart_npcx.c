@@ -182,11 +182,7 @@ static void uart_npcx_irq_tx_disable(const struct device *dev)
 
 static int uart_npcx_irq_tx_ready(const struct device *dev)
 {
-	struct uart_reg *const inst = HAL_INSTANCE(dev);
-
-	/* Tx interrupt is enable and its FIFO is ready to send (not full) */
-	return (IS_BIT_SET(inst->UFTCTL, NPCX_UFTCTL_TEMPTY_EN) &&
-			uart_npcx_tx_fifo_ready(dev));
+	return uart_npcx_tx_fifo_ready(dev);
 }
 
 static int uart_npcx_irq_tx_complete(const struct device *dev)
@@ -213,11 +209,7 @@ static void uart_npcx_irq_rx_disable(const struct device *dev)
 
 static int uart_npcx_irq_rx_ready(const struct device *dev)
 {
-	struct uart_reg *const inst = HAL_INSTANCE(dev);
-
-	/* Rx interrupt is enable and at least one byte is in its FIFO */
-	return (IS_BIT_SET(inst->UFRCTL, NPCX_UFRCTL_RNEMPTY_EN) &&
-			uart_npcx_rx_fifo_available(dev));
+	return uart_npcx_rx_fifo_available(dev);
 }
 
 static void uart_npcx_irq_err_enable(const struct device *dev)
