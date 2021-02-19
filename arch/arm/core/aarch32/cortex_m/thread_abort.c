@@ -40,13 +40,8 @@ void z_impl_k_thread_abort(k_tid_t thread)
 			 * is not an implicit scheduler invocation.
 			 */
 			SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
-		} else {
-			z_self_abort(); /* Never returns */
 		}
 	}
 
-	z_thread_single_abort(thread);
-
-	/* The abort handler might have altered the ready queue. */
-	z_reschedule_unlocked();
+	z_thread_abort(thread);
 }

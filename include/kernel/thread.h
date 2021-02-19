@@ -204,6 +204,9 @@ struct k_thread {
 	/** static thread init data */
 	void *init_data;
 
+	/** threads waiting in k_thread_join() */
+	_wait_q_t join_queue;
+
 #if defined(CONFIG_POLL)
 	struct z_poller poller;
 #endif

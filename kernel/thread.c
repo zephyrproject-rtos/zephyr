@@ -552,6 +552,7 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	/* Any given thread has access to itself */
 	k_object_access_grant(new_thread, new_thread);
 #endif
+	z_waitq_init(&new_thread->join_queue);
 
 	/* Initialize various struct k_thread members */
 	z_init_thread_base(&new_thread->base, prio, _THREAD_PRESTART, options);
