@@ -571,7 +571,7 @@ static int dtls_rx(void *ctx, unsigned char *buf, size_t len,
 		/* mbedtLS does not allow blocking rx for DTLS, therefore use
 		 * k_poll for timeout functionality.
 		 */
-		if (is_block) {
+		if (!is_block) {
 			fds.fd = tls_ctx->sock;
 			fds.events = ZSOCK_POLLIN;
 
