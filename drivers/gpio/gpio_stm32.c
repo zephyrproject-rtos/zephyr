@@ -27,6 +27,12 @@
 #include "gpio_stm32.h"
 #include "gpio_utils.h"
 
+#if defined(PWR_CR2_IOSV) && DT_NODE_HAS_STATUS(DT_NODELABEL(gpiog), okay)
+#define STM32_GPIO_G_VDDIO 1
+#else
+#define STM32_GPIO_G_VDDIO 0
+#endif
+
 /**
  * @brief Common GPIO driver for STM32 MCUs.
  */
@@ -222,12 +228,15 @@ int gpio_stm32_configure(const struct device *dev, int pin, int conf, int altf)
 	return 0;
 }
 
+
+
 /**
  * @brief GPIO port clock handling
  */
 int gpio_stm32_clock_request(const struct device *dev, bool on)
 {
 	const struct gpio_stm32_config *cfg = dev->config;
+	struct gpio_stm32_data *data = dev->data;
 	int ret = 0;
 
 	if (dev == NULL) {
@@ -239,27 +248,36 @@ int gpio_stm32_clock_request(const struct device *dev, bool on)
 	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
 	if (on) {
-		ret = clock_control_on(clk,
+		if (data->client_count == 0) {
+			ret = clock_control_on(clk,
 					(clock_control_subsys_t *)&cfg->pclken);
 
+			if (IS_ENABLED(STM32_GPIO_G_VDDIO) &&
+						cfg->port == STM32_PORTG) {
+				z_stm32_hsem_lock(CFG_HW_RCC_SEMID,
+						  HSEM_LOCK_DEFAULT_RETRY);
+				/* Port G[15:2] requires external power supply */
+				/* Cf: L4XX RM, §5.1 Power supplies */
+				LL_PWR_EnableVddIO2();
+				z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
+			}
+		}
+		data->client_count++;
 	} else {
-		ret = clock_control_off(clk,
+		data->client_count--;
+		if (data->client_count == 0) {
+			ret = clock_control_off(clk,
 					(clock_control_subsys_t *)&cfg->pclken);
-	}
 
-#if defined(PWR_CR2_IOSV) && DT_NODE_HAS_STATUS(DT_NODELABEL(gpiog), okay)
-	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
-	if (cfg->port == STM32_PORTG) {
-		/* Port G[15:2] requires external power supply */
-		/* Cf: L4XX RM, §5.1 Power supplies */
-		if (on) {
-			LL_PWR_EnableVddIO2();
-		} else {
-			LL_PWR_DisableVddIO2();
+			if (IS_ENABLED(STM32_GPIO_G_VDDIO) &&
+						cfg->port == STM32_PORTG) {
+				z_stm32_hsem_lock(CFG_HW_RCC_SEMID,
+						  HSEM_LOCK_DEFAULT_RETRY);
+				LL_PWR_DisableVddIO2();
+				z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
+			}
 		}
 	}
-	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
-#endif
 
 exit:
 	return ret;
@@ -571,6 +589,8 @@ static int gpio_stm32_init(const struct device *device)
 	struct gpio_stm32_data *data = device->data;
 
 	data->dev = device;
+
+	data->client_count = 0;
 
 	gpio_stm32_clock_request(device, true);
 

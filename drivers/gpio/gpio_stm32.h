@@ -222,6 +222,8 @@ struct gpio_stm32_data {
 	const struct device *dev;
 	/* user ISR cb */
 	sys_slist_t cb;
+	/* Active number of device's clients */
+	int client_count;
 };
 
 /**
