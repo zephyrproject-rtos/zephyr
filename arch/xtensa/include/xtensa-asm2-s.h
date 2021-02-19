@@ -245,6 +245,13 @@ _xstack_returned_\@:
 	l32i a2, a1, 0
 	l32i a2, a2, BSA_SCRATCH_OFF
 
+#ifdef CONFIG_KERNEL_COHERENCE
+	/* If stacks are incoherent, we need all the data pushed now
+	 * so it can be flushed
+	 */
+	SPILL_ALL_WINDOWS
+#endif
+
 	/* There's a gotcha with level 1 handlers: the INTLEVEL field
 	 * gets left at zero and not set like high priority interrupts
 	 * do.  That works fine for exceptions, but for L1 interrupts,
@@ -313,6 +320,7 @@ _do_call_\@:
 	addi a0, a0, -1
 	s32i a0, a3, \NEST_OFF
 
+#ifndef CONFIG_KERNEL_COHERENCE
 	/* Last trick: the called function returned the "next" handle
 	 * to restore to in A6 (the call4'd function's A2).  If this
 	 * is not the same handle as we started with, we need to do a
@@ -320,11 +328,14 @@ _do_call_\@:
 	 * Remember to restore the A1 stack pointer as it existed at
 	 * interrupt time so the caller of the interrupted function
 	 * spills to the right place.
+	 *
+	 * (Skipped when COHERENCE is set because it was already spilled)
 	 */
 	beq a6, a1, _restore_\@
 	l32i a1, a1, 0
 	addi a1, a1, BASE_SAVE_AREA_SIZE
 	SPILL_ALL_WINDOWS
+#endif
 	mov a1, a6
 
 _restore_\@:
