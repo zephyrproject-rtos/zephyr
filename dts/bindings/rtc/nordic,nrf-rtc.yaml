@@ -7,6 +7,8 @@ compatible: "nordic,nrf-rtc"
 
 include: rtc.yaml
 
+bus: counter
+
 properties:
     reg:
       required: true
