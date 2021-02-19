@@ -152,19 +152,7 @@ int stream_flash_buffered_write(struct stream_flash_ctx *ctx, const uint8_t *dat
 		fill_length = flash_get_write_block_size(ctx->fdev);
 		if (ctx->buf_bytes % fill_length) {
 			fill_length -= ctx->buf_bytes % fill_length;
-			/*
-			 * Leverage the fact that unwritten memory
-			 * should be erased in order to get the erased
-			 * byte-value.
-			 */
-			rc = flash_read(ctx->fdev,
-					ctx->offset + ctx->bytes_written,
-					(void *)&filler,
-					1);
-
-			if (rc != 0) {
-				return rc;
-			}
+			filler = flash_get_parameters(ctx->fdev)->erase_value;
 
 			memset(ctx->buf + ctx->buf_bytes, filler, fill_length);
 			ctx->buf_bytes += fill_length;
