@@ -56,10 +56,11 @@ static int flash_sync(struct stream_flash_ctx *ctx)
 	size_t write_addr = ctx->offset + ctx->bytes_written;
 
 
+	if (ctx->buf_bytes == 0) {
+		return 0;
+	}
+
 	if (IS_ENABLED(CONFIG_STREAM_FLASH_ERASE)) {
-		if (ctx->buf_bytes == 0) {
-			return 0;
-		}
 
 		rc = stream_flash_erase_page(ctx,
 					     write_addr + ctx->buf_bytes - 1);
