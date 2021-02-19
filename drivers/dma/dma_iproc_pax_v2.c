@@ -985,7 +985,13 @@ static int dma_iproc_pax_process_dma_blocks(const struct device *dev,
 		block_config = block_config->next_block;
 	}
 
-	/* Append write sync payload descriptors */
+	/*
+	 * Write sync payload descriptors should go with separate RM header
+	 * as RM implementation allows all the BD's in a header packet should
+	 * have same data transfer direction. Setting non_hdr_bd_count to 0,
+	 * helps generate separate packet.
+	 */
+	ring->non_hdr_bd_count = 0;
 	dma_iproc_pax_gen_packets(dev, ring, MEMORY_TO_PERIPHERAL, &sync_pl,
 				  &non_hdr_bd_count);
 
