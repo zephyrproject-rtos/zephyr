@@ -487,6 +487,10 @@ static int gpio_stm32_config(const struct device *dev,
 		goto exit;
 	}
 
+	if ((flags & GPIO_DISCONNECTED) == 0) {
+		err = gpio_stm32_clock_request(dev, true);
+	}
+
 	if ((flags & GPIO_OUTPUT) != 0) {
 		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0) {
 			gpio_stm32_port_set_bits_raw(dev, BIT(pin));
@@ -496,6 +500,10 @@ static int gpio_stm32_config(const struct device *dev,
 	}
 
 	gpio_stm32_configure(dev, pin, pincfg, 0);
+
+	if ((flags & GPIO_DISCONNECTED) != 0) {
+		err = gpio_stm32_clock_request(dev, false);
+	}
 
 exit:
 	return err;
@@ -517,8 +525,16 @@ static int gpio_stm32_pin_interrupt_configure(const struct device *dev,
 			stm32_exti_unset_callback(pin);
 			stm32_exti_trigger(pin, STM32_EXTI_TRIG_NONE);
 		}
-		/* else: No irq source configured for pin. Nothing to disable */
+
+		/* Disable clock */
+		err = gpio_stm32_clock_request(dev, false);
+
 		goto exit;
+	}
+
+	/* Enable clock */
+	if (gpio_stm32_clock_request(dev, true) != 0) {
+		err = -EIO;
 	}
 
 	/* Level trigger interrupts not supported */
@@ -591,8 +607,6 @@ static int gpio_stm32_init(const struct device *device)
 	data->dev = device;
 
 	data->client_count = 0;
-
-	gpio_stm32_clock_request(device, true);
 
 	return 0;
 }
