@@ -4,6 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* Override __DEPRECATED_MACRO so we don't get twister failures for
+ * deprecated macros:
+ * - DT_CLOCKS_LABEL_BY_IDX
+ * - DT_CLOCKS_LABEL_BY_NAME
+ * - DT_CLOCKS_LABEL
+ * - DT_INST_CLOCKS_LABEL_BY_IDX
+ * - DT_INST_CLOCKS_LABEL_BY_NAME
+ * - DT_INST_CLOCKS_LABEL
+ */
+#define __DEPRECATED_MACRO
+
 #include <ztest.h>
 #include <devicetree.h>
 #include <device.h>
