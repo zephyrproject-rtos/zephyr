@@ -49,6 +49,12 @@
 #define MAX_BD_COUNT_PER_HEADER		30
 
 /*
+ * Sync payload buffer size is of 4 bytes,4096 Bytes allocated here
+ * to make sure BD memories fall in 4K alignment.
+ */
+#define PAX_DMA_RM_SYNC_BUFFER_MISC_SIZE       4096
+
+/*
  * Per-ring memory, with 8K & 4K alignment
  * Alignment may not be ensured by allocator
  * s/w need to allocate extra upto 8K to
@@ -56,7 +62,8 @@
  */
 #define PAX_DMA_PER_RING_ALLOC_SIZE	(PAX_DMA_RM_CMPL_RING_SIZE * 2 + \
 					 PAX_DMA_NUM_BD_BUFFS * \
-					 PAX_DMA_RM_DESC_RING_SIZE)
+					 PAX_DMA_RM_DESC_RING_SIZE + \
+					 PAX_DMA_RM_SYNC_BUFFER_MISC_SIZE)
 
 /* RM header desc field */
 struct rm_header {
