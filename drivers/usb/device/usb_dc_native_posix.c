@@ -512,9 +512,16 @@ int handle_usb_control(struct usbip_header *hdr)
 		return -EIO;
 	}
 
+	if ((ntohl(hdr->common.direction) == USBIP_DIR_IN) ^
+	    (REQTYPE_GET_DIR(hdr->u.submit.bmRequestType) ==
+	     REQTYPE_DIR_TO_HOST)) {
+		LOG_ERR("Failed to verify bmRequestType");
+		return -EIO;
+	}
+
 	ep_ctrl->data_len = 8;
 	LOG_DBG("SETUP event ep 0x%02x %u", ep_idx, ep_ctrl->data_len);
-	usbip_recv(ep_ctrl->buf, ep_ctrl->data_len);
+	memcpy(ep_ctrl->buf, &hdr->u.submit.bmRequestType, ep_ctrl->data_len);
 	ep_ctrl->cb(ep_idx, USB_DC_EP_SETUP);
 
 	if (ntohl(hdr->common.direction) == USBIP_DIR_OUT) {
@@ -560,11 +567,6 @@ int handle_usb_data(struct usbip_header *hdr)
 		ep_ctrl = &usbip_ctrl.in_ep_ctrl[ep_idx];
 		ep = ep_idx | USB_EP_DIR_IN;
 		LOG_DBG("DATA IN event ep 0x%02x %u", ep, ep_ctrl->buf_len);
-
-		/* Read USB setup, not handled */
-		if (!usbip_skip_setup()) {
-			return -EIO;
-		}
 
 		/* Send queued data */
 		if (!usbip_send_common(ep, ep_ctrl->buf_len)) {
