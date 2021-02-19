@@ -127,6 +127,8 @@ int stm32_dt_pinctrl_configure(const struct soc_gpio_pinctrl *pinctrl,
 		ret = gpio_stm32_clock_request(port_device, true);
 
 		stm32_pin_configure(pin, func, STM32_DT_PINMUX_FUNC(mux));
+
+		ret = gpio_stm32_clock_request(port_device, false);
 	}
 
 exit:
