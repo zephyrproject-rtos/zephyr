@@ -234,7 +234,13 @@ void hci_le_cis_req(struct net_buf *buf)
 	iso->role = BT_HCI_ROLE_SLAVE;
 	bt_conn_set_state(iso, BT_CONN_CONNECT);
 
-	hci_le_accept_cis(cis_handle);
+	err = hci_le_accept_cis(cis_handle);
+	if (err) {
+		bt_iso_cleanup(iso);
+		hci_le_reject_cis(cis_handle,
+				  BT_HCI_ERR_INSUFFICIENT_RESOURCES);
+		return;
+	}
 }
 
 int hci_le_remove_cig(uint8_t cig_id)
