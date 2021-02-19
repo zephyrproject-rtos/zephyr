@@ -98,7 +98,7 @@ void z_add_timeout(struct _timeout *to, _timeout_func_t fn,
 	k_ticks_t ticks = timeout.ticks + 1;
 
 	if (IS_ENABLED(CONFIG_TIMEOUT_64BIT) && Z_TICK_ABS(ticks) >= 0) {
-		ticks = Z_TICK_ABS(ticks) - (curr_tick + elapsed());
+		ticks = Z_TICK_ABS(timeout.ticks) - (curr_tick + elapsed());
 	}
 
 	__ASSERT(!sys_dnode_is_linked(&to->node), "");
