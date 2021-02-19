@@ -67,6 +67,11 @@ struct usbip_submit {
 	int32_t start_frame;
 	int32_t number_of_packets;
 	int32_t interval;
+	uint8_t bmRequestType;
+	uint8_t bRequest;
+	uint16_t wValue;
+	uint16_t wIndex;
+	uint16_t wLength;
 } __packed;
 
 struct usbip_unlink {
@@ -104,4 +109,3 @@ void usbip_start(void);
 
 int handle_usb_control(struct usbip_header *hdr);
 int handle_usb_data(struct usbip_header *hdr);
-bool usbip_skip_setup(void);
