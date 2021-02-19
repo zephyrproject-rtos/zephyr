@@ -12,11 +12,6 @@
 #include <drivers/timer/system_timer.h>
 #include <sys_clock.h>
 
-#define LOCKED(lck) for (k_spinlock_key_t __i = {},			\
-					  __key = k_spin_lock(lck);	\
-			__i.key == 0;					\
-			k_spin_unlock(lck, __key), __i.key = 1)
-
 static uint64_t curr_tick;
 
 static sys_dlist_t timeout_list = SYS_DLIST_STATIC_INIT(&timeout_list);

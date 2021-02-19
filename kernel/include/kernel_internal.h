@@ -202,6 +202,11 @@ void z_mem_manage_init(void);
 /* Workaround for build-time page table mapping of the kernel */
 void z_kernel_map_fixup(void);
 
+#define LOCKED(lck) for (k_spinlock_key_t __i = {},			\
+					  __key = k_spin_lock(lck);	\
+			!__i.key;					\
+			k_spin_unlock(lck, __key), __i.key = 1)
+
 #ifdef __cplusplus
 }
 #endif

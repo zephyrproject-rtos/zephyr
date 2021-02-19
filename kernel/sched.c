@@ -60,11 +60,6 @@ static struct k_spinlock sched_spinlock;
 
 static void update_cache(int);
 
-#define LOCKED(lck) for (k_spinlock_key_t __i = {},			\
-					  __key = k_spin_lock(lck);	\
-			!__i.key;					\
-			k_spin_unlock(lck, __key), __i.key = 1)
-
 static inline int is_preempt(struct k_thread *thread)
 {
 #ifdef CONFIG_PREEMPT_ENABLED
