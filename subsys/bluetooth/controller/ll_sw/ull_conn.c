@@ -29,14 +29,18 @@
 #include "lll.h"
 #include "lll_clock.h"
 #include "lll_conn.h"
+#include "lll_conn_iso.h"
 
 #include "ull_conn_types.h"
+#include "ull_conn_iso_types.h"
 #include "ull_internal.h"
+#include "ull_iso_internal.h"
 #include "ull_sched_internal.h"
 #include "ull_chan_internal.h"
 #include "ull_conn_internal.h"
 #include "ull_slave_internal.h"
 #include "ull_master_internal.h"
+#include "ull_peripheral_iso_internal.h"
 
 #if defined(CONFIG_BT_CTLR_USER_EXT)
 #include "ull_vendor.h"
@@ -121,6 +125,13 @@ static inline void event_phy_req_prep(struct ll_conn *conn);
 static inline void event_phy_upd_ind_prep(struct ll_conn *conn,
 					  uint16_t event_counter);
 #endif /* CONFIG_BT_CTLR_PHY */
+
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+static inline void event_send_cis_rsp(struct ll_conn *conn);
+static inline void event_peripheral_iso_prep(struct ll_conn *conn,
+					     uint16_t event_counter,
+					     uint32_t ticks_at_expire);
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
 
 static inline void ctrl_tx_pre_ack(struct ll_conn *conn,
 				   struct pdu_data *pdu_tx);
@@ -941,6 +952,27 @@ int ull_conn_llcp(struct ll_conn *conn, uint32_t ticks_at_expire, uint16_t lazy)
 			/* handle PHY Upd state machine */
 			event_phy_req_prep(conn);
 #endif /* CONFIG_BT_CTLR_PHY */
+
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+		} else if (conn->llcp_cis.req != conn->llcp_cis.ack) {
+			if (conn->llcp_cis.state == LLCP_CIS_STATE_RSP_WAIT) {
+				/* Handle CIS response */
+				event_send_cis_rsp(conn);
+			} else if (conn->llcp_cis.state ==
+						LLCP_CIS_STATE_INST_WAIT) {
+				struct lll_conn *lll = &conn->lll;
+				uint16_t event_counter;
+
+				/* Calculate current event counter */
+				event_counter = lll->event_counter +
+						lll->latency_prepare + lazy;
+
+				/* Start CIS peripheral */
+				event_peripheral_iso_prep(conn,
+							  event_counter,
+							  ticks_at_expire);
+			}
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
 		}
 	}
 
@@ -5284,6 +5316,107 @@ static inline uint8_t phy_upd_ind_recv(struct ll_conn *conn, memq_link_t *link,
 }
 #endif /* CONFIG_BT_CTLR_PHY */
 
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+void event_send_cis_rsp(struct ll_conn *conn)
+{
+	struct node_tx *tx;
+
+	tx = mem_acquire(&mem_conn_tx_ctrl.free);
+	if (tx) {
+		struct pdu_data *pdu = (void *)tx->pdu;
+
+		pdu->ll_id = PDU_DATA_LLID_CTRL;
+		pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CIS_RSP;
+
+		sys_put_le24(conn->llcp_cis.cis_offset_min,
+			     pdu->llctrl.cis_rsp.cis_offset_min);
+		sys_put_le24(conn->llcp_cis.cis_offset_max,
+			     pdu->llctrl.cis_rsp.cis_offset_max);
+		pdu->llctrl.cis_rsp.conn_event_count =
+			sys_cpu_to_le16(conn->llcp_cis.conn_event_count);
+
+		pdu->len = offsetof(struct pdu_data_llctrl, cis_rsp) +
+				    sizeof(struct pdu_data_llctrl_cis_rsp);
+
+		conn->llcp_cis.state = LLCP_CIS_STATE_IND_WAIT;
+
+		ctrl_tx_enqueue(conn, tx);
+	}
+}
+
+void event_peripheral_iso_prep(struct ll_conn *conn, uint16_t event_counter,
+			       uint32_t ticks_at_expire)
+{
+	if (event_counter == conn->llcp_cis.conn_event_count) {
+		ull_peripheral_iso_start(conn, ticks_at_expire);
+
+		conn->llcp_cis.state = LLCP_CIS_STATE_REQ;
+		conn->llcp_cis.ack = conn->llcp_cis.req;
+	}
+}
+
+static uint8_t cis_req_recv(struct ll_conn *conn, memq_link_t *link,
+			    struct node_rx_pdu **rx, struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_cis_req *req = &pdu->llctrl.cis_req;
+	struct node_rx_conn_iso_req *conn_iso_req;
+	uint16_t cis_handle;
+	uint8_t err;
+
+	conn->llcp_cis.cig_id = req->cig_id;
+	conn->llcp_cis.framed = req->framed;
+	conn->llcp_cis.c_max_sdu = sys_le16_to_cpu(req->c_max_sdu);
+	conn->llcp_cis.p_max_sdu = sys_le16_to_cpu(req->p_max_sdu);
+	conn->llcp_cis.c_sdu_interval = sys_get_le24(req->c_sdu_interval);
+	conn->llcp_cis.p_sdu_interval = sys_get_le24(req->p_sdu_interval);
+	conn->llcp_cis.cis_offset_min = sys_get_le24(req->cis_offset_min);
+	conn->llcp_cis.cis_offset_max = sys_get_le24(req->cis_offset_max);
+	conn->llcp_cis.conn_event_count =
+		sys_le16_to_cpu(req->conn_event_count);
+
+	/* Acquire resources for new CIS */
+	err = ull_peripheral_iso_acquire(conn, &pdu->llctrl.cis_req, &cis_handle);
+	if (err) {
+		return err;
+	}
+
+	conn->llcp_cis.cis_handle = cis_handle;
+	conn->llcp_cis.state = LLCP_CIS_STATE_RSP_WAIT;
+	conn->llcp_cis.ack -= 2U;
+
+	(*rx)->hdr.type = NODE_RX_TYPE_CIS_REQUEST;
+
+	conn_iso_req = (void *)pdu;
+	conn_iso_req->cig_id = req->cig_id;
+	conn_iso_req->cis_id = req->cis_id;
+	conn_iso_req->cis_handle = sys_le16_to_cpu(cis_handle);
+
+	return 0;
+}
+
+static uint8_t cis_ind_recv(struct ll_conn *conn, memq_link_t *link,
+			    struct node_rx_pdu **rx, struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_cis_ind *ind = &pdu->llctrl.cis_ind;
+	uint8_t err;
+
+	conn->llcp_cis.conn_event_count =
+		sys_le16_to_cpu(ind->conn_event_count);
+
+	/* Setup CIS connection */
+	err = ull_peripheral_iso_setup(&pdu->llctrl.cis_ind,
+				       conn->llcp_cis.cig_id,
+				       conn->llcp_cis.cis_handle);
+
+	conn->llcp_cis.state = LLCP_CIS_STATE_INST_WAIT;
+
+	/* Mark for buffer for release */
+	(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
+
+	return err;
+}
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
+
 static inline void ctrl_tx_pre_ack(struct ll_conn *conn,
 				   struct pdu_data *pdu_tx)
 {
@@ -6527,6 +6660,40 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 		break;
 #endif  /* CONFIG_BT_CENTRAL */
 #endif /* CONFIG_BT_CTLR_MIN_USED_CHAN */
+
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+	case PDU_DATA_LLCTRL_TYPE_CIS_REQ:
+	{
+		uint8_t err;
+
+		if (!conn->lll.role ||
+		    PDU_DATA_LLCTRL_LEN(cis_req) != pdu_rx->len) {
+			goto ull_conn_rx_unknown_rsp_send;
+		}
+
+		err = cis_req_recv(conn, link, rx, pdu_rx);
+		if (err) {
+			conn->llcp_terminate.reason_peer = err;
+		}
+		break;
+	}
+
+	case PDU_DATA_LLCTRL_TYPE_CIS_IND:
+	{
+		uint8_t err;
+
+		if (!conn->lll.role ||
+		    PDU_DATA_LLCTRL_LEN(cis_ind) != pdu_rx->len) {
+			goto ull_conn_rx_unknown_rsp_send;
+		}
+
+		err = cis_ind_recv(conn, link, rx, pdu_rx);
+		if (err) {
+			conn->llcp_terminate.reason_peer = err;
+		}
+		break;
+	}
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
 
 	default:
 ull_conn_rx_unknown_rsp_send:
