@@ -35,11 +35,6 @@ matrix_builds=1
 matrix=1
 
 function handle_coverage() {
-	# this is for shippable coverage reports
-	echo "Calling gcovr"
-	gcovr -r ${ZEPHYR_BASE} -x > shippable/codecoverage/coverage.xml
-
-
 	# Upload to codecov.io only on merged builds or if CODECOV_IO variable
 	# is set.
 	if [ -n "${CODECOV_IO}" -o -z "${pull_request_nr}" ]; then
@@ -91,24 +86,6 @@ function on_complete() {
 	fi
 
 	rm -rf ccache $HOME/.cache/zephyr
-	mkdir -p shippable/testresults
-	mkdir -p shippable/codecoverage
-
-	if [ -e ./twister-out/twister.xml ]; then
-		echo "Copy ./twister-out/twister.xml"
-		cp ./twister-out/twister.xml shippable/testresults/
-	fi
-
-	if [ -e ./module_tests/twister.xml ]; then
-		echo "Copy ./module_tests/twister.xml"
-		cp ./module_tests/twister.xml \
-			shippable/testresults/module_tests.xml
-	fi
-
-	if [ -e ${bsim_bt_test_results_file} ]; then
-		echo "Copy ${bsim_bt_test_results_file}"
-		cp ${bsim_bt_test_results_file} shippable/testresults/
-	fi
 
 	if [ "$matrix" = "1" ]; then
 		echo "Skip handling coverage data..."
