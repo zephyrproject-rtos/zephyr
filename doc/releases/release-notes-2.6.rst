@@ -30,6 +30,13 @@ API Changes
 ***********
 
 Deprecated in this release
+
+* :c:macro:`DT_CLOCKS_LABEL_BY_IDX`, :c:macro:`DT_CLOCKS_LABEL_BY_NAME`,
+  :c:macro:`DT_CLOCKS_LABEL`, :c:macro:`DT_INST_CLOCKS_LABEL_BY_IDX`,
+  :c:macro:`DT_INST_CLOCKS_LABEL_BY_NAME`, and
+  :c:macro:`DT_INST_CLOCKS_LABEL` was deprecated in favor of utilizing
+  :c:macro:`DT_CLOCKS_CTLR` and variants.
+
 ==========================
 
 Removed APIs in this release

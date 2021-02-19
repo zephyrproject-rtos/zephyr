@@ -120,6 +120,7 @@ extern "C" {
  * @see DT_PROP_BY_PHANDLE_IDX()
  */
 #define DT_CLOCKS_LABEL_BY_IDX(node_id, idx) \
+	__DEPRECATED_MACRO \
 	DT_PROP_BY_PHANDLE_IDX(node_id, clocks, idx, label)
 
 /**
@@ -155,6 +156,7 @@ extern "C" {
  * @see DT_PHANDLE_BY_NAME()
  */
 #define DT_CLOCKS_LABEL_BY_NAME(node_id, name) \
+	__DEPRECATED_MACRO \
 	DT_PROP(DT_PHANDLE_BY_NAME(node_id, clocks, name), label)
 
 /**
@@ -163,7 +165,7 @@ extern "C" {
  * @return the label property of the node referenced at index 0
  * @see DT_CLOCKS_LABEL_BY_IDX()
  */
-#define DT_CLOCKS_LABEL(node_id) DT_CLOCKS_LABEL_BY_IDX(node_id, 0)
+#define DT_CLOCKS_LABEL(node_id) __DEPRECATED_MACRO DT_CLOCKS_LABEL_BY_IDX(node_id, 0)
 
 /**
  * @brief Get a clock specifier's cell value at an index
@@ -289,6 +291,7 @@ extern "C" {
  * @see DT_CLOCKS_LABEL_BY_IDX()
  */
 #define DT_INST_CLOCKS_LABEL_BY_IDX(inst, idx) \
+	__DEPRECATED_MACRO \
 	DT_CLOCKS_LABEL_BY_IDX(DT_DRV_INST(inst), idx)
 
 /**
@@ -301,6 +304,7 @@ extern "C" {
  * @see DT_CLOCKS_LABEL_BY_NAME()
  */
 #define DT_INST_CLOCKS_LABEL_BY_NAME(inst, name) \
+	__DEPRECATED_MACRO \
 	DT_CLOCKS_LABEL_BY_NAME(DT_DRV_INST(inst), name)
 
 /**
@@ -309,7 +313,7 @@ extern "C" {
  * @return the label property of the node referenced at index 0
  * @see DT_CLOCKS_LABEL_BY_IDX()
  */
-#define DT_INST_CLOCKS_LABEL(inst) DT_INST_CLOCKS_LABEL_BY_IDX(inst, 0)
+#define DT_INST_CLOCKS_LABEL(inst) DT_INST_CLOCKS_LABEL_BY_IDX(inst, 0) __DEPRECATED_MACRO
 
 /**
  * @brief Get a DT_DRV_COMPAT instance's clock specifier's cell value
