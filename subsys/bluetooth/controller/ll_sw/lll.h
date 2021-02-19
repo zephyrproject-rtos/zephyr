@@ -114,6 +114,12 @@ enum {
 			       1),
 #endif /* CONFIG_BT_CONN */
 
+#if defined(CONFIG_BT_CTLR_CONN_ISO_GROUPS)
+	TICKER_ID_CONN_ISO_BASE,
+	TICKER_ID_CONN_ISO_LAST = ((TICKER_ID_CONN_ISO_BASE) +
+				   (CONFIG_BT_CTLR_CONN_ISO_GROUPS) - 1),
+#endif /* CONFIG_BT_CTLR_CONN_ISO_GROUPS */
+
 #if defined(CONFIG_BT_CTLR_USER_EXT) && \
 	(CONFIG_BT_CTLR_USER_TICKER_ID_RANGE > 0)
 	TICKER_ID_USER_BASE,
@@ -280,8 +286,8 @@ struct node_rx_hdr {
 	union {
 		struct node_rx_ftr rx_ftr;
 #if defined(CONFIG_BT_CTLR_SYNC_ISO) || \
-	defined(BT_CTLR_PERIPHERAL_ISO) || \
-	defined(BT_CTLR_CENTRAL_ISO)
+	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) || \
+	defined(CONFIG_BT_CTLR_CENTRAL_ISO)
 		struct node_rx_iso_meta rx_iso_meta;
 #endif
 #if defined(CONFIG_BT_CTLR_RX_PDU_META)
@@ -324,6 +330,10 @@ enum {
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_OBSERVER */
+
+#if defined(CONFIG_BT_CTLR_CONN_ISO_STREAMS)
+	EVENT_DONE_EXTRA_TYPE_CIS,
+#endif /* CONFIG_BT_CTLR_CONN_ISO_STREAMS */
 
 /* Following proprietary defines must be at end of enum range */
 #if defined(CONFIG_BT_CTLR_USER_EXT)

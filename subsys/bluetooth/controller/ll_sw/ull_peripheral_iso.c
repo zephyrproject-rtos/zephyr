@@ -5,17 +5,62 @@
  */
 
 #include <zephyr.h>
+#include <bluetooth/buf.h>
+#include <sys/byteorder.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_ull_peripheral_iso
 #include "common/log.h"
 #include "hal/debug.h"
 
+#include "util/memq.h"
+#include "ticker/ticker.h"
+
+#include "conn_internal.h"
+#include "hal/ticker.h"
+#include "util/mayfly.h"
+
+#include "pdu.h"
+#include "lll.h"
+#include "hal/ccm.h"
+#include "lll_conn.h"
+#include "lll_conn_iso.h"
+#include "ull_conn_types.h"
+#include "ull_conn_internal.h"
+#include "ull_conn_iso_types.h"
+#include "ull_conn_iso_internal.h"
+#include "ull_internal.h"
+
+#include "lll_vendor.h"
+#include "lll_peripheral_iso.h"
+
 uint8_t ll_cis_accept(uint16_t handle)
 {
-	ARG_UNUSED(handle);
+	struct ll_conn *acl_conn = NULL;
 
-	return BT_HCI_ERR_CMD_DISALLOWED;
+	for (int h = 0; h < CONFIG_BT_MAX_CONN; h++) {
+		struct ll_conn *conn = ll_conn_get(h);
+
+		if (handle == conn->llcp_cis.cis_handle) {
+			/* ACL connection found */
+			acl_conn = conn;
+			break;
+		}
+	}
+
+	if (!acl_conn) {
+		BT_ERR("No connection found for handle %u", handle);
+		return BT_HCI_ERR_UNKNOWN_CONN_ID;
+	}
+
+	if (acl_conn->lll.role == BT_CONN_ROLE_MASTER) {
+		BT_ERR("Not allowed for central");
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	acl_conn->llcp_cis.req++;
+
+	return 0;
 }
 
 uint8_t ll_cis_reject(uint16_t handle, uint8_t reason)
@@ -34,4 +79,207 @@ int ull_peripheral_iso_init(void)
 int ull_peripheral_iso_reset(void)
 {
 	return 0;
+}
+
+uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
+				   struct pdu_data_llctrl_cis_req *req,
+				   uint16_t *cis_handle)
+{
+	struct ll_conn_iso_group *cig;
+	struct ll_conn_iso_stream *cis;
+
+	/* Get CIG by id */
+	cig = ll_conn_iso_group_get_by_id(req->cig_id);
+	if (!cig) {
+		/* CIG does not exist - create it */
+		cig = ll_conn_iso_group_acquire();
+		if (!cig) {
+			/* No space for new CIG */
+			return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
+		}
+
+		memset(&cig->lll, 0, sizeof(cig->lll));
+
+		cig->cig_id = req->cig_id;
+		cig->lll.handle = 0xFFFF;
+		cig->lll.role = acl->lll.role;
+
+		for (int i = 0; i < CONFIG_BT_CTLR_CONN_ISO_STREAMS_PER_GROUP;
+		     i++) {
+			cig->cis_handles[i] = 0xFFFF;
+			cig->lll.cis_handles[cig->lll.num_cis] = 0xFFFF;
+		}
+
+		ull_hdr_init(&cig->ull);
+		lll_hdr_init(&cig->lll, cig);
+	}
+
+	if (cig->lll.num_cis == CONFIG_BT_CTLR_CONN_ISO_STREAMS_PER_GROUP) {
+		/* No space in CIG for new CIS */
+		return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
+	}
+
+	/* Acquire new CIS */
+	cis = ll_conn_iso_stream_acquire();
+	if (cis == NULL) {
+		/* No space for new CIS */
+		return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
+	}
+
+	cig->iso_interval = sys_le16_to_cpu(req->iso_interval);
+
+	cis->cis_id = req->cis_id;
+	cis->established = 0;
+	cis->group = cig;
+
+	cis->lll.acl_handle = acl->lll.handle;
+	cis->lll.sub_interval = sys_get_le24(req->sub_interval);
+	cis->lll.num_subevents = req->nse;
+	cis->lll.next_subevent = 0;
+	cis->lll.sn = 0;
+	cis->lll.nesn = 0;
+	cis->lll.cie = 0;
+
+	cis->lll.rx.phy = req->c_phy;
+	cis->lll.rx.burst_number = req->c_bn;
+	cis->lll.rx.flush_timeout = req->c_ft;
+	cis->lll.rx.max_octets = sys_le16_to_cpu(req->c_max_pdu);
+
+	cis->lll.tx.phy = req->p_phy;
+	cis->lll.tx.burst_number = req->p_bn;
+	cis->lll.tx.flush_timeout = req->p_ft;
+	cis->lll.tx.max_octets = sys_le16_to_cpu(req->p_max_pdu);
+
+
+	*cis_handle = ll_conn_iso_stream_handle_get(cis);
+	cig->lll.cis_handles[cig->lll.num_cis] = *cis_handle;
+	cig->cis_handles[cig->lll.num_cis] = *cis_handle;
+	cig->lll.num_cis++;
+
+	return 0;
+}
+
+uint8_t ull_peripheral_iso_setup(struct pdu_data_llctrl_cis_ind *ind,
+				 uint8_t cig_id, uint16_t cis_handle)
+{
+	struct ll_conn_iso_stream *cis = NULL;
+	struct ll_conn_iso_group *cig;
+
+	/* Get CIG by id */
+	cig = ll_conn_iso_group_get_by_id(cig_id);
+	if (!cig) {
+		return BT_HCI_ERR_UNSPECIFIED;
+	}
+
+	cig->lll.handle = ll_conn_iso_group_handle_get(cig);
+	cig->sync_delay = sys_get_le24(ind->cig_sync_delay);
+
+	/* Find CIS in CIG. NOTE: We could look up via handle, but we want to
+	 * sanity check the CIG/CIS link.
+	 */
+	for (int i = 0; i < CONFIG_BT_CTLR_CONN_ISO_STREAMS_PER_GROUP; i++) {
+		if (cig->cis_handles[i] == cis_handle) {
+			cis = ll_conn_iso_stream_get(cig->cis_handles[i]);
+			break;
+		}
+	}
+
+	if (!cis) {
+		return BT_HCI_ERR_UNSPECIFIED;
+	}
+
+	cis->sync_delay = sys_get_le24(ind->cis_sync_delay);
+	cis->lll.handle = cis_handle;
+	cis->lll.offset = sys_get_le24(ind->cis_offset);
+	cis->lll.event_count = -1;
+	memcpy(cis->lll.access_addr, ind->aa, sizeof(ind->aa));
+
+	return 0;
+}
+
+static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
+		      uint16_t lazy, void *param)
+{
+	static memq_link_t link;
+	static struct mayfly mfy = { 0, 0, &link, NULL,
+				     lll_peripheral_iso_prepare };
+	static struct lll_prepare_param p;
+	struct ll_conn_iso_group *cig;
+	struct ll_conn_iso_stream *cis;
+	uint32_t err;
+	uint8_t ref;
+
+	cig = param;
+
+	/* Check if stopping ticker (on disconnection, race with ticker expiry)
+	 */
+	if (unlikely(cig->lll.handle == 0xFFFF)) {
+		return;
+	}
+
+	/* Increment CIS event counters */
+	for (int i = 0; i < cig->lll.num_cis; i++)  {
+		cis = ll_conn_iso_stream_get(cig->cis_handles[i]);
+		cis->lll.event_count++;
+	}
+
+	/* Increment prepare reference count */
+	ref = ull_ref_inc(&cig->ull);
+	LL_ASSERT(ref);
+
+	/* Append timing parameters */
+	p.ticks_at_expire = ticks_at_expire;
+	p.remainder = remainder;
+	p.lazy = lazy;
+	p.param = &cig->lll;
+	mfy.param = &p;
+
+	/* Kick LLL prepare */
+	err = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL,
+			     0, &mfy);
+	LL_ASSERT(!err);
+}
+
+static void ticker_op_cb(uint32_t status, void *param)
+{
+	ARG_UNUSED(param);
+
+	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
+}
+
+void ull_peripheral_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire)
+{
+	struct ll_conn_iso_group *cig;
+	struct ll_conn_iso_stream *cis;
+	uint32_t ticker_status;
+	uint32_t ticks_interval;
+	uint8_t ticker_id;
+
+	cig = ll_conn_iso_group_get_by_id(acl->llcp_cis.cig_id);
+	cis = ll_conn_iso_stream_get(acl->llcp_cis.cis_handle);
+
+	ticker_id = TICKER_ID_CONN_ISO_BASE +
+		    ll_conn_iso_group_handle_get(cig);
+	ticks_interval = HAL_TICKER_US_TO_TICKS(cig->iso_interval *
+						CONN_INT_UNIT_US);
+
+	/* Start CIS peripheral CIG ticker. TODO: Handle multiple CISes - only
+	 * start ticker for first CIS.
+	 */
+	ticker_status = ticker_start(TICKER_INSTANCE_ID_CTLR,
+				     TICKER_USER_ID_ULL_HIGH,
+				     ticker_id,
+				     ticks_at_expire,
+				     HAL_TICKER_US_TO_TICKS(cis->offset -
+					EVENT_OVERHEAD_START_US),
+				     ticks_interval,
+				     HAL_TICKER_REMAINDER(ticks_interval),
+				     TICKER_NULL_LAZY,
+				     0,
+				     ticker_cb, cig,
+				     ticker_op_cb, NULL);
+
+	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
+		  (ticker_status == TICKER_STATUS_BUSY));
+
 }
