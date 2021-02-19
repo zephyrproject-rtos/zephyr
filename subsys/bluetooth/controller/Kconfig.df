@@ -92,7 +92,6 @@ config BT_CTLR_DF_CTE_RX
 config BT_CTLR_DF_CONN_CTE_RSP
 	bool "Enable Connection CTE Response feature"
 	depends on BT_CTLR_DF_CTE_TX && BT_CONN
-	default y
 	help
 	  Enable support for Bluetooth v5.1 Connection CTE Response feature
 	  in controller.
