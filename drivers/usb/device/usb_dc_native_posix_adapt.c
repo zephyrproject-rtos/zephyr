@@ -209,19 +209,6 @@ static void handle_usbip_submit(int connfd, struct usbip_header *hdr)
 	}
 }
 
-bool usbip_skip_setup(void)
-{
-	uint64_t setup;
-
-	LOG_DBG("Skip 8 bytes");
-
-	if (usbip_recv((void *)&setup, sizeof(setup)) != sizeof(setup)) {
-		return false;
-	}
-
-	return true;
-}
-
 static void handle_usbip_unlink(int connfd, struct usbip_header *hdr)
 {
 	int read;
@@ -232,12 +219,6 @@ static void handle_usbip_unlink(int connfd, struct usbip_header *hdr)
 	read = recv(connfd, &hdr->u, sizeof(hdr->u), 0);
 	if (read != sizeof(hdr->u)) {
 		LOG_ERR("recv() failed: %s", strerror(errno));
-		return;
-	}
-
-	/* Read USB setup, not handled */
-	if (!usbip_skip_setup()) {
-		LOG_ERR("setup skipping failed");
 		return;
 	}
 
