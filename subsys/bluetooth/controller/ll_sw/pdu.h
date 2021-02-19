@@ -643,7 +643,7 @@ struct pdu_data_llctrl_cis_rsp {
 } __packed;
 
 struct pdu_data_llctrl_cis_ind {
-	uint32_t aa;
+	uint8_t  aa[4];
 	uint8_t  cis_offset[3];
 	uint8_t  cig_sync_delay[3];
 	uint8_t  cis_sync_delay[3];
