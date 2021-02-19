@@ -175,6 +175,13 @@
 #define FLASH_TICKER_USER_APP_OPS 0
 #endif
 
+#if defined(CONFIG_BT_CTLR_CONN_ISO_GROUPS)
+#define BT_CIG_TICKER_NODES ((TICKER_ID_CONN_ISO_LAST) -
+			     (TICKER_ID_CONN_ISO_BASE) + 1)
+#else
+#define BT_CIG_TICKER_NODES 0
+#endif
+
 #if defined(CONFIG_BT_CTLR_USER_EXT)
 #define USER_TICKER_NODES         CONFIG_BT_CTLR_USER_TICKER_ID_RANGE
 #else
@@ -190,6 +197,7 @@
 				   BT_SCAN_SYNC_TICKER_NODES + \
 				   BT_CONN_TICKER_NODES + \
 				   FLASH_TICKER_NODES + \
+				   BT_CIG_TICKER_NODES + \
 				   USER_TICKER_NODES)
 #define TICKER_USER_APP_OPS       (TICKER_USER_THREAD_OPS + \
 				   FLASH_TICKER_USER_APP_OPS)
@@ -1015,6 +1023,15 @@ void ll_rx_dequeue(void)
 		__fallthrough;
 #endif /* CONFIG_BT_CTLR_USER_EVT_RANGE > 0 */
 
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+	case NODE_RX_TYPE_CIS_REQUEST:
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
+
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) || \
+	defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+	case NODE_RX_TYPE_CIS_ESTABLISHED:
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO || CONFIG_BT_CTLR_CENTRAL_ISO */
+
 	/* Ensure that at least one 'case' statement is present for this
 	 * code block.
 	 */
@@ -1174,6 +1191,15 @@ void ll_rx_mem_release(void **node_rx)
 #if CONFIG_BT_CTLR_USER_EVT_RANGE > 0
 		case NODE_RX_TYPE_USER_START ... NODE_RX_TYPE_USER_END - 1:
 #endif /* CONFIG_BT_CTLR_USER_EVT_RANGE > 0 */
+
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+		case NODE_RX_TYPE_CIS_REQUEST:
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
+
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) || \
+	defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+		case NODE_RX_TYPE_CIS_ESTABLISHED:
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO || CONFIG_BT_CTLR_CENTRAL_ISO */
 
 		/* Ensure that at least one 'case' statement is present for this
 		 * code block.
@@ -2268,6 +2294,12 @@ static inline void rx_demux_event_done(memq_link_t *link,
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 #endif /* CONFIG_BT_OBSERVER */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
+
+#if defined(CONFIG_BT_CTLR_CONN_ISO_STREAMS)
+	case EVENT_DONE_EXTRA_TYPE_CIS:
+		ull_conn_iso_done(done);
+		break;
+#endif /* CONFIG_BT_CTLR_CONN_ISO_STREAMS */
 
 #if defined(CONFIG_BT_CTLR_USER_EXT)
 	case EVENT_DONE_EXTRA_TYPE_USER_START
