@@ -89,6 +89,8 @@
 /* Offset Units field encoding */
 #define OFFS_UNIT_30_US         30
 #define OFFS_UNIT_300_US        300
+/* Value specified in BT Spec. Vol 6, Part B, section 2.3.4.6 */
+#define OFFS_ADJUST_US          245760
 
 /* transmitWindowDelay times (us) */
 #define WIN_DELAY_LEGACY     1250
@@ -331,9 +333,11 @@ struct pdu_adv_sync_info {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 	uint16_t offs:13;
 	uint16_t offs_units:1;
-	uint16_t rfu:2;
+	uint16_t offs_adjust:1;
+	uint16_t rfu:1;
 #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-	uint16_t rfu:2;
+	uint16_t rfu:1;
+	uint16_t offs_adjust:1;
 	uint16_t offs_units:1;
 	uint16_t offs:13;
 #else
