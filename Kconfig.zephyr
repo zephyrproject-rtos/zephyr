@@ -183,6 +183,23 @@ config SRAM_OFFSET
 
 	  If unsure, leave at the default value 0.
 
+config CAN_LINK_IN_VIRT
+	bool
+	help
+	  Hidden option to indicate that the architecture, SoC or board
+	  linker script can link the kernel in virtual address space.
+
+config KERNEL_LINK_IN_VIRT
+	bool "Link Kernel in Virtual Address Space"
+	depends on MMU
+	depends on CAN_LINK_IN_VIRT
+	help
+	  Enable linking the kernel in virtual address space defined by
+	  KERNEL_VM_BASE, KERNEL_VM_SIZE and KERNEL_VM_OFFSET.
+
+	  Requires linker script support. If unsure, says N and the kernel
+	  will be linked in physical address space.
+
 endmenu
 
 menu "Compiler Options"
