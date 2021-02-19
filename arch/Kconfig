@@ -62,6 +62,7 @@ config X86
 	select ARCH_HAS_TIMING_FUNCTIONS
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
 	select ARCH_HAS_DEMAND_PAGING
+	select CAN_LINK_IN_VIRT
 	help
 	  x86 architecture
 

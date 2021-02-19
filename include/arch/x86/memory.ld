@@ -11,6 +11,12 @@
  * By default, the kernel is linked at its physical address and all addresses
  * are in RAM.
  *
+ * If CONFIG_KERNEL_LINK_IN_VIRT is enabled, the kernel is linked at
+ * the virtual address space defined by CONFIG_KERNEL_VM_BASE,
+ * and CONFIG_KERNEL_VM_SIZE. CONFIG_KERNEL_VM_OFFSET defines the offset of
+ * the start of virtual address space to place the kernel. This allows
+ * the kernel to have a bigger address space.
+ *
  * If CONFIG_XIP is enabled, then another MEMORY region is declared for ROM,
  * and this is where the Zephyr image is booted from. The linker LMAs and VMAs
  * are set up, such that read/write data/bss have their VMA addresses
@@ -28,8 +34,23 @@
 #define PHYS_RAM_ADDR		DT_REG_ADDR(DT_CHOSEN(zephyr_sram))
 #define PHYS_RAM_SIZE		DT_REG_SIZE(DT_CHOSEN(zephyr_sram))
 
-#define KERNEL_BASE_ADDR  (PHYS_RAM_ADDR + CONFIG_SRAM_OFFSET)
-#define KERNEL_RAM_SIZE   (PHYS_RAM_SIZE - CONFIG_SRAM_OFFSET)
+#ifdef CONFIG_KERNEL_LINK_IN_VIRT
+
+/* Linked at virtual address space */
+#define KERNEL_BASE_ADDR	\
+	(CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_VM_OFFSET)
+#define KERNEL_RAM_SIZE		\
+	(CONFIG_KERNEL_VM_SIZE - CONFIG_KERNEL_VM_OFFSET)
+
+#else
+
+/* Linked at physical address */
+#define KERNEL_BASE_ADDR	\
+	(PHYS_RAM_ADDR + CONFIG_SRAM_OFFSET)
+#define KERNEL_RAM_SIZE		\
+	(PHYS_RAM_SIZE - CONFIG_SRAM_OFFSET)
+
+#endif /* CONFIG_DEMAND_PAGING */
 
 #ifdef CONFIG_XIP
   /* "ROM" is flash, we leave rodata and text there and just copy in data.
