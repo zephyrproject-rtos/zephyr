@@ -455,6 +455,25 @@ static void update_cache(int preempt_ok)
 #endif
 }
 
+static bool thread_active_elsewhere(struct k_thread *thread)
+{
+	/* True if the thread is currently running on another CPU.
+	 * There are more scalable designs to answer this question in
+	 * constant time, but this is fine for now.
+	 */
+#ifdef CONFIG_SMP
+	int currcpu = _current_cpu->id;
+
+	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+		if ((i != currcpu) &&
+		    (_kernel.cpus[i].current == thread)) {
+			return true;
+		}
+	}
+#endif
+	return false;
+}
+
 static void ready_thread(struct k_thread *thread)
 {
 #ifdef CONFIG_KERNEL_COHERENCE
@@ -477,7 +496,9 @@ static void ready_thread(struct k_thread *thread)
 void z_ready_thread(struct k_thread *thread)
 {
 	LOCKED(&sched_spinlock) {
-		ready_thread(thread);
+		if (!thread_active_elsewhere(thread)) {
+			ready_thread(thread);
+		}
 	}
 }
 
