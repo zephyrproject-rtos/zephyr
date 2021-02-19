@@ -62,7 +62,7 @@ Here's a quick summary of resources to help you find your way around:
   subgroups`_ have their own archives and sign-up pages.
 * **Nightly CI Build Status**: https://lists.zephyrproject.org/g/builds
   The builds@lists.zephyrproject.org mailing list archives the CI
-  (shippable) nightly build results.
+  (buildkite) nightly build results.
 * **Chat**: Zephyr's Slack workspace is https://zephyrproject.slack.com.  Use
   this `Slack Invite`_ to register.
 * **Contributing**: see the `Contribution Guide`_

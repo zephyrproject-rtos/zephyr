@@ -167,7 +167,7 @@ on https://github.com and have Git tools available on your development system.
    (Linux, macOS, and Windows) but some of the tools used in the sections below
    are only available on Linux and macOS. On Windows, instead of running these
    tools yourself, you will need to rely on the Continuous Integration (CI)
-   service ``shippable``, which runs automatically on GitHub when you submit
+   service ``buildkite``, which runs automatically on GitHub when you submit
    your Pull Request (PR).  You can see any failure results in the Shippable
    details link near the end of the PR conversation list. See
    `Continuous Integration`_ for more information
@@ -224,8 +224,8 @@ every Pull Request (PR) in order to verify several aspects of the PR:
 * Twister builds for multiple architectures and boards
 * Documentation build to verify any doc changes
 
-CI is run on the ``shippable`` cloud service and it uses the same tools
-described in the `Contribution Tools`_ section.
+CI is run both on the ``buildkite`` cloud service and Github Actions and it uses
+the same tools described in the `Contribution Tools`_ section.
 The CI results must be green indicating "All checks have passed" before
 the Pull Request can be merged.  CI is run when the PR is created, and
 again every time the PR is modified with a commit.
@@ -238,8 +238,9 @@ of the run you will see:
 * "All checks have failed"
 
 In case of failure you can click on the "Details" link presented below the
-failure message in order to navigate to ``shippable`` and inspect the results.
-Once you click on the link you will be taken to the ``shippable`` summary
+failure message in order to navigate to ``buildkite`` or ``Github Actions``
+and inspect the results.
+Once you click on the link you will be taken to the ``buildkite`` summary
 results page where a table with all the different builds will be shown. To see
 what build or test failed click on the row that contains the failed (i.e.
 non-green) build and then click on the "Tests" tab to see the console output
@@ -247,7 +248,7 @@ messages indicating the failure.
 
 The `builds@lists.zephyrproject.org mailing list
 <https://lists.zephyrproject.org/g/builds>`_
-archives the CI (shippable) nightly build results.
+archives the CI (buildkite) nightly build results.
 
 Coding Guidelines
 *****************
