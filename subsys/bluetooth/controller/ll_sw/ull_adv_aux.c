@@ -1018,6 +1018,10 @@ static inline void sync_info_fill(struct lll_adv_sync *lll_sync,
 
 	/* NOTE: sync offset and offset unit filled by secondary prepare */
 	si->offs_units = 0U;
+	/* If sync_info is part of ADV PDU the offs_adjust field
+	 * is always set to 0.
+	 */
+	si->offs_adjust = 0U;
 	si->offs = 0U;
 
 	sync = (void *)HDR_LLL2EVT(lll_sync);
