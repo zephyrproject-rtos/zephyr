@@ -800,7 +800,7 @@ void z_init_thread_base(struct _thread_base *thread_base, int priority,
 		       uint32_t initial_state, unsigned int options)
 {
 	/* k_q_node is initialized upon first insertion in a list */
-
+	thread_base->pended_on = NULL;
 	thread_base->user_options = (uint8_t)options;
 	thread_base->thread_state = (uint8_t)initial_state;
 
