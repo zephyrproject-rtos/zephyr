@@ -86,16 +86,28 @@ struct mcs_instance_t {
 	struct bt_gatt_subscribe_params search_results_obj_sub_params;
 #endif /* CONFIG_BT_OTC */
 
-	/* The write buffer is used for track position, playback speed */
-	/* playing order, object IDs and the control point */
-	/* The largest of these is the object ID, which is a UINT48. */
-	/* But the buffer is also used for the search control point, */
-	/* which can be larger */
-	/* If there is no OTC, the largest is the Object ID */
+	/* The write buffer is used for
+	 * - track position    (4 octets)
+	 * - playback speed    (1 octet)
+	 * - playing order     (1 octet)
+	 * - the control point (5 octets)
+	 *                     (1 octet opcode + optionally 4 octet param)
+	 *                     (mpl_op_t.opcode  + mpl_opt_t.param)
+	 * If the object transfer client is included, it is also used for
+	 * - object IDs (6 octets - BT_OTS_OBJ_ID_SIZE) and
+	 * - the search control point (64 octets - SEARCH_LEN_MAX)
+	 *
+	 * If there is no OTC, the largest is control point
+	 * If OTC is included, the largest is the search control point
+	 */
 #ifdef CONFIG_BT_OTC
 	char write_buf[SEARCH_LEN_MAX];
 #else
-	char write_buf[BT_OTS_OBJ_ID_SIZE];
+	/* Trick to be able to use sizeof on members of a struct type */
+	/* TODO: Rewrite the mpl_op_t to have the "use_param" parameter */
+	/* separately, and the opcode and param alone as a struct */
+	char write_buf[sizeof(((struct mpl_op_t *)0)->opcode) +
+		       sizeof(((struct mpl_op_t *)0)->param)];
 #endif /* CONFIG_BT_OTC */
 
 	struct bt_gatt_write_params     write_params;
