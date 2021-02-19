@@ -270,6 +270,16 @@ static void test_stream_flash_buf_size_greater_than_page_size(void)
 	zassert_true(rc < 0, "expected failure");
 }
 
+static int bad_read(const struct device *dev, off_t off, void *data, size_t len)
+{
+	return -EINVAL;
+}
+
+static int fake_write(const struct device *dev, off_t off, const void *data, size_t len)
+{
+	return 0;
+}
+
 static void test_stream_flash_buffered_write_callback(void)
 {
 	int rc;
@@ -304,6 +314,30 @@ static void test_stream_flash_buffered_write_callback(void)
 	cb_buf = NULL; /* Don't verify other parameters of the callback */
 	rc = stream_flash_buffered_write(&ctx, write_buf, BUF_LEN, true);
 	zassert_equal(rc, -EFAULT, "expected failure from callback");
+	/* Expect that the BUF_LEN of bytes got stuck in buffer as the  verification callback
+	 * failed.
+	 */
+	zassert_equal(ctx.buf_bytes, BUF_LEN, "Expected bytes to be left in buffer");
+
+	struct device fake_dev = *ctx.fdev;
+	struct flash_driver_api fake_api = *(struct flash_driver_api *)ctx.fdev->api;
+	struct stream_flash_ctx bad_ctx = ctx;
+	struct stream_flash_ctx cmp_ctx;
+
+	fake_api.read = bad_read;
+	/* Using fake write here because after previous write, with faked callback failure,
+	 * the flash is already written and real flash_write would cause failure.
+	 */
+	fake_api.write = fake_write;
+	fake_dev.api = &fake_api;
+	bad_ctx.fdev = &fake_dev;
+	/* Triger erase attempt */
+	cmp_ctx = bad_ctx;
+	/* Just flush buffer */
+	rc = stream_flash_buffered_write(&bad_ctx, write_buf, 0, true);
+	zassert_equal(rc, -EINVAL, "expected failure from flash_sync", rc);
+	zassert_equal(ctx.buf_bytes, BUF_LEN, "Expected bytes to be left in buffer");
+
 }
 
 static void test_stream_flash_flush(void)

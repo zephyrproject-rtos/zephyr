@@ -98,6 +98,7 @@ static int flash_sync(struct stream_flash_ctx *ctx)
 		rc = ctx->callback(ctx->buf, ctx->buf_bytes, write_addr);
 		if (rc != 0) {
 			LOG_ERR("callback failed: %d", rc);
+			return rc;
 		}
 	}
 
