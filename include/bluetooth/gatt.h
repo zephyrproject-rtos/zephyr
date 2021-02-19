@@ -290,7 +290,7 @@ struct bt_gatt_cpf {
 	uint8_t name_space;
 	/** Description of the characteristic as defined in a higher layer profile */
 	uint16_t description;
-} __packed;
+};
 
 /**
  * @defgroup bt_gatt_server GATT Server APIs

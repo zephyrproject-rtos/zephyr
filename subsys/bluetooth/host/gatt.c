@@ -1722,14 +1722,29 @@ ssize_t bt_gatt_attr_read_cud(struct bt_conn *conn,
 				 strlen(value));
 }
 
+struct gatt_cpf {
+	uint8_t  format;
+	int8_t   exponent;
+	uint16_t unit;
+	uint8_t  name_space;
+	uint16_t description;
+} __packed;
+
 ssize_t bt_gatt_attr_read_cpf(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, void *buf,
 			      uint16_t len, uint16_t offset)
 {
-	const struct bt_gatt_cpf *value = attr->user_data;
+	const struct bt_gatt_cpf *cpf = attr->user_data;
+	struct gatt_cpf value;
 
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
-				 sizeof(*value));
+	value.format = cpf->format;
+	value.exponent = cpf->exponent;
+	value.unit = sys_cpu_to_le16(cpf->unit);
+	value.name_space = cpf->name_space;
+	value.description = sys_cpu_to_le16(cpf->description);
+
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, &value,
+				 sizeof(value));
 }
 
 struct notify_data {
