@@ -1408,9 +1408,9 @@ void shell_vfprintf(const struct shell *shell, enum shell_vt100_color color,
 {
 	__ASSERT_NO_MSG(shell);
 	__ASSERT(!k_is_in_isr(), "Thread context required.");
+	__ASSERT_NO_MSG(shell->ctx);
 	__ASSERT_NO_MSG((shell->ctx->internal.flags.cmd_ctx == 1) ||
 			(k_current_get() != shell->ctx->tid));
-	__ASSERT_NO_MSG(shell->ctx);
 	__ASSERT_NO_MSG(shell->fprintf_ctx);
 	__ASSERT_NO_MSG(fmt);
 
