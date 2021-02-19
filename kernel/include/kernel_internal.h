@@ -151,7 +151,7 @@ bool z_stack_is_user_capable(k_thread_stack_t *stack);
 /* Memory domain setup hook, called from z_setup_new_thread() */
 void z_mem_domain_init_thread(struct k_thread *thread);
 
-/* Memory domain teardown hook, called from z_thread_single_abort() */
+/* Memory domain teardown hook, called from z_thread_abort() */
 void z_mem_domain_exit_thread(struct k_thread *thread);
 
 /* This spinlock:

@@ -52,6 +52,7 @@ struct z_kernel _kernel;
 struct k_spinlock sched_spinlock;
 
 static void update_cache(int);
+static void end_thread(struct k_thread *thread);
 
 static inline int is_preempt(struct k_thread *thread)
 {
@@ -216,6 +217,11 @@ void z_requeue_current(struct k_thread *curr)
 }
 #endif
 
+static inline bool is_aborting(struct k_thread *thread)
+{
+	return (thread->base.thread_state & _THREAD_ABORTING) != 0;
+}
+
 static ALWAYS_INLINE struct k_thread *next_up(void)
 {
 	struct k_thread *thread;
@@ -259,6 +265,10 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 	 * "ready", it means "is _current already added back to the
 	 * queue such that we don't want to re-add it".
 	 */
+	if (is_aborting(_current)) {
+		end_thread(_current);
+	}
+
 	int queued = z_is_thread_queued(_current);
 	int active = !z_is_thread_prevented_from_running(_current);
 
@@ -1426,6 +1436,123 @@ int k_thread_cpu_mask_disable(k_tid_t thread, int cpu)
 }
 
 #endif /* CONFIG_SCHED_CPU_MASK */
+
+static inline void unpend_all(_wait_q_t *wait_q)
+{
+	struct k_thread *thread;
+
+	while ((thread = z_waitq_head(wait_q)) != NULL) {
+		unpend_thread_no_timeout(thread);
+		(void)z_abort_thread_timeout(thread);
+		arch_thread_return_value_set(thread, 0);
+		ready_thread(thread);
+	}
+}
+
+static void end_thread(struct k_thread *thread)
+{
+	/* We hold the lock, and the thread is known not to be running
+	 * anywhere.
+	 */
+	if ((thread->base.thread_state & _THREAD_DEAD) == 0) {
+		thread->base.thread_state |= _THREAD_DEAD;
+		thread->base.thread_state &= ~_THREAD_ABORTING;
+		if (z_is_thread_queued(thread)) {
+			dequeue_thread(&_kernel.ready_q.runq, thread);
+		}
+		if (thread->base.pended_on != NULL) {
+			unpend_thread_no_timeout(thread);
+		}
+		(void)z_abort_thread_timeout(thread);
+		unpend_all(&thread->join_queue);
+		update_cache(1);
+
+		sys_trace_thread_abort(thread);
+		z_thread_monitor_exit(thread);
+
+#ifdef CONFIG_USERSPACE
+		z_mem_domain_exit_thread(thread);
+		z_thread_perms_all_clear(thread);
+		z_object_uninit(thread->stack_obj);
+		z_object_uninit(thread);
+#endif
+	}
+}
+
+void z_thread_abort(struct k_thread *thread)
+{
+	k_spinlock_key_t key = k_spin_lock(&sched_spinlock);
+
+	if (thread->base.thread_state & _THREAD_DEAD) {
+		k_spin_unlock(&sched_spinlock, key);
+		return;
+	}
+
+#ifdef CONFIG_SMP
+	if (is_aborting(thread) && thread == _current && arch_is_in_isr()) {
+		/* Another CPU is spinning for us, don't deadlock */
+		end_thread(thread);
+	}
+
+	bool active = thread_active_elsewhere(thread);
+
+	if (active) {
+		/* It's running somewhere else, flag and poke */
+		thread->base.thread_state |= _THREAD_ABORTING;
+		arch_sched_ipi();
+	}
+
+	if (is_aborting(thread) && thread != _current) {
+		if (arch_is_in_isr()) {
+			/* ISRs can only spin waiting another CPU */
+			k_spin_unlock(&sched_spinlock, key);
+			while (is_aborting(thread)) {
+			}
+		} else if (active) {
+			/* Threads can join */
+			add_to_waitq_locked(_current, &thread->join_queue);
+			z_swap(&sched_spinlock, key);
+		}
+		return; /* lock has been released */
+	}
+#endif
+	end_thread(thread);
+	if (thread == _current && !arch_is_in_isr()) {
+		z_swap(&sched_spinlock, key);
+		__ASSERT(false, "aborted _current back from dead");
+	}
+	k_spin_unlock(&sched_spinlock, key);
+}
+
+#if !defined(CONFIG_ARCH_HAS_THREAD_ABORT)
+void z_impl_k_thread_abort(struct k_thread *thread)
+{
+	z_thread_abort(thread);
+}
+#endif
+
+int z_impl_k_thread_join(struct k_thread *thread, k_timeout_t timeout)
+{
+	k_spinlock_key_t key = k_spin_lock(&sched_spinlock);
+	int ret = 0;
+
+	if (thread->base.thread_state & _THREAD_DEAD) {
+		ret = 0;
+	} else if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+		ret = -EBUSY;
+	} else if (thread == _current ||
+		   thread->base.pended_on == &_current->join_queue) {
+		ret = -EDEADLK;
+	} else {
+		__ASSERT(!arch_is_in_isr(), "cannot join in ISR");
+		add_to_waitq_locked(_current, &thread->join_queue);
+		add_thread_timeout(_current, timeout);
+		return z_swap(&sched_spinlock, key);
+	}
+
+	k_spin_unlock(&sched_spinlock, key);
+	return ret;
+}
 
 #ifdef CONFIG_USERSPACE
 /* Special case: don't oops if the thread is uninitialized.  This is because
