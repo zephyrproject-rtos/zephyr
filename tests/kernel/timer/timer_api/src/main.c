@@ -732,6 +732,22 @@ void test_timeout_abs(void)
 #endif
 }
 
+void test_sleep_abs(void)
+{
+	const int sleep_ticks = 5;
+	int64_t start, end;
+
+	k_usleep(1); /* tick align */
+
+	start = k_uptime_ticks();
+	k_sleep(K_TIMEOUT_ABS_TICKS(start + sleep_ticks));
+	end = k_uptime_ticks();
+
+	zassert_equal(end, start + sleep_ticks,
+		      "expected wakeup at %lld, got %lld",
+		      start + sleep_ticks, end);
+}
+
 static void timer_init(struct k_timer *timer, k_timer_expiry_t expiry_fn,
 		       k_timer_stop_t stop_fn)
 {
@@ -767,6 +783,7 @@ void test_main(void)
 			 ztest_user_unit_test(test_timer_k_define),
 			 ztest_user_unit_test(test_timer_user_data),
 			 ztest_user_unit_test(test_timer_remaining),
-			 ztest_user_unit_test(test_timeout_abs));
+			 ztest_user_unit_test(test_timeout_abs),
+			 ztest_user_unit_test(test_sleep_abs));
 	ztest_run_test_suite(timer_api);
 }
