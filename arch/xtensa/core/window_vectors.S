@@ -55,6 +55,11 @@ _WindowOverflow4:
     s32e    a1, a5, -12     /* save a1 to call[j+1]'s stack frame */
     s32e    a2, a5,  -8     /* save a2 to call[j+1]'s stack frame */
     s32e    a3, a5,  -4     /* save a3 to call[j+1]'s stack frame */
+#ifdef CONFIG_KERNEL_COHERENCE
+    addi    a0,  a5, -16
+    dhwb    a0,  0
+    dhwb    a0,  12
+#endif
     rfwo                    /* rotates back to call[i] position */
 
 /* Window Underflow Exception for Call4
@@ -136,6 +141,15 @@ _WindowOverflow8:
     s32e    a5, a0, -28     /* save a5 to call[j]'s stack frame */
     s32e    a6, a0, -24     /* save a6 to call[j]'s stack frame */
     s32e    a7, a0, -20     /* save a7 to call[j]'s stack frame */
+#ifdef CONFIG_KERNEL_COHERENCE
+    addi    a0,  a0, -32
+    dhwb    a0,  0
+    dhwb    a0,  12
+    addi    a0,  a0, 32
+    addi    a0,  a9, -16
+    dhwb    a0,  0
+    dhwb    a0,  12
+#endif
     rfwo                    /* rotates back to call[i] position */
 
 /*
@@ -198,6 +212,14 @@ _WindowOverflow12:
     s32e    a9,  a0,  -28   /* save a9 to end of call[j]'s stack frame */
     s32e    a10, a0,  -24   /* save a10 to end of call[j]'s stack frame */
     s32e    a11, a0,  -20   /* save a11 to end of call[j]'s stack frame */
+#ifdef CONFIG_KERNEL_COHERENCE
+    addi    a0,  a0, -48
+    dhwb    a0,  0
+    dhwb    a0,  28
+    addi    a0, a13, -16
+    dhwb    a0, 0
+    dhwb    a0, 12
+#endif
     rfwo                    /* rotates back to call[i] position */
 
 /*
@@ -236,4 +258,3 @@ _WindowUnderflow12:
     rfwu
 
 #endif /* XCHAL_HAVE_WINDOWED */
-
