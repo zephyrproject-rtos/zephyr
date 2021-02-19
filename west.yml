@@ -152,6 +152,10 @@ manifest:
       path: rte/hello
       url: https://github.com/SpooniSpoon/hello-world
       revision: 639a7d7a326aa6a4ac1d11d51b27029cfd43154e
+    - name: IoBus
+      path: rte/iobus
+      url: https://github.com/RealtimeEngineering/iobus
+      revision: 6b8cf34663b98bd7bbaf26e8cdd31f6cea2dd6db
 
   self:
     path: zephyr
