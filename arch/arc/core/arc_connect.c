@@ -13,15 +13,9 @@
 #include <kernel.h>
 #include <arch/cpu.h>
 #include <spinlock.h>
-
+#include <kernel_internal.h>
 
 static struct k_spinlock arc_connect_spinlock;
-
-#define LOCKED(lck) for (k_spinlock_key_t __i = {},			\
-					  __key = k_spin_lock(lck);	\
-			!__i.key;					\
-			k_spin_unlock(lck, __key), __i.key = 1)
-
 
 /* Generate an inter-core interrupt to the target core */
 void z_arc_connect_ici_generate(uint32_t core)
