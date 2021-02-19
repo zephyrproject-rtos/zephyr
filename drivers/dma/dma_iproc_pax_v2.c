@@ -716,7 +716,7 @@ static int dma_iproc_pax_init(const struct device *dev)
 		LOG_DBG("RING%d,VERSION:0x%x\n", pd->ring[r].idx,
 			sys_read32(RM_RING_REG(pd, r, RING_VER)));
 
-		/* Allocate for 2 BD buffers + cmpl buffer + payload struct */
+		/* Allocate for 2 BD buffers + cmpl buffer + sync location */
 		pd->ring[r].ring_mem = (void *)((uintptr_t)cfg->bd_memory_base +
 					r * PAX_DMA_PER_RING_ALLOC_SIZE);
 		if (!pd->ring[r].ring_mem) {
@@ -731,7 +731,7 @@ static int dma_iproc_pax_init(const struct device *dev)
 		pd->ring[r].cmpl = (void *)mem_aligned;
 		pd->ring[r].bd = (void *)(mem_aligned +
 					  PAX_DMA_RM_CMPL_RING_SIZE);
-		pd->ring[r].payload = (void *)((uintptr_t)pd->ring[r].bd +
+		pd->ring[r].sync_loc = (void *)((uintptr_t)pd->ring[r].bd +
 				      PAX_DMA_RM_DESC_RING_SIZE *
 				      PAX_DMA_NUM_BD_BUFFS);
 
@@ -739,11 +739,11 @@ static int dma_iproc_pax_init(const struct device *dev)
 			pd->ring[r].idx,
 			pd->ring[r].ring_mem,
 			PAX_DMA_PER_RING_ALLOC_SIZE);
-		LOG_DBG("Ring%d,BD:0x%p, CMPL:0x%p, PL:0x%p\n",
+		LOG_DBG("Ring%d,BD:0x%p, CMPL:0x%p, SYNC_LOC:0x%p\n",
 			pd->ring[r].idx,
 			pd->ring[r].bd,
 			pd->ring[r].cmpl,
-			pd->ring[r].payload);
+			pd->ring[r].sync_loc);
 
 		/* Prepare ring desc table */
 		prepare_ring(&(pd->ring[r]));
@@ -962,11 +962,11 @@ static int dma_iproc_pax_process_dma_blocks(const struct device *dev,
 	/* account extra sync packet */
 	ring->curr.sync_data.opaque = ring->curr.opq;
 	ring->curr.sync_data.total_pkts = config->block_count;
-	memcpy((void *)&ring->sync_loc,
+	memcpy((void *)ring->sync_loc,
 	       (void *)&(ring->curr.sync_data), 4);
 	sync_pl.dest_address = ring->sync_pci.addr_lo |
 			   (uint64_t)ring->sync_pci.addr_hi << 32;
-	sync_pl.source_address = (uintptr_t)&ring->sync_loc;
+	sync_pl.source_address = (uintptr_t)ring->sync_loc;
 	sync_pl.block_size = 4; /* 4-bytes */
 
 	/* current toggle bit */
