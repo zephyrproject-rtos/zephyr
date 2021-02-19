@@ -348,6 +348,12 @@ static void test_stream_flash_buffered_write_whole_page(void)
 	VERIFY_WRITTEN(page_size, page_size);
 }
 
+/* Erase that never completes successfully */
+static int bad_erase(const struct device *dev, off_t offset, size_t size)
+{
+	return -EINVAL;
+}
+
 static void test_stream_flash_erase_page(void)
 {
 	int rc;
@@ -362,6 +368,29 @@ static void test_stream_flash_erase_page(void)
 	zassert_equal(rc, 0, "expected success");
 
 	VERIFY_ERASED(FLASH_BASE, page_size);
+
+	/*
+	 * Test failure in erase does not change context.
+	 * The test is done by replacing erase function of device API with fake
+	 * one that returns with an error, invoking the erase procedure
+	 * and than comparing state of context prior to call to the one after.
+	 */
+	struct device fake_dev = *ctx.fdev;
+	struct flash_driver_api fake_api = *(struct flash_driver_api *)ctx.fdev->api;
+	struct stream_flash_ctx bad_ctx = ctx;
+	struct stream_flash_ctx cmp_ctx;
+
+	fake_api.erase = bad_erase;
+	fake_dev.api = &fake_api;
+	bad_ctx.fdev = &fake_dev;
+	/* Triger erase attempt */
+	bad_ctx.last_erased_page_start_offset = FLASH_BASE - 16;
+	cmp_ctx = bad_ctx;
+
+	rc = stream_flash_erase_page(&bad_ctx, FLASH_BASE);
+	zassert_equal(memcmp(&bad_ctx, &cmp_ctx, sizeof(bad_ctx)), 0,
+		      "Ctx should not get altered");
+	zassert_equal(rc, -EINVAL, "Expected failure");
 }
 #else
 static void test_stream_flash_erase_page(void)
