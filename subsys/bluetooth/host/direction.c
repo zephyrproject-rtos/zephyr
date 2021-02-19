@@ -190,6 +190,7 @@ static int hci_df_set_adv_cte_tx_enable(struct bt_le_ext_adv *adv,
 				   buf, NULL);
 }
 
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
 /* @brief Function sets CTE parameters for connection object
  *
  * @param[in] cte_types         Allowed response CTE types
@@ -258,6 +259,7 @@ static int hci_df_set_conn_cte_tx_param(struct bt_conn *conn, uint8_t cte_types,
 
 	return err;
 }
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
 
 /* @brief Function initializes Direction Finding in Host
  *
