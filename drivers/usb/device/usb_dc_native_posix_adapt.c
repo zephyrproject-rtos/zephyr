@@ -432,12 +432,14 @@ int usbip_send(uint8_t ep, const uint8_t *data, size_t len)
 bool usbip_send_common(uint8_t ep, uint32_t data_len)
 {
 	struct usbip_submit_rsp rsp;
+	uint32_t ep_dir = USB_EP_DIR_IS_IN(ep) ? USBIP_DIR_IN : USBIP_DIR_OUT;
+	uint32_t ep_idx = USB_EP_GET_IDX(ep);
 
 	rsp.common.command = htonl(USBIP_RET_SUBMIT);
 	rsp.common.seqnum = htonl(seqnum_global);
 	rsp.common.devid = htonl(0);
-	rsp.common.direction = htonl(0); /* TODO get from ep */
-	rsp.common.ep = htonl(ep);
+	rsp.common.direction = htonl(ep_dir);
+	rsp.common.ep = htonl(ep_idx);
 
 	rsp.status = htonl(0);
 	rsp.actual_length = htonl(data_len);
