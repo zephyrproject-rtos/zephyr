@@ -22,7 +22,7 @@ set -xe
 
 twister_options=" --inline-logs -N -v --integration"
 export BSIM_OUT_PATH="${BSIM_OUT_PATH:-/opt/bsim/}"
-if [ ! -d "${BSIM_OUT_PATH}" ]; then
+if [ ! -d "${BSIM_OUT_PATH}x" ]; then
         unset BSIM_OUT_PATH
 fi
 export BSIM_COMPONENTS_PATH="${BSIM_OUT_PATH}/components/"
@@ -104,16 +104,21 @@ function run_bsim_bt_tests() {
 
 function get_tests_to_run() {
 	./scripts/zephyr_module.py --twister-out module_tests.args
-	./scripts/ci/get_modified_tests.py --commits ${commit_range} > modified_tests.args
-	./scripts/ci/get_modified_boards.py --commits ${commit_range} > modified_boards.args
+	./scripts/ci/get_twister_opt.py --commits ${commit_range}
 
 	if [ -s modified_boards.args ]; then
-		${twister} ${twister_options} +modified_boards.args --save-tests test_file_1.txt || exit 1
+		${twister} ${twister_options} +modified_boards.args \
+			--save-tests test_file_1.txt || exit 1
 	fi
 	if [ -s modified_tests.args ]; then
-		${twister} ${twister_options} +modified_tests.args --save-tests test_file_2.txt || exit 1
+		${twister} ${twister_options} +modified_tests.args \
+			--save-tests test_file_2.txt || exit 1
 	fi
-	rm -f modified_tests.args modified_boards.args
+	if [ -s modified_archs.args ]; then
+		${twister} ${twister_options} +modified_archs.args \
+			--save-tests test_file_3.txt || exit 1
+	fi
+	rm -f modified_tests.args modified_boards.args modified_archs.args
 }
 
 
@@ -209,6 +214,7 @@ if [ -n "$main_ci" ]; then
 # https://stackoverflow.com/questions/3398258/edit-shell-script-while-its-running
 		git rebase $remote/${branch}
 	else
+		echo "Full Run"
 		SC="full"
 	fi
 	$short_git_log
@@ -226,7 +232,7 @@ if [ -n "$main_ci" ]; then
 
 	# cleanup
 	rm -f test_file.txt
-	touch test_file_1.txt test_file_2.txt
+	touch test_file_1.txt test_file_2.txt test_file_3.txt
 
 	# In a pull-request see if we have changed any tests or board definitions
 	if [ -n "${pull_request_nr}" -o -n "${local_run}"  ]; then
@@ -235,16 +241,18 @@ if [ -n "$main_ci" ]; then
 
 	if [ "$SC" == "full" ]; then
 		# Save list of tests to be run
-		${twister} ${twister_options} --save-tests test_file_3.txt || exit 1
+		${twister} ${twister_options} --save-tests test_file_4.txt || exit 1
 	else
-		echo "test,arch,platform,status,extra_args,handler,handler_time,ram_size,rom_size" > test_file_3.txt
+		echo "test,arch,platform,status,extra_args,handler,handler_time,ram_size,rom_size" \
+			> test_file_4.txt
 	fi
 
 	# Remove headers from all files but the first one to generate one
 	# single file with only one header row
+	tail -n +2 test_file_3.txt > test_file_3_in.txt
 	tail -n +2 test_file_2.txt > test_file_2_in.txt
 	tail -n +2 test_file_1.txt > test_file_1_in.txt
-	cat test_file_3.txt test_file_2_in.txt test_file_1_in.txt > test_file.txt
+	cat test_file_4.txt test_file_3_in.txt test_file_2_in.txt test_file_1_in.txt > test_file.txt
 
 	echo "+++ run twister"
 
