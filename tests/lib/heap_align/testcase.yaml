@@ -1,3 +1,5 @@
 tests:
   lib.heap_align:
+    integration_platforms:
+      - native_posix
     tags: heap

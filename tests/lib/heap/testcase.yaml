@@ -9,5 +9,7 @@ tests:
   lib.heap:
     tags: heap
     platform_exclude: m2gl025_miv qemu_xtensa
+    integration_platforms:
+      - native_posix
     filter: not CONFIG_SOC_NSIM
     timeout: 480
