@@ -47,6 +47,9 @@
 #define TEST_SPI_NO_CS DT_NODELABEL(test_spi_no_cs)
 #define TEST_SPI_DEV_NO_CS DT_NODELABEL(test_spi_no_cs)
 
+#define TEST_PWM_CTLR_1 DT_NODELABEL(test_pwm1)
+#define TEST_PWM_CTLR_2 DT_NODELABEL(test_pwm2)
+
 #define TA_HAS_COMPAT(compat) DT_NODE_HAS_COMPAT(TEST_ARRAYS, compat)
 
 #define TO_STRING(x) TO_STRING_(x)
@@ -922,6 +925,22 @@ static void test_pwms(void)
 	/* DT_PWMS_LABEL */
 	zassert_true(!strcmp(DT_PWMS_LABEL(TEST_PH), "TEST_PWM_CTRL_1"), "");
 
+	/* DT_PWMS_CTLR_BY_IDX */
+	zassert_true(DT_SAME_NODE(DT_PWMS_CTLR_BY_IDX(TEST_PH, 0),
+				  TEST_PWM_CTLR_1), "");
+	zassert_true(DT_SAME_NODE(DT_PWMS_CTLR_BY_IDX(TEST_PH, 1),
+				  TEST_PWM_CTLR_2), "");
+
+	/* DT_PWMS_CTLR_BY_NAME */
+	zassert_true(DT_SAME_NODE(DT_PWMS_CTLR_BY_NAME(TEST_PH, red),
+				  TEST_PWM_CTLR_1), "");
+	zassert_true(DT_SAME_NODE(DT_PWMS_CTLR_BY_NAME(TEST_PH, green),
+				  TEST_PWM_CTLR_2), "");
+
+	/* DT_PWMS_CTLR */
+	zassert_true(DT_SAME_NODE(DT_PWMS_CTLR(TEST_PH),
+				  TEST_PWM_CTLR_1), "");
+
 	/* DT_PWMS_CELL_BY_IDX */
 	zassert_equal(DT_PWMS_CELL_BY_IDX(TEST_PH, 1, channel), 5, "");
 	zassert_equal(DT_PWMS_CELL_BY_IDX(TEST_PH, 1, period), 100, "");
@@ -977,6 +996,21 @@ static void test_pwms(void)
 
 	/* DT_INST_PWMS_LABEL */
 	zassert_true(!strcmp(DT_INST_PWMS_LABEL(0), "TEST_PWM_CTRL_1"), "");
+
+	/* DT_INST_PWMS_CTLR_BY_IDX */
+	zassert_true(DT_SAME_NODE(DT_INST_PWMS_CTLR_BY_IDX(0, 0),
+				  TEST_PWM_CTLR_1), "");
+	zassert_true(DT_SAME_NODE(DT_INST_PWMS_CTLR_BY_IDX(0, 1),
+				  TEST_PWM_CTLR_2), "");
+
+	/* DT_INST_PWMS_CTLR_BY_NAME */
+	zassert_true(DT_SAME_NODE(DT_INST_PWMS_CTLR_BY_NAME(0, red),
+				  TEST_PWM_CTLR_1), "");
+	zassert_true(DT_SAME_NODE(DT_INST_PWMS_CTLR_BY_NAME(0, green),
+				  TEST_PWM_CTLR_2), "");
+
+	/* DT_INST_PWMS_CTLR */
+	zassert_true(DT_SAME_NODE(DT_INST_PWMS_CTLR(0), TEST_PWM_CTLR_1), "");
 
 	/* DT_INST_PWMS_CELL_BY_IDX */
 	zassert_equal(DT_INST_PWMS_CELL_BY_IDX(0, 1, channel), 5, "");
