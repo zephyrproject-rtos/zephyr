@@ -8,6 +8,7 @@
 #include <device.h>
 #include <drivers/adc.h>
 #include <stdio.h>
+#include <math.h>
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include <logging/log.h>
@@ -25,6 +26,7 @@ LOG_MODULE_REGISTER(main);
 /* Bottom resistor value in ohms */
 #define BOTTOM_RESISTANCE 2000
 
+#ifndef CONFIG_NEWLIB_LIBC
 static double sqrt(double value)
 {
 	double sqrt = value / 3;
@@ -40,6 +42,7 @@ static double sqrt(double value)
 
 	return sqrt;
 }
+#endif /* CONFIG_NEWLIB_LIBC */
 
 static double rtd_temperature(int nom, double resistance)
 {
