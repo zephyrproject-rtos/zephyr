@@ -46,6 +46,7 @@ struct lll_conn {
 	uint8_t data_chan_count:6;
 	uint8_t data_chan_sel:1;
 	uint8_t role:1;
+	uint8_t initiated:1;
 
 	union {
 		struct {
@@ -59,6 +60,7 @@ struct lll_conn {
 #if defined(CONFIG_BT_PERIPHERAL)
 	struct {
 		uint8_t  latency_enabled:1;
+
 		uint32_t window_widening_periodic_us;
 		uint32_t window_widening_max_us;
 		uint32_t window_widening_prepare_us;
