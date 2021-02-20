@@ -608,7 +608,7 @@ config KERNEL_VM_OFFSET
 	  in page tables, the equation:
 
 	      virt = phys + ((KERNEL_VM_BASE + KERNEL_VM_OFFSET) -
-	                     SRAM_BASE_ADDRESS)
+	                     (SRAM_BASE_ADDRESS + SRAM_OFFSET))
 
 	  Will be used to convert between physical and virtual addresses for
 	  memory that is mapped at boot.

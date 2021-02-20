@@ -167,6 +167,22 @@ config LINKER_SORT_BY_ALIGNMENT
 	  in decreasing size of symbols. This helps to minimize
 	  padding between symbols.
 
+config HAS_SRAM_OFFSET
+	bool
+	help
+	  This option is selected by targets that require SRAM_OFFSET.
+
+config SRAM_OFFSET
+	hex "Kernel SRAM offset" if HAS_SRAM_OFFSET
+	default 0
+	help
+	  This option specifies the byte offset from the beginning of SRAM
+	  where the kernel begins. Changing this value from zero will affect
+	  the Zephyr image's link, and will decrease the total amount of
+	  SRAM available for use by application code.
+
+	  If unsure, leave at the default value 0.
+
 endmenu
 
 menu "Compiler Options"

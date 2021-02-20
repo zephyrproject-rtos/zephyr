@@ -41,7 +41,7 @@
 #define Z_KERNEL_VIRT_SIZE	(Z_KERNEL_VIRT_END - Z_KERNEL_VIRT_START)
 
 #define Z_VM_OFFSET	 ((CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_VM_OFFSET) - \
-			  CONFIG_SRAM_BASE_ADDRESS)
+			  (CONFIG_SRAM_BASE_ADDRESS + CONFIG_SRAM_OFFSET))
 
 /* Only applies to boot RAM mappings within the Zephyr image that have never
  * been remapped or paged out. Never use this unless you know exactly what you
