@@ -43,8 +43,8 @@ static double sqrt(double value)
 
 static double rtd_temperature(int nom, double resistance)
 {
-	double a0 =  3.90802E-3;
-	double b0 = -0.58020E-6;
+	const double a0 =  3.90802E-3;
+	const double b0 = -0.58020E-6;
 	double temp;
 
 	temp = -nom * a0;
