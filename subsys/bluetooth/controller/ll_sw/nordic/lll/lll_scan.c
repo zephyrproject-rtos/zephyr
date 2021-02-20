@@ -768,7 +768,7 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 	if (0) {
 #if defined(CONFIG_BT_CENTRAL)
 	/* Initiator */
-	} else if ((lll->conn) &&
+	} else if (lll->conn && !lll->conn->initiated &&
 		   isr_scan_init_check(lll, pdu_adv_rx, rl_idx)) {
 		struct lll_conn *lll_conn;
 		struct node_rx_ftr *ftr;
@@ -924,6 +924,8 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 		/* Stop further LLL radio events */
 		ret = lll_stop(lll);
 		LL_ASSERT(!ret);
+
+		lll->conn->initiated = 1;
 
 		rx = ull_pdu_rx_alloc();
 
