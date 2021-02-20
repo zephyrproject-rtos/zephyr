@@ -13,7 +13,17 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(main);
 
+/* Nominal RTD (PT100) resistance in ohms */
 #define RTD_NOMINAL_RESISTANCE 100
+
+/* ADC resolution in bits */
+#define ADC_RESOLUTION 24U
+
+/* ADC maximum value (taking sign bit into consideration) */
+#define ADC_MAX BIT_MASK(ADC_RESOLUTION - 1)
+
+/* Bottom resistor value in ohms */
+#define BOTTOM_RESISTANCE 2000
 
 static double sqrt(double value)
 {
@@ -65,7 +75,7 @@ void main(void)
 		.channels = BIT(0),
 		.buffer = &buffer,
 		.buffer_size = sizeof(buffer),
-		.resolution = 24,
+		.resolution = ADC_RESOLUTION,
 		.oversampling = 0,
 		.calibrate = 0
 	};
@@ -87,7 +97,7 @@ void main(void)
 		if (err) {
 			LOG_ERR("failed to read ADC (err %d)", err);
 		} else {
-			resistance = (buffer / 8388608.0) * 2000;
+			resistance = (buffer / (double)ADC_MAX) * BOTTOM_RESISTANCE;
 			printf("R: %.02f ohm\n", resistance);
 			printf("T: %.02f degC\n",
 				rtd_temperature(RTD_NOMINAL_RESISTANCE,
