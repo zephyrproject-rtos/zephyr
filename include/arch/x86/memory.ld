@@ -28,8 +28,8 @@
 #define PHYS_RAM_ADDR		DT_REG_ADDR(DT_CHOSEN(zephyr_sram))
 #define PHYS_RAM_SIZE		DT_REG_SIZE(DT_CHOSEN(zephyr_sram))
 
-#define KERNEL_BASE_ADDR  (PHYS_RAM_ADDR + CONFIG_X86_KERNEL_OFFSET)
-#define KERNEL_RAM_SIZE   (PHYS_RAM_SIZE - CONFIG_X86_KERNEL_OFFSET)
+#define KERNEL_BASE_ADDR  (PHYS_RAM_ADDR + CONFIG_SRAM_OFFSET)
+#define KERNEL_RAM_SIZE   (PHYS_RAM_SIZE - CONFIG_SRAM_OFFSET)
 
 #ifdef CONFIG_XIP
   /* "ROM" is flash, we leave rodata and text there and just copy in data.

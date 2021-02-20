@@ -181,9 +181,8 @@ endif # FPU || X86_64
 
 endmenu
 
-config X86_KERNEL_OFFSET
-	int "Kernel offset from beginning of RAM"
-	default 1048576
+config SRAM_OFFSET
+	default 0x100000 if X86_PC_COMPATIBLE
 	help
 	  A lot of x86 that resemble PCs have many reserved physical memory
 	  regions within the first megabyte. Specify an offset from the
@@ -194,6 +193,9 @@ config X86_KERNEL_OFFSET
 	  bootstrap code within the first 64K of physical memory.
 
 	  This value normally need to be page-aligned.
+
+config KERNEL_VM_OFFSET
+	default 0x100000 if MMU
 
 config MAX_IRQ_LINES
 	int "Number of IRQ lines"
@@ -248,6 +250,7 @@ config X86_PC_COMPATIBLE
 	bool
 	default y
 	select ARCH_HAS_RESERVED_PAGE_FRAMES
+	select HAS_SRAM_OFFSET
 	help
 	  Hidden option to signal building for PC-compatible platforms
 	  with BIOS, ACPI, etc.
