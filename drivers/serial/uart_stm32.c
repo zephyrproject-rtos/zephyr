@@ -1393,14 +1393,18 @@ static int uart_stm32_set_power_state(const struct device *dev,
 
 	/* setting a low power mode */
 	if (new_state != DEVICE_PM_ACTIVE_STATE) {
+#ifdef USART_ISR_BUSY
 		/* Make sure that no USART transfer is on-going */
 		while (LL_USART_IsActiveFlag_BUSY(UartInstance) == 1) {
 		}
+#endif
 		while (LL_USART_IsActiveFlag_TC(UartInstance) == 0) {
 		}
+#ifdef USART_ISR_REACK
 		/* Make sure that USART is ready for reception */
 		while (LL_USART_IsActiveFlag_REACK(UartInstance) == 0) {
 		}
+#endif
 		/* Clear OVERRUN flag */
 		LL_USART_ClearFlag_ORE(UartInstance);
 		/* Leave UartInstance unchanged */
