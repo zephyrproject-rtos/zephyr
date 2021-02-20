@@ -1079,13 +1079,6 @@ ALWAYS_INLINE void z_priq_dumb_add(sys_dlist_t *pq, struct k_thread *thread)
 
 void z_priq_dumb_remove(sys_dlist_t *pq, struct k_thread *thread)
 {
-#if defined(CONFIG_SWAP_NONATOMIC) && defined(CONFIG_SCHED_DUMB)
-	if (pq == &_kernel.ready_q.runq && thread == _current &&
-	    z_is_thread_prevented_from_running(thread)) {
-		return;
-	}
-#endif
-
 	__ASSERT_NO_MSG(!z_is_idle_thread_object(thread));
 
 	sys_dlist_remove(&thread->base.qnode_dlist);
@@ -1144,12 +1137,6 @@ void z_priq_rb_add(struct _priq_rb *pq, struct k_thread *thread)
 
 void z_priq_rb_remove(struct _priq_rb *pq, struct k_thread *thread)
 {
-#if defined(CONFIG_SWAP_NONATOMIC) && defined(CONFIG_SCHED_SCALABLE)
-	if (pq == &_kernel.ready_q.runq && thread == _current &&
-	    z_is_thread_prevented_from_running(thread)) {
-		return;
-	}
-#endif
 	__ASSERT_NO_MSG(!z_is_idle_thread_object(thread));
 
 	rb_remove(&pq->tree, &thread->base.qnode_rb);
@@ -1186,12 +1173,6 @@ ALWAYS_INLINE void z_priq_mq_add(struct _priq_mq *pq, struct k_thread *thread)
 
 ALWAYS_INLINE void z_priq_mq_remove(struct _priq_mq *pq, struct k_thread *thread)
 {
-#if defined(CONFIG_SWAP_NONATOMIC) && defined(CONFIG_SCHED_MULTIQ)
-	if (pq == &_kernel.ready_q.runq && thread == _current &&
-	    z_is_thread_prevented_from_running(thread)) {
-		return;
-	}
-#endif
 	int priority_bit = thread->base.prio - K_HIGHEST_THREAD_PRIO;
 
 	sys_dlist_remove(&thread->base.qnode_dlist);
