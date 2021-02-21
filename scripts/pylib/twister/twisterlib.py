@@ -1107,7 +1107,6 @@ class QEMUHandler(Handler):
                                              self.pid_fn, self.results, harness,
                                              self.ignore_unexpected_eof))
 
-        self.instance.results = harness.tests
         self.thread.daemon = True
         logger.debug("Spawning QEMUHandler Thread for %s" % self.name)
         self.thread.start()
@@ -1586,6 +1585,9 @@ class TestCase(DisablePyTestCollectionMixin):
     def __str__(self):
         return self.name
 
+    def __repr__(self):
+        return "<TestCase %s with %s>" % (self.name, self.result)
+
 class TestScenario(DisablePyTestCollectionMixin):
     """Class representing a test scenario
     """
@@ -1615,7 +1617,6 @@ class TestScenario(DisablePyTestCollectionMixin):
         self.source_dir = ""
         self.yamlfile = ""
         self.testcases = []
-        self._testcases = []
         self.name = self.get_unique(testcase_root, workdir, name)
         self.id = name
 
@@ -1645,7 +1646,13 @@ class TestScenario(DisablePyTestCollectionMixin):
 
     def add_testcase(self, name):
         tc = TestCase(name=name, scenario=self)
-        self._testcases.append(tc)
+        self.testcases.append(tc)
+
+
+    def get_case(self, name):
+        for c in self.testcases:
+            if c.name == name:
+                return c
 
     @staticmethod
     def get_unique(testcase_root, workdir, name):
@@ -1683,7 +1690,7 @@ class TestSuite():
     def dump(self):
         for scenario in self.scenarios:
             print(f"Scenario: {scenario}")
-            for c in scenario._testcases:
+            for c in scenario.testcases:
                 print(f"  Testcase: {c}")
 
     def add_scenario(self, scenario):
@@ -1822,7 +1829,12 @@ class TestInstance(DisablePyTestCollectionMixin):
 
         self.run = False
 
-        self.results = {}
+        self.testcases = scenario.testcases
+
+    def get_case(self, name):
+        for c in self.testcases:
+            if c.name == name:
+                return c
 
     def __getstate__(self):
         d = self.__dict__.copy()
@@ -1961,8 +1973,8 @@ class TestInstance(DisablePyTestCollectionMixin):
             'failure': 'FAILED'
         }
 
-        for k in self.results:
-            self.results[k] = status_to_verdict[self.status]
+        for k in self.testcases:
+            k.result = status_to_verdict[self.status]
 
     def __repr__(self):
         return "<TestInstance %s on %s>" % (self.scenario.name, self.platform.name)
@@ -2369,8 +2381,10 @@ class ProjectBuilder(FilterBuilder):
                     self.instance.status = "skipped"
                     self.instance.reason = "filter"
                     results.skipped_runtime += 1
-                    for case in self.instance.scenario.testcases:
-                        self.instance.results.update({case: 'SKIP'})
+
+                    for case in self.instance.testcases:
+                        c = self.instance.get_case(case.name)
+                        c.result = 'SKIP'
                     pipeline.put({"op": "report", "test": self.instance})
                 else:
                     pipeline.put({"op": "build", "test": self.instance})
@@ -2752,8 +2766,8 @@ class TestRunner(DisablePyTestCollectionMixin):
                 results.skipped_cases += len(instance.scenario.testcases)
             elif instance.status == "passed":
                 results.passed += 1
-                for res in instance.results.values():
-                    if res == 'SKIP':
+                for c in instance.testcases:
+                    if c.result == 'SKIP':
                         results.skipped_cases += 1
 
     def compare_metrics(self, filename):
@@ -3032,10 +3046,10 @@ class TestRunner(DisablePyTestCollectionMixin):
                     if cases:
                         for c in cases:
                             name = f"{scenario.id}.{c}"
-                            scenario.testcases.append(name)
+                            #scenario.testcases.append(name)
                             scenario.add_testcase(name)
                     else:
-                        scenario.testcases.append(scenario.id)
+                        #scenario.testcases.append(scenario.id)
                         scenario.add_testcase(scenario.id)
 
                     if testsuite_filter:
@@ -3206,9 +3220,6 @@ class TestRunner(DisablePyTestCollectionMixin):
                     self.fixtures
                 )
 
-                for t in scenario.testcases:
-                    instance.results[t] = None
-
                 if runnable and self.duts:
                     for h in self.duts:
                         if h.platform == plat.name:
@@ -3318,7 +3329,7 @@ class TestRunner(DisablePyTestCollectionMixin):
                     b = set(scenario.platform_allow)
                     c = a.intersection(b)
                     if c:
-                        aa = list(filter(lambda s: scenario.platform.name in c, instance_list))
+                        aa = list(filter(lambda i: i.platform.name in c, instance_list))
                         self.add_instances(aa)
                     else:
                         self.add_instances(instance_list)
@@ -3540,12 +3551,12 @@ class TestRunner(DisablePyTestCollectionMixin):
                 handler_time = instance.metrics.get('handler_time', 0)
                 duration += handler_time
                 if full_report and instance.run:
-                    for k in instance.results.keys():
-                        if instance.results[k] == 'PASS':
+                    for k in instance.testcases:
+                        if k.result == 'PASS':
                             passes += 1
-                        elif instance.results[k] == 'BLOCK':
+                        elif k.result == 'BLOCK':
                             errors += 1
-                        elif instance.results[k] == 'SKIP' or instance.status in ['skipped']:
+                        elif k.result == 'SKIP' or instance.status in ['skipped']:
                             skips += 1
                         else:
                             fails += 1
@@ -3613,7 +3624,7 @@ class TestRunner(DisablePyTestCollectionMixin):
                 handler_time = instance.metrics.get('handler_time', 0)
 
                 if full_report:
-                    for k in instance.results.keys():
+                    for k in instance.testcases:
                         # remove testcases that are being re-run from exiting reports
                         for tc in eleTestsuite.findall(f'testcase/[@name="{k}"]'):
                             eleTestsuite.remove(tc)
@@ -3623,9 +3634,9 @@ class TestRunner(DisablePyTestCollectionMixin):
                             eleTestsuite, 'testcase',
                             classname=classname,
                             name="%s" % (k), time="%f" % handler_time)
-                        if instance.results[k] in ['FAIL', 'BLOCK'] or \
+                        if k.result in ['FAIL', 'BLOCK'] or \
                             (not instance.run and instance.status in ["error", "failed", "timeout"]):
-                            if instance.results[k] == 'FAIL':
+                            if k.result == 'FAIL':
                                 el = ET.SubElement(
                                     eleTestcase,
                                     'failure',
@@ -3641,10 +3652,10 @@ class TestRunner(DisablePyTestCollectionMixin):
                             log_file = os.path.join(log_root, "handler.log")
                             el.text = self.process_log(log_file)
 
-                        elif instance.results[k] == 'PASS' \
+                        elif k.result == 'PASS' \
                             or (not instance.run and instance.status in ["passed"]):
                             pass
-                        elif instance.results[k] == 'SKIP' or (instance.status in ["skipped"]):
+                        elif k.result == 'SKIP' or (instance.status in ["skipped"]):
                             el = ET.SubElement(eleTestcase, 'skipped', type="skipped", message=instance.reason)
                         else:
                             el = ET.SubElement(

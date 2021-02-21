@@ -32,9 +32,12 @@ class Harness:
         self.fieldnames = []
         self.ztest = False
         self.is_pytest = False
+        self.instance = None
 
     def configure(self, instance):
         config = instance.scenario.harness_config
+        self.instance = instance
+
         self.id = instance.scenario.id
         if "ignore_faults" in instance.scenario.tags:
             self.fail_on_fault = False
@@ -219,16 +222,18 @@ class Test(Harness):
         match = result_re.match(line)
         if match and match.group(2):
             name = "{}.{}".format(self.id, match.group(3))
-            self.tests[name] = match.group(1)
+            case = self.instance.get_case(name)
+            case.result = match.group(1)
             self.ztest = True
 
         self.process_test(line)
 
         if not self.ztest and self.state:
+            case = self.instance.get_case(self.id)
             if self.state == "passed":
-                self.tests[self.id] = "PASS"
+                case.result = "PASS"
             else:
-                self.tests[self.id] = "FAIL"
+                case.result = "FAIL"
 
 
 class Ztest(Test):
