@@ -30,9 +30,9 @@ class Harness:
         self.ztest = False
 
     def configure(self, instance):
-        config = instance.testcase.harness_config
-        self.id = instance.testcase.id
-        if "ignore_faults" in instance.testcase.tags:
+        config = instance.scenario.harness_config
+        self.id = instance.scenario.id
+        if "ignore_faults" in instance.scenario.tags:
             self.fail_on_fault = False
 
         if config:
