@@ -574,7 +574,7 @@ static inline int z_impl_sensor_channel_get(const struct device *dev,
 /**
  * @brief The value of constant PI in micros.
  */
-#define SENSOR_PI		3141592LL
+#define SENSOR_PI		3141593LL
 
 /**
  * @brief Helper function to convert acceleration from m/s^2 to Gs
