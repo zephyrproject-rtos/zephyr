@@ -1,0 +1,15 @@
+# TI SimpleLink MSP432E4XX
+
+# Copyright (c) 2021, pipei.sandor@gmail.com
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_MSP432E4XX
+	bool "TI SimpleLink Family MSP432E4XX"
+	select ARM
+	select CPU_HAS_ARM_MPU
+	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_DWT
+	select SOC_FAMILY_TISIMPLELINK
+	select CPU_HAS_FPU
+	help
+	  Enable support for TI SimpleLink MSP432E4XX.

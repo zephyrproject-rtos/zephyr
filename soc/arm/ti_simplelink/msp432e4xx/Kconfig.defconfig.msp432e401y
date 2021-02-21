@@ -1,0 +1,17 @@
+# TI SimpleLink MSP432E401Y SoC
+
+# Copyright (c) 2021, pipei.sandor@gmail.com
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_MSP432E401Y
+
+config SOC
+	default "msp432e401y"
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 120000000
+
+config NUM_IRQS
+	default 109
+
+endif # SOC_MSP432E401Y

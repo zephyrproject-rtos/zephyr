@@ -1,0 +1,13 @@
+# Texas Instruments MSP432E401Y
+
+# Copyright (c) 2021, pipei.sandor@gmail.com
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "TI SimpleLink MCU Selection"
+	depends on SOC_SERIES_MSP432E4XX
+
+config SOC_MSP432E401Y
+	bool "MSP432E401Y SDK"
+	select HAS_MSP432E4XXSDK
+endchoice

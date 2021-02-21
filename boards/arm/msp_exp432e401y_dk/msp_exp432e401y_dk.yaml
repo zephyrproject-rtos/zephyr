@@ -1,0 +1,10 @@
+identifier: msp_exp432e401y_dk
+name: MSP-EXP432E401Y-DK
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 256
+flash: 1024

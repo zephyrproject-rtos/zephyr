@@ -52,6 +52,7 @@
 /soc/arm/ti_simplelink/cc13x2_cc26x2/     @bwitherspoon
 /soc/arm/ti_simplelink/cc32xx/            @vanti
 /soc/arm/ti_simplelink/msp432p4xx/        @Mani-Sadhasivam
+/soc/arm/ti_simplelink/msp432e4xx/        @psanyi
 /soc/arm/xilinx_zynqmp/                   @stephanosio
 /soc/arm/renesas_rcar/                    @julien-massot
 /soc/xtensa/intel_s1000/                  @sathishkuttan @dcpleung
@@ -105,6 +106,7 @@
 /boards/arm/mimxrt*/doc/                  @MaureenHelm @MeganHansen
 /boards/arm/mps2_an385/                   @fvincenzo
 /boards/arm/msp_exp432p401r_launchxl/     @Mani-Sadhasivam
+/boards/arm/msp_exp432e401y_dk/           @psanyi
 /boards/arm/npcx7m6fb_evb/                @MulinChao @WealianLiao @ChiHuaL
 /boards/arm/nrf*/                         @carlescufi @lemrey @ioannisg
 /boards/arm/nucleo*/                      @erwango @ABOSTM @FRASTM
@@ -347,6 +349,7 @@
 /dts/arm/ti/cc13?2*                       @bwitherspoon
 /dts/arm/ti/cc26?2*                       @bwitherspoon
 /dts/arm/ti/cc3235*                       @vanti
+/dts/arm/ti/msp432e4*                     @psanyi
 /dts/arm/nordic/                          @ioannisg @carlescufi
 /dts/arm/nuvoton/                         @ssekar15
 /dts/arm/nuvoton/npcx/                    @MulinChao @WealianLiao @ChiHuaL

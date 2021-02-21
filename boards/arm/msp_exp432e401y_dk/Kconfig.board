@@ -1,0 +1,8 @@
+# TI SimpleLink MSP-EXP432P401R LaunchXL Development Board
+
+# Copyright (c) 2021 pipei.sandor@gmail.com
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MSP_EXP432E401Y_DK
+	bool "TI MSP-EXP432E401Y DK"
+	depends on SOC_MSP432E401Y

@@ -25,6 +25,10 @@ config HAS_MSP432P4XXSDK
 	bool
 	select HAS_CMSIS_CORE
 
+config HAS_MSP432E4XXSDK
+	bool
+	select HAS_CMSIS_CORE
+
 # CC13X2 / CC26X2 SDK HAL configuration
 
 config HAS_CC13X2_CC26X2_SDK
