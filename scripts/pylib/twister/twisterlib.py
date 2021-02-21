@@ -1553,6 +1553,16 @@ class DisablePyTestCollectionMixin(object):
     __test__ = False
 
 
+class TestCase(DisablePyTestCollectionMixin):
+    def __init__(self, name=None, scenario=None):
+        self.duration = 0
+        self.name = name
+        self.result = None
+        self.scenario = scenario
+
+    def __str__(self):
+        return self.name
+
 class TestScenario(DisablePyTestCollectionMixin):
     """Class representing a test scenario
     """
@@ -1582,6 +1592,7 @@ class TestScenario(DisablePyTestCollectionMixin):
         self.source_dir = ""
         self.yamlfile = ""
         self.testcases = []
+        self._testcases = []
         self.name = self.get_unique(testcase_root, workdir, name)
         self.id = name
 
@@ -1608,6 +1619,10 @@ class TestScenario(DisablePyTestCollectionMixin):
         self.min_flash = -1
         self.extra_sections = None
         self.integration_platforms = []
+
+    def add_testcase(self, name):
+        tc = TestCase(name=name, scenario=self)
+        self._testcases.append(tc)
 
     @staticmethod
     def get_unique(testcase_root, workdir, name):
@@ -1645,7 +1660,7 @@ class TestSuite():
     def dump(self):
         for scenario in self.scenarios:
             print(f"Scenario: {scenario}")
-            for c in scenario.testcases:
+            for c in scenario._testcases:
                 print(f"  Testcase: {c}")
 
     def add_scenario(self, scenario):
@@ -2980,8 +2995,10 @@ class TestRunner(DisablePyTestCollectionMixin):
                         for c in cases:
                             name = f"{scenario.id}.{c}"
                             scenario.testcases.append(name)
+                            scenario.add_testcase(name)
                     else:
                         scenario.testcases.append(scenario.id)
+                        scenario.add_testcase(scenario.id)
 
                     if testsuite_filter:
                         if scenario.name and scenario.name in testsuite_filter:
