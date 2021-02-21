@@ -132,6 +132,7 @@ config TEST_FLASH_DRIVERS
 config TEST_ARM_CORTEX_M
 	bool
 	depends on CPU_CORTEX_M
+	depends on TEST
 	default y
 	select ARM_SECURE_BUSFAULT_HARDFAULT_NMI if ARM_SECURE_FIRMWARE
 	help
