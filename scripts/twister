@@ -953,8 +953,8 @@ def main():
 
     if options.list_tags:
         tags = set()
-        for _, tc in runner.testcases.items():
-            tags = tags.union(tc.tags)
+        for _, scenario in runner.scenarios.items():
+            tags = tags.union(scenario.tags)
 
         for t in tags:
             print("- {}".format(t))
@@ -1193,7 +1193,7 @@ def main():
         return
 
     logger.info("%d test scenarios (%d configurations) selected, %d configurations discarded due to filters." %
-                (len(runner.testcases), len(runner.instances), len(discards)))
+                (len(runner.scenarios), len(runner.instances), len(discards)))
 
     if options.device_testing and not options.build_only:
         print("\nDevice testing on:")
