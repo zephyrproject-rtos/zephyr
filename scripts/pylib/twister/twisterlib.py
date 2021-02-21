@@ -2581,14 +2581,14 @@ class TestRunner(DisablePyTestCollectionMixin):
     config_re = re.compile('(CONFIG_[A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
     dt_re = re.compile('([A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
 
-    tc_schema = scl.yaml_load(
+    ts_schema = scl.yaml_load(
         os.path.join(ZEPHYR_BASE,
                      "scripts", "schemas", "twister", "testcase-schema.yaml"))
     quarantine_schema = scl.yaml_load(
         os.path.join(ZEPHYR_BASE,
                      "scripts", "schemas", "twister", "quarantine-schema.yaml"))
 
-    testcase_valid_keys = {"tags": {"type": "set", "required": False},
+    testsuite_valid_keys = {"tags": {"type": "set", "required": False},
                        "type": {"type": "str", "default": "integration"},
                        "extra_args": {"type": "list"},
                        "extra_configs": {"type": "list"},
@@ -2655,6 +2655,7 @@ class TestRunner(DisablePyTestCollectionMixin):
         self.testcases = {}
         self.quarantine = {}
         self.platforms = []
+
         self.selected_platforms = []
         self.filtered_platforms = []
         self.default_platforms = []
@@ -2921,11 +2922,11 @@ class TestRunner(DisablePyTestCollectionMixin):
 
         return toolchain
 
-    def add_testcases(self, testcase_filter=[]):
+    def add_suites(self, testsuite_filter=[]):
         for root in self.roots:
             root = os.path.abspath(root)
 
-            logger.debug("Reading test case configuration files under %s..." % root)
+            logger.debug("Reading testsuite configuration files under %s..." % root)
 
             for dirpath, _, filenames in os.walk(root, topdown=True):
                 if self.SAMPLE_FILENAME in filenames:
@@ -2938,61 +2939,61 @@ class TestRunner(DisablePyTestCollectionMixin):
                 else:
                     continue
 
-                logger.debug("Found possible test case in " + dirpath)
+                logger.debug("Found possible testsuite in " + dirpath)
 
-                tc_path = os.path.join(dirpath, filename)
+                ts_path = os.path.join(dirpath, filename)
 
                 try:
-                    parsed_data = TwisterConfigParser(tc_path, self.tc_schema)
+                    parsed_data = TwisterConfigParser(ts_path, self.ts_schema)
                     parsed_data.load()
 
-                    tc_path = os.path.dirname(tc_path)
-                    workdir = os.path.relpath(tc_path, root)
+                    ts_path = os.path.dirname(ts_path)
+                    workdir = os.path.relpath(ts_path, root)
 
                     for name in parsed_data.tests.keys():
-                        tc = TestApplication(root, workdir, name)
+                        ts = TestApplication(root, workdir, name)
 
-                        tc_dict = parsed_data.get_test(name, self.testcase_valid_keys)
+                        ts_dict = parsed_data.get_test(name, self.testsuite_valid_keys)
 
-                        tc.source_dir = tc_path
-                        tc.yamlfile = tc_path
+                        ts.source_dir = ts_path
+                        ts.yamlfile = ts_path
 
-                        tc.type = tc_dict["type"]
-                        tc.tags = tc_dict["tags"]
-                        tc.extra_args = tc_dict["extra_args"]
-                        tc.extra_configs = tc_dict["extra_configs"]
-                        tc.arch_allow = tc_dict["arch_allow"]
-                        tc.arch_exclude = tc_dict["arch_exclude"]
-                        tc.skip = tc_dict["skip"]
-                        tc.platform_exclude = tc_dict["platform_exclude"]
-                        tc.platform_allow = tc_dict["platform_allow"]
-                        tc.toolchain_exclude = tc_dict["toolchain_exclude"]
-                        tc.toolchain_allow = tc_dict["toolchain_allow"]
-                        tc.tc_filter = tc_dict["filter"]
-                        tc.timeout = tc_dict["timeout"]
-                        tc.harness = tc_dict["harness"]
-                        tc.harness_config = tc_dict["harness_config"]
-                        if tc.harness == 'console' and not tc.harness_config:
+                        ts.type = ts_dict["type"]
+                        ts.tags = ts_dict["tags"]
+                        ts.extra_args = ts_dict["extra_args"]
+                        ts.extra_configs = ts_dict["extra_configs"]
+                        ts.arch_allow = ts_dict["arch_allow"]
+                        ts.arch_exclude = ts_dict["arch_exclude"]
+                        ts.skip = ts_dict["skip"]
+                        ts.platform_exclude = ts_dict["platform_exclude"]
+                        ts.platform_allow = ts_dict["platform_allow"]
+                        ts.toolchain_exclude = ts_dict["toolchain_exclude"]
+                        ts.toolchain_allow = ts_dict["toolchain_allow"]
+                        ts.tc_filter = ts_dict["filter"]
+                        ts.timeout = ts_dict["timeout"]
+                        ts.harness = ts_dict["harness"]
+                        ts.harness_config = ts_dict["harness_config"]
+                        if ts.harness == 'console' and not ts.harness_config:
                             raise Exception('Harness config error: console harness defined without a configuration.')
-                        tc.build_only = tc_dict["build_only"]
-                        tc.build_on_all = tc_dict["build_on_all"]
-                        tc.slow = tc_dict["slow"]
-                        tc.min_ram = tc_dict["min_ram"]
-                        tc.depends_on = tc_dict["depends_on"]
-                        tc.min_flash = tc_dict["min_flash"]
-                        tc.extra_sections = tc_dict["extra_sections"]
-                        tc.integration_platforms = tc_dict["integration_platforms"]
+                        ts.build_only = ts_dict["build_only"]
+                        ts.build_on_all = ts_dict["build_on_all"]
+                        ts.slow = ts_dict["slow"]
+                        ts.min_ram = ts_dict["min_ram"]
+                        ts.depends_on = ts_dict["depends_on"]
+                        ts.min_flash = ts_dict["min_flash"]
+                        ts.extra_sections = ts_dict["extra_sections"]
+                        ts.integration_platforms = ts_dict["integration_platforms"]
 
-                        tc.parse_testcases(tc_path)
+                        ts.parse_testcases(ts_path)
 
-                        if testcase_filter:
-                            if tc.name and tc.name in testcase_filter:
-                                self.testcases[tc.name] = tc
+                        if testsuite_filter:
+                            if ts.name and ts.name in testsuite_filter:
+                                self.testcases[ts.name] = ts
                         else:
-                            self.testcases[tc.name] = tc
+                            self.testcases[ts.name] = ts
 
                 except Exception as e:
-                    logger.error("%s: can't load (skipping): %s" % (tc_path, e))
+                    logger.error("%s: can't load (skipping): %s" % (ts_path, e))
                     self.load_errors += 1
         return len(self.testcases)
 

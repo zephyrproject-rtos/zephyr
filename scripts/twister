@@ -911,7 +911,7 @@ def main():
     if options.test:
         run_individual_tests = options.test
 
-    num = runner.add_testcases(testcase_filter=run_individual_tests)
+    num = runner.add_suites(testsuite_filter=run_individual_tests)
     if num == 0:
         logger.error("No test cases found at the specified location...")
         sys.exit(1)
