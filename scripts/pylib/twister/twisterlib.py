@@ -1700,6 +1700,7 @@ Tests should reference the category and subsystem with a dot as a separator.
                     # it includes ztest.h
                     return None, None
 
+                suite = suite_regex_match.group(1)
                 suite_run_match = suite_run_regex.search(main_c)
                 if not suite_run_match:
                     raise ValueError("can't find ztest_run_test_suite")
@@ -1717,39 +1718,42 @@ Tests should reference the category and subsystem with a dot as a separator.
                     if not match.decode().startswith("test_"):
                         warnings = "Found a test that does not start with test_"
                 matches = [match.decode().replace("test_", "", 1) for match in _matches]
-                return matches, warnings
+
+                return ( (suite, matches),) , warnings
 
     def scan_path(self, path):
-        subcases = []
+        testcases = []
+        testsuite = None
+
         for filename in glob.glob(os.path.join(path, "src", "*.c*")):
             try:
-                _subcases, warnings = self.scan_file(filename)
+                ( (ts , _testcases), ), warnings = self.scan_file(filename)
                 if warnings:
                     logger.error("%s: %s" % (filename, warnings))
                     raise TwisterRuntimeError("%s: %s" % (filename, warnings))
-                if _subcases:
-                    subcases += _subcases
+                if _testcases:
+                    testcases += _testcases
             except ValueError as e:
                 logger.error("%s: can't find: %s" % (filename, e))
 
         for filename in glob.glob(os.path.join(path, "*.c")):
             try:
-                _subcases, warnings = self.scan_file(filename)
+                ( (ts , _testcases), ), warnings = self.scan_file(filename)
                 if warnings:
                     logger.error("%s: %s" % (filename, warnings))
-                if _subcases:
-                    subcases += _subcases
+                if _testcases:
+                    testcases += _testcases
             except ValueError as e:
                 logger.error("%s: can't find: %s" % (filename, e))
-        return subcases
+        return testsuite, testcases
 
-    def parse_subcases(self, test_path):
-        results = self.scan_path(test_path)
-        for sub in results:
-            name = "{}.{}".format(self.id, sub)
+    def parse_testcases(self, test_path):
+        testsuite, testcases = self.scan_path(test_path)
+        for tc in testcases:
+            name = "{}.{}".format(self.id, tc)
             self.cases.append(name)
 
-        if not results:
+        if not testcases:
             self.cases.append(self.id)
 
     def __str__(self):
@@ -2979,7 +2983,7 @@ class TestRunner(DisablePyTestCollectionMixin):
                         tc.extra_sections = tc_dict["extra_sections"]
                         tc.integration_platforms = tc_dict["integration_platforms"]
 
-                        tc.parse_subcases(tc_path)
+                        tc.parse_testcases(tc_path)
 
                         if testcase_filter:
                             if tc.name and tc.name in testcase_filter:
