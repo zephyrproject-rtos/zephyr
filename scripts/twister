@@ -8,59 +8,60 @@ Also check the "User and Developer Guides" at https://docs.zephyrproject.org/
 
 This script scans for the set of unit test applications in the git
 repository and attempts to execute them. By default, it tries to
-build each test case on one platform per architecture, using a precedence
+build each test on one platform per architecture, using a precedence
 list defined in an architecture configuration file, and if possible
 run the tests in any available emulators or simulators on the system.
 
-Test cases are detected by the presence of a 'tests.yaml' or a sample.yaml
+Test are detected by the presence of a 'tests.yaml' or a sample.yaml
 files in the application's project directory. This file may contain one or more
 blocks, each identifying a test scenario. The title of the block is a name for
-the test case, which only needs to be unique for the test cases specified in
-that testcase meta-data. The full canonical name for each test case is <path to
-test case>/<block>.
+the test scenario, which only needs to be unique for the test cases specified in
+that testcase meta-data. The full canonical name for each test scenario is <path to
+test>/<block>.
 
-Each test block in the testcase meta data can define the following key/value
+Each test block in the test meta data can define the following key/value
 pairs:
 
   tags: <list of tags> (required)
-    A set of string tags for the testcase. Usually pertains to
+    A set of string tags for the test scenario. Usually pertains to
     functional domains but can be anything. Command line invocations
     of this script can filter the set of tests to run based on tag.
 
   skip: <True|False> (default False)
-    skip testcase unconditionally. This can be used for broken tests.
+    skip test scenario unconditionally. This can be used for broken test
+    scenario.
 
   slow: <True|False> (default False)
-    Don't build or run this test case unless --enable-slow was passed
-    in on the command line. Intended for time-consuming test cases
+    Don't build or run this test scenario unless --enable-slow was passed
+    in on the command line. Intended for time-consuming test scenarios
     that are only run under certain circumstances, like daily
     builds.
 
   extra_args: <list of extra arguments>
     Extra cache entries to pass to CMake when building or running the
-    test case.
+    test scenario.
 
   extra_configs: <list of extra configurations>
     Extra configuration options to be merged with a master prj.conf
-    when building or running the test case.
+    when building or running the test scenario.
 
   build_only: <True|False> (default False)
-    If true, don't try to run the test even if the selected platform
+    If true, don't try to run the test scenario even if the selected platform
     supports it.
 
   build_on_all: <True|False> (default False)
-    If true, attempt to build test on all available platforms.
+    If true, attempt to build test scenario on all available platforms.
 
   depends_on: <list of features>
     A board or platform can announce what features it supports, this option
-    will enable the test only those platforms that provide this feature.
+    will enable the test scenario only those platforms that provide this feature.
 
   min_ram: <integer>
-    minimum amount of RAM needed for this test to build and run. This is
+    minimum amount of RAM needed for this test scenario to build and run. This is
     compared with information provided by the board metadata.
 
   min_flash: <integer>
-    minimum amount of ROM needed for this test to build and run. This is
+    minimum amount of ROM needed for this test scenario to build and run. This is
     compared with information provided by the board metadata.
 
   timeout: <number of seconds>
@@ -68,16 +69,16 @@ pairs:
     Default to 60 seconds.
 
   arch_allow: <list of arches, such as x86, arm, arc>
-    Set of architectures that this test case should only be run for.
+    Set of architectures that this test scenario should only be run for.
 
   arch_exclude: <list of arches, such as x86, arm, arc>
-    Set of architectures that this test case should not run on.
+    Set of architectures that this test scenario should not run on.
 
   platform_allow: <list of platforms>
-    Set of platforms that this test case should only be run for.
+    Set of platforms that this test scenario should only be run for.
 
   platform_exclude: <list of platforms>
-    Set of platforms that this test case should not run on.
+    Set of platforms that this test scenario should not run on.
 
   extra_sections: <list of extra binary sections>
     When computing sizes, twister will report errors if it finds
@@ -85,7 +86,7 @@ pairs:
     here. They will not be included in the size calculation.
 
   filter: <expression>
-    Filter whether the testcase should be run by evaluating an expression
+    Filter whether the scenario should be run by evaluating an expression
     against an environment containing the following values:
 
     { ARCH : <architecture>,
@@ -148,10 +149,10 @@ pairs:
 
     Would match it.
 
-The set of test cases that actually run depends on directives in the testcase
+The set of test scenarios that actually run depends on directives in the scenario
 filed and options passed in on the command line. If there is any confusion,
 running with -v or examining the discard report (twister_discard.csv)
-can help show why particular test cases were skipped.
+can help show why particular test scenarios were skipped.
 
 Metrics (such as pass/fail state and binary size) for the last code
 release are stored in scripts/release/twister_last_release.csv.
@@ -251,7 +252,7 @@ def parse_arguments():
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.fromfile_prefix_chars = "+"
 
-    case_select = parser.add_argument_group("Test case selection",
+    case_select = parser.add_argument_group("Test selection",
                                             """
 Artificially long but functional example:
     $ ./scripts/twister -v     \\
@@ -523,7 +524,7 @@ Artificially long but functional example:
     )
     parser.add_argument(
         "-H", "--footprint-threshold", type=float, default=5,
-        help="When checking test case footprint sizes, warn the user if "
+        help="When checking test footprint sizes, warn the user if "
              "the new app size is greater then the specified percentage "
              "from the last release. Default is 5. 0 to warn on any "
              "increase on app size")
