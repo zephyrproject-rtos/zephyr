@@ -454,7 +454,6 @@ attaching:
 	(void)modem_cmd_send_nolock(
 		&gsm->context.iface, &gsm->context.cmd_handler, NULL, 0,
 		"AT+QNWINFO", &gsm->sem_response, K_SECONDS(2));
-#endif
 
 	/* Ensure PDP context is activated. This is likely a NOP for most
 	 * modem/SIM combos, but it is required for certain setups.
@@ -463,6 +462,7 @@ attaching:
 		&gsm->context.iface, &gsm->context.cmd_handler,
 		NULL, 0, "AT+CGACT=1,1",
 		&gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
+#endif
 
 	LOG_DBG("modem setup complete, %s", "enable PPP");
 
