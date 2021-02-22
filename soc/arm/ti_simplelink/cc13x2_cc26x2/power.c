@@ -46,8 +46,6 @@ const PowerCC26X2_Config PowerCC26X2_config = {
 #endif
 };
 
-extern PowerCC26X2_ModuleState PowerCC26X2_module;
-
 /*
  * Power state mapping:
  * PM_STATE_SUSPEND_TO_IDLE: Idle
@@ -99,14 +97,8 @@ void pm_power_state_set(struct pm_state_info info)
 		break;
 
 	case PM_STATE_STANDBY:
-		/* schedule the wakeup event */
-		ClockP_start(ClockP_handle((ClockP_Struct *)
-			&PowerCC26X2_module.clockObj));
-
 		/* go to standby mode */
 		Power_sleep(PowerCC26XX_STANDBY);
-		ClockP_stop(ClockP_handle((ClockP_Struct *)
-			&PowerCC26X2_module.clockObj));
 		break;
 	case PM_STATE_SUSPEND_TO_RAM:
 		__fallthrough;
