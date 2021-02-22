@@ -30,7 +30,8 @@ struct pm_state_info pm_policy_next_state(int32_t ticks)
 			LOG_DBG("Selected power state %d "
 				"(ticks: %d, min_residency: %u)",
 				pm_min_residency[i].state, ticks,
-				pm_min_residency[i].min_residency_us);
+				k_us_to_ticks_ceil32(
+					pm_min_residency[i].min_residency_us));
 			return pm_min_residency[i];
 		}
 	}
