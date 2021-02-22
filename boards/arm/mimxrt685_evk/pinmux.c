@@ -13,7 +13,7 @@ static int mimxrt685_evk_pinmux_init(const struct device *dev)
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm0), nxp_lpc_usart, okay) && CONFIG_SERIAL
 	/* USART0 RX,  TX */
-	const uint32_t port0_pin1_config = (/* Pin is configured as FC0_TXD_SCL_MISO_WS */
+	uint32_t port0_pin1_config = (/* Pin is configured as FC0_TXD_SCL_MISO_WS */
 			IOPCTL_PIO_FUNC1 |
 			/* Disable pull-up / pull-down function */
 			IOPCTL_PIO_PUPD_DI |
@@ -34,7 +34,7 @@ static int mimxrt685_evk_pinmux_init(const struct device *dev)
 	/* PORT0 PIN1 (coords: G2) is configured as FC0_TXD_SCL_MISO_WS */
 	IOPCTL_PinMuxSet(IOPCTL, 0U, 1U, port0_pin1_config);
 
-	const uint32_t port0_pin2_config = (/* Pin is configured as FC0_RXD_SDA_MOSI_DATA */
+	uint32_t port0_pin2_config = (/* Pin is configured as FC0_RXD_SDA_MOSI_DATA */
 			IOPCTL_PIO_FUNC1 |
 			/* Disable pull-up / pull-down function */
 			IOPCTL_PIO_PUPD_DI |
@@ -57,7 +57,7 @@ static int mimxrt685_evk_pinmux_init(const struct device *dev)
 #endif
 
 #if DT_PHA_HAS_CELL(DT_ALIAS(sw0), gpios, pin)
-	const uint32_t port1_pin1_config = (/* Pin is configured as PIO1_1 */
+	uint32_t port1_pin1_config = (/* Pin is configured as PIO1_1 */
 			IOPCTL_PIO_FUNC0 |
 			/* Disable pull-up / pull-down function */
 			IOPCTL_PIO_PUPD_DI |
@@ -80,7 +80,7 @@ static int mimxrt685_evk_pinmux_init(const struct device *dev)
 #endif
 
 #if DT_PHA_HAS_CELL(DT_ALIAS(sw1), gpios, pin)
-	const uint32_t port0_pin10_config = (/* Pin is configured as PIO0_10 */
+	uint32_t port0_pin10_config = (/* Pin is configured as PIO0_10 */
 			IOPCTL_PIO_FUNC0 |
 			/* Disable pull-up / pull-down function */
 			IOPCTL_PIO_PUPD_DI |
@@ -103,7 +103,7 @@ static int mimxrt685_evk_pinmux_init(const struct device *dev)
 #endif
 
 #ifdef DT_GPIO_LEDS_LED_1_GPIOS_CONTROLLER
-	const uint32_t port0_pin14_config = (/* Pin is configured as PIO0_14 */
+	uint32_t port0_pin14_config = (/* Pin is configured as PIO0_14 */
 			IOPCTL_PIO_FUNC0 |
 			/* Disable pull-up / pull-down function */
 			IOPCTL_PIO_PUPD_DI |
@@ -126,7 +126,7 @@ static int mimxrt685_evk_pinmux_init(const struct device *dev)
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm2), nxp_lpc_i2c, okay) && CONFIG_I2C
-	const uint32_t port0_pin17_config = (/* Pin is configured as FC2_CTS_SDA_SSEL0 */
+	uint32_t port0_pin17_config = (/* Pin is configured as FC2_CTS_SDA_SSEL0 */
 			IOPCTL_PIO_FUNC1 |
 			/* Enable pull-up / pull-down function */
 			IOPCTL_PIO_PUPD_EN |
@@ -147,7 +147,7 @@ static int mimxrt685_evk_pinmux_init(const struct device *dev)
 	/* PORT0 PIN17 (coords: D7) is configured as FC2_CTS_SDA_SSEL0 */
 	IOPCTL_PinMuxSet(IOPCTL, 0U, 17U, port0_pin17_config);
 
-	const uint32_t port0_pin18_config = (/* Pin is configured as FC2_RTS_SCL_SSEL1 */
+	uint32_t port0_pin18_config = (/* Pin is configured as FC2_RTS_SCL_SSEL1 */
 			IOPCTL_PIO_FUNC1 |
 			/* Enable pull-up / pull-down function */
 			IOPCTL_PIO_PUPD_EN |
@@ -170,7 +170,7 @@ static int mimxrt685_evk_pinmux_init(const struct device *dev)
 #endif
 
 #ifdef CONFIG_FXOS8700_TRIGGER
-	const uint32_t port1_pin5_config = (/* Pin is configured as PIO1_5 */
+	uint32_t port1_pin5_config = (/* Pin is configured as PIO1_5 */
 			IOPCTL_PIO_FUNC0 |
 			/* Disable pull-up / pull-down function */
 			IOPCTL_PIO_PUPD_DI |
@@ -193,7 +193,7 @@ static int mimxrt685_evk_pinmux_init(const struct device *dev)
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcomm5), okay) && CONFIG_SPI
-	const uint32_t port1_pin3_config = (/* Pin is configured as FC5_SCK */
+	uint32_t port1_pin3_config = (/* Pin is configured as FC5_SCK */
 		IOPCTL_PIO_FUNC1 |
 		/* Disable pull-up / pull-down function */
 		IOPCTL_PIO_PUPD_DI |
@@ -214,7 +214,7 @@ static int mimxrt685_evk_pinmux_init(const struct device *dev)
 	/* PORT1 PIN3 (coords: G16) is configured as FC5_SCK */
 	IOPCTL_PinMuxSet(IOPCTL, 1U, 3U, port1_pin3_config);
 
-	const uint32_t port1_pin4_config = (/* Pin is configured as FC5_MISO */
+	uint32_t port1_pin4_config = (/* Pin is configured as FC5_MISO */
 		IOPCTL_PIO_FUNC1 |
 		/* Disable pull-up / pull-down function */
 		IOPCTL_PIO_PUPD_DI |
@@ -235,7 +235,7 @@ static int mimxrt685_evk_pinmux_init(const struct device *dev)
 	/* PORT1 PIN4 (coords: G17) is configured as FC5_TXD_SCL_MISO_WS */
 	IOPCTL_PinMuxSet(IOPCTL, 1U, 4U, port1_pin4_config);
 
-	const uint32_t port1_pin5_config = (/* Pin is configured as FC5_MOSI */
+	uint32_t port1_pin5_config = (/* Pin is configured as FC5_MOSI */
 		IOPCTL_PIO_FUNC1 |
 		/* Disable pull-up / pull-down function */
 		IOPCTL_PIO_PUPD_DI |
@@ -256,7 +256,7 @@ static int mimxrt685_evk_pinmux_init(const struct device *dev)
 	/* PORT1 PIN5 (coords: J16) is configured as FC5_RXD_SDA_MOSI_DATA */
 	IOPCTL_PinMuxSet(IOPCTL, 1U, 5U, port1_pin5_config);
 
-	const uint32_t port1_pin6_config = (/* Pin is configured as FC5_SSEL0 */
+	uint32_t port1_pin6_config = (/* Pin is configured as FC5_SSEL0 */
 		IOPCTL_PIO_FUNC1 |
 		/* Disable pull-up / pull-down function */
 		IOPCTL_PIO_PUPD_DI |
