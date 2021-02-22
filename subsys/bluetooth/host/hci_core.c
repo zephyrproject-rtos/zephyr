@@ -6664,7 +6664,6 @@ static int set_sd(struct bt_le_ext_adv *adv, const struct bt_ad *sd,
 int bt_set_name(const char *name)
 {
 #if defined(CONFIG_BT_DEVICE_NAME_DYNAMIC)
-	struct bt_le_ext_adv *adv = bt_adv_lookup_legacy();
 	size_t len = strlen(name);
 	int err;
 
@@ -6678,15 +6677,6 @@ int bt_set_name(const char *name)
 
 	strncpy(bt_dev.name, name, len);
 	bt_dev.name[len] = '\0';
-
-	/* Update advertising name if in use */
-	if (adv && atomic_test_bit(adv->flags, BT_ADV_INCLUDE_NAME)) {
-		struct bt_data data[] = { BT_DATA(BT_DATA_NAME_COMPLETE, name,
-						len) };
-		struct bt_ad sd = { data, ARRAY_SIZE(data) };
-
-		set_sd(adv, &sd, 1);
-	}
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		err = settings_save_one("bt/name", bt_dev.name, len);
