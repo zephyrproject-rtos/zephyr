@@ -54,8 +54,8 @@
 
 		/* SCFG DEVALT 5 */
 		alt5_trace_en:     alt50     { alts = <&scfg 0x05 0x0 0>; };
-		alt5_njen1_en:     alt51     { alts = <&scfg 0x05 0x1 0>; };
-		alt5_njen0_en:     alt52     { alts = <&scfg 0x05 0x2 0>; };
+		alt5_njen1_en:     alt51     { alts = <&scfg 0x05 0x1 1>; };
+		alt5_njen0_en:     alt52     { alts = <&scfg 0x05 0x2 1>; };
 		alt5_strace_en:    alt54     { alts = <&scfg 0x05 0x4 0>; };
 
 		/* SCFG DEVALT 6 */
