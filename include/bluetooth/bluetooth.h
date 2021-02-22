@@ -136,6 +136,10 @@ int bt_enable(bt_ready_cb_t cb);
  *
  * Set Bluetooth GAP Device Name.
  *
+ * When advertising with device name in the advertising data the name should
+ * be updated by calling @ref bt_le_adv_update_data or
+ * @ref bt_le_ext_adv_set_data.
+ *
  * @param name New name
  *
  * @return Zero on success or (negative) error code otherwise.
@@ -368,7 +372,23 @@ enum {
 	 */
 	BT_LE_ADV_OPT_USE_IDENTITY = BIT(2),
 
-	/** Advertise using GAP device name */
+	/** Advertise using GAP device name.
+	 *
+	 *  Include the GAP device name automatically when advertising.
+	 *  By default the GAP device name is put at the end of the scan
+	 *  response data.
+	 *  When advertising using @ref BT_LE_ADV_OPT_EXT_ADV and not
+	 *  @ref BT_LE_ADV_OPT_SCANNABLE then it will be put at the end of the
+	 *  advertising data.
+	 *  If the GAP device name does not fit into advertising data it will be
+	 *  converted to a shortened name if possible.
+	 *
+	 *  The application can set the device name itself by including the
+	 *  following in the advertising data.
+	 *  @code
+	 *  BT_DATA(BT_DATA_NAME_COMPLETE, name, strlen(name))
+	 *  @endcode
+	 */
 	BT_LE_ADV_OPT_USE_NAME = BIT(3),
 
 	/**
