@@ -17,7 +17,9 @@ endif()
 zephyr_sources_ifdef(CONFIG_ILI9340 display_ili9340.c)
 zephyr_sources_ifdef(CONFIG_ILI9488 display_ili9488.c)
 
-zephyr_sources_ifdef(CONFIG_MICROBIT_DISPLAY
-	mb_display.c
-	mb_font.c
-)
+if (CONFIG_MICROBIT_DISPLAY)
+  zephyr_sources_ifdef(CONFIG_BOARD_BBC_MICROBIT mb_display.c)
+  zephyr_sources_ifdef(CONFIG_BOARD_BBC_MICROBIT_V2 mb2_display.c)
+  zephyr_sources(mb_display_common.c)
+  zephyr_sources(mb_font.c)
+endif()
