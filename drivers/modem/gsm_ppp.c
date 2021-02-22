@@ -449,6 +449,13 @@ attaching:
 	/* Clear attach_retry */
 	attach_retry = 0;
 
+#if defined(CONFIG_BOARD_WOLFENSTEIN)
+	/* For Quectel, dump the network info (LTE/WCDMA/etc) for debugging */
+	(void)modem_cmd_send_nolock(
+		&gsm->context.iface, &gsm->context.cmd_handler, NULL, 0,
+		"AT+QNWINFO", &gsm->sem_response, K_SECONDS(2));
+#endif
+
 	/* Ensure PDP context is activated. This is likely a NOP for most
 	 * modem/SIM combos, but it is required for certain setups.
 	 */
