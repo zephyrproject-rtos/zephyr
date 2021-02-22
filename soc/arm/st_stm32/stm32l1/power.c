@@ -13,6 +13,9 @@
 #include <stm32_ll_pwr.h>
 #include <stm32_ll_system.h>
 #include <stm32_ll_bus.h>
+#include <stm32_ll_utils.h>
+
+#include <clock_control/clock_stm32_ll_common.h>
 
 #include <logging/log.h>
 
@@ -102,6 +105,8 @@ void pm_power_state_exit_post_ops(struct pm_state_info info)
 				info.substate_id);
 			break;
 		}
+		/* need to restore the clock */
+		stm32_clock_control_init(NULL);
 	}
 
 	/*
