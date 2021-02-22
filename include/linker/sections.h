@@ -71,11 +71,6 @@
 #if defined(_ASMLANGUAGE)
 /* Various text section names */
 #define TEXT text
-#if defined(CONFIG_X86)
-#define TEXT_START text_start /* beginning of TEXT section */
-#else
-#define TEXT_START text /* beginning of TEXT section */
-#endif
 
 /* Various data type section names */
 #define BSS bss

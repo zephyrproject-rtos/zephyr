@@ -109,8 +109,7 @@ SECTIONS
 #include <snippets-rom-start.ld>
 
 	/* Needs KEEP() as ENTRY() is given a physical address */
-	KEEP(*(.text_start))
-	KEEP(*(".text_start.*"))
+	KEEP(*(.text.__start))
 	*(.text)
 	*(".text.*")
 	*(.gnu.linkonce.t.*)
