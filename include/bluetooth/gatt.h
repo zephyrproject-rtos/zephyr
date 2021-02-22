@@ -1213,6 +1213,17 @@ enum {
 	 *        as it may incur in more round trips.
 	 */
 	BT_GATT_DISCOVER_ATTRIBUTE,
+	/** @brief Discover standard characteristic descriptor values.
+	 *
+	 *  Discover standard characterestic descriptor values and their
+	 *  properties.
+	 *  Supported descriptors:
+	 *   - Characteristic Extended Properties
+	 *   - Client Characteristic Configuration
+	 *   - Server Characteristic Configuration
+	 *   - Characteristic Presentation Format
+	 */
+	BT_GATT_DISCOVER_STD_CHAR_DESC,
 };
 
 /** @brief GATT Discover Attributes parameters */
