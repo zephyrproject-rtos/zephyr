@@ -159,20 +159,51 @@ static void set_pte_block_desc(uint64_t *pte, uint64_t desc, unsigned int level)
 	debug_show_pte(pte, level);
 }
 
-static void populate_table(uint64_t *table, uint64_t desc, unsigned int level)
+static uint64_t *expand_to_table(uint64_t *pte, unsigned int level)
 {
-	unsigned int stride_shift = LEVEL_TO_VA_SIZE_SHIFT(level);
-	unsigned int i;
+	uint64_t *table;
 
-	MMU_DEBUG("Populating table with PTE 0x%016llx(L%d)\n", desc, level);
+	__ASSERT(level < XLAT_LAST_LEVEL, "can't expand last level");
 
-	if (level == XLAT_LAST_LEVEL) {
-		desc |= PTE_PAGE_DESC;
+	table = new_table();
+	if (!table) {
+		return NULL;
 	}
 
-	for (i = 0; i < Ln_XLAT_NUM_ENTRIES; i++) {
-		table[i] = desc | (i << stride_shift);
+	if (!is_free_desc(*pte)) {
+		/*
+		 * If entry at current level was already populated
+		 * then we need to reflect that in the new table.
+		 */
+		uint64_t desc = *pte;
+		unsigned int i, stride_shift;
+
+		MMU_DEBUG("expanding PTE 0x%016llx into table [%d]%p\n",
+			  desc, table_index(table), table);
+		__ASSERT(is_block_desc(desc), "");
+
+		if (level + 1 == XLAT_LAST_LEVEL) {
+			desc |= PTE_PAGE_DESC;
+		}
+
+		stride_shift = LEVEL_TO_VA_SIZE_SHIFT(level + 1);
+		for (i = 0; i < Ln_XLAT_NUM_ENTRIES; i++) {
+			table[i] = desc | (i << stride_shift);
+		}
+		table_usage(table, Ln_XLAT_NUM_ENTRIES);
+	} else {
+		/*
+		 * Adjust usage count for parent table's entry
+		 * that will no longer be free.
+		 */
+		table_usage(pte, 1);
 	}
+
+	/* Link the new table in place of the pte it replaces */
+	set_pte_table_desc(pte, table, level);
+	table_usage(table, 1);
+
+	return table;
 }
 
 static int set_mapping(struct arm_mmu_ptables *ptables,
@@ -220,24 +251,10 @@ static int set_mapping(struct arm_mmu_ptables *ptables,
 
 		if ((size < level_size) || (virt & (level_size - 1))) {
 			/* Range doesn't fit, create subtable */
-			table = new_table();
+			table = expand_to_table(pte, level);
 			if (!table) {
 				return -ENOMEM;
 			}
-			/*
-			 * If entry at current level was already populated
-			 * then we need to reflect that in the new table.
-			 */
-			if (is_block_desc(*pte)) {
-				table_usage(table, Ln_XLAT_NUM_ENTRIES);
-				populate_table(table, *pte, level + 1);
-			}
-			/* Adjust usage count for parent table */
-			if (is_free_desc(*pte)) {
-				table_usage(pte, 1);
-			}
-			/* And link it. */
-			set_pte_table_desc(pte, table, level);
 			level++;
 			continue;
 		}
