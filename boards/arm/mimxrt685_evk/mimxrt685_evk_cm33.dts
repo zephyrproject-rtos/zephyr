@@ -143,6 +143,28 @@ arduino_spi: &flexcomm5 {
 	dma-names = "rx", "tx";
 };
 
+/* I2S receive channel */
+i2s0: &flexcomm1 {
+	status = "okay";
+	compatible = "nxp,lpc-i2s";
+	label = "I2S_0";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	dmas = <&dma0 2>;
+	dma-names = "rx";
+};
+
+/* I2S transmit channel */
+i2s1: &flexcomm3 {
+	status = "okay";
+	compatible = "nxp,lpc-i2s";
+	label = "I2S_1";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	dmas = <&dma0 7>;
+	dma-names = "tx";
+};
+
 &gpio0 {
 	status = "okay";
 };
