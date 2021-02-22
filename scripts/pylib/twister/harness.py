@@ -223,8 +223,9 @@ class Test(Harness):
         if match and match.group(2):
             name = "{}.{}".format(self.id, match.group(3))
             case = self.instance.get_case(name)
-            case.result = match.group(1)
-            self.ztest = True
+            if case:
+                case.result = match.group(1)
+                self.ztest = True
 
         self.process_test(line)
 
