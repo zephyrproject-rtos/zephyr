@@ -381,6 +381,19 @@ the default with::
 
   west flash --runner jlink
 
+You can override the default flash runner at build time by using the
+``BOARD_FLASH_RUNNER`` CMake variable, and the debug runner with
+``BOARD_DEBUG_RUNNER``.
+
+For example::
+
+  # Set the default runner to "jlink", overriding the board's
+  # usual default.
+  west build [...] -- -DBOARD_FLASH_RUNNER=jlink
+
+See :ref:`west-building-cmake-args` and :ref:`west-building-cmake-config` for
+more information on setting CMake arguments.
+
 See :ref:`west-runner` below for more information on the ``runner``
 library used by West. The list of runners which support flashing can
 be obtained with ``west flash -H``; if run from a build directory or
