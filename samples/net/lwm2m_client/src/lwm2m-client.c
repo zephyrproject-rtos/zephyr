@@ -233,6 +233,25 @@ static int firmware_block_received_cb(uint16_t obj_inst_id,
 }
 #endif
 
+/* An example data validation callback. */
+static int timer_on_off_validate_cb(uint16_t obj_inst_id, uint16_t res_id,
+				    uint16_t res_inst_id, uint8_t *data,
+				    uint16_t data_len, bool last_block,
+				    size_t total_size)
+{
+	LOG_INF("Validating On/Off data");
+
+	if (data_len != 1) {
+		return -EINVAL;
+	}
+
+	if (*data > 1) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static int timer_digital_state_cb(uint16_t obj_inst_id,
 				  uint16_t res_id, uint16_t res_inst_id,
 				  uint8_t *data, uint16_t data_len,
@@ -365,6 +384,8 @@ static int lwm2m_setup(void)
 
 	/* IPSO: Timer object */
 	lwm2m_engine_create_obj_inst("3340/0");
+	lwm2m_engine_register_validate_callback("3340/0/5850",
+			timer_on_off_validate_cb);
 	lwm2m_engine_register_post_write_callback("3340/0/5543",
 			timer_digital_state_cb);
 	lwm2m_engine_set_res_data("3340/0/5750", TIMER_NAME, sizeof(TIMER_NAME),
