@@ -166,7 +166,7 @@ void regression_thread(void *arg1, void *arg2, void *arg3)
 		      "Unexpected value for <critical_var>");
 
 	TC_PRINT("Enable timeslicing at %u\n", k_uptime_get_32());
-	k_sched_time_slice_set(10, 10);
+	k_sched_time_slice_set(20, 10);
 
 	k_sem_give(&ALT_SEM);   /* Re-activate alternate_thread() */
 
