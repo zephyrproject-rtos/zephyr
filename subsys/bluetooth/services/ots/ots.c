@@ -22,6 +22,7 @@
 #include <bluetooth/services/ots.h>
 #include "ots_internal.h"
 #include "ots_obj_manager_internal.h"
+#include "ots_dir_list_internal.h"
 
 #include <logging/log.h>
 
@@ -167,6 +168,13 @@ int bt_ots_obj_add(struct bt_ots *ots,
 	int err;
 	struct bt_gatt_ots_object *obj;
 
+#if IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ)
+	if (ots->dir_list->dir_list_obj->state.type != BT_GATT_OTS_OBJECT_IDLE_STATE) {
+		LOG_DBG("Directory Listing Object is being read");
+		return -EBUSY;
+	}
+#endif /* CONFIG_BT_OTS_DIR_LIST_OBJ */
+
 	err = bt_gatt_ots_obj_manager_obj_add(ots->obj_manager, &obj);
 	if (err) {
 		LOG_ERR("No space available in the object manager");
@@ -176,11 +184,20 @@ int bt_ots_obj_add(struct bt_ots *ots,
 	/* Initialize object. */
 	memcpy(&obj->metadata, obj_init, sizeof(obj->metadata));
 
+	if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ)) {
+		bt_ots_dir_list_obj_add(ots, obj);
+	}
+
 	/* Request object data. */
 	if (ots->cb->obj_created) {
 		err = ots->cb->obj_created(ots, NULL, obj->id, obj_init);
 		if (err) {
 			bt_gatt_ots_obj_manager_obj_delete(obj);
+
+			if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ)) {
+				bt_ots_dir_list_obj_remove(ots, obj);
+			}
+
 			return err;
 		}
 	}
@@ -210,9 +227,20 @@ int bt_ots_obj_delete(struct bt_ots *ots, uint64_t id)
 		ots->cur_obj = NULL;
 	}
 
+#if IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ)
+	if (ots->dir_list->dir_list_obj->state.type != BT_GATT_OTS_OBJECT_IDLE_STATE) {
+		LOG_DBG("Directory Listing Object is being read");
+		return -EBUSY;
+	}
+#endif /* CONFIG_BT_OTS_DIR_LIST_OBJ */
+
 	err = bt_gatt_ots_obj_manager_obj_delete(obj);
 	if (err) {
 		return err;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ)) {
+		bt_ots_dir_list_obj_remove(ots, obj);
 	}
 
 	if (ots->cb->obj_deleted) {
@@ -273,6 +301,10 @@ int bt_ots_init(struct bt_ots *ots,
 		bt_gatt_ots_l2cap_unregister(&ots->l2cap);
 
 		return err;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ)) {
+		bt_ots_dir_list_init(ots);
 	}
 
 	LOG_DBG("Initialized OTS");
@@ -352,6 +384,7 @@ static int bt_gatt_ots_instances_prepare(const struct device *dev)
 	     instance++, index++) {
 		/* Assign an object pool to the OTS instance. */
 		instance->obj_manager = bt_gatt_ots_obj_manager_assign();
+
 		if (!instance->obj_manager) {
 			LOG_ERR("OTS Object manager instance not available");
 			return -ENOMEM;

@@ -16,6 +16,10 @@ extern "C" {
 #include "ots_oacp_internal.h"
 #include "ots_olcp_internal.h"
 
+/** Maximum size of the Directory Listing Object Record. Table 4.1 in the OTS spec. */
+#define DIR_LIST_OBJ_RECORD_MAX_SIZE       172
+#define DIR_LIST_MAX_SIZE (DIR_LIST_OBJ_RECORD_MAX_SIZE * CONFIG_BT_OTS_MAX_OBJ_CNT)
+
 /**@brief OTS Attribute Protocol Application Error codes. */
 enum bt_gatt_ots_att_err_codes {
 	/** An attempt was made to write a value that is invalid or
@@ -66,6 +70,12 @@ struct bt_gatt_ots_indicate {
 	bool is_enabled;
 };
 
+struct bt_ots_dir_list {
+	struct net_buf_simple net_buf;
+	struct bt_gatt_ots_object *dir_list_obj;
+	uint8_t _content[DIR_LIST_MAX_SIZE];
+};
+
 struct bt_ots {
 	struct bt_ots_feat features;
 	struct bt_gatt_ots_object *cur_obj;
@@ -74,6 +84,9 @@ struct bt_ots {
 	struct bt_gatt_ots_indicate olcp_ind;
 	struct bt_gatt_ots_l2cap l2cap;
 	struct bt_ots_cb *cb;
+#if defined(CONFIG_BT_OTS_DIR_LIST_OBJ)
+	struct bt_ots_dir_list *dir_list;
+#endif /* CONFIG_BT_OTS_DIR_LIST_OBJ */
 	void *obj_manager;
 };
 

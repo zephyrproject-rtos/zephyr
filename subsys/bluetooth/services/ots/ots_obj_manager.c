@@ -21,9 +21,6 @@ LOG_MODULE_DECLARE(bt_ots, CONFIG_BT_OTS_LOG_LEVEL);
 /**Start of the usable range of Object IDs (values 0 to 0x100 are reserved)*/
 #define OTS_OBJ_ID_START_RANGE  0x000000000100
 
-#define OTS_OBJ_INDEX_TO_ID(_index) (OTS_OBJ_ID_START_RANGE + (_index))
-#define OTS_OBJ_ID_TO_INDEX(_id)    ((_id) - OTS_OBJ_ID_START_RANGE)
-
 struct bt_gatt_ots_pool_item {
 	sys_dnode_t dnode;
 	struct bt_gatt_ots_object val;
@@ -35,6 +32,32 @@ struct bt_gatt_ots_obj_manager {
 	struct bt_gatt_ots_pool_item pool[CONFIG_BT_OTS_MAX_OBJ_CNT];
 	bool is_assigned;
 };
+
+static uint64_t obj_id_to_index(uint64_t id)
+{
+	if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ)) {
+		if (id == OTS_OBJ_ID_DIR_LIST) {
+			return id;
+		} else {
+			return id - OTS_OBJ_ID_START_RANGE + 1;
+		}
+	} else {
+		return id - OTS_OBJ_ID_START_RANGE;
+	}
+}
+
+static uint64_t obj_index_to_id(uint64_t index)
+{
+	if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ)) {
+		if (index == 0) {
+			return OTS_OBJ_ID_DIR_LIST;
+		} else {
+			return OTS_OBJ_ID_START_RANGE + index - 1;
+		}
+	} else {
+		return OTS_OBJ_ID_START_RANGE + index;
+	}
+}
 
 int bt_gatt_ots_obj_manager_first_obj_get(
 	struct bt_gatt_ots_obj_manager *obj_manager,
@@ -132,13 +155,15 @@ int bt_gatt_ots_obj_manager_obj_get(
 	struct bt_gatt_ots_obj_manager *obj_manager, uint64_t id,
 	struct bt_gatt_ots_object **object)
 {
-	uint64_t i = OTS_OBJ_ID_TO_INDEX(id);
+	uint64_t i = obj_id_to_index(id);
 
 	if (sys_dlist_is_empty(&obj_manager->list)) {
 		return -ENOENT;
 	}
 
-	if (id < OTS_OBJ_ID_START_RANGE) {
+	if (id < OTS_OBJ_ID_START_RANGE ||
+	    (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ) &&
+		id != OTS_OBJ_ID_DIR_LIST)) {
 		return -EINVAL;
 	}
 
@@ -165,7 +190,7 @@ int bt_gatt_ots_obj_manager_obj_add(
 
 		if (!cur_obj->is_allocated) {
 			cur_obj->is_allocated = true;
-			cur_obj->val.id = OTS_OBJ_INDEX_TO_ID(i);
+			cur_obj->val.id = obj_index_to_id(i);
 			sys_dlist_append(&obj_manager->list, &cur_obj->dnode);
 
 			*object = &cur_obj->val;
@@ -183,6 +208,11 @@ int bt_gatt_ots_obj_manager_obj_delete(struct bt_gatt_ots_object *obj)
 	item = CONTAINER_OF(obj, struct bt_gatt_ots_pool_item, val);
 
 	if (!item->is_allocated) {
+		return -EINVAL;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ) &&
+	    obj->id == OTS_OBJ_ID_DIR_LIST) {
 		return -EINVAL;
 	}
 
