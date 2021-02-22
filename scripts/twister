@@ -1257,11 +1257,12 @@ def main():
     else:
         report_to_use = runner.RELEASE_DATA
 
-    runner.footprint_reports(report_to_use,
-                            options.show_footprint,
-                            options.all_deltas,
-                            options.footprint_threshold,
-                            options.last_metrics)
+    if 0:
+        runner.footprint_reports(report_to_use,
+                                options.show_footprint,
+                                options.all_deltas,
+                                options.footprint_threshold,
+                                options.last_metrics)
 
     runner.duration = time.time() - start_time
     runner.update_counting(results)
