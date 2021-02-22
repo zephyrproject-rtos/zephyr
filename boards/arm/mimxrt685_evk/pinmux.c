@@ -278,6 +278,126 @@ static int mimxrt685_evk_pinmux_init(const struct device *dev)
 	IOPCTL_PinMuxSet(IOPCTL, 1U, 6U, port1_pin6_config);
 #endif
 
+#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm1), nxp_lpc_i2s, okay)) && \
+	(DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm3), nxp_lpc_i2s, okay)) && \
+	CONFIG_I2S
+
+	/* Set shared signal set 0 SCK, WS from Transmit I2S - Flexcomm3 */
+	SYSCTL1->SHAREDCTRLSET[0] = SYSCTL1_SHAREDCTRLSET_SHAREDSCKSEL(3) |
+				SYSCTL1_SHAREDCTRLSET_SHAREDWSSEL(3);
+
+#ifdef CONFIG_I2S_TEST_SEPARATE_DEVICES
+	/* Select Data in from Transmit I2S - Flexcomm 3 */
+	SYSCTL1->SHAREDCTRLSET[0] |= SYSCTL1_SHAREDCTRLSET_SHAREDDATASEL(3);
+	/* Enable Transmit I2S - Flexcomm 3 for Shared Data Out */
+	SYSCTL1->SHAREDCTRLSET[0] |= SYSCTL1_SHAREDCTRLSET_FC3DATAOUTEN(1);
+#endif
+
+	/* Set Receive I2S - Flexcomm 1 SCK, WS from shared signal set 0 */
+	SYSCTL1->FCCTRLSEL[1] = SYSCTL1_FCCTRLSEL_SCKINSEL(1) |
+				SYSCTL1_FCCTRLSEL_WSINSEL(1);
+
+	/* Set Transmit I2S - Flexcomm 3 SCK, WS from shared signal set 0 */
+	SYSCTL1->FCCTRLSEL[3] = SYSCTL1_FCCTRLSEL_SCKINSEL(1) |
+				SYSCTL1_FCCTRLSEL_WSINSEL(1);
+
+#ifdef CONFIG_I2S_TEST_SEPARATE_DEVICES
+	/* Select Receive I2S - Flexcomm 1 Data in from shared signal set 0 */
+	SYSCTL1->FCCTRLSEL[1] |= SYSCTL1_FCCTRLSEL_DATAINSEL(1);
+	/* Select Transmit I2S - Flexcomm 3 Data out to shared signal set 0 */
+	SYSCTL1->FCCTRLSEL[3] |= SYSCTL1_FCCTRLSEL_DATAOUTSEL(1);
+#endif
+
+	/* Pin is configured as FC3_RXD_SDA_MOSI_DATA */
+	uint32_t port0_pin23_config = (
+		IOPCTL_PIO_FUNC1 |
+		/* Disable pull-up / pull-down function */
+		IOPCTL_PIO_PUPD_DI |
+		/* Enable pull-down function */
+		IOPCTL_PIO_PULLDOWN_EN |
+		/* Enables input buffer function */
+		IOPCTL_PIO_INBUF_EN |
+		/* Normal mode */
+		IOPCTL_PIO_SLEW_RATE_NORMAL |
+		/* Full drive enable */
+		IOPCTL_PIO_FULLDRIVE_EN |
+		/* Analog mux is disabled */
+		IOPCTL_PIO_ANAMUX_DI |
+		/* Pseudo Output Drain is disabled */
+		IOPCTL_PIO_PSEDRAIN_DI |
+		/* Input function is not inverted */
+		IOPCTL_PIO_INV_DI);
+	/* PORT0 PIN23 (coords: C9) is configured as FC3_RXD_SDA_MOSI_DATA */
+	IOPCTL_PinMuxSet(IOPCTL, 0U, 23U, port0_pin23_config);
+
+	/* Pin is configured as FC3_TXD_SCL_MISO_WS */
+	uint32_t port0_pin22_config = (
+		IOPCTL_PIO_FUNC1 |
+		/* Disable pull-up / pull-down function */
+		IOPCTL_PIO_PUPD_DI |
+		/* Enable pull-down function */
+		IOPCTL_PIO_PULLDOWN_EN |
+		/* Enables input buffer function */
+		IOPCTL_PIO_INBUF_EN |
+		/* Normal mode */
+		IOPCTL_PIO_SLEW_RATE_NORMAL |
+		/* Full drive enable */
+		IOPCTL_PIO_FULLDRIVE_EN |
+		/* Analog mux is disabled */
+		IOPCTL_PIO_ANAMUX_DI |
+		/* Pseudo Output Drain is disabled */
+		IOPCTL_PIO_PSEDRAIN_DI |
+		/* Input function is not inverted */
+		IOPCTL_PIO_INV_DI);
+	/* PORT0 PIN22 (coords: D8) is configured as FC3_TXD_SCL_MISO_WS */
+	IOPCTL_PinMuxSet(IOPCTL, 0U, 22U, port0_pin22_config);
+
+	/* Pin is configured as FC3_SCK */
+	uint32_t port0_pin21_config = (
+		IOPCTL_PIO_FUNC1 |
+		/* Disable pull-up / pull-down function */
+		IOPCTL_PIO_PUPD_DI |
+		/* Enable pull-down function */
+		IOPCTL_PIO_PULLDOWN_EN |
+		/* Enables input buffer function */
+		IOPCTL_PIO_INBUF_EN |
+		/* Normal mode */
+		IOPCTL_PIO_SLEW_RATE_NORMAL |
+		/* Full drive enable */
+		IOPCTL_PIO_FULLDRIVE_EN |
+		/* Analog mux is disabled */
+		IOPCTL_PIO_ANAMUX_DI |
+		/* Pseudo Output Drain is disabled */
+		IOPCTL_PIO_PSEDRAIN_DI |
+		/* Input function is not inverted */
+		IOPCTL_PIO_INV_DI);
+	/* PORT0 PIN21 (coords: C7) is configured as FC3_SCK */
+	IOPCTL_PinMuxSet(IOPCTL, 0U, 21U, port0_pin21_config);
+
+	/* Pin is configured as FC1_RXD_SDA_MOSI_DATA */
+	uint32_t port0_pin9_config = (
+		IOPCTL_PIO_FUNC1 |
+		/* Disable pull-up / pull-down function */
+		IOPCTL_PIO_PUPD_DI |
+		/* Enable pull-down function */
+		IOPCTL_PIO_PULLDOWN_EN |
+		/* Enables input buffer function */
+		IOPCTL_PIO_INBUF_EN |
+		/* Normal mode */
+		IOPCTL_PIO_SLEW_RATE_NORMAL |
+		/* Full drive enable */
+		IOPCTL_PIO_FULLDRIVE_EN |
+		/* Analog mux is disabled */
+		IOPCTL_PIO_ANAMUX_DI |
+		/* Pseudo Output Drain is disabled */
+		IOPCTL_PIO_PSEDRAIN_DI |
+		/* Input function is not inverted */
+		IOPCTL_PIO_INV_DI);
+	/* PORT0 PIN9 (coords: L3) is configured as FC1_RXD_SDA_MOSI_DATA */
+	IOPCTL_PinMuxSet(IOPCTL, 0U, 9U, port0_pin9_config);
+
+#endif
+
 	return 0;
 }
 
