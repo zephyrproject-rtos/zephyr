@@ -60,9 +60,6 @@ void *xtensa_init_stack(struct k_thread *thread, int *stack_top,
 	bsa[-9] = bsa;
 	ret = &bsa[-9];
 
-#ifdef CONFIG_KERNEL_COHERENCE
-	z_xtensa_cache_flush(ret, (char *)stack_top - (char *)ret);
-#endif
 	return ret;
 }
 
@@ -73,6 +70,11 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	thread->switch_handle = xtensa_init_stack(thread,
 						  (int *)stack_ptr, entry,
 						  p1, p2, p3);
+#ifdef CONFIG_KERNEL_COHERENCE
+	__ASSERT((((size_t)stack) % XCHAL_DCACHE_LINESIZE) == 0, "");
+	__ASSERT((((size_t)stack_ptr) % XCHAL_DCACHE_LINESIZE) == 0, "");
+	z_xtensa_cache_flush_inv(stack, (char *)stack_ptr - (char *)stack);
+#endif
 }
 
 void z_irq_spurious(const void *arg)
