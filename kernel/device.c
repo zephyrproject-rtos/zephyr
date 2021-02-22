@@ -162,6 +162,28 @@ bool z_device_ready(const struct device *dev)
 	return dev->state->initialized && (dev->state->init_res == 0);
 }
 
+int device_required_foreach(const struct device *dev,
+			  device_visitor_callback_t visitor_cb,
+			  void *context)
+{
+	size_t handle_count = 0;
+	const device_handle_t *handles =
+		device_required_handles_get(dev, &handle_count);
+
+	/* Iterate over fixed devices */
+	for (size_t i = 0; i < handle_count; ++i) {
+		device_handle_t dh = handles[i];
+		const struct device *rdev = device_from_handle(dh);
+		int rc = visitor_cb(rdev, context);
+
+		if (rc < 0) {
+			return rc;
+		}
+	}
+
+	return handle_count;
+}
+
 #ifdef CONFIG_PM_DEVICE
 int device_pm_control_nop(const struct device *unused_device,
 			  uint32_t unused_ctrl_command,
