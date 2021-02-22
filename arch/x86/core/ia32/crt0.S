@@ -97,7 +97,7 @@ vm_enter:
 #endif /* CONFIG_X86_MMU */
 .endm
 
-SECTION_FUNC(TEXT_START, __start)
+SECTION_FUNC(TEXT, __start)
 
 #include "../common.S"
 
