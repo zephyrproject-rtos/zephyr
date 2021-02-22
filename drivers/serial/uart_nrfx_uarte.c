@@ -1397,7 +1397,8 @@ static int uarte_instance_init(const struct device *dev,
 
 	// FIXME: This is a cheap workaround needed because Ninebot made the
 	// Scooter UART multi-drop. We should make it prettier, somehow.
-	if (config->pseltxd == DT_PROP(DT_NODELABEL(uart1), tx_pin)) {
+	if (IS_ENABLED(CONFIG_BOARD_WOLFENSTEIN) &&
+	    config->pseltxd == DT_PROP(DT_NODELABEL(uart1), tx_pin)) {
 		nrf_gpio_cfg(
 			DT_PROP(DT_NODELABEL(uart1), tx_pin),
 			NRF_GPIO_PIN_DIR_OUTPUT,
@@ -1499,7 +1500,8 @@ static void uarte_nrfx_pins_enable(const struct device *dev, bool enable)
 
 		// FIXME: This is a cheap workaround needed because Ninebot made the
 		// Scooter UART multi-drop. We should make it prettier, somehow.
-		if (tx_pin == DT_PROP(DT_NODELABEL(uart1), tx_pin)) {
+		if (IS_ENABLED(CONFIG_BOARD_WOLFENSTEIN) &&
+		    tx_pin == DT_PROP(DT_NODELABEL(uart1), tx_pin)) {
 			nrf_gpio_cfg(
 				DT_PROP(DT_NODELABEL(uart1), tx_pin),
 				NRF_GPIO_PIN_DIR_OUTPUT,
