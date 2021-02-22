@@ -381,6 +381,14 @@ struct net_if_config {
 #if defined(CONFIG_NET_IPV4_AUTO) && defined(CONFIG_NET_NATIVE_IPV4)
 	struct net_if_ipv4_autoconf ipv4auto;
 #endif /* CONFIG_NET_IPV4_AUTO */
+
+#if defined(CONFIG_NET_L2_VIRTUAL)
+	/**
+	 * This list keeps track of the virtual network interfaces
+	 * that are attached to this network interface.
+	 */
+	sys_slist_t virtual_interfaces;
+#endif /* CONFIG_NET_L2_VIRTUAL */
 };
 
 /**

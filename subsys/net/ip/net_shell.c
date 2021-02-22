@@ -51,6 +51,14 @@ LOG_MODULE_REGISTER(net_shell, LOG_LEVEL_DBG);
 #include <net/ethernet_mgmt.h>
 #endif
 
+#if defined(CONFIG_NET_L2_VIRTUAL)
+#include <net/virtual.h>
+#endif
+
+#if defined(CONFIG_NET_L2_VIRTUAL_MGMT)
+#include <net/virtual_mgmt.h>
+#endif
+
 #if defined(CONFIG_NET_GPTP)
 #include <net/gptp.h>
 #include "ethernet/gptp/gptp_messages.h"
@@ -146,6 +154,16 @@ static const char *iface2str(struct net_if *iface, const char **extra)
 		}
 
 		return "Ethernet";
+	}
+#endif
+
+#ifdef CONFIG_NET_L2_VIRTUAL
+	if (net_if_l2(iface) == &NET_L2_GET_NAME(VIRTUAL)) {
+		if (extra) {
+			*extra = "=======";
+		}
+
+		return "Virtual";
 	}
 #endif
 
@@ -315,6 +333,46 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		PR_INFO("Interface is suspended, thus not able to tx/rx.\n");
 	}
 #endif
+
+#if defined(CONFIG_NET_L2_VIRTUAL)
+	if (!sys_slist_is_empty(&iface->config.virtual_interfaces)) {
+		struct virtual_interface_context *ctx, *tmp;
+
+		PR("Virtual interfaces attached to this : ");
+		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(
+					&iface->config.virtual_interfaces,
+					ctx, tmp, node) {
+			if (ctx->virtual_iface == iface) {
+				continue;
+			}
+
+			PR("%d ", net_if_get_by_iface(ctx->virtual_iface));
+		}
+
+		PR("\n");
+	}
+
+	if (net_if_l2(iface) == &NET_L2_GET_NAME(VIRTUAL)) {
+		struct net_if *orig_iface;
+		const char *name = net_virtual_get_name(iface);
+
+		if (!(name && name[0])) {
+			name = "<unknown>";
+		}
+
+		PR("Name      : %s\n", name);
+
+		orig_iface = net_virtual_get_iface(iface);
+		if (orig_iface == NULL) {
+			PR("No attached network interface.\n");
+		} else {
+			PR("Attached  : %d (%s / %p)\n",
+			   net_if_get_by_iface(orig_iface),
+			   iface2str(orig_iface, NULL),
+			   orig_iface);
+		}
+	}
+#endif /* CONFIG_NET_L2_VIRTUAL */
 
 	if (net_if_get_link_addr(iface) &&
 	    net_if_get_link_addr(iface)->addr) {

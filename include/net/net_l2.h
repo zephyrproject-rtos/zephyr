@@ -82,6 +82,11 @@ struct net_l2 {
 	extern const struct net_l2 NET_L2_GET_NAME(_name)
 #define NET_L2_GET_CTX_TYPE(_name) _name##_CTX_TYPE
 
+#ifdef CONFIG_NET_L2_VIRTUAL
+#define VIRTUAL_L2		VIRTUAL
+NET_L2_DECLARE_PUBLIC(VIRTUAL_L2);
+#endif /* CONFIG_NET_L2_DUMMY */
+
 #ifdef CONFIG_NET_L2_DUMMY
 #define DUMMY_L2		DUMMY
 #define DUMMY_L2_CTX_TYPE	void*
