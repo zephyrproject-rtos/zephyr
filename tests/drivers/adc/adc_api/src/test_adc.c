@@ -49,7 +49,8 @@
 	defined(CONFIG_BOARD_BT510) || \
 	defined(CONFIG_BOARD_PINNACLE_100_DVK) || \
 	defined(CONFIG_BOARD_ARDUINO_NANO_33_BLE) || \
-	defined(CONFIG_BOARD_BMD_345_EVAL)
+	defined(CONFIG_BOARD_BMD_345_EVAL) || \
+	defined(CONFIG_BOARD_UBX_BMD380EVAL_NRF52840)
 
 #include <hal/nrf_saadc.h>
 #define ADC_DEVICE_NAME		DT_LABEL(DT_INST(0, nordic_nrf_saadc))
