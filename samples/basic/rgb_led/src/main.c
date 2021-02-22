@@ -22,34 +22,34 @@
 #define BLUE_NODE DT_ALIAS(blue_pwm_led)
 
 #if DT_NODE_HAS_STATUS(RED_NODE, okay)
-#define RED_LABEL	DT_PWMS_LABEL(RED_NODE)
+#define RED_CTLR_NODE	DT_PWMS_CTLR(RED_NODE)
 #define RED_CHANNEL	DT_PWMS_CHANNEL(RED_NODE)
 #define RED_FLAGS	DT_PWMS_FLAGS(RED_NODE)
 #else
 #error "Unsupported board: red-pwm-led devicetree alias is not defined"
-#define RED_LABEL	""
+#define RED_CTLR_NODE	DT_INVALID_NODE
 #define RED_CHANNEL	0
 #define RED_FLAGS	0
 #endif
 
 #if DT_NODE_HAS_STATUS(GREEN_NODE, okay)
-#define GREEN_LABEL	DT_PWMS_LABEL(GREEN_NODE)
+#define GREEN_CTLR_NODE	DT_PWMS_CTLR(GREEN_NODE)
 #define GREEN_CHANNEL	DT_PWMS_CHANNEL(GREEN_NODE)
 #define GREEN_FLAGS	DT_PWMS_FLAGS(GREEN_NODE)
 #else
 #error "Unsupported board: green-pwm-led devicetree alias is not defined"
-#define GREEN_LABEL	""
+#define GREEN_CTLR_NODE	DT_INVALID_NODE
 #define GREEN_CHANNEL	0
 #define GREEN_FLAGS	0
 #endif
 
 #if DT_NODE_HAS_STATUS(BLUE_NODE, okay)
-#define BLUE_LABEL	DT_PWMS_LABEL(BLUE_NODE)
+#define BLUE_CTLR_NODE	DT_PWMS_CTLR(BLUE_NODE)
 #define BLUE_CHANNEL	DT_PWMS_CHANNEL(BLUE_NODE)
 #define BLUE_FLAGS	DT_PWMS_FLAGS(BLUE_NODE)
 #else
 #error "Unsupported board: blue-pwm-led devicetree alias is not defined"
-#define BLUE_LABEL	""
+#define BLUE_CTLR_NODE	DT_INVALID_NODE
 #define BLUE_CHANNEL	0
 #define BLUE_FLAGS	0
 #endif
@@ -78,11 +78,22 @@ void main(void)
 
 	printk("PWM-based RGB LED control\n");
 
-	pwm_dev[RED] = device_get_binding(RED_LABEL);
-	pwm_dev[GREEN] = device_get_binding(GREEN_LABEL);
-	pwm_dev[BLUE] = device_get_binding(BLUE_LABEL);
-	if (!pwm_dev[RED] || !pwm_dev[GREEN] || !pwm_dev[BLUE]) {
-		printk("Error: cannot find one or more PWM devices\n");
+	pwm_dev[RED] = DEVICE_DT_GET(RED_CTLR_NODE);
+	pwm_dev[GREEN] = DEVICE_DT_GET(GREEN_CTLR_NODE);
+	pwm_dev[BLUE] = DEVICE_DT_GET(BLUE_CTLR_NODE);
+
+	if (!device_is_ready(pwm_dev[RED])) {
+		printk("Error: red PWM device %s is not ready\n", pwm_dev[RED]->name);
+		return;
+	}
+
+	if (!device_is_ready(pwm_dev[GREEN])) {
+		printk("Error: green PWM device %s is not ready\n", pwm_dev[GREEN]->name);
+		return;
+	}
+
+	if (!device_is_ready(pwm_dev[BLUE])) {
+		printk("Error: blue PWM device %s is not ready\n", pwm_dev[BLUE]->name);
 		return;
 	}
 
