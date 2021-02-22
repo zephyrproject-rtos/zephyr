@@ -296,6 +296,17 @@ void test_syscall_cpu_scrubs_regs(void)
 				"not scrubbed after system call.");
 	}
 }
+#else
+void test_syscall_cpu_scrubs_regs(void)
+{
+	ztest_test_skip();
+}
+
+void test_arm_syscalls(void)
+{
+	ztest_test_skip();
+}
+
 #endif /* CONFIG_USERSPACE */
 /**
  * @}
