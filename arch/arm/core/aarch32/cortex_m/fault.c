@@ -324,7 +324,7 @@ static uint32_t mem_manage_fault(z_arch_esf_t *esf, int from_hard_fault,
 		}
 #else
 	(void)mmfar;
-	__ASSERT(0,
+	__ASSERT(!(SCB->CFSR & SCB_CFSR_MSTKERR_Msk),
 		"Stacking error without stack guard / User-mode support\n");
 #endif /* CONFIG_MPU_STACK_GUARD || CONFIG_USERSPACE */
 	}
