@@ -125,7 +125,7 @@
 			compatible = "nuvoton,npcx-pinctrl";
 			/* First reg region is System Configuration Device */
 			/* Second reg region is System Glue Device */
-			reg = <0x400c3000 0x2000
+			reg = <0x400c3000 0x70
 			       0x400a5000 0x2000>;
 			reg-names = "scfg", "glue";
 			#alt-cells = <3>;
