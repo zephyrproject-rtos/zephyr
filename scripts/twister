@@ -863,6 +863,7 @@ def main():
 
     runner = TestRunner(options.board_root, options.testcase_root, options.outdir)
 
+
     # Check version of zephyr repo
     runner.check_zephyr_version()
 
@@ -1248,6 +1249,10 @@ def main():
         # we do not try build failures.
         if retries == 0 or results.failed == results.error:
             break
+
+    for i in runner.instances.values():
+        for c in i.testcases:
+            print(c, c.result)
 
     # figure out which report to use for size comparison
     if options.compare_report:
