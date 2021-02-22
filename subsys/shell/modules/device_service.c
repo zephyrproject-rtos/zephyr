@@ -10,6 +10,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <device.h>
+#include <sys/arch_interface.h>
 
 extern const struct device __device_PRE_KERNEL_1_start[];
 extern const struct device __device_PRE_KERNEL_2_start[];
@@ -106,8 +107,25 @@ static int cmd_device_levels(const struct shell *shell,
 	return 0;
 }
 
+struct cmd_device_list_visitor_context {
+	const struct shell *shell;
+	char *buf;
+	size_t buf_size;
+};
+
+static int cmd_device_list_visitor(const struct device *dev,
+				   void *context)
+{
+	const struct cmd_device_list_visitor_context *ctx = context;
+
+	shell_fprintf(ctx->shell, SHELL_NORMAL, "  requires: %s\n",
+		      get_device_name(dev, ctx->buf, ctx->buf_size));
+
+	return 0;
+}
+
 static int cmd_device_list(const struct shell *shell,
-			      size_t argc, char **argv)
+			   size_t argc, char **argv)
 {
 	const struct device *devlist;
 	size_t devcnt = z_device_get_all_static(&devlist);
@@ -122,9 +140,6 @@ static int cmd_device_list(const struct shell *shell,
 		char buf[20];
 		const char *name = get_device_name(dev, buf, sizeof(buf));
 		const char *state = "READY";
-		size_t nhdls = 0;
-		const device_handle_t *hdls =
-			device_required_handles_get(dev, &nhdls);
 
 		shell_fprintf(shell, SHELL_NORMAL, "- %s", name);
 		if (!device_is_ready(dev)) {
@@ -141,12 +156,14 @@ static int cmd_device_list(const struct shell *shell,
 		}
 
 		shell_fprintf(shell, SHELL_NORMAL, " (%s)\n", state);
-		for (size_t di = 0; di < nhdls; ++di) {
-			device_handle_t dh = hdls[di];
-			const struct device *rdp = device_from_handle(dh);
+		if (!_is_user_context()) {
+			struct cmd_device_list_visitor_context ctx = {
+				.shell = shell,
+				.buf = buf,
+				.buf_size = sizeof(buf),
+			};
 
-			shell_fprintf(shell, SHELL_NORMAL, "  requires: %s\n",
-				      get_device_name(rdp, buf, sizeof(buf)));
+			(void)device_required_foreach(dev, cmd_device_list_visitor, &ctx);
 		}
 	}
 
