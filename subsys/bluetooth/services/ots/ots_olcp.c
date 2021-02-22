@@ -16,6 +16,7 @@
 #include <bluetooth/services/ots.h>
 #include "ots_internal.h"
 #include "ots_obj_manager_internal.h"
+#include "ots_dir_list_internal.h"
 
 #include <logging/log.h>
 
@@ -282,6 +283,10 @@ ssize_t bt_gatt_ots_olcp_write(struct bt_conn *conn,
 					      sizeof(id));
 		LOG_DBG("Selecting a new Current Object with id: %s",
 			log_strdup(id));
+
+		if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ)) {
+			bt_ots_dir_list_selected(ots);
+		}
 
 		if (ots->cb->obj_selected) {
 			ots->cb->obj_selected(ots, conn, ots->cur_obj->id);
