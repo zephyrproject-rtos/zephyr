@@ -71,9 +71,9 @@ static inline bool arch_mem_coherent(void *ptr)
 #endif
 
 #ifdef CONFIG_KERNEL_COHERENCE
-static inline void arch_cohere_stacks(struct k_thread *old_thread,
-				      void *old_switch_handle,
-				      struct k_thread *new_thread)
+static ALWAYS_INLINE void arch_cohere_stacks(struct k_thread *old_thread,
+					     void *old_switch_handle,
+					     struct k_thread *new_thread)
 {
 	size_t ostack = old_thread->stack_info.start;
 	size_t osz    = old_thread->stack_info.size;
@@ -83,24 +83,61 @@ static inline void arch_cohere_stacks(struct k_thread *old_thread,
 	size_t nsz    = new_thread->stack_info.size;
 	size_t nsp    = (size_t) new_thread->switch_handle;
 
+	/* The "live" area (the region between the switch handle,
+	 * which is the stack pointer, and the top of the stack
+	 * memory) of the inbound stack needs to be invalidated: it
+	 * may contain data that was modified on another CPU since the
+	 * last time this CPU ran the thread, and our cache may be
+	 * stale.
+	 *
+	 * The corresponding "dead area" of the inbound stack can be
+	 * ignored.  We may have cached data in that region, but by
+	 * definition any unused stack memory will always be written
+	 * before being read (well, unless the code has an
+	 * uninitialized data error) so our stale cache will be
+	 * automatically overwritten as needed.
+	 */
 	z_xtensa_cache_inv((void *)nsp, (nstack + nsz) - nsp);
 
-	/* FIXME: dummy initializion threads don't have stack info set
-	 * up and explode the logic above.  Find a way to get this
-	 * test out of the hot paths!
+	/* Dummy threads appear at system initialization, but don't
+	 * have stack_info data and will never be saved.  Ignore.
 	 */
 	if (old_thread->base.thread_state & _THREAD_DUMMY) {
 		return;
 	}
 
-	/* In interrupt context, we have a valid frame already from
-	 * the interrupt entry code, but for arch_switch() that hasn't
-	 * happened yet.  It will do the flush itself, we just have to
-	 * calculate the boundary for it.
+	/* For the outbound thread, we obviousy want to flush any data
+	 * in the live area (for the benefit of whichever CPU runs
+	 * this thread next).  But we ALSO have to invalidate the dead
+	 * region of the stack.  Those lines may have DIRTY data in
+	 * our own cache, and we cannot be allowed to write them back
+	 * later on top of the stack's legitimate owner!
+	 *
+	 * This work comes in two flavors.  In interrupts, the
+	 * outgoing context has already been saved for us, so we can
+	 * do the flush right here.  In direct context switches, we
+	 * are still using the stack, so we do the invalidate of the
+	 * bottom here, (and flush the line containing SP to handle
+	 * the overlap).  The remaining flush of the live region
+	 * happens in the assembly code once the context is pushed, up
+	 * to the stack top stashed in a special register.
 	 */
 	if (old_switch_handle != NULL) {
 		z_xtensa_cache_flush((void *)osp, (ostack + osz) - osp);
+		z_xtensa_cache_inv((void *)ostack, osp - ostack);
 	} else {
+		/* When in a switch, our current stack is the outbound
+		 * stack.  Flush the single line containing the stack
+		 * bottom (which is live data) before invalidating
+		 * everything below that.  Remember that the 16 bytes
+		 * below our SP are the calling function's spill area
+		 * and may be live too.
+		 */
+		__asm__ volatile("mov %0, a1" : "=r"(osp));
+		osp -= 16;
+		z_xtensa_cache_flush((void *)osp, 1);
+		z_xtensa_cache_inv((void *)ostack, osp - ostack);
+
 		/* FIXME: hardcoding EXCSAVE3 is bad, should be
 		 * configurable a-la XTENSA_KERNEL_CPU_PTR_SR.
 		 */
