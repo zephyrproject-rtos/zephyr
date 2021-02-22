@@ -23,16 +23,16 @@ enum test_pwm_unit {
 void get_test_pwms(struct test_pwm *out, struct test_pwm *in)
 {
 	/* PWM generator device */
-	out->dev = device_get_binding(PWM_LOOPBACK_OUT_LABEL);
+	out->dev = DEVICE_DT_GET(PWM_LOOPBACK_OUT_CTLR);
 	out->pwm = PWM_LOOPBACK_OUT_CHANNEL;
 	out->flags = PWM_LOOPBACK_OUT_FLAGS;
-	zassert_not_null(out->dev, "pwm loopback output device not found");
+	zassert_true(device_is_ready(out->dev), "pwm loopback output device is not ready");
 
 	/* PWM capture device */
-	in->dev = device_get_binding(PWM_LOOPBACK_IN_LABEL);
+	in->dev = DEVICE_DT_GET(PWM_LOOPBACK_IN_CTLR);
 	in->pwm = PWM_LOOPBACK_IN_CHANNEL;
 	in->flags = PWM_LOOPBACK_IN_FLAGS;
-	zassert_not_null(in->dev, "pwm loopback input device not found");
+	zassert_true(device_is_ready(in->dev), "pwm loopback input device is not ready");
 }
 
 void test_capture(uint32_t period, uint32_t pulse, enum test_pwm_unit unit,
