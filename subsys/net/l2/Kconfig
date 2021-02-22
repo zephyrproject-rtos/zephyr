@@ -66,6 +66,8 @@ config NET_L2_BT_SHELL
 	  This can be used for testing Bluetooth management commands through the
 	  console via a shell module named "net_bt".
 
+source "subsys/net/l2/virtual/Kconfig"
+
 source "subsys/net/l2/ethernet/Kconfig"
 
 source "subsys/net/l2/ppp/Kconfig"

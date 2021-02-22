@@ -19,6 +19,7 @@ LOG_MODULE_REGISTER(net_if, CONFIG_NET_IF_LOG_LEVEL);
 #include <net/net_if.h>
 #include <net/net_mgmt.h>
 #include <net/ethernet.h>
+#include <net/virtual.h>
 
 #include "net_private.h"
 #include "ipv6.h"
@@ -436,6 +437,7 @@ static inline void init_iface(struct net_if *iface)
 #if defined(CONFIG_NET_NATIVE_IPV6)
 	net_if_flag_set(iface, NET_IF_IPV6);
 #endif
+	net_virtual_init(iface);
 
 	NET_DBG("On iface %p", iface);
 
@@ -3967,6 +3969,8 @@ int net_if_down(struct net_if *iface)
 	if (status < 0) {
 		goto out;
 	}
+
+	net_virtual_disable(iface);
 
 done:
 	net_if_flag_clear(iface, NET_IF_UP);
