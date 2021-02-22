@@ -304,6 +304,12 @@ static int spi_nor_access(const struct device *const dev,
 #define spi_nor_cmd_addr_write(dev, opcode, addr, src, length) \
 	spi_nor_access(dev, opcode, true, addr, (void *)src, length, true)
 
+static inline int spi_nor_cmd_write_sr(const struct device *const dev,
+						uint8_t value)
+{
+	return spi_nor_access(dev, SPI_NOR_CMD_WRSR, false, 0, &value, 1, true);
+}
+
 #if defined(CONFIG_SPI_NOR_SFDP_RUNTIME) || defined(CONFIG_FLASH_JESD216_API)
 /*
  * @brief Read content from the SFDP hierarchy
@@ -908,6 +914,12 @@ static int spi_nor_configure(const struct device *dev)
 	    && (enter_dpd(dev) != 0)) {
 		return -ENODEV;
 	}
+
+#if defined(CONFIG_SPI_NOR_UNLOCK_ON_STARTUP)
+	spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
+	spi_nor_cmd_write_sr(dev, 0);
+	spi_nor_wait_until_ready(dev);
+#endif
 
 	return 0;
 }

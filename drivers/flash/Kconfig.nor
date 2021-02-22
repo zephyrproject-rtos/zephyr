@@ -73,4 +73,12 @@ config SPI_NOR_IDLE_IN_DPD
 	  long periods, and when used the impact of waiting for mode
 	  enter and exit delays is acceptable.
 
+config SPI_NOR_UNLOCK_ON_STARTUP
+	bool "Unlock flash partitions on startup"
+	help
+	  Flash devices areas can be locked against erases and writes.
+	  This can be done with writing to the block protect bits in the
+	  status register. This option allows to unlock those areas on
+	  configuring the spi-nor device.
+
 endif # SPI_NOR
