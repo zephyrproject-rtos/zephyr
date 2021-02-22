@@ -59,18 +59,23 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 
 	adv_iso = ull_adv_iso_get(big_handle);
 
-	if (!adv_iso || adv_iso->is_created) {
+	/* Already created */
+	if (!adv_iso || adv_iso->lll.adv) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
+	/* No advertising set created */
 	adv = ull_adv_is_created_get(adv_handle);
+	if (!adv) {
+		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
+	}
 
 	/* Does not identify a periodic advertising train or
 	 * the periodic advertising trains is already associated
 	 * with another BIG.
 	 */
 	lll_adv_sync = adv->lll.sync;
-	if (!adv || !lll_adv_sync || lll_adv_sync->iso) {
+	if (!lll_adv_sync || lll_adv_sync->iso) {
 		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
 	}
 
@@ -153,9 +158,6 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	node_rx->hdr.handle = big_handle;
 	node_rx->hdr.rx_ftr.param = adv_iso;
 
-	/* FIXME: instead of is_created use lll_adv_iso->adv being set */
-	adv_iso->is_created = true;
-
 	return BT_HCI_ERR_SUCCESS;
 }
 
@@ -215,7 +217,6 @@ uint8_t ll_big_terminate(uint8_t big_handle, uint8_t reason)
 			  TICKER_ID_ADV_ISO_BASE + adv_iso->bis_handle,
 			  ticker_op_stop_cb, adv_iso);
 
-	adv_iso->is_created = 0U;
 	lll_adv_iso->adv = NULL;
 	lll_adv_sync->iso = NULL;
 
@@ -262,7 +263,7 @@ uint8_t ll_adv_iso_by_hci_handle_get(uint8_t hci_handle, uint8_t *handle)
 	adv_iso =  &ll_adv_iso[0];
 
 	for (idx = 0U; idx < BT_CTLR_ADV_SET; idx++, adv_iso++) {
-		if (adv_iso->is_created &&
+		if (adv_iso->lll.adv &&
 		    (adv_iso->hci_handle == hci_handle)) {
 			*handle = idx;
 			return 0;
@@ -281,7 +282,7 @@ uint8_t ll_adv_iso_by_hci_handle_new(uint8_t hci_handle, uint8_t *handle)
 	adv_iso_empty = NULL;
 
 	for (idx = 0U; idx < BT_CTLR_ADV_SET; idx++, adv_iso++) {
-		if (adv_iso->is_created) {
+		if (adv_iso->lll.adv) {
 			if (adv_iso->hci_handle == hci_handle) {
 				return BT_HCI_ERR_CMD_DISALLOWED;
 			}
