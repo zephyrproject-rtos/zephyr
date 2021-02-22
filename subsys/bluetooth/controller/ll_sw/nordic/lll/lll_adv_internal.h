@@ -10,6 +10,11 @@ int lll_adv_data_release(struct lll_adv_pdu *pdu);
 
 struct pdu_adv *lll_adv_pdu_alloc(struct lll_adv_pdu *pdu, uint8_t *idx);
 
+int lll_adv_and_extra_data_release(struct lll_adv_pdu *pdu);
+struct pdu_adv *lll_adv_pdu_and_extra_data_alloc(struct lll_adv_pdu *pdu,
+						 void **extra_data,
+						 uint8_t *idx);
+
 static inline void lll_adv_pdu_enqueue(struct lll_adv_pdu *pdu, uint8_t idx)
 {
 	pdu->last = idx;
@@ -114,6 +119,7 @@ struct pdu_adv *lll_adv_pdu_latest_get(struct lll_adv_pdu *pdu,
 struct pdu_adv *lll_adv_pdu_and_extra_data_latest_get(struct lll_adv_pdu *pdu,
 						      void **extra_data,
 						      uint8_t *is_modified);
+
 #endif /* CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY */
 
 static inline struct pdu_adv *lll_adv_data_latest_get(struct lll_adv *lll,

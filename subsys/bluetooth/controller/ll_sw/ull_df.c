@@ -23,6 +23,7 @@
 #include "lll_adv.h"
 #include "ull_adv_types.h"
 #include "ull_adv_internal.h"
+#include "lll_adv_internal.h"
 
 #include "ull_df.h"
 #include "lll_df_internal.h"
