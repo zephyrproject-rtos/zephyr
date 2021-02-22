@@ -2108,7 +2108,44 @@ function(zephyr_check_cache variable)
   # Store the specified variable in parent scope and the cache
   set(${variable} ${${variable}} PARENT_SCOPE)
   set(CACHED_${variable} ${${variable}} CACHE STRING "Selected ${variable_text}")
+
+  # The variable is now set to its final value.
+  zephyr_boilerplate_watch(${variable})
 endfunction(zephyr_check_cache variable)
+
+
+# Usage:
+#   zephyr_boilerplate_watch(SOME_BOILERPLATE_VAR)
+#
+# Inform the build system that SOME_BOILERPLATE_VAR, a variable
+# handled in cmake/app/boilerplate.cmake, is now fixed and should no
+# longer be changed.
+#
+# This function uses variable_watch() to print a noisy warning
+# if the variable is set after it returns.
+function(zephyr_boilerplate_watch variable)
+  variable_watch(${variable} zephyr_variable_set_too_late)
+endfunction()
+
+function(zephyr_variable_set_too_late variable access value current_list_file)
+  if (access STREQUAL "MODIFIED_ACCESS")
+    message(WARNING
+"
+   **********************************************************************
+   *
+   *                    WARNING
+   *
+   * CMake variable ${variable} set to \"${value}\" in:
+   *     ${current_list_file}
+   *
+   * This is too late to make changes! The change was ignored.
+   *
+   * Hint: ${variable} must be set before calling find_package(Zephyr ...).
+   *
+   **********************************************************************
+")
+  endif()
+endfunction()
 
 # Usage:
 #   zephyr_get_targets(<directory> <types> <targets>)

@@ -483,6 +483,9 @@ unset(CONF_FILE CACHE)
 
 zephyr_file(CONF_FILES ${APPLICATION_SOURCE_DIR}/boards DTS APP_BOARD_DTS)
 
+# The CONF_FILE variable is now set to its final value.
+zephyr_boilerplate_watch(CONF_FILE)
+
 if(DTC_OVERLAY_FILE)
   # DTC_OVERLAY_FILE has either been specified on the cmake CLI or is already
   # in the CMakeCache.txt. This has precedence over the environment
@@ -519,6 +522,9 @@ include(${ZEPHYR_BASE}/cmake/host-tools.cmake)
 
 # Include board specific device-tree flags before parsing.
 include(${BOARD_DIR}/pre_dt_board.cmake OPTIONAL)
+
+# The DTC_OVERLAY_FILE variable is now set to its final value.
+zephyr_boilerplate_watch(DTC_OVERLAY_FILE)
 
 # DTS should be close to kconfig because CONFIG_ variables from
 # kconfig and dts should be available at the same time.
