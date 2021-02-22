@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(net_ipv4, CONFIG_NET_IPV4_LOG_LEVEL);
 #include <net/net_pkt.h>
 #include <net/net_stats.h>
 #include <net/net_context.h>
+#include <net/virtual.h>
 #include "net_private.h"
 #include "connection.h"
 #include "net_stats.h"
@@ -223,6 +224,12 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 	uint8_t opts_len;
 	int pkt_len;
 
+#if defined(CONFIG_NET_L2_VIRTUAL)
+	struct net_pkt_cursor hdr_start;
+
+	net_pkt_cursor_backup(pkt, &hdr_start);
+#endif
+
 	net_stats_update_ipv4_recv(net_pkt_iface(pkt));
 
 	hdr = (struct net_ipv4_hdr *)net_pkt_get_data(pkt, &ipv4_access);
@@ -327,6 +334,24 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 			verdict = NET_OK;
 		}
 		break;
+
+#if defined(CONFIG_NET_L2_VIRTUAL)
+	case IPPROTO_IPV6:
+	case IPPROTO_IPIP: {
+		struct net_addr remote_addr;
+
+		remote_addr.family = AF_INET;
+		net_ipaddr_copy(&remote_addr.in_addr, &hdr->src);
+
+		/* Get rid of the old IP header */
+		net_pkt_cursor_restore(pkt, &hdr_start);
+		net_pkt_pull(pkt, net_pkt_ip_hdr_len(pkt) +
+			     net_pkt_ipv4_opts_len(pkt));
+
+		return net_virtual_input(net_pkt_iface(pkt), &remote_addr,
+					 pkt);
+	}
+#endif
 	}
 
 	if (verdict == NET_DROP) {
