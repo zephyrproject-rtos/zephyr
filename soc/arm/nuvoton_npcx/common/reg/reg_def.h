@@ -1247,4 +1247,21 @@ struct tach_reg {
 #define NPCX_TWUEN_TCWEN                 2
 #define NPCX_TWUEN_TDWEN                 3
 
+/* Debug Interface registers */
+struct dbg_reg {
+	/* 0x000: Debug Control */
+	volatile uint8_t DBGCTRL;
+	volatile uint8_t reserved1;
+	/* 0x002: Debug Freeze Enable 1 */
+	volatile uint8_t DBGFRZEN1;
+	/* 0x003: Debug Freeze Enable 2 */
+	volatile uint8_t DBGFRZEN2;
+	/* 0x004: Debug Freeze Enable 3 */
+	volatile uint8_t DBGFRZEN3;
+	/* 0x005: Debug Freeze Enable 4 */
+	volatile uint8_t DBGFRZEN4;
+};
+/* Debug Interface registers fields */
+#define NPCX_DBGFRZEN3_GLBL_FRZ_DIS      7
+
 #endif /* _NUVOTON_NPCX_REG_DEF_H */
