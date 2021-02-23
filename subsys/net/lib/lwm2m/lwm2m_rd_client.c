@@ -116,8 +116,12 @@ struct lwm2m_rd_client_info {
 	bool update_objects : 1;
 } client;
 
-/* buffers */
-static char query_buffer[64]; /* allocate some data for queries and updates */
+/* Allocate some data for queries and updates. Make sure it's large enough to
+ * hold the largest query string, which in most cases will be the endpoint
+ * string. In other case, 32 bytes are enough to encode any other query string
+ * documented in the LwM2M specification.
+ */
+static char query_buffer[MAX(32, sizeof("ep=") + CLIENT_EP_LEN)];
 static uint8_t client_data[256]; /* allocate some data for the RD */
 
 void engine_update_tx_time(void)
