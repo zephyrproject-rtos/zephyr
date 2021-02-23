@@ -228,7 +228,7 @@ void pm_system_resume_from_deep_sleep(void);
  *
  * This function would notify exit from kernel idling if a corresponding
  * pm_system_suspend() notification was handled and did not return
- * POWER_STATE_ACTIVE.
+ * PM_STATE_ACTIVE.
  *
  * This function would be called from the ISR context of the event
  * that caused the exit from kernel idling. This will be called immediately
