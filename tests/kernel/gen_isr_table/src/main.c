@@ -51,13 +51,13 @@ extern uint32_t _irq_vector_table[];
  * the board.
  */
 #define TEST_NUM_IRQS	30
-#elif defined(CONFIG_SOC_NPCX7M6FB)
-/* In NPCX7M6FB, it uses some the IRQs at the end of the vector table, for
+#elif defined(CONFIG_SOC_SERIES_NPCX7)
+/* In NPCX7 series, it uses some the IRQs at the end of the vector table, for
  * example, the irq 60 and 61 used for Multi-Input Wake-Up Unit (MIWU) device
  * by default, and conflicts with isr used for testing. Move IRQs for this
  * test suite to solve the issue.
  */
-#define TEST_NUM_IRQS	42
+#define TEST_NUM_IRQS	46
 #else
 #define TEST_NUM_IRQS	CONFIG_NUM_IRQS
 #endif
