@@ -2,34 +2,54 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import importlib
+import logging
+
 from runners.core import ZephyrBinaryRunner, MissingProgram
+
+_logger = logging.getLogger('runners')
+
+def _import_runner_module(runner_name):
+    try:
+        importlib.import_module(f'runners.{runner_name}')
+    except ImportError:
+        # Runners are supposed to gracefully handle failures when they
+        # import anything outside of stdlib, but they sometimes do
+        # not. Catch ImportError to handle this.
+        _logger.warning(f'The module for runner "{runner_name}" '
+                        'could not be imported. This most likely means '
+                        'it is not handling its dependencies properly. '
+                        'Please report this to the zephyr developers.')
 
 # We import these here to ensure the ZephyrBinaryRunner subclasses are
 # defined; otherwise, ZephyrBinaryRunner.get_runners() won't work.
 
-# Explicitly silence the unused import warning.
-# flake8: noqa: F401
-# Keep this list sorted by runner name.
-from runners import blackmagicprobe
-from runners import bossac
-from runners import canopen_program
-from runners import dediprog
-from runners import dfu
-from runners import esp32
-from runners import hifive1
-from runners import intel_s1000
-from runners import jlink
-from runners import misc
-from runners import nios2
-from runners import nrfjprog
-from runners import nsim
-from runners import openocd
-from runners import pyocd
-from runners import qemu
-from runners import stm32flash
-from runners import xtensa
-from runners import mdb
-from runners import stm32cubeprogrammer
+_names = [
+    'blackmagicprobe',
+    'bossac',
+    'canopen_program',
+    'dediprog',
+    'dfu',
+    'esp32',
+    'hifive1',
+    'intel_s1000',
+    'jlink',
+    'mdb',
+    'misc',
+    'nios2',
+    'nrfjprog',
+    'nsim',
+    'openocd',
+    'pyocd',
+    'qemu',
+    'stm32cubeprogrammer',
+    'stm32flash',
+    'xtensa',
+    # Keep this list sorted by runner name; don't add to the end.
+]
+
+for _name in _names:
+    _import_runner_module(_name)
 
 def get_runner_cls(runner):
     '''Get a runner's class object, given its name.'''
