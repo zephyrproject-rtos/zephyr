@@ -125,10 +125,9 @@ ull_adv_aux_hdr_len_calc(struct pdu_adv_com_ext_adv *com_hdr, uint8_t **dptr)
 	uint8_t len;
 
 	len = *dptr - (uint8_t *)com_hdr;
-	if (len <= (offsetof(struct pdu_adv_com_ext_adv, ext_hdr_adv_data) +
+	if (len <= (PDU_AC_EXT_HEADER_SIZE_MIN +
 		    sizeof(struct pdu_adv_ext_hdr))) {
-		len = offsetof(struct pdu_adv_com_ext_adv,
-			       ext_hdr_adv_data);
+		len = PDU_AC_EXT_HEADER_SIZE_MIN;
 		*dptr = (uint8_t *)com_hdr + len;
 	}
 
@@ -139,8 +138,7 @@ ull_adv_aux_hdr_len_calc(struct pdu_adv_com_ext_adv *com_hdr, uint8_t **dptr)
 static inline void
 ull_adv_aux_hdr_len_fill(struct pdu_adv_com_ext_adv *com_hdr, uint8_t len)
 {
-	com_hdr->ext_hdr_len = len - offsetof(struct pdu_adv_com_ext_adv,
-					      ext_hdr_adv_data);
+	com_hdr->ext_hdr_len = len - PDU_AC_EXT_HEADER_SIZE_MIN;
 
 }
 
