@@ -326,7 +326,7 @@ uint16_t ll_adv_aux_max_data_length_get(void)
 
 uint8_t ll_adv_aux_set_count_get(void)
 {
-	return CONFIG_BT_CTLR_ADV_SET;
+	return BT_CTLR_ADV_SET;
 }
 
 uint8_t ll_adv_aux_set_remove(uint8_t handle)
