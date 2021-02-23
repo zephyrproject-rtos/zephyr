@@ -425,7 +425,8 @@ enum {
 #define CF_BIT_NOTIFY_MULTI	2
 #define CF_BIT_LAST		CF_BIT_NOTIFY_MULTI
 
-#define CF_BYTE_LAST		(CF_BIT_LAST % 8)
+#define CF_NUM_BITS             (CF_BIT_LAST + 1)
+#define CF_NUM_BYTES            ((CF_BIT_LAST / 8) + 1)
 
 #define CF_ROBUST_CACHING(_cfg) (_cfg->data[0] & BIT(CF_BIT_ROBUST_CACHING))
 #define CF_EATT(_cfg) (_cfg->data[0] & BIT(CF_BIT_EATT))
@@ -434,7 +435,7 @@ enum {
 struct gatt_cf_cfg {
 	uint8_t                    id;
 	bt_addr_le_t		peer;
-	uint8_t			data[1];
+	uint8_t			data[CF_NUM_BYTES];
 	ATOMIC_DEFINE(flags, CF_NUM_FLAGS);
 };
 
@@ -491,26 +492,24 @@ static ssize_t cf_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 static bool cf_set_value(struct gatt_cf_cfg *cfg, const uint8_t *value, uint16_t len)
 {
 	uint16_t i;
-	uint8_t last_byte = CF_BYTE_LAST;
-	uint8_t last_bit = CF_BIT_LAST;
 
 	/* Validate the bits */
-	for (i = 0U; i < len && i <= last_byte; i++) {
-		uint8_t chg_bits = value[i] ^ cfg->data[i];
-		uint8_t bit;
-
-		for (bit = 0U; bit <= last_bit; bit++) {
+	for (i = 0U; i <= CF_BIT_LAST && (i / 8) < len; i++) {
+		if ((cfg->data[i / 8] & BIT(i % 8)) &&
+		    !(value[i / 8] & BIT(i % 8))) {
 			/* A client shall never clear a bit it has set */
-			if ((BIT(bit) & chg_bits) &&
-			    (BIT(bit) & cfg->data[i])) {
-				return false;
-			}
+			return false;
 		}
 	}
 
 	/* Set the bits for each octect */
-	for (i = 0U; i < len && i < last_byte; i++) {
-		cfg->data[i] |= value[i] & (BIT(last_bit + 1) - 1);
+	for (i = 0U; i < len && i < CF_NUM_BYTES; i++) {
+		if (i == (CF_NUM_BYTES - 1)) {
+			cfg->data[i] |= value[i] & BIT_MASK(CF_NUM_BITS % 8);
+		} else {
+			cfg->data[i] |= value[i];
+		}
+
 		BT_DBG("byte %u: data 0x%02x value 0x%02x", i, cfg->data[i],
 		       value[i]);
 	}
