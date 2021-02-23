@@ -56,6 +56,13 @@ struct ll_conn {
 #endif /* CONFIG_BT_CTLR_PHY */
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
+#if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN)
+	uint8_t own_addr_type:1;
+	uint8_t peer_addr_type:2;
+	uint8_t own_addr[BDADDR_SIZE];
+	uint8_t peer_addr[BDADDR_SIZE];
+#endif /* CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN */
+
 	union {
 		struct {
 			uint8_t fex_valid:1;

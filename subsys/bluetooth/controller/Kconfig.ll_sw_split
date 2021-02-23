@@ -475,6 +475,18 @@ config BT_CTLR_CONN_RSSI_EVENT
 	help
 	  Generate events for connection RSSI measurement.
 
+config BT_CTLR_ALLOW_SAME_PEER_CONN
+	bool "Allow connection requests from same peer"
+	depends on BT_MAX_CONN > 1
+	help
+	  Allow connection requests from the same peer. While the
+	  Bluetooth specification does not allow multiple connections
+	  with the same peer, allowing such connections is useful
+	  while debugging multiple connections.
+
+	  WARNING: This option enables behavior that violates the Bluetooth
+	  specification.
+
 endif # BT_CONN
 
 config BT_CTLR_ADV_INDICATION

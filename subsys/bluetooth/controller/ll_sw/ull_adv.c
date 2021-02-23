@@ -893,6 +893,13 @@ uint8_t ll_adv_enable(uint8_t enable)
 		conn->supervision_expire = 0;
 		conn->procedure_expire = 0;
 
+#if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN)
+		conn->own_addr_type = BT_ADDR_LE_NONE->type;
+		memcpy(conn->own_addr, BT_ADDR_LE_NONE->a.val, sizeof(conn->own_addr));
+		conn->peer_addr_type = BT_ADDR_LE_NONE->type;
+		memcpy(conn->peer_addr, BT_ADDR_LE_NONE->a.val, sizeof(conn->peer_addr));
+#endif /* CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN */
+
 		conn->common.fex_valid = 0;
 		conn->slave.latency_cancel = 0;
 
@@ -2089,20 +2096,34 @@ static inline uint8_t *adv_pdu_adva_get(struct pdu_adv *pdu)
 static const uint8_t *adva_update(struct ll_adv_set *adv, struct pdu_adv *pdu)
 {
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-	const uint8_t *tx_addr = ull_filter_adva_get(adv);
+	const uint8_t *rpa = ull_filter_adva_get(adv);
 #else
-	const uint8_t *tx_addr = NULL;
+	const uint8_t *rpa = NULL;
 #endif
+	const uint8_t *own_addr;
+	const uint8_t *tx_addr;
 	uint8_t *adv_addr;
 
-	if (tx_addr) {
-		pdu->tx_addr = 1;
+	if (!rpa || IS_ENABLED(CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN)) {
+		if (0) {
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-	} else if (ll_adv_cmds_is_ext() && pdu->tx_addr) {
-		tx_addr = ll_adv_aux_random_addr_get(adv, NULL);
+		} else if (ll_adv_cmds_is_ext() && pdu->tx_addr) {
+			own_addr = ll_adv_aux_random_addr_get(adv, NULL);
 #endif
+		} else {
+			own_addr = ll_addr_get(pdu->tx_addr, NULL);
+		}
+	}
+
+#if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN)
+	memcpy(adv->own_addr, own_addr, BDADDR_SIZE);
+#endif /* CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN */
+
+	if (rpa) {
+		pdu->tx_addr = 1;
+		tx_addr = rpa;
 	} else {
-		tx_addr = ll_addr_get(pdu->tx_addr, NULL);
+		tx_addr = own_addr;
 	}
 
 	adv_addr = adv_pdu_adva_get(pdu);

@@ -770,6 +770,28 @@ uint8_t ull_conn_default_phy_rx_get(void)
 }
 #endif /* CONFIG_BT_CTLR_PHY */
 
+#if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN)
+bool ull_conn_peer_connected(uint8_t own_addr_type, uint8_t *own_addr,
+			     uint8_t peer_addr_type, uint8_t *peer_addr)
+{
+	uint16_t handle;
+
+	for (handle = 0U; handle < CONFIG_BT_MAX_CONN; handle++) {
+		struct ll_conn *conn = ll_connected_get(handle);
+
+		if (conn &&
+		    conn->peer_addr_type == peer_addr_type &&
+		    !memcmp(conn->peer_addr, peer_addr, BDADDR_SIZE) &&
+		    conn->own_addr_type == own_addr_type &&
+		    !memcmp(conn->own_addr, own_addr, BDADDR_SIZE)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+#endif /* CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN */
+
 void ull_conn_setup(memq_link_t *link, struct node_rx_hdr *rx)
 {
 	struct node_rx_ftr *ftr;
