@@ -43,6 +43,9 @@ Deprecated in this release
   :c:macro:`DT_INST_PWMS_LABEL` was deprecated in favor of utilizing
   :c:macro:`DT_PWMS_CTLR` and variants.
 
+* USB HID specific macros in ``<include/usb/class/usb_hid.h>`` are deprecated
+  in favor of new common HID macros defined in ``<include/usb/class/hid.h>``.
+
 ==========================
 
 Removed APIs in this release
