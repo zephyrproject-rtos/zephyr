@@ -2378,7 +2378,12 @@ void mpl_current_track_id_set(uint64_t id)
 
 uint64_t mpl_next_track_id_get(void)
 {
-	return pl.group->track->next->id;
+	if (pl.group->track->next) {
+		return pl.group->track->next->id;
+	}
+
+	/* Return zero value to indicate that there is no next track */
+	return MPL_NO_TRACK_ID;
 }
 
 void mpl_next_track_id_set(uint64_t id)
