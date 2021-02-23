@@ -66,6 +66,22 @@
 #include "common/log.h"
 #include "hal/debug.h"
 
+/* When both central and peripheral are supported, one each Rx node will be
+ * needed by connectable advertising and the initiator to generate connection
+ * complete event, hence conditionally set the count.
+ */
+#if defined(CONFIG_BT_MAX_CONN)
+#if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_PERIPHERAL)
+#define BT_CTLR_MAX_CONNECTABLE 2
+#else
+#define BT_CTLR_MAX_CONNECTABLE 1
+#endif
+#define BT_CTLR_MAX_CONN        CONFIG_BT_MAX_CONN
+#else
+#define BT_CTLR_MAX_CONNECTABLE 0
+#define BT_CTLR_MAX_CONN        0
+#endif
+
 #if !defined(TICKER_USER_LLL_VENDOR_OPS)
 #define TICKER_USER_LLL_VENDOR_OPS 0
 #endif /* TICKER_USER_LLL_VENDOR_OPS */
@@ -249,22 +265,6 @@ static MFIFO_DEFINE(pdu_rx_free, sizeof(void *), PDU_RX_CNT);
 			  PDU_DATA_SIZE),                     \
 		      PDU_RX_USER_PDU_OCTETS_MAX)              \
 	)
-
-/* When both central and peripheral are supported, one each Rx node will be
- * needed by connectable advertising and the initiator to generate connection
- * complete event, hence conditionally set the count.
- */
-#if defined(CONFIG_BT_MAX_CONN)
-#if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_PERIPHERAL)
-#define BT_CTLR_MAX_CONNECTABLE 2
-#else
-#define BT_CTLR_MAX_CONNECTABLE 1
-#endif
-#define BT_CTLR_MAX_CONN        CONFIG_BT_MAX_CONN
-#else
-#define BT_CTLR_MAX_CONNECTABLE 0
-#define BT_CTLR_MAX_CONN        0
-#endif
 
 #if defined(CONFIG_BT_PER_ADV_SYNC_MAX)
 #define BT_CTLR_SCAN_SYNC_SET CONFIG_BT_PER_ADV_SYNC_MAX
