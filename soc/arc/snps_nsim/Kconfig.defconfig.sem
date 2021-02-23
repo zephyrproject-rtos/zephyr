@@ -16,7 +16,7 @@ config NUM_IRQS
 	default 30
 
 config ARC_MPU_VER
-	default 3
+	default 4
 
 config RGF_NUM_BANKS
 	default 1

@@ -54,6 +54,6 @@ static inline uint32_t get_region_attr_by_type(uint32_t type)
 
 #if CONFIG_ARC_MPU_VER == 2
 #include "arc_mpu_v2_internal.h"
-#elif CONFIG_ARC_MPU_VER == 3
-#include "arc_mpu_v3_internal.h"
+#elif CONFIG_ARC_MPU_VER == 4
+#include "arc_mpu_v4_internal.h"
 #endif

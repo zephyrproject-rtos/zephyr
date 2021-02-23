@@ -52,13 +52,13 @@ extern "C" {
  *
  * For regions that are NOT the minimum size, this define has no semantics
  * on ARC MPUv2 as its regions must be power of two size and aligned to their
- * own size. On ARC MPUv3, region sizes are arbitrary and this just indicates
+ * own size. On ARC MPUv4, region sizes are arbitrary and this just indicates
  * the required size granularity.
  */
 #ifdef CONFIG_ARC_CORE_MPU
 #if CONFIG_ARC_MPU_VER == 2
 #define Z_ARC_MPU_ALIGN	2048
-#elif CONFIG_ARC_MPU_VER == 3
+#elif CONFIG_ARC_MPU_VER == 4
 #define Z_ARC_MPU_ALIGN	32
 #else
 #error "Unsupported MPU version"
@@ -244,7 +244,7 @@ BUILD_ASSERT(CONFIG_PRIVILEGED_STACK_SIZE % Z_ARC_MPU_ALIGN == 0,
 		"the size of the partition must be power of 2" \
 		" and greater than or equal to the mpu adddress alignment." \
 		"start address of the partition must align with size.")
-#elif CONFIG_ARC_MPU_VER == 3
+#elif CONFIG_ARC_MPU_VER == 4
 #define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size) \
 	BUILD_ASSERT((size) % Z_ARC_MPU_ALIGN == 0 && \
 		     (size) >= Z_ARC_MPU_ALIGN && \
