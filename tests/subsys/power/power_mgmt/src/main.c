@@ -45,7 +45,7 @@ __weak void pm_power_state_set(struct pm_state_info info)
 	zassert_false(device_power_state == DEVICE_PM_ACTIVE_STATE, NULL);
 
 	/* this function is called when system entering low power state, so
-	 * parameter state should not be POWER_STATE_ACTIVE
+	 * parameter state should not be PM_STATE_ACTIVE
 	 */
 	zassert_false(info.state == PM_STATE_ACTIVE,
 		      "Entering low power state with a wrong parameter");
@@ -131,7 +131,7 @@ static void notify_pm_state_exit(enum pm_state state)
  *  - The idle routine provide a timeout parameter to the suspend routine
  *    indicating the amount of time guaranteed to expire before the next
  *    timeout, pm_policy_next_state() handle this parameter.
- *  - In this case, pm_policy_next_sate() return POWER_STATE_ACTIVE,
+ *  - In this case, pm_policy_next_sate() return PM_STATE_ACTIVE,
  *    so there is no low power operation happen.
  *
  * @see pm_policy_next_state()
