@@ -1274,7 +1274,12 @@ void do_track_change_notifications(struct mpl_mediaplayer_t *pl)
 	mpl_track_position_cb(pl->track_pos);
 #ifdef CONFIG_BT_OTS_TEMP
 	mpl_current_track_id_cb(pl->group->track->id);
-	mpl_next_track_id_cb(pl->group->track->next->id);
+	if (pl->group->track->next) {
+		mpl_next_track_id_cb(pl->group->track->next->id);
+	} else {
+		/* Send a zero value to indicate that there is no next track */
+		mpl_next_track_id_cb(MPL_NO_TRACK_ID);
+	}
 #endif /* CONFIG_BT_OTS_TEMP */
 }
 
