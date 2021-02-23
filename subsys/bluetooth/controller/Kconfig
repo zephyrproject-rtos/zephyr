@@ -372,6 +372,10 @@ config BT_CTLR_CONN_RSSI
 	help
 	  Enable connection RSSI measurement.
 
+config BT_CTLR_CHECK_SAME_PEER_CONN
+	bool
+	default BT_MAX_CONN > 1 && !BT_CTLR_ALLOW_SAME_PEER_CONN
+
 endif # BT_CONN
 
 config BT_CTLR_FILTER

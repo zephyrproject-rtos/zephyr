@@ -58,6 +58,7 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 {
 	uint32_t conn_offset_us, conn_interval_us;
 	uint8_t ticker_id_adv, ticker_id_conn;
+	uint8_t peer_id_addr[BDADDR_SIZE];
 	uint8_t peer_addr[BDADDR_SIZE];
 	uint32_t ticks_slot_overhead;
 	uint32_t ticks_slot_offset;
@@ -78,6 +79,46 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 
 	/* Populate the slave context */
 	pdu_adv = (void *)((struct node_rx_pdu *)rx)->pdu;
+
+	peer_addr_type = pdu_adv->tx_addr;
+	memcpy(peer_addr, pdu_adv->connect_ind.init_addr, BDADDR_SIZE);
+
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+	uint8_t rl_idx = ftr->rl_idx;
+
+	if (rl_idx != FILTER_IDX_NONE) {
+		/* Get identity address */
+		ll_rl_id_addr_get(rl_idx, &peer_addr_type, peer_id_addr);
+		/* Mark it as identity address from RPA (0x02, 0x03) */
+		peer_addr_type += 2;
+	} else {
+#else /* CONFIG_BT_CTLR_PRIVACY */
+	if (1) {
+#endif /* CONFIG_BT_CTLR_PRIVACY */
+		memcpy(peer_id_addr, peer_addr, BDADDR_SIZE);
+	}
+
+#if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN)
+	uint8_t own_addr_type = pdu_adv->rx_addr;
+	uint8_t *own_addr = adv->own_addr;
+
+	/* Do not connect twice to the same peer */
+	if (ull_conn_peer_connected(own_addr_type, own_addr,
+				    peer_addr_type, peer_id_addr)) {
+		rx->type = NODE_RX_TYPE_RELEASE;
+
+		ll_rx_put(link, rx);
+		ll_rx_sched();
+		return;
+	}
+
+	/* Remember peer and own identity */
+	conn->peer_addr_type = peer_addr_type;
+	memcpy(conn->peer_addr, peer_id_addr, sizeof(conn->peer_addr));
+	conn->own_addr_type = own_addr_type;
+	memcpy(conn->own_addr, own_addr, sizeof(conn->own_addr));
+#endif /* CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN */
+
 	memcpy(&lll->crc_init[0], &pdu_adv->connect_ind.crc_init[0], 3);
 	memcpy(&lll->access_addr[0], &pdu_adv->connect_ind.access_addr[0], 4);
 	memcpy(&lll->data_chan_map[0], &pdu_adv->connect_ind.chan_map[0],
@@ -176,9 +217,6 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	       sizeof(conn->slave.force));
 #endif /* CONFIG_BT_CTLR_CONN_RANDOM_FORCE */
 
-	peer_addr_type = pdu_adv->tx_addr;
-	memcpy(peer_addr, pdu_adv->connect_ind.init_addr, BDADDR_SIZE);
-
 	if (0) {
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	} else if (adv->lll.aux) {
@@ -193,8 +231,6 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	cc->role = 1U;
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-	uint8_t rl_idx = ftr->rl_idx;
-
 	if (ull_filter_lll_lrpa_used(adv->lll.rl_idx)) {
 		memcpy(&cc->local_rpa[0], &pdu_adv->connect_ind.adv_addr[0],
 		       BDADDR_SIZE);
@@ -203,23 +239,15 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	}
 
 	if (rl_idx != FILTER_IDX_NONE) {
-		/* TODO: store rl_idx instead if safe */
-		/* Store identity address */
-		ll_rl_id_addr_get(rl_idx, &cc->peer_addr_type,
-				  &cc->peer_addr[0]);
-		/* Mark it as identity address from RPA (0x02, 0x03) */
-		cc->peer_addr_type += 2;
-
 		/* Store peer RPA */
-		memcpy(&cc->peer_rpa[0], &peer_addr[0], BDADDR_SIZE);
+		memcpy(cc->peer_rpa, peer_addr, BDADDR_SIZE);
 	} else {
-		memset(&cc->peer_rpa[0], 0x0, BDADDR_SIZE);
-#else
-	if (1) {
-#endif /* CONFIG_BT_CTLR_PRIVACY */
-		cc->peer_addr_type = peer_addr_type;
-		memcpy(cc->peer_addr, peer_addr, BDADDR_SIZE);
+		memset(cc->peer_rpa, 0x0, BDADDR_SIZE);
 	}
+#endif /* CONFIG_BT_CTLR_PRIVACY */
+
+	cc->peer_addr_type = peer_addr_type;
+	memcpy(cc->peer_addr, peer_id_addr, BDADDR_SIZE);
 
 	cc->interval = lll->interval;
 	cc->latency = lll->latency;

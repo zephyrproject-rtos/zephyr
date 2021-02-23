@@ -31,11 +31,13 @@
 
 #include "ull_adv_types.h"
 #include "ull_scan_types.h"
+#include "ull_conn_types.h"
 #include "ull_filter.h"
 
 #include "ull_internal.h"
 #include "ull_adv_internal.h"
 #include "ull_scan_internal.h"
+#include "ull_conn_internal.h"
 
 #include "ll.h"
 
@@ -138,6 +140,11 @@ static uint32_t filter_remove(struct lll_filter *filter, uint8_t addr_type,
 static void filter_insert(struct lll_filter *filter, int index, uint8_t addr_type,
 			   uint8_t *bdaddr);
 static void filter_clear(struct lll_filter *filter);
+
+#if defined(CONFIG_BT_CTLR_PRIVACY) && \
+	defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN)
+static void conn_rpa_update(uint8_t rl_idx);
+#endif /* CONFIG_BT_CTLR_PRIVACY && CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN */
 
 #if defined(CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY)
 static void prpa_cache_clear(void);
@@ -374,6 +381,9 @@ void ll_rl_crpa_set(uint8_t id_addr_type, uint8_t *id_addr, uint8_t rl_idx, uint
 		if (rl_idx < ARRAY_SIZE(rl) && rl[rl_idx].taken) {
 			memcpy(rl[rl_idx].curr_rpa.val, crpa,
 			       sizeof(bt_addr_t));
+#if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN)
+			conn_rpa_update(rl_idx);
+#endif /* CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN) */
 		}
 	}
 }
@@ -1083,6 +1093,27 @@ static void filter_clear(struct lll_filter *filter)
 	filter->addr_type_bitmask = 0;
 }
 
+#if defined(CONFIG_BT_CTLR_PRIVACY) && \
+	defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN)
+static void conn_rpa_update(uint8_t rl_idx)
+{
+	uint16_t handle;
+
+	for (handle = 0U; handle < CONFIG_BT_MAX_CONN; handle++) {
+		struct ll_conn *conn = ll_connected_get(handle);
+
+		/* The RPA of the connection matches the RPA that was just resolved */
+		if (conn &&
+		    conn->peer_addr_type < 2U &&
+		    !memcmp(conn->peer_addr, rl[rl_idx].curr_rpa.val, BDADDR_SIZE)) {
+			memcpy(conn->peer_addr, rl[rl_idx].id_addr.val, BDADDR_SIZE);
+			conn->peer_addr_type += 2U;
+			break;
+		}
+	}
+}
+#endif /* CONFIG_BT_CTLR_PRIVACY && CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN */
+
 #if defined(CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY)
 static void target_resolve(struct k_work *work)
 {
@@ -1171,6 +1202,9 @@ static void prpa_cache_resolve(struct k_work *work)
 			 */
 			memcpy(rl[j].curr_rpa.val, search_rpa->val,
 			       sizeof(bt_addr_t));
+#if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN)
+			conn_rpa_update(j);
+#endif /* CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN */
 		}
 
 	} else {
