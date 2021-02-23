@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2020 Nordic Semiconductor ASA
+ * Copyright (c) 2018-2021 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -395,22 +395,47 @@ uint8_t ll_connect_enable(uint8_t is_coded_included)
 
 uint8_t ll_connect_disable(void **rx)
 {
+	struct ll_scan_set *scan_coded;
+	struct lll_scan *scan_lll;
 	struct lll_conn *conn_lll;
 	struct ll_scan_set *scan;
-	uint8_t status;
+	uint8_t err;
 
-	scan = ull_scan_is_enabled_get(0);
-	if (!scan) {
-		return BT_HCI_ERR_CMD_DISALLOWED;
+	scan = ull_scan_is_enabled_get(SCAN_HANDLE_1M);
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT) &&
+	    IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
+		scan_coded = ull_scan_is_enabled_get(SCAN_HANDLE_PHY_CODED);
+	} else {
+		scan_coded = NULL;
 	}
 
-	conn_lll = scan->lll.conn;
+	if (!scan) {
+		if (!scan_coded) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+
+		scan_lll = &scan_coded->lll;
+	} else {
+		scan_lll = &scan->lll;
+	}
+
+	conn_lll = scan_lll->conn;
 	if (!conn_lll) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	status = ull_scan_disable(0, scan);
-	if (!status) {
+	if (scan) {
+		err = ull_scan_disable(SCAN_HANDLE_1M, scan);
+	} else {
+		err = 0U;
+	}
+
+	if (!err && scan_coded) {
+		err = ull_scan_disable(SCAN_HANDLE_PHY_CODED, scan_coded);
+	}
+
+	if (!err) {
 		struct ll_conn *conn = (void *)HDR_LLL2EVT(conn_lll);
 		struct node_rx_pdu *node_rx;
 		struct node_rx_cc *cc;
@@ -436,12 +461,12 @@ uint8_t ll_connect_disable(void **rx)
 		 *       LLL context for other cases, pass LLL context as
 		 *       parameter.
 		 */
-		node_rx->hdr.rx_ftr.param = &scan->lll;
+		node_rx->hdr.rx_ftr.param = scan_lll;
 
 		*rx = node_rx;
 	}
 
-	return status;
+	return err;
 }
 
 /* FIXME: Refactor out this interface so that its usable by extended
@@ -555,6 +580,46 @@ uint8_t ll_enc_req_send(uint16_t handle, uint8_t const *const rand,
 	return BT_HCI_ERR_CMD_DISALLOWED;
 }
 #endif /* CONFIG_BT_CTLR_LE_ENC */
+
+void ull_master_cleanup(struct node_rx_hdr *rx_free)
+{
+	struct node_rx_ftr *ftr = &rx_free->rx_ftr;
+	struct ll_scan_set *scan =
+		(void *)HDR_LLL2EVT(ftr->param);
+	struct lll_conn *conn_lll;
+	struct ll_conn *conn;
+	memq_link_t *link;
+
+	conn_lll = scan->lll.conn;
+	LL_ASSERT(conn_lll);
+	scan->lll.conn = NULL;
+
+	LL_ASSERT(!conn_lll->link_tx_free);
+	link = memq_deinit(&conn_lll->memq_tx.head,
+			   &conn_lll->memq_tx.tail);
+	LL_ASSERT(link);
+	conn_lll->link_tx_free = link;
+
+	conn = (void *)HDR_LLL2EVT(conn_lll);
+	ll_conn_release(conn);
+
+	scan->is_enabled = 0U;
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_CTLR_PHY_CODED)
+	scan->lll.phy = 0U;
+
+	struct ll_scan_set *scan_coded =
+				ull_scan_is_enabled_get(SCAN_HANDLE_PHY_CODED);
+	if (scan_coded && scan_coded != scan) {
+		conn_lll = scan_coded->lll.conn;
+		LL_ASSERT(conn_lll);
+		scan_coded->lll.conn = NULL;
+
+		scan_coded->is_enabled = 0U;
+		scan_coded->lll.phy = 0U;
+	}
+#endif /* CONFIG_BT_CTLR_ADV_EXT && CONFIG_BT_CTLR_PHY_CODED */
+}
 
 void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 		      struct node_rx_ftr *ftr, struct lll_conn *lll)
