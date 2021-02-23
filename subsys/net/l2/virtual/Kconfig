@@ -32,4 +32,6 @@ module-str = Log level for virtual L2 layer
 module-help = Enables virtual L2 to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
 
-endif # NET_L2_ETHERNET
+source "subsys/net/l2/virtual/ipip/Kconfig"
+
+endif # NET_L2_VIRTUAL
