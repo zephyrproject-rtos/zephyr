@@ -6,6 +6,7 @@ add_subdirectory(console)
 add_subdirectory(interrupt_controller)
 add_subdirectory(misc)
 add_subdirectory(pcie)
+add_subdirectory(disk)
 
 add_subdirectory_ifdef(CONFIG_ADC adc)
 add_subdirectory_ifdef(CONFIG_CLOCK_CONTROL clock_control)
