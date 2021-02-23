@@ -98,13 +98,20 @@
 #if defined(CONFIG_BT_CTLR_LOW_LAT) && \
 	(CONFIG_BT_CTLR_LLL_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
 #define TICKER_USER_LLL_OPS      (3 + TICKER_USER_LLL_VENDOR_OPS + 1)
-#else
+/* NOTE: When ticker job is disabled inside radio events then all advertising,
+ *       scanning, and slave latency cancel ticker operations will be deferred,
+ *       requiring increased ticker thread context operation queue count.
+ */
+#define TICKER_USER_THREAD_OPS   (BT_CTLR_ADV_SET + BT_CTLR_SCAN_SET + \
+				  BT_CTLR_CONN_MAX + \
+				  TICKER_USER_THREAD_VENDOR_OPS + 1)
+#else /* !CONFIG_BT_CTLR_LOW_LAT */
 #define TICKER_USER_LLL_OPS      (2 + TICKER_USER_LLL_VENDOR_OPS + 1)
-#endif /* CONFIG_BT_CTLR_LOW_LAT */
+#define TICKER_USER_THREAD_OPS   (1 + TICKER_USER_THREAD_VENDOR_OPS + 1)
+#endif /* !CONFIG_BT_CTLR_LOW_LAT */
 
 #define TICKER_USER_ULL_HIGH_OPS (3 + TICKER_USER_ULL_HIGH_VENDOR_OPS + 1)
 #define TICKER_USER_ULL_LOW_OPS  (1 + 1)
-#define TICKER_USER_THREAD_OPS   (1 + TICKER_USER_THREAD_VENDOR_OPS + 1)
 
 #if defined(CONFIG_BT_BROADCASTER)
 #define BT_ADV_TICKER_NODES ((TICKER_ID_ADV_LAST) - (TICKER_ID_ADV_STOP) + 1)
