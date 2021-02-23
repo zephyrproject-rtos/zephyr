@@ -286,9 +286,16 @@ static ssize_t next_track_id_read(struct bt_conn *conn,
 {
 	uint64_t track_id = mpl_next_track_id_get();
 
+	if (track_id == MPL_NO_TRACK_ID) {
+		BT_DBG("Next track read, but it is empty");
+		/* "If the media player has no next track, the length of the */
+		/* characteristic shall be zero." */
+		return bt_gatt_attr_read(conn, attr, buf, len, offset, NULL, 0);
+	}
+
 	BT_DBG_OBJ_ID("Next track read: ", track_id);
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, &track_id,
-				 BT_OTS_OBJ_ID_SIZE);
+	return bt_gatt_attr_read(conn, attr, buf, len, offset,
+					 &track_id, BT_OTS_OBJ_ID_SIZE);
 }
 
 static ssize_t next_track_id_write(struct bt_conn *conn,
