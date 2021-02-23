@@ -31,22 +31,22 @@
 #include <ztest.h>
 
 #if DT_NODE_HAS_STATUS(DT_ALIAS(pwm_0), okay)
-#define PWM_DEV_NAME DT_LABEL(DT_ALIAS(pwm_0))
+#define PWM_DEV_NODE DT_ALIAS(pwm_0)
 #elif DT_NODE_HAS_STATUS(DT_ALIAS(pwm_1), okay)
-#define PWM_DEV_NAME DT_LABEL(DT_ALIAS(pwm_1))
+#define PWM_DEV_NODE DT_ALIAS(pwm_1)
 #elif DT_NODE_HAS_STATUS(DT_ALIAS(pwm_2), okay)
-#define PWM_DEV_NAME DT_LABEL(DT_ALIAS(pwm_2))
+#define PWM_DEV_NODE DT_ALIAS(pwm_2)
 #elif DT_NODE_HAS_STATUS(DT_ALIAS(pwm_3), okay)
-#define PWM_DEV_NAME DT_LABEL(DT_ALIAS(pwm_3))
+#define PWM_DEV_NODE DT_ALIAS(pwm_3)
 
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_pwm)
-#define PWM_DEV_NAME DT_LABEL(DT_INST(0, st_stm32_pwm))
+#define PWM_DEV_NODE DT_INST(0, st_stm32_pwm)
 
 #elif DT_HAS_COMPAT_STATUS_OKAY(xlnx_xps_timer_1_00_a_pwm)
-#define PWM_DEV_NAME DT_LABEL(DT_INST(0, xlnx_xps_timer_1_00_a_pwm))
+#define PWM_DEV_NODE DT_INST(0, xlnx_xps_timer_1_00_a_pwm)
 
 #elif DT_HAS_COMPAT_STATUS_OKAY(nxp_kinetis_ftm_pwm)
-#define PWM_DEV_NAME DT_LABEL(DT_INST(0, nxp_kinetis_ftm_pwm))
+#define PWM_DEV_NODE DT_INST(0, nxp_kinetis_ftm_pwm)
 
 #else
 #error "Define a PWM device"
@@ -96,7 +96,7 @@
 
 const struct device *get_pwm_device(void)
 {
-	return device_get_binding(PWM_DEV_NAME);
+	return DEVICE_DT_GET(PWM_DEV_NODE);
 }
 
 static int test_task(uint32_t port, uint32_t period, uint32_t pulse, uint8_t unit)
@@ -106,8 +106,8 @@ static int test_task(uint32_t port, uint32_t period, uint32_t pulse, uint8_t uni
 
 	const struct device *pwm_dev = get_pwm_device();
 
-	if (!pwm_dev) {
-		TC_PRINT("Cannot get PWM device\n");
+	if (!device_is_ready(pwm_dev)) {
+		TC_PRINT("PWM device is not ready\n");
 		return TC_FAIL;
 	}
 
