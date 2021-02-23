@@ -248,31 +248,6 @@ void pm_system_resume_from_deep_sleep(void);
 void pm_system_resume(void);
 
 /**
- * @brief Allow entry to power state
- *
- * When the kernel is about to go idle, it calls this function to notify the
- * power management subsystem, that the kernel is ready to enter the idle state.
- *
- * At this point, the kernel has disabled interrupts and computed the maximum
- * time the system can remain idle. The function passes the time that the system
- * can remain idle. The SOC interface performs power operations that can be done
- * in the available time. The power management operations must halt execution of
- * the CPU.
- *
- * This function assumes that a wake up event has already been set up by the
- * application.
- *
- * This function is entered with interrupts disabled. It should re-enable
- * interrupts if it had entered a power state.
- *
- * @param ticks The upcoming kernel idle time.
- *
- * @return Power state which was entered or POWER_STATE_ACTIVE if SoC was
- *         kept in the active state.
- */
-enum pm_state pm_system_suspend(int32_t ticks);
-
-/**
  * @brief Do any SoC or architecture specific post ops after sleep state exits.
  *
  * This function is a place holder to do any operations that may
