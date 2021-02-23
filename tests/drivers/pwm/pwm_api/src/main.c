@@ -7,6 +7,7 @@
 
 #include <zephyr.h>
 #include <ztest.h>
+#include <device.h>
 
 const struct device *get_pwm_device(void);
 void test_pwm_usec(void);
@@ -17,7 +18,7 @@ void test_main(void)
 {
 	const struct device *dev = get_pwm_device();
 
-	zassert_not_null(dev, "Cannot get PWM device");
+	zassert_true(device_is_ready(dev), "PWM device is not ready");
 	k_object_access_grant(dev, k_current_get());
 
 	ztest_test_suite(pwm_basic_test,
