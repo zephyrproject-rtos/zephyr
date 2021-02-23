@@ -33,7 +33,7 @@
 #include "ull_adv_types.h"
 #include "ull_adv_internal.h"
 
-static struct ll_adv_iso ll_adv_iso[CONFIG_BT_CTLR_ADV_SET];
+static struct ll_adv_iso ll_adv_iso[BT_CTLR_ADV_SET];
 static void *adv_iso_free;
 
 static uint32_t ull_adv_iso_start(struct ll_adv_iso *adv_iso,
@@ -238,7 +238,7 @@ uint8_t ll_adv_iso_by_hci_handle_get(uint8_t hci_handle, uint8_t *handle)
 
 	adv_iso =  &ll_adv_iso[0];
 
-	for (idx = 0U; idx < CONFIG_BT_CTLR_ADV_SET; idx++, adv_iso++) {
+	for (idx = 0U; idx < BT_CTLR_ADV_SET; idx++, adv_iso++) {
 		if (adv_iso->is_created &&
 		    (adv_iso->hci_handle == hci_handle)) {
 			*handle = idx;
@@ -257,7 +257,7 @@ uint8_t ll_adv_iso_by_hci_handle_new(uint8_t hci_handle, uint8_t *handle)
 	adv_iso = &ll_adv_iso[0];
 	adv_iso_empty = NULL;
 
-	for (idx = 0U; idx < CONFIG_BT_CTLR_ADV_SET; idx++, adv_iso++) {
+	for (idx = 0U; idx < BT_CTLR_ADV_SET; idx++, adv_iso++) {
 		if (adv_iso->is_created) {
 			if (adv_iso->hci_handle == hci_handle) {
 				return BT_HCI_ERR_CMD_DISALLOWED;
@@ -330,7 +330,7 @@ static uint32_t ull_adv_iso_start(struct ll_adv_iso *adv_iso,
 
 static inline struct ll_adv_iso *ull_adv_iso_get(uint8_t handle)
 {
-	if (handle >= CONFIG_BT_CTLR_ADV_SET) {
+	if (handle >= BT_CTLR_ADV_SET) {
 		return NULL;
 	}
 
