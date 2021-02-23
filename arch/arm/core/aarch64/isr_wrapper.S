@@ -31,7 +31,6 @@ GDATA(_sw_isr_table)
 
 GTEXT(_isr_wrapper)
 SECTION_FUNC(TEXT, _isr_wrapper)
-	z_arm64_enter_exc x0, x1
 
 	/* ++(_kernel->nested) to be checked by arch_is_in_isr() */
 	inc_nest_counter x0, x1
@@ -111,5 +110,5 @@ exit:
 #ifdef CONFIG_STACK_SENTINEL
 	bl	z_check_stack_sentinel
 #endif
-	z_arm64_exit_exc x0, x1
+	b	z_arm64_exit_exc
 

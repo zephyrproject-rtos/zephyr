@@ -90,7 +90,6 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 
 GTEXT(z_arm64_sync_exc)
 SECTION_FUNC(TEXT, z_arm64_sync_exc)
-	z_arm64_enter_exc x2, x3
 
 	mrs	x0, esr_el1
 	lsr	x1, x0, #26
@@ -119,7 +118,7 @@ offload:
 
 	/* --(_kernel->nested) */
 	dec_nest_counter x0, x1
-	b	exit
+	b	z_arm64_exit_exc
 #endif
 	b	inv
 
@@ -141,9 +140,7 @@ context_switch:
 
 	/* Switch thread */
 	bl	z_arm64_context_switch
-
-exit:
-	z_arm64_exit_exc x0, x1
+	b	z_arm64_exit_exc
 
 inv:
 	mov	x0, #0 /* K_ERR_CPU_EXCEPTION */
@@ -151,7 +148,7 @@ inv:
 	bl	z_arm64_fatal_error
 
 	/* Return here only in case of recoverable error */
-	z_arm64_exit_exc x0, x1
+	b	z_arm64_exit_exc
 
 GTEXT(z_arm64_call_svc)
 SECTION_FUNC(TEXT, z_arm64_call_svc)
