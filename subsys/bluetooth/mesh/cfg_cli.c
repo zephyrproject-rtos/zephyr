@@ -704,15 +704,15 @@ const struct bt_mesh_model_op bt_mesh_cfg_cli_op[] = {
 	{ OP_APP_KEY_STATUS,         4,   app_key_status },
 	{ OP_APP_KEY_LIST,           3,   app_key_list },
 	{ OP_MOD_APP_STATUS,         7,   mod_app_status },
-	{ OP_SIG_MOD_APP_LIST,       5,   mod_app_list},
-	{ OP_VND_MOD_APP_LIST,       7,   mod_app_list_vnd},
+	{ OP_SIG_MOD_APP_LIST,       5,   mod_app_list },
+	{ OP_VND_MOD_APP_LIST,       7,   mod_app_list_vnd },
 	{ OP_MOD_PUB_STATUS,         12,  mod_pub_status },
 	{ OP_MOD_SUB_STATUS,         7,   mod_sub_status },
-	{ OP_MOD_SUB_LIST,           5,   mod_sub_list},
-	{ OP_MOD_SUB_LIST_VND,       7,   mod_sub_list_vnd},
+	{ OP_MOD_SUB_LIST,           5,   mod_sub_list },
+	{ OP_MOD_SUB_LIST_VND,       7,   mod_sub_list_vnd },
 	{ OP_HEARTBEAT_SUB_STATUS,   9,   hb_sub_status },
 	{ OP_HEARTBEAT_PUB_STATUS,   10,  hb_pub_status },
-	{ OP_NODE_RESET_STATUS,      0,   node_reset_status},
+	{ OP_NODE_RESET_STATUS,      0,   node_reset_status },
 	BT_MESH_MODEL_OP_END,
 };
 
@@ -1482,7 +1482,7 @@ int bt_mesh_cfg_mod_app_get_vnd(uint16_t net_idx, uint16_t addr, uint16_t elem_a
 	}
 
 	return mod_member_list_get(OP_VND_MOD_APP_GET, OP_VND_MOD_APP_LIST,
-				   net_idx, addr, elem_addr, mod_id, cid,
+				   net_idx, addr, elem_addr, mod_id, CID_NVAL,
 				   status, apps, app_cnt);
 }
 
@@ -1562,8 +1562,8 @@ int bt_mesh_cfg_mod_sub_del(uint16_t net_idx, uint16_t addr, uint16_t elem_addr,
 }
 
 int bt_mesh_cfg_mod_sub_del_vnd(uint16_t net_idx, uint16_t addr, uint16_t elem_addr,
-				 uint16_t sub_addr, uint16_t mod_id, uint16_t cid,
-				 uint8_t *status)
+				uint16_t sub_addr, uint16_t mod_id, uint16_t cid,
+				uint8_t *status)
 {
 	if (cid == CID_NVAL) {
 		return -EINVAL;
@@ -1618,7 +1618,7 @@ static int mod_sub_va(uint32_t op, uint16_t net_idx, uint16_t addr, uint16_t ele
 	}
 
 	BT_DBG("net_idx 0x%04x addr 0x%04x elem_addr 0x%04x label %s",
-	       net_idx, addr, elem_addr, label);
+	       net_idx, addr, elem_addr, log_strdup(label));
 	BT_DBG("mod_id 0x%04x cid 0x%04x", mod_id, cid);
 
 	bt_mesh_model_msg_init(&msg, op);
@@ -1726,7 +1726,7 @@ int bt_mesh_cfg_mod_sub_get_vnd(uint16_t net_idx, uint16_t addr, uint16_t elem_a
 	}
 
 	return mod_member_list_get(OP_MOD_SUB_GET_VND, OP_MOD_SUB_LIST_VND,
-				   net_idx, addr, elem_addr, mod_id, cid,
+				   net_idx, addr, elem_addr, mod_id, CID_NVAL,
 				   status, subs, sub_cnt);
 }
 
