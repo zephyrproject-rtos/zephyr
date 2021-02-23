@@ -35,6 +35,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                  gdbserver='JLinkGDBServer', gdb_port=DEFAULT_JLINK_GDB_PORT,
                  tui=False, tool_opt=[]):
         super().__init__(cfg)
+        self.hex_name = cfg.hex_file
         self.bin_name = cfg.bin_file
         self.elf_name = cfg.elf_file
         self.gdb_cmd = [cfg.gdb] if cfg.gdb else None
@@ -179,15 +180,26 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
 
     def flash(self, **kwargs):
         self.require(self.commander)
-        self.ensure_output('bin')
 
         lines = ['r'] # Reset and halt the target
 
         if self.erase:
             lines.append('erase') # Erase all flash sectors
 
-        lines.append('loadfile {} 0x{:x}'.format(self.bin_name,
-                                                 self.flash_addr))
+        # Get the build artifact to flash, prefering .hex over .bin
+        if self.hex_name is not None and os.path.isfile(self.hex_name):
+            flash_file = self.hex_name
+            flash_fmt = 'loadfile {}'
+        elif self.bin_name is not None and os.path.isfile(self.bin_name):
+            flash_file = self.bin_name
+            flash_fmt = 'loadfile {} 0x{:x}'
+        else:
+            err = 'Cannot flash; no hex ({}) or bin ({}) files found.'
+            raise ValueError(err.format(self.hex_name, self.bin_name))
+
+        # Flash the selected build artifact
+        lines.append(flash_fmt.format(flash_file, self.flash_addr))
+
         if self.reset_after_load:
             lines.append('r') # Reset and halt the target
 
@@ -226,5 +238,5 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                     '-CommanderScript', fname] +
                    self.tool_opt)
 
-            self.logger.info('Flashing file: {}'.format(self.bin_name))
+            self.logger.info('Flashing file: {}'.format(flash_file))
             self.check_call(cmd)
