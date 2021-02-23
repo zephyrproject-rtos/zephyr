@@ -490,6 +490,8 @@ static uint8_t mcc_read_next_track_obj_id_cb(struct bt_conn *conn, uint8_t err,
 	mcs_inst.busy = false;
 	if (err) {
 		BT_DBG("err: 0x%02x", err);
+	} else if (length == 0) {
+		BT_DBG("Characteristic is empty");
 	} else if (!pid || (length != BT_OTS_OBJ_ID_SIZE)) {
 		BT_DBG("length: %d, data: %p", length, data);
 		cb_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);

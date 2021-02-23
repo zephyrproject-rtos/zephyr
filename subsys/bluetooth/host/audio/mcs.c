@@ -881,8 +881,15 @@ void mpl_current_track_id_cb(uint64_t id)
 
 void mpl_next_track_id_cb(uint64_t id)
 {
-	BT_DBG_OBJ_ID("Notifying next track ID: ", id);
-	notify(BT_UUID_MCS_NEXT_TRACK_OBJ_ID, &id, BT_OTS_OBJ_ID_SIZE);
+	if (id == MPL_NO_TRACK_ID) {
+		/* "If the media player has no next track, the length of the */
+		/* characteristic shall be zero." */
+		BT_DBG_OBJ_ID("Notifying EMPTY next track ID: ", id);
+		notify(BT_UUID_MCS_NEXT_TRACK_OBJ_ID, NULL, 0);
+	} else {
+		BT_DBG_OBJ_ID("Notifying next track ID: ", id);
+		notify(BT_UUID_MCS_NEXT_TRACK_OBJ_ID, &id, BT_OTS_OBJ_ID_SIZE);
+	}
 }
 
 void mpl_group_id_cb(uint64_t id)
