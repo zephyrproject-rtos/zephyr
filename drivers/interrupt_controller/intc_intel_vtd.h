@@ -16,35 +16,31 @@
 	((0x0FEE00000U) | (int_idx << 5) | shv | VTD_INT_FORMAT)
 
 /* Interrupt Remapping Table Entry (IRTE) for Remapped Interrupts */
-struct vtd_irte {
-	union {
-		struct vtd_irte_low {
-			uint64_t present		: 1;
-			uint64_t fpd			: 1;
-			uint64_t dst_mode		: 1;
-			uint64_t redirection_hint	: 1;
-			uint64_t trigger_mode		: 1;
-			uint64_t delivery_mode		: 3;
-			uint64_t available		: 4;
-			uint64_t _reserved_0		: 3;
-			uint64_t irte_mode		: 1;
-			uint64_t vector			: 8;
-			uint64_t _reserved_1		: 8;
-			uint64_t dst_id			: 32;
-		} l;
+union vtd_irte {
+	struct irte_parts {
 		uint64_t low;
-	};
-
-	union {
-		struct vtd_irte_high {
-			uint64_t src_id			: 16;
-			uint64_t src_id_qualifier	: 2;
-			uint64_t src_validation_type	: 2;
-			uint64_t _reserved		: 44;
-		} h;
 		uint64_t high;
-	};
-} __packed;
+	} parts;
+
+	struct irte_bits {
+		uint64_t present		: 1;
+		uint64_t fpd			: 1;
+		uint64_t dst_mode		: 1;
+		uint64_t redirection_hint	: 1;
+		uint64_t trigger_mode		: 1;
+		uint64_t delivery_mode		: 3;
+		uint64_t available		: 4;
+		uint64_t _reserved_0		: 3;
+		uint64_t irte_mode		: 1;
+		uint64_t vector			: 8;
+		uint64_t _reserved_1		: 8;
+		uint64_t dst_id			: 32;
+		uint64_t src_id			: 16;
+		uint64_t src_id_qualifier	: 2;
+		uint64_t src_validation_type	: 2;
+		uint64_t _reserved		: 44;
+	} bits __packed;
+};
 
 /* The table must be 4KB aligned, which is exactly 256 entries.
  * And since we allow only 256 entries as a maximum: let's align to it.
@@ -103,7 +99,7 @@ union qi_wait_descriptor {
 #define QI_WAIT_STATUS_COMPLETE 0x1UL
 
 struct vtd_ictl_data {
-	struct vtd_irte irte[IRTE_NUM] __aligned(0x1000);
+	union vtd_irte irte[IRTE_NUM] __aligned(0x1000);
 	struct qi_descriptor qi[QI_NUM] __aligned(0x1000);
 	int irqs[IRTE_NUM];
 	int vectors[IRTE_NUM];

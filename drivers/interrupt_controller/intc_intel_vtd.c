@@ -83,7 +83,7 @@ static void vtd_flush_irte_from_cache(const struct device *dev,
 
 	if (!data->pwc) {
 		sys_cache_data_range(&data->irte[irte_idx],
-				     sizeof(struct vtd_irte), K_CACHE_WB);
+				     sizeof(union vtd_irte), K_CACHE_WB);
 	}
 }
 
@@ -320,24 +320,24 @@ static int vtd_ictl_remap(const struct device *dev,
 			  uint32_t flags)
 {
 	struct vtd_ictl_data *data = dev->data;
-	struct vtd_irte irte = { 0 };
+	union vtd_irte irte = { 0 };
 
-	irte.l.vector = vector;
+	irte.bits.vector = vector;
 
 	if (IS_ENABLED(CONFIG_X2APIC)) {
-		irte.l.dst_id = arch_curr_cpu()->id;
+		irte.bits.dst_id = arch_curr_cpu()->id;
 	} else {
-		irte.l.dst_id = arch_curr_cpu()->id << 8;
+		irte.bits.dst_id = arch_curr_cpu()->id << 8;
 	}
 
-	irte.l.trigger_mode = (flags & IOAPIC_TRIGGER_MASK) >> 15;
-	irte.l.delivery_mode = (flags & IOAPIC_DELIVERY_MODE_MASK) >> 8;
-	irte.l.dst_mode = 1;
-	irte.l.redirection_hint = 1;
-	irte.l.present = 1;
+	irte.bits.trigger_mode = (flags & IOAPIC_TRIGGER_MASK) >> 15;
+	irte.bits.delivery_mode = (flags & IOAPIC_DELIVERY_MODE_MASK) >> 8;
+	irte.bits.dst_mode = 1;
+	irte.bits.redirection_hint = 1;
+	irte.bits.present = 1;
 
-	data->irte[irte_idx].low = irte.low;
-	data->irte[irte_idx].high = irte.high;
+	data->irte[irte_idx].parts.low = irte.parts.low;
+	data->irte[irte_idx].parts.high = irte.parts.high;
 
 	vtd_index_iec_invalidate(dev, irte_idx);
 
