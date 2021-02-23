@@ -66,9 +66,9 @@ struct df_ant_cfg {
 /* Check if there is enough pins configured to represent each pattern
  * for given antennas number.
  */
-BUILD_ASSERT((DT_PROP(RADIO, dfe_ant_num) <= DFE_GPIO_ALLOWED_ANT_NUM), "Insufficient "
+BUILD_ASSERT((DT_PROP(RADIO, dfe_antenna_num) <= DFE_GPIO_ALLOWED_ANT_NUM), "Insufficient "
 	     "number of GPIO pins configured.");
-BUILD_ASSERT((DT_PROP(RADIO, dfe_ant_num) >= DF_ANT_NUM_MIN), "Insufficient "
+BUILD_ASSERT((DT_PROP(RADIO, dfe_antenna_num) >= DF_ANT_NUM_MIN), "Insufficient "
 	     "number of antennas provided.");
 BUILD_ASSERT(!IS_ENABLED(CONFIG_BT_CTLR_DF_INIT_ANT_SEL_GPIOS) ||
 	     (DT_PROP(RADIO, dfe_pdu_antenna) != DF_PDU_ANT_NOT_SET), "Missing "
@@ -89,14 +89,14 @@ FOR_EACH(DFE_GPIO_PIN_IS_FLAG_ZERO, (;),
 
 #if DT_NODE_HAS_STATUS(RADIO, okay)
 const static struct df_ant_cfg ant_cfg = {
-	.ant_num = DT_PROP(RADIO, dfe_ant_num),
+	.ant_num = DT_PROP(RADIO, dfe_antenna_num),
 	.dfe_gpio = {
 		FOR_EACH(DFE_GPIO_PSEL, (,),
 			 UTIL_LISTIFY(DF_PSEL_GPIO_NUM_MAX_IDX, DFE_GPIO_PIN_LIST))
 	}
 };
 #else
-#error "DF antenna switching feature requires dfe_ant to be enabled in DTS"
+#error "DF antenna switching feature requires dfe_antenna_num to be enabled in DTS"
 #endif
 
 /* @brief Function configures Radio with information about GPIO pins that may be
