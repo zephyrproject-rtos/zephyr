@@ -39,13 +39,14 @@
 
 /* Advertisement channel maximum payload size */
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+#define PDU_AC_EXT_HEADER_SIZE_MIN  offsetof(struct pdu_adv_com_ext_adv, \
+					     ext_hdr_adv_data)
 #define PDU_AC_EXT_HEADER_SIZE_MAX  63
 /* TODO: PDU_AC_EXT_PAYLOAD_OVERHEAD can be reduced based on supported
  *       features, like omitting support for periodic advertising will reduce
  *       18 octets in the Common Extended Advertising Payload Format.
  */
-#define PDU_AC_EXT_PAYLOAD_OVERHEAD (offsetof(struct pdu_adv_com_ext_adv, \
-					      ext_hdr_adv_data) + \
+#define PDU_AC_EXT_PAYLOAD_OVERHEAD (PDU_AC_EXT_HEADER_SIZE_MIN + \
 				     PDU_AC_EXT_HEADER_SIZE_MAX)
 #define PDU_AC_PAYLOAD_SIZE_MAX     MAX(MIN((PDU_AC_EXT_PAYLOAD_OVERHEAD + \
 					     CONFIG_BT_CTLR_ADV_DATA_LEN_MAX), \
