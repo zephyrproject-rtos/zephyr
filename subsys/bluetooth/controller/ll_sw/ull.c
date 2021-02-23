@@ -53,6 +53,7 @@
 #include "ull_scan_internal.h"
 #include "ull_sync_internal.h"
 #include "ull_sync_iso_internal.h"
+#include "ull_master_internal.h"
 #include "ull_conn_internal.h"
 #include "ull_conn_iso_internal.h"
 #include "ull_central_iso_internal.h"
@@ -1085,27 +1086,7 @@ void ll_rx_mem_release(void **node_rx)
 
 #if defined(CONFIG_BT_CENTRAL)
 			} else if (cc->status == BT_HCI_ERR_UNKNOWN_CONN_ID) {
-				struct node_rx_ftr *ftr = &rx_free->rx_ftr;
-				struct ll_scan_set *scan =
-					(void *)HDR_LLL2EVT(ftr->param);
-				struct lll_conn *conn_lll;
-				struct ll_conn *conn;
-				memq_link_t *link;
-
-				conn_lll = scan->lll.conn;
-				LL_ASSERT(conn_lll);
-				scan->lll.conn = NULL;
-
-				LL_ASSERT(!conn_lll->link_tx_free);
-				link = memq_deinit(&conn_lll->memq_tx.head,
-						   &conn_lll->memq_tx.tail);
-				LL_ASSERT(link);
-				conn_lll->link_tx_free = link;
-
-				conn = (void *)HDR_LLL2EVT(conn_lll);
-				ll_conn_release(conn);
-
-				scan->is_enabled = 0U;
+				ull_master_cleanup(rx_free);
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 #if defined(CONFIG_BT_BROADCASTER)
