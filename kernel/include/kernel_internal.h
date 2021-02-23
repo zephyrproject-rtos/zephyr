@@ -207,6 +207,27 @@ void z_kernel_map_fixup(void);
 			!__i.key;					\
 			k_spin_unlock(lck, __key), __i.key = 1)
 
+#ifdef CONFIG_PM
+
+/* When the kernel is about to go idle, it calls this function to notify the
+ * power management subsystem, that the kernel is ready to enter the idle state.
+ *
+ * At this point, the kernel has disabled interrupts and computed the maximum
+ * time the system can remain idle. The function passes the time that the system
+ * can remain idle. The SOC interface performs power operations that can be done
+ * in the available time. The power management operations must halt execution of
+ * the CPU.
+ *
+ * This function assumes that a wake up event has already been set up by the
+ * application.
+ *
+ * This function is entered with interrupts disabled. It should re-enable
+ * interrupts if it had entered a power state.
+ */
+enum pm_state pm_system_suspend(int32_t ticks);
+
+#endif
+
 #ifdef __cplusplus
 }
 #endif
