@@ -37,6 +37,12 @@ Deprecated in this release
   :c:macro:`DT_INST_CLOCKS_LABEL` was deprecated in favor of utilizing
   :c:macro:`DT_CLOCKS_CTLR` and variants.
 
+* :c:macro:`DT_PWMS_LABEL_BY_IDX`, :c:macro:`DT_PWMS_LABEL_BY_NAME`,
+  :c:macro:`DT_PWMS_LABEL`, :c:macro:`DT_INST_PWMS_LABEL_BY_IDX`,
+  :c:macro:`DT_INST_PWMS_LABEL_BY_NAME`, and
+  :c:macro:`DT_INST_PWMS_LABEL` was deprecated in favor of utilizing
+  :c:macro:`DT_PWMS_CTLR` and variants.
+
 ==========================
 
 Removed APIs in this release
