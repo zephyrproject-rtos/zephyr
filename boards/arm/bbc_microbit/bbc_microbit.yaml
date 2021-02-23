@@ -14,3 +14,4 @@ supported:
   - ble
   - i2c
   - gpio
+  - pwm
