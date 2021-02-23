@@ -38,8 +38,8 @@ static void init_zli_timer0(void)
 
 	IRQ_DIRECT_CONNECT(TIMER0_IRQn, 0,
 			   timer0_isr_wrapper,
-			   COND_CODE_1(CONFIG_ZERO_LATENCY_IRQS,
-				   (IRQ_ZERO_LATENCY), (0)));
+			   IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS) ?
+			   IRQ_ZERO_LATENCY : 0);
 	irq_enable(TIMER0_IRQn);
 }
 
