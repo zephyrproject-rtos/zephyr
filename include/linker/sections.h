@@ -75,6 +75,14 @@
 #define BOOT_NOINIT_SECTION_NAME	boot_noinit
 #endif
 
+#if defined(CONFIG_LINKER_USE_PINNED_SECTION)
+#define PINNED_TEXT_SECTION_NAME	pinned_text
+#define PINNED_BSS_SECTION_NAME		pinned_bss
+#define PINNED_RODATA_SECTION_NAME	pinned_rodata
+#define PINNED_DATA_SECTION_NAME	pinned_data
+#define PINNED_NOINIT_SECTION_NAME	pinned_noinit
+#endif
+
 /* Short section references for use in ASM files */
 #if defined(_ASMLANGUAGE)
 /* Various text section names */
@@ -99,6 +107,20 @@
 #define BOOT_DATA			DATA
 #define BOOT_NOINIT			NOINIT
 #endif /* CONFIG_LINKER_USE_BOOT_SECTION */
+
+#if defined(CONFIG_LINKER_USE_PINNED_SECTION)
+#define PINNED_TEXT			PINNED_TEXT_SECTION_NAME
+#define PINNED_BSS			PINNED_BSS_SECTION_NAME
+#define PINNED_RODATA			PINNED_RODATA_SECTION_NAME
+#define PINNED_DATA			PINNED_DATA_SECTION_NAME
+#define PINNED_NOINIT			PINNED_NOINIT_SECTION_NAME
+#else
+#define PINNED_TEXT			TEXT
+#define PINNED_BSS			BSS
+#define PINNED_RODATA			RODATA
+#define PINNED_DATA			DATA
+#define PINNED_NOINIT			NOINIT
+#endif /* CONFIG_LINKER_USE_PINNED_SECTION */
 
 #endif /* _ASMLANGUAGE */
 
