@@ -22,6 +22,12 @@ from west.commands import CommandError
 from west.configuration import config
 import yaml
 
+from zephyr_ext_common import ZEPHYR_SCRIPTS
+
+# Runners depend on edtlib. Make sure the copy in the tree is
+# available to them before trying to import any.
+sys.path.append(str(ZEPHYR_SCRIPTS / 'dts'))
+
 from runners import get_runner_cls, ZephyrBinaryRunner, MissingProgram
 from runners.core import RunnerConfig
 import zcmake
