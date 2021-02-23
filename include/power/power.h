@@ -127,12 +127,9 @@ static inline void pm_idle_exit_notification_disable(void)
  * @brief Force usage of given power state.
  *
  * This function overrides decision made by PM policy forcing
- * usage of given power state in the ongoing suspend operation.
- * And before the end of suspend, the state of forced_pm_state
- * is cleared with interrupt disabled.
+ * usage of given power state immediately.
  *
- * If enabled PM_DIRECT_FORCE_MODE, this function can only
- * run in thread context.
+ * @note This function can only run in thread context
  *
  * @param info Power state which should be used in the ongoing
  *	suspend operation.
