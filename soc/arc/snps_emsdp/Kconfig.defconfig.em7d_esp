@@ -10,7 +10,7 @@ config CPU_EM4_FPUDA
 	default y
 
 config ARC_MPU_VER
-	default 3
+	default 4
 
 config RGF_NUM_BANKS
 	default 1

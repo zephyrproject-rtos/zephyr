@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_ARCH_ARC_CORE_MPU_ARC_MPU_V3_INTERNAL_H_
-#define ZEPHYR_ARCH_ARC_CORE_MPU_ARC_MPU_V3_INTERNAL_H_
+#ifndef ZEPHYR_ARCH_ARC_CORE_MPU_ARC_MPU_V4_INTERNAL_H_
+#define ZEPHYR_ARCH_ARC_CORE_MPU_ARC_MPU_V4_INTERNAL_H_
 
 #define AUX_MPU_RPER_SID1       0x10000
 /* valid mask: SID1+secure+valid */
@@ -12,13 +12,13 @@
 
 #define AUX_MPU_RPER_ATTR_MASK (0x1FF)
 
-/* For MPU version 3, the minimum protection region size is 32 bytes */
+/* For MPU version 4, the minimum protection region size is 32 bytes */
 #define ARC_FEATURE_MPU_ALIGNMENT_BITS 5
 
 #define CALC_REGION_END_ADDR(start, size) \
 	(start + size - (1 << ARC_FEATURE_MPU_ALIGNMENT_BITS))
 
-/* ARC MPU version 3 does not support mpu region overlap in hardware
+/* ARC MPU version 4 does not support mpu region overlap in hardware
  * so if we want to allocate MPU region dynamically, e.g. thread stack,
  * memory domain from a background region, a dynamic region splitting
  * approach is designed. pls see comments in
@@ -521,7 +521,7 @@ void arc_core_mpu_disable(void)
 void arc_core_mpu_configure_thread(struct k_thread *thread)
 {
 #if defined(CONFIG_MPU_GAP_FILLING)
-/* the mpu entries of ARC MPUv3 are divided into 2 parts:
+/* the mpu entries of ARC MPUv4 are divided into 2 parts:
  * static entries: global mpu entries, not changed in context switch
  * dynamic entries: MPU entries changed in context switch and
  * memory domain configure, including:
@@ -785,7 +785,7 @@ int arc_core_mpu_buffer_validate(void *addr, size_t size, int write)
 	int key = arch_irq_lock();
 
 	/*
-	 * For ARC MPU v3, overlapping is not supported.
+	 * For ARC MPU v4, overlapping is not supported.
 	 * we can stop the iteration immediately once we find the
 	 * matched region that grants permission or denies access.
 	 */
@@ -893,4 +893,4 @@ static int arc_mpu_init(const struct device *arg)
 SYS_INIT(arc_mpu_init, PRE_KERNEL_1,
 	 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
-#endif /* ZEPHYR_ARCH_ARC_CORE_MPU_ARC_MPU_V3_INTERNAL_H_ */
+#endif /* ZEPHYR_ARCH_ARC_CORE_MPU_ARC_MPU_V4_INTERNAL_H_ */
