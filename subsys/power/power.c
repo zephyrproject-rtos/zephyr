@@ -144,7 +144,7 @@ static enum pm_state _handle_device_abort(struct pm_state_info info)
 	return PM_STATE_ACTIVE;
 }
 
-static enum pm_state pm_policy_mgr(int32_t ticks)
+enum pm_state pm_system_suspend(int32_t ticks)
 {
 	bool deep_sleep;
 #if CONFIG_PM_DEVICE
@@ -206,12 +206,6 @@ static enum pm_state pm_policy_mgr(int32_t ticks)
 	}
 
 	return z_power_state.state;
-}
-
-
-enum pm_state pm_system_suspend(int32_t ticks)
-{
-	return pm_policy_mgr(ticks);
 }
 
 void pm_system_resume(void)
