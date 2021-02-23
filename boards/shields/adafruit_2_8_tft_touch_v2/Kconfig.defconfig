@@ -71,11 +71,4 @@ endif # LVGL
 
 endif # DISPLAY
 
-if DISK_ACCESS_SDHC
-
-config DISK_ACCESS_SPI_SDHC
-	default y
-
-endif # DISK_ACCESS_SDHC
-
 endif # SHIELD_ADAFRUIT_2_8_TFT_TOUCH_V2
