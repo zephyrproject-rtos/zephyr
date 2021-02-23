@@ -1,0 +1,58 @@
+# Copyright (c) 2016 Intel Corporation
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+DT_COMPAT_ZEPHYR_MMC_SPI_SLOT := zephyr,mmc-spi-slot
+DT_COMPAT_NXP_USDHC := nxp,imx-usdhc
+DT_COMPAT_ST_STM32_SDMMC := st,stm32-sdmmc
+
+config DISK_DRIVER_SDMMC
+	bool "SDMMC card driver"
+	help
+	  SDMMC card driver.
+
+if DISK_DRIVER_SDMMC
+
+config SDMMC_INIT_PRIORITY
+	int "Init priority"
+	default 90
+	help
+	  SDMMC controller driver initialization priority.
+
+config SDMMC_VOLUME_NAME
+	string "SDMMC Disk mount point or drive name"
+	default "SD" if FAT_FILESYSTEM_ELM
+	default "SDMMC"
+	help
+	  Disk name as per file system naming guidelines.
+
+config SDMMC_OVER_SPI
+	bool "SDHC access over SPI"
+	select SPI
+	default $(dt_compat_enabled,$(DT_COMPAT_ZEPHYR_MMC_SPI_SLOT))
+	help
+	  File system on a SDHC card accessed over SPI.
+
+config SDMMC_USDHC
+	bool "NXP i.MXRT USDHC driver"
+	depends on (HAS_MCUX_USDHC1 || HAS_MCUX_USDHC2)
+	default $(dt_compat_enabled,$(DT_COMPAT_NXP_USDHC))
+	help
+	  File system on a SDHC card accessed over
+	  NXP USDHC.
+
+config SDMMC_STM32
+	bool "STM32 SDMMC driver"
+	depends on HAS_STM32CUBE
+	select USE_STM32_HAL_SD
+	select USE_STM32_HAL_SD_EX if SOC_SERIES_STM32L4X
+	select USE_STM32_LL_SDMMC
+	default $(dt_compat_enabled,$(DT_COMPAT_ST_STM32_SDMMC))
+	help
+	  File system on sdmmc accessed through stm32 sdmmc.
+
+module = SDMMC
+module-str = sdmmc
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # DISK_DRIVER_SDMMC
