@@ -94,13 +94,13 @@
 .endm
 
 /*
- * Decrement nested counter
+ * Decrement nested counter and update condition flags
  */
 
 .macro dec_nest_counter xreg0, xreg1
 	ldr	\xreg0, =_kernel
 	ldr	\xreg1, [\xreg0, #_kernel_offset_to_nested]
-	sub	\xreg1, \xreg1, #1
+	subs	\xreg1, \xreg1, #1
 	str	\xreg1, [\xreg0, #_kernel_offset_to_nested]
 .endm
 
