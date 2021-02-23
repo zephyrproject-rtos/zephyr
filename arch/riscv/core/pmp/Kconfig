@@ -33,6 +33,7 @@ config PMP_STACK_GUARD_MIN_SIZE
 	help
 	  Minimum size (and alignment when applicable) of an stack guard
 	  region, which guards the stack of a thread. The width of the
-	  guard is set to 4, to accommodate the riscv granularity.
+	  guard is set to 16 bytes, to accommodate the riscv
+	  granularity.
 
 endif # PMP_STACK_GUARD
