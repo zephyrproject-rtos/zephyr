@@ -52,11 +52,10 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	beq	spurious_continue
 
 	stp	x0, x1, [sp, #-16]!
-	lsl	x0, x0, #4 /* table is 16-byte wide */
 
 	/* Retrieve the interrupt service routine */
 	ldr	x1, =_sw_isr_table
-	add	x1, x1, x0
+	add	x1, x1, x0, lsl #4	/* table is 16-byte wide */
 	ldp	x0, x3, [x1] /* arg in x0, ISR in x3 */
 
 	/*
@@ -81,10 +80,8 @@ spurious_continue:
 	bl	sys_trace_isr_exit
 #endif
 
-	/* --(_kernel->nested) */
+	/* if (--(_kernel->nested) != 0) exit */
 	dec_nest_counter x0, x1
-
-	cmp	x1, #0
 	bne	exit
 
 	/*
