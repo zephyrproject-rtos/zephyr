@@ -203,3 +203,56 @@ The USB device should be connected to your Linux host, and verified with the fol
               -> remote bus/dev 001/002
    $ lsusb -d 2fe3:0100
    Bus 007 Device 004: ID 2fe3:0100
+
+USB Human Interface Devices (HID) support
+*****************************************
+
+HID Item helpers
+================
+
+HID item helper macros can be used to compose a HID Report Descriptor.
+The names correspond to those used in the USB HID Specification.
+
+Example of a HID Report Descriptor:
+
+.. code-block:: c
+
+    static const uint8_t hid_report_desc[] = {
+        HID_USAGE_PAGE(HID_USAGE_GEN_DESKTOP),
+        HID_USAGE(HID_USAGE_GEN_DESKTOP_UNDEFINED),
+        HID_COLLECTION(HID_COLLECTION_APPLICATION),
+        HID_LOGICAL_MIN8(0),
+        /* logical maximum 255 */
+        HID_LOGICAL_MAX16(0xFF, 0x00),
+        HID_REPORT_ID(1),
+        HID_REPORT_SIZE(8),
+        HID_REPORT_COUNT(1),
+        HID_USAGE(HID_USAGE_GEN_DESKTOP_UNDEFINED),
+        /* HID_INPUT (Data, Variable, Absolute)	*/
+        HID_INPUT(0x02),
+        HID_END_COLLECTION,
+    };
+
+
+.. doxygengroup:: usb_hid_items
+   :project: Zephyr
+
+.. doxygengroup:: usb_hid_types
+   :project: Zephyr
+
+HID Mouse and Keyboard report descriptors
+=========================================
+
+The pre-defined Mouse and Keyboard report descriptors can be used by
+a HID device implementation or simply as examples.
+
+.. doxygengroup:: usb_hid_mk_report_desc
+   :project: Zephyr
+
+HID Class Device API
+********************
+
+USB HID devices like mouse, keyboard, or any other specific device use this API.
+
+.. doxygengroup:: usb_hid_device_api
+   :project: Zephyr
