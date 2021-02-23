@@ -183,9 +183,9 @@ static bool prov_check_method(struct bt_mesh_dev_capabilities *caps)
 		}
 
 		if (!(BIT(bt_mesh_prov_link.oob_action) & caps->input_actions)) {
-			BT_WARN("The required input action (0x%02x) "
+			BT_WARN("The required input action (0x%04x) "
 				"not supported by the device (0x%02x)",
-				bt_mesh_prov_link.oob_action, caps->input_actions);
+				(uint16_t)BIT(bt_mesh_prov_link.oob_action), caps->input_actions);
 			return false;
 		}
 
@@ -209,9 +209,9 @@ static bool prov_check_method(struct bt_mesh_dev_capabilities *caps)
 		}
 
 		if (!(BIT(bt_mesh_prov_link.oob_action) & caps->output_actions)) {
-			BT_WARN("The required output action (0x%02x) "
+			BT_WARN("The required output action (0x%04x) "
 				"not supported by the device (0x%02x)",
-				bt_mesh_prov_link.oob_action, caps->output_actions);
+				(uint16_t)BIT(bt_mesh_prov_link.oob_action), caps->output_actions);
 			return false;
 		}
 
@@ -241,9 +241,11 @@ static void prov_capabilities(const uint8_t *data)
 	BT_DBG("Static OOB Type:   0x%02x", caps.static_oob);
 	BT_DBG("Output OOB Size:   %u", caps.output_size);
 
-	caps.output_actions = (bt_mesh_output_action_t)data[6];
+	caps.output_actions = (bt_mesh_output_action_t)
+					(sys_get_be16(&data[6]));
 	caps.input_size = data[8];
-	caps.input_actions = (bt_mesh_input_action_t)data[9];
+	caps.input_actions = (bt_mesh_input_action_t)
+					(sys_get_be16(&data[9]));
 	BT_DBG("Output OOB Action: 0x%04x", caps.output_actions);
 	BT_DBG("Input OOB Size:    %u", caps.input_size);
 	BT_DBG("Input OOB Action:  0x%04x", caps.input_actions);
@@ -339,8 +341,6 @@ static void public_key_sent(int err, void *cb_data)
 		prov_dh_key_gen();
 		return;
 	}
-
-	bt_mesh_prov_link.expect = PROV_PUB_KEY;
 }
 
 static void send_pub_key(void)
@@ -370,6 +370,8 @@ static void send_pub_key(void)
 		BT_ERR("Failed to send Public Key");
 		return;
 	}
+
+	bt_mesh_prov_link.expect = PROV_PUB_KEY;
 }
 
 static void prov_dh_key_cb(const uint8_t dhkey[32])

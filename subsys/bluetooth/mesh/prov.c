@@ -50,7 +50,7 @@ int bt_mesh_prov_reset_state(void (*func)(const uint8_t key[64]))
 {
 	int err;
 	static struct bt_pub_key_cb pub_key_cb;
-	const size_t offset = offsetof(struct bt_mesh_prov_link, dhkey);
+	const size_t offset = offsetof(struct bt_mesh_prov_link, auth);
 
 	pub_key_cb.func = func ? func : pub_key_ready;
 
@@ -268,7 +268,7 @@ static void prov_recv(const struct prov_bearer *bearer, void *cb_data,
 
 	if (type >= ARRAY_SIZE(bt_mesh_prov_link.role->op)) {
 		BT_ERR("Unknown provisioning PDU type 0x%02x", type);
-		bt_mesh_prov_link.role->error(PROV_ERR_NVAL_FMT);
+		bt_mesh_prov_link.role->error(PROV_ERR_NVAL_PDU);
 		return;
 	}
 
