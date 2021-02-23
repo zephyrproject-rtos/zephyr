@@ -175,6 +175,27 @@ static inline char *z_stack_ptr_align(char *ptr)
 #define K_KERNEL_STACK_DEFINE(sym, size) \
 	Z_KERNEL_STACK_DEFINE_IN(sym, size, __kstackmem)
 
+/**
+ * @def K_KERNEL_PINNED_STACK_DEFINE
+ * @brief Define a toplevel kernel stack memory region in pinned section
+ *
+ * See K_KERNEL_STACK_DEFINE() for more information and constraints.
+ *
+ * This puts the stack into the pinned noinit linker section if
+ * CONFIG_LINKER_USE_PINNED_SECTION is enabled, or else it would
+ * put the stack into the same section as K_KERNEL_STACK_DEFINE().
+ *
+ * @param sym Thread stack symbol name
+ * @param size Size of the stack memory region
+ */
+#if defined(CONFIG_LINKER_USE_PINNED_SECTION)
+#define K_KERNEL_PINNED_STACK_DEFINE(sym, size) \
+	Z_KERNEL_STACK_DEFINE_IN(sym, size, __pinned_noinit)
+#else
+#define K_KERNEL_PINNED_STACK_DEFINE(sym, size) \
+	Z_KERNEL_STACK_DEFINE_IN(sym, size, __kstackmem)
+#endif
+
 #define Z_KERNEL_STACK_LEN(size) \
 	ROUND_UP(Z_KERNEL_STACK_SIZE_ADJUST(size), Z_KERNEL_STACK_OBJ_ALIGN)
 
@@ -190,6 +211,28 @@ static inline char *z_stack_ptr_align(char *ptr)
  */
 #define K_KERNEL_STACK_ARRAY_DEFINE(sym, nmemb, size) \
 	Z_KERNEL_STACK_ARRAY_DEFINE_IN(sym, nmemb, size, __kstackmem)
+
+/**
+ * @def K_KERNEL_PINNED_STACK_ARRAY_DEFINE
+ * @brief Define a toplevel array of kernel stack memory regions in pinned section
+ *
+ * See K_KERNEL_STACK_ARRAY_DEFINE() for more information and constraints.
+ *
+ * This puts the stack into the pinned noinit linker section if
+ * CONFIG_LINKER_USE_PINNED_SECTION is enabled, or else it would
+ * put the stack into the same section as K_KERNEL_STACK_ARRAY_DEFINE().
+ *
+ * @param sym Kernel stack array symbol name
+ * @param nmemb Number of stacks to declare
+ * @param size Size of the stack memory region
+ */
+#if defined(CONFIG_LINKER_USE_PINNED_SECTION)
+#define K_KERNEL_PINNED_STACK_ARRAY_DEFINE(sym, nmemb, size) \
+	Z_KERNEL_STACK_ARRAY_DEFINE_IN(sym, nmemb, size, __pinned_noinit)
+#else
+#define K_KERNEL_PINNED_STACK_ARRAY_DEFINE(sym, nmemb, size) \
+	Z_KERNEL_STACK_ARRAY_DEFINE_IN(sym, nmemb, size, __kstackmem)
+#endif
 
 /**
  * @def K_KERNEL_STACK_MEMBER
