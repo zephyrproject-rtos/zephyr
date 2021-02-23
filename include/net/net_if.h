@@ -187,6 +187,12 @@ enum net_if_flag {
 	 */
 	NET_IF_FORWARD_MULTICASTS,
 
+	/** Interface supports IPv4 */
+	NET_IF_IPV4,
+
+	/** Interface supports IPv6 */
+	NET_IF_IPV6,
+
 /** @cond INTERNAL_HIDDEN */
 	/* Total number of flags - must be at the end of the enum */
 	NET_IF_NUM_FLAGS
