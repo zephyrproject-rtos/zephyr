@@ -1211,6 +1211,8 @@ Nuvoton Platforms:
         - MulinChao
         - sjg20
         - jackrosenthal
+        - ChiHuaL
+        - WealianLiao
     files:
         - soc/arm/nuvoton/
         - boards/arm/npcx*/
