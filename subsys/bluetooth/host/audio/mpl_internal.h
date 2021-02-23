@@ -13,6 +13,8 @@
 
 #include "mpl.h"
 
+#define MPL_NO_TRACK_ID 0
+
 /* Debug output of 48 bit Object ID value */
 /* (Zephyr does not yet support debug output of more than 32 bit values.) */
 /* Takes a text and a 64-bit integer as input */

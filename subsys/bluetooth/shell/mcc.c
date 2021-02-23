@@ -18,6 +18,7 @@
 #include "bt.h"
 
 #include "../host/audio/otc.h"
+#include "../host/audio/mpl_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_MCS)
 #define LOG_MODULE_NAME bt_mcc_shell
@@ -231,8 +232,12 @@ static void mcc_next_track_obj_id_read_cb(struct bt_conn *conn, int err,
 		return;
 	}
 
-	(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
-	shell_print(ctx_shell, "Next Track Object ID: %s", str);
+	if (id == MPL_NO_TRACK_ID) {
+		shell_print(ctx_shell, "Next Track Object ID is empty");
+	} else {
+		(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
+		shell_print(ctx_shell, "Next Track Object ID: %s", str);
+	}
 
 	obj_ids.next_track_obj_id = id;
 }
