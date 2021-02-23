@@ -54,6 +54,7 @@ extern "C" {
  * @see DT_PROP_BY_PHANDLE_IDX()
  */
 #define DT_PWMS_LABEL_BY_IDX(node_id, idx) \
+	__DEPRECATED_MACRO \
 	DT_PROP_BY_PHANDLE_IDX(node_id, pwms, idx, label)
 
 /**
@@ -91,6 +92,7 @@ extern "C" {
  * @see DT_PHANDLE_BY_NAME()
  */
 #define DT_PWMS_LABEL_BY_NAME(node_id, name) \
+	__DEPRECATED_MACRO \
 	DT_PROP(DT_PHANDLE_BY_NAME(node_id, pwms, name), label)
 
 /**
@@ -99,7 +101,7 @@ extern "C" {
  * @return the label property of the node referenced at index 0
  * @see DT_PWMS_LABEL_BY_IDX()
  */
-#define DT_PWMS_LABEL(node_id) DT_PWMS_LABEL_BY_IDX(node_id, 0)
+#define DT_PWMS_LABEL(node_id) __DEPRECATED_MACRO DT_PWMS_LABEL_BY_IDX(node_id, 0)
 
 /**
  * @brief Get the node identifier for the PWM controller from a
@@ -410,6 +412,7 @@ extern "C" {
  * @see DT_PWMS_LABEL_BY_IDX()
  */
 #define DT_INST_PWMS_LABEL_BY_IDX(inst, idx) \
+	__DEPRECATED_MACRO \
 	DT_PWMS_LABEL_BY_IDX(DT_DRV_INST(inst), idx)
 
 /**
@@ -422,6 +425,7 @@ extern "C" {
  * @see DT_PWMS_LABEL_BY_NAME()
  */
 #define DT_INST_PWMS_LABEL_BY_NAME(inst, name) \
+	__DEPRECATED_MACRO \
 	DT_PWMS_LABEL_BY_NAME(DT_DRV_INST(inst), name)
 
 /**
@@ -430,7 +434,7 @@ extern "C" {
  * @return the label property of the node referenced at index 0
  * @see DT_PWMS_LABEL_BY_IDX()
  */
-#define DT_INST_PWMS_LABEL(inst) DT_INST_PWMS_LABEL_BY_IDX(inst, 0)
+#define DT_INST_PWMS_LABEL(inst) __DEPRECATED_MACRO DT_INST_PWMS_LABEL_BY_IDX(inst, 0)
 
 /**
  * @brief Get the node identifier for the PWM controller from a
