@@ -26,25 +26,6 @@ extern "C" {
  * @}
  */
 
-struct usb_hid_class_subdescriptor {
-	uint8_t bDescriptorType;
-	uint16_t wDescriptorLength;
-} __packed;
-
-struct usb_hid_descriptor {
-	uint8_t bLength;
-	uint8_t bDescriptorType;
-	uint16_t bcdHID;
-	uint8_t bCountryCode;
-	uint8_t bNumDescriptors;
-
-	/*
-	 * Specification says at least one Class Descriptor needs to
-	 * be present (Report Descriptor).
-	 */
-	struct usb_hid_class_subdescriptor subdesc[1];
-} __packed;
-
 /**
  * @defgroup usb_hid_device_api HID class USB specific definitions
  * @ingroup usb_hid_class
