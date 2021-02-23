@@ -34,3 +34,5 @@ scripts/ci/twister_ignore.txt
 scripts/ci/what_changed.py
 scripts/ci/version_mgr.py
 scripts/requirements*
+scripts/checkpatch/*
+scripts/checkpatch.pl
