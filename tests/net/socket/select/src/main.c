@@ -23,8 +23,8 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #define SERVER_PORT 4242
 #define CLIENT_PORT 9898
 
-/* On QEMU, poll() which waits takes +10ms from the requested time. */
-#define FUZZ 10
+/* On QEMU, poll() which waits takes +20ms from the requested time. */
+#define FUZZ 20
 
 void test_fd_set(void)
 {
