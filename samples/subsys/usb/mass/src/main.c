@@ -13,7 +13,7 @@
 
 LOG_MODULE_REGISTER(main);
 
-#if CONFIG_DISK_ACCESS_FLASH
+#if CONFIG_DISK_DRIVER_FLASH
 #include <storage/flash_map.h>
 #endif
 
@@ -31,7 +31,7 @@ static struct fs_mount_t fs_mnt;
 static int setup_flash(struct fs_mount_t *mnt)
 {
 	int rc = 0;
-#if CONFIG_DISK_ACCESS_FLASH
+#if CONFIG_DISK_DRIVER_FLASH
 	unsigned int id;
 	const struct flash_area *pfa;
 
@@ -65,7 +65,7 @@ static int mount_app_fs(struct fs_mount_t *mnt)
 
 	mnt->type = FS_FATFS;
 	mnt->fs_data = &fat_fs;
-	if (IS_ENABLED(CONFIG_DISK_ACCESS_RAM)) {
+	if (IS_ENABLED(CONFIG_DISK_DRIVER_RAM)) {
 		mnt->mnt_point = "/RAM:";
 	} else {
 		mnt->mnt_point = "/NAND:";
@@ -90,7 +90,7 @@ static void setup_disk(void)
 
 	fs_dir_t_init(&dir);
 
-	if (IS_ENABLED(CONFIG_DISK_ACCESS_FLASH)) {
+	if (IS_ENABLED(CONFIG_DISK_DRIVER_FLASH)) {
 		rc = setup_flash(mp);
 		if (rc < 0) {
 			LOG_ERR("Failed to setup flash area");
