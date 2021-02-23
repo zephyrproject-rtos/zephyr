@@ -35,6 +35,12 @@ enum bt_mesh_feat_state {
 	BT_MESH_FEATURE_NOT_SUPPORTED,
 };
 
+/* Key Refresh Phase */
+#define BT_MESH_KR_NORMAL                   0x00
+#define BT_MESH_KR_PHASE_1                  0x01
+#define BT_MESH_KR_PHASE_2                  0x02
+#define BT_MESH_KR_PHASE_3                  0x03
+
 /* Legacy feature defines */
 #define BT_MESH_RELAY_DISABLED              BT_MESH_FEATURE_DISABLED
 #define BT_MESH_RELAY_ENABLED               BT_MESH_FEATURE_ENABLED

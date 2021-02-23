@@ -286,7 +286,6 @@ static int cdb_subnet_set(const char *name, size_t len_rd,
 	if (sub) {
 		BT_DBG("Updating existing NetKeyIndex 0x%03x", net_idx);
 
-		sub->kr_flag = key.kr_flag;
 		sub->kr_phase = key.kr_phase;
 		memcpy(sub->keys[0].net_key, &key.val[0], 16);
 		memcpy(sub->keys[1].net_key, &key.val[1], 16);
@@ -300,7 +299,6 @@ static int cdb_subnet_set(const char *name, size_t len_rd,
 		return -ENOMEM;
 	}
 
-	sub->kr_flag = key.kr_flag;
 	sub->kr_phase = key.kr_phase;
 	memcpy(sub->keys[0].net_key, &key.val[0], 16);
 	memcpy(sub->keys[1].net_key, &key.val[1], 16);
@@ -456,7 +454,7 @@ static void store_cdb_subnet(const struct bt_mesh_cdb_subnet *sub)
 
 	memcpy(&key.val[0], sub->keys[0].net_key, 16);
 	memcpy(&key.val[1], sub->keys[1].net_key, 16);
-	key.kr_flag = sub->kr_flag;
+	key.kr_flag = 0U; /* Deprecated */
 	key.kr_phase = sub->kr_phase;
 
 	snprintk(path, sizeof(path), "bt/mesh/cdb/Subnet/%x", sub->net_idx);
@@ -807,7 +805,7 @@ uint8_t bt_mesh_cdb_subnet_flags(const struct bt_mesh_cdb_subnet *sub)
 {
 	uint8_t flags = 0x00;
 
-	if (sub && sub->kr_flag) {
+	if (sub && SUBNET_KEY_TX_IDX(sub)) {
 		flags |= BT_MESH_NET_FLAG_KR;
 	}
 
