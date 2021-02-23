@@ -27,8 +27,3 @@ config PM_POLICY_RESIDENCY_DEFAULT
 	bool
 	help
 	  Use the default residency policy implementation
-
-config PM_POLICY_RESIDENCY_CC13X2_CC26X2
-	bool
-	help
-	  Use the residency policy implementation for TI CC13x2/CC26x2
