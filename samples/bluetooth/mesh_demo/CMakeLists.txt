@@ -7,9 +7,10 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(mesh_demo)
 
 target_sources(app PRIVATE src/main.c)
-target_sources_ifdef(CONFIG_BOARD_BBC_MICROBIT app PRIVATE src/microbit.c)
-zephyr_include_directories_ifdef(CONFIG_BOARD_BBC_MICROBIT
-				 ${ZEPHYR_BASE}/boards/arm/bbc_microbit)
+if(CONFIG_MICROBIT_DISPLAY)
+  target_sources(app PRIVATE src/microbit.c)
+  zephyr_include_directories(${ZEPHYR_BASE}/boards/arm/bbc_microbit)
+endif()
 
 if(NODE_ADDR)
   zephyr_compile_definitions(NODE_ADDR=${NODE_ADDR})
