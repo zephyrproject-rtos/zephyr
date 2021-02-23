@@ -105,7 +105,8 @@ void z_sys_init_run_level(int32_t level)
 	}
 }
 
-const struct device *z_impl_device_get_binding(const char *name)
+static const struct device *device_lookup_by_name(const char *name,
+						  bool require_ready)
 {
 	const struct device *dev;
 
@@ -122,18 +123,28 @@ const struct device *z_impl_device_get_binding(const char *name)
 	 * performed. Reserve string comparisons for a fallback.
 	 */
 	for (dev = __device_start; dev != __device_end; dev++) {
-		if (z_device_ready(dev) && (dev->name == name)) {
+		if ((dev->name == name) && (!require_ready || z_device_ready(dev))) {
 			return dev;
 		}
 	}
 
 	for (dev = __device_start; dev != __device_end; dev++) {
-		if (z_device_ready(dev) && (strcmp(name, dev->name) == 0)) {
+		if ((strcmp(name, dev->name) == 0) && (!require_ready || z_device_ready(dev))) {
 			return dev;
 		}
 	}
 
 	return NULL;
+}
+
+const struct device *z_impl_device_get_binding(const char *name)
+{
+	return device_lookup_by_name(name, true);
+}
+
+const struct device *z_impl_device_from_name(const char *name)
+{
+	return device_lookup_by_name(name, false);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -157,6 +168,20 @@ static inline int z_vrfy_device_usable_check(const struct device *dev)
 	return z_impl_device_usable_check(dev);
 }
 #include <syscalls/device_usable_check_mrsh.c>
+
+static inline const struct device *z_vrfy_device_from_name(const char *name)
+{
+	char name_copy[Z_DEVICE_MAX_NAME_LEN];
+
+	if (z_user_string_copy(name_copy, (char *)name, sizeof(name_copy))
+	    != 0) {
+		return 0;
+	}
+
+	return z_impl_device_from_name(name_copy);
+}
+#include <syscalls/device_from_name_mrsh.c>
+
 #endif /* CONFIG_USERSPACE */
 
 size_t z_device_get_all_static(struct device const **devices)

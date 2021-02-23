@@ -88,6 +88,8 @@ static void test_dynamic_name(void)
 	char name[sizeof(DUMMY_PORT_2)];
 
 	snprintk(name, sizeof(name), "%s", DUMMY_PORT_2);
+	mux = device_from_name(name);
+	zassert_true(mux != NULL, NULL);
 	mux = device_get_binding(name);
 	zassert_true(mux != NULL, NULL);
 }
@@ -106,6 +108,8 @@ static void test_bogus_dynamic_name(void)
 	char name[64];
 
 	snprintk(name, sizeof(name), "ANOTHER_BOGUS_NAME");
+	mux = device_from_name(name);
+	zassert_true(mux == NULL, NULL);
 	mux = device_get_binding(name);
 	zassert_true(mux == NULL, NULL);
 }

@@ -568,6 +568,33 @@ int device_required_foreach(const struct device *dev,
  */
 __syscall const struct device *device_get_binding(const char *name);
 
+/**
+ * @brief Retrieve the device structure for a driver by name.
+ *
+ * This is the implementation underlying device_from_name(), without
+ * the overhead of a syscall wrapper.
+ *
+ * @param name device name to search for.  A null pointer, or a pointer to an
+ * empty string, will cause NULL to be returned.
+ *
+ * @return pointer to device structure; NULL if the name is not
+ * acceptable or no device is associated with the name.
+ */
+const struct device *z_device_from_name(const char *name);
+
+/**
+ * @brief Retrieve the device structure for a driver by name.
+ *
+ * This differs from device_get_binding() in that it does not verify
+ * that the device is ready to use.
+ *
+ * @param name device name to search for.  A null pointer, or a pointer to an
+ * empty string, will cause NULL to be returned.
+ *
+ * @return pointer to device structure; NULL if not found or cannot be used.
+ */
+__syscall const struct device *device_from_name(const char *name);
+
 /** @brief Get access to the static array of static devices.
  *
  * @param devices where to store the pointer to the array of
@@ -623,10 +650,12 @@ static inline int z_impl_device_usable_check(const struct device *dev)
  * Indicates whether the provided device pointer is for a device known to be
  * in a state where it can be used with its standard API.
  *
- * This can be used with device pointers captured from DEVICE_DT_GET(), which
- * does not include the readiness checks of device_get_binding().  At minimum
- * this means that the device has been successfully initialized, but it may
- * take on further conditions (e.g. is not powered down).
+ * This can be used with device pointers captured from DEVICE_DT_GET() or
+ * device_from_name(), which do not include the readiness checks of
+ * device_get_binding().
+ *
+ * At minimum this means that the device has been successfully initialized,
+ * but it may take on further conditions (e.g. is not powered down).
  *
  * @param dev pointer to the device in question.
  *
