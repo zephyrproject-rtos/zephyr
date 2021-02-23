@@ -49,37 +49,37 @@ static const struct hid_ops usb_transport_callbacks = {
 /* create an HID report descriptor with input and output reports */
 static const uint8_t usb_transport_hid_report_desc[] = {
 	/* Usage page: vendor defined */
-	HID_GLOBAL_ITEM(ITEM_TAG_USAGE_PAGE, 2), 0x00, 0xFF,
+	HID_ITEM(HID_ITEM_TAG_USAGE_PAGE, HID_ITEM_TYPE_GLOBAL, 2), 0x00, 0xFF,
 
 	/* Usage: vendor specific */
-	HID_LI_USAGE, 0x01,
+	HID_USAGE(0x01),
 	/* Collection: Application Collection */
-	HID_MI_COLLECTION, COLLECTION_APPLICATION,
+	HID_COLLECTION(HID_COLLECTION_APPLICATION),
 	/* Logical Minimum: 0 */
-	HID_GI_LOGICAL_MIN(1), 0x00,
+	HID_LOGICAL_MIN8(0x00),
 	/* Logical Maximum: 255 */
-	HID_GI_LOGICAL_MAX(1), 0xFF,
+	HID_LOGICAL_MAX8(0xFF),
 	/* Report Size: 8 bits */
-	HID_GI_REPORT_SIZE, 0x08,
+	HID_REPORT_SIZE(8),
 	/* Report Count (in bytes) */
-	HID_GI_REPORT_COUNT, (USB_TPORT_HID_REPORT_COUNT - 1),
+	HID_REPORT_COUNT(USB_TPORT_HID_REPORT_COUNT - 1),
 
 	/* Report ID: 1 */
-	HID_GI_REPORT_ID, USB_TPORT_HID_REPORT_ID,
+	HID_REPORT_ID(USB_TPORT_HID_REPORT_ID),
 	/* Vendor Usage 2 */
-	HID_LI_USAGE, 0x02,
+	HID_USAGE(0x02),
 	/* Input: Data, Variable, Absolute & Buffered bytes*/
-	HID_MI_INPUT, 0x86,
+	HID_INPUT(0x86),
 
 	/* Report ID: 1 */
-	HID_GI_REPORT_ID, USB_TPORT_HID_REPORT_ID,
+	HID_REPORT_ID(USB_TPORT_HID_REPORT_ID),
 	/* Vendor Usage 2 */
-	HID_LI_USAGE, 0x02,
+	HID_USAGE(0x02),
 	/* Output: Data, Variable, Absolute & Buffered bytes*/
-	HID_MI_OUTPUT, 0x86,
+	HID_OUTPUT(0x86),
 
 	/* End collection */
-	HID_MI_COLLECTION_END,
+	HID_END_COLLECTION,
 };
 
 static usb_transport_receive_callback_t receive_data_cb;
