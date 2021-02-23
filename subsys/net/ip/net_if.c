@@ -427,6 +427,16 @@ static inline void init_iface(struct net_if *iface)
 		return;
 	}
 
+	/* By default IPv4 and IPv6 are enabled for a given network interface.
+	 * These can be turned off later if needed.
+	 */
+#if defined(CONFIG_NET_NATIVE_IPV4)
+	net_if_flag_set(iface, NET_IF_IPV4);
+#endif
+#if defined(CONFIG_NET_NATIVE_IPV6)
+	net_if_flag_set(iface, NET_IF_IPV6);
+#endif
+
 	NET_DBG("On iface %p", iface);
 
 #ifdef CONFIG_USERSPACE
@@ -940,6 +950,11 @@ int net_if_config_ipv6_get(struct net_if *iface, struct net_if_ipv6 **ipv6)
 
 	k_mutex_lock(&lock, K_FOREVER);
 
+	if (!net_if_flag_is_set(iface, NET_IF_IPV6)) {
+		ret = -ENOTSUP;
+		goto out;
+	}
+
 	if (iface->config.ip.ipv6) {
 		if (ipv6) {
 			*ipv6 = iface->config.ip.ipv6;
@@ -976,6 +991,11 @@ int net_if_config_ipv6_put(struct net_if *iface)
 	int i;
 
 	k_mutex_lock(&lock, K_FOREVER);
+
+	if (!net_if_flag_is_set(iface, NET_IF_IPV6)) {
+		ret = -ENOTSUP;
+		goto out;
+	}
 
 	if (!iface->config.ip.ipv6) {
 		ret = -EALREADY;
@@ -1173,14 +1193,18 @@ void net_if_start_dad(struct net_if *iface)
 	struct net_if_addr *ifaddr;
 	struct net_if_ipv6 *ipv6;
 	struct in6_addr addr = { };
-	int i;
+	int ret, i;
 
 	k_mutex_lock(&lock, K_FOREVER);
 
 	NET_DBG("Starting DAD for iface %p", iface);
 
-	if (net_if_config_ipv6_get(iface, &ipv6) < 0) {
-		NET_WARN("Cannot do DAD IPv6 config is not valid.");
+	ret = net_if_config_ipv6_get(iface, &ipv6);
+	if (ret < 0) {
+		if (ret != -ENOTSUP) {
+			NET_WARN("Cannot do DAD IPv6 config is not valid.");
+		}
+
 		goto out;
 	}
 
@@ -2786,6 +2810,11 @@ int net_if_config_ipv4_get(struct net_if *iface, struct net_if_ipv4 **ipv4)
 
 	k_mutex_lock(&lock, K_FOREVER);
 
+	if (!net_if_flag_is_set(iface, NET_IF_IPV4)) {
+		ret = -ENOTSUP;
+		goto out;
+	}
+
 	if (iface->config.ip.ipv4) {
 		if (ipv4) {
 			*ipv4 = iface->config.ip.ipv4;
@@ -2822,6 +2851,11 @@ int net_if_config_ipv4_put(struct net_if *iface)
 	int i;
 
 	k_mutex_lock(&lock, K_FOREVER);
+
+	if (!net_if_flag_is_set(iface, NET_IF_IPV4)) {
+		ret = -ENOTSUP;
+		goto out;
+	}
 
 	if (!iface->config.ip.ipv4) {
 		ret = -EALREADY;
