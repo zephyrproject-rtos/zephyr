@@ -23,6 +23,25 @@ LOG_MODULE_REGISTER(usb_hid);
 #define HID_INT_IN_EP_IDX		0
 #define HID_INT_OUT_EP_IDX		1
 
+struct usb_hid_class_subdescriptor {
+	uint8_t bDescriptorType;
+	uint16_t wDescriptorLength;
+} __packed;
+
+struct usb_hid_descriptor {
+	uint8_t bLength;
+	uint8_t bDescriptorType;
+	uint16_t bcdHID;
+	uint8_t bCountryCode;
+	uint8_t bNumDescriptors;
+
+	/*
+	 * Specification says at least one Class Descriptor needs to
+	 * be present (Report Descriptor).
+	 */
+	struct usb_hid_class_subdescriptor subdesc[1];
+} __packed;
+
 struct usb_hid_config {
 	struct usb_if_descriptor if0;
 	struct usb_hid_descriptor if0_hid;
