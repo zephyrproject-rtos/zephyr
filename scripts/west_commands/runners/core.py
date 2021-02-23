@@ -149,28 +149,26 @@ class BuildConfiguration:
         not_set = re.compile('^# (?P<option>CONFIG_[A-Za-z0-9_]+) is not set$')
 
         with open(filename, 'r') as f:
-            lines = f.readlines()
+            for line in f:
+                match = opt_value.match(line)
+                if match:
+                    value = match.group('value').rstrip()
+                    if value.startswith('"') and value.endswith('"'):
+                        value = value[1:-1]
+                    else:
+                        try:
+                            base = 16 if value.startswith('0x') else 10
+                            self.options[match.group('option')] = int(value, base=base)
+                            continue
+                        except ValueError:
+                            pass
 
-        for line in lines:
-            match = opt_value.match(line)
-            if match:
-                value = match.group('value').rstrip()
-                if value.startswith('"') and value.endswith('"'):
-                    value = value[1:-1]
-                else:
-                    try:
-                        base = 16 if value.startswith('0x') else 10
-                        self.options[match.group('option')] = int(value, base=base)
-                        continue
-                    except ValueError:
-                        pass
+                    self.options[match.group('option')] = value
+                    continue
 
-                self.options[match.group('option')] = value
-                continue
-
-            match = not_set.match(line)
-            if match:
-                self.options[match.group('option')] = 'n'
+                match = not_set.match(line)
+                if match:
+                    self.options[match.group('option')] = 'n'
 
 class MissingProgram(FileNotFoundError):
     '''FileNotFoundError subclass for missing program dependencies.
