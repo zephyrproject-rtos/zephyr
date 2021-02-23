@@ -111,4 +111,6 @@ source "drivers/pm_cpu_ops/Kconfig"
 
 source "drivers/misc/Kconfig"
 
+source "drivers/disk/Kconfig"
+
 endmenu
