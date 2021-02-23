@@ -574,7 +574,7 @@ static int cmd_ident(const struct shell *shell, size_t argc, char *argv[])
 
 static int cmd_get_comp(const struct shell *shell, size_t argc, char *argv[])
 {
-	NET_BUF_SIMPLE_DEFINE(comp, 32);
+	NET_BUF_SIMPLE_DEFINE(comp, BT_MESH_RX_SDU_MAX);
 	uint8_t status, page = 0x00;
 	int err;
 
@@ -1621,13 +1621,13 @@ static int mod_pub_get(const struct shell *shell, uint16_t addr, uint16_t mod_id
 		return 0;
 	}
 
-	shell_print(shell, "Model Publication for Element 0x%04x, Model 0x%04x:"
-		    "\tPublish Address:                0x%04x"
-		    "\tAppKeyIndex:                    0x%04x"
-		    "\tCredential Flag:                %u"
-		    "\tPublishTTL:                     %u"
-		    "\tPublishPeriod:                  0x%02x"
-		    "\tPublishRetransmitCount:         %u"
+	shell_print(shell, "Model Publication for Element 0x%04x, Model 0x%04x:\n"
+		    "\tPublish Address:                0x%04x\n"
+		    "\tAppKeyIndex:                    0x%04x\n"
+		    "\tCredential Flag:                %u\n"
+		    "\tPublishTTL:                     %u\n"
+		    "\tPublishPeriod:                  0x%02x\n"
+		    "\tPublishRetransmitCount:         %u\n"
 		    "\tPublishRetransmitInterval:      %ums",
 		    addr, mod_id, pub.addr, pub.app_idx, pub.cred_flag, pub.ttl,
 		    pub.period, BT_MESH_PUB_TRANSMIT_COUNT(pub.transmit),
@@ -1724,12 +1724,12 @@ static int cmd_mod_pub(const struct shell *shell, size_t argc, char *argv[])
 static void hb_sub_print(const struct shell *shell,
 			 struct bt_mesh_cfg_hb_sub *sub)
 {
-	shell_print(shell, "Heartbeat Subscription:"
-		    "\tSource:      0x%04x"
-		    "\tDestination: 0x%04x"
-		    "\tPeriodLog:   0x%02x"
-		    "\tCountLog:    0x%02x"
-		    "\tMinHops:     %u"
+	shell_print(shell, "Heartbeat Subscription:\n"
+		    "\tSource:      0x%04x\n"
+		    "\tDestination: 0x%04x\n"
+		    "\tPeriodLog:   0x%02x\n"
+		    "\tCountLog:    0x%02x\n"
+		    "\tMinHops:     %u\n"
 		    "\tMaxHops:     %u",
 		    sub->src, sub->dst, sub->period, sub->count,
 		    sub->min, sub->max);
@@ -2700,7 +2700,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mesh_cmds,
 	/* Configuration Client Model operations */
 	SHELL_CMD_ARG(timeout, NULL, "[timeout in seconds]", cmd_timeout, 1, 1),
 	SHELL_CMD_ARG(get-comp, NULL, "[page]", cmd_get_comp, 1, 1),
-	SHELL_CMD_ARG(beacon, NULL, "[val: off, on]", cmd_beacon, 2, 1),
+	SHELL_CMD_ARG(beacon, NULL, "[val: off, on]", cmd_beacon, 1, 1),
 	SHELL_CMD_ARG(ttl, NULL, "[ttl: 0x00, 0x02-0x7f]", cmd_ttl, 1, 1),
 	SHELL_CMD_ARG(friend, NULL, "[val: off, on]", cmd_friend, 1, 1),
 	SHELL_CMD_ARG(gatt-proxy, NULL, "[val: off, on]", cmd_gatt_proxy, 1, 1),
