@@ -420,7 +420,9 @@ void k_thread_system_pool_assign(struct k_thread *thread);
  * to being aborted, self-exiting, or taking a fatal error. This API returns
  * immediately if the thread isn't running.
  *
- * This API may only be called from ISRs with a K_NO_WAIT timeout.
+ * This API may only be called from ISRs with a K_NO_WAIT timeout,
+ * where it can be useful as a predicate to detect when a thread has
+ * aborted.
  *
  * @param thread Thread to wait to exit
  * @param timeout upper bound time to wait for the thread to exit.
@@ -536,6 +538,17 @@ __syscall k_tid_t k_current_get(void);
  * thread might currently own (such as mutexes or memory blocks) are not
  * released. It is the responsibility of the caller of this routine to ensure
  * all necessary cleanup is performed.
+ *
+ * After k_thread_abort() returns, the thread is guaranteed not to be
+ * running or to become runnable anywhere on the system.  Normally
+ * this is done via blocking the caller (in the same manner as
+ * k_thread_join()), but in interrupt context on SMP systems the
+ * implementation is required to spin for threads that are running on
+ * other CPUs.  Note that as specified, this means that on SMP
+ * platforms it is possible for application code to create a deadlock
+ * condition by simultaneously aborting a cycle of threads using at
+ * least one termination from interrupt context.  Zephyr cannot detect
+ * all such conditions.
  *
  * @param thread ID of thread to abort.
  *
