@@ -484,8 +484,8 @@ static uint8_t mcc_read_next_track_obj_id_cb(struct bt_conn *conn, uint8_t err,
 					     const void *data, uint16_t length)
 {
 	int cb_err = err;
-	uint8_t  *pid    = (uint8_t *)data;
-	uint64_t  id     = 0;
+	uint8_t *pid = (uint8_t *)data;
+	uint64_t id = 0;
 
 	mcs_inst.busy = false;
 	if (err) {
@@ -511,8 +511,8 @@ static uint8_t mcc_read_current_group_obj_id_cb(struct bt_conn *conn, uint8_t er
 						const void *data, uint16_t length)
 {
 	int cb_err = err;
-	uint8_t  *pid    = (uint8_t *)data;
-	uint64_t  id     = 0;
+	uint8_t *pid = (uint8_t *)data;
+	uint64_t id = 0;
 
 	mcs_inst.busy = false;
 	if (err) {
@@ -538,8 +538,8 @@ static uint8_t mcc_read_parent_group_obj_id_cb(struct bt_conn *conn, uint8_t err
 					       const void *data, uint16_t length)
 {
 	int cb_err = err;
-	uint8_t  *pid    = (uint8_t *)data;
-	uint64_t  id     = 0;
+	uint8_t *pid = (uint8_t *)data;
+	uint64_t id = 0;
 
 	mcs_inst.busy = false;
 	if (err) {
@@ -753,8 +753,8 @@ static uint8_t mcc_read_search_results_obj_id_cb(struct bt_conn *conn, uint8_t e
 						 const void *data, uint16_t length)
 {
 	int cb_err = err;
-	uint8_t  *pid    = (uint8_t *)data;
-	uint64_t  id     = 0;
+	uint8_t *pid = (uint8_t *)data;
+	uint64_t id = 0;
 
 	mcs_inst.busy = false;
 	if (err) {
