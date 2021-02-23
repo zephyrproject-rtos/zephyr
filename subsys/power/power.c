@@ -18,7 +18,6 @@
 LOG_MODULE_REGISTER(power);
 
 static int post_ops_done = 1;
-static bool z_forced_power_state;
 static struct pm_state_info z_power_state;
 static sys_slist_t pm_notifiers = SYS_SLIST_STATIC_INIT(&pm_notifiers);
 static struct k_spinlock pm_notifier_lock;
@@ -84,22 +83,6 @@ __weak void pm_power_state_set(struct pm_state_info info)
 	 */
 }
 
-void pm_power_state_force(struct pm_state_info info)
-{
-	__ASSERT(info.state < PM_STATES_LEN,
-		 "Invalid power state %d!", info.state);
-
-#ifdef CONFIG_PM_DIRECT_FORCE_MODE
-	(void)arch_irq_lock();
-	z_forced_power_state = true;
-	z_power_state = info;
-	pm_system_suspend(K_TICKS_FOREVER);
-#else
-	z_power_state = info;
-	z_forced_power_state = true;
-#endif
-}
-
 /*
  * Function called to notify when the system is entering / exiting a
  * power state
@@ -125,6 +108,32 @@ static inline void pm_state_notify(bool entering_state)
 	k_spin_unlock(&pm_notifier_lock, pm_notifier_key);
 }
 
+void pm_power_state_force(struct pm_state_info info)
+{
+	__ASSERT(info.state < PM_STATES_LEN,
+		 "Invalid power state %d!", info.state);
+
+	if (info.state == PM_STATE_ACTIVE) {
+		return;
+	}
+
+	(void)arch_irq_lock();
+	z_power_state = info;
+	post_ops_done = 0;
+	pm_state_notify(true);
+
+	pm_debug_start_timer();
+	/* Enter power state */
+	pm_power_state_set(z_power_state);
+	pm_debug_stop_timer();
+
+	if (!post_ops_done) {
+		post_ops_done = 1;
+		pm_state_notify(false);
+		pm_power_state_exit_post_ops(z_power_state);
+	}
+}
+
 static enum pm_state _handle_device_abort(struct pm_state_info info)
 {
 	LOG_DBG("Some devices didn't enter suspend state!");
@@ -142,10 +151,7 @@ static enum pm_state pm_policy_mgr(int32_t ticks)
 	bool low_power = false;
 #endif
 
-	if (z_forced_power_state == false) {
-		z_power_state = pm_policy_next_state(ticks);
-	}
-
+	z_power_state = pm_policy_next_state(ticks);
 	if (z_power_state.state == PM_STATE_ACTIVE) {
 		LOG_DBG("No PM operations done.");
 		return z_power_state.state;
@@ -195,8 +201,6 @@ static enum pm_state pm_policy_mgr(int32_t ticks)
 
 	if (!post_ops_done) {
 		post_ops_done = 1;
-		/* clear z_forced_power_state */
-		z_forced_power_state = false;
 		pm_state_notify(false);
 		pm_power_state_exit_post_ops(z_power_state);
 	}
