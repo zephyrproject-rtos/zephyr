@@ -483,7 +483,7 @@ static uint8_t mcc_read_next_track_obj_id_cb(struct bt_conn *conn, uint8_t err,
 					     struct bt_gatt_read_params *params,
 					     const void *data, uint16_t length)
 {
-	uint8_t   cb_err = err;
+	int cb_err = err;
 	uint8_t  *pid    = (uint8_t *)data;
 	uint64_t  id     = 0;
 
@@ -510,7 +510,7 @@ static uint8_t mcc_read_current_group_obj_id_cb(struct bt_conn *conn, uint8_t er
 						struct bt_gatt_read_params *params,
 						const void *data, uint16_t length)
 {
-	uint8_t   cb_err = err;
+	int cb_err = err;
 	uint8_t  *pid    = (uint8_t *)data;
 	uint64_t  id     = 0;
 
@@ -537,7 +537,7 @@ static uint8_t mcc_read_parent_group_obj_id_cb(struct bt_conn *conn, uint8_t err
 					       struct bt_gatt_read_params *params,
 					       const void *data, uint16_t length)
 {
-	uint8_t   cb_err = err;
+	int cb_err = err;
 	uint8_t  *pid    = (uint8_t *)data;
 	uint64_t  id     = 0;
 
@@ -752,7 +752,7 @@ static uint8_t mcc_read_search_results_obj_id_cb(struct bt_conn *conn, uint8_t e
 						 struct bt_gatt_read_params *params,
 						 const void *data, uint16_t length)
 {
-	uint8_t   cb_err = err;
+	int cb_err = err;
 	uint8_t  *pid    = (uint8_t *)data;
 	uint64_t  id     = 0;
 
