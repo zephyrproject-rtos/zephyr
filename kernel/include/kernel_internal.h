@@ -45,6 +45,15 @@ static inline void z_bss_zero_boot(void)
 }
 #endif
 
+#ifdef CONFIG_LINKER_USE_PINNED_SECTION
+void z_bss_zero_pinned(void);
+#else
+static inline void z_bss_zero_pinned(void)
+{
+	/* Do nothing */
+}
+#endif
+
 FUNC_NORETURN void z_cstart(void);
 
 void z_device_state_init(void);

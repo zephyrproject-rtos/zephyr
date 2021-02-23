@@ -127,6 +127,28 @@ void z_bss_zero_boot(void)
 }
 #endif /* CONFIG_LINKER_USE_BOOT_SECTION */
 
+#ifdef CONFIG_LINKER_USE_PINNED_SECTION
+/**
+ * @brief Clear BSS within the pinned region
+ *
+ * This routine clears the BSS within the pinned region.
+ * This is separate from z_bss_zero() as pinned region may
+ * contain symbols required for the boot process before
+ * paging is initialized.
+ */
+#ifdef CONFIG_LINKER_USE_BOOT_SECTION
+__boot_func
+#else
+__pinned_func
+#endif
+void z_bss_zero_pinned(void)
+{
+	(void)memset(&lnkr_pinned_bss_start, 0,
+		(uintptr_t)&lnkr_pinned_bss_end
+		- (uintptr_t)&lnkr_pinned_bss_start);
+}
+#endif /* CONFIG_LINKER_USE_PINNED_SECTION */
+
 #ifdef CONFIG_STACK_CANARIES
 extern volatile uintptr_t __stack_chk_guard;
 #endif /* CONFIG_STACK_CANARIES */
