@@ -6,6 +6,6 @@
 if SOC_NPCX7M6FB
 
 config SOC
-	default "npcx76mfb"
+	default "npcx7m6fb"
 
 endif # SOC_NPCX7M6FB
