@@ -395,6 +395,12 @@ static void iface_cb(struct net_if *iface, void *user_data)
 #if defined(CONFIG_NET_IPV6)
 	count = 0;
 
+	if (!net_if_flag_is_set(iface, NET_IF_IPV6)) {
+		PR("%s not %s for this interface.\n", "IPv6", "enabled");
+		ipv6 = NULL;
+		goto skip_ipv6;
+	}
+
 	ipv6 = iface->config.ip.ipv6;
 
 	PR("IPv6 unicast addresses (max %d):\n", NET_IF_MAX_IPV6_ADDR);
@@ -466,6 +472,8 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		   router->is_infinite ? " infinite" : "");
 	}
 
+skip_ipv6:
+
 	if (ipv6) {
 		PR("IPv6 hop limit           : %d\n",
 		   ipv6->hop_limit);
@@ -476,7 +484,6 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		PR("IPv6 retransmit timer    : %d\n",
 		   ipv6->retrans_timer);
 	}
-
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
@@ -491,11 +498,18 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		 (net_if_l2(iface) == &NET_L2_GET_NAME(BLUETOOTH)) ||
 #endif
 		 0) {
-		PR_WARNING("IPv4 not supported for this interface.\n");
+		PR_WARNING("%s not %s for this interface.\n", "IPv4",
+			   "supported");
 		return;
 	}
 
 	count = 0;
+
+	if (!net_if_flag_is_set(iface, NET_IF_IPV4)) {
+		PR("%s not %s for this interface.\n", "IPv4", "enabled");
+		ipv4 = NULL;
+		goto skip_ipv4;
+	}
 
 	ipv4 = iface->config.ip.ipv4;
 
@@ -538,6 +552,8 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	if (count == 0) {
 		PR("\t<none>\n");
 	}
+
+skip_ipv4:
 
 	if (ipv4) {
 		PR("IPv4 gateway : %s\n",
