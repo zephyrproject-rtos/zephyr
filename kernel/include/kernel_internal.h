@@ -35,6 +35,16 @@ static inline void z_data_copy(void)
 	/* Do nothing */
 }
 #endif
+
+#ifdef CONFIG_LINKER_USE_BOOT_SECTION
+void z_bss_zero_boot(void);
+#else
+static inline void z_bss_zero_boot(void)
+{
+	/* Do nothing */
+}
+#endif
+
 FUNC_NORETURN void z_cstart(void);
 
 void z_device_state_init(void);
