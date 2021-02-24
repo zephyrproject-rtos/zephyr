@@ -106,6 +106,8 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 		z_spin_lock_set_owner(&sched_spinlock);
 #endif
 
+		arch_cohere_stacks(old_thread, NULL, new_thread);
+
 #ifdef CONFIG_SMP
 		/* Add _current back to the run queue HERE. After
 		 * wait_for_switch() we are guaranteed to reach the
@@ -121,7 +123,6 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 			new_thread->switch_handle = NULL;
 		}
 		k_spin_release(&sched_spinlock);
-		arch_cohere_stacks(old_thread, NULL, new_thread);
 		arch_switch(newsh, &old_thread->switch_handle);
 	} else {
 		k_spin_release(&sched_spinlock);
