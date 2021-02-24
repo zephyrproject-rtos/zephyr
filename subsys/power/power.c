@@ -171,7 +171,6 @@ enum pm_state pm_system_suspend(int32_t ticks)
 		 * Disable idle exit notification as it is not needed
 		 * in deep sleep mode.
 		 */
-		pm_idle_exit_notification_disable();
 #if CONFIG_PM_DEVICE
 	} else {
 		if (pm_policy_low_power_devices(z_power_state.state)) {

@@ -19,11 +19,6 @@ extern uint32_t z_timestamp_idle;
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #ifdef CONFIG_PM
-/*
- * Used to allow pm_system_suspend() implementation to control notification
- * of the event that caused exit from kernel idling after pm operations.
- */
-unsigned char pm_idle_exit_notify;
 
 /* LCOV_EXCL_START
  * These are almost certainly overidden and in any event do nothing
@@ -51,8 +46,6 @@ static void pm_save_idle(void)
 	int32_t ticks = z_get_next_timeout_expiry();
 	_kernel.idle = ticks;
 
-	pm_idle_exit_notify = 1U;
-
 	/*
 	 * Call the suspend hook function of the soc interface to allow
 	 * entry into a low power state. The function returns
@@ -67,7 +60,6 @@ static void pm_save_idle(void)
 	 * the kernel's scheduling logic.
 	 */
 	if (pm_system_suspend(ticks) == PM_STATE_ACTIVE) {
-		pm_idle_exit_notify = 0U;
 		k_cpu_idle();
 	}
 #endif
@@ -78,14 +70,11 @@ void z_pm_save_idle_exit(int32_t ticks)
 #ifdef CONFIG_PM
 	/* Some CPU low power states require notification at the ISR
 	 * to allow any operations that needs to be done before kernel
-	 * switches task or processes nested interrupts. This can be
-	 * disabled by calling pm_idle_exit_notification_disable().
-	 * Alternatively it can be simply ignored if not required.
+	 * switches task or processes nested interrupts.
+	 * This can be simply ignored if not required.
 	 */
-	if (pm_idle_exit_notify) {
-		pm_system_resume();
-	}
-#endif
+	pm_system_resume();
+#endif	/* CONFIG_PM */
 	z_clock_idle_exit();
 }
 
