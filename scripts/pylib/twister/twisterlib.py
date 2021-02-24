@@ -1810,7 +1810,7 @@ class TestInstance(DisablePyTestCollectionMixin):
 
         target_ready = bool(self.testcase.type == "unit" or \
                         self.platform.type == "native" or \
-                        self.platform.simulation in ["mdb-nsim", "nsim", "renode", "qemu", "tsim"] or \
+                        self.platform.simulation in ["mdb-nsim", "nsim", "renode", "qemu", "tsim", "armfvp"] or \
                         filter == 'runnable')
 
         if self.platform.simulation == "nsim":
@@ -2268,6 +2268,9 @@ class ProjectBuilder(FilterBuilder):
                 instance.handler = BinaryHandler(instance, "nsim")
                 instance.handler.pid_fn = os.path.join(instance.build_dir, "mdb.pid")
                 instance.handler.call_west_flash = True
+        elif instance.platform.simulation == "armfvp":
+            instance.handler = BinaryHandler(instance, "armfvp")
+            instance.handler.call_make_run = True
 
         if instance.handler:
             instance.handler.args = args
