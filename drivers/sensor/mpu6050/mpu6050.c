@@ -161,7 +161,7 @@ int mpu6050_init(const struct device *dev)
 		return -EIO;
 	}
 
-	if (id != MPU6050_CHIP_ID) {
+	if (id != MPU6050_CHIP_ID && id != MPU9250_CHIP_ID) {
 		LOG_ERR("Invalid chip ID.");
 		return -EINVAL;
 	}
