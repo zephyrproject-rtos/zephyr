@@ -25,6 +25,8 @@ LOG_MODULE_REGISTER(i2c_ll_stm32_v2);
 
 #include "i2c-priv.h"
 
+#define STM32_I2C_TRANSFER_TIMEOUT_MSEC  500
+
 static inline void msg_init(const struct device *dev, struct i2c_msg *msg,
 			    uint8_t *next_msg_flags, uint16_t slave,
 			    uint32_t transfer)
@@ -384,6 +386,7 @@ int stm32_i2c_msg_write(const struct device *dev, struct i2c_msg *msg,
 	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
 	struct i2c_stm32_data *data = DEV_DATA(dev);
 	I2C_TypeDef *i2c = cfg->i2c;
+	bool is_timeout = false;
 
 	data->current.len = msg->len;
 	data->current.buf = msg->buf;
@@ -397,10 +400,15 @@ int stm32_i2c_msg_write(const struct device *dev, struct i2c_msg *msg,
 	stm32_i2c_enable_transfer_interrupts(dev);
 	LL_I2C_EnableIT_TX(i2c);
 
-	k_sem_take(&data->device_sync_sem, K_FOREVER);
+	if (k_sem_take(&data->device_sync_sem,
+		       K_MSEC(STM32_I2C_TRANSFER_TIMEOUT_MSEC)) != 0) {
+		stm32_i2c_master_mode_end(dev);
+		k_sem_take(&data->device_sync_sem, K_FOREVER);
+		is_timeout = true;
+	}
 
 	if (data->current.is_nack || data->current.is_err ||
-	    data->current.is_arlo) {
+	    data->current.is_arlo || is_timeout) {
 		goto error;
 	}
 
@@ -423,6 +431,10 @@ error:
 		data->current.is_err = 0U;
 	}
 
+	if (is_timeout) {
+		LOG_DBG("%s: TIMEOUT", __func__);
+	}
+
 	return -EIO;
 }
 
@@ -432,6 +444,7 @@ int stm32_i2c_msg_read(const struct device *dev, struct i2c_msg *msg,
 	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
 	struct i2c_stm32_data *data = DEV_DATA(dev);
 	I2C_TypeDef *i2c = cfg->i2c;
+	bool is_timeout = false;
 
 	data->current.len = msg->len;
 	data->current.buf = msg->buf;
@@ -446,10 +459,15 @@ int stm32_i2c_msg_read(const struct device *dev, struct i2c_msg *msg,
 	stm32_i2c_enable_transfer_interrupts(dev);
 	LL_I2C_EnableIT_RX(i2c);
 
-	k_sem_take(&data->device_sync_sem, K_FOREVER);
+	if (k_sem_take(&data->device_sync_sem,
+		       K_MSEC(STM32_I2C_TRANSFER_TIMEOUT_MSEC)) != 0) {
+		stm32_i2c_master_mode_end(dev);
+		k_sem_take(&data->device_sync_sem, K_FOREVER);
+		is_timeout = true;
+	}
 
 	if (data->current.is_nack || data->current.is_err ||
-	    data->current.is_arlo) {
+	    data->current.is_arlo || is_timeout) {
 		goto error;
 	}
 
@@ -470,6 +488,10 @@ error:
 		LOG_DBG("%s: ERR %d", __func__,
 				    data->current.is_err);
 		data->current.is_err = 0U;
+	}
+
+	if (is_timeout) {
+		LOG_DBG("%s: TIMEOUT", __func__);
 	}
 
 	return -EIO;
