@@ -110,20 +110,6 @@ static inline bool pm_is_deep_sleep_state(enum pm_state state)
 }
 
 /**
- * @brief Function to disable power management idle exit notification
- *
- * The pm_system_resume() would be called from the ISR of the event that caused
- * exit from kernel idling after PM operations. For some power operations,
- * this notification may not be necessary. This function can be called in
- * pm_system_suspend to disable the corresponding pm_system_resume notification.
- *
- */
-static inline void pm_idle_exit_notification_disable(void)
-{
-	pm_idle_exit_notify = 0U;
-}
-
-/**
  * @brief Force usage of given power state.
  *
  * This function overrides decision made by PM policy forcing
