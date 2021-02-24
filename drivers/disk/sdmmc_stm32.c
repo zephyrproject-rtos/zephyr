@@ -16,7 +16,7 @@
 #include <soc.h>
 #include <stm32_ll_rcc.h>
 
-LOG_MODULE_REGISTER(stm32_sdmmc);
+LOG_MODULE_REGISTER(stm32_sdmmc, CONFIG_SDMMC_LOG_LEVEL);
 
 struct stm32_sdmmc_priv {
 	SD_HandleTypeDef hsd;
@@ -210,7 +210,7 @@ static const struct disk_operations stm32_sdmmc_ops = {
 };
 
 static struct disk_info stm32_sdmmc_info = {
-	.name = CONFIG_DISK_STM32_SDMMC_VOLUME_NAME,
+	.name = CONFIG_SDMMC_VOLUME_NAME,
 	.ops = &stm32_sdmmc_ops,
 };
 
@@ -429,7 +429,7 @@ static struct stm32_sdmmc_priv stm32_sdmmc_priv_1 = {
 };
 
 DEVICE_DT_INST_DEFINE(0, disk_stm32_sdmmc_init, device_pm_control_nop,
-		    &stm32_sdmmc_priv_1, NULL, APPLICATION,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    &stm32_sdmmc_priv_1, NULL, POST_KERNEL,
+		    CONFIG_SDMMC_INIT_PRIORITY,
 		    NULL);
 #endif
