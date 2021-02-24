@@ -555,6 +555,8 @@ static int nrf5_init(const struct device *dev)
 
 	nrf_802154_init();
 
+	nrf5_get_capabilities_at_boot();
+
 	nrf5_radio_cfg->irq_config_func(dev);
 
 	k_thread_create(&nrf5_radio->rx_thread, nrf5_radio->rx_stack,
@@ -581,7 +583,6 @@ static void nrf5_iface_init(struct net_if *iface)
 	nrf5_radio->iface = iface;
 
 	ieee802154_init(iface);
-	nrf5_get_capabilities_at_boot();
 }
 
 static int nrf5_configure(const struct device *dev,
