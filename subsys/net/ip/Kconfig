@@ -439,6 +439,16 @@ config NET_TCP_WORKQ_STACK_SIZE
 	help
 	  Set the TCP work queue thread stack size in bytes.
 
+config NET_TCP_ISN_RFC6528
+	bool "Use ISN algorithm from RFC 6528"
+	default y
+	depends on NET_TCP
+	select MBEDTLS
+	help
+	  Implement Initial Sequence Number calculation as described in
+	  RFC 6528 chapter 3. https://tools.ietf.org/html/rfc6528
+	  If this is not set, then sys_rand32_get() is used for ISN value.
+
 choice
 	prompt "Select TCP stack"
 	depends on NET_TCP
