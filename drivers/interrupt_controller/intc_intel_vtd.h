@@ -98,6 +98,9 @@ union qi_wait_descriptor {
 #define QI_WAIT_STATUS_INCOMPLETE 0x0UL
 #define QI_WAIT_STATUS_COMPLETE 0x1UL
 
+/* Arbitrary wait counter limit */
+#define QI_WAIT_COUNT_LIMIT 100
+
 struct vtd_ictl_data {
 	union vtd_irte irte[IRTE_NUM] __aligned(0x1000);
 	struct qi_descriptor qi[QI_NUM] __aligned(0x1000);
