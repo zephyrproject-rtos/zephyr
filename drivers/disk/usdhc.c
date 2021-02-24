@@ -1,5 +1,3 @@
-/* disk_access_usdhc.c - NXP USDHC driver*/
-
 /*
  * Copyright (c) 2019 NXP
  *
@@ -15,10 +13,10 @@
 #include <soc.h>
 #include <drivers/clock_control.h>
 
-#include "disk_access_sdhc.h"
+#include "sdmmc_sdhc.h"
 
 #include <logging/log.h>
-LOG_MODULE_REGISTER(usdhc, LOG_LEVEL_INF);
+LOG_MODULE_REGISTER(usdhc, CONFIG_SDMMC_LOG_LEVEL);
 
 enum usdhc_cmd_type {
 	USDHC_CMD_TYPE_NORMAL = 0U,
@@ -2783,7 +2781,7 @@ static const struct disk_operations usdhc_disk_ops = {
 };
 
 static struct disk_info usdhc_disk = {
-	.name = CONFIG_DISK_SDHC_VOLUME_NAME,
+	.name = CONFIG_SDMMC_VOLUME_NAME,
 	.ops = &usdhc_disk_ops,
 };
 
@@ -2844,8 +2842,8 @@ static int disk_usdhc_init(const struct device *dev)
 			    device_pm_control_nop,			\
 			    &usdhc_priv_##n,				\
 			    &usdhc_config_##n,				\
-			    APPLICATION,				\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    POST_KERNEL,				\
+			    CONFIG_SDMMC_INIT_PRIORITY,			\
 			    NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(DISK_ACCESS_USDHC_INIT)

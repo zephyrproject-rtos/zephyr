@@ -8,14 +8,14 @@
 
 #include <logging/log.h>
 
-LOG_MODULE_REGISTER(sdhc_spi, CONFIG_DISK_LOG_LEVEL);
+LOG_MODULE_REGISTER(sdmmc_spi, CONFIG_SDMMC_LOG_LEVEL);
 
 #include <disk/disk_access.h>
 #include <drivers/gpio.h>
 #include <sys/byteorder.h>
 #include <drivers/spi.h>
 #include <sys/crc.h>
-#include "disk_access_sdhc.h"
+#include "sdmmc_sdhc.h"
 
 /* Clock speed used during initialisation */
 #define SDHC_SPI_INITIAL_SPEED 400000
@@ -962,7 +962,7 @@ static const struct disk_operations spi_sdhc_disk_ops = {
 };
 
 static struct disk_info spi_sdhc_disk = {
-	.name = CONFIG_DISK_SDHC_VOLUME_NAME,
+	.name = CONFIG_SDMMC_VOLUME_NAME,
 	.ops = &spi_sdhc_disk_ops,
 };
 
@@ -981,5 +981,5 @@ static struct sdhc_spi_data sdhc_spi_data_0;
 
 DEVICE_DT_INST_DEFINE(0, sdhc_spi_init, device_pm_control_nop,
 	&sdhc_spi_data_0, NULL,
-	APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
+	POST_KERNEL, CONFIG_SDMMC_INIT_PRIORITY, NULL);
 #endif

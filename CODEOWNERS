@@ -275,6 +275,11 @@
 /drivers/serial/*xmc4xxx*                 @parthitce
 /drivers/serial/*nuvoton*                 @ssekar15
 /drivers/serial/*apbuart*                 @martin-aberg
+/drivers/disk/                            @jfischer-no
+/drivers/disk/sdmmc_sdhc.h                @JunYangNXP
+/drivers/disk/sdmmc_spi.c                 @JunYangNXP
+/drivers/disk/usdhc.c                     @JunYangNXP
+/drivers/disk/sdmmc_stm32.c               @anthonybrandon
 /drivers/net/                             @jukkar @tbursztyka
 /drivers/ptp_clock/                       @jukkar
 /drivers/spi/                             @tbursztyka
@@ -556,10 +561,6 @@
 /subsys/tracing/                          @nashif
 /subsys/debug/asan_hacks.c                @vanwinkeljan @aescolar @daor-oti
 /subsys/demand_paging/                    @dcpleung @nashif
-/subsys/disk/disk_access_spi_sdhc.c       @JunYangNXP
-/subsys/disk/disk_access_sdhc.h           @JunYangNXP
-/subsys/disk/disk_access_usdhc.c          @JunYangNXP
-/subsys/disk/disk_access_stm32_sdmmc.c    @anthonybrandon
 /subsys/emul/                             @sjg20
 /subsys/fb/                               @jfischer-no
 /subsys/fs/                               @nashif
