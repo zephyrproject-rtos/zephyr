@@ -26,7 +26,7 @@
 #include "lll_adv.h"
 #include "lll_adv_sync.h"
 #include "lll_adv_internal.h"
-#if IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 #include "lll_df_internal.h"
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 
@@ -48,7 +48,7 @@ static inline uint16_t sync_handle_get(struct ll_adv_sync_set *sync);
 static inline uint8_t sync_remove(struct ll_adv_sync_set *sync,
 				  struct ll_adv_set *adv, uint8_t enable);
 
-#if IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 static inline void adv_sync_extra_data_set_clear(void *extra_data_prev,
 						 void *extra_data_new,
 						 uint16_t hdr_add_fields,
@@ -369,7 +369,7 @@ uint32_t ull_adv_sync_start(struct ll_adv_set *adv,
 			    struct ll_adv_sync_set *sync,
 			    uint32_t ticks_anchor)
 {
-#if IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 	struct lll_df_adv_cfg *df_cfg;
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 	uint32_t ticks_slot_overhead;
@@ -385,7 +385,7 @@ uint32_t ull_adv_sync_start(struct ll_adv_set *adv,
 	slot_us = EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
 	slot_us += 1000;
 
-#if IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 	df_cfg = adv->df_cfg;
 	if (df_cfg && df_cfg->is_enabled) {
 		slot_us += CTE_LEN_US(df_cfg->cte_length);
@@ -443,7 +443,7 @@ void ull_adv_sync_offset_get(struct ll_adv_set *adv)
 	LL_ASSERT(!ret);
 }
 
-#if IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 void ull_adv_sync_update(struct ll_adv_sync_set *sync, uint32_t slot_plus_us,
 			 uint32_t slot_minus_us)
 {
@@ -497,7 +497,7 @@ uint8_t ull_adv_sync_pdu_set_clear(struct ll_adv_set *adv,
 	struct pdu_adv *pdu_prev, *pdu_new;
 	struct lll_adv_sync *lll_sync;
 	void *extra_data_prev;
-#if IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 	void *extra_data;
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 	int err;
@@ -510,7 +510,7 @@ uint8_t ull_adv_sync_pdu_set_clear(struct ll_adv_set *adv,
 	/* Get reference to previous periodic advertising PDU data */
 	pdu_prev = lll_adv_sync_data_peek(lll_sync, &extra_data_prev);
 
-#if IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 	/* Get reference to new periodic advertising PDU data buffer */
 	if ((hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_CTE_INFO) ||
 	    (!(hdr_rem_fields & ULL_ADV_PDU_HDR_FIELD_CTE_INFO) &&
@@ -541,7 +541,7 @@ uint8_t ull_adv_sync_pdu_set_clear(struct ll_adv_set *adv,
 		return err;
 	}
 
-#if IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 	if (extra_data) {
 		adv_sync_extra_data_set_clear(extra_data_prev, extra_data,
 					      hdr_add_fields, hdr_rem_fields,
@@ -662,7 +662,7 @@ static uint8_t adv_sync_hdr_set_clear(struct lll_adv_sync *lll_sync,
 	uint8_t hdr_buf_len;
 	uint16_t ter_len;
 	uint8_t *ad_data;
-#if IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 	uint8_t cte_info;
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 	uint8_t ad_len;
@@ -690,7 +690,7 @@ static uint8_t adv_sync_hdr_set_clear(struct lll_adv_sync *lll_sync,
 	/* No AdvA in AUX_SYNC_IND */
 	/* No TargetA in AUX_SYNC_IND */
 
-#if IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 	/* If requested add or update CTEInfo */
 	if (hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_CTE_INFO) {
 		ter_hdr->cte_info = 1;
@@ -826,7 +826,7 @@ static uint8_t adv_sync_hdr_set_clear(struct lll_adv_sync *lll_sync,
 
 	/* No ADI in AUX_SYNC_IND*/
 
-#if IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 	if (ter_hdr->cte_info) {
 		if (hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_CTE_INFO) {
 			*--ter_dptr = cte_info;
@@ -842,7 +842,7 @@ static uint8_t adv_sync_hdr_set_clear(struct lll_adv_sync *lll_sync,
 	return 0;
 }
 
-#if IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 /* @brief Set or clear fields in extended advertising header and store
  *        extra_data if requested.
  *

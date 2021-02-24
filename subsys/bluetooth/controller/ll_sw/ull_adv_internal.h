@@ -163,7 +163,7 @@ void ull_adv_sync_offset_get(struct ll_adv_set *adv);
 int ull_adv_iso_init(void);
 int ull_adv_iso_reset(void);
 
-#if IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 /* helper function to release unused DF configuration memory */
 void ull_df_adv_cfg_release(struct lll_df_adv_cfg *df_adv_cfg);
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */

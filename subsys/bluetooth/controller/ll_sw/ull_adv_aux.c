@@ -27,7 +27,7 @@
 #include "lll_adv.h"
 #include "lll_adv_aux.h"
 #include "lll_adv_internal.h"
-#if IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 #include "lll_df_internal.h"
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 
@@ -361,7 +361,7 @@ uint8_t ll_adv_aux_set_remove(uint8_t handle)
 	}
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 
-#if IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 	if (adv->df_cfg) {
 		if (adv->df_cfg->is_enabled) {
 			return BT_HCI_ERR_CMD_DISALLOWED;

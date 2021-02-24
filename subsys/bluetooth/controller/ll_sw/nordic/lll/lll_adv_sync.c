@@ -29,7 +29,7 @@
 #include "lll_internal.h"
 #include "lll_adv_internal.h"
 #include "lll_tim_internal.h"
-#if IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 #include "lll_df_internal.h"
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 
@@ -98,7 +98,7 @@ static int init_reset(void)
 
 static int prepare_cb(struct lll_prepare_param *p)
 {
-#if IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 	struct lll_df_adv_cfg *df_cfg;
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 	struct lll_adv_sync *lll;
@@ -158,7 +158,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	pdu = lll_adv_sync_data_latest_get(lll, &extra_data, &upd);
 	LL_ASSERT(pdu);
 
-#if IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 	if (extra_data) {
 		df_cfg = (struct lll_df_adv_cfg *)extra_data;
 		lll_df_conf_cte_tx_enable(df_cfg->cte_type, df_cfg->cte_length,
@@ -176,7 +176,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	radio_isr_set(lll_isr_done, lll);
 	radio_isr_set(isr_done, lll);
 
-#if IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 	if (df_cfg) {
 		radio_switch_complete_and_phy_end_disable();
 	} else
@@ -231,7 +231,7 @@ static void isr_done(void *param)
 	struct lll_adv_sync *lll;
 
 	lll = param;
-#if IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 	if (lll->cte_started) {
 		lll_df_conf_cte_tx_disable();
 	}

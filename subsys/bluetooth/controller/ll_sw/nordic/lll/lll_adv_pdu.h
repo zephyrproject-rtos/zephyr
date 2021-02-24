@@ -16,7 +16,7 @@ struct lll_adv_pdu {
 	uint8_t volatile first;
 	uint8_t          last;
 	uint8_t          *pdu[DOUBLE_BUFFER_SIZE];
-#if IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
+#if defined(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
 	/* This is a storage for LLL configuration that may be
 	 * changed while LLL advertising role is started.
 	 * Also it makes the configuration data to be in sync
