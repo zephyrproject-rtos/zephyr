@@ -12,6 +12,39 @@ properties:
         The property value should ensure the flags properly describe
         the signal that is presented to the driver.
 
+    accel-odr:
+      type: int
+      required: false
+      default: 0
+      description: |
+        Specify the default accelerometer output data rate expressed in samples per second (Hz).
+        Default is power-up configuration.
+
+          Selection
+            0   Power-Down
+            1   12.5Hz
+            2   26Hz
+            3   52Hz
+            4   104Hz
+            5   208Hz
+            6   416Hz
+            7   833Hz
+            8   1660Hz
+            9   3330Hz
+            10  6660Hz
+      enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+        - 8
+        - 9
+        - 10
+
     accel-range:
       type: int
       required: false
@@ -29,6 +62,39 @@ properties:
         -  8
         -  4
         -  2
+
+    gyro-odr:
+      type: int
+      required: false
+      default: 0
+      description: |
+        Specify the default gyro output data rate expressed in samples per second (Hz).
+        Default is power-up configuration.
+
+          Selection
+            0   Power-Down
+            1   12.5Hz
+            2   26Hz
+            3   52Hz
+            4   104Hz
+            5   208Hz
+            6   416Hz
+            7   833Hz
+            8   1660Hz
+            9   3330Hz
+            10  6660Hz
+      enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+        - 8
+        - 9
+        - 10
 
     gyro-range:
       type: int
