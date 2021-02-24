@@ -224,7 +224,7 @@ void z_set_timeout_expiry(int32_t ticks, bool is_idle)
 		 * in.
 		 */
 		if (!imminent && (sooner || IS_ENABLED(CONFIG_SMP))) {
-			z_clock_set_timeout(ticks, is_idle);
+			z_clock_set_timeout(MIN(ticks, next_to), is_idle);
 		}
 	}
 }
