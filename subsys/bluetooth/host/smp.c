@@ -143,7 +143,7 @@ struct bt_smp {
 	struct bt_l2cap_le_chan		chan;
 
 	/* Commands that remote is allowed to send */
-	atomic_t			allowed_cmds;
+	ATOMIC_DEFINE(allowed_cmds, BT_SMP_NUM_CMDS);
 
 	/* Flags for SMP state machine */
 	ATOMIC_DEFINE(flags, SMP_NUM_FLAGS);
@@ -243,7 +243,7 @@ struct bt_smp_br {
 	struct bt_l2cap_br_chan	chan;
 
 	/* Commands that remote is allowed to send */
-	atomic_t		allowed_cmds;
+	ATOMIC_DEFINE(allowed_cmds, BT_SMP_NUM_CMDS);
 
 	/* Flags for SMP state machine */
 	ATOMIC_DEFINE(flags, SMP_NUM_FLAGS);
@@ -965,9 +965,9 @@ static void smp_br_reset(struct bt_smp_br *smp)
 	k_delayed_work_cancel(&smp->work);
 
 	atomic_set(smp->flags, 0);
-	atomic_set(&smp->allowed_cmds, 0);
+	atomic_set(smp->allowed_cmds, 0);
 
-	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_REQ);
+	atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_REQ);
 }
 
 static void smp_pairing_br_complete(struct bt_smp_br *smp, uint8_t status)
@@ -1064,7 +1064,7 @@ static void smp_br_init(struct bt_smp_br *smp)
 	(void)memset((uint8_t *)smp + sizeof(smp->chan), 0,
 		     sizeof(*smp) - (sizeof(smp->chan) + sizeof(smp->work)));
 
-	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_FAIL);
+	atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_FAIL);
 }
 
 static void smp_br_derive_ltk(struct bt_smp_br *smp)
@@ -1344,9 +1344,9 @@ static uint8_t smp_br_pairing_req(struct bt_smp_br *smp, struct net_buf *buf)
 	smp_br_distribute_keys(smp);
 
 	if (smp->remote_dist & BT_SMP_DIST_ID_KEY) {
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_IDENT_INFO);
+		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_IDENT_INFO);
 	} else if (smp->remote_dist & BT_SMP_DIST_SIGN) {
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_SIGNING_INFO);
+		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_SIGNING_INFO);
 	}
 
 	/* if all keys were distributed, pairing is done */
@@ -1384,9 +1384,9 @@ static uint8_t smp_br_pairing_rsp(struct bt_smp_br *smp, struct net_buf *buf)
 	/* slave distributes its keys first */
 
 	if (smp->remote_dist & BT_SMP_DIST_ID_KEY) {
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_IDENT_INFO);
+		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_IDENT_INFO);
 	} else if (smp->remote_dist & BT_SMP_DIST_SIGN) {
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_SIGNING_INFO);
+		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_SIGNING_INFO);
 	}
 
 	/* derive LTK if requested and clear distribution bits */
@@ -1451,7 +1451,7 @@ static uint8_t smp_br_ident_info(struct bt_smp_br *smp, struct net_buf *buf)
 
 	memcpy(keys->irk.val, req->irk, sizeof(keys->irk.val));
 
-	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_IDENT_ADDR_INFO);
+	atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_IDENT_ADDR_INFO);
 
 	return 0;
 }
@@ -1481,7 +1481,7 @@ static uint8_t smp_br_ident_addr_info(struct bt_smp_br *smp,
 	smp->remote_dist &= ~BT_SMP_DIST_ID_KEY;
 
 	if (smp->remote_dist & BT_SMP_DIST_SIGN) {
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_SIGNING_INFO);
+		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_SIGNING_INFO);
 	}
 
 	if (conn->role == BT_CONN_ROLE_MASTER && !smp->remote_dist) {
@@ -1618,7 +1618,7 @@ static int bt_smp_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		return 0;
 	}
 
-	if (!atomic_test_and_clear_bit(&smp->allowed_cmds, hdr->code)) {
+	if (!atomic_test_and_clear_bit(smp->allowed_cmds, hdr->code)) {
 		BT_WARN("Unexpected SMP code 0x%02x", hdr->code);
 		smp_br_error(smp, BT_SMP_ERR_UNSPECIFIED);
 		return 0;
@@ -1767,7 +1767,7 @@ int bt_smp_br_send_pairing_req(struct bt_conn *conn)
 	smp->local_dist = BR_SEND_KEYS_SC;
 	smp->remote_dist = BR_RECV_KEYS_SC;
 
-	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RSP);
+	atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_RSP);
 
 	atomic_set_bit(smp->flags, SMP_FLAG_PAIRING);
 
@@ -1782,17 +1782,17 @@ static void smp_reset(struct bt_smp *smp)
 	k_delayed_work_cancel(&smp->work);
 
 	smp->method = JUST_WORKS;
-	atomic_set(&smp->allowed_cmds, 0);
+	atomic_set(smp->allowed_cmds, 0);
 	atomic_set(smp->flags, 0);
 
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
 	    conn->role == BT_HCI_ROLE_MASTER) {
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_SECURITY_REQUEST);
+		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_SECURITY_REQUEST);
 		return;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL)) {
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_REQ);
+		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_REQ);
 	}
 }
 
@@ -2408,7 +2408,7 @@ static uint8_t legacy_pairing_req(struct bt_smp *smp)
 		return 0;
 	}
 
-	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
+	atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
 	return send_pairing_rsp(smp);
 }
 #endif /* CONFIG_BT_PERIPHERAL */
@@ -2458,13 +2458,13 @@ static uint8_t legacy_pairing_random(struct bt_smp *smp)
 
 		if (IS_ENABLED(CONFIG_BT_SMP_USB_HCI_CTLR_WORKAROUND)) {
 			if (smp->remote_dist & BT_SMP_DIST_ENC_KEY) {
-				atomic_set_bit(&smp->allowed_cmds,
+				atomic_set_bit(smp->allowed_cmds,
 					       BT_SMP_CMD_ENCRYPT_INFO);
 			} else if (smp->remote_dist & BT_SMP_DIST_ID_KEY) {
-				atomic_set_bit(&smp->allowed_cmds,
+				atomic_set_bit(smp->allowed_cmds,
 					       BT_SMP_CMD_IDENT_INFO);
 			} else if (smp->remote_dist & BT_SMP_DIST_SIGN) {
-				atomic_set_bit(&smp->allowed_cmds,
+				atomic_set_bit(smp->allowed_cmds,
 					       BT_SMP_CMD_SIGNING_INFO);
 			}
 		}
@@ -2496,13 +2496,13 @@ static uint8_t legacy_pairing_confirm(struct bt_smp *smp)
 
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
 	    smp->chan.chan.conn->role == BT_HCI_ROLE_MASTER) {
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
+		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
 		return legacy_send_pairing_confirm(smp);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL)) {
 		if (!atomic_test_bit(smp->flags, SMP_FLAG_USER)) {
-			atomic_set_bit(&smp->allowed_cmds,
+			atomic_set_bit(smp->allowed_cmds,
 				       BT_SMP_CMD_PAIRING_RANDOM);
 			return legacy_send_pairing_confirm(smp);
 		}
@@ -2527,12 +2527,12 @@ static void legacy_user_tk_entry(struct bt_smp *smp)
 
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
 	    smp->chan.chan.conn->role == BT_HCI_ROLE_MASTER) {
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
+		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
 		return;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL)) {
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RANDOM);
+		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_RANDOM);
 	}
 }
 
@@ -2563,7 +2563,7 @@ static uint8_t smp_encrypt_info(struct bt_smp *smp, struct net_buf *buf)
 		memcpy(keys->ltk.val, req->ltk, 16);
 	}
 
-	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_MASTER_IDENT);
+	atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_MASTER_IDENT);
 
 	return 0;
 }
@@ -2593,9 +2593,9 @@ static uint8_t smp_master_ident(struct bt_smp *smp, struct net_buf *buf)
 	}
 
 	if (smp->remote_dist & BT_SMP_DIST_ID_KEY) {
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_IDENT_INFO);
+		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_IDENT_INFO);
 	} else if (smp->remote_dist & BT_SMP_DIST_SIGN) {
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_SIGNING_INFO);
+		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_SIGNING_INFO);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
@@ -2636,8 +2636,8 @@ static uint8_t legacy_pairing_rsp(struct bt_smp *smp)
 	}
 
 	if (!atomic_test_bit(smp->flags, SMP_FLAG_USER)) {
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_KEYPRESS_NOTIFICATION);
+		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
+		atomic_set_bit(smp->allowed_cmds, BT_SMP_KEYPRESS_NOTIFICATION);
 		return legacy_send_pairing_confirm(smp);
 	}
 
@@ -2671,7 +2671,7 @@ static int smp_init(struct bt_smp *smp)
 
 	BT_DBG("prnd %s", bt_hex(smp->prnd, 16));
 
-	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_FAIL);
+	atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_FAIL);
 
 #if !defined(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)
 	sc_public_key = bt_pub_key_get();
@@ -2915,7 +2915,7 @@ static int smp_send_security_req(struct bt_conn *conn)
 	bt_l2cap_send(conn, BT_L2CAP_CID_SMP, req_buf);
 
 	atomic_set_bit(smp->flags, SMP_FLAG_SEC_REQ);
-	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_REQ);
+	atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_REQ);
 
 	return 0;
 }
@@ -3038,7 +3038,7 @@ static uint8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 		return 0;
 	}
 
-	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PUBLIC_KEY);
+	atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PUBLIC_KEY);
 	return send_pairing_rsp(smp);
 }
 #else
@@ -3148,8 +3148,8 @@ static int smp_send_pairing_req(struct bt_conn *conn)
 
 	smp_send(smp, req_buf, NULL, NULL);
 
-	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RSP);
-	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_SECURITY_REQUEST);
+	atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_RSP);
+	atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_SECURITY_REQUEST);
 	atomic_set_bit(smp->flags, SMP_FLAG_PAIRING);
 
 	return 0;
@@ -3244,8 +3244,8 @@ static uint8_t smp_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 		return 0;
 	}
 
-	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PUBLIC_KEY);
-	atomic_clear_bit(&smp->allowed_cmds, BT_SMP_CMD_SECURITY_REQUEST);
+	atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PUBLIC_KEY);
+	atomic_clear_bit(smp->allowed_cmds, BT_SMP_CMD_SECURITY_REQUEST);
 
 	return sc_send_public_key(smp);
 }
@@ -3268,7 +3268,7 @@ static uint8_t smp_pairing_confirm(struct bt_smp *smp, struct net_buf *buf)
 
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
 	    smp->chan.chan.conn->role == BT_HCI_ROLE_MASTER) {
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RANDOM);
+		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_RANDOM);
 		return smp_send_pairing_random(smp);
 	}
 
@@ -3284,7 +3284,7 @@ static uint8_t smp_pairing_confirm(struct bt_smp *smp, struct net_buf *buf)
 
 	switch (smp->method) {
 	case PASSKEY_DISPLAY:
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RANDOM);
+		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_RANDOM);
 		return smp_send_pairing_confirm(smp);
 	case PASSKEY_INPUT:
 		if (atomic_test_bit(smp->flags, SMP_FLAG_USER)) {
@@ -3292,7 +3292,7 @@ static uint8_t smp_pairing_confirm(struct bt_smp *smp, struct net_buf *buf)
 			return 0;
 		}
 
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RANDOM);
+		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_RANDOM);
 		return smp_send_pairing_confirm(smp);
 	case JUST_WORKS:
 	case PASSKEY_CONFIRM:
@@ -3363,7 +3363,7 @@ static uint8_t compute_and_send_master_dhcheck(struct bt_smp *smp)
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
-	atomic_set_bit(&smp->allowed_cmds, BT_SMP_DHKEY_CHECK);
+	atomic_set_bit(smp->allowed_cmds, BT_SMP_DHKEY_CHECK);
 	return sc_smp_send_dhkey_check(smp, e);
 }
 #endif /* CONFIG_BT_CENTRAL */
@@ -3673,7 +3673,7 @@ static uint8_t smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 				return BT_SMP_ERR_UNSPECIFIED;
 			}
 
-			atomic_set_bit(&smp->allowed_cmds,
+			atomic_set_bit(smp->allowed_cmds,
 				       BT_SMP_CMD_PAIRING_CONFIRM);
 			return smp_send_pairing_confirm(smp);
 		default:
@@ -3711,7 +3711,7 @@ static uint8_t smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 			return err;
 		}
 
-		atomic_set_bit(&smp->allowed_cmds,
+		atomic_set_bit(smp->allowed_cmds,
 			       BT_SMP_CMD_PAIRING_CONFIRM);
 		err = smp_send_pairing_random(smp);
 		if (err) {
@@ -3720,7 +3720,7 @@ static uint8_t smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 
 		smp->passkey_round++;
 		if (smp->passkey_round == 20U) {
-			atomic_set_bit(&smp->allowed_cmds, BT_SMP_DHKEY_CHECK);
+			atomic_set_bit(smp->allowed_cmds, BT_SMP_DHKEY_CHECK);
 			atomic_set_bit(smp->flags, SMP_FLAG_DHCHECK_WAIT);
 			return 0;
 		}
@@ -3759,7 +3759,7 @@ static uint8_t smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
-	atomic_set_bit(&smp->allowed_cmds, BT_SMP_DHKEY_CHECK);
+	atomic_set_bit(smp->allowed_cmds, BT_SMP_DHKEY_CHECK);
 	atomic_set_bit(smp->flags, SMP_FLAG_DHCHECK_WAIT);
 	return smp_send_pairing_random(smp);
 #else
@@ -3806,7 +3806,7 @@ static uint8_t smp_ident_info(struct bt_smp *smp, struct net_buf *buf)
 		memcpy(keys->irk.val, req->irk, 16);
 	}
 
-	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_IDENT_ADDR_INFO);
+	atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_IDENT_ADDR_INFO);
 
 	return 0;
 }
@@ -3872,7 +3872,7 @@ static uint8_t smp_ident_addr_info(struct bt_smp *smp, struct net_buf *buf)
 	smp->remote_dist &= ~BT_SMP_DIST_ID_KEY;
 
 	if (smp->remote_dist & BT_SMP_DIST_SIGN) {
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_SIGNING_INFO);
+		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_SIGNING_INFO);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
@@ -4107,7 +4107,7 @@ static uint8_t smp_public_key_slave(struct bt_smp *smp)
 	switch (smp->method) {
 	case PASSKEY_CONFIRM:
 	case JUST_WORKS:
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RANDOM);
+		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_RANDOM);
 
 		err = smp_send_pairing_confirm(smp);
 		if (err) {
@@ -4120,15 +4120,15 @@ static uint8_t smp_public_key_slave(struct bt_smp *smp)
 			return err;
 		}
 
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
+		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
 		break;
 	case PASSKEY_INPUT:
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
+		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
 		atomic_set_bit(smp->flags, SMP_FLAG_USER);
 		bt_auth->passkey_entry(smp->chan.chan.conn);
 		break;
 	case LE_SC_OOB:
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RANDOM);
+		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_RANDOM);
 		break;
 	default:
 		BT_ERR("Unknown pairing method (%u)", smp->method);
@@ -4173,7 +4173,7 @@ static uint8_t smp_public_key(struct bt_smp *smp, struct net_buf *buf)
 		switch (smp->method) {
 		case PASSKEY_CONFIRM:
 		case JUST_WORKS:
-			atomic_set_bit(&smp->allowed_cmds,
+			atomic_set_bit(smp->allowed_cmds,
 				       BT_SMP_CMD_PAIRING_CONFIRM);
 			break;
 		case PASSKEY_DISPLAY:
@@ -4182,10 +4182,10 @@ static uint8_t smp_public_key(struct bt_smp *smp, struct net_buf *buf)
 				return err;
 			}
 
-			atomic_set_bit(&smp->allowed_cmds,
+			atomic_set_bit(smp->allowed_cmds,
 				       BT_SMP_CMD_PAIRING_CONFIRM);
 
-			atomic_set_bit(&smp->allowed_cmds,
+			atomic_set_bit(smp->allowed_cmds,
 				       BT_SMP_KEYPRESS_NOTIFICATION);
 
 			err = smp_send_pairing_confirm(smp);
@@ -4197,7 +4197,7 @@ static uint8_t smp_public_key(struct bt_smp *smp, struct net_buf *buf)
 			atomic_set_bit(smp->flags, SMP_FLAG_USER);
 			bt_auth->passkey_entry(smp->chan.chan.conn);
 
-			atomic_set_bit(&smp->allowed_cmds,
+			atomic_set_bit(smp->allowed_cmds,
 				       BT_SMP_KEYPRESS_NOTIFICATION);
 
 			break;
@@ -4306,10 +4306,10 @@ static uint8_t smp_dhkey_check(struct bt_smp *smp, struct net_buf *buf)
 
 		if (IS_ENABLED(CONFIG_BT_SMP_USB_HCI_CTLR_WORKAROUND)) {
 			if (smp->remote_dist & BT_SMP_DIST_ID_KEY) {
-				atomic_set_bit(&smp->allowed_cmds,
+				atomic_set_bit(smp->allowed_cmds,
 					       BT_SMP_CMD_IDENT_INFO);
 			} else if (smp->remote_dist & BT_SMP_DIST_SIGN) {
-				atomic_set_bit(&smp->allowed_cmds,
+				atomic_set_bit(smp->allowed_cmds,
 					       BT_SMP_CMD_SIGNING_INFO);
 			}
 		}
@@ -4349,7 +4349,7 @@ static uint8_t smp_keypress_notif(struct bt_smp *smp, struct net_buf *buf)
 	BT_DBG("");
 
 	/* Ignore packets until keypress notifications are fully supported. */
-	atomic_set_bit(&smp->allowed_cmds, BT_SMP_KEYPRESS_NOTIFICATION);
+	atomic_set_bit(smp->allowed_cmds, BT_SMP_KEYPRESS_NOTIFICATION);
 	return 0;
 }
 
@@ -4415,7 +4415,7 @@ static int bt_smp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		return 0;
 	}
 
-	if (!atomic_test_and_clear_bit(&smp->allowed_cmds, hdr->code)) {
+	if (!atomic_test_and_clear_bit(smp->allowed_cmds, hdr->code)) {
 		BT_WARN("Unexpected SMP code 0x%02x", hdr->code);
 		/* Don't send error responses to error PDUs */
 		if (hdr->code != BT_SMP_CMD_PAIRING_FAIL) {
@@ -4468,7 +4468,7 @@ static void bt_smp_pkey_ready(const uint8_t *pkey)
 				smp_error(smp, err);
 			}
 
-			atomic_set_bit(&smp->allowed_cmds,
+			atomic_set_bit(smp->allowed_cmds,
 				       BT_SMP_CMD_PUBLIC_KEY);
 			continue;
 		}
@@ -4586,11 +4586,11 @@ static void bt_smp_encrypt_change(struct bt_l2cap_chan *chan,
 	}
 
 	if (smp->remote_dist & BT_SMP_DIST_ENC_KEY) {
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_ENCRYPT_INFO);
+		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_ENCRYPT_INFO);
 	} else if (smp->remote_dist & BT_SMP_DIST_ID_KEY) {
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_IDENT_INFO);
+		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_IDENT_INFO);
 	} else if (smp->remote_dist & BT_SMP_DIST_SIGN) {
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_SIGNING_INFO);
+		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_SIGNING_INFO);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
@@ -5200,7 +5200,7 @@ int bt_smp_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
 
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
 	    smp->chan.chan.conn->role == BT_HCI_ROLE_MASTER) {
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
+		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
 		err = smp_send_pairing_confirm(smp);
 		if (err) {
 			smp_error(smp, BT_SMP_ERR_PASSKEY_ENTRY_FAILED);
@@ -5211,7 +5211,7 @@ int bt_smp_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
 
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
 	    atomic_test_bit(smp->flags, SMP_FLAG_CFM_DELAYED)) {
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RANDOM);
+		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_RANDOM);
 		err = smp_send_pairing_confirm(smp);
 		if (err) {
 			smp_error(smp, BT_SMP_ERR_PASSKEY_ENTRY_FAILED);
@@ -5377,9 +5377,9 @@ static int le_sc_oob_pairing_continue(struct bt_smp *smp)
 
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
 	    smp->chan.chan.conn->role == BT_HCI_ROLE_MASTER) {
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RANDOM);
+		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_RANDOM);
 	} else if (IS_ENABLED(CONFIG_BT_PERIPHERAL)) {
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_DHKEY_CHECK);
+		atomic_set_bit(smp->allowed_cmds, BT_SMP_DHKEY_CHECK);
 		atomic_set_bit(smp->flags, SMP_FLAG_DHCHECK_WAIT);
 	}
 
@@ -5488,7 +5488,7 @@ int bt_smp_auth_pairing_confirm(struct bt_conn *conn)
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
 	    conn->role == BT_CONN_ROLE_MASTER) {
 		if (!atomic_test_bit(smp->flags, SMP_FLAG_SC)) {
-			atomic_set_bit(&smp->allowed_cmds,
+			atomic_set_bit(smp->allowed_cmds,
 				       BT_SMP_CMD_PAIRING_CONFIRM);
 			return legacy_send_pairing_confirm(smp);
 		}
@@ -5498,18 +5498,18 @@ int bt_smp_auth_pairing_confirm(struct bt_conn *conn)
 			return 0;
 		}
 
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PUBLIC_KEY);
+		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PUBLIC_KEY);
 		return sc_send_public_key(smp);
 	}
 
 #if defined(CONFIG_BT_PERIPHERAL)
 	if (!atomic_test_bit(smp->flags, SMP_FLAG_SC)) {
-		atomic_set_bit(&smp->allowed_cmds,
+		atomic_set_bit(smp->allowed_cmds,
 			       BT_SMP_CMD_PAIRING_CONFIRM);
 		return send_pairing_rsp(smp);
 	}
 
-	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PUBLIC_KEY);
+	atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PUBLIC_KEY);
 	if (send_pairing_rsp(smp)) {
 		return -EIO;
 	}
@@ -5580,7 +5580,7 @@ int bt_smp_start_security(struct bt_conn *conn)
 			return err;
 		}
 
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_SECURITY_REQUEST);
+		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_SECURITY_REQUEST);
 		atomic_set_bit(smp->flags, SMP_FLAG_ENC_PENDING);
 		return 0;
 	}
