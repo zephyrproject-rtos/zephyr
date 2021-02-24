@@ -1,5 +1,8 @@
 sample:
   name: Shell Sample
+common:
+  integration_platforms:
+    - native_posix
 tests:
   sample.shell.shell_module:
     filter: ( CONFIG_SERIAL and CONFIG_UART_SHELL_ON_DEV_NAME )
