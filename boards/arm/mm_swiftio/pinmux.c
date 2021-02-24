@@ -17,7 +17,7 @@ static gpio_pin_config_t enet_gpio_config = {
 };
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) && CONFIG_DISK_ACCESS_USDHC1
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) && CONFIG_DISK_DRIVER_SDMMC
 
 /*Drive Strength Field: R0(260 Ohm @ 3.3V, 150 Ohm@1.8V, 240 Ohm for DDR)
  * Speed Field: medium(100MHz)
@@ -187,7 +187,7 @@ static int mm_swiftio_init(const struct device *dev)
 			    IOMUXC_SW_PAD_CTL_PAD_DSE(6));
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) && CONFIG_DISK_ACCESS_USDHC1
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) && CONFIG_DISK_DRIVER_SDMMC
 	mm_swiftio_usdhc_pinmux(0, true, 2, 1);
 	imxrt_usdhc_pinmux_cb_register(mm_swiftio_usdhc_pinmux);
 #endif

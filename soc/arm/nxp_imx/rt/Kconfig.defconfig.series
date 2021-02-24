@@ -19,10 +19,6 @@ config CLOCK_CONTROL_MCUX_CCM
 	default y if HAS_MCUX_CCM
 	depends on CLOCK_CONTROL
 
-config DISK_ACCESS_USDHC
-	default y if (HAS_MCUX_USDHC1 || HAS_MCUX_USDHC2)
-	depends on DISK_ACCESS_SDHC
-
 config DISPLAY_MCUX_ELCDIF
 	default y if HAS_MCUX_ELCDIF
 	depends on DISPLAY
