@@ -46,20 +46,24 @@ const uint8_t *ull_adv_pdu_update_addrs(struct ll_adv_set *adv,
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 
+/* Below are BT Spec v5.2, Vol 6, Part B Section 2.3.4 Table 2.12 defined */
 #define ULL_ADV_PDU_HDR_FIELD_ADVA      BIT(0)
 #define ULL_ADV_PDU_HDR_FIELD_TARGETA   BIT(1)
 #define ULL_ADV_PDU_HDR_FIELD_CTE_INFO  BIT(2)
 #define ULL_ADV_PDU_HDR_FIELD_ADI       BIT(3)
 #define ULL_ADV_PDU_HDR_FIELD_AUX_PTR   BIT(4)
 #define ULL_ADV_PDU_HDR_FIELD_SYNC_INFO BIT(5)
-#define ULL_ADV_PDU_HDR_FIELD_TX_POWER  BIT(7)
-#define ULL_ADV_PDU_HDR_FIELD_AD_DATA   BIT(8)
+#define ULL_ADV_PDU_HDR_FIELD_TX_POWER  BIT(6)
+#define ULL_ADV_PDU_HDR_FIELD_RFU       BIT(7)
+/* Below are implementation defined bit fields */
+#define ULL_ADV_PDU_HDR_FIELD_ACAD      BIT(8)
+#define ULL_ADV_PDU_HDR_FIELD_AD_DATA   BIT(9)
 
 /* Helper type to store data for extended advertising
  * header fields and extra data.
  */
-struct adv_pdu_field_data {
-	uint8_t *field_data;
+struct ull_adv_ext_hdr_data {
+	void *field_data;
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
 	void *extra_data;
@@ -116,7 +120,7 @@ void ull_adv_sync_release(struct ll_adv_sync_set *sync);
 uint8_t ull_adv_sync_pdu_alloc(struct ll_adv_set *adv,
 			       uint16_t hdr_add_fields,
 			       uint16_t hdr_rem_fields,
-			       struct adv_pdu_field_data *data,
+			       struct ull_adv_ext_hdr_data *hdr_data,
 			       struct pdu_adv **ter_pdu_prev,
 			       struct pdu_adv **ter_pdu_new,
 			       void **extra_data_prev,
@@ -131,7 +135,7 @@ uint8_t ull_adv_sync_pdu_set_clear(struct lll_adv_sync *lll_sync,
 				   struct pdu_adv *ter_pdu,
 				   uint16_t hdr_add_fields,
 				   uint16_t hdr_rem_fields,
-				   struct adv_pdu_field_data *data);
+				   struct ull_adv_ext_hdr_data *hdr_data);
 
 /* helper function to update extra_data field */
 void ull_adv_sync_extra_data_set_clear(void *extra_data_prev,
@@ -186,10 +190,6 @@ void ull_adv_sync_update(struct ll_adv_sync_set *sync, uint32_t slot_plus_us,
 
 /* helper function to schedule a mayfly to get sync offset */
 void ull_adv_sync_offset_get(struct ll_adv_set *adv);
-
-/* helper function to reserve ACAD field in PDU buffer */
-uint8_t ull_adv_sync_acad_enable(struct lll_adv_sync *lll_sync,
-				 uint8_t acad_len, void **acad);
 
 int ull_adv_iso_init(void);
 int ull_adv_iso_reset(void);

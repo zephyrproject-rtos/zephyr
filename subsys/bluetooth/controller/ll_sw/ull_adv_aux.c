@@ -93,7 +93,7 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 			    uint8_t const *const data)
 {
 	struct ll_adv_set *adv;
-	uint8_t value[5];
+	uint8_t value[1 + sizeof(data)];
 	uint8_t *val_ptr;
 	uint8_t pri_idx;
 	uint8_t err;
@@ -122,7 +122,7 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 
 	val_ptr = value;
 	*val_ptr++ = len;
-	sys_put_le32((uint32_t)data, val_ptr);
+	memcpy(val_ptr, &data, sizeof(data));
 	err = ull_adv_aux_hdr_set_clear(adv, ULL_ADV_PDU_HDR_FIELD_AD_DATA,
 					0, value, NULL, &pri_idx);
 	if (err) {
