@@ -157,6 +157,21 @@ typedef int16_t device_handle_t;
 			data_ptr, cfg_ptr, level, prio, api_ptr)
 
 /**
+ * @def DEVICE_DT_NAME
+ *
+ * @brief Return a string name for a devicetree node.
+ *
+ * @details This macro returns a string literal usable as a device name
+ * from a devicetree node. If the node has a "label" property, its value is
+ * returned. Otherwise, the node's full "node-name@@unit-address" name is
+ * returned.
+ *
+ * @param node_id The devicetree node identifier.
+ */
+#define DEVICE_DT_NAME(node_id) \
+	DT_PROP_OR(node_id, label, DT_NODE_FULL_NAME(node_id))
+
+/**
  * @def DEVICE_DT_DEFINE
  *
  * @brief Like DEVICE_DEFINE but taking metadata from a devicetree node.
@@ -197,7 +212,7 @@ typedef int16_t device_handle_t;
 			 data_ptr, cfg_ptr, level, prio,		\
 			 api_ptr, ...)					\
 	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_NAME(node_id),		\
-			DT_PROP_OR(node_id, label, ""), init_fn,	\
+			DEVICE_DT_NAME(node_id), init_fn,		\
 			pm_control_fn,					\
 			data_ptr, cfg_ptr, level, prio,			\
 			api_ptr, __VA_ARGS__)
