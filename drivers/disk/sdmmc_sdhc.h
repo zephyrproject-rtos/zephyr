@@ -5,8 +5,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_INCLUDE_DISK_ACCESS_SDHC_H_
-#define ZEPHYR_INCLUDE_DISK_ACCESS_SDHC_H_
+#ifndef ZEPHYR_INCLUDE_DISK_DRIVER_SDMMC_H_
+#define ZEPHYR_INCLUDE_DISK_DRIVER_SDMMC_H_
 
 #include <drivers/spi.h>
 
@@ -745,4 +745,4 @@ static inline void sdhc_decode_cid(struct sd_cid *cid,
 	cid->date = (uint16_t)((raw_cid[0U] & 0xFFF00U) >> 8U);
 }
 
-#endif /*ZEPHYR_INCLUDE_DISK_ACCESS_SDHC_H_*/
+#endif /*ZEPHYR_INCLUDE_DISK_DRIVER_SDMMC_H_*/
