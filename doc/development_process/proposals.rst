@@ -158,5 +158,5 @@ and main stakeholders of the project can make progress on.
 Items labeled as ``features`` are short or long term release items that shall
 have an assignee and a milestone set.
 
-.. _`RFC template`: https://github.com/zephyrproject-rtos/zephyr/blob/master/.github/ISSUE_TEMPLATE/rfc---proposal.md
+.. _`RFC template`: https://github.com/zephyrproject-rtos/zephyr/blob/master/.github/ISSUE_TEMPLATE/rfc-proposal.md
 .. _`Zephyr meetings`: https://github.com/zephyrproject-rtos/zephyr/wiki/Zephyr-Committee-and-Working-Group-Meetings
