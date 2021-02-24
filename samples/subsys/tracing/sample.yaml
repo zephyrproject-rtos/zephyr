@@ -16,6 +16,8 @@ tests:
       - CONFIG_TRACING=y
       - CONFIG_TRACING_CPU_STATS=y
   tracing.osawareness.openocd:
+    integration_platforms:
+      - frdm_k64f
     extra_configs:
       - CONFIG_MP_NUM_CPUS=1
       - CONFIG_OPENOCD_SUPPORT=y
