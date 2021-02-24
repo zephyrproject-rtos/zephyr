@@ -2,6 +2,8 @@ sample:
   name: Shell Sensor Module Sample
 tests:
   sample.sensor.shell:
+    integration_platforms:
+      - frdm_k64f
     filter: ( CONFIG_UART_CONSOLE and CONFIG_SERIAL_SUPPORT_INTERRUPT )
     tags: shell
     harness: keyboard
