@@ -16,6 +16,7 @@
 #include <kernel.h>
 #include <logging/log.h>
 #include <helpers/nrfx_gppi.h>
+#include <soc.h>
 LOG_MODULE_REGISTER(uart_nrfx_uarte, LOG_LEVEL_ERR);
 
 /* Generalize PPI or DPPI channel management */
@@ -1668,13 +1669,15 @@ static int uarte_nrfx_pm_control(const struct device *dev,
 #define UARTE_HAS_PROP(idx, prop)	DT_NODE_HAS_PROP(UARTE(idx), prop)
 #define UARTE_PROP(idx, prop)		DT_PROP(UARTE(idx), prop)
 
-#define UARTE_PSEL(idx, pin_prop)					       \
-	COND_CODE_1(UARTE_HAS_PROP(idx, pin_prop),			       \
-		    (UARTE_PROP(idx, pin_prop)),			       \
-		    (NRF_UARTE_PSEL_DISCONNECTED))
+#define UARTE_PSEL(idx, val)						\
+	NRF_DT_PSEL(UARTE(idx), val##_pin, val##_gpios,			\
+		    NRF_UARTE_PSEL_DISCONNECTED)
 
-#define HWFC_AVAILABLE(idx)					       \
-	(UARTE_HAS_PROP(idx, rts_pin) || UARTE_HAS_PROP(idx, cts_pin))
+#define HWFC_AVAILABLE(idx)						\
+	(UARTE_HAS_PROP(idx, rts_pin) ||				\
+	 UARTE_HAS_PROP(idx, rts_gpios) ||				\
+	 UARTE_HAS_PROP(idx, cts_pin) ||				\
+	 UARTE_HAS_PROP(idx, cts_gpios))
 
 #define UARTE_IRQ_CONFIGURE(idx, isr_handler)				       \
 	do {								       \
@@ -1712,13 +1715,30 @@ static int uarte_nrfx_pm_control(const struct device *dev,
 			(.timer = NRFX_TIMER_INSTANCE(			       \
 				CONFIG_UART_##idx##_NRF_HW_ASYNC_TIMER),))     \
 	};								       \
+	/* tx-pin or tx-gpios must be set; the rest are optional. */	       \
+	NRF_DT_PSEL_CHECK_EXACTLY_ONE(UARTE(idx),			       \
+				      tx_pin, "tx-pin",			       \
+				      tx_gpios, "tx-gpios");		       \
+	NRF_DT_PSEL_CHECK_NOT_BOTH(UARTE(idx),				       \
+				   rx_pin, "rx-pin",			       \
+				   rx_gpios, "rx-gpios");		       \
+	NRF_DT_PSEL_CHECK_NOT_BOTH(UARTE(idx),				       \
+				   rts_pin, "rts-pin",			       \
+				   rts_gpios, "rts-gpios");		       \
+	NRF_DT_PSEL_CHECK_NOT_BOTH(UARTE(idx),				       \
+				   cts_pin, "cts-pin",			       \
+				   cts_gpios, "cts-gpios");		       \
+	NRF_DT_CHECK_GPIO_CTLR_IS_SOC(UARTE(idx), tx_gpios, "tx-gpios");       \
+	NRF_DT_CHECK_GPIO_CTLR_IS_SOC(UARTE(idx), rx_gpios, "rx-gpios");       \
+	NRF_DT_CHECK_GPIO_CTLR_IS_SOC(UARTE(idx), rts_gpios, "rts-gpios");     \
+	NRF_DT_CHECK_GPIO_CTLR_IS_SOC(UARTE(idx), cts_gpios, "cts-gpios");     \
 	static int uarte_##idx##_init(const struct device *dev)		       \
 	{								       \
 		const struct uarte_init_config init_config = {		       \
-			.pseltxd = UARTE_PROP(idx, tx_pin),  /* must be set */ \
-			.pselrxd = UARTE_PSEL(idx, rx_pin),  /* optional */    \
-			.pselcts = UARTE_PSEL(idx, cts_pin), /* optional */    \
-			.pselrts = UARTE_PSEL(idx, rts_pin), /* optional */    \
+			.pseltxd = UARTE_PSEL(idx, tx),			       \
+			.pselrxd = UARTE_PSEL(idx, rx),			       \
+			.pselcts = UARTE_PSEL(idx, cts),		       \
+			.pselrts = UARTE_PSEL(idx, rts),		       \
 		};							       \
 		COND_CODE_1(CONFIG_UART_##idx##_ASYNC,			       \
 			   (UARTE_IRQ_CONFIGURE(idx, uarte_nrfx_isr_async);),  \

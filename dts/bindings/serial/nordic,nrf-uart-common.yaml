@@ -7,9 +7,46 @@ properties:
     interrupts:
       required: true
 
+    tx-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        The TX pin to use. The value is "<&gpioX Y flags>".
+        Pin PX.Y will be used for TX. The "flags" portion currently
+        has no effect, but must be set to zero.
+
+        For example, to use P0.16 for TX, set:
+
+          tx-gpios = <&gpio0 16 0>;
+
+        To use P1.2 for TX, set:
+
+          tx-gpios = <&gpio1 2 0>;
+
+    rx-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        The RX pin to use. The value should be set in the same
+        way as the tx-gpios property.
+
+    rts-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        The RTS pin to use. The value should be set in the same
+        way as the tx-gpios property.
+
+    cts-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        The CTS pin to use. The value should be set in the same
+        way as the tx-gpios property.
+
     tx-pin:
       type: int
-      required: true
+      required: false
       description: |
         The TX pin to use.
 

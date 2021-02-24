@@ -11,6 +11,7 @@
 #include <drivers/uart.h>
 #include <hal/nrf_uart.h>
 #include <hal/nrf_gpio.h>
+#include <soc.h>
 
 /*
  * Extract information from devicetree.
@@ -20,32 +21,60 @@
  */
 #define DT_DRV_COMPAT	nordic_nrf_uart
 
+#define UART_NODE	DT_DRV_INST(0)
 #define PROP(prop)	DT_INST_PROP(0, prop)
-#define HAS_PROP(prop)	DT_INST_NODE_HAS_PROP(0, prop)
+#define PSEL(val)	NRF_DT_PSEL(UART_NODE, val##_pin, val##_gpios, \
+				    NRF_UART_PSEL_DISCONNECTED)
+#define HAS_PSEL(val)	(PSEL(val) != NRF_UART_PSEL_DISCONNECTED)
 
 #define BAUDRATE	PROP(current_speed)
-#define TX_PIN		PROP(tx_pin)
 
-#define RX_PIN_USED	HAS_PROP(rx_pin)
-#if RX_PIN_USED
-#define RX_PIN		PROP(rx_pin)
+#define RTS_PIN		PSEL(rts)
+#define CTS_PIN		PSEL(cts)
+#define TX_PIN		PSEL(tx)
+#define RX_PIN		PSEL(rx)
+
+/* tx-pin or tx-gpios is mandatory; the rest are optional. */
+NRF_DT_PSEL_CHECK_EXACTLY_ONE(UART_NODE, tx_pin, "tx-pin",
+			      tx_gpios, "tx-gpios");
+NRF_DT_PSEL_CHECK_NOT_BOTH(UART_NODE, rx_pin, "rx-pin",
+			   rx_gpios, "rx-gpios");
+NRF_DT_PSEL_CHECK_NOT_BOTH(UART_NODE, rts_pin, "rts-pin",
+			   rts_gpios, "rts-gpios");
+NRF_DT_PSEL_CHECK_NOT_BOTH(UART_NODE, cts_pin, "cts-pin",
+			   cts_gpios, "cts-gpios");
+NRF_DT_CHECK_GPIO_CTLR_IS_SOC(UART_NODE, tx_gpios, "tx-gpios");
+NRF_DT_CHECK_GPIO_CTLR_IS_SOC(UART_NODE, rx_gpios, "rx-gpios");
+NRF_DT_CHECK_GPIO_CTLR_IS_SOC(UART_NODE, rts_gpios, "rts-gpios");
+NRF_DT_CHECK_GPIO_CTLR_IS_SOC(UART_NODE, cts_gpios, "cts-gpios");
+
+#if HAS_PSEL(rts) || HAS_PSEL(cts)
+#define HW_FLOW_CONTROL_AVAILABLE 1
 #else
-#define RX_PIN		NRF_UART_PSEL_DISCONNECTED
+#define HW_FLOW_CONTROL_AVAILABLE 0
 #endif
 
-#define HW_FLOW_CONTROL_AVAILABLE	(HAS_PROP(rts_pin) || HAS_PROP(cts_pin))
+#if HAS_PSEL(rx)
+#define RX_PIN_USED 1
+#else
+#define RX_PIN_USED 0
+#endif
+
+#if HAS_PSEL(rts)
+#define RTS_PIN_USED 1
+#else
+#define RTS_PIN_USED 0
+#endif
+
+#if HAS_PSEL(cts)
+#define CTS_PIN_USED 1
+#else
+#define CTS_PIN_USED 0
+#endif
 
 /* Protect against enabling flow control without pins set. */
 BUILD_ASSERT((PROP(hw_flow_control) && HW_FLOW_CONTROL_AVAILABLE) ||
 		!PROP(hw_flow_control));
-
-#define RTS_PIN \
-	COND_CODE_1(HAS_PROP(rts_pin), \
-		(PROP(rts_pin)), (NRF_UART_PSEL_DISCONNECTED))
-
-#define CTS_PIN \
-	COND_CODE_1(HAS_PROP(cts_pin), \
-		(PROP(cts_pin)), (NRF_UART_PSEL_DISCONNECTED))
 
 #define IRQN		DT_INST_IRQN(0)
 #define IRQ_PRIO	DT_INST_IRQ(0, priority)
@@ -996,7 +1025,7 @@ static int uart_nrfx_init(const struct device *dev)
 
 	nrf_uart_txrx_pins_set(uart0_addr, TX_PIN, RX_PIN);
 
-	if (HAS_PROP(rts_pin)) {
+	if (RTS_PIN_USED) {
 		/* Setting default height state of the RTS PIN to avoid glitches
 		 * on the line during peripheral activation/deactivation.
 		 */
@@ -1004,7 +1033,7 @@ static int uart_nrfx_init(const struct device *dev)
 		nrf_gpio_cfg_output(RTS_PIN);
 	}
 
-	if (HAS_PROP(cts_pin)) {
+	if (CTS_PIN_USED) {
 		nrf_gpio_cfg_input(CTS_PIN, NRF_GPIO_PIN_NOPULL);
 	}
 
@@ -1109,11 +1138,11 @@ static void uart_nrfx_pins_enable(const struct device *dev, bool enable)
 			nrf_gpio_cfg_input(rx_pin, NRF_GPIO_PIN_NOPULL);
 		}
 
-		if (HAS_PROP(rts_pin)) {
+		if (RTS_PIN_USED) {
 			nrf_gpio_pin_write(rts_pin, 1);
 			nrf_gpio_cfg_output(rts_pin);
 		}
-		if (HAS_PROP(cts_pin)) {
+		if (CTS_PIN_USED) {
 			nrf_gpio_cfg_input(cts_pin,
 					   NRF_GPIO_PIN_NOPULL);
 		}
@@ -1123,11 +1152,11 @@ static void uart_nrfx_pins_enable(const struct device *dev, bool enable)
 			nrf_gpio_cfg_default(rx_pin);
 		}
 
-		if (HAS_PROP(rts_pin)) {
+		if (RTS_PIN_USED) {
 			nrf_gpio_cfg_default(rts_pin);
 		}
 
-		if (HAS_PROP(cts_pin)) {
+		if (CTS_PIN_USED) {
 			nrf_gpio_cfg_default(cts_pin);
 		}
 	}
