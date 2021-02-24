@@ -52,6 +52,20 @@
 #define __kstackmem __noinit
 #endif /* CONFIG_KERNEL_COHERENCE */
 
+#if defined(CONFIG_LINKER_USE_BOOT_SECTION)
+#define __boot_func	Z_GENERIC_DOT_SECTION(BOOT_TEXT_SECTION_NAME)
+#define __boot_data	Z_GENERIC_DOT_SECTION(BOOT_DATA_SECTION_NAME)
+#define __boot_rodata	Z_GENERIC_DOT_SECTION(BOOT_RODATA_SECTION_NAME)
+#define __boot_bss	Z_GENERIC_DOT_SECTION(BOOT_BSS_SECTION_NAME)
+#define __boot_noinit	Z_GENERIC_DOT_SECTION(BOOT_NOINIT_SECTION_NAME)
+#else
+#define __boot_func
+#define __boot_data
+#define __boot_rodata
+#define __boot_bss
+#define __boot_noinit	__noinit
+#endif /* CONFIG_LINKER_USE_BOOT_SECTION */
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* ZEPHYR_INCLUDE_LINKER_SECTION_TAGS_H_ */

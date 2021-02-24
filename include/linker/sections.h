@@ -67,6 +67,14 @@
 #define _NOCACHE_SECTION_NAME nocache
 #endif
 
+#if defined(CONFIG_LINKER_USE_BOOT_SECTION)
+#define BOOT_TEXT_SECTION_NAME		boot_text
+#define BOOT_BSS_SECTION_NAME		boot_bss
+#define BOOT_RODATA_SECTION_NAME	boot_rodata
+#define BOOT_DATA_SECTION_NAME		boot_data
+#define BOOT_NOINIT_SECTION_NAME	boot_noinit
+#endif
+
 /* Short section references for use in ASM files */
 #if defined(_ASMLANGUAGE)
 /* Various text section names */
@@ -77,6 +85,21 @@
 #define RODATA rodata
 #define DATA data
 #define NOINIT noinit
+
+#if defined(CONFIG_LINKER_USE_BOOT_SECTION)
+#define BOOT_TEXT			BOOT_TEXT_SECTION_NAME
+#define BOOT_BSS			BOOT_BSS_SECTION_NAME
+#define BOOT_RODATA			BOOT_RODATA_SECTION_NAME
+#define BOOT_DATA			BOOT_DATA_SECTION_NAME
+#define BOOT_NOINIT			BOOT_NOINIT_SECTION_NAME
+#else
+#define BOOT_TEXT			TEXT
+#define BOOT_BSS			BSS
+#define BOOT_RODATA			RODATA
+#define BOOT_DATA			DATA
+#define BOOT_NOINIT			NOINIT
+#endif /* CONFIG_LINKER_USE_BOOT_SECTION */
+
 #endif /* _ASMLANGUAGE */
 
 #include <linker/section_tags.h>
