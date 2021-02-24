@@ -4,6 +4,8 @@ sample:
   name: logger sample
 tests:
   sample.logger.basic:
+    integration_platforms:
+      - native_posix
     tags: logging
     harness: console
     harness_config:
@@ -17,6 +19,8 @@ tests:
         - Logs from external logging system showcase
 
   sample.logger.rtt:
+    integration_platforms:
+      - frdm_k64f
     tags: logging
     filter: CONFIG_HAS_SEGGER_RTT
     harness: keyboard
@@ -25,6 +29,8 @@ tests:
       - CONFIG_USE_SEGGER_RTT=y
 
   sample.logger.usermode:
+    integration_platforms:
+      - mps2_an385
     tags: logging usermode
     filter: CONFIG_ARCH_HAS_USERSPACE
     harness: keyboard
