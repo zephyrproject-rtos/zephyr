@@ -57,7 +57,10 @@ const uint8_t *ull_adv_pdu_update_addrs(struct ll_adv_set *adv,
  */
 struct adv_pdu_field_data {
 	uint8_t *field_data;
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
 	void *extra_data;
+#endif /* CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY */
 };
 
 /* helper function to handle adv done events */
