@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "lll_adv_pdu.h"
-
 struct lll_adv_iso {
 	struct lll_hdr hdr;
 	struct lll_adv *adv;

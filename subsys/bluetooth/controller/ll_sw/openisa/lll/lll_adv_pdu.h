@@ -1,28 +1,48 @@
 /*
- * Copyright (c) 2018-2019 Nordic Semiconductor ASA
+ * Copyright (c) 2018-2021 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Structure used to double buffer pointers of AD Data PDU buffer.
- * The first and last members are used to make modification to AD data to be
- * context safe. Thread always appends or updates the buffer pointed to
- * the array element indexed by the member last.
- * LLL in the ISR context, checks, traverses to the valid pointer indexed
- * by the member first, such that the buffer is the latest committed by
- * the thread context.
- */
-struct lll_adv_pdu {
-	uint8_t volatile first;
-	uint8_t          last;
-	uint8_t          *pdu[DOUBLE_BUFFER_SIZE];
-#if defined(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
-	/* This is a storage for LLL configuration that may be
-	 * changed while LLL advertising role is started.
-	 * Also it makes the configuration data to be in sync
-	 * with extended advertising PDU e.g. CTE TX configuration
-	 * and CTEInfo field.
-	 */
-	void             *extra_data[DOUBLE_BUFFER_SIZE];
-#endif /* CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY */
-};
+int lll_adv_data_init(struct lll_adv_pdu *pdu);
+int lll_adv_data_reset(struct lll_adv_pdu *pdu);
+int lll_adv_data_release(struct lll_adv_pdu *pdu);
+
+static inline void lll_adv_pdu_enqueue(struct lll_adv_pdu *pdu, uint8_t idx)
+{
+	pdu->last = idx;
+}
+
+struct pdu_adv *lll_adv_pdu_alloc(struct lll_adv_pdu *pdu, uint8_t *idx);
+
+static inline struct pdu_adv *lll_adv_data_alloc(struct lll_adv *lll,
+						 uint8_t *idx)
+{
+	return lll_adv_pdu_alloc(&lll->adv_data, idx);
+}
+
+static inline void lll_adv_data_enqueue(struct lll_adv *lll, uint8_t idx)
+{
+	lll_adv_pdu_enqueue(&lll->adv_data, idx);
+}
+
+static inline struct pdu_adv *lll_adv_data_peek(struct lll_adv *lll)
+{
+	return (void *)lll->adv_data.pdu[lll->adv_data.last];
+}
+
+static inline struct pdu_adv *lll_adv_scan_rsp_alloc(struct lll_adv *lll,
+						     uint8_t *idx)
+{
+	return lll_adv_pdu_alloc(&lll->scan_rsp, idx);
+}
+
+static inline void lll_adv_scan_rsp_enqueue(struct lll_adv *lll, uint8_t idx)
+{
+	lll_adv_pdu_enqueue(&lll->scan_rsp, idx);
+}
+
+static inline struct pdu_adv *lll_adv_scan_rsp_peek(struct lll_adv *lll)
+{
+	return (void *)lll->scan_rsp.pdu[lll->scan_rsp.last];
+}

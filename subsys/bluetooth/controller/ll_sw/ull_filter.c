@@ -20,14 +20,14 @@
 #include "util/mayfly.h"
 
 #include "pdu.h"
-#include "ll.h"
 
 #include "lll.h"
+#include "lll/lll_adv_types.h"
 #include "lll_adv.h"
+#include "lll/lll_adv_pdu.h"
 #include "lll_scan.h"
 #include "lll_conn.h"
 #include "lll_filter.h"
-#include "lll_adv_internal.h"
 
 #include "ull_adv_types.h"
 #include "ull_scan_types.h"
@@ -37,12 +37,14 @@
 #include "ull_adv_internal.h"
 #include "ull_scan_internal.h"
 
-#define ADDR_TYPE_ANON 0xFF
+#include "ll.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_ull_filter
 #include "common/log.h"
 #include "hal/debug.h"
+
+#define ADDR_TYPE_ANON 0xFF
 
 /* Hardware whitelist */
 static struct lll_filter wl_filter;

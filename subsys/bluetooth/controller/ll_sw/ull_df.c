@@ -5,32 +5,37 @@
  */
 
 #include <stdint.h>
+
 #include <zephyr.h>
 #include <sys/util.h>
 #include <bluetooth/hci.h>
 
-#include "hal/debug.h"
 #include "hal/cpu.h"
 
 #include "util/util.h"
-#include "util/memq.h"
 #include "util/mem.h"
+#include "util/memq.h"
 
 #include "pdu.h"
-#include "ll.h"
+
 #include "lll.h"
-
+#include "lll/lll_adv_types.h"
 #include "lll_adv.h"
-#include "ull_adv_types.h"
-#include "ull_adv_internal.h"
-#include "lll_adv_internal.h"
+#include "lll/lll_adv_pdu.h"
+#include "lll/lll_df_types.h"
+#include "lll_df.h"
 
+#include "ull_adv_types.h"
 #include "ull_df.h"
-#include "lll_df_internal.h"
+
+#include "ull_adv_internal.h"
+
+#include "ll.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_ull_df
 #include "common/log.h"
+#include "hal/debug.h"
 
 /* ToDo:
  * - Add release of df_adv_cfg when adv_sync is released.
@@ -154,7 +159,7 @@ uint8_t ll_df_set_cl_cte_tx_params(uint8_t adv_handle, uint8_t cte_len,
 	if ((cte_type == BT_HCI_LE_AOD_CTE_1US ||
 	     cte_type == BT_HCI_LE_AOD_CTE_2US) &&
 	    (num_ant_ids < LLL_DF_MIN_ANT_PATTERN_LEN ||
-	     num_ant_ids > CONFIG_BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN ||
+	     num_ant_ids > BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN ||
 	     !ant_ids)) {
 		return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
 	}
@@ -359,7 +364,7 @@ void ll_df_read_ant_inf(uint8_t *switch_sample_rates,
 		*switch_sample_rates |= DF_AOA_1US;
 	}
 
-	*max_switch_pattern_len = CONFIG_BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN;
+	*max_switch_pattern_len = BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN;
 	*num_ant = lll_df_ant_num_get();
 	*max_cte_len = LLL_DF_MAX_CTE_LEN;
 }

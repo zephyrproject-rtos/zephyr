@@ -59,9 +59,6 @@ if(CONFIG_BT_LL_SW_SPLIT)
   if(CONFIG_BT_CTLR_DF AND NOT CONFIG_SOC_SERIES_BSIM_NRFXX)
     zephyr_library_sources(ll_sw/nordic/hal/nrf5/radio/radio_df.c)
   endif()
-  zephyr_library_include_directories(
-    ll_sw/nordic/lll
-    )
 endif()
 
 zephyr_library_sources(
