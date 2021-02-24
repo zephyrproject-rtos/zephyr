@@ -319,7 +319,7 @@ static void iproc_pcie_reset_config(const struct device *dev)
 
 	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, perst, irq),
 		    DT_INST_IRQ_BY_NAME(0, perst, priority),
-		    iproc_pcie_perst, DEVICE_GET(iproc_pcie_ep_0), 0);
+		    iproc_pcie_perst, DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQ_BY_NAME(0, perst, irq));
 #endif
 
@@ -338,7 +338,7 @@ static void iproc_pcie_reset_config(const struct device *dev)
 
 	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, perst_inband, irq),
 		    DT_INST_IRQ_BY_NAME(0, perst_inband, priority),
-		    iproc_pcie_hot_reset, DEVICE_GET(iproc_pcie_ep_0), 0);
+		    iproc_pcie_hot_reset, DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQ_BY_NAME(0, perst_inband, irq));
 #endif
 
@@ -358,7 +358,7 @@ static void iproc_pcie_reset_config(const struct device *dev)
 
 	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, flr, irq),
 		    DT_INST_IRQ_BY_NAME(0, flr, priority),
-		    iproc_pcie_flr, DEVICE_GET(iproc_pcie_ep_0), 0);
+		    iproc_pcie_flr, DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQ_BY_NAME(0, flr, irq));
 #endif
 }
@@ -383,7 +383,7 @@ static void iproc_pcie_msix_pvm_config(const struct device *dev)
 
 	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, snoop_irq1, irq),
 		    DT_INST_IRQ_BY_NAME(0, snoop_irq1, priority),
-		    iproc_pcie_func_mask_isr, DEVICE_GET(iproc_pcie_ep_0), 0);
+		    iproc_pcie_func_mask_isr, DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQ_BY_NAME(0, snoop_irq1, irq));
 
 	LOG_DBG("snoop interrupt configured\n");
@@ -405,7 +405,7 @@ static void iproc_pcie_msix_pvm_config(const struct device *dev)
 
 	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, pcie_pmon_lite, irq),
 		    DT_INST_IRQ_BY_NAME(0, pcie_pmon_lite, priority),
-		    iproc_pcie_vector_mask_isr, DEVICE_GET(iproc_pcie_ep_0), 0);
+		    iproc_pcie_vector_mask_isr, DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQ_BY_NAME(0, pcie_pmon_lite, irq));
 
 	LOG_DBG("pcie pmon lite interrupt configured\n");
