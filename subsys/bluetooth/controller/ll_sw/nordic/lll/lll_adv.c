@@ -97,8 +97,7 @@ static inline bool isr_rx_ci_adva_check(uint8_t tx_addr, uint8_t *addr,
 #define BT_CTLR_ADV_SYNC_SET 0
 #endif
 
-#define PDU_MEM_SIZE       MROUND(PDU_AC_LL_HEADER_SIZE + \
-				  PDU_AC_PAYLOAD_SIZE_MAX)
+#define PDU_MEM_SIZE       PDU_ADV_MEM_SIZE
 #define PDU_MEM_COUNT_MIN  (BT_CTLR_ADV_SET + \
 			    (BT_CTLR_ADV_SET * PAYLOAD_FRAG_COUNT) + \
 			    (BT_CTLR_ADV_AUX_SET * PAYLOAD_FRAG_COUNT) + \
@@ -305,11 +304,17 @@ struct pdu_adv *lll_adv_pdu_alloc_pdu_adv(void)
 
 		MFIFO_DEQUEUE(pdu_free);
 
+#if defined(CONFIG_BT_CTLR_ADV_PDU_LINK)
+		PDU_ADV_NEXT_PTR(p) = NULL;
+#endif
 		return p;
 	}
 
 	p = mem_acquire(&mem_pdu.free);
 	if (p) {
+#if defined(CONFIG_BT_CTLR_ADV_PDU_LINK)
+		PDU_ADV_NEXT_PTR(p) = NULL;
+#endif
 		return p;
 	}
 
@@ -319,8 +324,32 @@ struct pdu_adv *lll_adv_pdu_alloc_pdu_adv(void)
 	p = MFIFO_DEQUEUE(pdu_free);
 	LL_ASSERT(p);
 
+#if defined(CONFIG_BT_CTLR_ADV_PDU_LINK)
+	PDU_ADV_NEXT_PTR(p) = NULL;
+#endif
 	return p;
 }
+
+#if defined(CONFIG_BT_CTLR_ADV_PDU_LINK)
+void lll_adv_pdu_release(struct pdu_adv *pdu)
+{
+	mem_release(pdu, &mem_pdu.free);
+}
+
+void lll_adv_pdu_linked_release_all(struct pdu_adv *pdu_first)
+{
+	struct pdu_adv *pdu = pdu_first;
+
+	while (pdu) {
+		struct pdu_adv *pdu_next;
+
+		pdu_next = PDU_ADV_NEXT_PTR(pdu);
+		PDU_ADV_NEXT_PTR(pdu) = NULL;
+		lll_adv_pdu_release(pdu);
+		pdu = pdu_next;
+	}
+}
+#endif
 
 struct pdu_adv *lll_adv_pdu_latest_get(struct lll_adv_pdu *pdu,
 				       uint8_t *is_modified)
@@ -333,11 +362,34 @@ struct pdu_adv *lll_adv_pdu_latest_get(struct lll_adv_pdu *pdu,
 		uint8_t pdu_idx;
 		void *p;
 
-		if (!MFIFO_ENQUEUE_IDX_GET(pdu_free, &free_idx)) {
-			return NULL;
-		}
-
 		pdu_idx = first;
+		p = pdu->pdu[pdu_idx];
+
+		do {
+			void *next;
+
+			/* Store partial list in current data index if there is
+			 * no free slot in mfifo. It can be released on next
+			 * switch attempt (on next event).
+			 */
+			if (!MFIFO_ENQUEUE_IDX_GET(pdu_free, &free_idx)) {
+				pdu->pdu[pdu_idx] = p;
+				return NULL;
+			}
+
+#if defined(CONFIG_BT_CTLR_ADV_PDU_LINK)
+			next = lll_adv_pdu_linked_next_get(p);
+#else
+			next = NULL;
+#endif
+
+			MFIFO_BY_IDX_ENQUEUE(pdu_free, free_idx, p);
+			k_sem_give(&sem_pdu_free);
+
+			p = next;
+		} while (p);
+
+		pdu->pdu[pdu_idx] = NULL;
 
 		first += 1U;
 		if (first == DOUBLE_BUFFER_SIZE) {
@@ -346,11 +398,7 @@ struct pdu_adv *lll_adv_pdu_latest_get(struct lll_adv_pdu *pdu,
 		pdu->first = first;
 		*is_modified = 1U;
 
-		p = pdu->pdu[pdu_idx];
 		pdu->pdu[pdu_idx] = NULL;
-
-		MFIFO_BY_IDX_ENQUEUE(pdu_free, free_idx, p);
-		k_sem_give(&sem_pdu_free);
 	}
 
 	return (void *)pdu->pdu[first];

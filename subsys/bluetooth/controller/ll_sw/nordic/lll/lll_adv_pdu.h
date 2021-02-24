@@ -4,6 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if defined(CONFIG_BT_CTLR_ADV_PDU_LINK)
+#define PDU_ADV_MEM_SIZE       MROUND(PDU_AC_LL_HEADER_SIZE + \
+				      PDU_AC_PAYLOAD_SIZE_MAX + \
+				      sizeof(uintptr_t))
+#define PDU_ADV_NEXT_PTR(p)    *(struct pdu_adv **)((uint8_t *)(p) + \
+						    PDU_ADV_MEM_SIZE - \
+						    sizeof(uintptr_t))
+#else
+#define PDU_ADV_MEM_SIZE       MROUND(PDU_AC_LL_HEADER_SIZE + \
+				      PDU_AC_PAYLOAD_SIZE_MAX)
+#endif
+
 int lll_adv_data_init(struct lll_adv_pdu *pdu);
 int lll_adv_data_reset(struct lll_adv_pdu *pdu);
 int lll_adv_data_release(struct lll_adv_pdu *pdu);
@@ -124,3 +136,38 @@ static inline struct pdu_adv *lll_adv_sync_data_peek(struct lll_adv_sync *lll,
 }
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
+
+#if defined(CONFIG_BT_CTLR_ADV_PDU_LINK)
+/* Release single PDU, shall only be called from ULL */
+void lll_adv_pdu_release(struct pdu_adv *pdu);
+/* Release PDU and all linked PDUs, shall only be called from ULL */
+void lll_adv_pdu_linked_release_all(struct pdu_adv *pdu_first);
+
+static inline struct pdu_adv *lll_adv_pdu_linked_next_get(struct pdu_adv *pdu)
+{
+	return PDU_ADV_NEXT_PTR(pdu);
+}
+
+static inline struct pdu_adv *lll_adv_pdu_linked_last_get(struct pdu_adv *pdu)
+{
+	while (PDU_ADV_NEXT_PTR(pdu)) {
+		pdu = PDU_ADV_NEXT_PTR(pdu);
+	}
+	return pdu;
+}
+
+static inline void lll_adv_pdu_linked_append(struct pdu_adv *pdu,
+					     struct pdu_adv *prev)
+{
+	PDU_ADV_NEXT_PTR(prev) = pdu;
+}
+
+static inline void lll_adv_pdu_linked_append_end(struct pdu_adv *pdu,
+						 struct pdu_adv *first)
+{
+	struct pdu_adv *last;
+
+	last = lll_adv_pdu_linked_last_get(first);
+	lll_adv_pdu_linked_append(pdu, last);
+}
+#endif
