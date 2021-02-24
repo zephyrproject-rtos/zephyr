@@ -365,7 +365,7 @@ do {                                                                    \
 	section_subsec_func sect, subsec, sym
 #else /* !CONFIG_ARC */
 
-#define SECTION_VAR(sect, sym)  .section .sect.##sym; sym :
+#define SECTION_VAR(sect, sym)  .section .sect.sym; sym:
 #define SECTION_FUNC(sect, sym)						\
 	.section .sect.sym, "ax";					\
 				FUNC_CODE()				\
