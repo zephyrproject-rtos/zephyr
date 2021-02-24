@@ -11,6 +11,7 @@
 
 #include "util/util.h"
 #include "util/memq.h"
+#include "util/mem.h"
 #include "util/mayfly.h"
 
 #include "hal/cpu.h"
