@@ -191,21 +191,21 @@ static ALWAYS_INLINE void clock_init(void)
 	USB_EhciPhyInit(kUSB_ControllerEhci0, CPU_XTAL_CLK_HZ, &usbPhyConfig);
 #endif
 
-#if defined(CONFIG_DISK_ACCESS_USDHC1) ||       \
-	defined(CONFIG_DISK_ACCESS_USDHC2)
-	CLOCK_InitSysPfd(kCLOCK_Pfd0, 0x12U);
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) && CONFIG_DISK_DRIVER_SDMMC
 	/* Configure USDHC clock source and divider */
-#ifdef CONFIG_DISK_ACCESS_USDHC1
+	CLOCK_InitSysPfd(kCLOCK_Pfd0, 0x12U);
 	CLOCK_SetDiv(kCLOCK_Usdhc1Div, 0U);
 	CLOCK_SetMux(kCLOCK_Usdhc1Mux, 1U);
 	CLOCK_EnableClock(kCLOCK_Usdhc1);
 #endif
-#ifdef CONFIG_DISK_ACCESS_USDHC2
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc2), okay) && CONFIG_DISK_DRIVER_SDMMC
+	/* Configure USDHC clock source and divider */
+	CLOCK_InitSysPfd(kCLOCK_Pfd0, 0x12U);
 	CLOCK_SetDiv(kCLOCK_Usdhc2Div, 0U);
 	CLOCK_SetMux(kCLOCK_Usdhc2Mux, 1U);
 	CLOCK_EnableClock(kCLOCK_Usdhc2);
 #endif
-#endif
+
 #ifdef CONFIG_VIDEO_MCUX_CSI
 	CLOCK_EnableClock(kCLOCK_Csi); /* Disable CSI clock gate */
 	CLOCK_SetDiv(kCLOCK_CsiDiv, 0); /* Set CSI divider to 1 */
@@ -230,8 +230,7 @@ static ALWAYS_INLINE void clock_init(void)
 
 }
 
-#if defined(CONFIG_DISK_ACCESS_USDHC1) ||	\
-	defined(CONFIG_DISK_ACCESS_USDHC2)
+#if (DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) && CONFIG_DISK_DRIVER_SDMMC)
 
 /* Usdhc driver needs to re-configure pinmux
  * Pinmux depends on board design.
