@@ -109,6 +109,24 @@ void z_bss_zero(void)
 #endif
 }
 
+#ifdef CONFIG_LINKER_USE_BOOT_SECTION
+/**
+ * @brief Clear BSS within the bot region
+ *
+ * This routine clears the BSS within the boot region.
+ * This is separate from z_bss_zero() as boot region may
+ * contain symbols required for the boot process before
+ * paging is initialized.
+ */
+__boot_func
+void z_bss_zero_boot(void)
+{
+	(void)memset(&lnkr_boot_bss_start, 0,
+		     (uintptr_t)&lnkr_boot_bss_end
+		     - (uintptr_t)&lnkr_boot_bss_start);
+}
+#endif /* CONFIG_LINKER_USE_BOOT_SECTION */
+
 #ifdef CONFIG_STACK_CANARIES
 extern volatile uintptr_t __stack_chk_guard;
 #endif /* CONFIG_STACK_CANARIES */
