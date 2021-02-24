@@ -80,15 +80,11 @@ zephyr_compile_definitions(
   NRF_802154_ACK_TIMEOUT_ENABLED=1
 )
 
-if (CONFIG_IEEE802154_NRF5 OR NOT CONFIG_NRF_802154_SL_OPENSOURCE)
-  zephyr_compile_definitions(
-    NRF_802154_INTERNAL_RADIO_IRQ_HANDLING=0
-  )
-else()
-  zephyr_compile_definitions(
-    NRF_802154_INTERNAL_RADIO_IRQ_HANDLING=1
-  )
-endif()
+if (NOT CONFIG_IEEE802154_NRF5 AND NOT CONFIG_IEEE802154_NRF5_EXT_IRQ_MGMT)
+  zephyr_compile_definitions(NRF_802154_INTERNAL_RADIO_IRQ_HANDLING=1)
+else ()
+  zephyr_compile_definitions(NRF_802154_INTERNAL_RADIO_IRQ_HANDLING=0)
+endif ()
 
 if (CONFIG_NRF_802154_SL_OPENSOURCE OR CONFIG_SOC_SERIES_NRF53X)
   zephyr_compile_definitions(
