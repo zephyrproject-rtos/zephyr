@@ -98,6 +98,10 @@ def main():
             out_comment("Node's full path:")
             out_dt_define(f"{node.z_path_id}_PATH", f'"{escape(node.path)}"')
 
+            out_comment("Node's name with unit-address:")
+            out_dt_define(f"{node.z_path_id}_FULL_NAME",
+                          f'"{escape(node.name)}"')
+
             if node.parent is not None:
                 out_comment(f"Node parent ({node.parent.path}) identifier:")
                 out_dt_define(f"{node.z_path_id}_PARENT",
