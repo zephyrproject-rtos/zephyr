@@ -9,13 +9,18 @@ import os
 import platform
 import re
 import shlex
+from subprocess import TimeoutExpired
 import sys
 import tempfile
 
-from packaging import version
 from runners.core import ZephyrBinaryRunner, RunnerCaps, \
     BuildConfiguration
-from subprocess import TimeoutExpired
+
+try:
+    from packaging import version
+    MISSING_REQUIREMENTS = False
+except ImportError:
+    MISSING_REQUIREMENTS = True
 
 DEFAULT_JLINK_EXE = 'JLink.exe' if sys.platform == 'win32' else 'JLinkExe'
 DEFAULT_JLINK_GDB_PORT = 2331
@@ -142,6 +147,11 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         return version.parse(ver) >= version.parse("6.80")
 
     def do_run(self, command, **kwargs):
+        if MISSING_REQUIREMENTS:
+            raise RuntimeError('one or more Python dependencies were missing; '
+                               "see the getting started guide for details on "
+                               "how to fix")
+
         server_cmd = ([self.gdbserver] +
                       ['-select', 'usb', # only USB connections supported
                        '-port', str(self.gdb_port),
