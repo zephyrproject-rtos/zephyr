@@ -5,6 +5,8 @@ common:
   filter: TOOLCHAIN_HAS_NEWLIB == 1
   tags: posix
   platform_exclude: m2gl025_miv
+  integration_platforms:
+    - mps2_an385
 tests:
   sample.posix.eventfd:
     tags: posix
