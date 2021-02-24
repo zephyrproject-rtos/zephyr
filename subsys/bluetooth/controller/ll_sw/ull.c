@@ -28,22 +28,24 @@
 #include "ticker/ticker.h"
 
 #include "pdu.h"
-#include "ll.h"
-#include "ll_feat.h"
-#include "ll_settings.h"
+
 #include "lll.h"
-#include "lll_vendor.h"
+#include "lll/lll_vendor.h"
+#include "lll/lll_adv_types.h"
 #include "lll_adv.h"
+#include "lll/lll_adv_pdu.h"
 #include "lll_scan.h"
 #include "lll_sync.h"
 #include "lll_sync_iso.h"
 #include "lll_conn.h"
 #include "lll_df.h"
+
 #include "ull_adv_types.h"
 #include "ull_scan_types.h"
 #include "ull_sync_types.h"
 #include "ull_conn_types.h"
 #include "ull_filter.h"
+#include "ull_df.h"
 
 #include "ull_internal.h"
 #include "ull_iso_internal.h"
@@ -55,11 +57,14 @@
 #include "ull_conn_iso_internal.h"
 #include "ull_central_iso_internal.h"
 #include "ull_peripheral_iso_internal.h"
-#include "ull_df.h"
 
 #if defined(CONFIG_BT_CTLR_USER_EXT)
 #include "ull_vendor.h"
 #endif /* CONFIG_BT_CTLR_USER_EXT */
+
+#include "ll.h"
+#include "ll_feat.h"
+#include "ll_settings.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_ull

@@ -26,21 +26,28 @@
 
 #include "util/util.h"
 #include "util/memq.h"
+
 #include "hal/ecb.h"
 #include "hal/ccm.h"
+
 #include "ll_sw/pdu.h"
+
 #include "ll_sw/lll.h"
+#include "lll/lll_adv_types.h"
 #include "ll_sw/lll_adv.h"
+#include "lll/lll_adv_pdu.h"
 #include "ll_sw/lll_sync_iso.h"
 #include "ll_sw/lll_scan.h"
 #include "ll_sw/lll_sync.h"
 #include "ll_sw/lll_conn.h"
 #include "ll_sw/lll_conn_iso.h"
+
 #include "ll_sw/ull_adv_types.h"
 #include "ll_sw/ull_scan_types.h"
 #include "ll_sw/ull_sync_types.h"
 #include "ll_sw/ull_conn_types.h"
 #include "ll_sw/ull_conn_iso_types.h"
+
 #include "ll.h"
 #include "ll_feat.h"
 #include "ll_settings.h"

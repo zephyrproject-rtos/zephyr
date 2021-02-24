@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 Nordic Semiconductor ASA
+ * Copyright (c) 2018-2021 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,7 +28,9 @@
 
 #include "lll.h"
 #include "lll_vendor.h"
+#include "lll_adv_types.h"
 #include "lll_adv.h"
+#include "lll_adv_pdu.h"
 #include "lll_conn.h"
 #include "lll_chan.h"
 #include "lll_filter.h"

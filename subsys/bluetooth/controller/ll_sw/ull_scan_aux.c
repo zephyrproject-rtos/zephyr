@@ -18,7 +18,7 @@
 #include "pdu.h"
 
 #include "lll.h"
-#include "lll_vendor.h"
+#include "lll/lll_vendor.h"
 #include "lll_scan.h"
 #include "lll_scan_aux.h"
 #include "lll_sync.h"

@@ -15,19 +15,20 @@
 #include "util/util.h"
 #include "util/memq.h"
 
-#include "hal/cpu.h"
-
 #include "pdu.h"
-#include "ll.h"
-#include "lll.h"
 
+#include "lll.h"
+#include "lll/lll_adv_types.h"
 #include "lll_adv.h"
+#include "lll/lll_adv_pdu.h"
 #include "lll_scan.h"
 
 #include "ull_adv_types.h"
 #include "ull_scan_types.h"
 #include "ull_adv_internal.h"
 #include "ull_scan_internal.h"
+
+#include "ll.h"
 
 static uint8_t pub_addr[BDADDR_SIZE];
 static uint8_t rnd_addr[BDADDR_SIZE];

@@ -25,7 +25,9 @@
 #include "lll_vendor.h"
 #include "lll_clock.h"
 #include "lll_chan.h"
+#include "lll_adv_types.h"
 #include "lll_adv.h"
+#include "lll_adv_pdu.h"
 #include "lll_adv_aux.h"
 #include "lll_filter.h"
 

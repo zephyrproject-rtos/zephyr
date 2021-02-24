@@ -29,7 +29,6 @@
 #include "lll.h"
 #include "lll_clock.h"
 #include "lll_conn.h"
-#include "lll_tim_internal.h"
 
 #include "ull_conn_types.h"
 #include "ull_internal.h"
@@ -39,6 +38,10 @@
 #include "ull_slave_internal.h"
 #include "ull_master_internal.h"
 
+#if defined(CONFIG_BT_CTLR_USER_EXT)
+#include "ull_vendor.h"
+#endif /* CONFIG_BT_CTLR_USER_EXT */
+
 #include "ll.h"
 #include "ll_feat.h"
 #include "ll_settings.h"
@@ -47,10 +50,6 @@
 #define LOG_MODULE_NAME bt_ctlr_ull_conn
 #include "common/log.h"
 #include "hal/debug.h"
-
-#if defined(CONFIG_BT_CTLR_USER_EXT)
-#include "ull_vendor.h"
-#endif /* CONFIG_BT_CTLR_USER_EXT */
 
 /**
  *  User CPR Interval

@@ -21,19 +21,17 @@
 #include "ticker/ticker.h"
 
 #include "pdu.h"
-#include "ll.h"
-#include "ll_feat.h"
-#include "ll_settings.h"
 
 #include "lll.h"
-#include "lll_vendor.h"
 #include "lll_clock.h"
+#include "lll/lll_vendor.h"
+#include "lll/lll_adv_types.h"
 #include "lll_adv.h"
+#include "lll/lll_adv_pdu.h"
 #include "lll_scan.h"
 #include "lll_conn.h"
 #include "lll_master.h"
 #include "lll_filter.h"
-#include "lll_tim_internal.h"
 
 #include "ull_adv_types.h"
 #include "ull_scan_types.h"
@@ -45,6 +43,10 @@
 #include "ull_scan_internal.h"
 #include "ull_conn_internal.h"
 #include "ull_master_internal.h"
+
+#include "ll.h"
+#include "ll_feat.h"
+#include "ll_settings.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_ull_master
