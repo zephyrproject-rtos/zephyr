@@ -85,7 +85,6 @@ extern FUNC_NORETURN void z_cstart(void);
 
 void _PrepC(void)
 {
-	z_icache_setup();
 	z_bss_zero();
 	z_data_copy();
 	z_cstart();
