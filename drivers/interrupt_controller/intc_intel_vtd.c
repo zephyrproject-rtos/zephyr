@@ -117,6 +117,7 @@ static int vtd_qi_send(const struct device *dev,
 	union qi_wait_descriptor wait_desc = { 0 };
 	struct qi_descriptor *desc;
 	uint32_t wait_status;
+	uint32_t wait_count;
 
 	desc = (struct qi_descriptor *)((uintptr_t)data->qi + data->qi_tail);
 
@@ -141,12 +142,25 @@ static int vtd_qi_send(const struct device *dev,
 
 	vtd_write_reg64(dev, VTD_IQT_REG, data->qi_tail);
 
+	wait_count = 0;
+
 	while (wait_status != QI_WAIT_STATUS_COMPLETE) {
+		/* We cannot use timeout here, this function being called
+		 * at init time, it might result that the system clock
+		 * is not initialized yet since VT-D init comes first.
+		 */
+		if (wait_count > QI_WAIT_COUNT_LIMIT) {
+			printk("QI timeout\n");
+			return -ETIME;
+		}
+
 		if (vtd_read_reg32(dev, VTD_FSTS_REG) & VTD_FSTS_IQE) {
+			printk("QI error\n");
 			return -EIO;
 		}
 
 		vtd_pause_cpu();
+		wait_count++;
 	}
 
 	return 0;
