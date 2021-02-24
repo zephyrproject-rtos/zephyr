@@ -251,6 +251,12 @@ __csSet:
 #endif /* Z_VM_KERNEL */
 
 	/* Clear BSS */
+#ifdef CONFIG_LINKER_USE_BOOT_SECTION
+	call	z_bss_zero_boot
+#endif
+#ifdef CONFIG_LINKER_USE_PINNED_SECTION
+	call	z_bss_zero_pinned
+#endif
 	call	z_bss_zero
 
 	/* load 32-bit operand size IDT */
