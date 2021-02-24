@@ -280,6 +280,11 @@ static int fake_write(const struct device *dev, off_t off, const void *data, siz
 	return 0;
 }
 
+static int bad_write(const struct device *dev, off_t off, const void *data, size_t len)
+{
+	return -EINVAL;
+}
+
 static void test_stream_flash_buffered_write_callback(void)
 {
 	int rc;
@@ -338,6 +343,25 @@ static void test_stream_flash_buffered_write_callback(void)
 	zassert_equal(rc, -EINVAL, "expected failure from flash_sync", rc);
 	zassert_equal(ctx.buf_bytes, BUF_LEN, "Expected bytes to be left in buffer");
 
+	/* Pretend flashed context and attempt write write block - 1 bytes to trigger unaligned
+	 * write; the write needs to fail so that we could check that context does not get modified.
+	 */
+	fake_api.write = bad_write;
+	bad_ctx.callback = NULL;
+	bad_ctx.buf_bytes = 0;
+	cmp_ctx = bad_ctx;
+	size_t wblock = flash_get_write_block_size(ctx.fdev);
+	size_t tow = (wblock == 1) ? 1 : wblock - 1;
+
+	rc = stream_flash_buffered_write(&bad_ctx, write_buf, tow, true);
+	zassert_equal(rc, -EINVAL, "expected failure from flash_sync", rc);
+	zassert_equal(cmp_ctx.bytes_written, bad_ctx.bytes_written,
+		      "Expected bytes_written not modified");
+	/* The write failed but bytes have already been added to buffer and buffer offset
+	 * increased.
+	 */
+	zassert_equal(bad_ctx.buf_bytes, cmp_ctx.buf_bytes + tow,
+		      "Expected %d bytes added to buffer", tow);
 }
 
 static void test_stream_flash_flush(void)
