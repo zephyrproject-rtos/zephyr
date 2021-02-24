@@ -6,6 +6,8 @@ common:
   tags: crypto
   min_ram: 20
   arch_exclude: xtensa
+  integration_platforms:
+    - native_posix
 tests:
   sample.drivers.crypto.mbedtls:
     min_flash: 34
