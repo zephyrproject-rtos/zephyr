@@ -18,18 +18,6 @@ extern uint32_t z_timestamp_idle;
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
-#ifdef CONFIG_PM
-
-/* LCOV_EXCL_START
- * These are almost certainly overidden and in any event do nothing
- */
-void __attribute__((weak)) pm_system_resume(void)
-{
-}
-/* LCOV_EXCL_STOP */
-
-#endif /* CONFIG_PM */
-
 /**
  * @brief Indicate that kernel is idling in tickless mode
  *
