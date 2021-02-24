@@ -103,7 +103,7 @@
  *       requiring increased ticker thread context operation queue count.
  */
 #define TICKER_USER_THREAD_OPS   (BT_CTLR_ADV_SET + BT_CTLR_SCAN_SET + \
-				  BT_CTLR_CONN_MAX + \
+				  BT_CTLR_MAX_CONN + \
 				  TICKER_USER_THREAD_VENDOR_OPS + 1)
 #else /* !CONFIG_BT_CTLR_LOW_LAT */
 #define TICKER_USER_LLL_OPS      (2 + TICKER_USER_LLL_VENDOR_OPS + 1)
