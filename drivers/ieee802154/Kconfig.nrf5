@@ -33,7 +33,7 @@ config IEEE802154_NRF5_INIT_PRIO
 	  you know what you are doing.
 
 config IEEE802154_NRF5_EXT_IRQ_MGMT
-	bool "Radio IRQ is managed by an external module"
+	bool
 	help
 	  The driver may manage radio IRQs by itself, or use an external
 	  radio IRQ provider. When radio IRQs are managed by an external

@@ -542,7 +542,7 @@ static int nrf5_stop(const struct device *dev)
 	return 0;
 }
 
-#ifndef CONFIG_IEEE802154_NRF5_EXT_IRQ_MGMT
+#if !IS_ENABLED(CONFIG_IEEE802154_NRF5_EXT_IRQ_MGMT)
 static void nrf5_radio_irq(void *arg)
 {
 	ARG_UNUSED(arg);
@@ -555,7 +555,7 @@ static void nrf5_irq_config(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-#ifndef CONFIG_IEEE802154_NRF5_EXT_IRQ_MGMT
+#if !IS_ENABLED(CONFIG_IEEE802154_NRF5_EXT_IRQ_MGMT)
 	IRQ_CONNECT(RADIO_IRQn, NRF_802154_IRQ_PRIORITY,
 		    nrf5_radio_irq, NULL, 0);
 	irq_enable(RADIO_IRQn);
