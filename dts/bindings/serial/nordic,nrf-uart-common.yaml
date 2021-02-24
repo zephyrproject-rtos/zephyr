@@ -46,8 +46,10 @@ properties:
 
     tx-pin:
       type: int
-      required: false
+      deprecated: true
       description: |
+        Deprecated; use tx-gpios instead.
+
         The TX pin to use.
 
         For pins P0.0 through P0.31, use the pin number. For example,
@@ -62,21 +64,27 @@ properties:
 
     rx-pin:
       type: int
-      required: false
+      deprecated: true
       description: |
+        Deprecated; use rx-gpios instead.
+
         The RX pin to use. The pin numbering scheme is the same as the
         tx-pin property's.
 
     rts-pin:
       type: int
-      required: false
+      deprecated: true
       description: |
+        Deprecated; use rts-gpios instead.
+
         The RTS pin to use. The pin numbering scheme is the same as the
         tx-pin property's.
 
     cts-pin:
       type: int
-      required: false
+      deprecated: true
       description: |
+        Deprecated; use cts-gpios instead.
+
         The CTS pin to use. The pin numbering scheme is the same as the
         tx-pin property's.
