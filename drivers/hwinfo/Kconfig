@@ -108,4 +108,12 @@ config HWINFO_GECKO
 	help
 	  Enable Silabs GECKO hwinfo driver.
 
+config HWINFO_NPCX
+	bool "Nuvoton NPCX embedded controller (EC) hwinfo driver"
+	default y
+	depends on SOC_FAMILY_NPCX
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable hwinfo driver for NPCX family of processors.
+
 endif
