@@ -41,17 +41,11 @@ union axis1bit16_t {
 #define SENSOR_DEG2RAD_DOUBLE			(SENSOR_PI_DOUBLE / 180)
 #define SENSOR_G_DOUBLE				(SENSOR_G / 1000000.0)
 
-#if (CONFIG_ISM330DHCX_ACCEL_ODR == 0)
-#define ISM330DHCX_ACCEL_ODR_RUNTIME 1
-#endif
-
-#if (CONFIG_ISM330DHCX_GYRO_ODR == 0)
-#define ISM330DHCX_GYRO_ODR_RUNTIME 1
-#endif
-
 struct ism330dhcx_config {
 	char *bus_name;
 	int (*bus_init)(const struct device *dev);
+	uint8_t accel_odr;
+	uint16_t gyro_odr;
 	uint8_t accel_range;
 	uint16_t gyro_range;
 #ifdef CONFIG_ISM330DHCX_TRIGGER

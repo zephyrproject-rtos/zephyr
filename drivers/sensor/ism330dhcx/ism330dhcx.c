@@ -26,7 +26,6 @@ LOG_MODULE_REGISTER(ISM330DHCX, CONFIG_SENSOR_LOG_LEVEL);
 static const uint16_t ism330dhcx_odr_map[] = {0, 12, 26, 52, 104, 208, 416, 833,
 					1660, 3330, 6660};
 
-#if defined(ISM330DHCX_ACCEL_ODR_RUNTIME) || defined(ISM330DHCX_GYRO_ODR_RUNTIME)
 static int ism330dhcx_freq_to_odr_val(uint16_t freq)
 {
 	size_t i;
@@ -39,7 +38,6 @@ static int ism330dhcx_freq_to_odr_val(uint16_t freq)
 
 	return -EINVAL;
 }
-#endif
 
 static int ism330dhcx_odr_to_freq_val(uint16_t odr)
 {
@@ -146,7 +144,6 @@ static int ism330dhcx_gyro_set_odr_raw(const struct device *dev, uint8_t odr)
 	return 0;
 }
 
-#ifdef ISM330DHCX_ACCEL_ODR_RUNTIME
 static int ism330dhcx_accel_odr_set(const struct device *dev, uint16_t freq)
 {
 	int odr;
@@ -163,7 +160,6 @@ static int ism330dhcx_accel_odr_set(const struct device *dev, uint16_t freq)
 
 	return 0;
 }
-#endif
 
 static int ism330dhcx_accel_range_set(const struct device *dev, int32_t range)
 {
@@ -192,10 +188,8 @@ static int ism330dhcx_accel_config(const struct device *dev,
 	switch (attr) {
 	case SENSOR_ATTR_FULL_SCALE:
 		return ism330dhcx_accel_range_set(dev, sensor_ms2_to_g(val));
-#ifdef ISM330DHCX_ACCEL_ODR_RUNTIME
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
 		return ism330dhcx_accel_odr_set(dev, val->val1);
-#endif
 	default:
 		LOG_DBG("Accel attribute not supported.");
 		return -ENOTSUP;
@@ -204,7 +198,6 @@ static int ism330dhcx_accel_config(const struct device *dev,
 	return 0;
 }
 
-#ifdef ISM330DHCX_GYRO_ODR_RUNTIME
 static int ism330dhcx_gyro_odr_set(const struct device *dev, uint16_t freq)
 {
 	int odr;
@@ -221,7 +214,6 @@ static int ism330dhcx_gyro_odr_set(const struct device *dev, uint16_t freq)
 
 	return 0;
 }
-#endif
 
 static int ism330dhcx_gyro_range_set(const struct device *dev, int32_t range)
 {
@@ -250,10 +242,8 @@ static int ism330dhcx_gyro_config(const struct device *dev,
 	switch (attr) {
 	case SENSOR_ATTR_FULL_SCALE:
 		return ism330dhcx_gyro_range_set(dev, sensor_rad_to_degrees(val));
-#ifdef ISM330DHCX_GYRO_ODR_RUNTIME
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
 		return ism330dhcx_gyro_odr_set(dev, val->val1);
-#endif
 	default:
 		LOG_DBG("Gyro attribute not supported.");
 		return -ENOTSUP;
@@ -709,8 +699,8 @@ static int ism330dhcx_init_chip(const struct device *dev)
 		return -EIO;
 	}
 
-	ism330dhcx->accel_freq = ism330dhcx_odr_to_freq_val(CONFIG_ISM330DHCX_ACCEL_ODR);
-	if (ism330dhcx_accel_set_odr_raw(dev, CONFIG_ISM330DHCX_ACCEL_ODR) < 0) {
+	LOG_DBG("accel odr is %d", cfg->accel_odr);
+	if (ism330dhcx_accel_set_odr_raw(dev, cfg->accel_odr) < 0) {
 		LOG_DBG("failed to set accelerometer sampling rate");
 		return -EIO;
 	}
@@ -721,8 +711,9 @@ static int ism330dhcx_init_chip(const struct device *dev)
 		return -EIO;
 	}
 
-	ism330dhcx->gyro_freq = ism330dhcx_odr_to_freq_val(CONFIG_ISM330DHCX_GYRO_ODR);
-	if (ism330dhcx_gyro_set_odr_raw(dev, CONFIG_ISM330DHCX_GYRO_ODR) < 0) {
+	LOG_DBG("gyro odr is %d", cfg->gyro_odr);
+	ism330dhcx->gyro_freq = ism330dhcx_odr_to_freq_val(cfg->gyro_odr);
+	if (ism330dhcx_gyro_set_odr_raw(dev, cfg->gyro_odr) < 0) {
 		LOG_DBG("failed to set gyroscope sampling rate");
 		return -EIO;
 	}
@@ -745,7 +736,9 @@ static struct ism330dhcx_data ism330dhcx_data;
 
 static const struct ism330dhcx_config ism330dhcx_config = {
 	.bus_name = DT_INST_BUS_LABEL(0),
+	.accel_odr = DT_INST_PROP(0, accel_odr),
 	.accel_range = DT_INST_PROP(0, accel_range),
+	.gyro_odr = DT_INST_PROP(0, gyro_odr),
 	.gyro_range = DT_INST_PROP(0, gyro_range),
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 	.bus_init = ism330dhcx_spi_init,
