@@ -55,7 +55,9 @@
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
 #define BT_CTLR_SCAN_SET 1
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
-#endif /* CONFIG_BT_OBSERVER */
+#else /* !CONFIG_BT_OBSERVER */
+#define BT_CTLR_SCAN_SET 0
+#endif /* !CONFIG_BT_OBSERVER */
 
 enum {
 	TICKER_ID_LLL_PREEMPT = 0,
