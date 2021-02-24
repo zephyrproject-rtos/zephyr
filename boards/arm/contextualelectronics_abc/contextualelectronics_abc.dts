@@ -37,8 +37,8 @@
 	status = "okay";
 	current-speed = <115200>;
 
-	tx-pin = <7>;
-	rx-pin = <6>;
+	tx-gpios = <&gpio0 7 0>;
+	rx-gpios = <&gpio0 6 0>;
 };
 
 arduino_serial: &uart1 {
@@ -46,10 +46,10 @@ arduino_serial: &uart1 {
 	current-speed = <115200>;
 
 	/* UART Pin info. */
-	rx-pin  = <20>;
-	tx-pin  = <24>;
-	rts-pin = <17>;
-	cts-pin = <16>;
+	rx-gpios = <&gpio0 20 0>;
+	tx-gpios = <&gpio0 24 0>;
+	rts-gpios = <&gpio0 17 0>;
+	cts-gpios = <&gpio0 16 0>;
 
 	/* Use hardware flow control. */
 	hw-flow-control;

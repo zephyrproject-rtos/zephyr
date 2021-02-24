@@ -48,5 +48,5 @@
 	 * Only TX is used in this sample, so delete the RX pin assignment
 	 * to prevent UART receiver from being enabled and consuming power.
 	 */
-	/delete-property/ rx-pin;
+	/delete-property/ rx-gpios;
 };

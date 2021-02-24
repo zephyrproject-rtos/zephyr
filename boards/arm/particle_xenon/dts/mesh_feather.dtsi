@@ -220,8 +220,8 @@ feather_serial: &uart0 { /* feather UART1 */
 	compatible = "nordic,nrf-uarte";
 	current-speed = <115200>;
 	status = "okay";
-	tx-pin = <6>;
-	rx-pin = <8>;
+	tx-gpios = <&gpio0 6 0>;
+	rx-gpios = <&gpio0 8 0>;
 	/* optional mesh_feather_uart1_rtscts.dtsi */
 };
 

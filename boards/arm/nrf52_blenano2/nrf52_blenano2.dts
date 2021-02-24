@@ -47,10 +47,10 @@
 	compatible = "nordic,nrf-uart";
 	current-speed = <115200>;
 	status = "okay";
-	tx-pin = <29>;
-	rx-pin = <30>;
-	rts-pin = <2>;
-	cts-pin = <28>;
+	tx-gpios = <&gpio0 29 0>;
+	rx-gpios = <&gpio0 30 0>;
+	rts-gpios = <&gpio0 2 0>;
+	cts-gpios = <&gpio0 28 0>;
 };
 
 &i2c0 {

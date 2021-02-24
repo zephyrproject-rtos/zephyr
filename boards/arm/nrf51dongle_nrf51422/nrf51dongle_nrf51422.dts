@@ -69,10 +69,10 @@
 &uart0 {
 	current-speed = <115200>;
 	status = "okay";
-	tx-pin = <9>;
-	rx-pin = <11>;
-	rts-pin = <8>;
-	cts-pin = <10>;
+	tx-gpios = <&gpio0 9 0>;
+	rx-gpios = <&gpio0 11 0>;
+	rts-gpios = <&gpio0 8 0>;
+	cts-gpios = <&gpio0 10 0>;
 };
 
 &flash0 {

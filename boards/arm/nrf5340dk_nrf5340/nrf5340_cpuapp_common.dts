@@ -133,10 +133,10 @@
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
-	tx-pin = <20>;
-	rx-pin = <22>;
-	rts-pin = <19>;
-	cts-pin = <21>;
+	tx-gpios = <&gpio0 20 0>;
+	rx-gpios = <&gpio0 22 0>;
+	rts-gpios = <&gpio0 19 0>;
+	cts-gpios = <&gpio0 21 0>;
 };
 
 &pwm0 {
@@ -187,8 +187,8 @@
 arduino_serial: &uart1 {
 	compatible = "nordic,nrf-uarte";
 	current-speed = <115200>;
-	tx-pin = <33>;
-	rx-pin = <32>;
+	tx-gpios = <&gpio1 1 0>;
+	rx-gpios = <&gpio1 0 0>;
 };
 
 arduino_i2c: &i2c1 {};

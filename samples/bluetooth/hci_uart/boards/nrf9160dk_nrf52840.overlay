@@ -11,8 +11,8 @@
 	current-speed = <1000000>;
 	status = "okay";
 	hw-flow-control;
-	tx-pin = <17>;
-	rx-pin = <20>;
-	rts-pin = <15>;
-	cts-pin = <22>;
+	tx-gpios = <&gpio0 17 0>;
+	rx-gpios = <&gpio0 20 0>;
+	rts-gpios = <&gpio0 15 0>;
+	cts-gpios = <&gpio0 22 0>;
 };

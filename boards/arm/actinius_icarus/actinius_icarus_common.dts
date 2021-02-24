@@ -98,24 +98,24 @@
 	status = "okay";
 
 	current-speed = <115200>;
-	tx-pin = <9>;
-	rx-pin = <6>;
-	rts-pin = <7>;
-	cts-pin = <25>;
+	tx-gpios = <&gpio0 9 0>;
+	rx-gpios = <&gpio0 6 0>;
+	rts-gpios = <&gpio0 7 0>;
+	cts-gpios = <&gpio0 25 0>;
 };
 
 &uart1 {
 	status = "okay";
 
 	current-speed = <115200>;
-	tx-pin = <24>;
-	rx-pin = <23>;
+	tx-gpios = <&gpio0 24 0>;
+	rx-gpios = <&gpio0 23 0>;
 };
 
 &uart2 {
 	current-speed = <115200>;
-	tx-pin = <4>;
-	rx-pin = <5>;
+	tx-gpios = <&gpio0 4 0>;
+	rx-gpios = <&gpio0 5 0>;
 };
 
 &i2c2 {

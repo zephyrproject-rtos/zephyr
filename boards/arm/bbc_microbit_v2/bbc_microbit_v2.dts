@@ -83,8 +83,8 @@
 	compatible = "nordic,nrf-uart";
 	status = "okay";
 	current-speed = <115200>;
-	tx-pin = <6>;
-	rx-pin = <40>;
+	tx-gpios = <&gpio0 6 0>;
+	rx-gpios = <&gpio1 8 0>;
 };
 
 &i2c0 {

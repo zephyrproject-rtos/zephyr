@@ -104,10 +104,10 @@
 	compatible = "nordic,nrf-uarte";
 	status = "okay";
 	current-speed = <115200>;
-	tx-pin = <20>;
-	rx-pin = <24>;
-	rts-pin = <17>;
-	cts-pin = <22>;
+	tx-gpios = <&gpio0 20 0>;
+	rx-gpios = <&gpio0 24 0>;
+	rts-gpios = <&gpio0 17 0>;
+	cts-gpios = <&gpio0 22 0>;
 };
 
 &i2c0 {

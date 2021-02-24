@@ -9,6 +9,6 @@
  * NOTE: This file is replicated in particle_{argon,boron,xenon}.
  * Changes should be made in all instances. */
 &uart0 {
-	rts-pin = <33>;
-	cts-pin = <34>;
+	rts-gpios = <&gpio1 1 0>;
+	cts-gpios = <&gpio1 2 0>;
 };

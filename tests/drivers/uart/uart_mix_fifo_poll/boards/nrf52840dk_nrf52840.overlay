@@ -9,18 +9,18 @@
 &uart1 {
 	current-speed = <115200>;
 	status = "okay";
-	tx-pin = <6>;
-	rx-pin = <8>;
+	tx-gpios = <&gpio0 6 0>;
+	rx-gpios = <&gpio0 8 0>;
 };
 
 &uart0 {
 	compatible = "nordic,nrf-uarte";
 	current-speed = <115200>;
 	status = "okay";
-	tx-pin = <44>;
-	rx-pin = <45>;
-	rts-pin = <46>;
-	cts-pin = <47>;
+	tx-gpios = <&gpio1 12 0>;
+	rx-gpios = <&gpio1 13 0>;
+	rts-gpios = <&gpio1 14 0>;
+	cts-gpios = <&gpio1 15 0>;
 	hw-flow-control;
 };
 

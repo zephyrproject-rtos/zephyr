@@ -9,8 +9,8 @@
 	compatible = "nordic,nrf-uarte";
 	current-speed = <115200>;
 	status = "okay";
-	tx-pin = <40>;
-	rx-pin = <42>;
+	tx-gpios = <&gpio1 8 0>;
+	rx-gpios = <&gpio1 10 0>;
 	rts-pin = <35>;
 	cts-pin = <43>;
 };

@@ -119,10 +119,10 @@
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
-	tx-pin = <33>;
-	rx-pin = <32>;
-	rts-pin = <11>;
-	cts-pin = <10>;
+	tx-gpios = <&gpio1 1 0>;
+	rx-gpios = <&gpio1 0 0>;
+	rts-gpios = <&gpio0 11 0>;
+	cts-gpios = <&gpio0 10 0>;
 };
 
 arduino_serial: &uart0{};

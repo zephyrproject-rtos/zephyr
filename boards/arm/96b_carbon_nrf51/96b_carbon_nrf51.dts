@@ -37,8 +37,8 @@
 &uart0 {
 	current-speed = <115200>;
 	status = "okay";
-	tx-pin = <29>;
-	rx-pin = <11>;
+	tx-gpios = <&gpio0 29 0>;
+	rx-gpios = <&gpio0 11 0>;
 };
 
 &spi1 {

@@ -42,10 +42,10 @@
 	compatible = "nordic,nrf-uarte";
 	current-speed = <115200>;
 	status = "okay";
-	tx-pin = <5>;
-	rx-pin = <3>;
-	rts-pin = <40>;
-	cts-pin = <7>;
+	tx-gpios = <&gpio0 5 0>;
+	rx-gpios = <&gpio0 3 0>;
+	rts-gpios = <&gpio1 8 0>;
+	cts-gpios = <&gpio0 7 0>;
 };
 
 &flash0 {
