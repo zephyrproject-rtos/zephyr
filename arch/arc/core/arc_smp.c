@@ -72,7 +72,6 @@ void z_arc_slave_start(int cpu_num)
 	arch_cpustart_t fn;
 
 #ifdef CONFIG_SMP
-	z_icache_setup();
 	z_irq_setup();
 
 	z_arc_connect_ici_clear();
