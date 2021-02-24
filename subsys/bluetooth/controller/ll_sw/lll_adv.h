@@ -34,7 +34,7 @@ struct lll_adv_sync {
 	struct lll_adv_iso *iso;
 #endif /* CONFIG_BT_CTLR_ADV_ISO */
 
-#if IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 	/* This flag is used only by LLL. It holds information if CTE
 	 * transmission was started by LLL.
 	 */

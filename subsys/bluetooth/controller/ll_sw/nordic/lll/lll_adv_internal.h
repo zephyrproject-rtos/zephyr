@@ -69,7 +69,7 @@ static inline struct pdu_adv *lll_adv_sync_data_alloc(struct lll_adv_sync *lll,
 						      void **extra_data,
 						      uint8_t *idx)
 {
-#if IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
+#if defined(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
 	return lll_adv_pdu_and_extra_data_alloc(&lll->data, extra_data, idx);
 #else
 	return lll_adv_pdu_alloc(&lll->data, idx);
@@ -78,7 +78,7 @@ static inline struct pdu_adv *lll_adv_sync_data_alloc(struct lll_adv_sync *lll,
 
 static inline void lll_adv_sync_data_release(struct lll_adv_sync *lll)
 {
-#if IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
+#if defined(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
 	lll_adv_and_extra_data_release(&lll->data);
 #else
 	lll_adv_data_release(&lll->data);
@@ -96,7 +96,7 @@ static inline struct pdu_adv *lll_adv_sync_data_peek(struct lll_adv_sync *lll,
 {
 	uint8_t last = lll->data.last;
 
-#if IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
+#if defined(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
 	if (extra_data) {
 		*extra_data = lll->data.extra_data[last];
 	}
@@ -110,7 +110,7 @@ static inline struct pdu_adv *lll_adv_sync_data_peek(struct lll_adv_sync *lll,
 struct pdu_adv *lll_adv_pdu_latest_get(struct lll_adv_pdu *pdu,
 				       uint8_t *is_modified);
 
-#if IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
+#if defined(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
 struct pdu_adv *lll_adv_pdu_and_extra_data_latest_get(struct lll_adv_pdu *pdu,
 						      void **extra_data,
 						      uint8_t *is_modified);
@@ -155,7 +155,7 @@ static inline struct pdu_adv *
 lll_adv_sync_data_latest_get(struct lll_adv_sync *lll, void **extra_data,
 			     uint8_t *is_modified)
 {
-#if IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
+#if defined(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
 	return lll_adv_pdu_and_extra_data_latest_get(&lll->data, extra_data,
 						     is_modified);
 #else
@@ -167,7 +167,7 @@ static inline struct pdu_adv *
 lll_adv_sync_data_curr_get(struct lll_adv_sync *lll, void **extra_data)
 {
 	uint8_t first = lll->data.first;
-#if IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
+#if defined(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
 	if (extra_data) {
 		*extra_data = lll->data.extra_data[first];
 	}

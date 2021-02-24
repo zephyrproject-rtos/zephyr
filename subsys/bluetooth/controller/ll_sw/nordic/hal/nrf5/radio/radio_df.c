@@ -52,8 +52,8 @@ struct df_ant_cfg {
 #define DFE_GPIO_ALLOWED_ANT_NUM COND_CODE_1(DFE_GPIO_NUM_IS_ZERO,       \
 					     (BIT(DFE_GPIO_NUM)), (0))
 
-#if IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_TX) || \
-	IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_RX)
+#if defined(CONFIG_BT_CTLR_DF_ANT_SWITCH_TX) || \
+	defined(CONFIG_BT_CTLR_DF_ANT_SWITCH_RX)
 
 /* Check if there is enough pins configured to represent each pattern
  * for given antennas number.
@@ -103,8 +103,8 @@ const static struct df_ant_cfg ant_cfg = {
  */
 void radio_df_ant_configure(void)
 {
-#if IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_TX) || \
-	IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_RX)
+#if defined(CONFIG_BT_CTLR_DF_ANT_SWITCH_TX) || \
+	defined(CONFIG_BT_CTLR_DF_ANT_SWITCH_RX)
 
 	for (uint8_t idx = 0; idx < DF_PSEL_GPIO_NUM; ++idx) {
 		if (ant_cfg.dfe_gpio[idx] != DF_GPIO_PIN_NOT_SET) {
@@ -128,8 +128,8 @@ void radio_df_ant_configure(void)
  */
 uint8_t radio_df_ant_num_get(void)
 {
-#if IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_TX) || \
-	IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_RX)
+#if defined(CONFIG_BT_CTLR_DF_ANT_SWITCH_TX) || \
+	defined(CONFIG_BT_CTLR_DF_ANT_SWITCH_RX)
 	return ant_cfg.ant_num;
 #else
 	return 0;

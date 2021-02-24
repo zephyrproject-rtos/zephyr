@@ -98,7 +98,7 @@ static int init_reset(void)
 	return 0;
 }
 
-#if IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 /* @brief Function sets CTE transmission parameters for periodic advertising.
  *
  * @param[in]adv_handle                 Handle of advertising set.
@@ -363,7 +363,7 @@ void ll_df_read_ant_inf(uint8_t *switch_sample_rates,
 	*max_cte_len = LLL_DF_MAX_CTE_LEN;
 }
 
-#if IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 /* @brief Function releases unused memory for DF advertising configuration.
  *
  * The memory is released to private @ref lll_df_adv_cfg_pool memory store.
