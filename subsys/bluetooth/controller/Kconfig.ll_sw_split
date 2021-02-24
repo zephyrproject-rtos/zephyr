@@ -165,6 +165,13 @@ config BT_CTLR_ADV_SYNC_SET
 	help
 	  Maximum supported periodic advertising sets.
 
+config BT_CTLR_ADV_PDU_LINK
+	bool "Enable linking of advertising PDU trains"
+	help
+	  Enables extra space in each advertising PDU to allow linking PDUs. This
+	  is required to enable advertising data trains (i.e. transmission of
+	  AUX_CHAIN_IND).
+
 config BT_CTLR_ADV_DATA_BUF_MAX
 	int "Advertising Data Maximum Buffers"
 	depends on BT_BROADCASTER

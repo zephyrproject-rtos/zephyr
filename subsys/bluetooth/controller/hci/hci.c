@@ -26,6 +26,7 @@
 
 #include "util/util.h"
 #include "util/memq.h"
+#include "util/mem.h"
 
 #include "hal/ecb.h"
 #include "hal/ccm.h"

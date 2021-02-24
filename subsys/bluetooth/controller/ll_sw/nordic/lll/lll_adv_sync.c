@@ -15,6 +15,7 @@
 #include "hal/radio_df.h"
 
 #include "util/util.h"
+#include "util/mem.h"
 #include "util/memq.h"
 
 #include "pdu.h"
