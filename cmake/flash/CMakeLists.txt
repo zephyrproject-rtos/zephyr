@@ -141,7 +141,7 @@ foreach(target flash debug debugserver attach)
   elseif(target STREQUAL debugserver)
     set(comment "Debugging ${BOARD}")
     if(EMU_PLATFORM)
-      # cmake/qemu/CMakeLists.txt will add a debugserver target for
+      # cmake/emu/*.cmake will add a debugserver target for
       # emulation platforms, so we don't add one here
       continue()
     endif()
