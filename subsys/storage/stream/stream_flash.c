@@ -161,7 +161,11 @@ int stream_flash_buffered_write(struct stream_flash_ctx *ctx, const uint8_t *dat
 		}
 
 		rc = flash_sync(ctx);
-		ctx->bytes_written -= fill_length;
+		if (rc == 0) {
+			ctx->bytes_written -= fill_length;
+		} else {
+			ctx->buf_bytes -= fill_length;
+		}
 	}
 
 	return rc;
