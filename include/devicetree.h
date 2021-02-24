@@ -400,6 +400,28 @@
 #define DT_NODE_PATH(node_id) DT_CAT(node_id, _PATH)
 
 /**
+ * @brief Get a devicetree node's name with unit-address as a string literal
+ *
+ * This returns the node name and unit-address from a node identifier.
+ *
+ * Example devicetree fragment:
+ *
+ *     / {
+ *             soc {
+ *                     node: my-node@12345678 { ... };
+ *             };
+ *     };
+ *
+ * Example usage:
+ *
+ *    DT_NODE_FULL_NAME(DT_NODELABEL(node)) // "my-node@12345678"
+ *
+ * @param node_id node identifier
+ * @return the node's name with unit-address as a string in the devicetree
+ */
+#define DT_NODE_FULL_NAME(node_id) DT_CAT(node_id, _FULL_NAME)
+
+/**
  * @brief Do node_id1 and node_id2 refer to the same node?
  *
  * Both "node_id1" and "node_id2" must be node identifiers for nodes

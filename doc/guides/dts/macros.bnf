@@ -59,6 +59,8 @@ node-macro =/ %s"DT_N" path-id %s"_STATUS_" dt-name
 node-macro =/ %s"DT_N" path-id %s"_ORD"
 ; The node's path, as a string literal
 node-macro =/ %s"DT_N" path-id %s"_PATH"
+; The node's name@unit-addr, as a string literal
+node-macro =/ %s"DT_N" path-id %s"_FULL_NAME"
 ; The dependency ordinals of a node's requirements (direct dependencies).
 node-macro =/ %s"DT_N" path-id %s"_REQUIRES_ORDS"
 ; The dependency ordinals of a node supports (reverse direct dependencies).
