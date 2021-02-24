@@ -26,10 +26,6 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 void __attribute__((weak)) pm_system_resume(void)
 {
 }
-
-void __attribute__((weak)) pm_system_resume_from_deep_sleep(void)
-{
-}
 /* LCOV_EXCL_STOP */
 
 #endif /* CONFIG_PM */

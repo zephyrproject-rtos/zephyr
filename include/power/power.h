@@ -195,21 +195,6 @@ bool pm_constraint_get(enum pm_state state);
  */
 
 /**
- * @brief Restore context to the point where system entered the deep sleep
- * state.
- *
- * This function is optionally called when exiting from deep sleep if the SOC
- * interface does not have bootloader support to handle resume from deep sleep.
- * This function should restore context to the point where system entered
- * the deep sleep state.
- *
- * If the function is called at cold boot it should return immediately.
- *
- * @note This function is not supported on all architectures.
- */
-void pm_system_resume_from_deep_sleep(void);
-
-/**
  * @brief Notify exit from kernel idling after PM operations
  *
  * This function would notify exit from kernel idling if a corresponding
