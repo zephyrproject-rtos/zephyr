@@ -66,7 +66,7 @@ config SHELL_ARGC_MAX
 	  Maximum number of arguments that can build a command.
 
 config SHELL_TAB
-	bool "Enable the Tab button supporort in shell"
+	bool "Enable the Tab button support in shell"
 	default y
 	help
 	  Enable using the Tab button in the shell. The button
