@@ -336,7 +336,7 @@ void test_timer_add_timeout(void)
 }
 
 extern uint64_t z_timeout_end_calc(k_timeout_t timeout);
-extern void z_clock_announce(int32_t ticks);
+extern void sys_clock_announce(int32_t ticks);
 void test_timeout_end_calc(void)
 {
 	int ret;

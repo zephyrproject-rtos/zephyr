@@ -118,10 +118,10 @@ static void compare_isr(const void *arg)
 
 	k_spin_unlock(&lock, key);
 
-	z_clock_announce(dticks);
+	sys_clock_announce(dticks);
 }
 
-int z_clock_driver_init(const struct device *device)
+int sys_clock_driver_init(const struct device *device)
 {
 	uint64_t curr = count();
 
@@ -132,7 +132,7 @@ int z_clock_driver_init(const struct device *device)
 	return 0;
 }
 
-void z_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
@@ -164,7 +164,7 @@ void z_clock_set_timeout(int32_t ticks, bool idle)
 #endif
 }
 
-uint32_t z_clock_elapsed(void)
+uint32_t sys_clock_elapsed(void)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return 0;

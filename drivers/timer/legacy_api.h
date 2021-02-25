@@ -6,7 +6,7 @@
 #ifndef ZEPHYR_LEGACY_SET_TIME_H__
 #define ZEPHYR_LEGACY_SET_TIME_H__
 
-/* Stub implementation of z_clock_set_timeout() and z_clock_elapsed()
+/* Stub implementation of sys_clock_set_timeout() and sys_clock_elapsed()
  * in terms of the original APIs.  Used by older timer drivers.
  * Should be replaced.
  *
@@ -16,7 +16,7 @@
 
 #ifdef CONFIG_TICKLESS_IDLE
 void z_timer_idle_enter(int32_t ticks);
-void z_clock_idle_exit(void);
+void clock_idle_exit(void);
 #endif
 
 #ifdef CONFIG_TICKLESS_KERNEL
@@ -26,9 +26,9 @@ extern uint32_t z_get_remaining_program_time(void);
 extern uint32_t z_get_elapsed_program_time(void);
 #endif
 
-extern uint64_t z_clock_uptime(void);
+extern uint64_t clock_uptime(void);
 
-void z_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
 #if defined(CONFIG_TICKLESS_IDLE) && defined(CONFIG_TICKLESS_KERNEL)
 	if (idle) {
@@ -46,10 +46,10 @@ void z_clock_set_timeout(int32_t ticks, bool idle)
  */
 static uint32_t driver_uptime;
 
-uint32_t z_clock_elapsed(void)
+uint32_t sys_clock_elapsed(void)
 {
 #ifdef CONFIG_TICKLESS_KERNEL
-	return (uint32_t)(z_clock_uptime() - driver_uptime);
+	return (uint32_t)(clock_uptime() - driver_uptime);
 #else
 	return 0;
 #endif
@@ -58,16 +58,16 @@ uint32_t z_clock_elapsed(void)
 static void wrapped_announce(int32_t ticks)
 {
 	driver_uptime += ticks;
-	z_clock_announce(ticks);
+	sys_clock_announce(ticks);
 }
 
-#define z_clock_announce(t) wrapped_announce(t)
+#define sys_clock_announce(t) wrapped_announce(t)
 
 #define _sys_clock_always_on (0)
 
 static inline void z_tick_set(int64_t val)
 {
-	/* noop with current kernel code, use z_clock_announce() */
+	/* noop with current kernel code, use sys_clock_announce() */
 	ARG_UNUSED(val);
 }
 

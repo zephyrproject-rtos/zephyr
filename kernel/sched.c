@@ -351,7 +351,7 @@ void z_reset_time_slice(void)
 	 * FUTURE z_time_slice() call.
 	 */
 	if (slice_time != 0) {
-		_current_cpu->slice_ticks = slice_time + z_clock_elapsed();
+		_current_cpu->slice_ticks = slice_time + sys_clock_elapsed();
 		z_set_timeout_expiry(slice_time, false);
 	}
 }

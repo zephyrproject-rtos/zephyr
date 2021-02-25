@@ -112,7 +112,7 @@ static inline uint32_t timer_count(void)
 
 #ifdef CONFIG_TICKLESS_KERNEL
 
-static uint32_t last_announcement;	/* last time we called z_clock_announce() */
+static uint32_t last_announcement;	/* last time we called sys_clock_announce() */
 
 /*
  * Request a timeout n Zephyr ticks in the future from now.
@@ -126,7 +126,7 @@ static uint32_t last_announcement;	/* last time we called z_clock_announce() */
  * Writing a new value to preload only takes effect once the count
  * register reaches 0.
  */
-void z_clock_set_timeout(int32_t n, bool idle)
+void sys_clock_set_timeout(int32_t n, bool idle)
 {
 	ARG_UNUSED(idle);
 
@@ -185,10 +185,10 @@ void z_clock_set_timeout(int32_t n, bool idle)
 
 /*
  * Return the number of Zephyr ticks elapsed from last call to
- * z_clock_announce in the ISR. The caller casts uint32_t to int32_t.
+ * sys_clock_announce in the ISR. The caller casts uint32_t to int32_t.
  * We must make sure bit[31] is 0 in the return value.
  */
-uint32_t z_clock_elapsed(void)
+uint32_t sys_clock_elapsed(void)
 {
 	uint32_t ccr;
 	uint32_t ticks;
@@ -242,7 +242,7 @@ static void xec_rtos_timer_isr(const void *arg)
 	last_announcement = total_cycles;
 
 	k_spin_unlock(&lock, key);
-	z_clock_announce(ticks);
+	sys_clock_announce(ticks);
 }
 
 #else
@@ -266,10 +266,10 @@ static void xec_rtos_timer_isr(const void *arg)
 	total_cycles = temp & TIMER_COUNT_MASK;
 	k_spin_unlock(&lock, key);
 
-	z_clock_announce(1);
+	sys_clock_announce(1);
 }
 
-uint32_t z_clock_elapsed(void)
+uint32_t sys_clock_elapsed(void)
 {
 	return 0U;
 }
@@ -301,7 +301,7 @@ uint32_t z_timer_cycle_get_32(void)
 	return ret;
 }
 
-void z_clock_idle_exit(void)
+void sys_clock_idle_exit(void)
 {
 	if (cached_icr == TIMER_STOPPED) {
 		cached_icr = CYCLES_PER_TICK;
@@ -314,7 +314,7 @@ void sys_clock_disable(void)
 	TIMER_REGS->CTRL = 0U;
 }
 
-int z_clock_driver_init(const struct device *device)
+int sys_clock_driver_init(const struct device *device)
 {
 	ARG_UNUSED(device);
 

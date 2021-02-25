@@ -78,10 +78,10 @@ static void timer_isr(const void *unused)
 	tmr->ctrl = GPTIMER_CTRL_IE | GPTIMER_CTRL_RS |
 		    GPTIMER_CTRL_EN | gptimer_ctrl_clear_ip;
 
-	z_clock_announce(1);
+	sys_clock_announce(1);
 }
 
-uint32_t z_clock_elapsed(void)
+uint32_t sys_clock_elapsed(void)
 {
 	return 0;
 }
@@ -101,7 +101,7 @@ static void init_downcounter(volatile struct gptimer_timer_regs *tmr)
 	tmr->ctrl = GPTIMER_CTRL_LD | GPTIMER_CTRL_RS | GPTIMER_CTRL_EN;
 }
 
-int z_clock_driver_init(const struct device *device)
+int sys_clock_driver_init(const struct device *device)
 {
 	const int timer_interrupt = get_timer_irq();
 	volatile struct gptimer_regs *regs = get_regs();

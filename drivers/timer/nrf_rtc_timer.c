@@ -242,7 +242,7 @@ static void sys_clock_timeout_handler(uint32_t chan,
 					  sys_clock_timeout_handler, NULL);
 	}
 
-	z_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ?
+	sys_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ?
 						dticks : (dticks > 0));
 }
 
@@ -299,7 +299,7 @@ void z_nrf_rtc_timer_chan_free(uint32_t chan)
 	atomic_or(&alloc_mask, BIT(chan));
 }
 
-int z_clock_driver_init(const struct device *device)
+int sys_clock_driver_init(const struct device *device)
 {
 	ARG_UNUSED(device);
 	static const enum nrf_lfclk_start_mode mode =
@@ -339,7 +339,7 @@ int z_clock_driver_init(const struct device *device)
 	return 0;
 }
 
-void z_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 	uint32_t cyc;
@@ -380,7 +380,7 @@ void z_clock_set_timeout(int32_t ticks, bool idle)
 	compare_set(0, cyc, sys_clock_timeout_handler, NULL);
 }
 
-uint32_t z_clock_elapsed(void)
+uint32_t sys_clock_elapsed(void)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return 0;

@@ -67,7 +67,7 @@ static uint32_t last_load;
 
 /*
  * This local variable holds the amount of timer cycles elapsed
- * and it is updated in z_timer_int_handler and z_clock_set_timeout().
+ * and it is updated in z_timer_int_handler and sys_clock_set_timeout().
  *
  * Note:
  *  At an arbitrary point in time the "current" value of the
@@ -166,7 +166,7 @@ static ALWAYS_INLINE void timer0_limit_register_set(uint32_t count)
 /* This internal function calculates the amount of HW cycles that have
  * elapsed since the last time the absolute HW cycles counter has been
  * updated. 'cycle_count' may be updated either by the ISR, or
- * in z_clock_set_timeout().
+ * in sys_clock_set_timeout().
  *
  * Additionally, the function updates the 'overflow_cycles' counter, that
  * holds the amount of elapsed HW cycles due to (possibly) multiple
@@ -241,13 +241,13 @@ static void timer_int_handler(const void *unused)
 
 	k_spin_unlock(&lock, key);
 
-	z_clock_announce(dticks);
+	sys_clock_announce(dticks);
 #else
 	/* timer_int_handler may be triggered by timer irq or
 	 * software helper irq
 	 */
 
-	/* irq with higher priority may call z_clock_set_timeout
+	/* irq with higher priority may call sys_clock_set_timeout
 	 * so need a lock here
 	 */
 	uint32_t key;
@@ -262,7 +262,7 @@ static void timer_int_handler(const void *unused)
 
 	dticks = (cycle_count - announced_cycles) / CYC_PER_TICK;
 	announced_cycles += dticks * CYC_PER_TICK;
-	z_clock_announce(TICKLESS ? dticks : 1);
+	sys_clock_announce(TICKLESS ? dticks : 1);
 #endif
 
 }
@@ -277,7 +277,7 @@ static void timer_int_handler(const void *unused)
  *
  * @return 0
  */
-int z_clock_driver_init(const struct device *device)
+int sys_clock_driver_init(const struct device *device)
 {
 	ARG_UNUSED(device);
 
@@ -314,7 +314,7 @@ int z_clock_driver_init(const struct device *device)
 	return 0;
 }
 
-void z_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
 	/* If the kernel allows us to miss tick announcements in idle,
 	 * then shut off the counter. (Note: we can assume if idle==true
@@ -417,7 +417,7 @@ void z_clock_set_timeout(int32_t ticks, bool idle)
 #endif
 }
 
-uint32_t z_clock_elapsed(void)
+uint32_t sys_clock_elapsed(void)
 {
 	if (!TICKLESS) {
 		return 0;

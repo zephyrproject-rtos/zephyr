@@ -139,7 +139,7 @@ static int cmd_kernel_threads(const struct shell *shell,
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	shell_print(shell, "Scheduler: %u since last call", z_clock_elapsed());
+	shell_print(shell, "Scheduler: %u since last call", sys_clock_elapsed());
 	shell_print(shell, "Threads:");
 	k_thread_foreach(shell_tdata_dump, (void *)shell);
 	return 0;

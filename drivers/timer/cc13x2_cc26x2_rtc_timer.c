@@ -109,7 +109,7 @@ void rtc_isr(const void *arg)
 	rtc_last += ticks * RTC_COUNTS_PER_TICK;
 	k_spin_unlock(&lock, key);
 
-	z_clock_announce(ticks);
+	sys_clock_announce(ticks);
 
 #else /* !CONFIG_TICKLESS_KERNEL */
 
@@ -123,7 +123,7 @@ void rtc_isr(const void *arg)
 
 	rtc_last += RTC_COUNTS_PER_TICK;
 
-	z_clock_announce(1);
+	sys_clock_announce(1);
 
 #endif /* CONFIG_TICKLESS_KERNEL */
 }
@@ -183,7 +183,7 @@ static void startDevice(void)
 	irq_unlock(key);
 }
 
-int z_clock_driver_init(const struct device *device)
+int sys_clock_driver_init(const struct device *device)
 {
 	ARG_UNUSED(device);
 
@@ -201,7 +201,7 @@ int z_clock_driver_init(const struct device *device)
 	return 0;
 }
 
-void z_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
@@ -230,7 +230,7 @@ void z_clock_set_timeout(int32_t ticks, bool idle)
 #endif /* CONFIG_TICKLESS_KERNEL */
 }
 
-uint32_t z_clock_elapsed(void)
+uint32_t sys_clock_elapsed(void)
 {
 	uint32_t ret = (AONRTCCurrent64BitValueGet() - rtc_last) /
 		RTC_COUNTS_PER_TICK;

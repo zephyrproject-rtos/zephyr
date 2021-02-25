@@ -201,10 +201,10 @@ static void timer_isr(const void *unused)
 				- accumulated_cycle_count) / CYC_PER_TICK;
 	accumulated_cycle_count += dticks * CYC_PER_TICK;
 	k_spin_unlock(&lock, key);
-	z_clock_announce(dticks);
+	sys_clock_announce(dticks);
 }
 
-int z_clock_driver_init(const struct device *device)
+int sys_clock_driver_init(const struct device *device)
 {
 	timer_init_combine(CTIMER_HW_TIMER_INDEX, TRUE);
 	timer_init(CTIMER_HW_TIMER_INDEX, ET_PSR_32K, TRUE, FALSE, 0);
@@ -215,7 +215,7 @@ int z_clock_driver_init(const struct device *device)
 	return 0;
 }
 
-void z_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
@@ -227,7 +227,7 @@ void z_clock_set_timeout(int32_t ticks, bool idle)
 	k_spin_unlock(&lock, key);
 }
 
-uint32_t z_clock_elapsed(void)
+uint32_t sys_clock_elapsed(void)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return 0;
