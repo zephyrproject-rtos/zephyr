@@ -918,7 +918,6 @@ static ssize_t ascs_enable(struct bt_ascs *ascs, struct net_buf_simple *buf)
 
 	for (i = 0; i < req->num_ases; i++) {
 		struct bt_ascs_ase *ase;
-		struct bt_ascs_metadata *meta;
 
 		meta = net_buf_simple_pull_mem(buf, sizeof(*meta));
 
