@@ -542,7 +542,7 @@ static ssize_t ascs_ase_read(struct bt_conn *conn,
 	}
 
 	ase = ase_get(ascs, POINTER_TO_UINT(attr->user_data));
-	if (!ascs) {
+	if (!ase) {
 		BT_ERR("Unable to get ASE");
 		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 	}
