@@ -437,12 +437,12 @@ static bool broadcaster_found(struct bt_data *data, void *user_data)
 		}
 
 		for (int i = 0; i < data->data_len; i += sizeof(uint16_t)) {
-			struct bt_uuid *uuid;
+			struct bt_uuid *adv_uuid;
 			uint16_t u16;
 
 			memcpy(&u16, &data->data[i], sizeof(u16));
-			uuid = BT_UUID_DECLARE_16(sys_le16_to_cpu(u16));
-			if (bt_uuid_cmp(uuid, BT_UUID_BROADCAST_AUDIO)) {
+			adv_uuid = BT_UUID_DECLARE_16(sys_le16_to_cpu(u16));
+			if (bt_uuid_cmp(adv_uuid, BT_UUID_BROADCAST_AUDIO)) {
 				continue;
 			}
 
