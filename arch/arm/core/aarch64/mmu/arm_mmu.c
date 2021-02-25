@@ -16,6 +16,7 @@
 #include <arch/arm/aarch64/lib_helpers.h>
 #include <arch/arm/aarch64/arm_mmu.h>
 #include <linker/linker-defs.h>
+#include <spinlock.h>
 #include <sys/util.h>
 
 #include "arm_mmu.h"
@@ -25,6 +26,7 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 static uint64_t xlat_tables[CONFIG_MAX_XLAT_TABLES * Ln_XLAT_NUM_ENTRIES]
 		__aligned(Ln_XLAT_NUM_ENTRIES * sizeof(uint64_t));
 static uint16_t xlat_use_count[CONFIG_MAX_XLAT_TABLES];
+static struct k_spinlock xlat_lock;
 
 /* Returns a reference to a free table */
 static uint64_t *new_table(void)
@@ -217,6 +219,10 @@ static int set_mapping(struct arm_mmu_ptables *ptables,
 	uint64_t level_size;
 	uint64_t *table = ptables->base_xlat_table;
 	unsigned int level = BASE_XLAT_LEVEL;
+	k_spinlock_key_t key;
+	int ret = 0;
+
+	key = k_spin_lock(&xlat_lock);
 
 	while (size) {
 		__ASSERT(level <= XLAT_LAST_LEVEL,
@@ -238,7 +244,8 @@ static int set_mapping(struct arm_mmu_ptables *ptables,
 			LOG_ERR("entry already in use: "
 				"level %d pte %p *pte 0x%016llx",
 				level, pte, *pte);
-			return -EBUSY;
+			ret = -EBUSY;
+			break;
 		}
 
 		level_size = 1ULL << LEVEL_TO_VA_SIZE_SHIFT(level);
@@ -256,7 +263,8 @@ static int set_mapping(struct arm_mmu_ptables *ptables,
 			/* Range doesn't fit, create subtable */
 			table = expand_to_table(pte, level);
 			if (!table) {
-				return -ENOMEM;
+				ret = -ENOMEM;
+				break;
 			}
 			level++;
 			continue;
@@ -291,7 +299,9 @@ move_on:
 		level = BASE_XLAT_LEVEL;
 	}
 
-	return 0;
+	k_spin_unlock(&xlat_lock, key);
+
+	return ret;
 }
 
 #ifdef CONFIG_USERSPACE
@@ -379,10 +389,19 @@ static int privatize_page_range(struct arm_mmu_ptables *dst_pt,
 				uintptr_t virt_start, size_t size,
 				const char *name)
 {
+	k_spinlock_key_t key;
+	int ret;
+
 	MMU_DEBUG("privatize [%s]: virt %lx size %lx\n",
 		  name, virt_start, size);
-	return privatize_table(dst_pt->base_xlat_table, src_pt->base_xlat_table,
-			       virt_start, size, BASE_XLAT_LEVEL);
+
+	key = k_spin_lock(&xlat_lock);
+
+	ret = privatize_table(dst_pt->base_xlat_table, src_pt->base_xlat_table,
+			      virt_start, size, BASE_XLAT_LEVEL);
+
+	k_spin_unlock(&xlat_lock, key);
+	return ret;
 }
 
 static void discard_table(uint64_t *table, unsigned int level)
@@ -474,10 +493,19 @@ static int globalize_page_range(struct arm_mmu_ptables *dst_pt,
 				uintptr_t virt_start, size_t size,
 				const char *name)
 {
+	k_spinlock_key_t key;
+	int ret;
+
 	MMU_DEBUG("globalize [%s]: virt %lx size %lx\n",
 		  name, virt_start, size);
-	return globalize_table(dst_pt->base_xlat_table, src_pt->base_xlat_table,
-			       virt_start, size, BASE_XLAT_LEVEL);
+
+	key = k_spin_lock(&xlat_lock);
+
+	ret = globalize_table(dst_pt->base_xlat_table, src_pt->base_xlat_table,
+			      virt_start, size, BASE_XLAT_LEVEL);
+
+	k_spin_unlock(&xlat_lock, key);
+	return ret;
 }
 
 #endif /* CONFIG_USERSPACE */
