@@ -1198,35 +1198,34 @@ static void csip_lock_set_discover_sets_cb(struct bt_conn *conn, int err,
 					   uint8_t set_count,
 					   struct bt_csip_set_t *sets)
 {
+	int cb_err;
 	char addr[BT_ADDR_LE_STR_LEN];
 
 	if (err) {
 		busy = false;
 		cur_inst = NULL;
+		cb_err = err;
 		if (csip_cbs && csip_cbs->lock_set) {
-			csip_cbs->lock_set(err);
+			csip_cbs->lock_set(cb_err);
 		}
 		return;
 	}
 
 	for (int i = 0; i < cur_set.set_size; i++) {
 		if (!set_members[i].conn) {
-			int err;
-
 			bt_addr_le_to_str(&set_member_addrs[i].addr, addr,
 					  sizeof(addr));
 			BT_DBG("[%d]: Connecting to %s", i, log_strdup(addr));
 
-			err = bt_conn_le_create(&set_member_addrs[i].addr,
-						BT_CONN_LE_CREATE_CONN,
-						BT_LE_CONN_PARAM_DEFAULT,
-						&set_members[i].conn);
+			cb_err = bt_conn_le_create(&set_member_addrs[i].addr,
+						   BT_CONN_LE_CREATE_CONN, BT_LE_CONN_PARAM_DEFAULT,
+						   &set_members[i].conn);
 
-			if (err) {
+			if (cb_err) {
 				busy = false;
 				cur_inst = NULL;
 				if (csip_cbs && csip_cbs->lock_set) {
-					csip_cbs->lock_set(err);
+					csip_cbs->lock_set(cb_err);
 				}
 			}
 			return;
@@ -1239,8 +1238,9 @@ static void csip_lock_set_discover_sets_cb(struct bt_conn *conn, int err,
 	if (csip_set_is_locked()) {
 		busy = false;
 		cur_inst = NULL;
+		cb_err = -EBUSY;
 		if (csip_cbs && csip_cbs->lock_set) {
-			csip_cbs->lock_set(-EBUSY);
+			csip_cbs->lock_set(cb_err);
 		}
 		return;
 	}
