@@ -80,6 +80,9 @@ struct spi_nor_config {
 	/* Expected JEDEC ID, from jedec-id property */
 	uint8_t jedec_id[SPI_NOR_MAX_ID_LEN];
 
+	/* Optional bits in SR to be cleared on startup */
+	uint8_t has_lock;
+
 #if defined(CONFIG_SPI_NOR_SFDP_DEVICETREE)
 	/* Length of BFP structure, in 32-bit words. */
 	uint8_t bfp_len;
@@ -457,6 +460,53 @@ static void release_device(const struct device *dev)
 
 		k_sem_give(&driver_data->sem);
 	}
+}
+
+/**
+ * @brief Read the status register.
+ *
+ * @note The device must be externally acquired before invoking this
+ * function.
+ *
+ * @param dev Device struct
+ *
+ * @return the non-negative value of the status register, or an error code.
+ */
+static int spi_nor_rdsr(const struct device *dev)
+{
+	uint8_t reg;
+	int ret = spi_nor_cmd_read(dev, SPI_NOR_CMD_RDSR, &reg, sizeof(reg));
+
+	if (ret == 0) {
+		ret = reg;
+	}
+
+	return ret;
+}
+
+/**
+ * @brief Write the status register.
+ *
+ * @note The device must be externally acquired before invoking this
+ * function.
+ *
+ * @param dev Device struct
+ * @param sr The new value of the status register
+ *
+ * @return 0 on success or a negative error code.
+ */
+static int spi_nor_wrsr(const struct device *dev,
+			uint8_t sr)
+{
+	int ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
+
+	if (ret == 0) {
+		ret = spi_nor_access(dev, SPI_NOR_CMD_WRSR, false, 0, &sr,
+				     sizeof(sr), true);
+		spi_nor_wait_until_ready(dev);
+	}
+
+	return ret;
 }
 
 static int spi_nor_read(const struct device *dev, off_t addr, void *dest,
@@ -904,6 +954,25 @@ static int spi_nor_configure(const struct device *dev)
 	}
 #endif
 
+	/* Check for block protect bits that need to be cleared. */
+	if (cfg->has_lock != 0) {
+		acquire_device(dev);
+
+		rc = spi_nor_rdsr(dev);
+
+		/* Only clear if RDSR worked and something's set. */
+		if (rc > 0) {
+			rc = spi_nor_wrsr(dev, rc & ~cfg->has_lock);
+		}
+
+		if (rc != 0) {
+			LOG_ERR("BP clear failed: %d\n", rc);
+			return -ENODEV;
+		}
+
+		release_device(dev);
+	}
+
 #ifndef CONFIG_SPI_NOR_SFDP_MINIMAL
 	/* For devicetree and runtime we need to process BFP data and
 	 * set up or validate page layout.
@@ -1033,6 +1102,14 @@ static const __aligned(4) uint8_t bfp_data_0[] = DT_INST_PROP(0, sfdp_bfp);
 
 #endif /* CONFIG_SPI_NOR_SFDP_RUNTIME */
 
+#if DT_INST_NODE_HAS_PROP(0, has_lock)
+/* Currently we only know of devices where the BP bits are present in
+ * the first byte of the status register.  Complain if that changes.
+ */
+BUILD_ASSERT(DT_INST_PROP(0, has_lock) == (DT_INST_PROP(0, has_lock) & 0xFF),
+	     "Need support for lock clear beyond SR1");
+#endif
+
 static const struct spi_nor_config spi_nor_config_0 = {
 #if !defined(CONFIG_SPI_NOR_SFDP_RUNTIME)
 
@@ -1047,6 +1124,9 @@ static const struct spi_nor_config spi_nor_config_0 = {
 	.flash_size = DT_INST_PROP(0, size) / 8,
 	.jedec_id = DT_INST_PROP(0, jedec_id),
 
+#if DT_INST_NODE_HAS_PROP(0, has_lock)
+	.has_lock = DT_INST_PROP(0, has_lock),
+#endif
 #ifdef CONFIG_SPI_NOR_SFDP_DEVICETREE
 	.bfp_len = sizeof(bfp_data_0) / 4,
 	.bfp = (const struct jesd216_bfp *)bfp_data_0,
