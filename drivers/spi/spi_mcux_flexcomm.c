@@ -38,7 +38,6 @@ struct spi_mcux_config {
 	(SPI_MCUX_FLEXCOMM_DMA_RX_DONE_FLAG | SPI_MCUX_FLEXCOMM_DMA_TX_DONE_FLAG)
 
 struct stream {
-	const char *dma_name;
 	const struct device *dma_dev;
 	uint32_t channel; /* stores the channel for dma */
 	struct dma_config dma_cfg;
@@ -647,12 +646,7 @@ static int spi_mcux_transceive(const struct device *dev,
 			       const struct spi_buf_set *rx_bufs)
 {
 #ifdef CONFIG_SPI_MCUX_FLEXCOMM_DMA
-	struct spi_mcux_data *data = dev->data;
-
-	if ((data->dma_tx.dma_name != NULL)
-	 && (data->dma_rx.dma_name != NULL)) {
-		return transceive_dma(dev, spi_cfg, tx_bufs, rx_bufs, false, NULL);
-	}
+	return transceive_dma(dev, spi_cfg, tx_bufs, rx_bufs, false, NULL);
 #endif
 	return transceive(dev, spi_cfg, tx_bufs, rx_bufs, false, NULL);
 }
@@ -688,22 +682,15 @@ static int spi_mcux_init(const struct device *dev)
 	data->dev = dev;
 
 #ifdef CONFIG_SPI_MCUX_FLEXCOMM_DMA
-		if (data->dma_tx.dma_name != NULL) {
-			/* Get the binding to the DMA device */
-			data->dma_tx.dma_dev = device_get_binding(data->dma_tx.dma_name);
-			if (!data->dma_tx.dma_dev) {
-				LOG_ERR("%s device not found", data->dma_tx.dma_name);
-				return -ENODEV;
-			}
-		}
+	if (!device_is_ready(data->dma_tx.dma_dev)) {
+		LOG_ERR("%s device is not ready", data->dma_tx.dma_dev->name);
+		return -ENODEV;
+	}
 
-		if (data->dma_rx.dma_name != NULL) {
-			data->dma_rx.dma_dev = device_get_binding(data->dma_rx.dma_name);
-			if (!data->dma_rx.dma_dev) {
-				LOG_ERR("%s device not found", data->dma_rx.dma_name);
-				return -ENODEV;
-			}
-		}
+	if (!device_is_ready(data->dma_rx.dma_dev)) {
+		LOG_ERR("%s device is not ready", data->dma_rx.dma_dev->name);
+		return -ENODEV;
+	}
 #endif /* CONFIG_SPI_MCUX_FLEXCOMM_DMA */
 
 	spi_context_unlock_unconditionally(&data->ctx);
@@ -738,7 +725,7 @@ static void spi_mcux_config_func_##id(const struct device *dev) \
 #else
 #define SPI_DMA_CHANNELS(id)				\
 	.dma_tx = {						\
-		.dma_name = DT_INST_DMAS_LABEL_BY_NAME(id, tx),	\
+		.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(id, tx)), \
 		.channel =					\
 			DT_INST_DMAS_CELL_BY_NAME(id, tx, channel),	\
 		.dma_cfg = {					\
@@ -749,7 +736,7 @@ static void spi_mcux_config_func_##id(const struct device *dev) \
 		}							\
 	},								\
 	.dma_rx = {						\
-		.dma_name = DT_INST_DMAS_LABEL_BY_NAME(id, rx),	\
+		.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(id, rx)), \
 		.channel =					\
 			DT_INST_DMAS_CELL_BY_NAME(id, rx, channel),	\
 		.dma_cfg = {				\
