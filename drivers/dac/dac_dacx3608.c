@@ -191,7 +191,7 @@ static int dacx3608_device_id_check(const struct device *dev)
 	uint16_t dev_id;
 	int ret;
 
-	ret = dacx3608_reg_read(dev, DACX3608_REG_STATUS_TRIGGER, dev_id);
+	ret = dacx3608_reg_read(dev, DACX3608_REG_STATUS_TRIGGER, &dev_id);
 	if (ret) {
 		LOG_ERR("Unable to read device ID");
 		return -EIO;
