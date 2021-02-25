@@ -166,8 +166,13 @@ void test_thread_name_user_get_set(void)
 	char too_small[2];
 
 	/* Some memory-related error cases for k_thread_name_set() */
+#if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+	/* Non-Secure images cannot normally access memory outside the image
+	 * flash and ram.
+	 */
 	ret = k_thread_name_set(NULL, (const char *)0xFFFFFFF0);
 	zassert_equal(ret, -EFAULT, "accepted nonsense string (%d)", ret);
+#endif
 	ret = k_thread_name_set(NULL, unreadable_string);
 	zassert_equal(ret, -EFAULT, "accepted unreadable string");
 	ret = k_thread_name_set((struct k_thread *)&sem, "some name");
