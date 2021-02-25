@@ -213,9 +213,32 @@ static void uart_npcx_isr(const struct device *dev)
 		data->user_cb(dev, data->user_data);
 	}
 }
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-/* UART api functions */
+/*
+ * Poll-in implementation for interrupt driven config, forward call to
+ * uart_npcx_fifo_read().
+ */
+static int uart_npcx_poll_in(const struct device *dev, unsigned char *c)
+{
+	return uart_npcx_fifo_read(dev, c, 1) ? 0 : -1;
+}
+
+/*
+ * Poll-out implementation for interrupt driven config, forward call to
+ * uart_npcx_fifo_fill().
+ */
+static void uart_npcx_poll_out(const struct device *dev, unsigned char c)
+{
+	while (!uart_npcx_fifo_fill(dev, &c, 1))
+		continue;
+}
+
+#else /* !CONFIG_UART_INTERRUPT_DRIVEN */
+
+/*
+ * Poll-in implementation for byte mode config, read byte from URBUF if
+ * available.
+ */
 static int uart_npcx_poll_in(const struct device *dev, unsigned char *c)
 {
 	struct uart_reg *const inst = HAL_INSTANCE(dev);
@@ -228,6 +251,9 @@ static int uart_npcx_poll_in(const struct device *dev, unsigned char *c)
 	return 0;
 }
 
+/*
+ * Poll-out implementation for byte mode config, write byte to UTBUF if empty.
+ */
 static void uart_npcx_poll_out(const struct device *dev, unsigned char c)
 {
 	struct uart_reg *const inst = HAL_INSTANCE(dev);
@@ -238,7 +264,9 @@ static void uart_npcx_poll_out(const struct device *dev, unsigned char c)
 
 	inst->UTBUF = c;
 }
+#endif /* !CONFIG_UART_INTERRUPT_DRIVEN */
 
+/* UART api functions */
 static int uart_npcx_err_check(const struct device *dev)
 {
 	struct uart_reg *const inst = HAL_INSTANCE(dev);
