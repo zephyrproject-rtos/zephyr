@@ -9,7 +9,6 @@
  * @file
  * @brief Timer driver API
  *
- *
  * Declare API implemented by system timer driver and used by kernel components.
  */
 
@@ -23,6 +22,12 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @brief Clock APIs
+ * @defgroup clock_apis Clock APIs
+ * @{
+ */
 
 /**
  * @brief Initialize system clock driver
