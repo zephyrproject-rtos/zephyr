@@ -54,16 +54,6 @@ if SPI
 config SPI_XEC_QMSPI
 	default y
 
-if SPI_XEC_QMSPI
-
-config SPI_0
-	default y
-
-config SPI_0_OP_MODES
-	default 1
-
-endif # SPI_XEC_QMSPI
-
 endif # SPI
 
 config TACH_XEC
