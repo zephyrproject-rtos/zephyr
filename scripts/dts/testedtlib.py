@@ -181,15 +181,15 @@ def test_child_binding():
     child = top.child_binding
     assert Path(top.path) == binding_file
     assert Path(child.path) == binding_file
-    assert top.compatible == 'child-binding'
-    assert child.compatible == 'child-binding'
+    assert top.compatible == 'top-binding'
+    assert child.compatible is None
 
     binding_file = Path("test-bindings/child-binding-with-compat.yaml").resolve()
     top = edtlib.Binding(binding_file, {})
     child = top.child_binding
     assert Path(top.path) == binding_file
     assert Path(child.path) == binding_file
-    assert top.compatible == 'child-binding-with-compat'
+    assert top.compatible == 'top-binding-with-compat'
     assert child.compatible == 'child-compat'
 
 def test_props():
