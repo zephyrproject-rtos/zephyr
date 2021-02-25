@@ -34,22 +34,22 @@
 
 	};
 
-	sram0: memory@3ffb0000 {
-		compatible = "mmio-sram";
-		reg = <0x3FFB0000 0x50000>;
-	};
-
-	rtc: rtc@3ff48000 {
-		compatible = "espressif,esp32-rtc";
-		reg = <0x3ff48000 0x0D8>;
-		label = "RTC";
-		xtal-freq = <ESP32_CLK_XTAL_40M>;
-		xtal-div = <0>;
-		#clock-cells = <1>;
-		status = "ok";
-	};
-
 	soc {
+		sram0: memory@3ffb0000 {
+			compatible = "mmio-sram";
+			reg = <0x3FFB0000 0x50000>;
+		};
+
+		rtc: rtc@3ff48000 {
+			compatible = "espressif,esp32-rtc";
+			reg = <0x3ff48000 0x0D8>;
+			label = "RTC";
+			xtal-freq = <ESP32_CLK_XTAL_40M>;
+			xtal-div = <0>;
+			#clock-cells = <1>;
+			status = "ok";
+		};
+
 		uart0: uart@3ff40000 {
 			compatible = "espressif,esp32-uart";
 			reg = <0x3ff40000 0x400>;
