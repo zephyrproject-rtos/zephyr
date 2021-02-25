@@ -56,6 +56,9 @@
 #define TEST_PWM_CTLR_1 DT_NODELABEL(test_pwm1)
 #define TEST_PWM_CTLR_2 DT_NODELABEL(test_pwm2)
 
+#define TEST_DMA_CTLR_1 DT_NODELABEL(test_dma1)
+#define TEST_DMA_CTLR_2 DT_NODELABEL(test_dma2)
+
 #define TA_HAS_COMPAT(compat) DT_NODE_HAS_COMPAT(TEST_ARRAYS, compat)
 
 #define TO_STRING(x) TO_STRING_(x)
@@ -902,6 +905,37 @@ static void test_dma(void)
 			     "TEST_DMA_CTRL_1"), "");
 	zassert_true(!strcmp(DT_INST_DMAS_LABEL_BY_IDX(0, 0),
 			     "TEST_DMA_CTRL_1"), "");
+
+	/* DT_DMAS_CTLR_BY_IDX */
+	zassert_true(DT_SAME_NODE(DT_DMAS_CTLR_BY_IDX(TEST_TEMP, 0),
+				  TEST_DMA_CTLR_1), "");
+	zassert_true(DT_SAME_NODE(DT_DMAS_CTLR_BY_IDX(TEST_TEMP, 1),
+				  TEST_DMA_CTLR_2), "");
+
+	/* DT_DMAS_CTLR_BY_NAME */
+	zassert_true(DT_SAME_NODE(DT_DMAS_CTLR_BY_NAME(TEST_TEMP, tx),
+				  TEST_DMA_CTLR_1), "");
+	zassert_true(DT_SAME_NODE(DT_DMAS_CTLR_BY_NAME(TEST_TEMP, rx),
+				  TEST_DMA_CTLR_2), "");
+
+	/* DT_DMAS_CTLR */
+	zassert_true(DT_SAME_NODE(DT_DMAS_CTLR(TEST_TEMP),
+				  TEST_DMA_CTLR_1), "");
+
+	/* DT_INST_DMAS_CTLR_BY_IDX */
+	zassert_true(DT_SAME_NODE(DT_INST_DMAS_CTLR_BY_IDX(0, 0),
+				  TEST_DMA_CTLR_1), "");
+	zassert_true(DT_SAME_NODE(DT_INST_DMAS_CTLR_BY_IDX(0, 1),
+				  TEST_DMA_CTLR_2), "");
+
+	/* DT_INST_DMAS_CTLR_BY_NAME */
+	zassert_true(DT_SAME_NODE(DT_INST_DMAS_CTLR_BY_NAME(0, tx),
+				  TEST_DMA_CTLR_1), "");
+	zassert_true(DT_SAME_NODE(DT_INST_DMAS_CTLR_BY_NAME(0, rx),
+				  TEST_DMA_CTLR_2), "");
+
+	/* DT_INST_DMAS_CTLR */
+	zassert_true(DT_SAME_NODE(DT_INST_DMAS_CTLR(0), TEST_DMA_CTLR_1), "");
 
 	zassert_equal(DT_DMAS_CELL_BY_NAME(TEST_TEMP, rx, channel), 3, "");
 	zassert_equal(DT_INST_DMAS_CELL_BY_NAME(0, rx, channel), 3, "");
