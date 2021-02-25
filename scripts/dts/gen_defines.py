@@ -92,6 +92,16 @@ def main():
         for node in sorted(edt.nodes, key=lambda node: node.dep_ordinal):
             node.z_path_id = node_z_path_id(node)
 
+        # Check to see if we have duplicate "label" property values.
+        labels = dict()
+        for node in sorted(edt.nodes, key=lambda node: node.dep_ordinal):
+            if 'label' in node.props:
+                label = node.props['label'].val
+                if label in labels:
+                    sys.exit(f"ERROR: Duplicate label ({label}) properties "
+                             f"between {labels[label].path} and {node.path}")
+                labels[label] = node
+
         for node in sorted(edt.nodes, key=lambda node: node.dep_ordinal):
             write_node_comment(node)
 
