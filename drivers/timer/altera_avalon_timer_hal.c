@@ -28,10 +28,10 @@ static void timer_irq_handler(const void *unused)
 	/* Clear the interrupt */
 	alt_handle_irq((void *)TIMER_0_BASE, TIMER_0_IRQ);
 
-	z_clock_announce(_sys_idle_elapsed_ticks);
+	sys_clock_announce(_sys_idle_elapsed_ticks);
 }
 
-int z_clock_driver_init(const struct device *device)
+int sys_clock_driver_init(const struct device *device)
 {
 	ARG_UNUSED(device);
 

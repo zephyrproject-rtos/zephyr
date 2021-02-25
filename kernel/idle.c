@@ -59,7 +59,7 @@ void z_pm_save_idle_exit(int32_t ticks)
 	 */
 	pm_system_resume();
 #endif	/* CONFIG_PM */
-	z_clock_idle_exit();
+	sys_clock_idle_exit();
 }
 
 void idle(void *unused1, void *unused2, void *unused3)

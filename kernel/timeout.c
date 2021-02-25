@@ -21,7 +21,7 @@ static struct k_spinlock timeout_lock;
 #define MAX_WAIT (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) \
 		  ? K_TICKS_FOREVER : INT_MAX)
 
-/* Cycles left to process in the currently-executing z_clock_announce() */
+/* Cycles left to process in the currently-executing sys_clock_announce() */
 static int announce_remaining;
 
 #if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
@@ -61,7 +61,7 @@ static void remove_timeout(struct _timeout *t)
 
 static int32_t elapsed(void)
 {
-	return announce_remaining == 0 ? z_clock_elapsed() : 0U;
+	return announce_remaining == 0 ? sys_clock_elapsed() : 0U;
 }
 
 static int32_t next_timeout(void)
@@ -131,10 +131,10 @@ void z_add_timeout(struct _timeout *to, _timeout_func_t fn,
 
 			if (next_time == 0 ||
 			    _current_cpu->slice_ticks != next_time) {
-				z_clock_set_timeout(next_time, false);
+				sys_clock_set_timeout(next_time, false);
 			}
 #else
-			z_clock_set_timeout(next_timeout(), false);
+			sys_clock_set_timeout(next_timeout(), false);
 #endif	/* CONFIG_TIMESLICING */
 		}
 	}
@@ -224,12 +224,12 @@ void z_set_timeout_expiry(int32_t ticks, bool is_idle)
 		 * in.
 		 */
 		if (!imminent && (sooner || IS_ENABLED(CONFIG_SMP))) {
-			z_clock_set_timeout(MIN(ticks, next_to), is_idle);
+			sys_clock_set_timeout(MIN(ticks, next_to), is_idle);
 		}
 	}
 }
 
-void z_clock_announce(int32_t ticks)
+void sys_clock_announce(int32_t ticks)
 {
 #ifdef CONFIG_TIMESLICING
 	z_time_slice(ticks);
@@ -260,7 +260,7 @@ void z_clock_announce(int32_t ticks)
 	curr_tick += announce_remaining;
 	announce_remaining = 0;
 
-	z_clock_set_timeout(next_timeout(), false);
+	sys_clock_set_timeout(next_timeout(), false);
 
 	k_spin_unlock(&timeout_lock, key);
 }
@@ -270,7 +270,7 @@ int64_t z_tick_get(void)
 	uint64_t t = 0U;
 
 	LOCKED(&timeout_lock) {
-		t = curr_tick + z_clock_elapsed();
+		t = curr_tick + sys_clock_elapsed();
 	}
 	return t;
 }
