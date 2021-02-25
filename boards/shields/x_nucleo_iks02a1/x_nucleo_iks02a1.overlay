@@ -35,5 +35,6 @@
 		reg = <0x6b>;
 		drdy-gpios =  <&arduino_header 11 GPIO_ACTIVE_HIGH>; /* D5 - INT2 */
 		label = "ISM330DHCX";
+		int-pin = <2>;
 	};
 };
