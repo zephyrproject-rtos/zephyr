@@ -155,7 +155,7 @@ Kernel timing at the tick level is driven by a timer driver with a
 comparatively simple API.
 
 * The driver is expected to be able to "announce" new ticks to the
-  kernel via the ``sys_clock_announce()`` call, which passes an integer
+  kernel via the :c:func:`sys_clock_announce` call, which passes an integer
   number of ticks that have elapsed since the last announce call (or
   system boot).  These calls can occur at any time, but the driver is
   expected to attempt to ensure (to the extent practical given
@@ -164,7 +164,7 @@ comparatively simple API.
   be correct over time and subject to minimal skew vs. other counters
   and real world time.
 
-* The driver is expected to provide a ``sys_clock_set_timeout()`` call
+* The driver is expected to provide a :c:func:`sys_clock_set_timeout` call
   to the kernel which indicates how many ticks may elapse before the
   kernel must receive an announce call to trigger registered timeouts.
   It is legal to announce new ticks before that moment (though they
@@ -175,10 +175,10 @@ comparatively simple API.
   implementations of this function are subject to bugs where the
   fractional tick gets "reset" incorrectly and causes clock skew.
 
-* The driver is expected to provide a ``sys_clock_elapsed()`` call which
+* The driver is expected to provide a :c:func:`sys_clock_elapsed` call which
   provides a current indication of how many ticks have elapsed (as
   compared to a real world clock) since the last call to
-  ``sys_clock_announce()``, which the kernel needs to test newly
+  :c:func:`sys_clock_announce`, which the kernel needs to test newly
   arriving timeouts for expiration.
 
 Note that a natural implementation of this API results in a "tickless"
@@ -191,12 +191,15 @@ counter driver can be trivially implemented also:
   the OS tick rate, calling z_clock_anounce() with an argument of one
   each time.
 
-* The driver can ignore calls to ``sys_clock_set_timeout()``, as every
+* The driver can ignore calls to :c:func:`sys_clock_set_timeout`, as every
   tick will be announced regardless of timeout status.
 
-* The driver can return zero for every call to ``sys_clock_elapsed()``
+* The driver can return zero for every call to :c:func:`sys_clock_elapsed`
   as no more than one tick can be detected as having elapsed (because
   otherwise an interrupt would have been received).
+
+
+
 
 SMP Details
 -----------
@@ -211,7 +214,7 @@ and minimal.  But some notes are important to detail:
   have every timer interrupt handled on a single processor.  Existing
   SMP architectures implement symmetric timer drivers.
 
-* The ``sys_clock_announce()`` call is expected to be globally
+* The :c:func:`sys_clock_announce` call is expected to be globally
   synchronized at the driver level.  The kernel does not do any
   per-CPU tracking, and expects that if two timer interrupts fire near
   simultaneously, that only one will provide the current tick count to
@@ -228,7 +231,7 @@ and minimal.  But some notes are important to detail:
   :c:func:`sys_clock_set_timeout` is done identically for every CPU.
   So by default, every CPU will see simultaneous timer interrupts for
   every event, even though by definition only one of them should see a
-  non-zero ticks argument to ``sys_clock_announce()``.  This is probably
+  non-zero ticks argument to :c:func:`sys_clock_announce`.  This is probably
   a correct default for timing sensitive applications (because it
   minimizes the chance that an errant ISR or interrupt lock will delay
   a timeout), but may be a performance problem in some cases.  The
