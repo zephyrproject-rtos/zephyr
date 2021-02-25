@@ -188,6 +188,14 @@ if(SUPPORTS_DTS)
   if (check)
     set(DTC_NO_WARN_UNIT_ADDR "-Wno-unique_unit_address")
   endif()
+  set(VALID_EXTRA_DTC_FLAGS "")
+  foreach(extra_opt ${EXTRA_DTC_FLAGS})
+    check_dtc_flag(${extra_opt} check)
+    if (check)
+      list(APPEND VALID_EXTRA_DTC_FLAGS ${extra_opt})
+    endif()
+  endforeach()
+  set(EXTRA_DTC_FLAGS ${VALID_EXTRA_DTC_FLAGS})
   execute_process(
     COMMAND ${DTC}
     -O dts
