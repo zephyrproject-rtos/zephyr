@@ -144,6 +144,15 @@ menuconfig MCUMGR_CMD_IMG_MGMT
 	  Enables mcumgr handlers for image management
 
 if MCUMGR_CMD_IMG_MGMT
+config IMG_MGMT_DIRECT_XIP
+	bool "Enables mcuboot Direct-XIP restrictions within image management"
+	help
+	  The option should be enabled if mcuboot, on the device the the
+	  application will be built for, has been built with Direct-XIP;
+	  The option will will force mcmgr to ignore pending bits for slots,
+	  as they have no meaning for Direct-XIP, and allow to overwrite slots
+	  that have been set peding for test or permanently.
+
 config IMG_MGMT_UL_CHUNK_SIZE
 	int "Maximum chunk size for image uploads"
 	default 512
