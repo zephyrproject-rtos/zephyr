@@ -900,7 +900,7 @@ static uint8_t mcs_notify_handler(struct bt_conn *conn,
 			}
 
 			if (mcc_cb && mcc_cb->cp_ntf) {
-				mcc_cb->cp_ntf(conn, 0, ntf);
+				mcc_cb->cp_ntf(conn, cb_err, ntf);
 			}
 
 		} else if (handle == mcs_inst.opcodes_supported_handle) {
@@ -926,7 +926,7 @@ static uint8_t mcs_notify_handler(struct bt_conn *conn,
 			}
 
 			if (mcc_cb && mcc_cb->scp_ntf) {
-				mcc_cb->scp_ntf(conn, 0, result_code);
+				mcc_cb->scp_ntf(conn, cb_err, result_code);
 			}
 
 		} else if (handle == mcs_inst.search_results_obj_id_handle) {
