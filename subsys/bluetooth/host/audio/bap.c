@@ -459,12 +459,11 @@ static struct bt_audio_capability_ops cap_ops = {
 };
 
 static uint8_t cp_discover_func(struct bt_conn *conn,
-			     const struct bt_gatt_attr *attr,
-			     struct bt_gatt_discover_params *discover)
+				const struct bt_gatt_attr *attr,
+				struct bt_gatt_discover_params *discover)
 {
 	struct bt_audio_discover_params *params;
 	struct bt_gatt_chrc *chrc = attr->user_data;
-	int err;
 
 	params = CONTAINER_OF(discover, struct bt_audio_discover_params,
 			      discover);
@@ -472,16 +471,17 @@ static uint8_t cp_discover_func(struct bt_conn *conn,
 	BT_DBG("conn %p attr %p handle 0x%04x", conn, attr, chrc->value_handle);
 
 	if (!attr) {
-		BT_ERR("Unable to find ASE Control Point");
-		err = BT_ATT_ERR_ATTRIBUTE_NOT_FOUND;
-		goto done;
+		if (params->err) {
+			BT_ERR("Unable to find ASE Control Point");
+		}
+		params->func(conn, NULL, NULL, params);
+		return BT_GATT_ITER_STOP;
 	}
 
+	params->err = 0;
 	bt_audio_ep_set_cp(conn, chrc->value_handle);
 
-done:
-	params->func(conn, NULL, NULL, params);
-	return BT_GATT_ITER_STOP;
+	return BT_GATT_ITER_CONTINUE;
 }
 
 static int ase_cp_discover(struct bt_conn *conn,
@@ -489,6 +489,7 @@ static int ase_cp_discover(struct bt_conn *conn,
 {
 	BT_DBG("conn %p params %p", conn, params);
 
+	params->err = BT_ATT_ERR_ATTRIBUTE_NOT_FOUND;
 	params->discover.uuid = cp_uuid;
 	params->discover.func = cp_discover_func;
 	params->discover.start_handle = 0x0001;
