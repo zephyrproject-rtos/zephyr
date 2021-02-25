@@ -3,3 +3,4 @@ tests:
     # nios2 excluded, see #22956
     arch_exclude: nios2
     tags: interrupt
+    filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE
