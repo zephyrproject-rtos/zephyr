@@ -65,7 +65,7 @@ static struct itim32_reg *const evt_tmr = (struct itim32_reg *)
 static const struct npcx_clk_cfg itim_clk_cfg[] = NPCX_DT_CLK_CFG_ITEMS_LIST(0);
 
 static struct k_spinlock lock;
-/* Announced cycles in system timer before executing z_clock_announce() */
+/* Announced cycles in system timer before executing sys_clock_announce() */
 static uint64_t cyc_sys_announced;
 /* Current target cycles of time-out signal in event timer */
 static uint32_t cyc_evt_timeout;
@@ -178,13 +178,13 @@ static void npcx_itim_evt_isr(const struct device *dev)
 		k_spin_unlock(&lock, key);
 
 		/* Informs kernel that specified number of ticks have elapsed */
-		z_clock_announce(delta_ticks);
+		sys_clock_announce(delta_ticks);
 	} else {
 		/* Enable event timer for ticking and wait to it take effect */
 		npcx_itim_evt_enable();
 
 		/* Informs kernel that one tick has elapsed */
-		z_clock_announce(1);
+		sys_clock_announce(1);
 	}
 }
 
@@ -224,7 +224,7 @@ static uint32_t npcx_itim_evt_elapsed_cyc32(void)
 #endif /* CONFIG_PM */
 
 /* System timer api functions */
-void z_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
@@ -238,7 +238,7 @@ void z_clock_set_timeout(int32_t ticks, bool idle)
 	npcx_itim_start_evt_tmr_by_tick(ticks);
 }
 
-uint32_t z_clock_elapsed(void)
+uint32_t sys_clock_elapsed(void)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		/* Always return 0 for tickful kernel system */
@@ -250,7 +250,7 @@ uint32_t z_clock_elapsed(void)
 
 	k_spin_unlock(&lock, key);
 
-	/* Return how many ticks elapsed since last z_clock_announce() call */
+	/* Return how many ticks elapsed since last sys_clock_announce() call */
 	return (uint32_t)((current - cyc_sys_announced) / SYS_CYCLES_PER_TICK);
 }
 
@@ -265,7 +265,7 @@ uint32_t z_timer_cycle_get_32(void)
 	return (uint32_t)(current);
 }
 
-int z_clock_driver_init(const struct device *device)
+int sys_clock_driver_init(const struct device *device)
 {
 	ARG_UNUSED(device);
 	int ret;

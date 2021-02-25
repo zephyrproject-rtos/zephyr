@@ -6,7 +6,7 @@ timeout is repeatedly rescheduled before it has a chance to fire.  In
 some implementations this may prevent the timer interrupt handler from
 ever being invoked, which in turn prevents an announcement of ticks.
 Lack of tick announcement propagates into a monotonic increase in the
-value returned by z_clock_elapsed().
+value returned by sys_clock_elapsed().
 
 This test is not run in automatic test suites because it generally takes
 minutes, hours, or days to fail, depending on the hardware clock rate

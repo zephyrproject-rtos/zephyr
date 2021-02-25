@@ -346,9 +346,9 @@ config TICKLESS_CAPABLE
 	help
 	  Timer drivers should select this flag if they are capable of
 	  supporting tickless operation.  That is, a call to
-	  z_clock_set_timeout() with a number of ticks greater than
+	  sys_clock_set_timeout() with a number of ticks greater than
 	  one should be expected not to produce a call to
-	  z_clock_announce() (really, not to produce an interrupt at
+	  sys_clock_announce() (really, not to produce an interrupt at
 	  all) until the specified expiration.
 
 endmenu

@@ -76,9 +76,9 @@ static uint32_t cached_icr = CYCLES_PER_TICK;
 
 #ifdef CONFIG_TICKLESS_KERNEL
 
-static uint64_t last_announcement;	/* last time we called z_clock_announce() */
+static uint64_t last_announcement;	/* last time we called sys_clock_announce() */
 
-void z_clock_set_timeout(int32_t n, bool idle)
+void sys_clock_set_timeout(int32_t n, bool idle)
 {
 	ARG_UNUSED(idle);
 
@@ -117,7 +117,7 @@ void z_clock_set_timeout(int32_t n, bool idle)
 	k_spin_unlock(&lock, key);
 }
 
-uint32_t z_clock_elapsed(void)
+uint32_t sys_clock_elapsed(void)
 {
 	uint32_t ccr;
 	uint32_t ticks;
@@ -143,7 +143,7 @@ static void isr(const void *arg)
 
 	/*
 	 * If we get here and the CCR isn't zero, then this interrupt is
-	 * stale: it was queued while z_clock_set_timeout() was setting
+	 * stale: it was queued while sys_clock_set_timeout() was setting
 	 * a new counter. Just ignore it. See above for more info.
 	 */
 
@@ -161,7 +161,7 @@ static void isr(const void *arg)
 	ticks = (total_cycles - last_announcement) / CYCLES_PER_TICK;
 	last_announcement = total_cycles;
 	k_spin_unlock(&lock, key);
-	z_clock_announce(ticks);
+	sys_clock_announce(ticks);
 }
 
 #else
@@ -175,10 +175,10 @@ static void isr(const void *arg)
 	x86_write_loapic(LOAPIC_TIMER_ICR, cached_icr);
 	k_spin_unlock(&lock, key);
 
-	z_clock_announce(1);
+	sys_clock_announce(1);
 }
 
-uint32_t z_clock_elapsed(void)
+uint32_t sys_clock_elapsed(void)
 {
 	return 0U;
 }
@@ -213,7 +213,7 @@ uint32_t z_timer_cycle_get_32(void)
 
 #endif
 
-int z_clock_driver_init(const struct device *device)
+int sys_clock_driver_init(const struct device *device)
 {
 	uint32_t val;
 

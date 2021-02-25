@@ -90,7 +90,7 @@ static void hpet_isr(const void *arg)
 	}
 
 	k_spin_unlock(&lock, key);
-	z_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? dticks : 1);
+	sys_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? dticks : 1);
 }
 
 static void set_timer0_irq(unsigned int irq)
@@ -106,7 +106,7 @@ static void set_timer0_irq(unsigned int irq)
 	TIMER0_CONF_REG = val;
 }
 
-int z_clock_driver_init(const struct device *device)
+int sys_clock_driver_init(const struct device *device)
 {
 	extern int z_clock_hw_cycles_per_sec;
 	uint32_t hz;
@@ -154,7 +154,7 @@ void smp_timer_init(void)
 	 */
 }
 
-void z_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
@@ -191,7 +191,7 @@ void z_clock_set_timeout(int32_t ticks, bool idle)
 #endif
 }
 
-uint32_t z_clock_elapsed(void)
+uint32_t sys_clock_elapsed(void)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return 0;
@@ -209,7 +209,7 @@ uint32_t z_timer_cycle_get_32(void)
 	return MAIN_COUNTER_REG;
 }
 
-void z_clock_idle_exit(void)
+void sys_clock_idle_exit(void)
 {
 	GENERAL_CONF_REG |= GCONF_ENABLE;
 }

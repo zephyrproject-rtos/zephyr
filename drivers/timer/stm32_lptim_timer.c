@@ -55,7 +55,7 @@ static void lptim_irq_handler(const struct device *unused)
 
 		k_spinlock_key_t key = k_spin_lock(&lock);
 
-		/* do not change ARR yet, z_clock_announce will do */
+		/* do not change ARR yet, sys_clock_announce will do */
 		LL_LPTIM_ClearFLAG_ARRM(LPTIM1);
 
 		/* increase the total nb of autoreload count
@@ -73,12 +73,12 @@ static void lptim_irq_handler(const struct device *unused)
 				* CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 				/ LPTIM_CLOCK;
 
-		z_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL)
+		sys_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL)
 				? dticks : (dticks > 0));
 	}
 }
 
-int z_clock_driver_init(const struct device *device)
+int sys_clock_driver_init(const struct device *device)
 {
 	ARG_UNUSED(device);
 
@@ -188,7 +188,7 @@ static inline uint32_t z_clock_lptim_getcounter(void)
 	return lp_time;
 }
 
-void z_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
 	/* new LPTIM1 AutoReload value to set (aligned on Kernel ticks) */
 	uint32_t next_arr = 0;
@@ -268,7 +268,7 @@ void z_clock_set_timeout(int32_t ticks, bool idle)
 	k_spin_unlock(&lock, key);
 }
 
-uint32_t z_clock_elapsed(void)
+uint32_t sys_clock_elapsed(void)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return 0;

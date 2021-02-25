@@ -50,10 +50,10 @@ static void lptmr_irq_handler(const struct device *unused)
 
 	SYSTEM_TIMER_INSTANCE->CSR |= LPTMR_CSR_TCF(1); /* Rearm timer. */
 	cycle_count += CYCLES_PER_TICK;          /* Track cycles. */
-	z_clock_announce(1);                     /* Poke the scheduler. */
+	sys_clock_announce(1);                     /* Poke the scheduler. */
 }
 
-int z_clock_driver_init(const struct device *unused)
+int sys_clock_driver_init(const struct device *unused)
 {
 	uint32_t csr, psr, sircdiv; /* LPTMR registers */
 
@@ -139,7 +139,7 @@ uint32_t z_timer_cycle_get_32(void)
 /*
  * Since we're not tickless, this is identically zero.
  */
-uint32_t z_clock_elapsed(void)
+uint32_t sys_clock_elapsed(void)
 {
 	return 0;
 }
