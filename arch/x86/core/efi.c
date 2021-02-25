@@ -4,7 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-void efi_init(void)
+#include <arch/x86/efi.h>
+#include <sys/mem_manage.h>
+
+struct efi_boot_arg *efi;
+
+void efi_init(struct efi_boot_arg *efi_arg)
 {
-	/* Do Nothing atm */
+	if (efi_arg == NULL) {
+		return;
+	}
+
+	z_phys_map((uint8_t **)&efi, (uintptr_t)efi_arg,
+		   sizeof(struct efi_boot_arg), 0);
 }

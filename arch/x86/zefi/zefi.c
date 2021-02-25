@@ -9,8 +9,28 @@
 #include "efi.h"
 #include "printf.h"
 #include <zefi-segments.h>
+#include <arch/x86/efi.h>
 
 #define PUTCHAR_BUFSZ 128
+
+/* EFI GUID for RSDP
+ * See "Finding the RSDP on UEFI Enabled Systems" in ACPI specs.
+ */
+#define ACPI_1_0_RSDP_EFI_GUID						\
+	{								\
+		.Data1 = 0xeb9d2d30,					\
+		.Data2 = 0x2d88,					\
+		.Data3 = 0x11d3,					\
+		.Data4 = { 0x9a, 0x16, 0x00, 0x90, 0x27, 0x3f, 0xc1, 0x4d }, \
+	}
+
+#define ACPI_2_0_RSDP_EFI_GUID						\
+	{								\
+		.Data1 = 0x8868e871,					\
+		.Data2 = 0xe4f1,					\
+		.Data3 = 0x11d3,					\
+		.Data4 = { 0xbc, 0x22, 0x00, 0x80, 0xc7, 0x3c, 0x88, 0x81 }, \
+	}
 
 /* The linker places this dummy last in the data memory.  We can't use
  * traditional linker address symbols because we're relocatable; the
@@ -25,6 +45,7 @@ uint64_t runtime_data_end[1] = { 0x1111aa8888aa1111L };
 #define EXT_DATA_START ((void *) &runtime_data_end[1])
 
 static struct efi_system_table *efi;
+static struct efi_boot_arg efi_arg;
 
 static void efi_putchar(int c)
 {
@@ -71,6 +92,23 @@ static void *efi_config_get_vendor_table_by_guid(efi_guid_t *guid)
 	return NULL;
 }
 
+static void efi_prepare_boot_arg(void)
+{
+	efi_guid_t rsdp_guid_1 = ACPI_1_0_RSDP_EFI_GUID;
+	efi_guid_t rsdp_guid_2 = ACPI_2_0_RSDP_EFI_GUID;
+
+	/* Let's lookup for most recent ACPI table first */
+	efi_arg.acpi_rsdp = efi_config_get_vendor_table_by_guid(&rsdp_guid_2);
+	if (efi_arg.acpi_rsdp == NULL) {
+		efi_arg.acpi_rsdp =
+			efi_config_get_vendor_table_by_guid(&rsdp_guid_1);
+	}
+
+	if (efi_arg.acpi_rsdp != NULL) {
+		printf("RSDP found at %p\n", efi_arg.acpi_rsdp);
+	}
+}
+
 /* Existing x86_64 EFI environments have a bad habit of leaving the
  * HPET timer running.  This then fires later on, once the OS has
  * started.  If the timing isn't right, it can happen before the OS
@@ -99,6 +137,8 @@ uintptr_t __abi efi_entry(void *img_handle, struct efi_system_table *sys_tab)
 	efi = sys_tab;
 	z_putchar = efi_putchar;
 	printf("*** Zephyr EFI Loader ***\n");
+
+	efi_prepare_boot_arg();
 
 	for (int i = 0; i < sizeof(zefi_zsegs)/sizeof(zefi_zsegs[0]); i++) {
 		int bytes = zefi_zsegs[i].sz;
@@ -153,7 +193,7 @@ uintptr_t __abi efi_entry(void *img_handle, struct efi_system_table *sys_tab)
 	}
 
 	__asm__ volatile("cli; movq %0, %%rbx; jmp *%1"
-			 :: "r"(NULL), "r"(code) : "rbx");
+			 :: "r"(&efi_arg), "r"(code) : "rbx");
 
 	return 0;
 }
