@@ -683,11 +683,10 @@ void test_timeout_abs(void)
 {
 #ifdef CONFIG_TIMEOUT_64BIT
 	const uint64_t exp_ms = 10000000;
-	uint64_t cap_ticks;
 	uint64_t rem_ticks;
-	uint64_t cap2_ticks;
 	uint64_t exp_ticks = k_ms_to_ticks_ceil64(exp_ms);
 	k_timeout_t t = K_TIMEOUT_ABS_TICKS(exp_ticks), t2;
+	uint64_t t0, t1;
 
 	/* Check the other generator macros to make sure they produce
 	 * the same (whiteboxed) converted values
@@ -706,35 +705,33 @@ void test_timeout_abs(void)
 
 	/* Now set the timeout and make sure the expiration time is
 	 * correct vs. current time.  Tick units and tick alignment
-	 * makes this math exact: remember to add one to match the
-	 * convention (i.e. a timer of "1 tick" will expire at "now
-	 * plus 2 ticks", because "now plus one" will always be
-	 * somewhat less than a tick).
-	 *
-	 * However, if the timer clock runs relatively fast the tick
-	 * clock may advance before or after reading the remaining
-	 * ticks, so we have to check that at least one case is
-	 * satisfied.
+	 * makes this math exact, no slop is needed.  Note that time
+	 * is advancing always, so we add a retry condition to be sure
+	 * that a tick advance did not happen between our reads of
+	 * "now" and "expires".
 	 */
 	init_timer_data();
 	k_timer_start(&remain_timer, t, K_FOREVER);
-	cap_ticks = k_uptime_ticks();
-	rem_ticks = k_timer_remaining_ticks(&remain_timer);
-	cap2_ticks = k_uptime_ticks();
+	k_usleep(1);
+
+	do {
+		t0 = k_uptime_ticks();
+		rem_ticks = k_timer_remaining_ticks(&remain_timer);
+		t1 = k_uptime_ticks();
+	} while (t0 != t1);
+
+	zassert_true(t0 + rem_ticks == exp_ticks,
+		     "Wrong remaining: now %lld rem %lld expires %lld (%d)",
+		     (uint64_t)t0, (uint64_t)rem_ticks, (uint64_t)exp_ticks,
+		     t0+rem_ticks-exp_ticks);
+
 	k_timer_stop(&remain_timer);
-	zassert_true((cap_ticks + rem_ticks + 1 == exp_ticks)
-		     || (rem_ticks + cap2_ticks + 1 == exp_ticks)
-		     || (INEXACT_MS_CONVERT
-			 && (cap_ticks + rem_ticks == exp_ticks))
-		     || (INEXACT_MS_CONVERT
-			 && (rem_ticks + cap2_ticks == exp_ticks)),
-		     NULL);
 #endif
 }
 
 void test_sleep_abs(void)
 {
-	const int sleep_ticks = 5;
+	const int sleep_ticks = 50;
 	int64_t start, end;
 
 	k_usleep(1); /* tick align */
@@ -743,9 +740,16 @@ void test_sleep_abs(void)
 	k_sleep(K_TIMEOUT_ABS_TICKS(start + sleep_ticks));
 	end = k_uptime_ticks();
 
-	zassert_equal(end, start + sleep_ticks,
-		      "expected wakeup at %lld, got %lld",
-		      start + sleep_ticks, end);
+	/* Systems with very high tick rates and/or slow idle resume
+	 * (I've seen this on intel_adsp) can occasionally take more
+	 * than a tick to return from k_sleep().  Set a 100us real
+	 * time slop.
+	 */
+	k_ticks_t late = end - (start + sleep_ticks);
+
+	zassert_true(late >= 0 && late < k_us_to_ticks_ceil32(100),
+		     "expected wakeup at %lld, got %lld (late %lld)",
+		     start + sleep_ticks, end, late);
 }
 
 static void timer_init(struct k_timer *timer, k_timer_expiry_t expiry_fn,
