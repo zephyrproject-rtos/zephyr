@@ -55,8 +55,7 @@ enum {
 static struct {
 	ATOMIC_DEFINE(flags, ADV_FLAGS_NUM);
 	struct bt_le_ext_adv *instance;
-	const struct bt_mesh_send_cb *cb;
-	void *cb_data;
+	struct net_buf *buf;
 	uint64_t timestamp;
 	struct k_delayed_work work;
 } adv;
@@ -140,12 +139,15 @@ static int buf_send(struct net_buf *buf)
 		atomic_set_bit(adv.flags, ADV_FLAG_UPDATE_PARAMS);
 	}
 
-	adv.cb = BT_MESH_ADV(buf)->cb;
-	adv.cb_data = BT_MESH_ADV(buf)->cb_data;
+	adv.buf = buf;
 
 	err = adv_start(&adv_param, &start, &ad, 1, NULL, 0);
-	net_buf_unref(buf);
-	bt_mesh_adv_send_start(duration, err, adv.cb, adv.cb_data);
+
+	bt_mesh_adv_send_start(duration, err, BT_MESH_ADV(buf));
+
+	if (err) {
+		net_buf_unref(buf);
+	}
 
 	return err;
 }
@@ -235,7 +237,8 @@ static void adv_sent(struct bt_le_ext_adv *instance,
 	atomic_clear_bit(adv.flags, ADV_FLAG_ACTIVE);
 
 	if (!atomic_test_and_clear_bit(adv.flags, ADV_FLAG_PROXY)) {
-		bt_mesh_adv_send_end(0, adv.cb, adv.cb_data);
+		BT_MESH_ADV(adv.buf)->busy = 0U;
+		net_buf_unref(adv.buf);
 	}
 
 	schedule_send();
