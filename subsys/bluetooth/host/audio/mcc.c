@@ -887,8 +887,7 @@ static uint8_t mcs_notify_handler(struct bt_conn *conn,
 			struct mpl_op_ntf_t ntf = {0};
 
 			BT_DBG("Control Point notification");
-			if (data != 0 && length == sizeof(ntf.requested_opcode) +
-			    sizeof(ntf.result_code)) {
+			if (length == sizeof(ntf.requested_opcode) + sizeof(ntf.result_code)) {
 				ntf.requested_opcode = *(uint8_t *)data;
 				ntf.result_code = *((uint8_t *)data +
 						    sizeof(ntf.requested_opcode));
@@ -917,7 +916,7 @@ static uint8_t mcs_notify_handler(struct bt_conn *conn,
 			uint8_t result_code = 0;
 
 			BT_DBG("Search Control Point notification");
-			if (data != 0 && length == sizeof(result_code)) {
+			if (length == sizeof(result_code)) {
 				result_code = *(uint8_t *)data;
 				BT_DBG("Result: %d", result_code);
 			} else {
