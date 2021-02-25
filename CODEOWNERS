@@ -558,6 +558,7 @@
 /subsys/debug/gdbstub/                    @ceolin
 /subsys/debug/gdbstub.c                   @ceolin
 /subsys/dfu/                              @nvlsianpu
+/subsys/disk/                             @jfischer-no
 /subsys/tracing/                          @nashif
 /subsys/debug/asan_hacks.c                @vanwinkeljan @aescolar @daor-oti
 /subsys/demand_paging/                    @dcpleung @nashif
