@@ -102,6 +102,73 @@ extern "C" {
 	DT_PROP(DT_PHANDLE_BY_NAME(node_id, dmas, name), label)
 
 /**
+ * @brief Get the node identifier for the DMA controller from a
+ *        dmas property at an index
+ *
+ * Example devicetree fragment:
+ *
+ *     dma1: dma@... { ... };
+ *
+ *     dma2: dma@... { ... };
+ *
+ *     n: node {
+ *		dmas = <&dma1 1 2 0x400 0x3>,
+ *			<&dma2 6 3 0x404 0x5>;
+ *     };
+ *
+ * Example usage:
+ *
+ *     DT_DMAS_CTLR_BY_IDX(DT_NODELABEL(n), 0) // DT_NODELABEL(dma1)
+ *     DT_DMAS_CTLR_BY_IDX(DT_NODELABEL(n), 1) // DT_NODELABEL(dma2)
+ *
+ * @param node_id node identifier for a node with a dmas property
+ * @param idx logical index into dmas property
+ * @return the node identifier for the DMA controller referenced at
+ *         index "idx"
+ * @see DT_PROP_BY_PHANDLE_IDX()
+ */
+#define DT_DMAS_CTLR_BY_IDX(node_id, idx) DT_PHANDLE_BY_IDX(node_id, dmas, idx)
+
+/**
+ * @brief Get the node identifier for the DMA controller from a
+ *        dmas property by name
+ *
+ * Example devicetree fragment:
+ *
+ *     dma1: dma@... { ... };
+ *
+ *     dma2: dma@... { ... };
+ *
+ *     n: node {
+ *		dmas = <&dma1 1 2 0x400 0x3>,
+ *			<&dma2 6 3 0x404 0x5>;
+ *		dma-names = "tx", "rx";
+ *     };
+ *
+ * Example usage:
+ *
+ *     DT_DMAS_CTLR_BY_NAME(DT_NODELABEL(n), tx) // DT_NODELABEL(dma1)
+ *     DT_DMAS_CTLR_BY_NAME(DT_NODELABEL(n), rx) // DT_NODELABEL(dma2)
+ *
+ * @param node_id node identifier for a node with a dmas property
+ * @param name lowercase-and-underscores name of a dmas element
+ *             as defined by the node's dma-names property
+ * @return the node identifier for the DMA controller in the named element
+ * @see DT_PHANDLE_BY_NAME()
+ */
+#define DT_DMAS_CTLR_BY_NAME(node_id, name) \
+	DT_PHANDLE_BY_NAME(node_id, dmas, name)
+
+/**
+ * @brief Equivalent to DT_DMAS_CTLR_BY_IDX(node_id, 0)
+ * @param node_id node identifier for a node with a dmas property
+ * @return the node identifier for the DMA controller at index 0
+ *         in the node's "dmas" property
+ * @see DT_DMAS_CTLR_BY_IDX()
+ */
+#define DT_DMAS_CTLR(node_id) DT_DMAS_CTLR_BY_IDX(node_id, 0)
+
+/**
  * @brief Get a label property from a DT_DRV_COMPAT instance's dmas
  *        property by name
  * @param inst DT_DRV_COMPAT instance number
@@ -112,6 +179,40 @@ extern "C" {
  */
 #define DT_INST_DMAS_LABEL_BY_NAME(inst, name) \
 	DT_DMAS_LABEL_BY_NAME(DT_DRV_INST(inst), name)
+
+/**
+ * @brief Get the node identifier for the DMA controller from a
+ *        DT_DRV_COMPAT instance's dmas property at an index
+ *
+ * @param inst DT_DRV_COMPAT instance number
+ * @param idx logical index into dmas property
+ * @return the node identifier for the DMA controller referenced at
+ *         index "idx"
+ * @see DT_DMAS_CTLR_BY_IDX()
+ */
+#define DT_INST_DMAS_CTLR_BY_IDX(inst, idx) \
+	DT_DMAS_CTLR_BY_IDX(DT_DRV_INST(inst), idx)
+
+/**
+ * @brief Get the node identifier for the DMA controller from a
+ *        DT_DRV_COMPAT instance's dmas property by name
+ * @param inst DT_DRV_COMPAT instance number
+ * @param name lowercase-and-underscores name of a dmas element
+ *             as defined by the node's dma-names property
+ * @return the node identifier for the DMA controller in the named element
+ * @see DT_DMAS_CTLR_BY_NAME()
+ */
+#define DT_INST_DMAS_CTLR_BY_NAME(inst, name) \
+	DT_DMAS_CTLR_BY_NAME(DT_DRV_INST(inst), name)
+
+/**
+ * @brief Equivalent to DT_INST_DMAS_CTLR_BY_IDX(inst, 0)
+ * @param inst DT_DRV_COMPAT instance number
+ * @return the node identifier for the DMA controller at index 0
+ *         in the instance's "dmas" property
+ * @see DT_DMAS_CTLR_BY_IDX()
+ */
+#define DT_INST_DMAS_CTLR(inst) DT_INST_DMAS_CTLR_BY_IDX(inst, 0)
 
 /**
  * @brief Get a DMA specifier's cell value at an index
