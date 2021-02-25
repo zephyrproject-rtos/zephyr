@@ -577,16 +577,16 @@ static ssize_t read_uri_scheme_list(struct bt_conn *conn,
 	if (IS_ENABLED(CONFIG_BT_GTBS) && attr->user_data == &gtbs_inst) {
 		/* TODO: Make uri schemes unique */
 		for (int i = 0; i < ARRAY_SIZE(svc_insts); i++) {
-			size_t len = strlen(svc_insts[i].uri_scheme_list);
+			size_t uri_len = strlen(svc_insts[i].uri_scheme_list);
 
-			if (read_buf.len + len >= read_buf.size) {
+			if (read_buf.len + uri_len >= read_buf.size) {
 				BT_WARN("Cannot fit all TBS instances in GTBS "
 					"URI scheme list");
 				break;
 			}
 
 			net_buf_simple_add_mem(
-				&read_buf, svc_insts[i].uri_scheme_list, len);
+				&read_buf, svc_insts[i].uri_scheme_list, uri_len);
 		}
 		/* Add null terminator for printing */
 		read_buf.data[read_buf.len] = '\0';
