@@ -46,9 +46,9 @@ struct bt_audio_chan *bt_audio_chan_config(struct bt_conn *conn,
 {
 	struct bt_audio_chan *chan;
 
-	BT_DBG("conn %p ep %p cap %p codec 0x%02x codec cid 0x%04x "
-	       "codec vid 0x%04x", conn, ep, cap, codec->id, codec->cid,
-	       codec->vid);
+	BT_DBG("conn %p ep %p cap %p codec %p codec id 0x%02x codec cid 0x%04x "
+	       "codec vid 0x%04x", conn, ep, cap, codec, codec ? codec->id : 0,
+	       codec ? codec->cid : 0, codec ? codec->vid : 0);
 
 	if (!conn || !cap || !cap->ops || !codec) {
 		return NULL;
@@ -744,7 +744,7 @@ int bt_audio_chan_unbind(struct bt_audio_chan *chan)
 
 int bt_audio_chan_connect(struct bt_audio_chan *chan)
 {
-	BT_DBG("chan %p iso %p", chan, chan->iso);
+	BT_DBG("chan %p iso %p", chan, chan ? chan->iso : NULL);
 
 	if (!chan || !chan->iso) {
 		return -EINVAL;
