@@ -1,3 +1,7 @@
+common:
+  integration_platforms:
+    - native_posix
+
 tests:
   logging.log_list:
     tags: log_list logging
