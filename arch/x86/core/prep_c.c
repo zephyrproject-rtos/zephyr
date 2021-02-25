@@ -49,7 +49,7 @@ if (IS_ENABLED(CONFIG_MULTIBOOT_INFO) &&
 	z_multiboot_init((struct multiboot_info *)cpu_arg->arg);
 } else if (IS_ENABLED(CONFIG_X86_EFI) &&
 	   cpu_arg->boot_type == EFI_BOOT_TYPE) {
-		efi_init();
+		efi_init((struct efi_boot_arg *)cpu_arg->arg);
 } else {
 	ARG_UNUSED(cpu_arg);
 }
