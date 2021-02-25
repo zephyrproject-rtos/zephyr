@@ -6,6 +6,12 @@ tests:
     tags: shell
     harness: keyboard
     min_ram: 40
+  sample.shell.shell_module.usb:
+    depends_on: usb_device
+    tags: shell usb
+    harness: keyboard
+    min_ram: 40
+    extra_args: OVERLAY_CONFIG="overlay-usb.conf"
   sample.shell.shell_module.minimal:
     filter: ( CONFIG_SERIAL and CONFIG_UART_SHELL_ON_DEV_NAME )
     tags: shell
