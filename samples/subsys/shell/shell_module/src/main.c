@@ -10,6 +10,8 @@
 #include <version.h>
 #include <logging/log.h>
 #include <stdlib.h>
+#include <drivers/uart.h>
+#include <usb/usb_device.h>
 
 LOG_MODULE_REGISTER(app);
 
@@ -145,5 +147,18 @@ SHELL_CMD_ARG_REGISTER(version, NULL, "Show kernel version", cmd_version, 1, 0);
 
 void main(void)
 {
+#if defined(CONFIG_USB_UART_CONSOLE)
+	const struct device *dev;
+	uint32_t dtr = 0;
 
+	dev = device_get_binding(CONFIG_UART_SHELL_ON_DEV_NAME);
+	if (dev == NULL || usb_enable(NULL)) {
+		return;
+	}
+
+	while (!dtr) {
+		uart_line_ctrl_get(dev, UART_LINE_CTRL_DTR, &dtr);
+		k_sleep(K_MSEC(100));
+	}
+#endif
 }
