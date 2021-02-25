@@ -169,16 +169,6 @@ extern void z_enable_sys_clock(void);
 	(uint32_t)(k_cyc_to_ns_floor64(X) / NCYCLES)
 
 /**
- * @defgroup clock_apis Kernel Clock APIs
- * @ingroup kernel_apis
- * @{
- */
-
-/**
- * @} end defgroup clock_apis
- */
-
-/**
  *
  * @brief Return the lower part of the current system tick count
  *
