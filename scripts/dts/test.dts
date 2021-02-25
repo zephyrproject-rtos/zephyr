@@ -359,7 +359,7 @@
 	//
 
 	child-binding {
-		compatible = "child-binding";
+		compatible = "top-binding";
 		child-1 {
 			child-prop = <1>;
 			grandchild {

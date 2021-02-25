@@ -2,7 +2,7 @@
 
 description: child-binding test
 
-compatible: "child-binding"
+compatible: "top-binding"
 
 child-binding:
     description: child node

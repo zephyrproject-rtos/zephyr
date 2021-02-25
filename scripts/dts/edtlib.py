@@ -1454,10 +1454,11 @@ class Binding:
       The free-form description of the binding.
 
     compatible:
-      The compatible string the binding matches. This is None if the Binding is
-      inferred from node properties. If the Binding is a child binding, then
-      this will be inherited from the parent binding unless the child binding
-      explicitly sets its own compatible.
+      The compatible string the binding matches.
+
+      This may be None. For example, it's None when the Binding is inferred
+      from node properties. It can also be None for Binding objects created
+      using 'child-binding:' with no compatible.
 
     prop2specs:
       A collections.OrderedDict mapping property names to PropertySpec objects
@@ -1564,14 +1565,6 @@ class Binding:
             if key.endswith("-cells"):
                 self.specifier2cells[key[:-len("-cells")]] = val
 
-        # Make child binding compatibles match ours if they are missing.
-        if self.compatible is not None:
-            child = self.child_binding
-            while child is not None:
-                if child.compatible is None:
-                    child.compatible = self.compatible
-                child = child.child_binding
-
     def __repr__(self):
         if self.compatible:
             compat = f" for compatible '{self.compatible}'"
@@ -1587,14 +1580,7 @@ class Binding:
     @property
     def compatible(self):
         "See the class docstring"
-        if hasattr(self, '_compatible'):
-            return self._compatible
         return self.raw.get('compatible')
-
-    @compatible.setter
-    def compatible(self, compatible):
-        "See the class docstring"
-        self._compatible = compatible
 
     @property
     def bus(self):

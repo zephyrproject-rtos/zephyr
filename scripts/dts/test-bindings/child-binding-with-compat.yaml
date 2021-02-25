@@ -2,7 +2,7 @@
 
 description: child-binding with separate compatible than the parent
 
-compatible: "child-binding-with-compat"
+compatible: "top-binding-with-compat"
 
 child-binding:
     compatible: child-compat
