@@ -312,6 +312,7 @@ config STM32_RTC_TIMER
 	bool "STM32 RTC Timer [EXPERIMENTAL]"
 	depends on SOC_SERIES_STM32L1X
 	depends on CLOCK_CONTROL && PM
+	depends on !COUNTER_RTC_STM32
 	select TICKLESS_CAPABLE
 	select USE_STM32_LL_RTC
 	help

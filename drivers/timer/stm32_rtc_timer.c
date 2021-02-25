@@ -23,6 +23,7 @@
  * - only for LSI / LSE (prescalers set for 1hz rtc > (see RTC application note table 7)
  * 		LSI 37kHz async 1, sync 18499
  * 		LSE 32.768kHz async 1, sync 16383
+ * 		(other combinations possible, but async=>1, sync as high as possible for max granularity)
  * - max resolution = ((synchronous prescaler + 1)/2) > alarm mask SS [0] bit (see RTC application note table 10)
  * 	> subsecond granularity in read is 2x the subsec interrupt granularity (due to subsec alarm masks)
  * - max granularity = 1/resolution sec = 1000/resolution ms
@@ -51,19 +52,18 @@
 
 /*
  * questions:
- * - problems with also having the rtc counter driver / having a rtc device (devicetree)?
  * - for CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC should i use the max ss alarm resolution, or max ss resolution?
  * 		the actual granularity of the rtc (so also for read) is (RTC_SYNCH_PREDIV+1), so should use that probably
  */
 
 /*
  * TODO:
- * - add 'depends on !COUNTER_RTC_STM32' in timer's Kconfig
  * - find proper place for LSI/LSE config (in board config?) > dependent on SoC's LSI freq, but also application preferred config
  * 		(especially if consumption during sleep dependent on prescalers > need to run tests)
  * - add something for CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC ?
  * - figure out if tick threshold
  * - figure out if there is a way to not have to 'overwrite' the LL functions, due to the disabling of SysTick
+ * - calculate if variables are large enough if controller would run for 10 years :)
  */
 
 #define RTC_EXTI_LINE	LL_EXTI_LINE_17
@@ -84,13 +84,6 @@ static struct k_spinlock lock;
 #define RTC_SYNCH_PREDIV           ((uint32_t)0x3FFF)
 #endif
 
-//#ifdef CONFIG_STM32_RTC_TIMER_LSE
-///* ck_apre=LSEFreq/(ASYNC prediv + 1) = 16384 with LSEFreq=32768Hz */
-//#define RTC_ASYNCH_PREDIV          ((uint32_t)0x7F)
-///* sync presc = 16384, ck_spre= ck_apre/(SYNC prediv + 1) = 1 Hz */
-//#define RTC_SYNCH_PREDIV           ((uint32_t)0xFF)
-//#endif
-
 
 
 #define RTC_CLOCK_HW_CYCLES_PER_SEC ((RTC_SYNCH_PREDIV+1)/ 2U)
@@ -101,7 +94,7 @@ static struct k_spinlock lock;
 #define T_TIME_OFFSET 946684800
 
 /* Tick/cycle count of the last announce call. */
-static volatile uint32_t rtc_last;
+static volatile uint32_t rtc_last = 0;
 
 /* TODO: check whether also right calculation for our impl */
 /* Maximum number of ticks. */
@@ -295,11 +288,34 @@ static uint32_t _tv_to_ms(const struct timeval *to)
 	return (to->tv_sec * MSEC_PER_SEC) + (to->tv_usec / USEC_PER_MSEC);
 }
 
+static struct timeval rtc_stm32_ticks_to_tv(uint32_t ticks)
+{
+	struct timeval ts;
+	uint64_t ticks_us;
+
+	/* ticks to us, some accuracy loss,
+	 * but this is the best way with also long enough timeout length
+	 *
+	 * ticks_to_us = ticks * (1/CONFIG_SYS_CLOCK_TICKS_PER_SEC) * USEC_PER_SEC
+	 */
+	ticks_us = (uint64_t)ticks *
+			(uint64_t)(USEC_PER_SEC) /
+			(uint64_t)(CONFIG_SYS_CLOCK_TICKS_PER_SEC);
+
+	/* check how many ticks for calendar, and how many for subseconds */
+	ts.tv_usec = ticks_us % USEC_PER_SEC;
+	ts.tv_sec = (ticks_us - ts.tv_usec) / USEC_PER_SEC;
+
+	printk("rtc_stm32_ticks_to_tv: ticks_us= %llu\n", ticks_us);
+
+	return ts;
+}
 
 /* TODO:
  * - check if okay changed to timeval (from timespec) > okay range with usec vs nsec?
  * - check whether problem with offsetting
  * - check ms>ticks conversion formula
+ * - check whether the last ticks formula covers all combinations of tms & ticks_per_sec (lower than msec_per_sec)
  */
 static uint32_t rtc_stm32_read(void)
 {
@@ -315,11 +331,16 @@ static uint32_t rtc_stm32_read(void)
 	rtc_time = LL_RTC_TIME_Get(RTC);
 	rtc_date = LL_RTC_DATE_Get(RTC);
 
-	/* TODO check whether this is correct offsetting etc */
-
 	/* Convert calendar datetime to UNIX timestamp */
-	/* RTC start time: 1st, Jan, 2000 */
-	/* time_t start:   1st, Jan, 1970 */
+
+	/* RTC start time: 1st, Jan, 2000
+	 * tm start: commonly 1st, Jan, 1900 (but just struct for civil time)
+	 * time_t start: UNIX epoch: 1st, Jan, 1970
+	 */
+
+	/* add 100 before, since in timeutil_timegm() tm epoch considered
+	 * 1900, so need to change to RTC epoch (2000)
+	 */
 	now.tm_year = 100 +
 			__LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_YEAR(rtc_date));
 	/* tm_mon allowed values are 0-11 */
@@ -330,12 +351,14 @@ static uint32_t rtc_stm32_read(void)
 	now.tm_min = __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_MINUTE(rtc_time));
 	now.tm_sec = __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_SECOND(rtc_time));
 
+	/* Convert tm to a POSIX epoch offset in seconds.*/
 	ts.tv_sec = timeutil_timegm(&now);
 
 	/* Subtract offset of RTC (2000>1970), back to UNIX epoch */
 	ts.tv_sec -= T_TIME_OFFSET;
 
-	/*convert subseconds value into us */
+
+	/* Convert subseconds value into us */
 	/*
 	 * formula based on stm32l1 ref manual (RM0038, 16) pg 537:
 	 * Second fraction = ( PREDIV_S - SS ) / ( PREDIV_S + 1 )
@@ -345,11 +368,13 @@ static uint32_t rtc_stm32_read(void)
 	 */
 	ts.tv_usec = (RTC_SYNCH_PREDIV - rtc_subsec) * USEC_PER_SEC / (RTC_SYNCH_PREDIV+1);
 
-	/* convert timeval	 */
+	/* convert sec&usec to ms (so some accuracy loss) */
 	tms = _tv_to_ms(&ts);
+	//printk("rtc_stm32_read: ts.tv_sec= %llu, ts.tv_usec= %u, tms= %u \n", ts.tv_sec, ts.tv_usec, tms);
 
 	/* convert ms to ticks */
-	ticks = tms * ( CONFIG_SYS_CLOCK_TICKS_PER_SEC / MSEC_PER_SEC );
+	ticks = tms * CONFIG_SYS_CLOCK_TICKS_PER_SEC / MSEC_PER_SEC ;
+	//printk("rtc_stm32_read: ticks= %u\n", ticks);
 
 	return ticks;
 }
@@ -357,17 +382,22 @@ static uint32_t rtc_stm32_read(void)
 /*
  * TODO:
  * - add error returns
- * - think about whether to keep subsec alarm here as well (is it && for alarm flag or ||?)
  * - !! Check if need to change to add timeout/alarm value to current time,
  * 			not absolute time (variable type limitations)
  * - !! check if problem when >1 year
  */
-static int rtc_stm32_set_calendar_alarm(time_t tv_sec)
+static int rtc_stm32_set_calendar_alarm(struct timeval alarm_tv)
 {
-	struct tm alarm_tm;
 	LL_RTC_AlarmTypeDef rtc_alarm;
+	struct tm alarm_tm;
 
-	gmtime_r(&tv_sec, &alarm_tm);
+	/* From UNIX epoch (1970) to RTC epoch (2000) */
+	alarm_tv.tv_sec += T_TIME_OFFSET;
+
+	/* Convert UNIX time to civil time*/
+	gmtime_r(&alarm_tv.tv_sec , &alarm_tm);
+
+	printk("rtc_stm32_set_calendar_alarm: on %u calendar alarm min %u, sec %u\n", rtc_stm32_read(), alarm_tm.tm_min, alarm_tm.tm_sec);
 
 	/* Apply ALARM_A */
 	rtc_alarm.AlarmTime.TimeFormat = LL_RTC_TIME_FORMAT_AM_OR_24;
@@ -390,6 +420,9 @@ static int rtc_stm32_set_calendar_alarm(time_t tv_sec)
 
 	LL_RTC_DisableWriteProtection(RTC);
 
+	/* reset subsec alarm, otherwise will still
+	 * generate interrupt
+	 */
 	LL_RTC_ALMA_SetSubSecond(RTC, 0);
 	LL_RTC_ALMA_SetSubSecondMask(RTC, 0);
 
@@ -411,11 +444,11 @@ static int rtc_stm32_set_calendar_alarm(time_t tv_sec)
  * - add something that bases the mask on the ticks_per_sec?
  *      for now just smallest possible granularity
  */
-static int rtc_stm32_set_subsec_alarm(suseconds_t tv_usec)
+static int rtc_stm32_set_subsec_alarm(struct timeval alarm_tv)
 {
 	LL_RTC_AlarmTypeDef rtc_alarm;
 
-	/* Apply ALARM_A */
+	/* reset ALARM_A calendar */
 	rtc_alarm.AlarmTime.TimeFormat = LL_RTC_TIME_FORMAT_AM_OR_24;
 	rtc_alarm.AlarmTime.Hours = 0;
 	rtc_alarm.AlarmTime.Minutes = 0;
@@ -439,13 +472,15 @@ static int rtc_stm32_set_subsec_alarm(suseconds_t tv_usec)
 	/* convert usecs to subsecond register values
 	 * formula adapted from subsecond>us formula, see rtc_stm32_read()
 	*/
-	uint32_t subsecond = RTC_SYNCH_PREDIV - ( (tv_usec * (RTC_SYNCH_PREDIV+1)) / USEC_PER_SEC );
+	uint32_t subsecond = RTC_SYNCH_PREDIV - ( (alarm_tv.tv_usec * (RTC_SYNCH_PREDIV+1)) / USEC_PER_SEC );
 
 	/* check whether subsecond is between min and max data/prescaler
 	 * and set subsecond alarm a
 	 */
 	LL_RTC_ALMA_SetSubSecond(RTC, subsecond <= RTC_SYNCH_PREDIV ? subsecond : RTC_SYNCH_PREDIV);
 	LL_RTC_ALMA_SetSubSecondMask(RTC, 1);
+
+	printk("rtc_stm32_set_subsec_alarm: on %u ticks, tv_usec=%u, subsecond alarm set %u\n", rtc_stm32_read(), alarm_tv.tv_usec, subsecond);
 
 	LL_RTC_ALMA_Enable(RTC);
 	LL_RTC_ClearFlag_ALRA(RTC);
@@ -464,12 +499,12 @@ static void rtc_stm32_isr_handler(const void *arg)
 {
 	ARG_UNUSED(arg);
 
-	uint32_t now_ticks = rtc_stm32_read();
-
 	if (LL_RTC_IsActiveFlag_ALRA(RTC) != 0) {
 		/* clear flags */
 
 		k_spinlock_key_t key = k_spin_lock(&lock);
+
+		uint32_t now_ticks = rtc_stm32_read();
 
 		LL_RTC_DisableWriteProtection(RTC);
 		LL_RTC_ClearFlag_ALRA(RTC);
@@ -487,6 +522,8 @@ static void rtc_stm32_isr_handler(const void *arg)
 
 		z_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL)
 				? dticks : (dticks > 0));
+
+		//printk("rtc_stm32_isr_handler: on %u announce %u\n", now_ticks, dticks);
 	}
 
 	LL_EXTI_ClearFlag_0_31(RTC_EXTI_LINE);
@@ -521,8 +558,6 @@ int z_clock_driver_init(const struct device *device)
 	LL_RCC_SetRTCClockSource(LL_RCC_RTC_CLKSOURCE_LSI);
 	printk("z_clock_driver_init: LSI clock source set\n");
 
-
-
 #else /* CONFIG_STM32_RTC_TIMER_LSE */
 
 #if defined(CONFIG_STM32_RTC_TIMER_LSE_BYPASS)
@@ -535,7 +570,6 @@ int z_clock_driver_init(const struct device *device)
 	/* Wait until LSE is ready */
 	while (LL_RCC_LSE_IsReady() != 1) {
 	}
-
 
 	LL_RCC_SetRTCClockSource(LL_RCC_RTC_CLKSOURCE_LSE);
 
@@ -572,7 +606,6 @@ int z_clock_driver_init(const struct device *device)
 
 	LL_EXTI_EnableRisingTrig_0_31(RTC_EXTI_LINE);
 
-
 	IRQ_CONNECT(DT_IRQN(DT_NODELABEL(rtc)),
 			DT_IRQ(DT_NODELABEL(rtc), priority),
 			rtc_stm32_isr_handler, 0, 0);
@@ -586,11 +619,12 @@ int z_clock_driver_init(const struct device *device)
  * - calculate and add max_cyc, max_tick
  * - check whether okay this way with the -rtc_last and later +, for rounding
  * 		(especially since it's updated in the isr handler, and not here)
- * - if and if so, where to implement CYCLES_PER_TICK?
+ * - if, and if so where, to implement CYCLES_PER_TICK?
+ * - check if/how to account for partial ticks (should it be -1 or +1?)
  */
 void z_clock_set_timeout(int32_t ticks, bool idle)
 {
-	struct timeval ts;
+	struct timeval alarm_tv;
 
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return;
@@ -599,34 +633,30 @@ void z_clock_set_timeout(int32_t ticks, bool idle)
 	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : ticks;
 	ticks = CLAMP(ticks - 1, 0, (uint32_t) MAX_TICKS);
 
-	/* Compute number of RTC cycles until the next timeout. */
-	/* timeout is tick value of when timeout occurs, not amount until */
-
 	uint32_t now_ticks = rtc_stm32_read();
 
-	uint32_t timeout = ticks + now_ticks - rtc_last;
+	/* Compute number of RTC cycles until the next timeout. */
+	/* alarm_on_ticks is tick value of when timeout occurs, not amount until */
 
-	/* Round to the nearest tick boundary. */
-	timeout = (timeout - 1) / CYCLES_PER_TICK
-		  * CYCLES_PER_TICK;
+	// can't be uint32_t bc otherwise max a few days since boot
+	uint64_t alarm_on_ticks = now_ticks + ticks;
 
-	timeout += rtc_last;
+	/**** rounding off ticks *****/
 
-	/* ticks to us, some accuracy loss,
-	 * but this is the best way with also long enough timeout length
-	 *
-	 * ticks_to_us = timeout_ticks * (1/CONFIG_SYS_CLOCK_TICKS_PER_SEC) * USEC_PER_SEC
+	/* Add +1 in order to compensate the partially started tick.
+	 * Alarm will expire between requested ticks and ticks+1.
+	 * In case only 1 tick is requested, it will avoid
+	 * that tick+1 event occurs before alarm setting is finished.
 	 */
-	uint64_t timeout_us = (uint64_t)timeout *
-			(uint64_t)(USEC_PER_SEC) /
-			(uint64_t)(CONFIG_SYS_CLOCK_TICKS_PER_SEC);
+	alarm_on_ticks+=1;
 
-	/* check how many ticks for calendar, and how many for subseconds */
-	ts.tv_usec = timeout_us % USEC_PER_SEC;
-	ts.tv_sec = (timeout_us - ts.tv_usec) / USEC_PER_SEC;
+	printk("z_clock_set_timeout: on %u ticks, timeout ticks = %u, alarm_on_ticks = %llu\n", now_ticks, ticks, alarm_on_ticks);
+
+	// ticks > timeval (there already split in sec & usec)
+	alarm_tv = rtc_stm32_ticks_to_tv(alarm_on_ticks);
 
 	if (ticks >= CONFIG_SYS_CLOCK_TICKS_PER_SEC){
-		if (!rtc_stm32_set_calendar_alarm(ts.tv_sec)){
+		if (!rtc_stm32_set_calendar_alarm(alarm_tv)){
 			printk("calendar alarm set, subsec alarm & mask reset \n");
 		}
 		else{
@@ -635,8 +665,8 @@ void z_clock_set_timeout(int32_t ticks, bool idle)
 		}
 	}
 	else {
-		if(!rtc_stm32_set_subsec_alarm(ts.tv_usec)){
-			printk("subsecond alarm, ss mask, calendar mask [1,1,1,1] set\n");
+		if(!rtc_stm32_set_subsec_alarm(alarm_tv)){
+			printk("subsecond alarm & ss mask set, calendar reset\n");
 		}
 		else{
 			/* error */
@@ -647,20 +677,18 @@ void z_clock_set_timeout(int32_t ticks, bool idle)
 
 /* TODO:
  * - check whether to add the tickless kernel ifs
- * - check whether to keep the cycles_per_tick
+ * - check whether to add the cycles_per_tick
+ * - check if need to do additional rounding
+ */
+/* announce to kernel how many ticks have elapsed since
+ * last call to z_clock_announce()
  */
 uint32_t z_clock_elapsed(void)
 {
 	uint32_t now_ticks = rtc_stm32_read();
 	printk("z_clock_elapsed: now_ticks= %u, rtc_last= %u\n", now_ticks, rtc_last);
 
-	uint32_t dticks = (now_ticks - rtc_last);
-
-	//rtc_last += dticks;
-
-	return (dticks / CYCLES_PER_TICK);
-
-	//return (rtc_stm32_read() - rtc_last) / CYCLES_PER_TICK;
+	return (now_ticks - rtc_last);
 }
 
 /* TODO:
