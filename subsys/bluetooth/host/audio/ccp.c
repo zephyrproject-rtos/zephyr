@@ -82,7 +82,7 @@ struct tbs_instance_t {
 	struct bt_gatt_subscribe_params friendly_name_sub_params;
 };
 
-static struct ccp_read_params read_params[MAX_CONCURRENT_REQS];
+static struct ccp_read_params read_params_arr[MAX_CONCURRENT_REQS];
 static struct bt_ccp_cb_t *ccp_cbs;
 
 static struct bt_gatt_discover_params discover_params;
@@ -117,10 +117,10 @@ static struct tbs_instance_t *get_inst_by_index(uint8_t idx)
 
 static struct ccp_read_params *get_read_params(void)
 {
-	for (int i = 0; i < ARRAY_SIZE(read_params); i++) {
-		if (!read_params[i].params.func) {
-			read_params[i].bytes_read = 0;
-			return &read_params[i];
+	for (int i = 0; i < ARRAY_SIZE(read_params_arr); i++) {
+		if (!read_params_arr[i].params.func) {
+			read_params_arr[i].bytes_read = 0;
+			return &read_params_arr[i];
 		}
 	}
 	return NULL;
@@ -129,9 +129,9 @@ static struct ccp_read_params *get_read_params(void)
 static struct ccp_read_params *lookup_read_params(
 	struct bt_gatt_read_params *params)
 {
-	for (int i = 0; i < ARRAY_SIZE(read_params); i++) {
-		if (&read_params[i].params == params) {
-			return &read_params[i];
+	for (int i = 0; i < ARRAY_SIZE(read_params_arr); i++) {
+		if (&read_params_arr[i].params == params) {
+			return &read_params_arr[i];
 		}
 	}
 	return NULL;

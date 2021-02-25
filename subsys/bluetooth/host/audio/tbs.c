@@ -334,8 +334,8 @@ static void net_buf_put_call_state(void *inst_p)
 			calls = svc_insts[i].calls;
 			call_count = ARRAY_SIZE(svc_insts[i].calls);
 
-			for (int i = 0; i < call_count; i++) {
-				call = &calls[i];
+			for (int j = 0; j < call_count; j++) {
+				call = &calls[j];
 				if (call->index == BT_TBS_FREE_CALL_INDEX) {
 					continue;
 				}
@@ -382,8 +382,8 @@ static void net_buf_put_current_calls(void *inst_p)
 			calls = svc_insts[i].calls;
 			call_count = ARRAY_SIZE(svc_insts[i].calls);
 
-			for (int i = 0; i < call_count; i++) {
-				call = &calls[i];
+			for (int j = 0; j < call_count; j++) {
+				call = &calls[j];
 				if (call->index == BT_TBS_FREE_CALL_INDEX) {
 					continue;
 				}
@@ -2432,9 +2432,9 @@ int bt_tbs_set_uri_scheme_list(uint8_t bearer_idx, const char **uri_list,
 
 		/* TODO: Make uri schemes unique */
 		for (int i = 0; i < ARRAY_SIZE(svc_insts); i++) {
-			size_t len = strlen(svc_insts[i].uri_scheme_list);
+			size_t uri_len = strlen(svc_insts[i].uri_scheme_list);
 
-			if (uri_scheme_buf.len + len >= uri_scheme_buf.size) {
+			if (uri_scheme_buf.len + uri_len >= uri_scheme_buf.size) {
 				BT_WARN("Cannot fit all TBS instances in GTBS "
 					"URI scheme list");
 				break;
@@ -2442,7 +2442,7 @@ int bt_tbs_set_uri_scheme_list(uint8_t bearer_idx, const char **uri_list,
 
 			net_buf_simple_add_mem(&uri_scheme_buf,
 					       svc_insts[i].uri_scheme_list,
-					       len);
+					       uri_len);
 		}
 
 		/* Add null terminator for printing */

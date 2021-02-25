@@ -309,7 +309,7 @@ int csis_adv_resume(void)
 	ad[1].data = csis_inst.psri;
 
 #if defined(CONFIG_BT_EXT_ADV)
-	struct bt_le_ext_adv_start_param param;
+	struct bt_le_ext_adv_start_param start_param;
 	if (!csis_inst.adv) {
 		struct bt_le_adv_param param;
 
@@ -339,9 +339,9 @@ int csis_adv_resume(void)
 		return err;
 	}
 
-	memset(&param, 0, sizeof(param));
-	param.timeout = CSIS_ADV_TIME;
-	err = bt_le_ext_adv_start(csis_inst.adv, &param);
+	memset(&start_param, 0, sizeof(start_param));
+	start_param.timeout = CSIS_ADV_TIME;
+	err = bt_le_ext_adv_start(csis_inst.adv, &start_param);
 #else
 	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME,
 				ad, ARRAY_SIZE(ad), NULL, 0);
