@@ -148,7 +148,6 @@
 			reg = <0x40008000 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00100000>;
 			interrupts = <29 3>;
-			interrupt-names = "combined";
 			status = "disabled";
 			label = "LPUART_1";
 		};
@@ -242,7 +241,6 @@
 			reg = <0x40012400 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00100000>;
 			interrupts = <12 0>;
-			interrupt-names = "combined";
 			status = "disabled";
 			label = "ADC_1";
 			#io-channel-cells = <1>;

@@ -14,7 +14,6 @@
 			reg = <0x40004800 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00040000>;
 			interrupts = <29 0>;
-			interrupt-names = "combined";
 			status = "disabled";
 			label = "UART_3";
 		};
@@ -24,7 +23,6 @@
 			reg = <0x40004c00 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00080000>;
 			interrupts = <29 1>;
-			interrupt-names = "combined";
 			status = "disabled";
 			label = "UART_4";
 		};
