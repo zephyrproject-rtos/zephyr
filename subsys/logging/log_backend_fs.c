@@ -29,6 +29,7 @@ static int file_ctr, newest, oldest;
 
 static int allocate_new_file(struct fs_file_t *file);
 static int del_oldest_log(void);
+static int get_log_file_id(struct fs_dirent *ent);
 
 static int check_log_dir_available(void)
 {
@@ -49,6 +50,41 @@ static int check_log_dir_available(void)
 	}
 
 	return -ENOENT;
+}
+
+static int check_log_file_exist(int num)
+{
+	struct fs_dir_t dir;
+	struct fs_dirent ent;
+	int rc;
+
+	fs_dir_t_init(&dir);
+
+	rc = fs_opendir(&dir, CONFIG_LOG_BACKEND_FS_DIR);
+	if (rc) {
+		return -EIO;
+	}
+
+	while (1) {
+		rc = fs_readdir(&dir, &ent);
+		if (rc < 0) {
+			(void) fs_closedir(&dir);
+			return -EIO;
+		}
+		if (ent.name[0] == 0) {
+			break;
+		}
+
+		rc = get_log_file_id(&ent);
+
+		if (rc == num) {
+			return 1;
+		}
+	}
+
+	(void) fs_closedir(&dir);
+
+	return 0;
 }
 
 int write_log_to_file(uint8_t *data, size_t length, void *ctx)
@@ -84,18 +120,33 @@ int write_log_to_file(uint8_t *data, size_t length, void *ctx)
 		}
 
 		rc = fs_write(f, data, length);
-		if (rc == -ENOSPC) {
-			if (IS_ENABLED(CONFIG_LOG_BACKEND_FS_OVERWRITE)) {
+		if (rc >= 0) {
+			if (IS_ENABLED(CONFIG_LOG_BACKEND_FS_OVERWRITE) &&
+			    (rc != length)) {
 				del_oldest_log();
 
 				return 0;
 			}
 			/* If overwrite is disabled, full memory
-			 * is equivalent of corrupted backend.
+			 * cause the log record abandonment.
 			 */
-			goto on_error;
-		} else if (rc < 0) {
-			return 0;
+			length = rc;
+		} else {
+			rc = check_log_file_exist(newest);
+			if (rc == 0) {
+				/* file was lost somehow
+				 * try to get a new one
+				 */
+				file_ctr--;
+				rc = allocate_new_file(f);
+				if (rc < 0) {
+					goto on_error;
+				}
+			} else if (rc < 0) {
+				/* fs is corrupted*/
+				goto on_error;
+			}
+			length = 0;
 		}
 
 		fs_sync(f);
