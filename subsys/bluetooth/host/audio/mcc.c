@@ -427,13 +427,14 @@ static uint8_t mcc_read_segments_obj_id_cb(struct bt_conn *conn, uint8_t err,
 					   struct bt_gatt_read_params *params,
 					   const void *data, uint16_t length)
 {
-	int cb_err = err;
+	int cb_err;
 	uint8_t *pid = (uint8_t *)data;
 	uint64_t id = 0;
 
 	mcs_inst.busy = false;
 	if (err) {
 		BT_DBG("err: 0x%02x", err);
+		cb_err = err;
 	} else if ((!pid) || (length != BT_OTS_OBJ_ID_SIZE)) {
 		BT_DBG("length: %d, data: %p", length, data);
 		cb_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
@@ -441,10 +442,11 @@ static uint8_t mcc_read_segments_obj_id_cb(struct bt_conn *conn, uint8_t err,
 		BT_HEXDUMP_DBG(pid, length, "Segments Object ID");
 		id = sys_get_le48(pid);
 		BT_DBG_OBJ_ID("Segments Object ID: ", id);
+		cb_err = 0;
 	}
 
 	if (mcc_cb && mcc_cb->segments_obj_id_read) {
-		mcc_cb->segments_obj_id_read(conn, err, id);
+		mcc_cb->segments_obj_id_read(conn, cb_err, id);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -454,13 +456,14 @@ static uint8_t mcc_read_current_track_obj_id_cb(struct bt_conn *conn, uint8_t er
 						struct bt_gatt_read_params *params,
 						const void *data, uint16_t length)
 {
-	int cb_err = err;
+	int cb_err;
 	uint8_t *pid = (uint8_t *)data;
 	uint64_t id = 0;
 
 	mcs_inst.busy = false;
 	if (err) {
 		BT_DBG("err: 0x%02x", err);
+		cb_err = err;
 	} else if ((!pid) || (length != BT_OTS_OBJ_ID_SIZE)) {
 		BT_DBG("length: %d, data: %p", length, data);
 		cb_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
@@ -468,10 +471,11 @@ static uint8_t mcc_read_current_track_obj_id_cb(struct bt_conn *conn, uint8_t er
 		BT_HEXDUMP_DBG(pid, length, "Current Track Object ID");
 		id = sys_get_le48(pid);
 		BT_DBG_OBJ_ID("Current Track Object ID: ", id);
+		cb_err = 0;
 	}
 
 	if (mcc_cb && mcc_cb->current_track_obj_id_read) {
-		mcc_cb->current_track_obj_id_read(conn, err, id);
+		mcc_cb->current_track_obj_id_read(conn, cb_err, id);
 	}
 
 	return BT_GATT_ITER_STOP;

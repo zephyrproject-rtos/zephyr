@@ -201,7 +201,7 @@ static bool uri_scheme_in_list(const char *uri_scheme,
 	uint8_t scheme_len = strlen(uri_scheme);
 	uint8_t scheme_list_len = strlen(uri_scheme_list);
 	const char *uri_scheme_cand = uri_scheme_list;
-	uint8_t uri_scheme_cand_len = 0;
+	uint8_t uri_scheme_cand_len;
 	int start_idx = 0;
 
 	for (int i = 0; i < scheme_list_len; i++) {
@@ -1054,7 +1054,7 @@ static int originate_call(struct tbs_service_inst_t *inst,
 	}
 
 	if (uri_len == 0 || uri_len > CONFIG_BT_TBS_MAX_URI_LENGTH) {
-		call_index = BT_TBS_FREE_CALL_INDEX;
+		call->index = BT_TBS_FREE_CALL_INDEX;
 		return BT_CCP_RESULT_CODE_INVALID_URI;
 	}
 
@@ -1062,7 +1062,7 @@ static int originate_call(struct tbs_service_inst_t *inst,
 	call->remote_uri[uri_len] = '\0';
 	if (!tbs_valid_uri(call->remote_uri)) {
 		BT_DBG("Invalid URI: %s", log_strdup(call->remote_uri));
-		call_index = BT_TBS_FREE_CALL_INDEX;
+		call->index = BT_TBS_FREE_CALL_INDEX;
 		return BT_CCP_RESULT_CODE_INVALID_URI;
 	}
 
@@ -1070,7 +1070,7 @@ static int originate_call(struct tbs_service_inst_t *inst,
 	 * even though we don't have an internal dialing state.
 	 */
 	call->state = BT_CCP_CALL_STATE_DIALING;
-	if (call_index) {
+	if (call->index) {
 		*call_index = call->index;
 	}
 	BT_CCP_CALL_FLAG_SET_OUTGOING(call->flags);
