@@ -32,6 +32,7 @@ struct pinmux_ports_t {
 #endif
 };
 
+#ifdef CONFIG_I2C_XEC
 static void i2c_pinmux(struct pinmux_ports_t *p, uint8_t port_sel)
 {
 	switch (port_sel) {
@@ -97,6 +98,7 @@ static void i2c_pinmux(struct pinmux_ports_t *p, uint8_t port_sel)
 		break;
 	}
 }
+#endif
 
 static void configure_debug_interface(void)
 {
