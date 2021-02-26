@@ -654,8 +654,6 @@ static int i2s_cavs_trigger(const struct device *dev, enum i2s_dir dir,
 			break;
 		}
 
-		__ASSERT_NO_MSG(strm->mem_block == NULL);
-
 		if (dir == I2S_DIR_TX) {
 			ret = i2s_tx_stream_start(dev_data, ssp,
 					dev_data->dev_dma);
