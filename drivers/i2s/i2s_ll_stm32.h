@@ -81,7 +81,7 @@ struct stream {
 	int32_t state;
 	struct k_sem sem;
 
-	const char *dma_name;
+	const struct device *dev_dma;
 	uint32_t dma_channel;
 	struct dma_config dma_cfg;
 	uint8_t priority;
@@ -101,8 +101,6 @@ struct stream {
 
 /* Device run time data */
 struct i2s_stm32_data {
-	const struct device *dev_dma_tx;
-	const struct device *dev_dma_rx;
 	struct stream rx;
 	struct stream tx;
 };
