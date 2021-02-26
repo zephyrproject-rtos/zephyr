@@ -165,7 +165,7 @@
 			compatible = "nxp,imx-iuart";
 			reg = <0x30a60000 0x10000>;
 			interrupts = <29 3>;
-			clocks = <&ccm IMX_CCM_UART_CLK 0x6c 24>;
+			clocks = <&ccm IMX_CCM_UART4_CLK 0x6c 24>;
 			label = "UART_4";
 			status = "disabled";
 		};
