@@ -17,6 +17,8 @@
 
 #define BQ274XX_SUBCLASS_DELAY 5 /* subclass 64 & 82 needs 5ms delay */
 
+static int bq274xx_gauge_configure(const struct device *dev);
+
 static int bq274xx_command_reg_read(struct bq274xx_data *bq274xx, uint8_t reg_addr,
 				    int16_t *val)
 {
@@ -216,6 +218,17 @@ static int bq274xx_sample_fetch(const struct device *dev,
 	struct bq274xx_data *bq274xx = dev->data;
 	int status = 0;
 
+#ifdef CONFIG_BQ274XX_LAZY_CONFIGURE
+	if (!bq274xx->lazy_loaded) {
+		status = bq274xx_gauge_configure(dev);
+
+		if (status < 0) {
+			return status;
+		}
+		bq274xx->lazy_loaded = true;
+	}
+#endif
+
 	switch (chan) {
 	case SENSOR_CHAN_GAUGE_VOLTAGE:
 		status = bq274xx_command_reg_read(
@@ -355,16 +368,7 @@ static int bq274xx_gauge_init(const struct device *dev)
 	struct bq274xx_data *bq274xx = dev->data;
 	const struct bq274xx_config *const config = dev->config;
 	int status = 0;
-	uint8_t tmp_checksum = 0, checksum_old = 0, checksum_new = 0;
-	uint16_t flags = 0, designenergy_mwh = 0, taperrate = 0, id;
-	uint8_t designcap_msb, designcap_lsb, designenergy_msb, designenergy_lsb,
-		terminatevolt_msb, terminatevolt_lsb, taperrate_msb,
-		taperrate_lsb;
-	uint8_t block[32];
-
-	designenergy_mwh = (uint16_t)3.7 * config->design_capacity;
-	taperrate =
-		(uint16_t)config->design_capacity / (0.1 * config->taper_current);
+	uint16_t id;
 
 	bq274xx->i2c = device_get_binding(config->bus_name);
 	if (bq274xx->i2c == NULL) {
@@ -383,6 +387,31 @@ static int bq274xx_gauge_init(const struct device *dev)
 		LOG_ERR("Invalid Device");
 		return -EINVAL;
 	}
+
+#ifdef CONFIG_BQ274XX_LAZY_CONFIGURE
+	bq274xx->lazy_loaded = false;
+#else
+	status = bq274xx_gauge_configure(dev);
+#endif
+
+	return status;
+}
+
+static int bq274xx_gauge_configure(const struct device *dev)
+{
+	struct bq274xx_data *bq274xx = dev->data;
+	const struct bq274xx_config *const config = dev->config;
+	int status = 0;
+	uint8_t tmp_checksum = 0, checksum_old = 0, checksum_new = 0;
+	uint16_t flags = 0, designenergy_mwh = 0, taperrate = 0;
+	uint8_t designcap_msb, designcap_lsb, designenergy_msb, designenergy_lsb,
+		terminatevolt_msb, terminatevolt_lsb, taperrate_msb,
+		taperrate_lsb;
+	uint8_t block[32];
+
+	designenergy_mwh = (uint16_t)3.7 * config->design_capacity;
+	taperrate =
+		(uint16_t)config->design_capacity / (0.1 * config->taper_current);
 
 	/** Unseal the battery control register **/
 	status = bq274xx_control_reg_write(bq274xx, BQ274XX_UNSEAL_KEY);
