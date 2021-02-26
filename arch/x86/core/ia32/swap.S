@@ -65,7 +65,7 @@
  * unsigned int arch_swap (unsigned int eflags);
  */
 
-SECTION_FUNC(TEXT, arch_swap)
+SECTION_FUNC(PINNED_TEXT, arch_swap)
 #if defined(CONFIG_INSTRUMENT_THREAD_SWITCHING)
 	pushl	%eax
 	call	z_thread_mark_switched_out
@@ -400,7 +400,7 @@ CROHandlingDone:
  * @return this routine does NOT return.
  */
 
-SECTION_FUNC(TEXT, z_x86_thread_entry_wrapper)
+SECTION_FUNC(PINNED_TEXT, z_x86_thread_entry_wrapper)
 	movl	$0, (%esp)
 	jmp	*%edi
 #endif /* _THREAD_WRAPPER_REQUIRED */
