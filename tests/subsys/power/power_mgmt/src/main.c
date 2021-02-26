@@ -98,9 +98,9 @@ static void notify_pm_state_entry(enum pm_state state)
 	zassert_true(z_is_idle_thread_object(_current), NULL);
 	zassert_equal(state, PM_STATE_RUNTIME_IDLE, NULL);
 
-	/* at this point, devices are active */
+	/* at this point, devices should not be active */
 	device_get_power_state(dev, &device_power_state);
-	zassert_equal(device_power_state, DEVICE_PM_ACTIVE_STATE, NULL);
+	zassert_false(device_power_state == DEVICE_PM_ACTIVE_STATE, NULL);
 	set_pm = true;
 	notify_app_exit = true;
 }

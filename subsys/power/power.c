@@ -138,7 +138,6 @@ static enum pm_state _handle_device_abort(struct pm_state_info info)
 {
 	LOG_DBG("Some devices didn't enter suspend state!");
 	pm_resume_devices();
-	pm_state_notify(false);
 
 	z_power_state.state = PM_STATE_ACTIVE;
 	return PM_STATE_ACTIVE;
@@ -160,7 +159,6 @@ enum pm_state pm_system_suspend(int32_t ticks)
 	deep_sleep = pm_is_deep_sleep_state(z_power_state.state);
 
 	post_ops_done = 0;
-	pm_state_notify(true);
 
 	if (deep_sleep) {
 		/* Suspend peripherals. */
@@ -186,6 +184,7 @@ enum pm_state pm_system_suspend(int32_t ticks)
 
 	pm_debug_start_timer();
 	/* Enter power state */
+	pm_state_notify(true);
 	pm_power_state_set(z_power_state);
 	pm_debug_stop_timer();
 
