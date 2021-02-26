@@ -88,6 +88,10 @@ char *net_sprint_ll_addr_buf(const uint8_t *ll, uint8_t ll_len,
 	uint8_t i, len, blen;
 	char *ptr = buf;
 
+	if (ll == NULL) {
+		return "<unknown>";
+	}
+
 	switch (ll_len) {
 	case 8:
 		len = 8U;
