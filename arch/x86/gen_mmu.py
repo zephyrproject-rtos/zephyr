@@ -116,6 +116,17 @@ def dump_flags(flags):
 
     return ret.strip()
 
+
+def round_up(val, align):
+    """Round up val to the next multiple of align"""
+    return (val + (align - 1)) & (~(align - 1))
+
+
+def round_down(val, align):
+    """Round down val to the previous multiple of align"""
+    return val & (~(align - 1))
+
+
 # Hard-coded flags for intermediate paging levels. Permissive, we only control
 # access or set caching properties at leaf levels.
 INT_FLAGS = FLAG_P | FLAG_RW | FLAG_US
@@ -325,6 +336,7 @@ class PtableSet(object):
             table.map(virt_addr, phys_addr, flags)
 
     def reserve(self, virt_base, size):
+        """Reserve page table space with already aligned virt_base and size"""
         debug("Reserving paging structures 0x%x (%d)" %
               (virt_base, size))
 
@@ -339,6 +351,17 @@ class PtableSet(object):
 
         for addr in range(virt_base, virt_base + size, scope):
             self.map_page(addr, 0, 0, True)
+
+    def reserve_unaligned(self, virt_base, size):
+        """Reserve page table space with virt_base and size alignment"""
+        # How much memory is covered by leaf page table
+        scope = 1 << self.levels[-2].addr_shift
+
+        mem_start = round_down(virt_base, scope)
+        mem_end = round_up(virt_base + size, scope)
+        mem_size = mem_end - mem_start
+
+        self.reserve(mem_start, mem_size)
 
     def identity_map(self, phys_base, size, flags):
         """Identity map an address range in the page tables, with provided
@@ -378,7 +401,7 @@ class PtableSet(object):
 
                 self.map_page(vaddr, paddr, flags, False)
 
-    def set_region_perms(self, name, flags):
+    def set_region_perms(self, name, flags, use_offset=False):
         """Set access permissions for a named region that is already mapped
 
         The bounds of the region will be looked up in the symbol table
@@ -389,6 +412,9 @@ class PtableSet(object):
         # either dual mapping or it's the same as physical
         base = syms[name + "_start"]
         size = syms[name + "_size"]
+
+        if use_offset:
+            base += self.virt_to_phys_offset
 
         debug("change flags for %s at 0x%x (%d): %s" %
               (name, base, size, dump_flags(flags)))
@@ -485,6 +511,10 @@ def main():
     vm_offset = syms["CONFIG_KERNEL_VM_OFFSET"]
 
     sram_base = syms["CONFIG_SRAM_BASE_ADDRESS"]
+    sram_size = syms["CONFIG_SRAM_SIZE"] * 1024
+
+    mapped_kernel_base = syms["z_mapped_start"]
+    mapped_kernel_size = syms["z_mapped_size"]
 
     if isdef("CONFIG_SRAM_OFFSET"):
         sram_offset = syms["CONFIG_SRAM_OFFSET"]
@@ -496,11 +526,12 @@ def main():
     virt_to_phys_offset = (sram_base + sram_offset) - (vm_base + vm_offset)
 
     if isdef("CONFIG_ARCH_MAPS_ALL_RAM"):
-        image_base = syms["CONFIG_SRAM_BASE_ADDRESS"]
-        image_size = syms["CONFIG_SRAM_SIZE"] * 1024
+        image_base = sram_base
+        image_size = sram_size
     else:
-        image_base = syms["z_mapped_start"]
-        image_size = syms["z_mapped_size"]
+        image_base = mapped_kernel_base
+        image_size = mapped_kernel_size
+
     ptables_phys = syms["z_x86_pagetables_start"]
 
     debug("Address space: 0x%x - 0x%x size 0x%x" %
@@ -527,6 +558,17 @@ def main():
     # Map the zephyr image
     pt.map(image_base, image_size, map_flags | ENTRY_RW)
 
+    if isdef("CONFIG_KERNEL_LINK_IN_VIRT"):
+        pt.reserve_unaligned(sram_base, sram_size)
+
+        mapped_kernel_phys_base = mapped_kernel_base + virt_to_phys_offset
+        mapped_kernel_phys_size = mapped_kernel_size
+
+        debug("Kernel addresses: physical 0x%x size %d" % (mapped_kernel_phys_base,
+                                                           mapped_kernel_phys_size))
+        pt.identity_map(mapped_kernel_phys_base, mapped_kernel_phys_size,
+                        map_flags | ENTRY_RW)
+
     if isdef("CONFIG_X86_64"):
         # 64-bit has a special region in the first 64K to bootstrap other CPUs
         # from real mode
@@ -550,10 +592,23 @@ def main():
         # - User mode needs access as we currently do not separate application
         #   text/rodata from kernel text/rodata
         if isdef("CONFIG_GDBSTUB"):
-            pt.set_region_perms("_image_text", FLAG_P | ENTRY_US | ENTRY_RW)
+            flags = FLAG_P | ENTRY_US | ENTRY_RW
+            pt.set_region_perms("_image_text", flags)
+
+            if isdef("CONFIG_KERNEL_LINK_IN_VIRT") and virt_to_phys_offset != 0:
+                pt.set_region_perms("_image_text", flags, use_offset=True)
         else:
-            pt.set_region_perms("_image_text", FLAG_P | ENTRY_US)
-        pt.set_region_perms("_image_rodata", FLAG_P | ENTRY_US | ENTRY_XD)
+            flags = FLAG_P | ENTRY_US
+            pt.set_region_perms("_image_text", flags)
+
+            if isdef("CONFIG_KERNEL_LINK_IN_VIRT") and virt_to_phys_offset != 0:
+                pt.set_region_perms("_image_text", flags, use_offset=True)
+
+        flags = FLAG_P | ENTRY_US | ENTRY_XD
+        pt.set_region_perms("_image_rodata", flags)
+
+        if isdef("CONFIG_KERNEL_LINK_IN_VIRT") and virt_to_phys_offset != 0:
+            pt.set_region_perms("_image_rodata", flags, use_offset=True)
 
         if isdef("CONFIG_COVERAGE_GCOV") and isdef("CONFIG_USERSPACE"):
             # If GCOV is enabled, user mode must be able to write to its
