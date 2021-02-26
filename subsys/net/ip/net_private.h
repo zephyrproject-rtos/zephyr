@@ -235,7 +235,7 @@ static inline void net_pkt_hexdump(struct net_pkt *pkt, const char *str)
 	char pkt_str[sizeof("0x") + sizeof(intptr_t) * 2];
 
 	if (str && str[0]) {
-		LOG_DBG("%s", str);
+		LOG_DBG("%s", log_strdup(str));
 	}
 
 	snprintk(pkt_str, sizeof(pkt_str), "%p", pkt);
