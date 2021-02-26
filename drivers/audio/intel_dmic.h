@@ -222,10 +222,6 @@
 /* max number of streams supported by hardware 2 = Stream A & B */
 #define DMIC_MAX_STREAMS			2
 
-#define DMIC_DMA_DEV_NAME			CONFIG_DMA_0_NAME
-#define DMA_CHANNEL_DMIC_RXA			0
-#define DMA_CHANNEL_DMIC_RXB			1
-
 #define DMA_HANDSHAKE_DMIC_RXA			0
 #define DMA_HANDSHAKE_DMIC_RXB			1
 

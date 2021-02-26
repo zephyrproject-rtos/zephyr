@@ -22,6 +22,9 @@
 #include "intel_dmic.h"
 #include "decimation/pdm_decim_fir.h"
 
+#define DMA_CHANNEL_DMIC_RXA DT_INST_DMAS_CELL_BY_NAME(0, rx_a, channel)
+#define DMA_CHANNEL_DMIC_RXB DT_INST_DMAS_CELL_BY_NAME(0, rx_b, channel)
+
 #define LOG_LEVEL CONFIG_AUDIO_DMIC_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(audio_dmic);
@@ -1388,9 +1391,9 @@ int dmic_configure_dma(struct pcm_stream_cfg *config, uint8_t num_streams)
 		.dma_callback		= dmic_dma_callback,
 	};
 
-	dmic_private.dma_dev = device_get_binding(DMIC_DMA_DEV_NAME);
-	if (!dmic_private.dma_dev) {
-		LOG_ERR("Failed to bind to device: %s", DMIC_DMA_DEV_NAME);
+	dmic_private.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_IDX(0, 0));
+	if (!device_is_ready(dmic_private.dma_dev)) {
+		LOG_ERR("Failed - device is not ready: %s", dmic_private.dma_dev->name);
 		return -ENODEV;
 	}
 

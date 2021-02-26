@@ -62,14 +62,6 @@
 #define DMA_HANDSHAKE_SSP3_TX			8
 #define DMA_HANDSHAKE_SSP3_RX			9
 
-/* DMA Channel Allocation
- * FIXME: I2S Driver assigns channel in Kconfig.
- * Perhaps DTS is a better option
- */
-#define DMIC_DMA_DEV_NAME			CONFIG_DMA_0_NAME
-#define DMA_CHANNEL_DMIC_RXA			0
-#define DMA_CHANNEL_DMIC_RXB			1
-
 /* I2S */
 #define I2S_CAVS_IRQ(i2s_num)			\
 	SOC_AGGREGATE_IRQ(0, (i2s_num) + 1, CAVS_L2_AGG_INT_LEVEL5)
