@@ -100,7 +100,7 @@ bool z_is_t1_higher_prio_than_t2(struct k_thread *thread_1,
 		int32_t d1 = thread_1->base.prio_deadline;
 		int32_t d2 = thread_2->base.prio_deadline;
 
-		return (d2 - d1) >= 0;
+		return (d2 - d1) > 0;
 	}
 #endif
 
