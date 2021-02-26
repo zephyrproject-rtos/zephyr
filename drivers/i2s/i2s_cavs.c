@@ -75,13 +75,12 @@ struct i2s_cavs_config {
 	struct i2s_cavs_mn_div *mn_regs;
 	uint32_t irq_id;
 	void (*irq_connect)(void);
-	const char *dma_name;
+	const struct device *dev_dma;
 };
 
 /* Device run time data */
 struct i2s_cavs_dev_data {
 	struct i2s_config cfg;
-	const struct device *dev_dma;
 	struct stream tx;
 	struct stream rx;
 };
@@ -140,10 +139,10 @@ static void i2s_dma_tx_callback(const struct device *dma_dev, void *arg,
 		ret = k_msgq_get(&strm->in_queue, &buffer, K_NO_WAIT);
 		if (ret == 0) {
 			/* reload the DMA */
-			dma_reload(dev_data->dev_dma, strm->dma_channel,
+			dma_reload(dev_cfg->dev_dma, strm->dma_channel,
 					(uint32_t)buffer, (uint32_t)&ssp->ssd,
 					dev_data->cfg.block_size);
-			dma_start(dev_data->dev_dma, strm->dma_channel);
+			dma_start(dev_cfg->dev_dma, strm->dma_channel);
 			ssp->ssc1 |= SSCR1_TSRE;
 			k_msgq_put(&strm->out_queue, &buffer, K_NO_WAIT);
 		}
@@ -157,13 +156,13 @@ static void i2s_dma_tx_callback(const struct device *dma_dev, void *arg,
 			LOG_ERR("DMA status %08x channel %u k_msgq_get ret %d",
 					status, channel, ret);
 			strm->state = I2S_STATE_STOPPING;
-			i2s_tx_stream_disable(dev_data, ssp, dev_data->dev_dma);
+			i2s_tx_stream_disable(dev_data, ssp, dev_cfg->dev_dma);
 		}
 
 		break;
 
 	case I2S_STATE_STOPPING:
-		i2s_tx_stream_disable(dev_data, ssp, dev_data->dev_dma);
+		i2s_tx_stream_disable(dev_data, ssp, dev_cfg->dev_dma);
 		break;
 	}
 }
@@ -200,7 +199,7 @@ static void i2s_dma_rx_callback(const struct device *dma_dev, void *arg,
 		if (ret != 0) {
 			LOG_ERR("buffer alloc from slab %p err %d",
 					dev_data->cfg.mem_slab, ret);
-			i2s_rx_stream_disable(dev_data, ssp, dev_data->dev_dma);
+			i2s_rx_stream_disable(dev_data, ssp, dev_cfg->dev_dma);
 			strm->state = I2S_STATE_READY;
 		} else {
 			/* put buffer in input queue */
@@ -213,15 +212,15 @@ static void i2s_dma_rx_callback(const struct device *dma_dev, void *arg,
 			SOC_DCACHE_INVALIDATE(buffer, dev_data->cfg.block_size);
 
 			/* reload the DMA */
-			dma_reload(dev_data->dev_dma, strm->dma_channel,
+			dma_reload(dev_cfg->dev_dma, strm->dma_channel,
 					(uint32_t)&ssp->ssd, (uint32_t)buffer,
 					dev_data->cfg.block_size);
-			dma_start(dev_data->dev_dma, strm->dma_channel);
+			dma_start(dev_cfg->dev_dma, strm->dma_channel);
 			ssp->ssc1 |= SSCR1_RSRE;
 		}
 		break;
 	case I2S_STATE_STOPPING:
-		i2s_rx_stream_disable(dev_data, ssp, dev_data->dev_dma);
+		i2s_rx_stream_disable(dev_data, ssp, dev_cfg->dev_dma);
 		strm->state = I2S_STATE_READY;
 		break;
 	}
@@ -459,7 +458,7 @@ static int i2s_cavs_configure(const struct device *dev, enum i2s_dir dir,
 	dma_block->source_address = (uint32_t)NULL;
 	dma_block->dest_address = (uint32_t)&ssp->ssd;
 
-	ret = dma_config(dev_data->dev_dma, dev_data->tx.dma_channel,
+	ret = dma_config(dev_cfg->dev_dma, dev_data->tx.dma_channel,
 			&dev_data->tx.dma_cfg);
 	if (ret < 0) {
 		LOG_ERR("dma_config failed: %d", ret);
@@ -471,7 +470,7 @@ static int i2s_cavs_configure(const struct device *dev, enum i2s_dir dir,
 	dma_block->source_address = (uint32_t)&ssp->ssd;
 	dma_block->dest_address = (uint32_t)NULL;
 
-	ret = dma_config(dev_data->dev_dma, dev_data->rx.dma_channel,
+	ret = dma_config(dev_cfg->dev_dma, dev_data->rx.dma_channel,
 			&dev_data->rx.dma_cfg);
 	if (ret < 0) {
 		LOG_ERR("dma_config failed: %d", ret);
@@ -656,10 +655,10 @@ static int i2s_cavs_trigger(const struct device *dev, enum i2s_dir dir,
 
 		if (dir == I2S_DIR_TX) {
 			ret = i2s_tx_stream_start(dev_data, ssp,
-					dev_data->dev_dma);
+					dev_cfg->dev_dma);
 		} else {
 			ret = i2s_rx_stream_start(dev_data, ssp,
-					dev_data->dev_dma);
+					dev_cfg->dev_dma);
 		}
 
 		if (ret < 0) {
@@ -771,9 +770,8 @@ static int i2s_cavs_initialize(const struct device *dev)
 	const struct i2s_cavs_config *const dev_cfg = DEV_CFG(dev);
 	struct i2s_cavs_dev_data *const dev_data = DEV_DATA(dev);
 
-	dev_data->dev_dma = device_get_binding(dev_cfg->dma_name);
-	if (!dev_data->dev_dma) {
-		LOG_ERR("%s device not found", dev_cfg->dma_name);
+	if (!device_is_ready(dev_cfg->dev_dma)) {
+		LOG_ERR("%s device not ready", dev_cfg->dev_dma->name);
 		return -ENODEV;
 	}
 
@@ -823,7 +821,7 @@ static const struct i2s_driver_api i2s_cavs_driver_api = {
 				DT_INST_REG_ADDR_BY_IDX(n, 1),		\
 		.irq_id = DT_INST_IRQN(n),				\
 		.irq_connect = i2s_cavs_irq_connect_##n,		\
-		.dma_name = DT_INST_DMAS_LABEL_BY_NAME(n, tx),		\
+		.dev_dma = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(n, tx)),\
 	};								\
 									\
 	static struct i2s_cavs_dev_data i2s_cavs_data_##n = {		\
