@@ -9,7 +9,7 @@
 #include <sys/__assert.h>
 #include <sys/util.h>
 #include <init.h>
-#include <disk/disk_access.h>
+#include <storage/disk_access.h>
 #include <errno.h>
 #include <device.h>
 
