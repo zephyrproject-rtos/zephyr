@@ -170,22 +170,6 @@ typedef struct z_kernel _kernel_t;
 
 extern struct z_kernel _kernel;
 
-#ifdef CONFIG_SMP
-
-/* True if the current context can be preempted and migrated to
- * another SMP CPU.
- */
-bool z_smp_cpu_mobile(void);
-
-#define _current_cpu ({ __ASSERT_NO_MSG(!z_smp_cpu_mobile()); \
-			arch_curr_cpu(); })
-#define _current k_current_get()
-
-#else
-#define _current_cpu (&_kernel.cpus[0])
-#define _current _kernel.cpus[0].current
-#endif
-
 #define _timeout_q _kernel.timeout_q
 
 /* kernel wait queue record */

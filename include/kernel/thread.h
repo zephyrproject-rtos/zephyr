@@ -7,6 +7,10 @@
 #ifndef ZEPHYR_INCLUDE_KERNEL_THREAD_H_
 #define ZEPHYR_INCLUDE_KERNEL_THREAD_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @typedef k_thread_entry_t
  * @brief Thread entry point function type.
@@ -285,5 +289,60 @@ struct k_thread {
 
 typedef struct k_thread _thread_t;
 typedef struct k_thread *k_tid_t;
+
+#ifdef CONFIG_SMP
+
+/* True if the current context can be preempted and migrated to
+ * another SMP CPU.
+ */
+bool z_smp_cpu_mobile(void);
+
+/* These values are performance critical and we want the compiler to
+ * be able to optimize their results, even if they are defined in
+ * architecture code that might otherwise preclude that (for example
+ * as C function calls, volatile __asm__ blocks, etc...).
+ */
+
+/* The current CPU may change, but only once we release a lock and
+ * become preemptiable.  This function is "pure", meaning that the
+ * compiler will only trust its resutl until global program state may
+ * have changed.  So the memory clobbers (or just function calls)
+ * required by arch locking operations will force it to be
+ * re-evaluated.
+ */
+static ALWAYS_INLINE __attribute__((pure)) struct _cpu *__eval_curr_cpu(void)
+{
+	return arch_curr_cpu();
+}
+
+/* The current thread is by definition unchanging from the perspective
+ * of generated code, so this is "const" allowing the compiler to
+ * cache its value in any manner it wants.
+ */
+static ALWAYS_INLINE __attribute__((const)) struct k_thread *__eval_curr(void)
+{
+	return __eval_curr_cpu()->current;
+}
+
+/* Note that _current_cpu can change as the thread migrates, so it's
+ * never legal to use this result if preemption is possible.  The
+ * assert is there to catch mistakes.
+ */
+#define _current_cpu ({ __ASSERT_NO_MSG(!z_smp_cpu_mobile()); \
+			__eval_curr_cpu(); })
+
+#define _current __eval_curr()
+
+#else
+
+/* When !SMP, these are just aliases for obvious fields */
+#define _current_cpu (&_kernel.cpus[0])
+#define _current _kernel.cpus[0].current
+
+#endif
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif
