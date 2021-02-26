@@ -40,6 +40,10 @@ PROVIDE ( Cache_Read_Disable_rom = 0x40009ab8 );
 PROVIDE ( Cache_Read_Enable_rom = 0x40009a84 );
 PROVIDE ( Cache_Read_Init_rom = 0x40009950 );
 PROVIDE ( phy_get_romfuncs = 0x40004100 );
+PROVIDE ( esp_rom_spiflash_read_user_cmd = 0x400621b0 );
+PROVIDE ( g_rom_spiflash_dummy_len_plus = 0x3ffae290 );
+PROVIDE ( g_rom_flashchip = 0x3ffae270 );
+PROVIDE ( SPI0 = 0x3ff43000 );
 PROVIDE ( SPI1 = 0x3ff42fff );
 PROVIDE ( SPI2 = 0x3ff64fff );
 PROVIDE ( SPI3 = 0x3ff65fff );
@@ -269,6 +273,7 @@ _net_buf_pool_list = _esp_net_buf_pool_list;
     *libzephyr.a:log_core.*(.rodata .rodata.*)
     *libzephyr.a:log_backend_uart.*(.rodata .rodata.*)
     *libzephyr.a:log_output.*(.rodata .rodata.*)
+    *libdrivers__flash.a:flash_esp32.*(.rodata  .rodata.*)
     *libdrivers__serial.a:uart_esp32.*(.rodata .rodata.*)
 
    . = ALIGN(4);
@@ -380,7 +385,7 @@ __shell_root_cmds_end = __esp_shell_root_cmds_end;
     *libsoc.a:cpu_util.*(.literal .text .literal.* .text.*)
     *libhal.a:(.literal .text .literal.* .text.*)
     *libgcc.a:lib2funcs.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:spi_flash_rom_patch.*(.literal .text .literal.* .text.*)
+    *libdrivers__flash.a:flash_esp32.*(.literal .text .literal.* .text.*)
     *libzephyr.a:log_noos.*(.literal .text .literal.* .text.*)
     *libzephyr.a:xtensa_sys_timer.*(.literal .text .literal.* .text.*)
     *libzephyr.a:log_core.*(.literal .text .literal.* .text.*)
