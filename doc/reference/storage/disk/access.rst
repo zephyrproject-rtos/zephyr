@@ -6,11 +6,10 @@ Disk Access
 Overview
 ********
 
-The disk access API provides access to storage disks, physical or in Flash or
-RAM.
+The disk access API provides access to storage devices.
 
-Configuration Options
-*********************
+API Configuration Options
+*************************
 
 Related configuration options:
 
@@ -20,4 +19,17 @@ API Reference
 *************
 
 .. doxygengroup:: disk_access_interface
+   :project: Zephyr
+
+Disk Driver Configuration Options
+*********************************
+
+Related driver configuration options:
+
+* :option:`CONFIG_DISK_DRIVERS`
+
+Disk Driver Interface
+*********************
+
+.. doxygengroup:: disk_driver_interface
    :project: Zephyr
