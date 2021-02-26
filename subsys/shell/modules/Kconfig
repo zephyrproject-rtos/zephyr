@@ -5,7 +5,7 @@
 
 config KERNEL_SHELL
 	bool "Enable kernel shell"
-	default y
+	default y if !SHELL_MINIMAL
 	imply INIT_STACKS
 	imply THREAD_MONITOR
 	imply THREAD_NAME
@@ -16,13 +16,13 @@ config KERNEL_SHELL
 
 config DEVICE_SHELL
 	bool "Enable device shell"
-	default y
+	default y if !SHELL_MINIMAL
 	help
 	  This shell provides access to basic device data.
 
 config DATE_SHELL
 	bool "Enable date shell"
 	depends on POSIX_CLOCK
-	default y
+	default y if !SHELL_MINIMAL
 	help
 	  This shell provides access to date and time based on Unix time.
