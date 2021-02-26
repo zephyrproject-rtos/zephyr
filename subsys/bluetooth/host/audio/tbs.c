@@ -41,7 +41,6 @@ struct tbs_service_inst_t {
 	struct bt_tbs_terminate_reason_t terminate_reason;
 	struct bt_tbs_in_uri_t friendly_name;
 	struct bt_tbs_in_uri_t in_call;
-	char out_remote_uri[CONFIG_BT_TBS_MAX_URI_LENGTH + 1];
 
 	/* Instance values */
 	uint8_t index;
@@ -72,7 +71,6 @@ struct gtbs_service_inst_t {
 	struct bt_tbs_in_uri_t incoming_uri;
 	struct bt_tbs_in_uri_t friendly_name;
 	struct bt_tbs_in_uri_t in_call;
-	char out_remote_uri[CONFIG_BT_TBS_MAX_URI_LENGTH + 1];
 
 	/* Instance values */
 	bool notify_current_calls;
