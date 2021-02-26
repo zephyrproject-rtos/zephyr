@@ -19,5 +19,6 @@
 #include <soc_dt.h>
 #include <soc_clock.h>
 #include <soc_pins.h>
+#include <soc_power.h>
 
 #endif /* _NUVOTON_NPCX_SOC_H_ */

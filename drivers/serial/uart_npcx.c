@@ -34,6 +34,7 @@ struct uart_npcx_config {
 struct uart_npcx_data {
 	/* Baud rate */
 	uint32_t baud_rate;
+	struct miwu_dev_callback uart_rx_cb;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t user_cb;
 	void *user_data;
@@ -209,6 +210,12 @@ static void uart_npcx_isr(const struct device *dev)
 {
 	struct uart_npcx_data *data = DRV_DATA(dev);
 
+	/* Refresh console expired time if got UART Rx event */
+	if (IS_ENABLED(CONFIG_UART_CONSOLE_INPUT_EXPIRED) &&
+		       uart_npcx_irq_rx_ready(dev)) {
+		npcx_power_console_is_in_use_refresh();
+	}
+
 	if (data->user_cb) {
 		data->user_cb(dev, data->user_data);
 	}
@@ -285,6 +292,15 @@ static int uart_npcx_err_check(const struct device *dev)
 	return err;
 }
 
+static __unused void uart_npcx_rx_wk_isr(const struct device *dev,
+						struct npcx_wui *wui)
+{
+	/* Refresh console expired time if got UART Rx wake-up event */
+	if (IS_ENABLED(CONFIG_UART_CONSOLE_INPUT_EXPIRED)) {
+		npcx_power_console_is_in_use_refresh();
+	}
+}
+
 /* UART driver registration */
 static const struct uart_driver_api uart_npcx_driver_api = {
 	.poll_in = uart_npcx_poll_in,
@@ -311,7 +327,7 @@ static const struct uart_driver_api uart_npcx_driver_api = {
 static int uart_npcx_init(const struct device *dev)
 {
 	const struct uart_npcx_config *const config = DRV_CONFIG(dev);
-	const struct uart_npcx_data *const data = DRV_DATA(dev);
+	struct uart_npcx_data *const data = DRV_DATA(dev);
 	struct uart_reg *const inst = HAL_INSTANCE(dev);
 	const struct device *const clk_dev =
 					device_get_binding(NPCX_CLK_CTRL_NAME);
@@ -366,17 +382,22 @@ static int uart_npcx_init(const struct device *dev)
 	config->uconf.irq_config_func(dev);
 #endif
 
-#if defined(CONFIG_PM)
-	/*
-	 * Configure the UART wake-up event triggered from a falling edge
-	 * on CR_SIN pin. No need for callback function.
-	 */
-	npcx_miwu_interrupt_configure(&config->uart_rx_wui,
-			NPCX_MIWU_MODE_EDGE, NPCX_MIWU_TRIG_LOW);
+	if (IS_ENABLED(CONFIG_PM)) {
+		/* Initialize a miwu device input and its callback function */
+		npcx_miwu_init_dev_callback(&data->uart_rx_cb,
+					    &config->uart_rx_wui,
+					    uart_npcx_rx_wk_isr, dev);
+		npcx_miwu_manage_dev_callback(&data->uart_rx_cb, true);
+		/*
+		 * Configure the UART wake-up event triggered from a falling
+		 * edge on CR_SIN pin. No need for callback function.
+		 */
+		npcx_miwu_interrupt_configure(&config->uart_rx_wui,
+				NPCX_MIWU_MODE_EDGE, NPCX_MIWU_TRIG_LOW);
 
-	/* Enable irq of interrupt-input module */
-	npcx_miwu_irq_enable(&config->uart_rx_wui);
-#endif
+		/* Enable irq of interrupt-input module */
+		npcx_miwu_irq_enable(&config->uart_rx_wui);
+	}
 
 	/* Configure pin-mux for uart device */
 	npcx_pinctrl_mux_configure(config->alts_list, config->alts_size, 1);
