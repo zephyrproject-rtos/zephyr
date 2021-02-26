@@ -4,11 +4,11 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-import sys
-import os
 import copy
-import threading
+import os
 import re
+import sys
+import threading
 
 try:
     import ply.lex as lex
