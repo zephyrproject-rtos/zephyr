@@ -260,6 +260,22 @@ Documentation
 Tests and Samples
 *****************
 
+* Twister's ``dt_compat_enabled_with_alias()`` test case filter was deprecated
+  in favor of a new ``dt_enabled_alias_with_parent_compat()`` filter. The old
+  filter is still supported, but it may be removed in a future release.
+
+  To update, replace uses like this:
+
+  .. code-block:: yaml
+
+     filter: dt_compat_enabled_with_alias("gpio-leds", "led0")
+
+  with:
+
+  .. code-block:: yaml
+
+     filter: dt_enabled_alias_with_parent_compat("led0", "gpio-leds")
+
 Issue Related Items
 *******************
 
