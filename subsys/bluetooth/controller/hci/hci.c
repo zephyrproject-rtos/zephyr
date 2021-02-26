@@ -6374,25 +6374,73 @@ static void le_per_adv_sync_lost(struct pdu_data *pdu_data,
 }
 
 #if defined(CONFIG_BT_CTLR_SYNC_ISO)
-static void le_per_adv_sync_iso_established(struct pdu_data *pdu_data,
-					    struct node_rx_pdu *node_rx,
-					    struct net_buf *buf)
-{
-	printk("Sync ISO Established\n");
-}
-
-static void le_per_adv_sync_iso_pdu(struct pdu_data *pdu_data,
+static void le_big_sync_established(struct pdu_data *pdu,
 				    struct node_rx_pdu *node_rx,
 				    struct net_buf *buf)
 {
-	printk("Sync ISO PDU (%u)\n", pdu_data->len);
+	struct bt_hci_evt_le_big_sync_established *sep;
+	struct ll_sync_iso_set *sync_iso;
+	struct node_rx_sync_iso *se;
+	struct lll_sync_iso *lll;
+	size_t evt_size;
+
+	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
+	    !(le_event_mask & BT_EVT_MASK_LE_BIG_SYNC_ESTABLISHED)) {
+		return;
+	}
+
+	sync_iso = node_rx->hdr.rx_ftr.param;
+	lll = &sync_iso->lll;
+
+	evt_size = sizeof(*sep) + (lll->num_bis * sizeof(uint16_t));
+
+	sep = meta_evt(buf, BT_HCI_EVT_LE_BIG_SYNC_ESTABLISHED, evt_size);
+	sep->big_handle = sys_cpu_to_le16(node_rx->hdr.handle);
+
+	se = (void *)pdu;
+	sep->status = se->status;
+	if (sep->status) {
+		return;
+	}
+
+	/* TODO: Fill latency */
+	sys_put_le32(0, sep->latency);
+
+	sep->nse = lll->nse;
+	sep->bn = lll->bn;
+	sep->pto = lll->pto;
+	sep->irc = lll->irc;
+	sep->max_pdu = lll->max_pdu;
+	sep->num_bis = lll->num_bis;
+
+	/* TODO: Connection handle list of all BISes in the BIG */
+	sep->handle[0] = sys_cpu_to_le16(0);
 }
 
-static void le_per_adv_sync_iso_lost(struct pdu_data *pdu_data,
+static void le_sync_iso_pdu(struct pdu_data *pdu,
+			    struct node_rx_pdu *node_rx,
+			    struct net_buf *buf)
+{
+	printk("Sync ISO PDU (%u)\n", pdu->len);
+}
+
+static void le_big_sync_lost(struct pdu_data *pdu,
 				     struct node_rx_pdu *node_rx,
 				     struct net_buf *buf)
 {
-	printk("Sync ISO lost\n");
+	struct bt_hci_evt_le_big_sync_lost *sep;
+	struct node_rx_sync_iso *se;
+
+	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
+	    !(le_event_mask & BT_EVT_MASK_LE_BIG_SYNC_LOST)) {
+		return;
+	}
+
+	sep = meta_evt(buf, BT_HCI_EVT_LE_BIG_SYNC_LOST, sizeof(*sep));
+	sep->big_handle = sys_cpu_to_le16(node_rx->hdr.handle);
+
+	se = (void *)pdu;
+	sep->reason = se->status;
 }
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
@@ -6428,14 +6476,14 @@ static void le_big_complete(struct pdu_data *pdu_data,
 {
 	struct bt_hci_evt_le_big_complete *sep;
 	struct ll_adv_iso_set *adv_iso;
+	struct lll_adv_iso *lll;
 	struct node_rx_sync *se;
 	size_t evt_size;
 
 	adv_iso = node_rx->hdr.rx_ftr.param;
+	lll = &adv_iso->lll;
 
-	evt_size = sizeof(*sep) + adv_iso->lll.num_bis * sizeof(uint16_t);
-
-	adv_iso = node_rx->hdr.rx_ftr.param;
+	evt_size = sizeof(*sep) + (lll->num_bis * sizeof(uint16_t));
 
 	sep = meta_evt(buf, BT_HCI_EVT_LE_BIG_COMPLETE, evt_size);
 
@@ -6447,17 +6495,19 @@ static void le_big_complete(struct pdu_data *pdu_data,
 		return;
 	}
 
-	/* TODO: Fill values */
+	/* TODO: Fill sync delay and latency */
 	sys_put_le24(0, sep->sync_delay);
 	sys_put_le24(0, sep->latency);
-	sep->phy = adv_iso->lll.phy;
-	sep->nse = 0;
-	sep->bn = 0;
-	sep->pto = 0;
-	sep->irc = 0;
-	sep->max_pdu = 0;
-	sep->num_bis = adv_iso->lll.num_bis;
-	/* TODO: */
+
+	sep->phy = find_lsb_set(lll->phy);
+	sep->nse = lll->nse;
+	sep->bn = lll->bn;
+	sep->pto = lll->pto;
+	sep->irc = lll->irc;
+	sep->max_pdu = lll->max_pdu;
+	sep->num_bis = lll->num_bis;
+
+	/* TODO: Connection handle list of all BISes in the BIG */
 	sep->handle[0] = sys_cpu_to_le16(0);
 }
 #endif /* CONFIG_BT_CTLR_ADV_ISO */
@@ -6817,15 +6867,15 @@ static void encode_control(struct node_rx_pdu *node_rx,
 
 #if defined(CONFIG_BT_CTLR_SYNC_ISO)
 	case NODE_RX_TYPE_SYNC_ISO:
-		le_per_adv_sync_iso_established(pdu_data, node_rx, buf);
+		le_big_sync_established(pdu_data, node_rx, buf);
 		break;
 
 	case NODE_RX_TYPE_SYNC_ISO_PDU:
-		le_per_adv_sync_iso_pdu(pdu_data, node_rx, buf);
+		le_sync_iso_pdu(pdu_data, node_rx, buf);
 		break;
 
 	case NODE_RX_TYPE_SYNC_ISO_LOST:
-		le_per_adv_sync_iso_lost(pdu_data, node_rx, buf);
+		le_big_sync_lost(pdu_data, node_rx, buf);
 		break;
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
