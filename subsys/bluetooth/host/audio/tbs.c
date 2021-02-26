@@ -972,8 +972,7 @@ static uint8_t terminate_call(struct tbs_service_inst_t *inst,
 	return BT_CCP_RESULT_CODE_SUCCESS;
 }
 
-static uint8_t hold_call(struct tbs_service_inst_t *inst,
-			 struct bt_tbs_call_cp_hold_t *ccp)
+static uint8_t tbs_hold_call(struct tbs_service_inst_t *inst, struct bt_tbs_call_cp_hold_t *ccp)
 {
 	struct bt_tbs_call_t *call =
 		lookup_call_in_instance(inst, ccp->call_index);
@@ -1341,7 +1340,7 @@ static ssize_t write_call_cp(struct bt_conn *conn,
 			}
 		}
 
-		status = hold_call(inst, &ccp->hold);
+		status = tbs_hold_call(inst, &ccp->hold);
 		break;
 	case BT_TBS_CALL_OPCODE_RETRIEVE:
 		if (len != sizeof(ccp->retrieve)) {
@@ -1890,7 +1889,7 @@ int bt_tbs_hold(uint8_t call_index)
 	};
 
 	if (inst) {
-		status = hold_call(inst, &ccp);
+		status = tbs_hold_call(inst, &ccp);
 	}
 
 	return status;
