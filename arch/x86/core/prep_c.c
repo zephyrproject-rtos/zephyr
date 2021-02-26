@@ -16,6 +16,7 @@ extern void x86_64_irq_init(void);
 /* Early global initialization functions, C domain. This runs only on the first
  * CPU for SMP systems.
  */
+__boot_func
 FUNC_NORETURN void z_x86_prep_c(void *arg)
 {
 	struct multiboot_info *info = arg;
