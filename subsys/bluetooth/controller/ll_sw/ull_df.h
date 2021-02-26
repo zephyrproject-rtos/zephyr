@@ -23,3 +23,14 @@ enum df_switch_sample_support {
 
 int ull_df_init(void);
 int ull_df_reset(void);
+
+/* Release link to node_rx_iq_report memory. */
+void ull_df_iq_report_link_release(memq_link_t *link);
+/* Release memory of node_rx_iq_report. */
+void ull_df_iq_report_mem_release(struct node_rx_hdr *rx);
+/* Change quota of free node_iq_report links. Delta may be negative,
+ * then it will decrease number of free link elements.
+ */
+void ull_iq_report_link_inc_quota(int8_t delta);
+/* Allocate node_rx_iq_report in free report PDUs list */
+void ull_df_rx_iq_report_alloc(uint8_t max);
