@@ -1543,7 +1543,7 @@ int bt_csip_release_set(void)
 
 int bt_csip_disconnect(void)
 {
-	int err = 0;
+	int err;
 	char addr[BT_ADDR_LE_STR_LEN];
 
 	for (int i = 0; i < cur_set.set_size; i++) {
