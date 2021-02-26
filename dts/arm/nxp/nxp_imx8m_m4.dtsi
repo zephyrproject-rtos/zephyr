@@ -142,7 +142,7 @@
 			compatible = "nxp,imx-iuart";
 			reg = <0x30860000 0x10000>;
 			interrupts = <26 3>;
-			clocks = <&ccm IMX_CCM_UART_CLK 0x7c 24>;
+			clocks = <&ccm IMX_CCM_UART1_CLK 0x7c 24>;
 			label = "UART_1";
 			status = "disabled";
 		};
@@ -151,7 +151,7 @@
 			compatible = "nxp,imx-iuart";
 			reg = <0x30890000 0x10000>;
 			interrupts = <27 3>;
-			clocks = <&ccm IMX_CCM_UART_CLK 0x68 28>;
+			clocks = <&ccm IMX_CCM_UART2_CLK 0x68 28>;
 			label = "UART_2";
 			status = "disabled";
 		};
@@ -160,7 +160,7 @@
 			compatible = "nxp,imx-iuart";
 			reg = <0x30880000 0x10000>;
 			interrupts = <28 3>;
-			clocks = <&ccm IMX_CCM_UART_CLK 0x68 12>;
+			clocks = <&ccm IMX_CCM_UART3_CLK 0x68 12>;
 			label = "UART_3";
 			status = "disabled";
 		};
@@ -169,7 +169,7 @@
 			compatible = "nxp,imx-iuart";
 			reg = <0x30a60000 0x10000>;
 			interrupts = <29 3>;
-			clocks = <&ccm IMX_CCM_UART_CLK 0x6c 24>;
+			clocks = <&ccm IMX_CCM_UART4_CLK 0x6c 24>;
 			label = "UART_4";
 			status = "disabled";
 		};
