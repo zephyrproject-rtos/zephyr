@@ -15,6 +15,7 @@
 #include "util/util.h"
 #include "util/mem.h"
 #include "util/memq.h"
+#include "util/mfifo.h"
 
 #include "pdu.h"
 
@@ -37,7 +38,47 @@
 #include "common/log.h"
 #include "hal/debug.h"
 
-#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
+#define IQ_REPORT_HEADER_SIZE      (offsetof(struct node_rx_iq_report, pdu))
+#define IQ_REPORT_STRUCT_OVERHEAD  (IQ_REPORT_HEADER_SIZE)
+#define IQ_SAMPLE_SIZE (sizeof(struct iq_sample))
+
+/* TODO Verify required number of IQ reports.
+ * At the moment it is set to 2 (if CONFIG_BT_PER_ADV_SYNC_MAX is set the value
+ * is multiplied by 2):
+ * - for LLL -> ULL
+ * - for ULL -> LL(HCI).
+ */
+#if defined(CONFIG_BT_PER_ADV_SYNC_MAX)
+#define IQ_REPORT_CNT (CONFIG_BT_PER_ADV_SYNC_MAX * 2)
+#else
+#define IQ_REPORT_CNT 2
+#endif
+
+#define IQ_REPORT_RX_NODE_POOL_ELEMENT_SIZE              \
+	MROUND(IQ_REPORT_STRUCT_OVERHEAD + (IQ_SAMPLE_TOTAL_CNT * IQ_SAMPLE_SIZE))
+#define IQ_REPORT_POOL_SIZE (IQ_REPORT_RX_NODE_POOL_ELEMENT_SIZE * IQ_REPORT_CNT)
+
+/* Memory pool to store IQ reports data */
+static struct {
+	void *free;
+	uint8_t pool[IQ_REPORT_POOL_SIZE];
+} mem_iq_report;
+
+#define LINK_IQ_REPORT_POOL_SIZE (sizeof(memq_link_t) * IQ_REPORT_CNT)
+
+/* Linked list to store pointers to mem_iq_report memory pool for IQ reports. */
+static struct {
+	uint8_t quota_pdu; /* Number of un-utilized buffers */
+
+	void *free;
+	uint8_t pool[LINK_IQ_REPORT_POOL_SIZE];
+} mem_link_iq_report;
+
+/* FIFO to store free IQ report norde_rx objects. */
+static MFIFO_DEFINE(iq_report_free, sizeof(void *), IQ_REPORT_CNT);
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+
 /* ToDo:
  * - Add release of df_adv_cfg when adv_sync is released.
  *   Open question, should df_adv_cfg be released when Adv. CTE is disabled?
@@ -45,6 +86,7 @@
  *   before consecutive Adv CTE enable.
  */
 
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 static struct lll_df_adv_cfg lll_df_adv_cfg_pool[CONFIG_BT_CTLR_ADV_AUX_SET];
 static void *df_adv_cfg_free;
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
@@ -106,6 +148,21 @@ static int init_reset(void)
 		 sizeof(lll_df_adv_cfg_pool) / sizeof(struct lll_df_adv_cfg),
 		 &df_adv_cfg_free);
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
+
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
+	/* Re-initialize the free IQ report mfifo */
+	MFIFO_INIT(iq_report_free);
+
+	/* Initialize IQ report memory pool. */
+	mem_init(mem_iq_report.pool, (IQ_REPORT_RX_NODE_POOL_ELEMENT_SIZE),
+		 sizeof(mem_iq_report.pool) / (IQ_REPORT_RX_NODE_POOL_ELEMENT_SIZE),
+		 &mem_iq_report.free);
+
+	/* Initialize IQ report link pool. */
+	mem_init(mem_link_iq_report.pool, sizeof(memq_link_t),
+		 sizeof(mem_link_iq_report.pool) / sizeof(memq_link_t),
+		 &mem_link_iq_report.free);
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 	return 0;
 }
 
