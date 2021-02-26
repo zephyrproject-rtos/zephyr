@@ -162,6 +162,10 @@ static int init_reset(void)
 	mem_init(mem_link_iq_report.pool, sizeof(memq_link_t),
 		 sizeof(mem_link_iq_report.pool) / sizeof(memq_link_t),
 		 &mem_link_iq_report.free);
+
+	/* Allocate free IQ report node rx */
+	mem_link_iq_report.quota_pdu = IQ_REPORT_CNT;
+	ull_df_rx_iq_report_alloc(UINT8_MAX);
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 	return 0;
 }
@@ -430,6 +434,74 @@ void ll_df_read_ant_inf(uint8_t *switch_sample_rates,
 	*num_ant = lll_df_ant_num_get();
 	*max_cte_len = LLL_DF_MAX_CTE_LEN;
 }
+
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
+void *ull_df_iq_report_alloc_peek(uint8_t count)
+{
+	if (count > MFIFO_AVAIL_COUNT_GET(iq_report_free)) {
+		return NULL;
+	}
+
+	return MFIFO_DEQUEUE_PEEK(iq_report_free);
+}
+
+void *ull_df_iq_report_alloc_peek_iter(uint8_t *idx)
+{
+	return *(void **)MFIFO_DEQUEUE_ITER_GET(iq_report_free, idx);
+}
+
+void *ull_df_iq_report_alloc(void)
+{
+	return MFIFO_DEQUEUE(iq_report_free);
+}
+
+void ull_df_iq_report_link_release(memq_link_t *link)
+{
+	mem_release(link, &mem_link_iq_report.free);
+}
+
+void ull_df_iq_report_mem_release(struct node_rx_hdr *rx)
+{
+	mem_release(rx, &mem_iq_report.free);
+}
+
+void ull_iq_report_link_inc_quota(int8_t delta)
+{
+	LL_ASSERT(delta <= 0 || mem_link_iq_report.quota_pdu < IQ_REPORT_CNT);
+	mem_link_iq_report.quota_pdu += delta;
+}
+
+void ull_df_rx_iq_report_alloc(uint8_t max)
+{
+	uint8_t idx;
+
+	if (max > mem_link_iq_report.quota_pdu) {
+		max = mem_link_iq_report.quota_pdu;
+	}
+
+	while ((max--) && MFIFO_ENQUEUE_IDX_GET(iq_report_free, &idx)) {
+		memq_link_t *link;
+		struct node_rx_hdr *rx;
+
+		link = mem_acquire(&mem_link_iq_report.free);
+		if (!link) {
+			return;
+		}
+
+		rx = mem_acquire(&mem_iq_report.free);
+		if (!rx) {
+			mem_release(link, &mem_link_iq_report.free);
+			return;
+		}
+
+		rx->link = link;
+
+		MFIFO_BY_IDX_ENQUEUE(iq_report_free, idx, rx);
+
+		ull_iq_report_link_inc_quota(-1);
+	}
+}
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 /* @brief Function releases unused memory for DF advertising configuration.
