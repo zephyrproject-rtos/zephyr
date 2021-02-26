@@ -81,7 +81,6 @@ struct csis_instance_t {
 	uint8_t set_lock;
 	uint8_t rank;
 	bool adv_enabled;
-	bool pending_notification;
 	struct k_work_delayable set_lock_timer;
 	bt_addr_le_t lock_client_addr;
 	const struct bt_gatt_service_static *service_p;
