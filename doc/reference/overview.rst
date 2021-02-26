@@ -252,11 +252,6 @@ current :ref:`stability level <api_lifecycle>`.
      - 2.4
      - 2.4
 
-   * - :ref:`sdhc_api`
-     - Stable
-     - 1.14
-     - 2.0
-
    * - :ref:`spi_api`
      - Stable
      - 1.0
