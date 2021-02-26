@@ -9,6 +9,7 @@ toolchain:
 supported:
   - netif:eth
   - adc
+  - i2s
   - gpio
   - spi
   - watchdog
