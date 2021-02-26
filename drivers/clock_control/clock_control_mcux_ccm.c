@@ -109,7 +109,7 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 #endif
 
 #ifdef CONFIG_UART_MCUX_IUART
-	case IMX_CCM_UART_CLK:
+	case IMX_CCM_UART4_CLK:
 		*rate = CLOCK_GetPllFreq(kCLOCK_SystemPll1Ctrl) /
 				(CLOCK_GetRootPreDivider(kCLOCK_RootUart4)) /
 				(CLOCK_GetRootPostDivider(kCLOCK_RootUart4)) /
