@@ -4,6 +4,8 @@
 
 set(EMU_PLATFORM qemu)
 set(QEMU_ARCH xilinx-aarch64)
+board_set_flasher_ifnset(qemu)
+board_set_debugger_ifnset(qemu)
 
 set(QEMU_CPU_TYPE_${ARCH} cortex-r5)
 set(QEMU_FLAGS_${ARCH}

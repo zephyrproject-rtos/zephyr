@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 set(EMU_PLATFORM qemu)
+board_set_flasher_ifnset(qemu)
+board_set_debugger_ifnset(qemu)
+
 
 if(NOT CONFIG_REBOOT)
   set(REBOOT_FLAG -no-reboot)
@@ -60,6 +63,7 @@ set(QEMU_FLAGS_${ARCH}
   ${REBOOT_FLAG}
   -nographic
   )
+
 
 if(NOT CONFIG_ACPI)
   list(APPEND QEMU_FLAGS_${ARCH} -no-acpi)
