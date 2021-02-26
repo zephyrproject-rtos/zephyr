@@ -8,3 +8,12 @@ set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
   WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
 )
 endif()
+
+if("${BOARD}" STREQUAL "qemu_x86_virt")
+  set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+    COMMAND ${PYTHON_EXECUTABLE} ${BOARD_DIR}/scripts/update_elf_load_addr.py
+    --kernel ${PROJECT_BINARY_DIR}/${CONFIG_KERNEL_BIN_NAME}.elf
+    --output ${PROJECT_BINARY_DIR}/${BOARD}.elf
+    $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
+  )
+endif()
