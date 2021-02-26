@@ -8,9 +8,13 @@
 #include <random/rand32.h>
 
 #define NUM_THREADS 8
-#define STACK_SIZE (256 + CONFIG_TEST_EXTRA_STACKSIZE)
+/* this should be large enough for us
+ * to print a failing assert if necessary
+ */
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 
 struct k_thread worker_threads[NUM_THREADS];
+k_tid_t worker_tids[NUM_THREADS];
 
 K_THREAD_STACK_ARRAY_DEFINE(worker_stacks, NUM_THREADS, STACK_SIZE);
 
@@ -53,7 +57,7 @@ void test_deadline(void)
 	 * were executed in the right order.
 	 */
 	for (i = 0; i < NUM_THREADS; i++) {
-		k_thread_create(&worker_threads[i],
+		worker_tids[i] = k_thread_create(&worker_threads[i],
 				worker_stacks[i], STACK_SIZE,
 				worker, INT_TO_POINTER(i), NULL, NULL,
 				K_LOWEST_APPLICATION_THREAD_PRIO,
@@ -98,11 +102,65 @@ void test_deadline(void)
 
 		zassert_true(d0 <= d1, "threads ran in wrong order");
 	}
+	for (i = 0; i < NUM_THREADS; i++) {
+		k_thread_abort(worker_tids[i]);
+	}
+}
+
+void yield_worker(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	zassert_true(n_exec >= 0 && n_exec < NUM_THREADS, "");
+
+	n_exec += 1;
+
+	k_yield();
+
+	/* should not get here until all threads have started */
+	zassert_true(n_exec == NUM_THREADS, "");
+
+	k_thread_abort(k_current_get());
+}
+
+void test_yield(void)
+{
+	/* Test that yield works across threads with the
+	 * same deadline and priority. This currently works by
+	 * simply not setting a deadline, which results in a
+	 * deadline of 0.
+	 */
+
+	int i;
+
+	n_exec = 0;
+
+	/* Create a bunch of threads at a single lower priority
+	 * and deadline.
+	 * Each thread increments its own variable, then yields
+	 * to the next. Sleep. Check that all threads ran.
+	 */
+	for (i = 0; i < NUM_THREADS; i++) {
+		k_thread_create(&worker_threads[i],
+				worker_stacks[i], STACK_SIZE,
+				yield_worker, NULL, NULL, NULL,
+				K_LOWEST_APPLICATION_THREAD_PRIO,
+				0, K_NO_WAIT);
+	}
+
+	zassert_true(n_exec == 0, "threads ran too soon");
+
+	k_sleep(K_MSEC(100));
+
+	zassert_true(n_exec == NUM_THREADS, "not enough threads ran");
 }
 
 void test_main(void)
 {
 	ztest_test_suite(suite_deadline,
-			 ztest_unit_test(test_deadline));
+			 ztest_unit_test(test_deadline),
+			 ztest_unit_test(test_yield));
 	ztest_run_test_suite(suite_deadline);
 }
