@@ -25,6 +25,9 @@
 		label = "PDM";
 
 		status = "okay";
+		dmas = <&dma0 0
+			&dma0 1>;
+		dma-names = "rx-a", "rx-b";
 	};
 };
 
