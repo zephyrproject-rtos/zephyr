@@ -929,9 +929,8 @@ static int i2s_sam_initialize(const struct device *dev)
 	k_sem_init(&dev_data->tx.sem, CONFIG_I2S_SAM_SSC_TX_BLOCK_COUNT,
 		   CONFIG_I2S_SAM_SSC_TX_BLOCK_COUNT);
 
-	dev_data->dev_dma = device_get_binding(DT_INST_DMAS_LABEL_BY_NAME(0, tx));
-	if (!dev_data->dev_dma) {
-		LOG_ERR("%s device not found", DT_INST_DMAS_LABEL_BY_NAME(0, tx));
+	if (!device_is_ready(dev_data->dev_dma)) {
+		LOG_ERR("%s device not ready", dev_data->dev_dma->name);
 		return -ENODEV;
 	}
 
@@ -988,6 +987,7 @@ struct queue_item rx_0_ring_buf[CONFIG_I2S_SAM_SSC_RX_BLOCK_COUNT + 1];
 struct queue_item tx_0_ring_buf[CONFIG_I2S_SAM_SSC_TX_BLOCK_COUNT + 1];
 
 static struct i2s_sam_dev_data i2s0_sam_data = {
+	.dev_dma = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(0, tx)),
 	.rx = {
 		.dma_channel = DT_INST_DMAS_CELL_BY_NAME(0, rx, channel),
 		.dma_cfg = {
