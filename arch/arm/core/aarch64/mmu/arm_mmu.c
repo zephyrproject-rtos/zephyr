@@ -600,6 +600,13 @@ static int remove_map(struct arm_mmu_ptables *ptables, const char *name,
 	return set_mapping(ptables, virt, size, 0, true);
 }
 
+static void invalidate_tlb_all(void)
+{
+	__asm__ volatile (
+	"tlbi vmalle1; dsb sy; isb"
+	: : : "memory");
+}
+
 /* zephyr execution regions with appropriate attributes */
 
 struct arm_mmu_flat_range {
@@ -692,6 +699,8 @@ static void setup_page_tables(struct arm_mmu_ptables *ptables)
 		region = &mmu_config.mmu_regions[index];
 		add_arm_mmu_region(ptables, region, MT_NO_OVERWRITE);
 	}
+
+	invalidate_tlb_all();
 }
 
 /* Translation table control register settings */
@@ -862,6 +871,7 @@ void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 		k_panic();
 	} else {
 		sync_domains((uintptr_t)virt, size);
+		invalidate_tlb_all();
 	}
 }
 
@@ -873,10 +883,16 @@ void arch_mem_unmap(void *addr, size_t size)
 		LOG_ERR("remove_map() returned %d", ret);
 	} else {
 		sync_domains((uintptr_t)addr, size);
+		invalidate_tlb_all();
 	}
 }
 
 #ifdef CONFIG_USERSPACE
+
+static inline bool is_ptable_active(struct arm_mmu_ptables *ptables)
+{
+	return read_sysreg(ttbr0_el1) == (uintptr_t)ptables->base_xlat_table;
+}
 
 int arch_mem_domain_max_partitions_get(void)
 {
@@ -924,6 +940,9 @@ static void private_map(struct arm_mmu_ptables *ptables, const char *name,
 	__ASSERT(ret == 0, "privatize_page_range() returned %d", ret);
 	ret = add_map(ptables, name, phys, virt, size, attrs);
 	__ASSERT(ret == 0, "add_map() returned %d", ret);
+	if (is_ptable_active(ptables)) {
+		invalidate_tlb_all();
+	}
 }
 
 static void reset_map(struct arm_mmu_ptables *ptables, const char *name,
@@ -933,6 +952,9 @@ static void reset_map(struct arm_mmu_ptables *ptables, const char *name,
 
 	ret = globalize_page_range(ptables, &kernel_ptables, addr, size, name);
 	__ASSERT(ret == 0, "globalize_page_range() returned %d", ret);
+	if (is_ptable_active(ptables)) {
+		invalidate_tlb_all();
+	}
 }
 
 void arch_mem_domain_partition_add(struct k_mem_domain *domain,
