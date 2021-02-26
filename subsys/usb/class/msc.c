@@ -38,7 +38,7 @@
 #include <string.h>
 #include <sys/byteorder.h>
 #include <sys/__assert.h>
-#include <disk/disk_access.h>
+#include <storage/disk_access.h>
 #include <usb/class/usb_msc.h>
 #include <usb/usb_device.h>
 #include <usb/usb_common.h>
