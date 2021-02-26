@@ -17,6 +17,14 @@ module-str = Shell
 source "subsys/logging/Kconfig.template.log_config"
 source "subsys/shell/Kconfig.backends"
 
+config SHELL_MINIMAL
+	bool "Default config to reduce flash and memory requirements"
+	help
+	  This is a meta-configuration option to significantly reduce the flash
+	  and memory requirements of the shell.  Enabling it will choose Kconfig
+	  defaults which favor reduced flash or memory requirements over extra
+	  features.
+
 config SHELL_STACK_SIZE
 	int "Shell thread stack size"
 	default 2520 if OPENTHREAD_SHELL
@@ -35,6 +43,7 @@ config SHELL_BACKSPACE_MODE_DELETE
 
 config SHELL_CMD_BUFF_SIZE
 	int "Shell command buffer size"
+	default 128 if SHELL_MINIMAL
 	default 256
 	help
 	  Maximum command size in bytes. One byte is reserved for the string
@@ -67,7 +76,7 @@ config SHELL_ARGC_MAX
 
 config SHELL_TAB
 	bool "Enable the Tab button support in shell"
-	default y
+	default y if !SHELL_MINIMAL
 	help
 	  Enable using the Tab button in the shell. The button
 	  can be used for prompting commands, or for autocompletion.
@@ -76,7 +85,7 @@ config SHELL_TAB
 config SHELL_TAB_AUTOCOMPLETION
 	bool "Enable commands autocompletion with the Tab button"
 	depends on SHELL_TAB
-	default y
+	default y if !SHELL_MINIMAL
 	help
 	  Enable commands and subcommands autocompletion with the Tab
 	  key. This function can be deactivated to save some flash.
@@ -84,7 +93,7 @@ config SHELL_TAB_AUTOCOMPLETION
 config SHELL_WILDCARD
 	bool "Enable wildcard support in shell"
 	select FNMATCH
-	default y
+	default y if !SHELL_MINIMAL
 	help
 	  Enables using wildcards: * and ? in the shell.
 
@@ -96,13 +105,13 @@ config SHELL_ECHO_STATUS
 
 config SHELL_VT100_COLORS
 	bool "Enable colors in shell"
-	default y
+	default y if !SHELL_MINIMAL
 	help
 	  If enabled VT100 colors are used in shell (e.g. print errors in red).
 
 config SHELL_METAKEYS
 	bool "Enable metakeys"
-	default y
+	default y if !SHELL_MINIMAL
 	help
 	  Enables shell meta keys: Ctrl+a, Ctrl+b, Ctrl+c, Ctrl+d, Ctrl+e,
 	  Ctrl+f, Ctrl+k, Ctrl+l, Ctrl+u, Ctrl+w, Alt+b, Alt+f
@@ -110,18 +119,18 @@ config SHELL_METAKEYS
 
 config SHELL_HELP
 	bool "Enable help message"
-	default y
+	default y if !SHELL_MINIMAL
 	help
 	  Enables formatting help message when requested with '-h' or '--help'.
 
 config SHELL_HELP_ON_WRONG_ARGUMENT_COUNT
 	bool "Enable printing help on wrong argument count"
 	depends on SHELL_HELP
-	default y
+	default y if !SHELL_MINIMAL
 
 config SHELL_HISTORY
 	bool "Enable history in shell"
-	default y
+	default y if !SHELL_MINIMAL
 	select RING_BUFFER
 	help
 	  Enable commands history. History can be accessed using up and down
@@ -129,6 +138,7 @@ config SHELL_HISTORY
 
 config SHELL_HISTORY_BUFFER
 	int "History buffer in bytes"
+	default 128 if SHELL_MINIMAL
 	default 512
 	depends on SHELL_HISTORY
 	help
@@ -136,18 +146,18 @@ config SHELL_HISTORY_BUFFER
 
 config SHELL_STATS
 	bool "Enable shell statistics"
-	default y
+	default y if !SHELL_MINIMAL
 
 config SHELL_CMDS
 	bool "Enable built-in commands"
-	default y
+	default y if !SHELL_MINIMAL
 	help
 	  Enable built-in commands like 'clear', 'history', etc.
 
 config SHELL_CMDS_RESIZE
 	bool "Enable resize command"
 	depends on SHELL_CMDS
-	default y
+	default y if !SHELL_MINIMAL
 	help
 	  By default shell assumes width of a terminal screen set to 80
 	  characters. Each time terminal screen width is changed resize command

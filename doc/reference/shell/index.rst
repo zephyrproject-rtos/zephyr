@@ -32,10 +32,12 @@ interaction is required. This module is a Unix-like shell with these features:
 * Support for meta keys.
 * Kconfig configuration to optimize memory usage.
 
-Some of these features have a significant impact on RAM and flash usage,
-but many can be disabled when not needed.  A configuration that should
-produce the minimum useful feature set is in
-:zephyr_file:`samples/subsys/shell/shell_module/prj_minimal.conf`.
+.. note::
+	Some of these features have a significant impact on RAM and flash usage,
+	but many can be disabled when not needed.  To default to options which
+	favor reduced RAM and flash requirements instead of features, you should
+	enable :option:`CONFIG_SHELL_MINIMAL` and selectively enable just the
+	features you want.
 
 The module can be connected to any transport for command input and output.
 At this point, the following transport layers are implemented:
