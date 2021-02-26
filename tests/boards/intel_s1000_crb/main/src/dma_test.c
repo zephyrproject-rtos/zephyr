@@ -57,7 +57,6 @@ K_SEM_DEFINE(dma_sem, 0, 1);
 
 extern struct k_sem thread_sem;
 
-#define DMA_DEVICE_NAME		CONFIG_DMA_0_NAME
 #define RX_BUFF_SIZE		(48)
 
 struct transfers {
@@ -139,10 +138,10 @@ static int test_task(uint32_t chan_id, uint32_t blen, uint32_t block_count)
 		return -1;
 	}
 
-	dma_device = device_get_binding(DMA_DEVICE_NAME);
+	dma_device = DEVICE_DT_GET(DT_NODELABEL(dma0));
 
-	if (!dma_device) {
-		printk("Cannot get dma controller\n");
+	if (!device_is_ready(dma_device)) {
+		printk("dma controller is not ready\n");
 		return -1;
 	}
 
