@@ -6,12 +6,9 @@
 
 /**
  * @file
- * @brief Disk Access layer APIs and defines
+ * @brief Disk Access layer API
  *
- * This file contains APIs for disk access. Apart from disks, various
- * other storage media like Flash and RAM disks may implement this interface to
- * be used by various higher layers(consumers) like USB Mass storage
- * and Filesystems.
+ * This file contains APIs for disk access.
  */
 
 #ifndef ZEPHYR_INCLUDE_DISK_DISK_ACCESS_H_
@@ -23,53 +20,11 @@
  * @{
  */
 
-#include <kernel.h>
-#include <zephyr/types.h>
-#include <sys/dlist.h>
+#include <drivers/disk.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/* Possible Cmd Codes for disk_ioctl() */
-
-/* Get the number of sectors in the disk  */
-#define DISK_IOCTL_GET_SECTOR_COUNT		1
-/* Get the size of a disk SECTOR in bytes */
-#define DISK_IOCTL_GET_SECTOR_SIZE		2
-/* How many  sectors constitute a FLASH Erase block */
-#define DISK_IOCTL_GET_ERASE_BLOCK_SZ		4
-/* Commit any cached read/writes to disk */
-#define DISK_IOCTL_CTRL_SYNC			5
-
-/* 3 is reserved.  It used to be DISK_IOCTL_GET_DISK_SIZE */
-
-/* Possible return bitmasks for disk_status() */
-#define DISK_STATUS_OK			0x00
-#define DISK_STATUS_UNINIT		0x01
-#define DISK_STATUS_NOMEDIA		0x02
-#define DISK_STATUS_WR_PROTECT		0x04
-
-struct disk_operations;
-
-struct disk_info {
-	sys_dnode_t node;
-	char *name;
-	const struct disk_operations *ops;
-	/* Disk device associated to this disk.
-	 */
-	const struct device *dev;
-};
-
-struct disk_operations {
-	int (*init)(struct disk_info *disk);
-	int (*status)(struct disk_info *disk);
-	int (*read)(struct disk_info *disk, uint8_t *data_buf,
-		    uint32_t start_sector, uint32_t num_sector);
-	int (*write)(struct disk_info *disk, const uint8_t *data_buf,
-		     uint32_t start_sector, uint32_t num_sector);
-	int (*ioctl)(struct disk_info *disk, uint8_t cmd, void *buff);
-};
 
 /*
  * @brief perform any initialization
@@ -128,10 +83,6 @@ int disk_access_write(const char *pdrv, const uint8_t *data_buf,
  * @return 0 on success, negative errno code on fail
  */
 int disk_access_ioctl(const char *pdrv, uint8_t cmd, void *buff);
-
-int disk_access_register(struct disk_info *disk);
-
-int disk_access_unregister(struct disk_info *disk);
 
 #ifdef __cplusplus
 }

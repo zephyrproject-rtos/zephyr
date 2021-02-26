@@ -10,7 +10,7 @@
 
 LOG_MODULE_REGISTER(sdmmc_spi, CONFIG_SDMMC_LOG_LEVEL);
 
-#include <disk/disk_access.h>
+#include <drivers/disk.h>
 #include <drivers/gpio.h>
 #include <sys/byteorder.h>
 #include <drivers/spi.h>

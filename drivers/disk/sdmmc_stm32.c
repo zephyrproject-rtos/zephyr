@@ -7,7 +7,7 @@
 #define DT_DRV_COMPAT st_stm32_sdmmc
 
 #include <devicetree.h>
-#include <disk/disk_access.h>
+#include <drivers/disk.h>
 #include <drivers/clock_control.h>
 #include <drivers/clock_control/stm32_clock_control.h>
 #include <pinmux/stm32/pinmux_stm32.h>
