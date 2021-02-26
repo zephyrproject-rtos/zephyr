@@ -7,7 +7,7 @@
 #define DT_DRV_COMPAT nxp_imx_usdhc
 
 #include <sys/__assert.h>
-#include <disk/disk_access.h>
+#include <drivers/disk.h>
 #include <drivers/gpio.h>
 #include <sys/byteorder.h>
 #include <soc.h>

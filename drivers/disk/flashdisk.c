@@ -8,7 +8,7 @@
 #include <zephyr/types.h>
 #include <sys/__assert.h>
 #include <sys/util.h>
-#include <disk/disk_access.h>
+#include <drivers/disk.h>
 #include <errno.h>
 #include <init.h>
 #include <device.h>
