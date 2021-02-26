@@ -34,6 +34,11 @@
 
 	};
 
+	wifi: wifi {
+		compatible = "espressif,esp32-wifi";
+		status = "disabled";
+	};
+
 	soc {
 		sram0: memory@3ffb0000 {
 			compatible = "mmio-sram";
@@ -49,11 +54,6 @@
 			#clock-cells = <1>;
 			status = "ok";
 		};
-
-	wifi: wifi {
-		compatible = "espressif,esp32-wifi";
-		status = "disabled";
-	};
 
 		uart0: uart@3ff40000 {
 			compatible = "espressif,esp32-uart";
