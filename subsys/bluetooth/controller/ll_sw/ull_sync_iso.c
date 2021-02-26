@@ -388,8 +388,9 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 void ull_sync_iso_estab_done(struct node_rx_event_done *done)
 {
 	struct ll_sync_iso_set *sync_iso;
+	struct node_rx_sync_iso *se;
 	struct lll_sync_iso *lll;
-	struct node_rx_hdr *rx;
+	struct node_rx_pdu *rx;
 
 	/* switch to normal prepare */
 	mfy_lll_prepare.fp = lll_sync_iso_prepare;
@@ -399,12 +400,15 @@ void ull_sync_iso_estab_done(struct node_rx_event_done *done)
 	lll = &sync_iso->lll;
 
 	/* Prepare BIG Sync Established */
-	rx = sync_iso->sync->iso.node_rx_estab;
-	rx->type = NODE_RX_TYPE_SYNC_ISO;
-	rx->handle = ull_sync_iso_handle_get(sync_iso);
-	rx->rx_ftr.param = sync_iso;
+	rx = (void *)sync_iso->sync->iso.node_rx_estab;
+	rx->hdr.type = NODE_RX_TYPE_SYNC_ISO;
+	rx->hdr.handle = ull_sync_iso_handle_get(sync_iso);
+	rx->hdr.rx_ftr.param = sync_iso;
 
-	ll_rx_put(rx->link, rx);
+	se = (void *)rx->pdu;
+	se->status = BT_HCI_ERR_SUCCESS;
+
+	ll_rx_put(rx->hdr.link, rx);
 	ll_rx_sched();
 
 	ull_sync_iso_done(done);
@@ -600,6 +604,7 @@ static void ticker_stop_op_cb(uint32_t status, void *param)
 static void sync_lost(void *param)
 {
 	struct ll_sync_iso_set *sync_iso = param;
+	struct node_rx_sync_iso *se;
 	struct node_rx_pdu *rx;
 
 	/* Generate BIG sync lost */
@@ -607,6 +612,9 @@ static void sync_lost(void *param)
 	rx->hdr.handle = ull_sync_iso_handle_get(sync_iso);
 	rx->hdr.type = NODE_RX_TYPE_SYNC_ISO_LOST;
 	rx->hdr.rx_ftr.param = sync_iso;
+
+	se = (void *)rx->pdu;
+	se->status = BT_HCI_ERR_CONN_TIMEOUT;
 
 	/* Enqueue the BIG sync lost towards ULL context */
 	ll_rx_put(rx->hdr.link, rx);
