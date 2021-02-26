@@ -138,8 +138,8 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 uint8_t ll_big_sync_terminate(uint8_t big_handle, void **rx)
 {
 	struct ll_sync_iso_set *sync_iso;
-	struct node_rx_pdu *node_rx;
 	memq_link_t *link_sync_estab;
+	struct node_rx_pdu *node_rx;
 	memq_link_t *link_sync_lost;
 	struct ll_sync_set *sync;
 	int err;
@@ -171,16 +171,16 @@ uint8_t ll_big_sync_terminate(uint8_t big_handle, void **rx)
 		node_rx->hdr.type = NODE_RX_TYPE_SYNC_ISO;
 		node_rx->hdr.handle = 0xffff;
 
+		/* NOTE: Since NODE_RX_TYPE_SYNC_ISO is only generated from ULL
+		 *       context, pass ULL context as parameter.
+		 */
+		node_rx->hdr.rx_ftr.param = sync_iso;
+
 		/* NOTE: struct node_rx_lost has uint8_t member following the
 		 *       struct node_rx_hdr to store the reason.
 		 */
 		se = (void *)node_rx->pdu;
 		se->status = BT_HCI_ERR_OP_CANCELLED_BY_HOST;
-
-		/* NOTE: Since NODE_RX_TYPE_SYNC_ISO is only generated from ULL
-		 *       context, pass ULL context as parameter.
-		 */
-		node_rx->hdr.rx_ftr.param = sync_iso;
 
 		*rx = node_rx;
 
