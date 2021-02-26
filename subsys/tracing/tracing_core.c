@@ -22,6 +22,8 @@
 #define TRACING_BACKEND_NAME "tracing_backend_usb"
 #elif defined CONFIG_TRACING_BACKEND_POSIX
 #define TRACING_BACKEND_NAME "tracing_backend_posix"
+#elif defined CONFIG_TRACING_BACKEND_RAM
+#define TRACING_BACKEND_NAME "tracing_backend_ram"
 #else
 #define TRACING_BACKEND_NAME ""
 #endif

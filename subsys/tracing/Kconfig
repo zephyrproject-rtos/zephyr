@@ -165,6 +165,21 @@ config TRACING_BACKEND_POSIX
 	help
 	  Use posix architecture to output tracing data to file system.
 
+config TRACING_BACKEND_RAM
+	bool "Enable RAM backend"
+	help
+	  Use a ram buffer to output tracing data which can
+	  be dumped to a file at runtime with a debugger.
+	  See gdb dump binary memory documentation for example.
+
+config RAM_TRACING_BUFFER_SIZE
+	int "Ram Tracing buffer size"
+	default 4096
+	depends on TRACING_BACKEND_RAM
+	help
+	  Size of the RAM trace buffer. Trace will be discarded if the
+	  length is exceeded.
+
 endchoice
 
 config TRACING_BACKEND_UART_NAME
