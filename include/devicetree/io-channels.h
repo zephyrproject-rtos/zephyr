@@ -53,6 +53,7 @@ extern "C" {
  * @see DT_PROP_BY_PHANDLE_IDX()
  */
 #define DT_IO_CHANNELS_LABEL_BY_IDX(node_id, idx) \
+	__DEPRECATED_MACRO \
 	DT_PROP_BY_PHANDLE_IDX(node_id, io_channels, idx, label)
 
 /**
@@ -88,6 +89,7 @@ extern "C" {
  * @see DT_PHANDLE_BY_NAME()
  */
 #define DT_IO_CHANNELS_LABEL_BY_NAME(node_id, name) \
+	__DEPRECATED_MACRO \
 	DT_PROP(DT_PHANDLE_BY_NAME(node_id, io_channels, name), label)
 
 /**
@@ -96,7 +98,8 @@ extern "C" {
  * @return the label property of the node referenced at index 0
  * @see DT_IO_CHANNELS_LABEL_BY_IDX()
  */
-#define DT_IO_CHANNELS_LABEL(node_id) DT_IO_CHANNELS_LABEL_BY_IDX(node_id, 0)
+#define DT_IO_CHANNELS_LABEL(node_id) \
+	__DEPRECATED_MACRO DT_IO_CHANNELS_LABEL_BY_IDX(node_id, 0)
 
 /**
  *
@@ -173,6 +176,7 @@ extern "C" {
  * @see DT_IO_CHANNELS_LABEL_BY_IDX()
  */
 #define DT_INST_IO_CHANNELS_LABEL_BY_IDX(inst, idx) \
+	__DEPRECATED_MACRO \
 	DT_IO_CHANNELS_LABEL_BY_IDX(DT_DRV_INST(inst), idx)
 
 /**
@@ -185,6 +189,7 @@ extern "C" {
  * @see DT_IO_CHANNELS_LABEL_BY_NAME()
  */
 #define DT_INST_IO_CHANNELS_LABEL_BY_NAME(inst, name) \
+	__DEPRECATED_MACRO \
 	DT_IO_CHANNELS_LABEL_BY_NAME(DT_DRV_INST(inst), name)
 
 /**
@@ -192,7 +197,8 @@ extern "C" {
  * @param inst DT_DRV_COMPAT instance number
  * @return the label property of the node referenced at index 0
  */
-#define DT_INST_IO_CHANNELS_LABEL(inst) DT_INST_IO_CHANNELS_LABEL_BY_IDX(inst, 0)
+#define DT_INST_IO_CHANNELS_LABEL(inst) \
+	__DEPRECATED_MACRO DT_INST_IO_CHANNELS_LABEL_BY_IDX(inst, 0)
 
 /**
  * @brief Get the node identifier from a DT_DRV_COMPAT instance's io-channels
