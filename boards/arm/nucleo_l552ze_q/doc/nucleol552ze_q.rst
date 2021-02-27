@@ -276,7 +276,16 @@ You should see the following message on the console:
 Building a secure/non-secure with Arm |reg| TrustZone |reg|
 -----------------------------------------------------------
 
-The TF-M integration sample :ref:`tfm_ipc` can be run by a Nucleo L552ZE Q, using the ``nucleo_l552ze_q_ns`` target. When building a ``*_ns`` image with TF-M, a ``build/tfm/install/postbuild.sh`` bash script will be run as a post-build step to make some required flash layout changes. The ``build/tfm/install/postbuild.sh`` script will also be used to flash the board. Check the ``build/tfm/install`` directory to ensure that the commands required by these scripts (``readlink``, etc.) are available on your system.
+The TF-M integration sample :ref:`tfm_ipc` can be run by a Nucleo L552ZE Q,
+using the ``nucleo_l552ze_q_ns`` target. When building a ``*_ns`` image with TF-M,
+a ``build/tfm/install/postbuild.sh`` bash script will be run as a post-build step
+to make some required flash layout changes. The ``build/tfm/regression.sh`` script
+will need to be run to perform device initialization, and then run ``west flash --hex-file build/tfm_merged.hex``
+to flash the board.
+
+Check the ``build/tfm/`` directory to ensure that the commands required by these scripts
+(``readlink``, etc.) are available on your system. Please also check ``STM32_Programmer_CLI``
+used for initialization is available in the PATH.
 
 Debugging
 =========
