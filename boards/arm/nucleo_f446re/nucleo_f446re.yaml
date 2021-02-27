@@ -14,6 +14,7 @@ supported:
   - gpio
   - spi
   - i2c
+  - can
   - backup_sram
 ram: 96
 flash: 512

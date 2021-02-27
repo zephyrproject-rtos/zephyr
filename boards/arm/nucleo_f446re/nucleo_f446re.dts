@@ -18,6 +18,7 @@
 		zephyr,shell-uart = &usart2;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,can-primary = &can1;
 	};
 
 	leds {
@@ -83,6 +84,17 @@
 };
 
 &backup_sram {
+	status = "okay";
+};
+
+&can1 {
+	/* CAUTION: PB8 and PB9 may conflict with same pins of I2C1 */
+	pinctrl-0 = <&can1_rx_pb8 &can1_tx_pb9>;
+	bus-speed = <125000>;
+	sjw = <1>;
+	prop-seg = <0>;
+	phase-seg1 = <6>;
+	phase-seg2 = <5>;
 	status = "okay";
 };
 
