@@ -43,6 +43,14 @@ Deprecated in this release
   :c:macro:`DT_INST_PWMS_LABEL` was deprecated in favor of utilizing
   :c:macro:`DT_PWMS_CTLR` and variants.
 
+* :c:macro:`DT_IO_CHANNELS_LABEL_BY_IDX`,
+  :c:macro:`DT_IO_CHANNELS_LABEL_BY_NAME`,
+  :c:macro:`DT_IO_CHANNELS_LABEL`,
+  :c:macro:`DT_INST_IO_CHANNELS_LABEL_BY_IDX`,
+  :c:macro:`DT_INST_IO_CHANNELS_LABEL_BY_NAME`, and
+  :c:macro:`DT_INST_IO_CHANNELS_LABEL` were deprecated in favor of utilizing
+  :c:macro:`DT_IO_CHANNELS_CTLR` and variants.
+
 * USB HID specific macros in ``<include/usb/class/usb_hid.h>`` are deprecated
   in favor of new common HID macros defined in ``<include/usb/class/hid.h>``.
 
