@@ -35,7 +35,6 @@ LOG_MODULE_REGISTER(BATTERY, CONFIG_ADC_LOG_LEVEL);
 #endif
 
 struct io_channel_config {
-	const char *label;
 	uint8_t channel;
 };
 
@@ -59,7 +58,6 @@ struct divider_config {
 static const struct divider_config divider_config = {
 #if DT_NODE_HAS_STATUS(VBATT, okay)
 	.io_channel = {
-		DT_IO_CHANNELS_LABEL(VBATT),
 		DT_IO_CHANNELS_INPUT(VBATT),
 	},
 #if DT_NODE_HAS_PROP(VBATT, power_gpios)
@@ -85,7 +83,9 @@ struct divider_data {
 	struct adc_sequence adc_seq;
 	int16_t raw;
 };
-static struct divider_data divider_data;
+static struct divider_data divider_data = {
+	.adc = DEVICE_DT_GET(DT_IO_CHANNELS_CTLR(VBATT)),
+};
 
 static int divider_setup(void)
 {
@@ -97,13 +97,8 @@ static int divider_setup(void)
 	struct adc_channel_cfg *accp = &ddp->adc_cfg;
 	int rc;
 
-	if (iocp->label == NULL) {
-		return -ENOTSUP;
-	}
-
-	ddp->adc = device_get_binding(iocp->label);
-	if (ddp->adc == NULL) {
-		LOG_ERR("Failed to get ADC %s", iocp->label);
+	if (!device_is_ready(ddp->adc)) {
+		LOG_ERR("ADC device is not ready %s", ddp->adc->name);
 		return -ENOENT;
 	}
 
