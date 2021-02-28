@@ -593,3 +593,20 @@ test_i2c_pcal6408a: pcal6408a@4b {
 	int-gpios = <&test_gpio 0 0>;
 	reset-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_fdc2x1x: fdc2x1x@2a {
+	compatible = "ti,fdc2x1x";
+	label = "FDC2X1X";
+	reg = <0x2a>;
+	intb-gpios = <&test_gpio 0 0>;
+	deglitch = <5>;
+	fref = <43360>;
+	channel_0 {
+		rcount = <7499>;
+		settlecount = <48>;
+		fref-divider = <1>;
+		idrive = <10>;
+		fin-sel = <2>;
+		inductance = <18>;
+	};
+};
