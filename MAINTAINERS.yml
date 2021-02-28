@@ -645,6 +645,8 @@ Documentation:
     status: maintained
     maintainers:
         - Mani-Sadhasivam
+    collaborators:
+        - mniestroj
     files:
         - drivers/lora/
         - include/drivers/lora.h
