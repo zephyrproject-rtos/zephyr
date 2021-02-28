@@ -99,6 +99,69 @@ static inline void trigger_irq(int irq)
 	printk("Triggering irq : %d\n", irq);
 	z_arc_v2_aux_reg_write(_ARC_V2_AUX_IRQ_HINT, irq);
 }
+
+#elif defined(CONFIG_X86)
+
+#define TEST_IRQ_DYN_LINE 16
+#define TEST_DYNAMIC_VECTOR     TEST_IRQ_DYN_LINE+32
+
+static inline void trigger_irq(int irq)
+{
+	int vector = irq + 32;
+
+/*
+ * Trigger an interrupt of x86 under gcov code coverage report enabled,
+ * which means GCC optimization will be -O0, so need to hard code the
+ * immediate number for INT instruction. Otherwise, an build error
+ * happends and shows:
+ * "error: 'asm' operand 0 probably does not match constraints" and
+ * "error: impossible constraint in 'asm'"
+ */
+#if defined(CONFIG_COVERAGE)
+	if (vector == TEST_DYNAMIC_VECTOR) {
+		__asm__ volatile("int %0" :: "i"(TEST_DYNAMIC_VECTOR));
+	} else {
+		printk("not interrupt");
+	}
+#else
+	__asm__ volatile("int %0" :: "i"(vector));
+#endif
+}
+
+#elif defined(CONFIG_ARCH_POSIX)
+#include "irq_ctrl.h"
+
+#define TEST_IRQ_DYN_LINE 5
+
+static inline void trigger_irq(int irq)
+{
+	hw_irq_ctrl_raise_im_from_sw(irq);
+}
+
+#elif defined(CONFIG_RISCV)
+static inline void trigger_irq(int irq)
+{
+	uint32_t mip;
+
+	__asm__ volatile ("csrrs %0, mip, %1\n"
+			  : "=r" (mip)
+			  : "r" (1 << irq));
+}
+
+#elif defined(CONFIG_XTENSA)
+static inline void trigger_irq(int irq)
+{
+	z_xt_set_intset(BIT((unsigned int)irq));
+}
+
+#elif defined(CONFIG_SPARC)
+extern void z_sparc_enter_irq(int);
+
+static inline void trigger_irq(int irq)
+{
+	z_sparc_enter_irq(irq);
+}
+
 #else
 /* for not supported architecture */
 #define NO_TRIGGER_FROM_SW
