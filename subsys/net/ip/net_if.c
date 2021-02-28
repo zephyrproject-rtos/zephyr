@@ -1680,6 +1680,11 @@ struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 					 &ipv6->unicast[i].address.in6_addr);
 
 			net_if_ipv6_start_dad(iface, &ipv6->unicast[i]);
+		} else {
+			/* If DAD is not done for point-to-point links, then
+			 * the address is usable immediately.
+			 */
+			ipv6->unicast[i].addr_state = NET_ADDR_PREFERRED;
 		}
 
 		net_mgmt_event_notify_with_info(
