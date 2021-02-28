@@ -285,6 +285,53 @@ static void print_supported_ethernet_capabilities(
 }
 #endif /* CONFIG_NET_L2_ETHERNET */
 
+static const char *iface_flags2str(struct net_if *iface)
+{
+	static char str[sizeof("POINTOPOINT") + sizeof("PROMISC") +
+			sizeof("NO_AUTO_START") + sizeof("SUSPENDED") +
+			sizeof("MCAST_FORWARD") + sizeof("IPv4") +
+			sizeof("IPv6")];
+	int pos = 0;
+
+	if (net_if_flag_is_set(iface, NET_IF_POINTOPOINT)) {
+		pos += snprintk(str + pos, sizeof(str) - pos,
+				"POINTOPOINT,");
+	}
+
+	if (net_if_flag_is_set(iface, NET_IF_PROMISC)) {
+		pos += snprintk(str + pos, sizeof(str) - pos,
+				"PROMISC,");
+	}
+
+	if (net_if_flag_is_set(iface, NET_IF_NO_AUTO_START)) {
+		pos += snprintk(str + pos, sizeof(str) - pos,
+				"NO_AUTO_START,");
+	} else {
+		pos += snprintk(str + pos, sizeof(str) - pos,
+				"AUTO_START,");
+	}
+
+	if (net_if_flag_is_set(iface, NET_IF_FORWARD_MULTICASTS)) {
+		pos += snprintk(str + pos, sizeof(str) - pos,
+				"MCAST_FORWARD,");
+	}
+
+	if (net_if_flag_is_set(iface, NET_IF_IPV4)) {
+		pos += snprintk(str + pos, sizeof(str) - pos,
+				"IPv4,");
+	}
+
+	if (net_if_flag_is_set(iface, NET_IF_IPV6)) {
+		pos += snprintk(str + pos, sizeof(str) - pos,
+				"IPv6,");
+	}
+
+	/* get rid of last ',' character */
+	str[pos - 1] = '\0';
+
+	return str;
+}
+
 static void iface_cb(struct net_if *iface, void *user_data)
 {
 #if defined(CONFIG_NET_NATIVE)
@@ -383,6 +430,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	}
 
 	PR("MTU       : %d\n", net_if_get_mtu(iface));
+	PR("Flags     : %s\n", iface_flags2str(iface));
 
 #if defined(CONFIG_NET_L2_ETHERNET_MGMT)
 	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
