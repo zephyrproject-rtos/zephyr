@@ -63,7 +63,7 @@ compatible: "manufacturer,device"
 include: other.yaml # or [other1.yaml, other2.yaml]
 
 # If the node describes a bus, then the bus type should be given, like below
-bus: <string describing bus type, e.g. "i2c">
+bus: <string or list of strings describing bus type, e.g. "i2c" or ["i3c", "i2c"]>
 
 # If the node appears on a bus, then the bus type should be given, like below.
 #

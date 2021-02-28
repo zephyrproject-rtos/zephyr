@@ -157,6 +157,11 @@ def test_bus():
     assert str(edt.get_node("/buses/foo-bus/node1/nested").binding_path) == \
         hpath("test-bindings/device-on-foo-bus.yaml")
 
+    # Some buses can support other bus types, ensure that the priority is
+    # maintained in the ordering
+    assert str(edt.get_node("/buses/bazbar-bus/node").binding_path) == \
+        hpath("test-bindings/device-on-baz-bus.yaml")
+
 def test_child_binding():
     '''Test 'child-binding:' in bindings'''
     edt = edtlib.EDT("test.dts", ["test-bindings"])

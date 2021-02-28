@@ -705,7 +705,7 @@ class Node:
     def on_bus(self):
         "See the class docstring"
         bus_node = self.bus_node
-        return bus_node.bus if bus_node else None
+        return bus_node.bus if bus_node else bus_node
 
     @property
     def flash_controller(self):
@@ -780,7 +780,17 @@ class Node:
                 # specified bus (if any) and then against any bus. This is so
                 # that matching against bindings which do not specify a bus
                 # works the same way in Zephyr as it does elsewhere.
-                if (compat, on_bus) in self.edt._compat2binding:
+                if isinstance(on_bus, list) \
+                    and (any((compat, elem) in self.edt._compat2binding for elem in on_bus)):
+                    for elem in on_bus:
+                        if (compat, elem) in self.edt._compat2binding:
+                            # When matching, the preference is encoded in to
+                            # bus list order, and it is to match the first one
+                            # available
+                            binding = self.edt._compat2binding[compat, elem]
+                            break
+                elif isinstance(on_bus, str) \
+                    and (compat, on_bus) in self.edt._compat2binding:
                     binding = self.edt._compat2binding[compat, on_bus]
                 elif (compat, None) in self.edt._compat2binding:
                     binding = self.edt._compat2binding[compat, None]
@@ -1695,10 +1705,18 @@ class Binding:
                 _err(f"unknown key '{key}' in {self.path}, "
                      "expected one of {', '.join(ok_top)}, or *-cells")
 
-        for bus_key in "bus", "on-bus":
-            if bus_key in raw and \
-               not isinstance(raw[bus_key], str):
-                _err(f"malformed '{bus_key}:' value in {self.path}, "
+        if "bus" in raw:
+            bus = raw["bus"]
+            if not isinstance(bus, str) and \
+                not isinstance(bus, list) and \
+                not all(isinstance(elem, str) for elem in bus):
+                _err(f"malformed 'bus: {bus}:' value in {self.path}, "
+                     "expected string or list of strings")
+
+        if "on-bus" in raw:
+            on_bus = raw["on-bus"]
+            if not isinstance(on_bus, str):
+                _err(f"malformed 'on-bus: {on_bus}:' value in {self.path}, "
                      "expected string")
 
         self._check_properties()
