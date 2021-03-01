@@ -9,8 +9,8 @@
  * Common Kconfig settings
  */
 
-#ifndef CONFIG_BT_LL_SW
-#define CONFIG_BT_LL_SW y
+#ifndef CONFIG_BT_LL_SW_SPLIT
+#define CONFIG_BT_LL_SW_SPLIT y
 #endif
 
 #define CONFIG_BT_CONN
