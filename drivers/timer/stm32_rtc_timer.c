@@ -11,6 +11,7 @@
 #include <stm32_ll_rtc.h>
 #include <stm32_ll_exti.h>
 #include <stm32_ll_pwr.h>
+#include <stm32_ll_system.h>
 
 #include <drivers/timer/system_timer.h>
 
@@ -306,8 +307,6 @@ static struct timeval rtc_stm32_ticks_to_tv(uint32_t ticks)
 	ts.tv_usec = ticks_us % USEC_PER_SEC;
 	ts.tv_sec = (ticks_us - ts.tv_usec) / USEC_PER_SEC;
 
-	printk("rtc_stm32_ticks_to_tv: ticks_us= %llu\n", ticks_us);
-
 	return ts;
 }
 
@@ -370,11 +369,9 @@ static uint32_t rtc_stm32_read(void)
 
 	/* convert sec&usec to ms (so some accuracy loss) */
 	tms = _tv_to_ms(&ts);
-	//printk("rtc_stm32_read: ts.tv_sec= %llu, ts.tv_usec= %u, tms= %u \n", ts.tv_sec, ts.tv_usec, tms);
 
 	/* convert ms to ticks */
 	ticks = tms * CONFIG_SYS_CLOCK_TICKS_PER_SEC / MSEC_PER_SEC ;
-	//printk("rtc_stm32_read: ticks= %u\n", ticks);
 
 	return ticks;
 }
@@ -396,8 +393,6 @@ static int rtc_stm32_set_calendar_alarm(struct timeval alarm_tv)
 
 	/* Convert UNIX time to civil time*/
 	gmtime_r(&alarm_tv.tv_sec , &alarm_tm);
-
-	printk("rtc_stm32_set_calendar_alarm: on %u calendar alarm min %u, sec %u\n", rtc_stm32_read(), alarm_tm.tm_min, alarm_tm.tm_sec);
 
 	/* Apply ALARM_A */
 	rtc_alarm.AlarmTime.TimeFormat = LL_RTC_TIME_FORMAT_AM_OR_24;
@@ -480,8 +475,6 @@ static int rtc_stm32_set_subsec_alarm(struct timeval alarm_tv)
 	LL_RTC_ALMA_SetSubSecond(RTC, subsecond <= RTC_SYNCH_PREDIV ? subsecond : RTC_SYNCH_PREDIV);
 	LL_RTC_ALMA_SetSubSecondMask(RTC, 1);
 
-	printk("rtc_stm32_set_subsec_alarm: on %u ticks, tv_usec=%u, subsecond alarm set %u\n", rtc_stm32_read(), alarm_tv.tv_usec, subsecond);
-
 	LL_RTC_ALMA_Enable(RTC);
 	LL_RTC_ClearFlag_ALRA(RTC);
 	LL_RTC_EnableIT_ALRA(RTC);
@@ -523,7 +516,6 @@ static void rtc_stm32_isr_handler(const void *arg)
 		z_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL)
 				? dticks : (dticks > 0));
 
-		//printk("rtc_stm32_isr_handler: on %u announce %u\n", now_ticks, dticks);
 	}
 
 	LL_EXTI_ClearFlag_0_31(RTC_EXTI_LINE);
@@ -556,7 +548,6 @@ int z_clock_driver_init(const struct device *device)
 	while (LL_RCC_LSI_IsReady() != 1) {
 	}
 	LL_RCC_SetRTCClockSource(LL_RCC_RTC_CLKSOURCE_LSI);
-	printk("z_clock_driver_init: LSI clock source set\n");
 
 #else /* CONFIG_STM32_RTC_TIMER_LSE */
 
@@ -564,7 +555,6 @@ int z_clock_driver_init(const struct device *device)
 	LL_RCC_LSE_EnableBypass();
 #endif /* CONFIG_STM32_RTC_TIMER_LSE_BYPASS */
 
-	printk("z_clock_driver_init: before setting LSE things \n");
 	LL_RCC_LSE_Enable();
 
 	/* Wait until LSE is ready */
@@ -611,6 +601,11 @@ int z_clock_driver_init(const struct device *device)
 			rtc_stm32_isr_handler, 0, 0);
 	irq_enable(DT_IRQN(DT_NODELABEL(rtc)));
 
+#ifdef CONFIG_DEBUG
+	/* Freeze RTC during Debug breakpoint */
+	LL_DBGMCU_APB1_GRP1_FreezePeriph(LL_DBGMCU_APB1_GRP1_RTC_STOP);
+#endif /* CONFIG_DEBUG */
+
 	return 0;
 }
 
@@ -631,7 +626,7 @@ void z_clock_set_timeout(int32_t ticks, bool idle)
 	}
 
 	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : ticks;
-	ticks = CLAMP(ticks - 1, 0, (uint32_t) MAX_TICKS);
+	ticks = CLAMP(ticks - 1, 1, (uint32_t) MAX_TICKS);
 
 	uint32_t now_ticks = rtc_stm32_read();
 
@@ -648,16 +643,14 @@ void z_clock_set_timeout(int32_t ticks, bool idle)
 	 * In case only 1 tick is requested, it will avoid
 	 * that tick+1 event occurs before alarm setting is finished.
 	 */
-	alarm_on_ticks+=1;
-
-	printk("z_clock_set_timeout: on %u ticks, timeout ticks = %u, alarm_on_ticks = %llu\n", now_ticks, ticks, alarm_on_ticks);
+	//alarm_on_ticks+=1;
 
 	// ticks > timeval (there already split in sec & usec)
 	alarm_tv = rtc_stm32_ticks_to_tv(alarm_on_ticks);
 
 	if (ticks >= CONFIG_SYS_CLOCK_TICKS_PER_SEC){
 		if (!rtc_stm32_set_calendar_alarm(alarm_tv)){
-			printk("calendar alarm set, subsec alarm & mask reset \n");
+			/* log something? */
 		}
 		else{
 			/* error */
@@ -666,7 +659,7 @@ void z_clock_set_timeout(int32_t ticks, bool idle)
 	}
 	else {
 		if(!rtc_stm32_set_subsec_alarm(alarm_tv)){
-			printk("subsecond alarm & ss mask set, calendar reset\n");
+			/* log something? */
 		}
 		else{
 			/* error */
@@ -686,7 +679,6 @@ void z_clock_set_timeout(int32_t ticks, bool idle)
 uint32_t z_clock_elapsed(void)
 {
 	uint32_t now_ticks = rtc_stm32_read();
-	printk("z_clock_elapsed: now_ticks= %u, rtc_last= %u\n", now_ticks, rtc_last);
 
 	return (now_ticks - rtc_last);
 }
