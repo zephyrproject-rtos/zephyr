@@ -12,7 +12,7 @@ CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
 
 # PSCI is supported
-CONFIG_ARM_PSCI=y
+CONFIG_PM_CPU_OPS=y
 
 # Enable serial port
 CONFIG_UART_PL011=y

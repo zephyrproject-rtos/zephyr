@@ -42,7 +42,7 @@ add_subdirectory_ifdef(CONFIG_PECI peci)
 add_subdirectory_ifdef(CONFIG_REGULATOR regulator)
 add_subdirectory_ifdef(CONFIG_MEMC memc)
 add_subdirectory_ifdef(CONFIG_VIRTUALIZATION virtualization)
-add_subdirectory_ifdef(CONFIG_ARM_PSCI psci)
+add_subdirectory_ifdef(CONFIG_PM_CPU_OPS pm_cpu_ops)
 
 add_subdirectory_ifdef(CONFIG_FLASH_HAS_DRIVER_ENABLED flash)
 add_subdirectory_ifdef(CONFIG_SERIAL_HAS_DRIVER serial)

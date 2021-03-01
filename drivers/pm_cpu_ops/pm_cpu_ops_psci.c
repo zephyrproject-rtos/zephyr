@@ -6,7 +6,7 @@
 
 #define DT_DRV_COMPAT arm_psci_0_2
 
-#define LOG_LEVEL CONFIG_PSCI_LOG_LEVEL
+#define LOG_LEVEL CONFIG_PM_CPU_OPS_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(psci);
 
@@ -17,8 +17,10 @@ LOG_MODULE_REGISTER(psci);
 #include <device.h>
 #include <init.h>
 
-#include <drivers/psci.h>
-#include "psci.h"
+#include <drivers/pm_cpu_ops.h>
+#include "pm_cpu_ops_psci.h"
+
+static struct psci psci_data;
 
 static int psci_to_dev_err(int ret)
 {
@@ -37,43 +39,30 @@ static int psci_to_dev_err(int ret)
 	return -EINVAL;
 }
 
-static uint32_t psci_api_get_version(const struct device *dev)
+int pm_cpu_off(void)
 {
-	struct psci *data = dev->data;
-
-	return data->invoke_psci_fn(PSCI_0_2_FN_PSCI_VERSION, 0, 0, 0);
-}
-
-static int psci_api_cpu_off(const struct device *dev, uint32_t state)
-{
-	struct psci *data = dev->data;
 	int ret;
 
-	ret = data->invoke_psci_fn(PSCI_0_2_FN_CPU_OFF, state, 0, 0);
+	if (psci_data.conduit == SMCCC_CONDUIT_NONE)
+		return -EINVAL;
+
+	ret = psci_data.invoke_psci_fn(PSCI_0_2_FN_CPU_OFF, 0, 0, 0);
 
 	return psci_to_dev_err(ret);
 }
 
-static int psci_api_cpu_on(const struct device *dev, unsigned long cpuid,
-			   unsigned long entry_point)
+int pm_cpu_on(unsigned long cpuid,
+	      uintptr_t entry_point)
 {
-	struct psci *data = dev->data;
 	int ret;
 
-	ret = data->invoke_psci_fn(PSCI_FN_NATIVE(0_2, CPU_ON), cpuid,
-				   entry_point, 0);
+	if (psci_data.conduit == SMCCC_CONDUIT_NONE)
+		return -EINVAL;
+
+	ret = psci_data.invoke_psci_fn(PSCI_FN_NATIVE(0_2, CPU_ON), cpuid,
+				       (unsigned long) entry_point, 0);
 
 	return psci_to_dev_err(ret);
-}
-
-static int psci_api_affinity_info(const struct device *dev,
-				  unsigned long target_affinity,
-				  unsigned long lowest_affinity_level)
-{
-	struct psci *data = dev->data;
-
-	return data->invoke_psci_fn(PSCI_FN_NATIVE(0_2, AFFINITY_INFO),
-				    target_affinity, lowest_affinity_level, 0);
 }
 
 static unsigned long __invoke_psci_fn_hvc(unsigned long function_id,
@@ -98,18 +87,23 @@ static unsigned long __invoke_psci_fn_smc(unsigned long function_id,
 	return res.a0;
 }
 
-static int set_conduit_method(struct psci *data)
+static uint32_t psci_get_version(void)
+{
+	return psci_data.invoke_psci_fn(PSCI_0_2_FN_PSCI_VERSION, 0, 0, 0);
+}
+
+static int set_conduit_method(void)
 {
 	const char *method;
 
 	method = DT_PROP(DT_INST(0, DT_DRV_COMPAT), method);
 
 	if (!strcmp("hvc", method)) {
-		data->conduit = SMCCC_CONDUIT_HVC;
-		data->invoke_psci_fn = __invoke_psci_fn_hvc;
+		psci_data.conduit = SMCCC_CONDUIT_HVC;
+		psci_data.invoke_psci_fn = __invoke_psci_fn_hvc;
 	} else if (!strcmp("smc", method)) {
-		data->conduit = SMCCC_CONDUIT_SMC;
-		data->invoke_psci_fn = __invoke_psci_fn_smc;
+		psci_data.conduit = SMCCC_CONDUIT_SMC;
+		psci_data.invoke_psci_fn = __invoke_psci_fn_smc;
 	} else {
 		LOG_ERR("Invalid conduit method");
 		return -EINVAL;
@@ -118,9 +112,9 @@ static int set_conduit_method(struct psci *data)
 	return 0;
 }
 
-static int psci_detect(const struct device *dev)
+static int psci_detect(void)
 {
-	uint32_t ver = psci_api_get_version(dev);
+	uint32_t ver = psci_get_version();
 
 	LOG_DBG("Detected PSCIv%d.%d",
 		PSCI_VERSION_MAJOR(ver),
@@ -131,29 +125,27 @@ static int psci_detect(const struct device *dev)
 		return -ENOTSUP;
 	}
 
+	psci_data.ver = ver;
+
 	return 0;
+}
+
+uint32_t psci_version(void)
+{
+	return psci_data.ver;
 }
 
 static int psci_init(const struct device *dev)
 {
-	struct psci *data = dev->data;
+	psci_data.conduit = SMCCC_CONDUIT_NONE;
 
-	if (set_conduit_method(data)) {
+	if (set_conduit_method()) {
 		return -ENOTSUP;
 	}
 
-	return psci_detect(dev);
+	return psci_detect();
 }
-
-static const struct psci_driver_api psci_api = {
-	.get_version = psci_api_get_version,
-	.cpu_off = psci_api_cpu_off,
-	.cpu_on = psci_api_cpu_on,
-	.affinity_info = psci_api_affinity_info,
-};
-
-static struct psci psci_data;
 
 DEVICE_DT_INST_DEFINE(0, psci_init, device_pm_control_nop,
 	&psci_data, NULL, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-	&psci_api);
+	NULL);

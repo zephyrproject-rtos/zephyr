@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_DRIVERS_PSCI_PSCI_H_
 #define ZEPHYR_DRIVERS_PSCI_PSCI_H_
 
-#include <drivers/psci.h>
+#include <drivers/pm_cpu_ops/psci.h>
 
 #ifdef CONFIG_64BIT
 #define PSCI_FN_NATIVE(version, name)		PSCI_##version##_FN64_##name
@@ -56,8 +56,9 @@ typedef unsigned long (psci_fn)(unsigned long, unsigned long,
 				unsigned long, unsigned long);
 
 struct psci {
-	psci_fn *invoke_psci_fn;
 	enum arm_smccc_conduit conduit;
+	psci_fn *invoke_psci_fn;
+	uint32_t ver;
 };
 
 #endif /* ZEPHYR_DRIVERS_PSCI_PSCI_H_ */
