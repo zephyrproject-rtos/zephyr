@@ -50,14 +50,6 @@ static inline uint16_t sync_handle_get(struct ll_adv_sync_set *sync);
 static inline uint8_t sync_remove(struct ll_adv_sync_set *sync,
 				  struct ll_adv_set *adv, uint8_t enable);
 
-#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
-static inline void adv_sync_extra_data_set_clear(void *extra_data_prev,
-						 void *extra_data_new,
-						 uint16_t hdr_add_fields,
-						 uint16_t hdr_rem_fields,
-						 void *data);
-#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
-
 static uint8_t adv_sync_hdr_set_clear(struct lll_adv_sync *lll_sync,
 				      struct pdu_adv *ter_pdu_prev,
 				      struct pdu_adv *ter_pdu,
@@ -120,8 +112,194 @@ static void adv_sync_pdu_init(struct pdu_adv *pdu, uint8_t ext_hdr_flags)
 
 	pdu->len = len;
 }
+
+#if defined(CONFIG_BT_CTLR_ADV_PDU_LINK)
+static uint8_t adv_sync_pdu_init_from_prev_pdu(struct pdu_adv *pdu,
+					       struct pdu_adv *pdu_prev,
+					       uint16_t ext_hdr_flags_add,
+					       uint16_t ext_hdr_flags_rem)
+{
+	struct pdu_adv_com_ext_adv *com_hdr_prev;
+	struct pdu_adv_ext_hdr *ext_hdr_prev;
+	struct pdu_adv_com_ext_adv *com_hdr;
+	struct pdu_adv_ext_hdr *ext_hdr;
+	uint8_t ext_hdr_flags_prev;
+	uint8_t ext_hdr_flags;
+	uint8_t *dptr_prev;
+	uint8_t len_prev;
+	uint8_t *dptr;
+	uint8_t len;
+
+	/* Copy complete header, assume it was set properly in old PDU */
+	*(uint8_t *)pdu = *(uint8_t *)pdu_prev;
+
+	com_hdr_prev = &pdu_prev->adv_ext_ind;
+	com_hdr = &pdu->adv_ext_ind;
+
+	com_hdr->adv_mode = 0U;
+
+	ext_hdr_prev = &com_hdr_prev->ext_hdr;
+	ext_hdr = &com_hdr->ext_hdr;
+
+	if (com_hdr_prev->ext_hdr_len) {
+		ext_hdr_flags_prev = *(uint8_t *) ext_hdr_prev;
+	} else {
+		ext_hdr_flags_prev = 0;
+	}
+	ext_hdr_flags = ext_hdr_flags_prev |
+			(ext_hdr_flags_add & (~ext_hdr_flags_rem));
+
+	*(uint8_t *)ext_hdr = ext_hdr_flags;
+
+	LL_ASSERT(!ext_hdr->adv_addr);
+	LL_ASSERT(!ext_hdr->tgt_addr);
+	LL_ASSERT(!ext_hdr->adi);
+	LL_ASSERT(!ext_hdr->sync_info);
+
+	dptr = ext_hdr->data;
+	dptr_prev = ext_hdr_prev->data;
+
+	/* Note: skip length verification of ext header writes as we assume that
+	 *       all PDUs are large enough to store at least complete ext header.
+	 */
+
+	/* Copy CTEInfo, if applicable */
+	if (ext_hdr->cte_info) {
+		if (ext_hdr_prev->cte_info) {
+			memcpy(dptr, dptr_prev, sizeof(struct pdu_cte_info));
+		}
+		dptr += sizeof(struct pdu_cte_info);
+	}
+	if (ext_hdr_prev->cte_info) {
+		dptr_prev += sizeof(struct pdu_cte_info);
+	}
+
+	/* Add AuxPtr, if applicable. Do not copy since it will be updated later
+	 * anyway.
+	 */
+	if (ext_hdr->aux_ptr) {
+		dptr += sizeof(struct pdu_adv_aux_ptr);
+	}
+	if (ext_hdr_prev->aux_ptr) {
+		dptr_prev += sizeof(struct pdu_adv_aux_ptr);
+	}
+
+	/* Copy TxPower, if applicable */
+	if (ext_hdr->tx_pwr) {
+		if (ext_hdr_prev->tx_pwr) {
+			memcpy(dptr, dptr_prev, sizeof(uint8_t));
+		}
+		dptr += sizeof(uint8_t);
+	}
+	if (ext_hdr_prev->tx_pwr) {
+		dptr_prev += sizeof(uint8_t);
+	}
+
+	LL_ASSERT(ext_hdr_prev  >= 0);
+
+	/* Copy ACAD */
+	len = com_hdr_prev->ext_hdr_len - (dptr_prev - (uint8_t *)ext_hdr_prev);
+	memcpy(dptr, dptr_prev, len);
+	dptr += len;
+
+	/* Check populated ext header length excluding length itself. If 0, then
+	 * there was neither field nor ACAD populated and we skip ext header
+	 * entirely.
+	 */
+	len = dptr - ext_hdr->data;
+	if (len == 0) {
+		com_hdr->ext_hdr_len = 0;
+	} else {
+		com_hdr->ext_hdr_len = len +
+				       offsetof(struct pdu_adv_ext_hdr, data);
+	}
+
+	/* Both PDUs have now ext header length calculated properly, reset
+	 * pointers to start of AD.
+	 */
+	dptr = &com_hdr->ext_hdr_adv_data[com_hdr->ext_hdr_len];
+	dptr_prev = &com_hdr_prev->ext_hdr_adv_data[com_hdr_prev->ext_hdr_len];
+
+	/* Calculate length of AD to copy and AD length available in new PDU */
+	len_prev = pdu_prev->len - (dptr_prev - pdu_prev->payload);
+	len = PDU_AC_PAYLOAD_SIZE_MAX - (dptr - pdu->payload);
+
+	/* TODO: we should allow partial copy and let caller refragment data */
+	if (len < len_prev) {
+		return BT_HCI_ERR_PACKET_TOO_LONG;
+	}
+
+	/* Copy AD */
+	if (!(ext_hdr_flags_rem & ULL_ADV_PDU_HDR_FIELD_AD_DATA)) {
+		len = MIN(len, len_prev);
+		memcpy(dptr, dptr_prev, len);
+		dptr += len;
+	}
+
+	/* Finalize PDU */
+	pdu->len = dptr - pdu->payload;
+
+	return 0;
+}
+
+static uint8_t adv_sync_pdu_ad_data_set(struct pdu_adv *pdu,
+					const uint8_t *data, uint8_t len)
+{
+	struct pdu_adv_com_ext_adv *com_hdr;
+	uint8_t len_max;
+	uint8_t *dptr;
+
+	com_hdr = &pdu->adv_ext_ind;
+
+	dptr = &com_hdr->ext_hdr_adv_data[com_hdr->ext_hdr_len];
+
+	len_max = PDU_AC_PAYLOAD_SIZE_MAX - (dptr - pdu->payload);
+	/* TODO: we should allow partial copy and let caller refragment data */
+	if (len > len_max) {
+		return BT_HCI_ERR_PACKET_TOO_LONG;
+	}
+
+	memcpy(dptr, data, len);
+	dptr += len;
+
+	pdu->len = dptr - pdu->payload;
+
+	return 0;
+}
+
+static struct pdu_adv *adv_sync_pdu_duplicate_chain(struct pdu_adv *pdu)
+{
+	struct pdu_adv *pdu_dup = NULL;
+	uint8_t err;
+
+	while (pdu) {
+		struct pdu_adv *pdu_new;
+
+		pdu_new = lll_adv_pdu_alloc_pdu_adv();
+
+		/* We make exact copy of old PDU, there's really nothing that
+		 * can go wrong there assuming original PDU was created properly
+		 */
+		err = adv_sync_pdu_init_from_prev_pdu(pdu_new, pdu, 0, 0);
+		LL_ASSERT(err == 0);
+
+		if (pdu_dup) {
+			lll_adv_pdu_linked_append_end(pdu_new, pdu_dup);
+		} else {
+			pdu_dup = pdu_new;
+		}
+
+		pdu = lll_adv_pdu_linked_next_get(pdu);
+	}
+
+	return pdu_dup;
+}
+#endif /* CONFIG_BT_CTLR_ADV_PDU_LINK */
+
 uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 {
+	void *extra_data_prev, *extra_data;
+	struct pdu_adv *pdu_prev, *pdu;
 	struct lll_adv_sync *lll_sync;
 	struct ll_adv_sync_set *sync;
 	struct ll_adv_set *adv;
@@ -181,7 +359,20 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 
 	sync->interval = interval;
 
-	err = ull_adv_sync_pdu_set_clear(adv, 0, 0, NULL, &ter_idx);
+	err = ull_adv_sync_pdu_alloc(adv, 0, 0, NULL, &pdu_prev, &pdu,
+				     &extra_data_prev, &extra_data, &ter_idx);
+	if (err) {
+		return err;
+	}
+
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+	if (extra_data) {
+		ull_adv_sync_extra_data_set_clear(extra_data_prev, extra_data,
+						  0, 0, NULL);
+	}
+#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
+
+	err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu, 0, 0, NULL);
 	if (err) {
 		return err;
 	}
@@ -194,7 +385,9 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 				uint8_t const *const data)
 {
+	void *extra_data_prev, *extra_data;
 	struct adv_pdu_field_data pdu_data;
+	struct pdu_adv *pdu_prev, *pdu;
 	struct lll_adv_sync *lll_sync;
 	struct ll_adv_set *adv;
 	uint8_t value[5];
@@ -222,15 +415,49 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 	*pdu_data.field_data = len;
 	sys_put_le32((uint32_t)data, pdu_data.field_data + 1);
 
-	err = ull_adv_sync_pdu_set_clear(adv, ULL_ADV_PDU_HDR_FIELD_AD_DATA,
-					 0, &pdu_data, &ter_idx);
+	err = ull_adv_sync_pdu_alloc(adv, ULL_ADV_PDU_HDR_FIELD_AD_DATA, 0,
+				     &pdu_data, &pdu_prev, &pdu,
+				     &extra_data_prev, &extra_data, &ter_idx);
 	if (err) {
 		return err;
 	}
 
-	lll_adv_sync_data_enqueue(lll_sync, ter_idx);
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+	if (extra_data) {
+		ull_adv_sync_extra_data_set_clear(extra_data_prev, extra_data,
+						  ULL_ADV_PDU_HDR_FIELD_AD_DATA,
+						  0, &pdu_data);
+	}
+#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 
-	return 0;
+	err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu,
+					 ULL_ADV_PDU_HDR_FIELD_AD_DATA,
+					 0, &pdu_data);
+
+
+#if defined(CONFIG_BT_CTLR_ADV_PDU_LINK)
+	/* alloc() will return the same PDU as peek() in case there was PDU
+	 * queued but not switched to current before alloc() - no need to deal
+	 * with chain as it's already there. In other case we need to duplicate
+	 * chain from current PDU and append it to new PDU.
+	 */
+	if (pdu != pdu_prev) {
+		struct pdu_adv *next, *next_dup;
+
+		LL_ASSERT(lll_adv_pdu_linked_next_get(pdu) == NULL);
+
+		next = lll_adv_pdu_linked_next_get(pdu_prev);
+		next_dup = adv_sync_pdu_duplicate_chain(next);
+
+		lll_adv_pdu_linked_append(next_dup, pdu);
+	}
+#endif /* CONFIG_BT_CTLR_ADV_PDU_LINK */
+
+	if (!err) {
+		lll_adv_sync_data_enqueue(lll_sync, ter_idx);
+	}
+
+	return err;
 }
 
 uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
@@ -484,6 +711,70 @@ void ull_adv_sync_update(struct ll_adv_sync_set *sync, uint32_t slot_plus_us,
 }
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 
+uint8_t ull_adv_sync_pdu_alloc(struct ll_adv_set *adv,
+			       uint16_t hdr_add_fields,
+			       uint16_t hdr_rem_fields,
+			       struct adv_pdu_field_data *data,
+			       struct pdu_adv **ter_pdu_prev,
+			       struct pdu_adv **ter_pdu_new,
+			       void **extra_data_prev,
+			       void **extra_data_new,
+			       uint8_t *ter_idx)
+{
+	struct pdu_adv *pdu_prev, *pdu_new;
+	struct lll_adv_sync *lll_sync;
+	void *ed_prev;
+#if defined(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
+	void *ed_new;
+#endif
+
+	lll_sync = adv->lll.sync;
+	if (!lll_sync) {
+		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
+	}
+
+	/* Get reference to previous periodic advertising PDU data */
+	pdu_prev = lll_adv_sync_data_peek(lll_sync, &ed_prev);
+
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+	/* Get reference to new periodic advertising PDU data buffer */
+	if ((hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_CTE_INFO) ||
+	    (!(hdr_rem_fields & ULL_ADV_PDU_HDR_FIELD_CTE_INFO) &&
+	     ed_prev)) {
+		/* If there was an extra data in past PDU data or it is required
+		 * by the hdr_add_fields then allocate memmory for it.
+		 */
+		pdu_new = lll_adv_sync_data_alloc(lll_sync, &ed_new,
+						  ter_idx);
+		if (!pdu_new) {
+			return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+		}
+	} else {
+		ed_new = NULL;
+#else
+	{
+#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
+		pdu_new = lll_adv_sync_data_alloc(lll_sync, NULL, ter_idx);
+		if (!pdu_new) {
+			return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+		}
+	}
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
+	if (extra_data_prev) {
+		*extra_data_prev = ed_prev;
+	}
+	if (extra_data_new) {
+		*extra_data_new = ed_new;
+	}
+#endif /* CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY */
+
+	*ter_pdu_prev = pdu_prev;
+	*ter_pdu_new = pdu_new;
+
+	return 0;
+}
+
 /* @brief Set or clear fields in extended advertising header and store
  *        extra_data if requested.
  *
@@ -510,69 +801,58 @@ void ull_adv_sync_update(struct ll_adv_sync_set *sync, uint32_t slot_plus_us,
  *
  * @return Zero in case of success, other value in case of failure.
  */
-uint8_t ull_adv_sync_pdu_set_clear(struct ll_adv_set *adv,
+uint8_t ull_adv_sync_pdu_set_clear(struct lll_adv_sync *lll_sync,
+				   struct pdu_adv *ter_pdu_prev,
+				   struct pdu_adv *ter_pdu,
 				   uint16_t hdr_add_fields,
 				   uint16_t hdr_rem_fields,
-				   struct adv_pdu_field_data *data,
-				   uint8_t *ter_idx)
+				   struct adv_pdu_field_data *data)
 {
-	struct pdu_adv *pdu_prev, *pdu_new;
-	struct lll_adv_sync *lll_sync;
-	void *extra_data_prev;
-#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
-	void *extra_data;
-#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 	int err;
 
-	lll_sync = adv->lll.sync;
-	if (!lll_sync) {
-		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
-	}
-
-	/* Get reference to previous periodic advertising PDU data */
-	pdu_prev = lll_adv_sync_data_peek(lll_sync, &extra_data_prev);
-
-#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
-	/* Get reference to new periodic advertising PDU data buffer */
-	if ((hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_CTE_INFO) ||
-	    (!(hdr_rem_fields & ULL_ADV_PDU_HDR_FIELD_CTE_INFO) &&
-	    extra_data_prev)) {
-		/* If there was an extra data in past PDU data or it is required
-		 * by the hdr_add_fields then allocate memmory for it.
-		 */
-		pdu_new = lll_adv_sync_data_alloc(lll_sync, &extra_data,
-						  ter_idx);
-		if (!pdu_new) {
-			return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
-		}
-	} else {
-		extra_data = NULL;
-#else
-	{
-#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
-		pdu_new = lll_adv_sync_data_alloc(lll_sync, NULL, ter_idx);
-		if (!pdu_new) {
-			return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
-		}
-	}
-
-	err = adv_sync_hdr_set_clear(lll_sync, pdu_prev, pdu_new,
+	err = adv_sync_hdr_set_clear(lll_sync, ter_pdu_prev, ter_pdu,
 				     hdr_add_fields, hdr_rem_fields,
 				     (data ? data->field_data : NULL));
-	if (err) {
-		return err;
-	}
+
+	return err;
+}
 
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
-	if (extra_data) {
-		adv_sync_extra_data_set_clear(extra_data_prev, extra_data,
-					      hdr_add_fields, hdr_rem_fields,
-					      (data ? data->extra_data : NULL));
+/* @brief Set or clear fields in extended advertising header and store
+ *        extra_data if requested.
+ *
+ * @param[in]  extra_data_prev  Pointer to previous content of extra_data.
+ * @param[in]  hdr_add_fields   Flag with information which fields add.
+ * @param[in]  hdr_rem_fields   Flag with information which fields remove.
+ * @param[in]  data             Pointer to data to be stored in extra_data.
+ *                              Content depends on the data depends on
+ *                              @p hdr_add_fields.
+ *
+ * @Note
+ * @p data depends on the flag provided by @p hdr_add_fields.
+ * Information about content of value may be found in description of
+ * @ref ull_adv_sync_pdu_set_clear.
+ *
+ * @return Zero in case of success, other value in case of failure.
+ */
+void ull_adv_sync_extra_data_set_clear(void *extra_data_prev,
+				       void *extra_data_new,
+				       uint16_t hdr_add_fields,
+				       uint16_t hdr_rem_fields,
+				       void *data)
+{
+	/* Currently only CTE enable requires extra_data. Due to that fact
+	 * CTE additional data are just copied to extra_data memory.
+	 */
+	if (hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_CTE_INFO) {
+		memcpy(extra_data_new, data, sizeof(struct lll_df_adv_cfg));
+	} else if (!(hdr_rem_fields & ULL_ADV_PDU_HDR_FIELD_CTE_INFO) ||
+		   extra_data_prev) {
+		memmove(extra_data_new, extra_data_prev,
+			sizeof(struct lll_df_adv_cfg));
 	}
-#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
-
-	return 0;
 }
+#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 
 static int init_reset(void)
 {
@@ -872,43 +1152,6 @@ static uint8_t adv_sync_hdr_set_clear(struct lll_adv_sync *lll_sync,
 
 	return 0;
 }
-
-#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
-/* @brief Set or clear fields in extended advertising header and store
- *        extra_data if requested.
- *
- * @param[in]  extra_data_prev  Pointer to previous content of extra_data.
- * @param[in]  hdr_add_fields   Flag with information which fields add.
- * @param[in]  hdr_rem_fields   Flag with information which fields remove.
- * @param[in]  data             Pointer to data to be stored in extra_data.
- *                              Content depends on the data depends on
- *                              @p hdr_add_fields.
- *
- * @Note
- * @p data depends on the flag provided by @p hdr_add_fields.
- * Information about content of value may be found in description of
- * @ref ull_adv_sync_pdu_set_clear.
- *
- * @return Zero in case of success, other value in case of failure.
- */
-static inline void adv_sync_extra_data_set_clear(void *extra_data_prev,
-						 void *extra_data_new,
-						 uint16_t hdr_add_fields,
-						 uint16_t hdr_rem_fields,
-						 void *data)
-{
-	/* Currently only CTE enable requires extra_data. Due to that fact
-	 * CTE additional data are just copied to extra_data memory.
-	 */
-	if (hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_CTE_INFO) {
-		memcpy(extra_data_new, data, sizeof(struct lll_df_adv_cfg));
-	} else if ((hdr_rem_fields & ULL_ADV_PDU_HDR_FIELD_CTE_INFO) ||
-		    extra_data_prev) {
-		memmove(extra_data_new, extra_data_prev,
-			sizeof(struct lll_df_adv_cfg));
-	}
-}
-#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 
 static void mfy_sync_offset_get(void *param)
 {
