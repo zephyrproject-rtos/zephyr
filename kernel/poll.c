@@ -100,15 +100,15 @@ static inline void add_event(sys_dlist_t *events, struct k_poll_event *event,
 
 	pending = (struct k_poll_event *)sys_dlist_peek_tail(events);
 	if ((pending == NULL) ||
-	    z_is_t1_higher_prio_than_t2(poller_thread(pending->poller),
-					poller_thread(poller))) {
+		(z_sched_prio_cmp(poller_thread(pending->poller),
+							   poller_thread(poller)) > 0)) {
 		sys_dlist_append(events, &event->_node);
 		return;
 	}
 
 	SYS_DLIST_FOR_EACH_CONTAINER(events, pending, _node) {
-		if (z_is_t1_higher_prio_than_t2(poller_thread(poller),
-					poller_thread(pending->poller))) {
+		if (z_sched_prio_cmp(poller_thread(poller),
+					poller_thread(pending->poller)) > 0) {
 			sys_dlist_insert(&pending->_node, &event->_node);
 			return;
 		}
