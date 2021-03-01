@@ -1138,6 +1138,7 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 {
 	struct bt_gatt_chrc *chrc;
 	struct bt_gatt_subscribe_params *sub_params = NULL;
+	int err = 0;
 
 	if (attr) {
 		/* Found an attribute */
@@ -1263,7 +1264,6 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 
 #ifdef CONFIG_BT_MCC_OTS
 #if (CONFIG_BT_MCC_MAX_OTS_INST > 0)
-	int err = 0;
 
 	/* Discover included services */
 	discover_params.start_handle = mcs_inst.start_handle;
@@ -1284,6 +1284,11 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 		mcc_cb->discover_mcs(conn, err);
 	}
 #endif /* (CONFIG_BT_MCC_MAX_OTS_INST > 0)*/
+
+#else
+	if (mcc_cb && mcc_cb->discover_mcs) {
+		mcc_cb->discover_mcs(conn, err);
+	}
 #endif /* CONFIG_BT_MCC_OTS */
 	return BT_GATT_ITER_STOP;
 }
