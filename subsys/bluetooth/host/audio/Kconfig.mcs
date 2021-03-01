@@ -52,6 +52,16 @@ config BT_MCC
 
 if BT_MCC
 
+config BT_MCC_OTS
+	bool "Media Control Client support for Object Transfer Service"
+	depends on BT_OTC
+	default n
+	help
+	  Use this option to configure support in the Media Control Client for
+	  an included Object Transfer Service in the Media Control Service.
+
+if BT_MCC_OTS
+
 config BT_MCC_MAX_OTS_INST
 	int "Maximum number of OTS instances to setup"
 	default 1
@@ -96,6 +106,8 @@ config BT_MCC_GROUP_RECORDS_MAX
 	  Sets the maximum number of records in a group object. If the received
 	  group object has more records than this, the remaining records in the
 	  object will be ignored.
+
+endif # BT_MCC_OTS
 
 config BT_MCC_SHELL
 	bool "Media Control Client Shell Support"
