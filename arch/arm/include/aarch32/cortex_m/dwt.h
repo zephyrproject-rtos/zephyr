@@ -143,6 +143,14 @@ static inline void z_arm_dwt_cycle_count_start(void)
  */
 static inline void z_arm_dwt_enable_debug_monitor(void)
 {
+	/*
+	 * In case the CPU is left in Debug mode, the behavior will be
+	 * unpredictable if the DebugMonitor exception is triggered. We
+	 * assert that the CPU is in normal mode.
+	 */
+	__ASSERT((CoreDebug->DHCSR & CoreDebug_DHCSR_C_DEBUGEN_Msk) == 0,
+		"Cannot enable DBM when CPU is in Debug mode\n");
+
 #if defined(CONFIG_ARMV8_M_SE) && !defined(CONFIG_ARM_NONSECURE_FIRMWARE)
 	/*
 	 * By design, the DebugMonitor exception is only employed

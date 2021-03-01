@@ -342,6 +342,7 @@ config CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_DETECTION_DWT
 	  - Requires DWT functionality in the Cortex-M SoC
 	  implementation (1 comparator for ARMv7-M, 2 comparators
 	  for ARMv8-M).
+	  - Requires the Cortex-M core be in normal mode.
 
 config CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_DETECTION_MPU
 	bool "Use MPU for null pointer exception detection"
