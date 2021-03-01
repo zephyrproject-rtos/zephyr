@@ -110,9 +110,14 @@ Remotes
 =======
 
 The ``remotes`` subsection contains a sequence which specifies the base URLs
-where projects can be fetched from. Each sequence element has a name and a "URL
-base". These are used to form the complete fetch URL for each project. For
-example:
+where projects can be fetched from.
+
+Each ``remotes`` element has a name and a "URL base". These are used to form
+the complete Git fetch URL for each project. A project's fetch URL can be set
+by appending a project-specific path onto a remote URL base. (As we'll see
+below, projects can also specify their complete fetch URLs.)
+
+For example:
 
 .. code-block:: yaml
 
