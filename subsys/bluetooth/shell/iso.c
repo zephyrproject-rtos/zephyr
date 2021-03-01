@@ -46,7 +46,7 @@ static struct bt_iso_chan_ops iso_ops = {
 };
 
 static struct bt_iso_chan_qos iso_qos = {
-	.sca = 0x07,
+	.sca = BT_GAP_SCA_UNKNOWN,
 };
 
 struct bt_iso_chan iso_chan = {
