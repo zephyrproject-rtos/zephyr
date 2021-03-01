@@ -768,8 +768,8 @@ static int spi_stm32_transceive(const struct device *dev,
 #ifdef CONFIG_SPI_STM32_DMA
 	struct spi_stm32_data *data = DEV_DATA(dev);
 
-	if ((data->dma_tx.dma_name != NULL)
-	 && (data->dma_rx.dma_name != NULL)) {
+	if ((data->dma_tx.dma_dev != NULL)
+	 && (data->dma_rx.dma_dev != NULL)) {
 		return transceive_dma(dev, config, tx_bufs, rx_bufs,
 				      false, NULL);
 	}
@@ -822,21 +822,16 @@ static int spi_stm32_init(const struct device *dev)
 #endif
 
 #ifdef CONFIG_SPI_STM32_DMA
-	if (data->dma_tx.dma_name != NULL) {
-		/* Get the binding to the DMA device */
-		data->dma_tx.dma_dev = device_get_binding(data->dma_tx.dma_name);
-		if (!data->dma_tx.dma_dev) {
-			LOG_ERR("%s device not found", data->dma_tx.dma_name);
-			return -ENODEV;
-		}
+	if ((data->dma_rx.dma_dev != NULL) &&
+				!device_is_ready(data->dma_rx.dma_dev)) {
+		LOG_ERR("%s device not ready", data->dma_rx.dma_dev->name);
+		return -ENODEV;
 	}
 
-	if (data->dma_rx.dma_name != NULL) {
-		data->dma_rx.dma_dev = device_get_binding(data->dma_rx.dma_name);
-		if (!data->dma_rx.dma_dev) {
-			LOG_ERR("%s device not found", data->dma_rx.dma_name);
-			return -ENODEV;
-		}
+	if ((data->dma_tx.dma_dev != NULL) &&
+				!device_is_ready(data->dma_tx.dma_dev)) {
+		LOG_ERR("%s device not ready", data->dma_tx.dma_dev->name);
+		return -ENODEV;
 	}
 #endif /* CONFIG_SPI_STM32_DMA */
 	spi_context_unlock_unconditionally(&data->ctx);
@@ -867,11 +862,13 @@ static void spi_stm32_irq_config_func_##id(const struct device *dev)		\
 		DT_INST_DMAS_CELL_BY_NAME(id, dir, channel_config)
 #define DMA_FEATURES(id, dir)						\
 		DT_INST_DMAS_CELL_BY_NAME(id, dir, features)
+#define DMA_CTLR(id, dir)						\
+		DT_INST_DMAS_CTLR_BY_NAME(id, dir)
 
 #define SPI_DMA_CHANNEL_INIT(index, dir, dir_cap, src_dev, dest_dev)	\
-	.dma_name = DT_INST_DMAS_LABEL_BY_NAME(index, dir),		\
 	.channel =							\
 		DT_INST_DMAS_CELL_BY_NAME(index, dir, channel),		\
+	.dma_dev = DEVICE_DT_GET(DMA_CTLR(index, dir)),			\
 	.dma_cfg = {							\
 		.dma_slot =						\
 		   DT_INST_DMAS_CELL_BY_NAME(index, dir, slot),		\
@@ -903,11 +900,9 @@ static void spi_stm32_irq_config_func_##id(const struct device *dev)		\
 			(SPI_DMA_CHANNEL_INIT(id, dir, DIR, src, dest)),\
 			(NULL))						\
 		},
-
 #define SPI_DMA_STATUS_SEM(id)						\
 	.status_sem = Z_SEM_INITIALIZER(				\
 		spi_stm32_dev_data_##id.status_sem, 0, 1),
-
 #else
 #define SPI_DMA_CHANNEL(id, dir, DIR, src, dest)
 #define SPI_DMA_STATUS_SEM(id)
