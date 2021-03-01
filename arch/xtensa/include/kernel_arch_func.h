@@ -83,6 +83,15 @@ static ALWAYS_INLINE void arch_cohere_stacks(struct k_thread *old_thread,
 	size_t nsz    = new_thread->stack_info.size;
 	size_t nsp    = (size_t) new_thread->switch_handle;
 
+	if (old_switch_handle != NULL) {
+		int32_t a0save;
+
+		__asm__ volatile("mov %0, a0;"
+				 "call0 xtensa_spill_reg_windows;"
+				 "mov a0, %0"
+				 : "=r"(a0save));
+	}
+
 	/* The "live" area (the region between the switch handle,
 	 * which is the stack pointer, and the top of the stack
 	 * memory) of the inbound stack needs to be invalidated: it

@@ -324,7 +324,12 @@ _do_call_\@:
 	beq a6, a1, _restore_\@
 	l32i a1, a1, 0
 	addi a1, a1, BASE_SAVE_AREA_SIZE
+#ifndef CONFIG_KERNEL_COHERENCE
+	/* When using coherence, the registers of the interrupted
+	 * context got spilled upstream in arch_cohere_stacks()
+	 */
 	SPILL_ALL_WINDOWS
+#endif
 	mov a1, a6
 
 _restore_\@:

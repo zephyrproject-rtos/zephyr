@@ -10,12 +10,11 @@
 /*
  * xtensa_spill_reg_windows
  *
- * Globally visible symbol to do register spills.  Useful for unit
- * testing, or maybe as part of a debug/watchdog/error handler.  Not a
- * C function, call this via CALL0 (so you probably have to save off
- * A0, but no other registers need to be spilled).  On return, all
- * registers not part of the current function will be spilled to
- * memory.
+ * Spill all register windows.  Not a C function, enter this via CALL0
+ * (so you have to save off A0, but no other registers need to be
+ * spilled).  On return, all registers not part of the current
+ * function will be spilled to memory.  The WINDOWSTART SR will have a
+ * single 1 bit corresponding to the current frame at WINDOWBASE.
  */
 .global xtensa_spill_reg_windows
 .align 4
