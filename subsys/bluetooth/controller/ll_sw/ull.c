@@ -826,8 +826,17 @@ void ll_rx_dequeue(void)
 	case NODE_RX_TYPE_EXT_ADV_TERMINATE:
 	{
 		struct ll_adv_set *adv;
+		struct lll_adv_aux *lll_aux;
 
 		adv = ull_adv_set_get(rx->handle);
+		lll_aux = adv->lll.aux;
+		if (lll_aux) {
+			struct ll_adv_aux_set *aux;
+
+			aux = (void *)HDR_LLL2EVT(lll_aux);
+
+			aux->is_started = 0U;
+		}
 
 #if defined(CONFIG_BT_PERIPHERAL)
 		struct lll_conn *lll_conn = adv->lll.conn;

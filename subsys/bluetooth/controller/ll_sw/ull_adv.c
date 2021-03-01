@@ -72,6 +72,7 @@ static void conn_release(struct ll_adv_set *adv);
 #endif /* CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+static void ticker_op_aux_stop_cb(uint32_t status, void *param);
 static void ticker_op_ext_stop_cb(uint32_t status, void *param);
 static void ext_disabled_cb(void *param);
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
@@ -1583,6 +1584,7 @@ void ull_adv_done(struct node_rx_event_done *done)
 {
 	struct lll_adv *lll = (void *)HDR_ULL2LLL(done->param);
 	struct ll_adv_set *adv = (void *)HDR_LLL2EVT(lll);
+	struct lll_adv_aux *lll_aux;
 	struct node_rx_hdr *rx_hdr;
 	uint8_t handle;
 	uint32_t ret;
@@ -1612,9 +1614,23 @@ void ull_adv_done(struct node_rx_event_done *done)
 	rx_hdr->rx_ftr.param_adv_term.conn_handle = 0xffff;
 	rx_hdr->rx_ftr.param_adv_term.num_events = adv->event_counter;
 
-	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
-			  (TICKER_ID_ADV_BASE + handle), ticker_op_ext_stop_cb,
-			  adv);
+	lll_aux = lll->aux;
+	if (lll_aux) {
+		struct ll_adv_aux_set *aux;
+		uint8_t aux_handle;
+
+		aux = (void *)HDR_LLL2EVT(lll_aux);
+		aux_handle = ull_adv_aux_handle_get(aux);
+		ret = ticker_stop(TICKER_INSTANCE_ID_CTLR,
+				  TICKER_USER_ID_ULL_HIGH,
+				  (TICKER_ID_ADV_AUX_BASE + aux_handle),
+				  ticker_op_aux_stop_cb, adv);
+	} else {
+		ret = ticker_stop(TICKER_INSTANCE_ID_CTLR,
+				  TICKER_USER_ID_ULL_HIGH,
+				  (TICKER_ID_ADV_BASE + handle),
+				  ticker_op_ext_stop_cb, adv);
+	}
 
 	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
 		  (ret == TICKER_STATUS_BUSY));
@@ -1903,6 +1919,21 @@ static void conn_release(struct ll_adv_set *adv)
 #endif /* CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+static void ticker_op_aux_stop_cb(uint32_t status, void *param)
+{
+	uint8_t handle;
+	uint32_t ret;
+
+	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
+
+	handle = ull_adv_handle_get(param);
+	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_LOW,
+			  (TICKER_ID_ADV_BASE + handle), ticker_op_ext_stop_cb,
+			  param);
+	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
+		  (ret == TICKER_STATUS_BUSY));
+}
+
 static void ticker_op_ext_stop_cb(uint32_t status, void *param)
 {
 	static memq_link_t link;
