@@ -511,18 +511,27 @@ struct ppp_context {
 /**
  * @brief Inform PPP L2 driver that carrier is detected.
  * This happens when cable is connected etc.
+ * A NET_EVENT_PPP_CARRIER_ON event will be generated when done,
+ * if the carrier was previously off.
  *
  * @param iface Network interface
+ *
+ * @return 0 if the operation has been submitted to system workqueue,
+ * < 0 if a carrier change is already pending.
  */
-void net_ppp_carrier_on(struct net_if *iface);
+int net_ppp_carrier_on(struct net_if *iface);
 
 /**
  * @brief Inform PPP L2 driver that carrier was lost.
  * This happens when cable is disconnected etc.
+ * A NET_EVENT_PPP_CARRIER_OFF event will be generated when done.
  *
  * @param iface Network interface
+ *
+ * @return 0 if the operation has been submitted to system workqueue,
+ * < 0 if a carrier change is already pending.
  */
-void net_ppp_carrier_off(struct net_if *iface);
+int net_ppp_carrier_off(struct net_if *iface);
 
 /**
  * @brief Initialize PPP L2 stack for a given interface

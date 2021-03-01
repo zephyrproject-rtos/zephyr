@@ -284,26 +284,32 @@ static void carrier_off(struct k_work *work)
 	ctx->carrier_mgmt.enabled = false;
 }
 
-static void handle_carrier(struct ppp_context *ctx,
+static int handle_carrier(struct ppp_context *ctx,
 			   k_work_handler_t handler)
 {
+	if (k_work_pending(&ctx->carrier_mgmt.work)) {
+		return -EBUSY;
+	}
+
 	k_work_init(&ctx->carrier_mgmt.work, handler);
 
 	k_work_submit(&ctx->carrier_mgmt.work);
+
+	return 0;
 }
 
-void net_ppp_carrier_on(struct net_if *iface)
+int net_ppp_carrier_on(struct net_if *iface)
 {
 	struct ppp_context *ctx = net_if_l2_data(iface);
 
-	handle_carrier(ctx, carrier_on);
+	return handle_carrier(ctx, carrier_on);
 }
 
-void net_ppp_carrier_off(struct net_if *iface)
+int net_ppp_carrier_off(struct net_if *iface)
 {
 	struct ppp_context *ctx = net_if_l2_data(iface);
 
-	handle_carrier(ctx, carrier_off);
+	return handle_carrier(ctx, carrier_off);
 }
 
 #if defined(CONFIG_NET_SHELL)
@@ -447,6 +453,8 @@ void net_ppp_init(struct net_if *iface)
 	NET_DBG("Initializing PPP L2 %p for iface %p", ctx, iface);
 
 	memset(ctx, 0, sizeof(*ctx));
+
+	k_work_init(&ctx->carrier_mgmt.work, NULL);
 
 	ctx->ppp_l2_flags = NET_L2_MULTICAST | NET_L2_POINT_TO_POINT;
 	ctx->iface = iface;
