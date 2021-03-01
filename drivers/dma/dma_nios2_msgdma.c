@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT altr_msgdma
+
 #include <device.h>
 #include <errno.h>
 #include <init.h>
@@ -40,7 +42,7 @@ static void nios2_msgdma_isr(void *arg)
 	struct nios2_msgdma_dev_cfg *cfg = DEV_CFG(dev);
 
 	/* Call Altera HAL driver ISR */
-	alt_handle_irq(cfg->msgdma_dev, MSGDMA_0_CSR_IRQ);
+	alt_handle_irq(cfg->msgdma_dev, DT_INST_IRQN(0));
 }
 
 static void nios2_msgdma_callback(void *context)
@@ -205,9 +207,6 @@ static const struct dma_driver_api nios2_msgdma_driver_api = {
 	.stop = nios2_msgdma_transfer_stop,
 };
 
-/* DMA0 */
-DEVICE_DECLARE(dma0_nios2);
-
 static int nios2_msgdma0_initialize(const struct device *dev)
 {
 	struct nios2_msgdma_dev_cfg *dev_cfg = DEV_CFG(dev);
@@ -217,12 +216,12 @@ static int nios2_msgdma0_initialize(const struct device *dev)
 	/* Initialize semaphore */
 	k_sem_init(&dev_cfg->sem_lock, 1, 1);
 
-	alt_msgdma_init(dev_cfg->msgdma_dev, 0, MSGDMA_0_CSR_IRQ);
+	alt_msgdma_init(dev_cfg->msgdma_dev, 0, DT_INST_IRQN(0));
 
-	IRQ_CONNECT(MSGDMA_0_CSR_IRQ, CONFIG_DMA_0_IRQ_PRI,
-		    nios2_msgdma_isr, DEVICE_GET(dma0_nios2), 0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(inst, priority),
+		    nios2_msgdma_isr, DEVICE_DT_INST_GET(0), 0);
 
-	irq_enable(MSGDMA_0_CSR_IRQ);
+	irq_enable(DT_INST_IRQN(0));
 
 	return 0;
 }
@@ -234,6 +233,6 @@ static struct nios2_msgdma_dev_cfg dma0_nios2_config = {
 	.msgdma_dev = &msgdma_dev0,
 };
 
-DEVICE_DEFINE(dma0_nios2, CONFIG_DMA_0_NAME, &nios2_msgdma0_initialize,
+DEVICE_DT_INST_DEFINE(0, &nios2_msgdma0_initialize,
 		device_pm_control_nop, NULL, &dma0_nios2_config, POST_KERNEL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &nios2_msgdma_driver_api);

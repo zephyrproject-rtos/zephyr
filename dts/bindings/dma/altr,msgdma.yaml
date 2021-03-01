@@ -1,0 +1,18 @@
+# Copyright (c) 2021 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: Altera mSGDMA (Modular Scatter-Gather DMA)
+
+compatible: "altr,msgdma"
+
+include: dma-controller.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    "#dma-cells":
+      const: 0
