@@ -524,7 +524,7 @@ int bt_mcc_otc_read_current_group_object(struct bt_conn *conn);
 int bt_mcc_otc_read_parent_group_object(struct bt_conn *conn);
 
 #if defined(CONFIG_BT_MCC_SHELL)
-struct bt_otc_instance_t *bt_mcc_otc_inst(uint8_t index);
+struct bt_otc_instance_t *bt_mcc_otc_inst(void);
 #endif /* defined(CONFIG_BT_MCC_SHELL) */
 #endif /* CONFIG_BT_OTC */
 

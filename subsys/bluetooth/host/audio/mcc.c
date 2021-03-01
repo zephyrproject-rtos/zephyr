@@ -2437,9 +2437,9 @@ int bt_mcc_otc_read_parent_group_object(struct bt_conn *conn)
 }
 
 #if defined(CONFIG_BT_MCC_SHELL)
-struct bt_otc_instance_t *bt_mcc_otc_inst(uint8_t index)
+struct bt_otc_instance_t *bt_mcc_otc_inst(void)
 {
-	return &mcs_inst.otc[index];
+	return &mcs_inst.otc[0];
 }
 #endif /* defined(CONFIG_BT_MCC_SHELL) */
 
