@@ -8,18 +8,18 @@
 #include <sys/dlist.h>
 #include <toolchain.h>
 
-#include <hal/nrf_radio.h>
 #include <hal/nrf_rtc.h>
 #include <hal/nrf_timer.h>
 #include <hal/nrf_ccm.h>
 #include <hal/nrf_aar.h>
 
 #include "util/mem.h"
+
 #include "hal/ccm.h"
 #include "hal/radio.h"
 #include "hal/ticker.h"
+
 #include "ll_sw/pdu.h"
-#include "radio_nrf5.h"
 
 #if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
 #if ((CONFIG_BT_CTLR_GPIO_PA_PIN) > 31)
