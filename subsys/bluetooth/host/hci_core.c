@@ -6319,8 +6319,22 @@ int bt_recv(struct net_buf *buf)
 		hci_event(buf);
 #else
 		struct bt_hci_evt_hdr *hdr = (void *)buf->data;
-		uint8_t evt_flags = bt_hci_evt_get_flags(hdr->evt);
 
+		if (hdr->evt == BT_HCI_EVT_LE_META_EVENT) {
+			struct bt_hci_evt_le_meta_event *sub_event =
+				(struct bt_hci_evt_le_meta_event *)(buf->data
+					+ sizeof(struct bt_hci_evt_hdr));
+			switch (sub_event->subevent) {
+			case BT_HCI_EVT_LE_CONN_COMPLETE:
+			case BT_HCI_EVT_LE_ENH_CONN_COMPLETE:
+				hci_event(buf);
+				return 0;
+			default:
+				break;
+			}
+		}
+
+		uint8_t evt_flags = bt_hci_evt_get_flags(hdr->evt);
 		if (evt_flags & BT_HCI_EVT_FLAG_RECV_PRIO) {
 			hci_event_prio(buf);
 		}
