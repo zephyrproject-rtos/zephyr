@@ -281,7 +281,7 @@ static int cmd_read(const struct shell *shell, size_t argc, char **argv)
 	shell_print(shell, "File size: %zd", dirent.size);
 
 	fs_file_t_init(&file);
-	err = fs_open(&file, path, FS_O_CREATE | FS_O_RDWR);
+	err = fs_open(&file, path, FS_O_READ);
 	if (err) {
 		shell_error(shell, "Failed to open %s (%d)", path, err);
 		return -ENOEXEC;
