@@ -124,6 +124,18 @@
 			#clock-cells = <3>;
 		};
 
+		snvs: snvs@400d4000 {
+			compatible = "nxp,imx-snvs";
+			reg = <0x400d4000 0x4000>;
+			label = "SNVS";
+
+			snvs_rtc: rtc {
+				compatible = "nxp,imx-snvs-rtc";
+				label = "SNVS_RTC";
+				interrupts = <46 0>;
+			};
+		};
+
 		gpio1: gpio@401b8000 {
 			compatible = "nxp,imx-gpio";
 			reg = <0x401b8000 0x4000>;
