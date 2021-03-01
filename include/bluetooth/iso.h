@@ -85,7 +85,11 @@ struct bt_iso_chan_qos {
 	uint8_t				dir;
 	/** Channel interval in us. Value range 0x0000FF - 0x0FFFFFF. */
 	uint32_t			interval;
-	/** Channel SCA - Only for CIS */
+	/** @brief Channel peripherals sleep clock accuracy Only for CIS
+	 *
+	 * Shall be worst case sleep clock accuracy of all the peripherals.
+	 * If unknown for the peripherals, this should be set to BT_GAP_SCA_UNKNOWN.
+	 */
 	uint8_t				sca;
 	/** Channel packing mode. 0 for unpacked, 1 for packed. */
 	uint8_t				packing;

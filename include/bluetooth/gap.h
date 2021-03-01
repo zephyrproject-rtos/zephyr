@@ -162,6 +162,20 @@ enum {
 	BT_GAP_CTE_NONE = 0xFF,
 };
 
+
+/** @brief Peripheral sleep clock accuracy (SCA) in ppm (parts per million) */
+enum {
+	BT_GAP_SCA_UNKNOWN = 0,
+	BT_GAP_SCA_251_500 = 0,
+	BT_GAP_SCA_151_250 = 1,
+	BT_GAP_SCA_101_150 = 2,
+	BT_GAP_SCA_76_100 = 3,
+	BT_GAP_SCA_51_75 = 4,
+	BT_GAP_SCA_31_50 = 5,
+	BT_GAP_SCA_21_30 = 6,
+	BT_GAP_SCA_0_20 = 7,
+};
+
 /**
  * @}
  */
