@@ -866,12 +866,10 @@ static void spi_stm32_irq_config_func_##id(const struct device *dev)		\
 		DT_INST_DMAS_CTLR_BY_NAME(id, dir)
 
 #define SPI_DMA_CHANNEL_INIT(index, dir, dir_cap, src_dev, dest_dev)	\
-	.channel =							\
-		DT_INST_DMAS_CELL_BY_NAME(index, dir, channel),		\
 	.dma_dev = DEVICE_DT_GET(DMA_CTLR(index, dir)),			\
+	.channel = DT_INST_DMAS_CELL_BY_NAME(index, dir, channel),	\
 	.dma_cfg = {							\
-		.dma_slot =						\
-		   DT_INST_DMAS_CELL_BY_NAME(index, dir, slot),		\
+		.dma_slot = DT_INST_DMAS_CELL_BY_NAME(index, dir, slot),\
 		.channel_direction = STM32_DMA_CONFIG_DIRECTION(	\
 					DMA_CHANNEL_CONFIG(index, dir)),       \
 		.source_data_size = STM32_DMA_CONFIG_##src_dev##_DATA_SIZE(    \
@@ -890,7 +888,7 @@ static void spi_stm32_irq_config_func_##id(const struct device *dev)		\
 	.dst_addr_increment = STM32_DMA_CONFIG_##dest_dev##_ADDR_INC(	\
 				DMA_CHANNEL_CONFIG(index, dir)),	\
 	.fifo_threshold = STM32_DMA_FEATURES_FIFO_THRESHOLD(		\
-					DMA_FEATURES(index, dir)),	\
+				DMA_FEATURES(index, dir)),		\
 
 
 #if CONFIG_SPI_STM32_DMA
