@@ -1047,8 +1047,6 @@ struct bt_gatt_indicate_params {
  *  automatically created after the Characteristic Declaration when using
  *  BT_GATT_CHARACTERISTIC.
  *
- *  The callback is run from System Workqueue context.
- *
  *  Alternatively it is possible to indicate by UUID by setting it on the
  *  parameters, when using this method the attribute given is used as the
  *  start range when looking up for possible matches.
