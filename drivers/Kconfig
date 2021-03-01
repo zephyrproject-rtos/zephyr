@@ -105,8 +105,8 @@ source "drivers/memc/Kconfig"
 
 source "drivers/virtualization/Kconfig"
 
-source "drivers/psci/Kconfig"
-
 source "drivers/edac/Kconfig"
+
+source "drivers/pm_cpu_ops/Kconfig"
 
 endmenu
