@@ -1283,7 +1283,7 @@ static uint8_t csip_read_lock_cb(struct bt_conn *conn, uint8_t err,
 				 const void *data, uint16_t length)
 {
 	struct set_member_t *member;
-	uint8_t value;
+	uint8_t value = 0;
 	int cb_err = err;
 	uint8_t idx = cur_inst->idx;
 
