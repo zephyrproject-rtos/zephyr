@@ -77,6 +77,49 @@ static void ticker_op_cb(uint32_t status, void *param);
 static struct ll_adv_sync_set ll_adv_sync_pool[CONFIG_BT_CTLR_ADV_SYNC_SET];
 static void *adv_sync_free;
 
+static void adv_sync_pdu_init(struct pdu_adv *pdu, uint8_t ext_hdr_flags)
+{
+	struct pdu_adv_com_ext_adv *com_hdr;
+	struct pdu_adv_ext_hdr *ext_hdr;
+	uint8_t *dptr;
+	uint8_t len;
+
+	pdu->type = PDU_ADV_TYPE_AUX_SYNC_IND;
+	pdu->rfu = 0U;
+	pdu->chan_sel = 0U;
+
+	pdu->tx_addr = 0U;
+	pdu->rx_addr = 0U;
+
+	com_hdr = &pdu->adv_ext_ind;
+	/* Non-connectable and Non-scannable adv mode */
+	com_hdr->adv_mode = 0U;
+
+	ext_hdr = &com_hdr->ext_hdr;
+	*(uint8_t *)ext_hdr = ext_hdr_flags;
+	dptr = ext_hdr->data;
+
+	LL_ASSERT(!(ext_hdr_flags & (ULL_ADV_PDU_HDR_FIELD_ADVA |
+				     ULL_ADV_PDU_HDR_FIELD_TARGETA |
+				     ULL_ADV_PDU_HDR_FIELD_ADI |
+				     ULL_ADV_PDU_HDR_FIELD_SYNC_INFO)));
+
+	if (ext_hdr_flags & ULL_ADV_PDU_HDR_FIELD_CTE_INFO) {
+		dptr += sizeof(struct pdu_cte_info);
+	}
+	if (ext_hdr_flags & ULL_ADV_PDU_HDR_FIELD_AUX_PTR) {
+		dptr += sizeof(struct pdu_adv_aux_ptr);
+	}
+	if (ext_hdr_flags & ULL_ADV_PDU_HDR_FIELD_TX_POWER) {
+		dptr += sizeof(uint8_t);
+	}
+
+	/* Calc tertiary PDU len */
+	len = ull_adv_aux_hdr_len_calc(com_hdr, &dptr);
+	ull_adv_aux_hdr_len_fill(com_hdr, len);
+
+	pdu->len = len;
+}
 uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 {
 	struct lll_adv_sync *lll_sync;
@@ -91,12 +134,8 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 
 	lll_sync = adv->lll.sync;
 	if (!lll_sync) {
-		struct pdu_adv_com_ext_adv *ter_com_hdr;
-		struct pdu_adv_ext_hdr *ter_hdr;
 		struct pdu_adv *ter_pdu;
 		struct lll_adv *lll;
-		uint8_t *ter_dptr;
-		uint8_t ter_len;
 		int err;
 
 		sync = sync_acquire();
@@ -135,26 +174,7 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 		sync->is_started = 0U;
 
 		ter_pdu = lll_adv_sync_data_peek(lll_sync, NULL);
-		ter_pdu->type = PDU_ADV_TYPE_AUX_SYNC_IND;
-		ter_pdu->rfu = 0U;
-		ter_pdu->chan_sel = 0U;
-
-		ter_pdu->tx_addr = 0U;
-		ter_pdu->rx_addr = 0U;
-
-		ter_com_hdr = (void *)&ter_pdu->adv_ext_ind;
-		ter_hdr = (void *)ter_com_hdr->ext_hdr_adv_data;
-		ter_dptr = ter_hdr->data;
-		*(uint8_t *)ter_hdr = 0U;
-
-		/* Non-connectable and Non-scannable adv mode */
-		ter_com_hdr->adv_mode = 0U;
-
-		/* Calc tertiary PDU len */
-		ter_len = ull_adv_aux_hdr_len_calc(ter_com_hdr, &ter_dptr);
-		ull_adv_aux_hdr_len_fill(ter_com_hdr, ter_len);
-
-		ter_pdu->len = ter_len;
+		adv_sync_pdu_init(ter_pdu, 0);
 	} else {
 		sync = HDR_LLL2ULL(lll_sync);
 	}
