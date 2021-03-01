@@ -38,6 +38,8 @@ int bt_gatt_ots_obj_manager_obj_add(void *obj_manager,
 
 int bt_gatt_ots_obj_manager_obj_delete(struct bt_gatt_ots_object *obj);
 
+bool bt_gatt_ots_obj_manager_obj_contains(void *obj_manager, struct bt_gatt_ots_object *obj);
+
 void *bt_gatt_ots_obj_manager_assign(void);
 
 #ifdef __cplusplus

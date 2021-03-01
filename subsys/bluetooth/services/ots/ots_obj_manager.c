@@ -222,6 +222,17 @@ int bt_gatt_ots_obj_manager_obj_delete(struct bt_gatt_ots_object *obj)
 	return 0;
 }
 
+
+bool bt_gatt_ots_obj_manager_obj_contains(struct bt_gatt_ots_obj_manager *obj_manager,
+					  struct bt_gatt_ots_object *obj)
+{
+	struct bt_gatt_ots_pool_item *item;
+
+	item = CONTAINER_OF(obj, struct bt_gatt_ots_pool_item, val);
+
+	return PART_OF_ARRAY(obj_manager->pool, item);
+}
+
 void *bt_gatt_ots_obj_manager_assign(void)
 {
 	static struct bt_gatt_ots_obj_manager
