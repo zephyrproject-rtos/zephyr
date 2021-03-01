@@ -89,7 +89,7 @@ with some subsections, like this:
      self:
        # configuration related to the manifest repository itself,
        # i.e. the repository containing west.yml
-     version: <schema-version>
+     version: "<schema-version>"
      group-filter:
        # a list of project groups to enable or disable
 
@@ -398,20 +398,25 @@ manifest file schema that can parse this file's data:
 .. code-block:: yaml
 
    manifest:
-     version: 0.7
-     # marks that this manifest uses features available in west 0.7 and
-     # up, like manifest imports
+     version: "0.10"
+     # marks that this file uses version 0.10 of the west manifest
+     # file format.
 
 The pykwalify schema :file:`manifest-schema.yml` in the west source code
 repository is used to validate the manifest section. The current manifest
-``version`` is 0.9, which corresponds to west version 0.9.
+``version`` is 0.10, which is supported by west version v0.10.x.
 
-The ``version`` value may be 0.7, 0.8, or 0.9.
+The ``version`` value may be ``"0.7"``, ``"0.8"``, ``"0.9"``, or ``"0.10"``.
+West v0.10.x can load manifests with any of these ``version`` values, while
+west v0.9.x can only load versions up to ``"0.9"``, and so on.
 
-If a later version of west, say version ``21.0``, includes changes to the
-manifest schema that cannot be parsed by west 0.7, then setting ``version:
-21.0`` will cause west to print an error when attempting to parse the manifest
-data.
+West halts with an error if you ask it to load a manifest file written in a
+version it cannot handle.
+
+Quoting the ``version`` value as shown above forces the YAML parser to treat
+it as a string. Without quotes, ``0.10`` in YAML is just the floating point
+value ``0.1``. You can omit the quotes if the value is the same when cast to
+string, but it's best to include them. Always use quotes if you're not sure.
 
 Group-filter
 ============
