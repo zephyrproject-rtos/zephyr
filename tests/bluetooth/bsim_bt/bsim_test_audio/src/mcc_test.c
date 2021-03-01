@@ -227,7 +227,7 @@ void test_main(void)
 	WAIT_FOR_FLAG(current_track_object_id_read);
 
 	/* TODO: Fix the instance pointer - it is neither valid nor used */
-	err = bt_otc_select_id(default_conn, bt_mcc_otc_inst(0),
+	err = bt_otc_select_id(default_conn, bt_mcc_otc_inst(),
 			       g_current_track_object_id);
 	if (err) {
 		FAIL("Failed to select object\n");
@@ -238,7 +238,7 @@ void test_main(void)
 	UNSET_FLAG(object_selected);    /* Clear flag for later use */
 
 	/* TODO: Fix the instance pointer - it is neither valid nor used */
-	err = bt_otc_obj_metadata_read(default_conn, bt_mcc_otc_inst(0),
+	err = bt_otc_obj_metadata_read(default_conn, bt_mcc_otc_inst(),
 				       BT_OTC_METADATA_REQ_ALL);
 	if (err) {
 		FAIL("Failed to read object metadata\n");
@@ -275,7 +275,7 @@ void test_main(void)
 	WAIT_FOR_FLAG(track_segments_object_id_read);
 
 	/* TODO: Fix the instance pointer - it is neither valid nor used */
-	err = bt_otc_select_id(default_conn, bt_mcc_otc_inst(0),
+	err = bt_otc_select_id(default_conn, bt_mcc_otc_inst(),
 			       g_track_segments_object_id);
 	if (err) {
 		FAIL("Failed to select current track object\n");
@@ -286,7 +286,7 @@ void test_main(void)
 	UNSET_FLAG(object_selected);    /* Clear flag for later use */
 
 	/* TODO: Fix the instance pointer - it is neither valid nor used */
-	err = bt_otc_obj_metadata_read(default_conn, bt_mcc_otc_inst(0),
+	err = bt_otc_obj_metadata_read(default_conn, bt_mcc_otc_inst(),
 				       BT_OTC_METADATA_REQ_ALL);
 	if (err) {
 		FAIL("Failed to read current track object metadata\n");
@@ -323,7 +323,7 @@ void test_main(void)
 	WAIT_FOR_FLAG(current_group_object_id_read);
 
 	/* TODO: Fix the instance pointer - it is neither valid nor used */
-	err = bt_otc_select_id(default_conn, bt_mcc_otc_inst(0),
+	err = bt_otc_select_id(default_conn, bt_mcc_otc_inst(),
 			       g_current_group_object_id);
 	if (err) {
 		FAIL("Failed to select current group object\n");
@@ -334,7 +334,7 @@ void test_main(void)
 	UNSET_FLAG(object_selected);
 
 	/* TODO: Fix the instance pointer - it is neither valid nor used */
-	err = bt_otc_obj_metadata_read(default_conn, bt_mcc_otc_inst(0),
+	err = bt_otc_obj_metadata_read(default_conn, bt_mcc_otc_inst(),
 				       BT_OTC_METADATA_REQ_ALL);
 	if (err) {
 		FAIL("Failed to read current group object metadata\n");
