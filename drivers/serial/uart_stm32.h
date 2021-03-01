@@ -29,7 +29,7 @@ struct uart_stm32_config {
 
 #ifdef CONFIG_UART_ASYNC_API
 struct uart_dma_stream {
-	const char *dma_name;
+	const struct device *dma_dev;
 	uint32_t dma_channel;
 	struct dma_config dma_cfg;
 	uint8_t priority;
@@ -60,8 +60,6 @@ struct uart_stm32_data {
 
 #ifdef CONFIG_UART_ASYNC_API
 	const struct device *uart_dev;
-	const struct device *dev_dma_tx;
-	const struct device *dev_dma_rx;
 	uart_callback_t async_cb;
 	void *async_user_data;
 	struct uart_dma_stream dma_rx;
