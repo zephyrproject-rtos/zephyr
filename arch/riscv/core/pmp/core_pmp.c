@@ -9,7 +9,10 @@
 #include <sys/__assert.h>
 #include "core_pmp.h"
 #include <arch/riscv/csr.h>
-#include <stdio.h>
+
+#define LOG_LEVEL CONFIG_MPU_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(mpu);
 
 #define PMP_SLOT_NUMBER	CONFIG_PMP_SLOT
 
@@ -40,7 +43,7 @@ enum {
 	CSR_PMPADDR15
 };
 
-ulong_t csr_read_enum(int pmp_csr_enum)
+static ulong_t csr_read_enum(int pmp_csr_enum)
 {
 	ulong_t res = -1;
 
@@ -91,7 +94,7 @@ ulong_t csr_read_enum(int pmp_csr_enum)
 	return res;
 }
 
-void csr_write_enum(int pmp_csr_enum, ulong_t value)
+static void csr_write_enum(int pmp_csr_enum, ulong_t value)
 {
 	switch (pmp_csr_enum) {
 	case CSR_PMPCFG0:
@@ -175,52 +178,10 @@ int z_riscv_pmp_set(unsigned int index, ulong_t cfg_val, ulong_t addr_val)
 	return 0;
 }
 
-int pmp_get(unsigned int index, ulong_t *cfg_val, ulong_t *addr_val)
-{
-	ulong_t shift;
-	int pmpcfg_csr;
-	int pmpaddr_csr;
-
-	if (index >= PMP_SLOT_NUMBER) {
-		return -1;
-	}
-
-	/* Calculate PMP config/addr register and shift */
-#ifdef CONFIG_64BIT
-	pmpcfg_csr = CSR_PMPCFG0 + (index >> 4);
-	shift = (index & 0x0007) << 3;
-#else
-	pmpcfg_csr = CSR_PMPCFG0 + (index >> 2);
-	shift = (index & 0x0003) << 3;
-#endif /* CONFIG_64BIT */
-	pmpaddr_csr = CSR_PMPADDR0 + index;
-
-	*cfg_val = (csr_read_enum(pmpcfg_csr) >> shift) & 0xFF;
-	*addr_val = FROM_PMP_ADDR(csr_read_enum(pmpaddr_csr));
-
-	return 0;
-}
-
 void z_riscv_pmp_clear_config(void)
 {
 	for (unsigned int i = 0; i < RISCV_PMP_CFG_NUM; i++)
 		csr_write_enum(CSR_PMPCFG0 + i, 0);
-}
-
-/* Function to help debug */
-void z_riscv_pmp_print(unsigned int index)
-{
-	ulong_t cfg_val;
-	ulong_t addr_val;
-
-	if (pmp_get(index, &cfg_val, &addr_val)) {
-		return;
-	}
-#ifdef CONFIG_64BIT
-	printf("PMP[%d] :\t%02lX %16lX\n", index, cfg_val, addr_val);
-#else
-	printf("PMP[%d] :\t%02lX %08lX\n", index, cfg_val, addr_val);
-#endif /* CONFIG_64BIT */
 }
 
 #if defined(CONFIG_USERSPACE)

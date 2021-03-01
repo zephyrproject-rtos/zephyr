@@ -57,11 +57,6 @@ int z_riscv_pmp_set(unsigned int index, ulong_t cfg_val, ulong_t addr_val);
  * @brief Reset to 0 all PMP setup registers
  */
 void z_riscv_pmp_clear_config(void);
-
-/*
- * @brief Print PMP setup register for info/debug
- */
-void z_riscv_pmp_print(unsigned int index);
 #endif /* CONFIG_RISCV_PMP */
 
 #if defined(CONFIG_USERSPACE)
