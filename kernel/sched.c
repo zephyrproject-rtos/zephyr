@@ -1209,17 +1209,19 @@ void z_impl_k_yield(void)
 	__ASSERT(!arch_is_in_isr(), "");
 
 	if (!z_is_idle_thread_object(_current)) {
-		LOCKED(&sched_spinlock) {
-			if (!IS_ENABLED(CONFIG_SMP) ||
-			    z_is_thread_queued(_current)) {
-				dequeue_thread(&_kernel.ready_q.runq,
-						 _current);
-			}
-			queue_thread(&_kernel.ready_q.runq, _current);
-			update_cache(1);
+		k_spinlock_key_t key = k_spin_lock(&sched_spinlock);
+
+		if (!IS_ENABLED(CONFIG_SMP) ||
+			z_is_thread_queued(_current)) {
+			dequeue_thread(&_kernel.ready_q.runq,
+					_current);
 		}
+		queue_thread(&_kernel.ready_q.runq, _current);
+		update_cache(1);
+		z_swap(&sched_spinlock, key);
+	} else {
+		z_swap_unlocked();
 	}
-	z_swap_unlocked();
 }
 
 #ifdef CONFIG_USERSPACE
