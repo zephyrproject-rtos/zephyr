@@ -81,6 +81,34 @@ struct shell_uart {
  */
 const struct shell *shell_backend_uart_get_ptr(void);
 
+/**
+ * @typedef shell_uart_rx_callback_t
+ * @brief Define the RX callback when forking the shell UART via
+ * shell_backend_uart_fork_rx()
+ *
+ * @param dev		UART device structure.
+ * @param user_data	Pointer to data specified by user.
+ * @param data		Pointer to the start of the data coming from RX (this
+ *			address range will be recycled, so data should be
+ *			copied to persist).
+ * @param length	Number of bytes available starting at {@code data}.
+ */
+typedef void (*shell_uart_rx_callback_t)(const struct device *dev,
+	void *user_data, uint8_t *data, size_t length);
+
+/**
+ * @brief Fork the RX data obtained by the shell.
+ *
+ * When non {@code NULL}, the callback will be notified of any new data
+ * received on this shell's instance. Note that a new callback will override
+ * the previous and passing {@code NULL} will stop the fork.
+ *
+ * @param callback	The function to call when new data is available.
+ * @param user_data	Pointer to data to pass into the callbeck when called.
+ */
+void shell_backend_uart_fork_rx(shell_uart_rx_callback_t callback,
+	void *user_data);
+
 #ifdef __cplusplus
 }
 #endif

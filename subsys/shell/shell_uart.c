@@ -31,6 +31,8 @@ SHELL_DEFINE(shell_uart, CONFIG_SHELL_PROMPT_UART, &shell_transport_uart,
 	     CONFIG_SHELL_BACKEND_SERIAL_LOG_MESSAGE_QUEUE_SIZE,
 	     CONFIG_SHELL_BACKEND_SERIAL_LOG_MESSAGE_QUEUE_TIMEOUT,
 	     SHELL_FLAG_OLF_CRLF);
+static shell_uart_rx_callback_t fork_rx_callback;
+static void *fork_rx_user_data;
 
 #ifdef CONFIG_SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN
 static void uart_rx_handle(const struct device *dev,
@@ -72,6 +74,16 @@ static void uart_rx_handle(const struct device *dev,
 				}
 			}
 #endif /* CONFIG_MCUMGR_SMP_SHELL */
+			/*
+			 * Notify forked RX callback prior to notifying the
+			 * ring buffer. This helps avoid the shell reading/
+			 * removing those bytes and overriding them with new
+			 * data prior to the fork being able to read them.
+			 */
+			if (fork_rx_callback) {
+				fork_rx_callback(dev, fork_rx_user_data, data,
+						 rd_len);
+			}
 			int err = ring_buf_put_finish(sh_uart->rx_ringbuf,
 						      rd_len);
 			(void)err;
@@ -314,4 +326,11 @@ SYS_INIT(enable_shell_uart, POST_KERNEL,
 const struct shell *shell_backend_uart_get_ptr(void)
 {
 	return &shell_uart;
+}
+
+void shell_backend_uart_fork_rx(shell_uart_rx_callback_t callback,
+	void *user_data)
+{
+	fork_rx_callback = callback;
+	fork_rx_user_data = user_data;
 }
