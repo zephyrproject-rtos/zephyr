@@ -73,6 +73,9 @@ void bt_ots_dir_list_obj_add(struct bt_ots *ots,
 	__ASSERT(ots->dir_list->dir_list_obj != obj,
 		 "Cannot add Directory Listing Object");
 
+	__ASSERT(bt_gatt_ots_obj_manager_obj_contains(ots->obj_manager, obj),
+		 "Object not part of OTS instance");
+
 	if (ots->dir_list->dir_list_obj != ots->cur_obj) {
 		/* We only need to update the object directory listing if it is currently selected,
 		 * as we otherwise only create it when it is selected.
@@ -96,6 +99,9 @@ void bt_ots_dir_list_obj_remove(struct bt_ots *ots,
 
 	__ASSERT(ots->dir_list->dir_list_obj != obj,
 		 "Cannot remove Directory Listing Object");
+
+	__ASSERT(bt_gatt_ots_obj_manager_obj_contains(ots->obj_manager, obj),
+		 "Object not part of OTS instance");
 
 	if (ots->dir_list->dir_list_obj != ots->cur_obj) {
 		/* We only need to update the object directory listing if it is currently selected,
