@@ -1661,9 +1661,12 @@ void arch_mem_domain_thread_add(struct k_thread *thread)
 	/* New memory domain we are being added to */
 	struct k_mem_domain *domain = thread->mem_domain_info.mem_domain;
 	/* This is only set for threads that were migrating from some other
-	 * memory domain; new threads this is NULL
+	 * memory domain; new threads this is NULL.
+	 *
+	 * Note that NULL check on old_ptables must be done before any
+	 * address translation or else (NULL + offset) != NULL.
 	 */
-	pentry_t *old_ptables = z_x86_virt_addr(thread->arch.ptables);
+	pentry_t *old_ptables = UINT_TO_POINTER(thread->arch.ptables);
 	bool is_user = (thread->base.user_options & K_USER) != 0;
 	bool is_migration = (old_ptables != NULL) && is_user;
 
@@ -1672,6 +1675,7 @@ void arch_mem_domain_thread_add(struct k_thread *thread)
 	 * z_x86_current_stack_perms()
 	 */
 	if (is_migration) {
+		old_ptables = z_x86_virt_addr(thread->arch.ptables);
 		set_stack_perms(thread, domain->arch.ptables);
 	}
 
