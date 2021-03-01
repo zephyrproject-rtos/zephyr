@@ -10,30 +10,6 @@ menuconfig DMA
 	bool "DMA driver Configuration"
 
 if DMA
-config DMA_0_NAME
-	string "Device name for DMA Controller 0"
-	default "DMA_0"
-	help
-	  Device name for DMA Controller 0.
-
-config DMA_0_IRQ_PRI
-	int "IRQ Priority for DMA Controller 0"
-	default 3
-	help
-	  IRQ Priority for the DMA Controller.
-
-config DMA_1_NAME
-	string "Device name for DMA Controller 1"
-	default "DMA_1"
-	help
-	  Device name for DMA Controller 1.
-
-config DMA_2_NAME
-	string "Device name for DMA Controller 2"
-	default "DMA_2"
-	help
-	  Device name for DMA Controller 2.
-
 config DMA_64BIT
 	bool "DMA 64 bit address support"
 	help
