@@ -44,8 +44,8 @@ void test_msgdma(void)
 	static uint32_t chan_id;
 	int i;
 
-	dma = device_get_binding(CONFIG_DMA_0_NAME);
-	zassert_true(dma != NULL, "DMA_0 device not found!!");
+	dma = DEVICE_DT_GET(DT_NODELABEL(dma));
+	__ASSERT_NO_MSG(device_is_ready(dma));
 
 	/* Init tx buffer */
 	for (i = 0; i < DMA_BUFF_SIZE; i++) {
