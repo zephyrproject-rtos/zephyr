@@ -582,3 +582,14 @@ test_i2c_bmi270: bmi270@4a {
 	label = "BMI270";
 	reg = <0x4a>;
 };
+
+test_i2c_pcal6408a: pcal6408a@4b {
+	compatible = "nxp,pcal6408a";
+	label = "PCAL6408A";
+	reg = <0x4b>;
+	gpio-controller;
+	#gpio-cells = <2>;
+	ngpios = <8>;
+	int-gpios = <&test_gpio 0 0>;
+	reset-gpios = <&test_gpio 0 0>;
+};
