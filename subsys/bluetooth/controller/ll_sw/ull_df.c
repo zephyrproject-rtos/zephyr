@@ -256,6 +256,8 @@ uint8_t ll_df_set_cl_cte_tx_params(uint8_t adv_handle, uint8_t cte_len,
  */
 uint8_t ll_df_set_cl_cte_tx_enable(uint8_t adv_handle, uint8_t cte_enable)
 {
+	void *extra_data_prev, *extra_data;
+	struct pdu_adv *pdu_prev, *pdu;
 	struct lll_adv_sync *lll_sync;
 	struct lll_df_adv_cfg *df_cfg;
 	struct ll_adv_sync_set *sync;
@@ -295,9 +297,25 @@ uint8_t ll_df_set_cl_cte_tx_enable(uint8_t adv_handle, uint8_t cte_enable)
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 
-		err = ull_adv_sync_pdu_set_clear(adv, 0,
+		err = ull_adv_sync_pdu_alloc(adv, 0,
+					     ULL_ADV_PDU_HDR_FIELD_CTE_INFO,
+					     NULL, &pdu_prev, &pdu,
+					     &extra_data_prev, &extra_data,
+					     &ter_idx);
+		if (err) {
+			return err;
+		}
+
+		if (extra_data) {
+			ull_adv_sync_extra_data_set_clear(extra_data_prev,
+							  extra_data, 0,
+							  ULL_ADV_PDU_HDR_FIELD_CTE_INFO,
+							  NULL);
+		}
+
+		err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu, 0,
 						 ULL_ADV_PDU_HDR_FIELD_CTE_INFO,
-						 NULL, &ter_idx);
+						 NULL);
 		if (err) {
 			return err;
 		}
@@ -326,9 +344,26 @@ uint8_t ll_df_set_cl_cte_tx_enable(uint8_t adv_handle, uint8_t cte_enable)
 		cte_info.time = df_cfg->cte_length;
 		pdu_data.field_data = (uint8_t *)&cte_info;
 		pdu_data.extra_data = df_cfg;
-		err = ull_adv_sync_pdu_set_clear(adv,
+
+		err = ull_adv_sync_pdu_alloc(adv, 0,
+					     ULL_ADV_PDU_HDR_FIELD_CTE_INFO,
+					     NULL, &pdu_prev, &pdu,
+					     &extra_data_prev, &extra_data,
+					     &ter_idx);
+		if (err) {
+			return err;
+		}
+
+		if (extra_data) {
+			ull_adv_sync_extra_data_set_clear(extra_data_prev,
+							  extra_data,
+							  ULL_ADV_PDU_HDR_FIELD_CTE_INFO,
+							  0, &pdu_data);
+		}
+
+		err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu,
 						 ULL_ADV_PDU_HDR_FIELD_CTE_INFO,
-						 0, &pdu_data, &ter_idx);
+						 0, &pdu_data);
 		if (err) {
 			return err;
 		}
