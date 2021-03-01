@@ -446,7 +446,7 @@ conn_is_valid:
 	return ull_scan_enable(scan);
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
 }
-#endif /* CONFIG_BT_LL_SW_SPLIT_LEGACY */
+#endif /* CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 uint8_t ll_connect_enable(uint8_t is_coded_included)
