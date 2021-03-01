@@ -365,8 +365,8 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 	adv->own_addr_type = own_addr_type;
 	if (adv->own_addr_type == BT_ADDR_LE_PUBLIC_ID ||
 	    adv->own_addr_type == BT_ADDR_LE_RANDOM_ID) {
-		adv->id_addr_type = direct_addr_type;
-		memcpy(&adv->id_addr, direct_addr, BDADDR_SIZE);
+		adv->peer_addr_type = direct_addr_type;
+		memcpy(&adv->peer_addr, direct_addr, BDADDR_SIZE);
 	}
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
@@ -718,8 +718,8 @@ uint8_t ll_adv_enable(uint8_t enable)
 	if (adv->own_addr_type == BT_ADDR_LE_PUBLIC_ID ||
 	    adv->own_addr_type == BT_ADDR_LE_RANDOM_ID) {
 		/* Look up the resolving list */
-		lll->rl_idx = ull_filter_rl_find(adv->id_addr_type,
-						 adv->id_addr, NULL);
+		lll->rl_idx = ull_filter_rl_find(adv->peer_addr_type,
+						 adv->peer_addr, NULL);
 
 		if (lll->rl_idx != FILTER_IDX_NONE) {
 			/* Generate RPAs if required */
