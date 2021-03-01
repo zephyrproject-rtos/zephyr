@@ -906,6 +906,10 @@ struct bt_gatt_notify_params {
  *  callback function will be called.
  *
  *  The callback is run from System Workqueue context.
+ *  When called from the System Workqueue context this API will not wait for
+ *  resources for the callback but instead return an error.
+ *  The number of pending callbacks can be increased with the
+ *  @option{CONFIG_BT_CONN_TX_MAX} option.
  *
  *  Alternatively it is possible to notify by UUID by setting it on the
  *  parameters, when using this method the attribute given is used as the
@@ -920,6 +924,8 @@ int bt_gatt_notify_cb(struct bt_conn *conn,
 		      struct bt_gatt_notify_params *params);
 
 /** @brief Notify multiple attribute value change.
+ *
+ *  This function works in the same way as @ref bt_gatt_notify_cb.
  *
  *  @param conn Connection object.
  *  @param num_params Number of notification parameters.
@@ -1367,6 +1373,11 @@ int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params);
  *  called.
  *
  *  The callback is run from System Workqueue context.
+ *  When called from the System Workqueue context this API will not wait for
+ *  resources for the callback but instead return an error.
+ *  The number of pending callbacks can be increased with the
+ *  @option{CONFIG_BT_CONN_TX_MAX} option.
+
  *
  *  @note By using a callback it also disable the internal flow control
  *        which would prevent sending multiple commands without waiting for
