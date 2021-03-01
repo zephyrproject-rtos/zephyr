@@ -402,10 +402,12 @@ static inline sys_dnode_t *sys_dlist_peek_tail(sys_dlist_t *list)
 
 static inline void sys_dlist_append(sys_dlist_t *list, sys_dnode_t *node)
 {
-	node->next = list;
-	node->prev = list->tail;
+	sys_dnode_t *const tail = list->tail;
 
-	list->tail->next = node;
+	node->next = list;
+	node->prev = tail;
+
+	tail->next = node;
 	list->tail = node;
 }
 
@@ -422,10 +424,12 @@ static inline void sys_dlist_append(sys_dlist_t *list, sys_dnode_t *node)
 
 static inline void sys_dlist_prepend(sys_dlist_t *list, sys_dnode_t *node)
 {
-	node->next = list->head;
+	sys_dnode_t *const head = list->head;
+
+	node->next = head;
 	node->prev = list;
 
-	list->head->prev = node;
+	head->prev = node;
 	list->head = node;
 }
 
@@ -439,9 +443,11 @@ static inline void sys_dlist_prepend(sys_dlist_t *list, sys_dnode_t *node)
  */
 static inline void sys_dlist_insert(sys_dnode_t *successor, sys_dnode_t *node)
 {
-	node->prev = successor->prev;
+	sys_dnode_t *const prev = successor->prev;
+
+	node->prev = prev;
 	node->next = successor;
-	successor->prev->next = node;
+	prev->next = node;
 	successor->prev = node;
 }
 
@@ -494,8 +500,11 @@ static inline void sys_dlist_insert_at(sys_dlist_t *list, sys_dnode_t *node,
 
 static inline void sys_dlist_remove(sys_dnode_t *node)
 {
-	node->prev->next = node->next;
-	node->next->prev = node->prev;
+	sys_dnode_t *const prev = node->prev;
+	sys_dnode_t *const next = node->next;
+
+	prev->next = next;
+	next->prev = prev;
 	sys_dnode_init(node);
 }
 
