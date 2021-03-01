@@ -38,6 +38,14 @@
 #include "radio_nrf52840.h"
 #elif defined(CONFIG_SOC_NRF5340_CPUNET)
 #include "radio_nrf5340.h"
+#elif
+#error "Unsupported SoC."
+#endif
+
+#if defined(CONFIG_SOC_SERIES_NRF51X)
+#define HAL_RADIO_PDU_LEN_MAX (BIT(5) - 1)
+#else
+#define HAL_RADIO_PDU_LEN_MAX (BIT(8) - 1)
 #endif
 
 #include "radio_nrf5_ppi.h"
