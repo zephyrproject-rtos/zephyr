@@ -86,6 +86,11 @@ struct mb_rtu_gpio_config {
 	gpio_dt_flags_t flags;
 };
 
+enum modbus_mode {
+	MODBUS_MODE_RTU,
+	MODBUS_MODE_ASCII,
+};
+
 #define MODBUS_STATE_CONFIGURED		0
 
 struct modbus_context {
@@ -95,8 +100,8 @@ struct modbus_context {
 	const char *dev_name;
 	/* UART device */
 	const struct device *dev;
-	/* True if ASCII mode is enabled */
-	bool ascii_mode;
+	/* MODBUS mode */
+	enum modbus_mode mode;
 	/* True if interface is configured as client */
 	bool client;
 	/* Amount of time client is willing to wait for response from server */

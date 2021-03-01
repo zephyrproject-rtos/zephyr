@@ -356,11 +356,18 @@ static void mb_tx_rtu_frame(struct modbus_context *ctx)
 
 void mb_tx_frame(struct modbus_context *ctx)
 {
-	if (IS_ENABLED(CONFIG_MODBUS_ASCII_MODE) &&
-	    (ctx->ascii_mode == true)) {
-		mb_tx_ascii_frame(ctx);
-	} else {
+	switch (ctx->mode) {
+	case MODBUS_MODE_RTU:
 		mb_tx_rtu_frame(ctx);
+		break;
+	case MODBUS_MODE_ASCII:
+		if (IS_ENABLED(CONFIG_MODBUS_ASCII_MODE)) {
+			mb_tx_ascii_frame(ctx);
+			break;
+		}
+	default:
+		LOG_ERR("Unknown MODBUS mode");
+		return;
 	}
 }
 
@@ -370,7 +377,7 @@ void mb_tx_frame(struct modbus_context *ctx)
  */
 static void mb_cb_handler_rx(struct modbus_context *ctx)
 {
-	if ((ctx->ascii_mode == true) &&
+	if ((ctx->mode == MODBUS_MODE_ASCII) &&
 	    IS_ENABLED(CONFIG_MODBUS_ASCII_MODE)) {
 		uint8_t c;
 
@@ -460,11 +467,18 @@ static void mb_rx_handler(struct k_work *item)
 
 	mb_rx_disable(ctx);
 
-	if (IS_ENABLED(CONFIG_MODBUS_ASCII_MODE) &&
-	    (ctx->ascii_mode == true)) {
-		ctx->rx_frame_err = mb_rx_ascii_frame(ctx);
-	} else {
+	switch (ctx->mode) {
+	case MODBUS_MODE_RTU:
 		ctx->rx_frame_err = mb_rx_rtu_frame(ctx);
+		break;
+	case MODBUS_MODE_ASCII:
+		if (IS_ENABLED(CONFIG_MODBUS_ASCII_MODE)) {
+			ctx->rx_frame_err = mb_rx_ascii_frame(ctx);
+			break;
+		}
+	default:
+		LOG_ERR("Unknown MODBUS mode");
+		return;
 	}
 
 	ctx->uart_buf_ctr = 0;
@@ -513,7 +527,7 @@ static int mb_configure_uart(struct modbus_context *ctx,
 	uart_cfg.baudrate = baudrate,
 	uart_cfg.flow_ctrl = UART_CFG_FLOW_CTRL_NONE;
 
-	if (ctx->ascii_mode == true) {
+	if (ctx->mode == MODBUS_MODE_ASCII) {
 		uart_cfg.data_bits = UART_CFG_DATA_BITS_7;
 	} else {
 		uart_cfg.data_bits = UART_CFG_DATA_BITS_8;
@@ -634,7 +648,7 @@ static struct modbus_context *mb_cfg_iface(const uint8_t iface,
 	ctx->rxwait_to = rx_timeout;
 	ctx->node_addr = node_addr;
 	ctx->client = client;
-	ctx->ascii_mode = ascii_mode;
+	ctx->mode = ascii_mode ? MODBUS_MODE_ASCII : MODBUS_MODE_RTU;
 	ctx->mbs_user_cb = NULL;
 	k_mutex_init(&ctx->iface_lock);
 
@@ -743,7 +757,7 @@ int modbus_disable(const uint8_t iface)
 
 	ctx->rxwait_to = 0;
 	ctx->node_addr = 0;
-	ctx->ascii_mode = false;
+	ctx->mode = MODBUS_MODE_RTU;
 	ctx->mbs_user_cb = NULL;
 	atomic_clear_bit(&ctx->state, MODBUS_STATE_CONFIGURED);
 
