@@ -44,7 +44,7 @@ config MASS_STORAGE_BULK_EP_MPS
 	  Mass storage device class bulk endpoints size
 
 config MASS_STORAGE_STACK_SIZE
-	int
+	int "Set stack size for mass storage thread"
 	default 512
 	help
 	  Stack size for mass storage disk operations thread
