@@ -989,7 +989,7 @@ int cmd_mcc_otc_read_features(const struct shell *shell, size_t argc,
 {
 	int result;
 
-	result = bt_otc_read_feature(default_conn, bt_mcc_otc_inst(0));
+	result = bt_otc_read_feature(default_conn, bt_mcc_otc_inst());
 	if (result) {
 		shell_error(shell, "Fail: %d", result);
 	}
@@ -1000,7 +1000,7 @@ int cmd_mcc_otc_read(const struct shell *shell, size_t argc, char *argv[])
 {
 	int result;
 
-	result = bt_otc_read(default_conn, bt_mcc_otc_inst(0));
+	result = bt_otc_read(default_conn, bt_mcc_otc_inst());
 	if (result) {
 		shell_error(shell, "Fail: %d", result);
 	}
@@ -1012,7 +1012,7 @@ int cmd_mcc_otc_read_metadata(const struct shell *shell, size_t argc,
 {
 	int result;
 
-	result = bt_otc_obj_metadata_read(default_conn, bt_mcc_otc_inst(0),
+	result = bt_otc_obj_metadata_read(default_conn, bt_mcc_otc_inst(),
 					  BT_OTC_METADATA_REQ_ALL);
 	if (result) {
 		shell_error(shell, "Fail: %d", result);
@@ -1032,7 +1032,7 @@ int cmd_mcc_otc_select(const struct shell *shell, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	result = bt_otc_select_id(default_conn, bt_mcc_otc_inst(0), id);
+	result = bt_otc_select_id(default_conn, bt_mcc_otc_inst(), id);
 	if (result) {
 		shell_error(shell, "Fail: %d", result);
 	}
@@ -1044,7 +1044,7 @@ int cmd_mcc_otc_select_first(const struct shell *shell, size_t argc,
 {
 	int result;
 
-	result = bt_otc_select_first(default_conn, bt_mcc_otc_inst(0));
+	result = bt_otc_select_first(default_conn, bt_mcc_otc_inst());
 	if (result) {
 		shell_error(shell, "Fail: %d", result);
 	}
@@ -1056,7 +1056,7 @@ int cmd_mcc_otc_select_last(const struct shell *shell, size_t argc,
 {
 	int result;
 
-	result = bt_otc_select_last(default_conn, bt_mcc_otc_inst(0));
+	result = bt_otc_select_last(default_conn, bt_mcc_otc_inst());
 	if (result) {
 		shell_error(shell, "Fail: %d", result);
 	}
@@ -1068,7 +1068,7 @@ int cmd_mcc_otc_select_next(const struct shell *shell, size_t argc,
 {
 	int result;
 
-	result = bt_otc_select_next(default_conn, bt_mcc_otc_inst(0));
+	result = bt_otc_select_next(default_conn, bt_mcc_otc_inst());
 	if (result) {
 		shell_error(shell, "Fail: %d", result);
 	}
@@ -1080,7 +1080,7 @@ int cmd_mcc_otc_select_prev(const struct shell *shell, size_t argc,
 {
 	int result;
 
-	result = bt_otc_select_prev(default_conn, bt_mcc_otc_inst(0));
+	result = bt_otc_select_prev(default_conn, bt_mcc_otc_inst());
 	if (result) {
 		shell_error(shell, "Fail: %d", result);
 	}
