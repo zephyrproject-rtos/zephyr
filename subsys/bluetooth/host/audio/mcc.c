@@ -36,9 +36,9 @@ struct mcs_instance_t {
 	uint16_t start_handle;
 	uint16_t end_handle;
 	uint16_t player_name_handle;
-#ifdef CONFIG_BT_OTC
+#ifdef CONFIG_BT_MCC_OTS
 	uint16_t icon_obj_id_handle;
-#endif /* CONFIG_BT_OTC */
+#endif /* CONFIG_BT_MCC_OTS */
 	uint16_t icon_uri_handle;
 	uint16_t track_changed_handle;
 	uint16_t track_title_handle;
@@ -46,22 +46,22 @@ struct mcs_instance_t {
 	uint16_t track_pos_handle;
 	uint16_t playback_speed_handle;
 	uint16_t seeking_speed_handle;
-#ifdef CONFIG_BT_OTC
+#ifdef CONFIG_BT_MCC_OTS
 	uint16_t segments_obj_id_handle;
 	uint16_t current_track_obj_id_handle;
 	uint16_t next_track_obj_id_handle;
 	uint16_t current_group_obj_id_handle;
 	uint16_t parent_group_obj_id_handle;
-#endif /* CONFIG_BT_OTC */
+#endif /* CONFIG_BT_MCC_OTS */
 	uint16_t playing_order_handle;
 	uint16_t playing_orders_supported_handle;
 	uint16_t media_state_handle;
 	uint16_t cp_handle;
 	uint16_t opcodes_supported_handle;
-#ifdef CONFIG_BT_OTC
+#ifdef CONFIG_BT_MCC_OTS
 	uint16_t scp_handle;
 	uint16_t search_results_obj_id_handle;
-#endif /* CONFIG_BT_OTC */
+#endif /* CONFIG_BT_MCC_OTS */
 	uint16_t content_control_id_handle;
 
 	struct bt_gatt_subscribe_params player_name_sub_params;
@@ -71,20 +71,20 @@ struct mcs_instance_t {
 	struct bt_gatt_subscribe_params track_pos_sub_params;
 	struct bt_gatt_subscribe_params playback_speed_sub_params;
 	struct bt_gatt_subscribe_params seeking_speed_sub_params;
-#ifdef CONFIG_BT_OTC
+#ifdef CONFIG_BT_MCC_OTS
 	struct bt_gatt_subscribe_params current_track_obj_sub_params;
 	struct bt_gatt_subscribe_params next_track_obj_sub_params;
 	struct bt_gatt_subscribe_params current_group_obj_sub_params;
 	struct bt_gatt_subscribe_params parent_group_obj_sub_params;
-#endif /* CONFIG_BT_OTC */
+#endif /* CONFIG_BT_MCC_OTS */
 	struct bt_gatt_subscribe_params playing_order_sub_params;
 	struct bt_gatt_subscribe_params media_state_sub_params;
 	struct bt_gatt_subscribe_params cp_sub_params;
 	struct bt_gatt_subscribe_params opcodes_supported_sub_params;
-#ifdef CONFIG_BT_OTC
+#ifdef CONFIG_BT_MCC_OTS
 	struct bt_gatt_subscribe_params scp_sub_params;
 	struct bt_gatt_subscribe_params search_results_obj_sub_params;
-#endif /* CONFIG_BT_OTC */
+#endif /* CONFIG_BT_MCC_OTS */
 
 	/* The write buffer is used for
 	 * - track position    (4 octets)
@@ -100,7 +100,7 @@ struct mcs_instance_t {
 	 * If there is no OTC, the largest is control point
 	 * If OTC is included, the largest is the search control point
 	 */
-#ifdef CONFIG_BT_OTC
+#ifdef CONFIG_BT_MCC_OTS
 	char write_buf[SEARCH_LEN_MAX];
 #else
 	/* Trick to be able to use sizeof on members of a struct type */
@@ -108,15 +108,15 @@ struct mcs_instance_t {
 	/* separately, and the opcode and param alone as a struct */
 	char write_buf[sizeof(((struct mpl_op_t *)0)->opcode) +
 		       sizeof(((struct mpl_op_t *)0)->param)];
-#endif /* CONFIG_BT_OTC */
+#endif /* CONFIG_BT_MCC_OTS */
 
 	struct bt_gatt_write_params     write_params;
 	bool busy;
 
-#ifdef CONFIG_BT_OTC
+#ifdef CONFIG_BT_MCC_OTS
 	struct bt_otc_instance_t otc[CONFIG_BT_MCC_MAX_OTS_INST];
 	uint8_t otc_inst_cnt;
-#endif /* CONFIG_BT_OTC */
+#endif /* CONFIG_BT_MCC_OTS */
 };
 
 static struct bt_gatt_discover_params  discover_params;
@@ -130,15 +130,15 @@ static struct bt_uuid_16 uuid = BT_UUID_INIT_16(0);
 static struct bt_mcc_cb_t *mcc_cb;
 static bool subscribe_all;
 
-#ifdef CONFIG_BT_OTC
+#ifdef CONFIG_BT_MCC_OTS
 NET_BUF_SIMPLE_DEFINE_STATIC(otc_obj_buf, CONFIG_BT_MCC_OTC_OBJ_BUF_SIZE);
 static struct bt_otc_instance_t *cur_otc_inst;
 static struct bt_otc_cb otc_cb;
-#endif /* CONFIG_BT_OTC */
+#endif /* CONFIG_BT_MCC_OTS */
 
 
 
-#ifdef CONFIG_BT_OTC
+#ifdef CONFIG_BT_MCC_OTS
 void on_obj_selected(struct bt_conn *conn, int err,
 		     struct bt_otc_instance_t *otc_inst);
 
@@ -149,7 +149,7 @@ void on_object_metadata(struct bt_conn *conn, int err,
 int on_icon_content(struct bt_conn *conn, uint32_t offset, uint32_t len,
 		    uint8_t *data_p,
 		    bool is_complete, struct bt_otc_instance_t *otc_inst);
-#endif /* CONFIG_BT_OTC */
+#endif /* CONFIG_BT_MCC_OTS */
 
 
 static uint8_t mcc_read_player_name_cb(struct bt_conn *conn, uint8_t err,
@@ -186,7 +186,7 @@ static uint8_t mcc_read_player_name_cb(struct bt_conn *conn, uint8_t err,
 }
 
 
-#ifdef CONFIG_BT_OTC
+#ifdef CONFIG_BT_MCC_OTS
 static uint8_t mcc_read_icon_obj_id_cb(struct bt_conn *conn, uint8_t err,
 				       struct bt_gatt_read_params *params,
 				       const void *data, uint16_t length)
@@ -213,7 +213,7 @@ static uint8_t mcc_read_icon_obj_id_cb(struct bt_conn *conn, uint8_t err,
 
 	return BT_GATT_ITER_STOP;
 }
-#endif /* CONFIG_BT_OTC */
+#endif /* CONFIG_BT_MCC_OTS */
 
 static uint8_t mcc_read_icon_uri_cb(struct bt_conn *conn, uint8_t err,
 				    struct bt_gatt_read_params *params,
@@ -424,7 +424,7 @@ static uint8_t mcc_read_seeking_speed_cb(struct bt_conn *conn, uint8_t err,
 	return BT_GATT_ITER_STOP;
 }
 
-#ifdef CONFIG_BT_OTC
+#ifdef CONFIG_BT_MCC_OTS
 static uint8_t mcc_read_segments_obj_id_cb(struct bt_conn *conn, uint8_t err,
 					   struct bt_gatt_read_params *params,
 					   const void *data, uint16_t length)
@@ -561,7 +561,7 @@ static uint8_t mcc_read_parent_group_obj_id_cb(struct bt_conn *conn, uint8_t err
 
 	return BT_GATT_ITER_STOP;
 }
-#endif /* CONFIG_BT_OTC */
+#endif /* CONFIG_BT_MCC_OTS */
 
 static uint8_t mcc_read_playing_order_cb(struct bt_conn *conn, uint8_t err,
 					 struct bt_gatt_read_params *params,
@@ -724,7 +724,7 @@ static uint8_t mcc_read_opcodes_supported_cb(struct bt_conn *conn, uint8_t err,
 	return BT_GATT_ITER_STOP;
 }
 
-#ifdef CONFIG_BT_OTC
+#ifdef CONFIG_BT_MCC_OTS
 static void mcs_write_scp_cb(struct bt_conn *conn, uint8_t err,
 			     struct bt_gatt_write_params *params)
 {
@@ -779,7 +779,7 @@ static uint8_t mcc_read_search_results_obj_id_cb(struct bt_conn *conn, uint8_t e
 
 	return BT_GATT_ITER_STOP;
 }
-#endif /* CONFIG_BT_OTC */
+#endif /* CONFIG_BT_MCC_OTS */
 
 static uint8_t mcc_read_content_control_id_cb(struct bt_conn *conn, uint8_t err,
 					      struct bt_gatt_read_params *params,
@@ -849,7 +849,7 @@ static uint8_t mcs_notify_handler(struct bt_conn *conn,
 			BT_DBG("Seeking Speed notification");
 			mcc_read_seeking_speed_cb(conn, 0, NULL, data, length);
 
-#ifdef CONFIG_BT_OTC
+#ifdef CONFIG_BT_MCC_OTS
 		} else if (handle == mcs_inst.current_track_obj_id_handle) {
 			BT_DBG("Current Track notification");
 			mcc_read_current_track_obj_id_cb(conn, 0, NULL, data,
@@ -869,7 +869,7 @@ static uint8_t mcs_notify_handler(struct bt_conn *conn,
 			BT_DBG("Parent Group notification");
 			mcc_read_parent_group_obj_id_cb(conn, 0, NULL, data,
 							 length);
-#endif /* CONFIG_BT_OTC */
+#endif /* CONFIG_BT_MCC_OTS */
 
 		} else if (handle == mcs_inst.playing_order_handle) {
 			BT_DBG("Playing Order notification");
@@ -907,7 +907,7 @@ static uint8_t mcs_notify_handler(struct bt_conn *conn,
 			mcc_read_opcodes_supported_cb(conn, 0, NULL, data,
 						      length);
 
-#ifdef CONFIG_BT_OTC
+#ifdef CONFIG_BT_MCC_OTS
 		} else if (handle == mcs_inst.scp_handle) {
 			/* The search control point is a special case - only */
 			/* writable and notifiable.  Handle directly here. */
@@ -932,7 +932,7 @@ static uint8_t mcs_notify_handler(struct bt_conn *conn,
 			BT_DBG("Search Results notification");
 			mcc_read_search_results_obj_id_cb(conn, 0, NULL, data,
 							  length);
-#endif /* CONFIG_BT_OTC */
+#endif /* CONFIG_BT_MCC_OTS */
 
 		} else {
 			BT_DBG("Unknown handle: %d (0x%04X)", handle, handle);
@@ -941,7 +941,7 @@ static uint8_t mcs_notify_handler(struct bt_conn *conn,
 	return BT_GATT_ITER_CONTINUE;
 }
 
-#ifdef CONFIG_BT_OTC
+#ifdef CONFIG_BT_MCC_OTS
 #if CONFIG_BT_MCC_MAX_OTS_INST > 0
 static uint8_t discover_otc_char_func(struct bt_conn *conn,
 				      const struct bt_gatt_attr *attr,
@@ -1044,10 +1044,10 @@ static uint8_t discover_otc_char_func(struct bt_conn *conn,
 	return BT_GATT_ITER_STOP;
 }
 #endif /* CONFIG_BT_MCC_MAX_OTS_INST > 0 */
-#endif /* CONFIG_BT_OTC */
+#endif /* CONFIG_BT_MCC_OTS */
 
 
-#ifdef CONFIG_BT_OTC
+#ifdef CONFIG_BT_MCC_OTS
 #if (CONFIG_BT_MCC_MAX_OTS_INST > 0)
 /* This function is called when an included service is found.
  * The function will store the start and end handle for the service,
@@ -1124,7 +1124,7 @@ static uint8_t discover_include_func(struct bt_conn *conn,
 	return BT_GATT_ITER_STOP;
 }
 #endif /* (CONFIG_BT_MCC_MAX_OTS_INST > 0)*/
-#endif /* CONFIG_BT_OTC */
+#endif /* CONFIG_BT_MCC_OTS */
 
 
 /* This function is called when characteristics are found.
@@ -1156,11 +1156,11 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 			BT_DBG("Player name, UUID: %s", bt_uuid_str(chrc->uuid));
 			mcs_inst.player_name_handle = chrc->value_handle;
 			sub_params = &mcs_inst.player_name_sub_params;
-#ifdef CONFIG_BT_OTC
+#ifdef CONFIG_BT_MCC_OTS
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_ICON_OBJ_ID)) {
 			BT_DBG("Icon Object, UUID: %s", bt_uuid_str(chrc->uuid));
 			mcs_inst.icon_obj_id_handle = chrc->value_handle;
-#endif /* CONFIG_BT_OTC */
+#endif /* CONFIG_BT_MCC_OTS */
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_ICON_URI)) {
 			BT_DBG("Icon URI, UUID: %s", bt_uuid_str(chrc->uuid));
 			mcs_inst.icon_uri_handle = chrc->value_handle;
@@ -1188,7 +1188,7 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 			BT_DBG("Seeking Speed, UUID: %s", bt_uuid_str(chrc->uuid));
 			mcs_inst.seeking_speed_handle = chrc->value_handle;
 			sub_params = &mcs_inst.seeking_speed_sub_params;
-#ifdef CONFIG_BT_OTC
+#ifdef CONFIG_BT_MCC_OTS
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_TRACK_SEGMENTS_OBJ_ID)) {
 			BT_DBG("Track Segments Object, UUID: %s", bt_uuid_str(chrc->uuid));
 			mcs_inst.segments_obj_id_handle = chrc->value_handle;
@@ -1208,7 +1208,7 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 			BT_DBG("Parent Group Object, UUID: %s", bt_uuid_str(chrc->uuid));
 			mcs_inst.parent_group_obj_id_handle = chrc->value_handle;
 			sub_params = &mcs_inst.parent_group_obj_sub_params;
-#endif /* CONFIG_BT_OTC */
+#endif /* CONFIG_BT_MCC_OTS */
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_PLAYING_ORDER)) {
 			BT_DBG("Playing Order, UUID: %s", bt_uuid_str(chrc->uuid));
 			mcs_inst.playing_order_handle = chrc->value_handle;
@@ -1228,7 +1228,7 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 			BT_DBG("Media control opcodes supported, UUID: %s", bt_uuid_str(chrc->uuid));
 			mcs_inst.opcodes_supported_handle = chrc->value_handle;
 			sub_params = &mcs_inst.opcodes_supported_sub_params;
-#ifdef CONFIG_BT_OTC
+#ifdef CONFIG_BT_MCC_OTS
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_SEARCH_CONTROL_POINT)) {
 			BT_DBG("Search control point, UUID: %s", bt_uuid_str(chrc->uuid));
 			mcs_inst.scp_handle = chrc->value_handle;
@@ -1237,7 +1237,7 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 			BT_DBG("Search Results object, UUID: %s", bt_uuid_str(chrc->uuid));
 			mcs_inst.search_results_obj_id_handle = chrc->value_handle;
 			sub_params = &mcs_inst.search_results_obj_sub_params;
-#endif /* CONFIG_BT_OTC */
+#endif /* CONFIG_BT_MCC_OTS */
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_CCID)) {
 			BT_DBG("Content Control ID, UUID: %s", bt_uuid_str(chrc->uuid));
 			mcs_inst.content_control_id_handle = chrc->value_handle;
@@ -1261,7 +1261,7 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 	BT_DBG("Setup complete for GMCS");
 	(void)memset(params, 0, sizeof(*params));
 
-#ifdef CONFIG_BT_OTC
+#ifdef CONFIG_BT_MCC_OTS
 #if (CONFIG_BT_MCC_MAX_OTS_INST > 0)
 	int err = 0;
 
@@ -1284,7 +1284,7 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 		mcc_cb->discover_mcs(conn, err);
 	}
 #endif /* (CONFIG_BT_MCC_MAX_OTS_INST > 0)*/
-#endif /* CONFIG_BT_OTC */
+#endif /* CONFIG_BT_MCC_OTS */
 	return BT_GATT_ITER_STOP;
 }
 
@@ -1358,7 +1358,7 @@ int bt_mcc_init(struct bt_conn *conn, struct bt_mcc_cb_t *cb)
 		mcc_cb->init(conn, 0);
 	}
 
-#ifdef CONFIG_BT_OTC
+#ifdef CONFIG_BT_MCC_OTS
 	/* Set up the callbacks from OTC */
 	/* TODO: Have one single content callback. */
 	/* For now: Use the icon callback for content - it is the first, */
@@ -1370,7 +1370,7 @@ int bt_mcc_init(struct bt_conn *conn, struct bt_mcc_cb_t *cb)
 	BT_DBG("Current object selected callback: %p", otc_cb.obj_selected);
 	BT_DBG("Content callback: %p", otc_cb.content_cb);
 	BT_DBG("Metadata callback: %p", otc_cb.metadata_cb);
-#endif /* CONFIG_BT_OTC */
+#endif /* CONFIG_BT_MCC_OTS */
 
 	return 0;
 }
@@ -1438,7 +1438,7 @@ int bt_mcc_read_player_name(struct bt_conn *conn)
 }
 
 
-#ifdef CONFIG_BT_OTC
+#ifdef CONFIG_BT_MCC_OTS
 int bt_mcc_read_icon_obj_id(struct bt_conn *conn)
 {
 	int err;
@@ -1465,7 +1465,7 @@ int bt_mcc_read_icon_obj_id(struct bt_conn *conn)
 	}
 	return err;
 }
-#endif /* CONFIG_BT_OTC */
+#endif /* CONFIG_BT_MCC_OTS */
 
 int bt_mcc_read_icon_uri(struct bt_conn *conn)
 {
@@ -1695,7 +1695,7 @@ int bt_mcc_read_seeking_speed(struct bt_conn *conn)
 	return err;
 }
 
-#ifdef CONFIG_BT_OTC
+#ifdef CONFIG_BT_MCC_OTS
 int bt_mcc_read_segments_obj_id(struct bt_conn *conn)
 {
 	int err;
@@ -1830,7 +1830,7 @@ int bt_mcc_read_parent_group_obj_id(struct bt_conn *conn)
 	}
 	return err;
 }
-#endif /* CONFIG_BT_OTC */
+#endif /* CONFIG_BT_MCC_OTS */
 
 int bt_mcc_read_playing_order(struct bt_conn *conn)
 {
@@ -2012,7 +2012,7 @@ int bt_mcc_read_opcodes_supported(struct bt_conn *conn)
 	return err;
 }
 
-#ifdef CONFIG_BT_OTC
+#ifdef CONFIG_BT_MCC_OTS
 int bt_mcc_set_scp(struct bt_conn *conn, struct mpl_search_t search)
 {
 	int err;
@@ -2072,7 +2072,7 @@ int bt_mcc_read_search_results_obj_id(struct bt_conn *conn)
 	}
 	return err;
 }
-#endif /* CONFIG_BT_OTC */
+#endif /* CONFIG_BT_MCC_OTS */
 
 int bt_mcc_read_content_control_id(struct bt_conn *conn)
 {
@@ -2101,7 +2101,7 @@ int bt_mcc_read_content_control_id(struct bt_conn *conn)
 	return err;
 }
 
-#ifdef CONFIG_BT_OTC
+#ifdef CONFIG_BT_MCC_OTS
 #if CONFIG_BT_MCC_MAX_OTS_INST > 0
 
 void on_obj_selected(struct bt_conn *conn, int result,
@@ -2444,4 +2444,4 @@ struct bt_otc_instance_t *bt_mcc_otc_inst(uint8_t index)
 #endif /* defined(CONFIG_BT_MCC_SHELL) */
 
 #endif /* CONFIG_BT_MCC_MAX_OTS_INST > 0 */
-#endif /* CONFIG_BT_OTC */
+#endif /* CONFIG_BT_MCC_OTS */
