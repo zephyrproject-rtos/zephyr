@@ -733,18 +733,26 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
 /**
  * @brief Inform ethernet L2 driver that ethernet carrier is detected.
  * This happens when cable is connected.
+ * A NET_EVENT_ETHERNET_CARRIER_ON event will be generated when done.
  *
  * @param iface Network interface
+ *
+ * @return 0 if the operation has been submitted to system workqueue,
+ * < 0 if a carrier change is already pending.
  */
-void net_eth_carrier_on(struct net_if *iface);
+int net_eth_carrier_on(struct net_if *iface);
 
 /**
  * @brief Inform ethernet L2 driver that ethernet carrier was lost.
  * This happens when cable is disconnected.
+ * A NET_EVENT_ETHERNET_CARRIER_OFF event will be generated when done.
  *
  * @param iface Network interface
+ *
+ * @return 0 if the operation has been submitted to system workqueue,
+ * < 0 if a carrier change is already pending.
  */
-void net_eth_carrier_off(struct net_if *iface);
+int net_eth_carrier_off(struct net_if *iface);
 
 /**
  * @brief Set promiscuous mode either ON or OFF.

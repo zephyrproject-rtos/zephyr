@@ -1028,29 +1028,35 @@ static void carrier_off(struct k_work *work)
 	net_if_carrier_down(ctx->carrier_mgmt.iface);
 }
 
-static void handle_carrier(struct ethernet_context *ctx,
+static int handle_carrier(struct ethernet_context *ctx,
 			   struct net_if *iface,
 			   k_work_handler_t handler)
 {
+	if (k_work_pending(&ctx->carrier_mgmt.work)) {
+		return -EBUSY;
+	}
+
 	k_work_init(&ctx->carrier_mgmt.work, handler);
 
 	ctx->carrier_mgmt.iface = iface;
 
 	k_work_submit(&ctx->carrier_mgmt.work);
+
+	return 0;
 }
 
-void net_eth_carrier_on(struct net_if *iface)
+int net_eth_carrier_on(struct net_if *iface)
 {
 	struct ethernet_context *ctx = net_if_l2_data(iface);
 
-	handle_carrier(ctx, iface, carrier_on);
+	return handle_carrier(ctx, iface, carrier_on);
 }
 
-void net_eth_carrier_off(struct net_if *iface)
+int net_eth_carrier_off(struct net_if *iface)
 {
 	struct ethernet_context *ctx = net_if_l2_data(iface);
 
-	handle_carrier(ctx, iface, carrier_off);
+	return handle_carrier(ctx, iface, carrier_off);
 }
 
 #if defined(CONFIG_PTP_CLOCK)
@@ -1147,6 +1153,8 @@ void ethernet_init(struct net_if *iface)
 #endif
 
 	NET_DBG("Initializing Ethernet L2 %p for iface %p", ctx, iface);
+
+	k_work_init(&ctx->carrier_mgmt.work, NULL);
 
 	ctx->ethernet_l2_flags = NET_L2_MULTICAST;
 
