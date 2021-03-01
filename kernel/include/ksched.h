@@ -219,7 +219,7 @@ static inline bool z_is_prio_lower_or_equal(int prio1, int prio2)
 	return z_is_prio1_lower_than_or_equal_to_prio2(prio1, prio2);
 }
 
-bool z_is_t1_higher_prio_than_t2(struct k_thread *t1, struct k_thread *t2);
+int32_t z_sched_prio_cmp(struct k_thread *t1, struct k_thread *t2);
 
 static inline bool _is_valid_prio(int prio, void *entry_point)
 {
