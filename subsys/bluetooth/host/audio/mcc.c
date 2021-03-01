@@ -114,8 +114,7 @@ struct mcs_instance_t {
 	bool busy;
 
 #ifdef CONFIG_BT_MCC_OTS
-	struct bt_otc_instance_t otc[CONFIG_BT_MCC_MAX_OTS_INST];
-	uint8_t otc_inst_cnt;
+	struct bt_otc_instance_t otc;
 #endif /* CONFIG_BT_MCC_OTS */
 };
 
@@ -132,7 +131,6 @@ static bool subscribe_all;
 
 #ifdef CONFIG_BT_MCC_OTS
 NET_BUF_SIMPLE_DEFINE_STATIC(otc_obj_buf, CONFIG_BT_MCC_OTC_OBJ_BUF_SIZE);
-static struct bt_otc_instance_t *cur_otc_inst;
 static struct bt_otc_cb otc_cb;
 #endif /* CONFIG_BT_MCC_OTS */
 
@@ -942,14 +940,12 @@ static uint8_t mcs_notify_handler(struct bt_conn *conn,
 }
 
 #ifdef CONFIG_BT_MCC_OTS
-#if CONFIG_BT_MCC_MAX_OTS_INST > 0
 static uint8_t discover_otc_char_func(struct bt_conn *conn,
 				      const struct bt_gatt_attr *attr,
 				      struct bt_gatt_discover_params *params)
 {
 	int err = 0;
 	struct bt_gatt_chrc *chrc;
-	static uint8_t next_idx;
 	struct bt_gatt_subscribe_params *sub_params = NULL;
 
 	if (attr) {
@@ -966,30 +962,30 @@ static uint8_t discover_otc_char_func(struct bt_conn *conn,
 		chrc = (struct bt_gatt_chrc *)attr->user_data;
 		if (!bt_uuid_cmp(chrc->uuid, BT_UUID_OTS_FEATURE)) {
 			BT_DBG("OTS Features");
-			cur_otc_inst->feature_handle = chrc->value_handle;
+			mcs_inst.otc.feature_handle = chrc->value_handle;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_OTS_NAME)) {
 			BT_DBG("Object Name");
-			cur_otc_inst->obj_name_handle = chrc->value_handle;
+			mcs_inst.otc.obj_name_handle = chrc->value_handle;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_OTS_TYPE)) {
 			BT_DBG("Object Type");
-			cur_otc_inst->obj_type_handle = chrc->value_handle;
+			mcs_inst.otc.obj_type_handle = chrc->value_handle;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_OTS_SIZE)) {
 			BT_DBG("Object Size");
-			cur_otc_inst->obj_size_handle = chrc->value_handle;
+			mcs_inst.otc.obj_size_handle = chrc->value_handle;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_OTS_ID)) {
 			BT_DBG("Object ID");
-			cur_otc_inst->obj_id_handle = chrc->value_handle;
+			mcs_inst.otc.obj_id_handle = chrc->value_handle;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_OTS_PROPERTIES)) {
 			BT_DBG("Object properties %d", chrc->value_handle);
-			cur_otc_inst->obj_properties_handle = chrc->value_handle;
+			mcs_inst.otc.obj_properties_handle = chrc->value_handle;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_OTS_ACTION_CP)) {
 			BT_DBG("Object Action Control Point");
-			cur_otc_inst->oacp_handle = chrc->value_handle;
-			sub_params = &cur_otc_inst->oacp_sub_params;
+			mcs_inst.otc.oacp_handle = chrc->value_handle;
+			sub_params = &mcs_inst.otc.oacp_sub_params;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_OTS_LIST_CP)) {
 			BT_DBG("Object List Control Point");
-			cur_otc_inst->olcp_handle = chrc->value_handle;
-			sub_params = &cur_otc_inst->olcp_sub_params;
+			mcs_inst.otc.olcp_handle = chrc->value_handle;
+			sub_params = &mcs_inst.otc.olcp_sub_params;
 		}
 
 		if (sub_params) {
@@ -1009,46 +1005,22 @@ static uint8_t discover_otc_char_func(struct bt_conn *conn,
 	}
 
 	/* No more attributes found */
-	cur_otc_inst->cb = &otc_cb;
-	bt_otc_register(cur_otc_inst);
+	mcs_inst.otc.cb = &otc_cb;
+	bt_otc_register(&mcs_inst.otc);
 
-	next_idx++;
-	BT_DBG("Setup complete for OTS %u / %u", next_idx,
-	       mcs_inst.otc_inst_cnt);
+	BT_DBG("Setup complete for included OTS");
 	(void)memset(params, 0, sizeof(*params));
 
-	if (next_idx < mcs_inst.otc_inst_cnt) {
-		/* Discover characteristics of next included OTS */
-		cur_otc_inst = &mcs_inst.otc[next_idx];
-		discover_params.start_handle = cur_otc_inst->start_handle;
-		discover_params.end_handle = cur_otc_inst->end_handle;
-		discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
-		discover_params.func = discover_otc_char_func;
-
-		BT_DBG("Start discovery of OTS characteristics");
-		err = bt_gatt_discover(conn, &discover_params);
-		if (err) {
-			BT_DBG("Discovery of OTS chars. failed (err %d)",
-				   err);
-			cur_otc_inst = NULL;
-			if (mcc_cb && mcc_cb->discover_mcs) {
-				mcc_cb->discover_mcs(conn, err);
-			}
-		}
-	} else {
-		cur_otc_inst = NULL;
-		if (mcc_cb && mcc_cb->discover_mcs) {
-			mcc_cb->discover_mcs(conn, err);
-		}
+	if (mcc_cb && mcc_cb->discover_mcs) {
+		mcc_cb->discover_mcs(conn, err);
 	}
+
 	return BT_GATT_ITER_STOP;
 }
-#endif /* CONFIG_BT_MCC_MAX_OTS_INST > 0 */
 #endif /* CONFIG_BT_MCC_OTS */
 
 
 #ifdef CONFIG_BT_MCC_OTS
-#if (CONFIG_BT_MCC_MAX_OTS_INST > 0)
 /* This function is called when an included service is found.
  * The function will store the start and end handle for the service,
  * and continue the search for more instances of included services.
@@ -1060,7 +1032,6 @@ static uint8_t discover_include_func(struct bt_conn *conn,
 				     struct bt_gatt_discover_params *params)
 {
 	struct bt_gatt_include *include;
-	uint8_t inst_idx;
 	int err = 0;
 
 	if (attr) {
@@ -1079,29 +1050,15 @@ static uint8_t discover_include_func(struct bt_conn *conn,
 			return BT_GATT_ITER_CONTINUE;
 		}
 
-		/* We have an included OTS service */
-		if (mcs_inst.otc_inst_cnt < CONFIG_BT_MCC_MAX_OTS_INST) {
-			inst_idx = mcs_inst.otc_inst_cnt;
-			mcs_inst.otc[inst_idx].start_handle =
-				include->start_handle;
-			mcs_inst.otc[inst_idx].end_handle =
-				include->end_handle;
-			mcs_inst.otc_inst_cnt++;
-			return BT_GATT_ITER_CONTINUE;
-		}
+		/* We have the included OTS service (MCS includes only one) */
+		BT_DBG("Discover include complete for GMCS: OTS");
+		mcs_inst.otc.start_handle = include->start_handle;
+		mcs_inst.otc.end_handle = include->end_handle;
+		(void)memset(params, 0, sizeof(*params));
 
-		BT_WARN("More OTS instances than expected - skipping");
-	}
-
-	/* No more included services found */
-	BT_DBG("Discover include complete for GMCS: OTS");
-	(void)memset(params, 0, sizeof(*params));
-	if (mcs_inst.otc_inst_cnt) {
-
-		/* Discover characteristics of any included OTS */
-		cur_otc_inst = &mcs_inst.otc[0];
-		discover_params.start_handle = cur_otc_inst->start_handle;
-		discover_params.end_handle = cur_otc_inst->end_handle;
+		/* Discover characteristics of the included OTS */
+		discover_params.start_handle = mcs_inst.otc.start_handle;
+		discover_params.end_handle = mcs_inst.otc.end_handle;
 		discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
 		discover_params.func = discover_otc_char_func;
 
@@ -1109,21 +1066,23 @@ static uint8_t discover_include_func(struct bt_conn *conn,
 		err = bt_gatt_discover(conn, &discover_params);
 		if (err) {
 			BT_DBG("Discovery of OTS chars. failed (err %d)",
-				   err);
-			cur_otc_inst = NULL;
+			       err);
 			if (mcc_cb && mcc_cb->discover_mcs) {
 				mcc_cb->discover_mcs(conn, err);
 			}
 		}
-	} else {
-		cur_otc_inst = NULL;
-		if (mcc_cb && mcc_cb->discover_mcs) {
-			mcc_cb->discover_mcs(conn, err);
-		}
+		return BT_GATT_ITER_STOP;
+	}
+
+	BT_DBG("No included OTS found");
+	/* This is OK, the server may not support OTS. But in that case,
+	 *  discovery stops here.
+	 */
+	if (mcc_cb && mcc_cb->discover_mcs) {
+		mcc_cb->discover_mcs(conn, err);
 	}
 	return BT_GATT_ITER_STOP;
 }
-#endif /* (CONFIG_BT_MCC_MAX_OTS_INST > 0)*/
 #endif /* CONFIG_BT_MCC_OTS */
 
 
@@ -1263,7 +1222,6 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 	(void)memset(params, 0, sizeof(*params));
 
 #ifdef CONFIG_BT_MCC_OTS
-#if (CONFIG_BT_MCC_MAX_OTS_INST > 0)
 
 	/* Discover included services */
 	discover_params.start_handle = mcs_inst.start_handle;
@@ -1279,17 +1237,16 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 			mcc_cb->discover_mcs(conn, err);
 		}
 	}
-#else
-	if (mcc_cb && mcc_cb->discover_mcs) {
-		mcc_cb->discover_mcs(conn, err);
-	}
-#endif /* (CONFIG_BT_MCC_MAX_OTS_INST > 0)*/
 
 #else
+
+	/* If OTS is not configured, discovery ends here */
 	if (mcc_cb && mcc_cb->discover_mcs) {
 		mcc_cb->discover_mcs(conn, err);
 	}
+
 #endif /* CONFIG_BT_MCC_OTS */
+
 	return BT_GATT_ITER_STOP;
 }
 
@@ -2107,7 +2064,6 @@ int bt_mcc_read_content_control_id(struct bt_conn *conn)
 }
 
 #ifdef CONFIG_BT_MCC_OTS
-#if CONFIG_BT_MCC_MAX_OTS_INST > 0
 
 void on_obj_selected(struct bt_conn *conn, int result,
 		     struct bt_otc_instance_t *otc_inst)
@@ -2329,7 +2285,7 @@ int bt_mcc_otc_read_object_metadata(struct bt_conn *conn)
 {
 	int err;
 
-	err = bt_otc_obj_metadata_read(conn, &mcs_inst.otc[0],
+	err = bt_otc_obj_metadata_read(conn, &mcs_inst.otc,
 				       BT_OTC_METADATA_REQ_ALL);
 	if (err) {
 		BT_DBG("Error reading the object: %d", err);
@@ -2344,9 +2300,9 @@ int bt_mcc_otc_read_icon_object(struct bt_conn *conn)
 	int err;
 	/* TODO: Add handling for busy - either MCS or OTS */
 
-	mcs_inst.otc[0].cb->content_cb = on_icon_content;
+	mcs_inst.otc.cb->content_cb = on_icon_content;
 
-	err = bt_otc_read(conn, &mcs_inst.otc[0]);
+	err = bt_otc_read(conn, &mcs_inst.otc);
 	if (err) {
 		BT_DBG("Error reading the object: %d", err);
 	}
@@ -2361,9 +2317,9 @@ int bt_mcc_otc_read_track_segments_object(struct bt_conn *conn)
 	/* TODO: Add handling for busy - either MCS or OTS */
 
 	/* TODO: Assumes object is already selected */
-	mcs_inst.otc[0].cb->content_cb = on_track_segments_content;
+	mcs_inst.otc.cb->content_cb = on_track_segments_content;
 
-	err = bt_otc_read(conn, &mcs_inst.otc[0]);
+	err = bt_otc_read(conn, &mcs_inst.otc);
 	if (err) {
 		BT_DBG("Error reading the object: %d", err);
 	}
@@ -2378,9 +2334,9 @@ int bt_mcc_otc_read_current_track_object(struct bt_conn *conn)
 	/* TODO: Add handling for busy - either MCS or OTS */
 
 	/* TODO: Assumes object is already selected */
-	mcs_inst.otc[0].cb->content_cb = on_track_content;
+	mcs_inst.otc.cb->content_cb = on_track_content;
 
-	err = bt_otc_read(conn, &mcs_inst.otc[0]);
+	err = bt_otc_read(conn, &mcs_inst.otc);
 	if (err) {
 		BT_DBG("Error reading the object: %d", err);
 	}
@@ -2395,9 +2351,9 @@ int bt_mcc_otc_read_next_track_object(struct bt_conn *conn)
 	/* TODO: Add handling for busy - either MCS or OTS */
 
 	/* TODO: Assumes object is already selected */
-	mcs_inst.otc[0].cb->content_cb = on_next_track_content;
+	mcs_inst.otc.cb->content_cb = on_next_track_content;
 
-	err = bt_otc_read(conn, &mcs_inst.otc[0]);
+	err = bt_otc_read(conn, &mcs_inst.otc);
 	if (err) {
 		BT_DBG("Error reading the object: %d", err);
 	}
@@ -2412,9 +2368,9 @@ int bt_mcc_otc_read_current_group_object(struct bt_conn *conn)
 	/* TODO: Add handling for busy - either MCS or OTS */
 
 	/* TODO: Assumes object is already selected */
-	mcs_inst.otc[0].cb->content_cb = on_group_content;
+	mcs_inst.otc.cb->content_cb = on_group_content;
 
-	err = bt_otc_read(conn, &mcs_inst.otc[0]);
+	err = bt_otc_read(conn, &mcs_inst.otc);
 	if (err) {
 		BT_DBG("Error reading the object: %d", err);
 	}
@@ -2431,9 +2387,9 @@ int bt_mcc_otc_read_parent_group_object(struct bt_conn *conn)
 	/* TODO: Assumes object is already selected */
 
 	/* Reuse callback for current group */
-	mcs_inst.otc[0].cb->content_cb = on_group_content;
+	mcs_inst.otc.cb->content_cb = on_group_content;
 
-	err = bt_otc_read(conn, &mcs_inst.otc[0]);
+	err = bt_otc_read(conn, &mcs_inst.otc);
 	if (err) {
 		BT_DBG("Error reading the object: %d", err);
 	}
@@ -2444,9 +2400,8 @@ int bt_mcc_otc_read_parent_group_object(struct bt_conn *conn)
 #if defined(CONFIG_BT_MCC_SHELL)
 struct bt_otc_instance_t *bt_mcc_otc_inst(void)
 {
-	return &mcs_inst.otc[0];
+	return &mcs_inst.otc;
 }
 #endif /* defined(CONFIG_BT_MCC_SHELL) */
 
-#endif /* CONFIG_BT_MCC_MAX_OTS_INST > 0 */
 #endif /* CONFIG_BT_MCC_OTS */
