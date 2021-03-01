@@ -43,11 +43,6 @@ void pm_resume_devices(void);
  */
 struct pm_state_info pm_policy_next_state(int32_t ticks);
 
-/**
- * @brief Function to determine whether to put devices in low
- *        power state, given the system PM state.
- */
-bool pm_policy_low_power_devices(enum pm_state state);
 
 #ifdef __cplusplus
 }
