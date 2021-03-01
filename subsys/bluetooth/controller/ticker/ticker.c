@@ -2276,9 +2276,16 @@ void ticker_job(void *param)
 
 	DEBUG_TICKER_JOB(1);
 
-	/* Defer worker, as job is now running */
+	/* Defer job, as worker is running */
 	if (instance->worker_trigger) {
 		DEBUG_TICKER_JOB(0);
+		return;
+	}
+
+	/* Defer job, as job is already running */
+	if (instance->job_guard) {
+		instance->sched_cb(TICKER_CALL_ID_JOB, TICKER_CALL_ID_JOB, 1,
+				   instance);
 		return;
 	}
 	instance->job_guard = 1U;
