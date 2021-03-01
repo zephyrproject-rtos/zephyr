@@ -16,8 +16,10 @@
 #define BASE_FLAGS	(K_MEM_CACHE_WB)
 volatile bool expect_fault;
 
+#ifndef CONFIG_KERNEL_LINK_IN_VIRT
 static uint8_t __aligned(CONFIG_MMU_PAGE_SIZE)
 			test_page[2 * CONFIG_MMU_PAGE_SIZE];
+#endif
 
 void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 {
@@ -46,6 +48,7 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
  */
 void test_z_phys_map_rw(void)
 {
+#ifndef CONFIG_KERNEL_LINK_IN_VIRT
 	uint8_t *mapped_rw, *mapped_ro;
 	uint8_t *buf = test_page + BUF_OFFSET;
 
@@ -76,9 +79,17 @@ void test_z_phys_map_rw(void)
 
 	printk("shouldn't get here\n");
 	ztest_test_fail();
+#else
+	ztest_test_skip();
+#endif /* CONFIG_KERNEL_LINK_IN_VIRT */
 }
 
-#ifndef SKIP_EXECUTE_TESTS
+#if defined(SKIP_EXECUTE_TESTS) || defined(CONFIG_KERNEL_LINK_IN_VIRT)
+void test_z_phys_map_exec(void)
+{
+	ztest_test_skip();
+}
+#else
 extern char __test_mem_map_start[];
 extern char __test_mem_map_end[];
 extern char __test_mem_map_size[];
@@ -128,12 +139,7 @@ void test_z_phys_map_exec(void)
 	printk("shouldn't get here\n");
 	ztest_test_fail();
 }
-#else
-void test_z_phys_map_exec(void)
-{
-	ztest_test_skip();
-}
-#endif /* SKIP_EXECUTE_TESTS */
+#endif /* SKIP_EXECUTE_TESTS || CONFIG_KERNEL_LINK_IN_VIRT */
 
 /**
  * Show that memory mapping doesn't have unintended side effects
@@ -142,6 +148,7 @@ void test_z_phys_map_exec(void)
  */
 void test_z_phys_map_side_effect(void)
 {
+#ifndef CONFIG_KERNEL_LINK_IN_VIRT
 	uint8_t *mapped;
 
 	expect_fault = false;
@@ -161,6 +168,9 @@ void test_z_phys_map_side_effect(void)
 	mapped[0] = 42;
 	printk("shouldn't get here\n");
 	ztest_test_fail();
+#else
+	ztest_test_skip();
+#endif /* CONFIG_KERNEL_LINK_IN_VIRT */
 }
 
 /**
