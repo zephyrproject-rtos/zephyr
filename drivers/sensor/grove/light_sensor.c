@@ -34,7 +34,7 @@ struct gls_data {
 };
 
 struct gls_config {
-	const char *adc_label;
+	const struct device *adc;
 	uint8_t adc_channel;
 };
 
@@ -50,9 +50,9 @@ static struct adc_sequence adc_table = {
 static int gls_sample_fetch(const struct device *dev,
 			    enum sensor_channel chan)
 {
-	struct gls_data *drv_data = dev->data;
+	const struct gls_config *cfg = dev->config;
 
-	return adc_read(drv_data->adc, &adc_table);
+	return adc_read(cfg->adc, &adc_table);
 }
 
 static int gls_channel_get(const struct device *dev,
@@ -87,10 +87,8 @@ static int gls_init(const struct device *dev)
 	struct gls_data *drv_data = dev->data;
 	const struct gls_config *cfg = dev->config;
 
-	drv_data->adc = device_get_binding(cfg->adc_label);
-
-	if (drv_data->adc == NULL) {
-		LOG_ERR("Failed to get ADC device.");
+	if (!device_is_ready(cfg->adc)) {
+		LOG_ERR("ADC device is not ready.");
 		return -EINVAL;
 	}
 
@@ -109,14 +107,14 @@ static int gls_init(const struct device *dev)
 	adc_table.resolution = GROVE_RESOLUTION;
 	adc_table.channels = BIT(cfg->adc_channel);
 
-	adc_channel_setup(drv_data->adc, &drv_data->ch_cfg);
+	adc_channel_setup(cfg->adc, &drv_data->ch_cfg);
 
 	return 0;
 }
 
 static struct gls_data gls_data;
 static const struct gls_config gls_cfg = {
-	.adc_label = DT_INST_IO_CHANNELS_LABEL(0),
+	.adc = DEVICE_DT_GET(DT_INST_IO_CHANNELS_CTLR(0)),
 	.adc_channel = DT_INST_IO_CHANNELS_INPUT(0),
 };
 
