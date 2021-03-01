@@ -81,17 +81,17 @@ with some subsections, like this:
 
    manifest:
      remotes:
-       # short names for project URLs (optional)
+       # short names for project URLs
      projects:
-       # a list of projects managed by west (mandatory)
+       # a list of projects managed by west
      defaults:
-       # default project attributes (optional)
+       # default project attributes
      self:
        # configuration related to the manifest repository itself,
-       # i.e. the repository containing west.yml (optional)
-     version: <schema-version> # optional
+       # i.e. the repository containing west.yml
+     version: <schema-version>
      group-filter:
-       # a list of project groups to enable or disable (optional)
+       # a list of project groups to enable or disable
 
 In YAML terms, the manifest file contains a mapping, with a ``manifest``
 key. Any other keys and their contents are ignored (west v0.5 also required a
@@ -99,8 +99,12 @@ key. Any other keys and their contents are ignored (west v0.5 also required a
 
 The manifest contains subsections, like ``defaults``, ``remotes``,
 ``projects``, and ``self``. In YAML terms, the value of the ``manifest`` key is
-also a mapping, with these "subsections" as keys. Only ``projects`` is
-mandatory: this is the list of repositories managed by west and their metadata.
+also a mapping, with these "subsections" as keys. As of west v0.10, all of
+these "subsection" keys are optional.
+
+The ``projects`` value is a list of repositories managed by west and associated
+metadata. We'll discuss it soon, but first we will describe the ``remotes``
+section, which can be used to save typing in the ``projects`` list.
 
 Remotes
 =======
