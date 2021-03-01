@@ -134,6 +134,7 @@ void pm_power_state_force(struct pm_state_info info)
 	}
 }
 
+#if CONFIG_PM_DEVICE
 static enum pm_state _handle_device_abort(struct pm_state_info info)
 {
 	LOG_DBG("Some devices didn't enter suspend state!");
@@ -142,46 +143,43 @@ static enum pm_state _handle_device_abort(struct pm_state_info info)
 	z_power_state.state = PM_STATE_ACTIVE;
 	return PM_STATE_ACTIVE;
 }
+#endif
 
 enum pm_state pm_system_suspend(int32_t ticks)
 {
-	bool deep_sleep;
-#if CONFIG_PM_DEVICE
-	bool low_power = false;
-#endif
-
 	z_power_state = pm_policy_next_state(ticks);
 	if (z_power_state.state == PM_STATE_ACTIVE) {
 		LOG_DBG("No PM operations done.");
 		return z_power_state.state;
 	}
-
-	deep_sleep = pm_is_deep_sleep_state(z_power_state.state);
-
 	post_ops_done = 0;
 
-	if (deep_sleep) {
-		/* Suspend peripherals. */
-		if (IS_ENABLED(CONFIG_PM_DEVICE) && pm_suspend_devices()) {
+#if CONFIG_PM_DEVICE
+
+	bool should_resume_devices = true;
+
+	switch (z_power_state.state) {
+	case PM_STATE_RUNTIME_IDLE:
+		__fallthrough;
+	case PM_STATE_SUSPEND_TO_IDLE:
+		__fallthrough;
+	case PM_STATE_STANDBY:
+		/* low power peripherals. */
+		if (pm_low_power_devices()) {
+			return _handle_device_abort(z_power_state);
+		}		break;
+	case PM_STATE_SUSPEND_TO_RAM:
+		__fallthrough;
+	case PM_STATE_SUSPEND_TO_DISK:
+		if (pm_suspend_devices()) {
 			return _handle_device_abort(z_power_state);
 		}
-		/*
-		 * Disable idle exit notification as it is not needed
-		 * in deep sleep mode.
-		 */
-#if CONFIG_PM_DEVICE
-	} else {
-		if (pm_policy_low_power_devices(z_power_state.state)) {
-			/* low power peripherals. */
-			if (pm_low_power_devices()) {
-				return _handle_device_abort(z_power_state);
-			}
-
-			low_power = true;
-		}
-#endif
+		break;
+	default:
+		should_resume_devices = false;
+		break;
 	}
-
+#endif
 	pm_debug_start_timer();
 	/* Enter power state */
 	pm_state_notify(true);
@@ -190,7 +188,7 @@ enum pm_state pm_system_suspend(int32_t ticks)
 
 	/* Wake up sequence starts here */
 #if CONFIG_PM_DEVICE
-	if (deep_sleep || low_power) {
+	if (should_resume_devices) {
 		/* Turn on peripherals and restore device states as necessary */
 		pm_resume_devices();
 	}

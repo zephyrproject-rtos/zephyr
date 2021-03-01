@@ -136,8 +136,3 @@ struct pm_state_info pm_policy_next_state(int32_t ticks)
 	LOG_DBG("No suitable power state found!");
 	return STATE_ACTIVE;
 }
-
-__weak bool pm_policy_low_power_devices(enum pm_state state)
-{
-	return state == PM_STATE_STANDBY;
-}

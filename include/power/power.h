@@ -64,52 +64,6 @@ struct pm_notifier {
 };
 
 /**
- * @brief Check if particular power state is a sleep state.
- *
- * This function returns true if given power state is a sleep state.
- */
-static inline bool pm_is_sleep_state(enum pm_state state)
-{
-	bool ret = true;
-
-	switch (state) {
-	case PM_STATE_RUNTIME_IDLE:
-		__fallthrough;
-	case PM_STATE_SUSPEND_TO_IDLE:
-		__fallthrough;
-	case PM_STATE_STANDBY:
-		break;
-	default:
-		ret = false;
-		break;
-	}
-
-	return ret;
-}
-
-/**
- * @brief Check if particular power state is a deep sleep state.
- *
- * This function returns true if given power state is a deep sleep state.
- */
-static inline bool pm_is_deep_sleep_state(enum pm_state state)
-{
-	bool ret = true;
-
-	switch (state) {
-	case PM_STATE_SUSPEND_TO_RAM:
-		__fallthrough;
-	case PM_STATE_SUSPEND_TO_DISK:
-		break;
-	default:
-		ret = false;
-		break;
-	}
-
-	return ret;
-}
-
-/**
  * @brief Force usage of given power state.
  *
  * This function overrides decision made by PM policy forcing

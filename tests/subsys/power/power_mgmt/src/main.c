@@ -59,11 +59,6 @@ __weak void pm_power_state_exit_post_ops(struct pm_state_info info)
 	irq_unlock(0);
 }
 
-__weak bool pm_policy_low_power_devices(enum pm_state state)
-{
-	return pm_is_sleep_state(state);
-}
-
 /* Our PM policy handler */
 struct pm_state_info pm_policy_next_state(int ticks)
 {
