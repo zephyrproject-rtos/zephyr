@@ -10,17 +10,17 @@
 LOG_MODULE_REGISTER(mbs_test, LOG_LEVEL_INF);
 
 const static uint16_t fp_offset = MB_TEST_FP_OFFSET;
-static uint16_t test_coils;
-static uint16_t test_holding_reg[8];
-static float test_holding_fp[4];
+static uint16_t coils;
+static uint16_t holding_reg[8];
+static float holding_fp[4];
 
 static int coil_rd(uint16_t addr, bool *state)
 {
-	if (addr >= (sizeof(test_coils) * 8)) {
+	if (addr >= (sizeof(coils) * 8)) {
 		return -ENOTSUP;
 	}
 
-	if (test_coils & BIT(addr)) {
+	if (coils & BIT(addr)) {
 		*state = true;
 	} else {
 		*state = false;
@@ -33,14 +33,14 @@ static int coil_rd(uint16_t addr, bool *state)
 
 static int coil_wr(uint16_t addr, bool state)
 {
-	if (addr >= (sizeof(test_coils) * 8)) {
+	if (addr >= (sizeof(coils) * 8)) {
 		return -ENOTSUP;
 	}
 
 	if (state == true) {
-		test_coils |= BIT(addr);
+		coils |= BIT(addr);
 	} else {
-		test_coils &= ~BIT(addr);
+		coils &= ~BIT(addr);
 	}
 
 	LOG_DBG("Coil write, addr %u, %d", addr, (int)state);
@@ -50,11 +50,11 @@ static int coil_wr(uint16_t addr, bool state)
 
 static int discrete_input_rd(uint16_t addr, bool *state)
 {
-	if (addr >= (sizeof(test_coils) * 8)) {
+	if (addr >= (sizeof(coils) * 8)) {
 		return -ENOTSUP;
 	}
 
-	if (test_coils & BIT(addr)) {
+	if (coils & BIT(addr)) {
 		*state = true;
 	} else {
 		*state = false;
@@ -67,11 +67,11 @@ static int discrete_input_rd(uint16_t addr, bool *state)
 
 static int input_reg_rd(uint16_t addr, uint16_t *reg)
 {
-	if (addr >= ARRAY_SIZE(test_holding_reg)) {
+	if (addr >= ARRAY_SIZE(holding_reg)) {
 		return -ENOTSUP;
 	}
 
-	*reg = test_holding_reg[addr];
+	*reg = holding_reg[addr];
 
 	LOG_DBG("Input register read, addr %u, 0x%04x", addr, *reg);
 
@@ -81,11 +81,11 @@ static int input_reg_rd(uint16_t addr, uint16_t *reg)
 static int input_reg_rd_fp(uint16_t addr, float *reg)
 {
 	if ((addr < fp_offset) ||
-	    (addr >= (ARRAY_SIZE(test_holding_fp) + fp_offset))) {
+	    (addr >= (ARRAY_SIZE(holding_fp) + fp_offset))) {
 		return -ENOTSUP;
 	}
 
-	*reg = test_holding_fp[addr - fp_offset];
+	*reg = holding_fp[addr - fp_offset];
 
 	LOG_DBG("FP input register read, addr %u", addr);
 
@@ -94,11 +94,11 @@ static int input_reg_rd_fp(uint16_t addr, float *reg)
 
 static int holding_reg_rd(uint16_t addr, uint16_t *reg)
 {
-	if (addr >= ARRAY_SIZE(test_holding_reg)) {
+	if (addr >= ARRAY_SIZE(holding_reg)) {
 		return -ENOTSUP;
 	}
 
-	*reg = test_holding_reg[addr];
+	*reg = holding_reg[addr];
 
 	LOG_DBG("Holding register read, addr %u", addr);
 
@@ -107,11 +107,11 @@ static int holding_reg_rd(uint16_t addr, uint16_t *reg)
 
 static int holding_reg_wr(uint16_t addr, uint16_t reg)
 {
-	if (addr >= ARRAY_SIZE(test_holding_reg)) {
+	if (addr >= ARRAY_SIZE(holding_reg)) {
 		return -ENOTSUP;
 	}
 
-	test_holding_reg[addr] = reg;
+	holding_reg[addr] = reg;
 
 	LOG_DBG("Holding register write, addr %u", addr);
 
@@ -121,11 +121,11 @@ static int holding_reg_wr(uint16_t addr, uint16_t reg)
 static int holding_reg_rd_fp(uint16_t addr, float *reg)
 {
 	if ((addr < fp_offset) ||
-	    (addr >= (ARRAY_SIZE(test_holding_fp) + fp_offset))) {
+	    (addr >= (ARRAY_SIZE(holding_fp) + fp_offset))) {
 		return -ENOTSUP;
 	}
 
-	*reg = test_holding_fp[addr - fp_offset];
+	*reg = holding_fp[addr - fp_offset];
 
 	LOG_DBG("FP holding register read, addr %u", addr);
 
@@ -135,11 +135,11 @@ static int holding_reg_rd_fp(uint16_t addr, float *reg)
 static int holding_reg_wr_fp(uint16_t addr, float reg)
 {
 	if ((addr < fp_offset) ||
-	    (addr >= (ARRAY_SIZE(test_holding_fp) + fp_offset))) {
+	    (addr >= (ARRAY_SIZE(holding_fp) + fp_offset))) {
 		return -ENOTSUP;
 	}
 
-	test_holding_fp[addr - fp_offset] = reg;
+	holding_fp[addr - fp_offset] = reg;
 
 	LOG_DBG("FP holding register write, addr %u", addr);
 
@@ -164,7 +164,7 @@ static struct modbus_user_callbacks mbs_cbs = {
 	.holding_reg_wr_fp = holding_reg_wr_fp,
 };
 
-void test_server_rtu_setup_low_odd(void)
+void test_server_setup_low_odd(void)
 {
 	int err;
 
@@ -179,7 +179,7 @@ void test_server_rtu_setup_low_odd(void)
 	}
 }
 
-void test_server_rtu_setup_low_none(void)
+void test_server_setup_low_none(void)
 {
 	int err;
 
@@ -194,7 +194,7 @@ void test_server_rtu_setup_low_none(void)
 	}
 }
 
-void test_server_rtu_setup_high_even(void)
+void test_server_setup_high_even(void)
 {
 	int err;
 
@@ -209,7 +209,7 @@ void test_server_rtu_setup_high_even(void)
 	}
 }
 
-void test_server_rtu_setup_ascii(void)
+void test_server_setup_ascii(void)
 {
 	int err;
 
@@ -224,7 +224,7 @@ void test_server_rtu_setup_ascii(void)
 	}
 }
 
-void test_server_rtu_disable(void)
+void test_server_disable(void)
 {
 	int err;
 
