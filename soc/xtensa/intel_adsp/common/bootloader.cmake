@@ -14,7 +14,7 @@ add_custom_target(
   COMMAND ${CMAKE_OBJCOPY} --add-section .module=mod-apl.bin --set-section-flags .module=load,readonly ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_ELF_NAME} ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_ELF_NAME}.mod
 
   # Adjust final section addresses so they all appear in the cached region.
-  COMMAND ${ELF_FIX} ${CMAKE_OBJCOPY} ${CMAKE_BINARY_DIR}/zephyr/zephyr.elf.mod
+  COMMAND ${ELF_FIX} ${CMAKE_OBJCOPY} ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_ELF_NAME}.mod
   )
 
 add_custom_target(
