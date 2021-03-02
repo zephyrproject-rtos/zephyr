@@ -7,16 +7,16 @@ if(CONFIG_MODBUS)
 	zephyr_include_directories(${ZEPHYR_BASE}/subsys/modbus)
 
 	zephyr_library_sources(
-		mb_rtu_core.c
+		modbus_core.c
 	)
 
 	zephyr_library_sources_ifdef(
 		CONFIG_MODBUS_SERVER
-		mb_rtu_server.c
+		modbus_server.c
 	)
 
 	zephyr_library_sources_ifdef(
 		CONFIG_MODBUS_CLIENT
-		mb_rtu_client.c
+		modbus_client.c
 	)
 endif()
