@@ -16,7 +16,7 @@ const static uint8_t node = MB_TEST_NODE_ADDR;
 const static uint16_t offset_oor = 32;
 const static uint16_t fp_offset_oor = fp_offset + offset_oor;
 
-void test_rtu_coil_wr_rd(void)
+void test_coil_wr_rd(void)
 {
 	const uint8_t coil_qty = 16;
 	uint8_t coil[3] = {0};
@@ -55,7 +55,7 @@ void test_rtu_coil_wr_rd(void)
 	zassert_not_equal(err, 0, "FC15 out of range request not failed");
 }
 
-void test_rtu_di_rd(void)
+void test_di_rd(void)
 {
 	const uint8_t di_qty = 16;
 	uint8_t di[4] = {0};
@@ -74,7 +74,7 @@ void test_rtu_di_rd(void)
 	zassert_not_equal(err, 0, "FC02 out of range request not failed");
 }
 
-void test_rtu_input_reg(void)
+void test_input_reg(void)
 {
 	uint16_t ir[8] = {0};
 	int err;
@@ -95,7 +95,7 @@ void test_rtu_input_reg(void)
 	zassert_not_equal(err, 0, "FC04 out of range request not failed");
 }
 
-void test_rtu_holding_reg(void)
+void test_holding_reg(void)
 {
 	uint16_t hr_wr[8] = {0, 2, 1, 3, 5, 4, 7, 6};
 	uint16_t hr_rd[8] = {0};
@@ -182,7 +182,7 @@ void test_rtu_holding_reg(void)
 		      "FC16FP verify failed");
 }
 
-void test_rtu_diagnostic(void)
+void test_diagnostic(void)
 {
 	uint16_t data = 0xcafe;
 	int err;
@@ -196,7 +196,7 @@ void test_rtu_diagnostic(void)
 	zassert_not_equal(err, 0, "FC08 not supported request not failed");
 }
 
-void test_client_rtu_setup_low_none(void)
+void test_client_setup_low_none(void)
 {
 	int err;
 
@@ -206,7 +206,7 @@ void test_client_rtu_setup_low_none(void)
 	zassert_equal(err, 0, "Failed to configure RTU client");
 }
 
-void test_client_rtu_setup_low_odd(void)
+void test_client_setup_low_odd(void)
 {
 	int err;
 
@@ -216,7 +216,7 @@ void test_client_rtu_setup_low_odd(void)
 	zassert_equal(err, 0, "Failed to configure RTU client");
 }
 
-void test_client_rtu_setup_high_even(void)
+void test_client_setup_high_even(void)
 {
 	int err;
 
@@ -226,7 +226,7 @@ void test_client_rtu_setup_high_even(void)
 	zassert_equal(err, 0, "Failed to configure RTU client");
 }
 
-void test_client_rtu_setup_ascii(void)
+void test_client_setup_ascii(void)
 {
 	int err;
 
@@ -236,7 +236,7 @@ void test_client_rtu_setup_ascii(void)
 	zassert_equal(err, 0, "Failed to configure RTU client");
 }
 
-void test_client_rtu_disable(void)
+void test_client_disable(void)
 {
 	int err;
 
@@ -246,52 +246,52 @@ void test_client_rtu_disable(void)
 
 #else
 
-void test_client_rtu_setup_low_none(void)
+void test_client_setup_low_none(void)
 {
 	ztest_test_skip();
 }
 
-void test_client_rtu_setup_low_odd(void)
+void test_client_setup_low_odd(void)
 {
 	ztest_test_skip();
 }
 
-void test_client_rtu_setup_high_even(void)
+void test_client_setup_high_even(void)
 {
 	ztest_test_skip();
 }
 
-void test_client_rtu_setup_ascii(void)
+void test_client_setup_ascii(void)
 {
 	ztest_test_skip();
 }
 
-void test_rtu_coil_wr_rd(void)
+void test_coil_wr_rd(void)
 {
 	ztest_test_skip();
 }
 
-void test_rtu_di_rd(void)
+void test_di_rd(void)
 {
 	ztest_test_skip();
 }
 
-void test_rtu_input_reg(void)
+void test_input_reg(void)
 {
 	ztest_test_skip();
 }
 
-void test_rtu_holding_reg(void)
+void test_holding_reg(void)
 {
 	ztest_test_skip();
 }
 
-void test_rtu_diagnostic(void)
+void test_diagnostic(void)
 {
 	ztest_test_skip();
 }
 
-void test_client_rtu_disable(void)
+void test_client_disable(void)
 {
 	ztest_test_skip();
 }

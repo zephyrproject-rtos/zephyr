@@ -30,21 +30,21 @@
 #define MB_TEST_IFACE_SERVER		0
 #endif
 
-void test_server_rtu_setup_low_none(void);
-void test_server_rtu_setup_low_odd(void);
-void test_server_rtu_setup_high_even(void);
-void test_server_rtu_setup_ascii(void);
-void test_server_rtu_disable(void);
+void test_server_setup_low_none(void);
+void test_server_setup_low_odd(void);
+void test_server_setup_high_even(void);
+void test_server_setup_ascii(void);
+void test_server_disable(void);
 
-void test_client_rtu_setup_low_none(void);
-void test_client_rtu_setup_low_odd(void);
-void test_client_rtu_setup_high_even(void);
-void test_client_rtu_setup_ascii(void);
-void test_rtu_coil_wr_rd(void);
-void test_rtu_di_rd(void);
-void test_rtu_input_reg(void);
-void test_rtu_holding_reg(void);
-void test_rtu_diagnostic(void);
-void test_client_rtu_disable(void);
+void test_client_setup_low_none(void);
+void test_client_setup_low_odd(void);
+void test_client_setup_high_even(void);
+void test_client_setup_ascii(void);
+void test_coil_wr_rd(void);
+void test_di_rd(void);
+void test_input_reg(void);
+void test_holding_reg(void);
+void test_diagnostic(void);
+void test_client_disable(void);
 
 #endif /* __TEST_MODBUS_H__ */
