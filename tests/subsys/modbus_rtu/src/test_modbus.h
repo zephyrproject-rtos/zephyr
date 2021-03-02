@@ -9,7 +9,7 @@
 
 #include <drivers/uart.h>
 #include <ztest.h>
-#include <modbus/modbus_rtu.h>
+#include <modbus/modbus.h>
 
 #define MB_TEST_BAUDRATE_LOW	9600
 #define MB_TEST_BAUDRATE_HIGH	115200

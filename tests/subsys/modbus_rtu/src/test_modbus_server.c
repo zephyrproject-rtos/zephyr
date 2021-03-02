@@ -168,7 +168,7 @@ void test_server_rtu_setup_low_odd(void)
 {
 	int err;
 
-	if (IS_ENABLED(CONFIG_MODBUS_RTU_SERVER)) {
+	if (IS_ENABLED(CONFIG_MODBUS_SERVER)) {
 		err = modbus_init_server(MB_TEST_IFACE_SERVER, MB_TEST_NODE_ADDR,
 					 MB_TEST_BAUDRATE_LOW,
 					 UART_CFG_PARITY_ODD,
@@ -183,7 +183,7 @@ void test_server_rtu_setup_low_none(void)
 {
 	int err;
 
-	if (IS_ENABLED(CONFIG_MODBUS_RTU_SERVER)) {
+	if (IS_ENABLED(CONFIG_MODBUS_SERVER)) {
 		err = modbus_init_server(MB_TEST_IFACE_SERVER, MB_TEST_NODE_ADDR,
 					 MB_TEST_BAUDRATE_LOW,
 					 UART_CFG_PARITY_NONE,
@@ -198,7 +198,7 @@ void test_server_rtu_setup_high_even(void)
 {
 	int err;
 
-	if (IS_ENABLED(CONFIG_MODBUS_RTU_SERVER)) {
+	if (IS_ENABLED(CONFIG_MODBUS_SERVER)) {
 		err = modbus_init_server(MB_TEST_IFACE_SERVER, MB_TEST_NODE_ADDR,
 					 MB_TEST_BAUDRATE_HIGH,
 					 UART_CFG_PARITY_EVEN,
@@ -213,7 +213,7 @@ void test_server_rtu_setup_ascii(void)
 {
 	int err;
 
-	if (IS_ENABLED(CONFIG_MODBUS_RTU_SERVER)) {
+	if (IS_ENABLED(CONFIG_MODBUS_SERVER)) {
 		err = modbus_init_server(MB_TEST_IFACE_SERVER, MB_TEST_NODE_ADDR,
 					 MB_TEST_BAUDRATE_HIGH,
 					 UART_CFG_PARITY_EVEN,
@@ -228,7 +228,7 @@ void test_server_rtu_disable(void)
 {
 	int err;
 
-	if (IS_ENABLED(CONFIG_MODBUS_RTU_SERVER)) {
+	if (IS_ENABLED(CONFIG_MODBUS_SERVER)) {
 		err = modbus_disable(MB_TEST_IFACE_SERVER);
 		zassert_equal(err, 0, "Failed to disable RTU server");
 	} else {

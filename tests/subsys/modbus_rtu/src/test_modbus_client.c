@@ -9,7 +9,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(mbc_test, LOG_LEVEL_INF);
 
-#ifdef CONFIG_MODBUS_RTU_CLIENT
+#ifdef CONFIG_MODBUS_CLIENT
 const static uint16_t fp_offset = MB_TEST_FP_OFFSET;
 const static uint8_t iface = MB_TEST_IFACE_CLIENT;
 const static uint8_t node = MB_TEST_NODE_ADDR;
