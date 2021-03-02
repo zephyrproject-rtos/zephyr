@@ -4,3 +4,4 @@
 config SOC_QEMU_ARC
 	bool "QEMU emulation of ARC cores"
 	select ARC
+	select CPU_HAS_MPU
