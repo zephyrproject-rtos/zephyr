@@ -117,6 +117,55 @@ static int gatt_proxy_status(struct bt_mesh_model *model,
 	return state_status_u8(model, ctx, buf, OP_GATT_PROXY_STATUS);
 }
 
+static int transmit_status(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+			   struct net_buf_simple *buf)
+{
+	return state_status_u8(model, ctx, buf, OP_NET_TRANSMIT_STATUS);
+}
+
+struct krp_param {
+	uint8_t *status;
+	uint16_t net_idx;
+	uint8_t *phase;
+};
+
+static int krp_status(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+		       struct net_buf_simple *buf)
+{
+	struct krp_param *param;
+	uint16_t net_idx;
+	uint8_t status, phase;
+
+	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
+	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
+	       bt_hex(buf->data, buf->len));
+
+	if (!bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_KRP_STATUS, ctx->addr,
+				       (void **)&param)) {
+		return -ENOENT;
+	}
+
+	status = net_buf_simple_pull_u8(buf);
+	net_idx = net_buf_simple_pull_le16(buf) & 0xfff;
+	phase = net_buf_simple_pull_u8(buf);
+
+	if (param->net_idx != net_idx) {
+		return -ENOENT;
+	}
+
+	if (param && param->status) {
+		*param->status = status;
+	}
+
+	if (param && param->phase) {
+		*param->phase = phase;
+	}
+
+	bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
+
+	return 0;
+}
+
 struct relay_param {
 	uint8_t *status;
 	uint8_t *transmit;
@@ -748,6 +797,83 @@ static int hb_pub_status(struct bt_mesh_model *model,
 	return 0;
 }
 
+struct node_idt_param {
+	uint8_t *status;
+	uint16_t net_idx;
+	uint8_t *identity;
+};
+
+static int node_identity_status(struct bt_mesh_model *model,
+				 struct bt_mesh_msg_ctx *ctx,
+				 struct net_buf_simple *buf)
+{
+	struct node_idt_param *param;
+	uint16_t net_idx, identity;
+	uint8_t status;
+
+	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
+	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
+	       bt_hex(buf->data, buf->len));
+
+	if (!bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_NODE_IDENTITY_STATUS,
+				       ctx->addr, (void **)&param)) {
+		return -ENOENT;
+	}
+
+	status = net_buf_simple_pull_u8(buf);
+	net_idx = net_buf_simple_pull_le16(buf) & 0xfff;
+	identity = net_buf_simple_pull_u8(buf);
+
+	if (param && param->status) {
+		*param->status = status;
+	}
+
+	if (param && param->identity) {
+		*param->identity = identity;
+	}
+
+	bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
+
+	return 0;
+}
+
+struct lpn_timeout_param {
+	uint16_t unicast_addr;
+	int32_t *polltimeout;
+};
+
+static int lpn_timeout_status(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+			      struct net_buf_simple *buf)
+{
+	struct lpn_timeout_param *param;
+	uint16_t unicast_addr;
+	int32_t polltimeout;
+
+	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
+	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
+	       bt_hex(buf->data, buf->len));
+
+	if (!bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_LPN_TIMEOUT_STATUS, ctx->addr,
+				       (void **)&param)) {
+		return -ENOENT;
+	}
+
+	unicast_addr = net_buf_simple_pull_le16(buf);
+	polltimeout = net_buf_simple_pull_le24(buf);
+
+	if (param->unicast_addr != unicast_addr) {
+		return -ENOENT;
+	}
+
+	if (param && param->polltimeout) {
+		*param->polltimeout = polltimeout;
+	}
+
+	bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
+
+	return 0;
+}
+
 const struct bt_mesh_model_op bt_mesh_cfg_cli_op[] = {
 	{ OP_DEV_COMP_DATA_STATUS,   BT_MESH_LEN_MIN(15),     comp_data_status },
 	{ OP_BEACON_STATUS,          BT_MESH_LEN_EXACT(1),    beacon_status },
@@ -770,6 +896,10 @@ const struct bt_mesh_model_op bt_mesh_cfg_cli_op[] = {
 	{ OP_HEARTBEAT_SUB_STATUS,   BT_MESH_LEN_EXACT(9),    hb_sub_status },
 	{ OP_HEARTBEAT_PUB_STATUS,   BT_MESH_LEN_EXACT(10),   hb_pub_status },
 	{ OP_NODE_RESET_STATUS,      BT_MESH_LEN_EXACT(0),    node_reset_status },
+	{ OP_NODE_IDENTITY_STATUS,   BT_MESH_LEN_EXACT(4),    node_identity_status},
+	{ OP_LPN_TIMEOUT_STATUS,     BT_MESH_LEN_EXACT(5),    lpn_timeout_status },
+	{ OP_NET_TRANSMIT_STATUS,    BT_MESH_LEN_EXACT(1),    transmit_status},
+	{ OP_KRP_STATUS,             BT_MESH_LEN_EXACT(4),    krp_status},
 	BT_MESH_MODEL_OP_END,
 };
 
@@ -911,6 +1041,75 @@ int bt_mesh_cfg_beacon_get(uint16_t net_idx, uint16_t addr, uint8_t *status)
 {
 	return get_state_u8(net_idx, addr, OP_BEACON_GET, OP_BEACON_STATUS,
 			    status);
+}
+
+int bt_mesh_cfg_krp_get(uint16_t net_idx, uint16_t addr, uint16_t key_net_idx,
+			uint8_t *status, uint8_t *phase)
+{
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_KRP_GET, 2);
+	struct bt_mesh_msg_ctx ctx = {
+		.net_idx = net_idx,
+		.app_idx = BT_MESH_KEY_DEV_REMOTE,
+		.addr = addr,
+		.send_ttl = BT_MESH_TTL_DEFAULT,
+	};
+	struct krp_param param = {
+		.status = status,
+		.phase = phase,
+	};
+	int err;
+
+	err = cli_prepare(&param, OP_KRP_STATUS, addr);
+	if (err) {
+		return err;
+	}
+
+	bt_mesh_model_msg_init(&msg, OP_KRP_GET);
+	net_buf_simple_add_le16(&msg, key_net_idx);
+
+	err = bt_mesh_model_send(cli->model, &ctx, &msg, NULL, NULL);
+	if (err) {
+		BT_ERR("model_send() failed (err %d)", err);
+		bt_mesh_msg_ack_ctx_clear(&cli->ack_ctx);
+		return err;
+	}
+
+	return bt_mesh_msg_ack_ctx_wait(&cli->ack_ctx, K_MSEC(msg_timeout));
+}
+
+int bt_mesh_cfg_krp_set(uint16_t net_idx, uint16_t addr, uint16_t key_net_idx,
+			uint8_t transition, uint8_t *status, uint8_t *phase)
+{
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_KRP_SET, 3);
+	struct bt_mesh_msg_ctx ctx = {
+		.net_idx = net_idx,
+		.app_idx = BT_MESH_KEY_DEV_REMOTE,
+		.addr = addr,
+		.send_ttl = BT_MESH_TTL_DEFAULT,
+	};
+	struct krp_param param = {
+		.status = status,
+		.phase = phase,
+	};
+	int err;
+
+	err = cli_prepare(&param, OP_KRP_STATUS, addr);
+	if (err) {
+		return err;
+	}
+
+	bt_mesh_model_msg_init(&msg, OP_KRP_SET);
+	net_buf_simple_add_le16(&msg, key_net_idx);
+	net_buf_simple_add_u8(&msg, transition);
+
+	err = bt_mesh_model_send(cli->model, &ctx, &msg, NULL, NULL);
+	if (err) {
+		BT_ERR("model_send() failed (err %d)", err);
+		bt_mesh_msg_ack_ctx_clear(&cli->ack_ctx);
+		return err;
+	}
+
+	return bt_mesh_msg_ack_ctx_wait(&cli->ack_ctx, K_MSEC(msg_timeout));
 }
 
 int bt_mesh_cfg_beacon_set(uint16_t net_idx, uint16_t addr, uint8_t val, uint8_t *status)
@@ -1079,6 +1278,47 @@ int bt_mesh_cfg_net_key_add(uint16_t net_idx, uint16_t addr, uint16_t key_net_id
 	return bt_mesh_msg_ack_ctx_wait(&cli->ack_ctx, K_MSEC(msg_timeout));
 }
 
+int bt_mesh_cfg_net_key_update(uint16_t net_idx, uint16_t addr,
+			       uint16_t key_net_idx, const uint8_t net_key[16],
+			       uint8_t *status)
+{
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_NET_KEY_UPDATE, 18);
+	struct bt_mesh_msg_ctx ctx = {
+		.net_idx = net_idx,
+		.app_idx = BT_MESH_KEY_DEV_REMOTE,
+		.addr = addr,
+		.send_ttl = BT_MESH_TTL_DEFAULT,
+	};
+	struct net_key_param param = {
+		.status = status,
+		.net_idx = key_net_idx,
+	};
+	int err;
+
+	err = cli_prepare(&param, OP_NET_KEY_STATUS, addr);
+	if (err) {
+		return err;
+	}
+
+	bt_mesh_model_msg_init(&msg, OP_NET_KEY_UPDATE);
+	net_buf_simple_add_le16(&msg, key_net_idx);
+	net_buf_simple_add_mem(&msg, net_key, 16);
+
+	err = bt_mesh_model_send(cli->model, &ctx, &msg, NULL, NULL);
+	if (err) {
+		BT_ERR("model_send() failed (err %d)", err);
+		bt_mesh_msg_ack_ctx_clear(&cli->ack_ctx);
+		return err;
+	}
+
+	if (!status) {
+		bt_mesh_msg_ack_ctx_clear(&cli->ack_ctx);
+		return 0;
+	}
+
+	return bt_mesh_msg_ack_ctx_wait(&cli->ack_ctx, K_MSEC(msg_timeout));
+}
+
 int bt_mesh_cfg_net_key_get(uint16_t net_idx, uint16_t addr, uint16_t *keys,
 			     size_t *key_cnt)
 {
@@ -1175,6 +1415,48 @@ int bt_mesh_cfg_app_key_add(uint16_t net_idx, uint16_t addr, uint16_t key_net_id
 	}
 
 	bt_mesh_model_msg_init(&msg, OP_APP_KEY_ADD);
+	key_idx_pack(&msg, key_net_idx, key_app_idx);
+	net_buf_simple_add_mem(&msg, app_key, 16);
+
+	err = bt_mesh_model_send(cli->model, &ctx, &msg, NULL, NULL);
+	if (err) {
+		BT_ERR("model_send() failed (err %d)", err);
+		bt_mesh_msg_ack_ctx_clear(&cli->ack_ctx);
+		return err;
+	}
+
+	if (!status) {
+		bt_mesh_msg_ack_ctx_clear(&cli->ack_ctx);
+		return 0;
+	}
+
+	return bt_mesh_msg_ack_ctx_wait(&cli->ack_ctx, K_MSEC(msg_timeout));
+}
+
+int bt_mesh_cfg_app_key_update(uint16_t net_idx, uint16_t addr,
+			       uint16_t key_net_idx, uint16_t key_app_idx,
+			       const uint8_t app_key[16], uint8_t *status)
+{
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_APP_KEY_UPDATE, 19);
+	struct bt_mesh_msg_ctx ctx = {
+		.net_idx = net_idx,
+		.app_idx = BT_MESH_KEY_DEV_REMOTE,
+		.addr = addr,
+		.send_ttl = BT_MESH_TTL_DEFAULT,
+	};
+	struct app_key_param param = {
+		.status = status,
+		.net_idx = key_net_idx,
+		.app_idx = key_app_idx,
+	};
+	int err;
+
+	err = cli_prepare(&param, OP_APP_KEY_STATUS, addr);
+	if (err) {
+		return err;
+	}
+
+	bt_mesh_model_msg_init(&msg, OP_APP_KEY_UPDATE);
 	key_idx_pack(&msg, key_net_idx, key_app_idx);
 	net_buf_simple_add_mem(&msg, app_key, 16);
 
@@ -1593,6 +1875,49 @@ int bt_mesh_cfg_mod_sub_del(uint16_t net_idx, uint16_t addr, uint16_t elem_addr,
 		       mod_id, CID_NVAL, status);
 }
 
+int bt_mesh_cfg_mod_sub_del_all(uint16_t net_idx, uint16_t addr,
+				uint16_t elem_addr, uint16_t mod_id,
+				uint8_t *status)
+{
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_MOD_SUB_DEL_ALL, 6);
+	struct bt_mesh_msg_ctx ctx = {
+		.net_idx = net_idx,
+		.app_idx = BT_MESH_KEY_DEV_REMOTE,
+		.addr = addr,
+		.send_ttl = BT_MESH_TTL_DEFAULT,
+	};
+	struct mod_sub_param param = {
+		.status = status,
+		.elem_addr = elem_addr,
+		.mod_id = mod_id,
+		.cid = CID_NVAL,
+	};
+	int err;
+
+	err = cli_prepare(&param, OP_MOD_SUB_STATUS, addr);
+	if (err) {
+		return err;
+	}
+
+	bt_mesh_model_msg_init(&msg, OP_MOD_SUB_DEL_ALL);
+	net_buf_simple_add_le16(&msg, elem_addr);
+	net_buf_simple_add_le16(&msg, mod_id);
+
+	err = bt_mesh_model_send(cli->model, &ctx, &msg, NULL, NULL);
+	if (err) {
+		BT_ERR("model_send() failed (err %d)", err);
+		bt_mesh_msg_ack_ctx_clear(&cli->ack_ctx);
+		return err;
+	}
+
+	if (!status) {
+		bt_mesh_msg_ack_ctx_clear(&cli->ack_ctx);
+		return 0;
+	}
+
+	return bt_mesh_msg_ack_ctx_wait(&cli->ack_ctx, K_MSEC(msg_timeout));
+}
+
 int bt_mesh_cfg_mod_sub_del_vnd(uint16_t net_idx, uint16_t addr, uint16_t elem_addr,
 				uint16_t sub_addr, uint16_t mod_id, uint16_t cid,
 				uint8_t *status)
@@ -1886,23 +2211,85 @@ static int mod_pub_set(uint16_t net_idx, uint16_t addr, uint16_t elem_addr,
 	return bt_mesh_msg_ack_ctx_wait(&cli->ack_ctx, K_MSEC(msg_timeout));
 }
 
+static int mod_pub_va_set(uint16_t net_idx, uint16_t addr, uint16_t elem_addr,
+			  uint16_t mod_id, uint16_t cid,
+			  struct bt_mesh_cfg_mod_pub *pub, uint8_t *status)
+{
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_MOD_PUB_VA_SET, 27);
+	struct bt_mesh_msg_ctx ctx = {
+		.net_idx = net_idx,
+		.app_idx = BT_MESH_KEY_DEV_REMOTE,
+		.addr = addr,
+		.send_ttl = BT_MESH_TTL_DEFAULT,
+	};
+	struct mod_pub_param param = {
+		.mod_id = mod_id,
+		.cid = cid,
+		.elem_addr = elem_addr,
+		.status = status,
+		.pub = pub,
+	};
+	int err;
+
+	err = cli_prepare(&param, OP_MOD_PUB_STATUS, addr);
+	if (err) {
+		return err;
+	}
+	BT_DBG("app_idx 0x%04x", pub->app_idx);
+	bt_mesh_model_msg_init(&msg, OP_MOD_PUB_VA_SET);
+
+	net_buf_simple_add_le16(&msg, elem_addr);
+	net_buf_simple_add_mem(&msg, pub->uuid, 16);
+	net_buf_simple_add_le16(&msg, (pub->app_idx | (pub->cred_flag << 12)));
+	net_buf_simple_add_u8(&msg, pub->ttl);
+	net_buf_simple_add_u8(&msg, pub->period);
+	net_buf_simple_add_u8(&msg, pub->transmit);
+
+	if (cid != CID_NVAL) {
+		net_buf_simple_add_le16(&msg, cid);
+	}
+
+	net_buf_simple_add_le16(&msg, mod_id);
+
+	err = bt_mesh_model_send(cli->model, &ctx, &msg, NULL, NULL);
+	if (err) {
+		BT_ERR("model_send() failed (err %d)", err);
+		bt_mesh_msg_ack_ctx_clear(&cli->ack_ctx);
+		return err;
+	}
+
+	if (!status) {
+		bt_mesh_msg_ack_ctx_clear(&cli->ack_ctx);
+		return 0;
+	}
+
+	return bt_mesh_msg_ack_ctx_wait(&cli->ack_ctx, K_MSEC(msg_timeout));
+}
+
 int bt_mesh_cfg_mod_pub_set(uint16_t net_idx, uint16_t addr, uint16_t elem_addr,
 			    uint16_t mod_id, struct bt_mesh_cfg_mod_pub *pub,
 			    uint8_t *status)
 {
-	return mod_pub_set(net_idx, addr, elem_addr, mod_id, CID_NVAL,
-			   pub, status);
+	if (pub->uuid) {
+		return mod_pub_va_set(net_idx, addr, elem_addr, mod_id, CID_NVAL, pub, status);
+	} else {
+		return mod_pub_set(net_idx, addr, elem_addr, mod_id, CID_NVAL, pub, status);
+	}
 }
 
 int bt_mesh_cfg_mod_pub_set_vnd(uint16_t net_idx, uint16_t addr, uint16_t elem_addr,
-				uint16_t mod_id, uint16_t cid,
-				struct bt_mesh_cfg_mod_pub *pub, uint8_t *status)
+				uint16_t mod_id, uint16_t cid, struct bt_mesh_cfg_mod_pub *pub,
+				uint8_t *status)
 {
 	if (cid == CID_NVAL) {
 		return -EINVAL;
 	}
 
-	return mod_pub_set(net_idx, addr, elem_addr, mod_id, cid, pub, status);
+	if (pub->uuid) {
+		return mod_pub_va_set(net_idx, addr, elem_addr, mod_id, cid, pub, status);
+	} else {
+		return mod_pub_set(net_idx, addr, elem_addr, mod_id, cid, pub, status);
+	}
 }
 
 int bt_mesh_cfg_hb_sub_set(uint16_t net_idx, uint16_t addr,
@@ -2060,6 +2447,123 @@ int bt_mesh_cfg_hb_pub_get(uint16_t net_idx, uint16_t addr,
 	if (!status) {
 		bt_mesh_msg_ack_ctx_clear(&cli->ack_ctx);
 		return 0;
+	}
+
+	return bt_mesh_msg_ack_ctx_wait(&cli->ack_ctx, K_MSEC(msg_timeout));
+}
+
+int bt_mesh_cfg_node_identity_set(uint16_t net_idx, uint16_t addr,
+				  uint16_t key_net_idx, uint8_t new_identity,
+				  uint8_t *status, uint8_t *identity)
+{
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_NODE_IDENTITY_SET, 4);
+	struct bt_mesh_msg_ctx ctx = {
+		.net_idx = net_idx,
+		.app_idx = BT_MESH_KEY_DEV_REMOTE,
+		.addr = addr,
+		.send_ttl = BT_MESH_TTL_DEFAULT,
+	};
+	struct node_idt_param param = {
+		.status = status,
+		.net_idx = key_net_idx,
+		.identity = identity,
+	};
+	int err;
+
+	err = cli_prepare(&param, OP_NODE_IDENTITY_STATUS, addr);
+	if (err) {
+		return err;
+	}
+
+	bt_mesh_model_msg_init(&msg, OP_NODE_IDENTITY_SET);
+	net_buf_simple_add_le16(&msg, key_net_idx);
+	net_buf_simple_add_u8(&msg, new_identity);
+
+	err = bt_mesh_model_send(cli->model, &ctx, &msg, NULL, NULL);
+	if (err) {
+		BT_ERR("model_send() failed (err %d)", err);
+		bt_mesh_msg_ack_ctx_clear(&cli->ack_ctx);
+		return err;
+	}
+
+	if (!status) {
+		bt_mesh_msg_ack_ctx_clear(&cli->ack_ctx);
+		return 0;
+	}
+
+	return bt_mesh_msg_ack_ctx_wait(&cli->ack_ctx, K_MSEC(msg_timeout));
+}
+
+int bt_mesh_cfg_node_identity_get(uint16_t net_idx, uint16_t addr,
+				  uint16_t key_net_idx, uint8_t *status,
+				  uint8_t *identity)
+{
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_NODE_IDENTITY_GET, 2);
+	struct bt_mesh_msg_ctx ctx = {
+		.net_idx = net_idx,
+		.app_idx = BT_MESH_KEY_DEV_REMOTE,
+		.addr = addr,
+		.send_ttl = BT_MESH_TTL_DEFAULT,
+	};
+	struct node_idt_param param = {
+		.status = status,
+		.net_idx = key_net_idx,
+		.identity = identity,
+	};
+	int err;
+
+	err = cli_prepare(&param, OP_NODE_IDENTITY_STATUS, addr);
+	if (err) {
+		return err;
+	}
+
+	bt_mesh_model_msg_init(&msg, OP_NODE_IDENTITY_GET);
+	net_buf_simple_add_le16(&msg, key_net_idx);
+
+	err = bt_mesh_model_send(cli->model, &ctx, &msg, NULL, NULL);
+	if (err) {
+		BT_ERR("model_send() failed (err %d)", err);
+		bt_mesh_msg_ack_ctx_clear(&cli->ack_ctx);
+		return err;
+	}
+
+	if (!status) {
+		bt_mesh_msg_ack_ctx_clear(&cli->ack_ctx);
+		return 0;
+	}
+
+	return bt_mesh_msg_ack_ctx_wait(&cli->ack_ctx, K_MSEC(msg_timeout));
+}
+
+int bt_mesh_cfg_lpn_timeout_get(uint16_t net_idx, uint16_t addr,
+				uint16_t unicast_addr, int32_t *polltimeout)
+{
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_LPN_TIMEOUT_GET, 2);
+	struct bt_mesh_msg_ctx ctx = {
+		.net_idx = net_idx,
+		.app_idx = BT_MESH_KEY_DEV_REMOTE,
+		.addr = addr,
+		.send_ttl = BT_MESH_TTL_DEFAULT,
+	};
+	struct lpn_timeout_param param = {
+		.unicast_addr = unicast_addr,
+		.polltimeout = polltimeout,
+	};
+	int err;
+
+	err = cli_prepare(&param, OP_LPN_TIMEOUT_STATUS, addr);
+	if (err) {
+		return err;
+	}
+
+	bt_mesh_model_msg_init(&msg, OP_LPN_TIMEOUT_GET);
+	net_buf_simple_add_le16(&msg, unicast_addr);
+
+	err = bt_mesh_model_send(cli->model, &ctx, &msg, NULL, NULL);
+	if (err) {
+		BT_ERR("model_send() failed (err %d)", err);
+		bt_mesh_msg_ack_ctx_clear(&cli->ack_ctx);
+		return err;
 	}
 
 	return bt_mesh_msg_ack_ctx_wait(&cli->ack_ctx, K_MSEC(msg_timeout));
