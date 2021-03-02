@@ -104,7 +104,7 @@ struct mb_rtu_context {
 	/* RTU timeout (maximum inter-frame delay) */
 	uint32_t rtu_timeout;
 	/* Pointer to user server callbacks */
-	struct mbs_rtu_user_callbacks *mbs_user_cb;
+	struct modbus_user_callbacks *mbs_user_cb;
 	/* Interface state */
 	atomic_t state;
 	/* Pointer to current position in buffer */

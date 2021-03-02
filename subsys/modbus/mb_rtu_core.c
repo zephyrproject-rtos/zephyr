@@ -664,10 +664,10 @@ static struct mb_rtu_context *mb_cfg_iface(const uint8_t iface,
 	return ctx;
 }
 
-int mb_rtu_cfg_server(const uint8_t iface, const uint8_t node_addr,
-		      const uint32_t baud, const enum uart_config_parity parity,
-		      struct mbs_rtu_user_callbacks *const cb,
-		      const bool ascii_mode)
+int modbus_init_server(const uint8_t iface, const uint8_t node_addr,
+		       const uint32_t baud, const enum uart_config_parity parity,
+		       struct modbus_user_callbacks *const cb,
+		       const bool ascii_mode)
 {
 	struct mb_rtu_context *ctx;
 
@@ -693,7 +693,7 @@ int mb_rtu_cfg_server(const uint8_t iface, const uint8_t node_addr,
 	return 0;
 }
 
-int mb_rtu_iface_get_by_name(const char *iface_name)
+int modbus_iface_get_by_name(const char *iface_name)
 {
 	for (int i = 0; i < ARRAY_SIZE(mb_ctx_tbl); i++) {
 		if (strcmp(iface_name, mb_ctx_tbl[i].iface_name) == 0) {
@@ -704,10 +704,10 @@ int mb_rtu_iface_get_by_name(const char *iface_name)
 	return -ENODEV;
 }
 
-int mb_rtu_cfg_client(const uint8_t iface,
-		      const uint32_t baud, const enum uart_config_parity parity,
-		      const uint32_t rx_timeout,
-		      const bool ascii_mode)
+int modbus_init_client(const uint8_t iface,
+		       const uint32_t baud, const enum uart_config_parity parity,
+		       const uint32_t rx_timeout,
+		       const bool ascii_mode)
 {
 	struct mb_rtu_context *ctx;
 
@@ -726,7 +726,7 @@ int mb_rtu_cfg_client(const uint8_t iface,
 	return 0;
 }
 
-int mb_rtu_disable_iface(const uint8_t iface)
+int modbus_disable(const uint8_t iface)
 {
 	struct mb_rtu_context *ctx;
 

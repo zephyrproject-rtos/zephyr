@@ -93,7 +93,7 @@ static int holding_reg_wr(uint16_t addr, uint16_t reg)
 	return 0;
 }
 
-static struct mbs_rtu_user_callbacks mbs_cbs = {
+static struct modbus_user_callbacks mbs_cbs = {
 	.coil_rd = coil_rd,
 	.coil_wr = coil_wr,
 	.holding_reg_rd = holding_reg_rd,
@@ -106,15 +106,15 @@ static int init_modbus_server(void)
 	const char iface_name[] = {DT_PROP(DT_INST(0, zephyr_modbus_serial), label)};
 	int iface;
 
-	iface = mb_rtu_iface_get_by_name(iface_name);
+	iface = modbus_iface_get_by_name(iface_name);
 
 	if (iface < 0) {
 		LOG_ERR("Failed to get iface index for %s", iface_name);
 		return iface;
 	}
 
-	return mb_rtu_cfg_server(iface, 1, mb_rtu_br, UART_CFG_PARITY_NONE,
-				 &mbs_cbs, false);
+	return modbus_init_server(iface, 1, mb_rtu_br, UART_CFG_PARITY_NONE,
+				  &mbs_cbs, false);
 }
 
 void main(void)
