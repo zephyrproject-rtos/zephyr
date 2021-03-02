@@ -19,17 +19,17 @@
  *      Version 2.0 available at www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef ZEPHYR_INCLUDE_MODBUS_RTU_INTERNAL_H_
-#define ZEPHYR_INCLUDE_MODBUS_RTU_INTERNAL_H_
+#ifndef ZEPHYR_INCLUDE_MODBUS_INTERNAL_H_
+#define ZEPHYR_INCLUDE_MODBUS_INTERNAL_H_
 
 #include <zephyr.h>
 #include <drivers/gpio.h>
-#include <modbus/modbus_rtu.h>
+#include <modbus/modbus.h>
 
-#ifdef CONFIG_MODBUS_RTU_FP_EXTENSIONS
-#define MODBUS_RTU_FP_ADDR			5000
+#ifdef CONFIG_MODBUS_FP_EXTENSIONS
+#define MODBUS_FP_EXTENSIONS_ADDR		5000
 #else
-#define MODBUS_RTU_FP_ADDR			UINT16_MAX
+#define MODBUS_FP_EXTENSIONS_ADDR		UINT16_MAX
 #endif
 
 #define MODBUS_RTU_MTU				256
@@ -75,7 +75,7 @@ struct mb_rtu_frame {
 	uint16_t length;
 	uint8_t addr;
 	uint8_t fc;
-	uint8_t data[CONFIG_MODBUS_RTU_BUFFER_SIZE - 4];
+	uint8_t data[CONFIG_MODBUS_BUFFER_SIZE - 4];
 	uint16_t crc;
 };
 
@@ -86,9 +86,9 @@ struct mb_rtu_gpio_config {
 	gpio_dt_flags_t flags;
 };
 
-#define MB_RTU_STATE_CONFIGURED		0
+#define MODBUS_STATE_CONFIGURED		0
 
-struct mb_rtu_context {
+struct modbus_context {
 	/* Interface name */
 	const char *iface_name;
 	/* UART device name */
@@ -132,7 +132,7 @@ struct mb_rtu_context {
 	/* Records error from frame reception, e.g. CRC error */
 	uint16_t rx_frame_err;
 
-#ifdef CONFIG_MODBUS_RTU_FC08_DIAGNOSTIC
+#ifdef CONFIG_MODBUS_FC08_DIAGNOSTIC
 	uint16_t mbs_msg_ctr;
 	uint16_t mbs_crc_err_ctr;
 	uint16_t mbs_except_ctr;
@@ -142,15 +142,15 @@ struct mb_rtu_context {
 	/* Node address */
 	uint8_t node_addr;
 	/* Storage of received characters or characters to send */
-	uint8_t uart_buf[CONFIG_MODBUS_RTU_BUFFER_SIZE];
+	uint8_t uart_buf[CONFIG_MODBUS_BUFFER_SIZE];
 
 };
 
-struct mb_rtu_context *mb_get_context(const uint8_t iface);
-int mb_rx_frame(struct mb_rtu_context *ctx);
-void mb_tx_frame(struct mb_rtu_context *ctx);
+struct modbus_context *mb_get_context(const uint8_t iface);
+int mb_rx_frame(struct modbus_context *ctx);
+void mb_tx_frame(struct modbus_context *ctx);
 
-bool mbs_rx_handler(struct mb_rtu_context *ctx);
-void mbs_reset_statistics(struct mb_rtu_context *pch);
+bool mbs_rx_handler(struct modbus_context *ctx);
+void mbs_reset_statistics(struct modbus_context *pch);
 
-#endif /* ZEPHYR_INCLUDE_MODBUS_RTU_INTERNAL_H_ */
+#endif /* ZEPHYR_INCLUDE_MODBUS_INTERNAL_H_ */

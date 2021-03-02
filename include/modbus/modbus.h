@@ -26,8 +26,8 @@
  * @{
  */
 
-#ifndef ZEPHYR_INCLUDE_MODBUS_RTU_H_
-#define ZEPHYR_INCLUDE_MODBUS_RTU_H_
+#ifndef ZEPHYR_INCLUDE_MODBUS_H_
+#define ZEPHYR_INCLUDE_MODBUS_H_
 
 #include <drivers/uart.h>
 
@@ -404,4 +404,4 @@ int modbus_disable(const uint8_t iface);
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_MODBUS_RTU_H_ */
+#endif /* ZEPHYR_INCLUDE_MODBUS_H_ */

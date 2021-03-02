@@ -20,12 +20,12 @@
  */
 
 #include <logging/log.h>
-LOG_MODULE_REGISTER(mb_rtu, CONFIG_MODBUS_RTU_LOG_LEVEL);
+LOG_MODULE_REGISTER(modbus, CONFIG_MODBUS_LOG_LEVEL);
 
 #include <kernel.h>
 #include <string.h>
 #include <sys/byteorder.h>
-#include <mb_rtu_internal.h>
+#include <modbus_internal.h>
 
 #define DT_DRV_COMPAT zephyr_modbus_serial
 
@@ -55,11 +55,11 @@ DT_INST_FOREACH_STATUS_OKAY(MB_RTU_DEFINE_GPIO_CFGS)
 		.re = MB_RTU_ASSIGN_GPIO_CFG(n, re_gpios),	\
 	},
 
-static struct mb_rtu_context mb_ctx_tbl[] = {
+static struct modbus_context mb_ctx_tbl[] = {
 	DT_INST_FOREACH_STATUS_OKAY(MODBUS_DT_GET_DEV)
 };
 
-static void mb_tx_enable(struct mb_rtu_context *ctx)
+static void mb_tx_enable(struct modbus_context *ctx)
 {
 	if (ctx->de != NULL) {
 		gpio_pin_set(ctx->de->dev, ctx->de->pin, 1);
@@ -68,7 +68,7 @@ static void mb_tx_enable(struct mb_rtu_context *ctx)
 	uart_irq_tx_enable(ctx->dev);
 }
 
-static void mb_tx_disable(struct mb_rtu_context *ctx)
+static void mb_tx_disable(struct modbus_context *ctx)
 {
 	uart_irq_tx_disable(ctx->dev);
 	if (ctx->de != NULL) {
@@ -76,7 +76,7 @@ static void mb_tx_disable(struct mb_rtu_context *ctx)
 	}
 }
 
-static void mb_rx_enable(struct mb_rtu_context *ctx)
+static void mb_rx_enable(struct modbus_context *ctx)
 {
 	if (ctx->re != NULL) {
 		gpio_pin_set(ctx->re->dev, ctx->re->pin, 1);
@@ -85,7 +85,7 @@ static void mb_rx_enable(struct mb_rtu_context *ctx)
 	uart_irq_rx_enable(ctx->dev);
 }
 
-static void mb_rx_disable(struct mb_rtu_context *ctx)
+static void mb_rx_disable(struct modbus_context *ctx)
 {
 	uart_irq_rx_disable(ctx->dev);
 	if (ctx->re != NULL) {
@@ -93,7 +93,7 @@ static void mb_rx_disable(struct mb_rtu_context *ctx)
 	}
 }
 
-#ifdef CONFIG_MODBUS_RTU_ASCII_MODE
+#ifdef CONFIG_MODBUS_ASCII_MODE
 /* The function calculates an 8-bit Longitudinal Redundancy Check. */
 static uint8_t mb_ascii_get_lrc(uint8_t *src, size_t length)
 {
@@ -118,7 +118,7 @@ static uint8_t mb_ascii_get_lrc(uint8_t *src, size_t length)
 }
 
 /* Parses and converts an ASCII mode frame into a Modbus RTU frame. */
-static int mb_rx_ascii_frame(struct mb_rtu_context *ctx)
+static int mb_rx_ascii_frame(struct modbus_context *ctx)
 {
 	uint8_t *pmsg;
 	uint8_t *prx_data;
@@ -203,7 +203,7 @@ static uint8_t *mb_bin2hex(uint8_t value, uint8_t *pbuf)
 	return pbuf;
 }
 
-static void mb_tx_ascii_frame(struct mb_rtu_context *ctx)
+static void mb_tx_ascii_frame(struct modbus_context *ctx)
 {
 	uint16_t tx_bytes = 0;
 	uint8_t lrc;
@@ -249,12 +249,12 @@ static void mb_tx_ascii_frame(struct mb_rtu_context *ctx)
 	mb_tx_enable(ctx);
 }
 #else
-static int mb_rx_ascii_frame(struct mb_rtu_context *ctx)
+static int mb_rx_ascii_frame(struct modbus_context *ctx)
 {
 	return 0;
 }
 
-static void mb_tx_ascii_frame(struct mb_rtu_context *ctx)
+static void mb_tx_ascii_frame(struct modbus_context *ctx)
 {
 }
 #endif
@@ -291,7 +291,7 @@ static uint16_t mb_rtu_crc16(uint8_t *src, size_t length)
 }
 
 /* Copy Modbus RTU frame and check if the CRC is valid. */
-static int mb_rx_rtu_frame(struct mb_rtu_context *ctx)
+static int mb_rx_rtu_frame(struct modbus_context *ctx)
 {
 	uint16_t calc_crc;
 	uint16_t crc_idx;
@@ -299,7 +299,7 @@ static int mb_rx_rtu_frame(struct mb_rtu_context *ctx)
 
 	/* Is the message long enough? */
 	if ((ctx->uart_buf_ctr < MODBUS_RTU_MIN_MSG_SIZE) ||
-	    (ctx->uart_buf_ctr > CONFIG_MODBUS_RTU_BUFFER_SIZE)) {
+	    (ctx->uart_buf_ctr > CONFIG_MODBUS_BUFFER_SIZE)) {
 		LOG_WRN("Frame length error");
 		return -EMSGSIZE;
 	}
@@ -327,7 +327,7 @@ static int mb_rx_rtu_frame(struct mb_rtu_context *ctx)
 	return 0;
 }
 
-static void mb_tx_rtu_frame(struct mb_rtu_context *ctx)
+static void mb_tx_rtu_frame(struct modbus_context *ctx)
 {
 	uint16_t tx_bytes = 0;
 	uint8_t *data_ptr;
@@ -354,9 +354,9 @@ static void mb_tx_rtu_frame(struct mb_rtu_context *ctx)
 	mb_tx_enable(ctx);
 }
 
-void mb_tx_frame(struct mb_rtu_context *ctx)
+void mb_tx_frame(struct modbus_context *ctx)
 {
-	if (IS_ENABLED(CONFIG_MODBUS_RTU_ASCII_MODE) &&
+	if (IS_ENABLED(CONFIG_MODBUS_ASCII_MODE) &&
 	    (ctx->ascii_mode == true)) {
 		mb_tx_ascii_frame(ctx);
 	} else {
@@ -368,10 +368,10 @@ void mb_tx_frame(struct mb_rtu_context *ctx)
  * A byte has been received from a serial port. We just store it in the buffer
  * for processing when a complete packet has been received.
  */
-static void mb_cb_handler_rx(struct mb_rtu_context *ctx)
+static void mb_cb_handler_rx(struct modbus_context *ctx)
 {
 	if ((ctx->ascii_mode == true) &&
-	    IS_ENABLED(CONFIG_MODBUS_RTU_ASCII_MODE)) {
+	    IS_ENABLED(CONFIG_MODBUS_ASCII_MODE)) {
 		uint8_t c;
 
 		if (uart_fifo_read(ctx->dev, &c, 1) != 1) {
@@ -385,7 +385,7 @@ static void mb_cb_handler_rx(struct mb_rtu_context *ctx)
 			ctx->uart_buf_ctr = 0;
 		}
 
-		if (ctx->uart_buf_ctr < CONFIG_MODBUS_RTU_BUFFER_SIZE) {
+		if (ctx->uart_buf_ctr < CONFIG_MODBUS_BUFFER_SIZE) {
 			*ctx->uart_buf_ptr++ = c;
 			ctx->uart_buf_ctr++;
 		}
@@ -402,7 +402,7 @@ static void mb_cb_handler_rx(struct mb_rtu_context *ctx)
 			      K_USEC(ctx->rtu_timeout), K_NO_WAIT);
 
 		n = uart_fifo_read(ctx->dev, ctx->uart_buf_ptr,
-				   (CONFIG_MODBUS_RTU_BUFFER_SIZE -
+				   (CONFIG_MODBUS_BUFFER_SIZE -
 				    ctx->uart_buf_ctr));
 
 		ctx->uart_buf_ptr += n;
@@ -410,7 +410,7 @@ static void mb_cb_handler_rx(struct mb_rtu_context *ctx)
 	}
 }
 
-static void mb_cb_handler_tx(struct mb_rtu_context *ctx)
+static void mb_cb_handler_tx(struct modbus_context *ctx)
 {
 	int n;
 
@@ -429,7 +429,7 @@ static void mb_cb_handler_tx(struct mb_rtu_context *ctx)
 
 static void mb_uart_cb_handler(const struct device *dev, void *app_data)
 {
-	struct mb_rtu_context *ctx = (struct mb_rtu_context *)app_data;
+	struct modbus_context *ctx = (struct modbus_context *)app_data;
 
 	if (ctx == NULL) {
 		LOG_ERR("Modbus hardware is not properly initialized");
@@ -450,8 +450,8 @@ static void mb_uart_cb_handler(const struct device *dev, void *app_data)
 
 static void mb_rx_handler(struct k_work *item)
 {
-	struct mb_rtu_context *ctx =
-		CONTAINER_OF(item, struct mb_rtu_context, server_work);
+	struct modbus_context *ctx =
+		CONTAINER_OF(item, struct modbus_context, server_work);
 
 	if (ctx == NULL) {
 		LOG_ERR("Where is my pointer?");
@@ -460,7 +460,7 @@ static void mb_rx_handler(struct k_work *item)
 
 	mb_rx_disable(ctx);
 
-	if (IS_ENABLED(CONFIG_MODBUS_RTU_ASCII_MODE) &&
+	if (IS_ENABLED(CONFIG_MODBUS_ASCII_MODE) &&
 	    (ctx->ascii_mode == true)) {
 		ctx->rx_frame_err = mb_rx_ascii_frame(ctx);
 	} else {
@@ -472,7 +472,7 @@ static void mb_rx_handler(struct k_work *item)
 
 	if (ctx->client == true) {
 		k_sem_give(&ctx->client_wait_sem);
-	} else if (IS_ENABLED(CONFIG_MODBUS_RTU_SERVER)) {
+	} else if (IS_ENABLED(CONFIG_MODBUS_SERVER)) {
 		if (mbs_rx_handler(ctx) == false) {
 			/* Server does not send response, re-enable RX */
 			mb_rx_enable(ctx);
@@ -483,9 +483,9 @@ static void mb_rx_handler(struct k_work *item)
 /* This function is called when the RTU framing timer expires. */
 static void mb_rtu_tmr_handler(struct k_timer *t_id)
 {
-	struct mb_rtu_context *ctx;
+	struct modbus_context *ctx;
 
-	ctx = (struct mb_rtu_context *)k_timer_user_data_get(t_id);
+	ctx = (struct modbus_context *)k_timer_user_data_get(t_id);
 
 	if (ctx == NULL) {
 		LOG_ERR("Failed to get Modbus context");
@@ -495,7 +495,7 @@ static void mb_rtu_tmr_handler(struct k_timer *t_id)
 	k_work_submit(&ctx->server_work);
 }
 
-static int mb_configure_uart(struct mb_rtu_context *ctx,
+static int mb_configure_uart(struct modbus_context *ctx,
 			     uint32_t baudrate,
 			     enum uart_config_parity parity)
 {
@@ -553,9 +553,9 @@ static int mb_configure_uart(struct mb_rtu_context *ctx,
 	return 0;
 }
 
-struct mb_rtu_context *mb_get_context(const uint8_t iface)
+struct modbus_context *mb_get_context(const uint8_t iface)
 {
-	struct mb_rtu_context *ctx;
+	struct modbus_context *ctx;
 
 	if (iface >= ARRAY_SIZE(mb_ctx_tbl)) {
 		LOG_ERR("Interface %u not available", iface);
@@ -564,7 +564,7 @@ struct mb_rtu_context *mb_get_context(const uint8_t iface)
 
 	ctx = &mb_ctx_tbl[iface];
 
-	if (!atomic_test_bit(&ctx->state, MB_RTU_STATE_CONFIGURED)) {
+	if (!atomic_test_bit(&ctx->state, MODBUS_STATE_CONFIGURED)) {
 		LOG_ERR("Interface not configured");
 		return NULL;
 	}
@@ -572,7 +572,7 @@ struct mb_rtu_context *mb_get_context(const uint8_t iface)
 	return ctx;
 }
 
-static int mb_configure_gpio(struct mb_rtu_context *ctx)
+static int mb_configure_gpio(struct modbus_context *ctx)
 {
 	if (ctx->de != NULL) {
 		ctx->de->dev = device_get_binding(ctx->de->name);
@@ -602,7 +602,7 @@ static int mb_configure_gpio(struct mb_rtu_context *ctx)
 	return 0;
 }
 
-static struct mb_rtu_context *mb_cfg_iface(const uint8_t iface,
+static struct modbus_context *mb_cfg_iface(const uint8_t iface,
 					   const uint8_t node_addr,
 					   const uint32_t baud,
 					   const enum uart_config_parity parity,
@@ -610,7 +610,7 @@ static struct mb_rtu_context *mb_cfg_iface(const uint8_t iface,
 					   const bool client,
 					   const bool ascii_mode)
 {
-	struct mb_rtu_context *ctx;
+	struct modbus_context *ctx;
 
 	if (iface >= ARRAY_SIZE(mb_ctx_tbl)) {
 		LOG_ERR("Interface %u not available", iface);
@@ -619,13 +619,13 @@ static struct mb_rtu_context *mb_cfg_iface(const uint8_t iface,
 
 	ctx = &mb_ctx_tbl[iface];
 
-	if (atomic_test_and_set_bit(&ctx->state, MB_RTU_STATE_CONFIGURED)) {
+	if (atomic_test_and_set_bit(&ctx->state, MODBUS_STATE_CONFIGURED)) {
 		LOG_ERR("Interface allready used");
 		return NULL;
 	}
 
 	if ((client == true) &&
-	    !IS_ENABLED(CONFIG_MODBUS_RTU_CLIENT)) {
+	    !IS_ENABLED(CONFIG_MODBUS_CLIENT)) {
 		LOG_ERR("Modbus client support is not enabled");
 		ctx->client = false;
 		return NULL;
@@ -644,7 +644,7 @@ static struct mb_rtu_context *mb_cfg_iface(const uint8_t iface,
 	k_sem_init(&ctx->client_wait_sem, 0, 1);
 	k_work_init(&ctx->server_work, mb_rx_handler);
 
-	if (IS_ENABLED(CONFIG_MODBUS_RTU_FC08_DIAGNOSTIC)) {
+	if (IS_ENABLED(CONFIG_MODBUS_FC08_DIAGNOSTIC)) {
 		mbs_reset_statistics(ctx);
 	}
 
@@ -669,9 +669,9 @@ int modbus_init_server(const uint8_t iface, const uint8_t node_addr,
 		       struct modbus_user_callbacks *const cb,
 		       const bool ascii_mode)
 {
-	struct mb_rtu_context *ctx;
+	struct modbus_context *ctx;
 
-	if (!IS_ENABLED(CONFIG_MODBUS_RTU_SERVER)) {
+	if (!IS_ENABLED(CONFIG_MODBUS_SERVER)) {
 		LOG_ERR("Modbus server support is not enabled");
 		return -ENOTSUP;
 	}
@@ -709,9 +709,9 @@ int modbus_init_client(const uint8_t iface,
 		       const uint32_t rx_timeout,
 		       const bool ascii_mode)
 {
-	struct mb_rtu_context *ctx;
+	struct modbus_context *ctx;
 
-	if (!IS_ENABLED(CONFIG_MODBUS_RTU_CLIENT)) {
+	if (!IS_ENABLED(CONFIG_MODBUS_CLIENT)) {
 		LOG_ERR("Modbus client support is not enabled");
 		return -ENOTSUP;
 	}
@@ -728,7 +728,7 @@ int modbus_init_client(const uint8_t iface,
 
 int modbus_disable(const uint8_t iface)
 {
-	struct mb_rtu_context *ctx;
+	struct modbus_context *ctx;
 
 	if (iface >= ARRAY_SIZE(mb_ctx_tbl)) {
 		LOG_ERR("Interface %u not available", iface);
@@ -745,7 +745,7 @@ int modbus_disable(const uint8_t iface)
 	ctx->node_addr = 0;
 	ctx->ascii_mode = false;
 	ctx->mbs_user_cb = NULL;
-	atomic_clear_bit(&ctx->state, MB_RTU_STATE_CONFIGURED);
+	atomic_clear_bit(&ctx->state, MODBUS_STATE_CONFIGURED);
 
 	LOG_INF("Disable Modbus interface");
 

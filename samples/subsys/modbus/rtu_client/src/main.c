@@ -7,7 +7,7 @@
 #include <zephyr.h>
 #include <sys/util.h>
 #include <drivers/gpio.h>
-#include <modbus/modbus_rtu.h>
+#include <modbus/modbus.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(mbc_sample, LOG_LEVEL_INF);
