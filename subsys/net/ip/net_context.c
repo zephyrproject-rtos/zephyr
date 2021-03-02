@@ -1462,6 +1462,20 @@ static int context_sendto(struct net_context *context,
 		if (net_ipv6_is_addr_unspecified(&addr6->sin6_addr)) {
 			return -EDESTADDRREQ;
 		}
+
+		/* If application has not yet set the destination address
+		 * i.e., by not calling connect(), then set the interface
+		 * here so that the packet gets sent to the correct network
+		 * interface. This issue can be seen if there are multiple
+		 * network interfaces and we are trying to send data to
+		 * second or later network interface.
+		 */
+		if (addr6 && net_ipv6_is_addr_unspecified(
+				&net_sin6(&context->remote)->sin6_addr)) {
+			iface = net_if_ipv6_select_src_iface(&addr6->sin6_addr);
+			net_context_set_iface(context, iface);
+		}
+
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
 		   net_context_get_family(context) == AF_INET) {
 		const struct sockaddr_in *addr4 =
@@ -1488,6 +1502,19 @@ static int context_sendto(struct net_context *context,
 		if (!addr4->sin_addr.s_addr) {
 			return -EDESTADDRREQ;
 		}
+
+		/* If application has not yet set the destination address
+		 * i.e., by not calling connect(), then set the interface
+		 * here so that the packet gets sent to the correct network
+		 * interface. This issue can be seen if there are multiple
+		 * network interfaces and we are trying to send data to
+		 * second or later network interface.
+		 */
+		if (addr4 && net_sin(&context->remote)->sin_addr.s_addr == 0U) {
+			iface = net_if_ipv4_select_src_iface(&addr4->sin_addr);
+			net_context_set_iface(context, iface);
+		}
+
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
 		   net_context_get_family(context) == AF_PACKET) {
 		struct sockaddr_ll *ll_addr = (struct sockaddr_ll *)dst_addr;
