@@ -29,6 +29,11 @@ function Execute(){
 #Give a default value to BOARD if it does not have one yet:
 BOARD="${BOARD:-nrf52_bsim}"
 
+#Give a default value to PRJ_CONF_x if it does not have one yet:
+PRJ_CONF="${PRJ_CONF:-prj_conf}"
+PRJ_CONF_1="${PRJ_CONF_1:-${PRJ_CONF}}"
+PRJ_CONF_2="${PRJ_CONF_2:-${PRJ_CONF}}"
+
 cd ${EDTT_PATH}
 
 Execute ./src/edttool.py -s=${SIMULATION_ID} -d=0 --transport bsim \
@@ -40,11 +45,11 @@ Execute ./bs_device_EDTT_bridge -s=${SIMULATION_ID} -d=0 -AutoTerminate \
   -RxWait=2.5e3 -D=2 -dev0=1 -dev1=2 -v=${VERBOSITY_LEVEL_BRIDGE}
 
 Execute \
-  ./bs_${BOARD}_tests_bluetooth_bsim_bt_edtt_ble_test_app_hci_test_app_prj_conf\
+  ./bs_${BOARD}_tests_bluetooth_bsim_bt_edtt_ble_test_app_hci_test_app_${PRJ_CONF_1}\
   -s=${SIMULATION_ID} -d=1 -v=${VERBOSITY_LEVEL_DEV1} -RealEncryption=1
 
 Execute \
-  ./bs_${BOARD}_tests_bluetooth_bsim_bt_edtt_ble_test_app_hci_test_app_prj_conf\
+  ./bs_${BOARD}_tests_bluetooth_bsim_bt_edtt_ble_test_app_hci_test_app_${PRJ_CONF_2}\
   -s=${SIMULATION_ID} -d=2 -v=${VERBOSITY_LEVEL_DEV2} -RealEncryption=1
 
 Execute ./bs_2G4_phy_v1 -v=${VERBOSITY_LEVEL_PHY} -s=${SIMULATION_ID} \
