@@ -71,6 +71,8 @@ import argparse
 import ctypes
 import os
 import struct
+import re
+import textwrap
 
 from distutils.version import LooseVersion
 
@@ -91,6 +93,7 @@ def bit(pos):
 FLAG_P = bit(0)
 FLAG_RW = bit(1)
 FLAG_US = bit(2)
+FLAG_SZ = bit(7)
 FLAG_G = bit(8)
 FLAG_XD = bit(63)
 
@@ -126,11 +129,11 @@ def error(text):
     sys.exit(os.path.basename(sys.argv[0]) + ": " + text)
 
 
-def align_check(base, size):
+def align_check(base, size, scope=4096):
     """Make sure base and size are page-aligned"""
-    if (base % 4096) != 0:
+    if (base % scope) != 0:
         error("unaligned base address %x" % base)
-    if (size % 4096) != 0:
+    if (size % scope) != 0:
         error("Unaligned region size 0x%x for base %x" % (size, base))
 
 
@@ -152,6 +155,9 @@ def dump_flags(flags):
 
     if flags & FLAG_XD:
         ret += "XD "
+
+    if flags & FLAG_SZ:
+        ret += "SZ "
 
     return ret.strip()
 
@@ -283,7 +289,7 @@ class Pdpt(MMUTable):
     addr_mask = 0x7FFFFFFFFFFFF000
     type_code = 'Q'
     num_entries = 512
-    supported_flags = INT_FLAGS
+    supported_flags = INT_FLAGS | FLAG_SZ
 
 class PdptPAE(Pdpt):
     """Page directory pointer table for PAE"""
@@ -295,7 +301,7 @@ class Pd(MMUTable):
     addr_mask = 0xFFFFF000
     type_code = 'I'
     num_entries = 1024
-    supported_flags = INT_FLAGS
+    supported_flags = INT_FLAGS | FLAG_SZ
 
 class PdXd(Pd):
     """Page directory for either PAE or IA-32e"""
@@ -354,6 +360,42 @@ class PtableSet():
         some kind of leaf page table class (Pt or PtXd)"""
         raise NotImplementedError()
 
+    def is_mapped(self, virt_addr, level):
+        """
+        Return True if virt_addr has already been mapped.
+
+        level_from_last == 0 only searches leaf level page tables.
+        level_from_last == 1 searches both page directories and page tables.
+
+        """
+        table = self.toplevel
+        num_levels = len(self.levels) + level + 1
+        has_mapping = False
+
+        # Create and link up intermediate tables if necessary
+        for depth in range(0, num_levels):
+            # Create child table if needed
+            if table.has_entry(virt_addr):
+                if depth == num_levels:
+                    has_mapping = True
+                else:
+                    table = self.tables[table.lookup(virt_addr)]
+
+            if has_mapping:
+                # pylint doesn't like break in the above if-block
+                break
+
+        return has_mapping
+
+    def is_region_mapped(self, virt_base, size, level=PT_LEVEL):
+        """Find out if a region has been mapped"""
+        align_check(virt_base, size)
+        for vaddr in range(virt_base, virt_base + size, 4096):
+            if self.is_mapped(vaddr, level):
+                return True
+
+        return False
+
     def new_child_table(self, table, virt_addr, depth):
         """Create a new child table"""
         new_table_addr = self.get_new_mmutable_addr()
@@ -365,13 +407,15 @@ class PtableSet():
 
         return new_table
 
-    def map_page(self, virt_addr, phys_addr, flags, reserve):
+    def map_page(self, virt_addr, phys_addr, flags, reserve, level=PT_LEVEL):
         """Map a virtual address to a physical address in the page tables,
         with provided access flags"""
         table = self.toplevel
 
+        num_levels = len(self.levels) + level + 1
+
         # Create and link up intermediate tables if necessary
-        for depth in range(1, len(self.levels)):
+        for depth in range(1, num_levels):
             # Create child table if needed
             if not table.has_entry(virt_addr):
                 table = self.new_child_table(table, virt_addr, depth)
@@ -382,7 +426,7 @@ class PtableSet():
         if not reserve:
             table.map(virt_addr, phys_addr, flags)
 
-    def reserve(self, virt_base, size):
+    def reserve(self, virt_base, size, to_level=PT_LEVEL):
         """Reserve page table space with already aligned virt_base and size"""
         debug("Reserving paging structures 0x%x (0x%x)" %
               (virt_base, size))
@@ -397,9 +441,9 @@ class PtableSet():
                   (virt_base, scope))
 
         for addr in range(virt_base, virt_base + size, scope):
-            self.map_page(addr, 0, 0, True)
+            self.map_page(addr, 0, 0, True, to_level)
 
-    def reserve_unaligned(self, virt_base, size):
+    def reserve_unaligned(self, virt_base, size, to_level=PT_LEVEL):
         """Reserve page table space with virt_base and size alignment"""
         # How much memory is covered by leaf page table
         scope = 1 << self.levels[PD_LEVEL].addr_shift
@@ -408,26 +452,29 @@ class PtableSet():
         mem_end = round_up(virt_base + size, scope)
         mem_size = mem_end - mem_start
 
-        self.reserve(mem_start, mem_size)
+        self.reserve(mem_start, mem_size, to_level)
 
-    def map(self, phys_base, virt_base, size, flags):
+    def map(self, phys_base, virt_base, size, flags, level=PT_LEVEL, double_map=True):
         """Map an address range in the page tables provided access flags.
 
         If virt_base is None, identity mapping using phys_base is done.
         If virt_base is not the same address as phys_base, the same memory
-        will be double mapped to the virt_base address.
+        will be double mapped to the virt_base address if double_map == True;
+        or normal mapping to virt_base if double_map == False.
         """
         skip_vm_map = virt_base is None or virt_base == phys_base
 
         if virt_base is None:
             virt_base = phys_base
 
+        scope = 1 << self.levels[level].addr_shift
+
         debug("Mapping 0x%x (0x%x) to 0x%x: %s" %
                 (phys_base, size, virt_base, dump_flags(flags)))
 
-        align_check(phys_base, size)
-        align_check(virt_base, size)
-        for paddr in range(phys_base, phys_base + size, 4096):
+        align_check(phys_base, size, scope)
+        align_check(virt_base, size, scope)
+        for paddr in range(phys_base, phys_base + size, scope):
             if paddr == 0 and skip_vm_map:
                 # Never map the NULL page
                 #
@@ -438,9 +485,9 @@ class PtableSet():
 
             vaddr = virt_base + (paddr - phys_base)
 
-            self.map_page(vaddr, paddr, flags, False)
+            self.map_page(vaddr, paddr, flags, False, level)
 
-        if skip_vm_map:
+        if skip_vm_map or not double_map:
             return
 
         # Find how much VM a top-level entry covers
@@ -476,7 +523,7 @@ class PtableSet():
             # Link to the entry for the physical mapping (i.e. mirroring).
             self.toplevel.map(cur_phys, table_link_phys, INT_FLAGS)
 
-    def set_region_perms(self, name, flags):
+    def set_region_perms(self, name, flags, level=PT_LEVEL):
         """Set access permissions for a named region that is already mapped
 
         The bounds of the region will be looked up in the symbol table
@@ -490,16 +537,20 @@ class PtableSet():
 
         debug("change flags for %s at 0x%x (0x%x): %s" %
               (name, base, size, dump_flags(flags)))
-        align_check(base, size)
+
+        num_levels = len(self.levels) + level + 1
+        scope = 1 << self.levels[level].addr_shift
+
+        align_check(base, size, scope)
 
         try:
-            for addr in range(base, base + size, 4096):
+            for addr in range(base, base + size, scope):
                 # Never map the NULL page
                 if addr == 0:
                     continue
 
                 table = self.toplevel
-                for _ in range(1, len(self.levels)):
+                for _ in range(1, num_levels):
                     table = self.tables[table.lookup(addr)]
                 table.set_perms(addr, flags)
         except KeyError:
@@ -556,6 +607,21 @@ def parse_args():
                         help="path to prebuilt kernel ELF binary")
     parser.add_argument("-o", "--output", required=True,
                         help="output file")
+    parser.add_argument("--map", action='append',
+                        help=textwrap.dedent('''\
+                            Map extra memory:
+                            <physical address>,<size>[,<flags:LUWX>[,<virtual adderss>]]
+                            where flags can be empty or combination of:
+                                L - Large page (2MB or 4MB),
+                                U - Userspace accessible,
+                                W - Writable,
+                                X - Executable.
+                            Default is
+                                small (4KB) page,
+                                supervisor only,
+                                read only,
+                                and execution disabled.
+                            '''))
     parser.add_argument("-v", "--verbose", action="count",
                         help="Print extra debugging information")
     args = parser.parse_args()
@@ -586,6 +652,71 @@ def find_symbol(obj, name):
                     return sym
 
     return None
+
+
+def map_extra_regions(pt):
+    """Map extra regions specified in command line"""
+    # Extract command line arguments
+    mappings = []
+
+    for entry in args.map:
+        elements = entry.split(',')
+
+        if len(elements) < 2:
+            error("Not enough arguments for --map %s" % entry)
+
+        one_map = {}
+
+        one_map['cmdline'] = entry
+        one_map['phys'] = int(elements[0], 16)
+        one_map['size']= int(elements[1], 16)
+        one_map['large_page'] = False
+
+        flags = FLAG_P | ENTRY_XD
+        if len(elements) > 2:
+            map_flags = elements[2]
+
+            # Check for allowed flags
+            if not bool(re.match('^[LUWX]*$', map_flags)):
+                error("Unrecognized flags: %s" % map_flags)
+
+            flags = FLAG_P | ENTRY_XD
+            if 'W' in map_flags:
+                flags |= ENTRY_RW
+            if 'X' in map_flags:
+                flags &= ~ENTRY_XD
+            if 'U' in map_flags:
+                flags |= ENTRY_US
+            if 'L' in map_flags:
+                flags |=  FLAG_SZ
+                one_map['large_page'] = True
+
+        one_map['flags'] = flags
+
+        if len(elements) > 3:
+            one_map['virt'] = int(elements[3], 16)
+        else:
+            one_map['virt'] = one_map['phys']
+
+        mappings.append(one_map)
+
+    # Map the regions
+    for one_map in mappings:
+        phys = one_map['phys']
+        size = one_map['size']
+        flags = one_map['flags']
+        virt = one_map['virt']
+        level = PD_LEVEL if one_map['large_page'] else PT_LEVEL
+
+        # Check if addresses have already been mapped.
+        # Error out if so as they could override kernel mappings.
+        if pt.is_region_mapped(virt, size, level):
+            error(("Region 0x%x (%d) already been mapped "
+                   "for --map %s" % (virt, size, one_map['cmdline'])))
+
+        # Reserve space in page table, and map the region
+        pt.reserve_unaligned(virt, size, level)
+        pt.map(phys, virt, size, flags, level, double_map=False)
 
 
 def main():
@@ -679,6 +810,10 @@ def main():
         # Additionally identity-map all ROM as read-only
         pt.map(syms["CONFIG_FLASH_BASE_ADDRESS"], None,
                syms["CONFIG_FLASH_SIZE"] * 1024, map_flags)
+
+    # Process extra mapping requests
+    if args.map:
+        map_extra_regions(pt)
 
     # Adjust mapped region permissions if configured
     if is_perm_regions:
