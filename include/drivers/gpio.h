@@ -305,6 +305,59 @@ typedef uint8_t gpio_dt_flags_t;
 typedef uint32_t gpio_flags_t;
 
 /**
+ * @brief Provides a type to hold GPIO information specified in devicetree
+ *
+ * This type is sufficient to hold a GPIO device pointer, pin number,
+ * and the subset of the flags used to control GPIO configuration
+ * which may be given in devicetree.
+ */
+struct gpio_dt_spec {
+	const struct device *port;
+	gpio_pin_t pin;
+	gpio_dt_flags_t dt_flags;
+};
+
+/**
+ * @brief Static initializer for a @p gpio_dt_spec
+ *
+ * This returns a static initializer for a @p gpio_dt_spec structure
+ * given a devicetree node identifier and a property specifying a
+ * GPIO.
+ *
+ * Example devicetree fragment:
+ *
+ *	n: node {
+ *		foo-gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;
+ *	}
+ *
+ * Example usage:
+ *
+ *	const struct gpio_dt_spec spec = GPIO_DT_SPEC_GET(DT_NODELABEL(n),
+ *							  foo_gpios);
+ *	// Initializes 'spec' to:
+ *	// {
+ *	//         .port = DEVICE_DT_GET(DT_NODELABEL(gpio1)),
+ *	//         .pin = 2,
+ *	//         .dt_flags = GPIO_ACTIVE_LOW
+ *	// }
+ *
+ * The 'gpio' field must still be checked for readiness, e.g. using
+ * device_is_ready(). It is an error to use this macro unless the node
+ * exists, has the given property, and that property specifies a GPIO
+ * controller, pin number, and flags as shown above.
+ *
+ * @param node_id devicetree node identifier
+ * @param prop lowercase-and-underscores property name
+ * @return static initializer for a struct gpio_dt_spec for the property
+ */
+#define GPIO_DT_SPEC_GET(node_id, prop)					\
+	{								\
+		.port = DEVICE_DT_GET(DT_GPIO_CTLR(node_id, prop)),	\
+		.pin = DT_GPIO_PIN(node_id, prop),			\
+		.dt_flags = DT_GPIO_FLAGS(node_id, prop),		\
+	}
+
+/**
  * @brief Maximum number of pins that are supported by `gpio_port_pins_t`.
  */
 #define GPIO_MAX_PINS_PER_PORT (sizeof(gpio_port_pins_t) * __CHAR_BIT__)
@@ -523,6 +576,25 @@ static inline int z_impl_gpio_pin_interrupt_configure(const struct device *port,
 }
 
 /**
+ * @brief Configure pin interrupts from a @p gpio_dt_spec.
+ *
+ * This is equivalent to:
+ *
+ *     gpio_pin_interrupt_configure(spec->port, spec->pin, flags);
+ *
+ * The <tt>spec->dt_flags</tt> value is not used.
+ *
+ * @param spec GPIO specification from devicetree
+ * @param flags interrupt configuration flags
+ * @retval a value from gpio_pin_interrupt_configure()
+ */
+static inline int gpio_pin_interrupt_configure_dt(const struct gpio_dt_spec *spec,
+						  gpio_flags_t flags)
+{
+	return gpio_pin_interrupt_configure(spec->port, spec->pin, flags);
+}
+
+/**
  * @brief Configure a single pin.
  *
  * @param port Pointer to device structure for the driver instance.
@@ -598,6 +670,25 @@ static inline int gpio_pin_configure(const struct device *port,
 	}
 
 	return ret;
+}
+
+/**
+ * @brief Configure a single pin from a @p gpio_dt_spec and some extra flags.
+ *
+ * This is equivalent to:
+ *
+ *     gpio_pin_configure(spec->port, spec->pin, spec->dt_flags | extra_flags);
+ *
+ * @param spec GPIO specification from devicetree
+ * @param extra_flags additional flags
+ * @retval a value from gpio_pin_configure()
+ */
+static inline int gpio_pin_configure_dt(const struct gpio_dt_spec *spec,
+					gpio_flags_t extra_flags)
+{
+	return gpio_pin_configure(spec->port,
+				  spec->pin,
+				  spec->dt_flags | extra_flags);
 }
 
 /**
