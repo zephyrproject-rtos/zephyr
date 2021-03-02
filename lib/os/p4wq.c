@@ -80,12 +80,13 @@ static FUNC_NORETURN void p4wq_loop(void *p0, void *p1, void *p2)
 		if (r) {
 			struct k_p4wq_work *w
 				= CONTAINER_OF(r, struct k_p4wq_work, rbnode);
+			struct k_thread *const current = _current;
 
 			rb_remove(&queue->queue, r);
-			w->thread = _current;
+			w->thread = current;
 			sys_dlist_append(&queue->active, &w->dlnode);
-			set_prio(_current, w);
-			thread_clear_requeued(_current);
+			set_prio(current, w);
+			thread_clear_requeued(current);
 
 			k_spin_unlock(&queue->lock, k);
 			w->handler(w);
@@ -94,7 +95,7 @@ static FUNC_NORETURN void p4wq_loop(void *p0, void *p1, void *p2)
 			/* Remove from the active list only if it
 			 * wasn't resubmitted already
 			 */
-			if (!thread_was_requeued(_current)) {
+			if (!thread_was_requeued(current)) {
 				sys_dlist_remove(&w->dlnode);
 				w->thread = NULL;
 			}
@@ -147,6 +148,7 @@ SYS_INIT(static_init, SMP, 99);
 
 void k_p4wq_submit(struct k_p4wq *queue, struct k_p4wq_work *item)
 {
+	struct k_thread *const current = _current;
 	k_spinlock_key_t k = k_spin_lock(&queue->lock);
 
 	/* Input is a delta time from now (to match
@@ -156,9 +158,9 @@ void k_p4wq_submit(struct k_p4wq *queue, struct k_p4wq_work *item)
 	item->deadline += k_cycle_get_32();
 
 	/* Resubmission from within handler?  Remove from active list */
-	if (item->thread == _current) {
+	if (item->thread == current) {
 		sys_dlist_remove(&item->dlnode);
-		thread_set_requeued(_current);
+		thread_set_requeued(current);
 		item->thread = NULL;
 	}
 	__ASSERT_NO_MSG(item->thread == NULL);
