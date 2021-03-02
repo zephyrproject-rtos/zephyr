@@ -252,11 +252,16 @@ static const struct paging_level paging_levels[] = {
 #define NUM_TABLE_PAGES	(NUM_PT + NUM_PD)
 #endif /* CONFIG_X86_64 */
 
+#define INITIAL_PTABLE_PAGES \
+	(NUM_TABLE_PAGES + CONFIG_X86_EXTRA_PAGE_TABLE_PAGES)
+
 #ifdef CONFIG_X86_PAE
 /* Toplevel PDPT wasn't included as it is not a page in size */
-#define INITIAL_PTABLE_SIZE ((NUM_TABLE_PAGES * CONFIG_MMU_PAGE_SIZE) + 0x20)
+#define INITIAL_PTABLE_SIZE \
+	((INITIAL_PTABLE_PAGES * CONFIG_MMU_PAGE_SIZE) + 0x20)
 #else
-#define INITIAL_PTABLE_SIZE (NUM_TABLE_PAGES * CONFIG_MMU_PAGE_SIZE)
+#define INITIAL_PTABLE_SIZE \
+	(INITIAL_PTABLE_PAGES * CONFIG_MMU_PAGE_SIZE)
 #endif
 
 /* "dummy" pagetables for the first-phase build. The real page tables
@@ -1396,7 +1401,7 @@ void arch_mem_domain_thread_remove(struct k_thread *thread)
 /*
  * Pool of free memory pages for copying page tables, as needed.
  */
-#define PTABLE_COPY_SIZE	(NUM_TABLE_PAGES * CONFIG_MMU_PAGE_SIZE)
+#define PTABLE_COPY_SIZE	(INITIAL_PTABLE_PAGES * CONFIG_MMU_PAGE_SIZE)
 
 static uint8_t __noinit
 	page_pool[PTABLE_COPY_SIZE * CONFIG_X86_MAX_ADDITIONAL_MEM_DOMAINS]
