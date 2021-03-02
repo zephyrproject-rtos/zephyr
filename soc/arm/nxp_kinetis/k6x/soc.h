@@ -24,8 +24,12 @@
 #elif defined(CONFIG_SOC_MK66F18)
 #define SYSCLK_DEFAULT_IOSC_HZ MHZ(180)
 #endif
+
+#define CLOCK_DIVIDER(prop) \
+	DT_PROP_OR(DT_INST(0, nxp_kinetis_sim), prop, 1) - 1
+
 #define BUSCLK_DEFAULT_IOSC_HZ (SYSCLK_DEFAULT_IOSC_HZ / \
-				CONFIG_K6X_BUS_CLOCK_DIVIDER)
+				CLOCK_DIVIDER(bus_clk_divider))
 
 /* address bases */
 

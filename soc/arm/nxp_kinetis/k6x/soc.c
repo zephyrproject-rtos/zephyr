@@ -59,10 +59,10 @@ static const mcg_pll_config_t pll0Config = {
 static const sim_clock_config_t simConfig = {
 	.pllFllSel = DT_PROP(DT_INST(0, nxp_kinetis_sim), pllfll_select),
 	.er32kSrc = DT_PROP(DT_INST(0, nxp_kinetis_sim), er32k_select),
-	.clkdiv1 = SIM_CLKDIV1_OUTDIV1(CONFIG_K6X_CORE_CLOCK_DIVIDER - 1) |
-		   SIM_CLKDIV1_OUTDIV2(CONFIG_K6X_BUS_CLOCK_DIVIDER - 1) |
-		   SIM_CLKDIV1_OUTDIV3(CONFIG_K6X_FLEXBUS_CLOCK_DIVIDER - 1) |
-		   SIM_CLKDIV1_OUTDIV4(CONFIG_K6X_FLASH_CLOCK_DIVIDER - 1),
+	.clkdiv1 = SIM_CLKDIV1_OUTDIV1(CLOCK_DIVIDER(core_clk_divider)) |
+		   SIM_CLKDIV1_OUTDIV2(CLOCK_DIVIDER(bus_clk_divider)) |
+		   SIM_CLKDIV1_OUTDIV3(CLOCK_DIVIDER(flexbus_clk_divider)) |
+		   SIM_CLKDIV1_OUTDIV4(CLOCK_DIVIDER(flash_clk_divider)),
 };
 
 /**
