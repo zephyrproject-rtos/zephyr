@@ -945,10 +945,7 @@ static inline void disable(uint16_t handle)
 					conn, &conn->lll);
 	LL_ASSERT(err == 0 || err == -EALREADY);
 
-	/*
-	 * EGON TODO: use proper variable when available
 	conn->lll.link_tx_free = NULL;
-	*/
 }
 
 static void conn_cleanup(struct ll_conn *conn, uint8_t reason)

@@ -10,15 +10,12 @@
  * and compared to their counterpart in ull_conn.c
  * to verify that any bug-fixes and new features there are included here
  */
-
-#include <stddef.h>
 #include <zephyr.h>
 #include <soc.h>
-#include <bluetooth/bluetooth.h>
+#include <bluetooth/hci.h>
 #include <sys/byteorder.h>
 
 #include "hal/cpu.h"
-#include "hal/ecb.h"
 #include "hal/ccm.h"
 #include "hal/ticker.h"
 
@@ -29,53 +26,56 @@
 #include "util/mayfly.h"
 
 #include "ticker/ticker.h"
-#include "ull_tx_queue.h"
 
 #include "pdu.h"
+#include "ll.h"
+#include "ll_feat.h"
+#include "ll_settings.h"
+
 #include "lll.h"
+#include "lll_vendor.h"
+#include "lll_clock.h"
+#include "lll_adv.h"
+#include "lll_scan.h"
 #include "lll_conn.h"
 #include "lll_filter.h"
-#include "lll_adv.h"
+
+
+#include "ull_tx_queue.h"
+
 #include "ull_adv_types.h"
-#include "ull_filter.h"
+#include "ull_scan_types.h"
 #include "ull_conn_types.h"
+#include "ull_filter.h"
+
 #include "ull_internal.h"
 #include "ull_sched_internal.h"
 #include "ull_slave_internal.h"
+#include "ull_chan_internal.h"
+#include "ull_scan_internal.h"
+#include "ull_conn_llcp_internal.h"
 #include "ull_master_internal.h"
 
-#include "ull_chan_internal.h"
-
-#include "lll_clock.h"
-#include "lll_scan.h"
-#include "ull_scan_types.h"
-#include "ull_scan_internal.h"
-
-#include "ull_conn_llcp_internal.h"
 #include "ull_llcp.h"
-
-#include "ll.h"
-#include "bluetooth/hci.h"
-#include "ll_feat.h"
 #include "ull_llcp_features.h"
-#include "ll_settings.h"
+
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_ull_llcp_hci
 #include "common/log.h"
-#include <soc.h>
 #include "hal/debug.h"
 
 #if defined(CONFIG_BT_CTLR_USER_EXT)
 #include "ull_vendor.h"
 #endif /* CONFIG_BT_CTLR_USER_EXT */
 
+static void tx_demux(void *param);
 
-#if defined(CONFIG_BT_PERIPHERAL)
-static void ticker_update_latency_cancel_op_cb(uint32_t ticker_status,
-					       void *params);
-#endif /* CONFIG_BT_PERIPHERAL */
 static inline void conn_release(struct ll_scan_set *scan);
+
+#if defined(CONFIG_BT_CTLR_FORCE_MD_AUTO)
+static uint8_t force_md_cnt_calc(struct lll_conn *lll_conn, uint32_t tx_rate);
+#endif /* CONFIG_BT_CTLR_FORCE_MD_AUTO */
 
 uint8_t ll_version_ind_send(uint16_t handle)
 {
@@ -452,6 +452,7 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	struct lll_conn *conn_lll;
 	struct ll_scan_set *scan;
 	uint32_t conn_interval_us;
+	uint32_t ready_delay_us;
 	struct lll_scan *lll;
 	struct ll_conn *conn;
 	memq_link_t *link;
@@ -562,16 +563,16 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 #if defined(CONFIG_BT_CTLR_PHY)
-	conn_lll->phy_tx = BIT(0);
+	conn_lll->phy_tx = PHY_1M;
 	conn_lll->phy_flags = 0;
-	conn_lll->phy_tx_time = BIT(0);
-	conn_lll->phy_rx = BIT(0);
+	conn_lll->phy_tx_time = PHY_1M;
+	conn_lll->phy_rx = PHY_1M;
 #endif /* CONFIG_BT_CTLR_PHY */
 
 #if defined(CONFIG_BT_CTLR_CONN_RSSI)
-	conn_lll->rssi_latest = 0x7F;
+	conn_lll->rssi_latest = BT_HCI_LE_RSSI_NOT_AVAILABLE;
 #if defined(CONFIG_BT_CTLR_CONN_RSSI_EVENT)
-	conn_lll->rssi_reported = 0x7F;
+	conn_lll->rssi_reported = BT_HCI_LE_RSSI_NOT_AVAILABLE;
 	conn_lll->rssi_sample_count = 0;
 #endif /* CONFIG_BT_CTLR_CONN_RSSI_EVENT */
 #endif /* CONFIG_BT_CTLR_CONN_RSSI */
@@ -598,7 +599,7 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 
 	conn->connect_expire = 6U;
 	conn->supervision_expire = 0U;
-	conn_interval_us = (uint32_t)interval * 1250U;
+	conn_interval_us = (uint32_t)interval * CONN_INT_UNIT_US;
 	conn->supervision_reload = RADIO_CONN_EVENTS(timeout * 10000U,
 							 conn_interval_us);
 
@@ -621,19 +622,16 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 #endif /* CONFIG_BT_CTLR_LE_PING */
 
 	conn->llcp.fex.valid = 0U;
+	conn->master.terminate_ack = 0U;
 
-	/* Reset terminate reason */
+	conn->llcp.fex.features_used = LL_FEAT;
+	conn->llcp.fex.features_peer = 0;
 	conn->terminate.reason = 0U;
 
 	/* NOTE: use allocated link for generating dedicated
 	 * terminate ind rx node
 	 */
 	conn->terminate.node_rx.hdr.link = link;
-
-	conn->llcp.fex.features_used = LL_FEAT;
-	conn->llcp.fex.features_peer = 0;
-
-	conn->default_tx_octets = ull_conn_default_tx_octets_get();
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	conn_lll->enc_rx = conn_lll->enc_tx = 0U;
@@ -651,14 +649,31 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 #if defined(CONFIG_BT_CTLR_PHY)
 	conn->phy_pref_tx = ull_conn_default_phy_tx_get();
 	conn->phy_pref_rx = ull_conn_default_phy_rx_get();
-	conn->phy_pref_flags = 0U;
 #endif /* CONFIG_BT_CTLR_PHY */
+
+#if defined(CONFIG_BT_CTLR_PHY)
+	ready_delay_us = lll_radio_tx_ready_delay_get(conn_lll->phy_tx,
+						      conn_lll->phy_flags);
+#else
+	ready_delay_us = lll_radio_tx_ready_delay_get(0, 0);
+#endif
 
 	/* Re-initialize the Tx Q */
 	ull_tx_q_init(&conn->tx_q);
 
 	/* Re-initialize the control procedure data structures */
 	ll_conn_init(conn);
+
+	/* TODO: active_to_start feature port */
+	conn->evt.ticks_active_to_start = 0U;
+	conn->evt.ticks_xtal_to_start =
+		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
+	conn->evt.ticks_preempt_to_start =
+		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
+	conn->evt.ticks_slot =
+		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
+				       ready_delay_us +
+				       328 + EVENT_IFS_US + 328);
 
 	lll->conn = conn_lll;
 
@@ -702,7 +717,6 @@ conn_is_valid:
 
 	return ull_scan_enable(scan);
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
-
 }
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
@@ -722,7 +736,7 @@ uint8_t ll_connect_enable(uint8_t is_coded_included)
 	}
 
 	if (!is_coded_included ||
-	    (scan->lll.phy & BIT(0))) {
+	    (scan->lll.phy & PHY_1M)) {
 		err = ull_scan_enable(scan);
 		if (err) {
 			return err;
@@ -761,30 +775,42 @@ uint8_t ll_connect_disable(void **rx)
 	status = ull_scan_disable(0, scan);
 	if (!status) {
 		struct ll_conn *conn = (void *)HDR_LLL2EVT(conn_lll);
-		struct node_rx_ftr *ftr;
-		struct node_rx_pdu *cc;
+		struct node_rx_pdu *node_rx;
+		struct node_rx_cc *cc;
 		memq_link_t *link;
 
-		cc = (void *)&conn->terminate.node_rx;
-		link = cc->hdr.link;
+		node_rx = (void *)&conn->terminate.node_rx;
+		link = node_rx->hdr.link;
 		LL_ASSERT(link);
 
 		/* free the memq link early, as caller could overwrite it */
 		ll_rx_link_release(link);
 
-		cc->hdr.type = NODE_RX_TYPE_CONNECTION;
-		cc->hdr.handle = 0xffff;
-		*((uint8_t *)cc->pdu) = BT_HCI_ERR_UNKNOWN_CONN_ID;
+		node_rx->hdr.type = NODE_RX_TYPE_CONNECTION;
+		node_rx->hdr.handle = 0xffff;
 
-		ftr = &(cc->hdr.rx_ftr);
-		ftr->param = &scan->lll;
+		/* NOTE: struct llcp_terminate.node_rx has uint8_t member
+		 *       following the struct node_rx_hdr to store the reason.
+		 */
+		cc = (void *)node_rx->pdu;
+		cc->status = BT_HCI_ERR_UNKNOWN_CONN_ID;
 
-		*rx = cc;
+		/* NOTE: Since NODE_RX_TYPE_CONNECTION is also generated from
+		 *       LLL context for other cases, pass LLL context as
+		 *       parameter.
+		 */
+		node_rx->hdr.rx_ftr.param = &scan->lll;
+
+		*rx = node_rx;
 	}
 
 	return status;
 }
 
+/* FIXME: Refactor out this interface so that its usable by extended
+ * advertising channel classification, and also master role connections can
+ * perform channel map update control procedure.
+ */
 uint8_t ll_chm_update(uint8_t const *const chm)
 {
 	uint16_t handle;
@@ -840,7 +866,11 @@ void ll_tx_mem_release(void *tx)
 
 int ll_tx_mem_enqueue(uint16_t handle, void *tx)
 {
-
+#if defined(CONFIG_BT_CTLR_THROUGHPUT)
+#define BT_CTLR_THROUGHPUT_PERIOD 1000000000UL
+	static uint32_t tx_rate;
+	static uint32_t tx_cnt;
+#endif /* CONFIG_BT_CTLR_THROUGHPUT */
 	struct lll_tx *lll_tx;
 	struct ll_conn *conn;
 	uint8_t idx;
@@ -860,39 +890,71 @@ int ll_tx_mem_enqueue(uint16_t handle, void *tx)
 
 	ull_conn_mfifo_enqueue_tx(idx);
 
-#if defined(CONFIG_BT_PERIPHERAL)
-	/* break slave latency */
-	if (conn->lll.role && conn->lll.latency_event &&
-	    !conn->slave.latency_cancel) {
-		uint32_t ticker_status;
+	if (ull_ref_get(&conn->ull)) {
+		static memq_link_t link;
+		static struct mayfly mfy = {0, 0, &link, NULL, tx_demux};
 
-		conn->slave.latency_cancel = 1U;
+#if defined(CONFIG_BT_CTLR_FORCE_MD_AUTO)
+		if (tx_cnt >= CONFIG_BT_CTLR_TX_BUFFERS) {
+			uint8_t previous, force_md_cnt;
 
-		ticker_status =
-			ticker_update(TICKER_INSTANCE_ID_CTLR,
-				      TICKER_USER_ID_THREAD,
-				      (TICKER_ID_CONN_BASE + handle),
-				      0, 0, 0, 0, 1, 0,
-				      ticker_update_latency_cancel_op_cb,
-				      (void *)conn);
-		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
-			  (ticker_status == TICKER_STATUS_BUSY));
+			force_md_cnt = force_md_cnt_calc(&conn->lll, tx_rate);
+			previous = lll_conn_force_md_cnt_set(force_md_cnt);
+			if (previous != force_md_cnt) {
+				BT_INFO("force_md_cnt: old= %u, new= %u.",
+					previous, force_md_cnt);
+			}
+		}
+#endif /* CONFIG_BT_CTLR_FORCE_MD_AUTO */
+
+		mfy.param = conn;
+
+		mayfly_enqueue(TICKER_USER_ID_THREAD, TICKER_USER_ID_ULL_HIGH,
+			       0, &mfy);
+
+#if defined(CONFIG_BT_CTLR_FORCE_MD_AUTO)
+	} else {
+		lll_conn_force_md_cnt_set(0U);
+#endif /* CONFIG_BT_CTLR_FORCE_MD_AUTO */
 	}
-#endif /* CONFIG_BT_PERIPHERAL */
+
+	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn->lll.role) {
+		ull_slave_latency_cancel(conn, handle);
+	}
+
+#if defined(CONFIG_BT_CTLR_THROUGHPUT)
+	static uint32_t last_cycle_stamp;
+	static uint32_t tx_len;
+	struct pdu_data *pdu;
+	uint32_t cycle_stamp;
+	uint64_t delta;
+
+	cycle_stamp = k_cycle_get_32();
+	delta = k_cyc_to_ns_floor64(cycle_stamp - last_cycle_stamp);
+	if (delta > BT_CTLR_THROUGHPUT_PERIOD) {
+		BT_INFO("incoming Tx: count= %u, len= %u, rate= %u bps.",
+			tx_cnt, tx_len, tx_rate);
+
+		last_cycle_stamp = cycle_stamp;
+		tx_cnt = 0U;
+		tx_len = 0U;
+	}
+
+	pdu = (void *)((struct node_tx *)tx)->pdu;
+	tx_len += pdu->len;
+	tx_rate = ((uint64_t)tx_len << 3) * BT_CTLR_THROUGHPUT_PERIOD / delta;
+	tx_cnt++;
+#endif /* CONFIG_BT_CTLR_THROUGHPUT */
+
 	return 0;
 }
 
-#if defined(CONFIG_BT_PERIPHERAL)
-static void ticker_update_latency_cancel_op_cb(uint32_t ticker_status,
-					       void *params)
+static void tx_demux(void *param)
 {
-	struct ll_conn *conn = params;
+	ull_conn_tx_demux(1);
 
-	LL_ASSERT(ticker_status == TICKER_STATUS_SUCCESS);
-
-	conn->slave.latency_cancel = 0U;
+	ull_conn_tx_lll_enqueue(param, 1);
 }
-#endif /* CONFIG_BT_PERIPHERAL */
 
 static inline void conn_release(struct ll_scan_set *scan)
 {
@@ -917,3 +979,48 @@ static inline void conn_release(struct ll_scan_set *scan)
 	ll_conn_release(conn);
 	scan->lll.conn = NULL;
 }
+
+#if defined(CONFIG_BT_CTLR_FORCE_MD_AUTO)
+static uint8_t force_md_cnt_calc(struct lll_conn *lll_conn, uint32_t tx_rate)
+{
+	uint32_t time_incoming, time_outgoing;
+	uint8_t force_md_cnt;
+	uint8_t mic_size;
+	uint8_t phy;
+
+#if defined(CONFIG_BT_CTLR_PHY)
+	phy = lll_conn->phy_tx;
+#else /* !CONFIG_BT_CTLR_PHY */
+	phy = PHY_1M;
+#endif /* !CONFIG_BT_CTLR_PHY */
+
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+	mic_size = PDU_MIC_SIZE * lll_conn->enc_tx;
+#else /* !CONFIG_BT_CTLR_LE_ENC */
+	mic_size = 0U;
+#endif /* !CONFIG_BT_CTLR_LE_ENC */
+
+	time_incoming = (LL_LENGTH_OCTETS_RX_MAX << 3) *
+			1000000UL / tx_rate;
+	time_outgoing = PKT_DC_US(LL_LENGTH_OCTETS_RX_MAX, mic_size, phy) +
+			PKT_DC_US(0U, 0U, phy) +
+			(EVENT_IFS_US << 1);
+
+	force_md_cnt = 0U;
+	if (time_incoming > time_outgoing) {
+		uint32_t delta;
+		uint32_t time_keep_alive;
+
+		delta = (time_incoming << 1) - time_outgoing;
+		time_keep_alive = (PKT_DC_US(0U, 0U, phy) + EVENT_IFS_US) << 1;
+		force_md_cnt = (delta + (time_keep_alive - 1)) /
+			       time_keep_alive;
+		BT_DBG("Time: incoming= %u, expected outgoing= %u, delta= %u, "
+		       "keepalive= %u, force_md_cnt = %u.",
+		       time_incoming, time_outgoing, delta, time_keep_alive,
+		       force_md_cnt);
+	}
+
+	return force_md_cnt;
+}
+#endif /* CONFIG_BT_CTLR_FORCE_MD_AUTO */
