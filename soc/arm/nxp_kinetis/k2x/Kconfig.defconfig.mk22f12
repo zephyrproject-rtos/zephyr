@@ -12,6 +12,10 @@ config ADC_MCUX_ADC16
 	default y
 	depends on ADC
 
+config DAC_MCUX_DAC
+	default y
+	depends on DAC
+
 if CLOCK_CONTROL
 
 config CLOCK_CONTROL_MCUX_MCG
