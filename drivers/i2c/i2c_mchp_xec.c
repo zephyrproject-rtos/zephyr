@@ -12,7 +12,7 @@
 #include <errno.h>
 #include <drivers/i2c.h>
 #include <logging/log.h>
-LOG_MODULE_REGISTER(i2c_mchp);
+LOG_MODULE_REGISTER(i2c_mchp, CONFIG_I2C_LOG_LEVEL);
 
 #define SPEED_100KHZ_BUS    0
 #define SPEED_400KHZ_BUS    1
