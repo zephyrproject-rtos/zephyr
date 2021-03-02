@@ -84,6 +84,8 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 	new_thread = z_swap_next_thread();
 
 	if (new_thread != old_thread) {
+		_cpu_t *const current_cpu = _current_cpu;
+
 #ifdef CONFIG_TIMESLICING
 		z_reset_time_slice();
 #endif
@@ -91,7 +93,7 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 		old_thread->swap_retval = -EAGAIN;
 
 #ifdef CONFIG_SMP
-		_current_cpu->swap_ok = 0;
+		current_cpu->swap_ok = 0;
 		new_thread->base.cpu = arch_curr_cpu()->id;
 
 		if (!is_spinlock) {
@@ -100,7 +102,7 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 #endif
 		z_thread_mark_switched_out();
 		wait_for_switch(new_thread);
-		_current_cpu->current = new_thread;
+		current_cpu->current = new_thread;
 
 #ifdef CONFIG_SPIN_VALIDATE
 		z_spin_lock_set_owner(&sched_spinlock);
