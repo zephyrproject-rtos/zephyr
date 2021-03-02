@@ -341,6 +341,26 @@
 			#io-channel-cells = <1>;
 		};
 
+		dac0: dac@4003f000 {
+			compatible = "nxp,kinetis-dac";
+			reg = <0x4003f000 0x1000>;
+			interrupts = <56 0>;
+			voltage-reference = <1>;
+			label = "DAC_0";
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
+		dac1: dac@40028000 {
+			compatible = "nxp,kinetis-dac";
+			reg = <0x40028000 0x1000>;
+			interrupts = <72 0>;
+			voltage-reference = <1>;
+			label = "DAC_1";
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
 		usbotg: usbd@40072000 {
 			compatible = "nxp,kinetis-usbd";
 			reg = <0x40072000 0x1000>;
