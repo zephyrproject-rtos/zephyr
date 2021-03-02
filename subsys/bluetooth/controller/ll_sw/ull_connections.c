@@ -162,9 +162,9 @@ void ull_conn_tx_mem_release(void *tx)
 	mem_release(tx, &mem_conn_tx.free);
 }
 
-uint8_t ull_conn_mfifo_get_tx(void *lll_tx)
+uint8_t ull_conn_mfifo_get_tx(void **lll_tx)
 {
-	return MFIFO_ENQUEUE_GET(conn_tx, (void **) &lll_tx);
+	return MFIFO_ENQUEUE_GET(conn_tx, lll_tx);
 }
 
 void ull_conn_mfifo_enqueue_tx(uint8_t idx)
@@ -874,6 +874,10 @@ static int init_reset(void)
 	/* Initialize conn pool. */
 	mem_init(mem_conn.pool, sizeof(struct ll_conn),
 		 sizeof(mem_conn.pool) / sizeof(struct ll_conn), &mem_conn.free);
+
+	/* Initialize tx pool. */
+	mem_init(mem_conn_tx.pool, CONN_TX_BUF_SIZE, CONFIG_BT_CTLR_TX_BUFFERS,
+		 &mem_conn_tx.free);
 
 	/* Initialize tx link pool. */
 	mem_init(mem_link_tx.pool, sizeof(memq_link_t),
