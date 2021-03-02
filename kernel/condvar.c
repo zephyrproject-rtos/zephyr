@@ -64,9 +64,9 @@ int z_impl_k_condvar_broadcast(struct k_condvar *condvar)
 	/* wake up any threads that are waiting to write */
 	while ((pending_thread = z_unpend_first_thread(&condvar->wait_q)) !=
 	       NULL) {
+		woken++;
 		arch_thread_return_value_set(pending_thread, 0);
 		z_ready_thread(pending_thread);
-		woken++;
 	}
 
 	z_reschedule(&lock, key);

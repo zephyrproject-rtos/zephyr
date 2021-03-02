@@ -41,9 +41,9 @@ int z_impl_k_futex_wake(struct k_futex *futex, bool wake_all)
 	do {
 		thread = z_unpend_first_thread(&futex_data->wait_q);
 		if (thread) {
-			z_ready_thread(thread);
-			arch_thread_return_value_set(thread, 0);
 			woken++;
+			arch_thread_return_value_set(thread, 0);
+			z_ready_thread(thread);
 		}
 	} while (thread && wake_all);
 

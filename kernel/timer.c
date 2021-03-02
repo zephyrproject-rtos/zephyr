@@ -82,9 +82,9 @@ void z_timer_expiration_handler(struct _timeout *t)
 	 */
 	z_unpend_thread_no_timeout(thread);
 
-	z_ready_thread(thread);
-
 	arch_thread_return_value_set(thread, 0);
+
+	z_ready_thread(thread);
 }
 
 
