@@ -121,23 +121,24 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 	int new_prio;
 	k_spinlock_key_t key;
 	bool resched = false;
+	struct k_thread *const current = _current;
 
 	__ASSERT(!arch_is_in_isr(), "mutexes cannot be used inside ISRs");
 
 	sys_trace_mutex_lock(mutex);
 	key = k_spin_lock(&lock);
 
-	if (likely((mutex->lock_count == 0U) || (mutex->owner == _current))) {
+	if (likely((mutex->lock_count == 0U) || (mutex->owner == current))) {
 
 		mutex->owner_orig_prio = (mutex->lock_count == 0U) ?
-					_current->base.prio :
+					current->base.prio :
 					mutex->owner_orig_prio;
 
 		mutex->lock_count++;
-		mutex->owner = _current;
+		mutex->owner = current;
 
 		LOG_DBG("%p took mutex %p, count: %d, orig prio: %d",
-			_current, mutex, mutex->lock_count,
+			current, mutex, mutex->lock_count,
 			mutex->owner_orig_prio);
 
 		k_spin_unlock(&lock, key);
@@ -152,7 +153,7 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 		return -EBUSY;
 	}
 
-	new_prio = new_prio_for_inheritance(_current->base.prio,
+	new_prio = new_prio_for_inheritance(current->base.prio,
 					    mutex->owner->base.prio);
 
 	LOG_DBG("adjusting prio up on mutex %p", mutex);
@@ -165,7 +166,7 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 
 	LOG_DBG("on mutex %p got_mutex value: %d", mutex, got_mutex);
 
-	LOG_DBG("%p got mutex %p (y/n): %c", _current, mutex,
+	LOG_DBG("%p got mutex %p (y/n): %c", current, mutex,
 		got_mutex ? 'y' : 'n');
 
 	if (got_mutex == 0) {
@@ -175,7 +176,7 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 
 	/* timed out */
 
-	LOG_DBG("%p timeout on mutex %p", _current, mutex);
+	LOG_DBG("%p timeout on mutex %p", current, mutex);
 
 	key = k_spin_lock(&lock);
 
