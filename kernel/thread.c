@@ -370,12 +370,13 @@ static inline int z_vrfy_k_thread_name_copy(k_tid_t thread,
 void z_check_stack_sentinel(void)
 {
 	uint32_t *stack;
+	struct k_thread *const current = _current;
 
-	if ((_current->base.thread_state & _THREAD_DUMMY) != 0) {
+	if ((current->base.thread_state & _THREAD_DUMMY) != 0) {
 		return;
 	}
 
-	stack = (uint32_t *)_current->stack_info.start;
+	stack = (uint32_t *)current->stack_info.start;
 	if (*stack != STACK_SENTINEL) {
 		/* Restore it so further checks don't trigger this same error */
 		*stack = STACK_SENTINEL;
@@ -537,6 +538,7 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 			 int prio, uint32_t options, const char *name)
 {
 	char *stack_ptr;
+	struct k_thread *const current = _current;
 
 	Z_ASSERT_VALID_PRIO(prio, entry);
 
@@ -610,7 +612,7 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 #endif
 #ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 	/* _current may be null if the dummy thread is not used */
-	if (!_current) {
+	if (!current) {
 		new_thread->resource_pool = NULL;
 		return stack_ptr;
 	}
@@ -619,13 +621,13 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	z_mem_domain_init_thread(new_thread);
 
 	if ((options & K_INHERIT_PERMS) != 0U) {
-		z_thread_perms_inherit(_current, new_thread);
+		z_thread_perms_inherit(current, new_thread);
 	}
 #endif
 #ifdef CONFIG_SCHED_DEADLINE
 	new_thread->base.prio_deadline = 0;
 #endif
-	new_thread->resource_pool = _current->resource_pool;
+	new_thread->resource_pool = current->resource_pool;
 	sys_trace_thread_create(new_thread);
 
 #ifdef CONFIG_THREAD_RUNTIME_STATS
@@ -810,25 +812,27 @@ void z_init_thread_base(struct _thread_base *thread_base, int priority,
 FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
 					    void *p1, void *p2, void *p3)
 {
-	_current->base.user_options |= K_USER;
+	struct k_thread *const current = _current;
+
+	current->base.user_options |= K_USER;
 	z_thread_essential_clear();
 #ifdef CONFIG_THREAD_MONITOR
-	_current->entry.pEntry = entry;
-	_current->entry.parameter1 = p1;
-	_current->entry.parameter2 = p2;
-	_current->entry.parameter3 = p3;
+	current->entry.pEntry = entry;
+	current->entry.parameter1 = p1;
+	current->entry.parameter2 = p2;
+	current->entry.parameter3 = p3;
 #endif
 #ifdef CONFIG_USERSPACE
-	__ASSERT(z_stack_is_user_capable(_current->stack_obj),
+	__ASSERT(z_stack_is_user_capable(current->stack_obj),
 		 "dropping to user mode with kernel-only stack object");
 #ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
-	memset(_current->userspace_local_data, 0,
+	memset(current->userspace_local_data, 0,
 	       sizeof(struct _thread_userspace_local_data));
 #endif
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
-	arch_tls_stack_setup(_current,
-			     (char *)(_current->stack_info.start +
-				      _current->stack_info.size));
+	arch_tls_stack_setup(current,
+			     (char *)(current->stack_info.start +
+				      current->stack_info.size));
 #endif
 	arch_user_mode_enter(entry, p1, p2, p3);
 #else
