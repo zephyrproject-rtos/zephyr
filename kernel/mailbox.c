@@ -387,9 +387,10 @@ int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg, void *buffer,
 	struct k_mbox_msg *tx_msg;
 	k_spinlock_key_t key;
 	int result;
+	struct k_thread *const current = _current;
 
 	/* save receiver id so it can be used during message matching */
-	rx_msg->tx_target_thread = _current;
+	rx_msg->tx_target_thread = current;
 
 	/* search mailbox's tx queue for a compatible sender */
 	key = k_spin_lock(&mbox->lock);
@@ -417,7 +418,7 @@ int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg, void *buffer,
 	}
 
 	/* wait until a matching sender appears or a timeout occurs */
-	_current->base.swap_data = rx_msg;
+	current->base.swap_data = rx_msg;
 	result = z_pend_curr(&mbox->lock, key, &mbox->rx_msg_queue, timeout);
 
 	/* consume message data immediately, if needed */
