@@ -28,7 +28,7 @@ fi
 err=0
 i=0
 
-SEARCH_PATH="${SEARCH_PATH:-`pwd`}"
+SEARCH_PATH="${SEARCH_PATH:-.}"
 
 #All the testcases we want to run:
 all_cases=`find ${SEARCH_PATH} -name "*.sh" | \
