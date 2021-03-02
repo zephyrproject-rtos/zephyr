@@ -649,25 +649,22 @@ class DeviceHandler(Handler):
 
         log_out_fp.close()
 
-    def get_available_device(self, instance):
-        device = instance.platform.name
-        for d in self.suite.duts:
-            if d.platform == device and d.available and (d.serial or d.serial_pty):
-                d.available = 0
-                d.counter += 1
-                return d
-
-        return None
-
     def device_is_available(self, instance):
         device = instance.platform.name
         fixture = instance.testcase.harness_config.get("fixture")
         for d in self.suite.duts:
             if fixture and fixture not in d.fixtures:
                 continue
-            if d.platform == device and d.available and (d.serial or d.serial_pty):
+            if d.platform != device or not (d.serial or d.serial_pty):
+                continue
+            d.lock.acquire()
+            avail = False
+            if d.available:
                 d.available = 0
                 d.counter += 1
+                avail = True
+            d.lock.release()
+            if avail:
                 return d
 
         return None
@@ -3845,7 +3842,7 @@ class DUT(object):
         self.pre_script = pre_script
         self.probe_id = None
         self.notes = None
-
+        self.lock = Lock()
         self.match = False
 
 
