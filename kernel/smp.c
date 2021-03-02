@@ -17,23 +17,26 @@ static atomic_t start_flag;
 unsigned int z_smp_global_lock(void)
 {
 	unsigned int key = arch_irq_lock();
+	struct k_thread *const current = _current;
 
-	if (!_current->base.global_lock_count) {
+	if (!current->base.global_lock_count) {
 		while (!atomic_cas(&global_lock, 0, 1)) {
 		}
 	}
 
-	_current->base.global_lock_count++;
+	current->base.global_lock_count++;
 
 	return key;
 }
 
 void z_smp_global_unlock(unsigned int key)
 {
-	if (_current->base.global_lock_count) {
-		_current->base.global_lock_count--;
+	struct k_thread *const current = _current;
 
-		if (!_current->base.global_lock_count) {
+	if (current->base.global_lock_count) {
+		current->base.global_lock_count--;
+
+		if (!current->base.global_lock_count) {
 			atomic_clear(&global_lock);
 		}
 	}
