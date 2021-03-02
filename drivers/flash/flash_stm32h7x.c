@@ -112,21 +112,45 @@ bool flash_stm32_valid_range(const struct device *dev, off_t offset,
 
 static int flash_stm32_check_status(const struct device *dev)
 {
-	uint32_t const error_bank1 = FLASH_FLAG_ALL_ERRORS_BANK1;
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+	/* The hardware corrects single ECC errors and detects double
+	 * ECC errors. Corrected data is returned for single ECC
+	 * errors, so in this case we just log a warning.
+	 */
+	uint32_t const error_bank1 = (FLASH_FLAG_ALL_ERRORS_BANK1
+				      & ~FLASH_FLAG_SNECCERR_BANK1);
 #ifdef DUAL_BANK
-	uint32_t const error_bank2 = FLASH_FLAG_ALL_ERRORS_BANK2;
+	uint32_t const error_bank2 = (FLASH_FLAG_ALL_ERRORS_BANK2
+				      & ~FLASH_FLAG_SNECCERR_BANK2);
 #endif
+	uint32_t sr;
 
-	if (FLASH_STM32_REGS(dev)->SR1 & error_bank1) {
-		LOG_ERR("Status Bank1: 0x%08x",
-			FLASH_STM32_REGS(dev)->SR1 & error_bank1);
+	/* Read the status flags. */
+	sr = regs->SR1;
+	if (sr & (FLASH_FLAG_SNECCERR_BANK1|FLASH_FLAG_DBECCERR_BANK1)) {
+		uint32_t word = regs->ECC_FA1 & FLASH_ECC_FA_FAIL_ECC_ADDR;
+
+		LOG_WRN("Bank%d ECC error at 0x%08x", 1,
+			word * 4 * FLASH_NB_32BITWORD_IN_FLASHWORD);
+	}
+	/* Clear the flags (including FA1R) */
+	regs->CCR1 = FLASH_FLAG_ALL_BANK1;
+	if (sr & error_bank1) {
+		LOG_ERR("Status Bank%d: 0x%08x", 1, sr);
 		return -EIO;
 	}
 
 #ifdef DUAL_BANK
-	if (FLASH_STM32_REGS(dev)->SR2 & error_bank2) {
-		LOG_ERR("Status Bank2: 0x%08x",
-			FLASH_STM32_REGS(dev)->SR2 & error_bank2);
+	sr = regs->SR2;
+	if (sr & (FLASH_FLAG_SNECCERR_BANK1|FLASH_FLAG_DBECCERR_BANK1)) {
+		uint32_t word = regs->ECC_FA2 & FLASH_ECC_FA_FAIL_ECC_ADDR;
+
+		LOG_WRN("Bank%d ECC error at 0x%08x", 2,
+			word * 4 * FLASH_NB_32BITWORD_IN_FLASHWORD);
+	}
+	regs->CCR2 = FLASH_FLAG_ALL_BANK2;
+	if (sr & error_bank2) {
+		LOG_ERR("Status Bank%d: 0x%08x", 2, sr);
 		return -EIO;
 	}
 #endif
@@ -536,9 +560,27 @@ static int flash_stm32h7_read(const struct device *dev, off_t offset,
 
 	LOG_DBG("Read offset: %ld, len: %zu", (long) offset, len);
 
+	/* During the read we mask bus errors and only allow NMI.
+	 *
+	 * If the flash has a double ECC error then there is normally
+	 * a bus fault, but we want to return an error code instead.
+	 */
+	unsigned int irq_lock_key = irq_lock();
+
+	__set_FAULTMASK(1);
+	SCB->CCR |= SCB_CCR_BFHFNMIGN_Msk;
+	__DSB();
+	__ISB();
+
 	memcpy(data, (uint8_t *) CONFIG_FLASH_BASE_ADDRESS + offset, len);
 
-	return 0;
+	__set_FAULTMASK(0);
+	SCB->CCR &= ~SCB_CCR_BFHFNMIGN_Msk;
+	__DSB();
+	__ISB();
+	irq_unlock(irq_lock_key);
+
+	return flash_stm32_check_status(dev);
 }
 
 
