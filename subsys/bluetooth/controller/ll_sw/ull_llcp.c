@@ -25,6 +25,7 @@
 
 #include "ull_tx_queue.h"
 
+#include "ull_internal.h"
 #include "ull_conn_types.h"
 #include "ull_llcp.h"
 #include "ull_llcp_internal.h"
@@ -56,11 +57,6 @@ struct mem_pool {
 #endif
 
 /* TODO(thoh): Placeholder until Kconfig setting is made */
-#if !defined(NTF_BUF_NUM)
-#define NTF_BUF_NUM 1
-#endif
-
-/* TODO(thoh): Placeholder until Kconfig setting is made */
 #if !defined(PROC_CTX_BUF_NUM)
 #define PROC_CTX_BUF_NUM 1
 #endif
@@ -68,10 +64,6 @@ struct mem_pool {
 /* TODO: Determine correct number of tx nodes */
 static uint8_t buffer_mem_tx[TX_CTRL_BUF_SIZE * TX_CTRL_BUF_NUM];
 static struct mem_pool mem_tx = { .pool = buffer_mem_tx };
-
-/* TODO: Determine correct number of ntf nodes */
-static uint8_t buffer_mem_ntf[NTF_BUF_SIZE * NTF_BUF_NUM];
-static struct mem_pool mem_ntf = { .pool = buffer_mem_ntf };
 
 /* TODO: Determine correct number of ctx */
 static uint8_t buffer_mem_ctx[PROC_CTX_BUF_SIZE * PROC_CTX_BUF_NUM];
@@ -114,20 +106,12 @@ static void tx_release(struct node_tx *tx)
 
 bool ull_cp_priv_ntf_alloc_is_available(void)
 {
-	return mem_ntf.free != NULL;
+	return ll_pdu_rx_alloc_peek(1) != NULL;
 }
 
 struct node_rx_pdu *ull_cp_priv_ntf_alloc(void)
 {
-	struct node_rx_pdu *ntf;
-
-	ntf = (struct node_rx_pdu *) mem_acquire(&mem_ntf.free);
-	return ntf;
-}
-
-static void ntf_release(struct node_rx_pdu *ntf)
-{
-	mem_release(ntf, &mem_ntf.free);
+	return ll_pdu_rx_alloc();
 }
 
 /*
@@ -271,7 +255,6 @@ void ull_cp_init(void)
 	/**/
 	mem_init(mem_ctx.pool, PROC_CTX_BUF_SIZE, PROC_CTX_BUF_NUM, &mem_ctx.free);
 	mem_init(mem_tx.pool, TX_CTRL_BUF_SIZE, TX_CTRL_BUF_NUM, &mem_tx.free);
-	mem_init(mem_ntf.pool, NTF_BUF_SIZE, NTF_BUF_NUM, &mem_ntf.free);
 }
 
 void ll_conn_init(struct ll_conn *conn)
@@ -314,7 +297,8 @@ void ull_cp_release_tx(struct node_tx *tx)
 
 void ull_cp_release_ntf(struct node_rx_pdu *ntf)
 {
-	ntf_release(ntf);
+	ntf->hdr.next = NULL;
+	ll_rx_mem_release((void **)&ntf);
 }
 
 void ull_cp_run(struct ll_conn *conn)
@@ -733,64 +717,6 @@ void test_int_mem_tx(void)
 	for (int i = 0U; i < TX_CTRL_BUF_NUM; i++) {
 		tx_release(txl[i]);
 	}
-}
-
-void test_int_mem_ntf(void)
-{
-	bool peek;
-	struct node_rx_pdu *ntf;
-	struct node_rx_pdu *ntfl[NTF_BUF_NUM];
-
-	ull_cp_init();
-
-	for (int i = 0U; i < NTF_BUF_NUM; i++) {
-		peek = ntf_alloc_is_available();
-
-		/* The previous ntf alloc peek should be valid */
-		zassert_true(peek, NULL);
-
-		ntfl[i] = ntf_alloc();
-
-		/* The previous alloc should be valid */
-		zassert_not_null(ntfl[i], NULL);
-	}
-
-	peek = ntf_alloc_is_available();
-
-	/* The last ntf alloc peek should fail */
-	zassert_false(peek, NULL);
-
-	ntf = ntf_alloc();
-
-	/* The last ntf alloc should fail */
-	zassert_is_null(ntf, NULL);
-
-	/* Release all */
-	for (int i = 0U; i < NTF_BUF_NUM; i++) {
-		ntf_release(ntfl[i]);
-	}
-
-	for (int i = 0U; i < NTF_BUF_NUM; i++) {
-		peek = ntf_alloc_is_available();
-
-		/* The previous ntf alloc peek should be valid */
-		zassert_true(peek, NULL);
-
-		ntfl[i] = ntf_alloc();
-
-		/* The previous alloc should be valid */
-		zassert_not_null(ntfl[i], NULL);
-	}
-
-	peek = ntf_alloc_is_available();
-
-	/* The last ntf alloc peek should fail */
-	zassert_false(peek, NULL);
-
-	ntf = ntf_alloc();
-
-	/* The last ntf alloc should fail */
-	zassert_is_null(ntf, NULL);
 }
 
 void test_int_create_proc(void)
