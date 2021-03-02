@@ -34,6 +34,26 @@ properties:
       required: false
       description: clkout divider
 
+    core-clk-divider:
+      type: int
+      required: false
+      description: core clock divider
+
+    bus-clk-divider:
+      type: int
+      required: false
+      description: bus clock divider
+
+    flexbus-clk-divider:
+      type: int
+      required: false
+      description: flexbus clock divider
+
+    flash-clk-divider:
+      type: int
+      required: false
+      description: flash clock divider
+
     "#clock-cells":
       type: int
       required: false
