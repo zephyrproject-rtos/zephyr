@@ -368,6 +368,18 @@ config X86_MAX_ADDITIONAL_MEM_DOMAINS
 
 	  Zephyr test cases assume 3 additional domains can be instantiated.
 
+config X86_EXTRA_PAGE_TABLE_PAGES
+	int "Reserve extra pages in page table"
+	default 0
+	depends on X86_MMU
+	help
+	  The whole page table is pre-allocated at build time and is
+	  dependent on the range of address space. This allows reserving
+	  extra pages (of size CONFIG_MMU_PAGE_SIZE) to the page table
+	  so that gen_mmu.py can make use of these extra pages.
+
+	  Says 0 unless absolutely sure that this is necessary.
+
 config X86_NO_MELTDOWN
 	bool
 	help
