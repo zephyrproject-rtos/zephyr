@@ -43,5 +43,5 @@ uint8_t ull_conn_llcp_req(void *conn);
 
 void *ull_conn_tx_mem_acquire(void);
 void ull_conn_tx_mem_release(void *tx);
-uint8_t ull_conn_mfifo_get_tx(void *lll_tx);
+uint8_t ull_conn_mfifo_get_tx(void **lll_tx);
 void ull_conn_mfifo_enqueue_tx(uint8_t idx);
