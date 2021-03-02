@@ -65,6 +65,7 @@ osStatus_t osMutexAcquire(osMutexId_t mutex_id, uint32_t timeout)
 {
 	struct cv2_mutex *mutex = (struct cv2_mutex *) mutex_id;
 	int status;
+	struct k_thread *const current = _current;
 
 	if (mutex_id == NULL) {
 		return osErrorParameter;
@@ -74,15 +75,11 @@ osStatus_t osMutexAcquire(osMutexId_t mutex_id, uint32_t timeout)
 		return osErrorISR;
 	}
 
-	if (mutex->z_mutex.lock_count == 0U ||
-	    mutex->z_mutex.owner == _current) {
-	}
-
 	/* Throw an error if the mutex is not configured to be recursive and
 	 * the current thread is trying to acquire the mutex again.
 	 */
 	if ((mutex->state & osMutexRecursive) == 0U) {
-		if ((mutex->z_mutex.owner == _current) &&
+		if ((mutex->z_mutex.owner == current) &&
 		    (mutex->z_mutex.lock_count != 0U)) {
 			return osErrorResource;
 		}
