@@ -128,10 +128,11 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 
 	DEBUG_RADIO_START_O(1);
 
+#if defined(CONFIG_BT_CENTRAL)
 	/* Check if stopped (on connection establishment race between LLL and
 	 * ULL.
 	 */
-	if (lll_is_stop(lll)) {
+	if (lll->conn && lll->conn->initiated) {
 		int err;
 
 		err = lll_clk_off();
@@ -142,6 +143,7 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 		DEBUG_RADIO_START_O(0);
 		return 0;
 	}
+#endif /* CONFIG_BT_CENTRAL */
 
 	radio_reset();
 	/* TODO: other Tx Power settings */
@@ -686,7 +688,6 @@ static inline uint32_t isr_rx_pdu(struct lll_scan *lll, uint8_t devmatch_ok,
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 		bt_addr_t *lrpa;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
-		int ret;
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_CHAN_SEL_2)) {
 			rx = ull_pdu_rx_alloc_peek(4);
@@ -826,9 +827,6 @@ static inline uint32_t isr_rx_pdu(struct lll_scan *lll, uint8_t devmatch_ok,
 		 */
 
 		/* Stop further LLL radio events */
-		ret = lll_stop(lll);
-		LL_ASSERT(!ret);
-
 		lll->conn->initiated = 1;
 
 		rx = ull_pdu_rx_alloc();

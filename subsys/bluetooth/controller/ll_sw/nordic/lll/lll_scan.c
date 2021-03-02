@@ -134,10 +134,11 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	lll = p->param;
 
+#if defined(CONFIG_BT_CENTRAL)
 	/* Check if stopped (on connection establishment race between LLL and
 	 * ULL.
 	 */
-	if (unlikely(lll_is_stop(lll))) {
+	if (unlikely(lll->conn && lll->conn->initiated)) {
 		int err;
 
 		err = lll_hfclock_off();
@@ -148,6 +149,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 		DEBUG_RADIO_CLOSE_O(0);
 		return 0;
 	}
+#endif /* CONFIG_BT_CENTRAL */
 
 	/* Initialize scanning state */
 	lll->state = 0U;
@@ -355,6 +357,9 @@ static int is_abort_cb(void *next, int prio, void *curr,
 
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 {
+#if defined(CONFIG_BT_CENTRAL)
+	struct lll_scan *lll = param;
+#endif /* CONFIG_BT_CENTRAL */
 	int err;
 
 	/* NOTE: This is not a prepare being cancelled */
@@ -363,10 +368,14 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 		 * After event has been cleanly aborted, clean up resources
 		 * and dispatch event done.
 		 */
-		if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT) && lll_is_stop(param)) {
+		if (0) {
+#if defined(CONFIG_BT_CENTRAL)
+		} else if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT) &&
+			   lll->conn && lll->conn->initiated) {
 			while (!radio_has_disabled()) {
 				cpu_sleep();
 			}
+#endif /* CONFIG_BT_CENTRAL */
 		} else {
 			radio_isr_set(isr_abort, param);
 			radio_disable();
@@ -782,7 +791,6 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 		bt_addr_t *lrpa;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
-		int ret;
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_CHAN_SEL_2)) {
 			rx = ull_pdu_rx_alloc_peek(4);
@@ -922,9 +930,6 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 		 */
 
 		/* Stop further LLL radio events */
-		ret = lll_stop(lll);
-		LL_ASSERT(!ret);
-
 		lll->conn->initiated = 1;
 
 		rx = ull_pdu_rx_alloc();

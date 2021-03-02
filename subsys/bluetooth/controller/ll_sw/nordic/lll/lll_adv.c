@@ -740,10 +740,11 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	lll = p->param;
 
+#if defined(CONFIG_BT_PERIPHERAL)
 	/* Check if stopped (on connection establishment race between LLL and
 	 * ULL.
 	 */
-	if (unlikely(lll_is_stop(lll))) {
+	if (unlikely(lll->conn && lll->conn->initiated)) {
 		int err;
 
 		err = lll_hfclock_off();
@@ -754,6 +755,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 		DEBUG_RADIO_CLOSE_A(0);
 		return 0;
 	}
+#endif /* CONFIG_BT_PERIPHERAL */
 
 	radio_reset();
 
@@ -1335,7 +1337,6 @@ static inline int isr_rx_pdu(struct lll_adv *lll,
 		   !lll->conn->initiated) {
 		struct node_rx_ftr *ftr;
 		struct node_rx_pdu *rx;
-		int ret;
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_CHAN_SEL_2)) {
 			rx = ull_pdu_rx_alloc_peek(4);
@@ -1364,9 +1365,6 @@ static inline int isr_rx_pdu(struct lll_adv *lll,
 #endif /* CONFIG_BT_CTLR_CONN_RSSI */
 
 		/* Stop further LLL radio events */
-		ret = lll_stop(lll);
-		LL_ASSERT(!ret);
-
 		lll->conn->initiated = 1;
 
 		rx = ull_pdu_rx_alloc();
