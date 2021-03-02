@@ -1,0 +1,8 @@
+sample:
+  description: Bluetooth ISO peripheral (server) sample
+  name: Bluetooth ISO peripheral (server) sample
+tests:
+  sample.bluetooth.peripheral_iso:
+    harness: bluetooth
+    platform_allow: qemu_cortex_m3 qemu_x86
+    tags: bluetooth
