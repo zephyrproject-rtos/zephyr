@@ -142,6 +142,20 @@ ARM arch:
     labels:
         - "area: ARM"
 
+ARM64 arch:
+    status: maintained
+    maintainers:
+        - carlocaione
+    collaborators:
+        - npitre
+        - ioannisg
+    files:
+        - arch/arm/core/aarch64/
+        - include/arch/arm/aarch64/
+        - tests/arch/arm64/
+    labels:
+        - "area: ARM64"
+
 Bluetooth:
     status: maintained
     maintainers:
