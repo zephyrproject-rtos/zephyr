@@ -4,7 +4,14 @@
 
 # Common part of the test scripts for some of the EDTT tests
 # in which 2 controller only builds of the stack are run against each other
-VERBOSITY_LEVEL=2
+VERBOSITY_LEVEL=${VERBOSITY_LEVEL:-2}
+VERBOSITY_LEVEL_EDTT=${VERBOSITY_LEVEL_EDTT:-${VERBOSITY_LEVEL}}
+VERBOSITY_LEVEL_BRIDGE=${VERBOSITY_LEVEL_BRIDGE:-${VERBOSITY_LEVEL}}
+VERBOSITY_LEVEL_PHY=${VERBOSITY_LEVEL_PHY:-${VERBOSITY_LEVEL}}
+VERBOSITY_LEVEL_DEVS=${VERBOSITY_LEVEL_DEVS:-${VERBOSITY_LEVEL}}
+VERBOSITY_LEVEL_DEV1=${VERBOSITY_LEVEL_1:-${VERBOSITY_LEVEL_DEVS}}
+VERBOSITY_LEVEL_DEV2=${VERBOSITY_LEVEL_2:-${VERBOSITY_LEVEL_DEVS}}
+
 PROCESS_IDS=""; EXIT_CODE=0
 
 function Execute(){
@@ -25,22 +32,22 @@ BOARD="${BOARD:-nrf52_bsim}"
 cd ${EDTT_PATH}
 
 Execute ./src/edttool.py -s=${SIMULATION_ID} -d=0 --transport bsim \
-  -T $TEST_MODULE -C $TEST_FILE -v=${VERBOSITY_LEVEL}
+  -T $TEST_MODULE -C $TEST_FILE -v=${VERBOSITY_LEVEL_EDTT} -S
 
 cd ${BSIM_OUT_PATH}/bin
 
 Execute ./bs_device_EDTT_bridge -s=${SIMULATION_ID} -d=0 -AutoTerminate \
-  -RxWait=2.5e3 -D=2 -dev0=1 -dev1=2 -v=${VERBOSITY_LEVEL}
+  -RxWait=2.5e3 -D=2 -dev0=1 -dev1=2 -v=${VERBOSITY_LEVEL_BRIDGE}
 
 Execute \
-  ./bs_${BOARD}_tests_bluetooth_bsim_bt_edtt_ble_test_app_hci_test_app_prj_dut_conf\
-  -s=${SIMULATION_ID} -d=1 -v=${VERBOSITY_LEVEL} -RealEncryption=1
+  ./bs_${BOARD}_tests_bluetooth_bsim_bt_edtt_ble_test_app_hci_test_app_prj_conf\
+  -s=${SIMULATION_ID} -d=1 -v=${VERBOSITY_LEVEL_DEV1} -RealEncryption=1
 
 Execute \
-  ./bs_${BOARD}_tests_bluetooth_bsim_bt_edtt_ble_test_app_hci_test_app_prj_tst_conf\
-  -s=${SIMULATION_ID} -d=2 -v=${VERBOSITY_LEVEL} -RealEncryption=1
+  ./bs_${BOARD}_tests_bluetooth_bsim_bt_edtt_ble_test_app_hci_test_app_prj_conf\
+  -s=${SIMULATION_ID} -d=2 -v=${VERBOSITY_LEVEL_DEV2} -RealEncryption=1
 
-Execute ./bs_2G4_phy_v1 -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} \
+Execute ./bs_2G4_phy_v1 -v=${VERBOSITY_LEVEL_PHY} -s=${SIMULATION_ID} \
   -D=3 -sim_length=3600e6 $@
 
 for PROCESS_ID in $PROCESS_IDS; do
