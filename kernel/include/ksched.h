@@ -252,10 +252,12 @@ static inline void _ready_one_thread(_wait_q_t *wq)
 static inline void z_sched_lock(void)
 {
 #ifdef CONFIG_PREEMPT_ENABLED
-	__ASSERT(!arch_is_in_isr(), "");
-	__ASSERT(_current->base.sched_locked != 1, "");
+	struct k_thread *const current = _current;
 
-	--_current->base.sched_locked;
+	__ASSERT(!arch_is_in_isr(), "");
+	__ASSERT(current->base.sched_locked != 1, "");
+
+	--current->base.sched_locked;
 
 	compiler_barrier();
 
@@ -265,12 +267,14 @@ static inline void z_sched_lock(void)
 static ALWAYS_INLINE void z_sched_unlock_no_reschedule(void)
 {
 #ifdef CONFIG_PREEMPT_ENABLED
+	struct k_thread *const current = _current;
+
 	__ASSERT(!arch_is_in_isr(), "");
-	__ASSERT(_current->base.sched_locked != 0, "");
+	__ASSERT(current->base.sched_locked != 0, "");
 
 	compiler_barrier();
 
-	++_current->base.sched_locked;
+	++current->base.sched_locked;
 #endif
 }
 
