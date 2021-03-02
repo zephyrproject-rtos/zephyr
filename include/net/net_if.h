@@ -1554,6 +1554,23 @@ static inline uint8_t net_if_ipv4_get_ttl(struct net_if *iface)
 }
 
 /**
+ * @brief Set IPv4 time-to-live value specified to a given interface
+ *
+ * @param iface Network interface
+ * @param ttl Time-to-live value
+ */
+static inline void net_if_ipv4_set_ttl(struct net_if *iface, uint8_t ttl)
+{
+#if defined(CONFIG_NET_NATIVE_IPV4)
+	if (!iface->config.ip.ipv4) {
+		return;
+	}
+
+	iface->config.ip.ipv4->ttl = ttl;
+#endif
+}
+
+/**
  * @brief Check if this IPv4 address belongs to one of the interfaces.
  *
  * @param addr IPv4 address
