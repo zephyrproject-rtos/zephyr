@@ -90,51 +90,7 @@ static void uart_npcx_clear_rx_fifo(const struct device *dev)
 	while (uart_npcx_rx_fifo_available(dev))
 		scratch = inst->URBUF;
 }
-#endif
 
-/* UART api functions */
-static int uart_npcx_poll_in(const struct device *dev, unsigned char *c)
-{
-	struct uart_reg *const inst = HAL_INSTANCE(dev);
-
-	/* Rx single byte buffer is not full */
-	if (!IS_BIT_SET(inst->UICTRL, NPCX_UICTRL_RBF))
-		return -1;
-
-	*c = inst->URBUF;
-	return 0;
-}
-
-static void uart_npcx_poll_out(const struct device *dev, unsigned char c)
-{
-	struct uart_reg *const inst = HAL_INSTANCE(dev);
-
-	/* Wait while Tx single byte buffer is ready to send */
-	while (!IS_BIT_SET(inst->UICTRL, NPCX_UICTRL_TBE))
-		continue;
-
-	inst->UTBUF = c;
-}
-
-static int uart_npcx_err_check(const struct device *dev)
-{
-	struct uart_reg *const inst = HAL_INSTANCE(dev);
-	uint32_t err = 0U;
-	uint8_t stat = inst->USTAT;
-
-	if (IS_BIT_SET(stat, NPCX_USTAT_DOE))
-		err |= UART_ERROR_OVERRUN;
-
-	if (IS_BIT_SET(stat, NPCX_USTAT_PE))
-		err |= UART_ERROR_PARITY;
-
-	if (IS_BIT_SET(stat, NPCX_USTAT_FE))
-		err |= UART_ERROR_FRAMING;
-
-	return err;
-}
-
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static int uart_npcx_fifo_fill(const struct device *dev,
 				  const uint8_t *tx_data,
 				  int size)
@@ -258,6 +214,48 @@ static void uart_npcx_isr(const struct device *dev)
 	}
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+
+/* UART api functions */
+static int uart_npcx_poll_in(const struct device *dev, unsigned char *c)
+{
+	struct uart_reg *const inst = HAL_INSTANCE(dev);
+
+	/* Rx single byte buffer is not full */
+	if (!IS_BIT_SET(inst->UICTRL, NPCX_UICTRL_RBF))
+		return -1;
+
+	*c = inst->URBUF;
+	return 0;
+}
+
+static void uart_npcx_poll_out(const struct device *dev, unsigned char c)
+{
+	struct uart_reg *const inst = HAL_INSTANCE(dev);
+
+	/* Wait while Tx single byte buffer is ready to send */
+	while (!IS_BIT_SET(inst->UICTRL, NPCX_UICTRL_TBE))
+		continue;
+
+	inst->UTBUF = c;
+}
+
+static int uart_npcx_err_check(const struct device *dev)
+{
+	struct uart_reg *const inst = HAL_INSTANCE(dev);
+	uint32_t err = 0U;
+	uint8_t stat = inst->USTAT;
+
+	if (IS_BIT_SET(stat, NPCX_USTAT_DOE))
+		err |= UART_ERROR_OVERRUN;
+
+	if (IS_BIT_SET(stat, NPCX_USTAT_PE))
+		err |= UART_ERROR_PARITY;
+
+	if (IS_BIT_SET(stat, NPCX_USTAT_FE))
+		err |= UART_ERROR_FRAMING;
+
+	return err;
+}
 
 /* UART driver registration */
 static const struct uart_driver_api uart_npcx_driver_api = {
