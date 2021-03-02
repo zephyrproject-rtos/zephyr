@@ -61,10 +61,6 @@ config TEST_LOGGING_DEFAULTS
 
 if LOG
 
-# When console is enabled printk should go through it
-config LOG_PRINTK
-	default y if !CONSOLE
-
 config LOG_BACKEND_ADSP
 	default y
 

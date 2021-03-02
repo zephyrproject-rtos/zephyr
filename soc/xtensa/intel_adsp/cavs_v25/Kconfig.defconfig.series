@@ -61,9 +61,6 @@ config TEST_LOGGING_DEFAULTS
 
 if LOG
 
-config LOG_PRINTK
-	default y
-
 config LOG_BACKEND_ADSP
 	default y
 
