@@ -502,6 +502,8 @@ SECTIONS
   /* Initial/boot stack lives in the CPU0 interrupt stack */
   __stack = z_interrupt_stacks + CONFIG_ISR_STACK_SIZE;
 
+  _end = .;
+
   /* dma buffers */
   .lpbuf (NOLOAD): ALIGN(4)
   {
