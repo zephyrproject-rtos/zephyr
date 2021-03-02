@@ -28,6 +28,12 @@
 #define DAC_RESOLUTION		12
 #define DAC_CHANNEL_ID		0
 
+#elif defined(CONFIG_BOARD_FRDM_K22F)
+
+#define DAC_DEVICE_NAME		DT_LABEL(DT_NODELABEL(dac0))
+#define DAC_RESOLUTION		12
+#define DAC_CHANNEL_ID		0
+
 #else
 #error "Unsupported board."
 #endif
