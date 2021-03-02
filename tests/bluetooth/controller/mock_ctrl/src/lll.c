@@ -38,3 +38,7 @@ int lll_csrand_get(void *buf, size_t len)
 	* (int *) buf = 0;
 	return 0;
 }
+uint32_t lll_radio_tx_ready_delay_get(uint8_t phy, uint8_t flags)
+{
+	return 0;
+}
