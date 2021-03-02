@@ -151,7 +151,8 @@ struct task_state_segment _df_tss = {
 	.es = DATA_SEG,
 	.ss = DATA_SEG,
 	.eip = (uint32_t)df_handler_top,
-	.cr3 = (uint32_t)Z_X86_PHYS_ADDR(z_x86_kernel_ptables)
+	.cr3 = (uint32_t)
+		Z_X86_PHYS_ADDR(POINTER_TO_UINT(&z_x86_kernel_ptables[0]))
 };
 
 static __used void df_handler_bottom(void)
