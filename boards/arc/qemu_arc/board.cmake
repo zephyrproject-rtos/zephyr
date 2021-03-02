@@ -23,6 +23,8 @@ list(APPEND QEMU_FLAGS_${ARCH}
   -global cpu.freq_hz=1000000
   -global cpu.timer0=true
   -global cpu.timer1=true
+  -global cpu.has-mpu=true
+  -global cpu.mpu-numreg=16
   )
 
 set(BOARD_DEBUG_RUNNER qemu)
