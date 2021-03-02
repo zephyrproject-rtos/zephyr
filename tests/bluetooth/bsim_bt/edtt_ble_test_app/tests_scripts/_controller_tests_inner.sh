@@ -15,12 +15,21 @@ VERBOSITY_LEVEL_DEV2=${VERBOSITY_LEVEL_2:-${VERBOSITY_LEVEL_DEVS}}
 PROCESS_IDS=""; EXIT_CODE=0
 
 function Execute(){
+  local rr=
+  if [ "rr" = "$1" ]; then
+    local devno=$2
+    shift 2
+    local exe=$(basename $1)
+    local out=/tmp/rr/$$-${SIMULATION_ID}-${exe}-d_${devno}
+    rm -rf ${out}
+    rr="rr record -o ${out}"
+  fi
   if [ ! -f $1 ]; then
     echo -e "  \e[91m`pwd`/`basename $1` cannot be found (did you forget to\
  compile it?)\e[39m"
     exit 1
   fi
-  timeout 300 $@ & PROCESS_IDS="$PROCESS_IDS $!"
+  timeout 300 ${rr} $@ & PROCESS_IDS="$PROCESS_IDS $!"
 }
 
 : "${BSIM_OUT_PATH:?BSIM_OUT_PATH must be defined}"
@@ -34,6 +43,23 @@ PRJ_CONF="${PRJ_CONF:-prj_conf}"
 PRJ_CONF_1="${PRJ_CONF_1:-${PRJ_CONF}}"
 PRJ_CONF_2="${PRJ_CONF_2:-${PRJ_CONF}}"
 
+#Give default value to RR_x if it does not have one yet:
+RR="${RR:-0}"
+RR_1="${RR_1:-${RR}}"
+RR_2="${RR_2:-${RR}}"
+
+#Check if rr was requested and is available
+if [ "${RR_1}" != "0" -o "${RR_2}" != "0" ]; then
+    if [ ! -x "$(command -v rr)" ]; then
+      echo 'error: rr cannot be found in $PATH.' >&2
+      exit 1
+    fi
+
+    #Set RR_ARGS_x based on RR_x
+    [ "${RR_1}" != "0" ] && RR_ARGS_1="rr 1"
+    [ "${RR_2}" != "0" ] && RR_ARGS_2="rr 2"
+fi
+
 cd ${EDTT_PATH}
 
 Execute ./src/edttool.py -s=${SIMULATION_ID} -d=0 --transport bsim \
@@ -45,11 +71,11 @@ Execute ./bs_device_EDTT_bridge -s=${SIMULATION_ID} -d=0 -AutoTerminate \
   -RxWait=2.5e3 -D=2 -dev0=1 -dev1=2 -v=${VERBOSITY_LEVEL_BRIDGE}
 
 Execute \
-  ./bs_${BOARD}_tests_bluetooth_bsim_bt_edtt_ble_test_app_hci_test_app_${PRJ_CONF_1}\
+  ${RR_ARGS_1} ./bs_${BOARD}_tests_bluetooth_bsim_bt_edtt_ble_test_app_hci_test_app_${PRJ_CONF_1}\
   -s=${SIMULATION_ID} -d=1 -v=${VERBOSITY_LEVEL_DEV1} -RealEncryption=1
 
 Execute \
-  ./bs_${BOARD}_tests_bluetooth_bsim_bt_edtt_ble_test_app_hci_test_app_${PRJ_CONF_2}\
+  ${RR_ARGS_2} ./bs_${BOARD}_tests_bluetooth_bsim_bt_edtt_ble_test_app_hci_test_app_${PRJ_CONF_2}\
   -s=${SIMULATION_ID} -d=2 -v=${VERBOSITY_LEVEL_DEV2} -RealEncryption=1
 
 Execute ./bs_2G4_phy_v1 -v=${VERBOSITY_LEVEL_PHY} -s=${SIMULATION_ID} \
