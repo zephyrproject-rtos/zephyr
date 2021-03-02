@@ -116,6 +116,33 @@ void ll_reset(void)
 	init_reset();
 }
 
+void ll_rx_mem_release(void **node_rx)
+{
+	struct node_rx_hdr *rx;
+
+	rx = *node_rx;
+	while (rx) {
+		struct node_rx_hdr *rx_free;
+
+		rx_free = rx;
+		rx = rx->next;
+
+		switch (rx_free->type) {
+		case NODE_RX_TYPE_DC_PDU:
+			ll_rx_link_inc_quota(1);
+			mem_release(rx_free, &mem_pdu_rx.free);
+			break;
+		default:
+			__ASSERT(0, "Tried to release unknown rx node type");
+			break;
+		}
+	}
+
+	*node_rx = rx;
+
+	rx_alloc(UINT8_MAX);
+}
+
 static inline void ll_rx_link_inc_quota(int8_t delta)
 {
 	mem_link_rx.quota_pdu += delta;
@@ -151,13 +178,18 @@ void ll_rx_sched(void)
 
 }
 
+void *ll_pdu_rx_alloc_peek(uint8_t count)
+{
+	if (count > MFIFO_AVAIL_COUNT_GET(ll_pdu_rx_free)) {
+		return NULL;
+	}
+
+	return MFIFO_DEQUEUE_PEEK(ll_pdu_rx_free);
+}
+
 void *ll_pdu_rx_alloc(void)
 {
-	void *temp;
-
-	temp = MFIFO_DEQUEUE(ll_pdu_rx_free);
-
-	return temp;
+	return MFIFO_DEQUEUE(ll_pdu_rx_free);
 }
 
 /* Forward declaration */

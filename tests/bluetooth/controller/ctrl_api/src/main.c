@@ -53,7 +53,6 @@ void test_api_init(void)
 
 extern void test_int_mem_proc_ctx(void);
 extern void test_int_mem_tx(void);
-extern void test_int_mem_ntf(void);
 extern void test_int_create_proc(void);
 extern void test_int_local_pending_requests(void);
 extern void test_int_remote_pending_requests(void);
@@ -201,7 +200,6 @@ void test_main(void)
 	ztest_test_suite(internal,
 			 ztest_unit_test(test_int_mem_proc_ctx),
 			 ztest_unit_test(test_int_mem_tx),
-			 ztest_unit_test(test_int_mem_ntf),
 			 ztest_unit_test(test_int_create_proc),
 			 ztest_unit_test(test_int_local_pending_requests),
 			 ztest_unit_test(test_int_remote_pending_requests),
