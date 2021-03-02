@@ -21,7 +21,9 @@ mkdir -p ${WORK_DIR}
 function compile(){
   local app_root="${app_root:-${ZEPHYR_BASE}}"
   local conf_file="${conf_file:-prj.conf}"
-  local cmake_args="${cmake_args:-"-DCONFIG_COVERAGE=y"}"
+  local cmake_args="${cmake_args:-"-DCONFIG_COVERAGE=y \
+    -DCONFIG_DEBUG_OPTIMIZATIONS=y \
+    -DCMAKE_EXPORT_COMPILE_COMMANDS=ON"}"
   local ninja_args="${ninja_args:-""}"
   local cc_flags="${cc_flags:-"-Werror"}"
 
