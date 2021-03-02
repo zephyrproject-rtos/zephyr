@@ -45,6 +45,14 @@
 &sim {
 	pllfll-select = <KINETIS_SIM_PLLFLLSEL_MCGPLLCLK>;
 	er32k-select = <KINETIS_SIM_ER32KSEL_RTC>;
+
+	bus_clk {
+		clock-div = <3>;
+	};
+
+	flash_clk {
+		clock-div = <7>;
+	};
 };
 
 &gpioa {
