@@ -21,12 +21,12 @@
 
 #include <string.h>
 #include <sys/byteorder.h>
-#include <mb_rtu_internal.h>
+#include <modbus_internal.h>
 
 #include <logging/log.h>
-LOG_MODULE_REGISTER(mb_rtu_c, CONFIG_MODBUS_RTU_LOG_LEVEL);
+LOG_MODULE_REGISTER(modbus_c, CONFIG_MODBUS_LOG_LEVEL);
 
-static int mbm_validate_response_fc(struct mb_rtu_context *ctx,
+static int mbm_validate_response_fc(struct modbus_context *ctx,
 				    const uint8_t node_addr,
 				    uint8_t fc)
 {
@@ -54,8 +54,8 @@ static int mbm_validate_response_fc(struct mb_rtu_context *ctx,
 	return 0;
 }
 
-#ifdef CONFIG_MODBUS_RTU_FP_EXTENSIONS
-static int mbm_validate_fc03fp_response(struct mb_rtu_context *ctx, float *ptbl)
+#ifdef CONFIG_MODBUS_FP_EXTENSIONS
+static int mbm_validate_fc03fp_response(struct modbus_context *ctx, float *ptbl)
 {
 	uint8_t resp_byte_cnt;
 	uint8_t req_byte_cnt;
@@ -83,7 +83,7 @@ static int mbm_validate_fc03fp_response(struct mb_rtu_context *ctx, float *ptbl)
 }
 #endif
 
-static int mbm_validate_rd_response(struct mb_rtu_context *ctx,
+static int mbm_validate_rd_response(struct modbus_context *ctx,
 				    const uint8_t node_addr,
 				    uint8_t fc,
 				    uint8_t *data)
@@ -122,8 +122,8 @@ static int mbm_validate_rd_response(struct mb_rtu_context *ctx,
 		break;
 
 	case MODBUS_FC03_HOLDING_REG_RD:
-		if (IS_ENABLED(CONFIG_MODBUS_RTU_FP_EXTENSIONS) &&
-		    (req_addr >= MODBUS_RTU_FP_ADDR)) {
+		if (IS_ENABLED(CONFIG_MODBUS_FP_EXTENSIONS) &&
+		    (req_addr >= MODBUS_FP_EXTENSIONS_ADDR)) {
 			err = mbm_validate_fc03fp_response(ctx, (float *)data);
 			break;
 		}
@@ -151,7 +151,7 @@ static int mbm_validate_rd_response(struct mb_rtu_context *ctx,
 	return err;
 }
 
-static int mbm_validate_fc08_response(struct mb_rtu_context *ctx,
+static int mbm_validate_fc08_response(struct modbus_context *ctx,
 				      const uint8_t node_addr,
 				      uint16_t *data)
 {
@@ -203,7 +203,7 @@ static int mbm_validate_fc08_response(struct mb_rtu_context *ctx,
 	return err;
 }
 
-static int mbm_validate_wr_response(struct mb_rtu_context *ctx,
+static int mbm_validate_wr_response(struct modbus_context *ctx,
 				    const uint8_t node_addr,
 				    uint8_t fc)
 {
@@ -238,7 +238,7 @@ static int mbm_validate_wr_response(struct mb_rtu_context *ctx,
 	return err;
 }
 
-static int mbm_send_cmd(struct mb_rtu_context *ctx, const uint8_t node_addr,
+static int mbm_send_cmd(struct modbus_context *ctx, const uint8_t node_addr,
 			uint8_t fc, void *data)
 {
 	int err;
@@ -302,7 +302,7 @@ int modbus_read_coils(const int iface,
 		      uint8_t *const coil_tbl,
 		      const uint16_t num_coils)
 {
-	struct mb_rtu_context *ctx = mb_get_context(iface);
+	struct modbus_context *ctx = mb_get_context(iface);
 	int err;
 
 	if (ctx == NULL) {
@@ -327,7 +327,7 @@ int modbus_read_dinputs(const int iface,
 			uint8_t *const di_tbl,
 			const uint16_t num_di)
 {
-	struct mb_rtu_context *ctx = mb_get_context(iface);
+	struct modbus_context *ctx = mb_get_context(iface);
 	int err;
 
 	if (ctx == NULL) {
@@ -352,7 +352,7 @@ int modbus_read_holding_regs(const int iface,
 			     uint16_t *const reg_buf,
 			     const uint16_t num_regs)
 {
-	struct mb_rtu_context *ctx = mb_get_context(iface);
+	struct modbus_context *ctx = mb_get_context(iface);
 	int err;
 
 	if (ctx == NULL) {
@@ -372,14 +372,14 @@ int modbus_read_holding_regs(const int iface,
 }
 
 
-#ifdef CONFIG_MODBUS_RTU_FP_EXTENSIONS
+#ifdef CONFIG_MODBUS_FP_EXTENSIONS
 int modbus_read_holding_regs_fp(const int iface,
 			       const uint8_t node_addr,
 			       const uint16_t start_addr,
 			       float *const reg_buf,
 			       const uint16_t num_regs)
 {
-	struct mb_rtu_context *ctx = mb_get_context(iface);
+	struct modbus_context *ctx = mb_get_context(iface);
 	int err;
 
 	if (ctx == NULL) {
@@ -405,7 +405,7 @@ int modbus_read_input_regs(const int iface,
 			   uint16_t *const reg_buf,
 			   const uint16_t num_regs)
 {
-	struct mb_rtu_context *ctx = mb_get_context(iface);
+	struct modbus_context *ctx = mb_get_context(iface);
 	int err;
 
 	if (ctx == NULL) {
@@ -429,7 +429,7 @@ int modbus_write_coil(const int iface,
 		      const uint16_t coil_addr,
 		      const bool coil_state)
 {
-	struct mb_rtu_context *ctx = mb_get_context(iface);
+	struct modbus_context *ctx = mb_get_context(iface);
 	int err;
 	uint16_t coil_val;
 
@@ -460,7 +460,7 @@ int modbus_write_holding_reg(const int iface,
 			     const uint16_t start_addr,
 			     const uint16_t reg_val)
 {
-	struct mb_rtu_context *ctx = mb_get_context(iface);
+	struct modbus_context *ctx = mb_get_context(iface);
 	int err;
 
 	if (ctx == NULL) {
@@ -485,7 +485,7 @@ int modbus_request_diagnostic(const int iface,
 			      const uint16_t data,
 			      uint16_t *const data_out)
 {
-	struct mb_rtu_context *ctx = mb_get_context(iface);
+	struct modbus_context *ctx = mb_get_context(iface);
 	int err;
 
 	if (ctx == NULL) {
@@ -510,7 +510,7 @@ int modbus_write_coils(const int iface,
 		       uint8_t *const coil_tbl,
 		       const uint16_t num_coils)
 {
-	struct mb_rtu_context *ctx = mb_get_context(iface);
+	struct modbus_context *ctx = mb_get_context(iface);
 	uint8_t num_bytes;
 	int err;
 	uint8_t *data_ptr;
@@ -543,7 +543,7 @@ int modbus_write_holding_regs(const int iface,
 			      uint16_t *const reg_buf,
 			      const uint16_t num_regs)
 {
-	struct mb_rtu_context *ctx = mb_get_context(iface);
+	struct modbus_context *ctx = mb_get_context(iface);
 	uint8_t num_bytes;
 	int err;
 	uint8_t *data_ptr;
@@ -573,14 +573,14 @@ int modbus_write_holding_regs(const int iface,
 	return err;
 }
 
-#ifdef CONFIG_MODBUS_RTU_FP_EXTENSIONS
+#ifdef CONFIG_MODBUS_FP_EXTENSIONS
 int modbus_write_holding_regs_fp(const int iface,
 				 const uint8_t node_addr,
 				 const uint16_t start_addr,
 				 float *const reg_buf,
 				 const uint16_t num_regs)
 {
-	struct mb_rtu_context *ctx = mb_get_context(iface);
+	struct modbus_context *ctx = mb_get_context(iface);
 	uint8_t num_bytes;
 	int err;
 	uint8_t *data_ptr;
