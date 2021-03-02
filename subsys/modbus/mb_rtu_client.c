@@ -296,7 +296,7 @@ exit_error:
 	return err;
 }
 
-int mb_rtu_read_coils(const int iface,
+int modbus_read_coils(const int iface,
 		      const uint8_t node_addr,
 		      const uint16_t start_addr,
 		      uint8_t *const coil_tbl,
@@ -321,7 +321,7 @@ int mb_rtu_read_coils(const int iface,
 	return err;
 }
 
-int mb_rtu_read_dinputs(const int iface,
+int modbus_read_dinputs(const int iface,
 			const uint8_t node_addr,
 			const uint16_t start_addr,
 			uint8_t *const di_tbl,
@@ -346,7 +346,7 @@ int mb_rtu_read_dinputs(const int iface,
 	return err;
 }
 
-int mb_rtu_read_holding_regs(const int iface,
+int modbus_read_holding_regs(const int iface,
 			     const uint8_t node_addr,
 			     const uint16_t start_addr,
 			     uint16_t *const reg_buf,
@@ -373,7 +373,7 @@ int mb_rtu_read_holding_regs(const int iface,
 
 
 #ifdef CONFIG_MODBUS_RTU_FP_EXTENSIONS
-int mb_rtu_read_holding_regs_fp(const int iface,
+int modbus_read_holding_regs_fp(const int iface,
 			       const uint8_t node_addr,
 			       const uint16_t start_addr,
 			       float *const reg_buf,
@@ -399,7 +399,7 @@ int mb_rtu_read_holding_regs_fp(const int iface,
 }
 #endif
 
-int mb_rtu_read_input_regs(const int iface,
+int modbus_read_input_regs(const int iface,
 			   const uint8_t node_addr,
 			   const uint16_t start_addr,
 			   uint16_t *const reg_buf,
@@ -424,7 +424,7 @@ int mb_rtu_read_input_regs(const int iface,
 	return err;
 }
 
-int mb_rtu_write_coil(const int iface,
+int modbus_write_coil(const int iface,
 		      const uint8_t node_addr,
 		      const uint16_t coil_addr,
 		      const bool coil_state)
@@ -455,7 +455,7 @@ int mb_rtu_write_coil(const int iface,
 	return err;
 }
 
-int mb_rtu_write_holding_reg(const int iface,
+int modbus_write_holding_reg(const int iface,
 			     const uint8_t node_addr,
 			     const uint16_t start_addr,
 			     const uint16_t reg_val)
@@ -479,7 +479,7 @@ int mb_rtu_write_holding_reg(const int iface,
 	return err;
 }
 
-int mb_rtu_request_diagnostic(const int iface,
+int modbus_request_diagnostic(const int iface,
 			      const uint8_t node_addr,
 			      const uint16_t sfunc,
 			      const uint16_t data,
@@ -504,7 +504,7 @@ int mb_rtu_request_diagnostic(const int iface,
 	return err;
 }
 
-int mb_rtu_write_coils(const int iface,
+int modbus_write_coils(const int iface,
 		       const uint8_t node_addr,
 		       const uint16_t start_addr,
 		       uint8_t *const coil_tbl,
@@ -537,7 +537,7 @@ int mb_rtu_write_coils(const int iface,
 	return err;
 }
 
-int mb_rtu_write_holding_regs(const int iface,
+int modbus_write_holding_regs(const int iface,
 			      const uint8_t node_addr,
 			      const uint16_t start_addr,
 			      uint16_t *const reg_buf,
@@ -574,7 +574,7 @@ int mb_rtu_write_holding_regs(const int iface,
 }
 
 #ifdef CONFIG_MODBUS_RTU_FP_EXTENSIONS
-int mb_rtu_write_holding_regs_fp(const int iface,
+int modbus_write_holding_regs_fp(const int iface,
 				 const uint8_t node_addr,
 				 const uint16_t start_addr,
 				 float *const reg_buf,

@@ -19,8 +19,8 @@ static int init_modbus_client(void)
 	const uint32_t mb_rtu_br = 19200;
 	const uint32_t rsp_timeout = 50000;
 
-	return mb_rtu_cfg_client(RTU_IFACE, mb_rtu_br, UART_CFG_PARITY_NONE,
-				 rsp_timeout, false);
+	return modbus_init_client(RTU_IFACE, mb_rtu_br, UART_CFG_PARITY_NONE,
+				  rsp_timeout, false);
 }
 
 void main(void)
@@ -38,14 +38,14 @@ void main(void)
 		return;
 	}
 
-	err = mb_rtu_write_holding_regs(RTU_IFACE, node, 0, holding_reg,
+	err = modbus_write_holding_regs(RTU_IFACE, node, 0, holding_reg,
 					ARRAY_SIZE(holding_reg));
 	if (err != 0) {
 		LOG_ERR("FC16 failed");
 		return;
 	}
 
-	err = mb_rtu_read_holding_regs(RTU_IFACE, node, 0, holding_reg,
+	err = modbus_read_holding_regs(RTU_IFACE, node, 0, holding_reg,
 				       ARRAY_SIZE(holding_reg));
 	if (err != 0) {
 		LOG_ERR("FC03 failed with %d", err);
@@ -58,7 +58,7 @@ void main(void)
 	while (true) {
 		uint16_t addr = 0;
 
-		err = mb_rtu_read_coils(RTU_IFACE, node, 0, coil, coil_qty);
+		err = modbus_read_coils(RTU_IFACE, node, 0, coil, coil_qty);
 		if (err != 0) {
 			LOG_ERR("FC01 failed with %d", err);
 			return;
@@ -66,28 +66,28 @@ void main(void)
 
 		LOG_INF("Coils state 0x%02x", coil[0]);
 
-		err = mb_rtu_write_coil(RTU_IFACE, node, addr++, true);
+		err = modbus_write_coil(RTU_IFACE, node, addr++, true);
 		if (err != 0) {
 			LOG_ERR("FC05 failed with %d", err);
 			return;
 		}
 
 		k_msleep(sleep);
-		err = mb_rtu_write_coil(RTU_IFACE, node, addr++, true);
+		err = modbus_write_coil(RTU_IFACE, node, addr++, true);
 		if (err != 0) {
 			LOG_ERR("FC05 failed with %d", err);
 			return;
 		}
 
 		k_msleep(sleep);
-		err = mb_rtu_write_coil(RTU_IFACE, node, addr++, true);
+		err = modbus_write_coil(RTU_IFACE, node, addr++, true);
 		if (err != 0) {
 			LOG_ERR("FC05 failed with %d", err);
 			return;
 		}
 
 		k_msleep(sleep);
-		err = mb_rtu_read_coils(RTU_IFACE, node, 0, coil, coil_qty);
+		err = modbus_read_coils(RTU_IFACE, node, 0, coil, coil_qty);
 		if (err != 0) {
 			LOG_ERR("FC01 failed with %d", err);
 			return;
@@ -96,7 +96,7 @@ void main(void)
 		LOG_INF("Coils state 0x%02x", coil[0]);
 
 		coil[0] = 0;
-		err = mb_rtu_write_coils(RTU_IFACE, node, 0, coil, coil_qty);
+		err = modbus_write_coils(RTU_IFACE, node, 0, coil, coil_qty);
 		if (err != 0) {
 			LOG_ERR("FC15 failed with %d", err);
 			return;
