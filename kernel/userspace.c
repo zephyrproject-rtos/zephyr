@@ -581,9 +581,11 @@ static int thread_perms_test(struct z_object *ko)
 
 static void dump_permission_error(struct z_object *ko)
 {
-	int index = thread_index_get(_current);
+	struct k_thread *const current = _current;
+	int index = thread_index_get(current);
+
 	LOG_ERR("thread %p (%d) does not have permission on %s %p",
-		_current, index,
+		current, index,
 		otype_to_str(ko->type), ko->name);
 	LOG_HEXDUMP_ERR(ko->perms, sizeof(ko->perms), "permission bitmap");
 }
