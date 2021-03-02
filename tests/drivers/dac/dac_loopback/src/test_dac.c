@@ -95,6 +95,21 @@
 #define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_DEFAULT
 #define ADC_CHANNEL_ID		23
 
+#elif defined(CONFIG_BOARD_FRDM_K22F)
+
+/* DAC0 output is internally available on ADC0_SE23 */
+
+#define DAC_DEVICE_NAME		DT_LABEL(DT_NODELABEL(dac0))
+#define DAC_RESOLUTION		12
+#define DAC_CHANNEL_ID		0
+
+#define ADC_DEVICE_NAME		DT_LABEL(DT_NODELABEL(adc0))
+#define ADC_RESOLUTION		12
+#define ADC_GAIN		ADC_GAIN_1
+#define ADC_REFERENCE		ADC_REF_INTERNAL
+#define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_DEFAULT
+#define ADC_CHANNEL_ID		23
+
 #else
 #error "Unsupported board."
 #endif
