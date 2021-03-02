@@ -154,7 +154,6 @@ struct ull_hdr {
 
 struct lll_hdr {
 	void *parent;
-	uint8_t is_stop:1;
 };
 
 struct lll_prepare_param {
@@ -370,17 +369,6 @@ static inline void lll_hdr_init(void *lll, void *parent)
 	struct lll_hdr *hdr = lll;
 
 	hdr->parent = parent;
-	hdr->is_stop = 0U;
-}
-
-static inline int lll_stop(void *lll)
-{
-	struct lll_hdr *hdr = lll;
-	int ret = !!hdr->is_stop;
-
-	hdr->is_stop = 1U;
-
-	return ret;
 }
 
 int lll_init(void);

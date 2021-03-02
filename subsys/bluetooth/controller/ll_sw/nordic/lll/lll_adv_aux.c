@@ -659,7 +659,6 @@ static void isr_tx_connect_rsp(void *param)
 	struct node_rx_pdu *rx;
 	struct lll_adv *lll;
 	bool is_done;
-	int ret;
 
 	rx = param;
 	ftr = &(rx->hdr.rx_ftr);
@@ -687,9 +686,6 @@ static void isr_tx_connect_rsp(void *param)
 
 	if (is_done) {
 		/* Stop further LLL radio events */
-		ret = lll_stop(lll);
-		LL_ASSERT(!ret);
-
 		lll->conn->initiated = 1;
 	}
 
