@@ -64,4 +64,3 @@
 #define CONFIG_BT_CTLR_RX_BUFFERS 7
 #define PROC_CTX_BUF_NUM 3
 #define TX_CTRL_BUF_NUM 2
-#define NTF_BUF_NUM 2
