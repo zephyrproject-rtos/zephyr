@@ -21,6 +21,7 @@ target_sources(                     app PRIVATE src/echo-server.c)
 target_sources_ifdef(CONFIG_NET_UDP app PRIVATE src/udp.c)
 target_sources_ifdef(CONFIG_NET_TCP app PRIVATE src/tcp.c)
 target_sources_ifdef(CONFIG_NET_VLAN app PRIVATE src/vlan.c)
+target_sources_ifdef(CONFIG_NET_L2_IPIP app PRIVATE src/tunnel.c)
 
 include(${ZEPHYR_BASE}/samples/net/common/common.cmake)
 
