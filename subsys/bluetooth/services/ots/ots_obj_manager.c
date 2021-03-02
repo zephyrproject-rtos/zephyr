@@ -155,7 +155,7 @@ int bt_gatt_ots_obj_manager_obj_get(
 	struct bt_gatt_ots_obj_manager *obj_manager, uint64_t id,
 	struct bt_gatt_ots_object **object)
 {
-	uint64_t i = obj_id_to_index(id);
+	uint64_t index;
 
 	if (sys_dlist_is_empty(&obj_manager->list)) {
 		return -ENOENT;
@@ -167,15 +167,17 @@ int bt_gatt_ots_obj_manager_obj_get(
 		return -EINVAL;
 	}
 
-	if (i >= ARRAY_SIZE(obj_manager->pool)) {
+	index = obj_id_to_index(id);
+
+	if (index >= ARRAY_SIZE(obj_manager->pool)) {
 		return -EINVAL;
 	}
 
-	if (!obj_manager->pool[i].is_allocated) {
+	if (!obj_manager->pool[index].is_allocated) {
 		return -EINVAL;
 	}
 
-	*object = &obj_manager->pool[i].val;
+	*object = &obj_manager->pool[index].val;
 
 	return 0;
 }
