@@ -334,22 +334,22 @@ static void queue_poll_race_consume(void *p1, void *p2, void *p3)
 void test_queue_poll_race(void)
 {
 	int prio = k_thread_priority_get(k_current_get());
-	int mid_count = 0, low_count = 0;
+	static volatile int mid_count, low_count;
 
 	k_queue_init(&queue);
 
 	k_thread_create(&tdata, tstack, STACK_SIZE,
 			queue_poll_race_consume,
-			&queue, &mid_count, NULL,
+			&queue, (void *)&mid_count, NULL,
 			prio + 1, 0, K_NO_WAIT);
 
 	k_thread_create(&tdata1, tstack1, STACK_SIZE,
 			queue_poll_race_consume,
-			&queue, &low_count, NULL,
+			&queue, (void *)&low_count, NULL,
 			prio + 2, 0, K_NO_WAIT);
 
 	/* Let them initialize and block */
-	k_sleep(K_TICKS(2));
+	k_sleep(K_MSEC(10));
 
 	/* Insert two items.  This will wake up both threads, but the
 	 * higher priority thread (tdata1) might (if CONFIG_POLL)
@@ -362,7 +362,7 @@ void test_queue_poll_race(void)
 	zassert_true(low_count == 0, NULL);
 	zassert_true(mid_count == 0, NULL);
 
-	k_sleep(K_TICKS(2));
+	k_sleep(K_MSEC(10));
 
 	zassert_true(low_count + mid_count == 2, NULL);
 

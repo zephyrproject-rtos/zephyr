@@ -310,7 +310,7 @@ static void test_timeout_non_empty_lifo(void)
 static void test_timeout_lifo_thread(void)
 {
 	void *packet, *scratch_packet;
-	struct reply_packet reply_packet;
+	static volatile struct reply_packet reply_packet;
 	uint32_t start_time, timeout;
 
 	/*
@@ -338,7 +338,7 @@ static void test_timeout_lifo_thread(void)
 	 */
 	tid[0] = k_thread_create(&ttdata[0], ttstack[0], TSTACK_SIZE,
 				test_thread_timeout_reply_values,
-				&reply_packet, NULL, NULL,
+				 (void *)&reply_packet, NULL, NULL,
 				LIFO_THREAD_PRIO, K_INHERIT_PERMS, K_NO_WAIT);
 
 	k_yield();
@@ -357,7 +357,7 @@ static void test_timeout_lifo_thread(void)
 
 	tid[0] = k_thread_create(&ttdata[0], ttstack[0], TSTACK_SIZE,
 				test_thread_timeout_reply_values,
-				&reply_packet, NULL, NULL,
+				(void *)&reply_packet, NULL, NULL,
 				LIFO_THREAD_PRIO, K_INHERIT_PERMS, K_NO_WAIT);
 
 	k_yield();
@@ -377,7 +377,7 @@ static void test_timeout_lifo_thread(void)
 
 	tid[0] = k_thread_create(&ttdata[0], ttstack[0], TSTACK_SIZE,
 				test_thread_timeout_reply_values_wfe,
-				&reply_packet, NULL, NULL,
+				(void *)&reply_packet, NULL, NULL,
 				LIFO_THREAD_PRIO, K_INHERIT_PERMS, K_NO_WAIT);
 
 	packet = k_lifo_get(&timeout_order_lifo, K_FOREVER);
