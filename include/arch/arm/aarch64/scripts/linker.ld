@@ -45,19 +45,8 @@
   #define ROM_SIZE (CONFIG_FLASH_SIZE * 1K - CONFIG_FLASH_LOAD_OFFSET)
 #endif
 
-#if defined(CONFIG_XIP)
-  #if defined(CONFIG_IS_BOOTLOADER)
-    #define RAM_SIZE (CONFIG_BOOTLOADER_SRAM_SIZE * 1K)
-    #define RAM_ADDR (CONFIG_SRAM_BASE_ADDRESS + \
-                     (CONFIG_SRAM_SIZE * 1K - RAM_SIZE))
-  #else
-    #define RAM_SIZE (CONFIG_SRAM_SIZE * 1K)
-    #define RAM_ADDR CONFIG_SRAM_BASE_ADDRESS
-  #endif
-#else
-  #define RAM_SIZE (CONFIG_SRAM_SIZE * 1K - CONFIG_BOOTLOADER_SRAM_SIZE * 1K)
-  #define RAM_ADDR CONFIG_SRAM_BASE_ADDRESS
-#endif
+#define RAM_SIZE (CONFIG_SRAM_SIZE * 1K)
+#define RAM_ADDR CONFIG_SRAM_BASE_ADDRESS
 
 #if defined(CONFIG_ARM_MMU)
   _region_min_align = CONFIG_MMU_PAGE_SIZE;
@@ -252,10 +241,6 @@ SECTIONS
         *(COMMON)
         *(".kernel_bss.*")
 
-#ifdef CONFIG_CODE_DATA_RELOCATION
-#include <linker_sram_bss_relocate.ld>
-#endif
-
         /*
          * As memory is cleared in words only, it is simpler to ensure the BSS
          * section ends on a 4 byte boundary. This wastes a maximum of 3 bytes.
@@ -276,10 +261,6 @@ SECTIONS
  * zephyr_linker_sources() Cmake function.
  */
 #include <snippets-rwdata.ld>
-
-#ifdef CONFIG_CODE_DATA_RELOCATION
-#include <linker_sram_data_relocate.ld>
-#endif
 
     } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
