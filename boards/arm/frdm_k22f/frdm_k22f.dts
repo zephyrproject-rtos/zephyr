@@ -118,6 +118,10 @@
 	status = "okay";
 };
 
+&dac0 {
+	status = "okay";
+	voltage-reference = <2>;
+};
 arduino_i2c: &i2c0 {
 	status = "okay";
 
