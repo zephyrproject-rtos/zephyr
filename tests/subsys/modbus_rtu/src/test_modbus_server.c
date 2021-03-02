@@ -146,7 +146,7 @@ static int holding_reg_wr_fp(uint16_t addr, float reg)
 	return 0;
 }
 
-static struct mbs_rtu_user_callbacks mbs_cbs = {
+static struct modbus_user_callbacks mbs_cbs = {
 	/** Coil read/write callback */
 	.coil_rd = coil_rd,
 	.coil_wr = coil_wr,
@@ -169,10 +169,10 @@ void test_server_rtu_setup_low_odd(void)
 	int err;
 
 	if (IS_ENABLED(CONFIG_MODBUS_RTU_SERVER)) {
-		err = mb_rtu_cfg_server(MB_TEST_IFACE_SERVER, MB_TEST_NODE_ADDR,
-					MB_TEST_BAUDRATE_LOW,
-					UART_CFG_PARITY_ODD,
-					&mbs_cbs, false);
+		err = modbus_init_server(MB_TEST_IFACE_SERVER, MB_TEST_NODE_ADDR,
+					 MB_TEST_BAUDRATE_LOW,
+					 UART_CFG_PARITY_ODD,
+					 &mbs_cbs, false);
 		zassert_equal(err, 0, "Failed to configure RTU server");
 	} else {
 		ztest_test_skip();
@@ -184,10 +184,10 @@ void test_server_rtu_setup_low_none(void)
 	int err;
 
 	if (IS_ENABLED(CONFIG_MODBUS_RTU_SERVER)) {
-		err = mb_rtu_cfg_server(MB_TEST_IFACE_SERVER, MB_TEST_NODE_ADDR,
-					MB_TEST_BAUDRATE_LOW,
-					UART_CFG_PARITY_NONE,
-					&mbs_cbs, false);
+		err = modbus_init_server(MB_TEST_IFACE_SERVER, MB_TEST_NODE_ADDR,
+					 MB_TEST_BAUDRATE_LOW,
+					 UART_CFG_PARITY_NONE,
+					 &mbs_cbs, false);
 		zassert_equal(err, 0, "Failed to configure RTU server");
 	} else {
 		ztest_test_skip();
@@ -199,10 +199,10 @@ void test_server_rtu_setup_high_even(void)
 	int err;
 
 	if (IS_ENABLED(CONFIG_MODBUS_RTU_SERVER)) {
-		err = mb_rtu_cfg_server(MB_TEST_IFACE_SERVER, MB_TEST_NODE_ADDR,
-					MB_TEST_BAUDRATE_HIGH,
-					UART_CFG_PARITY_EVEN,
-					&mbs_cbs, false);
+		err = modbus_init_server(MB_TEST_IFACE_SERVER, MB_TEST_NODE_ADDR,
+					 MB_TEST_BAUDRATE_HIGH,
+					 UART_CFG_PARITY_EVEN,
+					 &mbs_cbs, false);
 		zassert_equal(err, 0, "Failed to configure RTU server");
 	} else {
 		ztest_test_skip();
@@ -214,10 +214,10 @@ void test_server_rtu_setup_ascii(void)
 	int err;
 
 	if (IS_ENABLED(CONFIG_MODBUS_RTU_SERVER)) {
-		err = mb_rtu_cfg_server(MB_TEST_IFACE_SERVER, MB_TEST_NODE_ADDR,
-					MB_TEST_BAUDRATE_HIGH,
-					UART_CFG_PARITY_EVEN,
-					&mbs_cbs, true);
+		err = modbus_init_server(MB_TEST_IFACE_SERVER, MB_TEST_NODE_ADDR,
+					 MB_TEST_BAUDRATE_HIGH,
+					 UART_CFG_PARITY_EVEN,
+					 &mbs_cbs, true);
 		zassert_equal(err, 0, "Failed to configure RTU server");
 	} else {
 		ztest_test_skip();
@@ -229,7 +229,7 @@ void test_server_rtu_disable(void)
 	int err;
 
 	if (IS_ENABLED(CONFIG_MODBUS_RTU_SERVER)) {
-		err = mb_rtu_disable_iface(MB_TEST_IFACE_SERVER);
+		err = modbus_disable(MB_TEST_IFACE_SERVER);
 		zassert_equal(err, 0, "Failed to disable RTU server");
 	} else {
 		ztest_test_skip();
