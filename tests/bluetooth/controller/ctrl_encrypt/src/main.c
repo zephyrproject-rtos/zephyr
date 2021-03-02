@@ -28,6 +28,7 @@
 
 #include "ull_tx_queue.h"
 
+#include "ull_internal.h"
 #include "ull_conn_types.h"
 #include "ull_llcp.h"
 #include "ull_llcp_internal.h"
@@ -201,9 +202,10 @@ void test_encryption_start_mas_loc_limited_memory(void)
 	}
 
 	/* Steal all ntf buffers */
-	for (int i = 0U; i < NTF_BUF_NUM; i++) {
-		ntf = ntf_alloc();
-		zassert_not_null(ntf, NULL);
+	while (ll_pdu_rx_alloc_peek(1)) {
+		ntf = ll_pdu_rx_alloc();
+		/* Make sure we use a correct type or the release won't work */
+		ntf->hdr.type = NODE_RX_TYPE_DC_PDU;
 	}
 
 	/* Initiate an Encryption Start Procedure */
@@ -556,9 +558,10 @@ void test_encryption_start_mas_rem_limited_memory(void)
 	}
 
 	/* Steal all ntf buffers */
-	for (int i = 0U; i < NTF_BUF_NUM; i++) {
-		ntf = ntf_alloc();
-		zassert_not_null(ntf, NULL);
+	while (ll_pdu_rx_alloc_peek(1)) {
+		ntf = ll_pdu_rx_alloc();
+		/* Make sure we use a correct type or the release won't work */
+		ntf->hdr.type = NODE_RX_TYPE_DC_PDU;
 	}
 
 	/* Prepare */
