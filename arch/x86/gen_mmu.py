@@ -68,6 +68,7 @@ top-level paging structure as it is written out last.
 import sys
 import array
 import argparse
+import ctypes
 import os
 import struct
 
@@ -507,10 +508,14 @@ class PtableSet():
 
     def write_output(self, filename):
         """Write the page tables to the output file in binary format"""
+        written_size = 0
+
         with open(filename, "wb") as output_fp:
             for addr in sorted(self.tables):
                 mmu_table = self.tables[addr]
-                output_fp.write(mmu_table.get_binary())
+                mmu_table_bin = mmu_table.get_binary()
+                output_fp.write(mmu_table_bin)
+                written_size += len(mmu_table_bin)
 
             # We always have the top-level table be last. This is because
             # in PAE, the top-level PDPT has only 4 entries and is not a
@@ -519,7 +524,11 @@ class PtableSet():
             debug("top-level %s at physical addr 0x%x" %
                   (self.toplevel.__class__.__name__,
                    self.get_new_mmutable_addr()))
-            output_fp.write(self.toplevel.get_binary())
+            top_level_bin = self.toplevel.get_binary()
+            output_fp.write(top_level_bin)
+            written_size += len(top_level_bin)
+
+        return written_size
 
 # Paging mode classes, we'll use one depending on configuration
 class Ptables32bit(PtableSet):
@@ -567,6 +576,18 @@ def isdef(sym_name):
     """True if symbol is defined in ELF file"""
     return sym_name in syms
 
+
+def find_symbol(obj, name):
+    """Find symbol object from ELF file"""
+    for section in obj.iter_sections():
+        if isinstance(section, SymbolTableSection):
+            for sym in section.iter_symbols():
+                if sym.name == name:
+                    return sym
+
+    return None
+
+
 def main():
     """Main program"""
     global syms
@@ -575,6 +596,12 @@ def main():
     with open(args.kernel, "rb") as elf_fp:
         kernel = ELFFile(elf_fp)
         syms = get_symbols(kernel)
+
+        sym_dummy_pagetables = find_symbol(kernel, "dummy_pagetables")
+        if sym_dummy_pagetables:
+            reserved_pt_size = sym_dummy_pagetables['st_size']
+        else:
+            reserved_pt_size = None
 
     if isdef("CONFIG_X86_64"):
         pclass = PtablesIA32e
@@ -694,7 +721,29 @@ def main():
             pt.set_region_perms("_locore", FLAG_P | flag_user)
             pt.set_region_perms("_lorodata", FLAG_P | ENTRY_XD | flag_user)
 
-    pt.write_output(args.output)
+    written_size = pt.write_output(args.output)
+    debug("Written %d bytes to %s" % (written_size, args.output))
+
+    # Warn if reserved page table is not of correct size
+    if reserved_pt_size and written_size != reserved_pt_size:
+        # Figure out how many extra pages needed
+        size_diff = written_size - reserved_pt_size
+        page_size = syms["CONFIG_MMU_PAGE_SIZE"]
+        extra_pages_needed = int(round_up(size_diff, page_size) / page_size)
+
+        if isdef("CONFIG_X86_EXTRA_PAGE_TABLE_PAGES"):
+            extra_pages_kconfig = syms["CONFIG_X86_EXTRA_PAGE_TABLE_PAGES"]
+            if isdef("CONFIG_X86_64"):
+                extra_pages_needed += ctypes.c_int64(extra_pages_kconfig).value
+            else:
+                extra_pages_needed += ctypes.c_int32(extra_pages_kconfig).value
+
+        reason = "big" if reserved_pt_size > written_size else "small"
+
+        error(("Reserved space for page table is too %s."
+               " Set CONFIG_X86_EXTRA_PAGE_TABLE_PAGES=%d") %
+               (reason, extra_pages_needed))
+
 
 if __name__ == "__main__":
     main()
