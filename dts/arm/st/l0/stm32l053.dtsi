@@ -68,8 +68,28 @@
 			};
 		};
 
+		usb: usb@40005c00 {
+			compatible = "st,stm32-usb";
+			reg = <0x40005c00 0x400>;
+			interrupts = <31 0>;
+			interrupt-names = "usb";
+			num-bidir-endpoints = <8>;
+			ram-size = <1024>;
+			maximum-speed = "full-speed";
+			phys = <&otgfs_phy>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00800000>;
+			status = "disabled";
+			label= "USB";
+		};
+
 		eeprom: eeprom@8080000{
 			reg = <0x08080000 DT_SIZE_K(2)>;
+		};
+
+		otgfs_phy: otgfs_phy {
+			compatible = "usb-nop-xceiv";
+			#phy-cells = <0>;
+			label = "OTGFS_PHY";
 		};
 	};
 };
