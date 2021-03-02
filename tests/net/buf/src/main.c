@@ -121,7 +121,7 @@ static void test_net_buf_1(void)
 static void test_net_buf_2(void)
 {
 	struct net_buf *frag, *head;
-	struct k_fifo fifo;
+	static struct k_fifo fifo;
 	int i;
 
 	head = net_buf_alloc_len(&bufs_pool, 74, K_NO_WAIT);
@@ -169,8 +169,8 @@ static void test_net_buf_3(void)
 {
 	static struct k_thread test_3_thread_data;
 	struct net_buf *frag, *head;
-	struct k_fifo fifo;
-	struct k_sem sema;
+	static struct k_fifo fifo;
+	static struct k_sem sema;
 	int i;
 
 	head = net_buf_alloc_len(&bufs_pool, 74, K_NO_WAIT);

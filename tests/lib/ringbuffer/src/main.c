@@ -845,7 +845,7 @@ void test_ringbuffer_equal_bufs(void)
 void test_ringbuffer_performance(void)
 {
 	uint8_t buf[16];
-	struct ring_buf rbuf;
+	static struct ring_buf rbuf;
 	uint8_t indata[16];
 	uint8_t outdata[16];
 	uint8_t *ptr;

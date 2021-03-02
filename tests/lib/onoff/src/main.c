@@ -1054,7 +1054,7 @@ static void test_cancel_or_release(void)
 
 static void test_sync_basic(void)
 {
-	struct onoff_sync_service srv = {};
+	static struct onoff_sync_service srv = {};
 	k_spinlock_key_t key;
 	int res = 5;
 	int rc;
@@ -1131,7 +1131,7 @@ static void test_sync_basic(void)
 
 static void test_sync_error(void)
 {
-	struct onoff_sync_service srv = {};
+	static struct onoff_sync_service srv = {};
 	k_spinlock_key_t key;
 	int res = -EPERM;
 	int rc;
