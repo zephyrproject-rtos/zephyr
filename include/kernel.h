@@ -2701,6 +2701,7 @@ struct k_sem {
 	_wait_q_t wait_q;
 	uint32_t count;
 	uint32_t limit;
+
 	_POLL_EVENT;
 
 	_OBJECT_TRACING_NEXT_PTR(k_sem)
