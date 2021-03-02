@@ -93,6 +93,11 @@ static void event_handler(struct net_mgmt_event_callback *cb,
 		want_to_quit = false;
 	}
 
+	if (is_tunnel(iface)) {
+		/* Tunneling is handled separately, so ignore it here */
+		return;
+	}
+
 	if (mgmt_event == NET_EVENT_L4_CONNECTED) {
 		LOG_INF("Network connected");
 
@@ -192,6 +197,7 @@ static void init_app(void)
 	}
 
 	init_vlan();
+	init_tunnel();
 }
 
 static int cmd_sample_quit(const struct shell *shell,

@@ -54,6 +54,9 @@ echo-server directory:
 - :file:`overlay-tls.conf`
   This overlay config enables support for TLS.
 
+- :file:`overlay-tunnel.conf`
+  This overlay config enables support for IP tunneling.
+
 Build echo-server sample application like this:
 
 .. zephyr-app-commands::
