@@ -11,6 +11,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <toolchain.h>
+#include <sys/cbprintf_internal.h>
 
 #ifdef CONFIG_CBPRINTF_LIBC_SUBSTS
 #include <stdio.h>
@@ -20,11 +21,31 @@
 extern "C" {
 #endif
 
+/* Determine if _Generic is supported.
+ * In general it's a C11 feature but it was added also in:
+ * - GCC 4.9.0 https://gcc.gnu.org/gcc-4.9/changes.html
+ * - Clang 3.0 https://releases.llvm.org/3.0/docs/ClangReleaseNotes.html
+ */
+#ifndef Z_C_GENERIC
+#if ((__STDC_VERSION__ >= 201112L) || \
+	((__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__) >= 40900) || \
+	((__clang_major__ * 10000 + __clang_minor__ * 100 + __clang_patchlevel__) >= 30000))
+#define Z_C_GENERIC 1
+#else
+#define Z_C_GENERIC 0
+#endif
+#endif
+
 /**
  * @defgroup cbprintf_apis Formatted Output APIs
  * @ingroup support_apis
  * @{
  */
+
+/** @brief Required alignment of the buffer used for packaging. */
+#define CBPRINTF_PACKAGE_ALIGNMENT \
+	(IS_ENABLED(CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE) ? \
+		sizeof(long double) : MAX(sizeof(double), sizeof(long long)))
 
 /** @brief Signature for a cbprintf callback function.
  *
@@ -44,6 +65,50 @@ extern "C" {
  * cbprintf().
  */
 typedef int (*cbprintf_cb)(/* int c, void *ctx */);
+
+/** @brief Determine if string must be packaged in run time.
+ *
+ * Static packaging can be applied if size of the package can be determined
+ * at compile time. In general, package size can be determined at compile time
+ * if there are no string arguments which might be copied into package body if
+ * they are considered transient.
+ *
+ * @param skip number of read only string arguments in the parameter list. It
+ * shall be non-zero if there are known read only string arguments present
+ * in the string (e.g. function name prefix in the log message).
+ *
+ * @param ... String with arguments.
+ *
+ * @retval 1 if string must be packaged in run time.
+ * @retval 0 string can be statically packaged.
+ */
+#define CBPRINTF_MUST_RUNTIME_PACKAGE(skip, .../* fmt, ... */) \
+	Z_CBPRINTF_MUST_RUNTIME_PACKAGE(skip, __VA_ARGS__)
+
+/** @brief Statically package string.
+ *
+ * Build string package from formatted string. It assumes that formatted
+ * string is in the read only memory.
+ *
+ * If _Generic is not supported then runtime packaging is performed.
+ *
+ * @param packaged pointer to where the packaged data can be stored. Pass a null
+ * pointer to skip packaging but still calculate the total space required.
+ * The data stored here is relocatable, that is it can be moved to another
+ * contiguous block of memory. It must be aligned to the size of the longest
+ * argument. It is recommended to use CBPRINTF_PACKAGE_ALIGNMENT for alignment.
+ *
+ * @param inlen set to the number of bytes available at @p packaged. If
+ * @p packaged is NULL the value is ignored.
+ *
+ * @param outlen variable updated to the number of bytes required to completely
+ * store the packed information. If input buffer was too small it is set to
+ * -ENOSPC.
+ *
+ * @param ... formatted string with arguments. Format string must be constant.
+ */
+#define CBPRINTF_STATIC_PACKAGE(packaged, inlen, outlen, ... /* fmt, ... */) \
+		Z_CBPRINTF_STATIC_PACKAGE(packaged, inlen, outlen, __VA_ARGS__)
 
 /** @brief Capture state required to output formatted data later.
  *
