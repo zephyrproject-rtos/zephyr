@@ -742,9 +742,10 @@ static void iface_per_route_cb(struct net_if *iface, void *user_data)
 	const struct shell *shell = data->shell;
 	const char *extra;
 
-	PR("\nIPv6 routes for interface %p (%s)\n", iface,
+	PR("\nIPv6 routes for interface %d (%p) (%s)\n",
+	   net_if_get_by_iface(iface), iface,
 	   iface2str(iface, &extra));
-	PR("=======================================%s\n", extra);
+	PR("=========================================%s\n", extra);
 
 	data->user_data = iface;
 
@@ -765,8 +766,8 @@ static void route_mcast_cb(struct net_route_entry_mcast *entry,
 		return;
 	}
 
-	PR("IPv6 multicast route %p for interface %p (%s)\n", entry,
-	   iface, iface2str(iface, &extra));
+	PR("IPv6 multicast route %p for interface %d (%p) (%s)\n", entry,
+	   net_if_get_by_iface(iface), iface, iface2str(iface, &extra));
 	PR("==========================================================="
 	   "%s\n", extra);
 
@@ -1367,9 +1368,9 @@ static void context_cb(struct net_context *context, void *user_data)
 	get_addresses(context, addr_local, sizeof(addr_local),
 		      addr_remote, sizeof(addr_remote));
 
-	PR("[%2d] %p\t%p    %c%c%c   %16s\t%16s\n",
+	PR("[%2d] %p\t%d      %c%c%c   %16s\t%16s\n",
 	   (*count) + 1, context,
-	   net_context_get_iface(context),
+	   net_if_get_by_iface(net_context_get_iface(context)),
 	   net_context_get_family(context) == AF_INET6 ? '6' :
 	   (net_context_get_family(context) == AF_INET ? '4' : ' '),
 	   net_context_get_type(context) == SOCK_DGRAM ? 'D' :
@@ -1691,7 +1692,8 @@ static void arp_cb(struct arp_entry *entry, void *user_data)
 		PR("     Interface  Link              Address\n");
 	}
 
-	PR("[%2d] %p %s %s\n", *count, entry->iface,
+	PR("[%2d] %d          %s %s\n", *count,
+	   net_if_get_by_iface(entry->iface),
 	   net_sprint_ll_addr(entry->eth.addr, sizeof(struct net_eth_addr)),
 	   net_sprint_ipv4_addr(&entry->ip));
 
@@ -1761,7 +1763,7 @@ static int cmd_net_conn(const struct shell *shell, size_t argc, char *argv[])
 	struct net_shell_user_data user_data;
 	int count = 0;
 
-	PR("     Context   \tIface         Flags Local           \tRemote\n");
+	PR("     Context   \tIface  Flags            Local             Remote\n");
 
 	user_data.shell = shell;
 	user_data.user_data = &count;
@@ -3171,9 +3173,9 @@ static void address_lifetime_cb(struct net_if *iface, void *user_data)
 
 	ARG_UNUSED(user_data);
 
-	PR("\nIPv6 addresses for interface %p (%s)\n", iface,
-	       iface2str(iface, &extra));
-	PR("==========================================%s\n", extra);
+	PR("\nIPv6 addresses for interface %d (%p) (%s)\n",
+	   net_if_get_by_iface(iface), iface, iface2str(iface, &extra));
+	PR("============================================%s\n", extra);
 
 	if (!ipv6) {
 		PR("No IPv6 config found for this interface.\n");
@@ -3524,7 +3526,7 @@ static void nbr_cb(struct net_nbr *nbr, void *user_data)
 #endif
 
 	if (*count == 0) {
-		PR("     Neighbor   Interface        Flags State     "
+		PR("     Neighbor  Interface  Flags    State     "
 		   "Remain  Link              %sAddress\n", padding);
 	}
 
@@ -3546,8 +3548,8 @@ static void nbr_cb(struct net_nbr *nbr, void *user_data)
 		    k_uptime_get();
 #endif
 
-	PR("[%2d] %p %p %5d/%d/%d/%d %s%s %6d  %17s%s %s\n",
-	   *count, nbr, nbr->iface,
+	PR("[%2d] %p  %d      %5d/%d/%d/%d  %s%s %6d  %17s%s %s\n",
+	   *count, nbr, net_if_get_by_iface(nbr->iface),
 	   net_ipv6_nbr_data(nbr)->link_metric,
 	   nbr->ref,
 	   net_ipv6_nbr_data(nbr)->ns_count,
@@ -5077,14 +5079,17 @@ static void iface_vlan_del_cb(struct net_if *iface, void *user_data)
 	if (ret < 0) {
 		if (ret != -ESRCH) {
 			PR_WARNING("Cannot delete VLAN tag %d from "
-				   "interface %p\n",
-				   vlan_tag, iface);
+				   "interface %d (%p)\n",
+				   vlan_tag,
+				   net_if_get_by_iface(iface),
+				   iface);
 		}
 
 		return;
 	}
 
-	PR("VLAN tag %d removed from interface %p\n", vlan_tag, iface);
+	PR("VLAN tag %d removed from interface %d (%p)\n", vlan_tag,
+	   net_if_get_by_iface(iface), iface);
 }
 
 static void iface_vlan_cb(struct net_if *iface, void *user_data)
@@ -5192,8 +5197,8 @@ static int cmd_net_vlan_add(const struct shell *shell, size_t argc,
 	}
 
 	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
-		PR_WARNING("Network interface %p is not ethernet interface\n",
-			   iface);
+		PR_WARNING("Network interface %d (%p) is not ethernet interface\n",
+			   net_if_get_by_iface(iface), iface);
 		return -ENOEXEC;
 	}
 
@@ -5208,7 +5213,8 @@ static int cmd_net_vlan_add(const struct shell *shell, size_t argc,
 		return -ENOEXEC;
 	}
 
-	PR("VLAN tag %d set to interface %p\n", tag, iface);
+	PR("VLAN tag %d set to interface %d (%p)\n", tag,
+	   net_if_get_by_iface(iface), iface);
 
 	return 0;
 
