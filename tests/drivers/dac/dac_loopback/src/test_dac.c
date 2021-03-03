@@ -27,7 +27,8 @@
  */
 
 #if defined(CONFIG_BOARD_NUCLEO_L073RZ) || \
-	defined(CONFIG_BOARD_NUCLEO_L152RE)
+	defined(CONFIG_BOARD_NUCLEO_L152RE) || \
+	defined(CONFIG_BOARD_RONOTH_LODEV)
 
 /*
  * DAC output on PA4 (Arduino A2 pin of Nucleo board)
