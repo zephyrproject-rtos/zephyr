@@ -72,9 +72,9 @@
 #define MODBUS_ASCII_END_FRAME_CHAR1		'\r'
 #define MODBUS_ASCII_END_FRAME_CHAR2		'\n'
 
-struct mb_rtu_frame {
+struct modbus_adu {
 	uint16_t length;
-	uint8_t addr;
+	uint8_t unit_id;
 	uint8_t fc;
 	uint8_t data[CONFIG_MODBUS_BUFFER_SIZE - 4];
 	uint16_t crc;
@@ -138,12 +138,12 @@ struct modbus_context {
 	/* Server work item */
 	struct k_work server_work;
 	/* Received frame */
-	struct mb_rtu_frame rx_frame;
+	struct modbus_adu rx_adu;
 	/* Frame to transmit */
-	struct mb_rtu_frame tx_frame;
+	struct modbus_adu tx_adu;
 
 	/* Records error from frame reception, e.g. CRC error */
-	int rx_frame_err;
+	int rx_adu_err;
 
 #ifdef CONFIG_MODBUS_FC08_DIAGNOSTIC
 	uint16_t mbs_msg_ctr;
@@ -152,21 +152,21 @@ struct modbus_context {
 	uint16_t mbs_server_msg_ctr;
 	uint16_t mbs_noresp_ctr;
 #endif
-	/* Node address */
-	uint8_t node_addr;
+	/* Unit ID */
+	uint8_t unit_id;
 
 };
 
-struct modbus_context *mb_get_context(const uint8_t iface);
-void mb_tx_frame(struct modbus_context *ctx);
+struct modbus_context *modbus_get_context(const uint8_t iface);
+void modbus_tx_adu(struct modbus_context *ctx);
 
-bool mbs_rx_handler(struct modbus_context *ctx);
-void mbs_reset_statistics(struct modbus_context *pch);
+bool modbus_server_handler(struct modbus_context *ctx);
+void modbus_reset_stats(struct modbus_context *ctx);
 
 void modbus_serial_rx_disable(struct modbus_context *ctx);
 void modbus_serial_rx_enable(struct modbus_context *ctx);
-int modbus_serial_rx_frame(struct modbus_context *ctx);
-int modbus_serial_tx_frame(struct modbus_context *ctx);
+int modbus_serial_rx_adu(struct modbus_context *ctx);
+int modbus_serial_tx_adu(struct modbus_context *ctx);
 int modbus_serial_init(struct modbus_context *ctx,
 		       uint32_t baudrate,
 		       enum uart_config_parity parity,
