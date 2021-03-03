@@ -70,7 +70,7 @@ static void modbus_rx_handler(struct k_work *item)
 	case MODBUS_MODE_ASCII:
 		if (IS_ENABLED(CONFIG_MODBUS_SERIAL)) {
 			modbus_serial_rx_disable(ctx);
-			ctx->rx_frame_err = modbus_serial_rx_frame(ctx);
+			ctx->rx_adu_err = modbus_serial_rx_adu(ctx);
 		}
 		break;
 	default:
@@ -84,7 +84,7 @@ static void modbus_rx_handler(struct k_work *item)
 	}
 
 	if (IS_ENABLED(CONFIG_MODBUS_SERVER)) {
-		bool respond = mbs_rx_handler(ctx);
+		bool respond = modbus_server_handler(ctx);
 
 		switch (ctx->mode) {
 		case MODBUS_MODE_RTU:
@@ -101,13 +101,13 @@ static void modbus_rx_handler(struct k_work *item)
 	}
 }
 
-void mb_tx_frame(struct modbus_context *ctx)
+void modbus_tx_adu(struct modbus_context *ctx)
 {
 	switch (ctx->mode) {
 	case MODBUS_MODE_RTU:
 	case MODBUS_MODE_ASCII:
 		if (IS_ENABLED(CONFIG_MODBUS_SERIAL) &&
-		    modbus_serial_tx_frame(ctx)) {
+		    modbus_serial_tx_adu(ctx)) {
 			LOG_ERR("Unsupported MODBUS serial mode");
 		}
 		break;
@@ -116,7 +116,7 @@ void mb_tx_frame(struct modbus_context *ctx)
 	}
 }
 
-struct modbus_context *mb_get_context(const uint8_t iface)
+struct modbus_context *modbus_get_context(const uint8_t iface)
 {
 	struct modbus_context *ctx;
 
@@ -136,7 +136,7 @@ struct modbus_context *mb_get_context(const uint8_t iface)
 }
 
 static struct modbus_context *mb_cfg_iface(const uint8_t iface,
-					   const uint8_t node_addr,
+					   const uint8_t unit_id,
 					   const uint32_t baud,
 					   const enum uart_config_parity parity,
 					   const uint32_t rx_timeout,
@@ -165,7 +165,7 @@ static struct modbus_context *mb_cfg_iface(const uint8_t iface,
 	}
 
 	ctx->rxwait_to = rx_timeout;
-	ctx->node_addr = node_addr;
+	ctx->unit_id = unit_id;
 	ctx->client = client;
 	ctx->mbs_user_cb = NULL;
 	k_mutex_init(&ctx->iface_lock);
@@ -174,7 +174,7 @@ static struct modbus_context *mb_cfg_iface(const uint8_t iface,
 	k_work_init(&ctx->server_work, modbus_rx_handler);
 
 	if (IS_ENABLED(CONFIG_MODBUS_FC08_DIAGNOSTIC)) {
-		mbs_reset_statistics(ctx);
+		modbus_reset_stats(ctx);
 	}
 
 	switch (ctx->mode) {
@@ -196,7 +196,7 @@ static struct modbus_context *mb_cfg_iface(const uint8_t iface,
 	return ctx;
 }
 
-int modbus_init_server(const uint8_t iface, const uint8_t node_addr,
+int modbus_init_server(const uint8_t iface, const uint8_t unit_id,
 		       const uint32_t baud, const enum uart_config_parity parity,
 		       struct modbus_user_callbacks *const cb,
 		       const bool ascii_mode)
@@ -213,7 +213,7 @@ int modbus_init_server(const uint8_t iface, const uint8_t node_addr,
 		return -EINVAL;
 	}
 
-	ctx = mb_cfg_iface(iface, node_addr, baud,
+	ctx = mb_cfg_iface(iface, unit_id, baud,
 			   parity, 0, false, ascii_mode);
 
 	if (ctx == NULL) {
@@ -281,7 +281,7 @@ int modbus_disable(const uint8_t iface)
 	}
 
 	ctx->rxwait_to = 0;
-	ctx->node_addr = 0;
+	ctx->unit_id = 0;
 	ctx->mode = MODBUS_MODE_RTU;
 	ctx->mbs_user_cb = NULL;
 	atomic_clear_bit(&ctx->state, MODBUS_STATE_CONFIGURED);

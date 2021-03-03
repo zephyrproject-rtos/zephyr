@@ -95,7 +95,7 @@ static uint8_t modbus_ascii_get_lrc(uint8_t *src, size_t length)
 }
 
 /* Parses and converts an ASCII mode frame into a Modbus RTU frame. */
-static int modbus_ascii_rx_frame(struct modbus_context *ctx)
+static int modbus_ascii_rx_adu(struct modbus_context *ctx)
 {
 	struct modbus_serial_config *cfg = ctx->cfg;
 	uint8_t *pmsg;
@@ -105,7 +105,7 @@ static int modbus_ascii_rx_frame(struct modbus_context *ctx)
 	uint8_t calc_lrc;
 
 	rx_size =  cfg->uart_buf_ctr;
-	prx_data = &ctx->rx_frame.data[0];
+	prx_data = &ctx->rx_adu.data[0];
 
 	if (!(rx_size & 0x01)) {
 		LOG_WRN("Message should have an odd number of bytes");
@@ -129,27 +129,27 @@ static int modbus_ascii_rx_frame(struct modbus_context *ctx)
 	/* Point past the ':' to the address. */
 	pmsg = &cfg->uart_buf[1];
 
-	hex2bin(pmsg, 2, &ctx->rx_frame.addr, 1);
+	hex2bin(pmsg, 2, &ctx->rx_adu.unit_id, 1);
 	pmsg += 2;
 	rx_size -= 2;
-	hex2bin(pmsg, 2, &ctx->rx_frame.fc, 1);
+	hex2bin(pmsg, 2, &ctx->rx_adu.fc, 1);
 	pmsg += 2;
 	rx_size -= 2;
 
 	/* Get the data from the message */
-	ctx->rx_frame.length = 0;
+	ctx->rx_adu.length = 0;
 	while (rx_size > 2) {
 		hex2bin(pmsg, 2, prx_data, 1);
 		prx_data++;
 		pmsg += 2;
 		rx_size -= 2;
 		/* Increment the number of Modbus packets received */
-		ctx->rx_frame.length++;
+		ctx->rx_adu.length++;
 	}
 
 	/* Extract the message's LRC */
 	hex2bin(pmsg, 2, &frame_lrc, 1);
-	ctx->rx_frame.crc = frame_lrc;
+	ctx->rx_adu.crc = frame_lrc;
 
 	/*
 	 * The LRC is calculated on the ADDR, FC and Data fields,
@@ -181,7 +181,7 @@ static uint8_t *modbus_ascii_bin2hex(uint8_t value, uint8_t *pbuf)
 	return pbuf;
 }
 
-static void modbus_ascii_tx_frame(struct modbus_context *ctx)
+static void modbus_ascii_tx_adu(struct modbus_context *ctx)
 {
 	struct modbus_serial_config *cfg = ctx->cfg;
 	uint16_t tx_bytes = 0;
@@ -193,13 +193,13 @@ static void modbus_ascii_tx_frame(struct modbus_context *ctx)
 	tx_bytes = 1;
 
 	pbuf = &cfg->uart_buf[1];
-	pbuf = modbus_ascii_bin2hex(ctx->tx_frame.addr, pbuf);
+	pbuf = modbus_ascii_bin2hex(ctx->tx_adu.unit_id, pbuf);
 	tx_bytes += 2;
-	pbuf = modbus_ascii_bin2hex(ctx->tx_frame.fc, pbuf);
+	pbuf = modbus_ascii_bin2hex(ctx->tx_adu.fc, pbuf);
 	tx_bytes += 2;
 
-	for (int i = 0; i < ctx->tx_frame.length; i++) {
-		pbuf = modbus_ascii_bin2hex(ctx->tx_frame.data[i], pbuf);
+	for (int i = 0; i < ctx->tx_adu.length; i++) {
+		pbuf = modbus_ascii_bin2hex(ctx->tx_adu.data[i], pbuf);
 		tx_bytes += 2;
 	}
 
@@ -228,12 +228,12 @@ static void modbus_ascii_tx_frame(struct modbus_context *ctx)
 	modbus_serial_tx_on(ctx);
 }
 #else
-static int modbus_ascii_rx_frame(struct modbus_context *ctx)
+static int modbus_ascii_rx_adu(struct modbus_context *ctx)
 {
 	return 0;
 }
 
-static void modbus_ascii_tx_frame(struct modbus_context *ctx)
+static void modbus_ascii_tx_adu(struct modbus_context *ctx)
 {
 }
 #endif
@@ -270,7 +270,7 @@ static uint16_t modbus_rtu_crc16(uint8_t *src, size_t length)
 }
 
 /* Copy Modbus RTU frame and check if the CRC is valid. */
-static int modbus_rtu_rx_frame(struct modbus_context *ctx)
+static int modbus_rtu_rx_adu(struct modbus_context *ctx)
 {
 	struct modbus_serial_config *cfg = ctx->cfg;
 	uint16_t calc_crc;
@@ -284,22 +284,22 @@ static int modbus_rtu_rx_frame(struct modbus_context *ctx)
 		return -EMSGSIZE;
 	}
 
-	ctx->rx_frame.addr = cfg->uart_buf[0];
-	ctx->rx_frame.fc = cfg->uart_buf[1];
+	ctx->rx_adu.unit_id = cfg->uart_buf[0];
+	ctx->rx_adu.fc = cfg->uart_buf[1];
 	data_ptr = &cfg->uart_buf[2];
 	/* Payload length without node address, function code, and CRC */
-	ctx->rx_frame.length = cfg->uart_buf_ctr - 4;
+	ctx->rx_adu.length = cfg->uart_buf_ctr - 4;
 	/* CRC index */
 	crc_idx = cfg->uart_buf_ctr - sizeof(uint16_t);
 
-	memcpy(ctx->rx_frame.data, data_ptr, ctx->rx_frame.length);
+	memcpy(ctx->rx_adu.data, data_ptr, ctx->rx_adu.length);
 
-	ctx->rx_frame.crc = sys_get_le16(&cfg->uart_buf[crc_idx]);
+	ctx->rx_adu.crc = sys_get_le16(&cfg->uart_buf[crc_idx]);
 	/* Calculate CRC over address, function code, and payload */
 	calc_crc = modbus_rtu_crc16(&cfg->uart_buf[0],
-				    cfg->uart_buf_ctr - sizeof(ctx->rx_frame.crc));
+				    cfg->uart_buf_ctr - sizeof(ctx->rx_adu.crc));
 
-	if (ctx->rx_frame.crc != calc_crc) {
+	if (ctx->rx_adu.crc != calc_crc) {
 		LOG_WRN("Calculated CRC does not match received CRC");
 		return -EIO;
 	}
@@ -307,23 +307,23 @@ static int modbus_rtu_rx_frame(struct modbus_context *ctx)
 	return 0;
 }
 
-static void rtu_tx_frame(struct modbus_context *ctx)
+static void rtu_tx_adu(struct modbus_context *ctx)
 {
 	struct modbus_serial_config *cfg = ctx->cfg;
 	uint16_t tx_bytes = 0;
 	uint8_t *data_ptr;
 
-	cfg->uart_buf[0] = ctx->tx_frame.addr;
-	cfg->uart_buf[1] = ctx->tx_frame.fc;
-	tx_bytes = 2 + ctx->tx_frame.length;
+	cfg->uart_buf[0] = ctx->tx_adu.unit_id;
+	cfg->uart_buf[1] = ctx->tx_adu.fc;
+	tx_bytes = 2 + ctx->tx_adu.length;
 	data_ptr = &cfg->uart_buf[2];
 
-	memcpy(data_ptr, ctx->tx_frame.data, ctx->tx_frame.length);
+	memcpy(data_ptr, ctx->tx_adu.data, ctx->tx_adu.length);
 
-	ctx->tx_frame.crc = modbus_rtu_crc16(&cfg->uart_buf[0],
-					     ctx->tx_frame.length + 2);
-	sys_put_le16(ctx->tx_frame.crc,
-		     &cfg->uart_buf[ctx->tx_frame.length + 2]);
+	ctx->tx_adu.crc = modbus_rtu_crc16(&cfg->uart_buf[0],
+					     ctx->tx_adu.length + 2);
+	sys_put_le16(ctx->tx_adu.crc,
+		     &cfg->uart_buf[ctx->tx_adu.length + 2]);
 	tx_bytes += 2;
 
 	cfg->uart_buf_ctr = tx_bytes;
@@ -480,21 +480,21 @@ void modbus_serial_rx_enable(struct modbus_context *ctx)
 	modbus_serial_rx_on(ctx);
 }
 
-int modbus_serial_rx_frame(struct modbus_context *ctx)
+int modbus_serial_rx_adu(struct modbus_context *ctx)
 {
 	struct modbus_serial_config *cfg = ctx->cfg;
 	int rc = 0;
 
 	switch (ctx->mode) {
 	case MODBUS_MODE_RTU:
-		rc = modbus_rtu_rx_frame(ctx);
+		rc = modbus_rtu_rx_adu(ctx);
 		break;
 	case MODBUS_MODE_ASCII:
 		if (!IS_ENABLED(CONFIG_MODBUS_ASCII_MODE)) {
 			return -ENOTSUP;
 		}
 
-		rc = modbus_ascii_rx_frame(ctx);
+		rc = modbus_ascii_rx_adu(ctx);
 		break;
 	default:
 		LOG_ERR("Unsupported MODBUS mode");
@@ -507,15 +507,15 @@ int modbus_serial_rx_frame(struct modbus_context *ctx)
 	return rc;
 }
 
-int modbus_serial_tx_frame(struct modbus_context *ctx)
+int modbus_serial_tx_adu(struct modbus_context *ctx)
 {
 	switch (ctx->mode) {
 	case MODBUS_MODE_RTU:
-		rtu_tx_frame(ctx);
+		rtu_tx_adu(ctx);
 		return 0;
 	case MODBUS_MODE_ASCII:
 		if (IS_ENABLED(CONFIG_MODBUS_ASCII_MODE)) {
-			modbus_ascii_tx_frame(ctx);
+			modbus_ascii_tx_adu(ctx);
 			return 0;
 		}
 	default:
