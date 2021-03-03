@@ -160,12 +160,19 @@ struct ull_hdr {
 
 struct lll_hdr {
 	void *parent;
+#if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+	uint8_t score;
+	uint8_t latency;
+#endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
 };
 
 struct lll_prepare_param {
 	uint32_t ticks_at_expire;
 	uint32_t remainder;
 	uint16_t lazy;
+#if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+	int8_t  prio;
+#endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
 	uint8_t force;
 	void *param;
 };
@@ -379,7 +386,14 @@ static inline void lll_hdr_init(void *lll, void *parent)
 	struct lll_hdr *hdr = lll;
 
 	hdr->parent = parent;
+
+#if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+	hdr->score = 0U;
+	hdr->latency = 0U;
+#endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
 }
+
+void lll_done_score(void *param, uint8_t too_late, uint8_t aborted);
 
 int lll_init(void);
 int lll_reset(void);
