@@ -15,7 +15,8 @@
 #define SLEEP_MS_LONG	15000
 
 #if defined(CONFIG_BOARD_NUCLEO_F429ZI) || defined(CONFIG_BOARD_NUCLEO_F207ZG) \
-	|| defined(CONFIG_BOARD_NUCLEO_L073RZ)
+	|| defined(CONFIG_BOARD_NUCLEO_L073RZ) \
+	|| defined(CONFIG_BOARD_RONOTH_LODEV)
 #define FAULTY_ADDRESS 0x0FFFFFFF
 #elif CONFIG_MMU
 /* Just past the zephyr image mapping should be a non-present page */
