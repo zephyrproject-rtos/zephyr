@@ -206,9 +206,7 @@ static void summarize_dw16(const struct jesd216_param_header *php,
 		return;
 	}
 
-	uint32_t dw1 = sys_le32_to_cpu(bfp->dw1);
-	uint8_t addr_support = (dw1 & JESD216_SFDP_BFP_DW1_ADDRBYTES_MASK)
-		>> JESD216_SFDP_BFP_DW1_ADDRBYTES_SHFT;
+	uint8_t addr_support = jesd216_bfp_addrbytes(bfp);
 
 	/* Don't display bits when 4-byte addressing is not supported. */
 	if (addr_support != JESD216_SFDP_BFP_DW1_ADDRBYTES_VAL_3B) {
