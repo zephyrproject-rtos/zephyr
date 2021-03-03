@@ -1277,13 +1277,13 @@ uint8_t ll_adv_enable(uint8_t enable)
 				   HAL_TICKER_US_TO_TICKS((uint64_t)interval *
 							  ADV_INT_UNIT_US),
 				   TICKER_NULL_REMAINDER,
-#if !defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE) && \
+#if !defined(CONFIG_BT_TICKER_LOW_LAT) && \
 	!defined(CONFIG_BT_CTLR_LOW_LAT)
 				   /* Force expiry to ensure timing update */
 				   TICKER_LAZY_MUST_EXPIRE,
 #else
 				   TICKER_NULL_LAZY,
-#endif
+#endif /* !CONFIG_BT_TICKER_LOW_LAT && !CONFIG_BT_CTLR_LOW_LAT */
 				   ticks_slot,
 				   ticker_cb, adv,
 				   ull_ticker_status_give,
@@ -1721,7 +1721,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t laz
 
 	lll = &adv->lll;
 
-	if (IS_ENABLED(CONFIG_BT_TICKER_COMPATIBILITY_MODE) ||
+	if (IS_ENABLED(CONFIG_BT_TICKER_LOW_LAT) ||
 	    (lazy != TICKER_LAZY_MUST_EXPIRE)) {
 		/* Increment prepare reference count */
 		ref = ull_ref_inc(&adv->ull);

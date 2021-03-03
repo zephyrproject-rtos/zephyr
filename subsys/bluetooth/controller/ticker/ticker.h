@@ -37,7 +37,7 @@
 
 /** \brief Timer node type size.
  */
-#if defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
+#if defined(CONFIG_BT_TICKER_LOW_LAT)
 #define TICKER_NODE_T_SIZE      40
 #else
 #if defined(CONFIG_BT_TICKER_EXT)
@@ -45,7 +45,7 @@
 #else
 #define TICKER_NODE_T_SIZE      44
 #endif /* CONFIG_BT_TICKER_EXT */
-#endif /* CONFIG_BT_TICKER_COMPATIBILITY_MODE*/
+#endif /* CONFIG_BT_TICKER_LOW_LAT*/
 
 /** \brief Timer user type size.
  */
@@ -156,7 +156,7 @@ uint32_t ticker_job_idle_get(uint8_t instance_index, uint8_t user_id,
 void ticker_job_sched(uint8_t instance_index, uint8_t user_id);
 uint32_t ticker_ticks_now_get(void);
 uint32_t ticker_ticks_diff_get(uint32_t ticks_now, uint32_t ticks_old);
-#if !defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
+#if !defined(CONFIG_BT_TICKER_LOW_LAT)
 uint32_t ticker_priority_set(uint8_t instance_index, uint8_t user_id, uint8_t ticker_id,
 			  int8_t priority, ticker_op_func fp_op_func,
 			  void *op_context);
@@ -176,4 +176,4 @@ uint32_t ticker_update_ext(uint8_t instance_index, uint8_t user_id,
 			   ticker_op_func fp_op_func, void *op_context,
 			   uint8_t must_expire);
 #endif /* CONFIG_BT_TICKER_EXT */
-#endif /* !CONFIG_BT_TICKER_COMPATIBILITY_MODE */
+#endif /* !CONFIG_BT_TICKER_LOW_LAT */

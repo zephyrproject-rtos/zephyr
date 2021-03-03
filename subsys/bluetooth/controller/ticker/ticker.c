@@ -29,59 +29,62 @@
  ****************************************************************************/
 
 struct ticker_node {
-	uint8_t  next;			 /* Next ticker node */
+	uint8_t  next;			    /* Next ticker node */
 
-	uint8_t  req;			 /* Request counter */
-	uint8_t  ack;			 /* Acknowledge counter. Imbalance
-					  * between req and ack indicates
-					  * ongoing operation
-					  */
-	uint8_t  force;			 /* If non-zero, node timeout should
-					  * be forced at next expiration
-					  */
-	uint32_t ticks_periodic;		 /* If non-zero, interval
-					  * between expirations
-					  */
-	uint32_t ticks_to_expire;		 /* Ticks until expiration */
-	ticker_timeout_func timeout_func;/* User timeout function */
-	void  *context;			 /* Context delivered to timeout
-					  * function
-					  */
-	uint32_t ticks_to_expire_minus;	 /* Negative drift correction */
-	uint32_t ticks_slot;		 /* Air-time reservation for node */
-	uint16_t lazy_periodic;		 /* Number of timeouts to allow
-					  * skipping
-					  */
-	uint16_t lazy_current;		 /* Current number of timeouts
-					  * skipped = slave latency
-					  */
+	uint8_t  req;			    /* Request counter */
+	uint8_t  ack;			    /* Acknowledge counter. Imbalance
+					     * between req and ack indicates
+					     * ongoing operation
+					     */
+	uint8_t  force;			    /* If non-zero, node timeout should
+					     * be forced at next expiration
+					     */
+	uint32_t ticks_periodic;	    /* If non-zero, interval
+					     * between expirations
+					     */
+	uint32_t ticks_to_expire;	    /* Ticks until expiration */
+	ticker_timeout_func timeout_func;   /* User timeout function */
+	void  *context;			    /* Context delivered to timeout
+					     * function
+					     */
+	uint32_t ticks_to_expire_minus;	    /* Negative drift correction */
+	uint32_t ticks_slot;		    /* Air-time reservation for node */
+	uint16_t lazy_periodic;		    /* Number of timeouts to allow
+					     * skipping
+					     */
+	uint16_t lazy_current;		    /* Current number of timeouts
+					     * skipped = slave latency
+					     */
 	union {
-		uint32_t remainder_periodic;  /* Sub-microsecond tick remainder
-					       * for each period
-					       */
-		ticker_op_func fp_op_func; /* Operation completion callback */
+		uint32_t remainder_periodic;/* Sub-microsecond tick remainder
+					     * for each period
+					     */
+		ticker_op_func fp_op_func;  /* Operation completion callback */
 	};
 
 	union {
 		uint32_t remainder_current; /* Current sub-microsecond tick
-					  * remainder
-					  */
-		void  *op_context;       /* Context passed in completion
-					  * callback
-					  */
+					     * remainder
+					     */
+		void  *op_context;	    /* Context passed in completion
+					     * callback
+					     */
 	};
 
-#if !defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
+#if !defined(CONFIG_BT_TICKER_LOW_LAT)
 #if  defined(CONFIG_BT_TICKER_EXT)
-	struct ticker_ext *ext_data;	 /* Ticker extension data */
+	struct ticker_ext *ext_data;	    /* Ticker extension data */
 #endif /* CONFIG_BT_TICKER_EXT */
-	uint8_t  must_expire;		 /* Node must expire, even if it
-					  * collides with other nodes
-					  */
-	int8_t  priority;			 /* Ticker node priority. 0 is default.
-					  * Lower value is higher priority
-					  */
-#endif /* CONFIG_BT_TICKER_COMPATIBILITY_MODE */
+	uint8_t  must_expire;		    /* Node must expire, even if it
+					     * collides with other nodes
+					     */
+	int8_t  priority;		    /* Ticker node priority. 0 is
+					     * default. Lower value is higher
+					     * priority
+					     */
+#endif /* !CONFIG_BT_TICKER_LOW_LAT &&
+	* !CONFIG_BT_TICKER_SLOT_AGNOSTIC
+	*/
 };
 
 /* Operations to be performed in ticker_job.
@@ -113,9 +116,9 @@ struct ticker_node {
  * requests to ticker_job
  */
 struct ticker_user_op_start {
-	uint32_t ticks_at_start;		/* Anchor ticks (absolute) */
+	uint32_t ticks_at_start;	/* Anchor ticks (absolute) */
 	uint32_t ticks_first;		/* Initial timeout ticks */
-	uint32_t ticks_periodic;		/* Ticker period ticks */
+	uint32_t ticks_periodic;	/* Ticker period ticks */
 	uint32_t remainder_periodic;	/* Sub-microsecond tick remainder */
 	uint16_t lazy;			/* Periodic latency in number of
 					 * periods
@@ -132,12 +135,12 @@ struct ticker_user_op_start {
  * requests to ticker_job
  */
 struct ticker_user_op_update {
-	uint32_t ticks_drift_plus;		/* Requested positive drift in ticks */
+	uint32_t ticks_drift_plus;	/* Requested positive drift in ticks */
 	uint32_t ticks_drift_minus;	/* Requested negatice drift in ticks */
-	uint32_t ticks_slot_plus;		/* Number of ticks to add to slot
+	uint32_t ticks_slot_plus;	/* Number of ticks to add to slot
 					 * reservation (air-time)
 					 */
-	uint32_t ticks_slot_minus;		/* Number of ticks to subtract from
+	uint32_t ticks_slot_minus;	/* Number of ticks to subtract from
 					 * slot reservation (air-time)
 					 */
 	uint16_t lazy;			/* Slave latency:
@@ -160,7 +163,7 @@ struct ticker_user_op_update {
  * requests with absolute tick to ticker_job
  */
 struct ticker_user_op_stop {
-	uint32_t ticks_at_stop;            /* Anchor ticks (absolute) */
+	uint32_t ticks_at_stop;		/* Anchor ticks (absolute) */
 };
 
 /* User operation data structure for slot_get opcode. Used for passing request
@@ -179,74 +182,77 @@ struct ticker_user_op_slot_get {
  * request to set ticker node priority via ticker_job
  */
 struct ticker_user_op_priority_set {
-	int8_t priority;		   /* Node priority. Defaults to 0 */
+	int8_t priority;		/* Node priority. Defaults to 0 */
 };
 
 /* User operation top level data structure. Used for passing requests to
  * ticker_job
  */
 struct ticker_user_op {
-	uint8_t op;		   /* User operation */
-	uint8_t id;		   /* Ticker node id */
+	uint8_t op;			/* User operation */
+	uint8_t id;			/* Ticker node id */
 	union {
 		struct ticker_user_op_start        start;
 		struct ticker_user_op_update       update;
 		struct ticker_user_op_stop         stop;
 		struct ticker_user_op_slot_get     slot_get;
 		struct ticker_user_op_priority_set priority_set;
-	} params;		   /* User operation parameters */
-	uint32_t status;		   /* Operation result */
-	ticker_op_func fp_op_func; /* Operation completion callback */
-	void  *op_context;	   /* Context passed in completion callback */
+	} params;			/* User operation parameters */
+	uint32_t status;		/* Operation result */
+	ticker_op_func fp_op_func;	/* Operation completion callback */
+	void  *op_context;		/* Context passed in completion callback */
 };
 
 /* User data structure for operations
  */
 struct ticker_user {
-	uint8_t count_user_op;	   /* Number of user operation slots */
-	uint8_t first;		   /* Slot index of first user operation */
-	uint8_t middle;		   /* Slot index of last managed user op.
-				    * Updated by ticker_job_list_manage
-				    * for use in ticker_job_list_insert
-				    */
-	uint8_t last;		   /* Slot index of last user operation */
+	uint8_t count_user_op;		/* Number of user operation slots */
+	uint8_t first;			/* Slot index of first user operation */
+	uint8_t middle;			/* Slot index of last managed user op.
+					 * Updated by ticker_job_list_manage
+					 * for use in ticker_job_list_insert
+					 */
+	uint8_t last;			/* Slot index of last user operation */
 	struct ticker_user_op *user_op; /* Pointer to user operation array */
 };
 
 /* Ticker instance
  */
 struct ticker_instance {
-	struct ticker_node *nodes; /* Pointer to ticker nodes */
-	struct ticker_user *users; /* Pointer to user nodes */
-	uint8_t  count_node;	   /* Number of ticker nodes */
-	uint8_t  count_user;	   /* Number of user nodes */
-	uint8_t  ticks_elapsed_first; /* Index from which elapsed ticks count is
-				    * pulled
-				    */
-	uint8_t  ticks_elapsed_last;  /* Index to which elapsed ticks count is
-				    * pushed
-				    */
-	uint32_t ticks_elapsed[DOUBLE_BUFFER_SIZE]; /* Buffer for elapsed ticks */
-	uint32_t ticks_current;	   /* Absolute ticks elapsed at last
-				    * ticker_job
-				    */
-	uint32_t ticks_slot_previous; /* Number of ticks previously reserved by a
-				    * ticker node (active air-time)
-				    */
-	uint8_t  ticker_id_slot_previous; /* Id of previous slot reserving ticker
-					* node
-					*/
-	uint8_t  ticker_id_head;      /* Index of first ticker node (next to
-				    * expire)
-				    */
-	uint8_t  job_guard;	   /* Flag preventing ticker_worker from
-				    * running if ticker_job is active
-				    */
-	uint8_t  worker_trigger;	   /* Flag preventing ticker_job from starting
-				    * if ticker_worker was requested, and to
-				    * trigger ticker_worker at end of job, if
-				    * requested
-				    */
+	struct ticker_node *nodes;	/* Pointer to ticker nodes */
+	struct ticker_user *users;	/* Pointer to user nodes */
+	uint8_t  count_node;		/* Number of ticker nodes */
+	uint8_t  count_user;		/* Number of user nodes */
+	uint8_t  ticks_elapsed_first;	/* Index from which elapsed ticks count
+					 * is pulled
+					 */
+	uint8_t  ticks_elapsed_last;	/* Index to which elapsed ticks count
+					 * is pushed
+					 */
+	uint32_t ticks_elapsed[DOUBLE_BUFFER_SIZE]; /* Buffer for elapsed
+						     * ticks
+						     */
+	uint32_t ticks_current;		/* Absolute ticks elapsed at last
+					 * ticker_job
+					 */
+	uint32_t ticks_slot_previous;	/* Number of ticks previously reserved
+					 * by a ticker node (active air-time)
+					 */
+	uint8_t  ticker_id_slot_previous; /* Id of previous slot reserving
+					   * ticker node
+					   */
+	uint8_t  ticker_id_head;	/* Index of first ticker node (next to
+					 * expire)
+					 */
+	uint8_t  job_guard;		/* Flag preventing ticker_worker from
+					 * running if ticker_job is active
+					 */
+	uint8_t  worker_trigger;	/* Flag preventing ticker_job from
+					 * starting if ticker_worker was
+					 * requested, and to trigger
+					 * ticker_worker at end of job, if
+					 * requested
+					 */
 
 	ticker_caller_id_get_cb_t caller_id_get_cb; /* Function for retrieving
 						     * the caller id from user
@@ -293,7 +299,7 @@ static inline void ticker_next_elapsed(uint8_t *ticks_elapsed_index)
 	*ticks_elapsed_index = idx;
 }
 
-#if defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
+#if defined(CONFIG_BT_TICKER_LOW_LAT)
 /**
  * @brief Get ticker expiring in a specific slot
  *
@@ -335,7 +341,7 @@ static uint8_t ticker_by_slot_get(struct ticker_node *node, uint8_t ticker_id_he
 
 	return ticker_id_head;
 }
-#endif /* CONFIG_BT_TICKER_COMPATIBILITY_MODE */
+#endif /* CONFIG_BT_TICKER_LOW_LAT */
 
 /**
  * @brief Get next ticker with slot ticks
@@ -403,7 +409,7 @@ static void ticker_by_next_slot_get(struct ticker_instance *instance,
 	*ticks_to_expire = _ticks_to_expire;
 }
 
-#if !defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
+#if !defined(CONFIG_BT_TICKER_LOW_LAT)
 /**
  * @brief Enqueue ticker node
  *
@@ -472,7 +478,7 @@ static uint8_t ticker_enqueue(struct ticker_instance *instance, uint8_t id)
 
 	return id;
 }
-#else /* !CONFIG_BT_TICKER_COMPATIBILITY_MODE */
+#else /* !CONFIG_BT_TICKER_LOW_LAT */
 
 /**
  * @brief Enqueue ticker node
@@ -569,7 +575,7 @@ static uint8_t ticker_enqueue(struct ticker_instance *instance, uint8_t id)
 
 	return id;
 }
-#endif /* !CONFIG_BT_TICKER_COMPATIBILITY_MODE */
+#endif /* !CONFIG_BT_TICKER_LOW_LAT */
 
 /**
  * @brief Dequeue ticker node
@@ -642,7 +648,7 @@ static uint32_t ticker_dequeue(struct ticker_instance *instance, uint8_t id)
 	return (total + timeout);
 }
 
-#if !defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
+#if !defined(CONFIG_BT_TICKER_LOW_LAT)
 /**
  * @brief Resolve ticker node collision
  *
@@ -762,7 +768,7 @@ static uint8_t ticker_resolve_collision(struct ticker_node *nodes,
 
 	return 0U;
 }
-#endif /* !CONFIG_BT_TICKER_COMPATIBILITY_MODE */
+#endif /* !CONFIG_BT_TICKER_LOW_LAT */
 
 /**
  * @brief Ticker worker
@@ -807,19 +813,18 @@ void ticker_worker(void *param)
 	/* Auto variable containing the head of tickers expiring */
 	ticker_id_head = instance->ticker_id_head;
 
-#if !defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
 	/* Check if the previous ticker node which had air-time, is still
 	 * active and has this time slot reserved
 	 */
 	uint8_t slot_reserved = 0;
 
-	if (instance->ticker_id_slot_previous != TICKER_NULL) {
+	if (!IS_ENABLED(CONFIG_BT_TICKER_LOW_LAT) &&
+	    instance->ticker_id_slot_previous != TICKER_NULL) {
 		if (instance->ticks_slot_previous > ticks_elapsed) {
 			/* This node intersects reserved slot */
 			slot_reserved = 1;
 		}
 	}
-#endif /* !CONFIG_BT_TICKER_COMPATIBILITY_MODE */
 
 	/* Expire all tickers within ticks_elapsed and collect ticks_expired */
 	node = &instance->nodes[0];
@@ -850,7 +855,7 @@ void ticker_worker(void *param)
 			continue;
 		}
 
-#if !defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
+#if !defined(CONFIG_BT_TICKER_LOW_LAT)
 		/* Check if node has slot reservation and resolve any collision
 		 * with other ticker nodes
 		 */
@@ -901,7 +906,7 @@ void ticker_worker(void *param)
 				TICKER_RESCHEDULE_STATE_NONE;
 		}
 #endif /* CONFIG_BT_TICKER_EXT */
-#endif /* !CONFIG_BT_TICKER_COMPATIBILITY_MODE */
+#endif /* !CONFIG_BT_TICKER_LOW_LAT */
 
 		/* Scheduled timeout is acknowledged to be complete */
 		ticker->ack--;
@@ -924,8 +929,8 @@ void ticker_worker(void *param)
 					     ticker->context);
 			DEBUG_TICKER_TASK(0);
 
-#if !defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
-			if (must_expire_skip == 0U) {
+			if (!IS_ENABLED(CONFIG_BT_TICKER_LOW_LAT) &&
+			   (must_expire_skip == 0U)) {
 				/* Reset latency to periodic offset */
 				ticker->lazy_current = 0U;
 				ticker->force = 0U;
@@ -934,7 +939,6 @@ void ticker_worker(void *param)
 					slot_reserved = 1U;
 				}
 			}
-#endif /* !CONFIG_BT_TICKER_COMPATIBILITY_MODE */
 		}
 	}
 
@@ -1404,13 +1408,13 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 	struct ticker_node *node;
 	uint32_t ticks_expired;
 
-#if !defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
+#if !defined(CONFIG_BT_TICKER_LOW_LAT)
 	uint32_t ticks_latency;
 	uint32_t ticks_now;
 
 	ticks_now = cntr_cnt_get();
 	ticks_latency = ticker_ticks_diff_get(ticks_now, ticks_previous);
-#endif /* !CONFIG_BT_TICKER_COMPATIBILITY_MODE */
+#endif /* !CONFIG_BT_TICKER_LOW_LAT */
 
 	node = &instance->nodes[0];
 	ticks_expired = 0U;
@@ -1436,7 +1440,7 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 		ticks_elapsed -= ticks_to_expire;
 		ticks_expired += ticks_to_expire;
 
-#if !defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
+#if !defined(CONFIG_BT_TICKER_LOW_LAT)
 		ticks_latency -= ticks_to_expire;
 
 		/* Node with lazy count did not expire with callback, but
@@ -1444,7 +1448,7 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 		 * not define the active slot reservation (slot_previous).
 		 */
 		skip_collision = (ticker->lazy_current != 0U);
-#endif /* !CONFIG_BT_TICKER_COMPATIBILITY_MODE */
+#endif /* !CONFIG_BT_TICKER_LOW_LAT */
 
 		/* decrement ticks_slot_previous */
 		if (instance->ticks_slot_previous > ticks_to_expire) {
@@ -1473,7 +1477,7 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 		/* Ticker will be restarted if periodic or to be re-scheduled */
 		if ((ticker->ticks_periodic != 0U) ||
 		    TICKER_RESCHEDULE_PENDING(ticker)) {
-#if !defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
+#if !defined(CONFIG_BT_TICKER_LOW_LAT)
 			if (TICKER_RESCHEDULE_PENDING(ticker)) {
 				/* Set the re-scheduled node to now. Will be
 				 * collision resolved after all nodes are
@@ -1540,7 +1544,7 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 
 			ticks_to_expire_prep(ticker, instance->ticks_current,
 					     (ticks_previous + ticks_expired));
-#else /* !CONFIG_BT_TICKER_COMPATIBILITY_MODE */
+#else /* !CONFIG_BT_TICKER_LOW_LAT */
 			uint32_t count;
 
 			/* Prepare for next interval */
@@ -1558,7 +1562,7 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 			/* Reset latency to periodic offset */
 			ticker->lazy_current = ticker->lazy_periodic;
 			ticker->force = 0U;
-#endif /* !CONFIG_BT_TICKER_COMPATIBILITY_MODE */
+#endif /* !CONFIG_BT_TICKER_LOW_LAT */
 			/* Add to insert list */
 			ticker->next = *insert_head;
 			*insert_head = id_expired;
@@ -1566,7 +1570,7 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 			/* set schedule status of node as restarting. */
 			ticker->req++;
 		} else {
-#if !defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
+#if !defined(CONFIG_BT_TICKER_LOW_LAT)
 			/* A single-shot ticker in requested or skipped due to
 			 * collision shall generate a operation function
 			 * callback with failure status.
@@ -1576,7 +1580,7 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 				ticker->fp_op_func(TICKER_STATUS_FAILURE,
 						   ticker->op_context);
 			}
-#endif /* !CONFIG_BT_TICKER_COMPATIBILITY_MODE */
+#endif /* !CONFIG_BT_TICKER_LOW_LAT */
 
 			/* reset schedule status of node */
 			ticker->req = ticker->ack;
@@ -1601,7 +1605,7 @@ static inline void ticker_job_op_start(struct ticker_node *ticker,
 {
 	struct ticker_user_op_start *start = (void *)&user_op->params.start;
 
-#if defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
+#if defined(CONFIG_BT_TICKER_LOW_LAT)
 	/* Must expire is not supported in compatibility mode */
 	LL_ASSERT(start->lazy < TICKER_LAZY_MUST_EXPIRE_KEEP);
 #else
@@ -1613,7 +1617,7 @@ static inline void ticker_job_op_start(struct ticker_node *ticker,
 #if defined(CONFIG_BT_TICKER_EXT)
 	ticker->ext_data = start->ext_data;
 #endif /* CONFIG_BT_TICKER_EXT */
-#endif /* CONFIG_BT_TICKER_COMPATIBILITY_MODE */
+#endif /* CONFIG_BT_TICKER_LOW_LAT */
 
 	ticker->ticks_periodic = start->ticks_periodic;
 	ticker->remainder_periodic = start->remainder_periodic;
@@ -1631,7 +1635,7 @@ static inline void ticker_job_op_start(struct ticker_node *ticker,
 	ticker->force = 1U;
 }
 
-#if !defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
+#if !defined(CONFIG_BT_TICKER_LOW_LAT)
 /**
  * @brief Insert new ticker node
  *
@@ -1877,7 +1881,7 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance,
 	return rescheduled;
 }
 #endif /* CONFIG_BT_TICKER_EXT */
-#else  /* !CONFIG_BT_TICKER_COMPATIBILITY_MODE */
+#else  /* !CONFIG_BT_TICKER_LOW_LAT */
 
 /**
  * @brief Insert new ticker node
@@ -1990,7 +1994,7 @@ static inline uint32_t ticker_job_insert(struct ticker_instance *instance,
 
 	return TICKER_STATUS_SUCCESS;
 }
-#endif /* !CONFIG_BT_TICKER_COMPATIBILITY_MODE */
+#endif /* !CONFIG_BT_TICKER_LOW_LAT */
 
 /**
  * @brief Insert and start ticker nodes for all users
@@ -2082,15 +2086,14 @@ static inline void ticker_job_list_insert(struct ticker_instance *instance,
 			if (user_op) {
 				ticker_job_op_cb(user_op, status);
 
-#if !defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
-				if ((ticker->ticks_periodic == 0U) &&
+				if (!IS_ENABLED(CONFIG_BT_TICKER_LOW_LAT) &&
+				    (ticker->ticks_periodic == 0U) &&
 				    user_op) {
 					ticker->fp_op_func =
 						user_op->fp_op_func;
 					ticker->op_context =
 						user_op->op_context;
 				}
-#endif /* !CONFIG_BT_TICKER_COMPATIBILITY_MODE */
 			}
 		}
 	}
@@ -2126,7 +2129,7 @@ static inline void ticker_job_op_inquire(struct ticker_instance *instance,
 		uop->status = TICKER_STATUS_SUCCESS;
 		fp_op_func = uop->fp_op_func;
 		break;
-#if !defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
+#if !defined(CONFIG_BT_TICKER_LOW_LAT)
 	case TICKER_USER_OP_TYPE_PRIORITY_SET:
 		if (uop->id < instance->count_node) {
 			struct ticker_node *node = instance->nodes;
@@ -2139,7 +2142,7 @@ static inline void ticker_job_op_inquire(struct ticker_instance *instance,
 		}
 		fp_op_func = uop->fp_op_func;
 		break;
-#endif
+#endif /* CONFIG_BT_TICKER_LOW_LAT */
 	default:
 		/* do nothing for other ops */
 		break;
@@ -2439,11 +2442,13 @@ uint32_t ticker_init(uint8_t instance_index, uint8_t count_node, void *node,
 	instance->count_node = count_node;
 	instance->nodes = node;
 
-#if !defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
+#if !defined(CONFIG_BT_TICKER_LOW_LAT)
 	while (count_node--) {
 		instance->nodes[count_node].priority = 0;
 	}
-#endif /* !CONFIG_BT_TICKER_COMPATIBILITY_MODE */
+#endif /* !CONFIG_BT_TICKER_LOW_LAT &&
+	* !CONFIG_BT_TICKER_SLOT_AGNOSTIC
+	*/
 
 	instance->count_user = count_user;
 	instance->users = user;
@@ -2946,7 +2951,7 @@ uint32_t ticker_job_idle_get(uint8_t instance_index, uint8_t user_id,
 	return user_op->status;
 }
 
-#if !defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
+#if !defined(CONFIG_BT_TICKER_LOW_LAT)
 /**
  * @brief Set ticker node priority
  *
@@ -3003,7 +3008,7 @@ uint32_t ticker_priority_set(uint8_t instance_index, uint8_t user_id, uint8_t ti
 
 	return user_op->status;
 }
-#endif /* !CONFIG_BT_TICKER_COMPATIBILITY_MODE */
+#endif /* !CONFIG_BT_TICKER_LOW_LAT */
 
 /**
  * @brief Schedule ticker job
