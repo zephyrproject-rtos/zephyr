@@ -84,3 +84,10 @@ struct lll_df_sync_cfg {
 	uint8_t ant_sw_len:7;
 	uint8_t ant_ids[BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN];
 };
+
+/* Double buffer to store DF sync configuration */
+struct lll_df_sync {
+	uint8_t volatile first;
+	uint8_t last;
+	struct lll_df_sync_cfg cfg[DOUBLE_BUFFER_SIZE];
+};
