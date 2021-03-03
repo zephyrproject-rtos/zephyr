@@ -174,6 +174,41 @@ Cy_WDT_Disable().
 
    You should see "Hello World! cy8ckit_062_ble_m0" in your terminal.
 
+Board Revision
+**************
+
+The CY8CKIT-062-BLE KitProg2 shares connections with Arduino-R3 header.  This
+connections may not allow the correct use of shields.  The default board
+revision (0.0.0) allows use of default connections.  The use of Arduino headers
+are only possible after rework the board and using the revision 1.0.0.
+
+#. Build the Zephyr kernel and the :ref:`hello_world` sample application for
+board revision 1.0.0:
+
+   .. zephyr-app-commands::
+      :zephyr-app: samples/hello_world
+      :board: cy8ckit_062_ble_m0@1.0.0
+      :goals: build
+      :compact:
+
+#. The diferences from version 0.0.0 to 1.0.0:
++-------------+------------+------------+
+| Connecion   | 0.0.0      | 1.0.0      |
++=============+============+============+
+| CDC-COM RX  | P5_0       | P9_0       |
+| CDC-COM TX  | P5_1       | P9_1       |
+| R77         |  X         |            |
+| R78         |            |   X        |
++-------------+------------+------------+
+
+The P9 pins are available at J2. Those signals should be routed to J6.
+
+J2-2 to J6-14
+J2-4 to J6-13
+
+The most complex part is short circuit pins 14 and 15 from U13.  That connect
+UART_RTS with UART_CTS from KitProg2.
+
 References
 **********
 
