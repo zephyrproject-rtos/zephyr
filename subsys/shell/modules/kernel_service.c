@@ -78,7 +78,8 @@ static void shell_tdata_dump(const struct k_thread *cthread, void *user_data)
 		      thread->base.user_options,
 		      thread->base.prio,
 		      thread->base.timeout.dticks);
-	shell_print(shell, "\tstate: %s", k_thread_state_str(thread));
+	shell_print(shell, "\tstate: %s, entry: %p", k_thread_state_str(thread),
+		    thread->entry);
 
 #ifdef CONFIG_THREAD_RUNTIME_STATS
 	ret = 0;
