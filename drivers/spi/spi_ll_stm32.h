@@ -39,6 +39,12 @@ struct stream {
 	bool src_addr_increment;
 	bool dst_addr_increment;
 	int fifo_threshold;
+#if CONFIG_SPI_STM32_UNALIGNED_DMA
+	uint8_t dma_aligned_buffer[__SCB_DCACHE_LINE_SIZE]
+					__aligned(__SCB_DCACHE_LINE_SIZE);
+#else /* CONFIG_SPI_STM32_UNALIGNED_DMA */
+	uint32_t dma_dummy_buffer;
+#endif /* CONFIG_SPI_STM32_UNALIGNED_DMA */
 };
 #endif
 
@@ -49,6 +55,10 @@ struct spi_stm32_data {
 	volatile uint32_t status_flags;
 	struct stream dma_rx;
 	struct stream dma_tx;
+#if CONFIG_SPI_STM32_UNALIGNED_DMA
+	uint8_t *dma_rx_buffer;
+	size_t dma_rx_buffer_len;
+#endif /* CONFIG_SPI_STM32_UNALIGNED_DMA */
 #endif
 };
 

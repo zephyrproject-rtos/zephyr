@@ -24,6 +24,19 @@ config SPI_STM32_DMA
 	  Enable the SPI DMA mode for SPI instances
 	  that enable dma channels in their device tree node.
 
+config SPI_STM32_UNALIGNED_DMA
+	bool "STM32 MCU SPI Unaligned DMA Support"
+	depends on SPI_STM32_DMA
+	depends on CPU_CORTEX_M7
+	help
+	  Support unaligned DMA buffer. When DMA buffers are not aligned on
+	  cache line boundaries, or there size is not a multiple of the
+	  the cache line size, the SPI driver will use a temporary buffer
+	  that is correctly aligned, so the user doesn't have to care
+	  about it. This of course comes with the cost of an extra memcpy
+	  so if the user is sure the SPI buffers are all correctly aligned
+	  the option can be disabled.
+
 config SPI_STM32_USE_HW_SS
 	bool "STM32 Hardware Slave Select support"
 	default y
