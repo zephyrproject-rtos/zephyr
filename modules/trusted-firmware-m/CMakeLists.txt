@@ -36,6 +36,11 @@ set(TFM_VALID_PARTITIONS
 #                TF-M regression tests
 # BL2: Boolean if the TF-M build uses MCUboot. Default: True
 # ENABLED_PARTITIONS: List of TFM partitions to enable.
+# CMAKE_ARGS: Additional CMake flags to be used when building TF-M
+#             This is a list of flags, such as
+#             `CMAKE_ARGS -DARG0=val0 -DARG1=val1`
+#              or a generator expression, such as:
+#             `CMAKE_ARGS $<TARGET_PROPERTY:target,property>
 #
 # Example usage:
 #
@@ -160,30 +165,44 @@ function(trusted_firmware_build)
     message(FATAL_ERROR "Unsupported ZEPHYR_TOOLCHAIN_VARIANT: ${ZEPHYR_TOOLCHAIN_VARIANT}")
   endif()
 
+  file(MAKE_DIRECTORY ${TFM_BINARY_DIR})
+  add_custom_target(tfm_cmake
+    COMMAND ${CMAKE_COMMAND}
+      -G${CMAKE_GENERATOR}
+      -DTFM_TOOLCHAIN_FILE=${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/${TFM_TOOLCHAIN_FILE}
+      -DTFM_PLATFORM=${TFM_BOARD}
+      -DCROSS_COMPILE=${TFM_TOOLCHAIN_PATH}/${TFM_TOOLCHAIN_PREFIX}
+      ${TFM_CMAKE_BUILD_TYPE_ARG}
+      -DBL2=${TFM_BL2}
+      ${TFM_IPC_ARG}
+      ${TFM_ISOLATION_LEVEL_ARG}
+      ${TFM_REGRESSION_S_ARG}
+      ${TFM_REGRESSION_NS_ARG}
+      ${TFM_PROFILE_ARG}
+      ${MCUBOOT_IMAGE_NUM_ARG}
+      ${PSA_TEST_ARG}
+      ${TFM_CMAKE_ARGS}
+      -DTFM_TEST_REPO_PATH=${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/tf-m-tests
+      -DMCUBOOT_PATH=${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/../tfm-mcuboot
+      -DPSA_ARCH_TESTS_PATH=${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/psa-arch-tests
+      ${TFM_PARTITIONS_ARGS}
+      ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/trusted-firmware-m
+    WORKING_DIRECTORY ${TFM_BINARY_DIR}
+    COMMAND_EXPAND_LISTS
+  )
+
   include(ExternalProject)
 
   ExternalProject_Add(
     tfm
     SOURCE_DIR ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/trusted-firmware-m
     BINARY_DIR ${TFM_BINARY_DIR}
-    CMAKE_ARGS -DTFM_TOOLCHAIN_FILE=${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/${TFM_TOOLCHAIN_FILE}
-               -DTFM_PLATFORM=${TFM_BOARD}
-               -DCROSS_COMPILE=${TFM_TOOLCHAIN_PATH}/${TFM_TOOLCHAIN_PREFIX}
-               ${TFM_CMAKE_BUILD_TYPE_ARG}
-               -DBL2=${TFM_BL2}
-               ${TFM_IPC_ARG}
-               ${TFM_ISOLATION_LEVEL_ARG}
-               ${TFM_REGRESSION_S_ARG}
-               ${TFM_REGRESSION_NS_ARG}
-               ${TFM_PROFILE_ARG}
-               ${MCUBOOT_IMAGE_NUM_ARG}
-               ${PSA_TEST_ARG}
-               -DTFM_TEST_REPO_PATH=${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/tf-m-tests
-               -DMCUBOOT_PATH=${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/../tfm-mcuboot
-               -DPSA_ARCH_TESTS_PATH=${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/psa-arch-tests
-               ${TFM_PARTITIONS_ARGS}
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ${CMAKE_COMMAND} --build .
+    INSTALL_COMMAND ${CMAKE_COMMAND} --install .
     BUILD_ALWAYS True
     USES_TERMINAL_BUILD True
+    DEPENDS tfm_cmake
     BUILD_BYPRODUCTS ${BUILD_BYPRODUCTS}
   )
 
@@ -299,6 +318,7 @@ if (CONFIG_BUILD_WITH_TFM)
     ${TFM_IPC_ARG}
     ${TFM_REGRESSION_S_ARG}
     ${TFM_REGRESSION_NS_ARG}
+    CMAKE_ARGS $<GENEX_EVAL:$<TARGET_PROPERTY:zephyr_property_target,TFM_CMAKE_OPTIONS>>
     ENABLED_PARTITIONS ${TFM_ENABLED_PARTITIONS_ARG}
     ${TFM_PSA_TEST_ARG}
     CMAKE_BUILD_TYPE ${TFM_CMAKE_BUILD_TYPE}
