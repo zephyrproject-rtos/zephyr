@@ -1,4 +1,0 @@
-tests:
-  deprecated.inttypes:
-    build_only: true
-    tags: deprecated
