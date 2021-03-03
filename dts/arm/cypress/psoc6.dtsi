@@ -1,11 +1,14 @@
 /*
  * Copyright (c) 2018, Cypress
+ * Copyright (c) 2020-2021, ATL Electronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <mem.h>
 #include <dt-bindings/gpio/gpio.h>
+
+#include "psoc6-pinctrl.dtsi"
 
 / {
 	cpus {
@@ -64,163 +67,185 @@
 	};
 
 	soc {
-		hsiom: hsiom@40310000 {
-			compatible = "cypress,psoc6-hsiom";
-			reg = <0x40310000 0x2024>;
-			interrupts = <15 1>, <16 1>;
-			label = "HSIOM";
-			status = "disabled";
-		};
+		pinctrl@40310000 {
+			compatible = "cypress,psoc6-pinctrl";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x40310000 0x40310000 0x2024>;
 
-		gpio_prt0: gpio@40320000 {
-			compatible = "cypress,psoc6-gpio";
-			reg = <0x40320000 0x80>;
-			interrupts = <0 1>;
-			label = "P0";
-			gpio-controller;
-			ngpios = <6>;
-			#gpio-cells = <2>;
-			status = "disabled";
-		};
-		gpio_prt1: gpio@40320080 {
-			compatible = "cypress,psoc6-gpio";
-			reg = <0x40320080 0x80>;
-			interrupts = <1 1>;
-			label = "P1";
-			gpio-controller;
-			ngpios = <6>;
-			#gpio-cells = <2>;
-			status = "disabled";
-		};
-		gpio_prt2: gpio@40320100 {
-			compatible = "cypress,psoc6-gpio";
-			reg = <0x40320100 0x80>;
-			interrupts = <2 1>;
-			label = "P2";
-			gpio-controller;
-			ngpios = <8>;
-			#gpio-cells = <2>;
-			status = "disabled";
-		};
-		gpio_prt3: gpio@40320180 {
-			compatible = "cypress,psoc6-gpio";
-			reg = <0x40320180 0x80>;
-			interrupts = <3 1>;
-			label = "P3";
-			gpio-controller;
-			ngpios = <6>;
-			#gpio-cells = <2>;
-			status = "disabled";
-		};
-		gpio_prt4: gpio@40320200 {
-			compatible = "cypress,psoc6-gpio";
-			reg = <0x40320200 0x80>;
-			interrupts = <4 1>;
-			label = "P4";
-			gpio-controller;
-			ngpios = <4>;
-			#gpio-cells = <2>;
-			status = "disabled";
-		};
-		gpio_prt5: gpio@40320280 {
-			compatible = "cypress,psoc6-gpio";
-			reg = <0x40320280 0x80>;
-			interrupts = <5 1>;
-			label = "P5";
-			gpio-controller;
-			ngpios = <8>;
-			#gpio-cells = <2>;
-			status = "disabled";
-		};
-		gpio_prt6: gpio@40320300 {
-			compatible = "cypress,psoc6-gpio";
-			reg = <0x40320300 0x80>;
-			interrupts = <6 1>;
-			label = "P6";
-			gpio-controller;
-			ngpios = <8>;
-			#gpio-cells = <2>;
-			status = "disabled";
-		};
-		gpio_prt7: gpio@40320380 {
-			compatible = "cypress,psoc6-gpio";
-			reg = <0x40320380 0x80>;
-			interrupts = <7 1>;
-			label = "P7";
-			gpio-controller;
-			ngpios = <8>;
-			#gpio-cells = <2>;
-			status = "disabled";
-		};
-		gpio_prt8: gpio@40320400 {
-			compatible = "cypress,psoc6-gpio";
-			reg = <0x40320400 0x80>;
-			interrupts = <8 1>;
-			label = "P8";
-			gpio-controller;
-			ngpios = <8>;
-			#gpio-cells = <2>;
-			status = "disabled";
-		};
-		gpio_prt9: gpio@40320480 {
-			compatible = "cypress,psoc6-gpio";
-			reg = <0x40320480 0x80>;
-			interrupts = <9 1>;
-			label = "P9";
-			gpio-controller;
-			ngpios = <8>;
-			#gpio-cells = <2>;
-			status = "disabled";
-		};
-		gpio_prt10: gpio@40320500 {
-			compatible = "cypress,psoc6-gpio";
-			reg = <0x40320500 0x80>;
-			interrupts = <10 1>;
-			label = "P10";
-			gpio-controller;
-			ngpios = <8>;
-			#gpio-cells = <2>;
-			status = "disabled";
-		};
-		gpio_prt11: gpio@40320580 {
-			compatible = "cypress,psoc6-gpio";
-			reg = <0x40320580 0x80>;
-			interrupts = <11 1>;
-			label = "P11";
-			gpio-controller;
-			ngpios = <8>;
-			#gpio-cells = <2>;
-			status = "disabled";
-		};
-		gpio_prt12: gpio@40320600 {
-			compatible = "cypress,psoc6-gpio";
-			reg = <0x40320600 0x80>;
-			interrupts = <12 1>;
-			label = "P12";
-			gpio-controller;
-			ngpios = <8>;
-			#gpio-cells = <2>;
-			status = "disabled";
-		};
-		gpio_prt13: gpio@40320680 {
-			compatible = "cypress,psoc6-gpio";
-			reg = <0x40320680 0x80>;
-			interrupts = <13 1>;
-			label = "P13";
-			gpio-controller;
-			ngpios = <8>;
-			#gpio-cells = <2>;
-			status = "disabled";
-		};
-		gpio_prt14: gpio@40320700 {
-			compatible = "cypress,psoc6-gpio";
-			reg = <0x40320700 0x80>;
-			interrupts = <14 1>;
-			label = "P14";
-			gpio-controller;
-			ngpios = <2>;
-			#gpio-cells = <2>;
-			status = "disabled";
+			hsiom: hsiom@40310000 {
+				compatible = "cypress,psoc6-hsiom";
+				reg = <0x40310000 0x2024>;
+				interrupts = <15 1>, <16 1>;
+				label = "HSIOM";
+				status = "disabled";
+			};
+
+			gpio_prt0: gpio@40320000 {
+				compatible = "cypress,psoc6-gpio";
+				reg = <0x40320000 0x80>;
+				interrupts = <0 1>;
+				label = "P0";
+				gpio-controller;
+				ngpios = <6>;
+				#gpio-cells = <2>;
+				#cypress,pin-cells = <2>;
+				status = "disabled";
+			};
+			gpio_prt1: gpio@40320080 {
+				compatible = "cypress,psoc6-gpio";
+				reg = <0x40320080 0x80>;
+				interrupts = <1 1>;
+				label = "P1";
+				gpio-controller;
+				ngpios = <6>;
+				#gpio-cells = <2>;
+				#cypress,pin-cells = <2>;
+				status = "disabled";
+			};
+			gpio_prt2: gpio@40320100 {
+				compatible = "cypress,psoc6-gpio";
+				reg = <0x40320100 0x80>;
+				interrupts = <2 1>;
+				label = "P2";
+				gpio-controller;
+				ngpios = <8>;
+				#gpio-cells = <2>;
+				#cypress,pin-cells = <2>;
+				status = "disabled";
+			};
+			gpio_prt3: gpio@40320180 {
+				compatible = "cypress,psoc6-gpio";
+				reg = <0x40320180 0x80>;
+				interrupts = <3 1>;
+				label = "P3";
+				gpio-controller;
+				ngpios = <6>;
+				#gpio-cells = <2>;
+				#cypress,pin-cells = <2>;
+				status = "disabled";
+			};
+			gpio_prt4: gpio@40320200 {
+				compatible = "cypress,psoc6-gpio";
+				reg = <0x40320200 0x80>;
+				interrupts = <4 1>;
+				label = "P4";
+				gpio-controller;
+				ngpios = <4>;
+				#gpio-cells = <2>;
+				#cypress,pin-cells = <2>;
+				status = "disabled";
+			};
+			gpio_prt5: gpio@40320280 {
+				compatible = "cypress,psoc6-gpio";
+				reg = <0x40320280 0x80>;
+				interrupts = <5 1>;
+				label = "P5";
+				gpio-controller;
+				ngpios = <8>;
+				#gpio-cells = <2>;
+				#cypress,pin-cells = <2>;
+				status = "disabled";
+			};
+			gpio_prt6: gpio@40320300 {
+				compatible = "cypress,psoc6-gpio";
+				reg = <0x40320300 0x80>;
+				interrupts = <6 1>;
+				label = "P6";
+				gpio-controller;
+				ngpios = <8>;
+				#gpio-cells = <2>;
+				#cypress,pin-cells = <2>;
+				status = "disabled";
+			};
+			gpio_prt7: gpio@40320380 {
+				compatible = "cypress,psoc6-gpio";
+				reg = <0x40320380 0x80>;
+				interrupts = <7 1>;
+				label = "P7";
+				gpio-controller;
+				ngpios = <8>;
+				#gpio-cells = <2>;
+				#cypress,pin-cells = <2>;
+				status = "disabled";
+			};
+			gpio_prt8: gpio@40320400 {
+				compatible = "cypress,psoc6-gpio";
+				reg = <0x40320400 0x80>;
+				interrupts = <8 1>;
+				label = "P8";
+				gpio-controller;
+				ngpios = <8>;
+				#gpio-cells = <2>;
+				#cypress,pin-cells = <2>;
+				status = "disabled";
+			};
+			gpio_prt9: gpio@40320480 {
+				compatible = "cypress,psoc6-gpio";
+				reg = <0x40320480 0x80>;
+				interrupts = <9 1>;
+				label = "P9";
+				gpio-controller;
+				ngpios = <8>;
+				#gpio-cells = <2>;
+				#cypress,pin-cells = <2>;
+				status = "disabled";
+			};
+			gpio_prt10: gpio@40320500 {
+				compatible = "cypress,psoc6-gpio";
+				reg = <0x40320500 0x80>;
+				interrupts = <10 1>;
+				label = "P10";
+				gpio-controller;
+				ngpios = <8>;
+				#gpio-cells = <2>;
+				#cypress,pin-cells = <2>;
+				status = "disabled";
+			};
+			gpio_prt11: gpio@40320580 {
+				compatible = "cypress,psoc6-gpio";
+				reg = <0x40320580 0x80>;
+				interrupts = <11 1>;
+				label = "P11";
+				gpio-controller;
+				ngpios = <8>;
+				#gpio-cells = <2>;
+				#cypress,pin-cells = <2>;
+				status = "disabled";
+			};
+			gpio_prt12: gpio@40320600 {
+				compatible = "cypress,psoc6-gpio";
+				reg = <0x40320600 0x80>;
+				interrupts = <12 1>;
+				label = "P12";
+				gpio-controller;
+				ngpios = <8>;
+				#gpio-cells = <2>;
+				#cypress,pin-cells = <2>;
+				status = "disabled";
+			};
+			gpio_prt13: gpio@40320680 {
+				compatible = "cypress,psoc6-gpio";
+				reg = <0x40320680 0x80>;
+				interrupts = <13 1>;
+				label = "P13";
+				gpio-controller;
+				ngpios = <8>;
+				#gpio-cells = <2>;
+				#cypress,pin-cells = <2>;
+				status = "disabled";
+			};
+			gpio_prt14: gpio@40320700 {
+				compatible = "cypress,psoc6-gpio";
+				reg = <0x40320700 0x80>;
+				interrupts = <14 1>;
+				label = "P14";
+				gpio-controller;
+				ngpios = <2>;
+				#gpio-cells = <2>;
+				#cypress,pin-cells = <2>;
+				status = "disabled";
+			};
 		};
 
 		uart5: uart@40660000 {
