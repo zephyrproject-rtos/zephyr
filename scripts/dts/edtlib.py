@@ -1659,26 +1659,37 @@ class Binding:
                      f"field in {self.path} - "
                      f"should be a string, not {type(compatible).__name__}")
         elif require_compatible:
-            _err(f"missing 'compatible' property in {self.path}")
+            _err(f"missing 'compatible' in {self.path}")
 
-        if "description" not in raw and require_description:
-            _err(f"missing 'description' property in {self.path}")
+        if "description" in raw:
+            description = raw["description"]
+            if not isinstance(description, str) or not description:
+                _err(f"malformed or empty 'description' in {self.path}")
+        elif require_description:
+            _err(f"missing 'description' in {self.path}")
 
-        for prop in "title", "description":
-            if prop in raw and (not isinstance(raw[prop], str) or
-                                not raw[prop]):
-                _err(f"malformed or empty '{prop}' in {self.path}")
+        # Allowed top-level keys. The 'include' key should have been
+        # removed by _load_raw() already.
+        ok_top = {"description", "compatible", "bus", "on-bus",
+                  "properties", "child-binding"}
 
-        ok_top = {"title", "description", "compatible", "properties",
-                  "bus", "on-bus", "parent-bus", "child-bus", "parent", "child",
-                  "child-binding", "sub-node"}
+        # Descriptive errors for legacy bindings.
+        legacy_errors = {
+            "#cells": "expected *-cells syntax",
+            "child": "use 'bus: <bus>' instead",
+            "child-bus": "use 'bus: <bus>' instead",
+            "parent": "use 'on-bus: <bus>' instead",
+            "parent-bus": "use 'on-bus: <bus>' instead",
+            "sub-node": "use 'child-binding' instead",
+            "title": "use 'description' instead",
+        }
 
-        for prop in raw:
-            if prop == "#cells": # clean error for users of legacy syntax
-                _err(f"malformed '{prop}:' in {self.path}, "
-                     "expected *-cells syntax")
-            if prop not in ok_top and not prop.endswith("-cells"):
-                _err(f"unknown key '{prop}' in {self.path}, "
+        for key in raw:
+            if key in legacy_errors:
+                _err(f"legacy '{key}:' in {self.path}, {legacy_errors[key]}")
+
+            if key not in ok_top and not key.endswith("-cells"):
+                _err(f"unknown key '{key}' in {self.path}, "
                      "expected one of {', '.join(ok_top)}, or *-cells")
 
         for bus_key in "bus", "on-bus":
