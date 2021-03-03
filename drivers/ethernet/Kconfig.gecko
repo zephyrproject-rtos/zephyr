@@ -9,12 +9,6 @@ menuconfig ETH_GECKO
 
 if ETH_GECKO
 
-config ETH_GECKO_IRQ_PRI
-	int "Interrupt priority"
-	default 0
-	help
-	  IRQ priority of Ethernet device
-
 config ETH_GECKO_RX_THREAD_STACK_SIZE
 	int "RX thread stack size"
 	default 1500

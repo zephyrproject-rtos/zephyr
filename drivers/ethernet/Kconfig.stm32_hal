@@ -17,12 +17,6 @@ menuconfig ETH_STM32_HAL
 
 if ETH_STM32_HAL
 
-config ETH_STM32_HAL_IRQ_PRI
-	int "Controller interrupt priority"
-	default 0
-	help
-	  IRQ priority
-
 config ETH_STM32_HAL_RX_THREAD_STACK_SIZE
 	int "RX thread stack size"
 	default 1500

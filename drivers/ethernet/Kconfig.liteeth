@@ -7,13 +7,3 @@ menuconfig ETH_LITEETH
 config ETH_LITEETH_0
 	bool "LiteEth Ethernet port 0"
 	depends on ETH_LITEETH
-
-if ETH_LITEETH_0
-
-config ETH_LITEETH_0_IRQ_PRI
-	int "LiteEth interrupt priority"
-	default 0
-	help
-	  IRQ priority
-
-endif # ETH_LITEETH_0
