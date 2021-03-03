@@ -9,6 +9,7 @@ toolchain:
   - xtools
 supported:
   - netif
+  - spi
 testing:
   ignore_tags:
     - net
