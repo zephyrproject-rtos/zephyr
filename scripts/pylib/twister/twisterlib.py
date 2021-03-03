@@ -3040,6 +3040,9 @@ class TestSuite(DisablePyTestCollectionMixin):
 
             if tc.build_on_all and not platform_filter:
                 platform_scope = self.platforms
+            elif tc.integration_platforms and self.integration:
+                platform_scope = list(filter(lambda item: item.name in tc.integration_platforms, \
+                                         self.platforms))
             else:
                 platform_scope = platforms
 
@@ -3151,9 +3154,10 @@ class TestSuite(DisablePyTestCollectionMixin):
             if not instance_list:
                 continue
 
+            integration = self.integration and tc.integration_platforms
             # if twister was launched with no platform options at all, we
             # take all default platforms
-            if default_platforms and not tc.build_on_all:
+            if default_platforms and not tc.build_on_all and not integration:
                 if tc.platform_allow:
                     a = set(self.default_platforms)
                     b = set(tc.platform_allow)
@@ -3165,10 +3169,12 @@ class TestSuite(DisablePyTestCollectionMixin):
                         self.add_instances(instance_list[:1])
                 else:
                     instances = list(filter(lambda tc: tc.platform.default, instance_list))
-                    if self.integration:
-                        instances += list(filter(lambda item: item.platform.name in tc.integration_platforms, \
-                                         instance_list))
                     self.add_instances(instances)
+            elif self.integration:
+                instances = list(filter(lambda item:  item.platform.name in tc.integration_platforms, instance_list))
+                self.add_instances(instances)
+
+
 
             elif emulation_platforms:
                 self.add_instances(instance_list)
