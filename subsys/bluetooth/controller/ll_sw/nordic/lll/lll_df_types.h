@@ -72,3 +72,15 @@ struct node_rx_iq_report {
 		struct iq_sample sample[0];
 	};
 };
+
+/* @brief Configuration of Constant Tone Extension for connectionless
+ * reception.
+ */
+struct lll_df_sync_cfg {
+	uint8_t is_enabled:1;
+	uint8_t slot_durations:2; /* One of possible values: 1us, 2us. */
+	uint8_t max_cte_count:5;  /* Max number of received CTEs. */
+	uint8_t cte_count:5;      /* Received CTEs count. */
+	uint8_t ant_sw_len:7;
+	uint8_t ant_ids[BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN];
+};
