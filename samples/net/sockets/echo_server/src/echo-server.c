@@ -134,7 +134,7 @@ static void init_app(void)
 	int err;
 #endif
 
-	k_sem_init(&quit_lock, 0, UINT_MAX);
+	k_sem_init(&quit_lock, 0, K_SEM_MAX_LIMIT);
 
 	LOG_INF(APP_BANNER);
 

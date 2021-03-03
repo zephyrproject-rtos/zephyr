@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(conn_mgr, CONFIG_NET_CONNECTION_MANAGER_LOG_LEVEL);
 
 uint16_t iface_states[CONN_MGR_IFACE_MAX];
 
-K_SEM_DEFINE(conn_mgr_lock, 1, UINT_MAX);
+K_SEM_DEFINE(conn_mgr_lock, 1, K_SEM_MAX_LIMIT);
 
 static enum net_conn_mgr_state conn_mgr_iface_status(int index)
 {

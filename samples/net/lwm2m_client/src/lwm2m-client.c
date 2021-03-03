@@ -437,7 +437,7 @@ void main(void)
 
 	LOG_INF(APP_BANNER);
 
-	k_sem_init(&quit_lock, 0, UINT_MAX);
+	k_sem_init(&quit_lock, 0, K_SEM_MAX_LIMIT);
 
 	ret = lwm2m_setup();
 	if (ret < 0) {

@@ -452,7 +452,7 @@ void net_ppp_init(struct net_if *iface)
 	ctx->iface = iface;
 
 #if defined(CONFIG_NET_SHELL)
-	k_sem_init(&ctx->shell.wait_echo_reply, 0, UINT_MAX);
+	k_sem_init(&ctx->shell.wait_echo_reply, 0, K_SEM_MAX_LIMIT);
 #endif
 
 	/* TODO: Unify the startup worker code so that we can save

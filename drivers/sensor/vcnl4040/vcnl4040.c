@@ -322,7 +322,7 @@ static int vcnl4040_init(const struct device *dev)
 	}
 #endif
 
-	k_sem_init(&data->sem, 0, UINT_MAX);
+	k_sem_init(&data->sem, 0, K_SEM_MAX_LIMIT);
 
 #if CONFIG_VCNL4040_TRIGGER
 	if (vcnl4040_trigger_init(dev)) {

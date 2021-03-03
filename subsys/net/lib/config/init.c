@@ -361,7 +361,7 @@ int net_config_init_by_iface(struct net_if *iface, const char *app_info,
 
 	/* First make sure that network interface is up */
 	if (check_interface(iface) == false) {
-		k_sem_init(&counter, 1, UINT_MAX);
+		k_sem_init(&counter, 1, K_SEM_MAX_LIMIT);
 
 		while (count-- > 0) {
 			if (!k_sem_count_get(&counter)) {

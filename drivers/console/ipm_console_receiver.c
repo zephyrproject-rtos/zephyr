@@ -134,7 +134,7 @@ int ipm_console_receiver_init(const struct device *d)
 
 	driver_data->ipm_device = ipm;
 	driver_data->channel_disabled = 0;
-	k_sem_init(&driver_data->sem, 0, UINT_MAX);
+	k_sem_init(&driver_data->sem, 0, K_SEM_MAX_LIMIT);
 	ring_buf_init(&driver_data->rb, config_info->rb_size32,
 		      config_info->ring_buf_data);
 

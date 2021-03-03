@@ -1142,7 +1142,7 @@ static struct tcp *tcp_conn_alloc(void)
 
 	k_mutex_init(&conn->lock);
 	k_fifo_init(&conn->recv_data);
-	k_sem_init(&conn->connect_sem, 0, UINT_MAX);
+	k_sem_init(&conn->connect_sem, 0, K_SEM_MAX_LIMIT);
 
 	conn->in_connect = false;
 	conn->state = TCP_LISTEN;

@@ -80,7 +80,7 @@ void init_testing(void)
 		return;
 	}
 
-	k_sem_init(&quit_lock, 0, UINT_MAX);
+	k_sem_init(&quit_lock, 0, K_SEM_MAX_LIMIT);
 
 	k_delayed_work_init(&stop_sample, stop_handler);
 	k_delayed_work_submit(&stop_sample, K_SECONDS(run_duration));

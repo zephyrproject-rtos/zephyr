@@ -323,7 +323,7 @@ struct net_tcp *net_tcp_alloc(struct net_context *context)
 	tcp_context[i].accept_cb = NULL;
 
 	k_delayed_work_init(&tcp_context[i].retry_timer, tcp_retry_expired);
-	k_sem_init(&tcp_context[i].connect_wait, 0, UINT_MAX);
+	k_sem_init(&tcp_context[i].connect_wait, 0, K_SEM_MAX_LIMIT);
 
 	return &tcp_context[i];
 }

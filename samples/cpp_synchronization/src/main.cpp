@@ -64,7 +64,7 @@ public:
 cpp_semaphore::cpp_semaphore()
 {
 	printk("Create semaphore %p\n", this);
-	k_sem_init(&_sema_internal, 0, UINT_MAX);
+	k_sem_init(&_sema_internal, 0, K_SEM_MAX_LIMIT);
 }
 
 /*

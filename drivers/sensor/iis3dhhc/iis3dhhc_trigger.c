@@ -132,7 +132,7 @@ int iis3dhhc_init_interrupt(const struct device *dev)
 	iis3dhhc->dev = dev;
 
 #if defined(CONFIG_IIS3DHHC_TRIGGER_OWN_THREAD)
-	k_sem_init(&iis3dhhc->gpio_sem, 0, UINT_MAX);
+	k_sem_init(&iis3dhhc->gpio_sem, 0, K_SEM_MAX_LIMIT);
 
 	k_thread_create(&iis3dhhc->thread, iis3dhhc->thread_stack,
 		       CONFIG_IIS3DHHC_THREAD_STACK_SIZE,

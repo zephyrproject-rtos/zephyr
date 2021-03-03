@@ -142,7 +142,7 @@ int sx12xx_lora_test_cw(const struct device *dev, uint32_t frequency,
 
 int sx12xx_init(const struct device *dev)
 {
-	k_sem_init(&dev_data.data_sem, 0, UINT_MAX);
+	k_sem_init(&dev_data.data_sem, 0, K_SEM_MAX_LIMIT);
 
 	dev_data.events.TxDone = sx12xx_ev_tx_done;
 	dev_data.events.RxDone = sx12xx_ev_rx_done;
