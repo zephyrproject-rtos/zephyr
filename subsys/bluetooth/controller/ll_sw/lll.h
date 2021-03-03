@@ -171,8 +171,8 @@ struct lll_prepare_param {
 };
 
 typedef int (*lll_prepare_cb_t)(struct lll_prepare_param *prepare_param);
-typedef int (*lll_is_abort_cb_t)(void *next, int prio, void *curr,
-				 lll_prepare_cb_t *resume_cb, int *resume_prio);
+typedef int (*lll_is_abort_cb_t)(void *next, void *curr,
+				 lll_prepare_cb_t *resume_cb);
 typedef void (*lll_abort_cb_t)(struct lll_prepare_param *prepare_param,
 			       void *param);
 
@@ -181,9 +181,8 @@ struct lll_event {
 	lll_prepare_cb_t         prepare_cb;
 	lll_is_abort_cb_t        is_abort_cb;
 	lll_abort_cb_t           abort_cb;
-	int                      prio;
-	uint8_t                     is_resume:1;
-	uint8_t                     is_aborted:1;
+	uint8_t                  is_resume:1;
+	uint8_t                  is_aborted:1;
 };
 
 #define DEFINE_NODE_RX_USER_TYPE(i, _) NODE_RX_TYPE_##i,
@@ -402,7 +401,7 @@ int lll_rand_isr_get(void *buf, size_t len);
 int ull_prepare_enqueue(lll_is_abort_cb_t is_abort_cb,
 			       lll_abort_cb_t abort_cb,
 			       struct lll_prepare_param *prepare_param,
-			       lll_prepare_cb_t prepare_cb, int prio,
+			       lll_prepare_cb_t prepare_cb,
 			       uint8_t is_resume);
 void *ull_prepare_dequeue_get(void);
 void *ull_prepare_dequeue_iter(uint8_t *idx);
@@ -426,6 +425,6 @@ int lll_prepare(lll_is_abort_cb_t is_abort_cb,
 		struct lll_prepare_param *prepare_param);
 int lll_resume_enqueue(lll_prepare_cb_t resume_cb, int resume_prio);
 int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
-			lll_prepare_cb_t prepare_cb,  int prio,
+			lll_prepare_cb_t prepare_cb,
 			struct lll_prepare_param *prepare_param,
 			uint8_t is_resume, uint8_t is_dequeue);
