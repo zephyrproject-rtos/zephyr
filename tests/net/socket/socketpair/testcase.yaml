@@ -1,6 +1,7 @@
 common:
   tags: net socket userspace
   filter: TOOLCHAIN_HAS_NEWLIB == 1
+  platform_exclude: intel_adsp_cavs15
 tests:
   net.socket.socketpair:
     min_ram: 21

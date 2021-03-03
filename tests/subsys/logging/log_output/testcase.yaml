@@ -4,4 +4,5 @@ common:
 
 tests:
   logging.log_output:
+    platform_exclude: intel_adsp_cavs15
     tags: log_output logging
