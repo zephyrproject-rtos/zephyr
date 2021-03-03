@@ -1,0 +1,54 @@
+#!/bin/bash
+#
+# Copyright (c) 2021 Nordic Semiconductor ASA.
+# SPDX-License-Identifier: Apache-2.0
+#
+# This script can be used as a bisect test script, or manually, to run
+# twister a repeated number of times to identify whether an
+# intermittent failure is visible at a particular Zephyr commit.
+#
+# Invoke with the same arguments passed to twister.
+#
+# The number of times to retry a test can be controlled by setting the
+# RETWIST_REPS environment variable.  The default is 5 repetitions.
+#
+# To use when testing commits before the script was introduced copy it
+# to a location out of tree.
+#
+# Example of automating a bisect:
+#
+# % cp -p scripts/retwist /tmp
+# % git bisect start bad good
+# % git bisect run /tmp/retwist -p platform -s testid
+#
+
+head=$(git describe HEAD)
+
+log () {
+  now=$(date +%Y-%m-%dT%H:%M:%S)
+  echo "${now}: ${head}: ${@}" \
+   | tee -a retwist.log
+}
+
+TWISTER_ARGS="${@}"
+MAX_REPS=${RETWIST_REPS:-5}
+rm -rf twister-out*
+west update
+log "twister ${TWISTER_ARGS}"
+twister ${TWISTER_ARGS}
+result=$?
+rep=1
+while [ ${result} -eq 0 -a ${rep} -lt ${MAX_REPS} ]; do
+  log "rep ${rep} succeeded, retrying"
+  rep=$((${rep} + 1))
+  twister --test-only ${TWISTER_ARGS}
+  result=$?
+done
+if [ ${result} -eq 0 ] ; then
+  log "PASS: Not reproduced in ${MAX_REPS} attempts"
+else
+  log "FAIL: Reproduced at attempt ${rep}, result ${result}"
+  mv twister-out retwist-out-${head}
+fi
+
+exit ${result}

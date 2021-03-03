@@ -514,6 +514,7 @@
 /scripts/get_maintainer.py                @nashif
 /scripts/dts/                             @mbolivar-nordic @galak
 /scripts/release/                         @nashif
+/scripts/retwist                         @pabigot
 /scripts/ci/                              @nashif
 /arch/x86/gen_gdt.py                      @dcpleung @nashif
 /arch/x86/gen_idt.py                      @dcpleung @nashif
