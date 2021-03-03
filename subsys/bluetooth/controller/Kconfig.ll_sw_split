@@ -570,6 +570,15 @@ config BT_TICKER_SLOT_AGNOSTIC
 	  reservations and collision handling, and operates as a simple
 	  multi-instance programmable timer.
 
+config BT_CTLR_JIT_SCHEDULING
+	bool "Just-in-Time Scheduling"
+	select BT_TICKER_SLOT_AGNOSTIC
+	help
+	  This option enables the experimental 'Next Generation' scheduling
+	  feature, which eliminates priorities and collision resolving in the
+	  ticker, and instead relies on just-in-time ("lazy") resolution in
+	  the link layer.
+
 config BT_CTLR_USER_EXT
 	prompt "Enable proprietary extensions in Controller"
 	bool

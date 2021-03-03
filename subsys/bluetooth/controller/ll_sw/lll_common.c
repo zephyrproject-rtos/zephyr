@@ -41,7 +41,27 @@ int lll_prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 		lll_prepare_cb_t prepare_cb, int8_t event_prio,
 		struct lll_prepare_param *prepare_param)
 {
-	/* TODO: Calculate priority */
+#if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+	int prio = event_prio;
+	struct lll_hdr *hdr = prepare_param->param;
+
+	/* Establish priority based on:
+	 * 1. Event priority passed to function
+	 * 2. Force flag => priority = -127
+	 * 3. Score (events terminated- and too late)
+	 * 4. Latency (skipped- and programmed latency)
+	 * 5. Critical priority is immutable (-128)
+	 */
+	if (prio > -128) {
+		if (prepare_param->force) {
+			prio = -127;
+		} else {
+			prio = MAX(-127, prio - hdr->score - hdr->latency);
+		}
+	}
+
+	prepare_param->prio = prio;
+#endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
 
 	return lll_prepare_resolve(is_abort_cb, abort_cb, prepare_cb,
 				   prepare_param, 0, 0);
@@ -58,3 +78,21 @@ void lll_resume(void *param)
 				  next->is_resume, 1);
 	LL_ASSERT(!ret || ret == -EINPROGRESS);
 }
+
+#if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+void lll_done_score(void *param, uint8_t too_late, uint8_t aborted)
+{
+	struct lll_hdr *hdr = param;
+
+	if (!hdr) {
+		return;
+	}
+
+	if (!too_late && !aborted) {
+		hdr->score  = 0;
+		hdr->latency = 0;
+	} else {
+		hdr->score++;
+	}
+}
+#endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
