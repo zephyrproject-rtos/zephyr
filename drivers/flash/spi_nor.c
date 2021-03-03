@@ -247,23 +247,34 @@ static inline void delay_until_exit_dpd_ok(const struct device *const dev)
 #endif /* DT_INST_NODE_HAS_PROP(0, has_dpd) */
 }
 
+/* Indicates that an access command includes bytes for the address.
+ * If not provided the opcode is not followed by address bytes.
+ */
+#define NOR_ACCESS_ADDRESSED BIT(0)
+/* Indicates that an access command is performing a write.  If not
+ * provided access is a read.
+ */
+#define NOR_ACCESS_WRITE BIT(1)
+
 /*
  * @brief Send an SPI command
  *
  * @param dev Device struct
  * @param opcode The command to send
- * @param is_addressed A flag to define if the command is addressed
+ * @param access flags that determine how the command is constructed.
+ *        See NOR_ACCESS_*.
  * @param addr The address to send
  * @param data The buffer to store or read the value
  * @param length The size of the buffer
- * @param is_write A flag to define if it's a read or a write command
  * @return 0 on success, negative errno code otherwise
  */
 static int spi_nor_access(const struct device *const dev,
-			  uint8_t opcode, bool is_addressed, off_t addr,
-			  void *data, size_t length, bool is_write)
+			  uint8_t opcode, uint8_t access, off_t addr,
+			  void *data, size_t length)
 {
 	struct spi_nor_data *const driver_data = dev->data;
+	bool is_addressed = (access & NOR_ACCESS_ADDRESSED) != 0U;
+	bool is_write = (access & NOR_ACCESS_WRITE) != 0U;
 
 	uint8_t buf[4] = {
 		opcode,
@@ -302,13 +313,14 @@ static int spi_nor_access(const struct device *const dev,
 }
 
 #define spi_nor_cmd_read(dev, opcode, dest, length) \
-	spi_nor_access(dev, opcode, false, 0, dest, length, false)
+	spi_nor_access(dev, opcode, 0, 0, dest, length)
 #define spi_nor_cmd_addr_read(dev, opcode, addr, dest, length) \
-	spi_nor_access(dev, opcode, true, addr, dest, length, false)
+	spi_nor_access(dev, opcode, NOR_ACCESS_ADDRESSED, addr, dest, length)
 #define spi_nor_cmd_write(dev, opcode) \
-	spi_nor_access(dev, opcode, false, 0, NULL, 0, true)
+	spi_nor_access(dev, opcode, NOR_ACCESS_WRITE, 0, NULL, 0)
 #define spi_nor_cmd_addr_write(dev, opcode, addr, src, length) \
-	spi_nor_access(dev, opcode, true, addr, (void *)src, length, true)
+	spi_nor_access(dev, opcode, NOR_ACCESS_WRITE | NOR_ACCESS_ADDRESSED, \
+		       addr, (void *)src, length)
 
 /**
  * @brief Wait until the flash is ready
@@ -501,8 +513,8 @@ static int spi_nor_wrsr(const struct device *dev,
 	int ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
 
 	if (ret == 0) {
-		ret = spi_nor_access(dev, SPI_NOR_CMD_WRSR, false, 0, &sr,
-				     sizeof(sr), true);
+		ret = spi_nor_access(dev, SPI_NOR_CMD_WRSR, NOR_ACCESS_WRITE, 0, &sr,
+				     sizeof(sr));
 		spi_nor_wait_until_ready(dev);
 	}
 
