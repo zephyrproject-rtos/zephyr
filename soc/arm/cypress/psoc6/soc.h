@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018, Cypress
- * Copyright (c) 2020, ATL Electronics
+ * Copyright (c) 2020-2021, ATL Electronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,6 +24,7 @@
 
 #include <cy_device_headers.h>
 
+#include "../common/soc_gpio.h"
 #include "../common/cypress_psoc6_dt.h"
 
 #endif /* !_ASMLANGUAGE */
