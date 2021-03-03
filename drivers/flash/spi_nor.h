@@ -28,6 +28,7 @@
 #define SPI_NOR_CMD_CE          0xC7    /* Chip erase */
 #define SPI_NOR_CMD_RDID        0x9F    /* Read JEDEC ID */
 #define SPI_NOR_CMD_ULBPR       0x98    /* Global Block Protection Unlock */
+#define SPI_NOR_CMD_4BA         0xB7    /* Enter 4-Byte Address Mode */
 #define SPI_NOR_CMD_DPD         0xB9    /* Deep Power Down */
 #define SPI_NOR_CMD_RDPD        0xAB    /* Release from Deep Power Down */
 

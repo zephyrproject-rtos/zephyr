@@ -83,6 +83,11 @@ struct spi_nor_config {
 	/* Optional bits in SR to be cleared on startup */
 	uint8_t has_lock;
 
+#if defined(CONFIG_SPI_NOR_SFDP_MINIMAL)
+	/* Optional support for entering 32-bit address mode. */
+	uint8_t enter_4byte_addr;
+#endif /* CONFIG_SPI_NOR_SFDP_MINIMAL */
+
 #if defined(CONFIG_SPI_NOR_SFDP_DEVICETREE)
 	/* Length of BFP structure, in 32-bit words. */
 	uint8_t bfp_len;
@@ -738,6 +743,67 @@ static int spi_nor_read_jedec_id(const struct device *dev,
 	return ret;
 }
 
+/* Put the device into the appropriate address mode, if supported.
+ *
+ * On successful return spi_nor_data::flag_access_32bit has been set
+ * (cleared) if the device is configured for 4-byte (3-byte) addresses
+ * for read, write, and erase commands.
+ *
+ * @param dev the device
+ *
+ * @param enter_4byte_addr the Enter 4-Byte Addressing bit set from
+ * DW16 of SFDP BFP.  A value of all zeros or all ones is interpreted
+ * as "not supported".
+ *
+ * @retval -ENOTSUP if 4-byte addressing is supported but not in a way
+ * that the driver can handle.
+ * @retval negative codes if the attempt was made and failed
+ * @retval 0 if the device is successfully left in 24-bit mode or
+ *         reconfigured to 32-bit mode.
+ */
+static int spi_nor_set_address_mode(const struct device *dev,
+				    uint8_t enter_4byte_addr)
+{
+	int ret = 0;
+
+	/* Do nothing if not provided (either no bits or all bits
+	 * set).
+	 */
+	if ((enter_4byte_addr == 0)
+	    || (enter_4byte_addr == 0xff)) {
+		return 0;
+	}
+
+	LOG_DBG("Checking enter-4byte-addr %02x", enter_4byte_addr);
+
+	/* This currently only supports command 0xB7 (Enter 4-Byte
+	 * Address Mode), with or without preceding WREN.
+	 */
+	if ((enter_4byte_addr & 0x03) == 0) {
+		return -ENOTSUP;
+	}
+
+	acquire_device(dev);
+
+	if ((enter_4byte_addr & 0x02) != 0) {
+		/* Enter after WREN. */
+		ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
+	}
+	if (ret == 0) {
+		ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_4BA);
+	}
+
+	if (ret == 0) {
+		struct spi_nor_data *data = dev->data;
+
+		data->flag_access_32bit = true;
+	}
+
+	release_device(dev);
+
+	return ret;
+}
+
 #ifndef CONFIG_SPI_NOR_SFDP_MINIMAL
 
 static int spi_nor_process_bfp(const struct device *dev,
@@ -772,6 +838,21 @@ static int spi_nor_process_bfp(const struct device *dev,
 #endif /* CONFIG_SPI_NOR_SFDP_RUNTIME */
 
 	LOG_DBG("Page size %u bytes", data->page_size);
+
+	/* If 4-byte addressing is supported, switch to it. */
+	if (jesd216_bfp_addrbytes(bfp) != JESD216_SFDP_BFP_DW1_ADDRBYTES_VAL_3B) {
+		struct jesd216_bfp_dw16 dw16;
+		int rc = 0;
+
+		if (jesd216_bfp_decode_dw16(php, bfp, &dw16) == 0) {
+			rc = spi_nor_set_address_mode(dev, dw16.enter_4ba);
+		}
+
+		if (rc != 0) {
+			LOG_ERR("Unable to enter 4-byte mode: %d\n", rc);
+			return rc;
+		}
+	}
 	return 0;
 }
 
@@ -1005,7 +1086,20 @@ static int spi_nor_configure(const struct device *dev)
 		release_device(dev);
 	}
 
-#ifndef CONFIG_SPI_NOR_SFDP_MINIMAL
+#ifdef CONFIG_SPI_NOR_SFDP_MINIMAL
+	/* For minimal we support some overrides from specific
+	 * devicertee properties.
+	 */
+	if (cfg->enter_4byte_addr != 0) {
+		rc = spi_nor_set_address_mode(dev, cfg->enter_4byte_addr);
+
+		if (rc != 0) {
+			LOG_ERR("Unable to enter 4-byte mode: %d\n", rc);
+			return -ENODEV;
+		}
+	}
+
+#else /* CONFIG_SPI_NOR_SFDP_MINIMAL */
 	/* For devicetree and runtime we need to process BFP data and
 	 * set up or validate page layout.
 	 */
@@ -1158,6 +1252,10 @@ static const struct spi_nor_config spi_nor_config_0 = {
 
 #if DT_INST_NODE_HAS_PROP(0, has_lock)
 	.has_lock = DT_INST_PROP(0, has_lock),
+#endif
+#if defined(CONFIG_SPI_NOR_SFDP_MINIMAL)		\
+	&& DT_INST_NODE_HAS_PROP(0, enter_4byte_addr)
+	.enter_4byte_addr = DT_INST_PROP(0, enter_4byte_addr),
 #endif
 #ifdef CONFIG_SPI_NOR_SFDP_DEVICETREE
 	.bfp_len = sizeof(bfp_data_0) / 4,
