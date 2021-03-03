@@ -5,4 +5,4 @@ description: ARM Cortex-M33F CPU
 
 compatible: "arm,cortex-m33f"
 
-include: cpu.yaml
+include: arm,cortex-m.yaml
