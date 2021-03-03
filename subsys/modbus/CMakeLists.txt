@@ -8,6 +8,7 @@ if(CONFIG_MODBUS)
 
 	zephyr_library_sources(
 		modbus_core.c
+		modbus_serial.c
 	)
 
 	zephyr_library_sources_ifdef(

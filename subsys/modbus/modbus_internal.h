@@ -135,7 +135,7 @@ struct modbus_context {
 	/* Number of bytes received or to send */
 	uint16_t uart_buf_ctr;
 	/* Records error from frame reception, e.g. CRC error */
-	uint16_t rx_frame_err;
+	int rx_frame_err;
 
 #ifdef CONFIG_MODBUS_FC08_DIAGNOSTIC
 	uint16_t mbs_msg_ctr;
@@ -152,10 +152,19 @@ struct modbus_context {
 };
 
 struct modbus_context *mb_get_context(const uint8_t iface);
-int mb_rx_frame(struct modbus_context *ctx);
 void mb_tx_frame(struct modbus_context *ctx);
 
 bool mbs_rx_handler(struct modbus_context *ctx);
 void mbs_reset_statistics(struct modbus_context *pch);
+
+void modbus_serial_rx_disable(struct modbus_context *ctx);
+void modbus_serial_rx_enable(struct modbus_context *ctx);
+int modbus_serial_rx_frame(struct modbus_context *ctx);
+int modbus_serial_tx_frame(struct modbus_context *ctx);
+int modbus_serial_init(struct modbus_context *ctx,
+		       uint32_t baudrate,
+		       enum uart_config_parity parity,
+		       const bool ascii_mode);
+void modbus_serial_disable(struct modbus_context *ctx);
 
 #endif /* ZEPHYR_INCLUDE_MODBUS_INTERNAL_H_ */
