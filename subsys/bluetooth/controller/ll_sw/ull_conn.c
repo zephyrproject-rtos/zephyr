@@ -2709,11 +2709,11 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 				     ticks_at_expire, ticks_win_offset,
 				     HAL_TICKER_US_TO_TICKS(periodic_us),
 				     HAL_TICKER_REMAINDER(periodic_us),
-#if defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
+#if defined(CONFIG_BT_TICKER_LOW_LAT)
 				     TICKER_NULL_LAZY,
 #else
 				     TICKER_LAZY_MUST_EXPIRE_KEEP,
-#endif
+#endif /* CONFIG_BT_TICKER_LOW_LAT */
 				     (ticks_slot_overhead +
 				      conn->evt.ticks_slot),
 #if defined(CONFIG_BT_PERIPHERAL) && defined(CONFIG_BT_CENTRAL)
