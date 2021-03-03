@@ -463,12 +463,10 @@ static uint8_t cp_discover_func(struct bt_conn *conn,
 				struct bt_gatt_discover_params *discover)
 {
 	struct bt_audio_discover_params *params;
-	struct bt_gatt_chrc *chrc = attr->user_data;
+	struct bt_gatt_chrc *chrc;
 
 	params = CONTAINER_OF(discover, struct bt_audio_discover_params,
 			      discover);
-
-	BT_DBG("conn %p attr %p handle 0x%04x", conn, attr, chrc->value_handle);
 
 	if (!attr) {
 		if (params->err) {
@@ -477,6 +475,10 @@ static uint8_t cp_discover_func(struct bt_conn *conn,
 		params->func(conn, NULL, NULL, params);
 		return BT_GATT_ITER_STOP;
 	}
+
+	chrc = attr->user_data;
+
+	BT_DBG("conn %p attr %p handle 0x%04x", conn, attr, chrc->value_handle);
 
 	params->err = 0;
 	bt_audio_ep_set_cp(conn, chrc->value_handle);
