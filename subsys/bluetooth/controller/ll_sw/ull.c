@@ -1597,7 +1597,7 @@ void ull_rx_sched_done(void)
 int ull_prepare_enqueue(lll_is_abort_cb_t is_abort_cb,
 			lll_abort_cb_t abort_cb,
 			struct lll_prepare_param *prepare_param,
-			lll_prepare_cb_t prepare_cb, int prio,
+			lll_prepare_cb_t prepare_cb,
 			uint8_t is_resume)
 {
 	struct lll_event *e;
@@ -1612,7 +1612,6 @@ int ull_prepare_enqueue(lll_is_abort_cb_t is_abort_cb,
 	e->prepare_cb = prepare_cb;
 	e->is_abort_cb = is_abort_cb;
 	e->abort_cb = abort_cb;
-	e->prio = prio;
 	e->is_resume = is_resume;
 	e->is_aborted = 0U;
 
