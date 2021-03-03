@@ -14,9 +14,8 @@
 #include <openamp/open_amp.h>
 #include <metal/device.h>
 
-#define LOG_LEVEL LOG_LEVEL_INFO
 #define LOG_MODULE_NAME rpmsg_backend
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_RPMSG_SERVICE_LOG_LEVEL);
 
 /* Configuration defines */
 #if !DT_HAS_CHOSEN(zephyr_ipc_shm)
