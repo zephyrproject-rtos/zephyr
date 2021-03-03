@@ -11,21 +11,20 @@
 #define NUM_THREAD 4
 static K_THREAD_STACK_ARRAY_DEFINE(tstack, NUM_THREAD, STACK_SIZE);
 static struct k_thread tdata[NUM_THREAD];
-/*for those not supporting tickless idle*/
-#ifndef CONFIG_TICKLESS_IDLE
-#define CONFIG_TICKLESS_IDLE_THRESH 20
-#endif
+
+#define IDLE_THRESH 20
+
 /*sleep duration tickless*/
-#define SLEEP_TICKLESS	 k_ticks_to_ms_floor64(CONFIG_TICKLESS_IDLE_THRESH)
+#define SLEEP_TICKLESS	 k_ticks_to_ms_floor64(IDLE_THRESH)
 
 /*sleep duration with tick*/
-#define SLEEP_TICKFUL	 k_ticks_to_ms_floor64(CONFIG_TICKLESS_IDLE_THRESH - 1)
+#define SLEEP_TICKFUL	 k_ticks_to_ms_floor64(IDLE_THRESH - 1)
 
 /*slice size is set as half of the sleep duration*/
-#define SLICE_SIZE	 k_ticks_to_ms_floor64(CONFIG_TICKLESS_IDLE_THRESH >> 1)
+#define SLICE_SIZE	 k_ticks_to_ms_floor64(IDLE_THRESH >> 1)
 
 /*maximum slice duration accepted by the test*/
-#define SLICE_SIZE_LIMIT k_ticks_to_ms_floor64((CONFIG_TICKLESS_IDLE_THRESH >> 1) + 1)
+#define SLICE_SIZE_LIMIT k_ticks_to_ms_floor64((IDLE_THRESH >> 1) + 1)
 
 /*align to millisecond boundary*/
 #if defined(CONFIG_ARCH_POSIX)
