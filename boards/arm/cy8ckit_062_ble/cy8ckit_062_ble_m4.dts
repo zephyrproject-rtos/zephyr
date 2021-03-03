@@ -13,21 +13,8 @@
 	model = "Cypress PSoC6 BLE Pioneer Kit";
 	compatible = "cypress,cy8c6xx7_cm4", "cypress,psoc6";
 
-	aliases {
-		uart-6 = &uart6;
-	};
-
 	chosen {
 		zephyr,sram = &sram2;
 		zephyr,flash = &flash1;
-		zephyr,console = &uart6;
-		zephyr,shell-uart = &uart6;
 	};
-};
-
-&uart6 {
-	status = "okay";
-	current-speed = <115200>;
-
-	pinctrl-0 = <&p13_0_uart6_rx &p13_1_uart6_tx>;
 };
