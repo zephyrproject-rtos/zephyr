@@ -4,9 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-int lll_prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
-		lll_prepare_cb_t prepare_cb, int prio,
-		struct lll_prepare_param *prepare_param);
 int lll_prepare_done(void *param);
 int lll_done(void *param);
 bool lll_is_done(void *param);

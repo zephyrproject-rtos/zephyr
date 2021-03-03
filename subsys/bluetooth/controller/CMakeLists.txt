@@ -21,6 +21,7 @@ zephyr_library_sources_ifdef(
 if(CONFIG_BT_LL_SW_SPLIT)
   zephyr_library_sources(
     ll_sw/ull.c
+    ll_sw/lll_common.c
     )
   if(CONFIG_BT_BROADCASTER)
     zephyr_library_sources(
