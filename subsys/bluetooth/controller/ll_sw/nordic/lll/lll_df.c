@@ -7,8 +7,18 @@
 #include <stdint.h>
 #include <bluetooth/hci.h>
 
+#include "util/util.h"
+#include "util/memq.h"
+
+#include "hal/cpu.h"
 #include "hal/radio_df.h"
+
+#include "pdu.h"
+
+#include "lll.h"
 #include "lll_df.h"
+#include "lll_df_types.h"
+#include "lll_df_internal.h"
 
 /* @brief Function performs common steps for initialization and reset
  * of Direction Finding LLL module.
@@ -86,6 +96,66 @@ void lll_df_conf_cte_tx_enable(uint8_t type, uint8_t length,
 	}
 #endif /* CONFIG_BT_CTLR_DF_ANT_SWITCH_TX || CONFIG_BT_CTLR_DF_ANT_SWITCH_RX */
 }
+
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
+struct lll_df_sync_cfg *lll_df_sync_cfg_alloc(struct lll_df_sync *df_cfg,
+					      uint8_t *idx)
+{
+	uint8_t first, last;
+
+	first = df_cfg->first;
+	last = df_cfg->last;
+	if (first == last) {
+		last++;
+		if (last == DOUBLE_BUFFER_SIZE) {
+			last = 0U;
+		}
+	} else {
+		uint8_t first_latest;
+
+		df_cfg->last = first;
+		cpu_dmb();
+		first_latest = df_cfg->first;
+		if (first_latest != first) {
+			last++;
+			if (last == DOUBLE_BUFFER_SIZE) {
+				last = 0U;
+			}
+		}
+	}
+
+	*idx = last;
+
+	return &df_cfg->cfg[last];
+}
+
+struct lll_df_sync_cfg *lll_df_sync_cfg_latest_get(struct lll_df_sync *df_cfg,
+						   uint8_t *is_modified)
+{
+	uint8_t first;
+
+	first = df_cfg->first;
+	if (first != df_cfg->last) {
+		uint8_t cfg_idx;
+
+		cfg_idx = first;
+
+		first += 1U;
+		if (first == DOUBLE_BUFFER_SIZE) {
+			first = 0U;
+		}
+		df_cfg->first = first;
+
+		if (is_modified) {
+			*is_modified = 1U;
+		}
+
+		df_cfg->cfg[cfg_idx].is_enabled = 0U; /* mark as disabled - not used anymore */
+	}
+
+	return &df_cfg->cfg[first];
+}
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 
 void lll_df_conf_cte_tx_disable(void)
 {

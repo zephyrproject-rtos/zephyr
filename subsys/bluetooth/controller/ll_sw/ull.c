@@ -39,6 +39,7 @@
 #include "lll_sync_iso.h"
 #include "lll_conn.h"
 #include "lll_df.h"
+#include "lll/lll_df_types.h"
 
 #include "ull_adv_types.h"
 #include "ull_scan_types.h"
