@@ -97,7 +97,7 @@ typedef void (*ticker_trigger_set_cb_t)(uint32_t value);
 /** \brief Timer timeout function type.
  */
 typedef void (*ticker_timeout_func) (uint32_t ticks_at_expire, uint32_t remainder,
-				     uint16_t lazy, void *context);
+				     uint16_t lazy, uint8_t force, void *context);
 
 /** \brief Timer operation complete function type.
  */

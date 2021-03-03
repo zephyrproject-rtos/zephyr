@@ -48,7 +48,7 @@ static uint32_t ull_adv_iso_start(struct ll_adv_iso *adv_iso,
 static inline struct ll_adv_iso *ull_adv_iso_get(uint8_t handle);
 static int init_reset(void);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
-		      uint16_t lazy, void *param);
+		      uint16_t lazy, uint8_t force, void *param);
 static void tx_lll_flush(void *param);
 static void ticker_op_stop_cb(uint32_t status, void *param);
 
@@ -379,7 +379,7 @@ static int init_reset(void)
 
 
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
-		      uint16_t lazy, void *param)
+		      uint16_t lazy, uint8_t force, void *param)
 {
 	/* TODO: LLL support for ADV ISO */
 #if 0
@@ -403,6 +403,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 	p.ticks_at_expire = ticks_at_expire;
 	p.remainder = remainder;
 	p.lazy = lazy;
+	p.force = force;
 	p.param = lll;
 	mfy.param = &p;
 

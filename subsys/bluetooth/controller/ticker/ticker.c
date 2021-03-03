@@ -943,6 +943,7 @@ void ticker_worker(void *param)
 					     must_expire_skip ?
 					     TICKER_LAZY_MUST_EXPIRE :
 					     ticker->lazy_current,
+					     ticker->force,
 					     ticker->context);
 			DEBUG_TICKER_TASK(0);
 

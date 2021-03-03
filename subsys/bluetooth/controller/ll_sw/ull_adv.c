@@ -60,12 +60,12 @@ inline uint16_t ull_adv_handle_get(struct ll_adv_set *adv);
 static int init_reset(void);
 static inline struct ll_adv_set *is_disabled_get(uint8_t handle);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
-		      uint16_t lazy, void *param);
+		      uint16_t lazy, uint8_t force, void *param);
 static void ticker_op_update_cb(uint32_t status, void *params);
 
 #if defined(CONFIG_BT_PERIPHERAL)
 static void ticker_stop_cb(uint32_t ticks_at_expire, uint32_t remainder,
-			   uint16_t lazy, void *param);
+			   uint16_t lazy, uint8_t force, void *param);
 static void ticker_op_stop_cb(uint32_t status, void *params);
 static void disabled_cb(void *param);
 static void conn_release(struct ll_adv_set *adv);
@@ -1707,7 +1707,7 @@ static inline struct ll_adv_set *is_disabled_get(uint8_t handle)
 }
 
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t lazy,
-		      void *param)
+		      uint8_t force, void *param)
 {
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, lll_adv_prepare};
@@ -1731,6 +1731,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t laz
 		p.ticks_at_expire = ticks_at_expire;
 		p.remainder = remainder;
 		p.lazy = lazy;
+		p.force = force;
 		p.param = lll;
 		mfy.param = &p;
 
@@ -1798,7 +1799,7 @@ static void ticker_op_update_cb(uint32_t status, void *param)
 
 #if defined(CONFIG_BT_PERIPHERAL)
 static void ticker_stop_cb(uint32_t ticks_at_expire, uint32_t remainder,
-			   uint16_t lazy, void *param)
+			   uint16_t lazy, uint8_t force, void *param)
 {
 	struct ll_adv_set *adv = param;
 	uint8_t handle;

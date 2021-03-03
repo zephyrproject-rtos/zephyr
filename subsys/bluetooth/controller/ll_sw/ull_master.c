@@ -840,7 +840,7 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 }
 
 void ull_master_ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t lazy,
-			  void *param)
+			  uint8_t force, void *param)
 {
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, lll_master_prepare};
@@ -892,6 +892,7 @@ void ull_master_ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t
 	p.ticks_at_expire = ticks_at_expire;
 	p.remainder = remainder;
 	p.lazy = lazy;
+	p.force = force;
 	p.param = &conn->lll;
 	mfy.param = &p;
 
