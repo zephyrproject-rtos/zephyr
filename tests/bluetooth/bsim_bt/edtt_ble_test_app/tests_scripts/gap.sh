@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # GAP regression tests based on the EDTTool
-CWD=`pwd`"/"`dirname $0`
+CWD="$(cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P)"
 
 export SIMULATION_ID="edtt_gap"
 export TEST_FILE=${CWD}"/gap.test_list"
