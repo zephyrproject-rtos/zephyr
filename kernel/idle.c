@@ -14,20 +14,9 @@
 #include <logging/log.h>
 #include <ksched.h>
 
+extern uint32_t z_timestamp_idle;
+
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
-
-#ifdef CONFIG_TICKLESS_IDLE_THRESH
-#define IDLE_THRESH CONFIG_TICKLESS_IDLE_THRESH
-#else
-#define IDLE_THRESH 1
-#endif
-
-/* Fallback idle spin loop for SMP platforms without a working IPI */
-#if (defined(CONFIG_SMP) && !defined(CONFIG_SCHED_IPI_SUPPORTED))
-#define SMP_FALLBACK 1
-#else
-#define SMP_FALLBACK 0
-#endif
 
 #ifdef CONFIG_PM
 /*
@@ -35,7 +24,6 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
  * of the event that caused exit from kernel idling after pm operations.
  */
 unsigned char pm_idle_exit_notify;
-
 
 /* LCOV_EXCL_START
  * These are almost certainly overidden and in any event do nothing
@@ -52,20 +40,16 @@ void __attribute__((weak)) pm_system_resume_from_deep_sleep(void)
 #endif /* CONFIG_PM */
 
 /**
- *
  * @brief Indicate that kernel is idling in tickless mode
  *
  * Sets the kernel data structure idle field to either a positive value or
  * K_FOREVER.
- *
- * @param ticks the number of ticks to idle
- *
- * @return N/A
  */
-#if !SMP_FALLBACK && CONFIG_PM
-static enum pm_state pm_save_idle(int32_t ticks)
+static void pm_save_idle(void)
 {
-	static enum pm_state idle_state = PM_STATE_ACTIVE;
+#ifdef CONFIG_PM
+	int32_t ticks = z_get_next_timeout_expiry();
+	_kernel.idle = ticks;
 
 	pm_idle_exit_notify = 1U;
 
@@ -82,16 +66,12 @@ static enum pm_state pm_save_idle(int32_t ticks)
 	 * idle processing re-enables interrupts which is essential for
 	 * the kernel's scheduling logic.
 	 */
-	idle_state = pm_system_suspend(ticks);
-	if (idle_state == PM_STATE_ACTIVE) {
+	if (pm_system_suspend(ticks) == PM_STATE_ACTIVE) {
 		pm_idle_exit_notify = 0U;
+		k_cpu_idle();
 	}
-
-	return idle_state;
-
+#endif
 }
-#endif /* !SMP_FALLBACK */
-
 
 void z_pm_save_idle_exit(int32_t ticks)
 {
@@ -105,64 +85,57 @@ void z_pm_save_idle_exit(int32_t ticks)
 	if (pm_idle_exit_notify) {
 		pm_system_resume();
 	}
-#endif	/* CONFIG_PM */
+#endif
 	z_clock_idle_exit();
 }
 
-
-#if K_IDLE_PRIO < 0
-#define IDLE_YIELD_IF_COOP() k_yield()
-#else
-#define IDLE_YIELD_IF_COOP() do { } while (false)
-#endif
-
-void idle(void *p1, void *unused2, void *unused3)
+void idle(void *unused1, void *unused2, void *unused3)
 {
+	ARG_UNUSED(unused1);
 	ARG_UNUSED(unused2);
 	ARG_UNUSED(unused3);
 
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
-	/* record timestamp when idling begins */
-
-	extern uint32_t z_timestamp_idle;
-
 	z_timestamp_idle = k_cycle_get_32();
-#endif /* CONFIG_BOOT_TIME_MEASUREMENT */
+#endif
 
 	while (true) {
-#if SMP_FALLBACK
-		k_busy_wait(100);
-		k_yield();
-#else
+		/* SMP systems without a working IPI can't
+		 * actual enter an idle state, because they
+		 * can't be notified of scheduler changes
+		 * (i.e. threads they should run).  They just
+		 * spin in a yield loop.  This is intended as
+		 * a fallback configuration for new platform
+		 * bringup.
+		 */
+		if (IS_ENABLED(CONFIG_SMP) &&
+		    !IS_ENABLED(CONFIG_SCHED_IPI_SUPPORTED)) {
+			k_busy_wait(100);
+			k_yield();
+			continue;
+		}
 
+		/* Note weird API: k_cpu_idle() is called with local
+		 * CPU interrupts masked, and returns with them
+		 * unmasked.  It does not take a spinlock or other
+		 * higher level construct.
+		 */
 		(void) arch_irq_lock();
 
-#ifdef CONFIG_SYS_CLOCK_EXISTS
-		int32_t ticks = z_get_next_timeout_expiry();
-
-		/* The documented behavior of CONFIG_TICKLESS_IDLE_THRESH is
-		 * that the system should not enter a tickless idle for
-		 * periods less than that.  This seems... silly, given that it
-		 * saves no power and does not improve latency.  But it's an
-		 * API we need to honor...
-		 */
-		z_set_timeout_expiry((ticks < IDLE_THRESH) ? 1 : ticks, true);
-#ifdef CONFIG_PM
-		_kernel.idle = ticks;
-		/* Check power policy and decide if we are going to sleep or
-		 * just idle.
-		 */
-		if (pm_save_idle(ticks) == PM_STATE_ACTIVE) {
+		if (IS_ENABLED(CONFIG_PM)) {
+			pm_save_idle();
+		} else {
 			k_cpu_idle();
 		}
-#else /* CONFIG_PM */
-		k_cpu_idle();
-#endif /* CONFIG_PM */
-#else /* CONFIG_SYS_CLOCK_EXISTS */
-		k_cpu_idle();
-#endif /* CONFIG_SYS_CLOCK_EXISTS */
 
-		IDLE_YIELD_IF_COOP();
-#endif /* SMP_FALLBACK */
+		/* It is possible to (pathologically) configure the
+		 * idle thread to have a non-preemptible priority.
+		 * You might think this is an API bug, but we actually
+		 * have a test that exercises this.  Handle the edge
+		 * case when that happens.
+		 */
+		if (K_IDLE_PRIO < 0) {
+			k_yield();
+		}
 	}
 }
