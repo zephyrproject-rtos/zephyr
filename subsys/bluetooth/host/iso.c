@@ -777,8 +777,9 @@ static void bt_iso_chan_disconnected(struct bt_iso_chan *chan)
 
 	bt_iso_chan_set_state(chan, BT_ISO_BOUND);
 
-	/* Unbind if acting as slave */
-	if (chan->conn->role == BT_HCI_ROLE_SLAVE) {
+	/* Unbind if acting as slave or ACL has been disconnected */
+	if (chan->conn->role == BT_HCI_ROLE_SLAVE ||
+	    chan->conn->iso.acl->state == BT_CONN_DISCONNECTED) {
 		bt_iso_chan_unbind(chan);
 	}
 
