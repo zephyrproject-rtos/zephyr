@@ -40,9 +40,11 @@ DT_INST_FOREACH_STATUS_OKAY(MB_RTU_DEFINE_GPIO_CFGS)
 		.re = MB_RTU_ASSIGN_GPIO_CFG(n, re_gpios),	\
 	},
 
+#ifdef CONFIG_MODBUS_SERIAL
 static struct modbus_serial_config modbus_serial_cfg[] = {
 	DT_INST_FOREACH_STATUS_OKAY(MODBUS_DT_GET_SERIAL_DEV)
 };
+#endif
 
 #define MODBUS_DT_GET_DEV(n) {					\
 		.iface_name = DT_INST_LABEL(n),			\
@@ -66,8 +68,10 @@ static void modbus_rx_handler(struct k_work *item)
 	switch (ctx->mode) {
 	case MODBUS_MODE_RTU:
 	case MODBUS_MODE_ASCII:
-		modbus_serial_rx_disable(ctx);
-		ctx->rx_frame_err = modbus_serial_rx_frame(ctx);
+		if (IS_ENABLED(CONFIG_MODBUS_SERIAL)) {
+			modbus_serial_rx_disable(ctx);
+			ctx->rx_frame_err = modbus_serial_rx_frame(ctx);
+		}
 		break;
 	default:
 		LOG_ERR("Unknown MODBUS mode");
@@ -85,7 +89,8 @@ static void modbus_rx_handler(struct k_work *item)
 		switch (ctx->mode) {
 		case MODBUS_MODE_RTU:
 		case MODBUS_MODE_ASCII:
-			if (respond == false) {
+			if (IS_ENABLED(CONFIG_MODBUS_SERIAL) &&
+			    respond == false) {
 				LOG_DBG("Server has dropped frame");
 				modbus_serial_rx_enable(ctx);
 			}
@@ -101,7 +106,8 @@ void mb_tx_frame(struct modbus_context *ctx)
 	switch (ctx->mode) {
 	case MODBUS_MODE_RTU:
 	case MODBUS_MODE_ASCII:
-		if (modbus_serial_tx_frame(ctx)) {
+		if (IS_ENABLED(CONFIG_MODBUS_SERIAL) &&
+		    modbus_serial_tx_frame(ctx)) {
 			LOG_ERR("Unsupported MODBUS serial mode");
 		}
 		break;
@@ -171,8 +177,17 @@ static struct modbus_context *mb_cfg_iface(const uint8_t iface,
 		mbs_reset_statistics(ctx);
 	}
 
-	if (modbus_serial_init(ctx, baud, parity, ascii_mode) != 0) {
-		LOG_ERR("Failed to init MODBUS over serial line");
+	switch (ctx->mode) {
+	case MODBUS_MODE_RTU:
+	case MODBUS_MODE_ASCII:
+		if (IS_ENABLED(CONFIG_MODBUS_SERIAL) &&
+		    modbus_serial_init(ctx, baud, parity, ascii_mode) != 0) {
+			LOG_ERR("Failed to init MODBUS over serial line");
+			return NULL;
+		}
+		break;
+	default:
+		LOG_ERR("Unknown MODBUS mode");
 		return NULL;
 	}
 
@@ -254,7 +269,17 @@ int modbus_disable(const uint8_t iface)
 
 	ctx = &mb_ctx_tbl[iface];
 
-	modbus_serial_disable(ctx);
+	switch (ctx->mode) {
+	case MODBUS_MODE_RTU:
+	case MODBUS_MODE_ASCII:
+		if (IS_ENABLED(CONFIG_MODBUS_SERIAL)) {
+			modbus_serial_disable(ctx);
+		}
+		break;
+	default:
+		LOG_ERR("Unknown MODBUS mode");
+	}
+
 	ctx->rxwait_to = 0;
 	ctx->node_addr = 0;
 	ctx->mode = MODBUS_MODE_RTU;
