@@ -146,7 +146,7 @@ static void i2c_nios2_isr(const struct device *dev)
 	struct i2c_nios2_config *config = DEV_CFG(dev);
 
 	/* Call Altera HAL driver ISR */
-	alt_handle_irq(&config->i2c_dev, I2C_0_IRQ);
+	alt_handle_irq(&config->i2c_dev, DT_INST_IRQN(0));
 }
 
 static int i2c_nios2_init(const struct device *dev);
@@ -160,7 +160,7 @@ static struct i2c_nios2_config i2c_nios2_cfg = {
 	.i2c_dev = {
 		.i2c_base = (alt_u32 *)DT_INST_REG_ADDR(0),
 		.irq_controller_ID = I2C_0_IRQ_INTERRUPT_CONTROLLER_ID,
-		.irq_ID = I2C_0_IRQ,
+		.irq_ID = DT_INST_IRQN(0),
 		.ip_freq_in_hz = DT_INST_PROP(0, clock_frequency),
 	},
 };
@@ -189,8 +189,8 @@ static int i2c_nios2_init(const struct device *dev)
 	/* clear ISR register content */
 	alt_avalon_i2c_int_clear(&config->i2c_dev,
 			ALT_AVALON_I2C_ISR_ALL_CLEARABLE_INTS_MSK);
-	IRQ_CONNECT(I2C_0_IRQ, CONFIG_I2C_0_IRQ_PRI,
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
 			i2c_nios2_isr, DEVICE_DT_INST_GET(0), 0);
-	irq_enable(I2C_0_IRQ);
+	irq_enable(DT_INST_IRQN(0));
 	return 0;
 }
