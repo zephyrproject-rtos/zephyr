@@ -62,3 +62,20 @@ properties:
       instruction.  Use S1B6 if QE is bit 6 of the first status register
       byte, and can be configured by reading then writing one byte with
       RDSR and WRSR.  For other fields see the specification.
+
+  enter-4byte-addr:
+    type: int
+    required: false
+    description: |
+      Enter 4-Byte Addressing value from JESD216 BFP DW16
+
+      This property is ignored if the device is configured to use SFDP data
+      from the sfdp-bfp property (CONFIG_SPI_NOR_SFDP_DEVICETREE) or to read
+      SFDP properties at runtime (CONFIG_SPI_NOR_SFDP_RUNTIME).
+
+      For CONFIG_SPI_NOR_SFDP_MINIMAL this is the 8-bit value from bits 31:24
+      of DW16 identifying ways a device can be placed into 4-byte addressing
+      mode.  If provided as a non-zero value the driver assumes that 4-byte
+      addressing is require to access the full address range, and
+      automatically puts the device into 4-byte address mode when the device
+      is initialized.
