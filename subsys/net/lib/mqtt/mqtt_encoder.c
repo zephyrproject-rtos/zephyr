@@ -287,8 +287,8 @@ int connect_request_encode(const struct mqtt_client *client,
 	buf->cur += MQTT_FIXED_HEADER_MAX_SIZE;
 	start = buf->cur;
 
-	MQTT_TRC("Encoding Protocol Description. Str:%s Size:%08x.",
-		 mqtt_proto_desc->utf8, mqtt_proto_desc->size);
+	MQTT_HEXDUMP_TRC(mqtt_proto_desc->utf8, mqtt_proto_desc->size,
+			 "Encoding Protocol Description.");
 
 	err_code = pack_utf8_str(mqtt_proto_desc, buf);
 	if (err_code != 0) {
@@ -317,8 +317,8 @@ int connect_request_encode(const struct mqtt_client *client,
 		return err_code;
 	}
 
-	MQTT_TRC("Encoding Client Id. Str:%s Size:%08x.",
-		 client->client_id.utf8, client->client_id.size);
+	MQTT_HEXDUMP_TRC(client->client_id.utf8, client->client_id.size,
+			 "Encoding Client Id.");
 	err_code = pack_utf8_str(&client->client_id, buf);
 	if (err_code != 0) {
 		return err_code;
@@ -331,18 +331,18 @@ int connect_request_encode(const struct mqtt_client *client,
 		connect_flags |= ((client->will_topic->qos & 0x03) << 3);
 		connect_flags |= client->will_retain << 5;
 
-		MQTT_TRC("Encoding Will Topic. Str:%s Size:%08x.",
-			 client->will_topic->topic.utf8,
-			 client->will_topic->topic.size);
+		MQTT_HEXDUMP_TRC(client->will_topic->topic.utf8,
+				 client->will_topic->topic.size,
+				 "Encoding Will Topic.");
 		err_code = pack_utf8_str(&client->will_topic->topic, buf);
 		if (err_code != 0) {
 			return err_code;
 		}
 
 		if (client->will_message != NULL) {
-			MQTT_TRC("Encoding Will Message. Str:%s Size:%08x.",
-				 client->will_message->utf8,
-				 client->will_message->size);
+			MQTT_HEXDUMP_TRC(client->will_message->utf8,
+					 client->will_message->size,
+					 "Encoding Will Message.");
 			err_code = pack_utf8_str(client->will_message, buf);
 			if (err_code != 0) {
 				return err_code;
@@ -360,8 +360,9 @@ int connect_request_encode(const struct mqtt_client *client,
 	if (client->user_name != NULL) {
 		connect_flags |= MQTT_CONNECT_FLAG_USERNAME;
 
-		MQTT_TRC("Encoding Username. Str:%s, Size:%08x.",
-			 client->user_name->utf8, client->user_name->size);
+		MQTT_HEXDUMP_TRC(client->user_name->utf8,
+				 client->user_name->size,
+				 "Encoding Username.");
 		err_code = pack_utf8_str(client->user_name, buf);
 		if (err_code != 0) {
 			return err_code;
@@ -372,8 +373,9 @@ int connect_request_encode(const struct mqtt_client *client,
 	if (client->password != NULL) {
 		connect_flags |= MQTT_CONNECT_FLAG_PASSWORD;
 
-		MQTT_TRC("Encoding Password. Str:%s Size:%08x.",
-			 client->password->utf8, client->password->size);
+		MQTT_HEXDUMP_TRC(client->password->utf8,
+				 client->password->size,
+				 "Encoding Password.");
 		err_code = pack_utf8_str(client->password, buf);
 		if (err_code != 0) {
 			return err_code;
