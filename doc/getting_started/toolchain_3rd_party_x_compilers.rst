@@ -51,6 +51,14 @@ GNU ARM Embedded
       C:\gnu_arm_embedded
 
 
+   .. warning::
+
+      On macOS, if you are having trouble with the suggested procedure, there is an unofficial package on brew that migth help you.
+      Run ``brew install gcc-arm-embedded`` and configure the variables
+
+      - Set :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``gnuarmemb``.
+      - Set :envvar:`GNUARMEMB_TOOLCHAIN_PATH` to the brew installation directory (something like ``/usr/local``)
+
 DesignWare ARC MetaWare Development Toolkit (MWDT)
 **************************************************
 
