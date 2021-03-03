@@ -58,7 +58,7 @@
 
 		paxdma: paxdma@4e100800 {
 			compatible = "brcm,iproc-pax-dma-v2";
-			label = "pax_dma";
+			label = "DMA_1";
 			reg = <0x0 0x4e100800 0x0 0x2100>,
 			      <0x0 0x4f000000 0x0 0x200000>,
 			      <0x0 0x4f200000 0x0 0x10000>;
