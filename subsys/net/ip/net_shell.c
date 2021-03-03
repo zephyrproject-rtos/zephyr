@@ -354,8 +354,9 @@ static void iface_cb(struct net_if *iface, void *user_data)
 
 	if (net_if_l2(iface) == &NET_L2_GET_NAME(VIRTUAL)) {
 		struct net_if *orig_iface;
-		const char *name = net_virtual_get_name(iface);
+		char *name, buf[CONFIG_NET_L2_VIRTUAL_MAX_NAME_LEN];
 
+		name = net_virtual_get_name(iface, buf, sizeof(buf));
 		if (!(name && name[0])) {
 			name = "<unknown>";
 		}
@@ -4920,6 +4921,102 @@ static int cmd_net_udp(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
+#if defined(CONFIG_NET_L2_VIRTUAL)
+static void virtual_iface_cb(struct net_if *iface, void *user_data)
+{
+	struct net_shell_user_data *data = user_data;
+	const struct shell *shell = data->shell;
+	int *count = data->user_data;
+	char *name, buf[CONFIG_NET_L2_VIRTUAL_MAX_NAME_LEN];
+	struct net_if *orig_iface;
+
+	if (net_if_l2(iface) != &NET_L2_GET_NAME(VIRTUAL)) {
+		return;
+	}
+
+	if (*count == 0) {
+		PR("Interface  Attached-To  Description\n");
+		(*count)++;
+	}
+
+	orig_iface = net_virtual_get_iface(iface);
+
+	name = net_virtual_get_name(iface, buf, sizeof(buf));
+
+	PR("%d          %c            %s\n",
+	   net_if_get_by_iface(iface),
+	   orig_iface ? net_if_get_by_iface(orig_iface) + '0' : '-',
+	   name);
+
+	(*count)++;
+}
+
+static void attached_iface_cb(struct net_if *iface, void *user_data)
+{
+	struct net_shell_user_data *data = user_data;
+	const struct shell *shell = data->shell;
+	int *count = data->user_data;
+	char buf[CONFIG_NET_L2_VIRTUAL_MAX_NAME_LEN];
+	const char *name;
+	struct virtual_interface_context *ctx, *tmp;
+
+	if (sys_slist_is_empty(&iface->config.virtual_interfaces)) {
+		return;
+	}
+
+	if (*count == 0) {
+		PR("Interface  Below-of  Description\n");
+		(*count)++;
+	}
+
+	PR("%d          ", net_if_get_by_iface(iface));
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&iface->config.virtual_interfaces,
+					  ctx, tmp, node) {
+		if (ctx->virtual_iface == iface) {
+			continue;
+		}
+
+		PR("%d ", net_if_get_by_iface(ctx->virtual_iface));
+	}
+
+	name = net_virtual_get_name(iface, buf, sizeof(buf));
+	if (name == NULL) {
+		name = iface2str(iface, NULL);
+	}
+
+	PR("        %s\n", name);
+
+	(*count)++;
+}
+#endif /* CONFIG_NET_L2_VIRTUAL */
+
+static int cmd_net_virtual(const struct shell *shell, size_t argc,
+			   char *argv[])
+{
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+#if defined(CONFIG_NET_L2_VIRTUAL)
+	struct net_shell_user_data user_data;
+	int count = 0;
+
+	user_data.shell = shell;
+	user_data.user_data = &count;
+
+	net_if_foreach(virtual_iface_cb, &user_data);
+
+	count = 0;
+	PR("\n");
+
+	net_if_foreach(attached_iface_cb, &user_data);
+#else
+	PR_INFO("Set %s to enable %s support.\n", "CONFIG_NET_L2_VIRTUAL",
+		"virtual network interface");
+#endif
+	return 0;
+}
+
 #if defined(CONFIG_NET_VLAN)
 static void iface_vlan_del_cb(struct net_if *iface, void *user_data)
 {
@@ -5622,6 +5719,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_commands,
 	SHELL_CMD(tcp, &net_cmd_tcp, "Connect/send/close TCP connection.",
 		  cmd_net_tcp),
 	SHELL_CMD(udp, &net_cmd_udp, "Send/recv UDP packet", cmd_net_udp),
+	SHELL_CMD(virtual, NULL, "Show virtual network interfaces.",
+		  cmd_net_virtual),
 	SHELL_CMD(vlan, &net_cmd_vlan, "Show VLAN information.", cmd_net_vlan),
 	SHELL_CMD(websocket, NULL, "Print information about WebSocket "
 								"connections.",
