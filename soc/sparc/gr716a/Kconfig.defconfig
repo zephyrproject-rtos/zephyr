@@ -13,4 +13,17 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int
 	default 50000000
 
+if FLASH
+
+config SPI
+	default y
+
+config SPI_NOR
+	default y
+
+config SPI_GRLIB_SPIMCTRL
+	default y
+
+endif
+
 endif
