@@ -17,6 +17,8 @@
 #include <sys/cbprintf.h>
 #include <sys/util.h>
 
+#define CBPRINTF_VIA_UNIT_TEST
+
 /* Unit testing doesn't use Kconfig, so if we're not building from
  * twister force selection of all features.  If we are use flags to
  * determine which features are desired.  Yes, this is a mess.
@@ -26,6 +28,7 @@
  * This should be used with all options enabled.
  */
 #define USE_LIBC 0
+#define USE_PACKAGED 0
 #define CONFIG_CBPRINTF_COMPLETE 1
 #define CONFIG_CBPRINTF_FULL_INTEGRAL 1
 #define CONFIG_CBPRINTF_FP_SUPPORT 1
@@ -85,6 +88,9 @@
 #if (VIA_TWISTER & 0x100) != 0
 #define CONFIG_CBPRINTF_LIBC_SUBSTS 1
 #endif
+#if (VIA_TWISTER & 0x200) != 0
+#define USE_PACKAGED 1
+#endif
 
 #endif /* VIA_TWISTER */
 
@@ -97,12 +103,22 @@
 #define ENABLED_USE_LIBC false
 #endif
 
+#if USE_PACKAGED
+#define ENABLED_USE_PACKAGED true
+#else
+#define ENABLED_USE_PACKAGED false
+#endif
+
 #include "../../../lib/os/cbprintf.c"
 
 #if defined(CONFIG_CBPRINTF_COMPLETE)
 #include "../../../lib/os/cbprintf_complete.c"
 #elif defined(CONFIG_CBPRINTF_NANO)
 #include "../../../lib/os/cbprintf_nano.c"
+#endif
+
+#if USE_PACKAGED
+#include "../../../lib/os/cbprintf_packaged.c"
 #endif
 
 /* We can't determine at build-time whether int is 64-bit, so assume
@@ -115,6 +131,11 @@ static const char *pfx_str = pfx_str64;
 static const unsigned int sfx_val = (unsigned int)0xe7e6e5e4e3e2e1e0;
 static const char sfx_str64[] = "e7e6e5e4e3e2e1e0";
 static const char *sfx_str = sfx_str64;
+
+/* Buffer adequate to hold packaged state for all tested
+ * configurations.
+ */
+static uint8_t __aligned(__alignof__(long double)) packaged[256];
 
 #define WRAP_FMT(_fmt) "%x" _fmt "%x"
 #define PASS_ARG(...) pfx_val, __VA_ARGS__, sfx_val
@@ -173,8 +194,14 @@ static int prf(const char *format, ...)
 #if USE_LIBC
 	rv = vsnprintf(buf, sizeof(buf), format, ap);
 #else
-	reset_out();
+#if USE_PACKAGED
+	rv = cbvprintf_package(packaged, sizeof(packaged), format, ap);
+	if (rv >= 0) {
+		rv = cbpprintf(out, NULL, packaged);
+	}
+#else
 	rv = cbvprintf(out, NULL, format, ap);
+#endif
 	if (bp == (buf + ARRAY_SIZE(buf))) {
 		--bp;
 	}
@@ -190,7 +217,14 @@ static int rawprf(const char *format, ...)
 	int rv;
 
 	va_start(ap, format);
+#if USE_PACKAGED
+	rv = cbvprintf_package(packaged, sizeof(packaged), format, ap);
+	if (rv >= 0) {
+		rv = cbpprintf(out, NULL, packaged);
+	}
+#else
 	rv = cbvprintf(out, NULL, format, ap);
+#endif
 	va_end(ap);
 
 	if (IS_ENABLED(CONFIG_CBPRINTF_NANO)
@@ -1064,6 +1098,51 @@ static void test_libc_substs(void)
 	}
 }
 
+static void test_cbprintf_package(void)
+{
+	if (!ENABLED_USE_PACKAGED) {
+		TC_PRINT("disabled\n");
+		return;
+	}
+
+	int rc;
+	char fmt[] = "/%i/";	/* not const */
+
+	/* Verify we can calculate length without storing */
+	rc = cbprintf_package(NULL, 0, fmt, 3);
+	zassert_true(rc > sizeof(int), NULL);
+
+	/* Capture the base package information for future tests. */
+	size_t len = rc;
+
+	/* Verify we get same length when storing */
+	rc = cbprintf_package(packaged, sizeof(packaged), fmt, 3);
+	zassert_equal(rc, len, NULL);
+
+	/* Verify we get an error if can't store */
+	len -= 1;
+	rc = cbprintf_package(packaged, len, fmt, 3);
+	zassert_equal(rc, -ENOSPC, NULL);
+}
+
+static void test_cbpprintf(void)
+{
+	if (!ENABLED_USE_PACKAGED) {
+		TC_PRINT("disabled\n");
+		return;
+	}
+
+	int rc;
+
+	/* This only checks error conditions.  Formatting is checked
+	 * by diverting prf() and related helpers to use the packaged
+	 * version.
+	 */
+	reset_out();
+	rc = cbpprintf(out, NULL, NULL);
+	zassert_equal(rc, -EINVAL, NULL);
+}
+
 static void test_nop(void)
 {
 }
@@ -1081,7 +1160,12 @@ void test_main(void)
 		TC_PRINT(" LIBC");
 	}
 	if (IS_ENABLED(CONFIG_CBPRINTF_COMPLETE)) {
-		TC_PRINT(" COMPLETE\n");
+		TC_PRINT(" COMPLETE");
+		if (ENABLED_USE_PACKAGED) {
+			TC_PRINT(" PACKAGED\n");
+		} else {
+			TC_PRINT(" VA_LIST\n");
+		}
 	} else {
 		TC_PRINT(" NANO\n");
 	}
@@ -1103,8 +1187,12 @@ void test_main(void)
 		TC_PRINT(" LIBC_SUBSTS\n");
 	}
 
-	printf("sizeof: int = %zu ; long = %zu ; ptr = %zu\n",
-	       sizeof(int), sizeof(long), sizeof(void *));
+	printf("sizeof:  int=%zu long=%zu ptr=%zu long long=%zu double=%zu long double=%zu\n",
+	       sizeof(int), sizeof(long), sizeof(void *), sizeof(long long),
+	       sizeof(double), sizeof(long double));
+	printf("alignof: int=%zu long=%zu ptr=%zu long long=%zu double=%zu long double=%zu\n",
+	       __alignof__(int), __alignof__(long), __alignof__(void *),
+	       __alignof__(long long), __alignof__(double), __alignof__(long double));
 #ifdef CONFIG_CBPRINTF_COMPLETE
 	printf("sizeof(conversion) = %zu\n", sizeof(struct conversion));
 #endif
@@ -1127,6 +1215,8 @@ void test_main(void)
 			 ztest_unit_test(test_n),
 			 ztest_unit_test(test_p),
 			 ztest_unit_test(test_libc_substs),
+			 ztest_unit_test(test_cbprintf_package),
+			 ztest_unit_test(test_cbpprintf),
 			 ztest_unit_test(test_nop)
 			 );
 	ztest_run_test_suite(test_prf);
