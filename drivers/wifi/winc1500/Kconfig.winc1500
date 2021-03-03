@@ -15,6 +15,12 @@ config WIFI_WINC1500_NAME
 	string "Driver name"
 	default "WINC1500"
 
+config WINC1500_DRV_USE_OLD_SPI_SW
+	bool "Use old SPI access method in the vendor HAL"
+	help
+	  This option, when enabled, causes USE_OLD_SPI_SW
+	  setting to be passed to vendor HAL.
+
 config WIFI_WINC1500_THREAD_STACK_SIZE
 	int "HAL callback handler thread stack size"
 	default 2048
