@@ -464,6 +464,7 @@
 /lib/gui/                                 @vanwinkeljan
 /lib/open-amp/                            @arnopo
 /lib/os/                                  @dcpleung @nashif @andyross
+/lib/os/cbprintf_packaged.c               @npitre
 /lib/posix/                               @pfalcon
 /lib/cmsis_rtos_v2/                       @nashif
 /lib/cmsis_rtos_v1/                       @nashif
