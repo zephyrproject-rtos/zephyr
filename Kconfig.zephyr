@@ -436,13 +436,6 @@ config MAKEFILE_EXPORTS
 	  Generates a file with build information that can be read by
 	  third party Makefile-based build systems.
 
-config DEPRECATED_ZEPHYR_INT_TYPES
-	bool "Allow the use of the deprecated zephyr integer types"
-	help
-	  Allows the use of the deprecated Zephyr integer typedefs defined in
-	  Zephyr 2.3 and previous versions.  These types are:
-	  u8_t, u16_t, u32_t, u64_t, s8_t, s16_t, s32_t, and s64_t.
-
 endmenu
 endmenu
 

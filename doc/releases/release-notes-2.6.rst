@@ -57,6 +57,9 @@ Deprecated in this release
 ==========================
 
 Removed APIs in this release
+
+* Removed support for the old zephyr integer typedefs (u8_t, u16_t, etc...).
+
 ============================
 
 Stable API changes in this release
