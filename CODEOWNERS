@@ -110,6 +110,7 @@
 /boards/arm/qemu_cortex_m*/               @ioannisg
 /boards/arm/quick_feather/                @kowalewskijan @kgugala
 /boards/arm/rak5010_nrf52840/             @gpaquet85
+/boards/arm/ronoth_lodev/                 @NorthernDean
 /boards/arm/xmc45_relax_kit/              @parthitce
 /boards/arm/sam4e_xpro/                   @nandojve
 /boards/arm/sam4l_ek/                     @nandojve
