@@ -53,7 +53,7 @@ static inline void sync_info_fill(struct lll_adv_sync *lll_sync,
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 static void mfy_aux_offset_get(void *param);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
-		      uint16_t lazy, void *param);
+		      uint16_t lazy, uint8_t force, void *param);
 static void ticker_op_cb(uint32_t status, void *param);
 
 static struct ll_adv_aux_set ll_adv_aux_pool[CONFIG_BT_CTLR_ADV_AUX_SET];
@@ -1102,7 +1102,7 @@ static void mfy_aux_offset_get(void *param)
 }
 
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
-		      uint16_t lazy, void *param)
+		      uint16_t lazy, uint8_t force, void *param)
 {
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, lll_adv_aux_prepare};
@@ -1124,6 +1124,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 	p.ticks_at_expire = ticks_at_expire;
 	p.remainder = remainder;
 	p.lazy = lazy;
+	p.force = force;
 	p.param = lll;
 	mfy.param = &p;
 

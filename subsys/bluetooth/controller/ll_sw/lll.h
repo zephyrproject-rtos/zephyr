@@ -166,7 +166,8 @@ struct lll_prepare_param {
 	uint32_t ticks_at_expire;
 	uint32_t remainder;
 	uint16_t lazy;
-	void  *param;
+	uint8_t force;
+	void *param;
 };
 
 typedef int (*lll_prepare_cb_t)(struct lll_prepare_param *prepare_param);

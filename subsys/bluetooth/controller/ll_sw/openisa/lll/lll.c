@@ -58,7 +58,7 @@ static int resume_enqueue(lll_prepare_cb_t resume_cb, int resume_prio);
 static void ticker_start_op_cb(uint32_t status, void *param);
 static void preempt_ticker_start(struct lll_prepare_param *prepare_param);
 static void preempt_ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
-			      uint16_t lazy, void *param);
+			      uint16_t lazy, uint8_t force, void *param);
 static void preempt(void *param);
 #else /* CONFIG_BT_CTLR_LOW_LAT */
 #if (CONFIG_BT_CTLR_LLL_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
@@ -582,7 +582,7 @@ static void preempt_ticker_start(struct lll_prepare_param *prepare_param)
 }
 
 static void preempt_ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
-			       uint16_t lazy, void *param)
+			      uint16_t lazy, uint8_t force, void *param)
 {
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, preempt};
