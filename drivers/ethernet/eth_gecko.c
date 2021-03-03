@@ -612,7 +612,7 @@ static void eth_iface_init(struct net_if *iface)
 
 	/* Initialise TX/RX semaphores */
 	k_sem_init(&dev_data->tx_sem, 1, ETH_TX_BUF_COUNT);
-	k_sem_init(&dev_data->rx_sem, 0, UINT_MAX);
+	k_sem_init(&dev_data->rx_sem, 0, K_SEM_MAX_LIMIT);
 
 	/* Start interruption-poll thread */
 	k_thread_create(&dev_data->rx_thread, dev_data->rx_thread_stack,

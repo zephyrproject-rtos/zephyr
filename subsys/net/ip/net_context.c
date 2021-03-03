@@ -306,7 +306,7 @@ int net_context_get(sa_family_t family,
 		}
 
 #if defined(CONFIG_NET_CONTEXT_SYNC_RECV)
-		k_sem_init(&contexts[i].recv_data_wait, 1, UINT_MAX);
+		k_sem_init(&contexts[i].recv_data_wait, 1, K_SEM_MAX_LIMIT);
 #endif /* CONFIG_NET_CONTEXT_SYNC_RECV */
 
 		k_mutex_init(&contexts[i].lock);
@@ -2371,5 +2371,5 @@ const char *net_context_state(struct net_context *context)
 
 void net_context_init(void)
 {
-	k_sem_init(&contexts_lock, 1, UINT_MAX);
+	k_sem_init(&contexts_lock, 1, K_SEM_MAX_LIMIT);
 }

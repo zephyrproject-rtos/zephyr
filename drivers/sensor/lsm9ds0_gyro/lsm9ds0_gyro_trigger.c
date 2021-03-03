@@ -101,7 +101,7 @@ int lsm9ds0_gyro_init_interrupt(const struct device *dev)
 	struct lsm9ds0_gyro_data *data = dev->data;
 
 	data->dev = dev;
-	k_sem_init(&data->sem, 0, UINT_MAX);
+	k_sem_init(&data->sem, 0, K_SEM_MAX_LIMIT);
 
 	k_thread_create(&data->thread, data->thread_stack,
 			CONFIG_LSM9DS0_GYRO_THREAD_STACK_SIZE,

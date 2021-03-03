@@ -33,7 +33,7 @@ struct mgmt_event_wait {
 	struct net_if *iface;
 };
 
-static K_SEM_DEFINE(network_event, 0, UINT_MAX);
+static K_SEM_DEFINE(network_event, 0, K_SEM_MAX_LIMIT);
 static K_SEM_DEFINE(net_mgmt_lock, 1, 1);
 
 K_KERNEL_STACK_DEFINE(mgmt_stack, CONFIG_NET_MGMT_EVENT_STACK_SIZE);
@@ -239,7 +239,7 @@ static void mgmt_thread(void)
 			NET_DBG("Some event got probably lost (%u)",
 				k_sem_count_get(&network_event));
 
-			k_sem_init(&network_event, 0, UINT_MAX);
+			k_sem_init(&network_event, 0, K_SEM_MAX_LIMIT);
 			k_sem_give(&net_mgmt_lock);
 
 			continue;

@@ -988,5 +988,5 @@ void websocket_context_foreach(websocket_context_cb_t cb, void *user_data)
 
 void websocket_init(void)
 {
-	k_sem_init(&contexts_lock, 1, UINT_MAX);
+	k_sem_init(&contexts_lock, 1, K_SEM_MAX_LIMIT);
 }

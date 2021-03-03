@@ -1186,7 +1186,7 @@ static void rfcomm_handle_pn(struct bt_rfcomm_session *session,
 			if (session->cfc == BT_RFCOMM_CFC_UNKNOWN) {
 				session->cfc = BT_RFCOMM_CFC_SUPPORTED;
 			}
-			k_sem_init(&dlc->tx_credits, 0, UINT32_MAX);
+			k_sem_init(&dlc->tx_credits, 0, K_SEM_MAX_LIMIT);
 			rfcomm_dlc_tx_give_credits(dlc, pn->credits);
 		} else {
 			session->cfc = BT_RFCOMM_CFC_NOT_SUPPORTED;
@@ -1216,7 +1216,7 @@ static void rfcomm_handle_pn(struct bt_rfcomm_session *session,
 				if (session->cfc == BT_RFCOMM_CFC_UNKNOWN) {
 					session->cfc = BT_RFCOMM_CFC_SUPPORTED;
 				}
-				k_sem_init(&dlc->tx_credits, 0, UINT32_MAX);
+				k_sem_init(&dlc->tx_credits, 0, K_SEM_MAX_LIMIT);
 				rfcomm_dlc_tx_give_credits(dlc, pn->credits);
 			} else {
 				session->cfc = BT_RFCOMM_CFC_NOT_SUPPORTED;

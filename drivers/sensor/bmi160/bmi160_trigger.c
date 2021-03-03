@@ -277,7 +277,7 @@ int bmi160_trigger_mode_init(const struct device *dev)
 	data->dev = dev;
 
 #if defined(CONFIG_BMI160_TRIGGER_OWN_THREAD)
-	k_sem_init(&data->sem, 0, UINT_MAX);
+	k_sem_init(&data->sem, 0, K_SEM_MAX_LIMIT);
 
 	k_thread_create(&bmi160_thread, bmi160_thread_stack,
 			CONFIG_BMI160_THREAD_STACK_SIZE,

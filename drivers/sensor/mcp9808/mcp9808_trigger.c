@@ -158,7 +158,7 @@ int mcp9808_setup_interrupt(const struct device *dev)
 	data->dev = dev;
 
 #ifdef CONFIG_MCP9808_TRIGGER_OWN_THREAD
-	k_sem_init(&data->sem, 0, UINT_MAX);
+	k_sem_init(&data->sem, 0, K_SEM_MAX_LIMIT);
 
 	k_thread_create(&mcp9808_thread, mcp9808_thread_stack,
 			CONFIG_MCP9808_THREAD_STACK_SIZE,

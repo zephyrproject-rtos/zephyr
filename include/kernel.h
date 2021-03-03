@@ -16,6 +16,7 @@
 #if !defined(_ASMLANGUAGE)
 #include <kernel_includes.h>
 #include <errno.h>
+#include <limits.h>
 #include <stdbool.h>
 #include <toolchain.h>
 
@@ -2699,8 +2700,8 @@ __syscall int k_condvar_wait(struct k_condvar *condvar, struct k_mutex *mutex,
 
 struct k_sem {
 	_wait_q_t wait_q;
-	uint32_t count;
-	uint32_t limit;
+	unsigned int count;
+	unsigned int limit;
 
 	_POLL_EVENT;
 
@@ -2728,6 +2729,16 @@ struct k_sem {
  */
 
 /**
+ * @brief Maximum limit value allowed for a semaphore.
+ *
+ * This is intended for use when a semaphore does not have
+ * an explicit maximum limit, and instead is just used for
+ * counting purposes.
+ *
+ */
+#define K_SEM_MAX_LIMIT UINT_MAX
+
+/**
  * @brief Initialize a semaphore.
  *
  * This routine initializes a semaphore object, prior to its first use.
@@ -2735,6 +2746,8 @@ struct k_sem {
  * @param sem Address of the semaphore.
  * @param initial_count Initial semaphore count.
  * @param limit Maximum permitted semaphore count.
+ *
+ * @see K_SEM_MAX_LIMIT
  *
  * @retval 0 Semaphore created successfully
  * @retval -EINVAL Invalid values
@@ -2827,7 +2840,8 @@ static inline unsigned int z_impl_k_sem_count_get(struct k_sem *sem)
 	Z_STRUCT_SECTION_ITERABLE(k_sem, name) = \
 		Z_SEM_INITIALIZER(name, initial_count, count_limit); \
 	BUILD_ASSERT(((count_limit) != 0) && \
-		     ((initial_count) <= (count_limit)));
+		     ((initial_count) <= (count_limit)) && \
+			 ((count_limit) <= K_SEM_MAX_LIMIT));
 
 /** @} */
 

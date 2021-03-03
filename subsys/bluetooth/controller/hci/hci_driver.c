@@ -49,7 +49,7 @@
 
 #include "hal/debug.h"
 
-static K_SEM_DEFINE(sem_prio_recv, 0, UINT_MAX);
+static K_SEM_DEFINE(sem_prio_recv, 0, K_SEM_MAX_LIMIT);
 static K_FIFO_DEFINE(recv_fifo);
 
 struct k_thread prio_recv_thread_data;

@@ -256,7 +256,7 @@ int ism330dhcx_init_interrupt(const struct device *dev)
 	}
 
 #if defined(CONFIG_ISM330DHCX_TRIGGER_OWN_THREAD)
-	k_sem_init(&ism330dhcx->gpio_sem, 0, UINT_MAX);
+	k_sem_init(&ism330dhcx->gpio_sem, 0, K_SEM_MAX_LIMIT);
 
 	k_thread_create(&ism330dhcx->thread, ism330dhcx->thread_stack,
 			CONFIG_ISM330DHCX_THREAD_STACK_SIZE,

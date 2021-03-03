@@ -628,7 +628,7 @@ static int i2c_dw_initialize(const struct device *dev)
 		DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
 	}
 
-	k_sem_init(&dw->device_sync_sem, 0, UINT_MAX);
+	k_sem_init(&dw->device_sync_sem, 0, K_SEM_MAX_LIMIT);
 
 	regs = get_regs(dev);
 	/* verify that we have a valid DesignWare register first */

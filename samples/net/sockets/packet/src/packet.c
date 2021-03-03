@@ -215,7 +215,7 @@ static void send_packet(void)
 
 void main(void)
 {
-	k_sem_init(&quit_lock, 0, UINT_MAX);
+	k_sem_init(&quit_lock, 0, K_SEM_MAX_LIMIT);
 
 	LOG_INF("Packet socket sample is running");
 

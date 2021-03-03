@@ -878,7 +878,7 @@ static int i2c_ctrl_init(const struct device *dev)
 
 	/* initialize mutux and semaphore for i2c/smb controller */
 	k_sem_init(&data->lock_sem, 1, 1);
-	k_sem_init(&data->sync_sem, 0, UINT_MAX);
+	k_sem_init(&data->sync_sem, 0, K_SEM_MAX_LIMIT);
 
 	/* Initialize driver status machine */
 	data->oper_state = NPCX_I2C_IDLE;

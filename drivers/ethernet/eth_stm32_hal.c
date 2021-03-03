@@ -703,9 +703,9 @@ static int eth_initialize(const struct device *dev)
 
 	/* Initialize semaphores */
 	k_mutex_init(&dev_data->tx_mutex);
-	k_sem_init(&dev_data->rx_int_sem, 0, UINT_MAX);
+	k_sem_init(&dev_data->rx_int_sem, 0, K_SEM_MAX_LIMIT);
 #ifdef CONFIG_SOC_SERIES_STM32H7X
-	k_sem_init(&dev_data->tx_int_sem, 0, UINT_MAX);
+	k_sem_init(&dev_data->tx_int_sem, 0, K_SEM_MAX_LIMIT);
 #endif /* CONFIG_SOC_SERIES_STM32H7X */
 
 	/* Start interruption-poll thread */

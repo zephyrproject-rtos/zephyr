@@ -923,7 +923,7 @@ static int spi_nor_init(const struct device *dev)
 	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
 		struct spi_nor_data *const driver_data = dev->data;
 
-		k_sem_init(&driver_data->sem, 1, UINT_MAX);
+		k_sem_init(&driver_data->sem, 1, K_SEM_MAX_LIMIT);
 	}
 
 	return spi_nor_configure(dev);

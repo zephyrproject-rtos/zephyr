@@ -193,7 +193,7 @@ static int i2c_mcux_init(const struct device *dev)
 	int error;
 
 	k_sem_init(&data->lock, 1, 1);
-	k_sem_init(&data->device_sync_sem, 0, UINT_MAX);
+	k_sem_init(&data->device_sync_sem, 0, K_SEM_MAX_LIMIT);
 
 	clock_freq = CLOCK_GetFreq(config->clock_source);
 	I2C_MasterGetDefaultConfig(&master_config);

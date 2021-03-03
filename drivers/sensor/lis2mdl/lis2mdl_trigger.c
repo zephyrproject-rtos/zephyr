@@ -118,7 +118,7 @@ int lis2mdl_init_interrupt(const struct device *dev)
 	}
 
 #if defined(CONFIG_LIS2MDL_TRIGGER_OWN_THREAD)
-	k_sem_init(&lis2mdl->gpio_sem, 0, UINT_MAX);
+	k_sem_init(&lis2mdl->gpio_sem, 0, K_SEM_MAX_LIMIT);
 	k_thread_create(&lis2mdl->thread, lis2mdl->thread_stack,
 			CONFIG_LIS2MDL_THREAD_STACK_SIZE,
 			(k_thread_entry_t)lis2mdl_thread, lis2mdl,

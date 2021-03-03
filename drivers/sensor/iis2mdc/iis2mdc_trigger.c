@@ -118,7 +118,7 @@ int iis2mdc_init_interrupt(const struct device *dev)
 	}
 
 #if defined(CONFIG_IIS2MDC_TRIGGER_OWN_THREAD)
-	k_sem_init(&iis2mdc->gpio_sem, 0, UINT_MAX);
+	k_sem_init(&iis2mdc->gpio_sem, 0, K_SEM_MAX_LIMIT);
 	k_thread_create(&iis2mdc->thread, iis2mdc->thread_stack,
 			CONFIG_IIS2MDC_THREAD_STACK_SIZE,
 			(k_thread_entry_t)iis2mdc_thread, iis2mdc,

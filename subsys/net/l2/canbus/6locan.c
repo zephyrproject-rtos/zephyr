@@ -1727,7 +1727,7 @@ void net_6locan_init(struct net_if *iface)
 
 	k_mutex_init(&l2_ctx.tx_ctx_mtx);
 	k_mutex_init(&l2_ctx.rx_ctx_mtx);
-	k_sem_init(&l2_ctx.tx_sem, 1, INT_MAX);
+	k_sem_init(&l2_ctx.tx_sem, 1, K_SEM_MAX_LIMIT);
 
 	/* This work queue should have precedence over the tx stream
 	 * TODO thread_priority = tx_tc2thread(NET_TC_TX_COUNT -1) - 1;

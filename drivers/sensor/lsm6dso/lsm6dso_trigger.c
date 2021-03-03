@@ -257,7 +257,7 @@ int lsm6dso_init_interrupt(const struct device *dev)
 	}
 
 #if defined(CONFIG_LSM6DSO_TRIGGER_OWN_THREAD)
-	k_sem_init(&lsm6dso->gpio_sem, 0, UINT_MAX);
+	k_sem_init(&lsm6dso->gpio_sem, 0, K_SEM_MAX_LIMIT);
 
 	k_thread_create(&lsm6dso->thread, lsm6dso->thread_stack,
 			CONFIG_LSM6DSO_THREAD_STACK_SIZE,

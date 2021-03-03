@@ -216,7 +216,7 @@ int iis2iclx_init_interrupt(const struct device *dev)
 	}
 
 #if defined(CONFIG_IIS2ICLX_TRIGGER_OWN_THREAD)
-	k_sem_init(&iis2iclx->gpio_sem, 0, UINT_MAX);
+	k_sem_init(&iis2iclx->gpio_sem, 0, K_SEM_MAX_LIMIT);
 
 	k_thread_create(&iis2iclx->thread, iis2iclx->thread_stack,
 			CONFIG_IIS2ICLX_THREAD_STACK_SIZE,
