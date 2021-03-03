@@ -26,10 +26,11 @@ Mapping nodes to bindings
 *************************
 
 During the :ref:`build_configuration_phase`, the build system tries to map each
-node in the devicetree to a binding file. The build system only generates
-macros for devicetree nodes which have matching bindings. Nodes are mapped to
-bindings by their :ref:`compatible properties <dt-syntax>`. Take the following
-node as an example:
+node in the devicetree to a binding file. When this succeeds, the build system
+uses the information in the binding file when generating macros for the node.
+
+Nodes are mapped to binding files by their :ref:`compatible properties
+<dt-syntax>`. Take the following node as an example:
 
 .. code-block:: DTS
 
