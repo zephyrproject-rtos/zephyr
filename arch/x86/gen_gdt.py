@@ -39,26 +39,30 @@ import argparse
 import sys
 import struct
 import os
-import elftools
+
 from distutils.version import LooseVersion
+
+import elftools
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
+
 
 if LooseVersion(elftools.__version__) < LooseVersion('0.24'):
     sys.exit("pyelftools is out of date, need version 0.24 or later")
 
 
 def debug(text):
-    if not args.verbose:
-        return
-    sys.stdout.write(os.path.basename(sys.argv[0]) + ": " + text + "\n")
+    """Display debug message if --verbose"""
+    if args.verbose:
+        sys.stdout.write(os.path.basename(sys.argv[0]) + ": " + text + "\n")
 
 
 def error(text):
+    """Exit program with an error message"""
     sys.exit(os.path.basename(sys.argv[0]) + ": " + text)
 
 
-gdt_pd_fmt = "<HIH"
+GDT_PD_FMT = "<HIH"
 
 FLAGS_GRAN = 1 << 7  # page granularity
 ACCESS_EX = 1 << 3  # executable
@@ -70,14 +74,15 @@ ACCESS_RW = 1 << 1  # read or write permission
 
 
 def create_gdt_pseudo_desc(addr, size):
+    """Create pseudo GDT descriptor"""
     debug("create pseudo decriptor: %x %x" % (addr, size))
     # ...and take back one byte for the Intel god whose Ark this is...
     size = size - 1
-    return struct.pack(gdt_pd_fmt, size, addr, 0)
+    return struct.pack(GDT_PD_FMT, size, addr, 0)
 
 
-# Limit argument always in bytes
 def chop_base_limit(base, limit):
+    """Limit argument always in bytes"""
     base_lo = base & 0xFFFF
     base_mid = (base >> 16) & 0xFF
     base_hi = (base >> 24) & 0xFF
@@ -88,10 +93,11 @@ def chop_base_limit(base, limit):
     return (base_lo, base_mid, base_hi, limit_lo, limit_hi)
 
 
-gdt_ent_fmt = "<HHBBBB"
+GDT_ENT_FMT = "<HHBBBB"
 
 
 def create_code_data_entry(base, limit, dpl, flags, access):
+    """Create GDT entry for code or data"""
     debug("create code or data entry: %x %x %x %x %x" %
           (base, limit, dpl, flags, access))
 
@@ -115,11 +121,12 @@ def create_code_data_entry(base, limit, dpl, flags, access):
     access = access | (present << 7) | (dpl << 5) | (desc_type << 4) | accessed
     flags = flags | (size << 6) | limit_hi
 
-    return struct.pack(gdt_ent_fmt, limit_lo, base_lo, base_mid,
+    return struct.pack(GDT_ENT_FMT, limit_lo, base_lo, base_mid,
                        access, flags, base_hi)
 
 
 def create_tss_entry(base, limit, dpl):
+    """Create GDT TSS entry"""
     debug("create TSS entry: %x %x %x" % (base, limit, dpl))
     present = 1
 
@@ -132,11 +139,12 @@ def create_tss_entry(base, limit, dpl):
     flags = (gran << 7) | limit_hi
     type_byte = ((present << 7) | (dpl << 5) | type_code)
 
-    return struct.pack(gdt_ent_fmt, limit_lo, base_lo, base_mid,
+    return struct.pack(GDT_ENT_FMT, limit_lo, base_lo, base_mid,
                        type_byte, flags, base_hi)
 
 
 def get_symbols(obj):
+    """Extract all symbols from ELF file object"""
     for section in obj.iter_sections():
         if isinstance(section, SymbolTableSection):
             return {sym.name: sym.entry.st_value
@@ -146,6 +154,7 @@ def get_symbols(obj):
 
 
 def parse_args():
+    """Parse command line arguments"""
     global args
     parser = argparse.ArgumentParser(
         description=__doc__,
@@ -163,10 +172,11 @@ def parse_args():
 
 
 def main():
+    """Main Program"""
     parse_args()
 
-    with open(args.kernel, "rb") as fp:
-        kernel = ELFFile(fp)
+    with open(args.kernel, "rb") as elf_fp:
+        kernel = ELFFile(elf_fp)
         syms = get_symbols(kernel)
 
     # NOTE: use-cases are extremely limited; we always have a basic flat
@@ -206,17 +216,17 @@ def main():
 
     gdt_base = syms["_gdt"] + virt_to_phys_offset
 
-    with open(args.output_gdt, "wb") as fp:
+    with open(args.output_gdt, "wb") as output_fp:
         # The pseudo descriptor is stuffed into the NULL descriptor
         # since the CPU never looks at it
-        fp.write(create_gdt_pseudo_desc(gdt_base, num_entries * 8))
+        output_fp.write(create_gdt_pseudo_desc(gdt_base, num_entries * 8))
 
         # Selector 0x08: code descriptor
-        fp.write(create_code_data_entry(0, 0xFFFFF, 0,
+        output_fp.write(create_code_data_entry(0, 0xFFFFF, 0,
                                         FLAGS_GRAN, ACCESS_EX | ACCESS_RW))
 
         # Selector 0x10: data descriptor
-        fp.write(create_code_data_entry(0, 0xFFFFF, 0,
+        output_fp.write(create_code_data_entry(0, 0xFFFFF, 0,
                                         FLAGS_GRAN, ACCESS_RW))
 
         if num_entries >= 5:
@@ -224,18 +234,18 @@ def main():
             df_tss = syms["_df_tss"] + virt_to_phys_offset
 
             # Selector 0x18: main TSS
-            fp.write(create_tss_entry(main_tss, 0x67, 0))
+            output_fp.write(create_tss_entry(main_tss, 0x67, 0))
 
             # Selector 0x20: double-fault TSS
-            fp.write(create_tss_entry(df_tss, 0x67, 0))
+            output_fp.write(create_tss_entry(df_tss, 0x67, 0))
 
         if num_entries >= 7:
             # Selector 0x28: code descriptor, dpl = 3
-            fp.write(create_code_data_entry(0, 0xFFFFF, 3,
+            output_fp.write(create_code_data_entry(0, 0xFFFFF, 3,
                                             FLAGS_GRAN, ACCESS_EX | ACCESS_RW))
 
             # Selector 0x30: data descriptor, dpl = 3
-            fp.write(create_code_data_entry(0, 0xFFFFF, 3,
+            output_fp.write(create_code_data_entry(0, 0xFFFFF, 3,
                                             FLAGS_GRAN, ACCESS_RW))
 
         if use_tls:
@@ -244,7 +254,7 @@ def main():
             #
             # for use with thread local storage while this will be
             # modified at runtime.
-            fp.write(create_code_data_entry(0, 0xFFFFF, 3,
+            output_fp.write(create_code_data_entry(0, 0xFFFFF, 3,
                                             FLAGS_GRAN, ACCESS_RW))
 
 
