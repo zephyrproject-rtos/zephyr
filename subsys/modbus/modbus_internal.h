@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020 PHYTEC Messtechnik GmbH
+ * Copyright (c) 2021 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -91,33 +92,44 @@ enum modbus_mode {
 	MODBUS_MODE_ASCII,
 };
 
-#define MODBUS_STATE_CONFIGURED		0
-
-struct modbus_context {
-	/* Interface name */
-	const char *iface_name;
+struct modbus_serial_config {
 	/* UART device name */
 	const char *dev_name;
 	/* UART device */
 	const struct device *dev;
-	/* MODBUS mode */
-	enum modbus_mode mode;
-	/* True if interface is configured as client */
-	bool client;
-	/* Amount of time client is willing to wait for response from server */
-	uint32_t rxwait_to;
 	/* RTU timeout (maximum inter-frame delay) */
 	uint32_t rtu_timeout;
-	/* Pointer to user server callbacks */
-	struct modbus_user_callbacks *mbs_user_cb;
-	/* Interface state */
-	atomic_t state;
 	/* Pointer to current position in buffer */
 	uint8_t *uart_buf_ptr;
 	/* Pointer to driver enable (DE) pin config */
 	struct mb_rtu_gpio_config *de;
 	/* Pointer to receiver enable (nRE) pin config */
 	struct mb_rtu_gpio_config *re;
+	/* RTU timer to detect frame end point */
+	struct k_timer rtu_timer;
+	/* Number of bytes received or to send */
+	uint16_t uart_buf_ctr;
+	/* Storage of received characters or characters to send */
+	uint8_t uart_buf[CONFIG_MODBUS_BUFFER_SIZE];
+};
+
+#define MODBUS_STATE_CONFIGURED		0
+
+struct modbus_context {
+	/* Interface name */
+	const char *iface_name;
+	/* Serial line configuration */
+	struct modbus_serial_config *cfg;
+	/* MODBUS mode */
+	enum modbus_mode mode;
+	/* True if interface is configured as client */
+	bool client;
+	/* Amount of time client is willing to wait for response from server */
+	uint32_t rxwait_to;
+	/* Pointer to user server callbacks */
+	struct modbus_user_callbacks *mbs_user_cb;
+	/* Interface state */
+	atomic_t state;
 
 	/* Client's mutually exclusive access */
 	struct k_mutex iface_lock;
@@ -125,15 +137,11 @@ struct modbus_context {
 	struct k_sem client_wait_sem;
 	/* Server work item */
 	struct k_work server_work;
-	/* RTU timer to detect frame end point */
-	struct k_timer rtu_timer;
 	/* Received frame */
 	struct mb_rtu_frame rx_frame;
 	/* Frame to transmit */
 	struct mb_rtu_frame tx_frame;
 
-	/* Number of bytes received or to send */
-	uint16_t uart_buf_ctr;
 	/* Records error from frame reception, e.g. CRC error */
 	int rx_frame_err;
 
@@ -146,8 +154,6 @@ struct modbus_context {
 #endif
 	/* Node address */
 	uint8_t node_addr;
-	/* Storage of received characters or characters to send */
-	uint8_t uart_buf[CONFIG_MODBUS_BUFFER_SIZE];
 
 };
 

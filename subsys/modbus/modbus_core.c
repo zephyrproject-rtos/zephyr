@@ -34,11 +34,19 @@ DT_INST_FOREACH_STATUS_OKAY(MB_RTU_DEFINE_GPIO_CFGS)
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, d),		\
 		    (&d##_cfg_##n), (NULL))
 
-#define MODBUS_DT_GET_DEV(n) {					\
-		.iface_name = DT_INST_LABEL(n),			\
+#define MODBUS_DT_GET_SERIAL_DEV(n) {				\
 		.dev_name = DT_INST_BUS_LABEL(n),		\
 		.de = MB_RTU_ASSIGN_GPIO_CFG(n, de_gpios),	\
 		.re = MB_RTU_ASSIGN_GPIO_CFG(n, re_gpios),	\
+	},
+
+static struct modbus_serial_config modbus_serial_cfg[] = {
+	DT_INST_FOREACH_STATUS_OKAY(MODBUS_DT_GET_SERIAL_DEV)
+};
+
+#define MODBUS_DT_GET_DEV(n) {					\
+		.iface_name = DT_INST_LABEL(n),			\
+		.cfg = &modbus_serial_cfg[n],			\
 	},
 
 static struct modbus_context mb_ctx_tbl[] = {
@@ -155,9 +163,6 @@ static struct modbus_context *mb_cfg_iface(const uint8_t iface,
 	ctx->client = client;
 	ctx->mbs_user_cb = NULL;
 	k_mutex_init(&ctx->iface_lock);
-
-	ctx->uart_buf_ctr = 0;
-	ctx->uart_buf_ptr = &ctx->uart_buf[0];
 
 	k_sem_init(&ctx->client_wait_sem, 0, 1);
 	k_work_init(&ctx->server_work, modbus_rx_handler);
