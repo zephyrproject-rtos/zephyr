@@ -51,7 +51,7 @@ static void trigger_fault_illeagl_instuction(void)
 
 static void trigger_fault_access(void)
 {
-#if defined(CONFIG_CPU_ARCEM)
+#if defined(CONFIG_CPU_ARCEM) || defined(CONFIG_CPU_CORTEX_M)
 	/* For iotdk and ARC/nSIM, nSIM simulates full address space of memory,
 	 * so all accesses outside of CCMs are valid and access to 0x0 address
 	 * doesn't generate any exception.So we access it 0XFFFFFFFF instead to
@@ -59,8 +59,14 @@ static void trigger_fault_access(void)
 	 */
 	void *a = (void *)0xFFFFFFFF;
 #else
-	/* For most arch which support userspace, derefencing NULL
+	/* For most arch which support userspace, dereferencing NULL
 	 * pointer will be caught by exception.
+	 *
+	 * Note: this is not applicable for ARM Cortex-M:
+	 * In Cortex-M, nPRIV read access to address 0x0 is generally allowed,
+	 * provided that it is "mapped" e.g. when CONFIG_FLASH_BASE_ADDRESS is
+	 * 0x0. So, de-referencing NULL pointer is not guaranteed to trigger an
+	 * exception.
 	 */
 	void *a = (void *)NULL;
 #endif
