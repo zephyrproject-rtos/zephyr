@@ -116,6 +116,16 @@ struct spi_nor_data {
 	uint32_t ts_enter_dpd;
 #endif
 
+	/* Miscellaneous flags */
+
+	/* If set addressed operations should use 32-bit rather than
+	 * 24-bit addresses.
+	 *
+	 * This is ignored if the access parameter to a command
+	 * explicitly specifies 24-bit or 32-bit addressing.
+	 */
+	bool flag_access_32bit: 1;
+
 	/* Minimal SFDP stores no dynamic configuration.  Runtime and
 	 * devicetree store page size and erase_types; runtime also
 	 * stores flash size and layout.
@@ -251,10 +261,21 @@ static inline void delay_until_exit_dpd_ok(const struct device *const dev)
  * If not provided the opcode is not followed by address bytes.
  */
 #define NOR_ACCESS_ADDRESSED BIT(0)
+
+/* Indicates that addressed access uses a 24-bit address regardless of
+ * spi_nor_data::flag_32bit_addr.
+ */
+#define NOR_ACCESS_24BIT_ADDR BIT(1)
+
+/* Indicates that addressed access uses a 32-bit address regardless of
+ * spi_nor_data::flag_32bit_addr.
+ */
+#define NOR_ACCESS_32BIT_ADDR BIT(2)
+
 /* Indicates that an access command is performing a write.  If not
  * provided access is a read.
  */
-#define NOR_ACCESS_WRITE BIT(1)
+#define NOR_ACCESS_WRITE BIT(7)
 
 /*
  * @brief Send an SPI command
@@ -269,38 +290,55 @@ static inline void delay_until_exit_dpd_ok(const struct device *const dev)
  * @return 0 on success, negative errno code otherwise
  */
 static int spi_nor_access(const struct device *const dev,
-			  uint8_t opcode, uint8_t access, off_t addr,
-			  void *data, size_t length)
+			  uint8_t opcode, unsigned int access,
+			  off_t addr, void *data, size_t length)
 {
 	struct spi_nor_data *const driver_data = dev->data;
 	bool is_addressed = (access & NOR_ACCESS_ADDRESSED) != 0U;
 	bool is_write = (access & NOR_ACCESS_WRITE) != 0U;
-
-	uint8_t buf[4] = {
-		opcode,
-		(addr & 0xFF0000) >> 16,
-		(addr & 0xFF00) >> 8,
-		(addr & 0xFF),
-	};
-
+	uint8_t buf[5] = { 0 };
 	struct spi_buf spi_buf[2] = {
 		{
 			.buf = buf,
-			.len = (is_addressed) ? 4 : 1,
+			.len = 1,
 		},
 		{
 			.buf = data,
 			.len = length
 		}
 	};
+
+	buf[0] = opcode;
+	if (is_addressed) {
+		bool access_24bit = (access & NOR_ACCESS_24BIT_ADDR) != 0;
+		bool access_32bit = (access & NOR_ACCESS_32BIT_ADDR) != 0;
+		bool use_32bit = (access_32bit
+				  || (!access_24bit
+				      && driver_data->flag_access_32bit));
+		union {
+			uint32_t u32;
+			uint8_t u8[4];
+		} addr32 = {
+			.u32 = sys_cpu_to_be32(addr),
+		};
+
+		if (use_32bit) {
+			memcpy(&buf[1], &addr32.u8[0], 4);
+			spi_buf[0].len += 4;
+		} else {
+			memcpy(&buf[1], &addr32.u8[1], 3);
+			spi_buf[0].len += 3;
+		}
+	};
+
 	const struct spi_buf_set tx_set = {
 		.buffers = spi_buf,
-		.count = (length) ? 2 : 1
+		.count = (length != 0) ? 2 : 1,
 	};
 
 	const struct spi_buf_set rx_set = {
 		.buffers = spi_buf,
-		.count = 2
+		.count = 2,
 	};
 
 	if (is_write) {
@@ -364,31 +402,13 @@ static int spi_nor_wait_until_ready(const struct device *dev)
 static int read_sfdp(const struct device *const dev,
 		     off_t addr, void *data, size_t length)
 {
-	struct spi_nor_data *const driver_data = dev->data;
-	uint8_t buf[] = {
-		JESD216_CMD_READ_SFDP,
-		addr >> 16,
-		addr >> 8,
-		addr,
-		0,		/* wait state */
-	};
-	struct spi_buf spi_buf[] = {
-		{
-			.buf = buf,
-			.len = sizeof(buf),
-		},
-		{
-			.buf = data,
-			.len = length,
-		}
-	};
-	const struct spi_buf_set buf_set = {
-		.buffers = spi_buf,
-		.count = ARRAY_SIZE(spi_buf),
-	};
-
-	return spi_transceive(driver_data->spi, &driver_data->spi_cfg,
-			      &buf_set, &buf_set);
+	/* READ_SFDP requires a 24-bit address followed by a single
+	 * byte for a wait state.  This is effected by using 32-bit
+	 * address by shifting the 24-bit address up 8 bits.
+	 */
+	return spi_nor_access(dev, JESD216_CMD_READ_SFDP,
+			      NOR_ACCESS_32BIT_ADDR | NOR_ACCESS_ADDRESSED,
+			      addr << 8, data, length);
 }
 #endif /* CONFIG_SPI_NOR_SFDP_RUNTIME */
 
