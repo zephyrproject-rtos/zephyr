@@ -98,6 +98,12 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	lll = &scan->lll;
 	lll_coded = &scan_coded->lll;
 
+	/* NOTE: When coded PHY is supported, and connection establishment
+	 *       over coded PHY is selected by application then look for
+	 *       a connection context already assigned to 1M PHY scanning
+	 *       context. Use the same connection context in the coded PHY
+	 *       scanning context.
+	 */
 	if (phy & BT_HCI_LE_EXT_SCAN_PHY_CODED) {
 		if (!lll_coded->conn) {
 			lll_coded->conn = lll->conn;
@@ -119,6 +125,7 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 
 #endif /* !CONFIG_BT_CTLR_PHY_CODED */
 
+	/* NOTE: non-zero PHY value enables initiating connection on that PHY */
 	lll->phy = phy;
 
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
@@ -590,6 +597,11 @@ void ull_master_cleanup(struct node_rx_hdr *rx_free)
 	struct ll_conn *conn;
 	memq_link_t *link;
 
+	/* NOTE: `scan` variable can be 1M PHY or coded PHY scanning context.
+	 *       Single connection context is allocated in both the 1M PHY and
+	 *       coded PHY scanning context, hence releasing only this one
+	 *       connection context.
+	 */
 	conn_lll = scan->lll.conn;
 	LL_ASSERT(conn_lll);
 	scan->lll.conn = NULL;
@@ -603,11 +615,17 @@ void ull_master_cleanup(struct node_rx_hdr *rx_free)
 	conn = (void *)HDR_LLL2EVT(conn_lll);
 	ll_conn_release(conn);
 
+	/* 1M PHY is disabled here if both 1M and coded PHY was enabled for
+	 * connection establishment.
+	 */
 	scan->is_enabled = 0U;
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_CTLR_PHY_CODED)
 	scan->lll.phy = 0U;
 
+	/* Determine if coded PHY was also enabled, if so, reset the assigned
+	 * connection context, enabled flag and phy value.
+	 */
 	struct ll_scan_set *scan_coded =
 				ull_scan_is_enabled_get(SCAN_HANDLE_PHY_CODED);
 	if (scan_coded && scan_coded != scan) {
