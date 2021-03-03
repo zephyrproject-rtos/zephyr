@@ -31,7 +31,7 @@ LOG_MODULE_REGISTER(modbus_s, CONFIG_MODBUS_LOG_LEVEL);
  * statistics and communications counters.
  */
 #ifdef CONFIG_MODBUS_FC08_DIAGNOSTIC
-void mbs_reset_statistics(struct modbus_context *ctx)
+void modbus_reset_stats(struct modbus_context *ctx)
 {
 	/* Initialize all MODBUS event counters. */
 	ctx->mbs_msg_ctr = 0;
@@ -66,7 +66,7 @@ static void update_noresp_ctr(struct modbus_context *ctx)
 	ctx->mbs_noresp_ctr++;
 }
 #else
-#define mbs_reset_statistics(...)
+#define modbus_reset_stats(...)
 #define update_msg_ctr(...)
 #define update_crcerr_ctr(...)
 #define update_excep_ctr(...)
@@ -82,13 +82,13 @@ static void mbs_exception_rsp(struct modbus_context *ctx, uint8_t excep_code)
 {
 	const uint8_t excep_bit = BIT(7);
 
-	LOG_INF("FC 0x%02x Error 0x%02x", ctx->rx_frame.fc, excep_code);
+	LOG_INF("FC 0x%02x Error 0x%02x", ctx->rx_adu.fc, excep_code);
 
 	update_excep_ctr(ctx);
 
-	ctx->tx_frame.fc |= excep_bit;
-	ctx->tx_frame.data[0] = excep_code;
-	ctx->tx_frame.length = 1;
+	ctx->tx_adu.fc |= excep_bit;
+	ctx->tx_adu.data[0] = excep_code;
+	ctx->tx_adu.length = 1;
 }
 
 /*
@@ -117,7 +117,7 @@ static bool mbs_fc01_coil_read(struct modbus_context *ctx)
 	uint8_t bit_mask;
 	uint16_t coil_cntr;
 
-	if (ctx->rx_frame.length != request_len) {
+	if (ctx->rx_adu.length != request_len) {
 		LOG_ERR("Wrong request length");
 		return false;
 	}
@@ -127,8 +127,8 @@ static bool mbs_fc01_coil_read(struct modbus_context *ctx)
 		return true;
 	}
 
-	coil_addr = sys_get_be16(&ctx->rx_frame.data[0]);
-	coil_qty = sys_get_be16(&ctx->rx_frame.data[2]);
+	coil_addr = sys_get_be16(&ctx->rx_adu.data[0]);
+	coil_qty = sys_get_be16(&ctx->rx_adu.data[2]);
 
 	/* Make sure we don't exceed the allowed limit per request */
 	if (coil_qty == 0 || coil_qty > coils_limit) {
@@ -140,16 +140,16 @@ static bool mbs_fc01_coil_read(struct modbus_context *ctx)
 	/* Calculate byte count for response. */
 	num_bytes = ((coil_qty - 1) / 8) + 1;
 	/* Number of data bytes + byte count. */
-	ctx->tx_frame.length = num_bytes + 1;
+	ctx->tx_adu.length = num_bytes + 1;
 	/* Set number of data bytes in response message. */
-	ctx->tx_frame.data[0] = (uint8_t)num_bytes;
+	ctx->tx_adu.data[0] = (uint8_t)num_bytes;
 
 	/* Clear bytes in response */
-	presp = &ctx->tx_frame.data[1];
+	presp = &ctx->tx_adu.data[1];
 	memset(presp, 0, num_bytes);
 
 	/* Reset the pointer to the start of the response payload */
-	presp = &ctx->tx_frame.data[1];
+	presp = &ctx->tx_adu.data[1];
 	/* Start with bit 0 in response byte data mask. */
 	bit_mask = BIT(0);
 	/* Initialize loop counter. */
@@ -216,7 +216,7 @@ static bool mbs_fc02_di_read(struct modbus_context *ctx)
 	uint8_t bit_mask;
 	uint16_t di_cntr;
 
-	if (ctx->rx_frame.length != request_len) {
+	if (ctx->rx_adu.length != request_len) {
 		LOG_ERR("Wrong request length");
 		return false;
 	}
@@ -226,8 +226,8 @@ static bool mbs_fc02_di_read(struct modbus_context *ctx)
 		return true;
 	}
 
-	di_addr = sys_get_be16(&ctx->rx_frame.data[0]);
-	di_qty = sys_get_be16(&ctx->rx_frame.data[2]);
+	di_addr = sys_get_be16(&ctx->rx_adu.data[0]);
+	di_qty = sys_get_be16(&ctx->rx_adu.data[2]);
 
 	/* Make sure we don't exceed the allowed limit per request */
 	if (di_qty == 0 || di_qty > di_limit) {
@@ -239,18 +239,18 @@ static bool mbs_fc02_di_read(struct modbus_context *ctx)
 	/* Get number of bytes needed for response. */
 	num_bytes = ((di_qty - 1) / 8) + 1;
 	/* Number of data bytes + byte count. */
-	ctx->tx_frame.length = num_bytes + 1;
+	ctx->tx_adu.length = num_bytes + 1;
 	/* Set number of data bytes in response message. */
-	ctx->tx_frame.data[0] = (uint8_t)num_bytes;
+	ctx->tx_adu.data[0] = (uint8_t)num_bytes;
 
 	/* Clear bytes in response */
-	presp = &ctx->tx_frame.data[1];
+	presp = &ctx->tx_adu.data[1];
 	for (di_cntr = 0; di_cntr < num_bytes; di_cntr++) {
 		*presp++ = 0x00;
 	}
 
 	/* Reset the pointer to the start of the response payload */
-	presp = &ctx->tx_frame.data[1];
+	presp = &ctx->tx_adu.data[1];
 	/* Start with bit 0 in response byte data mask. */
 	bit_mask = BIT(0);
 	/* Initialize loop counter. */
@@ -314,13 +314,13 @@ static bool mbs_fc03_hreg_read(struct modbus_context *ctx)
 	uint16_t reg_qty;
 	uint16_t num_bytes;
 
-	if (ctx->rx_frame.length != request_len) {
+	if (ctx->rx_adu.length != request_len) {
 		LOG_ERR("Wrong request length");
 		return false;
 	}
 
-	reg_addr = sys_get_be16(&ctx->rx_frame.data[0]);
-	reg_qty = sys_get_be16(&ctx->rx_frame.data[2]);
+	reg_addr = sys_get_be16(&ctx->rx_adu.data[0]);
+	reg_qty = sys_get_be16(&ctx->rx_adu.data[2]);
 
 	if ((reg_addr < MODBUS_FP_EXTENSIONS_ADDR) ||
 	    !IS_ENABLED(CONFIG_MODBUS_FP_EXTENSIONS)) {
@@ -356,12 +356,12 @@ static bool mbs_fc03_hreg_read(struct modbus_context *ctx)
 	}
 
 	/* Number of data bytes + byte count. */
-	ctx->tx_frame.length = num_bytes + 1;
+	ctx->tx_adu.length = num_bytes + 1;
 	/* Set number of data bytes in response message. */
-	ctx->tx_frame.data[0] = (uint8_t)num_bytes;
+	ctx->tx_adu.data[0] = (uint8_t)num_bytes;
 
 	/* Reset the pointer to the start of the response payload */
-	presp = &ctx->tx_frame.data[1];
+	presp = &ctx->tx_adu.data[1];
 	/* Loop through each register requested. */
 	while (reg_qty > 0) {
 		if (reg_addr < MODBUS_FP_EXTENSIONS_ADDR) {
@@ -424,13 +424,13 @@ static bool mbs_fc04_inreg_read(struct modbus_context *ctx)
 	uint16_t reg_qty;
 	uint16_t num_bytes;
 
-	if (ctx->rx_frame.length != request_len) {
+	if (ctx->rx_adu.length != request_len) {
 		LOG_ERR("Wrong request length");
 		return false;
 	}
 
-	reg_addr = sys_get_be16(&ctx->rx_frame.data[0]);
-	reg_qty = sys_get_be16(&ctx->rx_frame.data[2]);
+	reg_addr = sys_get_be16(&ctx->rx_adu.data[0]);
+	reg_qty = sys_get_be16(&ctx->rx_adu.data[2]);
 
 	if ((reg_addr < MODBUS_FP_EXTENSIONS_ADDR) ||
 	    !IS_ENABLED(CONFIG_MODBUS_FP_EXTENSIONS)) {
@@ -466,12 +466,12 @@ static bool mbs_fc04_inreg_read(struct modbus_context *ctx)
 	}
 
 	/* Number of data bytes + byte count. */
-	ctx->tx_frame.length = num_bytes + 1;
+	ctx->tx_adu.length = num_bytes + 1;
 	/* Set number of data bytes in response message. */
-	ctx->tx_frame.data[0] = (uint8_t)num_bytes;
+	ctx->tx_adu.data[0] = (uint8_t)num_bytes;
 
 	/* Reset the pointer to the start of the response payload */
-	presp = &ctx->tx_frame.data[1];
+	presp = &ctx->tx_adu.data[1];
 	/* Loop through each register requested. */
 	while (reg_qty > 0) {
 		if (reg_addr < MODBUS_FP_EXTENSIONS_ADDR) {
@@ -533,8 +533,8 @@ static bool mbs_fc05_coil_write(struct modbus_context *ctx)
 	uint16_t coil_val;
 	bool coil_state;
 
-	if (ctx->rx_frame.length != request_len) {
-		LOG_ERR("Wrong request length %u", ctx->rx_frame.length);
+	if (ctx->rx_adu.length != request_len) {
+		LOG_ERR("Wrong request length %u", ctx->rx_adu.length);
 		return false;
 	}
 
@@ -544,8 +544,8 @@ static bool mbs_fc05_coil_write(struct modbus_context *ctx)
 	}
 
 	/* Get the desired coil address and coil value */
-	coil_addr = sys_get_be16(&ctx->rx_frame.data[0]);
-	coil_val = sys_get_be16(&ctx->rx_frame.data[2]);
+	coil_addr = sys_get_be16(&ctx->rx_adu.data[0]);
+	coil_val = sys_get_be16(&ctx->rx_adu.data[2]);
 
 	/* See if coil needs to be OFF? */
 	if (coil_val == MODBUS_COIL_OFF_CODE) {
@@ -563,9 +563,9 @@ static bool mbs_fc05_coil_write(struct modbus_context *ctx)
 	}
 
 	/* Assemble response payload */
-	ctx->tx_frame.length = response_len;
-	sys_put_be16(coil_addr, &ctx->tx_frame.data[0]);
-	sys_put_be16(coil_val, &ctx->tx_frame.data[2]);
+	ctx->tx_adu.length = response_len;
+	sys_put_be16(coil_addr, &ctx->tx_adu.data[0]);
+	sys_put_be16(coil_val, &ctx->tx_adu.data[2]);
 
 	return true;
 }
@@ -591,8 +591,8 @@ static bool mbs_fc06_hreg_write(struct modbus_context *ctx)
 	uint16_t reg_addr;
 	uint16_t reg_val;
 
-	if (ctx->rx_frame.length != request_len) {
-		LOG_ERR("Wrong request length %u", ctx->rx_frame.length);
+	if (ctx->rx_adu.length != request_len) {
+		LOG_ERR("Wrong request length %u", ctx->rx_adu.length);
 		return false;
 	}
 
@@ -601,8 +601,8 @@ static bool mbs_fc06_hreg_write(struct modbus_context *ctx)
 		return true;
 	}
 
-	reg_addr = sys_get_be16(&ctx->rx_frame.data[0]);
-	reg_val = sys_get_be16(&ctx->rx_frame.data[2]);
+	reg_addr = sys_get_be16(&ctx->rx_adu.data[0]);
+	reg_val = sys_get_be16(&ctx->rx_adu.data[2]);
 
 	err = ctx->mbs_user_cb->holding_reg_wr(reg_addr, reg_val);
 
@@ -613,9 +613,9 @@ static bool mbs_fc06_hreg_write(struct modbus_context *ctx)
 	}
 
 	/* Assemble response payload */
-	ctx->tx_frame.length = response_len;
-	sys_put_be16(reg_addr, &ctx->tx_frame.data[0]);
-	sys_put_be16(reg_val, &ctx->tx_frame.data[2]);
+	ctx->tx_adu.length = response_len;
+	sys_put_be16(reg_addr, &ctx->tx_adu.data[0]);
+	sys_put_be16(reg_val, &ctx->tx_adu.data[2]);
 
 	return true;
 }
@@ -641,13 +641,13 @@ static bool mbs_fc08_diagnostics(struct modbus_context *ctx)
 	uint16_t sfunc;
 	uint16_t data;
 
-	if (ctx->rx_frame.length != request_len) {
-		LOG_ERR("Wrong request length %u", ctx->rx_frame.length);
+	if (ctx->rx_adu.length != request_len) {
+		LOG_ERR("Wrong request length %u", ctx->rx_adu.length);
 		return false;
 	}
 
-	sfunc = sys_get_be16(&ctx->rx_frame.data[0]);
-	data = sys_get_be16(&ctx->rx_frame.data[2]);
+	sfunc = sys_get_be16(&ctx->rx_adu.data[0]);
+	data = sys_get_be16(&ctx->rx_adu.data[2]);
 
 	switch (sfunc) {
 	case MODBUS_FC08_SUBF_QUERY:
@@ -656,7 +656,7 @@ static bool mbs_fc08_diagnostics(struct modbus_context *ctx)
 
 	case MODBUS_FC08_SUBF_CLR_CTR:
 		/* Sub-function 0x0A clear Counters and Diagnostic */
-		mbs_reset_statistics(ctx);
+		modbus_reset_stats(ctx);
 		break;
 
 	case MODBUS_FC08_SUBF_BUS_MSG_CTR:
@@ -691,9 +691,9 @@ static bool mbs_fc08_diagnostics(struct modbus_context *ctx)
 	}
 
 	/* Assemble response payload */
-	ctx->tx_frame.length = response_len;
-	sys_put_be16(sfunc, &ctx->tx_frame.data[0]);
-	sys_put_be16(data, &ctx->tx_frame.data[2]);
+	ctx->tx_adu.length = response_len;
+	sys_put_be16(sfunc, &ctx->tx_adu.data[0]);
+	sys_put_be16(data, &ctx->tx_adu.data[2]);
 
 	return true;
 }
@@ -735,8 +735,8 @@ static bool mbs_fc15_coils_write(struct modbus_context *ctx)
 	uint8_t data_ix;
 	bool coil_state;
 
-	if (ctx->rx_frame.length < request_len) {
-		LOG_ERR("Wrong request length %u", ctx->rx_frame.length);
+	if (ctx->rx_adu.length < request_len) {
+		LOG_ERR("Wrong request length %u", ctx->rx_adu.length);
 		return false;
 	}
 
@@ -745,10 +745,10 @@ static bool mbs_fc15_coils_write(struct modbus_context *ctx)
 		return true;
 	}
 
-	coil_addr = sys_get_be16(&ctx->rx_frame.data[0]);
-	coil_qty = sys_get_be16(&ctx->rx_frame.data[2]);
+	coil_addr = sys_get_be16(&ctx->rx_adu.data[0]);
+	coil_qty = sys_get_be16(&ctx->rx_adu.data[2]);
 	/* Get the byte count for the data. */
-	num_bytes = ctx->rx_frame.data[4];
+	num_bytes = ctx->rx_adu.data[4];
 
 	if (coil_qty == 0 || coil_qty > coils_limit) {
 		LOG_ERR("Number of coils limit exceeded");
@@ -758,7 +758,7 @@ static bool mbs_fc15_coils_write(struct modbus_context *ctx)
 
 	/* Be sure byte count is valid for quantity of coils. */
 	if (((((coil_qty - 1) / 8) + 1) !=  num_bytes) ||
-	    (ctx->rx_frame.length  != (num_bytes + 5))) {
+	    (ctx->rx_adu.length  != (num_bytes + 5))) {
 		LOG_ERR("Mismatch in the number of coils");
 		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_VAL);
 		return true;
@@ -771,7 +771,7 @@ static bool mbs_fc15_coils_write(struct modbus_context *ctx)
 	while (coil_cntr < coil_qty) {
 		/* Move to the next data byte after every eight bits. */
 		if ((coil_cntr % 8) == 0) {
-			temp = ctx->rx_frame.data[data_ix++];
+			temp = ctx->rx_adu.data[data_ix++];
 		}
 
 		if (temp & BIT(0)) {
@@ -796,9 +796,9 @@ static bool mbs_fc15_coils_write(struct modbus_context *ctx)
 	}
 
 	/* Assemble response payload */
-	ctx->tx_frame.length = response_len;
-	sys_put_be16(coil_addr, &ctx->tx_frame.data[0]);
-	sys_put_be16(coil_qty, &ctx->tx_frame.data[2]);
+	ctx->tx_adu.length = response_len;
+	sys_put_be16(coil_addr, &ctx->tx_adu.data[0]);
+	sys_put_be16(coil_qty, &ctx->tx_adu.data[2]);
 
 	return true;
 }
@@ -835,15 +835,15 @@ static bool mbs_fc16_hregs_write(struct modbus_context *ctx)
 	uint16_t num_bytes;
 	uint8_t reg_size;
 
-	if (ctx->rx_frame.length < request_len) {
-		LOG_ERR("Wrong request length %u", ctx->rx_frame.length);
+	if (ctx->rx_adu.length < request_len) {
+		LOG_ERR("Wrong request length %u", ctx->rx_adu.length);
 		return false;
 	}
 
-	reg_addr = sys_get_be16(&ctx->rx_frame.data[0]);
-	reg_qty = sys_get_be16(&ctx->rx_frame.data[2]);
+	reg_addr = sys_get_be16(&ctx->rx_adu.data[0]);
+	reg_qty = sys_get_be16(&ctx->rx_adu.data[2]);
 	/* Get the byte count for the data. */
-	num_bytes = ctx->rx_frame.data[4];
+	num_bytes = ctx->rx_adu.data[4];
 
 	if ((reg_addr < MODBUS_FP_EXTENSIONS_ADDR) ||
 	    !IS_ENABLED(CONFIG_MODBUS_FP_EXTENSIONS)) {
@@ -877,7 +877,7 @@ static bool mbs_fc16_hregs_write(struct modbus_context *ctx)
 	}
 
 	/* Compare number of bytes and payload length */
-	if ((ctx->rx_frame.length - 5) != num_bytes) {
+	if ((ctx->rx_adu.length - 5) != num_bytes) {
 		LOG_ERR("Mismatch in the number of bytes");
 		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_VAL);
 		return true;
@@ -890,7 +890,7 @@ static bool mbs_fc16_hregs_write(struct modbus_context *ctx)
 	}
 
 	/* The 1st registers data byte is 6th element in payload */
-	prx_data = &ctx->rx_frame.data[5];
+	prx_data = &ctx->rx_adu.data[5];
 
 	for (uint16_t reg_cntr = 0; reg_cntr < reg_qty; reg_cntr++) {
 		uint16_t addr = reg_addr + reg_cntr;
@@ -919,9 +919,9 @@ static bool mbs_fc16_hregs_write(struct modbus_context *ctx)
 	}
 
 	/* Assemble response payload */
-	ctx->tx_frame.length = response_len;
-	sys_put_be16(reg_addr, &ctx->tx_frame.data[0]);
-	sys_put_be16(reg_qty, &ctx->tx_frame.data[2]);
+	ctx->tx_adu.length = response_len;
+	sys_put_be16(reg_addr, &ctx->tx_adu.data[0]);
+	sys_put_be16(reg_qty, &ctx->tx_adu.data[2]);
 
 	return true;
 }
@@ -929,16 +929,16 @@ static bool mbs_fc16_hregs_write(struct modbus_context *ctx)
 static bool mbs_fc_handler(struct modbus_context *ctx)
 {
 	bool send_reply = false;
-	uint8_t addr = ctx->rx_frame.addr;
-	uint8_t fc = ctx->rx_frame.fc;
+	uint8_t addr = ctx->rx_adu.unit_id;
+	uint8_t fc = ctx->rx_adu.fc;
 
-	if (addr != 0 && addr != ctx->node_addr) {
+	if (addr != 0 && addr != ctx->unit_id) {
 		return false;
 	}
 
 	/* Prepare response header */
-	ctx->tx_frame.addr = addr;
-	ctx->tx_frame.fc = fc;
+	ctx->tx_adu.unit_id = addr;
+	ctx->tx_adu.fc = fc;
 
 	update_server_msg_ctr(ctx);
 
@@ -994,20 +994,20 @@ static bool mbs_fc_handler(struct modbus_context *ctx)
 	}
 }
 
-bool mbs_rx_handler(struct modbus_context *ctx)
+bool modbus_server_handler(struct modbus_context *ctx)
 {
 	LOG_DBG("Server RX handler %p", ctx);
 
 	update_msg_ctr(ctx);
 
-	if (ctx->rx_frame_err == -EIO) {
+	if (ctx->rx_adu_err == -EIO) {
 		update_noresp_ctr(ctx);
 		update_crcerr_ctr(ctx);
-	} else if (ctx->rx_frame_err != 0) {
+	} else if (ctx->rx_adu_err != 0) {
 		update_noresp_ctr(ctx);
 	} else {
 		if (mbs_fc_handler(ctx) == true) {
-			mb_tx_frame(ctx);
+			modbus_tx_adu(ctx);
 			return true;
 		}
 

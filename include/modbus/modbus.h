@@ -41,7 +41,7 @@ extern "C" {
  * Sends a Modbus message to read the status of coils from a server.
  *
  * @param iface      Modbus interface index
- * @param node_addr  Modbus unit address of the server
+ * @param unit_id    Modbus unit ID of the server
  * @param start_addr Coil starting address
  * @param coil_tbl   Pointer to an array of bytes containing the value
  *                   of the coils read.
@@ -63,7 +63,7 @@ extern "C" {
  * @retval           0 If the function was successful
  */
 int modbus_read_coils(const int iface,
-		      const uint8_t node_addr,
+		      const uint8_t unit_id,
 		      const uint16_t start_addr,
 		      uint8_t *const coil_tbl,
 		      const uint16_t num_coils);
@@ -75,7 +75,7 @@ int modbus_read_coils(const int iface,
  * a server.
  *
  * @param iface      Modbus interface index
- * @param node_addr  Modbus unit address of the server
+ * @param unit_id    Modbus unit ID of the server
  * @param start_addr Discrete input starting address
  * @param di_tbl     Pointer to an array that will receive the state
  *                   of the discrete inputs.
@@ -97,7 +97,7 @@ int modbus_read_coils(const int iface,
  * @retval           0 If the function was successful
  */
 int modbus_read_dinputs(const int iface,
-			const uint8_t node_addr,
+			const uint8_t unit_id,
 			const uint16_t start_addr,
 			uint8_t *const di_tbl,
 			const uint16_t num_di);
@@ -109,7 +109,7 @@ int modbus_read_dinputs(const int iface,
  * from a server.
  *
  * @param iface      Modbus interface index
- * @param node_addr  Modbus unit address of the server
+ * @param unit_id    Modbus unit ID of the server
  * @param start_addr Register starting address
  * @param reg_buf    Is a pointer to an array that will receive
  *                   the current values of the holding registers from
@@ -120,7 +120,7 @@ int modbus_read_dinputs(const int iface,
  * @retval           0 If the function was successful
  */
 int modbus_read_holding_regs(const int iface,
-			     const uint8_t node_addr,
+			     const uint8_t unit_id,
 			     const uint16_t start_addr,
 			     uint16_t *const reg_buf,
 			     const uint16_t num_regs);
@@ -132,7 +132,7 @@ int modbus_read_holding_regs(const int iface,
  * a server.
  *
  * @param iface      Modbus interface index
- * @param node_addr  Modbus unit address of the server
+ * @param unit_id    Modbus unit ID of the server
  * @param start_addr Register starting address
  * @param reg_buf    Is a pointer to an array that will receive
  *                   the current value of the holding registers
@@ -143,7 +143,7 @@ int modbus_read_holding_regs(const int iface,
  * @retval           0 If the function was successful
  */
 int modbus_read_input_regs(const int iface,
-			   const uint8_t node_addr,
+			   const uint8_t unit_id,
 			   const uint16_t start_addr,
 			   uint16_t *const reg_buf,
 			   const uint16_t num_regs);
@@ -154,14 +154,14 @@ int modbus_read_input_regs(const int iface,
  * Sends a Modbus message to write the value of single coil to a server.
  *
  * @param iface      Modbus interface index
- * @param node_addr  Modbus unit address of the server
+ * @param unit_id    Modbus unit ID of the server
  * @param coil_addr  Coils starting address
  * @param coil_state Is the desired state of the coil
  *
  * @retval           0 If the function was successful
  */
 int modbus_write_coil(const int iface,
-		      const uint8_t node_addr,
+		      const uint8_t unit_id,
 		      const uint16_t coil_addr,
 		      const bool coil_state);
 
@@ -172,14 +172,14 @@ int modbus_write_coil(const int iface,
  * to a server unit.
  *
  * @param iface      Modbus interface index
- * @param node_addr  Modbus unit address of the server
+ * @param unit_id    Modbus unit ID of the server
  * @param start_addr Coils starting address
  * @param reg_val    Desired value of the holding register
  *
  * @retval           0 If the function was successful
  */
 int modbus_write_holding_reg(const int iface,
-			     const uint8_t node_addr,
+			     const uint8_t unit_id,
 			     const uint16_t start_addr,
 			     const uint16_t reg_val);
 
@@ -189,7 +189,7 @@ int modbus_write_holding_reg(const int iface,
  * Sends a Modbus message to perform a diagnostic function of a server unit.
  *
  * @param iface      Modbus interface index
- * @param node_addr  Modbus unit address of the server
+ * @param unit_id    Modbus unit ID of the server
  * @param sfunc      Diagnostic sub-function code
  * @param data       Sub-function data
  * @param data_out   Pointer to the data value
@@ -197,7 +197,7 @@ int modbus_write_holding_reg(const int iface,
  * @retval           0 If the function was successful
  */
 int modbus_request_diagnostic(const int iface,
-			      const uint8_t node_addr,
+			      const uint8_t unit_id,
 			      const uint16_t sfunc,
 			      const uint16_t data,
 			      uint16_t *const data_out);
@@ -208,7 +208,7 @@ int modbus_request_diagnostic(const int iface,
  * Sends a Modbus message to write to coils on a server unit.
  *
  * @param iface      Modbus interface index
- * @param node_addr  Modbus unit address of the server
+ * @param unit_id    Modbus unit ID of the server
  * @param start_addr Coils starting address
  * @param coil_tbl   Pointer to an array of bytes containing the value
  *                   of the coils to write.
@@ -230,7 +230,7 @@ int modbus_request_diagnostic(const int iface,
  * @retval           0 If the function was successful
  */
 int modbus_write_coils(const int iface,
-		       const uint8_t node_addr,
+		       const uint8_t unit_id,
 		       const uint16_t start_addr,
 		       uint8_t *const coil_tbl,
 		       const uint16_t num_coils);
@@ -242,7 +242,7 @@ int modbus_write_coils(const int iface,
  * to a server unit.
  *
  * @param iface      Modbus interface index
- * @param node_addr  Modbus unit address of the server
+ * @param unit_id    Modbus unit ID of the server
  * @param start_addr Register starting address
  * @param reg_buf    Is a pointer to an array containing
  *                   the value of the holding registers to write.
@@ -253,7 +253,7 @@ int modbus_write_coils(const int iface,
  * @retval           0 If the function was successful
  */
 int modbus_write_holding_regs(const int iface,
-			      const uint8_t node_addr,
+			      const uint8_t unit_id,
 			      const uint16_t start_addr,
 			      uint16_t *const reg_buf,
 			      const uint16_t num_regs);
@@ -265,7 +265,7 @@ int modbus_write_holding_regs(const int iface,
  * holding registers from a server unit.
  *
  * @param iface      Modbus interface index
- * @param node_addr  Modbus unit address of the server
+ * @param unit_id    Modbus unit ID of the server
  * @param start_addr Register starting address
  * @param reg_buf    Is a pointer to an array that will receive
  *                   the current values of the holding registers from
@@ -276,7 +276,7 @@ int modbus_write_holding_regs(const int iface,
  * @retval           0 If the function was successful
  */
 int modbus_read_holding_regs_fp(const int iface,
-				const uint8_t node_addr,
+				const uint8_t unit_id,
 				const uint16_t start_addr,
 				float *const reg_buf,
 				const uint16_t num_regs);
@@ -288,7 +288,7 @@ int modbus_read_holding_regs_fp(const int iface,
  * to a server unit.
  *
  * @param iface      Modbus interface index
- * @param node_addr  Modbus unit address of the server
+ * @param unit_id    Modbus unit ID of the server
  * @param start_addr Register starting address
  * @param reg_buf    Is a pointer to an array containing
  *                   the value of the holding registers to write.
@@ -299,7 +299,7 @@ int modbus_read_holding_regs_fp(const int iface,
  * @retval           0 If the function was successful
  */
 int modbus_write_holding_regs_fp(const int iface,
-				 const uint8_t node_addr,
+				 const uint8_t unit_id,
 				 const uint16_t start_addr,
 				 float *const reg_buf,
 				 const uint16_t num_regs);
@@ -350,7 +350,7 @@ int modbus_iface_get_by_name(const char *iface_name);
  * @brief Configure Modbus Interface as server
  *
  * @param iface      Modbus interface index
- * @param node_addr  Modbus unit address of the server
+ * @param unit_id    Modbus unit ID of the server
  * @param baud       Baudrate of the serial line
  * @param parity     UART's parity setting:
  *                       UART_CFG_PARITY_NONE,
@@ -361,7 +361,7 @@ int modbus_iface_get_by_name(const char *iface_name);
  *
  * @retval           0 If the function was successful
  */
-int modbus_init_server(const uint8_t iface, const uint8_t node_addr,
+int modbus_init_server(const uint8_t iface, const uint8_t unit_id,
 		       const uint32_t baud, enum uart_config_parity parity,
 		       struct modbus_user_callbacks *const cb,
 		       bool ascii_mode);
