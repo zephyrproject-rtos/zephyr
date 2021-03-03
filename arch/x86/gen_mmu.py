@@ -51,8 +51,10 @@ import array
 import argparse
 import os
 import struct
-import elftools
+
 from distutils.version import LooseVersion
+
+import elftools
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
@@ -61,6 +63,7 @@ if LooseVersion(elftools.__version__) < LooseVersion('0.24'):
 
 
 def bit(pos):
+    """Get value by shifting 1 by pos"""
     return 1 << pos
 
 
@@ -80,16 +83,19 @@ ENTRY_US = FLAG_US | FLAG_IGNORED1
 ENTRY_XD = FLAG_XD | FLAG_IGNORED2
 
 def debug(text):
+    """Display verbose debug message"""
     if not args.verbose:
         return
     sys.stdout.write(os.path.basename(sys.argv[0]) + ": " + text + "\n")
 
 
 def error(text):
+    """Display error message and exit program"""
     sys.exit(os.path.basename(sys.argv[0]) + ": " + text)
 
 
 def align_check(base, size):
+    """Make sure base and size are page-aligned"""
     if (base % 4096) != 0:
         error("unaligned base address %x" % base)
     if (size % 4096) != 0:
@@ -97,6 +103,7 @@ def align_check(base, size):
 
 
 def dump_flags(flags):
+    """Translate page table flags into string"""
     ret = ""
 
     if flags & FLAG_P:
@@ -131,7 +138,7 @@ def round_down(val, align):
 # access or set caching properties at leaf levels.
 INT_FLAGS = FLAG_P | FLAG_RW | FLAG_US
 
-class MMUTable(object):
+class MMUTable():
     """Represents a particular table in a set of page tables, at any level"""
 
     def __init__(self):
@@ -275,7 +282,7 @@ class PtXd(Pt):
                        FLAG_IGNORED0 | FLAG_IGNORED1 | FLAG_IGNORED2)
 
 
-class PtableSet(object):
+class PtableSet():
     """Represents a complete set of page tables for any paging mode"""
 
     def __init__(self, pages_start, offset=0):
@@ -309,6 +316,7 @@ class PtableSet(object):
         raise NotImplementedError()
 
     def new_child_table(self, table, virt_addr, depth):
+        """Create a new child table"""
         new_table_addr = self.get_new_mmutable_addr()
         new_table = self.levels[depth]()
         debug("new %s at physical addr 0x%x"
@@ -436,10 +444,10 @@ class PtableSet(object):
 
     def write_output(self, filename):
         """Write the page tables to the output file in binary format"""
-        with open(filename, "wb") as fp:
+        with open(filename, "wb") as output_fp:
             for addr in sorted(self.tables):
                 mmu_table = self.tables[addr]
-                fp.write(mmu_table.get_binary())
+                output_fp.write(mmu_table.get_binary())
 
             # We always have the top-level table be last. This is because
             # in PAE, the top-level PDPT has only 4 entries and is not a
@@ -448,21 +456,26 @@ class PtableSet(object):
             debug("top-level %s at physical addr 0x%x" %
                   (self.toplevel.__class__.__name__,
                    self.get_new_mmutable_addr()))
-            fp.write(self.toplevel.get_binary())
+            output_fp.write(self.toplevel.get_binary())
 
 # Paging mode classes, we'll use one depending on configuration
 class Ptables32bit(PtableSet):
+    """32-bit Page Tables"""
     levels = [Pd, Pt]
 
 class PtablesPAE(PtableSet):
+    """PAE Page Tables"""
     levels = [PdptPAE, PdXd, PtXd]
 
 class PtablesIA32e(PtableSet):
+    """Page Tables under IA32e mode"""
     levels = [Pml4, Pdpt, PdXd, PtXd]
 
 
 def parse_args():
+    """Parse command line arguments"""
     global args
+
     parser = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -478,8 +491,9 @@ def parse_args():
         args.verbose = True
 
 
-def get_symbols(obj):
-    for section in obj.iter_sections():
+def get_symbols(elf_obj):
+    """Get all symbols from the ELF file"""
+    for section in elf_obj.iter_sections():
         if isinstance(section, SymbolTableSection):
             return {sym.name: sym.entry.st_value
                     for sym in section.iter_symbols()}
@@ -487,14 +501,16 @@ def get_symbols(obj):
     raise LookupError("Could not find symbol table")
 
 def isdef(sym_name):
+    """True if symbol is defined in ELF file"""
     return sym_name in syms
 
 def main():
+    """Main program"""
     global syms
     parse_args()
 
-    with open(args.kernel, "rb") as fp:
-        kernel = ELFFile(fp)
+    with open(args.kernel, "rb") as elf_fp:
+        kernel = ELFFile(elf_fp)
         syms = get_symbols(kernel)
 
     if isdef("CONFIG_X86_64"):
