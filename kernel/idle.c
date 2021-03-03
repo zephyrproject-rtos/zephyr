@@ -135,6 +135,8 @@ void idle(void *p1, void *unused2, void *unused3)
 		k_yield();
 #else
 
+		(void) arch_irq_lock();
+
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 		int32_t ticks = z_get_next_timeout_expiry();
 
