@@ -257,7 +257,7 @@ struct conversion {
 	bool pad_fp: 1;
 
 	/** Conversion specifier character */
-	char specifier;
+	unsigned char specifier;
 
 	union {
 		/** Width value from specification.
