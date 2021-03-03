@@ -1504,7 +1504,7 @@ struct bt_conn *conn_lookup_iso(struct bt_conn *conn)
 			return iso_conn;
 		}
 
-		if (conn->iso.acl == conn) {
+		if (iso_conn->iso.acl == conn) {
 			return iso_conn;
 		}
 
