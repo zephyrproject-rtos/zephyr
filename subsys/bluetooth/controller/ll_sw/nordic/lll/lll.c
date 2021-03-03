@@ -65,10 +65,6 @@ static int init_reset(void);
 #if defined(CONFIG_BT_CTLR_LOW_LAT_ULL_DONE)
 static inline void done_inc(void);
 #endif /* CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
-static int prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
-		   lll_prepare_cb_t prepare_cb, int prio,
-		   struct lll_prepare_param *prepare_param,
-		   uint8_t is_resume, uint8_t is_dequeue);
 static int resume_enqueue(lll_prepare_cb_t resume_cb, int resume_prio);
 static void isr_race(void *param);
 
@@ -244,25 +240,6 @@ int lll_reset(void)
 	}
 
 	return 0;
-}
-
-int lll_prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
-		lll_prepare_cb_t prepare_cb, int prio,
-		struct lll_prepare_param *prepare_param)
-{
-	return prepare(is_abort_cb, abort_cb, prepare_cb, prio, prepare_param,
-		       0, 0);
-}
-
-void lll_resume(void *param)
-{
-	struct lll_event *next;
-	int ret;
-
-	next = param;
-	ret = prepare(next->is_abort_cb, next->abort_cb, next->prepare_cb,
-		      next->prio, &next->prepare_param, next->is_resume, 1);
-	LL_ASSERT(!ret || ret == -EINPROGRESS);
 }
 
 void lll_disable(void *param)
@@ -618,10 +595,10 @@ static inline bool is_done_sync(void)
 #endif /* !CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
 }
 
-static int prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
-		   lll_prepare_cb_t prepare_cb, int prio,
-		   struct lll_prepare_param *prepare_param,
-		   uint8_t is_resume, uint8_t is_dequeue)
+int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
+			lll_prepare_cb_t prepare_cb, int prio,
+			struct lll_prepare_param *prepare_param,
+			uint8_t is_resume, uint8_t is_dequeue)
 {
 	struct lll_event *p;
 	uint8_t idx;

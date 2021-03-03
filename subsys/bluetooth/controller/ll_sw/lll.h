@@ -419,3 +419,13 @@ void ull_rx_sched(void);
 void ull_rx_sched_done(void);
 void *ull_event_done_extra_get(void);
 void *ull_event_done(void *param);
+
+int lll_prepare(lll_is_abort_cb_t is_abort_cb,
+		lll_abort_cb_t abort_cb,
+		lll_prepare_cb_t prepare_cb, int8_t event_prio,
+		struct lll_prepare_param *prepare_param);
+int lll_resume_enqueue(lll_prepare_cb_t resume_cb, int resume_prio);
+int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
+			lll_prepare_cb_t prepare_cb,  int prio,
+			struct lll_prepare_param *prepare_param,
+			uint8_t is_resume, uint8_t is_dequeue);
