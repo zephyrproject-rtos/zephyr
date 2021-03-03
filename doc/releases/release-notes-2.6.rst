@@ -60,6 +60,8 @@ Removed APIs in this release
 
 * Removed support for the old zephyr integer typedefs (u8_t, u16_t, etc...).
 
+* Removed support for k_mem_domain_destroy and k_mem_domain_remove_thread
+
 ============================
 
 Stable API changes in this release
