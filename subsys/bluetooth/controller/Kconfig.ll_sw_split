@@ -555,13 +555,20 @@ config BT_TICKER_LAZY_GET
 
 config BT_TICKER_EXT
 	bool "Ticker extensions"
-	depends on !BT_TICKER_LOW_LAT
+	depends on !BT_TICKER_LOW_LAT && !BT_TICKER_SLOT_AGNOSTIC
 	default y
 	help
 	  This option enables ticker extensions such as re-scheduling of
 	  ticker nodes with slot_window set to non-zero. Ticker extensions
 	  are invoked by using available '_ext' versions of ticker interface
 	  functions.
+
+config BT_TICKER_SLOT_AGNOSTIC
+	bool "Slot agnostic ticker mode"
+	help
+	  This option enables slot agnostic ticker mode, which ignores slot
+	  reservations and collision handling, and operates as a simple
+	  multi-instance programmable timer.
 
 config BT_CTLR_USER_EXT
 	prompt "Enable proprietary extensions in Controller"
