@@ -22,6 +22,15 @@
 #include <errno.h>
 #include <time.h>
 
+/**
+ *
+ * @brief Test implementation-defined constants library
+ * @defgroup libc_api
+ * @ingroup all_tests
+ * @{
+ *
+ */
+
 #define BUF_LEN 10
 
 
@@ -136,6 +145,25 @@ void test_malloc(void)
 	free(iptr);
 	iptr = NULL;
 }
+#if (CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE == 0)
+void test_no_mem_malloc(void)
+{
+	int *iptr = NULL;
+
+	iptr = malloc(BUF_LEN);
+	zassert_is_null((iptr), "malloc failed, errno: %d", errno);
+	free(iptr);
+	iptr = NULL;
+}
+void test_no_mem_realloc(void)
+{
+	char *ptr = NULL;
+	char *reloc_ptr = NULL;
+
+	reloc_ptr = realloc(ptr, BUF_LEN);
+	zassert_is_null(reloc_ptr, "realloc failed, errno: %d", errno);
+}
+#endif
 
 /**
  * @brief Test dynamic memory allocation free function
@@ -149,27 +177,6 @@ void test_free(void)
  * Just make sure, no exception occurs and test pass
  */
 	free(NULL);
-}
-
-/**
- * @brief Test dynamic memory allocation using calloc
- *
- * @see calloc(), free()
- */
-#define CALLOC_BUFLEN (200)
-static ZTEST_BMEM unsigned char zerobuf[CALLOC_BUFLEN];
-
-void test_calloc(void)
-{
-	char *cptr = NULL;
-
-	cptr =  calloc(CALLOC_BUFLEN, sizeof(char));
-	zassert_not_null((cptr), "calloc failed, errno: %d", errno);
-	zassert_true(((memcmp(cptr, zerobuf, CALLOC_BUFLEN)) == 0),
-			"calloc failed to set zero value, errno: %d", errno);
-	memset(cptr, 'p', CALLOC_BUFLEN);
-	free(cptr);
-	cptr = NULL;
 }
 
 /**
@@ -215,11 +222,49 @@ void test_reallocarray(void)
 	/* reallocarray not implemented for newlib */
 	ztest_test_skip();
 }
+void test_calloc(void)
+{
+	ztest_test_skip();
+}
 #else
+/**
+ * @brief Test dynamic memory allocation using calloc
+ *
+ * @see calloc(), free()
+ */
+#define CALLOC_BUFLEN (200)
+static ZTEST_BMEM unsigned char zerobuf[CALLOC_BUFLEN];
+
+void test_calloc(void)
+{
+	char *cptr = NULL;
+
+	cptr =  calloc(0x7fffffff, sizeof(int));
+	zassert_is_null((cptr), "calloc failed, errno: %d", errno);
+
+	cptr =  calloc(0x7fffffff, sizeof(char));
+	zassert_is_null((cptr), "calloc failed, errno: %d", errno);
+
+
+	cptr =  calloc(CALLOC_BUFLEN, sizeof(char));
+	zassert_not_null((cptr), "calloc failed, errno: %d", errno);
+	zassert_true(((memcmp(cptr, zerobuf, CALLOC_BUFLEN)) == 0),
+			"calloc failed to set zero value, errno: %d", errno);
+	memset(cptr, 'p', CALLOC_BUFLEN);
+	free(cptr);
+	cptr = NULL;
+}
+
 void test_reallocarray(void)
 {
 	char orig_size = BUF_LEN;
 	char *ptr = NULL;
+	char *cptr = NULL;
+
+	cptr =  reallocarray(ptr, 0x7fffffff, sizeof(int));
+	zassert_is_null((ptr), "reallocarray failed, errno: %d", errno);
+	zassert_is_null((cptr), "reallocarray failed, errno: %d");
+	free(cptr);
 
 	ptr = malloc(orig_size);
 
@@ -275,6 +320,10 @@ void test_memalloc_all(void)
 }
 
 /**
+ * @}
+ */
+
+/**
  *
  * @brief Test dynamic memory allocation upto maximum size
  * Negative test case
@@ -293,6 +342,15 @@ __no_optimization void test_memalloc_max(void)
 
 void test_main(void)
 {
+#if (CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE == 0)
+#ifndef CONFIG_NEWLIB_LIBC
+	ztest_test_suite(test_c_lib_dynamic_memalloc,
+			 ztest_user_unit_test(test_no_mem_malloc),
+			 ztest_user_unit_test(test_no_mem_realloc)
+			 );
+	ztest_run_test_suite(test_c_lib_dynamic_memalloc);
+#endif
+#else
 	ztest_test_suite(test_c_lib_dynamic_memalloc,
 			 ztest_user_unit_test(test_malloc_align),
 			 ztest_user_unit_test(test_malloc),
@@ -304,4 +362,5 @@ void test_main(void)
 			 ztest_user_unit_test(test_memalloc_max)
 			 );
 	ztest_run_test_suite(test_c_lib_dynamic_memalloc);
+#endif
 }
