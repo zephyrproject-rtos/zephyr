@@ -136,8 +136,11 @@ ARM arch:
         - MaureenHelm
         - stephanosio
     files:
-        - arch/arm/
-        - include/arch/arm/
+        - arch/arm/aarch32/
+        - arch/arm/common/
+        - arch/arm/offsets/
+        - include/arch/arm/aarch32
+        - include/arch/arm/*
         - tests/arch/arm/
     labels:
         - "area: ARM"
