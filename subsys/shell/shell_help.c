@@ -112,7 +112,7 @@ static void help_item_print(const struct shell *shell, const char *item_name,
 	static const uint8_t tabulator[] = "  ";
 	const uint16_t offset = 2 * strlen(tabulator) + item_name_width + 1;
 
-	if (item_name == NULL) {
+	if ((item_name == NULL) || (item_name[0] == '\0')) {
 		return;
 	}
 
