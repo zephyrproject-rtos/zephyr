@@ -3658,13 +3658,13 @@ static inline k_tid_t k_work_queue_thread_get(struct k_work_q *queue)
 
 /* Legacy wrappers */
 
-/* to be deprecated */
+__deprecated
 static inline bool k_work_pending(const struct k_work *work)
 {
 	return k_work_is_pending(work);
 }
 
-/* to be deprecated */
+__deprecated
 static inline void k_work_q_start(struct k_work_q *work_q,
 				  k_thread_stack_t *stack,
 				  size_t stack_size, int prio)
@@ -3672,24 +3672,23 @@ static inline void k_work_q_start(struct k_work_q *work_q,
 	k_work_queue_start(work_q, stack, stack_size, prio, NULL);
 }
 
-/* to be deprecated */
+/* deprecated, remove when corresponding deprecated API is removed. */
 struct k_delayed_work {
 	struct k_work_delayable work;
 };
 
-/* to be deprecated */
-#define Z_DELAYED_WORK_INITIALIZER(work_handler) { \
+#define Z_DELAYED_WORK_INITIALIZER(work_handler) __DEPRECATED_MACRO { \
 	.work = Z_WORK_DELAYABLE_INITIALIZER(work_handler), \
 }
 
-/* to be deprecated */
+__deprecated
 static inline void k_delayed_work_init(struct k_delayed_work *work,
 				       k_work_handler_t handler)
 {
 	k_work_init_delayable(&work->work, handler);
 }
 
-/* to be deprecated */
+__deprecated
 static inline int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
 						 struct k_delayed_work *work,
 						 k_timeout_t delay)
@@ -3700,7 +3699,7 @@ static inline int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
 	return (rc >= 0) ? 0 : rc;
 }
 
-/* to be deprecated */
+__deprecated
 static inline int k_delayed_work_submit(struct k_delayed_work *work,
 					k_timeout_t delay)
 {
@@ -3710,7 +3709,7 @@ static inline int k_delayed_work_submit(struct k_delayed_work *work,
 	return (rc >= 0) ? 0 : rc;
 }
 
-/* to be deprecated */
+__deprecated
 static inline int k_delayed_work_cancel(struct k_delayed_work *work)
 {
 	bool pending = k_work_delayable_is_pending(&work->work);
@@ -3751,13 +3750,13 @@ static inline int k_delayed_work_cancel(struct k_delayed_work *work)
 	return -EALREADY;
 }
 
-/* to be deprecated */
+__deprecated
 static inline bool k_delayed_work_pending(struct k_delayed_work *work)
 {
 	return k_work_delayable_is_pending(&work->work);
 }
 
-/* to be deprecated */
+__deprecated
 static inline int32_t k_delayed_work_remaining_get(struct k_delayed_work *work)
 {
 	k_ticks_t rem = k_work_delayable_remaining_get(&work->work);
@@ -3766,14 +3765,14 @@ static inline int32_t k_delayed_work_remaining_get(struct k_delayed_work *work)
 	return k_ticks_to_ms_floor32(rem);
 }
 
-/* to be deprecated, not used in-tree */
+__deprecated
 static inline k_ticks_t k_delayed_work_expires_ticks(
 	struct k_delayed_work *work)
 {
 	return k_work_delayable_expires_get(&work->work);
 }
 
-/* to be deprecated, not used in-tree */
+__deprecated
 static inline k_ticks_t k_delayed_work_remaining_ticks(
 	struct k_delayed_work *work)
 {
@@ -3998,7 +3997,7 @@ struct k_work_poll {
  * @param work Symbol name for delayed work item object
  * @param work_handler Function to invoke each time work item is processed.
  */
-#define K_DELAYED_WORK_DEFINE(work, work_handler) \
+#define K_DELAYED_WORK_DEFINE(work, work_handler) __DEPRECATED_MACRO \
 	struct k_delayed_work work = Z_DELAYED_WORK_INITIALIZER(work_handler)
 
 /**
