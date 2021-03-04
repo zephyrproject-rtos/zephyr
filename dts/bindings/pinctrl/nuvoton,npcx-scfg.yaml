@@ -1,9 +1,9 @@
 # Copyright (c) 2020 Nuvoton Technology Corporation.
 # SPDX-License-Identifier: Apache-2.0
 
-description: Nuvoton, NPCX Pin-Controller (Pinmux, 1.8V support and so on) node
+description: Nuvoton, NPCX System Configuration (Pinmux, 1.8V support and so on) node
 
-compatible: "nuvoton,npcx-pinctrl"
+compatible: "nuvoton,npcx-scfg"
 
 include: [base.yaml]
 
