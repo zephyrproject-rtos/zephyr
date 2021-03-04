@@ -40,6 +40,9 @@ static int mcux_mcg_get_rate(const struct device *dev,
 	case KINETIS_MCG_FIXED_FREQ_CLK:
 		clock_name = kCLOCK_McgFixedFreqClk;
 		break;
+	case KINETIS_MCG_OUT_CLK:
+		*rate = CLOCK_GetOutClkFreq();
+		return 0;
 	default:
 		LOG_ERR("Unsupported clock name");
 		return -EINVAL;
