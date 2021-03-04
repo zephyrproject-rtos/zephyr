@@ -37,10 +37,6 @@ static struct net_traffic_class rx_classes[NET_TC_RX_COUNT];
 
 bool net_tc_submit_to_tx_queue(uint8_t tc, struct net_pkt *pkt)
 {
-	if (k_work_pending(net_pkt_work(pkt))) {
-		return false;
-	}
-
 	net_pkt_set_tx_stats_tick(pkt, k_cycle_get_32());
 
 	k_work_submit_to_queue(&tx_classes[tc].work_q, net_pkt_work(pkt));
