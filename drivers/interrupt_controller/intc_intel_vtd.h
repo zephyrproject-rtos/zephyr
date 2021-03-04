@@ -102,6 +102,7 @@ union qi_wait_descriptor {
 #define QI_WAIT_COUNT_LIMIT 100
 
 struct vtd_ictl_data {
+	DEVICE_MMIO_RAM;
 	union vtd_irte irte[IRTE_NUM] __aligned(0x1000);
 	struct qi_descriptor qi[QI_NUM] __aligned(0x1000);
 	int irqs[IRTE_NUM];
