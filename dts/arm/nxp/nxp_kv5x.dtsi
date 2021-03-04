@@ -6,6 +6,7 @@
 
 #include <arm/armv7-m.dtsi>
 #include <dt-bindings/clock/kinetis_sim.h>
+#include <dt-bindings/clock/kinetis_mcg.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/i2c/i2c.h>
 
@@ -37,12 +38,41 @@
 			reg = <0x40047000 0x2000>;
 			label = "SIM";
 			#clock-cells = <3>;
+
+			core_clk {
+				compatible = "fixed-factor-clock";
+				clocks = <&mcg KINETIS_MCG_OUT_CLK>;
+				clock-div = <1>;
+				#clock-cells = <0>;
+			};
+
+			bus_clk {
+				compatible = "fixed-factor-clock";
+				clocks = <&mcg KINETIS_MCG_OUT_CLK>;
+				clock-div = <2>;
+				#clock-cells = <0>;
+			};
+
+			flexbus_clk {
+				compatible = "fixed-factor-clock";
+				clocks = <&mcg KINETIS_MCG_OUT_CLK>;
+				clock-div = <4>;
+				#clock-cells = <0>;
+			};
+
+			flash_clk {
+				compatible = "fixed-factor-clock";
+				clocks = <&mcg KINETIS_MCG_OUT_CLK>;
+				clock-div = <10>;
+				#clock-cells = <0>;
+			};
 		};
 
 		mcg: clock-controller@40064000 {
-			compatible = "nxp,kv58-mcg";
+			compatible = "nxp,kinetis-mcg";
 			reg = <0x40064000 0x1000>;
-			system-clock-frequency = <240000000>;
+			label = "MCG";
+			#clock-cells = <1>;
 		};
 
 		osc: clock-controller@40065000 {
