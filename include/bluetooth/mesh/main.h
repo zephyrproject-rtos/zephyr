@@ -610,6 +610,19 @@ struct bt_mesh_friend_cb {
 	 *  @param lpn_addr Low Power Node address.
 	 */
 	void (*terminated)(uint16_t net_idx, uint16_t lpn_addr);
+
+	/** @brief Friend Poll Request.
+	 *
+	 *  This callback notifies the application that the low power node has
+	 *  polled the friend node.
+	 *
+	 *  This callback will be called before @ref bt_mesh_friend_cb::established
+	 *  when attempting to establish a friendship.
+	 *
+	 *  @param net_idx  NetKeyIndex used during friendship establishment.
+	 *  @param lpn_addr LPN address.
+	 */
+	void (*polled)(uint16_t net_idx, uint16_t lpn_addr);
 };
 
 /** @def BT_MESH_FRIEND_CB_DEFINE
