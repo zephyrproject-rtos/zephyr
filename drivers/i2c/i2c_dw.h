@@ -116,6 +116,41 @@ struct i2c_dw_dev_config {
 	bool			support_hs_mode;
 };
 
+#define Z_REG_READ(__sz) sys_read##__sz
+#define Z_REG_WRITE(__sz) sys_write##__sz
+#define Z_REG_SET_BIT sys_set_bit
+#define Z_REG_CLEAR_BIT sys_clear_bit
+#define Z_REG_TEST_BIT sys_test_bit
+
+#define DEFINE_MM_REG_READ(__reg, __off, __sz)				\
+	static inline uint32_t read_##__reg(uint32_t addr)			\
+	{								\
+		return Z_REG_READ(__sz)(addr + __off);			\
+	}
+#define DEFINE_MM_REG_WRITE(__reg, __off, __sz)				\
+	static inline void write_##__reg(uint32_t data, uint32_t addr)	\
+	{								\
+		Z_REG_WRITE(__sz)(data, addr + __off);			\
+	}
+
+#define DEFINE_SET_BIT_OP(__reg_bit, __reg_off, __bit)			\
+	static inline void set_bit_##__reg_bit(uint32_t addr)		\
+	{								\
+		Z_REG_SET_BIT(addr + __reg_off, __bit);			\
+	}
+
+#define DEFINE_CLEAR_BIT_OP(__reg_bit, __reg_off, __bit)		\
+	static inline void clear_bit_##__reg_bit(uint32_t addr)		\
+	{								\
+		Z_REG_CLEAR_BIT(addr + __reg_off, __bit);		\
+	}
+
+#define DEFINE_TEST_BIT_OP(__reg_bit, __reg_off, __bit)			\
+	static inline int test_bit_##__reg_bit(uint32_t addr)		\
+	{								\
+		return Z_REG_TEST_BIT(addr + __reg_off, __bit);		\
+	}
+
 #ifdef __cplusplus
 }
 #endif
