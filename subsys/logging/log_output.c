@@ -753,3 +753,10 @@ void log_output_timestamp_freq_set(uint32_t frequency)
 
 	freq = frequency;
 }
+
+uint64_t log_output_timestamp_to_us(uint32_t timestamp)
+{
+	timestamp /= timestamp_div;
+
+	return ((uint64_t) timestamp * 1000000U) / freq;
+}
