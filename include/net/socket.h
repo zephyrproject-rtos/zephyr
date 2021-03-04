@@ -132,6 +132,12 @@ struct zsock_pollfd {
  *  the TLS handshake.
  */
 #define TLS_ALPN_LIST 7
+/** Socket option to set DTLS handshake timeout. The timeout starts at min,
+ *  and upon retransmission the timeout is doubled util max is reached.
+ *  Min and max arguments are separate options. The time unit is ms.
+ */
+#define TLS_DTLS_HANDSHAKE_TIMEOUT_MIN 8
+#define TLS_DTLS_HANDSHAKE_TIMEOUT_MAX 9
 
 /** @} */
 
