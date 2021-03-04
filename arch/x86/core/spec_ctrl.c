@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+// dummy change
+
 #include <cpuid.h> /* Header provided by the toolchain. */
 
 #include <init.h>
