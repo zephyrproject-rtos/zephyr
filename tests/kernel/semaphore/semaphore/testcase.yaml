@@ -1,3 +1,13 @@
 tests:
-  kernel.semaphore:
+  kernel.semaphore.single_spinlock:
+    extra_configs:
+      - CONFIG_SEM_IMPL_SINGLE_SPINLOCK=y
+    tags: kernel userspace ignore_faults
+  kernel.semaphore.spinlock_per_semaphore:
+    extra_configs:
+      - CONFIG_SEM_IMPL_SPINLOCK_PER_SEMAPHORE=y
+    tags: kernel userspace ignore_faults
+  kernel.semaphore.atomic_based:
+    extra_configs:
+      - CONFIG_SEM_IMPL_ATOMIC=y
     tags: kernel userspace ignore_faults

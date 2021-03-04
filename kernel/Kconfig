@@ -474,6 +474,57 @@ endmenu
 
 menu "Other Kernel Object Options"
 
+choice SEM_IMPL
+	prompt "Semaphore implementation"
+	default SEM_IMPL_SINGLE_SPINLOCK if !SMP
+	default SEM_IMPL_ATOMIC if SMP && !ATOMIC_OPERATIONS_C
+	default SEM_IMPL_SPINLOCK_PER_SEMAPHORE if SMP && ATOMIC_OPERATIONS_C
+	help
+	  The kernel can be built with with several choices for the
+	  semaphore implementation, offering different choices between
+	  binary size, performance, and concurrency.
+
+config SEM_IMPL_SINGLE_SPINLOCK
+	bool "Single spinlock"
+	help
+	  When selected, the semaphore will be implemented
+	  as a single spinlock. This is simple, has a low code size,
+	  and has low memory use per spinlock, but restricts the system
+	  performance to one outstanding semaphore call at a time, and
+	  can result in the global spinlock becoming highly contended
+	  on SMP platforms, especially with a large number of cores.
+	  It is suggested to use this implementation on single-core platforms.
+
+config SEM_IMPL_SPINLOCK_PER_SEMAPHORE
+	bool "Spinlock per semaphore"
+	help
+	  When selected, the semaphore will be implemented
+	  as a spinlock per semaphore. This is simple, but can result in
+	  a relatively large amount of memory use for each spinlock.
+	  This allows multiple concurrent semaphore calls on different
+	  semaphores, but still restricts the system performance to
+	  one outstanding semaphore call on any one particular semaphore.
+	  This option can be used on a single-core platform, but it
+	  generally makes no sense to do so, as there is no advantage
+	  of this option over SEM_IMPL_SINGLE_SPINLOCK.
+
+config SEM_IMPL_ATOMIC
+	bool "Atomics-based semaphore"
+	help
+	  When selected, the semaphore will be implemented
+	  using atomics. On multicore platforms where atomics are cheap,
+	  this can result in significantly better performance and
+	  significantly less contention than a spinlock-based
+	  implementation. This has a fairly high code size, but
+	  relatively low memory use per semaphore.
+	  Note that on some platforms atomics are actually implemented
+	  internally with a spinlock. On such platforms this option
+	  offers no real advantages. Ditto, this option can be
+	  used on a single-core platform, but it generally makes no
+	  sense to do so.
+
+endchoice # SEM_IMPL
+
 config MEM_SLAB_TRACE_MAX_UTILIZATION
 	bool "Enable getting maximum slab utilization"
 	help

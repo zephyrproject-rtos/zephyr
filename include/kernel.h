@@ -2700,8 +2700,16 @@ __syscall int k_condvar_wait(struct k_condvar *condvar, struct k_mutex *mutex,
 
 struct k_sem {
 	_wait_q_t wait_q;
+#ifdef CONFIG_SEM_IMPL_ATOMIC
+	atomic_t count;
+	atomic_t limit;
+#else
 	unsigned int count;
 	unsigned int limit;
+#endif
+#ifdef CONFIG_SEM_IMPL_SPINLOCK_PER_SEMAPHORE
+	struct k_spinlock lock;
+#endif
 
 	_POLL_EVENT;
 
@@ -2736,7 +2744,11 @@ struct k_sem {
  * counting purposes.
  *
  */
+#ifdef CONFIG_SEM_IMPL_ATOMIC
+#define K_SEM_MAX_LIMIT ATOMIC_T_MAX
+#else
 #define K_SEM_MAX_LIMIT UINT_MAX
+#endif
 
 /**
  * @brief Initialize a semaphore.
@@ -2793,7 +2805,10 @@ __syscall void k_sem_give(struct k_sem *sem);
  *
  * This routine sets the count of @a sem to zero.
  * Any outstanding semaphore takes will be aborted
- * with -EAGAIN.
+ * with -EAGAIN, however this API does _not_
+ * perform a reschedule, and so threads with aborted
+ * takes may not run immediately, even if higher priority.
+ * If this is desired, call k_yield after.
  *
  * @param sem Address of the semaphore.
  *
@@ -2817,7 +2832,11 @@ __syscall unsigned int k_sem_count_get(struct k_sem *sem);
  */
 static inline unsigned int z_impl_k_sem_count_get(struct k_sem *sem)
 {
-	return sem->count;
+	if (IS_ENABLED(CONFIG_SEM_IMPL_ATOMIC)) {
+		return MAX(sem->count, 0);
+	} else {
+		return sem->count;
+	}
 }
 
 /**

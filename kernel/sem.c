@@ -24,6 +24,7 @@
 #include <wait_q.h>
 #include <sys/dlist.h>
 #include <ksched.h>
+#include <kswap.h>
 #include <init.h>
 #include <syscall_handler.h>
 #include <tracing/tracing.h>
@@ -36,7 +37,16 @@
  * implementation would spin on atomic access to the count variable,
  * and not a spinlock per se.  Useful optimization for the future...
  */
+#if defined(CONFIG_SEM_IMPL_SINGLE_SPINLOCK)
 static struct k_spinlock lock;
+#define LOCK_FOR_SEM(sem) (&lock)
+#elif defined(CONFIG_SEM_IMPL_SPINLOCK_PER_SEMAPHORE)
+#define LOCK_FOR_SEM(sem) (&sem->lock)
+#endif
+
+#if defined(CONFIG_POLL) && defined(CONFIG_SEM_IMPL_ATOMIC)
+static struct k_spinlock poll_lock;
+#endif
 
 #ifdef CONFIG_OBJECT_TRACING
 
@@ -73,6 +83,11 @@ int z_impl_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 	sem->limit = limit;
 	sys_trace_semaphore_init(sem);
 	z_waitq_init(&sem->wait_q);
+#if defined(CONFIG_SEM_IMPL_SPINLOCK_PER_SEMAPHORE)
+	struct k_spinlock reinit = {};
+
+	sem->lock = reinit;
+#endif
 #if defined(CONFIG_POLL)
 	sys_dlist_init(&sem->poll_events);
 #endif
@@ -98,18 +113,27 @@ int z_vrfy_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 static inline void handle_poll_events(struct k_sem *sem)
 {
 #ifdef CONFIG_POLL
+#ifdef CONFIG_SEM_IMPL_ATOMIC
+	/* The polling API requires a lock for now. */
+	k_spinlock_key_t key = k_spin_lock(&poll_lock);
+
+#endif
 	z_handle_obj_poll_events(&sem->poll_events, K_POLL_STATE_SEM_AVAILABLE);
+#ifdef CONFIG_SEM_IMPL_ATOMIC
+	k_spin_unlock(&poll_lock, key);
+#endif
 #else
 	ARG_UNUSED(sem);
 #endif
 }
 
-void z_impl_k_sem_give(struct k_sem *sem)
+#ifndef CONFIG_SEM_IMPL_ATOMIC
+/* Also see sem_spinlock.tla */
+static inline void sem_give(struct k_sem *sem)
 {
-	k_spinlock_key_t key = k_spin_lock(&lock);
 	struct k_thread *thread;
+	k_spinlock_key_t key = k_spin_lock(LOCK_FOR_SEM(sem));
 
-	sys_trace_semaphore_give(sem);
 	thread = z_unpend_first_thread(&sem->wait_q);
 
 	if (thread != NULL) {
@@ -120,7 +144,171 @@ void z_impl_k_sem_give(struct k_sem *sem)
 		handle_poll_events(sem);
 	}
 
-	z_reschedule(&lock, key);
+	z_reschedule(LOCK_FOR_SEM(sem), key);
+}
+
+static inline int sem_take(struct k_sem *sem, k_timeout_t timeout)
+{
+	k_spinlock_key_t key = k_spin_lock(LOCK_FOR_SEM(sem));
+
+	if (likely(sem->count > 0U)) {
+		sem->count--;
+		k_spin_unlock(LOCK_FOR_SEM(sem), key);
+		return 0;
+	}
+
+	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+		k_spin_unlock(LOCK_FOR_SEM(sem), key);
+		return -EBUSY;
+	}
+
+	return z_pend_curr(LOCK_FOR_SEM(sem), key, &sem->wait_q, timeout);
+}
+
+static inline void sem_reset(struct k_sem *sem)
+{
+	struct k_thread *thread;
+	k_spinlock_key_t key = k_spin_lock(LOCK_FOR_SEM(sem));
+
+	while (true) {
+		thread = z_unpend_first_thread(&sem->wait_q);
+		if (thread == NULL) {
+			break;
+		}
+		arch_thread_return_value_set(thread, -EAGAIN);
+		z_ready_thread(thread);
+	}
+	sem->count = 0;
+	handle_poll_events(sem);
+
+	k_spin_unlock(LOCK_FOR_SEM(sem), key);
+	/* z_reschedule(LOCK_FOR_SEM(sem), key); */
+}
+
+#else
+/* Also see sem_atomic.tla */
+static inline void sem_give(struct k_sem *sem)
+{
+	/* compiler wasn't hoisting this out of the loop. */
+	atomic_t sem_limit = sem->limit;
+	struct k_thread *thread;
+	unsigned int key = arch_irq_lock();
+
+	do {
+		atomic_t count = atomic_get(&sem->count);
+
+		if ((count >= sem_limit) ||
+			(count >= 0 && atomic_cas(&sem->count, count, count + 1))) {
+			handle_poll_events(sem);
+			arch_irq_unlock(key);
+			goto out;
+		}
+
+		thread = z_unpend_first_thread(&sem->wait_q);
+	} while (thread == NULL);
+
+	atomic_inc(&sem->count);
+	arch_thread_return_value_set(thread, 0);
+	z_ready_thread(thread);
+	z_reschedule_no_lock(key);
+out:
+	return;
+}
+
+static int sem_take(struct k_sem *sem, k_timeout_t timeout)
+{
+	int ret;
+	unsigned int key = arch_irq_lock();
+
+	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+		atomic_t count;
+		/* this doesn't truly need to be duplicated, but
+		 * we want as little as possible in the CASloop.
+		 */
+		do {
+			count = atomic_get(&sem->count);
+			if (count <= 0) {
+				ret = -EBUSY;
+				goto out;
+			}
+		} while (!atomic_cas(&sem->count, count, count - 1));
+		ret = 0;
+		goto out;
+	}
+
+	if (atomic_dec(&sem->count) > 0) {
+		ret = 0;
+		goto out;
+	}
+	ret = z_pend_curr_with_arch_lock(&sem->wait_q, timeout);
+
+	if (ret == -EAGAIN) {
+		/* We timed out, and now the semaphore value
+		 * is off by one because we're not in wait_q.
+		 * Give back our semaphore reservation.
+		 */
+		/* There is a lingering concern here with thread priorities.
+		 * If a bunch of low-priority threads do sem_take with a timeout,
+		 * and have enough cpu time to take the semaphore but not enough
+		 * to return it later, a high-priority thread may not be able
+		 * to take the semaphore until one of said low-priority threads
+		 * run. That being said, if you want priority inheritance you should
+		 * probably be using a mutex instead...
+		 * If this is an issue, we can fix it (at a performance penalty,
+		 * especially with the current APIs as there's no way to share the lock
+		 * call with the z_pend_curr call, and we'd likely be rescheduling twice
+		 * for much the same reason) by bumping this thread's priority for the
+		 * z_pend_curr call above.
+		 */
+		/*
+		 * Perhaps counterintuitively, this
+		 * should _not_ do a normal semaphore give.
+		 */
+		atomic_inc(&sem->count);
+	}
+out:
+	arch_irq_unlock(key);
+	return ret;
+}
+
+static inline void sem_reset(struct k_sem *sem)
+{
+	unsigned int key = arch_irq_lock();
+
+	while (true) {
+		atomic_t count = atomic_get(&sem->count);
+
+		if (count == 0) {
+			break;
+		}
+		if (count > 0) {
+			if (!atomic_cas(&sem->count, count, 0)) {
+				continue;
+			}
+			break;
+		}
+		struct k_thread *thread = z_unpend_first_thread(&sem->wait_q);
+
+		if (thread != NULL) {
+			arch_thread_return_value_set(thread, -EAGAIN);
+			z_ready_thread(thread);
+			/* cannot overflow */
+			atomic_inc(&sem->count);
+		}
+	}
+
+	handle_poll_events(sem);
+	/* z_reschedule_no_lock(key); */
+	arch_irq_unlock(key);
+}
+#endif
+
+void z_impl_k_sem_give(struct k_sem *sem)
+{
+	sys_trace_semaphore_give(sem);
+
+	sem_give(sem);
+
 	sys_trace_end_call(SYS_TRACE_ID_SEMA_GIVE);
 }
 
@@ -135,51 +323,19 @@ static inline void z_vrfy_k_sem_give(struct k_sem *sem)
 
 int z_impl_k_sem_take(struct k_sem *sem, k_timeout_t timeout)
 {
-	int ret = 0;
+	int ret;
 
 	__ASSERT(((arch_is_in_isr() == false) ||
 		  K_TIMEOUT_EQ(timeout, K_NO_WAIT)), "");
-
-	k_spinlock_key_t key = k_spin_lock(&lock);
 	sys_trace_semaphore_take(sem);
-
-	if (likely(sem->count > 0U)) {
-		sem->count--;
-		k_spin_unlock(&lock, key);
-		ret = 0;
-		goto out;
-	}
-
-	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
-		k_spin_unlock(&lock, key);
-		ret = -EBUSY;
-		goto out;
-	}
-
-	ret = z_pend_curr(&lock, key, &sem->wait_q, timeout);
-
-out:
+	ret = sem_take(sem, timeout);
 	sys_trace_end_call(SYS_TRACE_ID_SEMA_TAKE);
 	return ret;
 }
 
 void z_impl_k_sem_reset(struct k_sem *sem)
 {
-	struct k_thread *thread;
-	k_spinlock_key_t key = k_spin_lock(&lock);
-
-	while (true) {
-		thread = z_unpend_first_thread(&sem->wait_q);
-		if (thread == NULL) {
-			break;
-		}
-		arch_thread_return_value_set(thread, -EAGAIN);
-		z_ready_thread(thread);
-	}
-	sem->count = 0;
-	handle_poll_events(sem);
-
-	z_reschedule(&lock, key);
+	sem_reset(sem);
 }
 
 #ifdef CONFIG_USERSPACE

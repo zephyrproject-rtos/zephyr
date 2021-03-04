@@ -12,6 +12,7 @@
 #include <stdbool.h>
 #include <toolchain.h>
 #include <stddef.h>
+#include <limits.h>
 
 #include <zephyr/types.h>
 
@@ -20,6 +21,7 @@ extern "C" {
 #endif
 
 typedef int atomic_t;
+#define ATOMIC_T_MAX INT_MAX
 typedef atomic_t atomic_val_t;
 typedef void *atomic_ptr_t;
 

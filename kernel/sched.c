@@ -629,6 +629,18 @@ static void pend(struct k_thread *thread, _wait_q_t *wait_q,
 	add_thread_timeout(thread, timeout);
 }
 
+static void pend_with_lock(struct k_thread *thread, _wait_q_t *wait_q,
+		 k_timeout_t timeout)
+{
+#ifdef CONFIG_KERNEL_COHERENCE
+	__ASSERT_NO_MSG(wait_q == NULL || arch_mem_coherent(wait_q));
+#endif
+
+	add_to_waitq_locked(thread, wait_q);
+
+	add_thread_timeout(thread, timeout);
+}
+
 void z_pend_thread(struct k_thread *thread, _wait_q_t *wait_q,
 		   k_timeout_t timeout)
 {
@@ -700,6 +712,17 @@ int z_pend_curr(struct k_spinlock *lock, k_spinlock_key_t key,
 #endif
 	pend(_current, wait_q, timeout);
 	return z_swap(lock, key);
+}
+
+int z_pend_curr_with_arch_lock(_wait_q_t *wait_q, k_timeout_t timeout)
+{
+#if defined(CONFIG_TIMESLICING) && defined(CONFIG_SWAP_NONATOMIC)
+	pending_current = _current;
+#endif
+	k_spinlock_key_t key = k_spin_lock(&sched_spinlock);
+
+	pend_with_lock(_current, wait_q, timeout);
+	return z_swap(&sched_spinlock, key);
 }
 
 struct k_thread *z_unpend1_no_timeout(_wait_q_t *wait_q)
@@ -814,6 +837,15 @@ void z_reschedule(struct k_spinlock *lock, k_spinlock_key_t key)
 		z_swap(lock, key);
 	} else {
 		k_spin_unlock(lock, key);
+	}
+}
+
+void z_reschedule_no_lock(uint32_t key)
+{
+	if (resched(key) && need_swap()) {
+		z_swap(&sched_spinlock, k_spin_lock(&sched_spinlock));
+	} else {
+		irq_unlock(key);
 	}
 }
 

@@ -43,11 +43,13 @@ void z_unpend_thread_no_timeout(struct k_thread *thread);
 struct k_thread *z_unpend1_no_timeout(_wait_q_t *wait_q);
 int z_pend_curr(struct k_spinlock *lock, k_spinlock_key_t key,
 	       _wait_q_t *wait_q, k_timeout_t timeout);
+int z_pend_curr_with_arch_lock(_wait_q_t *wait_q, k_timeout_t timeout);
 int z_pend_curr_irqlock(uint32_t key, _wait_q_t *wait_q, k_timeout_t timeout);
 void z_pend_thread(struct k_thread *thread, _wait_q_t *wait_q,
 		   k_timeout_t timeout);
 void z_reschedule(struct k_spinlock *lock, k_spinlock_key_t key);
 void z_reschedule_irqlock(uint32_t key);
+void z_reschedule_no_lock(uint32_t key);
 struct k_thread *z_unpend_first_thread(_wait_q_t *wait_q);
 void z_unpend_thread(struct k_thread *thread);
 int z_unpend_all(_wait_q_t *wait_q);
@@ -64,11 +66,6 @@ void z_ready_thread(struct k_thread *thread);
 void z_requeue_current(struct k_thread *curr);
 struct k_thread *z_swap_next_thread(void);
 void z_thread_abort(struct k_thread *thread);
-
-static inline void z_pend_curr_unlocked(_wait_q_t *wait_q, k_timeout_t timeout)
-{
-	(void) z_pend_curr_irqlock(arch_irq_lock(), wait_q, timeout);
-}
 
 static inline void z_reschedule_unlocked(void)
 {
