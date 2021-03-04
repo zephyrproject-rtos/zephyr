@@ -103,6 +103,13 @@ config SHELL_ECHO_STATUS
 	help
 	  If enabled shell prints back every input byte.
 
+config SHELL_START_OBSCURED
+	bool "Display asterisk when echoing"
+	default n
+	help
+	  If enabled, don't echo actual character, but echo * instead.
+	  This is used for login prompts.
+
 config SHELL_VT100_COLORS
 	bool "Enable colors in shell"
 	default y if !SHELL_MINIMAL
