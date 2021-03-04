@@ -379,14 +379,13 @@ int notify_new_tx_frame(struct net_pkt *pkt)
 
 static int run_tx_task(otInstance *aInstance)
 {
-	static struct k_work tx_job;
+	static K_WORK_DEFINE(tx_job, transmit_message);
 
 	ARG_UNUSED(aInstance);
 
-	if (k_work_pending(&tx_job) == 0) {
+	if (!k_work_is_pending(&tx_job)) {
 		sState = OT_RADIO_STATE_TRANSMIT;
 
-		k_work_init(&tx_job, transmit_message);
 		k_work_submit_to_queue(&ot_work_q, &tx_job);
 		return 0;
 	} else {
