@@ -2769,7 +2769,8 @@ __syscall int k_sem_init(struct k_sem *sem, unsigned int initial_count,
  *
  * @retval 0 Semaphore taken.
  * @retval -EBUSY Returned without waiting.
- * @retval -EAGAIN Waiting period timed out.
+ * @retval -EAGAIN Waiting period timed out,
+ *			or the semaphore was reset during the waiting period.
  */
 __syscall int k_sem_take(struct k_sem *sem, k_timeout_t timeout);
 
@@ -2788,23 +2789,17 @@ __syscall int k_sem_take(struct k_sem *sem, k_timeout_t timeout);
 __syscall void k_sem_give(struct k_sem *sem);
 
 /**
- * @brief Reset a semaphore's count to zero.
+ * @brief Resets a semaphore's count to zero.
  *
  * This routine sets the count of @a sem to zero.
+ * Any outstanding semaphore takes will be aborted
+ * with -EAGAIN.
  *
  * @param sem Address of the semaphore.
  *
  * @return N/A
  */
 __syscall void k_sem_reset(struct k_sem *sem);
-
-/**
- * @internal
- */
-static inline void z_impl_k_sem_reset(struct k_sem *sem)
-{
-	sem->count = 0U;
-}
 
 /**
  * @brief Get a semaphore's count.
