@@ -59,7 +59,10 @@ static void test_wipe_fs_logs(void)
 	fs_file_t_init(&file);
 
 	rc = fs_opendir(&dir, CONFIG_LOG_BACKEND_FS_DIR);
-	zassert_equal(rc, 0, "Can not open directory.");
+	if (rc) {
+		/* log directory might not exist jet */
+		return;
+	}
 
 	/* Iterate over logging directory. */
 	while (1) {
