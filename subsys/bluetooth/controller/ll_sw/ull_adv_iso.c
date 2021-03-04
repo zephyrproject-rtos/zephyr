@@ -344,7 +344,7 @@ uint8_t ll_big_terminate(uint8_t big_handle, uint8_t reason)
 
 	/* TODO: Terminate all BIS data paths */
 
-	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
+	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
 			  (TICKER_ID_ADV_ISO_BASE + lll_adv_iso->handle),
 			  ticker_op_stop_cb, adv_iso);
 
