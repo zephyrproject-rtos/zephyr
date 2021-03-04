@@ -31,7 +31,7 @@ static int allocate_new_file(struct fs_file_t *file);
 static int del_oldest_log(void);
 static int get_log_file_id(struct fs_dirent *ent);
 
-static int check_log_dir_available(void)
+static int check_log_volumen_available(void)
 {
 	int index = 0;
 	char const *name;
@@ -42,7 +42,7 @@ static int check_log_dir_available(void)
 		if (rc == 0) {
 			if (strncmp(CONFIG_LOG_BACKEND_FS_DIR,
 				    name,
-				    strlen(CONFIG_LOG_BACKEND_FS_DIR))
+				    strlen(name))
 			    == 0) {
 				return 0;
 			}
@@ -50,6 +50,57 @@ static int check_log_dir_available(void)
 	}
 
 	return -ENOENT;
+}
+
+static int create_log_dir(const char *path)
+{
+	const char *next;
+	const char *last = path + (strlen(path) - 1);
+	char w_path[MAX_PATH_LEN];
+	int rc, len;
+	struct fs_dir_t dir;
+
+	fs_dir_t_init(&dir);
+
+	/* the fist directory name is the mount point*/
+	/* the firs path's letter might be meaningless `/`, let's skip it */
+	next = strchr(path + 1, '/');
+	if (!next) {
+		return 0;
+	}
+
+	while (1) {
+		next++;
+		if (next > last) {
+			return 0;
+		}
+		next = strchr(next, '/');
+		if (!next) {
+			next = last;
+			len = last - path + 1;
+		} else {
+			len = next - path;
+		}
+
+		memcpy(w_path, path, len);
+		w_path[len] = 0;
+
+		rc = fs_opendir(&dir, w_path);
+		if (rc) {
+			/* assume directory doesn't exist */
+			rc = fs_mkdir(w_path);
+			if (rc) {
+				break;
+			}
+		}
+		rc = fs_closedir(&dir);
+		if (rc) {
+			break;
+		}
+	}
+
+	return rc;
+
 }
 
 static int check_log_file_exist(int num)
@@ -93,10 +144,13 @@ int write_log_to_file(uint8_t *data, size_t length, void *ctx)
 	struct fs_file_t *f = &file;
 
 	if (backend_state == BACKEND_FS_NOT_INITIALIZED) {
-		if (check_log_dir_available()) {
+		if (check_log_volumen_available()) {
 			return length;
 		}
-		rc = allocate_new_file(&file);
+		rc = create_log_dir(CONFIG_LOG_BACKEND_FS_DIR);
+		if (!rc) {
+			rc = allocate_new_file(&file);
+		}
 		backend_state = (rc ? BACKEND_FS_CORRUPTED : BACKEND_FS_OK);
 	}
 
