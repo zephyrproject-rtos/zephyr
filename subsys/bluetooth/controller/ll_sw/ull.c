@@ -2382,8 +2382,12 @@ static inline void rx_demux_event_done(memq_link_t *link,
 	struct ull_hdr *ull_hdr;
 	void *release;
 
-	/* Get the ull instance */
+	/* Decrement prepare reference if ULL will not resume */
 	ull_hdr = done->param;
+	if (ull_hdr) {
+		LL_ASSERT(ull_ref_get(ull_hdr));
+		ull_ref_dec(ull_hdr);
+	}
 
 	/* Process role dependent event done */
 	switch (done->extra.type) {
@@ -2452,17 +2456,8 @@ static inline void rx_demux_event_done(memq_link_t *link,
 	lll_done_sync();
 #endif /* CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
 
-	/* ull instance will resume, dont decrement ref */
-	if (!ull_hdr) {
-		return;
-	}
-
-	/* Decrement prepare reference */
-	LL_ASSERT(ull_ref_get(ull_hdr));
-	ull_ref_dec(ull_hdr);
-
 	/* If disable initiated, signal the semaphore */
-	if (!ull_ref_get(ull_hdr) && ull_hdr->disabled_cb) {
+	if (ull_hdr && !ull_ref_get(ull_hdr) && ull_hdr->disabled_cb) {
 		ull_hdr->disabled_cb(ull_hdr->disabled_param);
 	}
 }
