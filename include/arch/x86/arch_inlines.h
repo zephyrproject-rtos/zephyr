@@ -19,7 +19,7 @@ static ALWAYS_INLINE _cpu_t *arch_curr_cpu(void)
 {
 	struct _cpu *cpu;
 
-	__asm__ volatile("movq %%gs:(%c1), %0"
+	__asm__("movq %%gs:(%c1), %0"
 			 : "=r" (cpu)
 			 : "i" (offsetof(x86_tss64_t, cpu)));
 
