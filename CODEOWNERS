@@ -23,6 +23,7 @@
 /arch/arm/include/aarch32/cortex_m/cmse.h @ioannisg
 /arch/arm/core/aarch32/cortex_a_r/        @MaureenHelm @galak @ioannisg @bbolen @stephanosio
 /arch/arm64/                              @carlocaione
+/arch/arm64/core/cortex_r/                @povergoing
 /arch/common/                             @ioannisg @andyross
 /soc/arc/snps_*/                          @abrodkin @ruuddw @evgeniy-paltsev
 /soc/nios2/                               @nashif
