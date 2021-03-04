@@ -99,7 +99,8 @@ static volatile uint32_t rtc_last = 0;
 
 /* TODO: check whether also right calculation for our impl */
 /* Maximum number of ticks. */
-#define MAX_TICKS (UINT32_MAX / CYCLES_PER_TICK - 2U)
+//#define MAX_TICKS (UINT32_MAX / CYCLES_PER_TICK - 2U)
+#define MAX_TICKS (UINT32_MAX / CONFIG_SYS_CLOCK_TICKS_PER_SEC - 2U)
 
 /* TODO: check what tick threshold applicable to our rtc */
 #define TICK_THRESHOLD 7
