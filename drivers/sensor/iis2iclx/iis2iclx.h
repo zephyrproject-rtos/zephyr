@@ -35,25 +35,18 @@
 #define SENSOR_DEG2RAD_DOUBLE			(SENSOR_PI_DOUBLE / 180)
 #define SENSOR_G_DOUBLE				(SENSOR_G / 1000000.0)
 
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-struct iis2iclx_spi_cfg {
-	struct spi_config spi_conf;
-	const char *cs_gpios_label;
-};
-#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
-
 union iis2iclx_bus_cfg {
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 	uint16_t i2c_slv_addr;
 #endif
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-	const struct iis2iclx_spi_cfg *spi_cfg;
+	struct spi_config spi_cfg;
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
 };
 
 struct iis2iclx_config {
-	char *bus_name;
+	const struct device *bus;
 	int (*bus_init)(const struct device *dev);
 	const union iis2iclx_bus_cfg bus_cfg;
 	uint8_t odr;
@@ -119,10 +112,6 @@ struct iis2iclx_data {
 	struct k_work work;
 #endif
 #endif /* CONFIG_IIS2ICLX_TRIGGER */
-
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-	struct spi_cs_control cs_ctrl;
-#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
 };
 
 int iis2iclx_spi_init(const struct device *dev);

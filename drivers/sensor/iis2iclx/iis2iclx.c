@@ -589,16 +589,11 @@ static int iis2iclx_init_chip(const struct device *dev)
 static int iis2iclx_init(const struct device *dev)
 {
 	const struct iis2iclx_config * const config = dev->config;
-	struct iis2iclx_data *data = dev->data;
 
-	data->bus = device_get_binding(config->bus_name);
-	if (!data->bus) {
-		LOG_DBG("master not found: %s",
-			    config->bus_name);
-		return -EINVAL;
+	if (config->bus_init(dev) < 0) {
+		LOG_ERR("failed to initialize bus");
+		return -EIO;
 	}
-
-	config->bus_init(dev);
 
 	if (iis2iclx_init_chip(dev) < 0) {
 		LOG_ERR("failed to initialize chip");
@@ -646,45 +641,6 @@ static int iis2iclx_init(const struct device *dev)
  * Instantiation macros used when a device is on a SPI bus.
  */
 
-#define IIS2ICLX_HAS_CS(inst) DT_INST_SPI_DEV_HAS_CS_GPIOS(inst)
-
-#define IIS2ICLX_DATA_SPI_CS(inst)					\
-	{ .cs_ctrl = {							\
-		.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(inst),		\
-		.gpio_dt_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(inst),	\
-		},							\
-	}
-
-#define IIS2ICLX_DATA_SPI(inst)						\
-	COND_CODE_1(IIS2ICLX_HAS_CS(inst),				\
-		    (IIS2ICLX_DATA_SPI_CS(inst)),			\
-		    ({}))
-
-#define IIS2ICLX_SPI_CS_PTR(inst)					\
-	COND_CODE_1(IIS2ICLX_HAS_CS(inst),				\
-		    (&(iis2iclx_data_##inst.cs_ctrl)),			\
-		    (NULL))
-
-#define IIS2ICLX_SPI_CS_LABEL(inst)					\
-	COND_CODE_1(IIS2ICLX_HAS_CS(inst),				\
-		    (DT_INST_SPI_DEV_CS_GPIOS_LABEL(inst)), (NULL))
-
-#define IIS2ICLX_SPI_CFG(inst)						\
-	(&(struct iis2iclx_spi_cfg) {					\
-		.spi_conf = {						\
-			.frequency =					\
-				DT_INST_PROP(inst, spi_max_frequency),	\
-			.operation = (SPI_WORD_SET(8) |			\
-				      SPI_OP_MODE_MASTER |		\
-				      SPI_MODE_CPOL |			\
-				      SPI_MODE_CPHA),			\
-			.slave = DT_INST_REG_ADDR(inst),		\
-			.cs = IIS2ICLX_SPI_CS_PTR(inst),		\
-		},							\
-		.cs_gpios_label = IIS2ICLX_SPI_CS_LABEL(inst),		\
-	})
-
-
 #ifdef CONFIG_IIS2ICLX_TRIGGER
 #define IIS2ICLX_CFG_IRQ(inst) \
 		.irq_dev_name = DT_INST_GPIO_LABEL(inst, drdy_gpios),	\
@@ -695,23 +651,24 @@ static int iis2iclx_init(const struct device *dev)
 #define IIS2ICLX_CFG_IRQ(inst)
 #endif /* CONFIG_IIS2ICLX_TRIGGER */
 
+#define IIS2ICLX_SPI_OPERATION (SPI_WORD_SET(8) |			\
+				SPI_OP_MODE_MASTER |			\
+				SPI_MODE_CPOL |				\
+				SPI_MODE_CPHA)				\
+
 #define IIS2ICLX_CONFIG_SPI(inst)					\
 	{								\
-		.bus_name = DT_INST_BUS_LABEL(inst),			\
+		.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),		\
 		.bus_init = iis2iclx_spi_init,				\
-		.bus_cfg = { .spi_cfg = IIS2ICLX_SPI_CFG(inst)	},	\
+		.bus_cfg.spi_cfg =					\
+			SPI_CONFIG_DT_INST(inst,			\
+					   IIS2ICLX_SPI_OPERATION,	\
+					   0),				\
 		.odr = DT_INST_PROP(inst, odr),				\
 		.range = DT_INST_PROP(inst, range),			\
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),	\
 			(IIS2ICLX_CFG_IRQ(inst)), ())			\
 	}
-
-#define IIS2ICLX_DEFINE_SPI(inst)					\
-	static struct iis2iclx_data iis2iclx_data_##inst =		\
-		IIS2ICLX_DATA_SPI(inst);				\
-	static const struct iis2iclx_config iis2iclx_config_##inst =	\
-		IIS2ICLX_CONFIG_SPI(inst);				\
-	IIS2ICLX_DEVICE_INIT(inst)
 
 /*
  * Instantiation macros used when a device is on an I2C bus.
@@ -719,28 +676,26 @@ static int iis2iclx_init(const struct device *dev)
 
 #define IIS2ICLX_CONFIG_I2C(inst)					\
 	{								\
-		.bus_name = DT_INST_BUS_LABEL(inst),			\
+		.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),		\
 		.bus_init = iis2iclx_i2c_init,				\
-		.bus_cfg = { .i2c_slv_addr = DT_INST_REG_ADDR(inst), },	\
+		.bus_cfg.i2c_slv_addr = DT_INST_REG_ADDR(inst),		\
 		.odr = DT_INST_PROP(inst, odr),				\
 		.range = DT_INST_PROP(inst, range),			\
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),	\
 			(IIS2ICLX_CFG_IRQ(inst)), ())			\
 	}
 
-#define IIS2ICLX_DEFINE_I2C(inst)					\
-	static struct iis2iclx_data iis2iclx_data_##inst;		\
-	static const struct iis2iclx_config iis2iclx_config_##inst =	\
-		IIS2ICLX_CONFIG_I2C(inst);				\
-	IIS2ICLX_DEVICE_INIT(inst)
 /*
  * Main instantiation macro. Use of COND_CODE_1() selects the right
  * bus-specific macro at preprocessor time.
  */
 
 #define IIS2ICLX_DEFINE(inst)						\
-	COND_CODE_1(DT_INST_ON_BUS(inst, spi),				\
-		    (IIS2ICLX_DEFINE_SPI(inst)),			\
-		    (IIS2ICLX_DEFINE_I2C(inst)))
+	static struct iis2iclx_data iis2iclx_data_##inst;		\
+	static const struct iis2iclx_config iis2iclx_config_##inst =	\
+		COND_CODE_1(DT_INST_ON_BUS(inst, spi),			\
+			(IIS2ICLX_CONFIG_SPI(inst)),			\
+			(IIS2ICLX_CONFIG_I2C(inst)));			\
+	IIS2ICLX_DEVICE_INIT(inst)
 
 DT_INST_FOREACH_STATUS_OKAY(IIS2ICLX_DEFINE)
