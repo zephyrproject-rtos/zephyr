@@ -23,12 +23,6 @@
 extern "C" {
 #endif
 
-/* default system clock */
-
-#define SYSCLK_DEFAULT_IOSC_HZ MHZ(120)
-#define BUSCLK_DEFAULT_IOSC_HZ (SYSCLK_DEFAULT_IOSC_HZ / \
-				CONFIG_K22_BUS_CLOCK_DIVIDER)
-
 /* address bases */
 
 #define PERIPH_ADDR_BASE_WDOG 0x40052000 /* Watchdog Timer module */
