@@ -163,6 +163,8 @@ Bluetooth:
     collaborators:
         - joerchan
         - Vudentz
+        - Thalley
+        - asbjornsabo
     files:
         - doc/reference/bluetooth/
         - doc/guides/bluetooth/
@@ -175,6 +177,7 @@ Bluetooth:
         - subsys/bluetooth/host/
         - subsys/bluetooth/services/
         - subsys/bluetooth/shell/
+        - subsys/bluetooth/audio/
         - tests/bluetooth/
     labels:
         - "area: Bluetooth"
