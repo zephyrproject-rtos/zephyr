@@ -67,52 +67,58 @@ described in :ref:`getting_started`. Then install additional tools
 that are only required to generate the documentation,
 as described below:
 
-On Ubuntu Linux:
+.. tabs::
 
-.. code-block:: console
+   .. group-tab:: Linux
 
-   sudo apt-get install --no-install-recommends doxygen librsvg2-bin \
-     texlive-latex-base texlive-latex-extra latexmk texlive-fonts-recommended
+      On Ubuntu Linux:
 
-On Fedora Linux:
+      .. code-block:: console
 
-.. code-block:: console
+         sudo apt-get install --no-install-recommends doxygen librsvg2-bin \
+         texlive-latex-base texlive-latex-extra latexmk texlive-fonts-recommended
 
-   sudo dnf install doxygen texlive-latex latexmk \
-     texlive-collection-fontsrecommended librsvg2-tools
+      On Fedora Linux:
 
-On Clear Linux:
+      .. code-block:: console
 
-.. code-block:: console
+         sudo dnf install doxygen texlive-latex latexmk \
+         texlive-collection-fontsrecommended librsvg2-tools
 
-  sudo swupd bundle-add texlive
+      On Clear Linux:
 
-On Arch Linux:
+      .. code-block:: console
 
-.. code-block:: console
+         sudo swupd bundle-add texlive
 
-   sudo pacman -S doxygen librsvg texlive-core texlive-bin
+      On Arch Linux:
 
-On macOS:
+      .. code-block:: console
 
-.. code-block:: console
+         sudo pacman -S doxygen librsvg texlive-core texlive-bin
 
-   brew install doxygen mactex librsvg
-   tlmgr install latexmk
-   tlmgr install collection-fontsrecommended
+   .. group-tab:: macOS
 
-On Windows in an Administrator ``cmd.exe`` prompt:
+      .. code-block:: console
 
-.. code-block:: console
+         brew install doxygen mactex librsvg
+         tlmgr install latexmk
+         tlmgr install collection-fontsrecommended
 
-   choco install doxygen.install strawberryperl miktex rsvg-convert
+   .. group-tab:: Windows
 
-.. note::
-   On Windows, the Sphinx executable ``sphinx-build.exe`` is placed in
-   the ``Scripts`` folder of your Python installation path.
-   Dependending on how you have installed Python, you may need to
-   add this folder to your ``PATH`` environment variable. Follow
-   the instructions in `Windows Python Path`_ to add those if needed.
+      Run in an Administrator ``cmd.exe`` prompt:
+
+      .. code-block:: console
+
+         choco install doxygen.install strawberryperl miktex rsvg-convert
+
+      .. note::
+         On Windows, the Sphinx executable ``sphinx-build.exe`` is placed in
+         the ``Scripts`` folder of your Python installation path.
+         Dependending on how you have installed Python, you may need to
+         add this folder to your ``PATH`` environment variable. Follow
+         the instructions in `Windows Python Path`_ to add those if needed.
 
 Documentation presentation theme
 ********************************
