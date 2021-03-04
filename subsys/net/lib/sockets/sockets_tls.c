@@ -120,6 +120,12 @@ __net_socket struct tls_context {
 		 * protocols.
 		 */
 		const char *alpn_list[ALPN_MAX_PROTOCOLS];
+
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
+		/* DTLS handshake timeout */
+		uint32_t dtls_handshake_timeout_min;
+		uint32_t dtls_handshake_timeout_max;
+#endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 	} options;
 
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
@@ -401,6 +407,10 @@ static struct tls_context *tls_alloc(void)
 		tls_set_max_frag_len(&tls->config);
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
 		mbedtls_ssl_cookie_init(&tls->cookie);
+		tls->options.dtls_handshake_timeout_min =
+			MBEDTLS_SSL_DTLS_TIMEOUT_DFL_MIN;
+		tls->options.dtls_handshake_timeout_max =
+			MBEDTLS_SSL_DTLS_TIMEOUT_DFL_MAX;
 #endif
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
 		mbedtls_x509_crt_init(&tls->ca_chain);
@@ -930,6 +940,9 @@ static int tls_mbedtls_init(struct tls_context *context, bool is_server)
 					 &context->dtls_timing,
 					 dtls_timing_set_delay,
 					 dtls_timing_get_delay);
+		mbedtls_ssl_conf_handshake_timeout(&context->config,
+				context->options.dtls_handshake_timeout_min,
+				context->options.dtls_handshake_timeout_max);
 
 		/* Configure cookie for DTLS server */
 		if (role == MBEDTLS_SSL_IS_SERVER) {
@@ -1183,6 +1196,60 @@ static int tls_opt_alpn_list_set(struct tls_context *context,
 
 	return 0;
 }
+
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
+static int tls_opt_dtls_handshake_timeout_get(struct tls_context *context,
+					      void *optval, socklen_t *optlen,
+					      bool is_max)
+{
+	uint32_t *val = (uint32_t *)optval;
+
+	if (sizeof(uint32_t) != *optlen) {
+		return -EINVAL;
+	}
+
+	if (is_max) {
+		*val = context->options.dtls_handshake_timeout_max;
+	} else {
+		*val = context->options.dtls_handshake_timeout_min;
+	}
+
+	return 0;
+}
+
+static int tls_opt_dtls_handshake_timeout_set(struct tls_context *context,
+					      const void *optval,
+					      socklen_t optlen, bool is_max)
+{
+	uint32_t *val = (uint32_t *)optval;
+
+	if (!optval) {
+		return -EINVAL;
+	}
+
+	if (sizeof(uint32_t) != optlen) {
+		return -EINVAL;
+	}
+
+	/* If mbedTLS context not inited, it will
+	 * use these values upon init.
+	 */
+	if (is_max) {
+		context->options.dtls_handshake_timeout_max = *val;
+	} else {
+		context->options.dtls_handshake_timeout_min = *val;
+	}
+
+	/* If mbedTLS context already inited, we need to
+	 * update mbedTLS config for it to take effect
+	 */
+	mbedtls_ssl_conf_handshake_timeout(&context->config,
+			context->options.dtls_handshake_timeout_min,
+			context->options.dtls_handshake_timeout_max);
+
+	return 0;
+}
+#endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 
 static int tls_opt_alpn_list_get(struct tls_context *context,
 				 void *optval, socklen_t *optlen)
@@ -2192,6 +2259,18 @@ int ztls_getsockopt_ctx(struct tls_context *ctx, int level, int optname,
 		err = tls_opt_alpn_list_get(ctx, optval, optlen);
 		break;
 
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
+	case TLS_DTLS_HANDSHAKE_TIMEOUT_MIN:
+		err = tls_opt_dtls_handshake_timeout_get(ctx, optval,
+							 optlen, false);
+		break;
+
+	case TLS_DTLS_HANDSHAKE_TIMEOUT_MAX:
+		err = tls_opt_dtls_handshake_timeout_get(ctx, optval,
+							 optlen, true);
+		break;
+#endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
+
 	default:
 		/* Unknown or write-only option. */
 		err = -ENOPROTOOPT;
@@ -2240,6 +2319,18 @@ int ztls_setsockopt_ctx(struct tls_context *ctx, int level, int optname,
 	case TLS_ALPN_LIST:
 		err = tls_opt_alpn_list_set(ctx, optval, optlen);
 		break;
+
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
+	case TLS_DTLS_HANDSHAKE_TIMEOUT_MIN:
+		err = tls_opt_dtls_handshake_timeout_set(ctx, optval,
+							 optlen, false);
+		break;
+
+	case TLS_DTLS_HANDSHAKE_TIMEOUT_MAX:
+		err = tls_opt_dtls_handshake_timeout_set(ctx, optval,
+							 optlen, true);
+		break;
+#endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 
 	default:
 		/* Unknown or read-only option. */
