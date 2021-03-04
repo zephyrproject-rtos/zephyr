@@ -418,6 +418,7 @@
 /include/arch/arm/aarch32/                @MaureenHelm @galak @ioannisg
 /include/arch/arm/aarch32/cortex_a_r/     @stephanosio
 /include/arch/arm64/                      @carlocaione
+/include/arch/arm64/cortex_r/             @povergoing
 /include/arch/arm/aarch32/irq.h           @carlocaione
 /include/arch/nios2/                      @nashif
 /include/arch/nios2/arch.h                @nashif
