@@ -10,6 +10,7 @@
 #include <dt-bindings/espi/npcx_espi.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/i2c/i2c.h>
+#include <dt-bindings/pinctrl/npcx-pinctrl.h>
 #include <dt-bindings/pwm/pwm.h>
 #include <dt-bindings/sensor/npcx_tach.h>
 
@@ -23,6 +24,8 @@
 #include "npcx/npcx7-espi-vws-map.dtsi"
 /* NPCX7 series low-voltage io controls mapping table */
 #include "npcx/npcx7-lvol-ctrl-map.dtsi"
+/* NPCX7 series power-switch-logic (PSL) io controls mapping table */
+#include "npcx/npcx7-psl-ctrl-map.dtsi"
 
 / {
 	cpus {
@@ -93,6 +96,20 @@
 		 * lvol_io_pads = <&lvol_io90 &lvol_io87>;
 		 */
 		lvol_io_pads = <>;
+	};
+
+	vsby-psl-in-list {
+		compatible = "nuvoton,npcx-pslctrl-def";
+		/* Put Power Switch Logic (PSL) input pads which detect the
+		 * wake-up events and turn on core power supply (VCC1) from
+		 * standby power state (ultra-low-power mode) into "psl-in-pads"
+		 * property. For example, if PSL input 1 that is plan to detect
+		 * a 'falling edge' event, this property should be:
+		 *   psl-in-pads = <&psl_in1>;
+		 * And the flag property in psl_in1 should change to
+		 *   flag = <NPCX_PSL_FALLING_EDGE>;
+		 */
+		psl-in-pads = <>;
 	};
 
 	soc {
@@ -716,6 +733,13 @@
 			clocks = <&pcc NPCX_CLOCK_BUS_LFCLK NPCX_PWDWN_CTL1 6>;
 			label = "TACH_2";
 			status = "disabled";
+		};
+
+		psl_out: psl-out {
+			compatible = "nuvoton,npcx-psl-out";
+			controller = <&gpio8>;
+			pin = <5>;
+			label = "PSL_OUT";
 		};
 	};
 };

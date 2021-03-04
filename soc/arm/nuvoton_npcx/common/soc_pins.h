@@ -37,6 +37,27 @@ struct npcx_lvol {
 };
 
 /**
+ * @brief NPCX Power Switch Logic (PSL) input configuration structure
+ *
+ * Used to configure PSL input pad which detect the wake-up events and switch
+ * core power supply (VCC1) on from standby power state (ultra-low-power mode).
+ */
+struct npcx_psl_in {
+	/** flag to indicate the detection mode and type. */
+	uint32_t flag;
+	/** offset in PSL_CTS for status and detection mode. */
+	uint32_t offset;
+	/** Device Alternate Function. (DEVALT) register/bit for PSL pin-muxing.
+	 * It determines whether PSL input or GPIO selected to the pad.
+	 */
+	struct npcx_alt pinctrl;
+	/** Device Alternate Function. (DEVALT) register/bit for PSL polarity.
+	 * It determines active polarity of wake-up signal via PSL input.
+	 */
+	struct npcx_alt polarity;
+};
+
+/**
  * @brief Select device pin-mux to I/O or its alternative functionality
  *
  * Example devicetree fragment:
@@ -79,6 +100,34 @@ void npcx_pinctrl_mux_configure(const struct npcx_alt *alts_list,
  * @param port index for i2c port pads
  */
 void npcx_pinctrl_i2c_port_sel(int controller, int port);
+
+/**
+ * @brief Set PSL output pad to inactive level.
+ *
+ * The PSL_OUT output pad should be connected to the control pin of either the
+ * switch or the power supply used generate the VCC1 power from the VSBY power.
+ * When PSL_OUT is high (active), the Core Domain power supply (VCC1) is turned
+ * on. When PSL_OUT is low (inactive) by setting bit of related PDOUT, VCC1 is
+ * turned off for entering standby power state (ultra-low-power mode).
+ */
+void npcx_pinctrl_psl_output_set_inactive(void);
+
+/**
+ * @brief Configure PSL input pads in psl_in_pads list
+ *
+ * Used to configure PSL input pads list from "psl-in-pads" property which
+ * detect the wake-up events and the related circuit will turn on core power
+ * supply (VCC1) from standby power state (ultra-low-power mode) later.
+ */
+void npcx_pinctrl_psl_input_configure(void);
+
+/**
+ * @brief Get the asserted status of PSL input pads
+ *
+ * @param i index of 'psl-in-pads' prop
+ * @return 1 is asserted, otherwise de-asserted.
+ */
+bool npcx_pinctrl_psl_input_asserted(int i);
 
 #ifdef __cplusplus
 }

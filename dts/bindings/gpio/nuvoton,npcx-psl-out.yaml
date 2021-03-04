@@ -1,0 +1,19 @@
+# Copyright (c) 2021 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton, NPCX-PSL (Power Switch Logic) Output node
+
+compatible: "nuvoton,npcx-psl-out"
+
+include: [base.yaml]
+
+properties:
+    controller:
+        type: phandle
+        required: true
+        description: gpio controller to handle PSL output pad.
+
+    pin:
+        type: int
+        required: true
+        description: pin in gpio controller for PSL output.
