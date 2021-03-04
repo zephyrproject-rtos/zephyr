@@ -528,9 +528,9 @@ __syscall void k_wakeup(k_tid_t thread);
  * @return ID of current thread.
  *
  */
-__syscall k_tid_t k_current_get(void);
+__attribute__((const)) __syscall k_tid_t k_current_get(void);
 
-static ALWAYS_INLINE k_tid_t z_impl_k_current_get(void)
+static ALWAYS_INLINE __attribute__((const)) k_tid_t z_impl_k_current_get(void)
 {
 #ifdef CONFIG_SMP
 	/* In SMP, _current is a field read from _current_cpu, which
