@@ -113,6 +113,32 @@ Deprecated in this release
   ``pm_device_state_set`` and ``pm_device_state_get`` in order to align with
   the naming of other device PM APIs.
 
+* The following functions, macros, and structures related to the kernel
+  work queue API:
+
+  * :c:func:`k_work_pending()` replace with :c:func:`k_work_is_pending()`
+  * :c:func:`k_work_q_start()` replace with :c:func:`k_work_queue_start()`
+  * :c:struct:`k_delayed_work` replace with :c:struct:`k_work_delayable`
+  * :c:func:`k_delayed_work_init()` replace with
+    :c:func:`k_work_init_delayable`
+  * :c:func:`k_delayed_work_submit_to_queue()` replace with
+    :c:func:`k_work_schedule_for_queue()` or
+    :c:func:`k_work_reschedule_for_queue()`
+  * :c:func:`k_delayed_work_submit()` replace with :c:func:`k_work_schedule()`
+    or :c:func:`k_work_reschedule()`
+  * :c:func:`k_delayed_work_pending()` replace with
+    :c:func:`k_work_delayable_is_pending()`
+  * :c:func:`k_delayed_work_cancel()` replace with
+    :c:func:`k_work_cancel_delayable()`
+  * :c:func:`k_delayed_work_remaining_get()` replace with
+    :c:func:`k_work_delayable_remaining_get()`
+  * :c:func:`k_delayed_work_expires_ticks()` replace with
+    :c:func:`k_work_delayable_expires_get()`
+  * :c:func:`k_delayed_work_remaining_ticks()` replace with
+    :c:func:`k_work_delayable_remaining_get()`
+  * :c:macro:`K_DELAYED_WORK_DEFINE` replace with
+    :c:macro:`K_WORK_DELAYABLE_DEFINE`
+
 ==========================
 
 Removed APIs in this release
