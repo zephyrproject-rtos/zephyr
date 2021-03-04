@@ -144,7 +144,7 @@ static void json_add_char(struct lwm2m_input_context *in,
 static int json_next_token(struct lwm2m_input_context *in,
 			   struct json_in_formatter_data *fd)
 {
-	uint8_t cont, c;
+	uint8_t cont, c = 0;
 	bool escape = false;
 
 	(void)memset(fd, 0, sizeof(*fd));
