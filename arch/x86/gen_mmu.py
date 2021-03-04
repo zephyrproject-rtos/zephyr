@@ -371,43 +371,26 @@ class PtableSet():
 
         self.reserve(mem_start, mem_size)
 
-    def identity_map(self, phys_base, size, flags):
-        """Identity map an address range in the page tables, with provided
-        access flags.
-        """
-        debug("Identity-mapping 0x%x (%d): %s" %
-              (phys_base, size, dump_flags(flags)))
-
-        align_check(phys_base, size)
-        for addr in range(phys_base, phys_base + size, 4096):
-            if addr == 0:
-                # Never map the NULL page
-                continue
-
-            self.map_page(addr, addr, flags, False)
-
-    def map(self, virt_base, size, flags):
+    def map(self, virt_base, size, flags, phys_base=None):
         """Map an address range in the page tables, with
         virtual-to-physical address translation and provided access flags.
         """
-        if self.virt_to_phys_offset == 0:
-            self.identity_map(virt_base, size, flags)
-        else:
+        if not phys_base:
             phys_base = virt_base + self.virt_to_phys_offset
 
-            debug("Mapping 0x%x (%d) to 0x%x: %s" %
-                  (phys_base, size, virt_base, dump_flags(flags)))
+        debug("Mapping 0x%x (%d) to 0x%x: %s" %
+                (phys_base, size, virt_base, dump_flags(flags)))
 
-            align_check(phys_base, size)
-            align_check(virt_base, size)
-            for paddr in range(phys_base, phys_base + size, 4096):
-                if paddr == 0:
-                    # Never map the NULL page
-                    continue
+        align_check(phys_base, size)
+        align_check(virt_base, size)
+        for paddr in range(phys_base, phys_base + size, 4096):
+            if paddr == 0:
+                # Never map the NULL page
+                continue
 
-                vaddr = virt_base + (paddr - phys_base)
+            vaddr = virt_base + (paddr - phys_base)
 
-                self.map_page(vaddr, paddr, flags, False)
+            self.map_page(vaddr, paddr, flags, False)
 
     def set_region_perms(self, name, flags, use_offset=False):
         """Set access permissions for a named region that is already mapped
@@ -582,8 +565,8 @@ def main():
 
         debug("Kernel addresses: physical 0x%x size %d" % (mapped_kernel_phys_base,
                                                            mapped_kernel_phys_size))
-        pt.identity_map(mapped_kernel_phys_base, mapped_kernel_phys_size,
-                        map_flags | ENTRY_RW)
+        pt.map(mapped_kernel_phys_base, mapped_kernel_phys_size,
+               map_flags | ENTRY_RW, phys_base=mapped_kernel_phys_base)
 
     if isdef("CONFIG_X86_64"):
         # 64-bit has a special region in the first 64K to bootstrap other CPUs
