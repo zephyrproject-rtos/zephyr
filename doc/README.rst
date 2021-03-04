@@ -55,12 +55,9 @@ Installing the documentation processors
 Our documentation processing has been tested to run with:
 
 * Doxygen version 1.8.13
-* Sphinx version 3.2.0
-* Breathe version 4.20.0
-* docutils version 0.16
-* sphinx_rtd_theme version 0.4.0
-* sphinxcontrib-svg2pdfconverter version 0.1.0
 * Latexmk version 4.56
+* All Python dependencies listed in the repository file
+  ``scripts/requirements-doc.txt``
 
 In order to install the documentation tools, first install Zephyr as
 described in :ref:`getting_started`. Then install additional tools
