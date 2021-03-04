@@ -1352,23 +1352,6 @@ static inline void z_vrfy_k_wakeup(k_tid_t thread)
 #include <syscalls/k_wakeup_mrsh.c>
 #endif
 
-k_tid_t z_impl_k_current_get(void)
-{
-#ifdef CONFIG_SMP
-	/* In SMP, _current is a field read from _current_cpu, which
-	 * can race with preemption before it is read.  We must lock
-	 * local interrupts when reading it.
-	 */
-	unsigned int k = arch_irq_lock();
-#endif
-
-	k_tid_t ret = _current_cpu->current;
-
-#ifdef CONFIG_SMP
-	arch_irq_unlock(k);
-#endif
-	return ret;
-}
 
 #ifdef CONFIG_USERSPACE
 static inline k_tid_t z_vrfy_k_current_get(void)
