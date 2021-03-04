@@ -414,6 +414,17 @@ int net_config_init(const char *app_info, uint32_t flags,
 	return net_config_init_by_iface(NULL, app_info, flags, timeout);
 }
 
+static void iface_find_cb(struct net_if *iface, void *user_data)
+{
+	struct net_if **iface_to_use = user_data;
+
+	if (*iface_to_use == NULL &&
+	    !net_if_flag_is_set(iface, NET_IF_NO_AUTO_START)) {
+		*iface_to_use = iface;
+		return;
+	}
+}
+
 int net_config_init_app(const struct device *dev, const char *app_info)
 {
 	struct net_if *iface = NULL;
@@ -451,6 +462,11 @@ int net_config_init_app(const struct device *dev, const char *app_info)
 
 	if (IS_ENABLED(CONFIG_NET_CONFIG_NEED_IPV4)) {
 		flags |= NET_CONFIG_NEED_IPV4;
+	}
+
+	/* Only try to use a network interface that is auto started */
+	if (iface == NULL) {
+		net_if_foreach(iface_find_cb, &iface);
 	}
 
 	/* Initialize the application automatically if needed */
