@@ -53,8 +53,8 @@ static struct in6_addr my_addr2 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 
 /* Destination address for test packets */
-static struct in6_addr dst_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 9, 0, 0, 0,
-					0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+static struct in6_addr dst_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0x2 } } };
 
 /* Extra address is assigned to ll_addr */
 static struct in6_addr ll_addr = { { { 0xfe, 0x80, 0x43, 0xb8, 0, 0, 0, 0,
@@ -845,7 +845,7 @@ static void test_rx_chksum_offload_enabled_test_v6(void)
 			       sizeof(struct sockaddr_in6));
 	zassert_equal(ret, 0, "Context bind failure test failed");
 
-	iface = eth_interfaces[1];
+	iface = net_if_ipv6_select_src_iface(&dst_addr6.sin6_addr);
 	ctx = net_if_get_device(iface)->data;
 	zassert_equal_ptr(&eth_context_offloading_enabled, ctx,
 			  "eth context mismatch");
