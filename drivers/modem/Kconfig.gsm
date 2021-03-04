@@ -61,4 +61,12 @@ config MODEM_GSM_MANUAL_MCCMNO
 	  the network provider and may need to be changed if auto is not
 	  selected.
 
+config MODEM_GSM_FACTORY_RESET_AT_BOOT
+	bool "Factory reset modem at boot"
+	help
+	  If this is enabled, the modem will be reset to factory default
+	  settings first thing in the initialization sequence. This is
+	  helpful if your modem has a tendency to get stuck due to cached
+	  state.
+
 endif
