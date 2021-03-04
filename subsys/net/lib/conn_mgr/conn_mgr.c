@@ -70,10 +70,12 @@ static void conn_mgr_notify_status(int index)
 	struct net_if *iface = net_if_get_by_index(index + 1);
 
 	if (iface_states[index] & NET_STATE_CONNECTED) {
-		NET_DBG("Iface %p connected", iface);
+		NET_DBG("Iface %d (%p) connected",
+			net_if_get_by_iface(iface), iface);
 		net_mgmt_event_notify(NET_EVENT_L4_CONNECTED, iface);
 	} else {
-		NET_DBG("Iface %p disconnected", iface);
+		NET_DBG("Iface %d (%p) disconnected",
+			net_if_get_by_iface(iface), iface);
 		net_mgmt_event_notify(NET_EVENT_L4_DISCONNECTED, iface);
 	}
 }
