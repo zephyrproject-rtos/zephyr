@@ -228,6 +228,15 @@ ALIASES += req{1}="\ref ZEPH_\1 \"ZEPH-\1\" "
 ALIASES += satisfy{1}="\xrefitem satisfy \"Satisfies requirement\" \"Requirement Implementation\" \1"
 ALIASES += verify{1}="\xrefitem verify \"Verifies requirement\" \"Requirement Verification\" \1"
 
+ALIASES += "funcprops=\par \"Function properties (list may not be complete)\""
+ALIASES += "reschedule=\htmlonly reschedule \endhtmlonly \xmlonly <verbatim>embed:rst:inline :ref:`api_term_reschedule`</verbatim> \endxmlonly"
+ALIASES += "sleep=\htmlonly sleep \endhtmlonly \xmlonly <verbatim>embed:rst:inline :ref:`api_term_sleep`</verbatim> \endxmlonly"
+ALIASES += "no_wait=\htmlonly no-wait \endhtmlonly \xmlonly <verbatim>embed:rst:inline :ref:`api_term_no-wait`</verbatim> \endxmlonly"
+ALIASES += "isr_ok=\htmlonly isr-ok \endhtmlonly \xmlonly <verbatim>embed:rst:inline :ref:`api_term_isr-ok`</verbatim> \endxmlonly"
+ALIASES += "pre_kernel_ok=\htmlonly pre-kernel-ok \endhtmlonly \xmlonly <verbatim>embed:rst:inline :ref:`api_term_pre-kernel-ok`</verbatim> \endxmlonly"
+ALIASES += "async=\htmlonly async \endhtmlonly \xmlonly <verbatim>embed:rst:inline :ref:`api_term_async`</verbatim> \endxmlonly"
+ALIASES += "supervisor=\htmlonly supervisor \endhtmlonly \xmlonly <verbatim>embed:rst:inline :ref:`api_term_supervisor`</verbatim> \endxmlonly"
+
 # Set the OPTIMIZE_OUTPUT_FOR_C tag to YES if your project consists of C sources
 # only. Doxygen will then generate output that is more tailored for C. For
 # instance, some of the names that are used will be different. The list of all
