@@ -65,6 +65,13 @@ If the original patches are substantially modified, the developer can either:
   number).
 
 .. note::
+
+  In any case commits that include content from both the original and
+  modifying author **must** include the ``Signed-off-by`` statements
+  from the original commit that provided the content as well as one from
+  the modifying author.  See :ref:`DCO`.
+
+.. note::
   Contributors should uncheck the box *“Allow Edits By Maintainers"*
   to indicate that they do not wish their patches to be amended,
   inside their original branch or pull request, by other Zephyr developers.
