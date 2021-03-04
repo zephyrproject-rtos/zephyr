@@ -31,3 +31,9 @@ tests:
     tags: shell
     harness: keyboard
     extra_args: CONF_FILE="prj_minimal_rtt.conf"
+  sample.shell.shell_module.login:
+    filter: ( CONFIG_SERIAL and CONFIG_UART_SHELL_ON_DEV_NAME )
+    tags: shell
+    harness: keyboard
+    min_ram: 40
+    extra_args: CONF_FILE="prj_login.conf"
