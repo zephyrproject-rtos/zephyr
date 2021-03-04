@@ -37,6 +37,7 @@ static void *datapath_free;
 
 static int init_reset(void);
 
+#if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
 static MFIFO_DEFINE(iso_tx, sizeof(struct lll_tx),
 		    CONFIG_BT_CTLR_ISO_TX_BUFFERS);
 
@@ -45,6 +46,7 @@ static struct {
 	uint8_t pool[CONFIG_BT_CTLR_ISO_TX_BUFFER_SIZE *
 			CONFIG_BT_CTLR_ISO_TX_BUFFERS];
 } mem_iso_tx;
+#endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
 /* must be implemented by vendor */
 __weak bool ll_data_path_configured(uint8_t data_path_dir,
@@ -280,8 +282,10 @@ int ull_iso_reset(void)
 {
 	int err;
 
+#if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
 	/* Re-initialize the Tx mfifo */
 	MFIFO_INIT(iso_tx);
+#endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
 	err = init_reset();
 	if (err) {
@@ -291,6 +295,7 @@ int ull_iso_reset(void)
 	return 0;
 }
 
+#if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
 void *ll_iso_tx_mem_acquire(void)
 {
 	return mem_acquire(&mem_iso_tx.free);
@@ -318,12 +323,15 @@ int ll_iso_tx_mem_enqueue(uint16_t handle, void *tx)
 
 	return 0;
 }
+#endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
 static int init_reset(void)
 {
+#if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
 	/* Initialize tx pool. */
 	mem_init(mem_iso_tx.pool, CONFIG_BT_CTLR_ISO_TX_BUFFER_SIZE,
 		 CONFIG_BT_CTLR_ISO_TX_BUFFERS, &mem_iso_tx.free);
+#endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
 #if defined(CONFIG_BT_CTLR_CONN_ISO_STREAMS)
 	/* Initialize ISO Datapath pool */
