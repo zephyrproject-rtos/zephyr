@@ -68,6 +68,17 @@ int npcx_host_periph_read_request(enum lpc_peripheral_opcode op,
 int npcx_host_periph_write_request(enum lpc_peripheral_opcode op,
 							const uint32_t *data);
 
+/**
+ * @brief Enable host access wake-up interrupt. Usually, it is used to wake up
+ * ec during system is in Modern standby power mode.
+ */
+void npcx_host_enable_access_interrupt(void);
+
+/**
+ * @brief Disable host access wake-up interrupt.
+ */
+void npcx_host_disable_access_interrupt(void);
+
 #ifdef __cplusplus
 }
 #endif
