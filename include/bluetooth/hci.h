@@ -1736,6 +1736,10 @@ struct bt_hci_rp_le_reject_cis {
 	uint16_t handle;
 } __packed;
 
+#define BT_HCI_LE_BIG_PHY_1M                    BIT(0)
+#define BT_HCI_LE_BIG_PHY_2M                    BIT(1)
+#define BT_HCI_LE_BIG_PHY_CODED                 BIT(2)
+
 #define BT_HCI_OP_LE_CREATE_BIG                 BT_OP(BT_OGF_LE, 0x0068)
 struct bt_hci_cp_le_create_big {
 	uint8_t  big_handle;
