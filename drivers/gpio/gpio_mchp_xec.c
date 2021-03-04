@@ -133,6 +133,13 @@ static int gpio_xec_configure(const struct device *dev,
 		mask = MCHP_GPIO_CTRL_DIR_MASK;
 		pcr1 = MCHP_GPIO_CTRL_DIR_OUTPUT;
 		*current_pcr1 = (*current_pcr1 & ~mask) | pcr1;
+	} else if ((flags & GPIO_INPUT) != 0U) {
+		/* Already configured */
+	} else {
+		/*  GPIO disconnected */
+		mask |= MCHP_GPIO_CTRL_PWRG_MASK;
+		pcr1 |= MCHP_GPIO_CTRL_PWRG_OFF;
+		*current_pcr1 = (*current_pcr1 & ~mask) | pcr1;
 	}
 
 	return 0;
