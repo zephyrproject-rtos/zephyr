@@ -22,12 +22,6 @@ config CLOCK_CONTROL_NPCX
 	help
 	  Enable support for NPCX clock controller driver.
 
-config PINMUX_NPCX
-	default y
-	depends on PINMUX
-	help
-	  Enable support for NPCX pinmux controller driver.
-
 config UART_NPCX
 	default y
 	depends on SERIAL

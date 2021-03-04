@@ -121,8 +121,8 @@
 			label = "PMC_CDCG";
 		};
 
-		scfg: pin-controller@400c3000 {
-			compatible = "nuvoton,npcx-pinctrl";
+		scfg: scfg@400c3000 {
+			compatible = "nuvoton,npcx-scfg";
 			/* First reg region is System Configuration Device */
 			/* Second reg region is System Glue Device */
 			reg = <0x400c3000 0x70

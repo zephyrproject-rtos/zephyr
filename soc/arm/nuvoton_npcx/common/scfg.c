@@ -4,9 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT nuvoton_npcx_pinctrl
-
-#include <drivers/pinmux.h>
+#include <device.h>
 #include <kernel.h>
 #include <soc.h>
 
@@ -14,7 +12,7 @@
 LOG_MODULE_REGISTER(pimux_npcx, LOG_LEVEL_ERR);
 
 /* Driver config */
-struct npcx_pinctrl_config {
+struct npcx_scfg_config {
 	/* scfg device base address */
 	uintptr_t base_scfg;
 	uintptr_t base_glue;
@@ -36,20 +34,20 @@ static const struct npcx_alt def_alts[] =
 
 static const struct npcx_lvol def_lvols[] = NPCX_DT_IO_LVOL_ITEMS_DEF_LIST;
 
-static const struct npcx_pinctrl_config npcx_pinctrl_cfg = {
-	.base_scfg = DT_INST_REG_ADDR_BY_NAME(0, scfg),
-	.base_glue = DT_INST_REG_ADDR_BY_NAME(0, glue),
+static const struct npcx_scfg_config npcx_scfg_cfg = {
+	.base_scfg = DT_REG_ADDR_BY_NAME(DT_NODELABEL(scfg), scfg),
+	.base_glue = DT_REG_ADDR_BY_NAME(DT_NODELABEL(scfg), glue),
 };
 
 /* Driver convenience defines */
-#define HAL_SFCG_INST() (struct scfg_reg *)(npcx_pinctrl_cfg.base_scfg)
+#define HAL_SFCG_INST() (struct scfg_reg *)(npcx_scfg_cfg.base_scfg)
 
-#define HAL_GLUE_INST() (struct glue_reg *)(npcx_pinctrl_cfg.base_glue)
+#define HAL_GLUE_INST() (struct glue_reg *)(npcx_scfg_cfg.base_glue)
 
 /* Pin-control local functions */
 static void npcx_pinctrl_alt_sel(const struct npcx_alt *alt, int alt_func)
 {
-	const uint32_t scfg_base = npcx_pinctrl_cfg.base_scfg;
+	const uint32_t scfg_base = npcx_scfg_cfg.base_scfg;
 	uint8_t alt_mask = BIT(alt->bit);
 
 	/*
@@ -79,7 +77,7 @@ void npcx_pinctrl_mux_configure(const struct npcx_alt *alts_list,
 
 void npcx_lvol_pads_configure(void)
 {
-	const uint32_t scfg_base = npcx_pinctrl_cfg.base_scfg;
+	const uint32_t scfg_base = npcx_scfg_cfg.base_scfg;
 
 	for (int i = 0; i < ARRAY_SIZE(def_lvols); i++) {
 		NPCX_LV_GPIO_CTL(scfg_base, def_lvols[i].ctrl)
@@ -101,7 +99,7 @@ void npcx_pinctrl_i2c_port_sel(int controller, int port)
 }
 
 /* Pin-control driver registration */
-static int npcx_pinctrl_init(const struct device *dev)
+static int npcx_scfg_init(const struct device *dev)
 {
 	struct scfg_reg *inst_scfg = HAL_SFCG_INST();
 
@@ -122,9 +120,4 @@ static int npcx_pinctrl_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_DEFINE(DT_NODELABEL(scfg),
-		    &npcx_pinctrl_init,
-		    device_pm_control_nop,
-		    NULL, &npcx_pinctrl_cfg,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    NULL);
+SYS_INIT(npcx_scfg_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
