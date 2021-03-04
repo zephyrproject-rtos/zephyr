@@ -413,6 +413,7 @@
 /include/arch/sparc/                      @martin-aberg
 /include/sys/atomic.h                     @andyross
 /include/bluetooth/                       @joerchan @jhedberg @Vudentz
+/include/bluetooth/audio/                 @joerchan @jhedberg @Vudentz @Thalley @asbjornsabo
 /include/cache.h                          @carlocaione @andyross
 /include/canbus/                          @alexanderwachter
 /include/tracing/                         @nashif
@@ -539,6 +540,7 @@
 /share/zephyr-package/                    @tejlmand
 /share/zephyrunittest-package/            @tejlmand
 /subsys/bluetooth/                        @joerchan @jhedberg @Vudentz
+/subsys/bluetooth/audio/                  @joerchan @jhedberg @Vudentz @Thalley @asbjornsabo
 /subsys/bluetooth/controller/             @carlescufi @cvinayak @thoh-ot @kruithofa
 /subsys/bluetooth/mesh/                   @jhedberg @trond-snekvik @joerchan @Vudentz
 /subsys/canbus/                           @alexanderwachter
