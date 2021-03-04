@@ -103,6 +103,8 @@ The board configuration supports the following hardware features:
 +-----------+------------+-----------------------+
 | PINCTRL   | on-chip    | pin control           |
 +-----------+------------+-----------------------+
+| SPI       | on-chip    | spi                   |
++-----------+------------+-----------------------+
 | UART      | on-chip    | serial port-polling;  |
 |           |            | serial port-interrupt |
 +-----------+------------+-----------------------+
