@@ -49,10 +49,19 @@
 			min-residency-us = <201000>;
 		};
 	};
+
+	vsby-psl-in-list {
+		psl-in-pads = <&psl_in1>; /* Use PSL_IN1 as detection pins */
+	};
 };
 
 &cpu0 {
 	cpu-power-states = <&suspend_to_idle0 &suspend_to_idle1>;
+};
+
+&psl_in1 {
+	/* A falling edge detection type for PSL_IN1 */
+	flag = <NPCX_PSL_FALLING_EDGE>;
 };
 
 /* Overwirte default device properties with overlays in board dt file here. */
