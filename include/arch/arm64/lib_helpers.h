@@ -64,6 +64,7 @@ MAKE_REG_HELPER(currentel);
 MAKE_REG_HELPER(daif)
 MAKE_REG_HELPER(hcr_el2);
 MAKE_REG_HELPER(id_aa64pfr0_el1);
+MAKE_REG_HELPER(id_aa64mmfr0_el1);
 MAKE_REG_HELPER(scr_el3);
 
 MAKE_REG_HELPER_EL123(actlr)
@@ -78,6 +79,19 @@ MAKE_REG_HELPER_EL123(spsr)
 MAKE_REG_HELPER_EL123(tcr)
 MAKE_REG_HELPER_EL123(ttbr0)
 MAKE_REG_HELPER_EL123(vbar)
+
+#if defined(CONFIG_ARM_MPU)
+/* Armv8-R aarch64 mpu registers */
+#define mpuir_el1	S3_0_c0_c0_4
+#define prselr_el1	S3_0_c6_c2_1
+#define prbar_el1	S3_0_c6_c8_0
+#define prlar_el1	S3_0_c6_c8_1
+
+MAKE_REG_HELPER(mpuir_el1);
+MAKE_REG_HELPER(prselr_el1);
+MAKE_REG_HELPER(prbar_el1);
+MAKE_REG_HELPER(prlar_el1);
+#endif
 
 static ALWAYS_INLINE void enable_debug_exceptions(void)
 {
