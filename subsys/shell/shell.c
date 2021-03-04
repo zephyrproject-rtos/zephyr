@@ -1166,6 +1166,7 @@ static int instance_init(const struct shell *shell, const void *p_config,
 
 	z_flag_tx_rdy_set(shell, true);
 	z_flag_echo_set(shell, IS_ENABLED(CONFIG_SHELL_ECHO_STATUS));
+	z_flag_obscure_set(shell, IS_ENABLED(CONFIG_SHELL_START_OBSCURED));
 	z_flag_mode_delete_set(shell,
 			     IS_ENABLED(CONFIG_SHELL_BACKSPACE_MODE_DELETE));
 	shell->ctx->vt100_ctx.cons.terminal_wid =
@@ -1557,6 +1558,28 @@ int shell_execute_cmd(const struct shell *shell, const char *cmd)
 	k_mutex_unlock(&shell->ctx->wr_mtx);
 
 	return ret_val;
+}
+
+int shell_use_colors_set(const struct shell *shell, bool use_colors)
+{
+	if (shell == NULL) {
+		return -EINVAL;
+	}
+
+	z_flag_use_colors_set(shell, use_colors);
+
+	return 0;
+}
+
+int shell_obscure_set(const struct shell *shell, bool obscure)
+{
+	if (shell == NULL) {
+		return -EINVAL;
+	}
+
+	z_flag_obscure_set(shell, obscure);
+
+	return 0;
 }
 
 static int cmd_help(const struct shell *shell, size_t argc, char **argv)

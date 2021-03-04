@@ -608,6 +608,7 @@ struct shell_flags {
 	uint32_t insert_mode :1; /*!< Controls insert mode for text introduction.*/
 	uint32_t use_colors  :1; /*!< Controls colored syntax.*/
 	uint32_t echo        :1; /*!< Controls shell echo.*/
+	uint32_t obscure     :1; /*!< If echo on, print asterisk instead */
 	uint32_t processing  :1; /*!< Shell is executing process function.*/
 	uint32_t tx_rdy      :1;
 	uint32_t mode_delete :1; /*!< Operation mode of backspace key */
@@ -1033,6 +1034,30 @@ int shell_execute_cmd(const struct shell *shell, const char *cmd);
  * @retval -EINVAL if invalid root command is provided.
  */
 int shell_set_root_cmd(const char *cmd);
+
+/**
+ * @brief Allow application to control whether terminal output uses colored
+ * syntax.
+ *
+ * @param[in] shell	Pointer to the shell instance.
+ * @param[in] use_colors	Color mode.
+ *
+ * @retval 0 if set.
+ * @retval -EINVAL if shell is NULL.
+ */
+int shell_use_colors_set(const struct shell *shell, bool use_colors);
+
+/**
+ * @brief Allow application to control whether user input is obscured with
+ * asterisks -- useful for implementing passwords.
+ *
+ * @param[in] shell	Pointer to the shell instance.
+ * @param[in] obscure	Obscure mode.
+ *
+ * @retval 0 if set.
+ * @retval -EINVAL if shell is NULL.
+ */
+int shell_obscure_set(const struct shell *shell, bool obscure);
 
 /**
  * @}

@@ -223,8 +223,16 @@ static void reprint_from_cursor(const struct shell *shell, uint16_t diff,
 		z_clear_eos(shell);
 	}
 
-	z_shell_fprintf(shell, SHELL_NORMAL, "%s",
-		      &shell->ctx->cmd_buff[shell->ctx->cmd_buff_pos]);
+	if (z_flag_obscure_get(shell)) {
+		int len = strlen(&shell->ctx->cmd_buff[shell->ctx->cmd_buff_pos]);
+
+		while (len--) {
+			z_shell_raw_fprintf(shell->fprintf_ctx, "*");
+		}
+	} else {
+		z_shell_fprintf(shell, SHELL_NORMAL, "%s",
+			      &shell->ctx->cmd_buff[shell->ctx->cmd_buff_pos]);
+	}
 	shell->ctx->cmd_buff_pos = shell->ctx->cmd_buff_len;
 
 	if (full_line_cmd(shell)) {
@@ -264,6 +272,9 @@ static void char_replace(const struct shell *shell, char data)
 
 	if (!z_flag_echo_get(shell)) {
 		return;
+	}
+	if (z_flag_obscure_get(shell)) {
+		data = '*';
 	}
 
 	z_shell_raw_fprintf(shell->fprintf_ctx, "%c", data);
