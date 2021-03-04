@@ -96,6 +96,12 @@ void sem_give_task(void *p1, void *p2, void *p3)
 	k_sem_give((struct k_sem *)p1);
 }
 
+void sem_reset_take_task(void *p1, void *p2, void *p3)
+{
+	k_sem_reset((struct k_sem *)p1);
+	zassert_false(k_sem_take((struct k_sem *)p1, K_FOREVER), NULL);
+}
+
 void isr_sem_give(const void *semaphore)
 {
 	k_sem_give((struct k_sem *)semaphore);
@@ -317,6 +323,31 @@ void test_sem_reset(void)
 
 	expect_k_sem_take_nomsg(&sema, K_FOREVER, 0);
 	expect_k_sem_count_get_nomsg(&sema, 0);
+}
+
+void test_sem_reset_waiting(void)
+{
+	int32_t ret_value;
+
+	k_sem_reset(&simple_sem);
+
+	/* create a new thread. It will reset the semaphore in 1ms
+	 * then wait for us.
+	 */
+	k_tid_t tid = k_thread_create(&sem_tid_1, stack_1, STACK_SIZE,
+			sem_reset_take_task, &simple_sem, NULL, NULL,
+			K_PRIO_PREEMPT(0), K_USER | K_INHERIT_PERMS,
+			K_MSEC(1));
+
+	/* Take semaphore and wait for the abort. */
+	ret_value = k_sem_take(&simple_sem, K_FOREVER);
+	zassert_true(ret_value == -EAGAIN, "k_sem_take not aborted: %d",
+			ret_value);
+
+	/* ensure the semaphore is still functional after. */
+	k_sem_give(&simple_sem);
+
+	k_thread_join(tid, K_FOREVER);
 }
 
 /**
@@ -1290,6 +1321,7 @@ void test_main(void)
 			 ztest_user_unit_test(test_sem_thread2thread),
 			 ztest_unit_test(test_sem_thread2isr),
 			 ztest_user_unit_test(test_sem_reset),
+			 ztest_user_unit_test(test_sem_reset_waiting),
 			 ztest_user_unit_test(test_sem_count_get),
 			 ztest_unit_test(test_sem_give_from_isr),
 			 ztest_user_unit_test(test_sem_give_from_thread),
