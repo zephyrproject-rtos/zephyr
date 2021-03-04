@@ -168,7 +168,7 @@ def wrapper_defs(func_name, func_type, args):
     if ret64:
         mrsh_args.append("(uintptr_t)&ret64")
 
-    decl_arglist = ", ".join([" ".join(argrec) for argrec in args])
+    decl_arglist = ", ".join([" ".join(argrec) for argrec in args]) or "void"
 
     wrap = "extern %s z_impl_%s(%s);\n" % (func_type, func_name, decl_arglist)
     wrap += "static inline %s %s(%s)\n" % (func_type, func_name, decl_arglist)
