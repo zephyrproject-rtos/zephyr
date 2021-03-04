@@ -962,6 +962,16 @@ void npcx_host_init_subs_host_domain(void)
 	LOG_DBG("Hos sub-modules configurations are done!");
 }
 
+void npcx_host_enable_access_interrupt(void)
+{
+	npcx_miwu_irq_enable(&host_sub_cfg.host_acc_wui);
+}
+
+void npcx_host_disable_access_interrupt(void)
+{
+	npcx_miwu_irq_disable(&host_sub_cfg.host_acc_wui);
+}
+
 int npcx_host_init_subs_core_domain(const struct device *host_bus_dev,
 							sys_slist_t *callbacks)
 {
@@ -1057,13 +1067,11 @@ int npcx_host_init_subs_core_domain(const struct device *host_bus_dev,
 	if (IS_ENABLED(CONFIG_PM)) {
 		/*
 		 * Configure the host access wake-up event triggered from a host
-		 * transaction on eSPI/LPC bus. No need for callback function.
+		 * transaction on eSPI/LPC bus. Do not enable it here. Or plenty
+		 * of interrupts will jam the system in S0.
 		 */
 		npcx_miwu_interrupt_configure(&host_sub_cfg.host_acc_wui,
 				NPCX_MIWU_MODE_EDGE, NPCX_MIWU_TRIG_HIGH);
-
-		/* Enable irq of interrupt-input module */
-		npcx_miwu_irq_enable(&host_sub_cfg.host_acc_wui);
 	}
 
 	return 0;

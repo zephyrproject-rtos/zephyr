@@ -46,8 +46,11 @@
  */
 
 #include <zephyr.h>
+#include <drivers/espi.h>
 #include <power/power.h>
 #include <soc.h>
+
+#include "soc_host.h"
 
 #include <logging/log.h>
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
@@ -94,6 +97,9 @@ static void npcx_power_enter_system_sleep(int slp_mode, int wk_mode)
 	npcx_clock_control_turn_on_system_sleep(slp_mode == NPCX_DEEP_SLEEP,
 					wk_mode == NPCX_INSTANT_WAKE_UP);
 
+	/* Turn on host access wake-up interrupt. */
+	npcx_host_enable_access_interrupt();
+
 	/*
 	 * Capture the reading of low-freq timer for compensation before ec
 	 * enters system sleep mode.
@@ -108,6 +114,9 @@ static void npcx_power_enter_system_sleep(int slp_mode, int wk_mode)
 	 * system sleep mode.
 	 */
 	npcx_clock_compensate_system_timer();
+
+	/* Turn off host access wake-up interrupt. */
+	npcx_host_disable_access_interrupt();
 
 	/* Turn off system sleep mode. */
 	npcx_clock_control_turn_off_system_sleep();
