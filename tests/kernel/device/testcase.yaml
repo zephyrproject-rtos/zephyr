@@ -4,9 +4,9 @@ common:
     - native_posix
 tests:
   kernel.device:
-    tags: device
+    tags: kernel device
   kernel.device.pm:
-    tags: device
+    tags: kernel device
     platform_exclude: mec15xxevb_assy6853
     extra_configs:
       - CONFIG_PM_DEVICE=y
