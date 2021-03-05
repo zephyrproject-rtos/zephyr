@@ -22,6 +22,7 @@
 #include <arch/x86/intel_vtd.h>
 #include <drivers/interrupt_controller/intel_vtd.h>
 #include <drivers/interrupt_controller/ioapic.h>
+#include <drivers/interrupt_controller/loapic.h>
 #include <drivers/pcie/msi.h>
 
 #include <kernel_arch_func.h>
@@ -339,15 +340,17 @@ static int vtd_ictl_remap(const struct device *dev,
 	irte.bits.vector = vector;
 
 	if (IS_ENABLED(CONFIG_X2APIC)) {
-		irte.bits.dst_id = arch_curr_cpu()->id;
+		/* Getting the logical APIC ID */
+		irte.bits.dst_id = x86_read_loapic(LOAPIC_LDR);
 	} else {
-		irte.bits.dst_id = arch_curr_cpu()->id << 8;
+		/* As for IOAPIC: let's mask all possible IDs */
+		irte.bits.dst_id = 0xFF << 8;
 	}
 
 	irte.bits.trigger_mode = (flags & IOAPIC_TRIGGER_MASK) >> 15;
 	irte.bits.delivery_mode = (flags & IOAPIC_DELIVERY_MODE_MASK) >> 8;
-	irte.bits.dst_mode = 1;
 	irte.bits.redirection_hint = 1;
+	irte.bits.dst_mode = 1; /* Always logical */
 	irte.bits.present = 1;
 
 	data->irte[irte_idx].parts.low = irte.parts.low;
