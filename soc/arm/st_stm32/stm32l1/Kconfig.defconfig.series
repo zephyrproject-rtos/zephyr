@@ -10,4 +10,16 @@ source "soc/arm/st_stm32/stm32l1/Kconfig.defconfig.stm32l1*"
 config SOC_SERIES
 	default "stm32l1"
 
+if PM
+config PM_DEVICE
+	bool
+	default y
+
+# Only can use RTC as kernel timer if has subseconds register (Cat. 2-6)
+config STM32_RTC_TIMER
+	bool
+	default y if SOC_STM32L151XBA || SOC_STM32L151XC || SOC_STM32L152XC || SOC_STM32L152XE
+
+endif # PM
+
 endif # SOC_SERIES_STM32L1X

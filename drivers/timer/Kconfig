@@ -325,6 +325,7 @@ if STM32_RTC_TIMER
 
 choice STM32_RTC_TIMER_SRC
 	prompt "RTC source configuration"
+	depends on STM32_RTC_TIMER
 
 config STM32_RTC_TIMER_LSI
 	bool "LSI"
