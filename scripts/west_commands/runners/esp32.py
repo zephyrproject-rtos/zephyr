@@ -1,4 +1,5 @@
 # Copyright (c) 2017 Linaro Limited.
+# Copyright (c) 2021 Espressif Systems (Shanghai) Co., Ltd.
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -80,7 +81,6 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
     def do_run(self, command, **kwargs):
         self.require(self.espidf)
         bin_name = path.splitext(self.elf)[0] + path.extsep + 'bin'
-        cmd_convert = [self.espidf, '--chip', 'esp32', 'elf2image', self.elf]
         cmd_flash = [self.espidf, '--chip', 'esp32', '--port', self.device,
                      '--baud', self.baud, '--before', 'default_reset',
                      '--after', 'hard_reset', 'write_flash', '-u',
@@ -90,7 +90,6 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
 
         # Execute Python interpreter if calling a Python script
         if self.espidf.lower().endswith(".py") and sys.executable:
-            cmd_convert.insert(0, sys.executable)
             cmd_flash.insert(0, sys.executable)
 
         if self.bootloader_bin:
@@ -99,9 +98,6 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
             cmd_flash.extend(['0x10000', bin_name])
         else:
             cmd_flash.extend(['0x1000', bin_name])
-
-        self.logger.info("Converting ELF to BIN")
-        self.check_call(cmd_convert)
 
         self.logger.info("Flashing ESP32 on {} ({}bps)".
                          format(self.device, self.baud))
