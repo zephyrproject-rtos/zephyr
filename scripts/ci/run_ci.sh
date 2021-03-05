@@ -108,15 +108,15 @@ function get_tests_to_run() {
 
 	if [ -s modified_boards.args ]; then
 		${twister} ${twister_options} +modified_boards.args \
-			--save-tests test_file_1.txt || exit 1
+			--save-tests test_file_boards.txt || exit 1
 	fi
 	if [ -s modified_tests.args ]; then
 		${twister} ${twister_options} +modified_tests.args \
-			--save-tests test_file_2.txt || exit 1
+			--save-tests test_file_tests.txt || exit 1
 	fi
 	if [ -s modified_archs.args ]; then
 		${twister} ${twister_options} +modified_archs.args \
-			--save-tests test_file_3.txt || exit 1
+			--save-tests test_file_archs.txt || exit 1
 	fi
 	rm -f modified_tests.args modified_boards.args modified_archs.args
 }
@@ -232,7 +232,7 @@ if [ -n "$main_ci" ]; then
 
 	# cleanup
 	rm -f test_file.txt
-	touch test_file_1.txt test_file_2.txt test_file_3.txt
+	touch test_file_boards.txt test_file_tests.txt test_file_archs.txt
 
 	# In a pull-request see if we have changed any tests or board definitions
 	if [ -n "${pull_request_nr}" -o -n "${local_run}"  ]; then
@@ -241,18 +241,19 @@ if [ -n "$main_ci" ]; then
 
 	if [ "$SC" == "full" ]; then
 		# Save list of tests to be run
-		${twister} ${twister_options} --save-tests test_file_4.txt || exit 1
+		${twister} ${twister_options} --save-tests test_file_main.txt || exit 1
 	else
 		echo "test,arch,platform,status,extra_args,handler,handler_time,ram_size,rom_size" \
-			> test_file_4.txt
+			> test_file_main.txt
 	fi
 
 	# Remove headers from all files but the first one to generate one
 	# single file with only one header row
-	tail -n +2 test_file_3.txt > test_file_3_in.txt
-	tail -n +2 test_file_2.txt > test_file_2_in.txt
-	tail -n +2 test_file_1.txt > test_file_1_in.txt
-	cat test_file_4.txt test_file_3_in.txt test_file_2_in.txt test_file_1_in.txt > test_file.txt
+	tail -n +2 test_file_archs.txt > test_file_archs_in.txt
+	tail -n +2 test_file_tests.txt > test_file_tests_in.txt
+	tail -n +2 test_file_boards.txt > test_file_boards_in.txt
+	cat test_file_main.txt test_file_archs_in.txt test_file_tests_in.txt \
+		test_file_boards_in.txt > test_file.txt
 
 	echo "+++ run twister"
 
