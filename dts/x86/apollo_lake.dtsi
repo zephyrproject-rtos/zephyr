@@ -214,7 +214,7 @@
 			label = "VTD_0";
 			reg = <0xfed65000 0x1000>;
 
-			status = "disabled";
+			status = "okay";
 		};
 
 		gpio_n_000_031: gpio@d0c50000 {
