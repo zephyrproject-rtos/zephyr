@@ -137,6 +137,12 @@ static void supported_commands(uint8_t *data, uint16_t len)
 	net_buf_simple_add_u8(buf, MESH_CFG_NODE_RESET);
 	net_buf_simple_add_u8(buf, MESH_CFG_LPN_TIMEOUT_GET);
 	net_buf_simple_add_u8(buf, MESH_CFG_MODEL_APP_BIND_VND);
+	net_buf_simple_add_u8(buf, MESH_HEALTH_FAULT_GET);
+	net_buf_simple_add_u8(buf, MESH_HEALTH_FAULT_CLEAR);
+	net_buf_simple_add_u8(buf, MESH_HEALTH_PERIOD_GET);
+	net_buf_simple_add_u8(buf, MESH_HEALTH_PERIOD_SET);
+	net_buf_simple_add_u8(buf, MESH_HEALTH_ATTENTION_GET);
+	net_buf_simple_add_u8(buf, MESH_HEALTH_ATTENTION_SET);
 
 	tester_send(BTP_SERVICE_ID_MESH, MESH_READ_SUPPORTED_COMMANDS,
 		    CONTROLLER_INDEX, buf->data, buf->len);
@@ -2047,6 +2053,225 @@ fail:
 		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
 }
 
+static void health_fault_get(uint8_t *data, uint16_t len)
+{
+	struct mesh_health_fault_get_cmd *cmd = (void *)data;
+	uint8_t test_id;
+	size_t fault_count = 16;
+	uint8_t faults[fault_count];
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_health_fault_get(cmd->address, cmd->app_idx, cmd->cid,
+				       &test_id, faults, &fault_count);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_HEALTH_FAULT_GET, CONTROLLER_INDEX,
+		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+}
+
+static void health_fault_clear(uint8_t *data, uint16_t len)
+{
+	struct mesh_health_fault_clear_cmd *cmd = (void *)data;
+	uint8_t test_id;
+	size_t fault_count = 16;
+	uint8_t faults[fault_count];
+	int err;
+
+	LOG_DBG("");
+
+	if (cmd->ack) {
+		err = bt_mesh_health_fault_clear(cmd->address, cmd->app_idx,
+						 cmd->cid, &test_id, faults,
+						 &fault_count);
+	} else {
+		err = bt_mesh_health_fault_clear(cmd->address, cmd->app_idx,
+						 cmd->cid, NULL, faults,
+						 &fault_count);
+	}
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	if (cmd->ack) {
+		tester_send(BTP_SERVICE_ID_MESH, MESH_HEALTH_FAULT_CLEAR,
+			    CONTROLLER_INDEX, &test_id, sizeof(test_id));
+		return;
+	}
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_HEALTH_FAULT_CLEAR,
+		   CONTROLLER_INDEX,
+		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+}
+
+static void health_fault_test(uint8_t *data, uint16_t len)
+{
+	struct mesh_health_fault_test_cmd *cmd = (void *)data;
+	struct net_buf_simple *buf = NET_BUF_SIMPLE(6);
+	size_t fault_count = 16;
+	uint8_t faults[fault_count];
+	uint8_t test_id;
+	uint16_t cid;
+	int err;
+
+	LOG_DBG("");
+
+	test_id = cmd->test_id;
+	cid = cmd->cid;
+
+	if (cmd->ack) {
+		err = bt_mesh_health_fault_test(cmd->address, cmd->app_idx,
+						cid, test_id, faults,
+						&fault_count);
+	} else {
+		err = bt_mesh_health_fault_test(cmd->address, cmd->app_idx,
+						cid, test_id, NULL,
+						&fault_count);
+	}
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	if (cmd->ack) {
+		net_buf_simple_init(buf, 0);
+		net_buf_simple_add_u8(buf, test_id);
+		net_buf_simple_add_le16(buf, cid);
+		net_buf_simple_add_mem(buf, faults, fault_count);
+
+		tester_send(BTP_SERVICE_ID_MESH, MESH_HEALTH_FAULT_TEST,
+			    CONTROLLER_INDEX, buf->data, buf->len);
+		return;
+	}
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_HEALTH_FAULT_TEST,
+		   CONTROLLER_INDEX,
+		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+}
+
+static void health_period_get(uint8_t *data, uint16_t len)
+{
+	struct mesh_health_period_get_cmd *cmd = (void *)data;
+	uint8_t divisor;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_health_period_get(cmd->address, cmd->app_idx, &divisor);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_HEALTH_PERIOD_GET,
+		   CONTROLLER_INDEX,
+		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+}
+
+static void health_period_set(uint8_t *data, uint16_t len)
+{
+	struct mesh_health_period_set_cmd *cmd = (void *)data;
+	uint8_t updated_divisor;
+	int err;
+
+	LOG_DBG("");
+
+	if (cmd->ack) {
+		err = bt_mesh_health_period_set(cmd->address, cmd->app_idx,
+						cmd->divisor, &updated_divisor);
+	} else {
+		err = bt_mesh_health_period_set(cmd->address, cmd->app_idx,
+						cmd->divisor, NULL);
+	}
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	if (cmd->ack) {
+		tester_send(BTP_SERVICE_ID_MESH, MESH_HEALTH_PERIOD_SET,
+			    CONTROLLER_INDEX, &updated_divisor,
+			    sizeof(updated_divisor));
+		return;
+	}
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_HEALTH_PERIOD_SET,
+		   CONTROLLER_INDEX,
+		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+}
+
+static void health_attention_get(uint8_t *data, uint16_t len)
+{
+	struct mesh_health_attention_get_cmd *cmd = (void *)data;
+	uint8_t attention;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_health_attention_get(cmd->address, cmd->app_idx,
+					   &attention);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_HEALTH_ATTENTION_GET,
+		   CONTROLLER_INDEX,
+		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+}
+
+static void health_attention_set(uint8_t *data, uint16_t len)
+{
+	struct mesh_health_attention_set_cmd *cmd = (void *)data;
+	uint8_t updated_attention;
+	int err;
+
+	LOG_DBG("");
+
+	if (cmd->ack) {
+		err = bt_mesh_health_attention_set(cmd->address, cmd->app_idx,
+						   cmd->attention,
+						   &updated_attention);
+	} else {
+		err = bt_mesh_health_attention_set(cmd->address, cmd->app_idx,
+						   cmd->attention, NULL);
+	}
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	if (cmd->ack) {
+		tester_send(BTP_SERVICE_ID_MESH, MESH_HEALTH_ATTENTION_SET,
+			    CONTROLLER_INDEX, &updated_attention,
+			    sizeof(updated_attention));
+		return;
+	}
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_HEALTH_ATTENTION_SET,
+		   CONTROLLER_INDEX,
+		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+}
+
 void tester_handle_mesh(uint8_t opcode, uint8_t index, uint8_t *data, uint16_t len)
 {
 	switch (opcode) {
@@ -2232,6 +2457,27 @@ void tester_handle_mesh(uint8_t opcode, uint8_t index, uint8_t *data, uint16_t l
 		break;
 	case MESH_CFG_MODEL_APP_BIND_VND:
 		config_model_app_bind_vnd(data, len);
+		break;
+	case MESH_HEALTH_FAULT_GET:
+		health_fault_get(data, len);
+		break;
+	case MESH_HEALTH_FAULT_CLEAR:
+		health_fault_clear(data, len);
+		break;
+	case MESH_HEALTH_FAULT_TEST:
+		health_fault_test(data, len);
+		break;
+	case MESH_HEALTH_PERIOD_GET:
+		health_period_get(data, len);
+		break;
+	case MESH_HEALTH_PERIOD_SET:
+		health_period_set(data, len);
+		break;
+	case MESH_HEALTH_ATTENTION_GET:
+		health_attention_get(data, len);
+		break;
+	case MESH_HEALTH_ATTENTION_SET:
+		health_attention_set(data, len);
 		break;
 #if defined(CONFIG_BT_TESTING)
 	case MESH_LPN_SUBSCRIBE:
