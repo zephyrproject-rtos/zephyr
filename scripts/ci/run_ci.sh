@@ -92,21 +92,29 @@ function build_test_file() {
 	rm -f test_file_boards.txt test_file_tests.txt test_file_archs.txt test_file_full.txt
 	touch test_file_boards.txt test_file_tests.txt test_file_archs.txt test_file_full.txt
 
+	twister_exclude_tag_opt=""
+	if [ -s modified_tags.args ]; then
+		twister_exclude_tag_opt="+modified_tags.args"
+	fi
+
 	# In a pull-request see if we have changed any tests or board definitions
 	if [ -n "${pull_request_nr}" -o -n "${local_run}"  ]; then
 		./scripts/zephyr_module.py --twister-out module_tests.args
 		./scripts/ci/get_twister_opt.py --commits ${commit_range}
 
 		if [ -s modified_boards.args ]; then
-			${twister} ${twister_options} +modified_boards.args \
+			${twister} ${twister_options} ${twister_exclude_tag_opt} \
+				+modified_boards.args \
 				--save-tests test_file_boards.txt || exit 1
 		fi
 		if [ -s modified_tests.args ]; then
-			${twister} ${twister_options} +modified_tests.args \
+			${twister} ${twister_options} ${twister_exclude_tag_opt} \
+				+modified_tests.args \
 				--save-tests test_file_tests.txt || exit 1
 		fi
 		if [ -s modified_archs.args ]; then
-			${twister} ${twister_options} +modified_archs.args \
+			${twister} ${twister_options} ${twister_exclude_tag_opt} \
+				+modified_archs.args \
 				--save-tests test_file_archs.txt || exit 1
 		fi
 		rm -f modified_tests.args modified_boards.args modified_archs.args
@@ -114,7 +122,8 @@ function build_test_file() {
 
 	if [ "$SC" == "full" ]; then
 		# Save list of tests to be run
-		${twister} ${twister_options} --save-tests test_file_full.txt || exit 1
+		${twister} ${twister_options} ${twister_exclude_tag_opt} \
+			--save-tests test_file_full.txt || exit 1
 	fi
 
 	# Remove headers from all files.  We insert it into test_file.txt explicitly
