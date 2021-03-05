@@ -484,6 +484,7 @@ static int health_cli_init(struct bt_mesh_model *model)
 
 	cli = model->user_data;
 	cli->model = model;
+	msg_timeout = 2 * MSEC_PER_SEC;
 
 	/* Set the default health client pointer */
 	if (!health_cli) {
