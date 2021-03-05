@@ -255,7 +255,8 @@ void test_timer_period_0(void)
 			      - BUSY_SLEW_THRESHOLD_TICKS(DURATION
 							  * USEC_PER_MSEC)),
 		      K_NO_WAIT);
-	busy_wait_ms(DURATION + 1);
+	/* Need to wait at least 2 durations to ensure one-shot behavior. */
+	busy_wait_ms(2 * DURATION + 1);
 
 	/** TESTPOINT: ensure it is one-short timer */
 	TIMER_ASSERT((tdata.expire_cnt == 1)
