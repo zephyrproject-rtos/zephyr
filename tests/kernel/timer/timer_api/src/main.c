@@ -235,7 +235,7 @@ void test_timer_restart(void)
  * @brief Test Timer with zero period value
  *
  * Validates initial timer duration, keeping timer period to zero.
- * Basically, acting as one-short timer.
+ * Basically, acting as one-shot timer.
  * It initializes the timer with k_timer_init(), then starts the timer
  * using k_timer_start() with specific initial duration and period as
  * zero. Stops the timer using k_timer_stop() and checks for proper
@@ -258,7 +258,7 @@ void test_timer_period_0(void)
 	/* Need to wait at least 2 durations to ensure one-shot behavior. */
 	busy_wait_ms(2 * DURATION + 1);
 
-	/** TESTPOINT: ensure it is one-short timer */
+	/** TESTPOINT: ensure it is one-shot timer */
 	TIMER_ASSERT((tdata.expire_cnt == 1)
 		     || (INEXACT_MS_CONVERT
 			 && (tdata.expire_cnt == 0)), &period0_timer);
