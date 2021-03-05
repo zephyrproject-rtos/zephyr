@@ -33,8 +33,6 @@ config SPI_NRFX
 	default y
 config NRFX_SPIM
 	default y
-config SPI_2
-	default y
 config SPI_2_NRF_SPIM
 	default y
 endif #SPI

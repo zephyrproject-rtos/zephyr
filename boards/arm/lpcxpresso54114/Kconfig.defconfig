@@ -19,8 +19,4 @@ config GPIO_MCUX_LPC_PORT1
 
 endif # GPIO_MCUX_LPC
 
-config SPI_5
-	default y
-	depends on SPI
-
 endif # BOARD_LPCXPRESSO54114_M4 || BOARD_LPCXPRESSO54114_M0

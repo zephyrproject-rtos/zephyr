@@ -24,10 +24,6 @@ config MCG_VDIV0
 config MCG_FCRDIV
 	default 2
 
-config SPI_1
-	default y
-	depends on SPI
-
 config MCR20A_IS_PART_OF_KW2XD_SIP
 	default y
 	depends on IEEE802154_MCR20A

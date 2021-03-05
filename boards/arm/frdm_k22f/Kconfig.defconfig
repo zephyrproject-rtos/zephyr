@@ -20,8 +20,4 @@ config MCG_VDIV0
 config MCG_FCRDIV
 	default 0
 
-config SPI_0
-	default y
-	depends on SPI
-
 endif # BOARD_FRDM_K22F

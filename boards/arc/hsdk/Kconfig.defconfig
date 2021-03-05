@@ -33,15 +33,6 @@ config SPI_DW_ARC_AUX_REGS
 config SPI_DW_ACCESS_WORD_ONLY
 	default y
 
-config SPI_0
-	default y
-
-config SPI_1
-	default y
-
-config SPI_2
-	default y
-
 endif # SPI_DW
 
 endif # SPI

@@ -153,9 +153,6 @@ if SPI
 config SPI_DW
 	default y
 
-config SPI_0
-	default y
-
 endif
 
 config PINMUX_INTEL_S1000

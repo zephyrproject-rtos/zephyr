@@ -27,17 +27,4 @@ config BATTERY_SENSE
 
 endif # ADC
 
-if SPI
-
-config SPI_0
-	default y
-
-config SPI_1
-	default n
-
-config SPI_2
-	default n
-
-endif # SPI
-
 endif # BOARD_HEXIWEAR_K64
