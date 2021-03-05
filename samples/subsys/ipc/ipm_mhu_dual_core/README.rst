@@ -18,27 +18,6 @@ steps are:
 Building and Running
 ********************
 
-On Musca A1
------------
-
-This project outputs 'IPM MHU sample on musca_a' to the console.
-It can be built and executed on Musca A1 CPU 0 as follows:
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/subsys/ipc/ipm_mhu_dual_core
-   :board: v2m_musca
-   :goals: run
-   :compact:
-
-This project outputs 'IPM MHU sample on v2m_musca_nonsecure' to the console.
-It can be built and executed on Musca A1 CPU 1 as follows:
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/subsys/ipc/ipm_mhu_dual_core
-   :board: v2m_musca_nonsecure
-   :goals: run
-   :compact:
-
 On Musca B1
 -----------
 
