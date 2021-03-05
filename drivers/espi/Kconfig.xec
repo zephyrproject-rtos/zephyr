@@ -37,6 +37,23 @@ config ESPI_PERIPHERAL_UART_SOC_MAPPING
 	  This tells the driver to which SoC UART to direct the UART traffic
 	  send over eSPI from host.
 
+config ESPI_OOB_BUFFER_SIZE
+	int "eSPI OOB channel buffer size in bytes"
+	default 128
+	depends on ESPI_OOB_CHANNEL
+	help
+	  Use minimum RAM buffer size by default but allow applications to
+	  override the value.
+	  Maximum OOB payload is 73 bytes.
+
+config ESPI_FLASH_BUFFER_SIZE
+	int "eSPI Flash channel buffer size in bytes"
+	default 256
+	depends on ESPI_FLASH_CHANNEL
+	help
+	  Use maximum RAM buffer size defined by spec but allow applications
+	  to override if eSPI host doesn't support it.
+
 config ESPI_SAF
 	bool "XEC Microchip ESPI SAF driver"
 	depends on ESPI_FLASH_CHANNEL
