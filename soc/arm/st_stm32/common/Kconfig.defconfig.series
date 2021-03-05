@@ -17,6 +17,13 @@ config SYS_CLOCK_TICKS_PER_SEC
 	default 4096 if STM32_LPTIM_TIMER && STM32_LPTIM_CLOCK_LSE
 	default 4000 if STM32_LPTIM_TIMER && STM32_LPTIM_CLOCK_LSI
 
+# Disable null pointer exception detection by default as long as debug
+# mode is left active by west runners (openocd mainly)
+# cf https://github.com/zephyrproject-rtos/zephyr/issues/32984
+choice CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_DETECTION
+	default CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_DETECTION_NONE
+endchoice
+
 config CLOCK_CONTROL_STM32_CUBE
 	default y
 	depends on CLOCK_CONTROL
