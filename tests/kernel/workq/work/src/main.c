@@ -160,7 +160,7 @@ static inline void async_release(void)
 
 static void rel_handler(struct k_work *work)
 {
-	k_sem_take(&rel_sem, K_FOREVER);
+	(void)k_sem_take(&rel_sem, K_FOREVER);
 	counter_handler(work);
 }
 
@@ -360,7 +360,8 @@ static void test_1cpu_sync_queue(void)
 	zassert_equal(coophi_counter(), 0, NULL);
 
 	/* Wait for then verify finish */
-	k_sem_take(&sync_sem, K_FOREVER);
+	rc = k_sem_take(&sync_sem, K_FOREVER);
+	zassert_equal(rc, 0, NULL);
 	zassert_equal(coophi_counter(), 1, NULL);
 }
 
@@ -391,14 +392,16 @@ static void test_1cpu_reentrant_queue(void)
 
 	/* Release the first submission. */
 	handler_release();
-	k_sem_take(&sync_sem, K_FOREVER);
+	rc = k_sem_take(&sync_sem, K_FOREVER);
+	zassert_equal(rc, 0, NULL);
 	zassert_equal(coophi_counter(), 1, NULL);
 
 	/* Confirm the second submission was redirected to the running
 	 * queue to avoid re-entrancy problems.
 	 */
 	handler_release();
-	k_sem_take(&sync_sem, K_FOREVER);
+	rc = k_sem_take(&sync_sem, K_FOREVER);
+	zassert_equal(rc, 0, NULL);
 	zassert_equal(coophi_counter(), 2, NULL);
 }
 
