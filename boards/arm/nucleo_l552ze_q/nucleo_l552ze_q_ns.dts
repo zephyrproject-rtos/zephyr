@@ -31,3 +31,7 @@
 	current-speed = <115200>;
 	status = "okay";
 };
+
+&lptim1 {
+	status = "okay";
+};
