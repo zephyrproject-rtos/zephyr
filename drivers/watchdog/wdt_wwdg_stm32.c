@@ -33,6 +33,16 @@ LOG_MODULE_REGISTER(wdt_wwdg_stm32);
 #error "WWDG CFR WDGTB position not defined for soc"
 #endif
 
+/*
+ * additinally to the internal divider, the clock is divided by a
+ * programmable prescaler.
+ */
+#if defined(LL_WWDG_PRESCALER_128)
+#define WWDG_PRESCALER_EXPONENT_MAX 7 /* 2^7 = 128 */
+#elif defined(LL_WWDG_PRESCALER_8)
+#define WWDG_PRESCALER_EXPONENT_MAX 3 /* 2^3 = 8 */
+#endif
+
 /* The timeout of the WWDG in milliseconds is calculated by the below formula:
  *
  * t_WWDG = 1000 * ((counter & 0x3F) + 1) / f_WWDG (ms)
@@ -49,7 +59,8 @@ LOG_MODULE_REGISTER(wdt_wwdg_stm32);
  *    where:
  *     - f_PCLK: the clock frequency of the system
  *     - 4096: the constant internal divider
- *     - prescaler: the programmable divider with valid values of 1, 2, 4 or 8
+ *     - prescaler: the programmable divider with valid values of 1, 2, 4 or 8,
+ *                  and for some series additionally 16, 32, 64 and 128
  *
  * The minimum timeout is calculated with:
  *  - counter = 0x40
@@ -128,8 +139,10 @@ static void wwdg_stm32_convert_timeout(const struct device *dev,
 	*prescaler_exp = 0U;
 	*counter = 0;
 
-	for (*prescaler_exp = 0; *prescaler_exp <= 3; (*prescaler_exp)++) {
-		wwdg_freq = ((float)clock_freq) / WWDG_INTERNAL_DIVIDER / (1 << *prescaler_exp);
+	for (*prescaler_exp = 0; *prescaler_exp <= WWDG_PRESCALER_EXPONENT_MAX;
+	     (*prescaler_exp)++) {
+		wwdg_freq = ((float)clock_freq) / WWDG_INTERNAL_DIVIDER
+			     / (1 << *prescaler_exp);
 		/* +1 to ceil the result, which may lose from truncation */
 		*counter = (uint32_t)(timeout_s * wwdg_freq + 1) - 1;
 		*counter += WWDG_RESET_LIMIT;
