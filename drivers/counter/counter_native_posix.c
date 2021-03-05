@@ -154,6 +154,6 @@ static const struct counter_config_info ctr_config = {
 	.flags = DRIVER_CONFIG_INFO_FLAGS
 };
 
-DEVICE_DT_DEFINE(DT_NODELABEL(DT_COUNTER_LABEL), device_pm_control_nop,
-		    &ctr_init, NULL, &ctr_config, PRE_KERNEL_1,
+DEVICE_DT_DEFINE(DT_NODELABEL(DT_COUNTER_LABEL), ctr_init,
+		    device_pm_control_nop, NULL, &ctr_config, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &ctr_api);
