@@ -118,6 +118,7 @@ static inline int sys_mutex_lock(struct sys_mutex *mutex, k_timeout_t timeout)
  * thread.
  *
  * @param mutex Address of the mutex, which may reside in user memory
+ * @retval 0 Mutex unlocked
  * @retval -EACCES Caller has no access to provided mutex address
  * @retval -EINVAL Provided mutex not recognized by the kernel or mutex wasn't
  *                 locked
