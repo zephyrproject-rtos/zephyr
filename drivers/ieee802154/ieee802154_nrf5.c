@@ -199,9 +199,7 @@ drop:
 		nrf_802154_buffer_free_raw(rx_frame->psdu);
 		rx_frame->psdu = NULL;
 
-		if (pkt) {
-			net_pkt_unref(pkt);
-		}
+		net_pkt_unref(pkt);
 	}
 }
 
