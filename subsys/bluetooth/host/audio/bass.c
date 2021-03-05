@@ -167,7 +167,7 @@ static struct bass_recv_state_internal_t *bass_lookup_work(struct k_work *work)
 
 
 	for (int i = 0; i < ARRAY_SIZE(bass_inst.recv_states); i++) {
-		if (&bass_inst.recv_states[i].past_timer.work == work) {
+		if (&bass_inst.recv_states[i].past_timer.work.work == work) {
 			return &bass_inst.recv_states[i];
 		}
 	}
@@ -272,6 +272,101 @@ static void past_timer_handler(struct k_work *work)
 
 #endif /* CONFIG_BT_BASS_AUTO_SYNC */
 
+static void bass_pa_sync_past(struct bt_conn *conn, struct bass_recv_state_internal_t *state)
+{
+	struct bass_recv_state_t *recv_state = &state->state;
+#if defined(CONFIG_BT_BASS_AUTO_SYNC)
+	int err;
+	struct bt_le_per_adv_sync_transfer_param param = { 0 };
+
+	param.skip = PA_SYNC_SKIP;
+	param.timeout = PA_SYNC_TIMEOUT;
+
+	err = bt_le_per_adv_sync_transfer_subscribe(conn, &param);
+	if (err) {
+		recv_state->pa_sync_state = BASS_PA_STATE_FAILED;
+	} else {
+		recv_state->pa_sync_state = BASS_PA_STATE_INFO_REQ;
+	}
+
+	(void)k_delayed_work_submit(&state->past_timer, PAST_TIMEOUT);
+#else
+	if (bass_cbs && bass_cbs->past_req) {
+		bass_cbs->past_req(conn, recv_state->src_id, state->requested_bis_sync,
+				   &recv_state->addr, recv_state->metadata_len,
+				   recv_state->metadata);
+	} else {
+		BT_WARN("PAST not possible");
+		recv_state->pa_sync_state = BASS_PA_STATE_FAILED;
+	}
+#endif /* CONFIG_BT_BASS_AUTO_SYNC */
+}
+
+static void bass_pa_sync_no_past(struct bass_recv_state_internal_t *state)
+{
+	struct bass_recv_state_t *recv_state = &state->state;
+#if defined(CONFIG_BT_BASS_AUTO_SYNC)
+	int err;
+	struct bt_le_per_adv_sync_param param = { 0 };
+
+	if (state->pa_sync_pending) {
+		return;
+	}
+
+	bt_addr_le_copy(&param.addr, &recv_state->addr);
+	param.sid = recv_state->adv_sid;
+	param.skip = PA_SYNC_SKIP;
+	param.timeout = PA_SYNC_TIMEOUT;
+	err = bt_le_per_adv_sync_create(&param, &state->pa_sync);
+	if (err) {
+		BT_WARN("Could not sync per adv: %d", err);
+		recv_state->pa_sync_state = BASS_PA_STATE_FAILED;
+	} else {
+		BT_DBG("PA sync pending");
+		state->pa_sync_pending = true;
+	}
+#else
+	if (bass_cbs && bass_cbs->pa_sync_req) {
+		bass_cbs->pa_sync_req(recv_state->src_id, state->requested_bis_sync,
+				      &recv_state->addr, recv_state->adv_sid,
+				      recv_state->metadata_len, recv_state->metadata);
+	} else {
+		BT_WARN("PA sync not possible");
+		recv_state->pa_sync_state = BASS_PA_STATE_FAILED;
+	}
+#endif /* defined(CONFIG_BT_BASS_AUTO_SYNC) */
+}
+
+static void bass_pa_sync_cancel(struct bass_recv_state_internal_t *state)
+{
+	struct bass_recv_state_t *recv_state = &state->state;
+#if defined(CONFIG_BT_BASS_AUTO_SYNC)
+	int err;
+
+	(void)k_delayed_work_cancel(&state->past_timer);
+
+	if (!state->pa_sync) {
+		return;
+	}
+
+	err = bt_le_per_adv_sync_delete(state->pa_sync);
+	if (err) {
+		BT_WARN("Could not delete per adv sync: %d", err);
+	} else {
+		state->pa_sync = NULL;
+		state->pa_sync_pending = true;
+		recv_state->pa_sync_state = BASS_PA_STATE_NOT_SYNCED;
+	}
+#else
+	if (recv_state->pa_sync_state == BASS_PA_STATE_SYNCED &&
+		bass_cbs && bass_cbs->pa_sync_term_req) {
+		bass_cbs->pa_sync_term_req(recv_state->src_id);
+	} else {
+		BT_WARN("PA sync terminate not possible");
+	}
+#endif /* defined(CONFIG_BT_BASS_AUTO_SYNC) */
+}
+
 static void bass_pa_sync(struct bt_conn *conn,
 			 struct bass_recv_state_internal_t *state, bool sync_pa)
 {
@@ -285,102 +380,12 @@ static void bass_pa_sync(struct bt_conn *conn,
 		if (conn &&
 		    BT_FEAT_LE_PAST_SEND(conn->le.features) &&
 		    BT_FEAT_LE_PAST_RECV(bt_dev.le.features)) {
-#if defined(CONFIG_BT_BASS_AUTO_SYNC)
-			int err;
-			struct bt_le_per_adv_sync_transfer_param param = { 0 };
-
-			param.skip = PA_SYNC_SKIP;
-			param.timeout = PA_SYNC_TIMEOUT;
-
-			err = bt_le_per_adv_sync_transfer_subscribe(conn,
-								    &param);
-			if (err) {
-				recv_state->pa_sync_state =
-					BASS_PA_STATE_FAILED;
-			} else {
-				recv_state->pa_sync_state =
-					BASS_PA_STATE_INFO_REQ;
-			}
-
-			(void)k_delayed_work_submit(&state->past_timer,
-						    PAST_TIMEOUT);
-#else
-			if (bass_cbs && bass_cbs->pa_sync_req) {
-				bass_cbs->past_req(conn, recv_state->src_id,
-						   state->requested_bis_sync,
-						   &recv_state->addr,
-						   recv_state->metadata_len,
-						   recv_state->metadata);
-			} else {
-				BT_WARN("PAST not possible");
-				recv_state->pa_sync_state =
-					BASS_PA_STATE_FAILED;
-			}
-#endif /* CONFIG_BT_BASS_AUTO_SYNC */
+			bass_pa_sync_past(conn, state);
 		} else {
-#if defined(CONFIG_BT_BASS_AUTO_SYNC)
-			int err;
-			struct bt_le_per_adv_sync_param param = { 0 };
-
-			if (state->pa_sync_pending) {
-				return;
-			}
-
-			bt_addr_le_copy(&param.addr, &recv_state->addr);
-			param.sid = recv_state->adv_sid;
-			param.skip = PA_SYNC_SKIP;
-			param.timeout = PA_SYNC_TIMEOUT;
-			err = bt_le_per_adv_sync_create(&param,
-							&state->pa_sync);
-			if (err) {
-				BT_WARN("Could not sync per adv: %d", err);
-				recv_state->pa_sync_state =
-					BASS_PA_STATE_FAILED;
-			} else {
-				BT_DBG("PA sync pending");
-				state->pa_sync_pending = true;
-			}
-#else
-			if (bass_cbs && bass_cbs->pa_sync_req) {
-				bass_cbs->pa_sync_req(recv_state->src_id,
-						      state->requested_bis_sync,
-						      &recv_state->addr,
-						      recv_state->adv_sid,
-						      recv_state->metadata_len,
-						      recv_state->metadata);
-			} else {
-				BT_WARN("PA sync not possible");
-				recv_state->pa_sync_state =
-					BASS_PA_STATE_FAILED;
-			}
-#endif /* defined(CONFIG_BT_BASS_AUTO_SYNC) */
+			bass_pa_sync_no_past(state);
 		}
 	} else {
-#if defined(CONFIG_BT_BASS_AUTO_SYNC)
-		int err;
-
-		(void)k_delayed_work_cancel(&state->past_timer);
-
-		if (!state->pa_sync) {
-			return;
-		}
-
-		err = bt_le_per_adv_sync_delete(state->pa_sync);
-		if (err) {
-			BT_WARN("Could not delete per adv sync: %d", err);
-		} else {
-			state->pa_sync = NULL;
-			state->pa_sync_pending = true;
-			recv_state->pa_sync_state = BASS_PA_STATE_NOT_SYNCED;
-		}
-#else
-		if (recv_state->pa_sync_state == BASS_PA_STATE_SYNCED &&
-		    bass_cbs && bass_cbs->pa_sync_term_req) {
-			bass_cbs->pa_sync_term_req(recv_state->src_id);
-		} else {
-			BT_WARN("PA sync terminate not possible");
-		}
-#endif /* defined(CONFIG_BT_BASS_AUTO_SYNC) */
+		bass_pa_sync_cancel(state);
 	}
 }
 
