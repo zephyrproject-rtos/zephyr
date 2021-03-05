@@ -12,6 +12,13 @@ config BUILD_OUTPUT_STRIPPED
 config MP_NUM_CPUS
 	default 2
 
+if PCIE_MSI_MULTI_VECTOR
+
+config INTEL_VTD_ICTL
+	default y
+
+endif # PCIE_MSI_MULTI_VECTOR
+
 endif # BOARD_EHL_CRB
 
 if BOARD_EHL_CRB_SBL
