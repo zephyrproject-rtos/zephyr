@@ -51,7 +51,12 @@ void *malloc(size_t size)
 		errno = ENOMEM;
 	}
 
-	sys_mutex_unlock(&z_malloc_heap_mutex);
+	int unlock_ret = sys_mutex_unlock(&z_malloc_heap_mutex);
+
+	CHECKIF(unlock_ret != 0) {
+		return NULL;
+	}
+
 	return ret;
 }
 
@@ -74,22 +79,31 @@ void *realloc(void *ptr, size_t requested_size)
 	}
 
 	void *ret = sys_heap_aligned_realloc(&z_malloc_heap, ptr,
-					     __alignof__(z_max_align_t),
-					     requested_size);
+						 __alignof__(z_max_align_t),
+						 requested_size);
 
 	if (ret == NULL && requested_size != 0) {
 		errno = ENOMEM;
 	}
 
-	sys_mutex_unlock(&z_malloc_heap_mutex);
+	int unlock_ret = sys_mutex_unlock(&z_malloc_heap_mutex);
+
+	CHECKIF(unlock_ret != 0) {
+		return NULL;
+	}
 	return ret;
 }
 
 void free(void *ptr)
 {
-	sys_mutex_lock(&z_malloc_heap_mutex, K_FOREVER);
+	int lock_ret = sys_mutex_lock(&z_malloc_heap_mutex, K_FOREVER);
+
+	CHECKIF(lock_ret != 0) {
+		return;
+	}
+
 	sys_heap_free(&z_malloc_heap, ptr);
-	sys_mutex_unlock(&z_malloc_heap_mutex);
+	(void) sys_mutex_unlock(&z_malloc_heap_mutex);
 }
 
 SYS_INIT(malloc_prepare, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
