@@ -1185,6 +1185,58 @@ struct mesh_cfg_model_app_bind_vnd_cmd {
 	uint16_t cid;
 } __packed;
 
+#define MESH_HEALTH_FAULT_GET		0x43
+struct mesh_health_fault_get_cmd {
+	uint16_t address;
+	uint16_t app_idx;
+	uint16_t cid;
+} __packed;
+
+#define MESH_HEALTH_FAULT_CLEAR		0x44
+struct mesh_health_fault_clear_cmd {
+	uint16_t address;
+	uint16_t app_idx;
+	uint16_t cid;
+	uint8_t ack;
+} __packed;
+
+#define MESH_HEALTH_FAULT_TEST		0x45
+struct mesh_health_fault_test_cmd {
+	uint16_t address;
+	uint16_t app_idx;
+	uint16_t cid;
+	uint8_t test_id;
+	uint8_t ack;
+} __packed;
+
+#define MESH_HEALTH_PERIOD_GET		0x46
+struct mesh_health_period_get_cmd {
+	uint16_t address;
+	uint16_t app_idx;
+} __packed;
+
+#define MESH_HEALTH_PERIOD_SET		0x47
+struct mesh_health_period_set_cmd {
+	uint16_t address;
+	uint16_t app_idx;
+	uint8_t divisor;
+	uint8_t ack;
+} __packed;
+
+#define MESH_HEALTH_ATTENTION_GET		0x48
+struct mesh_health_attention_get_cmd {
+	uint16_t address;
+	uint16_t app_idx;
+} __packed;
+
+#define MESH_HEALTH_ATTENTION_SET		0x49
+struct mesh_health_attention_set_cmd {
+	uint16_t address;
+	uint16_t app_idx;
+	uint8_t attention;
+	uint8_t ack;
+} __packed;
+
 /* events */
 #define MESH_EV_OUT_NUMBER_ACTION	0x80
 struct mesh_out_number_action_ev {
