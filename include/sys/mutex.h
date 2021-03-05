@@ -156,16 +156,7 @@ static inline int sys_mutex_lock(struct sys_mutex *mutex, k_timeout_t timeout)
 
 static inline int sys_mutex_unlock(struct sys_mutex *mutex)
 {
-	if (mutex->kernel_mutex.lock_count == 0) {
-		return -EINVAL;
-	}
-
-	if (mutex->kernel_mutex.owner != _current) {
-		return -EPERM;
-	}
-
-	k_mutex_unlock(&mutex->kernel_mutex);
-	return 0;
+	return k_mutex_unlock(&mutex->kernel_mutex);
 }
 
 #endif /* CONFIG_USERSPACE */
