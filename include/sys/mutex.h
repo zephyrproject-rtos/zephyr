@@ -98,7 +98,7 @@ __syscall int z_sys_mutex_kernel_unlock(struct sys_mutex *mutex);
  * @retval 0 Mutex locked.
  * @retval -EBUSY Returned without waiting.
  * @retval -EAGAIN Waiting period timed out.
- * @retval -EACCESS Caller has no access to provided mutex address
+ * @retval -EACCES Caller has no access to provided mutex address
  * @retval -EINVAL Provided mutex not recognized by the kernel
  */
 static inline int sys_mutex_lock(struct sys_mutex *mutex, k_timeout_t timeout)
@@ -118,7 +118,7 @@ static inline int sys_mutex_lock(struct sys_mutex *mutex, k_timeout_t timeout)
  * thread.
  *
  * @param mutex Address of the mutex, which may reside in user memory
- * @retval -EACCESS Caller has no access to provided mutex address
+ * @retval -EACCES Caller has no access to provided mutex address
  * @retval -EINVAL Provided mutex not recognized by the kernel or mutex wasn't
  *                 locked
  * @retval -EPERM Caller does not own the mutex
