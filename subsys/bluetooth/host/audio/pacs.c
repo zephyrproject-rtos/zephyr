@@ -144,7 +144,7 @@ static ssize_t supported_context_read(struct bt_conn *conn,
 
 #if defined(CONFIG_BT_PAC_SNK)
 static sys_slist_t snks;
-static struct k_delayed_work snks_work;
+static struct k_work_delayable snks_work;
 static uint32_t snk_loc = CONFIG_BT_PAC_SNK_LOC;
 
 static ssize_t snk_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
@@ -197,7 +197,7 @@ static void snk_loc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 
 #if defined(CONFIG_BT_PAC_SRC)
 static sys_slist_t srcs;
-static struct k_delayed_work srcs_work;
+static struct k_work_delayable srcs_work;
 static uint32_t src_loc = CONFIG_BT_PAC_SRC_LOC;
 
 static ssize_t src_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
@@ -299,7 +299,7 @@ BT_GATT_SERVICE_DEFINE(pacs_svc,
 #endif /* CONFIG_BT_PAC_SNK || CONFIG_BT_PAC_SRC */
 
 int bt_audio_cap_get(uint8_t type, sys_slist_t **lst,
-		     struct k_delayed_work **work)
+		     struct k_work_delayable **work)
 {
 	switch (type) {
 #if defined(CONFIG_BT_PAC_SNK)
@@ -361,7 +361,7 @@ static void pac_indicate(struct k_work *work)
 int bt_audio_register(struct bt_audio_cap *cap)
 {
 	sys_slist_t *lst;
-	struct k_delayed_work *work;
+	struct k_work_delayable *work;
 	int err;
 
 	if (!cap || !cap->codec) {
@@ -381,10 +381,10 @@ int bt_audio_register(struct bt_audio_cap *cap)
 
 	/* Initialize handler if it hasn't been initialized */
 	if (!work->work.handler) {
-		k_delayed_work_init(work, pac_indicate);
+		k_work_init_delayable(work, pac_indicate);
 	}
 
-	k_delayed_work_submit(work, PAC_INDICATE_TIMEOUT);
+	k_work_reschedule(work, PAC_INDICATE_TIMEOUT);
 
 	return 0;
 }
@@ -393,7 +393,7 @@ int bt_audio_register(struct bt_audio_cap *cap)
 int bt_audio_unregister(struct bt_audio_cap *cap)
 {
 	sys_slist_t *lst;
-	struct k_delayed_work *work;
+	struct k_work_delayable *work;
 	int err;
 
 	if (!cap) {
@@ -411,7 +411,7 @@ int bt_audio_unregister(struct bt_audio_cap *cap)
 		return -ENOENT;
 	}
 
-	k_delayed_work_submit(work, PAC_INDICATE_TIMEOUT);
+	k_work_reschedule(work, PAC_INDICATE_TIMEOUT);
 
 	return 0;
 }
