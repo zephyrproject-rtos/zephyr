@@ -14,6 +14,7 @@
 
 import sys
 import os
+import textwrap
 
 if "ZEPHYR_BASE" not in os.environ:
     sys.exit("$ZEPHYR_BASE environment variable undefined.")
@@ -583,3 +584,28 @@ def setup(app):
     app.add_js_file("https://www.googletagmanager.com/gtag/js?id=UA-831873-47")
     app.add_js_file("ga-tracker.js")
     app.add_js_file("zephyr-custom.js")
+
+    # algolia search
+    if os.environ.get("SPHINX_USE_ALGOLIA"):
+        index_version = version if is_release else "latest"
+        app.add_js_file(
+            "https://cdn.jsdelivr.net/npm/docsearch.js@2/dist/cdn/docsearch.min.js",
+            defer="defer",
+            onload=textwrap.dedent(
+                f"""
+                docsearch({{
+                    apiKey: 'fbf344891a8b11e75473c30449281262',
+                    indexName: 'zephyrproject',
+                    inputSelector: '#rtd-search-form input[type=text]',
+                    algoliaOptions: {{
+                        'facetFilters': ["version:{ index_version }"]
+                    }},
+                }});
+                """
+            ),
+        )
+
+        app.add_css_file(
+            "https://cdn.jsdelivr.net/npm/docsearch.js@2/dist/cdn/docsearch.min.css"
+        )
+        app.add_css_file("algolia.css")
