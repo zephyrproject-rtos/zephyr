@@ -45,7 +45,7 @@ static inline uint64_t z_arm_dwt_freq_get(void)
 
 	if (!dwt_frequency) {
 
-		z_arm_dwt_init(NULL);
+		z_arm_dwt_init();
 
 		uint32_t cyc_start = k_cycle_get_32();
 		uint64_t dwt_start = z_arm_dwt_get_cycles();
