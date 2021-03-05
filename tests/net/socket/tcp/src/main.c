@@ -707,6 +707,172 @@ void test_v6_so_rcvtimeo(void)
 	k_sleep(TCP_TEARDOWN_TIMEOUT);
 }
 
+struct test_msg_waitall_data {
+	struct k_delayed_work tx_work;
+	int sock;
+	const uint8_t *data;
+	size_t offset;
+	int retries;
+};
+
+static void test_msg_waitall_tx_work_handler(struct k_work *work)
+{
+	struct test_msg_waitall_data *test_data =
+		CONTAINER_OF(work, struct test_msg_waitall_data, tx_work);
+
+	if (test_data->retries > 0) {
+		test_send(test_data->sock, test_data->data + test_data->offset, 1, 0);
+		test_data->offset++;
+		test_data->retries--;
+		k_delayed_work_submit(&test_data->tx_work, K_MSEC(10));
+	}
+}
+
+void test_v4_msg_waitall(void)
+{
+	struct test_msg_waitall_data test_data = {
+		.data = TEST_STR_SMALL,
+	};
+	int c_sock;
+	int s_sock;
+	int new_sock;
+	struct sockaddr_in c_saddr;
+	struct sockaddr_in s_saddr;
+	struct sockaddr addr;
+	socklen_t addrlen = sizeof(addr);
+	int ret;
+	uint8_t rx_buf[sizeof(TEST_STR_SMALL) - 1] = { 0 };
+	struct timeval timeo_optval = {
+		.tv_sec = 0,
+		.tv_usec = 100000,
+	};
+
+	prepare_sock_tcp_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, ANY_PORT,
+			    &c_sock, &c_saddr);
+	prepare_sock_tcp_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, SERVER_PORT,
+			    &s_sock, &s_saddr);
+
+	test_bind(s_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_listen(s_sock);
+
+	test_connect(c_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+
+	test_accept(s_sock, &new_sock, &addr, &addrlen);
+	zassert_equal(addrlen, sizeof(struct sockaddr_in), "Wrong addrlen");
+
+
+	/* Regular MSG_WAITALL - make sure recv returns only after
+	 * requested amount is received.
+	 */
+	test_data.offset = 0;
+	test_data.retries = sizeof(rx_buf);
+	test_data.sock = c_sock;
+	k_delayed_work_init(&test_data.tx_work, test_msg_waitall_tx_work_handler);
+	k_delayed_work_submit(&test_data.tx_work, K_MSEC(10));
+
+	ret = recv(new_sock, rx_buf, sizeof(rx_buf), MSG_WAITALL);
+	zassert_equal(ret, sizeof(rx_buf), "Invalid length received");
+	zassert_mem_equal(rx_buf, TEST_STR_SMALL, sizeof(rx_buf),
+			  "Invalid data received");
+	k_delayed_work_cancel(&test_data.tx_work);
+
+	/* MSG_WAITALL + SO_RCVTIMEO - make sure recv returns the amount of data
+	 * received so far
+	 */
+	ret = setsockopt(new_sock, SOL_SOCKET, SO_RCVTIMEO, &timeo_optval,
+			 sizeof(timeo_optval));
+	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
+
+	memset(rx_buf, 0, sizeof(rx_buf));
+	test_data.offset = 0;
+	test_data.retries = sizeof(rx_buf) - 1;
+	test_data.sock = c_sock;
+	k_delayed_work_init(&test_data.tx_work, test_msg_waitall_tx_work_handler);
+	k_delayed_work_submit(&test_data.tx_work, K_MSEC(10));
+
+	ret = recv(new_sock, rx_buf, sizeof(rx_buf) - 1, MSG_WAITALL);
+	zassert_equal(ret, sizeof(rx_buf) - 1, "Invalid length received");
+	zassert_mem_equal(rx_buf, TEST_STR_SMALL, sizeof(rx_buf) - 1,
+			  "Invalid data received");
+	k_delayed_work_cancel(&test_data.tx_work);
+
+	test_close(new_sock);
+	test_close(s_sock);
+	test_close(c_sock);
+}
+
+void test_v6_msg_waitall(void)
+{
+	struct test_msg_waitall_data test_data = {
+		.data = TEST_STR_SMALL,
+	};
+	int c_sock;
+	int s_sock;
+	int new_sock;
+	struct sockaddr_in6 c_saddr;
+	struct sockaddr_in6 s_saddr;
+	struct sockaddr addr;
+	socklen_t addrlen = sizeof(addr);
+	int ret;
+	uint8_t rx_buf[sizeof(TEST_STR_SMALL) - 1] = { 0 };
+	struct timeval timeo_optval = {
+		.tv_sec = 0,
+		.tv_usec = 100000,
+	};
+
+	prepare_sock_tcp_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, ANY_PORT,
+			    &c_sock, &c_saddr);
+	prepare_sock_tcp_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, SERVER_PORT,
+			    &s_sock, &s_saddr);
+
+	test_bind(s_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_listen(s_sock);
+
+	test_connect(c_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+
+	test_accept(s_sock, &new_sock, &addr, &addrlen);
+	zassert_equal(addrlen, sizeof(struct sockaddr_in6), "Wrong addrlen");
+
+	/* Regular MSG_WAITALL - make sure recv returns only after
+	 * requested amount is received.
+	 */
+	test_data.offset = 0;
+	test_data.retries = sizeof(rx_buf);
+	test_data.sock = c_sock;
+	k_delayed_work_init(&test_data.tx_work, test_msg_waitall_tx_work_handler);
+	k_delayed_work_submit(&test_data.tx_work, K_MSEC(10));
+
+	ret = recv(new_sock, rx_buf, sizeof(rx_buf), MSG_WAITALL);
+	zassert_equal(ret, sizeof(rx_buf), "Invalid length received");
+	zassert_mem_equal(rx_buf, TEST_STR_SMALL, sizeof(rx_buf),
+			  "Invalid data received");
+	k_delayed_work_cancel(&test_data.tx_work);
+
+	/* MSG_WAITALL + SO_RCVTIMEO - make sure recv returns the amount of data
+	 * received so far
+	 */
+	ret = setsockopt(new_sock, SOL_SOCKET, SO_RCVTIMEO, &timeo_optval,
+			 sizeof(timeo_optval));
+	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
+
+	memset(rx_buf, 0, sizeof(rx_buf));
+	test_data.offset = 0;
+	test_data.retries = sizeof(rx_buf) - 1;
+	test_data.sock = c_sock;
+	k_delayed_work_init(&test_data.tx_work, test_msg_waitall_tx_work_handler);
+	k_delayed_work_submit(&test_data.tx_work, K_MSEC(10));
+
+	ret = recv(new_sock, rx_buf, sizeof(rx_buf) - 1, MSG_WAITALL);
+	zassert_equal(ret, sizeof(rx_buf) - 1, "Invalid length received");
+	zassert_mem_equal(rx_buf, TEST_STR_SMALL, sizeof(rx_buf) - 1,
+			  "Invalid data received");
+	k_delayed_work_cancel(&test_data.tx_work);
+
+	test_close(new_sock);
+	test_close(s_sock);
+	test_close(c_sock);
+}
+
 #ifdef CONFIG_USERSPACE
 #define CHILD_STACK_SZ		(2048 + CONFIG_TEST_EXTRA_STACKSIZE)
 struct k_thread child_thread;
@@ -797,6 +963,8 @@ void test_main(void)
 		ztest_unit_test(test_so_protocol),
 		ztest_unit_test(test_v4_so_rcvtimeo),
 		ztest_unit_test(test_v6_so_rcvtimeo),
+		ztest_unit_test(test_v4_msg_waitall),
+		ztest_unit_test(test_v6_msg_waitall),
 		ztest_user_unit_test(test_socket_permission)
 		);
 
