@@ -268,6 +268,45 @@ void test_timer_period_0(void)
 }
 
 /**
+ * @brief Test Timer with K_FOREVER period value
+ *
+ * Validates initial timer duration, keeping timer period to K_FOREVER.
+ * Basically, acting as one-shot timer.
+ * It initializes the timer with k_timer_init(), then starts the timer
+ * using k_timer_start() with specific initial duration and period as
+ * zero. Stops the timer using k_timer_stop() and checks for proper
+ * completion.
+ *
+ * @ingroup kernel_timer_tests
+ *
+ * @see k_timer_init(), k_timer_start(), k_timer_stop(), k_uptime_get(),
+ * k_busy_wait()
+ */
+void test_timer_period_k_forever(void)
+{
+	init_timer_data();
+	/** TESTPOINT: set period 0 */
+	k_timer_start(
+		&period0_timer,
+		K_TICKS(k_ms_to_ticks_floor32(DURATION) -
+			BUSY_SLEW_THRESHOLD_TICKS(DURATION * USEC_PER_MSEC)),
+		K_FOREVER);
+	tdata.timestamp = k_uptime_get();
+
+	/* Need to wait at least 2 durations to ensure one-shot behavior. */
+	busy_wait_ms(2 * DURATION + 1);
+
+	/** TESTPOINT: ensure it is one-shot timer */
+	TIMER_ASSERT((tdata.expire_cnt == 1) ||
+			     (INEXACT_MS_CONVERT && (tdata.expire_cnt == 0)),
+		     &period0_timer);
+	TIMER_ASSERT(tdata.stop_cnt == 0, &period0_timer);
+
+	/* cleanup environemtn */
+	k_timer_stop(&period0_timer);
+}
+
+/**
  * @brief Test Timer without any timer expiry callback function
  *
  * Validates timer without any expiry_fn(set to NULL). expiry_fn() is a
@@ -779,6 +818,7 @@ void test_main(void)
 			 ztest_user_unit_test(test_timer_duration_period),
 			 ztest_user_unit_test(test_timer_restart),
 			 ztest_user_unit_test(test_timer_period_0),
+			 ztest_user_unit_test(test_timer_period_k_forever),
 			 ztest_user_unit_test(test_timer_expirefn_null),
 			 ztest_user_unit_test(test_timer_periodicity),
 			 ztest_user_unit_test(test_timer_status_get),
