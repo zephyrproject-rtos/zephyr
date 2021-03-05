@@ -67,6 +67,8 @@ app=tests/bluetooth/bsim_bt/edtt_ble_test_app/hci_test_app \
   conf_file=prj_dut.conf compile
 app=tests/bluetooth/bsim_bt/edtt_ble_test_app/hci_test_app \
   conf_file=prj_tst.conf compile
+app=tests/bluetooth/bsim_bt/edtt_ble_test_app/hci_test_app \
+  conf_file=prj_legacy.conf compile
 app=tests/bluetooth/bsim_bt/edtt_ble_test_app/gatt_test_app compile
 app=tests/bluetooth/bsim_bt/bsim_test_mesh compile
 app=tests/bluetooth/bsim_bt/bsim_test_mesh conf_file=prj_low_lat.conf compile
