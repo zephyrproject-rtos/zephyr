@@ -19,10 +19,6 @@ config GPIO_MCUX_LPC_PORT1
 
 endif # GPIO_MCUX_LPC
 
-config SPI_8
-	default y
-	depends on SPI
-
 config FXOS8700_DRDY_INT1
 	default y
 	depends on FXOS8700_TRIGGER

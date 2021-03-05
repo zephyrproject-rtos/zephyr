@@ -19,10 +19,6 @@ config DISK_ACCESS_USDHC1
 config I2C
 	default y if KSCAN
 
-config SPI_3
-	default y
-	depends on SPI_MCUX_LPSPI
-
 config KSCAN
 	default y if LVGL
 
