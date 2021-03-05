@@ -8,4 +8,9 @@ if BOARD_STM32L1_DISCO
 config BOARD
 	default "stm32l1_disco"
 
+choice STM32_RTC_TIMER_SRC
+	default STM32_RTC_TIMER_LSE
+	depends on STM32_RTC_TIMER
+endchoice
+
 endif # BOARD_STM32L1_DISCO
