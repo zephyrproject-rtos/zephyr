@@ -38,7 +38,6 @@ BUILD_ASSERT(K_LOWEST_APPLICATION_THREAD_PRIO
 
 void z_sched_init(void);
 void z_move_thread_to_end_of_prio_q(struct k_thread *thread);
-void z_remove_thread_from_ready_q(struct k_thread *thread);
 int z_is_thread_time_slicing(struct k_thread *thread);
 void z_unpend_thread_no_timeout(struct k_thread *thread);
 struct k_thread *z_unpend1_no_timeout(_wait_q_t *wait_q);
@@ -55,8 +54,6 @@ int z_unpend_all(_wait_q_t *wait_q);
 void z_thread_priority_set(struct k_thread *thread, int prio);
 bool z_set_prio(struct k_thread *thread, int prio);
 void *z_get_next_switch_handle(void *interrupted);
-struct k_thread *z_find_first_thread_to_unpend(_wait_q_t *wait_q,
-					      struct k_thread *from);
 void idle(void *a, void *b, void *c);
 void z_time_slice(int ticks);
 void z_reset_time_slice(void);
