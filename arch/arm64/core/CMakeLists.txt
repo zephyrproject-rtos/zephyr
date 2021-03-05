@@ -33,4 +33,6 @@ if ((CONFIG_MP_NUM_CPUS GREATER 1) OR (CONFIG_SMP))
   zephyr_library_sources(smp.c)
 endif ()
 
+add_subdirectory_ifdef(CONFIG_ARM_MPU cortex_r/mpu)
+
 zephyr_cc_option_ifdef(CONFIG_USERSPACE -mno-outline-atomics)
