@@ -97,10 +97,13 @@ static struct k_spinlock lock;
 /* Tick/cycle count of the last announce call. */
 static volatile uint32_t rtc_last = 0;
 
-/* TODO: check whether also right calculation for our impl */
-/* Maximum number of ticks. */
-//#define MAX_TICKS (UINT32_MAX / CYCLES_PER_TICK - 2U)
-#define MAX_TICKS (UINT32_MAX / CONFIG_SYS_CLOCK_TICKS_PER_SEC - 2U)
+/* Maximum number of ticks.
+ *
+ * Be aware that even though this is 'technically' the MAX_TICKS value
+ * the RTC can't truly set this actual TICKS value due to hardware
+ * limitations (see rtc_stm32_set_calendar_alarm() for more info)
+ */
+#define MAX_TICKS (UINT32_MAX / CYCLES_PER_TICK - 2U)
 
 /* TODO: check what tick threshold applicable to our rtc */
 #define TICK_THRESHOLD 7
@@ -383,6 +386,13 @@ static uint32_t rtc_stm32_read(void)
  * - !! Check if need to change to add timeout/alarm value to current time,
  * 			not absolute time (variable type limitations)
  * - !! check if problem when >1 year
+ */
+/*
+ * @note No month and year bits in RTC alarm register, so limited to max a week.
+ * 		Theoretically shouldn't be a problem,
+ * 		there will just be a weekly wake-up where the elapsed time
+ * 		is announced to the kernel and new timeout value is calculated.
+ * 		However, this hasn't been tested yet.
  */
 static int rtc_stm32_set_calendar_alarm(struct timeval alarm_tv)
 {
