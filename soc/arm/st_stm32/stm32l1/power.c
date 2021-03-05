@@ -13,6 +13,7 @@
 #include <stm32_ll_pwr.h>
 #include <stm32_ll_system.h>
 #include <stm32_ll_bus.h>
+#include <stm32_ll_utils.h>
 
 #include <clock_control/clock_stm32_ll_common.h>
 
