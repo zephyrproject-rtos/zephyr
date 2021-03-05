@@ -5,7 +5,8 @@
 
 menuconfig INTEL_VTD_ICTL
 	bool "Intel VT-D interrupt remapping controller"
-	depends on ACPI && X86 && 64BIT && PCIE_MSI_MULTI_VECTOR
+	default y
+	depends on !BOARD_QEMU_X86_64 && ACPI && X86 && 64BIT && PCIE_MSI_MULTI_VECTOR
 	select CACHE_MANAGEMENT
 	help
 	  Such interrupt remapping hardware is provided through Intel VT-D
