@@ -53,9 +53,6 @@
 #define UART_DEFAULT_IRQ_POS	    2u
 #define UART_DEFAULT_IRQ	    BIT(UART_DEFAULT_IRQ_POS)
 
-#define MAX_OOB_BUFFER_SIZE         128ul
-#define MAX_SLAVE_BUFFER_SIZE       128ul
-
 LOG_MODULE_REGISTER(espi, CONFIG_ESPI_LOG_LEVEL);
 
 struct espi_isr {
@@ -204,9 +201,14 @@ static const struct xec_signal vw_tbl[] = {
 					     ESPI_MASTER_TO_SLAVE},
 };
 
-static uint32_t slave_rx_mem[MAX_OOB_BUFFER_SIZE];
-static uint32_t slave_tx_mem[MAX_OOB_BUFFER_SIZE];
-static uint32_t slave_mem[MAX_SLAVE_BUFFER_SIZE];
+/* Buffer size are expressed in bytes */
+#ifdef CONFIG_ESPI_OOB_CHANNEL
+static uint32_t target_rx_mem[CONFIG_ESPI_OOB_BUFFER_SIZE >> 2];
+static uint32_t target_tx_mem[CONFIG_ESPI_OOB_BUFFER_SIZE >> 2];
+#endif
+#ifdef CONFIG_ESPI_FLASH_CHANNEL
+static uint32_t target_mem[CONFIG_ESPI_FLASH_BUFFER_SIZE >> 2];
+#endif
 
 static int espi_xec_configure(const struct device *dev, struct espi_cfg *cfg)
 {
@@ -479,6 +481,7 @@ static int espi_xec_receive_vwire(const struct device *dev,
 	return 0;
 }
 
+#ifdef CONFIG_ESPI_OOB_CHANNEL
 static int espi_xec_send_oob(const struct device *dev,
 			     struct espi_oob_packet *pckt)
 {
@@ -500,12 +503,12 @@ static int espi_xec_send_oob(const struct device *dev,
 		return -EBUSY;
 	}
 
-	if (pckt->len > MAX_OOB_BUFFER_SIZE) {
+	if (pckt->len > CONFIG_ESPI_OOB_BUFFER_SIZE) {
 		LOG_ERR("insufficient space");
 		return -EINVAL;
 	}
 
-	memcpy(slave_tx_mem, pckt->buf, pckt->len);
+	memcpy(target_tx_mem, pckt->buf, pckt->len);
 
 	ESPI_OOB_REGS->TX_LEN = pckt->len;
 	ESPI_OOB_REGS->TX_CTRL = MCHP_ESPI_OOB_TX_CTRL_START;
@@ -555,8 +558,8 @@ static int espi_xec_receive_oob(const struct device *dev,
 	}
 
 	pckt->len = rcvd_len;
-	memcpy(pckt->buf, slave_rx_mem, pckt->len);
-	memset(slave_rx_mem, 0, pckt->len);
+	memcpy(pckt->buf, target_rx_mem, pckt->len);
+	memset(target_rx_mem, 0, pckt->len);
 
 	/* Only after data has been copied from SRAM, indicate channel
 	 * is available for next packet
@@ -565,7 +568,9 @@ static int espi_xec_receive_oob(const struct device *dev,
 
 	return 0;
 }
+#endif /* CONFIG_ESPI_OOB_CHANNEL */
 
+#ifdef CONFIG_ESPI_FLASH_CHANNEL
 static int espi_xec_flash_read(const struct device *dev,
 			       struct espi_flash_packet *pckt)
 {
@@ -583,7 +588,7 @@ static int espi_xec_flash_read(const struct device *dev,
 		return -EIO;
 	}
 
-	if (pckt->len > MAX_SLAVE_BUFFER_SIZE) {
+	if (pckt->len > CONFIG_ESPI_FLASH_BUFFER_SIZE) {
 		LOG_ERR("Invalid size request");
 		return -EINVAL;
 	}
@@ -591,7 +596,7 @@ static int espi_xec_flash_read(const struct device *dev,
 	ESPI_FC_REGS->FL_ADDR_MSW = 0;
 	ESPI_FC_REGS->FL_ADDR_LSW = pckt->flash_addr;
 	ESPI_FC_REGS->MEM_ADDR_MSW = 0;
-	ESPI_FC_REGS->MEM_ADDR_LSW = (uint32_t)&slave_mem[0];
+	ESPI_FC_REGS->MEM_ADDR_LSW = (uint32_t)&target_mem[0];
 	ESPI_FC_REGS->XFR_LEN = pckt->len;
 	ESPI_FC_REGS->CTRL = MCHP_ESPI_FC_CTRL_FUNC(MCHP_ESPI_FC_CTRL_RD0);
 	ESPI_FC_REGS->CTRL |= MCHP_ESPI_FC_CTRL_START;
@@ -609,7 +614,7 @@ static int espi_xec_flash_read(const struct device *dev,
 		return -EIO;
 	}
 
-	memcpy(pckt->buf, slave_mem, pckt->len);
+	memcpy(pckt->buf, target_mem, pckt->len);
 
 	return 0;
 }
@@ -637,12 +642,12 @@ static int espi_xec_flash_write(const struct device *dev,
 		return -EBUSY;
 	}
 
-	memcpy(slave_mem, pckt->buf, pckt->len);
+	memcpy(target_mem, pckt->buf, pckt->len);
 
 	ESPI_FC_REGS->FL_ADDR_MSW = 0;
 	ESPI_FC_REGS->FL_ADDR_LSW = pckt->flash_addr;
 	ESPI_FC_REGS->MEM_ADDR_MSW = 0;
-	ESPI_FC_REGS->MEM_ADDR_LSW = (uint32_t)&slave_mem[0];
+	ESPI_FC_REGS->MEM_ADDR_LSW = (uint32_t)&target_mem[0];
 	ESPI_FC_REGS->XFR_LEN = pckt->len;
 	ESPI_FC_REGS->CTRL = MCHP_ESPI_FC_CTRL_FUNC(MCHP_ESPI_FC_CTRL_WR0);
 	ESPI_FC_REGS->CTRL |= MCHP_ESPI_FC_CTRL_START;
@@ -712,6 +717,7 @@ static int espi_xec_flash_erase(const struct device *dev,
 
 	return 0;
 }
+#endif /* CONFIG_ESPI_FLASH_CHANNEL */
 
 static int espi_xec_manage_callback(const struct device *dev,
 				    struct espi_callback *callback, bool set)
@@ -749,8 +755,8 @@ static void espi_init_oob(const struct device *dev)
 
 	ESPI_OOB_REGS->TX_ADDR_MSW = 0;
 	ESPI_OOB_REGS->RX_ADDR_MSW = 0;
-	ESPI_OOB_REGS->TX_ADDR_LSW = (uint32_t)&slave_tx_mem[0];
-	ESPI_OOB_REGS->RX_ADDR_LSW = (uint32_t)&slave_rx_mem[0];
+	ESPI_OOB_REGS->TX_ADDR_LSW = (uint32_t)&target_tx_mem[0];
+	ESPI_OOB_REGS->RX_ADDR_LSW = (uint32_t)&target_rx_mem[0];
 	ESPI_OOB_REGS->RX_LEN = 0x00FF0000;
 
 	/* Enable OOB Tx channel enable change status interrupt */
@@ -1345,11 +1351,15 @@ static const struct espi_driver_api espi_xec_driver_api = {
 	.get_channel_status = espi_xec_channel_ready,
 	.send_vwire = espi_xec_send_vwire,
 	.receive_vwire = espi_xec_receive_vwire,
+#ifdef CONFIG_ESPI_OOB_CHANNEL
 	.send_oob = espi_xec_send_oob,
 	.receive_oob = espi_xec_receive_oob,
+#endif
+#ifdef CONFIG_ESPI_FLASH_CHANNEL
 	.flash_read = espi_xec_flash_read,
 	.flash_write = espi_xec_flash_write,
 	.flash_erase = espi_xec_flash_erase,
+#endif
 	.manage_callback = espi_xec_manage_callback,
 	.read_lpc_request = espi_xec_read_lpc_request,
 	.write_lpc_request = espi_xec_write_lpc_request,
