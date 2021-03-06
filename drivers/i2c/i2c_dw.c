@@ -46,6 +46,8 @@ static inline void i2c_dw_data_ask(const struct device *dev)
 	uint8_t tx_empty;
 	int8_t rx_empty;
 	uint8_t cnt;
+	uint8_t rx_buffer_depth, tx_buffer_depth;
+	union ic_comp_param_1_register ic_comp_param_1;
 	uint32_t reg_base = get_regs(dev);
 
 	/* No more bytes to request, so command queue is no longer needed */
@@ -54,8 +56,13 @@ static inline void i2c_dw_data_ask(const struct device *dev)
 		return;
 	}
 
+	/* Get the FIFO depth that could be from 2 to 256 from HW spec */
+	ic_comp_param_1.raw = read_comp_param_1(reg_base);
+	rx_buffer_depth = ic_comp_param_1.bits.rx_buffer_depth + 1;
+	tx_buffer_depth = ic_comp_param_1.bits.tx_buffer_depth + 1;
+
 	/* How many bytes we can actually ask */
-	rx_empty = (I2C_DW_FIFO_DEPTH - read_rxflr(reg_base)) - dw->rx_pending;
+	rx_empty = (rx_buffer_depth - read_rxflr(reg_base)) - dw->rx_pending;
 
 	if (rx_empty < 0) {
 		/* RX FIFO expected to be full.
@@ -65,10 +72,10 @@ static inline void i2c_dw_data_ask(const struct device *dev)
 	}
 
 	/* How many empty slots in TX FIFO (as command queue) */
-	tx_empty = I2C_DW_FIFO_DEPTH - read_txflr(reg_base);
+	tx_empty = tx_buffer_depth - read_txflr(reg_base);
 
 	/* Figure out how many bytes we can request */
-	cnt = MIN(I2C_DW_FIFO_DEPTH, dw->request_bytes);
+	cnt = MIN(rx_buffer_depth, dw->request_bytes);
 	cnt = MIN(MIN(tx_empty, rx_empty), cnt);
 
 	while (cnt > 0) {
