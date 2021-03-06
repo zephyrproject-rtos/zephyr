@@ -24,7 +24,7 @@ Samples and Demos
    portability/*
    posix/*
    video/*
-   scheduler/*
+   kernel/*
    smp/*
    tfm_integration/tfm_integration.rst
    debug/*
