@@ -222,7 +222,7 @@ static int bmi160_pmu_set(const struct device *dev,
 
 	/* set the undersampling flag for accelerometer */
 	return bmi160_reg_field_update(dev, BMI160_REG_ACC_CONF,
-				       BMI160_ACC_CONF_US, BMI160_ACC_CONF_US,
+				       BMI160_ACC_CONF_US_POS, BMI160_ACC_CONF_US_MASK,
 				       pmu_sts->acc != BMI160_PMU_NORMAL);
 }
 
