@@ -12,5 +12,4 @@ platforms:
 
    hello_world/*
    synchronization/*
-   cpp_synchronization/*
    philosophers/*
