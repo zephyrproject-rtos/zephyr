@@ -182,6 +182,31 @@ void pm_notifier_register(struct pm_notifier *notifier);
 int pm_notifier_unregister(struct pm_notifier *notifier);
 
 /**
+ * @brief Function to create device PM list
+ */
+void pm_create_device_list(void);
+
+/**
+ * @brief Function to suspend the devices in PM device list
+ */
+int pm_suspend_devices(void);
+
+/**
+ * @brief Function to put the devices in PM device list in low power state
+ */
+int pm_low_power_devices(void);
+
+/**
+ * @brief Function to force suspend the devices in PM device list
+ */
+int pm_force_suspend_devices(void);
+
+/**
+ * @brief Function to resume the devices in PM device list
+ */
+void pm_resume_devices(void);
+
+/**
  * @}
  */
 
