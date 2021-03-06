@@ -1,4 +1,4 @@
-.. _scheduler-samples:
+.. _kernel-samples:
 
 Various Kernel and Scheduler Samples
 ####################################
