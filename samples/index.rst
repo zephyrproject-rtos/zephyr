@@ -17,14 +17,12 @@ Samples and Demos
    sensor/*
    arch/*
    boards/*
-   mpu/*
    drivers/drivers.rst
    application_development/*
    shields/*
    portability/*
    posix/*
    kernel/*
-   smp/*
    tfm_integration/tfm_integration.rst
 
 .. comment
