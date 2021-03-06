@@ -251,6 +251,10 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 		return -EINVAL;
 	}
 
+	if (hdr->ttl == 0) {
+		goto drop;
+	}
+
 	net_pkt_set_ipv4_opts_len(pkt, opts_len);
 
 	pkt_len = ntohs(hdr->len);
