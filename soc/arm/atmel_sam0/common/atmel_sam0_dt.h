@@ -29,10 +29,6 @@
 	ATMEL_SAM0_DT_INST_DMA_CELL(n, name, trigsrc)
 #define ATMEL_SAM0_DT_INST_DMA_CHANNEL(n, name) \
 	ATMEL_SAM0_DT_INST_DMA_CELL(n, name, channel)
-#define ATMEL_SAM0_DT_INST_DMA_NAME(n, name)			\
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, dmas),		\
-		    (DT_INST_DMAS_LABEL_BY_NAME(n, name)),	\
-		    (NULL))
 #define ATMEL_SAM0_DT_INST_DMA_CTLR(n, name)			\
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, dmas),		\
 		    (DT_INST_DMAS_CTLR_BY_NAME(n, name)),	\
