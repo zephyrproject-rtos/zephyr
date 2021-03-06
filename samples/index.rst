@@ -15,19 +15,17 @@ Samples and Demos
    net/net.rst
    bluetooth/bluetooth.rst
    sensor/*
+   arch/*
    boards/*
    mpu/*
    drivers/drivers.rst
    application_development/*
-   display/*
    shields/*
    portability/*
    posix/*
-   video/*
    kernel/*
    smp/*
    tfm_integration/tfm_integration.rst
-   debug/*
 
 .. comment
    To add a new sample document, please use the template available under
