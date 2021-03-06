@@ -13,7 +13,7 @@ integration testing, or for unit testing specific modules.
 Quick start - Integration testing
 *********************************
 
-A simple working base is located at :zephyr_file:`samples/testing/integration`.  Just
+A simple working base is located at :zephyr_file:`samples/subsys/testsuite/integration`.  Just
 copy the files to ``tests/`` and edit them for your needs. The test will then
 be automatically built and run by the twister script. If you are testing
 the **bar** component of **foo**, you should copy the sample folder to
@@ -33,25 +33,25 @@ The sample contains the following files:
 
 CMakeLists.txt
 
-.. literalinclude:: ../../../samples/testing/integration/CMakeLists.txt
+.. literalinclude:: ../../../samples/subsys/testsuite/integration/CMakeLists.txt
    :language: CMake
    :linenos:
 
 testcase.yaml
 
-.. literalinclude:: ../../../samples/testing/integration/testcase.yaml
+.. literalinclude:: ../../../samples/subsys/testsuite/integration/testcase.yaml
    :language: yaml
    :linenos:
 
 prj.conf
 
-.. literalinclude:: ../../../samples/testing/integration/prj.conf
+.. literalinclude:: ../../../samples/subsys/testsuite/integration/prj.conf
    :language: text
    :linenos:
 
 src/main.c (see :ref:`best practices <main_c_bp>`)
 
-.. literalinclude:: ../../../samples/testing/integration/src/main.c
+.. literalinclude:: ../../../samples/subsys/testsuite/integration/src/main.c
    :language: c
    :linenos:
 
