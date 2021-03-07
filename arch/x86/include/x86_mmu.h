@@ -14,6 +14,7 @@
 
 #include <kernel.h>
 #include <arch/x86/mmustructs.h>
+#include <sys/mem_manage.h>
 
 #if defined(CONFIG_X86_64) || defined(CONFIG_X86_PAE)
 #define XD_SUPPORTED
@@ -65,43 +66,7 @@
 #define PF_PK		BIT(5)  /* 1 protection-key violation */
 #define PF_SGX		BIT(15) /* 1 SGX-specific access control requirements */
 
-/*
- * NOTE: All page table links are by physical, not virtual address.
- * For now, we have a hard requirement that the memory addresses of paging
- * structures must be convertible with a simple mathematical operation,
- * by applying the difference in the base kernel virtual and physical
- * addresses.
- *
- * Arbitrary mappings would induce a chicken-and-the-egg problem when walking
- * page tables. The codebase does not yet use techniques like recursive page
- * table mapping to alleviate this. It's simplest to just ensure the page
- * pool's pages can always be converted with simple math and a cast.
- *
- * The following conversion functions and macros are exclusively for use when
- * walking and creating page tables.
- */
-#ifdef CONFIG_MMU
-#define Z_X86_VIRT_OFFSET ((CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_VM_OFFSET) - \
-			   (CONFIG_SRAM_BASE_ADDRESS + CONFIG_SRAM_OFFSET))
-#else
-#define Z_X86_VIRT_OFFSET 0
-#endif
-
-/* ASM code */
-#define Z_X86_PHYS_ADDR(virt)	((virt) - Z_X86_VIRT_OFFSET)
-
 #ifndef _ASMLANGUAGE
-/* Installing new paging structures */
-static inline uintptr_t z_x86_phys_addr(void *virt)
-{
-	return ((uintptr_t)virt - Z_X86_VIRT_OFFSET);
-}
-
-/* Examining page table links */
-static inline void *z_x86_virt_addr(uintptr_t phys)
-{
-	return (void *)(phys + Z_X86_VIRT_OFFSET);
-}
 
 #ifdef CONFIG_EXCEPTION_DEBUG
 /**
@@ -217,7 +182,7 @@ static inline uintptr_t z_x86_cr3_get(void)
 /* Return the virtual address of the page tables installed in this CPU in CR3 */
 static inline pentry_t *z_x86_page_tables_get(void)
 {
-	return z_x86_virt_addr(z_x86_cr3_get());
+	return z_mem_virt_addr(z_x86_cr3_get());
 }
 
 /* Return cr2 value, which contains the page fault linear address.
@@ -250,7 +215,7 @@ static inline pentry_t *z_x86_thread_page_tables_get(struct k_thread *thread)
 		 * the kernel's page tables and not the page tables associated
 		 * with their memory domain.
 		 */
-		return z_x86_virt_addr(thread->arch.ptables);
+		return z_mem_virt_addr(thread->arch.ptables);
 	}
 #endif
 	return z_x86_kernel_ptables;
