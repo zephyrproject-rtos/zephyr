@@ -75,7 +75,7 @@ config MBEDTLS_DEBUG
 config MBEDTLS_DEBUG_LEVEL
 	int "mbed TLS default debug level"
 	depends on MBEDTLS_DEBUG
-	default 0
+	default 3
 	range 0 4
 	help
 	  Default mbed TLS debug logging level for Zephyr integration code

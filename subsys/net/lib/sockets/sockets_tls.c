@@ -34,6 +34,9 @@ LOG_MODULE_REGISTER(net_sock_tls, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <mbedtls/ssl_cookie.h>
 #include <mbedtls/error.h>
 #include <mbedtls/debug.h>
+#ifdef CONFIG_MBEDTLS_DEBUG
+#include "mbedtls_dbg.h"
+#endif /* CONFIG_MBEDTLS_DEBUG */
 #endif /* CONFIG_MBEDTLS */
 
 #include "sockets_internal.h"
@@ -174,30 +177,6 @@ bool net_socket_is_tls(void *obj)
 	return PART_OF_ARRAY(tls_contexts, (struct tls_context *)obj);
 }
 
-#if defined(MBEDTLS_DEBUG_C) && (CONFIG_NET_SOCKETS_LOG_LEVEL >= LOG_LEVEL_DBG)
-static void tls_debug(void *ctx, int level, const char *file,
-		      int line, const char *str)
-{
-	const char *p, *basename;
-
-	ARG_UNUSED(ctx);
-
-	if (!file || !str) {
-		return;
-	}
-
-	/* Extract basename from file */
-	for (p = basename = file; *p != '\0'; p++) {
-		if (*p == '/' || *p == '\\') {
-			basename = p + 1;
-		}
-	}
-
-	NET_DBG("%s:%04d: |%d| %s", basename, line, level,
-		log_strdup(str));
-}
-#endif /* defined(MBEDTLS_DEBUG_C) && (CONFIG_NET_SOCKETS_LOG_LEVEL >= LOG_LEVEL_DBG) */
-
 #if defined(CONFIG_ENTROPY_HAS_DRIVER)
 static int tls_entropy_func(void *ctx, unsigned char *buf, size_t len)
 {
@@ -309,7 +288,7 @@ static int tls_init(const struct device *unused)
 		return -EFAULT;
 	}
 
-#if defined(MBEDTLS_DEBUG_C) && (CONFIG_NET_SOCKETS_LOG_LEVEL >= LOG_LEVEL_DBG)
+#if defined(MBEDTLS_DEBUG_C) && (CONFIG_MBEDTLS_DEBUG)
 	mbedtls_debug_set_threshold(CONFIG_MBEDTLS_DEBUG_LEVEL);
 #endif
 
@@ -408,8 +387,8 @@ static struct tls_context *tls_alloc(void)
 		mbedtls_pk_init(&tls->priv_key);
 #endif
 
-#if defined(MBEDTLS_DEBUG_C) && (CONFIG_NET_SOCKETS_LOG_LEVEL >= LOG_LEVEL_DBG)
-		mbedtls_ssl_conf_dbg(&tls->config, tls_debug, NULL);
+#if defined(MBEDTLS_DEBUG_C) && (CONFIG_MBEDTLS_DEBUG)
+		mbedtls_dbg_init(&tls->config);
 #endif
 	} else {
 		NET_WARN("Failed to allocate TLS context");
