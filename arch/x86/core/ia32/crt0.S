@@ -21,6 +21,7 @@
 #include <arch/cpu.h>
 #include <arch/x86/multiboot.h>
 #include <x86_mmu.h>
+#include <sys/mem_manage.h>
 
 	/* exports (private APIs) */
 
@@ -42,6 +43,51 @@
 #if defined(CONFIG_X86_SSE)
 	GDATA(_sse_mxcsr_default_value)
 #endif
+
+.macro install_page_tables
+#ifdef CONFIG_X86_MMU
+	/* Enable paging. If virtual memory is enabled, the instruction pointer
+	 * is currently at a physical address. There is an identity mapping
+	 * for all RAM, plus a virtual mapping of RAM starting at
+	 * CONFIG_KERNEL_VM_BASE using the same paging structures.
+	 *
+	 * Until we enable these page tables, only physical memory addresses
+	 * work.
+	 */
+	movl	$Z_MEM_PHYS_ADDR(z_x86_kernel_ptables), %eax
+	movl	%eax, %cr3
+
+#ifdef CONFIG_X86_PAE
+	/* Enable PAE */
+	movl	%cr4, %eax
+	orl	$CR4_PAE, %eax
+	movl	%eax, %cr4
+
+	/* IA32_EFER NXE bit set */
+	movl	$0xC0000080, %ecx
+	rdmsr
+	orl	$0x800, %eax
+	wrmsr
+#endif /* CONFIG_X86_PAE */
+
+	/* Enable paging (CR0.PG, bit 31) / write protect (CR0.WP, bit 16) */
+	movl	%cr0, %eax
+	orl	$(CR0_PG | CR0_WP), %eax
+	movl	%eax, %cr0
+
+#ifdef Z_VM_KERNEL
+	/* Jump to a virtual address, which works because the identity and
+	 * virtual mappings both are to the same physical address.
+	 */
+	ljmp    $CODE_SEG, $vm_enter
+vm_enter:
+	/* We are now executing in virtual memory. We'll un-map the identity
+	 * mappings later once we are in the C domain
+	 */
+#endif /* Z_VM_KERNEL */
+
+#endif /* CONFIG_X86_MMU */
+.endm
 
 SECTION_FUNC(TEXT_START, __start)
 
@@ -158,9 +204,6 @@ __csSet:
 	addl	$CONFIG_ISR_STACK_SIZE, %esp
 #endif
 
-	/* Clear BSS */
-	call	z_bss_zero
-
 #ifdef CONFIG_XIP
 	/* Copy data from flash to RAM.
 	 *
@@ -179,53 +222,18 @@ __csSet:
 	mov $MAIN_TSS, %ax
 	ltr %ax
 #endif
-	/* load 32-bit operand size IDT */
-	lidt	Z_MEM_PHYS_ADDR(z_x86_idt)
 
-#ifdef CONFIG_X86_MMU
-	/* Install page tables */
-	movl $Z_MEM_PHYS_ADDR(z_x86_kernel_ptables), %eax
-	movl %eax, %cr3
-
-#ifdef CONFIG_X86_PAE
-	/* Enable PAE */
-	movl %cr4, %eax
-	orl $CR4_PAE, %eax
-	movl %eax, %cr4
-
-	/* IA32_EFER NXE bit set */
-	movl $0xC0000080, %ecx
-	rdmsr
-	orl $0x800, %eax
-	wrmsr
-#endif /* CONFIG_X86_PAE */
-
-	/* Enable paging (CR0.PG, bit 31) / write protect (CR0.WP, bit 16) */
-	movl %cr0, %eax
-	orl $(CR0_PG | CR0_WP), %eax
-	movl %eax, %cr0
-#endif /* CONFIG_X86_MMU */
-
-#if (Z_MEM_PHYS_ADDR(0x1000) != 0x1000)
-	/*
-	 * Page table loaded so we can start executing in
-	 * virtual address space.
-	 *
-	 * Note that __prep_c and z_x86_prep_c() must be
-	 * mapped in virtual address space in gen_mmu.py.
-	 *
-	 * This jump must be done due to relative
-	 * addressing code emitted by the toolchain
-	 * (think EIP + offset). If we are not already in
-	 * virtual address space, everything afterwards
-	 * would still be referenced via physical addresses
-	 * and will crash if we have a kernel bigger than
-	 * physical memory with demand paging (for example).
+	/* Note that installing page tables must be done after
+	 * z_data_copy() as the page tables are being copied into
+	 * RAM there.
 	 */
-	ljmp	$CODE_SEG, $__prep_c
+	install_page_tables
 
-__prep_c:
-#endif
+	/* Clear BSS */
+	call	z_bss_zero
+
+	/* load 32-bit operand size IDT */
+	lidt	z_x86_idt
 
 	pushl	%ebx		/* pointer to multiboot info, or NULL */
 	call	z_x86_prep_c	/* enter kernel; never returns */
@@ -250,8 +258,8 @@ z_x86_idt:
 	 * setup by the BIOS (or GRUB?).
 	 */
 
-	/* physical start address */
-	.long	Z_MEM_PHYS_ADDR(_idt_base_address)
+	/* IDT table start address */
+	.long	_idt_base_address
 
 
 #ifdef CONFIG_SET_GDT
