@@ -11,12 +11,6 @@
  * By default, the kernel is linked at its physical address and all addresses
  * are in RAM.
  *
- * If CONFIG_KERNEL_LINK_IN_VIRT is enabled, the kernel is linked at
- * the virtual address space defined by CONFIG_KERNEL_VM_BASE,
- * and CONFIG_KERNEL_VM_SIZE. CONFIG_KERNEL_VM_OFFSET defines the offset of
- * the start of virtual address space to place the kernel. This allows
- * the kernel to have a bigger address space.
- *
  * If CONFIG_XIP is enabled, then another MEMORY region is declared for ROM,
  * and this is where the Zephyr image is booted from. The linker LMAs and VMAs
  * are set up, such that read/write data/bss have their VMA addresses
