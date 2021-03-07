@@ -5,8 +5,8 @@
  */
 
 #if defined (CONFIG_CPLUSPLUS)
-	SECTION_PROLOGUE(.gcc_except_table,,ONLY_IF_RW)
+	SECTION_DATA_PROLOGUE(.gcc_except_table,,ONLY_IF_RW)
 	{
 	*(.gcc_except_table .gcc_except_table.*)
-	} GROUP_LINK_IN(RAMABLE_REGION)
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 #endif

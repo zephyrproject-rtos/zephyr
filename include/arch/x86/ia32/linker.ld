@@ -43,7 +43,7 @@
 
 #include <linker/linker-tool.h>
 
-#ifdef CONFIG_XIP
+#if defined(CONFIG_XIP) || defined(Z_VM_KERNEL)
 	#define ROMABLE_REGION ROM
 	#define RAMABLE_REGION RAM
 #else
@@ -122,7 +122,7 @@ SECTIONS
 #include <linker/kobject-text.ld>
 
 	MMU_PAGE_ALIGN_PERM
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 	_image_text_end = .;
 	_image_text_size = _image_text_end - _image_text_start;
@@ -161,7 +161,7 @@ SECTIONS
 #include <snippets-rodata.ld>
 
 #include <linker/kobject-rom.ld>
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 #include <linker/cplusplus-rom.ld>
 
@@ -234,7 +234,7 @@ SECTIONS
 	 */
 	. = ALIGN(4);
 	__bss_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
+	} GROUP_NOLOAD_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 	__bss_num_words	= (__bss_end - __bss_start) >> 2;
 
