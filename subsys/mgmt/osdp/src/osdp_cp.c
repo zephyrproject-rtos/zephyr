@@ -360,7 +360,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		}
 		while (pos < len) {
 			t1 = buf[pos++]; /* func_code */
-			if (t1 > OSDP_PD_CAP_SENTINEL) {
+			if (t1 >= OSDP_PD_CAP_SENTINEL) {
 				break;
 			}
 			pd->cap[t1].function_code    = t1;
