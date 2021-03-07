@@ -185,12 +185,15 @@ struct dns_resolve_context {
 	 */
 	struct dns_pending_query {
 		/** Timeout timer */
-		struct k_delayed_work timer;
+		struct k_work_delayable timer;
 
 		/** Back pointer to ctx, needed in timeout handler */
 		struct dns_resolve_context *ctx;
 
-		/** Result callback */
+		/** Result callback.
+		 *
+		 * A null value indicates the slot is not in use.
+		 */
 		dns_resolve_cb_t cb;
 
 		/** User data */
@@ -200,6 +203,10 @@ struct dns_resolve_context {
 		k_timeout_t timeout;
 
 		/** String containing the thing to resolve like www.example.com
+		 *
+		 * The pointer is zeroed to indicate that an active query is
+		 * complete.  Release of the query slot is performed by the
+		 * timeout handler.
 		 */
 		const char *query;
 

@@ -135,6 +135,7 @@ static int sender_iface(const struct device *dev, struct net_pkt *pkt)
 	if (!timeout_query) {
 		struct net_if_test *data = dev->data;
 		struct dns_resolve_context *ctx;
+		int rc;
 		int slot;
 
 		if (net_if_get_by_iface(net_pkt_iface(pkt)) != data->idx) {
@@ -152,9 +153,12 @@ static int sender_iface(const struct device *dev, struct net_pkt *pkt)
 		}
 
 		/* We need to cancel the query manually so that we
-		 * will not get a timeout.
+		 * will not get a timeout.  Real applications should
+		 * be prepared for cancellations to complete
+		 * asynchronously, and handle a non-zero return here.
 		 */
-		k_delayed_work_cancel(&ctx->queries[slot].timer);
+		rc = k_work_cancel_delayable(&ctx->queries[slot].timer);
+		zassert_equal(rc, 0, "cancel did not complete: %d", rc);
 
 		DBG("Calling cb %p with user data %p\n",
 		    ctx->queries[slot].cb,
@@ -507,11 +511,27 @@ static void verify_cancelled(void)
 	int i, count = 0, timer_not_stopped = 0;
 
 	for (i = 0; i < CONFIG_DNS_NUM_CONCUR_QUERIES; i++) {
+		int busy;
+
+		/* Cancellation is not a synchronous action, and the
+		 * timeout will remain active until the slot is
+		 * released confirming completion of the query.  If
+		 * timeout is still busy, it may be that the requested
+		 * cancellation hasn't completed.  Yield so the work
+		 * queue can release the slot, then check status
+		 * again.
+		 */
+		busy = k_work_delayable_busy_get(&ctx->queries[i].timer);
+		if (busy != 0) {
+			k_yield();
+			busy = k_work_delayable_busy_get(&ctx->queries[i].timer);
+		}
+
 		if (ctx->queries[i].cb) {
 			count++;
 		}
 
-		if (k_delayed_work_remaining_get(&ctx->queries[i].timer) > 0) {
+		if (busy != 0) {
 			timer_not_stopped++;
 		}
 	}
