@@ -66,7 +66,7 @@ SECTION_FUNC(TEXT_START, __start)
 	 */
 #if CONFIG_SET_GDT
 	/* load 32-bit operand size GDT */
-	lgdt	Z_X86_PHYS_ADDR(_gdt_rom)
+	lgdt	Z_MEM_PHYS_ADDR(_gdt_rom)
 
 	/* If we set our own GDT, update the segment registers as well.
 	 */
@@ -78,7 +78,7 @@ SECTION_FUNC(TEXT_START, __start)
 	movw	%ax, %fs	/* Zero FS */
 	movw	%ax, %gs	/* Zero GS */
 
-	ljmp	$CODE_SEG, $Z_X86_PHYS_ADDR(__csSet)	/* set CS = 0x08 */
+	ljmp	$CODE_SEG, $Z_MEM_PHYS_ADDR(__csSet)	/* set CS = 0x08 */
 
 __csSet:
 #endif /* CONFIG_SET_GDT */
@@ -139,7 +139,7 @@ __csSet:
 	 */
 #ifdef CONFIG_INIT_STACKS
 	movl $0xAAAAAAAA, %eax
-	leal Z_X86_PHYS_ADDR(z_interrupt_stacks), %edi
+	leal Z_MEM_PHYS_ADDR(z_interrupt_stacks), %edi
 #ifdef CONFIG_X86_STACK_PROTECTION
 	addl $4096, %edi
 #endif
@@ -148,7 +148,7 @@ __csSet:
 	rep  stosl
 #endif
 
-	movl	$Z_X86_PHYS_ADDR(z_interrupt_stacks), %esp
+	movl	$Z_MEM_PHYS_ADDR(z_interrupt_stacks), %esp
 #ifdef CONFIG_X86_STACK_PROTECTION
 	/* In this configuration, all stacks, including IRQ stack, are declared
 	 * with a 4K non-present guard page preceding the stack buffer
@@ -172,7 +172,7 @@ __csSet:
 
 #ifdef CONFIG_GDT_DYNAMIC
 	/* activate RAM-based Global Descriptor Table (GDT) */
-	lgdt	%ds:Z_X86_PHYS_ADDR(_gdt)
+	lgdt	%ds:Z_MEM_PHYS_ADDR(_gdt)
 #endif
 
 #if defined(CONFIG_X86_ENABLE_TSS)
@@ -180,11 +180,11 @@ __csSet:
 	ltr %ax
 #endif
 	/* load 32-bit operand size IDT */
-	lidt	Z_X86_PHYS_ADDR(z_x86_idt)
+	lidt	Z_MEM_PHYS_ADDR(z_x86_idt)
 
 #ifdef CONFIG_X86_MMU
 	/* Install page tables */
-	movl $Z_X86_PHYS_ADDR(z_x86_kernel_ptables), %eax
+	movl $Z_MEM_PHYS_ADDR(z_x86_kernel_ptables), %eax
 	movl %eax, %cr3
 
 #ifdef CONFIG_X86_PAE
@@ -206,7 +206,7 @@ __csSet:
 	movl %eax, %cr0
 #endif /* CONFIG_X86_MMU */
 
-#if (Z_X86_PHYS_ADDR(0x1000) != 0x1000)
+#if (Z_MEM_PHYS_ADDR(0x1000) != 0x1000)
 	/*
 	 * Page table loaded so we can start executing in
 	 * virtual address space.
@@ -251,7 +251,7 @@ z_x86_idt:
 	 */
 
 	/* physical start address */
-	.long	Z_X86_PHYS_ADDR(_idt_base_address)
+	.long	Z_MEM_PHYS_ADDR(_idt_base_address)
 
 
 #ifdef CONFIG_SET_GDT
@@ -289,9 +289,9 @@ _gdt_rom:
 	 * descriptor here */
 
 	/* Limit on GDT */
-	.word Z_X86_PHYS_ADDR(_gdt_rom_end) - Z_X86_PHYS_ADDR(_gdt_rom) - 1
+	.word Z_MEM_PHYS_ADDR(_gdt_rom_end) - Z_MEM_PHYS_ADDR(_gdt_rom) - 1
 	/* table address: _gdt_rom */
-	.long Z_X86_PHYS_ADDR(_gdt_rom)
+	.long Z_MEM_PHYS_ADDR(_gdt_rom)
 	.word   0x0000
 
 	/* Entry 1 (selector=0x0008): Code descriptor: DPL0 */

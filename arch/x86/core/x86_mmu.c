@@ -332,7 +332,7 @@ static inline uintptr_t get_entry_phys(pentry_t entry, int level)
 /* Return the virtual address of a linked table stored in the provided entry */
 static inline pentry_t *next_table(pentry_t entry, int level)
 {
-	return z_x86_virt_addr(get_entry_phys(entry, level));
+	return z_mem_virt_addr(get_entry_phys(entry, level));
 }
 
 /* Number of table entries at this level */
@@ -426,12 +426,12 @@ void z_x86_tlb_ipi(const void *arg)
 	 * if KPTI is turned on
 	 */
 	ptables_phys = z_x86_cr3_get();
-	__ASSERT(ptables_phys == z_x86_phys_addr(&z_x86_kernel_ptables), "");
+	__ASSERT(ptables_phys == z_mem_phys_addr(&z_x86_kernel_ptables), "");
 #else
 	/* We might have been moved to another memory domain, so always invoke
 	 * z_x86_thread_page_tables_get() instead of using current CR3 value.
 	 */
-	ptables_phys = z_x86_phys_addr(z_x86_thread_page_tables_get(_current));
+	ptables_phys = z_mem_phys_addr(z_x86_thread_page_tables_get(_current));
 #endif
 	/*
 	 * In the future, we can consider making this smarter, such as
@@ -770,7 +770,7 @@ static inline pentry_t pte_finalize_value(pentry_t val, bool user_table)
 {
 #ifdef CONFIG_X86_KPTI
 	static const uintptr_t shared_phys_addr =
-		Z_X86_PHYS_ADDR(POINTER_TO_UINT(&z_shared_kernel_page_start));
+		Z_MEM_PHYS_ADDR(POINTER_TO_UINT(&z_shared_kernel_page_start));
 
 	if (user_table && (val & MMU_US) == 0 && (val & MMU_P) != 0 &&
 	    get_entry_phys(val, PTE_LEVEL) != shared_phys_addr) {
@@ -1479,7 +1479,7 @@ static int copy_page_table(pentry_t *dst, pentry_t *src, int level)
 			 * cast needed for PAE case where sizeof(void *) and
 			 * sizeof(pentry_t) are not the same.
 			 */
-			dst[i] = ((pentry_t)z_x86_phys_addr(child_dst) |
+			dst[i] = ((pentry_t)z_mem_phys_addr(child_dst) |
 				  INT_FLAGS);
 
 			ret = copy_page_table(child_dst,
@@ -1675,11 +1675,11 @@ void arch_mem_domain_thread_add(struct k_thread *thread)
 	 * z_x86_current_stack_perms()
 	 */
 	if (is_migration) {
-		old_ptables = z_x86_virt_addr(thread->arch.ptables);
+		old_ptables = z_mem_virt_addr(thread->arch.ptables);
 		set_stack_perms(thread, domain->arch.ptables);
 	}
 
-	thread->arch.ptables = z_x86_phys_addr(domain->arch.ptables);
+	thread->arch.ptables = z_mem_phys_addr(domain->arch.ptables);
 	LOG_DBG("set thread %p page tables to %p", thread,
 		(void *)thread->arch.ptables);
 
