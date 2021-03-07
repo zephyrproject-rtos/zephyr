@@ -152,7 +152,7 @@ struct task_state_segment _df_tss = {
 	.ss = DATA_SEG,
 	.eip = (uint32_t)df_handler_top,
 	.cr3 = (uint32_t)
-		Z_X86_PHYS_ADDR(POINTER_TO_UINT(&z_x86_kernel_ptables[0]))
+		Z_MEM_PHYS_ADDR(POINTER_TO_UINT(&z_x86_kernel_ptables[0]))
 };
 
 static __used void df_handler_bottom(void)
@@ -200,7 +200,7 @@ static FUNC_NORETURN __used void df_handler_top(void)
 	_main_tss.es = DATA_SEG;
 	_main_tss.ss = DATA_SEG;
 	_main_tss.eip = (uint32_t)df_handler_bottom;
-	_main_tss.cr3 = z_x86_phys_addr(z_x86_kernel_ptables);
+	_main_tss.cr3 = z_mem_phys_addr(z_x86_kernel_ptables);
 	_main_tss.eflags = 0U;
 
 	/* NT bit is set in EFLAGS so we will task switch back to _main_tss
