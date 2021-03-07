@@ -182,10 +182,10 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	lll->latency_event = lll->latency_prepare - 1;
 
 	/* Calculate the current event counter value */
-	event_counter = lll->event_counter + lll->latency_event;
+	event_counter = (lll->payload_count & 0xFFFF) + lll->latency_event;
 
-	/* Update event counter to next value */
-	lll->event_counter = lll->event_counter + lll->latency_prepare;
+	/* Update BIS packet counter to next value */
+	lll->payload_count += (lll->latency_prepare * lll->bn);
 
 	/* Reset accumulated latencies */
 	lll->latency_prepare = 0;
