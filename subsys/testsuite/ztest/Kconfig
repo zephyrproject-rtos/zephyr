@@ -33,6 +33,7 @@ config ZTEST_ASSERT_VERBOSE
 
 config ZTEST_THREAD_PRIORITY
 	int "Testing thread priority"
+	default -2 if !PREEMPT_ENABLED
 	default -1
 	help
 	  Set priority of the testing thread. Default is -1 (cooperative).
