@@ -283,8 +283,6 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	       sizeof(lll->seed_access_addr));
 	memcpy(lll->base_crc_init, &bi->base_crc_init,
 	       sizeof(lll->base_crc_init));
-	memcpy(lll->payload_count, bi->payload_count_framing,
-	       sizeof(lll->payload_count));
 
 	memcpy(lll->data_chan_map, bi->chm_phy, sizeof(lll->data_chan_map));
 	lll->data_chan_map[4] &= ~0xE0;
@@ -308,6 +306,12 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	lll->bis_spacing = bi->spacing;
 	lll->irc = bi->irc;
 	lll->sdu_interval = bi->sdu_interval;
+
+	lll->payload_count = (uint64_t)bi->payload_count_framing[0];
+	lll->payload_count |= (uint64_t)bi->payload_count_framing[1] << 8;
+	lll->payload_count |= (uint64_t)bi->payload_count_framing[2] << 16;
+	lll->payload_count |= (uint64_t)bi->payload_count_framing[3] << 24;
+	lll->payload_count |= (uint64_t)bi->payload_count_framing[4] << 32;
 
 	interval = sys_le16_to_cpu(bi->iso_interval);
 	interval_us = interval * CONN_INT_UNIT_US;
