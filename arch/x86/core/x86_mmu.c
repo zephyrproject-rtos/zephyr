@@ -517,9 +517,12 @@ static void print_entries(pentry_t entries_array[], uint8_t *base, int level,
 				if (phys == virt) {
 					/* Identity mappings */
 					COLOR(YELLOW);
-				} else {
-					/* Other mappings */
+				} else if (phys + Z_MEM_VM_OFFSET == virt) {
+					/* Permanent RAM mappings */
 					COLOR(GREEN);
+				} else {
+					/* General mapped pages */
+					COLOR(CYAN);
 				}
 			} else {
 				/* Intermediate entry */
@@ -580,7 +583,8 @@ static void dump_ptables(pentry_t *table, uint8_t *base, int level)
 	}
 #endif
 
-	printk("%s at %p: ", info->name, table);
+	printk("%s at %p (0x%" PRIxPTR "): ", info->name, table,
+	       z_mem_phys_addr(table));
 	if (level == 0) {
 		printk("entire address space\n");
 	} else {
@@ -1109,6 +1113,42 @@ void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 {
 	range_map_unlocked(virt, phys, size, flags_to_entry(flags),
 			   MASK_ALL, 0);
+}
+
+static void identity_map_remove(void)
+{
+#ifdef Z_VM_KERNEL
+	size_t size, scope = get_entry_scope(0);
+	uint8_t *pos;
+
+	k_mem_region_align((uintptr_t *)&pos, &size,
+			   (uintptr_t)CONFIG_SRAM_BASE_ADDRESS,
+			   (size_t)CONFIG_SRAM_SIZE * 1024U, scope);
+
+	/* We booted with RAM mapped both to its identity and virtual
+	 * mapping starting at CONFIG_KERNEL_VM_BASE. This was done by
+	 * double-linking the relevant tables in the top-level table.
+	 * At this point we don't need the identity mapping(s) any more,
+	 * zero the top-level table entries corresponding to the
+	 * physical mapping.
+	 */
+	while (size) {
+		pentry_t *entry = get_entry_ptr(z_x86_kernel_ptables, pos, 0);
+
+		/* set_pte */
+		*entry = 0;
+		pos += scope;
+		size -= scope;
+	}
+#endif
+}
+
+/* Invoked to remove the identity mappings in the page tables,
+ * they were only needed to tranisition the instruction pointer at early boot
+ */
+void z_x86_mmu_init(void)
+{
+	identity_map_remove();
 }
 
 #if CONFIG_X86_STACK_PROTECTION

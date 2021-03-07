@@ -229,5 +229,8 @@ void z_x86_tlb_ipi(const void *arg);
 #ifdef CONFIG_X86_COMMON_PAGE_TABLE
 void z_x86_swap_update_common_page_table(struct k_thread *incoming);
 #endif
+
+/* Early-boot paging setup tasks, called from prep_c */
+void z_x86_mmu_init(void);
 #endif /* _ASMLANGUAGE */
 #endif /* ZEPHYR_ARCH_X86_INCLUDE_X86_MMU_H */
