@@ -8,5 +8,5 @@
 	SECTION_PROLOGUE(.gcc_except_table,,ONLY_IF_RO)
 	{
 	*(.gcc_except_table .gcc_except_table.*)
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 #endif
