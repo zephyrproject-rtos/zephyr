@@ -10,13 +10,14 @@ struct lll_adv_iso {
 
 	uint8_t seed_access_addr[4];
 	uint8_t base_crc_init[2];
-	uint8_t payload_count[5];
-	uint8_t handle;
 
 	uint16_t latency_prepare;
 	uint16_t latency_event;
-	uint16_t event_counter;
 	uint16_t data_chan_id;
+
+	uint64_t payload_count:39;
+	uint64_t framing:1;
+	uint64_t handle:8;
 
 	uint8_t data_chan_map[5];
 	uint8_t data_chan_count:6;

@@ -205,11 +205,9 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	lll_adv_iso->phy = phy;
 	lll_adv_iso->latency_prepare = 0;
 	lll_adv_iso->latency_event = 0;
-	lll_csrand_get(lll_adv_iso->payload_count,
-		       sizeof(lll_adv_iso->payload_count));
-	lll_adv_iso->payload_count[4] &= 0x3F;
 
 	/* TODO: framing support */
+	lll_adv_iso->framing = framing;
 
 	/* TODO: Calculate ISO interval */
 	iso_interval = sdu_interval / 1250U;
@@ -264,8 +262,11 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	       sizeof(big_info->chm_phy));
 	big_info->chm_phy[4] &= 0x1F;
 	big_info->chm_phy[4] |= ((find_lsb_set(phy) - 1) << 5);
-	memcpy(big_info->payload_count_framing, lll_adv_iso->payload_count,
-	       sizeof(big_info->payload_count_framing));
+	big_info->payload_count_framing[0] = lll_adv_iso->payload_count;
+	big_info->payload_count_framing[1] = lll_adv_iso->payload_count >> 8;
+	big_info->payload_count_framing[2] = lll_adv_iso->payload_count >> 16;
+	big_info->payload_count_framing[3] = lll_adv_iso->payload_count >> 24;
+	big_info->payload_count_framing[4] = lll_adv_iso->payload_count >> 32;
 	big_info->payload_count_framing[4] &= 0x7F;
 	big_info->payload_count_framing[4] |= ((framing & 0x01) << 7);
 
@@ -613,7 +614,13 @@ static void mfy_iso_offset_get(void *param)
 	pdu = lll_adv_sync_data_latest_peek(&sync->lll);
 	bi = big_info_get(pdu);
 	big_info_offset_fill(bi, ticks_to_expire, 0);
-	/* FIXME: Fill the payload count */
+	bi->payload_count_framing[0] = lll_iso->payload_count;
+	bi->payload_count_framing[1] = lll_iso->payload_count >> 8;
+	bi->payload_count_framing[2] = lll_iso->payload_count >> 16;
+	bi->payload_count_framing[3] = lll_iso->payload_count >> 24;
+	bi->payload_count_framing[4] = lll_iso->payload_count >> 32;
+	bi->payload_count_framing[4] &= 0x7F;
+	bi->payload_count_framing[4] |= ((lll_iso->framing & 0x01) << 7);
 }
 
 static inline struct pdu_big_info *big_info_get(struct pdu_adv *pdu)
