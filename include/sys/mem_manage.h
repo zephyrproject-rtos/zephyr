@@ -66,6 +66,13 @@
 #define Z_MEM_PHYS_ADDR(virt)	((virt) - Z_MEM_VM_OFFSET)
 #define Z_MEM_VIRT_ADDR(phys)	((phys) + Z_MEM_VM_OFFSET)
 
+#if Z_MEM_VM_OFFSET != 0
+#define Z_VM_KERNEL 1
+#ifdef CONFIG_XIP
+#error "XIP and a virtual memory kernel are not allowed"
+#endif
+#endif
+
 #ifndef _ASMLANGUAGE
 #include <stdint.h>
 #include <stddef.h>

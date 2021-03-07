@@ -34,9 +34,9 @@
 #ifndef LINKER_PASS2
 SECTION_PROLOGUE(.intList,,)
 {
-	KEEP(*(.irq_info*))
-	KEEP(*(.intList*))
-} GROUP_LINK_IN(IDT_LIST)
+	KEEP(*(.irq_info))
+	KEEP(*(.intList))
+} GROUP_ROM_LINK_IN(IDT_LIST, IDT_LIST)
 #else
 /DISCARD/ :
 {

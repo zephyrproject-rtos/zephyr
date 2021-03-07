@@ -5,12 +5,12 @@
 	SECTION_DATA_PROLOGUE(tdata,,)
 	{
 		*(.tdata .tdata.* .gnu.linkonce.td.*);
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 	SECTION_DATA_PROLOGUE(tbss,,)
 	{
 		*(.tbss .tbss.* .gnu.linkonce.tb.* .tcommon);
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 	/*
 	 * These needs to be outside of the tdata/tbss
