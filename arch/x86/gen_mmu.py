@@ -574,7 +574,7 @@ def main():
     # Map the zephyr image
     pt.map(image_base, image_size, map_flags | ENTRY_RW)
 
-    if isdef("CONFIG_KERNEL_LINK_IN_VIRT"):
+    if virt_to_phys_offset != 0:
         pt.reserve_unaligned(sram_base, sram_size)
 
         mapped_kernel_phys_base = mapped_kernel_base + virt_to_phys_offset
@@ -611,19 +611,19 @@ def main():
             flags = FLAG_P | ENTRY_US | ENTRY_RW
             pt.set_region_perms("_image_text", flags)
 
-            if isdef("CONFIG_KERNEL_LINK_IN_VIRT") and virt_to_phys_offset != 0:
+            if virt_to_phys_offset != 0:
                 pt.set_region_perms("_image_text", flags, use_offset=True)
         else:
             flags = FLAG_P | ENTRY_US
             pt.set_region_perms("_image_text", flags)
 
-            if isdef("CONFIG_KERNEL_LINK_IN_VIRT") and virt_to_phys_offset != 0:
+            if virt_to_phys_offset != 0:
                 pt.set_region_perms("_image_text", flags, use_offset=True)
 
         flags = FLAG_P | ENTRY_US | ENTRY_XD
         pt.set_region_perms("_image_rodata", flags)
 
-        if isdef("CONFIG_KERNEL_LINK_IN_VIRT") and virt_to_phys_offset != 0:
+        if virt_to_phys_offset != 0:
             pt.set_region_perms("_image_rodata", flags, use_offset=True)
 
         if isdef("CONFIG_COVERAGE_GCOV") and isdef("CONFIG_USERSPACE"):

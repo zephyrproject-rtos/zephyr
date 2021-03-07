@@ -219,7 +219,7 @@ static const struct paging_level paging_levels[] = {
  */
 #define NUM_PT_VIRT	((PT_VIRT_END - PT_VIRT_START) / PT_AREA)
 
-#ifdef CONFIG_KERNEL_LINK_IN_VIRT
+#ifdef Z_VM_KERNEL
 /* When linking in virtual address space, the physical address space
  * also needs to be mapped as platform is booted via physical address
  * and various structures needed by boot (e.g. GDT, IDT) must be
@@ -238,7 +238,7 @@ static const struct paging_level paging_levels[] = {
 #define NUM_PT_PHYS	((PT_PHYS_END - PT_PHYS_START) / PT_AREA)
 #else
 #define NUM_PT_PHYS	0
-#endif /* CONFIG_KERNEL_LINK_IN_VIRT */
+#endif /* Z_VM_KERNEL */
 
 #define NUM_PT		(NUM_PT_VIRT + NUM_PT_PHYS)
 
@@ -253,14 +253,14 @@ static const struct paging_level paging_levels[] = {
  */
 #define NUM_PD_VIRT	((PD_VIRT_END - PD_VIRT_START) / PD_AREA)
 
-#ifdef CONFIG_KERNEL_LINK_IN_VIRT
+#ifdef Z_VM_KERNEL
 #define PD_PHYS_START	((uintptr_t)ROUND_DOWN(SRAM_ADDR, PD_AREA))
 #define PD_PHYS_END	((uintptr_t)ROUND_UP(SRAM_ADDR + SRAM_SIZE, PD_AREA))
 
 #define NUM_PD_PHYS	((PD_PHYS_END - PD_PHYS_START) / PD_AREA)
 #else
 #define NUM_PD_PHYS	0
-#endif /* CONFIG_KERNEL_LINK_IN_VIRT */
+#endif /* Z_VM_KERNEL */
 
 #define NUM_PD		(NUM_PD_VIRT + NUM_PD_PHYS)
 #else
