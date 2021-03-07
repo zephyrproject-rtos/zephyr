@@ -35,7 +35,9 @@ LOG_MODULE_REGISTER(net_dhcpv4, CONFIG_NET_DHCPV4_LOG_LEVEL);
 static sys_slist_t dhcpv4_ifaces;
 static struct k_delayed_work timeout_work;
 
+#ifdef CONFIG_NET_MGMT_EVENT
 static struct net_mgmt_event_callback mgmt4_cb;
+#endif /* CONFIG_NET_MGMT_EVENT */
 
 /* RFC 1497 [17] */
 static const uint8_t magic_cookie[4] = { 0x63, 0x82, 0x53, 0x63 };
@@ -276,6 +278,7 @@ fail:
 	return NULL;
 }
 
+#ifdef CONFIG_NET_MGMT_EVENT
 static void dhcpv4_immediate_timeout(struct net_if_dhcpv4 *dhcpv4)
 {
 	NET_DBG("force timeout dhcpv4=%p", dhcpv4);
@@ -283,6 +286,7 @@ static void dhcpv4_immediate_timeout(struct net_if_dhcpv4 *dhcpv4)
 	dhcpv4->request_time = 0U;
 	k_delayed_work_submit(&timeout_work, K_NO_WAIT);
 }
+#endif /* CONFIG_NET_MGMT_EVENT */
 
 static void dhcpv4_set_timeout(struct net_if_dhcpv4 *dhcpv4,
 			       uint32_t timeout)
@@ -1066,6 +1070,7 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 	return NET_OK;
 }
 
+#ifdef CONFIG_NET_MGMT_EVENT
 static void dhcpv4_iface_event_handler(struct net_mgmt_event_callback *cb,
 				       uint32_t mgmt_event, struct net_if *iface)
 {
@@ -1101,6 +1106,7 @@ static void dhcpv4_iface_event_handler(struct net_mgmt_event_callback *cb,
 		dhcpv4_immediate_timeout(&iface->config.dhcpv4);
 	}
 }
+#endif /* CONFIG_NET_MGMT_EVENT */
 
 const char *net_dhcpv4_state_name(enum net_dhcpv4_state state)
 {
@@ -1237,11 +1243,13 @@ int net_dhcpv4_init(void)
 
 	k_delayed_work_init(&timeout_work, dhcpv4_timeout);
 
+#ifdef CONFIG_NET_MGMT_EVENT
 	/* Catch network interface UP or DOWN events and renew the address
 	 * if interface is coming back up again.
 	 */
 	net_mgmt_init_event_callback(&mgmt4_cb, dhcpv4_iface_event_handler,
 					 NET_EVENT_IF_DOWN | NET_EVENT_IF_UP);
+#endif /* CONFIG_NET_MGMT_EVENT */
 
 	return 0;
 }
