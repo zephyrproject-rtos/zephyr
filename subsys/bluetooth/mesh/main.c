@@ -117,7 +117,7 @@ int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
 		atomic_clear_bit(bt_mesh.flags, BT_MESH_VALID);
 
 		if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT) && pb_gatt_enabled) {
-			bt_mesh_proxy_prov_enable();
+			(void)bt_mesh_proxy_prov_enable();
 		}
 
 		return err;
