@@ -208,61 +208,27 @@ static const struct paging_level paging_levels[] = {
 #define VM_ADDR		CONFIG_KERNEL_VM_BASE
 #define VM_SIZE		CONFIG_KERNEL_VM_SIZE
 
-/* Define a range [PT_VIRT_START, PT_VIRT_END) which is the memory range
- * covered by all the page tables needed for the virtual address space
+/* Define a range [PT_START, PT_END) which is the memory range
+ * covered by all the page tables needed for the address space
  */
-#define PT_VIRT_START	((uintptr_t)ROUND_DOWN(VM_ADDR, PT_AREA))
-#define PT_VIRT_END	((uintptr_t)ROUND_UP(VM_ADDR + VM_SIZE, PT_AREA))
+#define PT_START	((uintptr_t)ROUND_DOWN(VM_ADDR, PT_AREA))
+#define PT_END		((uintptr_t)ROUND_UP(VM_ADDR + VM_SIZE, PT_AREA))
 
 /* Number of page tables needed to cover address space. Depends on the specific
  * bounds, but roughly 1 page table per 2MB of RAM
  */
-#define NUM_PT_VIRT	((PT_VIRT_END - PT_VIRT_START) / PT_AREA)
-
-#ifdef Z_VM_KERNEL
-/* When linking in virtual address space, the physical address space
- * also needs to be mapped as platform is booted via physical address
- * and various structures needed by boot (e.g. GDT, IDT) must be
- * available via physical addresses. So the reserved space for
- * page tables needs to be enlarged to accommodate this.
- *
- * Note that this assumes the physical and virtual address spaces
- * do not overlap, hence the simply addition of space.
- */
-#define SRAM_ADDR	CONFIG_SRAM_BASE_ADDRESS
-#define SRAM_SIZE	KB(CONFIG_SRAM_SIZE)
-
-#define PT_PHYS_START	((uintptr_t)ROUND_DOWN(SRAM_ADDR, PT_AREA))
-#define PT_PHYS_END	((uintptr_t)ROUND_UP(SRAM_ADDR + SRAM_SIZE, PT_AREA))
-
-#define NUM_PT_PHYS	((PT_PHYS_END - PT_PHYS_START) / PT_AREA)
-#else
-#define NUM_PT_PHYS	0
-#endif /* Z_VM_KERNEL */
-
-#define NUM_PT		(NUM_PT_VIRT + NUM_PT_PHYS)
+#define NUM_PT	((PT_END - PT_START) / PT_AREA)
 
 #if defined(CONFIG_X86_64) || defined(CONFIG_X86_PAE)
 /* Same semantics as above, but for the page directories needed to cover
  * system RAM.
  */
-#define PD_VIRT_START	((uintptr_t)ROUND_DOWN(VM_ADDR, PD_AREA))
-#define PD_VIRT_END	((uintptr_t)ROUND_UP(VM_ADDR + VM_SIZE, PD_AREA))
+#define PD_START	((uintptr_t)ROUND_DOWN(VM_ADDR, PD_AREA))
+#define PD_END		((uintptr_t)ROUND_UP(VM_ADDR + VM_SIZE, PD_AREA))
 /* Number of page directories needed to cover the address space. Depends on the
  * specific bounds, but roughly 1 page directory per 1GB of RAM
  */
-#define NUM_PD_VIRT	((PD_VIRT_END - PD_VIRT_START) / PD_AREA)
-
-#ifdef Z_VM_KERNEL
-#define PD_PHYS_START	((uintptr_t)ROUND_DOWN(SRAM_ADDR, PD_AREA))
-#define PD_PHYS_END	((uintptr_t)ROUND_UP(SRAM_ADDR + SRAM_SIZE, PD_AREA))
-
-#define NUM_PD_PHYS	((PD_PHYS_END - PD_PHYS_START) / PD_AREA)
-#else
-#define NUM_PD_PHYS	0
-#endif /* Z_VM_KERNEL */
-
-#define NUM_PD		(NUM_PD_VIRT + NUM_PD_PHYS)
+#define NUM_PD	((PD_END - PD_START) / PD_AREA)
 #else
 /* 32-bit page tables just have one toplevel page directory */
 #define NUM_PD	1
