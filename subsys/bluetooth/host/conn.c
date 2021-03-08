@@ -29,6 +29,7 @@
 
 #include "hci_core.h"
 #include "id.h"
+#include "adv.h"
 #include "conn_internal.h"
 #include "l2cap_internal.h"
 #include "keys.h"
