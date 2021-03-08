@@ -10,6 +10,7 @@
 #include <zephyr/types.h>
 #include <sys/slist.h>
 #include <power/power_state.h>
+#include <power/pm_policy.h>
 #include <toolchain.h>
 #include <stdbool.h>
 

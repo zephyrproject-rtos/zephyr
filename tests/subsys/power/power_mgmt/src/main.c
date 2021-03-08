@@ -60,9 +60,14 @@ __weak void pm_power_state_exit_post_ops(struct pm_state_info info)
 }
 
 /* Our PM policy handler */
-struct pm_state_info pm_policy_next_state(int ticks)
+static int test_pm_policy_next_state(struct pm_policy *policy,
+			     int ticks, struct pm_state_info *info)
 {
-	struct pm_state_info info = {};
+	ARG_UNUSED(policy);
+
+	if (info == NULL) {
+		return -EINVAL;
+	}
 
 	/* make sure this is idle thread */
 	zassert_true(z_is_idle_thread_object(_current), NULL);
@@ -72,17 +77,19 @@ struct pm_state_info pm_policy_next_state(int ticks)
 	if (enter_low_power) {
 		enter_low_power = false;
 		notify_app_entry = true;
-		info.state = PM_STATE_RUNTIME_IDLE;
+		info->state = PM_STATE_RUNTIME_IDLE;
 	} else {
 		/* only test pm_policy_next_state()
 		 * no PM operation done
 		 */
-		info.state = PM_STATE_ACTIVE;
+		info->state = PM_STATE_ACTIVE;
 	}
-	return info;
+	return 0;
 }
 
-/* implement in application, called by idle thread */
+PM_POLICY_DEFINE(test_policy, test_pm_policy_next_state);
+
+/* implement in application, callted by idle thread */
 static void notify_pm_state_entry(enum pm_state state)
 {
 	uint32_t device_power_state;

@@ -8,6 +8,7 @@
 #include <power/power.h>
 #include <irq_offload.h>
 #include <debug/stack.h>
+#include <power/pm_policy.h>
 
 #define SLEEP_MS 100
 #define NUM_OF_WORK 2
@@ -39,20 +40,30 @@ __weak void pm_power_state_exit_post_ops(struct pm_state_info info)
 }
 
 /* Our PM policy handler */
-struct pm_state_info pm_policy_next_state(int32_t ticks)
+static int test_pm_policy_next_state(struct pm_policy *policy,
+			     int32_t ticks, struct pm_state_info *state)
 {
 	static bool test_flag;
+
+	ARG_UNUSED(policy);
+
+	if (state == NULL) {
+		return -EINVAL;
+	}
 
 	/* Call k_thread_foreach only once otherwise it will
 	 * flood the console with stack dumps.
 	 */
-	if (!test_flag) {
+	if (test_flag == false) {
 		k_thread_foreach(tdata_dump_callback, NULL);
 		test_flag = true;
 	}
 
-	return (struct pm_state_info){PM_STATE_ACTIVE, 0, 0};
+	*state = (struct pm_state_info){PM_STATE_ACTIVE, 0, 0};
+	return 0;
 }
+
+PM_POLICY_DEFINE(test_pm_policy, test_pm_policy_next_state);
 
 /*work handler*/
 static void work_handler(struct k_work *w)

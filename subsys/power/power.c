@@ -147,7 +147,13 @@ static enum pm_state _handle_device_abort(struct pm_state_info info)
 
 enum pm_state pm_system_suspend(int32_t ticks)
 {
-	z_power_state = pm_policy_next_state(ticks);
+	int ret = pm_policy_next_state(ticks, &z_power_state);
+
+	if (ret < 0) {
+		z_power_state.state = PM_STATE_ACTIVE;
+		LOG_WRN("pm_policy_next_state returned: %d\n", ret);
+	}
+
 	if (z_power_state.state == PM_STATE_ACTIVE) {
 		LOG_DBG("No PM operations done.");
 		return z_power_state.state;

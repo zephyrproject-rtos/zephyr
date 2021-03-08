@@ -18,15 +18,23 @@ LOG_MODULE_DECLARE(power, CONFIG_PM_LOG_LEVEL);
 static const struct pm_state_info pm_dummy_states[] =
 	PM_STATE_INFO_DT_ITEMS_LIST(DT_NODELABEL(cpu0));
 
-struct pm_state_info pm_policy_next_state(int32_t ticks)
+static int dummy_policy_next_state(struct pm_policy *policy,
+			   int32_t ticks, struct pm_state_info *state)
 {
 	static struct pm_state_info cur_pm_state_info;
 	int i = (int)cur_pm_state_info.state;
 	uint8_t states_len = ARRAY_SIZE(pm_dummy_states);
 
+	ARG_UNUSED(policy);
+
+	if (state == NULL) {
+		return -EINVAL;
+	}
+
+	*state = STATE_ACTIVE;
 	if (states_len == 0) {
 		/* No power states to go through. */
-		return STATE_ACTIVE;
+		return 0;
 	}
 
 	do {
@@ -40,10 +48,13 @@ struct pm_state_info pm_policy_next_state(int32_t ticks)
 		cur_pm_state_info = pm_dummy_states[i];
 
 		LOG_DBG("Selected power state: %u", pm_dummy_states[i].state);
+		*state = pm_dummy_states[i];
 
-		return pm_dummy_states[i];
+		return 0;
 	} while (pm_dummy_states[i].state != cur_pm_state_info.state);
 
 	LOG_DBG("No suitable power state found!");
-	return STATE_ACTIVE;
+	return 0;
 }
+
+PM_POLICY_DEFINE(dummy_policy, dummy_policy_next_state);

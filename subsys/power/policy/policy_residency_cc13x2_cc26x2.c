@@ -35,7 +35,8 @@ extern PowerCC26X2_ModuleState PowerCC26X2_module;
 static const struct pm_state_info residency_info[] =
 	PM_STATE_INFO_DT_ITEMS_LIST(DT_NODELABEL(cpu0));
 
-struct pm_state_info pm_policy_next_state(int32_t ticks)
+static int residency_policy_next_state(struct pm_policy *policy,
+			       int32_t ticks, struct pm_state_info *info)
 {
 	uint32_t constraints;
 	bool disallowed = false;
@@ -47,10 +48,15 @@ struct pm_state_info pm_policy_next_state(int32_t ticks)
 	/* query the declared constraints */
 	constraints = Power_getConstraintMask();
 
+	if (info == NULL) {
+		return -EINVAL;
+	}
+
+	*info = STATE_ACTIVE;
 	if ((ticks != K_TICKS_FOREVER) && (ticks <
 		k_us_to_ticks_ceil32(residency_info[0].min_residency_us))) {
 		LOG_DBG("Not enough time for PM operations: %d", ticks);
-		return STATE_ACTIVE;
+		return 0;
 	}
 
 	for (i = ARRAY_SIZE(residency_info) - 1; i >= 0; i--) {
@@ -130,9 +136,12 @@ struct pm_state_info pm_policy_next_state(int32_t ticks)
 			residency_info[i].state, ticks,
 			k_us_to_ticks_ceil32(
 				residency_info[i].min_residency_us));
-		return residency_info[i];
+		*info = residency_info[i];
+		return 0;
 	}
 
 	LOG_DBG("No suitable power state found!");
-	return STATE_ACTIVE;
+	return 0;
 }
+
+PM_POLICY_DEFINE(residency_policy, residency_policy_next_state);

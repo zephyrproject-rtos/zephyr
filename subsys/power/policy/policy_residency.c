@@ -6,7 +6,7 @@
 
 #include <zephyr.h>
 #include <kernel.h>
-#include "pm_policy.h"
+#include <power/pm_policy.h>
 
 #define LOG_LEVEL CONFIG_PM_LOG_LEVEL /* From power module Kconfig */
 #include <logging/log.h>
@@ -15,9 +15,16 @@ LOG_MODULE_DECLARE(power);
 static const struct pm_state_info pm_min_residency[] =
 	PM_STATE_INFO_DT_ITEMS_LIST(DT_NODELABEL(cpu0));
 
-struct pm_state_info pm_policy_next_state(int32_t ticks)
+static int residency_policy_next_state(struct pm_policy *policy,
+			       int32_t ticks, struct pm_state_info *state)
 {
 	int i;
+
+	ARG_UNUSED(policy);
+
+	if (state == NULL) {
+		return -EINVAL;
+	}
 
 	for (i = ARRAY_SIZE(pm_min_residency) - 1; i >= 0; i--) {
 		if (!pm_constraint_get(pm_min_residency[i].state)) {
@@ -31,10 +38,15 @@ struct pm_state_info pm_policy_next_state(int32_t ticks)
 				"(ticks: %d, min_residency: %u)",
 				pm_min_residency[i].state, ticks,
 				pm_min_residency[i].min_residency_us);
-			return pm_min_residency[i];
+			*state = pm_min_residency[i];
+			return 0;
 		}
 	}
 
 	LOG_DBG("No suitable power state found!");
-	return (struct pm_state_info){PM_STATE_ACTIVE, 0, 0};
+	*state = (struct pm_state_info){PM_STATE_ACTIVE, 0, 0};
+
+	return 0;
 }
+
+PM_POLICY_DEFINE(residency_policy, residency_policy_next_state);
