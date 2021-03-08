@@ -197,24 +197,7 @@ def main():
         # x86_64 does not use descriptor for thread local storage
         num_entries += 1
 
-    if "CONFIG_X86_MMU" in syms:
-        vm_base = syms["CONFIG_KERNEL_VM_BASE"]
-        vm_offset = syms["CONFIG_KERNEL_VM_OFFSET"]
-
-        sram_base = syms["CONFIG_SRAM_BASE_ADDRESS"]
-
-        if "CONFIG_SRAM_OFFSET" in syms:
-            sram_offset = syms["CONFIG_SRAM_OFFSET"]
-        else:
-            sram_offset = 0
-
-        # Figure out if there is any need to do virtual-to-physical
-        # address translation
-        virt_to_phys_offset = (sram_base + sram_offset) - (vm_base + vm_offset)
-    else:
-        virt_to_phys_offset = 0
-
-    gdt_base = syms["_gdt"] + virt_to_phys_offset
+    gdt_base = syms["_gdt"]
 
     with open(args.output_gdt, "wb") as output_fp:
         # The pseudo descriptor is stuffed into the NULL descriptor
@@ -230,8 +213,8 @@ def main():
                                         FLAGS_GRAN, ACCESS_RW))
 
         if num_entries >= 5:
-            main_tss = syms["_main_tss"] + virt_to_phys_offset
-            df_tss = syms["_df_tss"] + virt_to_phys_offset
+            main_tss = syms["_main_tss"]
+            df_tss = syms["_df_tss"]
 
             # Selector 0x18: main TSS
             output_fp.write(create_tss_entry(main_tss, 0x67, 0))
