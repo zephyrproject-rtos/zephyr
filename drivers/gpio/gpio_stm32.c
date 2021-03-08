@@ -363,8 +363,13 @@ static int gpio_stm32_enable_int(int port, int pin)
 		.enr = LL_APB2_GRP1_PERIPH_SYSCFG
 #endif /* CONFIG_SOC_SERIES_STM32H7X */
 	};
+	int ret;
+
 	/* Enable SYSCFG clock */
-	clock_control_on(clk, (clock_control_subsys_t *) &pclken);
+	ret = clock_control_on(clk, (clock_control_subsys_t *) &pclken);
+	if (ret != 0) {
+		return ret;
+	}
 #endif
 
 	gpio_stm32_set_exti_source(port, pin);
