@@ -44,6 +44,14 @@ uint8_t lll_chan_sel_1(uint8_t *chan_use, uint8_t hop, uint16_t latency, uint8_t
 #endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_CTLR_CHAN_SEL_2)
+uint16_t lll_chan_id(uint8_t *access_addr)
+{
+	uint16_t aa_ls = ((uint16_t)access_addr[1] << 8) | access_addr[0];
+	uint16_t aa_ms = ((uint16_t)access_addr[3] << 8) | access_addr[2];
+
+	return aa_ms ^ aa_ls;
+}
+
 uint8_t lll_chan_sel_2(uint16_t counter, uint16_t chan_id, uint8_t *chan_map,
 		    uint8_t chan_count)
 {
