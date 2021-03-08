@@ -342,6 +342,7 @@ bool bt_le_conn_params_valid(const struct bt_le_conn_param *param);
 int bt_le_set_data_len(struct bt_conn *conn, uint16_t tx_octets, uint16_t tx_time);
 int bt_le_set_phy(struct bt_conn *conn, uint8_t all_phys,
 		  uint8_t pref_tx_phy, uint8_t pref_rx_phy, uint8_t phy_opts);
+uint8_t bt_get_phy(uint8_t hci_phy);
 
 int bt_le_scan_update(bool fast_scan);
 
@@ -378,8 +379,6 @@ int bt_le_adv_set_enable(struct bt_le_ext_adv *adv, bool enable);
 void bt_le_ext_adv_foreach(void (*func)(struct bt_le_ext_adv *adv, void *data),
 			   void *data);
 
-int bt_le_scan_set_enable(uint8_t enable);
-
 void bt_hci_host_num_completed_packets(struct net_buf *buf);
 
 /* HCI event handlers */
@@ -397,3 +396,13 @@ void hci_evt_auth_complete(struct net_buf *buf);
 /* ECC HCI event handlers */
 void bt_hci_evt_le_pkey_complete(struct net_buf *buf);
 void bt_hci_evt_le_dhkey_complete(struct net_buf *buf);
+
+/* Scan HCI event handlers */
+void bt_hci_le_adv_report(struct net_buf *buf);
+void bt_hci_le_scan_timeout(struct net_buf *buf);
+void bt_hci_le_adv_ext_report(struct net_buf *buf);
+void bt_hci_le_per_adv_sync_established(struct net_buf *buf);
+void bt_hci_le_per_adv_report(struct net_buf *buf);
+void bt_hci_le_per_adv_sync_lost(struct net_buf *buf);
+void bt_hci_le_biginfo_adv_report(struct net_buf *buf);
+void bt_hci_le_past_received(struct net_buf *buf);
