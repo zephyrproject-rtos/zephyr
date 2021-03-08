@@ -11,6 +11,8 @@
 #define BYTES_TO_WRITE	16
 #define BYTES_TO_READ BYTES_TO_WRITE
 
+K_HEAP_DEFINE(mpool, PIPE_LEN * 1);
+
 static ZTEST_DMEM unsigned char __aligned(4) data[] =
 "abcd1234$%^&PIPEefgh5678!/?*EPIPijkl9012[]<>PEPImnop3456{}()IPEP";
 BUILD_ASSERT(sizeof(data) >= PIPE_LEN);
@@ -20,7 +22,7 @@ K_PIPE_DEFINE(kpipe, PIPE_LEN, 4);
 K_PIPE_DEFINE(khalfpipe, (PIPE_LEN / 2), 4);
 K_PIPE_DEFINE(kpipe1, PIPE_LEN, 4);
 K_PIPE_DEFINE(pipe_test_alloc, PIPE_LEN, 4);
-struct k_pipe pipe;
+struct k_pipe pipe, pipe1;
 
 K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 K_THREAD_STACK_DEFINE(tstack1, STACK_SIZE);
@@ -29,6 +31,17 @@ struct k_thread tdata;
 struct k_thread tdata1;
 struct k_thread tdata2;
 K_SEM_DEFINE(end_sema, 0, 1);
+
+#ifdef CONFIG_64BIT
+#define SZ 256
+#else
+#define SZ 128
+#endif
+K_HEAP_DEFINE(test_pool, SZ * 4);
+
+struct mem_block {
+	void *data;
+};
 
 static void tpipe_put(struct k_pipe *ppipe, k_timeout_t timeout)
 {
@@ -90,6 +103,23 @@ static void tpipe_thread_thread(struct k_pipe *ppipe)
 	k_thread_abort(tid);
 }
 
+static void tpipe_kthread_to_kthread(struct k_pipe *ppipe)
+{
+	/**TESTPOINT: thread-thread data passing via pipe*/
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+				      tThread_entry, ppipe, NULL, NULL,
+				      K_PRIO_PREEMPT(0), 0, K_NO_WAIT);
+
+	tpipe_put(ppipe, K_NO_WAIT);
+	k_sem_take(&end_sema, K_FOREVER);
+
+	k_sem_take(&end_sema, K_FOREVER);
+	tpipe_get(ppipe, K_FOREVER);
+
+	/* clear the spawned thread avoid side effect */
+	k_thread_abort(tid);
+}
+
 static void tpipe_put_no_wait(struct k_pipe *ppipe)
 {
 	size_t to_wt, wt_byte = 0;
@@ -102,6 +132,89 @@ static void tpipe_put_no_wait(struct k_pipe *ppipe)
 					&wt_byte, 1, K_NO_WAIT), NULL);
 		zassert_true(wt_byte == to_wt || wt_byte == 1, NULL);
 	}
+}
+
+static void tpipe_put_small_size(struct k_pipe *ppipe, k_timeout_t timeout)
+{
+	size_t to_wt, wt_byte = 0;
+
+	for (int i = 0; i < PIPE_LEN; i += wt_byte) {
+		/**TESTPOINT: pipe put*/
+		to_wt = (PIPE_LEN - i) >= 24 ?
+			24 : (PIPE_LEN - i);
+		k_pipe_put(ppipe, &data[i], to_wt, &wt_byte, 1, timeout);
+	}
+}
+
+static void tpipe_get_small_size(struct k_pipe *ppipe, k_timeout_t timeout)
+{
+	unsigned char rx_data[PIPE_LEN];
+	size_t to_rd, rd_byte = 0;
+
+	/*get pipe data from "pipe_put"*/
+	for (int i = 0; i < PIPE_LEN; i += rd_byte) {
+		/**TESTPOINT: pipe get*/
+		to_rd = (PIPE_LEN - i) >= 24 ?
+			24 : (PIPE_LEN - i);
+		zassert_false(k_pipe_get(ppipe, &rx_data[i], to_rd,
+					 &rd_byte, 1, timeout), NULL);
+	}
+}
+
+
+/**
+ * @brief Test Initialization and buffer allocation of pipe,
+ * with various parameters
+ * @see k_pipe_alloc_init(), k_pipe_cleanup()
+ */
+void test_pipe_alloc(void)
+{
+	int ret;
+
+	zassert_false(k_pipe_alloc_init(&pipe_test_alloc, PIPE_LEN), NULL);
+
+	tpipe_kthread_to_kthread(&pipe_test_alloc);
+	k_pipe_cleanup(&pipe_test_alloc);
+
+	zassert_false(k_pipe_alloc_init(&pipe_test_alloc, 0), NULL);
+	k_pipe_cleanup(&pipe_test_alloc);
+
+	ret = k_pipe_alloc_init(&pipe_test_alloc, 2048);
+	zassert_true(ret == -ENOMEM,
+		"resource pool max block size is not smaller then requested buffer");
+}
+
+static void thread_for_get_forever(void *p1, void *p2, void *p3)
+{
+	tpipe_get((struct k_pipe *)p1, K_FOREVER);
+}
+
+void test_pipe_cleanup(void)
+{
+	int ret;
+
+	zassert_false(k_pipe_alloc_init(&pipe_test_alloc, PIPE_LEN), NULL);
+
+	/**TESTPOINT: test if a dynamically allocated buffer can be freed*/
+	ret = k_pipe_cleanup(&pipe_test_alloc);
+	zassert_true((ret == 0) && (pipe_test_alloc.buffer == NULL),
+			"Failed to free buffer with k_pipe_cleanup().");
+
+	/**TESTPOINT: nothing to do with k_pipe_cleanup() for static buffer in pipe*/
+	ret = k_pipe_cleanup(&kpipe);
+	zassert_true((ret == 0) && (kpipe.buffer != NULL),
+			"Static buffer should not be freed.");
+
+	zassert_false(k_pipe_alloc_init(&pipe_test_alloc, PIPE_LEN), NULL);
+
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+			thread_for_get_forever, &pipe_test_alloc, NULL,
+			NULL, K_PRIO_PREEMPT(0), 0, K_NO_WAIT);
+	k_sleep(K_MSEC(100));
+
+	ret = k_pipe_cleanup(&pipe_test_alloc);
+	zassert_true(ret == -EAGAIN, "k_pipe_cleanup() should not return with 0.");
+	k_thread_abort(tid);
 }
 
 static void thread_handler(void *p1, void *p2, void *p3)
@@ -162,7 +275,6 @@ static void thread_handler(void *p1, void *p2, void *p3)
 void test_pipe_thread2thread(void)
 {
 	/**TESTPOINT: test k_pipe_init pipe*/
-
 	k_pipe_init(&pipe, data, PIPE_LEN);
 	tpipe_thread_thread(&pipe);
 
@@ -189,27 +301,85 @@ void test_pipe_user_thread2thread(void)
 }
 #endif
 
+/**
+ * @brief Test resource pool free
+ * @see k_heap_alloc()
+ */
+#ifdef CONFIG_USERSPACE
+void test_resource_pool_auto_free(void)
+{
+	/* Pool has 2 blocks, both should succeed if kernel object and pipe
+	 * buffer are auto-freed when the allocating threads exit
+	 */
+	zassert_true(k_heap_alloc(&test_pool, 64, K_NO_WAIT) != NULL, NULL);
+	zassert_true(k_heap_alloc(&test_pool, 64, K_NO_WAIT) != NULL, NULL);
+}
+#endif
+
 static void tThread_half_pipe_put(void *p1, void *p2, void *p3)
 {
 	tpipe_put((struct k_pipe *)p1, K_FOREVER);
 }
 
+static void tThread_half_pipe_get(void *p1, void *p2, void *p3)
+{
+	tpipe_get((struct k_pipe *)p1, K_FOREVER);
+}
+
 /**
- * @brief Test get/put with smaller pipe buffer
+ * @brief Test put/get with smaller pipe buffer
  * @see k_pipe_put(), k_pipe_get()
  */
-void test_half_pipe_get_put(void)
+void test_half_pipe_put_get(void)
 {
 	/**TESTPOINT: thread-thread data passing via pipe*/
-	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+	k_tid_t tid1 = k_thread_create(&tdata1, tstack1, STACK_SIZE,
+				      tThread_half_pipe_get, &khalfpipe,
+				      NULL, NULL, K_PRIO_PREEMPT(0),
+				      K_INHERIT_PERMS | K_USER, K_NO_WAIT);
+
+	k_tid_t tid2 = k_thread_create(&tdata2, tstack2, STACK_SIZE,
+				      tThread_half_pipe_get, &khalfpipe,
+				      NULL, NULL, K_PRIO_PREEMPT(0),
+				      K_INHERIT_PERMS | K_USER, K_NO_WAIT);
+
+	k_sleep(K_MSEC(100));
+	tpipe_put_small_size(&khalfpipe, K_NO_WAIT);
+
+	/* clear the spawned thread avoid side effect */
+	k_thread_abort(tid1);
+	k_thread_abort(tid2);
+}
+
+void test_pipe_get_put(void)
+{
+	unsigned char rx_data[PIPE_LEN];
+	size_t rd_byte = 0;
+	int ret;
+
+	/* TESTPOINT: min_xfer > bytes_to_read */
+	ret = k_pipe_get(&kpipe, &rx_data[0], 1, &rd_byte, 24, K_NO_WAIT);
+	zassert_true(ret == -EINVAL, NULL);
+	ret = k_pipe_get(&kpipe, &rx_data[0], 24, NULL, 1, K_NO_WAIT);
+	zassert_true(ret == -EINVAL, NULL);
+
+	/**TESTPOINT: thread-thread data passing via pipe*/
+	k_tid_t tid1 = k_thread_create(&tdata1, tstack1, STACK_SIZE,
 				      tThread_half_pipe_put, &khalfpipe,
 				      NULL, NULL, K_PRIO_PREEMPT(0),
 				      K_INHERIT_PERMS | K_USER, K_NO_WAIT);
 
-	tpipe_get(&khalfpipe, K_FOREVER);
+	k_tid_t tid2 = k_thread_create(&tdata2, tstack2, STACK_SIZE,
+				      tThread_half_pipe_put, &khalfpipe,
+				      NULL, NULL, K_PRIO_PREEMPT(0),
+				      K_INHERIT_PERMS | K_USER, K_NO_WAIT);
+
+	k_sleep(K_MSEC(100));
+	tpipe_get_small_size(&khalfpipe, K_NO_WAIT);
 
 	/* clear the spawned thread avoid side effect */
-	k_thread_abort(tid);
+	k_thread_abort(tid1);
+	k_thread_abort(tid2);
 }
 
 /**
