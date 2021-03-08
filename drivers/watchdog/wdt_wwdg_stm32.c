@@ -251,11 +251,9 @@ static int wwdg_stm32_init(const struct device *dev)
 	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	const struct wwdg_stm32_config *cfg = WWDG_STM32_CFG(dev);
 
-	clock_control_on(clk, (clock_control_subsys_t *) &cfg->pclken);
-
 	wwdg_stm32_irq_config(dev);
 
-	return 0;
+	return clock_control_on(clk, (clock_control_subsys_t *) &cfg->pclken);
 }
 
 static struct wwdg_stm32_data wwdg_stm32_dev_data = {
