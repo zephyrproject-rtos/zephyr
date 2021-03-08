@@ -90,6 +90,11 @@
 #endif
 #if (VIA_TWISTER & 0x200) != 0
 #define USE_PACKAGED 1
+#else
+#define USE_PACKAGED 0
+#endif
+#if (VIA_TWISTER & 0x400) != 0
+#define CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE 1
 #endif
 
 #endif /* VIA_TWISTER */
@@ -163,28 +168,43 @@ static inline int match_sfx(const char **ptr)
 
 /* This has to be more than 255 so we can test over-sized widths. */
 static char buf[512];
-static char *bp;
+
+struct out_buffer {
+	char *buf;
+	size_t idx;
+	size_t size;
+};
+
+static struct out_buffer outbuf;
 
 static inline void reset_out(void)
 {
-	bp = buf;
-	*bp = 0;
+	outbuf.buf = buf;
+	outbuf.size = ARRAY_SIZE(buf);
+	outbuf.idx = 0;
+}
+
+static void outbuf_null_terminate(struct out_buffer *outbuf)
+{
+	int idx = outbuf->idx - ((outbuf->idx == outbuf->size) ? 1 : 0);
+
+	outbuf->buf[idx] = 0;
 }
 
 static int out(int c, void *dest)
 {
 	int rv = EOF;
+	struct out_buffer *buf = dest;
 
-	ARG_UNUSED(dest);
-	if (bp < (buf + ARRAY_SIZE(buf))) {
-		*bp++ = (char)(unsigned char)c;
+	if (buf->idx < buf->size) {
+		buf->buf[buf->idx++] = (char)(unsigned char)c;
 		rv = (int)(unsigned char)c;
 	}
 	return rv;
 }
 
-__printf_like(1, 2)
-static int prf(const char *format, ...)
+__printf_like(2, 3)
+static int prf(char *static_package_str, const char *format, ...)
 {
 	va_list ap;
 	int rv;
@@ -197,15 +217,15 @@ static int prf(const char *format, ...)
 #if USE_PACKAGED
 	rv = cbvprintf_package(packaged, sizeof(packaged), format, ap);
 	if (rv >= 0) {
-		rv = cbpprintf(out, NULL, packaged);
+		rv = cbpprintf(out, &outbuf, packaged);
+		if (rv == 0 && static_package_str) {
+			rv = strcmp(static_package_str, outbuf.buf);
+		}
 	}
 #else
-	rv = cbvprintf(out, NULL, format, ap);
+	rv = cbvprintf(out, &outbuf, format, ap);
 #endif
-	if (bp == (buf + ARRAY_SIZE(buf))) {
-		--bp;
-	}
-	*bp = 0;
+	outbuf_null_terminate(&outbuf);
 #endif
 	va_end(ap);
 	return rv;
@@ -220,22 +240,58 @@ static int rawprf(const char *format, ...)
 #if USE_PACKAGED
 	rv = cbvprintf_package(packaged, sizeof(packaged), format, ap);
 	if (rv >= 0) {
-		rv = cbpprintf(out, NULL, packaged);
+		rv = cbpprintf(out, &outbuf, packaged);
 	}
 #else
-	rv = cbvprintf(out, NULL, format, ap);
+	rv = cbvprintf(out, &outbuf, format, ap);
 #endif
 	va_end(ap);
 
 	if (IS_ENABLED(CONFIG_CBPRINTF_NANO)
 	    && !IS_ENABLED(CONFIG_CBPRINTF_LIBC_SUBSTS)) {
 		zassert_equal(rv, 0, NULL);
-		rv = bp - buf;
+		rv = outbuf.idx;
 	}
 	return rv;
 }
 
-#define TEST_PRF(_fmt, ...) prf(WRAP_FMT(_fmt), PASS_ARG(__VA_ARGS__))
+#define TEST_PRF2(rc, _fmt, ...) do { \
+	char _buf[512]; \
+	char *sp_buf = NULL; /* static package buffer */\
+	if (USE_PACKAGED && !CBPRINTF_MUST_RUNTIME_PACKAGE(0, _fmt, __VA_ARGS__)) { \
+		int rv = 0; \
+		size_t _len; \
+		struct out_buffer package_buf = { \
+			.buf = _buf, .size = ARRAY_SIZE(_buf), .idx = 0 \
+		}; \
+		CBPRINTF_STATIC_PACKAGE(NULL, 0, _len, _fmt, __VA_ARGS__); \
+		uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) package[_len]; \
+		int st_pkg_rv; \
+		CBPRINTF_STATIC_PACKAGE(package, _len - 1, st_pkg_rv, \
+					_fmt, __VA_ARGS__); \
+		zassert_equal(st_pkg_rv, -ENOSPC, NULL); \
+		CBPRINTF_STATIC_PACKAGE(package, _len, st_pkg_rv, \
+					_fmt, __VA_ARGS__); \
+		zassert_equal(st_pkg_rv, _len, NULL); \
+		rv = cbpprintf(out, &package_buf, package); \
+		if (rv >= 0) { \
+			sp_buf = _buf; \
+		} \
+	} \
+	*rc = prf(sp_buf, _fmt, __VA_ARGS__); \
+} while (0)
+
+#define TEST_PRF(rc, _fmt, ...) \
+	TEST_PRF2(rc, WRAP_FMT(_fmt), PASS_ARG(__VA_ARGS__))
+
+#ifdef CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE
+#define TEST_PRF_LONG_DOUBLE(rc, _fmt, ...) \
+	TEST_PRF(rc, _fmt, __VA_ARGS__)
+#else
+/* Skip testing of static packaging if long double support not enabled. */
+#define TEST_PRF_LONG_DOUBLE(rc, _fmt, ...) \
+	*rc = prf(NULL, WRAP_FMT(_fmt), PASS_ARG(__VA_ARGS__))
+#endif
 
 struct context {
 	const char *expected;
@@ -323,7 +379,9 @@ static inline bool prf_check(const char *expected,
 
 static void test_pct(void)
 {
-	int rc = TEST_PRF("/%%/%c/", 'a');
+	int rc;
+
+	TEST_PRF(&rc, "/%%/%c/", 'a');
 
 	PRF_CHECK("/%/a/", rc);
 }
@@ -332,10 +390,10 @@ static void test_c(void)
 {
 	int rc;
 
-	rc = TEST_PRF("%c", 'a');
+	TEST_PRF(&rc, "%c", 'a');
 	PRF_CHECK("a", rc);
 
-	rc = prf("/%256c/", 'a');
+	rc = prf(NULL, "/%256c/", 'a');
 
 	const char *bp = buf;
 	size_t spaces = 255;
@@ -356,7 +414,7 @@ static void test_c(void)
 		return;
 	}
 
-	rc = TEST_PRF("%lc", (wint_t)'a');
+	TEST_PRF(&rc, "%lc", (wint_t)'a');
 	if (ENABLED_USE_LIBC) {
 		PRF_CHECK("a", rc);
 	} else {
@@ -370,13 +428,13 @@ static void test_s(void)
 	static wchar_t ws[] = L"abc";
 	int rc;
 
-	rc = TEST_PRF("/%s/", s);
+	TEST_PRF(&rc, "/%s/", s);
 	PRF_CHECK("/123/", rc);
 
-	rc = TEST_PRF("/%6s/%-6s/%2s/", s, s, s);
+	TEST_PRF(&rc, "/%6s/%-6s/%2s/", s, s, s);
 	PRF_CHECK("/   123/123   /123/", rc);
 
-	rc = TEST_PRF("/%.6s/%.2s/%.s/", s, s, s);
+	TEST_PRF(&rc, "/%.6s/%.2s/%.s/", s, s, s);
 	PRF_CHECK("/123/12//", rc);
 
 	if (IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
@@ -384,7 +442,7 @@ static void test_s(void)
 		return;
 	}
 
-	rc = TEST_PRF("%ls", ws);
+	TEST_PRF(&rc, "%ls", ws);
 	if (ENABLED_USE_LIBC) {
 		PRF_CHECK("abc", rc);
 	} else {
@@ -414,21 +472,21 @@ static void test_d_length(void)
 	long long svll2 = -2LL;
 	int rc;
 
-	rc = TEST_PRF("%d/%d", min, max);
+	TEST_PRF(&rc, "%d/%d", min, max);
 	PRF_CHECK("-1234567890/1876543210", rc);
 
-	rc = TEST_PRF("%u/%u", min, max);
+	TEST_PRF(&rc, "%u/%u", min, max);
 	PRF_CHECK("3060399406/1876543210", rc);
 
 	if (!IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
-		rc = TEST_PRF("%hd/%hd", min, max);
+		TEST_PRF(&rc, "%hd/%hd", min, max);
 		PRF_CHECK("-722/-14614", rc);
 
-		rc = TEST_PRF("%hhd/%hhd", min, max);
+		TEST_PRF(&rc, "%hhd/%hhd", min, max);
 		PRF_CHECK("46/-22", rc);
 	}
 
-	rc = TEST_PRF("%ld/%ld", (long)min, (long)max);
+	TEST_PRF(&rc, "%ld/%ld", (long)min, (long)max);
 	if (IS_ENABLED(CONFIG_CBPRINTF_FULL_INTEGRAL)
 	    || (sizeof(long) <= 4)
 	    || IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
@@ -437,7 +495,7 @@ static void test_d_length(void)
 		PRF_CHECK("%ld/%ld", rc);
 	}
 
-	rc = TEST_PRF("/%lld/%lld/%lld/", svll, -svll, svll2);
+	TEST_PRF(&rc, "/%lld/%lld/%lld/", svll, -svll, svll2);
 	if (IS_ENABLED(CONFIG_CBPRINTF_FULL_INTEGRAL)) {
 		PRF_CHECK("/34621422135410688/-34621422135410688/-2/", rc);
 	} else if (IS_ENABLED(CONFIG_CBPRINTF_COMPLETE)) {
@@ -448,7 +506,7 @@ static void test_d_length(void)
 		zassert_true(false, "Missed case!");
 	}
 
-	rc = TEST_PRF("%lld/%lld", (long long)min, (long long)max);
+	TEST_PRF(&rc, "%lld/%lld", (long long)min, (long long)max);
 	if (IS_ENABLED(CONFIG_CBPRINTF_FULL_INTEGRAL)) {
 		PRF_CHECK("-1234567890/1876543210", rc);
 	} else if (IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
@@ -462,14 +520,14 @@ static void test_d_length(void)
 		return;
 	}
 
-	rc = TEST_PRF("%jd/%jd", (intmax_t)min, (intmax_t)max);
+	TEST_PRF(&rc, "%jd/%jd", (intmax_t)min, (intmax_t)max);
 	if (IS_ENABLED(CONFIG_CBPRINTF_FULL_INTEGRAL)) {
 		PRF_CHECK("-1234567890/1876543210", rc);
 	} else {
 		PRF_CHECK("%jd/%jd", rc);
 	}
 
-	rc = TEST_PRF("%zd/%td/%td", (size_t)min, (ptrdiff_t)min,
+	TEST_PRF(&rc, "%zd/%td/%td", (size_t)min, (ptrdiff_t)min,
 		      (ptrdiff_t)max);
 	if (IS_ENABLED(CONFIG_CBPRINTF_FULL_INTEGRAL)
 	    || (sizeof(size_t) <= 4)) {
@@ -494,32 +552,32 @@ static void test_d_flags(void)
 	int rc;
 
 	/* Stuff related to sign */
-	rc = TEST_PRF("/%d/%-d/%+d/% d/",
+	TEST_PRF(&rc, "/%d/%-d/%+d/% d/",
 		      sv, sv, sv, sv);
 	PRF_CHECK("/123/123/+123/ 123/", rc);
 
 	/* Stuff related to width padding */
-	rc = TEST_PRF("/%1d/%4d/%-4d/%04d/%15d/%-15d/",
+	TEST_PRF(&rc, "/%1d/%4d/%-4d/%04d/%15d/%-15d/",
 		      sv, sv, sv, sv, sv, sv);
 	PRF_CHECK("/123/ 123/123 /0123/"
 		  "            123/123            /", rc);
 
 	/* Stuff related to precision */
-	rc = TEST_PRF("/%.6d/%6.4d/", sv, sv);
+	TEST_PRF(&rc, "/%.6d/%6.4d/", sv, sv);
 	PRF_CHECK("/000123/  0123/", rc);
 
 	/* Now with negative values */
 	sv = -sv;
-	rc = TEST_PRF("/%d/%-d/%+d/% d/",
+	TEST_PRF(&rc, "/%d/%-d/%+d/% d/",
 		      sv, sv, sv, sv);
 	PRF_CHECK("/-123/-123/-123/-123/", rc);
 
-	rc = TEST_PRF("/%1d/%6d/%-6d/%06d/%13d/%-13d/",
+	TEST_PRF(&rc, "/%1d/%6d/%-6d/%06d/%13d/%-13d/",
 		      sv, sv, sv, sv, sv, sv);
 	PRF_CHECK("/-123/  -123/-123  /-00123/"
 		  "         -123/-123         /", rc);
 
-	rc = TEST_PRF("/%.6d/%6.4d/", sv, sv);
+	TEST_PRF(&rc, "/%.6d/%6.4d/", sv, sv);
 	PRF_CHECK("/-000123/ -0123/", rc);
 
 	/* These have to be tested without the format validation
@@ -540,10 +598,10 @@ static void test_x_length(void)
 	unsigned int max = 0x4d3d2d1d;
 	int rc;
 
-	rc = TEST_PRF("%x/%X", min, max);
+	TEST_PRF(&rc, "%x/%X", min, max);
 	PRF_CHECK("4c3c2c1c/4D3D2D1D", rc);
 
-	rc = TEST_PRF("%lx/%lX", (unsigned long)min, (unsigned long)max);
+	TEST_PRF(&rc, "%lx/%lX", (unsigned long)min, (unsigned long)max);
 	if (IS_ENABLED(CONFIG_CBPRINTF_FULL_INTEGRAL)
 	    || (sizeof(long) <= 4)
 	    || IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
@@ -557,22 +615,22 @@ static void test_x_length(void)
 		return;
 	}
 
-	rc = TEST_PRF("%hx/%hX", min, max);
+	TEST_PRF(&rc, "%hx/%hX", min, max);
 	PRF_CHECK("2c1c/2D1D", rc);
 
-	rc = TEST_PRF("%hhx/%hhX", min, max);
+	TEST_PRF(&rc, "%hhx/%hhX", min, max);
 	PRF_CHECK("1c/1D", rc);
 
 	if (IS_ENABLED(CONFIG_CBPRINTF_FULL_INTEGRAL)) {
-		rc = TEST_PRF("%llx/%llX", (unsigned long long)min,
+		TEST_PRF(&rc, "%llx/%llX", (unsigned long long)min,
 			      (unsigned long long)max);
 		PRF_CHECK("4c3c2c1c/4D3D2D1D", rc);
 
-		rc = TEST_PRF("%jx/%jX", (uintmax_t)min, (uintmax_t)max);
+		TEST_PRF(&rc, "%jx/%jX", (uintmax_t)min, (uintmax_t)max);
 		PRF_CHECK("4c3c2c1c/4D3D2D1D", rc);
 	}
 
-	rc = TEST_PRF("%zx/%zX", (size_t)min, (size_t)max);
+	TEST_PRF(&rc, "%zx/%zX", (size_t)min, (size_t)max);
 	if (IS_ENABLED(CONFIG_CBPRINTF_FULL_INTEGRAL)
 	    || (sizeof(size_t) <= 4)) {
 		PRF_CHECK("4c3c2c1c/4D3D2D1D", rc);
@@ -580,7 +638,7 @@ static void test_x_length(void)
 		PRF_CHECK("%zx/%zX", rc);
 	}
 
-	rc = TEST_PRF("%tx/%tX", (ptrdiff_t)min, (ptrdiff_t)max);
+	TEST_PRF(&rc, "%tx/%tX", (ptrdiff_t)min, (ptrdiff_t)max);
 	if (IS_ENABLED(CONFIG_CBPRINTF_FULL_INTEGRAL)
 	    || (sizeof(ptrdiff_t) <= 4)) {
 		PRF_CHECK("4c3c2c1c/4D3D2D1D", rc);
@@ -593,7 +651,7 @@ static void test_x_length(void)
 		unsigned long long min = 0x8c7c6c5c4c3c2c1cULL;
 		unsigned long long max = 0x8d7d6d5d4d3d2d1dULL;
 
-		rc = TEST_PRF("%llx/%llX", (unsigned long long)min,
+		TEST_PRF(&rc, "%llx/%llX", (unsigned long long)min,
 			      (unsigned long long)max);
 		PRF_CHECK("8c7c6c5c4c3c2c1c/8D7D6D5D4D3D2D1D", rc);
 	}
@@ -607,12 +665,12 @@ static void test_x_flags(void)
 	/* Stuff related to sign flags, which have no effect on
 	 * unsigned conversions, and alternate form
 	 */
-	rc = TEST_PRF("/%x/%-x/%#x/",
+	TEST_PRF(&rc, "/%x/%-x/%#x/",
 		      sv, sv, sv);
 	PRF_CHECK("/123/123/0x123/", rc);
 
 	/* Stuff related to width and padding */
-	rc = TEST_PRF("/%1x/%4x/%-4x/%04x/%#15x/%-15x/",
+	TEST_PRF(&rc, "/%1x/%4x/%-4x/%04x/%#15x/%-15x/",
 		      sv, sv, sv, sv, sv, sv);
 	PRF_CHECK("/123/ 123/123 /0123/"
 		  "          0x123/123            /", rc);
@@ -637,9 +695,9 @@ static void test_o(void)
 		return;
 	}
 
-	rc = TEST_PRF("%o", v);
+	TEST_PRF(&rc, "%o", v);
 	PRF_CHECK("1234567", rc);
-	rc = TEST_PRF("%#o", v);
+	TEST_PRF(&rc, "%#o", v);
 	PRF_CHECK("01234567", rc);
 }
 
@@ -653,15 +711,15 @@ static void test_fp_value(void)
 	double dv = 1234.567;
 	int rc;
 
-	rc = TEST_PRF("/%f/%F/", dv, dv);
+	TEST_PRF(&rc, "/%f/%F/", dv, dv);
 	PRF_CHECK("/1234.567000/1234.567000/", rc);
-	rc = TEST_PRF("%g", dv);
+	TEST_PRF(&rc, "%g", dv);
 	PRF_CHECK("1234.57", rc);
-	rc = TEST_PRF("%e", dv);
+	TEST_PRF(&rc, "%e", dv);
 	PRF_CHECK("1.234567e+03", rc);
-	rc = TEST_PRF("%E", dv);
+	TEST_PRF(&rc, "%E", dv);
 	PRF_CHECK("1.234567E+03", rc);
-	rc = TEST_PRF("%a", dv);
+	TEST_PRF(&rc, "%a", dv);
 	if (IS_ENABLED(CONFIG_CBPRINTF_FP_A_SUPPORT)) {
 		PRF_CHECK("0x1.34a449ba5e354p+10", rc);
 	} else {
@@ -669,40 +727,40 @@ static void test_fp_value(void)
 	}
 
 	dv = 1E3;
-	rc = TEST_PRF("%.2f", dv);
+	TEST_PRF(&rc, "%.2f", dv);
 	PRF_CHECK("1000.00", rc);
 
 	dv = 1E20;
-	rc = TEST_PRF("%.0f", dv);
+	TEST_PRF(&rc, "%.0f", dv);
 	PRF_CHECK("100000000000000000000", rc);
-	rc = TEST_PRF("%.20e", dv);
+	TEST_PRF(&rc, "%.20e", dv);
 	PRF_CHECK("1.00000000000000000000e+20", rc);
 
 	dv = 1E-3;
-	rc = TEST_PRF("%.3e", dv);
+	TEST_PRF(&rc, "%.3e", dv);
 	PRF_CHECK("1.000e-03", rc);
 
 	dv = 1E-3;
-	rc = TEST_PRF("%g", dv);
+	TEST_PRF(&rc, "%g", dv);
 	PRF_CHECK("0.001", rc);
 
 	dv = 1234567.89;
-	rc = TEST_PRF("%g", dv);
+	TEST_PRF(&rc, "%g", dv);
 	PRF_CHECK("1.23457e+06", rc);
 
 	if (IS_ENABLED(CONFIG_CBPRINTF_FP_A_SUPPORT)) {
 		dv = (double)BIT64(40);
-		rc = TEST_PRF("/%a/%.4a/%.20a/", dv, dv, dv);
+		TEST_PRF(&rc, "/%a/%.4a/%.20a/", dv, dv, dv);
 		PRF_CHECK("/0x1p+40/0x1.0000p+40/"
 			  "0x1.00000000000000000000p+40/", rc);
 
 		dv += (double)BIT64(32);
-		rc = TEST_PRF("%a", dv);
+		TEST_PRF(&rc, "%a", dv);
 		PRF_CHECK("0x1.01p+40", rc);
 	}
 
 	dv = INFINITY;
-	rc = TEST_PRF("%f.f %F.F %e.e %E.E %g.g %G.g %a.a %A.A",
+	TEST_PRF(&rc, "%f.f %F.F %e.e %E.E %g.g %G.g %a.a %A.A",
 		      dv, dv, dv, dv, dv, dv, dv, dv);
 	if (IS_ENABLED(CONFIG_CBPRINTF_FP_A_SUPPORT)) {
 		PRF_CHECK("inf.f INF.F inf.e INF.E "
@@ -713,7 +771,7 @@ static void test_fp_value(void)
 	}
 
 	dv = -INFINITY;
-	rc = TEST_PRF("%f.f %F.F %e.e %E.E %g.g %G.g %a.a %A.A",
+	TEST_PRF(&rc, "%f.f %F.F %e.e %E.E %g.g %G.g %a.a %A.A",
 		      dv, dv, dv, dv, dv, dv, dv, dv);
 	if (IS_ENABLED(CONFIG_CBPRINTF_FP_A_SUPPORT)) {
 		PRF_CHECK("-inf.f -INF.F -inf.e -INF.E "
@@ -724,7 +782,7 @@ static void test_fp_value(void)
 	}
 
 	dv = NAN;
-	rc = TEST_PRF("%f.f %F.F %e.e %E.E %g.g %G.g %a.a %A.A",
+	TEST_PRF(&rc, "%f.f %F.F %e.e %E.E %g.g %G.g %a.a %A.A",
 		      dv, dv, dv, dv, dv, dv, dv, dv);
 	if (IS_ENABLED(CONFIG_CBPRINTF_FP_A_SUPPORT)) {
 		PRF_CHECK("nan.f NAN.F nan.e NAN.E "
@@ -735,7 +793,7 @@ static void test_fp_value(void)
 	}
 
 	dv = DBL_MIN;
-	rc = TEST_PRF("%a %e", dv, dv);
+	TEST_PRF(&rc, "%a %e", dv, dv);
 	if (IS_ENABLED(CONFIG_CBPRINTF_FP_A_SUPPORT)) {
 		PRF_CHECK("0x1p-1022 2.225074e-308", rc);
 	} else {
@@ -743,7 +801,7 @@ static void test_fp_value(void)
 	}
 
 	dv /= 4;
-	rc = TEST_PRF("%a %e", dv, dv);
+	TEST_PRF(&rc, "%a %e", dv, dv);
 	if (IS_ENABLED(CONFIG_CBPRINTF_FP_A_SUPPORT)) {
 		PRF_CHECK("0x0.4p-1022 5.562685e-309", rc);
 	} else {
@@ -756,83 +814,83 @@ static void test_fp_value(void)
 	 */
 
 	dv = 0x1.0p-3;
-	rc = TEST_PRF("%.16g", dv);
+	TEST_PRF(&rc, "%.16g", dv);
 	PRF_CHECK("0.125", rc);
 
 	dv = 0x1.0p-4;
-	rc = TEST_PRF("%.16g", dv);
+	TEST_PRF(&rc, "%.16g", dv);
 	PRF_CHECK("0.0625", rc);
 
 	dv = 0x1.8p-4;
-	rc = TEST_PRF("%.16g", dv);
+	TEST_PRF(&rc, "%.16g", dv);
 	PRF_CHECK("0.09375", rc);
 
 	dv = 0x1.cp-4;
-	rc = TEST_PRF("%.16g", dv);
+	TEST_PRF(&rc, "%.16g", dv);
 	PRF_CHECK("0.109375", rc);
 
 	dv = 0x1.9999999800000p-7;
-	rc = TEST_PRF("%.16g", dv);
+	TEST_PRF(&rc, "%.16g", dv);
 	PRF_CHECK("0.01249999999708962", rc);
 
 	dv = 0x1.9999999ffffffp-8;
-	rc = TEST_PRF("%.16g", dv);
+	TEST_PRF(&rc, "%.16g", dv);
 	PRF_CHECK("0.006250000005820765", rc);
 
 	dv = 0x1.0p+0;
-	rc = TEST_PRF("%.16g", dv);
+	TEST_PRF(&rc, "%.16g", dv);
 	PRF_CHECK("1", rc);
 
 	dv = 0x1.fffffffffffffp-1022;
-	rc = TEST_PRF("%.16g", dv);
+	TEST_PRF(&rc, "%.16g", dv);
 	PRF_CHECK("4.450147717014402e-308", rc);
 
 	dv = 0x1.ffffffffffffep-1022;
-	rc = TEST_PRF("%.16g", dv);
+	TEST_PRF(&rc, "%.16g", dv);
 	PRF_CHECK("4.450147717014402e-308", rc);
 
 	dv = 0x1.ffffffffffffdp-1022;
-	rc = TEST_PRF("%.16g", dv);
+	TEST_PRF(&rc, "%.16g", dv);
 	PRF_CHECK("4.450147717014401e-308", rc);
 
 	dv = 0x1.0000000000001p-1022;
-	rc = TEST_PRF("%.16g", dv);
+	TEST_PRF(&rc, "%.16g", dv);
 	PRF_CHECK("2.225073858507202e-308", rc);
 
 	dv = 0x1p-1022;
-	rc = TEST_PRF("%.16g", dv);
+	TEST_PRF(&rc, "%.16g", dv);
 	PRF_CHECK("2.225073858507201e-308", rc);
 
 	dv = 0x0.fffffffffffffp-1022;
-	rc = TEST_PRF("%.16g", dv);
+	TEST_PRF(&rc, "%.16g", dv);
 	PRF_CHECK("2.225073858507201e-308", rc);
 
 	dv = 0x0.0000000000001p-1022;
-	rc = TEST_PRF("%.16g", dv);
+	TEST_PRF(&rc, "%.16g", dv);
 	PRF_CHECK("4.940656458412465e-324", rc);
 
 	dv = 0x1.1fa182c40c60dp-1019;
-	rc = TEST_PRF("%.16g", dv);
+	TEST_PRF(&rc, "%.16g", dv);
 	PRF_CHECK("2e-307", rc);
 
 	dv = 0x1.fffffffffffffp+1023;
-	rc = TEST_PRF("%.16g", dv);
+	TEST_PRF(&rc, "%.16g", dv);
 	PRF_CHECK("1.797693134862316e+308", rc);
 
 	dv = 0x1.ffffffffffffep+1023;
-	rc = TEST_PRF("%.16g", dv);
+	TEST_PRF(&rc, "%.16g", dv);
 	PRF_CHECK("1.797693134862316e+308", rc);
 
 	dv = 0x1.ffffffffffffdp+1023;
-	rc = TEST_PRF("%.16g", dv);
+	TEST_PRF(&rc, "%.16g", dv);
 	PRF_CHECK("1.797693134862315e+308", rc);
 
 	dv = 0x1.0000000000001p+1023;
-	rc = TEST_PRF("%.16g", dv);
+	TEST_PRF(&rc, "%.16g", dv);
 	PRF_CHECK("8.988465674311582e+307", rc);
 
 	dv = 0x1p+1023;
-	rc = TEST_PRF("%.16g", dv);
+	TEST_PRF(&rc, "%.16g", dv);
 	PRF_CHECK("8.98846567431158e+307", rc);
 }
 
@@ -846,21 +904,21 @@ static void test_fp_length(void)
 	double dv = 1.2345;
 	int rc;
 
-	rc = TEST_PRF("/%g/", dv);
+	TEST_PRF(&rc, "/%g/", dv);
 	if (IS_ENABLED(CONFIG_CBPRINTF_FP_SUPPORT)) {
 		PRF_CHECK("/1.2345/", rc);
 	} else {
 		PRF_CHECK("/%g/", rc);
 	}
 
-	rc = TEST_PRF("/%lg/", dv);
+	TEST_PRF(&rc, "/%lg/", dv);
 	if (IS_ENABLED(CONFIG_CBPRINTF_FP_SUPPORT)) {
 		PRF_CHECK("/1.2345/", rc);
 	} else {
 		PRF_CHECK("/%lg/", rc);
 	}
 
-	rc = TEST_PRF("/%Lg/", (long double)dv);
+	TEST_PRF_LONG_DOUBLE(&rc, "/%Lg/", (long double)dv);
 	if (ENABLED_USE_LIBC) {
 		PRF_CHECK("/1.2345/", rc);
 	} else {
@@ -887,24 +945,24 @@ static void test_fp_flags(void)
 	double dv = 1.23;
 	int rc;
 
-	rc = TEST_PRF("/%g/% g/%+g/", dv, dv, dv);
+	TEST_PRF(&rc, "/%g/% g/%+g/", dv, dv, dv);
 	PRF_CHECK("/1.23/ 1.23/+1.23/", rc);
 
 	if (IS_ENABLED(CONFIG_CBPRINTF_FP_A_SUPPORT)) {
-		rc = TEST_PRF("/%a/%.1a/%.2a/", dv, dv, dv);
+		TEST_PRF(&rc, "/%a/%.1a/%.2a/", dv, dv, dv);
 		PRF_CHECK("/0x1.3ae147ae147aep+0/"
 			  "0x1.4p+0/0x1.3bp+0/", rc);
 	}
 
 	dv = -dv;
-	rc = TEST_PRF("/%g/% g/%+g/", dv, dv, dv);
+	TEST_PRF(&rc, "/%g/% g/%+g/", dv, dv, dv);
 	PRF_CHECK("/-1.23/-1.23/-1.23/", rc);
 
 	dv = 23;
-	rc = TEST_PRF("/%g/%#g/%.0f/%#.0f/", dv, dv, dv, dv);
+	TEST_PRF(&rc, "/%g/%#g/%.0f/%#.0f/", dv, dv, dv, dv);
 	PRF_CHECK("/23/23.0000/23/23./", rc);
 
-	rc = prf("% .380f", 0x1p-400);
+	rc = prf(NULL, "% .380f", 0x1p-400);
 	zassert_equal(rc, 383, NULL);
 	zassert_equal(strncmp(buf, " 0.000", 6), 0, NULL);
 	zassert_equal(strncmp(&buf[119], "00003872", 8), 0, NULL);
@@ -914,10 +972,10 @@ static void test_star_width(void)
 {
 	int rc;
 
-	rc = TEST_PRF("/%3c/%-3c/", 'a', 'a');
+	TEST_PRF(&rc, "/%3c/%-3c/", 'a', 'a');
 	PRF_CHECK("/  a/a  /", rc);
 
-	rc = TEST_PRF("/%*c/%*c/", 3, 'a', -3, 'a');
+	TEST_PRF(&rc, "/%*c/%*c/", 3, 'a', -3, 'a');
 	PRF_CHECK("/  a/a  /", rc);
 }
 
@@ -925,7 +983,7 @@ static void test_star_precision(void)
 {
 	int rc;
 
-	rc = TEST_PRF("/%.*x/%10.*x/",
+	TEST_PRF(&rc, "/%.*x/%10.*x/",
 		      5, 0x12, 5, 0x12);
 	PRF_CHECK("/00012/     00012/", rc);
 
@@ -937,11 +995,11 @@ static void test_star_precision(void)
 	if (IS_ENABLED(CONFIG_CBPRINTF_FP_SUPPORT)) {
 		double dv = 1.2345678;
 
-		rc = TEST_PRF("/%.3g/%.5g/%.8g/%g/",
+		TEST_PRF(&rc, "/%.3g/%.5g/%.8g/%g/",
 			      dv, dv, dv, dv);
 		PRF_CHECK("/1.23/1.2346/1.2345678/1.23457/", rc);
 
-		rc = TEST_PRF("/%.*g/%.*g/%.*g/%.*g/",
+		TEST_PRF(&rc, "/%.*g/%.*g/%.*g/%.*g/",
 			      3, dv,
 			      5, dv,
 			      8, dv,
@@ -971,30 +1029,30 @@ static void test_n(void)
 	ptrdiff_t l_t = 0;
 	int rc;
 
-	rc = prf("12345%n", &l);
+	rc = prf(NULL, "12345%n", &l);
 	zassert_equal(l, rc, "%d != %d", l, rc);
 	zassert_equal(rc, 5, NULL);
 
 
-	rc = prf("12345%hn", &l_h);
+	rc = prf(NULL, "12345%hn", &l_h);
 	zassert_equal(l_h, rc, NULL);
 
-	rc = prf("12345%hhn", &l_hh);
+	rc = prf(NULL, "12345%hhn", &l_hh);
 	zassert_equal(l_hh, rc, NULL);
 
-	rc = prf("12345%ln", &l_l);
+	rc = prf(NULL, "12345%ln", &l_l);
 	zassert_equal(l_l, rc, NULL);
 
-	rc = prf("12345%lln", &l_ll);
+	rc = prf(NULL, "12345%lln", &l_ll);
 	zassert_equal(l_ll, rc, NULL);
 
-	rc = prf("12345%jn", &l_j);
+	rc = prf(NULL, "12345%jn", &l_j);
 	zassert_equal(l_j, rc, NULL);
 
-	rc = prf("12345%zn", &l_z);
+	rc = prf(NULL, "12345%zn", &l_z);
 	zassert_equal(l_z, rc, NULL);
 
-	rc = prf("12345%tn", &l_t);
+	rc = prf(NULL, "12345%tn", &l_t);
 	zassert_equal(l_t, rc, NULL);
 }
 
@@ -1012,9 +1070,9 @@ static void test_p(void)
 	void *ptr = (void *)uip;
 	int rc;
 
-	rc = TEST_PRF("%p", ptr);
+	TEST_PRF(&rc, "%p", ptr);
 	PRF_CHECK("0xcafe21", rc);
-	rc = TEST_PRF("%p", NULL);
+	TEST_PRF(&rc, "%p", NULL);
 	PRF_CHECK("(nil)", rc);
 
 	reset_out();
@@ -1139,7 +1197,7 @@ static void test_cbpprintf(void)
 	 * version.
 	 */
 	reset_out();
-	rc = cbpprintf(out, NULL, NULL);
+	rc = cbpprintf(out, &outbuf, NULL);
 	zassert_equal(rc, -EINVAL, NULL);
 }
 
