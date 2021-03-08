@@ -104,7 +104,7 @@ static int heartbeat_send(const struct bt_mesh_send_cb *cb, void *cb_data)
 	 * removed.
 	 */
 	if (!tx.sub || pub.dst == BT_MESH_ADDR_UNASSIGNED) {
-		return 0U;
+		return 0;
 	}
 
 	hb.init_ttl = pub.ttl;
