@@ -135,7 +135,7 @@ static void test_inject(uint64_t addr, uint64_t mask, uint8_t type)
 
 	uint64_t test_addr;
 	uint32_t test_value;
-	int ret;
+	int ret, num_int;
 
 	interrupt = 0;
 
@@ -173,12 +173,15 @@ static void test_inject(uint64_t addr, uint64_t mask, uint8_t type)
 	/* Wait for interrupt if needed */
 	k_busy_wait(USEC_PER_MSEC * DURATION);
 
-	zassert_not_equal(interrupt, 0, "Interrupt handler did not execute");
-	zassert_equal(interrupt, 1,
-		      "Interrupt handler executed more than once! (%d)\n",
-		      interrupt);
+	/* Load to local variable to avoid using volatile in assert */
+	num_int = interrupt;
 
-	TC_PRINT("Interrupt %d\n", interrupt);
+	zassert_not_equal(num_int, 0, "Interrupt handler did not execute");
+	zassert_equal(num_int, 1,
+		      "Interrupt handler executed more than once! (%d)\n",
+		      num_int);
+
+	TC_PRINT("Interrupt %d\n", num_int);
 	TC_PRINT("ECC Error Log 0x%llx\n", edac_ecc_error_log_get(dev));
 	TC_PRINT("Error: type %u, address 0x%llx, syndrome %u\n",
 		 error_type, error_address, error_syndrome);
@@ -188,15 +191,20 @@ static int check_values(void *p1, void *p2, void *p3)
 {
 	intptr_t address = (intptr_t)p1;
 	intptr_t type = (intptr_t)p2;
+	intptr_t addr, errtype;
 
 #if defined(CONFIG_USERSPACE)
 	TC_PRINT("Test communication in user mode thread\n");
 	zassert_true(_is_user_context(), "thread left in kernel mode");
 #endif
 
+	/* Load to local variables to avoid using volatile in assert */
+	addr = error_address;
+	errtype = error_type;
+
 	/* Verify page address and error type */
-	zassert_equal(error_address, address, "Error address wrong");
-	zassert_equal(error_type, type, "Error type wrong");
+	zassert_equal(addr, address, "Error address wrong");
+	zassert_equal(errtype, type, "Error type wrong");
 
 	return 0;
 }
