@@ -116,6 +116,25 @@ int flash_area_check_int_sha256(const struct flash_area *fa,
 #endif
 
 /**
+ * @brief Return pointer to flash_area occupied by running application.
+ *
+ * @return non-NULL pointer to @p flash_area structure holding information on area an application is
+ * running; NULL pointer if application is not running from any of the partitions in flash_map.
+ */
+const struct flash_area *flash_area_active(void);
+
+/**
+ * Enumerate flash areas of specified type.
+ *
+ * @param[in] current	Pointer to flash_map entry to start after; if NULL the first entry is used.
+ * @param[in] type	Type to match: one of FLASH_AREA_TYPE_* constants.
+ *
+ * @returns non-NULL pointer to flash area that matches a given type; NULL if there are no more
+ * areas to match.
+ */
+const struct flash_area *flash_area_enum_type(const struct flash_area *current, uint8_t type);
+
+/**
  * @brief Retrieve partitions flash area from the flash_map.
  *
  * Function Retrieves flash_area from flash_map for given partition.

@@ -55,6 +55,49 @@ void flash_area_foreach(flash_area_cb_t user_cb, void *user_data)
 	}
 }
 
+const struct flash_area *flash_area_active(void)
+{
+	const struct flash_area *active = NULL;
+
+#if DT_HAS_CHOSEN(zephyr_code_partitioN)
+	/*
+	 * Search flash map for area that starts at the same offset as the  "zephyr,code-partition"
+	 * chosen: this will be the active partition.
+	 */
+	for (int i = 0; i < flash_map_entries; ++i) {
+		if (flash_map[i].fa_off == DT_REG_ADDR(DT_CHOSEN(zephyr_code_partition))) {
+			active = &flash_map[i];
+			break;
+		}
+	}
+#endif
+
+	return active;
+}
+
+const struct flash_area *flash_area_enum_type(const struct flash_area *current, uint8_t type)
+{
+	if (current == NULL) {
+		/* The current is unconditionally increased at the beginning of the loop below */
+		current = flash_map - 1;
+	}
+
+	/*
+	 * Find description of next area, after current, of given type and return pointer to its
+	 * flash_area record.
+	 */
+	while (current != NULL) {
+		++current;
+		if ((current - flash_map) >= flash_map_entries) {
+			current = NULL;
+		} else if (current->fa_type == type) {
+			break;
+		}
+	}
+
+	return current;
+}
+
 int flash_area_open(uint8_t id, const struct flash_area **fap)
 {
 	const struct flash_area *area;
