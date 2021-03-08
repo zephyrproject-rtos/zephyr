@@ -157,10 +157,65 @@ void test_yield(void)
 	zassert_true(n_exec == NUM_THREADS, "not enough threads ran");
 }
 
+void unqueue_worker(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	zassert_true(n_exec >= 0 && n_exec < NUM_THREADS, "");
+
+	n_exec += 1;
+}
+
+/**
+ * @brief Validate the behavior of dealine_set when the thread is not queued
+ *
+ * @details Create a bunch of threads with scheduling delay which make the
+ * thread in unqueued state. The k_thread_deadline_set() call should not make
+ * these threads run before there delay time pass.
+ *
+ * @ingroup kernel_sched_tests
+ */
+void test_unqueued(void)
+{
+	int i;
+
+	n_exec = 0;
+
+	for (i = 0; i < NUM_THREADS; i++) {
+		worker_tids[i] = k_thread_create(&worker_threads[i],
+				worker_stacks[i], STACK_SIZE,
+				unqueue_worker, NULL, NULL, NULL,
+				K_LOWEST_APPLICATION_THREAD_PRIO,
+				0, K_MSEC(100));
+	}
+
+	zassert_true(n_exec == 0, "threads ran too soon");
+
+	for (i = 0; i < NUM_THREADS; i++) {
+		thread_deadlines[i] = sys_rand32_get() & 0x3fffff00;
+		k_thread_deadline_set(&worker_threads[i], thread_deadlines[i]);
+	}
+
+	k_sleep(K_MSEC(50));
+
+	zassert_true(n_exec == 0, "deadline set make the unqueued thread run");
+
+	k_sleep(K_MSEC(100));
+
+	zassert_true(n_exec == NUM_THREADS, "not enough threads ran");
+
+	for (i = 0; i < NUM_THREADS; i++) {
+		k_thread_abort(worker_tids[i]);
+	}
+}
+
 void test_main(void)
 {
 	ztest_test_suite(suite_deadline,
 			 ztest_unit_test(test_deadline),
-			 ztest_unit_test(test_yield));
+			 ztest_unit_test(test_yield),
+			 ztest_unit_test(test_unqueued));
 	ztest_run_test_suite(suite_deadline);
 }
