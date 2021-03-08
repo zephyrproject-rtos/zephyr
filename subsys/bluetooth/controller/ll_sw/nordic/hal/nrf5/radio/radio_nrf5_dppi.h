@@ -492,6 +492,20 @@ static inline void hal_radio_rxen_on_sw_switch(uint8_t ppi)
 	nrf_radio_subscribe_set(NRF_RADIO, NRF_RADIO_TASK_RXEN, ppi);
 }
 
+static inline void hal_radio_b2b_rxen_on_sw_switch(uint8_t ppi)
+{
+	/* NOTE: Calling radio_tmr_start/radio_tmr_start_us/radio_tmr_start_now
+	 *       after the radio_switch_complete_and_b2b_rx() call would have
+	 *       changed the PPI channel to HAL_RADIO_ENABLE_ON_TICK_PPI as we
+	 *       cannot double buffer the subscribe buffer. Hence, lets have
+	 *       both DPPI channel enabled (other one was enabled by the DPPI
+	 *       group when the Radio End occurred) so that when both timer
+	 *       trigger one of the DPPI is correct in the radio rx
+	 *       subscription.
+	 */
+	nrf_radio_subscribe_set(NRF_RADIO, NRF_RADIO_TASK_RXEN, ppi);
+	nrf_dppi_channels_enable(NRF_DPPIC, BIT(ppi));
+}
 
 static inline void hal_radio_sw_switch_disable(void)
 {
