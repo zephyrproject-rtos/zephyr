@@ -213,21 +213,21 @@ __csSet:
 	call	z_data_copy
 #endif
 
+	/* Note that installing page tables must be done after
+	 * z_data_copy() as the page tables are being copied into
+	 * RAM there.
+	 */
+	install_page_tables
+
 #ifdef CONFIG_GDT_DYNAMIC
 	/* activate RAM-based Global Descriptor Table (GDT) */
-	lgdt	%ds:Z_MEM_PHYS_ADDR(_gdt)
+	lgdt	%ds:_gdt
 #endif
 
 #if defined(CONFIG_X86_ENABLE_TSS)
 	mov $MAIN_TSS, %ax
 	ltr %ax
 #endif
-
-	/* Note that installing page tables must be done after
-	 * z_data_copy() as the page tables are being copied into
-	 * RAM there.
-	 */
-	install_page_tables
 
 	/* Clear BSS */
 	call	z_bss_zero
