@@ -31,7 +31,7 @@ struct hb_pub_val {
 static struct bt_mesh_hb_pub pub;
 static struct bt_mesh_hb_sub sub;
 static struct k_delayed_work sub_timer;
-static struct k_delayed_work pub_timer;
+static struct k_work_delayable pub_timer;
 
 static int64_t sub_remaining(void)
 {
@@ -45,7 +45,7 @@ static int64_t sub_remaining(void)
 static void hb_publish_end_cb(int err, void *cb_data)
 {
 	if (pub.period && pub.count > 1) {
-		k_delayed_work_submit(&pub_timer, K_SECONDS(pub.period));
+		k_work_reschedule(&pub_timer, K_SECONDS(pub.period));
 	}
 
 	if (pub.count != 0xffff) {
@@ -151,14 +151,15 @@ static void hb_publish(struct k_work *work)
 
 	BT_DBG("hb_pub.count: %u", pub.count);
 
+	/* Fast exit if disabled or expired */
+	if (pub.period == 0U || pub.count == 0U) {
+		return;
+	}
+
 	sub = bt_mesh_subnet_get(pub.net_idx);
 	if (!sub) {
 		BT_ERR("No matching subnet for idx 0x%02x", pub.net_idx);
 		pub.dst = BT_MESH_ADDR_UNASSIGNED;
-		return;
-	}
-
-	if (pub.count == 0U) {
 		return;
 	}
 
@@ -218,7 +219,11 @@ static void pub_disable(void)
 	pub.ttl = 0U;
 	pub.period = 0U;
 
-	k_delayed_work_cancel(&pub_timer);
+	/* Try to cancel, but it's OK if this still runs (or is
+	 * running) as the handler will be a no-op if it hasn't
+	 * already checked period for being non-zero.
+	 */
+	(void)k_work_cancel_delayable(&pub_timer);
 }
 
 uint8_t bt_mesh_hb_pub_set(struct bt_mesh_hb_pub *new_pub)
@@ -250,12 +255,11 @@ uint8_t bt_mesh_hb_pub_set(struct bt_mesh_hb_pub *new_pub)
 	/* The first Heartbeat message shall be published as soon as possible
 	 * after the Heartbeat Publication Period state has been configured for
 	 * periodic publishing.
+	 *
+	 * If the new configuration disables publishing this flushes
+	 * the work item.
 	 */
-	if (pub.period && pub.count) {
-		k_delayed_work_submit(&pub_timer, K_NO_WAIT);
-	} else {
-		k_delayed_work_cancel(&pub_timer);
-	}
+	k_work_reschedule(&pub_timer, K_NO_WAIT);
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		bt_mesh_settings_store_schedule(
@@ -349,7 +353,7 @@ void bt_mesh_hb_feature_changed(uint16_t features)
 void bt_mesh_hb_init(void)
 {
 	pub.net_idx = BT_MESH_KEY_UNUSED;
-	k_delayed_work_init(&pub_timer, hb_publish);
+	k_work_init_delayable(&pub_timer, hb_publish);
 	k_delayed_work_init(&sub_timer, sub_end);
 }
 
@@ -357,20 +361,23 @@ void bt_mesh_hb_start(void)
 {
 	if (pub.count && pub.period) {
 		BT_DBG("Starting heartbeat publication");
-		k_delayed_work_submit(&pub_timer, K_NO_WAIT);
+		k_work_reschedule(&pub_timer, K_NO_WAIT);
 	}
 }
 
 void bt_mesh_hb_suspend(void)
 {
-	k_delayed_work_cancel(&pub_timer);
+	/* Best-effort suspend.  This cannot guarantee that an
+	 * in-progress publish will not complete.
+	 */
+	(void)k_work_cancel_delayable(&pub_timer);
 }
 
 void bt_mesh_hb_resume(void)
 {
 	if (pub.period && pub.count) {
 		BT_DBG("Starting heartbeat publication");
-		k_delayed_work_submit(&pub_timer, K_NO_WAIT);
+		k_work_reschedule(&pub_timer, K_NO_WAIT);
 	}
 }
 
