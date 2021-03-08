@@ -50,10 +50,12 @@ static void create_dynamic_thread(void)
 
 	tid = k_thread_create(dyn_thread, dyn_thread_stack, STACKSIZE,
 			      dyn_thread_entry, NULL, NULL, NULL,
-			      K_PRIO_PREEMPT(0), K_USER, K_NO_WAIT);
+			      K_PRIO_PREEMPT(0), K_USER, K_FOREVER);
 
 	k_object_access_grant(&start_sem, tid);
 	k_object_access_grant(&end_sem, tid);
+
+	k_thread_start(tid);
 
 	k_sem_give(&start_sem);
 
@@ -76,9 +78,11 @@ static void permission_test(void)
 
 	tid = k_thread_create(dyn_thread, dyn_thread_stack, STACKSIZE,
 			      dyn_thread_entry, NULL, NULL, NULL,
-			      K_PRIO_PREEMPT(0), K_USER, K_NO_WAIT);
+			      K_PRIO_PREEMPT(0), K_USER, K_FOREVER);
 
 	k_object_access_grant(&start_sem, tid);
+
+	k_thread_start(tid);
 
 	/*
 	 * Notice dyn_thread will not have permission to access
