@@ -1729,6 +1729,7 @@ uint8_t *bt_mesh_va_label_get(uint16_t addr)
 	return NULL;
 }
 
+#if CONFIG_BT_MESH_LABEL_COUNT > 0
 static struct virtual_addr *bt_mesh_va_get(uint16_t index)
 {
 	if (index >= ARRAY_SIZE(virtual_addrs)) {
@@ -1738,7 +1739,6 @@ static struct virtual_addr *bt_mesh_va_get(uint16_t index)
 	return &virtual_addrs[index];
 }
 
-#if CONFIG_BT_MESH_LABEL_COUNT > 0
 static int va_set(const char *name, size_t len_rd,
 		  settings_read_cb read_cb, void *cb_arg)
 {
@@ -1787,7 +1787,6 @@ static int va_set(const char *name, size_t len_rd,
 }
 
 BT_MESH_SETTINGS_DEFINE(va, "Va", va_set);
-#endif /* CONFIG_BT_MESH_LABEL_COUNT > 0 */
 
 #define IS_VA_DEL(_label)	((_label)->ref == 0)
 void bt_mesh_va_pending_store(void)
@@ -1828,3 +1827,9 @@ void bt_mesh_va_pending_store(void)
 		}
 	}
 }
+#else
+void bt_mesh_va_pending_store(void)
+{
+	/* Do nothing. */
+}
+#endif /* CONFIG_BT_MESH_LABEL_COUNT > 0 */
