@@ -704,6 +704,11 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
 {
 	NET_BUF_SIMPLE_DEFINE(sdu, BT_MESH_TX_SDU_MAX);
 	struct bt_mesh_model_pub *pub = model->pub;
+
+	if (!pub) {
+		return -ENOTSUP;
+	}
+
 	struct bt_mesh_msg_ctx ctx = {
 		.addr = pub->addr,
 		.send_ttl = pub->ttl,
@@ -717,10 +722,6 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
 	int err;
 
 	BT_DBG("");
-
-	if (!pub) {
-		return -ENOTSUP;
-	}
 
 	if (pub->addr == BT_MESH_ADDR_UNASSIGNED) {
 		return -EADDRNOTAVAIL;
