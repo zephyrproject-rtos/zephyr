@@ -14,6 +14,7 @@
 #include "hci_core.h"
 #include "id.h"
 #include "scan.h"
+#include "adv.h"
 #include "smp.h"
 #include "conn_internal.h"
 #include "keys.h"

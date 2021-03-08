@@ -364,21 +364,6 @@ void bt_setup_public_id_addr(void);
 
 void bt_finalize_init(void);
 
-int bt_le_adv_start_internal(const struct bt_le_adv_param *param,
-			     const struct bt_data *ad, size_t ad_len,
-			     const struct bt_data *sd, size_t sd_len,
-			     const bt_addr_le_t *peer);
-
-void bt_le_adv_resume(void);
-int bt_le_adv_set_enable_legacy(struct bt_le_ext_adv *adv, bool enable);
-int bt_le_adv_set_enable_ext(struct bt_le_ext_adv *adv,
-			     bool enable,
-			     const struct bt_le_ext_adv_start_param *param);
-struct bt_le_ext_adv *bt_le_adv_lookup_legacy(void);
-int bt_le_adv_set_enable(struct bt_le_ext_adv *adv, bool enable);
-void bt_le_ext_adv_foreach(void (*func)(struct bt_le_ext_adv *adv, void *data),
-			   void *data);
-
 void bt_hci_host_num_completed_packets(struct net_buf *buf);
 
 /* HCI event handlers */
@@ -406,3 +391,7 @@ void bt_hci_le_per_adv_report(struct net_buf *buf);
 void bt_hci_le_per_adv_sync_lost(struct net_buf *buf);
 void bt_hci_le_biginfo_adv_report(struct net_buf *buf);
 void bt_hci_le_past_received(struct net_buf *buf);
+
+/* Adv HCI event handlers */
+void bt_hci_le_adv_set_terminated(struct net_buf *buf);
+void bt_hci_le_scan_req_received(struct net_buf *buf);
