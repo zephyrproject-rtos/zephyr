@@ -1470,7 +1470,7 @@ static int context_sendto(struct net_context *context,
 		 * network interfaces and we are trying to send data to
 		 * second or later network interface.
 		 */
-		if (addr6 && net_ipv6_is_addr_unspecified(
+		if (net_ipv6_is_addr_unspecified(
 				&net_sin6(&context->remote)->sin6_addr)) {
 			iface = net_if_ipv6_select_src_iface(&addr6->sin6_addr);
 			net_context_set_iface(context, iface);
@@ -1510,7 +1510,7 @@ static int context_sendto(struct net_context *context,
 		 * network interfaces and we are trying to send data to
 		 * second or later network interface.
 		 */
-		if (addr4 && net_sin(&context->remote)->sin_addr.s_addr == 0U) {
+		if (net_sin(&context->remote)->sin_addr.s_addr == 0U) {
 			iface = net_if_ipv4_select_src_iface(&addr4->sin_addr);
 			net_context_set_iface(context, iface);
 		}
