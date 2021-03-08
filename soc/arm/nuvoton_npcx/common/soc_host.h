@@ -66,7 +66,7 @@ int npcx_host_periph_read_request(enum lpc_peripheral_opcode op,
  * @retval -EINVAL for unimplemented lpc opcode, but in range.
  */
 int npcx_host_periph_write_request(enum lpc_peripheral_opcode op,
-								uint32_t *data);
+							const uint32_t *data);
 
 #ifdef __cplusplus
 }
