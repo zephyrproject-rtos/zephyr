@@ -34,6 +34,7 @@ if(CONFIG_BT_HCI_HOST)
     buf.c
     hci_core.c
     hci_common.c
+    id.c
     )
   zephyr_library_sources_ifdef(
     CONFIG_BT_HOST_CRYPTO

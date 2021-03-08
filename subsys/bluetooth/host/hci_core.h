@@ -326,6 +326,11 @@ struct bt_hci_cmd_state_set {
 	bool val;
 };
 
+struct bt_adv_id_check_data {
+	uint8_t id;
+	bool adv_enabled;
+};
+
 /* Set command state related with the command buffer */
 void bt_hci_cmd_state_set_init(struct net_buf *buf,
 			       struct bt_hci_cmd_state_set *state,
@@ -364,7 +369,16 @@ int bt_le_adv_start_internal(const struct bt_le_adv_param *param,
 			     const bt_addr_le_t *peer);
 
 void bt_le_adv_resume(void);
-bool bt_le_scan_random_addr_check(void);
+int bt_le_adv_set_enable_legacy(struct bt_le_ext_adv *adv, bool enable);
+int bt_le_adv_set_enable_ext(struct bt_le_ext_adv *adv,
+			     bool enable,
+			     const struct bt_le_ext_adv_start_param *param);
+struct bt_le_ext_adv *bt_le_adv_lookup_legacy(void);
+int bt_le_adv_set_enable(struct bt_le_ext_adv *adv, bool enable);
+void bt_le_ext_adv_foreach(void (*func)(struct bt_le_ext_adv *adv, void *data),
+			   void *data);
+
+int bt_le_scan_set_enable(uint8_t enable);
 
 void bt_hci_host_num_completed_packets(struct net_buf *buf);
 
