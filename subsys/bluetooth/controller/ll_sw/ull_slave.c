@@ -28,6 +28,7 @@
 #include "lll/lll_adv_types.h"
 #include "lll_adv.h"
 #include "lll/lll_adv_pdu.h"
+#include "lll_chan.h"
 #include "lll_conn.h"
 #include "lll_slave.h"
 #include "lll_filter.h"
@@ -284,13 +285,8 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 		cs = (void *)rx_csa->pdu;
 
 		if (chan_sel) {
-			uint16_t aa_ls = ((uint16_t)lll->access_addr[1] << 8) |
-				      lll->access_addr[0];
-			uint16_t aa_ms = ((uint16_t)lll->access_addr[3] << 8) |
-				      lll->access_addr[2];
-
 			lll->data_chan_sel = 1;
-			lll->data_chan_id = aa_ms ^ aa_ls;
+			lll->data_chan_id = lll_chan_id(lll->access_addr);
 
 			cs->csa = 0x01;
 		} else {
