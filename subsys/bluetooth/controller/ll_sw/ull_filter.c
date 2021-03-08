@@ -811,7 +811,7 @@ bool ull_filter_lll_rl_enabled(void)
 uint8_t ull_filter_deferred_resolve(bt_addr_t *rpa, resolve_callback_t cb)
 {
 	if (rl_enable) {
-		if (!k_work_pending(&(resolve_work.prpa_work))) {
+		if (!k_work_is_pending(&(resolve_work.prpa_work))) {
 			/* copy input param to work variable */
 			memcpy(resolve_work.rpa.val, rpa->val, sizeof(bt_addr_t));
 			resolve_work.cb = cb;
@@ -829,7 +829,7 @@ uint8_t ull_filter_deferred_targeta_resolve(bt_addr_t *rpa, uint8_t rl_idx,
 					 resolve_callback_t cb)
 {
 	if (rl_enable) {
-		if (!k_work_pending(&(t_work.target_work))) {
+		if (!k_work_is_pending(&(t_work.target_work))) {
 			/* copy input param to work variable */
 			memcpy(t_work.rpa.val, rpa->val, sizeof(bt_addr_t));
 			t_work.cb = cb;
