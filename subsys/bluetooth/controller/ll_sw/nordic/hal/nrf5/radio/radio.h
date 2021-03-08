@@ -96,6 +96,8 @@ void radio_switch_complete_with_delay_compensation_and_tx(
 	enum radio_end_evt_delay_state end_evt_delay_en);
 void radio_switch_complete_and_b2b_tx(uint8_t phy_curr, uint8_t flags_curr,
 				      uint8_t phy_next, uint8_t flags_next);
+void radio_switch_complete_and_b2b_rx(uint8_t phy_curr, uint8_t flags_curr,
+				      uint8_t phy_next, uint8_t flags_next);
 void radio_switch_complete_and_disable(void);
 
 uint8_t radio_phy_flags_rx_get(void);

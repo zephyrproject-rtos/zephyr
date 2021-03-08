@@ -717,12 +717,26 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 		/* RX */
 
 		/* Calculate delay with respect to current and next PHY. */
-		delay = HAL_RADIO_NS2US_CEIL(
-			hal_radio_rx_ready_delay_ns_get(phy_next, flags_next) +
-			hal_radio_tx_chain_delay_ns_get(phy_curr, flags_curr)) +
-			(EVENT_CLOCK_JITTER_US << 1);
+		if (dir_curr) {
+			delay = HAL_RADIO_NS2US_CEIL(
+				hal_radio_rx_ready_delay_ns_get(phy_next,
+								flags_next) +
+				hal_radio_tx_chain_delay_ns_get(phy_curr,
+								flags_curr)) +
+				(EVENT_CLOCK_JITTER_US << 1);
 
-		hal_radio_rxen_on_sw_switch(ppi);
+			hal_radio_rxen_on_sw_switch(ppi);
+		} else {
+			delay = HAL_RADIO_NS2US_CEIL(
+				hal_radio_rx_ready_delay_ns_get(phy_next,
+								flags_next) +
+				hal_radio_rx_chain_delay_ns_get(phy_curr,
+								flags_curr)) +
+				(EVENT_CLOCK_JITTER_US << 1);
+
+			hal_radio_b2b_rxen_on_sw_switch(ppi);
+		}
+
 
 #if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
 		hal_radio_sw_switch_phyend_delay_compensation_config_clear(radio_enable_ppi,
@@ -835,6 +849,22 @@ void radio_switch_complete_and_b2b_tx(uint8_t phy_curr, uint8_t flags_curr,
 	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_PDU_END_DISABLE;
 
 	sw_switch(SW_SWITCH_TX, SW_SWITCH_TX, phy_curr, flags_curr, phy_next, flags_next,
+		  END_EVT_DELAY_DISABLED);
+#endif /* !CONFIG_BT_CTLR_TIFS_HW */
+}
+
+void radio_switch_complete_and_b2b_rx(uint8_t phy_curr, uint8_t flags_curr,
+				      uint8_t phy_next, uint8_t flags_next)
+{
+#if defined(CONFIG_BT_CTLR_TIFS_HW)
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk |
+			    RADIO_SHORTS_END_DISABLE_Msk |
+			    RADIO_SHORTS_DISABLED_RXEN_Msk;
+#else /* !CONFIG_BT_CTLR_TIFS_HW */
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk |
+			    RADIO_SHORTS_END_DISABLE_Msk;
+
+	sw_switch(SW_SWITCH_RX, SW_SWITCH_RX, phy_curr, flags_curr, phy_next, flags_next,
 		  END_EVT_DELAY_DISABLED);
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 }
