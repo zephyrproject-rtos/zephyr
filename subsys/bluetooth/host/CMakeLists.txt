@@ -37,6 +37,10 @@ if(CONFIG_BT_HCI_HOST)
     id.c
     )
   zephyr_library_sources_ifdef(
+    CONFIG_BT_BROADCASTER
+    adv.c
+    )
+  zephyr_library_sources_ifdef(
     CONFIG_BT_OBSERVER
     scan.c
     )
