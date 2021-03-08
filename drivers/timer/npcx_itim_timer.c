@@ -134,13 +134,12 @@ static int npcx_itim_start_evt_tmr_by_tick(int32_t ticks)
 	 * Get desired cycles of event timer from the requested ticks which
 	 * round up to next tick boundary.
 	 */
-	if (ticks <= 0) {
-		ticks = 1;
-	}
-
 	if (ticks == K_TICKS_FOREVER) {
 		cyc_evt_timeout = NPCX_ITIM32_MAX_CNT;
 	} else {
+		if (ticks <= 0) {
+			ticks = 1;
+		}
 		cyc_evt_timeout = MIN(EVT_CYCLES_FROM_TICKS(ticks),
 				      NPCX_ITIM32_MAX_CNT);
 	}
