@@ -28,6 +28,7 @@
 #include "lll/lll_adv_pdu.h"
 #include "lll_adv_sync.h"
 #include "lll/lll_df_types.h"
+#include "lll_chan.h"
 
 #include "ull_adv_types.h"
 
@@ -120,15 +121,15 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 		err = util_aa_le32(lll_sync->access_addr);
 		LL_ASSERT(!err);
 
+		lll_sync->data_chan_id = lll_chan_id(lll_sync->access_addr);
+		lll_sync->data_chan_count =
+			ull_chan_map_get(lll_sync->data_chan_map);
+
 		lll_csrand_get(lll_sync->crc_init, sizeof(lll_sync->crc_init));
 
 		lll_sync->latency_prepare = 0;
 		lll_sync->latency_event = 0;
 		lll_sync->event_counter = 0;
-
-		lll_sync->data_chan_count =
-			ull_chan_map_get(lll_sync->data_chan_map);
-		lll_sync->data_chan_id = 0;
 
 		sync->is_enabled = 0U;
 		sync->is_started = 0U;
