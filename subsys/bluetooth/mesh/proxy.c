@@ -664,7 +664,7 @@ int bt_mesh_proxy_prov_enable(void)
 		return -EBUSY;
 	}
 
-	bt_gatt_service_register(&prov_svc);
+	(void)bt_gatt_service_register(&prov_svc);
 	gatt_svc = MESH_GATT_PROV;
 	prov_fast_adv = true;
 
@@ -784,7 +784,7 @@ int bt_mesh_proxy_gatt_enable(void)
 		return -EBUSY;
 	}
 
-	bt_gatt_service_register(&proxy_svc);
+	(void)bt_gatt_service_register(&proxy_svc);
 	gatt_svc = MESH_GATT_PROXY;
 
 	for (i = 0; i < ARRAY_SIZE(clients); i++) {

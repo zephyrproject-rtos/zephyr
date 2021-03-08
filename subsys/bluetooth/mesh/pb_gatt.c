@@ -109,7 +109,7 @@ int bt_mesh_pb_gatt_close(struct bt_conn *conn)
 
 static int link_accept(const struct prov_bearer_cb *cb, void *cb_data)
 {
-	bt_mesh_proxy_prov_enable();
+	(void)bt_mesh_proxy_prov_enable();
 	bt_mesh_adv_update();
 
 	link.cb = cb;
