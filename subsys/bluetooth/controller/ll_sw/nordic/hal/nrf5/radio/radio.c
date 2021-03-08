@@ -583,13 +583,24 @@ static inline void sw_switch(uint8_t dir_curr, uint8_t dir_next,
 	} else {
 		/* RX */
 
-		/* Calculate delay with respect to current and next PHY.
-		 */
-		delay = HAL_RADIO_NS2US_CEIL(
-			hal_radio_rx_ready_delay_ns_get(phy_next, flags_next) +
-			hal_radio_tx_chain_delay_ns_get(phy_curr, flags_curr)) +
-			4;
+		/* Calculate delay with respect to current and next PHY. */
+		if (dir_curr) {
+			delay = HAL_RADIO_NS2US_CEIL(
+				hal_radio_rx_ready_delay_ns_get(phy_next,
+								flags_next) +
+				hal_radio_tx_chain_delay_ns_get(phy_curr,
+								flags_curr)) +
+				4;
+		} else {
+			delay = HAL_RADIO_NS2US_CEIL(
+				hal_radio_rx_ready_delay_ns_get(phy_next,
+								flags_next) +
+				hal_radio_rx_chain_delay_ns_get(phy_curr,
+								flags_curr)) +
+				4;
+		}
 
+		/* FIXME: for nRF53 DPPI, refer to how tx-tx handles it */
 		hal_radio_rxen_on_sw_switch(ppi);
 
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
@@ -684,6 +695,22 @@ void radio_switch_complete_and_b2b_tx(uint8_t phy_curr, uint8_t flags_curr,
 			    RADIO_SHORTS_END_DISABLE_Msk;
 
 	sw_switch(SW_SWITCH_PREV_TX, SW_SWITCH_NEXT_TX,
+		  phy_curr, flags_curr, phy_next, flags_next);
+#endif /* !CONFIG_BT_CTLR_TIFS_HW */
+}
+
+void radio_switch_complete_and_b2b_rx(uint8_t phy_curr, uint8_t flags_curr,
+				      uint8_t phy_next, uint8_t flags_next)
+{
+#if defined(CONFIG_BT_CTLR_TIFS_HW)
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk |
+			    RADIO_SHORTS_END_DISABLE_Msk |
+			    RADIO_SHORTS_DISABLED_RXEN_Msk;
+#else /* !CONFIG_BT_CTLR_TIFS_HW */
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk |
+			    RADIO_SHORTS_END_DISABLE_Msk;
+
+	sw_switch(SW_SWITCH_PREV_RX, SW_SWITCH_NEXT_RX,
 		  phy_curr, flags_curr, phy_next, flags_next);
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 }
