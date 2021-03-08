@@ -433,9 +433,11 @@ static void espi_vw_generic_isr(const struct device *dev, struct npcx_wui *wui)
 		}
 	}
 
-	if (idx == ARRAY_SIZE(vw_in_tbl))
+	if (idx == ARRAY_SIZE(vw_in_tbl)) {
 		LOG_ERR("Unknown VW event! %d %d %d", wui->table,
 				wui->group, wui->bit);
+		return;
+	}
 
 	signal = vw_in_tbl[idx].sig;
 	if (signal == ESPI_VWIRE_SIGNAL_SLP_S3
