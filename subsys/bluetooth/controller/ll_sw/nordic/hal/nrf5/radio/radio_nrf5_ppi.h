@@ -479,6 +479,16 @@ static inline void hal_radio_txen_on_sw_switch(uint8_t ppi)
 		HAL_SW_SWITCH_RADIO_ENABLE_PPI_TASK_TX);
 }
 
+static inline void hal_radio_b2b_txen_on_sw_switch(uint8_t ppi)
+{
+	/* NOTE: As independent PPI are used to trigger the Radio Tx task,
+	 *       double buffers implementation works for sw_switch using PPIs,
+	 *       simply reuse the hal_radio_txen_on_sw_switch() functon to set
+	 *	 the next PPIs task to be Radio Tx enable.
+	 */
+	hal_radio_txen_on_sw_switch(ppi);
+}
+
 static inline void hal_radio_rxen_on_sw_switch(uint8_t ppi)
 {
 	nrf_ppi_task_endpoint_setup(

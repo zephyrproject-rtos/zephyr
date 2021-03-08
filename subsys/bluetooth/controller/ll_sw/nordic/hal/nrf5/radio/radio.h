@@ -48,6 +48,8 @@ void *radio_pkt_decrypt_get(void);
 void radio_switch_complete_and_rx(uint8_t phy_rx);
 void radio_switch_complete_and_tx(uint8_t phy_rx, uint8_t flags_rx, uint8_t phy_tx,
 				  uint8_t flags_tx);
+void radio_switch_complete_and_b2b_tx(uint8_t phy_curr, uint8_t flags_curr,
+				      uint8_t phy_next, uint8_t flags_next);
 void radio_switch_complete_and_disable(void);
 
 void radio_rssi_measure(void);
