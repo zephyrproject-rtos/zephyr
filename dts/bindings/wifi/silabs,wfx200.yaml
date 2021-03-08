@@ -1,0 +1,31 @@
+# Copyright (c) 2021, grandcentrix GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    SiLabs WFx200 WiFi controller with SPI and SDIO Interface
+
+compatible: "silabs,wfx200"
+
+include: [spi-device.yaml]
+
+properties:
+    int-gpios:
+      type: phandle-array
+      required: true
+    reset-gpios:
+      type: phandle-array
+      required: true
+    wake-gpios:
+      type: phandle-array
+      required: false
+    hif-sel-gpios:
+      type: phandle-array
+      required: false
+      description: GPIO used to either select the SPI or SDIO interface.
+    pds:
+      type: string-array
+      required: true
+      description: |
+        Platfrom Data Set as specified by SiLabs. SiLabs implemented
+        a quite sophisticated format to configure the WiFi modules.
+        This includes settings for IO drive strength, antenna selection etc.

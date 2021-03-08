@@ -1,0 +1,83 @@
+# Copyright (c) 2022 grandcentrix GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig WIFI_WFX200
+	bool "SiLabs WFX200 support"
+	select HAS_SILABS_WFX_FMAC
+	depends on NET_L2_WIFI_MGMT
+	depends on WIFI_OFFLOAD
+	depends on NET_L2_ETHERNET
+	help
+	  SiLabs WFX200 WiFi Module with SPI
+	  or SDIO Interface
+
+if WIFI_WFX200
+
+choice WIFI_WFX200_BUS
+	bool "Select BUS interface"
+	default WIFI_WFX200_BUS_SPI
+
+config WIFI_WFX200_BUS_SPI
+	bool "SPI Bus interface"
+	select SPI
+
+endchoice # WIFI_WFX200_BUS
+
+config WIFI_WFX200_VERBOSE_DEBUG
+	bool "Enable verbose debugging"
+	depends on LOG_PRINTK
+
+config WIFI_WFX200_LOG_BUFFER_SIZE
+	int "Static log buffer size"
+	default 128
+
+config WIFI_WFX200_STACK_SIZE
+	int "Driver task stack size"
+	default 768
+
+config WIFI_WFX200_EVENT_STACK_SIZE
+	int "Driver event task stack size"
+	default 768
+
+config WIFI_WFX200_HEAP_SIZE
+	int "Driver heap size"
+	default 2048
+
+config WIFI_WFX200_PRIORITY
+	int "Driver task priority"
+	default 2
+
+config WIFI_WFX200_SLEEP
+	bool "Enable sleep mode"
+	default y
+
+choice WIFI_WFX200_PM_MODE
+	bool "Select PM Mode" if WIFI_WFX200_SLEEP
+	default WIFI_WFX200_PM_MODE_PS
+
+config WIFI_WFX200_PM_MODE_PS
+	bool "Wake up on beacons"
+
+config WIFI_WFX200_PM_MODE_DTIM
+	bool "Wake up on DTIM"
+
+endchoice # WIFI_WFX200_PM_MODE
+
+choice WIFI_WFX200_PM_POLL_STRATEGY
+	bool "Select PM poll Strategy" if WIFI_WFX200_SLEEP
+	default WIFI_WFX200_PM_POLL_STRATEGY_UAPSD
+
+config WIFI_WFX200_PM_POLL_STRATEGY_UAPSD
+	bool "UAPSD"
+
+config WIFI_WFX200_PM_POLL_STRATEGY_FAST_PS
+	bool "Fast PS"
+
+endchoice # WIFI_WFX200_OM_POLL_STRATEGY
+
+config WIFI_WFX200_DTIM_SKIP_INTERVAL
+	int "Number of beacons/DTIMs to skip while sleeping" if WIFI_WFX200_SLEEP
+	default 3
+
+endif # WIFI_WFX200
