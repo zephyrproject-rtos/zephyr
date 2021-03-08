@@ -153,6 +153,22 @@ static inline bool is_el_implemented(unsigned int el)
 	return (((read_id_aa64pfr0_el1() >> shift) & ID_AA64PFR0_ELX_MASK) != 0U);
 }
 
+static inline bool is_el_highest_implemented(void)
+{
+	uint32_t el_highest;
+	uint32_t curr_el;
+
+	el_highest = read_id_aa64pfr0_el1() & 0xFFFF;
+	el_highest = (31U - __builtin_clz(el_highest)) / 4;
+
+	curr_el = GET_EL(read_currentel());
+
+	if (curr_el < el_highest)
+		return false;
+
+	return true;
+}
+
 static inline bool is_el2_sec_supported(void)
 {
 	return (((read_id_aa64pfr0_el1() >> ID_AA64PFR0_SEL2_SHIFT) &
