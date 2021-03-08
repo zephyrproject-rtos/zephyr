@@ -82,6 +82,12 @@ ENTRY_RW = FLAG_RW | FLAG_IGNORED0
 ENTRY_US = FLAG_US | FLAG_IGNORED1
 ENTRY_XD = FLAG_XD | FLAG_IGNORED2
 
+# PD_LEVEL and PT_LEVEL are used as list index to PtableSet.levels[]
+# to get table from back of list.
+PD_LEVEL = -2
+PT_LEVEL = -1
+
+
 def debug(text):
     """Display verbose debug message"""
     if not args.verbose:
@@ -365,7 +371,7 @@ class PtableSet():
         align_check(virt_base, size)
 
         # How much memory is covered by leaf page table
-        scope = 1 << self.levels[-2].addr_shift
+        scope = 1 << self.levels[PD_LEVEL].addr_shift
 
         if virt_base % scope != 0:
             error("misaligned virtual address space, 0x%x not a multiple of 0x%x" %
@@ -377,7 +383,7 @@ class PtableSet():
     def reserve_unaligned(self, virt_base, size):
         """Reserve page table space with virt_base and size alignment"""
         # How much memory is covered by leaf page table
-        scope = 1 << self.levels[-2].addr_shift
+        scope = 1 << self.levels[PD_LEVEL].addr_shift
 
         mem_start = round_down(virt_base, scope)
         mem_end = round_up(virt_base + size, scope)
