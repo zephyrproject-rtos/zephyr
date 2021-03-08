@@ -101,7 +101,11 @@ static volatile uint32_t rtc_last = 0;
  *
  * Be aware that even though this is 'technically' the MAX_TICKS value
  * the RTC can't truly set this actual TICKS value due to hardware
- * limitations (see rtc_stm32_set_calendar_alarm() for more info)
+ * limitations (see rtc_stm32_set_calendar_alarm() for more info).
+ *
+ * Note: also max timeout duration limited by variables. With LSE
+ * and TICKS_PER_SEC=8192 the max sleep duration is 72h.
+ *
  */
 #define MAX_TICKS (UINT32_MAX / CYCLES_PER_TICK - 2U)
 
