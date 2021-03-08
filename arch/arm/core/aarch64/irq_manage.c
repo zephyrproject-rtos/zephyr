@@ -70,8 +70,3 @@ void z_irq_spurious(const void *unused)
 
 	z_arm64_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
 }
-
-_cpu_t *z_arm64_curr_cpu(void)
-{
-	return arch_curr_cpu();
-}
