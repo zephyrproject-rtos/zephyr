@@ -29,7 +29,7 @@
 #include "settings.h"
 #include "cfg.h"
 
-static struct k_delayed_work pending_store;
+static struct k_work_delayable pending_store;
 static ATOMIC_DEFINE(pending_flags, BT_MESH_SETTINGS_FLAG_COUNT);
 
 int bt_mesh_settings_set(settings_read_cb read_cb, void *cb_arg,
@@ -92,7 +92,7 @@ SETTINGS_STATIC_HANDLER_DEFINE(bt_mesh, "bt/mesh", NULL, NULL, mesh_commit,
 
 void bt_mesh_settings_store_schedule(enum bt_mesh_settings_flag flag)
 {
-	int32_t timeout_ms, remaining;
+	uint32_t timeout_ms, remaining_ms;
 
 	atomic_set_bit(pending_flags, flag);
 
@@ -108,15 +108,18 @@ void bt_mesh_settings_store_schedule(enum bt_mesh_settings_flag flag)
 		timeout_ms = CONFIG_BT_MESH_STORE_TIMEOUT * MSEC_PER_SEC;
 	}
 
-	remaining = k_delayed_work_remaining_get(&pending_store);
-	if ((remaining > 0) && remaining < timeout_ms) {
-		BT_DBG("Not rescheduling due to existing earlier deadline");
-		return;
+	remaining_ms = k_ticks_to_ms_floor32(k_work_delayable_remaining_get(&pending_store));
+	BT_DBG("Waiting %u ms vs rem %u ms", timeout_ms, remaining_ms);
+
+	/* If the new deadline is sooner, override any existing
+	 * deadline; otherwise schedule without changing any existing
+	 * deadline.
+	 */
+	if (timeout_ms < remaining_ms) {
+		k_work_reschedule(&pending_store, K_MSEC(timeout_ms));
+	} else {
+		k_work_schedule(&pending_store, K_MSEC(timeout_ms));
 	}
-
-	BT_DBG("Waiting %d seconds", timeout_ms / MSEC_PER_SEC);
-
-	k_delayed_work_submit(&pending_store, K_MSEC(timeout_ms));
 }
 
 static void store_pending(struct k_work *work)
@@ -182,5 +185,5 @@ static void store_pending(struct k_work *work)
 
 void bt_mesh_settings_init(void)
 {
-	k_delayed_work_init(&pending_store, store_pending);
+	k_work_init_delayable(&pending_store, store_pending);
 }
