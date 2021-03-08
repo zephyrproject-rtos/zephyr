@@ -16,7 +16,7 @@ GDATA(_kernel)
  * Get CPU id
  */
 
-.macro z_arm64_get_cpu_id xreg0
+.macro get_cpu_id xreg0
 	mrs	\xreg0, mpidr_el1
 	/* FIMXME: aff3 not taken into consideration */
 	ubfx	\xreg0, \xreg0, #0, #24
@@ -28,7 +28,7 @@ GDATA(_kernel)
 
 .macro get_cpu xreg0, xreg1
 	ldr	\xreg0, =_curr_cpu
-	z_arm64_get_cpu_id \xreg1
+	get_cpu_id \xreg1
 	add	\xreg0, \xreg0, \xreg1, lsl #3
 	ldr	\xreg0, [\xreg0]
 .endm

@@ -76,7 +76,7 @@ out:
 	msr	SPSel, #0
 
 #if CONFIG_MP_NUM_CPUS > 1
-	z_arm64_get_cpu_id	x0
+	get_cpu_id x0
 	cbnz    x0, L_secondary_stack
 #endif
 
@@ -89,7 +89,7 @@ out:
 
 #if CONFIG_MP_NUM_CPUS > 1
 L_secondary_stack:
-	z_arm64_get_cpu_id	x1
+	get_cpu_id x1
 	adr	x0, arm64_cpu_init
 	mov	x2, #ARM64_CPU_INIT_SIZE
 	madd	x0, x1, x2, x0
@@ -156,7 +156,7 @@ switch_el:
 	isb
 
 #if CONFIG_MP_NUM_CPUS > 1
-	z_arm64_get_cpu_id	x0
+	get_cpu_id x0
 	cbnz    x0, L_enable_secondary
 #endif
 
