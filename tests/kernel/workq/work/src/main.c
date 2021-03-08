@@ -1320,7 +1320,7 @@ static void test_1cpu_legacy_delayed_submit(void)
 	uint32_t max_ms = k_ticks_to_ms_ceil32(1U
 				+ k_ms_to_ticks_ceil32(DELAY_MS));
 	uint32_t elapsed_ms;
-	struct k_delayed_work lwork;
+	static struct k_delayed_work lwork;
 
 	/* Reset state and use non-blocking handler */
 	reset_counters();
@@ -1362,7 +1362,7 @@ static void test_1cpu_legacy_delayed_resubmit(void)
 	uint32_t max_ms = k_ticks_to_ms_ceil32(1U
 				+ k_ms_to_ticks_ceil32(DELAY_MS));
 	uint32_t elapsed_ms;
-	struct k_delayed_work lwork;
+	static struct k_delayed_work lwork;
 
 	/* Reset state and use non-blocking handler */
 	reset_counters();
@@ -1408,7 +1408,7 @@ static void test_1cpu_legacy_delayed_resubmit(void)
 static void test_1cpu_legacy_delayed_cancel(void)
 {
 	int rc;
-	struct k_delayed_work lwork;
+	static struct k_delayed_work lwork;
 
 	/* Reset state and use non-blocking handler */
 	reset_counters();
