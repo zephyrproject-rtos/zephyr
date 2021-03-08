@@ -2,6 +2,38 @@
 # Copyright 2019 Oticon A/S
 # SPDX-License-Identifier: Apache-2.0
 
+#
+# ENVIRONMENT CONFIGURATION
+# =========================
+#
+# This script can be configured with a number of environment variables.
+# Values in [] are the default unless overridden.
+#
+# PROJECT CONFIGURATION
+# ---------------------
+#     PRJ_CONF:   Default bsim device configuration [prj_conf]
+#     PRJ_CONF_1: bsim device 1 configuration [PRJ_CONF]
+#     PRJ_CONF_2: bsim device 2 configuration [PRJ_CONF]
+#
+# VERBOSITY
+# ---------
+#     VERBOSITY_LEVEL:        Global verbosity [2]
+#     VERBOSITY_LEVEL_EDTT:   EDTT verbosity [VERBOSITY_LEVEL]
+#     VERBOSITY_LEVEL_BRIDGE: EDTT bridge verbosity [VERBOSITY_LEVEL]
+#     VERBOSITY_LEVEL_PHY:    bsim phy verbosity [VERBOSITY_LEVEL]
+#     VERBOSITY_LEVEL_DEVS:   Global bsim device verbosity [VERBOSITY_LEVEL]
+#     VERBOSITY_LEVEL_DEV1:   bsim device 1 verbosity [VERBOSITY_LEVEL_DEVS]
+#     VERBOSITY_LEVEL_DEV1:   bsim device 2 verbosity [VERBOSITY_LEVEL_DEVS]
+#
+# RR DEBUG SUPPORT
+# ----------------
+#     RR:   Default run bsim device under rr [0]
+#           0: disables; any other value enables.
+#     RR_1: Run bsim device 1 under rr [RR]
+#     RR_2: Run bsim device 2 under rr [RR]
+#
+
+
 # Common part of the test scripts for some of the EDTT tests
 # in which 2 controller only builds of the stack are run against each other
 VERBOSITY_LEVEL=${VERBOSITY_LEVEL:-2}
