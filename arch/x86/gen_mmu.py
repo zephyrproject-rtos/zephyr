@@ -89,6 +89,12 @@ def debug(text):
     sys.stdout.write(os.path.basename(sys.argv[0]) + ": " + text + "\n")
 
 
+def verbose(text):
+    """Display --verbose --verbose message"""
+    if args.verbose and args.verbose > 1:
+        sys.stdout.write(os.path.basename(sys.argv[0]) + ": " + text + "\n")
+
+
 def error(text):
     """Display error message and exit program"""
     sys.exit(os.path.basename(sys.argv[0]) + ": " + text)
@@ -215,6 +221,10 @@ class MMUTable():
         this is the physical address of the next level table"""
         index = self.entry_index(virt_addr)
 
+        verbose("%s: mapping 0x%x to 0x%x : %s" %
+                (self.__class__.__name__,
+                 phys_addr, virt_addr, dump_flags(entry_flags)))
+
         self.entries[index] = ((phys_addr & self.addr_mask) |
                                (entry_flags & self.supported_flags))
 
@@ -223,6 +233,10 @@ class MMUTable():
         update just the flags, leaving the physical mapping alone.
         Unsupported flags will be filtered out."""
         index = self.entry_index(virt_addr)
+
+        verbose("%s: changing perm at 0x%x : %s" %
+                (self.__class__.__name__,
+                 virt_addr, dump_flags(entry_flags)))
 
         self.entries[index] = ((self.entries[index] & self.addr_mask) |
                                (entry_flags & self.supported_flags))
@@ -467,11 +481,11 @@ def parse_args():
                         help="path to prebuilt kernel ELF binary")
     parser.add_argument("-o", "--output", required=True,
                         help="output file")
-    parser.add_argument("-v", "--verbose", action="store_true",
+    parser.add_argument("-v", "--verbose", action="count",
                         help="Print extra debugging information")
     args = parser.parse_args()
-    if "VERBOSE" in os.environ:
-        args.verbose = True
+    if "VERBOSE" in os.environ and args.verbose == 0:
+        args.verbose = 1
 
 
 def get_symbols(elf_obj):
