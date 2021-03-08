@@ -20,8 +20,6 @@
 
 _ASM_FILE_PROLOGUE
 
-GDATA(_kernel)
-
 /*
  * Routine to handle context switches
  *
@@ -119,12 +117,12 @@ SECTION_FUNC(TEXT, z_arm64_sync_exc)
 	b	inv
 offload:
 	/* ++(_kernel->nested) to be checked by arch_is_in_isr() */
-	inc_nest_counter
+	inc_nest_counter x0, x1
 
 	bl	z_irq_do_offload
 
 	/* --(_kernel->nested) */
-	dec_nest_counter
+	dec_nest_counter x0, x1
 	b	z_arm64_exit_exc
 #endif
 	b	inv
