@@ -111,13 +111,16 @@ void run_workq(void)
 				K_THREAD_STACK_SIZEOF(user_workq_stack),
 				CONFIG_MAIN_THREAD_PRIORITY, NULL);
 
+	/* The work queue thread has been started, but it's OK because
+	 * it doesn't need these permissions until something's submitted
+	 * to it.
+	 */
 	k_mem_domain_add_thread(&footprint_mem_domain, &user_workq.thread);
-	k_thread_access_grant(&user_workq.thread, &user_workq_stack);
 	k_thread_access_grant(&user_workq.thread, &sync_sema);
 
 	tid = k_thread_create(&my_thread, my_stack_area, STACK_SIZE,
 			      simple_user_workq_thread, NULL, NULL, NULL,
-			      0, K_USER, K_NO_WAIT);
+			      0, K_USER, K_FOREVER);
 
 	k_thread_access_grant(tid, &sync_sema,
 			      &user_workq.thread, &user_workq.queue,
