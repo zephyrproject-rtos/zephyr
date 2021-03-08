@@ -30,7 +30,7 @@ struct hb_pub_val {
 
 static struct bt_mesh_hb_pub pub;
 static struct bt_mesh_hb_sub sub;
-static struct k_delayed_work sub_timer;
+static struct k_work_delayable sub_timer;
 static struct k_work_delayable pub_timer;
 
 static int64_t sub_remaining(void)
@@ -39,7 +39,10 @@ static int64_t sub_remaining(void)
 		return 0U;
 	}
 
-	return k_delayed_work_remaining_get(&sub_timer) / MSEC_PER_SEC;
+	uint32_t rem_ms = k_ticks_to_ms_floor32(
+		k_work_delayable_remaining_get(&sub_timer));
+
+	return rem_ms / MSEC_PER_SEC;
 }
 
 static void hb_publish_end_cb(int err, void *cb_data)
@@ -189,8 +192,8 @@ int bt_mesh_hb_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 		return 0;
 	}
 
-	if (!k_delayed_work_pending(&sub_timer)) {
-		BT_DBG("Heartbeat subscription period expired");
+	if (!k_work_delayable_is_pending(&sub_timer)) {
+		BT_DBG("Heartbeat subscription inactive");
 		return 0;
 	}
 
@@ -301,10 +304,7 @@ uint8_t bt_mesh_hb_sub_set(uint16_t src, uint16_t dst, uint32_t period)
 		sub.min_hops = 0U;
 		sub.max_hops = 0U;
 		sub.count = 0U;
-		sub.period = sub.period - sub_remaining();
-		if (!k_delayed_work_cancel(&sub_timer)) {
-			notify_sub_end();
-		}
+		sub.period = 0U;
 	} else if (period) {
 		sub.src = src;
 		sub.dst = dst;
@@ -312,16 +312,17 @@ uint8_t bt_mesh_hb_sub_set(uint16_t src, uint16_t dst, uint32_t period)
 		sub.max_hops = 0U;
 		sub.count = 0U;
 		sub.period = period;
-		k_delayed_work_submit(&sub_timer, K_SECONDS(period));
 	} else {
 		/* Clearing the period should stop heartbeat subscription
 		 * without clearing the parameters, so we can still read them.
 		 */
-		sub.period = sub.period - sub_remaining();
-		if (!k_delayed_work_cancel(&sub_timer)) {
-			notify_sub_end();
-		}
+		sub.period = 0U;
 	}
+
+	/* Start the timer, which notifies immediately if the new
+	 * configuration disables the subscription.
+	 */
+	k_work_reschedule(&sub_timer, K_SECONDS(sub.period));
 
 	return STATUS_SUCCESS;
 }
@@ -354,7 +355,7 @@ void bt_mesh_hb_init(void)
 {
 	pub.net_idx = BT_MESH_KEY_UNUSED;
 	k_work_init_delayable(&pub_timer, hb_publish);
-	k_delayed_work_init(&sub_timer, sub_end);
+	k_work_init_delayable(&sub_timer, sub_end);
 }
 
 void bt_mesh_hb_start(void)
