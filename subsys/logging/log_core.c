@@ -970,8 +970,9 @@ void z_vrfy_z_log_string_from_user(uint32_t src_level_val, const char *str)
 		struct log_msg_ids structure;
 		uint32_t value;
 	} src_level_union;
-	size_t len;
+	size_t len, max_len;
 	int err;
+	bool is_imm, is_raw, is_nrm;
 
 	src_level_union.value = src_level_val;
 	level = src_level_union.structure.level;
@@ -995,31 +996,39 @@ void z_vrfy_z_log_string_from_user(uint32_t src_level_val, const char *str)
 		return;
 	}
 
-	/*
-	 * Validate and make a copy of the source string. Because we need
-	 * the log subsystem to eventually free it, we're going to use
-	 * log_strdup().
-	 */
-	len = z_user_string_nlen(str, (level == LOG_LEVEL_INTERNAL_RAW_STRING) ?
-				 CONFIG_LOG_PRINTK_MAX_STRING_LENGTH :
-				 CONFIG_LOG_STRDUP_MAX_STRING, &err);
+	is_imm = IS_ENABLED(CONFIG_LOG_IMMEDIATE);
+	is_raw = !is_imm && IS_ENABLED(CONFIG_LOG_PRINTK) &&
+						(level == LOG_LEVEL_INTERNAL_RAW_STRING);
+	is_nrm = !is_imm && !is_raw;
+	max_len = (level == LOG_LEVEL_INTERNAL_RAW_STRING) ?
+						CONFIG_LOG_PRINTK_MAX_STRING_LENGTH :
+						CONFIG_LOG_STRDUP_MAX_STRING;
 
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(err == 0, "invalid string passed in"));
-	Z_OOPS(Z_SYSCALL_MEMORY_READ(str, len));
+	if (is_nrm) {
+		char kstr[MAX(CONFIG_LOG_PRINTK_MAX_STRING_LENGTH,
+					  CONFIG_LOG_STRDUP_MAX_STRING) + 1];
 
-	if (IS_ENABLED(CONFIG_LOG_IMMEDIATE)) {
-		log_string_sync(src_level_union.structure, "%s", str);
-	} else if (IS_ENABLED(CONFIG_LOG_PRINTK) &&
-		   (level == LOG_LEVEL_INTERNAL_RAW_STRING)) {
-		struct log_msg *msg;
+		err = z_user_string_copy(kstr, (char *)str, max_len);
+		Z_OOPS(Z_SYSCALL_VERIFY_MSG(err == 0, "invalid string passed in"));
 
-		msg = log_msg_hexdump_create(NULL, str, len);
-		if (msg != NULL) {
-			msg_finalize(msg, src_level_union.structure);
-		}
-	} else {
-		str = log_strdup(str);
+		str = log_strdup(kstr);
 		log_1("%s", (log_arg_t)str, src_level_union.structure);
+	} else {
+		len = z_user_string_nlen(str, max_len, &err);
+
+		Z_OOPS(Z_SYSCALL_VERIFY_MSG(err == 0, "invalid string passed in"));
+		Z_OOPS(Z_SYSCALL_MEMORY_READ(str, len));
+
+		if (is_imm) {
+			log_string_sync(src_level_union.structure, "%.*s", len, str);
+		} else {
+			struct log_msg *msg;
+
+			msg = log_msg_hexdump_create(NULL, str, len);
+			if (msg != NULL) {
+				msg_finalize(msg, src_level_union.structure);
+			}
+		}
 	}
 }
 #include <syscalls/z_log_string_from_user_mrsh.c>
