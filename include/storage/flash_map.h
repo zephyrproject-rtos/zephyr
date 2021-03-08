@@ -275,6 +275,20 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
 #define FLASH_AREA_SIZE(label) \
 	DT_REG_SIZE(DT_NODE_BY_FIXED_PARTITION_LABEL(label))
 
+#define FLASH_AREA_NODE_COMPAT_TYPE(n, c, t)  COND_CODE_1(DT_NODE_HAS_COMPAT(n, c), (t), ())
+
+#define FLASH_AREA_NODE_TYPE(n)									   \
+	FLASH_AREA_NODE_COMPAT_TYPE(n, zephyr_mcuboot_image, FLASH_AREA_TYPE_MCUBOOT)		   \
+	FLASH_AREA_NODE_COMPAT_TYPE(n, zephyr_mcuboot_scratch, FLASH_AREA_TYPE_MCUBOOT_SCRATCH)	   \
+	FLASH_AREA_NODE_COMPAT_TYPE(n, zephyr_application_image, FLASH_AREA_TYPE_ZEPHYR_APPLICATION)
+
+#define FLASH_AREA_NODE_TYPE_OR_UNSPECIFIED(n)		\
+	COND_CODE_0(					\
+		IS_EMPTY(FLASH_AREA_NODE_TYPE(n)),	\
+		(FLASH_AREA_NODE_TYPE(n)),		\
+		(FLASH_AREA_TYPE_UNSPECIFIED)		\
+	)
+
 #ifdef __cplusplus
 }
 #endif
