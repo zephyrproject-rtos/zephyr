@@ -150,7 +150,7 @@ static void store_iv(bool only_duration)
 
 static void store_seq(void)
 {
-	if (CONFIG_BT_MESH_SEQ_STORE_RATE &&
+	if (CONFIG_BT_MESH_SEQ_STORE_RATE > 1 &&
 	    (bt_mesh.seq % CONFIG_BT_MESH_SEQ_STORE_RATE)) {
 		return;
 	}
