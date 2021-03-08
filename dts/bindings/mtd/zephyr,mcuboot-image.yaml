@@ -1,0 +1,15 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Partition or other storage area for mcuboot bootloader image.
+
+compatible: "zephyr,mcuboot-image"
+
+include: base.yaml
+
+properties:
+  label:
+    required: true
+  reg:
+    required: true
