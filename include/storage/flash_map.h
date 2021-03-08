@@ -55,7 +55,8 @@ struct flash_area {
 	uint8_t fa_id;
 	/** Provided for compatibility with MCUboot */
 	uint8_t fa_device_id;
-	uint16_t pad16;
+	uint8_t fa_type;
+	uint8_t pad8;
 	/** Start offset from the beginning of the flash device */
 	off_t fa_off;
 	/** Total size */
@@ -66,6 +67,12 @@ struct flash_area {
 	 */
 	const char *fa_dev_name;
 };
+
+#define FLASH_AREA_TYPE_UNSPECIFIED			0x00 /* No type */
+#define FLASH_AREA_TYPE_MCUBOOT				0x01 /* zephyr,mcuboot,image */
+#define FLASH_AREA_TYPE_MCUBOOT_SCRATCH			0x02 /* zephyr,mcuboot,scratch */
+#define FLASH_AREA_TYPE_ZEPHYR_APPLICATION		0x10 /* zephyr,application,image */
+#define FLASH_AREA_TYPE_UNKNOWN				0xff /* Reserved for unknown compatible */
 
 /**
  * @brief Structure for transfer flash sector boundaries
