@@ -291,7 +291,7 @@
 /drivers/timer/cavs_timer.c               @dcpleung
 /drivers/timer/stm32_lptim_timer.c        @FRASTM
 /drivers/timer/leon_gptimer.c             @martin-aberg
-/drivers/usb/                             @jfischer-no @finikorg
+/drivers/usb/                             @jfischer-no
 /drivers/usb/device/usb_dc_stm32.c        @ydamigos @loicpoulain
 /drivers/video/                           @loicpoulain
 /drivers/i2c/i2c_ll_stm32*                @ydamigos
@@ -427,7 +427,7 @@
 /include/dt-bindings/clock/kinetis_scg.h  @henrikbrixandersen
 /include/dt-bindings/dma/stm32_dma.h      @cybertale
 /include/dt-bindings/pcie/                @dcpleung
-/include/dt-bindings/usb/usb.h            @galak @finikorg
+/include/dt-bindings/usb/usb.h            @galak
 /include/emul.h                           @sjg20
 /include/fs/                              @nashif @nvlsianpu @de-nordic @pabigot
 /include/init.h                           @nashif @andyross
@@ -501,7 +501,7 @@
 /samples/subsys/mgmt/mcumgr/smp_svr/      @aunsbjerg @nvlsianpu
 /samples/subsys/mgmt/updatehub/           @nandojve @otavio
 /samples/subsys/mgmt/osdp/                @cbsiddharth
-/samples/subsys/usb/                      @jfischer-no @finikorg
+/samples/subsys/usb/                      @jfischer-no
 /samples/subsys/power/                    @nashif @pabigot @ceolin
 /samples/tfm_integration/                 @ioannisg @microbuilder
 /samples/userspace/                       @dcpleung @nashif
@@ -597,7 +597,7 @@
 /subsys/storage/                          @nvlsianpu
 /subsys/testsuite/                        @nashif
 /subsys/timing/                           @nashif @dcpleung
-/subsys/usb/                              @jfischer-no @finikorg
+/subsys/usb/                              @jfischer-no
 /subsys/usb/class/dfu/usb_dfu.c           @nvlsianpu
 /tests/                                   @nashif
 /tests/application_development/libcxx/    @pabigot

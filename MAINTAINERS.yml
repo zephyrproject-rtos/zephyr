@@ -1388,8 +1388,6 @@ USB:
     status: maintained
     maintainers:
         - jfischer-no
-    collaborators:
-        - finikorg
     files:
         - drivers/usb/
         - dts/bindings/usb/
