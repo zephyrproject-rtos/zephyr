@@ -7,6 +7,8 @@
 #include <kernel_internal.h>
 #include "vector_table.h"
 
+void z_arm64_el2_init(void);
+
 void __weak z_arm64_el_highest_plat_init(void)
 {
 	/* do nothing */
@@ -34,6 +36,28 @@ void z_arm64_el_highest_init(void)
 	z_arm64_el_highest_plat_init();
 
 	isb();
+}
+
+enum el3_next_el {
+	EL3_TO_EL2,
+	EL3_TO_EL1_NO_EL2,
+	EL3_TO_EL1_SKIP_EL2
+};
+
+static inline enum el3_next_el el3_get_next_el(void)
+{
+	if (!is_el_implemented(2)) {
+		return EL3_TO_EL1_NO_EL2;
+	} else if (is_in_secure_state() && !is_el2_sec_supported()) {
+		/*
+		 * Is considered an illegal return "[..] a return to EL2 when EL3 is
+		 * implemented and the value of the SCR_EL3.NS bit is 0 if
+		 * ARMv8.4-SecEL2 is not implemented" (D1.11.2 from ARM DDI 0487E.a)
+		 */
+		return EL3_TO_EL1_SKIP_EL2;
+	} else {
+		return EL3_TO_EL2;
+	}
 }
 
 void z_arm64_el3_init(void)
@@ -64,6 +88,14 @@ void z_arm64_el3_init(void)
 	z_arm64_el3_plat_init();
 
 	isb();
+
+	if (el3_get_next_el() == EL3_TO_EL1_SKIP_EL2) {
+		/*
+		 * handle EL2 init in EL3, as it still needs to be done,
+		 * but we are going to be skipping EL2.
+		 */
+		z_arm64_el2_init();
+	}
 }
 
 void z_arm64_el2_init(void)
@@ -89,6 +121,10 @@ void z_arm64_el2_init(void)
 	zero_cntvoff_el2();		/* Set 64-bit virtual timer offset to 0 */
 	zero_cnthctl_el2();
 	zero_cnthp_ctl_el2();
+	/*
+	 * Enable this if/when we use the hypervisor timer.
+	 * write_cnthp_cval_el2(~(uint64_t)0);
+	 */
 
 	z_arm64_el2_plat_init();
 
@@ -114,6 +150,13 @@ void z_arm64_el1_init(void)
 		SCTLR_SA_BIT);		/* Enable SP alignment check */
 	write_sctlr_el1(reg);
 
+	write_cntv_cval_el0(~(uint64_t)0);
+	/*
+	 * Enable these if/when we use the corresponding timers.
+	 * write_cntp_cval_el0(~(uint64_t)0);
+	 * write_cntps_cval_el1(~(uint64_t)0);
+	 */
+
 	z_arm64_el1_plat_init();
 
 	isb();
@@ -128,13 +171,7 @@ void z_arm64_el3_get_next_el(uint64_t switch_addr)
 	/* Mask the DAIF */
 	spsr = SPSR_DAIF_MASK;
 
-	/*
-	 * Is considered an illegal return "[..] a return to EL2 when EL3 is
-	 * implemented and the value of the SCR_EL3.NS bit is 0 if
-	 * ARMv8.4-SecEL2 is not implemented" (D1.11.2 from ARM DDI 0487E.a)
-	 */
-	if (is_el_implemented(2) &&
-	   ((is_in_secure_state() && is_el2_sec_supported()) || !is_in_secure_state())) {
+	if (el3_get_next_el() == EL3_TO_EL2) {
 		/* Dropping into EL2 */
 		spsr |= SPSR_MODE_EL2T;
 	} else {
