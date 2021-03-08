@@ -1,0 +1,48 @@
+# Copyright (c) 2023 grandcentrix GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig WIFI_WFX200
+	bool "SiLabs WFX200 support"
+	default y
+	depends on DT_HAS_SILABS_WFX200_ENABLED
+	depends on SPI
+	select NET_L2_WIFI_MGMT
+	select WIFI_USE_NATIVE_NETWORKING
+	select HAS_SILABS_WFX_FMAC
+	help
+	  SiLabs WFX200 WiFi Module with SPI Interface
+
+if WIFI_WFX200
+
+config NET_IF_MAX_IPV6_COUNT
+	default 2
+
+config NET_IF_MAX_IPV4_COUNT
+	default 2
+
+config WIFI_WFX200_VERBOSE_LOGGING
+	bool "Verbose logging"
+	depends on LOG_PRINTK
+
+config WIFI_WFX200_LOG_BUFFER_SIZE
+	int "Static log buffer size"
+	default 128
+
+config WIFI_WFX200_STACK_SIZE
+	int "Driver task stack size"
+	default 768
+
+config WIFI_WFX200_EVENT_STACK_SIZE
+	int "Driver event task stack size"
+	default 768
+
+config WIFI_WFX200_HEAP_SIZE
+	int "Driver heap size"
+	default 2048
+
+config WIFI_WFX200_PRIORITY
+	int "Driver task priority"
+	default 2
+
+endif # WIFI_WFX200
