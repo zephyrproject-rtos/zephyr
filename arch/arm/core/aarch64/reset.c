@@ -31,7 +31,9 @@ void __weak z_arm64_el1_plat_init(void)
 
 void z_arm64_el_highest_init(void)
 {
-	write_cntfrq_el0(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+	if (is_el_highest_implemented()) {
+		write_cntfrq_el0(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+	}
 
 	z_arm64_el_highest_plat_init();
 
