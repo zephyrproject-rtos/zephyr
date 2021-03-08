@@ -417,6 +417,16 @@ static inline void hal_radio_rxen_on_sw_switch(uint8_t ppi)
 		HAL_SW_SWITCH_RADIO_ENABLE_PPI_TASK_RX);
 }
 
+static inline void hal_radio_b2b_rxen_on_sw_switch(uint8_t ppi)
+{
+	/* NOTE: As independent PPI are used to trigger the Radio Rx task,
+	 *       double buffers implementation works for sw_switch using PPIs,
+	 *       simply reuse the hal_radio_rxen_on_sw_switch() functon to set
+	 *	 the next PPIs task to be Radio Rx enable.
+	 */
+	hal_radio_rxen_on_sw_switch(ppi);
+}
+
 static inline void hal_radio_sw_switch_disable(void)
 {
 	/* Disable the following PPI channels that implement SW Switch:
