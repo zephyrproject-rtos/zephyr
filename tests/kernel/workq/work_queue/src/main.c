@@ -314,6 +314,7 @@ static void test_delayed_cancel(void)
 
 	TC_PRINT(" - Checking results\n");
 	check_results(0);
+	reset_results();
 }
 
 static void test_delayed_pending(void)
@@ -341,93 +342,6 @@ static void test_delayed_pending(void)
 
 	k_msleep(WORK_ITEM_WAIT_ALIGNED);
 	zassert_false(k_delayed_work_pending(&delayed_tests[0].work), NULL);
-
-	TC_PRINT(" - Checking results\n");
-	check_results(1);
-	reset_results();
-}
-
-static void delayed_resubmit_work_handler(struct k_work *work)
-{
-	struct delayed_test_item *ti =
-			CONTAINER_OF(work, struct delayed_test_item, work);
-
-	results[num_results++] = ti->key;
-
-	if (ti->key < NUM_TEST_ITEMS) {
-		ti->key++;
-		TC_PRINT(" - Resubmitting delayed work\n");
-		k_delayed_work_submit(&ti->work, K_MSEC(WORK_ITEM_WAIT));
-	}
-}
-
-/**
- * @brief Test delayed resubmission of work queue item
- *
- * @ingroup kernel_workqueue_tests
- *
- * @see k_delayed_work_init(), k_delayed_work_submit()
- */
-static void test_delayed_resubmit(void)
-{
-	TC_PRINT("Starting delayed resubmit test\n");
-
-	delayed_tests[0].key = 1;
-	k_delayed_work_init(&delayed_tests[0].work,
-			    delayed_resubmit_work_handler);
-
-	TC_PRINT(" - Submitting delayed work\n");
-	k_delayed_work_submit(&delayed_tests[0].work, K_MSEC(WORK_ITEM_WAIT));
-
-	TC_PRINT(" - Waiting for work to finish\n");
-	k_msleep(CHECK_WAIT);
-
-	TC_PRINT(" - Checking results\n");
-	check_results(NUM_TEST_ITEMS);
-	reset_results();
-}
-
-static void coop_delayed_work_resubmit(void)
-{
-	int i;
-
-	for (i = 0; i < NUM_TEST_ITEMS; i++) {
-		TC_PRINT(" - Resubmitting delayed work with 1 ms\n");
-		k_delayed_work_submit(&delayed_tests[0].work, K_MSEC(1));
-
-		/* Busy wait 1 ms to force a clash with workqueue */
-#if defined(CONFIG_ARCH_POSIX)
-		k_busy_wait(1000);
-#else
-		volatile uint32_t uptime;
-		uptime = k_uptime_get_32();
-		while (k_uptime_get_32() == uptime) {
-		}
-#endif
-	}
-}
-
-
-/**
- * @brief Test delayed resubmission of work queue thread
- *
- * @ingroup kernel_workqueue_tests
- *
- * @see k_delayed_work_init()
- */
-static void test_delayed_resubmit_thread(void)
-{
-	TC_PRINT("Starting delayed resubmit from coop thread test\n");
-
-	delayed_tests[0].key = 1;
-	k_delayed_work_init(&delayed_tests[0].work, delayed_work_handler);
-
-	k_thread_create(&co_op_data, co_op_stack, STACK_SIZE,
-			(k_thread_entry_t)coop_delayed_work_resubmit,
-			NULL, NULL, NULL, K_PRIO_COOP(10), 0, K_NO_WAIT);
-
-	TC_PRINT(" - Waiting for work to finish\n");
-	k_msleep(WORK_ITEM_WAIT_ALIGNED);
 
 	TC_PRINT(" - Checking results\n");
 	check_results(1);
@@ -807,8 +721,6 @@ void test_main(void)
 			 ztest_1cpu_unit_test(test_sequence),
 			 ztest_1cpu_unit_test(test_resubmit),
 			 ztest_1cpu_unit_test(test_delayed),
-			 ztest_1cpu_unit_test(test_delayed_resubmit),
-			 ztest_1cpu_unit_test(test_delayed_resubmit_thread),
 			 ztest_1cpu_unit_test(test_delayed_cancel),
 			 ztest_1cpu_unit_test(test_delayed_pending),
 			 ztest_1cpu_unit_test(test_triggered),
