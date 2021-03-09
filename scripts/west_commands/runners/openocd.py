@@ -24,6 +24,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
 
     def __init__(self, cfg, pre_init=None, pre_load=None,
                  load_cmd=None, verify_cmd=None, post_verify=None,
+                 post_reset_cmd=None,
                  tui=None, config=None, serial=None, use_elf=None,
                  tcl_port=DEFAULT_OPENOCD_TCL_PORT,
                  telnet_port=DEFAULT_OPENOCD_TELNET_PORT,
@@ -52,6 +53,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         self.load_cmd = load_cmd
         self.verify_cmd = verify_cmd
         self.post_verify = post_verify or []
+        self.post_reset_cmd = post_reset_cmd or []
         self.tcl_port = tcl_port
         self.telnet_port = telnet_port
         self.gdb_port = gdb_port
@@ -87,6 +89,8 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--cmd-post-verify', action='append',
                             help='''Command to run after verification;
                             may be given multiple times''')
+        parser.add_argument('--cmd-post-reset', action='append',
+                            help='''Command to run after resetting target''')
 
         # Options for debugging:
         parser.add_argument('--tui', default=False, action='store_true',
@@ -106,6 +110,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
             pre_init=args.cmd_pre_init,
             pre_load=args.cmd_pre_load, load_cmd=args.cmd_load,
             verify_cmd=args.cmd_verify, post_verify=args.cmd_post_verify,
+            post_reset_cmd=args.cmd_post_reset,
             tui=args.tui, config=args.config, serial=args.serial, use_elf=args.use_elf,
             tcl_port=args.tcl_port, telnet_port=args.telnet_port,
             gdb_port=args.gdb_port)
@@ -147,6 +152,8 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         pre_init_cmd = []
         pre_load_cmd = []
         post_verify_cmd = []
+        post_reset_cmd = []
+
         for i in self.pre_init:
             pre_init_cmd.append("-c")
             pre_init_cmd.append(i)
@@ -159,6 +166,10 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
             post_verify_cmd.append("-c")
             post_verify_cmd.append(i)
 
+        for i in self.post_reset_cmd:
+            post_reset_cmd.append("-c")
+            post_reset_cmd.append(i)
+
         cmd = (self.openocd_cmd + self.serial + self.cfg_cmd +
                pre_init_cmd + ['-c', 'init',
                                 '-c', 'targets'] +
@@ -167,8 +178,9 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                                 '-c', 'reset halt'] +
                ['-c', self.verify_cmd + ' ' + hex_name] +
                post_verify_cmd +
-               ['-c', 'reset run',
-                '-c', 'shutdown'])
+               ['-c', 'reset halt'] +
+               post_reset_cmd +
+               ['-c', 'shutdown'])
         self.check_call(cmd)
 
     def do_flash_elf(self, **kwargs):
