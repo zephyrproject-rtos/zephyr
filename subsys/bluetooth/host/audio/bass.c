@@ -367,8 +367,8 @@ static void bass_pa_sync_cancel(struct bass_recv_state_internal_t *state)
 #endif /* defined(CONFIG_BT_BASS_AUTO_SYNC) */
 }
 
-static void bass_pa_sync(struct bt_conn *conn,
-			 struct bass_recv_state_internal_t *state, bool sync_pa)
+static void bass_pa_sync(struct bt_conn *conn, struct bass_recv_state_internal_t *state,
+			 uint8_t sync_pa)
 {
 	struct bass_recv_state_t *recv_state = &state->state;
 
@@ -377,7 +377,9 @@ static void bass_pa_sync(struct bt_conn *conn,
 			return;
 		}
 
-		if (conn &&
+		/* TODO: Handle case where current state is BASS_PA_STATE_INFO_REQ */
+
+		if (conn && sync_pa == BASS_PA_REQ_SYNC_PAST &&
 		    BT_FEAT_LE_PAST_SEND(conn->le.features) &&
 		    BT_FEAT_LE_PAST_RECV(bt_dev.le.features)) {
 			bass_pa_sync_past(conn, state);
@@ -569,7 +571,7 @@ static ssize_t write_control_point(struct bt_conn *conn,
 		    len < sizeof(cp->add_src) - sizeof(cp->add_src.metadata)) {
 			BT_DBG("Invalid length %u", len);
 			return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
-		} else if (cp->add_src.pa_sync > BASS_PA_REQ_SYNC ||
+		} else if (cp->add_src.pa_sync > BASS_PA_REQ_SYNC_PAST ||
 			   cp->add_src.addr.type > BT_ADDR_LE_RANDOM_ID ||
 			   cp->add_src.adv_sid > BT_GAP_SID_MAX) {
 			BT_DBG("Invalid data");
@@ -591,7 +593,7 @@ static ssize_t write_control_point(struct bt_conn *conn,
 		    len < sizeof(cp->mod_src) - sizeof(cp->mod_src.metadata)) {
 			BT_DBG("Invalid length %u", len);
 			return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
-		} else if (cp->mod_src.pa_sync > BASS_PA_REQ_SYNC) {
+		} else if (cp->mod_src.pa_sync > BASS_PA_REQ_SYNC_PAST) {
 			BT_DBG("Invalid data");
 			return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
 		} else if (cp->mod_src.metadata_len > CONFIG_BT_BASS_MAX_METADATA_LEN) {
