@@ -1,6 +1,7 @@
 /* hci_core.h - Bluetooth HCI core access */
 
 /*
+ * Copyright (c) 2021 Nordic Semiconductor ASA
  * Copyright (c) 2015-2016 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -325,19 +326,10 @@ struct bt_hci_cmd_state_set {
 	bool val;
 };
 
-/* Initialize command state instance */
-static inline void bt_hci_cmd_state_set_init(struct bt_hci_cmd_state_set *state,
-					     atomic_t *target, int bit,
-					     bool val)
-{
-	state->target = target;
-	state->bit = bit;
-	state->val = val;
-}
-
 /* Set command state related with the command buffer */
-void bt_hci_cmd_data_state_set(struct net_buf *buf,
-			       struct bt_hci_cmd_state_set *state);
+void bt_hci_cmd_state_set_init(struct net_buf *buf,
+			       struct bt_hci_cmd_state_set *state,
+			       atomic_t *target, int bit, bool val);
 
 int bt_hci_disconnect(uint16_t handle, uint8_t reason);
 
