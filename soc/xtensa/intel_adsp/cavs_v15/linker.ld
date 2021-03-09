@@ -502,7 +502,12 @@ SECTIONS
   /* Initial/boot stack lives in the CPU0 interrupt stack */
   __stack = z_interrupt_stacks + CONFIG_ISR_STACK_SIZE;
 
+  /* These symbols bound the newlib heap, which must be uncached */
+  . = SEGSTART_UNCACHED;
   _end = .;
+  . = L2_SRAM_BASE + L2_SRAM_SIZE;
+  . = SEGSTART_UNCACHED;
+  _heap_sentry = .;
 
   /* dma buffers */
   .lpbuf (NOLOAD): ALIGN(4)
@@ -511,7 +516,6 @@ SECTIONS
     *(.dma_buffers)
     _dma_buf_end = ABSOLUTE(.);
   } >LP_SRAM_REGION
-  _heap_sentry = L2_SRAM_BASE + L2_SRAM_SIZE;
   .comment  0 :  { *(.comment) }
   .debug 0 : { *(.debug) }
   .line 0 : { *(.line) }
