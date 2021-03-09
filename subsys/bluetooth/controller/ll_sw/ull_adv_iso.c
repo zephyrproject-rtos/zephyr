@@ -202,14 +202,15 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 						      phy) +
 					   EVENT_MSS_US;
 	}
+
 	util_saa_le32(lll_adv_iso->seed_access_addr, big_handle);
+
 	lll_adv_iso->sdu_interval = sdu_interval;
 	lll_adv_iso->max_sdu = max_sdu;
 	lll_csrand_get(lll_adv_iso->base_crc_init,
 		       sizeof(lll_adv_iso->base_crc_init));
 	lll_adv_iso->data_chan_count =
 		ull_chan_map_get(lll_adv_iso->data_chan_map);
-	lll_adv_iso->data_chan_id = 0;
 	lll_adv_iso->phy = phy;
 	lll_adv_iso->latency_prepare = 0;
 	lll_adv_iso->latency_event = 0;
