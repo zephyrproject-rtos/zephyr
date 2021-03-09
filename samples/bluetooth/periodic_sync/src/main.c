@@ -12,6 +12,14 @@
 #define TIMEOUT_SYNC_CREATE K_SECONDS(10)
 #define NAME_LEN            30
 
+#define BT_LE_SCAN_INTERVAL_CUSTOM 1000000 / 7 / 625
+#define BT_LE_SCAN_WINDOW_CUSTOM 10000 / 625
+#define BT_LE_SCAN_ACTIVE_CUSTOM BT_LE_SCAN_PARAM(BT_LE_SCAN_TYPE_ACTIVE,          \
+                                                  BT_LE_SCAN_OPT_FILTER_DUPLICATE, \
+                                                  BT_LE_SCAN_INTERVAL_CUSTOM,      \
+                                                  BT_LE_SCAN_WINDOW_CUSTOM)
+#define PERIODIC_SYNC_TIMEOUT 2 * 2200 / 10
+
 static bool         per_adv_found;
 static bt_addr_le_t per_addr;
 static uint8_t      per_sid;
@@ -201,7 +209,7 @@ void main(void)
 	printk("Success.\n");
 
 	printk("Start scanning...");
-	err = bt_le_scan_start(BT_LE_SCAN_ACTIVE, NULL);
+	err = bt_le_scan_start(BT_LE_SCAN_ACTIVE_CUSTOM, NULL);
 	if (err) {
 		printk("failed (err %d)\n", err);
 		return;
@@ -230,7 +238,7 @@ void main(void)
 		sync_create_param.options = 0;
 		sync_create_param.sid = per_sid;
 		sync_create_param.skip = 0;
-		sync_create_param.timeout = 0xa;
+		sync_create_param.timeout = PERIODIC_SYNC_TIMEOUT;
 		err = bt_le_per_adv_sync_create(&sync_create_param, &sync);
 		if (err) {
 			printk("failed (err %d)\n", err);
