@@ -13,8 +13,10 @@
 
 #if IS_ENABLED(CONFIG_BT_BASS)
 #define BASS_MAX_METADATA_LEN CONFIG_BT_BASS_MAX_METADATA_LEN
+#define BASS_MAX_SUBGROUPS    CONFIG_BT_BASS_MAX_SUBGROUPS
 #else
 #define BASS_MAX_METADATA_LEN 0
+#define BASS_MAX_SUBGROUPS    0
 #endif
 
 #define BASS_BROADCAST_CODE_SIZE        16
@@ -25,42 +27,53 @@
 #define BASS_PA_STATE_FAILED		0x03
 #define BASS_PA_STATE_NO_PAST		0x04
 
+#define BASS_BIG_ENC_STATE_NO_ENC       0x00
+#define BASS_BIG_ENC_STATE_BCODE_REQ    0x01
+#define BASS_BIG_ENC_STATE_DEC          0x02
+#define BASS_BIG_ENC_STATE_BAD_CODE     0x03
+
 #define BASS_ERR_OPCODE_NOT_SUPPORTED   0x80
 
-#define BASS_RECV_STATE_EMPTY(rs) \
-	((rs)->src_id == 0 && (rs)->pa_sync_state == 0 && \
-	 (rs)->bis_sync_state == 0 && (rs)->big_enc == 0 && \
-	 !bt_addr_le_cmp(&(rs)->addr, BT_ADDR_LE_ANY) && (rs)->adv_sid == 0 && \
-	 (rs)->metadata_len == 0)
+#define BASS_PA_INTERVAL_UNKNOWN        0xFFFF
 
-struct bass_recv_state_t {
+#define BASS_RECV_STATE_EMPTY(rs) \
+	((rs)->pa_sync_state == 0 && (rs)->encrypt_state == 0 && \
+	 !bt_addr_le_cmp(&(rs)->addr, BT_ADDR_LE_ANY) && (rs)->adv_sid == 0 && \
+	 (rs)->num_subgroups == 0)
+
+struct bt_bass_subgroup {
+	uint32_t bis_sync;
+	uint8_t metadata_len;
+	uint8_t metadata[BASS_MAX_METADATA_LEN];
+};
+
+/* TODO: Only expose this as an opaque type */
+struct bt_bass_recv_state {
 	uint8_t src_id;
 	bt_addr_le_t addr;
 	uint8_t adv_sid;
 	uint8_t pa_sync_state;
-	uint32_t bis_sync_state;
-	uint8_t big_enc;
-	uint8_t metadata_len;
-	uint8_t metadata[BASS_MAX_METADATA_LEN];
-} __packed;
+	uint8_t encrypt_state;
+	uint8_t bad_code[BASS_BROADCAST_CODE_SIZE];
+	uint8_t num_subgroups;
+	struct bt_bass_subgroup subgroups[BASS_MAX_SUBGROUPS];
+};
 
 struct bt_bass_cb_t {
 #if defined(CONFIG_BT_BASS_AUTO_SYNC)
-	void (*pa_synced)(uint8_t src_id, uint32_t bis_sync,
+	void (*pa_synced)(struct bt_bass_recv_state *recv_state,
 			  const struct bt_le_per_adv_sync_synced_info *info);
-	void (*pa_term)(uint8_t src_id,
+	void (*pa_term)(struct bt_bass_recv_state *recv_state,
 			const struct bt_le_per_adv_sync_term_info *info);
-	void (*pa_recv)(uint8_t src_id,
+	void (*pa_recv)(struct bt_bass_recv_state *recv_state,
 			const struct bt_le_per_adv_sync_recv_info *info,
 			struct net_buf_simple *buf);
 #else
-	void (*pa_sync_req)(uint8_t src_id, uint32_t bis_sync,
-			    bt_addr_le_t *addr, uint8_t adv_sid,
-			    uint8_t metadata_len, uint8_t *metadata);
-	void (*past_req)(struct bt_conn *conn, uint8_t src_id,
-			 uint32_t bis_sync, bt_addr_le_t *addr,
-			 uint8_t metadata_len, uint8_t *metadata);
-	void (*pa_sync_term_req)(uint8_t src_id);
+	void (*pa_sync_req)(struct bt_bass_recv_state *recv_state,
+			    uint16_t pa_interval);
+	void (*past_req)(struct bt_bass_recv_state *recv_state,
+			 struct bt_conn *conn);
+	void (*pa_sync_term_req)(struct bt_bass_recv_state *recv_state);
 #endif /* defined(CONFIG_BT_BASS_AUTO_SYNC) */
 };
 
@@ -74,12 +87,12 @@ void bt_bass_register_cb(struct bt_bass_cb_t *cb);
  *
  * @param src_id         The source id used to identify the receive state.
  * @param pa_sync_state  The sync state of the PA.
- * @param bis_synced     Bitfield to set the BIS sync state.
+ * @param bis_synced     Array of bitfields to set the BIS sync state for each subgroup.
  * @param encrypted      The BIG encryption state.
  * @return int           Error value. 0 on success, ERRNO on fail.
  */
 int bt_bass_set_synced(uint8_t src_id, uint8_t pa_sync_state,
-		       uint32_t bis_synced, uint8_t encrypted);
+		       uint32_t bis_synced[BASS_MAX_SUBGROUPS], uint8_t encrypted);
 
 
 /******************************** CLIENT API ********************************/
@@ -115,7 +128,7 @@ typedef void (*bt_bass_client_scan_cb_t)(
  * @param state    The receive state
  */
 typedef void (*bt_bass_client_recv_state_cb_t)(
-	struct bt_conn *conn, int err, const struct bass_recv_state_t *state);
+	struct bt_conn *conn, int err, const struct bt_bass_recv_state *state);
 
 /** @brief Callback function for writes.
  *
@@ -175,36 +188,55 @@ int bt_bass_client_scan_stop(struct bt_conn *conn);
  */
 void bt_bass_client_register_cb(struct bt_bass_client_cb_t *cb);
 
+/** Parameters for adding a source to a BASS server */
+struct bt_bass_add_src_param {
+	/** Address of the advertiser. */
+	bt_addr_le_t addr;
+	/** SID of the advertising set. */
+	uint8_t adv_sid;
+	/** Whether to sync to periodic advertisements. */
+	uint8_t pa_sync;
+	/** Periodic advertising interval. BASS_PA_INTERVAL_UNKNOWN if unknown. */
+	uint16_t pa_interval;
+	/** Number of subgroups */
+	uint8_t num_subgroups;
+	/** Pointer to array of subgroups */
+	struct bt_bass_subgroup *subgroups;
+};
+
 /** @brief Add a source on the server.
  *
  *  @param conn          Connection to the server.
- *  @param addr          Address of the advertiser.
- *  @param adv_sid       SID of the advertising set.
- *  @param sync_pa       Whether to sync to periodic advertisements.
- *  @param sync_bis      Which BIS to sync to.
- *  @param metadata_len  Length of the metadata.
- *  @param metadata      The metadata, if any.
+ *  @param param         Parameter struct.
  *
  *  @return Error value. 0 on success, GATT error or ERRNO on fail.
  */
-int bt_bass_client_add_src(struct bt_conn *conn, const bt_addr_le_t *addr,
-			   uint8_t adv_sid, bool sync_pa, uint32_t sync_bis,
-			   uint8_t metadata_len, uint8_t *metadata);
+int bt_bass_client_add_src(struct bt_conn *conn, struct bt_bass_add_src_param *param);
+
+/** Parameters for adding a source to a BASS server */
+struct bt_bass_mod_src_param {
+	/** Source ID of the receive state. */
+	uint8_t src_id;
+	/** Whether to sync to periodic advertisements. */
+	uint8_t pa_sync;
+	/** Periodic advertising interval. BASS_PA_INTERVAL_UNKNOWN if unknown. */
+	uint16_t pa_interval;
+	/** Address of the advertiser. */
+	bt_addr_t addr;
+	/** Number of subgroups */
+	uint8_t num_subgroups;
+	/** Pointer to array of subgroups */
+	struct bt_bass_subgroup *subgroups;
+};
 
 /** @brief Modify a source on the server.
  *
  *  @param conn          Connection to the server.
- *  @param src_id        Source ID of the receive state.
- *  @param sync_pa       Whether to sync to periodic advertisements.
- *  @param sync_bis      Which BIS to sync to.
- *  @param metadata_len  Length of the metadata.
- *  @param metadata      The metadata, if any.
+ *  @param param         Parameter struct.
  *
  *  @return Error value. 0 on success, GATT error or ERRNO on fail.
  */
-int bt_bass_client_mod_src(struct bt_conn *conn, uint8_t src_id,
-			   bool sync_pa, uint32_t sync_bis,
-			   uint8_t metadata_len, uint8_t *metadata);
+int bt_bass_client_mod_src(struct bt_conn *conn, struct bt_bass_mod_src_param *param);
 
 /** @brief Add a broadcast code to the specified receive state.
  *

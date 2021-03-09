@@ -17,6 +17,7 @@
 #include <bluetooth/gatt.h>
 #include <bluetooth/buf.h>
 #include <sys/byteorder.h>
+#include <sys/check.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_BASS_CLIENT)
 #define LOG_MODULE_NAME bt_bass_client
@@ -48,7 +49,6 @@ struct bass_client_instance_t {
 	struct bt_gatt_read_params read_params;
 	struct bt_gatt_write_params write_params;
 	struct bt_gatt_discover_params disc_params;
-	uint8_t write_buf[sizeof(union bass_cp_t)];
 };
 
 static struct bt_bass_client_cb_t *bass_cbs;
@@ -56,39 +56,95 @@ static struct bt_bass_client_cb_t *bass_cbs;
 static struct bass_client_instance_t bass_client;
 static struct bt_uuid_16 uuid = BT_UUID_INIT_16(0);
 
-static int parse_recv_state(const void *data, uint16_t length,
-			    struct bass_recv_state_t *recv_state)
-{
-	struct bass_recv_state_t *new_recv_state =
-		(struct bass_recv_state_t *)data;
-	int err = 0;
+NET_BUF_SIMPLE_DEFINE_STATIC(cp_buf, CONFIG_BT_L2CAP_TX_MTU);
 
-	if (!recv_state || !data || length == 0) {
+static int parse_recv_state(const void *data, uint16_t length,
+			    struct bt_bass_recv_state *recv_state)
+{
+	struct net_buf_simple buf;
+	bt_addr_t *addr;
+	const uint16_t min_length = 12; /* minimum length of a receive state*/
+
+	__ASSERT(recv_state, "NULL receive state");
+
+	if (!data || length == 0) {
+		BT_DBG("NULL data");
 		return -EINVAL;
 	}
 
-	/* Length shall be between the min and max size, and match the
-	 * metadata length field
-	 */
-	if (length <= sizeof(*recv_state) &&
-	    length >= (sizeof(*recv_state) - sizeof(recv_state->metadata)) &&
-	    length == BASS_ACTUAL_SIZE(*new_recv_state)) {
-		memcpy(recv_state, data, length);
-
-		BT_DBG("src_id %u, PA %u, BIS %u, encrypt %u, "
-		       "addr %s, sid %u, metadata_len %u",
-		       recv_state->src_id, recv_state->pa_sync_state,
-		       recv_state->bis_sync_state, recv_state->big_enc,
-		       bt_addr_le_str(&recv_state->addr),
-		       recv_state->adv_sid, recv_state->metadata_len);
-
-	} else {
-		BT_DBG("Invalid receive state length %u, expected %u",
-		       length, BASS_ACTUAL_SIZE(*new_recv_state));
-		err = BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+	if (length < min_length) {
+		BT_DBG("Invalid receive state length %u, expected at least %u",
+			length, min_length);
+		return -EINVAL;
 	}
 
-	return err;
+	net_buf_simple_init_with_data(&buf, (void *)data, length);
+
+	memset(recv_state, 0, sizeof(*recv_state));
+
+	recv_state->src_id = net_buf_simple_pull_u8(&buf);
+	recv_state->addr.type = net_buf_simple_pull_u8(&buf);
+	addr = net_buf_simple_pull_mem(&buf, sizeof(*addr));
+	bt_addr_copy(&recv_state->addr.a, addr);
+	recv_state->adv_sid = net_buf_simple_pull_u8(&buf);
+	recv_state->pa_sync_state = net_buf_simple_pull_u8(&buf);
+	recv_state->encrypt_state = net_buf_simple_pull_u8(&buf);
+	if (recv_state->encrypt_state == BASS_BIG_ENC_STATE_BAD_CODE) {
+		uint8_t *broadcast_code;
+
+		if (buf.len < sizeof(recv_state->bad_code) + sizeof(recv_state->num_subgroups)) {
+			BT_DBG("Invalid receive state length %u, expected at least %zu",
+			       buf.size, (buf.len + sizeof(recv_state->bad_code) +
+								sizeof(recv_state->num_subgroups)));
+			return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+		}
+
+		broadcast_code = net_buf_simple_pull_mem(&buf, BASS_BROADCAST_CODE_SIZE);
+		memcpy(recv_state->bad_code, broadcast_code, sizeof(recv_state->bad_code));
+	}
+
+	recv_state->num_subgroups = net_buf_simple_pull_u8(&buf);
+	for (int i = 0; i < recv_state->num_subgroups; i++) {
+		struct bt_bass_subgroup *subgroup = &recv_state->subgroups[i];
+		uint8_t *metadata;
+
+		if (buf.len < sizeof(subgroup->bis_sync)) {
+			BT_DBG("Invalid receive state length %u, expected at least %zu",
+			       buf.len, buf.len + sizeof(subgroup->bis_sync));
+			return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+		}
+
+		subgroup->bis_sync = net_buf_simple_pull_le32(&buf);
+
+		if (buf.len < sizeof(subgroup->metadata_len)) {
+			BT_DBG("Invalid receive state length %u, expected at least %zu",
+			       buf.len, buf.len + sizeof(subgroup->metadata_len));
+			return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+		}
+		subgroup->metadata_len = net_buf_simple_pull_u8(&buf);
+
+		if (buf.len < subgroup->metadata_len) {
+			BT_DBG("Invalid receive state length %u, expected at least %u",
+			       buf.len, buf.len + subgroup->metadata_len);
+			return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+		}
+
+		if (subgroup->metadata_len > sizeof(subgroup->metadata)) {
+			BT_DBG("Metadata too long: %u/%zu",
+			       subgroup->metadata_len, sizeof(subgroup->metadata));
+		}
+
+		metadata = net_buf_simple_pull_mem(&buf, subgroup->metadata_len);
+		memcpy(subgroup->metadata, metadata, subgroup->metadata_len);
+	}
+
+	if (buf.len != 0) {
+		BT_DBG("Invalid receive state length %u, but only %u was parsed",
+		       length, length - buf.len);
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+	}
+
+	return 0;
 }
 
 /** @brief Handles notifications and indications from the server */
@@ -97,7 +153,7 @@ static uint8_t notify_handler(struct bt_conn *conn,
 			      const void *data, uint16_t length)
 {
 	uint16_t handle = params->value_handle;
-	struct bass_recv_state_t recv_state;
+	struct bt_bass_recv_state recv_state;
 	int err;
 
 	if (!data) {
@@ -112,7 +168,8 @@ static uint8_t notify_handler(struct bt_conn *conn,
 	err = parse_recv_state(data, length, &recv_state);
 
 	if (err) {
-		BT_DBG("Invalid receive state");
+		/* TODO: Likely due to the length. Start a read autonomously */
+		BT_WARN("Invalid receive state received");
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -134,7 +191,7 @@ static uint8_t read_recv_state_cb(struct bt_conn *conn, uint8_t err,
 	uint16_t handle = params->single.handle;
 	uint8_t last_handle_index = bass_client.recv_state_cnt - 1;
 	uint16_t last_handle = bass_client.recv_state_handles[last_handle_index];
-	struct bass_recv_state_t recv_state;
+	struct bt_bass_recv_state recv_state;
 	int bass_err;
 
 	memset(params, 0, sizeof(*params));
@@ -314,7 +371,7 @@ static uint8_t primary_char_discover_func(struct bt_conn *conn,
 static void bass_client_write_cp_cb(struct bt_conn *conn, uint8_t err,
 				    struct bt_gatt_write_params *params)
 {
-	uint8_t opcode = bass_client.write_buf[0];
+	uint8_t opcode = net_buf_simple_pull_u8(&cp_buf);
 
 	bass_client.busy = false;
 
@@ -359,8 +416,7 @@ static void bass_client_write_cp_cb(struct bt_conn *conn, uint8_t err,
 	}
 }
 
-static int bt_bass_client_common_cp(struct bt_conn *conn, union bass_cp_t *cp,
-				    uint8_t data_len)
+static int bt_bass_client_common_cp(struct bt_conn *conn, const struct net_buf_simple *buf)
 {
 	int err;
 
@@ -369,14 +425,11 @@ static int bt_bass_client_common_cp(struct bt_conn *conn, union bass_cp_t *cp,
 	} else if (!bass_client.cp_handle) {
 		BT_DBG("Handle not set");
 		return -EINVAL;
-	} else if (bass_client.busy) {
-		return -EBUSY;
 	}
 
-	memcpy(bass_client.write_buf, cp, data_len);
 	bass_client.write_params.offset = 0;
-	bass_client.write_params.data = bass_client.write_buf;
-	bass_client.write_params.length = data_len;
+	bass_client.write_params.data = buf->data;
+	bass_client.write_params.length = buf->len;
 	bass_client.write_params.handle = bass_client.cp_handle;
 	bass_client.write_params.func = bass_client_write_cp_cb;
 
@@ -464,15 +517,22 @@ int bt_bass_client_discover(struct bt_conn *conn)
 	return 0;
 }
 
+void bt_bass_client_register_cb(struct bt_bass_client_cb_t *cb)
+{
+	bass_cbs = cb;
+}
+
 int bt_bass_client_scan_start(struct bt_conn *conn, bool start_scan)
 {
-	union bass_cp_t cp = { .opcode = BASS_OP_SCAN_START };
+	struct bass_cp_scan_start_t *cp;
 	int err;
 
 	if (!conn) {
 		return -ENOTCONN;
 	} else if (!bass_client.cp_handle) {
 		return -EINVAL;
+	} else if (bass_client.busy) {
+		return -EBUSY;
 	}
 
 	if (start_scan) {
@@ -493,18 +553,26 @@ int bt_bass_client_scan_start(struct bt_conn *conn, bool start_scan)
 		}
 	}
 
-	return bt_bass_client_common_cp(conn, &cp, sizeof(cp.scan_start));
+	/* Reset buffer before using */
+	net_buf_simple_reset(&cp_buf);
+	cp = net_buf_simple_add(&cp_buf, sizeof(*cp));
+
+	cp->opcode = BASS_OP_SCAN_START;
+
+	return bt_bass_client_common_cp(conn, &cp_buf);
 }
 
 int bt_bass_client_scan_stop(struct bt_conn *conn)
 {
-	union bass_cp_t cp = { .opcode = BASS_OP_SCAN_STOP };
+	struct bass_cp_scan_stop_t *cp;
 	int err;
 
 	if (!conn) {
 		return 0;
 	} else if (!bass_client.cp_handle) {
 		return -EINVAL;
+	} else if (bass_client.busy) {
+		return -EBUSY;
 	}
 
 	if (bass_client.scanning) {
@@ -516,134 +584,197 @@ int bt_bass_client_scan_stop(struct bt_conn *conn)
 		bass_client.scanning = false;
 	}
 
-	return bt_bass_client_common_cp(conn, &cp, sizeof(cp.scan_stop));
+	/* Reset buffer before using */
+	net_buf_simple_reset(&cp_buf);
+	cp = net_buf_simple_add(&cp_buf, sizeof(*cp));
+
+	cp->opcode = BASS_OP_SCAN_STOP;
+
+	return bt_bass_client_common_cp(conn, &cp_buf);
 }
 
-void bt_bass_client_register_cb(struct bt_bass_client_cb_t *cb)
+int bt_bass_client_add_src(struct bt_conn *conn, struct bt_bass_add_src_param *param)
 {
-	bass_cbs = cb;
-}
-
-int bt_bass_client_add_src(struct bt_conn *conn, const bt_addr_le_t *addr,
-			   uint8_t adv_sid, bool sync_pa, uint32_t sync_bis,
-			   uint8_t metadata_len, uint8_t *metadata)
-{
-	union bass_cp_t cp;
+	struct bass_cp_add_src_t *cp;
 
 	if (!conn) {
 		return 0;
 	} else if (!bass_client.cp_handle) {
 		return -EINVAL;
-	} else if (!sync_pa && sync_bis) {
-		BT_DBG("Only syncing to BIS is not allowed");
-		return -EINVAL;
+	} else if (bass_client.busy) {
+		return -EBUSY;
 	}
 
-	cp.add_src.opcode = BASS_OP_ADD_SRC;
-	cp.add_src.adv_sid = adv_sid;
-	cp.add_src.bis_sync = sync_bis;
-	bt_addr_le_copy(&cp.add_src.addr, addr);
+	/* Reset buffer before using */
+	net_buf_simple_reset(&cp_buf);
+	cp = net_buf_simple_add(&cp_buf, sizeof(*cp));
 
-	if (sync_pa) {
+	cp->opcode = BASS_OP_ADD_SRC;
+	cp->adv_sid = param->adv_sid;
+	bt_addr_le_copy(&cp->addr, &param->addr);
+
+	if (param->pa_sync) {
 		if (BT_FEAT_LE_PAST_SEND(conn->le.features) &&
 		    BT_FEAT_LE_PAST_RECV(bt_dev.le.features)) {
 			/* TODO: Validate that we are synced to the peer address
 			 * before saying to use PAST - Requires additional per_adv_sync API
 			 */
-			cp.add_src.pa_sync = BASS_PA_REQ_SYNC_PAST;
+			cp->pa_sync = BASS_PA_REQ_SYNC_PAST;
 		} else {
-			cp.add_src.pa_sync = BASS_PA_REQ_SYNC;
+			cp->pa_sync = BASS_PA_REQ_SYNC;
 		}
 	} else {
-		cp.add_src.pa_sync = BASS_PA_REQ_NO_SYNC;
+		cp->pa_sync = BASS_PA_REQ_NO_SYNC;
 	}
 
-	if (metadata_len && metadata) {
-		memcpy(cp.add_src.metadata, metadata, metadata_len);
-		cp.add_src.metadata_len = metadata_len;
-	} else {
-		cp.add_src.metadata_len = 0;
+	cp->pa_interval = sys_cpu_to_le16(param->pa_interval);
+
+	cp->num_subgroups = param->num_subgroups;
+	for (int i = 0; i < param->num_subgroups; i++) {
+		struct bt_bass_subgroup *subgroup;
+		const size_t subgroup_size = sizeof(subgroup->bis_sync) +
+						sizeof(subgroup->metadata_len) +
+						param->subgroups[i].metadata_len;
+
+		if (cp_buf.len + subgroup_size > cp_buf.size) {
+			BT_DBG("MTU is too small to send %zu octets", cp_buf.len + subgroup_size);
+			return -EINVAL;
+		}
+
+		subgroup = net_buf_simple_add(&cp_buf, subgroup_size);
+
+		subgroup->bis_sync = param->subgroups[i].bis_sync;
+
+		CHECKIF(!param->pa_sync && subgroup->bis_sync) {
+			BT_DBG("Only syncing to BIS is not allowed");
+			return -EINVAL;
+		}
+
+		if (param->subgroups[i].metadata_len && param->subgroups[i].metadata) {
+			memcpy(subgroup->metadata, param->subgroups[i].metadata,
+			       param->subgroups[i].metadata_len);
+			subgroup->metadata_len = param->subgroups[i].metadata_len;
+		} else {
+			subgroup->metadata_len = 0;
+		}
+
 	}
 
-	return bt_bass_client_common_cp(conn, &cp,
-					BASS_ACTUAL_SIZE(cp.add_src));
+	return bt_bass_client_common_cp(conn, &cp_buf);
 }
 
 
-int bt_bass_client_mod_src(struct bt_conn *conn, uint8_t src_id,
-			   bool sync_pa, uint32_t sync_bis,
-			   uint8_t metadata_len, uint8_t *metadata)
+int bt_bass_client_mod_src(struct bt_conn *conn, struct bt_bass_mod_src_param *param)
 {
-	union bass_cp_t cp;
+	struct bass_cp_mod_src_t *cp;
 
 	if (!conn) {
 		return 0;
 	} else if (!bass_client.cp_handle) {
 		return -EINVAL;
-	} else if (!sync_pa && sync_bis) {
-		BT_DBG("Only syncing to BIS is not allowed");
-		return -EINVAL;
+	} else if (bass_client.busy) {
+		return -EBUSY;
 	}
 
-	cp.mod_src.opcode = BASS_OP_MOD_SRC;
-	cp.mod_src.src_id = src_id;
-	cp.mod_src.bis_sync = sync_bis;
+	/* Reset buffer before using */
+	net_buf_simple_reset(&cp_buf);
+	cp = net_buf_simple_add(&cp_buf, sizeof(*cp));
 
-	if (sync_pa) {
+	cp->opcode = BASS_OP_MOD_SRC;
+	cp->src_id = param->src_id;
+	bt_addr_copy(&cp->addr, &param->addr);
+
+	if (param->pa_sync) {
 		if (BT_FEAT_LE_PAST_SEND(conn->le.features) &&
 		    BT_FEAT_LE_PAST_RECV(bt_dev.le.features)) {
-			cp.mod_src.pa_sync = BASS_PA_REQ_SYNC_PAST;
+			cp->pa_sync = BASS_PA_REQ_SYNC_PAST;
 		} else {
-			cp.mod_src.pa_sync = BASS_PA_REQ_SYNC;
+			cp->pa_sync = BASS_PA_REQ_SYNC;
 		}
 	} else {
-		cp.mod_src.pa_sync = BASS_PA_REQ_NO_SYNC;
+		cp->pa_sync = BASS_PA_REQ_NO_SYNC;
+	}
+	cp->pa_interval = sys_cpu_to_le16(param->pa_interval);
+
+	cp->num_subgroups = param->num_subgroups;
+	for (int i = 0; i < param->num_subgroups; i++) {
+		struct bt_bass_subgroup *subgroup;
+		const size_t subgroup_size = sizeof(subgroup->bis_sync) +
+						sizeof(subgroup->metadata_len) +
+						param->subgroups[i].metadata_len;
+
+		if (cp_buf.len + subgroup_size > cp_buf.size) {
+			BT_DBG("MTU is too small to send %zu octets", cp_buf.len + subgroup_size);
+			return -EINVAL;
+		}
+		subgroup = net_buf_simple_add(&cp_buf, subgroup_size);
+
+		subgroup->bis_sync = param->subgroups[i].bis_sync;
+
+
+		CHECKIF(!param->pa_sync && subgroup->bis_sync) {
+			BT_DBG("Only syncing to BIS is not allowed");
+			return -EINVAL;
+		}
+
+		if (param->subgroups[i].metadata_len && param->subgroups[i].metadata) {
+			memcpy(subgroup->metadata, param->subgroups[i].metadata,
+			       param->subgroups[i].metadata_len);
+			subgroup->metadata_len = param->subgroups[i].metadata_len;
+		} else {
+			subgroup->metadata_len = 0;
+		}
+
 	}
 
-	if (metadata_len && metadata) {
-		memcpy(cp.mod_src.metadata, metadata, metadata_len);
-		cp.mod_src.metadata_len = metadata_len;
-	} else {
-		cp.mod_src.metadata_len = 0;
-	}
-
-	return bt_bass_client_common_cp(conn, &cp,
-					BASS_ACTUAL_SIZE(cp.mod_src));
+	return bt_bass_client_common_cp(conn, &cp_buf);
 }
 
 int bt_bass_client_broadcast_code(struct bt_conn *conn, uint8_t src_id,
 				  uint8_t broadcast_code[16])
 {
-	union bass_cp_t cp;
+	struct bass_cp_broadcase_code_t *cp;
 
 	if (!conn) {
 		return 0;
 	} else if (!bass_client.cp_handle) {
 		return -EINVAL;
+	} else if (bass_client.busy) {
+		return -EBUSY;
 	}
 
-	cp.broadcast_code.opcode = BASS_OP_BROADCAST_CODE;
-	cp.broadcast_code.src_id = src_id;
-	memcpy(cp.broadcast_code.broadcast_code, broadcast_code,
-	       BASS_BROADCAST_CODE_SIZE);
+	/* Reset buffer before using */
+	net_buf_simple_reset(&cp_buf);
+	cp = net_buf_simple_add(&cp_buf, sizeof(*cp));
 
-	return bt_bass_client_common_cp(conn, &cp, sizeof(cp.broadcast_code));
+	cp->opcode = BASS_OP_BROADCAST_CODE;
+	cp->src_id = src_id;
+
+	memcpy(cp->broadcast_code, broadcast_code, BASS_BROADCAST_CODE_SIZE);
+
+	return bt_bass_client_common_cp(conn, &cp_buf);
 }
 
 int bt_bass_client_rem_src(struct bt_conn *conn, uint8_t src_id)
 {
-	union bass_cp_t cp;
+	struct bass_cp_rem_src_t *cp;
 
 	if (!conn) {
 		return 0;
 	} else if (!bass_client.cp_handle) {
 		return -EINVAL;
+	} else if (bass_client.busy) {
+		return -EBUSY;
 	}
 
-	cp.rem_src.opcode = BASS_OP_REM_SRC;
-	cp.rem_src.src_id = src_id;
+	/* Reset buffer before using */
+	net_buf_simple_reset(&cp_buf);
+	cp = net_buf_simple_add(&cp_buf, sizeof(*cp));
 
-	return bt_bass_client_common_cp(conn, &cp, sizeof(cp.rem_src));
+	cp->opcode = BASS_OP_REM_SRC;
+	cp->src_id = src_id;
+
+	return bt_bass_client_common_cp(conn, &cp_buf);
 }
 
 int bt_bass_client_read_recv_state(struct bt_conn *conn, uint8_t idx)
