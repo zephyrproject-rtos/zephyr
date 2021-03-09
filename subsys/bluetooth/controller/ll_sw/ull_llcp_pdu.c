@@ -322,22 +322,16 @@ void ull_cp_priv_pdu_encode_enc_rsp(struct pdu_data *pdu)
 
 void ull_cp_priv_pdu_encode_start_enc_req(struct pdu_data *pdu)
 {
-	//struct pdu_data_llctrl_enc_req *p;
-
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len = offsetof(struct pdu_data_llctrl, start_enc_req) + sizeof(struct pdu_data_llctrl_start_enc_req);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_START_ENC_REQ;
-	/* TODO(thoh): Fill in PDU with correct data */
 }
 
 void ull_cp_priv_pdu_encode_start_enc_rsp(struct pdu_data *pdu)
 {
-	//struct pdu_data_llctrl_enc_req *p;
-
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len = offsetof(struct pdu_data_llctrl, start_enc_rsp) + sizeof(struct pdu_data_llctrl_start_enc_rsp);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_START_ENC_RSP;
-	/* TODO(thoh): Fill in PDU with correct data */
 }
 
 void ull_cp_priv_pdu_encode_reject_ind(struct pdu_data *pdu, uint8_t error_code)
