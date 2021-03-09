@@ -64,7 +64,7 @@ void hci_le_cis_req(struct net_buf *buf);
 void hci_le_big_complete(struct net_buf *buf);
 
 /** Process BIG terminate event */
-void hci_le_big_termimate(struct net_buf *buf);
+void hci_le_big_terminate(struct net_buf *buf);
 
 /** Process BIG sync established event */
 void hci_le_big_sync_established(struct net_buf *buf);

@@ -1357,7 +1357,7 @@ int bt_iso_big_terminate(struct bt_iso_big *big)
 		err = hci_le_terminate_big(big);
 
 		/* Wait for BT_HCI_EVT_LE_BIG_TERMINATE before cleaning up
-		 * the BIG in hci_le_big_termimate
+		 * the BIG in hci_le_big_terminate
 		 */
 		if (!err) {
 			for (int i = 0; i < big->num_bis; i++) {
@@ -1402,7 +1402,7 @@ void hci_le_big_complete(struct net_buf *buf)
 	}
 }
 
-void hci_le_big_termimate(struct net_buf *buf)
+void hci_le_big_terminate(struct net_buf *buf)
 {
 	struct bt_hci_evt_le_big_terminate *evt = (void *)buf->data;
 	uint16_t handle = sys_le16_to_cpu(evt->big_handle);

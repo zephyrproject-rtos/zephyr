@@ -5071,7 +5071,7 @@ static const struct event_handler meta_events[] = {
 		      hci_le_big_complete,
 		      sizeof(struct bt_hci_evt_le_big_complete)),
 	EVENT_HANDLER(BT_HCI_EVT_LE_BIG_TERMINATE,
-		      hci_le_big_termimate,
+		      hci_le_big_terminate,
 		      sizeof(struct bt_hci_evt_le_big_terminate)),
 	EVENT_HANDLER(BT_HCI_EVT_LE_BIG_SYNC_ESTABLISHED,
 		      hci_le_big_sync_established,
