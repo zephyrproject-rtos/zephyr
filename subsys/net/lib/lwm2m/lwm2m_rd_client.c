@@ -907,14 +907,22 @@ static int sm_do_deregister(void)
 		goto cleanup;
 	}
 
-	/* TODO: handle return error */
-	coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_PATH,
-				  LWM2M_RD_CLIENT_URI,
-				  strlen(LWM2M_RD_CLIENT_URI));
+	ret = coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_PATH,
+					LWM2M_RD_CLIENT_URI,
+					strlen(LWM2M_RD_CLIENT_URI));
+	if (ret < 0) {
+		LOG_ERR("Failed to encode URI path option (err:%d).", ret);
+		goto cleanup;
+	}
+
 	/* include server endpoint in URI PATH */
-	coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_PATH,
-				  client.server_ep,
-				  strlen(client.server_ep));
+	ret = coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_PATH,
+					client.server_ep,
+					strlen(client.server_ep));
+	if (ret < 0) {
+		LOG_ERR("Failed to encode URI path option (err:%d).", ret);
+		goto cleanup;
+	}
 
 	LOG_INF("Deregister from '%s'", log_strdup(client.server_ep));
 
