@@ -1739,11 +1739,16 @@ static void le_big_terminate_sync(struct net_buf *buf, struct net_buf **evt,
 				  void **node_rx)
 {
 	struct bt_hci_cp_le_big_terminate_sync *cmd = (void *)buf->data;
+	struct bt_hci_rp_le_big_terminate_sync *rp;
+	uint8_t big_handle;
 	uint8_t status;
 
-	status = ll_big_sync_terminate(cmd->big_handle, node_rx);
+	big_handle = cmd->big_handle;
+	status = ll_big_sync_terminate(big_handle, node_rx);
 
-	*evt = cmd_complete_status(status);
+	rp = hci_cmd_complete(evt, sizeof(*rp));
+	rp->status = status;
+	rp->big_handle = big_handle;
 }
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */
 #endif /* CONFIG_BT_OBSERVER */
