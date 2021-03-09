@@ -4,6 +4,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <string.h>
 
 #include <zephyr/types.h>
 #include <sys/byteorder.h>
@@ -264,3 +265,39 @@ void util_saa_le32(uint8_t *dst, uint8_t handle)
 	sys_put_le32(saa, dst);
 }
 #endif /* CONFIG_BT_CTLR_ADV_ISO */
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_SYNC_ISO)
+void util_bis_aa_le32(uint8_t bis, uint8_t *saa, uint8_t *dst)
+{
+	/* Refer to Bluetooth Core Specification Version 5.2 Vol 6, Part B,
+	 * section 2.1.2 Access Address
+	 */
+	uint8_t dwh[2]; /* Holds the two most significant bytes of DW */
+	uint8_t d;
+
+	/* 8-bits for d is enough due to wrapping math and requirement to do
+	 * modulus 128.
+	 */
+	d = ((35 * bis) + 42) & 0x7f;
+
+	/* Most significant 6 bits of DW are bit extension of least significant
+	 * bit of D.
+	 */
+	if (d & 1) {
+		dwh[1] = 0xFC;
+	} else {
+		dwh[1] = 0;
+	}
+
+	/* Set the bits 25 to 17 of DW */
+	dwh[1] |= (d & 0x02) | ((d >> 6) & 0x01);
+	dwh[0] = ((d & 0x02) << 6) | (d & 0x30) | ((d & 0x0C) >> 1);
+
+	/* Most significant 16-bits of SAA XOR DW, least significant 16-bit are
+	 * zeroes, needing no operation on them.
+	 */
+	memcpy(dst, saa, sizeof(uint32_t));
+	dst[3] ^= dwh[1];
+	dst[2] ^= dwh[0];
+}
+#endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_SYNC_ISO*/
