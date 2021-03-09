@@ -972,6 +972,7 @@ int npcx_host_init_subs_core_domain(const struct device *host_bus_dev,
 	const struct device *const clk_dev =
 					device_get_binding(NPCX_CLK_CTRL_NAME);
 	int i;
+	uint8_t shm_sts;
 
 	host_sub_data.callbacks = callbacks;
 	host_sub_data.host_bus_dev = host_bus_dev;
@@ -998,7 +999,8 @@ int npcx_host_init_subs_core_domain(const struct device *host_bus_dev,
 	 */
 	inst_shm->SMC_CTL &= BIT(NPCX_SMC_CTL_HOSTWAIT);
 	/* Clear shared memory status */
-	inst_shm->SMC_STS = inst_shm->SMC_STS;
+	shm_sts = inst_shm->SMC_STS;
+	inst_shm->SMC_STS = shm_sts;
 
 	/* host sub-module initialization in core domain */
 #if defined(CONFIG_ESPI_PERIPHERAL_8042_KBC)
