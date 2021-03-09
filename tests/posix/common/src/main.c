@@ -16,6 +16,8 @@ extern void test_posix_rw_lock(void);
 extern void test_posix_realtime(void);
 extern void test_posix_timer(void);
 extern void test_posix_pthread_execution(void);
+extern void test_posix_pthread_error_condition(void);
+extern void test_posix_pthread_create_negative(void);
 extern void test_posix_pthread_termination(void);
 extern void test_posix_multiple_threads_single_key(void);
 extern void test_posix_single_thread_multiple_keys(void);
@@ -39,6 +41,7 @@ void test_main(void)
 {
 	ztest_test_suite(posix_apis,
 			ztest_unit_test(test_posix_pthread_execution),
+			ztest_unit_test(test_posix_pthread_error_condition),
 			ztest_unit_test(test_posix_pthread_termination),
 			ztest_unit_test(test_posix_multiple_threads_single_key),
 			ztest_unit_test(test_posix_single_thread_multiple_keys),
@@ -63,7 +66,8 @@ void test_main(void)
 			ztest_unit_test(test_nanosleep_0_500000000),
 			ztest_unit_test(test_nanosleep_1_0),
 			ztest_unit_test(test_nanosleep_1_1),
-			ztest_unit_test(test_nanosleep_1_1001)
+			ztest_unit_test(test_nanosleep_1_1001),
+			ztest_unit_test(test_posix_pthread_create_negative)
 			);
 	ztest_run_test_suite(posix_apis);
 }
