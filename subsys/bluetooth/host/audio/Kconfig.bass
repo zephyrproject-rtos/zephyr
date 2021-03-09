@@ -42,6 +42,13 @@ config BT_BASS_MAX_METADATA_LEN
 	help
 	  The maximum metadata length support by the BASS server.
 
+config BT_BASS_MAX_SUBGROUPS
+	int "Broadcast Audio Scan Service Maximum Number of Subgroups support"
+	default 1
+	range 0 31
+	help
+	  The maximum number of BIS subgroups supported.
+
 ############### DEBUG ###############
 
 config BT_DEBUG_BASS

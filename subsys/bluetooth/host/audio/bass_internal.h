@@ -29,19 +29,12 @@
 #define BASS_SCAN_STATE_FAILED         0x02
 #define BASS_SCAN_STATE_SYNCED         0x03
 
-#define BASS_BIG_ENC_STATE_NO_ENC      0x00
-#define BASS_BIG_ENC_STATE_ENC         0x01
-#define BASS_BIG_ENC_STATE_DEC         0x02
-
 #define BASS_PA_REQ_NO_SYNC            0x00
 #define BASS_PA_REQ_SYNC               0x01
 #define BASS_PA_REQ_SYNC_PAST          0x02
 
 #define BASS_VALID_OPCODE(opcode) \
 	((opcode) >= BASS_OP_SCAN_STOP && (opcode) <= BASS_OP_REM_SRC)
-
-#define BASS_ACTUAL_SIZE(x) \
-	((uint32_t)(sizeof(x) - (BASS_MAX_METADATA_LEN - (x).metadata_len)))
 
 struct bass_cp_scan_stop_t {
 	uint8_t opcode;
@@ -51,23 +44,30 @@ struct bass_cp_scan_start_t {
 	uint8_t opcode;
 } __packed;
 
+struct bass_cp_subgroup {
+	uint32_t bis_sync;
+	uint8_t metadata_len;
+	uint8_t metadata[0];
+};
+
 struct bass_cp_add_src_t {
 	uint8_t opcode;
 	bt_addr_le_t addr;
 	uint8_t adv_sid;
 	uint8_t pa_sync;
-	uint32_t bis_sync;
-	uint8_t metadata_len;
-	uint8_t metadata[BASS_MAX_METADATA_LEN];
+	uint16_t pa_interval;
+	uint8_t num_subgroups;
+	struct bass_cp_subgroup subgroups[0];
 } __packed;
 
 struct bass_cp_mod_src_t {
 	uint8_t opcode;
 	uint8_t src_id;
+	bt_addr_t addr;
 	uint8_t pa_sync;
-	uint32_t bis_sync;
-	uint8_t metadata_len;
-	uint8_t metadata[BASS_MAX_METADATA_LEN];
+	uint16_t pa_interval;
+	uint8_t num_subgroups;
+	struct bass_cp_subgroup subgroups[0];
 } __packed;
 
 struct bass_cp_broadcase_code_t {
