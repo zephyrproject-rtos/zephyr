@@ -15,6 +15,7 @@ zephyr_library_sources_ifdef(CONFIG_BT_HOST_CCM         aes_ccm.c)
 
 zephyr_library_sources_ifdef(
   CONFIG_BT_BREDR
+  br.c
   keys_br.c
   l2cap_br.c
   sdp.c

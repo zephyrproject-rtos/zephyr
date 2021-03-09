@@ -395,3 +395,18 @@ void bt_hci_le_past_received(struct net_buf *buf);
 /* Adv HCI event handlers */
 void bt_hci_le_adv_set_terminated(struct net_buf *buf);
 void bt_hci_le_scan_req_received(struct net_buf *buf);
+
+/* BR/EDR HCI event handlers */
+void bt_hci_conn_req(struct net_buf *buf);
+void bt_hci_conn_complete(struct net_buf *buf);
+
+
+void bt_hci_inquiry_complete(struct net_buf *buf);
+void bt_hci_inquiry_result_with_rssi(struct net_buf *buf);
+void bt_hci_extended_inquiry_result(struct net_buf *buf);
+void bt_hci_remote_name_request_complete(struct net_buf *buf);
+
+void bt_hci_read_remote_features_complete(struct net_buf *buf);
+void bt_hci_read_remote_ext_features_complete(struct net_buf *buf);
+void bt_hci_role_change(struct net_buf *buf);
+void bt_hci_synchronous_conn_complete(struct net_buf *buf);
