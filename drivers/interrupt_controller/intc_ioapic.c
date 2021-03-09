@@ -67,13 +67,6 @@
 DEVICE_MMIO_TOPLEVEL_STATIC(ioapic_regs, DT_DRV_INST(0));
 
 #define IOAPIC_REG DEVICE_MMIO_TOPLEVEL_GET(ioapic_regs)
-#define BITS_PER_IRQ  4
-#define IOAPIC_BITFIELD_HI_LO	0
-#define IOAPIC_BITFIELD_LVL_EDGE 1
-#define IOAPIC_BITFIELD_ENBL_DSBL 2
-#define IOAPIC_BITFIELD_DELIV_MODE 3
-#define BIT_POS_FOR_IRQ_OPTION(irq, option) ((irq) * BITS_PER_IRQ + (option))
-#define SUSPEND_BITS_REQD (ROUND_UP((CONFIG_IOAPIC_NUM_RTES * BITS_PER_IRQ), 32))
 
 /*
  * Destination field (bits[56:63]) defines a set of processors, which is
@@ -92,10 +85,27 @@ DEVICE_MMIO_TOPLEVEL_STATIC(ioapic_regs, DT_DRV_INST(0));
  */
 #define DEFAULT_RTE_DEST	(0xFF << 24)
 
+static uint32_t ioapic_rtes;
+
 #ifdef CONFIG_PM_DEVICE
 #include <power/power.h>
+
+#define BITS_PER_IRQ  4
+#define IOAPIC_BITFIELD_HI_LO	0
+#define IOAPIC_BITFIELD_LVL_EDGE 1
+#define IOAPIC_BITFIELD_ENBL_DSBL 2
+#define IOAPIC_BITFIELD_DELIV_MODE 3
+
+#define BIT_POS_FOR_IRQ_OPTION(irq, option) ((irq) * BITS_PER_IRQ + (option))
+
+/* Allocating up to 256 irq bits bufffer for RTEs, RTEs are dynamically found
+ * so let's just assume the maximum, it's only 128 bytes in total.
+ */
+#define SUSPEND_BITS_REQD (ROUND_UP((256 * BITS_PER_IRQ), 32))
+
 uint32_t ioapic_suspend_buf[SUSPEND_BITS_REQD / 32] = {0};
 static uint32_t ioapic_device_power_state = DEVICE_PM_ACTIVE_STATE;
+
 #endif
 
 static uint32_t __IoApicGet(int32_t offset);
@@ -126,28 +136,28 @@ int ioapic_init(const struct device *unused)
 
 	DEVICE_MMIO_TOPLEVEL_MAP(ioapic_regs, K_MEM_CACHE_NONE);
 
+	/* Reading MRE: this will give the number of RTEs available */
+	ioapic_rtes = ((__IoApicGet(IOAPIC_VERS) &
+			IOAPIC_MRE_MASK) >> IOAPIC_MRE_POS) + 1;
+
 #ifdef CONFIG_IOAPIC_MASK_RTE
 	int32_t ix;	/* redirection table index */
 	uint32_t rteValue; /* value to copy into redirection table entry */
 
-	/*
-	 * The platform must set the Kconfig option IOAPIC_NUM_RTES to indicate
-	 * the number of redirection table entries supported by the IOAPIC.
-	 *
-	 * Note: The number of actual IRQs supported by the IOAPIC can be
-	 * determined at runtime by computing:
-	 *
-	 * ((__IoApicGet(IOAPIC_VERS) & IOAPIC_MRE_MASK) >> 16) + 1
-	 */
 	rteValue = IOAPIC_EDGE | IOAPIC_HIGH | IOAPIC_FIXED | IOAPIC_INT_MASK |
 		   IOAPIC_LOGICAL | 0 /* dummy vector */;
 
-	for (ix = 0; ix < CONFIG_IOAPIC_NUM_RTES; ix++) {
+	for (ix = 0; ix < ioapic_rtes; ix++) {
 		ioApicRedSetHi(ix, DEFAULT_RTE_DEST);
 		ioApicRedSetLo(ix, rteValue);
 	}
 #endif
 	return 0;
+}
+
+uint32_t z_ioapic_num_rtes(void)
+{
+	return ioapic_rtes;
 }
 
 /**
@@ -244,7 +254,7 @@ int ioapic_suspend(const struct device *port)
 
 	ARG_UNUSED(port);
 	(void)memset(ioapic_suspend_buf, 0, (SUSPEND_BITS_REQD >> 3));
-	for (irq = 0; irq < CONFIG_IOAPIC_NUM_RTES; irq++) {
+	for (irq = 0; irq < ioapic_rtes; irq++) {
 		/*
 		 * The following check is to figure out the registered
 		 * IRQ lines, so as to limit ourselves to saving the
@@ -267,7 +277,7 @@ int ioapic_resume_from_suspend(const struct device *port)
 
 	ARG_UNUSED(port);
 
-	for (irq = 0; irq < CONFIG_IOAPIC_NUM_RTES; irq++) {
+	for (irq = 0; irq < ioapic_rtes; irq++) {
 		if (_irq_to_interrupt_vector[irq]) {
 			/* Get the saved flags */
 			flags = restore_flags(irq);

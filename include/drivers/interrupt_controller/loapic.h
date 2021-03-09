@@ -55,6 +55,7 @@
 extern "C" {
 #endif
 
+extern uint32_t z_loapic_irq_base(void);
 extern void z_loapic_enable(unsigned char cpu_number);
 extern void z_loapic_int_vec_set(unsigned int irq, unsigned int vector);
 extern void z_loapic_irq_enable(unsigned int irq);
