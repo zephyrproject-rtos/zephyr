@@ -28,6 +28,7 @@
 
 K_THREAD_STACK_ARRAY_DEFINE(stack_e, N_THR_E, STACKS);
 K_THREAD_STACK_ARRAY_DEFINE(stack_t, N_THR_T, STACKS);
+K_THREAD_STACK_ARRAY_DEFINE(stack_1, 1, 32);
 
 void *thread_top_exec(void *p1);
 void *thread_top_term(void *p1);
@@ -239,7 +240,7 @@ void test_posix_pthread_execution(void)
 	void *retval, *stackaddr;
 	size_t stacksize;
 	int serial_threads = 0;
-	const char thr_name[] = "thread name";
+	static const char thr_name[] = "thread name";
 	char thr_name_buf[CONFIG_THREAD_MAX_NAME_LEN];
 
 	sem_init(&main_sem, 0, 1);
@@ -402,6 +403,70 @@ void test_posix_pthread_execution(void)
 	printk("Barrier test OK\n");
 }
 
+void test_posix_pthread_error_condition(void)
+{
+	pthread_attr_t attr;
+	struct sched_param param;
+	void *stackaddr;
+	size_t stacksize;
+	int policy, detach;
+	static pthread_once_t key = 1;
+
+	/* TESTPOINT: invoke pthread APIs with NULL */
+	zassert_equal(pthread_attr_destroy(NULL), EINVAL,
+		      "pthread destroy NULL error");
+	zassert_equal(pthread_attr_getschedparam(NULL, &param), EINVAL,
+		      "get scheduling param error");
+	zassert_equal(pthread_attr_getstack(NULL, &stackaddr, &stacksize),
+		      EINVAL, "get stack attributes error");
+	zassert_equal(pthread_attr_getstacksize(NULL, &stacksize),
+		      EINVAL, "get stack size error");
+	zassert_equal(pthread_attr_setschedpolicy(NULL, 2),
+		      EINVAL, "set scheduling policy error");
+	zassert_equal(pthread_attr_getschedpolicy(NULL, &policy),
+		      EINVAL, "get scheduling policy error");
+	zassert_equal(pthread_attr_setdetachstate(NULL, 0),
+		      EINVAL, "pthread set detach state with NULL error");
+	zassert_equal(pthread_attr_getdetachstate(NULL, &detach),
+		      EINVAL, "get datach state error");
+	zassert_equal(pthread_detach(NULL), ESRCH, "detach with NULL error");
+	zassert_equal(pthread_attr_init(NULL), ENOMEM,
+		      "init with NULL error");
+	zassert_equal(pthread_attr_setschedparam(NULL, &param), EINVAL,
+		      "set sched param with NULL error");
+	zassert_equal(pthread_cancel(NULL), ESRCH,
+		      "cancel NULL error");
+	zassert_equal(pthread_join(NULL, NULL), ESRCH,
+		      "join with NULL has error");
+	zassert_false(pthread_once(&key, NULL),
+		      "pthread dynamic package initialization error");
+	zassert_equal(pthread_getschedparam(NULL, &policy, &param), ESRCH,
+		      "get schedparam with NULL error");
+	zassert_equal(pthread_setschedparam(NULL, policy, &param), ESRCH,
+		      "set schedparam with NULL error");
+
+	attr.initialized = 0U;
+	zassert_equal(pthread_attr_getdetachstate(&attr, &detach),
+		      EINVAL, "get datach state error");
+
+	/* Initialise thread attribute to ensure won't be return with init error */
+	pthread_attr_init(&attr);
+	zassert_false(pthread_attr_setschedpolicy(&attr, 0),
+		      "set scheduling policy error");
+	zassert_false(pthread_attr_setschedpolicy(&attr, 1),
+		      "set scheduling policy error");
+	zassert_equal(pthread_attr_setschedpolicy(&attr, 2),
+		      EINVAL, "set scheduling policy error");
+	zassert_false(pthread_attr_setdetachstate(&attr, 1),
+		      "set detach state error");
+	zassert_false(pthread_attr_setdetachstate(&attr, 2),
+		      "set detach state error");
+	zassert_equal(pthread_attr_setdetachstate(&attr, 3),
+		      EINVAL, "set detach state error");
+	zassert_false(pthread_attr_getdetachstate(&attr, &detach),
+		      "get datach state error");
+}
+
 void test_posix_pthread_termination(void)
 {
 	int32_t i, ret;
@@ -463,4 +528,34 @@ void test_posix_pthread_termination(void)
 	/* TESTPOINT: Try getting scheduling info from terminated thread */
 	ret = pthread_getschedparam(newthread[N_THR_T/2], &policy, &schedparam);
 	zassert_equal(ret, ESRCH, "got attr from terminated thread!");
+}
+
+static void *create_thread1(void *p1)
+{
+	/* do nothing */
+	return NULL;
+}
+
+void test_posix_pthread_create_negative(void)
+{
+	int ret;
+	pthread_t pthread1;
+	pthread_attr_t attr1;
+
+	/* create pthread without attr initialized */
+	ret = pthread_create(&pthread1, NULL, create_thread1, (void *)1);
+	zassert_equal(ret, EINVAL, "create thread with NULL successful");
+
+	/* initialized attr without set stack to create thread */
+	ret = pthread_attr_init(&attr1);
+	zassert_false(ret, "attr1 initialized failed");
+
+	attr1.stack = NULL;
+	ret = pthread_create(&pthread1, &attr1, create_thread1, (void *)1);
+	zassert_equal(ret, EINVAL, "create successful with NULL attr");
+
+	/* set stack size 0 to create thread */
+	pthread_attr_setstack(&attr1, &stack_1, 0);
+	ret = pthread_create(&pthread1, &attr1, create_thread1, (void *)1);
+	zassert_equal(ret, EINVAL, "create thread with 0 size");
 }
