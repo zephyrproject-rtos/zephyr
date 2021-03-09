@@ -90,6 +90,38 @@ void entry_cpu_exception(void *p1, void *p2, void *p3)
 	rv = TC_FAIL;
 }
 
+void entry_cpu_exception_extend(void *p1, void *p2, void *p3)
+{
+	expected_reason = K_ERR_CPU_EXCEPTION;
+
+#if defined(CONFIG_ARM64)
+	__asm__ volatile ("svc 0");
+#elif defined(CONFIG_CPU_CORTEX_R)
+	__asm__ volatile ("BKPT");
+#elif defined(CONFIG_CPU_CORTEX_M)
+	__asm__ volatile ("swi 0");
+#elif defined(CONFIG_NIOS2)
+	__asm__ volatile ("trap");
+#elif defined(CONFIG_RISCV)
+	/* In riscv architecture, use an undefined
+	 * instruction to trigger illegal instruction on RISCV.
+	 */
+	__asm__ volatile (".word 0x77777777");
+	/* In arc architecture, SWI instruction is used
+	 * to trigger soft interrupt.
+	 */
+#elif defined(CONFIG_ARC)
+	__asm__ volatile ("swi");
+#else
+	/* used to create a divide by zero error on X86 */
+	volatile int error;
+	volatile int zero = 0;
+
+	error = 32;     /* avoid static checker uninitialized warnings */
+	error = error / zero;
+#endif
+	rv = TC_FAIL;
+}
 
 void entry_oops(void *p1, void *p2, void *p3)
 {
@@ -133,6 +165,19 @@ void entry_arbitrary_reason(void *p1, void *p2, void *p3)
 
 	key = irq_lock();
 	z_except_reason(INT_MAX);
+	TC_ERROR("SHOULD NEVER SEE THIS\n");
+	rv = TC_FAIL;
+	irq_unlock(key);
+}
+
+void entry_arbitrary_reason_negative(void *p1, void *p2, void *p3)
+{
+	unsigned int key;
+
+	expected_reason = -2;
+
+	key = irq_lock();
+	z_except_reason(-2);
 	TC_ERROR("SHOULD NEVER SEE THIS\n");
 	rv = TC_FAIL;
 	irq_unlock(key);
@@ -276,6 +321,14 @@ void test_fatal(void)
 			NULL, NULL, NULL, K_PRIO_COOP(PRIORITY), 0,
 			K_NO_WAIT);
 	zassert_not_equal(rv, TC_FAIL, "thread was not aborted");
+
+	TC_PRINT("test alt thread 1: generic CPU exception divide zero\n");
+	k_thread_create(&alt_thread, alt_stack,
+			K_THREAD_STACK_SIZEOF(alt_stack),
+			entry_cpu_exception_extend,
+			NULL, NULL, NULL, K_PRIO_COOP(PRIORITY), 0,
+			K_NO_WAIT);
+	zassert_not_equal(rv, TC_FAIL, "thread was not aborted");
 #else
 	/*
 	 * We want the native OS to handle segfaults so we can debug it
@@ -318,6 +371,15 @@ void test_fatal(void)
 	k_thread_create(&alt_thread, alt_stack,
 			K_THREAD_STACK_SIZEOF(alt_stack),
 			entry_arbitrary_reason,
+			NULL, NULL, NULL, K_PRIO_COOP(PRIORITY), 0,
+			K_NO_WAIT);
+	k_thread_abort(&alt_thread);
+
+	zassert_not_equal(rv, TC_FAIL, "thread was not aborted");
+	TC_PRINT("test alt thread 6: initiate arbitrary SW exception negative\n");
+	k_thread_create(&alt_thread, alt_stack,
+			K_THREAD_STACK_SIZEOF(alt_stack),
+			entry_arbitrary_reason_negative,
 			NULL, NULL, NULL, K_PRIO_COOP(PRIORITY), 0,
 			K_NO_WAIT);
 	k_thread_abort(&alt_thread);
