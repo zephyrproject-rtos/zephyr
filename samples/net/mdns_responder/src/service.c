@@ -19,11 +19,11 @@ LOG_MODULE_REGISTER(mdns_echo_service, LOG_LEVEL_DBG);
 /* A default port of 0 causes bind(2) to request an ephemeral port */
 #define DEFAULT_PORT 0
 
-static void welcome(int fd)
+static int welcome(int fd)
 {
 	static const char msg[] = "Bonjour, Zephyr world!\n";
 
-	send(fd, msg, sizeof(msg), 0);
+	return send(fd, msg, sizeof(msg), 0);
 }
 
 /* This is mainly here to bind to a port to get service advertisement
@@ -121,7 +121,12 @@ void service(void)
 			log_strdup(addrstr), ntohs(*portp));
 
 		/* send a banner */
-		welcome(client_fd);
+		r = welcome(client_fd);
+		if (r == -1) {
+			NET_DBG("send() failed (%d)", errno);
+			close(client_fd);
+			return;
+		}
 
 		for (;;) {
 			/* echo 1 line at a time */
