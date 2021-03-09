@@ -1,0 +1,21 @@
+#
+# Copyright (c) 2020 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+sample:
+  name: flash_area_type
+  description: Flash area type API usage for partition enumeration
+common:
+  tags: flash_area
+tests:
+  sample.storage.flash_area:
+    platform_allow: nrf52840dk_nrf52840 native_posix
+    tags: flash_area
+    harness: console
+    harness_config:
+        type: multi_line
+        regex:
+          - "Known types:(.*)"
+          - "(.*)"
