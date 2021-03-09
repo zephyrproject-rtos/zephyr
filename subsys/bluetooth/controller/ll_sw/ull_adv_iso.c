@@ -280,12 +280,7 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	big_info->payload_count_framing[4] &= 0x7F;
 	big_info->payload_count_framing[4] |= ((framing & 0x01) << 7);
 
-	lll_adv_sync_data_enqueue(lll_adv_sync, ter_idx);
-
-	/* Associate the ISO instance with a Periodic Advertising and
-	 * an Extended Advertising instance
-	 */
-	lll_adv_sync->iso = lll_adv_iso;
+	/* Associate the ISO instance with an Extended Advertising instance */
 	lll_adv_iso->adv = &adv->lll;
 
 	/* Store the link buffer for ISO create and terminate complete event */
@@ -302,6 +297,12 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 		/* FIXME: release resources */
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
+
+	/* Associate the ISO instance with a Periodic Advertising */
+	lll_adv_sync->iso = lll_adv_iso;
+
+	/* Commit the BIGInfo in the ACAD field of Periodic Advertising */
+	lll_adv_sync_data_enqueue(lll_adv_sync, ter_idx);
 
 	return BT_HCI_ERR_SUCCESS;
 }
