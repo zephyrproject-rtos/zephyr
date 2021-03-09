@@ -165,6 +165,7 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	uint32_t ticks_at_start;
 	uint16_t event_counter;
 	uint8_t access_addr[4];
+	uint16_t data_chan_id;
 	uint8_t data_chan_use;
 	uint8_t crc_init[3];
 	struct pdu_bis *pdu;
@@ -182,7 +183,8 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	lll->latency_event = lll->latency_prepare - 1;
 
 	/* Calculate the current event counter value */
-	event_counter = (lll->payload_count & 0xFFFF) + lll->latency_event;
+	event_counter = ((lll->payload_count / lll->bn) & 0xFFFF) +
+			(lll->latency_event * lll->bn);
 
 	/* Update BIS packet counter to next value */
 	lll->payload_count += (lll->latency_prepare * lll->bn);
@@ -190,14 +192,11 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	/* Reset accumulated latencies */
 	lll->latency_prepare = 0;
 
-	/* Calculate the radio channel to use */
-	data_chan_use = lll_chan_sel_2(event_counter, lll->data_chan_id,
-				       &lll->data_chan_map[0],
-				       lll->data_chan_count);
 
 	/* Calculate the Access Address for the BIS event */
 	bis = 1U;
 	util_bis_aa_le32(bis, lll->seed_access_addr, access_addr);
+	data_chan_id = lll_chan_id(access_addr);
 
 	/* Calculate the CRC init value for the BIS event,
 	 * preset with the BaseCRCInit value from the BIGInfo data the most
@@ -206,6 +205,13 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	 */
 	memcpy(&crc_init[1], lll->base_crc_init, sizeof(uint16_t));
 	crc_init[0] = bis;
+
+	/* Calculate the radio channel to use for ISO event */
+	data_chan_use = lll_chan_iso_event(event_counter, data_chan_id,
+					   &lll->data_chan_map[0],
+					   lll->data_chan_count,
+					   &lll->data_chan_prn_s,
+					   &lll->data_chan_remap_idx);
 
 	/* Start setting up of Radio h/w */
 	radio_reset();
