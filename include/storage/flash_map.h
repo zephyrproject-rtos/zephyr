@@ -277,16 +277,67 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
 
 #define FLASH_AREA_NODE_COMPAT_TYPE(n, c, t)  COND_CODE_1(DT_NODE_HAS_COMPAT(n, c), (t), ())
 
+/**
+ * @brief Macro attempts to translate DTS compatible to FLASH_AREA_* identifier
+ *
+ * @param n Compatible to translate in C identifier format, for example zephyr_application_image.
+ * @returns Value of FLASH_AREA_TYPE_* that matches the compatible or nothing.
+ */
 #define FLASH_AREA_NODE_TYPE(n)									   \
 	FLASH_AREA_NODE_COMPAT_TYPE(n, zephyr_mcuboot_image, FLASH_AREA_TYPE_MCUBOOT)		   \
 	FLASH_AREA_NODE_COMPAT_TYPE(n, zephyr_mcuboot_scratch, FLASH_AREA_TYPE_MCUBOOT_SCRATCH)	   \
 	FLASH_AREA_NODE_COMPAT_TYPE(n, zephyr_application_image, FLASH_AREA_TYPE_ZEPHYR_APPLICATION)
 
+/**
+ * @brief Macro translates DTS compatible to FLASH_AREA_TYPE_* identifier
+ *
+ * This is extension of FLASH_AREA_NODE_TYPE that, instead of returning nothing, will return
+ * FLASH_AREA_TYPE_UNSPECIFIED if unable to match any other FLASH_AREA_TYPE_*.
+ *
+ * @param n Compatible to translate in C identifier format, for example zephyr_application_image.
+ * @returns Value of FLASH_AREA_TYPE_* that matches the compatible or FLASH_AREA_TYPE_UNSPECIFIED.
+ */
 #define FLASH_AREA_NODE_TYPE_OR_UNSPECIFIED(n)		\
 	COND_CODE_0(					\
 		IS_EMPTY(FLASH_AREA_NODE_TYPE(n)),	\
 		(FLASH_AREA_NODE_TYPE(n)),		\
 		(FLASH_AREA_TYPE_UNSPECIFIED)		\
+	)
+
+/* Macro returns ID of a partition the application is running from */
+#define FLASH_AREA_ACTIVE_ID DT_FIXED_PARTITION_ID(DT_CHOSEN(zephyr_code_partition))
+
+/* Helper macro used to append argument to list of macro arguments */
+#define APPEND_ARG(f) EMPTY, f
+
+/**
+ * @brief The macro iterates through a list of "compatible" flash areas.
+ *
+ * The macro will evaluate provided @p fn macro for each flash area (partition) defined in DTS
+ * with @p compat compatible.
+ * The provided @p fn macro should accept two parameters: the first one would be the instance index
+ * of compatible, and the second will be the same identifier as passed to @p compat.
+ * To see how these are related see the DT_INST macro description.
+ *
+ * @param compat DTS compatible in C preprocessor form, for example zephry_application_image
+ * @param fn Macro to be invoked.
+ */
+#define FLASH_AREA_FOR_EACH_COMPATIBLE(compat, fn)						\
+	COND_CODE_1(										\
+		DT_HAS_COMPAT_STATUS_OKAY(compat),						\
+		(FOR_EACH_FIXED_ARG(								\
+			fn,									\
+			(),									\
+			compat,									\
+			LIST_DROP_EMPTY(							\
+				COND_CODE_1(							\
+					DT_HAS_COMPAT_STATUS_OKAY(compat),			\
+					(UTIL_CAT(DT_FOREACH_OKAY_INST_, compat)(APPEND_ARG)),	\
+					()							\
+				)								\
+			)									\
+		)),										\
+		()										\
 	)
 
 #ifdef __cplusplus
