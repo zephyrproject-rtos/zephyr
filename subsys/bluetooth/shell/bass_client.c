@@ -64,11 +64,23 @@ static void bass_client_scan_cb(const struct bt_le_scan_recv_info *info)
 
 }
 
+static bool metadata_entry(struct bt_data *data, void *user_data)
+{
+	char metadata[512];
+
+	bin2hex(data->data, data->data_len, metadata, sizeof(metadata));
+
+	shell_print(ctx_shell, "\t\tMetadata length %u, type %u, data: %s",
+		    data->data_len, data->type, metadata);
+
+	return true;
+}
+
 static void bass_client_recv_state_cb(struct bt_conn *conn, int err,
-				      const struct bass_recv_state_t *state)
+				      const struct bt_bass_recv_state *state)
 {
 	char le_addr[BT_ADDR_LE_STR_LEN];
-	char metadata[512];
+	char bad_code[33];
 
 	if (err) {
 		shell_error(ctx_shell, "BASS recv state read failed (%d)", err);
@@ -77,14 +89,25 @@ static void bass_client_recv_state_cb(struct bt_conn *conn, int err,
 
 
 	bt_addr_le_to_str(&state->addr, le_addr, sizeof(le_addr));
-	bin2hex(state->metadata, state->metadata_len,
-		metadata, sizeof(metadata));
+	bin2hex(state->bad_code, BASS_BROADCAST_CODE_SIZE, bad_code, sizeof(bad_code));
 	shell_print(ctx_shell, "BASS recv state: src_id %u, addr %s, "
-		    "sid %u, sync_state %u, bis_sync_state 0x%x, "
-		    "big_enc %u, metadata_len %u, metadata %s",
+		    "sid %u, sync_state %u, encrypt_state %u%s%s",
 		    state->src_id, le_addr, state->adv_sid,
-		    state->pa_sync_state, state->bis_sync_state,
-		    state->big_enc, state->metadata_len, metadata);
+		    state->pa_sync_state, state->encrypt_state,
+		    state->encrypt_state == BASS_BIG_ENC_STATE_BAD_CODE ? ", bad code" : "",
+		    bad_code);
+
+	for (int i = 0; i < state->num_subgroups; i++) {
+		const struct bt_bass_subgroup *subgroup = &state->subgroups[i];
+		struct net_buf_simple buf;
+
+		shell_print(ctx_shell, "\t[%d]: BIS sync %u, metadata_len %u",
+			    i, subgroup->bis_sync, subgroup->metadata_len);
+
+		net_buf_simple_init_with_data(&buf, (void *)subgroup->metadata,
+					      subgroup->metadata_len);
+		bt_data_parse(&buf, metadata_entry, NULL);
+	}
 
 
 	if (state->pa_sync_state == BASS_PA_STATE_INFO_REQ) {
@@ -153,7 +176,7 @@ static void bass_client_recv_state_cb(struct bt_conn *conn, int err,
 }
 
 static void bass_client_recv_state_removed_cb(
-	struct bt_conn *conn, int err, const struct bass_recv_state_t *state)
+	struct bt_conn *conn, int err, const struct bt_bass_recv_state *state)
 {
 	if (err) {
 		shell_error(ctx_shell, "BASS recv state removed failed (%d)",
@@ -283,34 +306,31 @@ static int cmd_bass_client_add_src(const struct shell *shell, size_t argc,
 				   char **argv)
 {
 	int result;
-	long adv_sid;
-	long pa_sync;
-	unsigned long bis_sync = 0;
-	bt_addr_le_t addr;
-	static uint8_t metadata[256];
-	uint8_t metadata_len = 0;
+	struct bt_bass_add_src_param param = { 0 };
+	struct bt_bass_subgroup subgroup = { 0 };
 
-	result = bt_addr_le_from_str(argv[1], argv[2], &addr);
+	result = bt_addr_le_from_str(argv[1], argv[2], &param.addr);
 	if (result) {
 		shell_error(shell, "Invalid peer address (err %d)", result);
 		return -ENOEXEC;
 	}
 
-	adv_sid = strtol(argv[3], NULL, 0);
-	if (adv_sid < 0 || adv_sid > 0x0F) {
+	param.adv_sid = strtol(argv[3], NULL, 0);
+	if (param.adv_sid < 0 || param.adv_sid > 0x0F) {
 		shell_error(shell, "adv_sid shall be 0x00-0x0f");
 		return -ENOEXEC;
 	}
 
-	pa_sync = strtol(argv[4], NULL, 0);
-	if (pa_sync < 0 || pa_sync > 1) {
+	param.pa_sync = strtol(argv[4], NULL, 0);
+	if (param.pa_sync < 0 || param.pa_sync > 1) {
 		shell_error(shell, "pa_sync shall be boolean");
 		return -ENOEXEC;
 	}
 
+	/* TODO: Support multiple subgroups */
 	if (argc > 5) {
-		bis_sync = strtoul(argv[5], NULL, 0);
-		if (bis_sync > UINT32_MAX) {
+		subgroup.bis_sync = strtoul(argv[5], NULL, 0);
+		if (subgroup.bis_sync > UINT32_MAX) {
 			shell_error(shell, "bis_sync shall be 0x00000000 "
 				    "to 0xFFFFFFFF");
 			return -ENOEXEC;
@@ -318,18 +338,19 @@ static int cmd_bass_client_add_src(const struct shell *shell, size_t argc,
 	}
 
 	if (argc > 6) {
-		metadata_len = hex2bin(argv[6], strlen(argv[6]),
-				       metadata, sizeof(metadata));
+		subgroup.metadata_len = hex2bin(argv[6], strlen(argv[6]),
+						subgroup.metadata, sizeof(subgroup.metadata));
 
-		if (!metadata_len) {
+		if (!subgroup.metadata_len) {
 			shell_error(shell, "Could not parse metadata");
 			return -ENOEXEC;
 		}
 	}
 
-	result = bt_bass_client_add_src(default_conn, &addr, adv_sid,
-					pa_sync, bis_sync, metadata_len,
-					metadata);
+	param.num_subgroups = 1;
+	param.subgroups = &subgroup;
+
+	result = bt_bass_client_add_src(default_conn, &param);
 	if (result) {
 		shell_print(shell, "Fail: %d", result);
 	}
@@ -340,45 +361,51 @@ static int cmd_bass_client_mod_src(const struct shell *shell, size_t argc,
 				   char **argv)
 {
 	int result;
-	long src_id;
-	long pa_sync;
-	unsigned long bis_sync = 0;
-	static uint8_t metadata[256];
-	uint8_t metadata_len = 0;
+	struct bt_bass_mod_src_param param = { 0 };
+	struct bt_bass_subgroup subgroup = { 0 };
 
-	src_id = strtol(argv[1], NULL, 0);
-	if (src_id < 0 || src_id > UINT8_MAX) {
+	param.src_id = strtol(argv[1], NULL, 0);
+	if (param.src_id < 0 || param.src_id > UINT8_MAX) {
 		shell_error(shell, "adv_sid shall be 0x00-0xff");
 		return -ENOEXEC;
 	}
 
-	pa_sync = strtol(argv[2], NULL, 0);
-	if (pa_sync < 0 || pa_sync > 1) {
+	result = bt_addr_from_str(argv[2], &param.addr);
+	if (result) {
+		shell_error(shell, "Invalid peer address (err %d)", result);
+		return -ENOEXEC;
+	}
+
+	param.pa_sync = strtol(argv[3], NULL, 0);
+	if (param.pa_sync < 0 || param.pa_sync > 1) {
 		shell_error(shell, "pa_sync shall be boolean");
 		return -ENOEXEC;
 	}
 
-	if (argc > 3) {
-		bis_sync = strtoul(argv[3], NULL, 0);
-		if (bis_sync > UINT32_MAX) {
+	/* TODO: Support multiple subgroups */
+	if (argc > 4) {
+		subgroup.bis_sync = strtoul(argv[4], NULL, 0);
+		if (subgroup.bis_sync > UINT32_MAX) {
 			shell_error(shell, "bis_sync shall be 0x00000000 "
 				    "to 0xFFFFFFFF");
 			return -ENOEXEC;
 		}
 	}
 
-	if (argc > 4) {
-		metadata_len = hex2bin(argv[4], strlen(argv[4]),
-				       metadata, sizeof(metadata));
+	if (argc > 5) {
+		subgroup.metadata_len = hex2bin(argv[6], strlen(argv[6]),
+						subgroup.metadata, sizeof(subgroup.metadata));
 
-		if (!metadata_len) {
+		if (!subgroup.metadata_len) {
 			shell_error(shell, "Could not parse metadata");
 			return -ENOEXEC;
 		}
 	}
 
-	result = bt_bass_client_mod_src(default_conn, src_id, pa_sync, bis_sync,
-					metadata_len, metadata);
+	param.num_subgroups = 1;
+	param.subgroups = &subgroup;
+
+	result = bt_bass_client_mod_src(default_conn, &param);
 	if (result) {
 		shell_print(shell, "Fail: %d", result);
 	}
@@ -479,8 +506,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bass_client_cmds,
 		      "[<metadata>]",
 		      cmd_bass_client_add_src, 5, 2),
 	SHELL_CMD_ARG(mod_src, NULL,
-		      "Set sync <src_id> <sync_pa> [<sync_bis>] [<metadata>]",
-		      cmd_bass_client_mod_src, 3, 2),
+		      "Set sync <src_id> <address: XX:XX:XX:XX:XX:XX> <sync_pa> [<sync_bis>] [<metadata>]",
+		      cmd_bass_client_mod_src, 4, 2),
 	SHELL_CMD_ARG(broadcast_code, NULL,
 		      "Send a space separated broadcast code of up to 16 bytes "
 		      "<src_id> [broadcast code]",
