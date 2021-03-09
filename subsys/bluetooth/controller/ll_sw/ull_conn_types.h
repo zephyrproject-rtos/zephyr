@@ -336,8 +336,6 @@ struct ll_conn {
 		uint32_t cis_offset_min;
 		uint32_t cis_offset_max;
 		uint16_t conn_event_count;
-		uint32_t cig_sync_delay;
-		uint32_t cis_sync_delay;
 	} llcp_cis;
 #endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
 };

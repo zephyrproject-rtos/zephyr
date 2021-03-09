@@ -132,6 +132,7 @@ uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 	cis->established = 0;
 	cis->group = cig;
 
+	cis->lll.handle = 0xFFFF;
 	cis->lll.acl_handle = acl->lll.handle;
 	cis->lll.sub_interval = sys_get_le24(req->sub_interval);
 	cis->lll.num_subevents = req->nse;
@@ -189,8 +190,7 @@ uint8_t ull_peripheral_iso_setup(struct pdu_data_llctrl_cis_ind *ind,
 	}
 
 	cis->sync_delay = sys_get_le24(ind->cis_sync_delay);
-	cis->lll.handle = cis_handle;
-	cis->lll.offset = sys_get_le24(ind->cis_offset);
+	cis->offset = sys_get_le24(ind->cis_offset);
 	cis->lll.event_count = -1;
 	memcpy(cis->lll.access_addr, ind->aa, sizeof(ind->aa));
 
@@ -220,7 +220,16 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 	/* Increment CIS event counters */
 	for (int i = 0; i < cig->lll.num_cis; i++)  {
 		cis = ll_conn_iso_stream_get(cig->cis_handles[i]);
-		cis->lll.event_count++;
+
+		/* New CIS may become available by creation prior to the CIG
+		 * event in which it has event_count == 0. Don't increment
+		 * event count until its handle is validated in
+		 * ull_peripheral_iso_start, which means that its ACL instant
+		 * has been reached, and offset calculated.
+		 */
+		if (cis->lll.handle != 0xFFFF) {
+			cis->lll.event_count++;
+		}
 	}
 
 	/* Increment prepare reference count */
@@ -251,27 +260,72 @@ void ull_peripheral_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire)
 {
 	struct ll_conn_iso_group *cig;
 	struct ll_conn_iso_stream *cis;
-	uint32_t ticker_status;
+	uint32_t acl_to_cig_ref_point;
+	uint32_t cis_offs_to_cig_ref;
+	uint32_t ready_delay_us;
 	uint32_t ticks_interval;
+	uint32_t ticker_status;
+	int32_t cig_offset_us;
+	uint16_t cis_handle;
 	uint8_t ticker_id;
 
+	cis_handle = acl->llcp_cis.cis_handle;
+
 	cig = ll_conn_iso_group_get_by_id(acl->llcp_cis.cig_id);
-	cis = ll_conn_iso_stream_get(acl->llcp_cis.cis_handle);
+	cis = ll_conn_iso_stream_get(cis_handle);
+
+	cis_offs_to_cig_ref = cig->sync_delay - cis->sync_delay;
+
+	for (int i = 0; i < cig->lll.num_cis; i++) {
+		uint16_t handle = cig->cis_handles[i];
+
+		/* Find valid CIS handle, but exclude incoming */
+		if ((handle != 0xFFFF) && (handle != cis_handle)) {
+			/* Ticker already started - just set the offset and
+			 * assign LLL handle (now valid).
+			 */
+			cis->lll.offset = cis_offs_to_cig_ref;
+			cis->lll.handle = cis_handle;
+			return;
+		}
+	}
+
+	cis->lll.offset = cis_offs_to_cig_ref;
+	cis->lll.handle = cis_handle;
 
 	ticker_id = TICKER_ID_CONN_ISO_BASE +
 		    ll_conn_iso_group_handle_get(cig);
 	ticks_interval = HAL_TICKER_US_TO_TICKS(cig->iso_interval *
 						CONN_INT_UNIT_US);
 
-	/* Start CIS peripheral CIG ticker. TODO: Handle multiple CISes - only
-	 * start ticker for first CIS.
+	/* Establish the CIG reference point by adjusting ACL-to-CIS offset
+	 * (cis->offset) by the difference between CIG- and CIS sync delays.
 	 */
+	acl_to_cig_ref_point = cis->offset - cis_offs_to_cig_ref;
+
+#if defined(CONFIG_BT_CTLR_PHY)
+	ready_delay_us = lll_radio_rx_ready_delay_get(acl->lll.phy_rx, 1);
+#else
+	ready_delay_us = lll_radio_rx_ready_delay_get(0, 0);
+#endif
+
+	cig_offset_us  = acl_to_cig_ref_point;
+	cig_offset_us -= EVENT_OVERHEAD_START_US;
+	cig_offset_us -= EVENT_TICKER_RES_MARGIN_US;
+	cig_offset_us -= EVENT_JITTER_US;
+	cig_offset_us -= ready_delay_us;
+
+	/* Make sure we have time to service first subevent. TODO: Improve
+	 * by skipping <n> interval(s) and incrementing event_count.
+	 */
+	LL_ASSERT(cig_offset_us > 0);
+
+	/* Start CIS peripheral CIG ticker */
 	ticker_status = ticker_start(TICKER_INSTANCE_ID_CTLR,
 				     TICKER_USER_ID_ULL_HIGH,
 				     ticker_id,
 				     ticks_at_expire,
-				     HAL_TICKER_US_TO_TICKS(cis->offset -
-					EVENT_OVERHEAD_START_US),
+				     HAL_TICKER_US_TO_TICKS(cig_offset_us),
 				     ticks_interval,
 				     HAL_TICKER_REMAINDER(ticks_interval),
 				     TICKER_NULL_LAZY,
@@ -281,5 +335,4 @@ void ull_peripheral_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire)
 
 	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 		  (ticker_status == TICKER_STATUS_BUSY));
-
 }
