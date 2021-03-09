@@ -85,6 +85,7 @@ void service(void)
 	r = bind(server_fd, &server_addr, sizeof(server_addr));
 	if (r == -1) {
 		NET_DBG("bind() failed (%d)", errno);
+		close(server_fd);
 		return;
 	}
 
@@ -103,6 +104,7 @@ void service(void)
 	r = listen(server_fd, 1);
 	if (r == -1) {
 		NET_DBG("listen() failed (%d)", errno);
+		close(server_fd);
 		return;
 	}
 
