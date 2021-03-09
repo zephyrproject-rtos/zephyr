@@ -34,6 +34,7 @@
 #include "lll/lll_adv_types.h"
 #include "lll_adv.h"
 #include "lll/lll_adv_pdu.h"
+#include "lll_chan.h"
 #include "lll_scan.h"
 #include "lll/lll_df_types.h"
 #include "lll_sync.h"
@@ -618,6 +619,10 @@ int ll_init(struct k_sem *sem_rx)
 	if (IS_ENABLED(CONFIG_BT_CTLR_FILTER)) {
 		ull_filter_reset(true);
 	}
+
+#if defined(CONFIG_BT_CTLR_TEST)
+	lll_chan_sel_2_ut();
+#endif /* CONFIG_BT_CTLR_TEST */
 
 	return  0;
 }
