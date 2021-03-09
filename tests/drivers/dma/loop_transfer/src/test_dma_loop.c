@@ -146,11 +146,10 @@ static int test_loop(void)
 	if (transfer_count < TRANSFER_LOOPS) {
 		transfer_count = TRANSFER_LOOPS;
 		TC_PRINT("ERROR: unfinished transfer\n");
-		return TC_FAIL;
 		if (dma_stop(dma, chan_id)) {
 			TC_PRINT("ERROR: transfer stop\n");
-			return TC_FAIL;
 		}
+		return TC_FAIL;
 	}
 
 	TC_PRINT("Each RX buffer should contain the full TX buffer string.\n");
