@@ -12,7 +12,8 @@ struct lll_sync_iso {
 
 	uint16_t latency_prepare;
 	uint16_t latency_event;
-	uint16_t data_chan_id;
+	uint16_t data_chan_prn_s;
+	uint16_t data_chan_remap_idx;
 
 	uint64_t payload_count:39;
 
