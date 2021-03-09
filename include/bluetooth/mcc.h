@@ -15,6 +15,7 @@
 
 #include <zephyr/types.h>
 #include <bluetooth/conn.h>
+#include <net/buf.h>
 
 /* Todo: Decide placement of headers below, fix */
 #include "../subsys/bluetooth/host/audio/mpl.h"
@@ -298,9 +299,8 @@ typedef void (*bt_mcc_search_results_obj_id_read_cb_t)(struct bt_conn *conn,
  * @param ccid          The Content Control ID
  */
 typedef void (*bt_mcc_content_control_id_read_cb_t)(struct bt_conn *conn,
-						    int err, int8_t ccid);
+						    int err, uint8_t ccid);
 #ifdef CONFIG_BT_OTC
-#if CONFIG_BT_DEBUG_MCC
 /**** Callback functions for the included Object Transfer service *************/
 
 /** @brief Callback function for object selected
@@ -317,7 +317,72 @@ typedef void (*bt_mcc_otc_obj_selected_cb_t)(struct bt_conn *conn, int err);
  */
 typedef void (*bt_mcc_otc_obj_metadata_cb_t)(struct bt_conn *conn, int err);
 
-#endif /* CONFIG_BT_DEBUG_MCC */
+/** @brief Callback function for bt_mcc_otc_read_icon_object
+ *
+ * @param conn          The connection that was used to initialise MCC
+ * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param buf           Buffer containing the object contents
+ *
+ * If err is EMSGSIZE, the object contents have been truncated.
+ */
+typedef void (*bt_mcc_otc_read_icon_object_cb_t)(struct bt_conn *conn, int err,
+						 struct net_buf_simple *buf);
+
+/** @brief Callback function for bt_mcc_otc_read_track_segments_object
+ *
+ * @param conn          The connection that was used to initialise MCC
+ * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param buf           Buffer containing the object contents
+ *
+ * If err is EMSGSIZE, the object contents have been truncated.
+ */
+typedef void (*bt_mcc_otc_read_track_segments_object_cb_t)(struct bt_conn *conn, int err,
+							   struct net_buf_simple *buf);
+
+/** @brief Callback function for bt_mcc_otc_read_current_track_object
+ *
+ * @param conn          The connection that was used to initialise MCC
+ * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param buf           Buffer containing the object contents
+ *
+ * If err is EMSGSIZE, the object contents have been truncated.
+ */
+typedef void (*bt_mcc_otc_read_current_track_object_cb_t)(struct bt_conn *conn, int err,
+							  struct net_buf_simple *buf);
+
+/** @brief Callback function for bt_mcc_otc_read_next_track_object
+ *
+ * @param conn          The connection that was used to initialise MCC
+ * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param buf           Buffer containing the object contents
+ *
+ * If err is EMSGSIZE, the object contents have been truncated.
+ */
+typedef void (*bt_mcc_otc_read_next_track_object_cb_t)(struct bt_conn *conn, int err,
+						       struct net_buf_simple *buf);
+
+/** @brief Callback function for bt_mcc_otc_read_current_group_object
+ *
+ * @param conn          The connection that was used to initialise MCC
+ * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param buf           Buffer containing the object contents
+ *
+ * If err is EMSGSIZE, the object contents have been truncated.
+ */
+typedef void (*bt_mcc_otc_read_current_group_object_cb_t)(struct bt_conn *conn, int err,
+							  struct net_buf_simple *buf);
+
+/** @brief Callback function for bt_mcc_otc_read_parent_group_object
+ *
+ * @param conn          The connection that was used to initialise MCC
+ * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param buf           Buffer containing the object contents
+ *
+ * If err is EMSGSIZE, the object contents have been truncated.
+ */
+typedef void (*bt_mcc_otc_read_parent_group_object_cb_t)(struct bt_conn *conn, int err,
+							  struct net_buf_simple *buf);
+
 #endif /* CONFIG_BT_OTC */
 
 
@@ -359,10 +424,14 @@ struct bt_mcc_cb_t {
 #endif /* CONFIG_BT_OTC */
 	bt_mcc_content_control_id_read_cb_t       content_control_id_read;
 #ifdef CONFIG_BT_OTC
-#if CONFIG_BT_DEBUG_MCC
 	bt_mcc_otc_obj_selected_cb_t              otc_obj_selected;
 	bt_mcc_otc_obj_metadata_cb_t              otc_obj_metadata;
-#endif /* CONFIG_BT_DEBUG_MCC */
+	bt_mcc_otc_read_icon_object_cb_t          otc_icon_object;
+	bt_mcc_otc_read_track_segments_object_cb_t otc_track_segments_object;
+	bt_mcc_otc_read_current_track_object_cb_t  otc_current_track_object;
+	bt_mcc_otc_read_next_track_object_cb_t     otc_next_track_object;
+	bt_mcc_otc_read_current_group_object_cb_t  otc_current_group_object;
+	bt_mcc_otc_read_parent_group_object_cb_t   otc_parent_group_object;
 #endif /* CONFIG_BT_OTC */
 };
 
