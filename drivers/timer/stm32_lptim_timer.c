@@ -105,6 +105,7 @@ int sys_clock_driver_init(const struct device *dev)
 	/* Enable the power interface clock */
 	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
 #endif /* LL_APB1_GRP1_PERIPH_PWR */
+
 	/* enable backup domain */
 	LL_PWR_EnableBkUpAccess();
 
@@ -114,6 +115,9 @@ int sys_clock_driver_init(const struct device *dev)
 	while (!LL_RCC_LSE_IsReady()) {
 		/* Wait for LSE ready */
 	}
+#ifdef RCC_BDCR_LSESYSEN
+	LL_RCC_LSE_EnablePropagation();
+#endif /* RCC_BDCR_LSESYSEN */
 	LL_RCC_SetLPTIMClockSource(LL_RCC_LPTIM1_CLKSOURCE_LSE);
 
 #endif /* CONFIG_STM32_LPTIM_CLOCK_LSI */
