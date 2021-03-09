@@ -9,7 +9,6 @@
 
 #ifdef _ASMLANGUAGE
 
-GDATA(_curr_cpu)
 GDATA(_kernel)
 
 /*
@@ -27,10 +26,11 @@ GDATA(_kernel)
  */
 
 .macro get_cpu xreg0, xreg1
-	ldr	\xreg0, =_curr_cpu
 	get_cpu_id \xreg1
-	add	\xreg0, \xreg0, \xreg1, lsl #3
-	ldr	\xreg0, [\xreg0]
+	mov	\xreg0, #___cpu_t_SIZEOF
+	mul	\xreg0, \xreg0, \xreg1
+	ldr	\xreg1, =(_kernel + ___kernel_t_cpus_OFFSET)
+	add	\xreg0, \xreg0, \xreg1
 .endm
 
 /*
