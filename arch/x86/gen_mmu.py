@@ -130,7 +130,7 @@ def align_check(base, size):
     if (base % 4096) != 0:
         error("unaligned base address %x" % base)
     if (size % 4096) != 0:
-        error("Unaligned region size %d for base %x" % (size, base))
+        error("Unaligned region size 0x%x for base %x" % (size, base))
 
 
 def dump_flags(flags):
@@ -383,7 +383,7 @@ class PtableSet():
 
     def reserve(self, virt_base, size):
         """Reserve page table space with already aligned virt_base and size"""
-        debug("Reserving paging structures 0x%x (%d)" %
+        debug("Reserving paging structures 0x%x (0x%x)" %
               (virt_base, size))
 
         align_check(virt_base, size)
@@ -421,7 +421,7 @@ class PtableSet():
         if virt_base is None:
             virt_base = phys_base
 
-        debug("Mapping 0x%x (%d) to 0x%x: %s" %
+        debug("Mapping 0x%x (0x%x) to 0x%x: %s" %
                 (phys_base, size, virt_base, dump_flags(flags)))
 
         align_check(phys_base, size)
@@ -487,7 +487,7 @@ class PtableSet():
         base = syms[name + "_start"]
         size = syms[name + "_size"]
 
-        debug("change flags for %s at 0x%x (%d): %s" %
+        debug("change flags for %s at 0x%x (0x%x): %s" %
               (name, base, size, dump_flags(flags)))
         align_check(base, size)
 
@@ -616,10 +616,10 @@ def main():
     ptables_phys = syms["z_x86_pagetables_start"] + virt_to_phys_offset
 
     debug("Address space: 0x%x - 0x%x size 0x%x" %
-          (vm_base, vm_base + vm_size, vm_size))
+          (vm_base, vm_base + vm_size - 1, vm_size))
 
     debug("Zephyr image: 0x%x - 0x%x size 0x%x" %
-          (image_base, image_base + image_size, image_size))
+          (image_base, image_base + image_size - 1, image_size))
 
     is_perm_regions = isdef("CONFIG_SRAM_REGION_PERMISSIONS")
 
@@ -644,7 +644,7 @@ def main():
         # from real mode
         locore_base = syms["_locore_start"]
         locore_size = syms["_lodata_end"] - locore_base
-        debug("Base addresses: physical 0x%x size %d" % (locore_base,
+        debug("Base addresses: physical 0x%x size 0x%x" % (locore_base,
                                                          locore_size))
         pt.map(locore_base, None, locore_size, map_flags | ENTRY_RW)
 
