@@ -1497,7 +1497,10 @@ void z_thread_abort(struct k_thread *thread)
 	if (active) {
 		/* It's running somewhere else, flag and poke */
 		thread->base.thread_state |= _THREAD_ABORTING;
+
+#ifdef CONFIG_SCHED_IPI_SUPPORTED
 		arch_sched_ipi();
+#endif
 	}
 
 	if (is_aborting(thread) && thread != _current) {
