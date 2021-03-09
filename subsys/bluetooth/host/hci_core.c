@@ -1,7 +1,7 @@
 /* hci_core.c - HCI core Bluetooth handling */
 
 /*
- * Copyright (c) 2017 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2021 Nordic Semiconductor ASA
  * Copyright (c) 2015-2016 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -137,9 +137,13 @@ static struct cmd_data cmd_data[CONFIG_BT_HCI_CMD_COUNT];
 #define cmd(buf) (&cmd_data[net_buf_id(buf)])
 #define acl(buf) ((struct acl_data *)net_buf_user_data(buf))
 
-void bt_hci_cmd_data_state_set(struct net_buf *buf,
-			       struct bt_hci_cmd_state_set *state)
+void bt_hci_cmd_state_set_init(struct net_buf *buf,
+			       struct bt_hci_cmd_state_set *state,
+			       atomic_t *target, int bit, bool val)
 {
+	state->target = target;
+	state->bit = bit;
+	state->val = val;
 	cmd(buf)->state = state;
 }
 
@@ -484,8 +488,7 @@ static int set_le_adv_enable_legacy(struct bt_le_ext_adv *adv, bool enable)
 		net_buf_add_u8(buf, BT_HCI_LE_ADV_DISABLE);
 	}
 
-	bt_hci_cmd_state_set_init(&state, adv->flags, BT_ADV_ENABLED, enable);
-	cmd(buf)->state = &state;
+	bt_hci_cmd_state_set_init(buf, &state, adv->flags, BT_ADV_ENABLED, enable);
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_ADV_ENABLE, buf, NULL);
 	if (err) {
@@ -549,8 +552,7 @@ static int set_le_adv_enable_ext(struct bt_le_ext_adv *adv,
 	net_buf_add_le16(buf, param ? sys_cpu_to_le16(param->timeout) : 0);
 	net_buf_add_u8(buf, param ? param->num_events : 0);
 
-	bt_hci_cmd_state_set_init(&state, adv->flags, BT_ADV_ENABLED, enable);
-	cmd(buf)->state = &state;
+	bt_hci_cmd_state_set_init(buf, &state, adv->flags, BT_ADV_ENABLED, enable);
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_EXT_ADV_ENABLE, buf, NULL);
 	if (err) {
@@ -1104,9 +1106,8 @@ static int set_le_ext_scan_enable(uint8_t enable, uint16_t duration)
 	cp->duration = sys_cpu_to_le16(duration);
 	cp->period = 0;
 
-	bt_hci_cmd_state_set_init(&state, bt_dev.flags, BT_DEV_SCANNING,
+	bt_hci_cmd_state_set_init(buf, &state, bt_dev.flags, BT_DEV_SCANNING,
 				  enable == BT_HCI_LE_SCAN_ENABLE);
-	cmd(buf)->state = &state;
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_EXT_SCAN_ENABLE, buf, NULL);
 	if (err) {
@@ -1139,9 +1140,8 @@ static int set_le_scan_enable_legacy(uint8_t enable)
 
 	cp->enable = enable;
 
-	bt_hci_cmd_state_set_init(&state, bt_dev.flags, BT_DEV_SCANNING,
+	bt_hci_cmd_state_set_init(buf, &state, bt_dev.flags, BT_DEV_SCANNING,
 				  enable == BT_HCI_LE_SCAN_ENABLE);
-	cmd(buf)->state = &state;
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_SCAN_ENABLE, buf, NULL);
 	if (err) {
@@ -1462,9 +1462,8 @@ int bt_le_create_conn_ext(const struct bt_conn *conn)
 		set_phy_conn_param(conn, phy);
 	}
 
-	bt_hci_cmd_state_set_init(&state, bt_dev.flags,
+	bt_hci_cmd_state_set_init(buf, &state, bt_dev.flags,
 				  BT_DEV_INITIATING, true);
-	cmd(buf)->state = &state;
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_EXT_CREATE_CONN, buf, NULL);
 }
@@ -1522,9 +1521,8 @@ int bt_le_create_conn_legacy(const struct bt_conn *conn)
 	cp->conn_latency = sys_cpu_to_le16(conn->le.latency);
 	cp->supervision_timeout = sys_cpu_to_le16(conn->le.timeout);
 
-	bt_hci_cmd_state_set_init(&state, bt_dev.flags,
+	bt_hci_cmd_state_set_init(buf, &state, bt_dev.flags,
 				  BT_DEV_INITIATING, true);
-	cmd(buf)->state = &state;
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CREATE_CONN, buf, NULL);
 }
@@ -1546,9 +1544,8 @@ int bt_le_create_conn_cancel(void)
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_CREATE_CONN_CANCEL, 0);
 
-	bt_hci_cmd_state_set_init(&state, bt_dev.flags,
+	bt_hci_cmd_state_set_init(buf, &state, bt_dev.flags,
 				  BT_DEV_INITIATING, false);
-	cmd(buf)->state = &state;
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CREATE_CONN_CANCEL, buf, NULL);
 }
@@ -7345,9 +7342,8 @@ static int bt_le_per_adv_enable(struct bt_le_ext_adv *adv, bool enable)
 	cp->handle = adv->handle;
 	cp->enable = enable ? 1 : 0;
 
-	bt_hci_cmd_state_set_init(&state, adv->flags,
+	bt_hci_cmd_state_set_init(buf, &state, adv->flags,
 				  BT_PER_ADV_ENABLED, enable);
-	cmd(buf)->state = &state;
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_PER_ADV_ENABLE, buf, NULL);
 	if (err) {
@@ -7617,10 +7613,9 @@ static int bt_le_set_per_adv_recv_enable(
 	cp->handle = sys_cpu_to_le16(per_adv_sync->handle);
 	cp->enable = enable ? 1 : 0;
 
-	bt_hci_cmd_state_set_init(&state, per_adv_sync->flags,
+	bt_hci_cmd_state_set_init(buf, &state, per_adv_sync->flags,
 				  BT_PER_ADV_SYNC_RECV_DISABLED,
 				  enable);
-	cmd(buf)->state = &state;
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_PER_ADV_RECV_ENABLE,
 				   buf, NULL);
