@@ -165,8 +165,8 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	uint32_t ticks_at_start;
 	uint16_t event_counter;
 	uint8_t access_addr[4];
-	uint8_t crc_init[3];
 	uint8_t data_chan_use;
+	uint8_t crc_init[3];
 	struct pdu_bis *pdu;
 	struct ull_hdr *ull;
 	uint32_t remainder;
@@ -196,24 +196,8 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 				       lll->data_chan_count);
 
 	/* Calculate the Access Address for the BIS event */
-	/* FIXME: */
-	bis = 1;
-	{
-		uint8_t dwh[2];
-		uint8_t d;
-
-		d = ((35 * bis) + 42) & 0x7f;
-		if (d & 1) {
-			dwh[1] = 0xFC;
-		} else {
-			dwh[1] = 0;
-		}
-		dwh[1] |= (d & 0x02) | ((d >> 6) & 0x01);
-		dwh[0] = ((d & 0x02) << 7) | (d & 0x30) | ((d & 0x0C) >> 1);
-		memcpy(access_addr, lll->seed_access_addr, sizeof(access_addr));
-		access_addr[3] ^= dwh[1];
-		access_addr[2] ^= dwh[0];
-	}
+	bis = 1U;
+	util_bis_aa_le32(bis, lll->seed_access_addr, access_addr);
 
 	/* Calculate the CRC init value for the BIS event,
 	 * preset with the BaseCRCInit value from the BIGInfo data the most
@@ -225,6 +209,7 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 
 	/* Start setting up of Radio h/w */
 	radio_reset();
+
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
 	radio_tx_power_set(lll->tx_pwr_lvl);
 #else
