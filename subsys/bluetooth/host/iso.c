@@ -395,40 +395,48 @@ static struct net_buf *hci_le_set_cig_params(struct bt_iso_create_param *param)
 	memset(req, 0, sizeof(*req));
 
 	req->cig_id = param->conns[0]->iso.cig_id;
-	sys_put_le24(param->chans[0]->qos->interval, req->m_interval);
-	sys_put_le24(param->chans[0]->qos->interval, req->s_interval);
+	sys_put_le24(param->chans[0]->qos->tx->interval, req->m_interval);
+	sys_put_le24(param->chans[0]->qos->rx->interval, req->s_interval);
 	req->sca = param->chans[0]->qos->sca;
 	req->packing = param->chans[0]->qos->packing;
 	req->framing = param->chans[0]->qos->framing;
-	req->m_latency = sys_cpu_to_le16(param->chans[0]->qos->latency);
-	req->s_latency = sys_cpu_to_le16(param->chans[0]->qos->latency);
+	req->m_latency = sys_cpu_to_le16(param->chans[0]->qos->tx->latency);
+	req->s_latency = sys_cpu_to_le16(param->chans[0]->qos->rx->latency);
 	req->num_cis = param->num_conns;
 
 	/* Program the cis parameters */
 	for (i = 0; i < param->num_conns; i++) {
+		struct bt_iso_chan_qos *qos = param->chans[i]->qos;
+
 		cis = net_buf_add(buf, sizeof(*cis));
 
 		memset(cis, 0, sizeof(*cis));
 
 		cis->cis_id = param->conns[i]->iso.cis_id;
 
-		switch (param->chans[i]->qos->dir) {
-		case BT_ISO_CHAN_QOS_IN:
-			cis->s_sdu = param->chans[i]->qos->sdu;
-			break;
-		case BT_ISO_CHAN_QOS_OUT:
-			cis->m_sdu = param->chans[i]->qos->sdu;
-			break;
-		case BT_ISO_CHAN_QOS_INOUT:
-			cis->m_sdu = param->chans[i]->qos->sdu;
-			cis->s_sdu = param->chans[i]->qos->sdu;
-			break;
+		if (!qos->tx && !qos->rx) {
+			BT_ERR("Both TX and RX QoS are disabled");
+			net_buf_unref(buf);
+			return NULL;
 		}
 
-		cis->m_phy = param->chans[i]->qos->phy;
-		cis->s_phy = param->chans[i]->qos->phy;
-		cis->m_rtn = param->chans[i]->qos->rtn;
-		cis->s_rtn = param->chans[i]->qos->rtn;
+		if (!qos->tx) {
+			/* Use RX PHY if TX is not set (disabled) */
+			cis->m_phy = qos->rx->phy;
+		} else {
+			cis->m_sdu = sys_cpu_to_le16(qos->tx->sdu);
+			cis->m_phy = qos->tx->phy;
+			cis->m_rtn = qos->tx->rtn;
+		}
+
+		if (!qos->rx) {
+			/* Use TX PHY if RX is not set (disabled) */
+			cis->s_phy = qos->tx->phy;
+		} else {
+			cis->s_sdu = sys_cpu_to_le16(qos->rx->sdu);
+			cis->s_phy = qos->rx->phy;
+			cis->s_rtn = qos->rx->rtn;
+		}
 	}
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_CIG_PARAMS, buf, &rsp);
@@ -702,24 +710,15 @@ static int bt_iso_setup_data_path(struct bt_conn *conn)
 		return -EINVAL;
 	}
 
-	in_path.path = chan->path ? chan->path : &path;
-	out_path.path = chan->path ? chan->path : &path;
+	in_path.path = chan->qos->tx->path ? chan->qos->tx->path : &path;
+	out_path.path = chan->qos->rx->path ? chan->qos->rx->path : &path;
 
-	switch (chan->qos->dir) {
-	case BT_ISO_CHAN_QOS_IN:
-		in_path.pid = in_path.path->pid;
-		out_path.pid = BT_ISO_DATA_PATH_DISABLED;
-		break;
-	case BT_ISO_CHAN_QOS_OUT:
+	if (!chan->qos->tx) {
 		in_path.pid = BT_ISO_DATA_PATH_DISABLED;
-		out_path.pid = out_path.path->pid;
-		break;
-	case BT_ISO_CHAN_QOS_INOUT:
-		in_path.pid = in_path.path->pid;
-		out_path.pid = out_path.path->pid;
-		break;
-	default:
-		return -EINVAL;
+	}
+
+	if (!chan->qos->rx) {
+		out_path.pid = BT_ISO_DATA_PATH_DISABLED;
 	}
 
 	err = hci_le_setup_iso_data_path(conn, &in_path);
@@ -1242,8 +1241,7 @@ static int big_init_bis(struct bt_iso_big *big, bool broadcaster)
 			return -EALREADY;
 		}
 
-		if (!bis->qos ||
-		    bis->qos->dir != (broadcaster ? BT_ISO_CHAN_QOS_IN : BT_ISO_CHAN_QOS_OUT)) {
+		if (!bis->qos || (!bis->qos->tx && broadcaster)) {
 			BT_DBG("BIS QOS was invalid");
 			return -EINVAL;
 		}
@@ -1286,11 +1284,11 @@ static int hci_le_create_big(struct bt_le_ext_adv *padv, struct bt_iso_big *big,
 	req->big_handle = big->handle;
 	req->adv_handle = padv->handle;
 	req->num_bis = big->num_bis;
-	sys_put_le24(qos->interval, req->sdu_interval);
-	req->max_sdu = sys_cpu_to_le16(qos->sdu);
-	req->max_latency = sys_cpu_to_le16(qos->latency);
-	req->rtn = qos->rtn;
-	req->phy = qos->phy;
+	sys_put_le24(qos->tx->interval, req->sdu_interval);
+	req->max_sdu = sys_cpu_to_le16(qos->tx->sdu);
+	req->max_latency = sys_cpu_to_le16(qos->tx->latency);
+	req->rtn = qos->tx->rtn;
+	req->phy = qos->tx->phy;
 	req->packing = qos->packing;
 	req->framing = qos->framing;
 	req->encryption = param->encryption;
@@ -1428,7 +1426,7 @@ int bt_iso_big_terminate(struct bt_iso_big *big)
 	}
 
 	/* They all have the same QOS dir so we can just check the first */
-	broadcaster = big->bis[0]->qos->dir == BT_ISO_CHAN_QOS_IN;
+	broadcaster = big->bis[0]->qos->tx ? true : false;
 
 	if (broadcaster) {
 		err = hci_le_terminate_big(big);

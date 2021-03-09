@@ -60,31 +60,33 @@ struct bt_iso_chan {
 	struct bt_iso_chan_ops		*ops;
 	/** Channel QoS reference */
 	struct bt_iso_chan_qos		*qos;
-	/** Channel data path reference*/
-	struct bt_iso_chan_path		*path;
 	sys_snode_t			node;
 	uint8_t				state;
 	bt_security_t			required_sec_level;
 };
 
-/** @brief Audio QoS direction */
-enum {
-	BT_ISO_CHAN_QOS_IN,
-	BT_ISO_CHAN_QOS_OUT,
-	BT_ISO_CHAN_QOS_INOUT
+/** @brief ISO Channel IO QoS structure. */
+struct bt_iso_chan_io_qos {
+	/** Channel interval in us. Value range 0x0000FF - 0x0FFFFFF. */
+	uint32_t			interval;
+	/** Channel Latency in ms. Value range 0x0005 - 0x0FA0. */
+	uint16_t			latency;
+	/** Channel SDU. Value range 0x0000 - 0x0FFF. */
+	uint16_t			sdu;
+	/** Channel PHY - See BT_GAP_LE_PHY for values.
+	 *  Setting BT_GAP_LE_PHY_NONE is invalid.
+	 */
+	uint8_t				phy;
+	/** Channel Retransmission Number. Value range 0x00 - 0x0F. */
+	uint8_t				rtn;
+	/** Channel data path reference.
+	 *  Setting to NULL default to HCI data path.
+	 */
+	struct bt_iso_chan_path		*path;
 };
 
 /** @brief ISO Channel QoS structure. */
 struct bt_iso_chan_qos {
-	/** @brief Channel direction
-	 *
-	 *  Possible values: BT_ISO_CHAN_QOS_IN, BT_ISO_CHAN_QOS_OUT or
-	 *  BT_ISO_CHAN_QOS_INOUT. Shall be BT_ISO_CHAN_QOS_IN for broadcast
-	 *  transmitting, and BT_ISO_CHAN_QOS_OUT for broadcast receiver.
-	 */
-	uint8_t				dir;
-	/** Channel interval in us. Value range 0x0000FF - 0x0FFFFFF. */
-	uint32_t			interval;
 	/** @brief Channel peripherals sleep clock accuracy Only for CIS
 	 *
 	 * Shall be worst case sleep clock accuracy of all the peripherals.
@@ -95,14 +97,14 @@ struct bt_iso_chan_qos {
 	uint8_t				packing;
 	/** Channel framing mode. 0 for unframed, 1 for framed. */
 	uint8_t				framing;
-	/** Channel Latency in ms. Value range 0x0005 - 0x0FA0. */
-	uint16_t			latency;
-	/** Channel SDU. Value range 0x0000 0 0x0FFF. */
-	uint8_t				sdu;
-	/** Channel PHY - See BT_GAP_LE_PHY for values. Shall not be BT_GAP_LE_PHY_NONE. */
-	uint8_t				phy;
-	/** Channel Retransmission Number. Value range 0x00 - 0x0F. */
-	uint8_t				rtn;
+	/** Channel Receiving QoS:
+	 *  Setting NULL disables data path BT_HCI_DATAPATH_DIR_CTLR_TO_HOST
+	 */
+	struct bt_iso_chan_io_qos	*rx;
+	/** Channel Transmission QoS:
+	 *  Setting NULL disables data path BT_HCI_DATAPATH_DIR_HOST_TO_CTRL
+	 */
+	struct bt_iso_chan_io_qos	*tx;
 };
 
 /** @brief ISO Channel Data Path structure. */
@@ -122,7 +124,6 @@ struct bt_iso_chan_path {
 	/** Codec Configuration */
 	uint8_t				cc[0];
 };
-
 
 /** Opaque type representing an Broadcast Isochronous Group (BIG). */
 struct bt_iso_big;
