@@ -16,6 +16,7 @@ target_sources(app PRIVATE
 	src/main.c
 	src/mesh_test.c
 	src/test_transport.c
+	src/test_friendship.c
 )
 
 zephyr_include_directories(
