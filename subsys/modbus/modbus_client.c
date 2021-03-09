@@ -244,26 +244,18 @@ static int mbc_send_cmd(struct modbus_context *ctx, const uint8_t unit_id,
 	ctx->tx_adu.unit_id = unit_id;
 	ctx->tx_adu.fc = fc;
 
-	modbus_tx_adu(ctx);
-
-	if (k_sem_take(&ctx->client_wait_sem, K_USEC(ctx->rxwait_to)) != 0) {
-		LOG_WRN("Client wait-for-RX timeout");
-		err = -EIO;
-		goto exit_error;
-	}
-
-	if (ctx->rx_adu_err != 0) {
-		err = ctx->rx_adu_err;
-		goto exit_error;
+	err = modbus_tx_wait_rx_adu(ctx);
+	if (err != 0) {
+		return err;
 	}
 
 	err = mbc_validate_response_fc(ctx, unit_id, fc);
 	if (err < 0) {
-		LOG_ERR("Failed to validate address or function code");
-		goto exit_error;
+		LOG_ERR("Failed to validate unit ID or function code");
+		return err;
 	} else if (err > 0) {
 		LOG_INF("Modbus FC %u, error code %u", fc, err);
-		goto exit_error;
+		return err;
 	}
 
 	switch (fc) {
@@ -290,7 +282,6 @@ static int mbc_send_cmd(struct modbus_context *ctx, const uint8_t unit_id,
 		err = -ENOTSUP;
 	}
 
-exit_error:
 	return err;
 }
 

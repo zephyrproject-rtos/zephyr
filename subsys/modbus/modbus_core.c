@@ -80,18 +80,20 @@ static void modbus_rx_handler(struct k_work *item)
 
 	if (ctx->client == true) {
 		k_sem_give(&ctx->client_wait_sem);
-		return;
-	}
-
-	if (IS_ENABLED(CONFIG_MODBUS_SERVER)) {
+	} else if (IS_ENABLED(CONFIG_MODBUS_SERVER)) {
 		bool respond = modbus_server_handler(ctx);
+
+		if (respond) {
+			modbus_tx_adu(ctx);
+		} else {
+			LOG_DBG("Server has dropped frame");
+		}
 
 		switch (ctx->mode) {
 		case MODBUS_MODE_RTU:
 		case MODBUS_MODE_ASCII:
 			if (IS_ENABLED(CONFIG_MODBUS_SERIAL) &&
 			    respond == false) {
-				LOG_DBG("Server has dropped frame");
 				modbus_serial_rx_enable(ctx);
 			}
 			break;
@@ -114,6 +116,18 @@ void modbus_tx_adu(struct modbus_context *ctx)
 	default:
 		LOG_ERR("Unknown MODBUS mode");
 	}
+}
+
+int modbus_tx_wait_rx_adu(struct modbus_context *ctx)
+{
+	modbus_tx_adu(ctx);
+
+	if (k_sem_take(&ctx->client_wait_sem, K_USEC(ctx->rxwait_to)) != 0) {
+		LOG_WRN("Client wait-for-RX timeout");
+		return -EIO;
+	}
+
+	return ctx->rx_adu_err;
 }
 
 struct modbus_context *modbus_get_context(const uint8_t iface)
