@@ -132,6 +132,7 @@ uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 	cis->established = 0;
 	cis->group = cig;
 
+	cis->lll.handle = 0xFFFF;
 	cis->lll.acl_handle = acl->lll.handle;
 	cis->lll.sub_interval = sys_get_le24(req->sub_interval);
 	cis->lll.num_subevents = req->nse;
@@ -189,8 +190,7 @@ uint8_t ull_peripheral_iso_setup(struct pdu_data_llctrl_cis_ind *ind,
 	}
 
 	cis->sync_delay = sys_get_le24(ind->cis_sync_delay);
-	cis->lll.handle = cis_handle;
-	cis->lll.offset = sys_get_le24(ind->cis_offset);
+	cis->offset = sys_get_le24(ind->cis_offset);
 	cis->lll.event_count = -1;
 	memcpy(cis->lll.access_addr, ind->aa, sizeof(ind->aa));
 
@@ -220,7 +220,10 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 	/* Increment CIS event counters */
 	for (int i = 0; i < cig->lll.num_cis; i++)  {
 		cis = ll_conn_iso_stream_get(cig->cis_handles[i]);
-		cis->lll.event_count++;
+
+		if (cis->lll.handle != 0xFFFF) {
+			cis->lll.event_count++;
+		}
 	}
 
 	/* Increment prepare reference count */
@@ -251,26 +254,59 @@ void ull_peripheral_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire)
 {
 	struct ll_conn_iso_group *cig;
 	struct ll_conn_iso_stream *cis;
+	uint32_t acl_to_cig_ref_point;
+	uint32_t cis_offs_to_cig_ref;
 	uint32_t ticker_status;
 	uint32_t ticks_interval;
+	uint16_t cis_handle;
 	uint8_t ticker_id;
 
+	cis_handle = acl->llcp_cis.cis_handle;
+
 	cig = ll_conn_iso_group_get_by_id(acl->llcp_cis.cig_id);
-	cis = ll_conn_iso_stream_get(acl->llcp_cis.cis_handle);
+	cis = ll_conn_iso_stream_get(cis_handle);
+
+	cis_offs_to_cig_ref = cig->sync_delay - cis->sync_delay;
+
+	for (int i = 0; i < cig->lll.num_cis; i++) {
+		uint16_t handle = cig->cis_handles[i];
+
+		/* Find valid CIS handle, but exclude incoming */
+		if ((handle != 0xFFFF) && (handle != cis_handle)) {
+			/* Ticker already started - just set the offset and
+			 * assign LLL handle (now valid).
+			 */
+			cis->lll.ticks_offset = HAL_TICKER_US_TO_TICKS(cis_offs_to_cig_ref);
+			cis->lll.handle = cis_handle;
+			return;
+		}
+	}
+
+	cis->lll.ticks_offset = HAL_TICKER_US_TO_TICKS(cis_offs_to_cig_ref);
+	cis->lll.handle = cis_handle;
 
 	ticker_id = TICKER_ID_CONN_ISO_BASE +
 		    ll_conn_iso_group_handle_get(cig);
 	ticks_interval = HAL_TICKER_US_TO_TICKS(cig->iso_interval *
 						CONN_INT_UNIT_US);
 
-	/* Start CIS peripheral CIG ticker. TODO: Handle multiple CISes - only
-	 * start ticker for first CIS.
+	/* Establish the CIG reference point by adjusting ACL-to-CIS offset
+	 * (cis->offset) by the difference between CIG- and CIS sync delays.
 	 */
+	acl_to_cig_ref_point = cis->offset - cis_offs_to_cig_ref;
+
+	/* Make sure we have time to service first subevent. TODO: Improve
+	 * by skipping <n> interval(s) and incrementing event_count.
+	 */
+	LL_ASSERT(acl_to_cig_ref_point >= EVENT_OVERHEAD_START_US);
+
+	/* Start CIS peripheral CIG ticker */
 	ticker_status = ticker_start(TICKER_INSTANCE_ID_CTLR,
 				     TICKER_USER_ID_ULL_HIGH,
 				     ticker_id,
 				     ticks_at_expire,
-				     HAL_TICKER_US_TO_TICKS(cis->offset -
+				     HAL_TICKER_US_TO_TICKS(
+					acl_to_cig_ref_point -
 					EVENT_OVERHEAD_START_US),
 				     ticks_interval,
 				     HAL_TICKER_REMAINDER(ticks_interval),
@@ -281,5 +317,4 @@ void ull_peripheral_iso_start(struct ll_conn *acl, uint32_t ticks_at_expire)
 
 	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 		  (ticker_status == TICKER_STATUS_BUSY));
-
 }
