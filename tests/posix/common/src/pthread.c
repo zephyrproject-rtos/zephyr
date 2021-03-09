@@ -239,7 +239,7 @@ void test_posix_pthread_execution(void)
 	void *retval, *stackaddr;
 	size_t stacksize;
 	int serial_threads = 0;
-	const char thr_name[] = "thread name";
+	static const char thr_name[] = "thread name";
 	char thr_name_buf[CONFIG_THREAD_MAX_NAME_LEN];
 
 	sem_init(&main_sem, 0, 1);
@@ -400,6 +400,79 @@ void test_posix_pthread_execution(void)
 	zassert_true(serial_threads == 1, "Bungled barrier return value(s)");
 
 	printk("Barrier test OK\n");
+}
+
+void test_posix_pthread_error_condition(void)
+{
+	pthread_attr_t attr;
+	struct sched_param param;
+	void *stackaddr;
+	size_t stacksize;
+	int policy, detach;
+	static struct posix_thread pthread;
+	static pthread_once_t key = 1;
+
+	/* TESTPOINT: invoke pthread APIs with NULL */
+	zassert_equal(pthread_attr_destroy(NULL), EINVAL,
+		      "pthread destroy NULL error");
+	zassert_equal(pthread_attr_getschedparam(NULL, &param), EINVAL,
+		      "get scheduling param error");
+	zassert_equal(pthread_attr_getstack(NULL, &stackaddr, &stacksize),
+		      EINVAL, "get stack attributes error");
+	zassert_equal(pthread_attr_getstacksize(NULL, &stacksize),
+		      EINVAL, "get stack size error");
+	zassert_equal(pthread_attr_setschedpolicy(NULL, 2),
+		      EINVAL, "set scheduling policy error");
+	zassert_equal(pthread_attr_getschedpolicy(NULL, &policy),
+		      EINVAL, "get scheduling policy error");
+	zassert_equal(pthread_attr_setdetachstate(NULL, 0),
+		      EINVAL, "pthread set detach state with NULL error");
+	zassert_equal(pthread_attr_getdetachstate(NULL, &detach),
+		      EINVAL, "get datach state error");
+	zassert_equal(pthread_detach(NULL), ESRCH, "detach with NULL error");
+	zassert_equal(pthread_attr_init(NULL), ENOMEM,
+		      "init with NULL error");
+	zassert_equal(pthread_attr_setschedparam(NULL, &param), EINVAL,
+		      "set sched param with NULL error");
+	zassert_equal(pthread_cancel(NULL), ESRCH,
+		      "cancel NULL error");
+	zassert_equal(pthread_join(NULL, NULL), ESRCH,
+		      "join with NULL has error");
+	zassert_false(pthread_once(&key, NULL),
+		      "pthread dynamic package initialization error");
+	zassert_equal(pthread_getschedparam(NULL, &policy, &param), ESRCH,
+		      "get schedparam with NULL error");
+	zassert_equal(pthread_setschedparam(NULL, policy, &param), ESRCH,
+		      "set schedparam with NULL error");
+
+	attr.initialized = 0U;
+	zassert_equal(pthread_attr_getdetachstate(&attr, &detach),
+		      EINVAL, "get datach state error");
+
+	/* Initialise thread attribute to ensure won't be return with init error */
+	pthread_attr_init(&attr);
+	zassert_false(pthread_attr_setschedpolicy(&attr, 0),
+		      "set scheduling policy error");
+	zassert_false(pthread_attr_setschedpolicy(&attr, 1),
+		      "set scheduling policy error");
+	zassert_equal(pthread_attr_setschedpolicy(&attr, 2),
+		      EINVAL, "set scheduling policy error");
+	zassert_false(pthread_attr_setdetachstate(&attr, 1),
+		      "set detach state error");
+	zassert_false(pthread_attr_setdetachstate(&attr, 2),
+		      "set detach state error");
+	zassert_equal(pthread_attr_setdetachstate(&attr, 3),
+		      EINVAL, "set detach state error");
+	zassert_false(pthread_attr_getdetachstate(&attr, &detach),
+		      "get datach state error");
+
+	pthread.state = 3;
+	zassert_false(pthread_detach(&pthread),
+		      "detach with exited case error");
+
+	pthread.state = 0;
+	zassert_equal(pthread_detach(&pthread),
+		      ESRCH, "detach with exited case error");
 }
 
 void test_posix_pthread_termination(void)
