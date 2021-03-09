@@ -407,8 +407,17 @@ static void mcc_search_results_obj_id_read_cb(struct bt_conn *conn, int err,
 }
 #endif /* CONFIG_BT_MCC_OTS */
 
+static void mcc_content_control_id_read_cb(struct bt_conn *conn, int err, uint8_t ccid)
+{
+	if (err) {
+		shell_error(ctx_shell, "Content Control ID read failed (%d)", err);
+		return;
+	}
+
+	shell_print(ctx_shell, "Content Control ID: %d", ccid);
+}
+
 #ifdef CONFIG_BT_MCC_OTS
-#if CONFIG_BT_DEBUG_MCC
 /**** Callback functions for the included Object Transfer service *************/
 static void mcc_otc_obj_selected_cb(struct bt_conn *conn, int err)
 {
@@ -431,7 +440,86 @@ static void mcc_otc_obj_metadata_cb(struct bt_conn *conn, int err)
 
 	shell_print(ctx_shell, "Reading object metadata succeeded\n");
 }
-#endif /* CONFIG_BT_DEBUG_MCC */
+
+static void mcc_icon_object_read_cb(struct bt_conn *conn, int err,
+				    struct net_buf_simple *buf)
+{
+	if (err) {
+		shell_error(ctx_shell,
+			    "Icon Object read failed (%d)", err);
+		return;
+	}
+
+	shell_print(ctx_shell, "Icon content (%d octets)", buf->len);
+	shell_hexdump(ctx_shell, buf->data, buf->len);
+}
+
+/* TODO: May want to use a parsed type, instead of the raw buf, here */
+static void mcc_track_segments_object_read_cb(struct bt_conn *conn, int err,
+					      struct net_buf_simple *buf)
+{
+	if (err) {
+		shell_error(ctx_shell,
+			    "Track Segments Object read failed (%d)", err);
+		return;
+	}
+
+	shell_print(ctx_shell, "Track Segments content (%d octets)", buf->len);
+	shell_hexdump(ctx_shell, buf->data, buf->len);
+}
+
+static void mcc_otc_read_current_track_object_cb(struct bt_conn *conn, int err,
+						 struct net_buf_simple *buf)
+{
+	if (err) {
+		shell_error(ctx_shell,
+			    "Current Track Object read failed (%d)", err);
+		return;
+	}
+
+	shell_print(ctx_shell, "Current Track content (%d octets)", buf->len);
+	shell_hexdump(ctx_shell, buf->data, buf->len);
+}
+
+static void mcc_otc_read_next_track_object_cb(struct bt_conn *conn, int err,
+						 struct net_buf_simple *buf)
+{
+	if (err) {
+		shell_error(ctx_shell,
+			    "Next Track Object read failed (%d)", err);
+		return;
+	}
+
+	shell_print(ctx_shell, "Next Track content (%d octets)", buf->len);
+	shell_hexdump(ctx_shell, buf->data, buf->len);
+}
+
+static void mcc_otc_read_current_group_object_cb(struct bt_conn *conn, int err,
+						 struct net_buf_simple *buf)
+{
+	if (err) {
+		shell_error(ctx_shell,
+			    "Current Group Object read failed (%d)", err);
+		return;
+	}
+
+	shell_print(ctx_shell, "Current Group content (%d octets)", buf->len);
+	shell_hexdump(ctx_shell, buf->data, buf->len);
+}
+
+static void mcc_otc_read_parent_group_object_cb(struct bt_conn *conn, int err,
+						struct net_buf_simple *buf)
+{
+	if (err) {
+		shell_error(ctx_shell,
+			    "Parent Group Object read failed (%d)", err);
+		return;
+	}
+
+	shell_print(ctx_shell, "Parent Group content (%d octets)", buf->len);
+	shell_hexdump(ctx_shell, buf->data, buf->len);
+}
+
 #endif /* CONFIG_BT_MCC_OTS */
 
 
@@ -477,9 +565,17 @@ int cmd_mcc_init(const struct shell *shell, size_t argc, char **argv)
 	cb.scp_set            = &mcc_scp_set_cb;
 	cb.scp_ntf            = &mcc_scp_ntf_cb;
 	cb.search_results_obj_id_read = &mcc_search_results_obj_id_read_cb;
-
-	cb.otc_obj_selected = &mcc_otc_obj_selected_cb,
-	cb.otc_obj_metadata = &mcc_otc_obj_metadata_cb,
+#endif /* CONFIG_BT_MCC_OTS */
+	cb.content_control_id_read = &mcc_content_control_id_read_cb;
+#ifdef CONFIG_BT_MCC_OTS
+	cb.otc_obj_selected = &mcc_otc_obj_selected_cb;
+	cb.otc_obj_metadata = &mcc_otc_obj_metadata_cb;
+	cb.otc_icon_object  = &mcc_icon_object_read_cb;
+	cb.otc_track_segments_object = &mcc_track_segments_object_read_cb;
+	cb.otc_current_track_object  = &mcc_otc_read_current_track_object_cb;
+	cb.otc_next_track_object     = &mcc_otc_read_next_track_object_cb;
+	cb.otc_current_group_object  = &mcc_otc_read_current_group_object_cb;
+	cb.otc_parent_group_object   = &mcc_otc_read_parent_group_object_cb;
 #endif /* CONFIG_BT_MCC_OTS */
 
 	/* Initialize the module */
