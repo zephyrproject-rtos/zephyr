@@ -121,7 +121,6 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 	lll = &sync_iso->lll;
 	lll->latency_prepare = 0U;
 	lll->latency_event = 0U;
-	lll->data_chan_id = 0U;
 	lll->window_widening_prepare_us = 0U;
 	lll->window_widening_event_us = 0U;
 
