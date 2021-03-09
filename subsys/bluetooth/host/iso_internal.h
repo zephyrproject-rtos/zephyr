@@ -133,3 +133,5 @@ void bt_iso_chan_set_state(struct bt_iso_chan *chan, uint8_t state);
 
 /* Process incoming data for a connection */
 void bt_iso_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags);
+
+struct bt_conn_iso *bt_conn_iso(struct bt_conn *conn);
