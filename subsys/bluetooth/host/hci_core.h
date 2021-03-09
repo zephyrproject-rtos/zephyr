@@ -367,16 +367,16 @@ void bt_finalize_init(void);
 void bt_hci_host_num_completed_packets(struct net_buf *buf);
 
 /* HCI event handlers */
-void hci_evt_pin_code_req(struct net_buf *buf);
-void hci_evt_link_key_notify(struct net_buf *buf);
-void hci_evt_link_key_req(struct net_buf *buf);
-void hci_evt_io_capa_resp(struct net_buf *buf);
-void hci_evt_io_capa_req(struct net_buf *buf);
-void hci_evt_ssp_complete(struct net_buf *buf);
-void hci_evt_user_confirm_req(struct net_buf *buf);
-void hci_evt_user_passkey_notify(struct net_buf *buf);
-void hci_evt_user_passkey_req(struct net_buf *buf);
-void hci_evt_auth_complete(struct net_buf *buf);
+void bt_hci_pin_code_req(struct net_buf *buf);
+void bt_hci_link_key_notify(struct net_buf *buf);
+void bt_hci_link_key_req(struct net_buf *buf);
+void bt_hci_io_capa_resp(struct net_buf *buf);
+void bt_hci_io_capa_req(struct net_buf *buf);
+void bt_hci_ssp_complete(struct net_buf *buf);
+void bt_hci_user_confirm_req(struct net_buf *buf);
+void bt_hci_user_passkey_notify(struct net_buf *buf);
+void bt_hci_user_passkey_req(struct net_buf *buf);
+void bt_hci_auth_complete(struct net_buf *buf);
 
 /* ECC HCI event handlers */
 void bt_hci_evt_le_pkey_complete(struct net_buf *buf);
