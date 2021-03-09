@@ -15,6 +15,7 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/gatt.h>
+#include <bluetooth/buf.h>
 #include <sys/byteorder.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_BASS_CLIENT)
@@ -22,6 +23,8 @@
 #include "common/log.h"
 
 #include "bass_internal.h"
+#include "../conn_internal.h"
+#include "../hci_core.h"
 
 #define FIRST_HANDLE			0x0001
 #define LAST_HANDLE			0xFFFF
@@ -535,9 +538,23 @@ int bt_bass_client_add_src(struct bt_conn *conn, const bt_addr_le_t *addr,
 
 	cp.add_src.opcode = BASS_OP_ADD_SRC;
 	cp.add_src.adv_sid = adv_sid;
-	cp.add_src.pa_sync = sync_pa ? BASS_PA_REQ_SYNC : BASS_PA_REQ_NO_SYNC;
 	cp.add_src.bis_sync = sync_bis;
 	bt_addr_le_copy(&cp.add_src.addr, addr);
+
+	if (sync_pa) {
+		if (BT_FEAT_LE_PAST_SEND(conn->le.features) &&
+		    BT_FEAT_LE_PAST_RECV(bt_dev.le.features)) {
+			/* TODO: Validate that we are synced to the peer address
+			 * before saying to use PAST - Requires additional per_adv_sync API
+			 */
+			cp.add_src.pa_sync = BASS_PA_REQ_SYNC_PAST;
+		} else {
+			cp.add_src.pa_sync = BASS_PA_REQ_SYNC;
+		}
+	} else {
+		cp.add_src.pa_sync = BASS_PA_REQ_NO_SYNC;
+	}
+
 	if (metadata_len && metadata) {
 		memcpy(cp.add_src.metadata, metadata, metadata_len);
 		cp.add_src.metadata_len = metadata_len;
@@ -567,8 +584,19 @@ int bt_bass_client_mod_src(struct bt_conn *conn, uint8_t src_id,
 
 	cp.mod_src.opcode = BASS_OP_MOD_SRC;
 	cp.mod_src.src_id = src_id;
-	cp.mod_src.pa_sync = sync_pa ? BASS_PA_REQ_SYNC : BASS_PA_REQ_NO_SYNC;
 	cp.mod_src.bis_sync = sync_bis;
+
+	if (sync_pa) {
+		if (BT_FEAT_LE_PAST_SEND(conn->le.features) &&
+		    BT_FEAT_LE_PAST_RECV(bt_dev.le.features)) {
+			cp.mod_src.pa_sync = BASS_PA_REQ_SYNC_PAST;
+		} else {
+			cp.mod_src.pa_sync = BASS_PA_REQ_SYNC;
+		}
+	} else {
+		cp.mod_src.pa_sync = BASS_PA_REQ_NO_SYNC;
+	}
+
 	if (metadata_len && metadata) {
 		memcpy(cp.mod_src.metadata, metadata, metadata_len);
 		cp.mod_src.metadata_len = metadata_len;
