@@ -258,31 +258,26 @@ int hci_le_remove_cig(uint8_t cig_id)
 
 void bt_iso_cleanup(struct bt_conn *conn)
 {
+	struct bt_conn_iso *iso = bt_conn_iso(conn);
 	int i;
-
-	CHECKIF(!conn || conn->type != BT_CONN_TYPE_ISO) {
-		BT_DBG("Invalid parameters: conn %p conn->type %u", conn,
-		       conn ? conn->type : 0);
-		return;
-	}
 
 	BT_DBG("%p", conn);
 
 	/* Check if ISO connection is in fact a BIS */
-	if (!conn->iso.acl) {
+	if (!iso->acl) {
 		goto done;
 	}
 
 	/* If ACL is still connected there are channels to serve that means the
 	 * connection is still in use.
 	 */
-	if (conn->iso.acl->state == BT_CONN_CONNECTED &&
+	if (iso->acl->state == BT_CONN_CONNECTED &&
 	    !sys_slist_is_empty(&conn->channels)) {
 		goto done;
 	}
 
-	bt_conn_unref(conn->iso.acl);
-	conn->iso.acl = NULL;
+	bt_conn_unref(iso->acl);
+	iso->acl = NULL;
 
 	/* Check if conn is last of CIG */
 	for (i = 0; i < CONFIG_BT_ISO_MAX_CHAN; i++) {
@@ -1181,6 +1176,17 @@ int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf)
 							BT_ISO_DATA_VALID));
 
 	return bt_conn_send(chan->conn, buf);
+}
+
+struct bt_conn_iso *bt_conn_iso(struct bt_conn *conn)
+{
+	CHECKIF(!conn || conn->type != BT_CONN_TYPE_ISO) {
+		BT_DBG("Invalid parameters: conn %p conn->type %u", conn,
+		       conn ? conn->type : 0);
+		return NULL;
+	}
+
+	return &conn->iso;
 }
 
 #if defined(CONFIG_BT_ISO_BROADCAST)
