@@ -159,6 +159,7 @@ struct modbus_context {
 
 struct modbus_context *modbus_get_context(const uint8_t iface);
 void modbus_tx_adu(struct modbus_context *ctx);
+int modbus_tx_wait_rx_adu(struct modbus_context *ctx);
 
 bool modbus_server_handler(struct modbus_context *ctx);
 void modbus_reset_stats(struct modbus_context *ctx);

@@ -926,13 +926,26 @@ static bool mbs_fc16_hregs_write(struct modbus_context *ctx)
 	return true;
 }
 
-static bool mbs_fc_handler(struct modbus_context *ctx)
+bool modbus_server_handler(struct modbus_context *ctx)
 {
 	bool send_reply = false;
 	uint8_t addr = ctx->rx_adu.unit_id;
 	uint8_t fc = ctx->rx_adu.fc;
 
+	LOG_DBG("Server RX handler %p", ctx);
+	update_msg_ctr(ctx);
+
+	if (ctx->rx_adu_err != 0) {
+		update_noresp_ctr(ctx);
+		if (ctx->rx_adu_err == -EIO) {
+			update_crcerr_ctr(ctx);
+		}
+
+		return false;
+	}
+
 	if (addr != 0 && addr != ctx->unit_id) {
+		update_noresp_ctr(ctx);
 		return false;
 	}
 
@@ -988,31 +1001,12 @@ static bool mbs_fc_handler(struct modbus_context *ctx)
 
 	if (addr == 0) {
 		/* Broadcast address, do not reply */
-		return false;
-	} else {
-		return send_reply;
+		send_reply = false;
 	}
-}
 
-bool modbus_server_handler(struct modbus_context *ctx)
-{
-	LOG_DBG("Server RX handler %p", ctx);
-
-	update_msg_ctr(ctx);
-
-	if (ctx->rx_adu_err == -EIO) {
-		update_noresp_ctr(ctx);
-		update_crcerr_ctr(ctx);
-	} else if (ctx->rx_adu_err != 0) {
-		update_noresp_ctr(ctx);
-	} else {
-		if (mbs_fc_handler(ctx) == true) {
-			modbus_tx_adu(ctx);
-			return true;
-		}
-
+	if (send_reply == false) {
 		update_noresp_ctr(ctx);
 	}
 
-	return false;
+	return send_reply;
 }
