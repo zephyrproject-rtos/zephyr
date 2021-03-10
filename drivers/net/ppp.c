@@ -416,8 +416,30 @@ static void ppp_process_msg(struct ppp_driver_context *ppp)
 #endif
 			net_pkt_unref(ppp->pkt);
 		} else {
-			/* Skip FCS bytes (2) */
-			net_buf_frag_last(ppp->pkt->buffer)->len -= 2;
+			/* Remove FCS bytes from the end (2) */
+			struct net_buf *parent = NULL;
+			struct net_buf *cur = ppp->pkt->buffer;
+
+			while (cur->frags) {
+				parent = cur;
+				cur = cur->frags;
+			}
+			if (cur->len >= 2) {
+				cur->len -= 2;
+			} else {
+				if (cur->len == 1) {
+					cur->len--;
+					if (parent && parent->len > 1) {
+						parent->len--;
+					}
+				} else {
+					if (parent && parent->len > 2) {
+						parent->len -= 2;
+					}
+				}
+				if (parent)
+					net_pkt_frag_del(ppp->pkt, parent, cur);
+			}
 
 			/* Make sure we now start reading from PPP header in
 			 * PPP L2 recv()
