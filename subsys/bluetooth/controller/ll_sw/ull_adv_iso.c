@@ -278,8 +278,8 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	lll_adv_sync->iso = lll_adv_iso;
 	lll_adv_iso->adv = &adv->lll;
 
-	/* Store the link buffer for ISO create complete event */
-	adv_iso->node_rx_complete.link = link;
+	/* Store the link buffer for ISO create and terminate complete event */
+	adv_iso->node_rx_complete.hdr.link = link;
 
 	/* Initialise LLL header members */
 	lll_hdr_init(lll_adv_iso, adv_iso);
@@ -474,6 +474,7 @@ void ull_adv_iso_done(struct node_rx_event_done *done)
 	struct ll_adv_iso_set *adv_iso;
 	struct lll_adv_iso *lll;
 	struct node_rx_hdr *rx;
+	memq_link_t *link;
 
 	/* switch to normal prepare */
 	mfy_lll_prepare.fp = lll_adv_iso_prepare;
@@ -483,12 +484,15 @@ void ull_adv_iso_done(struct node_rx_event_done *done)
 	lll = &adv_iso->lll;
 
 	/* Prepare BIG complete event */
-	rx = &adv_iso->node_rx_complete;
+	rx = (void *)&adv_iso->node_rx_complete;
+	link = rx->link;
+	LL_ASSERT(link);
+	rx->link = NULL;
 	rx->type = NODE_RX_TYPE_BIG_COMPLETE;
 	rx->handle = lll->handle;
 	rx->rx_ftr.param = adv_iso;
 
-	ll_rx_put(rx->link, rx);
+	ll_rx_put(link, rx);
 	ll_rx_sched();
 }
 

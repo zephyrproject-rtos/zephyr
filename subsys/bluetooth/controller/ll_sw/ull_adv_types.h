@@ -96,7 +96,9 @@ struct ll_adv_iso_set {
 	struct ull_hdr        ull;
 	struct lll_adv_iso    lll;
 
-	struct node_rx_hdr node_rx_complete;
+	struct {
+		struct node_rx_hdr hdr;
+	} node_rx_complete;
 	struct {
 		struct node_rx_hdr node_rx_hdr_terminate;
 		union {
