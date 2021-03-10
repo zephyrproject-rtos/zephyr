@@ -87,11 +87,6 @@ struct mb_rtu_gpio_config {
 	gpio_dt_flags_t flags;
 };
 
-enum modbus_mode {
-	MODBUS_MODE_RTU,
-	MODBUS_MODE_ASCII,
-};
-
 struct modbus_serial_config {
 	/* UART device name */
 	const char *dev_name;
@@ -244,19 +239,12 @@ int modbus_serial_tx_adu(struct modbus_context *ctx);
  * @brief Initialize serial line support.
  *
  * @param ctx        Modbus interface context
- * @param baudrate   Baudrate of the serial line
- * @param parity     UART's parity setting:
- *                       UART_CFG_PARITY_NONE,
- *                       UART_CFG_PARITY_EVEN,
- *                       UART_CFG_PARITY_ODD
- * @param ascii_mode Enable ASCII Transfer Mode
+ * @param param      Configuration parameter of the interface
  *
  * @retval           0 If the function was successful.
  */
 int modbus_serial_init(struct modbus_context *ctx,
-		       uint32_t baudrate,
-		       enum uart_config_parity parity,
-		       const bool ascii_mode);
+		       struct modbus_iface_param param);
 
 /**
  * @brief Disable serial line support.

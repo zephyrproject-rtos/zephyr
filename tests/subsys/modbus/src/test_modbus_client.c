@@ -11,10 +11,11 @@ LOG_MODULE_REGISTER(mbc_test, LOG_LEVEL_INF);
 
 #ifdef CONFIG_MODBUS_CLIENT
 const static uint16_t fp_offset = MB_TEST_FP_OFFSET;
-const static uint8_t iface = MB_TEST_IFACE_CLIENT;
 const static uint8_t node = MB_TEST_NODE_ADDR;
 const static uint16_t offset_oor = 32;
 const static uint16_t fp_offset_oor = fp_offset + offset_oor;
+
+static uint8_t client_iface;
 
 void test_coil_wr_rd(void)
 {
@@ -23,35 +24,35 @@ void test_coil_wr_rd(void)
 	int err;
 
 	for (uint16_t idx = 0; idx < coil_qty; idx++) {
-		err = modbus_write_coil(iface, node, idx, true);
+		err = modbus_write_coil(client_iface, node, idx, true);
 		zassert_equal(err, 0, "FC05 request failed");
 	}
 
-	err = modbus_read_coils(iface, node, 0, coil, coil_qty);
+	err = modbus_read_coils(client_iface, node, 0, coil, coil_qty);
 	zassert_equal(err, 0, "FC01 request failed");
 
 	zassert_equal(coil[0], 0xff, "FC05 verify coil 0-7 failed");
 	zassert_equal(coil[1], 0xff, "FC05 verify coil 8-15 failed");
 
 	for (uint16_t numof = 1; numof <= coil_qty; numof++) {
-		err = modbus_write_coils(iface, node, 0, coil, numof);
+		err = modbus_write_coils(client_iface, node, 0, coil, numof);
 		zassert_equal(err, 0, "FC15 request failed");
 	}
 
 	coil[0] = 0xaa; coil[1] = 0xbb;
-	err = modbus_write_coils(iface, node, 0, coil, coil_qty);
+	err = modbus_write_coils(client_iface, node, 0, coil, coil_qty);
 	zassert_equal(err, 0, "FC15 request failed");
 
-	err = modbus_read_coils(iface, node, 0, coil, coil_qty);
+	err = modbus_read_coils(client_iface, node, 0, coil, coil_qty);
 	zassert_equal(err, 0, "FC01 request failed");
 
 	zassert_equal(coil[0], 0xaa, "FC15 verify coil 0-7 failed");
 	zassert_equal(coil[1], 0xbb, "FC15 verify coil 8-15 failed");
 
-	err = modbus_write_coil(iface, node, offset_oor, true);
+	err = modbus_write_coil(client_iface, node, offset_oor, true);
 	zassert_not_equal(err, 0, "FC05 out of range request not failed");
 
-	err = modbus_write_coils(iface, node, offset_oor, coil, coil_qty);
+	err = modbus_write_coils(client_iface, node, offset_oor, coil, coil_qty);
 	zassert_not_equal(err, 0, "FC15 out of range request not failed");
 }
 
@@ -61,16 +62,16 @@ void test_di_rd(void)
 	uint8_t di[4] = {0};
 	int err;
 
-	err = modbus_read_dinputs(iface, node, 0, di, di_qty);
+	err = modbus_read_dinputs(client_iface, node, 0, di, di_qty);
 	zassert_equal(err, 0, "FC02 request failed");
 
 	zassert_equal(di[0], 0xaa, "FC02 verify di 0-7 failed");
 	zassert_equal(di[1], 0xbb, "FC02 verify di 8-15 failed");
 
-	err = modbus_read_dinputs(iface, node, 0, di, di_qty + 1);
+	err = modbus_read_dinputs(client_iface, node, 0, di, di_qty + 1);
 	zassert_not_equal(err, 0, "FC02 out of range request not failed");
 
-	err = modbus_read_dinputs(iface, node, offset_oor, di, di_qty);
+	err = modbus_read_dinputs(client_iface, node, offset_oor, di, di_qty);
 	zassert_not_equal(err, 0, "FC02 out of range request not failed");
 }
 
@@ -79,15 +80,15 @@ void test_input_reg(void)
 	uint16_t ir[8] = {0};
 	int err;
 
-	err = modbus_write_holding_reg(iface, node, 0, 0xcafe);
+	err = modbus_write_holding_reg(client_iface, node, 0, 0xcafe);
 	zassert_equal(err, 0, "FC06 write request for FC04 failed");
 
-	err = modbus_read_input_regs(iface, node, 0, ir, ARRAY_SIZE(ir));
+	err = modbus_read_input_regs(client_iface, node, 0, ir, ARRAY_SIZE(ir));
 	zassert_equal(err, 0, "FC04 request failed");
 
 	zassert_equal(ir[0], 0xcafe, "FC04 verify failed");
 
-	err = modbus_read_input_regs(iface,
+	err = modbus_read_input_regs(client_iface,
 				     node,
 				     offset_oor,
 				     ir,
@@ -105,14 +106,14 @@ void test_holding_reg(void)
 
 	/* Test FC06 | FC03 */
 	for (uint16_t idx = 0; idx < ARRAY_SIZE(hr_wr); idx++) {
-		err = modbus_write_holding_reg(iface, node, idx, hr_wr[idx]);
+		err = modbus_write_holding_reg(client_iface, node, idx, hr_wr[idx]);
 		zassert_equal(err, 0, "FC06 write request failed");
 	}
 
-	err = modbus_write_holding_reg(iface, node, offset_oor, 0xcafe);
+	err = modbus_write_holding_reg(client_iface, node, offset_oor, 0xcafe);
 	zassert_not_equal(err, 0, "FC06 out of range request not failed");
 
-	err = modbus_read_holding_regs(iface, node, 0,
+	err = modbus_read_holding_regs(client_iface, node, 0,
 				       hr_rd, ARRAY_SIZE(hr_rd));
 	zassert_equal(err, 0, "FC03 read request failed");
 
@@ -120,7 +121,7 @@ void test_holding_reg(void)
 	zassert_equal(memcmp(hr_wr, hr_rd, sizeof(hr_wr)), 0,
 		      "FC06 verify failed");
 
-	err = modbus_read_holding_regs(iface,
+	err = modbus_read_holding_regs(client_iface,
 				       node,
 				       offset_oor,
 				       hr_rd,
@@ -128,11 +129,11 @@ void test_holding_reg(void)
 	zassert_not_equal(err, 0, "FC03 out of range request not failed");
 
 	/* Test FC16 | FC03 */
-	err = modbus_write_holding_regs(iface, node, 0,
+	err = modbus_write_holding_regs(client_iface, node, 0,
 					hr_wr, ARRAY_SIZE(hr_wr));
 	zassert_equal(err, 0, "FC16 write request failed");
 
-	err = modbus_read_holding_regs(iface, node, 0,
+	err = modbus_read_holding_regs(client_iface, node, 0,
 				       hr_rd, ARRAY_SIZE(hr_rd));
 	zassert_equal(err, 0, "FC03 read request failed");
 
@@ -142,35 +143,35 @@ void test_holding_reg(void)
 
 	/* Test FC16 | FC03 */
 	for (uint16_t idx = 0; idx < ARRAY_SIZE(fhr_wr); idx++) {
-		err = modbus_write_holding_regs_fp(iface,
+		err = modbus_write_holding_regs_fp(client_iface,
 						 node,
 						 fp_offset + idx,
 						 &fhr_wr[0], 1);
 		zassert_equal(err, 0, "FC16 write request failed");
 	}
 
-	err = modbus_write_holding_regs_fp(iface,
+	err = modbus_write_holding_regs_fp(client_iface,
 					   node,
 					   fp_offset,
 					   fhr_wr,
 					   ARRAY_SIZE(fhr_wr));
 	zassert_equal(err, 0, "FC16 FP request failed");
 
-	err = modbus_write_holding_regs_fp(iface,
+	err = modbus_write_holding_regs_fp(client_iface,
 					   node,
 					   fp_offset_oor,
 					   fhr_wr,
 					   ARRAY_SIZE(fhr_wr));
 	zassert_not_equal(err, 0, "FC16 FP out of range request not failed");
 
-	err = modbus_read_holding_regs_fp(iface,
+	err = modbus_read_holding_regs_fp(client_iface,
 					  node,
 					  fp_offset_oor,
 					  fhr_wr,
 					  ARRAY_SIZE(fhr_wr));
 	zassert_not_equal(err, 0, "FC16 FP out of range request not failed");
 
-	err = modbus_read_holding_regs_fp(iface,
+	err = modbus_read_holding_regs_fp(client_iface,
 					  node,
 					  fp_offset,
 					  fhr_rd,
@@ -188,51 +189,81 @@ void test_diagnostic(void)
 	int err;
 
 	for (uint16_t sf = 0x0A; sf < 0x0F; sf++) {
-		err = modbus_request_diagnostic(iface, node, sf, 0, &data);
+		err = modbus_request_diagnostic(client_iface, node, sf, 0, &data);
 		zassert_equal(err, 0, "FC08:0x%04x request failed", sf);
 	}
 
-	err = modbus_request_diagnostic(iface, node, 0xFF, 0, &data);
+	err = modbus_request_diagnostic(client_iface, node, 0xFF, 0, &data);
 	zassert_not_equal(err, 0, "FC08 not supported request not failed");
 }
+
+static struct modbus_iface_param client_param = {
+	.mode = MODBUS_MODE_RTU,
+	.rx_timeout = MB_TEST_RESPONSE_TO,
+	.serial = {
+		.baud = MB_TEST_BAUDRATE_LOW,
+		.parity = UART_CFG_PARITY_ODD,
+	},
+};
 
 void test_client_setup_low_none(void)
 {
 	int err;
+	const char iface_name[] = {DT_PROP_OR(DT_INST(0, zephyr_modbus_serial),
+					      label, "")};
 
-	err = modbus_init_client(iface, MB_TEST_BAUDRATE_LOW,
-				 UART_CFG_PARITY_NONE,
-				 MB_TEST_RESPONSE_TO, false);
+	client_iface = modbus_iface_get_by_name(iface_name);
+	client_param.mode = MODBUS_MODE_RTU;
+	client_param.serial.baud = MB_TEST_BAUDRATE_LOW;
+	client_param.serial.parity = UART_CFG_PARITY_NONE;
+
+	err = modbus_init_client(client_iface, client_param);
 	zassert_equal(err, 0, "Failed to configure RTU client");
 }
 
 void test_client_setup_low_odd(void)
 {
 	int err;
+	const char iface_name[] = {DT_PROP_OR(DT_INST(0, zephyr_modbus_serial),
+					      label, "")};
 
-	err = modbus_init_client(iface, MB_TEST_BAUDRATE_LOW,
-				 UART_CFG_PARITY_ODD,
-				 MB_TEST_RESPONSE_TO, false);
+	client_iface = modbus_iface_get_by_name(iface_name);
+	client_param.mode = MODBUS_MODE_RTU;
+	client_param.serial.baud = MB_TEST_BAUDRATE_LOW;
+	client_param.serial.parity = UART_CFG_PARITY_ODD;
+
+	err = modbus_init_client(client_iface, client_param);
 	zassert_equal(err, 0, "Failed to configure RTU client");
 }
 
 void test_client_setup_high_even(void)
 {
 	int err;
+	const char iface_name[] = {DT_PROP_OR(DT_INST(0, zephyr_modbus_serial),
+					      label, "")};
 
-	err = modbus_init_client(iface, MB_TEST_BAUDRATE_HIGH,
-				 UART_CFG_PARITY_EVEN,
-				 MB_TEST_RESPONSE_TO, false);
+	client_iface = modbus_iface_get_by_name(iface_name);
+	client_param.mode = MODBUS_MODE_RTU;
+	client_param.serial.baud = MB_TEST_BAUDRATE_HIGH;
+	client_param.serial.parity = UART_CFG_PARITY_EVEN;
+
+	err = modbus_init_client(client_iface, client_param);
 	zassert_equal(err, 0, "Failed to configure RTU client");
 }
 
 void test_client_setup_ascii(void)
 {
 	int err;
+	const char iface_name[] = {DT_PROP_OR(DT_INST(0, zephyr_modbus_serial),
+					      label, "")};
 
-	err = modbus_init_client(iface, MB_TEST_BAUDRATE_HIGH,
-				 UART_CFG_PARITY_EVEN,
-				 MB_TEST_RESPONSE_TO, true);
+	client_iface = modbus_iface_get_by_name(iface_name);
+	client_param.mode = MODBUS_MODE_ASCII;
+	client_param.serial.baud = MB_TEST_BAUDRATE_HIGH;
+	client_param.serial.parity = UART_CFG_PARITY_EVEN;
+
+	err = modbus_init_client(client_iface, client_param);
+
 	zassert_equal(err, 0, "Failed to configure RTU client");
 }
 
@@ -240,7 +271,7 @@ void test_client_disable(void)
 {
 	int err;
 
-	err = modbus_disable(iface);
+	err = modbus_disable(client_iface);
 	zassert_equal(err, 0, "Failed to disable RTU client");
 }
 

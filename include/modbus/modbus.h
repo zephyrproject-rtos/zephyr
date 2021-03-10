@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020 PHYTEC Messtechnik GmbH
+ * Copyright (c) 2021 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -347,44 +348,79 @@ struct modbus_user_callbacks {
 int modbus_iface_get_by_name(const char *iface_name);
 
 /**
- * @brief Configure Modbus Interface as server
- *
- * @param iface      Modbus interface index
- * @param unit_id    Modbus unit ID of the server
- * @param baud       Baudrate of the serial line
- * @param parity     UART's parity setting:
- *                       UART_CFG_PARITY_NONE,
- *                       UART_CFG_PARITY_EVEN,
- *                       UART_CFG_PARITY_ODD
- * @param cb         Pointer to the User Callback structure
- * @param ascii_mode Enable ASCII Transfer Mode
- *
- * @retval           0 If the function was successful
+ * @brief Modbus interface mode
  */
-int modbus_init_server(const uint8_t iface, const uint8_t unit_id,
-		       const uint32_t baud, enum uart_config_parity parity,
-		       struct modbus_user_callbacks *const cb,
-		       bool ascii_mode);
+enum modbus_mode {
+	/** Modbus over serial line RTU mode */
+	MODBUS_MODE_RTU,
+	/** Modbus over serial line ASCII mode */
+	MODBUS_MODE_ASCII,
+};
 
 /**
- * @brief Configure Modbus Interface as client
+ * @brief Modbus serial line parameter
+ */
+struct modbus_serial_param {
+	/** Baudrate of the serial line */
+	uint32_t baud;
+	/** parity UART's parity setting:
+	 *    UART_CFG_PARITY_NONE,
+	 *    UART_CFG_PARITY_EVEN,
+	 *    UART_CFG_PARITY_ODD
+	 */
+	enum uart_config_parity parity;
+};
+
+/**
+ * @brief Modbus server parameter
+ */
+struct modbus_server_param {
+	/** Pointer to the User Callback structure */
+	struct modbus_user_callbacks *user_cb;
+	/** Modbus unit ID of the server */
+	uint8_t unit_id;
+};
+
+/**
+ * @brief User parameter structure to configure Modbus interfase
+ *        as client or server.
+ */
+struct modbus_iface_param {
+	/** Mode of the interface */
+	enum modbus_mode mode;
+	union {
+		struct modbus_server_param server;
+		/** Amount of time client will wait for
+		 *  a response from the server.
+		 */
+		uint32_t rx_timeout;
+	};
+	union {
+		/** Serial support parameter of the interface */
+		struct modbus_serial_param serial;
+	};
+};
+
+/**
+ * @brief Configure Modbus Interface as raw ADU server
  *
- * @param iface      Modbus interface index
- * @param baud       Baudrate of the serial line
- * @param parity     UART's parity setting:
- *                       UART_CFG_PARITY_NONE,
- *                       UART_CFG_PARITY_EVEN,
- *                       UART_CFG_PARITY_ODD
- * @param rx_timeout Amount of time client will wait for a response
- *                   from the server.
- * @param ascii_mode Enable ASCII Transfer Mode
+ * @param iface      Modbus RTU interface index
+ * @param param      Configuration parameter of the server interface
  *
  * @retval           0 If the function was successful
  */
-int modbus_init_client(const uint8_t iface,
-		       const uint32_t baud, enum uart_config_parity parity,
-		       uint32_t rx_timeout,
-		       bool ascii_mode);
+int modbus_init_server(const int iface, struct modbus_iface_param param);
+
+/**
+ * @brief Configure Modbus Interface as raw ADU client
+ *
+ * @param iface      Modbus RTU interface index
+ * @param param      Configuration parameter of the client interface
+ *
+ * @retval           0 If the function was successful
+ */
+int modbus_init_client(const int iface, struct modbus_iface_param param);
+
 /**
  * @brief Disable Modbus Interface
  *

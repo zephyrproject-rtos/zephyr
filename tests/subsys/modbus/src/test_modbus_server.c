@@ -14,6 +14,13 @@ static uint16_t coils;
 static uint16_t holding_reg[8];
 static float holding_fp[4];
 
+uint8_t server_iface;
+
+uint8_t test_get_server_iface(void)
+{
+	return server_iface;
+}
+
 static int coil_rd(uint16_t addr, bool *state)
 {
 	if (addr >= (sizeof(coils) * 8)) {
@@ -164,15 +171,31 @@ static struct modbus_user_callbacks mbs_cbs = {
 	.holding_reg_wr_fp = holding_reg_wr_fp,
 };
 
+static struct modbus_iface_param server_param = {
+	.mode = MODBUS_MODE_RTU,
+	.server = {
+		.user_cb = &mbs_cbs,
+		.unit_id = MB_TEST_NODE_ADDR,
+	},
+	.serial = {
+		.baud = MB_TEST_BAUDRATE_LOW,
+		.parity = UART_CFG_PARITY_ODD,
+	},
+};
+
 void test_server_setup_low_odd(void)
 {
 	int err;
+	const char iface_name[] = {DT_PROP_OR(DT_INST(1, zephyr_modbus_serial),
+					      label, "")};
+
+	server_iface = modbus_iface_get_by_name(iface_name);
+	server_param.mode = MODBUS_MODE_RTU;
+	server_param.serial.baud = MB_TEST_BAUDRATE_LOW;
+	server_param.serial.parity = UART_CFG_PARITY_ODD;
 
 	if (IS_ENABLED(CONFIG_MODBUS_SERVER)) {
-		err = modbus_init_server(MB_TEST_IFACE_SERVER, MB_TEST_NODE_ADDR,
-					 MB_TEST_BAUDRATE_LOW,
-					 UART_CFG_PARITY_ODD,
-					 &mbs_cbs, false);
+		err = modbus_init_server(server_iface, server_param);
 		zassert_equal(err, 0, "Failed to configure RTU server");
 	} else {
 		ztest_test_skip();
@@ -182,12 +205,16 @@ void test_server_setup_low_odd(void)
 void test_server_setup_low_none(void)
 {
 	int err;
+	const char iface_name[] = {DT_PROP_OR(DT_INST(1, zephyr_modbus_serial),
+					      label, "")};
+
+	server_iface = modbus_iface_get_by_name(iface_name);
+	server_param.mode = MODBUS_MODE_RTU;
+	server_param.serial.baud = MB_TEST_BAUDRATE_LOW;
+	server_param.serial.parity = UART_CFG_PARITY_NONE;
 
 	if (IS_ENABLED(CONFIG_MODBUS_SERVER)) {
-		err = modbus_init_server(MB_TEST_IFACE_SERVER, MB_TEST_NODE_ADDR,
-					 MB_TEST_BAUDRATE_LOW,
-					 UART_CFG_PARITY_NONE,
-					 &mbs_cbs, false);
+		err = modbus_init_server(server_iface, server_param);
 		zassert_equal(err, 0, "Failed to configure RTU server");
 	} else {
 		ztest_test_skip();
@@ -197,12 +224,16 @@ void test_server_setup_low_none(void)
 void test_server_setup_high_even(void)
 {
 	int err;
+	const char iface_name[] = {DT_PROP_OR(DT_INST(1, zephyr_modbus_serial),
+					      label, "")};
+
+	server_iface = modbus_iface_get_by_name(iface_name);
+	server_param.mode = MODBUS_MODE_RTU;
+	server_param.serial.baud = MB_TEST_BAUDRATE_HIGH;
+	server_param.serial.parity = UART_CFG_PARITY_EVEN;
 
 	if (IS_ENABLED(CONFIG_MODBUS_SERVER)) {
-		err = modbus_init_server(MB_TEST_IFACE_SERVER, MB_TEST_NODE_ADDR,
-					 MB_TEST_BAUDRATE_HIGH,
-					 UART_CFG_PARITY_EVEN,
-					 &mbs_cbs, false);
+		err = modbus_init_server(server_iface, server_param);
 		zassert_equal(err, 0, "Failed to configure RTU server");
 	} else {
 		ztest_test_skip();
@@ -212,12 +243,16 @@ void test_server_setup_high_even(void)
 void test_server_setup_ascii(void)
 {
 	int err;
+	const char iface_name[] = {DT_PROP_OR(DT_INST(1, zephyr_modbus_serial),
+					      label, "")};
+
+	server_iface = modbus_iface_get_by_name(iface_name);
+	server_param.mode = MODBUS_MODE_ASCII;
+	server_param.serial.baud = MB_TEST_BAUDRATE_HIGH;
+	server_param.serial.parity = UART_CFG_PARITY_EVEN;
 
 	if (IS_ENABLED(CONFIG_MODBUS_SERVER)) {
-		err = modbus_init_server(MB_TEST_IFACE_SERVER, MB_TEST_NODE_ADDR,
-					 MB_TEST_BAUDRATE_HIGH,
-					 UART_CFG_PARITY_EVEN,
-					 &mbs_cbs, true);
+		err = modbus_init_server(server_iface, server_param);
 		zassert_equal(err, 0, "Failed to configure RTU server");
 	} else {
 		ztest_test_skip();
@@ -229,7 +264,7 @@ void test_server_disable(void)
 	int err;
 
 	if (IS_ENABLED(CONFIG_MODBUS_SERVER)) {
-		err = modbus_disable(MB_TEST_IFACE_SERVER);
+		err = modbus_disable(server_iface);
 		zassert_equal(err, 0, "Failed to disable RTU server");
 	} else {
 		ztest_test_skip();
