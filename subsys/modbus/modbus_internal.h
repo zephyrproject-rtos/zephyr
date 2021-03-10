@@ -157,21 +157,112 @@ struct modbus_context {
 
 };
 
+/**
+ * @brief Get Modbus interface context.
+ *
+ * @param ctx        Modbus interface context
+ *
+ * @retval           Pointer to interface context or NULL
+ *                   if interface not available or not configured;
+ */
 struct modbus_context *modbus_get_context(const uint8_t iface);
+
+/**
+ * @brief Send ADU.
+ *
+ * @param ctx        Modbus interface context
+ */
 void modbus_tx_adu(struct modbus_context *ctx);
+
+/**
+ * @brief Send ADU and wait certain time for response.
+ *
+ * @param ctx        Modbus interface context
+ *
+ * @retval           0 If the function was successful,
+ *                   -ENOTSUP if Modbus mode is not supported,
+ *                   -ETIMEDOUT on timeout,
+ *                   -EMSGSIZE on length error,
+ *                   -EIO on CRC error.
+ */
 int modbus_tx_wait_rx_adu(struct modbus_context *ctx);
 
+/**
+ * @brief Let server handle the received ADU.
+ *
+ * @param ctx        Modbus interface context
+ *
+ * @retval           True if the server has prepared a response ADU
+ *                   that should be sent.
+ */
 bool modbus_server_handler(struct modbus_context *ctx);
+
+/**
+ * @brief Reset server stats.
+ *
+ * @param ctx        Modbus interface context
+ */
 void modbus_reset_stats(struct modbus_context *ctx);
 
+/**
+ * @brief Disable serial line reception.
+ *
+ * @param ctx        Modbus interface context
+ */
 void modbus_serial_rx_disable(struct modbus_context *ctx);
+
+/**
+ * @brief Enable serial line reception.
+ *
+ * @param ctx        Modbus interface context
+ */
 void modbus_serial_rx_enable(struct modbus_context *ctx);
+
+/**
+ * @brief Assemble ADU from serial line RX buffer
+ *
+ * @param ctx        Modbus interface context
+ *
+ * @retval           0 If the function was successful,
+ *                   -ENOTSUP if serial line mode is not supported,
+ *                   -EMSGSIZE on length error,
+ *                   -EIO on CRC error.
+ */
 int modbus_serial_rx_adu(struct modbus_context *ctx);
+
+/**
+ * @brief Assemble ADU from serial line RX buffer
+ *
+ * @param ctx        Modbus interface context
+ *
+ * @retval           0 If the function was successful,
+ *                   -ENOTSUP if serial line mode is not supported.
+ */
 int modbus_serial_tx_adu(struct modbus_context *ctx);
+
+/**
+ * @brief Initialize serial line support.
+ *
+ * @param ctx        Modbus interface context
+ * @param baudrate   Baudrate of the serial line
+ * @param parity     UART's parity setting:
+ *                       UART_CFG_PARITY_NONE,
+ *                       UART_CFG_PARITY_EVEN,
+ *                       UART_CFG_PARITY_ODD
+ * @param ascii_mode Enable ASCII Transfer Mode
+ *
+ * @retval           0 If the function was successful.
+ */
 int modbus_serial_init(struct modbus_context *ctx,
 		       uint32_t baudrate,
 		       enum uart_config_parity parity,
 		       const bool ascii_mode);
+
+/**
+ * @brief Disable serial line support.
+ *
+ * @param ctx        Modbus interface context
+ */
 void modbus_serial_disable(struct modbus_context *ctx);
 
 #endif /* ZEPHYR_INCLUDE_MODBUS_INTERNAL_H_ */
