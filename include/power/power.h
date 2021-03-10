@@ -78,17 +78,6 @@ struct pm_notifier {
  */
 void pm_power_state_force(struct pm_state_info info);
 
-/**
- * @brief Put processor into a power state.
- *
- * This function implements the SoC specific details necessary
- * to put the processor into available power states.
- *
- * @param info Power state which should be used in the ongoing
- *	suspend operation.
- */
-void pm_power_state_set(struct pm_state_info info);
-
 #ifdef CONFIG_PM_DEBUG
 /**
  * @brief Dump Low Power states related debug info
@@ -137,29 +126,6 @@ void pm_constraint_release(enum pm_state state);
  */
 bool pm_constraint_get(enum pm_state state);
 
-
-/**
- * @}
- */
-
-/**
- * @brief Power Management Hooks
- *
- * @defgroup power_management_hook_interface Power Management Hooks
- * @ingroup power_management_api
- * @{
- */
-
-/**
- * @brief Do any SoC or architecture specific post ops after sleep state exits.
- *
- * This function is a place holder to do any operations that may
- * be needed to be done after sleep state exits. Currently it enables
- * interrupts after resuming from sleep state. In future, the enabling
- * of interrupts may be moved into the kernel.
- */
-void pm_power_state_exit_post_ops(struct pm_state_info info);
-
 /**
  * @brief Register a power management notifier
  *
@@ -182,6 +148,39 @@ void pm_notifier_register(struct pm_notifier *notifier);
  * otherwise.
  */
 int pm_notifier_unregister(struct pm_notifier *notifier);
+
+/**
+ * @}
+ */
+
+/**
+ * @brief Power Management Hooks
+ *
+ * @defgroup power_management_hook_interface Power Management Hooks
+ * @ingroup power_management_api
+ * @{
+ */
+
+/**
+ * @brief Put processor into a power state.
+ *
+ * This function implements the SoC specific details necessary
+ * to put the processor into available power states.
+ *
+ * @param info Power state which should be used in the ongoing
+ *	suspend operation.
+ */
+void pm_power_state_set(struct pm_state_info info);
+
+/**
+ * @brief Do any SoC or architecture specific post ops after sleep state exits.
+ *
+ * This function is a place holder to do any operations that may
+ * be needed to be done after sleep state exits. Currently it enables
+ * interrupts after resuming from sleep state. In future, the enabling
+ * of interrupts may be moved into the kernel.
+ */
+void pm_power_state_exit_post_ops(struct pm_state_info info);
 
 /**
  * @}
