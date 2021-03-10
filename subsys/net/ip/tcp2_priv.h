@@ -152,7 +152,7 @@ struct tcphdr {
 	uint32_t th_ack;
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 	uint8_t th_x2:4;	/* unused */
-	uint8_t th_off:4;	/* data offset */
+	uint8_t th_off:4;	/* data offset, in units of 32-bit words */
 #endif
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
 	uint8_t th_off:4;
