@@ -92,7 +92,6 @@ void test_z_phys_map_exec(void)
 #else
 extern char __test_mem_map_start[];
 extern char __test_mem_map_end[];
-extern char __test_mem_map_size[];
 
 __in_section_unique(test_mem_map) __used
 static void transplanted_function(bool *executed)
@@ -121,7 +120,7 @@ void test_z_phys_map_exec(void)
 
 	/* Now map with execution enabled and try to run the copied fn */
 	z_phys_map(&mapped_exec, (uintptr_t)__test_mem_map_start,
-		   (uintptr_t)__test_mem_map_size,
+		   (uintptr_t)(__test_mem_map_end - __test_mem_map_start),
 		   BASE_FLAGS | K_MEM_PERM_EXEC);
 
 	func = (void (*)(bool *executed))mapped_exec;
@@ -130,7 +129,7 @@ void test_z_phys_map_exec(void)
 
 	/* Now map without execution and execution should now fail */
 	z_phys_map(&mapped_ro, (uintptr_t)__test_mem_map_start,
-		   (uintptr_t)__test_mem_map_size, BASE_FLAGS);
+		   (uintptr_t)(__test_mem_map_end - __test_mem_map_start), BASE_FLAGS);
 
 	func = (void (*)(bool *executed))mapped_ro;
 	expect_fault = true;
