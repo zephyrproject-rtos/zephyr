@@ -139,6 +139,7 @@ typedef int (*cbprintf_cb)(/* int c, void *ctx */);
  * @retval nonegative the number of bytes successfully stored at @p packaged.
  * This will not exceed @p len.
  * @retval -EINVAL if @p format is not acceptable
+ * @retval -EFAULT if @p packaged alignment is not acceptable
  * @retval -ENOSPC if @p packaged was not null and the space required to store
  * exceed @p len.
  */

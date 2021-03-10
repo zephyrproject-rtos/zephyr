@@ -374,6 +374,11 @@ int cbvprintf_package(void *packaged, size_t len,
 		/* align destination buffer location */
 		buf = (void *) ROUND_UP(buf, align);
 
+		/* Check if buffer is properly aligned. */
+		if ((uintptr_t)buf0 & (align - 1)) {
+			return -EFAULT;
+		}
+
 		/* make sure the data fits */
 		if (buf0 && buf - buf0 + size > len) {
 			return -ENOSPC;
