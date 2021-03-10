@@ -1168,6 +1168,10 @@ Twister:
     collaborators:
         - chen-png
         - jocelyn-li
+        - galak
+        - PerMac
+        - enjiamai
+        - hakehuang
     files:
         - scripts/twister
         - scripts/pylib/twister/
