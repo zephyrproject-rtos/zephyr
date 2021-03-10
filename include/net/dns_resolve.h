@@ -175,6 +175,9 @@ struct dns_resolve_context {
 		uint8_t is_llmnr : 1;
 	} servers[CONFIG_DNS_RESOLVER_MAX_SERVERS + DNS_MAX_MCAST_SERVERS];
 
+	/** Prevent concurrent access */
+	struct k_mutex lock;
+
 	/** This timeout is also used when a buffer is required from the
 	 * buffer pools.
 	 */
