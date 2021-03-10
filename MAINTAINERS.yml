@@ -1492,6 +1492,9 @@ x86 arch:
         - arch/x86/
         - include/arch/x86/
         - tests/arch/x86/
+        - drivers/interrupt_controller/*intel*
+        - drivers/interrupt_controller/*ioapic*
+        - drivers/interrupt_controller/*loapic*
     labels:
         - "area: X86"
 
