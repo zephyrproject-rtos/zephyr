@@ -1,0 +1,17 @@
+# Copyright (c) 2018, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: GPIO LCD parent node
+
+compatible: "gpio-lcd"
+
+child-binding:
+    description: GPIO LCD child node
+    properties:
+       gpios:
+          type: phandle-array
+          required: true
+       label:
+          required: true
+          type: string
+          description: Human readable string describing the device (used as device_get_binding() argument)

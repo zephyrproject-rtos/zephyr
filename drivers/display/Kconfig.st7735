@@ -1,0 +1,25 @@
+# ST7735 display driver configuration options
+
+# Copyright (c) 2019 Marc Reilly <marc@cpdesign.com.au>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ST7735
+	bool "ST7735 display driver"
+	depends on SPI
+	help
+	  Enable driver for ST7735 display driver.
+
+choice ST7735_PIXEL_FORMAT
+	prompt "Color pixel format"
+	default ST7735_RGB565
+	depends on ST7735
+	help
+	  Specify the color pixel format for the ST7735 display controller.
+
+config ST7735_RGB888
+	bool "RGB888"
+
+config ST7735_RGB565
+	bool "RGB565"
+
+endchoice

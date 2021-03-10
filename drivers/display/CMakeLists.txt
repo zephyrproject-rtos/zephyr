@@ -10,6 +10,7 @@ zephyr_sources_ifdef(CONFIG_FRAMEBUF_DISPLAY	display_framebuf.c)
 zephyr_sources_ifdef(CONFIG_ST7789V		display_st7789v.c)
 zephyr_sources_ifdef(CONFIG_GD7965		gd7965.c)
 zephyr_sources_ifdef(CONFIG_LS0XX		ls0xx.c)
+zephyr_sources_ifdef(CONFIG_ST7735		display_st7735.c)
 
 if (CONFIG_ILI9XXX)
   zephyr_sources(display_ili9xxx.c)

@@ -11,7 +11,6 @@
 #define DT_DRV_COMPAT sitronix_st7789v
 
 #include "display_st7789v.h"
-
 #include <device.h>
 #include <drivers/spi.h>
 #include <drivers/gpio.h>
