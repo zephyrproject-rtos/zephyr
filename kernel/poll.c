@@ -227,6 +227,8 @@ static inline int register_events(struct k_poll_event *events,
 		} else if (!just_check && poller->is_polling) {
 			register_event(&events[ii], poller);
 			events_registered += 1;
+		} else {
+			;
 		}
 		k_spin_unlock(&lock, key);
 	}
@@ -409,6 +411,8 @@ static int signal_poll_event(struct k_poll_event *event, uint32_t state)
 			retcode = signal_poller(event, state);
 		} else if (poller->mode == MODE_TRIGGERED) {
 			retcode = signal_triggered_work(event, state);
+		} else {
+			;
 		}
 
 		poller->is_polling = false;
