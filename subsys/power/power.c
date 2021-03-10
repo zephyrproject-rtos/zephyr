@@ -72,7 +72,11 @@ __weak void pm_power_state_exit_post_ops(struct pm_state_info info)
 	/*
 	 * This function is supposed to be overridden to do SoC or
 	 * architecture specific post ops after sleep state exits.
+	 *
+	 * The kernel expects that irqs are unlocked after this.
 	 */
+
+	irq_unlock(0);
 }
 
 __weak void pm_power_state_set(struct pm_state_info info)
