@@ -65,6 +65,7 @@ config LWM2M_ENGINE_VALIDATION_BUFFER_SIZE
 	  for which validation callback has been registered). Set this value to
 	  the maximum expected size of the resources that need to be validated
 	  (and thus have validation callback registered).
+	  Setting the validation buffer size to 0 disables validation support.
 
 config LWM2M_ENGINE_MAX_PENDING
 	int "LWM2M engine max. pending objects"
