@@ -649,6 +649,11 @@ static void work_queue_main(void *workq_ptr, void *p2, void *p3)
 			 * submissions.
 			 */
 			(void)z_sched_wake_all(&queue->drainq, 1, NULL);
+		} else {
+			/* No work is available and no queue state requires
+			 * special handling.
+			 */
+			;
 		}
 
 		if (work == NULL) {
