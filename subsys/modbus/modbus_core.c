@@ -124,7 +124,7 @@ int modbus_tx_wait_rx_adu(struct modbus_context *ctx)
 
 	if (k_sem_take(&ctx->client_wait_sem, K_USEC(ctx->rxwait_to)) != 0) {
 		LOG_WRN("Client wait-for-RX timeout");
-		return -EIO;
+		return -ETIMEDOUT;
 	}
 
 	return ctx->rx_adu_err;
