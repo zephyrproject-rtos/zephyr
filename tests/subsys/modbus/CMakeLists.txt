@@ -10,4 +10,5 @@ target_sources(app PRIVATE
     src/main.c
     src/test_modbus_client.c
     src/test_modbus_server.c
+    src/test_modbus_raw.c
     )
