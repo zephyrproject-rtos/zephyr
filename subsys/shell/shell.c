@@ -1377,13 +1377,8 @@ void shell_process(const struct shell *shell)
 	__ASSERT_NO_MSG(shell);
 	__ASSERT_NO_MSG(shell->ctx);
 
-	union shell_internal internal;
-
-	internal.value = 0U;
-	internal.flags.processing = 1U;
-
-	(void)atomic_or((atomic_t *)&shell->ctx->internal.value,
-			internal.value);
+	/* atomically set the processing flag */
+	z_flag_processing_set(shell, true);
 
 	switch (shell->ctx->state) {
 	case SHELL_STATE_UNINITIALIZED:
@@ -1398,10 +1393,8 @@ void shell_process(const struct shell *shell)
 		break;
 	}
 
-	internal.value = 0xFFFFFFFF;
-	internal.flags.processing = 0U;
-	(void)atomic_and((atomic_t *)&shell->ctx->internal.value,
-			 internal.value);
+	/* atomically clear the processing flag */
+	z_flag_processing_set(shell, false);
 }
 
 /* This function mustn't be used from shell context to avoid deadlock.
@@ -1560,26 +1553,49 @@ int shell_execute_cmd(const struct shell *shell, const char *cmd)
 	return ret_val;
 }
 
-int shell_use_colors_set(const struct shell *shell, bool use_colors)
+int shell_insert_mode_set(const struct shell *shell, bool val)
 {
 	if (shell == NULL) {
 		return -EINVAL;
 	}
 
-	z_flag_use_colors_set(shell, use_colors);
-
-	return 0;
+	return (int)z_flag_insert_mode_set(shell, val);
 }
 
-int shell_obscure_set(const struct shell *shell, bool obscure)
+int shell_use_colors_set(const struct shell *shell, bool val)
 {
 	if (shell == NULL) {
 		return -EINVAL;
 	}
 
-	z_flag_obscure_set(shell, obscure);
+	return (int)z_flag_use_colors_set(shell, val);
+}
 
-	return 0;
+int shell_echo_set(const struct shell *shell, bool val)
+{
+	if (shell == NULL) {
+		return -EINVAL;
+	}
+
+	return (int)z_flag_echo_set(shell, val);
+}
+
+int shell_obscure_set(const struct shell *shell, bool val)
+{
+	if (shell == NULL) {
+		return -EINVAL;
+	}
+
+	return (int)z_flag_obscure_set(shell, val);
+}
+
+int shell_mode_delete_set(const struct shell *shell, bool val)
+{
+	if (shell == NULL) {
+		return -EINVAL;
+	}
+
+	return (int)z_flag_mode_delete_set(shell, val);
 }
 
 static int cmd_help(const struct shell *shell, size_t argc, char **argv)

@@ -60,14 +60,33 @@ static inline void z_cursor_next_line_move(const struct shell *shell)
 	z_shell_raw_fprintf(shell->fprintf_ctx, "\n");
 }
 
+#define Z_SHELL_SET_FLAG_ATOMIC(_shell_, _flag_, _val_, _ret_)			\
+	do {									\
+		union shell_internal _internal_;				\
+		atomic_t *_dst_ = (atomic_t *)&(_shell_)->ctx->internal.value;	\
+		_internal_.value = 0U;						\
+		_internal_.flags._flag_ = 1U;					\
+		if (_val_) {							\
+			_internal_.value = atomic_or(_dst_,			\
+						   _internal_.value);		\
+		} else {							\
+			_internal_.value = atomic_and(_dst_,			\
+						   ~_internal_.value);		\
+		}								\
+		_ret_ = (_internal_.flags._flag_ != 0);				\
+	} while (0)
+
 static inline bool z_flag_insert_mode_get(const struct shell *shell)
 {
 	return shell->ctx->internal.flags.insert_mode == 1;
 }
 
-static inline void z_flag_insert_mode_set(const struct shell *shell, bool val)
+static inline bool z_flag_insert_mode_set(const struct shell *shell, bool val)
 {
-	shell->ctx->internal.flags.insert_mode = val ? 1 : 0;
+	bool ret;
+
+	Z_SHELL_SET_FLAG_ATOMIC(shell, insert_mode, val, ret);
+	return ret;
 }
 
 static inline bool z_flag_use_colors_get(const struct shell *shell)
@@ -75,9 +94,12 @@ static inline bool z_flag_use_colors_get(const struct shell *shell)
 	return shell->ctx->internal.flags.use_colors == 1;
 }
 
-static inline void z_flag_use_colors_set(const struct shell *shell, bool val)
+static inline bool z_flag_use_colors_set(const struct shell *shell, bool val)
 {
-	shell->ctx->internal.flags.use_colors = val ? 1 : 0;
+	bool ret;
+
+	Z_SHELL_SET_FLAG_ATOMIC(shell, use_colors, val, ret);
+	return ret;
 }
 
 static inline bool z_flag_echo_get(const struct shell *shell)
@@ -85,9 +107,12 @@ static inline bool z_flag_echo_get(const struct shell *shell)
 	return shell->ctx->internal.flags.echo == 1;
 }
 
-static inline void z_flag_echo_set(const struct shell *shell, bool val)
+static inline bool z_flag_echo_set(const struct shell *shell, bool val)
 {
-	shell->ctx->internal.flags.echo = val ? 1 : 0;
+	bool ret;
+
+	Z_SHELL_SET_FLAG_ATOMIC(shell, echo, val, ret);
+	return ret;
 }
 
 static inline bool z_flag_obscure_get(const struct shell *shell)
@@ -95,9 +120,12 @@ static inline bool z_flag_obscure_get(const struct shell *shell)
 	return shell->ctx->internal.flags.obscure == 1;
 }
 
-static inline void z_flag_obscure_set(const struct shell *shell, bool val)
+static inline bool z_flag_obscure_set(const struct shell *shell, bool val)
 {
-	shell->ctx->internal.flags.obscure = val ? 1 : 0;
+	bool ret;
+
+	Z_SHELL_SET_FLAG_ATOMIC(shell, obscure, val, ret);
+	return ret;
 }
 
 static inline bool z_flag_processing_get(const struct shell *shell)
@@ -105,14 +133,25 @@ static inline bool z_flag_processing_get(const struct shell *shell)
 	return shell->ctx->internal.flags.processing == 1;
 }
 
+static inline bool z_flag_processing_set(const struct shell *shell, bool val)
+{
+	bool ret;
+
+	Z_SHELL_SET_FLAG_ATOMIC(shell, processing, val, ret);
+	return ret;
+}
+
 static inline bool z_flag_tx_rdy_get(const struct shell *shell)
 {
 	return shell->ctx->internal.flags.tx_rdy == 1;
 }
 
-static inline void z_flag_tx_rdy_set(const struct shell *shell, bool val)
+static inline bool z_flag_tx_rdy_set(const struct shell *shell, bool val)
 {
-	shell->ctx->internal.flags.tx_rdy = val ? 1 : 0;
+	bool ret;
+
+	Z_SHELL_SET_FLAG_ATOMIC(shell, tx_rdy, val, ret);
+	return ret;
 }
 
 static inline bool z_flag_mode_delete_get(const struct shell *shell)
@@ -120,9 +159,12 @@ static inline bool z_flag_mode_delete_get(const struct shell *shell)
 	return shell->ctx->internal.flags.mode_delete == 1;
 }
 
-static inline void z_flag_mode_delete_set(const struct shell *shell, bool val)
+static inline bool z_flag_mode_delete_set(const struct shell *shell, bool val)
 {
-	shell->ctx->internal.flags.mode_delete = val ? 1 : 0;
+	bool ret;
+
+	Z_SHELL_SET_FLAG_ATOMIC(shell, mode_delete, val, ret);
+	return ret;
 }
 
 static inline bool z_flag_history_exit_get(const struct shell *shell)
@@ -130,9 +172,12 @@ static inline bool z_flag_history_exit_get(const struct shell *shell)
 	return shell->ctx->internal.flags.history_exit == 1;
 }
 
-static inline void z_flag_history_exit_set(const struct shell *shell, bool val)
+static inline bool z_flag_history_exit_set(const struct shell *shell, bool val)
 {
-	shell->ctx->internal.flags.history_exit = val ? 1 : 0;
+	bool ret;
+
+	Z_SHELL_SET_FLAG_ATOMIC(shell, history_exit, val, ret);
+	return ret;
 }
 
 static inline bool z_flag_cmd_ctx_get(const struct shell *shell)
@@ -140,9 +185,12 @@ static inline bool z_flag_cmd_ctx_get(const struct shell *shell)
 	return shell->ctx->internal.flags.cmd_ctx == 1;
 }
 
-static inline void z_flag_cmd_ctx_set(const struct shell *shell, bool val)
+static inline bool z_flag_cmd_ctx_set(const struct shell *shell, bool val)
 {
-	shell->ctx->internal.flags.cmd_ctx = val ? 1 : 0;
+	bool ret;
+
+	Z_SHELL_SET_FLAG_ATOMIC(shell, cmd_ctx, val, ret);
+	return ret;
 }
 
 static inline uint8_t z_flag_last_nl_get(const struct shell *shell)
@@ -160,9 +208,12 @@ static inline bool z_flag_print_noinit_get(const struct shell *shell)
 	return shell->ctx->internal.flags.print_noinit == 1;
 }
 
-static inline void z_flag_print_noinit_set(const struct shell *shell, bool val)
+static inline bool z_flag_print_noinit_set(const struct shell *shell, bool val)
 {
-	shell->ctx->internal.flags.print_noinit = val ? 1 : 0;
+	bool ret;
+
+	Z_SHELL_SET_FLAG_ATOMIC(shell, print_noinit, val, ret);
+	return ret;
 }
 
 void z_shell_op_cursor_vert_move(const struct shell *shell, int32_t delta);
