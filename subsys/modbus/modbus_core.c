@@ -51,8 +51,18 @@ static struct modbus_serial_config modbus_serial_cfg[] = {
 		.cfg = &modbus_serial_cfg[n],			\
 	},
 
+#define DEFINE_MODBUS_RAW_ADU(x, _) {				\
+		.iface_name = "RAW_"#x,				\
+		.raw_tx_cb = NULL,				\
+		.mode = MODBUS_MODE_RAW,			\
+	},
+
+
 static struct modbus_context mb_ctx_tbl[] = {
 	DT_INST_FOREACH_STATUS_OKAY(MODBUS_DT_GET_DEV)
+#ifdef CONFIG_MODBUS_RAW_ADU
+	UTIL_LISTIFY(CONFIG_MODBUS_NUMOF_RAW_ADU, DEFINE_MODBUS_RAW_ADU, _)
+#endif
 };
 
 static void modbus_rx_handler(struct k_work *item)
@@ -71,6 +81,11 @@ static void modbus_rx_handler(struct k_work *item)
 		if (IS_ENABLED(CONFIG_MODBUS_SERIAL)) {
 			modbus_serial_rx_disable(ctx);
 			ctx->rx_adu_err = modbus_serial_rx_adu(ctx);
+		}
+		break;
+	case MODBUS_MODE_RAW:
+		if (IS_ENABLED(CONFIG_MODBUS_RAW_ADU)) {
+			ctx->rx_adu_err = modbus_raw_rx_adu(ctx);
 		}
 		break;
 	default:
@@ -113,6 +128,12 @@ void modbus_tx_adu(struct modbus_context *ctx)
 			LOG_ERR("Unsupported MODBUS serial mode");
 		}
 		break;
+	case MODBUS_MODE_RAW:
+		if (IS_ENABLED(CONFIG_MODBUS_RAW_ADU) &&
+		    modbus_raw_tx_adu(ctx)) {
+			LOG_ERR("Unsupported MODBUS raw mode");
+		}
+		break;
 	default:
 		LOG_ERR("Unknown MODBUS mode");
 	}
@@ -147,6 +168,17 @@ struct modbus_context *modbus_get_context(const uint8_t iface)
 	}
 
 	return ctx;
+}
+
+int modbus_iface_get_by_ctx(const struct modbus_context *ctx)
+{
+	for (int i = 0; i < ARRAY_SIZE(mb_ctx_tbl); i++) {
+		if (&mb_ctx_tbl[i] == ctx) {
+			return i;
+		}
+	}
+
+	return -ENODEV;
 }
 
 int modbus_iface_get_by_name(const char *iface_name)
@@ -216,6 +248,14 @@ int modbus_init_server(const int iface, struct modbus_iface_param param)
 			goto init_server_error;
 		}
 		break;
+	case MODBUS_MODE_RAW:
+		if (IS_ENABLED(CONFIG_MODBUS_RAW_ADU) &&
+		    modbus_raw_init(ctx, param) != 0) {
+			LOG_ERR("Failed to init MODBUS raw ADU support");
+			rc = -EINVAL;
+			goto init_server_error;
+		}
+		break;
 	default:
 		LOG_ERR("Unknown MODBUS mode");
 		rc = -ENOTSUP;
@@ -268,6 +308,14 @@ int modbus_init_client(const int iface, struct modbus_iface_param param)
 			goto init_client_error;
 		}
 		break;
+	case MODBUS_MODE_RAW:
+		if (IS_ENABLED(CONFIG_MODBUS_RAW_ADU) &&
+		    modbus_raw_init(ctx, param) != 0) {
+			LOG_ERR("Failed to init MODBUS raw ADU support");
+			rc = -EINVAL;
+			goto init_client_error;
+		}
+		break;
 	default:
 		LOG_ERR("Unknown MODBUS mode");
 		rc = -ENOTSUP;
@@ -305,6 +353,8 @@ int modbus_disable(const uint8_t iface)
 		if (IS_ENABLED(CONFIG_MODBUS_SERIAL)) {
 			modbus_serial_disable(ctx);
 		}
+		break;
+	case MODBUS_MODE_RAW:
 		break;
 	default:
 		LOG_ERR("Unknown MODBUS mode");
