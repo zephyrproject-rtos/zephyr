@@ -100,6 +100,18 @@ static struct modbus_user_callbacks mbs_cbs = {
 	.holding_reg_wr = holding_reg_wr,
 };
 
+const static struct modbus_iface_param server_param = {
+	.mode = MODBUS_MODE_RTU,
+	.server = {
+		.user_cb = &mbs_cbs,
+		.unit_id = 1,
+	},
+	.serial = {
+		.baud = 19200,
+		.parity = UART_CFG_PARITY_NONE,
+	},
+};
+
 static int init_modbus_server(void)
 {
 	const uint32_t mb_rtu_br = 19200;
@@ -113,8 +125,7 @@ static int init_modbus_server(void)
 		return iface;
 	}
 
-	return modbus_init_server(iface, 1, mb_rtu_br, UART_CFG_PARITY_NONE,
-				  &mbs_cbs, false);
+	return modbus_init_server(iface, server_param);
 }
 
 void main(void)
