@@ -604,7 +604,6 @@ static void ticker_stop_op_cb(uint32_t status, void *param)
 static void sync_lost(void *param)
 {
 	struct ll_sync_iso_set *sync_iso = param;
-	struct node_rx_sync_iso *se;
 	struct node_rx_pdu *rx;
 
 	/* Generate BIG sync lost */
@@ -612,9 +611,7 @@ static void sync_lost(void *param)
 	rx->hdr.handle = ull_sync_iso_handle_get(sync_iso);
 	rx->hdr.type = NODE_RX_TYPE_SYNC_ISO_LOST;
 	rx->hdr.rx_ftr.param = sync_iso;
-
-	se = (void *)rx->pdu;
-	se->status = BT_HCI_ERR_CONN_TIMEOUT;
+	*((uint8_t *)rx->pdu) = BT_HCI_ERR_CONN_TIMEOUT;
 
 	/* Enqueue the BIG sync lost towards ULL context */
 	ll_rx_put(rx->hdr.link, rx);

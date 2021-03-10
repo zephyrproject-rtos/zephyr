@@ -6430,11 +6430,10 @@ static void le_sync_iso_pdu(struct pdu_data *pdu,
 }
 
 static void le_big_sync_lost(struct pdu_data *pdu,
-				     struct node_rx_pdu *node_rx,
-				     struct net_buf *buf)
+			     struct node_rx_pdu *node_rx,
+			     struct net_buf *buf)
 {
 	struct bt_hci_evt_le_big_sync_lost *sep;
-	struct node_rx_sync_iso *se;
 
 	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
 	    !(le_event_mask & BT_EVT_MASK_LE_BIG_SYNC_LOST)) {
@@ -6443,9 +6442,7 @@ static void le_big_sync_lost(struct pdu_data *pdu,
 
 	sep = meta_evt(buf, BT_HCI_EVT_LE_BIG_SYNC_LOST, sizeof(*sep));
 	sep->big_handle = sys_cpu_to_le16(node_rx->hdr.handle);
-
-	se = (void *)pdu;
-	sep->reason = se->status;
+	sep->reason = *((uint8_t *)pdu);
 }
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
