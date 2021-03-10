@@ -1093,7 +1093,7 @@ uint8_t bt_le_per_adv_sync_get_index(struct bt_le_per_adv_sync *per_adv_sync)
 {
 	ptrdiff_t index = per_adv_sync - per_adv_sync_pool;
 
-	__ASSERT(0 <= index && index < ARRAY_SIZE(per_adv_sync_pool),
+	__ASSERT(index >= 0 && ARRAY_SIZE(per_adv_sync_pool) > index,
 		 "Invalid per_adv_sync pointer");
 	return (uint8_t)index;
 }
@@ -1255,7 +1255,8 @@ int bt_le_per_adv_sync_delete(struct bt_le_per_adv_sync *per_adv_sync)
 	} else if (get_pending_per_adv_sync() == per_adv_sync) {
 		err = bt_le_per_adv_sync_create_cancel(per_adv_sync);
 		/* Delete of the per_adv_sync will be done in the event
-		 * handler when cancelling */
+		 * handler when cancelling.
+		 */
 	}
 
 	return err;

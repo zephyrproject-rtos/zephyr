@@ -1432,11 +1432,10 @@ int bt_id_set_scan_own_addr(bool active_scan, uint8_t *own_addr_type)
 			if (err) {
 				if (active_scan || !is_adv_using_rand_addr()) {
 					return err;
-				} else {
-					BT_WARN("Ignoring failure to set "
-						"address for passive scan (%d)",
-						err);
 				}
+
+				BT_WARN("Ignoring failure to set address for passive scan (%d)",
+					err);
 			}
 
 			*own_addr_type = BT_ADDR_LE_RANDOM;

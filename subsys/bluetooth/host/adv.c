@@ -32,7 +32,7 @@ uint8_t bt_le_ext_adv_get_index(struct bt_le_ext_adv *adv)
 {
 	ptrdiff_t index = adv - adv_pool;
 
-	__ASSERT(0 <= index && index < ARRAY_SIZE(adv_pool),
+	__ASSERT(index >= 0 && index < ARRAY_SIZE(adv_pool),
 		 "Invalid bt_adv pointer");
 	return (uint8_t)index;
 }
