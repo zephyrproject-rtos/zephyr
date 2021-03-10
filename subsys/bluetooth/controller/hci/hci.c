@@ -6510,6 +6510,22 @@ static void le_big_complete(struct pdu_data *pdu_data,
 	/* TODO: Connection handle list of all BISes in the BIG */
 	sep->handle[0] = sys_cpu_to_le16(0);
 }
+
+static void le_big_terminate(struct pdu_data *pdu,
+			     struct node_rx_pdu *node_rx,
+			     struct net_buf *buf)
+{
+	struct bt_hci_evt_le_big_terminate *sep;
+
+	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
+	    !(le_event_mask & BT_EVT_MASK_LE_BIG_TERMINATED)) {
+		return;
+	}
+
+	sep = meta_evt(buf, BT_HCI_EVT_LE_BIG_TERMINATE, sizeof(*sep));
+	sep->big_handle = sys_cpu_to_le16(node_rx->hdr.handle);
+	sep->reason = *((uint8_t *)pdu);
+}
 #endif /* CONFIG_BT_CTLR_ADV_ISO */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_BROADCASTER */
@@ -6891,6 +6907,9 @@ static void encode_control(struct node_rx_pdu *node_rx,
 #if defined(CONFIG_BT_CTLR_ADV_ISO)
 	case NODE_RX_TYPE_BIG_COMPLETE:
 		le_big_complete(pdu_data, node_rx, buf);
+		break;
+	case NODE_RX_TYPE_BIG_TERMINATE:
+		le_big_terminate(pdu_data, node_rx, buf);
 		break;
 #endif /* CONFIG_BT_CTLR_ADV_ISO */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
@@ -7341,6 +7360,7 @@ uint8_t hci_get_class(struct node_rx_pdu *node_rx)
 		case NODE_RX_TYPE_EXT_ADV_TERMINATE:
 #if defined(CONFIG_BT_CTLR_ADV_ISO)
 		case NODE_RX_TYPE_BIG_COMPLETE:
+		case NODE_RX_TYPE_BIG_TERMINATE:
 #endif /* CONFIG_BT_CTLR_ADV_ISO */
 #endif /* CONFIG_BT_BROADCASTER */
 

@@ -79,9 +79,10 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	struct pdu_big_info *big_info;
 	uint8_t pdu_big_info_size;
 	uint32_t ticks_anchor_iso;
+	memq_link_t *link_cmplt;
+	memq_link_t *link_term;
 	struct ll_adv_set *adv;
 	uint16_t iso_interval;
-	memq_link_t *link;
 	uint8_t ter_idx;
 	uint8_t *acad;
 	uint32_t ret;
@@ -149,8 +150,15 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 		}
 	}
 
-	link = ll_rx_link_alloc();
-	if (!link) {
+	link_cmplt = ll_rx_link_alloc();
+	if (!link_cmplt) {
+		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+	}
+
+	link_term = ll_rx_link_alloc();
+	if (!link_term) {
+		ll_rx_link_release(link_cmplt);
+
 		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 	}
 
@@ -230,7 +238,8 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 					 ULL_ADV_PDU_HDR_FIELD_ACAD, 0U,
 					 &hdr_data);
 	if (err) {
-		ll_rx_link_release(link);
+		ll_rx_link_release(link_cmplt);
+		ll_rx_link_release(link_term);
 
 		return err;
 	}
@@ -279,7 +288,8 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	lll_adv_iso->adv = &adv->lll;
 
 	/* Store the link buffer for ISO create and terminate complete event */
-	adv_iso->node_rx_complete.hdr.link = link;
+	adv_iso->node_rx_complete.hdr.link = link_cmplt;
+	adv_iso->node_rx_terminate.hdr.link = link_term;
 
 	/* Initialise LLL header members */
 	lll_hdr_init(lll_adv_iso, adv_iso);
@@ -368,19 +378,20 @@ uint8_t ll_big_terminate(uint8_t big_handle, uint8_t reason)
 
 	/* TODO: Terminate all BIS data paths */
 
-	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
-			  (TICKER_ID_ADV_ISO_BASE + lll_adv_iso->handle),
-			  ticker_op_stop_cb, adv_iso);
-
-	lll_adv_iso->adv = NULL;
-	lll_adv_sync->iso = NULL;
-
+	/* FIXME: Generate after terminate procedure completes */
 	/* Prepare BIG terminate event */
 	node_rx = (void *)&adv_iso->node_rx_terminate;
 	node_rx->hdr.type = NODE_RX_TYPE_BIG_TERMINATE;
 	node_rx->hdr.handle = big_handle;
 	node_rx->hdr.rx_ftr.param = adv_iso;
 	*((uint8_t *)node_rx->pdu) = reason;
+
+	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
+			  (TICKER_ID_ADV_ISO_BASE + lll_adv_iso->handle),
+			  ticker_op_stop_cb, adv_iso);
+
+	lll_adv_iso->adv = NULL;
+	lll_adv_sync->iso = NULL;
 
 	return BT_HCI_ERR_SUCCESS;
 }
@@ -722,12 +733,24 @@ static void ticker_op_cb(uint32_t status, void *param)
 
 static void tx_lll_flush(void *param)
 {
-	/* TODO: LLL support for ADV ISO */
-	/* TODO: Send terminate complete event to host */
-#if 0
+	struct ll_adv_iso_set *adv_iso = param;
+	struct node_rx_pdu *rx;
+	memq_link_t *link;
+
 	/* TODO: Flush TX */
-	struct lll_adv_iso *lll = param;
-#endif
+
+	/* Get the terminate structure reserved in the ISO context.
+	 * The terminate reason and connection handle should already be
+	 * populated before this mayfly function was scheduled.
+	 */
+	rx = (void *)&adv_iso->node_rx_terminate;
+	link = rx->hdr.link;
+	LL_ASSERT(link);
+	rx->hdr.link = NULL;
+
+	/* Enqueue the terminate towards ULL context */
+	ull_rx_put(link, rx);
+	ull_rx_sched();
 }
 
 static void ticker_op_stop_cb(uint32_t status, void *param)
