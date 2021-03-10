@@ -25,8 +25,6 @@ extern "C" {
 
 #ifdef CONFIG_PM
 
-extern unsigned char pm_idle_exit_notify;
-
 /**
  * @brief System Power Management API
  *
