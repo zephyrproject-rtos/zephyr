@@ -1500,6 +1500,7 @@ static int lwm2m_engine_set(char *pathstr, void *value, uint16_t len)
 		changed = true;
 	}
 
+#if CONFIG_LWM2M_ENGINE_VALIDATION_BUFFER_SIZE > 0
 	if (res->validate_cb) {
 		ret = res->validate_cb(obj_inst->obj_inst_id, res->res_id,
 				       res_inst->res_inst_id, value,
@@ -1508,6 +1509,7 @@ static int lwm2m_engine_set(char *pathstr, void *value, uint16_t len)
 			return -EINVAL;
 		}
 	}
+#endif /* CONFIG_LWM2M_ENGINE_VALIDATION_BUFFER_SIZE > 0 */
 
 	switch (obj_field->data_type) {
 
@@ -2115,6 +2117,7 @@ int lwm2m_engine_register_pre_write_callback(char *pathstr,
 int lwm2m_engine_register_validate_callback(char *pathstr,
 					    lwm2m_engine_set_data_cb_t cb)
 {
+#if CONFIG_LWM2M_ENGINE_VALIDATION_BUFFER_SIZE > 0
 	int ret;
 	struct lwm2m_engine_res *res = NULL;
 
@@ -2125,6 +2128,15 @@ int lwm2m_engine_register_validate_callback(char *pathstr,
 
 	res->validate_cb = cb;
 	return 0;
+#else
+	ARG_UNUSED(pathstr);
+	ARG_UNUSED(cb);
+
+	LOG_ERR("Validation disabled. Set "
+		"CONFIG_LWM2M_ENGINE_VALIDATION_BUFFER_SIZE > 0 to "
+		"enable validation support.");
+	return -ENOTSUP;
+#endif /* CONFIG_LWM2M_ENGINE_VALIDATION_BUFFER_SIZE > 0 */
 }
 
 int lwm2m_engine_register_post_write_callback(char *pathstr,
@@ -2393,6 +2405,7 @@ static int lwm2m_write_handler_opaque(struct lwm2m_engine_obj_inst *obj_inst,
 		opaque_ctx = msg->in.block_ctx->opaque;
 	}
 
+#if CONFIG_LWM2M_ENGINE_VALIDATION_BUFFER_SIZE > 0
 	/* In case validation callback is present, write data to the temporary
 	 * buffer first, for validation. Otherwise, write to the data buffer
 	 * directly.
@@ -2400,7 +2413,9 @@ static int lwm2m_write_handler_opaque(struct lwm2m_engine_obj_inst *obj_inst,
 	if (res->validate_cb) {
 		write_buf = msg->ctx->validate_buf;
 		write_buf_len = sizeof(msg->ctx->validate_buf);
-	} else {
+	} else
+#endif /* CONFIG_LWM2M_ENGINE_VALIDATION_BUFFER_SIZE > 0 */
+	{
 		write_buf = data_ptr;
 		write_buf_len = data_len;
 	}
@@ -2414,6 +2429,7 @@ static int lwm2m_write_handler_opaque(struct lwm2m_engine_obj_inst *obj_inst,
 			return 0;
 		}
 
+#if CONFIG_LWM2M_ENGINE_VALIDATION_BUFFER_SIZE > 0
 		if (res->validate_cb) {
 			ret = res->validate_cb(
 				obj_inst->obj_inst_id, res->res_id,
@@ -2426,6 +2442,7 @@ static int lwm2m_write_handler_opaque(struct lwm2m_engine_obj_inst *obj_inst,
 
 			memcpy(data_ptr, write_buf, len);
 		}
+#endif /* CONFIG_LWM2M_ENGINE_VALIDATION_BUFFER_SIZE > 0 */
 
 		if (res->post_write_cb) {
 			ret = res->post_write_cb(
@@ -2482,7 +2499,11 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 					     &data_len);
 	}
 
-	if (res->post_write_cb || res->validate_cb) {
+	if (res->post_write_cb
+#if CONFIG_LWM2M_ENGINE_VALIDATION_BUFFER_SIZE > 0
+	    || res->validate_cb
+#endif
+	) {
 		if (msg->in.block_ctx != NULL) {
 			/* Get block_ctx for total_size (might be zero) */
 			total_size = msg->in.block_ctx->ctx.total_size;
@@ -2494,6 +2515,7 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 		}
 	}
 
+#if CONFIG_LWM2M_ENGINE_VALIDATION_BUFFER_SIZE > 0
 	/* In case validation callback is present, write data to the temporary
 	 * buffer first, for validation. Otherwise, write to the data buffer
 	 * directly.
@@ -2501,7 +2523,9 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 	if (res->validate_cb) {
 		write_buf = msg->ctx->validate_buf;
 		write_buf_len = sizeof(msg->ctx->validate_buf);
-	} else {
+	} else
+#endif /* CONFIG_LWM2M_ENGINE_VALIDATION_BUFFER_SIZE > 0 */
+	{
 		write_buf = data_ptr;
 		write_buf_len = data_len;
 	}
@@ -2606,6 +2630,7 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 	}
 
 	if (obj_field->data_type != LWM2M_RES_TYPE_OPAQUE) {
+#if CONFIG_LWM2M_ENGINE_VALIDATION_BUFFER_SIZE > 0
 		if (res->validate_cb) {
 			ret = res->validate_cb(
 				obj_inst->obj_inst_id, res->res_id,
@@ -2628,6 +2653,7 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 				memcpy(data_ptr, write_buf, len);
 			}
 		}
+#endif /* CONFIG_LWM2M_ENGINE_VALIDATION_BUFFER_SIZE > 0 */
 
 		if (res->post_write_cb) {
 			ret = res->post_write_cb(

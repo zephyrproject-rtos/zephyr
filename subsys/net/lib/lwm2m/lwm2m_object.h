@@ -197,6 +197,8 @@ struct lwm2m_engine_obj {
 #define RES_INSTANCE_NOT_CREATED 65535
 
 /* Resource macros */
+
+#if CONFIG_LWM2M_ENGINE_VALIDATION_BUFFER_SIZE > 0
 #define _INIT_OBJ_RES(_id, _r_ptr, _r_idx, _ri_ptr, _ri_count, _multi_ri, \
 		      _r_cb, _pre_w_cb, _val_cb, _post_w_cb, _ex_cb) \
 	_r_ptr[_r_idx].res_id = _id; \
@@ -208,6 +210,18 @@ struct lwm2m_engine_obj {
 	_r_ptr[_r_idx].validate_cb = _val_cb; \
 	_r_ptr[_r_idx].post_write_cb = _post_w_cb; \
 	_r_ptr[_r_idx].execute_cb = _ex_cb
+#else
+#define _INIT_OBJ_RES(_id, _r_ptr, _r_idx, _ri_ptr, _ri_count, _multi_ri, \
+		      _r_cb, _pre_w_cb, _val_cb, _post_w_cb, _ex_cb) \
+	_r_ptr[_r_idx].res_id = _id; \
+	_r_ptr[_r_idx].res_instances = _ri_ptr; \
+	_r_ptr[_r_idx].res_inst_count = _ri_count; \
+	_r_ptr[_r_idx].multi_res_inst = _multi_ri; \
+	_r_ptr[_r_idx].read_cb = _r_cb; \
+	_r_ptr[_r_idx].pre_write_cb = _pre_w_cb; \
+	_r_ptr[_r_idx].post_write_cb = _post_w_cb; \
+	_r_ptr[_r_idx].execute_cb = _ex_cb
+#endif /* CONFIG_LWM2M_ENGINE_VALIDATION_BUFFER_SIZE > 0 */
 
 #define _INIT_OBJ_RES_INST(_ri_ptr, _ri_idx, _ri_count, _ri_create, \
 			   _data_ptr, _data_len) \
@@ -337,7 +351,9 @@ struct lwm2m_engine_res_inst {
 struct lwm2m_engine_res {
 	lwm2m_engine_get_data_cb_t		read_cb;
 	lwm2m_engine_get_data_cb_t		pre_write_cb;
+#if CONFIG_LWM2M_ENGINE_VALIDATION_BUFFER_SIZE > 0
 	lwm2m_engine_set_data_cb_t		validate_cb;
+#endif
 	lwm2m_engine_set_data_cb_t		post_write_cb;
 	lwm2m_engine_execute_cb_t		execute_cb;
 
