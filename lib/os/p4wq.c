@@ -63,6 +63,8 @@ static inline bool item_lessthan(struct k_p4wq_work *a, struct k_p4wq_work *b)
 	} else if ((a->priority == b->priority) &&
 		   (a->deadline != b->deadline)) {
 		return a->deadline - b->deadline > 0;
+	} else {
+		;
 	}
 	return false;
 }
