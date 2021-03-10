@@ -100,7 +100,7 @@ struct ll_adv_iso_set {
 		struct node_rx_hdr hdr;
 	} node_rx_complete;
 	struct {
-		struct node_rx_hdr node_rx_hdr_terminate;
+		struct node_rx_hdr hdr;
 		union {
 			uint8_t    pdu[0] __aligned(4);
 			uint8_t    reason;
