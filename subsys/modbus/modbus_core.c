@@ -149,13 +149,18 @@ struct modbus_context *modbus_get_context(const uint8_t iface)
 	return ctx;
 }
 
-static struct modbus_context *mb_cfg_iface(const uint8_t iface,
-					   const uint8_t unit_id,
-					   const uint32_t baud,
-					   const enum uart_config_parity parity,
-					   const uint32_t rx_timeout,
-					   const bool client,
-					   const bool ascii_mode)
+int modbus_iface_get_by_name(const char *iface_name)
+{
+	for (int i = 0; i < ARRAY_SIZE(mb_ctx_tbl); i++) {
+		if (strcmp(iface_name, mb_ctx_tbl[i].iface_name) == 0) {
+			return i;
+		}
+	}
+
+	return -ENODEV;
+}
+
+static struct modbus_context *modbus_init_iface(const uint8_t iface)
 {
 	struct modbus_context *ctx;
 
@@ -171,117 +176,128 @@ static struct modbus_context *mb_cfg_iface(const uint8_t iface,
 		return NULL;
 	}
 
-	if ((client == true) &&
-	    !IS_ENABLED(CONFIG_MODBUS_CLIENT)) {
-		LOG_ERR("Modbus client support is not enabled");
-		ctx->client = false;
-		return NULL;
-	}
-
-	ctx->rxwait_to = rx_timeout;
-	ctx->unit_id = unit_id;
-	ctx->client = client;
-	ctx->mbs_user_cb = NULL;
 	k_mutex_init(&ctx->iface_lock);
-
 	k_sem_init(&ctx->client_wait_sem, 0, 1);
 	k_work_init(&ctx->server_work, modbus_rx_handler);
-
-	if (IS_ENABLED(CONFIG_MODBUS_FC08_DIAGNOSTIC)) {
-		modbus_reset_stats(ctx);
-	}
-
-	switch (ctx->mode) {
-	case MODBUS_MODE_RTU:
-	case MODBUS_MODE_ASCII:
-		if (IS_ENABLED(CONFIG_MODBUS_SERIAL) &&
-		    modbus_serial_init(ctx, baud, parity, ascii_mode) != 0) {
-			LOG_ERR("Failed to init MODBUS over serial line");
-			return NULL;
-		}
-		break;
-	default:
-		LOG_ERR("Unknown MODBUS mode");
-		return NULL;
-	}
-
-	LOG_DBG("Modbus interface %s initialized", ctx->iface_name);
 
 	return ctx;
 }
 
-int modbus_init_server(const uint8_t iface, const uint8_t unit_id,
-		       const uint32_t baud, const enum uart_config_parity parity,
-		       struct modbus_user_callbacks *const cb,
-		       const bool ascii_mode)
+int modbus_init_server(const int iface, struct modbus_iface_param param)
 {
-	struct modbus_context *ctx;
+	struct modbus_context *ctx = NULL;
+	int rc = 0;
 
 	if (!IS_ENABLED(CONFIG_MODBUS_SERVER)) {
 		LOG_ERR("Modbus server support is not enabled");
-		return -ENOTSUP;
+		rc = -ENOTSUP;
+		goto init_server_error;
 	}
 
-	if (cb == NULL) {
+	if (param.server.user_cb == NULL) {
 		LOG_ERR("User callbacks should be available");
-		return -EINVAL;
+		rc = -EINVAL;
+		goto init_server_error;
 	}
 
-	ctx = mb_cfg_iface(iface, unit_id, baud,
-			   parity, 0, false, ascii_mode);
-
+	ctx = modbus_init_iface(iface);
 	if (ctx == NULL) {
-		return -EINVAL;
+		rc = -EINVAL;
+		goto init_server_error;
 	}
 
-	ctx->mbs_user_cb = cb;
+	switch (param.mode) {
+	case MODBUS_MODE_RTU:
+	case MODBUS_MODE_ASCII:
+		if (IS_ENABLED(CONFIG_MODBUS_SERIAL) &&
+		    modbus_serial_init(ctx, param) != 0) {
+			LOG_ERR("Failed to init MODBUS over serial line");
+			rc = -EINVAL;
+			goto init_server_error;
+		}
+		break;
+	default:
+		LOG_ERR("Unknown MODBUS mode");
+		rc = -ENOTSUP;
+		goto init_server_error;
+	}
+
+	ctx->client = false;
+	ctx->unit_id = param.server.unit_id;
+	ctx->mbs_user_cb = param.server.user_cb;
+	if (IS_ENABLED(CONFIG_MODBUS_FC08_DIAGNOSTIC)) {
+		modbus_reset_stats(ctx);
+	}
+
+	LOG_DBG("Modbus interface %s initialized", ctx->iface_name);
 
 	return 0;
-}
 
-int modbus_iface_get_by_name(const char *iface_name)
-{
-	for (int i = 0; i < ARRAY_SIZE(mb_ctx_tbl); i++) {
-		if (strcmp(iface_name, mb_ctx_tbl[i].iface_name) == 0) {
-			return i;
-		}
+init_server_error:
+	if (ctx != NULL) {
+		atomic_clear_bit(&ctx->state, MODBUS_STATE_CONFIGURED);
 	}
 
-	return -ENODEV;
+	return rc;
 }
 
-int modbus_init_client(const uint8_t iface,
-		       const uint32_t baud, const enum uart_config_parity parity,
-		       const uint32_t rx_timeout,
-		       const bool ascii_mode)
+int modbus_init_client(const int iface, struct modbus_iface_param param)
 {
-	struct modbus_context *ctx;
+	struct modbus_context *ctx = NULL;
+	int rc = 0;
 
 	if (!IS_ENABLED(CONFIG_MODBUS_CLIENT)) {
 		LOG_ERR("Modbus client support is not enabled");
-		return -ENOTSUP;
+		rc = -ENOTSUP;
+		goto init_client_error;
 	}
 
-	ctx = mb_cfg_iface(iface, 0, baud,
-			   parity, rx_timeout, true, ascii_mode);
-
+	ctx = modbus_init_iface(iface);
 	if (ctx == NULL) {
-		return -EINVAL;
+		rc = -EINVAL;
+		goto init_client_error;
 	}
+
+	switch (param.mode) {
+	case MODBUS_MODE_RTU:
+	case MODBUS_MODE_ASCII:
+		if (IS_ENABLED(CONFIG_MODBUS_SERIAL) &&
+		    modbus_serial_init(ctx, param) != 0) {
+			LOG_ERR("Failed to init MODBUS over serial line");
+			rc = -EINVAL;
+			goto init_client_error;
+		}
+		break;
+	default:
+		LOG_ERR("Unknown MODBUS mode");
+		rc = -ENOTSUP;
+		goto init_client_error;
+	}
+
+	ctx->client = true;
+	ctx->unit_id = 0;
+	ctx->mbs_user_cb = NULL;
+	ctx->rxwait_to = param.rx_timeout;
 
 	return 0;
+
+init_client_error:
+	if (ctx != NULL) {
+		atomic_clear_bit(&ctx->state, MODBUS_STATE_CONFIGURED);
+	}
+
+	return rc;
 }
 
 int modbus_disable(const uint8_t iface)
 {
 	struct modbus_context *ctx;
 
-	if (iface >= ARRAY_SIZE(mb_ctx_tbl)) {
-		LOG_ERR("Interface %u not available", iface);
+	ctx = modbus_get_context(iface);
+	if (ctx == NULL) {
+		LOG_ERR("Interface %u not initialized", iface);
 		return -EINVAL;
 	}
-
-	ctx = &mb_ctx_tbl[iface];
 
 	switch (ctx->mode) {
 	case MODBUS_MODE_RTU:
@@ -300,7 +316,7 @@ int modbus_disable(const uint8_t iface)
 	ctx->mbs_user_cb = NULL;
 	atomic_clear_bit(&ctx->state, MODBUS_STATE_CONFIGURED);
 
-	LOG_INF("Disable Modbus interface");
+	LOG_INF("Modbus interface %u disabled", iface);
 
 	return 0;
 }

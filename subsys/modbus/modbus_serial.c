@@ -526,14 +526,21 @@ int modbus_serial_tx_adu(struct modbus_context *ctx)
 }
 
 int modbus_serial_init(struct modbus_context *ctx,
-		       uint32_t baudrate,
-		       enum uart_config_parity parity,
-		       const bool ascii_mode)
+		       struct modbus_iface_param param)
 {
 	struct modbus_serial_config *cfg = ctx->cfg;
 	const uint32_t if_delay_max = 3500000;
 	const uint32_t numof_bits = 11;
 	struct uart_config uart_cfg;
+
+	switch (param.mode) {
+	case MODBUS_MODE_RTU:
+	case MODBUS_MODE_ASCII:
+		ctx->mode = param.mode;
+		break;
+	default:
+		return -ENOTSUP;
+	}
 
 	cfg->dev = device_get_binding(cfg->dev_name);
 	if (cfg->dev == NULL) {
@@ -542,7 +549,7 @@ int modbus_serial_init(struct modbus_context *ctx,
 		return -ENODEV;
 	}
 
-	uart_cfg.baudrate = baudrate,
+	uart_cfg.baudrate = param.serial.baud,
 	uart_cfg.flow_ctrl = UART_CFG_FLOW_CTRL_NONE;
 
 	if (ctx->mode == MODBUS_MODE_ASCII) {
@@ -551,15 +558,15 @@ int modbus_serial_init(struct modbus_context *ctx,
 		uart_cfg.data_bits = UART_CFG_DATA_BITS_8;
 	}
 
-	switch (parity) {
+	switch (param.serial.parity) {
 	case UART_CFG_PARITY_ODD:
 	case UART_CFG_PARITY_EVEN:
-		uart_cfg.parity = parity;
+		uart_cfg.parity = param.serial.parity;
 		uart_cfg.stop_bits = UART_CFG_STOP_BITS_1;
 		break;
 	case UART_CFG_PARITY_NONE:
 		/* Use of no parity requires 2 stop bits */
-		uart_cfg.parity = parity;
+		uart_cfg.parity = param.serial.parity;
 		uart_cfg.stop_bits = UART_CFG_STOP_BITS_2;
 		break;
 	default:
@@ -571,8 +578,9 @@ int modbus_serial_init(struct modbus_context *ctx,
 		return -EINVAL;
 	}
 
-	if (baudrate <= 38400) {
-		cfg->rtu_timeout = (numof_bits * if_delay_max) / baudrate;
+	if (param.serial.baud <= 38400) {
+		cfg->rtu_timeout = (numof_bits * if_delay_max) /
+				   param.serial.baud;
 	} else {
 		cfg->rtu_timeout = (numof_bits * if_delay_max) / 38400;
 	}
@@ -583,12 +591,12 @@ int modbus_serial_init(struct modbus_context *ctx,
 
 	cfg->uart_buf_ctr = 0;
 	cfg->uart_buf_ptr = &cfg->uart_buf[0];
-	uart_irq_callback_user_data_set(cfg->dev, uart_cb_handler, ctx);
-	modbus_serial_rx_on(ctx);
 
-	ctx->mode = ascii_mode ? MODBUS_MODE_ASCII : MODBUS_MODE_RTU;
+	uart_irq_callback_user_data_set(cfg->dev, uart_cb_handler, ctx);
 	k_timer_init(&cfg->rtu_timer, rtu_tmr_handler, NULL);
 	k_timer_user_data_set(&cfg->rtu_timer, ctx);
+
+	modbus_serial_rx_on(ctx);
 	LOG_INF("RTU timeout %u us", cfg->rtu_timeout);
 
 	return 0;
