@@ -6479,7 +6479,6 @@ static void le_big_complete(struct pdu_data *pdu_data,
 	struct bt_hci_evt_le_big_complete *sep;
 	struct ll_adv_iso_set *adv_iso;
 	struct lll_adv_iso *lll;
-	struct node_rx_sync *se;
 	size_t evt_size;
 
 	adv_iso = node_rx->hdr.rx_ftr.param;
@@ -6489,8 +6488,7 @@ static void le_big_complete(struct pdu_data *pdu_data,
 
 	sep = meta_evt(buf, BT_HCI_EVT_LE_BIG_COMPLETE, evt_size);
 
-	se = (void *)pdu_data;
-	sep->status = se->status;
+	sep->status = BT_HCI_ERR_SUCCESS;
 	sep->big_handle = sys_cpu_to_le16(node_rx->hdr.handle);
 
 	if (sep->status) {
