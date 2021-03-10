@@ -9,7 +9,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <stdio.h>
 #include <ztest_assert.h>
-#include <sys/mutex.h>
+#include <sys/sem.h>
 #include <net/socket.h>
 #include <net/dns_resolve.h>
 #include <net/buf.h>
@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #define ANY_PORT 0
 #define MAX_BUF_SIZE 128
 #define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
-#define THREAD_PRIORITY K_PRIO_COOP(8)
+#define THREAD_PRIORITY K_PRIO_COOP(2)
 #define WAIT_TIME K_MSEC(250)
 
 static uint8_t recv_buf[MAX_BUF_SIZE];
@@ -36,8 +36,8 @@ static struct sockaddr_in6 addr_v6;
 
 static int queries_received;
 
-/* The mutex is there to wait the data to be received. */
-static ZTEST_BMEM SYS_MUTEX_DEFINE(wait_data);
+/* The semaphore is there to wait the data to be received. */
+static ZTEST_BMEM struct sys_sem wait_data;
 
 NET_BUF_POOL_DEFINE(test_dns_msg_pool, 1, 512, 0, NULL);
 
@@ -108,8 +108,6 @@ static int process_dns(void)
 	socklen_t addr_len;
 	int ret, idx;
 
-	(void)sys_mutex_lock(&wait_data, K_FOREVER);
-
 	NET_DBG("Waiting for IPv4 DNS packets on port %d",
 		ntohs(addr_v4.sin_port));
 	NET_DBG("Waiting for IPv6 DNS packets on port %d",
@@ -154,7 +152,7 @@ static int process_dns(void)
 				ret = check_dns_query(recv_buf,
 						      sizeof(recv_buf));
 				if (ret) {
-					sys_mutex_unlock(&wait_data);
+					(void)sys_sem_give(&wait_data);
 				}
 			}
 		}
@@ -207,8 +205,12 @@ void test_getaddrinfo_setup(void)
 	sock_v6 = prepare_listen_sock_udp_v6(&addr_v6);
 	zassert_true(sock_v6 >= 0, "Invalid IPv6 socket");
 
+	sys_sem_init(&wait_data, 0, INT_MAX);
+
 	k_thread_start(dns_server_thread_id);
 
+	k_thread_priority_set(dns_server_thread_id,
+			      k_thread_priority_get(k_current_get()));
 	k_yield();
 }
 
@@ -219,16 +221,19 @@ void test_getaddrinfo_ok(void)
 	queries_received = 0;
 
 	/* This check simulates a local query that we will catch
-	 * in dns_process() function. So we do not check the res variable
+	 * in process_dns() function. So we do not check the res variable
 	 * as that will currently not contain anything useful. We just check
-	 * that the query triggered a function call to dns_process() function
+	 * that the query triggered a function call to process_dns() function
 	 * and that it could parse the DNS query.
 	 */
 	(void)getaddrinfo(QUERY_HOST, NULL, NULL, &res);
 
-	if (sys_mutex_lock(&wait_data, WAIT_TIME)) {
-		zassert_true(false, "Timeout DNS query not received");
+	if (sys_sem_count_get(&wait_data) != 2) {
+		zassert_true(false, "Did not receive all queries");
 	}
+
+	(void)sys_sem_take(&wait_data, K_NO_WAIT);
+	(void)sys_sem_take(&wait_data, K_NO_WAIT);
 
 	zassert_equal(queries_received, 2,
 		      "Did not receive both IPv4 and IPv6 query");
@@ -242,6 +247,13 @@ void test_getaddrinfo_cancelled(void)
 	int ret;
 
 	ret = getaddrinfo(QUERY_HOST, NULL, NULL, &res);
+
+	if (sys_sem_count_get(&wait_data) != 2) {
+		zassert_true(false, "Did not receive all queries");
+	}
+
+	(void)sys_sem_take(&wait_data, K_NO_WAIT);
+	(void)sys_sem_take(&wait_data, K_NO_WAIT);
 
 	/* Without a local DNS server this request will be canceled. */
 	zassert_equal(ret, DNS_EAI_CANCELED, "Invalid result");
@@ -649,6 +661,7 @@ static void test_getaddrinfo_null_host(void)
 void test_main(void)
 {
 	k_thread_system_pool_assign(k_current_get());
+	k_thread_access_grant(k_current_get(), &wait_data);
 
 	ztest_test_suite(socket_getaddrinfo,
 			 ztest_unit_test(test_getaddrinfo_setup),
