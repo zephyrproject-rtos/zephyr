@@ -478,8 +478,8 @@ The software security process includes:
    towards a security certification if required.
 
 -  **Security Issue Management** encompasses the evaluation of potential
-   system vulnerabilities and their mitigation as described in the
-   `Security Issue Management`_ Section.
+   system vulnerabilities and their mitigation as described in
+   :ref:`Security Issue Management <reporting>`.
 
 These criteria and tasks need to be integrated into the development
 process for secure software and shall be automated wherever possible. On
