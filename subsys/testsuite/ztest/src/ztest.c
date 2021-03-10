@@ -79,6 +79,8 @@ static int cleanup_test(struct unit_test *test)
 		PRINT("Test %s failed: Unused mock return values\n",
 		      test->name);
 		ret = TC_FAIL;
+	} else {
+		;
 	}
 
 	return ret;
