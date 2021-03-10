@@ -48,6 +48,10 @@ extern unsigned char pm_idle_exit_notify;
  *
  * @note These callbacks can be called from the ISR of the event
  *       that caused the kernel exit from idling.
+ *
+ * @note It is not allowed to call @ref pm_notifier_unregister or
+ *       @ref pm_notifier_register from these callbacks because they are called
+ *       with the spin locked in those functions.
  */
 struct pm_notifier {
 	sys_snode_t _node;
