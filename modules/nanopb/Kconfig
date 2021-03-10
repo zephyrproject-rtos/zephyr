@@ -1,0 +1,59 @@
+# Copyright (c) 2021 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_NANOPB_MODULE
+	bool
+
+menuconfig NANOPB
+	bool "Nanopb Support"
+	help
+	  This option enables the Nanopb library and generator.
+
+if NANOPB
+
+config NANOPB_ENABLE_MALLOC
+	bool "Enable malloc usage"
+	help
+	  This option enables dynamic allocation support in the decoder.
+
+config NANOPB_MAX_REQUIRED_FIELDS
+	int "Max number of required fields"
+	default 64
+	help
+	  Maximum number of proto2 required fields to check for presence.
+	  Default and minimum value is 64.
+
+config NANOPB_NO_ERRMSG
+	bool "Disable error messages"
+	help
+	  Disable error message support to save code size. Only error
+	  information is the true/false return value.
+
+config NANOPB_BUFFER_ONLY
+	bool "Buffers only"
+	help
+	  Disable support for custom streams. Only supports encoding and
+	  decoding with memory buffers. Speeds up execution and slightly
+	  decreases code size.
+
+config NANOPB_WITHOUT_64BIT
+	bool "Disable 64-bit integer fields"
+	help
+	  Disable support of 64-bit integer fields, for old compilers or
+	  for a slight speedup on 8-bit platforms.
+
+config NANOPB_ENCODE_ARRAYS_UNPACKED
+	bool "Encode arrays unpacked"
+	help
+	  Encode scalar arrays in the unpacked format, which takes up more
+	  space.
+	  Only to be used when the decoder on the receiving side cannot
+	  process packed arrays, such as protobuf.js versions before 2020.
+
+config NANOPB_VALIDATE_UTF8
+	bool "Validate UTF-8"
+	help
+	  Check whether incoming strings are valid UTF-8 sequences.
+	  Adds a small performance and code size penalty.
+
+endif # NANOPB
