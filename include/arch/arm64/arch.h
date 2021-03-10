@@ -29,7 +29,9 @@
 #include <arch/arm64/sys_io.h>
 #include <arch/arm64/timer.h>
 #include <arch/arm64/error.h>
+#ifdef CONFIG_ARM_MMU
 #include <arch/arm64/arm_mmu.h>
+#endif
 #include <arch/arm64/thread_stack.h>
 #include <arch/common/addr_types.h>
 #include <arch/common/sys_bitops.h>
@@ -72,7 +74,9 @@ typedef struct {
 } k_mem_partition_attr_t;
 
 struct arch_mem_domain {
+#ifdef CONFIG_ARM_MMU
 	struct arm_mmu_ptables ptables;
+#endif
 	sys_snode_t node;
 };
 
