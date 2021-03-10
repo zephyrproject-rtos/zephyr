@@ -61,6 +61,11 @@
 #define MODBUS_EXC_ILLEGAL_DATA_ADDR		2
 #define MODBUS_EXC_ILLEGAL_DATA_VAL		3
 #define MODBUS_EXC_SERVER_DEVICE_FAILURE	4
+#define MODBUS_EXC_ACK				5
+#define MODBUS_EXC_SERVER_DEVICE_BUSY		6
+#define MODBUS_EXC_MEM_PARITY_ERROR		8
+#define MODBUS_EXC_GW_PATH_UNAVAILABLE		10
+#define MODBUS_EXC_GW_TARGET_FAILED_TO_RESP	11
 
 /* Modbus RTU (ASCII) constants */
 #define MODBUS_COIL_OFF_CODE			0x0000
@@ -72,13 +77,8 @@
 #define MODBUS_ASCII_END_FRAME_CHAR1		'\r'
 #define MODBUS_ASCII_END_FRAME_CHAR2		'\n'
 
-struct modbus_adu {
-	uint16_t length;
-	uint8_t unit_id;
-	uint8_t fc;
-	uint8_t data[CONFIG_MODBUS_BUFFER_SIZE - 4];
-	uint16_t crc;
-};
+/* Modbus ADU constants */
+#define MODBUS_ADU_PROTO_ID			0x0000
 
 struct mb_rtu_gpio_config {
 	const char *name;
@@ -113,8 +113,12 @@ struct modbus_serial_config {
 struct modbus_context {
 	/* Interface name */
 	const char *iface_name;
-	/* Serial line configuration */
-	struct modbus_serial_config *cfg;
+	union {
+		/* Serial line configuration */
+		struct modbus_serial_config *cfg;
+		/* RAW TX callback */
+		modbus_raw_cb_t raw_tx_cb;
+	};
 	/* MODBUS mode */
 	enum modbus_mode mode;
 	/* True if interface is configured as client */
@@ -161,6 +165,15 @@ struct modbus_context {
  *                   if interface not available or not configured;
  */
 struct modbus_context *modbus_get_context(const uint8_t iface);
+
+/**
+ * @brief Get Modbus interface index.
+ *
+ * @param ctx        Pointer to Modbus interface context
+ *
+ * @retval           Interface index or negative error value.
+ */
+int modbus_iface_get_by_ctx(const struct modbus_context *ctx);
 
 /**
  * @brief Send ADU.
@@ -252,5 +265,10 @@ int modbus_serial_init(struct modbus_context *ctx,
  * @param ctx        Modbus interface context
  */
 void modbus_serial_disable(struct modbus_context *ctx);
+
+int modbus_raw_rx_adu(struct modbus_context *ctx);
+int modbus_raw_tx_adu(struct modbus_context *ctx);
+int modbus_raw_init(struct modbus_context *ctx,
+		    struct modbus_iface_param param);
 
 #endif /* ZEPHYR_INCLUDE_MODBUS_INTERNAL_H_ */

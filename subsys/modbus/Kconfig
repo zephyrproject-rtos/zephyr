@@ -53,6 +53,18 @@ config MODBUS_ASCII_MODE
 	help
 	  Enable ASCII transmission mode.
 
+config MODBUS_RAW_ADU
+	bool "Modbus raw ADU support"
+	help
+	  Enable Modbus raw ADU support.
+
+config MODBUS_NUMOF_RAW_ADU
+	int "Number of raw ADU instances"
+	depends on MODBUS_RAW_ADU
+	range 1 4
+	help
+	  Number of raw ADU instances.
+
 config MODBUS_FP_EXTENSIONS
 	bool "Floating-Point extensions"
 	default y

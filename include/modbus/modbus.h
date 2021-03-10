@@ -36,6 +36,31 @@
 extern "C" {
 #endif
 
+/** Length of MBAP Header */
+#define MODBUS_MBAP_LENGTH		7
+/** Length of MBAP Header plus function code */
+#define MODBUS_MBAP_AND_FC_LENGTH	(MODBUS_MBAP_LENGTH + 1)
+
+/**
+ * @brief Frame struct used internally and for raw ADU support.
+ */
+struct modbus_adu {
+	/** Transaction Identifier */
+	uint16_t trans_id;
+	/** Protocol Identifier */
+	uint16_t proto_id;
+	/** Length of the data only (not the length of unit ID + PDU) */
+	uint16_t length;
+	/** Unit Identifier */
+	uint8_t unit_id;
+	/** Function Code */
+	uint8_t fc;
+	/** Transaction Data */
+	uint8_t data[CONFIG_MODBUS_BUFFER_SIZE - 4];
+	/** RTU CRC */
+	uint16_t crc;
+};
+
 /**
  * @brief Coil read (FC01)
  *
@@ -348,6 +373,16 @@ struct modbus_user_callbacks {
 int modbus_iface_get_by_name(const char *iface_name);
 
 /**
+ * @brief ADU raw callback function signature
+ *
+ * @param iface      Modbus RTU interface index
+ * @param adu        Pointer to the RAW ADU struct to send
+ *
+ * @retval           0 If transfer was successful
+ */
+typedef int (*modbus_raw_cb_t)(const int iface, const struct modbus_adu *adu);
+
+/**
  * @brief Modbus interface mode
  */
 enum modbus_mode {
@@ -355,6 +390,8 @@ enum modbus_mode {
 	MODBUS_MODE_RTU,
 	/** Modbus over serial line ASCII mode */
 	MODBUS_MODE_ASCII,
+	/** Modbus raw ADU mode */
+	MODBUS_MODE_RAW,
 };
 
 /**
@@ -398,6 +435,8 @@ struct modbus_iface_param {
 	union {
 		/** Serial support parameter of the interface */
 		struct modbus_serial_param serial;
+		/** Pointer to raw ADU callback function */
+		modbus_raw_cb_t raw_tx_cb;
 	};
 };
 
@@ -431,6 +470,60 @@ int modbus_init_client(const int iface, struct modbus_iface_param param);
  * @retval           0 If the function was successful
  */
 int modbus_disable(const uint8_t iface);
+
+/**
+ * @brief Submit raw ADU
+ *
+ * @param iface      Modbus RTU interface index
+ * @param adu        Pointer to the RAW ADU struct that is received
+ *
+ * @retval           0 If transfer was successful
+ */
+int modbus_raw_submit_rx(const int iface, const struct modbus_adu *adu);
+
+/**
+ * @brief Put MBAP header into a buffer
+ *
+ * @param adu        Pointer to the RAW ADU struct
+ * @param header     Pointer to the buffer in which MBAP header
+ *                   will be placed.
+ *
+ * @retval           0 If transfer was successful
+ */
+void modbus_raw_put_header(const struct modbus_adu *adu, uint8_t *header);
+
+/**
+ * @brief Get MBAP header from a buffer
+ *
+ * @param adu        Pointer to the RAW ADU struct
+ * @param header     Pointer to the buffer containing MBAP header
+ *
+ * @retval           0 If transfer was successful
+ */
+void modbus_raw_get_header(struct modbus_adu *adu, const uint8_t *header);
+
+/**
+ * @brief Set Server Device Failure exception
+ *
+ * This function modifies ADU passed by the pointer.
+ *
+ * @param adu        Pointer to the RAW ADU struct
+ */
+void modbus_raw_set_server_failure(struct modbus_adu *adu);
+
+/**
+ * @brief Use interface as backend to send and receive ADU
+ *
+ * This function overwrites ADU passed by the pointer and generates
+ * exception responses if backend interface is misconfigured or
+ * target device is unreachable.
+ *
+ * @param iface      Modbus client interface index
+ * @param adu        Pointer to the RAW ADU struct
+ *
+ * @retval           0 If transfer was successful
+ */
+int modbus_raw_backend_txn(const int iface, struct modbus_adu *adu);
 
 #ifdef __cplusplus
 }
