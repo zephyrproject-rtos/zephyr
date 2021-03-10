@@ -259,6 +259,23 @@ void test_server_setup_ascii(void)
 	}
 }
 
+void test_server_setup_raw(void)
+{
+	char iface_name[] = "RAW_1";
+	int err;
+
+	server_iface = modbus_iface_get_by_name(iface_name);
+	server_param.mode = MODBUS_MODE_RAW;
+	server_param.raw_tx_cb = server_raw_cb;
+
+	if (IS_ENABLED(CONFIG_MODBUS_SERVER)) {
+		err = modbus_init_server(server_iface, server_param);
+		zassert_equal(err, 0, "Failed to configure RAW server");
+	} else {
+		ztest_test_skip();
+	}
+}
+
 void test_server_disable(void)
 {
 	int err;

@@ -17,6 +17,11 @@ const static uint16_t fp_offset_oor = fp_offset + offset_oor;
 
 static uint8_t client_iface;
 
+uint8_t test_get_client_iface(void)
+{
+	return client_iface;
+}
+
 void test_coil_wr_rd(void)
 {
 	const uint8_t coil_qty = 16;
@@ -267,6 +272,19 @@ void test_client_setup_ascii(void)
 	zassert_equal(err, 0, "Failed to configure RTU client");
 }
 
+void test_client_setup_raw(void)
+{
+	char iface_name[] = "RAW_0";
+	int err;
+
+	client_iface = modbus_iface_get_by_name(iface_name);
+	client_param.mode = MODBUS_MODE_RAW;
+	client_param.raw_tx_cb = client_raw_cb;
+
+	err = modbus_init_client(client_iface, client_param);
+	zassert_equal(err, 0, "Failed to configure RAW client");
+}
+
 void test_client_disable(void)
 {
 	int err;
@@ -323,6 +341,11 @@ void test_diagnostic(void)
 }
 
 void test_client_disable(void)
+{
+	ztest_test_skip();
+}
+
+void test_client_setup_raw(void)
 {
 	ztest_test_skip();
 }
