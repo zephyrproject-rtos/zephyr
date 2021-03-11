@@ -570,8 +570,8 @@ static ssize_t write_control_point(struct bt_conn *conn,
 			BT_DBG("Invalid length %u", len);
 			return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 		} else if (cp->add_src.pa_sync > BASS_PA_REQ_SYNC ||
-			   cp->add_src.addr.type > 0x01 ||
-			   cp->add_src.adv_sid > 0x0f) {
+			   cp->add_src.addr.type > BT_ADDR_LE_RANDOM_ID ||
+			   cp->add_src.adv_sid > BT_GAP_SID_MAX) {
 			BT_DBG("Invalid data");
 			return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
 		} else if (cp->add_src.metadata_len > CONFIG_BT_BASS_MAX_METADATA_LEN) {
