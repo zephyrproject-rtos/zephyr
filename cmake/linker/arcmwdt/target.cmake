@@ -112,7 +112,7 @@ macro(toolchain_ld_baremetal)
     -Hnosdata
     -Hnocrt
     -Xtimer0 # to suppress the warning message
-    -Hnoxcheck
+    -Hnoxcheck_obj
     -Hnocplus
     -Hcl
     -Hheap=0
