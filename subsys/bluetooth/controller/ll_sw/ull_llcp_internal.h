@@ -865,11 +865,11 @@ static inline void pdu_decode_version_ind(struct ll_conn *conn, struct pdu_data 
 /*
  * Encryption Start Procedure Helper
  */
-void ull_cp_priv_pdu_encode_enc_req(struct pdu_data *pdu);
+void ull_cp_priv_pdu_encode_enc_req(struct proc_ctx *ctx, struct pdu_data *pdu);
 
-static inline void pdu_encode_enc_req(struct pdu_data *pdu)
+static inline void pdu_encode_enc_req(struct proc_ctx *ctx, struct pdu_data *pdu)
 {
-	return ull_cp_priv_pdu_encode_enc_req(pdu);
+	return ull_cp_priv_pdu_encode_enc_req(ctx, pdu);
 }
 
 void ull_cp_priv_ntf_encode_enc_req(struct proc_ctx *ctx, struct pdu_data *pdu);
