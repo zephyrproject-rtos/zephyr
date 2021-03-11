@@ -14,7 +14,6 @@
 #include <wctype.h>
 #include <stddef.h>
 #include <string.h>
-#include <sys/cbprintf.h>
 #include <sys/util.h>
 
 #define CBPRINTF_VIA_UNIT_TEST
@@ -96,6 +95,9 @@
 #if (VIA_TWISTER & 0x400) != 0
 #define CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE 1
 #endif
+#if (VIA_TWISTER & 0x800) != 0
+#define AVOID_C_GENERIC 1
+#endif
 
 #endif /* VIA_TWISTER */
 
@@ -114,6 +116,11 @@
 #define ENABLED_USE_PACKAGED false
 #endif
 
+#if AVOID_C_GENERIC
+#define Z_C_GENERIC 0
+#endif
+
+#include <sys/cbprintf.h>
 #include "../../../lib/os/cbprintf.c"
 
 #if defined(CONFIG_CBPRINTF_COMPLETE)
@@ -1219,13 +1226,14 @@ void test_main(void)
 	}
 	if (IS_ENABLED(CONFIG_CBPRINTF_COMPLETE)) {
 		TC_PRINT(" COMPLETE");
-		if (ENABLED_USE_PACKAGED) {
-			TC_PRINT(" PACKAGED\n");
-		} else {
-			TC_PRINT(" VA_LIST\n");
-		}
 	} else {
 		TC_PRINT(" NANO\n");
+	}
+	if (ENABLED_USE_PACKAGED) {
+		TC_PRINT(" PACKAGED %s C11 _Generic\n",
+				Z_C_GENERIC ? "with" : "without");
+	} else {
+		TC_PRINT(" VA_LIST\n");
 	}
 	if (IS_ENABLED(CONFIG_CBPRINTF_FULL_INTEGRAL)) {
 		TC_PRINT(" FULL_INTEGRAL\n");
