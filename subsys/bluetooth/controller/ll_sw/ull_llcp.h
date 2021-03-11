@@ -76,7 +76,7 @@ uint8_t ull_cp_min_used_chans(struct ll_conn *conn, uint8_t phys, uint8_t min_us
 /**
  * @brief Initiate a Encryption Start Procedure.
  */
-uint8_t ull_cp_encryption_start(struct ll_conn *conn);
+uint8_t ull_cp_encryption_start(struct ll_conn *conn, const uint8_t rand[8], const uint8_t ediv[2], const uint8_t ltk[16]);
 
 /**
  */
