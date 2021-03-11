@@ -350,4 +350,9 @@ config MBEDTLS_SERVER_NAME_INDICATION
 	  Enable this to support RFC 6066 server name indication (SNI) in SSL.
 	  This requires that MBEDTLS_X509_CRT_PARSE_C is also set.
 
+config MBEDTLS_PK_WRITE_C
+	bool "Enable the generic public (asymetric) key writer"
+	help
+	  Enable generic public key write functions.
+
 endmenu
