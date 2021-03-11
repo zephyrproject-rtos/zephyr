@@ -68,8 +68,12 @@ static void vtd_send_cmd(const struct device *dev,
 			 uint16_t cmd_bit, uint16_t status_bit)
 {
 	uintptr_t base_address = DEVICE_MMIO_GET(dev);
+	uint32_t value;
 
-	sys_set_bit((base_address + VTD_GCMD_REG), cmd_bit);
+	value = vtd_read_reg32(dev, VTD_GSTS_REG);
+	value |= BIT(cmd_bit);
+
+	vtd_write_reg32(dev, VTD_GCMD_REG, value);
 
 	while (!sys_test_bit((base_address + VTD_GSTS_REG),
 			     status_bit)) {
