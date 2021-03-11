@@ -393,7 +393,3 @@
 &nvic {
 	arm,num-irq-priority-bits = <4>;
 };
-
-&systick {
-	status = "disabled";
-};
