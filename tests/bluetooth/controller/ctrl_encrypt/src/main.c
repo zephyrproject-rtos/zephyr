@@ -423,13 +423,13 @@ void test_encryption_start_mas_loc_no_ltk(void)
  *    |     |---------------| |                     |
  *    |                       |                     |
  */
-void test_encryption_start_mas_rem(void)
+void test_encryption_start_sla_rem(void)
 {
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -556,13 +556,13 @@ void test_encryption_start_mas_rem(void)
  *    |     |---------------| |                     |
  *    |                       |                     |
  */
-void test_encryption_start_mas_rem_limited_memory(void)
+void test_encryption_start_sla_rem_limited_memory(void)
 {
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -718,7 +718,7 @@ void test_encryption_start_mas_rem_limited_memory(void)
  *    |                       | LL_REJECT_EXT_IND   |
  *    |                       |-------------------->|
  */
-void test_encryption_start_mas_rem_no_ltk(void)
+void test_encryption_start_sla_rem_no_ltk(void)
 {
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
@@ -729,7 +729,7 @@ void test_encryption_start_mas_rem_no_ltk(void)
 	};
 
 	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -795,21 +795,14 @@ void test_encryption_start_mas_rem_no_ltk(void)
 
 void test_main(void)
 {
-
-
-
 	ztest_test_suite(encryption,
 			 ztest_unit_test_setup_teardown(test_encryption_start_mas_loc, setup, unit_test_noop),
 			 ztest_unit_test_setup_teardown(test_encryption_start_mas_loc_limited_memory, setup, unit_test_noop),
 			 ztest_unit_test_setup_teardown(test_encryption_start_mas_loc_no_ltk, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_encryption_start_mas_rem, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_encryption_start_mas_rem_limited_memory, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_encryption_start_mas_rem_no_ltk, setup, unit_test_noop)
+			 ztest_unit_test_setup_teardown(test_encryption_start_sla_rem, setup, unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_encryption_start_sla_rem_limited_memory, setup, unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_encryption_start_sla_rem_no_ltk, setup, unit_test_noop)
 			);
 
-
-
-
 	ztest_run_test_suite(encryption);
-
 }
