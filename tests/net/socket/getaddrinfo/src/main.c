@@ -563,6 +563,7 @@ static void test_getaddrinfo_ipv4_hints_ipv6(void)
 	ret = zsock_getaddrinfo("192.0.2.1", NULL, &hints, &res);
 	zassert_equal(ret, DNS_EAI_ADDRFAMILY, "Invalid result (%d)", ret);
 	zassert_is_null(res, "");
+	zsock_freeaddrinfo(res);
 }
 
 static void test_getaddrinfo_ipv6_hints_ipv4(void)
@@ -576,6 +577,7 @@ static void test_getaddrinfo_ipv6_hints_ipv4(void)
 	ret = zsock_getaddrinfo("2001:db8::1", NULL, &hints, &res);
 	zassert_equal(ret, DNS_EAI_ADDRFAMILY, "Invalid result (%d)", ret);
 	zassert_is_null(res, "");
+	zsock_freeaddrinfo(res);
 }
 
 static void test_getaddrinfo_port_invalid(void)
@@ -585,6 +587,7 @@ static void test_getaddrinfo_port_invalid(void)
 	ret = zsock_getaddrinfo("192.0.2.1", "70000", NULL, &res);
 	zassert_equal(ret, DNS_EAI_NONAME, "Invalid result (%d)", ret);
 	zassert_is_null(res, "");
+	zsock_freeaddrinfo(res);
 }
 
 static void test_getaddrinfo_null_host(void)
