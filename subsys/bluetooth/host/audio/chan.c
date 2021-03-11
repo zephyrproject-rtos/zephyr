@@ -781,6 +781,35 @@ void bt_audio_chan_set_state(struct bt_audio_chan *chan, uint8_t state)
 }
 #endif /* CONFIG_BT_AUDIO_DEBUG_CHAN */
 
+static int codec_qos_to_iso_qos(struct bt_iso_chan_qos *qos,
+				struct bt_codec_qos *codec)
+{
+	struct bt_iso_chan_io_qos *io;
+
+	switch (codec->dir) {
+	case BT_CODEC_QOS_IN:
+		io = qos->rx;
+		break;
+	case BT_CODEC_QOS_OUT:
+		io = qos->tx;
+		break;
+	case BT_CODEC_QOS_INOUT:
+		io = qos->rx = qos->tx;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	qos->framing = codec->framing;
+	io->interval = codec->interval;
+	io->latency = codec->latency;
+	io->sdu = codec->sdu;
+	io->phy = codec->phy;
+	io->rtn = codec->rtn;
+
+	return 0;
+}
+
 struct bt_conn_iso *bt_audio_chan_bind(struct bt_audio_chan *chan,
 				       struct bt_codec_qos *qos)
 {
@@ -801,7 +830,12 @@ struct bt_conn_iso *bt_audio_chan_bind(struct bt_audio_chan *chan,
 
 	/* Fill up ISO QoS settings from Codec QoS*/
 	if (chan->qos != qos) {
-		memcpy(chan->qos, qos, sizeof(qos));
+		int err = codec_qos_to_iso_qos(chan->iso->qos, qos);
+
+		if (err) {
+			BT_ERR("Unable to convert codec QoS to ISO QoS");
+			return NULL;
+		}
 	}
 
 	conns[0] = chan->conn;

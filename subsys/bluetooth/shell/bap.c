@@ -23,10 +23,11 @@
 #include "bt.h"
 
 #define MAX_PAC 2
+#define MAX_ASE (CONFIG_BT_BAP_ASE_SNK_COUNT + CONFIG_BT_BAP_ASE_SRC_COUNT)
 
 static struct bt_audio_chan chans[MAX_PAC];
 static struct bt_audio_capability *rcaps[2][CONFIG_BT_BAP_PAC_COUNT];
-static struct bt_audio_ep *reps[CONFIG_BT_BAP_ASE_COUNT];
+static struct bt_audio_ep *reps[MAX_ASE];
 static struct bt_audio_chan *default_chan;
 static bool connecting;
 

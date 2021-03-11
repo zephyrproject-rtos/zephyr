@@ -38,7 +38,8 @@ static struct bap_pac {
 static struct bt_uuid *snk_uuid = BT_UUID_PACS_SNK;
 static struct bt_uuid *src_uuid = BT_UUID_PACS_SRC;
 static struct bt_uuid *pacs_context_uuid = BT_UUID_PACS_SUPPORTED_CONTEXT;
-static struct bt_uuid *ase_uuid = BT_UUID_ASCS_ASE;
+static struct bt_uuid *ase_snk_uuid = BT_UUID_ASCS_ASE_SNK;
+static struct bt_uuid *ase_src_uuid = BT_UUID_ASCS_ASE_SRC;
 static struct bt_uuid *cp_uuid = BT_UUID_ASCS_ASE_CP;
 
 static struct bt_audio_chan *bap_config(struct bt_conn *conn,
@@ -255,7 +256,11 @@ static int bap_start(struct bt_audio_chan *chan)
 	 * Central Establishment procedure.
 	 */
 	err = bt_audio_chan_connect(chan);
-	if (err && err != -EINPROGRESS) {
+	if (!err) {
+		return 0;
+	}
+
+	if (err && err != -EALREADY) {
 		BT_ERR("bt_audio_chan_connect: %d", err);
 		return err;
 	}
@@ -485,7 +490,9 @@ static uint8_t cp_discover_func(struct bt_conn *conn,
 	params->err = 0;
 	bt_audio_ep_set_cp(conn, chrc->value_handle);
 
-	return BT_GATT_ITER_CONTINUE;
+	params->func(conn, NULL, NULL, params);
+
+	return BT_GATT_ITER_STOP;
 }
 
 static int ase_cp_discover(struct bt_conn *conn,
@@ -547,7 +554,7 @@ static uint8_t ase_read_func(struct bt_conn *conn, uint8_t err,
 		goto fail;
 	}
 
-	ep = bt_audio_ep_get(conn, read->by_uuid.start_handle);
+	ep = bt_audio_ep_get(conn, params->type, read->by_uuid.start_handle);
 	if (!ep) {
 		BT_WARN("No space left to parse ASE");
 		if (params->num_eps) {
@@ -562,6 +569,7 @@ static uint8_t ase_read_func(struct bt_conn *conn, uint8_t err,
 	}
 
 	bt_audio_ep_set_status(ep, &buf);
+	bt_audio_ep_subscribe(conn, ep);
 
 	params->func(conn, NULL, ep, params);
 
@@ -581,7 +589,15 @@ static int ase_discover(struct bt_conn *conn,
 
 	params->read.func = ase_read_func;
 	params->read.handle_count = 0u;
-	params->read.by_uuid.uuid = ase_uuid;
+
+	if (params->type == BT_AUDIO_SINK) {
+		params->read.by_uuid.uuid = ase_snk_uuid;
+	} else if (params->type == BT_AUDIO_SOURCE) {
+		params->read.by_uuid.uuid = ase_src_uuid;
+	} else {
+		return -EINVAL;
+	}
+
 	params->read.by_uuid.start_handle = 0x0001;
 	params->read.by_uuid.end_handle = 0xffff;
 
