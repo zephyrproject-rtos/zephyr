@@ -402,6 +402,13 @@ uint8_t ull_cp_encryption_start(struct ll_conn *conn, const uint8_t rand[8], con
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
+	/* Copy input parameters */
+	memcpy(ctx->data.enc.rand, rand, sizeof(ctx->data.enc.rand));
+	ctx->data.enc.ediv[0] = ediv[0];
+	ctx->data.enc.ediv[1] = ediv[1];
+	memcpy(ctx->data.enc.ltk, ltk, sizeof(ctx->data.enc.ltk));
+
+	/* Enqueue request */
 	lr_enqueue(conn, ctx);
 
 	return BT_HCI_ERR_SUCCESS;
