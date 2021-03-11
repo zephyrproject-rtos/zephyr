@@ -35,6 +35,8 @@
 #include "helper_pdu.h"
 #include "helper_features.h"
 
+#define PDU_MEM_EQUAL(_f, _s, _p, _t) zassert_mem_equal(_s._f, _p->_f, sizeof(_p->_f), _t "\nCalled at %s:%d\n", file, line);
+
 void helper_pdu_encode_ping_req(struct pdu_data *pdu, void *param)
 {
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
@@ -125,10 +127,13 @@ void helper_pdu_encode_enc_req(struct pdu_data *pdu, void *param)
 
 void helper_pdu_encode_enc_rsp(struct pdu_data *pdu, void *param)
 {
+	struct pdu_data_llctrl_enc_rsp *p = param;
+
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len = offsetof(struct pdu_data_llctrl, enc_rsp) + sizeof(struct pdu_data_llctrl_enc_rsp);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_ENC_RSP;
-	/* TODO(thoh): Fill in correct data */
+	memcpy(pdu->llctrl.enc_rsp.skds, p->skds, sizeof(pdu->llctrl.enc_rsp.skds));
+	memcpy(pdu->llctrl.enc_rsp.ivs, p->ivs, sizeof(pdu->llctrl.enc_rsp.ivs));
 }
 
 void helper_pdu_encode_start_enc_req(struct pdu_data *pdu, void *param)
