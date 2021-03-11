@@ -36,7 +36,10 @@ LOG_MODULE_REGISTER(log);
 #endif
 
 #ifndef CONFIG_LOG_STRDUP_MAX_STRING
-#define CONFIG_LOG_STRDUP_MAX_STRING 0
+/* Required to suppress compiler warnings related to array subscript above array bounds.
+ * log_strdup explicitly accesses element with index of (sizeof(log_strdup_buf.buf) - 2).
+ */
+#define CONFIG_LOG_STRDUP_MAX_STRING 1
 #endif
 
 #ifndef CONFIG_LOG_STRDUP_BUF_COUNT
