@@ -3347,7 +3347,7 @@ static void hl7800_rx(void)
 
 	while (true) {
 		/* wait for incoming data */
-		k_sem_take(&ictx.mdm_ctx.rx_sem, K_FOREVER);
+		(void) k_sem_take(&ictx.mdm_ctx.rx_sem, K_FOREVER);
 
 		hl7800_read_rx(&rx_buf);
 		/* If an external module hasn't locked the command processor,
