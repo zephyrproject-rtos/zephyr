@@ -11,7 +11,6 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <toolchain.h>
-#include <sys/cbprintf_internal.h>
 
 #ifdef CONFIG_CBPRINTF_LIBC_SUBSTS
 #include <stdio.h>
@@ -35,6 +34,9 @@ extern "C" {
 #define Z_C_GENERIC 0
 #endif
 #endif
+
+/* Z_C_GENERIC is used there */
+#include <sys/cbprintf_internal.h>
 
 /**
  * @defgroup cbprintf_apis Formatted Output APIs
