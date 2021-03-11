@@ -122,6 +122,9 @@ features:
 +-----------+------------+-------------------------------------+
 | RNG       | on-chip    | True Random number generator        |
 +-----------+------------+-------------------------------------+
+| DAC       | on-chip    | DAC Controller                      |
++-----------+------------+-------------------------------------+
+
 
 (*) nucleo_f767zi with soc cut-A (Device marking A) has some ethernet
     instability (https://github.com/zephyrproject-rtos/zephyr/issues/26519).
