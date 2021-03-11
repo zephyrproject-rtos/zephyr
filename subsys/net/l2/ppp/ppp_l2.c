@@ -80,6 +80,13 @@ static enum net_verdict process_ppp_msg(struct net_if *iface,
 		return NET_CONTINUE;
 	}
 
+	if ((IS_ENABLED(CONFIG_NET_IPV4) && (protocol >> 8) == PPP_IP) ||
+	    (IS_ENABLED(CONFIG_NET_IPV6) && (protocol >> 8) == PPP_IPV6)) {
+		(void)net_buf_pull_u8(pkt->buffer);
+		net_pkt_cursor_init(pkt);
+		return NET_CONTINUE;
+	}
+
 	Z_STRUCT_SECTION_FOREACH(ppp_protocol_handler, proto) {
 		if (proto->protocol != protocol) {
 			continue;
