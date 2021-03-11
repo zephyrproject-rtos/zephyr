@@ -149,6 +149,9 @@ static const struct jesd216_erase_type minimal_erase_types[JESD216_NUM_ERASE_TYP
 };
 #endif /* CONFIG_SPI_NOR_SFDP_MINIMAL */
 
+static int spi_nor_write_protection_set(const struct device *dev,
+					bool write_protect);
+
 /* Get pointer to array of supported erase types.  Static const for
  * minimal, data for runtime and devicetree.
  */
@@ -480,36 +483,43 @@ static int spi_nor_write(const struct device *dev, off_t addr,
 	}
 
 	acquire_device(dev);
+	ret = spi_nor_write_protection_set(dev, false);
+	if (ret == 0) {
+		while (size > 0) {
+			size_t to_write = size;
 
-	while (size > 0) {
-		size_t to_write = size;
+			/* Don't write more than a page. */
+			if (to_write >= page_size) {
+				to_write = page_size;
+			}
 
-		/* Don't write more than a page. */
-		if (to_write >= page_size) {
-			to_write = page_size;
+			/* Don't write across a page boundary */
+			if (((addr + to_write - 1U) / page_size)
+			!= (addr / page_size)) {
+				to_write = page_size - (addr % page_size);
+			}
+
+			spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
+			ret = spi_nor_cmd_addr_write(dev, SPI_NOR_CMD_PP, addr,
+						src, to_write);
+			if (ret != 0) {
+				break;
+			}
+
+			size -= to_write;
+			src = (const uint8_t *)src + to_write;
+			addr += to_write;
+
+			spi_nor_wait_until_ready(dev);
 		}
-
-		/* Don't write across a page boundary */
-		if (((addr + to_write - 1U) / page_size)
-		    != (addr / page_size)) {
-			to_write = page_size - (addr % page_size);
-		}
-
-		spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
-		ret = spi_nor_cmd_addr_write(dev, SPI_NOR_CMD_PP, addr,
-					     src, to_write);
-		if (ret != 0) {
-			goto out;
-		}
-
-		size -= to_write;
-		src = (const uint8_t *)src + to_write;
-		addr += to_write;
-
-		spi_nor_wait_until_ready(dev);
 	}
 
-out:
+	int ret2 = spi_nor_write_protection_set(dev, false);
+
+	if (!ret) {
+		ret = ret2;
+	}
+
 	release_device(dev);
 	return ret;
 }
@@ -535,6 +545,7 @@ static int spi_nor_erase(const struct device *dev, off_t addr, size_t size)
 	}
 
 	acquire_device(dev);
+	ret = spi_nor_write_protection_set(dev, false);
 
 	while ((size > 0) && (ret == 0)) {
 		spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
@@ -573,17 +584,30 @@ static int spi_nor_erase(const struct device *dev, off_t addr, size_t size)
 		spi_nor_wait_until_ready(dev);
 	}
 
+	int ret2 = spi_nor_write_protection_set(dev, true);
+
+	if (!ret) {
+		ret = ret2;
+	}
+
 	release_device(dev);
 
 	return ret;
+}
+
+static int spi_nor_write_protection_nop(const struct device *dev,
+					bool write_protect)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(write_protect);
+
+	return 0;
 }
 
 static int spi_nor_write_protection_set(const struct device *dev,
 					bool write_protect)
 {
 	int ret;
-
-	acquire_device(dev);
 
 	spi_nor_wait_until_ready(dev);
 
@@ -595,8 +619,6 @@ static int spi_nor_write_protection_set(const struct device *dev,
 	    && !write_protect) {
 		ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_ULBPR);
 	}
-
-	release_device(dev);
 
 	return ret;
 }
@@ -963,7 +985,7 @@ static const struct flash_driver_api spi_nor_api = {
 	.read = spi_nor_read,
 	.write = spi_nor_write,
 	.erase = spi_nor_erase,
-	.write_protection = spi_nor_write_protection_set,
+	.write_protection = spi_nor_write_protection_nop,
 	.get_parameters = flash_nor_get_parameters,
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = spi_nor_pages_layout,
