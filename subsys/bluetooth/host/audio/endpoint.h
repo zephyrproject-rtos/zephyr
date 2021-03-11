@@ -32,6 +32,8 @@ struct bt_audio_ep {
 	struct bt_codec_qos qos;
 	struct bt_iso_chan iso;
 	struct bt_iso_chan_qos iso_qos;
+	struct bt_iso_chan_io_qos iso_tx;
+	struct bt_iso_chan_io_qos iso_rx;
 	sys_slist_t cbs;
 };
 
@@ -66,7 +68,8 @@ struct bt_audio_ep *bt_audio_ep_find_by_chan(struct bt_audio_chan *chan);
 
 struct bt_audio_ep *bt_audio_ep_alloc(struct bt_conn *conn, uint16_t handle);
 
-struct bt_audio_ep *bt_audio_ep_get(struct bt_conn *conn, uint16_t handle);
+struct bt_audio_ep *bt_audio_ep_get(struct bt_conn *conn, uint8_t dir,
+				    uint16_t handle);
 
 void bt_audio_ep_set_status(struct bt_audio_ep *ep, struct net_buf_simple *buf);
 
