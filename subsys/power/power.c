@@ -131,8 +131,9 @@ void pm_system_resume(void)
 	 */
 	if (!post_ops_done) {
 		post_ops_done = 1;
-		pm_state_notify(false);
 		pm_power_state_exit_post_ops(z_power_state);
+		pm_state_notify(false);
+		k_sched_unlock();
 	}
 }
 
@@ -150,6 +151,7 @@ void pm_power_state_force(struct pm_state_info info)
 	post_ops_done = 0;
 	pm_state_notify(true);
 
+	k_sched_lock();
 	pm_debug_start_timer();
 	/* Enter power state */
 	pm_power_state_set(z_power_state);
@@ -204,6 +206,16 @@ enum pm_state pm_system_suspend(int32_t ticks)
 		break;
 	}
 #endif
+	/*
+	 * This function runs with interruptions locked but it is
+	 * expected the SoC to unlock them in
+	 * pm_power_state_exit_post_ops() when returning to active
+	 * state. We don't want to be scheduled out yet, first we need
+	 * to send a notification about leaving the idle state. So,
+	 * we lock the scheduler here and unlock just after we have
+	 * sent the notification in pm_system_resume().
+	 */
+	k_sched_lock();
 	pm_debug_start_timer();
 	/* Enter power state */
 	pm_state_notify(true);
