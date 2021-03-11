@@ -40,8 +40,12 @@ static int frdm_k64f_pinmux_init(const struct device *dev)
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(uart0), okay) && CONFIG_SERIAL
 	/* UART0 RX, TX */
-	pinmux_pin_set(portb, 16, PORT_PCR_MUX(kPORT_MuxAlt3));
-	pinmux_pin_set(portb, 17, PORT_PCR_MUX(kPORT_MuxAlt3));
+	pinmux_pin_set(portb,DT_PROP(DT_NODELABEL(uart0_rx_ptb16), pin),
+			PORT_PCR_MUX(DT_PROP(DT_NODELABEL(uart0_rx_ptb16), mux))
+		      );
+	pinmux_pin_set(portb, DT_PROP(DT_NODELABEL(uart0_tx_ptb17), pin),
+			PORT_PCR_MUX(DT_PROP(DT_NODELABEL(uart0_rx_ptb16), mux))
+		      );
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(uart2), okay) && CONFIG_SERIAL
