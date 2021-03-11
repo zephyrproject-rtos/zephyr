@@ -589,11 +589,30 @@ static void rp_enc_state_idle(struct ll_conn *conn, struct proc_ctx *ctx, uint8_
 	}
 }
 
+static void rp_enc_store_m(struct ll_conn *conn, struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	/* Store Rand */
+	memcpy(ctx->data.enc.rand, pdu->llctrl.enc_req.rand, sizeof(ctx->data.enc.rand));
+
+	/* Store EDIV */
+	ctx->data.enc.ediv[0] = pdu->llctrl.enc_req.ediv[0];
+	ctx->data.enc.ediv[1] = pdu->llctrl.enc_req.ediv[1];
+
+	/* Store SKDm */
+	memcpy(&ctx->data.enc.skdm, pdu->llctrl.enc_req.skdm, sizeof(ctx->data.enc.skdm));
+
+	/* Store IVm in the LLL CCM RX
+	 * TODO(thoh): Should this be made into a ULL function, as it
+	 * interacts with data outside of LLCP?
+	 */
+	memcpy(&conn->lll.ccm_rx.iv[0], pdu->llctrl.enc_req.ivm, sizeof(pdu->llctrl.enc_req.ivm));
+}
+
 static void rp_enc_state_wait_rx_enc_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
-	/* TODO */
 	switch (evt) {
 	case RP_ENC_EVT_ENC_REQ:
+		rp_enc_store_m(conn, ctx, param);
 		rp_enc_send_enc_rsp(conn, ctx, evt, param);
 		break;
 	default:
