@@ -19,6 +19,70 @@ enum llcp_proc {
 	PROC_CHAN_MAP_UPDATE,
 };
 
+struct llcp_enc {
+	uint8_t error;
+
+	/* NOTE: To save memory, SKD(m|s) and IV(m|s) are
+	 * generated just-in-time for PDU enqueuing and are
+	 * therefore not present in this structure.
+	 */
+
+	/* TODO(thoh): Do we want a version without JIT vector
+	 * generation?
+	 */
+
+	/* TODO(thoh): Optimize memory layout.
+	 *	* Overlay memory?
+	 *	* Repurpose memory used by lll.ccm_tx/rx?
+	 */
+
+	/* Master: Rand and EDIV are input copies from
+	 * HCI that only live until the LL_ENC_REQ has
+	 * been enqueued.
+	 *
+	 * Slave: Rand and EDIV are input copies from
+	 * the LL_ENC_REQ that only live until host
+	 * notification has been enqueued.
+	 */
+
+	/* 64 bit random number. */
+	uint8_t rand[8];
+
+	/* 16 bit encrypted diversifier.*/
+	uint8_t ediv[2];
+
+	/* 128 bit long term key. */
+	uint8_t ltk[16];
+
+	/* SKD is the concatenation of SKDm and SKDs and
+	 * is used to calculate the session key, SK.
+	 *
+	 * Lifetime:
+	 * M    : Generate SKDm and IVm
+	 * M->S : LL_ENC_REQ(Rand, EDIV, SKDm, IVm)
+	 * S	: Notify host (Rand, EDIV)
+	 * S    : Generate SKDs and IVs
+	 * S    : Calculate SK = e(LTK, SKD)
+	 * M<-S : LL_ENC_RSP(SKDs, IVs)
+	 * M    : Calculate SK = e(LTK, SKD)
+	 *
+	 * where security function e generates 128-bit
+	 * encryptedData from a 128-bit key and 128-bit
+	 * plaintextData using the AES-128-bit block
+	 * cypher as defined in FIPS-1971:
+	 *	encryptedData = e(key, plaintextData)
+	 */
+	union {
+
+		/* 128-bit session key diversifier */
+		uint8_t skd[16];
+		struct {
+			uint8_t skdm[8];
+			uint8_t skds[8];
+		};
+	};
+};
+
 /* LLCP Procedure Context */
 struct proc_ctx {
 	/* Must be the first for sys_slist to work */
@@ -62,9 +126,7 @@ struct proc_ctx {
 		} muc;
 
 		/* Used by Encryption Procedure */
-		struct {
-			uint8_t error;
-		} enc;
+		struct llcp_enc enc;
 
 		/* PHY Update */
 		struct {
