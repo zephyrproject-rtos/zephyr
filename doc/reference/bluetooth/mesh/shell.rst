@@ -770,3 +770,21 @@ The Configuration database is an optional Mesh subsystem that can be enabled thr
 	Delete an application key from the Configuration database.
 
 	* ``AppKeyIdx``: Key index of the application key to delete.
+
+Settings
+========
+
+The Settings is an optional Mesh subsystem. The commands help to change the work mode of the subsystem to speed up data storing in case of emergency situations.
+
+``mesh setting-flush``
+----------------------
+
+	If there are not stored yet mesh settings they will be sent into the settings backend.
+
+
+``mesh setting-timeout-bypass <val: off, on>``
+----------------------------------------------
+
+	Switch on/off the bypassing of the :option:`CONFIG_BT_MESH_STORE_TIMEOUT` and :option:`CONFIG_BT_MESH_RPL_STORE_TIMEOUT` timeouts for storing data into the persistent memory.
+
+	* ``val``: Enable or disable the timeouts bypassing

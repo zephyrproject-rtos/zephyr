@@ -29,8 +29,13 @@
 #include "settings.h"
 #include "cfg.h"
 
+/* Work synchronization objects must be in cache-coherent memory,
+ * which excludes stacks on some architectures.
+ */
+static struct k_work_sync work_sync;
 static struct k_work_delayable pending_store;
 static ATOMIC_DEFINE(pending_flags, BT_MESH_SETTINGS_FLAG_COUNT);
+static bool is_init;
 
 int bt_mesh_settings_set(settings_read_cb read_cb, void *cb_arg,
 			 void *out, size_t read_len)
@@ -81,7 +86,8 @@ SETTINGS_STATIC_HANDLER_DEFINE(bt_mesh, "bt/mesh", NULL, NULL, mesh_commit,
 #define NO_WAIT_PENDING_BITS (BIT(BT_MESH_SETTINGS_NET_PENDING) |           \
 			      BIT(BT_MESH_SETTINGS_IV_PENDING)  |           \
 			      BIT(BT_MESH_SETTINGS_SEQ_PENDING) |           \
-			      BIT(BT_MESH_SETTINGS_CDB_PENDING))
+			      BIT(BT_MESH_SETTINGS_CDB_PENDING) |           \
+			      BIT(BT_MESH_SETTINGS_BYPASS_TIMEOUT))
 
 /* Pending flags that use CONFIG_BT_MESH_STORE_TIMEOUT */
 #define GENERIC_PENDING_BITS (BIT(BT_MESH_SETTINGS_NET_KEYS_PENDING) |      \
@@ -186,4 +192,18 @@ static void store_pending(struct k_work *work)
 void bt_mesh_settings_init(void)
 {
 	k_work_init_delayable(&pending_store, store_pending);
+	is_init = true;
+}
+
+void bt_mesh_settings_store_flush(void)
+{
+	if (is_init) {
+		k_work_flush_delayable(&pending_store, &work_sync);
+	}
+}
+
+void bt_mesh_settings_timeout_bypass(bool enable)
+{
+	atomic_set_bit_to(pending_flags,
+			BT_MESH_SETTINGS_BYPASS_TIMEOUT, enable);
 }

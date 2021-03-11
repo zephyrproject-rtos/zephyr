@@ -17,6 +17,7 @@ enum bt_mesh_settings_flag {
 	BT_MESH_SETTINGS_MOD_PENDING,
 	BT_MESH_SETTINGS_VA_PENDING,
 	BT_MESH_SETTINGS_CDB_PENDING,
+	BT_MESH_SETTINGS_BYPASS_TIMEOUT,
 
 	BT_MESH_SETTINGS_FLAG_COUNT,
 };
@@ -40,3 +41,5 @@ void bt_mesh_settings_init(void);
 void bt_mesh_settings_store_schedule(enum bt_mesh_settings_flag flag);
 int bt_mesh_settings_set(settings_read_cb read_cb, void *cb_arg,
 			 void *out, size_t read_len);
+void bt_mesh_settings_store_flush(void);
+void bt_mesh_settings_timeout_bypass(bool enable);

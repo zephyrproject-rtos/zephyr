@@ -2645,6 +2645,28 @@ static int cmd_cdb_app_key_del(const struct shell *shell, size_t argc,
 }
 #endif
 
+#if defined(CONFIG_BT_SETTINGS)
+static int cmd_setting_flush(const struct shell *shell, size_t argc,
+		char *argv[])
+{
+	bt_mesh_settings_store_flush();
+
+	shell_print(shell, "Settings flushed");
+
+	return 0;
+}
+
+static int cmd_setting_timeout_bypass(const struct shell *shell, size_t argc,
+		char *argv[])
+{
+	bt_mesh_settings_timeout_bypass(str2bool(argv[1]));
+
+	shell_print(shell, "Settings timeout bypassing: %s", argv[1]);
+
+	return 0;
+}
+#endif
+
 /* List of Mesh subcommands.
  *
  * Each command is documented in doc/reference/bluetooth/mesh/shell.rst.
@@ -2790,6 +2812,13 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mesh_cmds,
 		      "[<AppKey>]", cmd_cdb_app_key_add, 3, 1),
 	SHELL_CMD_ARG(cdb-app-key-del, NULL, "<AppKeyIdx>", cmd_cdb_app_key_del,
 		      2, 0),
+#endif
+
+#if defined(CONFIG_BT_SETTINGS)
+	/* Mesh Settings Operations */
+	SHELL_CMD_ARG(setting-flush, NULL, NULL, cmd_setting_flush, 1, 0),
+	SHELL_CMD_ARG(setting-timeout-bypass, NULL, "<val: off, on>",
+			cmd_setting_timeout_bypass, 2, 0),
 #endif
 
 	SHELL_SUBCMD_SET_END
