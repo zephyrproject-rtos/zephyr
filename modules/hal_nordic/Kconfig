@@ -10,6 +10,14 @@ config HAS_NORDIC_DRIVERS
 menu "Nordic drivers"
 	depends on HAS_NORDIC_DRIVERS
 
+choice NRF_802154_SOURCE
+	prompt "Source of the IEEE 802.15.4 radio driver"
+
+config NRF_802154_SOURCE_HAL_NORDIC
+	bool "Open source"
+
+endchoice
+
 menuconfig NRF_802154_RADIO_DRIVER
 	bool "Enable nRF IEEE 802.15.4 radio driver"
 	depends on HAS_HW_NRF_RADIO_IEEE802154

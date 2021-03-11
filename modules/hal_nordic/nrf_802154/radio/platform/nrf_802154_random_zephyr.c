@@ -5,7 +5,7 @@
  */
 
 
-#include <platform/temperature/nrf_802154_temperature.h>
+#include <platform/nrf_802154_temperature.h>
 #include <drivers/entropy.h>
 
 static uint32_t state;
