@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <platform/irq/nrf_802154_irq.h>
+#include <platform/nrf_802154_irq.h>
 
 #include <irq.h>
 #include <nrfx.h>

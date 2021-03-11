@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <platform/clock/nrf_802154_clock.h>
+#include <platform/nrf_802154_clock.h>
 
 #include <stddef.h>
 
