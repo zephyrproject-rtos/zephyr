@@ -98,6 +98,9 @@
 #if (VIA_TWISTER & 0x800) != 0
 #define AVOID_C_GENERIC 1
 #endif
+#if (VIA_TWISTER & 0x1000) != 0
+#define PKG_ALIGN_OFFSET sizeof(void *)
+#endif
 
 #endif /* VIA_TWISTER */
 
@@ -133,6 +136,10 @@
 #include "../../../lib/os/cbprintf_packaged.c"
 #endif
 
+#ifndef PKG_ALIGN_OFFSET
+#define PKG_ALIGN_OFFSET (size_t)0
+#endif
+
 /* We can't determine at build-time whether int is 64-bit, so assume
  * it is.  If not the values are truncated at build time, and the str
  * pointers will be updated during test initialization.
@@ -147,7 +154,9 @@ static const char *sfx_str = sfx_str64;
 /* Buffer adequate to hold packaged state for all tested
  * configurations.
  */
-static uint8_t __aligned(__alignof__(long double)) packaged[256];
+#if USE_PACKAGED
+static uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) packaged[256];
+#endif
 
 #define WRAP_FMT(_fmt) "%x" _fmt "%x"
 #define PASS_ARG(...) pfx_val, __VA_ARGS__, sfx_val
@@ -245,9 +254,21 @@ static int rawprf(const char *format, ...)
 
 	va_start(ap, format);
 #if USE_PACKAGED
-	rv = cbvprintf_package(packaged, sizeof(packaged), format, ap);
+	va_list ap2;
+	int len;
+	uint8_t *pkg_buf = &packaged[PKG_ALIGN_OFFSET];
+
+	va_copy(ap2, ap);
+	len = cbvprintf_package(NULL, PKG_ALIGN_OFFSET, format, ap2);
+	va_end(ap2);
+
+	if (len >= 0) {
+		rv = cbvprintf_package(pkg_buf, len, format, ap);
+	} else {
+		rv = len;
+	}
 	if (rv >= 0) {
-		rv = cbpprintf(out, &outbuf, packaged);
+		rv = cbpprintf(out, &outbuf, pkg_buf);
 	}
 #else
 	rv = cbvprintf(out, &outbuf, format, ap);
@@ -271,16 +292,20 @@ static int rawprf(const char *format, ...)
 		struct out_buffer package_buf = { \
 			.buf = _buf, .size = ARRAY_SIZE(_buf), .idx = 0 \
 		}; \
-		CBPRINTF_STATIC_PACKAGE(NULL, 0, _len, _fmt, __VA_ARGS__); \
-		uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) package[_len]; \
+		CBPRINTF_STATIC_PACKAGE(NULL, 0, _len, PKG_ALIGN_OFFSET, \
+					_fmt, __VA_ARGS__); \
+		uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) \
+			package[_len + PKG_ALIGN_OFFSET]; \
 		int st_pkg_rv; \
-		CBPRINTF_STATIC_PACKAGE(package, _len - 1, st_pkg_rv, \
+		CBPRINTF_STATIC_PACKAGE(&package[PKG_ALIGN_OFFSET], _len - 1, \
+					st_pkg_rv, PKG_ALIGN_OFFSET, \
 					_fmt, __VA_ARGS__); \
 		zassert_equal(st_pkg_rv, -ENOSPC, NULL); \
-		CBPRINTF_STATIC_PACKAGE(package, _len, st_pkg_rv, \
+		CBPRINTF_STATIC_PACKAGE(&package[PKG_ALIGN_OFFSET], _len, \
+					st_pkg_rv, PKG_ALIGN_OFFSET, \
 					_fmt, __VA_ARGS__); \
 		zassert_equal(st_pkg_rv, _len, NULL); \
-		rv = cbpprintf(out, &package_buf, package); \
+		rv = cbpprintf(out, &package_buf, &package[PKG_ALIGN_OFFSET]); \
 		if (rv >= 0) { \
 			sp_buf = _buf; \
 		} \
@@ -1174,19 +1199,23 @@ static void test_cbprintf_package(void)
 	char fmt[] = "/%i/";	/* not const */
 
 	/* Verify we can calculate length without storing */
-	rc = cbprintf_package(NULL, 0, fmt, 3);
+	rc = cbprintf_package(NULL, PKG_ALIGN_OFFSET, fmt, 3);
 	zassert_true(rc > sizeof(int), NULL);
 
 	/* Capture the base package information for future tests. */
 	size_t len = rc;
+	/* Create a buffer aligned to max argument. */
+	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) buf[len + PKG_ALIGN_OFFSET];
 
-	/* Verify we get same length when storing */
-	rc = cbprintf_package(packaged, sizeof(packaged), fmt, 3);
+	/* Verify we get same length when storing. Pass buffer which may be
+	 * unaligned. Same alignment offset was used for space calculation.
+	 */
+	rc = cbprintf_package(&buf[PKG_ALIGN_OFFSET], len, fmt, 3);
 	zassert_equal(rc, len, NULL);
 
 	/* Verify we get an error if can't store */
 	len -= 1;
-	rc = cbprintf_package(packaged, len, fmt, 3);
+	rc = cbprintf_package(&buf[PKG_ALIGN_OFFSET], len, fmt, 3);
 	zassert_equal(rc, -ENOSPC, NULL);
 }
 
@@ -1261,6 +1290,10 @@ void test_main(void)
 	       __alignof__(long long), __alignof__(double), __alignof__(long double));
 #ifdef CONFIG_CBPRINTF_COMPLETE
 	printf("sizeof(conversion) = %zu\n", sizeof(struct conversion));
+#endif
+
+#ifdef USE_PACKAGED
+	printf("package alignment offset = %zu\n", PKG_ALIGN_OFFSET);
 #endif
 
 	ztest_test_suite(test_prf,
