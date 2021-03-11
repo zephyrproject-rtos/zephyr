@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "platform/lp_timer/nrf_802154_lp_timer.h"
+#include "platform/nrf_802154_lp_timer.h"
 
 #include <assert.h>
 #include <kernel.h>
@@ -12,7 +12,7 @@
 
 #include "drivers/timer/nrf_rtc_timer.h"
 
-#include "platform/clock/nrf_802154_clock.h"
+#include "platform/nrf_802154_clock.h"
 #include "nrf_802154_sl_utils.h"
 
 static volatile bool m_clock_ready;
