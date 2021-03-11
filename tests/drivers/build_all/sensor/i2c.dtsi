@@ -237,6 +237,15 @@ test_i2c_sht3xd: sht3xd@23 {
 	alert-gpios = <&test_gpio 0 0>;
 };
 
+test_i2c_shtc3: SHTC3@70 {
+	compatible = "sensirion,shtcx";
+	label = "SHTC3";
+	reg = <0x70>;
+	chip = "shtc3";
+	measure-mode = "normal";
+	clock-stretching;
+};
+
 test_i2c_si7006: si7006@24 {
 	compatible = "silabs,si7006";
 	label = "SI7006";
