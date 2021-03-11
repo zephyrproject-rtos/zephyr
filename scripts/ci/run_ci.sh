@@ -22,7 +22,7 @@ set -xe
 
 twister_options=" --inline-logs -N -v --integration"
 export BSIM_OUT_PATH="${BSIM_OUT_PATH:-/opt/bsim/}"
-if [ ! -d "${BSIM_OUT_PATH}x" ]; then
+if [ ! -d "${BSIM_OUT_PATH}" ]; then
         unset BSIM_OUT_PATH
 fi
 export BSIM_COMPONENTS_PATH="${BSIM_OUT_PATH}/components/"
