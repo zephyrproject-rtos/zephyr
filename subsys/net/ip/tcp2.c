@@ -352,12 +352,22 @@ static void tcp_send_queue_flush(struct tcp *conn)
 	}
 }
 
+#if CONFIG_NET_TCP_LOG_LEVEL >= LOG_LEVEL_DBG
+#define tcp_conn_unref(conn)				\
+	tcp_conn_unref_debug(conn, __func__, __LINE__)
+
+static int tcp_conn_unref_debug(struct tcp *conn, const char *caller, int line)
+#else
 static int tcp_conn_unref(struct tcp *conn)
+#endif
 {
 	int ref_count = atomic_get(&conn->ref_count);
 	struct net_pkt *pkt;
 
-	NET_DBG("conn: %p, ref_count=%d", conn, ref_count);
+#if CONFIG_NET_TCP_LOG_LEVEL >= LOG_LEVEL_DBG
+	NET_DBG("conn: %p, ref_count=%d (%s():%d)", conn, ref_count,
+		caller, line);
+#endif
 
 #if !defined(CONFIG_NET_TEST_PROTOCOL)
 	if (conn->in_connect) {
