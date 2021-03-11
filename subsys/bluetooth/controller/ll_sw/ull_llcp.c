@@ -391,7 +391,7 @@ uint8_t ull_cp_version_exchange(struct ll_conn *conn)
 	return BT_HCI_ERR_SUCCESS;
 }
 
-uint8_t ull_cp_encryption_start(struct ll_conn *conn)
+uint8_t ull_cp_encryption_start(struct ll_conn *conn, const uint8_t rand[8], const uint8_t ediv[2], const uint8_t ltk[16])
 {
 	struct proc_ctx *ctx;
 
