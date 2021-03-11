@@ -1,14 +1,16 @@
 .. _modbus_api:
 
-MODBUS over serial line (RTU)
-#############################
+MODBUS
+######
 
 Modbus is an industrial messaging protocol. The protocol is specified
-for different types of networks or buses. Zephyr RTOS implementation
-is currently only available for serial line and may be used
+for different types of networks or buses. Zephyr OS implementation
+supports communication over serial line and may be used
 with different physical interfaces, like RS485 or RS232.
+TCP support is not implemented directly, but there are helper functions
+to realize TCP support according to the application's needs.
 
-Modbus communication via serial line is based on client/server model.
+Modbus communication is based on client/server model.
 Only one client may be present on the bus. Client can communicate with several
 server devices. Server devices themselves are passive and must not send
 requests or unsolicited responses.
@@ -26,6 +28,11 @@ Samples
 `modbus-rtu-server-sample` and `modbus-rtu-client-sample` give
 the possibility to try out RTU server and RTU client implementation with
 an evaluation board.
+
+`modbus-tcp-server-sample` is a simple Modbus TCP server.
+
+`modbus-gateway-sample` is an example how to build a TCP to serial line
+gateway with Zephyr OS.
 
 API Reference
 *************
