@@ -332,16 +332,20 @@ config EXCEPTION_STACK_TRACE
 #
 # Miscellaneous debugging options
 #
-
 config OPENOCD_SUPPORT
-	bool "OpenOCD support [EXPERIMENTAL]"
+	bool "OpenOCD support (DEPRECATED)"
+	select DEBUG_THREAD_INFO
+	help
+	  This is deprecated, please use DEBUG_THREAD_INFO instead.
+
+config DEBUG_THREAD_INFO
+	bool "Thread awareness support"
 	depends on !SMP
 	select THREAD_MONITOR
 	select THREAD_NAME
 	help
-	  This option exports an array of offsets to kernel structs, used by
-	  OpenOCD to determine the state of running threads.  (This option
-	  selects CONFIG_THREAD_MONITOR, so all of its caveats are implied.)
+	  This option exports an array of offsets to kernel structs to allow
+	  for debugger RTOS plugins to determine the state of running threads.
 
 rsource "coredump/Kconfig"
 endmenu

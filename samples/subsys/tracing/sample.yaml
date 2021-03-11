@@ -18,7 +18,7 @@ tests:
   tracing.osawareness.openocd:
     extra_configs:
       - CONFIG_MP_NUM_CPUS=1
-      - CONFIG_OPENOCD_SUPPORT=y
+      - CONFIG_DEBUG_THREAD_INFO=y
       - CONFIG_SMP=n
     arch_exclude: posix xtensa
     platform_exclude: qemu_x86_64
