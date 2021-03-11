@@ -43,6 +43,38 @@ static void setup(void)
 	test_setup(&conn);
 }
 
+void ecb_encrypt(uint8_t const *const key_le, uint8_t const *const clear_text_le, uint8_t * const cipher_text_le, uint8_t * const cipher_text_be)
+{
+	ztest_check_expected_data(key_le, 16);
+	ztest_check_expected_data(clear_text_le, 16);
+	if (cipher_text_le) {
+		ztest_copy_return_data(cipher_text_le, 16);
+	}
+
+	if (cipher_text_be) {
+		ztest_copy_return_data(cipher_text_be, 16);
+	}
+}
+
+int lll_csrand_get(void *buf, size_t len)
+{
+	ztest_check_expected_value(len);
+	ztest_copy_return_data(buf, len);
+	return ztest_get_return_value();
+}
+
+/* BLUETOOTH CORE SPECIFICATION Version 5.2 | Vol 6, Part C
+ * 1 ENCRYPTION SAMPLE DATA
+ */
+#define RAND 0xAB, 0xCD, 0xEF, 0x12, 0x34, 0x56, 0x78, 0x90
+#define EDIV 0x24, 0x74
+#define LTK  0x4C, 0x68, 0x38, 0x41, 0x39, 0xF5, 0x74, 0xD8, 0x36, 0xBC, 0xF3, 0x4E, 0x9D, 0xFB, 0x01, 0xBF
+#define SKDM 0xAC, 0xBD, 0xCE, 0xDF, 0xE0, 0xF1, 0x02, 0x13
+#define SKDS 0x02, 0x13, 0x24, 0x35, 0x46, 0x57, 0x68, 0x79
+#define IVM  0xBA, 0xDC, 0xAB, 0x24
+#define IVS  0xDE, 0xAF, 0xBA, 0xBE
+
+#define SK_BE 0x66, 0xC6, 0xC2, 0x27, 0x8E, 0x3B, 0x8E, 0x05, 0x3E, 0x7E, 0xA3, 0x26, 0x52, 0x1B, 0xAD, 0x99
 /* +-----+                     +-------+              +-----+
  * | UT  |                     | LL_A  |              | LT  |
  * +-----+                     +-------+              +-----+
@@ -83,9 +115,42 @@ void test_encryption_start_mas_loc(void)
 	uint8_t err;
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
-	uint8_t rand[8];
-	uint8_t ediv[2];
-	uint8_t ltk[16];
+
+	const uint8_t rand[] = {RAND};
+	const uint8_t ediv[] = {EDIV};
+	const uint8_t ltk[] = {LTK};
+	const uint8_t skd[] = {SKDM, SKDS};
+	const uint8_t sk_be[] = {SK_BE};
+	const uint8_t iv[] = {IVM, IVS};
+
+	/* Prepare expected LL_ENC_REQ */
+	struct pdu_data_llctrl_enc_req exp_enc_req = {
+		.rand = {RAND},
+		.ediv = {EDIV},
+		.skdm = {SKDM},
+		.ivm = {IVM},
+	};
+
+	/* Prepare LL_ENC_RSP */
+	struct pdu_data_llctrl_enc_rsp enc_rsp = {
+		.skds = {SKDS},
+		.ivs = {IVS}
+	};
+
+	/* Prepare mocked call(s) to lll_csrand_get */
+	/* First call for SKDm */
+	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_req.skdm));
+	ztest_return_data(lll_csrand_get, buf, exp_enc_req.skdm);
+	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_req.skdm));
+	/* Second call for IVm */
+	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_req.ivm));
+	ztest_return_data(lll_csrand_get, buf, exp_enc_req.ivm);
+	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_req.ivm));
+
+	/* Prepare mocked call to ecb_encrypt */
+	ztest_expect_data(ecb_encrypt, key_le, ltk);
+	ztest_expect_data(ecb_encrypt, clear_text_le, skd);
+	ztest_return_data(ecb_encrypt, cipher_text_be, sk_be);
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_MASTER);
@@ -101,14 +166,14 @@ void test_encryption_start_mas_loc(void)
 	event_prepare(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_ENC_REQ, &conn, &tx, NULL);
+	lt_rx(LL_ENC_REQ, &conn, &tx, &exp_enc_req);
 	lt_rx_q_is_empty(&conn);
 
 	/* Release Tx */
 	ull_cp_release_tx(tx);
 
 	/* Rx */
-	lt_tx(LL_ENC_RSP, &conn, NULL);
+	lt_tx(LL_ENC_RSP, &conn, &enc_rsp);
 
 	/* Rx */
 	lt_tx(LL_START_ENC_REQ, &conn, NULL);
@@ -122,6 +187,34 @@ void test_encryption_start_mas_loc(void)
 	/* Tx Queue should have one LL Control PDU */
 	lt_rx(LL_START_ENC_RSP, &conn, &tx, NULL);
 	lt_rx_q_is_empty(&conn);
+
+	/* CCM Tx/Rx SK should be the same */
+	zassert_mem_equal(conn.lll.ccm_tx.key, conn.lll.ccm_rx.key, sizeof(conn.lll.ccm_tx.key), "CCM Tx/Rx SK not the same");
+
+	/* CCM Tx/Rx SK should match SK */
+	zassert_mem_equal(conn.lll.ccm_tx.key, sk_be, sizeof(sk_be), "CCM Tx/Rx SK not equal to expected SK");
+
+	/* CCM Tx/Rx IV should be the same */
+	zassert_mem_equal(conn.lll.ccm_tx.iv, conn.lll.ccm_rx.iv, sizeof(conn.lll.ccm_tx.iv), "CCM Tx/Rx IV not the same");
+
+	/* CCM Tx/Rx IV should match the IV */
+	zassert_mem_equal(conn.lll.ccm_tx.iv, iv, sizeof(iv), "CCM Tx/Rx IV not equal to (IVm | IVs)");
+
+	/* CCM Tx/Rx Counter should be zero */
+	zassert_equal(conn.lll.ccm_tx.counter, 0U, NULL);
+	zassert_equal(conn.lll.ccm_rx.counter, 0U, NULL);
+
+	/* CCM Tx Direction should be M->S */
+	zassert_equal(conn.lll.ccm_tx.direction, 1U, NULL);
+
+	/* CCM Rx Direction should be S->M */
+	zassert_equal(conn.lll.ccm_rx.direction, 0U, NULL);
+
+	/* Tx Encryption should be enabled */
+	zassert_equal(conn.lll.enc_tx, 1U, NULL);
+
+	/* Rx Decryption should be enabled */
+	zassert_equal(conn.lll.enc_rx, 1U, NULL);
 
 	/* Release Tx */
 	ull_cp_release_tx(tx);
@@ -192,9 +285,42 @@ void test_encryption_start_mas_loc_limited_memory(void)
 	uint8_t err;
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
-	uint8_t rand[8];
-	uint8_t ediv[2];
-	uint8_t ltk[16];
+
+	const uint8_t rand[] = {RAND};
+	const uint8_t ediv[] = {EDIV};
+	const uint8_t ltk[] = {LTK};
+	const uint8_t skd[] = {SKDM, SKDS};
+	const uint8_t sk_be[] = {SK_BE};
+	const uint8_t iv[] = {IVM, IVS};
+
+	/* Prepare expected LL_ENC_REQ */
+	struct pdu_data_llctrl_enc_req exp_enc_req = {
+		.rand = {RAND},
+		.ediv = {EDIV},
+		.skdm = {SKDM},
+		.ivm = {IVM},
+	};
+
+	/* Prepare LL_ENC_RSP */
+	struct pdu_data_llctrl_enc_rsp enc_rsp = {
+		.skds = {SKDS},
+		.ivs = {IVS}
+	};
+
+	/* Prepare mocked call(s) to lll_csrand_get */
+	/* First call for SKDm */
+	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_req.skdm));
+	ztest_return_data(lll_csrand_get, buf, exp_enc_req.skdm);
+	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_req.skdm));
+	/* Second call for IVm */
+	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_req.ivm));
+	ztest_return_data(lll_csrand_get, buf, exp_enc_req.ivm);
+	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_req.ivm));
+
+	/* Prepare mocked call to ecb_encrypt */
+	ztest_expect_data(ecb_encrypt, key_le, ltk);
+	ztest_expect_data(ecb_encrypt, clear_text_le, skd);
+	ztest_return_data(ecb_encrypt, cipher_text_be, sk_be);
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_MASTER);
@@ -235,11 +361,11 @@ void test_encryption_start_mas_loc_limited_memory(void)
 	event_prepare(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_ENC_REQ, &conn, &tx, NULL);
+	lt_rx(LL_ENC_REQ, &conn, &tx, &exp_enc_req);
 	lt_rx_q_is_empty(&conn);
 
 	/* Rx */
-	lt_tx(LL_ENC_RSP, &conn, NULL);
+	lt_tx(LL_ENC_RSP, &conn, &enc_rsp);
 
 	/* Rx */
 	lt_tx(LL_START_ENC_REQ, &conn, NULL);
@@ -259,6 +385,34 @@ void test_encryption_start_mas_loc_limited_memory(void)
 	/* Tx Queue should have no LL Control PDU */
 	lt_rx(LL_START_ENC_RSP, &conn, &tx, NULL);
 	lt_rx_q_is_empty(&conn);
+
+	/* CCM Tx/Rx SK should be the same */
+	zassert_mem_equal(conn.lll.ccm_tx.key, conn.lll.ccm_rx.key, sizeof(conn.lll.ccm_tx.key), "CCM Tx/Rx SK not the same");
+
+	/* CCM Tx/Rx SK should match SK */
+	zassert_mem_equal(conn.lll.ccm_tx.key, sk_be, sizeof(sk_be), "CCM Tx/Rx SK not equal to expected SK");
+
+	/* CCM Tx/Rx IV should be the same */
+	zassert_mem_equal(conn.lll.ccm_tx.iv, conn.lll.ccm_rx.iv, sizeof(conn.lll.ccm_tx.iv), "CCM Tx/Rx IV not the same");
+
+	/* CCM Tx/Rx IV should match the IV */
+	zassert_mem_equal(conn.lll.ccm_tx.iv, iv, sizeof(iv), "CCM Tx/Rx IV not equal to (IVm | IVs)");
+
+	/* CCM Tx/Rx Counter should be zero */
+	zassert_equal(conn.lll.ccm_tx.counter, 0U, NULL);
+	zassert_equal(conn.lll.ccm_rx.counter, 0U, NULL);
+
+	/* CCM Tx Direction should be M->S */
+	zassert_equal(conn.lll.ccm_tx.direction, 1U, NULL);
+
+	/* CCM Rx Direction should be S->M */
+	zassert_equal(conn.lll.ccm_rx.direction, 0U, NULL);
+
+	/* Tx Encryption should be enabled */
+	zassert_equal(conn.lll.enc_tx, 1U, NULL);
+
+	/* Rx Decryption should be enabled */
+	zassert_equal(conn.lll.enc_rx, 1U, NULL);
 
 	/* Release Tx */
 	ull_cp_release_tx(tx);
@@ -327,9 +481,34 @@ void test_encryption_start_mas_loc_no_ltk(void)
 	uint8_t err;
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
-	uint8_t rand[8];
-	uint8_t ediv[2];
-	uint8_t ltk[16];
+
+	const uint8_t rand[] = {RAND};
+	const uint8_t ediv[] = {EDIV};
+	const uint8_t ltk[] = {LTK};
+
+	/* Prepare expected LL_ENC_REQ */
+	struct pdu_data_llctrl_enc_req exp_enc_req = {
+		.rand = {RAND},
+		.ediv = {EDIV},
+		.skdm = {SKDM},
+		.ivm = {IVM},
+	};
+
+	/* Prepare LL_ENC_RSP */
+	struct pdu_data_llctrl_enc_rsp enc_rsp = {
+		.skds = {SKDS},
+		.ivs = {IVS}
+	};
+
+	/* Prepare mocked call(s) to lll_csrand_get */
+	/* First call for SKDm */
+	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_req.skdm));
+	ztest_return_data(lll_csrand_get, buf, exp_enc_req.skdm);
+	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_req.skdm));
+	/* Second call for IVm */
+	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_req.ivm));
+	ztest_return_data(lll_csrand_get, buf, exp_enc_req.ivm);
+	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_req.ivm));
 
 	struct pdu_data_llctrl_reject_ind reject_ind = {
 		.error_code = BT_HCI_ERR_PIN_OR_KEY_MISSING
@@ -354,14 +533,14 @@ void test_encryption_start_mas_loc_no_ltk(void)
 	event_prepare(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_ENC_REQ, &conn, &tx, NULL);
+	lt_rx(LL_ENC_REQ, &conn, &tx, &exp_enc_req);
 	lt_rx_q_is_empty(&conn);
 
 	/* Release Tx */
 	ull_cp_release_tx(tx);
 
 	/* Rx */
-	lt_tx(LL_ENC_RSP, &conn, NULL);
+	lt_tx(LL_ENC_RSP, &conn, &enc_rsp);
 
 	/* Rx */
 	lt_tx(LL_REJECT_EXT_IND, &conn, &reject_ext_ind);
