@@ -1870,8 +1870,8 @@ static void print_dns_info(const struct shell *shell,
 			continue;
 		}
 
-		remaining =
-			k_delayed_work_remaining_get(&ctx->queries[i].timer);
+		remaining = k_ticks_to_ms_ceil32(
+			k_work_delayable_remaining_get(&ctx->queries[i].timer));
 
 		if (ctx->queries[i].query_type == DNS_QUERY_TYPE_A) {
 			PR("\tIPv4[%u]: %s remaining %d\n",
