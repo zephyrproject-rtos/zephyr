@@ -727,14 +727,8 @@ static uint8_t get_encryption_key_size(struct bt_smp *smp)
 /* Check that if a new pairing procedure with an existing bond will not lower
  * the established security level of the bond.
  */
-static bool update_keys_check(struct bt_smp *smp)
+static bool update_keys_check(struct bt_smp *smp, struct bt_keys *keys)
 {
-	struct bt_conn *conn = smp->chan.chan.conn;
-
-	if (!conn->le.keys) {
-		conn->le.keys = bt_keys_get_addr(conn->id, &conn->le.dst);
-	}
-
 	if (IS_ENABLED(CONFIG_BT_SMP_DISABLE_LEGACY_JW_PASSKEY) &&
 	    !atomic_test_bit(smp->flags, SMP_FLAG_SC) &&
 	    smp->method != LEGACY_OOB) {
@@ -746,27 +740,27 @@ static bool update_keys_check(struct bt_smp *smp)
 		return false;
 	}
 
-	if (!conn->le.keys ||
-	    !(conn->le.keys->keys & (BT_KEYS_LTK_P256 | BT_KEYS_LTK))) {
+	if (!keys ||
+	    !(keys->keys & (BT_KEYS_LTK_P256 | BT_KEYS_LTK))) {
 		return true;
 	}
 
-	if (conn->le.keys->enc_size > get_encryption_key_size(smp)) {
+	if (keys->enc_size > get_encryption_key_size(smp)) {
 		return false;
 	}
 
-	if ((conn->le.keys->keys & BT_KEYS_LTK_P256) &&
+	if ((keys->keys & BT_KEYS_LTK_P256) &&
 	    !atomic_test_bit(smp->flags, SMP_FLAG_SC)) {
 		return false;
 	}
 
-	if ((conn->le.keys->flags & BT_KEYS_AUTHENTICATED) &&
+	if ((keys->flags & BT_KEYS_AUTHENTICATED) &&
 	     smp->method == JUST_WORKS) {
 		return false;
 	}
 
 	if (!IS_ENABLED(CONFIG_BT_SMP_ALLOW_UNAUTH_OVERWRITE) &&
-	    (!(conn->le.keys->flags & BT_KEYS_AUTHENTICATED)
+	    (!(keys->flags & BT_KEYS_AUTHENTICATED)
 	     && smp->method == JUST_WORKS)) {
 		return false;
 	}
@@ -3007,7 +3001,7 @@ static uint8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 
 	smp->method = get_pair_method(smp, req->io_capability);
 
-	if (!update_keys_check(smp)) {
+	if (!update_keys_check(smp, conn->le.keys)) {
 		return BT_SMP_ERR_AUTH_REQUIREMENTS;
 	}
 
@@ -3205,7 +3199,7 @@ static uint8_t smp_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 
 	smp->method = get_pair_method(smp, rsp->io_capability);
 
-	if (!update_keys_check(smp)) {
+	if (!update_keys_check(smp, conn->le.keys)) {
 		return BT_SMP_ERR_AUTH_REQUIREMENTS;
 	}
 
