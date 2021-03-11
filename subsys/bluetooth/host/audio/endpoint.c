@@ -56,13 +56,24 @@ static void ep_iso_connected(struct bt_iso_chan *chan)
 
 	BT_DBG("chan %p ep %p", chan, ep);
 
-	/* Only auto-start if local endpoint and sink role otherwise wait the
-	 * sink to start.
-	 */
-	if (ep->type == BT_AUDIO_EP_LOCAL &&
-	    ep->chan->cap->type == BT_AUDIO_SINK &&
-	    ep->status.state == BT_ASCS_ASE_STATE_ENABLING) {
-		bt_audio_chan_start(ep->chan);
+	if (ep->status.state != BT_ASCS_ASE_STATE_ENABLING) {
+		return;
+	}
+
+	/* Only auto-start sink role otherwise wait for it to be started. */
+	switch (ep->type) {
+	case BT_AUDIO_EP_LOCAL:
+		/* Server */
+		if (ep->chan->cap->type == BT_AUDIO_SINK) {
+			bt_audio_chan_start(ep->chan);
+		}
+		return;
+	case BT_AUDIO_EP_REMOTE:
+		/* Client */
+		if (ep->chan->cap->type == BT_AUDIO_SOURCE) {
+			bt_audio_chan_start(ep->chan);
+		}
+		return;
 	}
 }
 
@@ -85,7 +96,7 @@ static void ep_iso_disconnected(struct bt_iso_chan *chan)
 		break;
 	case BT_ASCS_ASE_STATE_ENABLING:
 	case BT_ASCS_ASE_STATE_STREAMING:
-		bt_audio_ep_set_state(ep, BT_ASCS_ASE_STATE_QOS);
+		bt_audio_chan_disable(ep->chan);
 		break;
 	}
 }
@@ -202,12 +213,6 @@ static void ep_config(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 
 	cfg = net_buf_simple_pull_mem(buf, sizeof(*cfg));
 
-	if (!ep->chan->cap || ep->chan->cap->type != cfg->dir) {
-		BT_ERR("Capabilities type mismatched");
-		/* TODO: Release the channel? */
-		return;
-	}
-
 	if (!ep->chan->codec || ep->chan->codec->id != cfg->codec.id) {
 		BT_ERR("Codec configuration mismatched");
 		/* TODO: Release the channel? */
@@ -262,6 +267,8 @@ static void ep_qos(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 
 	qos = net_buf_simple_pull_mem(buf, sizeof(*qos));
 
+	ep->cig = qos->cig_id;
+	ep->cis = qos->cis_id;
 	memcpy(&ep->chan->qos->interval, sys_le24_to_cpu(qos->interval),
 	       sizeof(qos->interval));
 	ep->chan->qos->framing = qos->framing;
@@ -271,11 +278,12 @@ static void ep_qos(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 	ep->chan->qos->latency = sys_le16_to_cpu(qos->latency);
 	memcpy(&ep->chan->qos->pd, sys_le24_to_cpu(qos->pd), sizeof(qos->pd));
 
-	BT_DBG("dir 0x%02x codec 0x%02x interval %u framing 0x%02x phy 0x%02x "
-	       "rtn %u latency %u pd %u", ep->chan->cap->type,
-	       ep->chan->codec->id, ep->chan->qos->interval,
-	       ep->chan->qos->framing, ep->chan->qos->phy, ep->chan->qos->rtn,
-	       ep->chan->qos->latency, ep->chan->qos->pd);
+	BT_DBG("dir 0x%02x cig 0x%02x cis 0x%02x codec 0x%02x interval %u "
+	       "framing 0x%02x phy 0x%02x rtn %u latency %u pd %u",
+	       ep->chan->cap->type, ep->cis, ep->cis, ep->chan->codec->id,
+	       ep->chan->qos->interval, ep->chan->qos->framing,
+	       ep->chan->qos->phy, ep->chan->qos->rtn, ep->chan->qos->latency,
+	       ep->chan->qos->pd);
 
 	/* Disconnect ISO if connected */
 	if (ep->chan->iso->state == BT_ISO_CONNECTED) {
@@ -464,7 +472,6 @@ static void ep_get_status_config(struct bt_audio_ep *ep,
 	struct bt_audio_qos *qos = &ep->chan->cap->qos;
 
 	cfg = net_buf_simple_add(buf, sizeof(*cfg));
-	cfg->dir = ep->chan->cap->type;
 	cfg->framing = qos->framing;
 	cfg->phy = qos->phy;
 	cfg->rtn = qos->rtn;
@@ -687,6 +694,7 @@ int bt_audio_ep_set_metadata(struct bt_audio_ep *ep, struct net_buf_simple *buf,
 			     uint8_t len, struct bt_codec *codec)
 {
 	struct net_buf_simple meta;
+	int err;
 
 	if (!ep && !codec) {
 		return -EINVAL;
@@ -714,8 +722,14 @@ int bt_audio_ep_set_metadata(struct bt_audio_ep *ep, struct net_buf_simple *buf,
 
 	/* Check if all entries could be parsed */
 	if (meta.len) {
-		BT_ERR("Unable to parse Metadata: len %u",
-		       meta.len);
+		BT_ERR("Unable to parse Metadata: len %u", meta.len);
+		err = -EINVAL;
+
+		if (meta.len > 2) {
+			/* Value of the Metadata Type field in error */
+			err = meta.data[2];
+		}
+
 		goto fail;
 	}
 
@@ -724,7 +738,7 @@ int bt_audio_ep_set_metadata(struct bt_audio_ep *ep, struct net_buf_simple *buf,
 fail:
 	codec->meta_count = 0;
 	memset(codec->meta, 0, sizeof(codec->meta));
-	return -EINVAL;
+	return err;
 }
 
 void bt_audio_ep_register_cb(struct bt_audio_ep *ep, struct bt_audio_ep_cb *cb)
@@ -895,9 +909,23 @@ void bt_audio_ep_set_cp(struct bt_conn *conn, uint16_t handle)
 
 		if (ep->handle) {
 			ep->cp_handle = handle;
-			bt_audio_ep_subscribe(conn, ep);
 		}
 	}
+}
+
+int bt_audio_ep_send(struct bt_conn *conn, struct bt_audio_ep *ep,
+		     struct net_buf_simple *buf)
+{
+	int index = bt_conn_index(conn);
+
+	BT_DBG("conn %p ep %p buf %p len %u", conn, ep, buf, buf->len);
+
+	if (!cp_subscribe[index].ccc_handle) {
+		return -EAGAIN;
+	}
+
+	return bt_gatt_write_without_response(conn, ep->cp_handle,
+					      buf->data, buf->len, false);
 }
 #endif /* CONFIG_BT_BAP */
 
@@ -918,8 +946,7 @@ void bt_audio_ep_reset(struct bt_conn *conn)
 	}
 }
 
-void bt_audio_ep_attach(struct bt_audio_ep *ep,
-			      struct bt_audio_chan *chan)
+void bt_audio_ep_attach(struct bt_audio_ep *ep, struct bt_audio_chan *chan)
 {
 	BT_DBG("ep %p chan %p", ep, chan);
 
@@ -1003,7 +1030,6 @@ int bt_audio_ep_config(struct bt_audio_ep *ep, struct net_buf_simple *buf,
 
 	req = net_buf_simple_add(buf, sizeof(*req));
 	req->ase = ep->status.id;
-	req->dir = cap->type;
 	req->latency = 0x02; /* TODO: Select target latency based on cap? */
 	req->phy = 0x02; /* TODO: Select target PHY based on cap? */
 	req->codec.id = codec->id;
