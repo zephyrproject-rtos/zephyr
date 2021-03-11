@@ -33,6 +33,11 @@
 #if defined(CONFIG_BT_BAP)
 
 #define ASE_ID(_ase) ase->ep.status.id
+#define ASE_DIR(_id) \
+	(_id > CONFIG_BT_ASCS_ASE_SNK_COUNT ? BT_AUDIO_SOURCE : BT_AUDIO_SINK)
+#define ASE_UUID(_id) \
+	(_id > CONFIG_BT_ASCS_ASE_SNK_COUNT ? BT_UUID_ASCS_ASE_SRC : BT_UUID_ASCS_ASE_SNK)
+#define ASE_COUNT (CONFIG_BT_ASCS_ASE_SNK_COUNT + CONFIG_BT_ASCS_ASE_SRC_COUNT)
 
 struct bt_ascs_ase {
 	struct bt_ascs *ascs;
@@ -44,7 +49,7 @@ struct bt_ascs {
 	struct bt_conn *conn;
 	uint8_t id;
 	bt_addr_le_t peer;
-	struct bt_ascs_ase ases[CONFIG_BT_ASCS_ASE_COUNT];
+	struct bt_ascs_ase ases[ASE_COUNT];
 	struct bt_gatt_notify_params params;
 	uint16_t handle;
 };
@@ -217,7 +222,7 @@ static void ascs_clear(struct bt_ascs *ascs)
 
 	bt_addr_le_copy(&ascs->peer, BT_ADDR_LE_ANY);
 
-	for (i = 0; i < CONFIG_BT_ASCS_ASE_COUNT; i++) {
+	for (i = 0; i < ASE_COUNT; i++) {
 		struct bt_ascs_ase *ase = &ascs->ases[i];
 
 		if (ase->ep.status.state != BT_ASCS_ASE_STATE_IDLE) {
@@ -259,7 +264,7 @@ static void ascs_dettach(struct bt_ascs *ascs)
 
 	/* TODO: Store the ASES in the settings? */
 
-	for (i = 0; i < CONFIG_BT_ASCS_ASE_COUNT; i++) {
+	for (i = 0; i < ASE_COUNT; i++) {
 		struct bt_ascs_ase *ase = &ascs->ases[i];
 
 		if (ase->ep.status.state != BT_ASCS_ASE_STATE_IDLE) {
@@ -357,7 +362,7 @@ static void ascs_attach(struct bt_ascs *ascs, struct bt_conn *conn)
 
 	/* TODO: Load the ASEs from the settings? */
 
-	for (i = 0; i < CONFIG_BT_ASCS_ASE_COUNT; i++) {
+	for (i = 0; i < ASE_COUNT; i++) {
 		if (ascs->ases[i].ep.chan) {
 			ase_chan_add(ascs, &ascs->ases[i],
 				     ascs->ases[i].ep.chan);
@@ -409,7 +414,7 @@ static void ase_process(struct k_work *work)
 
 	memset(&attr, 0, sizeof(attr));
 	attr.handle = ase->ep.handle;
-	attr.uuid = BT_UUID_ASCS_ASE;
+	attr.uuid = ASE_UUID(ase->ep.status.id);
 
 	bt_gatt_notify(ase->ascs->conn, &attr, ase_buf.data, ase_buf.len);
 
@@ -437,7 +442,7 @@ static void ase_init(struct bt_ascs_ase *ase, uint8_t id)
 {
 	memset(ase, 0, sizeof(*ase));
 	bt_audio_ep_init(&ase->ep, BT_AUDIO_EP_LOCAL, 0x0000, id);
-	bt_gatt_foreach_attr_type(0x0001, 0xffff, BT_UUID_ASCS_ASE,
+	bt_gatt_foreach_attr_type(0x0001, 0xffff, ASE_UUID(id),
 				  UINT_TO_POINTER(id), 1, ase_attr_cb, ase);
 	k_work_init(&ase->work, ase_process);
 }
@@ -471,7 +476,7 @@ static struct bt_ascs_ase *ase_new(struct bt_ascs *ascs, uint8_t id)
 	int i;
 
 	if (id) {
-		if (id > CONFIG_BT_ASCS_ASE_COUNT) {
+		if (id > ASE_COUNT) {
 			return NULL;
 		}
 		i = id;
@@ -479,7 +484,7 @@ static struct bt_ascs_ase *ase_new(struct bt_ascs *ascs, uint8_t id)
 		goto done;
 	}
 
-	for (i = 0; i < CONFIG_BT_ASCS_ASE_COUNT; i++) {
+	for (i = 0; i < ASE_COUNT; i++) {
 		ase = &ascs->ases[i];
 
 		if (!ase->ep.status.id) {
@@ -503,7 +508,7 @@ static struct bt_ascs_ase *ase_find(struct bt_ascs *ascs, uint8_t id)
 {
 	struct bt_ascs_ase *ase;
 
-	if (!id || id > CONFIG_BT_ASCS_ASE_COUNT) {
+	if (!id || id > ASE_COUNT) {
 		return NULL;
 	}
 
@@ -569,8 +574,8 @@ static int ase_config(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
 	struct bt_audio_chan *chan;
 	int err;
 
-	BT_DBG("ase %p dir 0x%02x latency 0x%02x phy 0x%02x codec 0x%02x "
-		"cid 0x%04x vid 0x%04x codec config len 0x%02x", ase, cfg->dir,
+	BT_DBG("ase %p latency 0x%02x phy 0x%02x codec 0x%02x "
+		"cid 0x%04x vid 0x%04x codec config len 0x%02x", ase,
 		cfg->latency, cfg->phy, cfg->codec.id, cfg->codec.cid,
 		cfg->codec.vid, cfg->cc_len);
 
@@ -606,7 +611,7 @@ static int ase_config(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
 	}
 
 	/* Check if there are capabilities for the given direction */
-	lst = bt_audio_capability_get(cfg->dir);
+	lst = bt_audio_capability_get(ASE_DIR(ase->ep.status.id));
 	if (!lst) {
 		goto not_found;
 	}
@@ -631,7 +636,7 @@ static int ase_config(struct bt_ascs *ascs, struct bt_ascs_ase *ase,
 			memcpy(&ase->ep.codec, &codec, sizeof(codec));
 			ascs_cp_rsp_add(ASE_ID(ase), BT_ASCS_CONFIG_OP,
 					BT_ASCS_RSP_CONF_INVALID,
-					BT_ASCS_REASON_CODEC_DATA_LEN);
+					BT_ASCS_REASON_CODEC_DATA);
 			return 0;
 		}
 
@@ -846,11 +851,15 @@ static int ase_metadata(struct bt_ascs_ase *ase, uint8_t op,
 		goto done;
 	}
 
-	if (bt_audio_ep_set_metadata(&ase->ep, buf, meta->len,
-				     &ase->ep.codec)) {
-		ascs_cp_rsp_add(ASE_ID(ase), op,
-				BT_ASCS_RSP_METADATA_INVALID,
-				BT_ASCS_REASON_METADATA);
+	err = bt_audio_ep_set_metadata(&ase->ep, buf, meta->len,
+				       &ase->ep.codec);
+	if (err) {
+		if (err < 0) {
+			ascs_cp_rsp_add_errno(ASE_ID(ase), op, err, 0x00);
+		} else {
+			ascs_cp_rsp_add(ASE_ID(ase), op,
+					BT_ASCS_RSP_METADATA_INVALID, err);
+		}
 		return 0;
 	}
 
@@ -876,11 +885,16 @@ static int ase_enable(struct bt_ascs_ase *ase, struct bt_ascs_metadata *meta,
 
 	BT_DBG("ase %p buf->len %u", ase, buf->len);
 
-	if (bt_audio_ep_set_metadata(&ase->ep, buf, meta->len,
-				     &ase->ep.codec)) {
-		ascs_cp_rsp_add(ASE_ID(ase), BT_ASCS_ENABLE_OP,
-				BT_ASCS_RSP_METADATA_INVALID,
-				BT_ASCS_REASON_METADATA);
+	err = bt_audio_ep_set_metadata(&ase->ep, buf, meta->len,
+				       &ase->ep.codec);
+	if (err) {
+		if (err < 0) {
+			ascs_cp_rsp_add_errno(ASE_ID(ase), BT_ASCS_ENABLE_OP,
+					      err, 0x00);
+		} else {
+			ascs_cp_rsp_add(ASE_ID(ase), BT_ASCS_ENABLE_OP,
+					BT_ASCS_RSP_METADATA_INVALID, err);
+		}
 		return 0;
 	}
 
@@ -950,6 +964,19 @@ static void ase_start(struct bt_ascs_ase *ase)
 	int err;
 
 	BT_DBG("ase %p", ase);
+
+	/* If the ASE_ID  written by the client represents a Sink ASE, the
+	 * server shall not accept the Receiver Start Ready operation for that
+	 * ASE. The server shall send a notification of the ASE Control Point
+	 * characteristic to the client, and the server shall set the
+	 * Response_Code value for that ASE to 0x05 (Invalid ASE direction).
+	 */
+	if (ASE_DIR(ase->ep.status.id) == BT_AUDIO_SINK) {
+		BT_ERR("Start failed: invalid operation for Sink");
+		ascs_cp_rsp_add(ASE_ID(ase), BT_ASCS_START_OP,
+				BT_ASCS_RSP_INVALID_DIR, BT_ASCS_REASON_NONE);
+		return;
+	}
 
 	err = bt_audio_chan_start(ase->ep.chan);
 	if (err) {
@@ -1049,6 +1076,19 @@ static void ase_stop(struct bt_ascs_ase *ase)
 	int err;
 
 	BT_DBG("ase %p", ase);
+
+	/* If the ASE_ID  written by the client represents a Sink ASE, the
+	 * server shall not accept the Receiver Start Ready operation for that
+	 * ASE. The server shall send a notification of the ASE Control Point
+	 * characteristic to the client, and the server shall set the
+	 * Response_Code value for that ASE to 0x05 (Invalid ASE direction).
+	 */
+	if (ASE_DIR(ase->ep.status.id) == BT_AUDIO_SINK) {
+		BT_ERR("Stop failed: invalid operation for Sink");
+		ascs_cp_rsp_add(ASE_ID(ase), BT_ASCS_STOP_OP,
+				BT_ASCS_RSP_INVALID_DIR, BT_ASCS_REASON_NONE);
+		return;
+	}
 
 	err = bt_audio_chan_stop(ase->ep.chan);
 	if (err) {
@@ -1269,25 +1309,37 @@ respond:
 
 BT_GATT_SERVICE_DEFINE(ascs_svc,
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_ASCS),
-	BT_GATT_CHARACTERISTIC(BT_UUID_ASCS_ASE,
+#if CONFIG_BT_ASCS_ASE_SNK_COUNT > 0
+	BT_GATT_CHARACTERISTIC(BT_UUID_ASCS_ASE_SNK,
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
 			       BT_GATT_PERM_READ_ENCRYPT,
 			       ascs_ase_read, NULL, UINT_TO_POINTER(1)),
 	BT_GATT_CCC(ascs_ase_cfg_changed,
 		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT),
-#if CONFIG_BT_ASCS_ASE_COUNT > 1
-	BT_GATT_CHARACTERISTIC(BT_UUID_ASCS_ASE,
+#endif
+#if CONFIG_BT_ASCS_ASE_SNK_COUNT > 1
+	BT_GATT_CHARACTERISTIC(BT_UUID_ASCS_ASE_SNK,
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
 			       BT_GATT_PERM_READ_ENCRYPT,
 			       ascs_ase_read, NULL, UINT_TO_POINTER(2)),
 	BT_GATT_CCC(ascs_ase_cfg_changed,
 		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT),
 #endif
-#if CONFIG_BT_ASCS_ASE_COUNT > 2
-	BT_GATT_CHARACTERISTIC(BT_UUID_ASCS_ASE,
+#if CONFIG_BT_ASCS_ASE_SRC_COUNT > 0
+	BT_GATT_CHARACTERISTIC(BT_UUID_ASCS_ASE_SRC,
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
 			       BT_GATT_PERM_READ_ENCRYPT,
-			       ascs_ase_read, NULL, UINT_TO_POINTER(3)),
+			       ascs_ase_read, NULL,
+			       UINT_TO_POINTER(CONFIG_BT_ASCS_ASE_SNK_COUNT + 1)),
+	BT_GATT_CCC(ascs_ase_cfg_changed,
+		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT),
+#endif
+#if CONFIG_BT_ASCS_ASE_SRC_COUNT > 1
+	BT_GATT_CHARACTERISTIC(BT_UUID_ASCS_ASE_SRC,
+			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
+			       BT_GATT_PERM_READ_ENCRYPT,
+			       ascs_ase_read, NULL,
+			       UINT_TO_POINTER(CONFIG_BT_ASCS_ASE_SNK_COUNT + 2)),
 	BT_GATT_CCC(ascs_ase_cfg_changed,
 		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT),
 #endif

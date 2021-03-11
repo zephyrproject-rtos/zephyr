@@ -850,13 +850,13 @@ static int cmd_send(const struct shell *shell, size_t argc, char *argv[])
 
 	if (argc > 1) {
 		len = hex2bin(argv[1], strlen(argv[1]), data, sizeof(data));
-		if (len > default_chan->iso->qos->sdu) {
+		if (len > default_chan->iso->qos->tx->sdu) {
 			shell_print(shell, "Unable to send: len %d > % MTU",
-				    len, default_chan->iso->qos->sdu);
+				    len, default_chan->iso->qos->tx->sdu);
 			return -ENOEXEC;
 		}
 	} else {
-		len = MIN(default_chan->iso->qos->sdu, sizeof(data));
+		len = MIN(default_chan->iso->qos->tx->sdu, sizeof(data));
 		memset(data, 0xff, len);
 	}
 
