@@ -52,3 +52,11 @@ int ull_disable(void *param);
 void ull_drift_ticks_get(struct node_rx_event_done *done,
 			 uint32_t *ticks_drift_plus,
 			 uint32_t *ticks_drift_minus);
+/* Function acquire request lock. The function may be used from ULL,
+ * thread context only.
+ */
+int ull_req_acquire_lock(struct lll_req_ack_lock *state, k_timeout_t timeout);
+/* Function releases request lock. The function may be used from ULL,
+ * thread context only.
+ */
+void ull_req_release_lock(struct lll_req_ack_lock *state);

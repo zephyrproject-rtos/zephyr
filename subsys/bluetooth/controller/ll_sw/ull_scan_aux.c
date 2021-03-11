@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <sys_clock.h>
 #include <sys/byteorder.h>
 #include <sys/util.h>
 

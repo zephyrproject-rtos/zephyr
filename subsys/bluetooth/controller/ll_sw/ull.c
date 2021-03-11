@@ -1677,6 +1677,201 @@ void ull_drift_ticks_get(struct node_rx_event_done *done,
 }
 #endif /* CONFIG_BT_PERIPHERAL || CONFIG_BT_CTLR_SYNC_PERIODIC */
 
+/* @brief Function acquires lock of an object shared between ULL and LLL.
+ *
+ * The function is expected to be called from ULL thread context only.
+ * It may go to sleep if LLL locked and object so may not be called from
+ * any ISR context.
+ *
+ * @param[in] state     Pointer to lock instance.
+ * @param[in] timeout   Waiting time period to LLL release lock.
+ *
+ * @retval 0            Lock acquired successfully.
+ * @retval -EAGAIN      Waiting period timed out.
+ */
+int ull_req_acquire_lock(struct lll_req_ack_lock *state, k_timeout_t timeout)
+{
+	int err;
+	uint8_t ack;
+	uint8_t req;
+	uint8_t ack_latest;
+
+	ack = state->ack;
+	req = state->req;
+
+	/* Request was locked in the past - LLL may be using request. */
+	if (req == REQ_RELEASED) {
+		/* If ack is released, then it is allowed to lock it by ULL. */
+		if (ack == ACK_RELEASED) {
+			state->req = REQ_LOCKED;
+			/* Make sure the memory was updated for all masters on
+			 * the data bus.
+			 */
+			cpu_dmb();
+			/* Get current ack value to check if acquire was interrupted
+			 * by LLL(ISR) and ack lock acquired.
+			 */
+			ack_latest = state->ack;
+			if (ack != ack_latest) {
+				/* Check state of semaphore if it was signalled
+				 * and not taken in past.
+				 */
+				if (state->timedout) {
+					printk("sem count: %d\n", k_sem_count_get(state->wait_sem));
+					k_sem_reset(state->wait_sem);
+				}
+
+				/* ack has changed in the meantime. Event has
+				 * started. Request release of an object by LLL.
+				 */
+				state->req = REQ_LOCK_REQUEST;
+				err = k_sem_take(state->wait_sem, timeout);
+				if (err) {
+					/* Fallback to released state, to avoid
+					 * inconsistency in LLL behaviour.
+					 * Lock was unsucessfully acquired so
+					 * LLL should continue to use request
+					 * object. Pay attention to clean up
+					 * semaphore. It could be signaled by
+					 * ISR.
+					 */
+					state->req = REQ_RELEASED;
+					state->timedout = true;
+					return err;
+				}
+				state->req = REQ_LOCKED;
+			}
+		} else {
+			/* An object is not locked by LLL. */
+			state->req = REQ_LOCK_REQUEST;
+			/* Make sure the memory was updated for all masters on
+			 * the data bus.
+			 */
+			cpu_dmb();
+			ack_latest = state->ack;
+			if (ack_latest == ack) {
+				/* Check state of semaphore if it was signalled
+				 * and not taken in past.
+				 */
+				if (state->timedout) {
+					printk("sem count: %d\n", k_sem_count_get(state->wait_sem));
+					k_sem_reset(state->wait_sem);
+				}
+
+				/* ack hasn't changed in the meantime. Event has
+				 * started. Wait for end of the event.
+				 */
+				err = k_sem_take(state->wait_sem, K_MSEC(5));
+				if (err) {
+					state->req = REQ_RELEASED;
+					state->timedout = true;
+					return err;
+				}
+			}
+			LL_ASSERT(state->ack == ACK_RELEASED);
+			state->req = REQ_LOCKED;
+		}
+	} else {
+		/* Other state thant REQ_LOCK is forbidden. */
+		printk("req %d, ack %d", state->req, state->ack);
+		LL_ASSERT(req == REQ_LOCKED);
+	}
+
+	/* An object is already locked, nothing to change. */
+	return 0;
+}
+
+/* @brief Function releases request lock.
+ *
+ * The function is expected to be called from ULL thread context only.
+ * What more there may not be more than one thread that uses the same lock
+ * due to lll_req_ack_lock::req member not being atomic variable.
+ *
+ * @param[in] state     Pointer to lock instance.
+ */
+void ull_req_release_lock(struct lll_req_ack_lock *state)
+{
+	uint8_t req = state->req;
+
+	if (req == REQ_LOCKED) {
+		state->req = REQ_RELEASED;
+	}
+	printk("req released\n");
+}
+
+/* @brief Function acquires ack lock.
+ *
+ * The function is expected to be called from LLL (ISR) context only.
+ *
+ * The function does not wait if a quarded object is not locked. It will
+ * return immediately with information about it.
+ * Due to that it may be used for synchronization of requests. If there is a
+ * request to do something in LLL and required data are ready then it will be
+ * done. If there is no request (object is locked by ULL) the request is ignored
+ * and LLL continues execution.
+ *
+ * @Note The function does not vefiry if lll_req_ack_lock::req member
+ *       has been changed during processing, because it is expected
+ *       to be used from LLL context only. What more the controller ISRs
+ *       (RTC for ticker and Radio handling ISRs) have priority high enough
+ *       that may not be preemptied by ULL thread. So no verification here
+ *       seems to be required.
+ *
+ * @param[in] state     Pointer to lock instance.
+ *
+ * @retval 0            Lock acquired successfully.
+ * @retval -EAGAIN      Lock was not acquired.
+ */
+int ull_ack_acquire_lock(struct lll_req_ack_lock *state)
+{
+	uint8_t req = state->req;
+
+	if (req == REQ_RELEASED) {
+		state->ack = ACK_LOCKED;
+		return 0;
+	}
+	return -EAGAIN;
+}
+
+/* @brief Function releases request lock.
+ *
+ * The function is expected to be called from LLL (ISR) context only.
+ *
+ * The function veirfies if there is a request from ULL to unlock the object.
+ * If that is true then ULL is waiting for a semaphore that is referenced by
+ * lll_req_ack_lock::wait_sema pointer.
+ * Pay attention that to relase lock on all control paths to avoid deadlocks.
+ *
+ * @Note The function does not vefiry if lll_req_ack_lock::req member
+ *       has been changed during processing, because it is expected
+ *       to be used from LLL context only. What more the controller ISRs
+ *       (RTC for ticker and Radio handling ISRs) have priority high enough
+ *       that may not be preemptied by ULL thread. So no verification here
+ *       seems to be required.
+ *
+ * @param[in] state     Pointer to lock instance.
+ */
+void ull_ack_release_lock(struct lll_req_ack_lock *state)
+{
+	uint8_t req = state->req;
+
+	if (state->ack == ACK_LOCKED) {
+		if (req == REQ_RELEASED) {
+			state->ack = ACK_RELEASED;
+		} else if (req == REQ_LOCK_REQUEST) {
+			state->ack = ACK_RELEASED;
+			/* ULL has requested lock, LLL have to give sem to wake
+			 * up ULL thread.
+			 */
+			k_sem_give(state->wait_sem);
+		} else {
+			/* REQ_LOCK is forbidden state. */
+			LL_ASSERT(false);
+		}
+		printk("ack\n");
+	}
+}
+
 static inline int init_reset(void)
 {
 	memq_link_t *link;

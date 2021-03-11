@@ -364,6 +364,50 @@ struct node_rx_event_done {
 	struct event_done_extra extra;
 };
 
+/* Enumeration of allowed request lock states */
+enum ull_req_lock_state {
+	REQ_LOCKED,
+	REQ_RELEASED,
+	REQ_LOCK_REQUEST
+};
+
+/* Enumeration of allowed acknowledge lock states */
+enum lll_ack_lock_state {
+	ACK_RELEASED,
+	ACK_LOCKED
+};
+
+/* Structure that holds lock state. The lock may be used to synchronize
+ * requests from ULL to LLL e.g. enable/disable CTE Rx. The implementation
+ * is tightly coupled with controller design.
+ *
+ * The design assumptions:
+ * - request locks originate in thread context (ULL),
+ * - there is a single thread that handles ULL,
+ * - acknowledge locks are acquired from ISR context (LLL), it could be
+ *   ticker prepare or Radio handling ISR.
+ */
+struct lll_req_ack_lock {
+	volatile uint8_t req:3;
+	volatile uint8_t ack:2;
+	uint8_t          timedout:1;
+	struct k_sem     *wait_sem;
+};
+
+/* Acquire acknowledge lock. The function does not sleep. It returns immediately
+ * no matter is lock was acquired or not. If lock is not acquired the functionality
+ * guarded by lock may not be used (it means it is disabled).
+ */
+int ull_ack_acquire_lock(struct lll_req_ack_lock *state);
+/* Release acknowledge lock if it was locked before. If the lock was not
+ * acquired the function immediately returns.
+ */
+void ull_ack_release_lock(struct lll_req_ack_lock *state);
+static inline bool ull_ack_is_locked(struct lll_req_ack_lock *state)
+{
+	return (state->ack == ACK_LOCKED ? true : false);
+}
+
 static inline void lll_hdr_init(void *lll, void *parent)
 {
 	struct lll_hdr *hdr = lll;
