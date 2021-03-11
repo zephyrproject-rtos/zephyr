@@ -2021,15 +2021,24 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_ASCS \
 	BT_UUID_DECLARE_16(BT_UUID_ASCS_VAL)
-/** @def BT_UUID_ASCS_ASE_VAL
- *  @brief Audio Stream Endpoint Characteristic value
+/** @def BT_UUID_ASCS_ASE_SNK_VAL
+ *  @brief Audio Stream Endpoint Sink Characteristic value
  */
-#define BT_UUID_ASCS_ASE_VAL 0x8f9c
-/** @def BT_UUID_ASCS_ASE
- *  @brief Audio Stream Endpoint Characteristic
+#define BT_UUID_ASCS_ASE_SNK_VAL 0x8f9c
+/** @def BT_UUID_ASCS_ASE_SNK
+ *  @brief Audio Stream Endpoint Sink Characteristic
  */
-#define BT_UUID_ASCS_ASE \
-	BT_UUID_DECLARE_16(BT_UUID_ASCS_ASE_VAL)
+#define BT_UUID_ASCS_ASE_SNK \
+	BT_UUID_DECLARE_16(BT_UUID_ASCS_ASE_SNK_VAL)
+/** @def BT_UUID_ASCS_ASE_SRC_VAL
+ *  @brief Audio Stream Endpoint Source Characteristic value
+ */
+#define BT_UUID_ASCS_ASE_SRC_VAL 0x8f95
+/** @def BT_UUID_ASCS_ASE_SNK
+ *  @brief Audio Stream Endpoint Source Characteristic
+ */
+#define BT_UUID_ASCS_ASE_SRC \
+	BT_UUID_DECLARE_16(BT_UUID_ASCS_ASE_SRC_VAL)
 /** @def BT_UUID_ASCS_ASE_CP_VAL
  *  @brief Audio Stream Endpoint Control Point Characteristic value
  */
