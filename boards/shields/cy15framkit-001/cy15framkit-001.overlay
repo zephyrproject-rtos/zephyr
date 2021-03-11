@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2021 Caspar Friedrich, <c.s.w.friedrich@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		/*
+		 * These aliases maintain compatibility with the eeprom examples
+		 */
+		eeprom-0 = &eeprom_0;
+		eeprom-1 = &eeprom_1;
+	};
+};
+
+&arduino_i2c {
+	eeprom_0: eeprom@50 {
+		compatible = "cypress,fm24w256";
+		reg = <0x50>; /* All Device Select Address pins low*/
+		label = "EEPROM_0";
+		wp-gpios = <&arduino_header 13 GPIO_ACTIVE_HIGH>; /* D7 */
+	};
+};
+
+&arduino_spi {
+	eeprom_1: eeprom@0 {
+		compatible = "cypress,fm25w256";
+		reg = <0x0>;
+		spi-max-frequency = <20000000>;
+		label = "EEPROM_1";
+		wp-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>; /* D9 */
+		spi-mode = <0>;
+	};
+};
