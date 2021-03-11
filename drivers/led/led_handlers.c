@@ -53,7 +53,7 @@ static inline int z_vrfy_led_set_channel(const struct device *dev,
 }
 #include <syscalls/led_set_channel_mrsh.c>
 
-static inline int z_impl_led_set_color(const struct device *dev, uint32_t led,
+static inline int z_vrfy_led_set_color(const struct device *dev, uint32_t led,
 				       uint8_t num_colors, const uint8_t *color)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_LED));
