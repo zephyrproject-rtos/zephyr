@@ -464,6 +464,20 @@ Artificially long but functional example:
         action="store",
         help="Load list of tests and platforms to be run from file.")
 
+    parser.add_argument(
+        "--quarantine-list",
+        metavar="FILENAME",
+        help="Load list of test scenarios under quarantine. The entries in "
+             "the file need to correspond to the test scenarios names as in"
+             "corresponding tests .yaml files. These scenarios"
+             "will be skipped with quarantine as the reason")
+
+    parser.add_argument(
+        "--quarantine-verify",
+        action="store_true",
+        help="Use the list of test scenarios under quarantine and run them"
+             "to verify their current status")
+
     case_select.add_argument(
         "-E",
         "--save-tests",
@@ -1021,6 +1035,15 @@ def main():
     else:
         last_run = os.path.join(options.outdir, "twister.csv")
 
+    if options.quarantine_list:
+        suite.load_quarantine(options.quarantine_list)
+
+    if options.quarantine_verify:
+        if not options.quarantine_list:
+            logger.error("No quarantine list given to be verified")
+            sys.exit(1)
+        suite.quarantine_verify = options.quarantine_verify
+
     if options.only_failed:
         suite.load_from_file(last_run, filter_status=['skipped', 'passed'])
         suite.selected_platforms = set(p.platform.name for p in suite.instances.values())
@@ -1040,9 +1063,6 @@ def main():
         suite.load_from_file(last_run, filter_status=['skipped', 'error'],
                              filter_platform=connected_list)
         suite.selected_platforms = set(p.platform.name for p in suite.instances.values())
-
-
-
     else:
         discards = suite.apply_filters(
             enable_slow=options.enable_slow,
