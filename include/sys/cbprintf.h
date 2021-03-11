@@ -45,9 +45,13 @@ extern "C" {
  */
 
 /** @brief Required alignment of the buffer used for packaging. */
+#ifdef __xtensa__
+#define CBPRINTF_PACKAGE_ALIGNMENT 16
+#else
 #define CBPRINTF_PACKAGE_ALIGNMENT \
 	(IS_ENABLED(CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE) ? \
 		sizeof(long double) : MAX(sizeof(double), sizeof(long long)))
+#endif
 
 /** @brief Signature for a cbprintf callback function.
  *
@@ -107,10 +111,17 @@ typedef int (*cbprintf_cb)(/* int c, void *ctx */);
  * store the packed information. If input buffer was too small it is set to
  * -ENOSPC.
  *
+ * @param align_offset input buffer alignment offset in bytes. Where offset 0
+ * means that buffer is aligned to CBPRINTF_PACKAGE_ALIGNMENT. Xtensa requires
+ * that @p packaged is aligned to CBPRINTF_PACKAGE_ALIGNMENT so it must be
+ * multiply of CBPRINTF_PACKAGE_ALIGNMENT or 0.
+ *
  * @param ... formatted string with arguments. Format string must be constant.
  */
-#define CBPRINTF_STATIC_PACKAGE(packaged, inlen, outlen, ... /* fmt, ... */) \
-		Z_CBPRINTF_STATIC_PACKAGE(packaged, inlen, outlen, __VA_ARGS__)
+#define CBPRINTF_STATIC_PACKAGE(packaged, inlen, outlen, align_offset, \
+				... /* fmt, ... */) \
+	Z_CBPRINTF_STATIC_PACKAGE(packaged, inlen, outlen, \
+				  align_offset, __VA_ARGS__)
 
 /** @brief Capture state required to output formatted data later.
  *
@@ -126,11 +137,16 @@ typedef int (*cbprintf_cb)(/* int c, void *ctx */);
  * @param packaged pointer to where the packaged data can be stored.  Pass a
  * null pointer to store nothing but still calculate the total space required.
  * The data stored here is relocatable, that is it can be moved to another
- * contiguous block of memory. The pointer must be aligned to a multiple of
- * the largest element in the argument list.
+ * contiguous block of memory. However, under condition that alignment is
+ * maintained. It must be aligned to at least the size of a pointer.
  *
- * @param len this must be set to the number of bytes available at @p packaged.
- * Ignored if @p packaged is NULL.
+ * @param len this must be set to the number of bytes available at @p packaged
+ * if it is not null. If @p packaged is null then it indicates hypothetical
+ * buffer alignment offset in bytes compared to CBPRINTF_PACKAGE_ALIGNMENT
+ * alignment. Buffer alignment offset impacts returned size of the package.
+ * Xtensa requires that buffer is always aligned to CBPRINTF_PACKAGE_ALIGNMENT
+ * so it must be multiply of CBPRINTF_PACKAGE_ALIGNMENT or 0 when @p packaged is
+ * null.
  *
  * @param format a standard ISO C format string with characters and conversion
  * specifications.
