@@ -31,6 +31,12 @@ config SPI_INIT_PRIORITY
 	help
 	  Device driver initialization priority.
 
+config SPI_COMPLETION_TIMEOUT_TOLERANCE
+	int "Completion timeout tolerance (ms)"
+	default 200
+	help
+	  The tolerance value in ms for the SPI completion timeout logic.
+
 module = SPI
 module-str = spi
 source "subsys/logging/Kconfig.template.log_config"
