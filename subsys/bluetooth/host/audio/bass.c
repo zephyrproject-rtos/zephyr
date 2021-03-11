@@ -574,6 +574,10 @@ static ssize_t write_control_point(struct bt_conn *conn,
 			   cp->add_src.adv_sid > 0x0f) {
 			BT_DBG("Invalid data");
 			return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+		} else if (cp->add_src.metadata_len > CONFIG_BT_BASS_MAX_METADATA_LEN) {
+			BT_DBG("Metadata too long %u/%u",
+			       cp->add_src.metadata_len, CONFIG_BT_BASS_MAX_METADATA_LEN);
+			return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
 		}
 
 		if (!bass_add_source(conn, &cp->add_src)) {
@@ -590,6 +594,10 @@ static ssize_t write_control_point(struct bt_conn *conn,
 		} else if (cp->mod_src.pa_sync > BASS_PA_REQ_SYNC) {
 			BT_DBG("Invalid data");
 			return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+		} else if (cp->mod_src.metadata_len > CONFIG_BT_BASS_MAX_METADATA_LEN) {
+			BT_DBG("Metadata too long %u/%u",
+			       cp->mod_src.metadata_len, CONFIG_BT_BASS_MAX_METADATA_LEN);
+			return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
 		}
 
 		if (!bass_mod_src(conn, &cp->mod_src)) {
