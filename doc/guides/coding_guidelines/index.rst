@@ -865,7 +865,7 @@ governing body, or immediately if no specifications apply.
 
    * - ``blacklist / whitelist``
      - * ``denylist / allowlist``
-       * ``blocklist / passlist``
+       * ``blocklist / allowlist``
        * ``rejectlist / acceptlist``
 
    * - ``grandfather policy``
