@@ -478,14 +478,11 @@ void rb_remove(struct rbtree *tree, struct rbnode *node)
 		set_child(parent, get_side(parent, node), child);
 
 		/* Check colors, if one was red (at least one must have been
-		 * black in a valid tree), then we're done.  Otherwise we have
-		 * a missing black we need to fix
+		 * black in a valid tree), then we're done.
 		 */
+		__ASSERT(is_black(node) || is_black(child), "both nodes red?!");
 		if (is_red(node) || is_red(child)) {
 			set_color(child, BLACK);
-		} else {
-			stack[stacksz - 1] = child;
-			fix_missing_black(stack, stacksz, NULL);
 		}
 	}
 
