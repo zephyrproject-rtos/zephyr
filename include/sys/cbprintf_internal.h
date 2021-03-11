@@ -242,7 +242,7 @@ do { \
 			"Buffer must be aligned."); \
 	} \
 	uint8_t *_pbuf = buf; \
-	size_t _pmax = (buf != NULL) ? *_inlen : SIZE_MAX; \
+	size_t _pmax = (buf != NULL) ? _inlen : SIZE_MAX; \
 	size_t _pkg_len = 0; \
 	union z_cbprintf_hdr *_len_loc; \
 	/* package starts with string address and field with length */ \
