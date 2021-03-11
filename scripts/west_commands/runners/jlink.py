@@ -131,8 +131,8 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
 
         A timeout is used since the J-Link Commander takes up to a few seconds
         to exit upon failure.'''
-        if platform.system() == 'Windows':
-            # The check below does not work on Microsoft Windows
+        if platform.system() == 'Windows' or "microsoft" in platform.release().lower():
+            # The check below does not work on Microsoft Windows or in WSL
             return ''
 
         self.require(self.commander)
