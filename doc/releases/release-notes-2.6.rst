@@ -54,6 +54,9 @@ Deprecated in this release
 * USB HID specific macros in ``<include/usb/class/usb_hid.h>`` are deprecated
   in favor of new common HID macros defined in ``<include/usb/class/hid.h>``.
 
+* The ``CONFIG_OPENOCD_SUPPORT`` Kconfig option has been deprecated in favor
+  of ``CONFIG_DEBUG_THREAD_INFO``.
+
 ==========================
 
 Removed APIs in this release
