@@ -112,6 +112,30 @@ static inline void pm_state_notify(bool entering_state)
 	k_spin_unlock(&pm_notifier_lock, pm_notifier_key);
 }
 
+void pm_system_resume(void)
+{
+	/*
+	 * This notification is called from the ISR of the event
+	 * that caused exit from kernel idling after PM operations.
+	 *
+	 * Some CPU low power states require enabling of interrupts
+	 * atomically when entering those states. The wake up from
+	 * such a state first executes code in the ISR of the interrupt
+	 * that caused the wake. This hook will be called from the ISR.
+	 * For such CPU LPS states, do post operations and restores here.
+	 * The kernel scheduler will get control after the ISR finishes
+	 * and it may schedule another thread.
+	 *
+	 * Call pm_idle_exit_notification_disable() if this
+	 * notification is not required.
+	 */
+	if (!post_ops_done) {
+		post_ops_done = 1;
+		pm_state_notify(false);
+		pm_power_state_exit_post_ops(z_power_state);
+	}
+}
+
 void pm_power_state_force(struct pm_state_info info)
 {
 	__ASSERT(info.state < PM_STATES_LEN,
@@ -131,11 +155,7 @@ void pm_power_state_force(struct pm_state_info info)
 	pm_power_state_set(z_power_state);
 	pm_debug_stop_timer();
 
-	if (!post_ops_done) {
-		post_ops_done = 1;
-		pm_state_notify(false);
-		pm_power_state_exit_post_ops(z_power_state);
-	}
+	pm_system_resume();
 }
 
 #if CONFIG_PM_DEVICE
@@ -198,38 +218,9 @@ enum pm_state pm_system_suspend(int32_t ticks)
 	}
 #endif
 	pm_log_debug_info(z_power_state.state);
-
-	if (!post_ops_done) {
-		post_ops_done = 1;
-		pm_state_notify(false);
-		pm_power_state_exit_post_ops(z_power_state);
-	}
+	pm_system_resume();
 
 	return z_power_state.state;
-}
-
-void pm_system_resume(void)
-{
-	/*
-	 * This notification is called from the ISR of the event
-	 * that caused exit from kernel idling after PM operations.
-	 *
-	 * Some CPU low power states require enabling of interrupts
-	 * atomically when entering those states. The wake up from
-	 * such a state first executes code in the ISR of the interrupt
-	 * that caused the wake. This hook will be called from the ISR.
-	 * For such CPU LPS states, do post operations and restores here.
-	 * The kernel scheduler will get control after the ISR finishes
-	 * and it may schedule another thread.
-	 *
-	 * Call pm_idle_exit_notification_disable() if this
-	 * notification is not required.
-	 */
-	if (!post_ops_done) {
-		post_ops_done = 1;
-		pm_state_notify(false);
-		pm_power_state_exit_post_ops(z_power_state);
-	}
 }
 
 void pm_notifier_register(struct pm_notifier *notifier)
