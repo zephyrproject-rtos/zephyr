@@ -11,7 +11,13 @@
 #include <zephyr/types.h>
 #include <bluetooth/conn.h>
 
-#define BASS_BROADCAST_CODE_SIZE	16
+#if IS_ENABLED(CONFIG_BT_BASS)
+#define BASS_MAX_METADATA_LEN CONFIG_BT_BASS_MAX_METADATA_LEN
+#else
+#define BASS_MAX_METADATA_LEN 0
+#endif
+
+#define BASS_BROADCAST_CODE_SIZE        16
 
 #define BASS_PA_STATE_NOT_SYNCED	0x00
 #define BASS_PA_STATE_INFO_REQ		0x01
@@ -19,7 +25,7 @@
 #define BASS_PA_STATE_FAILED		0x03
 #define BASS_PA_STATE_NO_PAST		0x04
 
-#define BASS_MAX_METADATA_LEN		255
+#define BASS_ERR_OPCODE_NOT_SUPPORTED   0x80
 
 #define BASS_RECV_STATE_EMPTY(rs) \
 	((rs)->src_id == 0 && (rs)->pa_sync_state == 0 && \
