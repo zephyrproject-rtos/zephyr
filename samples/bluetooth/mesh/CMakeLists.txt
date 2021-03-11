@@ -11,4 +11,9 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(mesh)
 
 target_sources(app PRIVATE src/main.c)
-target_sources_ifdef(CONFIG_BOARD_BBC_MICROBIT app PRIVATE src/microbit.c)
+
+if (BOARD STREQUAL bbc_microbit)
+  target_sources(app PRIVATE src/microbit.c)
+else()
+  target_sources(app PRIVATE src/board.c)
+endif()

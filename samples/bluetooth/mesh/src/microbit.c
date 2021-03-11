@@ -6,16 +6,27 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/gpio.h>
-
-#include <display/mb_display.h>
 
 #include <bluetooth/mesh.h>
-
+#include <display/mb_display.h>
+#include <drivers/gpio.h>
 #include "board.h"
 
 static uint32_t oob_number;
 static const struct device *gpio;
+static const struct mb_image onoff[] = {
+	MB_IMAGE({ 0, 0, 0, 0, 0 },
+		 { 0, 0, 0, 0, 0 },
+		 { 0, 0, 0, 0, 0 },
+		 { 0, 0, 0, 0, 0 },
+		 { 0, 0, 0, 0, 0 }),
+	MB_IMAGE({ 1, 1, 1, 1, 1 },
+		 { 1, 1, 1, 1, 1 },
+		 { 1, 1, 1, 1, 1 },
+		 { 1, 1, 1, 1, 1 },
+		 { 1, 1, 1, 1, 1 }),
+};
+static struct k_work *button;
 
 static void button_pressed(const struct device *dev, struct gpio_callback *cb,
 			   uint32_t pins)
@@ -24,6 +35,10 @@ static void button_pressed(const struct device *dev, struct gpio_callback *cb,
 
 	mb_display_print(disp, MB_DISPLAY_MODE_DEFAULT, 500, "%04u",
 			 oob_number);
+
+	if (button) {
+		k_work_submit(button);
+	}
 }
 
 static void configure_button(void)
@@ -64,7 +79,7 @@ void board_output_number(bt_mesh_output_action_t action, uint32_t number)
 void board_prov_complete(void)
 {
 	struct mb_display *disp = mb_display_get();
-	struct mb_image arrow = MB_IMAGE({ 0, 1, 0, 1, 0 },
+	struct mb_image smile = MB_IMAGE({ 0, 1, 0, 1, 0 },
 					 { 0, 1, 0, 1, 0 },
 					 { 0, 0, 0, 0, 0 },
 					 { 1, 0, 0, 0, 1 },
@@ -75,27 +90,27 @@ void board_prov_complete(void)
 				     GPIO_INT_DISABLE);
 
 	mb_display_image(disp, MB_DISPLAY_MODE_DEFAULT, 10 * MSEC_PER_SEC,
-			 &arrow, 1);
+			 &smile, 1);
 }
 
-void board_init(void)
+int board_init(struct k_work *button_work)
 {
 	struct mb_display *disp = mb_display_get();
-	static struct mb_image blink[] = {
-		MB_IMAGE({ 1, 1, 1, 1, 1 },
-			 { 1, 1, 1, 1, 1 },
-			 { 1, 1, 1, 1, 1 },
-			 { 1, 1, 1, 1, 1 },
-			 { 1, 1, 1, 1, 1 }),
-		MB_IMAGE({ 0, 0, 0, 0, 0 },
-			 { 0, 0, 0, 0, 0 },
-			 { 0, 0, 0, 0, 0 },
-			 { 0, 0, 0, 0, 0 },
-			 { 0, 0, 0, 0, 0 })
-	};
 
 	mb_display_image(disp, MB_DISPLAY_MODE_DEFAULT | MB_DISPLAY_FLAG_LOOP,
-			 1 * MSEC_PER_SEC, blink, ARRAY_SIZE(blink));
+			 1 * MSEC_PER_SEC, onoff, ARRAY_SIZE(onoff));
+
+	button = button_work;
 
 	configure_button();
+
+	return 0;
+}
+
+void board_led_set(bool val)
+{
+	struct mb_display *disp = mb_display_get();
+
+	mb_display_image(disp, MB_DISPLAY_MODE_DEFAULT, SYS_FOREVER_MS,
+			 &onoff[val], 1);
 }
