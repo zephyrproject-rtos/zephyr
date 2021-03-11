@@ -154,7 +154,7 @@ static int sender_iface(const struct device *dev, struct net_pkt *pkt)
 		/* We need to cancel the query manually so that we
 		 * will not get a timeout.
 		 */
-		k_delayed_work_cancel(&ctx->queries[slot].timer);
+		k_work_cancel_delayable(&ctx->queries[slot].timer);
 
 		DBG("Calling cb %p with user data %p\n",
 		    ctx->queries[slot].cb,
@@ -511,7 +511,7 @@ static void verify_cancelled(void)
 			count++;
 		}
 
-		if (k_delayed_work_remaining_get(&ctx->queries[i].timer) > 0) {
+		if (k_work_delayable_busy_get(&ctx->queries[i].timer) != 0) {
 			timer_not_stopped++;
 		}
 	}
