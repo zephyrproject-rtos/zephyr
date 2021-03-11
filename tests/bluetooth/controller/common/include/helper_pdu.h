@@ -114,6 +114,5 @@ typedef enum {
 
 typedef void (helper_pdu_encode_func_t) (struct pdu_data *data, void *param);
 typedef void (helper_pdu_verify_func_t) (const char *file, uint32_t line, struct pdu_data *data, void *param);
-
+typedef void (helper_pdu_ntf_verify_func_t) (const char *file, uint32_t line, struct pdu_data *data, void *param);
 typedef void (helper_node_verify_func_t) (const char *file, uint32_t line, struct node_rx_pdu *rx, void *param);
-typedef void (helper_func_t) (const char *file, uint32_t line, struct pdu_data *data, void *param);
