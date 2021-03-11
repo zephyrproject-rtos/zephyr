@@ -124,7 +124,7 @@ static void lp_enc_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode
 	/* Encode LL Control PDU */
 	switch (opcode) {
 	case PDU_DATA_LLCTRL_TYPE_ENC_REQ:
-		pdu_encode_enc_req(pdu);
+		pdu_encode_enc_req(ctx, pdu);
 		break;
 	case PDU_DATA_LLCTRL_TYPE_START_ENC_RSP:
 		pdu_encode_start_enc_rsp(pdu);
