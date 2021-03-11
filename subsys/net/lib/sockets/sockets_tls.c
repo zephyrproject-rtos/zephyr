@@ -648,10 +648,10 @@ static int tls_tx(void *ctx, const unsigned char *buf, size_t len)
 static int tls_rx(void *ctx, unsigned char *buf, size_t len)
 {
 	struct tls_context *tls_ctx = ctx;
+	int flags = tls_ctx->flags & ~ZSOCK_MSG_WAITALL;
 	ssize_t received;
 
-	received = zsock_recvfrom(tls_ctx->sock, buf, len,
-				  tls_ctx->flags, NULL, 0);
+	received = zsock_recvfrom(tls_ctx->sock, buf, len, flags, NULL, 0);
 	if (received < 0) {
 		if (errno == EAGAIN) {
 			return MBEDTLS_ERR_SSL_WANT_READ;
@@ -1614,34 +1614,54 @@ ssize_t ztls_sendmsg_ctx(struct tls_context *ctx, const struct msghdr *msg,
 static ssize_t recv_tls(struct tls_context *ctx, void *buf,
 			size_t max_len, int flags)
 {
+	size_t recv_len = 0;
+	const bool waitall = flags & ZSOCK_MSG_WAITALL;
 	int ret;
 
-	ret = mbedtls_ssl_read(&ctx->ssl, buf, max_len);
-	if (ret >= 0) {
-		return ret;
-	}
+	do {
+		size_t read_len = max_len - recv_len;
 
-	if (ret == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY) {
-		/* Peer notified that it's closing the connection. */
-		return 0;
-	}
+		ret = mbedtls_ssl_read(&ctx->ssl, (uint8_t *)buf + recv_len,
+				       read_len);
+		if (ret < 0) {
+			if (ret == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY) {
+				/* Peer notified that it's closing the
+				 * connection.
+				 */
+				break;
+			}
 
-	if (ret == MBEDTLS_ERR_SSL_CLIENT_RECONNECT) {
-		/* Client reconnect on the same socket is not
-		 * supported. See mbedtls_ssl_read API documentation.
-		 */
-		return 0;
-	}
+			if (ret == MBEDTLS_ERR_SSL_CLIENT_RECONNECT) {
+				/* Client reconnect on the same socket is not
+				 * supported. See mbedtls_ssl_read API
+				 * documentation.
+				 */
+				break;
+			}
 
-	if (ret == MBEDTLS_ERR_SSL_WANT_READ ||
-	    ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
-		ret = -EAGAIN;
-	} else {
-		ret = -EIO;
-	}
+			if (ret == MBEDTLS_ERR_SSL_WANT_READ ||
+			    ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
+				if (recv_len > 0) {
+					break;
+				}
 
-	errno = -ret;
-	return -1;
+				ret = -EAGAIN;
+			} else {
+				ret = -EIO;
+			}
+
+			errno = -ret;
+			return -1;
+		}
+
+		if (ret == 0) {
+			break;
+		}
+
+		recv_len += ret;
+	} while (waitall && (recv_len < max_len));
+
+	return recv_len;
 }
 
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
