@@ -5,6 +5,6 @@
  */
 #include "hal/ecb.h"
 
-void ecb_encrypt(uint8_t const *const key_le, uint8_t const *const clear_text_le, uint8_t * const cipher_text_le, uint8_t * const cipher_text_be)
+__attribute__((weak)) void ecb_encrypt(uint8_t const *const key_le, uint8_t const *const clear_text_le, uint8_t * const cipher_text_le, uint8_t * const cipher_text_be)
 {
 }

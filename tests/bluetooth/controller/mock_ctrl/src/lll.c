@@ -33,7 +33,7 @@
 
 extern sys_slist_t ut_rx_q;
 
-int lll_csrand_get(void *buf, size_t len)
+__attribute__((weak)) int lll_csrand_get(void *buf, size_t len)
 {
 	* (int *) buf = 0;
 	return 0;
