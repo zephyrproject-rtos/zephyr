@@ -205,6 +205,18 @@ int cbvprintf_package(void *packaged, size_t len,
 	const char *s;
 	bool parsing = false;
 
+	/* Buffer must be aligned at least to size of a pointer. */
+	if ((uintptr_t)packaged & (sizeof(void *) - 1)) {
+		return -EFAULT;
+	}
+
+#if defined(__xtensa__)
+	/* Xtensa requires package to be 16 bytes aligned. */
+	if ((uintptr_t)packaged & (CBPRINTF_PACKAGE_ALIGNMENT - 1)) {
+		return -EFAULT;
+	}
+#endif
+
 	/*
 	 * Make room to store the arg list size and the number of
 	 * appended strings. They both occupy 1 byte each.
@@ -218,9 +230,17 @@ int cbvprintf_package(void *packaged, size_t len,
 	/*
 	 * When buf0 is NULL we don't store anything.
 	 * Instead we count the needed space to store the data.
+	 * In this case, incoming len argument indicates the anticipated
+	 * buffer "misalignment" offset.
 	 */
 	if (!buf0) {
-		len = 0;
+#if defined(__xtensa__)
+		if (len % CBPRINTF_PACKAGE_ALIGNMENT) {
+			return -EFAULT;
+		}
+#endif
+		buf += len % CBPRINTF_PACKAGE_ALIGNMENT;
+		len = -(len % CBPRINTF_PACKAGE_ALIGNMENT);
 	}
 
 	/*
@@ -373,11 +393,6 @@ int cbvprintf_package(void *packaged, size_t len,
 
 		/* align destination buffer location */
 		buf = (void *) ROUND_UP(buf, align);
-
-		/* Check if buffer is properly aligned. */
-		if ((uintptr_t)buf0 & (align - 1)) {
-			return -EFAULT;
-		}
 
 		/* make sure the data fits */
 		if (buf0 && buf - buf0 + size > len) {
