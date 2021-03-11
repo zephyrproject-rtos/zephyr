@@ -193,23 +193,27 @@ static inline void cbprintf_wcpy(int *dst, int *src, uint32_t len)
  *
  * @param _idx index. Index is postincremented.
  *
+ * @param _align_offset Current index with alignment offset.
+ *
  * @param _max maximum index (buffer capacity).
  *
  * @param _arg argument.
  */
-#define Z_CBPRINTF_PACK_ARG2(_buf, _idx, _max, _arg) do { \
+#define Z_CBPRINTF_PACK_ARG2(_buf, _idx, _align_offset, _max, _arg) do { \
 	BUILD_ASSERT(!((sizeof(double) < VA_STACK_ALIGN(long double)) && \
 			Z_CBPRINTF_IS_LONGDOUBLE(_arg) && \
 			!IS_ENABLED(CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE)),\
 			"Packaging of long double not enabled in Kconfig."); \
-	while (_idx % Z_CBPRINTF_ALIGNMENT(_arg)) { \
+	while (_align_offset % Z_CBPRINTF_ALIGNMENT(_arg)) { \
 		_idx += sizeof(int); \
+		_align_offset += sizeof(int); \
 	} \
 	uint32_t _arg_size = Z_CBPRINTF_ARG_SIZE(_arg); \
 	if (_buf && _idx < _max) { \
 		Z_CBPRINTF_STORE_ARG(&_buf[_idx], _arg); \
 	} \
 	_idx += _arg_size; \
+	_align_offset += _arg_size; \
 } while (0)
 
 /** @brief Package single argument.
@@ -219,7 +223,7 @@ static inline void cbprintf_wcpy(int *dst, int *src, uint32_t len)
  * @param arg argument.
  */
 #define Z_CBPRINTF_PACK_ARG(arg) \
-	Z_CBPRINTF_PACK_ARG2(_pbuf, _pkg_len, _pmax, arg)
+	Z_CBPRINTF_PACK_ARG2(_pbuf, _pkg_len, _pkg_offset, _pmax, arg)
 
 /** @brief Package descriptor.
  *
@@ -246,35 +250,41 @@ union z_cbprintf_hdr {
  *
  * @param _outlen number of bytes required to store the package.
  *
+ * @param _align_offset Input buffer alignment offset in words. Where offset 0
+ * means that buffer is aligned to CBPRINTF_PACKAGE_ALIGNMENT.
+ *
  * @param ... String with variable list of arguments.
  */
-#define Z_CBPRINTF_STATIC_PACKAGE_GENERIC(buf, _inlen, _outlen, \
+#define Z_CBPRINTF_STATIC_PACKAGE_GENERIC(buf, _inlen, _outlen, _align_offset, \
 					  ... /* fmt, ... */) \
 do { \
 	_Pragma("GCC diagnostic push") \
 	_Pragma("GCC diagnostic ignored \"-Wpointer-arith\"") \
+	BUILD_ASSERT(!IS_ENABLED(CONFIG_XTENSA) || \
+		     (IS_ENABLED(CONFIG_XTENSA) && \
+		      !(_align_offset % CBPRINTF_PACKAGE_ALIGNMENT)), \
+			"Xtensa requires aligned package."); \
+	BUILD_ASSERT((_align_offset % sizeof(int)) == 0, \
+			"Alignment offset must be multiply of a word."); \
 	if (IS_ENABLED(CONFIG_CBPRINTF_STATIC_PACKAGE_CHECK_ALIGNMENT)) { \
 		__ASSERT(!((uintptr_t)buf & (CBPRINTF_PACKAGE_ALIGNMENT - 1)), \
 			"Buffer must be aligned."); \
 	} \
 	uint8_t *_pbuf = buf; \
-	size_t _pmax = (buf != NULL) ? _inlen : SIZE_MAX; \
-	size_t _pkg_len = 0; \
+	int _pmax = (buf != NULL) ? _inlen : INT32_MAX; \
+	int _pkg_len = 0; \
+	int _pkg_offset = _align_offset; \
 	union z_cbprintf_hdr *_len_loc; \
 	/* package starts with string address and field with length */ \
-	if (_pmax < sizeof(char *) + 2 * sizeof(uint16_t)) { \
+	if (_pmax < sizeof(union z_cbprintf_hdr)) { \
+		_outlen = -ENOSPC; \
 		break; \
 	} \
 	_len_loc = (union z_cbprintf_hdr *)_pbuf; \
 	_pkg_len += sizeof(union z_cbprintf_hdr); \
-	if (_pbuf) { \
-		*(char **)&_pbuf[_pkg_len] = GET_ARG_N(1, __VA_ARGS__); \
-	} \
-	_pkg_len += sizeof(char *); \
+	_pkg_offset += sizeof(union z_cbprintf_hdr); \
 	/* Pack remaining arguments */\
-	COND_CODE_0(NUM_VA_ARGS_LESS_1(__VA_ARGS__), (), ( \
-	    FOR_EACH(Z_CBPRINTF_PACK_ARG, (;), GET_ARGS_LESS_N(1, __VA_ARGS__));\
-	)) \
+	FOR_EACH(Z_CBPRINTF_PACK_ARG, (;), __VA_ARGS__);\
 	/* Store length */ \
 	_outlen = (_pkg_len > _pmax) ? -ENOSPC : _pkg_len; \
 	/* Store length in the header, set number of dumped strings to 0 */ \
@@ -286,16 +296,19 @@ do { \
 } while (0)
 
 #if Z_C_GENERIC
-#define Z_CBPRINTF_STATIC_PACKAGE(packaged, inlen, outlen, ... /* fmt, ... */) \
-	Z_CBPRINTF_STATIC_PACKAGE_GENERIC(packaged, inlen, outlen, __VA_ARGS__)
+#define Z_CBPRINTF_STATIC_PACKAGE(packaged, inlen, outlen, align_offset, \
+				  ... /* fmt, ... */) \
+	Z_CBPRINTF_STATIC_PACKAGE_GENERIC(packaged, inlen, outlen, \
+					  align_offset, __VA_ARGS__)
 #else
-#define Z_CBPRINTF_STATIC_PACKAGE(packaged, inlen, outlen, ... /* fmt, ... */) \
+#define Z_CBPRINTF_STATIC_PACKAGE(packaged, inlen, outlen, align_offset, \
+				  ... /* fmt, ... */) \
 do { \
 	/* Small trick needed to avoid warning on always true */ \
 	if (((uintptr_t)packaged + 1) != 1) { \
 		outlen = cbprintf_package(packaged, inlen, __VA_ARGS__); \
 	} else { \
-		outlen = cbprintf_package(NULL, 0, __VA_ARGS__); \
+		outlen = cbprintf_package(NULL, align_offset, __VA_ARGS__); \
 	} \
 } while (0)
 #endif /* Z_C_GENERIC */
