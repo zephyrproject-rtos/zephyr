@@ -1,0 +1,25 @@
+#
+# Copyright (c) 2020 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+sample:
+  name: Simple FAT file system in internal/external flash sample
+common:
+  tags: filesystem, fat
+tests:
+  sample.filesystem.fat_fs_basic.nrf52840dk_nrf52840.internal:
+    platform_allow: nrf52840dk_nrf52840
+    extra_args: DTC_OVERLAY_FILE="boards/nrf52840dk_nrf52840.overlay"
+  sample.filesystem.fat_fs_basic.nrf9160dk_nrf52840.internal:
+    platform_allow: nrf9160dk_nrf52840
+    extra_args: DTC_OVERLAY_FILE="boards/nrf9160dk_nrf52840.overlay"
+  sample.filesystem.fat_fs_basic.nrf52840dk_nrf52840.external:
+    platform_allow: nrf52840dk_nrf52840
+    extra_args: DTC_OVERLAY_FILE="boards/nrf52840dk_nrf52840.overlay" CONF_FILE="prj_external_qspi.conf"
+  sample.filesystem.fat_fs_basic.nrf9160dk_nrf9160.external:
+    platform_allow: nrf9160dk_nrf9160@0.14.0
+    extra_args: DTC_OVERLAY_FILE="boards/nrf9160dk_nrf9160.overlay" CONF_FILE="prj_external_spi.conf"
+  sample.filesystem.fat_fs_basic.nrf9160dk_nrf9160.internal:
+    platform_allow: nrf9160dk_nrf9160@0.14.0
+    extra_args: DTC_OVERLAY_FILE="boards/nrf9160dk_nrf9160.overlay"

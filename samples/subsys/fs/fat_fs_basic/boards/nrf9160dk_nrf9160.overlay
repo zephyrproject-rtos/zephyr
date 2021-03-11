@@ -1,0 +1,69 @@
+/*
+ * Copyright (c) 2021 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * The overlay provides following changes to the DTS
+ *  1) it changes organizations of SoC internal flash to fit minimal FAT system; this is needed for
+ *  for FAT in internal flash sample;
+ *  2) it add definition of partition within external, mx25r64, flash; this change is needed for FAT
+ *  in external flash sample.
+ *
+ * Of course demo of FAT in internal flash requires 1) only and demo of FAT in external flash
+ * requires 2) only, but they have been merged here for convenience.
+ */
+/delete-node/ &slot0_partition;
+/delete-node/ &slot1_partition;
+/delete-node/ &storage_partition;
+/delete-node/ &scratch_partition;
+
+&flash0 {
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x000000000 0x0000C000>;
+		};
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000C000 0x00063000>;
+		};
+		slot1_partition: partition@67000 {
+			label = "image-1";
+			reg = <0x0006F000 0x00063000>;
+		};
+		scratch_partition: partition@d2000 {
+			label = "image-scratch";
+			reg = <0x000d2000 0x0001e000>;
+		};
+
+		/*
+		 * FAT FS requires at least 128 sectors set by CONFIG_DISK_FLASH_SECTOR_SIZE
+		 * configuration option to 512, which means that at least 64kiB are needed.
+		 */
+		storage_partition: partition@f0000 {
+			label = "storage";
+			reg = <0x000f0000 0x00010000>;
+		};
+	};
+};
+
+&mx25r64 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Use 128kiB of flash for storage, starting at 0x0000 address */
+		partition@0 {
+			label = "external_storage";
+			reg = <0x00000000 0x00020000>;
+		};
+	};
+};
