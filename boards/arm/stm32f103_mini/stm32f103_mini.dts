@@ -22,7 +22,7 @@
 	leds {
 		compatible = "gpio-leds";
 		green_led_1: led_1 {
-			gpios = <&gpioa 8 GPIO_ACTIVE_LOW>;
+			gpios = <&gpioa 1 GPIO_ACTIVE_HIGH>;
 			label = "User LD1";
 		};
 	};
@@ -66,9 +66,8 @@
 			reg=<0>;
 			spi-max-frequency = <5000000>; /* 8MHz */
 			label = "ST7735";
-			cmd-data-gpios = <&gpioc 4 GPIO_ACTIVE_HIGH>;
 			reset-gpios = <&gpiob 12 GPIO_ACTIVE_LOW>;
-			blk-gpios = <&gpioa 1 GPIO_ACTIVE_LOW>;
+			cmd-data-gpios = <&gpioc 4 GPIO_ACTIVE_HIGH>;
 			width = <129>;
 			height = <160>;
 	};

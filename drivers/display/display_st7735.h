@@ -2,6 +2,54 @@
 #ifndef __DISPLAY_ST7735_H__
 #define __DISPLAY_ST7735_H__
 
+
+
+
+#include <device.h>
+#include <drivers/spi.h>
+#include <drivers/gpio.h>
+#include <sys/byteorder.h>
+#include <drivers/display.h>
+#include <devicetree.h>
+
+
+
+struct st7735_data
+{
+    const struct device* spi_dev;
+    struct spi_config spi_config;
+    struct spi_cs_control cs_ctrl;
+
+    const struct device* reset_gpio;
+    const struct device* cmd_data_gpio;
+    const struct device* blk_gpio;
+
+    uint16_t height;
+    uint16_t width;
+
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #define LCD_WIDTH         129               // 设置屏幕的像素大小，
 #define LCD_HIGH          160               // 注意：实际像素好像要比标示值大1~2像素，
 #define LCD_DIR           1                 // 四种显示方向，参数：1、2、3、4

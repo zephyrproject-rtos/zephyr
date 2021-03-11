@@ -6,7 +6,10 @@
 #include "drivers/lcd_display.h"
 
 
-
+#define LED0_NODE DT_ALIAS(led0)
+#define LED0	DT_GPIO_LABEL(LED0_NODE, gpios)
+#define PIN	DT_GPIO_PIN(LED0_NODE, gpios)
+#define FLAGS	DT_GPIO_FLAGS(LED0_NODE, gpios)
 
 void main(void)
 {
@@ -17,14 +20,21 @@ void main(void)
     #pragma message("sitronix_st7735 not find")
     #endif
 
+    // const struct device *dev;
+    
+	// dev = device_get_binding(LED0);
+	// gpio_pin_configure(dev, PIN, GPIO_OUTPUT_ACTIVE | FLAGS);
+	// gpio_pin_set(dev, PIN, 1);
+
+
+
     const struct device* display_dev=device_get_binding(DISPLAY_DEV_NAME);
     st7735_LcdInit(display_dev);
     while(1)
     {
-        // printk("zephyr is low\n");
-        // high(display_dev);
-        // k_msleep(500);
-        // printk("zephyr is high\n");
-        // low(display_dev);
+        // gpio_pin_set(dev, PIN, 1);
+        // k_msleep(20);
+        // gpio_pin_set(dev, PIN, 0);
+        // k_msleep(20);
     }
 }

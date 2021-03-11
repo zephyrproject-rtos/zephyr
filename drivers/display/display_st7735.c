@@ -2,15 +2,8 @@
  * 
 */
 #define DT_DRV_COMPAT sitronix_st7735
-
 #include "display_st7735.h"
 #include "drivers/lcd_display.h"
-#include <device.h>
-#include <drivers/spi.h>
-#include <drivers/gpio.h>
-#include <sys/byteorder.h>
-#include <drivers/display.h>
-#include <devicetree.h>
 
 #define ST7735_CMD_DATA_PIN     DT_INST_GPIO_PIN(0, cmd_data_gpios)
 #define ST7735_RES_PIN          DT_INST_GPIO_PIN(0, reset_gpios)
@@ -23,56 +16,43 @@
 #define BLK_FLAGS       DT_INST_GPIO_FLAGS(0, blk_gpios)
 
 
-
-
-struct st7735_data
-{
-    const struct device* spi_dev;
-    struct spi_config spi_config;
-    struct spi_cs_control cs_ctrl;
-
-    const struct device* reset_gpio;
-    const struct device* cmd_data_gpio;
-    const struct device* blk_gpio;
-
-    uint16_t height;
-    uint16_t width;
-
-};
 static struct st7735_data st7735_data_instance={
     .height=LCD_HIGH,
     .width=LCD_WIDTH,
 };
 
-
-
-void st7735_set_cmd()
+void st7735_set_cmd(void *param)
 {
+    struct st7735_data* data=(struct st7735_data*)param;
     printk("%d==set:0\n",ST7735_CMD_DATA_PIN);
-    gpio_pin_set(st7735_data_instance.cmd_data_gpio, ST7735_CMD_DATA_PIN, 0);
+    gpio_pin_set(data->cmd_data_gpio, ST7735_CMD_DATA_PIN, 0);
 }
-void st7735_set_data()
+void st7735_set_data(void *param)
 {
+    struct st7735_data* data=(struct st7735_data*)param;
     printk("%d==set:1\n",ST7735_CMD_DATA_PIN);
-    gpio_pin_set(st7735_data_instance.cmd_data_gpio, ST7735_CMD_DATA_PIN, 1);
+    gpio_pin_set(data->cmd_data_gpio, ST7735_CMD_DATA_PIN, 1);
 }
-static inline void st7735_resetpin_low()
+static inline void st7735_resetpin_low(void *param)
 {
-    gpio_pin_set(st7735_data_instance.reset_gpio,ST7735_RES_PIN,0);
+    struct st7735_data* data=(struct st7735_data*)param;
+    gpio_pin_set(data->reset_gpio,ST7735_RES_PIN,0);
 }
-static inline void st7735_resetpin_high()
+static inline void st7735_resetpin_high(void *param)
 {
-    gpio_pin_set(st7735_data_instance.reset_gpio,ST7735_RES_PIN,1);
+    struct st7735_data* data=(struct st7735_data*)param;
+    gpio_pin_set(data->reset_gpio,ST7735_RES_PIN,1);
 }
 
-static inline void st7735_blk_close()
-{
-    gpio_pin_set(st7735_data_instance.reset_gpio,ST7735_BLK_PIN,0);
-}
-static inline void st7735_blk_open()
-{
-    gpio_pin_set(st7735_data_instance.reset_gpio,ST7735_BLK_PIN,1);
-}
+// static inline void st7735_blk_close(const struct st7735_data *data)
+// {
+//     gpio_pin_set(data->blk_gpio,ST7735_BLK_PIN,0);
+// }
+// static inline void st7735_blk_open(const struct st7735_data *data)
+// {
+//     printk("open blk:%d\n",ST7735_BLK_PIN);
+//     gpio_pin_set(data->blk_gpio,ST7735_BLK_PIN,1);
+// }
 
 static void st7735_transmit(struct st7735_data* data,uint8_t cmd,uint8_t* tx_data,size_t tx_count)
 {
@@ -84,7 +64,7 @@ static void st7735_transmit(struct st7735_data* data,uint8_t cmd,uint8_t* tx_dat
         .buffers=&tx_buf,
         .count=1,
     };
-    st7735_set_cmd();
+    st7735_set_cmd(data);
     k_sleep(K_MSEC(20));
     spi_write(data->spi_dev,&data->spi_config,&tx_bufs);
 
@@ -92,7 +72,7 @@ static void st7735_transmit(struct st7735_data* data,uint8_t cmd,uint8_t* tx_dat
     {
         tx_buf.buf=tx_data;
         tx_buf.len=tx_count;
-        st7735_set_data();
+        st7735_set_data(data);
         k_sleep(K_MSEC(20));
         spi_write(data->spi_dev,&data->spi_config,&tx_bufs);
     }
@@ -109,7 +89,7 @@ static void write_data(struct st7735_data* data,uint8_t* tx_data,size_t tx_count
         .buffers=&tx_buf,
         .count=1,
     };
-    st7735_set_data();
+    st7735_set_data(data);
     k_sleep(K_MSEC(20));
     spi_write(data->spi_dev,&data->spi_config,&tx_bufs);
 }
@@ -140,17 +120,6 @@ void LCD_FILL(uint8_t xstart,uint8_t ystart,uint8_t xend,uint8_t yend,uint16_t c
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
 void LCD_Init(void)
 {
     uint8_t B1_follow[]={0x05,0x3C,0x3C};
@@ -169,7 +138,7 @@ void LCD_Init(void)
     uint8_t CASET_follow[]={0,0,0,0x7f};
     uint8_t RASET_follow[]={0,0,0,0x9f};
     uint8_t COLMOD_follow[]={0x05};
-    st7735_blk_open();
+    // st7735_blk_open(&st7735_data_instance);
     
     if((LCD_DIR==1)||(LCD_DIR==3))
     {
@@ -180,9 +149,9 @@ void LCD_Init(void)
         st7735_data_instance.height=LCD_WIDTH;
     }
 
-    st7735_resetpin_low();
+    st7735_resetpin_low(&st7735_data_instance);
     k_sleep(K_MSEC(10));
-    st7735_resetpin_high();
+    st7735_resetpin_high(&st7735_data_instance);
     k_sleep(K_MSEC(10));
 
     st7735_transmit(&st7735_data_instance,ST7735_CMD_SLEEP_OUT,NULL,0);
@@ -227,19 +196,6 @@ void LCD_Init(void)
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 static int st7735_init(const struct device *dev)
 {
     struct st7735_data* data = (struct st7735_data*)dev->data;
@@ -277,23 +233,20 @@ static int st7735_init(const struct device *dev)
     }
     gpio_pin_configure(data->cmd_data_gpio,ST7735_CMD_DATA_PIN,GPIO_OUTPUT|CMD_DATA_FLAGS);
 
-    data->blk_gpio=device_get_binding(DT_INST_GPIO_LABEL(0, blk_gpios));
-    if(data->blk_gpio==NULL)
-    {
-        printk("data->blk_gpio is null\n");
-        return -EPERM;
-    }
-    gpio_pin_configure(data->blk_gpio,ST7735_BLK_PIN,GPIO_OUTPUT_INACTIVE|CMD_DATA_FLAGS);
-
-
+    // data->blk_gpio=device_get_binding(DT_INST_GPIO_LABEL(0, blk_gpios));
+    // if(data->blk_gpio==NULL)
+    // {
+    //     printk("data->blk_gpio is null\n");
+    //     return -EPERM;
+    // }
+    // gpio_pin_configure(data->blk_gpio,ST7735_BLK_PIN,GPIO_OUTPUT_INIT_HIGH);
 
 }
 
 static const struct lcd_display_driver_api  st7735_api={
     .st7735_lcd_init=LCD_Init,
-    .high=st7735_set_data,
-    .low=st7735_set_cmd,
-    
+    // .high=st7735_blk_close,
+    // .low=st7735_blk_open,
 };
 
 DEVICE_DT_INST_DEFINE(0, &st7735_init,
