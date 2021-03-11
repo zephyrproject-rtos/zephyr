@@ -418,8 +418,7 @@ static void rp_enc_ntf_ltk(struct ll_conn *conn, struct proc_ctx *ctx)
 	ntf->hdr.handle = conn->lll.handle;
 	pdu = (struct pdu_data *) ntf->pdu;
 
-	/* TODO(thoh): is this correct? */
-	pdu_encode_enc_req(pdu);
+	ntf_encode_enc_req(ctx, pdu);
 
 	/* Enqueue notification towards LL */
 	ll_rx_put(ntf->hdr.link, ntf);

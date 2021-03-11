@@ -295,6 +295,14 @@ void ull_cp_priv_pdu_encode_enc_req(struct pdu_data *pdu)
 	/* TODO(thoh): Fill in PDU with correct data */
 }
 
+void ull_cp_priv_ntf_encode_enc_req(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, enc_req) + sizeof(struct pdu_data_llctrl_enc_req);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_ENC_REQ;
+	/* TODO(thoh): Fill in PDU with correct data */
+}
+
 void ull_cp_priv_pdu_encode_enc_rsp(struct pdu_data *pdu)
 {
 	//struct pdu_data_llctrl_enc_req *p;
