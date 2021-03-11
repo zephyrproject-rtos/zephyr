@@ -12,30 +12,29 @@
 #define BT_ASCS_RSP_TRUNCATED		0x02
 #define BT_ASCS_RSP_INVALID_ASE		0x03
 #define BT_ASCS_RSP_INVALID_ASE_STATE	0x04
-#define BT_ASCS_RSP_CAP_UNSUPPORTED	0x05
-#define BT_ASCS_RSP_CONF_UNSUPPORTED	0x06
-#define BT_ASCS_RSP_CONF_REJECTED	0x07
-#define BT_ASCS_RSP_CONF_INVALID	0x08
-#define BT_ASCS_RSP_METADATA_UNSUPPORTED 0x09
-#define BT_ASCS_RSP_METADATA_REJECTED	0x0a
-#define BT_ASCS_RSP_METADATA_INVALID	0x0b
-#define BT_ASCS_RSP_NO_MEM		0x0c
-#define BT_ASCS_RSP_UNSPECIFIED		0x0d
+#define BT_ASCS_RSP_INVALID_DIR		0x05
+#define BT_ASCS_RSP_CAP_UNSUPPORTED	0x06
+#define BT_ASCS_RSP_CONF_UNSUPPORTED	0x07
+#define BT_ASCS_RSP_CONF_REJECTED	0x08
+#define BT_ASCS_RSP_CONF_INVALID	0x09
+#define BT_ASCS_RSP_METADATA_UNSUPPORTED 0x0a
+#define BT_ASCS_RSP_METADATA_REJECTED	0x0b
+#define BT_ASCS_RSP_METADATA_INVALID	0x0c
+#define BT_ASCS_RSP_NO_MEM		0x0d
+#define BT_ASCS_RSP_UNSPECIFIED		0x0e
 
 /* Response Reasons */
 #define BT_ASCS_REASON_NONE		0x00
-#define BT_ASCS_REASON_DIR		0x01
-#define BT_ASCS_REASON_CODEC		0x02
-#define BT_ASCS_REASON_CODEC_DATA_LEN	0x03
-#define BT_ASCS_REASON_CODEC_DATA	0x04
-#define BT_ASCS_REASON_INTERVAL		0x05
-#define BT_ASCS_REASON_FRAMING		0x06
-#define BT_ASCS_REASON_PHY		0x07
-#define BT_ASCS_REASON_SDU		0x08
-#define BT_ASCS_REASON_RTN		0x09
-#define BT_ASCS_REASON_LATENCY		0x0a
-#define BT_ASCS_REASON_PD		0x0b
-#define BT_ASCS_REASON_METADATA		0x0c
+#define BT_ASCS_REASON_CODEC		0x01
+#define BT_ASCS_REASON_CODEC_DATA	0x02
+#define BT_ASCS_REASON_INTERVAL		0x03
+#define BT_ASCS_REASON_FRAMING		0x04
+#define BT_ASCS_REASON_PHY		0x05
+#define BT_ASCS_REASON_SDU		0x06
+#define BT_ASCS_REASON_RTN		0x07
+#define BT_ASCS_REASON_LATENCY		0x08
+#define BT_ASCS_REASON_PD		0x09
+#define BT_ASCS_REASON_CIS		0x0a
 
 /* Transport QoS Packing */
 #define BT_ASCS_QOS_PACKING_SEQ		0x00
@@ -75,7 +74,6 @@ struct bt_ascs_codec {
 
 /* ASE_State = 0x01 (Codec Configured), defined in Table 4.7. */
 struct bt_ascs_ase_status_config {
-	uint8_t  dir;
 	uint8_t  framing;
 	uint8_t  phy;
 	uint8_t  rtn;
@@ -130,7 +128,6 @@ struct bt_ascs_ase_cp {
 
 struct bt_ascs_config {
 	uint8_t  ase;			/* ASE ID */
-	uint8_t  dir;			/* ASE direction */
 	uint8_t  latency;		/* Target latency */
 	uint8_t  phy;			/* Target PHY */
 	struct bt_ascs_codec codec;	/* Codec ID */
@@ -254,6 +251,8 @@ static inline const char *bt_ascs_rsp_str(uint8_t code)
 		return "Invalid ASE_ID";
 	case BT_ASCS_RSP_INVALID_ASE_STATE:
 		return "Invalid ASE State";
+	case BT_ASCS_RSP_INVALID_DIR:
+		return "Invalid ASE Direction";
 	case BT_ASCS_RSP_CAP_UNSUPPORTED:
 		return "Unsupported Capabilities";
 	case BT_ASCS_RSP_CONF_UNSUPPORTED:
@@ -282,14 +281,10 @@ static inline const char *bt_ascs_reason_str(uint8_t reason)
 	switch (reason) {
 	case BT_ASCS_REASON_NONE:
 		return "None";
-	case BT_ASCS_REASON_DIR:
-		return "Direction";
 	case BT_ASCS_REASON_CODEC:
 		return "Codec ID";
-	case BT_ASCS_REASON_CODEC_DATA_LEN:
-		return "Codec Configuration Length";
 	case BT_ASCS_REASON_CODEC_DATA:
-		return "Codec Configuration";
+		return "Codec Specific Configuration";
 	case BT_ASCS_REASON_INTERVAL:
 		return "SDU Interval";
 	case BT_ASCS_REASON_FRAMING:
@@ -304,8 +299,8 @@ static inline const char *bt_ascs_reason_str(uint8_t reason)
 		return "Maximum Transport Delay";
 	case BT_ASCS_REASON_PD:
 		return "Presentation Delay";
-	case BT_ASCS_REASON_METADATA:
-		return "Metadata Length";
+	case BT_ASCS_REASON_CIS:
+		return "Invalid ASE CIS Mapping";
 	}
 
 	return "Unknown";

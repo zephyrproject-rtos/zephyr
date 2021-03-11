@@ -25,7 +25,7 @@
 
 #if defined(CONFIG_BT_BAP)
 
-static struct bt_audio_chan *chan_listen;
+static struct bt_audio_chan *enabling[CONFIG_BT_ISO_MAX_CHAN];
 
 static void chan_attach(struct bt_conn *conn, struct bt_audio_chan *chan,
 			struct bt_audio_ep *ep, struct bt_audio_capability *cap,
@@ -144,20 +144,40 @@ int bt_audio_chan_reconfig(struct bt_audio_chan *chan,
 #define IN_RANGE(_min, _max, _value) \
 	(_value >= _min && _value <= _max)
 
+static bool bt_audio_chan_enabling(struct bt_audio_chan *chan)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(enabling); i++) {
+		if (enabling[i] == chan) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 static int bt_audio_chan_iso_accept(struct bt_conn *conn,
 				    struct bt_iso_chan **chan)
 {
+	int i;
+
 	BT_DBG("conn %p", conn);
 
-	if (!chan_listen) {
-		BT_ERR("No channel listening\n");
-		return -EPERM;
+	for (i = 0; i < ARRAY_SIZE(enabling); i++) {
+		struct bt_audio_chan *c = enabling[i];
+
+		if (c && c->ep->cig == conn->iso.cig_id &&
+		    c->ep->cis == conn->iso.cis_id) {
+			*chan = enabling[i]->iso;
+			enabling[i] = NULL;
+			return 0;
+		}
 	}
 
-	*chan = chan_listen->iso;
-	chan_listen = NULL;
+	BT_ERR("No channel listening");
 
-	return 0;
+	return -EPERM;
 }
 
 static struct bt_iso_server iso_server = {
@@ -165,16 +185,49 @@ static struct bt_iso_server iso_server = {
 	.accept = bt_audio_chan_iso_accept,
 };
 
+static bool bt_audio_chan_linked(struct bt_audio_chan *chan1,
+				 struct bt_audio_chan *chan2)
+{
+	struct bt_audio_chan *tmp;
+
+	if (!chan1 || !chan2) {
+		return false;
+	}
+
+	if (chan1 == chan2) {
+		return true;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&chan1->links, tmp, node) {
+		if (tmp == chan2) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+static bool bt_audio_chan_iso_linked(struct bt_audio_chan *chan1,
+				     struct bt_audio_chan *chan2)
+{
+	if (!chan1 || !chan2 || chan1->conn != chan2->conn) {
+		return false;
+	}
+
+	return (chan1->ep->cig == chan2->ep->cig) &&
+	       (chan1->ep->cis == chan2->ep->cis);
+}
+
 static int bt_audio_chan_iso_listen(struct bt_audio_chan *chan)
 {
 	static bool server;
-	int err;
+	int err, i;
+	struct bt_audio_chan **free = NULL;
 
 	BT_DBG("chan %p conn %p", chan, chan->conn);
 
 	if (server) {
-		chan_listen = chan;
-		return 0;
+		goto done;
 	}
 
 	err = bt_iso_server_register(&iso_server);
@@ -184,9 +237,31 @@ static int bt_audio_chan_iso_listen(struct bt_audio_chan *chan)
 	}
 
 	server = true;
-	chan_listen = chan;
 
-	return 0;
+done:
+	for (i = 0; i < ARRAY_SIZE(enabling); i++) {
+		if (enabling[i] == chan) {
+			return 0;
+		}
+
+		if (bt_audio_chan_iso_linked(enabling[i], chan)) {
+			bt_audio_chan_link(enabling[i], chan);
+			return 0;
+		}
+
+		if (!enabling[i] && !free) {
+			free = &enabling[i];
+		}
+	}
+
+	if (free) {
+		*free = chan;
+		return 0;
+	}
+
+	BT_ERR("Unable to listen: no slot left");
+
+	return -ENOSPC;
 }
 
 int bt_audio_chan_qos(struct bt_audio_chan *chan, struct bt_codec_qos *qos)
@@ -317,7 +392,7 @@ done:
 
 	bt_audio_ep_set_state(chan->ep, BT_ASCS_ASE_STATE_ENABLING);
 
-	if (chan == chan_listen) {
+	if (bt_audio_chan_enabling(chan)) {
 		return 0;
 	}
 
@@ -586,6 +661,10 @@ int bt_audio_chan_link(struct bt_audio_chan *chan1, struct bt_audio_chan *chan2)
 		return -EINVAL;
 	}
 
+	if (bt_audio_chan_linked(chan1, chan2)) {
+		return -EALREADY;
+	}
+
 	sys_slist_append(&chan1->links, &chan2->node);
 	sys_slist_append(&chan2->links, &chan1->node);
 
@@ -626,6 +705,8 @@ int bt_audio_chan_unlink(struct bt_audio_chan *chan1,
 
 static void chan_detach(struct bt_audio_chan *chan)
 {
+	int i;
+
 	BT_DBG("chan %p", chan);
 
 	bt_audio_ep_detach(chan->ep, chan);
@@ -633,6 +714,12 @@ static void chan_detach(struct bt_audio_chan *chan)
 	chan->conn = NULL;
 	chan->cap = NULL;
 	chan->codec = NULL;
+
+	for (i = 0; i < ARRAY_SIZE(enabling); i++) {
+		if (enabling[i] == chan) {
+			enabling[i] = NULL;
+		}
+	}
 
 	bt_audio_chan_disconnect(chan);
 }
@@ -707,15 +794,14 @@ struct bt_conn_iso *bt_audio_chan_bind(struct bt_audio_chan *chan,
 		return NULL;
 	}
 
+	if (!qos || !chan->iso->qos) {
+		BT_ERR("Unable to bind: QoS not set");
+		return NULL;
+	}
+
 	/* Fill up ISO QoS settings from Codec QoS*/
 	if (chan->qos != qos) {
-		chan->iso->qos->dir = qos->dir;
-		chan->iso->qos->interval = qos->interval;
-		chan->iso->qos->framing = qos->framing;
-		chan->iso->qos->latency = qos->latency;
-		chan->iso->qos->sdu = qos->sdu;
-		chan->iso->qos->phy = qos->phy;
-		chan->iso->qos->rtn = qos->rtn;
+		memcpy(chan->qos, qos, sizeof(qos));
 	}
 
 	conns[0] = chan->conn;
@@ -758,9 +844,9 @@ int bt_audio_chan_connect(struct bt_audio_chan *chan)
 
 		return bt_iso_chan_connect(&chan->iso, 1);
 	case BT_ISO_CONNECT:
-		return -EINPROGRESS;
-	case BT_ISO_CONNECTED:
 		return 0;
+	case BT_ISO_CONNECTED:
+		return -EALREADY;
 	default:
 		return bt_iso_chan_connect(&chan->iso, 1);
 	}
