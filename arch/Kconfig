@@ -743,9 +743,20 @@ config SRAM_REGION_PERMISSIONS
 
 menu "Floating Point Options"
 
+config FORBID_FP
+	bool "Forbid any floating point usage"
+	default y if ARMV8_A # FP is not yet supported
+	help
+	  This ensures that the Zephyr build contains no floating point
+	  usage at all. This is especially useful to forcefully prevent
+	  compilers from implicitly using hardware FP registers to implement
+	  some optimizations, and also to exclude code that would explicitly
+	  trigger such FP register usage or pull software FP library code
+	  into the build.
+
 config FPU
 	bool "Enable floating point unit (FPU)"
-	depends on CPU_HAS_FPU
+	depends on CPU_HAS_FPU && !FORBID_FP
 	depends on ARC || ARM || RISCV || SPARC || X86
 	help
 	  This option enables the hardware Floating Point Unit (FPU), in order to

@@ -7,6 +7,7 @@ choice CBPRINTF_IMPLEMENTATION
 
 config CBPRINTF_COMPLETE
 	bool "All selected features"
+	depends on !FORBID_FP
 	help
 	  Select this for an implementation that supports all potential
 	  conversions, with Kconfig options to control availability at build
@@ -72,7 +73,7 @@ config CBPRINTF_FP_SUPPORT
 # 04: 13% / 456 B (07 / 03)
 config CBPRINTF_FP_A_SUPPORT
 	bool "Enable floating point %a conversions"
-	depends on CBPRINTF_FULL_INTEGRAL
+	depends on CBPRINTF_COMPLETE && CBPRINTF_FULL_INTEGRAL
 	select CBPRINTF_FP_SUPPORT
 	help
 	  The %a hexadecimal format for floating point value conversion was
@@ -85,6 +86,7 @@ config CBPRINTF_FP_A_SUPPORT
 # 40: -15% / -508 B (46 / 06)
 config CBPRINTF_FP_ALWAYS_A
 	bool "Select %a format for all floating point specifications"
+	depends on CBPRINTF_COMPLETE
 	select CBPRINTF_FP_A_SUPPORT
 	help
 	  The %a format for floats requires significantly less code than the

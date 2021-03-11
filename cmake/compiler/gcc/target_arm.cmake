@@ -5,6 +5,10 @@ if(CONFIG_ARM64)
 
   list(APPEND TOOLCHAIN_C_FLAGS   -mabi=lp64)
   list(APPEND TOOLCHAIN_LD_FLAGS  -mabi=lp64)
+
+  if(CONFIG_FORBID_FP)
+    list(APPEND TOOLCHAIN_C_FLAGS   -mgeneral-regs-only)
+  endif()
 else()
   list(APPEND TOOLCHAIN_C_FLAGS   -mcpu=${GCC_M_CPU})
   list(APPEND TOOLCHAIN_LD_FLAGS  -mcpu=${GCC_M_CPU})

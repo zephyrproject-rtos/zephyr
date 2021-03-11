@@ -78,6 +78,7 @@ config ARMV8_A_NS
 config ARMV8_A
 	bool
 	select ATOMIC_OPERATIONS_BUILTIN
+	select CPU_HAS_FPU
 	select CPU_HAS_MMU
 	help
 	  This option signifies the use of an ARMv8-A processor

@@ -355,6 +355,7 @@ int cbvprintf_package(void *packaged, size_t len,
 			parsing = false;
 			break;
 
+#ifndef CONFIG_FORBID_FP
 		case 'a':
 		case 'A':
 		case 'e':
@@ -397,6 +398,7 @@ int cbvprintf_package(void *packaged, size_t len,
 			parsing = false;
 			continue;
 		}
+#endif
 
 		default:
 			parsing = false;
