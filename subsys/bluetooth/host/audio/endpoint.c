@@ -21,18 +21,18 @@
 #include "endpoint.h"
 #include "chan.h"
 
-/* Temporary compile guard - disable until upstream iso changes are sorted out */
 #if defined(CONFIG_BT_BAP)
-
-#if defined(CONFIG_BT_BAP)
-#define CACHE_SIZE CONFIG_BT_BAP_ASE_COUNT
+#define SNK_SIZE CONFIG_BT_BAP_ASE_SNK_COUNT
+#define SRC_SIZE CONFIG_BT_BAP_ASE_SRC_COUNT
 #else
-#define CACHE_SIZE 0
+#define SNK_SIZE 0
+#define SRC_SIZE 0
 #endif
 
 #define EP_ISO(_iso) CONTAINER_OF(_iso, struct bt_audio_ep, iso)
 
-static struct bt_audio_ep cache[CONFIG_BT_MAX_CONN][CACHE_SIZE];
+static struct bt_audio_ep snks[CONFIG_BT_MAX_CONN][SNK_SIZE];
+static struct bt_audio_ep srcs[CONFIG_BT_MAX_CONN][SRC_SIZE];
 
 #if defined(CONFIG_BT_BAP)
 static struct bt_gatt_subscribe_params cp_subscribe[CONFIG_BT_MAX_CONN];
@@ -77,11 +77,11 @@ static void ep_iso_connected(struct bt_iso_chan *chan)
 	}
 }
 
-static void ep_iso_disconnected(struct bt_iso_chan *chan)
+static void ep_iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 {
 	struct bt_audio_ep *ep = EP_ISO(chan);
 
-	BT_DBG("chan %p ep %p", chan, ep);
+	BT_DBG("chan %p ep %p reason 0x%02x", chan, ep, reason);
 
 	if (ep->type != BT_AUDIO_EP_LOCAL) {
 		return;
@@ -119,6 +119,8 @@ void bt_audio_ep_init(struct bt_audio_ep *ep, uint8_t type, uint16_t handle,
 	ep->status.id = id;
 	ep->iso.ops = &iso_ops;
 	ep->iso.qos = &ep->iso_qos;
+	ep->iso.qos->rx = &ep->iso_rx;
+	ep->iso.qos->tx = &ep->iso_tx;
 }
 
 struct bt_audio_ep *bt_audio_ep_find(struct bt_conn *conn, uint16_t handle)
@@ -127,8 +129,17 @@ struct bt_audio_ep *bt_audio_ep_find(struct bt_conn *conn, uint16_t handle)
 
 	index = bt_conn_index(conn);
 
-	for (i = 0; i < CACHE_SIZE; i++) {
-		struct bt_audio_ep *ep = &cache[index][i];
+	for (i = 0; i < SNK_SIZE; i++) {
+		struct bt_audio_ep *ep = &snks[index][i];
+
+		if ((handle && ep->handle == handle) ||
+		    (!handle && ep->handle)) {
+			return ep;
+		}
+	}
+
+	for (i = 0; i < SRC_SIZE; i++) {
+		struct bt_audio_ep *ep = &srcs[index][i];
 
 		if ((handle && ep->handle == handle) ||
 		    (!handle && ep->handle)) {
@@ -145,8 +156,16 @@ struct bt_audio_ep *bt_audio_ep_find_by_chan(struct bt_audio_chan *chan)
 
 	index = bt_conn_index(chan->conn);
 
-	for (i = 0; i < CACHE_SIZE; i++) {
-		struct bt_audio_ep *ep = &cache[index][i];
+	for (i = 0; i < SNK_SIZE; i++) {
+		struct bt_audio_ep *ep = &snks[index][i];
+
+		if (ep->chan == chan) {
+			return ep;
+		}
+	}
+
+	for (i = 0; i < SRC_SIZE; i++) {
+		struct bt_audio_ep *ep = &srcs[index][i];
 
 		if (ep->chan == chan) {
 			return ep;
@@ -156,14 +175,29 @@ struct bt_audio_ep *bt_audio_ep_find_by_chan(struct bt_audio_chan *chan)
 	return NULL;
 }
 
-struct bt_audio_ep *bt_audio_ep_new(struct bt_conn *conn, uint16_t handle)
+struct bt_audio_ep *bt_audio_ep_new(struct bt_conn *conn, uint8_t dir,
+				    uint16_t handle)
 {
-	int i, index;
+	int i, index, size;
+	struct bt_audio_ep *cache;
 
 	index = bt_conn_index(conn);
 
-	for (i = 0; i < CACHE_SIZE; i++) {
-		struct bt_audio_ep *ep = &cache[index][i];
+	switch (dir) {
+	case BT_AUDIO_SINK:
+		cache = snks[index];
+		size = SNK_SIZE;
+		break;
+	case BT_AUDIO_SOURCE:
+		cache = srcs[index];
+		size = SRC_SIZE;
+		break;
+	default:
+		return NULL;
+	}
+
+	for (i = 0; i < size; i++) {
+		struct bt_audio_ep *ep = &cache[i];
 
 		if (!ep->handle) {
 			bt_audio_ep_init(ep, BT_AUDIO_EP_REMOTE, handle, 0x00);
@@ -174,7 +208,8 @@ struct bt_audio_ep *bt_audio_ep_new(struct bt_conn *conn, uint16_t handle)
 	return NULL;
 }
 
-struct bt_audio_ep *bt_audio_ep_get(struct bt_conn *conn, uint16_t handle)
+struct bt_audio_ep *bt_audio_ep_get(struct bt_conn *conn, uint8_t dir,
+				    uint16_t handle)
 {
 	struct bt_audio_ep *ep;
 
@@ -183,7 +218,7 @@ struct bt_audio_ep *bt_audio_ep_get(struct bt_conn *conn, uint16_t handle)
 		return ep;
 	}
 
-	return bt_audio_ep_new(conn, handle);
+	return bt_audio_ep_new(conn, dir, handle);
 }
 
 static void ep_idle(struct bt_audio_ep *ep, struct net_buf_simple *buf)
@@ -194,6 +229,13 @@ static void ep_idle(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 	}
 
 	bt_audio_chan_reset(ep->chan);
+}
+
+static void ep_qos_reset(struct bt_audio_ep *ep)
+{
+	ep->iso.qos = memset(&ep->iso_qos, 0, sizeof(ep->iso_qos));
+	ep->iso.qos->rx = memset(&ep->iso_rx, 0, sizeof(ep->iso_rx));
+	ep->iso.qos->tx = memset(&ep->iso_tx, 0, sizeof(ep->iso_tx));
 }
 
 static void ep_config(struct bt_audio_ep *ep, struct net_buf_simple *buf)
@@ -224,6 +266,9 @@ static void ep_config(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 		       buf->len, cfg->cc_len);
 		return;
 	}
+
+	/* Reset any exiting QoS configuration */
+	ep_qos_reset(ep);
 
 	qos = &ep->chan->cap->qos;
 
@@ -407,6 +452,7 @@ static void ep_releasing(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 void bt_audio_ep_set_status(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 {
 	struct bt_ascs_ase_status *status;
+	uint8_t old_state;
 
 	if (!ep) {
 		return;
@@ -417,7 +463,7 @@ void bt_audio_ep_set_status(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 	BT_DBG("ep %p handle 0x%04x id 0x%02x state %s", ep, ep->handle,
 	       status->id, bt_audio_ep_state_str(status->state));
 
-	/* TODO: Warn invalid status transitions? */
+	old_state = ep->status.state;
 	ep->status = *status;
 
 	switch (status->state) {
@@ -425,21 +471,90 @@ void bt_audio_ep_set_status(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 		ep_idle(ep, buf);
 		break;
 	case BT_ASCS_ASE_STATE_CONFIG:
+		switch (old_state) {
+		/* Valid only if ASE_State field = 0x00 (Idle) */
+		case BT_ASCS_ASE_STATE_IDLE:
+		 /* or 0x01 (Codec Configured) */
+		case BT_ASCS_ASE_STATE_CONFIG:
+		 /* or 0x02 (QoS Configured) */
+		case BT_ASCS_ASE_STATE_QOS:
+			break;
+		default:
+			BT_WARN("Invalid state transition: %s -> %s",
+				bt_audio_ep_state_str(old_state),
+				bt_audio_ep_state_str(ep->status.state));
+		}
 		ep_config(ep, buf);
 		break;
 	case BT_ASCS_ASE_STATE_QOS:
+		switch (old_state) {
+		/* Valid only if ASE_State field = 0x01 (Codec Configured) */
+		case BT_ASCS_ASE_STATE_CONFIG:
+		 /* or 0x02 (QoS Configured) */
+		case BT_ASCS_ASE_STATE_QOS:
+			break;
+		default:
+			BT_WARN("Invalid state transition: %s -> %s",
+				bt_audio_ep_state_str(old_state),
+				bt_audio_ep_state_str(ep->status.state));
+		}
 		ep_qos(ep, buf);
 		break;
 	case BT_ASCS_ASE_STATE_ENABLING:
+		/* Valid only if ASE_State field = 0x02 (QoS Configured) */
+		if (old_state != BT_ASCS_ASE_STATE_QOS) {
+			BT_WARN("Invalid state transition: %s -> %s",
+				bt_audio_ep_state_str(old_state),
+				bt_audio_ep_state_str(ep->status.state));
+		}
 		ep_enabling(ep, buf);
 		break;
 	case BT_ASCS_ASE_STATE_STREAMING:
+		switch (old_state) {
+		/* Valid only if ASE_State field = 0x02 (QoS Configured) */
+		case BT_ASCS_ASE_STATE_QOS:
+		 /* or  0x03 (Enabling)*/
+		case BT_ASCS_ASE_STATE_ENABLING:
+			break;
+		default:
+			BT_WARN("Invalid state transition: %s -> %s",
+				bt_audio_ep_state_str(old_state),
+				bt_audio_ep_state_str(ep->status.state));
+		}
 		ep_streaming(ep, buf);
 		break;
 	case BT_ASCS_ASE_STATE_DISABLING:
+		switch (old_state) {
+		/* Valid only if ASE_State field = 0x03 (Enabling) */
+		case BT_ASCS_ASE_STATE_ENABLING:
+		 /* or 0x04 (Streaming) */
+		case BT_ASCS_ASE_STATE_STREAMING:
+			break;
+		default:
+			BT_WARN("Invalid state transition: %s -> %s",
+				bt_audio_ep_state_str(old_state),
+				bt_audio_ep_state_str(ep->status.state));
+		}
 		ep_disabling(ep, buf);
 		break;
 	case BT_ASCS_ASE_STATE_RELEASING:
+		switch (old_state) {
+		/* Valid only if ASE_State field = 0x01 (Codec Configured) */
+		case BT_ASCS_ASE_STATE_CONFIG:
+		 /* or 0x02 (QoS Configured) */
+		case BT_ASCS_ASE_STATE_QOS:
+		 /* or 0x03 (Enabling) */
+		case BT_ASCS_ASE_STATE_ENABLING:
+		 /* or 0x04 (Streaming) */
+		case BT_ASCS_ASE_STATE_STREAMING:
+		 /* or 0x04 (Disabling) */
+		case BT_ASCS_ASE_STATE_DISABLING:
+			break;
+		default:
+			BT_WARN("Invalid state transition: %s -> %s",
+				bt_audio_ep_state_str(old_state),
+				bt_audio_ep_state_str(ep->status.state));
+		}
 		ep_releasing(ep, buf);
 		break;
 	}
@@ -904,84 +1019,21 @@ void bt_audio_ep_set_cp(struct bt_conn *conn, uint16_t handle)
 		bt_gatt_subscribe(conn, &cp_subscribe[index]);
 	}
 
-	for (i = 0; i < CACHE_SIZE; i++) {
-		struct bt_audio_ep *ep = &cache[index][i];
+	for (i = 0; i < SNK_SIZE; i++) {
+		struct bt_audio_ep *ep = &snks[index][i];
 
 		if (ep->handle) {
 			ep->cp_handle = handle;
 		}
 	}
-}
 
-int bt_audio_ep_send(struct bt_conn *conn, struct bt_audio_ep *ep,
-		     struct net_buf_simple *buf)
-{
-	int index = bt_conn_index(conn);
+	for (i = 0; i < SRC_SIZE; i++) {
+		struct bt_audio_ep *ep = &srcs[index][i];
 
-	BT_DBG("conn %p ep %p buf %p len %u", conn, ep, buf, buf->len);
-
-	if (!cp_subscribe[index].ccc_handle) {
-		return -EAGAIN;
+		if (ep->handle) {
+			ep->cp_handle = handle;
+		}
 	}
-
-	return bt_gatt_write_without_response(conn, ep->cp_handle,
-					      buf->data, buf->len, false);
-}
-#endif /* CONFIG_BT_BAP */
-
-void bt_audio_ep_reset(struct bt_conn *conn)
-{
-	int i, index;
-
-	BT_DBG("conn %p", conn);
-
-	index = bt_conn_index(conn);
-
-	for (i = 0; i < CACHE_SIZE; i++) {
-		struct bt_audio_ep *ep = &cache[index][i];
-
-		bt_audio_chan_reset(ep->chan);
-
-		memset(ep, 0, sizeof(*ep));
-	}
-}
-
-void bt_audio_ep_attach(struct bt_audio_ep *ep, struct bt_audio_chan *chan)
-{
-	BT_DBG("ep %p chan %p", ep, chan);
-
-	if (!ep || !chan || ep->chan == chan) {
-		return;
-	}
-
-	if (ep->chan) {
-		BT_ERR("ep %p attached to another chan %p", ep, ep->chan);
-		return;
-	}
-
-	ep->chan = chan;
-	chan->ep = ep;
-
-	if (!chan->iso) {
-		chan->iso = &ep->iso;
-	}
-}
-
-void bt_audio_ep_detach(struct bt_audio_ep *ep, struct bt_audio_chan *chan)
-{
-	BT_DBG("ep %p chan %p", ep, chan);
-
-	if (!ep || !chan || !ep->chan) {
-		return;
-	}
-
-	if (ep->chan != chan) {
-		BT_ERR("ep %p attached to another chan %p", ep, ep->chan);
-		return;
-	}
-
-	ep->chan = NULL;
-	chan->ep = NULL;
 }
 
 NET_BUF_SIMPLE_DEFINE_STATIC(ep_buf, CONFIG_BT_L2CAP_TX_MTU);
@@ -1234,5 +1286,67 @@ int bt_audio_ep_send(struct bt_conn *conn, struct bt_audio_ep *ep,
 	return bt_gatt_write_without_response(conn, ep->cp_handle,
 					      buf->data, buf->len, false);
 }
-
 #endif /* CONFIG_BT_BAP */
+
+void bt_audio_ep_reset(struct bt_conn *conn)
+{
+	int i, index;
+
+	BT_DBG("conn %p", conn);
+
+	index = bt_conn_index(conn);
+
+	for (i = 0; i < SNK_SIZE; i++) {
+		struct bt_audio_ep *ep = &snks[index][i];
+
+		bt_audio_chan_reset(ep->chan);
+
+		memset(ep, 0, sizeof(*ep));
+	}
+
+	for (i = 0; i < SRC_SIZE; i++) {
+		struct bt_audio_ep *ep = &srcs[index][i];
+
+		bt_audio_chan_reset(ep->chan);
+
+		memset(ep, 0, sizeof(*ep));
+	}
+}
+
+void bt_audio_ep_attach(struct bt_audio_ep *ep, struct bt_audio_chan *chan)
+{
+	BT_DBG("ep %p chan %p", ep, chan);
+
+	if (!ep || !chan || ep->chan == chan) {
+		return;
+	}
+
+	if (ep->chan) {
+		BT_ERR("ep %p attached to another chan %p", ep, ep->chan);
+		return;
+	}
+
+	ep->chan = chan;
+	chan->ep = ep;
+
+	if (!chan->iso) {
+		chan->iso = &ep->iso;
+	}
+}
+
+void bt_audio_ep_detach(struct bt_audio_ep *ep, struct bt_audio_chan *chan)
+{
+	BT_DBG("ep %p chan %p", ep, chan);
+
+	if (!ep || !chan || !ep->chan) {
+		return;
+	}
+
+	if (ep->chan != chan) {
+		BT_ERR("ep %p attached to another chan %p", ep, ep->chan);
+		return;
+	}
+
+	ep->chan = NULL;
+	chan->ep = NULL;
+}
