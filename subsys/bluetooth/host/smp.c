@@ -2411,6 +2411,7 @@ static uint8_t legacy_pairing_req(struct bt_smp *smp)
 	}
 
 	atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
+	atomic_set_bit(smp->allowed_cmds, BT_SMP_KEYPRESS_NOTIFICATION);
 	return send_pairing_rsp(smp);
 }
 #endif /* CONFIG_BT_PERIPHERAL */
@@ -4142,9 +4143,11 @@ static uint8_t smp_public_key_slave(struct bt_smp *smp)
 		}
 
 		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
+		atomic_set_bit(smp->allowed_cmds, BT_SMP_KEYPRESS_NOTIFICATION);
 		break;
 	case PASSKEY_INPUT:
 		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
+		atomic_set_bit(smp->allowed_cmds, BT_SMP_KEYPRESS_NOTIFICATION);
 		atomic_set_bit(smp->flags, SMP_FLAG_USER);
 		bt_auth->passkey_entry(smp->chan.chan.conn);
 		break;
