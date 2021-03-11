@@ -845,11 +845,8 @@ uint8_t ll_enc_req_send(uint16_t handle, uint8_t const *const rand, uint8_t cons
 	if (!conn) {
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
-	/*
-	 * we need to enhance the conn structure so that parameters
-	 * are passed on
-	 */
-	return ull_cp_encryption_start(conn);
+
+	return ull_cp_encryption_start(conn, rand, ediv, ltk);
 }
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 

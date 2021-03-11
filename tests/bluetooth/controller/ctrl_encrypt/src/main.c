@@ -83,6 +83,9 @@ void test_encryption_start_mas_loc(void)
 	uint8_t err;
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
+	uint8_t rand[8];
+	uint8_t ediv[2];
+	uint8_t ltk[16];
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_MASTER);
@@ -91,7 +94,7 @@ void test_encryption_start_mas_loc(void)
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
 	/* Initiate an Encryption Start Procedure */
-	err = ull_cp_encryption_start(&conn);
+	err = ull_cp_encryption_start(&conn, rand, ediv, ltk);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	/* Prepare */
@@ -189,6 +192,9 @@ void test_encryption_start_mas_loc_limited_memory(void)
 	uint8_t err;
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
+	uint8_t rand[8];
+	uint8_t ediv[2];
+	uint8_t ltk[16];
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_MASTER);
@@ -210,7 +216,7 @@ void test_encryption_start_mas_loc_limited_memory(void)
 	}
 
 	/* Initiate an Encryption Start Procedure */
-	err = ull_cp_encryption_start(&conn);
+	err = ull_cp_encryption_start(&conn, rand, ediv, ltk);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	/* Prepare */
@@ -321,6 +327,9 @@ void test_encryption_start_mas_loc_no_ltk(void)
 	uint8_t err;
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
+	uint8_t rand[8];
+	uint8_t ediv[2];
+	uint8_t ltk[16];
 
 	struct pdu_data_llctrl_reject_ind reject_ind = {
 		.error_code = BT_HCI_ERR_PIN_OR_KEY_MISSING
@@ -338,7 +347,7 @@ void test_encryption_start_mas_loc_no_ltk(void)
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
 	/* Initiate an Encryption Start Procedure */
-	err = ull_cp_encryption_start(&conn);
+	err = ull_cp_encryption_start(&conn, rand, ediv, ltk);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	/* Prepare */
