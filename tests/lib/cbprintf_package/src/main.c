@@ -124,6 +124,7 @@ void test_main(void)
 	printk("alignof: int=%zu long=%zu ptr=%zu long long=%zu double=%zu long double=%zu\n",
 	       __alignof__(int), __alignof__(long), __alignof__(void *),
 	       __alignof__(long long), __alignof__(double), __alignof__(long double));
+	printk("%s C11 _Generic\n", Z_C_GENERIC ? "With" : "Without");
 
 	ztest_test_suite(cbprintf_package,
 			 ztest_unit_test(test_cbprintf_package)
