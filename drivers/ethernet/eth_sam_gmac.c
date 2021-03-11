@@ -1785,6 +1785,7 @@ static void get_mac_addr_from_i2c_eeprom(uint8_t mac_addr[6])
 {
 	const struct device *dev;
 	uint32_t iaddr = CONFIG_ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS;
+	int ret;
 
 	dev = device_get_binding(CONFIG_ETH_SAM_GMAC_MAC_I2C_DEV_NAME);
 	if (!dev) {
@@ -1792,9 +1793,14 @@ static void get_mac_addr_from_i2c_eeprom(uint8_t mac_addr[6])
 		return;
 	}
 
-	i2c_write_read(dev, CONFIG_ETH_SAM_GMAC_MAC_I2C_SLAVE_ADDRESS,
-		       &iaddr, CONFIG_ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS_SIZE,
-		       mac_addr, 6);
+	ret = i2c_write_read(dev, CONFIG_ETH_SAM_GMAC_MAC_I2C_SLAVE_ADDRESS,
+			   &iaddr, CONFIG_ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS_SIZE,
+			   mac_addr, 6);
+
+	if (ret != 0) {
+		LOG_ERR("I2C: failed to read MAC addr");
+		return;
+	}
 }
 #endif
 
