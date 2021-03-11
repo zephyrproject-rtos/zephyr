@@ -111,6 +111,7 @@ config LOG_DETECT_MISSED_STRDUP
 
 config LOG_STRDUP_MAX_STRING
 	int "Longest string that can be duplicated using log_strdup()"
+	range 1 8192
 	default 66 if BT
 	default 46 if NETWORKING
 	default 32
