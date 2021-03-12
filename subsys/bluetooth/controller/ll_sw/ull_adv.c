@@ -901,6 +901,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 #endif /* CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN */
 
 		conn->common.fex_valid = 0;
+		conn->common.txn_lock = 0;
 		conn->slave.latency_cancel = 0;
 
 		conn->llcp_req = conn->llcp_ack = conn->llcp_type = 0;
