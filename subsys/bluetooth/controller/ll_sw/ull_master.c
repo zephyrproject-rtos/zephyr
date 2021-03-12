@@ -253,6 +253,7 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 #endif /* CONFIG_BT_CTLR_LE_PING */
 
 	conn->common.fex_valid = 0U;
+	conn->common.txn_lock = 0U;
 	conn->master.terminate_ack = 0U;
 
 	conn->llcp_req = conn->llcp_ack = conn->llcp_type = 0U;
