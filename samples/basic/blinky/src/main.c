@@ -42,10 +42,10 @@ void main(void)
 	if (ret < 0) {
 		return;
 	}
-
+	gpio_pin_set(dev, PIN, 0);
 	while (1) {
-		gpio_pin_set(dev, PIN, (int)led_is_on);
-		led_is_on = !led_is_on;
-		k_msleep(SLEEP_TIME_MS);
+		// gpio_pin_set(dev, PIN, (int)led_is_on);
+		// led_is_on = !led_is_on;
+		// k_msleep(SLEEP_TIME_MS);
 	}
 }

@@ -22,14 +22,36 @@
 	leds {
 		compatible = "gpio-leds";
 		green_led_1: led_1 {
-			gpios = <&gpioa 1 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpiod 2 GPIO_ACTIVE_HIGH>;
 			label = "User LD1";
 		};
+	};
+
+	buttons {
+		compatible="gpio-keys";
+
+		button0: button0 {
+			gpios= <&gpioa 0 (GPIO_ACTIVE_HIGH|GPIO_PULL_DOWN)>;
+			label ="User Push Button 0";
+		};
+		
+		button1:button1{
+			gpios= <&gpioc 5 (GPIO_ACTIVE_HIGH|GPIO_PULL_UP)>;
+			label="User Push Button 1";
+		};
+		button2:button2{
+			gpios= <&gpioa 15 (GPIO_ACTIVE_HIGH|GPIO_PULL_UP)>;
+			label ="User Push Button 2";
+		};
+
 	};
 
 	aliases {
 		led0 = &green_led_1;
 		lcd0 = &lcd_st7735;
+		sw0 = &button0;
+		sw1 = &button1;
+		sw2 = &button2;
 	};
 };
 
