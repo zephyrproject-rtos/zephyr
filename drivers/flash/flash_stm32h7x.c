@@ -377,18 +377,24 @@ int flash_stm32_write_range(const struct device *dev, unsigned int offset,
 	return rc;
 }
 
+static int flash_stm32h7_write_protection_nop(const struct device *dev,
+					      bool enable)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(enable);
+
+	return 0;
+}
+
 static int flash_stm32h7_write_protection(const struct device *dev, bool enable)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 
 	int rc = 0;
 
-	flash_stm32_sem_take(dev);
-
 	if (enable) {
 		rc = flash_stm32_wait_flash_idle(dev);
 		if (rc) {
-			flash_stm32_sem_give(dev);
 			return rc;
 		}
 	}
@@ -420,8 +426,6 @@ static int flash_stm32h7_write_protection(const struct device *dev, bool enable)
 		LOG_DBG("Disable write protection");
 	}
 
-	flash_stm32_sem_give(dev);
-
 	return rc;
 }
 
@@ -438,7 +442,8 @@ static void flash_stm32h7_flush_caches(const struct device *dev,
 static int flash_stm32h7_erase(const struct device *dev, off_t offset,
 			       size_t len)
 {
-	int rc;
+	int rc, rc2;
+
 #ifdef CONFIG_CPU_CORTEX_M7
 	/* Flush whole sectors */
 	off_t flush_offset = ROUND_DOWN(offset, FLASH_SECTOR_SIZE);
@@ -460,6 +465,11 @@ static int flash_stm32h7_erase(const struct device *dev, off_t offset,
 
 	LOG_DBG("Erase offset: %ld, len: %zu", (long) offset, len);
 
+	rc = flash_stm32h7_write_protection(dev, false);
+	if (rc) {
+		goto done;
+	}
+
 	rc = flash_stm32_block_erase_loop(dev, offset, len);
 
 #ifdef CONFIG_CPU_CORTEX_M7
@@ -471,6 +481,12 @@ static int flash_stm32h7_erase(const struct device *dev, off_t offset,
 		LOG_ERR("Cortex M4: ART enabled not supported by flash driver");
 	}
 #endif /* CONFIG_CPU_CORTEX_M7 */
+done:
+	rc2 = flash_stm32h7_write_protection(dev, true);
+
+	if (!rc) {
+		rc = rc2;
+	}
 
 	flash_stm32_sem_give(dev);
 
@@ -497,7 +513,16 @@ static int flash_stm32h7_write(const struct device *dev, off_t offset,
 
 	LOG_DBG("Write offset: %ld, len: %zu", (long) offset, len);
 
-	rc = flash_stm32_write_range(dev, offset, data, len);
+	rc = flash_stm32h7_write_protection(dev, false);
+	if (!rc) {
+		rc = flash_stm32_write_range(dev, offset, data, len);
+	}
+
+	int rc2 = flash_stm32h7_write_protection(dev, true);
+
+	if (!rc) {
+		rc = rc2;
+	}
 
 	flash_stm32_sem_give(dev);
 
@@ -594,7 +619,7 @@ static struct flash_stm32_priv flash_data = {
 };
 
 static const struct flash_driver_api flash_stm32h7_api = {
-	.write_protection = flash_stm32h7_write_protection,
+	.write_protection = flash_stm32h7_write_protection_nop,
 	.erase = flash_stm32h7_erase,
 	.write = flash_stm32h7_write,
 	.read = flash_stm32h7_read,
