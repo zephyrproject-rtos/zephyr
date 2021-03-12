@@ -1364,6 +1364,19 @@ STM32 Platforms:
         STM32 SOCs, dts files and related drivers. ST nucleo, disco and eval
         boards.
 
+Espressif Platforms:
+    status: maintained
+    maintainers:
+        - sylvioalves
+    files:
+        - drivers/*/*esp32*
+        - boards/xtensa/esp32/
+        - soc/xtensa/esp32/
+        - dts/xtensa/espressif/
+        - dts/bindings/*/*esp32*
+    labels:
+        - "platform: ESP32"
+
 Storage:
     status: maintained
     maintainers:
