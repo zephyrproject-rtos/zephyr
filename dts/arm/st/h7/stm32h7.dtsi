@@ -248,6 +248,16 @@
 			status = "disabled";
 			label = "UART_8";
 		};
+		uart9: serial@40011800 {
+                        compatible = "st,stm32-uart";
+                        reg = <0x40011800 0x400>;
+                        clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000040>;
+                        interrupts = <155 0>;
+                        current-speed = <115200>;
+                        pinctrl-0 = <&uart9_tx_pg1 &uart9_rx_pg0>;
+                        label = "UART_9";
+                        status = "okay";
+                };
 
 		lpuart1: serial@58000c00 {
 			compatible = "st,stm32-lpuart", "st,stm32-uart";
