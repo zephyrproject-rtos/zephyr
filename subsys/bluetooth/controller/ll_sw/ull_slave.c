@@ -61,17 +61,16 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	uint8_t peer_addr[BDADDR_SIZE];
 	uint32_t ticks_slot_overhead;
 	uint32_t ticks_slot_offset;
+	uint32_t ready_delay_us;
 	struct pdu_adv *pdu_adv;
 	struct ll_adv_set *adv;
-	struct node_rx_cc *cc;
-	struct ll_conn *conn;
-	uint32_t ready_delay_us;
 	uint32_t ticker_status;
 	uint8_t peer_addr_type;
-	uint16_t win_offset;
 	uint16_t win_delay_us;
+	struct node_rx_cc *cc;
+	struct ll_conn *conn;
+	uint16_t win_offset;
 	uint16_t timeout;
-	uint16_t interval;
 	uint8_t chan_sel;
 
 	adv = ((struct lll_adv *)ftr->param)->hdr.parent;
@@ -86,8 +85,9 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	lll->data_chan_count = util_ones_count_get(&lll->data_chan_map[0],
 			       sizeof(lll->data_chan_map));
 	lll->data_chan_hop = pdu_adv->connect_ind.hop;
+	lll->interval = sys_le16_to_cpu(pdu_adv->connect_ind.interval);
 	if ((lll->data_chan_count < 2) || (lll->data_chan_hop < 5) ||
-	    (lll->data_chan_hop > 16)) {
+	    (lll->data_chan_hop > 16) || !lll->interval) {
 		lll->initiated = 0U;
 
 		/* Mark for buffer for release */
@@ -122,12 +122,10 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 
 	((struct lll_adv *)ftr->param)->conn = NULL;
 
-	interval = sys_le16_to_cpu(pdu_adv->connect_ind.interval);
-	lll->interval = interval;
 	lll->latency = sys_le16_to_cpu(pdu_adv->connect_ind.latency);
 
 	win_offset = sys_le16_to_cpu(pdu_adv->connect_ind.win_offset);
-	conn_interval_us = interval * CONN_INT_UNIT_US;
+	conn_interval_us = lll->interval * CONN_INT_UNIT_US;
 
 	if (0) {
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
