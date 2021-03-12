@@ -1107,6 +1107,13 @@ static void le_ecred_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	}
 
 	req = net_buf_pull_mem(buf, sizeof(*req));
+
+	if (buf->len > sizeof(dcid)) {
+		BT_ERR("Too large LE conn req packet size");
+		result = BT_L2CAP_LE_ERR_INVALID_PARAMS;
+		goto response;
+	}
+
 	psm = sys_le16_to_cpu(req->psm);
 	mtu = sys_le16_to_cpu(req->mtu);
 	mps = sys_le16_to_cpu(req->mps);
