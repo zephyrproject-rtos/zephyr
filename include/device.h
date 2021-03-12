@@ -638,11 +638,6 @@ static inline bool device_is_ready(const struct device *dev)
 	return device_usable_check(dev) == 0;
 }
 
-static inline bool z_impl_device_is_ready(const struct device *dev)
-{
-	return z_device_ready(dev);
-}
-
 /**
  * @}
  */
