@@ -106,6 +106,7 @@ licensing, as described in :ref:`Zephyr_Licensing`.
 
 .. toctree::
    :maxdepth: 1
+   :caption: Contents
 
    Documentation Home <self>
    introduction/index.rst
