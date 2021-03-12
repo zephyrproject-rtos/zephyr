@@ -46,9 +46,9 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	bl	z_soc_irq_get_active
 #endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 
-	/* Spurious */
-	cmp	x0, #(GIC_INTID_SPURIOUS)
-	beq	spurious_continue
+	/* IRQ out of bounds */
+	cmp	x0, #(CONFIG_NUM_IRQS - 1)
+	b.hi	spurious_continue
 
 	stp	x0, xzr, [sp, #-16]!
 
