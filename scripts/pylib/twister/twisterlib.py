@@ -3170,7 +3170,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                 else:
                     instances = list(filter(lambda tc: tc.platform.default, instance_list))
                     self.add_instances(instances)
-            elif self.integration:
+            elif integration:
                 instances = list(filter(lambda item:  item.platform.name in tc.integration_platforms, instance_list))
                 self.add_instances(instances)
 
