@@ -149,12 +149,6 @@ void main(void)
     #pragma message("sitronix_st7735 not find")
     #endif
 
-    // const struct device *dev;
-    
-	// dev = device_get_binding(LED0);
-	// gpio_pin_configure(dev, PIN, GPIO_OUTPUT_ACTIVE | FLAGS);
-	// gpio_pin_set(dev, PIN, 1);
-
 
     const struct device *button0;
     const struct device *button1;
@@ -193,8 +187,6 @@ void main(void)
     
 
 
-
-
     #ifdef KEY_INPUT_SUPPOR
 
 
@@ -214,9 +206,6 @@ void main(void)
     st7735_LcdInit(display_dev);
     while(1)
     {
-        // gpio_pin_set(dev, PIN, 1);
-        // k_msleep(20);
-        // gpio_pin_set(dev, PIN, 0);
-        // k_msleep(20);
+
     }
 }
