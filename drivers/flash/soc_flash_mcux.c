@@ -144,7 +144,7 @@ static int flash_mcux_erase(const struct device *dev, off_t offset,
 	status_t rc;
 	unsigned int key;
 
-	if (k_sem_take(&priv->write_lock, K_NO_WAIT)) {
+	if (k_sem_take(&priv->write_lock, K_FOREVER)) {
 		return -EACCES;
 	}
 
@@ -209,7 +209,7 @@ static int flash_mcux_write(const struct device *dev, off_t offset,
 	status_t rc;
 	unsigned int key;
 
-	if (k_sem_take(&priv->write_lock, K_NO_WAIT)) {
+	if (k_sem_take(&priv->write_lock, K_FOREVER)) {
 		return -EACCES;
 	}
 
@@ -226,16 +226,10 @@ static int flash_mcux_write(const struct device *dev, off_t offset,
 
 static int flash_mcux_write_protection(const struct device *dev, bool enable)
 {
-	struct flash_priv *priv = dev->data;
-	int rc = 0;
+	ARG_UNUSED(dev);
+	ARG_UNUSED(enable);
 
-	if (enable) {
-		rc = k_sem_take(&priv->write_lock, K_FOREVER);
-	} else {
-		k_sem_give(&priv->write_lock);
-	}
-
-	return rc;
+	return 0;
 }
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
@@ -281,7 +275,7 @@ static int flash_mcux_init(const struct device *dev)
 	uint32_t pflash_block_base;
 	status_t rc;
 
-	k_sem_init(&priv->write_lock, 0, 1);
+	k_sem_init(&priv->write_lock, 1, 1);
 
 	rc = FLASH_Init(&priv->config);
 
