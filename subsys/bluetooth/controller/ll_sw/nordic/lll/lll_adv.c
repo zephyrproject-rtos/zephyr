@@ -1333,8 +1333,7 @@ static inline int isr_rx_pdu(struct lll_adv *lll,
 		   lll_adv_connect_ind_check(lll, pdu_rx, tx_addr, addr,
 					     rx_addr, tgt_addr,
 					     devmatch_ok, &rl_idx) &&
-		   lll->conn &&
-		   !lll->conn->initiated) {
+		   lll->conn) {
 		struct node_rx_ftr *ftr;
 		struct node_rx_pdu *rx;
 
