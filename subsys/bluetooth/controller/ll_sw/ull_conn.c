@@ -4389,14 +4389,15 @@ static int feature_rsp_send(struct ll_conn *conn, struct node_rx_pdu *rx,
 			    struct pdu_data *pdu_rx)
 {
 	struct pdu_data_llctrl_feature_req *req;
-	struct node_tx *tx;
 	struct pdu_data *pdu_tx;
+	struct node_tx *tx;
 	uint64_t feat;
+	int err;
 
-	/* acquire tx mem */
-	tx = mem_acquire(&mem_conn_tx_ctrl.free);
+	/* Check transaction violation and get free ctrl tx PDU */
+	tx = ctrl_tx_rsp_mem_acquire(conn, rx, &err);
 	if (!tx) {
-		return -ENOBUFS;
+		return err;
 	}
 
 	/* AND the feature set to get Feature USED */
@@ -5508,6 +5509,11 @@ static inline void ctrl_tx_ack(struct ll_conn *conn, struct node_tx **tx,
 		conn_cleanup(conn, reason);
 	}
 	break;
+
+	case PDU_DATA_LLCTRL_TYPE_FEATURE_RSP:
+		/* Reset the transaction lock */
+		conn->common.txn_lock = 0U;
+		break;
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 #if defined(CONFIG_BT_CENTRAL)
