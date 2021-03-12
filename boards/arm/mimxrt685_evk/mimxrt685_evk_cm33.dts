@@ -103,6 +103,15 @@
 	cpu-power-states = <&idle>;
 };
 
+/*
+ * RT600 EVK board uses OS timer as the kernel timer
+ * In case we need to switch to SYSTICK timer, then
+ * replace &os_timer with &systick
+ */
+&os_timer {
+	status = "okay";
+};
+
 &flexcomm0 {
 	compatible = "nxp,lpc-usart";
 	status = "okay";
