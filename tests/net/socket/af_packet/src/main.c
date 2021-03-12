@@ -269,8 +269,6 @@ static void test_raw_packet_sockets(void)
 			  sizeof(data_to_send),
 			  "Sent and received buffers do not match");
 
-	close(sock1);
-	close(sock2);
 	close(sock3);
 	close(sock4);
 }
@@ -280,9 +278,6 @@ static void test_packet_sockets(void)
 	int sock1, sock2;
 
 	__test_packet_sockets(&sock1, &sock2);
-
-	close(sock1);
-	close(sock2);
 }
 
 static void test_packet_sockets_dgram(void)
@@ -365,9 +360,6 @@ static void test_packet_sockets_dgram(void)
 
 	zassert_equal(ret, sizeof(data_to_send), "Cannot receive all data (%d)",
 		      -errno);
-
-	close(sock1);
-	close(sock2);
 }
 
 void test_main(void)
