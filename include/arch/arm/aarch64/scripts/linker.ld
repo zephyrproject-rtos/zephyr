@@ -162,9 +162,6 @@ SECTIONS
     {
         KEEP(*(_IRQ_VECTOR_TABLE_SECTION_SYMS))
 
-        KEEP(*(.openocd_dbg))
-        KEEP(*(".openocd_dbg.*"))
-
         *(.rodata)
         *(".rodata.*")
         *(.gnu.linkonce.r.*)
