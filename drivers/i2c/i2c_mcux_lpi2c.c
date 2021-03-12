@@ -33,6 +33,7 @@ struct mcux_lpi2c_config {
 struct mcux_lpi2c_data {
 	lpi2c_master_handle_t handle;
 	struct k_sem device_sync_sem;
+	struct k_sem bus_sem;
 	status_t callback_status;
 };
 
@@ -112,11 +113,15 @@ static int mcux_lpi2c_transfer(const struct device *dev, struct i2c_msg *msgs,
 	LPI2C_Type *base = config->base;
 	lpi2c_master_transfer_t transfer;
 	status_t status;
+	int ret = 0;
+
+	k_sem_take(&data->bus_sem, K_FOREVER);
 
 	/* Iterate over all the messages */
 	for (int i = 0; i < num_msgs; i++) {
 		if (I2C_MSG_ADDR_10_BITS & msgs->flags) {
-			return -ENOTSUP;
+			ret = -ENOTSUP;
+			goto xfer_done;
 		}
 
 		/* Initialize the transfer descriptor */
@@ -146,7 +151,8 @@ static int mcux_lpi2c_transfer(const struct device *dev, struct i2c_msg *msgs,
 		 */
 		if (status != kStatus_Success) {
 			LPI2C_MasterTransferAbort(base, &data->handle);
-			return -EIO;
+			ret = -EIO;
+			goto xfer_done;
 		}
 
 		/* Wait for the transfer to complete */
@@ -157,20 +163,24 @@ static int mcux_lpi2c_transfer(const struct device *dev, struct i2c_msg *msgs,
 		 */
 		if (data->callback_status != kStatus_Success) {
 			LPI2C_MasterTransferAbort(base, &data->handle);
-			return -EIO;
+			ret = -EIO;
+			goto xfer_done;
 		}
 		if (msgs->len == 0) {
 			k_busy_wait(SCAN_DELAY_US(config->bitrate));
 			if (0 != (base->MSR & LPI2C_MSR_NDF_MASK)) {
 				LPI2C_MasterTransferAbort(base, &data->handle);
-				return -EIO;
+				ret = -EIO;
+				goto xfer_done;
 			}
 		}
 		/* Move to the next message */
 		msgs++;
 	}
 
-	return 0;
+xfer_done:
+	k_sem_give(&data->bus_sem);
+	return ret;
 }
 
 static void mcux_lpi2c_isr(const struct device *dev)
