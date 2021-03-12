@@ -25,7 +25,6 @@ extern struct k_spinlock sched_spinlock;
  * to restore the lock state to whatever the thread's counter
  * expects.
  */
-void z_smp_reacquire_global_lock(struct k_thread *thread);
 void z_smp_release_global_lock(struct k_thread *thread);
 
 /* context switching and scheduling-related routines */
