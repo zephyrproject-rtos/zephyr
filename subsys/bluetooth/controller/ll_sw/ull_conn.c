@@ -4580,11 +4580,12 @@ static int reject_ext_ind_send(struct ll_conn *conn, struct node_rx_pdu *rx,
 {
 	struct pdu_data *pdu_ctrl_tx;
 	struct node_tx *tx;
+	int err;
 
-	/* acquire tx mem */
-	tx = mem_acquire(&mem_conn_tx_ctrl.free);
+	/* Check transaction violation and get free ctrl tx PDU */
+	tx = ctrl_tx_rsp_mem_acquire(conn, rx, &err);
 	if (!tx) {
-		return -ENOBUFS;
+		return err;
 	}
 
 	pdu_ctrl_tx = (void *)tx->pdu;
@@ -5589,6 +5590,12 @@ static inline void ctrl_tx_ack(struct ll_conn *conn, struct node_tx **tx,
 	case PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND:
 		if (pdu_tx->llctrl.reject_ext_ind.reject_opcode !=
 		    PDU_DATA_LLCTRL_TYPE_ENC_REQ) {
+			/* Reset the transaction lock set by connection
+			 * parameter request and PHY update procedure when
+			 * sending the Reject Ext Ind PDU.
+			 */
+			conn->common.txn_lock = 0U;
+
 			break;
 		}
 		__fallthrough;
