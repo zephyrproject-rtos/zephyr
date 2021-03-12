@@ -22,6 +22,7 @@
 #include "pdu.h"
 #include "ll.h"
 #include "ll_settings.h"
+#include "ll_feat.h"
 
 #include "lll.h"
 #include "lll_conn.h"
