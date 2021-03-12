@@ -106,8 +106,6 @@ struct qspi_nor_data {
 #endif /* CONFIG_MULTITHREADING */
 };
 
-static int qspi_nor_write_protection_nop(const struct device *dev,
-					 bool write_protect);
 static int qspi_nor_write_protection_set(const struct device *dev,
 					 bool write_protect);
 
@@ -953,15 +951,6 @@ static int qspi_nor_erase(const struct device *dev, off_t addr, size_t size)
 	return ret;
 }
 
-static int qspi_nor_write_protection_nop(const struct device *dev,
-					 bool write_protect)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(write_protect);
-
-	return 0;
-}
-
 static int qspi_nor_write_protection_set(const struct device *dev,
 					 bool write_protect)
 {
@@ -1061,7 +1050,6 @@ static const struct flash_driver_api qspi_nor_api = {
 	.read = qspi_nor_read,
 	.write = qspi_nor_write,
 	.erase = qspi_nor_erase,
-	.write_protection = qspi_nor_write_protection_nop,
 	.get_parameters = qspi_flash_get_parameters,
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = qspi_nor_pages_layout,

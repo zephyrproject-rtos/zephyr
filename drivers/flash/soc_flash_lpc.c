@@ -117,14 +117,6 @@ static int flash_lpc_write(const struct device *dev, off_t offset,
 	return (rc == kStatus_FLASHIAP_Success) ? 0 : -EINVAL;
 }
 
-static int flash_lpc_write_protection(const struct device *dev, bool enable)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(enable);
-
-	return 0;
-}
-
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 static const struct flash_pages_layout dev_layout = {
 	.pages_count = DT_REG_SIZE(SOC_NV_FLASH_NODE) /
@@ -152,7 +144,6 @@ flash_lpc_get_parameters(const struct device *dev)
 static struct flash_priv flash_data;
 
 static const struct flash_driver_api flash_lpc_api = {
-	.write_protection = flash_lpc_write_protection,
 	.erase = flash_lpc_erase,
 	.write = flash_lpc_write,
 	.read = flash_lpc_read,

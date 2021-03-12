@@ -422,15 +422,6 @@ static int flash_stm32_qspi_erase(const struct device *dev, off_t addr,
 	return ret;
 }
 
-static int flash_stm32_qspi_write_protection_set(const struct device *dev,
-						 bool write_protect)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(write_protect);
-
-	return 0;
-}
-
 static const struct flash_parameters flash_stm32_qspi_parameters = {
 	.write_block_size = 1,
 	.erase_value = 0xff
@@ -562,7 +553,6 @@ static const struct flash_driver_api flash_stm32_qspi_driver_api = {
 	.read = flash_stm32_qspi_read,
 	.write = flash_stm32_qspi_write,
 	.erase = flash_stm32_qspi_erase,
-	.write_protection = flash_stm32_qspi_write_protection_set,
 	.get_parameters = flash_stm32_qspi_get_parameters,
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = flash_stm32_qspi_pages_layout,
