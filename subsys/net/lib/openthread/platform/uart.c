@@ -111,7 +111,8 @@ static void uart_callback(const struct device *dev, void *user_data)
 			uart_rx_handle(dev);
 		}
 
-		if (uart_irq_tx_ready(dev)) {
+		if (uart_irq_tx_ready(dev) &&
+		    atomic_get(&ot_uart.tx_busy) == 1) {
 			uart_tx_handle(dev);
 		}
 	}
@@ -143,7 +144,7 @@ void platformUartProcess(otInstance *aInstance)
 		otPlatUartSendDone();
 		ot_uart.tx_finished = 0;
 	}
-};
+}
 
 otError otPlatUartEnable(void)
 {
@@ -161,7 +162,7 @@ otError otPlatUartEnable(void)
 	uart_irq_rx_enable(ot_uart.dev);
 
 	return OT_ERROR_NONE;
-};
+}
 
 otError otPlatUartDisable(void)
 {
@@ -176,8 +177,7 @@ otError otPlatUartDisable(void)
 	uart_irq_tx_disable(ot_uart.dev);
 	uart_irq_rx_disable(ot_uart.dev);
 	return OT_ERROR_NONE;
-};
-
+}
 
 otError otPlatUartSend(const uint8_t *aBuf, uint16_t aBufLength)
 {
@@ -200,7 +200,7 @@ otError otPlatUartSend(const uint8_t *aBuf, uint16_t aBufLength)
 	}
 
 	return OT_ERROR_NONE;
-};
+}
 
 otError otPlatUartFlush(void)
 {
