@@ -326,7 +326,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	 * However for single core using 32-bits arc timer, idle cannot
 	 * be ignored, as 32-bits timer will overflow in a not-long time.
 	 */
-	if (IS_ENABLED(CONFIG_TICKLESS_IDLE) && ticks == K_TICKS_FOREVER) {
+	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL) && ticks == K_TICKS_FOREVER) {
 		timer0_control_register_set(0);
 		timer0_count_register_set(0);
 		timer0_limit_register_set(0);
@@ -356,8 +356,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	arch_irq_unlock(key);
 #endif
 #else
-	if (IS_ENABLED(CONFIG_TICKLESS_IDLE) && idle
-	    && ticks == K_TICKS_FOREVER) {
+	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL) && idle && ticks == K_TICKS_FOREVER) {
 		timer0_control_register_set(0);
 		timer0_count_register_set(0);
 		timer0_limit_register_set(0);

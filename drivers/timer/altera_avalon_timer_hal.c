@@ -13,11 +13,22 @@
 #include "altera_avalon_timer_regs.h"
 #include "altera_avalon_timer.h"
 
-#include "legacy_api.h"
+/* The old driver "now" API would return a full uptime value.  The new
+ * one only requires the driver to track ticks since the last announce
+ * call.  Implement the new call in terms of the old one on legacy
+ * drivers by keeping (yet another) uptime value locally.
+ */
+static uint32_t driver_uptime;
 
 static uint32_t accumulated_cycle_count;
 
 static int32_t _sys_idle_elapsed_ticks = 1;
+
+static void wrapped_announce(int32_t ticks)
+{
+	driver_uptime += ticks;
+	sys_clock_announce(ticks);
+}
 
 static void timer_irq_handler(const void *unused)
 {
@@ -28,7 +39,7 @@ static void timer_irq_handler(const void *unused)
 	/* Clear the interrupt */
 	alt_handle_irq((void *)TIMER_0_BASE, TIMER_0_IRQ);
 
-	sys_clock_announce(_sys_idle_elapsed_ticks);
+	wrapped_announce(_sys_idle_elapsed_ticks);
 }
 
 int sys_clock_driver_init(const struct device *device)
@@ -68,4 +79,9 @@ uint32_t sys_clock_cycle_get_32(void)
 	 * is currently unimplemented.
 	 */
 	return accumulated_cycle_count;
+}
+
+uint32_t sys_clock_elapsed(void)
+{
+	return 0;
 }

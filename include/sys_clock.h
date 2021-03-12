@@ -112,7 +112,6 @@ typedef struct {
 /** @} */
 
 #ifdef CONFIG_TICKLESS_KERNEL
-extern int _sys_clock_always_on;
 extern void z_enable_sys_clock(void);
 #endif
 
