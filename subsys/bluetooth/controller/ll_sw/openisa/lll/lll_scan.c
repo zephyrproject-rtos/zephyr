@@ -674,7 +674,7 @@ static inline uint32_t isr_rx_pdu(struct lll_scan *lll, uint8_t devmatch_ok,
 	if (0) {
 #if defined(CONFIG_BT_CENTRAL)
 	/* Initiator */
-	} else if (lll->conn && !lll->conn->initiated &&
+	} else if (lll->conn &&
 		   isr_scan_init_check(lll, pdu_adv_rx, rl_idx)) {
 		struct lll_conn *lll_conn;
 		struct node_rx_ftr *ftr;

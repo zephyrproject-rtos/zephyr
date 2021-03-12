@@ -898,8 +898,7 @@ static inline int isr_rx_pdu(struct lll_adv *lll,
 		   (pdu_rx->len == sizeof(struct pdu_adv_connect_ind)) &&
 		   isr_rx_ci_check(lll, pdu_adv, pdu_rx, devmatch_ok,
 				   &rl_idx) &&
-		   lll->conn &&
-		   !lll->conn->initiated) {
+		   lll->conn) {
 		struct node_rx_ftr *ftr;
 		struct node_rx_pdu *rx;
 
