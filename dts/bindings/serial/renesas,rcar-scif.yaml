@@ -1,0 +1,15 @@
+# Copyright (c) 2021, IoT.bzh
+# SPDX-License-Identifier: Apache-2.0
+#
+description: Renesas R-Car UART controller
+
+compatible: "renesas,rcar-scif"
+
+include: uart-controller.yaml
+
+properties:
+    reg:
+      required: true
+
+    clocks:
+      required: true
