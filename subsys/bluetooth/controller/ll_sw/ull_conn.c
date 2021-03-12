@@ -1979,6 +1979,42 @@ static inline void  ctrl_tx_check_and_resume(struct ll_conn *conn)
 }
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
+/* Check transaction violation and get free ctrl tx PDU */
+static struct node_tx *ctrl_tx_rsp_mem_acquire(struct ll_conn *conn,
+					       struct node_rx_pdu *rx,
+					       int *err)
+{
+	struct node_tx *tx;
+
+	/* Ignore duplicate requests without previous being acknowledged. */
+	if (conn->common.txn_lock) {
+		/* Mark for buffer for release */
+		rx->hdr.type = NODE_RX_TYPE_RELEASE;
+
+		/* Drop request */
+		*err = 0U;
+
+		return NULL;
+	}
+
+	/* Acquire ctrl tx mem */
+	tx = mem_acquire(&mem_conn_tx_ctrl.free);
+	if (!tx) {
+		*err = -ENOBUFS;
+
+		return NULL;
+	}
+
+	/* Lock further responses to duplicate requests before previous
+	 * response is acknowledged.
+	 */
+	conn->common.txn_lock = 1U;
+
+	/* NOTE: err value not required when returning valid ctrl tx PDU */
+
+	return tx;
+}
+
 static inline void ctrl_tx_last_enqueue(struct ll_conn *conn,
 					struct node_tx *tx)
 {
