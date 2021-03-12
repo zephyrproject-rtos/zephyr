@@ -19,6 +19,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
     def __init__(self, cfg, target,
                  pyocd='pyocd',
                  flash_addr=0x0, erase=False, flash_opts=None,
+                 post_flash_cmd=None,
                  gdb_port=DEFAULT_PYOCD_GDB_PORT,
                  telnet_port=DEFAULT_PYOCD_TELNET_PORT, tui=False,
                  board_id=None, daparg=None, frequency=None, tool_opt=None):
@@ -27,6 +28,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
         self.target_args = ['-t', target]
         self.pyocd = pyocd
         self.flash_addr_args = ['-a', hex(flash_addr)] if flash_addr else []
+        self.post_flash_cmd = post_flash_cmd or []
         self.erase = erase
         self.gdb_cmd = [cfg.gdb] if cfg.gdb is not None else None
         self.gdb_port = gdb_port
@@ -79,6 +81,8 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--flash-opt', default=[], action='append',
                             help='''Additional options for pyocd flash,
                             e.g. --flash-opt="-e=chip" to chip erase''')
+        parser.add_argument('--post-flash', default=[], action='append',
+                            help='Commands to run after flashing')
         parser.add_argument('--frequency',
                             help='SWD clock frequency in Hz')
         parser.add_argument('--gdb-port', default=DEFAULT_PYOCD_GDB_PORT,
@@ -104,6 +108,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
             cfg, args.target,
             pyocd=args.pyocd,
             flash_addr=flash_addr, erase=args.erase, flash_opts=args.flash_opt,
+            post_flash_cmd=args.post_flash,
             gdb_port=args.gdb_port, telnet_port=args.telnet_port, tui=args.tui,
             board_id=args.board_id, daparg=args.daparg,
             frequency=args.frequency,
@@ -157,6 +162,24 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
 
         self.logger.info('Flashing file: {}'.format(fname))
         self.check_call(cmd)
+
+        if self.post_flash_cmd is not []:
+
+            post_flash_cmd = []
+
+            for i in self.post_flash_cmd:
+                post_flash_cmd.append("-c")
+                post_flash_cmd.append(i)
+
+            post_flash_cmd = ([self.pyocd] +
+            ['cmd'] +
+            self.target_args +
+            self.board_args +
+            post_flash_cmd)
+
+            self.logger.info('Post flash command run')
+            self.check_call(post_flash_cmd)
+
 
     def log_gdbserver_message(self):
         self.logger.info('pyOCD GDB server running on port {}'.
