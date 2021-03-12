@@ -185,10 +185,10 @@ otError otPlatUartSend(const uint8_t *aBuf, uint16_t aBufLength)
 		return OT_ERROR_FAILED;
 	}
 
-	write_buffer = aBuf;
-	write_length = aBufLength;
+	if (atomic_cas(&(ot_uart.tx_busy), 0, 1)) {
+		write_buffer = aBuf;
+		write_length = aBufLength;
 
-	if (atomic_set(&(ot_uart.tx_busy), 1) == 0) {
 		if (is_panic_mode) {
 			/* In panic mode all data have to be send immediately
 			 * without using interrupts
@@ -197,9 +197,10 @@ otError otPlatUartSend(const uint8_t *aBuf, uint16_t aBufLength)
 		} else {
 			uart_irq_tx_enable(ot_uart.dev);
 		}
+		return OT_ERROR_NONE;
 	}
 
-	return OT_ERROR_NONE;
+	return OT_ERROR_BUSY;
 }
 
 otError otPlatUartFlush(void)
