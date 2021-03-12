@@ -57,6 +57,7 @@ static const struct flash_parameters flash_sam_parameters = {
 #define DEV_DATA(dev) \
 	((struct flash_sam_dev_data *const)(dev)->data)
 
+static int flash_sam_write_protection(const struct device *dev, bool enable);
 
 static inline void flash_sam_sem_take(const struct device *dev)
 {
@@ -187,29 +188,36 @@ static int flash_sam_write(const struct device *dev, off_t offset,
 
 	flash_sam_sem_take(dev);
 
-	rc = flash_sam_wait_ready(dev);
-	if (rc < 0) {
-		return rc;
+	rc = flash_sam_write_protection(dev, false);
+	if (rc >= 0) {
+		rc = flash_sam_wait_ready(dev);
 	}
 
-	while (len > 0) {
-		size_t eop_len, write_len;
+	if (rc >= 0) {
+		while (len > 0) {
+			size_t eop_len, write_len;
 
-		/* Maximum size without crossing a page */
-		eop_len = -(offset | ~(IFLASH_PAGE_SIZE - 1));
-		write_len = MIN(len, eop_len);
+			/* Maximum size without crossing a page */
+			eop_len = -(offset | ~(IFLASH_PAGE_SIZE - 1));
+			write_len = MIN(len, eop_len);
 
-		rc = flash_sam_write_page(dev, offset, data8, write_len);
-		if (rc < 0) {
-			goto done;
+			rc = flash_sam_write_page(dev, offset, data8, write_len);
+			if (rc < 0) {
+				break;
+			}
+
+			offset += write_len;
+			data8 += write_len;
+			len -= write_len;
 		}
-
-		offset += write_len;
-		data8 += write_len;
-		len -= write_len;
 	}
 
-done:
+	int rc2 = flash_sam_write_protection(dev, true);
+
+	if (!rc) {
+		rc = rc2;
+	}
+
 	flash_sam_sem_give(dev);
 
 	return rc;
@@ -274,15 +282,23 @@ static int flash_sam_erase(const struct device *dev, off_t offset, size_t len)
 
 	flash_sam_sem_take(dev);
 
-	/* Loop through the pages to erase */
-	for (i = offset; i < offset + len; i += FLASH_ERASE_BLK_SZ) {
-		rc = flash_sam_erase_block(dev, i);
-		if (rc < 0) {
-			goto done;
+	rc = flash_sam_write_protection(dev, false);
+	if (rc >= 0) {
+		/* Loop through the pages to erase */
+		for (i = offset; i < offset + len; i += FLASH_ERASE_BLK_SZ) {
+			rc = flash_sam_erase_block(dev, i);
+			if (rc < 0) {
+				break;
+			}
 		}
 	}
 
-done:
+	int rc2 = flash_sam_write_protection(dev, true);
+
+	if (!rc) {
+		rc = rc2;
+	}
+
 	flash_sam_sem_give(dev);
 
 	/*
@@ -294,13 +310,19 @@ done:
 	return rc;
 }
 
+static int flash_sam_write_protection_nop(const struct device *dev, bool enable)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(enable);
+
+	return 0;
+}
+
 /* Enable or disable the write protection */
 static int flash_sam_write_protection(const struct device *dev, bool enable)
 {
 	Efc *const efc = DEV_CFG(dev)->regs;
 	int rc = 0;
-
-	flash_sam_sem_take(dev);
 
 	if (enable) {
 		rc = flash_sam_wait_ready(dev);
@@ -313,7 +335,6 @@ static int flash_sam_write_protection(const struct device *dev, bool enable)
 	}
 
 done:
-	flash_sam_sem_give(dev);
 	return rc;
 }
 
@@ -354,7 +375,7 @@ static int flash_sam_init(const struct device *dev)
 }
 
 static const struct flash_driver_api flash_sam_api = {
-	.write_protection = flash_sam_write_protection,
+	.write_protection = flash_sam_write_protection_nop,
 	.erase = flash_sam_erase,
 	.write = flash_sam_write,
 	.read = flash_sam_read,
