@@ -78,7 +78,6 @@ struct flash_stm32_qspi_data {
 	struct jesd216_erase_type erase_types[JESD216_NUM_ERASE_TYPES];
 	/* Number of bytes per page */
 	uint16_t page_size;
-	bool write_protection;
 	int cmd_status;
 	struct stream dma;
 };
@@ -285,12 +284,7 @@ static int qspi_wait_until_ready(const struct device *dev)
 static int flash_stm32_qspi_write(const struct device *dev, off_t addr,
 				  const void *data, size_t size)
 {
-	struct flash_stm32_qspi_data *dev_data = DEV_DATA(dev);
 	int ret = 0;
-
-	if (dev_data->write_protection) {
-		return -EACCES;
-	}
 
 	if (!qspi_address_is_valid(dev, addr, size)) {
 		LOG_DBG("Error: address or size exceeds expected values: "
@@ -360,10 +354,6 @@ static int flash_stm32_qspi_erase(const struct device *dev, off_t addr,
 	const struct flash_stm32_qspi_config *dev_cfg = DEV_CFG(dev);
 	struct flash_stm32_qspi_data *dev_data = DEV_DATA(dev);
 	int ret = 0;
-
-	if (dev_data->write_protection) {
-		return -EACCES;
-	}
 
 	if (!qspi_address_is_valid(dev, addr, size)) {
 		LOG_DBG("Error: address or size exceeds expected values: "
@@ -435,9 +425,8 @@ static int flash_stm32_qspi_erase(const struct device *dev, off_t addr,
 static int flash_stm32_qspi_write_protection_set(const struct device *dev,
 						 bool write_protect)
 {
-	struct flash_stm32_qspi_data *dev_data = DEV_DATA(dev);
-
-	dev_data->write_protection = write_protect;
+	ARG_UNUSED(dev);
+	ARG_UNUSED(write_protect);
 
 	return 0;
 }
