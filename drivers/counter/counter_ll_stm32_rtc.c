@@ -359,9 +359,11 @@ static int rtc_stm32_init(const struct device *dev)
 
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 
+#if !defined(CONFIG_COUNTER_RTC_STM32_SAVE_VALUE_BETWEEN_RESETS)
 	if (LL_RTC_DeInit(RTC) != SUCCESS) {
 		return -EIO;
 	}
+#endif
 
 	if (LL_RTC_Init(RTC, ((LL_RTC_InitTypeDef *)
 			      &cfg->ll_rtc_config)) != SUCCESS) {
