@@ -86,7 +86,7 @@ uint32_t sys_clock_elapsed(void)
 	return 0;
 }
 
-uint32_t z_timer_cycle_get_32(void)
+uint32_t sys_clock_cycle_get_32(void)
 {
 	volatile struct gptimer_regs *regs = get_regs();
 	volatile struct gptimer_timer_regs *tmr = &regs->timer[1];

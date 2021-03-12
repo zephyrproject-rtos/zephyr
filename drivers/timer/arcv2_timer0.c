@@ -437,7 +437,7 @@ uint32_t sys_clock_elapsed(void)
 	return cyc / CYC_PER_TICK;
 }
 
-uint32_t z_timer_cycle_get_32(void)
+uint32_t sys_clock_cycle_get_32(void)
 {
 #if SMP_TIMER_DRIVER
 	return z_arc_connect_gfrc_read() - start_time;

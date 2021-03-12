@@ -29,7 +29,7 @@ static uint32_t sync(const struct device *cmos)
 		}
 	} while (last == this);
 
-	return z_timer_cycle_get_32();
+	return sys_clock_cycle_get_32();
 }
 
 void timer(void)

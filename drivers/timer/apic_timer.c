@@ -16,7 +16,7 @@ BUILD_ASSERT(!IS_ENABLED(CONFIG_SMP), "APIC timer doesn't support SMP");
  * This driver enables the local APIC as the Zephyr system timer. It supports
  * both legacy ("tickful") mode as well as TICKLESS_KERNEL. The driver will
  * work with any APIC that has the ARAT "always running APIC timer" feature
- * (CPUID 0x06, EAX bit 2); for the more accurate z_timer_cycle_get_32(),
+ * (CPUID 0x06, EAX bit 2); for the more accurate sys_clock_cycle_get_32(),
  * the invariant TSC feature (CPUID 0x80000007: EDX bit 8) is also required.
  * (Ultimately systems with invariant TSCs should use a TSC-based driver,
  * and the TSC-related parts should be stripped from this implementation.)
@@ -31,7 +31,7 @@ BUILD_ASSERT(!IS_ENABLED(CONFIG_SMP), "APIC timer doesn't support SMP");
  *     by the local APIC timer block (before it gets to the timer divider).
  *
  * CONFIG_APIC_TIMER_TSC=y enables the more accurate TSC-based cycle counter
- *     for z_timer_cycle_get_32(). This also requires the next options be set.
+ *     for sys_clock_cycle_get_32(). This also requires the next options be set.
  *
  * CONFIG_APIC_TIMER_TSC_N=<n>
  * CONFIG_APIC_TIMER_TSC_M=<m>
@@ -187,7 +187,7 @@ uint32_t sys_clock_elapsed(void)
 
 #ifdef CONFIG_APIC_TIMER_TSC
 
-uint32_t z_timer_cycle_get_32(void)
+uint32_t sys_clock_cycle_get_32(void)
 {
 	uint64_t tsc = z_tsc_read();
 	uint32_t cycles;
@@ -198,7 +198,7 @@ uint32_t z_timer_cycle_get_32(void)
 
 #else
 
-uint32_t z_timer_cycle_get_32(void)
+uint32_t sys_clock_cycle_get_32(void)
 {
 	uint32_t ret;
 	uint32_t ccr;

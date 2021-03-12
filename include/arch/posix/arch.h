@@ -44,11 +44,11 @@ struct __esf {
 
 typedef struct __esf z_arch_esf_t;
 
-extern uint32_t z_timer_cycle_get_32(void);
+extern uint32_t sys_clock_cycle_get_32(void);
 
 static inline uint32_t arch_k_cycle_get_32(void)
 {
-	return z_timer_cycle_get_32();
+	return sys_clock_cycle_get_32();
 }
 
 static ALWAYS_INLINE void arch_nop(void)
