@@ -207,14 +207,6 @@ void main(void)
 
 
 
-
-
-
-
-
-
-
-
     #endif
 
 
@@ -227,19 +219,8 @@ void main(void)
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-    // const struct device* display_dev=device_get_binding(DISPLAY_DEV_NAME);
-    // st7735_LcdInit(display_dev);
+    const struct device* display_dev=device_get_binding(DISPLAY_DEV_NAME);
+    st7735_LcdInit(display_dev);
     while(1)
     {
         // gpio_pin_set(dev, PIN, 1);

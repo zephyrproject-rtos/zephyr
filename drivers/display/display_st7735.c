@@ -24,13 +24,13 @@ static struct st7735_data st7735_data_instance={
 void st7735_set_cmd(void *param)
 {
     struct st7735_data* data=(struct st7735_data*)param;
-    printk("%d==set:0\n",ST7735_CMD_DATA_PIN);
+    // printk("%d==set:0\n",ST7735_CMD_DATA_PIN);
     gpio_pin_set(data->cmd_data_gpio, ST7735_CMD_DATA_PIN, 0);
 }
 void st7735_set_data(void *param)
 {
     struct st7735_data* data=(struct st7735_data*)param;
-    printk("%d==set:1\n",ST7735_CMD_DATA_PIN);
+    // printk("%d==set:1\n",ST7735_CMD_DATA_PIN);
     gpio_pin_set(data->cmd_data_gpio, ST7735_CMD_DATA_PIN, 1);
 }
 static inline void st7735_resetpin_low(void *param)
@@ -65,7 +65,7 @@ static void st7735_transmit(struct st7735_data* data,uint8_t cmd,uint8_t* tx_dat
         .count=1,
     };
     st7735_set_cmd(data);
-    k_sleep(K_MSEC(20));
+    // k_sleep(K_USEC(20));
     spi_write(data->spi_dev,&data->spi_config,&tx_bufs);
 
     if(tx_data!=NULL)
@@ -73,7 +73,7 @@ static void st7735_transmit(struct st7735_data* data,uint8_t cmd,uint8_t* tx_dat
         tx_buf.buf=tx_data;
         tx_buf.len=tx_count;
         st7735_set_data(data);
-        k_sleep(K_MSEC(20));
+        // k_sleep(K_USEC(20));
         spi_write(data->spi_dev,&data->spi_config,&tx_bufs);
     }
 
@@ -90,7 +90,7 @@ static void write_data(struct st7735_data* data,uint8_t* tx_data,size_t tx_count
         .count=1,
     };
     st7735_set_data(data);
-    k_sleep(K_MSEC(20));
+    // k_sleep(K_USEC(20));
     spi_write(data->spi_dev,&data->spi_config,&tx_bufs);
 }
 
@@ -106,13 +106,12 @@ void setCursor(uint8_t xstart,uint8_t ystart,uint8_t xend,uint8_t yend)
 void LCD_FILL(uint8_t xstart,uint8_t ystart,uint8_t xend,uint8_t yend,uint16_t color)
 {
     uint32_t pixel=(xend-xstart+1)*(yend-ystart+1);
-    setCursor(xstart,ystart,xend,yend);
     uint8_t color_data[]={((color>>8)&0xff),(color&0xff)};
-
-    for(int i=0;i<sizeof(color_data);i++)
-    {
-        printk("color_data:%0x\n",color_data[i]);
-    }
+    setCursor(xstart,ystart,xend,yend);
+    // for(int i=0;i<sizeof(color_data);i++)
+    // {
+    //     printk("color_data:%0x\n",color_data[i]);
+    // }
     while(pixel>0)
     {
         pixel--;
@@ -206,7 +205,7 @@ static int st7735_init(const struct device *dev)
         return -EPERM;
     }
     data->spi_config.frequency=DT_INST_PROP(0, spi_max_frequency);
-    data->spi_config.operation=SPI_OP_MODE_MASTER|SPI_WORD_SET(8);
+    data->spi_config.operation=SPI_OP_MODE_MASTER|SPI_WORD_SET(8)|SPI_MODE_CPHA|SPI_MODE_CPOL;
     data->spi_config.slave=DT_INST_REG_ADDR(0);
 
 
