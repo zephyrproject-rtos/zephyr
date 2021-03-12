@@ -418,15 +418,6 @@ static int flash_nios2_qspi_read(const struct device *dev, off_t offset,
 	return rc;
 }
 
-static int flash_nios2_qspi_write_protection_nop(const struct device *dev,
-						 bool write_protect)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(write_protect);
-
-	return 0;
-}
-
 static int flash_nios2_qspi_write_protection(const struct device *dev,
 					     bool enable)
 {
@@ -498,7 +489,6 @@ flash_nios2_qspi_get_parameters(const struct device *dev)
 }
 
 static const struct flash_driver_api flash_nios2_qspi_api = {
-	.write_protection = flash_nios2_qspi_write_protection_nop,
 	.erase = flash_nios2_qspi_erase,
 	.write = flash_nios2_qspi_write,
 	.read = flash_nios2_qspi_read,

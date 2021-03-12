@@ -287,15 +287,6 @@ static int flash_stm32_write(const struct device *dev, off_t offset,
 	return rc;
 }
 
-static int flash_stm32_write_protection_nop(const struct device *dev,
-					    bool enable)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(enable);
-
-	return 0;
-}
-
 static int flash_stm32_write_protection(const struct device *dev, bool enable)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
@@ -369,7 +360,6 @@ static struct flash_stm32_priv flash_data = {
 };
 
 static const struct flash_driver_api flash_stm32_api = {
-	.write_protection = flash_stm32_write_protection_nop,
 	.erase = flash_stm32_erase,
 	.write = flash_stm32_write,
 	.read = flash_stm32_read,
