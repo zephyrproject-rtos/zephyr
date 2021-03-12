@@ -47,34 +47,6 @@ The power management features are classified into the following categories.
 * System Power Management
 * Device Power Management
 
-Tickless Idle
-*************
-
-This is the name used to identify the event-based idling mechanism of the
-Zephyr RTOS kernel scheduler. The kernel scheduler can run in two modes. During
-normal operation, when at least one thread is active, it sets up the system
-timer in periodic mode and runs in an interval-based scheduling mode. The
-interval-based mode allows it to time slice between threads. Many times, the
-threads would be waiting on semaphores, timeouts or for events. When there
-are no threads running, it is inefficient for the kernel scheduler to run
-in interval-based mode. This is because, in this mode the timer would trigger
-an interrupt at fixed intervals causing the scheduler to be invoked at each
-interval. The scheduler checks if any thread is ready to run. If no thread
-is ready to run then it is a waste of power because of the unnecessary CPU
-processing. This is avoided by the kernel switching to event-based idling
-mode whenever there is no thread ready to run.
-
-The kernel holds an ordered list of thread timeouts in the system. These are
-the amount of time each thread has requested to wait. When the last active
-thread goes to wait, the idle thread is scheduled. The idle thread programs
-the timer to one-shot mode and programs the count to the earliest timeout
-from the ordered thread timeout list. When the timer expires, a timer event
-is generated. The ISR of this event will invoke the scheduler, which would
-schedule the thread associated with the timeout. Before scheduling the
-thread, the scheduler would switch the timer again to periodic mode. This
-method saves power because the CPU is removed from the wait only when there
-is a thread ready to run or if an external event occurred.
-
 System Power Management
 ***********************
 
@@ -89,9 +61,6 @@ will typically be an interrupt triggered by one of the SoC peripheral modules
 such as a SysTick, RTC, counter, or GPIO. Depending on the power mode entered,
 only some SoC peripheral modules may be active and can be used as a wake up
 source.
-
-Enabling system power management compels the Zephyr kernel scheduler to work in
-tickless idle mode (see :option:`CONFIG_TICKLESS_IDLE`).
 
 Power States
 ============
@@ -484,10 +453,6 @@ the following configuration flags.
 :option:`CONFIG_PM`
 
    This flag enables the power management subsystem.
-
-:option:`CONFIG_TICKLESS_IDLE`
-
-   This flag enables the tickless idle power saving feature.
 
 :option:`CONFIG_PM_DEVICE`
 
