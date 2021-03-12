@@ -171,6 +171,16 @@ static int vtd_qi_send(const struct device *dev,
 	return 0;
 }
 
+static int vtd_global_cc_invalidate(const struct device *dev)
+{
+	union qi_icc_descriptor iec_desc = { 0 };
+
+	iec_desc.icc.type = QI_TYPE_ICC;
+	iec_desc.icc.granularity = 1; /* Global Invalidation requested */
+
+	return vtd_qi_send(dev, &iec_desc.desc);
+}
+
 static int vtd_global_iec_invalidate(const struct device *dev)
 {
 	union qi_iec_descriptor iec_desc = { 0 };
@@ -461,6 +471,12 @@ static int vtd_ictl_init(const struct device *dev)
 	vtd_fault_event_init(dev);
 
 	vtd_qi_init(dev);
+
+	if (vtd_global_cc_invalidate(dev) != 0) {
+		printk("Could not perform ICC invalidation\n");
+		ret = -EIO;
+		goto out;
+	}
 
 	if (IS_ENABLED(CONFIG_X2APIC)) {
 		eime = VTD_IRTA_EIME;
