@@ -143,6 +143,7 @@ static void supported_commands(uint8_t *data, uint16_t len)
 	net_buf_simple_add_u8(buf, MESH_HEALTH_PERIOD_SET);
 	net_buf_simple_add_u8(buf, MESH_HEALTH_ATTENTION_GET);
 	net_buf_simple_add_u8(buf, MESH_HEALTH_ATTENTION_SET);
+	net_buf_simple_add_u8(buf, MESH_PROVISION_ADV);
 
 	tester_send(BTP_SERVICE_ID_MESH, MESH_READ_SUPPORTED_COMMANDS,
 		    CONTROLLER_INDEX, buf->data, buf->len);
@@ -450,7 +451,8 @@ static void config_prov(uint8_t *data, uint16_t len)
 
 static void provision_node(uint8_t *data, uint16_t len)
 {
-	const struct mesh_provision_node_cmd *cmd = (void *) data;
+	const struct mesh_provision_node_cmd *cmd = (void *)data;
+	int err;
 
 	LOG_DBG("");
 
@@ -461,9 +463,42 @@ static void provision_node(uint8_t *data, uint16_t len)
 	flags = cmd->flags;
 	iv_index = sys_le32_to_cpu(cmd->iv_index);
 	net_key_idx = sys_le16_to_cpu(cmd->net_key_idx);
+#if defined(CONFIG_BT_MESH_PROVISIONER)
+	err = bt_mesh_cdb_create(net_key);
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+#endif
+	err = bt_mesh_provision(net_key, net_key_idx, flags, iv_index, addr,
+				dev_key);
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
 
-	tester_rsp(BTP_SERVICE_ID_MESH, MESH_PROVISION_NODE,
-		   CONTROLLER_INDEX, BTP_STATUS_SUCCESS);
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_PROVISION_NODE, CONTROLLER_INDEX,
+		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+}
+
+static void provision_adv(uint8_t *data, uint16_t len)
+{
+	const struct mesh_provision_adv_cmd *cmd = (void *)data;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_provision_adv(cmd->uuid, cmd->net_idx, cmd->address,
+				    cmd->attention_duration);
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_PROVISION_ADV, CONTROLLER_INDEX,
+		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
 }
 
 static void init(uint8_t *data, uint16_t len)
@@ -2478,6 +2513,9 @@ void tester_handle_mesh(uint8_t opcode, uint8_t index, uint8_t *data, uint16_t l
 		break;
 	case MESH_HEALTH_ATTENTION_SET:
 		health_attention_set(data, len);
+		break;
+	case MESH_PROVISION_ADV:
+		provision_adv(data, len);
 		break;
 #if defined(CONFIG_BT_TESTING)
 	case MESH_LPN_SUBSCRIBE:
