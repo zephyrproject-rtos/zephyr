@@ -67,7 +67,7 @@ static uint32_t last_load;
 
 /*
  * This local variable holds the amount of timer cycles elapsed
- * and it is updated in z_timer_int_handler and sys_clock_set_timeout().
+ * and it is updated in timer_int_handler and sys_clock_set_timeout().
  *
  * Note:
  *  At an arbitrary point in time the "current" value of the
@@ -196,7 +196,7 @@ static uint32_t elapsed(void)
 					    _ARC_V2_TMR_CTRL_IE);
 		/* use sw triggered irq to remember the timer irq request
 		 * which may be cleared by the above operation. when elapsed ()
-		 * is called in z_timer_int_handler, no need to do this.
+		 * is called in timer_int_handler, no need to do this.
 		 */
 		if (!z_arc_v2_irq_unit_is_in_isr() ||
 		    z_arc_v2_aux_reg_read(_ARC_V2_ICAUSE) != IRQ_TIMER0) {
