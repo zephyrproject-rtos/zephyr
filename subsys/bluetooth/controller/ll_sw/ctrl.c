@@ -3288,7 +3288,10 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx,
 				_radio.conn_upd = conn;
 			}
 		} else {
-			LL_ASSERT(0);
+			/* Ignore duplicate request as peripheral is busy
+			 * processing the previously initiated connection
+			 * update request procedure.
+			 */
 		}
 		break;
 
