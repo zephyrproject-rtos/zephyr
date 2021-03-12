@@ -85,11 +85,38 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	       sizeof(lll->data_chan_map));
 	lll->data_chan_count = util_ones_count_get(&lll->data_chan_map[0],
 			       sizeof(lll->data_chan_map));
-	if (lll->data_chan_count < 2) {
-		return;
-	}
 	lll->data_chan_hop = pdu_adv->connect_ind.hop;
-	if ((lll->data_chan_hop < 5) || (lll->data_chan_hop > 16)) {
+	if ((lll->data_chan_count < 2) || (lll->data_chan_hop < 5) ||
+	    (lll->data_chan_hop > 16)) {
+		lll->initiated = 0U;
+
+		/* Mark for buffer for release */
+		rx->type = NODE_RX_TYPE_RELEASE;
+
+		/* Release CSA#2 related node rx too */
+		if (IS_ENABLED(CONFIG_BT_CTLR_CHAN_SEL_2)) {
+			struct node_rx_pdu *rx_csa;
+
+			/* pick the rx node instance stored within the
+			 * connection rx node.
+			 */
+			rx_csa = (void *)ftr->extra;
+
+			/* Enqueue the connection event to be release */
+			ll_rx_put(link, rx);
+
+			/* Use the rx node for CSA event */
+			rx = (void *)rx_csa;
+			link = rx->link;
+
+			/* Mark for buffer for release */
+			rx->type = NODE_RX_TYPE_RELEASE;
+		}
+
+		/* Enqueue connection or CSA event to be release */
+		ll_rx_put(link, rx);
+		ll_rx_sched();
+
 		return;
 	}
 
