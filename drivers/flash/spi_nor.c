@@ -595,15 +595,6 @@ static int spi_nor_erase(const struct device *dev, off_t addr, size_t size)
 	return ret;
 }
 
-static int spi_nor_write_protection_nop(const struct device *dev,
-					bool write_protect)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(write_protect);
-
-	return 0;
-}
-
 static int spi_nor_write_protection_set(const struct device *dev,
 					bool write_protect)
 {
@@ -985,7 +976,6 @@ static const struct flash_driver_api spi_nor_api = {
 	.read = spi_nor_read,
 	.write = spi_nor_write,
 	.erase = spi_nor_erase,
-	.write_protection = spi_nor_write_protection_nop,
 	.get_parameters = flash_nor_get_parameters,
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = spi_nor_pages_layout,

@@ -366,12 +366,6 @@ static int flash_flexspi_nor_erase(const struct device *dev, off_t offset,
 	return 0;
 }
 
-static int flash_flexspi_nor_write_protection(const struct device *dev,
-		bool enable)
-{
-	return 0;
-}
-
 static const struct flash_parameters *flash_flexspi_nor_get_parameters(
 		const struct device *dev)
 {
@@ -433,7 +427,6 @@ static int flash_flexspi_nor_init(const struct device *dev)
 }
 
 static const struct flash_driver_api flash_flexspi_nor_api = {
-	.write_protection = flash_flexspi_nor_write_protection,
 	.erase = flash_flexspi_nor_erase,
 	.write = flash_flexspi_nor_write,
 	.read = flash_flexspi_nor_read,

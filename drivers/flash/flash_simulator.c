@@ -156,14 +156,6 @@ static int flash_range_is_valid(const struct device *dev, off_t offset,
 	return 1;
 }
 
-static int flash_wp_set(const struct device *dev, bool enable)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(enable);
-
-	return 0;
-}
-
 static int flash_sim_read(const struct device *dev, const off_t offset,
 			  void *data,
 			  const size_t len)
@@ -346,7 +338,6 @@ static const struct flash_driver_api flash_sim_api = {
 	.read = flash_sim_read,
 	.write = flash_sim_write,
 	.erase = flash_sim_erase,
-	.write_protection = flash_wp_set,
 	.get_parameters = flash_sim_get_parameters,
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_sim_page_layout,

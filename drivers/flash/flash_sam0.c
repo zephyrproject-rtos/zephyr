@@ -379,15 +379,6 @@ static int flash_sam0_erase(const struct device *dev, off_t offset,
 	return err;
 }
 
-static int flash_sam0_write_protection_nop(const struct device *dev,
-					   bool enable)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(enable);
-
-	return 0;
-}
-
 static int flash_sam0_write_protection(const struct device *dev, bool enable)
 {
 	off_t offset;
@@ -464,7 +455,6 @@ static int flash_sam0_init(const struct device *dev)
 }
 
 static const struct flash_driver_api flash_sam0_api = {
-	.write_protection = flash_sam0_write_protection_nop,
 	.erase = flash_sam0_erase,
 	.write = flash_sam0_write,
 	.read = flash_sam0_read,

@@ -122,15 +122,6 @@ static int flash_gecko_erase(const struct device *dev, off_t offset,
 	return ret;
 }
 
-static int flash_gecko_write_protection_nop(const struct device *dev,
-					    bool enable)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(enable);
-
-	return 0;
-}
-
 static void flash_gecko_write_protection(bool enable)
 {
 	if (enable) {
@@ -224,7 +215,6 @@ static const struct flash_driver_api flash_gecko_driver_api = {
 	.read = flash_gecko_read,
 	.write = flash_gecko_write,
 	.erase = flash_gecko_erase,
-	.write_protection = flash_gecko_write_protection_nop,
 	.get_parameters = flash_gecko_get_parameters,
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_gecko_page_layout,
