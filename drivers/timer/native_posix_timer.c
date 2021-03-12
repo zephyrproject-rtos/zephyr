@@ -27,7 +27,7 @@ static uint64_t last_tick_time;
  * Return the current HW cycle counter
  * (number of microseconds since boot in 32bits)
  */
-uint32_t z_timer_cycle_get_32(void)
+uint32_t sys_clock_cycle_get_32(void)
 {
 	return hwm_get_time();
 }

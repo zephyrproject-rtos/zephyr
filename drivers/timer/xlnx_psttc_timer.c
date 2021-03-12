@@ -189,7 +189,7 @@ uint32_t sys_clock_elapsed(void)
 #endif
 }
 
-uint32_t z_timer_cycle_get_32(void)
+uint32_t sys_clock_cycle_get_32(void)
 {
 	/* Return the current counter value */
 	return read_count();

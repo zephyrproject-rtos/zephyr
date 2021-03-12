@@ -59,7 +59,7 @@ static void lptim_irq_handler(const struct device *unused)
 		LL_LPTIM_ClearFLAG_ARRM(LPTIM1);
 
 		/* increase the total nb of autoreload count
-		 * used in the z_timer_cycle_get_32() function.
+		 * used in the sys_clock_cycle_get_32() function.
 		 * Reading the CNT register gives a reliable value
 		 */
 		uint32_t autoreload = LL_LPTIM_GetAutoReload(LPTIM1) + 1;
@@ -296,7 +296,7 @@ uint32_t sys_clock_elapsed(void)
 	return (uint32_t)(ret);
 }
 
-uint32_t z_timer_cycle_get_32(void)
+uint32_t sys_clock_cycle_get_32(void)
 {
 	/* just gives the accumulated count in a number of hw cycles */
 

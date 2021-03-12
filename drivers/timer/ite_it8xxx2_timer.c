@@ -240,7 +240,7 @@ uint32_t sys_clock_elapsed(void)
 	return ret;
 }
 
-uint32_t z_timer_cycle_get_32(void)
+uint32_t sys_clock_cycle_get_32(void)
 {
 	return get_timer_combine_count(CTIMER_HW_TIMER_INDEX);
 }
