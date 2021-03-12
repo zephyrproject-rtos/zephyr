@@ -185,6 +185,11 @@
 
 	Z_ITERABLE_SECTION_ROM(tracing_backend, 4)
 
+	SECTION_DATA_PROLOGUE(zephyr_dbg_info,,)
+	{
+		KEEP(*(".dbg_thread_info"));
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
 	SECTION_DATA_PROLOGUE(device_handles,,)
 	{
 		__device_handles_start = .;

@@ -119,8 +119,6 @@ SECTIONS
 	*(.init)
 	*(.fini)
 	*(.eini)
-	KEEP(*(.openocd_dbg))
-	KEEP(*(".openocd_dbg.*"))
 
 #include <linker/kobject-text.ld>
 
