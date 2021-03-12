@@ -50,7 +50,7 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	cmp	x0, #(GIC_INTID_SPURIOUS)
 	beq	spurious_continue
 
-	stp	x0, x1, [sp, #-16]!
+	stp	x0, xzr, [sp, #-16]!
 
 	/* Retrieve the interrupt service routine */
 	ldr	x1, =_sw_isr_table
@@ -66,7 +66,7 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	msr	daifset, #(DAIFSET_IRQ_BIT)
 
 	/* Signal end-of-interrupt */
-	ldp	x0, x1, [sp], #16
+	ldp	x0, xzr, [sp], #16
 
 spurious_continue:
 #if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
@@ -92,7 +92,7 @@ spurious_continue:
 	 *   **old_thread parameter, so we need to make space on the stack for
 	 *   that.
 	 */
-	stp	x1, xzr, [sp, #-16]!
+	sub	sp, sp, #16
 	mov	x0, sp
 	bl	z_arch_get_next_switch_handle
 	ldp	x1, xzr, [sp], #16
