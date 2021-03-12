@@ -1054,15 +1054,14 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 			util_ones_count_get(&conn->data_chan_map[0],
 					    sizeof(conn->data_chan_map));
 		conn->data_chan_hop = pdu_adv->connect_ind.hop;
+		conn->conn_interval = pdu_adv->connect_ind.interval;
 		if ((conn->data_chan_count < 2) || (conn->data_chan_hop < 5) ||
-		    (conn->data_chan_hop > 16)) {
+		    (conn->data_chan_hop > 16) || !conn->conn_interval) {
 			return 1;
 		}
 
 		_radio.advertiser.conn = NULL;
 
-		conn->conn_interval =
-			pdu_adv->connect_ind.interval;
 		conn_interval_us =
 			pdu_adv->connect_ind.interval * 1250;
 		conn->latency = pdu_adv->connect_ind.latency;
