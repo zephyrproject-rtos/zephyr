@@ -65,6 +65,8 @@ features:
 +-----------+------------+-------------------------------------+
 | SYSTICK   | on-chip    | systick                             |
 +-----------+------------+-------------------------------------+
+| OS_TIMER  | on-chip    | os timer                            |
++-----------+------------+-------------------------------------+
 | IOCON     | on-chip    | pinmux                              |
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
@@ -119,9 +121,8 @@ functionality of a pin.
 System Clock
 ============
 
-The MIMXRT685 SoC is configured to use the main system PLL at 250MHz
-as a source for the system clock. Other sources for the system clock
-are provided in the SOC, depending on your system requirements.
+The MIMXRT685 EVK is configured to use the OS Event timer
+as a source for the system clock.
 
 Serial Port
 ===========
