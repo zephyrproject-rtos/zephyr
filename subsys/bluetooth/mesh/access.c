@@ -957,6 +957,7 @@ static int mod_set_pub(struct bt_mesh_model *mod, size_t len_rd,
 	mod->pub->ttl = pub.ttl;
 	mod->pub->period = pub.period;
 	mod->pub->retransmit = pub.retransmit;
+	mod->pub->period_div = pub.period_div;
 	mod->pub->count = 0U;
 
 	BT_DBG("Restored model publication, dst 0x%04x app_idx 0x%03x",
