@@ -4334,13 +4334,14 @@ static inline bool ctrl_is_unexpected(struct ll_conn *conn, uint8_t opcode)
 static int unknown_rsp_send(struct ll_conn *conn, struct node_rx_pdu *rx,
 			    uint8_t type)
 {
-	struct node_tx *tx;
 	struct pdu_data *pdu;
+	struct node_tx *tx;
+	int err;
 
-	/* acquire ctrl tx mem */
-	tx = mem_acquire(&mem_conn_tx_ctrl.free);
+	/* Check transaction violation and get free ctrl tx PDU */
+	tx = ctrl_tx_rsp_mem_acquire(conn, rx, &err);
 	if (!tx) {
-		return -ENOBUFS;
+		return err;
 	}
 
 	pdu = (void *)tx->pdu;
@@ -5511,6 +5512,7 @@ static inline void ctrl_tx_ack(struct ll_conn *conn, struct node_tx **tx,
 	break;
 
 	case PDU_DATA_LLCTRL_TYPE_FEATURE_RSP:
+	case PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP:
 		/* Reset the transaction lock */
 		conn->common.txn_lock = 0U;
 		break;
