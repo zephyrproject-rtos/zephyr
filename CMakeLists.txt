@@ -773,6 +773,7 @@ add_custom_command(
   ${ZEPHYR_BASE}/scripts/gen_handles.py
   --output-source dev_handles.c
   --kernel $<TARGET_FILE:${ZEPHYR_PREBUILT_EXECUTABLE}>
+  --zephyr-base ${ZEPHYR_BASE}
   DEPENDS ${ZEPHYR_PREBUILT_EXECUTABLE}
   )
 set_property(GLOBAL APPEND PROPERTY GENERATED_KERNEL_SOURCE_FILES dev_handles.c)
