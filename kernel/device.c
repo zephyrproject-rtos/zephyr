@@ -149,6 +149,14 @@ static inline const struct device *z_vrfy_device_get_binding(const char *name)
 	return z_impl_device_get_binding(name_copy);
 }
 #include <syscalls/device_get_binding_mrsh.c>
+
+static inline int z_vrfy_device_usable_check(const struct device *dev)
+{
+	Z_OOPS(Z_SYSCALL_OBJ_INIT(dev, K_OBJ_ANY));
+
+	return z_impl_device_usable_check(dev);
+}
+#include <syscalls/device_usable_check_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 size_t z_device_get_all_static(struct device const **devices)
