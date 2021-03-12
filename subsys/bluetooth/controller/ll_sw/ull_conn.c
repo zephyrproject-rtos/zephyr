@@ -5215,11 +5215,12 @@ static int phy_rsp_send(struct ll_conn *conn, struct node_rx_pdu *rx,
 	struct pdu_data_llctrl_phy_req *p;
 	struct pdu_data *pdu_ctrl_tx;
 	struct node_tx *tx;
+	int err;
 
-	/* acquire tx mem */
-	tx = mem_acquire(&mem_conn_tx_ctrl.free);
+	/* Check transaction violation and get free ctrl tx PDU */
+	tx = ctrl_tx_rsp_mem_acquire(conn, rx, &err);
 	if (!tx) {
-		return -ENOBUFS;
+		return err;
 	}
 
 	/* Wait for peer master to complete the procedure */
@@ -5696,9 +5697,18 @@ static inline void ctrl_tx_ack(struct ll_conn *conn, struct node_tx **tx,
 			uint8_t phy_tx_time[8] = {PHY_1M, PHY_1M, PHY_2M,
 						  PHY_1M, PHY_CODED, PHY_CODED,
 						  PHY_CODED, PHY_CODED};
-			struct lll_conn *lll = &conn->lll;
+			struct lll_conn *lll;
 			uint8_t phys;
 
+			/* Reset the transaction lock when PHY update response
+			 * sent by peripheral is acknowledged.
+			 */
+			if (pdu_tx->llctrl.opcode ==
+			    PDU_DATA_LLCTRL_TYPE_PHY_RSP) {
+				conn->common.txn_lock = 0U;
+			}
+
+			lll = &conn->lll;
 			phys = conn->llcp_phy.tx | lll->phy_tx;
 			lll->phy_tx_time = phy_tx_time[phys];
 		}
