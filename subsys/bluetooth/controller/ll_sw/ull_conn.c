@@ -6036,7 +6036,12 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 				conn_upd_curr = conn;
 			}
 		} else {
-			LL_ASSERT(0);
+			/* Ignore duplicate request as peripheral is busy
+			 * processing the previously initiated connection
+			 * update request procedure.
+			 */
+			/* Mark for buffer for release */
+			(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 		}
 		break;
 
