@@ -93,6 +93,27 @@ have higher wake latencies. Following is a thorough list of available states:
 .. doxygenenumvalue:: PM_STATE_SOFT_OFF
    :project: Zephyr
 
+.. _pm_constraints:
+
+Power States Constraint
+=======================
+
+The power management subsystem allows different Zephyr components and
+applications to set constraints on various power states preventing the
+system to go these states. This can be used by devices when executing
+tasks in background to avoid the system to go to state where it would
+lose context. Constraints can be set, released and checked using the
+follow APIs:
+
+.. doxygenfunction:: pm_constraint_set
+   :project: Zephyr
+
+.. doxygenfunction:: pm_constraint_release
+   :project: Zephyr
+
+.. doxygenfunction:: pm_constraint_get
+   :project: Zephyr
+
 Power Management Policies
 =========================
 
@@ -102,12 +123,20 @@ The power management subsystem supports the following power management policies:
 * Application
 * Dummy
 
+The policy manager is responsible to inform the power subsystem which
+power state the system should go based on states available in the
+platform and possible runtime :ref:`constraints<pm_constraints>`
+
+Information about states can be get from device tree, see
+:zephyr_file:`dts/bindings/power/state.yaml`.
+
 Residency
 ---------
 
 The power management system enters the power state which offers the highest
-power savings, and with a minimum residency value (defined by the respective
-Kconfig option) less than or equal to the scheduled system idle time duration.
+power savings, and with a minimum residency value (in device tree, see
+:zephyr_file:`dts/bindings/power/state.yaml`) less than or equal to
+the scheduled system idle time duration.
 
 Application
 -----------
@@ -118,6 +147,10 @@ the following function.
 .. code-block:: c
 
    struct pm_state_info pm_policy_next_state(int32_t ticks);
+
+In this policy the application is free to decide which power state the
+system should go based on the remaining time for the next scheduled
+timeout.
 
 Dummy
 -----
