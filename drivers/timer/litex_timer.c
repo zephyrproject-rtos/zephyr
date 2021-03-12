@@ -39,7 +39,7 @@ static void litex_timer_irq_handler(const void *device)
 	irq_unlock(key);
 }
 
-uint32_t z_timer_cycle_get_32(void)
+uint32_t sys_clock_cycle_get_32(void)
 {
 	static struct k_spinlock lock;
 	uint32_t timer_total;

@@ -286,7 +286,7 @@ uint32_t sys_clock_elapsed(void)
  *    z_impl_k_busy_wait calls here. This code path uses the value as uint32_t.
  *
  */
-uint32_t z_timer_cycle_get_32(void)
+uint32_t sys_clock_cycle_get_32(void)
 {
 	uint32_t ret;
 	uint32_t ccr;

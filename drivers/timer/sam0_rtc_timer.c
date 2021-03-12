@@ -310,7 +310,7 @@ uint32_t sys_clock_elapsed(void)
 #endif
 }
 
-uint32_t z_timer_cycle_get_32(void)
+uint32_t sys_clock_cycle_get_32(void)
 {
 	/* Just return the absolute value of RTC cycle counter. */
 	return rtc_count();

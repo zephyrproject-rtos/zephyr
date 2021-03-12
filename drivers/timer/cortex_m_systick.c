@@ -238,7 +238,7 @@ uint32_t sys_clock_elapsed(void)
 	return cyc / CYC_PER_TICK;
 }
 
-uint32_t z_timer_cycle_get_32(void)
+uint32_t sys_clock_cycle_get_32(void)
 {
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	uint32_t ret = elapsed() + cycle_count;

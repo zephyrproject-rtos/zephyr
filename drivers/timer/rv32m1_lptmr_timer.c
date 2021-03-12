@@ -131,7 +131,7 @@ int sys_clock_driver_init(const struct device *unused)
 	return 0;
 }
 
-uint32_t z_timer_cycle_get_32(void)
+uint32_t sys_clock_cycle_get_32(void)
 {
 	return cycle_count + SYSTEM_TIMER_INSTANCE->CNR;
 }

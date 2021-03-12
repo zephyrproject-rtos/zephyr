@@ -718,9 +718,9 @@ enum usdhc_reset {
 
 static void usdhc_millsec_delay(unsigned int cycles_to_wait)
 {
-	unsigned int start = z_timer_cycle_get_32();
+	unsigned int start = sys_clock_cycle_get_32();
 
-	while (z_timer_cycle_get_32() - start < (cycles_to_wait * 1000))
+	while (sys_clock_cycle_get_32() - start < (cycles_to_wait * 1000))
 		;
 }
 
