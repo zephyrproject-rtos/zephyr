@@ -5183,13 +5183,14 @@ send_length_resp:
 #if defined(CONFIG_BT_CTLR_LE_PING)
 static int ping_resp_send(struct ll_conn *conn, struct node_rx_pdu *rx)
 {
-	struct node_tx *tx;
 	struct pdu_data *pdu_tx;
+	struct node_tx *tx;
+	int err;
 
-	/* acquire tx mem */
-	tx = mem_acquire(&mem_conn_tx_ctrl.free);
+	/* Check transaction violation and get free ctrl tx PDU */
+	tx = ctrl_tx_rsp_mem_acquire(conn, rx, &err);
 	if (!tx) {
-		return -ENOBUFS;
+		return err;
 	}
 
 	pdu_tx = (void *)tx->pdu;
@@ -5521,6 +5522,7 @@ static inline void ctrl_tx_ack(struct ll_conn *conn, struct node_tx **tx,
 	break;
 
 	case PDU_DATA_LLCTRL_TYPE_FEATURE_RSP:
+	case PDU_DATA_LLCTRL_TYPE_PING_RSP:
 	case PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP:
 		/* Reset the transaction lock */
 		conn->common.txn_lock = 0U;
