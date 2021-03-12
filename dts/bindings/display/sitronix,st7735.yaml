@@ -26,7 +26,12 @@ properties:
         The D/CX pin of ST7789V is active low (transmission command byte).
         If connected directly the MCU pin should be configured
         as active low.
-      
+    blk_gpios:
+      type: phandle-array
+      required: true
+      description: D/CX pin.
+        The BLK pin of ST7789V is active high.
+        
     height:
       type: int
       required: true

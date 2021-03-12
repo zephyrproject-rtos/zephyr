@@ -210,15 +210,6 @@ void main(void)
     #endif
 
 
-
-
-
-
-
-
-
-
-
     const struct device* display_dev=device_get_binding(DISPLAY_DEV_NAME);
     st7735_LcdInit(display_dev);
     while(1)

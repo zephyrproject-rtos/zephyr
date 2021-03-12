@@ -44,15 +44,16 @@ static inline void st7735_resetpin_high(void *param)
     gpio_pin_set(data->reset_gpio,ST7735_RES_PIN,1);
 }
 
-// static inline void st7735_blk_close(const struct st7735_data *data)
-// {
-//     gpio_pin_set(data->blk_gpio,ST7735_BLK_PIN,0);
-// }
-// static inline void st7735_blk_open(const struct st7735_data *data)
-// {
-//     printk("open blk:%d\n",ST7735_BLK_PIN);
-//     gpio_pin_set(data->blk_gpio,ST7735_BLK_PIN,1);
-// }
+static inline void st7735_blk_close(void *param)
+{
+    struct st7735_data* data=(struct st7735_data*)param;
+    gpio_pin_set(data->blk_gpio,ST7735_BLK_PIN,0);
+}
+static inline void st7735_blk_open(void *param)
+{
+    struct st7735_data* data=(struct st7735_data*)param;
+    gpio_pin_set(data->blk_gpio,ST7735_BLK_PIN,1);
+}
 
 static void st7735_transmit(struct st7735_data* data,uint8_t cmd,uint8_t* tx_data,size_t tx_count)
 {
@@ -108,10 +109,6 @@ void LCD_FILL(uint8_t xstart,uint8_t ystart,uint8_t xend,uint8_t yend,uint16_t c
     uint32_t pixel=(xend-xstart+1)*(yend-ystart+1);
     uint8_t color_data[]={((color>>8)&0xff),(color&0xff)};
     setCursor(xstart,ystart,xend,yend);
-    // for(int i=0;i<sizeof(color_data);i++)
-    // {
-    //     printk("color_data:%0x\n",color_data[i]);
-    // }
     while(pixel>0)
     {
         pixel--;
@@ -137,7 +134,7 @@ void LCD_Init(void)
     uint8_t CASET_follow[]={0,0,0,0x7f};
     uint8_t RASET_follow[]={0,0,0,0x9f};
     uint8_t COLMOD_follow[]={0x05};
-    // st7735_blk_open(&st7735_data_instance);
+    st7735_blk_open(&st7735_data_instance);
     
     if((LCD_DIR==1)||(LCD_DIR==3))
     {
@@ -232,13 +229,13 @@ static int st7735_init(const struct device *dev)
     }
     gpio_pin_configure(data->cmd_data_gpio,ST7735_CMD_DATA_PIN,GPIO_OUTPUT|CMD_DATA_FLAGS);
 
-    // data->blk_gpio=device_get_binding(DT_INST_GPIO_LABEL(0, blk_gpios));
-    // if(data->blk_gpio==NULL)
-    // {
-    //     printk("data->blk_gpio is null\n");
-    //     return -EPERM;
-    // }
-    // gpio_pin_configure(data->blk_gpio,ST7735_BLK_PIN,GPIO_OUTPUT_INIT_HIGH);
+    data->blk_gpio=device_get_binding(DT_INST_GPIO_LABEL(0, blk_gpios));
+    if(data->blk_gpio==NULL)
+    {
+        printk("data->blk_gpio is null\n");
+        return -EPERM;
+    }
+    gpio_pin_configure(data->blk_gpio,ST7735_BLK_PIN,GPIO_OUTPUT|BLK_FLAGS);
 
 }
 
