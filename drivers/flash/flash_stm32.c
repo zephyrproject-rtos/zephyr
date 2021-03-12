@@ -75,6 +75,7 @@ static const struct flash_parameters flash_stm32_parameters = {
 #endif
 };
 
+static int flash_stm32_write_protection(const struct device *dev, bool enable);
 
 int __weak flash_stm32_check_configuration(void)
 {
@@ -233,9 +234,18 @@ static int flash_stm32_erase(const struct device *dev, off_t offset,
 
 	LOG_DBG("Erase offset: %ld, len: %zu", (long int) offset, len);
 
-	rc = flash_stm32_block_erase_loop(dev, offset, len);
+	rc = flash_stm32_write_protection(dev, false);
+	if (rc == 0) {
+		rc = flash_stm32_block_erase_loop(dev, offset, len);
+	}
 
 	flash_stm32_flush_caches(dev, offset, len);
+
+	int rc2 = flash_stm32_write_protection(dev, true);
+
+	if (!rc) {
+		rc = rc2;
+	}
 
 	flash_stm32_sem_give(dev);
 
@@ -261,11 +271,29 @@ static int flash_stm32_write(const struct device *dev, off_t offset,
 
 	LOG_DBG("Write offset: %ld, len: %zu", (long int) offset, len);
 
-	rc = flash_stm32_write_range(dev, offset, data, len);
+	rc = flash_stm32_write_protection(dev, false);
+	if (rc == 0) {
+		rc = flash_stm32_write_range(dev, offset, data, len);
+	}
+
+	int rc2 = flash_stm32_write_protection(dev, true);
+
+	if (!rc) {
+		rc = rc2;
+	}
 
 	flash_stm32_sem_give(dev);
 
 	return rc;
+}
+
+static int flash_stm32_write_protection_nop(const struct device *dev,
+					    bool enable)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(enable);
+
+	return 0;
 }
 
 static int flash_stm32_write_protection(const struct device *dev, bool enable)
@@ -273,8 +301,6 @@ static int flash_stm32_write_protection(const struct device *dev, bool enable)
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 
 	int rc = 0;
-
-	flash_stm32_sem_take(dev);
 
 	if (enable) {
 		rc = flash_stm32_wait_flash_idle(dev);
@@ -318,8 +344,6 @@ static int flash_stm32_write_protection(const struct device *dev, bool enable)
 		LOG_DBG("Disable write protection");
 	}
 
-	flash_stm32_sem_give(dev);
-
 	return rc;
 }
 
@@ -345,7 +369,7 @@ static struct flash_stm32_priv flash_data = {
 };
 
 static const struct flash_driver_api flash_stm32_api = {
-	.write_protection = flash_stm32_write_protection,
+	.write_protection = flash_stm32_write_protection_nop,
 	.erase = flash_stm32_erase,
 	.write = flash_stm32_write,
 	.read = flash_stm32_read,
