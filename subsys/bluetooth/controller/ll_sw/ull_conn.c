@@ -4943,9 +4943,12 @@ static inline int length_req_rsp_recv(struct ll_conn *conn, memq_link_t *link,
 
 	/* Check for free ctrl tx PDU */
 	if (pdu_rx->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_LENGTH_REQ) {
-		tx = mem_acquire(&mem_conn_tx_ctrl.free);
+		int err;
+
+		/* Check transaction violation and get free ctrl tx PDU */
+		tx = ctrl_tx_rsp_mem_acquire(conn, *rx, &err);
 		if (!tx) {
-			return -ENOBUFS;
+			return err;
 		}
 	}
 
@@ -5142,6 +5145,11 @@ static inline int length_req_rsp_recv(struct ll_conn *conn, memq_link_t *link,
 		 */
 		if (pdu_rx->llctrl.opcode != PDU_DATA_LLCTRL_TYPE_LENGTH_RSP) {
 			mem_release(tx, &mem_conn_tx_ctrl.free);
+
+			/* Release the transacation lock, as ctrl tx PDU is not
+			 * being enqueued.
+			 */
+			conn->common.txn_lock = 0U;
 
 			/* Defer new request if previous in resize state */
 			if (conn->llcp_length.state ==
@@ -5617,6 +5625,9 @@ static inline void ctrl_tx_ack(struct ll_conn *conn, struct node_tx **tx,
 		break;
 
 	case PDU_DATA_LLCTRL_TYPE_LENGTH_RSP:
+		/* Reset the transaction lock */
+		conn->common.txn_lock = 0U;
+
 		if (conn->llcp_length.req != conn->llcp_length.ack) {
 			switch (conn->llcp_length.state) {
 			case LLCP_LENGTH_STATE_RSP_ACK_WAIT:
