@@ -57,6 +57,25 @@ struct qi_descriptor {
 	uint64_t high;
 };
 
+#define QI_TYPE_ICC 0x1UL
+
+union qi_icc_descriptor {
+	struct qi_descriptor desc;
+
+	struct icc_bits {
+		uint64_t type		: 4;
+		uint64_t granularity	: 2;
+		uint64_t _reserved_0	: 3;
+		uint64_t zero		: 3;
+		uint64_t _reserved_1	: 4;
+		uint64_t domain_id	: 16;
+		uint64_t source_id	: 16;
+		uint64_t function_mask	: 2;
+		uint64_t _reserved_2	: 14;
+		uint64_t reserved;
+	} icc __packed;
+};
+
 #define QI_TYPE_IEC 0x4UL
 
 union qi_iec_descriptor {
