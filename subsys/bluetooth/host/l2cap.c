@@ -1169,10 +1169,6 @@ static void le_ecred_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	}
 
 response:
-	if (!i) {
-		i = buf->len / sizeof(scid);
-	}
-
 	buf = l2cap_create_le_sig_pdu(buf, BT_L2CAP_ECRED_CONN_RSP, ident,
 				      sizeof(*rsp) + (sizeof(scid) * i));
 
