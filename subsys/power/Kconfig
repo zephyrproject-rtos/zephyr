@@ -11,8 +11,7 @@ config SYS_POWER_MANAGEMENT
 	  This option is deprecated. Please use CONFIG_PM instead.
 
 menuconfig PM
-	bool "System Power management"
-	select TICKLESS_IDLE
+	bool "System Power Management"
 	depends on SYS_CLOCK_EXISTS && !HAS_NO_SYS_PM
 	help
 	  This option enables the board to implement extra power management
