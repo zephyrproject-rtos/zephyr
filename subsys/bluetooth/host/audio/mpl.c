@@ -726,9 +726,11 @@ static int on_obj_created(struct ots_svc_inst_t *ots, struct bt_conn *conn,
 			  const struct bt_ots_obj_metadata *metadata)
 {
 	BT_DBG_OBJ_ID("Object Id created: ", id);
-	if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) {
-		bt_ots_dump_metadata((struct bt_ots_obj_metadata *)metadata);
-	}
+#if CONFIG_BT_DEBUG_MCS
+#if CONFIG_BT_DEBUG_OTS
+	bt_ots_dump_metadata((struct bt_ots_obj_metadata *)metadata);
+#endif /* CONFIG_BT_DEBUG_OTS */
+#endif /* CONFIG_BT_DEBUG_MCS */
 
 	if (!bt_uuid_cmp(&metadata->type.uuid, BT_UUID_OTS_TYPE_MPL_ICON)) {
 		BT_DBG("Icon Obj Type");
