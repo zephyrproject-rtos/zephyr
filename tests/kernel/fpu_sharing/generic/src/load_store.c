@@ -136,10 +136,10 @@ static void load_store_low(void)
 		 * thread an opportunity to run when the low priority thread is
 		 * using the floating point registers.
 		 *
-		 * IMPORTANT: This logic requires that z_tick_get_32() not
+		 * IMPORTANT: This logic requires that sys_clock_tick_get_32() not
 		 * perform any floating point operations!
 		 */
-		while ((z_tick_get_32() % 5) != 0) {
+		while ((sys_clock_tick_get_32() % 5) != 0) {
 			/*
 			 * Use a volatile variable to prevent compiler
 			 * optimizing out the spin loop.

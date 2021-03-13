@@ -9,7 +9,7 @@
 #include <kernel.h>
 #include <cmsis_os2.h>
 
-extern uint32_t z_tick_get_32(void);
+extern uint32_t sys_clock_tick_get_32(void);
 
 /**
  * @brief Get RTOS Kernel Information.
@@ -89,7 +89,7 @@ int32_t osKernelRestoreLock(int32_t lock)
  */
 uint32_t osKernelGetTickCount(void)
 {
-	return z_tick_get_32();
+	return sys_clock_tick_get_32();
 }
 
 /**
