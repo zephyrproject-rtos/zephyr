@@ -155,9 +155,6 @@ extern void z_enable_sys_clock(void);
 
 #endif
 
-#define z_ms_to_ticks(t) \
-	((int32_t)k_ms_to_ticks_ceil32((uint32_t)(t)))
-
 /* added tick needed to account for tick in progress */
 #define _TICK_ALIGN 1
 
