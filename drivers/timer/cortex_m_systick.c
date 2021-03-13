@@ -35,7 +35,7 @@ static uint32_t last_load;
 
 /*
  * This local variable holds the amount of SysTick HW cycles elapsed
- * and it is updated in z_clock_isr() and sys_clock_set_timeout().
+ * and it is updated in sys_clock_isr() and sys_clock_set_timeout().
  *
  * Note:
  *  At an arbitrary point in time the "current" value of the SysTick
@@ -113,7 +113,7 @@ static uint32_t elapsed(void)
 }
 
 /* Callout out of platform assembly, not hooked via IRQ_CONNECT... */
-void z_clock_isr(void *arg)
+void sys_clock_isr(void *arg)
 {
 	ARG_UNUSED(arg);
 	uint32_t dticks;
