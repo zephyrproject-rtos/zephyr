@@ -16,9 +16,9 @@
 #include <init.h>
 #include <drivers/timer/system_timer.h>
 
-/* Weak-linked noop defaults for optional driver interfaces: */
+/* Weak-linked noop defaults for optional driver interfaces*/
 
-void __weak z_clock_isr(void *arg)
+void __weak sys_clock_isr(void *arg)
 {
 	__ASSERT_NO_MSG(false);
 }
