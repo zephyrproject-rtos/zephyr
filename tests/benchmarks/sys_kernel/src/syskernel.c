@@ -134,11 +134,11 @@ void main(void)
 	/* The following code is needed to make the benchmakring run on
 	 * slower platforms.
 	 */
-	uint64_t time_stamp = z_tick_get();
+	uint64_t time_stamp = sys_clock_tick_get();
 
 	k_sleep(K_MSEC(1));
 
-	uint64_t time_stamp_2 = z_tick_get();
+	uint64_t time_stamp_2 = sys_clock_tick_get();
 
 	if (time_stamp_2 - time_stamp > 1) {
 		number_of_loops = 10U;
