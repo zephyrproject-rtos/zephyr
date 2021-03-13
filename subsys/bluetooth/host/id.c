@@ -699,7 +699,8 @@ void bt_id_add(struct bt_keys *keys)
 		return;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_EXT_ADV)) {
+	if (IS_ENABLED(CONFIG_BT_BROADCASTER) &&
+	    IS_ENABLED(CONFIG_BT_EXT_ADV)) {
 		bool adv_enabled = false;
 
 		bt_le_ext_adv_foreach(adv_is_limited_enabled, &adv_enabled);
@@ -719,7 +720,9 @@ void bt_id_add(struct bt_keys *keys)
 	}
 #endif
 
-	bt_le_ext_adv_foreach(adv_pause_enabled, NULL);
+	if (IS_ENABLED(CONFIG_BT_BROADCASTER)) {
+		bt_le_ext_adv_foreach(adv_pause_enabled, NULL);
+	}
 
 #if defined(CONFIG_BT_OBSERVER)
 	if (scan_enabled) {
@@ -787,7 +790,9 @@ done:
 	}
 #endif /* CONFIG_BT_OBSERVER */
 
-	bt_le_ext_adv_foreach(adv_unpause_enabled, NULL);
+	if (IS_ENABLED(CONFIG_BT_BROADCASTER)) {
+		bt_le_ext_adv_foreach(adv_unpause_enabled, NULL);
+	}
 }
 
 static void keys_add_id(struct bt_keys *keys, void *data)
@@ -836,7 +841,8 @@ void bt_id_del(struct bt_keys *keys)
 		return;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_EXT_ADV)) {
+	if (IS_ENABLED(CONFIG_BT_BROADCASTER) &&
+	    IS_ENABLED(CONFIG_BT_EXT_ADV)) {
 		bool adv_enabled = false;
 
 		bt_le_ext_adv_foreach(adv_is_limited_enabled, &adv_enabled);
@@ -856,7 +862,9 @@ void bt_id_del(struct bt_keys *keys)
 	}
 #endif /* CONFIG_BT_OBSERVER */
 
-	bt_le_ext_adv_foreach(adv_pause_enabled, NULL);
+	if (IS_ENABLED(CONFIG_BT_BROADCASTER)) {
+		bt_le_ext_adv_foreach(adv_pause_enabled, NULL);
+	}
 
 #if defined(CONFIG_BT_OBSERVER)
 	if (scan_enabled) {
@@ -904,7 +912,9 @@ done:
 	}
 #endif /* CONFIG_BT_OBSERVER */
 
-	bt_le_ext_adv_foreach(adv_unpause_enabled, NULL);
+	if (IS_ENABLED(CONFIG_BT_BROADCASTER)) {
+		bt_le_ext_adv_foreach(adv_unpause_enabled, NULL);
+	}
 }
 #endif /* defined(CONFIG_BT_SMP) */
 
