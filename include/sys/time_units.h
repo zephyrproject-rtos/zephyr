@@ -27,9 +27,9 @@ extern "C" {
 /* Exhaustively enumerated, highly optimized time unit conversion API */
 
 #if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
-__syscall int z_clock_hw_cycles_per_sec_runtime_get(void);
+__syscall int sys_clock_hw_cycles_per_sec_runtime_get(void);
 
-static inline int z_impl_z_clock_hw_cycles_per_sec_runtime_get(void)
+static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
 {
 	extern int z_clock_hw_cycles_per_sec;
 
@@ -50,7 +50,7 @@ static inline int z_impl_z_clock_hw_cycles_per_sec_runtime_get(void)
 static TIME_CONSTEXPR inline int sys_clock_hw_cycles_per_sec(void)
 {
 #if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
-	return z_clock_hw_cycles_per_sec_runtime_get();
+	return sys_clock_hw_cycles_per_sec_runtime_get();
 #else
 	return CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
 #endif
