@@ -91,6 +91,7 @@ static inline void event_ch_map_prep(struct ll_conn *conn,
 				     uint16_t event_counter);
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
+static inline void ctrl_tx_check_and_resume(struct ll_conn *conn);
 static bool is_enc_req_pause_tx(struct ll_conn *conn);
 static inline void event_enc_prep(struct ll_conn *conn);
 #if defined(CONFIG_BT_PERIPHERAL)
@@ -1868,18 +1869,11 @@ static void tx_demux(void *param)
 
 static struct node_tx *tx_ull_dequeue(struct ll_conn *conn, struct node_tx *tx)
 {
+#if defined(CONFIG_BT_CTLR_LE_ENC)
 	if (!conn->tx_ctrl && (conn->tx_head != conn->tx_data)) {
-		struct pdu_data *pdu_data_tx;
-
-		pdu_data_tx = (void *)conn->tx_head->pdu;
-		if ((pdu_data_tx->ll_id != PDU_DATA_LLID_CTRL) ||
-		    ((pdu_data_tx->llctrl.opcode !=
-		      PDU_DATA_LLCTRL_TYPE_ENC_REQ) &&
-		     (pdu_data_tx->llctrl.opcode !=
-		      PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ))) {
-			conn->tx_ctrl = conn->tx_ctrl_last = conn->tx_head;
-		}
+		ctrl_tx_check_and_resume(conn);
 	}
+#endif /* CONFIG_BT_CTLR_LE_ENC */
 
 	if (conn->tx_head == conn->tx_ctrl) {
 		conn->tx_head = conn->tx_head->next;
@@ -1990,8 +1984,24 @@ static int empty_data_start_release(struct ll_conn *conn, struct node_tx *tx)
 }
 #endif /* CONFIG_BT_CTLR_LLID_DATA_START_EMPTY */
 
-static void ctrl_tx_last_enqueue(struct ll_conn *conn,
-				      struct node_tx *tx)
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+static inline void  ctrl_tx_check_and_resume(struct ll_conn *conn)
+{
+	struct pdu_data *pdu_data_tx;
+
+	pdu_data_tx = (void *)conn->tx_head->pdu;
+	if ((pdu_data_tx->ll_id != PDU_DATA_LLID_CTRL) ||
+	    ((pdu_data_tx->llctrl.opcode !=
+	      PDU_DATA_LLCTRL_TYPE_ENC_REQ) &&
+	     (pdu_data_tx->llctrl.opcode !=
+	      PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ))) {
+		conn->tx_ctrl = conn->tx_ctrl_last = conn->tx_head;
+	}
+}
+#endif /* CONFIG_BT_CTLR_LE_ENC */
+
+static inline void ctrl_tx_last_enqueue(struct ll_conn *conn,
+					struct node_tx *tx)
 {
 	tx->next = conn->tx_ctrl_last->next;
 	conn->tx_ctrl_last->next = tx;
@@ -2022,6 +2032,10 @@ static inline void ctrl_tx_pause_enqueue(struct ll_conn *conn,
 		 */
 		if (conn->tx_head == conn->tx_data) {
 			conn->tx_data = conn->tx_data->next;
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+		} else if (!conn->tx_ctrl) {
+			ctrl_tx_check_and_resume(conn);
+#endif /* CONFIG_BT_CTLR_LE_ENC */
 		}
 
 		/* if no ctrl packet already queued, new ctrl added will be
