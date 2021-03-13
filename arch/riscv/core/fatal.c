@@ -65,6 +65,22 @@ static char *cause_str(ulong_t cause)
 		return "Load address misaligned";
 	case 5:
 		return "Load access fault";
+	case 6:
+		return "Store/AMO address misaligned";
+	case 7:
+		return "Store/AMO access fault";
+	case 8:
+		return "Environment call from U-mode";
+	case 9:
+		return "Environment call from S-mode";
+	case 11:
+		return "Environment call from M-mode";
+	case 12:
+		return "Instruction page fault";
+	case 13:
+		return "Load page fault";
+	case 15:
+		return "Store/AMO page fault";
 	default:
 		return "unknown";
 	}
@@ -87,13 +103,15 @@ void _Fault(z_arch_esf_t *esf)
 		}
 	}
 #endif /* CONFIG_USERSPACE */
-	ulong_t mcause;
+	ulong_t mcause, mtval;
 
 	__asm__ volatile("csrr %0, mcause" : "=r" (mcause));
+	__asm__ volatile("csrr %0, mtval" : "=r" (mtval));
 
 	mcause &= SOC_MCAUSE_EXP_MASK;
 	LOG_ERR("");
 	LOG_ERR(" mcause: %ld, %s", mcause, cause_str(mcause));
+	LOG_ERR("  mtval: %lx", mtval);
 
 	z_riscv_fatal_error(K_ERR_CPU_EXCEPTION, esf);
 }
