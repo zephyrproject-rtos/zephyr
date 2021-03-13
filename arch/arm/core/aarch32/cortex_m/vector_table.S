@@ -73,10 +73,10 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
     .word z_arm_pendsv
 #if defined(CONFIG_CPU_CORTEX_M_HAS_SYSTICK)
 #if defined(CONFIG_SYS_CLOCK_EXISTS)
-    /* Install z_clock_isr even if CORTEX_M_SYSTICK is not set
+    /* Install sys_clock_isr even if CORTEX_M_SYSTICK is not set
      * (e.g. to support out-of-tree SysTick-based timer drivers).
      */
-    .word z_clock_isr
+    .word sys_clock_isr
 #else
     .word z_arm_exc_spurious
 #endif /* CONFIG_SYS_CLOCK_EXISTS */
