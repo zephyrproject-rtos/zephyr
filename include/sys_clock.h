@@ -6,7 +6,7 @@
 
 /**
  * @file
- * @brief Variables needed needed for system clock
+ * @brief Variables needed for system clock
  *
  *
  * Declare variables used by both system timer device driver and kernel
