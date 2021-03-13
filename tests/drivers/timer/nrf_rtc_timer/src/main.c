@@ -97,7 +97,7 @@ static void test_basic(void)
 	zassert_true(chan >= 0, "Failed to allocate RTC channel (%d).", chan);
 
 	k_timeout_t t0 =
-		Z_TIMEOUT_TICKS(Z_TICK_ABS(z_tick_get() + K_MSEC(1).ticks));
+		Z_TIMEOUT_TICKS(Z_TICK_ABS(sys_clock_tick_get() + K_MSEC(1).ticks));
 
 	test_timeout(chan, t0, false);
 
@@ -112,7 +112,7 @@ static void test_basic(void)
 
 	/* value in the past should expire immediately (2 ticks from now)*/
 	k_timeout_t t3 =
-		Z_TIMEOUT_TICKS(Z_TICK_ABS(z_tick_get() - K_MSEC(1).ticks));
+		Z_TIMEOUT_TICKS(Z_TICK_ABS(sys_clock_tick_get() - K_MSEC(1).ticks));
 
 	test_timeout(chan, t3, true);
 
@@ -172,21 +172,21 @@ static void test_get_ticks(void)
 		     "Unexpected result %d (expected: %d)", ticks, exp_ticks);
 
 	/* Absolute timeout 1ms in the past */
-	t = Z_TIMEOUT_TICKS(Z_TICK_ABS(z_tick_get() - K_MSEC(1).ticks));
+	t = Z_TIMEOUT_TICKS(Z_TICK_ABS(sys_clock_tick_get() - K_MSEC(1).ticks));
 	exp_ticks = z_nrf_rtc_timer_read() - K_MSEC(1).ticks;
 	ticks = z_nrf_rtc_timer_get_ticks(t);
 	zassert_true((ticks >= exp_ticks - 1) && (ticks <= exp_ticks),
 		     "Unexpected result %d (expected: %d)", ticks, exp_ticks);
 
 	/* Absolute timeout 10ms in the future */
-	t = Z_TIMEOUT_TICKS(Z_TICK_ABS(z_tick_get() + K_MSEC(10).ticks));
+	t = Z_TIMEOUT_TICKS(Z_TICK_ABS(sys_clock_tick_get() + K_MSEC(10).ticks));
 	exp_ticks = z_nrf_rtc_timer_read() + K_MSEC(10).ticks;
 	ticks = z_nrf_rtc_timer_get_ticks(t);
 	zassert_true((ticks >= exp_ticks - 1) && (ticks <= exp_ticks),
 		     "Unexpected result %d (expected: %d)", ticks, exp_ticks);
 
 	/* too far in the future */
-	t = Z_TIMEOUT_TICKS(z_tick_get() + 0x00800001);
+	t = Z_TIMEOUT_TICKS(sys_clock_tick_get() + 0x00800001);
 	ticks = z_nrf_rtc_timer_get_ticks(t);
 	zassert_equal(ticks, -EINVAL, "Unexpected ticks: %d", ticks);
 }
@@ -194,7 +194,7 @@ static void test_get_ticks(void)
 
 static void sched_handler(uint32_t id, uint32_t cc_val, void *user_data)
 {
-	int64_t now = z_tick_get();
+	int64_t now = sys_clock_tick_get();
 	int rtc_ticks_now =
 	     z_nrf_rtc_timer_get_ticks(Z_TIMEOUT_TICKS(Z_TICK_ABS(now)));
 	uint64_t *evt_uptime_us = user_data;
@@ -205,7 +205,7 @@ static void sched_handler(uint32_t id, uint32_t cc_val, void *user_data)
 static void test_absolute_scheduling(void)
 {
 	k_timeout_t t;
-	int64_t now_us = k_ticks_to_us_floor64(z_tick_get());
+	int64_t now_us = k_ticks_to_us_floor64(sys_clock_tick_get());
 	uint64_t target_us = now_us + 5678;
 	uint64_t evt_uptime_us;
 	int rtc_ticks;
@@ -228,7 +228,7 @@ static void test_absolute_scheduling(void)
 		(uint32_t)now_us, (uint32_t)target_us, (uint32_t)evt_uptime_us);
 
 	/* schedule event now. */
-	now_us = k_ticks_to_us_floor64(z_tick_get());
+	now_us = k_ticks_to_us_floor64(sys_clock_tick_get());
 	t = Z_TIMEOUT_TICKS(Z_TICK_ABS(K_USEC(now_us).ticks));
 	rtc_ticks = z_nrf_rtc_timer_get_ticks(t);
 

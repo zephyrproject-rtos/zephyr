@@ -184,10 +184,10 @@ uint32_t sys_clock_tick_get_32(void);
  * @return the current system tick count
  *
  */
-int64_t z_tick_get(void);
+int64_t sys_clock_tick_get(void);
 
 #ifndef CONFIG_SYS_CLOCK_EXISTS
-#define z_tick_get() (0)
+#define sys_clock_tick_get() (0)
 #define sys_clock_tick_get_32() (0)
 #endif
 

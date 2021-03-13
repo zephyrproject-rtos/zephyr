@@ -265,7 +265,7 @@ void sys_clock_announce(int32_t ticks)
 	k_spin_unlock(&timeout_lock, key);
 }
 
-int64_t z_tick_get(void)
+int64_t sys_clock_tick_get(void)
 {
 	uint64_t t = 0U;
 
@@ -278,7 +278,7 @@ int64_t z_tick_get(void)
 uint32_t sys_clock_tick_get_32(void)
 {
 #ifdef CONFIG_TICKLESS_KERNEL
-	return (uint32_t)z_tick_get();
+	return (uint32_t)sys_clock_tick_get();
 #else
 	return (uint32_t)curr_tick;
 #endif
@@ -286,7 +286,7 @@ uint32_t sys_clock_tick_get_32(void)
 
 int64_t z_impl_k_uptime_ticks(void)
 {
-	return z_tick_get();
+	return sys_clock_tick_get();
 }
 
 #ifdef CONFIG_USERSPACE
@@ -309,7 +309,7 @@ uint64_t z_timeout_end_calc(k_timeout_t timeout)
 	if (K_TIMEOUT_EQ(timeout, K_FOREVER)) {
 		return UINT64_MAX;
 	} else if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
-		return z_tick_get();
+		return sys_clock_tick_get();
 	}
 
 	dt = timeout.ticks;
@@ -317,5 +317,5 @@ uint64_t z_timeout_end_calc(k_timeout_t timeout)
 	if (IS_ENABLED(CONFIG_TIMEOUT_64BIT) && Z_TICK_ABS(dt) >= 0) {
 		return Z_TICK_ABS(dt);
 	}
-	return z_tick_get() + MAX(1, dt);
+	return sys_clock_tick_get() + MAX(1, dt);
 }

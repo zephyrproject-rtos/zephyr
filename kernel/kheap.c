@@ -38,7 +38,7 @@ void *k_heap_aligned_alloc(struct k_heap *h, size_t align, size_t bytes,
 	while (ret == NULL) {
 		ret = sys_heap_aligned_alloc(&h->heap, align, bytes);
 
-		now = z_tick_get();
+		now = sys_clock_tick_get();
 		if ((ret != NULL) || ((end - now) <= 0)) {
 			break;
 		}

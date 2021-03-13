@@ -129,7 +129,7 @@ int z_nrf_rtc_timer_get_ticks(k_timeout_t t)
 
 	do {
 		curr_count = counter();
-		curr_tick = z_tick_get();
+		curr_tick = sys_clock_tick_get();
 	} while (curr_count != counter());
 
 	abs_ticks = Z_TICK_ABS(t.ticks);
