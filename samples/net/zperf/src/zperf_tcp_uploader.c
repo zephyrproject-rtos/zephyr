@@ -27,7 +27,7 @@ void zperf_tcp_upload(const struct shell *shell,
 		      unsigned int packet_size,
 		      struct zperf_results *results)
 {
-	int64_t duration = z_timeout_end_calc(K_MSEC(duration_in_ms));
+	int64_t duration = sys_clock_timeout_end_calc(K_MSEC(duration_in_ms));
 	int64_t start_time, last_print_time, end_time, remaining;
 	uint32_t nb_packets = 0U, nb_errors = 0U;
 	uint32_t alloc_errors = 0U;

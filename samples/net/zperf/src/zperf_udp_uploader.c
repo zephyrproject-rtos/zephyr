@@ -167,8 +167,8 @@ void zperf_udp_upload(const struct shell *shell,
 {
 	uint32_t packet_duration = ((uint32_t)packet_size * 8U * USEC_PER_SEC) /
 				   (rate_in_kbps * 1024U);
-	uint64_t duration = z_timeout_end_calc(K_MSEC(duration_in_ms));
-	int64_t print_interval = z_timeout_end_calc(K_SECONDS(1));
+	uint64_t duration = sys_clock_timeout_end_calc(K_MSEC(duration_in_ms));
+	int64_t print_interval = sys_clock_timeout_end_calc(K_SECONDS(1));
 	uint64_t delay = packet_duration;
 	uint32_t nb_packets = 0U;
 	int64_t start_time, end_time;
@@ -275,7 +275,7 @@ void zperf_udp_upload(const struct shell *shell,
 				    "nb_packets=%u\tdelay=%u\tadjust=%d\n",
 				      nb_packets, (unsigned int)delay,
 				      (int)adjust);
-			print_interval = z_timeout_end_calc(K_SECONDS(1));
+			print_interval = sys_clock_timeout_end_calc(K_SECONDS(1));
 		}
 
 		remaining = duration - k_uptime_ticks();
