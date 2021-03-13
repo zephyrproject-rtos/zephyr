@@ -1233,7 +1233,7 @@ static int32_t z_tick_sleep(k_ticks_t ticks)
 
 	k_timeout_t timeout = Z_TIMEOUT_TICKS(ticks);
 
-	expected_wakeup_ticks = ticks + z_tick_get_32();
+	expected_wakeup_ticks = ticks + sys_clock_tick_get_32();
 
 	k_spinlock_key_t key = k_spin_lock(&sched_spinlock);
 
@@ -1248,7 +1248,7 @@ static int32_t z_tick_sleep(k_ticks_t ticks)
 
 	__ASSERT(!z_is_thread_state_set(_current, _THREAD_SUSPENDED), "");
 
-	ticks = (k_ticks_t)expected_wakeup_ticks - z_tick_get_32();
+	ticks = (k_ticks_t)expected_wakeup_ticks - sys_clock_tick_get_32();
 	if (ticks > 0) {
 		return ticks;
 	}

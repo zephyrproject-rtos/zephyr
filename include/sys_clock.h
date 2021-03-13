@@ -175,7 +175,7 @@ extern void z_enable_sys_clock(void);
  * @return the current system tick count
  *
  */
-uint32_t z_tick_get_32(void);
+uint32_t sys_clock_tick_get_32(void);
 
 /**
  *
@@ -188,7 +188,7 @@ int64_t z_tick_get(void);
 
 #ifndef CONFIG_SYS_CLOCK_EXISTS
 #define z_tick_get() (0)
-#define z_tick_get_32() (0)
+#define sys_clock_tick_get_32() (0)
 #endif
 
 uint64_t z_timeout_end_calc(k_timeout_t timeout);
