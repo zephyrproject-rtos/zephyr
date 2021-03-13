@@ -275,7 +275,7 @@ int64_t z_tick_get(void)
 	return t;
 }
 
-uint32_t z_tick_get_32(void)
+uint32_t sys_clock_tick_get_32(void)
 {
 #ifdef CONFIG_TICKLESS_KERNEL
 	return (uint32_t)z_tick_get();
