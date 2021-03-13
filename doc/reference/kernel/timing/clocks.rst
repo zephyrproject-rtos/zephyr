@@ -313,7 +313,7 @@ code.  For example, consider this design:
 
 This code requires that the timeout value be inspected, which is no
 longer possible.  For situations like this, the new API provides an
-internal :c:func:`z_timeout_end_calc` routine that converts an
+internal :c:func:`sys_clock_timeout_end_calc` routine that converts an
 arbitrary timeout to the uptime value in ticks at which it will
 expire.  So such a loop might look like:
 
@@ -323,7 +323,7 @@ expire.  So such a loop might look like:
     void my_wait_for_event(struct my_subsys *obj, k_timeout_t timeout_in_ms)
     {
         /* Compute the end time from the timeout */
-        uint64_t end = z_timeout_end_calc(timeout_in_ms);
+        uint64_t end = sys_clock_timeout_end_calc(timeout_in_ms);
 
         while (end > k_uptime_ticks()) {
             if (is_event_complete(obj)) {
@@ -335,7 +335,7 @@ expire.  So such a loop might look like:
         }
     }
 
-Note that :c:func:`z_timeout_end_calc` returns values in units of
+Note that :c:func:`sys_clock_timeout_end_calc` returns values in units of
 ticks, to prevent conversion aliasing, is always presented at 64 bit
 uptime precision to prevent rollover bugs, handles special
 :c:macro:`K_FOREVER` naturally (as ``UINT64_MAX``), and works
@@ -344,7 +344,7 @@ identically for absolute timeouts as well as conventional ones.
 But some care is still required for subsystems that use it.  Note that
 delta timeouts need to be interpreted relative to a "current time",
 and obviously that time is the time of the call to
-:c:func:`z_timeout_end_calc`.  But the user expects that the time is
+:c:func:`sys_clock_timeout_end_calc`.  But the user expects that the time is
 the time they passed the timeout to you.  Care must be taken to call
 this function just once, as synchronously as possible to the timeout
 creation in user code.  It should not be used on a "stored" timeout

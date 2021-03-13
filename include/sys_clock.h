@@ -191,7 +191,7 @@ int64_t sys_clock_tick_get(void);
 #define sys_clock_tick_get_32() (0)
 #endif
 
-uint64_t z_timeout_end_calc(k_timeout_t timeout);
+uint64_t sys_clock_timeout_end_calc(k_timeout_t timeout);
 
 #ifdef __cplusplus
 }
