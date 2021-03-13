@@ -54,6 +54,10 @@ class DediProgBinaryRunner(ZephyrBinaryRunner):
             cmd_flash.append('--vcc')
             cmd_flash.append(self.vcc)
 
+        # Allow to flash images smaller than flash device capacity
+        cmd_flash.append('-x')
+        cmd_flash.append('ff')
+
         cmd_flash.append('--silent')
         cmd_flash.append('--verify')
 
