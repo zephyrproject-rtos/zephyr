@@ -4,6 +4,7 @@
 #define DT_DRV_COMPAT sitronix_st7735
 #include "display_st7735.h"
 #include "drivers/lcd_display.h"
+#include "font.h"
 
 #define ST7735_CMD_DATA_PIN     DT_INST_GPIO_PIN(0, cmd_data_gpios)
 #define ST7735_RES_PIN          DT_INST_GPIO_PIN(0, reset_gpios)
@@ -24,13 +25,11 @@ static struct st7735_data st7735_data_instance={
 void st7735_set_cmd(void *param)
 {
     struct st7735_data* data=(struct st7735_data*)param;
-    // printk("%d==set:0\n",ST7735_CMD_DATA_PIN);
     gpio_pin_set(data->cmd_data_gpio, ST7735_CMD_DATA_PIN, 0);
 }
 void st7735_set_data(void *param)
 {
     struct st7735_data* data=(struct st7735_data*)param;
-    // printk("%d==set:1\n",ST7735_CMD_DATA_PIN);
     gpio_pin_set(data->cmd_data_gpio, ST7735_CMD_DATA_PIN, 1);
 }
 static inline void st7735_resetpin_low(void *param)
@@ -116,6 +115,83 @@ void LCD_FILL(uint8_t xstart,uint8_t ystart,uint8_t xend,uint8_t yend,uint16_t c
     }
 }
 
+
+
+void drawPoint(uint16_t x, uint16_t y, uint16_t color)
+{
+    uint8_t color_data[]={((color>>8)&0xff),(color&0xff)};
+    setCursor(x, y, x, y);      //设置光标位置 
+    write_data(&st7735_data_instance,color_data,sizeof(color_data));    
+}
+
+void drawAscii(uint16_t x,uint16_t y,uint8_t num,uint8_t size,uint32_t fColor, uint32_t bColor)
+{  			
+    uint8_t temp;
+	uint16_t y0=y;
+    
+	uint8_t csize=(size/8+((size%8)?1:0))*(size/2);		   // 得到字体一个字符对应点阵集所占的字节数	
+ 	num=num-' ';                                       // 得到偏移后的值（ASCII字库是从空格开始取模，所以-' '就是对应字符的字库）
+	for(uint8_t t=0;t<csize;t++)
+	{   
+		if(size==12)         temp=asc2_1206[num][t];   // 调用1206字体
+		else if(size==16)    temp=asc2_1608[num][t];   // 调用1608字体
+		else if(size==24)    temp=asc2_2412[num][t];   // 调用2412字体
+		else if(size==32)    temp=asc2_3216[num][t];   // 调用3216字体
+		else return;								   // 没有的字库
+		
+		for(uint8_t t1=0; t1<8; t1++)
+		{			    
+            if(temp&0x80)   drawPoint (x, y, fColor);  // 字体 画点 
+            else            drawPoint (x, y, bColor);  // 背景 画点
+            temp<<=1;
+			y++;
+			if(y>=st7735_data_instance.height)    return;		       // 超出屏幕高度(底)
+			if((y-y0)==size)
+			{
+				y=y0;
+				x++;
+				if(x>=st7735_data_instance.width) return;              // 超出屏幕宽度(宽)
+				break;
+			}
+		}  	 
+	}  	    	 	  
+} 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void LCD_Init(void)
 {
     uint8_t B1_follow[]={0x05,0x3C,0x3C};
@@ -181,15 +257,8 @@ void LCD_Init(void)
 
     st7735_transmit(&st7735_data_instance,ST7735_CMD_DISP_ON,NULL,0);
     
-
-
-    LCD_FILL(1,1,st7735_data_instance.width,st7735_data_instance.height,BLUE);
-
-
-
+    LCD_FILL(1,1,st7735_data_instance.width,st7735_data_instance.height,GREEN);
 }
-
-
 
 
 static int st7735_init(const struct device *dev)
@@ -239,10 +308,19 @@ static int st7735_init(const struct device *dev)
 
 }
 
+
+
+void lcd_clear(uint32_t color)
+{
+    LCD_FILL(1,1,st7735_data_instance.width,st7735_data_instance.height,color);
+}
+
+
 static const struct lcd_display_driver_api  st7735_api={
     .st7735_lcd_init=LCD_Init,
-    // .high=st7735_blk_close,
-    // .low=st7735_blk_open,
+    .writeAscii=drawAscii,
+    .showclear=lcd_clear,
+    .lcd_fill_area=LCD_FILL,
 };
 
 DEVICE_DT_INST_DEFINE(0, &st7735_init,

@@ -1,0 +1,15 @@
+
+
+menuconfig BUTTON
+	bool "key input Drivers"
+	help
+	  Enable display drivers
+
+if BUTTON
+
+module = BUTTON
+module-str = button_input
+
+source "drivers/stm32mini_dev_button/Kconfig.stm32mini_dev_button"
+
+endif

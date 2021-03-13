@@ -54,3 +54,6 @@ add_subdirectory_ifdef(CONFIG_SYS_CLOCK_EXISTS timer)
 add_subdirectory_ifdef(CONFIG_NEURAL_NET_ACCEL neural_net)
 add_subdirectory_ifdef(CONFIG_PTP_CLOCK        ptp_clock)
 add_subdirectory_ifdef(CONFIG_EDAC             edac)
+
+
+add_subdirectory_ifdef(CONFIG_BUTTON  stm32mini_dev_button)

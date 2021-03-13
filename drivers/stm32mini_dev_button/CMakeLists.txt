@@ -1,0 +1,1 @@
+zephyr_sources_ifdef(CONFIG_BUTTON_INPUT dev_button.c)

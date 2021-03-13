@@ -1,0 +1,11 @@
+
+# Copyright (c) 2019 Marc Reilly <marc@cpdesign.com.au>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BUTTON_INPUT
+	bool "stm32mini_dev input driver"
+    default y
+	help
+	  Enable driver for stm32mini_dev input driver.
+
+
