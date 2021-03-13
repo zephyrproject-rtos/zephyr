@@ -592,7 +592,7 @@ ssize_t zsock_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 		timeout = K_NO_WAIT;
 	} else {
 		net_context_get_option(ctx, NET_OPT_SNDTIMEO, &timeout, NULL);
-		buf_timeout = z_timeout_end_calc(MAX_WAIT_BUFS);
+		buf_timeout = sys_clock_timeout_end_calc(MAX_WAIT_BUFS);
 	}
 
 	/* Register the callback before sending in order to receive the response
@@ -1065,7 +1065,7 @@ static inline ssize_t zsock_recv_stream(struct net_context *ctx,
 		net_context_get_option(ctx, NET_OPT_RCVTIMEO, &timeout, NULL);
 	}
 
-	end = z_timeout_end_calc(timeout);
+	end = sys_clock_timeout_end_calc(timeout);
 
 	do {
 		struct net_pkt *pkt;
@@ -1325,7 +1325,7 @@ int z_impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int poll_timeout)
 		timeout = K_MSEC(poll_timeout);
 	}
 
-	end = z_timeout_end_calc(timeout);
+	end = sys_clock_timeout_end_calc(timeout);
 
 	pev = poll_events;
 	for (pfd = fds, i = nfds; i--; pfd++) {

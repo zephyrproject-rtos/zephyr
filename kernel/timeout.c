@@ -302,7 +302,7 @@ static inline int64_t z_vrfy_k_uptime_ticks(void)
  * synchronously with the user passing a new timeout value.  It should
  * not be used iteratively to adjust a timeout.
  */
-uint64_t z_timeout_end_calc(k_timeout_t timeout)
+uint64_t sys_clock_timeout_end_calc(k_timeout_t timeout)
 {
 	k_ticks_t dt;
 
