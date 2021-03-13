@@ -28,11 +28,11 @@ static int announce_remaining;
 int z_clock_hw_cycles_per_sec = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
 
 #ifdef CONFIG_USERSPACE
-static inline int z_vrfy_z_clock_hw_cycles_per_sec_runtime_get(void)
+static inline int z_vrfy_sys_clock_hw_cycles_per_sec_runtime_get(void)
 {
-	return z_impl_z_clock_hw_cycles_per_sec_runtime_get();
+	return z_impl_sys_clock_hw_cycles_per_sec_runtime_get();
 }
-#include <syscalls/z_clock_hw_cycles_per_sec_runtime_get_mrsh.c>
+#include <syscalls/sys_clock_hw_cycles_per_sec_runtime_get_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 #endif /* CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME */
 
