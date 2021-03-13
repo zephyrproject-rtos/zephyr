@@ -625,7 +625,7 @@ ssize_t zsock_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 				 * it means that the sending window is blocked
 				 * and we just cannot send anything.
 				 */
-				int64_t remaining = buf_timeout - z_tick_get();
+				int64_t remaining = buf_timeout - sys_clock_tick_get();
 
 				if (remaining <= 0) {
 					if (status == -ENOBUFS) {
@@ -1141,7 +1141,7 @@ static inline ssize_t zsock_recv_stream(struct net_context *ctx,
 		/* Update the timeout value in case loop is repeated. */
 		if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT) &&
 		    !K_TIMEOUT_EQ(timeout, K_FOREVER)) {
-			int64_t remaining = end - z_tick_get();
+			int64_t remaining = end - sys_clock_tick_get();
 
 			if (remaining <= 0) {
 				timeout = K_NO_WAIT;
@@ -1384,7 +1384,7 @@ int z_impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int poll_timeout)
 
 	if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT) &&
 	    !K_TIMEOUT_EQ(timeout, K_FOREVER)) {
-		int64_t remaining = end - z_tick_get();
+		int64_t remaining = end - sys_clock_tick_get();
 
 		if (remaining <= 0) {
 			timeout = K_NO_WAIT;
@@ -1449,7 +1449,7 @@ int z_impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int poll_timeout)
 			}
 
 			if (!K_TIMEOUT_EQ(timeout, K_FOREVER)) {
-				int64_t remaining = end - z_tick_get();
+				int64_t remaining = end - sys_clock_tick_get();
 
 				if (remaining <= 0) {
 					break;
