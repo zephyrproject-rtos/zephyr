@@ -10082,6 +10082,20 @@ static bool is_enc_req_pause_tx(struct connection *conn)
 	/* Head contains a permitted data or control packet. */
 	return false;
 }
+
+static inline void  ctrl_tx_check_and_resume(struct connection *conn)
+{
+	struct pdu_data *pdu_data_tx;
+
+	pdu_data_tx = (void *)conn->pkt_tx_head->pdu_data;
+	if ((pdu_data_tx->ll_id != PDU_DATA_LLID_CTRL) ||
+	    ((pdu_data_tx->llctrl.opcode !=
+	      PDU_DATA_LLCTRL_TYPE_ENC_REQ) &&
+	     (pdu_data_tx->llctrl.opcode !=
+	      PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ))) {
+		conn->pkt_tx_ctrl = conn->pkt_tx_ctrl_last = conn->pkt_tx_head;
+	}
+}
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
 static void prepare_pdu_data_tx(struct connection *conn,
@@ -10194,20 +10208,12 @@ static void prepare_pdu_data_tx(struct connection *conn,
 			_pdu_data_tx->md = 1U;
 		}
 
+#if defined(CONFIG_BT_CTLR_LE_ENC)
 		if (!conn->pkt_tx_ctrl &&
 		    (conn->pkt_tx_head != conn->pkt_tx_data)) {
-			struct pdu_data *pdu_data_tx;
-
-			pdu_data_tx = (void *)conn->pkt_tx_head->pdu_data;
-			if ((pdu_data_tx->ll_id != PDU_DATA_LLID_CTRL) ||
-			    ((pdu_data_tx->llctrl.opcode !=
-			      PDU_DATA_LLCTRL_TYPE_ENC_REQ) &&
-			     (pdu_data_tx->llctrl.opcode !=
-			      PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ))) {
-				conn->pkt_tx_ctrl = conn->pkt_tx_ctrl_last =
-					conn->pkt_tx_head;
-			}
+			ctrl_tx_check_and_resume(conn);
 		}
+#endif /* CONFIG_BT_CTLR_LE_ENC */
 	}
 
 	_pdu_data_tx->rfu = 0U;
@@ -10249,6 +10255,10 @@ static inline void ctrl_tx_pause_enqueue(struct connection *conn,
 		 */
 		if (conn->pkt_tx_head == conn->pkt_tx_data) {
 			conn->pkt_tx_data = conn->pkt_tx_data->next;
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+		} else if (!conn->pkt_tx_ctrl) {
+			ctrl_tx_check_and_resume(conn);
+#endif /* CONFIG_BT_CTLR_LE_ENC */
 		}
 
 		/* if no ctrl packet already queued, new ctrl added will be
