@@ -76,17 +76,6 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 */
 	stack_init->mstatus = MSTATUS_DEF_RESTORE;
 
-#if defined(CONFIG_PMP_STACK_GUARD) || defined(CONFIG_USERSPACE)
-	z_riscv_pmp_init_thread(thread);
-#endif /* CONFIG_PMP_STACK_GUARD || CONFIG_USERSPACE */
-
-#if defined(CONFIG_PMP_STACK_GUARD)
-	if ((thread->base.user_options & K_USER) == 0) {
-		/* Enable pmp for machine mode if thread isn't a user*/
-		stack_init->mstatus |= MSTATUS_MPRV;
-	}
-#endif /* CONFIG_PMP_STACK_GUARD */
-
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	/* Shared FP mode: enable FPU of threads with K_FP_REGS. */
 	if ((thread->base.user_options & K_FP_REGS) != 0) {
@@ -98,25 +87,39 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	stack_init->mstatus |= MSTATUS_FS_INIT;
 #endif
 
-	stack_init->mepc = (ulong_t)z_thread_entry_wrapper;
+#if defined(CONFIG_PMP_STACK_GUARD) || defined(CONFIG_USERSPACE)
+	/* Clear PMP context if RISC-V PMP is used. */
+	z_riscv_pmp_init_thread(thread);
+#endif /* CONFIG_PMP_STACK_GUARD || CONFIG_USERSPACE */
 
 #if defined(CONFIG_USERSPACE)
+	/* Clear user thread context */
 	thread->arch.priv_stack_start = 0;
 	thread->arch.user_sp = 0;
-	if ((thread->base.user_options & K_USER) != 0) {
+#endif /* CONFIG_USERSPACE */
+
+	/* Assign thread entry point and mstatus.MPRV mode. */
+	if (IS_ENABLED(CONFIG_USERSPACE)
+	    && (thread->base.user_options & K_USER)) {
+		/* User thread */
 		stack_init->mepc = (ulong_t)k_thread_user_mode_enter;
+
 	} else {
+		/* Supervisor thread */
 		stack_init->mepc = (ulong_t)z_thread_entry_wrapper;
+
 #if defined(CONFIG_PMP_STACK_GUARD)
-		z_riscv_init_stack_guard(thread);
+		/* Enable PMP in mstatus.MPRV mode for RISC-V machine mode
+		 * if thread is supervisor thread.
+		 */
+		stack_init->mstatus |= MSTATUS_MPRV;
 #endif /* CONFIG_PMP_STACK_GUARD */
 	}
-#else
-	stack_init->mepc = (ulong_t)z_thread_entry_wrapper;
+
 #if defined(CONFIG_PMP_STACK_GUARD)
+	/* Setup PMP regions of PMP stack guard of thread. */
 	z_riscv_init_stack_guard(thread);
 #endif /* CONFIG_PMP_STACK_GUARD */
-#endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
 	stack_init->soc_context = soc_esf_init;
