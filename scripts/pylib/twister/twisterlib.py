@@ -2061,6 +2061,10 @@ class CMake():
 
         logger.debug("Calling cmake with arguments: {}".format(cmake_args))
         cmake = shutil.which('cmake')
+        if not cmake:
+            msg = "Unable to find `cmake` in path"
+            logger.error(msg)
+            raise Exception(msg)
         cmd = [cmake] + cmake_args
 
         kwargs = dict()
