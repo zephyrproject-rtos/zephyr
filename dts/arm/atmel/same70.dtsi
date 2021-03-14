@@ -355,6 +355,50 @@
 				     &pd8a_gmac_gmdc &pd9a_gmac_gmdio>;
 		};
 
+		tc0: tc@4000C000 {
+			compatible = "atmel,sam-tc";
+			reg = <0x4000C000 0x100>;
+			interrupts = <23 0
+				      24 0
+				      25 0>;
+			peripheral-id = <23 24 25>;
+			status = "disabled";
+			label = "TC0";
+		};
+
+		tc1: tc@40010000 {
+			compatible = "atmel,sam-tc";
+			reg = <0x40010000 0x100>;
+			interrupts = <26 0
+				      27 0
+				      28 0>;
+			peripheral-id = <26 27 28>;
+			status = "disabled";
+			label = "TC1";
+		};
+
+		tc2: tc@40014000 {
+			compatible = "atmel,sam-tc";
+			reg = <0x40014000 0x100>;
+			interrupts = <47 0
+				      48 0
+				      49 0>;
+			peripheral-id = <47 48 49>;
+			status = "disabled";
+			label = "TC2";
+		};
+
+		tc3: tc@40054000 {
+			compatible = "atmel,sam-tc";
+			reg = <0x40054000 0x100>;
+			interrupts = <50 0
+				      51 0
+				      52 0>;
+			peripheral-id = <50 51 52>;
+			status = "disabled";
+			label = "TC3";
+		};
+
 		trng: random@40070000 {
 			compatible = "atmel,sam-trng";
 			reg = <0x40070000 0x4000>;
