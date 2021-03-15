@@ -626,6 +626,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	/* Calculate the aux offset from start of the scan window */
 	aux_offset_us += ftr->radio_end_us;
 	aux_offset_us -= PDU_AC_US(pdu->len, phy, ftr->phy_flags);
+	aux_offset_us -= EVENT_TICKER_RES_MARGIN_US;
 	aux_offset_us -= EVENT_JITTER_US;
 	aux_offset_us -= ready_delay_us;
 	aux_offset_us -= window_widening_us;
