@@ -128,7 +128,7 @@ static int lis2mdl_channel_get(const struct device *dev,
 		lis2mdl_channel_get_temp(dev, val);
 		break;
 	default:
-		LOG_DBG("Channel not supported");
+		LOG_ERR("Channel not supported");
 		return -ENOTSUP;
 	}
 
@@ -147,7 +147,7 @@ static int lis2mdl_config(const struct device *dev, enum sensor_channel chan,
 	case SENSOR_ATTR_OFFSET:
 		return lis2mdl_set_hard_iron(dev, chan, val);
 	default:
-		LOG_DBG("Mag attribute not supported");
+		LOG_ERR("Mag attribute not supported");
 		return -ENOTSUP;
 	}
 
@@ -167,7 +167,7 @@ static int lis2mdl_attr_set(const struct device *dev,
 	case SENSOR_CHAN_MAGN_XYZ:
 		return lis2mdl_config(dev, chan, attr, val);
 	default:
-		LOG_DBG("attr_set() not supported on %d channel", chan);
+		LOG_ERR("attr_set() not supported on %d channel", chan);
 		return -ENOTSUP;
 	}
 
@@ -181,7 +181,7 @@ static int lis2mdl_sample_fetch_mag(const struct device *dev)
 
 	/* fetch raw data sample */
 	if (lis2mdl_magnetic_raw_get(lis2mdl->ctx, raw_mag) < 0) {
-		LOG_DBG("Failed to read sample");
+		LOG_ERR("Failed to read sample");
 		return -EIO;
 	}
 
@@ -200,7 +200,7 @@ static int lis2mdl_sample_fetch_temp(const struct device *dev)
 
 	/* fetch raw temperature sample */
 	if (lis2mdl_temperature_raw_get(lis2mdl->ctx, &raw_temp) < 0) {
-		LOG_DBG("Failed to read sample");
+		LOG_ERR("Failed to read sample");
 		return -EIO;
 	}
 
@@ -251,7 +251,7 @@ static int lis2mdl_init_interface(const struct device *dev)
 
 	lis2mdl->bus = device_get_binding(config->master_dev_name);
 	if (!lis2mdl->bus) {
-		LOG_DBG("Could not get pointer to %s device",
+		LOG_ERR("Could not get pointer to %s device",
 			    config->master_dev_name);
 		return -EINVAL;
 	}
@@ -307,13 +307,13 @@ static int lis2mdl_init(const struct device *dev)
 	}
 
 	if (wai != LIS2MDL_ID) {
-		LOG_DBG("Invalid chip ID: %02x\n", wai);
+		LOG_ERR("Invalid chip ID: %02x", wai);
 		return -EINVAL;
 	}
 
 	/* reset sensor configuration */
 	if (lis2mdl_reset_set(lis2mdl->ctx, PROPERTY_ENABLE) < 0) {
-		LOG_DBG("s/w reset failed\n");
+		LOG_ERR("s/w reset failed");
 		return -EIO;
 	}
 
@@ -328,32 +328,32 @@ static int lis2mdl_init(const struct device *dev)
 
 	/* enable BDU */
 	if (lis2mdl_block_data_update_set(lis2mdl->ctx, PROPERTY_ENABLE) < 0) {
-		LOG_DBG("setting bdu failed\n");
+		LOG_ERR("setting bdu failed");
 		return -EIO;
 	}
 
 	/* Set Output Data Rate */
 	if (lis2mdl_data_rate_set(lis2mdl->ctx, LIS2MDL_ODR_10Hz)) {
-		LOG_DBG("set odr failed\n");
+		LOG_ERR("set odr failed");
 		return -EIO;
 	}
 
 	/* Set / Reset sensor mode */
 	if (lis2mdl_set_rst_mode_set(lis2mdl->ctx,
 				     LIS2MDL_SENS_OFF_CANC_EVERY_ODR)) {
-		LOG_DBG("reset sensor mode failed\n");
+		LOG_ERR("reset sensor mode failed");
 		return -EIO;
 	}
 
 	/* Enable temperature compensation */
 	if (lis2mdl_offset_temp_comp_set(lis2mdl->ctx, PROPERTY_ENABLE)) {
-		LOG_DBG("enable temp compensation failed\n");
+		LOG_ERR("enable temp compensation failed");
 		return -EIO;
 	}
 
 	/* Set device in continuous mode */
 	if (lis2mdl_operating_mode_set(lis2mdl->ctx, LIS2MDL_CONTINUOUS_MODE)) {
-		LOG_DBG("set continuos mode failed\n");
+		LOG_ERR("set continuos mode failed");
 		return -EIO;
 	}
 
@@ -363,7 +363,7 @@ static int lis2mdl_init(const struct device *dev)
 
 #ifdef CONFIG_LIS2MDL_TRIGGER
 	if (lis2mdl_init_interrupt(dev) < 0) {
-		LOG_DBG("Failed to initialize interrupts");
+		LOG_ERR("Failed to initialize interrupts");
 		return -EIO;
 	}
 #endif
