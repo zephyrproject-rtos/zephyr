@@ -198,7 +198,7 @@ config BT_CTLR_ADV_PDU_LINK
 
 config BT_CTLR_ADV_PDU_BACK2BACK
 	bool "Back-to-back transmission of extended advertising trains"
-	depends on BT_CTLR_ADV_EXT && BT_BROADCASTER
+	depends on BT_BROADCASTER && BT_CTLR_ADV_EXT
 	select BT_CTLR_ADV_PDU_LINK
 	help
 	  Enables transmission of AUX_CHAIN_IND in extended advertising train by
@@ -703,6 +703,14 @@ config BT_TICKER_LOW_LAT
 	  ticker node timeouts and thereby prevents ticker interrupts during
 	  radio RX/TX. Enabling this option disables the ticker priority- and
 	  'must expire' features.
+
+config BT_TICKER_REMAINDER_GET
+	bool "Ticker Next Slot Get with Remainder"
+	default y if BT_BROADCASTER && BT_CTLR_ADV_EXT
+	help
+	  This option enables ticker interface to iterate through active
+	  ticker nodes, returning tick to expire and remainder from a reference
+	  tick.
 
 config BT_TICKER_LAZY_GET
 	bool "Ticker Next Slot Get with Lazy"
