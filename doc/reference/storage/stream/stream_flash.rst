@@ -17,6 +17,17 @@ limitations which does not allow flash writes to be performed in parallell with
 other operations, such as radio RX and TX. Also, fewer write operations result
 in faster response times seen from the application.
 
+Persistent stream write progress
+********************************
+Some stream write operations, such as DFU operations, may run for a long time.
+When performing such long running operations it can be useful to be able to save
+the stream write progress to persistent storage so that the operation can resume
+at the same point after an unexpected interruption.
+
+The Stream Flash module offers an API for loading, saving and clearing stream
+write progress to persistent storage using the :ref:`Settings <settings_api>`
+module. The API can be enabled using :option:`CONFIG_STREAM_FLASH_PROGRESS`.
+
 API Reference
 *************
 
