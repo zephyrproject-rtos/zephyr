@@ -339,6 +339,7 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	sync_iso_offset_us += (uint32_t)bi->offs * lll->window_size_event_us;
 	sync_iso_offset_us -= PKT_AC_US(pdu->len, lll->phy);
 	sync_iso_offset_us -= EVENT_OVERHEAD_START_US;
+	sync_iso_offset_us -= EVENT_TICKER_RES_MARGIN_US;
 	sync_iso_offset_us -= EVENT_JITTER_US;
 	sync_iso_offset_us -= ready_delay_us;
 
