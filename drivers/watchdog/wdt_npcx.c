@@ -88,7 +88,8 @@ static inline void wdt_t0out_reload(const struct device *dev)
 
 	key = irq_lock();
 	/* Reload and restart T0 timer */
-	inst->T0CSR |= BIT(NPCX_T0CSR_RST);
+	inst->T0CSR = (inst->T0CSR & ~BIT(NPCX_T0CSR_WDRST_STS)) |
+		      BIT(NPCX_T0CSR_RST);
 	/* Wait for timer is loaded and restart */
 	while (IS_BIT_SET(inst->T0CSR, NPCX_T0CSR_RST))
 		;
@@ -312,8 +313,8 @@ static int wdt_npcx_init(const struct device *dev)
 	inst->TWCFG = BIT(NPCX_TWCFG_WDSDME) | BIT(NPCX_TWCFG_WDCT0I);
 
 	/* Disable early touch functionality */
-	inst->T0CSR |= BIT(NPCX_T0CSR_TESDIS);
-
+	inst->T0CSR = (inst->T0CSR & ~BIT(NPCX_T0CSR_WDRST_STS)) |
+		      BIT(NPCX_T0CSR_TESDIS);
 	/*
 	 * Plan clock frequency of T0 timer and watchdog timer as below:
 	 * - T0 Timer freq is LFCLK/32 Hz
