@@ -1,6 +1,17 @@
 West Release Notes
 ##################
 
+v0.10.1
+*******
+
+New features:
+
+- The :ref:`west-init` command's ``--manifest-rev`` (``--mr``) option no longer
+  defaults to ``master``. Instead, the command will query the repository for
+  its default branch name and use that instead. This allows users to move from
+  ``master`` to ``main`` without breaking scripts that do not provide this
+  option.
+
 v0.10.0
 *******
 
