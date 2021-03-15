@@ -117,6 +117,10 @@
 	Z_ITERABLE_SECTION_ROM(bt_mesh_lpn_cb, 4)
 #endif
 
+#if defined(CONFIG_BT_MESH_PROXY)
+	Z_ITERABLE_SECTION_ROM(bt_mesh_proxy_cb, 4)
+#endif
+
 #if defined(CONFIG_EC_HOST_CMD)
 	Z_ITERABLE_SECTION_ROM(ec_host_cmd_handler, 4)
 #endif

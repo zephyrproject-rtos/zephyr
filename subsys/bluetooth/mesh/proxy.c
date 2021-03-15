@@ -379,6 +379,12 @@ static void node_id_start(struct bt_mesh_subnet *sub)
 {
 	sub->node_id = BT_MESH_NODE_IDENTITY_RUNNING;
 	sub->node_id_start = k_uptime_get_32();
+
+	Z_STRUCT_SECTION_FOREACH(bt_mesh_proxy_cb, cb) {
+		if (cb->identity_enabled) {
+			cb->identity_enabled(sub->net_idx);
+		}
+	}
 }
 
 void bt_mesh_proxy_identity_start(struct bt_mesh_subnet *sub)
@@ -393,6 +399,12 @@ void bt_mesh_proxy_identity_stop(struct bt_mesh_subnet *sub)
 {
 	sub->node_id = BT_MESH_NODE_IDENTITY_STOPPED;
 	sub->node_id_start = 0U;
+
+	Z_STRUCT_SECTION_FOREACH(bt_mesh_proxy_cb, cb) {
+		if (cb->identity_disabled) {
+			cb->identity_disabled(sub->net_idx);
+		}
+	}
 }
 
 int bt_mesh_proxy_identity_enable(void)
