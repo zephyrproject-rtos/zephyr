@@ -229,6 +229,19 @@ __csSet:
 	ltr %ax
 #endif
 
+#ifdef Z_VM_KERNEL
+	/* Need to reset the stack to virtual address after
+	 * page table is loaded.
+	 */
+
+	movl	$z_interrupt_stacks, %esp
+#ifdef CONFIG_X86_STACK_PROTECTION
+	addl	$(CONFIG_ISR_STACK_SIZE + 4096), %esp
+#else
+	addl	$CONFIG_ISR_STACK_SIZE, %esp
+#endif
+#endif /* Z_VM_KERNEL */
+
 	/* Clear BSS */
 	call	z_bss_zero
 
