@@ -110,7 +110,7 @@ enum {
  * LLCP Local Procedure Encryption FSM
  */
 
-static void lp_enc_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
+static struct node_tx *lp_enc_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 {
 	struct node_tx *tx;
 	struct pdu_data *pdu;
@@ -137,6 +137,8 @@ static void lp_enc_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode
 
 	/* Enqueue LL Control PDU towards LLL */
 	tx_enqueue(conn, tx);
+
+	return tx;
 }
 
 static void lp_enc_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
@@ -175,12 +177,27 @@ static void lp_enc_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t 
 	}
 }
 
+static void lp_enc_store_m(struct ll_conn *conn, struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	/* Store SKDm */
+	memcpy(&ctx->data.enc.skd[0], pdu->llctrl.enc_req.skdm, sizeof(pdu->llctrl.enc_req.skdm));
+	/* Store IVm in the LLL CCM RX
+	 * TODO(thoh): Should this be made into a ULL function, as it
+	 * interacts with data outside of LLCP?
+	 */
+	memcpy(&conn->lll.ccm_rx.iv[0], pdu->llctrl.enc_req.ivm, sizeof(pdu->llctrl.enc_req.ivm));
+}
+
 static void lp_enc_send_enc_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
+	struct node_tx *tx;
+
 	if (!tx_alloc_is_available()) {
 		ctx->state = LP_ENC_STATE_WAIT_TX_ENC_REQ;
 	} else {
-		lp_enc_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_ENC_REQ);
+		tx = lp_enc_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_ENC_REQ);
+		lp_enc_store_m(conn, ctx, (struct pdu_data *)tx->pdu);
+		/* Wait for the LL_ENC_RSP */
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_ENC_RSP;
 		ctx->state = LP_ENC_STATE_WAIT_RX_ENC_RSP;
 	}
