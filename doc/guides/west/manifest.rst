@@ -1213,7 +1213,7 @@ Example 1.2: "Rolling release" Zephyr downstream
 ------------------------------------------------
 
 This is similar to :ref:`west-manifest-ex1.1`, except we'll use ``revision:
-master`` for the zephyr repository:
+main`` for the zephyr repository:
 
 .. code-block:: yaml
 
@@ -1225,7 +1225,7 @@ master`` for the zephyr repository:
      projects:
        - name: zephyr
          remote: zephyrproject-rtos
-         revision: master
+         revision: main
          import: true
 
 You can create the workspace in the same way:
@@ -1238,13 +1238,13 @@ You can create the workspace in the same way:
 
 This time, whenever you run ``west update``, the special :ref:`manifest-rev
 <west-manifest-rev>` branch in the ``zephyr`` repository will be updated to
-point at a newly fetched ``master`` branch tip from the URL
+point at a newly fetched ``main`` branch tip from the URL
 https://github.com/zephyrproject-rtos/zephyr.
 
 The contents of :file:`zephyr/west.yml` at the new ``manifest-rev`` will then
 be used to import projects from Zephyr. This lets you stay up to date with the
 latest changes in the Zephyr project. The cost is that running ``west update``
-will not produce reproducible results, since the remote ``master`` branch can
+will not produce reproducible results, since the remote ``main`` branch can
 change every time you run it.
 
 It's also important to understand that west **ignores your working tree's**
@@ -1341,7 +1341,7 @@ Here is an example:
          revision: v1.0
          import: west.yml
        - name: project-2
-         revision: master
+         revision: main
          import: p2-manifests
      self:
        import: submanifests
@@ -1351,7 +1351,8 @@ This will import the following:
 - the contents of :file:`project-1/west.yml` at ``manifest-rev``, which points
   at tag ``v1.0`` after running ``west update``
 - any YAML files in the directory tree :file:`project-2/p2-manifests`
-  at the latest ``master``, as fetched by ``west update``, sorted by file name
+  at the latest commit in the ``main`` branch, as fetched by ``west update``,
+  sorted by file name
 - YAML files in :file:`submanifests` in your manifest repository,
   as they appear on your file system, sorted by file name
 
@@ -1405,8 +1406,8 @@ them all in a single manifest repository, like this:
 
 You want to add all the files in :file:`my-repo/submanifests` to the main
 manifest file, :file:`my-repo/west.yml`, in addition to projects in
-:file:`zephyr/west.yml`. You want to track the latest mainline master
-instead of using a fixed revision.
+:file:`zephyr/west.yml`. You want to track the latest development code
+in the Zephyr repository's ``main`` branch instead of using a fixed revision.
 
 Here's how:
 
@@ -1420,6 +1421,7 @@ Here's how:
      projects:
        - name: zephyr
          remote: zephyrproject-rtos
+         revision: main
          import: true
      self:
        import: submanifests
