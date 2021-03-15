@@ -109,6 +109,14 @@ extern bool pcie_msi_enable(pcie_bdf_t bdf,
 			    uint8_t n_vector,
 			    unsigned int irq);
 
+/**
+ * @brief Check if the given PCI endpoint supports MSI/MSI-X
+ *
+ * @param bdf the target PCI endpoint
+ * @return true if the endpoint support MSI/MSI-X
+ */
+extern bool pcie_is_msi(pcie_bdf_t bdf);
+
 /*
  * The first word of the MSI capability is shared with the
  * capability ID and list link.  The high 16 bits are the MCR.
