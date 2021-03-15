@@ -170,6 +170,9 @@ struct ticker_user_op_slot_get {
 	uint8_t  *ticker_id;
 	uint32_t *ticks_current;
 	uint32_t *ticks_to_expire;
+#if defined(CONFIG_BT_TICKER_LAZY_GET)
+	uint16_t *lazy;
+#endif /* CONFIG_BT_TICKER_LAZY_GET */
 };
 
 /* User operation data structure for priority_set opcode. Used for passing
@@ -351,7 +354,11 @@ static uint8_t ticker_by_slot_get(struct ticker_node *node, uint8_t ticker_id_he
  */
 static void ticker_by_next_slot_get(struct ticker_instance *instance,
 				    uint8_t *ticker_id_head, uint32_t *ticks_current,
+#if defined(CONFIG_BT_TICKER_LAZY_GET)
+				    uint32_t *ticks_to_expire, uint16_t *lazy)
+#else /* !CONFIG_BT_TICKER_LAZY_GET */
 				    uint32_t *ticks_to_expire)
+#endif /* !CONFIG_BT_TICKER_LAZY_GET */
 {
 	struct ticker_node *ticker;
 	struct ticker_node *node;
@@ -385,6 +392,11 @@ static void ticker_by_next_slot_get(struct ticker_instance *instance,
 	if (_ticker_id_head != TICKER_NULL) {
 		/* Add ticks for found ticker */
 		_ticks_to_expire += ticker->ticks_to_expire;
+#if defined(CONFIG_BT_TICKER_LAZY_GET)
+		if (lazy) {
+			*lazy = ticker->lazy_current;
+		}
+#endif /* CONFIG_BT_TICKER_LAZY_GET */
 	}
 
 	*ticker_id_head = _ticker_id_head;
@@ -2103,7 +2115,12 @@ static inline void ticker_job_op_inquire(struct ticker_instance *instance,
 		ticker_by_next_slot_get(instance,
 					uop->params.slot_get.ticker_id,
 					uop->params.slot_get.ticks_current,
+#if defined(CONFIG_BT_TICKER_LAZY_GET)
+					uop->params.slot_get.ticks_to_expire,
+					uop->params.slot_get.lazy);
+#else /* !CONFIG_BT_TICKER_LAZY_GET */
 					uop->params.slot_get.ticks_to_expire);
+#endif /* !CONFIG_BT_TICKER_LAZY_GET */
 		__fallthrough;
 	case TICKER_USER_OP_TYPE_IDLE_GET:
 		uop->status = TICKER_STATUS_SUCCESS;
@@ -2823,10 +2840,23 @@ uint32_t ticker_stop_abs(uint8_t instance_index, uint8_t user_id, uint8_t ticker
  * available, and TICKER_STATUS_SUCCESS is returned if ticker_job gets to run
  * before exiting ticker_next_slot_get
  */
-uint32_t ticker_next_slot_get(uint8_t instance_index, uint8_t user_id, uint8_t *ticker_id,
-			   uint32_t *ticks_current, uint32_t *ticks_to_expire,
-			   ticker_op_func fp_op_func, void *op_context)
+uint32_t ticker_next_slot_get(uint8_t instance_index, uint8_t user_id,
+			      uint8_t *ticker_id, uint32_t *ticks_current,
+			      uint32_t *ticks_to_expire,
+			      ticker_op_func fp_op_func, void *op_context)
 {
+#if defined(CONFIG_BT_TICKER_LAZY_GET)
+	return ticker_next_slot_get_ext(instance_index, user_id, ticker_id,
+					ticks_current, ticks_to_expire, NULL,
+					fp_op_func, op_context);
+}
+
+uint32_t ticker_next_slot_get_ext(uint8_t instance_index, uint8_t user_id,
+				  uint8_t *ticker_id, uint32_t *ticks_current,
+				  uint32_t *ticks_to_expire, uint16_t *lazy,
+				  ticker_op_func fp_op_func, void *op_context)
+{
+#endif /* CONFIG_BT_TICKER_LAZY_GET */
 	struct ticker_instance *instance = &_instance[instance_index];
 	struct ticker_user_op *user_op;
 	struct ticker_user *user;
@@ -2849,6 +2879,9 @@ uint32_t ticker_next_slot_get(uint8_t instance_index, uint8_t user_id, uint8_t *
 	user_op->params.slot_get.ticker_id = ticker_id;
 	user_op->params.slot_get.ticks_current = ticks_current;
 	user_op->params.slot_get.ticks_to_expire = ticks_to_expire;
+#if defined(CONFIG_BT_TICKER_LAZY_GET)
+	user_op->params.slot_get.lazy = lazy;
+#endif /* CONFIG_BT_TICKER_LAZY_GET */
 	user_op->status = TICKER_STATUS_BUSY;
 	user_op->fp_op_func = fp_op_func;
 	user_op->op_context = op_context;
