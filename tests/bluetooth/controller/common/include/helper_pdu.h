@@ -55,6 +55,8 @@ void helper_pdu_verify_version_ind(const char *file, uint32_t line, struct pdu_d
 
 void helper_pdu_verify_enc_req(const char *file, uint32_t line, struct pdu_data *pdu, void *param);
 
+void helper_pdu_ntf_verify_enc_req(const char *file, uint32_t line, struct pdu_data *pdu, void *param);
+
 void helper_pdu_verify_enc_rsp(const char *file, uint32_t line, struct pdu_data *pdu, void *param);
 
 void helper_pdu_verify_start_enc_req(const char *file, uint32_t line, struct pdu_data *pdu, void *param);
