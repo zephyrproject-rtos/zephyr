@@ -66,7 +66,7 @@ manifest:
       revision: a1ec761014740a08699720298dd37ad4da360840
       path: modules/hal/microchip
     - name: hal_silabs
-      revision: de93f34488f2ab4d6337af0819b377636034fcda
+      revision: be39d4eebeddac6e18e9c0c3ba1b31ad1e82eaed
       path: modules/hal/silabs
     - name: hal_st
       revision: b52fdbf4b62439be9fab9bb4bae9690a42d2fb14
