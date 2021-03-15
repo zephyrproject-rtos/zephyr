@@ -247,11 +247,25 @@ static void lp_enc_st_wait_tx_enc_req(struct ll_conn *conn, struct proc_ctx *ctx
 	}
 }
 
+static void lp_enc_store_s(struct ll_conn *conn, struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	/* Store SKDs */
+	memcpy(&ctx->data.enc.skd[8], pdu->llctrl.enc_rsp.skds, sizeof(pdu->llctrl.enc_rsp.skds));
+	/* Store IVs in the LLL CCM RX
+	 * TODO(thoh): Should this be made into a ULL function, as it
+	 * interacts with data outside of LLCP?
+	 */
+	memcpy(&conn->lll.ccm_rx.iv[4], pdu->llctrl.enc_rsp.ivs, sizeof(pdu->llctrl.enc_rsp.ivs));
+}
+
 static void lp_enc_st_wait_rx_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
-	/* TODO */
+	struct pdu_data *pdu = (struct pdu_data *) param;
+
 	switch (evt) {
 	case LP_ENC_EVT_ENC_RSP:
+		lp_enc_store_s(conn, ctx, pdu);
+		/* Wait for LL_START_ENC_REQ */
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_START_ENC_REQ;
 		ctx->state = LP_ENC_STATE_WAIT_RX_START_ENC_REQ;
 		break;
