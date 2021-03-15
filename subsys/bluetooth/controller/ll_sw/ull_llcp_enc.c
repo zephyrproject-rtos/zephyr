@@ -11,6 +11,7 @@
 #include <sys/slist.h>
 #include <sys/util.h>
 
+#include "hal/ecb.h"
 #include "hal/ccm.h"
 
 #include "util/mem.h"
@@ -203,12 +204,40 @@ static void lp_enc_send_enc_req(struct ll_conn *conn, struct proc_ctx *ctx, uint
 	}
 }
 
+static void lp_enc_setup_lll(struct ll_conn *conn, struct proc_ctx *ctx)
+{
+	/* TODO(thoh): Move LLL/CCM manipulation to ULL? */
+
+	/* Calculate the Session Key */
+	ecb_encrypt(&ctx->data.enc.ltk[0], &ctx->data.enc.skd[0], NULL, &conn->lll.ccm_rx.key[0]);
+
+	/* Copy the Session Key */
+	memcpy(&conn->lll.ccm_tx.key[0], &conn->lll.ccm_rx.key[0], sizeof(conn->lll.ccm_tx.key));
+
+	/* Copy the IV */
+	memcpy(&conn->lll.ccm_tx.iv[0], &conn->lll.ccm_rx.iv[0], sizeof(conn->lll.ccm_tx.iv));
+
+	/* Reset CCM counter */
+	conn->lll.ccm_tx.counter = 0U;
+	conn->lll.ccm_rx.counter = 0U;
+
+	/* Set CCM direction:
+	 *	slave to master = 0,
+	 *	master to slave = 1
+	 */
+	conn->lll.ccm_tx.direction = 1U;
+	conn->lll.ccm_rx.direction = 0U;
+}
+
 static void lp_enc_send_start_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	if (!tx_alloc_is_available()) {
 		ctx->state = LP_ENC_STATE_WAIT_TX_START_ENC_RSP;
 	} else {
+		lp_enc_setup_lll(conn, ctx);
 		lp_enc_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_START_ENC_RSP);
+
+		/* Wait for LL_START_ENC_RSP */
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_START_ENC_RSP;
 		ctx->state = LP_ENC_STATE_WAIT_RX_START_ENC_RSP;
 
