@@ -155,11 +155,9 @@ int bt_bass_client_discover(struct bt_conn *conn);
  *
  * @param conn   Connection to the server, used to determine where to
  *               send scan results.
- * @param force  If set to true, will start scanning even if the server
- *               is already synchronized with a BIS.
  * @return int   Error value. 0 on success, GATT error or ERRNO on fail.
  */
-int bt_bass_client_scan_start(struct bt_conn *conn, bool force);
+int bt_bass_client_scan_start(struct bt_conn *conn);
 
 /**
  * @brief Stop remote scanning for BIS' for a server.

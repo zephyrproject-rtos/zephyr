@@ -219,18 +219,8 @@ static int cmd_bass_client_scan_start(const struct shell *shell, size_t argc,
 				      char **argv)
 {
 	int result;
-	int force = false;
 
-	if (argc > 1) {
-		force = strtol(argv[1], NULL, 0);
-
-		if (force < 0 || force > 1) {
-			shell_error(shell, "Value shall be boolean");
-			return -ENOEXEC;
-		}
-	}
-
-	result = bt_bass_client_scan_start(default_conn, (bool)force);
+	result = bt_bass_client_scan_start(default_conn);
 	if (result) {
 		shell_print(shell, "Fail: %d", result);
 	}
@@ -438,8 +428,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bass_client_cmds,
 		      "Discover BASS on the server",
 		      cmd_bass_client_discover, 1, 0),
 	SHELL_CMD_ARG(scan_start, NULL,
-		      "Start scanning for BISs [force]",
-		      cmd_bass_client_scan_start, 1, 1),
+		      "Start scanning for broadcasters",
+		      cmd_bass_client_scan_start, 1, 0),
 	SHELL_CMD_ARG(scan_stop, NULL,
 		      "Stop scanning for BISs",
 		      cmd_bass_client_scan_stop, 1, 0),
