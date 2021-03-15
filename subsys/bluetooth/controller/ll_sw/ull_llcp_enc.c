@@ -429,7 +429,7 @@ void ull_cp_priv_lp_enc_run(struct ll_conn *conn, struct proc_ctx *ctx, void *pa
  * LLCP Remote Procedure Encryption FSM
  */
 
-static void rp_enc_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
+static struct node_tx *rp_enc_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 {
 	struct node_tx *tx;
 	struct pdu_data *pdu;
@@ -463,6 +463,8 @@ static void rp_enc_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode
 
 	/* Enqueue LL Control PDU towards LLL */
 	tx_enqueue(conn, tx);
+
+	return tx;
 }
 
 static void rp_enc_ntf_ltk(struct ll_conn *conn, struct proc_ctx *ctx)
@@ -528,12 +530,26 @@ static void rp_enc_send_ltk_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint
 	}
 }
 
+static void rp_enc_store_s(struct ll_conn *conn, struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	/* Store SKDs */
+	memcpy(&ctx->data.enc.skds, pdu->llctrl.enc_rsp.skds, sizeof(pdu->llctrl.enc_rsp.skds));
+	/* Store IVs in the LLL CCM RX
+	 * TODO(thoh): Should this be made into a ULL function, as it
+	 * interacts with data outside of LLCP?
+	 */
+	memcpy(&conn->lll.ccm_rx.iv[4], pdu->llctrl.enc_rsp.ivs, sizeof(pdu->llctrl.enc_rsp.ivs));
+}
+
 static void rp_enc_send_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
+	struct node_tx *tx;
+
 	if (!tx_alloc_is_available()) {
 		ctx->state = RP_ENC_STATE_WAIT_TX_ENC_RSP;
 	} else {
-		rp_enc_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_ENC_RSP);
+		tx = rp_enc_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_ENC_RSP);
+		rp_enc_store_s(conn, ctx, (struct pdu_data *) tx->pdu);
 		rp_enc_send_ltk_ntf(conn, ctx, evt, param);
 	}
 }
