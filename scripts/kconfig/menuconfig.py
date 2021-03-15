@@ -1757,6 +1757,9 @@ def _input_dialog(title, initial_text, info_text=None):
             _safe_curs_set(0)
             return None
 
+        elif c == "\0":  # \0 = NUL, ignore
+            pass
+
         else:
             s, i, hscroll = _edit_text(c, s, i, hscroll, edit_width())
 
@@ -2195,6 +2198,9 @@ def _jump_to_dialog():
 
         elif c == curses.KEY_HOME:
             sel_node_i = scroll = 0
+
+        elif c == "\0":  # \0 = NUL, ignore
+            pass
 
         else:
             s, s_i, hscroll = _edit_text(c, s, s_i, hscroll,
