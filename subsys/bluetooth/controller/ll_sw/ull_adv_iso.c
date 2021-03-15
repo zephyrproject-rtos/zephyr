@@ -588,8 +588,10 @@ static void mfy_iso_offset_get(void *param)
 	uint32_t ticks_to_expire;
 	struct pdu_big_info *bi;
 	uint32_t ticks_current;
+	uint64_t payload_count;
 	struct pdu_adv *pdu;
 	uint8_t ticker_id;
+	uint16_t lazy;
 	uint8_t retry;
 	uint8_t id;
 
@@ -609,11 +611,12 @@ static void mfy_iso_offset_get(void *param)
 		ticks_previous = ticks_current;
 
 		ret_cb = TICKER_STATUS_BUSY;
-		ret = ticker_next_slot_get(TICKER_INSTANCE_ID_CTLR,
-					   TICKER_USER_ID_ULL_LOW,
-					   &id,
-					   &ticks_current, &ticks_to_expire,
-					   ticker_op_cb, (void *)&ret_cb);
+		ret = ticker_next_slot_get_ext(TICKER_INSTANCE_ID_CTLR,
+					       TICKER_USER_ID_ULL_LOW,
+					       &id, &ticks_current,
+					       &ticks_to_expire, &lazy,
+					       NULL, NULL,
+					       ticker_op_cb, (void *)&ret_cb);
 		if (ret == TICKER_STATUS_BUSY) {
 			while (ret_cb == TICKER_STATUS_BUSY) {
 				ticker_job_sched(TICKER_INSTANCE_ID_CTLR,
@@ -628,16 +631,19 @@ static void mfy_iso_offset_get(void *param)
 		LL_ASSERT(id != TICKER_NULL);
 	} while (id != ticker_id);
 
+	payload_count = lll_iso->payload_count + ((lll_iso->latency_prepare +
+						   lazy) * lll_iso->bn);
+
 	pdu = lll_adv_sync_data_latest_peek(&sync->lll);
 	bi = big_info_get(pdu);
 	big_info_offset_fill(bi, ticks_to_expire, 0);
-	bi->payload_count_framing[0] = lll_iso->payload_count;
-	bi->payload_count_framing[1] = lll_iso->payload_count >> 8;
-	bi->payload_count_framing[2] = lll_iso->payload_count >> 16;
-	bi->payload_count_framing[3] = lll_iso->payload_count >> 24;
-	bi->payload_count_framing[4] = lll_iso->payload_count >> 32;
-	bi->payload_count_framing[4] &= 0x7F;
-	bi->payload_count_framing[4] |= ((lll_iso->framing & 0x01) << 7);
+	bi->payload_count_framing[0] = payload_count;
+	bi->payload_count_framing[1] = payload_count >> 8;
+	bi->payload_count_framing[2] = payload_count >> 16;
+	bi->payload_count_framing[3] = payload_count >> 24;
+	bi->payload_count_framing[4] = payload_count >> 32;
+	bi->payload_count_framing[4] &= ~0x7F;
+	bi->payload_count_framing[4] |= (payload_count >> 32) & 0x7F;
 }
 
 static inline struct pdu_big_info *big_info_get(struct pdu_adv *pdu)
