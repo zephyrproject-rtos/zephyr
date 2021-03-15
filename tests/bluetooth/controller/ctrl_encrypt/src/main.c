@@ -607,6 +607,14 @@ void test_encryption_start_sla_rem(void)
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 
+	/* Prepare LL_ENC_REQ */
+	struct pdu_data_llctrl_enc_req enc_req = {
+		.rand = {RAND},
+		.ediv = {EDIV},
+		.skdm = {SKDM},
+		.ivm = {IVM},
+	};
+
 	struct pdu_data_llctrl_enc_rsp exp_enc_rsp = {
 		.skds = {SKDS},
 		.ivs = {IVS},
@@ -631,7 +639,7 @@ void test_encryption_start_sla_rem(void)
 	event_prepare(&conn);
 
 	/* Rx */
-	lt_tx(LL_ENC_REQ, &conn, NULL);
+	lt_tx(LL_ENC_REQ, &conn, &enc_req);
 
 	/* Done */
 	event_done(&conn);
@@ -640,7 +648,7 @@ void test_encryption_start_sla_rem(void)
 	event_prepare(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_ENC_RSP, &conn, &tx, NULL);
+	lt_rx(LL_ENC_RSP, &conn, &tx, &exp_enc_rsp);
 	lt_rx_q_is_empty(&conn);
 
 	/* Done */
@@ -650,7 +658,7 @@ void test_encryption_start_sla_rem(void)
 	ull_cp_release_tx(tx);
 
 	/* There should be a host notification */
-	ut_rx_pdu(LL_ENC_REQ, &ntf, NULL);
+	ut_rx_pdu(LL_ENC_REQ, &ntf, &enc_req);
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
@@ -754,6 +762,14 @@ void test_encryption_start_sla_rem_limited_memory(void)
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 
+	/* Prepare LL_ENC_REQ */
+	struct pdu_data_llctrl_enc_req enc_req = {
+		.rand = {RAND},
+		.ediv = {EDIV},
+		.skdm = {SKDM},
+		.ivm = {IVM},
+	};
+
 	struct pdu_data_llctrl_enc_rsp exp_enc_rsp = {
 		.skds = {SKDS},
 		.ivs = {IVS},
@@ -791,7 +807,7 @@ void test_encryption_start_sla_rem_limited_memory(void)
 	event_prepare(&conn);
 
 	/* Rx */
-	lt_tx(LL_ENC_REQ, &conn, NULL);
+	lt_tx(LL_ENC_REQ, &conn, &enc_req);
 
 	/* Tx Queue should not have a LL Control PDU */
 	lt_rx_q_is_empty(&conn);
@@ -806,7 +822,7 @@ void test_encryption_start_sla_rem_limited_memory(void)
 	event_prepare(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_ENC_RSP, &conn, &tx, NULL);
+	lt_rx(LL_ENC_RSP, &conn, &tx, &exp_enc_rsp);
 	lt_rx_q_is_empty(&conn);
 
 	/* Done */
@@ -822,7 +838,7 @@ void test_encryption_start_sla_rem_limited_memory(void)
 	event_prepare(&conn);
 
 	/* There should be one host notification */
-	ut_rx_pdu(LL_ENC_REQ, &ntf, NULL);
+	ut_rx_pdu(LL_ENC_REQ, &ntf, &enc_req);
 	ut_rx_q_is_empty();
 
 	/* Done */
@@ -930,6 +946,14 @@ void test_encryption_start_sla_rem_no_ltk(void)
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 
+	/* Prepare LL_ENC_REQ */
+	struct pdu_data_llctrl_enc_req enc_req = {
+		.rand = {RAND},
+		.ediv = {EDIV},
+		.skdm = {SKDM},
+		.ivm = {IVM},
+	};
+
 	struct pdu_data_llctrl_enc_rsp exp_enc_rsp = {
 		.skds = {SKDS},
 		.ivs = {IVS},
@@ -960,7 +984,7 @@ void test_encryption_start_sla_rem_no_ltk(void)
 	event_prepare(&conn);
 
 	/* Rx */
-	lt_tx(LL_ENC_REQ, &conn, NULL);
+	lt_tx(LL_ENC_REQ, &conn, &enc_req);
 
 	/* Done */
 	event_done(&conn);
@@ -969,7 +993,7 @@ void test_encryption_start_sla_rem_no_ltk(void)
 	event_prepare(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_ENC_RSP, &conn, &tx, NULL);
+	lt_rx(LL_ENC_RSP, &conn, &tx, &exp_enc_rsp);
 	lt_rx_q_is_empty(&conn);
 
 	/* Done */
@@ -979,7 +1003,7 @@ void test_encryption_start_sla_rem_no_ltk(void)
 	ull_cp_release_tx(tx);
 
 	/* There should be a host notification */
-	ut_rx_pdu(LL_ENC_REQ, &ntf, NULL);
+	ut_rx_pdu(LL_ENC_REQ, &ntf, &enc_req);
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
