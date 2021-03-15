@@ -6,6 +6,7 @@ BUILDDIR ?= doc/_build
 DOC_TAG ?= development
 SPHINXOPTS ?= -q
 KCONFIG_TURBO_MODE ?= 0
+DUMMY_BUILD ?= OFF
 
 # Documentation targets
 # ---------------------------------------------------------------------------
@@ -24,7 +25,8 @@ htmldocs pdfdocs doxygen: configure
 configure:
 	cmake -GNinja  -B${BUILDDIR} -Sdoc/ -DDOC_TAG=${DOC_TAG} \
 		-DSPHINXOPTS=${SPHINXOPTS} \
-		-DKCONFIG_TURBO_MODE=${KCONFIG_TURBO_MODE}
+		-DKCONFIG_TURBO_MODE=${KCONFIG_TURBO_MODE} \
+		-DDUMMY_BUILD=${DUMMY_BUILD}
 
 clean:
 	rm -rf ${BUILDDIR}

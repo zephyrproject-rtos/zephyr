@@ -64,6 +64,11 @@ else()
   separate_arguments(SPHINXOPTS)
 endif()
 
+option(DUMMY_BUILD "Use Sphinx dummy builder" OFF)
+if(DUMMY_BUILD)
+  list(APPEND SPHINXOPTS -b dummy)
+endif()
+
 if(NOT DEFINED SPHINX_OUTPUT_DIR)
   set(SPHINX_OUTPUT_DIR_HTML ${CMAKE_CURRENT_BINARY_DIR}/html)
   set(SPHINX_OUTPUT_DIR_LATEX ${CMAKE_CURRENT_BINARY_DIR}/latex)
