@@ -957,6 +957,69 @@ static void test_1cpu_basic_schedule(void)
 		     "long %u > %u\n", elapsed_ms, max_ms);
 }
 
+struct state_1cpu_basic_schedule_running {
+	struct k_work_delayable dwork;
+	int schedule_res;
+};
+
+static void handle_1cpu_basic_schedule_running(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct state_1cpu_basic_schedule_running *state
+		= CONTAINER_OF(dwork, struct state_1cpu_basic_schedule_running,
+			       dwork);
+
+	/* Co-opt the resubmits so we can test the schedule API
+	 * explicitly.
+	 */
+	if (atomic_dec(&resubmits_left) > 0) {
+		/* Schedule again on current queue */
+		state->schedule_res = k_work_schedule_for_queue(NULL, dwork,
+								K_MSEC(DELAY_MS));
+	} else {
+		/* Flag that it didn't schedule */
+		state->schedule_res = -EALREADY;
+	}
+
+	counter_handler(work);
+}
+
+/* Single CPU test that schedules when running */
+static void test_1cpu_basic_schedule_running(void)
+{
+	int rc;
+	struct state_1cpu_basic_schedule_running state = {
+		.schedule_res = -1,
+	};
+
+	/* Reset state and set for one resubmit.  Use a test-specific
+	 * handler.
+	 */
+	reset_counters();
+	atomic_set(&resubmits_left, 1);
+	k_work_init_delayable(&state.dwork, handle_1cpu_basic_schedule_running);
+
+	zassert_equal(state.schedule_res, -1, NULL);
+
+	rc = k_work_schedule_for_queue(&coophi_queue, &state.dwork,
+				       K_MSEC(DELAY_MS));
+	zassert_equal(rc, 1, NULL);
+
+	zassert_equal(coop_counter(&coophi_queue), 0, NULL);
+
+	/* Wait for completion */
+	rc = k_sem_take(&sync_sem, K_FOREVER);
+	zassert_equal(rc, 0, NULL);
+	zassert_equal(state.schedule_res, 1, NULL);
+	zassert_equal(coop_counter(&coophi_queue), 1, NULL);
+
+	/* Wait for completion */
+	rc = k_sem_take(&sync_sem, K_FOREVER);
+	zassert_equal(rc, 0, NULL);
+	zassert_equal(state.schedule_res, -EALREADY, NULL);
+	zassert_equal(coop_counter(&coophi_queue), 2, NULL);
+}
+
 /* Single CPU test schedule without delay is queued immediately. */
 static void test_1cpu_immed_schedule(void)
 {
@@ -1469,6 +1532,7 @@ void test_main(void)
 			 ztest_1cpu_unit_test(test_1cpu_drain_wait),
 			 ztest_1cpu_unit_test(test_1cpu_plugged_drain),
 			 ztest_1cpu_unit_test(test_1cpu_basic_schedule),
+			 ztest_1cpu_unit_test(test_1cpu_basic_schedule_running),
 			 ztest_1cpu_unit_test(test_1cpu_immed_schedule),
 			 ztest_1cpu_unit_test(test_1cpu_basic_reschedule),
 			 ztest_1cpu_unit_test(test_1cpu_immed_reschedule),
