@@ -165,6 +165,10 @@ static int composite_pre_init(const struct device *dev)
 	atomic_set_bit(hid_ep_in_busy, HID_EP_BUSY_FLAG);
 	k_timer_start(&event_timer, REPORT_PERIOD, REPORT_PERIOD);
 
+	if (usb_hid_set_proto_code(hdev, HID_BOOT_IFACE_CODE_NONE)) {
+		LOG_WRN("Failed to set Protocol Code");
+	}
+
 	return usb_hid_init(hdev);
 }
 
