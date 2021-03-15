@@ -119,10 +119,15 @@ void helper_pdu_encode_version_ind(struct pdu_data *pdu, void *param)
 
 void helper_pdu_encode_enc_req(struct pdu_data *pdu, void *param)
 {
+	struct pdu_data_llctrl_enc_req *p = param;
+
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len = offsetof(struct pdu_data_llctrl, enc_req) + sizeof(struct pdu_data_llctrl_enc_req);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_ENC_REQ;
-	/* TODO(thoh): Fill in correct data */
+	memcpy(pdu->llctrl.enc_req.rand, p->rand, sizeof(pdu->llctrl.enc_req.rand));
+	memcpy(pdu->llctrl.enc_req.ediv, p->ediv, sizeof(pdu->llctrl.enc_req.ediv));
+	memcpy(pdu->llctrl.enc_req.skdm, p->skdm, sizeof(pdu->llctrl.enc_req.skdm));
+	memcpy(pdu->llctrl.enc_req.ivm, p->ivm, sizeof(pdu->llctrl.enc_req.ivm));
 }
 
 void helper_pdu_encode_enc_rsp(struct pdu_data *pdu, void *param)
@@ -141,7 +146,6 @@ void helper_pdu_encode_start_enc_req(struct pdu_data *pdu, void *param)
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len = offsetof(struct pdu_data_llctrl, start_enc_req) + sizeof(struct pdu_data_llctrl_start_enc_req);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_START_ENC_REQ;
-	/* TODO(thoh): Fill in correct data */
 }
 
 void helper_pdu_encode_start_enc_rsp(struct pdu_data *pdu, void *param)
@@ -149,7 +153,6 @@ void helper_pdu_encode_start_enc_rsp(struct pdu_data *pdu, void *param)
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len = offsetof(struct pdu_data_llctrl, start_enc_rsp) + sizeof(struct pdu_data_llctrl_start_enc_rsp);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_START_ENC_RSP;
-	/* TODO(thoh): Fill in correct data */
 }
 
 void helper_pdu_encode_reject_ext_ind(struct pdu_data *pdu, void *param)
@@ -342,8 +345,26 @@ void helper_pdu_verify_min_used_chans_ind(const char *file, uint32_t line, struc
 
 void helper_pdu_verify_enc_req(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
 {
+	struct pdu_data_llctrl_enc_req *p = param;
+
 	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_ENC_REQ, "Not a LL_ENC_REQ. Called at %s:%d\n", file, line);
+
+	PDU_MEM_EQUAL(rand, pdu->llctrl.enc_req, p, "Rand mismatch.");
+	PDU_MEM_EQUAL(ediv, pdu->llctrl.enc_req, p, "EDIV mismatch.");
+	PDU_MEM_EQUAL(skdm, pdu->llctrl.enc_req, p, "SKDm mismatch.");
+	PDU_MEM_EQUAL(ivm, pdu->llctrl.enc_req, p, "IVm mismatch.");
+}
+
+void helper_pdu_ntf_verify_enc_req(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
+{
+	struct pdu_data_llctrl_enc_req *p = param;
+
+	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_ENC_REQ, "Not a LL_ENC_REQ. Called at %s:%d\n", file, line);
+
+	PDU_MEM_EQUAL(rand, pdu->llctrl.enc_req, p, "Rand mismatch.");
+	PDU_MEM_EQUAL(ediv, pdu->llctrl.enc_req, p, "EDIV mismatch.");
 }
 
 void helper_pdu_verify_enc_rsp(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
