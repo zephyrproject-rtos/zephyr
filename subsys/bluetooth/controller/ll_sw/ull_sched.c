@@ -686,7 +686,7 @@ static uint8_t after_match_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 #if defined(CONFIG_BT_TICKER_NEXT_SLOT_GET_MATCH)
 		ret = ticker_next_slot_get_ext(TICKER_INSTANCE_ID_CTLR, user_id,
 					       &ticker_id, ticks_anchor,
-					       &ticks_to_expire,
+					       &ticks_to_expire, NULL,
 					       NULL, /* lazy */
 					       ticker_match_op_cb,
 					       NULL, /* match_op_context */

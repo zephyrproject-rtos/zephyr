@@ -960,7 +960,7 @@ static void mfy_iso_offset_get(void *param)
 		ret = ticker_next_slot_get_ext(TICKER_INSTANCE_ID_CTLR,
 					       TICKER_USER_ID_ULL_LOW,
 					       &id, &ticks_current,
-					       &ticks_to_expire, &lazy,
+					       &ticks_to_expire, NULL, &lazy,
 					       NULL, NULL,
 					       ticker_op_cb, (void *)&ret_cb);
 		if (ret == TICKER_STATUS_BUSY) {
