@@ -174,7 +174,6 @@ static int prepare_cb(struct lll_prepare_param *p)
 	radio_pkt_tx_set(pdu);
 
 	/* TODO: chaining */
-	radio_isr_set(lll_isr_done, lll);
 	radio_isr_set(isr_done, lll);
 
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
