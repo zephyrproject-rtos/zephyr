@@ -60,6 +60,10 @@ Deprecated in this release
 * USB HID specific macros in ``<include/usb/class/usb_hid.h>`` are deprecated
   in favor of new common HID macros defined in ``<include/usb/class/hid.h>``.
 
+* USB HID Kconfig option USB_HID_PROTOCOL_CODE is deprecated.
+  USB_HID_PROTOCOL_CODE does not allow to set boot protocol code for specific
+  HID device. USB HID API function usb_hid_set_proto_code() can be used instead.
+
 * The ``CONFIG_OPENOCD_SUPPORT`` Kconfig option has been deprecated in favor
   of ``CONFIG_DEBUG_THREAD_INFO``.
 
