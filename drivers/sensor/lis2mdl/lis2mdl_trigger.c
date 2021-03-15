@@ -112,7 +112,7 @@ int lis2mdl_init_interrupt(const struct device *dev)
 	/* setup data ready gpio interrupt */
 	lis2mdl->gpio = device_get_binding(config->gpio_name);
 	if (lis2mdl->gpio == NULL) {
-		LOG_DBG("Cannot get pointer to %s device",
+		LOG_ERR("Cannot get pointer to %s device",
 			    config->gpio_name);
 		return -EINVAL;
 	}
@@ -136,7 +136,7 @@ int lis2mdl_init_interrupt(const struct device *dev)
 			   BIT(config->gpio_pin));
 
 	if (gpio_add_callback(lis2mdl->gpio, &lis2mdl->gpio_cb) < 0) {
-		LOG_DBG("Could not set gpio callback");
+		LOG_ERR("Could not set gpio callback");
 		return -EIO;
 	}
 
