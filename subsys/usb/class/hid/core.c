@@ -675,6 +675,19 @@ static void hid_interface_config(struct usb_desc_header *head,
 		.endpoint = hid_ep_data_##x,				\
 	};
 
+int usb_hid_set_proto_code(const struct device *dev, uint8_t proto_code)
+{
+	const struct usb_cfg_data *cfg = dev->config;
+	struct usb_if_descriptor *if_desc = cfg->interface_descriptor;
+
+	if (IS_ENABLED(CONFIG_USB_HID_BOOT_PROTOCOL)) {
+		if_desc->bInterfaceProtocol = proto_code;
+		return 0;
+	}
+
+	return -ENOTSUP;
+}
+
 int usb_hid_init(const struct device *dev)
 {
 	struct usb_cfg_data *cfg = (void *)dev->config;

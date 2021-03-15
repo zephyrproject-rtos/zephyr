@@ -66,16 +66,12 @@ config USB_HID_BOOT_PROTOCOL
 	  for more information.
 
 config USB_HID_PROTOCOL_CODE
-	int "HID protocol code"
+	int "HID Boot Interface protocol code (DEPRECATED)"
 	default 0
 	range 0 2
 	depends on USB_HID_BOOT_PROTOCOL
 	help
-	  Sets bIntefaceProtocol in HID instance.
-	  0 = None
-	  1 = Keyboard
-	  2 = Mouse
-	  See Chapter 4.3 of Device Class Definition for Human Interface Devices 1.11
-	  for more information.
+	  This option is deprecated.
+	  Please use usb_hid_set_proto_code() instead.
 
 endif # USB_DEVICE_HID
