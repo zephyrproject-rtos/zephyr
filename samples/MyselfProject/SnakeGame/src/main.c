@@ -18,7 +18,7 @@ food  delicious_fd;
 
 void main(void)
 {
-    uint16_t key_value;
+    uint16_t key_value=0;
 
 
     //消息队列初始化
@@ -46,6 +46,7 @@ void main(void)
         
         k_msgq_get(&input_key_message, &key_value, K_NO_WAIT);
         updata_control_input(&littlesnake,key_value);
+        key_value=0;
         if(SnakeMove(display_dev,&littlesnake,&delicious_fd))
         {
             CreatFood(display_dev,&littlesnake,&delicious_fd);

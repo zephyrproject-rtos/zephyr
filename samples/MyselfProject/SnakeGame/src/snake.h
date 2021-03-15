@@ -14,11 +14,14 @@
 
 #define MAX_BODY    50
 
-#define BODY_SIZE   12
-#define X_STEP      12
-#define Y_STEP      12
+#define X_STEP      10
+#define Y_STEP      10
 
-#define SCREEN_SIZE_X   129
+#define Forehead_BYTE       3
+
+#define Forehead_HEIGHT     (Y_STEP*Forehead_BYTE)
+
+#define SCREEN_SIZE_X   130
 #define SCREEN_SIZE_Y   160
 #define MAX_STEP_X    (SCREEN_SIZE_X/X_STEP)
 #define MAX_STEP_Y    (SCREEN_SIZE_Y/Y_STEP)
@@ -46,6 +49,7 @@ typedef struct
     int head,rear;
     int curdir,lastdir;
     int score;
+    int play_pause;
 }Snake;
 
 void updata_control_input(Snake* S,uint16_t key_value);
