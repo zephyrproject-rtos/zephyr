@@ -29,8 +29,6 @@
 struct bass_client_instance_t {
 	bool discovering;
 	uint8_t pa_sync;
-	struct bass_recv_state_t recv_state
-		[CONFIG_BT_BASS_CLIENT_RECV_STATE_COUNT];
 	uint8_t recv_state_cnt;
 
 	uint16_t start_handle;
@@ -51,39 +49,6 @@ static struct bt_bass_client_cb_t *bass_cbs;
 
 static struct bass_client_instance_t bass_client;
 static struct bt_uuid_16 uuid = BT_UUID_INIT_16(0);
-
-static struct bass_recv_state_t *get_recv_state_by_handle(uint16_t handle)
-{
-	for (int i = 0; i < bass_client.recv_state_cnt; i++) {
-		if (handle == bass_client.recv_state_handles[i]) {
-			return &bass_client.recv_state[i];
-		}
-	}
-	return NULL;
-}
-
-static struct bass_recv_state_t *get_recv_state_by_id(uint8_t src_id)
-{
-	for (int i = 0; i < bass_client.recv_state_cnt; i++) {
-		if (bass_client.recv_state[i].src_id == src_id) {
-			return &bass_client.recv_state[i];
-		}
-	}
-	return NULL;
-}
-
-static bool server_is_fully_synced(void)
-{
-	uint8_t synced_states = 0;
-
-	for (int i = 0; i < bass_client.recv_state_cnt; i++) {
-		if (bass_client.recv_state[i].pa_sync_state) {
-			synced_states++;
-		}
-	}
-
-	return synced_states == bass_client.recv_state_cnt;
-}
 
 static int parse_recv_state(const void *data, uint16_t length,
 			    struct bass_recv_state_t *recv_state)
@@ -126,7 +91,7 @@ static uint8_t notify_handler(struct bt_conn *conn,
 			      const void *data, uint16_t length)
 {
 	uint16_t handle = params->value_handle;
-	struct bass_recv_state_t *recv_state;
+	struct bass_recv_state_t recv_state;
 	int err;
 
 	if (!data) {
@@ -138,20 +103,19 @@ static uint8_t notify_handler(struct bt_conn *conn,
 
 	BT_HEXDUMP_DBG(data, length, "Receive state notification:");
 
-	recv_state = get_recv_state_by_handle(handle);
-	err = parse_recv_state(data, length, recv_state);
+	err = parse_recv_state(data, length, &recv_state);
 
 	if (err) {
 		BT_DBG("Invalid receive state");
 		return BT_GATT_ITER_STOP;
 	}
 
-	if (!BASS_RECV_STATE_EMPTY(recv_state)) {
+	if (!BASS_RECV_STATE_EMPTY(&recv_state)) {
 		if (bass_cbs && bass_cbs->recv_state) {
-			bass_cbs->recv_state(conn, 0, recv_state);
+			bass_cbs->recv_state(conn, 0, &recv_state);
 		}
 	} else if (bass_cbs && bass_cbs->recv_state_removed) {
-		bass_cbs->recv_state_removed(conn, 0, recv_state);
+		bass_cbs->recv_state_removed(conn, 0, &recv_state);
 	}
 
 	return BT_GATT_ITER_CONTINUE;
@@ -163,15 +127,13 @@ static uint8_t read_recv_state_cb(struct bt_conn *conn, uint8_t err,
 {
 	uint16_t handle = params->single.handle;
 	uint8_t last_handle_index = bass_client.recv_state_cnt - 1;
-	uint16_t last_handle =
-		bass_client.recv_state_handles[last_handle_index];
+	uint16_t last_handle = bass_client.recv_state_handles[last_handle_index];
+	struct bass_recv_state_t recv_state;
 
 	memset(params, 0, sizeof(*params));
 
 	if (!err) {
-		struct bass_recv_state_t *recv_state =
-			get_recv_state_by_handle(handle);
-		err = parse_recv_state(data, length, recv_state);
+		err = parse_recv_state(data, length, &recv_state);
 
 		if (err) {
 			BT_DBG("Invalid receive state");
@@ -200,14 +162,7 @@ static uint8_t read_recv_state_cb(struct bt_conn *conn, uint8_t err,
 		}
 
 		if (bass_cbs && bass_cbs->recv_state) {
-			for (int i = 0; i < bass_client.recv_state_cnt; i++) {
-				if (!bass_client.recv_state[i].src_id) {
-					continue;
-				}
-				bass_cbs->recv_state(
-					conn, err, &bass_client.recv_state[i]);
-
-			}
+			bass_cbs->recv_state(conn, err, &recv_state);
 		}
 	} else {
 		for (int i = 0; i < bass_client.recv_state_cnt; i++) {
@@ -505,7 +460,7 @@ int bt_bass_client_discover(struct bt_conn *conn)
 	return 0;
 }
 
-int bt_bass_client_scan_start(struct bt_conn *conn, bool force)
+int bt_bass_client_scan_start(struct bt_conn *conn)
 {
 	union bass_cp_t cp = { .opcode = BASS_OP_SCAN_START };
 	int err;
@@ -514,9 +469,6 @@ int bt_bass_client_scan_start(struct bt_conn *conn, bool force)
 		return -ENOTCONN;
 	} else if (!bass_client.cp_handle) {
 		return -EINVAL;
-	} else if (server_is_fully_synced() && !force) {
-		BT_DBG("The server is already fully synced or syncing");
-		return -EBUSY;
 	}
 
 	bt_le_scan_cb_register(&scan_cb);
@@ -608,8 +560,6 @@ int bt_bass_client_mod_src(struct bt_conn *conn, uint8_t src_id,
 		return 0;
 	} else if (!bass_client.cp_handle) {
 		return -EINVAL;
-	} else if (!get_recv_state_by_id(src_id)) {
-		return -EINVAL;
 	} else if (!sync_pa && sync_bis) {
 		BT_DBG("Only syncing to BIS is not allowed");
 		return -EINVAL;
@@ -639,8 +589,6 @@ int bt_bass_client_broadcast_code(struct bt_conn *conn, uint8_t src_id,
 		return 0;
 	} else if (!bass_client.cp_handle) {
 		return -EINVAL;
-	} else if (!get_recv_state_by_id(src_id)) {
-		return -EINVAL;
 	}
 
 	cp.broadcast_code.opcode = BASS_OP_BROADCAST_CODE;
@@ -658,8 +606,6 @@ int bt_bass_client_rem_src(struct bt_conn *conn, uint8_t src_id)
 	if (!conn) {
 		return 0;
 	} else if (!bass_client.cp_handle) {
-		return -EINVAL;
-	} else if (!get_recv_state_by_id(src_id)) {
 		return -EINVAL;
 	}
 
