@@ -607,6 +607,11 @@ void test_encryption_start_sla_rem(void)
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 
+	const uint8_t ltk[] = {LTK};
+	const uint8_t skd[] = {SKDM, SKDS};
+	const uint8_t sk_be[] = {SK_BE};
+	const uint8_t iv[] = {IVM, IVS};
+
 	/* Prepare LL_ENC_REQ */
 	struct pdu_data_llctrl_enc_req enc_req = {
 		.rand = {RAND},
@@ -629,6 +634,12 @@ void test_encryption_start_sla_rem(void)
 	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_rsp.ivs));
 	ztest_return_data(lll_csrand_get, buf, exp_enc_rsp.ivs);
 	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_rsp.ivs));
+
+	/* Prepare mocked call to ecb_encrypt */
+	ztest_expect_data(ecb_encrypt, key_le, ltk);
+	ztest_expect_data(ecb_encrypt, clear_text_le, skd);
+	ztest_return_data(ecb_encrypt, cipher_text_be, sk_be);
+
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
 
@@ -680,6 +691,18 @@ void test_encryption_start_sla_rem(void)
 	/* Release Tx */
 	ull_cp_release_tx(tx);
 
+	/* CCM Rx SK should match SK */
+	zassert_mem_equal(conn.lll.ccm_rx.key, sk_be, sizeof(sk_be), "CCM Rx SK not equal to expected SK");
+
+	/* CCM Rx IV should match the IV */
+	zassert_mem_equal(conn.lll.ccm_rx.iv, iv, sizeof(iv), "CCM Rx IV not equal to (IVm | IVs)");
+
+	/* CCM Rx Counter should be zero */
+	zassert_equal(conn.lll.ccm_rx.counter, 0U, NULL);
+
+	/* CCM Rx Direction should be M->S */
+	zassert_equal(conn.lll.ccm_rx.direction, 1U, NULL);
+
 	/* Rx Decryption should be enabled */
 	zassert_equal(conn.lll.enc_rx, 1U, NULL);
 
@@ -708,6 +731,18 @@ void test_encryption_start_sla_rem(void)
 
 	/* Release Tx */
 	ull_cp_release_tx(tx);
+
+	/* CCM Tx SK should match SK */
+	zassert_mem_equal(conn.lll.ccm_tx.key, sk_be, sizeof(sk_be), "CCM Tx SK not equal to expected SK");
+
+	/* CCM Tx IV should match the IV */
+	zassert_mem_equal(conn.lll.ccm_tx.iv, iv, sizeof(iv), "CCM Tx IV not equal to (IVm | IVs)");
+
+	/* CCM Tx Counter should be zero */
+	zassert_equal(conn.lll.ccm_tx.counter, 0U, NULL);
+
+	/* CCM Tx Direction should be S->M */
+	zassert_equal(conn.lll.ccm_tx.direction, 0U, NULL);
 
 	/* Tx Encryption should be enabled */
 	zassert_equal(conn.lll.enc_tx, 1U, NULL);
@@ -762,6 +797,11 @@ void test_encryption_start_sla_rem_limited_memory(void)
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 
+	const uint8_t ltk[] = {LTK};
+	const uint8_t skd[] = {SKDM, SKDS};
+	const uint8_t sk_be[] = {SK_BE};
+	const uint8_t iv[] = {IVM, IVS};
+
 	/* Prepare LL_ENC_REQ */
 	struct pdu_data_llctrl_enc_req enc_req = {
 		.rand = {RAND},
@@ -784,6 +824,12 @@ void test_encryption_start_sla_rem_limited_memory(void)
 	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_rsp.ivs));
 	ztest_return_data(lll_csrand_get, buf, exp_enc_rsp.ivs);
 	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_rsp.ivs));
+
+	/* Prepare mocked call to ecb_encrypt */
+	ztest_expect_data(ecb_encrypt, key_le, ltk);
+	ztest_expect_data(ecb_encrypt, clear_text_le, skd);
+	ztest_return_data(ecb_encrypt, cipher_text_be, sk_be);
+
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
 
@@ -869,6 +915,18 @@ void test_encryption_start_sla_rem_limited_memory(void)
 	/* Done */
 	event_done(&conn);
 
+	/* CCM Rx SK should match SK */
+	zassert_mem_equal(conn.lll.ccm_rx.key, sk_be, sizeof(sk_be), "CCM Rx SK not equal to expected SK");
+
+	/* CCM Rx IV should match the IV */
+	zassert_mem_equal(conn.lll.ccm_rx.iv, iv, sizeof(iv), "CCM Rx IV not equal to (IVm | IVs)");
+
+	/* CCM Rx Counter should be zero */
+	zassert_equal(conn.lll.ccm_rx.counter, 0U, NULL);
+
+	/* CCM Rx Direction should be M->S */
+	zassert_equal(conn.lll.ccm_rx.direction, 1U, NULL);
+
 	/* Rx Decryption should be enabled */
 	zassert_equal(conn.lll.enc_rx, 1U, NULL);
 
@@ -912,6 +970,18 @@ void test_encryption_start_sla_rem_limited_memory(void)
 
 	/* Done */
 	event_done(&conn);
+
+	/* CCM Tx SK should match SK */
+	zassert_mem_equal(conn.lll.ccm_tx.key, sk_be, sizeof(sk_be), "CCM Tx SK not equal to expected SK");
+
+	/* CCM Tx IV should match the IV */
+	zassert_mem_equal(conn.lll.ccm_tx.iv, iv, sizeof(iv), "CCM Tx IV not equal to (IVm | IVs)");
+
+	/* CCM Tx Counter should be zero */
+	zassert_equal(conn.lll.ccm_tx.counter, 0U, NULL);
+
+	/* CCM Tx Direction should be S->M */
+	zassert_equal(conn.lll.ccm_tx.direction, 0U, NULL);
 
 	/* Tx Encryption should be enabled */
 	zassert_equal(conn.lll.enc_tx, 1U, NULL);
