@@ -204,8 +204,10 @@ uint8_t lll_scan_aux_setup(struct pdu_adv *pdu, uint8_t pdu_phy,
 		overhead_us += cte_info->time << 3;
 	}
 #endif
+	overhead_us += radio_rx_chain_delay_get(pdu_phy, pdu_phy_flags_rx);
 	overhead_us += lll_radio_rx_ready_delay_get(phy, PHY_FLAGS_S8);
 	overhead_us += window_widening_us;
+	overhead_us += EVENT_TICKER_RES_MARGIN_US;
 	overhead_us += EVENT_JITTER_US;
 
 	/* Minimum prepare tick offset + minimum preempt tick offset are the
