@@ -318,12 +318,16 @@ void ull_cp_priv_ntf_encode_enc_req(struct proc_ctx *ctx, struct pdu_data *pdu)
 
 void ull_cp_priv_pdu_encode_enc_rsp(struct pdu_data *pdu)
 {
-	//struct pdu_data_llctrl_enc_req *p;
+	struct pdu_data_llctrl_enc_rsp *p;
 
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len = offsetof(struct pdu_data_llctrl, enc_rsp) + sizeof(struct pdu_data_llctrl_enc_rsp);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_ENC_RSP;
-	/* TODO(thoh): Fill in PDU with correct data */
+
+	p = &pdu->llctrl.enc_rsp;
+	/* TODO(thoh): Optimize getting random data */
+	lll_csrand_get(p->skds, sizeof(p->skds));
+	lll_csrand_get(p->ivs, sizeof(p->ivs));
 }
 
 void ull_cp_priv_pdu_encode_start_enc_req(struct pdu_data *pdu)
