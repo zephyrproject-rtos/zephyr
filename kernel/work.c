@@ -930,8 +930,8 @@ int k_work_schedule_for_queue(struct k_work_q *queue,
 	int ret = 0;
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	/* Schedule the work item if it's idle. */
-	if (work_busy_get_locked(work) == 0U) {
+	/* Schedule the work item if it's idle or running. */
+	if ((work_busy_get_locked(work) & ~K_WORK_RUNNING) == 0U) {
 		ret = schedule_for_queue_locked(&queue, dwork, delay);
 	}
 
