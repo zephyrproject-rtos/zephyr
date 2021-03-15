@@ -538,6 +538,14 @@ config BT_TICKER_COMPATIBILITY_MODE
 	  radio RX/TX. Enabling this option disables the ticker priority- and
 	  'must expire' features.
 
+config BT_TICKER_LAZY_GET
+	bool "Ticker Next Slot Get with Lazy"
+	default y if BT_CTLR_ADV_PERIODIC
+	help
+	  This option enables ticker interface to iterate through active
+	  ticker nodes, returning tick to expire and lazy count from a reference
+	  tick.
+
 config BT_TICKER_EXT
 	bool "Ticker extensions"
 	depends on !BT_TICKER_COMPATIBILITY_MODE
