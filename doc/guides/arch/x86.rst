@@ -76,3 +76,51 @@ where virtual address space can be:
 - Due to re-using of second level entries, both
   ``CONFIG_SRAM_OFFSET`` and ``CONFIG_KERNEL_VM_OFFSET`` must be of
   same value.
+
+Specifying Additional Memory Mappings at Build Time
+***************************************************
+
+The page table generation script (:file:`arch/x86/gen_mmu.py`) generates
+the necessary multi-level page tables for code execution and data access
+using the kernel image produced by the first linker pass. Additional
+command line arguments can be passed to the script to generate additional
+memory mappings. This is useful for static mappings and/or device MMIO
+access during very early boot. To pass extra command line arguments to
+the script, populate a CMake list named ``X86_EXTRA_GEN_MMU_ARGUMENTS``
+in the board configuration file. Here is an example:
+
+.. code-block:: cmake
+
+   set(X86_EXTRA_GEN_MMU_ARGUMENTS
+       --map 0xA0000000,0x2000
+       --map 0x80000000,0x400000,LWUX,0xB0000000)
+
+The argument ``--map`` takes the following value:
+``<physical address>,<size>[,<flags:LUWX>[,<virtual adderss>]]``, where:
+
+- ``<physical address>`` is the physical address of the mapping. (Required)
+
+- ``<size>`` is the size of the region to be mapped. (Required)
+
+- ``<flags>`` is the flag associated with the mapping: (Optional)
+
+  - ``L``: Large page at the page directory level.
+
+  - ``U``: Allow userspace access.
+
+  - ``W``: Read/write.
+
+  - ``X``: Allow execution.
+
+    - Default is small page (4KB), supervisor only, read only, and
+      execution disabled.
+
+- ``<virtual address`` is the virtual address of the mapping. (Optional)
+
+Note that specifying additional memory mappings requires larger storage
+space for the pre-allocated page tables (both kernel and per-domain
+tables). :option:`CONFIG_X86_EXTRA_PAGE_TABLE_PAGES` is needed to
+specify how many more memory pages to be reserved for the page tables.
+If the needed space is not exactly the same as required space,
+the ``gen_mmu.py`` script will print out a message indicating what
+needs to be the value for the kconfig.
