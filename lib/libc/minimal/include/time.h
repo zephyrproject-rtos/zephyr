@@ -52,6 +52,8 @@ struct tm *gmtime(const time_t *timep);
 struct tm *gmtime_r(const time_t *_MLIBC_RESTRICT timep,
 		    struct tm *_MLIBC_RESTRICT result);
 
+time_t time(time_t *tloc);
+
 #ifdef __cplusplus
 }
 #endif
