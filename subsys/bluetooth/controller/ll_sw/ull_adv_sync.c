@@ -891,6 +891,7 @@ static void mfy_sync_offset_get(void *param)
 	uint32_t ticks_current;
 	struct pdu_adv *pdu;
 	uint8_t ticker_id;
+	uint16_t lazy;
 	uint8_t retry;
 	uint8_t id;
 
@@ -910,11 +911,11 @@ static void mfy_sync_offset_get(void *param)
 		ticks_previous = ticks_current;
 
 		ret_cb = TICKER_STATUS_BUSY;
-		ret = ticker_next_slot_get(TICKER_INSTANCE_ID_CTLR,
-					   TICKER_USER_ID_ULL_LOW,
-					   &id,
-					   &ticks_current, &ticks_to_expire,
-					   ticker_op_cb, (void *)&ret_cb);
+		ret = ticker_next_slot_get_ext(TICKER_INSTANCE_ID_CTLR,
+					       TICKER_USER_ID_ULL_LOW,
+					       &id, &ticks_current,
+					       &ticks_to_expire, &lazy,
+					       ticker_op_cb, (void *)&ret_cb);
 		if (ret == TICKER_STATUS_BUSY) {
 			while (ret_cb == TICKER_STATUS_BUSY) {
 				ticker_job_sched(TICKER_INSTANCE_ID_CTLR,
@@ -937,7 +938,8 @@ static void mfy_sync_offset_get(void *param)
 	pdu = lll_adv_aux_data_curr_get(adv->lll.aux);
 	si = sync_info_get(pdu);
 	sync_info_offset_fill(si, ticks_to_expire, 0);
-	si->evt_cntr = lll_sync->event_counter + lll_sync->latency_prepare;
+	si->evt_cntr = lll_sync->event_counter + lll_sync->latency_prepare +
+		       lazy;
 }
 
 static inline struct pdu_adv_sync_info *sync_info_get(struct pdu_adv *pdu)
