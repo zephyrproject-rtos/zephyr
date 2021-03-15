@@ -107,6 +107,14 @@ extern bool pcie_msi_enable(pcie_bdf_t bdf,
 			    msi_vector_t *vectors,
 			    uint8_t n_vector);
 
+/**
+ * @brief Check if the given PCI endpoint support MSI/MSI-x
+ *
+ * @param bdf the target PCI endpoint
+ * @return true if the endpoint support MSI/MSI-x
+ */
+extern bool pcie_is_msi(pcie_bdf_t bdf);
+
 /*
  * MSI capability IDs in the PCI configuration capability list.
  */
