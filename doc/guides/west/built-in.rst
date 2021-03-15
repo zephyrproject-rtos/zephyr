@@ -52,10 +52,12 @@ and check out the ``v1.14.0`` release. This command creates
 <west-config>` to ``zephyr`` to record the location of the manifest
 repository in the workspace. The default manifest file location is used.
 
-The ``-m`` option defaults to
-``https://github.com/zephyrproject-rtos/zephyr``. The ``--mr`` option
-defaults to ``master``. The ``--mf`` option defaults to ``west.yml``. If no
-``directory`` is given, the current working directory is used.
+The ``-m`` option defaults to ``https://github.com/zephyrproject-rtos/zephyr``.
+The ``--mf`` option defaults to ``west.yml``. Since west v0.10.1, west will use
+the default branch in the manifest repository unless the ``--mr`` option
+is used to override it. (In prior versions, ``--mr`` defaulted to ``master``.)
+
+If no ``directory`` is given, the current working directory is used.
 
 **Option 2**: to create a workspace around an existing local manifest
 repository, use:
