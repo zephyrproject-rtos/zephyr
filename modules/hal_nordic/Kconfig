@@ -57,7 +57,6 @@ endchoice
 
 choice NRF_802154_SL_TYPE
 	prompt "nRF IEEE 802.15.4 Service Layer Type"
-	default NRF_802154_SL_OPENSOURCE
 
 config NRF_802154_SL_OPENSOURCE
 	bool "nRF IEEE 802.15.4 Open source Service Layer"
