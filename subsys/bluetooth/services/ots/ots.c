@@ -168,12 +168,11 @@ int bt_ots_obj_add(struct bt_ots *ots,
 	int err;
 	struct bt_gatt_ots_object *obj;
 
-#if IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ)
-	if (ots->dir_list->dir_list_obj->state.type != BT_GATT_OTS_OBJECT_IDLE_STATE) {
+	if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ) && ots->dir_list &&
+	    ots->dir_list->dir_list_obj->state.type != BT_GATT_OTS_OBJECT_IDLE_STATE) {
 		LOG_DBG("Directory Listing Object is being read");
 		return -EBUSY;
 	}
-#endif /* CONFIG_BT_OTS_DIR_LIST_OBJ */
 
 	err = bt_gatt_ots_obj_manager_obj_add(ots->obj_manager, &obj);
 	if (err) {
@@ -185,7 +184,7 @@ int bt_ots_obj_add(struct bt_ots *ots,
 	memcpy(&obj->metadata, obj_init, sizeof(obj->metadata));
 
 	if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ)) {
-		bt_ots_dir_list_obj_add(ots, obj);
+		bt_ots_dir_list_obj_add(ots->dir_list, ots->obj_manager, ots->cur_obj, obj);
 	}
 
 	/* Request object data. */
@@ -195,7 +194,8 @@ int bt_ots_obj_add(struct bt_ots *ots,
 			bt_gatt_ots_obj_manager_obj_delete(obj);
 
 			if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ)) {
-				bt_ots_dir_list_obj_remove(ots, obj);
+				bt_ots_dir_list_obj_remove(ots->dir_list, ots->obj_manager,
+							   ots->cur_obj, obj);
 			}
 
 			return err;
@@ -227,12 +227,11 @@ int bt_ots_obj_delete(struct bt_ots *ots, uint64_t id)
 		ots->cur_obj = NULL;
 	}
 
-#if IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ)
-	if (ots->dir_list->dir_list_obj->state.type != BT_GATT_OTS_OBJECT_IDLE_STATE) {
+	if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ) && ots->dir_list &&
+	    ots->dir_list->dir_list_obj->state.type != BT_GATT_OTS_OBJECT_IDLE_STATE) {
 		LOG_DBG("Directory Listing Object is being read");
 		return -EBUSY;
 	}
-#endif /* CONFIG_BT_OTS_DIR_LIST_OBJ */
 
 	err = bt_gatt_ots_obj_manager_obj_delete(obj);
 	if (err) {
@@ -240,7 +239,7 @@ int bt_ots_obj_delete(struct bt_ots *ots, uint64_t id)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ)) {
-		bt_ots_dir_list_obj_remove(ots, obj);
+		bt_ots_dir_list_obj_remove(ots->dir_list, ots->obj_manager, ots->cur_obj, obj);
 	}
 
 	if (ots->cb->obj_deleted) {
@@ -304,7 +303,7 @@ int bt_ots_init(struct bt_ots *ots,
 	}
 
 	if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ)) {
-		bt_ots_dir_list_init(ots);
+		bt_ots_dir_list_init(&ots->dir_list, ots->obj_manager);
 	}
 
 	LOG_DBG("Initialized OTS");
