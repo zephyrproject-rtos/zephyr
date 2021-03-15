@@ -574,6 +574,7 @@
 /subsys/mgmt/mcumgr/smp_udp.c             @aunsbjerg
 /subsys/mgmt/updatehub/                   @nandojve @otavio
 /subsys/mgmt/osdp/                        @cbsiddharth
+/subsys/modbus/                           @jfischer-no
 /subsys/net/buf.c                         @jukkar @jhedberg @tbursztyka @pfalcon
 /subsys/net/ip/                           @jukkar @tbursztyka @pfalcon
 /subsys/net/lib/                          @jukkar @tbursztyka @pfalcon
