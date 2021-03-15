@@ -159,11 +159,6 @@ long long strtoll(const char *str, char **endptr, int base)
 	return (long long)strtol(str, endptr, base);
 }
 
-time_t time(time_t *t)
-{
-	return 0;
-}
-
 /*
  * Most of the wrappers below are copies of the wrappers in net/sockets.h,
  * but they are available only if CONFIG_NET_SOCKETS_POSIX_NAMES is enabled
