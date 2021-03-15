@@ -176,6 +176,7 @@ static const struct paging_level paging_levels[] = {
 
 #define NUM_LEVELS	ARRAY_SIZE(paging_levels)
 #define PTE_LEVEL	(NUM_LEVELS - 1)
+#define PDE_LEVEL	(NUM_LEVELS - 2)
 
 /*
  * Macros for reserving space for page tables
@@ -733,7 +734,7 @@ static inline pentry_t reset_pte(pentry_t old_val)
 	return new_val;
 }
 
-/* Wrapper functionsfor some gross stuff we have to do for Kernel
+/* Wrapper functions for some gross stuff we have to do for Kernel
  * page table isolation. If these are User mode page tables, the user bit
  * isn't set, and this is not the shared page, all the bits in the PTE
  * are flipped. This serves three purposes:
@@ -741,14 +742,15 @@ static inline pentry_t reset_pte(pentry_t old_val)
  *  - Flipping the physical address bits cheaply mitigates L1TF
  *  - State is preserved; to get original PTE, just complement again
  */
-static inline pentry_t pte_finalize_value(pentry_t val, bool user_table)
+static inline pentry_t pte_finalize_value(pentry_t val, bool user_table,
+					  int level)
 {
 #ifdef CONFIG_X86_KPTI
 	static const uintptr_t shared_phys_addr =
 		Z_MEM_PHYS_ADDR(POINTER_TO_UINT(&z_shared_kernel_page_start));
 
 	if (user_table && (val & MMU_US) == 0 && (val & MMU_P) != 0 &&
-	    get_entry_phys(val, PTE_LEVEL) != shared_phys_addr) {
+	    get_entry_phys(val, level) != shared_phys_addr) {
 		val = ~val;
 	}
 #endif
@@ -859,7 +861,7 @@ static inline pentry_t pte_atomic_update(pentry_t *pte, pentry_t update_val,
 				   (update_val & update_mask));
 		}
 
-		new_val = pte_finalize_value(new_val, user_table);
+		new_val = pte_finalize_value(new_val, user_table, PTE_LEVEL);
 	} while (atomic_pte_cas(pte, old_val, new_val) == false);
 
 #ifdef CONFIG_X86_KPTI
@@ -1457,7 +1459,8 @@ static int copy_page_table(pentry_t *dst, pentry_t *src, int level)
 	if (level == PTE_LEVEL) {
 		/* Base case: leaf page table */
 		for (int i = 0; i < get_num_entries(level); i++) {
-			dst[i] = pte_finalize_value(reset_pte(src[i]), true);
+			dst[i] = pte_finalize_value(reset_pte(src[i]), true,
+						    PTE_LEVEL);
 		}
 	} else {
 		/* Recursive case: allocate sub-structures as needed and
@@ -1469,6 +1472,13 @@ static int copy_page_table(pentry_t *dst, pentry_t *src, int level)
 
 			if ((src[i] & MMU_P) == 0) {
 				/* Non-present, skip */
+				continue;
+			}
+
+			if ((level == PDE_LEVEL) && ((src[i] & MMU_PS) != 0)) {
+				/* large page: no lower level table */
+				dst[i] = pte_finalize_value(src[i], true,
+							    PDE_LEVEL);
 				continue;
 			}
 
