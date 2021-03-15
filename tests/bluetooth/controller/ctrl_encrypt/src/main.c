@@ -607,6 +607,20 @@ void test_encryption_start_sla_rem(void)
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 
+	struct pdu_data_llctrl_enc_rsp exp_enc_rsp = {
+		.skds = {SKDS},
+		.ivs = {IVS},
+	};
+
+	/* Prepare mocked call(s) to lll_csrand_get */
+	/* First call for SKDs */
+	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_rsp.skds));
+	ztest_return_data(lll_csrand_get, buf, exp_enc_rsp.skds);
+	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_rsp.skds));
+	/* Second call for IVs */
+	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_rsp.ivs));
+	ztest_return_data(lll_csrand_get, buf, exp_enc_rsp.ivs);
+	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_rsp.ivs));
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
 
@@ -740,6 +754,20 @@ void test_encryption_start_sla_rem_limited_memory(void)
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 
+	struct pdu_data_llctrl_enc_rsp exp_enc_rsp = {
+		.skds = {SKDS},
+		.ivs = {IVS},
+	};
+
+	/* Prepare mocked call(s) to lll_csrand_get */
+	/* First call for SKDs */
+	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_rsp.skds));
+	ztest_return_data(lll_csrand_get, buf, exp_enc_rsp.skds);
+	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_rsp.skds));
+	/* Second call for IVs */
+	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_rsp.ivs));
+	ztest_return_data(lll_csrand_get, buf, exp_enc_rsp.ivs);
+	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_rsp.ivs));
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
 
@@ -902,10 +930,25 @@ void test_encryption_start_sla_rem_no_ltk(void)
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 
+	struct pdu_data_llctrl_enc_rsp exp_enc_rsp = {
+		.skds = {SKDS},
+		.ivs = {IVS},
+	};
+
 	struct pdu_data_llctrl_reject_ext_ind reject_ext_ind = {
 		.reject_opcode = PDU_DATA_LLCTRL_TYPE_ENC_REQ,
 		.error_code = BT_HCI_ERR_PIN_OR_KEY_MISSING
 	};
+
+	/* Prepare mocked call(s) to lll_csrand_get */
+	/* First call for SKDs */
+	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_rsp.skds));
+	ztest_return_data(lll_csrand_get, buf, exp_enc_rsp.skds);
+	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_rsp.skds));
+	/* Second call for IVs */
+	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_rsp.ivs));
+	ztest_return_data(lll_csrand_get, buf, exp_enc_rsp.ivs);
+	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_rsp.ivs));
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
