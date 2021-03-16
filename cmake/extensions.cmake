@@ -2026,6 +2026,8 @@ endfunction()
 # variable: Name of <variable> to check and set, for example BOARD.
 # REQUIRED: Optional flag. If specified, then an unset <variable> will be
 #           treated as an error.
+# WATCH: Optional flag. If specified, watch the variable and print a warning if
+#        the variable is later being changed.
 #
 # Details:
 #   <variable> can be set by 3 sources.
@@ -2056,7 +2058,7 @@ endfunction()
 #   <variable> the build directory must be cleaned.
 #
 function(zephyr_check_cache variable)
-  cmake_parse_arguments(CACHE_VAR "REQUIRED" "" "" ${ARGN})
+  cmake_parse_arguments(CACHE_VAR "REQUIRED;WATCH" "" "" ${ARGN})
   string(TOLOWER ${variable} variable_text)
   string(REPLACE "_" " " variable_text ${variable_text})
 
@@ -2120,8 +2122,10 @@ function(zephyr_check_cache variable)
   set(${variable} ${${variable}} PARENT_SCOPE)
   set(CACHED_${variable} ${${variable}} CACHE STRING "Selected ${variable_text}")
 
-  # The variable is now set to its final value.
-  zephyr_boilerplate_watch(${variable})
+  if(CACHE_VAR_WATCH)
+    # The variable is now set to its final value.
+    zephyr_boilerplate_watch(${variable})
+  endif()
 endfunction(zephyr_check_cache variable)
 
 
