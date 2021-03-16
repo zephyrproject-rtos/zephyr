@@ -59,7 +59,7 @@ if(${LATEXMK} STREQUAL LATEXMK-NOTFOUND)
 endif()
 
 if(NOT DEFINED SPHINXOPTS)
-  set(SPHINXOPTS -q)
+  set(SPHINXOPTS -q -j auto)
 else()
   separate_arguments(SPHINXOPTS)
 endif()
