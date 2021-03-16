@@ -13,6 +13,15 @@
 				erase-block-size = <DT_SIZE_K(128)>;
 			};
 		};
+
+		uart9: serial@40011800 {
+			compatible = "st,stm32-uart";
+			reg = <0x40011800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000040>;
+			interrupts = <155 0>;
+			status = "disabled";
+			label = "UART_9";
+		};
 	};
 	/* DTCM memory directly coppled to CPU */
 	dtcm: memory@20000000 {
