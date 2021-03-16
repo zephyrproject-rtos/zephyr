@@ -587,6 +587,112 @@ class BinaryHandler(Handler):
 
         self.record(harness)
 
+class BSimHandler(BinaryHandler):
+    def __init__(self, instance, type_str, verbose):
+        super().__init__(instance, type_str)
+        self.verbose = verbose
+        self.binary = None
+        self.bsim_bin_path = os.path.join(os.environ.get('BSIM_OUT_PATH'), 'bin')
+
+    def _output_reader(self, proc):
+        self.line = proc.stdout.readline()
+
+    def _output_handler(self, proc):
+        timeout_time = time.time() + self.timeout
+
+        while True:
+            this_timeout = timeout_time - time.time()
+            if this_timeout < 0 or proc.poll() is not None:
+                break
+            reader_t = threading.Thread(target=self._output_reader, args=(proc,), daemon=True)
+            reader_t.start()
+            reader_t.join(this_timeout)
+            if not reader_t.is_alive():
+                line = self.line
+                if len(line) == 0:
+                    continue
+                logger.debug("OUTPUT: {0}".format(line.decode('utf-8').rstrip()))
+                with open(self.log, "a") as log_out:
+                    log_out.write(line.decode('utf-8'))
+            else:
+                reader_t.join(0)
+                break
+        try:
+            # BabbleSim processes end on their own,
+            # so let's give it up to 100ms to do so
+            proc.wait(0.1)
+        except subprocess.TimeoutExpired:
+            self.terminate(proc)
+
+    def handle(self):
+        harness_name = self.instance.testcase.harness.capitalize()
+        harness_import = HarnessImporter(harness_name)
+        harness = harness_import.instance
+        harness.configure(self.instance)
+
+        verbosity_level = 2 if self.verbose else 1
+        sim_id = self.name.replace('/', '_')
+
+        commands = []
+
+        for i, test in enumerate(harness.bsim_tests):
+            command = [
+                self.binary,
+                f'-d={i}',
+                f'--testid={test["id"]}',
+                f'-s={sim_id}',
+                f'-v={verbosity_level}',
+            ]
+
+            if 'real_encryption' in test and test['real_encryption']:
+                command.append('-RealEncryption=1')
+
+            if 'rs' in test:
+                command.append(f'-rs={test["rs"]}')
+
+            commands.append(command)
+
+        phy = [
+            os.path.join(self.bsim_bin_path, harness.phy),
+            f'-D={len(harness.bsim_tests)}',
+            f'-s={sim_id}',
+            f'-v={verbosity_level}'
+        ]
+
+        if harness.sim_length:
+            # Sim length is specified in microseconds:
+            phy.append(f'-sim_length={int(harness.sim_length * 1000000)}')
+
+        commands.append(phy)
+
+        procs = []
+
+        start_time = time.time()
+
+        # Flush log file
+        with open(self.log, 'w'):
+            pass
+
+        for i, command in enumerate(commands):
+            logger.debug(f"Spawning {' '.join(command)}")
+            proc = subprocess.Popen(command, stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE, cwd=self.bsim_bin_path)
+            t = threading.Thread(target=self._output_handler, args=(proc, ), daemon=True)
+            t.start()
+            procs.append((t, proc))
+
+        for t, proc in procs:
+            t.join()
+            if t.is_alive():
+                self.terminate(proc)
+                t.join()
+            proc.wait()
+            handler_time = time.time() - start_time
+
+        if all([proc.returncode == 0 for _, proc in procs]):
+            self.set_state("passed", handler_time)
+        else:
+            self.set_state("failed", handler_time)
 
 class DeviceHandler(Handler):
 
@@ -1782,7 +1888,8 @@ class TestInstance(DisablePyTestCollectionMixin):
             fixture = testcase.harness_config.get('fixture')
             if fixture:
                 can_run = (fixture in fixtures)
-
+        elif testcase.harness == 'bsim':
+            can_run = True
         elif testcase.harness:
             can_run = False
         else:
@@ -1810,7 +1917,7 @@ class TestInstance(DisablePyTestCollectionMixin):
 
         target_ready = bool(self.testcase.type == "unit" or \
                         self.platform.type == "native" or \
-                        self.platform.simulation in ["mdb-nsim", "nsim", "renode", "qemu", "tsim"] or \
+                        self.platform.simulation in ["mdb-nsim", "nsim", "renode", "qemu", "tsim", "bsim"] or \
                         filter == 'runnable')
 
         if self.platform.simulation == "nsim":
@@ -2237,6 +2344,10 @@ class ProjectBuilder(FilterBuilder):
             instance.handler.binary = os.path.join(instance.build_dir, "testbinary")
             if self.coverage:
                 args.append("COVERAGE=1")
+        elif instance.platform.simulation == "bsim":
+            if os.environ.get('BSIM_OUT_PATH'):
+                instance.handler = BSimHandler(instance, "bsim", self.verbose)
+                instance.handler.binary = os.path.join(instance.build_dir, "zephyr", "zephyr.exe")
         elif instance.platform.type == "native":
             handler = BinaryHandler(instance, "native")
 

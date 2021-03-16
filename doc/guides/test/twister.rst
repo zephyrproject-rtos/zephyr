@@ -369,6 +369,48 @@ harness_config: <harness configuration options>
 
         Only one fixture can be defined per testcase.
 
+    bsim_tests: <list of test specifications>
+        BabbleSim test harness only.
+
+        List of BabbleSim tests to run. Each entry in the list is a map with the
+        following members:
+
+        * ``id``: BabbleSim test ID (required)
+        * ``rs``: Seed for the random generator to use in the process.
+          (optional)
+        * ``real_encryption``:  Whether to use libCrypto for encryption in the
+          test. If true, twister passes -RealEncryption=1 to the test
+          (optional)
+
+        Optional parameters will only be passed to the processes if specified.
+
+        Each entry in the list will spawn a separate process, which will have to
+        complete successfully for the test to succeed.
+
+        Example:
+
+        ::
+
+           bsim_tests:
+             - id: test_id_1
+             - id: test_id_2
+               rs: 5
+             - id: test_id_3
+               real_encryption: true
+
+    bsim_phy: <BabbleSim Physical layer simulation specification>
+        BabbleSim test harness only.
+
+        Specification for the BabbleSim physical layer, as a map with members:
+
+        *  ``name``: Name of the Physical layer to simulate. Must match a
+           BabbleSim phy executable in ``$BSIM_OUT_PATH/bin``. (default:
+           ``bs_phy_2G4_v1``)
+        * ``sim_length``: In-simulator duration of the simulation, in seconds.
+
+        All parameters are optional.
+
+
     The following is an example yaml file with a few harness_config options.
 
     ::
@@ -634,3 +676,57 @@ using an external J-Link probe.  The "probe_id" keyword overrides the
       product: DAPLink CMSIS-DAP
       runner: jlink
       serial: null
+
+
+Running BabbleSim tests
+***********************
+
+BabbleSim tests can be used to emulate multiple devices connected to a common
+emulated physical layer. In order to run BabbleSim tests, BabbleSim must be
+installed on the host machine, and its accompanying environment variables must
+be set. See :ref:`nrf52_bsim` for instructions on setting up BabbleSim.
+
+BabbleSim tests consist of a single BabbleSim application containing one or more
+test cases. Multiple instances of this application can be run in parallel by
+twister, along with the Physical layer emulation process that binds them
+together.
+
+BabbleSim test cases
+====================
+
+Emulated BabbleSim boards are built with a lightweight framework for registering
+test cases. All available test cases in a BabbleSim test application are
+registered to the test runner through a list of installer functions. Each
+installer function should call ``bst_add_tests()``, and return its result. This
+function accepts a list of ``struct bst_test_instance`` objects, each
+representing a single test case. Each test case contains a test ID, a
+description, and a set of callbacks. These test IDs are matched with
+the ``--testid`` command line argument passed to the test application, and the
+test BabbleSim test framework runs the test case that matches the given test ID.
+
+
+Adding BabbleSim tests
+======================
+
+Test cases listed with the ``harness: bsim`` will run as BabbleSim tests. Each
+BabbleSim test can be configured through the ``bsim_phy`` and ``bsim_tests``
+configuration entries in ``harness_config``. ``bsim_phy`` specifies parameters
+for the BabbleSim physical layer emulation, while ``bsim_tests`` specifies the
+list of test cases to run together for each test. For example::
+
+   tests:
+     bluetooth.bsim.advx:
+       harness: bsim
+       tags: bluetooth
+       platform_allow: nrf52_bsim
+       harness_config:
+         bsim_phy:
+           sim_length: 60
+         bsim_tests:
+           - id: advx
+           - id: scanx
+
+This creates a single BabbleSim test that starts two instances of the application
+being tested - one that runs the test case with id "advx", and one that runs the
+test case with id "scanx". These will run for a simulated time of 60 seconds or
+until one of the simulated devices exits with an error.

@@ -160,3 +160,26 @@ class Test(Harness):
 
 class Ztest(Test):
     pass
+
+
+class Bsim(Harness):
+    def __init__(self):
+        super().__init__()
+        self.phy = 'bs_2G4_phy_v1'
+        self.bsim_tests = []
+        self.sim_length = None
+
+    def configure(self, instance):
+        config = instance.testcase.harness_config
+        self.id = instance.testcase.id
+        if "ignore_faults" in instance.testcase.tags:
+            self.fail_on_fault = False
+
+        if config:
+            phy = config.get('bsim_phy', {})
+            if phy:
+                if 'name' in phy:
+                    self.phy = phy['name']
+                if 'sim_length' in phy:
+                    self.sim_length = phy['sim_length']
+            self.bsim_tests = config.get('bsim_tests', [])

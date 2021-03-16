@@ -74,6 +74,34 @@ mapping:
               "regex":
                 type: str
                 required: no
+          "bsim_tests":
+            type: seq
+            required: no
+            sequence:
+              - type: map
+                mapping:
+                  "id":
+                    type: str
+                    required: yes
+                  "rs":
+                    type: int
+                    required: no
+                  "real_encryption":
+                    type: bool
+                    required: no
+          "bsim_phy":
+            type: map
+            required: no
+            mapping:
+              "name":
+                type: str
+                required: no
+              "sim_length":
+                type: float
+                required: no
+          "sim_length":
+            type: float
+            required: no
       "min_ram":
         type: int
         required: no
@@ -198,6 +226,31 @@ mapping:
                 mapping:
                   "regex":
                     type: str
+                    required: no
+              "bsim_tests":
+                type: seq
+                required: no
+                sequence:
+                  - type: map
+                    mapping:
+                      "id":
+                        type: str
+                        required: yes
+                      "rs":
+                        type: int
+                        required: no
+                      "real_encryption":
+                        type: bool
+                        required: no
+              "bsim_phy":
+                type: map
+                required: no
+                mapping:
+                  "name":
+                    type: str
+                    required: no
+                  "sim_length":
+                    type: float
                     required: no
           "min_ram":
             type: int
