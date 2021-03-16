@@ -811,6 +811,9 @@ void ull_conn_setup(memq_link_t *link, struct node_rx_hdr *rx)
 
 	ftr = &(rx->rx_ftr);
 
+	/* NOTE: LLL conn context SHALL be after lll_hdr in
+	 *       struct lll_adv and struct lll_scan.
+	 */
 	lll = *((struct lll_conn **)((uint8_t *)ftr->param +
 				     sizeof(struct lll_hdr)));
 	switch (lll->role) {
