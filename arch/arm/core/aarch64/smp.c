@@ -98,6 +98,14 @@ void sched_ipi_handler(const void *unused)
 {
 	ARG_UNUSED(unused);
 
+#ifdef CONFIG_USERSPACE
+	/*
+	 * Make sure a domain switch by another CPU is effective on this CPU.
+	 * This is a no-op if the page table is already the right one.
+	 */
+	z_arm64_swap_ptables(_current);
+#endif
+
 	z_sched_ipi();
 }
 
