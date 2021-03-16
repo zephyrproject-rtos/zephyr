@@ -115,6 +115,11 @@
 	(NORMAL_OUTER_INNER_WRITE_BACK_WRITE_READ_ALLOCATE_NON_SHAREABLE | \
 	 MPU_RASR_XN_Msk | size | P_RW_U_NA_Msk) \
 }
+#define REGION_RAM_NOCACHE_ATTR(size) \
+{ \
+	(NORMAL_OUTER_INNER_NON_CACHEABLE_NON_SHAREABLE | \
+	 MPU_RASR_XN_Msk | size | P_RW_U_NA_Msk) \
+}
 #if defined(CONFIG_MPU_ALLOW_FLASH_WRITE)
 #define REGION_FLASH_ATTR(size) \
 { \
@@ -132,15 +137,15 @@
 #define REGION_IO_ATTR(size) { (DEVICE_NON_SHAREABLE | size | P_RW_U_NA_Msk) }
 
 struct arm_mpu_region_attr {
-	/* Attributes belonging to RASR (including the encoded region size) */
-	uint32_t rasr;
+    /* Attributes belonging to RASR (including the encoded region size) */
+    uint32_t rasr;
 };
 
 typedef struct arm_mpu_region_attr arm_mpu_region_attr_t;
 
 /* Typedef for the k_mem_partition attribute */
 typedef struct {
-	uint32_t rasr_attr;
+    uint32_t rasr_attr;
 } k_mem_partition_attr_t;
 
 /* Read-Write access permission attributes */

@@ -64,6 +64,14 @@
     status = "okay";
 };
 
+/*
+&usart2 {
+    pinctrl-0 = <&usart2_tx_pd5 &usart2_rx_pd6 &uart2_de_pd4>;
+    current-speed = <115200>;
+    status = "okay";
+};
+*/
+
 &usart3 {
 	pinctrl-0 = <&usart3_tx_pd8 &usart3_rx_pd9>;
 	current-speed = <115200>;

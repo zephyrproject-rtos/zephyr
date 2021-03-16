@@ -123,6 +123,16 @@ MEMORY
 #ifdef CONFIG_BT_STM32_IPM
     SRAM1                 (rw) : ORIGIN = RAM1_ADDR, LENGTH = RAM1_SIZE
     SRAM2                 (rw) : ORIGIN = RAM2_ADDR, LENGTH = RAM2_SIZE
+#else
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(sram1), okay)
+    SRAM1                 (rw) : ORIGIN = DT_REG_ADDR(DT_NODELABEL(sram1)), LENGTH = DT_REG_SIZE(DT_NODELABEL(sram1))
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(sram2), okay)
+    SRAM2                 (rw) : ORIGIN = DT_REG_ADDR(DT_NODELABEL(sram2)), LENGTH = DT_REG_SIZE(DT_NODELABEL(sram2))
+#endif
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(sram3), okay)
+    SRAM3                 (rw) : ORIGIN = DT_REG_ADDR(DT_NODELABEL(sram3)), LENGTH = DT_REG_SIZE(DT_NODELABEL(sram3))
 #endif
 #ifdef CONFIG_MEMC_STM32_SDRAM
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(sdram1), okay)

@@ -13,6 +13,7 @@ config SOC_SERIES_STM32H7X
 	select CPU_HAS_ARM_MPU
 	select HAS_SWO
 	select USE_STM32_HAL_CORTEX
+	select CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS
 	help
 	  Enable support for STM32H7 MCU series
 
