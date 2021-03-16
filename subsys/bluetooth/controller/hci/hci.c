@@ -682,12 +682,28 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 			    BIT(6) | BIT(7);
 	/* LE Remove Adv Set, LE Clear Adv Sets */
 	rp->commands[37] |= BIT(0) | BIT(1);
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+	/* LE Set PA Params, LE Set PA Data, LE Set PA Enable */
+	rp->commands[37] |= BIT(2) | BIT(3) | BIT(4);
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_BROADCASTER */
 
 #if defined(CONFIG_BT_OBSERVER)
 	/* LE Set Scan Params, LE Set Scan Enable */
 	rp->commands[26] |= BIT(2) | BIT(3);
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	/* LE Set Extended Scan Params, LE Set Extended Scan Enable */
+	rp->commands[37] |= BIT(5) | BIT(6);
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
+	/* LE PA Create Sync, LE PA Create Sync Cancel, LE PA Terminate Sync */
+	rp->commands[38] |= BIT(0) | BIT(1) | BIT(2);
+	/* LE Set PA Receive Enable */
+	rp->commands[40] |= BIT(5);
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+
 #endif /* CONFIG_BT_OBSERVER */
 
 #if defined(CONFIG_BT_CONN)
@@ -696,6 +712,11 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 	rp->commands[26] |= BIT(4) | BIT(5);
 	/* Set Host Channel Classification */
 	rp->commands[27] |= BIT(3);
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	/* LE Extended Create Connection */
+	rp->commands[37] |= BIT(7);
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	/* LE Start Encryption */
