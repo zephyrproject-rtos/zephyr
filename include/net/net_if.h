@@ -627,6 +627,8 @@ static inline struct net_offload *net_if_offload(struct net_if *iface)
 #if defined(CONFIG_NET_OFFLOAD)
 	return iface->if_dev->offload;
 #else
+	ARG_UNUSED(iface);
+
 	return NULL;
 #endif
 }

@@ -400,6 +400,8 @@ void net_if_stats_reset(struct net_if *iface)
 			return;
 		}
 	}
+#else
+	ARG_UNUSED(iface);
 #endif
 }
 
@@ -3801,6 +3803,9 @@ static bool need_calc_checksum(struct net_if *iface, enum ethernet_hw_caps caps)
 
 	return !(net_eth_get_hw_capabilities(iface) & caps);
 #else
+	ARG_UNUSED(iface);
+	ARG_UNUSED(caps);
+
 	return true;
 #endif
 }
@@ -3960,6 +3965,8 @@ static int promisc_mode_set(struct net_if *iface, bool enable)
 		}
 	}
 #else
+	ARG_UNUSED(enable);
+
 	return -ENOTSUP;
 #endif
 
