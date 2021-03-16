@@ -66,10 +66,12 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 			     uint8_t devmatch_ok, uint8_t devmatch_id,
 			     uint8_t irkmatch_ok, uint8_t irkmatch_id,
 			     uint8_t rl_idx, uint8_t rssi_ready);
+#if defined(CONFIG_BT_CENTRAL)
 static inline bool isr_scan_init_check(struct lll_scan *lll,
 				       struct pdu_adv *pdu, uint8_t rl_idx);
 static inline bool isr_scan_init_adva_check(struct lll_scan *lll,
 					    struct pdu_adv *pdu, uint8_t rl_idx);
+#endif /* CONFIG_BT_CENTRAL */
 static inline bool isr_scan_tgta_check(struct lll_scan *lll, bool init,
 				       struct pdu_adv *pdu, uint8_t rl_idx,
 				       bool *dir_report);
@@ -1104,6 +1106,7 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 	return -ECANCELED;
 }
 
+#if defined(CONFIG_BT_CENTRAL)
 static inline bool isr_scan_init_check(struct lll_scan *lll,
 				       struct pdu_adv *pdu, uint8_t rl_idx)
 {
@@ -1133,6 +1136,7 @@ static inline bool isr_scan_init_adva_check(struct lll_scan *lll,
 	return ((lll->adv_addr_type == pdu->tx_addr) &&
 		!memcmp(lll->adv_addr, &pdu->adv_ind.addr[0], BDADDR_SIZE));
 }
+#endif /* CONFIG_BT_CENTRAL */
 
 static inline bool isr_scan_tgta_check(struct lll_scan *lll, bool init,
 				       struct pdu_adv *pdu, uint8_t rl_idx,
