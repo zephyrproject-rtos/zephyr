@@ -347,8 +347,17 @@ struct ethernet_lldp {
 };
 #endif /* CONFIG_NET_LLDP */
 
+enum ethernet_flags {
+	ETH_CARRIER_UP,
+};
+
 /** Ethernet L2 context that is needed for VLAN */
 struct ethernet_context {
+	/** Flags representing ethernet state, which are accessed from multiple
+	 * threads.
+	 */
+	atomic_t flags;
+
 #if defined(CONFIG_NET_VLAN)
 	struct ethernet_vlan vlan[NET_VLAN_MAX_COUNT];
 
@@ -360,19 +369,16 @@ struct ethernet_context {
 	ATOMIC_DEFINE(interfaces, NET_VLAN_MAX_COUNT);
 #endif
 
-	struct {
-		/** Carrier ON/OFF handler worker. This is used to create
-		 * network interface UP/DOWN event when ethernet L2 driver
-		 * notices carrier ON/OFF situation. We must not create another
-		 * network management event from inside management handler thus
-		 * we use worker thread to trigger the UP/DOWN event.
-		 */
-		struct k_work work;
+	/** Carrier ON/OFF handler worker. This is used to create
+	 * network interface UP/DOWN event when ethernet L2 driver
+	 * notices carrier ON/OFF situation. We must not create another
+	 * network management event from inside management handler thus
+	 * we use worker thread to trigger the UP/DOWN event.
+	 */
+	struct k_work carrier_work;
 
-		/** Network interface that is detecting carrier ON/OFF event.
-		 */
-		struct net_if *iface;
-	} carrier_mgmt;
+	/** Network interface. */
+	struct net_if *iface;
 
 #if defined(CONFIG_NET_LLDP)
 	struct ethernet_lldp lldp[NET_VLAN_MAX_COUNT];
@@ -415,8 +421,11 @@ struct ethernet_context {
 	int8_t vlan_enabled;
 #endif
 
+	/** Is network carrier up */
+	bool is_net_carrier_up : 1;
+
 	/** Is this context already initialized */
-	bool is_init;
+	bool is_init : 1;
 };
 
 /**
