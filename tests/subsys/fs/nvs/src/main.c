@@ -626,8 +626,6 @@ void test_nvs_gc_corrupt_close_ate(void)
 	ate.crc8 = crc8_ccitt(0xff, &ate,
 			      offsetof(struct nvs_ate, crc8));
 
-	flash_write_protection_set(flash_dev, false);
-
 	/* Mark sector 0 as closed */
 	err = flash_write(flash_dev, fs.offset + fs.sector_size -
 			  sizeof(struct nvs_ate), &close_ate,
@@ -649,8 +647,6 @@ void test_nvs_gc_corrupt_close_ate(void)
 			  sizeof(struct nvs_ate), &close_ate,
 			  sizeof(close_ate));
 	zassert_true(err == 0,  "flash_write failed: %d", err);
-
-	flash_write_protection_set(flash_dev, true);
 
 	fs.sector_count = 3;
 
@@ -687,8 +683,6 @@ void test_nvs_gc_corrupt_ate(void)
 	corrupt_ate.len = 20;
 	corrupt_ate.crc8 = 0xff; /* Incorrect crc8 */
 
-	flash_write_protection_set(flash_dev, false);
-
 	/* Mark sector 0 as closed */
 	err = flash_write(flash_dev, fs.offset + fs.sector_size -
 			  sizeof(struct nvs_ate), &close_ate,
@@ -705,8 +699,6 @@ void test_nvs_gc_corrupt_ate(void)
 			  sizeof(struct nvs_ate), &close_ate,
 			  sizeof(close_ate));
 	zassert_true(err == 0,  "flash_write failed: %d", err);
-
-	flash_write_protection_set(flash_dev, true);
 
 	fs.sector_count = 3;
 
