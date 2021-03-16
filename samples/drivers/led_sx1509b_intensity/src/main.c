@@ -17,7 +17,7 @@
 enum sx1509b_color { sx1509b_red = 0, sx1509b_green, sx1509b_blue };
 
 const struct device *sx1509b_dev;
-static struct k_delayed_work rgb_work;
+static struct k_work_delayable rgb_work;
 static uint8_t which_color = sx1509b_red;
 static uint8_t iterator;
 
@@ -62,7 +62,7 @@ static void rgb_work_handler(struct k_work *work)
 		}
 	}
 
-	k_delayed_work_submit(&rgb_work, K_MSEC(10));
+	k_work_schedule(k_work_delayable_from_work(work), K_MSEC(10));
 }
 
 void main(void)
@@ -88,6 +88,6 @@ void main(void)
 		}
 	}
 
-	k_delayed_work_init(&rgb_work, rgb_work_handler);
-	k_delayed_work_submit(&rgb_work, K_NO_WAIT);
+	k_work_init_delayable(&rgb_work, rgb_work_handler);
+	k_work_schedule(&rgb_work, K_NO_WAIT);
 }
