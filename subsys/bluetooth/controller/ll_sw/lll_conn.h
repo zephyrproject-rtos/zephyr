@@ -59,6 +59,7 @@ struct lll_conn {
 	union {
 		struct {
 			uint8_t initiated:1;
+			uint8_t cancelled:1;
 		} master;
 #if defined(CONFIG_BT_PERIPHERAL)
 		struct {

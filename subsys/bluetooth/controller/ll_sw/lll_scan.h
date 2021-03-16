@@ -12,7 +12,7 @@ struct lll_scan {
 	 *       check ull_conn_setup how it access the connection LLL
 	 *       context.
 	 */
-	struct lll_conn *conn;
+	struct lll_conn *volatile conn;
 
 	uint8_t  adv_addr[BDADDR_SIZE];
 	uint32_t conn_win_offset_us;
