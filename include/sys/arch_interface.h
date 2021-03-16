@@ -299,6 +299,12 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
  */
 
 /**
+ * @def ARCH_PCIE_IRQ_CONNECT(bdf, irq, pri, isr, arg, flags)
+ *
+ * @see PCIE_IRQ_CONNECT()
+ */
+
+/**
  * @def ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p)
  *
  * @see IRQ_DIRECT_CONNECT()
