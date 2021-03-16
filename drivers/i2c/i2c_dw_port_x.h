@@ -54,20 +54,23 @@ static void i2c_config_@NUM@(const struct device *port)
 		return;
 	}
 
-	irq_connect_dynamic(irq,
-			    DT_INST_IRQ(@NUM@, priority),
-			    (void (*)(const void *))i2c_dw_isr,
-			    DEVICE_DT_INST_GET(@NUM@), INST_@NUM@_IRQ_FLAGS);
+	pcie_connect_dynamic_irq(DT_INST_REG_ADDR(@NUM@), irq,
+				 DT_INST_IRQ(@NUM@, priority),
+				 (void (*)(const void *))i2c_dw_isr,
+				 DEVICE_DT_INST_GET(@NUM@),
+				 INST_@NUM@_IRQ_FLAGS);
+
 	pcie_irq_enable(DT_INST_REG_ADDR(@NUM@), irq);
 
 #else
 
 	/* PCI(e) with fixed or MSI IRQ */
 
-	IRQ_CONNECT(DT_INST_IRQN(@NUM@),
-		    DT_INST_IRQ(@NUM@, priority),
-		    i2c_dw_isr, DEVICE_DT_INST_GET(@NUM@),
-		    INST_@NUM@_IRQ_FLAGS);
+	PCIE_IRQ_CONNECT(DT_INST_REG_ADDR(@NUM@),
+			 DT_INST_IRQN(@NUM@),
+			 DT_INST_IRQ(@NUM@, priority),
+			 i2c_dw_isr, DEVICE_DT_INST_GET(@NUM@),
+			 INST_@NUM@_IRQ_FLAGS);
 	pcie_irq_enable(DT_INST_REG_ADDR(@NUM@),
 			DT_INST_IRQN(@NUM@));
 

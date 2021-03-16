@@ -91,11 +91,11 @@ static void irq_config_func_@NUM@(const struct device *dev)
 		return;
 	}
 
-	irq_connect_dynamic(irq,
-			    DT_INST_IRQ(@NUM@, priority),
-			    (void (*)(const void *))uart_ns16550_isr,
-			    DEVICE_DT_INST_GET(@NUM@),
-			    INST_@NUM@_IRQ_FLAGS);
+	pcie_connect_dynamic_irq(DT_INST_REG_ADDR(@NUM@), irq,
+				 DT_INST_IRQ(@NUM@, priority),
+				 (void (*)(const void *))uart_ns16550_isr,
+				 DEVICE_DT_INST_GET(@NUM@),
+				 INST_@NUM@_IRQ_FLAGS);
 
 	pcie_irq_enable(DT_INST_REG_ADDR(@NUM@), irq);
 
@@ -103,11 +103,12 @@ static void irq_config_func_@NUM@(const struct device *dev)
 
 	/* PCI(e) with fixed or MSI IRQ */
 
-	IRQ_CONNECT(DT_INST_IRQN(@NUM@),
-		    DT_INST_IRQ(@NUM@, priority),
-		    uart_ns16550_isr,
-		    DEVICE_DT_INST_GET(@NUM@),
-		    INST_@NUM@_IRQ_FLAGS);
+	PCIE_IRQ_CONNECT(DT_INST_REG_ADDR(@NUM@),
+			 DT_INST_IRQN(@NUM@),
+			 DT_INST_IRQ(@NUM@, priority),
+			 uart_ns16550_isr,
+			 DEVICE_DT_INST_GET(@NUM@),
+			 INST_@NUM@_IRQ_FLAGS);
 
 	pcie_irq_enable(DT_INST_REG_ADDR(@NUM@),
 			DT_INST_IRQN(@NUM@));
