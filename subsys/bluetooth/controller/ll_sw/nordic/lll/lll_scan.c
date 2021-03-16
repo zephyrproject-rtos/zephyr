@@ -140,7 +140,9 @@ static int prepare_cb(struct lll_prepare_param *p)
 	/* Check if stopped (on connection establishment race between LLL and
 	 * ULL.
 	 */
-	if (unlikely(lll->conn && lll->conn->master.initiated)) {
+	if (unlikely(lll->conn &&
+		     (lll->conn->master.initiated ||
+		      lll->conn->master.cancelled))) {
 		int err;
 
 		err = lll_hfclock_off();
@@ -779,7 +781,7 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 	if (0) {
 #if defined(CONFIG_BT_CENTRAL)
 	/* Initiator */
-	} else if (lll->conn &&
+	} else if (lll->conn && !lll->conn->master.cancelled &&
 		   isr_scan_init_check(lll, pdu_adv_rx, rl_idx)) {
 		struct lll_conn *lll_conn;
 		struct node_rx_ftr *ftr;
