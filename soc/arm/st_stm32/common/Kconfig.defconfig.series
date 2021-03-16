@@ -8,8 +8,7 @@
 if SOC_FAMILY_STM32
 
 config CORTEX_M_SYSTICK
-	bool
-	depends on !STM32_LPTIM_TIMER
+	default n if STM32_LPTIM_TIMER
 
 # set the tick per sec as a divider of the LPTIM clock source
 config SYS_CLOCK_TICKS_PER_SEC
