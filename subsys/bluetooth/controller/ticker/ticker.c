@@ -1731,7 +1731,6 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance,
 		}
 
 		ticker_id_iter = nodes[ticker_id_head].next;
-		ticker_id_prev = TICKER_NULL;
 
 		/* If drift was applied to this node, this must be
 		 * taken into consideration. Reduce the window with
@@ -1814,7 +1813,6 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance,
 			ticks_to_expire     = ticks_slot_window -
 					      ticker->ticks_slot;
 
-			ticker_id_prev = ticker_id_iter;
 			ticker_id_iter = node->next;
 		}
 
