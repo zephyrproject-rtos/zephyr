@@ -1140,6 +1140,8 @@ static void le_ecred_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 		goto response;
 	}
 
+	memset(dcid, 0, sizeof(dcid));
+
 	while (buf->len >= sizeof(scid)) {
 		scid = net_buf_pull_le16(buf);
 
@@ -1151,20 +1153,16 @@ static void le_ecred_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 			dcid[i++] = sys_cpu_to_le16(ch->rx.cid);
 			continue;
 		/* Some connections refused – invalid Source CID */
-		case BT_L2CAP_LE_ERR_INVALID_SCID:
 		/* Some connections refused – Source CID already allocated */
-		case BT_L2CAP_LE_ERR_SCID_IN_USE:
+		/* Some connections refused – not enough resources
+		 * available.
+		 */
+		default:
 			/* If a Destination CID is 0x0000, the channel was not
 			 * established.
 			 */
 			dcid[i++] = 0x0000;
 			continue;
-		/* Some connections refused – not enough resources
-		 * available.
-		 */
-		case BT_L2CAP_LE_ERR_NO_RESOURCES:
-		default:
-			goto response;
 		}
 	}
 
