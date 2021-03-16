@@ -5,6 +5,7 @@
 '''Runner for pyOCD .'''
 
 import os
+from os import path
 
 from runners.core import ZephyrBinaryRunner, RunnerCaps, \
     BuildConfiguration
@@ -21,8 +22,16 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
                  flash_addr=0x0, erase=False, flash_opts=None,
                  gdb_port=DEFAULT_PYOCD_GDB_PORT,
                  telnet_port=DEFAULT_PYOCD_TELNET_PORT, tui=False,
+                 pyocd_config=None,
                  board_id=None, daparg=None, frequency=None, tool_opt=None):
         super().__init__(cfg)
+
+        default = path.join(cfg.board_dir, 'support', 'pyocd.yaml')
+        if path.exists(default):
+            self.pyocd_config = default
+        else:
+            self.pyocd_config = None
+
 
         self.target_args = ['-t', target]
         self.pyocd = pyocd
@@ -35,6 +44,13 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
         self.hex_name = cfg.hex_file
         self.bin_name = cfg.bin_file
         self.elf_name = cfg.elf_file
+
+        pyocd_config_args = []
+
+        if self.pyocd_config is not None:
+            pyocd_config_args = ['--config', self.pyocd_config]
+
+        self.pyocd_config_args = pyocd_config_args
 
         board_args = []
         if board_id is not None:
@@ -145,6 +161,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
 
         cmd = ([self.pyocd] +
                ['flash'] +
+               self.pyocd_config_args +
                ['-e', erase_method] +
                self.flash_addr_args +
                self.daparg_args +
