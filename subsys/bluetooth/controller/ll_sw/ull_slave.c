@@ -130,7 +130,7 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	lll->interval = sys_le16_to_cpu(pdu_adv->connect_ind.interval);
 	if ((lll->data_chan_count < 2) || (lll->data_chan_hop < 5) ||
 	    (lll->data_chan_hop > 16) || !lll->interval) {
-		lll->initiated = 0U;
+		lll->slave.initiated = 0U;
 
 		/* Mark for buffer for release */
 		rx->type = NODE_RX_TYPE_RELEASE;

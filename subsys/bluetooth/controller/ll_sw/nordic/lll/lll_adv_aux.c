@@ -685,7 +685,7 @@ static void isr_tx_connect_rsp(void *param)
 
 	if (is_done) {
 		/* Stop further LLL radio events */
-		lll->conn->initiated = 1;
+		lll->conn->slave.initiated = 1;
 	}
 
 	/* Clear radio status and events */
