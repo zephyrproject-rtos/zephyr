@@ -1043,14 +1043,14 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 	_CONCAT(UART_NS16550_IRQ_FLAGS_SENSE, DT_INST_IRQ_HAS_CELL(n, sense))(n)
 
 /* not PCI(e) */
-#define UART_NS16550_IRQ_CONFIG_PCIE0(n)                                \
-	static void irq_config_func##n(const struct device *dev)        \
-	{                                                               \
-		ARG_UNUSED(dev);                                        \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),  \
-			    uart_ns16550_isr, DEVICE_DT_INST_GET(n),    \
-			    UART_NS16550_IRQ_FLAGS(n));                 \
-		irq_enable(DT_INST_IRQN(n));                            \
+#define UART_NS16550_IRQ_CONFIG_PCIE0(n)                                      \
+	static void irq_config_func##n(const struct device *dev)              \
+	{                                                                     \
+		ARG_UNUSED(dev);                                              \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),	      \
+			    uart_ns16550_isr, DEVICE_DT_INST_GET(n),	      \
+			    UART_NS16550_IRQ_FLAGS(n));			      \
+		irq_enable(DT_INST_IRQN(n));                                  \
 	}
 
 /* PCI(e) with auto IRQ detection */
@@ -1066,7 +1066,8 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 		if (irq == PCIE_CONF_INTR_IRQ_NONE) {                         \
 			return;                                               \
 		}                                                             \
-		irq_connect_dynamic(irq, DT_INST_IRQ(n, priority),            \
+		pcie_connect_dynamic_irq(DT_INST_REG_ADDR(n), irq,	      \
+				     DT_INST_IRQ(n, priority),		      \
 				    (void (*)(const void *))uart_ns16550_isr, \
 				    DEVICE_DT_INST_GET(n),                    \
 				    UART_NS16550_IRQ_FLAGS(n));               \
