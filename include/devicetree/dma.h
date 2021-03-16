@@ -53,6 +53,7 @@ extern "C" {
  * @return the label property of the node referenced at index "idx"
  */
 #define DT_DMAS_LABEL_BY_IDX(node_id, idx) \
+	__DEPRECATED_MACRO \
 	DT_PROP_BY_PHANDLE_IDX(node_id, dmas, idx, label)
 
 /**
@@ -64,6 +65,7 @@ extern "C" {
  * @see DT_DMAS_LABEL_BY_IDX()
  */
 #define DT_INST_DMAS_LABEL_BY_IDX(inst, idx) \
+	__DEPRECATED_MACRO \
 	DT_DMAS_LABEL_BY_IDX(DT_DRV_INST(inst), idx)
 
 /**
@@ -99,6 +101,7 @@ extern "C" {
  * @return the label property of the node referenced at the named element
  */
 #define DT_DMAS_LABEL_BY_NAME(node_id, name) \
+	__DEPRECATED_MACRO \
 	DT_PROP(DT_PHANDLE_BY_NAME(node_id, dmas, name), label)
 
 /**
@@ -178,6 +181,7 @@ extern "C" {
  * @see DT_DMAS_LABEL_BY_NAME()
  */
 #define DT_INST_DMAS_LABEL_BY_NAME(inst, name) \
+	__DEPRECATED_MACRO \
 	DT_DMAS_LABEL_BY_NAME(DT_DRV_INST(inst), name)
 
 /**
