@@ -146,8 +146,9 @@ typedef void (*auth_instance_func_t)(struct authenticate_conn *);
 /**
  * Authentication callback status function
  */
-typedef void (*auth_status_cb_t)(struct authenticate_conn *auth_conn, enum auth_instance_id instance,
-				 enum auth_status status, void *context);
+typedef void (*auth_status_cb_t)(struct authenticate_conn *auth_conn,
+                    enum auth_instance_id instance,
+				     enum auth_status status, void *context);
 
 
 /**
@@ -173,8 +174,10 @@ struct authenticate_conn {
 	auth_status_cb_t status_cb;
 	void *callback_context;
 
-	/* Work queue used to return status. Important if authentication
-	 * status changes/fails in an ISR context */
+	/*
+	 * Work queue used to return status. Important if authentication
+	 * status changes/fails in an ISR context
+	 */
 	struct k_work auth_status_work;
 
 
@@ -216,8 +219,7 @@ struct auth_certificate_info {
 	const uint8_t *cert;    /* Cert or cert chain in PEM format. */
 	size_t cert_size;       /* Size of cert or chain */
 
-	/* Optional private key for this cert, set to NULL if
-	 * not used. */
+	/* Optional private key for this cert, set to NULL if not used. */
 	const uint8_t *priv_key;
 	size_t priv_key_size;
 };
@@ -256,7 +258,8 @@ struct auth_optional_param {
 		struct auth_challenge_resp chal_resp;
 
 		/* For future use, additional optional params are added
-		 * added here. */
+		 * added here.
+		 */
 		struct auth_placeholder_opt placeholder_opt;
 	} param_body;
 };
@@ -269,13 +272,15 @@ struct auth_optional_param {
  * @param instance     The instance ID.
  * @param status_func  Status function callback.
  * @param context      Optional context used in status callback. NULL if not used.
- * @param opt_params   Optional params specific to the authentication method selected.  NULL if not used.
+ * @param opt_params   Optional params specific to the authentication method selected.
+ *                     NULL if not used.
  * @param auth_flags   Authentication flags.
  *
  * @return AUTH_SUCCESS on success else one of AUTH_ERROR_* values.
  */
 int auth_lib_init(struct authenticate_conn *auth_conn, enum auth_instance_id instance,
-		  auth_status_cb_t status_func, void *context, struct auth_optional_param *opt_params,
+		  auth_status_cb_t status_func, void *context,
+		  struct auth_optional_param *opt_params,
 		  enum auth_flags auth_flags);
 
 

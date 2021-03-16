@@ -359,27 +359,21 @@ const char *auth_lib_getstatus_str(enum auth_status status)
 	switch (status) {
 	case AUTH_STATUS_STARTED:
 		return "Authentication started";
-		break;
 
 	case AUTH_STATUS_IN_PROCESS:
 		return "In process";
-		break;
 
 	case AUTH_STATUS_CANCELED:
 		return "Canceled";
-		break;
 
 	case AUTH_STATUS_FAILED:
 		return "Failure";
-		break;
 
 	case AUTH_STATUS_AUTHENTICATION_FAILED:
 		return "Authentication Failed";
-		break;
 
 	case AUTH_STATUS_SUCCESSFUL:
 		return "Authentication Successful";
-		break;
 
 	default:
 		break;

@@ -157,8 +157,9 @@ static void auth_init_context(struct mbed_tls_context *mbed_ctx)
 	mbedtls_ctr_drbg_init(&mbed_ctx->ctr_drbg);
 	mbedtls_entropy_init(&mbed_ctx->entropy);
 
-    /* Generate random number as challenge using a cryptographically secure random
-	 * number generator. */
+	/* Generate random number as challenge using a cryptographically secure random
+	* number generator.
+	*/
 	sys_csrand_get(mbed_ctx->cookie, sizeof(mbed_ctx->cookie));
 }
 
@@ -175,79 +176,60 @@ static const char *auth_tls_handshake_state(const mbedtls_ssl_states state)
 
 	case MBEDTLS_SSL_HELLO_REQUEST:
 		return "MBEDTLS_SSL_HELLO_REQUEST";
-		break;
 
 	case MBEDTLS_SSL_CLIENT_HELLO:
 		return "MBEDTLS_SSL_CLIENT_HELLO";
-		break;
 
 	case MBEDTLS_SSL_SERVER_HELLO:
 		return "MBEDTLS_SSL_SERVER_HELLO";
-		break;
 
 	case MBEDTLS_SSL_SERVER_CERTIFICATE:
 		return "MBEDTLS_SSL_SERVER_CERTIFICATE";
-		break;
 
 	case MBEDTLS_SSL_SERVER_KEY_EXCHANGE:
 		return "MBEDTLS_SSL_SERVER_KEY_EXCHANGE";
-		break;
 
 	case MBEDTLS_SSL_CERTIFICATE_REQUEST:
 		return "MBEDTLS_SSL_CERTIFICATE_REQUEST";
-		break;
 
 	case MBEDTLS_SSL_SERVER_HELLO_DONE:
 		return "MBEDTLS_SSL_SERVER_HELLO_DONE";
-		break;
 
 	case MBEDTLS_SSL_CLIENT_CERTIFICATE:
 		return "MBEDTLS_SSL_CLIENT_CERTIFICATE";
-		break;
 
 	case MBEDTLS_SSL_CLIENT_KEY_EXCHANGE:
 		return "MBEDTLS_SSL_CLIENT_KEY_EXCHANGE";
-		break;
 
 	case MBEDTLS_SSL_CERTIFICATE_VERIFY:
 		return "MBEDTLS_SSL_CERTIFICATE_VERIFY";
-		break;
 
 	case MBEDTLS_SSL_CLIENT_CHANGE_CIPHER_SPEC:
 		return "MBEDTLS_SSL_CLIENT_CHANGE_CIPHER_SPEC";
-		break;
 
 	case MBEDTLS_SSL_CLIENT_FINISHED:
 		return "MBEDTLS_SSL_CLIENT_FINISHED";
-		break;
 
 	case MBEDTLS_SSL_SERVER_CHANGE_CIPHER_SPEC:
 		return "MBEDTLS_SSL_SERVER_CHANGE_CIPHER_SPEC";
-		break;
 
 	case MBEDTLS_SSL_SERVER_FINISHED:
 		return "MBEDTLS_SSL_SERVER_FINISHED";
-		break;
 
 	case MBEDTLS_SSL_FLUSH_BUFFERS:
 		return "MBEDTLS_SSL_FLUSH_BUFFERS";
-		break;
 
 	case MBEDTLS_SSL_HANDSHAKE_WRAPUP:
 		return "MBEDTLS_SSL_HANDSHAKE_WRAPUP";
-		break;
 
 	case MBEDTLS_SSL_HANDSHAKE_OVER:
 		return "MBEDTLS_SSL_HANDSHAKE_OVER";
-		break;
 
 	case MBEDTLS_SSL_SERVER_NEW_SESSION_TICKET:
 		return "MBEDTLS_SSL_SERVER_NEW_SESSION_TICKET";
-		break;
 
 	case MBEDTLS_SSL_SERVER_HELLO_VERIFY_REQUEST_SENT:
 		return "MBEDTLS_SSL_SERVER_HELLO_VERIFY_REQUEST_SENT";
-		break;
 
 	default:
 		break;
@@ -628,8 +610,9 @@ static int auth_tls_entropy(void *data, unsigned char *output, size_t len,
 {
 	(void) data;
 
-    /* Generate random number as challenge using a cryptographically secure random
-	 * number generator. */
+	/* Generate random number as challenge using a cryptographically secure random
+	* number generator.
+	*/
 	sys_csrand_get(output, len);
 
 	*olen = len;
@@ -729,7 +712,7 @@ static void auth_dtls_thead(struct authenticate_conn *auth_conn)
 
 			/* Server, wait for client hello */
 			bytecount = auth_xport_getnum_recvqueue_bytes_wait(auth_conn->xport_hdl,
-									   AUTH_DTLS_HELLO_WAIT_MSEC);
+								AUTH_DTLS_HELLO_WAIT_MSEC);
 
 			if (bytecount == -EAGAIN) {
 				/* simply timed out waiting for client hello, try again */
@@ -738,7 +721,8 @@ static void auth_dtls_thead(struct authenticate_conn *auth_conn)
 			}
 
 			if (bytecount < 0) {
-				LOG_ERR("Server, error when waiting for client hello, error: %d", bytecount);
+				LOG_ERR("Server, error when waiting for client hello, error: %d",
+	    					bytecount);
 				auth_lib_set_status(auth_conn, AUTH_STATUS_FAILED);
 				return;
 			}
@@ -758,7 +742,8 @@ static void auth_dtls_thead(struct authenticate_conn *auth_conn)
 		while (mbed_ctx->ssl.state != MBEDTLS_SSL_HANDSHAKE_OVER &&
 		       !auth_conn->cancel_auth) {
 
-			LOG_INF("Handshake state: %s", auth_tls_handshake_state(mbed_ctx->ssl.state));
+			LOG_INF("Handshake state: %s",
+	   			auth_tls_handshake_state(mbed_ctx->ssl.state));
 
 			/* do handshake step */
 			ret = mbedtls_ssl_handshake_step(&mbed_ctx->ssl);
@@ -848,7 +833,8 @@ static void auth_dtls_thead(struct authenticate_conn *auth_conn)
  * @see auth_internal.h
  *
  */
-int auth_init_dtls_method(struct authenticate_conn *auth_conn, struct auth_optional_param *opt_params)
+int auth_init_dtls_method(struct authenticate_conn *auth_conn,
+				struct auth_optional_param *opt_params)
 {
 	struct mbed_tls_context *mbed_ctx;
 	struct auth_dtls_certs *certs;
@@ -910,14 +896,16 @@ int auth_init_dtls_method(struct authenticate_conn *auth_conn, struct auth_optio
 	mbedtls_ssl_conf_authmode(&mbed_ctx->conf, MBEDTLS_SSL_VERIFY_REQUIRED);
 
 
-	if ((certs->device_cert_pem.priv_key == NULL) || (certs->device_cert_pem.priv_key_size == 0)) {
+	if ((certs->device_cert_pem.priv_key == NULL) ||
+			(certs->device_cert_pem.priv_key_size == 0)) {
 		LOG_ERR("Failed to get device private key");
 		goto init_error;
 	}
 
 
-	ret = mbedtls_pk_parse_key(&mbed_ctx->device_private_key, certs->device_cert_pem.priv_key,
-				   certs->device_cert_pem.priv_key_size, NULL, 0);
+	ret = mbedtls_pk_parse_key(&mbed_ctx->device_private_key,
+			    		certs->device_cert_pem.priv_key,
+				   	certs->device_cert_pem.priv_key_size, NULL, 0);
 
 	if (ret) {
 		LOG_ERR("Failed to parse device private key, error: 0x%x", ret);
@@ -925,7 +913,8 @@ int auth_init_dtls_method(struct authenticate_conn *auth_conn, struct auth_optio
 	}
 
 	/* Setup certs, the CA chain followed by the end device cert. */
-	if ((certs->server_ca_chain_pem.cert == NULL) || (certs->server_ca_chain_pem.cert_size == 0)) {
+	if ((certs->server_ca_chain_pem.cert == NULL) ||
+			(certs->server_ca_chain_pem.cert_size == 0)) {
 		LOG_ERR("Failed to get CA cert chain");
 		goto init_error;
 	}
@@ -949,8 +938,9 @@ int auth_init_dtls_method(struct authenticate_conn *auth_conn, struct auth_optio
 		goto init_error;
 	}
 
-	ret = mbedtls_x509_crt_parse(&mbed_ctx->device_cert, (const unsigned char *)certs->device_cert_pem.cert,
-				     certs->device_cert_pem.cert_size);
+	ret = mbedtls_x509_crt_parse(&mbed_ctx->device_cert,
+			      		(const unsigned char *)certs->device_cert_pem.cert,
+				     	certs->device_cert_pem.cert_size);
 
 	if (ret) {
 		LOG_ERR("Failed to parse device cert, error: 0x%x", ret);

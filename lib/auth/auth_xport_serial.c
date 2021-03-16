@@ -84,7 +84,8 @@ struct serial_recv_event {
 	uint16_t frag_len;
 
 	/* struct needs to be multiple of 4 bytes to work with the
-	 * message queue, add padding here */
+	 * message queue, add padding here
+	 */
 	uint8_t pad[4];
 };
 
@@ -340,7 +341,8 @@ static void auth_xp_serial_irq_recv_fragment(struct serial_xp_instance *xp_inst)
 		/* A full message fragment is present in the input buffer
 		 * starting at frag_beg_offset and frag_bytes in length.
 		 * It's possible to have the beginning of a second fragment
-		 * following this first fragment. */
+		 * following this first fragment.
+		 */
 
 		/* get new rx buffer */
 		new_rxbuf = serial_xp_get_buffer(SERIAL_XP_BUFFER_LEN);
@@ -348,11 +350,13 @@ static void auth_xp_serial_irq_recv_fragment(struct serial_xp_instance *xp_inst)
 		/* If there's garbage before the frame start,then skip.
 		 * If there is another fragment or partial fragment following
 		 * then copy to new buffer. 'remaining_buffer_bytes' is the
-		 * number of valid bytes after the current fragment. */
+		 * number of valid bytes after the current fragment.
+		 */
 		remaining_buffer_bytes = xp_inst->curr_rx_cnt - frag_beg_offset - frag_bytes;
 
 		/* If fragment bytes are less than the current, then the buffer contains bytes
-		 * for the next fragment. */
+		 * for the next fragment.
+		 */
 		if ((remaining_buffer_bytes != 0) && (new_rxbuf != NULL)) {
 			/* copy extra bytes to new buffer */
 			memcpy(new_rxbuf, xp_inst->rx_buf + frag_beg_offset + frag_bytes,

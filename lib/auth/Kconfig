@@ -22,21 +22,21 @@ if AUTH_LIB
 		help
 		Selects the DTLS authentication method.
 
-    config AUTH_LOG_LEVEL
-        int "Authentication log level"
-        depends on LOG
-        range 0 4
-        default 0
-        help
-          Sets authentication log level
-          Levels are:
-          0 OFF, do not write
-          1 ERROR, only write LOG_ERR
-          2 WARNING, write LOG_WRN in addition to previous level
-          3 INFO, write LOG_INF in addition to previous levels
-          4 DEBUG, write LOG_DBG in addition to previous levels
+	config AUTH_LOG_LEVEL
+		int "Authentication log level"
+		depends on LOG
+		range 0 4
+		default 0
+		help
+			Sets authentication log level
+			Levels are:
+			0 OFF, do not write
+			1 ERROR, only write LOG_ERR
+			2 WARNING, write LOG_WRN in addition to previous level
+			3 INFO, write LOG_INF in addition to previous levels
+			4 DEBUG, write LOG_DBG in addition to previous levels
 
-    config BT_XPORT
+	config BT_XPORT
 		bool "Bluetooth Transport"
 		help
 		If using Bluetooth to authenticate peer.
@@ -69,11 +69,10 @@ if AUTH_LIB
 	    would be a Bluetooth Central needing to authenticate multiple
 	    connected Peripherals.
 
-    config AUTH_THREAD_PRIORITY
-        int "Authentication thread priority."
-        default 0
-        help
-        The priority of the authentication thread.
-
+	config AUTH_THREAD_PRIORITY
+		int "Authentication thread priority."
+		default 0
+		help
+		The priority of the authentication thread.
 
 endif

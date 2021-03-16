@@ -41,7 +41,8 @@ static struct uart_config uart_cfg = {
 
 #if defined(CONFIG_AUTH_DTLS)
 /* The Root and Intermediate Certs in a single CA chain.
- * plus the server cert. All in PEM format.*/
+ * plus the server cert. All in PEM format.
+ */
 static const uint8_t auth_cert_ca_chain[] = AUTH_ROOTCA_CERT_PEM AUTH_INTERMEDIATE_CERT_PEM;
 static const uint8_t auth_dev_client_cert[] = AUTH_CLIENT_CERT_PEM;
 static const uint8_t auth_client_privatekey[] = AUTH_CLIENT_PRIVATE_KEY_PEM;
@@ -71,8 +72,10 @@ static struct auth_optional_param tls_certs_param = {
 
 /* Use a different key than default */
 static uint8_t chal_resp_sharedkey[NEW_SHARED_KEY_LEN] = {
-	0x21, 0x8e, 0x37, 0x42, 0x1e, 0xe1, 0x2a, 0x22, 0x7c, 0x4b, 0x3f, 0x3f, 0x07, 0x5e, 0x8a, 0xd8,
-	0x24, 0xdf, 0xca, 0xf4, 0x04, 0xd0, 0x3e, 0x22, 0x61, 0x9f, 0x24, 0xa3, 0xc7, 0xf6, 0x5d, 0x66
+	0x21, 0x8e, 0x37, 0x42, 0x1e, 0xe1, 0x2a, 0x22,
+	0x7c, 0x4b, 0x3f, 0x3f, 0x07, 0x5e, 0x8a, 0xd8,
+	0x24, 0xdf, 0xca, 0xf4, 0x04, 0xd0, 0x3e, 0x22,
+	0x61, 0x9f, 0x24, 0xa3, 0xc7, 0xf6, 0x5d, 0x66
 };
 
 
@@ -205,7 +208,8 @@ void main(void)
 				opt_parms, flags);
 
 	/* If successful, then configure the UAR and start the
-	 * authentication process */
+	 * authentication process
+	 */
 	if (!err) {
 
 		/* configure the UART and init the lower serial transport */

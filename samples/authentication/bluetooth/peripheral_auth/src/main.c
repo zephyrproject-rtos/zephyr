@@ -63,17 +63,17 @@ BT_GATT_SERVICE_DEFINE(auth_svc,
 	 */
 
 	/**
-	 * Client characteristic, used by the peripheral (server role) to write messages authentication messages
-	 * to the central (client role).  The peripheral needs to alert the central a message is
-	 * ready to be read.
+	 * Client characteristic, used by the peripheral (server role) to write messages
+	 * authentication messages to the central (client role).  The peripheral needs to
+	 * alert the central a message is ready to be read.
 	 */
 	BT_GATT_CHARACTERISTIC((const struct bt_uuid *)&auth_client_char, BT_GATT_CHRC_INDICATE,
 	(BT_GATT_PERM_READ|BT_GATT_PERM_WRITE), NULL, NULL, NULL),
 	BT_GATT_CCC(client_ccc_cfg_changed, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
 
 	/**
-	 * Server characteristic, used by the central (client role) to write authentication messages to.
-	 * to the server (peripheral)
+	 * Server characteristic, used by the central (client role) to write
+	 * authentication messages to the server (peripheral)
 	 */
 	BT_GATT_CHARACTERISTIC((const struct bt_uuid *)&auth_server_char, BT_GATT_CHRC_WRITE,
 	(BT_GATT_PERM_READ|BT_GATT_PERM_WRITE), NULL, auth_xp_bt_central_write, NULL),
@@ -122,8 +122,10 @@ static struct auth_optional_param dtls_certs_param  = {
 
 /* Use a different key than default */
 static uint8_t chal_resp_sharedkey[NEW_SHARED_KEY_LEN] = {
-    0x21, 0x8e, 0x37, 0x42, 0x1e, 0xe1, 0x2a, 0x22, 0x7c, 0x4b, 0x3f, 0x3f, 0x07, 0x5e, 0x8a, 0xd8,
-    0x24, 0xdf, 0xca, 0xf4, 0x04, 0xd0, 0x3e, 0x22, 0x61, 0x9f, 0x24, 0xa3, 0xc7, 0xf6, 0x5d, 0x66
+	0x21, 0x8e, 0x37, 0x42, 0x1e, 0xe1, 0x2a, 0x22,
+	0x7c, 0x4b, 0x3f, 0x3f, 0x07, 0x5e, 0x8a, 0xd8,
+	0x24, 0xdf, 0xca, 0xf4, 0x04, 0xd0, 0x3e, 0x22,
+	0x61, 0x9f, 0x24, 0xa3, 0xc7, 0xf6, 0x5d, 0x66
 };
 
 
@@ -425,7 +427,8 @@ void main(void)
 
 #if defined(CONFIG_AUTH_DTLS)
 	/* echo message between the central and peripheral
-	* using DTLS */
+	 * using DTLS
+	 */
 	echo_msg();
 #endif
 

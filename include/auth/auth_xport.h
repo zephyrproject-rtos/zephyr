@@ -147,7 +147,8 @@ int auth_xport_send(const auth_xport_hdl_t xporthdl, const uint8_t *data, size_t
  *
  * @return Negative on error or timeout, else number of bytes received.
  */
-int auth_xport_recv(const auth_xport_hdl_t xporthdl, uint8_t *buff, uint32_t buf_len, uint32_t timeoutMsec);
+int auth_xport_recv(const auth_xport_hdl_t xporthdl, uint8_t *buff,
+                    uint32_t buf_len, uint32_t timeoutMsec);
 
 
 /**
@@ -268,15 +269,18 @@ int auth_xport_get_max_payload(const auth_xport_hdl_t xporthdl);
 #define BT_UUID_AUTH_SVC_CLIENT_CHAR      (0x3015)
 #define BT_UUID_AUTH_SVC_SERVER_CHAR      (0x3016)
 
-#define AUTH_SERVICE_UUID_BYTES  BT_UUID_128_ENCODE(BT_UUID_AUTH_SVC, 0xa3f6, 0x4491, 0x8b4d, 0xb830f521243b)
+#define AUTH_SERVICE_UUID_BYTES  BT_UUID_128_ENCODE(BT_UUID_AUTH_SVC, \
+					0xa3f6, 0x4491, 0x8b4d, 0xb830f521243b)
 #define AUTH_SERVICE_UUID        BT_UUID_INIT_128(AUTH_SERVICE_UUID_BYTES)
 
 
 #define AUTH_SVC_CLIENT_CHAR_UUID   BT_UUID_INIT_128( \
-		BT_UUID_128_ENCODE(BT_UUID_AUTH_SVC_CLIENT_CHAR, 0xa3f6, 0x4491, 0x8b4d, 0xb830f521243b))
+		BT_UUID_128_ENCODE(BT_UUID_AUTH_SVC_CLIENT_CHAR,    \
+					0xa3f6, 0x4491, 0x8b4d, 0xb830f521243b))
 
 #define AUTH_SVC_SERVER_CHAR BT_UUID_INIT_128( \
-		BT_UUID_128_ENCODE(BT_UUID_AUTH_SVC_SERVER_CHAR, 0xa3f6, 0x4491, 0x8b4d, 0xb830f521243b))
+		BT_UUID_128_ENCODE(BT_UUID_AUTH_SVC_SERVER_CHAR, \
+					0xa3f6, 0x4491, 0x8b4d, 0xb830f521243b))
 #endif
 
 
@@ -288,11 +292,13 @@ struct auth_xp_bt_params {
 	bool is_central;
 
 	/* The BT value handle used by the Central to send to the Peripheral.
-	 * Not used by the Peripheral. */
+	 * Not used by the Peripheral.
+	 */
 	uint16_t server_char_hdl;
 
 	/* Client attribute, used by peripheral to indicate data for client.
-	 * Not used by the Central (client) */
+	 * Not used by the Central (client)
+	 */
 	const struct bt_gatt_attr *client_attr;
 };
 

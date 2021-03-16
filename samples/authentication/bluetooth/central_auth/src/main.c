@@ -52,7 +52,8 @@ K_SEM_DEFINE(auth_done_sem, 0, 1);
 
 #if defined(CONFIG_AUTH_DTLS)
 /* The Root and Intermediate Certs in a single CA chain.
- * plus the server cert. All in PEM format.*/
+ * plus the server cert. All in PEM format.
+ */
 static const uint8_t auth_cert_ca_chain[] = AUTH_ROOTCA_CERT_PEM AUTH_INTERMEDIATE_CERT_PEM;
 static const uint8_t auth_dev_client_cert[] = AUTH_CLIENT_CERT_PEM;
 static const uint8_t auth_client_privatekey[] = AUTH_CLIENT_PRIVATE_KEY_PEM;
@@ -82,8 +83,10 @@ static struct auth_optional_param dtls_certs_param = {
 
 /* Use a different key than default */
 static uint8_t chal_resp_sharedkey[NEW_SHARED_KEY_LEN] = {
-	0x21, 0x8e, 0x37, 0x42, 0x1e, 0xe1, 0x2a, 0x22, 0x7c, 0x4b, 0x3f, 0x3f, 0x07, 0x5e, 0x8a, 0xd8,
-	0x24, 0xdf, 0xca, 0xf4, 0x04, 0xd0, 0x3e, 0x22, 0x61, 0x9f, 0x24, 0xa3, 0xc7, 0xf6, 0x5d, 0x66
+	0x21, 0x8e, 0x37, 0x42, 0x1e, 0xe1, 0x2a, 0x22,
+	0x7c, 0x4b, 0x3f, 0x3f, 0x07, 0x5e, 0x8a, 0xd8,
+	0x24, 0xdf, 0xca, 0xf4, 0x04, 0xd0, 0x3e, 0x22,
+	0x61, 0x9f, 0x24, 0xa3, 0xc7, 0xf6, 0x5d, 0x66
 };
 
 static struct auth_optional_param chal_resp_param = {
@@ -139,10 +142,14 @@ static uint32_t auth_desc_index;
 
 /* Table content should match indexes above */
 static auth_svc_gatt_t auth_svc_gatt_tbl[AUTH_SVC_GATT_COUNT] = {
-	{ (const struct bt_uuid *)&auth_service_uuid,  NULL, 0, 0, BT_GATT_PERM_NONE, BT_GATT_DISCOVER_PRIMARY },               /* AUTH_SVC_INDEX */
-	{ (const struct bt_uuid *)&auth_client_char,   NULL, 0, 0, BT_GATT_PERM_NONE, BT_GATT_DISCOVER_CHARACTERISTIC },        /* AUTH_SVC_CLIENT_CHAR_INDEX */
-	{ BT_UUID_GATT_CCC,                            NULL, 0, 0, BT_GATT_PERM_NONE, BT_GATT_DISCOVER_DESCRIPTOR },            /*AUTH_SVC_CLIENT_CCC_INDEX CCC for Client char */
-	{ (const struct bt_uuid *)&auth_server_char,   NULL, 0, 0, BT_GATT_PERM_NONE, BT_GATT_DISCOVER_CHARACTERISTIC }  /* AUTH_SVC_SERVER_CHAR_INDEX */
+	{ (const struct bt_uuid *)&auth_service_uuid,  NULL, 0, 0, BT_GATT_PERM_NONE,
+			BT_GATT_DISCOVER_PRIMARY },               /* AUTH_SVC_INDEX */
+	{ (const struct bt_uuid *)&auth_client_char,   NULL, 0, 0, BT_GATT_PERM_NONE,
+			BT_GATT_DISCOVER_CHARACTERISTIC },  /* AUTH_SVC_CLIENT_CHAR_INDEX */
+	{ BT_UUID_GATT_CCC,                            NULL, 0, 0, BT_GATT_PERM_NONE,
+   			BT_GATT_DISCOVER_DESCRIPTOR },    /*AUTH_SVC_CLIENT_CCC_INDEX CCC */
+	{ (const struct bt_uuid *)&auth_server_char,   NULL, 0, 0, BT_GATT_PERM_NONE,
+			BT_GATT_DISCOVER_CHARACTERISTIC }  /* AUTH_SVC_SERVER_CHAR_INDEX */
 };
 
 
@@ -178,6 +185,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 			     struct bt_gatt_discover_params *params)
 {
 	int err;
+	char uuid_str[50];
 
 	if (!attr) {
 		LOG_INF("Discover complete, NULL attribute.");
@@ -192,7 +200,6 @@ static uint8_t discover_func(struct bt_conn *conn,
 	LOG_DBG("[ATTRIBUTE] value handle 0x%x", bt_gatt_attr_value_handle(attr));
 
 	/* let's get string */
-	char uuid_str[50];
 	bt_uuid_to_str(attr->uuid, uuid_str, sizeof(uuid_str));
 	LOG_DBG("Attribute UUID: %s", log_strdup(uuid_str));
 
@@ -212,7 +219,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 	}
 
 	/* save off GATT info */
-	auth_svc_gatt_tbl[auth_desc_index].attr = NULL; /* NOTE: attr var not used for the Central */
+	auth_svc_gatt_tbl[auth_desc_index].attr = NULL; /* attr var not used for the Central */
 	auth_svc_gatt_tbl[auth_desc_index].handle = attr->handle;
 	auth_svc_gatt_tbl[auth_desc_index].value_handle = bt_gatt_attr_value_handle(attr);
 	auth_svc_gatt_tbl[auth_desc_index].permissions = attr->perm;
@@ -245,7 +252,9 @@ static uint8_t discover_func(struct bt_conn *conn,
 			LOG_ERR("Subscribe failed (err %d)", err);
 		}
 
-		/* Get the server BT characteristic, the central sends data to this characteristic */
+		/* Get the server BT characteristic, the central sends data
+		 * to this characteristic
+		 */
 		uint16_t server_char_handle =
 			auth_svc_gatt_tbl[AUTH_SVC_SERVER_CHAR_INDEX].value_handle;
 
@@ -384,9 +393,9 @@ static bool bt_adv_data_found(struct bt_data *data, void *user_data)
 		 * @brief  Connect to the device
 		 */
 		struct bt_conn_le_create_param param = BT_CONN_LE_CREATE_PARAM_INIT(
-			BT_CONN_LE_OPT_NONE,
-			BT_GAP_SCAN_FAST_INTERVAL,
-			BT_GAP_SCAN_FAST_INTERVAL);
+					BT_CONN_LE_OPT_NONE,
+					BT_GAP_SCAN_FAST_INTERVAL,
+					BT_GAP_SCAN_FAST_INTERVAL);
 
 		if (bt_conn_le_create(addr, &param, BT_LE_CONN_PARAM_DEFAULT,
 				      &default_conn)) {
@@ -443,6 +452,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	/* de init transport */
 	/* Send disconnect event to BT transport. */
 	struct auth_xport_evt conn_evt = { .event = XP_EVT_DISCONNECT };
+
 	auth_xport_event(central_auth_conn.xport_hdl, &conn_evt);
 
 	/* Deinit lower transport */
@@ -634,7 +644,8 @@ void main(void)
 
 #if defined(CONFIG_AUTH_DTLS)
 	/* Echo message between the central and peripheral
-	 * using DTLS */
+	 * using DTLS
+	 */
 	echo_msg();
 #endif
 
