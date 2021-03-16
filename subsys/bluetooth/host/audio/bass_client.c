@@ -132,40 +132,42 @@ static uint8_t read_recv_state_cb(struct bt_conn *conn, uint8_t err,
 	uint8_t last_handle_index = bass_client.recv_state_cnt - 1;
 	uint16_t last_handle = bass_client.recv_state_handles[last_handle_index];
 	struct bass_recv_state_t recv_state;
+	int bass_err;
 
 	memset(params, 0, sizeof(*params));
 
-	if (!err) {
-		err = parse_recv_state(data, length, &recv_state);
+	if (err) {
+		bass_err = err;
+	} else {
+		bass_err = parse_recv_state(data, length, &recv_state);
 
-		if (err) {
+		if (bass_err) {
 			BT_DBG("Invalid receive state");
 		}
 	}
 
-	if (err) {
-		BT_DBG("err: 0x%02X", err);
+	if (bass_err) {
+		BT_DBG("err: %d", bass_err);
 		if (bass_client.discovering) {
 			bass_client.discovering = false;
 			if (bass_cbs && bass_cbs->discover) {
-				bass_cbs->discover(conn, err, 0);
+				bass_cbs->discover(conn, bass_err, 0);
 			}
 		} else {
 			if (bass_cbs && bass_cbs->recv_state) {
-				bass_cbs->recv_state(conn, err, NULL);
+				bass_cbs->recv_state(conn, bass_err, NULL);
 			}
 		}
 	} else if (handle == last_handle) {
 		if (bass_client.discovering) {
 			bass_client.discovering = false;
 			if (bass_cbs && bass_cbs->discover) {
-				bass_cbs->discover(conn, 0,
-						   bass_client.recv_state_cnt);
+				bass_cbs->discover(conn, bass_err, bass_client.recv_state_cnt);
 			}
 		}
 
 		if (bass_cbs && bass_cbs->recv_state) {
-			bass_cbs->recv_state(conn, err, &recv_state);
+			bass_cbs->recv_state(conn, bass_err, &recv_state);
 		}
 	} else {
 		for (int i = 0; i < bass_client.recv_state_cnt; i++) {
