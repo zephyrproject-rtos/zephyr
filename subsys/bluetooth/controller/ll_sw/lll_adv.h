@@ -18,6 +18,7 @@ struct lll_adv_iso {
 	uint64_t payload_count:39;
 	uint64_t framing:1;
 	uint64_t handle:8;
+	uint64_t cssn:3;
 
 	uint8_t data_chan_map[5];
 	uint8_t data_chan_count:6;
@@ -35,6 +36,20 @@ struct lll_adv_iso {
 	uint32_t irc:4;
 
 	uint32_t sdu_interval:20;
+	uint32_t pto_curr:4;
+	uint32_t bn_curr:3;
+	uint32_t bis_curr:5;
+
+	uint8_t irc_curr:4;
+	uint8_t term_req:1;
+	uint8_t term_ack:1;
+	uint8_t term_reason;
+	uint8_t chm_req;
+	uint8_t chm_ack;
+
+	uint16_t ctrl_chan_use;
+	uint16_t ctrl_instant;
+	uint8_t  ctrl_expire;
 };
 
 struct lll_adv_sync {
