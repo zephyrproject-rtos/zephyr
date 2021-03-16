@@ -986,3 +986,4 @@ struct pdu_big_info {
 #define PDU_BIG_INFO_CLEARTEXT_SIZE offsetof(struct pdu_big_info, giv)
 #define PDU_BIG_INFO_ENCRYPTED_SIZE sizeof(struct pdu_big_info)
 #define PDU_BIG_BN_MAX              0x07
+#define PDU_BIG_PAYLOAD_COUNT_MAX   28

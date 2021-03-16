@@ -302,6 +302,11 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	lll->sub_interval = bi->sub_interval;
 	lll->max_pdu = bi->max_pdu;
 	lll->pto = bi->pto;
+	if (lll->pto) {
+		lll->ptc = lll->bn;
+	} else {
+		lll->ptc = 0U;
+	}
 	lll->bis_spacing = bi->spacing;
 	lll->irc = bi->irc;
 	lll->sdu_interval = bi->sdu_interval;
@@ -311,6 +316,14 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	lll->payload_count |= (uint64_t)bi->payload_count_framing[2] << 16;
 	lll->payload_count |= (uint64_t)bi->payload_count_framing[3] << 24;
 	lll->payload_count |= (uint64_t)bi->payload_count_framing[4] << 32;
+
+	/* Initialize payload pointers */
+	lll->payload_count_max = PDU_BIG_PAYLOAD_COUNT_MAX;
+	lll->payload_head = 0U;
+	lll->payload_tail = 0U;
+	for (int i = 0U; i < PDU_BIG_PAYLOAD_COUNT_MAX; i++) {
+		lll->payload[i] = NULL;
+	}
 
 	interval = sys_le16_to_cpu(bi->iso_interval);
 	interval_us = interval * CONN_INT_UNIT_US;
