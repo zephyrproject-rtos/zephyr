@@ -181,6 +181,24 @@ extern uint32_t pcie_get_cap(pcie_bdf_t bdf, uint32_t cap_id);
  */
 extern uint32_t pcie_get_ext_cap(pcie_bdf_t bdf, uint32_t cap_id);
 
+/**
+ * @brief Dynamically connect a PCIe endpoint IRQ to an ISR handler
+ *
+ * @param bdf the PCI endpoint to examine
+ * @param irq the IRQ to connect (see pcie_alloc_irq())
+ * @param priority priority of the IRQ
+ * @param routine the ISR handler to connect to the IRQ
+ * @param parameter the parameter to provide to the handler
+ * @param flags IRQ connection flags
+ * @return true if connected, false otherwise
+ */
+extern bool pcie_connect_dynamic_irq(pcie_bdf_t bdf,
+				     unsigned int irq,
+				     unsigned int priority,
+				     void (*routine)(const void *parameter),
+				     const void *parameter,
+				     uint32_t flags);
+
 /*
  * Configuration word 13 contains the head of the capabilities list.
  */
