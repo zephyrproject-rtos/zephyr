@@ -244,66 +244,55 @@ static enum net_l2_flags ppp_flags(struct net_if *iface)
 
 NET_L2_INIT(PPP_L2, ppp_recv, ppp_send, ppp_enable, ppp_flags);
 
-static void carrier_on(struct k_work *work)
+static void carrier_on_off(struct k_work *work)
 {
 	struct ppp_context *ctx = CONTAINER_OF(work, struct ppp_context,
-					       carrier_mgmt.work);
-
-	if (ctx->iface == NULL || ctx->carrier_mgmt.enabled) {
-		return;
-	}
-
-	NET_DBG("Carrier ON for interface %p", ctx->iface);
-
-	ppp_mgmt_raise_carrier_on_event(ctx->iface);
-
-	ctx->carrier_mgmt.enabled = true;
-
-	net_if_up(ctx->iface);
-}
-
-static void carrier_off(struct k_work *work)
-{
-	struct ppp_context *ctx = CONTAINER_OF(work, struct ppp_context,
-					       carrier_mgmt.work);
+					       carrier_work);
+	bool ppp_carrier_up;
 
 	if (ctx->iface == NULL) {
 		return;
 	}
 
-	NET_DBG("Carrier OFF for interface %p", ctx->iface);
+	ppp_carrier_up = atomic_test_bit(&ctx->flags, PPP_CARRIER_UP);
 
-	ppp_lower_down(ctx);
+	if (ppp_carrier_up == (bool) ctx->is_net_carrier_up) {
+		return;
+	}
 
-	ppp_change_phase(ctx, PPP_DEAD);
+	ctx->is_net_carrier_up = ppp_carrier_up;
 
-	ppp_mgmt_raise_carrier_off_event(ctx->iface);
+	NET_DBG("Carrier %s for interface %p", ppp_carrier_up ? "ON" : "OFF",
+		ctx->iface);
 
-	net_if_carrier_down(ctx->iface);
+	if (ppp_carrier_up) {
+		ppp_mgmt_raise_carrier_on_event(ctx->iface);
+		net_if_up(ctx->iface);
+	} else {
+		ppp_lower_down(ctx);
+		ppp_change_phase(ctx, PPP_DEAD);
 
-	ctx->carrier_mgmt.enabled = false;
-}
-
-static void handle_carrier(struct ppp_context *ctx,
-			   k_work_handler_t handler)
-{
-	k_work_init(&ctx->carrier_mgmt.work, handler);
-
-	k_work_submit(&ctx->carrier_mgmt.work);
+		ppp_mgmt_raise_carrier_off_event(ctx->iface);
+		net_if_carrier_down(ctx->iface);
+	}
 }
 
 void net_ppp_carrier_on(struct net_if *iface)
 {
 	struct ppp_context *ctx = net_if_l2_data(iface);
 
-	handle_carrier(ctx, carrier_on);
+	if (!atomic_test_and_set_bit(&ctx->flags, PPP_CARRIER_UP)) {
+		k_work_submit(&ctx->carrier_work);
+	}
 }
 
 void net_ppp_carrier_off(struct net_if *iface)
 {
 	struct ppp_context *ctx = net_if_l2_data(iface);
 
-	handle_carrier(ctx, carrier_off);
+	if (atomic_test_and_clear_bit(&ctx->flags, PPP_CARRIER_UP)) {
+		k_work_submit(&ctx->carrier_work);
+	}
 }
 
 #if defined(CONFIG_NET_SHELL)
@@ -450,6 +439,8 @@ void net_ppp_init(struct net_if *iface)
 
 	ctx->ppp_l2_flags = NET_L2_MULTICAST | NET_L2_POINT_TO_POINT;
 	ctx->iface = iface;
+
+	k_work_init(&ctx->carrier_work, carrier_on_off);
 
 #if defined(CONFIG_NET_SHELL)
 	k_sem_init(&ctx->shell.wait_echo_reply, 0, K_SEM_MAX_LIMIT);
