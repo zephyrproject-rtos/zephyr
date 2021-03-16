@@ -225,6 +225,14 @@ typedef struct s_isrList {
 				   (flags_p)); \
 }
 
+#ifdef CONFIG_PCIE
+
+#define ARCH_PCIE_IRQ_CONNECT(bdf_p, irq_p, priority_p,			\
+			      isr_p, isr_param_p, flags_p)		\
+	ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p)
+
+#endif /* CONFIG_PCIE */
+
 /* Direct interrupts won't work as expected with KPTI turned on, because
  * all non-user accessible pages in the page table are marked non-present.
  * It's likely possible to add logic to ARCH_ISR_DIRECT_HEADER/FOOTER to do
