@@ -89,6 +89,41 @@ void pm_dump_debug_info(void);
 #endif /* CONFIG_PM_DEBUG */
 
 /**
+ * @brief Register a power management notifier
+ *
+ * Register the given notifier from the power management notification
+ * list.
+ *
+ * @param notifier pm_notifier object to be registered.
+ */
+void pm_notifier_register(struct pm_notifier *notifier);
+
+/**
+ * @brief Unregister a power management notifier
+ *
+ * Remove the given notifier from the power management notification
+ * list. After that this object callbacks will not be called.
+ *
+ * @param notifier pm_notifier object to be unregistered.
+ *
+ * @return 0 if the notifier was successfully removed, a negative value
+ * otherwise.
+ */
+int pm_notifier_unregister(struct pm_notifier *notifier);
+
+/**
+ * @}
+ */
+
+/**
+ * @brief System Power Management Constraint API
+ *
+ * @defgroup system_power_management_constraint_api Constraint API
+ * @ingroup power_management_api
+ * @{
+ */
+
+/**
  * @brief Set a constraint for a power state
  *
  * @details Disabled state cannot be selected by the Zephyr power
@@ -125,29 +160,6 @@ void pm_constraint_release(enum pm_state state);
  * @param [in] state Power state.
  */
 bool pm_constraint_get(enum pm_state state);
-
-/**
- * @brief Register a power management notifier
- *
- * Register the given notifier from the power management notification
- * list.
- *
- * @param notifier pm_notifier object to be registered.
- */
-void pm_notifier_register(struct pm_notifier *notifier);
-
-/**
- * @brief Unregister a power management notifier
- *
- * Remove the given notifier from the power management notification
- * list. After that this object callbacks will not be called.
- *
- * @param notifier pm_notifier object to be unregistered.
- *
- * @return 0 if the notifier was successfully removed, a negative value
- * otherwise.
- */
-int pm_notifier_unregister(struct pm_notifier *notifier);
 
 /**
  * @}
