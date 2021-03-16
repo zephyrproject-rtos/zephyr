@@ -138,7 +138,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	/* Check if stopped (on connection establishment race between LLL and
 	 * ULL.
 	 */
-	if (unlikely(lll->conn && lll->conn->initiated)) {
+	if (unlikely(lll->conn && lll->conn->master.initiated)) {
 		int err;
 
 		err = lll_hfclock_off();
@@ -371,7 +371,7 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 		if (0) {
 #if defined(CONFIG_BT_CENTRAL)
 		} else if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT) &&
-			   lll->conn && lll->conn->initiated) {
+			   lll->conn && lll->conn->master.initiated) {
 			while (!radio_has_disabled()) {
 				cpu_sleep();
 			}
@@ -930,7 +930,7 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 		 */
 
 		/* Stop further LLL radio events */
-		lll->conn->initiated = 1;
+		lll->conn->master.initiated = 1;
 
 		rx = ull_pdu_rx_alloc();
 
