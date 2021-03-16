@@ -224,6 +224,8 @@ if(NOT (REVISION_SEPARATOR_INDEX EQUAL -1))
   string(SUBSTRING ${BOARD} 0 ${REVISION_SEPARATOR_INDEX} BOARD)
 endif()
 
+zephyr_boilerplate_watch(BOARD)
+
 set(BOARD_MESSAGE "Board: ${BOARD}")
 
 if(DEFINED ENV{ZEPHYR_BOARD_ALIASES})
@@ -292,7 +294,7 @@ if(DEFINED BOARD_REVISION)
 endif()
 
 # Check that SHIELD has not changed.
-zephyr_check_cache(SHIELD)
+zephyr_check_cache(SHIELD WATCH)
 
 if(SHIELD)
   set(BOARD_MESSAGE "${BOARD_MESSAGE}, Shield(s): ${SHIELD}")
