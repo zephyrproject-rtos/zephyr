@@ -264,6 +264,7 @@
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x40049000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 9>;
+			#nxp,kinetis-pin-cells = <2>;
 		};
 
 		portb: pinmux@4004a000 {
@@ -271,6 +272,7 @@
 			reg = <0x4004a000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 10>;
 			label = "portb";
+			#nxp,kinetis-pin-cells = <2>;
 			DT_NXP_PINMUX_DEFINE(uart0_rx, b, 16, K_PORT_MuxAlt3);
 			DT_NXP_PINMUX_DEFINE(uart0_tx, b, 17, K_PORT_MuxAlt3);
 		};
@@ -279,18 +281,21 @@
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004b000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 11>;
+			#nxp,kinetis-pin-cells = <2>;
 		};
 
 		portd: pinmux@4004c000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004c000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 12>;
+			#nxp,kinetis-pin-cells = <2>;
 		};
 
 		porte: pinmux@4004d000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004d000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 13>;
+			#nxp,kinetis-pin-cells = <2>;
 		};
 
 		gpioa: gpio@400ff000 {

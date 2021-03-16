@@ -1,10 +1,13 @@
 /*
  * Copyright (c) 2021 Nicolai Glud <kludentwo@gmail.com>
+ * Copyright (c) 2021 Linaro Limited
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef PINMUX_NXP_K6X_H_
-#define PINMUX_NXP_K6X_H_
+#ifndef PINMUX_NXP_KINETIS_H_
+#define PINMUX_NXP_KINETIS_H_
+
+#include <dt-bindings/dt-util.h>
 
 #define K_PORT_PinDisabledOrAnalog		0
 #define K_PORT_MuxAsGpio			1
@@ -23,10 +26,14 @@
 #define K_PORT_MuxAlt14				14
 #define K_PORT_MuxAlt15				15
 
-#define DT_NXP_PINMUX_DEFINE(k_name, k_port, k_pin, k_mux) \
-	k_name##_##pt##k_port##k_pin: k_name##_##pt##k_port##k_pin { \
-		pin = <k_pin>; \
-		mux = <k_mux>; \
-	}
+#define DT_PINCFG_FLAG(flag) flag;
+#define DT_PINCFG_FLAGS(...) \
+       MACRO_MAP_CAT(DT_PINCFG_FLAG __VA_OPT__(,) __VA_ARGS__)
 
-#endif /* PINMUX_NXP_K6X_H_ */
+#define DT_NXP_PINMUX_DEFINE(k_name, k_port, k_pin, k_mux, ...) \
+        k_name##_##pt##k_port##k_pin: k_name##_##pt##k_port##k_pin { \
+               nxp,kinetis-pins = < &port##k_port k_pin k_mux >; \
+               DT_PINCFG_FLAGS(__VA_ARGS__) \
+        }
+
+#endif /* PINMUX_NXP_KINETIS_H_ */

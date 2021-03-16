@@ -8,6 +8,12 @@
 #include <drivers/pinmux.h>
 #include <fsl_port.h>
 
+#define NXP_PIN(node, i) \
+	DT_PHA(DT_PHANDLE_BY_IDX(node, pinctrl_0, i), nxp_kinetis_pins, pin)
+
+#define NXP_MUX(node, i) \
+	DT_PHA(DT_PHANDLE_BY_IDX(node, pinctrl_0, i), nxp_kinetis_pins, mux)
+
 static int frdm_k64f_pinmux_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
@@ -40,12 +46,10 @@ static int frdm_k64f_pinmux_init(const struct device *dev)
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(uart0), okay) && CONFIG_SERIAL
 	/* UART0 RX, TX */
-	pinmux_pin_set(portb,DT_PROP(DT_NODELABEL(uart0_rx_ptb16), pin),
-			PORT_PCR_MUX(DT_PROP(DT_NODELABEL(uart0_rx_ptb16), mux))
-		      );
-	pinmux_pin_set(portb, DT_PROP(DT_NODELABEL(uart0_tx_ptb17), pin),
-			PORT_PCR_MUX(DT_PROP(DT_NODELABEL(uart0_rx_ptb16), mux))
-		      );
+	pinmux_pin_set(portb,NXP_PIN(DT_NODELABEL(uart0), 0),
+			PORT_PCR_MUX(NXP_MUX(DT_NODELABEL(uart0), 0)));
+	pinmux_pin_set(portb,NXP_PIN(DT_NODELABEL(uart0), 1),
+			PORT_PCR_MUX(NXP_MUX(DT_NODELABEL(uart0), 1)));
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(uart2), okay) && CONFIG_SERIAL
