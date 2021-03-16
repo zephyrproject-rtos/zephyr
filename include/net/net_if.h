@@ -709,6 +709,30 @@ static inline void net_if_stop_rs(struct net_if *iface)
 }
 #endif /* CONFIG_NET_IPV6_ND */
 
+/** @cond INTERNAL_HIDDEN */
+
+static inline int net_if_set_link_addr_unlocked(struct net_if *iface,
+						uint8_t *addr, uint8_t len,
+						enum net_link_type type)
+{
+	if (net_if_flag_is_set(iface, NET_IF_UP)) {
+		return -EPERM;
+	}
+
+	net_if_get_link_addr(iface)->addr = addr;
+	net_if_get_link_addr(iface)->len = len;
+	net_if_get_link_addr(iface)->type = type;
+
+	net_hostname_set_postfix(addr, len);
+
+	return 0;
+}
+
+int net_if_set_link_addr_locked(struct net_if *iface,
+				uint8_t *addr, uint8_t len,
+				enum net_link_type type);
+/** @endcond */
+
 /**
  * @brief Set a network interface's link address
  *
@@ -724,17 +748,11 @@ static inline int net_if_set_link_addr(struct net_if *iface,
 				       uint8_t *addr, uint8_t len,
 				       enum net_link_type type)
 {
-	if (net_if_flag_is_set(iface, NET_IF_UP)) {
-		return -EPERM;
-	}
-
-	net_if_get_link_addr(iface)->addr = addr;
-	net_if_get_link_addr(iface)->len = len;
-	net_if_get_link_addr(iface)->type = type;
-
-	net_hostname_set_postfix(addr, len);
-
-	return 0;
+#if defined(CONFIG_NET_RAW_MODE)
+	return net_if_set_link_addr_unlocked(iface, addr, len, type);
+#else
+	return net_if_set_link_addr_locked(iface, addr, len, type);
+#endif
 }
 
 /**
@@ -808,12 +826,7 @@ static inline struct net_if_config *net_if_config_get(struct net_if *iface)
  *
  * @param router Pointer to existing router
  */
-static inline void net_if_router_rm(struct net_if_router *router)
-{
-	router->is_used = false;
-
-	/* FIXME - remove timer */
-}
+void net_if_router_rm(struct net_if_router *router);
 
 /**
  * @brief Get the default network interface.
@@ -1061,12 +1074,7 @@ void net_if_mcast_monitor(struct net_if *iface, const struct in6_addr *addr,
  *
  * @param addr IPv6 multicast address
  */
-static inline void net_if_ipv6_maddr_join(struct net_if_mcast_addr *addr)
-{
-	NET_ASSERT(addr);
-
-	addr->is_joined = true;
-}
+void net_if_ipv6_maddr_join(struct net_if_mcast_addr *addr);
 
 /**
  * @brief Check if given multicast address is joined or not.
@@ -1087,12 +1095,7 @@ static inline bool net_if_ipv6_maddr_is_joined(struct net_if_mcast_addr *addr)
  *
  * @param addr IPv6 multicast address
  */
-static inline void net_if_ipv6_maddr_leave(struct net_if_mcast_addr *addr)
-{
-	NET_ASSERT(addr);
-
-	addr->is_joined = false;
-}
+void net_if_ipv6_maddr_leave(struct net_if_mcast_addr *addr);
 
 /**
  * @brief Return prefix that corresponds to this IPv6 address.
