@@ -31,6 +31,7 @@
 
 struct bass_client_instance_t {
 	bool discovering;
+	bool scanning;
 	uint8_t pa_sync;
 	uint8_t recv_state_cnt;
 
@@ -423,16 +424,10 @@ static bool broadcaster_found(struct bt_data *data, void *user_data)
 	return true;
 }
 
-void scan_recv(const struct bt_le_scan_recv_info *info,
-	       struct net_buf_simple *ad)
+void scan_recv(const struct bt_le_scan_recv_info *info, struct net_buf_simple *ad)
 {
-
-	/* We're only interested in connectable events */
-	if (info->adv_type != BT_GAP_ADV_TYPE_EXT_ADV ||
-	    info->adv_props != BT_GAP_ADV_PROP_EXT_ADV) {
-		return;
-	} else if (info->interval == 0) {
-		/* No periodic advertisements */
+	/* We are only interested in non-connectable periodic advertisers */
+	if ((info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) || info->interval == 0) {
 		return;
 	}
 
@@ -469,7 +464,7 @@ int bt_bass_client_discover(struct bt_conn *conn)
 	return 0;
 }
 
-int bt_bass_client_scan_start(struct bt_conn *conn)
+int bt_bass_client_scan_start(struct bt_conn *conn, bool start_scan)
 {
 	union bass_cp_t cp = { .opcode = BASS_OP_SCAN_START };
 	int err;
@@ -480,18 +475,21 @@ int bt_bass_client_scan_start(struct bt_conn *conn)
 		return -EINVAL;
 	}
 
-	bt_le_scan_cb_register(&scan_cb);
+	if (start_scan) {
+		static bool cb_registered;
 
-	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
+		if (!cb_registered) {
+			bt_le_scan_cb_register(&scan_cb);
+			cb_registered = true;
+		}
 
-	if (err) {
-		BT_WARN("Could not start scan (%d)", err);
+		err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
 
-		/* If it's because we're already scanning, let the application
-		 * deal with the scan results
-		 */
-		if (err != EALREADY) {
+		if (err) {
+			BT_DBG("Could not start scan (%d)", err);
 			return err;
+		} else {
+			bass_client.scanning = true;
 		}
 	}
 
@@ -503,20 +501,19 @@ int bt_bass_client_scan_stop(struct bt_conn *conn)
 	union bass_cp_t cp = { .opcode = BASS_OP_SCAN_STOP };
 	int err;
 
-	/* TODO: Stop scan for BIS */
 	if (!conn) {
 		return 0;
 	} else if (!bass_client.cp_handle) {
 		return -EINVAL;
 	}
 
-	err = bt_le_scan_stop();
-	if (err) {
-		BT_DBG("Could not stop scan (%d)", err);
-
-		if (err != EALREADY) {
+	if (bass_client.scanning) {
+		err = bt_le_scan_stop();
+		if (err) {
+			BT_DBG("Could not stop scan (%d)", err);
 			return err;
 		}
+		bass_client.scanning = false;
 	}
 
 	return bt_bass_client_common_cp(conn, &cp, sizeof(cp.scan_stop));

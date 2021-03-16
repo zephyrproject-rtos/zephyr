@@ -153,11 +153,14 @@ int bt_bass_client_discover(struct bt_conn *conn);
 /**
  * @brief Start remote scanning for BIS' for a server.
  *
- * @param conn   Connection to the server, used to determine where to
- *               send scan results.
- * @return int   Error value. 0 on success, GATT error or ERRNO on fail.
+ * Scan results, if @p start_scan is true, is sent to the bt_bass_client_scan_cb_t callback.
+ *
+ * @param conn          Connection to the BASS server.
+ *                      Used to let the server know that we are scanning.
+ * @param start_scan    Start scanning if true. If false, the application should enable scan itself.
+ * @return int          Error value. 0 on success, GATT error or ERRNO on fail.
  */
-int bt_bass_client_scan_start(struct bt_conn *conn);
+int bt_bass_client_scan_start(struct bt_conn *conn, bool start_scan);
 
 /**
  * @brief Stop remote scanning for BIS' for a server.
