@@ -240,6 +240,6 @@ static inline bool size_too_big(struct z_heap *h, size_t bytes)
 }
 
 /* For debugging */
-void heap_dump(struct z_heap *h);
+void heap_print_info(struct z_heap *h, bool dump_chunks);
 
 #endif /* ZEPHYR_INCLUDE_LIB_OS_HEAP_H_ */
