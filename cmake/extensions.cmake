@@ -1874,6 +1874,13 @@ endfunction()
 #                    The conf file search will return existing configuration
 #                    files for the current board.
 #                    CONF_FILES takes the following additional arguments:
+#                    BOARD <board>:             Find configuration files for specified board.
+#                    BOARD_REVISION <revision>: Find configuration files for specified board
+#                                               revision. Requires BOARD to be specified.
+#
+#                                               If no board is given the current BOARD and
+#                                               BOARD_REVISION will be used.
+#
 #                    DTS <list>:   List to populate with DTS overlay files
 #                    KCONF <list>: List to populate with Kconfig fragment files
 #                    BUILD <type>: Build type to include for search.
@@ -1892,7 +1899,7 @@ Please provide one of following: APPLICATION_ROOT, CONF_FILES")
   if(${ARGV0} STREQUAL APPLICATION_ROOT)
     set(single_args APPLICATION_ROOT)
   elseif(${ARGV0} STREQUAL CONF_FILES)
-    set(single_args CONF_FILES DTS KCONF BUILD)
+    set(single_args CONF_FILES BOARD BOARD_REVISION DTS KCONF BUILD)
   endif()
 
   cmake_parse_arguments(FILE "" "${single_args}" "" ${ARGN})
@@ -1937,10 +1944,26 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
   endif()
 
   if(FILE_CONF_FILES)
-    set(FILENAMES ${BOARD})
+    if(DEFINED FILE_BOARD_REVISION AND NOT FILE_BOARD)
+        message(FATAL_ERROR
+          "zephyr_file(${ARGV0} <path> BOARD_REVISION ${FILE_BOARD_REVISION} ...)"
+          " given without BOARD argument, please specify BOARD"
+        )
+    endif()
 
-    if(DEFINED BOARD_REVISION)
-      list(APPEND FILENAMES "${BOARD}_${BOARD_REVISION_STRING}")
+    if(NOT DEFINED FILE_BOARD)
+      # Defaulting to system wide settings when BOARD is not given as argument
+      set(FILE_BOARD ${BOARD})
+      if(DEFINED BOARD_REVISION)
+        set(FILE_BOARD_REVISION ${BOARD_REVISION})
+      endif()
+    endif()
+
+    set(FILENAMES ${FILE_BOARD})
+
+    if(DEFINED FILE_BOARD_REVISION)
+      string(REPLACE "." "_" revision_string ${FILE_BOARD_REVISION})
+      list(APPEND FILENAMES "${FILE_BOARD}_${revision_string}")
     endif()
 
     if(FILE_DTS)
