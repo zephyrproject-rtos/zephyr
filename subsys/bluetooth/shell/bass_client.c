@@ -249,8 +249,18 @@ static int cmd_bass_client_scan_start(const struct shell *shell, size_t argc,
 				      char **argv)
 {
 	int result;
+	int start_scan = false;
 
-	result = bt_bass_client_scan_start(default_conn);
+	if (argc > 1) {
+		start_scan = strtol(argv[1], NULL, 0);
+
+		if (start_scan != 0 && start_scan != 1) {
+			shell_error(shell, "Value shall be boolean");
+			return -ENOEXEC;
+		}
+	}
+
+	result = bt_bass_client_scan_start(default_conn, (bool)start_scan);
 	if (result) {
 		shell_print(shell, "Fail: %d", result);
 	}
