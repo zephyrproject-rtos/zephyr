@@ -65,8 +65,6 @@ void test_flash(void)
 
 	LOG_INF("SPI flash driver was found!\n");
 
-	flash_write_protection_set(flash_dev, false);
-
 	if (flash_erase(flash_dev,
 			FLASH_TEST_REGION_OFFSET,
 			FLASH_SECTOR_SIZE) != 0) {
