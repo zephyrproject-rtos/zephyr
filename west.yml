@@ -148,14 +148,10 @@ manifest:
       repo-path: mcuboot
       path: modules/tee/tfm-mcuboot
       revision: 1.7.0-rc1
-    - name: hello-world
-      path: rte/hello
-      url: https://github.com/SpooniSpoon/hello-world
-      revision: 639a7d7a326aa6a4ac1d11d51b27029cfd43154e
     - name: IoBus
       path: rte/iobus
       url: https://github.com/RealtimeEngineering/iobus
-      revision: 7ec6d92a2014b0f0c8cae309c83c0032a58d017f
+      revision: 56b9264cfcf838e3a2b53ff9e8cee82db91414f0
 
   self:
     path: zephyr
