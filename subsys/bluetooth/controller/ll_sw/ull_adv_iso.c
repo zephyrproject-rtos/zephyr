@@ -37,6 +37,7 @@
 #include "ull_chan_internal.h"
 
 #include "ll.h"
+#include "ll_feat.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_ull_adv_iso
@@ -44,7 +45,8 @@
 #include "hal/debug.h"
 
 static uint32_t ull_adv_iso_start(struct ll_adv_iso_set *adv_iso,
-				  uint32_t ticks_anchor);
+				  uint32_t ticks_anchor,
+				  uint32_t iso_interval_us);
 static void mfy_iso_offset_get(void *param);
 static inline struct pdu_big_info *big_info_get(struct pdu_adv *pdu);
 static inline void big_info_offset_fill(struct pdu_big_info *bi,
@@ -79,14 +81,15 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	struct pdu_big_info *big_info;
 	uint8_t pdu_big_info_size;
 	uint32_t ticks_anchor_iso;
+	uint32_t iso_interval_us;
 	memq_link_t *link_cmplt;
 	memq_link_t *link_term;
 	struct ll_adv_set *adv;
-	uint16_t iso_interval;
 	uint8_t ter_idx;
 	uint8_t *acad;
 	uint32_t ret;
 	uint8_t err;
+	uint8_t bn;
 
 	adv_iso = ull_adv_iso_get(big_handle);
 
@@ -150,11 +153,29 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 		}
 	}
 
+	/* Store parameters in LLL context */
+	/* TODO: parameters to ULL if only accessed by ULL */
+	lll_adv_iso = &adv_iso->lll;
+	lll_adv_iso->handle = big_handle;
+	lll_adv_iso->max_pdu = LL_BIS_OCTETS_TX_MAX;
+
+	/* Mandatory Num_BIS = 1 */
+	lll_adv_iso->num_bis = num_bis;
+
+	/* BN (Burst Count), Mandatory BN = 1 */
+	bn = (max_sdu + (lll_adv_iso->max_pdu - 1)) / lll_adv_iso->max_pdu;
+	if (bn > 0x07) {
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
+	lll_adv_iso->bn = bn;
+
+	/* Allocate link buffer for created event */
 	link_cmplt = ll_rx_link_alloc();
 	if (!link_cmplt) {
 		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 	}
 
+	/* Allocate link buffer for sync lost event */
 	link_term = ll_rx_link_alloc();
 	if (!link_term) {
 		ll_rx_link_release(link_cmplt);
@@ -162,51 +183,72 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 	}
 
-	/* Store parameters in LLL context */
-	/* TODO: parameters to ULL if only accessed by ULL */
-	lll_adv_iso = &adv_iso->lll;
-	lll_adv_iso->handle = big_handle;
-	/* Mandatory Num_BIS = 1 */
-	lll_adv_iso->num_bis = num_bis;
-	/* TODO: Calculate NSE (No. of Sub Events), Mandatory NSE = 1 */
-	lll_adv_iso->nse = 1;
-	/* TODO: Calculate BN (Burst Count), Mandatory BN = 1 */
-	lll_adv_iso->bn = 1;
-	/* TODO: Immediate Repetation Count (IRC), Mandatory IRC = 1 */
-	lll_adv_iso->irc = 1;
-	/* TODO: Group count, GC = NSE / BN; PTO = GC - IRC;
+	/* Immediate Repetation Count (IRC), Mandatory IRC = 1 */
+	lll_adv_iso->irc = rtn + 1;
+
+	/* Calculate NSE (No. of Sub Events), Mandatory NSE = 1,
+	 * without PTO added.
 	 */
-	lll_adv_iso->pto = 0;
-	lll_adv_iso->max_pdu = CONFIG_BT_CTLR_ADV_ISO_PDU_LEN_MAX;
-	/* TODO: Calculate sub_interval, if interleaved then it is Num_BIS x
+	lll_adv_iso->nse = lll_adv_iso->bn * lll_adv_iso->irc;
+
+	/* NOTE: Calculate sub_interval, if interleaved then it is Num_BIS x
 	 *       BIS_Spacing (by BT Spec.)
 	 *       else if sequential, then by our implementation, lets keep it
 	 *       max_tx_time for Max_PDU + tMSS.
 	 */
-	/* TODO: BIS_Spacing, if interleaved, then by our implementation, lets
-	 *       keep it max_rx_time for Max_PDU + tMSS.
-	 */
-	/* TODO: packing support, sequential or interleaved */
 	if (encryption) {
-		lll_adv_iso->sub_interval = PKT_BIS_US(lll_adv_iso->max_pdu,
-						       PDU_MIC_SIZE, phy) +
-					    EVENT_MSS_US;
-		lll_adv_iso->bis_spacing = PKT_BIS_US(lll_adv_iso->max_pdu,
-						      PDU_MIC_SIZE, phy) +
-					   EVENT_MSS_US;
+		lll_adv_iso->sub_interval =
+			PKT_BIS_US(lll_adv_iso->max_pdu, PDU_MIC_SIZE,
+				   phy) +
+			EVENT_MSS_US;
 	} else {
-		lll_adv_iso->sub_interval = PKT_BIS_US(lll_adv_iso->max_pdu, 0,
-						       phy) +
-					    EVENT_MSS_US;
-		lll_adv_iso->bis_spacing = PKT_BIS_US(lll_adv_iso->max_pdu, 0,
-						      phy) +
-					   EVENT_MSS_US;
+		lll_adv_iso->sub_interval =
+			PKT_BIS_US(lll_adv_iso->max_pdu, 0,
+				   phy) +
+			EVENT_MSS_US;
 	}
 
-	util_saa_le32(lll_adv_iso->seed_access_addr, big_handle);
+	/* Based on packing requested, sequential or interleaved */
+	if (packing) {
+		uint32_t latency;
+
+		lll_adv_iso->bis_spacing = lll_adv_iso->sub_interval;
+		latency = lll_adv_iso->sub_interval * lll_adv_iso->nse *
+			   lll_adv_iso->num_bis;
+		if (latency < (max_latency * 1000)) {
+			lll_adv_iso->pto = ((max_latency * 1000) - latency) /
+					   lll_adv_iso->sub_interval;
+		} else {
+			lll_adv_iso->pto = 0;
+		}
+		lll_adv_iso->nse += lll_adv_iso->pto;
+		lll_adv_iso->sub_interval = lll_adv_iso->bis_spacing *
+					    lll_adv_iso->nse;
+	} else {
+		uint32_t latency;
+
+		latency = lll_adv_iso->sub_interval * lll_adv_iso->nse;
+		if (latency < (max_latency * 1000)) {
+			lll_adv_iso->pto = ((max_latency * 1000) - latency) /
+					   lll_adv_iso->sub_interval;
+		} else {
+			lll_adv_iso->pto = 0;
+		}
+
+		lll_adv_iso->nse += lll_adv_iso->pto;
+		lll_adv_iso->bis_spacing = lll_adv_iso->sub_interval *
+					   lll_adv_iso->nse;
+	}
+
+	/* TODO: Group count, GC = NSE / BN; PTO = GC - IRC;
+	 *       Is this required?
+	 */
 
 	lll_adv_iso->sdu_interval = sdu_interval;
 	lll_adv_iso->max_sdu = max_sdu;
+
+	util_saa_le32(lll_adv_iso->seed_access_addr, big_handle);
+
 	lll_csrand_get(lll_adv_iso->base_crc_init,
 		       sizeof(lll_adv_iso->base_crc_init));
 	lll_adv_iso->data_chan_count =
@@ -214,12 +256,20 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	lll_adv_iso->phy = phy;
 	lll_adv_iso->latency_prepare = 0;
 	lll_adv_iso->latency_event = 0;
+	lll_adv_iso->term_req = 0U;
+	lll_adv_iso->term_ack = 0U;
+	lll_adv_iso->chm_req = 0U;
+	lll_adv_iso->chm_ack = 0U;
+	lll_adv_iso->ctrl_expire = 0U;
 
 	/* TODO: framing support */
 	lll_adv_iso->framing = framing;
 
-	/* TODO: Calculate ISO interval */
-	iso_interval = sdu_interval / 1250U;
+	/* Calculate ISO interval */
+	/* iso_interval shall be at least SDU interval,
+	 * or integer multiple of SDU interval for unframed PDUs
+	 */
+	iso_interval_us = sdu_interval * lll_adv_iso->bn;
 
 	/* Allocate next PDU */
 	err = ull_adv_sync_pdu_alloc(adv, ULL_ADV_PDU_EXTRA_DATA_ALLOC_IF_EXIST, &pdu_prev, &pdu,
@@ -250,10 +300,12 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	acad[1] = BT_DATA_BIG_INFO;
 	big_info = (void *)&acad[2];
 
-	/* big_info->offset and big_info->offset_units will be filled by LLL
+	/* big_info->offset, big_info->offset_units and
+	 * big_info->payload_count_framing[] will be filled by periodic
+	 * advertising event.
 	 */
 
-	big_info->iso_interval = iso_interval;
+	big_info->iso_interval = iso_interval_us / 1250U;
 	big_info->num_bis = lll_adv_iso->num_bis;
 	big_info->nse = lll_adv_iso->nse;
 	big_info->bn = lll_adv_iso->bn;
@@ -277,7 +329,7 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	big_info->payload_count_framing[2] = lll_adv_iso->payload_count >> 16;
 	big_info->payload_count_framing[3] = lll_adv_iso->payload_count >> 24;
 	big_info->payload_count_framing[4] = lll_adv_iso->payload_count >> 32;
-	big_info->payload_count_framing[4] &= 0x7F;
+	big_info->payload_count_framing[4] &= ~BIT(7);
 	big_info->payload_count_framing[4] |= ((framing & 0x01) << 7);
 
 	/* Associate the ISO instance with an Extended Advertising instance */
@@ -292,7 +344,7 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 
 	/* Start sending BIS empty data packet for each BIS */
 	ticks_anchor_iso = ticker_ticks_now_get();
-	ret = ull_adv_iso_start(adv_iso, ticks_anchor_iso);
+	ret = ull_adv_iso_start(adv_iso, ticks_anchor_iso, iso_interval_us);
 	if (ret) {
 		/* FIXME: release resources */
 		return BT_HCI_ERR_CMD_DISALLOWED;
@@ -345,7 +397,6 @@ uint8_t ll_big_terminate(uint8_t big_handle, uint8_t reason)
 	struct lll_adv *lll_adv;
 	struct ll_adv_set *adv;
 	uint8_t ter_idx;
-	uint32_t ret;
 	uint8_t err;
 
 	adv_iso = ull_adv_iso_get(big_handle);
@@ -359,8 +410,15 @@ uint8_t ll_big_terminate(uint8_t big_handle, uint8_t reason)
 		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
 	}
 
+	if (lll_adv_iso->term_req) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
 	lll_adv_sync = lll_adv->sync;
 	adv = HDR_LLL2ULL(lll_adv);
+
+	/* Remove Periodic Advertising association */
+	lll_adv_sync->iso = NULL;
 
 	/* Allocate next PDU */
 	err = ull_adv_sync_pdu_alloc(adv, ULL_ADV_PDU_EXTRA_DATA_ALLOC_IF_EXIST, &pdu_prev, &pdu,
@@ -378,22 +436,21 @@ uint8_t ll_big_terminate(uint8_t big_handle, uint8_t reason)
 
 	lll_adv_sync_data_enqueue(lll_adv_sync, ter_idx);
 
-	/* TODO: Terminate all BIS data paths */
-
-	/* FIXME: Generate after terminate procedure completes */
-	/* Prepare BIG terminate event */
+	/* Prepare BIG terminate event, will be enqueued after tx flush  */
 	node_rx = (void *)&adv_iso->node_rx_terminate;
 	node_rx->hdr.type = NODE_RX_TYPE_BIG_TERMINATE;
 	node_rx->hdr.handle = big_handle;
 	node_rx->hdr.rx_ftr.param = adv_iso;
-	*((uint8_t *)node_rx->pdu) = reason;
 
-	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
-			  (TICKER_ID_ADV_ISO_BASE + lll_adv_iso->handle),
-			  ticker_op_stop_cb, adv_iso);
+	if (reason == BT_HCI_ERR_REMOTE_USER_TERM_CONN) {
+		*((uint8_t *)node_rx->pdu) = BT_HCI_ERR_LOCALHOST_TERM_CONN;
+	} else {
+		*((uint8_t *)node_rx->pdu) = reason;
+	}
 
-	lll_adv_iso->adv = NULL;
-	lll_adv_sync->iso = NULL;
+	/* Request terminate procedure */
+	lll_adv_iso->term_reason = reason;
+	lll_adv_iso->term_req = 1U;
 
 	return BT_HCI_ERR_SUCCESS;
 }
@@ -482,7 +539,7 @@ void ull_adv_iso_offset_get(struct ll_adv_sync_set *sync)
 	LL_ASSERT(!ret);
 }
 
-void ull_adv_iso_done(struct node_rx_event_done *done)
+void ull_adv_iso_done_complete(struct node_rx_event_done *done)
 {
 	struct ll_adv_iso_set *adv_iso;
 	struct lll_adv_iso *lll;
@@ -501,12 +558,30 @@ void ull_adv_iso_done(struct node_rx_event_done *done)
 	link = rx->link;
 	LL_ASSERT(link);
 	rx->link = NULL;
+
 	rx->type = NODE_RX_TYPE_BIG_COMPLETE;
 	rx->handle = lll->handle;
 	rx->rx_ftr.param = adv_iso;
 
 	ll_rx_put(link, rx);
 	ll_rx_sched();
+}
+
+void ull_adv_iso_done_terminate(struct node_rx_event_done *done)
+{
+	struct ll_adv_iso_set *adv_iso;
+	struct lll_adv_iso *lll;
+	uint32_t ret;
+
+	/* Get reference to ULL context */
+	adv_iso = CONTAINER_OF(done->param, struct ll_adv_iso_set, ull);
+	lll = &adv_iso->lll;
+
+	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
+			  (TICKER_ID_ADV_ISO_BASE + lll->handle),
+			  ticker_op_stop_cb, adv_iso);
+	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
+		  (ret == TICKER_STATUS_BUSY));
 }
 
 static int init_reset(void)
@@ -529,11 +604,11 @@ static inline struct ll_adv_iso_set *ull_adv_iso_get(uint8_t handle)
 }
 
 static uint32_t ull_adv_iso_start(struct ll_adv_iso_set *adv_iso,
-				  uint32_t ticks_anchor)
+				  uint32_t ticks_anchor,
+				  uint32_t iso_interval_us)
 {
 	uint32_t ticks_slot_overhead;
 	uint32_t volatile ret_cb;
-	uint32_t iso_interval_us;
 	uint32_t slot_us;
 	uint32_t ret;
 
@@ -559,12 +634,6 @@ static uint32_t ull_adv_iso_start(struct ll_adv_iso_set *adv_iso,
 
 	/* setup to use ISO create prepare function for first radio event */
 	mfy_lll_prepare.fp = lll_adv_iso_create_prepare;
-
-	/* TODO: Calculate ISO interval */
-	/* iso_interval shall be at least SDU interval,
-	 * or integer multiple of SDU interval for unframed PDUs
-	 */
-	iso_interval_us = adv_iso->lll.sdu_interval;
 
 	ret_cb = TICKER_STATUS_BUSY;
 	ret = ticker_start(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
