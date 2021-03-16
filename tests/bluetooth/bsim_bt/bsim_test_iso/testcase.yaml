@@ -1,0 +1,13 @@
+tests:
+  bluetooth.bsim.iso.broadcast:
+    harness: bsim
+    tags: bluetooth
+    platform_allow: nrf52_bsim
+    harness_config:
+      bsim_phy:
+        sim_length: 20
+      bsim_tests:
+        - id: receive
+          real_encryption: true
+        - id: broadcast
+          real_encryption: true

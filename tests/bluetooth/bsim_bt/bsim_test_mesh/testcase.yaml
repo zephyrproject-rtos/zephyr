@@ -1,0 +1,74 @@
+common:
+  harness: bsim
+  tags: bluetooth
+  platform_allow: nrf52_bsim
+tests:
+  # Transport tests:
+  bluetooth.bsim.mesh.transport.group:
+    harness_config:
+      bsim_tests:
+        - id: transport_tx_group
+          real_encryption: true
+        - id: transport_rx_group
+          real_encryption: true
+  bluetooth.bsim.mesh.transport.loopback_group:
+    harness_config:
+      bsim_tests:
+        - id: transport_tx_loopback_group
+          real_encryption: true
+        - id: transport_rx_group
+          real_encryption: true
+  bluetooth.bsim.mesh.transport.loopback:
+    harness_config:
+      bsim_tests:
+        - id: transport_tx_loopback
+          real_encryption: true
+        - id: transport_rx_none
+          real_encryption: true
+  bluetooth.bsim.mesh.transport.seg_block:
+    harness_config:
+      bsim_tests:
+        - id: transport_tx_seg_block
+          real_encryption: true
+        - id: transport_rx_seg_block
+          real_encryption: true
+  bluetooth.bsim.mesh.transport.seg_concurrent:
+    harness_config:
+      bsim_tests:
+        - id: transport_tx_seg_concurrent
+          real_encryption: true
+        - id: transport_rx_seg_concurrent
+          real_encryption: true
+  bluetooth.bsim.mesh.transport.seg_fail:
+    harness_config:
+      bsim_tests:
+        - id: transport_tx_seg_fail
+          real_encryption: true
+  bluetooth.bsim.mesh.transport.seg_ivu:
+    harness_config:
+      bsim_tests:
+        - id: transport_tx_seg_ivu
+          real_encryption: true
+        - id: transport_rx_seg_ivu
+          real_encryption: true
+  bluetooth.bsim.mesh.transport.unicast:
+    harness_config:
+      bsim_tests:
+        - id: transport_tx_unicast
+          real_encryption: true
+        - id: transport_rx_unicast
+          real_encryption: true
+  bluetooth.bsim.mesh.transport.unknown_app:
+    harness_config:
+      bsim_tests:
+        - id: transport_tx_unknown_app
+          real_encryption: true
+        - id: transport_rx_none
+          real_encryption: true
+  bluetooth.bsim.mesh.transport.va:
+    harness_config:
+      bsim_tests:
+        - id: transport_tx_va
+          real_encryption: true
+        - id: transport_rx_va
+          real_encryption: true

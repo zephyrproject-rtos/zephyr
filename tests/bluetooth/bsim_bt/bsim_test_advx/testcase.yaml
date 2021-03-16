@@ -1,0 +1,11 @@
+tests:
+  bluetooth.bsim.advx:
+    harness: bsim
+    tags: bluetooth
+    platform_allow: nrf52_bsim
+    harness_config:
+      bsim_phy:
+        sim_length: 60
+      bsim_tests:
+        - id: advx
+        - id: scanx

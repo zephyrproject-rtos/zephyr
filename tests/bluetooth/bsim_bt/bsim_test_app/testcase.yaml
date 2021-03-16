@@ -1,0 +1,39 @@
+common:
+  harness: bsim
+  tags: bluetooth
+  platform_allow: nrf52_bsim
+tests:
+  bluetooth.bsim.basic_conn.split:
+    extra_args: CONF_FILE=prj_split_privacy.conf
+    harness_config:
+      bsim_phy:
+        sim_length: 20
+      bsim_tests:
+        - id: peripheral
+          rs: 23
+        - id: central
+          rs: 6
+  bluetooth.bsim.basic_conn.split.enc:
+    extra_args: CONF_FILE=prj_split.conf
+    harness_config:
+      bsim_phy:
+        sim_length: 20
+      bsim_tests:
+        - id: peripheral
+          real_encryption: true
+          rs: 23
+        - id: central_encrypted
+          real_encryption: true
+          rs: 6
+  bluetooth.bsim.basic_conn.split.enc_privacy:
+    extra_args: CONF_FILE=prj_split_privacy.conf
+    harness_config:
+      bsim_phy:
+        sim_length: 20
+      bsim_tests:
+        - id: peripheral
+          real_encryption: true
+          rs: 23
+        - id: central_encrypted
+          real_encryption: true
+          rs: 6
