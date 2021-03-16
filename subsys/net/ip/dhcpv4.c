@@ -32,6 +32,8 @@ LOG_MODULE_REGISTER(net_dhcpv4, CONFIG_NET_DHCPV4_LOG_LEVEL);
 
 #define PKT_WAIT_TIME K_SECONDS(1)
 
+static K_MUTEX_DEFINE(lock);
+
 static sys_slist_t dhcpv4_ifaces;
 static struct k_delayed_work timeout_work;
 
@@ -632,6 +634,8 @@ static void dhcpv4_timeout(struct k_work *work)
 
 	ARG_UNUSED(work);
 
+	k_mutex_lock(&lock, K_FOREVER);
+
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&dhcpv4_ifaces, current, next, node) {
 		struct net_if *iface = CONTAINER_OF(
 			CONTAINER_OF(current, struct net_if_config, dhcpv4),
@@ -643,6 +647,8 @@ static void dhcpv4_timeout(struct k_work *work)
 			timeout_update = next_timeout;
 		}
 	}
+
+	k_mutex_unlock(&lock);
 
 	if (timeout_update != UINT32_MAX) {
 		NET_DBG("Waiting for %us", timeout_update);
@@ -975,6 +981,7 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 					 void *user_data)
 {
 	NET_PKT_DATA_ACCESS_DEFINE(dhcp_access, struct dhcp_msg);
+	enum net_verdict verdict = NET_DROP;
 	enum dhcpv4_msg_type msg_type = 0;
 	struct dhcp_msg *msg;
 	struct net_if *iface;
@@ -1029,6 +1036,8 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 	NET_DBG("  giaddr=%d.%d.%d.%d]",
 		msg->giaddr[0], msg->giaddr[1], msg->giaddr[2], msg->giaddr[3]);
 
+	k_mutex_lock(&lock, K_FOREVER);
+
 	if (!(msg->op == DHCPV4_MSG_BOOT_REPLY &&
 	      iface->config.dhcpv4.xid == ntohl(msg->xid) &&
 	      !memcmp(msg->chaddr, net_if_get_link_addr(iface)->addr,
@@ -1036,12 +1045,12 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 
 		NET_DBG("Unexpected op (%d), xid (%x vs %x) or chaddr",
 			msg->op, iface->config.dhcpv4.xid, ntohl(msg->xid));
-		return NET_DROP;
+		goto drop;
 	}
 
 	if (msg->hlen != net_if_get_link_addr(iface)->len) {
 		NET_DBG("Unexpected hlen (%d)", msg->hlen);
-		return NET_DROP;
+		goto drop;
 	}
 
 	memcpy(iface->config.dhcpv4.requested_ip.s4_addr,
@@ -1052,24 +1061,31 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 	/* SNAME, FILE are not used at the moment, skip it */
 	if (net_pkt_skip(pkt, SIZE_OF_SNAME + SIZE_OF_FILE)) {
 		NET_DBG("short packet while skipping sname");
-		return NET_DROP;
+		goto drop;
 	}
 
 	if (!dhcpv4_parse_options(pkt, iface, &msg_type)) {
-		return NET_DROP;
+		goto drop;
 	}
 
 	net_pkt_unref(pkt);
 
 	dhcpv4_handle_reply(iface, msg_type);
 
-	return NET_OK;
+	verdict = NET_OK;
+
+drop:
+	k_mutex_unlock(&lock);
+
+	return verdict;
 }
 
 static void dhcpv4_iface_event_handler(struct net_mgmt_event_callback *cb,
 				       uint32_t mgmt_event, struct net_if *iface)
 {
 	sys_snode_t *node = NULL;
+
+	k_mutex_lock(&lock, K_FOREVER);
 
 	SYS_SLIST_FOR_EACH_NODE(&dhcpv4_ifaces, node) {
 		if (node == &iface->config.dhcpv4.node) {
@@ -1078,7 +1094,7 @@ static void dhcpv4_iface_event_handler(struct net_mgmt_event_callback *cb,
 	}
 
 	if (node == NULL) {
-		return;
+		goto out;
 	}
 
 	if (mgmt_event == NET_EVENT_IF_DOWN) {
@@ -1100,6 +1116,9 @@ static void dhcpv4_iface_event_handler(struct net_mgmt_event_callback *cb,
 		 */
 		dhcpv4_immediate_timeout(&iface->config.dhcpv4);
 	}
+
+out:
+	k_mutex_unlock(&lock);
 }
 
 const char *net_dhcpv4_state_name(enum net_dhcpv4_state state)
@@ -1124,6 +1143,8 @@ void net_dhcpv4_start(struct net_if *iface)
 	uint32_t entropy;
 
 	net_mgmt_event_notify(NET_EVENT_IPV4_DHCP_START, iface);
+
+	k_mutex_lock(&lock, K_FOREVER);
 
 	switch (iface->config.dhcpv4.state) {
 	case NET_DHCPV4_DISABLED:
@@ -1173,10 +1194,14 @@ void net_dhcpv4_start(struct net_if *iface)
 	case NET_DHCPV4_BOUND:
 		break;
 	}
+
+	k_mutex_unlock(&lock);
 }
 
 void net_dhcpv4_stop(struct net_if *iface)
 {
+	k_mutex_lock(&lock, K_FOREVER);
+
 	switch (iface->config.dhcpv4.state) {
 	case NET_DHCPV4_DISABLED:
 		break;
@@ -1209,6 +1234,8 @@ void net_dhcpv4_stop(struct net_if *iface)
 	}
 
 	net_mgmt_event_notify(NET_EVENT_IPV4_DHCP_STOP, iface);
+
+	k_mutex_unlock(&lock);
 }
 
 int net_dhcpv4_init(void)
