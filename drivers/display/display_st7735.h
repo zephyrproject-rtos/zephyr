@@ -48,7 +48,7 @@ struct st7735_data
 
 
 
-
+//128*160
 
 #define LCD_WIDTH         129               // 设置屏幕的像素大小，
 #define LCD_HIGH          160               // 注意：实际像素好像要比标示值大1~2像素，

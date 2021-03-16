@@ -14,3 +14,8 @@ else
 fi;
 
 west build -b ${BOARDS}  ${PROJECT} -p auto
+
+
+# west build -t menuconfig
+# 或者
+# west build -t guiconfig
