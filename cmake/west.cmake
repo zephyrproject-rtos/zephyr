@@ -90,7 +90,15 @@ else()
   execute_process(
     COMMAND ${WEST} topdir
     OUTPUT_VARIABLE WEST_TOPDIR
+    ERROR_QUIET
+    RESULT_VARIABLE west_topdir_result
     OUTPUT_STRIP_TRAILING_WHITESPACE
     WORKING_DIRECTORY ${ZEPHYR_BASE}
     )
+
+  if(west_topdir_result)
+    # west topdir is undefined.
+    # That's fine; west is optional, so could be custom Zephyr project.
+    set(WEST WEST-NOTFOUND CACHE INTERNAL "West")
+  endif()
 endif()
