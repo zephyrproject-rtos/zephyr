@@ -35,7 +35,7 @@ LOG_MODULE_REGISTER(net_dhcpv4, CONFIG_NET_DHCPV4_LOG_LEVEL);
 static K_MUTEX_DEFINE(lock);
 
 static sys_slist_t dhcpv4_ifaces;
-static struct k_delayed_work timeout_work;
+static struct k_work_delayable timeout_work;
 
 static struct net_mgmt_event_callback mgmt4_cb;
 
@@ -278,14 +278,16 @@ fail:
 	return NULL;
 }
 
+/* Must be invoked with lock held. */
 static void dhcpv4_immediate_timeout(struct net_if_dhcpv4 *dhcpv4)
 {
 	NET_DBG("force timeout dhcpv4=%p", dhcpv4);
 	dhcpv4->timer_start = k_uptime_get() - 1;
 	dhcpv4->request_time = 0U;
-	k_delayed_work_submit(&timeout_work, K_NO_WAIT);
+	k_work_reschedule(&timeout_work, K_NO_WAIT);
 }
 
+/* Must be invoked with lock held. */
 static void dhcpv4_set_timeout(struct net_if_dhcpv4 *dhcpv4,
 			       uint32_t timeout)
 {
@@ -297,9 +299,10 @@ static void dhcpv4_set_timeout(struct net_if_dhcpv4 *dhcpv4,
 	 * event; also this timeout may replace the current timeout
 	 * event.  Delegate scheduling to the timeout manager.
 	 */
-	k_delayed_work_submit(&timeout_work, K_NO_WAIT);
+	k_work_reschedule(&timeout_work, K_NO_WAIT);
 }
 
+/* Must be invoked with lock held */
 static uint32_t dhcpv4_update_message_timeout(struct net_if_dhcpv4 *dhcpv4)
 {
 	uint32_t timeout;
@@ -526,6 +529,7 @@ static void dhcpv4_enter_requesting(struct net_if *iface)
 	dhcpv4_send_request(iface);
 }
 
+/* Must be invoked with lock held */
 static void dhcpv4_enter_bound(struct net_if *iface)
 {
 	uint32_t renewal_time;
@@ -653,8 +657,8 @@ static void dhcpv4_timeout(struct k_work *work)
 	if (timeout_update != UINT32_MAX) {
 		NET_DBG("Waiting for %us", timeout_update);
 
-		k_delayed_work_submit(&timeout_work,
-				      K_SECONDS(timeout_update));
+		k_work_reschedule(&timeout_work,
+				  K_SECONDS(timeout_update));
 	}
 }
 
@@ -900,6 +904,7 @@ static inline void dhcpv4_handle_msg_offer(struct net_if *iface)
 	}
 }
 
+/* Must be invoked with lock held */
 static void dhcpv4_handle_msg_ack(struct net_if *iface)
 {
 	switch (iface->config.dhcpv4.state) {
@@ -951,6 +956,7 @@ static void dhcpv4_handle_msg_nak(struct net_if *iface)
 	}
 }
 
+/* Takes and releases lock */
 static void dhcpv4_handle_reply(struct net_if *iface,
 				enum dhcpv4_msg_type msg_type)
 {
@@ -1226,7 +1232,10 @@ void net_dhcpv4_stop(struct net_if *iface)
 					  &iface->config.dhcpv4.node);
 
 		if (sys_slist_is_empty(&dhcpv4_ifaces)) {
-			k_delayed_work_cancel(&timeout_work);
+			/* Best effort cancel.  Handler is safe to invoke if
+			 * cancellation is unsuccessful.
+			 */
+			(void)k_work_cancel_delayable(&timeout_work);
 			net_mgmt_del_event_callback(&mgmt4_cb);
 		}
 
@@ -1262,7 +1271,7 @@ int net_dhcpv4_init(void)
 		return ret;
 	}
 
-	k_delayed_work_init(&timeout_work, dhcpv4_timeout);
+	k_work_init_delayable(&timeout_work, dhcpv4_timeout);
 
 	/* Catch network interface UP or DOWN events and renew the address
 	 * if interface is coming back up again.
