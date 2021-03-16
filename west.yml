@@ -88,7 +88,7 @@ manifest:
       revision: 31acbaa36e9e74ab88ac81e3d21e7f1d00a71136
       path: modules/lib/gui/lvgl
     - name: mbedtls
-      revision: 24d84ecff195fb15c889d9046e44e4804d626c67
+      revision: 53044168b43f06ec5654b906a2cdd260bf477edd
       path: modules/crypto/mbedtls
     - name: mcuboot
       revision: 846b104e67c46f9428fd020ba8dccf94f786d94d
