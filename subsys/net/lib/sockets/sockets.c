@@ -966,13 +966,31 @@ static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 	net_pkt_cursor_backup(pkt, &backup);
 
 	if (src_addr && addrlen) {
-		int rv;
+		if (IS_ENABLED(CONFIG_NET_OFFLOAD) &&
+		    net_if_is_ip_offloaded(net_context_get_iface(ctx))) {
+			/*
+			 * Packets from offloaded IP stack do not have IP
+			 * headers, so src address cannot be figured out at this
+			 * point. The best we can do is returning remote address
+			 * if that was set using connect() call.
+			 */
+			if (ctx->flags & NET_CONTEXT_REMOTE_ADDR_SET) {
+				memcpy(src_addr, &ctx->remote,
+				       MIN(*addrlen, sizeof(ctx->remote)));
+			} else {
+				errno = ENOTSUP;
+				goto fail;
+			}
+		} else {
+			int rv;
 
-		rv = sock_get_pkt_src_addr(pkt, net_context_get_ip_proto(ctx),
-					   src_addr, *addrlen);
-		if (rv < 0) {
-			errno = -rv;
-			goto fail;
+			rv = sock_get_pkt_src_addr(pkt, net_context_get_ip_proto(ctx),
+						   src_addr, *addrlen);
+			if (rv < 0) {
+				errno = -rv;
+				LOG_ERR("sock_get_pkt_src_addr %d", rv);
+				goto fail;
+			}
 		}
 
 		/* addrlen is a value-result argument, set to actual
