@@ -211,6 +211,7 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	conn_lll->data_chan_use = 0;
 	conn_lll->role = 0;
 	conn_lll->master.initiated = 0;
+	conn_lll->master.cancelled = 0;
 	/* FIXME: END: Move to ULL? */
 #if defined(CONFIG_BT_CTLR_CONN_META)
 	memset(&conn_lll->conn_meta, 0, sizeof(conn_lll->conn_meta));
@@ -384,8 +385,28 @@ uint8_t ll_connect_disable(void **rx)
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
+	/* Check if initiator active */
 	conn_lll = scan->lll.conn;
 	if (!conn_lll) {
+		/* Scanning not associated with initiation of a connection or
+		 * connection setup already complete (was set to NULL in
+		 * ull_master_setup), but HCI event not processed by host.
+		 */
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	/* Indicate to LLL that a cancellation is requested */
+	conn_lll->master.cancelled = 1U;
+	cpu_dmb();
+
+	/* Check if connection was established under race condition, i.e.
+	 * before the cancelled flag was set.
+	 */
+	conn_lll = scan->lll.conn;
+	if (!conn_lll) {
+		/* Connection setup completed on race condition with cancelled
+		 * flag, before it was set.
+		 */
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
