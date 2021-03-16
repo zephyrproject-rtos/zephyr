@@ -700,7 +700,7 @@ int auth_xport_send(const auth_xport_hdl_t xporthdl, const uint8_t *data, size_t
 		/* verify all bytes were sent */
 		if (send_ret != fragment_bytes) {
 			LOG_ERR("Failed to to send all bytes, send: %d, requested: %d",
-	   				send_ret, fragment_bytes);
+					send_ret, fragment_bytes);
 			return AUTH_ERROR_XPORT_SEND;
 		}
 
@@ -983,8 +983,9 @@ int auth_message_assemble(const auth_xport_hdl_t xporthdl, const uint8_t *buf,
 
 		} else {
 			int need = msg_recv->rx_curr_offset - free_bytes;
+
 			LOG_ERR("Not enough room in RX buffer, free: %d, need %d bytes.",
-	   				free_bytes, need);
+				free_bytes, need);
 		}
 
 		/* reset vars */

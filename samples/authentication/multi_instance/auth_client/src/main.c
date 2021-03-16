@@ -142,7 +142,7 @@ static auth_svc_gatt_t auth_svc_gatt_tbl[AUTH_SVC_GATT_COUNT] = {
 	{ (const struct bt_uuid *)&auth_client_char,  NULL, 0, 0, BT_GATT_PERM_NONE,
 		BT_GATT_DISCOVER_CHARACTERISTIC }, /* AUTH_SVC_CLIENT_CHAR_INDEX */
 	{ BT_UUID_GATT_CCC,                           NULL, 0, 0, BT_GATT_PERM_NONE,
-   		BT_GATT_DISCOVER_DESCRIPTOR },     /* AUTH_SVC_CLIENT_CCC_INDEX CCC  */
+		BT_GATT_DISCOVER_DESCRIPTOR },     /* AUTH_SVC_CLIENT_CCC_INDEX CCC  */
 	{ (const struct bt_uuid *)&auth_server_char,  NULL, 0, 0, BT_GATT_PERM_NONE,
 		BT_GATT_DISCOVER_CHARACTERISTIC }  /* AUTH_SVC_SERVER_CHAR_INDEX */
 };
@@ -213,6 +213,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 			     struct bt_gatt_discover_params *params)
 {
 	int err;
+	char uuid_str[50];
 
 	if (!attr) {
 		LOG_INF("Discover complete, NULL attribute.");
@@ -227,7 +228,6 @@ static uint8_t discover_func(struct bt_conn *conn,
 	LOG_DBG("[ATTRIBUTE] value handle 0x%x", bt_gatt_attr_value_handle(attr));
 
 	/* let's get string */
-	char uuid_str[50];
 	bt_uuid_to_str(attr->uuid, uuid_str, sizeof(uuid_str));
 	LOG_DBG("Attribute UUID: %s", log_strdup(uuid_str));
 

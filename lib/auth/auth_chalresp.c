@@ -251,7 +251,7 @@ static bool auth_client_send_challenge(struct authenticate_conn *auth_conn,
  */
 static bool auth_client_recv_chal_resp(struct authenticate_conn *auth_conn,
 					const uint8_t *random_chal,
-				       	enum auth_status *status)
+					enum auth_status *status)
 {
 	uint8_t hash[AUTH_CHAL_RESPONSE_LEN];
 	int numbytes;
@@ -321,7 +321,7 @@ static bool auth_client_recv_chal_resp(struct authenticate_conn *auth_conn,
 		chal_result.result = 1;
 
 		numbytes = auth_xport_send(auth_conn->xport_hdl, (uint8_t *)&chal_result,
-			     			sizeof(chal_result));
+				sizeof(chal_result));
 
 		if ((numbytes <= 0) || (numbytes != sizeof(chal_result))) {
 			LOG_ERR("Failed to send authentication error result to server.");
@@ -347,7 +347,7 @@ static bool auth_client_recv_chal_resp(struct authenticate_conn *auth_conn,
 
 	/* send Client's response to the Server's random challenge */
 	numbytes = auth_xport_send(auth_conn->xport_hdl, (uint8_t *)&client_resp,
-			    		sizeof(client_resp));
+					sizeof(client_resp));
 
 	if ((numbytes <= 0) || (numbytes != sizeof(client_resp))) {
 		LOG_ERR("Failed to send Client response.");
@@ -377,7 +377,7 @@ static bool auth_server_recv_msg(struct authenticate_conn *auth_conn, uint8_t *m
 	while (msglen > 0) {
 
 		numbytes = auth_xport_recv(auth_conn->xport_hdl, msgbuf, msglen,
-			     			AUTH_RX_TIMEOUT_MSEC);
+						AUTH_RX_TIMEOUT_MSEC);
 
 		if (auth_conn->cancel_auth) {
 			return false;
@@ -463,7 +463,7 @@ static bool auth_server_recv_challenge(struct authenticate_conn *auth_conn,
  */
 static bool auth_server_recv_chalresp(struct authenticate_conn *auth_conn,
 					uint8_t *server_random_chal,
-				      	enum auth_status *status)
+					enum auth_status *status)
 {
 	struct client_chal_resp client_resp;
 	struct auth_chalresp_result result_resp;
@@ -476,7 +476,7 @@ static bool auth_server_recv_chalresp(struct authenticate_conn *auth_conn,
 
 	/* read just the header */
 	if (!auth_server_recv_msg(auth_conn, (uint8_t *)&client_resp,
-			   		sizeof(client_resp.hdr))) {
+					sizeof(client_resp.hdr))) {
 		LOG_ERR("Failed to receive challenge response from the Client");
 		*status = AUTH_STATUS_FAILED;
 		return false;
@@ -487,7 +487,7 @@ static bool auth_server_recv_chalresp(struct authenticate_conn *auth_conn,
 
 		/* read the remainder of the message */
 		auth_server_recv_msg(auth_conn, (uint8_t *)&result_resp.result,
-		       				sizeof(result_resp.result));
+					sizeof(result_resp.result));
 
 		/* Result should be non-zero, meaning an authentication failure. */
 		if (result_resp.result != 0) {
@@ -530,7 +530,7 @@ static bool auth_server_recv_chalresp(struct authenticate_conn *auth_conn,
 
 	/* send result back to the Client */
 	numbytes = auth_xport_send(auth_conn->xport_hdl, (uint8_t *)&result_resp,
-			    		sizeof(result_resp));
+					sizeof(result_resp));
 
 	if ((numbytes <= 0) || (numbytes != sizeof(result_resp))) {
 		LOG_ERR("Failed to send Client authentication result.");
@@ -628,9 +628,9 @@ static int auth_chalresp_server(struct authenticate_conn *auth_conn)
 	enum auth_status status;
 	uint8_t random_chal[AUTH_CHALLENGE_LEN];
 
-    	/* Generate random number as challenge using a cryptographically secure random
+	/* Generate random number as challenge using a cryptographically secure random
 	 * number generator.
-    	 */
+	 */
 	sys_csrand_get(random_chal, sizeof(random_chal));
 
 	/* Wait for challenge from the Central */

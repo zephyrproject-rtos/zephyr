@@ -70,9 +70,9 @@ BT_GATT_SERVICE_DEFINE(auth_svc,
 	BT_GATT_CCC(client_ccc_cfg_changed, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
 
 	/**
-	* Server characteristic, used by the central (client role) to write
-	* authentication messages to the server (peripheral)
-	*/
+	 * Server characteristic, used by the central (client role) to write
+	 * authentication messages to the server (peripheral)
+	 */
 	BT_GATT_CHARACTERISTIC((const struct bt_uuid *)&auth_server_char, BT_GATT_CHRC_WRITE,
 			      (BT_GATT_PERM_READ | BT_GATT_PERM_WRITE), NULL,
 			      auth_xp_bt_central_write, NULL),

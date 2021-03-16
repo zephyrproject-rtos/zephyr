@@ -147,8 +147,8 @@ typedef void (*auth_instance_func_t)(struct authenticate_conn *);
  * Authentication callback status function
  */
 typedef void (*auth_status_cb_t)(struct authenticate_conn *auth_conn,
-                    enum auth_instance_id instance,
-				     enum auth_status status, void *context);
+			enum auth_instance_id instance,
+			enum auth_status status, void *context);
 
 
 /**

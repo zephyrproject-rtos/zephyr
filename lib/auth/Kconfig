@@ -51,7 +51,7 @@ if AUTH_LIB
 	    auth_xport.h header file for details.
 
 
-    config SERIAL_XPORT
+	config SERIAL_XPORT
 		bool "Serial Transport"
 		help
 		If using serial port to authenticate peer.

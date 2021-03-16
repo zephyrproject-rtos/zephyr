@@ -36,7 +36,7 @@ static struct auth_optional_param chal_resp_param = {
 
 static void auth_status_callback(struct authenticate_conn *auth_conn,
 					enum auth_instance_id instance,
-				 	enum auth_status status, void *context)
+					enum auth_status status, void *context)
 {
 	/* dummy function */
 }

@@ -147,7 +147,7 @@ static auth_svc_gatt_t auth_svc_gatt_tbl[AUTH_SVC_GATT_COUNT] = {
 	{ (const struct bt_uuid *)&auth_client_char,   NULL, 0, 0, BT_GATT_PERM_NONE,
 			BT_GATT_DISCOVER_CHARACTERISTIC },  /* AUTH_SVC_CLIENT_CHAR_INDEX */
 	{ BT_UUID_GATT_CCC,                            NULL, 0, 0, BT_GATT_PERM_NONE,
-   			BT_GATT_DISCOVER_DESCRIPTOR },    /*AUTH_SVC_CLIENT_CCC_INDEX CCC */
+			BT_GATT_DISCOVER_DESCRIPTOR },    /*AUTH_SVC_CLIENT_CCC_INDEX CCC */
 	{ (const struct bt_uuid *)&auth_server_char,   NULL, 0, 0, BT_GATT_PERM_NONE,
 			BT_GATT_DISCOVER_CHARACTERISTIC }  /* AUTH_SVC_SERVER_CHAR_INDEX */
 };
@@ -528,7 +528,8 @@ static void echo_msg(void)
 		}
 
 		/* wait for response */
-		ret = auth_lib_dtls_recv(&central_auth_conn, recv_msg_buffer, sizeof(recv_msg_buffer));
+		ret = auth_lib_dtls_recv(&central_auth_conn, recv_msg_buffer,
+					sizeof(recv_msg_buffer));
 
 		if (ret < 0) {
 			LOG_ERR("Failed to recv echo test message, ret: %d", ret);

@@ -158,8 +158,8 @@ static void auth_init_context(struct mbed_tls_context *mbed_ctx)
 	mbedtls_entropy_init(&mbed_ctx->entropy);
 
 	/* Generate random number as challenge using a cryptographically secure random
-	* number generator.
-	*/
+	 *  number generator.
+	 */
 	sys_csrand_get(mbed_ctx->cookie, sizeof(mbed_ctx->cookie));
 }
 
@@ -611,8 +611,8 @@ static int auth_tls_entropy(void *data, unsigned char *output, size_t len,
 	(void) data;
 
 	/* Generate random number as challenge using a cryptographically secure random
-	* number generator.
-	*/
+	 * number generator.
+	 */
 	sys_csrand_get(output, len);
 
 	*olen = len;
@@ -722,7 +722,7 @@ static void auth_dtls_thead(struct authenticate_conn *auth_conn)
 
 			if (bytecount < 0) {
 				LOG_ERR("Server, error when waiting for client hello, error: %d",
-	    					bytecount);
+					bytecount);
 				auth_lib_set_status(auth_conn, AUTH_STATUS_FAILED);
 				return;
 			}
@@ -743,7 +743,7 @@ static void auth_dtls_thead(struct authenticate_conn *auth_conn)
 		       !auth_conn->cancel_auth) {
 
 			LOG_INF("Handshake state: %s",
-	   			auth_tls_handshake_state(mbed_ctx->ssl.state));
+				auth_tls_handshake_state(mbed_ctx->ssl.state));
 
 			/* do handshake step */
 			ret = mbedtls_ssl_handshake_step(&mbed_ctx->ssl);
@@ -904,8 +904,8 @@ int auth_init_dtls_method(struct authenticate_conn *auth_conn,
 
 
 	ret = mbedtls_pk_parse_key(&mbed_ctx->device_private_key,
-			    		certs->device_cert_pem.priv_key,
-				   	certs->device_cert_pem.priv_key_size, NULL, 0);
+					certs->device_cert_pem.priv_key,
+					certs->device_cert_pem.priv_key_size, NULL, 0);
 
 	if (ret) {
 		LOG_ERR("Failed to parse device private key, error: 0x%x", ret);
@@ -939,8 +939,8 @@ int auth_init_dtls_method(struct authenticate_conn *auth_conn,
 	}
 
 	ret = mbedtls_x509_crt_parse(&mbed_ctx->device_cert,
-			      		(const unsigned char *)certs->device_cert_pem.cert,
-				     	certs->device_cert_pem.cert_size);
+				(const unsigned char *)certs->device_cert_pem.cert,
+				certs->device_cert_pem.cert_size);
 
 	if (ret) {
 		LOG_ERR("Failed to parse device cert, error: 0x%x", ret);

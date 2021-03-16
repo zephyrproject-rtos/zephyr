@@ -148,7 +148,7 @@ int auth_xport_send(const auth_xport_hdl_t xporthdl, const uint8_t *data, size_t
  * @return Negative on error or timeout, else number of bytes received.
  */
 int auth_xport_recv(const auth_xport_hdl_t xporthdl, uint8_t *buff,
-                    uint32_t buf_len, uint32_t timeoutMsec);
+			uint32_t buf_len, uint32_t timeoutMsec);
 
 
 /**
