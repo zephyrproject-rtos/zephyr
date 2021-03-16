@@ -31,6 +31,8 @@
 #include "lll_adv_internal.h"
 #include "lll_tim_internal.h"
 
+#include "ll_feat.h"
+
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_lll_adv_iso
 #include "common/log.h"
@@ -224,7 +226,7 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 
 	phy = lll->phy;
 	radio_phy_set(phy, 1);
-	radio_pkt_configure(8, PDU_AC_PAYLOAD_SIZE_MAX, (phy << 1));
+	radio_pkt_configure(8, LL_BIS_OCTETS_TX_MAX, (phy << 1));
 	radio_aa_set(access_addr);
 	radio_crc_configure(((0x5bUL) | ((0x06UL) << 8) | ((0x00UL) << 16)),
 			    (((uint32_t)crc_init[2] << 16) |
