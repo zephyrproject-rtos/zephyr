@@ -104,7 +104,7 @@ struct iproc_pcie_ep_config {
 	uint64_t map_high_base;	/* Base addr of outbound mapping at highmem */
 	uint32_t map_high_size;
 	unsigned int id;
-	const char *pl330_dev_name; /* pl330 device's "label" property */
+	const struct device *pl330_dev;
 	uint32_t pl330_tx_chan_id;  /* channel used for Device to Host write */
 	uint32_t pl330_rx_chan_id;  /* channel used for Host to Device read  */
 };
