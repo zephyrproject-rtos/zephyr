@@ -114,12 +114,12 @@ class Console(Harness):
                     csv.append(v.strip())
                 self.recording.append(csv)
 
+        self.process_test(line)
+
         if self.state == "passed":
             self.tests[self.id] = "PASS"
         else:
             self.tests[self.id] = "FAIL"
-
-        self.process_test(line)
 
 class Test(Harness):
     RUN_PASSED = "PROJECT EXECUTION SUCCESSFUL"
