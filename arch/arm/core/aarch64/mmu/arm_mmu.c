@@ -1003,14 +1003,20 @@ void arch_mem_domain_thread_add(struct k_thread *thread)
 	}
 
 	thread->arch.ptables = domain_ptables;
+	if (thread == _current) {
+		if (!is_ptable_active(domain_ptables)) {
+			z_arm64_swap_ptables(thread);
+		}
+	} else {
+#ifdef CONFIG_SMP
+		/* the thread could be running on another CPU right now */
+		arch_sched_ipi();
+#endif
+	}
 
 	if (is_migration) {
 		reset_map(old_ptables, __func__, thread->stack_info.start,
 				thread->stack_info.size);
-	}
-
-	if (thread == _current && !is_ptable_active(domain_ptables)) {
-		z_arm64_swap_ptables(thread);
 	}
 }
 
@@ -1040,8 +1046,6 @@ void z_arm64_swap_ptables(struct k_thread *incoming)
 
 	if (!is_ptable_active(ptables)) {
 		z_arm64_set_ttbr0((uintptr_t)ptables->base_xlat_table);
-	} else {
-		invalidate_tlb_all();
 	}
 }
 
