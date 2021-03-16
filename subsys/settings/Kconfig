@@ -60,6 +60,7 @@ config SETTINGS_NVS
 	bool "NVS non-volatile storage support"
 	depends on NVS
 	depends on FLASH_MAP
+	depends on FLASH_MAP_DEV_NAME_IN_FLASH_AREA
 	help
 	  Enables NVS storage support
 

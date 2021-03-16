@@ -14,7 +14,10 @@
 #define FLASH_AREA_FOO(part)							\
 	{.fa_id = DT_FIXED_PARTITION_ID(part),					\
 	 .fa_off = DT_REG_ADDR(part),						\
-	 .fa_dev_name = DT_LABEL(DT_MTD_FROM_FIXED_PARTITION(part)),		\
+	 COND_CODE_1(CONFIG_FLASH_MAP_DEV_NAME_IN_FLASH_AREA,			\
+		(.fa_dev_name = DT_LABEL(DT_MTD_FROM_FIXED_PARTITION(part)),),	\
+		()								\
+	 )									\
 	 COND_CODE_1(CONFIG_FLASH_MAP_DEV_IN_FLASH_AREA,			\
 		(.fa_dev = DEVICE_DT_GET(DT_MTD_FROM_FIXED_PARTITION(part)),),	\
 		()								\

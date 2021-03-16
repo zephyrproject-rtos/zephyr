@@ -60,11 +60,13 @@ struct flash_area {
 	off_t fa_off;
 	/** Total size */
 	size_t fa_size;
+#if defined(CONFIG_FLASH_MAP_DEV_NAME_IN_FLASH_AREA)
 	/**
 	 * Name of the flash device, suitable for passing to
 	 * device_get_binding().
 	 */
 	const char *fa_dev_name;
+#endif
 #if defined(CONFIG_FLASH_MAP_DEV_IN_FLASH_AREA)
 	/**
 	 * Pointer to device structure for the flash device.

@@ -18,8 +18,12 @@ if FLASH_MAP
 config FLASH_MAP_SHELL
 	bool "Enable flash map shell interface"
 	depends on SHELL
+	select FLASH_MAP_DEV_NAME_IN_FLASH_AREA
 	help
 	  This enables shell commands to list and test flash maps.
+	  The option depends on FLASH_MAP_DEV_NAME_IN_FLASH_AREA being selected, even when
+	  FLASH_MAP_DEV_IN_FLASH_AREA is enabled, to be able to list names of devices tied to
+	  flash areas, as the names need to be accessible from flash_area structure.
 
 config FLASH_MAP_DEV_IN_FLASH_AREA
 	bool "Switch flash map to use compile time evaluated devices objects"
@@ -35,6 +39,26 @@ config FLASH_MAP_DEV_IN_FLASH_AREA
 	  The option is set to n, by default, for custom flash maps (FLASH_MAP_CUSTOM=n); if your
 	  custom map populates the flash_area.fa_dev areas you may want to set this option to
 	  improve flash map performance.
+
+if FLASH_MAP_DEV_IN_FLASH_AREA
+config FLASH_MAP_DEV_NAME_IN_FLASH_AREA
+	bool "Keep fa_dev_name filed to flash_area structure"
+	default y
+	help
+	  The options allows storage of string name of flash device that is tied to the flash area
+	  record.  This may be useful when device_get_binding is used for obtaining device object
+	  for the flash_area or when in need to have such information at run-time.
+	  The flash map does not use flash_area.fa_dev_name internally when
+	  FLASH_MAP_USE_DEV_IN_FLASH_AREA is enabled, and in such case, unless used by other code,
+	  this can be safely disabled and will reduce size of flash_area structure by size of
+	  a pointer.
+endif
+
+if !FLASH_MAP_DEV_IN_FLASH_AREA
+config FLASH_MAP_DEV_NAME_IN_FLASH_AREA
+	bool
+	default y
+endif
 
 config FLASH_MAP_CUSTOM
 	bool "Custom flash map description"
