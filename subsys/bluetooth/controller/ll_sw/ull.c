@@ -1018,6 +1018,16 @@ void ll_rx_dequeue(void)
 		adv->is_enabled = 0U;
 	}
 	break;
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
+	case NODE_RX_TYPE_BIG_TERMINATE:
+	{
+		struct ll_adv_iso_set *adv_iso = rx->rx_ftr.param;
+
+		adv_iso->lll.adv = NULL;
+	}
+	break;
+#endif /* CONFIG_BT_CTLR_ADV_ISO */
 #endif /* CONFIG_BT_BROADCASTER */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
@@ -1133,7 +1143,6 @@ void ll_rx_dequeue(void)
 
 #if defined(CONFIG_BT_CTLR_ADV_ISO)
 	case NODE_RX_TYPE_BIG_COMPLETE:
-	case NODE_RX_TYPE_BIG_TERMINATE:
 #endif /* CONFIG_BT_CTLR_ADV_ISO */
 
 #if defined(CONFIG_BT_OBSERVER)
@@ -2678,9 +2687,14 @@ static inline void rx_demux_event_done(memq_link_t *link,
 	case EVENT_DONE_EXTRA_TYPE_ADV_AUX:
 		ull_adv_aux_done(done);
 		break;
+
 #if defined(CONFIG_BT_CTLR_ADV_ISO)
-	case EVENT_DONE_EXTRA_TYPE_ADV_ISO_CREATED:
-		ull_adv_iso_done(done);
+	case EVENT_DONE_EXTRA_TYPE_ADV_ISO_COMPLETE:
+		ull_adv_iso_done_complete(done);
+		break;
+
+	case EVENT_DONE_EXTRA_TYPE_ADV_ISO_TERMINATE:
+		ull_adv_iso_done_terminate(done);
 		break;
 #endif /* CONFIG_BT_CTLR_ADV_ISO */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
