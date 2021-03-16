@@ -33,6 +33,19 @@ struct lll_sync_iso {
 	uint32_t irc:4;
 
 	uint32_t sdu_interval:20;
+	uint32_t irc_curr:4;
+	uint32_t ptc_curr:4;
+	uint32_t ptc:4;
+
+	uint8_t bn_curr:3;
+	uint8_t bis_curr:5;
+
+	uint8_t ctrl_chan_use;
+
+	struct node_rx_pdu *payload[PDU_BIG_PAYLOAD_COUNT_MAX];
+	uint8_t payload_count_max;
+	uint8_t payload_head;
+	uint8_t payload_tail;
 
 	uint32_t window_widening_periodic_us;
 	uint32_t window_widening_max_us;
