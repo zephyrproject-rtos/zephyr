@@ -6,7 +6,7 @@
 #include <dt-bindings/clock/kinetis_mcg.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/i2c/i2c.h>
-#include "pinmux_nxp_k6x.h"
+#include "pinmux_nxp_kinetis.h"
 
 / {
 	aliases {
