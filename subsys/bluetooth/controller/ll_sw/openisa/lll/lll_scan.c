@@ -132,7 +132,7 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	/* Check if stopped (on connection establishment race between LLL and
 	 * ULL.
 	 */
-	if (lll->conn && lll->conn->initiated) {
+	if (unlikely(lll->conn && lll->conn->master.initiated)) {
 		int err;
 
 		err = lll_clk_off();
@@ -827,7 +827,7 @@ static inline uint32_t isr_rx_pdu(struct lll_scan *lll, uint8_t devmatch_ok,
 		 */
 
 		/* Stop further LLL radio events */
-		lll->conn->initiated = 1;
+		lll->conn->master.initiated = 1;
 
 		rx = ull_pdu_rx_alloc();
 
