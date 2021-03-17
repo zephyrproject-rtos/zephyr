@@ -79,9 +79,11 @@ static int gpio_xec_configure(const struct device *dev,
 	 * PCRs for a given GPIO. There are no GPIO modules in Microchip SOCs!
 	 * Keep direction as input until last.
 	 * Clear input pad disable allowing input pad to operate.
+	 * Clear Power gate to allow pads to operate.
 	 */
 	mask |= MCHP_GPIO_CTRL_DIR_MASK;
 	mask |= MCHP_GPIO_CTRL_INPAD_DIS_MASK;
+	mask |= MCHP_GPIO_CTRL_PWRG_MASK;
 	pcr1 |= MCHP_GPIO_CTRL_DIR_INPUT;
 
 	/* Figure out the pullup/pulldown configuration and keep it in the
@@ -114,6 +116,11 @@ static int gpio_xec_configure(const struct device *dev,
 	mask |= MCHP_GPIO_CTRL_AOD_MASK;
 	pcr1 |= MCHP_GPIO_CTRL_AOD_DIS;
 
+	/* Make sure disconnected on first control register write */
+	if (flags == GPIO_DISCONNECTED) {
+		pcr1 |= MCHP_GPIO_CTRL_PWRG_OFF;
+	}
+
 	/* Now write contents of pcr1 variable to the PCR1 register that
 	 * corresponds to the GPIO being configured.
 	 * AOD is 1 and direction is input. HW will allow use to set the
@@ -132,13 +139,6 @@ static int gpio_xec_configure(const struct device *dev,
 
 		mask = MCHP_GPIO_CTRL_DIR_MASK;
 		pcr1 = MCHP_GPIO_CTRL_DIR_OUTPUT;
-		*current_pcr1 = (*current_pcr1 & ~mask) | pcr1;
-	} else if ((flags & GPIO_INPUT) != 0U) {
-		/* Already configured */
-	} else {
-		/*  GPIO disconnected */
-		mask |= MCHP_GPIO_CTRL_PWRG_MASK;
-		pcr1 |= MCHP_GPIO_CTRL_PWRG_OFF;
 		*current_pcr1 = (*current_pcr1 & ~mask) | pcr1;
 	}
 
