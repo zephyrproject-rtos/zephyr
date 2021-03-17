@@ -123,20 +123,20 @@ static struct authenticate_conn auth_conn_serial;
 /**
  * Used to store Authentication GATT service and characteristics.
  */
-typedef struct {
+struct auth_svc_gatt {
 	const struct bt_uuid *uuid;
 	const struct bt_gatt_attr *attr;
 	uint16_t handle;
 	uint16_t value_handle;
 	uint8_t permissions; /* Bitfields from: BT_GATT_PERM_NONE, .., in gatt.h */
 	const uint32_t gatt_disc_type;
-} auth_svc_gatt_t;
+};
 
 
 static uint32_t auth_desc_index;
 
 /* Table content should match indexes above */
-static auth_svc_gatt_t auth_svc_gatt_tbl[AUTH_SVC_GATT_COUNT] = {
+static struct auth_svc_gatt auth_svc_gatt_tbl[AUTH_SVC_GATT_COUNT] = {
 	{ (const struct bt_uuid *)&auth_service_uuid, NULL, 0, 0, BT_GATT_PERM_NONE,
 		BT_GATT_DISCOVER_PRIMARY },        /* AUTH_SVC_INDEX */
 	{ (const struct bt_uuid *)&auth_client_char,  NULL, 0, 0, BT_GATT_PERM_NONE,
