@@ -80,6 +80,8 @@ Removed APIs in this release
 
 * Removed support for counter_read and counter_get_max_relative_alarm
 
+* Removed support for device_list_get
+
 ============================
 
 Stable API changes in this release

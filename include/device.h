@@ -820,25 +820,6 @@ static inline int device_get_power_state(const struct device *dev,
 }
 
 /**
- * @brief Gets the device structure list array and device count
- *
- * Called by the Power Manager application to get the list of
- * device structures associated with the devices in the system.
- * The PM app would use this list to create its own sorted list
- * based on the order it wishes to suspend or resume the devices.
- *
- * @param device_list Pointer to receive the device list array
- * @param device_count Pointer to receive the device count
- *
- * @deprecated in 2.4 release, replace with z_device_get_all_static()
- */
-__deprecated static inline void device_list_get(const struct device * *device_list,
-						int *device_count)
-{
-	*device_count = z_device_get_all_static(device_list);
-}
-
-/**
  * @brief Check if any device is in the middle of a transaction
  *
  * Called by an application to see if any device is in the middle
