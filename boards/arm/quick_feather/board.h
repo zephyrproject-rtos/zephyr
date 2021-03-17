@@ -16,4 +16,16 @@
 
 #define UART_RX_SEL		UART_RXD_SEL_PAD45
 
+#ifdef CONFIG_SPI
+#define SPI_CLK_PAD		34
+#define SPI_MISO_PAD		36
+#define SPI_MOSI_PAD		38
+#define SPI_SS1_PAD		39
+
+#define SPI_CLK_PAD_CFG		SPI_CLK_PAD34
+#define SPI_MISO_PAD_CFG	SPI_MISO_PAD36
+#define SPI_MOSI_PAD_CFG	SPI_MOSI_PAD38
+#define SPI_SS1_PAD_CFG		SPI_SS1_PAD39
+#endif /* CONFIG_SPI_EOS_S3 */
+
 #endif /* __INC_BOARD_H */

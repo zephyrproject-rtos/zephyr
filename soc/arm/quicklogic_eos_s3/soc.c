@@ -54,6 +54,9 @@ static void eos_s3_cru_init(void)
 	/* Turn off divisor for A0 domain */
 	CRU->CLK_CTRL_A_0 = 0;
 
+	/* Turn off divisor for A1 domain */
+	CRU->CLK_CTRL_A_1 = 0;
+
 	/* Enable UART, WDT and TIMER peripherals */
 	CRU->C11_CLK_GATE = C11_CLK_GATE_PATH_0_ON;
 
@@ -81,7 +84,11 @@ static int eos_s3_init(const struct device *arg)
 	INTR_CTRL->OTHER_INTR = 0xFFFFFF;
 
 	/* Enable UART interrupt */
-	INTR_CTRL->OTHER_INTR_EN_M4 = UART_INTR_EN_M4;
+	INTR_CTRL->OTHER_INTR_EN_M4 |= UART_INTR_EN_M4;
+
+#ifdef CONFIG_SPI
+	INTR_CTRL->OTHER_INTR_EN_M4 |= SPI_MS_INTR_EN_M4;
+#endif
 
 	key = irq_lock();
 

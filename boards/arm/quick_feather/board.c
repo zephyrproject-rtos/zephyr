@@ -18,6 +18,13 @@ static int eos_s3_board_init(const struct device *arg)
 
 	IO_MUX->UART_rxd_SEL = UART_RX_SEL;
 
+#ifdef CONFIG_SPI
+	eos_s3_io_mux(SPI_CLK_PAD, SPI_CLK_PAD_CFG);
+	eos_s3_io_mux(SPI_MISO_PAD, SPI_MISO_PAD_CFG);
+	eos_s3_io_mux(SPI_MOSI_PAD, SPI_MOSI_PAD_CFG);
+	eos_s3_io_mux(SPI_SS1_PAD, SPI_SS1_PAD_CFG);
+#endif
+
 	return 0;
 }
 
