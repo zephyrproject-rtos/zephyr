@@ -10,6 +10,7 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci_vs.h>
 #include <bluetooth/buf.h>
+#include <drivers/bluetooth/hci_driver.h>
 
 #include "hci_core.h"
 #include "id.h"
