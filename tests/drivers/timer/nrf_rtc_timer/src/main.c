@@ -53,7 +53,7 @@ static void stop_zli_timer0(void)
 	nrf_timer_task_trigger(NRF_TIMER0, NRF_TIMER_TASK_STOP);
 }
 
-static void timeout_handler(uint32_t id, uint32_t cc_value, void *user_data)
+static void timeout_handler(int32_t id, uint32_t cc_value, void *user_data)
 {
 	struct test_data *data = user_data;
 	uint32_t now = z_nrf_rtc_timer_read();
@@ -70,7 +70,7 @@ static void timeout_handler(uint32_t id, uint32_t cc_value, void *user_data)
 	timeout_handler_cnt++;
 }
 
-static void test_timeout(uint32_t chan, k_timeout_t t, bool ext_window)
+static void test_timeout(int32_t chan, k_timeout_t t, bool ext_window)
 {
 	int32_t cc_val = z_nrf_rtc_timer_get_ticks(t);
 	struct test_data test_data = {
@@ -92,7 +92,7 @@ static void test_timeout(uint32_t chan, k_timeout_t t, bool ext_window)
 
 static void test_basic(void)
 {
-	int chan = z_nrf_rtc_timer_chan_alloc();
+	int32_t chan = z_nrf_rtc_timer_chan_alloc();
 
 	zassert_true(chan >= 0, "Failed to allocate RTC channel (%d).", chan);
 
@@ -139,7 +139,7 @@ static void test_int_disable_enabled(void)
 		.err = -EINVAL
 	};
 	bool key;
-	int chan;
+	int32_t chan;
 
 	chan = z_nrf_rtc_timer_chan_alloc();
 	zassert_true(chan >= 0, "Failed to allocate RTC channel.");
@@ -192,7 +192,7 @@ static void test_get_ticks(void)
 }
 
 
-static void sched_handler(uint32_t id, uint32_t cc_val, void *user_data)
+static void sched_handler(int32_t id, uint32_t cc_val, void *user_data)
 {
 	int64_t now = sys_clock_tick_get();
 	int rtc_ticks_now =
@@ -209,7 +209,7 @@ static void test_absolute_scheduling(void)
 	uint64_t target_us = now_us + 5678;
 	uint64_t evt_uptime_us;
 	int rtc_ticks;
-	int chan;
+	int32_t chan;
 
 	chan = z_nrf_rtc_timer_chan_alloc();
 	zassert_true(chan >= 0, "Failed to allocate RTC channel.");
@@ -246,8 +246,8 @@ static void test_absolute_scheduling(void)
 
 static void test_alloc_free(void)
 {
-	int chan[CONFIG_NRF_RTC_TIMER_USER_CHAN_COUNT];
-	int inv_ch;
+	int32_t chan[CONFIG_NRF_RTC_TIMER_USER_CHAN_COUNT];
+	int32_t inv_ch;
 
 	for (int i = 0; i < CONFIG_NRF_RTC_TIMER_USER_CHAN_COUNT; i++) {
 		chan[i] = z_nrf_rtc_timer_chan_alloc();
@@ -267,7 +267,7 @@ static void test_stress(void)
 	int x = 0;
 	uint32_t start = k_uptime_get_32();
 	uint32_t test_time = 5000;
-	int chan = z_nrf_rtc_timer_chan_alloc();
+	int32_t chan = z_nrf_rtc_timer_chan_alloc();
 
 	zassert_true(chan >= 0, "Failed to allocate RTC channel.");
 	start_zli_timer0();
@@ -293,9 +293,11 @@ static void test_reseting_cc(void)
 {
 	uint32_t start = k_uptime_get_32();
 	uint32_t test_time = 1000;
-	int chan = z_nrf_rtc_timer_chan_alloc();
+	int32_t chan = z_nrf_rtc_timer_chan_alloc();
 	int i = 0;
 	int cnt = 0;
+
+	zassert_true(chan >= 0, "Failed to allocate RTC channel.");
 
 	timeout_handler_cnt = 0;
 
