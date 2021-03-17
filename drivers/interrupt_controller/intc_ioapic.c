@@ -85,7 +85,7 @@ DEVICE_MMIO_TOPLEVEL_STATIC(ioapic_regs, DT_DRV_INST(0));
  */
 #define DEFAULT_RTE_DEST	(0xFF << 24)
 
-static uint32_t ioapic_rtes;
+static __pinned_bss uint32_t ioapic_rtes;
 
 #ifdef CONFIG_PM_DEVICE
 #include <pm/device.h>
@@ -103,7 +103,10 @@ static uint32_t ioapic_rtes;
  */
 #define SUSPEND_BITS_REQD (ROUND_UP((256 * BITS_PER_IRQ), 32))
 
+__pinned_bss
 uint32_t ioapic_suspend_buf[SUSPEND_BITS_REQD / 32] = {0};
+
+__pinned_data
 static uint32_t ioapic_device_power_state = PM_DEVICE_STATE_ACTIVE;
 
 #endif
@@ -130,6 +133,7 @@ static void IoApicRedUpdateLo(unsigned int irq, uint32_t value,
  *
  * @return N/A
  */
+__boot_func
 int ioapic_init(const struct device *unused)
 {
 	ARG_UNUSED(unused);
@@ -155,6 +159,7 @@ int ioapic_init(const struct device *unused)
 	return 0;
 }
 
+__pinned_func
 uint32_t z_ioapic_num_rtes(void)
 {
 	return ioapic_rtes;
@@ -169,6 +174,7 @@ uint32_t z_ioapic_num_rtes(void)
  *
  * @return N/A
  */
+__pinned_func
 void z_ioapic_irq_enable(unsigned int irq)
 {
 	IoApicRedUpdateLo(irq, 0, IOAPIC_INT_MASK);
@@ -183,6 +189,7 @@ void z_ioapic_irq_enable(unsigned int irq)
  *
  * @return N/A
  */
+__pinned_func
 void z_ioapic_irq_disable(unsigned int irq)
 {
 	IoApicRedUpdateLo(irq, IOAPIC_INT_MASK, IOAPIC_INT_MASK);
@@ -191,6 +198,7 @@ void z_ioapic_irq_disable(unsigned int irq)
 
 #ifdef CONFIG_PM_DEVICE
 
+__pinned_func
 void store_flags(unsigned int irq, uint32_t flags)
 {
 	/* Currently only the following four flags are modified */
@@ -219,6 +227,7 @@ void store_flags(unsigned int irq, uint32_t flags)
 	}
 }
 
+__pinned_func
 uint32_t restore_flags(unsigned int irq)
 {
 	uint32_t flags = 0U;
@@ -247,6 +256,7 @@ uint32_t restore_flags(unsigned int irq)
 }
 
 
+__pinned_func
 int ioapic_suspend(const struct device *port)
 {
 	int irq;
@@ -268,6 +278,7 @@ int ioapic_suspend(const struct device *port)
 	return 0;
 }
 
+__pinned_func
 int ioapic_resume_from_suspend(const struct device *port)
 {
 	int irq;
@@ -301,6 +312,7 @@ int ioapic_resume_from_suspend(const struct device *port)
 * Implements the driver control management functionality
 * the *context may include IN data or/and OUT data
 */
+__pinned_func
 static int ioapic_device_ctrl(const struct device *dev,
 			      uint32_t ctrl_command,
 			      uint32_t *context, pm_device_cb cb, void *arg)
@@ -356,6 +368,7 @@ static int ioapic_device_ctrl(const struct device *dev,
  *
  * @return N/A
  */
+__boot_func
 void z_ioapic_irq_set(unsigned int irq, unsigned int vector, uint32_t flags)
 {
 	uint32_t rteValue;   /* value to copy into redirection table entry */
@@ -378,6 +391,7 @@ void z_ioapic_irq_set(unsigned int irq, unsigned int vector, uint32_t flags)
  * @param vector Vector number
  * @return N/A
  */
+__boot_func
 void z_ioapic_int_vec_set(unsigned int irq, unsigned int vector)
 {
 	IoApicRedUpdateLo(irq, vector, IOAPIC_VEC_MASK);
@@ -392,6 +406,7 @@ void z_ioapic_int_vec_set(unsigned int irq, unsigned int vector)
  *
  * @return register value
  */
+__pinned_func
 static uint32_t __IoApicGet(int32_t offset)
 {
 	uint32_t value; /* value */
@@ -419,6 +434,7 @@ static uint32_t __IoApicGet(int32_t offset)
  * @param value Value to set the register
  * @return N/A
  */
+__pinned_func
 static void __IoApicSet(int32_t offset, uint32_t value)
 {
 	unsigned int key; /* interrupt lock level */
@@ -442,6 +458,7 @@ static void __IoApicSet(int32_t offset, uint32_t value)
  * @param irq INTIN number
  * @return 32 low-order bits
  */
+__pinned_func
 static uint32_t ioApicRedGetLo(unsigned int irq)
 {
 	int32_t offset = IOAPIC_REDTBL + (irq << 1); /* register offset */
@@ -459,6 +476,7 @@ static uint32_t ioApicRedGetLo(unsigned int irq)
  * @param lower32 Value to be written
  * @return N/A
  */
+__pinned_func
 static void ioApicRedSetLo(unsigned int irq, uint32_t lower32)
 {
 	int32_t offset = IOAPIC_REDTBL + (irq << 1); /* register offset */
@@ -476,6 +494,7 @@ static void ioApicRedSetLo(unsigned int irq, uint32_t lower32)
  * @param upper32 Value to be written
  * @return N/A
  */
+__pinned_func
 static void ioApicRedSetHi(unsigned int irq, uint32_t upper32)
 {
 	int32_t offset = IOAPIC_REDTBL + (irq << 1) + 1; /* register offset */
@@ -495,6 +514,7 @@ static void ioApicRedSetHi(unsigned int irq, uint32_t upper32)
  * @param mask  Mask of bits to be modified
  * @return N/A
  */
+__pinned_func
 static void IoApicRedUpdateLo(unsigned int irq,
 				uint32_t value,
 				uint32_t mask)
