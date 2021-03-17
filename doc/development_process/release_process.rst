@@ -9,7 +9,7 @@ companies, and individuals from the community.
 
 A time-based release process enables the Zephyr project to provide users with a
 balance of the latest technologies and features and excellent overall quality. A
-roughly 3-month release cycle allows the project to coordinate development of
+roughly 4-month release cycle allows the project to coordinate development of
 the features that have actually been implemented, allowing the project to
 maintain the quality of the overall release without delays because of one or two
 features that are not ready yet.
@@ -18,7 +18,7 @@ The Zephyr release model is loosely based on the Linux kernel model:
 
 - Release tagging procedure:
 
-  - linear mode on master,
+  - linear mode on main branch,
   - release branches for maintenance after release tagging.
 - Each release period will consist of a merge window period followed by one or
   more release candidates on which only stabilization changes, bug fixes, and
@@ -131,12 +131,12 @@ The following syntax should be used for releases and tags in Git:
 
   - v[Major].[Minor].[Patch Level]-rc[RC Number]
   - v[Major].[Minor].[Patch Level]
-  - v[Major].[Minor].99 - A tag applied to master branch to signify that work on
+  - v[Major].[Minor].99 - A tag applied to main branch to signify that work on
     v[Major].[Minor+1] has started. For example, v1.7.99 will be tagged at the
     start of v1.8 process. The tag corresponds to
     VERSION_MAJOR/VERSION_MINOR/PATCHLEVEL macros as defined for a
-    work-in-progress master version. Presence of this tag allows generation of
-    sensible output for "git describe" on master, as typically used for
+    work-in-progress main branch version. Presence of this tag allows generation of
+    sensible output for "git describe" on main branch, as typically used for
     automated builds and CI tools.
 
 
@@ -158,7 +158,7 @@ products and the auditable branch used for certification.
 An LTS release is defined as:
 - **Product focused**
 - **Compatible with New Hardware**: We will make point releases throughout the development
-  cycle to provide functional support for new hardware.
+  cycle to provide functional support for new hardware.(FIXME)
 - **Extended Stabilisation period**: Allow for more testing and bug fixing
 - **Stable APIs**
 - **Quality Managed**: LTS provide the base for the auditable branch
@@ -177,7 +177,7 @@ after the following LTS release is published.
 
     Long Term Support Release
 
-Changes and fixes flow in both directions. However, changes from master to an
+Changes and fixes flow in both directions. However, changes from main branch to an
 LTS branch will be limited to fixes that apply to both branches and for existing
 features only.
 
