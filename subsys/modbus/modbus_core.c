@@ -15,29 +15,29 @@ LOG_MODULE_REGISTER(modbus, CONFIG_MODBUS_LOG_LEVEL);
 
 #define DT_DRV_COMPAT zephyr_modbus_serial
 
-#define MB_RTU_DEFINE_GPIO_CFG(n, d)				\
-	static struct mb_rtu_gpio_config d##_cfg_##n = {	\
-		.name = DT_INST_GPIO_LABEL(n, d),		\
-		.pin = DT_INST_GPIO_PIN(n, d),			\
-		.flags = DT_INST_GPIO_FLAGS(n,  d),		\
+#define MB_RTU_DEFINE_GPIO_CFG(inst, prop)				\
+	static struct gpio_dt_spec prop##_cfg_##inst = {		\
+		.port = DEVICE_DT_GET(DT_INST_PHANDLE(inst, prop)),	\
+		.pin = DT_INST_GPIO_PIN(inst, prop),			\
+		.dt_flags = DT_INST_GPIO_FLAGS(inst,  prop),		\
 	};
 
-#define MB_RTU_DEFINE_GPIO_CFGS(n)				\
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, de_gpios),		\
-		    (MB_RTU_DEFINE_GPIO_CFG(n, de_gpios)), ())	\
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, re_gpios),		\
-		    (MB_RTU_DEFINE_GPIO_CFG(n, re_gpios)), ())
+#define MB_RTU_DEFINE_GPIO_CFGS(inst)					\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, de_gpios),		\
+		    (MB_RTU_DEFINE_GPIO_CFG(inst, de_gpios)), ())	\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, re_gpios),		\
+		    (MB_RTU_DEFINE_GPIO_CFG(inst, re_gpios)), ())
 
 DT_INST_FOREACH_STATUS_OKAY(MB_RTU_DEFINE_GPIO_CFGS)
 
-#define MB_RTU_ASSIGN_GPIO_CFG(n, d)				\
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, d),		\
-		    (&d##_cfg_##n), (NULL))
+#define MB_RTU_ASSIGN_GPIO_CFG(inst, prop)			\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, prop),		\
+		    (&prop##_cfg_##inst), (NULL))
 
-#define MODBUS_DT_GET_SERIAL_DEV(n) {				\
-		.dev_name = DT_INST_BUS_LABEL(n),		\
-		.de = MB_RTU_ASSIGN_GPIO_CFG(n, de_gpios),	\
-		.re = MB_RTU_ASSIGN_GPIO_CFG(n, re_gpios),	\
+#define MODBUS_DT_GET_SERIAL_DEV(inst) {			\
+		.dev_name = DT_INST_BUS_LABEL(inst),		\
+		.de = MB_RTU_ASSIGN_GPIO_CFG(inst, de_gpios),	\
+		.re = MB_RTU_ASSIGN_GPIO_CFG(inst, re_gpios),	\
 	},
 
 #ifdef CONFIG_MODBUS_SERIAL
@@ -46,9 +46,9 @@ static struct modbus_serial_config modbus_serial_cfg[] = {
 };
 #endif
 
-#define MODBUS_DT_GET_DEV(n) {					\
-		.iface_name = DT_INST_LABEL(n),			\
-		.cfg = &modbus_serial_cfg[n],			\
+#define MODBUS_DT_GET_DEV(inst) {				\
+		.iface_name = DT_INST_LABEL(inst),		\
+		.cfg = &modbus_serial_cfg[inst],		\
 	},
 
 #define DEFINE_MODBUS_RAW_ADU(x, _) {				\
