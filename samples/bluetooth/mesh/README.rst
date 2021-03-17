@@ -53,7 +53,7 @@ external provisioner device, or self-provision through a button press.
 When provisioning with a provisioner device, the provisioner must give the
 device an Application key and bind it to both Generic OnOff models.
 
-When self-provisisoning, the device will take a random unicast address and
+When self-provisioning, the device will take a random unicast address and
 bind a dummy Application key to these models.
 
 Once provisioned, messages to the Generic OnOff Server will be used to turn
