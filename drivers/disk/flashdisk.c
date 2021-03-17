@@ -159,8 +159,6 @@ static int update_flash_block(off_t start_addr, uint32_t size, const void *buff)
 	/* always align starting address for flash write operation */
 	fl_addr = ROUND_DOWN(start_addr, CONFIG_DISK_FLASH_ERASE_ALIGNMENT);
 
-	/* disable write-protection first before erase */
-	flash_write_protection_set(flash_dev, false);
 	if (flash_erase(flash_dev, fl_addr, CONFIG_DISK_ERASE_BLOCK_SIZE)
 			!= 0) {
 		return -EIO;
@@ -171,9 +169,6 @@ static int update_flash_block(off_t start_addr, uint32_t size, const void *buff)
 				  CONFIG_DISK_FLASH_MAX_RW_SIZE);
 
 	for (uint32_t i = 0; i < num_write; i++) {
-		/* flash_write reenabled write-protection so disable it again */
-		flash_write_protection_set(flash_dev, false);
-
 		if (flash_write(flash_dev, fl_addr, src,
 				CONFIG_DISK_FLASH_MAX_RW_SIZE) != 0) {
 			return -EIO;
