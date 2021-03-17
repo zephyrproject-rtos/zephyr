@@ -131,7 +131,7 @@ config BT_HCI_ACL_DATA_SIZE
 	prompt "ACL data buffer size" if !BT_CTLR
 	depends on BT_HCI_RAW
 	range 27 251
-	default BT_CTLR_DATA_LENGTH_MAX if BT_CTLR
+	default BT_CTLR_DATA_LENGTH_MAX if BT_CTLR_DATA_LENGTH
 	default 27
 	help
 	  Maximum ACL data payload in HCI packets, excluding HCI header.
