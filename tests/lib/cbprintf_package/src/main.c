@@ -72,8 +72,11 @@ void unpack(const char *desc, struct out_buffer *buf,
 		.buf = static_buf, .idx = 0, .size = sizeof(static_buf) \
 	}; \
 	CBPRINTF_STATIC_PACKAGE(NULL, 0, len, fmt, __VA_ARGS__); \
+	zassert_true(len > 0, "CBPRINTF_STATIC_PACKAGE() returned %d", len); \
 	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) package[len]; \
-	CBPRINTF_STATIC_PACKAGE(package, len, len, fmt, __VA_ARGS__); \
+	int outlen; \
+	CBPRINTF_STATIC_PACKAGE(package, len, outlen, fmt, __VA_ARGS__); \
+	zassert_equal(len, outlen, NULL); \
 	dump("static", package, len); \
 	unpack("static", &st_buf, package, len); \
 } while (0)
