@@ -2345,7 +2345,7 @@ int bt_conn_le_create(const bt_addr_le_t *peer,
 	}
 
 	if (atomic_test_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN)) {
-		return -EINVAL;
+		return -EAGAIN;
 	}
 
 	if (atomic_test_bit(bt_dev.flags, BT_DEV_INITIATING)) {
