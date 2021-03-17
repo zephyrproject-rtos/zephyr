@@ -305,11 +305,6 @@ static uint32_t counter_sam0_tc32_get_top_value(const struct device *dev)
 	return tc->CC[0].reg;
 }
 
-static uint32_t counter_sam0_tc32_get_max_relative_alarm(const struct device *dev)
-{
-	return counter_sam0_tc32_get_top_value(dev) - 1;
-}
-
 static void counter_sam0_tc32_isr(const struct device *dev)
 {
 	struct counter_sam0_tc32_data *data = DEV_DATA(dev);
@@ -402,7 +397,6 @@ static const struct counter_driver_api counter_sam0_tc32_driver_api = {
 	.set_top_value = counter_sam0_tc32_set_top_value,
 	.get_pending_int = counter_sam0_tc32_get_pending_int,
 	.get_top_value = counter_sam0_tc32_get_top_value,
-	.get_max_relative_alarm = counter_sam0_tc32_get_max_relative_alarm,
 };
 
 

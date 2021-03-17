@@ -256,13 +256,6 @@ static uint32_t xlnx_axi_timer_get_top_value(const struct device *dev)
 	return xlnx_axi_timer_read32(dev, TLR0_OFFSET);
 }
 
-static uint32_t xlnx_axi_timer_get_max_relative_alarm(const struct device *dev)
-{
-	const struct xlnx_axi_timer_config *config = dev->config;
-
-	return config->info.max_top_value;
-}
-
 static void xlnx_axi_timer_isr(const struct device *dev)
 {
 	struct xlnx_axi_timer_data *data = dev->data;
@@ -323,7 +316,6 @@ static const struct counter_driver_api xlnx_axi_timer_driver_api = {
 	.set_top_value = xlnx_axi_timer_set_top_value,
 	.get_pending_int = xlnx_axi_timer_get_pending_int,
 	.get_top_value = xlnx_axi_timer_get_top_value,
-	.get_max_relative_alarm = xlnx_axi_timer_get_max_relative_alarm,
 };
 
 #define XLNX_AXI_TIMER_INIT(n)						\
