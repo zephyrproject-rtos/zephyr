@@ -309,6 +309,31 @@
 			label = "ADC_1";
 			#io-channel-cells = <1>;
 		};
+
+		dma1: dma@40020000 {
+			compatible = "st,stm32-dma-v2";
+			#dma-cells = <4>;
+			reg = <0x40020000 0x400>;
+			interrupts = <9 0 10 0 10 0 11 0 11 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x1>;
+			dma-requests = <5>;
+			dma-offset = <0>;
+			status = "disabled";
+			label = "DMA_1";
+		};
+
+		/* DMAMUX clock is enabled as long as DMA1 or DMA2 is enabled */
+		dmamux1: dmamux@40020800 {
+			compatible = "st,stm32-dmamux";
+			#dma-cells = <4>;
+			reg = <0x40020800 0x800>;
+			interrupts = <11 0>;
+			dma-channels = <5>;
+			dma-generators = <4>;
+			dma-requests= <49>;
+			status = "disabled";
+			label = "DMAMUX_1";
+		};
 	};
 };
 
