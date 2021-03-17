@@ -49,21 +49,21 @@ properties:
       required: true
       description: Initial baud rate setting for UART
       enum: 
-        - 1200 # actual 1205  0.5% error, good
-        - 2400 # actual 2396, 0.2% error, good
-        - 4800 # actual 4808, 0.2% error, good
-        - 9600 # actual 9598, < 0.1% error, good
-        - 14400 # actual 14401, < 0.1% error, good
-        - 19200 # actual 19208, < 0.1% error, good
-        - 28800 # actual 28777, < 0.1% error, good
+        - 1200 # actual 1205
+        - 2400 # actual 2396
+        - 4800 # actual 4808
+        - 9600 # actual 9598
+        - 14400 # actual 14401
+        - 19200 # actual 19208
+        - 28800 # actual 28777
         - 31250
-        - 38400 # actual 38369, < 0.1% error, good
-        - 56000 # actual 55944, 0.1% error, good
-        - 57600 # actual 57554, < 0.1% error, good
-        - 76800 # actual 76923, 1.6% error, not recommended
-        - 115200 # actual 115108, < 0.1% error, good
-        - 230400 # actual 231884, < 1% error, OK
+        - 38400 # actual 38369
+        - 56000 # actual 55944
+        - 57600 # actual 57554
+        - 76800 # actual 76923, 1.6% error, use with caution
+        - 115200 # actual 115108
+        - 230400 # actual 231884
         - 250000 
-        - 460800 # actual 457143 < 1% error, OK
-        - 921600 # actual 941176, > 2% error, not recommended if connected device deviates in the opposite direction
+        - 460800 # actual 457143
+        - 921600 # actual 941176, > 2% error,use with caution
         - 1000000
