@@ -21,6 +21,21 @@ config FLASH_MAP_SHELL
 	help
 	  This enables shell commands to list and test flash maps.
 
+config FLASH_MAP_DEV_IN_FLASH_AREA
+	bool "Switch flash map to use compile time evaluated devices objects"
+	default y if !FLASH_MAP_CUSTOM
+	help
+	  The option adds the fa_dev field to the flash_area structure that allows to evaluate flash
+	  device object pointer at compile time, and store it within flash_area structure to avoid
+	  run-time calls to obtain it.
+	  Enabling the option switches flash map API to use the flash_area.fa_dev instead of using
+	  flash_area.fa_dev_name to get device by name.
+	  In case of the default flash map, enabling this option will cause the fa_dev, of
+	  each map entry, to be populated with a pointer to the device tied to that flash area.
+	  The option is set to n, by default, for custom flash maps (FLASH_MAP_CUSTOM=n); if your
+	  custom map populates the flash_area.fa_dev areas you may want to set this option to
+	  improve flash map performance.
+
 config FLASH_MAP_CUSTOM
 	bool "Custom flash map description"
 	help

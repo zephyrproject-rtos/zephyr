@@ -145,7 +145,11 @@ flash_page_cb cb, struct layout_data *cb_data)
 	cb_data->ret_len = *cnt;
 	cb_data->status = 0;
 
+#if defined(CONFIG_FLASH_MAP_DEV_IN_FLASH_AREA)
+	flash_dev = fa->fa_dev;
+#else
 	flash_dev = device_get_binding(fa->fa_dev_name);
+#endif
 	if (flash_dev == NULL) {
 		return -ENODEV;
 	}
@@ -193,7 +197,11 @@ int flash_area_read(const struct flash_area *fa, off_t off, void *dst,
 		return -EINVAL;
 	}
 
+#if defined(CONFIG_FLASH_MAP_DEV_IN_FLASH_AREA)
+	dev = fa->fa_dev;
+#else
 	dev = device_get_binding(fa->fa_dev_name);
+#endif
 
 	return flash_read(dev, fa->fa_off + off, dst, len);
 }
@@ -208,7 +216,11 @@ int flash_area_write(const struct flash_area *fa, off_t off, const void *src,
 		return -EINVAL;
 	}
 
+#if defined(CONFIG_FLASH_MAP_DEV_IN_FLASH_AREA)
+	flash_dev = fa->fa_dev;
+#else
 	flash_dev = device_get_binding(fa->fa_dev_name);
+#endif
 
 	rc = flash_write_protection_set(flash_dev, false);
 	if (rc) {
@@ -232,7 +244,11 @@ int flash_area_erase(const struct flash_area *fa, off_t off, size_t len)
 		return -EINVAL;
 	}
 
+#if defined(CONFIG_FLASH_MAP_DEV_IN_FLASH_AREA)
+	flash_dev = fa->fa_dev;
+#else
 	flash_dev = device_get_binding(fa->fa_dev_name);
+#endif
 
 	rc = flash_write_protection_set(flash_dev, false);
 	if (rc) {
@@ -249,34 +265,44 @@ int flash_area_erase(const struct flash_area *fa, off_t off, size_t len)
 
 uint8_t flash_area_align(const struct flash_area *fa)
 {
-	const struct device *dev;
-
-	dev = device_get_binding(fa->fa_dev_name);
+#if defined(CONFIG_FLASH_MAP_DEV_IN_FLASH_AREA)
+	const struct device *dev = fa->fa_dev;
+#else
+	const struct device *dev = device_get_binding(fa->fa_dev_name);
+#endif
 
 	return flash_get_write_block_size(dev);
 }
 
 int flash_area_has_driver(const struct flash_area *fa)
 {
+#if defined(CONFIG_FLASH_MAP_DEV_IN_FLASH_AREA)
+	return (fa->fa_dev != NULL);
+#else
 	if (device_get_binding(fa->fa_dev_name) == NULL) {
 		return -ENODEV;
 	}
 
 	return 1;
+#endif
 }
 
 const struct device *flash_area_get_device(const struct flash_area *fa)
 {
+#if defined(CONFIG_FLASH_MAP_DEV_IN_FLASH_AREA)
+	return fa->fa_dev;
+#else
 	return device_get_binding(fa->fa_dev_name);
+#endif
 }
 
 uint8_t flash_area_erased_val(const struct flash_area *fa)
 {
-	const struct flash_parameters *param;
-
-	param = flash_get_parameters(device_get_binding(fa->fa_dev_name));
-
-	return param->erase_value;
+#if defined(CONFIG_FLASH_MAP_DEV_IN_FLASH_AREA)
+	return flash_get_parameters(fa->fa_dev)->erase_value;
+#else
+	return flash_get_parameters(device_get_binding(fa->fa_dev_name))->erase_value;
+#endif
 }
 
 #if defined(CONFIG_FLASH_AREA_CHECK_INTEGRITY)
@@ -303,7 +329,11 @@ int flash_area_check_int_sha256(const struct flash_area *fa,
 		return -ESRCH;
 	}
 
+#if defined(CONFIG_FLASH_MAP_DEV_IN_FLASH_AREA)
+	dev = fa->fa_dev;
+#else
 	dev = device_get_binding(fa->fa_dev_name);
+#endif
 	to_read = fac->rblen;
 
 	for (pos = 0; pos < fac->clen; pos += to_read) {
