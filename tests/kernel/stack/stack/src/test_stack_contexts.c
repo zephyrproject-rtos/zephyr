@@ -8,6 +8,9 @@
 #include <irq_offload.h>
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define STACK_LEN 4
+#define HIGH_T1			0xaaa
+#define HIGH_T2			0xbbb
+#define LOW_PRIO			0xccc
 
 /**TESTPOINT: init via K_STACK_DEFINE*/
 K_STACK_DEFINE(kstack, STACK_LEN);
@@ -16,6 +19,10 @@ struct k_stack stack;
 
 K_THREAD_STACK_DEFINE(threadstack1, STACK_SIZE);
 struct k_thread thread_data1;
+K_THREAD_STACK_DEFINE(threadstack_t1, STACK_SIZE);
+static struct k_thread high_pro_thread_t1;
+K_THREAD_STACK_DEFINE(threadstack_t2, STACK_SIZE);
+static struct k_thread high_pro_thread_t2;
 static ZTEST_DMEM stack_data_t data[STACK_LEN] = { 0xABCD, 0x1234 };
 struct k_sem end_sema1;
 
@@ -177,6 +184,99 @@ void test_stack_alloc_thread2thread(void)
 	ret = k_stack_alloc_init(&kstack_test_alloc, (STACK_SIZE/2)+1);
 	zassert_true(ret == -ENOMEM,
 			"resource pool is smaller then requested buffer");
+}
+
+static void low_prio_wait_for_stack(void *p1, void *p2, void *p3)
+{
+	struct k_stack *pstack = p1;
+	stack_data_t output;
+
+	k_stack_pop(pstack, &output, K_FOREVER);
+	zassert_true(output == LOW_PRIO,
+	    "The low priority thread get the stack data failed lastly");
+}
+
+static void high_prio_t1_wait_for_stack(void *p1, void *p2, void *p3)
+{
+	struct k_stack *pstack = p1;
+	stack_data_t output;
+
+	k_stack_pop(pstack, &output, K_FOREVER);
+	zassert_true(output == HIGH_T1,
+	    "The highest priority and waited longest get the stack data failed firstly");
+}
+
+static void high_prio_t2_wait_for_stack(void *p1, void *p2, void *p3)
+{
+	struct k_stack *pstack = p1;
+	stack_data_t output;
+
+	k_stack_pop(pstack, &output, K_FOREVER);
+	zassert_true(output == HIGH_T2,
+	   "The higher priority and waited longer get the stack data failed secondly");
+}
+
+/**
+ * @brief Test multi-threads to get data from stack.
+ *
+ * @details Define three threads, and set a higher priority for two of them,
+ * and set a lower priority for the last one. Then Add a delay between
+ * creating the two high priority threads.
+ * Test point:
+ * 1. Any number of threads may wait(K_FOREVER set) on an empty stack
+ * simultaneously.
+ * 2. When data is pushed, it is given to the highest priority
+ * thread that has waited longest.
+ *
+ * @ingroup kernel_stack_tests
+ */
+void test_stack_multithread_competition(void)
+{
+	int old_prio = k_thread_priority_get(k_current_get());
+	int prio = 10;
+	stack_data_t test_data[3];
+
+	memset(test_data, 0, sizeof(test_data));
+	k_thread_priority_set(k_current_get(), prio);
+
+	/* Set up some values */
+	test_data[0] = HIGH_T1;
+	test_data[1] = HIGH_T2;
+	test_data[2] = LOW_PRIO;
+
+	k_thread_create(&thread_data1, threadstack1, STACK_SIZE,
+			low_prio_wait_for_stack,
+			&stack, NULL, NULL,
+			prio + 4, 0, K_NO_WAIT);
+
+	k_thread_create(&high_pro_thread_t1, threadstack_t1, STACK_SIZE,
+			high_prio_t1_wait_for_stack,
+			&stack, NULL, NULL,
+			prio + 2, 0, K_NO_WAIT);
+
+	/* Make thread thread_data1 and high_pro_thread_t1 wait more time */
+	k_sleep(K_MSEC(10));
+
+	k_thread_create(&high_pro_thread_t2, threadstack_t2, STACK_SIZE,
+			high_prio_t2_wait_for_stack,
+			&stack, NULL, NULL,
+			prio + 2, 0, K_NO_WAIT);
+
+	/* Initialize them and block */
+	k_sleep(K_MSEC(50));
+
+	/* Insert some data to wake up thread */
+	k_stack_push(&stack, test_data[0]);
+	k_stack_push(&stack, test_data[1]);
+	k_stack_push(&stack, test_data[2]);
+
+	/* Wait for thread exiting */
+	k_thread_join(&thread_data1, K_FOREVER);
+	k_thread_join(&high_pro_thread_t1, K_FOREVER);
+	k_thread_join(&high_pro_thread_t2, K_FOREVER);
+
+	/* Revert priority of the main thread */
+	k_thread_priority_set(k_current_get(), old_prio);
 }
 
 /**
