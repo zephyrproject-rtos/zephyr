@@ -224,8 +224,6 @@ if(NOT (REVISION_SEPARATOR_INDEX EQUAL -1))
   string(SUBSTRING ${BOARD} 0 ${REVISION_SEPARATOR_INDEX} BOARD)
 endif()
 
-zephyr_boilerplate_watch(BOARD)
-
 set(BOARD_MESSAGE "Board: ${BOARD}")
 
 if(DEFINED ENV{ZEPHYR_BOARD_ALIASES})
@@ -242,6 +240,8 @@ if(${BOARD}_DEPRECATED)
   set(BOARD ${${BOARD}_DEPRECATED})
   message(WARNING "Deprecated BOARD=${BOARD_DEPRECATED} name specified, board automatically changed to: ${BOARD}.")
 endif()
+
+zephyr_boilerplate_watch(BOARD)
 
 foreach(root ${BOARD_ROOT})
   # Check that the board root looks reasonable.
