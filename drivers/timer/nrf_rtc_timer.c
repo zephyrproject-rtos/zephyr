@@ -51,27 +51,27 @@ static uint32_t counter_sub(uint32_t a, uint32_t b)
 	return (a - b) & COUNTER_MAX;
 }
 
-static void set_comparator(uint32_t chan, uint32_t cyc)
+static void set_comparator(int32_t chan, uint32_t cyc)
 {
 	nrf_rtc_cc_set(RTC, chan, cyc & COUNTER_MAX);
 }
 
-static uint32_t get_comparator(uint32_t chan)
+static uint32_t get_comparator(int32_t chan)
 {
 	return nrf_rtc_cc_get(RTC, chan);
 }
 
-static void event_clear(uint32_t chan)
+static void event_clear(int32_t chan)
 {
 	nrf_rtc_event_clear(RTC, RTC_CHANNEL_EVENT_ADDR(chan));
 }
 
-static void event_enable(uint32_t chan)
+static void event_enable(int32_t chan)
 {
 	nrf_rtc_event_enable(RTC, RTC_CHANNEL_INT_MASK(chan));
 }
 
-static void event_disable(uint32_t chan)
+static void event_disable(int32_t chan)
 {
 	nrf_rtc_event_disable(RTC, RTC_CHANNEL_INT_MASK(chan));
 }
@@ -86,13 +86,13 @@ uint32_t z_nrf_rtc_timer_read(void)
 	return nrf_rtc_counter_get(RTC);
 }
 
-uint32_t z_nrf_rtc_timer_compare_evt_address_get(uint32_t chan)
+uint32_t z_nrf_rtc_timer_compare_evt_address_get(int32_t chan)
 {
 	__ASSERT_NO_MSG(chan < CHAN_COUNT);
 	return nrf_rtc_event_address_get(RTC, nrf_rtc_compare_event_get(chan));
 }
 
-bool z_nrf_rtc_timer_compare_int_lock(uint32_t chan)
+bool z_nrf_rtc_timer_compare_int_lock(int32_t chan)
 {
 	__ASSERT_NO_MSG(chan && chan < CHAN_COUNT);
 
@@ -103,7 +103,7 @@ bool z_nrf_rtc_timer_compare_int_lock(uint32_t chan)
 	return prev & BIT(chan);
 }
 
-void z_nrf_rtc_timer_compare_int_unlock(uint32_t chan, bool key)
+void z_nrf_rtc_timer_compare_int_unlock(int32_t chan, bool key)
 {
 	__ASSERT_NO_MSG(chan && chan < CHAN_COUNT);
 
@@ -113,7 +113,7 @@ void z_nrf_rtc_timer_compare_int_unlock(uint32_t chan, bool key)
 	}
 }
 
-uint32_t z_nrf_rtc_timer_compare_read(uint32_t chan)
+uint32_t z_nrf_rtc_timer_compare_read(int32_t chan)
 {
 	__ASSERT_NO_MSG(chan < CHAN_COUNT);
 
@@ -154,7 +154,7 @@ int z_nrf_rtc_timer_get_ticks(k_timeout_t t)
  * less than COUNTER_HALF_SPAN from now. It detects late setting and also
  * handle +1 cycle case.
  */
-static void set_absolute_alarm(uint32_t chan, uint32_t abs_val)
+static void set_absolute_alarm(int32_t chan, uint32_t abs_val)
 {
 	uint32_t now;
 	uint32_t now2;
@@ -203,7 +203,7 @@ static void set_absolute_alarm(uint32_t chan, uint32_t abs_val)
 		 (counter_sub(cc_val, now2 + 2) > COUNTER_HALF_SPAN));
 }
 
-static void compare_set(uint32_t chan, uint32_t cc_value,
+static void compare_set(int32_t chan, uint32_t cc_value,
 			z_nrf_rtc_timer_compare_handler_t handler,
 			void *user_data)
 {
@@ -213,7 +213,7 @@ static void compare_set(uint32_t chan, uint32_t cc_value,
 	set_absolute_alarm(chan, cc_value);
 }
 
-void z_nrf_rtc_timer_compare_set(uint32_t chan, uint32_t cc_value,
+void z_nrf_rtc_timer_compare_set(int32_t chan, uint32_t cc_value,
 			      z_nrf_rtc_timer_compare_handler_t handler,
 			      void *user_data)
 {
@@ -226,7 +226,7 @@ void z_nrf_rtc_timer_compare_set(uint32_t chan, uint32_t cc_value,
 	z_nrf_rtc_timer_compare_int_unlock(chan, key);
 }
 
-static void sys_clock_timeout_handler(uint32_t chan,
+static void sys_clock_timeout_handler(int32_t chan,
 				      uint32_t cc_value,
 				      void *user_data)
 {
@@ -258,7 +258,7 @@ void rtc_nrf_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 
-	for (uint32_t chan = 0; chan < CHAN_COUNT; chan++) {
+	for (int32_t chan = 0; chan < CHAN_COUNT; chan++) {
 		if (nrf_rtc_int_enable_check(RTC, RTC_CHANNEL_INT_MASK(chan)) &&
 		    nrf_rtc_event_check(RTC, RTC_CHANNEL_EVENT_ADDR(chan))) {
 			uint32_t cc_val;
@@ -277,9 +277,9 @@ void rtc_nrf_isr(const void *arg)
 	}
 }
 
-int z_nrf_rtc_timer_chan_alloc(void)
+int32_t z_nrf_rtc_timer_chan_alloc(void)
 {
-	int chan;
+	int32_t chan;
 	atomic_val_t prev;
 	do {
 		chan = alloc_mask ? 31 - __builtin_clz(alloc_mask) : -1;
@@ -292,7 +292,7 @@ int z_nrf_rtc_timer_chan_alloc(void)
 	return chan;
 }
 
-void z_nrf_rtc_timer_chan_free(uint32_t chan)
+void z_nrf_rtc_timer_chan_free(int32_t chan)
 {
 	__ASSERT_NO_MSG(chan && chan < CHAN_COUNT);
 
@@ -311,7 +311,7 @@ int sys_clock_driver_init(const struct device *dev)
 
 	/* TODO: replace with counter driver to access RTC */
 	nrf_rtc_prescaler_set(RTC, 0);
-	for (uint32_t chan = 0; chan < CHAN_COUNT; chan++) {
+	for (int32_t chan = 0; chan < CHAN_COUNT; chan++) {
 		nrf_rtc_int_enable(RTC, RTC_CHANNEL_INT_MASK(chan));
 	}
 
