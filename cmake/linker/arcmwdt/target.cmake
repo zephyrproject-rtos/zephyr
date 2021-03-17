@@ -49,7 +49,7 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
     ${current_defines}
     ${linker_pass_define}
     ${LINKER_SCRIPT}
-    -P
+    -E
     -o ${linker_script_gen}
     VERBATIM
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
