@@ -15,15 +15,10 @@ LOG_MODULE_REGISTER(mbs_sample, LOG_LEVEL_INF);
 static uint16_t holding_reg[8];
 static uint8_t coils_state;
 
-struct led_device {
-	gpio_pin_t pin;
-	const struct device *dev;
-};
-
-static struct led_device led_dev[] = {
-	{ .pin = DT_GPIO_PIN(DT_ALIAS(led0), gpios) },
-	{ .pin = DT_GPIO_PIN(DT_ALIAS(led1), gpios) },
-	{ .pin = DT_GPIO_PIN(DT_ALIAS(led2), gpios) },
+static const struct gpio_dt_spec led_dev[] = {
+	GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios),
+	GPIO_DT_SPEC_GET(DT_ALIAS(led1), gpios),
+	GPIO_DT_SPEC_GET(DT_ALIAS(led2), gpios),
 };
 
 static int coil_rd(uint16_t addr, bool *state)
@@ -60,7 +55,7 @@ static int coil_wr(uint16_t addr, bool state)
 		on = false;
 	}
 
-	gpio_pin_set(led_dev[addr].dev, led_dev[addr].pin, (int)on);
+	gpio_pin_set(led_dev[addr].port, led_dev[addr].pin, (int)on);
 
 	LOG_INF("Coil write, addr %u, %d", addr, (int)state);
 
@@ -132,43 +127,18 @@ void main(void)
 {
 	int err;
 
-	led_dev[0].dev = device_get_binding(DT_GPIO_LABEL(DT_ALIAS(led0),
-							  gpios));
-	led_dev[1].dev = device_get_binding(DT_GPIO_LABEL(DT_ALIAS(led1),
-							  gpios));
-	led_dev[2].dev = device_get_binding(DT_GPIO_LABEL(DT_ALIAS(led2),
-							  gpios));
-	if (led_dev[0].dev == NULL ||
-	    led_dev[1].dev == NULL ||
-	    led_dev[2].dev == NULL) {
-		LOG_ERR("Failed to get binding for LED GPIO");
-		return;
-	}
+	for (int i = 0; i < ARRAY_SIZE(led_dev); i++) {
+		if (!device_is_ready(led_dev[i].port)) {
+			LOG_ERR("LED%u GPIO device not ready", i);
+			return;
+		}
 
-	err = gpio_pin_configure(led_dev[0].dev, led_dev[0].pin,
-				 DT_GPIO_FLAGS(DT_ALIAS(led0), gpios) |
-				 GPIO_OUTPUT_INACTIVE);
-	if (err != 0) {
-		LOG_ERR("Failed to initialize LED0 pin");
-		return;
+		err = gpio_pin_configure_dt(&led_dev[i], GPIO_OUTPUT_INACTIVE);
+		if (err != 0) {
+			LOG_ERR("Failed to configure LED%u pin", i);
+			return;
+		}
 	}
-
-	err = gpio_pin_configure(led_dev[1].dev, led_dev[1].pin,
-				 DT_GPIO_FLAGS(DT_ALIAS(led1), gpios) |
-				 GPIO_OUTPUT_INACTIVE);
-	if (err != 0) {
-		LOG_ERR("Failed to initialize LED1 pin");
-		return;
-	}
-
-	err = gpio_pin_configure(led_dev[2].dev, led_dev[2].pin,
-				 DT_GPIO_FLAGS(DT_ALIAS(led2), gpios) |
-				 GPIO_OUTPUT_INACTIVE);
-	if (err != 0) {
-		LOG_ERR("Failed to initialize LED2 pin");
-		return;
-	}
-
 
 	if (init_modbus_server()) {
 		LOG_ERR("Modbus RTU server initialization failed");
