@@ -30,7 +30,7 @@ Example devicetree fragment below shows how to add SD card node to ``spi1``
 interface. Example uses pin ``PA27`` for chip select, and runs the SPI bus
 at 24 MHz once the SD card has been initialized:
 
-.. code-block:: DTS
+.. code-block:: devicetree
 
     &spi1 {
             status = "okay";

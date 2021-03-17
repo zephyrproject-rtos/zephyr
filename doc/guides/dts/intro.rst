@@ -61,7 +61,7 @@ for this tree is called DTS (for devicetree source), and is defined in the
 
 Here is an example DTS file:
 
-.. code-block:: DTS
+.. code-block:: devicetree
 
    /dts-v1/;
 
@@ -121,7 +121,7 @@ Similar conventions exist for representing other types of hardware.
 
 The DTS would look something like this:
 
-.. code-block:: DTS
+.. code-block:: devicetree
 
    /dts-v1/;
 
@@ -154,7 +154,7 @@ names and properties you might see when working with I2C devices.
 
 This is the corresponding DTS:
 
-.. code-block:: DTS
+.. code-block:: devicetree
 
    /dts-v1/;
 
@@ -230,7 +230,7 @@ Fixed flash partitions
     The unit address is the partition's start offset within the flash memory.
     For example, take this flash device and its partitions:
 
-    .. code-block:: DTS
+    .. code-block:: devicetree
 
         flash@8000000 {
             /* ... */
@@ -423,7 +423,7 @@ Additional notes on the above:
   You can write a phandle using ``&foo``, where ``foo`` is a :ref:`node label
   <dt-node-labels>`. Here is an example devicetree fragment:
 
-  .. code-block:: DTS
+  .. code-block:: devicetree
 
      foo: device@0 { };
      device@1 {
@@ -465,7 +465,7 @@ chosen node.
 
 Here is an example devicetree which uses both:
 
-.. code-block:: DTS
+.. code-block:: devicetree
 
    /dts-v1/;
 

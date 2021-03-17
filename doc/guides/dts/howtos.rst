@@ -59,7 +59,7 @@ When writing Zephyr applications, you'll often want to get a driver-level
 For example, with this devicetree fragment, you might want the struct device
 for ``serial@40002000``:
 
-.. code-block:: DTS
+.. code-block:: devicetree
 
    / {
            soc {
@@ -237,7 +237,7 @@ See :ref:`set-devicetree-overlays` for how to add an overlay to the build.
 Overlays can override node property values in multiple ways.
 For example, if your BOARD.dts contains this node:
 
-.. code-block:: DTS
+.. code-block:: devicetree
 
    / {
            soc {
@@ -504,7 +504,7 @@ labels like ``mydevice0``, ``mydevice1``, etc. appropriately for the IP blocks
 your driver supports. The resulting devicetree usually looks something like
 this:
 
-.. code-block:: DTS
+.. code-block:: devicetree
 
    / {
            soc {
@@ -659,7 +659,7 @@ node with path ``/soc/i2c@12340000`` in a C/C++ file:
 
 And if you're trying to **set** that property in a devicetree overlay:
 
-.. code-block:: DTS
+.. code-block:: devicetree
 
    /*
     * foo.overlay: DTS names with special characters, etc.
