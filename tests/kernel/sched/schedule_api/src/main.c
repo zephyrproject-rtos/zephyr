@@ -38,6 +38,7 @@ void spin_for_ms(int ms)
  * @}
  */
 /* test case main entry */
+/* test ci behavior */
 void test_main(void)
 {
 #ifdef CONFIG_USERSPACE
