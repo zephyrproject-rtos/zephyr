@@ -275,9 +275,12 @@ void test_catch_assert_in_isr(void)
 
 
 #if defined(CONFIG_USERSPACE)
-static void trigger_z_oops(void *a)
+static void trigger_z_oops(void)
 {
-	Z_OOPS(*((bool *)a));
+	/* Set up a dummy syscall frame, pointing to a valid area in memory. */
+	_current->syscall_frame = _image_ram_start;
+
+	Z_OOPS(true);
 }
 
 /**
@@ -293,7 +296,7 @@ void test_catch_z_oops(void)
 	case_type = ZTEST_CATCH_USER_FATAL_Z_OOPS;
 
 	ztest_set_fault_valid(true);
-	trigger_z_oops((void *)false);
+	trigger_z_oops();
 }
 #endif
 
@@ -308,7 +311,7 @@ void test_main(void)
 			 ztest_user_unit_test(test_catch_assert_fail),
 			 ztest_user_unit_test(test_catch_fatal_error),
 			 ztest_unit_test(test_catch_assert_in_isr),
-			 ztest_user_unit_test(test_catch_z_oops)
+			 ztest_unit_test(test_catch_z_oops)
 			 );
 	ztest_run_test_suite(error_hook_tests);
 #else
