@@ -65,6 +65,9 @@ struct net_if_addr {
 	/** What is the current state of the address */
 	enum net_addr_state addr_state;
 
+	/** Reference counter */
+	atomic_t refcount;
+
 #if defined(CONFIG_NET_IPV6_DAD) && defined(CONFIG_NET_NATIVE_IPV6)
 	/** How many times we have done DAD */
 	uint8_t dad_count;
@@ -90,6 +93,12 @@ struct net_if_addr {
 struct net_if_mcast_addr {
 	/** IP address */
 	struct net_addr address;
+
+	/** Reference counter */
+	atomic_t refcount;
+
+	/** What is the current state of the address */
+	enum net_addr_state addr_state;
 
 	/** Is this multicast IP address used or not */
 	uint8_t is_used : 1;
@@ -375,6 +384,12 @@ struct net_if_config {
 #if defined(CONFIG_NET_IPV4_AUTO) && defined(CONFIG_NET_NATIVE_IPV4)
 	struct net_if_ipv4_autoconf ipv4auto;
 #endif /* CONFIG_NET_IPV4_AUTO */
+
+	/** Number of IPv6 sockets bound to this interface */
+	atomic_t ipv6_socket_count;
+
+	/** Number of IPv4 sockets bound to this interface */
+	atomic_t ipv4_socket_count;
 };
 
 /**
@@ -1546,6 +1561,17 @@ struct net_if_addr *net_if_ipv4_addr_lookup(const struct in_addr *addr,
 					    struct net_if **iface);
 
 /**
+ * @brief Check if this IPv4 address belongs to this specific interfaces.
+ *
+ * @param iface Network interface
+ * @param addr IPv4 address
+ *
+ * @return Pointer to interface address, NULL if not found.
+ */
+struct net_if_addr *net_if_ipv4_addr_lookup_by_iface(struct net_if *iface,
+						     struct in_addr *addr);
+
+/**
  * @brief Add a IPv4 address to an interface
  *
  * @param iface Network interface
@@ -1999,6 +2025,35 @@ static inline bool net_if_is_up(struct net_if *iface)
  */
 int net_if_down(struct net_if *iface);
 
+/**
+ * @brief Increase the refcount of an IP address struct.
+ *
+ * @details Used by bind() to mark the network interface address to be in use.
+ *
+ * @param iface Pointer to network interface
+ * @param addr IP address to use
+ * @param is_mcast Set to True if address is multicast one
+ *
+ * @return 0 if ok, <0 if error
+ */
+int net_if_addr_reserve(struct net_if *iface, struct sockaddr *addr,
+			bool is_mcast);
+
+/**
+ * @brief Decrease the refcount of an IP address struct.
+ *
+ * @details Used by close() to mark the network interface address to be not
+ *          in use.
+ *
+ * @param iface Pointer to network interface
+ * @param addr IP address to use
+ * @param is_mcast Set to True if address is multicast one
+ *
+ * @return 0 if ok, <0 if error
+ */
+int net_if_addr_release(struct net_if *iface, struct sockaddr *addr,
+			bool is_mcast);
+
 #if defined(CONFIG_NET_PKT_TIMESTAMP) && defined(CONFIG_NET_NATIVE)
 /**
  * @typedef net_if_timestamp_callback_t
@@ -2164,6 +2219,8 @@ struct net_if_api {
 	.config = {					\
 		.ip = {					\
 		},					\
+		.ipv6_socket_count = ATOMIC_INIT(0),	\
+		.ipv4_socket_count = ATOMIC_INIT(0),	\
 		NET_IF_DHCPV4_INIT			\
 	}
 
