@@ -753,7 +753,6 @@ config ARCH_MEM_DOMAIN_SYNCHRONOUS_API
 	  arch_mem_domain_thread_remove
 	  arch_mem_domain_partition_remove
 	  arch_mem_domain_partition_add
-	  arch_mem_domain_destroy
 
 	  It's important to note that although supervisor threads can be
 	  members of memory domains, they have no implications on supervisor

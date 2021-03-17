@@ -1390,11 +1390,6 @@ void arch_mem_domain_thread_remove(struct k_thread *thread)
 {
 
 }
-
-void arch_mem_domain_destroy(struct k_mem_domain *domain)
-{
-
-}
 #else
 /* Memory domains each have a set of page tables assigned to them */
 
@@ -1619,11 +1614,6 @@ void arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 	/* Reset the partition's region back to defaults */
 	reset_region(domain->arch.ptables, (void *)partition->start,
 		     partition->size);
-}
-
-void arch_mem_domain_destroy(struct k_mem_domain *domain)
-{
-	/* No-op, this is eventually getting removed in 2.5 */
 }
 
 /* Called on thread exit or when moving it to a different memory domain */

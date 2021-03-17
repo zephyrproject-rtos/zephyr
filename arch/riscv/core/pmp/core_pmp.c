@@ -503,18 +503,6 @@ void arch_mem_domain_thread_add(struct k_thread *thread)
 	}
 }
 
-void arch_mem_domain_destroy(struct k_mem_domain *domain)
-{
-	sys_dnode_t *node, *next_node;
-	struct k_thread *thread;
-
-	SYS_DLIST_FOR_EACH_NODE_SAFE(&domain->mem_domain_q, node, next_node) {
-		thread = CONTAINER_OF(node, struct k_thread, mem_domain_info);
-
-		arch_mem_domain_thread_remove(thread);
-	}
-}
-
 void arch_mem_domain_partition_add(struct k_mem_domain *domain,
 				    uint32_t partition_id)
 {
