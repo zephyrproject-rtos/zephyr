@@ -241,13 +241,6 @@ static int counter_xec_set_top_value(const struct device *dev,
 	return ret;
 }
 
-static uint32_t counter_xec_get_max_relative_alarm(const struct device *dev)
-{
-	const struct counter_xec_config *counter_cfg = COUNTER_XEC_CONFIG(dev);
-
-	return counter_cfg->info.max_top_value;
-}
-
 static void counter_xec_isr(const struct device *dev)
 {
 	BTMR_Type *counter = COUNTER_XEC_REG_BASE(dev);
@@ -284,7 +277,6 @@ static const struct counter_driver_api counter_xec_api = {
 		.set_top_value = counter_xec_set_top_value,
 		.get_pending_int = counter_xec_get_pending_int,
 		.get_top_value = counter_xec_get_top_value,
-		.get_max_relative_alarm = counter_xec_get_max_relative_alarm,
 };
 
 static int counter_xec_init(const struct device *dev)

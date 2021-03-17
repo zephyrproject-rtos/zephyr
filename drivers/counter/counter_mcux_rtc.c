@@ -182,13 +182,6 @@ static uint32_t mcux_rtc_get_top_value(const struct device *dev)
 	return info->max_top_value;
 }
 
-static uint32_t mcux_rtc_get_max_relative_alarm(const struct device *dev)
-{
-	const struct counter_config_info *info = dev->config;
-
-	return info->max_top_value;
-}
-
 static void mcux_rtc_isr(const struct device *dev)
 {
 	const struct counter_config_info *info = dev->config;
@@ -258,7 +251,6 @@ static const struct counter_driver_api mcux_rtc_driver_api = {
 	.set_top_value = mcux_rtc_set_top_value,
 	.get_pending_int = mcux_rtc_get_pending_int,
 	.get_top_value = mcux_rtc_get_top_value,
-	.get_max_relative_alarm = mcux_rtc_get_max_relative_alarm,
 };
 
 static struct mcux_rtc_data mcux_rtc_data_0;
