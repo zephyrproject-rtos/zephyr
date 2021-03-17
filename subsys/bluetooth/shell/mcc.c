@@ -338,7 +338,7 @@ static void mcc_cp_ntf_cb(struct bt_conn *conn, int err,
 {
 	if (err) {
 		shell_error(ctx_shell,
-			    "Control Point notification error (%d) - operation: %d, param: %d",
+			    "Control Point notification error (%d) - operation: %d, result: %d",
 			    err, ntf.requested_opcode, ntf.result_code);
 		return;
 	}
