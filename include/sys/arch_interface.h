@@ -609,19 +609,6 @@ void arch_mem_domain_partition_remove(struct k_mem_domain *domain,
  */
 void arch_mem_domain_partition_add(struct k_mem_domain *domain,
 				   uint32_t partition_id);
-
-/**
- * @brief Remove the memory domain
- *
- * Architecture-specific hook to manage internal data structures or hardware
- * state when a memory domain has been destroyed.
- *
- * Thread assignments to the memory domain are only cleared after this function
- * runs.
- *
- * @param domain The memory domain structure which needs to be deleted.
- */
-void arch_mem_domain_destroy(struct k_mem_domain *domain);
 #endif /* CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API */
 
 /**

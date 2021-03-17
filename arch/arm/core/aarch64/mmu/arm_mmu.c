@@ -917,20 +917,6 @@ int arch_mem_domain_init(struct k_mem_domain *domain)
 	return 0;
 }
 
-void arch_mem_domain_destroy(struct k_mem_domain *domain)
-{
-	struct arm_mmu_ptables *domain_ptables = &domain->arch.ptables;
-	k_spinlock_key_t key;
-
-	MMU_DEBUG("%s\n", __func__);
-
-	sys_slist_remove(&domain_list, NULL, &domain->arch.node);
-	key = k_spin_lock(&xlat_lock);
-	discard_table(domain_ptables->base_xlat_table, BASE_XLAT_LEVEL);
-	domain_ptables->base_xlat_table = NULL;
-	k_spin_unlock(&xlat_lock, key);
-}
-
 static void private_map(struct arm_mmu_ptables *ptables, const char *name,
 			uintptr_t phys, uintptr_t virt, size_t size, uint32_t attrs)
 {
