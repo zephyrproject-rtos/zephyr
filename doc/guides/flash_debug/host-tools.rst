@@ -84,7 +84,7 @@ avoid overlaps, always.
 
 A typical flash layout for devices without a ROM bootloader is:
 
-.. code-block:: DTS
+.. code-block:: devicetree
 
 	/ {
 		chosen {
@@ -125,7 +125,7 @@ A typical flash layout for devices without a ROM bootloader is:
 A typical flash layout for devices with a ROM bootloader and storage
 partition is:
 
-.. code-block:: DTS
+.. code-block:: devicetree
 
 	/ {
 		chosen {

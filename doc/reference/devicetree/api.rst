@@ -168,7 +168,7 @@ These are recommended for use within device drivers. To use them, define
 ``DT_DRV_COMPAT`` to the lowercase-and-underscores compatible the device driver
 implements support for. Here is an example devicetree fragment:
 
-.. code-block:: DTS
+.. code-block:: devicetree
 
    serial@40001000 {
            compatible = "vnd,serial";
