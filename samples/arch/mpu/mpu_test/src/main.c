@@ -60,15 +60,11 @@ static int cmd_write_mcux(const struct shell *shell, size_t argc, char *argv[])
 
 	PR_SHELL(shell, "write address: 0x%x\n", offset);
 
-	flash_write_protection_set(flash_dev, false);
-
 	if (flash_write(flash_dev, offset, value,
 				sizeof(value)) != 0) {
 		PR_ERROR(shell, "Flash write failed!\n");
 		return 1;
 	}
-
-	flash_write_protection_set(flash_dev, true);
 
 	return 0;
 
@@ -90,14 +86,10 @@ static int cmd_write_stm32(const struct shell *shell, size_t argc, char *argv[])
 
 	PR_SHELL(shell, "write address: 0x%x\n", offset);
 
-	flash_write_protection_set(flash_dev, false);
-
 	if (flash_write(flash_dev, offset, &value, sizeof(value)) != 0) {
 		PR_ERROR(shell, "Flash write failed!\n");
 		return 1;
 	}
-
-	flash_write_protection_set(flash_dev, true);
 
 	return 0;
 }
