@@ -21,3 +21,4 @@ supported:
   - pwm
   - adc
   - dac
+  - dma
