@@ -2,9 +2,9 @@ Title: A common fatal error and assert fail handler
 
 Description:
 
-These two common handler is in order to reduce the redundancy code writing
-for fatal and assert handler for error case testing. They can be used both
-in kernel and userspace, and are also SMP safe.
+These two common handlers are developed in order to reduce the redundancy
+code writing for fatal and assert handler for error case testing. They can
+be used both in kernel and userspace, and they are also SMP safe.
 
 
 Why doing this
@@ -12,13 +12,14 @@ Why doing this
 
 When writing error testing case (or we call it negative test case), we might
 have to write self-defined k_sys_fatal_handler or post_assert_handler to deal
-with the errors we caught, in order to make test going on. This mean much
-identical code would be written. So we try to make it as a common part and
-let other test case or app can reuse it.
+with the errors we caught, in order to make the test continue. This means much
+identical code would be written. So we try to move the error handler definition
+into a common part and let other test suites or applications reuse it, instead
+of defining their own.
 
-And when error happened, it sometimes need a special action to make our testing
-program back to normal, such as release some resource hold before error
-happened. This is why we add a hook on it, in order to achieve that goal.
+And when error happens, we sometimes need a special action to make our testing
+program return back to normal, such as releasing some resource hold before the
+error happened. This is why we add a hook on it, in order to achieve that goal.
 
 
 How to use it in you app
@@ -48,8 +49,8 @@ Step4: call ztest_set_assert_valid(true) before where your target function
        call.
 
 
-You can choose to use one or both of them, depneds on your need.
-If you use none of them, you can still defined your own fatal or assert handler
+You can choose to use one or both of them, depending on your needs.
+If you use none of them, you can still define your own fatal or assert handler
 as usual.
 
 
@@ -57,19 +58,21 @@ Test example in this test set
 =============================
 
 This test verifies if the common fatal error and assert fail handler works.
-If the expected error got caught, the test case pass.
+If the expected error was caught, the test case will pass.
 
 test_catch_assert_fail
   - To call a function then giving the condition to trigger the assert fail,
     then catch it by the assert handler.
 
 test_catch_fatal_error
-  - start a thread to test trigger a null address then catch fatal error.
-  - start a thread to test trigger a illegal instruction then catch fatal
-    error.
-  - start a thread to test trigger a divide zero error then catch fatal error.
-  - start a thread to call k_oops() then catch fatal error.
-  - start a thread to call k_panel() then catch fatal error.
+  - start a thread to test triggerring a null address dereferencing, then catch
+    the (expected) fatal error.
+  - start a thread to test triggerring an illegal instruction, then catch
+    the (expected) fatal error.
+  - start a thread to test triggerring a divide-by-zero error, then catch
+    the (expected) fatal error.
+  - start a thread to call k_oops() then catch the (expected) fatal error.
+  - start a thread to call k_panel() then catch the (expected) fatal error.
 
 test_catch_assert_in_isr
   - start a thread to enter ISR context by calling irq_offload(), then trigger
@@ -77,14 +80,14 @@ test_catch_assert_in_isr
 
 test_catch_z_oops
   - Pass illegal address by syscall, then inside the syscall handler, the
-    Z_OOPS macro will trigger a fatal error then got caught.
+    Z_OOPS macro will trigger a fatal error that will get caught (as expected).
 
 
 
 Limitation of this usage
 ========================
 
-Trigger an fatal error in ISR context, that will cause problem due to
+Trigger a fatal error in ISR context, that will cause problem due to
 the interrupt stack is already abnormal when we want to continue other
 test case, we do not recover it so far.
 
