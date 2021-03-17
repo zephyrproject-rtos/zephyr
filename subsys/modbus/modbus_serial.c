@@ -33,7 +33,7 @@ static void modbus_serial_tx_on(struct modbus_context *ctx)
 	struct modbus_serial_config *cfg = ctx->cfg;
 
 	if (cfg->de != NULL) {
-		gpio_pin_set(cfg->de->dev, cfg->de->pin, 1);
+		gpio_pin_set(cfg->de->port, cfg->de->pin, 1);
 	}
 
 	uart_irq_tx_enable(cfg->dev);
@@ -45,7 +45,7 @@ static void modbus_serial_tx_off(struct modbus_context *ctx)
 
 	uart_irq_tx_disable(cfg->dev);
 	if (cfg->de != NULL) {
-		gpio_pin_set(cfg->de->dev, cfg->de->pin, 0);
+		gpio_pin_set(cfg->de->port, cfg->de->pin, 0);
 	}
 }
 
@@ -54,7 +54,7 @@ static void modbus_serial_rx_on(struct modbus_context *ctx)
 	struct modbus_serial_config *cfg = ctx->cfg;
 
 	if (cfg->re != NULL) {
-		gpio_pin_set(cfg->re->dev, cfg->re->pin, 1);
+		gpio_pin_set(cfg->re->port, cfg->re->pin, 1);
 	}
 
 	uart_irq_rx_enable(cfg->dev);
@@ -66,7 +66,7 @@ static void modbus_serial_rx_off(struct modbus_context *ctx)
 
 	uart_irq_rx_disable(cfg->dev);
 	if (cfg->re != NULL) {
-		gpio_pin_set(cfg->re->dev, cfg->re->pin, 0);
+		gpio_pin_set(cfg->re->port, cfg->re->pin, 0);
 	}
 }
 
@@ -443,26 +443,22 @@ static int configure_gpio(struct modbus_context *ctx)
 	struct modbus_serial_config *cfg = ctx->cfg;
 
 	if (cfg->de != NULL) {
-		cfg->de->dev = device_get_binding(cfg->de->name);
-		if (cfg->de->dev == NULL) {
+		if (!device_is_ready(cfg->de->port)) {
 			return -ENODEV;
 		}
 
-		if (gpio_pin_configure(cfg->de->dev, cfg->de->pin,
-				       GPIO_OUTPUT_INACTIVE | cfg->de->flags)) {
+		if (gpio_pin_configure_dt(cfg->de, GPIO_OUTPUT_INACTIVE)) {
 			return -EIO;
 		}
 	}
 
 
 	if (cfg->re != NULL) {
-		cfg->re->dev = device_get_binding(cfg->re->name);
-		if (cfg->re->dev == NULL) {
+		if (!device_is_ready(cfg->re->port)) {
 			return -ENODEV;
 		}
 
-		if (gpio_pin_configure(cfg->re->dev, cfg->re->pin,
-				       GPIO_OUTPUT_INACTIVE | cfg->re->flags)) {
+		if (gpio_pin_configure_dt(cfg->re, GPIO_OUTPUT_INACTIVE)) {
 			return -EIO;
 		}
 	}

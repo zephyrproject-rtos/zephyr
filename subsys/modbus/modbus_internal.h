@@ -80,13 +80,6 @@
 /* Modbus ADU constants */
 #define MODBUS_ADU_PROTO_ID			0x0000
 
-struct mb_rtu_gpio_config {
-	const char *name;
-	const struct device *dev;
-	gpio_pin_t pin;
-	gpio_dt_flags_t flags;
-};
-
 struct modbus_serial_config {
 	/* UART device name */
 	const char *dev_name;
@@ -97,9 +90,9 @@ struct modbus_serial_config {
 	/* Pointer to current position in buffer */
 	uint8_t *uart_buf_ptr;
 	/* Pointer to driver enable (DE) pin config */
-	struct mb_rtu_gpio_config *de;
+	struct gpio_dt_spec *de;
 	/* Pointer to receiver enable (nRE) pin config */
-	struct mb_rtu_gpio_config *re;
+	struct gpio_dt_spec *re;
 	/* RTU timer to detect frame end point */
 	struct k_timer rtu_timer;
 	/* Number of bytes received or to send */
