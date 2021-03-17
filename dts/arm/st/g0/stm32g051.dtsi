@@ -54,5 +54,14 @@
 			label = "DAC_1";
 			#io-channel-cells = <1>;
 		};
+
+		dma1: dma@40020000 {
+			interrupts = <9 0 10 0 10 0 11 0 11 0 11 0 11 0>;
+			dma-requests = <7>;
+		};
+
+		dmamux1: dmamux@40020800 {
+			dma-channels = <7>;
+		};
 	};
 };
