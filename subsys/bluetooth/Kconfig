@@ -302,19 +302,6 @@ config BT_ISO_MAX_BIG
 endif # BT_ISO_BROADCAST
 endif # BT_ISO
 
-# Workaround for not being able to have commas in macro arguments
-DT_CHOSEN_Z_BT_C2H_UART := zephyr,bt-c2h-uart
-
-config BT_CTLR_TO_HOST_UART_DEV_NAME
-	string "Device Name of UART Device to an external Bluetooth Host"
-	default "$(dt_chosen_label,$(DT_CHOSEN_Z_BT_C2H_UART))" if HAS_DTS
-	default "UART_0"
-	depends on BT_HCI_RAW
-	help
-	  This option specifies the name of UART device to be used
-	  to connect to an external Bluetooth Host when Zephyr is
-	  acting as a Bluetooth Controller.
-
 source "subsys/bluetooth/common/Kconfig"
 source "subsys/bluetooth/host/Kconfig"
 source "subsys/bluetooth/controller/Kconfig"

@@ -156,6 +156,10 @@ Drivers and Sensors
 
 * Bluetooth
 
+  * The Kconfig option ``CONFIG_BT_CTLR_TO_HOST_UART_DEV_NAME`` was removed.
+    Use the :ref:`zephyr,bt-c2h-uart chosen node <devicetree-chosen-nodes>`
+    directly instead.
+
 * CAN
 
 * Clock Control
