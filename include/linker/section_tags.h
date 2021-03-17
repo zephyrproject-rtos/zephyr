@@ -80,6 +80,12 @@
 #define __pinned_noinit	__noinit
 #endif /* CONFIG_LINKER_USE_PINNED_SECTION */
 
+#if defined(CONFIG_LINKER_USE_PINNED_SECTION)
+#define __isr		__pinned_func
+#else
+#define __isr
+#endif
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* ZEPHYR_INCLUDE_LINKER_SECTION_TAGS_H_ */
