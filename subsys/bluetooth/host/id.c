@@ -194,7 +194,9 @@ static void le_rpa_invalidate(void)
 		atomic_clear_bit(bt_dev.flags, BT_DEV_RPA_VALID);
 	}
 
-	bt_le_ext_adv_foreach(adv_rpa_invalidate, NULL);
+	if (IS_ENABLED(CONFIG_BT_BROADCASTER)) {
+		bt_le_ext_adv_foreach(adv_rpa_invalidate, NULL);
+	}
 }
 
 #if defined(CONFIG_BT_PRIVACY)
@@ -370,7 +372,8 @@ static void le_update_private_addr(void)
 	uint8_t id = BT_ID_DEFAULT;
 	int err;
 
-	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
+	if (IS_ENABLED(CONFIG_BT_BROADCASTER) &&
+	    IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 	    BT_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
 		bt_le_ext_adv_foreach(adv_update_rpa, NULL);
 	}
@@ -395,7 +398,8 @@ static void le_update_private_addr(void)
 		bt_le_create_conn_cancel();
 	}
 
-	if (!(IS_ENABLED(CONFIG_BT_EXT_ADV) &&
+	if (IS_ENABLED(CONFIG_BT_BROADCASTER) &&
+	    !(IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 	      BT_FEAT_LE_EXT_ADV(bt_dev.le.features))) {
 		adv = bt_le_adv_lookup_legacy();
 
@@ -418,7 +422,8 @@ static void le_update_private_addr(void)
 		return;
 	}
 
-	if (adv && adv_enabled) {
+	if (IS_ENABLED(CONFIG_BT_BROADCASTER) &&
+	    adv && adv_enabled) {
 		bt_le_adv_set_enable_legacy(adv, true);
 	}
 
@@ -449,7 +454,9 @@ static void rpa_timeout(struct k_work *work)
 
 	le_rpa_invalidate();
 
-	bt_le_ext_adv_foreach(adv_is_private_enabled, &adv_enabled);
+	if (IS_ENABLED(CONFIG_BT_BROADCASTER)) {
+		bt_le_ext_adv_foreach(adv_is_private_enabled, &adv_enabled);
+	}
 
 	/* IF no roles using the RPA is running we can stop the RPA timer */
 	if (!(adv_enabled ||
@@ -1050,11 +1057,6 @@ int bt_id_create(bt_addr_le_t *addr, uint8_t *irk)
 
 int bt_id_reset(uint8_t id, bt_addr_le_t *addr, uint8_t *irk)
 {
-	struct bt_adv_id_check_data check_data = {
-		.id = id,
-		.adv_enabled = false,
-	};
-
 	if (addr && bt_addr_le_cmp(addr, BT_ADDR_LE_ANY)) {
 		if (addr->type != BT_ADDR_LE_RANDOM ||
 		    !BT_ADDR_IS_STATIC(&addr->a)) {
@@ -1075,9 +1077,16 @@ int bt_id_reset(uint8_t id, bt_addr_le_t *addr, uint8_t *irk)
 		return -EINVAL;
 	}
 
-	bt_le_ext_adv_foreach(adv_id_check_func, &check_data);
-	if (check_data.adv_enabled) {
-		return -EBUSY;
+	if (IS_ENABLED(CONFIG_BT_BROADCASTER)) {
+		struct bt_adv_id_check_data check_data = {
+			.id = id,
+			.adv_enabled = false,
+		};
+
+		bt_le_ext_adv_foreach(adv_id_check_func, &check_data);
+		if (check_data.adv_enabled) {
+			return -EBUSY;
+		}
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CONN) &&
@@ -1097,11 +1106,6 @@ int bt_id_reset(uint8_t id, bt_addr_le_t *addr, uint8_t *irk)
 
 int bt_id_delete(uint8_t id)
 {
-	struct bt_adv_id_check_data check_data = {
-		.id = id,
-		.adv_enabled = false,
-	};
-
 	if (id == BT_ID_DEFAULT || id >= bt_dev.id_count) {
 		return -EINVAL;
 	}
@@ -1110,9 +1114,16 @@ int bt_id_delete(uint8_t id)
 		return -EALREADY;
 	}
 
-	bt_le_ext_adv_foreach(adv_id_check_func, &check_data);
-	if (check_data.adv_enabled) {
-		return -EBUSY;
+	if (IS_ENABLED(CONFIG_BT_BROADCASTER)) {
+		struct bt_adv_id_check_data check_data = {
+			.id = id,
+			.adv_enabled = false,
+		};
+
+		bt_le_ext_adv_foreach(adv_id_check_func, &check_data);
+		if (check_data.adv_enabled) {
+			return -EBUSY;
+		}
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CONN)) {
