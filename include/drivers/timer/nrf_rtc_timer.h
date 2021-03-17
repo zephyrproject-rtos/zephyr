@@ -11,7 +11,7 @@
 extern "C" {
 #endif
 
-typedef void (*z_nrf_rtc_timer_compare_handler_t)(uint32_t id,
+typedef void (*z_nrf_rtc_timer_compare_handler_t)(int32_t id,
 						uint32_t cc_value,
 						void *user_data);
 
@@ -22,13 +22,13 @@ typedef void (*z_nrf_rtc_timer_compare_handler_t)(uint32_t id,
  * @retval Non-negative indicates allocated channel ID.
  * @retval -ENOMEM if channel cannot be allocated.
  */
-int z_nrf_rtc_timer_chan_alloc(void);
+int32_t z_nrf_rtc_timer_chan_alloc(void);
 
 /** @brief Free RTC compare channel.
  *
  * @param chan Previously allocated channel ID.
  */
-void z_nrf_rtc_timer_chan_free(uint32_t chan);
+void z_nrf_rtc_timer_chan_free(int32_t chan);
 
 /** @brief Read current RTC counter value.
  *
@@ -44,7 +44,7 @@ uint32_t z_nrf_rtc_timer_read(void);
  *
  * @return Register address.
  */
-uint32_t z_nrf_rtc_timer_compare_evt_address_get(uint32_t chan);
+uint32_t z_nrf_rtc_timer_compare_evt_address_get(int32_t chan);
 
 /** @brief Safely disable compare event interrupt.
  *
@@ -54,7 +54,7 @@ uint32_t z_nrf_rtc_timer_compare_evt_address_get(uint32_t chan);
  *
  * @return key passed to @ref z_nrf_rtc_timer_compare_int_unlock.
  */
-bool z_nrf_rtc_timer_compare_int_lock(uint32_t chan);
+bool z_nrf_rtc_timer_compare_int_lock(int32_t chan);
 
 /** @brief Safely enable compare event interrupt.
  *
@@ -64,7 +64,7 @@ bool z_nrf_rtc_timer_compare_int_lock(uint32_t chan);
  *
  * @param key Key returned by @ref z_nrf_rtc_timer_compare_int_lock.
  */
-void z_nrf_rtc_timer_compare_int_unlock(uint32_t chan, bool key);
+void z_nrf_rtc_timer_compare_int_unlock(int32_t chan, bool key);
 
 /** @brief Read compare register value.
  *
@@ -72,7 +72,7 @@ void z_nrf_rtc_timer_compare_int_unlock(uint32_t chan, bool key);
  *
  * @return Value set in the compare register.
  */
-uint32_t z_nrf_rtc_timer_compare_read(uint32_t chan);
+uint32_t z_nrf_rtc_timer_compare_read(int32_t chan);
 
 /** @brief  Try to set compare channel to given value.
  *
@@ -95,7 +95,7 @@ uint32_t z_nrf_rtc_timer_compare_read(uint32_t chan);
  *
  * @param user_data Data passed to the handler.
  */
-void z_nrf_rtc_timer_compare_set(uint32_t chan, uint32_t cc_value,
+void z_nrf_rtc_timer_compare_set(int32_t chan, uint32_t cc_value,
 			       z_nrf_rtc_timer_compare_handler_t handler,
 			       void *user_data);
 

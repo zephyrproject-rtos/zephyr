@@ -17,10 +17,10 @@
 
 static volatile bool m_clock_ready;
 static bool m_is_running;
-static uint32_t m_rtc_channel;
+static int32_t m_rtc_channel;
 static bool m_in_critical_section;
 
-void rtc_irq_handler(uint32_t id, uint32_t cc_value, void *user_data)
+void rtc_irq_handler(int32_t id, uint32_t cc_value, void *user_data)
 {
 	(void)cc_value;
 	(void)user_data;
@@ -81,11 +81,8 @@ void nrf_802154_lp_timer_init(void)
 		/* Intentionally empty */
 	}
 
-	int32_t chan = z_nrf_rtc_timer_chan_alloc();
-
-	if (chan >= 0) {
-		m_rtc_channel = (uint32_t)chan;
-	} else   {
+	m_rtc_channel = z_nrf_rtc_timer_chan_alloc();
+	if (m_rtc_channel < 0) {
 		assert(false);
 		return;
 	}
