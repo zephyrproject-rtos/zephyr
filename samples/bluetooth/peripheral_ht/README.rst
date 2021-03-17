@@ -7,8 +7,11 @@ Overview
 ********
 
 Similar to the :ref:`Peripheral <ble_peripheral>` sample, except that this
-application specifically exposes the HT (Health Thermometer) GATT Service. Once a device
-connects it will generate dummy temperature values.
+application specifically exposes the HT (Health Thermometer) GATT Service.
+
+On Nordic nRF devices, this sample uses the built-in TEMP peripheral to return
+die temperature values. On other boards, it will generate dummy temperature
+values.
 
 
 Requirements
