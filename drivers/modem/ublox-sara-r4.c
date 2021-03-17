@@ -314,6 +314,10 @@ static ssize_t send_socket_data(void *obj,
 	struct sockaddr *dst_addr = msg->msg_name;
 	size_t buf_len = 0;
 
+	if (!sock) {
+		return -EINVAL;
+	}
+
 	for (int i = 0; i < msg->msg_iovlen; i++) {
 		if (!msg->msg_iov[i].iov_base || msg->msg_iov[i].iov_len == 0) {
 			errno = EINVAL;
@@ -329,10 +333,6 @@ static ssize_t send_socket_data(void *obj,
 
 	if (!dst_addr && sock->ip_proto == IPPROTO_UDP) {
 		dst_addr = &sock->dst;
-	}
-
-	if (!sock) {
-		return -EINVAL;
 	}
 
 	/*
