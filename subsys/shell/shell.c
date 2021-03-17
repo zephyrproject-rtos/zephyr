@@ -1249,7 +1249,7 @@ void shell_thread(void *shell_handle, void *arg_log_backend,
 		return;
 	}
 
-	if (log_backend && IS_ENABLED(CONFIG_SHELL_LOG_BACKEND)) {
+	if (IS_ENABLED(CONFIG_SHELL_LOG_BACKEND) && log_backend) {
 		z_shell_log_backend_enable(shell->log_backend, (void *)shell,
 					   log_level);
 	}
