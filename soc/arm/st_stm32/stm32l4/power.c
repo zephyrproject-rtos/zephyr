@@ -35,13 +35,7 @@ void pm_power_state_set(struct pm_state_info info)
 	}
 
 	switch (info.substate_id) {
-	case 0:
-
-		/* this corresponds to the STOP0 mode: */
-#ifdef CONFIG_DEBUG
-		/* Enable the Debug Module during STOP mode */
-		LL_DBGMCU_EnableDBGStopMode();
-#endif /* CONFIG_DEBUG */
+	case 0: /* this corresponds to the STOP0 mode: */
 		/* ensure the proper wake-up system clock */
 		LL_RCC_SetClkAfterWakeFromStop(RCC_STOP_WAKEUPCLOCK_SELECTED);
 		/* enter STOP0 mode */
@@ -50,12 +44,7 @@ void pm_power_state_set(struct pm_state_info info)
 		/* enter SLEEP mode : WFE or WFI */
 		k_cpu_idle();
 		break;
-	case 1:
-		/* this corresponds to the STOP1 mode: */
-#ifdef CONFIG_DEBUG
-		/* Enable the Debug Module during STOP mode */
-		LL_DBGMCU_EnableDBGStopMode();
-#endif /* CONFIG_DEBUG */
+	case 1: /* this corresponds to the STOP1 mode: */
 		/* ensure the proper wake-up system clock */
 		LL_RCC_SetClkAfterWakeFromStop(RCC_STOP_WAKEUPCLOCK_SELECTED);
 		/* enter STOP1 mode */
@@ -63,12 +52,7 @@ void pm_power_state_set(struct pm_state_info info)
 		LL_LPM_EnableDeepSleep();
 		k_cpu_idle();
 		break;
-	case 2:
-		/* this corresponds to the STOP2 mode: */
-#ifdef CONFIG_DEBUG
-		/* Enable the Debug Module during STOP mode */
-		LL_DBGMCU_EnableDBGStopMode();
-#endif /* CONFIG_DEBUG */
+	case 2: /* this corresponds to the STOP2 mode: */
 		/* ensure the proper wake-up system clock */
 		LL_RCC_SetClkAfterWakeFromStop(RCC_STOP_WAKEUPCLOCK_SELECTED);
 #ifdef PWR_CR1_RRSTP
@@ -121,16 +105,15 @@ void pm_power_state_exit_post_ops(struct pm_state_info info)
 /* Initialize STM32 Power */
 static int stm32_power_init(const struct device *dev)
 {
-	unsigned int ret;
-
 	ARG_UNUSED(dev);
-
-	ret = irq_lock();
 
 	/* enable Power clock */
 	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
 
-	irq_unlock(ret);
+#ifdef CONFIG_DEBUG
+	/* Enable the Debug Module during STOP mode */
+	LL_DBGMCU_EnableDBGStopMode();
+#endif /* CONFIG_DEBUG */
 
 	return 0;
 }
