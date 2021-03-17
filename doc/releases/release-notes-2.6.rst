@@ -71,6 +71,8 @@ Removed APIs in this release
 
 * Removed support for k_mem_domain_destroy and k_mem_domain_remove_thread
 
+* Removed support for counter_read and counter_get_max_relative_alarm
+
 ============================
 
 Stable API changes in this release

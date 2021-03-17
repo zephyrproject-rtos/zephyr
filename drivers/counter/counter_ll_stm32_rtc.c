@@ -246,15 +246,6 @@ static int rtc_stm32_set_top_value(const struct device *dev,
 
 }
 
-
-static uint32_t rtc_stm32_get_max_relative_alarm(const struct device *dev)
-{
-	const struct counter_config_info *info = dev->config;
-
-	return info->max_top_value;
-}
-
-
 void rtc_stm32_isr(const struct device *dev)
 {
 	struct rtc_stm32_data *data = DEV_DATA(dev);
@@ -425,7 +416,6 @@ static const struct counter_driver_api rtc_stm32_driver_api = {
 		.set_top_value = rtc_stm32_set_top_value,
 		.get_pending_int = rtc_stm32_get_pending_int,
 		.get_top_value = rtc_stm32_get_top_value,
-		.get_max_relative_alarm = rtc_stm32_get_max_relative_alarm,
 };
 
 DEVICE_DT_INST_DEFINE(0, &rtc_stm32_init, device_pm_control_nop,

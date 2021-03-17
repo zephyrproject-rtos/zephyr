@@ -129,13 +129,6 @@ static inline uint32_t z_vrfy_counter_get_max_top_value(const struct device *dev
 }
 #include <syscalls/counter_get_max_top_value_mrsh.c>
 
-static inline uint32_t z_vrfy_counter_get_max_relative_alarm(const struct device *dev)
-{
-	Z_OOPS(Z_SYSCALL_DRIVER_COUNTER(dev, get_max_relative_alarm));
-	return z_impl_counter_get_max_relative_alarm((const struct device *)dev);
-}
-#include <syscalls/counter_get_max_relative_alarm_mrsh.c>
-
 static inline uint32_t z_vrfy_counter_get_guard_period(const struct device *dev,
 							uint32_t flags)
 {
