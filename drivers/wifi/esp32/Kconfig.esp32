@@ -2,14 +2,10 @@
 
 menuconfig WIFI_ESP32
 	bool "ESP32 SoC WiFi support"
-	select POSIX_API
 	select THREAD_CUSTOM_DATA
 	select DYNAMIC_INTERRUPTS
 	help
 	  Enable ESP32 SoC WiFi support.
-
-	  Note: POSIX_API is required by Wifi library. It shall be removed
-	  once NEWLIB gets supported.
 
 if WIFI_ESP32
 
