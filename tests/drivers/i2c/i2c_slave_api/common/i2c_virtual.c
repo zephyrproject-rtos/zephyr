@@ -36,7 +36,7 @@ static struct i2c_slave_config *find_address(struct i2c_virtual_data *data,
 	SYS_SLIST_FOR_EACH_NODE(&data->slaves, node) {
 		cfg = CONTAINER_OF(node, struct i2c_slave_config, node);
 
-		search_10bit = (cfg->flags & I2C_ADDR_10_BITS);
+		search_10bit = (cfg->flags & I2C_SLAVE_FLAGS_ADDR_10_BITS);
 
 		if (cfg->address == address && search_10bit == is_10bit) {
 			return cfg;
@@ -58,7 +58,7 @@ int i2c_virtual_slave_register(const struct device *dev,
 
 	/* Check the address is unique */
 	if (find_address(data, config->address,
-			 (config->flags & I2C_ADDR_10_BITS))) {
+			 (config->flags & I2C_SLAVE_FLAGS_ADDR_10_BITS))) {
 		return -EINVAL;
 	}
 
@@ -157,7 +157,7 @@ static int i2c_virtual_transfer(const struct device *dev, struct i2c_msg *msg,
 	bool is_write = false;
 	int ret = 0;
 
-	cfg = find_address(data, slave, (msg->flags & I2C_ADDR_10_BITS));
+	cfg = find_address(data, slave, (msg->flags & I2C_SLAVE_FLAGS_ADDR_10_BITS));
 	if (!cfg) {
 		return -EIO;
 	}
