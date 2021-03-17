@@ -179,20 +179,15 @@ Assert error expected as part of test case.
  PASS - test_catch_assert_in_isr
 ===================================================================
 START - test_catch_z_oops
-E: Page fault at address (nil) (error code 0x4)
-E: Linear address not present in page tables
-E: Access violation: user thread not allowed to read
-E: PTE: not present
-E: EAX: 0x00000000, EBX: 0x0011303c, ECX: 0x00000000, EDX: 0x0011303c
-E: ESI: 0x00000000, EDI: 0x00130fe8, EBP: 0x00130fc0, ESP: 0x00130fc0
-E: EFLAGS: 0x00000246 CS: 0x002b CR3: 0x001142c0
+E: EAX: 0x00000000, EBX: 0x00000000, ECX: 0x00000000, EDX: 0x00000000
+E: ESI: 0x00000000, EDI: 0x00000000, EBP: 0x00000000, ESP: 0x00000000
+E: EFLAGS: 0x001003c4 CS: 0x0511 CR3: 0x00115740
 E: call trace:
-E: EIP: 0x00100544
-E:      0x00104808 (0x130033)
-E:      0x001010ea (0x11303c)
-E: >>> ZEPHYR FATAL ERROR 0: CPU exception on CPU 0
-E: Current thread: 0x1140a0 (unknown)
-Caught system error -- reason 0 1
+E: EIP: 0x0010ff9e
+E: NULL base ptr
+E: >>> ZEPHYR FATAL ERROR 3: Kernel oops on CPU 0
+E: Current thread: 0x114120 (unknown)
+Caught system error -- reason 3 1
 Fatal error expected as part of test case.
  PASS - test_catch_z_oops
 ===================================================================
