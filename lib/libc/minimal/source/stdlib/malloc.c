@@ -11,7 +11,6 @@
 #include <sys/math_extras.h>
 #include <string.h>
 #include <app_memory/app_memdomain.h>
-#include <sys/check.h>
 #include <sys/mutex.h>
 #include <sys/sys_heap.h>
 #include <zephyr/types.h>
@@ -38,24 +37,19 @@ Z_GENERIC_SECTION(POOL_SECTION) static char z_malloc_heap_mem[HEAP_BYTES];
 
 void *malloc(size_t size)
 {
-	int lock_ret = sys_mutex_lock(&z_malloc_heap_mutex, K_FOREVER);
+	int lock_ret;
 
-	CHECKIF(lock_ret != 0) {
-		return NULL;
-	}
+	lock_ret = sys_mutex_lock(&z_malloc_heap_mutex, K_FOREVER);
+	__ASSERT_NO_MSG(lock_ret == 0);
 
 	void *ret = sys_heap_aligned_alloc(&z_malloc_heap,
 					   __alignof__(z_max_align_t),
 					   size);
-	if (ret == NULL) {
+	if (ret == NULL && size != 0) {
 		errno = ENOMEM;
 	}
 
-	int unlock_ret = sys_mutex_unlock(&z_malloc_heap_mutex);
-
-	CHECKIF(unlock_ret != 0) {
-		return NULL;
-	}
+	(void) sys_mutex_unlock(&z_malloc_heap_mutex);
 
 	return ret;
 }
@@ -72,36 +66,30 @@ static int malloc_prepare(const struct device *unused)
 
 void *realloc(void *ptr, size_t requested_size)
 {
-	int lock_ret = sys_mutex_lock(&z_malloc_heap_mutex, K_FOREVER);
+	int lock_ret;
 
-	CHECKIF(lock_ret != 0) {
-		return NULL;
-	}
+	lock_ret = sys_mutex_lock(&z_malloc_heap_mutex, K_FOREVER);
+	__ASSERT_NO_MSG(lock_ret == 0);
 
 	void *ret = sys_heap_aligned_realloc(&z_malloc_heap, ptr,
-						 __alignof__(z_max_align_t),
-						 requested_size);
+					     __alignof__(z_max_align_t),
+					     requested_size);
 
 	if (ret == NULL && requested_size != 0) {
 		errno = ENOMEM;
 	}
 
-	int unlock_ret = sys_mutex_unlock(&z_malloc_heap_mutex);
+	(void) sys_mutex_unlock(&z_malloc_heap_mutex);
 
-	CHECKIF(unlock_ret != 0) {
-		return NULL;
-	}
 	return ret;
 }
 
 void free(void *ptr)
 {
-	int lock_ret = sys_mutex_lock(&z_malloc_heap_mutex, K_FOREVER);
+	int lock_ret;
 
-	CHECKIF(lock_ret != 0) {
-		return;
-	}
-
+	lock_ret = sys_mutex_lock(&z_malloc_heap_mutex, K_FOREVER);
+	__ASSERT_NO_MSG(lock_ret == 0);
 	sys_heap_free(&z_malloc_heap, ptr);
 	(void) sys_mutex_unlock(&z_malloc_heap_mutex);
 }
