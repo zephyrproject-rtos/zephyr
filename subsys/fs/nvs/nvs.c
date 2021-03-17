@@ -67,10 +67,6 @@ static int nvs_flash_al_wrt(struct nvs_fs *fs, uint32_t addr, const void *data,
 
 		rc = flash_write(fs->flash_device, offset, buf,
 				 fs->flash_parameters->write_block_size);
-		if (rc) {
-			/* flash write error */
-			goto end;
-		}
 	}
 
 end:
@@ -236,12 +232,8 @@ static int nvs_flash_erase_sector(struct nvs_fs *fs, uint32_t addr)
 	LOG_DBG("Erasing flash at %lx, len %d", (long int) offset,
 		fs->sector_size);
 	rc = flash_erase(fs->flash_device, offset, fs->sector_size);
-	if (rc) {
-		/* flash erase error */
-		return rc;
-	}
 
-	return 0;
+	return rc;
 }
 
 /* crc update on allocation entry */
