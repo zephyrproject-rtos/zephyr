@@ -6,7 +6,6 @@ import os
 from pathlib import Path
 import re
 
-from sphinx.highlighting import lexers
 import sphinx_rtd_theme
 
 
@@ -32,7 +31,6 @@ sys.path.insert(0, str(ZEPHYR_BASE / "doc" / "_scripts"))
 # for autodoc directives on runners.xyz.
 sys.path.insert(0, str(ZEPHYR_BASE / "scripts" / "west_commands"))
 
-from lexer.DtsLexer import DtsLexer
 import redirects
 
 try:
@@ -106,8 +104,6 @@ else:
 default_role = "any"
 
 pygments_style = "sphinx"
-
-lexers["DTS"] = DtsLexer()
 
 todo_include_todos = False
 

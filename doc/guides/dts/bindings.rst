@@ -44,7 +44,7 @@ A simple example
 
 Here is an example devicetree node:
 
-.. code-block:: DTS
+.. code-block:: devicetree
 
    /* Node in a DTS file */
    bar-device {
@@ -88,7 +88,7 @@ For another example, the following node would cause a build error, because it
 has no ``num-foos`` property, and this property is marked required in the
 binding:
 
-.. code-block:: DTS
+.. code-block:: devicetree
 
    bad-node {
    	compatible = "foo-company,bar-device";
@@ -103,7 +103,7 @@ match.
 
 Take this node as an example:
 
-.. code-block:: DTS
+.. code-block:: devicetree
 
    baz-device {
    	compatible = "foo-company,baz-device", "generic-baz-device";
@@ -242,7 +242,7 @@ It should look like this in a binding file:
 
 This devicetree node would match the above binding:
 
-.. code-block:: DTS
+.. code-block:: devicetree
 
    device {
    	compatible = "manufacturer,device";
@@ -251,7 +251,7 @@ This devicetree node would match the above binding:
 Assuming no binding has ``compatible: "manufacturer,device-v2"``, it would also
 match this node:
 
-.. code-block:: DTS
+.. code-block:: devicetree
 
     device-2 {
         compatible = "manufacturer,device-v2", "manufacturer,device";
@@ -304,7 +304,7 @@ For example, a binding for a UART peripheral might look something like this:
 
 The properties in the following node would be validated by the above binding:
 
-.. code-block:: DTS
+.. code-block:: devicetree
 
    my-serial@deadbeef {
    	compatible = "manufacturer,serial";
@@ -575,7 +575,7 @@ a binding is found for it.
 Consider a binding for a PWM LED node like this one, where the child nodes are
 required to have a ``pwms`` property:
 
-.. code-block:: DTS
+.. code-block:: devicetree
 
    pwmleds {
            compatible = "pwm-leds";
@@ -618,7 +618,7 @@ The binding would look like this:
 
 will apply to the ``grandchild`` node in this DTS:
 
-.. code-block:: DTS
+.. code-block:: devicetree
 
    parent {
            compatible = "foo";
@@ -685,7 +685,7 @@ what bus it appears on. For example, consider a sensor device with compatible
 The sensor node may therefore appear in the devicetree as a child node of
 either an SPI or an I2C controller, like this:
 
-.. code-block:: DTS
+.. code-block:: devicetree
 
    spi-bus@... {
       /* ... some compatible with 'bus: spi', etc. ... */
@@ -749,7 +749,7 @@ The tooling strips the final ``s`` from the property name of such properties,
 resulting in ``pwm``. Then the value of the ``#pwm-cells`` property is
 looked up in each of the PWM controller nodes ``pwm0`` and ``pwm3``, like so:
 
-.. code-block:: DTS
+.. code-block:: devicetree
 
    pwm0: pwm@... {
    	compatible = "foo,pwm";
@@ -771,7 +771,7 @@ The number of PWM cells in the specifiers in ``pwms`` must match the
 ``#pwm-cells`` values, as shown above. If there is a mismatch, an error is
 raised. For example, this node would result in an error:
 
-.. code-block:: DTS
+.. code-block:: devicetree
 
    my-bad-device {
    	/* wrong: 2 cells given in the specifier, but #pwm-cells is 1 in pwm3. */
@@ -945,7 +945,7 @@ needed, such as storing a hardware-dependent value, phandle(s), or GPIO pin.
 
 For example, with this DTS fragment:
 
-.. code-block:: DTS
+.. code-block:: devicetree
 
    #include <dt-bindings/gpio/gpio.h>
 

@@ -73,7 +73,7 @@ Here's a DTS fragment for some imaginary hardware we'll return to throughout
 this file for examples:
 
 .. literalinclude:: main-example.dts
-   :language: DTS
+   :language: devicetree
    :start-after: start-after-here
 
 Here are a few ways to get node identifiers for the ``i2c@40002000`` node:
@@ -184,7 +184,7 @@ Properties with type ``array``, ``uint8-array``, and ``string-array`` work
 similarly, except ``DT_PROP()`` expands to an array initializer in these cases.
 Here is an example devicetree fragment:
 
-.. code-block:: DTS
+.. code-block:: devicetree
 
    foo: foo@1234 {
            a = <1000 2000 3000>; /* array */
