@@ -35,9 +35,7 @@ int stream_flash_erase_page(struct stream_flash_ctx *ctx, off_t off)
 
 	LOG_DBG("Erasing page at offset 0x%08lx", (long)page.start_offset);
 
-	flash_write_protection_set(ctx->fdev, false);
 	rc = flash_erase(ctx->fdev, page.start_offset, page.size);
-	flash_write_protection_set(ctx->fdev, true);
 
 	if (rc != 0) {
 		LOG_ERR("Error %d while erasing page", rc);
@@ -71,9 +69,7 @@ static int flash_sync(struct stream_flash_ctx *ctx)
 		}
 	}
 
-	flash_write_protection_set(ctx->fdev, false);
 	rc = flash_write(ctx->fdev, write_addr, ctx->buf, ctx->buf_bytes);
-	flash_write_protection_set(ctx->fdev, true);
 
 	if (rc != 0) {
 		LOG_ERR("flash_write error %d offset=0x%08zx", rc,
