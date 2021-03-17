@@ -41,11 +41,11 @@ static void trigger_assert_fail(void *a)
 	__ASSERT(a != NULL, "parameter a should not be NULL!");
 }
 
-static void trigger_fault_illeagl_instuction(void)
+static void trigger_fault_illegal_instruction(void)
 {
 	void *a = NULL;
 
-	/* execute an illeagal instructions */
+	/* execute an illeagal instruction */
 	((void(*)(void))&a)();
 }
 
@@ -70,7 +70,7 @@ static void trigger_fault_access(void)
 	 */
 	void *a = (void *)NULL;
 #endif
-	/* access a illeagal address */
+	/* access an illegal address */
 	volatile int b = *((int *)a);
 
 	printk("b is %d\n", b);
@@ -81,7 +81,7 @@ static void trigger_fault_divide_zero(void)
 	int a = 1;
 	int b = 0;
 
-	/* divde zero */
+	/* divide by zero */
 	a = a / b;
 	printk("a is %d\n", a);
 }
@@ -98,15 +98,16 @@ static void trigger_fault_panic(void)
 
 static void release_offload_sem(void)
 {
-	/* Semaphore used inside irq_offload need to be
-	 * released after assert or fault happened.
+	/* Semaphore used inside irq_offload needs to be
+	 * released after an assert or a fault has happened.
 	 */
 	k_sem_give(&offload_sem);
 }
 
-/* This is the fatal error hook that allow you to do actions after
- * fatal error happened. This is optional, you can choose to define
- * this yourself. If not, it will use the default one.
+/* This is the fatal error hook that allows you to do actions after
+ * the fatal error has occurred. This is optional; you can choose
+ * to define the hook yourself. If not, the program will use the
+ * default one.
  */
 void ztest_post_fatal_error_hook(unsigned int reason,
 		const z_arch_esf_t *pEsf)
@@ -134,9 +135,9 @@ void ztest_post_fatal_error_hook(unsigned int reason,
 	}
 }
 
-/* This is the assert fail post hook that allow you to do actions after
- * assert fail happened. This is optional, you can choose to define
- * this yourself. If not, it will use the default one.
+/* This is the assert fail post hook that allows you to do actions after
+ * the assert fail happened. This is optional, you can choose to define
+ * the hook yourself. If not, the program will use the default one.
  */
 void ztest_post_assert_fail_hook(void)
 {
@@ -170,7 +171,7 @@ static void tThread_entry(void *p1, void *p2, void *p3)
 		break;
 	case ZTEST_CATCH_FATAL_ILLEAGAL_INSTRUCTION:
 		ztest_set_fault_valid(true);
-		trigger_fault_illeagl_instuction();
+		trigger_fault_illegal_instruction();
 		break;
 	case ZTEST_CATCH_FATAL_DIVIDE_ZERO:
 		ztest_set_fault_valid(true);
