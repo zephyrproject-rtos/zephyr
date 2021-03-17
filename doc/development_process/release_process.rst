@@ -151,15 +151,23 @@ The following syntax should be used for releases and tags in Git:
 Long Term Support (LTS)
 =======================
 
-Long-term support releases are designed to be supported for a longer than normal
-period and will be the basis for products and certification for various usages.
+Long-term support releases are designed to be supported and maintained
+for an extended period and is the recommended release for
+products and the auditable branch used for certification.
 
-An LTS release is made every 2 years and is branched and maintained
-independently from the mainline tree.
+An LTS release is defined as:
+- **Product focused**
+- **Compatible with New Hardware**: We will make point releases throughout the development
+  cycle to provide functional support for new hardware.
+- **Extended Stabilisation period**: Allow for more testing and bug fixing
+- **Stable APIs**
+- **Quality Managed**: LTS provide the base for the auditable branch
+- **Long Term**: Maintained for an extended period of time (at least 2.5 years)
 
-An LTS release will be branched and maintained independently of the mainline
-tree.
-
+A Zephyr LTS release is published every 2 years and is branched and maintained
+independently from the mainline tree for at least 2.5 years after it was
+released. Support and maintenance for an LTS release stops at least half a year
+after the following LTS release is published.
 
 .. figure:: lts.png
     :align: center
@@ -173,8 +181,8 @@ Changes and fixes flow in both directions. However, changes from master to an
 LTS branch will be limited to fixes that apply to both branches and for existing
 features only.
 
-All fixes for an LTS branch that apply to the mainline tree are pushed to
-mainline as well.
+All fixes for an LTS branch that apply to the mainline tree shall be submitted to
+mainline tree as well.
 
 
 Auditable Code Base
