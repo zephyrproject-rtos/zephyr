@@ -1289,18 +1289,7 @@ bool net_if_ipv6_router_rm(struct net_if_router *router);
  *
  * @return Hop limit
  */
-static inline uint8_t net_if_ipv6_get_hop_limit(struct net_if *iface)
-{
-#if defined(CONFIG_NET_NATIVE_IPV6)
-	if (!iface->config.ip.ipv6) {
-		return 0;
-	}
-
-	return iface->config.ip.ipv6->hop_limit;
-#else
-	return 0;
-#endif
-}
+uint8_t net_if_ipv6_get_hop_limit(struct net_if *iface);
 
 /**
  * @brief Set the default IPv6 hop limit of a given interface.
@@ -1308,17 +1297,7 @@ static inline uint8_t net_if_ipv6_get_hop_limit(struct net_if *iface)
  * @param iface Network interface
  * @param hop_limit New hop limit
  */
-static inline void net_ipv6_set_hop_limit(struct net_if *iface,
-					  uint8_t hop_limit)
-{
-#if defined(CONFIG_NET_NATIVE_IPV6)
-	if (!iface->config.ip.ipv6) {
-		return;
-	}
-
-	iface->config.ip.ipv6->hop_limit = hop_limit;
-#endif
-}
+void net_ipv6_set_hop_limit(struct net_if *iface, uint8_t hop_limit);
 
 /**
  * @brief Set IPv6 reachable time for a given interface
@@ -1540,18 +1519,7 @@ int net_if_config_ipv4_put(struct net_if *iface);
  *
  * @return Time-to-live
  */
-static inline uint8_t net_if_ipv4_get_ttl(struct net_if *iface)
-{
-#if defined(CONFIG_NET_NATIVE_IPV4)
-	if (!iface->config.ip.ipv4) {
-		return 0;
-	}
-
-	return iface->config.ip.ipv4->ttl;
-#else
-	return 0;
-#endif
-}
+uint8_t net_if_ipv4_get_ttl(struct net_if *iface);
 
 /**
  * @brief Set IPv4 time-to-live value specified to a given interface
@@ -1559,16 +1527,7 @@ static inline uint8_t net_if_ipv4_get_ttl(struct net_if *iface)
  * @param iface Network interface
  * @param ttl Time-to-live value
  */
-static inline void net_if_ipv4_set_ttl(struct net_if *iface, uint8_t ttl)
-{
-#if defined(CONFIG_NET_NATIVE_IPV4)
-	if (!iface->config.ip.ipv4) {
-		return;
-	}
-
-	iface->config.ip.ipv4->ttl = ttl;
-#endif
-}
+void net_if_ipv4_set_ttl(struct net_if *iface, uint8_t ttl);
 
 /**
  * @brief Check if this IPv4 address belongs to one of the interfaces.

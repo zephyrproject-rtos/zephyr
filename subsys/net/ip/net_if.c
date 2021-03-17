@@ -2473,6 +2473,47 @@ bool net_if_ipv6_router_rm(struct net_if_router *router)
 	return iface_router_rm(router);
 }
 
+uint8_t net_if_ipv6_get_hop_limit(struct net_if *iface)
+{
+#if defined(CONFIG_NET_NATIVE_IPV6)
+	int ret = 0;
+
+	k_mutex_lock(&lock, K_FOREVER);
+
+	if (!iface->config.ip.ipv6) {
+		goto out;
+	}
+
+	ret = iface->config.ip.ipv6->hop_limit;
+out:
+	k_mutex_unlock(&lock);
+
+	return ret;
+#else
+	ARG_UNUSED(iface);
+
+	return 0;
+#endif
+}
+
+void net_ipv6_set_hop_limit(struct net_if *iface, uint8_t hop_limit)
+{
+#if defined(CONFIG_NET_NATIVE_IPV6)
+	k_mutex_lock(&lock, K_FOREVER);
+
+	if (!iface->config.ip.ipv6) {
+		goto out;
+	}
+
+	iface->config.ip.ipv6->hop_limit = hop_limit;
+out:
+	k_mutex_unlock(&lock);
+#else
+	ARG_UNUSED(iface);
+	ARG_UNUSED(hop_limit);
+#endif
+}
+
 struct in6_addr *net_if_ipv6_get_ll(struct net_if *iface,
 				    enum net_addr_state addr_state)
 {
@@ -2885,6 +2926,47 @@ out:
 	k_mutex_unlock(&lock);
 
 	return ret;
+}
+
+uint8_t net_if_ipv4_get_ttl(struct net_if *iface)
+{
+#if defined(CONFIG_NET_NATIVE_IPV4)
+	int ret = 0;
+
+	k_mutex_lock(&lock, K_FOREVER);
+
+	if (!iface->config.ip.ipv4) {
+		goto out;
+	}
+
+	ret = iface->config.ip.ipv4->ttl;
+out:
+	k_mutex_unlock(&lock);
+
+	return ret;
+#else
+	ARG_UNUSED(iface);
+
+	return 0;
+#endif
+}
+
+void net_if_ipv4_set_ttl(struct net_if *iface, uint8_t ttl)
+{
+#if defined(CONFIG_NET_NATIVE_IPV4)
+	k_mutex_lock(&lock, K_FOREVER);
+
+	if (!iface->config.ip.ipv4) {
+		goto out;
+	}
+
+	iface->config.ip.ipv4->ttl = ttl;
+out:
+	k_mutex_unlock(&lock);
+#else
+	ARG_UNUSED(iface);
+	ARG_UNUSED(ttl);
+#endif
 }
 
 struct net_if_router *net_if_ipv4_router_lookup(struct net_if *iface,
