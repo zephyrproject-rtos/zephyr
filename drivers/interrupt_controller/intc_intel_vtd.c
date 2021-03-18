@@ -350,6 +350,7 @@ static int vtd_ictl_remap(const struct device *dev,
 {
 	struct vtd_ictl_data *data = dev->data;
 	union vtd_irte irte = { 0 };
+	uint32_t delivery_mode;
 
 	irte.bits.vector = vector;
 
@@ -361,8 +362,14 @@ static int vtd_ictl_remap(const struct device *dev,
 		irte.bits.dst_id = 0xFF << 8;
 	}
 
+	delivery_mode = (flags & IOAPIC_DELIVERY_MODE_MASK);
+	if ((delivery_mode != IOAPIC_FIXED) ||
+	    (delivery_mode != IOAPIC_LOW)) {
+		delivery_mode = IOAPIC_LOW;
+	}
+
 	irte.bits.trigger_mode = (flags & IOAPIC_TRIGGER_MASK) >> 15;
-	irte.bits.delivery_mode = (flags & IOAPIC_DELIVERY_MODE_MASK) >> 8;
+	irte.bits.delivery_mode = delivery_mode >> 8;
 	irte.bits.redirection_hint = 1;
 	irte.bits.dst_mode = 1; /* Always logical */
 	irte.bits.present = 1;
