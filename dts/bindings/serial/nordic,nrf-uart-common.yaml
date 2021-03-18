@@ -46,6 +46,7 @@ properties:
 
     current-speed:
       type: int
+<<<<<<< HEAD
       required: false
       description: |
         Initial baud rate setting for UART. Only a fixed set of baud rates
@@ -68,4 +69,26 @@ properties:
         - 250000
         - 460800
         - 921600
+=======
+      required: true
+      description: Initial baud rate setting for UART
+      enum: 
+        - 1200 # actual 1205
+        - 2400 # actual 2396
+        - 4800 # actual 4808
+        - 9600 # actual 9598
+        - 14400 # actual 14401
+        - 19200 # actual 19208
+        - 28800 # actual 28777
+        - 31250
+        - 38400 # actual 38369
+        - 56000 # actual 55944
+        - 57600 # actual 57554
+        - 76800 # actual 76923, 1.6% error, use with caution
+        - 115200 # actual 115108
+        - 230400 # actual 231884
+        - 250000 
+        - 460800 # actual 457143
+        - 921600 # actual 941176, > 2% error,use with caution
+>>>>>>> 0581fd85bfeaef4114464974186be05bd79c8a1c
         - 1000000
