@@ -7,6 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_SYS_CBPRINTF_INTERNAL_H_
 #define ZEPHYR_INCLUDE_SYS_CBPRINTF_INTERNAL_H_
 
+#include <errno.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -100,9 +101,7 @@ extern "C" {
 /** @brief Get storage size for given argument.
  *
  * Floats are promoted to double so they use size of double, others int storage
- * or it's own storage size if it is bigger than int. Strings are stored in
- * the package with 1 byte header indicating if string is stored as pointer or
- * by value.
+ * or it's own storage size if it is bigger than int.
  *
  * @param x argument.
  *
@@ -112,11 +111,7 @@ extern "C" {
 	_Generic((v), \
 		float : sizeof(double), \
 		default : \
-			_Generic((v), \
-				void * : 0, \
-				default : \
-					sizeof((v)+0) \
-				) \
+			sizeof((v)+0) \
 		)
 
 /** @brief Promote and store argument in the buffer.
