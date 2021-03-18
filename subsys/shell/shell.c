@@ -1232,7 +1232,13 @@ static void shell_signal_handle(const struct shell *shell,
 
 static void kill_handler(const struct shell *shell)
 {
-	(void)instance_uninit(shell);
+	int err = instance_uninit(shell);
+
+	if (shell->ctx->uninit_cb) {
+		shell->ctx->uninit_cb(shell, err);
+	}
+
+	shell->ctx->tid = NULL;
 	k_thread_abort(k_current_get());
 }
 
@@ -1296,6 +1302,10 @@ int shell_init(const struct shell *shell, const void *transport_config,
 	__ASSERT_NO_MSG(shell);
 	__ASSERT_NO_MSG(shell->ctx && shell->iface && shell->default_prompt);
 
+	if (shell->ctx->tid) {
+		return -EALREADY;
+	}
+
 	int err = instance_init(shell, transport_config, use_colors);
 
 	if (err != 0) {
@@ -1314,7 +1324,7 @@ int shell_init(const struct shell *shell, const void *transport_config,
 	return 0;
 }
 
-int shell_uninit(const struct shell *shell)
+void shell_uninit(const struct shell *shell, shell_uninit_cb_t cb)
 {
 	__ASSERT_NO_MSG(shell);
 
@@ -1322,12 +1332,19 @@ int shell_uninit(const struct shell *shell)
 		struct k_poll_signal *signal =
 				&shell->ctx->signals[SHELL_SIGNAL_KILL];
 
+		shell->ctx->uninit_cb = cb;
 		/* signal kill message */
 		(void)k_poll_signal_raise(signal, 0);
 
-		return 0;
+		return;
+	}
+
+	int err = instance_uninit(shell);
+
+	if (cb) {
+		cb(shell, err);
 	} else {
-		return instance_uninit(shell);
+		__ASSERT_NO_MSG(0);
 	}
 }
 
