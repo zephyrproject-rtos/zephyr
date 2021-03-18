@@ -124,8 +124,6 @@
  * their shell commands are automatically initialized by the kernel.
  */
 
-#define APP_SMEM_SECTION() KEEP(*(SORT("data_smem_*")))
-
 #elif defined(_ASMLANGUAGE)
 
 /* Assembly FILES: declaration defined by the linker script */
