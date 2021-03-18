@@ -498,6 +498,9 @@ enum shell_transport_evt {
 typedef void (*shell_transport_handler_t)(enum shell_transport_evt evt,
 					  void *context);
 
+
+typedef void (*shell_uninit_cb_t)(const struct shell *shell, int res);
+
 struct shell_transport;
 
 /**
@@ -655,6 +658,11 @@ struct shell_ctx {
 	/*!< VT100 color and cursor position, terminal width.*/
 	struct shell_vt100_ctx vt100_ctx;
 
+	/*!< Callback called from shell thread context when unitialization is
+	 * completed just before aborting shell thread.
+	 */
+	shell_uninit_cb_t uninit_cb;
+
 #if defined CONFIG_SHELL_GETOPT
 	/*!< getopt context for a shell backend. */
 	struct getopt_state getopt_state;
@@ -785,10 +793,11 @@ int shell_init(const struct shell *shell, const void *transport_config,
  * @brief Uninitializes the transport layer and the internal shell state.
  *
  * @param shell Pointer to shell instance.
+ * @param cb Callback called when uninitialization is completed.
  *
  * @return Standard error code.
  */
-int shell_uninit(const struct shell *shell);
+void shell_uninit(const struct shell *shell, shell_uninit_cb_t cb);
 
 /**
  * @brief Function for starting shell processing.
