@@ -88,6 +88,48 @@ follows:
 
 DAC output is available on connector J4 pin 11.
 
+Building and Running for BL652
+======================================
+The BL652 DVK PCB contains a footprint for a MCP4725 to use as an external
+DAC. Note this is not populated by default. The sample can be built and
+executed for the :ref:`bl652_dvk` as follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/dac
+   :board: bl652_dvk
+   :goals: build flash
+   :compact:
+
+DAC output is available on pin 1 of the MCP4725.
+
+Building and Running for BL653
+======================================
+The BL653 DVK PCB contains a footprint for a MCP4725 to use as an external
+DAC. Note this is not populated by default. The sample can be built and
+executed for the :ref:`bl653_dvk` as follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/dac
+   :board: bl653_dvk
+   :goals: build flash
+   :compact:
+
+DAC output is available on pin 1 of the MCP4725.
+
+Building and Running for BL654
+======================================
+The BL654 DVK PCB contains a footprint for a MCP4725 to use as an external
+DAC. Note this is not populated by default. The sample can be built and
+executed for the :ref:`bl654_dvk` as follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/dac
+   :board: bl654_dvk
+   :goals: build flash
+   :compact:
+
+DAC output is available on pin 1 of the MCP4725.
+
 Sample output
 =============
 
