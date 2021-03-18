@@ -29,6 +29,11 @@ struct iso_data {
 enum {
 	BT_BIG_INITIALIZED,
 
+	/* Creating a BIG as a broadcaster */
+	BT_BIG_PENDING,
+	/* Creating a BIG as a receiver */
+	BT_BIG_SYNCING,
+
 	BT_BIG_NUM_FLAGS,
 };
 
