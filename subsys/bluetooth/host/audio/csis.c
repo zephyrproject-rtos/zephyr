@@ -688,6 +688,18 @@ static void auth_pairing_complete(struct bt_conn *conn, bool bonded)
 #endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
 }
 
+static void csis_bond_deleted(uint8_t id, const bt_addr_le_t *peer)
+{
+	for (int i = 0; i < ARRAY_SIZE(csis_inst.pend_notify); i++) {
+		bt_addr_le_t *addr = &csis_inst.pend_notify[i].addr;
+
+		if (csis_inst.pend_notify[i].active && !bt_addr_le_cmp(peer, addr)) {
+			memset(&csis_inst.pend_notify[i], 0, sizeof(csis_inst.pend_notify[i]));
+			return;
+		}
+	}
+}
+
 static struct bt_conn_cb conn_callbacks = {
 
 #if defined(CONFIG_BT_EXT_ADV)
@@ -698,7 +710,8 @@ static struct bt_conn_cb conn_callbacks = {
 };
 
 static const struct bt_conn_auth_cb auth_callbacks = {
-	.pairing_complete = auth_pairing_complete
+	.pairing_complete = auth_pairing_complete,
+	.bond_deleted = csis_bond_deleted
 };
 
 #if defined(CONFIG_BT_EXT_ADV)
