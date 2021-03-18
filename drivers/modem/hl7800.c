@@ -7,7 +7,9 @@
 #define DT_DRV_COMPAT swir_hl7800
 
 #include <logging/log.h>
-LOG_MODULE_REGISTER(modem_hl7800, CONFIG_MODEM_LOG_LEVEL);
+#include <logging/log_ctrl.h>
+#define LOG_MODULE_NAME modem_hl7800
+LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_DBG);
 
 #include <zephyr/types.h>
 #include <stddef.h>
@@ -1070,6 +1072,32 @@ void mdm_hl7800_generate_status_events(void)
 	hl7800_unlock();
 }
 
+/** @ref /zephyr/samples/subsys/logging/logger/src/main.c */
+static int log_source_id_get(const char *name)
+{
+	for (int i = 0; i < log_src_cnt_get(CONFIG_LOG_DOMAIN_ID); i++) {
+		if (strcmp(log_source_name_get(CONFIG_LOG_DOMAIN_ID, i),
+			   name) == 0) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+uint32_t mdm_hl7800_log_filter_set(uint32_t level)
+{
+	uint32_t new_log_level = 0;
+
+#ifdef CONFIG_LOG
+	new_log_level =
+		log_filter_set(NULL, CONFIG_LOG_DOMAIN_ID,
+			       log_source_id_get(STRINGIFY(LOG_MODULE_NAME)),
+			       level);
+#endif
+
+	return new_log_level;
+}
+
 static int send_data(struct hl7800_socket *sock, struct net_pkt *pkt)
 {
 	int ret;
@@ -1841,6 +1869,8 @@ static bool on_cmd_radio_active_bands(struct net_buf **buf, uint16_t len)
 	out_len = net_buf_linearize(value, sizeof(value), *buf, 0, len);
 	value[out_len] = 0;
 
+	LOG_DBG("%s", log_strdup(value));
+
 	if (strlen(value) < sizeof("#,###################")) {
 		/* String size too short */
 		return true;
@@ -2554,6 +2584,7 @@ static bool on_cmd_atcmdinfo_rssi(struct net_buf **buf, uint16_t len)
 		event_handler(HL7800_EVENT_SINR, &ictx.mdm_sinr);
 	}
 done:
+	LOG_HEXDUMP_DBG(value, len, "Network Coverage");
 	return true;
 }
 
