@@ -1492,9 +1492,8 @@ static void dns_work_cb(struct k_work *work)
 	/* set new DNS addr in DNS resolver */
 	LOG_DBG("Refresh DNS resolver");
 	dnsCtx = dns_resolve_get_default();
-	dns_resolve_close(dnsCtx);
 
-	ret = dns_resolve_init(dnsCtx, dns_servers_str, NULL);
+	ret = dns_resolve_reconfigure(dnsCtx, dns_servers_str, NULL);
 	if (ret < 0) {
 		LOG_ERR("dns_resolve_init fail (%d)", ret);
 		return;
