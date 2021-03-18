@@ -185,8 +185,27 @@ static inline int z_impl_flash_write(const struct device *dev, off_t offset,
 {
 	const struct flash_driver_api *api =
 		(const struct flash_driver_api *)dev->api;
+	int rc;
 
-	return api->write(dev, offset, data, len);
+	/* write protection management in this function exists for keeping
+	 * compatibility with out-of-tree drivers which are not aligned jet
+	 * with write-protection API depreciation.
+	 * This will be removed with flash_api_write_protection handler type.
+	 */
+	if (api->write_protection != NULL) {
+		rc = api->write_protection(dev, false);
+		if (rc) {
+			return rc;
+		}
+	}
+
+	rc = api->write(dev, offset, data, len);
+
+	if (api->write_protection != NULL) {
+		(void) api->write_protection(dev, true);
+	}
+
+	return rc;
 }
 
 /**
@@ -217,8 +236,27 @@ static inline int z_impl_flash_erase(const struct device *dev, off_t offset,
 {
 	const struct flash_driver_api *api =
 		(const struct flash_driver_api *)dev->api;
+	int rc;
 
-	return api->erase(dev, offset, size);
+	/* write protection management in this function exists for keeping
+	 * compatibility with out-of-tree drivers which are not aligned jet
+	 * with write-protection API depreciation.
+	 * This will be removed with flash_api_write_protection handler type.
+	 */
+	if (api->write_protection != NULL) {
+		rc = api->write_protection(dev, false);
+		if (rc) {
+			return rc;
+		}
+	}
+
+	rc = api->erase(dev, offset, size);
+
+	if (api->write_protection != NULL) {
+		(void) api->write_protection(dev, true);
+	}
+
+	return rc;
 }
 
 /**
@@ -260,10 +298,10 @@ __syscall int flash_write_protection_set(const struct device *dev,
 static inline int z_impl_flash_write_protection_set(const struct device *dev,
 						    bool enable)
 {
-	const struct flash_driver_api *api =
-		(const struct flash_driver_api *)dev->api;
+	ARG_UNUSED(dev);
+	ARG_UNUSED(enable);
 
-	return api->write_protection(dev, enable);
+	return 0;
 }
 
 struct flash_pages_info {
