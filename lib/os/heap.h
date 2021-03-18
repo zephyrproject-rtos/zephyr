@@ -33,10 +33,10 @@
  * field accessors since we can't use natural syntax.
  *
  * The fields are:
- *   SIZE_AND_USED: the total size (including header) of the chunk in
- *                  8-byte units.  The bottom bit stores a "used" flag.
  *   LEFT_SIZE: The size of the left (next lower chunk in memory)
  *              neighbor chunk.
+ *   SIZE_AND_USED: the total size (including header) of the chunk in
+ *                  8-byte units.  The bottom bit stores a "used" flag.
  *   FREE_PREV: Chunk ID of the previous node in a free list.
  *   FREE_NEXT: Chunk ID of the next node in a free list.
  *
@@ -44,14 +44,19 @@
  * category.  The free list pointers exist only for free chunks,
  * obviously.  This memory is part of the user's buffer when
  * allocated.
+ *
+ * The field order is so that allocated buffers are immediately bounded
+ * by SIZE_AND_USED of the current chunk at the bottom, and LEFT_SIZE of
+ * the following chunk at the top. This ordering allows for quick buffer
+ * overflow detection by testing left_chunk(c + chunk_size(c)) == c.
  */
 typedef size_t chunkid_t;
+
+enum chunk_fields { LEFT_SIZE, SIZE_AND_USED, FREE_PREV, FREE_NEXT };
 
 #define CHUNK_UNIT 8U
 
 typedef struct { char bytes[CHUNK_UNIT]; } chunk_unit_t;
-
-enum chunk_fields { LEFT_SIZE, SIZE_AND_USED, FREE_PREV, FREE_NEXT };
 
 struct z_heap_bucket {
 	chunkid_t next;
