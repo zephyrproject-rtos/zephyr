@@ -13,7 +13,7 @@ static void *chunk_mem(struct z_heap *h, chunkid_t c)
 	chunk_unit_t *buf = chunk_buf(h);
 	uint8_t *ret = ((uint8_t *)&buf[c]) + chunk_header_bytes(h);
 
-	CHECK(!(((size_t)ret) & (big_heap(h) ? 7 : 3)));
+	CHECK(!(((uintptr_t)ret) & (big_heap(h) ? 7 : 3)));
 
 	return ret;
 }
@@ -90,9 +90,9 @@ static void split_chunks(struct z_heap *h, chunkid_t lc, chunkid_t rc)
 	CHECK(rc > lc);
 	CHECK(rc - lc < chunk_size(h, lc));
 
-	size_t sz0 = chunk_size(h, lc);
-	size_t lsz = rc - lc;
-	size_t rsz = sz0 - lsz;
+	chunksz_t sz0 = chunk_size(h, lc);
+	chunksz_t lsz = rc - lc;
+	chunksz_t rsz = sz0 - lsz;
 
 	set_chunk_size(h, lc, lsz);
 	set_chunk_size(h, rc, rsz);
@@ -103,7 +103,7 @@ static void split_chunks(struct z_heap *h, chunkid_t lc, chunkid_t rc)
 /* Does not modify free list */
 static void merge_chunks(struct z_heap *h, chunkid_t lc, chunkid_t rc)
 {
-	size_t newsz = chunk_size(h, lc) + chunk_size(h, rc);
+	chunksz_t newsz = chunk_size(h, lc) + chunk_size(h, rc);
 
 	set_chunk_size(h, lc, newsz);
 	set_left_chunk_size(h, right_chunk(h, rc), newsz);
@@ -167,7 +167,7 @@ void sys_heap_free(struct sys_heap *heap, void *mem)
 	free_chunk(h, c);
 }
 
-static chunkid_t alloc_chunk(struct z_heap *h, size_t sz)
+static chunkid_t alloc_chunk(struct z_heap *h, chunksz_t sz)
 {
 	int bi = bucket_idx(h, sz);
 	struct z_heap_bucket *b = &h->buckets[bi];
@@ -205,7 +205,7 @@ static chunkid_t alloc_chunk(struct z_heap *h, size_t sz)
 	/* Otherwise pick the smallest non-empty bucket guaranteed to
 	 * fit and use that unconditionally.
 	 */
-	size_t bmask = h->avail_buckets & ~((1 << (bi + 1)) - 1);
+	uint32_t bmask = h->avail_buckets & ~((1 << (bi + 1)) - 1);
 
 	if (bmask != 0U) {
 		int minbucket = __builtin_ctz(bmask);
@@ -227,7 +227,7 @@ void *sys_heap_alloc(struct sys_heap *heap, size_t bytes)
 		return NULL;
 	}
 
-	size_t chunk_sz = bytes_to_chunksz(h, bytes);
+	chunksz_t chunk_sz = bytes_to_chunksz(h, bytes);
 	chunkid_t c = alloc_chunk(h, chunk_sz);
 	if (c == 0U) {
 		return NULL;
@@ -246,7 +246,7 @@ void *sys_heap_alloc(struct sys_heap *heap, size_t bytes)
 void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 {
 	struct z_heap *h = heap->heap;
-	size_t padded_sz, gap, rewind;
+	size_t gap, rewind;
 
 	/*
 	 * Split align and rewind values (if any).
@@ -277,7 +277,7 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 	 * We over-allocate to account for alignment and then free
 	 * the extra allocations afterwards.
 	 */
-	padded_sz = bytes_to_chunksz(h, bytes + align - gap);
+	chunksz_t padded_sz = bytes_to_chunksz(h, bytes + align - gap);
 	chunkid_t c0 = alloc_chunk(h, padded_sz);
 
 	if (c0 == 0) {
@@ -333,7 +333,7 @@ void *sys_heap_aligned_realloc(struct sys_heap *heap, void *ptr,
 	chunkid_t c = mem_to_chunkid(h, ptr);
 	chunkid_t rc = right_chunk(h, c);
 	size_t align_gap = (uint8_t *)ptr - (uint8_t *)chunk_mem(h, c);
-	size_t chunks_need = bytes_to_chunksz(h, bytes + align_gap);
+	chunksz_t chunks_need = bytes_to_chunksz(h, bytes + align_gap);
 
 	if (align && ((uintptr_t)ptr & (align - 1))) {
 		/* ptr is not sufficiently aligned */
@@ -387,22 +387,21 @@ void sys_heap_init(struct sys_heap *heap, void *mem, size_t bytes)
 	/* Round the start up, the end down */
 	uintptr_t addr = ROUND_UP(mem, CHUNK_UNIT);
 	uintptr_t end = ROUND_DOWN((uint8_t *)mem + bytes, CHUNK_UNIT);
-	size_t buf_sz = (end - addr) / CHUNK_UNIT;
+	chunksz_t heap_sz = (end - addr) / CHUNK_UNIT;
 
 	CHECK(end > addr);
-	__ASSERT(buf_sz > chunksz(sizeof(struct z_heap)), "heap size is too small");
+	__ASSERT(heap_sz > chunksz(sizeof(struct z_heap)), "heap size is too small");
 
 	struct z_heap *h = (struct z_heap *)addr;
 	heap->heap = h;
-	h->chunk0_hdr_area = 0;
-	h->end_chunk = buf_sz;
+	h->end_chunk = heap_sz;
 	h->avail_buckets = 0;
 
-	int nb_buckets = bucket_idx(h, buf_sz) + 1;
-	size_t chunk0_size = chunksz(sizeof(struct z_heap) +
+	int nb_buckets = bucket_idx(h, heap_sz) + 1;
+	chunksz_t chunk0_size = chunksz(sizeof(struct z_heap) +
 				     nb_buckets * sizeof(struct z_heap_bucket));
 
-	__ASSERT(chunk0_size + min_chunk_size(h) < buf_sz, "heap size is too small");
+	__ASSERT(chunk0_size + min_chunk_size(h) < heap_sz, "heap size is too small");
 
 	for (int i = 0; i < nb_buckets; i++) {
 		h->buckets[i].next = 0;
@@ -410,16 +409,17 @@ void sys_heap_init(struct sys_heap *heap, void *mem, size_t bytes)
 
 	/* chunk containing our struct z_heap */
 	set_chunk_size(h, 0, chunk0_size);
+	set_left_chunk_size(h, 0, 0);
 	set_chunk_used(h, 0, true);
 
 	/* chunk containing the free heap */
-	set_chunk_size(h, chunk0_size, buf_sz - chunk0_size);
+	set_chunk_size(h, chunk0_size, heap_sz - chunk0_size);
 	set_left_chunk_size(h, chunk0_size, chunk0_size);
 
 	/* the end marker chunk */
-	set_chunk_size(h, buf_sz, 0);
-	set_left_chunk_size(h, buf_sz, buf_sz - chunk0_size);
-	set_chunk_used(h, buf_sz, true);
+	set_chunk_size(h, heap_sz, 0);
+	set_left_chunk_size(h, heap_sz, heap_sz - chunk0_size);
+	set_chunk_used(h, heap_sz, true);
 
 	free_list_add(h, chunk0_size);
 }
