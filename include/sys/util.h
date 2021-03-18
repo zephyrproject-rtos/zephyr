@@ -132,6 +132,12 @@ extern "C" {
 	((type *)(((char *)(ptr)) - offsetof(type, field)))
 
 /**
+ * @brief Returns rounded division of @p A divided by @p B.
+ * @note Arguments are evaluated twice.
+ */
+#define ROUNDED_DIV(A, B) (((A) + ((B) / 2)) / (B))
+
+/**
  * @brief Value of @p x rounded up to the next multiple of @p align,
  *        which must be a power of 2.
  */
