@@ -57,7 +57,7 @@
 /** Define CONFIG_BT_MESH_SEQ_STORE_RATE even if settings are disabled to
  * compile the code.
  */
-#ifndef CONFIG_BT_SETTINGS
+#ifndef CONFIG_BT_MESH_AUTO_STORE
 #define CONFIG_BT_MESH_SEQ_STORE_RATE 1
 #endif
 

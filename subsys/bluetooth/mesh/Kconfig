@@ -660,7 +660,17 @@ config BT_MESH_MODEL_EXTENSIONS
 	  Enable support for the model extension concept, allowing the Access
 	  layer to know about Mesh model relationships.
 
-if BT_SETTINGS
+menuconfig BT_MESH_AUTO_STORE
+	bool "Store mesh settings automatically"
+	default y
+	depends on BT_SETTINGS
+	help
+	  When enabled, the mesh settings are stored automatically by timer.
+	  Otherwise, call settings_save() to store the mesh settings.
+	  The mesh settings can still be stored by settings_save() call
+	  when this options is enabled.
+
+if BT_MESH_AUTO_STORE
 
 config BT_MESH_STORE_TIMEOUT
 	int "Delay (in seconds) before storing anything persistently"
@@ -703,7 +713,7 @@ config BT_MESH_RPL_STORE_TIMEOUT
 	  writing to storage exposes the node to potential message
 	  replay attacks).
 
-endif # BT_SETTINGS
+endif # BT_MESH_AUTO_STORE
 
 config BT_MESH_DEBUG
 	bool "Enable debug logs"

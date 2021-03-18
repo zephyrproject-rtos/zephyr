@@ -29,6 +29,14 @@
 #include "settings.h"
 #include "cfg.h"
 
+#ifdef CONFIG_BT_MESH_AUTO_STORE
+#define MESH_STORE_TIMEOUT CONFIG_BT_MESH_STORE_TIMEOUT
+#define MESH_RPL_STORE_TIMEOUT CONFIG_BT_MESH_STORE_TIMEOUT
+#else
+#define MESH_STORE_TIMEOUT 0
+#define MESH_RPL_STORE_TIMEOUT 0
+#endif
+
 static struct k_work_delayable pending_store;
 static ATOMIC_DEFINE(pending_flags, BT_MESH_SETTINGS_FLAG_COUNT);
 
@@ -53,30 +61,6 @@ int bt_mesh_settings_set(settings_read_cb read_cb, void *cb_arg,
 	return 0;
 }
 
-static int mesh_commit(void)
-{
-	if (!bt_mesh_subnet_next(NULL)) {
-		/* Nothing to do since we're not yet provisioned */
-		return 0;
-	}
-
-	if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT)) {
-		bt_mesh_proxy_prov_disable(true);
-	}
-
-	bt_mesh_net_settings_commit();
-	bt_mesh_model_settings_commit();
-
-	atomic_set_bit(bt_mesh.flags, BT_MESH_VALID);
-
-	bt_mesh_start();
-
-	return 0;
-}
-
-SETTINGS_STATIC_HANDLER_DEFINE(bt_mesh, "bt/mesh", NULL, NULL, mesh_commit,
-			       NULL);
-
 /* Pending flags that use K_NO_WAIT as the storage timeout */
 #define NO_WAIT_PENDING_BITS (BIT(BT_MESH_SETTINGS_NET_PENDING) |           \
 			      BIT(BT_MESH_SETTINGS_IV_PENDING)  |           \
@@ -90,42 +74,8 @@ SETTINGS_STATIC_HANDLER_DEFINE(bt_mesh, "bt/mesh", NULL, NULL, mesh_commit,
 			      BIT(BT_MESH_SETTINGS_CFG_PENDING)      |      \
 			      BIT(BT_MESH_SETTINGS_MOD_PENDING))
 
-void bt_mesh_settings_store_schedule(enum bt_mesh_settings_flag flag)
+static void store_pending(void)
 {
-	uint32_t timeout_ms, remaining_ms;
-
-	atomic_set_bit(pending_flags, flag);
-
-	if (atomic_get(pending_flags) & NO_WAIT_PENDING_BITS) {
-		timeout_ms = 0;
-	} else if (atomic_test_bit(pending_flags,
-				   BT_MESH_SETTINGS_RPL_PENDING) &&
-		   (!(atomic_get(bt_mesh.flags) & GENERIC_PENDING_BITS) ||
-		    (CONFIG_BT_MESH_RPL_STORE_TIMEOUT <
-		     CONFIG_BT_MESH_STORE_TIMEOUT))) {
-		timeout_ms = CONFIG_BT_MESH_RPL_STORE_TIMEOUT * MSEC_PER_SEC;
-	} else {
-		timeout_ms = CONFIG_BT_MESH_STORE_TIMEOUT * MSEC_PER_SEC;
-	}
-
-	remaining_ms = k_ticks_to_ms_floor32(k_work_delayable_remaining_get(&pending_store));
-	BT_DBG("Waiting %u ms vs rem %u ms", timeout_ms, remaining_ms);
-
-	/* If the new deadline is sooner, override any existing
-	 * deadline; otherwise schedule without changing any existing
-	 * deadline.
-	 */
-	if (timeout_ms < remaining_ms) {
-		k_work_reschedule(&pending_store, K_MSEC(timeout_ms));
-	} else {
-		k_work_schedule(&pending_store, K_MSEC(timeout_ms));
-	}
-}
-
-static void store_pending(struct k_work *work)
-{
-	BT_DBG("");
-
 	if (atomic_test_and_clear_bit(pending_flags,
 				      BT_MESH_SETTINGS_RPL_PENDING)) {
 		bt_mesh_rpl_pending_store();
@@ -183,7 +133,91 @@ static void store_pending(struct k_work *work)
 	}
 }
 
+static int mesh_commit(void)
+{
+	if (!bt_mesh_subnet_next(NULL)) {
+		/* Nothing to do since we're not yet provisioned */
+		return 0;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT)) {
+		bt_mesh_proxy_prov_disable(true);
+	}
+
+	bt_mesh_net_settings_commit();
+	bt_mesh_model_settings_commit();
+
+	atomic_set_bit(bt_mesh.flags, BT_MESH_VALID);
+
+	bt_mesh_start();
+
+	return 0;
+}
+
+static int mesh_export(int (*export_func)(const char *name, const void *val,
+					  size_t val_len))
+{
+	BT_DBG("");
+
+	/* Even if settings_save passes settings_save_one as export_func, it is not
+	 * necessary to be like that, e.g. when h_export isn't called by settings_save.
+	 * In this case, it can be unsafe to use export_func. Since it is not obligatory
+	 * to use export_func when implementing h_export, use settings_save_one directly.
+	 */
+	store_pending();
+
+	return 0;
+}
+
+SETTINGS_STATIC_HANDLER_DEFINE(bt_mesh, "bt/mesh", NULL, NULL, mesh_commit,
+			       mesh_export);
+
+void bt_mesh_settings_store_schedule(enum bt_mesh_settings_flag flag)
+{
+	atomic_set_bit(pending_flags, flag);
+
+	if (!IS_ENABLED(CONFIG_BT_MESH_AUTO_STORE)) {
+		return;
+	}
+
+	uint32_t timeout_ms, remaining_ms;
+
+	if (atomic_get(pending_flags) & NO_WAIT_PENDING_BITS) {
+		timeout_ms = 0;
+	} else if (atomic_test_bit(pending_flags,
+				   BT_MESH_SETTINGS_RPL_PENDING) &&
+		   (!(atomic_get(bt_mesh.flags) & GENERIC_PENDING_BITS) ||
+		    (MESH_RPL_STORE_TIMEOUT < MESH_STORE_TIMEOUT))) {
+		timeout_ms = MESH_RPL_STORE_TIMEOUT * MSEC_PER_SEC;
+	} else {
+		timeout_ms = MESH_STORE_TIMEOUT * MSEC_PER_SEC;
+	}
+
+	remaining_ms = k_ticks_to_ms_floor32(k_work_delayable_remaining_get(
+									&pending_store));
+	BT_DBG("Waiting %u ms vs rem %u ms", timeout_ms, remaining_ms);
+
+	/* If the new deadline is sooner, override any existing
+	 * deadline; otherwise schedule without changing any existing
+	 * deadline.
+	 */
+	if (timeout_ms < remaining_ms) {
+		k_work_reschedule(&pending_store, K_MSEC(timeout_ms));
+	} else {
+		k_work_schedule(&pending_store, K_MSEC(timeout_ms));
+	}
+}
+
+static void pending_store_timeout_handler(struct k_work *work)
+{
+	BT_DBG("");
+
+	store_pending();
+}
+
 void bt_mesh_settings_init(void)
 {
-	k_work_init_delayable(&pending_store, store_pending);
+	if (IS_ENABLED(CONFIG_BT_MESH_AUTO_STORE)) {
+		k_work_init_delayable(&pending_store, pending_store_timeout_handler);
+	}
 }
