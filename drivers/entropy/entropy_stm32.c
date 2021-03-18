@@ -27,6 +27,10 @@
 #include <drivers/clock_control/stm32_clock_control.h>
 #include "stm32_hsem.h"
 
+#if CONFIG_SOC_SERIES_STM32L4X
+static int entropy_stm32_rng_init_l4(void);
+#endif
+
 #define IRQN		DT_INST_IRQN(0)
 #define IRQ_PRIO	DT_INST_IRQ(0, priority)
 
@@ -103,11 +107,18 @@ static int entropy_stm32_got_error(RNG_TypeDef *rng)
 {
 	__ASSERT_NO_MSG(rng != NULL);
 
-	if (LL_RNG_IsActiveFlag_CECS(rng)) {
+	if (LL_RNG_IsActiveFlag_CEIS(rng)) {
+#if CONFIG_SOC_SERIES_STM32L4X
+		entropy_stm32_rng_init_l4();
+#endif
+		LL_RNG_ClearFlag_CEIS(rng);
 		return 1;
 	}
 
-	if (LL_RNG_IsActiveFlag_SECS(rng)) {
+	if (LL_RNG_IsActiveFlag_SEIS(rng)) {
+		LL_RNG_ClearFlag_SEIS(rng);
+		LL_RNG_Disable(rng);
+		LL_RNG_Enable(rng);
 		return 1;
 	}
 
@@ -118,15 +129,17 @@ static int random_byte_get(void)
 {
 	int retval = -EAGAIN;
 	unsigned int key;
+	uint32_t rng_data;
 
 	key = irq_lock();
 
+	if (entropy_stm32_got_error(entropy_stm32_rng_data.rng)) {
+		retval = -EIO;
+	}
 	if ((LL_RNG_IsActiveFlag_DRDY(entropy_stm32_rng_data.rng) == 1)) {
-		if (entropy_stm32_got_error(entropy_stm32_rng_data.rng)) {
-			retval = -EIO;
-		} else {
-			retval = LL_RNG_ReadRandData32(
-						    entropy_stm32_rng_data.rng);
+		rng_data = LL_RNG_ReadRandData32(entropy_stm32_rng_data.rng);
+		if (retval != -EIO) {
+			retval = rng_data;
 			retval &= 0xFF;
 		}
 	}
