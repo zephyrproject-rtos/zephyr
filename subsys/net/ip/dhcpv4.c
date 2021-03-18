@@ -736,7 +736,6 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 		}
 #if defined(CONFIG_DNS_RESOLVER)
 		case DHCPV4_OPTIONS_DNS_SERVER: {
-			int i;
 			struct dns_resolve_context *ctx;
 			struct sockaddr_in dns;
 			const struct sockaddr *dns_servers[] = {
@@ -764,17 +763,8 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 			}
 
 			ctx = dns_resolve_get_default();
-			for (i = 0; i < CONFIG_DNS_NUM_CONCUR_QUERIES; i++) {
-				if (!ctx->queries[i].cb) {
-					continue;
-				}
-
-				dns_resolve_cancel(ctx, ctx->queries[i].id);
-			}
-			dns_resolve_close(ctx);
-
 			dns.sin_family = AF_INET;
-			status = dns_resolve_init(ctx, NULL, dns_servers);
+			status = dns_resolve_reconfigure(ctx, NULL, dns_servers);
 			if (status < 0) {
 				NET_DBG("options_dns, failed to set "
 					"resolve address: %d", status);
