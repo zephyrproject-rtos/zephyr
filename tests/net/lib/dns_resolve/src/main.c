@@ -347,7 +347,7 @@ static void test_dns_query_server_count(void)
 	int i, count = 0;
 
 	for (i = 0; i < CONFIG_DNS_RESOLVER_MAX_SERVERS; i++) {
-		if (!ctx->is_used) {
+		if (ctx->state != DNS_RESOLVE_CONTEXT_ACTIVE) {
 			continue;
 		}
 
@@ -368,7 +368,7 @@ static void test_dns_query_ipv4_server_count(void)
 	int i, count = 0, port = 0;
 
 	for (i = 0; i < CONFIG_DNS_RESOLVER_MAX_SERVERS; i++) {
-		if (!ctx->is_used) {
+		if (ctx->state != DNS_RESOLVE_CONTEXT_ACTIVE) {
 			continue;
 		}
 
@@ -398,7 +398,7 @@ static void test_dns_query_ipv6_server_count(void)
 	int i, count = 0, port = 0;
 
 	for (i = 0; i < CONFIG_DNS_RESOLVER_MAX_SERVERS; i++) {
-		if (!ctx->is_used) {
+		if (ctx->state != DNS_RESOLVE_CONTEXT_ACTIVE) {
 			continue;
 		}
 
