@@ -50,7 +50,6 @@
  * the following chunk at the top. This ordering allows for quick buffer
  * overflow detection by testing left_chunk(c + chunk_size(c)) == c.
  */
-typedef size_t chunkid_t;
 
 enum chunk_fields { LEFT_SIZE, SIZE_AND_USED, FREE_PREV, FREE_NEXT };
 
@@ -58,18 +57,22 @@ enum chunk_fields { LEFT_SIZE, SIZE_AND_USED, FREE_PREV, FREE_NEXT };
 
 typedef struct { char bytes[CHUNK_UNIT]; } chunk_unit_t;
 
+/* big_heap needs uint32_t, small_heap needs uint16_t */
+typedef uint32_t chunkid_t;
+typedef uint32_t chunksz_t;
+
 struct z_heap_bucket {
 	chunkid_t next;
 };
 
 struct z_heap {
-	uint64_t chunk0_hdr_area;  /* matches the largest header */
+	chunkid_t chunk0_hdr[2];
 	chunkid_t end_chunk;
 	uint32_t avail_buckets;
 	struct z_heap_bucket buckets[0];
 };
 
-static inline bool big_heap_chunks(size_t chunks)
+static inline bool big_heap_chunks(chunksz_t chunks)
 {
 	return sizeof(void *) > 4U || chunks > 0x7fffU;
 }
@@ -90,8 +93,8 @@ static inline chunk_unit_t *chunk_buf(struct z_heap *h)
 	return (chunk_unit_t *)h;
 }
 
-static inline size_t chunk_field(struct z_heap *h, chunkid_t c,
-				 enum chunk_fields f)
+static inline chunkid_t chunk_field(struct z_heap *h, chunkid_t c,
+				    enum chunk_fields f)
 {
 	chunk_unit_t *buf = chunk_buf(h);
 	void *cmem = &buf[c];
@@ -125,7 +128,7 @@ static inline bool chunk_used(struct z_heap *h, chunkid_t c)
 	return chunk_field(h, c, SIZE_AND_USED) & 1U;
 }
 
-static inline size_t chunk_size(struct z_heap *h, chunkid_t c)
+static inline chunksz_t chunk_size(struct z_heap *h, chunkid_t c)
 {
 	return chunk_field(h, c, SIZE_AND_USED) >> 1;
 }
@@ -155,7 +158,7 @@ static inline void set_chunk_used(struct z_heap *h, chunkid_t c, bool used)
  * when its size is modified, and potential set_chunk_used() is always
  * invoked after set_chunk_size().
  */
-static inline void set_chunk_size(struct z_heap *h, chunkid_t c, size_t size)
+static inline void set_chunk_size(struct z_heap *h, chunkid_t c, chunksz_t size)
 {
 	chunk_set(h, c, SIZE_AND_USED, size << 1);
 }
@@ -193,7 +196,7 @@ static inline chunkid_t right_chunk(struct z_heap *h, chunkid_t c)
 }
 
 static inline void set_left_chunk_size(struct z_heap *h, chunkid_t c,
-				       size_t size)
+				       chunksz_t size)
 {
 	chunk_set(h, c, LEFT_SIZE, size);
 }
@@ -213,29 +216,29 @@ static inline size_t heap_footer_bytes(size_t size)
 	return big_heap_bytes(size) ? 8 : 4;
 }
 
-static inline size_t chunksz(size_t bytes)
+static inline chunksz_t chunksz(size_t bytes)
 {
 	return (bytes + CHUNK_UNIT - 1U) / CHUNK_UNIT;
 }
 
-static inline size_t bytes_to_chunksz(struct z_heap *h, size_t bytes)
+static inline chunksz_t bytes_to_chunksz(struct z_heap *h, size_t bytes)
 {
 	return chunksz(chunk_header_bytes(h) + bytes);
 }
 
-static inline int min_chunk_size(struct z_heap *h)
+static inline chunksz_t min_chunk_size(struct z_heap *h)
 {
 	return bytes_to_chunksz(h, 1);
 }
 
-static inline size_t chunksz_to_bytes(struct z_heap *h, size_t chunksz)
+static inline size_t chunksz_to_bytes(struct z_heap *h, chunksz_t chunksz)
 {
 	return chunksz * CHUNK_UNIT - chunk_header_bytes(h);
 }
 
-static inline int bucket_idx(struct z_heap *h, size_t sz)
+static inline int bucket_idx(struct z_heap *h, chunksz_t sz)
 {
-	size_t usable_sz = sz - min_chunk_size(h) + 1;
+	unsigned int usable_sz = sz - min_chunk_size(h) + 1;
 	return 31 - __builtin_clz(usable_sz);
 }
 
