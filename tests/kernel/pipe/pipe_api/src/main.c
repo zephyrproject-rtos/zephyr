@@ -18,6 +18,7 @@ extern void test_pipe_get_fail(void);
 extern void test_pipe_block_put(void);
 extern void test_pipe_block_put_sema(void);
 extern void test_pipe_get_put(void);
+extern void test_pipe_get_large(void);
 
 extern void test_half_pipe_put_get(void);
 extern void test_half_pipe_saturating_block_put(void);
@@ -78,6 +79,7 @@ void test_main(void)
 			 ztest_unit_test(test_pipe_get_fail),
 			 ztest_unit_test(test_half_pipe_put_get),
 			 ztest_unit_test(test_pipe_get_put),
+			 ztest_unit_test(test_pipe_get_large),
 			 ztest_1cpu_unit_test(test_pipe_alloc),
 			 ztest_unit_test(test_pipe_cleanup),
 			 ztest_unit_test(test_pipe_reader_wait),
