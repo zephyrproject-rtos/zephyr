@@ -98,7 +98,7 @@ void trigger_irq(int irq)
 			  : "=r" (mip)
 			  : "r" (1 << irq));
 }
-#elif defined(CONFIG_CPU_ARCV2)
+#elif defined(CONFIG_ARC)
 void trigger_irq(int irq)
 {
 	z_arc_v2_aux_reg_write(_ARC_V2_AUX_IRQ_HINT, irq);
