@@ -347,25 +347,55 @@ static int entropy_stm32_rng_get_entropy_isr(const struct device *dev,
 	return cnt;
 }
 
-static int entropy_stm32_rng_init(const struct device *dev)
-{
-	struct entropy_stm32_rng_dev_data *dev_data;
-	const struct entropy_stm32_rng_dev_cfg *dev_cfg;
-	int res;
-
-	__ASSERT_NO_MSG(dev != NULL);
-
-	dev_data = DEV_DATA(dev);
-	dev_cfg = DEV_CFG(dev);
-
-	__ASSERT_NO_MSG(dev_data != NULL);
-	__ASSERT_NO_MSG(dev_cfg != NULL);
-
 #if CONFIG_SOC_SERIES_STM32L4X
+static int entropy_stm32_rng_init_l4(void)
+{
+	/*
+	 * PLL configuration table for all possible MSI input frequencies. Parameters
+	 * are chosen to obtain a 48 MHz clock for USB FS, SDMMC and RNG. For the
+	 * lower frequencies the highest possible output value is chosen that can be
+	 * used for RNG.
+	 */
+	static const struct {
+		uint8_t pllm;
+		uint8_t plln;
+		uint32_t pllq;
+	} pll_msi_cfg[] = {
+		/*PLLM               N   PLLMQ*/                  /*clkin   PLL48M2CLK*/
+		{ LL_RCC_PLLM_DIV_1, 86, LL_RCC_PLLSAI1Q_DIV_2 }, /*0.1 MHz 4.3 MHz   */
+		{ LL_RCC_PLLM_DIV_1, 86, LL_RCC_PLLSAI1Q_DIV_2 }, /*0.2 MHz 8.6 MHz   */
+		{ LL_RCC_PLLM_DIV_1, 86, LL_RCC_PLLSAI1Q_DIV_2 }, /*0.4 MHz 17.2 MHz  */
+		{ LL_RCC_PLLM_DIV_1, 86, LL_RCC_PLLSAI1Q_DIV_2 }, /*0.8 MHz 34.4 MHz  */
+		{ LL_RCC_PLLM_DIV_1, 48, LL_RCC_PLLSAI1Q_DIV_2 }, /*1 MHz   43   MHz  */
+		{ LL_RCC_PLLM_DIV_1, 24, LL_RCC_PLLSAI1Q_DIV_2 }, /*2 MHz   48   MHz  */
+		{ LL_RCC_PLLM_DIV_1, 24, LL_RCC_PLLSAI1Q_DIV_2 }, /*4 MHz   48   MHz  */
+		{ LL_RCC_PLLM_DIV_1, 24, LL_RCC_PLLSAI1Q_DIV_4 }, /*8 MHz   48   MHz  */
+		{ LL_RCC_PLLM_DIV_1, 24, LL_RCC_PLLSAI1Q_DIV_8 }, /*16 MHz  48   MHz  */
+		{ LL_RCC_PLLM_DIV_2, 32, LL_RCC_PLLSAI1Q_DIV_8 }, /*12 MHz  48   MHz  */
+		{ LL_RCC_PLLM_DIV_2, 24, LL_RCC_PLLSAI1Q_DIV_8 }, /*16 MHz  48   MHz  */
+		{ LL_RCC_PLLM_DIV_2, 16, LL_RCC_PLLSAI1Q_DIV_8 }, /*24 MHz  48   MHz  */
+	};
+	uint32_t msi_range;
+
+	if (LL_RCC_MSI_IsEnabledRangeSelect() == 0) {
+		msi_range = LL_RCC_MSI_GetRangeAfterStandby();
+		if (msi_range < LL_RCC_MSISRANGE_4 || msi_range > LL_RCC_MSISRANGE_7) {
+			return -EINVAL;
+		}
+		msi_range >>= RCC_CSR_MSISRANGE_Pos;
+	} else {
+		msi_range = LL_RCC_MSI_GetRange();
+		if (msi_range > LL_RCC_MSIRANGE_11) {
+			return -EINVAL;
+		}
+		msi_range >>= RCC_CR_MSIRANGE_Pos;
+	}
+	__ASSERT_NO_MSG(msi_range < ARRAY_SIZE(pll_msi_cfg));
+
 	/* Configure PLLSA11 to enable 48M domain */
 	LL_RCC_PLLSAI1_ConfigDomain_48M(LL_RCC_PLLSOURCE_MSI,
-					LL_RCC_PLLM_DIV_1,
-					24, LL_RCC_PLLSAI1Q_DIV_2);
+					pll_msi_cfg[msi_range].pllm,
+					pll_msi_cfg[msi_range].plln, pll_msi_cfg[msi_range].pllq);
 
 	/* Enable PLLSA1 */
 	LL_RCC_PLLSAI1_Enable();
@@ -381,7 +411,31 @@ static int entropy_stm32_rng_init(const struct device *dev)
 	 *  choose PLLSAI1 source as the 48 MHz clock is needed for the RNG
 	 *  Linear Feedback Shift Register
 	 */
-	 LL_RCC_SetRNGClockSource(LL_RCC_RNG_CLKSOURCE_PLLSAI1);
+	LL_RCC_SetRNGClockSource(LL_RCC_RNG_CLKSOURCE_PLLSAI1);
+
+	return 0;
+}
+#endif /* CONFIG_SOC_SERIES_STM32L4X */
+
+static int entropy_stm32_rng_init(const struct device *dev)
+{
+	struct entropy_stm32_rng_dev_data *dev_data;
+	const struct entropy_stm32_rng_dev_cfg *dev_cfg;
+	int res;
+
+	__ASSERT_NO_MSG(dev != NULL);
+
+	dev_data = DEV_DATA(dev);
+	dev_cfg = DEV_CFG(dev);
+
+	__ASSERT_NO_MSG(dev_data != NULL);
+	__ASSERT_NO_MSG(dev_cfg != NULL);
+
+#if CONFIG_SOC_SERIES_STM32L4X
+	res = entropy_stm32_rng_init_l4();
+	if (res != 0) {
+		return res;
+	}
 #elif defined(RCC_CR2_HSI48ON) || defined(RCC_CR_HSI48ON) \
 	|| defined(RCC_CRRCR_HSI48ON)
 
