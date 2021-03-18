@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Intel Corp.
+ * Copyright (c) 2019-2021 Intel Corp.
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -185,7 +185,7 @@ SECTIONS
 #include <arch/x86/pagetables.ld>
 
 /* Must be last in RAM */
-#include <linker/kobject.ld>
+#include <linker/kobject-data.ld>
 	MMU_PAGE_ALIGN
 	_image_ram_end = .;
 	z_mapped_end = .;

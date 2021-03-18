@@ -383,9 +383,6 @@ FUNC_NORETURN void z_cstart(void)
 
 	z_dummy_thread_init(&dummy_thread);
 #endif
-#if defined(CONFIG_MMU) && defined(CONFIG_USERSPACE)
-	z_kernel_map_fixup();
-#endif
 	/* do any necessary initialization of static devices */
 	z_device_state_init();
 
