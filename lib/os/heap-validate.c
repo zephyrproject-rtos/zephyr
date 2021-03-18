@@ -17,7 +17,7 @@
  * running one and corrupting it. YMMV.
  */
 
-static size_t max_chunkid(struct z_heap *h)
+static chunkid_t max_chunkid(struct z_heap *h)
 {
 	return h->end_chunk - min_chunk_size(h);
 }
@@ -329,7 +329,7 @@ void heap_print_info(struct z_heap *h, bool dump_chunks)
 	       "  -----------------------------------------------------------\n");
 	for (i = 0; i < nb_buckets; i++) {
 		chunkid_t first = h->buckets[i].next;
-		size_t largest = 0;
+		chunksz_t largest = 0;
 		int count = 0;
 
 		if (first) {
@@ -341,7 +341,7 @@ void heap_print_info(struct z_heap *h, bool dump_chunks)
 			} while (curr != first);
 		}
 		if (count) {
-			printk("%9d %12d %12d %12zd %12zd\n",
+			printk("%9d %12d %12d %12d %12zd\n",
 			       i, (1 << i) - 1 + min_chunk_size(h), count,
 			       largest, chunksz_to_bytes(h, largest));
 		}
@@ -360,7 +360,7 @@ void heap_print_info(struct z_heap *h, bool dump_chunks)
 			free_bytes += chunksz_to_bytes(h, chunk_size(h, c));
 		}
 		if (dump_chunks) {
-			printk("chunk %4zd: [%c] size=%-4zd left=%-4zd right=%zd\n",
+			printk("chunk %4d: [%c] size=%-4d left=%-4d right=%d\n",
 			       c,
 			       chunk_used(h, c) ? '*'
 			       : solo_free_header(h, c) ? '.'
