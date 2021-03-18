@@ -147,6 +147,9 @@ void test_print_conn(struct ll_conn *conn)
 }
 void test_setup(struct ll_conn *conn)
 {
+	/**/
+	memset(conn, 0x00, sizeof(*conn));
+
 	/* Initialize the upper test rx queue */
 	sys_slist_init(&ut_rx_q);
 
