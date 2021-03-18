@@ -322,9 +322,11 @@ static void test_dns_add_remove_two_callback6(void)
 			     "Timeout while waiting for DNS added callback");
 	}
 
-	/* Check both DNS servers are used */
-	zassert_true(resv_ipv6.is_used, "DNS server #1 is missing");
-	zassert_true(resv_ipv6_2.is_used, "DNS server #2 is missing");
+	/* Check both DNS servers are active */
+	zassert_equal(resv_ipv6.state, DNS_RESOLVE_CONTEXT_ACTIVE,
+		      "DNS server #1 is missing");
+	zassert_equal(resv_ipv6_2.state, DNS_RESOLVE_CONTEXT_ACTIVE,
+		      "DNS server #2 is missing");
 
 	/* Remove first DNS server */
 	dnsCtx = &resv_ipv6;
@@ -338,9 +340,11 @@ static void test_dns_add_remove_two_callback6(void)
 			"Received DNS removed callback when should not have");
 	}
 
-	/* Check second DNS servers is used */
-	zassert_false(resv_ipv6.is_used, "DNS server #1 is active");
-	zassert_true(resv_ipv6_2.is_used, "DNS server #2 is missing");
+	/* Check second DNS server is active */
+	zassert_equal(resv_ipv6.state, DNS_RESOLVE_CONTEXT_INACTIVE,
+		      "DNS server #1 is active");
+	zassert_equal(resv_ipv6_2.state, DNS_RESOLVE_CONTEXT_ACTIVE,
+		      "DNS server #2 is missing");
 
 	/* Check first DNS server cannot be removed once removed */
 	ret = dns_resolve_close(dnsCtx);
@@ -362,8 +366,10 @@ static void test_dns_add_remove_two_callback6(void)
 	}
 
 	/* Check neither DNS server is used */
-	zassert_false(resv_ipv6.is_used, "DNS server #1 isa ctive");
-	zassert_false(resv_ipv6_2.is_used, "DNS server #2 is active");
+	zassert_equal(resv_ipv6.state, DNS_RESOLVE_CONTEXT_INACTIVE,
+		      "DNS server #1 is active");
+	zassert_equal(resv_ipv6_2.state, DNS_RESOLVE_CONTEXT_INACTIVE,
+		      "DNS server #2 is active");
 
 	/* Check first DNS server cannot be removed once removed */
 	ret = dns_resolve_close(dnsCtx);
@@ -490,8 +496,10 @@ static void test_dns_add_remove_two_callback(void)
 	}
 
 	/* Check both DNS servers are used */
-	zassert_true(resv_ipv4.is_used, "DNS server #1 is missing");
-	zassert_true(resv_ipv4_2.is_used, "DNS server #2 is missing");
+	zassert_equal(resv_ipv4.state, DNS_RESOLVE_CONTEXT_ACTIVE,
+		      "DNS server #1 is missing");
+	zassert_equal(resv_ipv4_2.state, DNS_RESOLVE_CONTEXT_ACTIVE,
+		      "DNS server #2 is missing");
 
 	/* Remove first DNS server */
 	dnsCtx = &resv_ipv4;
@@ -506,8 +514,10 @@ static void test_dns_add_remove_two_callback(void)
 	}
 
 	/* Check second DNS servers is used */
-	zassert_false(resv_ipv4.is_used, "DNS server #1 is active");
-	zassert_true(resv_ipv4_2.is_used, "DNS server #2 is missing");
+	zassert_equal(resv_ipv4.state, DNS_RESOLVE_CONTEXT_INACTIVE,
+		      "DNS server #1 is active");
+	zassert_equal(resv_ipv4_2.state, DNS_RESOLVE_CONTEXT_ACTIVE,
+		      "DNS server #2 is missing");
 
 	/* Check first DNS server cannot be removed once removed */
 	ret = dns_resolve_close(dnsCtx);
@@ -529,8 +539,10 @@ static void test_dns_add_remove_two_callback(void)
 	}
 
 	/* Check neither DNS server is used */
-	zassert_false(resv_ipv4.is_used, "DNS server #1 isa ctive");
-	zassert_false(resv_ipv4_2.is_used, "DNS server #2 is active");
+	zassert_equal(resv_ipv4.state, DNS_RESOLVE_CONTEXT_INACTIVE,
+		      "DNS server #1 is active");
+	zassert_equal(resv_ipv4_2.state, DNS_RESOLVE_CONTEXT_INACTIVE,
+		      "DNS server #2 is active");
 
 	/* Check first DNS server cannot be removed once removed */
 	ret = dns_resolve_close(dnsCtx);
