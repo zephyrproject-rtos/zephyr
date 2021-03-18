@@ -1942,6 +1942,17 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 		info->br.dst = &conn->br.dst;
 		return 0;
 #endif
+#if defined(CONFIG_BT_ISO)
+	case BT_CONN_TYPE_ISO:
+		if (!conn->iso.is_bis) {
+			info->le.dst = &conn->iso.acl->le.dst;
+			info->le.src = &bt_dev.id_addr[conn->iso.acl->id];
+		} else {
+			info->le.src = BT_ADDR_LE_NONE;
+			info->le.dst = BT_ADDR_LE_NONE;
+		}
+		return 0;
+#endif
 	}
 
 	return -EINVAL;
