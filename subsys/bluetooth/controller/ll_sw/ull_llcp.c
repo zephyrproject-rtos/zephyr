@@ -489,13 +489,14 @@ uint8_t ull_cp_chan_map_update(struct ll_conn *conn, uint8_t chm[5])
 	return BT_HCI_ERR_SUCCESS;
 }
 
-void ull_cp_ltk_req_reply(struct ll_conn *conn)
+void ull_cp_ltk_req_reply(struct ll_conn *conn, const uint8_t ltk[16])
 {
 	/* TODO */
 	struct proc_ctx *ctx;
 
 	ctx = rr_peek(conn);
 	if (ctx && ctx->proc == PROC_ENCRYPTION_START) {
+		memcpy(ctx->data.enc.ltk, ltk, sizeof(ctx->data.enc.ltk));
 		rp_enc_ltk_req_reply(conn, ctx);
 	}
 }

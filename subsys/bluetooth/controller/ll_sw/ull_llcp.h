@@ -80,7 +80,7 @@ uint8_t ull_cp_encryption_start(struct ll_conn *conn, const uint8_t rand[8], con
 
 /**
  */
-void ull_cp_ltk_req_reply(struct ll_conn *conn);
+void ull_cp_ltk_req_reply(struct ll_conn *conn, const uint8_t ltk[16]);
 
 /**
  */
