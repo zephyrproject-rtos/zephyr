@@ -1488,8 +1488,7 @@ void hci_le_big_complete(struct net_buf *buf)
 void hci_le_big_terminate(struct net_buf *buf)
 {
 	struct bt_hci_evt_le_big_terminate *evt = (void *)buf->data;
-	uint16_t handle = sys_le16_to_cpu(evt->big_handle);
-	struct bt_iso_big *big = &bigs[handle];
+	struct bt_iso_big *big = &bigs[evt->big_handle];
 
 	BT_DBG("BIG[%u] %p terminated", big->handle, big);
 
@@ -1500,8 +1499,7 @@ void hci_le_big_terminate(struct net_buf *buf)
 void hci_le_big_sync_established(struct net_buf *buf)
 {
 	struct bt_hci_evt_le_big_sync_established *evt = (void *)buf->data;
-	uint16_t big_handle = sys_le16_to_cpu(evt->big_handle);
-	struct bt_iso_big *big = &bigs[big_handle];
+	struct bt_iso_big *big = &bigs[evt->big_handle];
 
 	BT_DBG("BIG[%u] %p sync established", big->handle, big);
 
@@ -1529,8 +1527,7 @@ void hci_le_big_sync_established(struct net_buf *buf)
 void hci_le_big_sync_lost(struct net_buf *buf)
 {
 	struct bt_hci_evt_le_big_sync_lost *evt = (void *)buf->data;
-	uint16_t handle = sys_le16_to_cpu(evt->big_handle);
-	struct bt_iso_big *big = &bigs[handle];
+	struct bt_iso_big *big = &bigs[evt->big_handle];
 
 	BT_DBG("BIG[%u] %p sync lost", big->handle, big);
 
