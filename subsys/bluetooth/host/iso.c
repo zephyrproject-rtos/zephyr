@@ -227,7 +227,7 @@ void hci_le_cis_req(struct net_buf *buf)
 	err = bt_iso_accept(iso);
 	if (err) {
 		BT_DBG("App rejected ISO %d", err);
-		bt_iso_cleanup(iso);
+		bt_conn_unref(iso);
 		hci_le_reject_cis(cis_handle,
 				  BT_HCI_ERR_INSUFFICIENT_RESOURCES);
 		return;
@@ -239,7 +239,7 @@ void hci_le_cis_req(struct net_buf *buf)
 
 	err = hci_le_accept_cis(cis_handle);
 	if (err) {
-		bt_iso_cleanup(iso);
+		bt_conn_unref(iso);
 		hci_le_reject_cis(cis_handle,
 				  BT_HCI_ERR_INSUFFICIENT_RESOURCES);
 		return;
@@ -274,15 +274,7 @@ void bt_iso_cleanup(struct bt_conn *conn)
 
 	/* Check if ISO connection is in fact a BIS */
 	if (!iso->acl) {
-		goto done;
-	}
-
-	/* If ACL is still connected there are channels to serve that means the
-	 * connection is still in use.
-	 */
-	if (iso->acl->state == BT_CONN_CONNECTED &&
-	    !sys_slist_is_empty(&conn->channels)) {
-		goto done;
+		return;
 	}
 
 	bt_conn_unref(iso->acl);
@@ -303,9 +295,6 @@ void bt_iso_cleanup(struct bt_conn *conn)
 	if (i == CONFIG_BT_ISO_MAX_CHAN) {
 		hci_le_remove_cig(conn->iso.cig_id);
 	}
-
-done:
-	bt_conn_unref(conn);
 }
 
 struct bt_conn *iso_new(void)
@@ -326,6 +315,7 @@ struct bt_conn *bt_conn_add_iso(struct bt_conn *acl)
 	struct bt_conn *conn = iso_new();
 
 	if (!conn) {
+		BT_ERR("Unable to allocate connection");
 		return NULL;
 	}
 
@@ -989,19 +979,9 @@ void bt_iso_chan_set_state(struct bt_iso_chan *chan, uint8_t state)
 }
 #endif /* CONFIG_BT_DEBUG_ISO */
 
-void bt_iso_chan_remove(struct bt_conn *conn, struct bt_iso_chan *chan)
+bool bt_iso_chan_remove(struct bt_conn *conn, struct bt_iso_chan *chan)
 {
-	struct bt_iso_chan *c;
-	sys_snode_t *prev = NULL;
-
-	SYS_SLIST_FOR_EACH_CONTAINER(&conn->channels, c, node) {
-		if (c == chan) {
-			sys_slist_remove(&conn->channels, prev, &chan->node);
-			return;
-		}
-
-		prev = &chan->node;
-	}
+	return sys_slist_find_and_remove(&conn->channels, &chan->node);
 }
 
 int bt_iso_chan_bind(struct bt_conn **conns, uint8_t num_conns,
@@ -1045,11 +1025,13 @@ int bt_iso_chan_unbind(struct bt_iso_chan *chan)
 		return -EINVAL;
 	}
 
-	if (!chan->conn || chan->state != BT_ISO_BOUND) {
+	if (!chan->conn) {
 		return -EINVAL;
 	}
 
-	bt_iso_chan_remove(chan->conn, chan);
+	if (!bt_iso_chan_remove(chan->conn, chan)) {
+		return -ENOENT;
+	}
 
 	bt_conn_unref(chan->conn);
 	chan->conn = NULL;
@@ -1102,7 +1084,6 @@ int bt_iso_chan_disconnect(struct bt_iso_chan *chan)
 	}
 
 	if (chan->state == BT_ISO_BOUND) {
-		bt_iso_chan_remove(chan->conn, chan);
 		bt_iso_chan_disconnected(chan, BT_HCI_ERR_LOCALHOST_TERM_CONN);
 		return 0;
 	}
