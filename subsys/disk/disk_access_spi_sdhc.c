@@ -146,7 +146,9 @@ static int sdhc_spi_tx_cmd(struct sdhc_spi_data *data, uint8_t cmd, uint32_t pay
 	/* Encode the command */
 	buf[0] = SDHC_TX | (cmd & ~SDHC_START);
 	sys_put_be32(payload, &buf[1]);
-	buf[SDHC_CMD_BODY_SIZE] = crc7_be(0, buf, SDHC_CMD_BODY_SIZE);
+
+	/* Add CRC and set LSB as 'end bit' */
+	buf[SDHC_CMD_BODY_SIZE] = crc7_be(0, buf, SDHC_CMD_BODY_SIZE) | 0x01;
 
 	return sdhc_spi_tx(data, buf, sizeof(buf));
 }
