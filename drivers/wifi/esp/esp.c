@@ -302,17 +302,7 @@ static void esp_dns_work(struct k_work *work)
 	}
 
 	dnsctx = dns_resolve_get_default();
-	for (i = 0; i < CONFIG_DNS_NUM_CONCUR_QUERIES; i++) {
-		if (!dnsctx->queries[i].cb) {
-			continue;
-		}
-
-		dns_resolve_cancel(dnsctx, dnsctx->queries[i].id);
-	}
-
-	dns_resolve_close(dnsctx);
-
-	err = dns_resolve_init(dnsctx, NULL, dns_servers);
+	err = dns_resolve_reconfigure(dnsctx, NULL, dns_servers);
 	if (err) {
 		LOG_ERR("Could not set DNS servers: %d", err);
 	}
