@@ -5,6 +5,10 @@
  */
 
 #ifdef CONFIG_USERSPACE
+#ifdef CONFIG_GEN_PRIV_STACKS
+	SECTION_DATA_PROLOGUE(priv_stacks_noinit,,)
+	{
+	z_priv_stacks_ram_start = .;
 
 	/* During LINKER_KOBJECT_PREBUILT and LINKER_ZEPHYR_PREBUILT,
 	 * space needs to be reserved for the rodata that will be
@@ -16,42 +20,39 @@
 	 */
 
 #if defined(LINKER_ZEPHYR_PREBUILT)
-#include <linker-kobject-prebuilt-rodata.h>
-#ifdef KOBJECT_RODATA_ALIGN
-	. = ALIGN(KOBJECT_RODATA_ALIGN);
-
-	_kobject_rodata_area_start = .;
-
-	. += KOBJECT_RODATA_SZ;
-
-	_kobject_rodata_area_end = .;
+#include <linker-kobject-prebuilt-priv-stacks.h>
+#ifdef KOBJECT_PRIV_STACKS_ALIGN
+	. = ALIGN(KOBJECT_PRIV_STACKS_ALIGN);
+	. += KOBJECT_PRIV_STACKS_SZ;
 #endif
 #endif /* LINKER_ZEPHYR_PREBUILT */
 
 #if defined(LINKER_ZEPHYR_FINAL)
-#include <linker-kobject-prebuilt-rodata.h>
-#ifdef KOBJECT_RODATA_ALIGN
-	. = ALIGN(KOBJECT_RODATA_ALIGN);
-
-	_kobject_rodata_area_start = .;
+#include <linker-kobject-prebuilt-priv-stacks.h>
+#ifdef KOBJECT_PRIV_STACKS_ALIGN
+	. = ALIGN(KOBJECT_PRIV_STACKS_ALIGN);
 #endif
+	*(".priv_stacks.noinit")
+#endif /* LINKER_ZEPHYR_FINAL */
 
-	*(".kobject_data.rodata*")
+	z_priv_stacks_ram_end = .;
 
-#ifdef KOBJECT_RODATA_ALIGN
-	_kobject_rodata_area_end = .;
-	_kobject_rodata_area_used = _kobject_rodata_area_end - _kobject_rodata_area_start;
+#if defined(LINKER_ZEPHYR_FINAL)
+#ifdef KOBJECT_PRIV_STACKS_ALIGN
+	z_priv_stacks_ram_used = z_priv_stacks_ram_end - z_priv_stacks_ram_start;
 
-	ASSERT(_kobject_rodata_area_used <= KOBJECT_RODATA_SZ,
+	ASSERT(z_priv_stacks_ram_used <= KOBJECT_PRIV_STACKS_SZ,
 "scripts/gen_kobject_placeholders.py did not reserve enough space \
-for kobject rodata."
+for priviledged stacks."
 	);
 
 	/* Padding is needed to preserve kobject addresses
 	 * if we have reserved more space than needed.
 	 */
-	. = MAX(., _kobject_rodata_area_start + KOBJECT_RODATA_SZ);
-#endif /* KOBJECT_RODATA_ALIGN */
+	. = MAX(., z_priv_stacks_ram_start + KOBJECT_PRIV_STACKS_SZ);
+#endif /* KOBJECT_PRIV_STACKS_ALIGN */
 #endif /* LINKER_ZEPHYR_FINAL */
 
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+#endif /* CONFIG_GEN_PRIV_STACKS */
 #endif /* CONFIG_USERSPACE */

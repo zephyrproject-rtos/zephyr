@@ -336,7 +336,7 @@ SECTIONS
 #include <arch/x86/pagetables.ld>
 
 /* Must be last in RAM */
-#include <linker/kobject.ld>
+#include <linker/kobject-data.ld>
 
 	MMU_PAGE_ALIGN
 	__data_ram_end = .;
