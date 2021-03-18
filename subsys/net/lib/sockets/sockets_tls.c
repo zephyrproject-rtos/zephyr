@@ -1892,23 +1892,46 @@ static int ztls_poll_prepare_ctx(struct tls_context *ctx,
 	const struct fd_op_vtable *vtable;
 	void *obj;
 	int ret;
+	short events = pfd->events;
+
+	/* DTLS client should wait for the handshake to complete before
+	 * it actually starts to poll for data.
+	 */
+	if ((pfd->events & ZSOCK_POLLIN) && (ctx->type == SOCK_DGRAM) &&
+	    (ctx->options.role == MBEDTLS_SSL_IS_CLIENT) &&
+	    !is_handshake_complete(ctx)) {
+		(*pev)->obj = &ctx->tls_established;
+		(*pev)->type = K_POLL_TYPE_SEM_AVAILABLE;
+		(*pev)->mode = K_POLL_MODE_NOTIFY_ONLY;
+		(*pev)->state = K_POLL_STATE_NOT_READY;
+		(*pev)++;
+
+		/* Since k_poll_event is configured by the TLS layer in this
+		 * case, do not forward ZSOCK_POLLIN to the underlying socket.
+		 */
+		pfd->events &= ~ZSOCK_POLLIN;
+	}
 
 	obj = z_get_fd_obj_and_vtable(
 		ctx->sock, (const struct fd_op_vtable **)&vtable);
 	if (obj == NULL) {
-		return -EBADF;
+		ret = -EBADF;
+		goto exit;
 	}
 
 	ret = z_fdtable_call_ioctl(vtable, obj, ZFD_IOCTL_POLL_PREPARE,
 				   pfd, pev, pev_end);
 	if (ret != 0) {
-		return ret;
+		goto exit;
 	}
 
 	if (pfd->events & ZSOCK_POLLIN) {
 		ret = ztls_poll_prepare_pollin(ctx);
 	}
 
+exit:
+	/* Restore original events. */
+	pfd->events = events;
 	return ret;
 }
 
@@ -1932,10 +1955,6 @@ static int ztls_poll_update_pollin(int fd, struct tls_context *ctx,
 
 	if (ctx->is_listening) {
 		goto next;
-	}
-
-	if (!is_handshake_complete(ctx)) {
-		goto again;
 	}
 
 	ret = zsock_recv(fd, NULL, 0, ZSOCK_MSG_DONTWAIT);
@@ -1972,6 +1991,7 @@ static int ztls_poll_update_ctx(struct tls_context *ctx,
 	const struct fd_op_vtable *vtable;
 	void *obj;
 	int ret;
+	short events = pfd->events;
 
 	obj = z_get_fd_obj_and_vtable(
 		ctx->sock, (const struct fd_op_vtable **)&vtable);
@@ -1979,20 +1999,50 @@ static int ztls_poll_update_ctx(struct tls_context *ctx,
 		return -EBADF;
 	}
 
+	/* Check if the socket was waiting for the handshake to complete. */
+	if ((pfd->events & ZSOCK_POLLIN) &&
+	    ((*pev)->obj == &ctx->tls_established)) {
+		/* In case handshake is complete, reconfigure the k_poll_event
+		 * to monitor the underlying socket now.
+		 */
+		if ((*pev)->state != K_POLL_STATE_NOT_READY) {
+			ret = z_fdtable_call_ioctl(vtable, obj,
+						   ZFD_IOCTL_POLL_PREPARE,
+						   pfd, pev, *pev + 1);
+			if (ret != 0 && ret != -EALREADY) {
+				return ret;
+			}
+
+			/* Return -EAGAIN to signal to poll() that it should
+			 * make another iteration with the event reconfigured
+			 * above (if needed).
+			 */
+			return -EAGAIN;
+		}
+
+		/* Handshake still not ready - skip ZSOCK_POLLIN verification
+		 * for the underlying socket.
+		 */
+		(*pev)++;
+		pfd->events &= ~ZSOCK_POLLIN;
+	}
+
 	ret = z_fdtable_call_ioctl(vtable, obj, ZFD_IOCTL_POLL_UPDATE,
 				   pfd, pev);
 	if (ret != 0) {
-		return ret;
+		goto exit;
 	}
 
 	if (pfd->events & ZSOCK_POLLIN) {
 		ret = ztls_poll_update_pollin(pfd->fd, ctx, pfd);
 		if (ret == -EAGAIN && pfd->revents != 0) {
 			(*pev - 1)->state = K_POLL_STATE_NOT_READY;
-			return -EAGAIN;
+			goto exit;
 		}
 	}
-
+exit:
+	/* Restore original events. */
+	pfd->events = events;
 	return ret;
 }
 
