@@ -64,7 +64,7 @@ struct z_heap_bucket {
 
 struct z_heap {
 	uint64_t chunk0_hdr_area;  /* matches the largest header */
-	uint32_t len;
+	chunkid_t end_chunk;
 	uint32_t avail_buckets;
 	struct z_heap_bucket buckets[0];
 };
@@ -81,7 +81,7 @@ static inline bool big_heap_bytes(size_t bytes)
 
 static inline bool big_heap(struct z_heap *h)
 {
-	return big_heap_chunks(h->len);
+	return big_heap_chunks(h->end_chunk);
 }
 
 static inline chunk_unit_t *chunk_buf(struct z_heap *h)
@@ -106,7 +106,7 @@ static inline size_t chunk_field(struct z_heap *h, chunkid_t c,
 static inline void chunk_set(struct z_heap *h, chunkid_t c,
 			     enum chunk_fields f, chunkid_t val)
 {
-	CHECK(c <= h->len);
+	CHECK(c <= h->end_chunk);
 
 	chunk_unit_t *buf = chunk_buf(h);
 	void *cmem = &buf[c];
@@ -239,9 +239,8 @@ static inline bool size_too_big(struct z_heap *h, size_t bytes)
 	/*
 	 * Quick check to bail out early if size is too big.
 	 * Also guards against potential arithmetic overflows elsewhere.
-	 * There is a minimum of one chunk always in use by the heap header.
 	 */
-	return (bytes / CHUNK_UNIT) >= h->len;
+	return (bytes / CHUNK_UNIT) >= h->end_chunk;
 }
 
 /* For debugging */
