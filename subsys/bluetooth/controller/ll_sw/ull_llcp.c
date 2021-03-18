@@ -151,6 +151,9 @@ static struct proc_ctx *create_procedure(enum llcp_proc proc)
 	ctx->pause = 0U;
 	ctx->done = 0U;
 
+	/* Clear procedure data */
+	memset((void *) &ctx->data, 0, sizeof(ctx->data));
+
 	/* Initialize opcodes fields to  known values */
 	ctx->rx_opcode = ULL_LLCP_INVALID_OPCODE;
 	ctx->tx_opcode = ULL_LLCP_INVALID_OPCODE;
