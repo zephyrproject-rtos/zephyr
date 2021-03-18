@@ -16,6 +16,7 @@
 #include <kernel_arch_func.h>
 #include <device.h>
 #include <drivers/pcie/msi.h>
+#include <drivers/interrupt_controller/sysapic.h>
 #endif
 
 /* PCI Express Extended Configuration Mechanism (MMIO) */
@@ -309,7 +310,7 @@ bool arch_pcie_msi_vector_connect(msi_vector_t *vector,
 #endif /* CONFIG_INTEL_VTD_ICTL */
 
 	z_x86_irq_connect_on_vector(vector->arch.irq, vector->arch.vector,
-				    routine, parameter, flags);
+				    routine, parameter);
 
 	return true;
 }
