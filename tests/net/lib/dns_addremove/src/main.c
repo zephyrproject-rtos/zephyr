@@ -41,6 +41,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 #define NAME_IPV6 "2001:db8::1"
 
 #define DNS_NAME_IPV4 "192.0.2.4"
+#define DNS2_NAME_IPV4 "192.0.2.5"
 #define DNS_NAME_IPV6 "2001:db8::4"
 
 #define DNS_TIMEOUT 500 /* ms */
@@ -437,6 +438,56 @@ static void test_dns_remove_callback(void)
 #endif
 }
 
+static void test_dns_reconfigure_callback(void)
+{
+#if defined(CONFIG_NET_IPV4)
+	struct dns_resolve_context *dnsCtx = &resv_ipv4;
+	const char *dns_servers_str[] = { DNS_NAME_IPV4, NULL };
+	const char *dns2_servers_str[] = { DNS2_NAME_IPV4, NULL };
+	int ret;
+
+	ret = dns_resolve_init(dnsCtx, dns_servers_str, NULL);
+	if (ret < 0) {
+		LOG_ERR("dns_resolve_init fail (%d)", ret);
+		return;
+	}
+
+	k_yield(); /* mandatory so that net_if send func gets to run */
+
+	/* Wait for DNS added callback after adding DNS */
+	if (k_sem_take(&dns_added, WAIT_TIME)) {
+		zassert_true(false,
+			     "Timeout while waiting for DNS added callback");
+	}
+
+	ret = dns_resolve_reconfigure(&resv_ipv4, dns2_servers_str, NULL);
+	zassert_equal(ret, 0, "Cannot reconfigure DNS server");
+
+	/* Wait for DNS removed callback after reconfiguring DNS */
+	if (k_sem_take(&dns_removed, WAIT_TIME)) {
+		zassert_true(false,
+			     "Timeout while waiting for DNS removed callback");
+	}
+
+	/* Wait for DNS added callback after reconfiguring DNS */
+	if (k_sem_take(&dns_added, WAIT_TIME)) {
+		zassert_true(false,
+			     "Timeout while waiting for DNS added callback");
+	}
+
+	ret = dns_resolve_close(&resv_ipv4);
+	zassert_equal(ret, 0, "Cannot remove DNS server");
+
+	k_yield(); /* mandatory so that net_if send func gets to run */
+
+	/* Wait for DNS removed callback after removing DNS */
+	if (k_sem_take(&dns_removed, WAIT_TIME)) {
+		zassert_true(false,
+			     "Timeout while waiting for DNS removed callback");
+	}
+#endif
+}
+
 static void test_dns_remove_none_callback(void)
 {
 #if defined(CONFIG_NET_IPV4)
@@ -564,6 +615,7 @@ void test_main(void)
 			 ztest_unit_test(test_dns_do_not_add_add_callback),
 			 ztest_unit_test(test_dns_add_callback),
 			 ztest_unit_test(test_dns_remove_callback),
+			 ztest_unit_test(test_dns_reconfigure_callback),
 			 ztest_unit_test(test_dns_remove_none_callback),
 			 ztest_unit_test(test_dns_add_remove_two_callback)
 
