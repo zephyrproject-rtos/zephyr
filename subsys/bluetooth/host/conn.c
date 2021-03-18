@@ -1534,7 +1534,9 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		 * bt_conn_add_le() and keep it until reaching DISCONNECTED
 		 * again.
 		 */
-		bt_conn_ref(conn);
+		if (conn->type != BT_CONN_TYPE_ISO) {
+			bt_conn_ref(conn);
+		}
 		break;
 	case BT_CONN_CONNECT:
 		if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
@@ -1586,7 +1588,6 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 				iso->err = conn->err;
 
 				bt_iso_disconnected(iso);
-				bt_iso_cleanup(iso);
 				bt_conn_unref(iso);
 
 				/* Stop if only ISO was Disconnected */
@@ -1881,14 +1882,24 @@ struct bt_conn *bt_conn_ref(struct bt_conn *conn)
 
 void bt_conn_unref(struct bt_conn *conn)
 {
-	atomic_val_t old = atomic_dec(&conn->ref);
+	atomic_val_t old;
+
+	/* Cleanup ISO before releasing the last reference to prevent other
+	 * threads reallocating the same connection while cleanup is ongoing.
+	 */
+	if (IS_ENABLED(CONFIG_BT_ISO) && conn->type == BT_CONN_TYPE_ISO &&
+	    atomic_get(&conn->ref) == 1) {
+		bt_iso_cleanup(conn);
+	}
+
+	old = atomic_dec(&conn->ref);
 
 	BT_DBG("handle %u ref %u -> %u", conn->handle, old,
 	       atomic_get(&conn->ref));
 
 	__ASSERT(old > 0, "Conn reference counter is 0");
 
-	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
+	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn->type == BT_CONN_TYPE_LE &&
 	    atomic_get(&conn->ref) == 0) {
 		bt_le_adv_resume();
 	}
