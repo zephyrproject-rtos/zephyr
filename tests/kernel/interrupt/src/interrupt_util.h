@@ -93,7 +93,7 @@ static inline void trigger_irq(int irq)
 #endif
 }
 
-#elif defined(CONFIG_CPU_ARCV2)
+#elif defined(CONFIG_ARC)
 static inline void trigger_irq(int irq)
 {
 	printk("Triggering irq : %d\n", irq);
