@@ -553,12 +553,14 @@ static void csis_security_changed(struct bt_conn *conn, bt_security_t level,
 }
 
 #if defined(CONFIG_BT_EXT_ADV)
-static void csis_connected(struct bt_conn *conn, uint8_t reason)
+static void csis_connected(struct bt_conn *conn, uint8_t err)
 {
-	csis_inst.conn_cnt++;
+	if (err == BT_HCI_ERR_SUCCESS) {
+		csis_inst.conn_cnt++;
 
-	__ASSERT(csis_inst.conn_cnt <= CONFIG_BT_MAX_CONN,
-		 "Invalid csis_inst.conn_cnt value");
+		__ASSERT(csis_inst.conn_cnt <= CONFIG_BT_MAX_CONN,
+			"Invalid csis_inst.conn_cnt value");
+	}
 }
 
 static void disconnect_adv(struct k_work *work)
