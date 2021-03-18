@@ -83,10 +83,9 @@ int z_x86_allocate_vector(unsigned int priority, int prev_vector)
 void z_x86_irq_connect_on_vector(unsigned int irq,
 				 uint8_t vector,
 				 void (*func)(const void *arg),
-				 const void *arg, uint32_t flags)
+				 const void *arg)
 {
 	_irq_to_interrupt_vector[irq] = vector;
-	z_irq_controller_irq_config(vector, irq, flags);
 	x86_irq_funcs[vector - IV_IRQS] = func;
 	x86_irq_args[vector - IV_IRQS] = arg;
 }
@@ -110,7 +109,8 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 
 	vector = z_x86_allocate_vector(priority, -1);
 	if (vector >= 0) {
-		z_x86_irq_connect_on_vector(irq, vector, func, arg, flags);
+		z_irq_controller_irq_config(vector, irq, flags);
+		z_x86_irq_connect_on_vector(irq, vector, func, arg);
 	}
 
 	irq_unlock(key);
