@@ -134,7 +134,7 @@ struct auth_svc_gatt {
 	uint16_t value_handle;
 	uint8_t permissions; /* Bitfields from: BT_GATT_PERM_NONE, in gatt.h */
 	const uint32_t gatt_disc_type;
-} ;
+};
 
 
 static uint32_t auth_desc_index;
