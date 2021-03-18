@@ -22,6 +22,7 @@ K_PIPE_DEFINE(kpipe, PIPE_LEN, 4);
 K_PIPE_DEFINE(khalfpipe, (PIPE_LEN / 2), 4);
 K_PIPE_DEFINE(kpipe1, PIPE_LEN, 4);
 K_PIPE_DEFINE(pipe_test_alloc, PIPE_LEN, 4);
+K_PIPE_DEFINE(ksmallpipe, 10, 2);
 struct k_pipe pipe, pipe1;
 
 K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
@@ -140,8 +141,7 @@ static void tpipe_put_small_size(struct k_pipe *ppipe, k_timeout_t timeout)
 
 	for (int i = 0; i < PIPE_LEN; i += wt_byte) {
 		/**TESTPOINT: pipe put*/
-		to_wt = (PIPE_LEN - i) >= 24 ?
-			24 : (PIPE_LEN - i);
+		to_wt = 15;
 		k_pipe_put(ppipe, &data[i], to_wt, &wt_byte, 1, timeout);
 	}
 }
@@ -154,8 +154,23 @@ static void tpipe_get_small_size(struct k_pipe *ppipe, k_timeout_t timeout)
 	/*get pipe data from "pipe_put"*/
 	for (int i = 0; i < PIPE_LEN; i += rd_byte) {
 		/**TESTPOINT: pipe get*/
-		to_rd = (PIPE_LEN - i) >= 24 ?
-			24 : (PIPE_LEN - i);
+		to_rd = 15;
+		zassert_false(k_pipe_get(ppipe, &rx_data[i], to_rd,
+					 &rd_byte, 1, timeout), NULL);
+	}
+}
+
+
+static void tpipe_get_large_size(struct k_pipe *ppipe, k_timeout_t timeout)
+{
+	unsigned char rx_data[PIPE_LEN];
+	size_t to_rd, rd_byte = 0;
+
+	/*get pipe data from "pipe_put"*/
+	for (int i = 0; i < PIPE_LEN; i += rd_byte) {
+		/**TESTPOINT: pipe get*/
+		to_rd = (PIPE_LEN - i) >= 128 ?
+			128 : (PIPE_LEN - i);
 		zassert_false(k_pipe_get(ppipe, &rx_data[i], to_rd,
 					 &rd_byte, 1, timeout), NULL);
 	}
@@ -332,6 +347,16 @@ static void tThread_half_pipe_get(void *p1, void *p2, void *p3)
  */
 void test_half_pipe_put_get(void)
 {
+	unsigned char rx_data[PIPE_LEN];
+	size_t rd_byte = 0;
+	int ret;
+
+	/* TESTPOINT: min_xfer > bytes_to_read */
+	ret = k_pipe_put(&kpipe, &rx_data[0], 1, &rd_byte, 24, K_NO_WAIT);
+	zassert_true(ret == -EINVAL, NULL);
+	ret = k_pipe_put(&kpipe, &rx_data[0], 24, NULL, 1, K_NO_WAIT);
+	zassert_true(ret == -EINVAL, NULL);
+
 	/**TESTPOINT: thread-thread data passing via pipe*/
 	k_tid_t tid1 = k_thread_create(&tdata1, tstack1, STACK_SIZE,
 				      tThread_half_pipe_get, &khalfpipe,
@@ -381,6 +406,28 @@ void test_pipe_get_put(void)
 	k_thread_abort(tid1);
 	k_thread_abort(tid2);
 }
+
+void test_pipe_get_large(void)
+{
+	/**TESTPOINT: thread-thread data passing via pipe*/
+	k_tid_t tid1 = k_thread_create(&tdata1, tstack1, STACK_SIZE,
+				      tThread_half_pipe_put, &khalfpipe,
+				      NULL, NULL, K_PRIO_PREEMPT(0),
+				      K_INHERIT_PERMS | K_USER, K_NO_WAIT);
+
+	k_tid_t tid2 = k_thread_create(&tdata2, tstack2, STACK_SIZE,
+				      tThread_half_pipe_put, &khalfpipe,
+				      NULL, NULL, K_PRIO_PREEMPT(0),
+				      K_INHERIT_PERMS | K_USER, K_NO_WAIT);
+
+	k_sleep(K_MSEC(100));
+	tpipe_get_large_size(&khalfpipe, K_NO_WAIT);
+
+	/* clear the spawned thread avoid side effect */
+	k_thread_abort(tid1);
+	k_thread_abort(tid2);
+}
+
 
 /**
  * @brief Test pending reader in pipe
