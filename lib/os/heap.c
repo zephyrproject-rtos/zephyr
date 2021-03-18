@@ -367,8 +367,7 @@ void *sys_heap_aligned_realloc(struct sys_heap *heap, void *ptr,
 	void *ptr2 = sys_heap_aligned_alloc(heap, align, bytes);
 
 	if (ptr2 != NULL) {
-		size_t prev_size = chunk_size(h, c) * CHUNK_UNIT
-				   - chunk_header_bytes(h) - align_gap;
+		size_t prev_size = chunksz_to_bytes(h, chunk_size(h, c)) - align_gap;
 
 		memcpy(ptr2, ptr, MIN(prev_size, bytes));
 		sys_heap_free(heap, ptr);

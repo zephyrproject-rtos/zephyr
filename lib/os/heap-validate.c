@@ -343,7 +343,7 @@ void heap_print_info(struct z_heap *h, bool dump_chunks)
 		if (count) {
 			printk("%9d %12d %12d %12zd %12zd\n",
 			       i, (1 << i) - 1 + min_chunk_size(h), count,
-			       largest, largest * CHUNK_UNIT - chunk_header_bytes(h));
+			       largest, chunksz_to_bytes(h, largest));
 		}
 	}
 
@@ -355,11 +355,9 @@ void heap_print_info(struct z_heap *h, bool dump_chunks)
 		if (c == 0 || c == h->end_chunk) {
 			/* those are always allocated for internal purposes */
 		} else if (chunk_used(h, c)) {
-			allocated_bytes += chunk_size(h, c) * CHUNK_UNIT
-						- chunk_header_bytes(h);
+			allocated_bytes += chunksz_to_bytes(h, chunk_size(h, c));
 		} else if (!solo_free_header(h, c)) {
-			free_bytes += chunk_size(h, c) * CHUNK_UNIT
-						- chunk_header_bytes(h);
+			free_bytes += chunksz_to_bytes(h, chunk_size(h, c));
 		}
 		if (dump_chunks) {
 			printk("chunk %4zd: [%c] size=%-4zd left=%-4zd right=%zd\n",

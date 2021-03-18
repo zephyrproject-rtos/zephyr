@@ -228,6 +228,11 @@ static inline int min_chunk_size(struct z_heap *h)
 	return bytes_to_chunksz(h, 1);
 }
 
+static inline size_t chunksz_to_bytes(struct z_heap *h, size_t chunksz)
+{
+	return chunksz * CHUNK_UNIT - chunk_header_bytes(h);
+}
+
 static inline int bucket_idx(struct z_heap *h, size_t sz)
 {
 	size_t usable_sz = sz - min_chunk_size(h) + 1;
