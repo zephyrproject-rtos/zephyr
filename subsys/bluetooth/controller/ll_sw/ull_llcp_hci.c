@@ -430,7 +430,7 @@ uint8_t ll_start_enc_req_send(uint16_t handle, uint8_t error_code,
 		ull_cp_ltk_req_neq_reply(conn);
 		return BT_HCI_ERR_SUCCESS;
 	} else {
-		ull_cp_ltk_req_reply(conn);
+		ull_cp_ltk_req_reply(conn, ltk);
 		return BT_HCI_ERR_SUCCESS;
 	}
 
