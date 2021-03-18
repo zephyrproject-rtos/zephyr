@@ -1204,7 +1204,7 @@ static struct bt_iso_big *get_free_big(void)
 	 */
 
 	for (int i = 0; i < ARRAY_SIZE(bigs); i++) {
-		if (atomic_get(&bigs[i].initialized) == false) {
+		if (!atomic_test_and_set_bit(bigs[i].flags, BT_BIG_INITIALIZED)) {
 			bigs[i].handle = i;
 			return &bigs[i];
 		}
@@ -1226,9 +1226,7 @@ static void cleanup_big(struct bt_iso_big *big)
 		}
 	}
 
-	big->bis = NULL;
-	big->num_bis = 0;
-	atomic_clear(&big->initialized);
+	memset(big, 0, sizeof(*big));
 }
 
 static void big_disconnect(struct bt_iso_big *big)
@@ -1366,8 +1364,6 @@ int bt_iso_big_create(struct bt_le_ext_adv *padv, struct bt_iso_big_create_param
 		return err;
 	}
 
-	atomic_set(&big->initialized, true);
-
 	*out_big = big;
 
 	return err;
@@ -1425,7 +1421,7 @@ int bt_iso_big_terminate(struct bt_iso_big *big)
 	int err;
 	bool broadcaster;
 
-	if (atomic_get(&big->initialized) == false || !big->num_bis || !big->bis) {
+	if (!atomic_test_bit(big->flags, BT_BIG_INITIALIZED) || !big->num_bis || !big->bis) {
 		BT_DBG("BIG not initialized");
 		return -EINVAL;
 	}
@@ -1651,8 +1647,6 @@ int bt_iso_big_sync(struct bt_le_per_adv_sync *sync, struct bt_iso_big_sync_para
 	for (int i = 0; i < big->num_bis; i++) {
 		bt_iso_chan_set_state(big->bis[i], BT_ISO_CONNECT);
 	}
-
-	atomic_set(&big->initialized, true);
 
 	*out_big = big;
 
