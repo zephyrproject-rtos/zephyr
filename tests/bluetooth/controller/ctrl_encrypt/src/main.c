@@ -676,7 +676,7 @@ void test_encryption_start_sla_rem(void)
 	ull_cp_release_ntf(ntf);
 
 	/* LTK request reply */
-	ull_cp_ltk_req_reply(&conn);
+	ull_cp_ltk_req_reply(&conn, ltk);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -891,7 +891,7 @@ void test_encryption_start_sla_rem_limited_memory(void)
 	event_done(&conn);
 
 	/* LTK request reply */
-	ull_cp_ltk_req_reply(&conn);
+	ull_cp_ltk_req_reply(&conn, ltk);
 
 	/* Prepare */
 	event_prepare(&conn);
