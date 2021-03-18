@@ -120,6 +120,26 @@ extern "C" {
  *
  * @param arg Argument.
  */
+#ifdef __sparc__
+static inline void cbprintf_wcpy(int *dst, int *src, uint32_t len)
+{
+	for (int i = 0; i < len; i++) {
+		dst[i] = src[i];
+	}
+}
+/* Sparc is expecting va_list to be packed but don't support unaligned access.*/
+#define Z_CBPRINTF_STORE_ARG(buf, arg) do {\
+	__auto_type _v = (arg) + 0; \
+	double _d = _Generic((arg) + 0, \
+			float : (arg) + 0, \
+			default : \
+				0.0); \
+	uint32_t _wsize = Z_CBPRINTF_ARG_SIZE(arg) / sizeof(int); \
+	cbprintf_wcpy((int *)buf, \
+		      (int *) _Generic((arg) + 0, float : &_d, default : &_v), \
+		      _wsize); \
+} while (0)
+#else /* __sparc__ */
 #define Z_CBPRINTF_STORE_ARG(buf, arg) \
 	*_Generic((arg) + 0, \
 		char : (int *)buf, \
@@ -137,6 +157,7 @@ extern "C" {
 		long double : (long double *)buf, \
 		default : \
 			(const void **)buf) = arg
+#endif
 
 /** @brief Return alignment needed for given argument.
  *
