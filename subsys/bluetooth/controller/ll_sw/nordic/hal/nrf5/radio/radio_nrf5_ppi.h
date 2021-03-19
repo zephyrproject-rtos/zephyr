@@ -369,13 +369,13 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
  * auto-switch for TIFS. 'index' must be 0 or 1.
  */
 #define SW_SWITCH_TIMER_TASK_GROUP(index) \
-	(SW_SWITCH_TIMER_TASK_GROUP_BASE + index)
+	(SW_SWITCH_TIMER_TASK_GROUP_BASE + (index))
 
 /* The 2 adjacent TIMER EVENTS_COMPARE event offsets used for implementing
  * SW_SWITCH_TIMER-based auto-switch for TIFS. 'index' must be 0 or 1.
  */
 #define SW_SWITCH_TIMER_EVTS_COMP(index) \
-	(SW_SWITCH_TIMER_EVTS_COMP_BASE + index)
+	(SW_SWITCH_TIMER_EVTS_COMP_BASE + (index))
 
 /* Wire a SW SWITCH TIMER EVENTS_COMPARE[<cc_offset>] event
  * to a PPI GROUP TASK DISABLE task (PPI group with index <index>).
@@ -384,7 +384,7 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
  */
 #define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_BASE 9
 #define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(index) \
-	(HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_BASE + index)
+	(HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_BASE + (index))
 #define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_REGISTER_EVT(chan) \
 	NRF_PPI->CH[chan].EEP
 #define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_EVT(cc_offset) \
@@ -431,7 +431,7 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
 #define HAL_SW_SWITCH_RADIO_ENABLE_PPI_BASE 12
 #endif
 #define HAL_SW_SWITCH_RADIO_ENABLE_PPI(index) \
-	(HAL_SW_SWITCH_RADIO_ENABLE_PPI_BASE + index)
+	(HAL_SW_SWITCH_RADIO_ENABLE_PPI_BASE + (index))
 #define HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_EVT(chan) \
 	NRF_PPI->CH[chan].EEP
 #define HAL_SW_SWITCH_RADIO_ENABLE_PPI_EVT(cc_offset) \
@@ -513,14 +513,14 @@ static inline void hal_radio_sw_switch_cleanup(void)
  *  'index' must be 0 or 1.
  */
 #define SW_SWITCH_TIMER_S2_EVTS_COMP(index) \
-	(SW_SWITCH_TIMER_EVTS_COMP_S2_BASE + index)
+	(SW_SWITCH_TIMER_EVTS_COMP_S2_BASE + (index))
 
 /* Wire the SW SWITCH TIMER EVENTS_COMPARE[<cc_offset>] event
  * to RADIO TASKS_TXEN/RXEN task.
  */
 #define HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI_BASE 17
 #define HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI(index) \
-	(HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI_BASE + index)
+	(HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI_BASE + (index))
 
 /* Cancel the SW switch timer running considering S8 timing:
  * wire the RADIO EVENTS_RATEBOOST event to SW_SWITCH_TIMER TASKS_CAPTURE task.

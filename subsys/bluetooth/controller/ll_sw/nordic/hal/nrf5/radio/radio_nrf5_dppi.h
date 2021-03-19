@@ -296,20 +296,20 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
  * auto-switch for TIFS. 'index' must be 0 or 1.
  */
 #define SW_SWITCH_TIMER_TASK_GROUP(index) \
-	(SW_SWITCH_TIMER_TASK_GROUP_BASE + index)
+	(SW_SWITCH_TIMER_TASK_GROUP_BASE + (index))
 
 /* The 2 adjacent TIMER EVENTS_COMPARE event offsets used for implementing
  * SW_SWITCH_TIMER-based auto-switch for TIFS. 'index' must be 0 or 1.
  */
 #define SW_SWITCH_TIMER_EVTS_COMP(index) \
-	(SW_SWITCH_TIMER_EVTS_COMP_BASE + index)
+	(SW_SWITCH_TIMER_EVTS_COMP_BASE + (index))
 
 /* The 2 adjacent TIMER EVENTS_COMPARE event offsets used for implementing
  * SW_SWITCH_TIMER-based auto-switch for TIFS, when receiving on LE Coded
  * PHY. 'index' must be 0 or 1.
  */
 #define SW_SWITCH_TIMER_S2_EVTS_COMP(index) \
-	(SW_SWITCH_TIMER_EVTS_COMP_S2_BASE + index)
+	(SW_SWITCH_TIMER_EVTS_COMP_S2_BASE + (index))
 
 /* Wire a SW SWITCH TIMER EVENTS_COMPARE[<cc_offset>] event
  * to a PPI GROUP TASK DISABLE task (PPI group with index <index>).
@@ -318,7 +318,7 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
  */
 #define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_BASE 14
 #define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(index) \
-	(HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_BASE + index)
+	(HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_BASE + (index))
 
 #define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_REGISTER_EVT(cc_offset) \
 	SW_SWITCH_TIMER->PUBLISH_COMPARE[cc_offset]
@@ -373,12 +373,12 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
  */
 #define HAL_SW_SWITCH_RADIO_ENABLE_PPI_BASE 14
 #define HAL_SW_SWITCH_RADIO_ENABLE_PPI(index) \
-	(HAL_SW_SWITCH_RADIO_ENABLE_PPI_BASE + index)
+	(HAL_SW_SWITCH_RADIO_ENABLE_PPI_BASE + (index))
 
 #define HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI_BASE \
 	HAL_SW_SWITCH_RADIO_ENABLE_PPI_BASE
 #define HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI(index) \
-	(HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI_BASE + index)
+	(HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI_BASE + (index))
 
 #define HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_EVT(cc_offset) \
 	SW_SWITCH_TIMER->PUBLISH_COMPARE[cc_offset]
