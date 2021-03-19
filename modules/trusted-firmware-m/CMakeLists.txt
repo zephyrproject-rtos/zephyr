@@ -205,6 +205,7 @@ function(trusted_firmware_build)
   add_dependencies(tfm_api tfm)
 endfunction()
 
+zephyr_library_sources_ifdef(CONFIG_BUILD_WITH_TFM  interface/interface.c)
 # Non-Secure interface to request system reboot
 zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PLATFORM  src/reboot.c)
 
