@@ -28,5 +28,6 @@ config NUM_IRQS
 	default 25
 
 source "soc/arc/snps_qemu/Kconfig.defconfig.em"
+source "soc/arc/snps_qemu/Kconfig.defconfig.hs"
 
 endif
