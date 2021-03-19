@@ -1561,6 +1561,25 @@ static void test_great_grandchild(void)
 	zassert_equal(DT_PROP(DT_NODELABEL(test_ggc), ggc_prop), 42, "");
 }
 
+static void test_compat_get_any_status_okay(void)
+{
+	zassert_true(
+		DT_SAME_NODE(
+			DT_COMPAT_GET_ANY_STATUS_OKAY(vnd_reg_holder),
+			TEST_REG),
+		"");
+
+	/*
+	 * DT_SAME_NODE requires that both its arguments are valid
+	 * node identifiers, so we can't pass it DT_INVALID_NODE,
+	 * which is what this DT_COMPAT_GET_ANY_STATUS_OKAY() expands to.
+	 */
+	zassert_false(
+		DT_NODE_EXISTS(
+			DT_COMPAT_GET_ANY_STATUS_OKAY(this_is_not_a_real_compat)),
+		"");
+}
+
 static bool ord_in_array(unsigned int ord, unsigned int *array,
 			 size_t array_size)
 {
@@ -1772,6 +1791,7 @@ void test_main(void)
 			 ztest_unit_test(test_parent),
 			 ztest_unit_test(test_child_nodes_list),
 			 ztest_unit_test(test_great_grandchild),
+			 ztest_unit_test(test_compat_get_any_status_okay),
 			 ztest_unit_test(test_dep_ord),
 			 ztest_unit_test(test_path),
 			 ztest_unit_test(test_node_name),
