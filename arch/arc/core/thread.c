@@ -150,14 +150,14 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 * level/mask can't be set from user space that's not worse than
 	 * executing a loop without yielding.
 	 */
-	iframe->status32 = _ARC_V2_STATUS32_US;
+	iframe->status32 = _ARC_V2_STATUS32_US | _ARC_V2_STATUS32_DZ;
 	if (is_user(thread)) {
 		iframe->pc = (uint32_t)z_user_thread_entry_wrapper;
 	} else {
 		iframe->pc = (uint32_t)z_thread_entry_wrapper;
 	}
 #else
-	iframe->status32 = 0;
+	iframe->status32 = _ARC_V2_STATUS32_DZ;
 	iframe->pc = ((uint32_t)z_thread_entry_wrapper);
 #endif /* CONFIG_USERSPACE */
 #ifdef CONFIG_ARC_SECURE_FIRMWARE

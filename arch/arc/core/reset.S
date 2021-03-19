@@ -83,6 +83,10 @@ SECTION_FUNC(TEXT,__start)
 	sr r0, [_ARC_V2_IRQ_VECT_BASE]
 #endif
 
+	lr r0, [_ARC_V2_STATUS32]
+	bset r0, r0, _ARC_V2_STATUS32_DZ_BIT
+	kflag r0
+
 #if defined(CONFIG_USERSPACE)
 	lr r0, [_ARC_V2_STATUS32]
 	bset r0, r0, _ARC_V2_STATUS32_US_BIT
