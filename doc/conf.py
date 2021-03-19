@@ -75,7 +75,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Zephyr Project'
-copyright = u'2015-2020 Zephyr Project members and individual contributors'
+copyright = u'2015-2021 Zephyr Project members and individual contributors'
 author = u'The Zephyr Project'
 
 # The following code tries to extract the information by reading the Makefile,
