@@ -9,20 +9,15 @@ menu "ARC Options"
 config ARCH
 	default "arc"
 
-choice
-	prompt "ARC core family"
-	default CPU_ARCEM
 
 config CPU_ARCEM
-	bool "ARC EM cores"
-	select CPU_ARCV2
+	bool
 	select ATOMIC_OPERATIONS_C
 	help
 	  This option signifies the use of an ARC EM CPU
 
 config CPU_ARCHS
-	bool "ARC HS cores"
-	select CPU_ARCV2
+	bool
 	# FIXME: ATOMIC_OPERATIONS_BUILTIN still has some problem in arcmwdt
 	# toolchain, so choosing ATOMIC_OPERATIONS_C instead.
 	select ATOMIC_OPERATIONS_C if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "arcmwdt"
@@ -30,34 +25,44 @@ config CPU_ARCHS
 	help
 	  This option signifies the use of an ARC HS CPU
 
-endchoice
 
 config CPU_EM4
 	bool
+	select CPU_ARCEM
 	help
 	  If y, the SoC uses an ARC EM4 CPU
 
 config CPU_EM4_DMIPS
 	bool
+	select CPU_ARCEM
 	help
 	  If y, the SoC uses an ARC EM4 DMIPS CPU
 
 config CPU_EM4_FPUS
 	bool
+	select CPU_ARCEM
 	help
 	  If y, the SoC uses an ARC EM4 DMIPS CPU with the single-precision
 	  floating-point extension
 
 config CPU_EM4_FPUDA
 	bool
+	select CPU_ARCEM
 	help
 	  If y, the SoC uses an ARC EM4 DMIPS CPU with single-precision
 	  floating-point and double assist instructions
 
 config CPU_EM6
 	bool
+	select CPU_ARCEM
 	help
 	  If y, the SoC uses an ARC EM6 CPU
+
+config CPU_HS3X
+	bool
+	select CPU_ARCHS
+	help
+	  If y, the SoC uses an ARC HS3x or HS4x CPU
 
 config FP_FPU_DA
 	bool
