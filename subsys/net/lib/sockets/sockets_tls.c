@@ -564,6 +564,7 @@ static int dtls_rx(void *ctx, unsigned char *buf, size_t len,
 	ssize_t received;
 	bool retry;
 	struct zsock_pollfd fds;
+	int flags = tls_ctx->flags & ~ZSOCK_MSG_TRUNC;
 
 	do {
 		retry = false;
@@ -580,9 +581,8 @@ static int dtls_rx(void *ctx, unsigned char *buf, size_t len,
 			}
 		}
 
-		received = zsock_recvfrom(
-				tls_ctx->sock, buf, len, tls_ctx->flags,
-				&addr, &addrlen);
+		received = zsock_recvfrom(tls_ctx->sock, buf, len, flags,
+					  &addr, &addrlen);
 		if (received < 0) {
 			if (errno == EAGAIN) {
 				return MBEDTLS_ERR_SSL_WANT_READ;
@@ -1665,6 +1665,53 @@ static ssize_t recv_tls(struct tls_context *ctx, void *buf,
 }
 
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
+static ssize_t recvfrom_dtls_common(struct tls_context *ctx, void *buf,
+				    size_t max_len, int flags,
+				    struct sockaddr *src_addr,
+				    socklen_t *addrlen)
+{
+	int ret;
+
+	ret = mbedtls_ssl_read(&ctx->ssl, buf, max_len);
+	if (ret >= 0) {
+		size_t remaining;
+
+		if (src_addr && addrlen) {
+			dtls_peer_address_get(ctx, src_addr, addrlen);
+		}
+
+		/* mbedtls_ssl_get_bytes_avail() indicate the data length
+		 * remaining in the current datagram.
+		 */
+		remaining = mbedtls_ssl_get_bytes_avail(&ctx->ssl);
+
+		/* No more data in the datagram, or dummy read. */
+		if ((remaining == 0) || (max_len == 0)) {
+			return ret;
+		}
+
+		if (flags & ZSOCK_MSG_TRUNC) {
+			ret += remaining;
+		}
+
+		for (int i = 0; i < remaining; i++) {
+			uint8_t byte;
+			int err;
+
+			err = mbedtls_ssl_read(&ctx->ssl, &byte, sizeof(byte));
+			if (err <= 0) {
+				NET_ERR("Error while flushing the rest of the"
+					" datagram, err %d", err);
+				ret = MBEDTLS_ERR_SSL_INTERNAL_ERROR;
+				break;
+			}
+		}
+	}
+
+
+	return ret;
+}
+
 static ssize_t recvfrom_dtls_client(struct tls_context *ctx, void *buf,
 				    size_t max_len, int flags,
 				    struct sockaddr *src_addr,
@@ -1677,11 +1724,8 @@ static ssize_t recvfrom_dtls_client(struct tls_context *ctx, void *buf,
 		goto error;
 	}
 
-	ret = mbedtls_ssl_read(&ctx->ssl, buf, max_len);
+	ret = recvfrom_dtls_common(ctx, buf, max_len, flags, src_addr, addrlen);
 	if (ret >= 0) {
-		if (src_addr && addrlen) {
-			dtls_peer_address_get(ctx, src_addr, addrlen);
-		}
 		return ret;
 	}
 
@@ -1752,11 +1796,9 @@ static ssize_t recvfrom_dtls_server(struct tls_context *ctx, void *buf,
 			}
 		}
 
-		ret = mbedtls_ssl_read(&ctx->ssl, buf, max_len);
+		ret = recvfrom_dtls_common(ctx, buf, max_len, flags,
+					   src_addr, addrlen);
 		if (ret >= 0) {
-			if (src_addr && addrlen) {
-				dtls_peer_address_get(ctx, src_addr, addrlen);
-			}
 			return ret;
 		}
 
