@@ -31,7 +31,7 @@
  * }
  */
 
-#ifndef LINKER_PASS2
+#ifndef LINKER_ZEPHYR_FINAL
 SECTION_PROLOGUE(.intList,,)
 {
 	KEEP(*(.irq_info))

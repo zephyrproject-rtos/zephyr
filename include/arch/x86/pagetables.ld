@@ -13,11 +13,11 @@
     {
     . = ALIGN(4096);
     z_x86_pagetables_start = .;
-#ifdef LINKER_PASS2
+#ifdef LINKER_ZEPHYR_FINAL
     KEEP(*(pagetables))         /* gen_mmu.py */
 #else
     KEEP(*(.dummy_pagetables))  /* from x86_mmu.c, just an empty array */
-#endif /* LINKER_PASS2 */
+#endif /* LINKER_ZEPHYR_FINAL */
 
     /* Top-level paging structure is the last thing in this section */
 #if CONFIG_X86_PAE
@@ -29,11 +29,11 @@
 #endif /* CONFIG_X86_PAE */
     } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-#ifdef LINKER_PASS2
+#ifdef LINKER_ZEPHYR_FINAL
     /DISCARD/ :
     {
     /* We have the real ones in this build */
     *(.dummy_pagetables)
     }
-#endif /* LINKER_PASS2 */
+#endif /* LINKER_ZEPHYR_FINAL */
 #endif /* CONFIG_MMU */
