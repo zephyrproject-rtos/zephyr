@@ -49,6 +49,22 @@ extern "C" {
 #define VA_STACK_ALIGN(type)	MAX(VA_STACK_MIN_ALIGN, __alignof__(type))
 #endif
 
+#if defined(__sparc__)
+/* The SPARC V8 ABI guarantees that the arguments of a variable argument
+ * list function are stored on the stack at addresses which are 32-bit
+ * aligned. It means that variables of type unit64_t and double may not
+ * be properly aligned on the stack.
+ *
+ * The compiler is aware of the ABI and takes care of this. However,
+ * as we are directly accessing the variable argument list here, we need
+ * to take the alignment into consideration and copy 64-bit arguments
+ * as 32-bit words.
+ */
+#define Z_CBPRINTF_VA_STACK_LL_DBL_MEMCPY	1
+#else
+#define Z_CBPRINTF_VA_STACK_LL_DBL_MEMCPY	0
+#endif
+
 /** @brief Return 1 if argument is a pointer to char or wchar_t
  *
  * @param x argument.
@@ -114,50 +130,51 @@ extern "C" {
 			sizeof((v)+0) \
 		)
 
+static inline void cbprintf_wcpy(int *dst, int *src, size_t len)
+{
+	for (int i = 0; i < len; i++) {
+		dst[i] = src[i];
+	}
+}
+
 /** @brief Promote and store argument in the buffer.
  *
  * @param buf Buffer.
  *
  * @param arg Argument.
  */
-#ifdef __sparc__
-static inline void cbprintf_wcpy(int *dst, int *src, uint32_t len)
-{
-	for (int i = 0; i < len; i++) {
-		dst[i] = src[i];
-	}
-}
-/* Sparc is expecting va_list to be packed but don't support unaligned access.*/
-#define Z_CBPRINTF_STORE_ARG(buf, arg) do {\
-	__auto_type _v = (arg) + 0; \
-	double _d = _Generic((arg) + 0, \
-			float : (arg) + 0, \
+#define Z_CBPRINTF_STORE_ARG(buf, arg) do { \
+	if (Z_CBPRINTF_VA_STACK_LL_DBL_MEMCPY) { \
+		/* If required, copy arguments by word to avoid unaligned access.*/ \
+		__auto_type _v = (arg) + 0; \
+		double _d = _Generic((arg) + 0, \
+				float : (arg) + 0, \
+				default : \
+					0.0); \
+		size_t arg_size = Z_CBPRINTF_ARG_SIZE(arg); \
+		size_t _wsize = arg_size / sizeof(int); \
+		cbprintf_wcpy((int *)buf, \
+			      (int *) _Generic((arg) + 0, float : &_d, default : &_v), \
+			      _wsize); \
+	} else { \
+		*_Generic((arg) + 0, \
+			char : (int *)buf, \
+			unsigned char: (int *)buf, \
+			short : (int *)buf, \
+			unsigned short : (int *)buf, \
+			int : (int *)buf, \
+			unsigned int : (unsigned int *)buf, \
+			long : (long *)buf, \
+			unsigned long : (unsigned long *)buf, \
+			long long : (long long *)buf, \
+			unsigned long long : (unsigned long long *)buf, \
+			float : (double *)buf, \
+			double : (double *)buf, \
+			long double : (long double *)buf, \
 			default : \
-				0.0); \
-	uint32_t _wsize = Z_CBPRINTF_ARG_SIZE(arg) / sizeof(int); \
-	cbprintf_wcpy((int *)buf, \
-		      (int *) _Generic((arg) + 0, float : &_d, default : &_v), \
-		      _wsize); \
+				(const void **)buf) = arg; \
+	} \
 } while (0)
-#else /* __sparc__ */
-#define Z_CBPRINTF_STORE_ARG(buf, arg) \
-	*_Generic((arg) + 0, \
-		char : (int *)buf, \
-		unsigned char: (int *)buf, \
-		short : (int *)buf, \
-		unsigned short : (int *)buf, \
-		int : (int *)buf, \
-		unsigned int : (unsigned int *)buf, \
-		long : (long *)buf, \
-		unsigned long : (unsigned long *)buf, \
-		long long : (long long *)buf, \
-		unsigned long long : (unsigned long long *)buf, \
-		float : (double *)buf, \
-		double : (double *)buf, \
-		long double : (long double *)buf, \
-		default : \
-			(const void **)buf) = arg
-#endif
 
 /** @brief Return alignment needed for given argument.
  *

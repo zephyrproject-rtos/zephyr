@@ -189,13 +189,6 @@ static int cbprintf_via_va_list(cbprintf_cb out, void *ctx,
 
 #endif
 
-#if defined(__sparc__)
-/* CPU can't do unaligned accesses even though no gaps on the stack.*/
-#define VA_STACK_LL_DBL_MEMCPY	true
-#else
-#define VA_STACK_LL_DBL_MEMCPY	false
-#endif
-
 int cbvprintf_package(void *packaged, size_t len,
 		      const char *fmt, va_list ap)
 {
@@ -373,7 +366,7 @@ int cbvprintf_package(void *packaged, size_t len,
 				if (buf - buf0 + size > len) {
 					return -ENOSPC;
 				}
-				if (VA_STACK_LL_DBL_MEMCPY) {
+				if (Z_CBPRINTF_VA_STACK_LL_DBL_MEMCPY) {
 					memcpy(buf, &v, size);
 				} else if (fmt[-1] == 'L') {
 					*(long double *)buf = v.ld;
@@ -445,7 +438,7 @@ process_string:
 			long long v = va_arg(ap, long long);
 
 			if (buf0) {
-				if (VA_STACK_LL_DBL_MEMCPY) {
+				if (Z_CBPRINTF_VA_STACK_LL_DBL_MEMCPY) {
 					memcpy(buf, &v, sizeof(long long));
 				} else {
 					*(long long *)buf = v;
