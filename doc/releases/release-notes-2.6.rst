@@ -253,6 +253,8 @@ Build and Infrastructure
 
 * Devicetree
 
+  - :c:macro:`DT_COMPAT_GET_ANY_STATUS_OKAY`: new macro
+
 Libraries / Subsystems
 **********************
 
