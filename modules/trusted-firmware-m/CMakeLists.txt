@@ -205,6 +205,9 @@ function(trusted_firmware_build)
   add_dependencies(tfm_api tfm)
 endfunction()
 
+# Non-Secure interface to request system reboot
+zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PLATFORM  src/reboot.c)
+
 if (CONFIG_BUILD_WITH_TFM)
   if (CONFIG_TFM_IPC)
     set(TFM_IPC_ARG IPC)
