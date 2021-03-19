@@ -141,15 +141,15 @@ SECTIONS
 #ifndef CONFIG_DYNAMIC_INTERRUPTS
 	. = ALIGN(8);
 	_idt_base_address = .;
-#ifdef LINKER_PASS2
+#ifdef LINKER_ZEPHYR_FINAL
 	KEEP(*(staticIdt))
 #else
 	. += CONFIG_IDT_NUM_VECTORS * 8;
-#endif /* LINKER_PASS2 */
+#endif /* LINKER_ZEPHYR_FINAL */
 
 	. = ALIGN(4);
 	_irq_to_interrupt_vector = .;
-#ifdef LINKER_PASS2
+#ifdef LINKER_ZEPHYR_FINAL
 	KEEP(*(irq_int_vector_map))
 #else
 	. += CONFIG_MAX_IRQ_LINES;
@@ -255,18 +255,18 @@ SECTIONS
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
 	. = ALIGN(4);
 	_irq_to_interrupt_vector = .;
-#ifdef LINKER_PASS2
+#ifdef LINKER_ZEPHYR_FINAL
 	KEEP(*(irq_int_vector_map))
 #else
 	. += CONFIG_MAX_IRQ_LINES;
-#endif /* LINKER_PASS2 */
+#endif /* LINKER_ZEPHYR_FINAL */
 
 	z_interrupt_vectors_allocated = .;
-#ifdef LINKER_PASS2
+#ifdef LINKER_ZEPHYR_FINAL
 	KEEP(*(irq_vectors_alloc))
 #else
 	. += (CONFIG_IDT_NUM_VECTORS + 7) / 8;
-#endif /* LINKER_PASS2 */
+#endif /* LINKER_ZEPHYR_FINAL */
 #endif /* CONFIG_DYNAMIC_INTERRUPTS */
 
 /* Located in generated directory. This file is populated by the
@@ -288,20 +288,20 @@ SECTIONS
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
 	. = ALIGN(8);
 	_idt_base_address = .;
-#ifdef LINKER_PASS2
+#ifdef LINKER_ZEPHYR_FINAL
 	KEEP(*(staticIdt))
 #else
 	. += CONFIG_IDT_NUM_VECTORS * 8;
-#endif /* LINKER_PASS2 */
+#endif /* LINKER_ZEPHYR_FINAL */
 #endif /* CONFIG_DYNAMIC_INTERRUPTS */
 
 #ifdef CONFIG_GDT_DYNAMIC
 	KEEP(*(.tss))
 	. = ALIGN(8);
 	_gdt = .;
-#ifdef LINKER_PASS2
+#ifdef LINKER_ZEPHYR_FINAL
 	KEEP(*(gdt))
-#else /* LINKER_PASS2 */
+#else /* LINKER_ZEPHYR_FINAL */
 
 #ifdef CONFIG_USERSPACE
     #define GDT_NUM_ENTRIES 7
@@ -311,7 +311,7 @@ SECTIONS
     #define GDT_NUM_ENTRIES 3
 #endif /* CONFIG_X86_USERSPACE */
 	. += GDT_NUM_ENTRIES * 8;
-#endif /* LINKER_PASS2 */
+#endif /* LINKER_ZEPHYR_FINAL */
 #endif /* CONFIG_GDT_DYNAMIC */
 
 #ifdef CONFIG_X86_KPTI
@@ -354,7 +354,7 @@ SECTIONS
 
 	GROUP_END(RAMABLE_REGION)
 
-#ifndef LINKER_PASS2
+#ifndef LINKER_ZEPHYR_FINAL
 	/* static interrupts */
 	SECTION_PROLOGUE(intList,,)
 	{
