@@ -1084,25 +1084,27 @@ if(NOT generated_kernel_files)
   # generation stage.
   set(logical_target_for_zephyr_elf ${ZEPHYR_PREBUILT_EXECUTABLE})
 else()
-  # The second linker pass uses the same source linker script of the
-  # first pass (LINKER_SCRIPT), but this time with a different output
-  # file and preprocessed with the define LINKER_PASS2.
+  # The final linker pass uses the same source linker script of the
+  # previous passes, but this time with a different output
+  # file and preprocessed with the define LINKER_ZEPHYR_FINAL.
+  #
+  # LINKER_PASS2 is deprecated but being kept to avoid breaking
+  # external projects. It will be removed in the future.
   configure_linker_script(
-    linker_pass_final.cmd
-    "-DLINKER_PASS2"
+    linker.cmd
+    "-DLINKER_ZEPHYR_FINAL;-DLINKER_PASS2"
     ${CODE_RELOCATION_DEP}
     ${ZEPHYR_PREBUILT_EXECUTABLE}
     zephyr_generated_headers
     )
 
-  set(LINKER_PASS_FINAL_SCRIPT_TARGET linker_pass_final_script_target)
   add_custom_target(
-    ${LINKER_PASS_FINAL_SCRIPT_TARGET}
+    linker_zephyr_final_script_target
     DEPENDS
-    linker_pass_final.cmd
+    linker.cmd
     )
   set_property(TARGET
-    ${LINKER_PASS_FINAL_SCRIPT_TARGET}
+    linker_zephyr_final_script_target
     PROPERTY INCLUDE_DIRECTORIES
     ${ZEPHYR_INCLUDE_DIRS}
   )
@@ -1112,15 +1114,15 @@ else()
     TARGET_ELF            ${ZEPHYR_FINAL_EXECUTABLE}
     OUTPUT_MAP            ${PROJECT_BINARY_DIR}/${ZEPHYR_FINAL_EXECUTABLE}.map
     LIBRARIES_PRE_SCRIPT  ${GKOF}
-    LINKER_SCRIPT         ${PROJECT_BINARY_DIR}/linker_pass_final.cmd
+    LINKER_SCRIPT         ${PROJECT_BINARY_DIR}/linker.cmd
     LIBRARIES_POST_SCRIPT ""
     DEPENDENCIES          ${CODE_RELOCATION_DEP}
   )
   target_byproducts(TARGET ${ZEPHYR_FINAL_EXECUTABLE}
                     BYPRODUCTS ${PROJECT_BINARY_DIR}/${ZEPHYR_FINAL_EXECUTABLE}.map
   )
-  set_property(TARGET   ${ZEPHYR_FINAL_EXECUTABLE} PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker_pass_final.cmd)
-  add_dependencies(     ${ZEPHYR_FINAL_EXECUTABLE} ${LINKER_PASS_FINAL_SCRIPT_TARGET})
+  set_property(TARGET   ${ZEPHYR_FINAL_EXECUTABLE} PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker.cmd)
+  add_dependencies(     ${ZEPHYR_FINAL_EXECUTABLE} linker_zephyr_final_script_target)
 
   # Use the pass2 elf as the final elf
   set(logical_target_for_zephyr_elf ${ZEPHYR_FINAL_EXECUTABLE})
