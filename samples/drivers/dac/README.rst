@@ -46,6 +46,17 @@ The sample can be built and executed for the
    :goals: build flash
    :compact:
 
+Building and Running for ST Nucleo F429ZI
+=========================================
+The sample can be built and executed for the
+:ref:`nucleo_f429zi_board` as follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/dac
+   :board: nucleo_f429zi
+   :goals: build flash
+   :compact:
+
 Building and Running for NXP TWR-KE18F
 ======================================
 The sample can be built and executed for the :ref:`twr_ke18f` as
