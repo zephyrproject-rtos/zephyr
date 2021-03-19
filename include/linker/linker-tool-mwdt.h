@@ -46,6 +46,14 @@
  */
 #define GROUP_LINK_IN(where) > where
 
+/**
+ * The GROUP_ROM_LINK_IN() macro is located at the end of the section
+ * description and tells the linker that this a read-only section
+ * that is physically placed at the 'lregion` argument.
+ *
+ */
+#define GROUP_ROM_LINK_IN(vregion, lregion) > lregion
+
 /*
  * As GROUP_LINK_IN(), but takes a second argument indicating the
  * memory region (e.g. "ROM") for the load address.  Used for
@@ -63,13 +71,15 @@
 #define GROUP_DATA_LINK_IN(vregion, lregion) > vregion
 #endif
 
-/*
- * The GROUP_FOLLOWS_AT() macro is located at the end of the section
- * and indicates that the section does not specify an address at which
- * it is to be loaded, but that it follows a section which did specify
- * such an address
+/**
+ * Route memory for read-write sections that are NOT loaded; typically this
+ * is only used for 'BSS' and 'noinit'.
  */
-#define GROUP_FOLLOWS_AT(where) AT > where
+#ifdef CONFIG_XIP
+#define GROUP_NOLOAD_LINK_IN(vregion, lregion) > vregion AT > vregion
+#else
+#define GROUP_NOLOAD_LINK_IN(vregion, lregion) > vregion
+#endif
 
 /*
  * The SECTION_PROLOGUE() macro is used to define the beginning of a section.
