@@ -1,0 +1,8 @@
+# Smart Guard Com board configuration
+
+# Copyright (c) 2021 RealTime Engineering AG
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_SMARTGUARDCOM
+	bool "Smart Guard Com Board"
+	depends on SOC_STM32H743XX
