@@ -70,6 +70,16 @@ Deprecated in this release
 * The ``CONFIG_OPENOCD_SUPPORT`` Kconfig option has been deprecated in favor
   of ``CONFIG_DEBUG_THREAD_INFO``.
 
+* Disk drivers (``disk_access_*.c``) are moved to ``drivers/disk`` and renamed
+  according to their function. Driver's Kconfig options are revised and renamed.
+  SDMMC host controller drivers are selected when the corresponding node
+  in devicetree is enabled. Following application relevant Kconfig options
+  are renamed: ``CONFIG_DISK_ACCESS_RAM`` -> `CONFIG_DISK_DRIVER_RAM`,
+  ``CONFIG_DISK_ACCESS_FLASH`` -> `CONFIG_DISK_DRIVER_FLASH`,
+  ``CONFIG_DISK_ACCESS_SDHC`` -> `CONFIG_DISK_DRIVER_SDMMC`.
+  Disk API header ``<include/disk/disk_access.h>`` is deprecated in favor of
+  ``<include/storage/disk_access.h>``.
+
 ==========================
 
 Removed APIs in this release
