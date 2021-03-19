@@ -53,7 +53,6 @@ set(OFFSETS_H_TARGET           offsets_h)
 set(SYSCALL_LIST_H_TARGET      syscall_list_h_target)
 set(DRIVER_VALIDATION_H_TARGET driver_validation_h_target)
 set(KOBJ_TYPES_H_TARGET        kobj_types_h_target)
-set(LINKER_SCRIPT_TARGET       linker_script_target)
 set(PARSE_SYSCALLS_TARGET      parse_syscalls_target)
 
 define_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT BRIEF_DOCS " " FULL_DOCS " ")
@@ -702,31 +701,12 @@ if (CONFIG_CODE_DATA_RELOCATION)
   set(CODE_RELOCATION_DEP code_relocation_source_lib)
 endif() # CONFIG_CODE_DATA_RELOCATION
 
-configure_linker_script(
-  linker.cmd
-  ""
-  ${APP_SMEM_ALIGNED_DEP}
-  ${CODE_RELOCATION_DEP}
-  zephyr_generated_headers
-  )
-
-add_custom_target(
-  ${LINKER_SCRIPT_TARGET}
-  DEPENDS
-  linker.cmd
-  )
-
-# Give the '${LINKER_SCRIPT_TARGET}' target all of the include directories so
-# that cmake can successfully find the linker_script's header
+# Give the linker script targets all of the include directories so
+# that cmake can successfully find the linker scripts' header
 # dependencies.
 zephyr_get_include_directories_for_lang(C
   ZEPHYR_INCLUDE_DIRS
   STRIP_PREFIX # Don't use a -I prefix
-  )
-set_property(TARGET
-  ${LINKER_SCRIPT_TARGET}
-  PROPERTY INCLUDE_DIRECTORIES
-  ${ZEPHYR_INCLUDE_DIRS}
   )
 
 if(CONFIG_GEN_ISR_TABLES)
@@ -1056,21 +1036,47 @@ if(CONFIG_USERSPACE)
     )
 endif()
 
+configure_linker_script(
+  linker_zephyr_prebuilt.cmd
+  "-DLINKER_ZEPHYR_PREBUILT"
+  ${APP_SMEM_ALIGNED_DEP}
+  ${CODE_RELOCATION_DEP}
+  zephyr_generated_headers
+  )
+
+add_custom_target(
+  linker_zephyr_prebuilt_script_target
+  DEPENDS
+  linker_zephyr_prebuilt.cmd
+  )
+
+set_property(TARGET
+  linker_zephyr_prebuilt_script_target
+  PROPERTY INCLUDE_DIRECTORIES
+  ${ZEPHYR_INCLUDE_DIRS}
+  )
+
 # FIXME: Is there any way to get rid of empty_file.c?
 add_executable(       ${ZEPHYR_PREBUILT_EXECUTABLE} misc/empty_file.c)
 toolchain_ld_link_elf(
   TARGET_ELF            ${ZEPHYR_PREBUILT_EXECUTABLE}
   OUTPUT_MAP            ${PROJECT_BINARY_DIR}/${ZEPHYR_PREBUILT_EXECUTABLE}.map
   LIBRARIES_PRE_SCRIPT  ""
-  LINKER_SCRIPT         ${PROJECT_BINARY_DIR}/linker.cmd
+  LINKER_SCRIPT         ${PROJECT_BINARY_DIR}/linker_zephyr_prebuilt.cmd
   DEPENDENCIES          ${CODE_RELOCATION_DEP}
 )
 target_byproducts(TARGET ${ZEPHYR_PREBUILT_EXECUTABLE}
                   BYPRODUCTS ${PROJECT_BINARY_DIR}/${ZEPHYR_PREBUILT_EXECUTABLE}.map
 )
-set_property(TARGET   ${ZEPHYR_PREBUILT_EXECUTABLE} PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker.cmd)
-add_dependencies(     ${ZEPHYR_PREBUILT_EXECUTABLE} ${LINKER_SCRIPT_TARGET} ${OFFSETS_LIB})
-
+set_property(TARGET
+  ${ZEPHYR_PREBUILT_EXECUTABLE}
+  PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker_zephyr_prebuilt.cmd
+  )
+add_dependencies(
+  ${ZEPHYR_PREBUILT_EXECUTABLE}
+  linker_zephyr_prebuilt_script_target
+  ${OFFSETS_LIB}
+  )
 
 set(generated_kernel_files ${GKSF} ${GKOF})
 if(NOT generated_kernel_files)
