@@ -14,10 +14,15 @@
 #include <stdlib.h>
 #include "mem_protect.h"
 
+K_HEAP_DEFINE(test_mem_heap, TEST_HEAP_SIZE);
+
+K_THREAD_STACK_DEFINE(test_stack, KOBJECT_STACK_SIZE);
 
 void test_main(void)
 {
 	k_thread_priority_set(k_current_get(), -1);
+
+	k_thread_heap_assign(k_current_get(), &test_mem_heap);
 
 	ztest_test_suite(memory_protection_test_suite,
 		/* inherit.c */
@@ -43,12 +48,17 @@ void test_main(void)
 
 		/* kobject.c */
 		ztest_unit_test(test_kobject_access_grant),
+		ztest_unit_test(test_kobject_access_grant_error),
+		ztest_user_unit_test(test_kobject_access_grant_error_user_null),
+		ztest_user_unit_test(test_kobject_access_grant_error_user),
+		ztest_user_unit_test(test_kobject_access_all_grant_error),
 		ztest_unit_test(test_syscall_invalid_kobject),
 		ztest_unit_test(test_thread_without_kobject_permission),
 		ztest_unit_test(test_kobject_revoke_access),
 		ztest_unit_test(test_kobject_grant_access_kobj),
 		ztest_unit_test(test_kobject_grant_access_kobj_invalid),
 		ztest_unit_test(test_kobject_release_from_user),
+		ztest_unit_test(test_kobject_release_null),
 		ztest_unit_test(test_kobject_access_all_grant),
 		ztest_unit_test(test_thread_has_residual_permissions),
 		ztest_unit_test(test_kobject_access_grant_to_invalid_thread),
@@ -65,7 +75,13 @@ void test_main(void)
 		ztest_unit_test(test_create_new_essential_thread_from_user),
 		ztest_unit_test(test_create_new_higher_prio_thread_from_user),
 		ztest_unit_test(test_create_new_invalid_prio_thread_from_user),
-		ztest_unit_test(test_mark_thread_exit_uninitialized)
+		ztest_unit_test(test_mark_thread_exit_uninitialized),
+		ztest_user_unit_test(test_kobject_init_error),
+		ztest_unit_test(test_alloc_kobjects),
+		ztest_unit_test(test_thread_alloc_out_of_idx),
+		ztest_unit_test(test_kobj_create_out_of_memory),
+		ztest_unit_test(test_kobject_perm_error),
+		ztest_unit_test(test_kobject_free_error)
 		);
 
 	ztest_run_test_suite(memory_protection_test_suite);
