@@ -934,6 +934,7 @@ static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 {
 	k_timeout_t timeout = K_FOREVER;
 	size_t recv_len = 0;
+	size_t read_len;
 	struct net_pkt_cursor backup;
 	struct net_pkt *pkt;
 
@@ -1007,11 +1008,9 @@ static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 	}
 
 	recv_len = net_pkt_remaining_data(pkt);
-	if (recv_len > max_len) {
-		recv_len = max_len;
-	}
+	read_len = MIN(recv_len, max_len);
 
-	if (net_pkt_read(pkt, buf, recv_len)) {
+	if (net_pkt_read(pkt, buf, read_len)) {
 		errno = ENOBUFS;
 		goto fail;
 	}
@@ -1027,7 +1026,7 @@ static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 		net_pkt_cursor_restore(pkt, &backup);
 	}
 
-	return recv_len;
+	return (flags & ZSOCK_MSG_TRUNC) ? recv_len : read_len;
 
 fail:
 	if (!(flags & ZSOCK_MSG_PEEK)) {
