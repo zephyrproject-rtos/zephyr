@@ -6,6 +6,9 @@ if SOC_ARC_HSDK
 config SOC
 	default "snps_arc_hsdk"
 
+config CPU_HS3X
+	default y
+
 config NUM_IRQ_PRIO_LEVELS
 	# This processor supports 2 priority levels:
 	# 0 for Fast Interrupts (FIRQs) and 1 for Regular Interrupts (IRQs).
