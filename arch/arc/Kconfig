@@ -26,6 +26,23 @@ config CPU_ARCHS
 	  This option signifies the use of an ARC HS CPU
 
 
+choice
+	prompt "ARC Instruction Set"
+	default ISA_ARCV2
+
+config ISA_ARCV2
+	bool "ARC ISA v2"
+	select ARCH_HAS_STACK_PROTECTION if ARC_HAS_STACK_CHECKING || (ARC_MPU && ARC_MPU_VER !=2)
+	select ARCH_HAS_USERSPACE if ARC_MPU
+	select USE_SWITCH
+	select USE_SWITCH_SUPPORTED
+	help
+	  v2 ISA for the ARC-HS & ARC-EM cores
+
+endchoice
+
+if ISA_ARCV2
+
 config CPU_EM4
 	bool
 	select CPU_ARCEM
@@ -64,20 +81,12 @@ config CPU_HS3X
 	help
 	  If y, the SoC uses an ARC HS3x or HS4x CPU
 
+endif #ISA_ARCV2
+
 config FP_FPU_DA
 	bool
 
-menu "ARCv2 Family Options"
-
-config CPU_ARCV2
-	bool
-	select ARCH_HAS_STACK_PROTECTION if ARC_HAS_STACK_CHECKING || (ARC_MPU && ARC_MPU_VER !=2)
-	select ARCH_HAS_USERSPACE if ARC_MPU
-	select USE_SWITCH
-	select USE_SWITCH_SUPPORTED
-	default y
-	help
-	  This option signifies the use of a CPU of the ARCv2 family.
+menu "ARC CPU Options"
 
 config NUM_IRQ_PRIO_LEVELS
 	int "Number of supported interrupt priority levels"
@@ -101,7 +110,6 @@ config NUM_IRQS
 
 config RGF_NUM_BANKS
 	int "Number of General Purpose Register Banks"
-	depends on CPU_ARCV2
 	range 1 2
 	default 2
 	help
