@@ -261,16 +261,32 @@ You should see the following message on the console:
 Building Secure/Non-Secure Zephyr applications with Arm |reg| TrustZone |reg|
 -----------------------------------------------------------------------------
 
-The TF-M integration sample :ref:`tfm_ipc` can be run on a STM32L562E-DK Discovery,
-using the ``stm32l562e_dk_ns`` target. When building a ``*_ns`` image with TF-M,
-a ``build/tfm/postbuild.sh`` bash script will be run automatically as a post-build step
-to make some required flash layout changes. The ``build/tfm/regression.sh`` script will
-need to be run to perform device initialization, and then run ``west flash --hex-file build/tfm_merged.hex``
-to flash the board.
+The TF-M integration sample :ref:`tfm_ipc` can be run on a ST STM32L562E-DK Discovery.
+In TF-M configuration, Zephyr is run on the non-secure domain. A non-secure image
+can be generated using ``stm32l562e_dk_ns`` as build target.
 
-Check the ``build/tfm`` directory to ensure that the commands required by these scripts
+.. code-block:: bash
+
+   $ west build -b stm32l562e_dk_ns path/to/source/directory
+
+Note: When building the ``*_ns`` image with TF-M, ``build/tfm/postbuild.sh`` bash script
+is run automatically in a post-build step to make some required flash layout changes.
+
+Once the build is completed, run the following script to initialize the option bytes.
+
+.. code-block:: bash
+
+   $ build/tfm/regression.sh
+
+Finally, to flash the board, run:
+
+.. code-block:: bash
+
+   $ west flash --hex-file build/tfm_merged.hex
+
+Note: Check the ``build/tfm`` directory to ensure that the commands required by these scripts
 (``readlink``, etc.) are available on your system. Please also check ``STM32_Programmer_CLI``
-used for initialization is available in the PATH.
+(which is used for initialization) is available in the PATH.
 
 Debugging
 =========
