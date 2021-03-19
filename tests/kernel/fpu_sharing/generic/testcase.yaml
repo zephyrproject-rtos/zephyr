@@ -1,7 +1,7 @@
 tests:
   kernel.fpu_sharing.generic.arc:
     extra_args: PI_NUM_ITERATIONS=500
-    filter: CONFIG_CPU_ARCV2 and CONFIG_CPU_HAS_FPU
+    filter: CONFIG_ISA_ARCV2 and CONFIG_CPU_HAS_FPU
     slow: true
     tags: kernel
     timeout: 600

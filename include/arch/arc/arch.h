@@ -21,7 +21,7 @@
 #include <arch/common/ffs.h>
 #include <arch/arc/thread.h>
 #include <arch/common/sys_bitops.h>
-#ifdef CONFIG_CPU_ARCV2
+#ifdef CONFIG_ISA_ARCV2
 #include <arch/arc/v2/exc.h>
 #include <arch/arc/v2/irq.h>
 #include <arch/arc/v2/error.h>

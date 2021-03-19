@@ -12,7 +12,7 @@
 #ifndef _FLOAT_REGS_ARC_GCC_H
 #define _FLOAT_REGS_ARC_GCC_H
 
-#if !defined(__GNUC__) || !defined(CONFIG_CPU_ARCV2)
+#if !defined(__GNUC__) || !defined(CONFIG_ISA_ARCV2)
 #error __FILE__ goes only with ARC GCC
 #endif
 
