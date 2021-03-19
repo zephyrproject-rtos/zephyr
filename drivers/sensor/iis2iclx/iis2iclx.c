@@ -658,12 +658,12 @@ static int iis2iclx_init(const struct device *dev)
 
 #define IIS2ICLX_CONFIG_SPI(inst)					\
 	{								\
-		.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),		\
-		.bus_init = iis2iclx_spi_init,				\
-		.bus_cfg.spi_cfg =					\
+		.stmemsc_cfg.spi.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),\
+		.stmemsc_cfg.spi.spi_cfg =				\
 			SPI_CONFIG_DT_INST(inst,			\
 					   IIS2ICLX_SPI_OPERATION,	\
 					   0),				\
+		.bus_init = iis2iclx_spi_init,				\
 		.odr = DT_INST_PROP(inst, odr),				\
 		.range = DT_INST_PROP(inst, range),			\
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),	\
@@ -676,9 +676,9 @@ static int iis2iclx_init(const struct device *dev)
 
 #define IIS2ICLX_CONFIG_I2C(inst)					\
 	{								\
-		.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),		\
+		.stmemsc_cfg.i2c.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),\
+		.stmemsc_cfg.i2c.i2c_slv_addr = DT_INST_REG_ADDR(inst),	\
 		.bus_init = iis2iclx_i2c_init,				\
-		.bus_cfg.i2c_slv_addr = DT_INST_REG_ADDR(inst),		\
 		.odr = DT_INST_PROP(inst, odr),				\
 		.range = DT_INST_PROP(inst, range),			\
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),	\
