@@ -585,12 +585,19 @@ static void sw_switch(uint8_t dir, uint8_t phy_curr, uint8_t flags_curr, uint8_t
 	hal_radio_nrf_ppi_channels_enable(BIT(HAL_SW_SWITCH_TIMER_CLEAR_PPI) |
 				BIT(HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI));
 
-#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
-	/* Since the event timer is cleared on END, we
-	 * always need to capture the PDU END time-stamp.
+#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER) || \
+	defined(CONFIG_SOC_SERIES_NRF53X)
+	/* NOTE: nRF5340 shares the DPPI channel being triggered by Radio End
+	 *       for End time capture and sw_switch DPPI channel toggling hence
+	 *       always need to capture End time. Or when using single event
+	 *       timer since the timer is cleared on Radio End, we always need
+	 *       to capture the Radio End time-stamp.
 	 */
-	radio_tmr_end_capture();
-#endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+	hal_radio_end_time_capture_ppi_config();
+#if !defined(CONFIG_SOC_SERIES_NRF53X)
+	hal_radio_nrf_ppi_channels_enable(BIT(HAL_RADIO_END_TIME_CAPTURE_PPI));
+#endif /* !CONFIG_SOC_SERIES_NRF53X */
+#endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER || CONFIG_SOC_SERIES_NRF53X */
 
 	sw_tifs_toggle += 1U;
 	sw_tifs_toggle &= 1U;
@@ -950,8 +957,16 @@ uint32_t radio_tmr_ready_get(void)
 
 void radio_tmr_end_capture(void)
 {
+	/* NOTE: nRF5340 shares the DPPI channel being triggered by Radio End
+	 *       for End time capture and sw_switch DPPI channel toggling hence
+	 *       always need to capture End time. Hence, the below code is
+	 *       present in hal_sw_switch_timer_clear_ppi_config() and
+	 *	 sw_switch().
+	 */
+#if defined(CONFIG_BT_CTLR_TIFS_HW) || !defined(CONFIG_SOC_SERIES_NRF53X)
 	hal_radio_end_time_capture_ppi_config();
 	hal_radio_nrf_ppi_channels_enable(BIT(HAL_RADIO_END_TIME_CAPTURE_PPI));
+#endif /* CONFIG_BT_CTLR_TIFS_HW || !CONFIG_SOC_SERIES_NRF53X */
 }
 
 uint32_t radio_tmr_end_get(void)

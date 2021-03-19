@@ -289,6 +289,13 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
 	nrf_radio_publish_set(NRF_RADIO, NRF_RADIO_EVENT_END, HAL_SW_SWITCH_TIMER_CLEAR_PPI);
 	nrf_timer_subscribe_set(SW_SWITCH_TIMER,
 				NRF_TIMER_TASK_CLEAR, HAL_SW_SWITCH_TIMER_CLEAR_PPI);
+
+	/* NOTE: nRF5340 shares the DPPI channel being triggered by Radio End,
+	 *       for End time capture and sw_switch DPPI channel toggling, hence
+	 *       always need to capture End time.
+	 */
+	nrf_dppi_channels_enable(NRF_DPPIC,
+				 BIT(HAL_RADIO_END_TIME_CAPTURE_PPI));
 }
 
 /* The 2 adjacent PPI groups used for implementing SW_SWITCH_TIMER-based
