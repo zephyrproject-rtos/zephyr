@@ -55,8 +55,7 @@ static inline void hal_radio_enable_on_tick_ppi_config_and_enable(uint8_t trx)
 		}
 	}
 
-	nrf_dppi_channels_enable(
-		NRF_DPPIC, BIT(HAL_RADIO_ENABLE_ON_TICK_PPI));
+	nrf_dppi_channels_enable(NRF_DPPIC, BIT(HAL_RADIO_ENABLE_ON_TICK_PPI));
 }
 
 /*******************************************************************************
@@ -445,11 +444,8 @@ static inline void hal_radio_sw_switch_setup(
 	    HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_TASK;
 
 	/* We need to un-subscribe the other group from the PPI channel. */
-	if (ppi_group_index == 0) {
-		HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_REGISTER_TASK(1)	= 0;
-	} else if (ppi_group_index == 1) {
-		HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_REGISTER_TASK(0)	= 0;
-	}
+	HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_REGISTER_TASK(
+		(ppi_group_index + 1) & 0x01) = 0;
 
 	/* Wire SW Switch timer event <compare_reg> to the
 	 * PPI[<radio_enable_ppi>] for enabling Radio. Do
@@ -521,7 +517,7 @@ static inline void hal_radio_sw_switch_coded_tx_config_set(uint8_t ppi_en,
 		HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_TASK;
 
 	nrf_dppi_channels_enable(NRF_DPPIC,
-		BIT(HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI));
+				 BIT(HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI));
 }
 
 static inline void hal_radio_sw_switch_coded_config_clear(uint8_t ppi_en,

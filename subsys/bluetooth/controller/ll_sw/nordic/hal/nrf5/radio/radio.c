@@ -530,12 +530,11 @@ static void sw_switch(uint8_t dir, uint8_t phy_curr, uint8_t flags_curr, uint8_t
 
 			/* Calculate assuming reception on S2 coding scheme. */
 			delay_s2 = HAL_RADIO_NS2US_ROUND(
-				hal_radio_tx_ready_delay_ns_get(
-					phy_next, flags_next) +
+				hal_radio_tx_ready_delay_ns_get(phy_next,
+								flags_next) +
 				hal_radio_rx_chain_delay_ns_get(phy_curr, 0));
 
-			SW_SWITCH_TIMER->CC[cc_s2] =
-				SW_SWITCH_TIMER->CC[cc];
+			SW_SWITCH_TIMER->CC[cc_s2] = SW_SWITCH_TIMER->CC[cc];
 
 			if (delay_s2 < SW_SWITCH_TIMER->CC[cc_s2]) {
 				SW_SWITCH_TIMER->CC[cc_s2] -= delay_s2;
@@ -564,12 +563,10 @@ static void sw_switch(uint8_t dir, uint8_t phy_curr, uint8_t flags_curr, uint8_t
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 #if defined(CONFIG_HAS_HW_NRF_RADIO_BLE_CODED)
 		if (1) {
-			uint8_t ppi_en =
-				HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI(
-					sw_tifs_toggle);
-			uint8_t ppi_dis =
-				HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(
-					sw_tifs_toggle);
+			uint8_t ppi_en = HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI(
+						sw_tifs_toggle);
+			uint8_t ppi_dis = HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(
+						sw_tifs_toggle);
 
 			hal_radio_sw_switch_coded_config_clear(ppi_en,
 				ppi_dis, cc, sw_tifs_toggle);
@@ -578,10 +575,9 @@ static void sw_switch(uint8_t dir, uint8_t phy_curr, uint8_t flags_curr, uint8_t
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
 	}
 
-	if (delay <
-		SW_SWITCH_TIMER->CC[cc]) {
+	if (delay < SW_SWITCH_TIMER->CC[cc]) {
 		nrf_timer_cc_set(SW_SWITCH_TIMER, cc,
-				 SW_SWITCH_TIMER->CC[cc] - delay);
+				 (SW_SWITCH_TIMER->CC[cc] - delay));
 	} else {
 		nrf_timer_cc_set(SW_SWITCH_TIMER, cc, 1);
 	}
@@ -597,7 +593,7 @@ static void sw_switch(uint8_t dir, uint8_t phy_curr, uint8_t flags_curr, uint8_t
 #endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
 	sw_tifs_toggle += 1U;
-	sw_tifs_toggle &= 1;
+	sw_tifs_toggle &= 1U;
 }
 #endif /* CONFIG_BT_CTLR_TIFS_HW */
 
