@@ -271,10 +271,7 @@
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004a000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 10>;
-			label = "portb";
 			#nxp,kinetis-pin-cells = <2>;
-			DT_NXP_PINMUX_DEFINE(uart0_rx, b, 16, K_PORT_MuxAlt3);
-			DT_NXP_PINMUX_DEFINE(uart0_tx, b, 17, K_PORT_MuxAlt3);
 		};
 
 		portc: pinmux@4004b000 {
@@ -558,3 +555,6 @@
 &nvic {
 	arm,num-irq-priority-bits = <4>;
 };
+
+#include "MK64FN1M0VLL12-pinctrl.dtsi"
+
