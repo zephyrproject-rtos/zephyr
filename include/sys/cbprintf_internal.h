@@ -306,7 +306,9 @@ do { \
 	_outlen = (_pkg_len > _pmax) ? -ENOSPC : _pkg_len; \
 	/* Store length in the header, set number of dumped strings to 0 */ \
 	if (_pbuf) { \
-		union z_cbprintf_hdr hdr = { .desc = {.len = _pkg_len }}; \
+		union z_cbprintf_hdr hdr = { \
+			.desc = {.len = _pkg_len / sizeof(int) } \
+		}; \
 		*_len_loc = hdr; \
 	} \
 	_Pragma("GCC diagnostic pop") \
