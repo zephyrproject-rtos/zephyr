@@ -1506,7 +1506,7 @@
  * As usual, both a missing status and an "ok" status are treated as
  * "okay".
  *
- * @param compat lowercase-and-underscores version of a compatible
+ * @param compat lowercase-and-underscores compatible, without quotes
  * @return 1 if both of the above conditions are met, 0 otherwise
  */
 #define DT_HAS_COMPAT_STATUS_OKAY(compat) \
@@ -1515,7 +1515,7 @@
 /**
  * @brief Get the number of instances of a given compatible with
  *        status "okay"
- * @param compat lowercase-and-underscores version of a compatible
+ * @param compat lowercase-and-underscores compatible, without quotes
  * @return Number of instances with status "okay"
  */
 #define DT_NUM_INST_STATUS_OKAY(compat)			\
@@ -1541,7 +1541,7 @@
  * on its value, nor does the node's status.
  *
  * @param node_id node identifier
- * @param compat lowercase-and-underscorse compatible value
+ * @param compat lowercase-and-underscores compatible, without quotes
  * @return 1 if the node's compatible property contains compat,
  *         0 otherwise.
  */
@@ -1557,7 +1557,7 @@
  *      DT_NODE_HAS_STATUS(node_id, status))
  *
  * @param node_id node identifier
- * @param compat lowercase-and-underscores compatible
+ * @param compat lowercase-and-underscores compatible, without quotes
  * @param status okay or disabled as a token, not a string
  */
 #define DT_NODE_HAS_COMPAT_STATUS(node_id, compat, status) \
