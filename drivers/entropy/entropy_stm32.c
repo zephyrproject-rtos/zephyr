@@ -363,6 +363,17 @@ static int entropy_stm32_rng_get_entropy_isr(const struct device *dev,
 #if CONFIG_SOC_SERIES_STM32L4X
 static int entropy_stm32_rng_init_l4(void)
 {
+#if defined(CONFIG_CLOCK_STM32_CLK48_SRC_HSI48)
+
+	/* Use the HSI48 for the RNG */
+	LL_RCC_HSI48_Enable();
+	while (!LL_RCC_HSI48_IsReady()) {
+		/* Wait for HSI48 to become ready */
+	}
+
+	LL_RCC_SetRNGClockSource(LL_RCC_RNG_CLKSOURCE_HSI48);
+
+#elif defined(CONFIG_CLOCK_STM32_CLK48_SRC_PLLSAI1Q)
 	/*
 	 * PLL configuration table for all possible MSI input frequencies. Parameters
 	 * are chosen to obtain a 48 MHz clock for USB FS, SDMMC and RNG. For the
@@ -426,6 +437,11 @@ static int entropy_stm32_rng_init_l4(void)
 	 */
 	LL_RCC_SetRNGClockSource(LL_RCC_RNG_CLKSOURCE_PLLSAI1);
 
+#elif defined(CONFIG_CLOCK_STM32_CLK48_SRC_MSI)
+
+	LL_RCC_SetRNGClockSource(LL_RCC_RNG_CLKSOURCE_MSI);
+
+#endif /* defined(CONFIG_CLOCK_STM32_CLK48_SRC_HSI48) */
 	return 0;
 }
 #endif /* CONFIG_SOC_SERIES_STM32L4X */

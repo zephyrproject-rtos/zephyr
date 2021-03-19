@@ -292,4 +292,24 @@ config CLOCK_STM32_MCO2_DIV
 	help
 	  allowed values: 1, 2, 3, 4, 5
 
+choice CLOCK_STM32_CLK48_SRC
+	prompt "STM32 48 MHz Clock to USB, RNG, SDMMC Source"
+
+config CLOCK_STM32_CLK48_SRC_HSI48
+	bool "HSI48"
+	help
+	  Use HSI48 as source of CLK48
+
+config CLOCK_STM32_CLK48_SRC_PLLSAI1Q
+	bool "PLLSAI1Q"
+	help
+	  Use PLLSAI1Q (PLL48M2CLK) as source of CLK48
+
+config CLOCK_STM32_CLK48_SRC_MSI
+	bool "MSI"
+	help
+	  Use MSI as source of CLK48
+
+endchoice #CLOCK_STM32_CLK48_SRC
+
 endif # CLOCK_CONTROL_STM32_CUBE
