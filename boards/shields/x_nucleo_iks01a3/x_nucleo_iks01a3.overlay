@@ -45,5 +45,6 @@
 		reg = <0x6b>;
 		irq-gpios =  <&arduino_header 11 GPIO_ACTIVE_HIGH>; /* D5 */
 		label = "LSM6DSO";
+		int-pin = <2>;
 	};
 };
