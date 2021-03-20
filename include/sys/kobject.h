@@ -67,7 +67,7 @@ union z_object_data {
 
 #ifdef CONFIG_GEN_PRIV_STACKS
 	/* Metadata for K_OBJ_THREAD_STACK_ELEMENT */
-	struct z_stack_data *stack_data;
+	const struct z_stack_data *stack_data;
 #else
 	/* Stack buffer size for K_OBJ_THREAD_STACK_ELEMENT */
 	size_t stack_size;
