@@ -780,7 +780,7 @@ def write_gperf_table(fp, syms, objs, little_endian, static_begin, static_end):
                      " priv_stacks[%d][Z_KERNEL_STACK_LEN(CONFIG_PRIVILEGED_STACK_SIZE)];\n"
                      % stack_counter)
 
-            fp.write("static struct z_stack_data stack_data[%d] = {\n"
+            fp.write("static const struct z_stack_data stack_data[%d] = {\n"
                      % stack_counter)
             counter = 0
             for _, ko in objs.items():
