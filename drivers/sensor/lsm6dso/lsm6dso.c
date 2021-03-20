@@ -782,12 +782,7 @@ static const struct lsm6dso_config lsm6dso_config = {
 	.int_gpio_port = DT_INST_GPIO_LABEL(0, irq_gpios),
 	.int_gpio_pin = DT_INST_GPIO_PIN(0, irq_gpios),
 	.int_gpio_flags = DT_INST_GPIO_FLAGS(0, irq_gpios),
-#if defined(CONFIG_LSM6DSO_INT_PIN_1)
-	.int_pin = 1,
-#elif defined(CONFIG_LSM6DSO_INT_PIN_2)
-	.int_pin = 2,
-#endif /* CONFIG_LSM6DSO_INT_PIN */
-
+	.int_pin = DT_INST_PROP(0, int_pin),
 #endif /* CONFIG_LSM6DSO_TRIGGER */
 };
 
