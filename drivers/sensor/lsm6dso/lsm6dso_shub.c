@@ -428,9 +428,9 @@ static inline void lsm6dso_shub_wait_completed(struct lsm6dso_data *data)
 static inline void lsm6dso_shub_embedded_en(struct lsm6dso_data *data, bool on)
 {
 	if (on) {
-		(void) lsm6dso_mem_bank_set(data->ctx, LSM6DSO_SENSOR_HUB_BANK);
+		(void) lsm6dso_mem_bank_set(&data->ctx, LSM6DSO_SENSOR_HUB_BANK);
 	} else {
-		(void) lsm6dso_mem_bank_set(data->ctx, LSM6DSO_USER_BANK);
+		(void) lsm6dso_mem_bank_set(&data->ctx, LSM6DSO_USER_BANK);
 	}
 
 	k_busy_wait(150);
@@ -442,7 +442,7 @@ static int lsm6dso_shub_read_embedded_regs(struct lsm6dso_data *data,
 {
 	lsm6dso_shub_embedded_en(data, true);
 
-	if (lsm6dso_read_reg(data->ctx, reg_addr, value, len) < 0) {
+	if (lsm6dso_read_reg(&data->ctx, reg_addr, value, len) < 0) {
 		LOG_DBG("shub: failed to read external reg: %02x", reg_addr);
 		lsm6dso_shub_embedded_en(data, false);
 		return -EIO;
@@ -459,7 +459,7 @@ static int lsm6dso_shub_write_embedded_regs(struct lsm6dso_data *data,
 {
 	lsm6dso_shub_embedded_en(data, true);
 
-	if (lsm6dso_write_reg(data->ctx, reg_addr, value, len) < 0) {
+	if (lsm6dso_write_reg(&data->ctx, reg_addr, value, len) < 0) {
 		LOG_DBG("shub: failed to write external reg: %02x", reg_addr);
 		lsm6dso_shub_embedded_en(data, false);
 		return -EIO;
@@ -476,7 +476,7 @@ static void lsm6dso_shub_enable(struct lsm6dso_data *data, uint8_t enable)
 	if (!data->accel_freq) {
 		uint8_t odr = (enable) ? 2 : 0;
 
-		if (lsm6dso_xl_data_rate_set(data->ctx, odr) < 0) {
+		if (lsm6dso_xl_data_rate_set(&data->ctx, odr) < 0) {
 			LOG_DBG("shub: failed to set XL sampling rate");
 			return;
 		}
@@ -484,7 +484,7 @@ static void lsm6dso_shub_enable(struct lsm6dso_data *data, uint8_t enable)
 
 	lsm6dso_shub_embedded_en(data, true);
 
-	if (lsm6dso_sh_master_set(data->ctx, enable) < 0) {
+	if (lsm6dso_sh_master_set(&data->ctx, enable) < 0) {
 		LOG_DBG("shub: failed to set master on");
 		lsm6dso_shub_embedded_en(data, false);
 		return;
@@ -537,7 +537,7 @@ static int lsm6dso_shub_read_slave_reg(struct lsm6dso_data *data,
 
 	/* read data from external slave */
 	lsm6dso_shub_embedded_en(data, true);
-	if (lsm6dso_read_reg(data->ctx, LSM6DSO_SHUB_DATA_OUT,
+	if (lsm6dso_read_reg(&data->ctx, LSM6DSO_SHUB_DATA_OUT,
 			     value, len) < 0) {
 		LOG_DBG("shub: error reading sensor data");
 		return -EIO;
@@ -642,14 +642,14 @@ static int lsm6dso_shub_set_data_channel(struct lsm6dso_data *data)
 	/* Configure the master */
 	lsm6dso_aux_sens_on_t aux = LSM6DSO_SLV_0_1_2;
 
-	if (lsm6dso_sh_slave_connected_set(data->ctx, aux) < 0) {
+	if (lsm6dso_sh_slave_connected_set(&data->ctx, aux) < 0) {
 		LOG_DBG("shub: error setting aux sensors");
 		return -EIO;
 	}
 
 	lsm6dso_write_once_t wo = LSM6DSO_ONLY_FIRST_CYCLE;
 
-	if (lsm6dso_sh_write_mode_set(data->ctx, wo) < 0) {
+	if (lsm6dso_sh_write_mode_set(&data->ctx, wo) < 0) {
 		LOG_DBG("shub: error setting write once");
 		return -EIO;
 	}
@@ -689,7 +689,7 @@ int lsm6dso_shub_fetch_external_devs(const struct device *dev)
 	for (n = 0; n < num_ext_dev; n++) {
 		sp = &lsm6dso_shub_slist[shub_ext[n]];
 
-		if (lsm6dso_read_reg(data->ctx, sp->sh_out_reg,
+		if (lsm6dso_read_reg(&data->ctx, sp->sh_out_reg,
 				     data->ext_data[n], sp->out_data_len) < 0) {
 			LOG_DBG("shub: failed to read sample");
 			return -EIO;

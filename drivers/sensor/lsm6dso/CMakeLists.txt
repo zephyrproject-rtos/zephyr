@@ -11,3 +11,5 @@ zephyr_library_sources_ifdef(CONFIG_LSM6DSO            lsm6dso_i2c.c)
 zephyr_library_sources_ifdef(CONFIG_LSM6DSO            lsm6dso_spi.c)
 zephyr_library_sources_ifdef(CONFIG_LSM6DSO_SENSORHUB  lsm6dso_shub.c)
 zephyr_library_sources_ifdef(CONFIG_LSM6DSO_TRIGGER    lsm6dso_trigger.c)
+
+zephyr_library_include_directories(../stmemsc)
