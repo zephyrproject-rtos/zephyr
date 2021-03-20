@@ -201,14 +201,14 @@ static int hid_on_get_protocol(struct hid_device_info *dev_data,
 			       uint8_t **data)
 {
 #ifdef CONFIG_USB_HID_BOOT_PROTOCOL
+	uint32_t size = sizeof(dev_data->protocol);
+
 	if (setup->wValue) {
 		LOG_ERR("wValue should be 0");
 		return -ENOTSUP;
 	}
 
-	uint32_t size = sizeof(dev_data->protocol);
-
-	LOG_DBG("Get Protocol callback, protocol: %d", dev_data->protocol);
+	LOG_DBG("Get Protocol: %d", dev_data->protocol);
 
 	*data = &dev_data->protocol;
 	*len = size;
@@ -274,7 +274,7 @@ static int hid_on_set_protocol(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	LOG_DBG("Set Protocol callback, protocol: %u", protocol);
+	LOG_DBG("Set Protocol: %u", protocol);
 
 	if (dev_data->protocol != protocol) {
 		dev_data->protocol = protocol;
@@ -452,14 +452,7 @@ static int hid_class_handle_req(struct usb_setup_packet *setup,
 	if (REQTYPE_GET_DIR(setup->bmRequestType) == REQTYPE_DIR_TO_HOST) {
 		switch (setup->bRequest) {
 		case USB_HID_GET_IDLE:
-			if (dev_data->ops && dev_data->ops->get_idle) {
-				return dev_data->ops->get_idle(dev, setup, len,
-							       data);
-			} else {
-				return hid_on_get_idle(dev_data, setup, len,
-						       data);
-			}
-			break;
+			return hid_on_get_idle(dev_data, setup, len, data);
 		case USB_HID_GET_REPORT:
 			if (dev_data->ops && dev_data->ops->get_report) {
 				return dev_data->ops->get_report(dev, setup,
@@ -470,14 +463,7 @@ static int hid_class_handle_req(struct usb_setup_packet *setup,
 			}
 			break;
 		case USB_HID_GET_PROTOCOL:
-			if (dev_data->ops && dev_data->ops->get_protocol) {
-				return dev_data->ops->get_protocol(dev, setup,
-								   len, data);
-			} else {
-				return hid_on_get_protocol(dev_data, setup, len,
-							   data);
-			}
-			break;
+			return hid_on_get_protocol(dev_data, setup, len, data);
 		default:
 			LOG_ERR("Unhandled request 0x%02x", setup->bRequest);
 			break;
@@ -485,14 +471,7 @@ static int hid_class_handle_req(struct usb_setup_packet *setup,
 	} else {
 		switch (setup->bRequest) {
 		case USB_HID_SET_IDLE:
-			if (dev_data->ops && dev_data->ops->set_idle) {
-				return dev_data->ops->set_idle(dev, setup, len,
-							       data);
-			} else {
-				return hid_on_set_idle(dev_data, setup, len,
-						       data);
-			}
-			break;
+			return hid_on_set_idle(dev_data, setup, len, data);
 		case USB_HID_SET_REPORT:
 			if (dev_data->ops && dev_data->ops->set_report) {
 				return dev_data->ops->set_report(dev, setup,
@@ -503,14 +482,7 @@ static int hid_class_handle_req(struct usb_setup_packet *setup,
 			}
 			break;
 		case USB_HID_SET_PROTOCOL:
-			if (dev_data->ops && dev_data->ops->set_protocol) {
-				return dev_data->ops->set_protocol(dev, setup,
-								   len, data);
-			} else {
-				return hid_on_set_protocol(dev, dev_data,
-							   setup);
-			}
-			break;
+			return hid_on_set_protocol(dev, dev_data, setup);
 		default:
 			LOG_ERR("Unhandled request 0x%02x", setup->bRequest);
 			break;
