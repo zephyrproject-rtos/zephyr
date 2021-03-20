@@ -20,6 +20,10 @@
 				erase-block-size = <DT_SIZE_K(128)>;
 			};
 		};
+
+		dmamux1: dmamux@40020800 {
+			dma-requests= <107>;
+		};
 	};
 	/*
 	* The RAM memories placed here can be used by both cores M4/M7
