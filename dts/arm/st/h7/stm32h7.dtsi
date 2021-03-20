@@ -712,6 +712,23 @@
 			label = "DMA_2";
 		};
 
+		dmamux1: dmamux@40020800 {
+			compatible = "st,stm32-dmamux";
+			#dma-cells = <4>;
+			reg = <0x40020800 0x400>;
+			interrupts = <102 0>;
+			/* dmamux1 has no dedicated clock, so we enable dma1 clock */
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000001>;
+			dma-channels = <16>;
+			dma-generators = <8>;
+			status = "disabled";
+			label = "DMAMUX_1";
+			/*
+			 * dma-requests is different among h7 socs,
+			 * so we set in specific dtsi files
+			 */
+		};
+
 		rng: rng@48021800 {
 			compatible = "st,stm32-rng";
 			reg = <0x48021800 0x400>;

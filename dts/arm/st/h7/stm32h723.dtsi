@@ -22,7 +22,12 @@
 			status = "disabled";
 			label = "UART_9";
 		};
+
+		dmamux1: dmamux@40020800 {
+			dma-requests= <129>;
+		};
 	};
+
 	/* DTCM memory directly coppled to CPU */
 	dtcm: memory@20000000 {
 		compatible = "arm,dtcm";
