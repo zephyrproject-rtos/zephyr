@@ -23,7 +23,7 @@ properties:
 
           pinctrl-0 = <&can1_rx_pa11 &can1_tx_pa12>;
 
-    master-can-reg:
-      type: int
+    master-can:
+      type: phandles
       required: false
-      description: master can reg when different from current instance
+      description: master can if different from current instance
