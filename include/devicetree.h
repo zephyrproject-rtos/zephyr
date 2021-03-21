@@ -1115,6 +1115,20 @@
  */
 #define DT_PHANDLE_BY_IDX(node_id, prop, idx) \
 	DT_CAT6(node_id, _P_, prop, _IDX_, idx, _PH)
+
+/**
+ * @brief Like DT_PHANDLE_BY_IDX(), but with a fallback to default_value
+ * @param node_id node identifier
+ * @param prop lowercase-and-underscores property name in "node_id"
+ *             with type "phandle", "phandles" or "phandle-array"
+ * @param idx index into "prop"
+ * @return node identifier for the node with the phandle at that index
+ *         or default_value
+ */
+#define DT_PHANDLE_BY_IDX_OR(node_id, prop, idx, default_value) \
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, prop##_IDX_##idx), \
+		    (DT_CAT6(node_id, _P_, prop, _IDX_, idx, _PH)), \
+		    (default_value))
 /*
  * Implementation note: using DT_CAT6 above defers concatenation until
  * after expansion of each parameter. This is important when 'idx' is
@@ -1133,6 +1147,16 @@
  * @return a node identifier for the node pointed to by "ph"
  */
 #define DT_PHANDLE(node_id, prop) DT_PHANDLE_BY_IDX(node_id, prop, 0)
+
+/**
+ * @brief Like DT_PHANDLE(), but with a fallback to default_value
+ * @param node_id node identifier
+ * @param prop lowercase-and-underscores property of "node_id"
+ *             with type "phandle"
+ * @return a node identifier for the node pointed to by "ph" or default_value
+ */
+#define DT_PHANDLE_OR(node_id, prop, default_value) \
+	DT_PHANDLE_BY_IDX_OR(node_id, prop, 0, default_value)
 
 /**
  * @}
@@ -1889,6 +1913,18 @@
 	DT_PHANDLE_BY_IDX(DT_DRV_INST(inst), prop, idx)
 
 /**
+ * @brief Like DT_INST_PHANDLE_BY_IDX(), but with a fallback to default_value
+ * @param inst instance number
+ * @param prop lowercase-and-underscores property name in "inst"
+ *             with type "phandle", "phandles" or "phandle-array"
+ * @param idx index into "prop"
+ * @return a node identifier for the phandle at index "idx" in "prop"
+ *         or default_val
+ */
+#define DT_INST_PHANDLE_BY_IDX_OR(inst, prop, idx, default_val) \
+	DT_PHANDLE_BY_IDX_OR(DT_DRV_INST(inst), prop, idx, default_val)
+
+/**
  * @brief Get a DT_DRV_COMPAT instance's node identifier for a phandle
  * property's value
  * @param inst instance number
@@ -1897,6 +1933,16 @@
  * @return a node identifier for the node pointed to by "ph"
  */
 #define DT_INST_PHANDLE(inst, prop) DT_INST_PHANDLE_BY_IDX(inst, prop, 0)
+
+/**
+ * @brief Like DT_INST_PHANDLE(), but with a fallback to default_value
+ * @param inst instance number
+ * @param prop lowercase-and-underscores property of "inst"
+ *             with type "phandle"
+ * @return a node identifier for the node pointed to by "ph" or default_val
+ */
+#define DT_INST_PHANDLE_OR(inst, prop, default_val) \
+	DT_INST_PHANDLE_BY_IDX_OR(inst, prop, 0, default_val)
 
 /**
  * @brief is "idx" a valid register block index on a DT_DRV_COMPAT instance?
