@@ -256,6 +256,7 @@
 /drivers/pwm/*xlnx*                       @henrikbrixandersen
 /drivers/pwm/pwm_capture.c                @henrikbrixandersen
 /drivers/pwm/pwm_shell.c                  @henrikbrixandersen
+/drivers/pwm/*gecko*                      @sun681
 /drivers/sensor/                          @MaureenHelm
 /drivers/sensor/ams_iAQcore/              @alexanderwachter
 /drivers/sensor/ens210/                   @alexanderwachter
