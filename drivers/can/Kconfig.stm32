@@ -16,7 +16,16 @@ config CAN_MAX_FILTER
 	int "Maximum number of concurrent active filters"
 	depends on CAN_STM32
 	default 5
-	range 1 56
+	range 1 112
 	help
-	  Defines the array size of the callback/msgq pointers.
+	  Defines the array size of the callback pointers.
 	  Must be at least the size of concurrent reads.
+
+config CAN_FILTER_SPLIT
+	int "Filter split. Num of filter banks for the master CAN"
+	default 14
+	#todo: depends on second CAN
+	range 0 28
+	help
+	  Defines the number of filter banks that is used for the master CAN.
+	  The rest of the banks is available to the second CAN.

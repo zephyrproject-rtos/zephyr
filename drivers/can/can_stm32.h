@@ -16,7 +16,10 @@
 
 #define BIT_SEG_LENGTH(cfg) ((cfg)->prop_ts1 + (cfg)->ts2 + 1)
 
-#define CAN_NUMBER_OF_FILTER_BANKS (14)
+#define CAN_FILTERS_PER_BANK (4)
+#define CAN_NUMBER_OF_FILTER_BANKS \
+	(sizeof(((const CAN_TypeDef *)0)->sFilterRegister) \
+	 / sizeof(CAN_FilterRegister_TypeDef))
 #define CAN_MAX_NUMBER_OF_FILTERS (CAN_NUMBER_OF_FILTER_BANKS * 4)
 
 #define CAN_FIRX_STD_IDE_POS   (3U)
@@ -61,7 +64,6 @@ struct can_stm32_data {
 	struct can_mailbox mb0;
 	struct can_mailbox mb1;
 	struct can_mailbox mb2;
-	uint64_t filter_usage;
 	can_rx_callback_t rx_cb[CONFIG_CAN_MAX_FILTER];
 	void *cb_arg[CONFIG_CAN_MAX_FILTER];
 	can_state_change_isr_t state_change_isr;
@@ -69,12 +71,14 @@ struct can_stm32_data {
 
 struct can_stm32_config {
 	CAN_TypeDef *can;   /*!< CAN Registers*/
-	CAN_TypeDef *master_can;   /*!< CAN Registers for shared filter */
+	CAN_TypeDef *master_can;
 	uint32_t bus_speed;
 	uint16_t sample_point;
 	uint8_t sjw;
 	uint8_t prop_ts1;
 	uint8_t ts2;
+	uint8_t filter_bank_start;
+	uint8_t filter_bank_end;
 	struct stm32_pclken pclken;
 	void (*config_irq)(CAN_TypeDef *can);
 	const struct soc_gpio_pinctrl *pinctrl;
