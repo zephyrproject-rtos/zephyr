@@ -12,10 +12,31 @@
 	model = "Silicon Labs BRD4250B (Flex Gecko Radio Board)";
 	compatible = "silabs,efr32_radio_brd4250b", "silabs,efr32fg1p";
 
+	pwmleds {
+		compatible = "pwm-leds";
+		status = "okay";
+		pwm_led0: pwm_led0 {
+			pwms = <&pwm0 0 PWM_POLARITY_NORMAL>;
+		};
+	};
+
+	aliases {
+		pwm-led0 = &pwm_led0;
+	};
 };
 
 &cpu0 {
 	clock-frequency = <38400000>;
+};
+
+&timer0 {
+	status = "okay";
+
+	pwm0: pwm {
+		status = "okay";
+		pin-location = <GECKO_LOCATION(28) GECKO_PORT_F GECKO_PIN(4)>;
+		prescaler = <1024>;
+	};
 };
 
 &flash0 {
