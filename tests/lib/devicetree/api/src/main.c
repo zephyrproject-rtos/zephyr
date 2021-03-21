@@ -193,6 +193,18 @@ static void test_default_prop_access(void)
 	zassert_equal(DT_PHA_BY_NAME_OR(TEST_TEMP, dmas, tx, not_a_cell, -1),
 		      -1, "");
 
+	zassert_true(!strcmp(DT_LABEL(DT_PHANDLE_OR(TEST_PH, gpios, X)),
+			     "TEST_GPIO_1"), "");
+	zassert_true(!strcmp(DT_LABEL(DT_PHANDLE_OR(TEST_PH, not_a_cell,
+						    DT_NODELABEL(test_gpio_2))),
+			     "TEST_GPIO_2"), "");
+
+	zassert_true(!strcmp(DT_LABEL(DT_PHANDLE_BY_IDX_OR(TEST_PH, gpios, 1, X)),
+			     "TEST_GPIO_2"), "");
+	zassert_true(!strcmp(DT_LABEL(DT_PHANDLE_BY_IDX_OR(TEST_PH, not_a_cell,
+							   1, DT_NODELABEL(test_gpio_1))),
+			     "TEST_GPIO_1"), "");
+
 	/* Instance number variants. */
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT vnd_reg_holder
@@ -212,7 +224,18 @@ static void test_default_prop_access(void)
 		      "");
 	zassert_equal(DT_INST_PHA_BY_NAME_OR(0, dmas, tx, not_a_cell, -1), -1,
 		      "");
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_phandle_holder
+	zassert_true(!strcmp(DT_LABEL(DT_INST_PHANDLE_OR(0, gpios, X)), "TEST_GPIO_1"), "");
+	zassert_true(!strcmp(DT_LABEL(DT_INST_PHANDLE_OR(0, not_a_cell, DT_NODELABEL(test_gpio_2))),
+			     "TEST_GPIO_2"), "");
 
+	zassert_true(!strcmp(DT_LABEL(DT_INST_PHANDLE_BY_IDX_OR(0, gpios, 1, X)),
+			     "TEST_GPIO_2"), "");
+	zassert_true(!strcmp(DT_LABEL(DT_INST_PHANDLE_BY_IDX_OR(0, not_a_cell, 1,
+								DT_NODELABEL(test_gpio_1))),
+			     "TEST_GPIO_1"), "");
+#undef DT_DRV_COMPAT
 #undef X
 }
 
