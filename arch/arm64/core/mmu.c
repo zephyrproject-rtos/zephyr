@@ -221,10 +221,7 @@ static int set_mapping(struct arm_mmu_ptables *ptables,
 	uint64_t level_size;
 	uint64_t *table = ptables->base_xlat_table;
 	unsigned int level = BASE_XLAT_LEVEL;
-	k_spinlock_key_t key;
 	int ret = 0;
-
-	key = k_spin_lock(&xlat_lock);
 
 	while (size) {
 		__ASSERT(level <= XLAT_LAST_LEVEL,
@@ -300,8 +297,6 @@ move_on:
 		table = ptables->base_xlat_table;
 		level = BASE_XLAT_LEVEL;
 	}
-
-	k_spin_unlock(&xlat_lock, key);
 
 	return ret;
 }
@@ -578,8 +573,8 @@ static uint64_t get_region_desc(uint32_t attrs)
 	return desc;
 }
 
-static int add_map(struct arm_mmu_ptables *ptables, const char *name,
-		   uintptr_t phys, uintptr_t virt, size_t size, uint32_t attrs)
+static int __add_map(struct arm_mmu_ptables *ptables, const char *name,
+		     uintptr_t phys, uintptr_t virt, size_t size, uint32_t attrs)
 {
 	uint64_t desc = get_region_desc(attrs);
 	bool may_overwrite = !(attrs & MT_NO_OVERWRITE);
@@ -592,13 +587,32 @@ static int add_map(struct arm_mmu_ptables *ptables, const char *name,
 	return set_mapping(ptables, virt, size, desc, may_overwrite);
 }
 
+static int add_map(struct arm_mmu_ptables *ptables, const char *name,
+		   uintptr_t phys, uintptr_t virt, size_t size, uint32_t attrs)
+{
+	k_spinlock_key_t key;
+	int ret;
+
+	key = k_spin_lock(&xlat_lock);
+	ret = __add_map(ptables, name, phys, virt, size, attrs);
+	k_spin_unlock(&xlat_lock, key);
+	return ret;
+}
+
 static int remove_map(struct arm_mmu_ptables *ptables, const char *name,
 		      uintptr_t virt, size_t size)
 {
+	k_spinlock_key_t key;
+	int ret;
+
 	MMU_DEBUG("unmmap [%s]: virt %lx size %lx\n", name, virt, size);
 	__ASSERT(((virt | size) & (CONFIG_MMU_PAGE_SIZE - 1)) == 0,
 		 "address/size are not page aligned\n");
-	return set_mapping(ptables, virt, size, 0, true);
+
+	key = k_spin_lock(&xlat_lock);
+	ret = set_mapping(ptables, virt, size, 0, true);
+	k_spin_unlock(&xlat_lock, key);
+	return ret;
 }
 
 static void invalidate_tlb_all(void)
@@ -649,8 +663,9 @@ static inline void add_arm_mmu_flat_range(struct arm_mmu_ptables *ptables,
 	size_t size = (uintptr_t)range->end - address;
 
 	if (size) {
-		add_map(ptables, range->name, address, address,
-			size, range->attrs | extra_flags);
+		/* MMU not yet active: must use unlocked version */
+		__add_map(ptables, range->name, address, address,
+			  size, range->attrs | extra_flags);
 	}
 }
 
@@ -659,8 +674,9 @@ static inline void add_arm_mmu_region(struct arm_mmu_ptables *ptables,
 				      uint32_t extra_flags)
 {
 	if (region->size || region->attrs) {
-		add_map(ptables, region->name, region->base_pa, region->base_va,
-			region->size, region->attrs | extra_flags);
+		/* MMU not yet active: must use unlocked version */
+		__add_map(ptables, region->name, region->base_pa, region->base_va,
+			  region->size, region->attrs | extra_flags);
 	}
 }
 
