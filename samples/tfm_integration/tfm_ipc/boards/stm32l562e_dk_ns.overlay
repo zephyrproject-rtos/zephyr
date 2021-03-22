@@ -30,18 +30,18 @@
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x00000000 0x00013000>;
+			reg = <0x00000000 0x00019000>;
 			read-only;
 		};
 		/* Secure image primary slot */
-		slot0_partition: partition@00013000 {
+		slot0_partition: partition@00019000 {
 			label = "image-0";
-			reg = <0x00013000 0x00038000>;
+			reg = <0x00019000 0x00038000>;
 		};
 		/* Non-secure image primary slot */
-		slot1_partition: partition@0004B000 {
+		slot1_partition: partition@00051000 {
 			label = "image-1";
-			reg = <0x0004B000 0x0002A000>;
+			reg = <0x00051000 0x0002A000>;
 		};
 		/*
 		 * The flash starting at 0x7F000 and ending at
