@@ -332,14 +332,14 @@ config BOOT_DELAY
 	  all serial ports have DCD.
 
 config THREAD_MONITOR
-	bool "Thread monitoring [EXPERIMENTAL]"
+	bool "Thread monitoring"
 	help
 	  This option instructs the kernel to maintain a list of all threads
 	  (excluding those that have not yet started or have already
 	  terminated).
 
 config THREAD_NAME
-	bool "Thread name [EXPERIMENTAL]"
+	bool "Thread name"
 	help
 	  This option allows to set a name for a thread.
 
