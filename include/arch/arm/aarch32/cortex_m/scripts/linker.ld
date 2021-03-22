@@ -13,6 +13,7 @@
 
 #include <autoconf.h>
 #include <linker/sections.h>
+#include <linker/devicetree_regions.h>
 #include <devicetree.h>
 
 #include <linker/linker-defs.h>
@@ -20,7 +21,7 @@
 
 /* physical address of RAM */
 #ifdef CONFIG_XIP
-#define ROMABLE_REGION FLASH
+#define ROMABLE_REGION DT_CODE_PARITION()
 #define RAMABLE_REGION SRAM
 #else
 #define ROMABLE_REGION SRAM
@@ -31,25 +32,6 @@
 #define _DATA_IN_ROM __data_rom_start
 #else
 #define _DATA_IN_ROM
-#endif
-
-#if !defined(CONFIG_XIP) && (CONFIG_FLASH_SIZE == 0)
-#define ROM_ADDR RAM_ADDR
-#else
-#define ROM_ADDR (CONFIG_FLASH_BASE_ADDRESS + CONFIG_FLASH_LOAD_OFFSET)
-#endif
-
-#ifdef CONFIG_HAS_TI_CCFG
-#define CCFG_SIZE 88
-#define ROM_SIZE (CONFIG_FLASH_SIZE*1K - CONFIG_FLASH_LOAD_OFFSET - \
-	CCFG_SIZE)
-#define CCFG_ADDR (ROM_ADDR + ROM_SIZE)
-#else
-#if CONFIG_FLASH_LOAD_SIZE > 0
-#define ROM_SIZE CONFIG_FLASH_LOAD_SIZE
-#else
-#define ROM_SIZE (CONFIG_FLASH_SIZE*1K - CONFIG_FLASH_LOAD_OFFSET)
-#endif
 #endif
 
 #if defined(CONFIG_XIP)
@@ -106,7 +88,6 @@ _region_min_align = 4;
 
 MEMORY
     {
-    FLASH                 (rx) : ORIGIN = ROM_ADDR, LENGTH = ROM_SIZE
 #ifdef CONFIG_HAS_TI_CCFG
     FLASH_CCFG            (rwx): ORIGIN = CCFG_ADDR, LENGTH = CCFG_SIZE
 #endif
@@ -135,6 +116,10 @@ MEMORY
 #ifdef CONFIG_STM32_BACKUP_SRAM
     BACKUP_SRAM           (rw) : ORIGIN = DT_REG_ADDR(DT_NODELABEL(backup_sram)), LENGTH = DT_REG_SIZE(DT_NODELABEL(backup_sram))
 #endif
+
+    /* Add custom memory regions specified by devicetree partitions */
+    DT_REGIONS_FROM_CHOSEN_FLASH(zephyr_flash)
+
     /* Used by and documented in include/linker/intlist.ld */
     IDT_LIST  (wx)      : ORIGIN = (RAM_ADDR + RAM_SIZE), LENGTH = 2K
     }
@@ -162,7 +147,7 @@ SECTIONS
 
     GROUP_START(ROMABLE_REGION)
 
-	_image_rom_start = ROM_ADDR;
+	_image_rom_start = .;
 
     SECTION_PROLOGUE(rom_start,,)
 	{
