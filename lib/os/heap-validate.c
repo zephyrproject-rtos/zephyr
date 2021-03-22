@@ -171,8 +171,8 @@ bool sys_heap_validate(struct sys_heap *heap)
 }
 
 struct z_heap_stress_rec {
-	void *(*alloc)(void *arg, size_t bytes);
-	void (*free)(void *arg, void *p);
+	void *(*alloc_fn)(void *arg, size_t bytes);
+	void (*free_fn)(void *arg, void *p);
 	void *arg;
 	size_t total_bytes;
 	struct z_heap_stress_block *blocks;
@@ -265,8 +265,8 @@ static size_t rand_free_choice(struct z_heap_stress_rec *sr)
  * scratch array is used to store temporary state and should be sized
  * about half as large as the heap itself. Returns true on success.
  */
-void sys_heap_stress(void *(*alloc)(void *arg, size_t bytes),
-		     void (*free)(void *arg, void *p),
+void sys_heap_stress(void *(*alloc_fn)(void *arg, size_t bytes),
+		     void (*free_fn)(void *arg, void *p),
 		     void *arg, size_t total_bytes,
 		     uint32_t op_count,
 		     void *scratch_mem, size_t scratch_bytes,
@@ -274,8 +274,8 @@ void sys_heap_stress(void *(*alloc)(void *arg, size_t bytes),
 		     struct z_heap_stress_result *result)
 {
 	struct z_heap_stress_rec sr = {
-	       .alloc = alloc,
-	       .free = free,
+	       .alloc_fn = alloc_fn,
+	       .free_fn = free_fn,
 	       .arg = arg,
 	       .total_bytes = total_bytes,
 	       .blocks = scratch_mem,
@@ -288,7 +288,7 @@ void sys_heap_stress(void *(*alloc)(void *arg, size_t bytes),
 	for (uint32_t i = 0; i < op_count; i++) {
 		if (rand_alloc_choice(&sr)) {
 			size_t sz = rand_alloc_size(&sr);
-			void *p = sr.alloc(sr.arg, sz);
+			void *p = sr.alloc_fn(sr.arg, sz);
 
 			result->total_allocs++;
 			if (p != NULL) {
@@ -307,7 +307,7 @@ void sys_heap_stress(void *(*alloc)(void *arg, size_t bytes),
 			sr.blocks[b] = sr.blocks[sr.blocks_alloced - 1];
 			sr.blocks_alloced--;
 			sr.bytes_alloced -= sz;
-			sr.free(sr.arg, p);
+			sr.free_fn(sr.arg, p);
 		}
 		result->accumulated_in_use_bytes += sr.bytes_alloced;
 	}
