@@ -507,6 +507,20 @@ config MAKEFILE_EXPORTS
 	  third party Makefile-based build systems.
 
 endmenu
+
+config EXPERIMENTAL
+	bool
+	help
+	  Symbol that must be selected by a feature if it is considered to be
+	  at an experimental implementation stage.
+
+config WARN_EXPERIMENTAL
+	bool
+	prompt "Warn on experimental usage"
+	help
+	  Print a warning when the Kconfig tree is parsed if any experimental
+	  features are enabled.
+
 endmenu
 
 
