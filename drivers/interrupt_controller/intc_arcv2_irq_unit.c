@@ -191,7 +191,7 @@ static int arc_v2_irq_unit_get_state(const struct device *dev)
  *
  * @return operation result
  */
-static int arc_v2_irq_unit_device_ctrl(const struct device *device,
+static int arc_v2_irq_unit_device_ctrl(const struct device *dev,
 				       uint32_t ctrl_command, void *context,
 				       device_pm_cb cb, void *arg)
 {
@@ -200,18 +200,18 @@ static int arc_v2_irq_unit_device_ctrl(const struct device *device,
 
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
 		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
-			ret = arc_v2_irq_unit_suspend(device);
+			ret = arc_v2_irq_unit_suspend(dev);
 		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
-			ret = arc_v2_irq_unit_resume(device);
+			ret = arc_v2_irq_unit_resume(dev);
 		}
 	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
-		*((uint32_t *)context) = arc_v2_irq_unit_get_state(device);
+		*((uint32_t *)context) = arc_v2_irq_unit_get_state(dev);
 	}
 
 	arch_irq_unlock(key);
 
 	if (cb) {
-		cb(device, ret, context, arg);
+		cb(dev, ret, context, arg);
 	}
 
 	return ret;

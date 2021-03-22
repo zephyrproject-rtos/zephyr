@@ -121,7 +121,7 @@ static void compare_isr(const void *arg)
 	sys_clock_announce(dticks);
 }
 
-int sys_clock_driver_init(const struct device *device)
+int sys_clock_driver_init(const struct device *dev)
 {
 	uint64_t curr = count();
 

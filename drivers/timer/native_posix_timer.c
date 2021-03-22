@@ -60,9 +60,9 @@ void np_timer_isr_test_hook(const void *arg)
  *
  * Enable the hw timer, setting its tick period, and setup its interrupt
  */
-int sys_clock_driver_init(const struct device *device)
+int sys_clock_driver_init(const struct device *dev)
 {
-	ARG_UNUSED(device);
+	ARG_UNUSED(dev);
 
 	tick_period = 1000000ul / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 

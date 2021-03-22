@@ -303,7 +303,7 @@ int ioapic_resume_from_suspend(const struct device *port)
 * Implements the driver control management functionality
 * the *context may include IN data or/and OUT data
 */
-static int ioapic_device_ctrl(const struct device *device,
+static int ioapic_device_ctrl(const struct device *dev,
 			      uint32_t ctrl_command,
 			      void *context, device_pm_cb cb, void *arg)
 {
@@ -311,16 +311,16 @@ static int ioapic_device_ctrl(const struct device *device,
 
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
 		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
-			ret = ioapic_suspend(device);
+			ret = ioapic_suspend(dev);
 		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
-			ret = ioapic_resume_from_suspend(device);
+			ret = ioapic_resume_from_suspend(dev);
 		}
 	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
 		*((uint32_t *)context) = ioapic_device_power_state;
 	}
 
 	if (cb) {
-		cb(device, ret, context, arg);
+		cb(dev, ret, context, arg);
 	}
 
 	return ret;

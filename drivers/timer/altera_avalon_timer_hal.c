@@ -42,9 +42,9 @@ static void timer_irq_handler(const void *unused)
 	wrapped_announce(_sys_idle_elapsed_ticks);
 }
 
-int sys_clock_driver_init(const struct device *device)
+int sys_clock_driver_init(const struct device *dev)
 {
-	ARG_UNUSED(device);
+	ARG_UNUSED(dev);
 
 	IOWR_ALTERA_AVALON_TIMER_PERIODL(TIMER_0_BASE,
 			k_ticks_to_cyc_floor32(1) & 0xFFFF);

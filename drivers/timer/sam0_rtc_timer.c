@@ -175,9 +175,9 @@ static void rtc_isr(const void *arg)
 #endif /* CONFIG_TICKLESS_KERNEL */
 }
 
-int sys_clock_driver_init(const struct device *device)
+int sys_clock_driver_init(const struct device *dev)
 {
-	ARG_UNUSED(device);
+	ARG_UNUSED(dev);
 
 #ifdef MCLK
 	MCLK->APBAMASK.reg |= MCLK_APBAMASK_RTC;

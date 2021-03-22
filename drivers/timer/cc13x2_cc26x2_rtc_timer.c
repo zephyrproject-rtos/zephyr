@@ -183,9 +183,9 @@ static void startDevice(void)
 	irq_unlock(key);
 }
 
-int sys_clock_driver_init(const struct device *device)
+int sys_clock_driver_init(const struct device *dev)
 {
-	ARG_UNUSED(device);
+	ARG_UNUSED(dev);
 
 	rtc_last = 0U;
 

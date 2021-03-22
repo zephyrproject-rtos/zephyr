@@ -249,12 +249,12 @@ static void stm32_rng_isr(const void *arg)
 	}
 }
 
-static int entropy_stm32_rng_get_entropy(const struct device *device,
+static int entropy_stm32_rng_get_entropy(const struct device *dev,
 					 uint8_t *buf,
 					 uint16_t len)
 {
 	/* Check if this API is called on correct driver instance. */
-	__ASSERT_NO_MSG(&entropy_stm32_rng_data == DEV_DATA(device));
+	__ASSERT_NO_MSG(&entropy_stm32_rng_data == DEV_DATA(dev));
 
 	while (len) {
 		uint16_t bytes;

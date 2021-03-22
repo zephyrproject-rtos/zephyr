@@ -277,9 +277,9 @@ static void timer_int_handler(const void *unused)
  *
  * @return 0
  */
-int sys_clock_driver_init(const struct device *device)
+int sys_clock_driver_init(const struct device *dev)
 {
-	ARG_UNUSED(device);
+	ARG_UNUSED(dev);
 
 	/* ensure that the timer will not generate interrupts */
 	timer0_control_register_set(0);

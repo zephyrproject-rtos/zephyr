@@ -36,7 +36,7 @@ extern "C" {
  * initialization callback.  It is a weak symbol that will be
  * implemented as a noop if undefined in the clock driver.
  */
-extern int sys_clock_driver_init(const struct device *device);
+extern int sys_clock_driver_init(const struct device *dev);
 
 /**
  * @brief Initialize system clock driver
@@ -46,7 +46,7 @@ extern int sys_clock_driver_init(const struct device *device);
  * management.  It is a weak symbol that will be implemented as a noop
  * if undefined in the clock driver.
  */
-extern int clock_device_ctrl(const struct device *device,
+extern int clock_device_ctrl(const struct device *dev,
 			       uint32_t ctrl_command,
 			       void *context, device_pm_cb cb, void *arg);
 

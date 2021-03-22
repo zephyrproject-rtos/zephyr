@@ -106,12 +106,12 @@ static void set_timer0_irq(unsigned int irq)
 	TIMER0_CONF_REG = val;
 }
 
-int sys_clock_driver_init(const struct device *device)
+int sys_clock_driver_init(const struct device *dev)
 {
 	extern int z_clock_hw_cycles_per_sec;
 	uint32_t hz;
 
-	ARG_UNUSED(device);
+	ARG_UNUSED(dev);
 
 	DEVICE_MMIO_TOPLEVEL_MAP(hpet_regs, K_MEM_CACHE_NONE);
 

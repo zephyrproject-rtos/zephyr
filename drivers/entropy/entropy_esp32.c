@@ -43,7 +43,7 @@ static inline uint32_t entropy_esp32_get_u32(void)
 	return REG_READ(WDEV_RND_REG);
 }
 
-static int entropy_esp32_get_entropy(const struct device *device, uint8_t *buf,
+static int entropy_esp32_get_entropy(const struct device *dev, uint8_t *buf,
 				     uint16_t len)
 {
 	assert(buf != NULL);
@@ -61,7 +61,7 @@ static int entropy_esp32_get_entropy(const struct device *device, uint8_t *buf,
 	return 0;
 }
 
-static int entropy_esp32_init(const struct device *device)
+static int entropy_esp32_init(const struct device *dev)
 {
 	/* clock initialization handled by clock manager */
 	return 0;

@@ -571,13 +571,13 @@ static const struct gpio_driver_api gpio_stm32_driver = {
  *
  * @return 0
  */
-static int gpio_stm32_init(const struct device *device)
+static int gpio_stm32_init(const struct device *dev)
 {
-	struct gpio_stm32_data *data = device->data;
+	struct gpio_stm32_data *data = dev->data;
 
-	data->dev = device;
+	data->dev = dev;
 
-	return gpio_stm32_clock_request(device, true);
+	return gpio_stm32_clock_request(dev, true);
 }
 
 #define GPIO_DEVICE_INIT(__node, __suffix, __base_addr, __port, __cenr, __bus) \
@@ -654,9 +654,9 @@ GPIO_DEVICE_INIT_STM32(k, K);
 
 #if defined(CONFIG_SOC_SERIES_STM32F1X)
 
-static int gpio_stm32_afio_init(const struct device *device)
+static int gpio_stm32_afio_init(const struct device *dev)
 {
-	UNUSED(device);
+	UNUSED(dev);
 
 	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_AFIO);
 
