@@ -1118,9 +1118,6 @@ else()
     LIBRARIES_POST_SCRIPT ""
     DEPENDENCIES          ${CODE_RELOCATION_DEP}
   )
-  target_byproducts(TARGET ${ZEPHYR_FINAL_EXECUTABLE}
-                    BYPRODUCTS ${PROJECT_BINARY_DIR}/${ZEPHYR_FINAL_EXECUTABLE}.map
-  )
   set_property(TARGET   ${ZEPHYR_FINAL_EXECUTABLE} PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker.cmd)
   add_dependencies(     ${ZEPHYR_FINAL_EXECUTABLE} linker_zephyr_final_script_target)
 
