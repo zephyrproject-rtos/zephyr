@@ -88,6 +88,8 @@ The Zephyr nucleo_207zg board configuration supports the following hardware feat
 +-------------+------------+-------------------------------------+
 | USB         | on-chip    | USB device                          |
 +-------------+------------+-------------------------------------+
+| SPI         | on-chip    | spi                                 |
++-------------+------------+-------------------------------------+
 | WATCHDOG    | on-chip    | independent watchdog                |
 +-------------+------------+-------------------------------------+
 | ADC         | on-chip    | ADC Controller                      |
@@ -139,6 +141,7 @@ Default Zephyr Peripheral Mapping:
 
 - UART_3 TX/RX : PD8/PD9 (ST-Link Virtual Port Com)
 - UART_6 TX/RX : PG14/PG9 (Arduino Serial)
+- SPI1 NSS/SCK/MISO/MOSI : PA4/PA5/PA6/PA7 (Arduino SPI)
 - ETH : PA1, PA2, PA7, PB13, PC1, PC4, PC5, PG11, PG13
 - USB_DM : PA11
 - USB_DP : PA12
