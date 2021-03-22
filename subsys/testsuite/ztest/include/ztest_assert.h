@@ -10,8 +10,8 @@
  * @brief Zephyr testing framework assertion macros
  */
 
-#ifndef __ZTEST_ASSERT_H__
-#define __ZTEST_ASSERT_H__
+#ifndef ZEPHYR_TESTSUITE_ZTEST_ASSERT_H_
+#define ZEPHYR_TESTSUITE_ZTEST_ASSERT_H_
 
 #include <ztest.h>
 #include <stdarg.h>
@@ -231,4 +231,4 @@ static inline void z_zassert(bool cond,
 }
 #endif
 
-#endif /* __ZTEST_ASSERT_H__ */
+#endif /* ZEPHYR_TESTSUITE_ZTEST_ASSERT_H_ */
