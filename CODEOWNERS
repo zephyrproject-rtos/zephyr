@@ -18,7 +18,7 @@
 /.github/workflows/                       @galak @nashif
 /.buildkite/				  @galak
 /MAINTAINERS.yml                          @ioannisg @MaureenHelm
-/arch/arc/                                @abrodkin @ruuddw
+/arch/arc/                                @abrodkin @ruuddw @evgeniy-paltsev
 /arch/arm/                                @MaureenHelm @galak @ioannisg
 /arch/arm/core/aarch32/cortex_m/cmse/     @ioannisg
 /arch/arm/core/aarch64/                   @carlocaione
@@ -26,7 +26,7 @@
 /arch/arm/include/aarch64/                @carlocaione
 /arch/arm/core/aarch32/cortex_a_r/        @MaureenHelm @galak @ioannisg @bbolen @stephanosio
 /arch/common/                             @ioannisg @andyross
-/soc/arc/snps_*/                          @abrodkin @ruuddw
+/soc/arc/snps_*/                          @abrodkin @ruuddw @evgeniy-paltsev
 /soc/nios2/                               @nashif
 /soc/arm/                                 @MaureenHelm @galak @ioannisg
 /soc/arm/arm/mps2/                        @fvincenzo
@@ -68,7 +68,7 @@
 /soc/xtensa/                              @dcpleung @andyross @nashif
 /arch/sparc/                              @martin-aberg
 /soc/sparc/                               @martin-aberg
-/boards/arc/                              @abrodkin @ruuddw
+/boards/arc/                              @abrodkin @ruuddw @evgeniy-paltsev
 /boards/arm/                              @MaureenHelm @galak
 /boards/arm/96b_argonkey/                 @avisconti
 /boards/arm/96b_avenger96/                @Mani-Sadhasivam
@@ -307,7 +307,7 @@
 /drivers/wifi/eswifi/                     @loicpoulain @nandojve
 /drivers/wifi/winc1500/                   @kludentwo
 /drivers/virtualization/		  @tbursztyka
-/dts/arc/                                 @abrodkin @ruuddw @iriszzw
+/dts/arc/                                 @abrodkin @ruuddw @iriszzw @evgeniy-paltsev
 /dts/arm/acsip/                           @NorthernDean
 /dts/arm/atmel/sam4e*                     @nandojve
 /dts/arm/atmel/sam4l*                     @nandojve
@@ -399,9 +399,9 @@
 /include/drivers/pm_cpu_ops.h             @carlocaione
 /include/drivers/pm_cpu_ops/              @carlocaione
 /include/app_memory/                      @dcpleung
-/include/arch/arc/                        @abrodkin @ruuddw
-/include/arch/arc/arch.h                  @abrodkin @ruuddw
-/include/arch/arc/v2/irq.h                @abrodkin @ruuddw
+/include/arch/arc/                        @abrodkin @ruuddw @evgeniy-paltsev
+/include/arch/arc/arch.h                  @abrodkin @ruuddw @evgeniy-paltsev
+/include/arch/arc/v2/irq.h                @abrodkin @ruuddw @evgeniy-paltsev
 /include/arch/arm/aarch32/                @MaureenHelm @galak @ioannisg
 /include/arch/arm/aarch32/cortex_a_r/     @stephanosio
 /include/arch/arm/aarch64/                @carlocaione
