@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2021, Commonwealth Scientific and Industrial Research
+ * Organisation (CSIRO) ABN 41 687 119 230.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&flash0 {
+	partitions {
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x000000000 0x0000C000>;
+		};
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000C000 0x00067000>;
+		};
+		slot1_partition: partition@73000 {
+			label = "image-1";
+			reg = <0x00073000 0x00067000>;
+		};
+		scratch_partition: partition@da000 {
+			label = "image-scratch";
+			reg = <0x000da000 0x0001e000>;
+		};
+	};
+};

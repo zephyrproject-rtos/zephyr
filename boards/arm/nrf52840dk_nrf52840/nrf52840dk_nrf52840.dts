@@ -19,7 +19,6 @@
 		zephyr,bt-c2h-uart = &uart0;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
-		zephyr,code-partition = &slot0_partition;
 	};
 
 	leds {
@@ -245,28 +244,6 @@ arduino_spi: &spi3 {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
-
-		boot_partition: partition@0 {
-			label = "mcuboot";
-			reg = <0x000000000 0x0000C000>;
-		};
-		slot0_partition: partition@c000 {
-			label = "image-0";
-			reg = <0x0000C000 0x00067000>;
-		};
-		slot1_partition: partition@73000 {
-			label = "image-1";
-			reg = <0x00073000 0x00067000>;
-		};
-		scratch_partition: partition@da000 {
-			label = "image-scratch";
-			reg = <0x000da000 0x0001e000>;
-		};
-
-		/*
-		 * The flash starting at 0x000f8000 and ending at
-		 * 0x000fffff is reserved for use by the application.
-		 */
 
 		/*
 		 * Storage partition will be used by FCB/LittleFS/NVS
