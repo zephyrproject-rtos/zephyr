@@ -420,6 +420,14 @@ config MAKEFILE_EXPORTS
 	  third party Makefile-based build systems.
 
 endmenu
+
+config WARN_EXPERIMENTAL
+	bool
+	prompt "Warn on experimental usage"
+	help
+	  Print a warning when the Kconfig tree is parsed if any experimental
+	  features are enabled.
+
 endmenu
 
 
