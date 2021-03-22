@@ -246,7 +246,7 @@ void *sys_heap_alloc(struct sys_heap *heap, size_t bytes)
 void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 {
 	struct z_heap *h = heap->heap;
-	size_t gap, rewind;
+	size_t gap, rew;
 
 	/*
 	 * Split align and rewind values (if any).
@@ -255,15 +255,15 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 	 * So if e.g. align = 0x28 (32 | 8) this means we align to a 32-byte
 	 * boundary and then rewind 8 bytes.
 	 */
-	rewind = align & -align;
-	if (align != rewind) {
-		align -= rewind;
-		gap = MIN(rewind, chunk_header_bytes(h));
+	rew = align & -align;
+	if (align != rew) {
+		align -= rew;
+		gap = MIN(rew, chunk_header_bytes(h));
 	} else {
 		if (align <= chunk_header_bytes(h)) {
 			return sys_heap_alloc(heap, bytes);
 		}
-		rewind = 0;
+		rew = 0;
 		gap = chunk_header_bytes(h);
 	}
 	__ASSERT((align & (align - 1)) == 0, "align must be a power of 2");
@@ -286,7 +286,7 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 	uint8_t *mem = chunk_mem(h, c0);
 
 	/* Align allocated memory */
-	mem = (uint8_t *) ROUND_UP(mem + rewind, align) - rewind;
+	mem = (uint8_t *) ROUND_UP(mem + rew, align) - rew;
 	chunk_unit_t *end = (chunk_unit_t *) ROUND_UP(mem + bytes, CHUNK_UNIT);
 
 	/* Get corresponding chunks */
