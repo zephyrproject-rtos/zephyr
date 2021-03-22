@@ -79,7 +79,7 @@ int bt_mesh_pb_gatt_recv(struct bt_conn *conn, struct net_buf_simple *buf)
 
 int bt_mesh_pb_gatt_open(struct bt_conn *conn)
 {
-	BT_DBG("conn %p", conn);
+	BT_DBG("conn %p", (void *)conn);
 
 	if (link.conn) {
 		return -EBUSY;
@@ -95,7 +95,7 @@ int bt_mesh_pb_gatt_open(struct bt_conn *conn)
 
 int bt_mesh_pb_gatt_close(struct bt_conn *conn)
 {
-	BT_DBG("conn %p", conn);
+	BT_DBG("conn %p", (void *)conn);
 
 	if (link.conn != conn) {
 		BT_DBG("Not connected");
