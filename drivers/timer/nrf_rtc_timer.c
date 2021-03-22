@@ -299,9 +299,9 @@ void z_nrf_rtc_timer_chan_free(uint32_t chan)
 	atomic_or(&alloc_mask, BIT(chan));
 }
 
-int sys_clock_driver_init(const struct device *device)
+int sys_clock_driver_init(const struct device *dev)
 {
-	ARG_UNUSED(device);
+	ARG_UNUSED(dev);
 	static const enum nrf_lfclk_start_mode mode =
 		IS_ENABLED(CONFIG_SYSTEM_CLOCK_NO_WAIT) ?
 			CLOCK_CONTROL_NRF_LF_START_NOWAIT :

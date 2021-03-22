@@ -314,9 +314,9 @@ void sys_clock_disable(void)
 	TIMER_REGS->CTRL = 0U;
 }
 
-int sys_clock_driver_init(const struct device *device)
+int sys_clock_driver_init(const struct device *dev)
 {
-	ARG_UNUSED(device);
+	ARG_UNUSED(dev);
 
 	mchp_pcr_periph_slp_ctrl(PCR_RTMR, MCHP_PCR_SLEEP_DIS);
 

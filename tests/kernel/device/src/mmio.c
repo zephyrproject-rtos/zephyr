@@ -28,9 +28,9 @@ const struct foo_single_config_info foo0_config = {
 	DEVICE_MMIO_ROM_INIT(DT_DRV_INST(0)),
 };
 
-int foo_single_init(const struct device *device)
+int foo_single_init(const struct device *dev)
 {
-	DEVICE_MMIO_MAP(device, K_MEM_CACHE_NONE);
+	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
 
 	return 0;
 }
@@ -122,10 +122,10 @@ const struct foo_mult_config_info foo12_config = {
 #define DEV_DATA(dev)	((struct foo_mult_dev_data *)((dev)->data))
 #define DEV_CFG(dev)	((struct foo_mult_config_info *)((dev)->config))
 
-int foo_mult_init(const struct device *device)
+int foo_mult_init(const struct device *dev)
 {
-	DEVICE_MMIO_NAMED_MAP(device, courge, K_MEM_CACHE_NONE);
-	DEVICE_MMIO_NAMED_MAP(device, grault, K_MEM_CACHE_NONE);
+	DEVICE_MMIO_NAMED_MAP(dev, courge, K_MEM_CACHE_NONE);
+	DEVICE_MMIO_NAMED_MAP(dev, grault, K_MEM_CACHE_NONE);
 
 	return 0;
 }

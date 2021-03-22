@@ -265,9 +265,9 @@ uint32_t sys_clock_cycle_get_32(void)
 	return (uint32_t)(current);
 }
 
-int sys_clock_driver_init(const struct device *device)
+int sys_clock_driver_init(const struct device *dev)
 {
-	ARG_UNUSED(device);
+	ARG_UNUSED(dev);
 	int ret;
 	const struct device *const clk_dev =
 					device_get_binding(NPCX_CLK_CTRL_NAME);

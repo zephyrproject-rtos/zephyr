@@ -204,7 +204,7 @@ static void timer_isr(const void *unused)
 	sys_clock_announce(dticks);
 }
 
-int sys_clock_driver_init(const struct device *device)
+int sys_clock_driver_init(const struct device *dev)
 {
 	timer_init_combine(CTIMER_HW_TIMER_INDEX, TRUE);
 	timer_init(CTIMER_HW_TIMER_INDEX, ET_PSR_32K, TRUE, FALSE, 0);
