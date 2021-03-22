@@ -292,6 +292,10 @@
 #define SEMBARH			ECREG(EC_REG_BASE_ADDR + 0x109E)
 #define SCRATH_SRAM		0x08
 
+/* --- General Control (GCTRL) --- */
+#define IT8XXX2_GCTRL_BASE      0x00F02000
+#define IT8XXX2_GCTRL_EIDSR     ECREG(IT8XXX2_GCTRL_BASE + 0x31)
+
 /**
  *
  * (11xxh) Interrupt controller (INTC)
