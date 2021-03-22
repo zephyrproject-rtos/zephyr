@@ -10,8 +10,8 @@
  * @brief Ztest mocking support
  */
 
-#ifndef __ZTEST_MOCK_H__
-#define __ZTEST_MOCK_H__
+#ifndef ZEPHYR_TESTSUITE_ZTEST_MOCK_H_
+#define ZEPHYR_TESTSUITE_ZTEST_MOCK_H_
 
 /**
  * @defgroup ztest_mock Ztest mocking support
@@ -181,4 +181,4 @@ uintptr_t z_ztest_get_return_value(const char *fn);
 
 #endif /* CONFIG_ZTEST_MOCKING */
 
-#endif /* __ZTEST_H__ */
+#endif /* ZEPHYR_TESTSUITE_ZTEST_MOCK_H_ */
