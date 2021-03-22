@@ -140,11 +140,11 @@ manifest:
       revision: 7dd56fc100d79cc45c33d43e7401d1803e26f6e7
     - name: trusted-firmware-m
       path: modules/tee/tfm
-      revision: 69dc29a48b707dfe732a57e05a3291ca71138eec
+      revision: d07d72c64e4b3d8594829eea302b88e51709861f
     - name: tfm-mcuboot # This is used by the trusted-firmware-m module.
       repo-path: mcuboot
       path: modules/tee/tfm-mcuboot
-      revision: 1.7.0-rc1
+      revision: v1.7.2
 
   self:
     path: zephyr
