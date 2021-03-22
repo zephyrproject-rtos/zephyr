@@ -23,12 +23,12 @@ extern "C" {
 
 /** @brief Put log message to a standard logger backend.
  *
- * @param log_output	Log output instance.
+ * @param output	Log output instance.
  * @param flags		Formatting flags.
  * @param msg		Log message.
  */
 static inline void
-log_backend_std_put(const struct log_output *const log_output, uint32_t flags,
+log_backend_std_put(const struct log_output *const output, uint32_t flags,
 		    struct log_msg *msg)
 {
 	log_msg_get(msg);
@@ -43,35 +43,35 @@ log_backend_std_put(const struct log_output *const log_output, uint32_t flags,
 		flags |= LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
 	}
 
-	log_output_msg_process(log_output, msg, flags);
+	log_output_msg_process(output, msg, flags);
 
 	log_msg_put(msg);
 }
 
 /** @brief Put a standard logger backend into panic mode.
  *
- * @param log_output	Log output instance.
+ * @param output	Log output instance.
  */
 static inline void
-log_backend_std_panic(const struct log_output *const log_output)
+log_backend_std_panic(const struct log_output *const output)
 {
-	log_output_flush(log_output);
+	log_output_flush(output);
 }
 
 /** @brief Report dropped messages to a standard logger backend.
  *
- * @param log_output	Log output instance.
+ * @param output	Log output instance.
  * @param cnt		Number of dropped messages.
  */
 static inline void
-log_backend_std_dropped(const struct log_output *const log_output, uint32_t cnt)
+log_backend_std_dropped(const struct log_output *const output, uint32_t cnt)
 {
-	log_output_dropped_process(log_output, cnt);
+	log_output_dropped_process(output, cnt);
 }
 
 /** @brief Synchronously process log message by a standard logger backend.
  *
- * @param log_output	Log output instance.
+ * @param output	Log output instance.
  * @param flags		Formatting flags.
  * @param src_level	Log message source and level.
  * @param timestamp	Timestamp.
@@ -79,7 +79,7 @@ log_backend_std_dropped(const struct log_output *const log_output, uint32_t cnt)
  * @param ap		Log string arguments.
  */
 static inline void
-log_backend_std_sync_string(const struct log_output *const log_output,
+log_backend_std_sync_string(const struct log_output *const output,
 			    uint32_t flags, struct log_msg_ids src_level,
 			    uint32_t timestamp, const char *fmt, va_list ap)
 {
@@ -102,7 +102,7 @@ log_backend_std_sync_string(const struct log_output *const log_output,
 		key = irq_lock();
 	}
 
-	log_output_string(log_output, src_level, timestamp, fmt, ap, flags);
+	log_output_string(output, src_level, timestamp, fmt, ap, flags);
 
 	if (IS_ENABLED(CONFIG_LOG_IMMEDIATE) &&
 		IS_ENABLED(CONFIG_LOG_IMMEDIATE_CLEAN_OUTPUT)) {
@@ -112,7 +112,7 @@ log_backend_std_sync_string(const struct log_output *const log_output,
 
 /** @brief Synchronously process hexdump message by a standard logger backend.
  *
- * @param log_output	Log output instance.
+ * @param output	Log output instance.
  * @param flags		Formatting flags.
  * @param src_level	Log message source and level.
  * @param timestamp	Timestamp.
@@ -121,7 +121,7 @@ log_backend_std_sync_string(const struct log_output *const log_output,
  * @param length	Length of the buffer.
  */
 static inline void
-log_backend_std_sync_hexdump(const struct log_output *const log_output,
+log_backend_std_sync_hexdump(const struct log_output *const output,
 			     uint32_t flags, struct log_msg_ids src_level,
 			     uint32_t timestamp, const char *metadata,
 			     const uint8_t *data, uint32_t length)
@@ -145,7 +145,7 @@ log_backend_std_sync_hexdump(const struct log_output *const log_output,
 		key = irq_lock();
 	}
 
-	log_output_hexdump(log_output, src_level, timestamp,
+	log_output_hexdump(output, src_level, timestamp,
 			metadata, data, length, flags);
 
 	if (IS_ENABLED(CONFIG_LOG_IMMEDIATE) &&
