@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Linaro Limited
+ * Copyright (c) 2021, Linaro Limited.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -217,8 +217,18 @@ static int uart_cmsdk_apb_fifo_fill(const struct device *dev,
 {
 	volatile struct uart_cmsdk_apb *uart = UART_STRUCT(dev);
 
-	/* No hardware FIFO present */
+	/*
+	 * No hardware FIFO present. Only 1 byte
+	 * to write if TX buffer is empty.
+	 */
 	if (len && !(uart->state & UART_TX_BF)) {
+		/*
+		 * Clear TX int. pending flag before pushing byte to "FIFO".
+		 * If TX interrupt is enabled the UART_TX_IN bit will be set
+		 * again automatically by the UART hardware machinery once
+		 * the "FIFO" becomes empty again.
+		 */
+		uart->intclear = UART_TX_IN;
 		uart->data = *tx_data;
 		return 1;
 	}
@@ -240,8 +250,18 @@ static int uart_cmsdk_apb_fifo_read(const struct device *dev,
 {
 	volatile struct uart_cmsdk_apb *uart = UART_STRUCT(dev);
 
-	/* No hardware FIFO present */
+	/*
+	 * No hardware FIFO present. Only 1 byte
+	 * to read if RX buffer is full.
+	 */
 	if (size && uart->state & UART_RX_BF) {
+		/*
+		 * Clear RX int. pending flag before popping byte from "FIFO".
+		 * If RX interrupt is enabled the UART_RX_IN bit will be set
+		 * again automatically by the UART hardware machinery once
+		 * the "FIFO" becomes full again.
+		 */
+		uart->intclear = UART_RX_IN;
 		*rx_data = (unsigned char)uart->data;
 		return 1;
 	}
@@ -262,10 +282,12 @@ static void uart_cmsdk_apb_irq_tx_enable(const struct device *dev)
 
 	UART_STRUCT(dev)->ctrl |= UART_TX_IN_EN;
 	/* The expectation is that TX is a level interrupt, active for as
-	 * long as TX buffer is empty. But in CMSDK UART, it appears to be
-	 * edge interrupt, firing on a state change of TX buffer. So, we
-	 * need to "prime" it here by calling ISR directly, to get interrupt
-	 * processing going.
+	 * long as TX buffer is empty. But in CMSDK UART it's an edge
+	 * interrupt, firing on a state change of TX buffer from full to
+	 * empty. So, we need to "prime" it here by calling ISR directly,
+	 * to get interrupt processing going, as there is no previous
+	 * full state to allow a transition from full to empty buffer
+	 * that will trigger a TX interrupt.
 	 */
 	key = irq_lock();
 	uart_cmsdk_apb_isr(dev);
@@ -282,6 +304,8 @@ static void uart_cmsdk_apb_irq_tx_enable(const struct device *dev)
 static void uart_cmsdk_apb_irq_tx_disable(const struct device *dev)
 {
 	UART_STRUCT(dev)->ctrl &= ~UART_TX_IN_EN;
+	/* Clear any pending TX interrupt after disabling it */
+	UART_STRUCT(dev)->intclear = UART_TX_IN;
 }
 
 /**
@@ -318,6 +342,8 @@ static void uart_cmsdk_apb_irq_rx_enable(const struct device *dev)
 static void uart_cmsdk_apb_irq_rx_disable(const struct device *dev)
 {
 	UART_STRUCT(dev)->ctrl &= ~UART_RX_IN_EN;
+	/* Clear any pending RX interrupt after disabling it */
+	UART_STRUCT(dev)->intclear = UART_RX_IN;
 }
 
 /**
@@ -377,9 +403,7 @@ static void uart_cmsdk_apb_irq_err_disable(const struct device *dev)
  */
 static int uart_cmsdk_apb_irq_is_pending(const struct device *dev)
 {
-	/* Return true if rx buffer full or tx buffer empty */
-	return (UART_STRUCT(dev)->state & (UART_RX_BF | UART_TX_BF))
-					!= UART_TX_BF;
+	return (UART_STRUCT(dev)->intstatus & (UART_RX_IN | UART_TX_IN));
 }
 
 /**
@@ -421,11 +445,7 @@ static void uart_cmsdk_apb_irq_callback_set(const struct device *dev,
  */
 void uart_cmsdk_apb_isr(const struct device *dev)
 {
-	volatile struct uart_cmsdk_apb *uart = UART_STRUCT(dev);
 	struct uart_cmsdk_apb_dev_data *data = DEV_DATA(dev);
-
-	/* Clear pending interrupts */
-	uart->intclear = UART_RX_IN | UART_TX_IN;
 
 	/* Verify if the callback has been registered */
 	if (data->irq_cb) {
