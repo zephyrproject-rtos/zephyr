@@ -5313,36 +5313,36 @@ __syscall int k_poll(struct k_poll_event *events, int num_events,
  *
  * Ready a poll signal object to be signaled via k_poll_signal_raise().
  *
- * @param signal A poll signal.
+ * @param sig A poll signal.
  *
  * @return N/A
  */
 
-__syscall void k_poll_signal_init(struct k_poll_signal *signal);
+__syscall void k_poll_signal_init(struct k_poll_signal *sig);
 
 /*
  * @brief Reset a poll signal object's state to unsignaled.
  *
- * @param signal A poll signal object
+ * @param sig A poll signal object
  */
-__syscall void k_poll_signal_reset(struct k_poll_signal *signal);
+__syscall void k_poll_signal_reset(struct k_poll_signal *sig);
 
-static inline void z_impl_k_poll_signal_reset(struct k_poll_signal *signal)
+static inline void z_impl_k_poll_signal_reset(struct k_poll_signal *sig)
 {
-	signal->signaled = 0U;
+	sig->signaled = 0U;
 }
 
 /**
  * @brief Fetch the signaled state and result value of a poll signal
  *
- * @param signal A poll signal object
+ * @param sig A poll signal object
  * @param signaled An integer buffer which will be written nonzero if the
  *		   object was signaled
  * @param result An integer destination buffer which will be written with the
  *		   result value if the object was signaled, or an undefined
  *		   value if it was not.
  */
-__syscall void k_poll_signal_check(struct k_poll_signal *signal,
+__syscall void k_poll_signal_check(struct k_poll_signal *sig,
 				   unsigned int *signaled, int *result);
 
 /**
@@ -5362,14 +5362,14 @@ __syscall void k_poll_signal_check(struct k_poll_signal *signal,
  * this function returns an error indicating that an expiring poll was
  * not notified.  The next k_poll() will detect the missed raise.
  *
- * @param signal A poll signal.
+ * @param sig A poll signal.
  * @param result The value to store in the result field of the signal.
  *
  * @retval 0 The signal was delivered successfully.
  * @retval -EAGAIN The polling thread's timeout is in the process of expiring.
  */
 
-__syscall int k_poll_signal_raise(struct k_poll_signal *signal, int result);
+__syscall int k_poll_signal_raise(struct k_poll_signal *sig, int result);
 
 /**
  * @internal
