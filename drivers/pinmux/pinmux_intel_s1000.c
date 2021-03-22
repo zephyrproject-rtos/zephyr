@@ -88,9 +88,9 @@ static struct pinmux_driver_api apis = {
 	.input = pinmux_input
 };
 
-static int pinmux_init(const struct device *device)
+static int pinmux_init(const struct device *dev)
 {
-	ARG_UNUSED(device);
+	ARG_UNUSED(dev);
 	return 0;
 }
 

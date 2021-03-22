@@ -84,7 +84,7 @@ static int entropy_gecko_trng_get_entropy_isr(const struct device *dev,
 	}
 }
 
-static int entropy_gecko_trng_init(const struct device *device)
+static int entropy_gecko_trng_init(const struct device *dev)
 {
 	/* Enable the TRNG0 clock. */
 	CMU_ClockEnable(cmuClock_TRNG0, true);

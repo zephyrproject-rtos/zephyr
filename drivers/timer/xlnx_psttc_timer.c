@@ -96,9 +96,10 @@ static void ttc_isr(const void *arg)
 	sys_clock_announce(ticks);
 }
 
-int sys_clock_driver_init(const struct device *device)
+int sys_clock_driver_init(const struct device *dev)
 {
 	uint32_t reg_val;
+	ARG_UNUSED(dev);
 
 	/* Stop timer */
 	sys_write32(XTTCPS_CNT_CNTRL_DIS_MASK,

@@ -46,9 +46,9 @@ static void arm_arch_timer_compare_isr(const void *arg)
 	sys_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? delta_ticks : 1);
 }
 
-int sys_clock_driver_init(const struct device *device)
+int sys_clock_driver_init(const struct device *dev)
 {
-	ARG_UNUSED(device);
+	ARG_UNUSED(dev);
 
 	IRQ_CONNECT(ARM_ARCH_TIMER_IRQ, ARM_ARCH_TIMER_PRIO,
 		    arm_arch_timer_compare_isr, NULL, ARM_ARCH_TIMER_FLAGS);

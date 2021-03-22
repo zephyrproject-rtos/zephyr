@@ -689,9 +689,9 @@ static void gsm_configure(struct k_work *work)
 	gsm_finalize_connection(gsm);
 }
 
-void gsm_ppp_start(const struct device *device)
+void gsm_ppp_start(const struct device *dev)
 {
-	struct gsm_modem *gsm = device->data;
+	struct gsm_modem *gsm = dev->data;
 
 	/* Re-init underlying UART comms */
 	int r = modem_iface_uart_init_dev(&gsm->context.iface,
@@ -705,9 +705,9 @@ void gsm_ppp_start(const struct device *device)
 	(void)k_delayed_work_submit(&gsm->gsm_configure_work, K_NO_WAIT);
 }
 
-void gsm_ppp_stop(const struct device *device)
+void gsm_ppp_stop(const struct device *dev)
 {
-	struct gsm_modem *gsm = device->data;
+	struct gsm_modem *gsm = dev->data;
 	struct net_if *iface = gsm->iface;
 
 	net_if_l2(iface)->enable(iface, false);
@@ -727,9 +727,9 @@ void gsm_ppp_stop(const struct device *device)
 	}
 }
 
-static int gsm_init(const struct device *device)
+static int gsm_init(const struct device *dev)
 {
-	struct gsm_modem *gsm = device->data;
+	struct gsm_modem *gsm = dev->data;
 	int r;
 
 	LOG_DBG("Generic GSM modem (%p)", gsm);
@@ -795,7 +795,7 @@ static int gsm_init(const struct device *device)
 	}
 
 	if (IS_ENABLED(CONFIG_GSM_PPP_AUTOSTART)) {
-		gsm_ppp_start(device);
+		gsm_ppp_start(dev);
 	}
 
 	return 0;

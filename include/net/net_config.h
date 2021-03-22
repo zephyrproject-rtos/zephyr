@@ -87,14 +87,14 @@ int net_config_init_by_iface(struct net_if *iface, const char *app_info,
  *          the config option and call the function manually when the
  *          application starts.
  *
- * @param device Network device to use. The function will figure out what
+ * @param dev Network device to use. The function will figure out what
  *        network interface to use based on the device. If the device is NULL,
  *        then default network interface is used by the function.
  * @param app_info String describing this application.
  *
  * @return 0 if ok, <0 if error.
  */
-int net_config_init_app(const struct device *device, const char *app_info);
+int net_config_init_app(const struct device *dev, const char *app_info);
 
 /**
  * @}
