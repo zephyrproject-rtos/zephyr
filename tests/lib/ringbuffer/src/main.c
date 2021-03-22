@@ -49,7 +49,7 @@ RING_BUF_ITEM_DECLARE_POW2(ring_buf1, 8);
 #define RINGBUFFER_SIZE 5
 #define DATA_MAX_SIZE 3
 #define POW 2
-
+extern void test_ringbuffer_concurrent(void);
 /**
  * @brief Test APIs of ring buffer
  *
@@ -929,7 +929,8 @@ void test_main(void)
 		       ztest_unit_test(test_ringbuffer_equal_bufs),
 		       ztest_unit_test(test_capacity),
 		       ztest_unit_test(test_reset),
-		       ztest_unit_test(test_ringbuffer_performance)
+		       ztest_unit_test(test_ringbuffer_performance),
+		       ztest_unit_test(test_ringbuffer_concurrent)
 		);
 	ztest_run_test_suite(test_ringbuffer_api);
 }
