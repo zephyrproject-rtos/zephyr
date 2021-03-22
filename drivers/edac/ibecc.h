@@ -9,7 +9,14 @@
 
 #define PCI_VENDOR_ID_INTEL	0x8086
 
+/* Supported SKU map */
+#define PCI_DEVICE_ID_SKU5	0x4514
+#define PCI_DEVICE_ID_SKU6	0x4528
 #define PCI_DEVICE_ID_SKU7	0x452a
+#define PCI_DEVICE_ID_SKU8	0x4516
+#define PCI_DEVICE_ID_SKU9	0x452c
+#define PCI_DEVICE_ID_SKU10	0x452e
+#define PCI_DEVICE_ID_SKU11	0x4532
 #define PCI_DEVICE_ID_SKU12	0x4518
 
 /* TODO: Move to correct place NMI registers */
