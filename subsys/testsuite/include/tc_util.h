@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __TC_UTIL_H__
-#define __TC_UTIL_H__
+#ifndef ZEPHYR_TESTSUITE_INCLUDE_TC_UTIL_H_
+#define ZEPHYR_TESTSUITE_INCLUDE_TC_UTIL_H_
 
 #include <zephyr.h>
 
@@ -195,4 +195,4 @@ static inline void test_time_ms(void)
 #define TC_CMD_ITEM(name) {STRINGIFY(name), cmd_##name, "none"}
 #endif
 
-#endif /* __TC_UTIL_H__ */
+#endif /* ZEPHYR_TESTSUITE_INCLUDE_TC_UTIL_H_ */
