@@ -307,7 +307,7 @@ Device Set Power State
 
 .. code-block:: c
 
-   int device_set_power_state(const struct device *device, uint32_t device_power_state, device_pm_cb cb, void *arg);
+   int device_set_power_state(const struct device *dev, uint32_t device_power_state, device_pm_cb cb, void *arg);
 
 Calls the :c:func:`device_pm_control()` handler function implemented by the
 device driver with DEVICE_PM_SET_POWER_STATE command.
@@ -317,7 +317,7 @@ Device Get Power State
 
 .. code-block:: c
 
-   int device_get_power_state(const struct device *device, uint32_t * device_power_state);
+   int device_get_power_state(const struct device *dev, uint32_t * device_power_state);
 
 Calls the :c:func:`device_pm_control()` handler function implemented by the
 device driver with DEVICE_PM_GET_POWER_STATE command.
