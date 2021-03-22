@@ -41,19 +41,19 @@ static uint32_t mod(struct ring_buf *buf, uint32_t val)
  */
 static void item_indexes_rewind(struct ring_buf *buf)
 {
-	uint32_t rewind;
+	uint32_t rew;
 	uint32_t threshold = ring_buf_get_rewind_threshold();
 
 	if (buf->head < threshold) {
 		return;
 	}
 
-	rewind = buf->size * (threshold / buf->size);
+	rew = buf->size * (threshold / buf->size);
 
 	k_spinlock_key_t key = k_spin_lock(&buf->lock);
 
-	buf->tail -= rewind;
-	buf->head -= rewind;
+	buf->tail -= rew;
+	buf->head -= rew;
 	k_spin_unlock(&buf->lock, key);
 }
 
@@ -63,7 +63,7 @@ static void item_indexes_rewind(struct ring_buf *buf)
  */
 static void byte_indexes_rewind(struct ring_buf *buf)
 {
-	uint32_t rewind;
+	uint32_t rew;
 	uint32_t threshold = ring_buf_get_rewind_threshold();
 
 	/* Checking head since it is the smallest index. */
@@ -71,14 +71,14 @@ static void byte_indexes_rewind(struct ring_buf *buf)
 		return;
 	}
 
-	rewind = buf->size * (threshold / buf->size);
+	rew = buf->size * (threshold / buf->size);
 
 	k_spinlock_key_t key = k_spin_lock(&buf->lock);
 
-	buf->tail -= rewind;
-	buf->head -= rewind;
-	buf->misc.byte_mode.tmp_head -= rewind;
-	buf->misc.byte_mode.tmp_tail -= rewind;
+	buf->tail -= rew;
+	buf->head -= rew;
+	buf->misc.byte_mode.tmp_head -= rew;
+	buf->misc.byte_mode.tmp_tail -= rew;
 	k_spin_unlock(&buf->lock, key);
 }
 
