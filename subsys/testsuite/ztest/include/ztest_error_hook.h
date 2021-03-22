@@ -68,7 +68,7 @@ void ztest_post_assert_fail_hook(void);
 
 #endif
 
-#if defined(CONFIG_ZTEST_FATAL_HOOK)
+#if defined(CONFIG_ZTEST_FATAL_HOOK) || defined(CONFIG_ZTEST_ASSERT_HOOK)
 #include <syscalls/ztest_error_hook.h>
 #endif
 
