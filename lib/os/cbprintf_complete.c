@@ -884,14 +884,14 @@ static char *encode_float(double value,
 	 * whether the value is subnormal.
 	 */
 	char c = conv->specifier;
-	int exp = (u.u64 >> FRACTION_BITS) & BIT_MASK(EXPONENT_BITS);
+	int expo = (u.u64 >> FRACTION_BITS) & BIT_MASK(EXPONENT_BITS);
 	uint64_t fract = u.u64 & BIT64_MASK(FRACTION_BITS);
-	bool is_subnormal = (exp == 0) && (fract != 0);
+	bool is_subnormal = (expo == 0) && (fract != 0);
 
 	/* Exponent of all-ones signals infinity or NaN, which are
 	 * text constants regardless of specifier.
 	 */
-	if (exp == BIT_MASK(EXPONENT_BITS)) {
+	if (expo == BIT_MASK(EXPONENT_BITS)) {
 		if (fract == 0) {
 			if (isupper((int)c)) {
 				*buf++ = 'I';
@@ -937,10 +937,10 @@ static char *encode_float(double value,
 		 * non-fractional value.  Subnormals require increasing the
 		 * exponent as first bit isn't the implicit bit.
 		 */
-		exp -= 1023;
+		expo -= 1023;
 		if (is_subnormal) {
 			*buf++ = '0';
-			++exp;
+			++expo;
 		} else {
 			*buf++ = '1';
 		}
@@ -1017,15 +1017,15 @@ static char *encode_float(double value,
 		}
 
 		*buf++ = 'p';
-		if (exp >= 0) {
+		if (expo >= 0) {
 			*buf++ = '+';
 		} else {
 			*buf++ = '-';
-			exp = -exp;
+			expo = -expo;
 		}
 
 		aconv.specifier = 'i';
-		sp = encode_uint(exp, &aconv, buf, spe);
+		sp = encode_uint(expo, &aconv, buf, spe);
 
 		while (sp < spe) {
 			*buf++ = *sp++;
@@ -1043,50 +1043,50 @@ static char *encode_float(double value,
 	fract &= ~SIGN_MASK;
 
 	/* Non-zero values need normalization. */
-	if ((exp | fract) != 0) {
+	if ((expo | fract) != 0) {
 		if (is_subnormal) {
 			/* Fraction is subnormal.  Normalize it and correct
 			 * the exponent.
 			 */
 			while (((fract <<= 1) & BIT_63) == 0) {
-				exp--;
+				expo--;
 			}
 		}
 		/* Adjust the offset exponent to be signed rather than offset,
 		 * and set the implicit 1 bit in the (shifted) 53-bit
 		 * fraction.
 		 */
-		exp -= (1023 - 1);	/* +1 since .1 vs 1. */
+		expo -= (1023 - 1);	/* +1 since .1 vs 1. */
 		fract |= BIT_63;
 	}
 
 	/*
 	 * Let's consider:
 	 *
-	 *	value = fract * 2^exp * 10^decexp
+	 *	value = fract * 2^expo * 10^decexp
 	 *
 	 * Initially decexp = 0. The goal is to bring exp between
 	 * 0 and -2 as the magnitude of a fractional decimal digit is 3 bits.
 	 */
 	int decexp = 0;
 
-	while (exp < -2) {
+	while (expo < -2) {
 		/*
 		 * Make roon to allow a multiplication by 5 without overflow.
 		 * We test only the top part for faster code.
 		 */
 		do {
 			fract >>= 1;
-			exp++;
+			expo++;
 		} while ((uint32_t)(fract >> 32) >= (UINT32_MAX / 5U));
 
 		/* Perform fract * 5 * 2 / 10 */
 		fract *= 5U;
-		exp++;
+		expo++;
 		decexp--;
 	}
 
-	while (exp > 0) {
+	while (expo > 0) {
 		/*
 		 * Perform fract / 5 / 2 * 10.
 		 * The +2 is there to do round the result of the division
@@ -1094,13 +1094,13 @@ static char *encode_float(double value,
 		 */
 		fract += 2;
 		_ldiv5(&fract);
-		exp--;
+		expo--;
 		decexp++;
 
 		/* Bring back our fractional number to full scale */
 		do {
 			fract <<= 1;
-			exp--;
+			expo--;
 		} while (!(fract & BIT_63));
 	}
 
@@ -1109,7 +1109,7 @@ static char *encode_float(double value,
 	 * Move it between bits 59 and 60 to give 4 bits of room to the
 	 * integer part.
 	 */
-	fract >>= (4 - exp);
+	fract >>= (4 - expo);
 
 	if ((c == 'g') || (c == 'G')) {
 		/* Use the specified precision and exponent to select the
