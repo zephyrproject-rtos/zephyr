@@ -1224,6 +1224,20 @@ int bt_mesh_model_data_store(struct bt_mesh_model *mod, bool vnd,
 	return err;
 }
 
+static void store_model_user_data(struct bt_mesh_model *mod,
+				  struct bt_mesh_elem *elem, bool vnd,
+				  bool primary, void *user_data)
+{
+	if (mod->cb && mod->cb->settings_store) {
+		mod->cb->settings_store(mod);
+	}
+}
+
+void bt_mesh_model_user_data_store_request(void)
+{
+	bt_mesh_model_foreach(store_model_user_data, NULL);
+}
+
 static void commit_mod(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
 		       bool vnd, bool primary, void *user_data)
 {

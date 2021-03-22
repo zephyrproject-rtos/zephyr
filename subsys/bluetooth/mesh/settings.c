@@ -165,6 +165,7 @@ static int mesh_export(int (*export_func)(const char *name, const void *val,
 	 * to use export_func when implementing h_export, use settings_save_one directly.
 	 */
 	store_pending();
+	bt_mesh_model_user_data_store_request();
 
 	return 0;
 }

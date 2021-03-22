@@ -494,6 +494,16 @@ struct bt_mesh_model_cb {
 				  const char *name, size_t len_rd,
 				  settings_read_cb read_cb, void *cb_arg);
 
+	/** @brief Callback called when the stack requests the model to store the user data
+	 * tied to the model in persistent storage.
+	 *
+	 * This happens when @ref settings_save gets called. To store the user data,
+	 * use @ref bt_mesh_model_data_store.
+	 *
+	 *  @param model      Model this callback belongs to.
+	 */
+	void (*const settings_store)(struct bt_mesh_model *model);
+
 	/** @brief Callback called when the mesh is started.
 	 *
 	 *  This handler gets called after the node has been provisioned, or
