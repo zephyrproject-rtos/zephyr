@@ -535,16 +535,21 @@ struct bt_mesh_model_cb {
 	void (*const reset)(struct bt_mesh_model *model);
 };
 
+/** Vendor model ID */
+struct bt_mesh_mod_id_vnd {
+	/** Vendor's company ID */
+	uint16_t company;
+	/** Model ID */
+	uint16_t id;
+};
+
 /** Abstraction that describes a Mesh Model instance */
 struct bt_mesh_model {
 	union {
 		/** SIG model ID */
 		const uint16_t id;
 		/** Vendor model ID */
-		struct {
-			uint16_t company; /**< Vendor's company ID */
-			uint16_t id;      /**< Model ID */
-		} vnd;
+		const struct bt_mesh_mod_id_vnd vnd;
 	};
 
 	/* Internal information, mainly for persistent storage */
