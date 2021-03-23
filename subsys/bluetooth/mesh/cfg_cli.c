@@ -13,6 +13,7 @@
 #include <zephyr/types.h>
 #include <sys/util.h>
 #include <sys/byteorder.h>
+#include <sys/check.h>
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
@@ -2073,4 +2074,69 @@ int32_t bt_mesh_cfg_cli_timeout_get(void)
 void bt_mesh_cfg_cli_timeout_set(int32_t timeout)
 {
 	msg_timeout = timeout;
+}
+
+int bt_mesh_comp_p0_get(struct bt_mesh_comp_p0 *page,
+			struct net_buf_simple *buf)
+{
+	if (buf->len < 10) {
+		return -EINVAL;
+	}
+
+	page->cid = net_buf_simple_pull_le16(buf);
+	page->pid = net_buf_simple_pull_le16(buf);
+	page->vid = net_buf_simple_pull_le16(buf);
+	page->crpl = net_buf_simple_pull_le16(buf);
+	page->feat = net_buf_simple_pull_le16(buf);
+	page->_buf = buf;
+
+	return 0;
+}
+
+struct bt_mesh_comp_p0_elem *bt_mesh_comp_p0_elem_pull(const struct bt_mesh_comp_p0 *page,
+						       struct bt_mesh_comp_p0_elem *elem)
+{
+	size_t modlist_size;
+
+	if (page->_buf->len < 4) {
+		return NULL;
+	}
+
+	elem->loc = net_buf_simple_pull_le16(page->_buf);
+	elem->nsig = net_buf_simple_pull_u8(page->_buf);
+	elem->nvnd = net_buf_simple_pull_u8(page->_buf);
+
+	modlist_size = elem->nsig * 2 + elem->nvnd * 4;
+
+	if (page->_buf->len < modlist_size) {
+		return NULL;
+	}
+
+	elem->_buf = net_buf_simple_pull_mem(page->_buf, modlist_size);
+
+	return elem;
+}
+
+uint16_t bt_mesh_comp_p0_elem_mod(struct bt_mesh_comp_p0_elem *elem, int idx)
+{
+	CHECKIF(idx >= elem->nsig) {
+		return 0xffff;
+	}
+
+	return sys_get_le16(&elem->_buf[idx * 2]);
+}
+
+struct bt_mesh_mod_id_vnd bt_mesh_comp_p0_elem_mod_vnd(struct bt_mesh_comp_p0_elem *elem, int idx)
+{
+	CHECKIF(idx >= elem->nvnd) {
+		return (struct bt_mesh_mod_id_vnd){ 0xffff, 0xffff };
+	}
+
+	size_t offset = elem->nsig * 2 + idx * 4;
+	struct bt_mesh_mod_id_vnd mod = {
+		.company = sys_get_le16(&elem->_buf[offset]),
+		.id = sys_get_le16(&elem->_buf[offset + 2]),
+	};
+
+	return mod;
 }

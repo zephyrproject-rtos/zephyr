@@ -941,6 +941,100 @@ int32_t bt_mesh_cfg_cli_timeout_get(void);
  */
 void bt_mesh_cfg_cli_timeout_set(int32_t timeout);
 
+/** Parsed Composition data page 0 representation.
+ *
+ *  Should be pulled from the return buffer passed to
+ *  @ref bt_mesh_cfg_comp_data_get using
+ *  @ref bt_mesh_comp_p0_get.
+ */
+struct bt_mesh_comp_p0 {
+	/** Company ID */
+	uint16_t cid;
+	/** Product ID */
+	uint16_t pid;
+	/** Version ID */
+	uint16_t vid;
+	/** Replay protection list size */
+	uint16_t crpl;
+	/** Supported features, see @ref BT_MESH_FEAT_SUPPORTED. */
+	uint16_t feat;
+
+	struct net_buf_simple *_buf;
+};
+
+/** Composition data page 0 element representation */
+struct bt_mesh_comp_p0_elem {
+	/** Element location */
+	uint16_t loc;
+	/** The number of SIG models in this element */
+	size_t nsig;
+	/** The number of vendor models in this element */
+	size_t nvnd;
+
+	uint8_t *_buf;
+};
+
+/** @brief Create a composition data page 0 representation from a buffer.
+ *
+ *  The composition data page object will take ownership over the buffer, which
+ *  should not be manipulated directly after this call.
+ *
+ *  This function can be used in combination with @ref bt_mesh_cfg_comp_data_get
+ *  to read out composition data page 0 from other devices:
+ *
+ *  @code
+ *  NET_BUF_SIMPLE_DEFINE(buf, BT_MESH_RX_SDU_MAX);
+ *  struct bt_mesh_comp_p0 comp;
+ *
+ *  err = bt_mesh_cfg_comp_data_get(net_idx, addr, 0, &page, &buf);
+ *  if (!err) {
+ *          bt_mesh_comp_p0_get(&comp, &buf);
+ *  }
+ *  @endcode
+ *
+ *  @param buf  Network buffer containing composition data.
+ *  @param comp Composition data structure to fill.
+ *
+ *  @return 0 on success, or (negative) error code on failure.
+ */
+int bt_mesh_comp_p0_get(struct bt_mesh_comp_p0 *comp,
+			struct net_buf_simple *buf);
+
+/** @brief Pull a composition data page 0 element from a composition data page 0
+ *         instance.
+ *
+ *  Each call to this function will pull out a new element from the composition
+ *  data page, until all elements have been pulled.
+ *
+ *  @param comp Composition data page
+ *  @param elem Element to fill.
+ *
+ *  @return A pointer to @c elem on success, or NULL if no more elements could
+ *          be pulled.
+ */
+struct bt_mesh_comp_p0_elem *bt_mesh_comp_p0_elem_pull(const struct bt_mesh_comp_p0 *comp,
+						       struct bt_mesh_comp_p0_elem *elem);
+
+/** @brief Get a SIG model from the given composition data page 0 element.
+ *
+ *  @param elem Element to read the model from.
+ *  @param idx  Index of the SIG model to read.
+ *
+ *  @return The Model ID of the SIG model at the given index, or 0xffff if the
+ *          index is out of bounds.
+ */
+uint16_t bt_mesh_comp_p0_elem_mod(struct bt_mesh_comp_p0_elem *elem, int idx);
+
+/** @brief Get a vendor model from the given composition data page 0 element.
+ *
+ *  @param elem Element to read the model from.
+ *  @param idx  Index of the vendor model to read.
+ *
+ *  @return The model ID of the vendor model at the given index, or
+ *          {0xffff, 0xffff} if the index is out of bounds.
+ */
+struct bt_mesh_mod_id_vnd bt_mesh_comp_p0_elem_mod_vnd(struct bt_mesh_comp_p0_elem *elem, int idx);
+
 /** @cond INTERNAL_HIDDEN */
 extern const struct bt_mesh_model_op bt_mesh_cfg_cli_op[];
 extern const struct bt_mesh_model_cb bt_mesh_cfg_cli_cb;
