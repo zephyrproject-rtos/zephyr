@@ -547,7 +547,6 @@
 /scripts/gen_syscalls.py                  @dcpleung @nashif
 /scripts/list_boards.py                   @mbolivar-nordic
 /scripts/net/                             @jukkar
-/scripts/process_gperf.py                 @dcpleung @nashif
 /scripts/gen_relocate_app.py              @dcpleung
 /scripts/requirements*.txt                @mbolivar-nordic @galak @nashif
 /scripts/tests/twister/                   @aasthagr
