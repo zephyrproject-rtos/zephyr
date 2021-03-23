@@ -174,6 +174,13 @@ enum sensor_channel {
 	/** Desired charging current in mA */
 	SENSOR_CHAN_GAUGE_DESIRED_CHARGING_CURRENT,
 
+	/** Fault status */
+	SENSOR_CHAN_CHARGER_FAULT_STATUS,
+	/** Charger status */
+	SENSOR_CHAN_CHARGER_CHARGING_STATUS,
+	/** Charger control functions */
+	SENSOR_CHAN_CHARGER_CONTROL,
+
 	/** All channels. */
 	SENSOR_CHAN_ALL,
 
@@ -294,6 +301,14 @@ enum sensor_attribute {
 	 * algorithms to calibrate itself on a certain axis, or all of them.
 	 */
 	SENSOR_ATTR_CALIB_TARGET,
+	/** Max charge current. */
+	SENSOR_ATTR_CHARGE_CURRENT,
+	/** Termination current value. */
+	SENSOR_ATTR_TERMINATION_CURRENT,
+	/** Input current limit. */
+	SENSOR_ATTR_INPUT_CURRENT,
+	/** Enable / disable charger. */
+	SENSOR_ATTR_CHARGE_CONTROL,
 
 	/**
 	 * Number of all common sensor attributes.

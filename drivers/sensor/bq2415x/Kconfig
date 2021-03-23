@@ -1,0 +1,8 @@
+# Copyright (c) 2021 Greyp Bikes d.o.o
+# SPDX-License-Identifier: Apache-2.0
+
+config BQ2415X
+	bool "BQ2415x One-Cell Li-Ion Charger"
+	depends on I2C
+	help
+	  Enable I2C-based driver for BQ2415x Li-Ion Charger.

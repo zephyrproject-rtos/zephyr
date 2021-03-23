@@ -1,0 +1,40 @@
+description: Texas Instruments BQ2415x One-Cell Li-Ion Charger
+
+compatible: "ti,bq2415x"
+
+include: i2c-device.yaml
+
+properties:
+    current-limit:
+      type: int
+      required: true
+      description: initial maximum current charger can pull
+                   from power supply in mA.
+
+    weak-voltage:
+      type: int
+      required: true
+      description: weak battery voltage threshold in mV.
+                   The chip will use slow precharge if
+                   battery voltage is below this value.
+
+    regulation-voltage:
+      type: int
+      required: true
+      description: maximum charging voltage in mV.
+
+    charge-current:
+      type: int
+      required: true
+      description: maximum charging current in mA.
+
+    termination-current:
+      type: int
+      required: true
+      description: charge will be terminated when current in
+                   constant-voltage phase drops below this value (in mA).
+
+    resistor-sense:
+      type: int
+      required: true
+      description: value of sensing resistor in milliohm.
