@@ -19,6 +19,10 @@ const osMutexAttr_t mutex_attr = {
 	0U
 };
 
+/* Status variable for verifying the thread schedulling order */
+volatile int test_var;
+
+
 void cleanup_max_mutex(osMutexId_t *mutex_ids)
 {
 	int mutex_count = 0;
@@ -127,10 +131,18 @@ void tThread_entry_lock_timeout(void *arg)
 	zassert_not_equal(id, osThreadGetId(),
 			  "Unexpectedly, current thread is the mutex owner!");
 
+	zassert_true(test_var == 0,
+		"test_var not cleared by the main test thread");
+	test_var = 1;
+
 	/* This delay ensures that the mutex gets released by the other
 	 * thread in the meantime
 	 */
 	osDelay(TIMEOUT_TICKS);
+
+	zassert_true(test_var == 0,
+		"test_var not cleared by the main test thread");
+	test_var = 1;
 
 	/* Now that the mutex is free, it should be possible to acquire
 	 * and release it.
@@ -173,12 +185,19 @@ void test_mutex_lock_timeout(void)
 	/* wait for spawn thread to take action */
 	osDelay(TIMEOUT_TICKS);
 
+	zassert_true(test_var != 0, "test_var not set by the other thread");
+
 	/* Release the mutex to be used by the other thread */
 	osMutexRelease(mutex_id);
+	/* Zero the test variable before switching out */
+	test_var = 0;
+
 	/* This delay ensures that the tThread_entry_lock_timeout thread
 	 * gets to execute the mutex operations.
 	 */
 	osDelay(TIMEOUT_TICKS * 2);
+
+	zassert_true(test_var != 0, "test_var not set by the other thread");
 
 	osMutexDelete(mutex_id);
 	zassert_true(status == osOK, "Mutex delete failure");
