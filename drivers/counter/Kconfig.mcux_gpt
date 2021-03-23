@@ -6,5 +6,6 @@
 config COUNTER_MCUX_GPT
 	bool "MCUX GPT driver"
 	depends on HAS_MCUX_GPT
+	imply MCUX_GPT
 	help
 	  Enable support for mcux General Purpose Timer (GPT) driver.

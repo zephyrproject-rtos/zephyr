@@ -4,6 +4,7 @@
 config SOC_FLASH_LPC
 	bool "LPC flash shim driver"
 	depends on HAS_MCUX_IAP_LEGACY
+	imply MCUX_FLASHIAP
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_DRIVER_ENABLED
 	help

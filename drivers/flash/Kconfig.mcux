@@ -3,6 +3,8 @@
 config SOC_FLASH_MCUX
 	bool "MCUX flash shim driver"
 	depends on (HAS_MCUX_FTFX || HAS_MCUX_IAP)
+	imply MCUX_FTFX
+	imply MCUX_IAP
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_DRIVER_ENABLED
 	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
@@ -35,5 +37,6 @@ config FLASH_MCUX_FLEXSPI_NOR
 
 config FLASH_MCUX_FLEXSPI
 	bool
+	imply MCUX_FLEXSPI
 
 endif # HAS_MCUX_FLEXSPI
