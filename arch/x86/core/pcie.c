@@ -181,7 +181,8 @@ static bool get_vtd(void)
 /* these functions are explained in include/drivers/pcie/msi.h */
 
 uint32_t pcie_msi_map(unsigned int irq,
-		      msi_vector_t *vector)
+		      msi_vector_t *vector,
+		      uint8_t n_vector)
 {
 	ARG_UNUSED(irq);
 
