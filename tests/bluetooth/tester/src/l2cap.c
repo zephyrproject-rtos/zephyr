@@ -19,11 +19,12 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "bttester.h"
 
 #define CONTROLLER_INDEX 0
-#define DATA_MTU 264
+#define DATA_BUF_SIZE (256 + BT_L2CAP_CHAN_SEND_RESERVE)
+#define DATA_MTU (DATA_BUF_SIZE - BT_L2CAP_CHAN_SEND_RESERVE)
 #define CHANNELS 2
 #define SERVERS 1
 
-NET_BUF_POOL_FIXED_DEFINE(data_pool, 1, DATA_MTU, NULL);
+NET_BUF_POOL_FIXED_DEFINE(data_pool, 1, DATA_BUF_SIZE, NULL);
 
 static struct channel {
 	uint8_t chan_id; /* Internal number that identifies L2CAP channel. */
@@ -38,7 +39,7 @@ static struct net_buf *alloc_buf_cb(struct bt_l2cap_chan *chan)
 	return net_buf_alloc(&data_pool, K_FOREVER);
 }
 
-static uint8_t recv_cb_buf[DATA_MTU + sizeof(struct l2cap_data_received_ev)];
+static uint8_t recv_cb_buf[DATA_BUF_SIZE + sizeof(struct l2cap_data_received_ev)];
 
 static int recv_cb(struct bt_l2cap_chan *l2cap_chan, struct net_buf *buf)
 {
@@ -215,7 +216,7 @@ static void send_data(uint8_t *data, uint16_t len)
 	uint16_t data_len = sys_le16_to_cpu(cmd->data_len);
 
 	/* FIXME: For now, fail if data length exceeds buffer length */
-	if (data_len > DATA_MTU - BT_L2CAP_CHAN_SEND_RESERVE) {
+	if (data_len > DATA_MTU) {
 		goto fail;
 	}
 
