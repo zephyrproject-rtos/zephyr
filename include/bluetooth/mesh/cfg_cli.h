@@ -55,17 +55,21 @@ int bt_mesh_cfg_node_reset(uint16_t net_idx, uint16_t addr, bool *status);
 
 /** @brief Get the target node's composition data.
  *
+ *  If the other device does not have the given composition data page, it will
+ *  return the largest page number it supports that is less than the requested
+ *  page index. The actual page the device responds with is returned in @c rsp.
+ *
  *  @param net_idx Network index to encrypt with.
  *  @param addr    Target node address.
  *  @param page    Composition data page, or 0xff to request the first available
  *                 page.
- *  @param status  Status response parameter.
+ *  @param rsp     Return parameter for the returned page number, or NULL.
  *  @param comp    Composition data buffer to fill.
  *
  *  @return 0 on success, or (negative) error code on failure.
  */
 int bt_mesh_cfg_comp_data_get(uint16_t net_idx, uint16_t addr, uint8_t page,
-			      uint8_t *status, struct net_buf_simple *comp);
+			      uint8_t *rsp, struct net_buf_simple *comp);
 
 /** @brief Get the target node's network beacon state.
  *
