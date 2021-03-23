@@ -31,7 +31,7 @@
 #define DUMMY_2_BYTE_OP	BT_MESH_MODEL_OP_2(0xff, 0xff)
 
 struct comp_data {
-	uint8_t *status;
+	uint8_t *page;
 	struct net_buf_simple *comp;
 };
 
@@ -62,7 +62,10 @@ static void comp_data_status(struct bt_mesh_model *model,
 
 	param = cli->op_param;
 
-	*(param->status) = net_buf_simple_pull_u8(buf);
+	if (param->page) {
+		*(param->page) = net_buf_simple_pull_u8(buf);
+	}
+
 	to_copy  = MIN(net_buf_simple_tailroom(param->comp), buf->len);
 	net_buf_simple_add_mem(param->comp, buf->data, to_copy);
 
@@ -812,7 +815,7 @@ static int cli_wait(void)
 }
 
 int bt_mesh_cfg_comp_data_get(uint16_t net_idx, uint16_t addr, uint8_t page,
-			      uint8_t *status, struct net_buf_simple *comp)
+			      uint8_t *rsp, struct net_buf_simple *comp)
 {
 	BT_MESH_MODEL_BUF_DEFINE(msg, OP_DEV_COMP_DATA_GET, 1);
 	struct bt_mesh_msg_ctx ctx = {
@@ -822,7 +825,7 @@ int bt_mesh_cfg_comp_data_get(uint16_t net_idx, uint16_t addr, uint8_t page,
 		.send_ttl = BT_MESH_TTL_DEFAULT,
 	};
 	struct comp_data param = {
-		.status = status,
+		.page = rsp,
 		.comp = comp,
 	};
 	int err;
