@@ -404,12 +404,14 @@ static void cb_handler_tx(struct modbus_context *ctx)
 static void uart_cb_handler(const struct device *dev, void *app_data)
 {
 	struct modbus_context *ctx = (struct modbus_context *)app_data;
-	struct modbus_serial_config *cfg = ctx->cfg;
+	struct modbus_serial_config *cfg;
 
 	if (ctx == NULL) {
 		LOG_ERR("Modbus hardware is not properly initialized");
 		return;
 	}
+
+	cfg = ctx->cfg;
 
 	while (uart_irq_update(cfg->dev) && uart_irq_is_pending(cfg->dev)) {
 
