@@ -68,9 +68,12 @@ static int vtd_ictl_allocate_entries(const struct device *dev,
 }
 
 static uint32_t vtd_ictl_remap_msi(const struct device *dev,
-				   msi_vector_t *vector)
+				   msi_vector_t *vector,
+				   uint8_t n_vector)
 {
-	return VTD_MSI_MAP(vector->arch.irte);
+	uint32_t shv = (n_vector > 1) ? VTD_INT_SHV : 0;
+
+	return VTD_MSI_MAP(vector->arch.irte, shv);
 }
 
 static int vtd_ictl_remap(const struct device *dev,

@@ -12,7 +12,8 @@ typedef int (*vtd_alloc_entries_f)(const struct device *dev,
 				   uint8_t n_entries);
 
 typedef uint32_t (*vtd_remap_msi_f)(const struct device *dev,
-				    msi_vector_t *vector);
+				    msi_vector_t *vector,
+				    uint8_t n_vector);
 
 typedef int (*vtd_remap_f)(const struct device *dev,
 			   msi_vector_t *vector);
@@ -46,17 +47,19 @@ static inline int vtd_allocate_entries(const struct device *dev,
  * @brief Generate the MSI Message Address data for the given vector
  *
  * @param dev Pointer to the device structure for the driver instance
- * @param vector A valid allocated MSI vector
+ * @param vector A valid allocated MSI vector array
+ * @param n_vector the size of the vector array
  *
  * @return The MSI Message Address value
  */
 static inline uint32_t vtd_remap_msi(const struct device *dev,
-				     msi_vector_t *vector)
+				     msi_vector_t *vector,
+				     uint8_t n_vector)
 {
 	const struct vtd_driver_api *api =
 		(const struct vtd_driver_api *)dev->api;
 
-	return api->remap_msi(dev, vector);
+	return api->remap_msi(dev, vector, n_vector);
 }
 
 /**
