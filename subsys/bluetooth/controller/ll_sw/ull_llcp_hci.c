@@ -479,6 +479,12 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	lll = &scan->lll;
 	lll_coded = &scan_coded->lll;
 
+	/* NOTE: When coded PHY is supported, and connection establishment
+	 *       over coded PHY is selected by application then look for
+	 *       a connection context already assigned to 1M PHY scanning
+	 *       context. Use the same connection context in the coded PHY
+	 *       scanning context.
+	 */
 	if (phy & BT_HCI_LE_EXT_SCAN_PHY_CODED) {
 		if (!lll_coded->conn) {
 			lll_coded->conn = lll->conn;
@@ -500,6 +506,7 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 
 #endif /* !CONFIG_BT_CTLR_PHY_CODED */
 
+	/* NOTE: non-zero PHY value enables initiating connection on that PHY */
 	lll->phy = phy;
 
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
@@ -594,6 +601,7 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	conn_lll->data_chan_sel = 0;
 	conn_lll->data_chan_use = 0;
 	conn_lll->role = 0;
+	conn_lll->initiated = 0;
 	/* FIXME: END: Move to ULL? */
 #if defined(CONFIG_BT_CTLR_CONN_META)
 	memset(&conn_lll->conn_meta, 0, sizeof(conn_lll->conn_meta));
@@ -760,22 +768,47 @@ uint8_t ll_connect_enable(uint8_t is_coded_included)
 
 uint8_t ll_connect_disable(void **rx)
 {
+	struct ll_scan_set *scan_coded;
+	struct lll_scan *scan_lll;
 	struct lll_conn *conn_lll;
 	struct ll_scan_set *scan;
-	uint8_t status;
+	uint8_t err;
 
-	scan = ull_scan_is_enabled_get(0);
-	if (!scan) {
-		return BT_HCI_ERR_CMD_DISALLOWED;
+	scan = ull_scan_is_enabled_get(SCAN_HANDLE_1M);
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT) &&
+	    IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
+		scan_coded = ull_scan_is_enabled_get(SCAN_HANDLE_PHY_CODED);
+	} else {
+		scan_coded = NULL;
 	}
 
-	conn_lll = scan->lll.conn;
+	if (!scan) {
+		if (!scan_coded) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+
+		scan_lll = &scan_coded->lll;
+	} else {
+		scan_lll = &scan->lll;
+	}
+
+	conn_lll = scan_lll->conn;
 	if (!conn_lll) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	status = ull_scan_disable(0, scan);
-	if (!status) {
+	if (scan) {
+		err = ull_scan_disable(SCAN_HANDLE_1M, scan);
+	} else {
+		err = 0U;
+	}
+
+	if (!err && scan_coded) {
+		err = ull_scan_disable(SCAN_HANDLE_PHY_CODED, scan_coded);
+	}
+
+	if (!err) {
 		struct ll_conn *conn = (void *)HDR_LLL2EVT(conn_lll);
 		struct node_rx_pdu *node_rx;
 		struct node_rx_cc *cc;
@@ -801,12 +834,12 @@ uint8_t ll_connect_disable(void **rx)
 		 *       LLL context for other cases, pass LLL context as
 		 *       parameter.
 		 */
-		node_rx->hdr.rx_ftr.param = &scan->lll;
+		node_rx->hdr.rx_ftr.param = scan_lll;
 
 		*rx = node_rx;
 	}
 
-	return status;
+	return err;
 }
 
 /* FIXME: Refactor out this interface so that its usable by extended
@@ -837,7 +870,8 @@ uint8_t ll_chm_update(uint8_t const *const chm)
 }
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
-uint8_t ll_enc_req_send(uint16_t handle, uint8_t const *const rand, uint8_t const *const ediv, uint8_t const *const ltk)
+uint8_t ll_enc_req_send(uint16_t handle, uint8_t const *const rand,
+		     uint8_t const *const ediv, uint8_t const *const ltk)
 {
 	struct ll_conn *conn;
 
