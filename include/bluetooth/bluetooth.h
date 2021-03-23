@@ -692,6 +692,17 @@ struct bt_le_per_adv_param {
 						 BT_GAP_ADV_FAST_INT_MAX_2, \
 						 NULL)
 
+/** Non-connectable extended advertising with @ref BT_LE_ADV_OPT_USE_NAME and
+ *  @ref BT_LE_ADV_OPT_USE_IDENTITY
+ */
+#define BT_LE_EXT_ADV_NCONN_NAME_IDENTITY \
+	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV | \
+			BT_LE_ADV_OPT_USE_NAME | \
+			BT_LE_ADV_OPT_USE_IDENTITY, \
+			BT_GAP_ADV_FAST_INT_MIN_2, \
+			BT_GAP_ADV_FAST_INT_MAX_2, \
+			NULL)
+
 /** Non-connectable extended advertising with @ref BT_LE_ADV_OPT_USE_IDENTITY */
 #define BT_LE_EXT_ADV_NCONN_IDENTITY \
 		BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV | \
