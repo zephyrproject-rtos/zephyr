@@ -5538,9 +5538,9 @@ __syscall void k_str_out(char *c, size_t n);
  *
  * @param thread ID of thread.
  *
- * @retval 0       On success.
- * @retval -ENOSYS If the floating point disabling is not implemented.
- *         -EINVAL If the floating point disabling could not be performed.
+ * @retval 0        On success.
+ * @retval -ENOTSUP If the floating point disabling is not implemented.
+ *         -EINVAL  If the floating point disabling could not be performed.
  */
 __syscall int k_float_disable(struct k_thread *thread);
 

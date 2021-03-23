@@ -76,7 +76,7 @@ void *z_arch_get_next_switch_handle(struct k_thread **old_thread)
 #if defined(CONFIG_FPU_SHARING)
 int arch_float_disable(struct k_thread *thread)
 {
-	return -ENOSYS;
+	return -ENOTSUP;
 }
 
 int arch_float_enable(struct k_thread *thread, unsigned int options)
