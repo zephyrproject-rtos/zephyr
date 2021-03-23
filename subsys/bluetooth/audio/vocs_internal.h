@@ -11,27 +11,27 @@
 #include <zephyr/types.h>
 
 #if defined(CONFIG_BT_VOCS)
-#define VOCS_MAX_DESC_SIZE CONFIG_BT_VOCS_MAX_OUTPUT_DESCRIPTION_SIZE
+#define BT_VOCS_MAX_DESC_SIZE CONFIG_BT_VOCS_MAX_OUTPUT_DESCRIPTION_SIZE
 #else
-#define VOCS_MAX_DESC_SIZE 1
+#define BT_VOCS_MAX_DESC_SIZE 1
 #endif /* CONFIG_BT_VOCS */
 
 /* VOCS opcodes */
-#define VOCS_OPCODE_SET_OFFSET                  0x01
+#define BT_VOCS_OPCODE_SET_OFFSET                  0x01
 
-struct vocs_control_t {
+struct bt_vocs_control {
 	uint8_t opcode;
 	uint8_t counter;
 	int16_t offset;
 } __packed;
 
-struct vocs_state_t {
+struct bt_vocs_state {
 	int16_t offset;
 	uint8_t change_counter;
 } __packed;
 
-struct vocs_client {
-	struct vocs_state_t state;
+struct bt_vocs_client {
+	struct bt_vocs_state state;
 	bool location_writable;
 	uint32_t location;
 	bool desc_writable;
@@ -49,7 +49,7 @@ struct vocs_client {
 	uint8_t subscribe_cnt;
 
 	bool busy;
-	struct vocs_control_t cp;
+	struct bt_vocs_control cp;
 	struct bt_gatt_write_params write_params;
 	struct bt_gatt_read_params read_params;
 	struct bt_vocs_cb *cb;
@@ -57,11 +57,11 @@ struct vocs_client {
 	struct bt_conn *conn;
 };
 
-struct vocs_server {
-	struct vocs_state_t state;
+struct bt_vocs_server {
+	struct bt_vocs_state state;
 	uint32_t location;
 	bool initialized;
-	char output_desc[VOCS_MAX_DESC_SIZE];
+	char output_desc[BT_VOCS_MAX_DESC_SIZE];
 	struct bt_vocs_cb *cb;
 
 	struct bt_gatt_service *service_p;
@@ -69,8 +69,8 @@ struct vocs_server {
 
 struct bt_vocs {
 	union {
-		struct vocs_server srv;
-		struct vocs_client cli;
+		struct bt_vocs_server srv;
+		struct bt_vocs_client cli;
 	};
 };
 
