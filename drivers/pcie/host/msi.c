@@ -204,7 +204,7 @@ static void enable_msix(pcie_bdf_t bdf,
 	int i;
 
 	for (i = 0; i < n_vector; i++) {
-		uint32_t map = pcie_msi_map(irq, &vectors[i]);
+		uint32_t map = pcie_msi_map(irq, &vectors[i], 1);
 		uint32_t mdr = pcie_msi_mdr(irq, &vectors[i]);
 
 		vectors[i].msix_vector->msg_addr = map;
@@ -243,7 +243,7 @@ static void enable_msi(pcie_bdf_t bdf,
 	uint32_t mdr;
 	uint32_t mme;
 
-	map = pcie_msi_map(irq, vectors);
+	map = pcie_msi_map(irq, vectors, n_vector);
 	pcie_conf_write(bdf, base + PCIE_MSI_MAP0, map);
 
 	mdr = pcie_msi_mdr(irq, vectors);
