@@ -123,7 +123,7 @@ SECTIONS
 #include <linker/kobject-text.ld>
 
         MMU_ALIGN;
-    } GROUP_LINK_IN(ROMABLE_REGION)
+    } GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
     _image_text_end = .;
     _image_text_size = _image_text_end - _image_text_start;
@@ -135,7 +135,7 @@ SECTIONS
          * .ARM.extab section containing exception unwinding information.
          */
         *(.ARM.extab* .gnu.linkonce.armextab.*)
-    } GROUP_LINK_IN(ROMABLE_REGION)
+    } GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 #endif
 
     SECTION_PROLOGUE(.ARM.exidx,,)
@@ -151,7 +151,7 @@ SECTIONS
         *(.ARM.exidx* gnu.linkonce.armexidx.*)
 #endif
         __exidx_end = .;
-    } GROUP_LINK_IN(ROMABLE_REGION)
+    } GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
         _image_rodata_start = .;
 
@@ -173,7 +173,7 @@ SECTIONS
 
 #include <linker/kobject-rom.ld>
 
-    } GROUP_LINK_IN(ROMABLE_REGION)
+    } GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 #include <linker/cplusplus-rom.ld>
     MMU_ALIGN;
@@ -243,7 +243,7 @@ SECTIONS
          * section ends on a 4 byte boundary. This wastes a maximum of 3 bytes.
                  */
         __bss_end = ALIGN(4);
-    } GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
+    } GROUP_NOLOAD_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
 
 #include <linker/common-noinit.ld>
 
@@ -301,7 +301,7 @@ SECTIONS
     /* Must be last in romable region */
     SECTION_PROLOGUE(.last_section,(NOLOAD),)
     {
-    } GROUP_LINK_IN(ROMABLE_REGION)
+    } GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
     /* To provide the image size as a const expression,
      * calculate this value here. */
