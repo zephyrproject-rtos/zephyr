@@ -175,7 +175,10 @@ void test_mutex_lock_timeout(void)
 
 	/* Release the mutex to be used by the other thread */
 	osMutexRelease(mutex_id);
-	osDelay(TIMEOUT_TICKS);
+	/* This delay ensures that the tThread_entry_lock_timeout thread
+	 * gets to execute the mutex operations.
+	 */
+	osDelay(TIMEOUT_TICKS * 2);
 
 	osMutexDelete(mutex_id);
 	zassert_true(status == osOK, "Mutex delete failure");
