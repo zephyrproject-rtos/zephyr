@@ -1,7 +1,7 @@
 # Copyright (c) 2021 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-choice
+choice LOG_MODE
 	prompt "Mode"
 	default LOG_MODE_DEFERRED
 
