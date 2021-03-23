@@ -117,11 +117,11 @@
 			reg = <0x00000000 0x0000C000>;
 			read-only;
 		};
-		slot0_partition: partition@0C000 {
+		slot0_partition: partition@C000 {
 			label = "image-0";
 			reg = <0x0000C000 0x00032000>;
 		};
-		slot1_partition: partition@31000 {
+		slot1_partition: partition@3E000 {
 			label = "image-1";
 			reg = <0x0003E000 0x00032000>;
 		};
