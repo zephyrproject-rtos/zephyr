@@ -26,8 +26,11 @@ void main(void)
 		return;
 	}
 
-	/* Create a non-connectable non-scannable advertising set */
-	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN_NAME, NULL, &adv);
+	/* Create a non-connectable non-scannable advertising set using the
+	 * identity address
+	 */
+	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN_NAME_IDENTITY, NULL,
+				   &adv);
 	if (err) {
 		printk("Failed to create advertising set (err %d)\n", err);
 		return;
