@@ -56,7 +56,7 @@ int arch_float_disable(struct k_thread *thread)
 #if defined(CONFIG_LAZY_FPU_SHARING)
 	return z_float_disable(thread);
 #else
-	return -ENOSYS;
+	return -ENOTSUP;
 #endif /* CONFIG_LAZY_FPU_SHARING */
 }
 
