@@ -29,6 +29,9 @@ interface and listing all issues with the `bug label
 API Changes
 ***********
 
+* DMA driver API changed to use -ENOTSUP instead of -ENOSYS to be consistent with other
+  driver APIs
+
 * The :c:func:`wait_for_usb_dfu` function now accepts a ``k_timeout_t`` argument instead of
   using the ``CONFIG_USB_DFU_WAIT_DELAY_MS`` macro.
 

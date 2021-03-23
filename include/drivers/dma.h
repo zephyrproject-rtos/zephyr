@@ -277,7 +277,7 @@ static inline int dma_reload(const struct device *dev, uint32_t channel,
 		return api->reload(dev, channel, src, dst, size);
 	}
 
-	return -ENOSYS;
+	return -ENOTSUP;
 }
 
 /**
@@ -331,7 +331,7 @@ static inline int z_impl_dma_stop(const struct device *dev, uint32_t channel)
  * @brief get current runtime status of DMA transfer
  *
  * Implementations must check the validity of the channel ID passed in and
- * return -EINVAL if it is invalid or -ENOSYS if not supported.
+ * return -EINVAL if it is invalid or -ENOTSUP if not supported.
  *
  * @param dev     Pointer to the device structure for the driver instance.
  * @param channel Numeric identification of the channel where the transfer was
@@ -351,7 +351,7 @@ static inline int dma_get_status(const struct device *dev, uint32_t channel,
 		return api->get_status(dev, channel, stat);
 	}
 
-	return -ENOSYS;
+	return -ENOTSUP;
 }
 
 /**
