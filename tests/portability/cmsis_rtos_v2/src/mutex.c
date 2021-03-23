@@ -138,6 +138,8 @@ void tThread_entry_lock_timeout(void *arg)
 	status = osMutexAcquire((osMutexId_t)arg, TIMEOUT_TICKS);
 	zassert_true(status == osOK, NULL);
 	osMutexRelease((osMutexId_t)arg);
+	zassert_true(status == osOK, "Mutex release failure");
+
 }
 
 static K_THREAD_STACK_DEFINE(test_stack, STACKSZ);
@@ -176,4 +178,5 @@ void test_mutex_lock_timeout(void)
 	osDelay(TIMEOUT_TICKS);
 
 	osMutexDelete(mutex_id);
+	zassert_true(status == osOK, "Mutex delete failure");
 }
