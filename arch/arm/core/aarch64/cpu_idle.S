@@ -16,15 +16,8 @@ _ASM_FILE_PROLOGUE
 
 GTEXT(arch_cpu_idle)
 SECTION_FUNC(TEXT, arch_cpu_idle)
-#ifdef CONFIG_TRACING
-	stp	xzr, x30, [sp, #-16]!
-	bl	sys_trace_idle
-	ldp	xzr, x30, [sp], #16
-#endif
-	dsb	sy
-	wfi
-	msr	daifclr, #(DAIFCLR_IRQ_BIT)
-	ret
+	mrs	x0, daif
+	b	arch_cpu_atomic_idle
 
 GTEXT(arch_cpu_atomic_idle)
 SECTION_FUNC(TEXT, arch_cpu_atomic_idle)
@@ -34,8 +27,20 @@ SECTION_FUNC(TEXT, arch_cpu_atomic_idle)
 	ldp	x0, x30, [sp], #16
 #endif
 	msr	daifset, #(DAIFSET_IRQ_BIT)
-	isb
-	wfe
+	/*
+	 * Ensure outstanding accesses are complete before WFI. Required by ARM spec,
+	 * but not actually necessary on most ARM processors.
+	 * Has to be done after masking interrupts, as returning from an interrupt is
+	 * not considered a dsb.
+	 */
+	dsb	sy
+	/*
+	 * Use WFI not WFE. We have interrupts masked here, and wfe does not wake
+	 * on masked interrupts (at least not with interrupts taken to EL1.)
+	 *
+	 * This does mean that events (SEV and friends) won't wake us, which is unfortunate.
+	 */
+	wfi
 	tst	x0, #(DAIF_IRQ_BIT)
 	beq	_irq_disabled
 	msr	daifclr, #(DAIFCLR_IRQ_BIT)
