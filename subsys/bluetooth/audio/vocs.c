@@ -65,8 +65,10 @@ static ssize_t write_location(struct bt_conn *conn, const struct bt_gatt_attr *a
 	BT_DBG("%02x", inst->location);
 
 	if (old_location != inst->location) {
-		bt_gatt_notify_uuid(NULL, BT_UUID_VOCS_LOCATION, inst->service_p->attrs,
-				    &inst->location, sizeof(inst->location));
+		(void)bt_gatt_notify_uuid(NULL, BT_UUID_VOCS_LOCATION,
+					  inst->service_p->attrs,
+					  &inst->location,
+					  sizeof(inst->location));
 
 		if (inst->cb && inst->cb->location) {
 			inst->cb->location(NULL, (struct bt_vocs *)inst, 0, inst->location);
@@ -140,8 +142,9 @@ static ssize_t write_vocs_control(struct bt_conn *conn, const struct bt_gatt_att
 		inst->state.change_counter++;
 		BT_DBG("New state: offset %d, counter %u",
 		       inst->state.offset, inst->state.change_counter);
-		bt_gatt_notify_uuid(NULL, BT_UUID_VOCS_STATE, inst->service_p->attrs,
-				    &inst->state, sizeof(inst->state));
+		(void)bt_gatt_notify_uuid(NULL, BT_UUID_VOCS_STATE,
+					  inst->service_p->attrs,
+					  &inst->state, sizeof(inst->state));
 
 		if (inst->cb && inst->cb->state) {
 			inst->cb->state(NULL, (struct bt_vocs *)inst, 0, inst->state.offset);
@@ -179,8 +182,10 @@ static ssize_t write_output_desc(struct bt_conn *conn, const struct bt_gatt_attr
 		memcpy(inst->output_desc, buf, len);
 		inst->output_desc[len] = '\0';
 
-		bt_gatt_notify_uuid(NULL, BT_UUID_VOCS_DESCRIPTION, inst->service_p->attrs,
-				    &inst->output_desc, strlen(inst->output_desc));
+		(void)bt_gatt_notify_uuid(NULL, BT_UUID_VOCS_DESCRIPTION,
+					  inst->service_p->attrs,
+					  &inst->output_desc,
+					  strlen(inst->output_desc));
 
 		if (inst->cb && inst->cb->description) {
 			inst->cb->description(NULL, (struct bt_vocs *)inst, 0, inst->output_desc);
