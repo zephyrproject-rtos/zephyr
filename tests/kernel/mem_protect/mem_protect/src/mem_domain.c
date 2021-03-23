@@ -48,9 +48,9 @@ void test_mem_domain_setup(void)
 	struct k_mem_partition *parts[] = { &ro_part, &ztest_mem_partition };
 
 	num_rw_parts = max_parts - PARTS_USED;
-	zassert_true(NUM_RW_PARTS >= num_rw_parts,
-		     "CONFIG_MAX_DOMAIN_PARTITIONS incorrectly tuned, %d should be at least %d",
-		     CONFIG_MAX_DOMAIN_PARTITIONS, max_parts);
+	zassert_true(num_rw_parts <= NUM_RW_PARTS,
+			"CONFIG_MAX_DOMAIN_PARTITIONS incorrectly tuned, %d should be at least %d",
+			CONFIG_MAX_DOMAIN_PARTITIONS, max_parts);
 	zassert_true(num_rw_parts > 0, "no free memory partitions");
 
 	k_mem_domain_init(&test_domain, ARRAY_SIZE(parts), parts);
@@ -383,7 +383,6 @@ void test_mem_part_overlap(void)
 	k_mem_domain_add_partition(&test_domain, &overlap_part);
 }
 
-
 extern struct k_spinlock z_mem_domain_lock;
 
 static ZTEST_BMEM bool need_recover_spinlock;
@@ -398,6 +397,44 @@ void post_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 		need_recover_spinlock = false;
 	}
 }
+
+static volatile uint8_t __aligned(MEM_REGION_ALLOC)
+	exceed_buf[MEM_REGION_ALLOC];
+
+K_MEM_PARTITION_DEFINE(exceed_part, exceed_buf, sizeof(exceed_buf),
+		      K_MEM_PARTITION_P_RW_U_RW);
+
+/**
+ * @brief Test system assert when adding memory partitions more than possible
+ *
+ * @details
+ * - Add memory partitions one by one and more than architecture allows to add.
+ * - When partitions added more than it is allowed by architecture, test that
+ *   system assert for that case works correctly.
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+void test_mem_part_assert_add_overmax(void)
+{
+	int max_parts = num_rw_parts + PARTS_USED;
+
+	/* Make sure the partitions of the domain is full, used in
+	 * previous test cases.
+	 */
+	zassert_equal(max_parts, arch_mem_domain_max_partitions_get(),
+			"domain still have room of partitions(%d).",
+			max_parts);
+
+	need_recover_spinlock = true;
+	set_fault_valid(true);
+
+	/* Add one more partition will trigger assert due to exceeding */
+	k_mem_domain_add_partition(&test_domain, &exceed_part);
+
+	/* should not reach here */
+	ztest_test_fail();
+}
+
 
 #if defined(CONFIG_ASSERT)
 static volatile uint8_t __aligned(MEM_REGION_ALLOC) misc_buf[MEM_REGION_ALLOC];
