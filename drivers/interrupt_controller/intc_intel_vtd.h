@@ -12,8 +12,8 @@
 /* We don't care about int_idx[15], since the size is fixed to 256,
  * it's always 0
  */
-#define VTD_MSI_MAP(int_idx) \
-	((0x0FEE << 20) | (int_idx << 5) | VTD_INT_SHV | VTD_INT_FORMAT)
+#define VTD_MSI_MAP(int_idx, shv)					\
+	((0x0FEE00000U) | (int_idx << 5) | shv | VTD_INT_FORMAT)
 
 /* Interrupt Remapping Table Entry (IRTE) for Remapped Interrupts */
 struct vtd_irte {

@@ -187,7 +187,7 @@ uint32_t pcie_msi_map(unsigned int irq,
 	ARG_UNUSED(irq);
 
 #if defined(CONFIG_INTEL_VTD_ICTL)
-	return vtd_remap_msi(vtd, vector);
+	return vtd_remap_msi(vtd, vector, n_vector);
 #else
 	return 0xFEE00000U; /* standard delivery to BSP local APIC */
 #endif
