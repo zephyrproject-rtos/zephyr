@@ -1,9 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
-if(CONFIG_PINMUX)
-zephyr_library_include_directories(${ZEPHYR_BASE}/drivers)
-endif()
-
 if(${ZEPHYR_TOOLCHAIN_VARIANT} STREQUAL "zephyr")
 	set(COMPILER_FULL_PATH ${ZEPHYR_SDK_INSTALL_DIR}/arm-zephyr-eabi/bin/arm-zephyr-eabi-gcc)
 elseif(${ZEPHYR_TOOLCHAIN_VARIANT} STREQUAL "gnuarmemb")
