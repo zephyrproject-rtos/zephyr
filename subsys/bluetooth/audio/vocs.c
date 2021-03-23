@@ -53,6 +53,10 @@ static ssize_t write_location(struct bt_conn *conn, const struct bt_gatt_attr *a
 	struct bt_vocs_server *inst = attr->user_data;
 	uint32_t old_location = inst->location;
 
+	if (offset) {
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
+	}
+
 	if (len != sizeof(inst->location)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
@@ -91,6 +95,10 @@ static ssize_t write_vocs_control(struct bt_conn *conn, const struct bt_gatt_att
 	const struct bt_vocs_control *cp = buf;
 	bool notify = false;
 
+	if (offset) {
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
+	}
+
 	if (!len || !buf) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
@@ -99,10 +107,6 @@ static ssize_t write_vocs_control(struct bt_conn *conn, const struct bt_gatt_att
 	if (!VALID_VOCS_OPCODE(cp->opcode)) {
 		BT_DBG("Invalid opcode %u", cp->opcode);
 		return BT_GATT_ERR(BT_VOCS_ERR_OP_NOT_SUPPORTED);
-	}
-
-	if (offset) {
-		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
 	if (len != sizeof(struct bt_vocs_control)) {
@@ -159,6 +163,10 @@ static ssize_t write_output_desc(struct bt_conn *conn, const struct bt_gatt_attr
 				 const void *buf, uint16_t len, uint16_t offset, uint8_t flags)
 {
 	struct bt_vocs_server *inst = attr->user_data;
+
+	if (offset) {
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
+	}
 
 	if (len >= sizeof(inst->output_desc)) {
 		BT_DBG("Output desc was clipped from length %u to %zu",
