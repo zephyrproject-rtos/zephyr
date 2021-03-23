@@ -635,7 +635,7 @@ static int littlefs_mount(struct fs_mount_t *mountp)
 
 	dev = flash_area_get_device(fs->area);
 	if (dev == NULL) {
-		LOG_ERR("can't get flash device: %s", log_strdup(fs->area->fa_dev_name));
+		LOG_ERR("can't get flash device for area with id: %u", area_id);
 		ret = -ENODEV;
 		goto out;
 	}
