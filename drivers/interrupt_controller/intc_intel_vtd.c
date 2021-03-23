@@ -309,7 +309,7 @@ static void vtd_fault_event_init(const struct device *dev)
 
 	vtd_write_reg32(dev, VTD_FEDATA_REG, data->fault_vector);
 	vtd_write_reg32(dev, VTD_FEADDR_REG,
-			pcie_msi_map(data->fault_irq, NULL));
+			pcie_msi_map(data->fault_irq, NULL, 0));
 	vtd_write_reg32(dev, VTD_FEUADDR_REG, 0);
 
 	z_x86_irq_connect_on_vector(data->fault_irq, data->fault_vector,
