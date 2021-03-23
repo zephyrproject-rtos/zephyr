@@ -76,6 +76,7 @@
 };
 
 &i2c0 {
+	compatible = "nordic,nrf-twi";
 	status = "okay";
 	sda-gpios = <&gpio0 12 0>;
 	scl-gpios = <&gpio0 11 0>;
