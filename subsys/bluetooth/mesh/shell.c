@@ -575,7 +575,7 @@ static int cmd_ident(const struct shell *shell, size_t argc, char *argv[])
 static int cmd_get_comp(const struct shell *shell, size_t argc, char *argv[])
 {
 	NET_BUF_SIMPLE_DEFINE(comp, BT_MESH_RX_SDU_MAX);
-	uint8_t status, page = 0x00;
+	uint8_t page = 0x00;
 	int err;
 
 	if (argc > 1) {
@@ -583,14 +583,15 @@ static int cmd_get_comp(const struct shell *shell, size_t argc, char *argv[])
 	}
 
 	err = bt_mesh_cfg_comp_data_get(net.net_idx, net.dst, page,
-					&status, &comp);
+					&page, &comp);
 	if (err) {
 		shell_error(shell, "Getting composition failed (err %d)", err);
 		return 0;
 	}
 
-	if (status != 0x00) {
-		shell_print(shell, "Got non-success status 0x%02x", status);
+	if (page != 0x00) {
+		shell_print(shell, "Got page 0x%02x. No parser available.",
+			    page);
 		return 0;
 	}
 
