@@ -93,7 +93,7 @@ struct perm_ctx {
 };
 
 #ifdef CONFIG_GEN_PRIV_STACKS
-/* See write_gperf_table() in scripts/gen_kobject_list.py. The privilege
+/* See write_c_source() in scripts/gen_kobject_list.py. The privilege
  * mode stacks are allocated as an array. The base of the array is
  * aligned to Z_PRIVILEGE_STACK_ALIGN, and all members must be as well.
  */
@@ -140,10 +140,6 @@ struct dyn_obj {
 	/* The object itself */
 	uint8_t data[] __aligned(DYN_OBJ_DATA_ALIGN_K_THREAD);
 };
-
-extern struct z_object *z_object_gperf_find(const void *obj);
-extern void z_object_gperf_wordlist_foreach(_wordlist_cb_func_t func,
-					     void *context);
 
 static bool node_lessthan(struct rbnode *a, struct rbnode *b);
 
@@ -273,7 +269,7 @@ static bool thread_idx_alloc(uintptr_t *tidx)
 					       *tidx);
 
 			/* Clear permission from all objects */
-			z_object_wordlist_foreach(clear_perms_cb,
+			z_object_metadata_foreach(clear_perms_cb,
 						   (void *)*tidx);
 
 			return true;
@@ -298,7 +294,7 @@ static bool thread_idx_alloc(uintptr_t *tidx)
 static void thread_idx_free(uintptr_t tidx)
 {
 	/* To prevent leaked permission when index is recycled */
-	z_object_wordlist_foreach(clear_perms_cb, (void *)tidx);
+	z_object_metadata_foreach(clear_perms_cb, (void *)tidx);
 
 	sys_bitfield_set_bit((mem_addr_t)_thread_idx_map, tidx);
 }
@@ -313,7 +309,7 @@ struct z_object *z_dynamic_object_aligned_create(size_t align, size_t size)
 		return NULL;
 	}
 
-	dyn->kobj.name = &dyn->data;
+	dyn->kobj.addr = &dyn->data;
 	dyn->kobj.type = K_OBJ_ANY;
 	dyn->kobj.flags = 0;
 	(void)memset(dyn->kobj.perms, 0, CONFIG_MAX_THREAD_BYTES);
@@ -378,7 +374,7 @@ void *z_impl_k_object_alloc(enum k_objects otype)
 	 */
 	zo->flags |= K_OBJ_FLAG_ALLOC;
 
-	return zo->name;
+	return zo->addr;
 }
 
 void k_object_free(void *obj)
@@ -407,13 +403,31 @@ void k_object_free(void *obj)
 		k_free(dyn);
 	}
 }
+#endif /* CONFIG_DYNAMIC_OBJECTS */
 
 struct z_object *z_object_find(const void *obj)
 {
-	struct z_object *ret;
+	extern struct z_object z_kobject_list[];
+	struct z_object *kobj = z_kobject_list;
+	struct z_object *ret = NULL;
 
-	ret = z_object_gperf_find(obj);
+	while (kobj->addr != NULL) {
+		if (obj < kobj->addr) {
+			/* The list is sorted incrementally by addresses,
+			 * so it is possible to bail out early.
+			 */
+			break;
+		}
 
+		if (kobj->addr == obj) {
+			ret = kobj;
+			break;
+		}
+
+		kobj++;
+	}
+
+#ifdef CONFIG_DYNAMIC_OBJECTS
 	if (ret == NULL) {
 		struct dyn_obj *dynamic_obj;
 
@@ -426,15 +440,24 @@ struct z_object *z_object_find(const void *obj)
 			ret = &dynamic_obj->kobj;
 		}
 	}
+#endif
 
 	return ret;
 }
 
-void z_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
+void z_object_metadata_foreach(_kobjlist_cb_func_t func, void *context)
 {
-	struct dyn_obj *obj, *next;
+	extern struct z_object z_kobject_list[];
+	struct z_object *kobj = z_kobject_list;
 
-	z_object_gperf_wordlist_foreach(func, context);
+	while (kobj->addr != NULL) {
+		func(kobj, context);
+
+		kobj++;
+	}
+
+#ifdef CONFIG_DYNAMIC_OBJECTS
+	struct dyn_obj *obj, *next;
 
 	k_spinlock_key_t key = k_spin_lock(&lists_lock);
 
@@ -442,8 +465,8 @@ void z_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
 		func(&obj->kobj, context);
 	}
 	k_spin_unlock(&lists_lock, key);
+#endif
 }
-#endif /* CONFIG_DYNAMIC_OBJECTS */
 
 static unsigned int thread_index_get(struct k_thread *thread)
 {
@@ -485,13 +508,13 @@ static void unref_check(struct z_object *ko, uintptr_t index)
 	 */
 	switch (ko->type) {
 	case K_OBJ_PIPE:
-		k_pipe_cleanup((struct k_pipe *)ko->name);
+		k_pipe_cleanup((struct k_pipe *)ko->addr);
 		break;
 	case K_OBJ_MSGQ:
-		k_msgq_cleanup((struct k_msgq *)ko->name);
+		k_msgq_cleanup((struct k_msgq *)ko->addr);
 		break;
 	case K_OBJ_STACK:
-		k_stack_cleanup((struct k_stack *)ko->name);
+		k_stack_cleanup((struct k_stack *)ko->addr);
 		break;
 	default:
 		/* Nothing to do */
@@ -506,12 +529,12 @@ out:
 	k_spin_unlock(&obj_lock, key);
 }
 
-static void wordlist_cb(struct z_object *ko, void *ctx_ptr)
+static void kobjlist_cb(struct z_object *ko, void *ctx_ptr)
 {
 	struct perm_ctx *ctx = (struct perm_ctx *)ctx_ptr;
 
 	if (sys_bitfield_test_bit((mem_addr_t)&ko->perms, ctx->parent_id) &&
-				  (struct k_thread *)ko->name != ctx->parent) {
+				  (struct k_thread *)ko->addr != ctx->parent) {
 		sys_bitfield_set_bit((mem_addr_t)&ko->perms, ctx->child_id);
 	}
 }
@@ -525,7 +548,7 @@ void z_thread_perms_inherit(struct k_thread *parent, struct k_thread *child)
 	};
 
 	if ((ctx.parent_id != -1) && (ctx.child_id != -1)) {
-		z_object_wordlist_foreach(wordlist_cb, &ctx);
+		z_object_metadata_foreach(kobjlist_cb, &ctx);
 	}
 }
 
@@ -560,7 +583,7 @@ void z_thread_perms_all_clear(struct k_thread *thread)
 	uintptr_t index = thread_index_get(thread);
 
 	if ((int)index != -1) {
-		z_object_wordlist_foreach(clear_perms_cb, (void *)index);
+		z_object_metadata_foreach(clear_perms_cb, (void *)index);
 	}
 }
 
@@ -584,7 +607,7 @@ static void dump_permission_error(struct z_object *ko)
 	int index = thread_index_get(_current);
 	LOG_ERR("thread %p (%d) does not have permission on %s %p",
 		_current, index,
-		otype_to_str(ko->type), ko->name);
+		otype_to_str(ko->type), ko->addr);
 	LOG_HEXDUMP_ERR(ko->perms, sizeof(ko->perms), "permission bitmap");
 }
 

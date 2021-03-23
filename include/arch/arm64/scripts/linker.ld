@@ -127,8 +127,6 @@ SECTIONS
          */
         *(.glue_7t) *(.glue_7) *(.vfp11_veneer) *(.v4_bx)
 
-#include <linker/kobject-text.ld>
-
         MMU_ALIGN;
     } GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
@@ -271,7 +269,7 @@ SECTIONS
     __data_rom_start = LOADADDR(_DATA_SECTION_NAME);
 
 #include <linker/common-ram.ld>
-#include <linker/kobject.ld>
+#include <linker/kobject-ram.ld>
 #include <linker/cplusplus-ram.ld>
 
     __data_ram_end = .;

@@ -120,8 +120,6 @@ SECTIONS
 	*(.fini)
 	*(.eini)
 
-#include <linker/kobject-text.ld>
-
 	MMU_PAGE_ALIGN_PERM
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
@@ -336,7 +334,7 @@ SECTIONS
 #include <arch/x86/pagetables.ld>
 
 /* Must be last in RAM */
-#include <linker/kobject.ld>
+#include <linker/kobject-ram.ld>
 
 	MMU_PAGE_ALIGN
 	__data_ram_end = .;

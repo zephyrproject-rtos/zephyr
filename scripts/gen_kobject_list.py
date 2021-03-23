@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 """
-Script to generate gperf tables of kernel object metadata
+Script to generate tables of kernel object metadata
 
 User mode threads making system calls reference kernel objects by memory
 address, as the kernel/driver APIs in Zephyr are the same for both user
@@ -21,8 +21,8 @@ validate accesses to kernel objects to make the following assertions:
 
 For more details see the :ref:`kernelobjects` section in the documentation.
 
-The zephyr build generates an intermediate ELF binary, zephyr_prebuilt.elf,
-which this script scans looking for kernel objects by examining the DWARF
+The zephyr build generates an intermediate ELF binaries
+which this script scans for kernel objects by examining the DWARF
 debug information to look for instances of data structures that are considered
 kernel objects. For device drivers, the API struct pointer populated at build
 time is also examined to disambiguate between various device driver instances
@@ -30,7 +30,7 @@ since they are all 'struct device'.
 
 This script can generate five different output files:
 
-    - A gperf script to generate the hash table mapping kernel object memory
+    - A C source file to map kernel object memory
       addresses to kernel object metadata, used to track permissions,
       object type, initialization state, and any object-specific data.
 
@@ -625,7 +625,7 @@ def find_kobjects(elf, syms):
     # is.
     ret = {}
     for addr, ko in all_objs.items():
-        # API structs don't get into the gperf table
+        # API structs don't get into the table
         if ko.type_obj.api:
             continue
 
@@ -640,7 +640,7 @@ def find_kobjects(elf, syms):
             debug("skip kernel-only stack at %s" % hex(addr))
             continue
 
-        # At this point we know the object will be included in the gperf table
+        # At this point we know the object will be included in the table
         if ko.type_obj.name == "k_thread":
             # Assign an ID for this thread object, used to track its
             # permissions to other kernel objects
@@ -697,55 +697,22 @@ def get_symbols(elf):
     raise LookupError("Could not find symbol table")
 
 
-# -- GPERF generation logic
+# -- C source file generation logic
 
-header = """%compare-lengths
-%define lookup-function-name z_object_lookup
-%language=ANSI-C
-%global-table
-%struct-type
-%{
+c_header = """/* Generated file. DO NOT MODIFY! */
+
 #include <kernel.h>
 #include <toolchain.h>
 #include <syscall_handler.h>
 #include <string.h>
-%}
-struct z_object;
+
+#include <sys/kobject.h>
+#include <sys/util.h>
+
 """
 
-# Different versions of gperf have different prototypes for the lookup
-# function, best to implement the wrapper here. The pointer value itself is
-# turned into a string, we told gperf to expect binary strings that are not
-# NULL-terminated.
-footer = """%%
-struct z_object *z_object_gperf_find(const void *obj)
-{
-    return z_object_lookup((const char *)obj, sizeof(void *));
-}
-
-void z_object_gperf_wordlist_foreach(_wordlist_cb_func_t func, void *context)
-{
-    int i;
-
-    for (i = MIN_HASH_VALUE; i <= MAX_HASH_VALUE; i++) {
-        if (wordlist[i].name != NULL) {
-            func(&wordlist[i], context);
-        }
-    }
-}
-
-#ifndef CONFIG_DYNAMIC_OBJECTS
-struct z_object *z_object_find(const void *obj)
-	ALIAS_OF(z_object_gperf_find);
-
-void z_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
-	ALIAS_OF(z_object_gperf_wordlist_foreach);
-#endif
-"""
-
-
-def write_gperf_table(fp, syms, objs, little_endian, static_begin, static_end):
-    fp.write(header)
+def write_c_source(fp, syms, objs, little_endian, static_begin, static_end):
+    fp.write(c_header)
     if sys_mutex_counter != 0:
         fp.write("static struct k_mutex kernel_mutexes[%d] = {\n"
                  % sys_mutex_counter)
@@ -775,12 +742,15 @@ def write_gperf_table(fp, syms, objs, little_endian, static_begin, static_end):
         if stack_counter != 0:
             # Same as K_KERNEL_STACK_ARRAY_DEFINE, but routed to a different
             # memory section.
-            fp.write("static uint8_t Z_GENERIC_SECTION(.priv_stacks.noinit) "
+            fp.write("Z_GENERIC_SECTION(.priv_stacks.noinit)\n")
+            fp.write("static uint8_t"
                      " __aligned(Z_KERNEL_STACK_OBJ_ALIGN)"
                      " priv_stacks[%d][Z_KERNEL_STACK_LEN(CONFIG_PRIVILEGED_STACK_SIZE)];\n"
                      % stack_counter)
 
-            fp.write("static struct z_stack_data stack_data[%d] = {\n"
+            fp.write("\n")
+            fp.write("Z_GENERIC_SECTION(.kobject_data.rodata)\n")
+            fp.write("static const struct z_stack_data stack_data[%d] = {\n"
                      % stack_counter)
             counter = 0
             for _, ko in objs.items():
@@ -803,7 +773,7 @@ def write_gperf_table(fp, syms, objs, little_endian, static_begin, static_end):
     else:
         metadata_names["K_OBJ_THREAD_STACK_ELEMENT"] = "stack_size"
 
-    fp.write("%%\n")
+    fp.write("\n")
     # Setup variables for mapping thread indexes
     thread_max_bytes = syms["CONFIG_MAX_THREAD_BYTES"]
     thread_idx_map = {}
@@ -811,6 +781,8 @@ def write_gperf_table(fp, syms, objs, little_endian, static_begin, static_end):
     for i in range(0, thread_max_bytes):
         thread_idx_map[i] = 0xFF
 
+    fp.write("Z_GENERIC_SECTION(.kobject_data.data)\n")
+    fp.write("struct z_object z_kobject_list[] = {\n")
     for obj_addr, ko in objs.items():
         obj_type = ko.type_name
         # pre-initialized objects fall within this memory range, they are
@@ -818,22 +790,6 @@ def write_gperf_table(fp, syms, objs, little_endian, static_begin, static_end):
         # at boot during some PRE_KERNEL_* phase
         initialized = static_begin <= obj_addr < static_end
         is_driver = obj_type.startswith("K_OBJ_DRIVER_")
-
-        if "CONFIG_64BIT" in syms:
-            format_code = "Q"
-        else:
-            format_code = "I"
-
-        if little_endian:
-            endian = "<"
-        else:
-            endian = ">"
-
-        byte_str = struct.pack(endian + format_code, obj_addr)
-        fp.write("\"")
-        for byte in byte_str:
-            val = "\\x%02x" % byte
-            fp.write(val)
 
         flags = "0"
         if initialized:
@@ -846,19 +802,20 @@ def write_gperf_table(fp, syms, objs, little_endian, static_begin, static_end):
         else:
             tname = "unused"
 
-        fp.write("\", {}, %s, %s, { .%s = %s }\n" % (obj_type, flags,
-		tname, str(ko.data)))
+        fp.write("\t{ UINT_TO_POINTER(0x%x), {}, %s, %s, { .%s = %s } },\n" %
+                 (obj_addr, obj_type, flags, tname, str(ko.data)))
 
         if obj_type == "K_OBJ_THREAD":
             idx = math.floor(ko.data / 8)
             bit = ko.data % 8
             thread_idx_map[idx] = thread_idx_map[idx] & ~(2**bit)
 
-    fp.write(footer)
+    fp.write("\t{ 0, {}, K_OBJ_UNDEFINED, 0, { .unused = 0 } }\n")
+    fp.write("};\n")
 
     # Generate the array of already mapped thread indexes
     fp.write('\n')
-    fp.write('Z_GENERIC_SECTION(.kobject_data.data) ')
+    fp.write('Z_GENERIC_SECTION(.kobject_data.data)\n')
     fp.write('uint8_t _thread_idx_map[%d] = {' % (thread_max_bytes))
 
     for i in range(0, thread_max_bytes):
@@ -893,6 +850,7 @@ def write_validation_output(fp):
 
 
 def write_kobj_types_output(fp):
+    fp.write("K_OBJ_UNDEFINED,\n")
     fp.write("/* Core kernel objects */\n")
     for kobj, obj_info in kobjects.items():
         dep, _, _ = obj_info
@@ -970,8 +928,8 @@ def parse_args():
     parser.add_argument("-k", "--kernel", required=False,
                         help="Input zephyr ELF binary")
     parser.add_argument(
-        "-g", "--gperf-output", required=False,
-        help="Output list of kernel object addresses for gperf use")
+        "--c-source", required=False,
+        help="Output list of kernel object addresses for z_object_find()")
     parser.add_argument(
         "-V", "--validation-output", required=False,
         help="Output driver validation macros")
@@ -1003,8 +961,8 @@ def main():
         for list_file in args.include_subsystem_list:
             parse_subsystems_list_file(list_file)
 
-    if args.gperf_output:
-        assert args.kernel, "--kernel ELF required for --gperf-output"
+    if args.c_source:
+        assert args.kernel, "--kernel ELF required for --c-source"
         elf = ELFFile(open(args.kernel, "rb"))
         syms = get_symbols(elf)
         max_threads = syms["CONFIG_MAX_THREAD_BYTES"] * 8
@@ -1018,10 +976,10 @@ def main():
                      "Increase CONFIG_MAX_THREAD_BYTES to {}"
                      .format(thread_counter, -(-thread_counter // 8)))
 
-        with open(args.gperf_output, "w") as fp:
-            write_gperf_table(fp, syms, objs, elf.little_endian,
-                              syms["_static_kernel_objects_begin"],
-                              syms["_static_kernel_objects_end"])
+        with open(args.c_source, "w") as fp:
+            write_c_source(fp, syms, objs, elf.little_endian,
+                            syms["_static_kernel_objects_begin"],
+                            syms["_static_kernel_objects_end"])
 
     if args.validation_output:
         with open(args.validation_output, "w") as fp:

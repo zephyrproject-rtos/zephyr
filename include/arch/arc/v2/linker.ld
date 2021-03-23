@@ -91,7 +91,7 @@ SECTIONS {
 		*(.gnu.linkonce.t.*)
 
 	. = ALIGN(4);
-#include <linker/kobject-text.ld>
+
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
 	_image_text_end = .;
@@ -188,7 +188,7 @@ SECTIONS {
 	__data_rom_start = LOADADDR(_DATA_SECTION_NAME);
 
 #include <linker/common-ram.ld>
-#include <linker/kobject.ld>
+#include <linker/kobject-ram.ld>
 
 #ifdef __MWDT_LINKER_CMD__
 /* TODO: add mwdt specific RAM C++ sections */

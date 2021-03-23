@@ -151,8 +151,6 @@ SECTIONS
 	{
 	_image_text_start = .;
 
-#include <linker/kobject-text.ld>
-
 	*(.text)
 	*(".text.*")
 	*(".TEXT.*")
@@ -327,7 +325,7 @@ SECTIONS
     __data_rom_start = LOADADDR(_DATA_SECTION_NAME);
 
 #include <linker/common-ram.ld>
-#include <linker/kobject.ld>
+#include <linker/kobject-ram.ld>
 
 #include <linker/cplusplus-ram.ld>
 

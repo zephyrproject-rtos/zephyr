@@ -223,7 +223,7 @@ static struct spair *spair_new(void)
 	if (zo == NULL) {
 		spair = NULL;
 	} else {
-		spair = zo->name;
+		spair = zo->addr;
 		zo->type = K_OBJ_NET_SOCKET;
 	}
 #else

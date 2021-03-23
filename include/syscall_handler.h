@@ -95,8 +95,7 @@ extern void z_dump_object_error(int retval, const void *obj,
 /**
  * Kernel object validation function
  *
- * Retrieve metadata for a kernel object. This function is implemented in
- * the gperf script footer, see gen_kobject_list.py
+ * Retrieve metadata for a kernel object.
  *
  * @param obj Address of kernel object to get metadata
  * @return Kernel object's metadata, or NULL if the parameter wasn't the
@@ -104,7 +103,7 @@ extern void z_dump_object_error(int retval, const void *obj,
  */
 extern struct z_object *z_object_find(const void *obj);
 
-typedef void (*_wordlist_cb_func_t)(struct z_object *ko, void *context);
+typedef void (*_kobjlist_cb_func_t)(struct z_object *ko, void *context);
 
 /**
  * Iterate over all the kernel object metadata in the system
@@ -112,7 +111,7 @@ typedef void (*_wordlist_cb_func_t)(struct z_object *ko, void *context);
  * @param func function to run on each struct z_object
  * @param context Context pointer to pass to each invocation
  */
-extern void z_object_wordlist_foreach(_wordlist_cb_func_t func, void *context);
+extern void z_object_metadata_foreach(_kobjlist_cb_func_t func, void *context);
 
 /**
  * Copy all kernel object permissions from the parent to the child
