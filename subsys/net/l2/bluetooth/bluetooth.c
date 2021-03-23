@@ -319,7 +319,7 @@ static int ipsp_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 	struct bt_if_conn *if_conn = NULL;
 	int i;
 
-	NET_DBG("Incoming conn %p", conn);
+	NET_DBG("Incoming conn %p", (void *)conn);
 
 	/* Find unused slot to store the iface */
 	for (i = 0; i < CONFIG_BT_MAX_CONN; i++) {
