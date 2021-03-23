@@ -38,6 +38,7 @@
 #include "lll_internal.h"
 #include "lll_tim_internal.h"
 #include "lll_prof_internal.h"
+#include "lll_scan_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_lll_scan
@@ -115,6 +116,66 @@ void lll_scan_prepare(void *param)
 
 	err = lll_prepare(is_abort_cb, abort_cb, prepare_cb, 0, param);
 	LL_ASSERT(!err || err == -EINPROGRESS);
+}
+
+void lll_scan_prepare_connect_req(struct lll_scan *lll, struct pdu_adv *pdu_tx,
+				  uint8_t adv_tx_addr, uint8_t *adv_addr,
+				  uint8_t init_tx_addr, uint8_t *init_addr,
+				  uint32_t *conn_space_us)
+{
+	struct lll_conn *lll_conn;
+	uint32_t conn_interval_us;
+	uint32_t conn_offset_us;
+
+	lll_conn = lll->conn;
+
+	/* Note: this code is also valid for AUX_CONNECT_REQ */
+	pdu_tx->type = PDU_ADV_TYPE_CONNECT_IND;
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_CHAN_SEL_2)) {
+		pdu_tx->chan_sel = 1;
+	} else {
+		pdu_tx->chan_sel = 0;
+	}
+
+	pdu_tx->tx_addr = init_tx_addr;
+	pdu_tx->rx_addr = adv_tx_addr;
+	pdu_tx->len = sizeof(struct pdu_adv_connect_ind);
+	memcpy(&pdu_tx->connect_ind.init_addr[0], init_addr, BDADDR_SIZE);
+	memcpy(&pdu_tx->connect_ind.adv_addr[0], adv_addr, BDADDR_SIZE);
+	memcpy(&pdu_tx->connect_ind.access_addr[0],
+	       &lll_conn->access_addr[0], 4);
+	memcpy(&pdu_tx->connect_ind.crc_init[0], &lll_conn->crc_init[0], 3);
+	pdu_tx->connect_ind.win_size = 1;
+
+	conn_interval_us = (uint32_t)lll_conn->interval * CONN_INT_UNIT_US;
+	conn_offset_us = radio_tmr_end_get() + 502 + CONN_INT_UNIT_US;
+
+	if (!IS_ENABLED(CONFIG_BT_CTLR_SCHED_ADVANCED) ||
+	    lll->conn_win_offset_us == 0U) {
+		*conn_space_us = conn_offset_us;
+		pdu_tx->connect_ind.win_offset = sys_cpu_to_le16(0);
+	} else {
+		uint32_t win_offset_us = lll->conn_win_offset_us;
+
+		while ((win_offset_us & ((uint32_t)1 << 31)) ||
+		       (win_offset_us < conn_offset_us)) {
+			win_offset_us += conn_interval_us;
+		}
+		*conn_space_us = win_offset_us;
+		pdu_tx->connect_ind.win_offset =
+			sys_cpu_to_le16((win_offset_us - conn_offset_us) /
+					CONN_INT_UNIT_US);
+		pdu_tx->connect_ind.win_size++;
+	}
+
+	pdu_tx->connect_ind.interval = sys_cpu_to_le16(lll_conn->interval);
+	pdu_tx->connect_ind.latency = sys_cpu_to_le16(lll_conn->latency);
+	pdu_tx->connect_ind.timeout = sys_cpu_to_le16(lll->conn_timeout);
+	memcpy(&pdu_tx->connect_ind.chan_map[0], &lll_conn->data_chan_map[0],
+	       sizeof(pdu_tx->connect_ind.chan_map));
+	pdu_tx->connect_ind.hop = lll_conn->data_chan_hop;
+	pdu_tx->connect_ind.sca = lll_clock_sca_local_get();
 }
 
 static int init_reset(void)
@@ -780,11 +841,11 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 		struct node_rx_ftr *ftr;
 		struct node_rx_pdu *rx;
 		struct pdu_adv *pdu_tx;
-		uint32_t conn_interval_us;
-		uint32_t conn_offset_us;
 		uint32_t conn_space_us;
 		struct ull_hdr *ull;
 		uint32_t pdu_end_us;
+		uint8_t init_tx_addr;
+		uint8_t *init_addr;
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 		bt_addr_t *lrpa;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
@@ -819,73 +880,25 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 		/* Acquire the connection context */
 		lll_conn = lll->conn;
 
-		/* Tx the connect request packet */
-		pdu_tx = (void *)radio_pkt_scratch_get();
-		pdu_tx->type = PDU_ADV_TYPE_CONNECT_IND;
-
-		if (IS_ENABLED(CONFIG_BT_CTLR_CHAN_SEL_2)) {
-			pdu_tx->chan_sel = 1;
-		} else {
-			pdu_tx->chan_sel = 0;
-		}
-
-		pdu_tx->rx_addr = pdu_adv_rx->tx_addr;
-		pdu_tx->len = sizeof(struct pdu_adv_connect_ind);
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 		lrpa = ull_filter_lll_lrpa_get(rl_idx);
 		if (lll->rpa_gen && lrpa) {
-			pdu_tx->tx_addr = 1;
-			memcpy(&pdu_tx->connect_ind.init_addr[0], lrpa->val,
-			       BDADDR_SIZE);
+			init_tx_addr = 1;
+			init_addr = lrpa->val;
 		} else {
 #else
 		if (1) {
-#endif /* CONFIG_BT_CTLR_PRIVACY */
-			pdu_tx->tx_addr = lll->init_addr_type;
-			memcpy(&pdu_tx->connect_ind.init_addr[0],
-			       &lll->init_addr[0], BDADDR_SIZE);
-		}
-		memcpy(&pdu_tx->connect_ind.adv_addr[0],
-		       &pdu_adv_rx->adv_ind.addr[0], BDADDR_SIZE);
-		memcpy(&pdu_tx->connect_ind.access_addr[0],
-		       &lll_conn->access_addr[0], 4);
-		memcpy(&pdu_tx->connect_ind.crc_init[0],
-		       &lll_conn->crc_init[0], 3);
-		pdu_tx->connect_ind.win_size = 1;
-
-		conn_interval_us = (uint32_t)lll_conn->interval *
-			CONN_INT_UNIT_US;
-		conn_offset_us = radio_tmr_end_get() + 502 +
-			CONN_INT_UNIT_US;
-
-		if (!IS_ENABLED(CONFIG_BT_CTLR_SCHED_ADVANCED) ||
-		    lll->conn_win_offset_us == 0U) {
-			conn_space_us = conn_offset_us;
-			pdu_tx->connect_ind.win_offset = sys_cpu_to_le16(0);
-		} else {
-			conn_space_us = lll->conn_win_offset_us;
-			while ((conn_space_us & ((uint32_t)1 << 31)) ||
-			       (conn_space_us < conn_offset_us)) {
-				conn_space_us += conn_interval_us;
-			}
-			pdu_tx->connect_ind.win_offset =
-				sys_cpu_to_le16((conn_space_us -
-						 conn_offset_us) /
-				CONN_INT_UNIT_US);
-			pdu_tx->connect_ind.win_size++;
+#endif
+			init_tx_addr = lll->init_addr_type;
+			init_addr = lll->init_addr;
 		}
 
-		pdu_tx->connect_ind.interval =
-			sys_cpu_to_le16(lll_conn->interval);
-		pdu_tx->connect_ind.latency =
-			sys_cpu_to_le16(lll_conn->latency);
-		pdu_tx->connect_ind.timeout =
-			sys_cpu_to_le16(lll->conn_timeout);
-		memcpy(&pdu_tx->connect_ind.chan_map[0],
-		       &lll_conn->data_chan_map[0],
-		       sizeof(pdu_tx->connect_ind.chan_map));
-		pdu_tx->connect_ind.hop = lll_conn->data_chan_hop;
-		pdu_tx->connect_ind.sca = lll_clock_sca_local_get();
+		pdu_tx = (void *)radio_pkt_scratch_get();
+
+		lll_scan_prepare_connect_req(lll, pdu_tx, pdu_adv_rx->tx_addr,
+					     pdu_adv_rx->adv_ind.addr,
+					     init_tx_addr, init_addr,
+					     &conn_space_us);
 
 		radio_pkt_tx_set(pdu_tx);
 
