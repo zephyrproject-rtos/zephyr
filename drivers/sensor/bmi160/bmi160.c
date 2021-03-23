@@ -1007,6 +1007,7 @@ int bmi160_init(const struct device *dev)
 /* Instantiation macros used when a device is on an I2C bus */
 #define BMI160_CONFIG_I2C(inst)						\
 	{								\
+		BMI160_TRIGGER_CFG(inst)				\
 		.bus_label = DT_INST_BUS_LABEL(inst),			\
 		.reg_io = &bmi160_reg_io_i2c,				\
 		.bus_cfg =  { .i2c_addr = DT_INST_REG_ADDR(inst), }	\

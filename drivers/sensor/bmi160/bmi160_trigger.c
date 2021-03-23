@@ -52,9 +52,15 @@ static void bmi160_handle_drdy(const struct device *dev, uint8_t status)
 static void bmi160_handle_interrupts(const struct device *dev)
 {
 	union {
+#if BMI160_BUS_SPI
 		uint8_t raw[6];
+#else
+		uint8_t raw[5];
+#endif
 		struct {
+#if BMI160_BUS_SPI
 			uint8_t dummy; /* spi related dummy byte */
+#endif
 			uint8_t status;
 			uint8_t int_status[4];
 		};
