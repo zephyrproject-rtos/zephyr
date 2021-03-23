@@ -115,7 +115,8 @@ manifest:
       revision: 38c79a447e4a47d413b4e8d34448316a5cece77c
       path: modules/debug/segger
     - name: sof
-      revision: b5b772dd611879ee6309da38759def79fc7f33f1
+      url: https://github.com/nordic-krch/sof
+      revision: 2f8ef204454d278f0c189e8c7cc70e84f745561a
       path: modules/audio/sof
     - name: tinycbor
       path: modules/lib/tinycbor
