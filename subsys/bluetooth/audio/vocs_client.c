@@ -318,7 +318,7 @@ static uint8_t vocs_discover_func(struct bt_conn *conn, const struct bt_gatt_att
 				  struct bt_gatt_discover_params *params)
 {
 	struct bt_vocs *inst = (struct bt_vocs *)CONTAINER_OF(
-				params, struct vocs_client, discover_params);
+				params, struct bt_vocs_client, discover_params);
 
 	if (!attr) {
 		BT_DBG("Discovery complete for VOCS %p", inst);
@@ -514,7 +514,7 @@ int bt_vocs_client_state_set(struct bt_conn *conn, struct bt_vocs *inst, int16_t
 		return -EBUSY;
 	}
 
-	inst->cli.cp.opcode = VOCS_OPCODE_SET_OFFSET;
+	inst->cli.cp.opcode = BT_VOCS_OPCODE_SET_OFFSET;
 	inst->cli.cp.counter = inst->cli.state.change_counter;
 	inst->cli.cp.offset = offset;
 
