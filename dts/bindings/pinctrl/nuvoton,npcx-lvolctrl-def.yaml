@@ -8,7 +8,7 @@ compatible: "nuvoton,npcx-lvolctrl-def"
 include: [base.yaml]
 
 properties:
-    lvol_io_pads:
+    lvol-io-pads:
         type: phandles
         required: false
         description: list of low-voltage configurations that need to set by default
