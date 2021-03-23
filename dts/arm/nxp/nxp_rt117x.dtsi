@@ -712,9 +712,7 @@
 			clk-source = <2>;
 			label = "CAN_1";
 			sjw = <1>;
-			prop-seg = <1>;
-			phase-seg1 = <3>;
-			phase-seg2 = <2>;
+			sample-point = <875>;
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -729,9 +727,7 @@
 			clk-source = <2>;
 			label = "CAN_2";
 			sjw = <1>;
-			prop-seg = <1>;
-			phase-seg1 = <3>;
-			phase-seg2 = <2>;
+			sample-point = <875>;
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -746,9 +742,7 @@
 			clk-source = <2>;
 			label = "CAN_3";
 			sjw = <1>;
-			prop-seg = <1>;
-			phase-seg1 = <3>;
-			phase-seg2 = <2>;
+			sample-point = <875>;
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
