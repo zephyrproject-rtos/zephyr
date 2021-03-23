@@ -598,8 +598,14 @@ def find_kobjects(elf, syms):
                           (name, hex(opcode)))
             continue
 
-        addr = (loc.value[1] | (loc.value[2] << 8) |
-                (loc.value[3] << 16) | (loc.value[4] << 24))
+        if "CONFIG_64BIT" in syms:
+            addr = ((loc.value[1] << 0 ) | (loc.value[2] << 8)  |
+                    (loc.value[3] << 16) | (loc.value[4] << 24) |
+                    (loc.value[5] << 32) | (loc.value[6] << 40) |
+                    (loc.value[7] << 48) | (loc.value[8] << 56))
+        else:
+            addr = ((loc.value[1] << 0 ) | (loc.value[2] << 8)  |
+                    (loc.value[3] << 16) | (loc.value[4] << 24))
 
         if addr == 0:
             # Never linked; gc-sections deleted it
