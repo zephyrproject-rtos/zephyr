@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 if(CONFIG_WIFI_ESP)
-  zephyr_include_directories(./)
 
   zephyr_library_include_directories(
     ${ZEPHYR_BASE}/drivers/modem
