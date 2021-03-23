@@ -111,6 +111,8 @@ Architectures
 
     * Added support for null pointer dereferencing detection in Cortex-M.
 
+    * Added initial support for Arm v8.1-m and Cortex-M55
+
   * AARCH64
 
 * POSIX
@@ -133,6 +135,8 @@ Boards & SoC Support
 * Changes for ARC boards:
 
 * Added support for these ARM boards:
+
+   * MPS3-AN547
 
 * Removed support for these ARM boards:
 
