@@ -7,6 +7,7 @@
 #include <sys/types.h>
 
 #include <sys/byteorder.h>
+#include <sys/check.h>
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/iso.h>
@@ -1096,6 +1097,40 @@ uint8_t bt_le_per_adv_sync_get_index(struct bt_le_per_adv_sync *per_adv_sync)
 	__ASSERT(index >= 0 && ARRAY_SIZE(per_adv_sync_pool) > index,
 		 "Invalid per_adv_sync pointer");
 	return (uint8_t)index;
+}
+
+int bt_le_per_adv_sync_get_info(struct bt_le_per_adv_sync *per_adv_sync,
+				struct bt_le_per_adv_sync_info *info)
+{
+	CHECKIF(per_adv_sync == NULL || info == NULL) {
+		return -EINVAL;
+	}
+
+	bt_addr_le_copy(&info->addr, &per_adv_sync->addr);
+	info->sid = per_adv_sync->sid;
+	info->phy = per_adv_sync->phy;
+	info->interval = per_adv_sync->interval;
+
+	return 0;
+}
+
+struct bt_le_per_adv_sync *bt_le_per_adv_sync_lookup_addr(const bt_addr_le_t *adv_addr,
+							  uint8_t sid)
+{
+	for (int i = 0; i < ARRAY_SIZE(per_adv_sync_pool); i++) {
+		struct bt_le_per_adv_sync *sync = &per_adv_sync_pool[i];
+
+		if (!atomic_test_bit(per_adv_sync_pool[i].flags,
+				     BT_PER_ADV_SYNC_CREATED)) {
+			continue;
+		}
+
+		if (!bt_addr_le_cmp(&sync->addr, adv_addr) && sync->sid == sid) {
+			return sync;
+		}
+	}
+
+	return NULL;
 }
 
 int bt_le_per_adv_sync_create(const struct bt_le_per_adv_sync_param *param,
