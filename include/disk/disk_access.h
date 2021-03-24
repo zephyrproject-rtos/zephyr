@@ -12,6 +12,10 @@
 #ifndef ZEPHYR_INCLUDE_DISK_DISK_ACCESS_H_
 #define ZEPHYR_INCLUDE_DISK_DISK_ACCESS_H_
 
+#ifndef CONFIG_COMPAT_INCLUDES
+#warning "This header file has moved, include <storage/disk_access.h> instead."
+#endif
+
 #include <storage/disk_access.h>
 
 #endif /* ZEPHYR_INCLUDE_DISK_DISK_ACCESS_H_ */
