@@ -41,6 +41,8 @@ def parse_args():
         description="Check if change requires full twister")
     parser.add_argument('-c', '--commits', default=None,
                         help="Commit range in the form: a..b")
+    parser.add_argument("-o", "--output", required=False,
+                        help="Print violation into a file")
     return parser.parse_args()
 
 
@@ -75,10 +77,16 @@ def main():
                     violation = "{}:{}".format(f.path, line.target_line_no)
                     if violation in violations:
                         numViolations += 1
-                        print(
-                            "{}:{}".format(
-                                violation, "\t\n".join(
-                                    violations[violation])))
+                        if args.output:
+                            with open(args.output, "a+") as fp:
+                                fp.write("{}:{}\n".format(
+                                    violation, "\t\n".join(
+                                        violations[violation])))
+                        else:
+                            print(
+                                "{}:{}".format(
+                                    violation, "\t\n".join(
+                                        violations[violation])))
 
     return numViolations
 
