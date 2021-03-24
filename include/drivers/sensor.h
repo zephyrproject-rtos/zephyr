@@ -405,7 +405,7 @@ static inline int z_impl_sensor_attr_set(const struct device *dev,
 		(const struct sensor_driver_api *)dev->api;
 
 	if (api->attr_set == NULL) {
-		return -ENOTSUP;
+		return -ENOSYS;
 	}
 
 	return api->attr_set(dev, chan, attr, val);
@@ -437,7 +437,7 @@ static inline int z_impl_sensor_attr_get(const struct device *dev,
 		(const struct sensor_driver_api *)dev->api;
 
 	if (api->attr_get == NULL) {
-		return -ENOTSUP;
+		return -ENOSYS;
 	}
 
 	return api->attr_get(dev, chan, attr, val);
@@ -468,7 +468,7 @@ static inline int sensor_trigger_set(const struct device *dev,
 		(const struct sensor_driver_api *)dev->api;
 
 	if (api->trigger_set == NULL) {
-		return -ENOTSUP;
+		return -ENOSYS;
 	}
 
 	return api->trigger_set(dev, trig, handler);
