@@ -1476,7 +1476,7 @@ static struct tcp *tcp_conn_new(struct net_pkt *pkt)
 				&context->remote, &local_addr,
 				ntohs(conn->dst.sin.sin_port),/* local port */
 				ntohs(conn->src.sin.sin_port),/* remote port */
-				tcp_recv, context,
+				context, tcp_recv, context,
 				&context->conn_handler);
 	if (ret < 0) {
 		NET_ERR("net_conn_register(): %d", ret);
@@ -2235,7 +2235,7 @@ int net_tcp_connect(struct net_context *context,
 				net_context_get_family(context),
 				remote_addr, local_addr,
 				ntohs(remote_port), ntohs(local_port),
-				tcp_recv, context,
+				context, tcp_recv, context,
 				&context->conn_handler);
 	if (ret < 0) {
 		goto out;
@@ -2335,7 +2335,7 @@ int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
 				 &context->remote : NULL,
 				 &local_addr,
 				 remote_port, local_port,
-				 tcp_recv, context,
+				 context, tcp_recv, context,
 				 &context->conn_handler);
 }
 
@@ -2636,6 +2636,7 @@ static void test_cb_register(sa_family_t family, uint8_t proto, uint16_t remote_
 				    &addr,	/* local address */
 				    local_port,
 				    remote_port,
+				    NULL,
 				    cb,
 				    NULL,	/* user_data */
 				    &conn_handle);

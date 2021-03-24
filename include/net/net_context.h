@@ -65,6 +65,9 @@ enum net_context_state {
 /** Is the socket closing / closed */
 #define NET_CONTEXT_CLOSING_SOCK  BIT(10)
 
+/* Context is bound to a specific interface */
+#define NET_CONTEXT_BOUND_TO_IFACE BIT(11)
+
 struct net_context;
 
 /**
@@ -334,6 +337,13 @@ static inline bool net_context_is_used(struct net_context *context)
 	NET_ASSERT(context);
 
 	return context->flags & NET_CONTEXT_IN_USE;
+}
+
+static inline bool net_context_is_bound_to_iface(struct net_context *context)
+{
+	NET_ASSERT(context);
+
+	return context->flags & NET_CONTEXT_BOUND_TO_IFACE;
 }
 
 /**

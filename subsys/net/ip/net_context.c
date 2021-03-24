@@ -528,6 +528,10 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 			return -EINVAL;
 		}
 
+		if (net_context_is_bound_to_iface(context)) {
+			iface = net_context_get_iface(context);
+		}
+
 		if (net_ipv6_is_addr_mcast(&addr6->sin6_addr)) {
 			struct net_if_mcast_addr *maddr;
 
@@ -540,15 +544,18 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 			ptr = &maddr->address.in6_addr;
 
 		} else if (net_ipv6_is_addr_unspecified(&addr6->sin6_addr)) {
-			iface = net_if_ipv6_select_src_iface(
-				&net_sin6(&context->remote)->sin6_addr);
+			if (iface == NULL) {
+				iface = net_if_ipv6_select_src_iface(
+					&net_sin6(&context->remote)->sin6_addr);
+			}
 
 			ptr = (struct in6_addr *)net_ipv6_unspecified_address();
 		} else {
 			struct net_if_addr *ifaddr;
 
-			ifaddr = net_if_ipv6_addr_lookup(&addr6->sin6_addr,
-							 &iface);
+			ifaddr = net_if_ipv6_addr_lookup(
+					&addr6->sin6_addr,
+					iface == NULL ? &iface : NULL);
 			if (!ifaddr) {
 				return -ENOENT;
 			}
@@ -622,6 +629,10 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 			return -EINVAL;
 		}
 
+		if (net_context_is_bound_to_iface(context)) {
+			iface = net_context_get_iface(context);
+		}
+
 		if (net_ipv4_is_addr_mcast(&addr4->sin_addr)) {
 			struct net_if_mcast_addr *maddr;
 
@@ -634,13 +645,16 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 			ptr = &maddr->address.in_addr;
 
 		} else if (addr4->sin_addr.s_addr == INADDR_ANY) {
-			iface = net_if_ipv4_select_src_iface(
-				&net_sin(&context->remote)->sin_addr);
+			if (iface == NULL) {
+				iface = net_if_ipv4_select_src_iface(
+					&net_sin(&context->remote)->sin_addr);
+			}
 
 			ptr = (struct in_addr *)net_ipv4_unspecified_address();
 		} else {
-			ifaddr = net_if_ipv4_addr_lookup(&addr4->sin_addr,
-							 &iface);
+			ifaddr = net_if_ipv4_addr_lookup(
+					&addr4->sin_addr,
+					iface == NULL ? &iface : NULL);
 			if (!ifaddr) {
 				return -ENOENT;
 			}
@@ -1473,7 +1487,8 @@ static int context_sendto(struct net_context *context,
 		 * second or later network interface.
 		 */
 		if (net_ipv6_is_addr_unspecified(
-				&net_sin6(&context->remote)->sin6_addr)) {
+				&net_sin6(&context->remote)->sin6_addr) &&
+		    !net_context_is_bound_to_iface(context)) {
 			iface = net_if_ipv6_select_src_iface(&addr6->sin6_addr);
 			net_context_set_iface(context, iface);
 		}
@@ -1512,7 +1527,8 @@ static int context_sendto(struct net_context *context,
 		 * network interfaces and we are trying to send data to
 		 * second or later network interface.
 		 */
-		if (net_sin(&context->remote)->sin_addr.s_addr == 0U) {
+		if (net_sin(&context->remote)->sin_addr.s_addr == 0U &&
+		    !net_context_is_bound_to_iface(context)) {
 			iface = net_if_ipv4_select_src_iface(&addr4->sin_addr);
 			net_context_set_iface(context, iface);
 		}
@@ -1962,6 +1978,7 @@ static int recv_udp(struct net_context *context,
 				laddr,
 				ntohs(net_sin(&context->remote)->sin_port),
 				ntohs(lport),
+				context,
 				net_context_packet_received,
 				user_data,
 				&context->conn_handler);
@@ -2029,6 +2046,7 @@ static int recv_raw(struct net_context *context,
 	ret = net_conn_register(net_context_get_ip_proto(context),
 				net_context_get_family(context),
 				NULL, local_addr, 0, 0,
+				context,
 				net_context_raw_packet_received,
 				user_data,
 				&context->conn_handler);
