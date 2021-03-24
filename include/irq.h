@@ -49,6 +49,23 @@ extern "C" {
 	ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p)
 
 /**
+ * @brief Replace default interrupt handler.
+ *
+ * This routine replaces default interrupt handler for an IRQ.
+ *
+ * @warning
+ * This functionalty only replaces ISR function, so to make it work
+ * correctly, the IRQ_CONNECT must be invoked also for target IRQ.
+ *
+ * @param irq_p IRQ line number.
+ * @param new_func_p Address of new interrupt service routine.
+ *
+ * @return New interrupt vector assigned to this interrupt.
+ */
+#define IRQ_REPLACE_ISR(irq_p, new_func_p) \
+	ARCH_IRQ_REPLACE_ISR(irq_p, new_func_p)
+
+/**
  * Configure a dynamic interrupt.
  *
  * Use this instead of IRQ_CONNECT() if arguments cannot be known at build time.

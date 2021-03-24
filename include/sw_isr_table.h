@@ -57,6 +57,7 @@ struct _isr_list {
 
 /** This interrupt gets put directly in the vector table */
 #define ISR_FLAG_DIRECT BIT(0)
+#define ISR_FLAG_REPLACE_ISR BIT(1)
 
 #define _MK_ISR_NAME(x, y) __MK_ISR_NAME(x, y)
 #define __MK_ISR_NAME(x, y) __isr_ ## x ## _irq_ ## y
@@ -69,6 +70,11 @@ struct _isr_list {
 	static Z_DECL_ALIGN(struct _isr_list) Z_GENERIC_SECTION(.intList) \
 		__used _MK_ISR_NAME(func, __COUNTER__) = \
 			{irq, flags, (void *)&func, (const void *)param}
+
+#define Z_ISR_REPLACE(irq, new_func) \
+	static Z_DECL_ALIGN(struct _isr_list) Z_GENERIC_SECTION(.intList) \
+		__used _MK_ISR_NAME(new_func, __COUNTER__) = \
+			{irq, ISR_FLAG_REPLACE_ISR, &new_func, NULL}
 
 #define IRQ_TABLE_SIZE (CONFIG_NUM_IRQS - CONFIG_GEN_IRQ_START_VECTOR)
 

@@ -54,4 +54,19 @@ void eos_s3_lock_disable(void);
 
 int eos_s3_io_mux(uint32_t pad_nr, uint32_t pad_cfg);
 
+#undef NVIC_DisableIRQ
+#undef NVIC_EnableIRQ
+#undef NVIC_ClearPendingIRQ
+
+#define WIC_GPIO_IRQ_BASE (5UL)
+#define WIC_OTHER_IRQ_BASE (6UL)
+
+void EOSS3_DisableIRQ(IRQn_Type IRQn);
+void EOSS3_EnableIRQ(IRQn_Type IRQn);
+void EOSS3_ClearPendingIRQ(IRQn_Type IRQn);
+
+#define NVIC_DisableIRQ		EOSS3_DisableIRQ
+#define NVIC_EnableIRQ		EOSS3_EnableIRQ
+#define NVIC_ClearPendingIRQ	EOSS3_ClearPendingIRQ
+
 #endif /* _SOC__H_ */

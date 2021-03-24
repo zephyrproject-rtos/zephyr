@@ -138,4 +138,9 @@ struct x86_ssf {
  */
 #define ARCH_DYMANIC_OBJ_K_THREAD_ALIGNMENT	16
 
+#define ARCH_IRQ_REPLACE_ISR(irq, new_func) \
+({ \
+	Z_ISR_REPLACE(irq, new_func); \
+})
+
 #endif /* ZEPHYR_INCLUDE_ARCH_X86_INTEL64_ARCH_H_ */

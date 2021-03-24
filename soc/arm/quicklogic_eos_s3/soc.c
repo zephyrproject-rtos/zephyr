@@ -10,6 +10,51 @@
 #include <soc_pinmap.h>
 #include <arch/arm/aarch32/cortex_m/cmsis.h>
 
+/* EOS S3 has WIC (Wake-up Interrupt Controller) which is an independent
+ * interrupt controller that also handles enabling, disabling and
+ * clearing IRQs. To actually make IRQs work properly we need to
+ * override NVIC functions and include WIC handling in them..
+ */
+void EOSS3_DisableIRQ(IRQn_Type IRQn)
+{
+	if ((int32_t)(IRQn) >= 0) {
+		NVIC->ICER[(((uint32_t)IRQn) >> 5UL)] =
+			(uint32_t)(1UL << (((uint32_t)IRQn) & 0x1FUL));
+		if ((int32_t)IRQn != WIC_GPIO_IRQ_BASE) {
+			INTR_CTRL->OTHER_INTR_EN_M4 &=
+				~(1 << (IRQn - WIC_OTHER_IRQ_BASE));
+		}
+		__DSB();
+		__ISB();
+	}
+}
+
+void EOSS3_EnableIRQ(IRQn_Type IRQn)
+{
+	if ((int32_t)(IRQn) >= 0) {
+		__COMPILER_BARRIER();
+		NVIC->ISER[(((uint32_t)IRQn) >> 5UL)] =
+			(uint32_t)(1UL << (((uint32_t)IRQn) & 0x1FUL));
+		__COMPILER_BARRIER();
+		if ((int32_t)IRQn != WIC_GPIO_IRQ_BASE) {
+			INTR_CTRL->OTHER_INTR_EN_M4 |=
+				(1 << (IRQn - WIC_OTHER_IRQ_BASE));
+		}
+	}
+}
+
+void EOSS3_ClearPendingIRQ(IRQn_Type IRQn)
+{
+	if ((int32_t)(IRQn) >= 0) {
+		NVIC->ICPR[(((uint32_t)IRQn) >> 5UL)] =
+			(uint32_t)(1UL << (((uint32_t)IRQn) & 0x1FUL));
+		if ((int32_t)IRQn != WIC_GPIO_IRQ_BASE) {
+			INTR_CTRL->OTHER_INTR |=
+				(1 << (IRQn - WIC_OTHER_IRQ_BASE));
+		}
+	}
+}
+
 void eos_s3_lock_enable(void)
 {
 	MISC_CTRL->LOCK_KEY_CTRL = MISC_LOCK_KEY;
@@ -79,9 +124,6 @@ static int eos_s3_init(const struct device *arg)
 
 	/* Clear all interrupts */
 	INTR_CTRL->OTHER_INTR = 0xFFFFFF;
-
-	/* Enable UART interrupt */
-	INTR_CTRL->OTHER_INTR_EN_M4 = UART_INTR_EN_M4;
 
 	key = irq_lock();
 

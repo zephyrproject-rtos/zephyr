@@ -54,6 +54,11 @@ extern void z_irq_spurious(const void *unused);
 	z_irq_priority_set(irq_p, priority_p, flags_p); \
 }
 
+#define ARCH_IRQ_REPLACE_ISR(irq, new_func) \
+({ \
+	Z_ISR_REPLACE(irq, new_func); \
+})
+
 /**
  * Configure a 'direct' static interrupt.
  *

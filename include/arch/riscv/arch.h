@@ -298,6 +298,11 @@ void z_irq_spurious(const void *unused);
 }
 #endif
 
+#define ARCH_IRQ_REPLACE_ISR(irq, new_func) \
+({ \
+	Z_ISR_REPLACE(irq, new_func); \
+})
+
 /*
  * use atomic instruction csrrc to lock global irq
  * csrrc: atomic read and clear bits in CSR register

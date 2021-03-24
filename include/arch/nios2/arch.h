@@ -44,6 +44,11 @@ extern "C" {
 	Z_ISR_DECLARE(irq_p, 0, isr_p, isr_param_p); \
 }
 
+#define ARCH_IRQ_REPLACE_ISR(irq, new_func) \
+({ \
+	Z_ISR_REPLACE(irq, new_func); \
+})
+
 extern void z_irq_spurious(const void *unused);
 
 static ALWAYS_INLINE unsigned int arch_irq_lock(void)

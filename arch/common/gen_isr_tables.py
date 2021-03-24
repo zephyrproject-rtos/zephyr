@@ -14,6 +14,7 @@ from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
 ISR_FLAG_DIRECT = (1 << 0)
+ISR_FLAG_REPLACE_ISR = (1 << 1)
 
 # The below few hardware independent magic numbers represent various
 # levels of interrupts in a multi-level interrupt system.
@@ -254,6 +255,8 @@ def main():
             error("one or both of -s or -V needs to be specified on command line")
         swt = None
 
+    subs_isr = list()
+
     for irq, flags, func, param in intlist["interrupts"]:
         if flags & ISR_FLAG_DIRECT:
             if param != 0:
@@ -308,13 +311,22 @@ def main():
             if not 0 <= table_index < len(swt):
                 error("IRQ %d (offset=%d) exceeds the maximum of %d" %
                       (table_index, offset, len(swt) - 1))
-            if swt[table_index] != (0, spurious_handler):
-                error(f"multiple registrations at table_index {table_index} for irq {irq} (0x{irq:x})"
-                      + f"\nExisting handler 0x{swt[table_index][1]:x}, new handler 0x{func:x}"
-                      + "\nHas IRQ_CONNECT or IRQ_DIRECT_CONNECT accidentally been invoked on the same irq multiple times?"
-                )
+            # Skip replace ISR entries - do it at the very end
+            if not flags & ISR_FLAG_REPLACE_ISR:
+                if swt[table_index] != (0, spurious_handler):
+                    error(f"multiple registrations at table_index {table_index} for irq {irq} (0x{irq:x})"
+                          + f"\nExisting handler 0x{swt[table_index][1]:x}, new handler 0x{func:x}"
+                          + "\nHas IRQ_CONNECT or IRQ_DIRECT_CONNECT accidentally been invoked on the same irq multiple times?"
+                    )
+                swt[table_index] = (param, func)
+            else:
+                subs_isr += [{table_index : func}]
 
-            swt[table_index] = (param, func)
+    # Replace ISR function if needed
+    for sub in subs_isr:
+        table_index = next(iter(sub))
+        param = swt[table_index][0]
+        swt[table_index] = (param, sub[table_index])
 
     with open(args.output_source, "w") as fp:
         write_source_file(fp, vt, swt, intlist, syms)
