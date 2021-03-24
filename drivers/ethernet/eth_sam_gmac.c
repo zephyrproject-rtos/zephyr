@@ -48,7 +48,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #endif
 
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
-#include <ptp_clock.h>
+#include <drivers/ptp_clock.h>
 #include <net/gptp.h>
 #endif
 

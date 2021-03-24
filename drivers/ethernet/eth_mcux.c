@@ -32,7 +32,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <ethernet/eth_stats.h>
 
 #if defined(CONFIG_PTP_CLOCK_MCUX)
-#include <ptp_clock.h>
+#include <drivers/ptp_clock.h>
 #include <net/gptp.h>
 #endif
 
