@@ -803,6 +803,13 @@ static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
 #define EAI_FAMILY DNS_EAI_FAMILY
 #endif /* defined(CONFIG_NET_SOCKETS_POSIX_NAMES) */
 
+#define IFNAMSIZ Z_DEVICE_MAX_NAME_LEN
+
+/** Interface description structure */
+struct ifreq {
+	char ifr_name[IFNAMSIZ]; /* Interface name */
+};
+
 /** sockopt: Socket-level option */
 #define SOL_SOCKET 1
 
@@ -821,6 +828,9 @@ static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
 #define SO_RCVTIMEO 20
 /** sockopt: Send timeout */
 #define SO_SNDTIMEO 21
+
+/** sockopt: Bind a socket to an interface */
+#define SO_BINDTODEVICE	25
 
 /** sockopt: Timestamp TX packets */
 #define SO_TIMESTAMPING 37

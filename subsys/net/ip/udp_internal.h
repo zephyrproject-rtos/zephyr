@@ -105,6 +105,7 @@ struct net_udp_hdr *net_udp_input(struct net_pkt *pkt,
  * @param local_addr Local address of the connection end point.
  * @param remote_port Remote port of the connection end point.
  * @param local_port Local port of the connection end point.
+ * @param context net_context structure related to the connection.
  * @param cb Callback to be called
  * @param user_data User data supplied by caller.
  * @param handle UDP handle that can be used when unregistering
@@ -116,6 +117,7 @@ int net_udp_register(uint8_t family,
 		     const struct sockaddr *local_addr,
 		     uint16_t remote_port,
 		     uint16_t local_port,
+		     struct net_context *context,
 		     net_conn_cb_t cb,
 		     void *user_data,
 		     struct net_conn_handle **handle);

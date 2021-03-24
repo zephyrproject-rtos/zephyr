@@ -1764,6 +1764,50 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 			}
 
 			break;
+
+		case SO_BINDTODEVICE: {
+			struct net_if *iface;
+			const struct device *dev;
+			struct ifreq *ifreq = (struct ifreq *)optval;
+
+			if (net_context_get_family(ctx) != AF_INET &&
+			    net_context_get_family(ctx) != AF_INET6) {
+				errno = EAFNOSUPPORT;
+				return -1;
+			}
+
+			/* optlen equal to 0 or empty interface name should
+			 * remove the binding.
+			 */
+			if ((optlen == 0) || (ifreq != NULL &&
+					      strlen(ifreq->ifr_name) == 0)) {
+				ctx->flags &= ~NET_CONTEXT_BOUND_TO_IFACE;
+				return 0;
+			}
+
+			if ((ifreq == NULL) || (optlen != sizeof(*ifreq))) {
+				errno = EINVAL;
+				return -1;
+			}
+
+			dev = device_get_binding(ifreq->ifr_name);
+			if (dev == NULL) {
+				errno = ENODEV;
+				return -1;
+			}
+
+			iface = net_if_lookup_by_dev(dev);
+			if (iface == NULL) {
+				errno = ENODEV;
+				return -1;
+			}
+
+			net_context_set_iface(ctx, iface);
+			ctx->flags |= NET_CONTEXT_BOUND_TO_IFACE;
+
+			return 0;
+		}
+
 		}
 
 		break;
