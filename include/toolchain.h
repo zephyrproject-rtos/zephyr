@@ -33,6 +33,15 @@
 #define HAS_BUILTIN(x) HAS_BUILTIN_##x
 #endif
 
+/* Determine if _Generic is supported based.
+ * In general it's a C11 feature but it was added also in:
+ * - GCC 4.9.0 https://gcc.gnu.org/gcc-4.9/changes.html
+ * - Clang 3.0 https://releases.llvm.org/3.0/docs/ClangReleaseNotes.html
+ */
+#if (__STDC_VERSION__ >= 201112L)
+#define Z_C_GENERIC 1
+#endif
+
 #if defined(__XCC__)
 #include <toolchain/xcc.h>
 #elif defined(__CCAC__)

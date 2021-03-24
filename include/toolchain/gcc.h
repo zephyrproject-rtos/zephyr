@@ -222,6 +222,20 @@ do {                                                                    \
 #define HAS_BUILTIN___builtin_ctzll 1
 #endif
 
+/* Determine if _Generic is supported.
+ * In general it's a C11 feature but it was added also in:
+ * - GCC 4.9.0 https://gcc.gnu.org/gcc-4.9/changes.html
+ * - Clang 3.0 https://releases.llvm.org/3.0/docs/ClangReleaseNotes.html
+ */
+#ifndef Z_C_GENERIC
+#if (((__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__) >= 40900) || \
+	((__clang_major__ * 10000 + __clang_minor__ * 100 + __clang_patchlevel__) >= 30000))
+#define Z_C_GENERIC 1
+#else
+#define Z_C_GENERIC 0
+#endif
+#endif
+
 /*
  * Be *very* careful with these. You cannot filter out __DEPRECATED_MACRO with
  * -wno-deprecated, which has implications for -Werror.
