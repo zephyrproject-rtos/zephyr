@@ -1246,6 +1246,10 @@ int bt_le_per_adv_sync_delete(struct bt_le_per_adv_sync *per_adv_sync)
 {
 	int err = 0;
 
+	if (!BT_FEAT_LE_EXT_PER_ADV(bt_dev.le.features)) {
+		return -ENOTSUP;
+	}
+
 	if (atomic_test_bit(per_adv_sync->flags, BT_PER_ADV_SYNC_SYNCED)) {
 		err = bt_le_per_adv_sync_terminate(per_adv_sync);
 
@@ -1349,8 +1353,11 @@ int bt_le_per_adv_sync_transfer(const struct bt_le_per_adv_sync *per_adv_sync,
 	struct bt_hci_cp_le_per_adv_sync_transfer *cp;
 	struct net_buf *buf;
 
-	if (!BT_FEAT_LE_PAST_SEND(bt_dev.le.features)) {
-		return -EOPNOTSUPP;
+
+	if (!BT_FEAT_LE_EXT_PER_ADV(bt_dev.le.features)) {
+		return -ENOTSUP;
+	} else if (!BT_FEAT_LE_PAST_SEND(bt_dev.le.features)) {
+		return -ENOTSUP;
 	}
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_PER_ADV_SYNC_TRANSFER,
@@ -1433,8 +1440,10 @@ int bt_le_per_adv_sync_transfer_subscribe(
 {
 	uint8_t cte_type = 0;
 
-	if (!BT_FEAT_LE_PAST_RECV(bt_dev.le.features)) {
-		return -EOPNOTSUPP;
+	if (!BT_FEAT_LE_EXT_PER_ADV(bt_dev.le.features)) {
+		return -ENOTSUP;
+	} else if (!BT_FEAT_LE_PAST_RECV(bt_dev.le.features)) {
+		return -ENOTSUP;
 	}
 
 	if (!valid_past_param(param)) {
@@ -1469,8 +1478,10 @@ int bt_le_per_adv_sync_transfer_subscribe(
 
 int bt_le_per_adv_sync_transfer_unsubscribe(const struct bt_conn *conn)
 {
-	if (!BT_FEAT_LE_PAST_RECV(bt_dev.le.features)) {
-		return -EOPNOTSUPP;
+	if (!BT_FEAT_LE_EXT_PER_ADV(bt_dev.le.features)) {
+		return -ENOTSUP;
+	} else if (!BT_FEAT_LE_PAST_RECV(bt_dev.le.features)) {
+		return -ENOTSUP;
 	}
 
 	if (conn) {

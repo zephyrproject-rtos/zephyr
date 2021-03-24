@@ -1347,6 +1347,10 @@ int bt_le_per_adv_set_param(struct bt_le_ext_adv *adv,
 	struct net_buf *buf;
 	int err;
 
+	if (!BT_FEAT_LE_EXT_PER_ADV(bt_dev.le.features)) {
+		return -ENOTSUP;
+	}
+
 	if (atomic_test_bit(adv->flags, BT_ADV_SCANNABLE)) {
 		return -EINVAL;
 	} else if (atomic_test_bit(adv->flags, BT_ADV_CONNECTABLE)) {
@@ -1394,6 +1398,10 @@ int bt_le_per_adv_set_data(const struct bt_le_ext_adv *adv,
 	struct net_buf *buf;
 	struct bt_ad d = { .data = ad, .len = ad_len };
 	int err;
+
+	if (!BT_FEAT_LE_EXT_PER_ADV(bt_dev.le.features)) {
+		return -ENOTSUP;
+	}
 
 	if (!atomic_test_bit(adv->flags, BT_PER_ADV_PARAMS_SET)) {
 		return -EINVAL;
@@ -1444,6 +1452,10 @@ static int bt_le_per_adv_enable(struct bt_le_ext_adv *adv, bool enable)
 	struct bt_hci_cmd_state_set state;
 	int err;
 
+	if (!BT_FEAT_LE_EXT_PER_ADV(bt_dev.le.features)) {
+		return -ENOTSUP;
+	}
+
 	/* TODO: We could setup some default ext adv params if not already set*/
 	if (!atomic_test_bit(adv->flags, BT_PER_ADV_PARAMS_SET)) {
 		return -EINVAL;
@@ -1493,8 +1505,11 @@ int bt_le_per_adv_set_info_transfer(const struct bt_le_ext_adv *adv,
 	struct bt_hci_cp_le_per_adv_set_info_transfer *cp;
 	struct net_buf *buf;
 
-	if (!BT_FEAT_LE_PAST_SEND(bt_dev.le.features)) {
-		return -EOPNOTSUPP;
+
+	if (!BT_FEAT_LE_EXT_PER_ADV(bt_dev.le.features)) {
+		return -ENOTSUP;
+	} else if (!BT_FEAT_LE_PAST_SEND(bt_dev.le.features)) {
+		return -ENOTSUP;
 	}
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_PER_ADV_SET_INFO_TRANSFER,
