@@ -32,7 +32,7 @@ config ARM
 	select HAS_DTS
 	# FIXME: current state of the code for all ARM requires this, but
 	# is really only necessary for Cortex-M with ARM MPU!
-	select GEN_PRIV_STACKS
+	select GEN_PRIV_STACKS if !ARM64
 	select ARCH_HAS_THREAD_LOCAL_STORAGE if ARM64 || CPU_CORTEX_R || CPU_CORTEX_M
 	help
 	  ARM architecture

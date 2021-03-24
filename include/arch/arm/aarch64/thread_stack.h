@@ -47,4 +47,12 @@
 #define ARCH_KERNEL_STACK_RESERVED		0
 #define ARCH_KERNEL_STACK_OBJ_ALIGN		ARCH_STACK_PTR_ALIGN
 
+#ifndef _ASMLANGUAGE
+
+struct z_arm64_thread_stack_header {
+	char privilege_stack[CONFIG_PRIVILEGED_STACK_SIZE];
+} __packed __aligned(Z_ARM64_STACK_BASE_ALIGN);
+
+#endif /* _ASMLANGUAGE */
+
 #endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH64_THREAD_STACK_H_ */
