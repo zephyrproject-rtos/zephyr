@@ -4714,13 +4714,13 @@ int bt_smp_sign_verify(struct bt_conn *conn, struct net_buf *buf)
 		BT_ERR("Unable to create signature for %s",
 		       bt_addr_le_str(&conn->le.dst));
 		return -EIO;
-	};
+	}
 
 	if (memcmp(sig, net_buf_tail(buf) - sizeof(sig), sizeof(sig))) {
 		BT_ERR("Unable to verify signature for %s",
 		       bt_addr_le_str(&conn->le.dst));
 		return -EBADMSG;
-	};
+	}
 
 	keys->remote_csrk.cnt++;
 

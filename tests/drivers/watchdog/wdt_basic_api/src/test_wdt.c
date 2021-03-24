@@ -209,7 +209,7 @@ static int test_wdt_no_callback(void)
 	m_state = WDT_TEST_STATE_CHECK_RESET;
 	while (1) {
 		k_yield();
-	};
+	}
 }
 
 #if TEST_WDT_CALLBACK_1
@@ -263,7 +263,7 @@ static int test_wdt_callback_1(void)
 	m_state = WDT_TEST_STATE_CHECK_RESET;
 	while (1) {
 		k_yield();
-	};
+	}
 }
 #endif
 
@@ -325,7 +325,7 @@ static int test_wdt_callback_2(void)
 	while (1) {
 		wdt_feed(wdt, 0);
 		k_sleep(K_MSEC(100));
-	};
+	}
 }
 #endif
 

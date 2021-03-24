@@ -629,7 +629,7 @@ void log_output_hexdump(const struct log_output *output,
 
 		data += part_len;
 		length -= part_len;
-	};
+	}
 
 	postfix_print(output, flags, level);
 	log_output_flush(output);

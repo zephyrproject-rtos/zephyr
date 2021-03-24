@@ -93,7 +93,7 @@ static enum shell_wildcard_status commands_expand(const struct shell *shell,
 			}
 			cnt++;
 		}
-	};
+	}
 
 	if (cnt > 0) {
 		z_shell_pattern_remove(shell->ctx->temp_buff,

@@ -204,7 +204,7 @@ static inline void cbprintf_wcpy(int *dst, int *src, uint32_t len)
 			"Packaging of long double not enabled in Kconfig."); \
 	while (_idx % Z_CBPRINTF_ALIGNMENT(_arg)) { \
 		_idx += sizeof(int); \
-	}; \
+	} \
 	uint32_t _arg_size = Z_CBPRINTF_ARG_SIZE(_arg); \
 	if (_buf && _idx < _max) { \
 		Z_CBPRINTF_STORE_ARG(&_buf[_idx], _arg); \

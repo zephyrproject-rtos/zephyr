@@ -98,7 +98,7 @@ static int http_send_data(int sock, char *send_buf,
 		} while (remaining_len > 0);
 
 		data = va_arg(va, const char *);
-	};
+	}
 
 	va_end(va);
 
