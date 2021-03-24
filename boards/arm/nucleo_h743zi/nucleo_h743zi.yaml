@@ -21,3 +21,4 @@ supported:
   - spi
   - backup_sram
   - watchdog
+  - usb_device
