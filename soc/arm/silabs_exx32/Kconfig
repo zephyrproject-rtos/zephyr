@@ -5,6 +5,7 @@
 config SOC_FAMILY_EXX32
 	bool
 	select HAS_SEGGER_RTT
+	select BUILD_OUTPUT_HEX
 
 if SOC_FAMILY_EXX32
 config SOC_FAMILY
