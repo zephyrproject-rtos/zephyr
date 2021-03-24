@@ -12,6 +12,7 @@ User and Developer Guides
    bluetooth/index.rst
    build/index
    coding_guidelines/index
+   naming_conventions/index
    design_guidelines.rst
    c_library
    ../README.rst
