@@ -203,7 +203,7 @@ static inline int z_impl_pwm_pin_set_cycles(const struct device *dev,
  *                  function
  *
  * @retval -EINVAL if invalid function parameters were given
- * @retval -ENOTSUP if PWM capture is not supported or the given flags are not
+ * @retval -ENOSYS if PWM capture is not supported or the given flags are not
  *                  supported
  * @retval -EIO if IO error occurred while configuring
  * @retval -EBUSY if PWM capture is already in progress
@@ -217,8 +217,8 @@ static inline int pwm_pin_configure_capture(const struct device *dev,
 {
 	const struct pwm_driver_api *api = (struct pwm_driver_api *)dev->api;
 
-	if (!api->pin_configure_capture) {
-		return -ENOTSUP;
+	if (api->pin_configure_capture == NULL) {
+		return -ENOSYS;
 	}
 
 	return api->pin_configure_capture(dev, pwm, flags, cb, user_data);
@@ -239,7 +239,7 @@ static inline int pwm_pin_configure_capture(const struct device *dev,
  *
  * @retval 0 If successful.
  * @retval -EINVAL if invalid function parameters were given
- * @retval -ENOTSUP if PWM capture is not supported
+ * @retval -ENOSYS if PWM capture is not supported
  * @retval -EIO if IO error occurred while enabling PWM capture
  * @retval -EBUSY if PWM capture is already in progress
  */
@@ -251,8 +251,8 @@ static inline int z_impl_pwm_pin_enable_capture(const struct device *dev,
 {
 	const struct pwm_driver_api *api = (struct pwm_driver_api *)dev->api;
 
-	if (!api->pin_enable_capture) {
-		return -ENOTSUP;
+	if (api->pin_enable_capture == NULL) {
+		return -ENOSYS;
 	}
 
 	return api->pin_enable_capture(dev, pwm);
@@ -271,7 +271,7 @@ static inline int z_impl_pwm_pin_enable_capture(const struct device *dev,
  *
  * @retval 0 If successful.
  * @retval -EINVAL if invalid function parameters were given
- * @retval -ENOTSUP if PWM capture is not supported
+ * @retval -ENOSYS if PWM capture is not supported
  * @retval -EIO if IO error occurred while disabling PWM capture
  */
 __syscall int pwm_pin_disable_capture(const struct device *dev, uint32_t pwm);
@@ -282,8 +282,8 @@ static inline int z_impl_pwm_pin_disable_capture(const struct device *dev,
 {
 	const struct pwm_driver_api *api = (struct pwm_driver_api *)dev->api;
 
-	if (!api->pin_disable_capture) {
-		return -ENOTSUP;
+	if (api->pin_disable_capture == NULL) {
+		return -ENOSYS;
 	}
 
 	return api->pin_disable_capture(dev, pwm);
