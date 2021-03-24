@@ -41,7 +41,11 @@ static void trigger_assert_fail(void *a)
 	__ASSERT(a != NULL, "parameter a should not be NULL!");
 }
 
-static void trigger_fault_illegal_instruction(void)
+/*
+ * Do not optimize to prevent GCC from generating invalid
+ * opcode exception instruction instead of real instruction.
+ */
+__no_optimization static void trigger_fault_illegal_instruction(void)
 {
 	void *a = NULL;
 
@@ -49,7 +53,11 @@ static void trigger_fault_illegal_instruction(void)
 	((void(*)(void))&a)();
 }
 
-static void trigger_fault_access(void)
+/*
+ * Do not optimize to prevent GCC from generating invalid
+ * opcode exception instruction instead of real instruction.
+ */
+__no_optimization static void trigger_fault_access(void)
 {
 #if defined(CONFIG_SOC_ARC_IOT) || defined(CONFIG_SOC_NSIM) || defined(CONFIG_SOC_EMSK)
 	/* For iotdk, em_starterkit and ARC/nSIM, nSIM simulates full address space of
@@ -82,7 +90,12 @@ static void trigger_fault_access(void)
 	printk("b is %d\n", b);
 }
 
-static void trigger_fault_divide_zero(void)
+
+/*
+ * Do not optimize the divide instruction. GCC will generate invalid
+ * opcode exception instruction instead of real divide instruction.
+ */
+__no_optimization static void trigger_fault_divide_zero(void)
 {
 	int a = 1;
 	int b = 0;
@@ -90,6 +103,18 @@ static void trigger_fault_divide_zero(void)
 	/* divide by zero */
 	a = a / b;
 	printk("a is %d\n", a);
+
+/*
+ * While no optimization is enabled, some QEMU such as QEMU cortex a53
+ * series and QEMU mps2 series board will not trigger an exception for
+ * divide zero. They might need to enable the divide zero exception.
+ * We only skip the QEMU board here, this means this test will still
+ * apply on the physical board.
+ */
+#if (defined(CONFIG_SOC_SERIES_MPS2) && (CONFIG_QEMU_TARGET)) || \
+	(CONFIG_BOARD_QEMU_CORTEX_A53)
+	ztest_test_skip();
+#endif
 }
 
 static void trigger_fault_oops(void)
