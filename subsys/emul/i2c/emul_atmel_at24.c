@@ -12,7 +12,7 @@
 LOG_MODULE_REGISTER(atmel_at24);
 
 #include <device.h>
-#include <emul.h>
+#include <drivers/emul.h>
 #include <drivers/i2c.h>
 #include <drivers/i2c_emul.h>
 

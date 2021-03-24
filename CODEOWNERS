@@ -455,7 +455,7 @@
 /include/dt-bindings/dma/stm32_dma.h      @cybertale
 /include/dt-bindings/pcie/                @dcpleung
 /include/dt-bindings/usb/usb.h            @galak
-/include/emul.h                           @sjg20
+/include/drivers/emul.h                   @sjg20
 /include/fs/                              @nashif @nvlsianpu @de-nordic
 /include/init.h                           @nashif @andyross
 /include/irq.h                            @dcpleung @nashif @andyross
