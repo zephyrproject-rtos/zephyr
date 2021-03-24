@@ -1145,7 +1145,7 @@ static void wncm14a2a_rx(void)
 
 	while (true) {
 		/* wait for incoming data */
-		k_sem_take(&ictx.mdm_ctx.rx_sem, K_FOREVER);
+		(void)k_sem_take(&ictx.mdm_ctx.rx_sem, K_FOREVER);
 
 		wncm14a2a_read_rx(&rx_buf);
 
