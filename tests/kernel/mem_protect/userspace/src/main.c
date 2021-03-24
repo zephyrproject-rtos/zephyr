@@ -666,7 +666,8 @@ static void test_init_and_access_other_memdomain(void)
 	spawn_user(&default_bool);
 }
 
-#if defined(CONFIG_ARM) || (defined(CONFIG_GEN_PRIV_STACKS) && defined(CONFIG_RISCV))
+#if (defined(CONFIG_ARM) || (defined(CONFIG_GEN_PRIV_STACKS) && defined(CONFIG_RISCV)) && \
+	!defined(CONFIG_ARM64))
 extern uint8_t *z_priv_stack_find(void *obj);
 #endif
 extern k_thread_stack_t ztest_thread_stack[];
@@ -942,7 +943,13 @@ void test_main(void)
 	/* Most of these scenarios use the default domain */
 	k_mem_domain_add_partition(&k_mem_domain_default, &default_part);
 
-#if defined(CONFIG_ARM)
+#if defined(CONFIG_ARM64)
+	struct z_arm64_thread_stack_header *hdr;
+
+	hdr = ((struct z_arm64_thread_stack_header *)ztest_thread_stack);
+	priv_stack_ptr = (((char *)&hdr->privilege_stack) +
+			  (sizeof(hdr->privilege_stack) - 1));
+#elif defined(CONFIG_ARM)
 	priv_stack_ptr = (char *)z_priv_stack_find(ztest_thread_stack);
 #elif defined(CONFIG_X86)
 	struct z_x86_thread_stack_header *hdr;
