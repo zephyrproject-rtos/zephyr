@@ -21,15 +21,4 @@
 #endif
 #endif /* CONFIG_TRUSTED_EXECUTION_NONSECURE */
 
-#define BOOT_MAGIC_GOOD    1
-#define BOOT_MAGIC_BAD     2
-#define BOOT_MAGIC_UNSET   3
-#define BOOT_MAGIC_ANY     4  /* NOTE: control only, not dependent on sector */
-#define BOOT_MAGIC_NOTGOOD 5  /* NOTE: control only, not dependent on sector */
-
-#define BOOT_FLAG_SET   1
-#define BOOT_FLAG_BAD   2
-#define BOOT_FLAG_UNSET 3
-#define BOOT_FLAG_ANY   4  /* NOTE: control only, not dependent on sector */
-
 #endif /* ZEPHYR_DFU_BOOT_MCUBOOT_H_ */
