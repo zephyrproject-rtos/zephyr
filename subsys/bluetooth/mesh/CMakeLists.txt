@@ -16,6 +16,7 @@ zephyr_library_sources_ifdef(CONFIG_BT_MESH
     heartbeat.c
     crypto.c
     access.c
+    msg.c
     cfg_srv.c
     health_srv.c
 )

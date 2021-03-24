@@ -630,31 +630,6 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 	}
 }
 
-void bt_mesh_model_msg_init(struct net_buf_simple *msg, uint32_t opcode)
-{
-	net_buf_simple_init(msg, 0);
-
-	switch (BT_MESH_MODEL_OP_LEN(opcode)) {
-	case 1:
-		net_buf_simple_add_u8(msg, opcode);
-		break;
-	case 2:
-		net_buf_simple_add_be16(msg, opcode);
-		break;
-	case 3:
-		net_buf_simple_add_u8(msg, ((opcode >> 16) & 0xff));
-		/* Using LE for the CID since the model layer is defined as
-		 * little-endian in the mesh spec and using BT_MESH_MODEL_OP_3
-		 * will declare the opcode in this way.
-		 */
-		net_buf_simple_add_le16(msg, opcode & 0xffff);
-		break;
-	default:
-		BT_WARN("Unknown opcode format");
-		break;
-	}
-}
-
 static int model_send(struct bt_mesh_model *model,
 		      struct bt_mesh_net_tx *tx, bool implicit_bind,
 		      struct net_buf_simple *msg,
