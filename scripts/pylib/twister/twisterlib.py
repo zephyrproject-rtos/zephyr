@@ -2187,6 +2187,7 @@ class ProjectBuilder(FilterBuilder):
         self.verbose = kwargs.get('verbose', None)
         self.warnings_as_errors = kwargs.get('warnings_as_errors', True)
         self.overflow_as_errors = kwargs.get('overflow_as_errors', False)
+        self.enable_size_report = kwargs.get('enable_size_report', False)
 
     @staticmethod
     def log_info(filename, inline_logs):
@@ -2343,6 +2344,9 @@ class ProjectBuilder(FilterBuilder):
 
         # Report results and output progress to screen
         elif op == "report":
+            if self.enable_size_report and not self.cmake_only:
+                self.suite.calc_one_elf_size(self.instance)
+
             with lock:
                 done.put(self.instance)
                 self.report_out(results)
@@ -3225,8 +3229,6 @@ class TestSuite(DisablePyTestCollectionMixin):
                 instance.metrics["rom_size"] = 0
                 instance.metrics["unrecognized"] = []
 
-            instance.metrics["handler_time"] = instance.handler.duration if instance.handler else 0
-
     def add_tasks_to_queue(self, pipeline, build_only=False, test_only=False):
         for instance in self.instances.values():
             if build_only:
@@ -3264,7 +3266,8 @@ class TestSuite(DisablePyTestCollectionMixin):
                                     generator_cmd=self.generator_cmd,
                                     verbose=self.verbose,
                                     warnings_as_errors=self.warnings_as_errors,
-                                    overflow_as_errors=self.overflow_as_errors
+                                    overflow_as_errors=self.overflow_as_errors,
+                                    enable_size_report=self.enable_size_report
                                     )
                 pb.process(pipeline, done_queue, task, lock, results)
 
@@ -3290,20 +3293,6 @@ class TestSuite(DisablePyTestCollectionMixin):
             logger.info("Execution interrupted")
             for p in processes:
                 p.terminate()
-
-        # FIXME: This needs to move out.
-        if self.enable_size_report and not self.cmake_only:
-            # Parallelize size calculation
-            executor = concurrent.futures.ThreadPoolExecutor(self.jobs)
-            futures = [executor.submit(self.calc_one_elf_size, instance)
-                       for instance in self.instances.values()]
-            concurrent.futures.wait(futures)
-        else:
-            for instance in self.instances.values():
-                instance.metrics["ram_size"] = 0
-                instance.metrics["rom_size"] = 0
-                instance.metrics["handler_time"] = instance.handler.duration if instance.handler else 0
-                instance.metrics["unrecognized"] = []
 
         return results
 

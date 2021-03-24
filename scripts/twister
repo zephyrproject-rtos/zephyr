@@ -1162,7 +1162,10 @@ def main():
                 break
             else:
                 inst.metrics["handler_time"] = inst.handler.duration if inst.handler else 0
-                inst.metrics["unrecognized"] = []
+
+                if "unrecognized" not in inst.metrics:
+                    inst.metrics["unrecognized"] = []
+
                 suite.instances[inst.name] = inst
 
         print("")
