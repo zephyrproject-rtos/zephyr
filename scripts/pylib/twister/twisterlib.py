@@ -1199,6 +1199,7 @@ class SizeCalculator:
         "nocache",
         "devices",
         "k_heap_area",
+        "pagetables",
     ]
 
     # These get copied into RAM only on non-XIP
@@ -1223,6 +1224,7 @@ class SizeCalculator:
         "shell_area",
         "tracing_backend_area",
         "ppp_protocol_handler_area",
+        "device_handles",
     ]
 
     def __init__(self, filename, extra_sections):
