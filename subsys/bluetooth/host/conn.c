@@ -1590,6 +1590,8 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 
 			iso = conn_lookup_iso(conn);
 			if (iso) {
+				iso->err = conn->err;
+
 				bt_iso_disconnected(iso);
 				bt_iso_cleanup(iso);
 				bt_conn_unref(iso);
