@@ -2969,7 +2969,8 @@ static void bt_dev_show_info(void)
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_BT_LOG_SNIFFER_INFO)) {
+	if (IS_ENABLED(CONFIG_BT_SMP) &&
+	    IS_ENABLED(CONFIG_BT_LOG_SNIFFER_INFO)) {
 		bt_keys_foreach(BT_KEYS_ALL, bt_keys_show_sniffer_info, NULL);
 	}
 
