@@ -265,7 +265,9 @@ static inline int video_set_format(const struct device *dev,
 	const struct video_driver_api *api =
 		(const struct video_driver_api *)dev->api;
 
-	__ASSERT(api->set_format, "set_format must be implemented by driver");
+	if (api->set_format == NULL) {
+		return -ENOSYS;
+	}
 
 	return api->set_format(dev, ep, fmt);
 }
@@ -288,7 +290,9 @@ static inline int video_get_format(const struct device *dev,
 	const struct video_driver_api *api =
 		(const struct video_driver_api *)dev->api;
 
-	__ASSERT(api->get_format, "get_format must be implemented by driver");
+	if (api->get_format == NULL) {
+		return -ENOSYS;
+	}
 
 	return api->get_format(dev, ep, fmt);
 }
@@ -315,7 +319,7 @@ static inline int video_enqueue(const struct device *dev,
 		(const struct video_driver_api *)dev->api;
 
 	if (api->enqueue == NULL) {
-		return -ENOTSUP;
+		return -ENOSYS;
 	}
 
 	return api->enqueue(dev, ep, buf);
@@ -345,7 +349,7 @@ static inline int video_dequeue(const struct device *dev,
 		(const struct video_driver_api *)dev->api;
 
 	if (api->dequeue == NULL) {
-		return -ENOTSUP;
+		return -ENOSYS;
 	}
 
 	return api->dequeue(dev, ep, buf, timeout);
@@ -374,7 +378,7 @@ static inline int video_flush(const struct device *dev,
 		(const struct video_driver_api *)dev->api;
 
 	if (api->flush == NULL) {
-		return -ENOTSUP;
+		return -ENOSYS;
 	}
 
 	return api->flush(dev, ep, cancel);
@@ -397,8 +401,9 @@ static inline int video_stream_start(const struct device *dev)
 	const struct video_driver_api *api =
 		(const struct video_driver_api *)dev->api;
 
-	__ASSERT(api->stream_start,
-		 "stream_start must be implemented by driver");
+	if (api->stream_start == NULL) {
+		return -ENOSYS;
+	}
 
 	return api->stream_start(dev);
 }
@@ -418,8 +423,9 @@ static inline int video_stream_stop(const struct device *dev)
 		(const struct video_driver_api *)dev->api;
 	int ret;
 
-	__ASSERT(api->stream_stop,
-		 "stream_stop must be implemented by driver");
+	if (api->stream_stop) {
+		return -ENOSYS;
+	}
 
 	ret = api->stream_stop(dev);
 	video_flush(dev, VIDEO_EP_ANY, true);
@@ -443,7 +449,9 @@ static inline int video_get_caps(const struct device *dev,
 	const struct video_driver_api *api =
 		(const struct video_driver_api *)dev->api;
 
-	__ASSERT(api->get_caps, "get_caps must be implemented by driver");
+	if (api->get_caps == NULL) {
+		return -ENOSYS;
+	}
 
 	return api->get_caps(dev, ep, caps);
 }
@@ -470,7 +478,7 @@ static inline int video_set_ctrl(const struct device *dev, unsigned int cid,
 		(const struct video_driver_api *)dev->api;
 
 	if (api->set_ctrl == NULL) {
-		return -ENOTSUP;
+		return -ENOSYS;
 	}
 
 	return api->set_ctrl(dev, cid, value);
@@ -498,7 +506,7 @@ static inline int video_get_ctrl(const struct device *dev, unsigned int cid,
 		(const struct video_driver_api *)dev->api;
 
 	if (api->get_ctrl == NULL) {
-		return -ENOTSUP;
+		return -ENOSYS;
 	}
 
 	return api->get_ctrl(dev, cid, value);
@@ -525,7 +533,7 @@ static inline int video_set_signal(const struct device *dev,
 		(const struct video_driver_api *)dev->api;
 
 	if (api->set_signal == NULL) {
-		return -ENOTSUP;
+		return -ENOSYS;
 	}
 
 	return api->set_signal(dev, ep, signal);
