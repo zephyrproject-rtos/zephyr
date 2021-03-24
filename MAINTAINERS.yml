@@ -327,10 +327,14 @@ Devicetree:
         - "area: Devicetree"
 
 Disk:
-    status: orphaned
+    status: maintained
+    maintainers:
+        - jfischer-no
     files:
+        - include/storage/disk_access.h
+        - include/drivers/disk.h
+        - drivers/disk/
         - subsys/disk/
-        - include/disk/
     labels:
         - "area: Disk Access"
 
