@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 
 #include <ztest.h>
 
-#include <ptp_clock.h>
+#include <drivers/ptp_clock.h>
 #include <net/ptp_time.h>
 
 #include <net/ethernet.h>

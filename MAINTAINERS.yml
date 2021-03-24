@@ -738,7 +738,7 @@ Documentation:
         - jukkar
     files:
         - drivers/ptp_clock/
-        - include/ptp_clock.h
+        - include/drivers/ptp_clock.h
     labels:
         - "area: Clocks"
 

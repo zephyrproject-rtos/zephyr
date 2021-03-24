@@ -457,7 +457,7 @@
 /include/net/mqtt.h                       @jukkar @rlubos
 /include/posix/                           @pfalcon
 /include/power/power.h                    @nashif @ceolin
-/include/ptp_clock.h                      @jukkar
+/include/drivers/ptp_clock.h              @jukkar
 /include/shared_irq.h                     @dcpleung @nashif @andyross
 /include/shell/                           @jakub-uC @nordic-krch
 /include/sw_isr_table.h                   @dcpleung @nashif @andyross

@@ -8,7 +8,7 @@
 LOG_MODULE_REGISTER(net_gptp, CONFIG_NET_GPTP_LOG_LEVEL);
 
 #include <net/net_pkt.h>
-#include <ptp_clock.h>
+#include <drivers/ptp_clock.h>
 #include <net/ethernet_mgmt.h>
 #include <random/rand32.h>
 
