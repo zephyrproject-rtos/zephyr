@@ -238,9 +238,10 @@ struct bt_iso_chan_ops {
 	 *  channel is disconnected, including when a connection gets
 	 *  rejected.
 	 *
-	 *  @param chan The channel that has been Disconnected
+	 *  @param chan   The channel that has been Disconnected
+	 *  @param reason HCI reason for the disconnection.
 	 */
-	void (*disconnected)(struct bt_iso_chan *chan);
+	void (*disconnected)(struct bt_iso_chan *chan, uint8_t reason);
 
 	/** @brief Channel alloc_buf callback
 	 *

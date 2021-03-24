@@ -766,9 +766,9 @@ static void bt_iso_remove_data_path(struct bt_conn *conn)
 	hci_le_remove_iso_data_path(conn, BT_HCI_DATAPATH_DIR_HOST_TO_CTLR);
 }
 
-static void bt_iso_chan_disconnected(struct bt_iso_chan *chan)
+static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 {
-	BT_DBG("%p", chan);
+	BT_DBG("%p, reason 0x%02x", chan, reason);
 
 	if (!chan->conn) {
 		bt_iso_chan_set_state(chan, BT_ISO_DISCONNECTED);
@@ -784,7 +784,7 @@ static void bt_iso_chan_disconnected(struct bt_iso_chan *chan)
 	}
 
 	if (chan->ops->disconnected) {
-		chan->ops->disconnected(chan);
+		chan->ops->disconnected(chan, reason);
 	}
 }
 
@@ -807,7 +807,7 @@ void bt_iso_disconnected(struct bt_conn *conn)
 	bt_iso_remove_data_path(conn);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&conn->channels, chan, next, node) {
-		bt_iso_chan_disconnected(chan);
+		bt_iso_chan_disconnected(chan, conn->err);
 	}
 }
 
@@ -1021,7 +1021,7 @@ int bt_iso_chan_disconnect(struct bt_iso_chan *chan)
 
 	if (chan->state == BT_ISO_BOUND) {
 		bt_iso_chan_remove(chan->conn, chan);
-		bt_iso_chan_disconnected(chan);
+		bt_iso_chan_disconnected(chan, BT_HCI_ERR_LOCALHOST_TERM_CONN);
 		return 0;
 	}
 
@@ -1242,9 +1242,11 @@ static void cleanup_big(struct bt_iso_big *big)
 	memset(big, 0, sizeof(*big));
 }
 
-static void big_disconnect(struct bt_iso_big *big)
+static void big_disconnect(struct bt_iso_big *big, uint8_t reason)
 {
 	for (int i = 0; i < big->num_bis; i++) {
+		big->bis[i]->conn->err = reason;
+
 		bt_iso_disconnected(big->bis[i]->conn);
 	}
 }
@@ -1466,7 +1468,7 @@ int bt_iso_big_terminate(struct bt_iso_big *big)
 		err = hci_le_big_sync_term(big);
 
 		if (!err) {
-			big_disconnect(big);
+			big_disconnect(big, BT_HCI_ERR_LOCALHOST_TERM_CONN);
 			cleanup_big(big);
 		}
 	}
@@ -1530,7 +1532,7 @@ void hci_le_big_terminate(struct net_buf *buf)
 
 	BT_DBG("BIG[%u] %p terminated", big->handle, big);
 
-	big_disconnect(big);
+	big_disconnect(big, evt->reason);
 	cleanup_big(big);
 }
 
@@ -1556,7 +1558,7 @@ void hci_le_big_sync_established(struct net_buf *buf)
 	BT_DBG("BIG[%u] %p sync established", big->handle, big);
 
 	if (evt->status || evt->num_bis != big->num_bis) {
-		big_disconnect(big);
+		big_disconnect(big, evt->status ? evt->status : BT_HCI_ERR_UNSPECIFIED);
 		cleanup_big(big);
 		return;
 	}
@@ -1590,7 +1592,7 @@ void hci_le_big_sync_lost(struct net_buf *buf)
 
 	BT_DBG("BIG[%u] %p sync lost", big->handle, big);
 
-	big_disconnect(big);
+	big_disconnect(big, evt->reason);
 	cleanup_big(big);
 }
 
