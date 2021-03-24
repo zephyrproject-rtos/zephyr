@@ -16,7 +16,7 @@
 LOG_MODULE_REGISTER(i2c_emul_ctlr);
 
 #include <device.h>
-#include <emul.h>
+#include <drivers/emul.h>
 #include <drivers/i2c.h>
 #include <drivers/i2c_emul.h>
 

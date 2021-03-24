@@ -15,7 +15,7 @@
 LOG_MODULE_REGISTER(spi_emul_ctlr);
 
 #include <device.h>
-#include <emul.h>
+#include <drivers/emul.h>
 #include <drivers/spi.h>
 #include <drivers/spi_emul.h>
 

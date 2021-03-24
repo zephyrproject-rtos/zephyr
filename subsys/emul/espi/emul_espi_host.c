@@ -14,7 +14,7 @@
 LOG_MODULE_REGISTER(espi_host);
 
 #include <device.h>
-#include <emul.h>
+#include <drivers/emul.h>
 #include <drivers/espi.h>
 #include <drivers/espi_emul.h>
 

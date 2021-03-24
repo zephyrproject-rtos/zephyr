@@ -16,7 +16,7 @@
 LOG_MODULE_REGISTER(espi_emul_ctlr);
 
 #include <device.h>
-#include <emul.h>
+#include <drivers/emul.h>
 #include <drivers/espi.h>
 #include <drivers/espi_emul.h>
 #include "espi_utils.h"
