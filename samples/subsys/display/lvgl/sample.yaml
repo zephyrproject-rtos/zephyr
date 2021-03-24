@@ -7,7 +7,7 @@ tests:
     platform_allow: reel_board mimxrt1050_evk mimxrt1060_evk mimxrt1064_evk
     tags: samples display gui
   sample.display.adafruit_2_8_tft_touch_v2:
-    platform_allow: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk_nrf52840 mimxrt685_evk_cm33 frdm_k64f
     extra_args: SHIELD=adafruit_2_8_tft_touch_v2
     tags: shield
   sample.display.waveshare_epaper_gdeh0213b1:
