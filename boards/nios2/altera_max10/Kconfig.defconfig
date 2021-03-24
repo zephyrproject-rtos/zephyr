@@ -14,24 +14,6 @@ if SOC_FLASH_NIOS2_QSPI
 
 if DISK_DRIVER_FLASH
 
-config DISK_FLASH_DEV_NAME
-	default "n25q512ax3@0"
-
-config DISK_FLASH_START
-	default 0x0
-
-config DISK_FLASH_MAX_RW_SIZE
-	default 256
-
-config DISK_ERASE_BLOCK_SIZE
-	default 0x10000
-
-config DISK_FLASH_ERASE_ALIGNMENT
-	default 0x10000
-
-config DISK_VOLUME_SIZE
-	default 0x4000000
-
 endif # DISK_DRIVER_FLASH
 
 endif # SOC_FLASH_NIOS2_QSPI
