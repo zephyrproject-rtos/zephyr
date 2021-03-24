@@ -9,12 +9,6 @@ menuconfig USB_MASS_STORAGE
 
 if USB_MASS_STORAGE
 
-config MASS_STORAGE_DISK_NAME
-	string "Mass storage disk or drive name"
-	default "RAM"
-	help
-	  Mass storage device disk or drive name
-
 config MASS_STORAGE_INQ_VENDOR_ID
 	string "T10 assigned vendor ID for inquiry (must be 8 characters)"
 	default "ZEPHYR  "

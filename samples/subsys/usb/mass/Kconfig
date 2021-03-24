@@ -48,11 +48,6 @@ endchoice
 config DISK_RAM_VOLUME_SIZE
 	default 32 if APP_MSC_STORAGE_NONE
 
-config MASS_STORAGE_DISK_NAME
-	default "NAND" if DISK_DRIVER_FLASH
-	default "RAM" if DISK_DRIVER_RAM
-	default "SD" if DISK_DRIVER_SDMMC
-
 if DISK_DRIVER_FLASH
 
 config FLASH_MAP
