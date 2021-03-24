@@ -18,9 +18,11 @@ LOG_MODULE_REGISTER(sdmmc_spi, CONFIG_SDMMC_LOG_LEVEL);
 #include "sdmmc_sdhc.h"
 
 /* Clock speed used during initialisation */
-#define SDHC_SPI_INITIAL_SPEED 400000
-/* Clock speed used after initialisation */
-#define SDHC_SPI_SPEED 4000000
+#define SDHC_SPI_INIT_SPEED KHZ(400)
+/* Maximum clock speed used after initialisation (actual speed set in DTS).
+ * SD Specifications Part 1 Physical layer states 25MHz maximum.
+ */
+#define SDHC_SPI_MAX_OPER_SPEED MHZ(25)
 
 #define SPI_SDHC_NODE DT_DRV_INST(0)
 
@@ -29,10 +31,7 @@ LOG_MODULE_REGISTER(sdmmc_spi, CONFIG_SDMMC_LOG_LEVEL);
 #else
 struct sdhc_spi_data {
 	const struct device *spi;
-	struct spi_config cfg;
-#if DT_SPI_DEV_HAS_CS_GPIOS(SPI_SDHC_NODE)
-	struct spi_cs_control cs;
-#endif
+	const struct spi_config *spi_cfg;
 	bool high_capacity;
 	uint32_t sector_count;
 	uint8_t status;
@@ -40,6 +39,27 @@ struct sdhc_spi_data {
 	int trace_dir;
 #endif
 };
+
+struct sdhc_spi_config {
+	struct spi_config init_cfg;
+	struct spi_config oper_cfg;
+#if DT_SPI_DEV_HAS_CS_GPIOS(SPI_SDHC_NODE)
+	struct spi_cs_control cs;
+#endif
+};
+
+static void sdhc_spi_set_status(const struct device *dev, uint8_t status)
+{
+	struct sdhc_spi_data *data = dev->data;
+	const struct sdhc_spi_config *cfg = dev->config;
+
+	data->status = status;
+	if (status == DISK_STATUS_UNINIT) {
+		data->spi_cfg = &cfg->init_cfg;
+	} else if (status == DISK_STATUS_OK) {
+		data->spi_cfg = &cfg->oper_cfg;
+	}
+}
 
 /* Traces card traffic for LOG_LEVEL_DBG */
 static int sdhc_spi_trace(struct sdhc_spi_data *data, int dir, int err,
@@ -98,7 +118,7 @@ static int sdhc_spi_rx_bytes(struct sdhc_spi_data *data, uint8_t *buf, int len)
 	};
 
 	return sdhc_spi_trace(data, -1,
-			  spi_transceive(data->spi, &data->cfg, &tx, &rx),
+			  spi_transceive(data->spi, data->spi_cfg, &tx, &rx),
 			  buf, len);
 }
 
@@ -131,7 +151,7 @@ static int sdhc_spi_tx(struct sdhc_spi_data *data, const uint8_t *buf, int len)
 	};
 
 	return sdhc_spi_trace(data, 1,
-			spi_write(data->spi, &data->cfg, &tx), buf,
+			spi_write(data->spi, data->spi_cfg, &tx), buf,
 			len);
 }
 
@@ -396,7 +416,7 @@ static int sdhc_spi_rx_block(struct sdhc_spi_data *data,
 		};
 
 		err = sdhc_spi_trace(data, -1,
-				spi_transceive(data->spi, &data->cfg,
+				spi_transceive(data->spi, data->spi_cfg,
 				&tx, &rx),
 				&buf[i], remain);
 		if (err != 0) {
@@ -459,7 +479,7 @@ static int sdhc_spi_go_idle(struct sdhc_spi_data *data)
 {
 	/* Write the initial >= 74 clocks */
 	sdhc_spi_tx(data, sdhc_ones, 10);
-	spi_release(data->spi, &data->cfg);
+	spi_release(data->spi, data->spi_cfg);
 
 	return sdhc_spi_cmd_r1_idle(data, SDHC_GO_IDLE_STATE, 0);
 }
@@ -491,8 +511,10 @@ static int sdhc_spi_check_interface(struct sdhc_spi_data *data)
 }
 
 /* Detect and initialise the card */
-static int sdhc_spi_detect(struct sdhc_spi_data *data)
+static int sdhc_spi_detect(const struct device *dev)
 {
+	struct sdhc_spi_data *data = dev->data;
+
 	int err;
 	uint32_t ocr;
 	struct sdhc_retry retry;
@@ -503,8 +525,7 @@ static int sdhc_spi_detect(struct sdhc_spi_data *data)
 	uint8_t buf[SDHC_CSD_SIZE];
 	bool is_v2;
 
-	data->cfg.frequency = SDHC_SPI_INITIAL_SPEED;
-	data->status = DISK_STATUS_UNINIT;
+	sdhc_spi_set_status(dev, DISK_STATUS_UNINIT);
 
 	sdhc_retry_init(&retry, SDHC_INIT_TIMEOUT, SDHC_RETRY_DELAY);
 
@@ -641,8 +662,7 @@ static int sdhc_spi_detect(struct sdhc_spi_data *data)
 		buf[7], buf[8], sys_get_be32(&buf[9]));
 
 	/* Initilisation complete */
-	data->cfg.frequency = SDHC_SPI_SPEED;
-	data->status = DISK_STATUS_OK;
+	sdhc_spi_set_status(dev, DISK_STATUS_OK);
 
 	return 0;
 }
@@ -690,7 +710,7 @@ static int sdhc_spi_read(struct sdhc_spi_data *data,
 	err = sdhc_spi_skip_until_ready(data);
 
 error:
-	spi_release(data->spi, &data->cfg);
+	spi_release(data->spi, data->spi_cfg);
 
 	return err;
 }
@@ -745,7 +765,7 @@ static int sdhc_spi_write(struct sdhc_spi_data *data,
 
 	err = 0;
 error:
-	spi_release(data->spi, &data->cfg);
+	spi_release(data->spi, data->spi_cfg);
 
 	return err;
 }
@@ -824,7 +844,7 @@ static int sdhc_spi_write_multi(struct sdhc_spi_data *data,
 
 	err = 0;
 exit:
-	spi_release(data->spi, &data->cfg);
+	spi_release(data->spi, data->spi_cfg);
 
 	return err;
 }
@@ -836,20 +856,6 @@ static int sdhc_spi_init(const struct device *dev)
 	struct sdhc_spi_data *data = dev->data;
 
 	data->spi = device_get_binding(DT_BUS_LABEL(SPI_SDHC_NODE));
-
-	data->cfg.frequency = SDHC_SPI_INITIAL_SPEED;
-	data->cfg.operation = SPI_WORD_SET(8) | SPI_HOLD_ON_CS;
-	data->cfg.slave = DT_REG_ADDR(SPI_SDHC_NODE);
-
-#if DT_SPI_DEV_HAS_CS_GPIOS(SPI_SDHC_NODE)
-	data->cs.gpio_dev =
-		device_get_binding(DT_SPI_DEV_CS_GPIOS_LABEL(SPI_SDHC_NODE));
-	__ASSERT_NO_MSG(data->cs.gpio_dev != NULL);
-
-	data->cs.gpio_pin = DT_SPI_DEV_CS_GPIOS_PIN(SPI_SDHC_NODE);
-	data->cs.gpio_dt_flags = DT_SPI_DEV_CS_GPIOS_FLAGS(SPI_SDHC_NODE);
-	data->cfg.cs = &data->cs;
-#endif
 
 	disk_spi_sdhc_init(dev);
 
@@ -947,8 +953,8 @@ static int disk_spi_sdhc_access_init(struct disk_info *disk)
 	struct sdhc_spi_data *data = dev->data;
 	int err;
 
-	err = sdhc_spi_detect(data);
-	spi_release(data->spi, &data->cfg);
+	err = sdhc_spi_detect(dev);
+	spi_release(data->spi, data->spi_cfg);
 
 	return err;
 }
@@ -968,9 +974,7 @@ static struct disk_info spi_sdhc_disk = {
 
 static int disk_spi_sdhc_init(const struct device *dev)
 {
-	struct sdhc_spi_data *data = dev->data;
-
-	data->status = DISK_STATUS_UNINIT;
+	sdhc_spi_set_status(dev, DISK_STATUS_UNINIT);
 
 	spi_sdhc_disk.dev = dev;
 
@@ -979,7 +983,34 @@ static int disk_spi_sdhc_init(const struct device *dev)
 
 static struct sdhc_spi_data sdhc_spi_data_0;
 
+static const struct sdhc_spi_config sdhc_spi_cfg_0 = {
+	.init_cfg = {
+		.frequency = SDHC_SPI_INIT_SPEED,
+		.operation = SPI_WORD_SET(8) | SPI_HOLD_ON_CS,
+		.slave = DT_REG_ADDR(SPI_SDHC_NODE),
+#if DT_SPI_DEV_HAS_CS_GPIOS(SPI_SDHC_NODE)
+		.cs = &sdhc_spi_cfg_0.cs,
+#endif
+	},
+	.oper_cfg = {
+		.frequency = MIN(SDHC_SPI_MAX_OPER_SPEED,
+				 DT_INST_PROP(0, spi_max_frequency)),
+		.operation = SPI_WORD_SET(8) | SPI_HOLD_ON_CS,
+		.slave = DT_REG_ADDR(SPI_SDHC_NODE),
+#if DT_SPI_DEV_HAS_CS_GPIOS(SPI_SDHC_NODE)
+		.cs = &sdhc_spi_cfg_0.cs,
+#endif
+	},
+#if DT_SPI_DEV_HAS_CS_GPIOS(SPI_SDHC_NODE)
+	.cs = {
+		.gpio_dev = DEVICE_DT_GET(DT_SPI_DEV_CS_GPIOS_CTLR(SPI_SDHC_NODE)),
+		.gpio_pin = DT_SPI_DEV_CS_GPIOS_PIN(SPI_SDHC_NODE),
+		.gpio_dt_flags = DT_SPI_DEV_CS_GPIOS_FLAGS(SPI_SDHC_NODE),
+	},
+#endif
+};
+
 DEVICE_DT_INST_DEFINE(0, sdhc_spi_init, device_pm_control_nop,
-	&sdhc_spi_data_0, NULL,
+	&sdhc_spi_data_0, &sdhc_spi_cfg_0,
 	POST_KERNEL, CONFIG_SDMMC_INIT_PRIORITY, NULL);
 #endif
