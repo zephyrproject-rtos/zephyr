@@ -34,7 +34,7 @@ static int psci_to_dev_err(int ret)
 		return -EINVAL;
 	case PSCI_RET_DENIED:
 		return -EPERM;
-	};
+	}
 
 	return -EINVAL;
 }

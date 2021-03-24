@@ -95,7 +95,7 @@ static int npcx_clock_control_get_subsys_rate(const struct device *dev,
 		*rate = 0U;
 		/* Invalid parameters */
 		return -EINVAL;
-	};
+	}
 
 	return 0;
 }

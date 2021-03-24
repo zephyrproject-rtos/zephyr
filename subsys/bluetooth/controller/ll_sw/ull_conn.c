@@ -3066,7 +3066,7 @@ static inline void event_vex_prep(struct ll_conn *conn)
 		rx = ll_pdu_rx_alloc();
 		if (!rx) {
 			return;
-		};
+		}
 
 		/* procedure request acked */
 		conn->llcp_version.ack = conn->llcp_version.req;

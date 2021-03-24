@@ -63,7 +63,7 @@ void main(void)
 		if (sensor_trigger_set(dev, &trig, hts221_handler) < 0) {
 			printf("Cannot configure trigger\n");
 			return;
-		};
+		}
 	}
 
 	while (!IS_ENABLED(CONFIG_HTS221_TRIGGER)) {

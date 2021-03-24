@@ -201,7 +201,7 @@ static int i2c_virtual_transfer(const struct device *dev, struct i2c_msg *msg,
 
 		current++;
 		num_msgs--;
-	};
+	}
 
 	return ret;
 }

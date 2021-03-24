@@ -605,7 +605,7 @@ l2cap_br_conn_security(struct bt_l2cap_chan *chan, const uint16_t psm)
 	 */
 	if (check == 0) {
 		return L2CAP_CONN_SECURITY_PENDING;
-	};
+	}
 
 	/*
 	 * For any other values in 'check' it means there was internal

@@ -476,7 +476,7 @@ static void thread_get_cpu_entry(void *p1, void *p2, void *p3)
 	/* loop forever to ensure running on this CPU */
 	while (1) {
 		k_busy_wait(DELAY_US);
-	};
+	}
 }
 
 /**

@@ -134,7 +134,7 @@ static int gpio_eos_s3_get_irq_num(uint8_t pad)
 		break;
 	default:
 		return -EINVAL;
-	};
+	}
 
 	return gpio_irq_num;
 }
