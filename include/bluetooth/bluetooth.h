@@ -1290,6 +1290,43 @@ struct bt_le_per_adv_sync_param {
  */
 uint8_t bt_le_per_adv_sync_get_index(struct bt_le_per_adv_sync *per_adv_sync);
 
+/** @brief Advertising set info structure. */
+struct bt_le_per_adv_sync_info {
+	/** Periodic Advertiser Address */
+	bt_addr_le_t addr;
+
+	/** Advertiser SID */
+	uint8_t sid;
+
+	/** Periodic advertising interval (N * 1.25 ms) */
+	uint16_t interval;
+
+	/** Advertiser PHY */
+	uint8_t phy;
+};
+
+/**
+ * @brief Get periodic adv sync information.
+ *
+ * @param per_adv_sync Periodic advertising sync object.
+ * @param info          Periodic advertising sync info object
+ *
+ * @return Zero on success or (negative) error code on failure.
+ */
+int bt_le_per_adv_sync_get_info(struct bt_le_per_adv_sync *per_adv_sync,
+				struct bt_le_per_adv_sync_info *info);
+
+/**
+ * @brief Look up an existing periodic advertising sync object by advertiser address.
+ *
+ * @param adv_addr Advertiser address.
+ * @param sid      The advertising set ID.
+ *
+ * @return Periodic advertising sync object or NULL if not found.
+ */
+struct bt_le_per_adv_sync *bt_le_per_adv_sync_lookup_addr(const bt_addr_le_t *adv_addr,
+							  uint8_t sid);
+
 /**
  * @brief Create a periodic advertising sync object.
  *
