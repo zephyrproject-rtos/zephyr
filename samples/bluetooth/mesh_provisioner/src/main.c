@@ -85,6 +85,7 @@ static void setup_cdb(void)
 static void configure_self(struct bt_mesh_cdb_node *self)
 {
 	struct bt_mesh_cdb_app_key *key;
+	uint8_t status = 0;
 	int err;
 
 	printk("Configuring self...\n");
@@ -97,17 +98,19 @@ static void configure_self(struct bt_mesh_cdb_node *self)
 
 	/* Add Application Key */
 	err = bt_mesh_cfg_app_key_add(self->net_idx, self->addr, self->net_idx,
-				      app_idx, key->keys[0].app_key, NULL);
-	if (err < 0) {
-		printk("Failed to add app-key (err %d)\n", err);
+				      app_idx, key->keys[0].app_key, &status);
+	if (err || status) {
+		printk("Failed to add app-key (err %d, status %d)\n", err,
+		       status);
 		return;
 	}
 
 	err = bt_mesh_cfg_mod_app_bind(self->net_idx, self->addr, self->addr,
 				       app_idx, BT_MESH_MODEL_ID_HEALTH_CLI,
-				       NULL);
-	if (err < 0) {
-		printk("Failed to bind app-key (err %d)\n", err);
+				       &status);
+	if (err || status) {
+		printk("Failed to bind app-key (err %d, status %d)\n", err,
+		       status);
 		return;
 	}
 
@@ -139,9 +142,9 @@ static void configure_node(struct bt_mesh_cdb_node *node)
 
 	/* Add Application Key */
 	err = bt_mesh_cfg_app_key_add(net_idx, node->addr, net_idx, app_idx,
-				      key->keys[0].app_key, NULL);
-	if (err) {
-		printk("Failed to add app-key (err %d)\n", err);
+				      key->keys[0].app_key, &status);
+	if (err || status) {
+		printk("Failed to add app-key (err %d status %d)\n", err, status);
 		return;
 	}
 
