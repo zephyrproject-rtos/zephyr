@@ -34,7 +34,18 @@ int32_t tfm_ns_interface_dispatch(veneer_fn fn,
 		return (int32_t)TFM_ERROR_GENERIC;
 	}
 
+	/*
+	 * Prevent the thread from being preempted, while executing a Secure
+	 * function. This is required to prevent system crashes that could
+	 * occur, if a thead context switch is triggered in the middle of a
+	 * Secure call.
+	 */
+	k_sched_lock();
+
 	result = fn(arg0, arg1, arg2, arg3);
+
+	/* Unlock the scheduler, to allow the thread to be preempted. */
+	k_sched_unlock();
 
 	k_mutex_unlock(&tfm_mutex);
 
