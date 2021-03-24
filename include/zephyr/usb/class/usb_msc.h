@@ -106,4 +106,6 @@ struct CSW {
 #define MODE_SELECT10			0x55
 #define MODE_SENSE10			0x5A
 
+int usb_msc_init(const char *disk_name);
+
 #endif /* ZEPHYR_INCLUDE_USB_CLASS_USB_MSC_H_ */

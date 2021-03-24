@@ -120,7 +120,7 @@ static uint8_t __aligned(4) page[BLOCK_SIZE + CONFIG_MASS_STORAGE_BULK_EP_MPS];
 /* Initialized during mass_storage_init() */
 static uint32_t memory_size;
 static uint32_t block_count;
-static const char *disk_pdrv = CONFIG_MASS_STORAGE_DISK_NAME;
+static char disk_pdrv[32];
 
 #define MSD_OUT_EP_IDX			0
 #define MSD_IN_EP_IDX			1
@@ -952,34 +952,37 @@ static void mass_thread_main(int arg1, int unused)
  *
  * @return negative errno code on fatal failure, 0 otherwise
  */
-static int mass_storage_init(const struct device *dev)
+int usb_msc_init(const char *disk_name)
 {
 	uint32_t block_size = 0U;
+	int rc;
 
-	ARG_UNUSED(dev);
-
-	if (disk_access_init(disk_pdrv) != 0) {
-		LOG_ERR("Storage init ERROR !!!! - Aborting USB init");
-		return 0;
+	rc = disk_access_init(disk_name);
+	if (rc) {
+		LOG_ERR("Failed to initialize %s disk", disk_name);
+		return rc;
 	}
 
-	if (disk_access_ioctl(disk_pdrv,
-				DISK_IOCTL_GET_SECTOR_COUNT, &block_count)) {
-		LOG_ERR("Unable to get sector count - Aborting USB init");
-		return 0;
+	strncpy(disk_pdrv, disk_name, sizeof(disk_pdrv));
+
+	rc = disk_access_ioctl(disk_pdrv, DISK_IOCTL_GET_SECTOR_COUNT,
+			       &block_count);
+	if (rc) {
+		LOG_ERR("Unable to get sector count");
+		return rc;
 	}
 
-	if (disk_access_ioctl(disk_pdrv,
-				DISK_IOCTL_GET_SECTOR_SIZE, &block_size)) {
-		LOG_ERR("Unable to get sector size - Aborting USB init");
-		return 0;
+	rc = disk_access_ioctl(disk_pdrv, DISK_IOCTL_GET_SECTOR_SIZE,
+			       &block_size);
+	if (rc) {
+		LOG_ERR("Unable to get sector size");
+		return rc;
 	}
 
 	if (block_size != BLOCK_SIZE) {
-		LOG_ERR("Block Size reported by the storage side is "
-			"different from Mass Storage Class page Buffer - "
-			"Aborting");
-		return 0;
+		LOG_ERR("Block size reported by the storage side is "
+			"different from MSC page buffer.");
+		return -EINVAL;
 	}
 
 
@@ -1002,5 +1005,3 @@ static int mass_storage_init(const struct device *dev)
 
 	return 0;
 }
-
-SYS_INIT(mass_storage_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);

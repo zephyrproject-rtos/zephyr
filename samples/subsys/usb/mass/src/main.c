@@ -8,6 +8,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/usb/usb_device.h>
+#include <zephyr/usb/class/usb_msc.h>
 #include <zephyr/fs/fs.h>
 #include <stdio.h>
 
@@ -86,7 +87,7 @@ static int mount_app_fs(struct fs_mount_t *mnt)
 	return rc;
 }
 
-static void setup_disk(void)
+static int setup_disk(void)
 {
 	struct fs_mount_t *mp = &fs_mnt;
 	struct fs_dir_t dir;
@@ -99,20 +100,20 @@ static void setup_disk(void)
 		rc = setup_flash(mp);
 		if (rc < 0) {
 			LOG_ERR("Failed to setup flash area");
-			return;
+			return rc;
 		}
 	}
 
 	if (!IS_ENABLED(CONFIG_FILE_SYSTEM_LITTLEFS) &&
 	    !IS_ENABLED(CONFIG_FAT_FILESYSTEM_ELM)) {
 		LOG_INF("No file system selected");
-		return;
+		return 0;
 	}
 
 	rc = mount_app_fs(mp);
 	if (rc < 0) {
 		LOG_ERR("Failed to mount filesystem");
-		return;
+		return rc;
 	}
 
 	/* Allow log messages to flush to avoid interleaved output */
@@ -123,7 +124,7 @@ static void setup_disk(void)
 	rc = fs_statvfs(mp->mnt_point, &sbuf);
 	if (rc < 0) {
 		printk("FAIL: statvfs: %d\n", rc);
-		return;
+		return rc;
 	}
 
 	printk("%s: bsize = %lu ; frsize = %lu ;"
@@ -137,6 +138,7 @@ static void setup_disk(void)
 
 	if (rc < 0) {
 		LOG_ERR("Failed to open directory");
+		return rc;
 	}
 
 	while (rc >= 0) {
@@ -159,14 +161,31 @@ static void setup_disk(void)
 
 	(void)fs_closedir(&dir);
 
-	return;
+	return rc;
 }
 
 void main(void)
 {
 	int ret;
 
-	setup_disk();
+	ret = setup_disk();
+	if (ret != 0) {
+		LOG_ERR("Failed to setup disk");
+		return;
+	}
+
+	if (IS_ENABLED(CONFIG_DISK_DRIVER_RAM)) {
+		ret = usb_msc_init("RAM");
+	} else if (IS_ENABLED(CONFIG_DISK_DRIVER_SDMMC)) {
+		ret = usb_msc_init("SD");
+	} else {
+		ret = usb_msc_init("NAND");
+	}
+
+	if (ret) {
+		LOG_ERR("Failed to initialize USB MSC support");
+		return;
+	}
 
 	ret = usb_enable(NULL);
 	if (ret != 0) {
