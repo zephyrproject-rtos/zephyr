@@ -245,6 +245,7 @@ int net_conn_register(uint16_t proto, uint8_t family,
 		      const struct sockaddr *local_addr,
 		      uint16_t remote_port,
 		      uint16_t local_port,
+		      struct net_context *context,
 		      net_conn_cb_t cb,
 		      void *user_data,
 		      struct net_conn_handle **handle)
@@ -348,6 +349,7 @@ int net_conn_register(uint16_t proto, uint8_t family,
 	conn->flags = flags;
 	conn->proto = proto;
 	conn->family = family;
+	conn->context = context;
 
 	if (handle) {
 		*handle = (struct net_conn_handle *)conn;
@@ -622,6 +624,12 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&conn_used, conn, node) {
+		if (conn->context != NULL &&
+		    net_context_is_bound_to_iface(conn->context) &&
+		    net_pkt_iface(pkt) != net_context_get_iface(conn->context)) {
+			continue;
+		}
+
 		/* For packet socket data, the proto is set to ETH_P_ALL or IPPROTO_RAW
 		 * but the listener might have a specific protocol set. This is ok
 		 * and let the packet pass this check in this case.

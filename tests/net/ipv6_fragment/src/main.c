@@ -1429,7 +1429,7 @@ static void setup_udp_handler(const struct in6_addr *raddr,
 	remote_addr.sa_family = AF_INET6;
 
 	ret = net_udp_register(AF_INET6, &remote_addr, &local_addr,
-			       remote_port, local_port, udp_data_received,
+			       remote_port, local_port, NULL, udp_data_received,
 			       NULL, &handle);
 	zassert_equal(ret, 0, "Cannot register UDP handler");
 }
