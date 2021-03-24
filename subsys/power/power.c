@@ -133,7 +133,6 @@ void pm_system_resume(void)
 		post_ops_done = 1;
 		pm_power_state_exit_post_ops(z_power_state);
 		pm_state_notify(false);
-		k_sched_unlock();
 	}
 }
 
@@ -231,6 +230,7 @@ enum pm_state pm_system_suspend(int32_t ticks)
 #endif
 	pm_log_debug_info(z_power_state.state);
 	pm_system_resume();
+	k_sched_unlock();
 
 	return z_power_state.state;
 }
