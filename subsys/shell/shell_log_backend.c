@@ -32,7 +32,7 @@ void z_shell_log_backend_enable(const struct shell_log_backend *backend,
 	if (err == 0) {
 		log_backend_enable(backend->backend, ctx, init_log_level);
 		log_output_ctx_set(backend->log_output, ctx);
-	backend->control_block->dropped_cnt = 0;
+		backend->control_block->dropped_cnt = 0;
 		backend->control_block->state = SHELL_LOG_BACKEND_ENABLED;
 	}
 }
