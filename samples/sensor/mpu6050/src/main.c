@@ -103,7 +103,7 @@ void main(void)
 			       handle_mpu6050_drdy) < 0) {
 		printf("Cannot configure trigger\n");
 		return;
-	};
+	}
 	printk("Configured for triggered sampling.\n");
 #endif
 

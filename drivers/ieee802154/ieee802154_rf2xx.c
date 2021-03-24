@@ -266,7 +266,7 @@ static void rf2xx_process_rx_frame(const struct device *dev)
 		while (rf2xx_iface_reg_read(dev, RF2XX_TRX_STATUS_REG) ==
 		       RF2XX_TRX_PHY_STATUS_BUSY_RX_AACK) {
 			;
-		};
+		}
 
 		/* Set PLL_ON to avoid transceiver receive
 		 * new data until finish reading process

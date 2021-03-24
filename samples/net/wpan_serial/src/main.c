@@ -578,7 +578,7 @@ void main(void)
 	if (!init_ieee802154()) {
 		LOG_ERR("Unable to initialize ieee802154");
 		return;
-	};
+	}
 
 	uart_irq_callback_set(dev, interrupt_handler);
 

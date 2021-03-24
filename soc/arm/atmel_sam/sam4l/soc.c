@@ -49,7 +49,7 @@ static ALWAYS_INLINE void wdt_set_ctrl(uint32_t ctrl)
 	dly >>= 3; /* ~8 cycles for one while loop */
 	while (dly--) {
 		;
-	};
+	}
 	WDT->CTRL = ctrl | WDT_CTRL_KEY(WDT_FIRST_KEY);
 	WDT->CTRL = ctrl | WDT_CTRL_KEY(WDT_SECOND_KEY);
 }
@@ -201,7 +201,7 @@ static ALWAYS_INLINE void clock_init(void)
 
 	while (HCACHE->SR & HCACHE_SR_CSTS_EN) {
 		;
-	};
+	}
 
 	/* Enable PLL */
 	if (!pll_is_locked(0)) {
@@ -216,7 +216,7 @@ static ALWAYS_INLINE void clock_init(void)
 
 		while (!osc_is_ready(OSC_ID_OSC0)) {
 			;
-		};
+		}
 		uint32_t pll_config = pll_config_init(PLL0_DIV,
 						      PLL0_MUL);
 
@@ -227,7 +227,7 @@ static ALWAYS_INLINE void clock_init(void)
 
 		while (!pll_is_locked(0)) {
 			;
-		};
+		}
 	}
 
 	/** Set a flash wait state depending on the new cpu frequency.
@@ -284,7 +284,7 @@ static int atmel_sam4l_init(const struct device *arg)
 	wdt_set_ctrl(WDT->CTRL & ~WDT_CTRL_EN);
 	while (WDT->CTRL & WDT_CTRL_EN) {
 		;
-	};
+	}
 #endif
 
 	/* Setup system clocks. */

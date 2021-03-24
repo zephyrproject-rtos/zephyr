@@ -214,7 +214,7 @@ static void mode_selected(int val)
 	default:
 		printk("Unknown state %d\n", state);
 		return;
-	};
+	}
 }
 
 static const struct pong_selection mode_selection = {

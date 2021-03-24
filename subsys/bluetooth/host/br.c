@@ -337,7 +337,7 @@ static bool eir_has_name(const uint8_t *eir)
 	while (len) {
 		if (len < 2) {
 			break;
-		};
+		}
 
 		/* Look for early termination */
 		if (!eir[0]) {
@@ -561,7 +561,7 @@ void bt_hci_remote_name_request_complete(struct net_buf *buf)
 	while (eir_len) {
 		if (eir_len < 2) {
 			break;
-		};
+		}
 
 		/* Look for early termination */
 		if (!eir[0]) {
