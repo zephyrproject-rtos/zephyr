@@ -1,0 +1,9 @@
+common:
+  filter: (CONFIG_TFM_BOARD != "") and CONFIG_ARM_NONSECURE_FIRMWARE
+  tags: arm
+  arch_allow: arm
+tests:
+  arch.arm.swap.tz: {}
+  arch.arm.swap.tz_off:
+    extra_configs:
+      - CONFIG_ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS=n
