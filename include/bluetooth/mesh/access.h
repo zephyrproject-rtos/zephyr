@@ -160,33 +160,6 @@ struct bt_mesh_elem {
 #define BT_MESH_MODEL_ID_LIGHT_LC_SETUPSRV         0x1310
 #define BT_MESH_MODEL_ID_LIGHT_LC_CLI              0x1311
 
-/** Message sending context. */
-struct bt_mesh_msg_ctx {
-	/** NetKey Index of the subnet to send the message on. */
-	uint16_t net_idx;
-
-	/** AppKey Index to encrypt the message with. */
-	uint16_t app_idx;
-
-	/** Remote address. */
-	uint16_t addr;
-
-	/** Destination address of a received message. Not used for sending. */
-	uint16_t recv_dst;
-
-	/** RSSI of received packet. Not used for sending. */
-	int8_t  recv_rssi;
-
-	/** Received TTL value. Not used for sending. */
-	uint8_t  recv_ttl;
-
-	/** Force sending reliably by using segment acknowledgement */
-	bool  send_rel;
-
-	/** TTL, or BT_MESH_TTL_DEFAULT for default TTL. */
-	uint8_t  send_ttl;
-};
-
 /** Model opcode handler. */
 struct bt_mesh_model_op {
 	/** OpCode encoded using the BT_MESH_MODEL_OP_* macros */
@@ -219,56 +192,6 @@ struct bt_mesh_model_op {
 
 /** Helper to define an empty model array */
 #define BT_MESH_MODEL_NONE ((struct bt_mesh_model []){})
-
-/** Length of a short Mesh MIC. */
-#define BT_MESH_MIC_SHORT 4
-/** Length of a long Mesh MIC. */
-#define BT_MESH_MIC_LONG 8
-
-/** @def BT_MESH_MODEL_OP_LEN
- *
- *  @brief Helper to determine the length of an opcode.
- *
- *  @param _op Opcode.
- */
-#define BT_MESH_MODEL_OP_LEN(_op) ((_op) <= 0xff ? 1 : (_op) <= 0xffff ? 2 : 3)
-
-/** @def BT_MESH_MODEL_BUF_LEN
- *
- *  @brief Helper for model message buffer length.
- *
- *  Returns the length of a Mesh model message buffer, including the opcode
- *  length and a short MIC.
- *
- *  @param _op          Opcode of the message.
- *  @param _payload_len Length of the model payload.
- */
-#define BT_MESH_MODEL_BUF_LEN(_op, _payload_len)                               \
-	(BT_MESH_MODEL_OP_LEN(_op) + (_payload_len) + BT_MESH_MIC_SHORT)
-
-/** @def BT_MESH_MODEL_BUF_LEN_LONG_MIC
- *
- *  @brief Helper for model message buffer length.
- *
- *  Returns the length of a Mesh model message buffer, including the opcode
- *  length and a long MIC.
- *
- *  @param _op          Opcode of the message.
- *  @param _payload_len Length of the model payload.
- */
-#define BT_MESH_MODEL_BUF_LEN_LONG_MIC(_op, _payload_len)                      \
-	(BT_MESH_MODEL_OP_LEN(_op) + (_payload_len) + BT_MESH_MIC_LONG)
-
-/** @def BT_MESH_MODEL_BUF_DEFINE
- *
- *  @brief Define a Mesh model message buffer using @ref NET_BUF_SIMPLE_DEFINE.
- *
- *  @param _buf         Buffer name.
- *  @param _op          Opcode of the message.
- *  @param _payload_len Length of the model message payload.
- */
-#define BT_MESH_MODEL_BUF_DEFINE(_buf, _op, _payload_len)                      \
-	NET_BUF_SIMPLE_DEFINE(_buf, BT_MESH_MODEL_BUF_LEN(_op, (_payload_len)))
 
 /** @def BT_MESH_MODEL_CB
  *
@@ -599,16 +522,6 @@ struct bt_mesh_send_cb {
 	void (*end)(int err, void *cb_data);
 };
 
-
-/** @brief Initialize a model message.
- *
- *  Clears the message buffer contents, and encodes the given opcode.
- *  The message buffer will be ready for filling in payload data.
- *
- *  @param msg    Message buffer.
- *  @param opcode Opcode to encode.
- */
-void bt_mesh_model_msg_init(struct net_buf_simple *msg, uint32_t opcode);
 
 /** Special TTL value to request using configured default TTL */
 #define BT_MESH_TTL_DEFAULT 0xff
