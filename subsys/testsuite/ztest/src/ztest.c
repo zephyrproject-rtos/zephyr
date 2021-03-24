@@ -31,6 +31,43 @@ ZTEST_DMEM enum {
 
 static ZTEST_BMEM int test_status;
 
+static const char *arg_formatter[] = {
+	"%c (0x%02x)",
+	"%hhd (0x%02x) ",
+	"%hhu (0x%02x)",
+	"%hd (0x%04x)",
+	"%hu (0x%04x)",
+	"%d (0x%08x)",
+	"%u (0x%08x)",
+	"%ld (0x%08x)",
+	"%lu (0x%08x)",
+	"%lld (0x%016x)",
+	"%llu (0x%016x)",
+	"%f (0x%08a)",
+	"%f (0x%08a)",
+	"%Lf (0x%08a)",
+	"%p %n"
+};
+
+void ztest_print_values(const char *msg, const char *a_name, const char *b_name,
+			int a_type, int b_type, ...)
+{
+	char _buf[64];
+	int cnt;
+	va_list ap;
+
+	va_start(ap, b_type);
+	cnt = snprintf(_buf, sizeof(_buf), "%s = %s %s%s = %s",
+			a_name, arg_formatter[a_type], msg,
+			b_name, arg_formatter[b_type]);
+	if (cnt > sizeof(_buf)) {
+		PRINT("Buffer too small\n");
+	}
+	vprintk(_buf, ap);
+	va_end(ap);
+}
+
+
 /**
  * @brief Try to shorten a filename by removing the current directory
  *

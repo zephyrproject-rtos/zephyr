@@ -23,6 +23,36 @@
 extern "C" {
 #endif
 
+#if Z_C_GENERIC && defined(__GNUC__) && !defined(__cplusplus)
+/* Printing values requires _Generic and __auto_type support. */
+#define ZTEST_ASSERT_PRINT_VALUES 1
+#endif
+
+/** @brief Return index of an array that holds format specifiers strings in ztest
+ * implementation.
+ *
+ * @param x variable.
+ *
+ * @return Index of format specifier for given variable.
+ */
+#define ZASSERT_FORMAT_SPECIFIER_IDX(x) _Generic((x), \
+	char : 0, \
+	signed char : 1, \
+	unsigned char : 2, \
+	signed short : 3, \
+	unsigned short : 4, \
+	int : 5, \
+	unsigned int : 6, \
+	long : 7, \
+	unsigned long : 8, \
+	long long : 9, \
+	unsigned long long : 10, \
+	float : 11, \
+	double : 12, \
+	long double : 13, \
+	default : \
+		14)
+
 const char *ztest_relative_filename(const char *file);
 void ztest_test_fail(void);
 
@@ -37,12 +67,17 @@ static inline void z_zassert(bool cond,
 			PRINT("\n    Assertion failed at %s:%d\n",
 				ztest_relative_filename(file), line);
 		} else {
+
+			PRINT("\n    Assertion failed at %s:%d: %s",
+			      ztest_relative_filename(file), line, func);
+			if (default_msg) {
+				PRINT(": %s\n", default_msg);
+			} else {
+				PRINT("\n");
+			}
 			va_list vargs;
 
 			va_start(vargs, msg);
-			PRINT("\n    Assertion failed at %s:%d: %s: %s\n",
-			      ztest_relative_filename(file), line, func,
-			      default_msg);
 			vprintk(msg, vargs);
 			printk("\n");
 			va_end(vargs);
@@ -53,6 +88,39 @@ static inline void z_zassert(bool cond,
 		      ztest_relative_filename(file), line, func);
 	}
 }
+
+/** @brief Function prints a message with 2 variables that failed a check.
+ *
+ * Printing is deferred from macro to a function to reduce stack usage.
+ *
+ * @param msg User message that goes between printed values.
+ * @param a_name Stringified name of the a variable.
+ * @param b_name Stringified name of the b variable.
+ * @param a_idx Index of format specifier to be used for a variable.
+ * @param b_idx Index of format specifier to be used for b variable.
+ * @param ... Variables. Each variable is provided twice (a, a, b, b).
+ */
+void ztest_print_values(const char *msg, const char *a_name, const char *b_name,
+			int a_idx, int b_idx, ...);
+
+#define z_zassert_2args(cond_op, a, b, default_msg, file, line, func, msg, ...) \
+do { \
+	_Pragma("GCC diagnostic push") \
+	_Pragma("GCC diagnostic ignored \"-Wpointer-arith\"") \
+	__auto_type _a = (a) + 0; \
+	__auto_type _b = (b) + 0; \
+	bool cond = _a __DEBRACKET cond_op _b; \
+	if ((cond == false) && (CONFIG_ZTEST_ASSERT_VERBOSE > 0)) { \
+		int a_idx = ZASSERT_FORMAT_SPECIFIER_IDX(_a); \
+		int b_idx = ZASSERT_FORMAT_SPECIFIER_IDX(_b); \
+		ztest_print_values(default_msg, #a, #b, a_idx, b_idx, \
+				   _a, _a, _b, _b); \
+		z_zassert(cond, NULL, file, line, func, msg, ##__VA_ARGS__); \
+	} else { \
+		z_zassert(cond, NULL, file, line, NULL, NULL); \
+	} \
+	_Pragma("GCC diagnostic pop") \
+} while (0)
 
 /**
  * @defgroup ztest_assert Ztest assertion macros
@@ -70,13 +138,31 @@ static inline void z_zassert(bool cond,
  * instead use zassert_{condition} macros below.
  *
  * @param cond Condition to check
- * @param msg Optional, can be NULL. Message to print if @a cond is false.
  * @param default_msg Message to print if @a cond is false
+ * @param msg Optional, can be NULL. Message to print if @a cond is false.
  */
 
 #define zassert(cond, default_msg, msg, ...)			    \
 	z_zassert(cond, msg ? ("(" default_msg ")") : (default_msg), \
 		 __FILE__, __LINE__, __func__, msg ? msg : "", ##__VA_ARGS__)
+
+/**
+ * @brief Fail the test, if @a cond is false
+ *
+ * If test fails report contains values of @a a and @a b. It must be
+ * conditionally compiled as it relies on C11 _Generic support. Additionally,
+ * it must be ensured that @a a and @a b are evaluated only once. Because of
+ * that only condition operator is passed and not full condition.
+ *
+ * @param cond_op Condition operator in parenthesis.
+ * @param a First argument
+ * @param b Second argument
+ * @param default_msg Message to print if @a cond is false
+ * @param msg Optional, can be NULL. Message to print if @a cond is false.
+ */
+#define zassert_2args(cond_op, a, b, default_msg, msg, ...) \
+	z_zassert_2args(cond_op, a, b, default_msg, __FILE__, __LINE__, \
+			__func__, msg ? msg : "", ##__VA_ARGS__)
 
 /**
  * @brief Assert that this function call won't be reached
@@ -136,9 +222,13 @@ static inline void z_zassert(bool cond,
  * @param b Value to compare
  * @param msg Optional message to print if the assertion fails
  */
-#define zassert_equal(a, b, msg, ...) zassert((a) == (b),	      \
-					      #a " not equal to " #b, \
-					      msg, ##__VA_ARGS__)
+#if ZTEST_ASSERT_PRINT_VALUES
+#define zassert_equal(a, b, msg, ...) \
+	zassert_2args((/**/==/**/), a, b, " not equal to ", msg, ##__VA_ARGS__)
+#else
+#define zassert_equal(a, b, msg, ...) \
+	zassert((a) == (b), #a " not equal to " #b, msg, ##__VA_ARGS__)
+#endif
 
 /**
  * @brief Assert that @a a does not equal @a b
