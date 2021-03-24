@@ -136,7 +136,7 @@ static inline int z_impl_ps2_enable_callback(const struct device *dev)
 			(const struct ps2_driver_api *)dev->api;
 
 	if (api->enable_callback == NULL) {
-		return -ENOTSUP;
+		return -ENOSYS;
 	}
 
 	return api->enable_callback(dev);
@@ -157,7 +157,7 @@ static inline int z_impl_ps2_disable_callback(const struct device *dev)
 			(const struct ps2_driver_api *)dev->api;
 
 	if (api->disable_callback == NULL) {
-		return -ENOTSUP;
+		return -ENOSYS;
 	}
 
 	return api->disable_callback(dev);
