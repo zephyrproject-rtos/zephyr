@@ -51,6 +51,8 @@ def main():
     if not args.commits:
         exit("missing commit range")
 
+    # pylint does not like the 'sh' library
+    # pylint: disable=too-many-function-args,unexpected-keyword-arg
     commit = sh.git("diff", args.commits, **sh_special_args)
     patch_set = PatchSet(commit)
     zephyr_base = os.getenv("ZEPHYR_BASE")
