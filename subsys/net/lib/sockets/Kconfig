@@ -149,7 +149,6 @@ config NET_SOCKETS_OFFLOAD_TLS
 
 config NET_SOCKETS_PACKET
 	bool "Enable packet socket support"
-	depends on NET_L2_ETHERNET
 	help
 	  This is an initial version of packet socket support (special type
 	  raw socket). Packets are passed to and from the device driver

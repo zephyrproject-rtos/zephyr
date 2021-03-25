@@ -506,11 +506,10 @@ static bool conn_are_end_points_valid(struct net_pkt *pkt,
 }
 
 static enum net_verdict conn_raw_socket(struct net_pkt *pkt,
-					struct net_conn *conn)
+					struct net_conn *conn, uint8_t proto)
 {
 	if (conn->flags & NET_CONN_LOCAL_ADDR_SET) {
 		struct net_if *pkt_iface = net_pkt_iface(pkt);
-		uint8_t proto = ETH_P_ALL;
 		struct sockaddr_ll *local;
 		struct net_pkt *raw_pkt;
 
@@ -527,6 +526,7 @@ static enum net_verdict conn_raw_socket(struct net_pkt *pkt,
 		raw_pkt = net_pkt_clone(pkt, CLONE_TIMEOUT);
 		if (!raw_pkt) {
 			net_stats_update_per_proto_drop(pkt_iface, proto);
+			NET_WARN("pkt cloning failed, pkt %p dropped", pkt);
 			return NET_DROP;
 		}
 
@@ -574,7 +574,7 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET)) {
 		if (net_pkt_family(pkt) != AF_PACKET ||
 		    (!IS_ENABLED(CONFIG_NET_SOCKETS_PACKET_DGRAM) &&
-		     proto != ETH_P_ALL)) {
+		     proto != ETH_P_ALL && proto != IPPROTO_RAW)) {
 			return NET_DROP;
 		}
 
@@ -622,13 +622,14 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&conn_used, conn, node) {
-		/* For packet socket data, the proto is set to ETH_P_ALL but
-		 * the listener might have a specific protocol set. This is ok
+		/* For packet socket data, the proto is set to ETH_P_ALL or IPPROTO_RAW
+		 * but the listener might have a specific protocol set. This is ok
 		 * and let the packet pass this check in this case.
 		 */
 		if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET_DGRAM) ||
 		    IS_ENABLED(CONFIG_NET_SOCKETS_PACKET)) {
-			if ((conn->proto != proto) && (proto != ETH_P_ALL)) {
+			if ((conn->proto != proto) && (proto != ETH_P_ALL) &&
+				(proto != IPPROTO_RAW)) {
 				continue;
 			}
 		} else {
@@ -662,14 +663,23 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 		 */
 		if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
 		    conn->family == AF_PACKET) {
-			ret = conn_raw_socket(pkt, conn);
-			if (ret == NET_DROP) {
-				goto drop;
-			} else if (ret == NET_OK) {
-				raw_pkt_delivered = true;
+			if (proto == ETH_P_ALL) {
+				/* We shall continue with ETH_P_ALL to IPPROTO_RAW: */
+				raw_pkt_continue = true;
 			}
 
-			continue;
+			/* With IPPROTO_RAW deliver only if protocol match: */
+			if ((proto == ETH_P_ALL && conn->proto != IPPROTO_RAW) ||
+			    conn->proto == proto) {
+				ret = conn_raw_socket(pkt, conn, proto);
+				if (ret == NET_DROP) {
+					goto drop;
+				} else if (ret == NET_OK) {
+					raw_pkt_delivered = true;
+				}
+
+				continue;
+			}
 		}
 
 		if (IS_ENABLED(CONFIG_NET_UDP) ||
@@ -757,7 +767,8 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 		}
 	}
 
-	if ((is_mcast_pkt && mcast_pkt_delivered) || raw_pkt_delivered) {
+	if ((is_mcast_pkt && mcast_pkt_delivered) || raw_pkt_delivered ||
+		raw_pkt_continue) {
 		if (raw_pkt_continue) {
 			/* When there is open connection different than
 			 * AF_PACKET this packet shall be also handled in
