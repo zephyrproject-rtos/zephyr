@@ -45,9 +45,12 @@ K_THREAD_STACK_DEFINE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
 struct k_thread z_main_thread;
 
 #ifdef CONFIG_MULTITHREADING
+__pinned_bss
 struct k_thread z_idle_threads[CONFIG_MP_NUM_CPUS];
-static K_KERNEL_STACK_ARRAY_DEFINE(z_idle_stacks, CONFIG_MP_NUM_CPUS,
-				   CONFIG_IDLE_STACK_SIZE);
+
+static K_KERNEL_PINNED_STACK_ARRAY_DEFINE(z_idle_stacks,
+					  CONFIG_MP_NUM_CPUS,
+					  CONFIG_IDLE_STACK_SIZE);
 #endif /* CONFIG_MULTITHREADING */
 
 /*
@@ -58,8 +61,9 @@ static K_KERNEL_STACK_ARRAY_DEFINE(z_idle_stacks, CONFIG_MP_NUM_CPUS,
  * of this area is safe since interrupts are disabled until the kernel context
  * switches to the init thread.
  */
-K_KERNEL_STACK_ARRAY_DEFINE(z_interrupt_stacks, CONFIG_MP_NUM_CPUS,
-			    CONFIG_ISR_STACK_SIZE);
+K_KERNEL_PINNED_STACK_ARRAY_DEFINE(z_interrupt_stacks,
+				   CONFIG_MP_NUM_CPUS,
+				   CONFIG_ISR_STACK_SIZE);
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 	#define initialize_timeouts() do { \
@@ -87,6 +91,7 @@ extern void idle(void *unused1, void *unused2, void *unused3);
  *
  * @return N/A
  */
+__boot_func
 void z_bss_zero(void)
 {
 	(void)memset(__bss_start, 0, __bss_end - __bss_start);
@@ -155,7 +160,9 @@ extern volatile uintptr_t __stack_chk_guard;
 
 /* LCOV_EXCL_STOP */
 
+__pinned_bss
 bool z_sys_post_kernel;
+
 extern void boot_banner(void);
 
 /**
@@ -167,6 +174,7 @@ extern void boot_banner(void);
  *
  * @return N/A
  */
+__boot_func
 static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 {
 	ARG_UNUSED(unused1);
@@ -235,6 +243,7 @@ void __weak main(void)
 /* LCOV_EXCL_STOP */
 
 #if defined(CONFIG_MULTITHREADING)
+__boot_func
 static void init_idle_thread(int i)
 {
 	struct k_thread *thread = &z_idle_threads[i];
@@ -271,6 +280,7 @@ static void init_idle_thread(int i)
  *
  * @return initial stack pointer for the main thread
  */
+__boot_func
 static char *prepare_multithreading(void)
 {
 	char *stack_ptr;
@@ -312,6 +322,7 @@ static char *prepare_multithreading(void)
 	return stack_ptr;
 }
 
+__boot_func
 static FUNC_NORETURN void switch_to_main_thread(char *stack_ptr)
 {
 #ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
@@ -330,6 +341,7 @@ static FUNC_NORETURN void switch_to_main_thread(char *stack_ptr)
 #endif /* CONFIG_MULTITHREADING */
 
 #if defined(CONFIG_ENTROPY_HAS_DRIVER) || defined(CONFIG_TEST_RANDOM_GENERATOR)
+__boot_func
 void z_early_boot_rand_get(uint8_t *buf, size_t length)
 {
 	int n = sizeof(uint32_t);
@@ -398,6 +410,7 @@ sys_rand_fallback:
  *
  * @return Does not return
  */
+__boot_func
 FUNC_NORETURN void z_cstart(void)
 {
 	/* gcov hook needed to get the coverage report.*/
