@@ -2,7 +2,7 @@
 # Top level makefile for documentation build
 #
 
-BUILDDIR ?= doc/_build
+BUILDDIR ?= _build
 DOC_TAG ?= development
 SPHINXOPTS ?= -q
 KCONFIG_TURBO_MODE ?= 0
@@ -22,7 +22,7 @@ htmldocs pdfdocs doxygen: configure
 # needed
 .PHONY: configure
 configure:
-	cmake -GNinja  -B${BUILDDIR} -Sdoc/ -DDOC_TAG=${DOC_TAG} \
+	cmake -GNinja -B${BUILDDIR} -S. -DDOC_TAG=${DOC_TAG} \
 		-DSPHINXOPTS=${SPHINXOPTS} \
 		-DKCONFIG_TURBO_MODE=${KCONFIG_TURBO_MODE}
 
