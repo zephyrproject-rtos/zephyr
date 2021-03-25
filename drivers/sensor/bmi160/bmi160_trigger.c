@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT bosch_bmi160
+
 #include <kernel.h>
 #include <drivers/sensor.h>
 #include <drivers/gpio.h>
