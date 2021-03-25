@@ -1869,6 +1869,11 @@ int net_ipv6_send_ns(struct net_if *iface,
 		goto drop;
 	}
 
+	/* Avoid recursive loop with network packet capturing */
+	if (IS_ENABLED(CONFIG_NET_CAPTURE) && pending) {
+		net_pkt_set_captured(pkt, net_pkt_is_captured(pending));
+	}
+
 	net_pkt_set_ipv6_hop_limit(pkt, NET_IPV6_ND_HOP_LIMIT);
 
 	if (net_ipv6_create(pkt, src, dst) ||
