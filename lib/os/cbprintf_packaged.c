@@ -30,7 +30,7 @@ static inline bool ptr_in_rodata(const char *addr)
 #define RO_START 0
 #define RO_END 0
 #elif defined(CONFIG_ARC) || defined(CONFIG_ARM) || defined(CONFIG_X86) \
-	|| defined(CONFIG_RISCV)
+	|| defined(CONFIG_RISCV) || defined(CONFIG_ARM64)
 	extern char _image_rodata_start[];
 	extern char _image_rodata_end[];
 #define RO_START _image_rodata_start

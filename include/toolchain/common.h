@@ -62,7 +62,7 @@
       #define PERFOPT_ALIGN .balign  1
     #endif
 
-  #elif defined(CONFIG_ARM)
+  #elif defined(CONFIG_ARM) || defined(CONFIG_ARM64)
 
     #define PERFOPT_ALIGN .balign  4
 
