@@ -26,3 +26,7 @@
 		sw0 = &user_button;
 	};
 };
+
+&lptim1 {
+	status = "okay";
+};
