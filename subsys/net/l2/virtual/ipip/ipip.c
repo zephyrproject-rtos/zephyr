@@ -77,7 +77,7 @@ static enum virtual_interface_caps get_capabilities(struct net_if *iface)
 {
 	ARG_UNUSED(iface);
 
-	return (enum virtual_interface_caps)0;
+	return VIRTUAL_INTERFACE_IPIP;
 }
 
 static int interface_start(const struct device *dev)
