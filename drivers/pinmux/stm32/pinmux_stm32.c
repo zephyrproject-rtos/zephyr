@@ -127,15 +127,36 @@ int stm32_dt_pinctrl_configure(const struct soc_gpio_pinctrl *pinctrl,
 			       STM32_DT_PINMUX_LINE(mux));
 		port_device = gpio_ports[STM32_PORT(pin)];
 
+#ifdef CONFIG_PM_DEVICE_IDLE
+		/* FIXME: Use of device_pm_foo clock mgmt function */
+		/* breaks correct gpio driver behavior */
+		/* Use direct clock gatting function as a workaround */
+		/* BEWARE that this has serious limitations in case */
+		/* of multithreaded application */
+		/* ret = device_pm_get_sync(port_device); */
 		ret = gpio_stm32_clock_request(port_device, true);
+#else
+		ret = gpio_stm32_clock_request(port_device, true);
+		/* Note, we don't use pm_constraint_foo functions here */
+		/* since idle period should not happen between clock_on */
+		/* and clock_off */
+#endif
+
 		if (ret != 0) {
 			return ret;
 		}
 
 		stm32_pin_configure(pin, func, STM32_DT_PINMUX_FUNC(mux));
+
+#ifdef CONFIG_PM_DEVICE_IDLE
+		/* FIXME: Use of device_pm clock mgmt function */
+		/* breaks correct gpio driver behavior */
+		/* ret = device_pm_put(port_device); */
+		ret = gpio_stm32_clock_request(port_device, false);
+#endif
 	}
 
-	return 0;
+	return ret;
 }
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl)
