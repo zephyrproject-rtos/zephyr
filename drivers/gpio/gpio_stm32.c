@@ -22,6 +22,7 @@
 #include <drivers/pinmux.h>
 #include <sys/util.h>
 #include <drivers/interrupt_controller/exti_stm32.h>
+#include <power/power.h>
 
 #include "stm32_hsem.h"
 #include "gpio_stm32.h"
@@ -238,7 +239,6 @@ int gpio_stm32_clock_request(const struct device *dev, bool on)
 	if (on) {
 		ret = clock_control_on(clk,
 					(clock_control_subsys_t *)&cfg->pclken);
-
 	} else {
 		ret = clock_control_off(clk,
 					(clock_control_subsys_t *)&cfg->pclken);
@@ -250,9 +250,9 @@ int gpio_stm32_clock_request(const struct device *dev, bool on)
 
 #if defined(PWR_CR2_IOSV) && DT_NODE_HAS_STATUS(DT_NODELABEL(gpiog), okay)
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
+	/* Port G[15:2] requires external power supply */
+	/* Cf: L4/L5 RM, Chapter "Independent I/O supply rail" */
 	if (cfg->port == STM32_PORTG) {
-		/* Port G[15:2] requires external power supply */
-		/* Cf: L4/L5 RM, Chapter "Independent I/O supply rail" */
 		if (on) {
 			LL_PWR_EnableVddIO2();
 		} else {
@@ -474,6 +474,12 @@ static int gpio_stm32_config(const struct device *dev,
 		goto exit;
 	}
 
+
+#ifdef CONFIG_PM_DEVICE_IDLE
+	/* Enable device clock before configuration (requires bank writes) */
+	device_pm_get_sync(dev);
+#endif /* CONFIG_PM_DEVICE */
+
 	if ((flags & GPIO_OUTPUT) != 0) {
 		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0) {
 			gpio_stm32_port_set_bits_raw(dev, BIT(pin));
@@ -483,6 +489,14 @@ static int gpio_stm32_config(const struct device *dev,
 	}
 
 	gpio_stm32_configure(dev, pin, pincfg, 0);
+
+	/* Device released */
+#ifdef CONFIG_PM_DEVICE_IDLE
+	/* Release clock only if configuration requires bank writes */
+	if (((flags & GPIO_OUTPUT) != 0)) {
+		device_pm_put(dev);
+	}
+#endif /* CONFIG_PM_DEVICE */
 
 exit:
 	return err;
@@ -561,6 +575,63 @@ static const struct gpio_driver_api gpio_stm32_driver = {
 	.manage_callback = gpio_stm32_manage_callback,
 };
 
+#ifdef CONFIG_PM_DEVICE
+static uint32_t gpio_stm32_get_power_state(const struct device *dev)
+{
+	struct gpio_stm32_data *data = dev->data;
+
+	return data->power_state;
+}
+
+static int gpio_stm32_set_power_state(const struct device *dev,
+					      uint32_t new_state)
+{
+	struct gpio_stm32_data *data = dev->data;
+	int ret = 0;
+
+	if (new_state == DEVICE_PM_ACTIVE_STATE) {
+		ret = gpio_stm32_clock_request(dev, true);
+	} else if (new_state == DEVICE_PM_SUSPEND_STATE) {
+		ret = gpio_stm32_clock_request(dev, false);
+	}
+
+	data->power_state = new_state;
+
+	return ret;
+}
+
+static int gpio_stm32_device_pm_ctrl(const struct device *dev,
+				     uint32_t ctrl_command,
+				     void *context, device_pm_cb cb, void *arg)
+{
+	struct gpio_stm32_data *data = dev->data;
+	uint32_t new_state;
+	int ret = 0;
+
+	switch (ctrl_command) {
+	case DEVICE_PM_SET_POWER_STATE:
+		new_state = *((const uint32_t *)context);
+		if (new_state != data->power_state) {
+			ret = gpio_stm32_set_power_state(dev, new_state);
+		}
+		break;
+	case DEVICE_PM_GET_POWER_STATE:
+		*((uint32_t *)context) = gpio_stm32_get_power_state(dev);
+		break;
+	default:
+		ret = -EINVAL;
+
+	}
+
+	if (cb) {
+		cb(dev, ret, context, arg);
+	}
+
+	return ret;
+}
+#endif /* CONFIG_PM_DEVICE */
+
+
 /**
  * @brief Initialize GPIO port
  *
@@ -577,7 +648,17 @@ static int gpio_stm32_init(const struct device *dev)
 
 	data->dev = dev;
 
+#ifdef CONFIG_PM_DEVICE_IDLE
+	data->power_state = DEVICE_PM_OFF_STATE;
+	device_pm_enable(dev);
+
+	return 0;
+#else
+#ifdef CONFIG_PM_DEVICE
+	data->power_state = DEVICE_PM_ACTIVE_STATE;
+#endif
 	return gpio_stm32_clock_request(dev, true);
+#endif
 }
 
 #define GPIO_DEVICE_INIT(__node, __suffix, __base_addr, __port, __cenr, __bus) \
@@ -592,7 +673,7 @@ static int gpio_stm32_init(const struct device *dev)
 	static struct gpio_stm32_data gpio_stm32_data_## __suffix;	       \
 	DEVICE_DT_DEFINE(__node,					       \
 			    gpio_stm32_init,				       \
-			    NULL,					       \
+			    gpio_stm32_device_pm_ctrl,			       \
 			    &gpio_stm32_data_## __suffix,		       \
 			    &gpio_stm32_cfg_## __suffix,		       \
 			    POST_KERNEL,				       \
