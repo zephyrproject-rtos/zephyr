@@ -125,7 +125,8 @@ static void eth_rx(const struct device *port)
 	struct net_pkt *pkt;
 	struct eth_liteeth_dev_data *context = port->data;
 
-	unsigned int key, r;
+	int r;
+	unsigned int key;
 	uint16_t len = 0;
 
 	key = irq_lock();
