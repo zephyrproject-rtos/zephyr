@@ -179,9 +179,11 @@ return_loc:
 #ifdef CONFIG_TRACING
 	push_s blink
 	push_s r1
+	push_s r0
 
 	bl sys_trace_thread_switched_in
 
+	pop_s r0
 	pop_s r1
 	pop_s blink
 #endif
