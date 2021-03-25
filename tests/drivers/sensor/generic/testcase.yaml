@@ -1,7 +1,10 @@
+common:
+  integration_platforms:
+    - qemu_x86
+    - mps2_an385
 tests:
   driver.sensor:
-    extra_args: CONF_FILE=prj.conf
-    tags: driver sensor subsys
+    tags: driver sensor
   driver.sensor.fpu:
     extra_args: CONF_FILE=prj_fpu.conf
-    tags: driver sensor subsys
+    tags: driver sensor
