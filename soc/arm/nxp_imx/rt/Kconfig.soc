@@ -385,6 +385,7 @@ config IPG_DIV
 
 menuconfig NXP_IMX_RT_BOOT_HEADER
 	bool "Enable the boot header"
+	depends on !BOOTLOADER_MCUBOOT
 	help
 	  Enable data structures required by the boot ROM to boot the
 	  application from an external flash device.
@@ -448,11 +449,11 @@ config CODE_ITCM
 
 config CODE_FLEXSPI
 	bool "Link code into external FlexSPI-controlled memory"
-	select NXP_IMX_RT_BOOT_HEADER
+	select NXP_IMX_RT_BOOT_HEADER if !BOOTLOADER_MCUBOOT
 
 config CODE_FLEXSPI2
 	bool "Link code into internal FlexSPI-controlled memory"
-	select NXP_IMX_RT_BOOT_HEADER
+	select NXP_IMX_RT_BOOT_HEADER if !BOOTLOADER_MCUBOOT
 
 endchoice
 
