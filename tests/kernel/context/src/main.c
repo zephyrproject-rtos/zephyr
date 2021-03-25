@@ -397,15 +397,15 @@ static void _test_kernel_cpu_idle(int atomic)
  *
  * @see k_cpu_idle()
  */
-#ifndef CONFIG_ARM
+#if defined(CONFIG_ARM) || defined(CONFIG_ARM64)
 static void test_kernel_cpu_idle_atomic(void)
 {
-	_test_kernel_cpu_idle(1);
+	ztest_test_skip();
 }
 #else
 static void test_kernel_cpu_idle_atomic(void)
 {
-	ztest_test_skip();
+	_test_kernel_cpu_idle(1);
 }
 #endif
 

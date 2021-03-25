@@ -22,7 +22,7 @@
 #include <arch/arc/v2/mpu/arc_core_mpu.h>
 #endif
 
-#if defined(CONFIG_ARM) && !defined(CONFIG_ARM64)
+#if defined(CONFIG_ARM)
 extern void arm_core_mpu_disable(void);
 #endif
 
@@ -352,7 +352,7 @@ static void test_read_priv_stack(void)
 
 	s[0] = 0;
 	priv_stack_ptr = (char *)&s[0] - size;
-#elif defined(CONFIG_ARM) || defined(CONFIG_X86) || defined(CONFIG_RISCV)
+#elif defined(CONFIG_ARM) || defined(CONFIG_X86) || defined(CONFIG_RISCV) || defined(CONFIG_ARM64)
 	/* priv_stack_ptr set by test_main() */
 #else
 #error "Not implemented for this architecture"
@@ -376,7 +376,7 @@ static void test_write_priv_stack(void)
 
 	s[0] = 0;
 	priv_stack_ptr = (char *)&s[0] - size;
-#elif defined(CONFIG_ARM) || defined(CONFIG_X86) || defined(CONFIG_RISCV)
+#elif defined(CONFIG_ARM) || defined(CONFIG_X86) || defined(CONFIG_RISCV) || defined(CONFIG_ARM64)
 	/* priv_stack_ptr set by test_main() */
 #else
 #error "Not implemented for this architecture"
@@ -666,8 +666,7 @@ static void test_init_and_access_other_memdomain(void)
 	spawn_user(&default_bool);
 }
 
-#if (defined(CONFIG_ARM) || (defined(CONFIG_GEN_PRIV_STACKS) && defined(CONFIG_RISCV)) && \
-	!defined(CONFIG_ARM64))
+#if (defined(CONFIG_ARM) || (defined(CONFIG_GEN_PRIV_STACKS) && defined(CONFIG_RISCV)))
 extern uint8_t *z_priv_stack_find(void *obj);
 #endif
 extern k_thread_stack_t ztest_thread_stack[];

@@ -1,0 +1,11 @@
+# General options signifying CPU capabilities of ARM64 SoCs
+
+# Copyright (c) 2018 Nordic Semiconductor ASA.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_PART_NUMBER
+	string
+	help
+	  This string holds the full part number of the SoC. It is a hidden option
+	  that you should not set directly. The part number selection choice defines
+	  the default value for this string.

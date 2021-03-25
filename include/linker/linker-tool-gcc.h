@@ -18,16 +18,14 @@
 #include <sys/mem_manage.h>
 
 #if defined(CONFIG_ARM)
-	#if defined(CONFIG_ARM64)
-		#define OUTPUT_FORMAT_ "elf64-littleaarch64"
+	#if defined(CONFIG_BIG_ENDIAN)
+		#define OUTPUT_FORMAT_ "elf32-bigarm"
 	#else
-		#if defined(CONFIG_BIG_ENDIAN)
-			#define OUTPUT_FORMAT_ "elf32-bigarm"
-		#else
-			#define OUTPUT_FORMAT_ "elf32-littlearm"
-		#endif
+		#define OUTPUT_FORMAT_ "elf32-littlearm"
 	#endif
 	OUTPUT_FORMAT(OUTPUT_FORMAT_)
+#elif defined(CONFIG_ARM64)
+	OUTPUT_FORMAT("elf64-littleaarch64")
 #elif defined(CONFIG_ARC)
 	OUTPUT_FORMAT("elf32-littlearc", "elf32-bigarc", "elf32-littlearc")
 #elif defined(CONFIG_X86)

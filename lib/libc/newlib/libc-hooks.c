@@ -66,7 +66,7 @@
 		 */
 		struct k_mem_partition z_malloc_partition;
 
-		#if defined(CONFIG_ARM)
+		#if defined(CONFIG_ARM) || defined(CONFIG_ARM64)
 			#define HEAP_BASE	ROUND_UP(USED_RAM_END_ADDR, \
 				 CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE)
 		#elif defined(CONFIG_ARC)
