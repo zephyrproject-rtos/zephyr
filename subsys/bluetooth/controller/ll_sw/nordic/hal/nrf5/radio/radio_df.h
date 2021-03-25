@@ -39,7 +39,7 @@ void radio_df_ant_switch_pattern_clear(void);
  * Radio internal list. Before start of new patterns clear the list
  * by call to @ref radio_df_ant_switch_pattern_clear.
  */
-void radio_df_ant_switch_pattern_set(uint8_t *patterns, uint8_t len);
+void radio_df_ant_switch_pattern_set(const uint8_t *patterns, uint8_t len);
 /* Provides switch pattern of antenna used to transmit PDU that is used to
  * transmit CTE
  */
