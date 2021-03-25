@@ -114,9 +114,9 @@ void lll_scan_prepare(void *param)
 }
 
 void lll_scan_prepare_connect_req(struct lll_scan *lll, struct pdu_adv *pdu_tx,
-				  uint8_t adv_tx_addr, uint8_t *adv_addr,
-				  uint8_t init_tx_addr, uint8_t *init_addr,
-				  uint32_t *conn_space_us)
+				  uint8_t phy, uint8_t adv_tx_addr,
+				  uint8_t *adv_addr, uint8_t init_tx_addr,
+				  uint8_t *init_addr, uint32_t *conn_space_us)
 {
 	struct lll_conn *lll_conn;
 	uint32_t conn_interval_us;
@@ -144,7 +144,31 @@ void lll_scan_prepare_connect_req(struct lll_scan *lll, struct pdu_adv *pdu_tx,
 	pdu_tx->connect_ind.win_size = 1;
 
 	conn_interval_us = (uint32_t)lll_conn->interval * CONN_INT_UNIT_US;
-	conn_offset_us = radio_tmr_end_get() + 502 + CONN_INT_UNIT_US;
+	conn_offset_us = radio_tmr_end_get() + 502;
+
+	/* Add transmitWindowDelay to default calculated connection offset:
+	 * 1.25ms for a legacy PDU, 2.5ms for an LE Uncoded PHY and 3.75ms for
+	 * an LE Coded PHY.
+	 */
+	switch (phy) {
+	case PHY_LEGACY:
+		conn_offset_us += 1250;
+		break;
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	case PHY_1M:
+	case PHY_2M:
+		conn_offset_us += 2500;
+		break;
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+	case PHY_CODED:
+		conn_offset_us += 3750;
+		break;
+#endif /* CONFIG_BT_CTLR_PHY_CODED */
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+	default:
+		LL_ASSERT(0);
+		break;
+	}
 
 	if (!IS_ENABLED(CONFIG_BT_CTLR_SCHED_ADVANCED) ||
 	    lll->conn_win_offset_us == 0U) {
@@ -890,7 +914,8 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 
 		pdu_tx = (void *)radio_pkt_scratch_get();
 
-		lll_scan_prepare_connect_req(lll, pdu_tx, pdu_adv_rx->tx_addr,
+		lll_scan_prepare_connect_req(lll, pdu_tx, PHY_LEGACY,
+					     pdu_adv_rx->tx_addr,
 					     pdu_adv_rx->adv_ind.addr,
 					     init_tx_addr, init_addr,
 					     &conn_space_us);
