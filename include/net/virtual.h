@@ -35,6 +35,8 @@ extern "C" {
 
 /** Virtual interface capabilities */
 enum virtual_interface_caps {
+	/** IPIP tunnel */
+	VIRTUAL_INTERFACE_IPIP = BIT(1),
 
 /** @cond INTERNAL_HIDDEN */
 	/* Marker for capabilities - must be at the end of the enum.
