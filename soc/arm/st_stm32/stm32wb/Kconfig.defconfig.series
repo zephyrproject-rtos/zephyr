@@ -12,11 +12,9 @@ config SOC_SERIES
 
 if PM
 config PM_DEVICE
-	bool
 	default y
 
 config STM32_LPTIM_TIMER
-	bool
 	default y
 endif # PM
 
