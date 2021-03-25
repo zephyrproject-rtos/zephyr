@@ -119,6 +119,7 @@ static int net_bt_send(struct net_if *iface, struct net_pkt *pkt)
 	if (ret < 0) {
 		NET_ERR("Unable to send packet: %d", ret);
 		bt_l2cap_chan_disconnect(&conn->ipsp_chan.chan);
+		net_buf_unref(buffer);
 		return ret;
 	}
 

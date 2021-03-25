@@ -66,6 +66,7 @@ static int avdtp_send(struct bt_avdtp *session,
 	result = bt_l2cap_chan_send(&session->br_chan.chan, buf);
 	if (result < 0) {
 		BT_ERR("Error:L2CAP send fail - result = %d", result);
+		net_buf_unref(buf);
 		return result;
 	}
 
