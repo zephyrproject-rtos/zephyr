@@ -32,6 +32,8 @@
 
 #define BYTES2US(bytes, phy) (((bytes)<<3)/BIT((phy&0x3)>>1))
 
+/* Advertisement channel minimum payload size */
+#define PDU_AC_PAYLOAD_SIZE_MIN 1
 /* Advertisement channel maximum legacy payload size */
 #define PDU_AC_LEG_PAYLOAD_SIZE_MAX 37
 /* Advertisement channel maximum extended payload size */
