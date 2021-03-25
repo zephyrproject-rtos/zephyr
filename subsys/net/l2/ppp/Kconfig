@@ -63,6 +63,21 @@ config NET_L2_PPP_PAP
 	help
 	  Enable support for PAP authentication protocol.
 
+config NET_L2_PPP_OPTION_MRU
+	bool "LCP MRU option support"
+	help
+	  Enable support for LCP MRU option.
+
+config NET_L2_PPP_OPTION_SERVE_IP
+	bool "Serve IP address to peer"
+	help
+	  Enable support for serving IP address to PPP peer.
+
+config NET_L2_PPP_OPTION_SERVE_DNS
+	bool "Serve DNS addresses to peer"
+	help
+	  Enable support for serving DNS addresses to PPP peer.
+
 module = NET_L2_PPP
 module-dep = NET_LOG
 module-str = Log level for ppp L2 layer
