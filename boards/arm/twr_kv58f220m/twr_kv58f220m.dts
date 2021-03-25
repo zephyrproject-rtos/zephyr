@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_kv58f1m0vlx24.dtsi>
+#include <nxp/MKV58F1M0VLQ24.dtsi>
 
 / {
 	model = "NXP Kinetis KV58 MCU Tower System Module";
