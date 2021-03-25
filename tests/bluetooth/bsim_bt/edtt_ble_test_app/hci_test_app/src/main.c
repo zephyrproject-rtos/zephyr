@@ -103,6 +103,25 @@ static struct net_buf *acl_data_create(struct bt_hci_acl_hdr *le_hdr)
 	return buf;
 }
 
+#if defined(CONFIG_BT_ISO)
+/**
+ * @brief Allocate buffer for ISO Data Package and fill in Header
+ */
+static struct net_buf *iso_data_create(struct bt_hci_iso_hdr *le_hdr)
+{
+	struct net_buf *buf;
+	struct bt_hci_iso_hdr *hdr;
+
+	buf = bt_buf_get_tx(BT_BUF_ISO_OUT, K_FOREVER, NULL, 0);
+	__ASSERT_NO_MSG(buf);
+
+	hdr = net_buf_add(buf, sizeof(*hdr));
+	*hdr = *le_hdr;
+
+	return buf;
+}
+#endif /* defined(CONFIG_BT_ISO) */
+
 /**
  * @brief Allocate buffer for HCI command, fill in parameters and send the
  * command...
@@ -159,6 +178,11 @@ static K_FIFO_DEFINE(rx_queue);
 NET_BUF_POOL_FIXED_DEFINE(data_pool, CONFIG_BT_CTLR_RX_BUFFERS + 14,
 			  BT_BUF_ACL_SIZE(CONFIG_BT_BUF_ACL_TX_SIZE) + 4, 4, NULL);
 static K_FIFO_DEFINE(data_queue);
+#if defined(CONFIG_BT_ISO)
+NET_BUF_POOL_FIXED_DEFINE(iso_data_pool, CONFIG_BT_ISO_RX_BUF_COUNT + 14,
+			  CONFIG_BT_ISO_RX_MTU + 4, NULL);
+static K_FIFO_DEFINE(iso_data_queue);
+#endif /* CONFIG_BT_ISO */
 
 /**
  * @brief Handle Command Complete HCI event...
@@ -254,7 +278,7 @@ static struct net_buf *queue_event(struct net_buf *buf)
 }
 
 /**
- * @brief Thread to service events and ACL data packets from the HCI input queue
+ * @brief Thread to service events and ACL/ISO data packets from the HCI input queue
  */
 static void service_events(void *p1, void *p2, void *p3)
 {
@@ -305,6 +329,19 @@ static void service_events(void *p1, void *p2, void *p3)
 				net_buf_add_mem(data, buf->data, buf->len);
 				net_buf_put(&data_queue, data);
 			}
+#if defined(CONFIG_BT_ISO)
+		} else if (bt_buf_get_type(buf) == BT_BUF_ISO_IN) {
+			struct net_buf *data;
+
+			data = net_buf_alloc(&iso_data_pool, K_NO_WAIT);
+			if (data) {
+				bt_buf_set_type(data, BT_BUF_ISO_IN);
+				net_buf_add_le32(data,
+					sys_cpu_to_le32(k_uptime_get()));
+				net_buf_add_mem(data, buf->data, buf->len);
+				net_buf_put(&iso_data_queue, data);
+			}
+#endif /* CONFIG_BT_ISO */
 		}
 		net_buf_unref(buf);
 
@@ -517,6 +554,124 @@ static void le_data_write(uint16_t size)
 	edtt_write((uint8_t *)&response, sizeof(response), EDTTT_BLOCK);
 }
 
+#if defined(CONFIG_BT_ISO)
+/**
+ * @brief Flush all ISO Data Packages from the input-copy queue
+ */
+static void le_flush_iso_data(uint16_t size)
+{
+	uint16_t  response = sys_cpu_to_le16(CMD_LE_FLUSH_ISO_DATA_RSP);
+	struct net_buf *buf;
+
+	while ((buf = net_buf_get(&iso_data_queue, K_NO_WAIT))) {
+		net_buf_unref(buf);
+	}
+	read_excess_bytes(size);
+	size = 0;
+
+	edtt_write((uint8_t *)&response, sizeof(response), EDTTT_BLOCK);
+	edtt_write((uint8_t *)&size, sizeof(size), EDTTT_BLOCK);
+}
+
+/**
+ * @brief Check whether an ISO Data Package is available in the input-copy queue
+ */
+static void le_iso_data_ready(uint16_t size)
+{
+	struct has_iso_data_resp {
+		uint16_t response;
+		uint16_t size;
+		uint8_t  empty;
+	} __packed;
+	struct has_iso_data_resp le_response = {
+		.response = sys_cpu_to_le16(CMD_LE_ISO_DATA_READY_RSP),
+		.size = sys_cpu_to_le16(1),
+		.empty = 0
+	};
+
+	if (size > 0) {
+		read_excess_bytes(size);
+	}
+	if (k_fifo_is_empty(&iso_data_queue)) {
+		le_response.empty = 1;
+	}
+	edtt_write((uint8_t *)&le_response, sizeof(le_response), EDTTT_BLOCK);
+}
+
+/**
+ * @brief Get next available ISO Data Package from the input-copy queue
+ */
+static void le_iso_data_read(uint16_t size)
+{
+	uint16_t  response = sys_cpu_to_le16(CMD_LE_ISO_DATA_READ_RSP);
+	struct net_buf *buf;
+
+	read_excess_bytes(size);
+	size = 0;
+
+	edtt_write((uint8_t *)&response, sizeof(response), EDTTT_BLOCK);
+	buf = net_buf_get(&iso_data_queue, K_FOREVER);
+	if (buf) {
+		size = sys_cpu_to_le16(buf->len);
+		edtt_write((uint8_t *)&size, sizeof(size), EDTTT_BLOCK);
+		edtt_write((uint8_t *)buf->data, buf->len, EDTTT_BLOCK);
+		net_buf_unref(buf);
+	} else {
+		edtt_write((uint8_t *)&size, sizeof(size), EDTTT_BLOCK);
+	}
+}
+
+/**
+ * @brief Write ISO Data Package to the Controller...
+ */
+static void le_iso_data_write(uint16_t size)
+{
+	struct iso_data_write_resp {
+		uint16_t code;
+		uint16_t size;
+		uint8_t  status;
+	} __packed;
+	struct iso_data_write_resp response = {
+		.code = sys_cpu_to_le16(CMD_LE_ISO_DATA_WRITE_RSP),
+		.size = sys_cpu_to_le16(1),
+		.status = 0
+	};
+	struct net_buf *buf;
+	struct bt_hci_iso_hdr hdr;
+	int err;
+
+	if (size >= sizeof(hdr)) {
+		edtt_read((uint8_t *)&hdr, sizeof(hdr), EDTTT_BLOCK);
+		size -= sizeof(hdr);
+		buf = iso_data_create(&hdr);
+		if (buf) {
+			uint16_t hdr_length = sys_le16_to_cpu(hdr.len);
+			uint8_t *pdata = net_buf_add(buf, hdr_length);
+
+			if (size >= hdr_length) {
+				edtt_read(pdata, hdr_length, EDTTT_BLOCK);
+				size -= hdr_length;
+			}
+			err = bt_send(buf);
+			if (err) {
+				LOG_ERR("Failed to send ISO Data (err %d)",
+					err);
+			}
+		} else {
+			err = -2; /* Failed to allocate data buffer */
+			LOG_ERR("Failed to create buffer for ISO Data.");
+		}
+	} else {
+		/* Size too small for header (handle and data length) */
+		err = -3;
+	}
+	read_excess_bytes(size);
+
+	response.status = sys_cpu_to_le32(err);
+	edtt_write((uint8_t *)&response, sizeof(response), EDTTT_BLOCK);
+}
+#endif /* CONFIG_BT_ISO */
+
 static K_THREAD_STACK_DEFINE(service_events_stack,
 			     CONFIG_BT_HCI_TX_STACK_SIZE);
 static struct k_thread service_events_data;
@@ -606,6 +761,20 @@ void main(void)
 		case CMD_LE_DATA_READ_REQ:
 			le_data_read(size);
 			break;
+#if defined(CONFIG_BT_ISO)
+		case CMD_LE_FLUSH_ISO_DATA_REQ:
+			le_flush_iso_data(size);
+			break;
+		case CMD_LE_ISO_DATA_READY_REQ:
+			le_iso_data_ready(size);
+			break;
+		case CMD_LE_ISO_DATA_WRITE_REQ:
+			le_iso_data_write(size);
+			break;
+		case CMD_LE_ISO_DATA_READ_REQ:
+			le_iso_data_read(size);
+			break;
+#endif /* CONFIG_BT_ISO */
 		default:
 			if (size >= 2) {
 				edtt_read((uint8_t *)&opcode, sizeof(opcode),
