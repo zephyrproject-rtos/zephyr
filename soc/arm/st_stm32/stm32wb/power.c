@@ -27,7 +27,7 @@ void pm_power_state_set(struct pm_state_info info)
 	}
 
 	switch (info.substate_id) {
-	case 0: /* this corresponds to the STOP0 mode: */
+	case 1: /* this corresponds to the STOP0 mode: */
 		/* ensure HSI is the wake-up system clock */
 		LL_RCC_SetClkAfterWakeFromStop(LL_RCC_STOP_WAKEUPCLOCK_HSI);
 		/* enter STOP0 mode */
@@ -36,15 +36,16 @@ void pm_power_state_set(struct pm_state_info info)
 		/* enter SLEEP mode : WFE or WFI */
 		k_cpu_idle();
 		break;
-	case 1: /* this corresponds to the STOP1 mode: */
+	case 2: /* this corresponds to the STOP1 mode: */
 		/* ensure HSI is the wake-up system clock */
 		LL_RCC_SetClkAfterWakeFromStop(LL_RCC_STOP_WAKEUPCLOCK_HSI);
 		/* enter STOP1 mode */
 		LL_PWR_SetPowerMode(LL_PWR_MODE_STOP1);
 		LL_LPM_EnableDeepSleep();
+		/* enter SLEEP mode : WFE or WFI */
 		k_cpu_idle();
 		break;
-	case 2: /* this corresponds to the STOP2 mode: */
+	case 3: /* this corresponds to the STOP2 mode: */
 		/* ensure HSI is the wake-up system clock */
 		LL_RCC_SetClkAfterWakeFromStop(LL_RCC_STOP_WAKEUPCLOCK_HSI);
 #ifdef PWR_CR1_RRSTP
@@ -53,6 +54,7 @@ void pm_power_state_set(struct pm_state_info info)
 		/* enter STOP2 mode */
 		LL_PWR_SetPowerMode(LL_PWR_MODE_STOP2);
 		LL_LPM_EnableDeepSleep();
+		/* enter SLEEP mode : WFE or WFI */
 		k_cpu_idle();
 		break;
 	default:
@@ -68,11 +70,11 @@ void pm_power_state_exit_post_ops(struct pm_state_info info)
 		LOG_DBG("Unsupported power state %u", info.state);
 	} else {
 		switch (info.substate_id) {
-		case 0:	/* STOP0 */
+		case 1:	/* STOP0 */
 			__fallthrough;
-		case 1:	/* STOP1 */
+		case 2:	/* STOP1 */
 			__fallthrough;
-		case 2:	/* STOP2 */
+		case 3:	/* STOP2 */
 			LL_LPM_DisableSleepOnExit();
 			LL_LPM_EnableSleep();
 			break;
