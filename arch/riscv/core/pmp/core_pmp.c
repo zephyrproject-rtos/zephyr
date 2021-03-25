@@ -146,7 +146,7 @@ int z_riscv_pmp_set(unsigned int index, ulong_t cfg_val, ulong_t addr_val)
 	int pmpcfg_csr;
 	int pmpaddr_csr;
 
-	if ((index >= PMP_SLOT_NUMBER) | (index < 0)) {
+	if (index >= PMP_SLOT_NUMBER) {
 		return -1;
 	}
 
@@ -181,7 +181,7 @@ int pmp_get(unsigned int index, ulong_t *cfg_val, ulong_t *addr_val)
 	int pmpcfg_csr;
 	int pmpaddr_csr;
 
-	if ((index >= PMP_SLOT_NUMBER) | (index < 0)) {
+	if (index >= PMP_SLOT_NUMBER) {
 		return -1;
 	}
 
