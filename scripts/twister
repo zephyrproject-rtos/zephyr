@@ -175,7 +175,6 @@ import shutil
 from collections import OrderedDict
 import multiprocessing
 from itertools import islice
-import csv
 from colorama import Fore
 from pathlib import Path
 from multiprocessing.managers import BaseManager

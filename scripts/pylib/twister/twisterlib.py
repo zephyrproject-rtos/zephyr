@@ -16,13 +16,11 @@ import shutil
 import shlex
 import signal
 import threading
-import concurrent.futures
 from collections import OrderedDict
 import queue
 import time
 import csv
 import glob
-import concurrent
 import xml.etree.ElementTree as ET
 import logging
 import pty
