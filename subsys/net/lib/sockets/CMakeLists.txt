@@ -13,9 +13,10 @@ zephyr_sources(
   getnameinfo.c
   sockets_misc.c
   )
-zephyr_sources_ifdef(CONFIG_NET_SOCKETS_PACKET sockets_packet.c)
+
 zephyr_sources_ifdef(CONFIG_NET_SOCKETS_CAN sockets_can.c)
 endif()
+zephyr_sources_ifdef(CONFIG_NET_SOCKETS_PACKET      sockets_packet.c)
 zephyr_sources_ifdef(CONFIG_NET_SOCKETS_OFFLOAD     socket_offload.c)
 
 if (CONFIG_NET_SOCKETS_SOCKOPT_TLS AND NOT CONFIG_NET_SOCKETS_OFFLOAD_TLS)

@@ -28,6 +28,7 @@ LOG_MODULE_REGISTER(net_core, CONFIG_NET_CORE_LOG_LEVEL);
 #include <net/dns_resolve.h>
 #include <net/gptp.h>
 #include <net/websocket.h>
+#include <net/ethernet.h>
 
 #if defined(CONFIG_NET_LLDP)
 #include <net/lldp.h>
@@ -61,7 +62,7 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 	int ret;
 	bool locally_routed = false;
 
-	ret = net_packet_socket_input(pkt);
+	ret = net_packet_socket_input(pkt, ETH_P_ALL);
 	if (ret != NET_CONTINUE) {
 		return ret;
 	}
@@ -95,6 +96,12 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 
 			return ret;
 		}
+	}
+
+	/* L2 processed, now we can pass IPPROTO_RAW to packet socket: */
+	ret = net_packet_socket_input(pkt, IPPROTO_RAW);
+	if (ret != NET_CONTINUE) {
+		return ret;
 	}
 
 	ret = net_canbus_socket_input(pkt);
