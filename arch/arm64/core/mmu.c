@@ -1012,7 +1012,7 @@ void arch_mem_domain_thread_add(struct k_thread *thread)
 	} else {
 #ifdef CONFIG_SMP
 		/* the thread could be running on another CPU right now */
-		arch_sched_ipi();
+		z_arm64_ptable_ipi();
 #endif
 	}
 
