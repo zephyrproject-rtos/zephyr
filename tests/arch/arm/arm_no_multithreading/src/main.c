@@ -7,7 +7,7 @@
 #include <kernel.h>
 #include <sys/printk.h>
 #include <sys/__assert.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <arch/arm/cortex_m/cmsis.h>
 
 #if !defined(CONFIG_CPU_CORTEX_M)
   #error test can only run on Cortex-M MCUs

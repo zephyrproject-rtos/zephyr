@@ -1,16 +1,13 @@
-/* ARM AArch32 GCC specific public inline assembler functions and macros */
-
 /*
- * Copyright (c) 2015, Wind River Systems, Inc.
+ * Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Either public functions or macros or invoked by public functions */
-
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_ASM_INLINE_GCC_H_
 #define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_ASM_INLINE_GCC_H_
 
+<<<<<<< HEAD
 /*
  * The file must not be included directly
  * Include arch/cpu.h instead
@@ -116,8 +113,12 @@ static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
 
 #ifdef __cplusplus
 }
+=======
+#ifndef CONFIG_COMPAT_INCLUDES
+#warning "This header file has moved, include <arch/arm/asm_inline_gcc.h> instead."
+>>>>>>> dd0848a9a7... arm: Remove aarch32 directory
 #endif
 
-#endif /* _ASMLANGUAGE */
+#include <arch/arm/asm_inline_gcc.h>
 
 #endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_ASM_INLINE_GCC_H_ */

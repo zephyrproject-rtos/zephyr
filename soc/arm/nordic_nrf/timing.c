@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <arch/arm/aarch32/arch.h>
+#include <arch/arm/arch.h>
 #include <kernel.h>
 #include <sys_clock.h>
 #include <timing/timing.h>

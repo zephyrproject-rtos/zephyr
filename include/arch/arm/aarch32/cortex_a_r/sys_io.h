@@ -1,75 +1,16 @@
 /*
- * Copyright (c) 2015, Wind River Systems, Inc.
- * Copyright (c) 2017, Oticon A/S
+ * Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
  *
  * SPDX-License-Identifier: Apache-2.0
- */
-
-/* "Arch" bit manipulation functions in non-arch-specific C code (uses some
- * gcc builtins)
  */
 
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_A_R_SYS_IO_H_
 #define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_A_R_SYS_IO_H_
 
-#ifndef _ASMLANGUAGE
-
-#include <zephyr/types.h>
-#include <sys/sys_io.h>
-#include <arch/arm/aarch32/cortex_a_r/cmsis.h>
-
-#ifdef __cplusplus
-extern "C" {
+#ifndef CONFIG_COMPAT_INCLUDES
+#warning "This header file has moved, include <arch/arm/cortex_a_r/sys_io.h> instead."
 #endif
 
-/* Memory mapped registers I/O functions */
-
-static ALWAYS_INLINE uint8_t sys_read8(mem_addr_t addr)
-{
-	uint8_t val = *(volatile uint8_t *)addr;
-
-	__DMB();
-	return val;
-}
-
-static ALWAYS_INLINE void sys_write8(uint8_t data, mem_addr_t addr)
-{
-	__DMB();
-	*(volatile uint8_t *)addr = data;
-}
-
-static ALWAYS_INLINE uint16_t sys_read16(mem_addr_t addr)
-{
-	uint16_t val = *(volatile uint16_t *)addr;
-
-	__DMB();
-	return val;
-}
-
-static ALWAYS_INLINE void sys_write16(uint16_t data, mem_addr_t addr)
-{
-	__DMB();
-	*(volatile uint16_t *)addr = data;
-}
-
-static ALWAYS_INLINE uint32_t sys_read32(mem_addr_t addr)
-{
-	uint32_t val = *(volatile uint32_t *)addr;
-
-	__DMB();
-	return val;
-}
-
-static ALWAYS_INLINE void sys_write32(uint32_t data, mem_addr_t addr)
-{
-	__DMB();
-	*(volatile uint32_t *)addr = data;
-}
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* _ASMLANGUAGE */
+#include <arch/arm/cortex_a_r/sys_io.h>
 
 #endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_A_R_SYS_IO_H_ */

@@ -12,7 +12,7 @@
 #include <linker/linker-defs.h>
 #include <fsl_clock.h>
 #include <arch/cpu.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <arch/arm/cortex_m/cmsis.h>
 #include <fsl_flexspi_nor_boot.h>
 #if CONFIG_USB_DC_NXP_EHCI
 #include "usb_phy.h"

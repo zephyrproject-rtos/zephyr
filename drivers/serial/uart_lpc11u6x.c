@@ -5,7 +5,7 @@
  */
 #define DT_DRV_COMPAT nxp_lpc11u6x_uart
 
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <arch/arm/cortex_m/cmsis.h>
 
 #include <drivers/uart.h>
 #include <drivers/pinmux.h>

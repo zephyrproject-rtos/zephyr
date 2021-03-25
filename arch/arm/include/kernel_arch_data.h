@@ -25,11 +25,11 @@
 #include <arch/cpu.h>
 
 #if defined(CONFIG_CPU_CORTEX_M)
-#include <aarch32/cortex_m/stack.h>
-#include <aarch32/cortex_m/exc.h>
+#include <cortex_m/stack.h>
+#include <cortex_m/exc.h>
 #elif defined(CONFIG_CPU_CORTEX_R)
-#include <aarch32/cortex_a_r/stack.h>
-#include <aarch32/cortex_a_r/exc.h>
+#include <cortex_a_r/stack.h>
+#include <cortex_a_r/exc.h>
 #endif
 
 #ifndef _ASMLANGUAGE

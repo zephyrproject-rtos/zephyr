@@ -9,7 +9,7 @@
 #include <syscall_handler.h>
 #include <toolchain.h>
 
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <arch/arm/cortex_m/cmsis.h>
 
 extern uint32_t _vector_table;
 extern uint32_t __vector_relay_handler;

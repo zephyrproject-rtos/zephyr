@@ -8,7 +8,7 @@
 #include <init.h>
 #include <soc.h>
 #include <soc_pinmap.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <arch/arm/cortex_m/cmsis.h>
 
 void eos_s3_lock_enable(void)
 {

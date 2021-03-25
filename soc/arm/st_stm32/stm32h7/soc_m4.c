@@ -19,7 +19,7 @@
 #include <stm32_ll_rcc.h>
 #include <stm32_ll_system.h>
 #include <arch/cpu.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <arch/arm/cortex_m/cmsis.h>
 #include "stm32_hsem.h"
 
 void stm32h7_m4_boot_stop(void)

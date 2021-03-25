@@ -1,40 +1,16 @@
 /*
- * Copyright (c) 2013-2014 Wind River Systems, Inc.
+ * Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
  *
  * SPDX-License-Identifier: Apache-2.0
- */
-
-/**
- * @file
- * @brief ARM AArch32 public kernel miscellaneous
- *
- * ARM AArch32-specific kernel miscellaneous interface. Included by arm/arch.h.
  */
 
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_MISC_H_
 #define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_MISC_H_
 
-#ifdef __cplusplus
-extern "C" {
+#ifndef CONFIG_COMPAT_INCLUDES
+#warning "This header file has moved, include <arch/arm/misc.h> instead."
 #endif
 
-#ifndef _ASMLANGUAGE
-extern uint32_t sys_clock_cycle_get_32(void);
-
-static inline uint32_t arch_k_cycle_get_32(void)
-{
-	return sys_clock_cycle_get_32();
-}
-
-static ALWAYS_INLINE void arch_nop(void)
-{
-	__asm__ volatile("nop");
-}
-
-#endif
-
-#ifdef __cplusplus
-}
-#endif
+#include <arch/arm/misc.h>
 
 #endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_MISC_H_ */

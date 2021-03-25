@@ -18,7 +18,7 @@
 #elif defined(CONFIG_ARM64)
 #include <arch/arm64/syscall.h>
 #elif defined(CONFIG_ARM)
-#include <arch/arm/aarch32/syscall.h>
+#include <arch/arm/syscall.h>
 #elif defined(CONFIG_ARC)
 #include <arch/arc/syscall.h>
 #elif defined(CONFIG_RISCV)

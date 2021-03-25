@@ -34,6 +34,6 @@ config ARM_CUSTOM_INTERRUPT_CONTROLLER
 	       family cores. The Cortex-M family cores are always equipped with
 	       the ARM Nested Vectored Interrupt Controller (NVIC).
 
-rsource "core/aarch32/Kconfig"
+rsource "core/Kconfig"
 
 endmenu
