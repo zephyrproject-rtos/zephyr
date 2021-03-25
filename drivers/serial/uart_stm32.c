@@ -300,14 +300,23 @@ static int uart_stm32_configure(const struct device *dev,
 {
 	struct uart_stm32_data *data = DEV_DATA(dev);
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
+	uint32_t databits = uart_stm32_cfg2ll_databits(cfg->data_bits);
 	const uint32_t parity = uart_stm32_cfg2ll_parity(cfg->parity);
 	const uint32_t stopbits = uart_stm32_cfg2ll_stopbits(cfg->stop_bits);
-	const uint32_t databits = uart_stm32_cfg2ll_databits(cfg->data_bits);
 	const uint32_t flowctrl = uart_stm32_cfg2ll_hwctrl(cfg->flow_ctrl);
 
-	/* Hardware doesn't support mark or space parity */
-	if ((cfg->parity == UART_CFG_PARITY_MARK) ||
-	    (cfg->parity == UART_CFG_PARITY_SPACE)) {
+	/* Determine the datawidth and parity. If we use other parity than
+	 * 'none' we must use datawidth = 9 (to get 8 databit + 1 parity bit).
+	 */
+	if ((cfg->parity == UART_CFG_PARITY_EVEN) ||
+		(cfg->parity == UART_CFG_PARITY_ODD)) {
+		/* 8 databit, 1 parity bit, parity even or odd */
+		databits = uart_stm32_cfg2ll_databits(UART_CFG_DATA_BITS_9);
+	} else if (cfg->parity == UART_CFG_PARITY_NONE) {
+		/* 8 databit, 0 parity bit, parity none */
+		databits = uart_stm32_cfg2ll_databits(UART_CFG_DATA_BITS_8);
+	} else {
+		/* Hardware doesn't support mark or space parity */
 		return -ENOTSUP;
 	}
 
