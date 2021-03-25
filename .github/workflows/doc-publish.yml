@@ -79,7 +79,7 @@ jobs:
         DOC_TAG: ${{ steps.tag.outputs.TYPE }}
       run: |
         source zephyr-env.sh
-        make DOC_TAG=${DOC_TAG} htmldocs
+        make DOC_TAG=${DOC_TAG} -C doc htmldocs
 
     - name: check-warns
       run: |
