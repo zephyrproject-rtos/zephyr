@@ -9,5 +9,6 @@ supported:
   - gpio
   - i2c
   - lsm6dso
+  - lptim
 ram: 192
 flash: 512
