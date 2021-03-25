@@ -189,11 +189,23 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf,
 
 	chan->sent = cb ? cb : chan_cb(buf);
 
+	/* bt_l2cap_send_cb takes onwership of the buffer so take another
+	 * reference to restore the state in case an error is returned.
+	 */
+	net_buf_ref(buf);
+
 	err = bt_l2cap_send_cb(chan->att->conn, BT_L2CAP_CID_ATT,
 			       buf, att_cb(chan->sent),
 			       &chan->chan.chan);
 	if (err) {
+		/* In case of an error has occurred restore the buffer state as
+		 * the extra reference shall have prevented the buffer to be
+		 * freed.
+		 */
 		net_buf_simple_restore(&buf->b, &state);
+	} else {
+		/* In case of success unref the extra reference taken */
+		net_buf_unref(buf);
 	}
 
 	return err;
