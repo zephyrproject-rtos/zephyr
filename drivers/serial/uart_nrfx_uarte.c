@@ -1155,7 +1155,7 @@ static uint8_t rx_flush(const struct device *dev, uint8_t *buf, uint32_t len)
 		return rx_amount;
 	}
 
-	for (int i = 0; i < 0; i++) {
+	for (int i = 0; i < flush_len; i++) {
 		if (buf[i] != dirty) {
 			return rx_amount;
 		}
