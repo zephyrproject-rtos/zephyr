@@ -89,6 +89,18 @@
 				<20 0 &gpio0 17 0>,	/* D14 */
 				<21 0 &gpio0 18 0>;	/* D15 */
 	};
+
+	power-states {
+		idle: idle {
+			compatible = "zephyr,power-state";
+			power-state-name = "runtime-idle";
+			min-residency-us = <10>;
+		};
+	};
+};
+
+&cpu0 {
+	cpu-power-states = <&idle>;
 };
 
 &flexcomm0 {
