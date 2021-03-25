@@ -856,7 +856,11 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 	if (0) {
 #if defined(CONFIG_BT_CENTRAL)
 	/* Initiator */
+	/* Note: connectable ADV_EXT_IND is handled as any other ADV_EXT_IND
+	 *       because we need to receive AUX_ADV_IND anyway.
+	 */
 	} else if (lll->conn && !lll->conn->master.cancelled &&
+		   (pdu_adv_rx->type != PDU_ADV_TYPE_EXT_IND) &&
 		   isr_scan_init_check(lll, pdu_adv_rx, rl_idx)) {
 		struct lll_conn *lll_conn;
 		struct node_rx_ftr *ftr;
@@ -1113,7 +1117,11 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 		   isr_scan_rsp_adva_matches(pdu_adv_rx))) &&
 		 (pdu_adv_rx->len != 0) &&
 #if defined(CONFIG_BT_CENTRAL)
-		   !lll->conn) {
+		   /* Note: ADV_EXT_IND is allowed here even if initiating
+		    *       because we still need to get AUX_ADV_IND as for any
+		    *       other ADV_EXT_IND.
+		    */
+		   (!lll->conn || (pdu_adv_rx->type == PDU_ADV_TYPE_EXT_IND))) {
 #else /* !CONFIG_BT_CENTRAL */
 		   1) {
 #endif /* !CONFIG_BT_CENTRAL */
