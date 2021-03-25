@@ -1321,9 +1321,7 @@ int bt_l2cap_br_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		return -EMSGSIZE;
 	}
 
-	bt_l2cap_send(ch->chan.conn, ch->tx.cid, buf);
-
-	return buf->len;
+	return bt_l2cap_send_cb(ch->chan.conn, ch->tx.cid, buf, NULL, NULL);
 }
 
 static int l2cap_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)

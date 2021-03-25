@@ -300,8 +300,7 @@ struct net_buf *bt_l2cap_create_rsp(struct net_buf *buf, size_t reserve);
 
 /* Send L2CAP PDU over a connection
  *
- * Buffer ownership is transferred to stack so either in case of success
- * or error the buffer will be unref internally.
+ * Buffer ownership is transferred to stack in case of success
  *
  * Calling this from RX thread is assumed to never fail so the return can be
  * ignored.

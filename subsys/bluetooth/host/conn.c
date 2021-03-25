@@ -1022,7 +1022,6 @@ int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
 
 	if (conn->state != BT_CONN_CONNECTED) {
 		BT_ERR("not connected!");
-		net_buf_unref(buf);
 		return -ENOTCONN;
 	}
 
@@ -1030,14 +1029,12 @@ int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
 		tx = conn_tx_alloc();
 		if (!tx) {
 			BT_ERR("Unable to allocate TX context");
-			net_buf_unref(buf);
 			return -ENOBUFS;
 		}
 
 		/* Verify that we're still connected after blocking */
 		if (conn->state != BT_CONN_CONNECTED) {
 			BT_WARN("Disconnected while allocating context");
-			net_buf_unref(buf);
 			tx_free(tx);
 			return -ENOTCONN;
 		}
