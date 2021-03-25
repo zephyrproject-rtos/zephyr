@@ -243,7 +243,6 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 		case LL_APB3_GRP1_PERIPH_SYSCFG:
 		case LL_APB3_GRP1_PERIPH_VREF:
 		case LL_APB3_GRP1_PERIPH_TMPSENS:
-		case LL_APB3_GRP1_PERIPH_PMBCTRL:
 		case LL_APB3_GRP1_PERIPH_HDP:
 		default:
 			return -ENOTSUP;
@@ -342,7 +341,6 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 		case LL_AHB5_GRP1_PERIPH_CRYP1:
 		case LL_AHB5_GRP1_PERIPH_HASH1:
 		case LL_AHB5_GRP1_PERIPH_BKPSRAM:
-		case LL_AHB5_GRP1_PERIPH_AXIMC:
 		default:
 			return -ENOTSUP;
 		}
