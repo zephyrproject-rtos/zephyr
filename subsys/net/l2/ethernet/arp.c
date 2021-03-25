@@ -252,6 +252,11 @@ static inline struct net_pkt *arp_prepare(struct net_if *iface,
 		if (!pkt) {
 			return NULL;
 		}
+
+		/* Avoid recursive loop with network packet capturing */
+		if (IS_ENABLED(CONFIG_NET_CAPTURE) && pending) {
+			net_pkt_set_captured(pkt, net_pkt_is_captured(pending));
+		}
 	}
 
 	net_pkt_set_vlan_tag(pkt, net_eth_get_vlan_tag(iface));
