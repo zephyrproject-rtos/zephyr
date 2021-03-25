@@ -30,8 +30,6 @@
 #elif defined(CONFIG_CPU_CORTEX_R)
 #include <aarch32/cortex_a_r/stack.h>
 #include <aarch32/cortex_a_r/exc.h>
-#elif defined(CONFIG_CPU_CORTEX_A)
-#include <aarch64/exc.h>
 #endif
 
 #ifndef _ASMLANGUAGE

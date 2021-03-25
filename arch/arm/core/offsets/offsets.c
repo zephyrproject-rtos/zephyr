@@ -6,10 +6,6 @@
 
 #include <gen_offset.h>
 
-#if defined(CONFIG_ARM64)
-#include "offsets_aarch64.c"
-#else
 #include "offsets_aarch32.c"
-#endif
 
 GEN_ABS_SYM_END
