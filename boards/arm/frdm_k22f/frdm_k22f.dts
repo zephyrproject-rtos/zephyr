@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_k2x.dtsi>
+#include <nxp/MK22FN512VLH12.dtsi>
 #include <dt-bindings/pwm/pwm.h>
 
 / {

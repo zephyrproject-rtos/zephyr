@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_k66.dtsi>
+#include <nxp/MK66FN2M0VMD18.dtsi>
 
 / {
 	model = "SEGGER MK66F IP Switch board";

@@ -2,7 +2,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_k6x.dtsi>
+#include <nxp/MK64FN1M0VLL12.dtsi>
 
 / {
 	model = "NXP Freedom MK64F board";

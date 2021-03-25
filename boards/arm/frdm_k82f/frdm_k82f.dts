@@ -7,7 +7,7 @@
 /dts-v1/;
 
 #include <mem.h>
-#include <nxp/nxp_k82fn256vxx15.dtsi>
+#include <nxp/MK82FN256VLL15.dtsi>
 #include <dt-bindings/pwm/pwm.h>
 
 / {
