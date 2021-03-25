@@ -70,14 +70,9 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 #if defined(CONFIG_BT_CENTRAL)
 static inline bool isr_scan_init_check(struct lll_scan *lll,
 				       struct pdu_adv *pdu, uint8_t rl_idx);
-static inline bool isr_scan_init_adva_check(struct lll_scan *lll,
-					    struct pdu_adv *pdu, uint8_t rl_idx);
 #endif /* CONFIG_BT_CENTRAL */
-static inline bool isr_scan_tgta_check(struct lll_scan *lll, bool init,
-				       struct pdu_adv *pdu, uint8_t rl_idx,
-				       bool *dir_report);
 static inline bool isr_scan_tgta_rpa_check(struct lll_scan *lll,
-					   struct pdu_adv *pdu,
+					   uint8_t addr_type, uint8_t *addr,
 					   bool *dir_report);
 static inline bool isr_scan_rsp_adva_matches(struct pdu_adv *srsp);
 static int isr_rx_scan_report(struct lll_scan *lll, uint8_t rssi_ready,
@@ -1078,8 +1073,9 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 		  ((pdu_adv_rx->type == PDU_ADV_TYPE_DIRECT_IND) &&
 		   (pdu_adv_rx->len == sizeof(struct pdu_adv_direct_ind)) &&
 		   (/* allow directed adv packets addressed to this device */
-		    isr_scan_tgta_check(lll, false, pdu_adv_rx, rl_idx,
-					&dir_report))) ||
+		    lll_scan_tgta_check(lll, false, pdu_adv_rx->rx_addr,
+					pdu_adv_rx->direct_ind.tgt_addr,
+					rl_idx, &dir_report))) ||
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 		  ((pdu_adv_rx->type == PDU_ADV_TYPE_EXT_IND) &&
 		   (lll->phy)) ||
@@ -1119,43 +1115,41 @@ static inline bool isr_scan_init_check(struct lll_scan *lll,
 				       struct pdu_adv *pdu, uint8_t rl_idx)
 {
 	return ((((lll->filter_policy & 0x01) != 0U) ||
-		 isr_scan_init_adva_check(lll, pdu, rl_idx)) &&
+		lll_scan_adva_check(lll, pdu->tx_addr, pdu->adv_ind.addr,
+				    rl_idx)) &&
 		(((pdu->type == PDU_ADV_TYPE_ADV_IND) &&
 		  (pdu->len <= sizeof(struct pdu_adv_adv_ind))) ||
 		 ((pdu->type == PDU_ADV_TYPE_DIRECT_IND) &&
 		  (pdu->len == sizeof(struct pdu_adv_direct_ind)) &&
 		  (/* allow directed adv packets addressed to this device */
-		   isr_scan_tgta_check(lll, true, pdu, rl_idx, NULL)))));
+			  lll_scan_tgta_check(lll, true, pdu->rx_addr,
+					      pdu->direct_ind.tgt_addr, rl_idx,
+					      NULL)))));
 }
 
-static inline bool isr_scan_init_adva_check(struct lll_scan *lll,
-					    struct pdu_adv *pdu, uint8_t rl_idx)
+bool lll_scan_adva_check(struct lll_scan *lll, uint8_t addr_type, uint8_t *addr,
+			 uint8_t rl_idx)
 {
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	/* Only applies to initiator with no whitelist */
 	if (rl_idx != FILTER_IDX_NONE) {
 		return (rl_idx == lll->rl_idx);
-	} else if (!ull_filter_lll_rl_addr_allowed(pdu->tx_addr,
-						   pdu->adv_ind.addr,
-						   &rl_idx)) {
+	} else if (!ull_filter_lll_rl_addr_allowed(addr_type, addr, &rl_idx)) {
 		return false;
 	}
 #endif /* CONFIG_BT_CTLR_PRIVACY */
-	return ((lll->adv_addr_type == pdu->tx_addr) &&
-		!memcmp(lll->adv_addr, &pdu->adv_ind.addr[0], BDADDR_SIZE));
+	return ((lll->adv_addr_type == addr_type) &&
+		!memcmp(lll->adv_addr, addr, BDADDR_SIZE));
 }
 #endif /* CONFIG_BT_CENTRAL */
 
-static inline bool isr_scan_tgta_check(struct lll_scan *lll, bool init,
-				       struct pdu_adv *pdu, uint8_t rl_idx,
-				       bool *dir_report)
+bool lll_scan_tgta_check(struct lll_scan *lll, bool init, uint8_t addr_type,
+			 uint8_t *addr, uint8_t rl_idx, bool *dir_report)
 {
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-	if (ull_filter_lll_rl_addr_resolve(pdu->rx_addr,
-					   pdu->direct_ind.tgt_addr, rl_idx)) {
+	if (ull_filter_lll_rl_addr_resolve(addr_type, addr, rl_idx)) {
 		return true;
-	} else if (init && lll->rpa_gen &&
-		   ull_filter_lll_lrpa_get(rl_idx)) {
+	} else if (init && lll->rpa_gen && ull_filter_lll_lrpa_get(rl_idx)) {
 		/* Initiator generating RPAs, and could not resolve TargetA:
 		 * discard
 		 */
@@ -1163,22 +1157,20 @@ static inline bool isr_scan_tgta_check(struct lll_scan *lll, bool init,
 	}
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
-	return (((lll->init_addr_type == pdu->rx_addr) &&
-		!memcmp(lll->init_addr, pdu->direct_ind.tgt_addr,
-			BDADDR_SIZE))) ||
-		  /* allow directed adv packets where TargetA address
-		   * is resolvable private address (scanner only)
-		   */
-	       isr_scan_tgta_rpa_check(lll, pdu, dir_report);
+	return (((lll->init_addr_type == addr_type) &&
+		 !memcmp(lll->init_addr, addr, BDADDR_SIZE))) ||
+	       /* allow directed adv packets where TargetA address
+		* is resolvable private address (scanner only)
+		*/
+	       isr_scan_tgta_rpa_check(lll, addr_type, addr, dir_report);
 }
 
 static inline bool isr_scan_tgta_rpa_check(struct lll_scan *lll,
-					   struct pdu_adv *pdu,
+					   uint8_t addr_type, uint8_t *addr,
 					   bool *dir_report)
 {
-	if (((lll->filter_policy & 0x02) != 0U) &&
-	    (pdu->rx_addr != 0) &&
-	    ((pdu->direct_ind.tgt_addr[5] & 0xc0) == 0x40)) {
+	if (((lll->filter_policy & 0x02) != 0U) && (addr_type != 0) &&
+	    ((addr[5] & 0xc0) == 0x40)) {
 
 		if (dir_report) {
 			*dir_report = true;
