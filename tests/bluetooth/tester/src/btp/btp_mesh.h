@@ -773,6 +773,28 @@ struct btp_proxy_connect_cmd {
 	uint16_t net_idx;
 } __packed;
 
+#define BTP_MESH_LARGE_COMP_DATA_GET		0x53
+struct btp_mesh_large_comp_data_get_cmd {
+	uint16_t net_idx;
+	uint16_t addr;
+	uint8_t page;
+	uint16_t offset;
+} __packed;
+struct btp_mesh_large_comp_data_get_rp {
+	uint8_t data[0];
+} __packed;
+
+#define BTP_MESH_MODELS_METADATA_GET		0x54
+struct btp_mesh_models_metadata_get_cmd {
+	uint16_t net_idx;
+	uint16_t addr;
+	uint8_t page;
+	uint16_t offset;
+} __packed;
+struct btp_mesh_models_metadata_get_rp {
+	uint8_t data[0];
+} __packed;
+
 /* events */
 #define BTP_MESH_EV_OUT_NUMBER_ACTION		0x80
 struct btp_mesh_out_number_action_ev {
