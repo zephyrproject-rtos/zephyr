@@ -127,15 +127,24 @@ int stm32_dt_pinctrl_configure(const struct soc_gpio_pinctrl *pinctrl,
 			       STM32_DT_PINMUX_LINE(mux));
 		port_device = gpio_ports[STM32_PORT(pin)];
 
+#ifdef CONFIG_PM_DEVICE
+		ret = device_pm_get_sync(port_device);
+#else
 		ret = gpio_stm32_clock_request(port_device, true);
+#endif
+
 		if (ret != 0) {
 			return ret;
 		}
 
 		stm32_pin_configure(pin, func, STM32_DT_PINMUX_FUNC(mux));
+
+#ifdef CONFIG_PM_DEVICE
+		ret = device_pm_put(port_device);
+#endif
 	}
 
-	return 0;
+	return ret;
 }
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl)
