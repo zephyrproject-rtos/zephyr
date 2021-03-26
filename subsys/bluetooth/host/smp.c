@@ -2719,9 +2719,16 @@ static uint8_t get_auth(struct bt_conn *conn, uint8_t auth)
 
 static uint8_t remote_sec_level_reachable(struct bt_smp *smp)
 {
-	struct bt_conn *conn = smp->chan.chan.conn;
+	bt_security_t sec = smp->chan.chan.conn->required_sec_level;
 
-	switch (conn->required_sec_level) {
+	if (IS_ENABLED(CONFIG_BT_SMP_SC_ONLY)) {
+		sec = BT_SECURITY_L4;
+	}
+	if (IS_ENABLED(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)) {
+		sec = BT_SECURITY_L3;
+	}
+
+	switch (sec) {
 	case BT_SECURITY_L1:
 	case BT_SECURITY_L2:
 		return 0;
