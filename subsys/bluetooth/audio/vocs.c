@@ -361,7 +361,7 @@ int bt_vocs_state_get(struct bt_conn *conn, struct bt_vocs *inst)
 		return 0;
 	}
 
-	return -EOPNOTSUPP;
+	return -ENOTSUP;
 }
 
 int bt_vocs_location_get(struct bt_conn *conn, struct bt_vocs *inst)
@@ -380,7 +380,7 @@ int bt_vocs_location_get(struct bt_conn *conn, struct bt_vocs *inst)
 		return 0;
 	}
 
-	return -EOPNOTSUPP;
+	return -ENOTSUP;
 }
 
 int bt_vocs_location_set(struct bt_conn *conn, struct bt_vocs *inst, uint32_t location)
@@ -403,7 +403,7 @@ int bt_vocs_location_set(struct bt_conn *conn, struct bt_vocs *inst, uint32_t lo
 		return err > 0 ? 0 : err;
 	}
 
-	return -EOPNOTSUPP;
+	return -ENOTSUP;
 }
 
 int bt_vocs_state_set(struct bt_conn *conn, struct bt_vocs *inst, int16_t offset)
@@ -431,7 +431,7 @@ int bt_vocs_state_set(struct bt_conn *conn, struct bt_vocs *inst, int16_t offset
 		return err > 0 ? 0 : err;
 	}
 
-	return -EOPNOTSUPP;
+	return -ENOTSUP;
 }
 
 int bt_vocs_description_get(struct bt_conn *conn, struct bt_vocs *inst)
@@ -450,7 +450,7 @@ int bt_vocs_description_get(struct bt_conn *conn, struct bt_vocs *inst)
 		return 0;
 	}
 
-	return -EOPNOTSUPP;
+	return -ENOTSUP;
 }
 
 int bt_vocs_description_set(struct bt_conn *conn, struct bt_vocs *inst, const char *description)
@@ -477,7 +477,7 @@ int bt_vocs_description_set(struct bt_conn *conn, struct bt_vocs *inst, const ch
 		return err > 0 ? 0 : err;
 	}
 
-	return -EOPNOTSUPP;
+	return -ENOTSUP;
 }
 
 int bt_vocs_cb_register(struct bt_vocs *inst, struct bt_vocs_cb *cb)
