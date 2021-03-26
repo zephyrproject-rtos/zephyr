@@ -2300,7 +2300,11 @@ struct k_lifo {
  * @return N/A
  */
 #define k_lifo_init(lifo) \
-	k_queue_init(&(lifo)->_queue)
+	({ \
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_lifo, init, lifo); \
+	k_queue_init(&(lifo)->_queue); \
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_lifo, init, lifo); \
+	})
 
 /**
  * @brief Add an element to a LIFO queue.
@@ -2317,7 +2321,11 @@ struct k_lifo {
  * @return N/A
  */
 #define k_lifo_put(lifo, data) \
-	k_queue_prepend(&(lifo)->_queue, data)
+	({ \
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_lifo, put, lifo, data); \
+	k_queue_prepend(&(lifo)->_queue, data); \
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_lifo, put, lifo, data); \
+	})
 
 /**
  * @brief Add an element to a LIFO queue.
@@ -2336,7 +2344,12 @@ struct k_lifo {
  * @retval -ENOMEM if there isn't sufficient RAM in the caller's resource pool
  */
 #define k_lifo_alloc_put(lifo, data) \
-	k_queue_alloc_prepend(&(lifo)->_queue, data)
+	({ \
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_lifo, alloc_put, lifo, data); \
+	int ret = k_queue_alloc_prepend(&(lifo)->_queue, data); \
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_lifo, alloc_put, lifo, data, ret); \
+	ret; \
+	})
 
 /**
  * @brief Get an element from a LIFO queue.
@@ -2356,7 +2369,12 @@ struct k_lifo {
  * without waiting, or waiting period timed out.
  */
 #define k_lifo_get(lifo, timeout) \
-	k_queue_get(&(lifo)->_queue, timeout)
+	({ \
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_lifo, get, lifo, timeout); \
+	void *ret = k_queue_get(&(lifo)->_queue, timeout); \
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_lifo, get, lifo, timeout, ret); \
+	ret; \
+	})
 
 /**
  * @brief Statically define and initialize a LIFO queue.
