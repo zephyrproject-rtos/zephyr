@@ -13,8 +13,8 @@
  * arm/arch.h.
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_IRQ_H_
-#define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_IRQ_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM_IRQ_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM_IRQ_H_
 
 #include <irq.h>
 #include <sw_isr_table.h>
@@ -127,7 +127,7 @@ extern void _arch_isr_direct_pm(void);
 #define ARCH_ISR_DIRECT_HEADER() arch_isr_direct_header()
 #define ARCH_ISR_DIRECT_FOOTER(swap) arch_isr_direct_footer(swap)
 
-/* arch/arm/core/aarch32/exc_exit.S */
+/* arch/arm/core/exc_exit.S */
 extern void z_arm_int_exit(void);
 
 #ifdef CONFIG_TRACING
@@ -248,4 +248,4 @@ typedef enum {
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_IRQ_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM_IRQ_H_ */

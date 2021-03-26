@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_M_MPU_ARM_CORE_MPU_DEV_H_
-#define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_M_MPU_ARM_CORE_MPU_DEV_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_MPU_ARM_CORE_MPU_DEV_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_MPU_ARM_CORE_MPU_DEV_H_
 
 #include <zephyr/types.h>
 #include <kernel_arch_data.h>
@@ -269,4 +269,4 @@ int arm_core_mpu_buffer_validate(void *addr, size_t size, int write);
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_M_MPU_ARM_CORE_MPU_DEV_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_MPU_ARM_CORE_MPU_DEV_H_ */

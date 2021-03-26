@@ -12,8 +12,8 @@
  * arm/arch.h.
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_EXC_H_
-#define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_EXC_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM_EXC_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM_EXC_H_
 
 #if defined(CONFIG_CPU_CORTEX_M)
 #include <devicetree.h>
@@ -124,4 +124,4 @@ extern void z_arm_exc_exit(bool fatal);
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_EXC_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM_EXC_H_ */

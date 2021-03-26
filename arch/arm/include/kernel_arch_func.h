@@ -18,8 +18,8 @@
  * in the offsets.o module.
  */
 
-#ifndef ZEPHYR_ARCH_ARM_INCLUDE_AARCH32_KERNEL_ARCH_FUNC_H_
-#define ZEPHYR_ARCH_ARM_INCLUDE_AARCH32_KERNEL_ARCH_FUNC_H_
+#ifndef ZEPHYR_ARCH_ARM_INCLUDE_KERNEL_ARCH_FUNC_H_
+#define ZEPHYR_ARCH_ARM_INCLUDE_KERNEL_ARCH_FUNC_H_
 
 #include <kernel_arch_data.h>
 
@@ -73,4 +73,4 @@ extern void z_arm_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
 }
 #endif
 
-#endif /* ZEPHYR_ARCH_ARM_INCLUDE_AARCH32_KERNEL_ARCH_FUNC_H_ */
+#endif /* ZEPHYR_ARCH_ARM_INCLUDE_KERNEL_ARCH_FUNC_H_ */

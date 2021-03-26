@@ -13,8 +13,8 @@
  * (include/arch/syscall.h)
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_SYSCALL_H_
-#define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_SYSCALL_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM_SYSCALL_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM_SYSCALL_H_
 
 #define _SVC_CALL_CONTEXT_SWITCH	0
 #define _SVC_CALL_IRQ_OFFLOAD		1
@@ -184,4 +184,4 @@ static inline bool arch_is_user_context(void)
 
 #endif /* _ASMLANGUAGE */
 #endif /* CONFIG_USERSPACE */
-#endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_SYSCALL_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM_SYSCALL_H_ */

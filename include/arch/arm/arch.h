@@ -13,8 +13,8 @@
  * (include/arm/cpu.h)
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_ARCH_H_
-#define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_ARCH_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM_ARCH_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM_ARCH_H_
 
 /* Add include for DTS generated information */
 #include <devicetree.h>
@@ -195,4 +195,4 @@ extern "C" {
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_ARCH_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM_ARCH_H_ */

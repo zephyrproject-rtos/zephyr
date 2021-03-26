@@ -11,8 +11,8 @@
  *
  */
 
-#ifndef ZEPHYR_ARCH_ARM_INCLUDE_AARCH32_CORTEX_M_DWT_H_
-#define ZEPHYR_ARCH_ARM_INCLUDE_AARCH32_CORTEX_M_DWT_H_
+#ifndef ZEPHYR_ARCH_ARM_INCLUDE_CORTEX_M_DWT_H_
+#define ZEPHYR_ARCH_ARM_INCLUDE_CORTEX_M_DWT_H_
 
 #ifdef _ASMLANGUAGE
 
@@ -178,4 +178,4 @@ static inline void z_arm_dwt_enable_debug_monitor(void)
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* ZEPHYR_ARCH_ARM_INCLUDE_AARCH32_CORTEX_M_DWT_H_ */
+#endif /* ZEPHYR_ARCH_ARM_INCLUDE_CORTEX_M_DWT_H_ */

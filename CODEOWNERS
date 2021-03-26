@@ -19,10 +19,10 @@
 /MAINTAINERS.yml                          @ioannisg @MaureenHelm
 /arch/arc/                                @abrodkin @ruuddw @evgeniy-paltsev
 /arch/arm/                                @MaureenHelm @galak @ioannisg
-/arch/arm/core/aarch32/cortex_m/cmse/     @ioannisg
-/arch/arm/include/aarch32/cortex_m/cmse.h @ioannisg
-/arch/arm/core/aarch32/cortex_a_r/        @MaureenHelm @galak @ioannisg @bbolen @stephanosio
+/arch/arm/core/cortex_m/cmse/             @ioannisg
 /arch/arm64/                              @carlocaione
+/arch/arm/include/cortex_m/cmse.h         @ioannisg
+/arch/arm/core/cortex_a_r/                @MaureenHelm @galak @ioannisg @bbolen @stephanosio
 /arch/common/                             @ioannisg @andyross
 /soc/arc/snps_*/                          @abrodkin @ruuddw @evgeniy-paltsev
 /soc/nios2/                               @nashif
@@ -411,8 +411,8 @@
 /include/arch/arc/                        @abrodkin @ruuddw @evgeniy-paltsev
 /include/arch/arc/arch.h                  @abrodkin @ruuddw @evgeniy-paltsev
 /include/arch/arc/v2/irq.h                @abrodkin @ruuddw @evgeniy-paltsev
-/include/arch/arm/aarch32/                @MaureenHelm @galak @ioannisg
-/include/arch/arm/aarch32/cortex_a_r/     @stephanosio
+/include/arch/arm/                        @MaureenHelm @galak @ioannisg
+/include/arch/arm/cortex_a_r/             @stephanosio
 /include/arch/arm64/                      @carlocaione
 /include/arch/arm/aarch32/irq.h           @carlocaione
 /include/arch/nios2/                      @nashif

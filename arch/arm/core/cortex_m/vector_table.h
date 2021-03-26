@@ -18,8 +18,8 @@
  * No other symbol has the same format, so they are easy to spot.
  */
 
-#ifndef ZEPHYR_ARCH_ARM_CORE_AARCH32_CORTEX_M_VECTOR_TABLE_H_
-#define ZEPHYR_ARCH_ARM_CORE_AARCH32_CORTEX_M_VECTOR_TABLE_H_
+#ifndef ZEPHYR_ARCH_ARM_CORE_CORTEX_M_VECTOR_TABLE_H_
+#define ZEPHYR_ARCH_ARM_CORE_CORTEX_M_VECTOR_TABLE_H_
 
 #ifdef _ASMLANGUAGE
 
@@ -67,4 +67,4 @@ extern void *_vector_table[];
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* ZEPHYR_ARCH_ARM_CORE_AARCH32_CORTEX_M_VECTOR_TABLE_H_ */
+#endif /* ZEPHYR_ARCH_ARM_CORE_CORTEX_M_VECTOR_TABLE_H_ */

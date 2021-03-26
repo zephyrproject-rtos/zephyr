@@ -12,8 +12,8 @@
  * arm/arch.h.
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_ERROR_H_
-#define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_ERROR_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM_ERROR_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM_ERROR_H_
 
 #include <arch/arm/syscall.h>
 #include <arch/arm/exc.h>
@@ -63,4 +63,4 @@ do { \
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_ERROR_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM_ERROR_H_ */

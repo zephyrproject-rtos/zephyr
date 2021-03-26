@@ -14,8 +14,8 @@
  * NOTE: cmsis.h includes this file; do not manually include this file.
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_A_R_CMSIS_EXT_H_
-#define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_A_R_CMSIS_EXT_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_A_R_CMSIS_EXT_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_A_R_CMSIS_EXT_H_
 
 /* FSR Register Definitions */
 #define FSR_FS_BACKGROUND_FAULT		(0)
@@ -61,4 +61,4 @@ __STATIC_FORCEINLINE uint32_t __get_DBGDSCR(void)
 	return result;
 }
 
-#endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_A_R_CMSIS_EXT_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_A_R_CMSIS_EXT_H_ */

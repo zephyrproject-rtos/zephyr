@@ -11,8 +11,8 @@
  * CMSE API for Cortex-M23/M33 CPUs.
  */
 
-#ifndef ZEPHYR_ARCH_ARM_INCLUDE_AARCH32_CORTEX_M_CMSE_H_
-#define ZEPHYR_ARCH_ARM_INCLUDE_AARCH32_CORTEX_M_CMSE_H_
+#ifndef ZEPHYR_ARCH_ARM_INCLUDE_CORTEX_M_CMSE_H_
+#define ZEPHYR_ARCH_ARM_INCLUDE_CORTEX_M_CMSE_H_
 
 #ifdef _ASMLANGUAGE
 
@@ -450,4 +450,4 @@ int arm_cmse_addr_range_nonsecure_readwrite_ok(uint32_t addr, uint32_t size,
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* ZEPHYR_ARCH_ARM_INCLUDE_AARCH32_CORTEX_M_CMSE_H_ */
+#endif /* ZEPHYR_ARCH_ARM_INCLUDE_CORTEX_M_CMSE_H_ */

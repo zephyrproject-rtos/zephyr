@@ -105,7 +105,7 @@ void z_arm_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
  * When a custom interrupt controller is used (i.e.
  * CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER is enabled), the architecture
  * interrupt control functions are mapped to the SoC layer in
- * `include/arch/arm/aarch32/irq.h`.
+ * `include/arch/arm/irq.h`.
  */
 
 #if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
@@ -174,7 +174,7 @@ void _arch_isr_direct_pm(void)
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	/* Lock all interrupts. irq_lock() will on this CPU only disable those
 	 * lower than BASEPRI, which is not what we want. See comments in
-	 * arch/arm/core/aarch32/isr_wrapper.S
+	 * arch/arm/core/isr_wrapper.S
 	 */
 	__asm__ volatile("cpsid i" : : : "memory");
 #else

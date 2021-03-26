@@ -11,8 +11,8 @@
  * Exception/interrupt context helpers.
  */
 
-#ifndef ZEPHYR_ARCH_ARM_INCLUDE_AARCH32_CORTEX_A_R_EXC_H_
-#define ZEPHYR_ARCH_ARM_INCLUDE_AARCH32_CORTEX_A_R_EXC_H_
+#ifndef ZEPHYR_ARCH_ARM_INCLUDE_CORTEX_A_R_EXC_H_
+#define ZEPHYR_ARCH_ARM_INCLUDE_CORTEX_A_R_EXC_H_
 
 #include <arch/cpu.h>
 
@@ -68,4 +68,4 @@ extern void z_arm_cortex_r_svc(void);
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* ZEPHYR_ARCH_ARM_INCLUDE_AARCH32_CORTEX_A_R_EXC_H_ */
+#endif /* ZEPHYR_ARCH_ARM_INCLUDE_CORTEX_A_R_EXC_H_ */
