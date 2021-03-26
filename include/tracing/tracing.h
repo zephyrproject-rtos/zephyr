@@ -839,6 +839,76 @@
  */ /* end of fifo_tracing_apis */
 
 
+
+
+/**
+ * @brief LIFO Tracing APIs
+ * @defgroup lifo_tracing_apis LIFO Tracing APIs
+ * @ingroup tracing_apis
+ * @{
+ */
+
+/**
+ * @brief Trace initialization of LIFO Queue entry
+ * @param lifo LIFO object
+ */
+#define sys_port_trace_k_lifo_init_enter(lifo)
+
+/**
+ * @brief Trace initialization of LIFO Queue exit
+ * @param lifo LIFO object
+ */
+#define sys_port_trace_k_lifo_init_exit(lifo)
+
+/**
+ * @brief Trace LIFO Queue put entry
+ * @param lifo LIFO object
+ * @param data Data item
+ */
+#define sys_port_trace_k_lifo_put_enter(lifo, data)
+
+/**
+ * @brief Trace LIFO Queue put exit
+ * @param lifo LIFO object
+ * @param data Data item
+ */
+#define sys_port_trace_k_lifo_put_exit(lifo, data)
+
+/**
+ * @brief Trace LIFO Queue alloc put entry
+ * @param lifo LIFO object
+ * @param data Data item
+ */
+#define sys_port_trace_k_lifo_alloc_put_enter(lifo, data)
+
+/**
+ * @brief Trace LIFO Queue alloc put exit
+ * @param lifo LIFO object
+ * @param data Data item
+ * @param ret Return value
+ */
+#define sys_port_trace_k_lifo_alloc_put_exit(lifo, data, ret)
+
+/**
+ * @brief Trace LIFO Queue get entry
+ * @param lifo LIFO object
+ * @param timeout Timeout period
+ */
+#define sys_port_trace_k_lifo_get_enter(lifo, timeout)
+
+/**
+ * @brief Trace LIFO Queue get exit
+ * @param lifo LIFO object
+ * @param timeout Timeout period
+ * @param ret Return value
+ */
+#define sys_port_trace_k_lifo_get_exit(lifo, timeout, ret)
+
+/**
+ * @}
+ */ /* end of lifo_tracing_apis */
+
+
 /**
  * @}
  */
