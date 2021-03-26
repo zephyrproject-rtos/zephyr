@@ -494,6 +494,213 @@
  */ /* end of condvar_tracing_apis */
 
 
+
+
+/**
+ * @brief Queue Tracing APIs
+ * @defgroup queue_tracing_apis Queue Tracing APIs
+ * @ingroup tracing_apis
+ * @{
+ */
+
+/**
+ * @brief Trace initialization of Queue
+ * @param queue Queue object
+ */
+#define sys_port_trace_k_queue_init(queue)
+
+/**
+ * @brief Trace Queue cancel wait
+ * @param queue Queue object
+ */
+#define sys_port_trace_k_queue_cancel_wait(queue)
+
+/**
+ * @brief Trace Queue insert attempt entry
+ * @param queue Queue object
+ * @param alloc Allocation flag
+ */
+#define sys_port_trace_k_queue_queue_insert_enter(queue, alloc)
+
+/**
+ * @brief Trace Queue insert attempt blocking
+ * @param queue Queue object
+ * @param alloc Allocation flag
+ * @param timeout Timeout period
+ */
+#define sys_port_trace_k_queue_queue_insert_blocking(queue, alloc, timeout)
+
+/**
+ * @brief Trace Queue insert attempt outcome
+ * @param queue Queue object
+ * @param alloc Allocation flag
+ * @param ret Return value
+ */
+#define sys_port_trace_k_queue_queue_insert_exit(queue, alloc, ret)
+
+/**
+ * @brief Trace Queue append enter
+ * @param queue Queue object
+ */
+#define sys_port_trace_k_queue_append_enter(queue)
+
+/**
+ * @brief Trace Queue append exit
+ * @param queue Queue object
+ */
+#define sys_port_trace_k_queue_append_exit(queue)
+
+/**
+ * @brief Trace Queue alloc append enter
+ * @param queue Queue object
+ */
+#define sys_port_trace_k_queue_alloc_append_enter(queue)
+
+/**
+ * @brief Trace Queue alloc append exit
+ * @param queue Queue object
+ * @param ret Return value
+ */
+#define sys_port_trace_k_queue_alloc_append_exit(queue, ret)
+
+/**
+ * @brief Trace Queue prepend enter
+ * @param queue Queue object
+ */
+#define sys_port_trace_k_queue_prepend_enter(queue)
+
+/**
+ * @brief Trace Queue prepend exit
+ * @param queue Queue object
+ */
+#define sys_port_trace_k_queue_prepend_exit(queue)
+
+/**
+ * @brief Trace Queue alloc prepend enter
+ * @param queue Queue object
+ */
+#define sys_port_trace_k_queue_alloc_prepend_enter(queue)
+
+/**
+ * @brief Trace Queue alloc prepend exit
+ * @param queue Queue object
+ * @param ret Return value
+ */
+#define sys_port_trace_k_queue_alloc_prepend_exit(queue, ret)
+
+/**
+ * @brief Trace Queue insert attempt entry
+ * @param queue Queue object
+ */
+#define sys_port_trace_k_queue_insert_enter(queue)
+
+/**
+ * @brief Trace Queue insert attempt blocking
+ * @param queue Queue object
+ * @param timeout Timeout period
+ */
+#define sys_port_trace_k_queue_insert_blocking(queue, timeout)
+
+/**
+ * @brief Trace Queue insert attempt exit
+ * @param queue Queue object
+ */
+#define sys_port_trace_k_queue_insert_exit(queue)
+
+/**
+ * @brief Trace Queue append list enter
+ * @param queue Queue object
+ */
+#define sys_port_trace_k_queue_append_list_enter(queue)
+
+/**
+ * @brief Trace Queue append list exit
+ * @param queue Queue object
+ * @param ret Return value
+ */
+#define sys_port_trace_k_queue_append_list_exit(queue, ret)
+
+/**
+ * @brief Trace Queue merge slist enter
+ * @param queue Queue object
+ */
+#define sys_port_trace_k_queue_merge_slist_enter(queue)
+
+/**
+ * @brief Trace Queue merge slist exit
+ * @param queue Queue object
+ * @param ret Return value
+ */
+#define sys_port_trace_k_queue_merge_slist_exit(queue, ret)
+
+/**
+ * @brief Trace Queue get attempt enter
+ * @param queue Queue object
+ * @param timeout Timeout period
+ */
+#define sys_port_trace_k_queue_get_enter(queue, timeout)
+
+/**
+ * @brief Trace Queue get attempt blockings
+ * @param queue Queue object
+ * @param timeout Timeout period
+ */
+#define sys_port_trace_k_queue_get_blocking(queue, timeout)
+
+/**
+ * @brief Trace Queue get attempt outcome
+ * @param queue Queue object
+ * @param timeout Timeout period
+ * @param ret Return value
+ */
+#define sys_port_trace_k_queue_get_exit(queue, timeout, ret)
+
+/**
+ * @brief Trace Queue remove enter
+ * @param queue Queue object
+ */
+#define sys_port_trace_k_queue_remove_enter(queue)
+
+/**
+ * @brief Trace Queue remove exit
+ * @param queue Queue object
+ * @param ret Return value
+ */
+#define sys_port_trace_queue_remove_exit(queue, ret)
+
+/**
+ * @brief Trace Queue unique append enter
+ * @param queue Queue object
+ */
+#define sys_port_trace_k_queue_unique_append_enter(queue)
+
+/**
+ * @brief Trace Queue unique append exit
+ * @param queue Queue object
+ *
+ * @param ret Return value
+ */
+#define sys_port_trace_k_queue_unique_append_exit(queue, ret)
+
+/**
+ * @brief Trace Queue peek head
+ * @param queue Queue object
+ * @param ret Return value
+ */
+#define sys_port_trace_k_queue_peek_head(queue, ret)
+
+/**
+ * @brief Trace Queue peek tail
+ * @param queue Queue object
+ * @param ret Return value
+ */
+#define sys_port_trace_k_queue_peek_tail(queue, ret)
+
+/**
+ * @}
+ */ /* end of queue_tracing_apis */
+
+
 /**
  * @}
  */
