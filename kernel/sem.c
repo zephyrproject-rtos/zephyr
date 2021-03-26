@@ -76,7 +76,6 @@ int z_impl_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 
 	SYS_PORT_TRACING_OBJ_FUNC(k_sem, init, sem, 0);
 
-	sys_trace_semaphore_init(sem);
 	z_waitq_init(&sem->wait_q);
 #if defined(CONFIG_POLL)
 	sys_dlist_init(&sem->poll_events);
@@ -84,7 +83,6 @@ int z_impl_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 	SYS_TRACING_OBJ_INIT(k_sem, sem);
 
 	z_object_init(sem);
-	sys_trace_end_call(SYS_TRACE_ID_SEMA_INIT);
 
 	return 0;
 }
@@ -115,7 +113,6 @@ void z_impl_k_sem_give(struct k_sem *sem)
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_sem, give, sem);
 
-	sys_trace_semaphore_give(sem);
 	thread = z_unpend_first_thread(&sem->wait_q);
 
 	if (thread != NULL) {
@@ -129,8 +126,6 @@ void z_impl_k_sem_give(struct k_sem *sem)
 	z_reschedule(&lock, key);
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_sem, give, sem);
-
-	sys_trace_end_call(SYS_TRACE_ID_SEMA_GIVE);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -153,8 +148,6 @@ int z_impl_k_sem_take(struct k_sem *sem, k_timeout_t timeout)
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_sem, take, sem, timeout);
 
-	sys_trace_semaphore_take(sem);
-
 	if (likely(sem->count > 0U)) {
 		sem->count--;
 		k_spin_unlock(&lock, key);
@@ -175,7 +168,6 @@ int z_impl_k_sem_take(struct k_sem *sem, k_timeout_t timeout)
 out:
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_sem, take, sem, timeout, ret);
 
-	sys_trace_end_call(SYS_TRACE_ID_SEMA_TAKE);
 	return ret;
 }
 
