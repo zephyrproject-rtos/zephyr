@@ -7,6 +7,10 @@
 #ifndef ZEPHYR_INCLUDE_KERNEL_THREAD_H_
 #define ZEPHYR_INCLUDE_KERNEL_THREAD_H_
 
+#ifdef CONFIG_DEMAND_PAGING_THREAD_STATS
+#include <sys/mem_manage.h>
+#endif
+
 /**
  * @typedef k_thread_entry_t
  * @brief Thread entry point function type.
@@ -277,6 +281,11 @@ struct k_thread {
 #ifdef CONFIG_THREAD_RUNTIME_STATS
 	/** Runtime statistics */
 	struct _thread_runtime_stats rt_stats;
+#endif
+
+#ifdef CONFIG_DEMAND_PAGING_THREAD_STATS
+	/** Paging statistics */
+	struct k_mem_paging_stats_t paging_stats;
 #endif
 
 	/** arch-specifics: must always be at the end */

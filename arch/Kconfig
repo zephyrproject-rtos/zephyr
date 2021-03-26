@@ -648,7 +648,7 @@ config KERNEL_VM_SIZE
 	  implement a notion of "high" memory in Zephyr to work around physical
 	  RAM size larger than the defined bounds of the virtual address space.
 
-config DEMAND_PAGING
+menuconfig DEMAND_PAGING
 	bool "Enable demand paging [EXPERIMENTAL]"
 	depends on ARCH_HAS_DEMAND_PAGING
 	help
@@ -671,6 +671,25 @@ config DEMAND_PAGING_ALLOW_IRQ
 	  If this option is disabled, the page fault servicing logic
 	  runs with interrupts disabled for the entire operation. However,
 	  ISRs may also page fault.
+
+config DEMAND_PAGING_STATS
+	bool "Gather Demand Paging Statistics"
+	help
+	  This enables gathering various statistics related to demand paging,
+	  e.g. number of pagefaults. This is useful for tuning eviction
+	  algorithms and optimizing backing store.
+
+	  Should say N in production system as this is not without cost.
+
+config DEMAND_PAGING_THREAD_STATS
+	bool "Gather per Thread Demand Paging Statistics"
+	depends on DEMAND_PAGING_STATS
+	help
+	  This enables gathering per thread statistics related to demand
+	  paging.
+
+	  Should say N in production system as this is not without cost.
+
 endif	# DEMAND_PAGING
 endif   # MMU
 

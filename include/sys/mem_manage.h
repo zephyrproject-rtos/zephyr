@@ -79,6 +79,34 @@
 #include <inttypes.h>
 #include <sys/__assert.h>
 
+struct k_mem_paging_stats_t {
+#ifdef CONFIG_DEMAND_PAGING_STATS
+	struct {
+		/** Number of page faults */
+		unsigned long			cnt;
+
+		/** Number of page faults with IRQ locked */
+		unsigned long			irq_locked;
+
+		/** Number of page faults with IRQ unlocked */
+		unsigned long			irq_unlocked;
+
+#ifndef CONFIG_DEMAND_PAGING_ALLOW_IRQ
+		/** Number of page faults while in ISR */
+		unsigned long			in_isr;
+#endif
+	} pagefaults;
+
+	struct {
+		/** Number of clean pages selected for eviction */
+		unsigned long			clean;
+
+		/** Number of dirty pages selected for eviction */
+		unsigned long			dirty;
+	} eviction;
+#endif /* CONFIG_DEMAND_PAGING_STATS */
+};
+
 /* Just like Z_MEM_PHYS_ADDR() but with type safety and assertions */
 static inline uintptr_t z_mem_phys_addr(void *virt)
 {
@@ -348,6 +376,36 @@ void k_mem_pin(void *addr, size_t size);
  */
 void k_mem_unpin(void *addr, size_t size);
 #endif /* CONFIG_DEMAND_PAGING */
+
+#ifdef CONFIG_DEMAND_PAGING_STATS
+/**
+ * Get the paging statistics since system startup
+ *
+ * This populates the paging statistics struct being passed in
+ * as argument.
+ *
+ * @param[in,out] stats Paging statistics struct to be filled.
+ */
+__syscall void k_mem_paging_stats_get(struct k_mem_paging_stats_t *stats);
+
+#ifdef CONFIG_DEMAND_PAGING_THREAD_STATS
+/**
+ * Get the paging statistics since system startup for a thread
+ *
+ * This populates the paging statistics struct being passed in
+ * as argument for a particular thread.
+ *
+ * @param[in] tid Thread ID
+ * @param[in,out] stats Paging statistics struct to be filled.
+ */
+__syscall
+void k_mem_paging_thread_stats_get(k_tid_t tid,
+				   struct k_mem_paging_stats_t *stats);
+#endif /* CONFIG_DEMAND_PAGING_THREAD_STATS */
+
+#include <syscalls/mem_manage.h>
+
+#endif /* CONFIG_DEMAND_PAGING_STATS */
 
 #ifdef __cplusplus
 }
