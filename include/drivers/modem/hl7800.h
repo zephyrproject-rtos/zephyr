@@ -269,6 +269,9 @@ int32_t mdm_hl7800_update_fw(char *file_path);
 /**
  * @brief Set the log level for the modem.
  *
+ * @note It cannot be set higher than CONFIG_MODEM_LOG_LEVEL.
+ * If debug level is desired, then it must be compiled with that level.
+ *
  * @param level 0 (None) - 4 (Debug)
  *
  * @param new level

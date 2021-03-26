@@ -9,7 +9,7 @@
 #include <logging/log.h>
 #include <logging/log_ctrl.h>
 #define LOG_MODULE_NAME modem_hl7800
-LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_MODEM_LOG_LEVEL);
 
 #include <zephyr/types.h>
 #include <stddef.h>
