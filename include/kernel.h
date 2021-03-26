@@ -4119,14 +4119,10 @@ extern int k_work_poll_submit_to_queue(struct k_work_q *work_q,
  * @retval -EINVAL Work item is being processed or has completed its work.
  * @retval -EADDRINUSE Work item is pending on a different workqueue.
  */
-static inline int k_work_poll_submit(struct k_work_poll *work,
+extern int k_work_poll_submit(struct k_work_poll *work,
 				     struct k_poll_event *events,
 				     int num_events,
-				     k_timeout_t timeout)
-{
-	return k_work_poll_submit_to_queue(&k_sys_work_q, work,
-					   events, num_events, timeout);
-}
+				     k_timeout_t timeout);
 
 /**
  * @brief Cancel a triggered work item.
@@ -5400,11 +5396,6 @@ __syscall void k_poll_signal_init(struct k_poll_signal *sig);
  * @param sig A poll signal object
  */
 __syscall void k_poll_signal_reset(struct k_poll_signal *sig);
-
-static inline void z_impl_k_poll_signal_reset(struct k_poll_signal *sig)
-{
-	sig->signaled = 0U;
-}
 
 /**
  * @brief Fetch the signaled state and result value of a poll signal

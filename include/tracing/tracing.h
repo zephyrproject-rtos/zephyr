@@ -315,6 +315,143 @@
 
 
 /**
+ * @brief Work Poll Tracing APIs
+ * @defgroup work_poll_tracing_apis Work Poll Tracing APIs
+ * @ingroup tracing_apis
+ * @{
+ */
+
+/**
+ * @brief Trace initialisation of a Work Poll structure enter
+ * @param work Work structure
+ */
+#define sys_port_trace_k_work_poll_init_enter(work)
+
+/**
+ * @brief Trace initialisation of a Work Poll structure exit
+ * @param work Work structure
+ */
+#define sys_port_trace_k_work_poll_init_exit(work)
+
+/**
+ * @brief Trace work poll submit to queue enter
+ * @param work_q Work queue
+ * @param work Work structure
+ * @param timeout Timeout period
+ */
+#define sys_port_trace_k_work_poll_submit_to_queue_enter(work_q, work, timeout)
+
+/**
+ * @brief Trace work poll submit to queue blocking
+ * @param work_q Work queue
+ * @param work Work structure
+ * @param timeout Timeout period
+ */
+#define sys_port_trace_k_work_poll_submit_to_queue_blocking(work_q, work, timeout)
+
+/**
+ * @brief Trace work poll submit to queue exit
+ * @param work_q Work queue
+ * @param work Work structure
+ * @param timeout Timeout period
+ * @param ret Return value
+ */
+#define sys_port_trace_k_work_poll_submit_to_queue_exit(work_q, work, timeout, ret)
+
+/**
+ * @brief Trace work poll submit to system queue enter
+ * @param work Work structure
+ * @param timeout Timeout period
+ */
+#define sys_port_trace_k_work_poll_submit_enter(work, timeout)
+
+/**
+ * @brief Trace work poll submit to system queue exit
+ * @param work Work structure
+ * @param timeout Timeout period
+ * @param ret Return value
+ */
+#define sys_port_trace_k_work_poll_submit_exit(work, timeout, ret)
+
+/**
+ * @brief Trace work poll cancel enter
+ * @param work Work structure
+ */
+#define sys_port_trace_k_work_poll_cancel_enter(work)
+
+/**
+ * @brief Trace work poll cancel exit
+ * @param work Work structure
+ * @param ret Return value
+ */
+#define sys_port_trace_k_work_poll_cancel_exit(work, ret)
+
+/**
+ * @}
+ */ /* end of work_poll_tracing_apis */
+
+
+
+
+/**
+ * @brief Poll Tracing APIs
+ * @defgroup poll_tracing_apis Poll Tracing APIs
+ * @ingroup tracing_apis
+ * @{
+ */
+
+/**
+ * @brief Trace initialisation of a Poll Event
+ * @param event Poll Event
+ */
+#define sys_port_trace_k_poll_api_event_init(event)
+
+/**
+ * @brief Trace Polling call start
+ * @param events Poll Events
+ */
+#define sys_port_trace_k_poll_api_poll_enter(events)
+
+/**
+ * @brief Trace Polling call outcome
+ * @param events Poll Events
+ * @param ret Return value
+ */
+#define sys_port_trace_k_poll_api_poll_exit(events, ret)
+
+/**
+ * @brief Trace initialisation of a Poll Signal
+ * @param signal Poll Signal
+ */
+#define sys_port_trace_k_poll_api_signal_init(signal)
+
+/**
+ * @brief Trace resetting of Poll Signal
+ * @param signal Poll Signal
+ */
+#define sys_port_trace_k_poll_api_signal_reset(signal)
+
+/**
+ * @brief Trace checking of Poll Signal
+ * @param signal Poll Signal
+ */
+#define sys_port_trace_k_poll_api_signal_check(signal)
+
+/**
+ * @brief Trace raising of Poll Signal
+ * @param signal Poll Signal
+ * @param ret Return value
+ */
+#define sys_port_trace_k_poll_api_signal_raise(signal, ret)
+
+/**
+ * @}
+ */ /* end of poll_tracing_apis */
+
+
+
+
+/**
  * @brief Semaphore Tracing APIs
  * @defgroup sem_tracing_apis Semaphore Tracing APIs
  * @ingroup tracing_apis
