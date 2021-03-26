@@ -20,7 +20,6 @@ Samples and Demos
    drivers/drivers.rst
    application_development/*
    shields/*
-   portability/*
    posix/*
    kernel/*
    tfm_integration/tfm_integration.rst
