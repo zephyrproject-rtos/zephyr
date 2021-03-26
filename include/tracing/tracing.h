@@ -990,6 +990,109 @@
  */ /* end of stack_tracing_apis */
 
 
+
+
+/**
+ * @brief Message Queue Tracing APIs
+ * @defgroup msgq_tracing_apis Message Queue Tracing APIs
+ * @ingroup tracing_apis
+ * @{
+ */
+
+/**
+ * @brief Trace initialization of Message Queue
+ * @param msgq Message Queue object
+ */
+#define sys_port_trace_k_msgq_init(msgq)
+
+/**
+ * @brief Trace Message Queue alloc init attempt entry
+ * @param msgq Message Queue object
+ */
+#define sys_port_trace_k_msgq_alloc_init_enter(msgq)
+
+/**
+ * @brief Trace Message Queue alloc init attempt outcome
+ * @param msgq Message Queue object
+ * @param ret Return value
+ */
+#define sys_port_trace_k_msgq_alloc_init_exit(msgq, ret)
+
+/**
+ * @brief Trace Message Queue cleanup attempt entry
+ * @param msgq Message Queue object
+ */
+#define sys_port_trace_k_msgq_cleanup_enter(msgq)
+
+/**
+ * @brief Trace Message Queue cleanup attempt outcome
+ * @param msgq Message Queue object
+ * @param ret Return value
+ */
+#define sys_port_trace_k_msgq_cleanup_exit(msgq, ret)
+
+/**
+ * @brief Trace Message Queue put attempt entry
+ * @param msgq Message Queue object
+ * @param timeout Timeout period
+ */
+#define sys_port_trace_k_msgq_put_enter(msgq, timeout)
+
+/**
+ * @brief Trace Message Queue put attempt blocking
+ * @param msgq Message Queue object
+ * @param timeout Timeout period
+ */
+#define sys_port_trace_k_msgq_put_blocking(msgq, timeout)
+
+/**
+ * @brief Trace Message Queue put attempt outcome
+ * @param msgq Message Queue object
+ * @param timeout Timeout period
+ * @param ret Return value
+ */
+#define sys_port_trace_k_msgq_put_exit(msgq, timeout, ret)
+
+/**
+ * @brief Trace Message Queue get attempt entry
+ * @param msgq Message Queue object
+ * @param timeout Timeout period
+ */
+#define sys_port_trace_k_msgq_get_enter(msgq, timeout)
+
+/**
+ * @brief Trace Message Queue get attempt blockings
+ * @param msgq Message Queue object
+ * @param timeout Timeout period
+ */
+#define sys_port_trace_k_msgq_get_blocking(msgq, timeout)
+
+/**
+ * @brief Trace Message Queue get attempt outcome
+ * @param msgq Message Queue object
+ * @param timeout Timeout period
+ * @param ret Return value
+ */
+#define sys_port_trace_k_msgq_get_exit(msgq, timeout, ret)
+
+/**
+ * @brief Trace Message Queue peek
+ * @param msgq Message Queue object
+ * @param ret Return value
+ */
+#define sys_port_trace_k_msgq_peek(msgq, ret)
+
+/**
+ * @brief Trace Message Queue purge
+ * @param msgq Message Queue object
+ */
+#define sys_port_trace_k_msgq_purge(msgq)
+
+/**
+ * @}
+ */ /* end of msgq_tracing_apis */
+
+
 /**
  * @}
  */
