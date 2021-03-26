@@ -48,6 +48,8 @@ void k_stack_init(struct k_stack *stack, stack_data_t *buffer,
 	stack->next = stack->base = buffer;
 	stack->top = stack->base + num_entries;
 
+	SYS_PORT_TRACING_OBJ_INIT(k_stack, stack);
+
 	SYS_TRACING_OBJ_INIT(k_stack, stack);
 	z_object_init(stack);
 }
@@ -57,6 +59,8 @@ int32_t z_impl_k_stack_alloc_init(struct k_stack *stack, uint32_t num_entries)
 	void *buffer;
 	int32_t ret;
 
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_stack, alloc_init, stack);
+
 	buffer = z_thread_malloc(num_entries * sizeof(stack_data_t));
 	if (buffer != NULL) {
 		k_stack_init(stack, buffer, num_entries);
@@ -65,6 +69,8 @@ int32_t z_impl_k_stack_alloc_init(struct k_stack *stack, uint32_t num_entries)
 	} else {
 		ret = -ENOMEM;
 	}
+
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_stack, alloc_init, stack, ret);
 
 	return ret;
 }
@@ -82,7 +88,11 @@ static inline int32_t z_vrfy_k_stack_alloc_init(struct k_stack *stack,
 
 int k_stack_cleanup(struct k_stack *stack)
 {
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_stack, cleanup, stack);
+
 	CHECKIF(z_waitq_head(&stack->wait_q) != NULL) {
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_stack, cleanup, stack, -EAGAIN);
+
 		return -EAGAIN;
 	}
 
@@ -91,6 +101,9 @@ int k_stack_cleanup(struct k_stack *stack)
 		stack->base = NULL;
 		stack->flags &= ~K_STACK_FLAG_ALLOC;
 	}
+
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_stack, cleanup, stack, 0);
+
 	return 0;
 }
 
@@ -99,6 +112,8 @@ int z_impl_k_stack_push(struct k_stack *stack, stack_data_t data)
 	struct k_thread *first_pending_thread;
 	int ret = 0;
 	k_spinlock_key_t key = k_spin_lock(&stack->lock);
+
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_stack, push, stack);
 
 	CHECKIF(stack->next == stack->top) {
 		ret = -ENOMEM;
@@ -124,6 +139,8 @@ out:
 	k_spin_unlock(&stack->lock, key);
 
 end:
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_stack, push, stack, ret);
+
 	return ret;
 }
 
@@ -145,24 +162,39 @@ int z_impl_k_stack_pop(struct k_stack *stack, stack_data_t *data,
 
 	key = k_spin_lock(&stack->lock);
 
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_stack, pop, stack, timeout);
+
 	if (likely(stack->next > stack->base)) {
 		stack->next--;
 		*data = *(stack->next);
 		k_spin_unlock(&stack->lock, key);
+
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_stack, pop, stack, timeout, 0);
+
 		return 0;
 	}
 
+	SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_stack, pop, stack, timeout);
+
 	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 		k_spin_unlock(&stack->lock, key);
+
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_stack, pop, stack, timeout, -EBUSY);
+
 		return -EBUSY;
 	}
 
 	result = z_pend_curr(&stack->lock, key, &stack->wait_q, timeout);
 	if (result == -EAGAIN) {
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_stack, pop, stack, timeout, -EAGAIN);
+
 		return -EAGAIN;
 	}
 
 	*data = (stack_data_t)_current->base.swap_data;
+
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_stack, pop, stack, timeout, 0);
+
 	return 0;
 }
 
