@@ -299,7 +299,9 @@ static inline int64_t z_vrfy_k_uptime_ticks(void)
 
 void z_impl_k_busy_wait(uint32_t usec_to_wait)
 {
+	SYS_PORT_TRACING_FUNC_ENTER(k_thread, busy_wait, usec_to_wait);
 	if (usec_to_wait == 0U) {
+		SYS_PORT_TRACING_FUNC_EXIT(k_thread, busy_wait, usec_to_wait);
 		return;
 	}
 
@@ -324,6 +326,7 @@ void z_impl_k_busy_wait(uint32_t usec_to_wait)
 #else
 	arch_busy_wait(usec_to_wait);
 #endif /* CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT */
+	SYS_PORT_TRACING_FUNC_EXIT(k_thread, busy_wait, usec_to_wait);
 }
 
 #ifdef CONFIG_USERSPACE
