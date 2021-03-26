@@ -168,7 +168,7 @@ struct bt_le_per_adv_sync {
 	/** Sync handle */
 	uint16_t handle;
 
-	/** Periodic advertising interval (N * 1.25MS) */
+	/** Periodic advertising interval (N * 1.25 ms) */
 	uint16_t interval;
 
 	/** Periodic advertising advertiser clock accuracy (ppm) */
