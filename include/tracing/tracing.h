@@ -909,6 +909,87 @@
  */ /* end of lifo_tracing_apis */
 
 
+
+
+/**
+ * @brief Stack Tracing APIs
+ * @defgroup stack_tracing_apis Stack Tracing APIs
+ * @ingroup tracing_apis
+ * @{
+ */
+
+/**
+ * @brief Trace initialization of Stack
+ * @param stack Stack object
+ */
+#define sys_port_trace_k_stack_init(stack)
+
+/**
+ * @brief Trace Stack alloc init attempt entry
+ * @param stack Stack object
+ */
+#define sys_port_trace_k_stack_alloc_init_enter(stack)
+
+/**
+ * @brief Trace Stack alloc init outcome
+ * @param stack Stack object
+ * @param ret Return value
+ */
+#define sys_port_trace_k_stack_alloc_init_exit(stack, ret)
+
+/**
+ * @brief Trace Stack cleanup attempt entry
+ * @param stack Stack object
+ */
+#define sys_port_trace_k_stack_cleanup_enter(stack)
+
+/**
+ * @brief Trace Stack cleanup outcome
+ * @param stack Stack object
+ * @param ret Return value
+ */
+#define sys_port_trace_k_stack_cleanup_exit(stack, ret)
+
+/**
+ * @brief Trace Stack push attempt entry
+ * @param stack Stack object
+ */
+#define sys_port_trace_k_stack_push_enter(stack)
+
+/**
+ * @brief Trace Stack push attempt outcome
+ * @param stack Stack object
+ * @param ret Return value
+ */
+#define sys_port_trace_k_stack_push_exit(stack, ret)
+
+/**
+ * @brief Trace Stack pop attempt entry
+ * @param stack Stack object
+ * @param timeout Timeout period
+ */
+#define sys_port_trace_k_stack_pop_enter(stack, timeout)
+
+/**
+ * @brief Trace Stack pop attempt blocking
+ * @param stack Stack object
+ * @param timeout Timeout period
+ */
+#define sys_port_trace_k_stack_pop_blocking(stack, timeout)
+
+/**
+ * @brief Trace Stack pop attempt outcome
+ * @param stack Stack object
+ * @param timeout Timeout period
+ * @param ret Return value
+ */
+#define sys_port_trace_k_stack_pop_exit(stack, timeout, ret)
+
+/**
+ * @}
+ */ /* end of stack_tracing_apis */
+
+
 /**
  * @}
  */
