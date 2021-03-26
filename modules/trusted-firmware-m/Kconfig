@@ -172,9 +172,11 @@ config TFM_PARTITION_PLATFORM
 	  options are handled by the build system in the trusted-firmware-m
 	  repository.
 
+# Audit Log partition build fails for profile_medium, so disable
+# the combination for now.
 config TFM_PARTITION_AUDIT_LOG
-	bool "Enable secure partition 'Audit Log'"
-	default y
+	bool "Enable secure partition 'Audit Log'" if (TFM_PROFILE != "profile_medium")
+	default y if (TFM_PROFILE != "profile_medium")
 	help
 	  Setting this option will cause '-DTFM_PARTITION_AUDIT_LOG'
 	  to be passed to the TF-M build system. Look at 'config_default.cmake'
