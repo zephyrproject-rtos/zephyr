@@ -19,7 +19,7 @@ static void thread_entry_params(void *p1, void *p2, void *p3)
 	/* checkpoint: check parameter 1, 2, 3 */
 	zassert_equal(p1, tp1, NULL);
 	zassert_equal(POINTER_TO_INT(p2), tp2, NULL);
-	zassert_equal(p3, tp3, NULL);
+	zassert_equal(p3, (void *)tp3, NULL);
 }
 
 static void thread_entry_priority(void *p1, void *p2, void *p3)

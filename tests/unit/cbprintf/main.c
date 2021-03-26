@@ -117,6 +117,7 @@
 #endif
 
 #if AVOID_C_GENERIC
+#undef Z_C_GENERIC
 #define Z_C_GENERIC 0
 #endif
 
