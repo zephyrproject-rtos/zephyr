@@ -38,6 +38,11 @@ from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 import elftools.elf.enums
 
+# This is needed to load edt.pickle files.
+sys.path.append(os.path.join(os.path.dirname(__file__),
+                             'dts', 'python-devicetree', 'src'))
+from devicetree import edtlib  # pylint: disable=unused-import
+
 if LooseVersion(elftools.__version__) < LooseVersion('0.24'):
     sys.exit("pyelftools is out of date, need version 0.24 or later")
 
