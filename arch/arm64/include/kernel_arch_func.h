@@ -17,8 +17,8 @@
  * in the offsets.o module.
  */
 
-#ifndef ZEPHYR_ARCH_ARM_INCLUDE_AARCH64_KERNEL_ARCH_FUNC_H_
-#define ZEPHYR_ARCH_ARM_INCLUDE_AARCH64_KERNEL_ARCH_FUNC_H_
+#ifndef ZEPHYR_ARCH_ARM64_INCLUDE_KERNEL_ARCH_FUNC_H_
+#define ZEPHYR_ARCH_ARM64_INCLUDE_KERNEL_ARCH_FUNC_H_
 
 #include <kernel_arch_data.h>
 
@@ -49,4 +49,4 @@ extern void z_arm64_set_ttbr0(uintptr_t ttbr0);
 }
 #endif
 
-#endif /* ZEPHYR_ARCH_ARM_INCLUDE_AARCH64_KERNEL_ARCH_FUNC_H_ */
+#endif /* ZEPHYR_ARCH_ARM64_INCLUDE_KERNEL_ARCH_FUNC_H_ */

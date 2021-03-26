@@ -6,8 +6,8 @@
 
 /* Either public functions or macros or invoked by public functions */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH64_ASM_INLINE_GCC_H_
-#define ZEPHYR_INCLUDE_ARCH_ARM_AARCH64_ASM_INLINE_GCC_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM64_ASM_INLINE_GCC_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM64_ASM_INLINE_GCC_H_
 
 /*
  * The file must not be included directly
@@ -54,4 +54,4 @@ static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH64_ASM_INLINE_GCC_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM64_ASM_INLINE_GCC_H_ */

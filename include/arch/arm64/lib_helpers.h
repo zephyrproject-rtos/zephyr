@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH64_LIB_HELPERS_H_
-#define ZEPHYR_INCLUDE_ARCH_ARM_AARCH64_LIB_HELPERS_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM64_LIB_HELPERS_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM64_LIB_HELPERS_H_
 
 #ifndef _ASMLANGUAGE
 
@@ -183,4 +183,4 @@ static inline bool is_in_secure_state(void)
 
 #endif /* !_ASMLANGUAGE */
 
-#endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH64_LIB_HELPERS_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM64_LIB_HELPERS_H_ */

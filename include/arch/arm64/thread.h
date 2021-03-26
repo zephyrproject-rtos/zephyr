@@ -16,8 +16,8 @@
  * necessary to instantiate instances of struct k_thread.
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH64_THREAD_H_
-#define ZEPHYR_INCLUDE_ARCH_ARM_AARCH64_THREAD_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM64_THREAD_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM64_THREAD_H_
 
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>
@@ -50,4 +50,4 @@ typedef struct _thread_arch _thread_arch_t;
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH64_THREAD_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM64_THREAD_H_ */

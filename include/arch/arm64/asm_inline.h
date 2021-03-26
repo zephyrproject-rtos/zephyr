@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH64_ASM_INLINE_H_
-#define ZEPHYR_INCLUDE_ARCH_ARM_AARCH64_ASM_INLINE_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM64_ASM_INLINE_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM64_ASM_INLINE_H_
 
 /*
  * The file must not be included directly
@@ -18,4 +18,4 @@
 #include <arch/arm/asm_inline_other.h>
 #endif
 
-#endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH64_ASM_INLINE_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM64_ASM_INLINE_H_ */

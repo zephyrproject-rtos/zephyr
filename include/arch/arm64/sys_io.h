@@ -9,8 +9,8 @@
  * gcc builtins)
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH64_SYS_IO_H_
-#define ZEPHYR_INCLUDE_ARCH_ARM_AARCH64_SYS_IO_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM64_SYS_IO_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM64_SYS_IO_H_
 
 #ifndef _ASMLANGUAGE
 
@@ -87,4 +87,4 @@ static ALWAYS_INLINE void sys_write32(uint32_t data, mem_addr_t addr)
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH64_SYS_IO_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM64_SYS_IO_H_ */
