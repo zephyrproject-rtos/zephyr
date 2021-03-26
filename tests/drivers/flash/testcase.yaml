@@ -1,3 +1,7 @@
+common:
+  integration_platforms:
+    - nrf52840dk_nrf52840
+
 tests:
   drivers.flash.nrf_qspi_nor:
     platform_allow: nrf52840dk_nrf52840
