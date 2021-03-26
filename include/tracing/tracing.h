@@ -1093,6 +1093,105 @@
  */ /* end of msgq_tracing_apis */
 
 
+
+
+/**
+ * @brief Mailbox Tracing APIs
+ * @defgroup mbox_tracing_apis Mailbox Tracing APIs
+ * @ingroup tracing_apis
+ * @{
+ */
+
+/**
+ * @brief Trace initialization of Mailbox
+ * @param mbox Mailbox object
+ */
+#define sys_port_trace_k_mbox_init(mbox)
+
+/**
+ * @brief Trace Mailbox message put attempt entry
+ * @param mbox Mailbox object
+ * @param timeout Timeout period
+ */
+#define sys_port_trace_k_mbox_message_put_enter(mbox, timeout)
+
+/**
+ * @brief Trace Mailbox message put attempt blocking
+ * @param mbox Mailbox object
+ * @param timeout Timeout period
+ */
+#define sys_port_trace_k_mbox_message_put_blocking(mbox, timeout)
+
+/**
+ * @brief Trace Mailbox message put attempt outcome
+ * @param mbox Mailbox object
+ * @param timeout Timeout period
+ * @param ret Return value
+ */
+#define sys_port_trace_k_mbox_message_put_exit(mbox, timeout, ret)
+
+/**
+ * @brief Trace Mailbox put attempt entry
+ * @param mbox Mailbox object
+ * @param timeout Timeout period
+ */
+#define sys_port_trace_k_mbox_put_enter(mbox, timeout)
+
+/**
+ * @brief Trace Mailbox put attempt blocking
+ * @param mbox Mailbox object
+ * @param timeout Timeout period
+ * @param ret Return value
+ */
+#define sys_port_trace_k_mbox_put_exit(mbox, timeout, ret)
+
+/**
+ * @brief Trace Mailbox async put entry
+ * @param mbox Mailbox object
+ * @param sem Semaphore object
+ */
+#define sys_port_trace_k_mbox_async_put_enter(mbox, sem)
+
+/**
+ * @brief Trace Mailbox async put exit
+ * @param mbox Mailbox object
+ * @param sem Semaphore object
+ */
+#define sys_port_trace_k_mbox_async_put_exit(mbox, sem)
+
+/**
+ * @brief Trace Mailbox get attempt entry
+ * @param mbox Mailbox entry
+ * @param timeout Timeout period
+ */
+#define sys_port_trace_k_mbox_get_enter(mbox, timeout)
+
+/**
+ * @brief Trace Mailbox get attempt blocking
+ * @param mbox Mailbox entry
+ * @param timeout Timeout period
+ */
+#define sys_port_trace_k_mbox_get_blocking(mbox, timeout)
+
+/**
+ * @brief Trace Mailbox get attempt outcome
+ * @param mbox Mailbox entry
+ * @param timeout Timeout period
+ * @param ret Return value
+ */
+#define sys_port_trace_k_mbox_get_exit(mbox, timeout, ret)
+
+/**
+ * @brief Trace Mailbox data get
+ * @brief rx_msg Receive Message object
+ */
+#define sys_port_trace_k_mbox_data_get(rx_msg)
+
+/**
+ * @}
+ */ /* end of mbox_tracing_apis */
+
+
 /**
  * @}
  */
