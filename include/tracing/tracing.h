@@ -1296,6 +1296,120 @@
  */ /* end of pipe_tracing_apis */
 
 
+
+
+/**
+ * @brief Heap Tracing APIs
+ * @defgroup heap_tracing_apis Heap Tracing APIs
+ * @ingroup tracing_apis
+ * @{
+ */
+
+/**
+ * @brief Trace initialization of Heap
+ * @param h Heap object
+ */
+#define sys_port_trace_k_heap_init(h)
+
+/**
+ * @brief Trace Heap aligned alloc attempt entry
+ * @param h Heap object
+ * @param timeout Timeout period
+ */
+#define sys_port_trace_k_heap_aligned_alloc_enter(h, timeout)
+
+/**
+ * @brief Trace Heap align alloc attempt blocking
+ * @param h Heap object
+ * @param timeout Timeout period
+ */
+#define sys_port_trace_k_heap_aligned_alloc_blocking(h, timeout)
+
+/**
+ * @brief Trace Heap align alloc attempt outcome
+ * @param h Heap object
+ * @param timeout Timeout period
+ * @param ret Return value
+ */
+#define sys_port_trace_k_heap_aligned_alloc_exit(h, timeout, ret)
+
+/**
+ * @brief Trace Heap alloc enter
+ * @param h Heap object
+ * @param timeout Timeout period
+ */
+#define sys_port_trace_k_heap_alloc_enter(h, timeout)
+
+/**
+ * @brief Trace Heap alloc exit
+ * @param h Heap object
+ * @param timeout Timeout period
+ * @param ret Return value
+ */
+#define sys_port_trace_k_heap_alloc_exit(h, timeout, ret)
+
+/**
+ * @brief Trace Heap free
+ * @param h Heap object
+ */
+#define sys_port_trace_k_heap_free(h)
+
+/**
+ * @brief Trace System Heap aligned alloc enter
+ * @param heap Heap object
+ */
+#define sys_port_trace_k_heap_sys_k_aligned_alloc_enter(heap)
+
+/**
+ * @brief Trace System Heap aligned alloc exit
+ * @param heap Heap object
+ * @param ret Return value
+ */
+#define sys_port_trace_k_heap_sys_k_aligned_alloc_exit(heap, ret)
+
+/**
+ * @brief Trace System Heap aligned alloc enter
+ * @param heap Heap object
+ */
+#define sys_port_trace_k_heap_sys_k_malloc_enter(heap)
+
+/**
+ * @brief Trace System Heap aligned alloc exit
+ * @param heap Heap object
+ * @param ret Return value
+ */
+#define sys_port_trace_k_heap_sys_k_malloc_exit(heap, ret)
+
+/**
+ * @brief Trace System Heap free entry
+ * @param heap Heap object
+ */
+#define sys_port_trace_k_heap_sys_k_free_enter(heap)
+
+/**
+ * @brief Trace System Heap free exit
+ * @param heap Heap object
+ */
+#define sys_port_trace_k_heap_sys_k_free_exit(heap)
+
+/**
+ * @brief Trace System heap calloc enter
+ * @param heap
+ */
+#define sys_port_trace_k_heap_sys_k_calloc_enter(heap)
+
+/**
+ * @brief Trace System heap calloc exit
+ * @param heap Heap object
+ * @param ret Return value
+ */
+#define sys_port_trace_k_heap_sys_k_calloc_exit(heap, ret)
+
+/**
+ * @}
+ */ /* end of heap_tracing_apis */
+
+
 /**
  * @}
  */

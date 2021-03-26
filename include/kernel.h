@@ -5028,11 +5028,8 @@ void *k_heap_aligned_alloc(struct k_heap *h, size_t align, size_t bytes,
  * @param timeout How long to wait, or K_NO_WAIT
  * @return A pointer to valid heap memory, or NULL
  */
-static inline void *k_heap_alloc(struct k_heap *h, size_t bytes,
-				 k_timeout_t timeout)
-{
-	return k_heap_aligned_alloc(h, sizeof(void *), bytes, timeout);
-}
+void *k_heap_alloc(struct k_heap *h, size_t bytes,
+				 k_timeout_t timeout);
 
 /**
  * @brief Free memory allocated by k_heap_alloc()
@@ -5105,10 +5102,7 @@ extern void *k_aligned_alloc(size_t align, size_t size);
  *
  * @return Address of the allocated memory if successful; otherwise NULL.
  */
-static inline void *k_malloc(size_t size)
-{
-	return k_aligned_alloc(sizeof(void *), size);
-}
+extern void *k_malloc(size_t size);
 
 /**
  * @brief Free memory allocated from heap.
