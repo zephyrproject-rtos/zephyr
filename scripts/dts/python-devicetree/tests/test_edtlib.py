@@ -1,6 +1,7 @@
 # Copyright (c) 2019 Nordic Semiconductor ASA
 # SPDX-License-Identifier: BSD-3-Clause
 
+import contextlib
 import io
 from logging import WARNING
 import os
@@ -8,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-import edtlib
+from devicetree import edtlib
 
 # Test suite for edtlib.py.
 #
@@ -22,6 +23,18 @@ import edtlib
 # bindings. The tests mostly use string comparisons via the various __repr__()
 # methods.
 
+HERE = os.path.dirname(__file__)
+
+@contextlib.contextmanager
+def from_here():
+    # Convenience hack to minimize diff from zephyr.
+    cwd = os.getcwd()
+    try:
+        os.chdir(HERE)
+        yield
+    finally:
+        os.chdir(cwd)
+
 def hpath(filename):
     '''Convert 'filename' to the host path syntax.'''
     return os.fspath(Path(filename))
@@ -29,7 +42,7 @@ def hpath(filename):
 def test_warnings(caplog):
     '''Tests for situations that should cause warnings.'''
 
-    edtlib.EDT("test.dts", ["test-bindings"])
+    with from_here(): edtlib.EDT("test.dts", ["test-bindings"])
 
     enums_hpath = hpath('test-bindings/enums.yaml')
     expected_warnings = [
@@ -40,12 +53,13 @@ def test_warnings(caplog):
         f"compatible 'enums' in binding '{enums_hpath}' has non-tokenizable enum for property 'string-enum': 'foo bar', 'foo_bar'",
         f"compatible 'enums' in binding '{enums_hpath}' has enum for property 'tokenizable-lower-enum' that is only tokenizable in lowercase: 'bar', 'BAR'",
     ]
-    assert caplog.record_tuples == [('edtlib', WARNING, warning_message)
+    assert caplog.record_tuples == [('devicetree.edtlib', WARNING, warning_message)
                                     for warning_message in expected_warnings]
 
 def test_interrupts():
     '''Tests for the interrupts property.'''
-    edt = edtlib.EDT("test.dts", ["test-bindings"])
+    with from_here():
+        edt = edtlib.EDT("test.dts", ["test-bindings"])
     filenames = {i: hpath(f'test-bindings/interrupt-{i}-cell.yaml')
                  for i in range(1, 4)}
 
@@ -66,7 +80,8 @@ def test_interrupts():
 
 def test_reg():
     '''Tests for the regs property'''
-    edt = edtlib.EDT("test.dts", ["test-bindings"])
+    with from_here():
+        edt = edtlib.EDT("test.dts", ["test-bindings"])
 
     assert str(edt.get_node("/reg-zero-address-cells/node").regs) == \
         "[<Register, size: 0x1>, <Register, size: 0x2>]"
@@ -82,14 +97,16 @@ def test_reg():
 
 def test_pinctrl():
     '''Test 'pinctrl-<index>'.'''
-    edt = edtlib.EDT("test.dts", ["test-bindings"])
+    with from_here():
+        edt = edtlib.EDT("test.dts", ["test-bindings"])
 
     assert str(edt.get_node("/pinctrl/dev").pinctrls) == \
         "[<PinCtrl, name: zero, configuration nodes: []>, <PinCtrl, name: one, configuration nodes: [<Node /pinctrl/pincontroller/state-1 in 'test.dts', no binding>]>, <PinCtrl, name: two, configuration nodes: [<Node /pinctrl/pincontroller/state-1 in 'test.dts', no binding>, <Node /pinctrl/pincontroller/state-2 in 'test.dts', no binding>]>]"
 
 def test_hierarchy():
     '''Test Node.parent and Node.children'''
-    edt = edtlib.EDT("test.dts", ["test-bindings"])
+    with from_here():
+        edt = edtlib.EDT("test.dts", ["test-bindings"])
 
     assert edt.get_node("/").parent is None
 
@@ -106,7 +123,8 @@ def test_hierarchy():
 
 def test_include():
     '''Test 'include:' and the legacy 'inherits: !include ...' in bindings'''
-    edt = edtlib.EDT("test.dts", ["test-bindings"])
+    with from_here():
+        edt = edtlib.EDT("test.dts", ["test-bindings"])
 
     assert str(edt.get_node("/binding-include").description) == \
         "Parent binding"
@@ -116,7 +134,8 @@ def test_include():
 
 def test_bus():
     '''Test 'bus:' and 'on-bus:' in bindings'''
-    edt = edtlib.EDT("test.dts", ["test-bindings"])
+    with from_here():
+        edt = edtlib.EDT("test.dts", ["test-bindings"])
 
     assert edt.get_node("/buses/foo-bus").bus == "foo"
 
@@ -159,7 +178,8 @@ def test_bus():
 
 def test_child_binding():
     '''Test 'child-binding:' in bindings'''
-    edt = edtlib.EDT("test.dts", ["test-bindings"])
+    with from_here():
+        edt = edtlib.EDT("test.dts", ["test-bindings"])
     child1 = edt.get_node("/child-binding/child-1")
     child2 = edt.get_node("/child-binding/child-2")
     grandchild = edt.get_node("/child-binding/child-1/grandchild")
@@ -176,16 +196,18 @@ def test_child_binding():
     assert str(grandchild.description) == "grandchild node"
     assert str(grandchild.props) == "OrderedDict([('grandchild-prop', <Property, name: grandchild-prop, type: int, value: 2>)])"
 
-    binding_file = Path("test-bindings/child-binding.yaml").resolve()
-    top = edtlib.Binding(binding_file, {})
+    with from_here():
+        binding_file = Path("test-bindings/child-binding.yaml").resolve()
+        top = edtlib.Binding(binding_file, {})
     child = top.child_binding
     assert Path(top.path) == binding_file
     assert Path(child.path) == binding_file
     assert top.compatible == 'top-binding'
     assert child.compatible is None
 
-    binding_file = Path("test-bindings/child-binding-with-compat.yaml").resolve()
-    top = edtlib.Binding(binding_file, {})
+    with from_here():
+        binding_file = Path("test-bindings/child-binding-with-compat.yaml").resolve()
+        top = edtlib.Binding(binding_file, {})
     child = top.child_binding
     assert Path(top.path) == binding_file
     assert Path(child.path) == binding_file
@@ -194,7 +216,8 @@ def test_child_binding():
 
 def test_props():
     '''Test Node.props (derived from DT and 'properties:' in the binding)'''
-    edt = edtlib.EDT("test.dts", ["test-bindings"])
+    with from_here():
+        edt = edtlib.EDT("test.dts", ["test-bindings"])
     filenames = {i: hpath(f'test-bindings/phandle-array-controller-{i}.yaml')
                  for i in range(0, 4)}
 
@@ -242,7 +265,8 @@ def test_props():
 
 def test_nexus():
     '''Test <prefix>-map via gpio-map (the most common case).'''
-    edt = edtlib.EDT("test.dts", ["test-bindings"])
+    with from_here():
+        edt = edtlib.EDT("test.dts", ["test-bindings"])
     filename = hpath('test-bindings/gpio-dst.yaml')
 
     assert str(edt.get_node("/gpio-map/source").props["foo-gpios"]) == \
@@ -250,7 +274,8 @@ def test_nexus():
 
 def test_prop_defaults():
     '''Test property default values given in bindings'''
-    edt = edtlib.EDT("test.dts", ["test-bindings"])
+    with from_here():
+        edt = edtlib.EDT("test.dts", ["test-bindings"])
 
     assert str(edt.get_node("/defaults").props) == \
         r"OrderedDict([('int', <Property, name: int, type: int, value: 123>), ('array', <Property, name: array, type: array, value: [1, 2, 3]>), ('uint8-array', <Property, name: uint8-array, type: uint8-array, value: b'\x89\xab\xcd'>), ('string', <Property, name: string, type: string, value: 'hello'>), ('string-array', <Property, name: string-array, type: string-array, value: ['hello', 'there']>), ('default-not-used', <Property, name: default-not-used, type: int, value: 234>)])"
@@ -258,7 +283,8 @@ def test_prop_defaults():
 def test_prop_enums():
     '''test properties with enum: in the binding'''
 
-    edt = edtlib.EDT("test.dts", ["test-bindings"])
+    with from_here():
+        edt = edtlib.EDT("test.dts", ["test-bindings"])
     props = edt.get_node('/enums').props
     int_enum = props['int-enum']
     string_enum = props['string-enum']
@@ -295,12 +321,14 @@ def test_prop_enums():
 def test_binding_inference():
     '''Test inferred bindings for special zephyr-specific nodes.'''
     warnings = io.StringIO()
-    edt = edtlib.EDT("test.dts", ["test-bindings"], warnings)
+    with from_here():
+        edt = edtlib.EDT("test.dts", ["test-bindings"], warnings)
 
     assert str(edt.get_node("/zephyr,user").props) == r"OrderedDict()"
 
-    edt = edtlib.EDT("test.dts", ["test-bindings"], warnings,
-                     infer_binding_for_paths=["/zephyr,user"])
+    with from_here():
+        edt = edtlib.EDT("test.dts", ["test-bindings"], warnings,
+                         infer_binding_for_paths=["/zephyr,user"])
     filenames = {i: hpath(f'test-bindings/phandle-array-controller-{i}.yaml')
                  for i in range(1, 3)}
 
@@ -309,7 +337,8 @@ def test_binding_inference():
 
 def test_multi_bindings():
     '''Test having multiple directories with bindings'''
-    edt = edtlib.EDT("test-multidir.dts", ["test-bindings", "test-bindings-2"])
+    with from_here():
+        edt = edtlib.EDT("test-multidir.dts", ["test-bindings", "test-bindings-2"])
 
     assert str(edt.get_node("/in-dir-1").binding_path) == \
         hpath("test-bindings/multidir.yaml")
@@ -319,7 +348,8 @@ def test_multi_bindings():
 
 def test_dependencies():
     ''''Test dependency relations'''
-    edt = edtlib.EDT("test-multidir.dts", ["test-bindings", "test-bindings-2"])
+    with from_here():
+        edt = edtlib.EDT("test-multidir.dts", ["test-bindings", "test-bindings-2"])
 
     assert edt.get_node("/").dep_ordinal == 0
     assert edt.get_node("/in-dir-1").dep_ordinal == 1

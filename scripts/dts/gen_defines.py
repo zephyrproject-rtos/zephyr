@@ -27,7 +27,10 @@ import pickle
 import re
 import sys
 
-import edtlib
+sys.path.append(os.path.join(os.path.dirname(__file__), 'python-devicetree',
+                             'src'))
+
+from devicetree import edtlib
 
 class LogFormatter(logging.Formatter):
     '''A log formatter that prints the level name in lower case,

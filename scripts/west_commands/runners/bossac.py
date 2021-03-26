@@ -14,7 +14,7 @@ from runners.core import ZephyrBinaryRunner, RunnerCaps, BuildConfiguration
 
 # This is needed to load edt.pickle files.
 try:
-    import edtlib  # pylint: disable=unused-import
+    from devicetree import edtlib  # pylint: disable=unused-import
     MISSING_EDTLIB = False
 except ImportError:
     # This can happen when building the documentation for the

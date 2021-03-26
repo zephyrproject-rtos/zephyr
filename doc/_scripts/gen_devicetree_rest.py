@@ -18,7 +18,7 @@ import re
 import sys
 import textwrap
 
-import edtlib
+from devicetree import edtlib
 
 import gen_helpers
 

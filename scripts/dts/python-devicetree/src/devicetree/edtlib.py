@@ -80,10 +80,11 @@ try:
 except ImportError:
     from yaml import Loader
 
-from dtlib import DT, DTError, to_num, to_nums, TYPE_EMPTY, TYPE_BYTES, \
-                  TYPE_NUM, TYPE_NUMS, TYPE_STRING, TYPE_STRINGS, \
-                  TYPE_PHANDLE, TYPE_PHANDLES, TYPE_PHANDLES_AND_NUMS
-from grutils import Graph
+from devicetree.dtlib import \
+    DT, DTError, to_num, to_nums, TYPE_EMPTY, TYPE_BYTES, \
+    TYPE_NUM, TYPE_NUMS, TYPE_STRING, TYPE_STRINGS, \
+    TYPE_PHANDLE, TYPE_PHANDLES, TYPE_PHANDLES_AND_NUMS
+from devicetree.grutils import Graph
 
 
 #
