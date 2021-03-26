@@ -14,5 +14,5 @@ if(DEFINED FORKS)
   zephyr_compile_definitions(FORKS=${FORKS})
 endif()
 
-target_include_directories(app PRIVATE ${ZEPHYR_BASE}/include/cmsis_rtos_v2)
+target_include_directories(app PRIVATE ${ZEPHYR_BASE}/include/portability)
 target_sources(app PRIVATE src/main.c)
