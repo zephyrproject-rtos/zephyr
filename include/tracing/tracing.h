@@ -1465,6 +1465,58 @@
  */ /* end of mslab_tracing_apis */
 
 
+
+
+/**
+ * @brief Timer Tracing APIs
+ * @defgroup timer_tracing_apis Timer Tracing APIs
+ * @ingroup tracing_apis
+ * @{
+ */
+
+/**
+ * @brief Trace initialization of Timer
+ * @param timer Timer object
+ */
+#define sys_port_trace_k_timer_init(timer)
+
+/**
+ * @brief Trace Timer start
+ * @param timer Timer object
+ */
+#define sys_port_trace_k_timer_start(timer)
+
+/**
+ * @brief Trace Timer stop
+ * @param timer Timer object
+ */
+#define sys_port_trace_k_timer_stop(timer)
+
+/**
+ * @brief Trace Timer status sync entry
+ * @param timer Timer object
+ */
+#define sys_port_trace_k_timer_status_sync_enter(timer)
+
+/**
+ * @brief Trace Timer Status sync blocking
+ * @param timer Timer object
+ * @param timeout Timeout period
+ */
+#define sys_port_trace_k_timer_status_sync_blocking(timer, timeout)
+
+/**
+ * @brief Trace Time Status sync outcome
+ * @param timer Timer object
+ * @param result Return value
+ */
+#define sys_port_trace_k_timer_status_sync_exit(timer, result)
+
+/**
+ * @}
+ */ /* end of timer_tracing_apis */
+
+
 /**
  * @}
  */
