@@ -1,0 +1,15 @@
+# Copyright (c) 2021 Greyp Bikes d.o.o
+#
+# SPDX -License-Identifier: Apache-2.0
+#
+
+config COUNTER_M41T62
+	bool "Enable I2C-based driver for M41T62"
+	depends on I2C
+
+config COUNTER_M41T62_INIT_PRIORITY
+	int "Init priority"
+	depends on COUNTER_M41T62
+	default 65
+	help
+	 M41T62 device driver initialization priority.
