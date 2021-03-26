@@ -2990,10 +2990,7 @@ int k_work_submit_to_queue(struct k_work_q *queue,
  *
  * @return as with k_work_submit_to_queue().
  */
-static inline int k_work_submit(struct k_work *work)
-{
-	return k_work_submit_to_queue(&k_sys_work_q, work);
-}
+extern int k_work_submit(struct k_work *work);
 
 /** @brief Wait for last-submitted instance to complete.
  *
@@ -3277,11 +3274,8 @@ int k_work_schedule_for_queue(struct k_work_q *queue,
  *
  * @return as with k_work_schedule_for_queue().
  */
-static inline int k_work_schedule(struct k_work_delayable *dwork,
-				   k_timeout_t delay)
-{
-	return k_work_schedule_for_queue(&k_sys_work_q, dwork, delay);
-}
+extern int k_work_schedule(struct k_work_delayable *dwork,
+				   k_timeout_t delay);
 
 /** @brief Reschedule a work item to a queue after a delay.
  *
@@ -3328,11 +3322,8 @@ int k_work_reschedule_for_queue(struct k_work_q *queue,
  *
  * @return as with k_work_reschedule_for_queue().
  */
-static inline int k_work_reschedule(struct k_work_delayable *dwork,
-				     k_timeout_t delay)
-{
-	return k_work_reschedule_for_queue(&k_sys_work_q, dwork, delay);
-}
+extern int k_work_reschedule(struct k_work_delayable *dwork,
+				     k_timeout_t delay);
 
 /** @brief Flush delayable work.
  *
