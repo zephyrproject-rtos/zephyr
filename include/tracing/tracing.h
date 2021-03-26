@@ -1192,6 +1192,110 @@
  */ /* end of mbox_tracing_apis */
 
 
+
+
+/**
+ * @brief Pipe Tracing APIs
+ * @defgroup pipe_tracing_apis Pipe Tracing APIs
+ * @ingroup tracing_apis
+ * @{
+ */
+
+/**
+ * @brief Trace initialization of Pipe
+ * @param pipe Pipe object
+ */
+#define sys_port_trace_k_pipe_init(pipe)
+
+/**
+ * @brief Trace Pipe cleanup entry
+ * @param pipe Pipe object
+ */
+#define sys_port_trace_k_pipe_cleanup_enter(pipe)
+
+/**
+ * @brief Trace Pipe cleanup exit
+ * @param pipe Pipe object
+ * @param ret Return value
+ */
+#define sys_port_trace_k_pipe_cleanup_exit(pipe, ret)
+
+/**
+ * @brief Trace Pipe alloc init entry
+ * @param pipe Pipe object
+ */
+#define sys_port_trace_k_pipe_alloc_init_enter(pipe)
+
+/**
+ * @brief Trace Pipe alloc init exit
+ * @param pipe Pipe object
+ * @param ret Return value
+ */
+#define sys_port_trace_k_pipe_alloc_init_exit(pipe, ret)
+
+/**
+ * @brief Trace Pipe put attempt entry
+ * @param pipe Pipe object
+ * @param timeout Timeout period
+ */
+#define sys_port_trace_k_pipe_put_enter(pipe, timeout)
+
+/**
+ * @brief Trace Pipe put attempt blocking
+ * @param pipe Pipe object
+ * @param timeout Timeout period
+ */
+#define sys_port_trace_k_pipe_put_blocking(pipe, timeout)
+
+/**
+ * @brief Trace Pipe put attempt outcome
+ * @param pipe Pipe object
+ * @param timeout Timeout period
+ * @param ret Return value
+ */
+#define sys_port_trace_k_pipe_put_exit(pipe, timeout, ret)
+
+/**
+ * @brief Trace Pipe get attempt entry
+ * @param pipe Pipe object
+ * @param timeout Timeout period
+ */
+#define sys_port_trace_k_pipe_get_enter(pipe, timeout)
+
+/**
+ * @brief Trace Pipe get attempt blocking
+ * @param pipe Pipe object
+ * @param timeout Timeout period
+ */
+#define sys_port_trace_k_pipe_get_blocking(pipe, timeout)
+
+/**
+ * @brief Trace Pipe get attempt outcome
+ * @param pipe Pipe object
+ * @param timeout Timeout period
+ * @param ret Return value
+ */
+#define sys_port_trace_k_pipe_get_exit(pipe, timeout, ret)
+
+/**
+ * @brief Trace Pipe block put enter
+ * @param pipe Pipe object
+ * @param sem Semaphore object
+ */
+#define sys_port_trace_k_pipe_block_put_enter(pipe, sem)
+
+/**
+ * @brief Trace Pipe block put exit
+ * @param pipe Pipe object
+ * @param sem Semaphore object
+ */
+#define sys_port_trace_k_pipe_block_put_exit(pipe, sem)
+
+/**
+ * @}
+ */ /* end of pipe_tracing_apis */
+
+
 /**
  * @}
  */
