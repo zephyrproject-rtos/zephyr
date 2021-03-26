@@ -296,9 +296,9 @@ typedef int16_t device_handle_t;
  * @param compat lowercase-and-underscores devicetree compatible
  * @return a pointer to a device, or NULL
  */
-#define DEVICE_DT_GET_ANY(compat)			\
-	COND_CODE_1(DT_HAS_COMPAT_STATUS_OKAY(compat),	\
-		    (DEVICE_DT_GET(DT_INST(0, compat))),	\
+#define DEVICE_DT_GET_ANY(compat)					    \
+	COND_CODE_1(DT_HAS_COMPAT_STATUS_OKAY(compat),			    \
+		    (DEVICE_DT_GET(DT_COMPAT_GET_ANY_STATUS_OKAY(compat))), \
 		    (NULL))
 
 /**
