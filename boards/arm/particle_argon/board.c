@@ -49,6 +49,7 @@ static int board_particle_argon_init(const struct device *dev)
 	return 0;
 }
 
-/* needs to be done after GPIO driver init */
-SYS_INIT(board_particle_argon_init, POST_KERNEL,
-	 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+/* needs to be done after GPIO driver init, which is at
+ * POST_KERNEL:KERNEL_INIT_PRIORITY_DEFAULT.
+ */
+SYS_INIT(board_particle_argon_init, POST_KERNEL, 99);
