@@ -246,10 +246,10 @@ CMSIS API layer:
     collaborators:
          - nashif
     files:
-         - lib/cmsis_rtos_v*/
-         - include/cmsis_rtos_v*/
-         - samples/portability/cmsis_rtos_v*/
-         - tests/portability/cmsis_rtos_v*/
+         - subsys/portability/cmsis_rtos_v*/
+         - include/portability/cmsis*
+         - samples/subsys/portability/cmsis_rtos_v*/
+         - tests/subsys/portability/cmsis_rtos_v*/
     labels:
         - "area: Portability"
 
