@@ -33,6 +33,11 @@ list(APPEND kernel_files
      xip.c)
 endif()
 
+if(CONFIG_DEMAND_PAGING_STATS)
+list(APPEND kernel_files
+     paging/statistics.c)
+endif()
+
 add_library(kernel ${kernel_files})
 
 # Kernel files has the macro __ZEPHYR_SUPERVISOR__ set so that it

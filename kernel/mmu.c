@@ -12,6 +12,7 @@
 #include <mmu.h>
 #include <init.h>
 #include <kernel_internal.h>
+#include <syscall_handler.h>
 #include <linker/linker-defs.h>
 #include <logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
@@ -563,7 +564,10 @@ void z_mem_manage_init(void)
 }
 
 #ifdef CONFIG_DEMAND_PAGING
-static unsigned long z_num_pagefaults;
+
+#ifdef CONFIG_DEMAND_PAGING_STATS
+struct k_mem_paging_stats_t paging_stats;
+#endif
 
 /* Current implementation relies on interrupt locking to any prevent page table
  * access, which falls over if other CPUs are active. Addressing this is not
@@ -786,6 +790,65 @@ out:
 	return ret;
 }
 
+static inline void paging_stats_faults_inc(struct k_thread *faulting_thread,
+					   int key)
+{
+#ifdef CONFIG_DEMAND_PAGING_STATS
+	bool is_irq_unlocked = arch_irq_unlocked(key);
+
+	paging_stats.pagefaults.cnt++;
+
+	if (is_irq_unlocked) {
+		paging_stats.pagefaults.irq_unlocked++;
+	} else {
+		paging_stats.pagefaults.irq_locked++;
+	}
+
+#ifdef CONFIG_DEMAND_PAGING_THREAD_STATS
+	faulting_thread->paging_stats.pagefaults.cnt++;
+
+	if (is_irq_unlocked) {
+		faulting_thread->paging_stats.pagefaults.irq_unlocked++;
+	} else {
+		faulting_thread->paging_stats.pagefaults.irq_locked++;
+	}
+#else
+	ARG_UNUSED(faulting_thread);
+#endif
+
+#ifndef CONFIG_DEMAND_PAGING_ALLOW_IRQ
+	if (k_is_in_isr()) {
+		paging_stats.pagefaults.in_isr++;
+
+#ifdef CONFIG_DEMAND_PAGING_THREAD_STATS
+		faulting_thread->paging_stats.pagefaults.in_isr++;
+#endif
+	}
+#endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
+#endif /* CONFIG_DEMAND_PAGING_STATS */
+}
+
+static inline void paging_stats_eviction_inc(struct k_thread *faulting_thread,
+					     bool dirty)
+{
+#ifdef CONFIG_DEMAND_PAGING_STATS
+	if (dirty) {
+		paging_stats.eviction.dirty++;
+	} else {
+		paging_stats.eviction.clean++;
+	}
+#ifdef CONFIG_DEMAND_PAGING_THREAD_STATS
+	if (dirty) {
+		faulting_thread->paging_stats.eviction.dirty++;
+	} else {
+		faulting_thread->paging_stats.eviction.clean++;
+	}
+#else
+	ARG_UNUSED(faulting_thread);
+#endif /* CONFIG_DEMAND_PAGING_THREAD_STATS */
+#endif /* CONFIG_DEMAND_PAGING_STATS */
+}
+
 static bool do_page_fault(void *addr, bool pin)
 {
 	struct z_page_frame *pf;
@@ -794,6 +857,7 @@ static bool do_page_fault(void *addr, bool pin)
 	enum arch_page_location status;
 	bool result;
 	bool dirty = false;
+	struct k_thread *faulting_thread = _current_cpu->current;
 
 	__ASSERT(page_frames_initialized, "page fault at %p happened too early",
 		 addr);
@@ -802,13 +866,7 @@ static bool do_page_fault(void *addr, bool pin)
 
 	/*
 	 * TODO: Add performance accounting:
-	 * - Number of pagefaults
-	 *   * gathered on a per-thread basis:
-	 *     . Pagefaults with IRQs locked in faulting thread (bad)
-	 *     . Pagefaults with IRQs unlocked in faulting thread
-	 *   * Pagefaults in ISRs (if allowed)
 	 * - z_eviction_select() metrics
-	 *   * Clean vs dirty page eviction counts
 	 *   * execution time histogram
 	 *   * periodic timer execution time histogram (if implemented)
 	 * - z_backing_store_page_out() execution time histogram
@@ -853,6 +911,9 @@ static bool do_page_fault(void *addr, bool pin)
 		goto out;
 	}
 	result = true;
+
+	paging_stats_faults_inc(faulting_thread, key);
+
 	if (status == ARCH_PAGE_LOCATION_PAGED_IN) {
 		if (pin) {
 			/* It's a physical memory address */
@@ -874,6 +935,8 @@ static bool do_page_fault(void *addr, bool pin)
 		__ASSERT(pf != NULL, "failed to get a page frame");
 		LOG_DBG("evicting %p at 0x%lx", pf->addr,
 			z_page_frame_to_phys(pf));
+
+		paging_stats_eviction_inc(faulting_thread, dirty);
 	}
 	ret = page_frame_prepare_locked(pf, &dirty, true, &page_out_location);
 	__ASSERT(ret == 0, "failed to prepare page frame");
@@ -946,30 +1009,7 @@ void k_mem_pin(void *addr, size_t size)
 
 bool z_page_fault(void *addr)
 {
-	bool ret;
-
-	ret = do_page_fault(addr, false);
-	if (ret) {
-		/* Wasn't an error, increment page fault count */
-		int key;
-
-		key = irq_lock();
-		z_num_pagefaults++;
-		irq_unlock(key);
-	}
-	return ret;
-}
-
-unsigned long z_num_pagefaults_get(void)
-{
-	unsigned long ret;
-	int key;
-
-	key = irq_lock();
-	ret = z_num_pagefaults;
-	irq_unlock(key);
-
-	return ret;
+	return do_page_fault(addr, false);
 }
 
 static void do_mem_unpin(void *addr)
@@ -995,4 +1035,5 @@ void k_mem_unpin(void *addr, size_t size)
 		 addr);
 	virt_region_foreach(addr, size, do_mem_unpin);
 }
+
 #endif /* CONFIG_DEMAND_PAGING */
