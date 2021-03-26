@@ -374,7 +374,13 @@ static void iface_cb(struct net_if *iface, void *user_data)
 
 	if (!net_if_is_up(iface)) {
 		PR_INFO("Interface is down.\n");
-		return;
+
+		/* Show detailed information only when user asks information
+		 * about one specific network interface.
+		 */
+		if (data->user_data == NULL) {
+			return;
+		}
 	}
 
 #ifdef CONFIG_NET_POWER_MANAGEMENT
