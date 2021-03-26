@@ -404,10 +404,13 @@ uint32_t lll_preempt_calc(struct evt_hdr *evt, uint8_t ticker_id,
 	uint32_t diff;
 
 	ticks_now = ticker_ticks_now_get();
-	diff = ticker_ticks_diff_get(ticks_now, ticks_at_event);
+	diff = ticks_now - ticks_at_event;
+	if (diff & BIT(HAL_TICKER_CNTR_MSBIT)) {
+		return 0;
+	}
+
 	diff += HAL_TICKER_CNTR_CMP_OFFSET_MIN;
-	if (!(diff & BIT(HAL_TICKER_CNTR_MSBIT)) &&
-	    (diff > HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US))) {
+	if (diff > HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US)) {
 		/* TODO: for Low Latency Feature with Advanced XTAL feature.
 		 * 1. Release retained HF clock.
 		 * 2. Advance the radio event to accommodate normal prepare
