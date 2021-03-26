@@ -701,6 +701,144 @@
  */ /* end of queue_tracing_apis */
 
 
+
+
+/**
+ * @brief FIFO Tracing APIs
+ * @defgroup fifo_tracing_apis FIFO Tracing APIs
+ * @ingroup tracing_apis
+ * @{
+ */
+
+/**
+ * @brief Trace initialization of FIFO Queue entry
+ * @param fifo FIFO object
+ */
+#define sys_port_trace_k_fifo_init_enter(fifo)
+
+/**
+ * @brief Trace initialization of FIFO Queue exit
+ * @param fifo FIFO object
+ */
+#define sys_port_trace_k_fifo_init_exit(fifo)
+
+/**
+ * @brief Trace FIFO Queue cancel wait entry
+ * @param fifo FIFO object
+ */
+#define sys_port_trace_k_fifo_cancel_wait_enter(fifo)
+
+/**
+ * @brief Trace FIFO Queue cancel wait exit
+ * @param fifo FIFO object
+ */
+#define sys_port_trace_k_fifo_cancel_wait_exit(fifo)
+
+/**
+ * @brief Trace FIFO Queue put entry
+ * @param fifo FIFO object
+ * @param data Data item
+ */
+#define sys_port_trace_k_fifo_put_enter(fifo, data)
+
+/**
+ * @brief Trace FIFO Queue put exit
+ * @param fifo FIFO object
+ * @param data Data item
+ */
+#define sys_port_trace_k_fifo_put_exit(fifo, data)
+
+/**
+ * @brief Trace FIFO Queue alloc put entry
+ * @param fifo FIFO object
+ * @param data Data item
+ */
+#define sys_port_trace_k_fifo_alloc_put_enter(fifo, data)
+
+/**
+ * @brief Trace FIFO Queue alloc put exit
+ * @param fifo FIFO object
+ * @param data Data item
+ * @param ret Return value
+ */
+#define sys_port_trace_k_fifo_alloc_put_exit(fifo, data, ret)
+
+/**
+ * @brief Trace FIFO Queue put list entry
+ * @param fifo FIFO object
+ * @param head First ll-node
+ * @param tail Last ll-node
+ */
+#define sys_port_trace_k_fifo_alloc_put_list_enter(fifo, head, tail)
+
+/**
+ * @brief Trace FIFO Queue put list exit
+ * @param fifo FIFO object
+ * @param head First ll-node
+ * @param tail Last ll-node
+ */
+#define sys_port_trace_k_fifo_alloc_put_list_exit(fifo, head, tail)
+
+/**
+ * @brief Trace FIFO Queue put slist entry
+ * @param fifo FIFO object
+ * @param list Syslist object
+ */
+#define sys_port_trace_k_fifo_alloc_put_slist_enter(fifo, list)
+
+/**
+ * @brief Trace FIFO Queue put slist exit
+ * @param fifo FIFO object
+ * @param list Syslist object
+ */
+#define sys_port_trace_k_fifo_alloc_put_slist_exit(fifo, list)
+
+/**
+ * @brief Trace FIFO Queue get entry
+ * @param fifo FIFO object
+ * @param timeout Timeout period
+ */
+#define sys_port_trace_k_fifo_get_enter(fifo, timeout)
+
+/**
+ * @brief Trace FIFO Queue get exit
+ * @param fifo FIFO object
+ * @param timeout Timeout period
+ * @param ret Return value
+ */
+#define sys_port_trace_k_fifo_get_exit(fifo, timeout, ret)
+
+/**
+ * @brief Trace FIFO Queue peek head entry
+ * @param fifo FIFO object
+ */
+#define sys_port_trace_k_fifo_peek_head_entry(fifo)
+
+/**
+ * @brief Trace FIFO Queue peek head exit
+ * @param fifo FIFO object
+ * @param ret Return value
+ */
+#define sys_port_trace_k_fifo_peek_head_exit(fifo, ret)
+
+/**
+ * @brief Trace FIFO Queue peek tail entry
+ * @param fifo FIFO object
+ */
+#define sys_port_trace_k_fifo_peek_tail_entry(fifo)
+
+/**
+ * @brief Trace FIFO Queue peek tail exit
+ * @param fifo FIFO object
+ * @param ret Return value
+ */
+#define sys_port_trace_k_fifo_peek_tail_exit(fifo, ret)
+
+/**
+ * @}
+ */ /* end of fifo_tracing_apis */
+
+
 /**
  * @}
  */
