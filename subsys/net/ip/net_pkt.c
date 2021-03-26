@@ -1765,9 +1765,16 @@ struct net_pkt *net_pkt_clone(struct net_pkt *pkt, k_timeout_t timeout)
 	struct net_pkt *clone_pkt;
 	struct net_pkt_cursor backup;
 
-	clone_pkt = net_pkt_alloc_with_buffer(net_pkt_iface(pkt),
-					      net_pkt_get_len(pkt),
-					      AF_UNSPEC, 0, timeout);
+#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
+	clone_pkt = pkt_alloc_with_buffer(pkt->slab, net_pkt_iface(pkt),
+					  net_pkt_get_len(pkt),
+					  AF_UNSPEC, 0, timeout,
+					  __func__, __LINE__);
+#else
+	clone_pkt = pkt_alloc_with_buffer(pkt->slab, net_pkt_iface(pkt),
+					  net_pkt_get_len(pkt),
+					  AF_UNSPEC, 0, timeout);
+#endif
 	if (!clone_pkt) {
 		return NULL;
 	}
