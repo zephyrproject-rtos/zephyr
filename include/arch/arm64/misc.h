@@ -9,11 +9,11 @@
  * @brief Cortex-A public kernel miscellaneous
  *
  * ARM64-specific kernel miscellaneous interface. Included by
- * arm/aarch64/arch.h.
+ * arm64/arch.h.
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH64_MISC_H_
-#define ZEPHYR_INCLUDE_ARCH_ARM_AARCH64_MISC_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM64_MISC_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM64_MISC_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,4 +38,4 @@ static ALWAYS_INLINE void arch_nop(void)
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH64_MISC_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM64_MISC_H_ */

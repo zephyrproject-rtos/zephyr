@@ -11,8 +11,8 @@
  * ARM AArch64-specific kernel error handling interface. Included by arch.h.
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH64_ERROR_H_
-#define ZEPHYR_INCLUDE_ARCH_ARM_AARCH64_ERROR_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM64_ERROR_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM64_ERROR_H_
 
 #include <arch/arm64/syscall.h>
 #include <arch/arm64/exc.h>
@@ -37,4 +37,4 @@ do {									\
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH64_ERROR_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM64_ERROR_H_ */

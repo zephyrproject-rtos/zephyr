@@ -21,10 +21,9 @@
 /arch/arc/                                @abrodkin @ruuddw @evgeniy-paltsev
 /arch/arm/                                @MaureenHelm @galak @ioannisg
 /arch/arm/core/aarch32/cortex_m/cmse/     @ioannisg
-/arch/arm/core/aarch64/                   @carlocaione
 /arch/arm/include/aarch32/cortex_m/cmse.h @ioannisg
-/arch/arm/include/aarch64/                @carlocaione
 /arch/arm/core/aarch32/cortex_a_r/        @MaureenHelm @galak @ioannisg @bbolen @stephanosio
+/arch/arm64/                              @carlocaione
 /arch/common/                             @ioannisg @andyross
 /soc/arc/snps_*/                          @abrodkin @ruuddw @evgeniy-paltsev
 /soc/nios2/                               @nashif
@@ -44,7 +43,6 @@
 /soc/arm/nordic_nrf/                      @ioannisg
 /soc/arm/nuvoton/                         @ssekar15
 /soc/arm/nuvoton_npcx/                    @MulinChao @WealianLiao @ChiHuaL
-/soc/arm/qemu_cortex_a53/                 @carlocaione
 /soc/arm/quicklogic_eos_s3/               @kowalewskijan @kgugala
 /soc/arm/silabs_exx32/efm32pg1b/          @rdmeneze
 /soc/arm/silabs_exx32/efr32mg21/          @l-alfred
@@ -56,6 +54,10 @@
 /soc/arm/ti_simplelink/msp432p4xx/        @Mani-Sadhasivam
 /soc/arm/xilinx_zynqmp/                   @stephanosio
 /soc/xtensa/intel_s1000/                  @sathishkuttan @dcpleung
+/soc/arm64/                               @carlocaione
+/soc/arm64/qemu_cortex_a53/               @carlocaione
+/soc/arm64/bcm_vk/                        @abhishek-brcm
+/soc/arm64/xenvm/                         @lorc
 /arch/x86/                                @jhedberg @nashif @jenmwms @aasthagr
 /arch/nios2/                              @nashif
 /arch/posix/                              @aescolar @daor-oti
@@ -105,7 +107,6 @@
 /boards/arm/nucleo*/                      @erwango @ABOSTM @FRASTM
 /boards/arm/nucleo_f401re/                @idlethread
 /boards/arm/nuvoton_pfm_m487/             @ssekar15
-/boards/arm/qemu_cortex_a53/              @carlocaione
 /boards/arm/qemu_cortex_r*/               @stephanosio
 /boards/arm/qemu_cortex_m*/               @ioannisg
 /boards/arm/quick_feather/                @kowalewskijan @kgugala
@@ -143,6 +144,9 @@
 /boards/xtensa/intel_s1000_crb/           @sathishkuttan @dcpleung
 /boards/xtensa/odroid_go/                 @ydamigos
 /boards/sparc/                            @martin-aberg
+/boards/arm64/qemu_cortex_a53/            @carlocaione
+/boards/arm64/bcm958402m2_a72/            @abhishek-brcm
+/boards/arm64/xenvm/                      @lorc
 # All cmake related files
 /cmake/                                   @tejlmand @nashif
 /cmake/*/arcmwdt/                         @abrodkin @evgeniy-paltsev @tejlmand
@@ -324,7 +328,7 @@
 /dts/arm/broadcom/                        @sbranden
 /dts/arm/cypress/                         @nandojve
 /dts/arm/infineon/                        @parthitce
-/dts/arm/qemu-virt/                       @carlocaione
+/dts/arm64/                               @carlocaione
 /dts/arm/quicklogic/                      @wtatarski @kowalewskijan @kgugala
 /dts/arm/st/                              @erwango
 /dts/arm/ti/cc13?2*                       @bwitherspoon
@@ -352,7 +356,6 @@
 /dts/riscv/riscv32-litex-vexriscv.dtsi    @mateusz-holenko @kgugala @pgielda
 /dts/arm/armv*m.dtsi                      @galak @ioannisg
 /dts/arm/armv7-r.dtsi                     @bbolen @stephanosio
-/dts/arm/armv8-a.dtsi                     @carlocaione
 /dts/arm/xilinx/                          @bbolen @stephanosio
 /dts/x86/                                 @jhedberg
 /dts/xtensa/xtensa.dtsi                   @ydamigos
@@ -410,8 +413,7 @@
 /include/arch/arc/v2/irq.h                @abrodkin @ruuddw @evgeniy-paltsev
 /include/arch/arm/aarch32/                @MaureenHelm @galak @ioannisg
 /include/arch/arm/aarch32/cortex_a_r/     @stephanosio
-/include/arch/arm/aarch64/                @carlocaione
-/include/arch/arm/arm-smccc.h             @carlocaione
+/include/arch/arm64/                      @carlocaione
 /include/arch/arm/aarch32/irq.h           @carlocaione
 /include/arch/nios2/                      @nashif
 /include/arch/nios2/arch.h                @nashif

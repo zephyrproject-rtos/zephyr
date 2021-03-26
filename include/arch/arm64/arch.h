@@ -10,11 +10,11 @@
  *
  * This header contains the ARM64 specific kernel interface.  It is
  * included by the kernel interface architecture-abstraction header
- * (include/arm/aarch64/cpu.h)
+ * (include/arm64/cpu.h)
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH64_ARCH_H_
-#define ZEPHYR_INCLUDE_ARCH_ARM_AARCH64_ARCH_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM64_ARCH_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM64_ARCH_H_
 
 /* Add include for DTS generated information */
 #include <devicetree.h>
@@ -49,7 +49,7 @@ extern "C" {
  * The macros are to be stored in k_mem_partition_attr_t
  * objects. The format of a k_mem_partition_attr_t object
  * is an uint32_t composed by permission and attribute flags
- * located in include/arch/arm/aarch64/arm_mmu.h
+ * located in include/arch/arm64/arm_mmu.h
  */
 
 /* Read-Write access permission attributes */
@@ -82,4 +82,4 @@ struct arch_mem_domain {
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH64_ARCH_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM64_ARCH_H_ */

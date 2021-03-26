@@ -17,8 +17,8 @@
  * in the offsets.o module.
  */
 
-#ifndef ZEPHYR_ARCH_ARM_INCLUDE_KERNEL_ARCH_DATA_H_
-#define ZEPHYR_ARCH_ARM_INCLUDE_KERNEL_ARCH_DATA_H_
+#ifndef ZEPHYR_ARCH_ARM64_INCLUDE_KERNEL_ARCH_DATA_H_
+#define ZEPHYR_ARCH_ARM64_INCLUDE_KERNEL_ARCH_DATA_H_
 
 #include <toolchain.h>
 #include <linker/sections.h>
@@ -45,4 +45,4 @@ typedef struct __basic_sf _basic_sf_t;
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* ZEPHYR_ARCH_ARM_INCLUDE_KERNEL_ARCH_DATA_H_ */
+#endif /* ZEPHYR_ARCH_ARM64_INCLUDE_KERNEL_ARCH_DATA_H_ */

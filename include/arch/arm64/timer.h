@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH64_TIMER_H_
-#define ZEPHYR_INCLUDE_ARCH_ARM_AARCH64_TIMER_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM64_TIMER_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM64_TIMER_H_
 
 #ifndef _ASMLANGUAGE
 
@@ -70,4 +70,4 @@ static ALWAYS_INLINE uint64_t arm_arch_timer_count(void)
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH64_TIMER_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM64_TIMER_H_ */

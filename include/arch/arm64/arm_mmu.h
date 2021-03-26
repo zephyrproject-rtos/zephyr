@@ -4,8 +4,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_INCLUDE_ARCH_ARM64_MMU_ARM_MMU_H_
-#define ZEPHYR_INCLUDE_ARCH_ARM64_MMU_ARM_MMU_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM64_ARM_MMU_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM64_ARM_MMU_H_
 
 /* Following Memory types supported through MAIR encodings can be passed
  * by user through "attrs"(attributes) field of specified memory region.
@@ -201,4 +201,4 @@ void z_arm64_swap_ptables(struct k_thread *thread);
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* ZEPHYR_INCLUDE_ARCH_ARM64_MMU_ARM_MMU_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM64_ARM_MMU_H_ */

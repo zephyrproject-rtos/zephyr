@@ -11,8 +11,8 @@
  * Exception/interrupt context helpers.
  */
 
-#ifndef ZEPHYR_ARCH_ARM_INCLUDE_AARCH64_EXC_H_
-#define ZEPHYR_ARCH_ARM_INCLUDE_AARCH64_EXC_H_
+#ifndef ZEPHYR_ARCH_ARM64_INCLUDE_EXC_H_
+#define ZEPHYR_ARCH_ARM64_INCLUDE_EXC_H_
 
 #include <arch/cpu.h>
 
@@ -46,4 +46,4 @@ extern void z_arm64_call_svc(void *switch_to, void **switched_from);
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* ZEPHYR_ARCH_ARM_INCLUDE_AARCH64_EXC_H_ */
+#endif /* ZEPHYR_ARCH_ARM64_INCLUDE_EXC_H_ */
