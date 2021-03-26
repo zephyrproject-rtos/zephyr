@@ -256,6 +256,73 @@
  */ /* end of mutex_tracing_apis */
 
 
+
+
+/**
+ * @brief Conditional Variable Tracing APIs
+ * @defgroup condvar_tracing_apis Conditional Variable Tracing APIs
+ * @ingroup tracing_apis
+ * @{
+ */
+
+/**
+ * @brief Trace initialization of Conditional Variable
+ * @param condvar Conditional Variable object
+ * @param ret Return value
+ */
+#define sys_port_trace_k_condvar_init(condvar, ret)
+
+/**
+ * @brief Trace Conditional Variable signaling start
+ * @param condvar Conditional Variable object
+ */
+#define sys_port_trace_k_condvar_signal_enter(condvar)
+
+/**
+ * @brief Trace Conditional Variable signaling blocking
+ * @param condvar Conditional Variable object
+ * @param timeout Timeout period
+ */
+#define sys_port_trace_k_condvar_signal_blocking(condvar, timeout)
+
+/**
+ * @brief Trace Conditional Variable signaling outcome
+ * @param condvar Conditional Variable object
+ * @param ret Return value
+ */
+#define sys_port_trace_k_condvar_signal_exit(condvar, ret)
+
+/**
+ * @brief Trace Conditional Variable broadcast enter
+ * @param condvar Conditional Variable object
+ */
+#define sys_port_trace_k_condvar_broadcast_enter(condvar)
+
+/**
+ * @brief Trace Conditional Variable broadcast exit
+ * @param condvar Conditional Variable object
+ * @param ret Return value
+ */
+#define sys_port_trace_k_condvar_broadcast_exit(condvar, ret)
+
+/**
+ * @brief Trace Conditional Variable wait enter
+ * @param condvar Conditional Variable object
+ */
+#define sys_port_trace_k_condvar_wait_enter(condvar)
+
+/**
+ * @brief Trace Conditional Variable wait exit
+ * @param condvar Conditional Variable object
+ * @param ret Return value
+ */
+#define sys_port_trace_k_condvar_wait_exit(condvar, ret)
+
+/**
+ * @}
+ */ /* end of condvar_tracing_apis */
+
+
 /**
  * @}
  */
