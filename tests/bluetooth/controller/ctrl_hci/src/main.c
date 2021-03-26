@@ -227,7 +227,7 @@ void test_hci_apto(void)
 	uint16_t conn_handle;
 	uint64_t err;
 
-	uint16_t dummy;
+	uint16_t apto;
 
 	conn_handle = ll_conn_handle_get(conn_from_pool);
 
@@ -235,15 +235,18 @@ void test_hci_apto(void)
 	/* Connect */
 	ull_cp_state_set(conn_from_pool, ULL_CP_CONNECTED);
 
-	err = ll_apto_get(conn_handle, &dummy);
-	zassert_equal(err, BT_HCI_ERR_CMD_DISALLOWED, NULL);
+	conn_from_pool->apto_reload = 100;
+	conn_from_pool->lll.interval = 10;
+	err = ll_apto_get(conn_handle, &apto);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(apto, 125, "Apto is %d", apto);
 
-	err = ll_apto_get(conn_handle+1, &dummy);
+	err = ll_apto_get(conn_handle+1, &apto);
 	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID, NULL);
 
-
-	err = ll_apto_set(conn_handle, 0x00);
-	zassert_equal(err, BT_HCI_ERR_CMD_DISALLOWED, NULL);
+	err = ll_apto_set(conn_handle, 1000);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+	zassert_equal(conn_from_pool->apto_reload, 800, "Apto reload is %d", conn_from_pool->apto_reload);
 
 	err = ll_apto_get(conn_handle+1, 0x00);
 	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID, NULL);
