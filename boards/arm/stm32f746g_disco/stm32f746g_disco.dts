@@ -119,3 +119,43 @@
 		     &eth_txd0_pg13
 		     &eth_txd1_pg14>;
 };
+
+&flash0 {
+partitions {
+compatible = "fixed-partitions";
+#address-cells = <1>;
+#size-cells = <1>;
+
+/* 128KB for bootloader */
+boot_partition: partition@0 {
+label = "mcuboot";
+reg = <0x00000000 0x00020000>;
+read-only;
+};
+
+/* storage: 128KB for settings */
+storage_partition: partition@20000 {
+label = "storage";
+reg = <0x00020000 0x00020000>;
+};
+
+/* application image slot: 256KB */
+slot0_partition: partition@40000 {
+label = "image-0";
+reg = <0x00040000 0x00040000>;
+};
+
+/* backup slot: 256KB */
+slot1_partition: partition@80000 {
+label = "image-1";
+reg = <0x00080000 0x00040000>;
+};
+
+/* swap slot: 256KB */
+scratch_partition: partition@c0000 {
+label = "image-scratch";
+reg = <0x000c0000 0x00040000>;
+};
+
+};
+};
