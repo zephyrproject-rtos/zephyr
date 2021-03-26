@@ -8,13 +8,13 @@ import tempfile
 
 import pytest
 
-import dtlib
+from devicetree import dtlib
 
 # Test suite for dtlib.py.
 #
 # Run it using pytest (https://docs.pytest.org/en/stable/usage.html):
 #
-#   $ pytest testdtlib.py
+#   $ pytest tests/test_dtlib.py
 #
 # Extra options you can pass to pytest for debugging:
 #
