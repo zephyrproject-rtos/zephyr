@@ -96,11 +96,16 @@
 			power-state-name = "runtime-idle";
 			min-residency-us = <10>;
 		};
+		suspend: suspend {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			min-residency-us = <1000>;
+		};
 	};
 };
 
 &cpu0 {
-	cpu-power-states = <&idle>;
+	cpu-power-states = <&idle &suspend>;
 };
 
 /*
