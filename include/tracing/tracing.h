@@ -19,7 +19,7 @@
 #define SYS_TRACE_ID_SEMA_TAKE               (6u + SYS_TRACE_ID_OFFSET)
 #define SYS_TRACE_ID_SLEEP                   (7u + SYS_TRACE_ID_OFFSET)
 
-#ifdef CONFIG_SEGGER_SYSTEMVIEW
+#if defined CONFIG_SEGGER_SYSTEMVIEW
 #include "tracing_sysview.h"
 
 #elif defined CONFIG_TRACING_CTF
@@ -133,24 +133,6 @@
 #define sys_trace_idle()
 
 /**
- * @brief Trace initialisation of a Semaphore
- * @param sem Semaphore object
- */
-#define sys_trace_semaphore_init(sem)
-
-/**
- * @brief Trace taking a Semaphore
- * @param sem Semaphore object
- */
-#define sys_trace_semaphore_take(sem)
-
-/**
- * @brief Trace giving a Semaphore
- * @param sem Semaphore object
- */
-#define sys_trace_semaphore_give(sem)
-
-/**
  * @brief Trace initialisation of a Mutex
  * @param mutex  Mutex object
  */
@@ -167,6 +149,77 @@
  * @param mutex Mutex object
  */
 #define sys_trace_mutex_unlock(mutex)
+/**
+ * @}
+ */
+
+
+/**
+ * @brief Tracing APIs
+ * @defgroup tracing_apis Tracing APIs
+ * @{
+ */
+
+
+/**
+ * @brief Semaphore Tracing APIs
+ * @defgroup sem_tracing_apis Semaphore Tracing APIs
+ * @ingroup tracing_apis
+ * @{
+ */
+
+/**
+ * @brief Trace initialisation of a Semaphore
+ * @param sem Semaphore object
+ * @param ret Return value
+ */
+#define sys_port_trace_k_sem_init(sem, ret)
+
+/**
+ * @brief Trace giving a Semaphore entry
+ * @param sem Semaphore object
+ */
+#define sys_port_trace_k_sem_give_enter(sem)
+
+/**
+ * @brief Trace giving a Semaphore exit
+ * @param sem Semaphore object
+ */
+#define sys_port_trace_k_sem_give_exit(sem)
+
+/**
+ * @brief Trace taking a Semaphore attempt start
+ * @param sem Semaphore object
+ * @param timeout Timeout period
+ */
+#define sys_port_trace_k_sem_take_enter(sem, timeout)
+
+/**
+ * @brief Trace taking a Semaphore attempt blocking
+ * @param sem Semaphore object
+ * @param timeout Timeout period
+ */
+#define sys_port_trace_k_sem_take_blocking(sem, timeout)
+
+/**
+ * @brief Trace taking a Semaphore attempt outcome
+ * @param sem Semaphore object
+ * @param timeout Timeout period
+ * @param ret Return value
+ */
+#define sys_port_trace_k_sem_take_exit(sem, timeout, ret)
+
+/**
+ * @brief Trace resetting a Semaphore
+ * @param sem Semaphore object
+ */
+#define sys_port_trace_k_sem_reset(sem)
+
+/**
+ * @}
+ */ /* end of sem_tracing_apis */
+
+
 /**
  * @}
  */
