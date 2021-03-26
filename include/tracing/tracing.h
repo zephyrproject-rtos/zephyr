@@ -1410,6 +1410,61 @@
  */ /* end of heap_tracing_apis */
 
 
+
+
+/**
+ * @brief Memory Slab Tracing APIs
+ * @defgroup mslab_tracing_apis Memory Slab Tracing APIs
+ * @ingroup tracing_apis
+ * @{
+ */
+
+/**
+ * @brief Trace initialization of Memory Slab
+ * @param slab Memory Slab object
+ * @param rc Return value
+ */
+#define sys_port_trace_k_mem_slab_init(slab, rc)
+
+/**
+ * @brief Trace Memory Slab alloc attempt entry
+ * @param slab Memory Slab object
+ * @param timeout Timeout period
+ */
+#define sys_port_trace_k_mem_slab_alloc_enter(slab, timeout)
+
+/**
+ * @brief Trace Memory Slab alloc attempt blocking
+ * @param slab Memory Slab object
+ * @param timeout Timeout period
+ */
+#define sys_port_trace_k_mem_slab_alloc_blocking(slab, timeout)
+
+/**
+ * @brief Trace Memory Slab alloc attempt outcome
+ * @param slab Memory Slab object
+ * @param timeout Timeout period
+ * @param ret Return value
+ */
+#define sys_port_trace_k_mem_slab_alloc_exit(slab, timeout, ret)
+
+/**
+ * @brief Trace Memory Slab free entry
+ * @param slab Memory Slab object
+ */
+#define sys_port_trace_k_mem_slab_free_enter(slab)
+
+/**
+ * @brief Trace Memory Slab free exit
+ * @param slab Memory Slab object
+ */
+#define sys_port_trace_k_mem_slab_free_exit(slab)
+
+/**
+ * @}
+ */ /* end of mslab_tracing_apis */
+
+
 /**
  * @}
  */
