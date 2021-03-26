@@ -764,18 +764,8 @@ void ull_conn_done(struct node_rx_event_done *done)
 		} else {
 			conn->appto_expire = 0U;
 
-			/*
-			** EGON TODO: check what we need to do here
-			*/
-
-			/*
-			** as a placeholder from original code
-			if ((conn->procedure_expire == 0U) &&
-			    (conn->llcp_req == conn->llcp_ack)) {
-				conn->llcp_type = LLCP_PING;
-				conn->llcp_ack -= 2U;
-			}
-			*/
+			/* Initiate LE_PING procedure */
+			ull_cp_le_ping(conn);
 		}
 	}
 #endif /* CONFIG_BT_CTLR_LE_PING */

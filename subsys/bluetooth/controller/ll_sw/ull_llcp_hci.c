@@ -101,11 +101,11 @@ uint8_t ll_apto_get(uint16_t handle, uint16_t *apto)
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
 
-	return BT_HCI_ERR_CMD_DISALLOWED;
-	/* EGON: for future reference
-	 *
-	 *	*apto = conn->apto_reload * conn->lll.interval * 125U / 1000;
-	 */
+	// apto unit is 10ms
+	*apto = conn->apto_reload * conn->lll.interval * (CONN_INT_UNIT_US/10) / 1000;
+
+	return 0;
+
 }
 
 uint8_t ll_apto_set(uint16_t handle, uint16_t apto)
@@ -117,13 +117,12 @@ uint8_t ll_apto_set(uint16_t handle, uint16_t apto)
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
 
-	return BT_HCI_ERR_CMD_DISALLOWED;
+	// apto unit is 10ms, RADIO_CONN_EVENTS converts us to connection events
+	conn->apto_reload = RADIO_CONN_EVENTS(apto * 10U * 1000U,
+					      conn->lll.interval * CONN_INT_UNIT_US);
 
-	/* EGON: for future reference
-	 *
-	 *	conn->apto_reload = RADIO_CONN_EVENTS(apto * 10U * 1000U,
-	 *				      conn->lll.interval * 1250);
-	 */
+	return 0;
+
 }
 #endif /* CONFIG_BT_CTLR_LE_PING */
 
