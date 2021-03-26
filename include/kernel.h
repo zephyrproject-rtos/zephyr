@@ -1870,10 +1870,7 @@ __syscall void *k_queue_get(struct k_queue *queue, k_timeout_t timeout);
  *
  * @return true if data item was removed
  */
-static inline bool k_queue_remove(struct k_queue *queue, void *data)
-{
-	return sys_sflist_find_and_remove(&queue->data_q, (sys_sfnode_t *)data);
-}
+bool k_queue_remove(struct k_queue *queue, void *data);
 
 /**
  * @brief Append an element to a queue only if it's not present already.
@@ -1889,19 +1886,7 @@ static inline bool k_queue_remove(struct k_queue *queue, void *data)
  *
  * @return true if data item was added, false if not
  */
-static inline bool k_queue_unique_append(struct k_queue *queue, void *data)
-{
-	sys_sfnode_t *test;
-
-	SYS_SFLIST_FOR_EACH_NODE(&queue->data_q, test) {
-		if (test == (sys_sfnode_t *) data) {
-			return false;
-		}
-	}
-
-	k_queue_append(queue, data);
-	return true;
-}
+bool k_queue_unique_append(struct k_queue *queue, void *data);
 
 /**
  * @brief Query a queue to see if it has data available.
@@ -1934,11 +1919,6 @@ static inline int z_impl_k_queue_is_empty(struct k_queue *queue)
  */
 __syscall void *k_queue_peek_head(struct k_queue *queue);
 
-static inline void *z_impl_k_queue_peek_head(struct k_queue *queue)
-{
-	return z_queue_node_peek(sys_sflist_peek_head(&queue->data_q), false);
-}
-
 /**
  * @brief Peek element at the tail of queue.
  *
@@ -1949,11 +1929,6 @@ static inline void *z_impl_k_queue_peek_head(struct k_queue *queue)
  * @return Tail element, or NULL if queue is empty.
  */
 __syscall void *k_queue_peek_tail(struct k_queue *queue);
-
-static inline void *z_impl_k_queue_peek_tail(struct k_queue *queue)
-{
-	return z_queue_node_peek(sys_sflist_peek_tail(&queue->data_q), false);
-}
 
 /**
  * @brief Statically define and initialize a queue.
