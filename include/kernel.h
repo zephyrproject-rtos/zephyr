@@ -1913,12 +1913,6 @@ static inline int z_impl_k_queue_is_empty(struct k_queue *queue)
  */
 __syscall void *k_queue_peek_head(struct k_queue *queue);
 
-/*static inline void *z_impl_k_queue_peek_head(struct k_queue *queue)
-{
-	return z_queue_node_peek(sys_sflist_peek_head(&queue->data_q), false);
-}
-*/
-
 /**
  * @brief Peek element at the tail of queue.
  *
@@ -1929,12 +1923,6 @@ __syscall void *k_queue_peek_head(struct k_queue *queue);
  * @return Tail element, or NULL if queue is empty.
  */
 __syscall void *k_queue_peek_tail(struct k_queue *queue);
-
-/*static inline void *z_impl_k_queue_peek_tail(struct k_queue *queue)
-{
-	return z_queue_node_peek(sys_sflist_peek_tail(&queue->data_q), false);
-}
-*/
 
 /**
  * @brief Statically define and initialize a queue.
