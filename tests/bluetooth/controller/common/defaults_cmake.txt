@@ -3,6 +3,7 @@
 #
 
 include_directories(
+        src
         ${ZEPHYR_BASE}/tests/bluetooth/controller/mock_ctrl/include
         ${ZEPHYR_BASE}/tests/bluetooth/controller/common/include
         ${ZEPHYR_BASE}/include/bluetooth
@@ -55,5 +56,9 @@ FILE(GLOB common_sources
 )
 
 add_definitions(-include kconfig.h)
+if(KCONFIG_OVERRIDE_FILE)
+  add_definitions(-include ${KCONFIG_OVERRIDE_FILE})
+endif()
+
 add_definitions(-include ztest.h)
 add_definitions(-include soc.h)
