@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_ARM_ARM_SMCCC_H_
-#define ZEPHYR_INCLUDE_ARCH_ARM_ARM_SMCCC_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM64_SMCCC_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM64_SMCCC_H_
 
 /*
  * Result from SMC/HVC call
@@ -56,4 +56,4 @@ void arm_smccc_smc(unsigned long a0, unsigned long a1,
 		   unsigned long a6, unsigned long a7,
 		   struct arm_smccc_res *res);
 
-#endif /* ZEPHYR_INCLUDE_ARCH_ARM_ARM_SMCCC_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM64_SMCCC_H_ */

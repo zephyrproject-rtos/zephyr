@@ -153,9 +153,12 @@ ARM64 arch:
         - npitre
         - ioannisg
     files:
-        - arch/arm/core/aarch64/
-        - include/arch/arm/aarch64/
+        - arch/arm64/
+        - include/arch/arm64/
         - tests/arch/arm64/
+        - soc/arm64/qemu_cortex_a53/
+        - boards/arm64/qemu_cortex_a53/
+        - dts/arm64/
     labels:
         - "area: ARM64"
 

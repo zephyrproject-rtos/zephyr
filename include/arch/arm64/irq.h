@@ -9,11 +9,11 @@
  * @brief Cortex-A public interrupt handling
  *
  * ARM64-specific kernel interrupt handling interface.
- * Included by arm/aarch64/arch.h.
+ * Included by arm64/arch.h.
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH64_IRQ_H_
-#define ZEPHYR_INCLUDE_ARCH_ARM_AARCH64_IRQ_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM64_IRQ_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM64_IRQ_H_
 
 #include <irq.h>
 #include <sw_isr_table.h>
@@ -111,4 +111,4 @@ extern void _isr_wrapper(void);
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH64_IRQ_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM64_IRQ_H_ */

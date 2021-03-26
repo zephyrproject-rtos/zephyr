@@ -10,11 +10,11 @@
  *
  * This header contains the ARM64 specific syscall interface.  It is
  * included by the syscall interface architecture-abstraction header
- * (include/arch/aarch64/syscall.h)
+ * (include/arch64/syscall.h)
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_AARCH64_ARM_SYSCALL_H_
-#define ZEPHYR_INCLUDE_ARCH_AARCH64_ARM_SYSCALL_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM64_SYSCALL_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM64_SYSCALL_H_
 
 #define _SVC_CALL_CONTEXT_SWITCH	0
 #define _SVC_CALL_IRQ_OFFLOAD		1
@@ -179,4 +179,4 @@ static inline bool arch_is_user_context(void)
 #endif /* _ASMLANGUAGE */
 #endif /* CONFIG_USERSPACE */
 
-#endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH64_SYSCALL_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM64_SYSCALL_H_ */
