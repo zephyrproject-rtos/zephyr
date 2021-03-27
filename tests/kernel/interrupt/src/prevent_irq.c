@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include "interrupt_util.h"
+#include <interrupt_util.h>
 
 #define DURATION	5
 #define HANDLER_TOKEN	0xDEADBEEF
