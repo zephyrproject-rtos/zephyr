@@ -101,7 +101,7 @@ static inline void get_start_time_cyc(void)
 	 * TC_START() in their code. But the caller thread cannot be
 	 * in userspace.
 	 */
-	if (!_is_user_context()) {
+	if (!k_is_user_context()) {
 		tc_start_time = k_cycle_get_32();
 	}
 }

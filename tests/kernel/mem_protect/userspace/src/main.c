@@ -97,7 +97,7 @@ static void test_is_usermode(void)
 	/* Confirm that we are in fact running in user mode. */
 	clear_fault();
 
-	zassert_true(_is_user_context(), "thread left in kernel mode");
+	zassert_true(k_is_user_context(), "thread left in kernel mode");
 }
 
 /**
@@ -547,7 +547,7 @@ static void test_access_after_revoke(void)
 
 static void umode_enter_func(void)
 {
-	zassert_true(_is_user_context(),
+	zassert_true(k_is_user_context(),
 		     "Thread did not enter user mode");
 }
 

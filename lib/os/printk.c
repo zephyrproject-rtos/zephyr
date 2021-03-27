@@ -120,7 +120,7 @@ static int char_out(int c, void *ctx_p)
 #ifdef CONFIG_USERSPACE
 void vprintk(const char *fmt, va_list ap)
 {
-	if (_is_user_context()) {
+	if (k_is_user_context()) {
 		struct buf_out_context ctx = { 0 };
 
 		cbvprintf(buf_char_out, &ctx, fmt, ap);

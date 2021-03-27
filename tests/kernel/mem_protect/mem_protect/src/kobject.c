@@ -1104,7 +1104,7 @@ void test_kobject_free_error(void)
 {
 	uint32_t perm = K_INHERIT_PERMS;
 
-	if (_is_user_context()) {
+	if (k_is_user_context()) {
 		perm = perm | K_USER;
 	}
 
