@@ -168,6 +168,8 @@ The Zephyr stm32l562e_dk board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | TrustZone | on-chip    | Trusted Firmware-M                  |
 +-----------+------------+-------------------------------------+
+| RNG       | on-chip    | True Random Number Generator        |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
