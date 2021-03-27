@@ -9,6 +9,7 @@
 #include <irq.h>
 #include <tc_util.h>
 #include <sw_isr_table.h>
+#include <interrupt_util.h>
 
 extern uint32_t _irq_vector_table[];
 
@@ -76,37 +77,6 @@ extern uint32_t _irq_vector_table[];
 
 static volatile int trigger_check[TRIG_CHECK_SIZE];
 
-#if defined(CONFIG_CPU_CORTEX_M)
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
-
-void trigger_irq(int irq)
-{
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) || \
-	defined(CONFIG_SOC_TI_LM3S6965_QEMU)
-	/* QEMU does not simulate the STIR register: this is a workaround */
-	NVIC_SetPendingIRQ(irq);
-#else
-	NVIC->STIR = irq;
-#endif
-}
-#elif defined(CONFIG_RISCV)
-void trigger_irq(int irq)
-{
-	uint32_t mip;
-
-	__asm__ volatile ("csrrs %0, mip, %1\n"
-			  : "=r" (mip)
-			  : "r" (1 << irq));
-}
-#elif defined(CONFIG_ARC)
-void trigger_irq(int irq)
-{
-	z_arc_v2_aux_reg_write(_ARC_V2_AUX_IRQ_HINT, irq);
-}
-#else
-/* So far, Nios II does not support this */
-#define NO_TRIGGER_FROM_SW
-#endif
 
 #ifdef HAS_DIRECT_IRQS
 ISR_DIRECT_DECLARE(isr1)

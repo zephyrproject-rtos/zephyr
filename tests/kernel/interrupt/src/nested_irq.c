@@ -6,7 +6,7 @@
  */
 
 #include <ztest.h>
-#include "interrupt_util.h"
+#include <interrupt_util.h>
 
 /*
  * Run the nested interrupt test for the supported platforms only.
