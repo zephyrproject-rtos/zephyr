@@ -123,10 +123,10 @@ void free(void *ptr)
 	ARG_UNUSED(ptr);
 }
 
-void *realloc(void *ptr, size_t requested_size)
+void *realloc(void *ptr, size_t size)
 {
 	ARG_UNUSED(ptr);
-	return malloc(requested_size);
+	return malloc(size);
 }
 #endif
 
