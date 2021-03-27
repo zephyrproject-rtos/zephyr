@@ -7,8 +7,6 @@
 #ifndef INTERRUPT_UTIL_H_
 #define INTERRUPT_UTIL_H_
 
-#include <ztest.h>
-
 #define MS_TO_US(ms)  (ms * USEC_PER_MSEC)
 
 #if defined(CONFIG_CPU_CORTEX_M)
@@ -63,7 +61,9 @@ static inline void trigger_irq(int irq)
 {
 	printk("Triggering irq : %d\n", irq);
 #if defined(CONFIG_SOC_TI_LM3S6965_QEMU) || defined(CONFIG_CPU_CORTEX_M0) \
-	|| defined(CONFIG_CPU_CORTEX_M0PLUS) || defined(CONFIG_CPU_CORTEX_M1)
+	|| defined(CONFIG_CPU_CORTEX_M0PLUS) || defined(CONFIG_CPU_CORTEX_M1)\
+	|| defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+	/* QEMU does not simulate the STIR register: this is a workaround */
 	NVIC_SetPendingIRQ(irq);
 #else
 	NVIC->STIR = irq;
@@ -102,36 +102,10 @@ static inline void trigger_irq(int irq)
 
 #elif defined(CONFIG_X86)
 
-#define TEST_IRQ_DYN_LINE 16
-#define TEST_DYNAMIC_VECTOR     TEST_IRQ_DYN_LINE+32
-
-static inline void trigger_irq(int irq)
-{
-	int vector = irq + 32;
-
-/*
- * Trigger an interrupt of x86 under gcov code coverage report enabled,
- * which means GCC optimization will be -O0, so need to hard code the
- * immediate number for INT instruction. Otherwise, an build error
- * happends and shows:
- * "error: 'asm' operand 0 probably does not match constraints" and
- * "error: impossible constraint in 'asm'"
- */
-#if defined(CONFIG_COVERAGE)
-	if (vector == TEST_DYNAMIC_VECTOR) {
-		__asm__ volatile("int %0" :: "i"(TEST_DYNAMIC_VECTOR));
-	} else {
-		printk("not interrupt");
-	}
-#else
-	__asm__ volatile("int %0" :: "i"(vector));
-#endif
-}
+#define trigger_irq(irq) __asm__ volatile("int %0" : : "i" (irq) : "memory")
 
 #elif defined(CONFIG_ARCH_POSIX)
 #include "irq_ctrl.h"
-
-#define TEST_IRQ_DYN_LINE 5
 
 static inline void trigger_irq(int irq)
 {
@@ -163,7 +137,7 @@ static inline void trigger_irq(int irq)
 }
 
 #else
-/* for not supported architecture */
+/* So far, Nios II does not support this */
 #define NO_TRIGGER_FROM_SW
 #endif
 
