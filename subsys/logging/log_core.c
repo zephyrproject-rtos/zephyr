@@ -338,7 +338,7 @@ void log_printk(const char *fmt, va_list ap)
 			}
 		};
 
-		if (_is_user_context()) {
+		if (k_is_user_context()) {
 			uint8_t str[CONFIG_LOG_PRINTK_MAX_STRING_LENGTH + 1];
 
 			vsnprintk(str, sizeof(str), fmt, ap);
@@ -391,7 +391,7 @@ uint32_t log_count_args(const char *fmt)
 void log_generic(struct log_msg_ids src_level, const char *fmt, va_list ap,
 		 enum log_strdup_action strdup_action)
 {
-	if (_is_user_context()) {
+	if (k_is_user_context()) {
 		log_generic_from_user(src_level, fmt, ap);
 	} else if (IS_ENABLED(CONFIG_LOG_IMMEDIATE) &&
 	    (!IS_ENABLED(CONFIG_LOG_FRONTEND))) {
@@ -895,7 +895,7 @@ char *log_strdup(const char *str)
 	int err;
 
 	if (IS_ENABLED(CONFIG_LOG_IMMEDIATE) ||
-	    is_rodata(str) || _is_user_context()) {
+	    is_rodata(str) || k_is_user_context()) {
 		return (char *)str;
 	}
 

@@ -37,7 +37,7 @@ __weak void assert_post_action(const char *file, unsigned int line)
 	/* User threads aren't allowed to induce kernel panics; generate
 	 * an oops instead.
 	 */
-	if (_is_user_context()) {
+	if (k_is_user_context()) {
 		k_oops();
 	}
 #endif

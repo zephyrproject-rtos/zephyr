@@ -95,7 +95,7 @@ static int create_negative_test_thread(int choice)
 	int ret;
 	uint32_t perm = K_INHERIT_PERMS;
 
-	if (_is_user_context()) {
+	if (k_is_user_context()) {
 		perm = perm | K_USER;
 	}
 

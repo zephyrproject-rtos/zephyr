@@ -201,7 +201,7 @@ static int run_trigger_thread(int i)
 
 	case_type = i;
 
-	if (_is_user_context()) {
+	if (k_is_user_context()) {
 		perm = perm | K_USER;
 	}
 

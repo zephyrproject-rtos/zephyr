@@ -278,7 +278,7 @@ static void external_log_system_showcase(void)
 
 static void log_demo_thread(void *p1, void *p2, void *p3)
 {
-	bool usermode = _is_user_context();
+	bool usermode = k_is_user_context();
 
 	k_sleep(K_MSEC(100));
 
