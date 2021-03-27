@@ -156,7 +156,7 @@ static int cmd_device_list(const struct shell *shell,
 		}
 
 		shell_fprintf(shell, SHELL_NORMAL, " (%s)\n", state);
-		if (!_is_user_context()) {
+		if (!k_is_user_context()) {
 			struct cmd_device_list_visitor_context ctx = {
 				.shell = shell,
 				.buf = buf,

@@ -262,7 +262,7 @@ static inline char z_log_minimal_level_to_char(int level)
 #define __LOG(_level, _id, _filter, ...)				       \
 	do {								       \
 		if (Z_LOG_CONST_LEVEL_CHECK(_level)) {			       \
-			bool is_user_context = _is_user_context();	       \
+			bool is_user_context = k_is_user_context();	       \
 									       \
 			if (IS_ENABLED(CONFIG_LOG_MINIMAL)) {		       \
 				Z_LOG_TO_PRINTK(_level, __VA_ARGS__);	       \
@@ -316,7 +316,7 @@ static inline char z_log_minimal_level_to_char(int level)
 #define __LOG_HEXDUMP(_level, _id, _filter, _data, _length, _str)	       \
 	do {								       \
 		if (Z_LOG_CONST_LEVEL_CHECK(_level)) {			       \
-			bool is_user_context = _is_user_context();	       \
+			bool is_user_context = k_is_user_context();	       \
 									       \
 			if (IS_ENABLED(CONFIG_LOG_MINIMAL)) {		       \
 				Z_LOG_TO_PRINTK(_level, "%s", _str);	       \
@@ -723,7 +723,7 @@ __syscall void z_log_hexdump_from_user(uint32_t src_level_val,
 #define __LOG_VA(_level, _id, _filter, _str, _valist, _argnum, _strdup_action) \
 	do {								       \
 		if (Z_LOG_CONST_LEVEL_CHECK(_level)) {			       \
-			bool is_user_context = _is_user_context();	       \
+			bool is_user_context = k_is_user_context();	       \
 									       \
 			if (IS_ENABLED(CONFIG_LOG_MINIMAL)) {		       \
 				z_log_minimal_printk(_str, _valist);	       \

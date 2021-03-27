@@ -62,7 +62,7 @@ static void tThread_entry_negative(void *p1, void *p2, void *p3)
 		break;
 	case THREAD_CREATE_NEWTHREAD_NULL:
 		ztest_set_fault_valid(true);
-		if (_is_user_context()) {
+		if (k_is_user_context()) {
 			perm = perm | K_USER;
 		}
 
@@ -73,7 +73,7 @@ static void tThread_entry_negative(void *p1, void *p2, void *p3)
 		break;
 	case THREAD_CREATE_STACK_NULL:
 		ztest_set_fault_valid(true);
-		if (_is_user_context()) {
+		if (k_is_user_context()) {
 			perm = perm | K_USER;
 		}
 
@@ -84,7 +84,7 @@ static void tThread_entry_negative(void *p1, void *p2, void *p3)
 		break;
 	case THREAD_CTEATE_STACK_SIZE_OVERFLOW:
 		ztest_set_fault_valid(true);
-		if (_is_user_context()) {
+		if (k_is_user_context()) {
 			perm = perm | K_USER;
 		}
 		k_thread_create(&test_tdata, test_stack, -1,
@@ -108,7 +108,7 @@ static void create_negative_test_thread(int choice)
 	int ret;
 	uint32_t perm = K_INHERIT_PERMS;
 
-	if (_is_user_context()) {
+	if (k_is_user_context()) {
 		perm = perm | K_USER;
 	}
 

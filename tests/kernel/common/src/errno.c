@@ -144,7 +144,7 @@ void test_errno(void)
 	k_tid_t tid;
 	uint32_t perm = K_INHERIT_PERMS;
 
-	if (_is_user_context()) {
+	if (k_is_user_context()) {
 		perm = perm | K_USER;
 	}
 
