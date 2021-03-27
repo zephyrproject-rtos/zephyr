@@ -185,6 +185,9 @@ struct net_pkt {
 					* segment.
 					*/
 #endif
+	uint8_t captured : 1; /* Set to 1 if this packet is already being
+			       * captured
+			       */
 
 	union {
 		/* IPv6 hop limit or IPv4 ttl for this network packet.
@@ -327,6 +330,16 @@ static inline bool net_pkt_is_gptp(struct net_pkt *pkt)
 static inline void net_pkt_set_gptp(struct net_pkt *pkt, bool is_gptp)
 {
 	pkt->gptp_pkt = is_gptp;
+}
+
+static inline bool net_pkt_is_captured(struct net_pkt *pkt)
+{
+	return !!(pkt->captured);
+}
+
+static inline void net_pkt_set_captured(struct net_pkt *pkt, bool is_captured)
+{
+	pkt->captured = is_captured;
 }
 
 static inline uint8_t net_pkt_ip_hdr_len(struct net_pkt *pkt)
