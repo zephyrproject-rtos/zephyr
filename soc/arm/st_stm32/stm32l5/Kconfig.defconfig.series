@@ -18,4 +18,11 @@ config STM32_LPTIM_TIMER
 	default y
 endif # PM
 
+if ENTROPY_GENERATOR
+
+config ENTROPY_STM32_RNG
+	default y
+
+endif # ENTROPY_GENERATOR
+
 endif # SOC_SERIES_STM32L5X
