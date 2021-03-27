@@ -154,6 +154,8 @@ The Zephyr nucleo_l552ze_q board configuration supports the following hardware f
 +-----------+------------+-------------------------------------+
 | TrustZone | on-chip    | Trusted Firmware-M                  |
 +-----------+------------+-------------------------------------+
+| RNG       | on-chip    | True Random Number Generator        |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
