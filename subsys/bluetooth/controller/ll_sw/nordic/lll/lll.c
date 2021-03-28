@@ -49,15 +49,22 @@ static struct {
 		lll_is_abort_cb_t is_abort_cb;
 		lll_abort_cb_t    abort_cb;
 	} curr;
+
+	struct {
+		uint8_t volatile lll_count;
+		uint8_t          ull_count;
+	} done;
 } event;
 
 /* Entropy device */
 static const struct device *dev_entropy;
 
 static int init_reset(void);
+static inline void done_inc(void);
 static int prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 		   lll_prepare_cb_t prepare_cb, int prio,
-		   struct lll_prepare_param *prepare_param, uint8_t is_resume);
+		   struct lll_prepare_param *prepare_param,
+		   uint8_t is_resume, uint8_t is_dequeue);
 static int resume_enqueue(lll_prepare_cb_t resume_cb, int resume_prio);
 static void isr_race(void *param);
 
@@ -240,7 +247,7 @@ int lll_prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 		struct lll_prepare_param *prepare_param)
 {
 	return prepare(is_abort_cb, abort_cb, prepare_cb, prio, prepare_param,
-		       0);
+		       0, 0);
 }
 
 void lll_resume(void *param)
@@ -250,7 +257,7 @@ void lll_resume(void *param)
 
 	next = param;
 	ret = prepare(next->is_abort_cb, next->abort_cb, next->prepare_cb,
-		      next->prio, &next->prepare_param, next->is_resume);
+		      next->prio, &next->prepare_param, next->is_resume, 1);
 	LL_ASSERT(!ret || ret == -EINPROGRESS);
 }
 
@@ -324,6 +331,8 @@ int lll_done(void *param)
 		param = event.curr.param;
 		event.curr.param = NULL;
 
+		done_inc();
+
 		if (param) {
 			ull = HDR_ULL(((struct lll_hdr *)param)->parent);
 		}
@@ -345,6 +354,11 @@ int lll_done(void *param)
 	LL_ASSERT(evdone);
 
 	return ret;
+}
+
+void lll_done_sync(void)
+{
+	event.done.ull_count = event.done.lll_count;
 }
 
 bool lll_is_done(void *param)
@@ -553,9 +567,20 @@ static int init_reset(void)
 	return 0;
 }
 
+static inline void done_inc(void)
+{
+	event.done.lll_count++;
+}
+
+static inline bool is_done_sync(void)
+{
+	return event.done.lll_count == event.done.ull_count;
+}
+
 static int prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 		   lll_prepare_cb_t prepare_cb, int prio,
-		   struct lll_prepare_param *prepare_param, uint8_t is_resume)
+		   struct lll_prepare_param *prepare_param,
+		   uint8_t is_resume, uint8_t is_dequeue)
 {
 	struct lll_event *p;
 	uint8_t idx;
@@ -569,7 +594,9 @@ static int prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 	}
 
 	/* Current event active or another prepare is ready in the pipeline */
-	if (event.curr.abort_cb || (p && is_resume)) {
+	if ((!is_dequeue && !is_done_sync()) ||
+	    event.curr.abort_cb ||
+	    (p && is_resume)) {
 #if defined(CONFIG_BT_CTLR_LOW_LAT)
 		lll_prepare_cb_t resume_cb;
 		struct lll_event *next;
