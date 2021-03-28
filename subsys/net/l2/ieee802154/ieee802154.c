@@ -10,6 +10,7 @@ LOG_MODULE_REGISTER(net_ieee802154, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 #include <net/net_core.h>
 #include <net/net_l2.h>
 #include <net/net_if.h>
+#include <net/capture.h>
 
 #include "ipv6.h"
 
@@ -250,6 +251,8 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 	if (len < 0) {
 		return len;
 	}
+
+	net_capture_pkt(iface, pkt);
 
 	fragment = ieee802154_fragment_is_needed(pkt, ll_hdr_size);
 	ieee802154_fragment_ctx_init(&f_ctx, pkt, len, true);
