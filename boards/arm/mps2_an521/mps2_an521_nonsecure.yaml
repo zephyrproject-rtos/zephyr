@@ -11,5 +11,6 @@ testing:
   default: true
   only_tags:
      - arm
+     - kernel
      - tfm
      - userspace
