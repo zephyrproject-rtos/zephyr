@@ -165,7 +165,7 @@ static int ppp_send(struct net_if *iface, struct net_pkt *pkt)
 		return -ENETDOWN;
 	}
 
-	ret = api->send(net_if_get_device(iface), pkt);
+	ret = net_l2_send(api->send, net_if_get_device(iface), iface, pkt);
 	if (!ret) {
 		ret = net_pkt_get_len(pkt);
 		ppp_update_tx_stats(iface, pkt, ret);

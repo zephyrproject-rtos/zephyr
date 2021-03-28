@@ -12,7 +12,9 @@
 #ifndef ZEPHYR_INCLUDE_NET_NET_L2_H_
 #define ZEPHYR_INCLUDE_NET_NET_L2_H_
 
+#include <device.h>
 #include <net/buf.h>
+#include <net/capture.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -143,6 +145,18 @@ NET_L2_DECLARE_PUBLIC(CANBUS_L2);
 
 #define NET_L2_DATA_INIT(name, sfx, ctx_type)				\
 	static ctx_type NET_L2_GET_DATA(name, sfx) __used;
+
+typedef int (*net_l2_send_t)(const struct device *dev, struct net_pkt *pkt);
+
+static inline int net_l2_send(net_l2_send_t send_fn,
+			      const struct device *dev,
+			      struct net_if *iface,
+			      struct net_pkt *pkt)
+{
+	net_capture_pkt(iface, pkt);
+
+	return send_fn(dev, pkt);
+}
 
 /** @endcond */
 
