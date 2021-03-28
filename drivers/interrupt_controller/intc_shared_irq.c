@@ -143,54 +143,30 @@ int shared_irq_initialize(const struct device *dev)
 	return 0;
 }
 
-#if CONFIG_SHARED_IRQ_0
-void shared_irq_config_0_irq(void);
-
-const struct shared_irq_config shared_irq_config_0 = {
-	.irq_num = DT_INST_IRQN(0),
-	.client_count = CONFIG_SHARED_IRQ_NUM_CLIENTS,
-	.config = shared_irq_config_0_irq
-};
-
-struct shared_irq_runtime shared_irq_0_runtime;
-
-DEVICE_DT_INST_DEFINE(0, shared_irq_initialize,
-		NULL, &shared_irq_0_runtime,
-		&shared_irq_config_0, POST_KERNEL,
-		CONFIG_SHARED_IRQ_INIT_PRIORITY, &api_funcs);
-
-void shared_irq_config_0_irq(void)
-{
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority),
-		    shared_irq_isr, DEVICE_DT_INST_GET(0),
-		    DT_INST_IRQ(0, sense));
+#define SHARED_IRQ_CONFIG_FUNC(n)					\
+void shared_irq_config_func_##n(void)					\
+{									\
+	IRQ_CONNECT(DT_INST_IRQN(n),					\
+		    DT_INST_IRQ(n, priority),				\
+		    shared_irq_isr,					\
+		    DEVICE_DT_INST_GET(n),				\
+		    DT_INST_IRQ(n, sense));				\
 }
 
-#endif /* CONFIG_SHARED_IRQ_0 */
+#define SHARED_IRQ_INIT(n)						\
+	SHARED_IRQ_CONFIG_FUNC(n)					\
+	struct shared_irq_runtime shared_irq_data_##n;			\
+									\
+	const struct shared_irq_config shared_irq_config_##n = {	\
+		.irq_num = DT_INST_IRQN(n),				\
+		.client_count = CONFIG_SHARED_IRQ_NUM_CLIENTS,		\
+		.config = shared_irq_config_func_##n			\
+	};								\
+	DEVICE_DT_INST_DEFINE(n, shared_irq_initialize,			\
+			      NULL,					\
+			      &shared_irq_data_##n,			\
+			      &shared_irq_config_##n, POST_KERNEL,	\
+			      CONFIG_SHARED_IRQ_INIT_PRIORITY,		\
+			      &api_funcs);
 
-#if CONFIG_SHARED_IRQ_1
-void shared_irq_config_1_irq(void);
-
-const struct shared_irq_config shared_irq_config_1 = {
-	.irq_num = DT_INST_IRQN(1),
-	.client_count = CONFIG_SHARED_IRQ_NUM_CLIENTS,
-	.config = shared_irq_config_1_irq
-};
-
-struct shared_irq_runtime shared_irq_1_runtime;
-
-DEVICE_DT_INST_DEFINE(1, shared_irq_initialize,
-		NULL, &shared_irq_1_runtime,
-		&shared_irq_config_1, POST_KERNEL,
-		CONFIG_SHARED_IRQ_INIT_PRIORITY, &api_funcs);
-
-void shared_irq_config_1_irq(void)
-{
-	IRQ_CONNECT(DT_INST_IRQN(1),
-		    DT_INST_IRQ(1, priority),
-		    shared_irq_isr, DEVICE_DT_INST_GET(1),
-		    DT_INST_IRQ(1, sense));
-}
-
-#endif /* CONFIG_SHARED_IRQ_1 */
+DT_INST_FOREACH_STATUS_OKAY(SHARED_IRQ_INIT)
