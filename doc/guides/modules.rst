@@ -690,6 +690,12 @@ Build settings supported in the :file:`module.yml` file are:
 - ``arch_root``: Contains additional architectures that are available to the
   build system. Additional architectures must be located in a
   :file:`<arch_root>/arch` folder.
+- ``syscall_include_dirs``: Contains additional syscall include paths
+  that are available to the build system. Additional syscalls must be located
+  in a :file:`<syscall_include_dirs>` folder. The system calls in zephyr are
+  generated automatically using python script. If you have your own syscalls
+  and you want zephyr to automatically generate them, then you can define this
+  variable in your module file.
 - ``module_ext_root``: Contains :file:`CMakeLists.txt` and :file:`Kconfig` files
   for Zephyr modules, see also :ref:`modules_module_ext_root`.
 
@@ -704,6 +710,7 @@ corresponding file system layout.
        dts_root: .
        soc_root: .
        arch_root: .
+       syscall_include_dirs: [.]
        module_ext_root: .
 
 

@@ -70,6 +70,11 @@ mapping:
           dts_root:
             required: false
             type: str
+          syscall_include_dirs:
+            required: false
+            type: seq
+            sequence:
+              - type: str
           soc_root:
             required: false
             type: str
@@ -184,6 +189,13 @@ def process_settings(module, meta):
                 root_path = PurePath(module) / setting
                 out_text += f'"{root.upper()}_ROOT":'
                 out_text += f'"{root_path.as_posix()}"\n'
+
+        setting = build_settings.get('syscall_include_dirs')
+        if setting is not None:
+            for path in setting:
+                path = PurePath(module) / path
+                out_text += f'"SYSCALL_INCLUDE_DIRS":'
+                out_text += f'"{path.as_posix()}"\n'
 
     return out_text
 
