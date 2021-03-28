@@ -29,6 +29,7 @@ LOG_MODULE_REGISTER(net_core, CONFIG_NET_CORE_LOG_LEVEL);
 #include <net/gptp.h>
 #include <net/websocket.h>
 #include <net/ethernet.h>
+#include <net/capture.h>
 
 #if defined(CONFIG_NET_LLDP)
 #include <net/lldp.h>
@@ -370,6 +371,8 @@ static void process_rx_packet(struct k_work *work)
 	pkt = CONTAINER_OF(work, struct net_pkt, work);
 
 	net_pkt_set_rx_stats_tick(pkt, k_cycle_get_32());
+
+	net_capture_pkt(net_pkt_iface(pkt), pkt);
 
 	net_rx(net_pkt_iface(pkt), pkt);
 }

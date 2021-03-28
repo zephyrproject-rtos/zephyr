@@ -10,6 +10,7 @@ LOG_MODULE_REGISTER(net_l2_canbus, CONFIG_NET_L2_CANBUS_LOG_LEVEL);
 #include <net/net_core.h>
 #include <net/net_l2.h>
 #include <net/net_if.h>
+#include <net/capture.h>
 #include <net/net_pkt.h>
 #include <net/can.h>
 #include "canbus_internal.h"
@@ -1083,6 +1084,8 @@ static int canbus_send(struct net_if *iface, struct net_pkt *pkt)
 	NET_DBG("IPv6 hdr compressed by %d bytes", comp_len);
 	net_pkt_cursor_init(pkt);
 	pkt_len = net_pkt_get_len(pkt);
+
+	net_capture_pkt(iface, pkt);
 
 	NET_DBG("Send CAN frame to 0x%04x%s", dest_addr.addr,
 		mcast ? " (mcast)" : "");
