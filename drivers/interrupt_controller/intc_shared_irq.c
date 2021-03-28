@@ -143,6 +143,15 @@ int shared_irq_initialize(const struct device *dev)
 	return 0;
 }
 
+/*
+ * INST_SUPPORTS_DEP_ORDS_CNT: Counts the number of "elements" in
+ * DT_SUPPORTS_DEP_ORDS(n). There is a comma after each ordinal(inc. the last)
+ * Hence FOR_EACH adds "+1" once too often which has to be subtracted in the end.
+ */
+#define F1(x) 1
+#define INST_SUPPORTS_DEP_ORDS_CNT(n)  \
+	(FOR_EACH(F1, (+), DT_INST_SUPPORTS_DEP_ORDS(n)) - 1)
+
 #define SHARED_IRQ_CONFIG_FUNC(n)					\
 void shared_irq_config_func_##n(void)					\
 {									\
@@ -159,7 +168,7 @@ void shared_irq_config_func_##n(void)					\
 									\
 	const struct shared_irq_config shared_irq_config_##n = {	\
 		.irq_num = DT_INST_IRQN(n),				\
-		.client_count = CONFIG_SHARED_IRQ_NUM_CLIENTS,		\
+		.client_count = INST_SUPPORTS_DEP_ORDS_CNT(n),		\
 		.config = shared_irq_config_func_##n			\
 	};								\
 	DEVICE_DT_INST_DEFINE(n, shared_irq_initialize,			\
