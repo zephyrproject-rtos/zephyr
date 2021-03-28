@@ -562,6 +562,21 @@ void lll_isr_cleanup(void *param)
 	lll_done(NULL);
 }
 
+void lll_isr_early_abort(void *param)
+{
+	int err;
+
+	radio_isr_set(isr_race, param);
+	if (!radio_is_idle()) {
+		radio_disable();
+	}
+
+	err = lll_hfclock_off();
+	LL_ASSERT(err >= 0);
+
+	lll_done(NULL);
+}
+
 static int init_reset(void)
 {
 	return 0;

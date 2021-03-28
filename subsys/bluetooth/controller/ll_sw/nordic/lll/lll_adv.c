@@ -745,14 +745,9 @@ static int prepare_cb(struct lll_prepare_param *p)
 	 * ULL.
 	 */
 	if (unlikely(lll->conn && lll->conn->slave.initiated)) {
-		int err;
+		radio_isr_set(lll_isr_early_abort, lll);
+		radio_disable();
 
-		err = lll_hfclock_off();
-		LL_ASSERT(err >= 0);
-
-		lll_done(NULL);
-
-		DEBUG_RADIO_CLOSE_A(0);
 		return 0;
 	}
 #endif /* CONFIG_BT_PERIPHERAL */
