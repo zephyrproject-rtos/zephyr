@@ -9,15 +9,6 @@ menuconfig SHARED_IRQ
 	  Include shared interrupt support in system. Shared interrupt
 	  support is NOT required in most systems. If in doubt answer no.
 
-config SHARED_IRQ_NUM_CLIENTS
-	int "The number of clients per instance"
-	depends on SHARED_IRQ
-	default 5
-	help
-	  Configures the maximum number of clients allowed per shared
-	  instance of the shared interrupt driver. To conserve RAM set
-	  this value to the lowest practical value.
-
 config SHARED_IRQ_INIT_PRIORITY
 	int "Shared IRQ init priority"
 	depends on SHARED_IRQ
