@@ -312,6 +312,7 @@ config BT_CTLR_ULL_LOW_PRIO
 
 config BT_CTLR_LOW_LAT
 	bool "Low latency non-negotiating event preemption"
+	select BT_CTLR_LOW_LAT_ULL_DONE
 	default y if SOC_SERIES_NRF51X
 	help
 	  Use low latency non-negotiating event preemption. This reduces
@@ -327,6 +328,12 @@ config BT_CTLR_LOW_LAT_ULL
 	help
 	  Low latency ULL implementation that uses tailchaining instead of while
 	  loop to demux rx messages from LLL.
+
+config BT_CTLR_LOW_LAT_ULL_DONE
+	prompt "Low latency ULL prepare dequeue"
+	bool
+	help
+	  Done events be processed and dequeued in ULL context.
 
 config BT_CTLR_CONN_META
 	prompt "Enable connection meta data extension"
