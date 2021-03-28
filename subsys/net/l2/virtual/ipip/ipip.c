@@ -558,10 +558,16 @@ static const struct virtual_interface_api ipip_iface_api = {
 	.get_config = interface_get_config,
 };
 
-static struct ipip_context ipip_context_data;
+#define NET_IPIP_DATA(x, _)						\
+	static struct ipip_context ipip_context_data_##x = {		\
+	};
 
-NET_VIRTUAL_INTERFACE_INIT(ipip, "IP_tunnel", ipip_init, device_pm_control_nop,
-			   &ipip_context_data, NULL,
-			   CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-			   &ipip_iface_api,
-			   IPIPV4_MTU);
+#define NET_IPIP_INTERFACE_INIT(x, _)					\
+	NET_VIRTUAL_INTERFACE_INIT(ipip##x, "IP_TUNNEL" #x, ipip_init,	\
+				   device_pm_control_nop,		\
+				   &ipip_context_data_##x, NULL,	\
+				   CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
+				   &ipip_iface_api, IPIPV4_MTU);
+
+UTIL_LISTIFY(CONFIG_NET_L2_IPIP_TUNNEL_COUNT, NET_IPIP_DATA, _)
+UTIL_LISTIFY(CONFIG_NET_L2_IPIP_TUNNEL_COUNT, NET_IPIP_INTERFACE_INIT, _)

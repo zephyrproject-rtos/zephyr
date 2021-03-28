@@ -14,6 +14,12 @@ menuconfig NET_L2_IPIP
 
 if NET_L2_IPIP
 
+config NET_L2_IPIP_TUNNEL_COUNT
+	int "Max number of IPIP tunnels"
+	default 1
+	help
+	  Tells how many IPIP tunnels are supported.
+
 module = NET_L2_IPIP
 module-dep = NET_LOG
 module-str = Log level for IP-to-IP tunnel
