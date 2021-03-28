@@ -1631,6 +1631,37 @@ void *ull_prepare_dequeue_iter(uint8_t *idx)
 	return MFIFO_DEQUEUE_ITER_GET(prep, idx);
 }
 
+void ull_prepare_dequeue(uint8_t caller_id)
+{
+	struct lll_event *next;
+
+	next = ull_prepare_dequeue_get();
+	while (next) {
+		uint8_t is_aborted = next->is_aborted;
+		uint8_t is_resume = next->is_resume;
+
+		if (!is_aborted) {
+			static memq_link_t link;
+			static struct mayfly mfy = {0, 0, &link, NULL,
+						    lll_resume};
+			uint32_t ret;
+
+			mfy.param = next;
+			ret = mayfly_enqueue(caller_id, TICKER_USER_ID_LLL, 0,
+					     &mfy);
+			LL_ASSERT(!ret);
+		}
+
+		MFIFO_DEQUEUE(prep);
+
+		next = ull_prepare_dequeue_get();
+
+		if (!next || (!is_aborted && (!is_resume || next->is_resume))) {
+			break;
+		}
+	}
+}
+
 void *ull_event_done_extra_get(void)
 {
 	struct node_rx_event_done *evdone;
@@ -2279,7 +2310,6 @@ static inline void rx_demux_event_done(memq_link_t *link,
 {
 	struct node_rx_event_done *done = (void *)rx;
 	struct ull_hdr *ull_hdr;
-	struct lll_event *next;
 	void *release;
 
 	/* Get the ull instance */
@@ -2345,31 +2375,10 @@ static inline void rx_demux_event_done(memq_link_t *link,
 	LL_ASSERT(release == done);
 
 	/* dequeue prepare pipeline */
-	next = ull_prepare_dequeue_get();
-	while (next) {
-		uint8_t is_aborted = next->is_aborted;
-		uint8_t is_resume = next->is_resume;
+	ull_prepare_dequeue(TICKER_USER_ID_ULL_HIGH);
 
-		if (!is_aborted) {
-			static memq_link_t link;
-			static struct mayfly mfy = {0, 0, &link, NULL,
-						    lll_resume};
-			uint32_t ret;
-
-			mfy.param = next;
-			ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
-					     TICKER_USER_ID_LLL, 0, &mfy);
-			LL_ASSERT(!ret);
-		}
-
-		MFIFO_DEQUEUE(prep);
-
-		next = ull_prepare_dequeue_get();
-
-		if (!next || (!is_aborted && (!is_resume || next->is_resume))) {
-			break;
-		}
-	}
+	/* LLL done synchronized */
+	lll_done_sync();
 
 	/* ull instance will resume, dont decrement ref */
 	if (!ull_hdr) {

@@ -385,6 +385,7 @@ int lll_init(void);
 int lll_reset(void);
 void lll_resume(void *param);
 void lll_disable(void *param);
+void lll_done_sync(void);
 uint32_t lll_radio_is_idle(void);
 uint32_t lll_radio_tx_ready_delay_get(uint8_t phy, uint8_t flags);
 uint32_t lll_radio_rx_ready_delay_get(uint8_t phy, uint8_t flags);
@@ -404,6 +405,7 @@ int ull_prepare_enqueue(lll_is_abort_cb_t is_abort_cb,
 			       uint8_t is_resume);
 void *ull_prepare_dequeue_get(void);
 void *ull_prepare_dequeue_iter(uint8_t *idx);
+void ull_prepare_dequeue(uint8_t caller_id);
 void *ull_pdu_rx_alloc_peek(uint8_t count);
 void *ull_pdu_rx_alloc_peek_iter(uint8_t *idx);
 void *ull_pdu_rx_alloc(void);
