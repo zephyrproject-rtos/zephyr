@@ -159,7 +159,9 @@ void shared_irq_config_func_##n(void)					\
 		    DT_INST_IRQ(n, priority),				\
 		    shared_irq_isr,					\
 		    DEVICE_DT_INST_GET(n),				\
-		    DT_INST_IRQ(n, sense));				\
+		    COND_CODE_1(DT_INST_IRQ_HAS_CELL(n, sense),		\
+				(DT_INST_IRQ(n, sense)),		\
+				(0)));					\
 }
 
 #define SHARED_IRQ_INIT(n)						\
