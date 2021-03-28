@@ -33,7 +33,7 @@ struct shared_irq_client {
 };
 
 struct shared_irq_runtime {
-	struct shared_irq_client client[CONFIG_SHARED_IRQ_NUM_CLIENTS];
+	struct shared_irq_client *const client;
 };
 
 /**
@@ -164,7 +164,10 @@ void shared_irq_config_func_##n(void)					\
 
 #define SHARED_IRQ_INIT(n)						\
 	SHARED_IRQ_CONFIG_FUNC(n)					\
-	struct shared_irq_runtime shared_irq_data_##n;			\
+	struct shared_irq_client clients_##n[INST_SUPPORTS_DEP_ORDS_CNT(n)]; \
+	struct shared_irq_runtime shared_irq_data_##n = {		\
+		.client = clients_##n					\
+	};								\
 									\
 	const struct shared_irq_config shared_irq_config_##n = {	\
 		.irq_num = DT_INST_IRQN(n),				\
