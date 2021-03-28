@@ -197,7 +197,6 @@
 /* Define ticker user operations */
 #if defined(CONFIG_BT_CTLR_LOW_LAT) && \
 	(CONFIG_BT_CTLR_LLL_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
-#define TICKER_USER_LLL_OPS      (3 + TICKER_USER_LLL_VENDOR_OPS + 1)
 /* NOTE: When ticker job is disabled inside radio events then all advertising,
  *       scanning, and slave latency cancel ticker operations will be deferred,
  *       requiring increased ticker thread context operation queue count.
@@ -208,12 +207,13 @@
 				  TICKER_USER_THREAD_FLASH_OPS + \
 				  1)
 #else /* !CONFIG_BT_CTLR_LOW_LAT */
-#define TICKER_USER_LLL_OPS      (2 + TICKER_USER_LLL_VENDOR_OPS + 1)
 /* NOTE: As ticker job is not disabled inside radio events, no need for extra
  *       thread operations queue element for flash driver.
  */
 #define TICKER_USER_THREAD_OPS   (1 + TICKER_USER_THREAD_VENDOR_OPS + 1)
 #endif /* !CONFIG_BT_CTLR_LOW_LAT */
+
+#define TICKER_USER_ULL_LOW_OPS  (1 + 1)
 
 /* NOTE: When ULL_LOW priority is configured to lower than ULL_HIGH, then extra
  *       ULL_HIGH operations queue elements are required to buffer the
@@ -222,7 +222,7 @@
 #define TICKER_USER_ULL_HIGH_OPS (3 + TICKER_USER_ULL_HIGH_VENDOR_OPS + \
 				  TICKER_USER_ULL_HIGH_FLASH_OPS + 1)
 
-#define TICKER_USER_ULL_LOW_OPS  (1 + 1)
+#define TICKER_USER_LLL_OPS      (3 + TICKER_USER_LLL_VENDOR_OPS + 1)
 
 #define TICKER_USER_OPS           (TICKER_USER_LLL_OPS + \
 				   TICKER_USER_ULL_HIGH_OPS + \
@@ -2374,11 +2374,13 @@ static inline void rx_demux_event_done(memq_link_t *link,
 	release = done_release(link, done);
 	LL_ASSERT(release == done);
 
+#if defined(CONFIG_BT_CTLR_LOW_LAT_ULL_DONE)
 	/* dequeue prepare pipeline */
 	ull_prepare_dequeue(TICKER_USER_ID_ULL_HIGH);
 
 	/* LLL done synchronized */
 	lll_done_sync();
+#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
 
 	/* ull instance will resume, dont decrement ref */
 	if (!ull_hdr) {
