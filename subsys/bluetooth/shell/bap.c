@@ -27,7 +27,8 @@
 
 static struct bt_audio_chan chans[MAX_PAC];
 static struct bt_audio_capability *rcaps[2][CONFIG_BT_BAP_PAC_COUNT];
-static struct bt_audio_ep *reps[MAX_ASE];
+static struct bt_audio_ep *snks[CONFIG_BT_BAP_ASE_SNK_COUNT];
+static struct bt_audio_ep *srcs[CONFIG_BT_BAP_ASE_SNK_COUNT];
 static struct bt_audio_chan *default_chan;
 static bool connecting;
 
@@ -154,36 +155,92 @@ static void print_codec(struct bt_codec *codec)
 	}
 }
 
+static void add_capability(struct bt_audio_capability *cap, int index)
+{
+	shell_print(ctx_shell, "#%u: cap %p type 0x%02x", index, cap,
+		    cap->type);
+
+	print_codec(cap->codec);
+
+	if (cap->type != BT_AUDIO_SINK && cap->type != BT_AUDIO_SOURCE) {
+		return;
+	}
+
+	if (index < CONFIG_BT_BAP_PAC_COUNT) {
+		rcaps[cap->type - 1][index] = cap;
+	}
+}
+
+static void add_sink(struct bt_audio_ep *ep, int index)
+{
+	shell_print(ctx_shell, "Sink #%u: ep %p index 0x%02x", index, ep);
+
+	snks[index] = ep;
+}
+
+static void add_source(struct bt_audio_ep *ep, int index)
+{
+	shell_print(ctx_shell, "Source #%u: ep %p index 0x%02x", index, ep);
+
+	srcs[index] = ep;
+}
+
 static void discover_cb(struct bt_conn *conn, struct bt_audio_capability *cap,
 			struct bt_audio_ep *ep,
 			struct bt_audio_discover_params *params)
 {
 	if (cap) {
-		shell_print(ctx_shell, "cap %p type 0x%02x", cap, cap->type);
-
-		print_codec(cap->codec);
-
-		if (cap->type != BT_AUDIO_SINK &&
-		    cap->type != BT_AUDIO_SOURCE) {
-			return;
-		}
-
-		if (params->num_caps < CONFIG_BT_BAP_PAC_COUNT) {
-			rcaps[cap->type - 1][params->num_caps] = cap;
-		}
-
+		add_capability(cap, params->num_caps);
 		return;
 	}
 
 	if (ep) {
-		shell_print(ctx_shell, "ep %p", ep);
-		reps[params->num_eps] = ep;
+		if (params->type == BT_AUDIO_SINK) {
+			add_sink(ep, params->num_eps);
+		} else if (params->type == BT_AUDIO_SOURCE) {
+			add_source(ep, params->num_eps);
+		}
+
 		return;
 	}
 
 	shell_print(ctx_shell, "Discover complete: err %d", params->err);
 
 	memset(params, 0, sizeof(*params));
+}
+
+static void discover_all(struct bt_conn *conn, struct bt_audio_capability *cap,
+			struct bt_audio_ep *ep,
+			struct bt_audio_discover_params *params)
+{
+	if (cap) {
+		add_capability(cap, params->num_caps);
+		return;
+	}
+
+	if (ep) {
+		if (params->type == BT_AUDIO_SINK) {
+			add_sink(ep, params->num_eps);
+		} else if (params->type == BT_AUDIO_SOURCE) {
+			add_source(ep, params->num_eps);
+		}
+
+		return;
+	}
+
+	/* Sinks discovery complete, now discover sources */
+	if (params->type == BT_AUDIO_SINK) {
+		int err;
+
+		params->func = discover_cb;
+		params->type = BT_AUDIO_SOURCE;
+
+		err = bt_audio_discover(default_conn, params);
+		if (err) {
+			shell_error(ctx_shell, "bt_audio_discover err %d", err);
+			discover_cb(conn, NULL, NULL, params);
+		}
+	}
 }
 
 static int cmd_discover(const struct shell *shell, size_t argc, char *argv[])
@@ -200,13 +257,20 @@ static int cmd_discover(const struct shell *shell, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	params.type = strtol(argv[1], NULL, 0);
-	if (params.type != BT_AUDIO_SINK && params.type != BT_AUDIO_SOURCE) {
-		shell_error(shell, "Invalid type");
-		return -ENOEXEC;
-	}
+	params.func = discover_all;
+	params.type = BT_AUDIO_SINK;
 
-	params.func = discover_cb;
+	if (argc > 1) {
+		if (!strcmp(argv[1], "sink")) {
+			params.func = discover_cb;
+		} else if (!strcmp(argv[1], "source")) {
+			params.func = discover_cb;
+			params.type = BT_AUDIO_SOURCE;
+		} else {
+			shell_error(shell, "Unsupported type: %s", argv[1]);
+			return -ENOEXEC;
+		}
+	}
 
 	return bt_audio_discover(default_conn, &params);
 }
@@ -273,7 +337,7 @@ static void set_channel(struct bt_audio_chan *chan)
 
 	for (i = 0; i < ARRAY_SIZE(chans); i++) {
 		if (chan == &chans[i]) {
-			shell_print(ctx_shell, "Default ase: %u", i + 1);
+			shell_print(ctx_shell, "Default channel: %u", i + 1);
 		}
 	}
 }
@@ -311,7 +375,7 @@ static int cmd_preset(const struct shell *shell, size_t argc, char *argv[])
 
 static int cmd_config(const struct shell *shell, size_t argc, char *argv[])
 {
-	int32_t ase, dir;
+	int32_t index, dir;
 	struct bt_audio_capability *cap = NULL;
 	struct bt_audio_ep *ep = NULL;
 	struct lc3_preset *preset;
@@ -322,15 +386,25 @@ static int cmd_config(const struct shell *shell, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	ase = strtol(argv[1], NULL, 0);
-	if (ase < 0 || ase > ARRAY_SIZE(reps)) {
-		shell_error(shell, "Invalid ase");
+	index = strtol(argv[2], NULL, 0);
+	if (index < 0) {
+		shell_error(shell, "Invalid index");
 		return -ENOEXEC;
 	}
 
-	dir = strtol(argv[2], NULL, 0);
-	if (dir != BT_AUDIO_SOURCE && dir != BT_AUDIO_SINK) {
-		shell_error(shell, "Invalid direction");
+	if (!strcmp(argv[1], "sink")) {
+		dir = BT_AUDIO_SINK;
+		ep = snks[index];
+	} else if (!strcmp(argv[1], "source")) {
+		dir = BT_AUDIO_SOURCE;
+		ep = srcs[index];
+	} else {
+		shell_error(shell, "Unsupported type: %s", argv[1]);
+		return -ENOEXEC;
+	}
+
+	if (!ep) {
+		shell_error(shell, "Unable to find endpoint");
 		return -ENOEXEC;
 	}
 
@@ -354,12 +428,6 @@ static int cmd_config(const struct shell *shell, size_t argc, char *argv[])
 
 	if (!cap) {
 		shell_error(shell, "Unable to find matching capabilities");
-		return -ENOEXEC;
-	}
-
-	ep = reps[ase - 1];
-	if (!ep) {
-		shell_error(shell, "Unable to find endpoint");
 		return -ENOEXEC;
 	}
 
@@ -513,16 +581,38 @@ static int cmd_list(const struct shell *shell, size_t argc, char *argv[])
 {
 	int i;
 
+	shell_print(shell, "Configured Channels:");
+
 	for (i = 0; i < ARRAY_SIZE(chans); i++) {
 		struct bt_audio_chan *chan = &chans[i];
 
 		if (chan->conn) {
-			shell_print(shell, "%s%u: ase 0x%02x dir 0x%02x "
+			shell_print(shell, "  %s#%u: chan %p dir 0x%02x "
 				    "state 0x%02x linked %s",
-				    chan == default_chan ? "*" : " ", i, i + 1,
+				    chan == default_chan ? "*" : " ", i, chan,
 				    chan->cap->type, chan->state,
 				    sys_slist_is_empty(&chan->links) ? "no" :
 				    "yes");
+		}
+	}
+
+	shell_print(shell, "Sinks:");
+
+	for (i = 0; i < ARRAY_SIZE(snks); i++) {
+		struct bt_audio_ep *ep = snks[i];
+
+		if (ep) {
+			shell_print(shell, "  #%u: ep %p", i, ep);
+		}
+	}
+
+	shell_print(shell, "Sources:");
+
+	for (i = 0; i < ARRAY_SIZE(snks); i++) {
+		struct bt_audio_ep *ep = srcs[i];
+
+		if (ep) {
+			shell_print(shell, "  #%u: ep %p", i, ep);
 		}
 	}
 
@@ -532,17 +622,17 @@ static int cmd_list(const struct shell *shell, size_t argc, char *argv[])
 static int cmd_select(const struct shell *shell, size_t argc, char *argv[])
 {
 	struct bt_audio_chan *chan;
-	int ase;
+	int index;
 
-	ase = strtol(argv[1], NULL, 0);
-	if (ase < 0 || ase > ARRAY_SIZE(chans)) {
-		shell_error(shell, "Invalid ase");
+	index = strtol(argv[1], NULL, 0);
+	if (index < 0 || index > ARRAY_SIZE(chans)) {
+		shell_error(shell, "Invalid index");
 		return -ENOEXEC;
 	}
 
-	chan = &chans[ase - 1];
+	chan = &chans[index];
 	if (!chan->conn) {
-		shell_error(shell, "Invalid ase");
+		shell_error(shell, "Invalid index");
 		return -ENOEXEC;
 	}
 
@@ -554,29 +644,29 @@ static int cmd_select(const struct shell *shell, size_t argc, char *argv[])
 static int cmd_link(const struct shell *shell, size_t argc, char *argv[])
 {
 	struct bt_audio_chan *chan1, *chan2;
-	int ase1, ase2, err;
+	int index1, index2, err;
 
-	ase1 = strtol(argv[1], NULL, 0);
-	if (ase1 < 0 || ase1 > ARRAY_SIZE(chans)) {
-		shell_error(shell, "Invalid ase1");
+	index1 = strtol(argv[1], NULL, 0);
+	if (index1 < 0 || index1 > ARRAY_SIZE(chans)) {
+		shell_error(shell, "Invalid index1");
 		return -ENOEXEC;
 	}
 
-	ase2 = strtol(argv[2], NULL, 0);
-	if (ase2 < 0 || ase2 > ARRAY_SIZE(chans)) {
-		shell_error(shell, "Invalid ase2");
+	index2 = strtol(argv[2], NULL, 0);
+	if (index2 < 0 || index2 > ARRAY_SIZE(chans)) {
+		shell_error(shell, "Invalid index2");
 		return -ENOEXEC;
 	}
 
-	chan1 = &chans[ase1 - 1];
+	chan1 = &chans[index1 - 1];
 	if (!chan1->conn) {
-		shell_error(shell, "Invalid ase1");
+		shell_error(shell, "Invalid index1");
 		return -ENOEXEC;
 	}
 
-	chan2 = &chans[ase2 - 1];
+	chan2 = &chans[index2 - 1];
 	if (!chan2->conn) {
-		shell_error(shell, "Invalid ase2");
+		shell_error(shell, "Invalid index2");
 		return -ENOEXEC;
 	}
 
@@ -586,7 +676,7 @@ static int cmd_link(const struct shell *shell, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	shell_print(shell, "ases %d:%d linked", ase1, ase2);
+	shell_print(shell, "channnels %d:%d linked", index1, index2);
 
 	return 0;
 }
@@ -594,29 +684,29 @@ static int cmd_link(const struct shell *shell, size_t argc, char *argv[])
 static int cmd_unlink(const struct shell *shell, size_t argc, char *argv[])
 {
 	struct bt_audio_chan *chan1, *chan2;
-	int ase1, ase2, err;
+	int index1, index2, err;
 
-	ase1 = strtol(argv[1], NULL, 0);
-	if (ase1 < 0 || ase1 > ARRAY_SIZE(chans)) {
-		shell_error(shell, "Invalid ase1");
+	index1 = strtol(argv[1], NULL, 0);
+	if (index1 < 0 || index1 > ARRAY_SIZE(chans)) {
+		shell_error(shell, "Invalid index1");
 		return -ENOEXEC;
 	}
 
-	ase2 = strtol(argv[2], NULL, 0);
-	if (ase2 < 0 || ase2 > ARRAY_SIZE(chans)) {
-		shell_error(shell, "Invalid ase2");
+	index2 = strtol(argv[2], NULL, 0);
+	if (index2 < 0 || index2 > ARRAY_SIZE(chans)) {
+		shell_error(shell, "Invalid index2");
 		return -ENOEXEC;
 	}
 
-	chan1 = &chans[ase1 - 1];
+	chan1 = &chans[index1 - 1];
 	if (!chan1->conn) {
-		shell_error(shell, "Invalid ase1");
+		shell_error(shell, "Invalid index1");
 		return -ENOEXEC;
 	}
 
-	chan2 = &chans[ase2 - 1];
+	chan2 = &chans[index2 - 1];
 	if (!chan2->conn) {
-		shell_error(shell, "Invalid ase2");
+		shell_error(shell, "Invalid index2");
 		return -ENOEXEC;
 	}
 
@@ -626,7 +716,7 @@ static int cmd_unlink(const struct shell *shell, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	shell_print(shell, "ases %d:%d unbound", ase1, ase2);
+	shell_print(shell, "ases %d:%d unbound", index1, index2);
 
 	return 0;
 }
@@ -791,13 +881,13 @@ static struct bt_audio_chan_ops chan_ops = {
 static struct bt_audio_capability caps[MAX_PAC] = {
 	{
 		.type = BT_AUDIO_SOURCE,
-		.qos = BT_AUDIO_QOS(0x00, 0x02, 2u, 60u, 20000u, 40000u),
+		.qos = BT_AUDIO_QOS(0x00, 0x02, 0u, 60u, 20000u, 40000u),
 		.codec = &lc3_codec,
 		.ops = &lc3_ops,
 	},
 	{
 		.type = BT_AUDIO_SINK,
-		.qos = BT_AUDIO_QOS(0x00, 0x02, 2u, 60u, 20000u, 40000u),
+		.qos = BT_AUDIO_QOS(0x00, 0x02, 0u, 60u, 20000u, 40000u),
 		.codec = &lc3_codec,
 		.ops = &lc3_ops,
 	},
@@ -879,11 +969,11 @@ static int cmd_send(const struct shell *shell, size_t argc, char *argv[])
 
 SHELL_STATIC_SUBCMD_SET_CREATE(bap_cmds,
 	SHELL_CMD_ARG(init, NULL, NULL, cmd_init, 1, 0),
-	SHELL_CMD_ARG(discover, NULL, "<type: sink, source>",
-		      cmd_discover, 2, 0),
+	SHELL_CMD_ARG(discover, NULL, "[type: sink, source]",
+		      cmd_discover, 1, 1),
 	SHELL_CMD_ARG(preset, NULL, "[preset]", cmd_preset, 1, 1),
 	SHELL_CMD_ARG(config, NULL,
-		      "<ase> <direction: sink, source> [codec] [preset]",
+		      "<direction: sink, source> <index> [codec] [preset]",
 		      cmd_config, 3, 2),
 	SHELL_CMD_ARG(qos, NULL,
 		      "[preset] [interval] [framing] [latency] [pd] [sdu] [phy]"
@@ -894,11 +984,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bap_cmds,
 	SHELL_CMD_ARG(stop, NULL, NULL, cmd_stop, 1, 0),
 	SHELL_CMD_ARG(release, NULL, NULL, cmd_release, 1, 0),
 	SHELL_CMD_ARG(list, NULL, NULL, cmd_list, 1, 0),
-	SHELL_CMD_ARG(select, NULL, "<ase>", cmd_select, 2, 0),
-	SHELL_CMD_ARG(link, NULL, "<ase1> <ase2>", cmd_link, 3, 0),
-	SHELL_CMD_ARG(unlink, NULL, "<ase1> <ase2>", cmd_unlink, 3, 0),
+	SHELL_CMD_ARG(select, NULL, "<chan>", cmd_select, 2, 0),
+	SHELL_CMD_ARG(link, NULL, "<chan1> <chan2>", cmd_link, 3, 0),
+	SHELL_CMD_ARG(unlink, NULL, "<chan1> <chan2>", cmd_unlink, 3, 0),
 	SHELL_CMD_ARG(connect, NULL,
-		      "<ase> <direction: sink, source> [codec] [preset]",
+		      "<direction: sink, source> <index>  [codec] [preset]",
 		      cmd_connect, 3, 2),
 	SHELL_CMD_ARG(send, NULL, "Send to Audio Channel [data]",
 		      cmd_send, 1, 1),
