@@ -92,7 +92,8 @@ static void time_slot_delay(uint32_t ticks_at_expire, uint32_t ticks_delay,
 	 * Radio h/w.
 	 */
 	err = ticker_start(instance_index, /* Radio instance ticker */
-			   0, /* user_id */
+			   1, /* user id for link layer ULL_HIGH */
+			      /* (MAYFLY_CALL_ID_WORKER) */
 			   (ticker_id + 1), /* ticker_id */
 			   ticks_at_expire, /* current tick */
 			   ticks_delay, /* one-shot delayed timeout */

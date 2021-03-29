@@ -310,6 +310,7 @@ void ll_iso_tx_mem_release(void *tx);
 int ll_iso_tx_mem_enqueue(uint16_t handle, void *tx);
 
 /* External co-operation */
-void ll_timeslice_ticker_id_get(uint8_t * const instance_index, uint8_t * const user_id);
+void ll_timeslice_ticker_id_get(uint8_t * const instance_index,
+				uint8_t * const ticker_id);
 void ll_radio_state_abort(void);
 uint32_t ll_radio_state_is_idle(void);
