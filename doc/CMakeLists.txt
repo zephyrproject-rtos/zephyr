@@ -114,7 +114,7 @@ configure_file(${DOXYFILE_IN} ${DOXYFILE_OUT} @ONLY)
 set(EXTRACT_CONTENT_COMMAND
   ${CMAKE_COMMAND} -E env
   ZEPHYR_BASE=${ZEPHYR_BASE}
-  ${PYTHON_EXECUTABLE} scripts/extract_content.py
+  ${PYTHON_EXECUTABLE} _scripts/extract_content.py
   # Ignore any files in the output directory.
   --ignore ${CMAKE_CURRENT_BINARY_DIR}
   # Copy all files in doc to the rst folder.
@@ -183,7 +183,7 @@ add_custom_command(
 add_custom_target(
   doxy_real_modified_times
   COMMAND ${CMAKE_COMMAND} -E env
-    ${PYTHON_EXECUTABLE} scripts/restore_modification_times.py
+    ${PYTHON_EXECUTABLE} _scripts/restore_modification_times.py
     --loglevel  WARN  ${DOXY_OUT}/xml
   WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
   DEPENDS ${DOXY_RUN_TSTAMP}
@@ -202,7 +202,7 @@ else()
 endif()
 
 set(KI_SCRIPT ${ZEPHYR_BASE}/scripts/filter-known-issues.py)
-set(FIX_TEX_SCRIPT ${ZEPHYR_BASE}/doc/scripts/fix_tex.py)
+set(FIX_TEX_SCRIPT ${ZEPHYR_BASE}/doc/_scripts/fix_tex.py)
 set(CONF_DIR ${ZEPHYR_BASE}/.known-issues/doc)
 
 #
@@ -257,7 +257,7 @@ add_custom_target(
   KCONFIG_TURBO_MODE=${KCONFIG_TURBO_MODE}
   KCONFIG_DOC_MODE=1
   ${ZEPHYR_KCONFIG_MODULES}
-    ${PYTHON_EXECUTABLE} scripts/gen_kconfig_rest.py ${RST_OUT}/doc/reference/kconfig/
+    ${PYTHON_EXECUTABLE} _scripts/gen_kconfig_rest.py ${RST_OUT}/doc/reference/kconfig/
       --separate-all-index
       --keep-module-paths
       --modules Architecture,arch,${ZEPHYR_BASE}/arch
@@ -291,7 +291,7 @@ add_custom_target(
 # - DTS_BINDINGS_RST_OUT: ${RST_OUT}/doc/reference/devicetree
 #
 
-set(GEN_DEVICETREE_REST_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/scripts/gen_devicetree_rest.py)
+set(GEN_DEVICETREE_REST_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/_scripts/gen_devicetree_rest.py)
 
 if(NOT DTS_ROOTS)
   set(DTS_ROOTS ${ZEPHYR_BASE})
