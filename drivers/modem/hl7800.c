@@ -517,6 +517,7 @@ struct hl7800_iface_ctx {
 	int device_services_ind;
 	bool new_rat_cmd_support;
 	uint8_t operator_index;
+	struct mdm_hl7800_site_survey site_survey;
 
 	/* modem state */
 	bool allow_sleep;
@@ -1063,6 +1064,29 @@ int32_t mdm_hl7800_get_operator_index(void)
 	ictx.last_socket_id = 0;
 	ret = send_at_cmd(NULL, "AT+KCARRIERCFG?", MDM_CMD_SEND_TIMEOUT, 0,
 			  false);
+	allow_sleep(true);
+	hl7800_unlock();
+	if (ret < 0) {
+		return ret;
+	} else {
+		return ictx.operator_index;
+	}
+}
+
+/**
+ * @brief Perform a site survey.
+ *
+ */
+int32_t mdm_hl7800_perform_site_survey(struct mdm_hl7800_site_survey *survey)
+{
+	int ret;
+
+	hl7800_lock();
+	wakeup_hl7800();
+	ictx.last_socket_id = 0;
+	ret = send_at_cmd(NULL, "at%meas=\"97\"", MDM_CMD_SEND_TIMEOUT, 0,
+			  false);
+	memcpy(survey, &ictx.site_survey, sizeof(*survey));
 	allow_sleep(true);
 	hl7800_unlock();
 	if (ret < 0) {
@@ -1732,7 +1756,13 @@ done:
 	return true;
 }
 
-/* Handler: +COPS: <mode>[,<format>,<oper>[,<AcT>]] */
+/* Handler1: +COPS: <mode>[,<format>,<oper>[,<AcT>]]
+ *
+ * Handler2:
+ * +COPS: [list of supported (<stat>, long alphanumeric <oper>, short
+ * alphanumeric <oper>, numeric <oper>[,< AcT>])s][,,
+ * (list of supported <mode>s),(list of supported <format>s)]
+ */
 static bool on_cmd_atcmdinfo_operator_status(struct net_buf **buf, uint16_t len)
 {
 	size_t out_len;
@@ -1744,8 +1774,16 @@ static bool on_cmd_atcmdinfo_operator_status(struct net_buf **buf, uint16_t len)
 
 	out_len = net_buf_linearize(value, sizeof(value), *buf, 0, len);
 	value[out_len] = 0;
-	LOG_INF("Operator: %s", log_strdup(value));
 
+	/* For AT+COPS=?, result is most likely longer than size of log string */
+	if (strchr(value, '(') != NULL) {
+		LOG_HEXDUMP_DBG(value, out_len, "Operator: ");
+		goto done;
+	} else {
+		LOG_INF("Operator: %s", log_strdup(value));
+	}
+
+	/* Process AT+COPS? */
 	if (len == 1) {
 		/* only mode was returned, there is no operator info */
 		ictx.operator_status = NO_OPERATOR;
@@ -2442,6 +2480,69 @@ static bool on_cmd_operator_index_query(struct net_buf **buf, uint16_t len)
 	ictx.operator_index = (uint8_t)strtol(carrier, NULL, 10);
 
 	LOG_INF("Operator Index: %u", ictx.operator_index);
+done:
+	return true;
+}
+
+/* %MEAS: EARFCN=5826, CellID=420, RSRP=-99, RSRQ=-15 */
+static bool on_cmd_survey_status(struct net_buf **buf, uint16_t len)
+{
+	struct net_buf *frag = NULL;
+	char response[] =
+		"EARFCN=XXXXXXXXXXX, CellID=XXXXXXXXXXX, RSRP=-XXX, RSRQ=-XXX";
+	size_t out_len;
+	char *key;
+	char *value;
+
+	wait_for_modem_data_and_newline(buf, net_buf_frags_len(*buf),
+					sizeof(response));
+
+	frag = NULL;
+	len = net_buf_findcrlf(*buf, &frag);
+	if (!frag) {
+		LOG_ERR("Unable to find end");
+		goto done;
+	}
+
+	out_len = net_buf_linearize(response, sizeof(response), *buf, 0, len);
+	LOG_HEXDUMP_DBG(response, out_len, "Site Survey");
+
+	key = "EARFCN=";
+	value = strstr(response, key);
+	if (value == NULL) {
+		goto done;
+	} else {
+		value += strlen(key);
+		ictx.site_survey.tower_id = strtoul(value, NULL, 10);
+	}
+
+	key = "CellID=";
+	value = strstr(response, key);
+	if (value == NULL) {
+		goto done;
+	} else {
+		value += strlen(key);
+		ictx.site_survey.cell_id = strtoul(value, NULL, 10);
+	}
+
+	key = "RSRP=";
+	value = strstr(response, key);
+	if (value == NULL) {
+		goto done;
+	} else {
+		value += strlen(key);
+		ictx.site_survey.rsrp = strtol(value, NULL, 10);
+	}
+
+	key = "RSRQ=";
+	value = strstr(response, key);
+	if (value == NULL) {
+		goto done;
+	} else {
+		value += strlen(key);
+		ictx.site_survey.rsrq = strtol(value, NULL, 10);
+	}
+
 done:
 	return true;
 }
@@ -3412,6 +3513,7 @@ static void hl7800_rx(void)
 		CMD_HANDLER("+CGDCONT: 1", atcmdinfo_pdp_context),
 		CMD_HANDLER("AT+CEREG?", network_report_query),
 		CMD_HANDLER("+KCARRIERCFG: ", operator_index_query),
+		CMD_HANDLER("%MEAS: ", survey_status),
 #ifdef CONFIG_NEWLIB_LIBC
 		CMD_HANDLER("+CCLK: ", rtc_query),
 #endif

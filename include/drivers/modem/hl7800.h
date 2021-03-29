@@ -60,6 +60,13 @@ struct mdm_hl7800_apn {
 #define MDM_HL7800_OPERATOR_INDEX_SIZE 3
 #define MDM_HL7800_OPERATOR_INDEX_STRLEN (MDM_HL7800_OPERATOR_INDEX_SIZE - 1)
 
+struct mdm_hl7800_site_survey {
+	uint32_t tower_id;
+	uint32_t cell_id;
+	int rsrp;
+	int rsrq;
+};
+
 enum mdm_hl7800_radio_mode { MDM_RAT_CAT_M1 = 0, MDM_RAT_CAT_NB1 };
 
 enum mdm_hl7800_event {
@@ -282,8 +289,18 @@ uint32_t mdm_hl7800_log_filter_set(uint32_t level);
  * @brief Read the operator index from the modem.
  *
  * @param operator index
+ *
+ * @retval negative error code, 0 on success
  */
 int32_t mdm_hl7800_get_operator_index(void);
+
+/**
+ * @brief Perform a site survey.  This command may return different values
+ * each time it is run (depending on what is in range).
+ *
+ * @retval negative error code, 0 on success
+ */
+int32_t mdm_hl7800_perform_site_survey(struct mdm_hl7800_site_survey *survey);
 
 #ifdef __cplusplus
 }
