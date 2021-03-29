@@ -24,6 +24,11 @@ config DAC_SHELL
 	help
 	  Enable DAC related shell commands.
 
+config DAC_CONTINIOUS_API
+	bool "Enable DAC continious api"
+	help
+	  Enable DAC continious api.
+
 source "drivers/dac/Kconfig.mcux"
 
 source "drivers/dac/Kconfig.stm32"

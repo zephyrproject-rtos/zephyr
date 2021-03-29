@@ -14,6 +14,13 @@ properties:
     clocks:
       required: true
 
+    st,external-trigger:
+      type: int
+      required: true
+      description: |
+        Configures the hardware trigger source of the dac
+        controller. See the dt-bindings for relevant values.
+
     pinctrl-0:
       type: phandles
       required: false
