@@ -463,7 +463,11 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device *dev,
 	LL_DMA_Init(dma, dma_stm32_id_to_stream(id), &DMA_InitStruct);
 
 	LL_DMA_EnableIT_TC(dma, dma_stm32_id_to_stream(id));
-	/* Half-Transfer irq is not handled */
+
+	/* Enable Half-Transfer irq if circular mode is enabled */
+	if (config->head_block->source_reload_en) {
+		LL_DMA_EnableIT_HT(dma, dma_stm32_id_to_stream(id));
+	}
 
 #if defined(CONFIG_DMA_STM32_V1)
 	if (DMA_InitStruct.FIFOMode == LL_DMA_FIFOMODE_ENABLE) {
