@@ -51,7 +51,7 @@ struct init_entry {
 	const struct device *dev;
 };
 
-void z_sys_init_run_level(int32_t _level);
+void z_sys_init_run_level(int32_t level);
 
 /* A counter is used to avoid issues when two or more system devices
  * are declared in the same C file with the same init function.

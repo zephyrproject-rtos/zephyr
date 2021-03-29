@@ -466,16 +466,16 @@ fail:
  * Miscellaneous
  */
 
-size_t k_mem_region_align(uintptr_t *aligned_phys, size_t *aligned_size,
-			  uintptr_t phys_addr, size_t size, size_t align)
+size_t k_mem_region_align(uintptr_t *aligned_addr, size_t *aligned_size,
+			  uintptr_t addr, size_t size, size_t align)
 {
 	size_t addr_offset;
 
 	/* The actual mapped region must be page-aligned. Round down the
 	 * physical address and pad the region size appropriately
 	 */
-	*aligned_phys = ROUND_DOWN(phys_addr, align);
-	addr_offset = phys_addr - *aligned_phys;
+	*aligned_addr = ROUND_DOWN(addr, align);
+	addr_offset = addr - *aligned_addr;
 	*aligned_size = ROUND_UP(size + addr_offset, align);
 
 	return addr_offset;

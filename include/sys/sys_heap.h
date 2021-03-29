@@ -65,11 +65,11 @@ struct z_heap_stress_result {
  *
  * Initializes a sys_heap struct to manage the specified memory.
  *
- * @param h Heap to initialize
+ * @param heap Heap to initialize
  * @param mem Untyped pointer to unused memory
  * @param bytes Size of region pointed to by @a mem
  */
-void sys_heap_init(struct sys_heap *h, void *mem, size_t bytes);
+void sys_heap_init(struct sys_heap *heap, void *mem, size_t bytes);
 
 /** @brief Allocate memory from a sys_heap
  *
@@ -84,11 +84,11 @@ void sys_heap_init(struct sys_heap *h, void *mem, size_t bytes);
  * No two sys_heap functions should operate on the same heap at the
  * same time.  All locking must be provided by the user.
  *
- * @param h Heap from which to allocate
+ * @param heap Heap from which to allocate
  * @param bytes Number of bytes requested
  * @return Pointer to memory the caller can now use
  */
-void *sys_heap_alloc(struct sys_heap *h, size_t bytes);
+void *sys_heap_alloc(struct sys_heap *heap, size_t bytes);
 
 /** @brief Allocate aligned memory from a sys_heap
  *
@@ -98,12 +98,12 @@ void *sys_heap_alloc(struct sys_heap *h, size_t bytes);
  * bytes.  With align=0 this behaves exactly like sys_heap_alloc().
  * The resulting memory can be returned to the heap using sys_heap_free().
  *
- * @param h Heap from which to allocate
+ * @param heap Heap from which to allocate
  * @param align Alignment in bytes, must be a power of two
  * @param bytes Number of bytes requested
  * @return Pointer to memory the caller can now use
  */
-void *sys_heap_aligned_alloc(struct sys_heap *h, size_t align, size_t bytes);
+void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes);
 
 /** @brief Free memory into a sys_heap
  *
@@ -115,10 +115,10 @@ void *sys_heap_aligned_alloc(struct sys_heap *h, size_t align, size_t bytes);
  * No two sys_heap functions should operate on the same heap at the
  * same time.  All locking must be provided by the user.
  *
- * @param h Heap to which to return the memory
+ * @param heap Heap to which to return the memory
  * @param mem A pointer previously returned from sys_heap_alloc()
  */
-void sys_heap_free(struct sys_heap *h, void *mem);
+void sys_heap_free(struct sys_heap *heap, void *mem);
 
 /** @brief Expand the size of an existing allocation
  *
@@ -159,10 +159,10 @@ void *sys_heap_aligned_realloc(struct sys_heap *heap, void *ptr,
  * handle any sys_heap_alloc() request and free any live pointer
  * returned from a previou allocation.
  *
- * @param h Heap to validate
+ * @param heap Heap to validate
  * @return true, if the heap is valid, otherwise false
  */
-bool sys_heap_validate(struct sys_heap *h);
+bool sys_heap_validate(struct sys_heap *heap);
 
 /** @brief sys_heap stress test rig
  *
@@ -175,9 +175,9 @@ bool sys_heap_validate(struct sys_heap *h);
  * Results, including counts of frees and successful/unsuccessful
  * allocations, are returnewd via the @result struct.
  *
- * @param alloc Callback to perform an allocation.  Passes back the @a
+ * @param alloc_fn Callback to perform an allocation.  Passes back the @a
  *              arg parameter as a context handle.
- * @param free Callback to perform a free of a pointer returned from
+ * @param free_fn Callback to perform a free of a pointer returned from
  *             @a alloc.  Passes back the @a arg parameter as a
  *             context handle.
  * @param arg Context handle to pass back to the callbacks
@@ -193,8 +193,8 @@ bool sys_heap_validate(struct sys_heap *h);
  *                       failures and a very fragmented heap.
  * @param result Struct into which to store test results.
  */
-void sys_heap_stress(void *(*alloc)(void *arg, size_t bytes),
-		     void (*free)(void *arg, void *p),
+void sys_heap_stress(void *(*alloc_fn)(void *arg, size_t bytes),
+		     void (*free_fn)(void *arg, void *p),
 		     void *arg, size_t total_bytes,
 		     uint32_t op_count,
 		     void *scratch_mem, size_t scratch_bytes,
@@ -206,9 +206,9 @@ void sys_heap_stress(void *(*alloc)(void *arg, size_t bytes),
  * Print information on the heap structure such as its size, chunk buckets,
  * chunk list and some statistics for debugging purpose.
  *
- * @param h Heap to print information about
+ * @param heap Heap to print information about
  * @param dump_chunks True to print the entire heap chunk list
  */
-void sys_heap_print_info(struct sys_heap *h, bool dump_chunks);
+void sys_heap_print_info(struct sys_heap *heap, bool dump_chunks);
 
 #endif /* ZEPHYR_INCLUDE_SYS_SYS_HEAP_H_ */

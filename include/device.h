@@ -726,18 +726,18 @@ const char *device_pm_state_str(uint32_t state);
  * Called by a device driver to indicate that it is in the middle of a
  * transaction.
  *
- * @param busy_dev Pointer to device structure of the driver instance.
+ * @param dev Pointer to device structure of the driver instance.
  */
-void device_busy_set(const struct device *busy_dev);
+void device_busy_set(const struct device *dev);
 
 /**
  * @brief Indicate that the device has completed its transaction
  *
  * Called by a device driver to indicate the end of a transaction.
  *
- * @param busy_dev Pointer to device structure of the driver instance.
+ * @param dev Pointer to device structure of the driver instance.
  */
-void device_busy_clear(const struct device *busy_dev);
+void device_busy_clear(const struct device *dev);
 
 #ifdef CONFIG_PM_DEVICE
 /*
