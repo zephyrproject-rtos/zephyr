@@ -127,7 +127,7 @@ void npcx_pinctrl_psl_input_configure(void);
  * @param i index of 'psl-in-pads' prop
  * @return 1 is asserted, otherwise de-asserted.
  */
-bool npcx_pinctrl_psl_input_asserted(int i);
+bool npcx_pinctrl_psl_input_asserted(uint32_t i);
 
 #ifdef __cplusplus
 }

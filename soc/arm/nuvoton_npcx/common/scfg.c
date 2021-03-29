@@ -127,11 +127,11 @@ void npcx_pinctrl_psl_output_set_inactive(void)
 	inst->PDOUT |= BIT(pin);
 }
 
-bool npcx_pinctrl_psl_input_asserted(int i)
+bool npcx_pinctrl_psl_input_asserted(uint32_t i)
 {
 	struct glue_reg *const inst_glue = HAL_GLUE_INST();
 
-	if (i >=  ARRAY_SIZE(psl_in_confs)) {
+	if (i >= ARRAY_SIZE(psl_in_confs)) {
 		return false;
 	}
 
