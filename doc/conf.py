@@ -278,7 +278,7 @@ sourcelink_suffix = '.txt'
 
 # The name of a javascript file (relative to the configuration directory) that
 # implements a search results scorer. If empty, the default will be used.
-html_search_scorer = 'scorer.js'
+html_search_scorer = '_static/js/scorer.js'
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'zephyrdoc'
@@ -582,5 +582,5 @@ def setup(app):
     app.add_css_file("zephyr-custom.css")
 
     app.add_js_file("https://www.googletagmanager.com/gtag/js?id=UA-831873-47")
-    app.add_js_file("ga-tracker.js")
-    app.add_js_file("zephyr-custom.js")
+    app.add_js_file("js/ga-tracker.js")
+    app.add_js_file("js/zephyr-custom.js")
