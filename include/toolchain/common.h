@@ -107,7 +107,7 @@
      * priv_stacks_hash.c. These are built without compiler flags
      * used for coverage. ALWAYS_INLINE cannot be empty as compiler
      * would complain about unused functions. Attaching unused
-     * attribute would result in their text sections ballon more than
+     * attribute would result in their text sections balloon more than
      * 10 times in size, as those functions are kept in text section.
      * So just keep "inline" here.
      */
@@ -166,7 +166,7 @@
 
 /*
  * This is meant to be used in conjunction with __in_section() and similar
- * where scattered structure instances are concatened together by the linker
+ * where scattered structure instances are concatenated together by the linker
  * and walked by the code at run time just like a contiguous array of such
  * structures.
  *
@@ -204,7 +204,7 @@
 	__in_section(_##out_type, static, name) __used
 
 /*
- * Itterator for structure instances gathered by Z_STRUCT_SECTION_ITERABLE().
+ * Iterator for structure instances gathered by Z_STRUCT_SECTION_ITERABLE().
  * The linker must provide a _<struct_type>_list_start symbol and a
  * _<struct_type>_list_end symbol to mark the start and the end of the
  * list of struct objects to iterate over.
