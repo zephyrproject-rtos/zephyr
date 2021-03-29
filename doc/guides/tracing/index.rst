@@ -146,6 +146,28 @@ and exits (only distinguishes between idle thread, non idle thread and scheduler
 Enable this format with the :option:`CONFIG_TRACING_CPU_STATS` option.
 
 
+User-Defined Tracing
+====================
+
+This tracing format allows the user to define functions to perform any work desired
+when a task is switched in or out, when an interrupt is entered or exited, and when the cpu
+is idle.
+
+Examples include:
+- simple toggling of GPIO for external scope tracing while minimizing extra cpu load
+- generating/outputting trace data in a non-standard or proprietary format that can
+not be supported by the other tracing systems
+
+The following functions can be defined by the user:
+- ``void user_sys_trace_thread_switched_in(struct k_thread *thread)``
+- ``void user_sys_trace_thread_switched_out(struct k_thread *thread)``
+- ``void user_sys_trace_isr_enter()``
+- ``void user_sys_trace_isr_exit()``
+- ``void user_sys_trace_idle()``
+
+Enable this format with the :option:`CONFIG_TRACING_USER` option.
+
+
 Transport Backends
 ******************
 

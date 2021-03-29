@@ -6,6 +6,11 @@ zephyr_sources_ifdef(
   )
 
 zephyr_sources_ifdef(
+  CONFIG_TRACING_USER
+  tracing_user.c
+  )
+
+zephyr_sources_ifdef(
   CONFIG_TRACING_CORE
   tracing_buffer.c
   tracing_core.c
