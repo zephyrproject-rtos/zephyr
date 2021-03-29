@@ -123,7 +123,7 @@ bool z_is_thread_essential(void)
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 void z_impl_k_busy_wait(uint32_t usec_to_wait)
 {
-	if (usec_to_wait == 0) {
+	if (usec_to_wait == 0U) {
 		return;
 	}
 

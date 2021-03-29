@@ -105,7 +105,7 @@ int k_msgq_cleanup(struct k_msgq *msgq)
 		return -EBUSY;
 	}
 
-	if ((msgq->flags & K_MSGQ_FLAG_ALLOC) != 0) {
+	if ((msgq->flags & K_MSGQ_FLAG_ALLOC) != 0U) {
 		k_free(msgq->buffer_start);
 		msgq->flags &= ~K_MSGQ_FLAG_ALLOC;
 	}
@@ -199,7 +199,7 @@ int z_impl_k_msgq_get(struct k_msgq *msgq, void *data, k_timeout_t timeout)
 
 	key = k_spin_lock(&msgq->lock);
 
-	if (msgq->used_msgs > 0) {
+	if (msgq->used_msgs > 0U) {
 		/* take first available message from queue */
 		(void)memcpy(data, msgq->read_ptr, msgq->msg_size);
 		msgq->read_ptr += msgq->msg_size;
@@ -260,7 +260,7 @@ int z_impl_k_msgq_peek(struct k_msgq *msgq, void *data)
 
 	key = k_spin_lock(&msgq->lock);
 
-	if (msgq->used_msgs > 0) {
+	if (msgq->used_msgs > 0U) {
 		/* take first available message from queue */
 		(void)memcpy(data, msgq->read_ptr, msgq->msg_size);
 		result = 0;

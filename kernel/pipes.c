@@ -116,7 +116,7 @@ int z_impl_k_pipe_alloc_init(struct k_pipe *pipe, size_t size)
 	void *buffer;
 	int ret;
 
-	if (size != 0) {
+	if (size != 0U) {
 		buffer = z_thread_malloc(size);
 		if (buffer != NULL) {
 			k_pipe_init(pipe, buffer, size);
@@ -150,7 +150,7 @@ int k_pipe_cleanup(struct k_pipe *pipe)
 		return -EAGAIN;
 	}
 
-	if ((pipe->flags & K_PIPE_FLAG_ALLOC) != 0) {
+	if ((pipe->flags & K_PIPE_FLAG_ALLOC) != 0U) {
 		k_free(pipe->buffer);
 		pipe->buffer = NULL;
 		pipe->flags &= ~K_PIPE_FLAG_ALLOC;
@@ -493,7 +493,7 @@ int z_pipe_put_internal(struct k_pipe *pipe, struct k_pipe_async *async_desc,
 
 	if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT)
 	    && num_bytes_written >= min_xfer
-	    && min_xfer > 0) {
+	    && min_xfer > 0U) {
 		*bytes_written = num_bytes_written;
 		k_sched_unlock();
 		return 0;
@@ -647,7 +647,7 @@ int z_impl_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 
 	if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT)
 	    && num_bytes_read >= min_xfer
-	    && min_xfer > 0) {
+	    && min_xfer > 0U) {
 		k_sched_unlock();
 
 		*bytes_read = num_bytes_read;
@@ -725,7 +725,7 @@ size_t z_impl_k_pipe_read_avail(struct k_pipe *pipe)
 	k_spinlock_key_t key;
 
 	/* Buffer and size are fixed. No need to spin. */
-	if (pipe->buffer == NULL || pipe->size == 0) {
+	if (pipe->buffer == NULL || pipe->size == 0U) {
 		res = 0;
 		goto out;
 	}
@@ -762,7 +762,7 @@ size_t z_impl_k_pipe_write_avail(struct k_pipe *pipe)
 	k_spinlock_key_t key;
 
 	/* Buffer and size are fixed. No need to spin. */
-	if (pipe->buffer == NULL || pipe->size == 0) {
+	if (pipe->buffer == NULL || pipe->size == 0U) {
 		res = 0;
 		goto out;
 	}

@@ -36,7 +36,7 @@ static int create_free_list(struct k_mem_slab *slab)
 
 	/* blocks must be word aligned */
 	CHECKIF(((slab->block_size | (uintptr_t)slab->buffer) &
-				(sizeof(void *) - 1)) != 0) {
+				(sizeof(void *) - 1)) != 0U) {
 		return -EINVAL;
 	}
 

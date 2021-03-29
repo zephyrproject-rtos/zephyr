@@ -112,7 +112,7 @@ const struct device *z_impl_device_get_binding(const char *name)
 	/* A null string identifies no device.  So does an empty
 	 * string.
 	 */
-	if ((name == NULL) || (*name == 0)) {
+	if ((name == NULL) || (*name == 0U)) {
 		return NULL;
 	}
 
@@ -167,7 +167,7 @@ size_t z_device_get_all_static(struct device const **devices)
 
 bool z_device_ready(const struct device *dev)
 {
-	return dev->state->initialized && (dev->state->init_res == 0);
+	return dev->state->initialized && (dev->state->init_res == 0U);
 }
 
 int device_required_foreach(const struct device *dev,
