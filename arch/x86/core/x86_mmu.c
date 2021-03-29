@@ -518,7 +518,7 @@ static void print_entries(pentry_t entries_array[], uint8_t *base, int level,
 		uintptr_t virt =
 			(uintptr_t)base + (get_entry_scope(level) * i);
 
-		if (entry & MMU_P) {
+		if ((entry & MMU_P) != 0U) {
 			if (is_leaf(level, entry)) {
 				if (phys == virt) {
 					/* Identity mappings */
