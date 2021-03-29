@@ -51,7 +51,7 @@ struct link_format_out_formatter_data {
 static size_t put_begin(struct lwm2m_output_context *out,
 			struct lwm2m_obj_path *path)
 {
-	char init_string[MAX(sizeof(ENABLER_VERSION), sizeof(REG_PREFACE))];
+	char init_string[MAX(sizeof(ENABLER_VERSION), sizeof(REG_PREFACE))] = "";
 	struct link_format_out_formatter_data *fd;
 	int ret;
 
