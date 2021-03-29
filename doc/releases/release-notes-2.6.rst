@@ -310,6 +310,14 @@ HALs
 * HALs are now moved out of the main tree as external modules and reside in
   their own standalone repositories.
 
+
+Trusted Firmware-m
+******************
+
+* Configured QEMU to run Zephyr samples and tests in CI on mps2_an521_nonsecure
+  (Cortex-M33 Non-Secure) with TF-M as the secure firmware component.
+
+
 Documentation
 *************
 
