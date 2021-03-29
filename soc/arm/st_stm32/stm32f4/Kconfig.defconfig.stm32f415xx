@@ -8,9 +8,6 @@ if SOC_STM32F415XX
 config SOC
 	default "stm32f415xx"
 
-config NUM_IRQS
-	default 82
-
 config CRYPTO_STM32
 	default y
 	depends on CRYPTO
