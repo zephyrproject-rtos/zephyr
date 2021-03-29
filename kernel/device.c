@@ -112,7 +112,7 @@ const struct device *z_impl_device_get_binding(const char *name)
 	/* A null string identifies no device.  So does an empty
 	 * string.
 	 */
-	if ((name == NULL) || (*name == 0U)) {
+	if ((name == NULL) || (name[0] == '\0')) {
 		return NULL;
 	}
 
