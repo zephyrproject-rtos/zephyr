@@ -292,7 +292,8 @@ void ll_rx_dequeue(void);
 void ll_rx_mem_release(void **node_rx);
 
 /* External co-operation */
-void ll_timeslice_ticker_id_get(uint8_t * const instance_index, uint8_t * const user_id);
+void ll_timeslice_ticker_id_get(uint8_t * const instance_index,
+				uint8_t * const ticker_id);
 void ll_radio_state_abort(void);
 uint32_t ll_radio_state_is_idle(void);
 
