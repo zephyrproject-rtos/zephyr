@@ -22,3 +22,8 @@ struct ll_conn_iso_stream *ll_iso_stream_connected_get(uint16_t handle);
 
 void ull_conn_iso_done(struct node_rx_event_done *done);
 void ull_conn_iso_cis_established(struct ll_conn_iso_stream *cis);
+
+void ull_conn_iso_resume_ticker_start(struct lll_event *resume_event,
+				      uint8_t  resume_cis,
+				      uint32_t ticks_anchor,
+				      uint32_t resume_timeout);
