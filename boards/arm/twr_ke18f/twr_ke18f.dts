@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Vestas Wind Systems A/S
+ * Copyright (c) 2019-2021 Vestas Wind Systems A/S
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -128,31 +128,64 @@
 };
 
 &scg {
-	sosc-freq = <8000000>;
 	sosc-mode = <KINETIS_SCG_SOSC_MODE_LOW_POWER>;
-	sosc-divider-1 = <1>;
-	sosc-divider-2 = <1>;
 
-	sirc-range = <8000000>;
-	sirc-divider-1 = <1>;
-	sirc-divider-2 = <2>;
+	sosc_clk {
+		status = "okay";
+		clock-frequency = <8000000>;
+	};
 
-	firc-range = <48000000>;
-	firc-divider-1 = <1>;
-	firc-divider-2 = <1>;
+	pll {
+		clock-mult = <30>;
+	};
 
-	spll-source = <KINETIS_SCG_SPLL_SRC_SOSC>;
-	spll-divider-pre = <1>;
-	spll-multiplier = <30>;
-	spll-divider-1 = <1>;
-	spll-divider-2 = <2>;
+	core_clk {
+		clocks = <&spll_clk>;
+	};
 
-	clk-source = <KINETIS_SCG_SCLK_SRC_SPLL>;
-	clk-divider-slow = <5>;
-	clk-divider-bus = <2>;
-	clk-divider-core = <1>;
+	bus_clk {
+		clock-div = <2>;
+	};
 
-	clkout-source = <KINETIS_SCG_CLKOUT_SRC_FIRC>;
+	slow_clk {
+		clock-div = <5>;
+	};
+
+	clkout_clk {
+		status = "okay";
+	};
+
+	splldiv1_clk {
+		clock-div = <1>;
+	};
+
+	splldiv2_clk {
+		clock-div = <2>;
+	};
+
+	sircdiv1_clk {
+		clock-div = <1>;
+	};
+
+	sircdiv2_clk {
+		clock-div = <2>;
+	};
+
+	fircdiv1_clk {
+		clock-div = <1>;
+	};
+
+	fircdiv2_clk {
+		clock-div = <1>;
+	};
+
+	soscdiv1_clk {
+		clock-div = <1>;
+	};
+
+	soscdiv2_clk {
+		clock-div = <1>;
+	};
 };
 
 &lpuart0 {

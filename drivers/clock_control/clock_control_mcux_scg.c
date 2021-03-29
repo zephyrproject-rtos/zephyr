@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Vestas Wind Systems A/S
+ * Copyright (c) 2019-2021 Vestas Wind Systems A/S
  *
  * Based on clock_control_mcux_sim.c, which is:
  * Copyright (c) 2017, NXP
@@ -17,6 +17,8 @@
 #define LOG_LEVEL CONFIG_CLOCK_CONTROL_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(clock_control_scg);
+
+#define MCUX_SCG_CLOCK_NODE(name) DT_CHILD(DT_DRV_INST(0), name)
 
 static int mcux_scg_on(const struct device *dev,
 		       clock_control_subsys_t sub_system)
@@ -96,9 +98,21 @@ static int mcux_scg_get_rate(const struct device *dev,
 
 static int mcux_scg_init(const struct device *dev)
 {
-#if DT_INST_NODE_HAS_PROP(0, clkout_source)
-	CLOCK_SetClkOutSel(DT_INST_PROP(0, clkout_source));
+#if DT_NODE_HAS_STATUS(MCUX_SCG_CLOCK_NODE(clkout_clk), okay)
+#if DT_SAME_NODE(DT_CLOCKS_CTLR(MCUX_SCG_CLOCK_NODE(clkout_clk)), MCUX_SCG_CLOCK_NODE(slow_clk))
+	CLOCK_SetClkOutSel(kClockClkoutSelScgSlow);
+#elif DT_SAME_NODE(DT_CLOCKS_CTLR(MCUX_SCG_CLOCK_NODE(clkout_clk)), MCUX_SCG_CLOCK_NODE(sosc_clk))
+	CLOCK_SetClkOutSel(kClockClkoutSelSysOsc);
+#elif DT_SAME_NODE(DT_CLOCKS_CTLR(MCUX_SCG_CLOCK_NODE(clkout_clk)), MCUX_SCG_CLOCK_NODE(sirc_clk))
+	CLOCK_SetClkOutSel(kClockClkoutSelSirc);
+#elif DT_SAME_NODE(DT_CLOCKS_CTLR(MCUX_SCG_CLOCK_NODE(clkout_clk)), MCUX_SCG_CLOCK_NODE(firc_clk))
+	CLOCK_SetClkOutSel(kClockClkoutSelFirc);
+#elif DT_SAME_NODE(DT_CLOCKS_CTLR(MCUX_SCG_CLOCK_NODE(clkout_clk)), MCUX_SCG_CLOCK_NODE(spll_clk))
+	CLOCK_SetClkOutSel(kClockClkoutSelSysPll);
+#else
+#error Unsupported SCG clkout clock source
 #endif
+#endif /* DT_NODE_HAS_STATUS(MCUX_SCG_CLOCK_NODE(clkout_clk), okay) */
 
 	return 0;
 }
