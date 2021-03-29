@@ -174,7 +174,11 @@ void bt_mesh_reset(void)
 
 	memset(bt_mesh.flags, 0, sizeof(bt_mesh.flags));
 
-	k_delayed_work_cancel(&bt_mesh.ivu_timer);
+	/* If this fails, the work handler will return early on the next
+	 * execution, as the device is not provisioned. If the device is
+	 * reprovisioned, the timer is always restarted.
+	 */
+	(void)k_work_cancel_delayable(&bt_mesh.ivu_timer);
 
 	bt_mesh_cfg_reset();
 	bt_mesh_trans_reset();
