@@ -273,7 +273,7 @@ zephyr_smp_handle_reqs(struct k_work *work)
 
 	zst = (void *)work;
 
-	while ((nb = k_fifo_get(&zst->zst_fifo, K_NO_WAIT)) != NULL) {
+	while ((nb = net_buf_get(&zst->zst_fifo, K_NO_WAIT)) != NULL) {
 		zephyr_smp_process_packet(zst, nb);
 	}
 }
@@ -299,6 +299,6 @@ zephyr_smp_transport_init(struct zephyr_smp_transport *zst,
 void
 zephyr_smp_rx_req(struct zephyr_smp_transport *zst, struct net_buf *nb)
 {
-	k_fifo_put(&zst->zst_fifo, nb);
+	net_buf_put(&zst->zst_fifo, nb);
 	k_work_submit(&zst->zst_work);
 }
