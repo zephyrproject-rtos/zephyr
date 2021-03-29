@@ -268,7 +268,7 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 	 * responsible for putting it back in z_swap and ISR return!),
 	 * which makes this choice simple.
 	 */
-	return thread ? thread : _current_cpu->idle_thread;
+	return (thread != NULL) ? thread : _current_cpu->idle_thread;
 #else
 	/* Under SMP, the "cache" mechanism for selecting the next
 	 * thread doesn't work, so we have more work to do to test
@@ -781,7 +781,7 @@ void z_thread_priority_set(struct k_thread *thread, int prio)
 	}
 }
 
-static inline int resched(uint32_t key)
+static inline bool resched(uint32_t key)
 {
 #ifdef CONFIG_SMP
 	_current_cpu->swap_ok = 0;
@@ -1481,7 +1481,7 @@ void z_thread_abort(struct k_thread *thread)
 {
 	k_spinlock_key_t key = k_spin_lock(&sched_spinlock);
 
-	if (thread->base.thread_state & _THREAD_DEAD) {
+	if ((thread->base.thread_state & _THREAD_DEAD) != 0U) {
 		k_spin_unlock(&sched_spinlock, key);
 		return;
 	}
@@ -1537,12 +1537,12 @@ int z_impl_k_thread_join(struct k_thread *thread, k_timeout_t timeout)
 	k_spinlock_key_t key = k_spin_lock(&sched_spinlock);
 	int ret = 0;
 
-	if (thread->base.thread_state & _THREAD_DEAD) {
+	if ((thread->base.thread_state & _THREAD_DEAD) != 0U) {
 		ret = 0;
 	} else if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 		ret = -EBUSY;
-	} else if (thread == _current ||
-		   thread->base.pended_on == &_current->join_queue) {
+	} else if ((thread == _current) ||
+		   (thread->base.pended_on == &_current->join_queue)) {
 		ret = -EDEADLK;
 	} else {
 		__ASSERT(!arch_is_in_isr(), "cannot join in ISR");

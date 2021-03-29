@@ -387,7 +387,7 @@ static int signal_poll_event(struct k_poll_event *event, uint32_t state)
 	struct z_poller *poller = event->poller;
 	int retcode = 0;
 
-	if (poller) {
+	if (poller != NULL) {
 		if (poller->mode == MODE_POLL) {
 			retcode = signal_poller(event, state);
 		} else if (poller->mode == MODE_TRIGGERED) {
