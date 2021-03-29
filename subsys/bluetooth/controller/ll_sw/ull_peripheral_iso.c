@@ -16,7 +16,6 @@
 #include "util/memq.h"
 #include "ticker/ticker.h"
 
-#include "conn_internal.h"
 #include "hal/ticker.h"
 #include "util/mayfly.h"
 
@@ -31,7 +30,7 @@
 #include "ull_conn_iso_internal.h"
 #include "ull_internal.h"
 
-#include "lll_vendor.h"
+#include "lll/lll_vendor.h"
 #include "lll_peripheral_iso.h"
 
 uint8_t ll_cis_accept(uint16_t handle)
