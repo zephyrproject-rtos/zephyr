@@ -250,7 +250,7 @@ static inline void z_sched_lock(void)
 {
 #ifdef CONFIG_PREEMPT_ENABLED
 	__ASSERT(!arch_is_in_isr(), "");
-	__ASSERT(_current->base.sched_locked != 1, "");
+	__ASSERT(_current->base.sched_locked != 1U, "");
 
 	--_current->base.sched_locked;
 
@@ -263,7 +263,7 @@ static ALWAYS_INLINE void z_sched_unlock_no_reschedule(void)
 {
 #ifdef CONFIG_PREEMPT_ENABLED
 	__ASSERT(!arch_is_in_isr(), "");
-	__ASSERT(_current->base.sched_locked != 0, "");
+	__ASSERT(_current->base.sched_locked != 0U, "");
 
 	compiler_barrier();
 

@@ -332,7 +332,7 @@ sys_rand_fallback:
 	 * those devices without a HWRNG entropy driver.
 	 */
 
-	while (length > 0) {
+	while (length > 0U) {
 		uint32_t rndbits;
 		uint8_t *p_rndbits = (uint8_t *)&rndbits;
 

@@ -235,7 +235,7 @@ void z_requeue_current(struct k_thread *curr)
 
 static inline bool is_aborting(struct k_thread *thread)
 {
-	return (thread->base.thread_state & _THREAD_ABORTING) != 0;
+	return (thread->base.thread_state & _THREAD_ABORTING) != 0U;
 }
 
 static ALWAYS_INLINE struct k_thread *next_up(void)
@@ -776,7 +776,7 @@ void z_thread_priority_set(struct k_thread *thread, int prio)
 	arch_sched_ipi();
 #endif
 
-	if (need_sched && _current->base.sched_locked == 0) {
+	if (need_sched && _current->base.sched_locked == 0U) {
 		z_reschedule_unlocked();
 	}
 }
@@ -837,7 +837,7 @@ void k_sched_unlock(void)
 {
 #ifdef CONFIG_PREEMPT_ENABLED
 	LOCKED(&sched_spinlock) {
-		__ASSERT(_current->base.sched_locked != 0, "");
+		__ASSERT(_current->base.sched_locked != 0U, "");
 		__ASSERT(!arch_is_in_isr(), "");
 
 		++_current->base.sched_locked;
@@ -1452,7 +1452,7 @@ static void end_thread(struct k_thread *thread)
 	/* We hold the lock, and the thread is known not to be running
 	 * anywhere.
 	 */
-	if ((thread->base.thread_state & _THREAD_DEAD) == 0) {
+	if ((thread->base.thread_state & _THREAD_DEAD) == 0U) {
 		thread->base.thread_state |= _THREAD_DEAD;
 		thread->base.thread_state &= ~_THREAD_ABORTING;
 		if (z_is_thread_queued(thread)) {

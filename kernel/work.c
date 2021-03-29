@@ -395,7 +395,7 @@ static bool work_flush_locked(struct k_work *work,
 			      struct z_work_flusher *flusher)
 {
 	bool need_flush = (flags_get(&work->flags)
-			   & (K_WORK_QUEUED | K_WORK_RUNNING)) != 0;
+			   & (K_WORK_QUEUED | K_WORK_RUNNING)) != 0U;
 
 	if (need_flush) {
 		struct k_work_q *queue = work->queue;
