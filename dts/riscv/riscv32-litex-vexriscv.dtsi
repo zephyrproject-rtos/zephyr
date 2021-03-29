@@ -115,6 +115,8 @@
 		gpio_in: gpio@e0006000 {
 			compatible = "litex,gpio";
 			reg = <0xe0006000 0x4>;
+			interrupt-parent = <&intc0>;
+			interrupts = <4 2>;
 			reg-names = "control";
 			ngpios = <4>;
 			label = "gpio_in";
