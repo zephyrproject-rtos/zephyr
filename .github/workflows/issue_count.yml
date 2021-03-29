@@ -1,8 +1,8 @@
 name: Issue Tracker
 
 on:
-  issues:
-    types: [opened, labeled, closed]
+  schedule:
+    - cron:  '*/10 * * * *'
 
 env:
   OUTPUT_FILE_NAME: IssuesReport.md
@@ -50,4 +50,3 @@ jobs:
       run: |
         mkd2html IssuesReport.md IssuesReport.html
         aws s3 cp --quiet IssuesReport.html s3://testing.zephyrproject.org/issues/$GITHUB_REPOSITORY/index.html
-
