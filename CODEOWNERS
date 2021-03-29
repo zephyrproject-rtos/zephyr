@@ -150,7 +150,7 @@
 /doc/                                     @dbkinder
 /doc/guides/coccinelle.rst                @himanshujha199640 @JuliaLawall
 /doc/CMakeLists.txt                       @carlescufi
-/doc/scripts/                             @carlescufi
+/doc/_scripts/                            @carlescufi
 /doc/guides/bluetooth/                    @joerchan @jhedberg @Vudentz
 /doc/guides/dts/                          @galak @mbolivar-nordic
 /doc/reference/bluetooth/                 @joerchan @jhedberg @Vudentz
