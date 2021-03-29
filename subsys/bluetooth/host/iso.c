@@ -28,6 +28,9 @@ NET_BUF_POOL_FIXED_DEFINE(iso_tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
 NET_BUF_POOL_FIXED_DEFINE(iso_rx_pool, CONFIG_BT_ISO_RX_BUF_COUNT,
 			  CONFIG_BT_ISO_RX_MTU, NULL);
 
+static struct bt_iso_recv_info iso_info_data[CONFIG_BT_ISO_RX_BUF_COUNT];
+#define iso_info(buf) (&iso_info_data[net_buf_id(buf)])
+
 #if CONFIG_BT_ISO_TX_FRAG_COUNT > 0
 NET_BUF_POOL_FIXED_DEFINE(iso_frag_pool, CONFIG_BT_ISO_TX_FRAG_COUNT,
 			  CONFIG_BT_ISO_TX_MTU, NULL);
@@ -1112,7 +1115,7 @@ void bt_iso_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 	struct bt_hci_iso_data_hdr *hdr;
 	struct bt_iso_chan *chan;
 	uint8_t pb, ts;
-	uint16_t len;
+	uint16_t len, pkt_seq_no;
 
 	pb = bt_iso_flags_pb(flags);
 	ts = bt_iso_flags_ts(flags);
@@ -1134,24 +1137,26 @@ void bt_iso_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 			struct bt_hci_iso_ts_data_hdr *ts_hdr;
 
 			ts_hdr = net_buf_pull_mem(buf, sizeof(*ts_hdr));
-			iso(buf)->ts = sys_le32_to_cpu(ts_hdr->ts);
+			iso_info(buf)->ts = sys_le32_to_cpu(ts_hdr->ts);
 
 			hdr = &ts_hdr->data;
 		} else {
 			hdr = net_buf_pull_mem(buf, sizeof(*hdr));
 			/* TODO: Generate a timestamp? */
-			iso(buf)->ts = 0x00000000;
+			iso_info(buf)->ts = 0x00000000;
 		}
 
 		len = sys_le16_to_cpu(hdr->slen);
 		flags = bt_iso_pkt_flags(len);
 		len = bt_iso_pkt_len(len);
+		pkt_seq_no = sys_le16_to_cpu(hdr->sn);
+		iso_info(buf)->sn = pkt_seq_no;
 
 		/* TODO: Drop the packet if NOP? */
 
 		BT_DBG("%s, len %u total %u flags 0x%02x timestamp %u",
 		       pb == BT_ISO_START ? "Start" : "Single", buf->len, len,
-		       flags, iso(buf)->ts);
+		       flags, iso_info(buf)->ts);
 
 		if (conn->rx) {
 			BT_ERR("Unexpected ISO %s fragment",
@@ -1230,7 +1235,7 @@ void bt_iso_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&conn->channels, chan, node) {
 		if (chan->ops->recv) {
-			chan->ops->recv(chan, conn->rx);
+			chan->ops->recv(chan, iso_info(conn->rx), conn->rx);
 		}
 	}
 

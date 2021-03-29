@@ -21,9 +21,6 @@ struct iso_data {
 
 	/** ISO connection handle */
 	uint16_t handle;
-
-	/** ISO timestamp */
-	uint32_t ts;
 };
 
 enum {
