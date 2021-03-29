@@ -1016,29 +1016,29 @@ __syscall void *k_thread_custom_data_get(void);
  * Set the name of the thread to be used when @option{CONFIG_THREAD_MONITOR}
  * is enabled for tracing and debugging.
  *
- * @param thread_id Thread to set name, or NULL to set the current thread
- * @param value Name string
+ * @param thread Thread to set name, or NULL to set the current thread
+ * @param str Name string
  * @retval 0 on success
  * @retval -EFAULT Memory access error with supplied string
  * @retval -ENOSYS Thread name configuration option not enabled
  * @retval -EINVAL Thread name too long
  */
-__syscall int k_thread_name_set(k_tid_t thread_id, const char *value);
+__syscall int k_thread_name_set(k_tid_t thread, const char *str);
 
 /**
  * @brief Get thread name
  *
  * Get the name of a thread
  *
- * @param thread_id Thread ID
+ * @param thread Thread ID
  * @retval Thread name, or NULL if configuration not enabled
  */
-const char *k_thread_name_get(k_tid_t thread_id);
+const char *k_thread_name_get(k_tid_t thread);
 
 /**
  * @brief Copy the thread name into a supplied buffer
  *
- * @param thread_id Thread to obtain name information
+ * @param thread Thread to obtain name information
  * @param buf Destination buffer
  * @param size Destination buffer size
  * @retval -ENOSPC Destination buffer too small
@@ -1046,7 +1046,7 @@ const char *k_thread_name_get(k_tid_t thread_id);
  * @retval -ENOSYS Thread name feature not enabled
  * @retval 0 Success
  */
-__syscall int k_thread_name_copy(k_tid_t thread_id, char *buf,
+__syscall int k_thread_name_copy(k_tid_t thread, char *buf,
 				 size_t size);
 
 /**
@@ -4207,14 +4207,14 @@ struct k_msgq_attrs {
  * that each message is similarly aligned to this boundary, @a q_msg_size
  * must also be a multiple of N.
  *
- * @param q Address of the message queue.
+ * @param msgq Address of the message queue.
  * @param buffer Pointer to ring buffer that holds queued messages.
  * @param msg_size Message size (in bytes).
  * @param max_msgs Maximum number of messages that can be queued.
  *
  * @return N/A
  */
-void k_msgq_init(struct k_msgq *q, char *buffer, size_t msg_size,
+void k_msgq_init(struct k_msgq *msgq, char *buffer, size_t msg_size,
 		 uint32_t max_msgs);
 
 /**

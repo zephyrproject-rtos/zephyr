@@ -1124,7 +1124,7 @@ static inline int z_vrfy_k_thread_priority_get(k_tid_t thread)
 #include <syscalls/k_thread_priority_get_mrsh.c>
 #endif
 
-void z_impl_k_thread_priority_set(k_tid_t tid, int prio)
+void z_impl_k_thread_priority_set(k_tid_t thread, int prio)
 {
 	/*
 	 * Use NULL, since we cannot know what the entry point is (we do not
@@ -1133,9 +1133,9 @@ void z_impl_k_thread_priority_set(k_tid_t tid, int prio)
 	Z_ASSERT_VALID_PRIO(prio, NULL);
 	__ASSERT(!arch_is_in_isr(), "");
 
-	struct k_thread *thread = (struct k_thread *)tid;
+	struct k_thread *th = (struct k_thread *)thread;
 
-	z_thread_priority_set(thread, prio);
+	z_thread_priority_set(th, prio);
 }
 
 #ifdef CONFIG_USERSPACE

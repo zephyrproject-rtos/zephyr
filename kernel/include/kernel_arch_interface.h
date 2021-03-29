@@ -275,12 +275,12 @@ static inline bool arch_is_in_isr(void);
  * This API is part of infrastructure still under development and may
  * change.
  *
- * @param dest Page-aligned Destination virtual address to map
- * @param addr Page-aligned Source physical address to map
+ * @param virt Page-aligned Destination virtual address to map
+ * @param phys Page-aligned Source physical address to map
  * @param size Page-aligned size of the mapped memory region in bytes
  * @param flags Caching, access and control flags, see K_MAP_* macros
  */
-void arch_mem_map(void *dest, uintptr_t addr, size_t size, uint32_t flags);
+void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags);
 
 /**
  * Remove mappings for a provided virtual address range
