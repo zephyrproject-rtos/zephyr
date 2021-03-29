@@ -104,11 +104,11 @@ struct pb_adv {
 		void *cb_data;
 
 		/* Retransmit timer */
-		struct k_delayed_work retransmit;
+		struct k_work_delayable retransmit;
 	} tx;
 
 	/* Protocol timeout */
-	struct k_delayed_work prot_timer;
+	struct k_work_delayable prot_timer;
 };
 
 struct prov_rx {
@@ -133,7 +133,7 @@ static void buf_sent(int err, void *user_data)
 		return;
 	}
 
-	k_delayed_work_submit(&link.tx.retransmit, RETRANSMIT_TIMEOUT);
+	k_work_reschedule(&link.tx.retransmit, RETRANSMIT_TIMEOUT);
 }
 
 static struct bt_mesh_send_cb buf_sent_cb = {
@@ -178,7 +178,12 @@ static void prov_clear_tx(void)
 {
 	BT_DBG("");
 
-	k_delayed_work_cancel(&link.tx.retransmit);
+	/* If this fails, the work handler will not find any buffers to send,
+	 * and return without rescheduling. The work handler also checks the
+	 * LINK_ACTIVE flag, so if this call is part of reset_adv_link, it'll
+	 * exit early.
+	 */
+	(void)k_work_cancel_delayable(&link.tx.retransmit);
 
 	free_segments();
 }
@@ -188,7 +193,10 @@ static void reset_adv_link(void)
 	BT_DBG("");
 	prov_clear_tx();
 
-	k_delayed_work_cancel(&link.prot_timer);
+	/* If this fails, the work handler will exit early on the LINK_ACTIVE
+	 * check.
+	 */
+	(void)k_work_cancel_delayable(&link.prot_timer);
 
 	if (atomic_test_bit(link.flags, ADV_PROVISIONER)) {
 		/* Clear everything except the retransmit and protocol timer
@@ -253,7 +261,7 @@ static void prov_failed(uint8_t err)
 
 static void prov_msg_recv(void)
 {
-	k_delayed_work_submit(&link.prot_timer, PROTOCOL_TIMEOUT);
+	k_work_reschedule(&link.prot_timer, PROTOCOL_TIMEOUT);
 
 	if (!bt_mesh_fcs_check(link.rx.buf, link.rx.fcs)) {
 		BT_ERR("Incorrect FCS");
@@ -274,6 +282,10 @@ static void prov_msg_recv(void)
 
 static void protocol_timeout(struct k_work *work)
 {
+	if (!atomic_test_bit(link.flags, ADV_LINK_ACTIVE)) {
+		return;
+	}
+
 	BT_DBG("");
 
 	link.rx.seg = 0U;
@@ -557,6 +569,12 @@ static void send_reliable(void)
 			break;
 		}
 
+		if (BT_MESH_ADV(buf)->busy) {
+			continue;
+		}
+
+		BT_DBG("%u bytes: %s", buf->len, bt_hex(buf->data, buf->len));
+
 		if (i + 1 < ARRAY_SIZE(link.tx.buf) && link.tx.buf[i + 1]) {
 			bt_mesh_adv_send(buf, NULL, NULL);
 		} else {
@@ -568,7 +586,6 @@ static void send_reliable(void)
 static void prov_retransmit(struct k_work *work)
 {
 	int32_t timeout_ms;
-	int i;
 
 	BT_DBG("");
 
@@ -599,25 +616,7 @@ static void prov_retransmit(struct k_work *work)
 		return;
 	}
 
-	for (i = 0; i < ARRAY_SIZE(link.tx.buf); i++) {
-		struct net_buf *buf = link.tx.buf[i];
-
-		if (!buf) {
-			break;
-		}
-
-		if (BT_MESH_ADV(buf)->busy) {
-			continue;
-		}
-
-		BT_DBG("%u bytes: %s", buf->len, bt_hex(buf->data, buf->len));
-
-		if (i + 1 < ARRAY_SIZE(link.tx.buf) && link.tx.buf[i + 1]) {
-			bt_mesh_adv_send(buf, NULL, NULL);
-		} else {
-			bt_mesh_adv_send(buf, &buf_sent_cb, NULL);
-		}
-	}
+	send_reliable();
 }
 
 static int bearer_ctl_send(uint8_t op, const void *data, uint8_t data_len,
@@ -628,7 +627,7 @@ static int bearer_ctl_send(uint8_t op, const void *data, uint8_t data_len,
 	BT_DBG("op 0x%02x data_len %u", op, data_len);
 
 	prov_clear_tx();
-	k_delayed_work_submit(&link.prot_timer, PROTOCOL_TIMEOUT);
+	k_work_reschedule(&link.prot_timer, PROTOCOL_TIMEOUT);
 
 	buf = adv_buf_create(reliable ? RETRANSMITS_RELIABLE :
 					RETRANSMITS_UNRELIABLE);
@@ -660,7 +659,7 @@ static int prov_send_adv(struct net_buf_simple *msg,
 	uint8_t seg_len, seg_id;
 
 	prov_clear_tx();
-	k_delayed_work_submit(&link.prot_timer, PROTOCOL_TIMEOUT);
+	k_work_reschedule(&link.prot_timer, PROTOCOL_TIMEOUT);
 
 	start = adv_buf_create(RETRANSMITS_RELIABLE);
 	if (!start) {
@@ -884,8 +883,8 @@ static void prov_link_close(enum prov_bearer_link_status status)
 
 void pb_adv_init(void)
 {
-	k_delayed_work_init(&link.prot_timer, protocol_timeout);
-	k_delayed_work_init(&link.tx.retransmit, prov_retransmit);
+	k_work_init_delayable(&link.prot_timer, protocol_timeout);
+	k_work_init_delayable(&link.tx.retransmit, prov_retransmit);
 }
 
 void pb_adv_reset(void)
