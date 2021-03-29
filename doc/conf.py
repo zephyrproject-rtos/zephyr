@@ -25,7 +25,7 @@ ZEPHYR_BUILD = os.path.abspath(os.environ["ZEPHYR_BUILD"])
 
 # Add the 'extensions' directory to sys.path, to enable finding Sphinx
 # extensions within.
-sys.path.insert(0, os.path.join(ZEPHYR_BASE, 'doc', 'extensions'))
+sys.path.insert(0, os.path.join(ZEPHYR_BASE, 'doc', '_extensions'))
 
 # Add the directory which contains the runners package as well,
 # for autodoc directives on runners.xyz.
