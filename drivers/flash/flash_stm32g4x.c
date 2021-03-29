@@ -197,7 +197,7 @@ int flash_stm32_block_erase_loop(const struct device *dev,
 				 unsigned int offset,
 				 unsigned int len)
 {
-	unsigned int address = offset
+	unsigned int address = offset;
 	int rc = 0;
 
 	for (; address <= offset + len - 1 ; address += FLASH_PAGE_SIZE) {
