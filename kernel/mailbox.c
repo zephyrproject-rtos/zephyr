@@ -343,7 +343,7 @@ void k_mbox_data_get(struct k_mbox_msg *rx_msg, void *buffer)
 	}
 
 	/* copy message data to buffer, then dispose of message */
-	if ((rx_msg->tx_data != NULL) && (rx_msg->size > 0)) {
+	if ((rx_msg->tx_data != NULL) && (rx_msg->size > 0U)) {
 		(void)memcpy(buffer, rx_msg->tx_data, rx_msg->size);
 	}
 	mbox_message_dispose(rx_msg);
@@ -370,7 +370,7 @@ static int mbox_message_data_check(struct k_mbox_msg *rx_msg, void *buffer)
 	if (buffer != NULL) {
 		/* retrieve data now, then dispose of message */
 		k_mbox_data_get(rx_msg, buffer);
-	} else if (rx_msg->size == 0) {
+	} else if (rx_msg->size == 0U) {
 		/* there is no data to get, so just dispose of message */
 		mbox_message_dispose(rx_msg);
 	} else {

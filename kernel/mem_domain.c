@@ -45,7 +45,7 @@ static bool check_add_partition(struct k_mem_domain *domain,
 	}
 #endif
 
-	if (part->size == 0) {
+	if (part->size == 0U) {
 		LOG_ERR("zero sized partition at %p with base 0x%lx",
 			part, part->start);
 		return false;
@@ -66,7 +66,7 @@ static bool check_add_partition(struct k_mem_domain *domain,
 	for (i = 0; i < domain->num_partitions; i++) {
 		struct k_mem_partition *dpart = &domain->partitions[i];
 
-		if (dpart->size == 0) {
+		if (dpart->size == 0U) {
 			/* Unused slot */
 			continue;
 		}

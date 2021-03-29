@@ -293,8 +293,8 @@ static int map_anon_page(void *addr, uint32_t flags)
 {
 	struct z_page_frame *pf;
 	uintptr_t phys;
-	bool lock = (flags & K_MEM_MAP_LOCK) != 0;
-	bool uninit = (flags & K_MEM_MAP_UNINIT) != 0;
+	bool lock = (flags & K_MEM_MAP_LOCK) != 0U;
+	bool uninit = (flags & K_MEM_MAP_UNINIT) != 0U;
 
 	pf = free_page_frame_list_get();
 	if (pf == NULL) {
@@ -346,17 +346,17 @@ void *k_mem_map(size_t size, uint32_t flags)
 	size_t total_size = size;
 	int ret;
 	k_spinlock_key_t key;
-	bool guard = (flags & K_MEM_MAP_GUARD) != 0;
+	bool guard = (flags & K_MEM_MAP_GUARD) != 0U;
 	uint8_t *pos;
 
-	__ASSERT(!(((flags & K_MEM_PERM_USER) != 0) &&
-		   ((flags & K_MEM_MAP_UNINIT) != 0)),
+	__ASSERT(!(((flags & K_MEM_PERM_USER) != 0U) &&
+		   ((flags & K_MEM_MAP_UNINIT) != 0U)),
 		 "user access to anonymous uninitialized pages is forbidden");
-	__ASSERT(size % CONFIG_MMU_PAGE_SIZE == 0,
+	__ASSERT(size % CONFIG_MMU_PAGE_SIZE == 0U,
 		 "unaligned size %zu passed to %s", size, __func__);
 	__ASSERT(size != 0, "zero sized memory mapping");
 	__ASSERT(page_frames_initialized, "%s called too early", __func__);
-	__ASSERT((flags & K_MEM_CACHE_MASK) == 0,
+	__ASSERT((flags & K_MEM_CACHE_MASK) == 0U,
 		 "%s does not support explicit cache settings", __func__);
 
 	key = k_spin_lock(&z_mm_lock);
@@ -406,7 +406,7 @@ size_t k_mem_free_get(void)
 	ret = z_free_page_count;
 	k_spin_unlock(&z_mm_lock, key);
 
-	return ret * CONFIG_MMU_PAGE_SIZE;
+	return ret * (size_t)CONFIG_MMU_PAGE_SIZE;
 }
 
 /* This may be called from arch early boot code before z_cstart() is invoked.
@@ -423,7 +423,7 @@ void z_phys_map(uint8_t **virt_ptr, uintptr_t phys, size_t size, uint32_t flags)
 	addr_offset = k_mem_region_align(&aligned_phys, &aligned_size,
 					 phys, size,
 					 CONFIG_MMU_PAGE_SIZE);
-	__ASSERT(aligned_size != 0, "0-length mapping at 0x%lx", aligned_phys);
+	__ASSERT(aligned_size != 0U, "0-length mapping at 0x%lx", aligned_phys);
 	__ASSERT(aligned_phys < (aligned_phys + (aligned_size - 1)),
 		 "wraparound for physical address 0x%lx (size %zu)",
 		 aligned_phys, aligned_size);
@@ -497,7 +497,7 @@ void z_kernel_map_fixup(void)
 				      CONFIG_MMU_PAGE_SIZE);
 	size_t kobject_size = (size_t)(Z_KERNEL_VIRT_END - kobject_page_begin);
 
-	if (kobject_size != 0) {
+	if (kobject_size != 0U) {
 		arch_mem_map(kobject_page_begin,
 			     Z_BOOT_VIRT_TO_PHYS(kobject_page_begin),
 			     kobject_size, K_MEM_PERM_RW | K_MEM_CACHE_WB);
