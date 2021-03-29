@@ -11,12 +11,19 @@
 #include "util/memq.h"
 #include "util/mayfly.h"
 #include "ticker/ticker.h"
+#include "hal/ccm.h"
+#include "hal/ticker.h"
 
+#include "pdu.h"
 #include "lll.h"
+#include "lll_conn.h"
+#include "ull_conn_types.h"
 #include "lll_conn_iso.h"
 
 #include "ull_conn_iso_types.h"
+#include "ull_conn_internal.h"
 #include "ull_internal.h"
+#include "lll/lll_vendor.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_ull_conn_iso
@@ -225,4 +232,95 @@ void ull_conn_iso_done(struct node_rx_event_done *done)
 			  (ticker_status == TICKER_STATUS_BUSY) ||
 			  ((void *)conn == ull_disable_mark_get()));
 	}
+}
+
+static void ticker_resume_op_cb(uint32_t status, void *param)
+{
+	ARG_UNUSED(param);
+
+	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
+}
+
+static void ticker_resume_cb(uint32_t ticks_at_expire, uint32_t remainder,
+			     uint16_t lazy, uint8_t force, void *param)
+{
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, lll_resume};
+	struct lll_event *resume_event;
+	uint32_t ret;
+
+	LL_ASSERT(lazy == 0);
+
+	resume_event = param;
+
+	/* Append timing parameters */
+	resume_event->prepare_param.ticks_at_expire = ticks_at_expire;
+	resume_event->prepare_param.remainder = remainder;
+	resume_event->prepare_param.lazy = 0;
+	resume_event->prepare_param.force = force;
+	mfy.param = resume_event;
+
+	/* Kick LLL resume */
+	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL,
+			     0, &mfy);
+
+	LL_ASSERT(!ret);
+}
+
+void ull_conn_iso_resume_ticker_start(struct lll_event *resume_event,
+				      uint8_t  resume_cis_index,
+				      uint32_t ticks_anchor,
+				      uint32_t resume_timeout)
+{
+	struct lll_conn_iso_group *cig;
+	uint32_t ready_delay_us;
+	uint32_t resume_delay_us;
+	int32_t resume_offset_us;
+	uint8_t ticker_id;
+	uint32_t ret;
+
+	cig = resume_event->prepare_param.param;
+	ticker_id = TICKER_ID_CONN_ISO_RESUME_BASE + cig->handle;
+
+	cig->resume_cis = resume_cis_index;
+
+	if (0) {
+#if defined(CONFIG_BT_CTLR_PHY)
+	} else {
+		struct ll_conn_iso_stream *cis;
+		struct ll_conn *acl;
+
+		cis = ll_conn_iso_stream_get(cig->cis_handles[resume_cis_index]);
+		acl = ll_conn_get(cis->lll.acl_handle);
+
+		ready_delay_us = lll_radio_rx_ready_delay_get(acl->lll.phy_rx, 1);
+#else
+	} else {
+		ready_delay_us = lll_radio_rx_ready_delay_get(0, 0);
+#endif /* CONFIG_BT_CTLR_PHY */
+	}
+
+	resume_delay_us  = EVENT_OVERHEAD_START_US;
+	resume_delay_us += EVENT_TICKER_RES_MARGIN_US;
+	resume_delay_us += EVENT_JITTER_US;
+	resume_delay_us += ready_delay_us;
+
+	resume_offset_us = (int32_t)(resume_timeout - resume_delay_us);
+	LL_ASSERT(resume_offset_us >= 0);
+
+	/* Setup resume timeout as single-shot */
+	ret = ticker_start(TICKER_INSTANCE_ID_CTLR,
+			   TICKER_USER_ID_LLL,
+			   ticker_id,
+			   ticks_anchor,
+			   HAL_TICKER_US_TO_TICKS(resume_offset_us),
+			   TICKER_NULL_PERIOD,
+			   TICKER_NULL_REMAINDER,
+			   TICKER_NULL_LAZY,
+			   TICKER_NULL_SLOT,
+			   ticker_resume_cb, resume_event,
+			   ticker_resume_op_cb, NULL);
+
+	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
+		  (ret == TICKER_STATUS_BUSY));
 }
