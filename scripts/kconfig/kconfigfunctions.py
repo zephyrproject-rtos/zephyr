@@ -430,6 +430,43 @@ def dt_nodelabel_path(kconf, _, label):
     return node.path if node else ""
 
 
+def dt_irq_highest_number(kconf, _, irq_parent_label):
+    """
+    This function returns the highest IRQ number used by nodes depending
+    on the interrupt-controller indentifed by its label with irq_parent_label.
+    """
+
+    if doc_mode or edt is None:
+        return "0"
+
+    irq_parent_node = edt.label2node.get(irq_parent_label)
+    highest_irq_number = 0
+
+    try:
+        node_using_irqs = irq_parent_node.required_by
+    except AttributeError:
+        return "0"
+
+	# Iterate over interrupt-parent depending nodes
+    for node in node_using_irqs:
+        node_irqs = node.props["interrupts"].val
+
+        try:
+            node_status = node.props["status"].val
+        except KeyError:
+            node_status = "okay"
+
+        # Only consider enabled nodes
+        if node_status == "okay":
+            # TODO: Get interrupts size cells from bindings
+            for i in range(0, int(len(node_irqs)/2)):
+                if node_irqs[2 * i] > highest_irq_number:
+                    highest_irq_number = node_irqs[2 * i]
+
+    # Report highest irq number + 1
+    return str(highest_irq_number + 1)
+
+
 def shields_list_contains(kconf, _, shield):
     """
     Return "n" if cmake environment variable 'SHIELD_AS_LIST' doesn't exist.
@@ -442,7 +479,6 @@ def shields_list_contains(kconf, _, shield):
         return "n"
 
     return "y" if shield in list.split(";") else "n"
-
 
 # Keys in this dict are the function names as they appear
 # in Kconfig files. The values are tuples in this form:
@@ -476,5 +512,6 @@ functions = {
         "dt_node_int_prop_hex": (dt_node_int_prop, 2, 2),
         "dt_nodelabel_has_compat": (dt_nodelabel_has_compat, 2, 2),
         "dt_nodelabel_path": (dt_nodelabel_path, 1, 1),
+        "dt_irq_highest_number": (dt_irq_highest_number, 1, 1),
         "shields_list_contains": (shields_list_contains, 1, 1),
 }
