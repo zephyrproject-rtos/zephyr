@@ -48,9 +48,9 @@ __weak void k_sys_fatal_error_handler(unsigned int reason,
 
 static const char *thread_name_get(struct k_thread *thread)
 {
-	const char *thread_name = thread ? k_thread_name_get(thread) : NULL;
+	const char *thread_name = (thread != NULL) ? k_thread_name_get(thread) : NULL;
 
-	if (thread_name == NULL || thread_name[0] == '\0') {
+	if ((thread_name == NULL) || (thread_name[0] == '\0')) {
 		thread_name = "unknown";
 	}
 
