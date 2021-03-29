@@ -147,7 +147,7 @@ struct acpi_cpu *z_acpi_get_cpu(int n)
 		if (entry->type == ACPI_MADT_ENTRY_CPU) {
 			struct acpi_cpu *cpu = (struct acpi_cpu *)entry;
 
-			if (cpu->flags & ACPI_CPU_FLAGS_ENABLED) {
+			if ((cpu->flags & ACPI_CPU_FLAGS_ENABLED) != 0) {
 				if (n == 0) {
 					return cpu;
 				}
