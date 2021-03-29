@@ -146,7 +146,10 @@
 
 #if defined(CONFIG_BT_CTLR_CONN_ISO)
 #define BT_CIG_TICKER_NODES ((TICKER_ID_CONN_ISO_LAST) - \
-			     (TICKER_ID_CONN_ISO_BASE) + 1)
+			     (TICKER_ID_CONN_ISO_BASE) + 1 + \
+			     (TICKER_ID_CONN_ISO_RESUME_LAST) - \
+			     (TICKER_ID_CONN_ISO_RESUME_BASE) + 1)
+
 #else
 #define BT_CIG_TICKER_NODES 0
 #endif
