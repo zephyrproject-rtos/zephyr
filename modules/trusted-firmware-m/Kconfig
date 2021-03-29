@@ -173,7 +173,8 @@ config TFM_PARTITION_PLATFORM
 	  repository.
 
 config TFM_PARTITION_AUDIT_LOG
-	bool "Enable secure partition 'Audit Log'"
+	bool "Enable secure partition 'Audit Log'" if !TFM_IPC
+	depends on !TFM_IPC
 	default y
 	help
 	  Setting this option will cause '-DTFM_PARTITION_AUDIT_LOG'
@@ -182,6 +183,8 @@ config TFM_PARTITION_AUDIT_LOG
 	  parameter. Any dependencies between the various TFM_PARTITION_*
 	  options are handled by the build system in the trusted-firmware-m
 	  repository.
+	  Note: the Audit Log service does not implement the IPC model
+	  interface so it may not be enabled together with IPC option.
 
 config TFM_IPC
 	bool "IPC"
