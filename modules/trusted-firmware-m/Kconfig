@@ -64,12 +64,39 @@ config TFM_KEY_FILE_NS
 	  firmware images.
 
 config TFM_PROFILE
-	string "The build profile used for TFM Secure image."
+	string
 	depends on BUILD_WITH_TFM
+	default "profile_small" if TFM_PROFILE_TYPE_SMALL
+	default "profile_medium" if TFM_PROFILE_TYPE_MEDIUM
+	default "profile_large" if TFM_PROFILE_TYPE_LARGE
 	help
 	  Build profile used to build tfm_s image. The available values are
-	  profile_medium and profile_small. The default profile does not need
-	  to have this configuration set.
+	  profile_large, profile_medium and profile_small. The default profile
+	  does not need to have this configuration set.
+
+choice TFM_PROFILE_TYPE
+	prompt "TF-M build profile"
+	depends on BUILD_WITH_TFM
+	default TFM_PROFILE_TYPE_NOT_SET
+	help
+	  The TF-M build profile selection. Can be empty (not set),
+	  small, medium or large. Certain profile types enable other
+	  TF-M configuration options, namely, the IPC model and the
+	  isolation level.
+
+config TFM_PROFILE_TYPE_NOT_SET
+	bool "TF-M build profile is not set"
+
+config TFM_PROFILE_TYPE_SMALL
+	bool "TF-M build profile: small"
+
+config TFM_PROFILE_TYPE_MEDIUM
+	bool "TF-M build profile: medium"
+
+config TFM_PROFILE_TYPE_LARGE
+	bool "TF-M build profile: large"
+
+endchoice
 
 choice TFM_CMAKE_BUILD_TYPE
 	prompt "The build type for TFM"
@@ -93,12 +120,17 @@ config TFM_CMAKE_BUILD_TYPE_DEBUG
 endchoice
 
 config TFM_ISOLATION_LEVEL
-	int "Isolation level setting."
+	int "Isolation level setting." if TFM_PROFILE_TYPE_NOT_SET
 	range 1 3
 	depends on BUILD_WITH_TFM
+	default 1 if TFM_PROFILE_TYPE_SMALL
+	default 2 if TFM_PROFILE_TYPE_MEDIUM
+	default 3 if TFM_PROFILE_TYPE_LARGE
 	help
 	  Manually set the required TFM isolation level. Possible values are
-	  1,2 or 3; the default is set by build configuration.
+	  1,2 or 3; the default is set by build configuration. When TF-M
+	  Profile option is supplied, do not allow manual setting of the
+	  isolation level, as it is determined by the profile setting.
 
 config TFM_BL2
 	bool "Add MCUboot to TFM"
@@ -187,10 +219,13 @@ config TFM_PARTITION_AUDIT_LOG
 	  interface so it may not be enabled together with IPC option.
 
 config TFM_IPC
-	bool "IPC"
+	bool "IPC" if TFM_PROFILE_TYPE_NOT_SET
+	default y if (TFM_PROFILE_TYPE_MEDIUM || TFM_PROFILE_TYPE_LARGE)
 	help
 	  When enabled, this option signifies that the TF-M build supports
-	  the PSA API (IPC mode) instead of the secure library mode.
+	  the PSA API (IPC mode) instead of the secure library mode. When
+	  TF-M Profile option is supplied, do not allow manual setting of
+	  the IPC mode, as it is determined by the profile setting.
 
 config TFM_REGRESSION
 	bool "Regression tests"
