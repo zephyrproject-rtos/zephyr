@@ -11,6 +11,18 @@ properties:
     clocks:
       required: true
 
-pinmux-cells:
+    "#nxp,kinetis-pin-cells":
+      type: int
+      required: true
+      const: 2
+      description: Number of items to expect in a nxp,kinetis-pins specifier
+
+nxp,kinetis-pin-cells:
   - pin
-  - function
+  - mux
+
+child-binding:
+    description: nxp kinetis pins
+    properties:
+      "nxp,kinetis-pins":
+        type: phandle-array

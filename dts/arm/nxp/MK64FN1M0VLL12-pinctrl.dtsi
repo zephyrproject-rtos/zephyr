@@ -1,0 +1,1221 @@
+&porta {
+	gpioa_gpio_pta0: gpioa_gpio_pta0 {
+		nxp,kinetis-pins = < &porta 0 1 >;
+	};
+	uart0_cts_pta0: uart0_cts_pta0 {
+		nxp,kinetis-pins = < &porta 0 2 >;
+	};
+	uart0_col_pta0: uart0_col_pta0 {
+		nxp,kinetis-pins = < &porta 0 2 >;
+	};
+	ftm0_ch_pta0: ftm0_ch_pta0 {
+		nxp,kinetis-pins = < &porta 0 3 >;
+	};
+	jtag_jtag_tclk_swd_clk_pta0: jtag_jtag_tclk_swd_clk_pta0 {
+		nxp,kinetis-pins = < &porta 0 7 >;
+	};
+	gpioa_gpio_pta1: gpioa_gpio_pta1 {
+		nxp,kinetis-pins = < &porta 1 1 >;
+	};
+	uart0_rx_pta1: uart0_rx_pta1 {
+		nxp,kinetis-pins = < &porta 1 2 >;
+	};
+	ftm0_ch_pta1: ftm0_ch_pta1 {
+		nxp,kinetis-pins = < &porta 1 3 >;
+	};
+	jtag_tdi_pta1: jtag_tdi_pta1 {
+		nxp,kinetis-pins = < &porta 1 7 >;
+	};
+	gpioa_gpio_pta2: gpioa_gpio_pta2 {
+		nxp,kinetis-pins = < &porta 2 1 >;
+	};
+	uart0_tx_pta2: uart0_tx_pta2 {
+		nxp,kinetis-pins = < &porta 2 2 >;
+	};
+	sim_uart0_mod_out_pta2: sim_uart0_mod_out_pta2 {
+		nxp,kinetis-pins = < &porta 2 2 >;
+	};
+	ftm0_ch_pta2: ftm0_ch_pta2 {
+		nxp,kinetis-pins = < &porta 2 3 >;
+	};
+	jtag_tdo_pta2: jtag_tdo_pta2 {
+		nxp,kinetis-pins = < &porta 2 7 >;
+	};
+	tpiu_swo_pta2: tpiu_swo_pta2 {
+		nxp,kinetis-pins = < &porta 2 7 >;
+	};
+	gpioa_gpio_pta3: gpioa_gpio_pta3 {
+		nxp,kinetis-pins = < &porta 3 1 >;
+	};
+	uart0_rts_pta3: uart0_rts_pta3 {
+		nxp,kinetis-pins = < &porta 3 2 >;
+	};
+	ftm0_ch_pta3: ftm0_ch_pta3 {
+		nxp,kinetis-pins = < &porta 3 3 >;
+	};
+	jtag_jtag_tms_swd_dio_pta3: jtag_jtag_tms_swd_dio_pta3 {
+		nxp,kinetis-pins = < &porta 3 7 >;
+	};
+	gpioa_gpio_pta4: gpioa_gpio_pta4 {
+		nxp,kinetis-pins = < &porta 4 1 >;
+	};
+	llwu_p_pta4: llwu_p_pta4 {
+		nxp,kinetis-pins = < &porta 4 1 >;
+	};
+	ftm0_ch_pta4: ftm0_ch_pta4 {
+		nxp,kinetis-pins = < &porta 4 3 >;
+	};
+	systemcontrol_nmi_pta4: systemcontrol_nmi_pta4 {
+		nxp,kinetis-pins = < &porta 4 7 >;
+	};
+	gpioa_gpio_pta5: gpioa_gpio_pta5 {
+		nxp,kinetis-pins = < &porta 5 1 >;
+	};
+	usb0_clkin_pta5: usb0_clkin_pta5 {
+		nxp,kinetis-pins = < &porta 5 2 >;
+	};
+	ftm0_ch_pta5: ftm0_ch_pta5 {
+		nxp,kinetis-pins = < &porta 5 3 >;
+	};
+	enet_rmii_rxer_pta5: enet_rmii_rxer_pta5 {
+		nxp,kinetis-pins = < &porta 5 4 >;
+	};
+	enet_mii_rxer_pta5: enet_mii_rxer_pta5 {
+		nxp,kinetis-pins = < &porta 5 4 >;
+	};
+	cmp2_out_pta5: cmp2_out_pta5 {
+		nxp,kinetis-pins = < &porta 5 5 >;
+	};
+	i2s0_tx_bclk_pta5: i2s0_tx_bclk_pta5 {
+		nxp,kinetis-pins = < &porta 5 6 >;
+	};
+	jtag_trst_pta5: jtag_trst_pta5 {
+		nxp,kinetis-pins = < &porta 5 7 >;
+	};
+	cmp2_in_pta12: cmp2_in_pta12 {
+		nxp,kinetis-pins = < &porta 12 0 >;
+	};
+	gpioa_gpio_pta12: gpioa_gpio_pta12 {
+		nxp,kinetis-pins = < &porta 12 1 >;
+	};
+	can0_tx_pta12: can0_tx_pta12 {
+		nxp,kinetis-pins = < &porta 12 2 >;
+	};
+	ftm1_ch_pta12: ftm1_ch_pta12 {
+		nxp,kinetis-pins = < &porta 12 3 >;
+	};
+	enet_rmii_rxd1_pta12: enet_rmii_rxd1_pta12 {
+		nxp,kinetis-pins = < &porta 12 4 >;
+	};
+	enet_mii_rxd1_pta12: enet_mii_rxd1_pta12 {
+		nxp,kinetis-pins = < &porta 12 4 >;
+	};
+	i2c2_scl_pta12: i2c2_scl_pta12 {
+		nxp,kinetis-pins = < &porta 12 5 >;
+	};
+	i2s0_txd0_pta12: i2s0_txd0_pta12 {
+		nxp,kinetis-pins = < &porta 12 6 >;
+	};
+	ftm1_qd_ph_pta12: ftm1_qd_ph_pta12 {
+		nxp,kinetis-pins = < &porta 12 7 >;
+	};
+	cmp2_in_pta13: cmp2_in_pta13 {
+		nxp,kinetis-pins = < &porta 13 0 >;
+	};
+	gpioa_gpio_pta13: gpioa_gpio_pta13 {
+		nxp,kinetis-pins = < &porta 13 1 >;
+	};
+	llwu_p_pta13: llwu_p_pta13 {
+		nxp,kinetis-pins = < &porta 13 1 >;
+	};
+	can0_rx_pta13: can0_rx_pta13 {
+		nxp,kinetis-pins = < &porta 13 2 >;
+	};
+	ftm1_ch_pta13: ftm1_ch_pta13 {
+		nxp,kinetis-pins = < &porta 13 3 >;
+	};
+	enet_rmii_rxd0_pta13: enet_rmii_rxd0_pta13 {
+		nxp,kinetis-pins = < &porta 13 4 >;
+	};
+	enet_mii_rxd0_pta13: enet_mii_rxd0_pta13 {
+		nxp,kinetis-pins = < &porta 13 4 >;
+	};
+	i2c2_sda_pta13: i2c2_sda_pta13 {
+		nxp,kinetis-pins = < &porta 13 5 >;
+	};
+	i2s0_tx_fs_pta13: i2s0_tx_fs_pta13 {
+		nxp,kinetis-pins = < &porta 13 6 >;
+	};
+	ftm1_qd_ph_pta13: ftm1_qd_ph_pta13 {
+		nxp,kinetis-pins = < &porta 13 7 >;
+	};
+	gpioa_gpio_pta14: gpioa_gpio_pta14 {
+		nxp,kinetis-pins = < &porta 14 1 >;
+	};
+	spi0_pcs0_ss_pta14: spi0_pcs0_ss_pta14 {
+		nxp,kinetis-pins = < &porta 14 2 >;
+	};
+	uart0_tx_pta14: uart0_tx_pta14 {
+		nxp,kinetis-pins = < &porta 14 3 >;
+	};
+	sim_uart0_mod_out_pta14: sim_uart0_mod_out_pta14 {
+		nxp,kinetis-pins = < &porta 14 3 >;
+	};
+	enet_rmii_crs_dv_pta14: enet_rmii_crs_dv_pta14 {
+		nxp,kinetis-pins = < &porta 14 4 >;
+	};
+	enet_mii_rxdv_pta14: enet_mii_rxdv_pta14 {
+		nxp,kinetis-pins = < &porta 14 4 >;
+	};
+	i2c2_scl_pta14: i2c2_scl_pta14 {
+		nxp,kinetis-pins = < &porta 14 5 >;
+	};
+	i2s0_rx_bclk_pta14: i2s0_rx_bclk_pta14 {
+		nxp,kinetis-pins = < &porta 14 6 >;
+	};
+	i2s0_txd1_pta14: i2s0_txd1_pta14 {
+		nxp,kinetis-pins = < &porta 14 7 >;
+	};
+	gpioa_gpio_pta15: gpioa_gpio_pta15 {
+		nxp,kinetis-pins = < &porta 15 1 >;
+	};
+	spi0_sck_pta15: spi0_sck_pta15 {
+		nxp,kinetis-pins = < &porta 15 2 >;
+	};
+	uart0_rx_pta15: uart0_rx_pta15 {
+		nxp,kinetis-pins = < &porta 15 3 >;
+	};
+	enet_rmii_txen_pta15: enet_rmii_txen_pta15 {
+		nxp,kinetis-pins = < &porta 15 4 >;
+	};
+	enet_mii_txen_pta15: enet_mii_txen_pta15 {
+		nxp,kinetis-pins = < &porta 15 4 >;
+	};
+	i2s0_rxd0_pta15: i2s0_rxd0_pta15 {
+		nxp,kinetis-pins = < &porta 15 6 >;
+	};
+	gpioa_gpio_pta16: gpioa_gpio_pta16 {
+		nxp,kinetis-pins = < &porta 16 1 >;
+	};
+	spi0_sout_pta16: spi0_sout_pta16 {
+		nxp,kinetis-pins = < &porta 16 2 >;
+	};
+	uart0_cts_pta16: uart0_cts_pta16 {
+		nxp,kinetis-pins = < &porta 16 3 >;
+	};
+	uart0_col_pta16: uart0_col_pta16 {
+		nxp,kinetis-pins = < &porta 16 3 >;
+	};
+	enet_rmii_txd0_pta16: enet_rmii_txd0_pta16 {
+		nxp,kinetis-pins = < &porta 16 4 >;
+	};
+	enet_mii_txd0_pta16: enet_mii_txd0_pta16 {
+		nxp,kinetis-pins = < &porta 16 4 >;
+	};
+	i2s0_rx_fs_pta16: i2s0_rx_fs_pta16 {
+		nxp,kinetis-pins = < &porta 16 6 >;
+	};
+	i2s0_rxd1_pta16: i2s0_rxd1_pta16 {
+		nxp,kinetis-pins = < &porta 16 7 >;
+	};
+	adc1_se_pta17: adc1_se_pta17 {
+		nxp,kinetis-pins = < &porta 17 0 >;
+	};
+	gpioa_gpio_pta17: gpioa_gpio_pta17 {
+		nxp,kinetis-pins = < &porta 17 1 >;
+	};
+	spi0_sin_pta17: spi0_sin_pta17 {
+		nxp,kinetis-pins = < &porta 17 2 >;
+	};
+	uart0_rts_pta17: uart0_rts_pta17 {
+		nxp,kinetis-pins = < &porta 17 3 >;
+	};
+	enet_rmii_txd1_pta17: enet_rmii_txd1_pta17 {
+		nxp,kinetis-pins = < &porta 17 4 >;
+	};
+	enet_mii_txd1_pta17: enet_mii_txd1_pta17 {
+		nxp,kinetis-pins = < &porta 17 4 >;
+	};
+	i2s0_mclk_pta17: i2s0_mclk_pta17 {
+		nxp,kinetis-pins = < &porta 17 6 >;
+	};
+	enet_rmii_clkin_pta18: enet_rmii_clkin_pta18 {
+		nxp,kinetis-pins = < &porta 18 0 >;
+	};
+	osc_extal0_pta18: osc_extal0_pta18 {
+		nxp,kinetis-pins = < &porta 18 0 >;
+	};
+	gpioa_gpio_pta18: gpioa_gpio_pta18 {
+		nxp,kinetis-pins = < &porta 18 1 >;
+	};
+	ftm0_flt_pta18: ftm0_flt_pta18 {
+		nxp,kinetis-pins = < &porta 18 3 >;
+	};
+	ftm0_clkin_pta18: ftm0_clkin_pta18 {
+		nxp,kinetis-pins = < &porta 18 4 >;
+	};
+	ftm1_clkin_pta18: ftm1_clkin_pta18 {
+		nxp,kinetis-pins = < &porta 18 4 >;
+	};
+	ftm2_clkin_pta18: ftm2_clkin_pta18 {
+		nxp,kinetis-pins = < &porta 18 4 >;
+	};
+	ftm3_clkin_pta18: ftm3_clkin_pta18 {
+		nxp,kinetis-pins = < &porta 18 4 >;
+	};
+	osc_xtal0_pta19: osc_xtal0_pta19 {
+		nxp,kinetis-pins = < &porta 19 0 >;
+	};
+	gpioa_gpio_pta19: gpioa_gpio_pta19 {
+		nxp,kinetis-pins = < &porta 19 1 >;
+	};
+	ftm1_flt_pta19: ftm1_flt_pta19 {
+		nxp,kinetis-pins = < &porta 19 3 >;
+	};
+	ftm1_trg_pta19: ftm1_trg_pta19 {
+		nxp,kinetis-pins = < &porta 19 3 >;
+	};
+	ftm0_clkin_pta19: ftm0_clkin_pta19 {
+		nxp,kinetis-pins = < &porta 19 4 >;
+	};
+	ftm1_clkin_pta19: ftm1_clkin_pta19 {
+		nxp,kinetis-pins = < &porta 19 4 >;
+	};
+	ftm2_clkin_pta19: ftm2_clkin_pta19 {
+		nxp,kinetis-pins = < &porta 19 4 >;
+	};
+	ftm3_clkin_pta19: ftm3_clkin_pta19 {
+		nxp,kinetis-pins = < &porta 19 4 >;
+	};
+	lptmr0_alt_pta19: lptmr0_alt_pta19 {
+		nxp,kinetis-pins = < &porta 19 6 >;
+	};
+};
+
+&portb {
+	adc0_se_ptb0: adc0_se_ptb0 {
+		nxp,kinetis-pins = < &portb 0 0 >;
+	};
+	adc1_se_ptb0: adc1_se_ptb0 {
+		nxp,kinetis-pins = < &portb 0 0 >;
+	};
+	gpiob_gpio_ptb0: gpiob_gpio_ptb0 {
+		nxp,kinetis-pins = < &portb 0 1 >;
+	};
+	llwu_p_ptb0: llwu_p_ptb0 {
+		nxp,kinetis-pins = < &portb 0 1 >;
+	};
+	i2c0_scl_ptb0: i2c0_scl_ptb0 {
+		nxp,kinetis-pins = < &portb 0 2 >;
+	};
+	ftm1_ch_ptb0: ftm1_ch_ptb0 {
+		nxp,kinetis-pins = < &portb 0 3 >;
+	};
+	enet_rmii_mdio_ptb0: enet_rmii_mdio_ptb0 {
+		nxp,kinetis-pins = < &portb 0 4 >;
+	};
+	enet_mii_mdio_ptb0: enet_mii_mdio_ptb0 {
+		nxp,kinetis-pins = < &portb 0 4 >;
+	};
+	ftm1_qd_ph_ptb0: ftm1_qd_ph_ptb0 {
+		nxp,kinetis-pins = < &portb 0 6 >;
+	};
+	adc0_se_ptb1: adc0_se_ptb1 {
+		nxp,kinetis-pins = < &portb 1 0 >;
+	};
+	adc1_se_ptb1: adc1_se_ptb1 {
+		nxp,kinetis-pins = < &portb 1 0 >;
+	};
+	gpiob_gpio_ptb1: gpiob_gpio_ptb1 {
+		nxp,kinetis-pins = < &portb 1 1 >;
+	};
+	i2c0_sda_ptb1: i2c0_sda_ptb1 {
+		nxp,kinetis-pins = < &portb 1 2 >;
+	};
+	ftm1_ch_ptb1: ftm1_ch_ptb1 {
+		nxp,kinetis-pins = < &portb 1 3 >;
+	};
+	enet_rmii_mdc_ptb1: enet_rmii_mdc_ptb1 {
+		nxp,kinetis-pins = < &portb 1 4 >;
+	};
+	enet_mii_mdc_ptb1: enet_mii_mdc_ptb1 {
+		nxp,kinetis-pins = < &portb 1 4 >;
+	};
+	ftm1_qd_ph_ptb1: ftm1_qd_ph_ptb1 {
+		nxp,kinetis-pins = < &portb 1 6 >;
+	};
+	adc0_se_ptb2: adc0_se_ptb2 {
+		nxp,kinetis-pins = < &portb 2 0 >;
+	};
+	gpiob_gpio_ptb2: gpiob_gpio_ptb2 {
+		nxp,kinetis-pins = < &portb 2 1 >;
+	};
+	i2c0_scl_ptb2: i2c0_scl_ptb2 {
+		nxp,kinetis-pins = < &portb 2 2 >;
+	};
+	uart0_rts_ptb2: uart0_rts_ptb2 {
+		nxp,kinetis-pins = < &portb 2 3 >;
+	};
+	enet_tmr_1588_ptb2: enet_tmr_1588_ptb2 {
+		nxp,kinetis-pins = < &portb 2 4 >;
+	};
+	ftm0_flt_ptb2: ftm0_flt_ptb2 {
+		nxp,kinetis-pins = < &portb 2 6 >;
+	};
+	adc0_se_ptb3: adc0_se_ptb3 {
+		nxp,kinetis-pins = < &portb 3 0 >;
+	};
+	gpiob_gpio_ptb3: gpiob_gpio_ptb3 {
+		nxp,kinetis-pins = < &portb 3 1 >;
+	};
+	i2c0_sda_ptb3: i2c0_sda_ptb3 {
+		nxp,kinetis-pins = < &portb 3 2 >;
+	};
+	uart0_cts_ptb3: uart0_cts_ptb3 {
+		nxp,kinetis-pins = < &portb 3 3 >;
+	};
+	uart0_col_ptb3: uart0_col_ptb3 {
+		nxp,kinetis-pins = < &portb 3 3 >;
+	};
+	enet_tmr_1588_ptb3: enet_tmr_1588_ptb3 {
+		nxp,kinetis-pins = < &portb 3 4 >;
+	};
+	ftm0_flt_ptb3: ftm0_flt_ptb3 {
+		nxp,kinetis-pins = < &portb 3 6 >;
+	};
+	ftm0_trg_ptb3: ftm0_trg_ptb3 {
+		nxp,kinetis-pins = < &portb 3 6 >;
+	};
+	gpiob_gpio_ptb9: gpiob_gpio_ptb9 {
+		nxp,kinetis-pins = < &portb 9 1 >;
+	};
+	spi1_pcs1_ptb9: spi1_pcs1_ptb9 {
+		nxp,kinetis-pins = < &portb 9 2 >;
+	};
+	uart3_cts_ptb9: uart3_cts_ptb9 {
+		nxp,kinetis-pins = < &portb 9 3 >;
+	};
+	adc1_se_ptb10: adc1_se_ptb10 {
+		nxp,kinetis-pins = < &portb 10 0 >;
+	};
+	gpiob_gpio_ptb10: gpiob_gpio_ptb10 {
+		nxp,kinetis-pins = < &portb 10 1 >;
+	};
+	spi1_pcs0_ss_ptb10: spi1_pcs0_ss_ptb10 {
+		nxp,kinetis-pins = < &portb 10 2 >;
+	};
+	uart3_rx_ptb10: uart3_rx_ptb10 {
+		nxp,kinetis-pins = < &portb 10 3 >;
+	};
+	ftm0_flt_ptb10: ftm0_flt_ptb10 {
+		nxp,kinetis-pins = < &portb 10 6 >;
+	};
+	adc1_se_ptb11: adc1_se_ptb11 {
+		nxp,kinetis-pins = < &portb 11 0 >;
+	};
+	gpiob_gpio_ptb11: gpiob_gpio_ptb11 {
+		nxp,kinetis-pins = < &portb 11 1 >;
+	};
+	spi1_sck_ptb11: spi1_sck_ptb11 {
+		nxp,kinetis-pins = < &portb 11 2 >;
+	};
+	uart3_tx_ptb11: uart3_tx_ptb11 {
+		nxp,kinetis-pins = < &portb 11 3 >;
+	};
+	ftm0_flt_ptb11: ftm0_flt_ptb11 {
+		nxp,kinetis-pins = < &portb 11 6 >;
+	};
+	gpiob_gpio_ptb16: gpiob_gpio_ptb16 {
+		nxp,kinetis-pins = < &portb 16 1 >;
+	};
+	spi1_sout_ptb16: spi1_sout_ptb16 {
+		nxp,kinetis-pins = < &portb 16 2 >;
+	};
+	uart0_rx_ptb16: uart0_rx_ptb16 {
+		nxp,kinetis-pins = < &portb 16 3 >;
+	};
+	ftm0_clkin_ptb16: ftm0_clkin_ptb16 {
+		nxp,kinetis-pins = < &portb 16 4 >;
+	};
+	ftm1_clkin_ptb16: ftm1_clkin_ptb16 {
+		nxp,kinetis-pins = < &portb 16 4 >;
+	};
+	ftm2_clkin_ptb16: ftm2_clkin_ptb16 {
+		nxp,kinetis-pins = < &portb 16 4 >;
+	};
+	ftm3_clkin_ptb16: ftm3_clkin_ptb16 {
+		nxp,kinetis-pins = < &portb 16 4 >;
+	};
+	ewm_in_ptb16: ewm_in_ptb16 {
+		nxp,kinetis-pins = < &portb 16 6 >;
+	};
+	gpiob_gpio_ptb17: gpiob_gpio_ptb17 {
+		nxp,kinetis-pins = < &portb 17 1 >;
+	};
+	spi1_sin_ptb17: spi1_sin_ptb17 {
+		nxp,kinetis-pins = < &portb 17 2 >;
+	};
+	uart0_tx_ptb17: uart0_tx_ptb17 {
+		nxp,kinetis-pins = < &portb 17 3 >;
+	};
+	sim_uart0_mod_out_ptb17: sim_uart0_mod_out_ptb17 {
+		nxp,kinetis-pins = < &portb 17 3 >;
+	};
+	ftm0_clkin_ptb17: ftm0_clkin_ptb17 {
+		nxp,kinetis-pins = < &portb 17 4 >;
+	};
+	ftm1_clkin_ptb17: ftm1_clkin_ptb17 {
+		nxp,kinetis-pins = < &portb 17 4 >;
+	};
+	ftm2_clkin_ptb17: ftm2_clkin_ptb17 {
+		nxp,kinetis-pins = < &portb 17 4 >;
+	};
+	ftm3_clkin_ptb17: ftm3_clkin_ptb17 {
+		nxp,kinetis-pins = < &portb 17 4 >;
+	};
+	ewm_out_ptb17: ewm_out_ptb17 {
+		nxp,kinetis-pins = < &portb 17 6 >;
+	};
+	gpiob_gpio_ptb18: gpiob_gpio_ptb18 {
+		nxp,kinetis-pins = < &portb 18 1 >;
+	};
+	can0_tx_ptb18: can0_tx_ptb18 {
+		nxp,kinetis-pins = < &portb 18 2 >;
+	};
+	ftm2_ch_ptb18: ftm2_ch_ptb18 {
+		nxp,kinetis-pins = < &portb 18 3 >;
+	};
+	i2s0_tx_bclk_ptb18: i2s0_tx_bclk_ptb18 {
+		nxp,kinetis-pins = < &portb 18 4 >;
+	};
+	ftm2_qd_ph_ptb18: ftm2_qd_ph_ptb18 {
+		nxp,kinetis-pins = < &portb 18 6 >;
+	};
+	gpiob_gpio_ptb19: gpiob_gpio_ptb19 {
+		nxp,kinetis-pins = < &portb 19 1 >;
+	};
+	can0_rx_ptb19: can0_rx_ptb19 {
+		nxp,kinetis-pins = < &portb 19 2 >;
+	};
+	ftm2_ch_ptb19: ftm2_ch_ptb19 {
+		nxp,kinetis-pins = < &portb 19 3 >;
+	};
+	i2s0_tx_fs_ptb19: i2s0_tx_fs_ptb19 {
+		nxp,kinetis-pins = < &portb 19 4 >;
+	};
+	ftm2_qd_ph_ptb19: ftm2_qd_ph_ptb19 {
+		nxp,kinetis-pins = < &portb 19 6 >;
+	};
+	gpiob_gpio_ptb20: gpiob_gpio_ptb20 {
+		nxp,kinetis-pins = < &portb 20 1 >;
+	};
+	spi2_pcs0_ss_ptb20: spi2_pcs0_ss_ptb20 {
+		nxp,kinetis-pins = < &portb 20 2 >;
+	};
+	cmp0_out_ptb20: cmp0_out_ptb20 {
+		nxp,kinetis-pins = < &portb 20 6 >;
+	};
+	gpiob_gpio_ptb21: gpiob_gpio_ptb21 {
+		nxp,kinetis-pins = < &portb 21 1 >;
+	};
+	spi2_sck_ptb21: spi2_sck_ptb21 {
+		nxp,kinetis-pins = < &portb 21 2 >;
+	};
+	cmp1_out_ptb21: cmp1_out_ptb21 {
+		nxp,kinetis-pins = < &portb 21 6 >;
+	};
+	gpiob_gpio_ptb22: gpiob_gpio_ptb22 {
+		nxp,kinetis-pins = < &portb 22 1 >;
+	};
+	spi2_sout_ptb22: spi2_sout_ptb22 {
+		nxp,kinetis-pins = < &portb 22 2 >;
+	};
+	cmp2_out_ptb22: cmp2_out_ptb22 {
+		nxp,kinetis-pins = < &portb 22 6 >;
+	};
+	gpiob_gpio_ptb23: gpiob_gpio_ptb23 {
+		nxp,kinetis-pins = < &portb 23 1 >;
+	};
+	spi2_sin_ptb23: spi2_sin_ptb23 {
+		nxp,kinetis-pins = < &portb 23 2 >;
+	};
+	spi0_pcs5_pcss_ptb23: spi0_pcs5_pcss_ptb23 {
+		nxp,kinetis-pins = < &portb 23 3 >;
+	};
+};
+
+&portc {
+	adc0_se_ptc0: adc0_se_ptc0 {
+		nxp,kinetis-pins = < &portc 0 0 >;
+	};
+	gpioc_gpio_ptc0: gpioc_gpio_ptc0 {
+		nxp,kinetis-pins = < &portc 0 1 >;
+	};
+	spi0_pcs4_ptc0: spi0_pcs4_ptc0 {
+		nxp,kinetis-pins = < &portc 0 2 >;
+	};
+	pdb0_extrg_ptc0: pdb0_extrg_ptc0 {
+		nxp,kinetis-pins = < &portc 0 3 >;
+	};
+	adc0_trg_ptc0: adc0_trg_ptc0 {
+		nxp,kinetis-pins = < &portc 0 3 >;
+	};
+	adc0_trg_ptc0: adc0_trg_ptc0 {
+		nxp,kinetis-pins = < &portc 0 3 >;
+	};
+	adc1_trg_ptc0: adc1_trg_ptc0 {
+		nxp,kinetis-pins = < &portc 0 3 >;
+	};
+	adc1_trg_ptc0: adc1_trg_ptc0 {
+		nxp,kinetis-pins = < &portc 0 3 >;
+	};
+	usb0_sof_out_ptc0: usb0_sof_out_ptc0 {
+		nxp,kinetis-pins = < &portc 0 4 >;
+	};
+	i2s0_txd1_ptc0: i2s0_txd1_ptc0 {
+		nxp,kinetis-pins = < &portc 0 6 >;
+	};
+	adc0_se_ptc1: adc0_se_ptc1 {
+		nxp,kinetis-pins = < &portc 1 0 >;
+	};
+	gpioc_gpio_ptc1: gpioc_gpio_ptc1 {
+		nxp,kinetis-pins = < &portc 1 1 >;
+	};
+	llwu_p_ptc1: llwu_p_ptc1 {
+		nxp,kinetis-pins = < &portc 1 1 >;
+	};
+	spi0_pcs3_ptc1: spi0_pcs3_ptc1 {
+		nxp,kinetis-pins = < &portc 1 2 >;
+	};
+	uart1_rts_ptc1: uart1_rts_ptc1 {
+		nxp,kinetis-pins = < &portc 1 3 >;
+	};
+	ftm0_ch_ptc1: ftm0_ch_ptc1 {
+		nxp,kinetis-pins = < &portc 1 4 >;
+	};
+	i2s0_txd0_ptc1: i2s0_txd0_ptc1 {
+		nxp,kinetis-pins = < &portc 1 6 >;
+	};
+	adc0_se_ptc2: adc0_se_ptc2 {
+		nxp,kinetis-pins = < &portc 2 0 >;
+	};
+	cmp1_in_ptc2: cmp1_in_ptc2 {
+		nxp,kinetis-pins = < &portc 2 0 >;
+	};
+	gpioc_gpio_ptc2: gpioc_gpio_ptc2 {
+		nxp,kinetis-pins = < &portc 2 1 >;
+	};
+	spi0_pcs2_ptc2: spi0_pcs2_ptc2 {
+		nxp,kinetis-pins = < &portc 2 2 >;
+	};
+	uart1_cts_ptc2: uart1_cts_ptc2 {
+		nxp,kinetis-pins = < &portc 2 3 >;
+	};
+	ftm0_ch_ptc2: ftm0_ch_ptc2 {
+		nxp,kinetis-pins = < &portc 2 4 >;
+	};
+	i2s0_tx_fs_ptc2: i2s0_tx_fs_ptc2 {
+		nxp,kinetis-pins = < &portc 2 6 >;
+	};
+	cmp1_in_ptc3: cmp1_in_ptc3 {
+		nxp,kinetis-pins = < &portc 3 0 >;
+	};
+	gpioc_gpio_ptc3: gpioc_gpio_ptc3 {
+		nxp,kinetis-pins = < &portc 3 1 >;
+	};
+	llwu_p_ptc3: llwu_p_ptc3 {
+		nxp,kinetis-pins = < &portc 3 1 >;
+	};
+	spi0_pcs1_ptc3: spi0_pcs1_ptc3 {
+		nxp,kinetis-pins = < &portc 3 2 >;
+	};
+	uart1_rx_ptc3: uart1_rx_ptc3 {
+		nxp,kinetis-pins = < &portc 3 3 >;
+	};
+	ftm0_ch_ptc3: ftm0_ch_ptc3 {
+		nxp,kinetis-pins = < &portc 3 4 >;
+	};
+	sim_clkout_ptc3: sim_clkout_ptc3 {
+		nxp,kinetis-pins = < &portc 3 5 >;
+	};
+	i2s0_tx_bclk_ptc3: i2s0_tx_bclk_ptc3 {
+		nxp,kinetis-pins = < &portc 3 6 >;
+	};
+	gpioc_gpio_ptc4: gpioc_gpio_ptc4 {
+		nxp,kinetis-pins = < &portc 4 1 >;
+	};
+	llwu_p_ptc4: llwu_p_ptc4 {
+		nxp,kinetis-pins = < &portc 4 1 >;
+	};
+	spi0_pcs0_ss_ptc4: spi0_pcs0_ss_ptc4 {
+		nxp,kinetis-pins = < &portc 4 2 >;
+	};
+	uart1_tx_ptc4: uart1_tx_ptc4 {
+		nxp,kinetis-pins = < &portc 4 3 >;
+	};
+	sim_uart1_mod_out_ptc4: sim_uart1_mod_out_ptc4 {
+		nxp,kinetis-pins = < &portc 4 3 >;
+	};
+	ftm0_ch_ptc4: ftm0_ch_ptc4 {
+		nxp,kinetis-pins = < &portc 4 4 >;
+	};
+	cmp1_out_ptc4: cmp1_out_ptc4 {
+		nxp,kinetis-pins = < &portc 4 6 >;
+	};
+	gpioc_gpio_ptc5: gpioc_gpio_ptc5 {
+		nxp,kinetis-pins = < &portc 5 1 >;
+	};
+	llwu_p_ptc5: llwu_p_ptc5 {
+		nxp,kinetis-pins = < &portc 5 1 >;
+	};
+	spi0_sck_ptc5: spi0_sck_ptc5 {
+		nxp,kinetis-pins = < &portc 5 2 >;
+	};
+	lptmr0_alt_ptc5: lptmr0_alt_ptc5 {
+		nxp,kinetis-pins = < &portc 5 3 >;
+	};
+	i2s0_rxd0_ptc5: i2s0_rxd0_ptc5 {
+		nxp,kinetis-pins = < &portc 5 4 >;
+	};
+	cmp0_out_ptc5: cmp0_out_ptc5 {
+		nxp,kinetis-pins = < &portc 5 6 >;
+	};
+	ftm0_ch_ptc5: ftm0_ch_ptc5 {
+		nxp,kinetis-pins = < &portc 5 7 >;
+	};
+	cmp0_in_ptc6: cmp0_in_ptc6 {
+		nxp,kinetis-pins = < &portc 6 0 >;
+	};
+	gpioc_gpio_ptc6: gpioc_gpio_ptc6 {
+		nxp,kinetis-pins = < &portc 6 1 >;
+	};
+	llwu_p_ptc6: llwu_p_ptc6 {
+		nxp,kinetis-pins = < &portc 6 1 >;
+	};
+	spi0_sout_ptc6: spi0_sout_ptc6 {
+		nxp,kinetis-pins = < &portc 6 2 >;
+	};
+	pdb0_extrg_ptc6: pdb0_extrg_ptc6 {
+		nxp,kinetis-pins = < &portc 6 3 >;
+	};
+	adc0_trg_ptc6: adc0_trg_ptc6 {
+		nxp,kinetis-pins = < &portc 6 3 >;
+	};
+	adc0_trg_ptc6: adc0_trg_ptc6 {
+		nxp,kinetis-pins = < &portc 6 3 >;
+	};
+	adc1_trg_ptc6: adc1_trg_ptc6 {
+		nxp,kinetis-pins = < &portc 6 3 >;
+	};
+	adc1_trg_ptc6: adc1_trg_ptc6 {
+		nxp,kinetis-pins = < &portc 6 3 >;
+	};
+	i2s0_rx_bclk_ptc6: i2s0_rx_bclk_ptc6 {
+		nxp,kinetis-pins = < &portc 6 4 >;
+	};
+	i2s0_mclk_ptc6: i2s0_mclk_ptc6 {
+		nxp,kinetis-pins = < &portc 6 6 >;
+	};
+	cmp0_in_ptc7: cmp0_in_ptc7 {
+		nxp,kinetis-pins = < &portc 7 0 >;
+	};
+	gpioc_gpio_ptc7: gpioc_gpio_ptc7 {
+		nxp,kinetis-pins = < &portc 7 1 >;
+	};
+	spi0_sin_ptc7: spi0_sin_ptc7 {
+		nxp,kinetis-pins = < &portc 7 2 >;
+	};
+	usb0_sof_out_ptc7: usb0_sof_out_ptc7 {
+		nxp,kinetis-pins = < &portc 7 3 >;
+	};
+	i2s0_rx_fs_ptc7: i2s0_rx_fs_ptc7 {
+		nxp,kinetis-pins = < &portc 7 4 >;
+	};
+	adc1_se_ptc8: adc1_se_ptc8 {
+		nxp,kinetis-pins = < &portc 8 0 >;
+	};
+	cmp0_in_ptc8: cmp0_in_ptc8 {
+		nxp,kinetis-pins = < &portc 8 0 >;
+	};
+	gpioc_gpio_ptc8: gpioc_gpio_ptc8 {
+		nxp,kinetis-pins = < &portc 8 1 >;
+	};
+	ftm3_ch_ptc8: ftm3_ch_ptc8 {
+		nxp,kinetis-pins = < &portc 8 3 >;
+	};
+	i2s0_mclk_ptc8: i2s0_mclk_ptc8 {
+		nxp,kinetis-pins = < &portc 8 4 >;
+	};
+	adc1_se_ptc9: adc1_se_ptc9 {
+		nxp,kinetis-pins = < &portc 9 0 >;
+	};
+	cmp0_in_ptc9: cmp0_in_ptc9 {
+		nxp,kinetis-pins = < &portc 9 0 >;
+	};
+	gpioc_gpio_ptc9: gpioc_gpio_ptc9 {
+		nxp,kinetis-pins = < &portc 9 1 >;
+	};
+	ftm3_ch_ptc9: ftm3_ch_ptc9 {
+		nxp,kinetis-pins = < &portc 9 3 >;
+	};
+	i2s0_rx_bclk_ptc9: i2s0_rx_bclk_ptc9 {
+		nxp,kinetis-pins = < &portc 9 4 >;
+	};
+	ftm2_flt_ptc9: ftm2_flt_ptc9 {
+		nxp,kinetis-pins = < &portc 9 6 >;
+	};
+	adc1_se_ptc10: adc1_se_ptc10 {
+		nxp,kinetis-pins = < &portc 10 0 >;
+	};
+	gpioc_gpio_ptc10: gpioc_gpio_ptc10 {
+		nxp,kinetis-pins = < &portc 10 1 >;
+	};
+	i2c1_scl_ptc10: i2c1_scl_ptc10 {
+		nxp,kinetis-pins = < &portc 10 2 >;
+	};
+	ftm3_ch_ptc10: ftm3_ch_ptc10 {
+		nxp,kinetis-pins = < &portc 10 3 >;
+	};
+	i2s0_rx_fs_ptc10: i2s0_rx_fs_ptc10 {
+		nxp,kinetis-pins = < &portc 10 4 >;
+	};
+	adc1_se_ptc11: adc1_se_ptc11 {
+		nxp,kinetis-pins = < &portc 11 0 >;
+	};
+	gpioc_gpio_ptc11: gpioc_gpio_ptc11 {
+		nxp,kinetis-pins = < &portc 11 1 >;
+	};
+	llwu_p_ptc11: llwu_p_ptc11 {
+		nxp,kinetis-pins = < &portc 11 1 >;
+	};
+	i2c1_sda_ptc11: i2c1_sda_ptc11 {
+		nxp,kinetis-pins = < &portc 11 2 >;
+	};
+	ftm3_ch_ptc11: ftm3_ch_ptc11 {
+		nxp,kinetis-pins = < &portc 11 3 >;
+	};
+	i2s0_rxd1_ptc11: i2s0_rxd1_ptc11 {
+		nxp,kinetis-pins = < &portc 11 4 >;
+	};
+	gpioc_gpio_ptc12: gpioc_gpio_ptc12 {
+		nxp,kinetis-pins = < &portc 12 1 >;
+	};
+	uart4_rts_ptc12: uart4_rts_ptc12 {
+		nxp,kinetis-pins = < &portc 12 3 >;
+	};
+	ftm3_flt_ptc12: ftm3_flt_ptc12 {
+		nxp,kinetis-pins = < &portc 12 6 >;
+	};
+	gpioc_gpio_ptc13: gpioc_gpio_ptc13 {
+		nxp,kinetis-pins = < &portc 13 1 >;
+	};
+	uart4_cts_ptc13: uart4_cts_ptc13 {
+		nxp,kinetis-pins = < &portc 13 3 >;
+	};
+	gpioc_gpio_ptc14: gpioc_gpio_ptc14 {
+		nxp,kinetis-pins = < &portc 14 1 >;
+	};
+	uart4_rx_ptc14: uart4_rx_ptc14 {
+		nxp,kinetis-pins = < &portc 14 3 >;
+	};
+	gpioc_gpio_ptc15: gpioc_gpio_ptc15 {
+		nxp,kinetis-pins = < &portc 15 1 >;
+	};
+	uart4_tx_ptc15: uart4_tx_ptc15 {
+		nxp,kinetis-pins = < &portc 15 3 >;
+	};
+	gpioc_gpio_ptc16: gpioc_gpio_ptc16 {
+		nxp,kinetis-pins = < &portc 16 1 >;
+	};
+	uart3_rx_ptc16: uart3_rx_ptc16 {
+		nxp,kinetis-pins = < &portc 16 3 >;
+	};
+	enet_tmr_1588_ptc16: enet_tmr_1588_ptc16 {
+		nxp,kinetis-pins = < &portc 16 4 >;
+	};
+	gpioc_gpio_ptc17: gpioc_gpio_ptc17 {
+		nxp,kinetis-pins = < &portc 17 1 >;
+	};
+	uart3_tx_ptc17: uart3_tx_ptc17 {
+		nxp,kinetis-pins = < &portc 17 3 >;
+	};
+	enet_tmr_1588_ptc17: enet_tmr_1588_ptc17 {
+		nxp,kinetis-pins = < &portc 17 4 >;
+	};
+	gpioc_gpio_ptc18: gpioc_gpio_ptc18 {
+		nxp,kinetis-pins = < &portc 18 1 >;
+	};
+	uart3_rts_ptc18: uart3_rts_ptc18 {
+		nxp,kinetis-pins = < &portc 18 3 >;
+	};
+	enet_tmr_1588_ptc18: enet_tmr_1588_ptc18 {
+		nxp,kinetis-pins = < &portc 18 4 >;
+	};
+};
+
+&portd {
+	gpiod_gpio_ptd0: gpiod_gpio_ptd0 {
+		nxp,kinetis-pins = < &portd 0 1 >;
+	};
+	llwu_p_ptd0: llwu_p_ptd0 {
+		nxp,kinetis-pins = < &portd 0 1 >;
+	};
+	spi0_pcs0_ss_ptd0: spi0_pcs0_ss_ptd0 {
+		nxp,kinetis-pins = < &portd 0 2 >;
+	};
+	uart2_rts_ptd0: uart2_rts_ptd0 {
+		nxp,kinetis-pins = < &portd 0 3 >;
+	};
+	ftm3_ch_ptd0: ftm3_ch_ptd0 {
+		nxp,kinetis-pins = < &portd 0 4 >;
+	};
+	adc0_se_ptd1: adc0_se_ptd1 {
+		nxp,kinetis-pins = < &portd 1 0 >;
+	};
+	gpiod_gpio_ptd1: gpiod_gpio_ptd1 {
+		nxp,kinetis-pins = < &portd 1 1 >;
+	};
+	spi0_sck_ptd1: spi0_sck_ptd1 {
+		nxp,kinetis-pins = < &portd 1 2 >;
+	};
+	uart2_cts_ptd1: uart2_cts_ptd1 {
+		nxp,kinetis-pins = < &portd 1 3 >;
+	};
+	ftm3_ch_ptd1: ftm3_ch_ptd1 {
+		nxp,kinetis-pins = < &portd 1 4 >;
+	};
+	gpiod_gpio_ptd2: gpiod_gpio_ptd2 {
+		nxp,kinetis-pins = < &portd 2 1 >;
+	};
+	llwu_p_ptd2: llwu_p_ptd2 {
+		nxp,kinetis-pins = < &portd 2 1 >;
+	};
+	spi0_sout_ptd2: spi0_sout_ptd2 {
+		nxp,kinetis-pins = < &portd 2 2 >;
+	};
+	uart2_rx_ptd2: uart2_rx_ptd2 {
+		nxp,kinetis-pins = < &portd 2 3 >;
+	};
+	ftm3_ch_ptd2: ftm3_ch_ptd2 {
+		nxp,kinetis-pins = < &portd 2 4 >;
+	};
+	i2c0_scl_ptd2: i2c0_scl_ptd2 {
+		nxp,kinetis-pins = < &portd 2 7 >;
+	};
+	gpiod_gpio_ptd3: gpiod_gpio_ptd3 {
+		nxp,kinetis-pins = < &portd 3 1 >;
+	};
+	spi0_sin_ptd3: spi0_sin_ptd3 {
+		nxp,kinetis-pins = < &portd 3 2 >;
+	};
+	uart2_tx_ptd3: uart2_tx_ptd3 {
+		nxp,kinetis-pins = < &portd 3 3 >;
+	};
+	ftm3_ch_ptd3: ftm3_ch_ptd3 {
+		nxp,kinetis-pins = < &portd 3 4 >;
+	};
+	i2c0_sda_ptd3: i2c0_sda_ptd3 {
+		nxp,kinetis-pins = < &portd 3 7 >;
+	};
+	gpiod_gpio_ptd4: gpiod_gpio_ptd4 {
+		nxp,kinetis-pins = < &portd 4 1 >;
+	};
+	llwu_p_ptd4: llwu_p_ptd4 {
+		nxp,kinetis-pins = < &portd 4 1 >;
+	};
+	spi0_pcs1_ptd4: spi0_pcs1_ptd4 {
+		nxp,kinetis-pins = < &portd 4 2 >;
+	};
+	uart0_rts_ptd4: uart0_rts_ptd4 {
+		nxp,kinetis-pins = < &portd 4 3 >;
+	};
+	ftm0_ch_ptd4: ftm0_ch_ptd4 {
+		nxp,kinetis-pins = < &portd 4 4 >;
+	};
+	ewm_in_ptd4: ewm_in_ptd4 {
+		nxp,kinetis-pins = < &portd 4 6 >;
+	};
+	spi1_pcs0_ss_ptd4: spi1_pcs0_ss_ptd4 {
+		nxp,kinetis-pins = < &portd 4 7 >;
+	};
+	adc0_se_ptd5: adc0_se_ptd5 {
+		nxp,kinetis-pins = < &portd 5 0 >;
+	};
+	gpiod_gpio_ptd5: gpiod_gpio_ptd5 {
+		nxp,kinetis-pins = < &portd 5 1 >;
+	};
+	spi0_pcs2_ptd5: spi0_pcs2_ptd5 {
+		nxp,kinetis-pins = < &portd 5 2 >;
+	};
+	uart0_cts_ptd5: uart0_cts_ptd5 {
+		nxp,kinetis-pins = < &portd 5 3 >;
+	};
+	uart0_col_ptd5: uart0_col_ptd5 {
+		nxp,kinetis-pins = < &portd 5 3 >;
+	};
+	ftm0_ch_ptd5: ftm0_ch_ptd5 {
+		nxp,kinetis-pins = < &portd 5 4 >;
+	};
+	ewm_out_ptd5: ewm_out_ptd5 {
+		nxp,kinetis-pins = < &portd 5 6 >;
+	};
+	spi1_sck_ptd5: spi1_sck_ptd5 {
+		nxp,kinetis-pins = < &portd 5 7 >;
+	};
+	adc0_se_ptd6: adc0_se_ptd6 {
+		nxp,kinetis-pins = < &portd 6 0 >;
+	};
+	gpiod_gpio_ptd6: gpiod_gpio_ptd6 {
+		nxp,kinetis-pins = < &portd 6 1 >;
+	};
+	llwu_p_ptd6: llwu_p_ptd6 {
+		nxp,kinetis-pins = < &portd 6 1 >;
+	};
+	spi0_pcs3_ptd6: spi0_pcs3_ptd6 {
+		nxp,kinetis-pins = < &portd 6 2 >;
+	};
+	uart0_rx_ptd6: uart0_rx_ptd6 {
+		nxp,kinetis-pins = < &portd 6 3 >;
+	};
+	ftm0_ch_ptd6: ftm0_ch_ptd6 {
+		nxp,kinetis-pins = < &portd 6 4 >;
+	};
+	ftm0_flt_ptd6: ftm0_flt_ptd6 {
+		nxp,kinetis-pins = < &portd 6 6 >;
+	};
+	ftm0_trg_ptd6: ftm0_trg_ptd6 {
+		nxp,kinetis-pins = < &portd 6 6 >;
+	};
+	spi1_sout_ptd6: spi1_sout_ptd6 {
+		nxp,kinetis-pins = < &portd 6 7 >;
+	};
+	gpiod_gpio_ptd7: gpiod_gpio_ptd7 {
+		nxp,kinetis-pins = < &portd 7 1 >;
+	};
+	cmt_iro_ptd7: cmt_iro_ptd7 {
+		nxp,kinetis-pins = < &portd 7 2 >;
+	};
+	uart0_tx_ptd7: uart0_tx_ptd7 {
+		nxp,kinetis-pins = < &portd 7 3 >;
+	};
+	sim_uart0_mod_out_ptd7: sim_uart0_mod_out_ptd7 {
+		nxp,kinetis-pins = < &portd 7 3 >;
+	};
+	ftm0_ch_ptd7: ftm0_ch_ptd7 {
+		nxp,kinetis-pins = < &portd 7 4 >;
+	};
+	ftm0_flt_ptd7: ftm0_flt_ptd7 {
+		nxp,kinetis-pins = < &portd 7 6 >;
+	};
+	spi1_sin_ptd7: spi1_sin_ptd7 {
+		nxp,kinetis-pins = < &portd 7 7 >;
+	};
+};
+
+&porte {
+	adc1_se_pte0: adc1_se_pte0 {
+		nxp,kinetis-pins = < &porte 0 0 >;
+	};
+	gpioe_gpio_pte0: gpioe_gpio_pte0 {
+		nxp,kinetis-pins = < &porte 0 1 >;
+	};
+	spi1_pcs1_pte0: spi1_pcs1_pte0 {
+		nxp,kinetis-pins = < &porte 0 2 >;
+	};
+	uart1_tx_pte0: uart1_tx_pte0 {
+		nxp,kinetis-pins = < &porte 0 3 >;
+	};
+	sim_uart1_mod_out_pte0: sim_uart1_mod_out_pte0 {
+		nxp,kinetis-pins = < &porte 0 3 >;
+	};
+	sdhc_data_pte0: sdhc_data_pte0 {
+		nxp,kinetis-pins = < &porte 0 4 >;
+	};
+	tpiu_clkout_pte0: tpiu_clkout_pte0 {
+		nxp,kinetis-pins = < &porte 0 5 >;
+	};
+	i2c1_sda_pte0: i2c1_sda_pte0 {
+		nxp,kinetis-pins = < &porte 0 6 >;
+	};
+	rtc_clkout_pte0: rtc_clkout_pte0 {
+		nxp,kinetis-pins = < &porte 0 7 >;
+	};
+	adc1_se_pte1: adc1_se_pte1 {
+		nxp,kinetis-pins = < &porte 1 0 >;
+	};
+	gpioe_gpio_pte1: gpioe_gpio_pte1 {
+		nxp,kinetis-pins = < &porte 1 1 >;
+	};
+	llwu_p_pte1: llwu_p_pte1 {
+		nxp,kinetis-pins = < &porte 1 1 >;
+	};
+	spi1_sout_pte1: spi1_sout_pte1 {
+		nxp,kinetis-pins = < &porte 1 2 >;
+	};
+	uart1_rx_pte1: uart1_rx_pte1 {
+		nxp,kinetis-pins = < &porte 1 3 >;
+	};
+	sdhc_data_pte1: sdhc_data_pte1 {
+		nxp,kinetis-pins = < &porte 1 4 >;
+	};
+	tpiu_d3_pte1: tpiu_d3_pte1 {
+		nxp,kinetis-pins = < &porte 1 5 >;
+	};
+	i2c1_scl_pte1: i2c1_scl_pte1 {
+		nxp,kinetis-pins = < &porte 1 6 >;
+	};
+	spi1_sin_pte1: spi1_sin_pte1 {
+		nxp,kinetis-pins = < &porte 1 7 >;
+	};
+	adc0_dp_pte2: adc0_dp_pte2 {
+		nxp,kinetis-pins = < &porte 2 0 >;
+	};
+	adc0_se_pte2: adc0_se_pte2 {
+		nxp,kinetis-pins = < &porte 2 0 >;
+	};
+	adc1_se_pte2: adc1_se_pte2 {
+		nxp,kinetis-pins = < &porte 2 0 >;
+	};
+	gpioe_gpio_pte2: gpioe_gpio_pte2 {
+		nxp,kinetis-pins = < &porte 2 1 >;
+	};
+	llwu_p_pte2: llwu_p_pte2 {
+		nxp,kinetis-pins = < &porte 2 1 >;
+	};
+	spi1_sck_pte2: spi1_sck_pte2 {
+		nxp,kinetis-pins = < &porte 2 2 >;
+	};
+	uart1_cts_pte2: uart1_cts_pte2 {
+		nxp,kinetis-pins = < &porte 2 3 >;
+	};
+	sdhc_dclk_pte2: sdhc_dclk_pte2 {
+		nxp,kinetis-pins = < &porte 2 4 >;
+	};
+	tpiu_d2_pte2: tpiu_d2_pte2 {
+		nxp,kinetis-pins = < &porte 2 5 >;
+	};
+	adc0_dm_pte3: adc0_dm_pte3 {
+		nxp,kinetis-pins = < &porte 3 0 >;
+	};
+	adc1_se_pte3: adc1_se_pte3 {
+		nxp,kinetis-pins = < &porte 3 0 >;
+	};
+	gpioe_gpio_pte3: gpioe_gpio_pte3 {
+		nxp,kinetis-pins = < &porte 3 1 >;
+	};
+	spi1_sin_pte3: spi1_sin_pte3 {
+		nxp,kinetis-pins = < &porte 3 2 >;
+	};
+	uart1_rts_pte3: uart1_rts_pte3 {
+		nxp,kinetis-pins = < &porte 3 3 >;
+	};
+	sdhc_cmd_pte3: sdhc_cmd_pte3 {
+		nxp,kinetis-pins = < &porte 3 4 >;
+	};
+	tpiu_d1_pte3: tpiu_d1_pte3 {
+		nxp,kinetis-pins = < &porte 3 5 >;
+	};
+	spi1_sout_pte3: spi1_sout_pte3 {
+		nxp,kinetis-pins = < &porte 3 7 >;
+	};
+	gpioe_gpio_pte4: gpioe_gpio_pte4 {
+		nxp,kinetis-pins = < &porte 4 1 >;
+	};
+	llwu_p_pte4: llwu_p_pte4 {
+		nxp,kinetis-pins = < &porte 4 1 >;
+	};
+	spi1_pcs0_ss_pte4: spi1_pcs0_ss_pte4 {
+		nxp,kinetis-pins = < &porte 4 2 >;
+	};
+	uart3_tx_pte4: uart3_tx_pte4 {
+		nxp,kinetis-pins = < &porte 4 3 >;
+	};
+	sdhc_data_pte4: sdhc_data_pte4 {
+		nxp,kinetis-pins = < &porte 4 4 >;
+	};
+	tpiu_d0_pte4: tpiu_d0_pte4 {
+		nxp,kinetis-pins = < &porte 4 5 >;
+	};
+	gpioe_gpio_pte5: gpioe_gpio_pte5 {
+		nxp,kinetis-pins = < &porte 5 1 >;
+	};
+	spi1_pcs2_pte5: spi1_pcs2_pte5 {
+		nxp,kinetis-pins = < &porte 5 2 >;
+	};
+	uart3_rx_pte5: uart3_rx_pte5 {
+		nxp,kinetis-pins = < &porte 5 3 >;
+	};
+	sdhc_data_pte5: sdhc_data_pte5 {
+		nxp,kinetis-pins = < &porte 5 4 >;
+	};
+	ftm3_ch_pte5: ftm3_ch_pte5 {
+		nxp,kinetis-pins = < &porte 5 6 >;
+	};
+	gpioe_gpio_pte6: gpioe_gpio_pte6 {
+		nxp,kinetis-pins = < &porte 6 1 >;
+	};
+	spi1_pcs3_pte6: spi1_pcs3_pte6 {
+		nxp,kinetis-pins = < &porte 6 2 >;
+	};
+	uart3_cts_pte6: uart3_cts_pte6 {
+		nxp,kinetis-pins = < &porte 6 3 >;
+	};
+	i2s0_mclk_pte6: i2s0_mclk_pte6 {
+		nxp,kinetis-pins = < &porte 6 4 >;
+	};
+	ftm3_ch_pte6: ftm3_ch_pte6 {
+		nxp,kinetis-pins = < &porte 6 6 >;
+	};
+	usb0_sof_out_pte6: usb0_sof_out_pte6 {
+		nxp,kinetis-pins = < &porte 6 7 >;
+	};
+	adc0_se_pte24: adc0_se_pte24 {
+		nxp,kinetis-pins = < &porte 24 0 >;
+	};
+	gpioe_gpio_pte24: gpioe_gpio_pte24 {
+		nxp,kinetis-pins = < &porte 24 1 >;
+	};
+	uart4_tx_pte24: uart4_tx_pte24 {
+		nxp,kinetis-pins = < &porte 24 3 >;
+	};
+	i2c0_scl_pte24: i2c0_scl_pte24 {
+		nxp,kinetis-pins = < &porte 24 5 >;
+	};
+	ewm_out_pte24: ewm_out_pte24 {
+		nxp,kinetis-pins = < &porte 24 6 >;
+	};
+	adc0_se_pte25: adc0_se_pte25 {
+		nxp,kinetis-pins = < &porte 25 0 >;
+	};
+	gpioe_gpio_pte25: gpioe_gpio_pte25 {
+		nxp,kinetis-pins = < &porte 25 1 >;
+	};
+	uart4_rx_pte25: uart4_rx_pte25 {
+		nxp,kinetis-pins = < &porte 25 3 >;
+	};
+	i2c0_sda_pte25: i2c0_sda_pte25 {
+		nxp,kinetis-pins = < &porte 25 5 >;
+	};
+	ewm_in_pte25: ewm_in_pte25 {
+		nxp,kinetis-pins = < &porte 25 6 >;
+	};
+	gpioe_gpio_pte26: gpioe_gpio_pte26 {
+		nxp,kinetis-pins = < &porte 26 1 >;
+	};
+	enet_clkin_1588_pte26: enet_clkin_1588_pte26 {
+		nxp,kinetis-pins = < &porte 26 2 >;
+	};
+	enet_rmii_clkin_pte26: enet_rmii_clkin_pte26 {
+		nxp,kinetis-pins = < &porte 26 2 >;
+	};
+	uart4_cts_pte26: uart4_cts_pte26 {
+		nxp,kinetis-pins = < &porte 26 3 >;
+	};
+	rtc_clkout_pte26: rtc_clkout_pte26 {
+		nxp,kinetis-pins = < &porte 26 6 >;
+	};
+	usb0_clkin_pte26: usb0_clkin_pte26 {
+		nxp,kinetis-pins = < &porte 26 7 >;
+	};
+};
+

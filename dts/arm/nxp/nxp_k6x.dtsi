@@ -6,6 +6,7 @@
 #include <dt-bindings/clock/kinetis_mcg.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/i2c/i2c.h>
+#include "pinmux_nxp_kinetis.h"
 
 / {
 	aliases {
@@ -263,30 +264,35 @@
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x40049000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 9>;
+			#nxp,kinetis-pin-cells = <2>;
 		};
 
 		portb: pinmux@4004a000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004a000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 10>;
+			#nxp,kinetis-pin-cells = <2>;
 		};
 
 		portc: pinmux@4004b000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004b000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 11>;
+			#nxp,kinetis-pin-cells = <2>;
 		};
 
 		portd: pinmux@4004c000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004c000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 12>;
+			#nxp,kinetis-pin-cells = <2>;
 		};
 
 		porte: pinmux@4004d000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004d000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 13>;
+			#nxp,kinetis-pin-cells = <2>;
 		};
 
 		gpioa: gpio@400ff000 {
@@ -549,3 +555,6 @@
 &nvic {
 	arm,num-irq-priority-bits = <4>;
 };
+
+#include "MK64FN1M0VLL12-pinctrl.dtsi"
+
