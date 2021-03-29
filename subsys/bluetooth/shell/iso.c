@@ -24,9 +24,11 @@
 
 #include "bt.h"
 
-static void iso_recv(struct bt_iso_chan *chan, struct net_buf *buf)
+static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *info,
+		struct net_buf *buf)
 {
-	printk("Incoming data channel %p len %u\n", chan, buf->len);
+	printk("Incoming data channel %p len %u, seq: %d, ts: %d\n", chan, buf->len,
+			info->sn, info->ts);
 }
 
 static void iso_connected(struct bt_iso_chan *chan)

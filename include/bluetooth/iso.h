@@ -138,6 +138,15 @@ struct bt_iso_chan_path {
 	uint8_t				cc[0];
 };
 
+/** @brief ISO Meta Data structure for received ISO packets. */
+struct bt_iso_recv_info {
+	/** ISO timestamp - valid only if the Bluetooth controller includes it */
+	uint32_t ts;
+
+	/** ISO Pkt Seq no of the first fragment in the SDU */
+	uint16_t sn;
+};
+
 /** Opaque type representing an Broadcast Isochronous Group (BIG). */
 struct bt_iso_big;
 
@@ -271,8 +280,13 @@ struct bt_iso_chan_ops {
 	 *
 	 *  @param chan The channel receiving data.
 	 *  @param buf Buffer containing incoming data.
+	 *  @param info Pointer to the metadata for the buffer. The lifetime of the
+	 *              pointer is linked to the lifetime of the net_buf.
+	 *              Metadata such as sequence number and timestamp can be
+	 *              provided by the bluetooth controller.
 	 */
-	void (*recv)(struct bt_iso_chan *chan, struct net_buf *buf);
+	void (*recv)(struct bt_iso_chan *chan, const struct bt_iso_recv_info *info,
+			struct net_buf *buf);
 };
 
 /** @brief ISO Server structure. */
