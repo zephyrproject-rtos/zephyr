@@ -234,13 +234,13 @@ int z_impl_k_thread_name_set(struct k_thread *thread, const char *value)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline int z_vrfy_k_thread_name_set(struct k_thread *t, const char *str)
+static inline int z_vrfy_k_thread_name_set(struct k_thread *thread, const char *str)
 {
 #ifdef CONFIG_THREAD_NAME
 	char name[CONFIG_THREAD_MAX_NAME_LEN];
 
-	if (t != NULL) {
-		if (Z_SYSCALL_OBJ(t, K_OBJ_THREAD) != 0) {
+	if (thread != NULL) {
+		if (Z_SYSCALL_OBJ(thread, K_OBJ_THREAD) != 0) {
 			return -EINVAL;
 		}
 	}
@@ -253,7 +253,7 @@ static inline int z_vrfy_k_thread_name_set(struct k_thread *t, const char *str)
 		return -EFAULT;
 	}
 
-	return z_impl_k_thread_name_set(t, name);
+	return z_impl_k_thread_name_set(thread, name);
 #else
 	return -ENOSYS;
 #endif /* CONFIG_THREAD_NAME */
@@ -271,13 +271,13 @@ const char *k_thread_name_get(struct k_thread *thread)
 #endif /* CONFIG_THREAD_NAME */
 }
 
-int z_impl_k_thread_name_copy(k_tid_t thread_id, char *buf, size_t size)
+int z_impl_k_thread_name_copy(k_tid_t thread, char *buf, size_t size)
 {
 #ifdef CONFIG_THREAD_NAME
-	strncpy(buf, thread_id->name, size);
+	strncpy(buf, thread->name, size);
 	return 0;
 #else
-	ARG_UNUSED(thread_id);
+	ARG_UNUSED(thread);
 	ARG_UNUSED(buf);
 	ARG_UNUSED(size);
 	return -ENOSYS;

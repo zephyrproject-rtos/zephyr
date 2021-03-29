@@ -89,12 +89,12 @@ int z_impl_k_msgq_alloc_init(struct k_msgq *msgq, size_t msg_size,
 }
 
 #ifdef CONFIG_USERSPACE
-int z_vrfy_k_msgq_alloc_init(struct k_msgq *q, size_t msg_size,
+int z_vrfy_k_msgq_alloc_init(struct k_msgq *msgq, size_t msg_size,
 			    uint32_t max_msgs)
 {
-	Z_OOPS(Z_SYSCALL_OBJ_NEVER_INIT(q, K_OBJ_MSGQ));
+	Z_OOPS(Z_SYSCALL_OBJ_NEVER_INIT(msgq, K_OBJ_MSGQ));
 
-	return z_impl_k_msgq_alloc_init(q, msg_size, max_msgs);
+	return z_impl_k_msgq_alloc_init(msgq, msg_size, max_msgs);
 }
 #include <syscalls/k_msgq_alloc_init_mrsh.c>
 #endif
@@ -160,13 +160,13 @@ int z_impl_k_msgq_put(struct k_msgq *msgq, const void *data, k_timeout_t timeout
 }
 
 #ifdef CONFIG_USERSPACE
-static inline int z_vrfy_k_msgq_put(struct k_msgq *q, const void *data,
+static inline int z_vrfy_k_msgq_put(struct k_msgq *msgq, const void *data,
 				    k_timeout_t timeout)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(q, K_OBJ_MSGQ));
-	Z_OOPS(Z_SYSCALL_MEMORY_READ(data, q->msg_size));
+	Z_OOPS(Z_SYSCALL_OBJ(msgq, K_OBJ_MSGQ));
+	Z_OOPS(Z_SYSCALL_MEMORY_READ(data, msgq->msg_size));
 
-	return z_impl_k_msgq_put(q, data, timeout);
+	return z_impl_k_msgq_put(msgq, data, timeout);
 }
 #include <syscalls/k_msgq_put_mrsh.c>
 #endif
@@ -179,12 +179,12 @@ void z_impl_k_msgq_get_attrs(struct k_msgq *msgq, struct k_msgq_attrs *attrs)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline void z_vrfy_k_msgq_get_attrs(struct k_msgq *q,
+static inline void z_vrfy_k_msgq_get_attrs(struct k_msgq *msgq,
 					   struct k_msgq_attrs *attrs)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(q, K_OBJ_MSGQ));
+	Z_OOPS(Z_SYSCALL_OBJ(msgq, K_OBJ_MSGQ));
 	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(attrs, sizeof(struct k_msgq_attrs)));
-	z_impl_k_msgq_get_attrs(q, attrs);
+	z_impl_k_msgq_get_attrs(msgq, attrs);
 }
 #include <syscalls/k_msgq_get_attrs_mrsh.c>
 #endif
@@ -242,13 +242,13 @@ int z_impl_k_msgq_get(struct k_msgq *msgq, void *data, k_timeout_t timeout)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline int z_vrfy_k_msgq_get(struct k_msgq *q, void *data,
+static inline int z_vrfy_k_msgq_get(struct k_msgq *msgq, void *data,
 				    k_timeout_t timeout)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(q, K_OBJ_MSGQ));
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(data, q->msg_size));
+	Z_OOPS(Z_SYSCALL_OBJ(msgq, K_OBJ_MSGQ));
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(data, msgq->msg_size));
 
-	return z_impl_k_msgq_get(q, data, timeout);
+	return z_impl_k_msgq_get(msgq, data, timeout);
 }
 #include <syscalls/k_msgq_get_mrsh.c>
 #endif
@@ -275,12 +275,12 @@ int z_impl_k_msgq_peek(struct k_msgq *msgq, void *data)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline int z_vrfy_k_msgq_peek(struct k_msgq *q, void *data)
+static inline int z_vrfy_k_msgq_peek(struct k_msgq *msgq, void *data)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(q, K_OBJ_MSGQ));
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(data, q->msg_size));
+	Z_OOPS(Z_SYSCALL_OBJ(msgq, K_OBJ_MSGQ));
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(data, msgq->msg_size));
 
-	return z_impl_k_msgq_peek(q, data);
+	return z_impl_k_msgq_peek(msgq, data);
 }
 #include <syscalls/k_msgq_peek_mrsh.c>
 #endif
@@ -305,24 +305,24 @@ void z_impl_k_msgq_purge(struct k_msgq *msgq)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline void z_vrfy_k_msgq_purge(struct k_msgq *q)
+static inline void z_vrfy_k_msgq_purge(struct k_msgq *msgq)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(q, K_OBJ_MSGQ));
-	z_impl_k_msgq_purge(q);
+	Z_OOPS(Z_SYSCALL_OBJ(msgq, K_OBJ_MSGQ));
+	z_impl_k_msgq_purge(msgq);
 }
 #include <syscalls/k_msgq_purge_mrsh.c>
 
-static inline uint32_t z_vrfy_k_msgq_num_free_get(struct k_msgq *q)
+static inline uint32_t z_vrfy_k_msgq_num_free_get(struct k_msgq *msgq)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(q, K_OBJ_MSGQ));
-	return z_impl_k_msgq_num_free_get(q);
+	Z_OOPS(Z_SYSCALL_OBJ(msgq, K_OBJ_MSGQ));
+	return z_impl_k_msgq_num_free_get(msgq);
 }
 #include <syscalls/k_msgq_num_free_get_mrsh.c>
 
-static inline uint32_t z_vrfy_k_msgq_num_used_get(struct k_msgq *q)
+static inline uint32_t z_vrfy_k_msgq_num_used_get(struct k_msgq *msgq)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(q, K_OBJ_MSGQ));
-	return z_impl_k_msgq_num_used_get(q);
+	Z_OOPS(Z_SYSCALL_OBJ(msgq, K_OBJ_MSGQ));
+	return z_impl_k_msgq_num_used_get(msgq);
 }
 #include <syscalls/k_msgq_num_used_get_mrsh.c>
 
