@@ -106,7 +106,7 @@ static void rx_thread(void *p1, void *p2, void *p3)
 		ssize_t len;
 
 		if (!uc_ready()) {
-			k_sleep(K_MSEC(20));
+			k_sleep(K_MSEC(1));
 			continue;
 		}
 
