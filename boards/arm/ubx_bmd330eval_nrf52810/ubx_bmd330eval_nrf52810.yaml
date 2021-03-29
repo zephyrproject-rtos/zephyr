@@ -1,0 +1,22 @@
+identifier: ubx_bmd330eval_nrf52810
+name: UBX_BMD330EVAL_NRF52810
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 24
+flash: 192
+supported:
+  - adc
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_spi
+  - gpio
+  - counter
+  - nvs
+  - i2c
+  - pwm
+  - spi
+  - watchdog
