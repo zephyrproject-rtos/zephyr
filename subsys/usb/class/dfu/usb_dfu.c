@@ -57,8 +57,6 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(usb_dfu);
 
-#define NUMOF_ALTERNATE_SETTINGS	2
-
 #define USB_DFU_MAX_XFER_SIZE		CONFIG_USB_REQUEST_BUFFER_SIZE
 
 #define FIRMWARE_IMAGE_0_LABEL "image-0"
