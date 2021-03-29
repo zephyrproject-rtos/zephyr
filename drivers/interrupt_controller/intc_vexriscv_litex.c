@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 - 2019 Antmicro <www.antmicro.com>
+ * Copyright (c) 2018 - 2021 Antmicro <www.antmicro.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,6 +24,9 @@
 
 #define I2S_RX_IRQ		DT_IRQN(DT_NODELABEL(i2s_rx))
 #define I2S_TX_IRQ		DT_IRQN(DT_NODELABEL(i2s_tx))
+
+#define GPIO_IRQ		DT_IRQN(DT_NODELABEL(gpio_in))
+
 static inline void vexriscv_litex_irq_setmask(uint32_t mask)
 {
 	__asm__ volatile ("csrw %0, %1" :: "i"(IRQ_MASK), "r"(mask));
@@ -96,6 +99,11 @@ static void vexriscv_litex_irq_handler(const void *device)
 		ite->isr(ite->arg);
 	}
 #endif
+
+	if (irqs & (1 << GPIO_IRQ)) {
+		ite = &_sw_isr_table[GPIO_IRQ];
+		ite->isr(ite->arg);
+	}
 }
 
 void arch_irq_enable(unsigned int irq)
