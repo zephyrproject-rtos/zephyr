@@ -192,7 +192,7 @@ your board's name). If you're new to devicetree, see :ref:`devicetree-intro`.
 
 In general, :file:`plank.dts` should look like this:
 
-.. code-block:: none
+.. code-block:: DTS
 
    /dts-v1/;
    #include <your_soc_vendor/your_soc.dtsi>
