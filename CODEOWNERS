@@ -140,6 +140,7 @@
 /boards/posix/nrf52_bsim/                 @aescolar @wopu-ot
 /boards/riscv/                            @kgugala @pgielda
 /boards/riscv/rv32m1_vega/                @MaureenHelm
+/boards/riscv/generic_noel/               @martin-aberg
 /boards/shields/                          @erwango
 /boards/shields/atmel_rf2xx/              @nandojve
 /boards/shields/esp_8266/                 @nandojve

@@ -1,0 +1,9 @@
+identifier: generic_noel
+name: Generic NOEL-V system
+type: mcu
+arch: riscv32
+ram: 4096
+toolchain:
+  - zephyr
+supported:
+  - netif
