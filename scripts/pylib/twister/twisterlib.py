@@ -2789,7 +2789,7 @@ class JsonReport(TestReport):
 
     def write_output(self, report):
         with open(self.filename, "wt") as json_file:
-            json.dump(report, json_file, indent=4, separators=(',',':'))
+            json.dump(report, json_file, separators=(',',':'))
 
 
 
