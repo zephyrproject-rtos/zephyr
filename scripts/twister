@@ -1250,10 +1250,6 @@ def main():
         if retries == 0 or results.failed == results.error:
             break
 
-    for i in runner.instances.values():
-        for c in i.testcases:
-            print(c, c.result)
-
     # figure out which report to use for size comparison
     if options.compare_report:
         report_to_use = options.compare_report
