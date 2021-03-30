@@ -203,7 +203,11 @@ int write_log_to_file(uint8_t *data, size_t length, void *ctx)
 			length = 0;
 		}
 
-		fs_sync(f);
+		rc = fs_sync(f);
+		if (rc < 0) {
+			/* Something is wrong */
+			goto on_error;
+		}
 	}
 
 	return length;
