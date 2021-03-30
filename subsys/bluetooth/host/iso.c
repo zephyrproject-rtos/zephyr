@@ -792,11 +792,11 @@ void bt_iso_connected(struct bt_conn *conn)
 	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&conn->channels, chan, node) {
+		bt_iso_chan_set_state(chan, BT_ISO_CONNECTED);
+
 		if (chan->ops->connected) {
 			chan->ops->connected(chan);
 		}
-
-		bt_iso_chan_set_state(chan, BT_ISO_CONNECTED);
 	}
 }
 
