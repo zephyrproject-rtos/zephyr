@@ -26,7 +26,7 @@ int server_raw_cb(const int iface, const struct modbus_adu *adu)
 	tmp_adu.unit_id = adu->unit_id;
 	tmp_adu.fc = adu->fc;
 	memcpy(tmp_adu.data, adu->data,
-	       MIN(adu->length, CONFIG_MODBUS_BUFFER_SIZE));
+	       MIN(adu->length, sizeof(tmp_adu.data)));
 
 	LOG_HEXDUMP_DBG(tmp_adu.data, tmp_adu.length, "resp");
 	k_sem_give(&received);
@@ -51,7 +51,7 @@ int client_raw_cb(const int iface, const struct modbus_adu *adu)
 	tmp_adu.unit_id = adu->unit_id;
 	tmp_adu.fc = adu->fc;
 	memcpy(tmp_adu.data, adu->data,
-	       MIN(adu->length, CONFIG_MODBUS_BUFFER_SIZE));
+	       MIN(adu->length, sizeof(tmp_adu.data)));
 
 	LOG_HEXDUMP_DBG(tmp_adu.data, tmp_adu.length, "c->s");
 
