@@ -6,14 +6,13 @@
 
 
 #include <ztest.h>
+#include <ztest_error_hook.h>
 
 #define TIMEOUT K_MSEC(100)
 #define PIPE_LEN 8
 
 static ZTEST_DMEM unsigned char __aligned(4) data[] = "abcd1234";
-
 struct k_pipe put_get_pipe;
-
 
 static void put_fail(struct k_pipe *p)
 {
@@ -96,6 +95,9 @@ void test_pipe_get_fail(void)
 }
 
 #ifdef CONFIG_USERSPACE
+static unsigned char user_unreach[PIPE_LEN];
+static size_t unreach_byte;
+
 /**
  * @brief Test pipe get by a user thread
  * @ingroup kernel_pipe_tests
@@ -109,5 +111,191 @@ void test_pipe_user_get_fail(void)
 	zassert_false(k_pipe_alloc_init(p, PIPE_LEN), NULL);
 
 	get_fail(p);
+}
+
+/**
+ * @brief Test k_pipe_alloc_init() failure scenario
+ *
+ * @details See what will happen if an uninitialized
+ * k_pipe is passed to k_pipe_alloc_init().
+ *
+ * @ingroup kernel_pipe_tests
+ *
+ * @see k_pipe_alloc_init()
+ */
+void test_pipe_alloc_not_init(void)
+{
+	struct k_pipe pipe;
+
+	ztest_set_fault_valid(true);
+	k_pipe_alloc_init(&pipe, PIPE_LEN);
+}
+
+/**
+ * @brief Test k_pipe_get() failure scenario
+ *
+ * @details See what will happen if an uninitialized
+ * k_pipe is passed to k_pipe_get().
+ *
+ * @ingroup kernel_pipe_tests
+ *
+ * @see k_pipe_get()
+ */
+void test_pipe_get_null(void)
+{
+	unsigned char rx_data[PIPE_LEN];
+	size_t rd_byte = 0;
+
+	ztest_set_fault_valid(true);
+	k_pipe_get(NULL, rx_data, PIPE_LEN,
+	&rd_byte, 1, TIMEOUT);
+}
+
+/**
+ * @brief Test k_pipe_get() failure scenario
+ *
+ * @details See what will happen if the parameter
+ * address is accessed deny to test k_pipe_get
+ *
+ * @ingroup kernel_pipe_tests
+ *
+ * @see k_pipe_get()
+ */
+void test_pipe_get_unreach_data(void)
+{
+	struct k_pipe *p = k_object_alloc(K_OBJ_PIPE);
+	size_t rd_byte = 0;
+
+	zassert_true(p != NULL, NULL);
+	zassert_false(k_pipe_alloc_init(p, PIPE_LEN), NULL);
+
+	ztest_set_fault_valid(true);
+	k_pipe_get(p, user_unreach, PIPE_LEN,
+	&rd_byte, 1, TIMEOUT);
+
+}
+
+/**
+ * @brief Test k_pipe_get() failure scenario
+ *
+ * @details See what will happen if the parameter
+ * address is accessed deny to test k_pipe_get
+ *
+ * @ingroup kernel_pipe_tests
+ *
+ * @see k_pipe_get()
+ */
+void test_pipe_get_unreach_size(void)
+{
+	struct k_pipe *p = k_object_alloc(K_OBJ_PIPE);
+	unsigned char rx_data[PIPE_LEN];
+
+	zassert_true(p != NULL, NULL);
+	zassert_false(k_pipe_alloc_init(p, PIPE_LEN), NULL);
+
+	ztest_set_fault_valid(true);
+	k_pipe_get(p, rx_data, PIPE_LEN,
+	&unreach_byte, 1, TIMEOUT);
+
+}
+
+/**
+ * @brief Test k_pipe_put() failure scenario
+ *
+ * @details See what will happen if a null pointer
+ * is passed into the k_pipe_put as a parameter
+ *
+ * @ingroup kernel_pipe_tests
+ *
+ * @see k_pipe_put()
+ */
+void test_pipe_put_null(void)
+{
+	unsigned char tx_data = 0xa;
+	size_t to_wt = 0, wt_byte = 0;
+
+	ztest_set_fault_valid(true);
+	k_pipe_put(NULL, &tx_data, to_wt,
+		&wt_byte, 1, TIMEOUT);
+}
+
+/**
+ * @brief Test k_pipe_put() failure scenario
+ *
+ * @details See what will happen if the parameter
+ * address is accessed deny to test k_pipe_put
+ *
+ * @ingroup kernel_pipe_tests
+ *
+ * @see k_pipe_put()
+ */
+void test_pipe_put_unreach_data(void)
+{
+	struct k_pipe *p = k_object_alloc(K_OBJ_PIPE);
+	size_t to_wt = 0, wt_byte = 0;
+
+	zassert_true(p != NULL, NULL);
+	zassert_false(k_pipe_alloc_init(p, PIPE_LEN), NULL);
+
+	ztest_set_fault_valid(true);
+	k_pipe_put(p, &user_unreach[0], to_wt,
+		&wt_byte, 1, TIMEOUT);
+
+}
+
+/**
+ * @brief Test k_pipe_put() failure scenario
+ *
+ * @details See what will happen if the parameter
+ * address is accessed deny to test k_pipe_put
+ *
+ * @ingroup kernel_pipe_tests
+ *
+ * @see k_pipe_put()
+ */
+void test_pipe_put_unreach_size(void)
+{
+	struct k_pipe *p = k_object_alloc(K_OBJ_PIPE);
+	unsigned char tx_data = 0xa;
+	size_t to_wt = 0;
+
+	zassert_true(p != NULL, NULL);
+	zassert_false(k_pipe_alloc_init(p, PIPE_LEN), NULL);
+
+	ztest_set_fault_valid(true);
+	k_pipe_put(p, &tx_data, to_wt,
+		&unreach_byte, 1, TIMEOUT);
+}
+
+/**
+ * @brief Test k_pipe_read_avail() failure scenario
+ *
+ * @details See what will happen if a null pointer
+ * is passed into the k_pipe_read_avail as a parameter
+ *
+ * @ingroup kernel_pipe_tests
+ *
+ * @see k_pipe_read_avail()
+ */
+void test_pipe_read_avail_null(void)
+{
+	ztest_set_fault_valid(true);
+	k_pipe_read_avail(NULL);
+}
+
+/**
+ * @brief Test k_pipe_write_avail() failure scenario
+ *
+ * @details See what will happen if a null pointer
+ * is passed into the k_pipe_write_avail as a parameter
+ *
+ * @ingroup kernel_pipe_tests
+ *
+ * @see k_pipe_write_avail()
+ */
+void test_pipe_write_avail_null(void)
+{
+	ztest_set_fault_valid(true);
+	k_pipe_write_avail(NULL);
 }
 #endif
