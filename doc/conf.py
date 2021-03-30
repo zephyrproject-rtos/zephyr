@@ -38,9 +38,9 @@ except ImportError:
 
 # -- Project --------------------------------------------------------------
 
-project = u'Zephyr Project'
-copyright = u'2015-2021 Zephyr Project members and individual contributors'
-author = u'The Zephyr Project'
+project = 'Zephyr Project'
+copyright = '2015-2021 Zephyr Project members and individual contributors'
+author = 'The Zephyr Project'
 
 # The following code tries to extract the information by reading the Makefile,
 # when Sphinx is run directly (e.g. by Read the Docs).
@@ -165,8 +165,8 @@ latex_elements = {
 }
 
 latex_documents = [
-  ('index', 'zephyr.tex', u'Zephyr Project Documentation',
-   u'many', 'manual'),
+  ('index', 'zephyr.tex', 'Zephyr Project Documentation',
+   'many', 'manual'),
 ]
 
 # -- Options for Breathe plugin -------------------------------------------
