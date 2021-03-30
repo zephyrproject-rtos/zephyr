@@ -1502,6 +1502,7 @@ void hci_le_big_complete(struct net_buf *buf)
 
 	if (evt->num_bis != big->num_bis) {
 		BT_ERR("Invalid number of BIS, was %u expected %u", evt->num_bis, big->num_bis);
+		big_disconnect(big);
 		cleanup_big(big);
 		return;
 	}
