@@ -3616,7 +3616,7 @@ static void context_info(struct net_context *context, void *user_data)
 			return;
 		}
 
-#if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
+#if defined(CONFIG_NET_BUF_POOL_USAGE)
 		PR("%p\t%u\t%u\tETX\n",
 		   slab, slab->num_blocks, k_mem_slab_num_free_get(slab));
 #else
