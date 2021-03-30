@@ -60,14 +60,6 @@ if tags.has("svgconvert"):  # pylint: disable=undefined-variable
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
-# The suffix(es) of source filenames.
-# You can specify multiple suffix as a list of string:
-# source_suffix = ['.rst', '.md']
-source_suffix = '.rst'
-
-# The master toctree document.
-master_doc = 'index'
-
 # General information about the project.
 project = u'Zephyr Project'
 copyright = u'2015-2021 Zephyr Project members and individual contributors'
@@ -185,9 +177,6 @@ html_last_updated_fmt = '%b %d, %Y'
 # If false, no module index is generated.
 html_domain_indices = False
 
-# If false, no index is generated.
-html_use_index = True
-
 # If true, the index is split into individual pages for each letter.
 html_split_index = True
 
@@ -196,11 +185,6 @@ html_show_sourcelink = False
 
 # If true, "Created using Sphinx" is shown in the HTML footer. Default is True.
 html_show_sphinx = False
-
-# If true, license is shown in the HTML footer. Default is True.
-html_show_license = True
-
-sourcelink_suffix = '.txt'
 
 # The name of a javascript file (relative to the configuration directory) that
 # implements a search results scorer. If empty, the default will be used.
@@ -377,7 +361,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  (master_doc, 'zephyr.tex', u'Zephyr Project Documentation',
+  ('index', 'zephyr.tex', u'Zephyr Project Documentation',
    u'many', 'manual'),
 ]
 
@@ -428,7 +412,7 @@ c_id_attributes = cpp_id_attributes
 
 # docs_title is used in the breadcrumb title in the zephyr docs theme
 html_context = {
-    'show_license': html_show_license,
+    'show_license': True,
     'docs_title': docs_title,
     'is_release': is_release,
     'theme_logo_only': False,
