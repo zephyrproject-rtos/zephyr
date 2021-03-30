@@ -2628,6 +2628,17 @@ class TestReport:
         if version:
             self.version = version
 
+    @staticmethod
+    def process_log(log_file):
+        filtered_string = ""
+        if os.path.exists(log_file):
+            with open(log_file, "rb") as f:
+                log = f.read().decode("utf-8")
+                filtered_string = ''.join(filter(lambda x: x in string.printable, log))
+
+        return filtered_string
+
+
     def get_platform_instances(self, platform):
         filtered_dict = {k:v for k,v in self.instances.items() if k.startswith(platform + "/")}
         return filtered_dict
@@ -2790,8 +2801,13 @@ class CSVReport(TestReport):
 
 
 class JunitReport(TestReport):
+
     def create_container(self, name):
-        eleTestsuites = ET.Element(name)
+        if os.path.exists(self.filename) and self.append:
+            tree = ET.parse(self.filename)
+            eleTestsuites = tree.getroot()
+        else:
+            eleTestsuites = ET.Element(name)
         return eleTestsuites
 
     def generate_output(self, testsuites):
@@ -2803,10 +2819,11 @@ class JunitReport(TestReport):
             report.write(output)
 
     def create_new_or_update(self, testsuites, instance, duration, total, fails, errors, passes, skips):
-
         name = f"{instance.scenario.suite.name}({instance.platform.name})"
         testsuite = testsuites.findall(f'testsuite/[@name="{name}"]')
-        if not testsuite:
+        if testsuite: # FIXME
+            return testsuite[0]
+        elif not testsuite:
             eleTestsuite = ET.SubElement(testsuites, 'testsuite',
                         name=f"{name}", time=f"{duration:.3f}",
                         tests="%d" % (total),
@@ -2815,7 +2832,6 @@ class JunitReport(TestReport):
             eleTSPropetries = ET.SubElement(eleTestsuite, 'properties')
             ET.SubElement(eleTSPropetries, 'property', name="version", value=self.version)
             ET.SubElement(eleTSPropetries, 'property', name="platform", value=instance.platform.name)
-
         else:
             eleTestsuite = testsuite[0]
             time = float(eleTestsuite.attrib['time']) + duration
@@ -2838,13 +2854,17 @@ class JunitReport(TestReport):
         return eleTestsuite
 
     def add_testcases(self, testsuites, testsuite, instance, duration):
+        classname = f"{instance.scenario.suite.name}.{instance.scenario.id}"
+        # remove testcases that are being re-run from exiting reports
+        for tc in testsuite.findall(f'testcase/[@classname="{classname}"]'):
+            testsuite.remove(tc)
+
         for test_result in instance.test_results:
             if test_result.duration:
                 dur = test_result.duration
             else:
                 dur = duration
 
-            classname = f"{instance.scenario.suite.name}.{instance.scenario.id}"
             testcase = ET.SubElement(testsuite, 'testcase',
                         classname=classname,
                         name=f"{test_result.testcase.name}", time=f"{dur:.3f}")
@@ -2863,7 +2883,7 @@ class JunitReport(TestReport):
                         'error',
                         type="failure",
                         message="failed")
-                log_root = os.path.join(self.outdir, instance.platform.name, instance.scenario.name)
+                log_root = os.path.join(instance.outdir, instance.platform.name, instance.scenario.name)
                 log_file = os.path.join(log_root, "handler.log")
                 el.text = self.process_log(log_file)
 
@@ -3700,16 +3720,6 @@ class TestRunner(DisablePyTestCollectionMixin):
                            "platform": instance.platform.name,
                            "reason": reason}
                 cw.writerow(rowdict)
-
-    @staticmethod
-    def process_log(log_file):
-        filtered_string = ""
-        if os.path.exists(log_file):
-            with open(log_file, "rb") as f:
-                log = f.read().decode("utf-8")
-                filtered_string = ''.join(filter(lambda x: x in string.printable, log))
-
-        return filtered_string
 
     def get_testcase(self, identifier):
         results = []
