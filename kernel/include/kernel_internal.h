@@ -249,6 +249,22 @@ void pm_system_resume(void);
 
 #endif
 
+#ifdef CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM
+/**
+ * Initialize the timing histograms for demand paging.
+ */
+void z_paging_histogram_init(void);
+
+/**
+ * Increment the counter in the timing histogram.
+ *
+ * @param hist The timing histogram to be updated.
+ * @param cycles Time spent in measured operation.
+ */
+void z_paging_histogram_inc(struct k_mem_paging_histogram_t *hist,
+			    uint32_t cycles);
+#endif /* CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM */
+
 #ifdef __cplusplus
 }
 #endif
