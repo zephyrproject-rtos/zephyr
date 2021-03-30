@@ -223,6 +223,9 @@ void hci_le_cis_req(struct net_buf *buf)
 		return;
 	}
 
+	iso->iso.cig_id = evt->cig_id;
+	iso->iso.cis_id = evt->cis_id;
+
 	/* Request application to accept */
 	err = bt_iso_accept(iso);
 	if (err) {
