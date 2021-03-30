@@ -127,13 +127,6 @@ html_theme_options = {
     'prev_next_buttons_location': None
 }
 
-if tags.has('release'):  # pylint: disable=undefined-variable
-    is_release = True
-    docs_title = 'Docs / %s' %(version)
-else:
-    is_release = False
-    docs_title = 'Docs / Latest'
-
 html_title = "Zephyr Project Documentation"
 
 html_logo = 'images/Zephyr-Kite-logo.png'
@@ -189,6 +182,9 @@ cpp_id_attributes = [
 c_id_attributes = cpp_id_attributes
 
 # docs_title is used in the breadcrumb title in the zephyr docs theme
+is_release = tags.has('release')  # pylint: disable=undefined-variable
+docs_title = 'Docs / {}'.format(version if is_release else 'Latest')
+
 html_context = {
     'show_license': True,
     'docs_title': docs_title,
