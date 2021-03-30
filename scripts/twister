@@ -208,6 +208,7 @@ except ImportError:
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 
 from twisterlib import HardwareMap, TestRunner, SizeCalculator, CoverageTool, ExecutionCounter
+from twisterlib import TestReport, CSVReport
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -1151,7 +1152,10 @@ def main():
         runner.instances = OrderedDict(sliced_instances)
 
     if options.save_tests:
-        runner.csv_report(options.save_tests)
+        csv_report = CSVReport(instances=runner.instances,
+                filename=options.save_tests
+                )
+        csv_report.generate_report()
         return
 
     logger.info("%d test scenarios (%d configurations) selected, %d configurations discarded due to filters." %

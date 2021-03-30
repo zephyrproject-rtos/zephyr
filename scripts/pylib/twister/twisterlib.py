@@ -2672,6 +2672,7 @@ class TestReport:
     def create_new_or_update(self, testsuites, instance, duration, total, fails, errors, passes, skips):
         pass
 
+
 class JsonReport(TestReport):
     def __init__(self, instances, filename, toolchain, version):
         self.toolchain = toolchain
@@ -2749,7 +2750,6 @@ class JsonReport(TestReport):
             json.dump(report, json_file, separators=(',',':'))
 
 
-
 class CSVReport(TestReport):
 
     def __init__(self, instances, filename):
@@ -2788,9 +2788,8 @@ class CSVReport(TestReport):
     def write_output(self, testsuites):
         self.csvfile.close()
 
+
 class JunitReport(TestReport):
-
-
     def create_container(self, name):
         eleTestsuites = ET.Element(name)
         return eleTestsuites
@@ -3540,7 +3539,7 @@ class TestRunner(DisablePyTestCollectionMixin):
             if not instance_list:
                 continue
 
-            integration = self.integration and tc.integration_platforms
+            integration = self.integration and scenario.integration_platforms
             # if twister was launched with no platform options at all, we
             # take all default platforms
             if default_platforms and not scenario.build_on_all and not integration:
