@@ -690,6 +690,27 @@ config DEMAND_PAGING_THREAD_STATS
 
 	  Should say N in production system as this is not without cost.
 
+config DEMAND_PAGING_TIMING_HISTOGRAM
+	bool "Gather Demand Paging Execution Timing Histogram"
+	depends on DEMAND_PAGING_STATS
+	help
+	  This gathers the histogram of execution time on page eviction
+	  selection, and backing store page in and page out.
+
+	  Should say N in production system as this is not without cost.
+
+config DEMAND_PAGING_TIMING_HISTOGRAM_NUM_BINS
+	int "Number of bins (buckets) in Demand Paging Timing Histogrm"
+	depends on DEMAND_PAGING_TIMING_HISTOGRAM
+	default 10
+	help
+	  Defines the number of bins (buckets) in the histogram used for
+	  gathering execution timing information for demand paging.
+
+	  This requires z_eviction_histogram_bounds[] and
+	  z_backing_store_histogram_bounds[] to define the upper bounds
+	  for each bin. See kernel/statistics.c for information.
+
 endif	# DEMAND_PAGING
 endif   # MMU
 

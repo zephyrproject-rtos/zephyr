@@ -279,6 +279,9 @@ static void frame_mapped_set(struct z_page_frame *pf, void *addr)
 #ifdef CONFIG_DEMAND_PAGING
 static int page_frame_prepare_locked(struct z_page_frame *pf, bool *dirty_ptr,
 				     bool page_in, uintptr_t *location_ptr);
+
+static inline void do_backing_store_page_in(uintptr_t location);
+static inline void do_backing_store_page_out(uintptr_t location);
 #endif /* CONFIG_DEMAND_PAGING */
 
 /* Allocate a free page frame, and map it to a specified virtual address
@@ -313,7 +316,7 @@ static int map_anon_page(void *addr, uint32_t flags)
 			return -ENOMEM;
 		}
 		if (dirty) {
-			z_backing_store_page_out(location);
+			do_backing_store_page_out(location);
 		}
 		pf->flags = 0;
 #else
@@ -554,6 +557,9 @@ void z_mem_manage_init(void)
 	LOG_DBG("free page frames: %zu", z_free_page_count);
 
 #ifdef CONFIG_DEMAND_PAGING
+#ifdef CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM
+	z_paging_histogram_init();
+#endif
 	z_backing_store_init();
 	z_eviction_init();
 #endif
@@ -567,7 +573,48 @@ void z_mem_manage_init(void)
 
 #ifdef CONFIG_DEMAND_PAGING_STATS
 struct k_mem_paging_stats_t paging_stats;
+extern struct k_mem_paging_histogram_t z_paging_histogram_eviction;
+extern struct k_mem_paging_histogram_t z_paging_histogram_backing_store_page_in;
+extern struct k_mem_paging_histogram_t z_paging_histogram_backing_store_page_out;
 #endif
+
+static inline void do_backing_store_page_in(uintptr_t location)
+{
+#ifdef CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM
+	uint32_t time_diff;
+	uint32_t time_start;
+
+	time_start = k_cycle_get_32();
+#endif /* CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM */
+
+	z_backing_store_page_in(location);
+
+#ifdef CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM
+	time_diff = k_cycle_get_32() - time_start;
+
+	z_paging_histogram_inc(&z_paging_histogram_backing_store_page_in,
+			       time_diff);
+#endif /* CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM */
+}
+
+static inline void do_backing_store_page_out(uintptr_t location)
+{
+#ifdef CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM
+	uint32_t time_diff;
+	uint32_t time_start;
+
+	time_start = k_cycle_get_32();
+#endif /* CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM */
+
+	z_backing_store_page_out(location);
+
+#ifdef CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM
+	time_diff = k_cycle_get_32() - time_start;
+
+	z_paging_histogram_inc(&z_paging_histogram_backing_store_page_out,
+			       time_diff);
+#endif /* CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM */
+}
 
 /* Current implementation relies on interrupt locking to any prevent page table
  * access, which falls over if other CPUs are active. Addressing this is not
@@ -702,7 +749,7 @@ static int do_mem_evict(void *addr)
 	irq_unlock(key);
 #endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
 	if (dirty) {
-		z_backing_store_page_out(location);
+		do_backing_store_page_out(location);
 	}
 #ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
 	key = irq_lock();
@@ -776,7 +823,7 @@ int z_page_frame_evict(uintptr_t phys)
 	irq_unlock(key);
 #endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
 	if (dirty) {
-		z_backing_store_page_out(location);
+		do_backing_store_page_out(location);
 	}
 #ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
 	key = irq_lock();
@@ -849,6 +896,25 @@ static inline void paging_stats_eviction_inc(struct k_thread *faulting_thread,
 #endif /* CONFIG_DEMAND_PAGING_STATS */
 }
 
+static inline struct z_page_frame *do_eviction_select(bool *dirty)
+{
+	struct z_page_frame *pf;
+
+#ifdef CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM
+	uint32_t time_start = k_cycle_get_32();
+	uint32_t time_diff;
+#endif /* CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM */
+
+	pf = z_eviction_select(dirty);
+
+#ifdef CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM
+	time_diff = k_cycle_get_32() - time_start;
+	z_paging_histogram_inc(&z_paging_histogram_eviction, time_diff);
+#endif /* CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM */
+
+	return pf;
+}
+
 static bool do_page_fault(void *addr, bool pin)
 {
 	struct z_page_frame *pf;
@@ -867,10 +933,7 @@ static bool do_page_fault(void *addr, bool pin)
 	/*
 	 * TODO: Add performance accounting:
 	 * - z_eviction_select() metrics
-	 *   * execution time histogram
 	 *   * periodic timer execution time histogram (if implemented)
-	 * - z_backing_store_page_out() execution time histogram
-	 * - z_backing_store_page_in() execution time histogram
 	 */
 
 #ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
@@ -931,7 +994,7 @@ static bool do_page_fault(void *addr, bool pin)
 	pf = free_page_frame_list_get();
 	if (pf == NULL) {
 		/* Need to evict a page frame */
-		pf = z_eviction_select(&dirty);
+		pf = do_eviction_select(&dirty);
 		__ASSERT(pf != NULL, "failed to get a page frame");
 		LOG_DBG("evicting %p at 0x%lx", pf->addr,
 			z_page_frame_to_phys(pf));
@@ -949,9 +1012,9 @@ static bool do_page_fault(void *addr, bool pin)
 	 */
 #endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
 	if (dirty) {
-		z_backing_store_page_out(page_out_location);
+		do_backing_store_page_out(page_out_location);
 	}
-	z_backing_store_page_in(page_in_location);
+	do_backing_store_page_in(page_in_location);
 
 #ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
 	key = irq_lock();
