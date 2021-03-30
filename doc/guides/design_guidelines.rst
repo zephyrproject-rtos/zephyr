@@ -102,3 +102,21 @@ practices should be followed.
 The Kconfig flag used to enable the feature should be added to the
 ``PREDEFINED`` variable in :file:`doc/zephyr.doxyfile.in` to ensure the
 conditional API and functions appear in generated documentation.
+
+Return Codes
+************
+
+Implementations of an API, for example an API for accessing a peripheral might
+implement only a subset of the functions that is required for minimal operation.
+A distinction is needed between APIs that are not supported and those that are
+not implemented or optional:
+
+- APIs that are supported but not implemented shall return ``-ENOSYS``.
+
+- Optional APIs that are not supported by the hardware should be implemented and
+  the return code in this case shall be ``-ENOTSUP``.
+
+- When an API is implemented, but the particular combination of options
+  requested in the call cannot be satisfied by the implementation the call shall
+  return -ENOTSUP. (For example, a request for a level-triggered GPIO interrupt on
+  hardware that supports only edge-triggered interrupts)
