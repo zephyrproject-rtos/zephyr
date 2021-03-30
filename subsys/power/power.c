@@ -16,7 +16,6 @@
 LOG_MODULE_REGISTER(power);
 
 static int post_ops_done = 1;
-static enum power_states forced_pm_state = SYS_POWER_STATE_AUTO;
 static enum power_states pm_state;
 
 #ifdef CONFIG_SYS_PM_DEBUG
@@ -80,7 +79,26 @@ void sys_pm_force_power_state(enum power_states state)
 		 state <  SYS_POWER_STATE_MAX,
 		 "Invalid power state %d!", state);
 
-	forced_pm_state = state;
+	(void)irq_lock();
+	pm_state = state;
+
+	if (pm_state == SYS_POWER_STATE_AUTO) {
+		irq_unlock(0);
+		return;
+	}
+
+	post_ops_done = 0;
+	sys_pm_notify_power_state_entry(pm_state);
+
+	sys_pm_debug_start_timer();
+	sys_set_power_state(state);
+	sys_pm_debug_stop_timer();
+
+	if (!post_ops_done) {
+		post_ops_done = 1;
+		sys_pm_notify_power_state_exit(pm_state);
+		_sys_pm_power_state_exit_post_ops(pm_state);
+	}
 }
 
 enum power_states _sys_suspend(s32_t ticks)
@@ -90,8 +108,7 @@ enum power_states _sys_suspend(s32_t ticks)
 	bool low_power = false;
 #endif
 
-	pm_state = (forced_pm_state == SYS_POWER_STATE_AUTO) ?
-		   sys_pm_policy_next_state(ticks) : forced_pm_state;
+	pm_state = sys_pm_policy_next_state(ticks);
 
 	if (pm_state == SYS_POWER_STATE_ACTIVE) {
 		LOG_DBG("No PM operations done.");
