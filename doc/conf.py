@@ -196,9 +196,6 @@ html_show_sphinx = False
 # implements a search results scorer. If empty, the default will be used.
 html_search_scorer = '_static/js/scorer.js'
 
-# Output file base name for HTML help builder.
-htmlhelp_basename = 'zephyrdoc'
-
 html_redirect_pages = redirects.REDIRECTS
 
 # -- Options for LaTeX output ---------------------------------------------
@@ -214,26 +211,6 @@ latex_elements = {
 latex_documents = [
   ('index', 'zephyr.tex', u'Zephyr Project Documentation',
    u'many', 'manual'),
-]
-
-# -- Options for manual page output ---------------------------------------
-
-# One entry per manual page. List of tuples
-# (source start file, name, description, authors, manual section).
-man_pages = [
-    (master_doc, 'zephyr', u'Zephyr Project Documentation',
-     [author], 1)
-]
-
-# -- Options for Texinfo output -------------------------------------------
-
-# Grouping the document tree into Texinfo files. List of tuples
-# (source start file, target name, title, author,
-#  dir menu entry, description, category)
-texinfo_documents = [
-  (master_doc, 'zephyr', u'Zephyr Project Documentation',
-   author, 'Zephyr', 'One line description of project.',
-   'Miscellaneous'),
 ]
 
 breathe_projects = {
