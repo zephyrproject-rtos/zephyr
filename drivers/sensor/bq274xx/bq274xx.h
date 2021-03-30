@@ -95,6 +95,10 @@ struct bq274xx_data {
 	uint16_t remaining_charge_capacity;
 	uint16_t nom_avail_capacity;
 	uint16_t full_avail_capacity;
+#ifdef CONFIG_PM_DEVICE
+	uint32_t pm_state;
+	const struct device *gpio;
+#endif
 };
 
 struct bq274xx_config {
@@ -103,6 +107,11 @@ struct bq274xx_config {
 	uint16_t design_capacity;
 	uint16_t taper_current;
 	uint16_t terminate_voltage;
+#ifdef CONFIG_PM_DEVICE
+	const char *gpio_port;
+	gpio_pin_t int_pin;
+	gpio_dt_flags_t int_flags;
+#endif
 };
 
 #endif
