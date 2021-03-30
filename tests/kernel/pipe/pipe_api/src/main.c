@@ -32,6 +32,15 @@ extern void test_pipe_user_thread2thread(void);
 extern void test_pipe_user_put_fail(void);
 extern void test_pipe_user_get_fail(void);
 extern void test_resource_pool_auto_free(void);
+extern void test_pipe_alloc_not_init(void);
+extern void test_pipe_get_null(void);
+extern void test_pipe_get_unreach_data(void);
+extern void test_pipe_get_unreach_size(void);
+extern void test_pipe_put_null(void);
+extern void test_pipe_put_unreach_data(void);
+extern void test_pipe_put_unreach_size(void);
+extern void test_pipe_read_avail_null(void);
+extern void test_pipe_write_avail_null(void);
 #endif
 
 extern void test_pipe_avail_r_lt_w(void);
@@ -58,6 +67,15 @@ dummy_test(test_pipe_user_thread2thread);
 dummy_test(test_pipe_user_put_fail);
 dummy_test(test_pipe_user_get_fail);
 dummy_test(test_resource_pool_auto_free);
+dummy_test(test_pipe_alloc_not_init);
+dummy_test(test_pipe_get_null);
+dummy_test(test_pipe_get_unreach_data);
+dummy_test(test_pipe_get_unreach_size);
+dummy_test(test_pipe_put_null);
+dummy_test(test_pipe_put_unreach_data);
+dummy_test(test_pipe_put_unreach_size);
+dummy_test(test_pipe_read_avail_null);
+dummy_test(test_pipe_write_avail_null);
 #endif /* !CONFIG_USERSPACE */
 
 /*test case main entry*/
@@ -74,6 +92,15 @@ void test_main(void)
 			 ztest_1cpu_user_unit_test(test_pipe_user_thread2thread),
 			 ztest_1cpu_user_unit_test(test_pipe_user_put_fail),
 			 ztest_user_unit_test(test_pipe_user_get_fail),
+			 ztest_user_unit_test(test_pipe_alloc_not_init),
+			 ztest_user_unit_test(test_pipe_get_null),
+			 ztest_user_unit_test(test_pipe_get_unreach_data),
+			 ztest_user_unit_test(test_pipe_get_unreach_size),
+			 ztest_user_unit_test(test_pipe_put_null),
+			 ztest_user_unit_test(test_pipe_put_unreach_data),
+			 ztest_user_unit_test(test_pipe_put_unreach_size),
+			 ztest_user_unit_test(test_pipe_read_avail_null),
+			 ztest_user_unit_test(test_pipe_write_avail_null),
 			 ztest_unit_test(test_resource_pool_auto_free),
 			 ztest_1cpu_unit_test(test_pipe_put_fail),
 			 ztest_unit_test(test_pipe_get_fail),
