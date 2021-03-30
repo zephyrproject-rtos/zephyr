@@ -4,6 +4,10 @@
 import sys
 import os
 
+from sphinx.highlighting import lexers
+import sphinx_rtd_theme
+
+
 if "ZEPHYR_BASE" not in os.environ:
     sys.exit("$ZEPHYR_BASE environment variable undefined.")
 ZEPHYR_BASE = os.path.abspath(os.environ["ZEPHYR_BASE"])
@@ -24,6 +28,7 @@ sys.path.insert(0, os.path.join(ZEPHYR_BASE, 'doc', '_scripts'))
 # for autodoc directives on runners.xyz.
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, 'scripts', 'west_commands'))
 
+from lexer.DtsLexer import DtsLexer
 import redirects
 
 try:
@@ -108,8 +113,6 @@ default_role = 'any'
 pygments_style = 'sphinx'
 
 # Additional lexer for Pygments (syntax highlighting)
-from lexer.DtsLexer import DtsLexer
-from sphinx.highlighting import lexers
 lexers['DTS'] = DtsLexer()
 
 todo_include_todos = False
@@ -120,7 +123,6 @@ rst_epilog = """
 
 # -- Options for HTML output ----------------------------------------------
 
-import sphinx_rtd_theme
 html_theme = "sphinx_rtd_theme"
 html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 html_theme_options = {
