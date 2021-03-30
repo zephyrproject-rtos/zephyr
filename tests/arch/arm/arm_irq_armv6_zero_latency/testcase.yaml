@@ -1,0 +1,7 @@
+common:
+  filter: CONFIG_CPU_CORTEX_M0 or CONFIG_CPU_CORTEX_M0PLUS or CONFIG_CPU_CORTEX_M1
+  tags: armv6-m zero latency interrupt
+  arch_allow: arm
+tests:
+  arch.arm.interrupt.irq_armv6_zero_latency:
+    filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE

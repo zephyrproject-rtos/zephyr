@@ -45,6 +45,18 @@ extern int arch_irq_is_enabled(unsigned int irq);
 extern void z_arm_irq_priority_set(unsigned int irq, unsigned int prio,
 				   uint32_t flags);
 
+#if defined(CONFIG_ZERO_LATENCY_IRQS_ARMV6_M)
+uint32_t zli_get_shadow_reg(void);
+void zli_set_shadow_reg(uint32_t new_value);
+uint32_t zli_get_mask(void);
+void zli_set_lock_flag(bool new_value);
+bool zli_locked(void);
+void zli_set_irq_status(uint32_t irq_status);
+uint32_t zli_get_irq_status(void);
+void zli_unlock_by_swap(void);
+void zli_lock_by_swap(void);
+#endif
+
 #else
 
 /*
@@ -85,7 +97,7 @@ extern void z_arm_interrupt_init(void);
 #define CONCAT(x, y) DO_CONCAT(x, y)
 
 /* Flags for use with IRQ_CONNECT() */
-#ifdef CONFIG_ZERO_LATENCY_IRQS
+#if defined(CONFIG_ZERO_LATENCY_IRQS) || defined(CONFIG_ZERO_LATENCY_IRQS_ARMV6_M)
 /**
  * Set this interrupt up as a zero-latency IRQ. It has a fixed hardware
  * priority level (discarding what was supplied in the interrupt's priority
@@ -93,7 +105,6 @@ extern void z_arm_interrupt_init(void);
  */
 #define IRQ_ZERO_LATENCY	BIT(0)
 #endif
-
 
 /* All arguments must be computable by the compiler at build time.
  *

@@ -30,9 +30,14 @@
 extern "C" {
 #endif
 
+
 /* On ARMv7-M and ARMv8-M Mainline CPUs, this function prevents regular
  * exceptions (i.e. with interrupt priority lower than or equal to
  * _EXC_IRQ_DEFAULT_PRIO) from interrupting the CPU. NMI, Faults, SVC,
+ * and Zero Latency IRQs (if supported) may still interrupt the CPU.
+ *
+ * On ARMv6-M with enabled Zero Latency IRQs feature, this function prevents
+ * regular exceptions from interrupting the CPU. NMI, Faults, SVC, pendSV
  * and Zero Latency IRQs (if supported) may still interrupt the CPU.
  *
  * On ARMv6-M and ARMv8-M Baseline CPUs, this function reads the value of
@@ -44,7 +49,20 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 {
 	unsigned int key;
 
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+#if defined(CONFIG_ZERO_LATENCY_IRQS_ARMV6_M)
+
+	/* write old shadow register into key*/
+	key = zli_get_shadow_reg();
+	zli_set_shadow_reg(key | zli_get_irq_status());
+
+	/* update interrupt register */
+	zli_set_irq_status((key | zli_get_irq_status()) & zli_get_mask());
+	zli_set_lock_flag(true);
+	__asm__ volatile(
+		"dsb;"
+		"isb;");
+
+#elif defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 	__asm__ volatile("mrs %0, PRIMASK;"
 		"cpsid i"
 		: "=r" (key)
@@ -77,13 +95,22 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 }
 
 
-/* On Cortex-M0/M0+, this enables all interrupts if they were not
- * previously disabled.
- */
-
 static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 {
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+/* unlocking with the key == 0, unlocks all locks */
+#if defined(CONFIG_ZERO_LATENCY_IRQS_ARMV6_M)
+
+	if (key == 0 && zli_locked()) {
+		/* update the irq's status with the value of the shadow register*/
+		zli_set_irq_status(zli_get_shadow_reg());
+		zli_set_shadow_reg(0);
+		zli_set_lock_flag(false);
+		__asm__ volatile(
+			"dsb;"
+			"isb;");
+	}
+
+#elif defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 	if (key) {
 		return;
 	}
@@ -105,7 +132,7 @@ static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 		: : : "memory", "cc");
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
+#endif /* CONFIG_ZERO_LATENCY_IRQS_ARMV6_M */
 }
 
 static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
