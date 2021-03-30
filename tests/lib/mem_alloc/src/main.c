@@ -162,6 +162,8 @@ void test_no_mem_realloc(void)
 
 	reloc_ptr = realloc(ptr, BUF_LEN);
 	zassert_is_null(reloc_ptr, "realloc failed, errno: %d", errno);
+	free(reloc_ptr);
+	reloc_ptr = NULL;
 }
 #endif
 
@@ -241,10 +243,11 @@ void test_calloc(void)
 
 	cptr =  calloc(0x7fffffff, sizeof(int));
 	zassert_is_null((cptr), "calloc failed, errno: %d", errno);
+	free(cptr);
 
 	cptr =  calloc(0x7fffffff, sizeof(char));
 	zassert_is_null((cptr), "calloc failed, errno: %d", errno);
-
+	free(cptr);
 
 	cptr =  calloc(CALLOC_BUFLEN, sizeof(char));
 	zassert_not_null((cptr), "calloc failed, errno: %d", errno);
