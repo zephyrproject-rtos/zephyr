@@ -157,6 +157,7 @@ void pm_power_state_force(struct pm_state_info info)
 	pm_debug_stop_timer();
 
 	pm_system_resume();
+	k_sched_unlock();
 }
 
 #if CONFIG_PM_DEVICE
