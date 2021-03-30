@@ -776,6 +776,13 @@ static void uart_stm32_isr(const struct device *dev)
 		if (data->dma_rx.timeout == 0) {
 			uart_stm32_dma_rx_flush(dev);
 		}
+	} else if (LL_USART_IsEnabledIT_TC(UartInstance) &&
+			  LL_USART_IsActiveFlag_TC(UartInstance)) {
+
+		LL_USART_DisableIT_TC(UartInstance);
+		LL_USART_ClearFlag_TC(UartInstance);
+		/* Generate TX_DONE event when transmission is done */
+		async_evt_tx_done(data);
 	}
 
 	/* Clear errors */
@@ -893,8 +900,6 @@ void uart_stm32_dma_tx_cb(const struct device *dma_dev, void *user_data,
 	}
 
 	irq_unlock(key);
-
-	async_evt_tx_done(data);
 }
 
 static void uart_stm32_dma_replace_buffer(const struct device *dev)
@@ -987,8 +992,11 @@ static int uart_stm32_async_tx(const struct device *dev,
 
 	LOG_DBG("tx: l=%d", data->dma_tx.buffer_length);
 
-	/* disable TX interrupt since DMA will handle it */
-	LL_USART_DisableIT_TC(UartInstance);
+	/* Clear TC flag */
+	LL_USART_ClearFlag_TC(UartInstance);
+
+	/* Enable TC interrupt so we can signal correct TX done */
+	LL_USART_EnableIT_TC(UartInstance);
 
 	/* set source address */
 	data->dma_tx.blk_cfg.source_address = (uint32_t)data->dma_tx.buffer;
