@@ -2368,6 +2368,9 @@ sub process {
 
 	my $checklicenseline = 1;
 
+	my $blank_seen = 0;
+	my $last_indent = "";
+
 	sanitise_line_reset();
 	my $line;
 	foreach my $rawline (@rawlines) {
@@ -3502,6 +3505,19 @@ sub process {
 			$last_blank_line = $linenr;
 		}
 
+# track whether we've "seen a blank line" at this level of
+# indentation, needed for discriminating LINE_SPACING_DECL (a missing
+# blank line after any declaration) from LINE_SPACING_INIT_DECL (a
+# missing blank line after an initial/top-of-function declaration
+# block)
+		$line =~ /^([\+ ]\s*)(.*)$/;
+		if ($2 eq "") {
+		    $blank_seen = 1;
+		} elsif ($1 ne $last_indent) {
+		    $last_indent = $1;
+		    $blank_seen = 0;
+		}
+
 # check for missing blank lines after declarations
 		if ($sline =~ /^\+\s+\S/ &&			#Not at char 1
 			# actual declarations
@@ -3536,11 +3552,19 @@ sub process {
 		      $sline =~ /^\+\s+\(?\s*(?:$Compare|$Assignment|$Operators)/) &&
 			# indentation of previous and current line are the same
 		    (($prevline =~ /\+(\s+)\S/) && $sline =~ /^\+$1\S/)) {
-			if (WARN("LINE_SPACING",
+		    if ($blank_seen) {
+			if (WARN("LINE_SPACING_DECL",
 				 "Missing a blank line after declarations\n" . $hereprev) &&
 			    $fix) {
-				fix_insert_line($fixlinenr, "\+");
+			    fix_insert_line($fixlinenr, "\+");
 			}
+		    } else {
+			if (WARN("LINE_SPACING_INIT_DECL",
+				 "Missing a blank line after initial declarations\n" . $hereprev) &&
+			    $fix) {
+			    fix_insert_line($fixlinenr, "\+");
+			}
+		    }
 		}
 
 # check for spaces at the beginning of a line.
