@@ -35,6 +35,7 @@ uint32_t dma_stm32_id_to_stream(uint32_t id)
 	return stream_nr[id];
 }
 
+#if !defined(CONFIG_DMAMUX_STM32)
 uint32_t dma_stm32_slot_to_channel(uint32_t slot)
 {
 	static const uint32_t channel_nr[] = {
@@ -52,6 +53,7 @@ uint32_t dma_stm32_slot_to_channel(uint32_t slot)
 
 	return channel_nr[slot];
 }
+#endif
 
 void dma_stm32_clear_ht(DMA_TypeDef *DMAx, uint32_t id)
 {
@@ -334,11 +336,14 @@ void stm32_dma_disable_fifo_irq(DMA_TypeDef *dma, uint32_t id)
 	LL_DMA_DisableIT_FE(dma, dma_stm32_id_to_stream(id));
 }
 
-void stm32_dma_config_channel_function(DMA_TypeDef *dma, uint32_t id, uint32_t slot)
+#if !defined(CONFIG_DMAMUX_STM32)
+void stm32_dma_config_channel_function(DMA_TypeDef *dma, uint32_t id,
+					uint32_t slot)
 {
 	LL_DMA_SetChannelSelection(dma, dma_stm32_id_to_stream(id),
 			dma_stm32_slot_to_channel(slot));
 }
+#endif
 
 uint32_t stm32_dma_get_mburst(struct dma_config *config, bool source_periph)
 {
