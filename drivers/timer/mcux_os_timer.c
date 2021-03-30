@@ -10,6 +10,7 @@
 #include <sys_clock.h>
 #include <spinlock.h>
 #include "fsl_ostimer.h"
+#include "fsl_power.h"
 
 #define CYC_PER_TICK ((uint32_t)((uint64_t)sys_clock_hw_cycles_per_sec()	\
 			      / (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC))
@@ -58,6 +59,8 @@ int sys_clock_driver_init(const struct device *device)
 					mcux_lpc_ostick_isr, NULL, 0);
 
 	base = (OSTIMER_Type *)DT_INST_REG_ADDR(0);
+
+	EnableDeepSleepIRQ(DT_INST_IRQN(0));
 
 	/* Initialize the OS timer, setting clock configuration. */
 	OSTIMER_Init(base);
