@@ -2178,7 +2178,8 @@ struct net_if_api {
 	};								\
 	static Z_DECL_ALIGN(struct net_if)				\
 		       NET_IF_GET_NAME(dev_name, sfx)[_num_configs]	\
-		       __used __in_section(_net_if, static, net_if) = {	\
+		       __used __in_section(_net_if, static,             \
+					   dev_name) = {                \
 		[0 ... (_num_configs - 1)] = {				\
 			.if_dev = &(NET_IF_DEV_GET_NAME(dev_name, sfx)), \
 			NET_IF_CONFIG_INIT				\
@@ -2193,7 +2194,8 @@ struct net_if_api {
 	};								\
 	static Z_DECL_ALIGN(struct net_if)				\
 		NET_IF_GET_NAME(dev_name, sfx)[NET_IF_MAX_CONFIGS]	\
-		       __used __in_section(_net_if, static, net_if) = {	\
+		       __used __in_section(_net_if, static,             \
+					   dev_name) = {                \
 		[0 ... (NET_IF_MAX_CONFIGS - 1)] = {			\
 			.if_dev = &(NET_IF_DEV_GET_NAME(dev_name, sfx)), \
 			NET_IF_CONFIG_INIT				\
