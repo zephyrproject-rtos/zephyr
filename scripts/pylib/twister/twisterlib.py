@@ -3256,8 +3256,16 @@ class TestSuite(DisablePyTestCollectionMixin):
 
         for instance in self.discards:
             instance.reason = self.discards[instance]
-            instance.status = "skipped"
-            instance.fill_results_by_status()
+            # If integration mode is on all skips on integration_platforms are treated as errors.
+            # TODO: add quarantine relief here when PR with quarantine feature gets merged
+            if self.integration and instance.platform.name in instance.testcase.integration_platforms:
+                instance.status = "error"
+                instance.reason += " but is one of the integration platforms"
+                instance.fill_results_by_status()
+                self.instances[instance.name] = instance
+            else:
+                instance.status = "skipped"
+                instance.fill_results_by_status()
 
         self.filtered_platforms = set(p.platform.name for p in self.instances.values()
                                       if p.status != "skipped" )
@@ -3295,6 +3303,9 @@ class TestSuite(DisablePyTestCollectionMixin):
                     logger.debug(f"adding {instance.name}")
                     instance.status = None
                     pipeline.put({"op": "cmake", "test": instance})
+                # If the instance got 'error' status before, proceed to the report stage
+                if instance.status == "error":
+                    pipeline.put({"op": "report", "test": instance})
 
     def pipeline_mgr(self, pipeline, done_queue, lock, results):
         while True:
