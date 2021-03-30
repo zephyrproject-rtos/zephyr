@@ -44,17 +44,17 @@ struct dma_stm32_config {
 	struct dma_stm32_stream *streams;
 };
 
-#ifdef CONFIG_DMA_STM32_V1
-/* from DTS the dma stream id is in range 0..<dma-requests>-1 */
-#define STREAM_OFFSET 0
-#else
+#if defined(CONFIG_DMAMUX_STM32) || defined(CONFIG_DMA_STM32_V2)
 /* from DTS the dma stream id is in range 1..<dma-requests> */
 /* so decrease to set range from 0 from now on */
 #define STREAM_OFFSET 1
-#endif /* CONFIG_DMA_STM32_V1 */
+#else
+/* from DTS the dma stream id is in range 0..<dma-requests>-1 */
+#define STREAM_OFFSET 0
+#endif /* CONFIG_DMAMUX_STM32 || CONFIG_DMA_STM32_V2 */
 
 uint32_t dma_stm32_id_to_stream(uint32_t id);
-#ifdef CONFIG_DMA_STM32_V1
+#if !defined(CONFIG_DMAMUX_STM32)
 uint32_t dma_stm32_slot_to_channel(uint32_t id);
 #endif
 
@@ -90,7 +90,11 @@ bool stm32_dma_is_irq_happened(DMA_TypeDef *dma, uint32_t id);
 bool stm32_dma_is_unexpected_irq_happened(DMA_TypeDef *dma, uint32_t id);
 void stm32_dma_enable_stream(DMA_TypeDef *dma, uint32_t id);
 int stm32_dma_disable_stream(DMA_TypeDef *dma, uint32_t id);
-void stm32_dma_config_channel_function(DMA_TypeDef *dma, uint32_t id, uint32_t slot);
+
+#if !defined(CONFIG_DMAMUX_STM32)
+void stm32_dma_config_channel_function(DMA_TypeDef *dma, uint32_t id,
+						uint32_t slot);
+#endif
 
 #ifdef CONFIG_DMA_STM32_V1
 void stm32_dma_disable_fifo_irq(DMA_TypeDef *dma, uint32_t id);
