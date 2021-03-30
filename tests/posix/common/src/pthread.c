@@ -450,7 +450,8 @@ void test_posix_pthread_error_condition(void)
 		      EINVAL, "get datach state error");
 
 	/* Initialise thread attribute to ensure won't be return with init error */
-	pthread_attr_init(&attr);
+	zassert_false(pthread_attr_init(&attr),
+		      "Unable to create pthread object attr");
 	zassert_false(pthread_attr_setschedpolicy(&attr, 0),
 		      "set scheduling policy error");
 	zassert_false(pthread_attr_setschedpolicy(&attr, 1),
