@@ -208,6 +208,7 @@ except ImportError:
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 
 from twisterlib import HardwareMap, TestRunner, SizeCalculator, CoverageTool, ExecutionCounter
+from twisterlib import TestReport, CSVReport
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -232,14 +233,14 @@ def export_tests(filename, tests):
         fieldnames = ['section', 'subsection', 'title', 'reference']
         cw = csv.DictWriter(csvfile, fieldnames, lineterminator=os.linesep)
         for test in tests:
-            data = test.split(".")
+            data = test.id.split(".")
             if len(data) > 1:
                 subsec = " ".join(data[1].split("_")).title()
                 rowdict = {
                     "section": data[0].capitalize(),
                     "subsection": subsec,
-                    "title": test,
-                    "reference": test
+                    "title": test.id,
+                    "reference": test.id
                 }
                 cw.writerow(rowdict)
             else:
@@ -971,6 +972,7 @@ def main():
             export_tests(options.export_tests, all_tests)
             return
 
+        #FIXME: does not currently work
         if options.list_test_duplicates:
             import collections
             dupes = [item for item, count in collections.Counter(all_tests).items() if count > 1]
@@ -1004,21 +1006,22 @@ def main():
                 samples = Node("Samples", parent=testsuite)
                 tests = Node("Tests", parent=testsuite)
 
-            for test in sorted(all_tests):
+            for test in all_tests:
+                #print(test.id)
                 cnt = cnt + 1
                 if options.list_tests:
-                    print(" - {}".format(test))
+                    print(" - {}".format(test.id))
 
                 if options.test_tree:
-                    if test.startswith("sample."):
-                        sec = test.split(".")
+                    if test.scenario.name.startswith("sample."):
+                        sec = test.scenario.id.split(".")
                         area = find(samples, lambda node: node.name == sec[1] and node.parent == samples)
                         if not area:
                             area = Node(sec[1], parent=samples)
 
-                        t = Node(test, parent=area)
+                        t = Node(test.scenario.name, parent=area)
                     else:
-                        sec = test.split(".")
+                        sec = test.id.split(".")
                         area = find(tests, lambda node: node.name == sec[0] and node.parent == tests)
                         if not area:
                             area = Node(sec[0], parent=tests)
@@ -1027,7 +1030,7 @@ def main():
                             subarea = find(area, lambda node: node.name == sec[1] and node.parent == area)
                             if not subarea:
                                 subarea = Node(sec[1], parent=area)
-                            t = Node(test, parent=subarea)
+                            t = Node(test.id, parent=subarea)
 
             if options.list_tests:
                 print("{} total.".format(cnt))
@@ -1045,13 +1048,13 @@ def main():
         last_run = os.path.join(options.outdir, "twister.csv")
 
     if options.quarantine_list:
-        suite.load_quarantine(options.quarantine_list)
+        runner.load_quarantine(options.quarantine_list)
 
     if options.quarantine_verify:
         if not options.quarantine_list:
             logger.error("No quarantine list given to be verified")
             sys.exit(1)
-        suite.quarantine_verify = options.quarantine_verify
+        runner.quarantine_verify = options.quarantine_verify
 
     if options.only_failed:
         runner.load_from_file(last_run, filter_status=['skipped', 'passed'])
@@ -1118,13 +1121,13 @@ def main():
         # Show only the discards that apply to the selected platforms on the
         # command line
 
-        for i, reason in discards.items():
-            if options.platform and i.platform.name not in options.platform:
+        for item, reason in discards.items():
+            if options.platform and item.platform.name not in options.platform:
                 continue
             logger.debug(
                 "{:<25} {:<50} {}SKIPPED{}: {}".format(
-                    i.platform.name,
-                    i.testcase.name,
+                    item.platform.name,
+                    item.scenario.name,
                     Fore.YELLOW,
                     Fore.RESET,
                     reason))
@@ -1133,12 +1136,12 @@ def main():
         all_tests = runner.get_all_tests()
         to_be_run = set()
         for i, p in runner.instances.items():
-            to_be_run.update(p.testcase.cases)
+            to_be_run.update(p.scenario.testcases)
 
-        if all_tests - to_be_run:
+        if set(all_tests) - to_be_run:
             print("Tests that never build or run:")
-            for not_run in all_tests - to_be_run:
-                print("- {}".format(not_run))
+            for not_run in set(all_tests) - to_be_run:
+                print("- {}".format(not_run.id))
 
         return
 
@@ -1159,7 +1162,7 @@ def main():
         # at runtime, ignore the cases we already know going to be skipped.
         # This fixes an issue where some sets would get majority of skips and
         # basically run nothing beside filtering.
-        to_run = {k : v for k,v in suite.instances.items() if v.status is None}
+        to_run = {k : v for k,v in runner.instances.items() if v.status is None}
 
         subset, sets = options.subset.split("/")
         subset = int(subset)
@@ -1180,9 +1183,9 @@ def main():
             end = start + per_set
 
         sliced_instances = islice(to_run.items(), start, end)
-        skipped = {k : v for k,v in suite.instances.items() if v.status == 'skipped'}
+        skipped = {k : v for k,v in runner.instances.items() if v.status == 'skipped'}
         errors = {k : v for k,v in suite.instances.items() if v.status == 'error'}
-        suite.instances = OrderedDict(sliced_instances)
+        runner.instances = OrderedDict(sliced_instances)
         if subset == 1:
             # add all pre-filtered tests that are skipped or got error status
             # to the first set to allow for better distribution among all sets.
@@ -1190,7 +1193,10 @@ def main():
             suite.instances.update(errors)
 
     if options.save_tests:
-        runner.csv_report(options.save_tests)
+        csv_report = CSVReport(instances=runner.instances,
+                filename=options.save_tests
+                )
+        csv_report.generate_report()
         return
 
     logger.info("%d test scenarios (%d configurations) selected, %d configurations discarded due to filters." %
@@ -1237,7 +1243,7 @@ def main():
             except queue.Empty:
                 break
             else:
-                inst.metrics.update(suite.instances[inst.name].metrics)
+                inst.metrics.update(runner.instances[inst.name].metrics)
                 inst.metrics["handler_time"] = inst.handler.duration if inst.handler else 0
                 inst.metrics["unrecognized"] = []
                 runner.instances[inst.name] = inst

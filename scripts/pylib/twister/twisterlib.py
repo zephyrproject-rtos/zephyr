@@ -584,7 +584,8 @@ class BinaryHandler(Handler):
 
         if harness.is_pytest:
             harness.pytest_run(self.log)
-        self.instance.results = harness.tests
+        # FIXME: rebase issue
+        #self.instance.results = harness.tests
 
         if not self.terminated and self.returncode != 0:
             # When a process is killed, the default handler returns 128 + SIGTERM
@@ -736,7 +737,7 @@ class DeviceHandler(Handler):
 
         logger.debug("Using serial device {} @ {} baud".format(serial_device, hardware.serial_baud))
 
-        if (self.suite.west_flash is not None) or runner:
+        if (self.runner.west_flash is not None) or runner:
             command = ["west", "flash", "--skip-rebuild", "-d", self.build_dir]
             command_extra_args = []
 
@@ -1633,11 +1634,10 @@ class TestScenario(DisablePyTestCollectionMixin):
 
         self.source_dir = ""
         self.yamlfile = ""
+        self.testsuite = ""
         self.testcases = []
         self.name = self.get_unique(testcase_root, workdir, name)
         self.id = name
-        self.suite = None
-
         self.type = None
         self.tags = set()
         self.extra_args = None
@@ -2671,6 +2671,17 @@ class TestReport:
         if version:
             self.version = version
 
+    @staticmethod
+    def process_log(log_file):
+        filtered_string = ""
+        if os.path.exists(log_file):
+            with open(log_file, "rb") as f:
+                log = f.read().decode("utf-8")
+                filtered_string = ''.join(filter(lambda x: x in string.printable, log))
+
+        return filtered_string
+
+
     def get_platform_instances(self, platform):
         filtered_dict = {k:v for k,v in self.instances.items() if k.startswith(platform + "/")}
         return filtered_dict
@@ -2693,7 +2704,7 @@ class TestReport:
                 if test_result.duration:
                     duration += float(test_result.duration)
                 else:
-                    duration += instance.metrics.get('handler_time', 0)
+                    duration = instance.metrics.get('handler_time', 0)
 
                 if test_result.result == 'PASS':
                     passes += 1
@@ -2714,6 +2725,7 @@ class TestReport:
 
     def create_new_or_update(self, testsuites, instance, duration, total, fails, errors, passes, skips):
         pass
+
 
 class JsonReport(TestReport):
     def __init__(self, instances, filename, toolchain, version):
@@ -2736,11 +2748,18 @@ class JsonReport(TestReport):
         return report
 
     def create_new_or_update(self, testsuites, instance, duration, total, fails, errors, passes, skips):
-        name = f"{instance.scenario.suite.name}"
+        ram_size = instance.metrics.get("ram_size", 0)
+        rom_size = instance.metrics.get("rom_size", 0)
+        name = f"{instance.scenario.testsuite}"
+        scenario = os.path.basename(instance.scenario.name)
         testsuite = {
             'name': f"{name}",
+            'scenario': f"{scenario}",
+            'path': f"{instance.scenario.source_dir}",
             'platform': f"{instance.platform.name}",
             'time': f"{duration:.3f}",
+            'ram': ram_size,
+            'rom': rom_size,
             'tests': f"{total}",
             'failures': f"{fails}",
             'errors': f"{errors}",
@@ -2792,7 +2811,6 @@ class JsonReport(TestReport):
             json.dump(report, json_file, separators=(',',':'))
 
 
-
 class CSVReport(TestReport):
 
     def __init__(self, instances, filename):
@@ -2831,11 +2849,15 @@ class CSVReport(TestReport):
     def write_output(self, testsuites):
         self.csvfile.close()
 
+
 class JunitReport(TestReport):
 
-
     def create_container(self, name):
-        eleTestsuites = ET.Element(name)
+        if os.path.exists(self.filename) and self.append:
+            tree = ET.parse(self.filename)
+            eleTestsuites = tree.getroot()
+        else:
+            eleTestsuites = ET.Element(name)
         return eleTestsuites
 
     def generate_output(self, testsuites):
@@ -2847,10 +2869,11 @@ class JunitReport(TestReport):
             report.write(output)
 
     def create_new_or_update(self, testsuites, instance, duration, total, fails, errors, passes, skips):
-
-        name = f"{instance.scenario.suite.name}({instance.platform.name})"
+        name = f"{instance.scenario.testsuite}({instance.platform.name})"
         testsuite = testsuites.findall(f'testsuite/[@name="{name}"]')
-        if not testsuite:
+        if testsuite: # FIXME
+            return testsuite[0]
+        elif not testsuite:
             eleTestsuite = ET.SubElement(testsuites, 'testsuite',
                         name=f"{name}", time=f"{duration:.3f}",
                         tests="%d" % (total),
@@ -2859,7 +2882,6 @@ class JunitReport(TestReport):
             eleTSPropetries = ET.SubElement(eleTestsuite, 'properties')
             ET.SubElement(eleTSPropetries, 'property', name="version", value=self.version)
             ET.SubElement(eleTSPropetries, 'property', name="platform", value=instance.platform.name)
-
         else:
             eleTestsuite = testsuite[0]
             time = float(eleTestsuite.attrib['time']) + duration
@@ -2882,13 +2904,17 @@ class JunitReport(TestReport):
         return eleTestsuite
 
     def add_testcases(self, testsuites, testsuite, instance, duration):
+        classname = f"{instance.scenario.testsuite}.{instance.scenario.id}"
+        # remove testcases that are being re-run from exiting reports
+        for tc in testsuite.findall(f'testcase/[@classname="{classname}"]'):
+            testsuite.remove(tc)
+
         for test_result in instance.test_results:
             if test_result.duration:
                 dur = test_result.duration
             else:
                 dur = duration
 
-            classname = f"{instance.scenario.suite.name}.{instance.scenario.id}"
             testcase = ET.SubElement(testsuite, 'testcase',
                         classname=classname,
                         name=f"{test_result.testcase.name}", time=f"{dur:.3f}")
@@ -2907,7 +2933,7 @@ class JunitReport(TestReport):
                         'error',
                         type="failure",
                         message="failed")
-                log_root = os.path.join(self.outdir, instance.platform.name, instance.scenario.name)
+                log_root = os.path.join(instance.outdir, instance.platform.name, instance.scenario.name)
                 log_file = os.path.join(log_root, "handler.log")
                 el.text = self.process_log(log_file)
 
@@ -3271,9 +3297,10 @@ class TestRunner(DisablePyTestCollectionMixin):
 
     def get_all_tests(self):
         tests = []
-        for _, scenario in self.scenarios.items():
-            for case in scenario.testcases:
-                tests.append(case)
+        for suite in self.suites:
+            for scenario in suite.scenarios:
+                for case in scenario.testcases:
+                    tests.append(case)
 
         return tests
 
@@ -3313,7 +3340,6 @@ class TestRunner(DisablePyTestCollectionMixin):
 
                 logger.debug("Found possible testsuite in " + dirpath)
 
-                dirnames[:] = []
                 test_data_path = os.path.join(dirpath, filename)
                 suite_path = os.path.dirname(test_data_path)
 
@@ -3329,13 +3355,11 @@ class TestRunner(DisablePyTestCollectionMixin):
 
                 for name in parsed_data.tests.keys():
                     scenario = TestScenario(root, workdir, name)
-                    suite.add_scenario(scenario)
-
+                    scenario.testsuite = suite.name
                     scenario_dict = parsed_data.get_test(name, self.testsuite_valid_keys)
 
                     scenario.source_dir = suite_path
                     scenario.yamlfile = suite_path
-                    scenario.suite = suite
                     scenario.type = scenario_dict["type"]
                     scenario.tags = scenario_dict["tags"]
                     scenario.extra_args = scenario_dict["extra_args"]
@@ -3370,6 +3394,8 @@ class TestRunner(DisablePyTestCollectionMixin):
                             scenario.add_testcase(test_id, test_name)
                     else:
                         scenario.add_testcase(scenario.id, suite.name)
+
+                    suite.add_scenario(scenario)
 
                     if testsuite_filter:
                         if scenario.name and scenario.name in testsuite_filter:
@@ -3500,172 +3526,169 @@ class TestRunner(DisablePyTestCollectionMixin):
 
         logger.info("Building initial testcase list...")
 
-        for scenario_name, scenario in self.scenarios.items():
-            suite = scenario.suite
-            if scenario.build_on_all and not platform_filter:
-                platform_scope = self.platforms
-            elif scenario.integration_platforms and self.integration:
-                platform_scope = list(filter(lambda item: item.name in scenario.integration_platforms, \
-                                         self.platforms))
-            else:
-                platform_scope = platforms
-
-            integration = self.integration and tc.integration_platforms
-
-            # If there isn't any overlap between the platform_allow list and the platform_scope
-            # we set the scope to the platform_allow list
-            if tc.platform_allow and not platform_filter and not integration:
-                a = set(platform_scope)
-                b = set(filter(lambda item: item.name in tc.platform_allow, self.platforms))
-                c = a.intersection(b)
-                if not c:
-                    platform_scope = list(filter(lambda item: item.name in tc.platform_allow, \
-                                             self.platforms))
-
-            # list of instances per testcase, aka configurations.
-            instance_list = []
-            for plat in platform_scope:
-                instance = TestInstance(scenario, plat, self.outdir)
-                if runnable:
-                    tfilter = 'runnable'
+        for suite in self.suites:
+            for scenario in suite.scenarios:
+                scenario_name = scenario.id
+                if scenario.build_on_all and not platform_filter:
+                    platform_scope = self.platforms
+                elif scenario.integration_platforms and self.integration:
+                    platform_scope = list(filter(lambda item: item.name in scenario.integration_platforms, \
+                                            self.platforms))
                 else:
-                    tfilter = 'buildable'
+                    platform_scope = platforms
 
-                instance.run = instance.check_runnable(
-                    self.enable_slow,
-                    tfilter,
-                    self.fixtures
-                )
+                integration = self.integration and scenario.integration_platforms
 
-                if runnable and self.duts:
-                    for h in self.duts:
-                        if h.platform == plat.name:
-                            if scenario.harness_config.get('fixture') in h.fixtures:
-                                instance.run = True
+                # If there isn't any overlap between the platform_allow list and the platform_scope
+                # we set the scope to the platform_allow list
+                if scenario.platform_allow and not platform_filter and not integration:
+                    a = set(platform_scope)
+                    b = set(filter(lambda item: item.name in scenario.platform_allow, self.platforms))
+                    c = a.intersection(b)
+                    if not c:
+                        platform_scope = list(filter(lambda item: item.name in scenario.platform_allow, \
+                                                self.platforms))
 
-                if not force_platform and plat.name in exclude_platform:
-                    discards[instance] = discards.get(instance, "Platform is excluded on command line.")
+                # list of instances per testcase, aka configurations.
+                instance_list = []
+                for plat in platform_scope:
+                    instance = TestInstance(scenario, plat, self.outdir)
+                    if runnable:
+                        tfilter = 'runnable'
+                    else:
+                        tfilter = 'buildable'
 
-                if (plat.arch == "unit") != (scenario.type == "unit"):
-                    # Discard silently
+                    instance.run = instance.check_runnable(
+                        self.enable_slow,
+                        tfilter,
+                        self.fixtures
+                    )
+
+                    if runnable and self.duts:
+                        for h in self.duts:
+                            if h.platform == plat.name:
+                                if scenario.harness_config.get('fixture') in h.fixtures:
+                                    instance.run = True
+
+                    if not force_platform and plat.name in exclude_platform:
+                        discards[instance] = discards.get(instance, "Platform is excluded on command line.")
+
+                    if (plat.arch == "unit") != (scenario.type == "unit"):
+                        # Discard silently
+                        continue
+
+                    if runnable and not instance.run:
+                        discards[instance] = discards.get(instance, "Not runnable on device")
+
+                    if self.integration and scenario.integration_platforms and plat.name not in scenario.integration_platforms:
+                        discards[instance] = discards.get(instance, "Not part of integration platforms")
+
+                    if scenario.skip:
+                        discards[instance] = discards.get(instance, "Skip filter")
+
+                    if tag_filter and not scenario.tags.intersection(tag_filter):
+                        discards[instance] = discards.get(instance, "Command line testcase tag filter")
+
+                    if exclude_tag and scenario.tags.intersection(exclude_tag):
+                        discards[instance] = discards.get(instance, "Command line testcase exclude filter")
+
+                    if testcase_filter and scenario_name not in testcase_filter:
+                        discards[instance] = discards.get(instance, "Testcase name filter")
+
+                    if arch_filter and plat.arch not in arch_filter:
+                        discards[instance] = discards.get(instance, "Command line testcase arch filter")
+
+                    if not force_platform:
+
+                        if scenario.arch_allow and plat.arch not in scenario.arch_allow:
+                            discards[instance] = discards.get(instance, "Not in test case arch allow list")
+
+                        if scenario.arch_exclude and plat.arch in scenario.arch_exclude:
+                            discards[instance] = discards.get(instance, "In test case arch exclude")
+
+                        if scenario.platform_exclude and plat.name in scenario.platform_exclude:
+                            discards[instance] = discards.get(instance, "In test case platform exclude")
+
+                    if scenario.toolchain_exclude and toolchain in scenario.toolchain_exclude:
+                        discards[instance] = discards.get(instance, "In test case toolchain exclude")
+
+                    if platform_filter and plat.name not in platform_filter:
+                        discards[instance] = discards.get(instance, "Command line platform filter")
+
+                    if not force_toolchain \
+                            and toolchain and (toolchain not in plat.supported_toolchains) \
+                            and "host" not in plat.supported_toolchains \
+                            and scenario.type != 'unit':
+                        discards[instance] = discards.get(instance, "Not supported by the toolchain")
+
+                    if scenario.platform_allow and plat.name not in scenario.platform_allow:
+                        discards[instance] = discards.get(instance, "Not in testcase platform allow list")
+
+                    if scenario.toolchain_allow and toolchain not in scenario.toolchain_allow:
+                        discards[instance] = discards.get(instance, "Not in testcase toolchain allow list")
+
+                    if not plat.env_satisfied:
+                        discards[instance] = discards.get(instance, "Environment ({}) not satisfied".format(", ".join(plat.env)))
+
+                    if plat.ram < scenario.min_ram:
+                        discards[instance] = discards.get(instance, "Not enough RAM")
+
+                    if scenario.depends_on:
+                        dep_intersection = scenario.depends_on.intersection(set(plat.supported))
+                        if dep_intersection != set(scenario.depends_on):
+                            discards[instance] = discards.get(instance, "No hardware support")
+
+                    if plat.flash < scenario.min_flash:
+                        discards[instance] = discards.get(instance, "Not enough FLASH")
+
+                    if set(plat.ignore_tags) & scenario.tags:
+                        discards[instance] = discards.get(instance, "Excluded tags per platform (exclude_tags)")
+
+                    if plat.only_tags and not set(plat.only_tags) & scenario.tags:
+                        discards[instance] = discards.get(instance, "Excluded tags per platform (only_tags)")
+
+                    test_configuration = ".".join([instance.platform.name, instance.scenario.id])
+                    # skip quarantined tests
+                    if test_configuration in self.quarantine and not self.quarantine_verify:
+                        discards[instance] = discards.get(instance,
+                                                        f"Quarantine: {self.quarantine[test_configuration]}")
+                    # run only quarantined test to verify their statuses (skip everything else)
+                    if self.quarantine_verify and test_configuration not in self.quarantine:
+                        discards[instance] = discards.get(instance, "Not under quarantine")
+
+                    # if nothing stopped us until now, it means this configuration
+                    # needs to be added.
+                    instance_list.append(instance)
+                    suite.add_instance(instance)
+
+                # no configurations, so jump to next testcase
+                if not instance_list:
                     continue
 
-                if runnable and not instance.run:
-                    discards[instance] = discards.get(instance, "Not runnable on device")
-
-                if self.integration and scenario.integration_platforms and plat.name not in scenario.integration_platforms:
-                    discards[instance] = discards.get(instance, "Not part of integration platforms")
-
-                if scenario.skip:
-                    discards[instance] = discards.get(instance, "Skip filter")
-
-                if tag_filter and not scenario.tags.intersection(tag_filter):
-                    discards[instance] = discards.get(instance, "Command line testcase tag filter")
-
-                if exclude_tag and scenario.tags.intersection(exclude_tag):
-                    discards[instance] = discards.get(instance, "Command line testcase exclude filter")
-
-                if testcase_filter and scenario_name not in testcase_filter:
-                    discards[instance] = discards.get(instance, "Testcase name filter")
-
-                if arch_filter and plat.arch not in arch_filter:
-                    discards[instance] = discards.get(instance, "Command line testcase arch filter")
-
-                if not force_platform:
-
-                    if scenario.arch_allow and plat.arch not in scenario.arch_allow:
-                        discards[instance] = discards.get(instance, "Not in test case arch allow list")
-
-                    if scenario.arch_exclude and plat.arch in scenario.arch_exclude:
-                        discards[instance] = discards.get(instance, "In test case arch exclude")
-
-                    if scenario.platform_exclude and plat.name in scenario.platform_exclude:
-                        discards[instance] = discards.get(instance, "In test case platform exclude")
-
-                if scenario.toolchain_exclude and toolchain in scenario.toolchain_exclude:
-                    discards[instance] = discards.get(instance, "In test case toolchain exclude")
-
-                if platform_filter and plat.name not in platform_filter:
-                    discards[instance] = discards.get(instance, "Command line platform filter")
-
-                if scenario.platform_allow and plat.name not in scenario.platform_allow:
-                    discards[instance] = discards.get(instance, "Not in testcase platform allow list")
-
-                if scenario.toolchain_allow and toolchain not in scenario.toolchain_allow:
-                    discards[instance] = discards.get(instance, "Not in testcase toolchain allow list")
-
-                if not plat.env_satisfied:
-                    discards[instance] = discards.get(instance, "Environment ({}) not satisfied".format(", ".join(plat.env)))
-
-                if not force_toolchain \
-                        and toolchain and (toolchain not in plat.supported_toolchains) \
-                        and "host" not in plat.supported_toolchains \
-                        and scenario.type != 'unit':
-                    discards[instance] = discards.get(instance, "Not supported by the toolchain")
-
-                if plat.ram < scenario.min_ram:
-                    discards[instance] = discards.get(instance, "Not enough RAM")
-
-                if scenario.depends_on:
-                    dep_intersection = scenario.depends_on.intersection(set(plat.supported))
-                    if dep_intersection != set(scenario.depends_on):
-                        discards[instance] = discards.get(instance, "No hardware support")
-
-                if plat.flash < scenario.min_flash:
-                    discards[instance] = discards.get(instance, "Not enough FLASH")
-
-                if set(plat.ignore_tags) & scenario.tags:
-                    discards[instance] = discards.get(instance, "Excluded tags per platform (exclude_tags)")
-
-                if plat.only_tags and not set(plat.only_tags) & scenario.tags:
-                    discards[instance] = discards.get(instance, "Excluded tags per platform (only_tags)")
-
-                test_configuration = ".".join([instance.platform.name,
-                                               instance.testcase.id])
-                # skip quarantined tests
-                if test_configuration in self.quarantine and not self.quarantine_verify:
-                    discards[instance] = discards.get(instance,
-                                                      f"Quarantine: {self.quarantine[test_configuration]}")
-                # run only quarantined test to verify their statuses (skip everything else)
-                if self.quarantine_verify and test_configuration not in self.quarantine:
-                    discards[instance] = discards.get(instance, "Not under quarantine")
-
-                # if nothing stopped us until now, it means this configuration
-                # needs to be added.
-                instance_list.append(instance)
-                suite.add_instance(instance)
-
-            # no configurations, so jump to next testcase
-            if not instance_list:
-                continue
-
-            # if twister was launched with no platform options at all, we
-            # take all default platforms
-            if default_platforms and not scenario.build_on_all and not integration:
-                if scenario.platform_allow:
-                    a = set(self.default_platforms)
-                    b = set(scenario.platform_allow)
-                    c = a.intersection(b)
-                    if c:
-                        aa = list(filter(lambda i: i.platform.name in c, instance_list))
-                        self.add_instances(aa)
+                # if twister was launched with no platform options at all, we
+                # take all default platforms
+                if default_platforms and not scenario.build_on_all and not integration:
+                    if scenario.platform_allow:
+                        a = set(self.default_platforms)
+                        b = set(scenario.platform_allow)
+                        c = a.intersection(b)
+                        if c:
+                            aa = list(filter(lambda i: i.platform.name in c, instance_list))
+                            self.add_instances(aa)
+                        else:
+                            self.add_instances(instance_list)
                     else:
-                        self.add_instances(instance_list)
-                else:
-                    instances = list(filter(lambda s: s.platform.default, instance_list))
+                        instances = list(filter(lambda s: s.platform.default, instance_list))
+                        self.add_instances(instances)
+                elif integration:
+                    instances = list(filter(lambda item:  item.platform.name in scenario.integration_platforms, instance_list))
                     self.add_instances(instances)
-            elif integration:
-                instances = list(filter(lambda item:  item.platform.name in scenario.integration_platforms, instance_list))
-                self.add_instances(instances)
-
-
-
-            elif emulation_platforms:
-                self.add_instances(instance_list)
-                for instance in list(filter(lambda inst: not inst.platform.simulation != 'na', instance_list)):
-                    discards[instance] = discards.get(instance, "Not an emulated platform")
-            else:
-                self.add_instances(instance_list)
+                elif emulation_platforms:
+                    self.add_instances(instance_list)
+                    for instance in list(filter(lambda inst: not inst.platform.simulation != 'na', instance_list)):
+                        discards[instance] = discards.get(instance, "Not an emulated platform")
+                else:
+                    self.add_instances(instance_list)
 
         for _, case in self.instances.items():
             case.create_overlay(case.platform, self.enable_asan, self.enable_ubsan, self.enable_coverage, self.coverage_platform)
@@ -3677,7 +3700,7 @@ class TestRunner(DisablePyTestCollectionMixin):
         for instance in self.discards:
             instance.reason = self.discards[instance]
             # If integration mode is on all skips on integration_platforms are treated as errors.
-            if self.integration and instance.platform.name in instance.testcase.integration_platforms \
+            if self.integration and instance.platform.name in instance.scenario.integration_platforms \
                 and "Quarantine" not in instance.reason:
                 instance.status = "error"
                 instance.reason += " but is one of the integration platforms"
@@ -3817,16 +3840,6 @@ class TestRunner(DisablePyTestCollectionMixin):
                            "platform": instance.platform.name,
                            "reason": reason}
                 cw.writerow(rowdict)
-
-    @staticmethod
-    def process_log(log_file):
-        filtered_string = ""
-        if os.path.exists(log_file):
-            with open(log_file, "rb") as f:
-                log = f.read().decode("utf-8")
-                filtered_string = ''.join(filter(lambda x: x in string.printable, log))
-
-        return filtered_string
 
     def get_testcase(self, identifier):
         results = []
