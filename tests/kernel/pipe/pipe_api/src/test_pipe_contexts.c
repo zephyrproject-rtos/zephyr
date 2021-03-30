@@ -142,7 +142,9 @@ static void tpipe_put_small_size(struct k_pipe *ppipe, k_timeout_t timeout)
 	for (int i = 0; i < PIPE_LEN; i += wt_byte) {
 		/**TESTPOINT: pipe put*/
 		to_wt = 15;
-		k_pipe_put(ppipe, &data[i], to_wt, &wt_byte, 1, timeout);
+		zassert_false(k_pipe_put(ppipe, &data[i], to_wt, &wt_byte,
+		1, timeout) != 0, NULL);
+
 	}
 }
 
