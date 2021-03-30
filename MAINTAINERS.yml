@@ -1323,6 +1323,9 @@ NXP Platforms:
   status: maintained
   maintainers:
     - MaureenHelm
+  collaborators:
+    - mmahadevan108
+    - dleach02
   files:
     - boards/arm/mimx*/
     - boards/arm/frdm_k*/
