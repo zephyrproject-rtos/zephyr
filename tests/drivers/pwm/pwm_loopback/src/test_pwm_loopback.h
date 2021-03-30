@@ -30,6 +30,9 @@
 #define PWM_LOOPBACK_IN_FLAGS \
 	DT_PWMS_FLAGS_BY_IDX(PWM_LOOPBACK_NODE, PWM_LOOPBACK_IN_IDX)
 
+#define CAPTURE_PWM_TIMER_BITS \
+	DT_PROP(PWM_LOOPBACK_NODE, capture_pwm_timer_bits)
+
 struct test_pwm {
 	const struct device *dev;
 	uint32_t pwm;
@@ -58,6 +61,12 @@ void test_period_capture_inverted(void);
 void test_pulse_and_period_capture(void);
 
 void test_capture_timeout(void);
+
+void test_pulse_capture_overflow(void);
+
+void test_period_capture_overflow(void);
+
+void test_pulse_and_period_capture_overflow(void);
 
 void test_continuous_capture(void);
 

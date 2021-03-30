@@ -20,3 +20,11 @@ properties:
           generation while the pin at the second index will be used for capuring
           the generated signal. The two pins must be physically connected to
           each other.
+
+    capture-pwm-timer-bits:
+        type: int
+        required: false
+        default: 16
+        description: |
+            Bit width of the pwm capture timer.
+            It is used for capture timer accumulation test cases.

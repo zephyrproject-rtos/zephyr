@@ -35,6 +35,21 @@ void get_test_pwms(struct test_pwm *out, struct test_pwm *in)
 	zassert_true(device_is_ready(in->dev), "pwm loopback input device is not ready");
 }
 
+static uint64_t get_timer_period_us(struct test_pwm *pwm)
+{
+	int err = 0;
+	uint64_t timer_period_us;
+	uint32_t timer_cycles;
+
+	timer_cycles = BIT(CAPTURE_PWM_TIMER_BITS - 1);
+	err = pwm_pin_cycles_to_usec(pwm->dev, pwm->pwm, timer_cycles,
+				     &timer_period_us);
+	zassert_equal(err, 0, "Failed to get 1/2 of period %d)", err);
+	timer_period_us *= 2;
+	TC_PRINT("timer maximal period is %lluus\n", timer_period_us);
+	return timer_period_us;
+}
+
 void test_capture(uint32_t period, uint32_t pulse, enum test_pwm_unit unit,
 		  pwm_flags_t flags)
 {
@@ -186,6 +201,97 @@ void test_capture_timeout(void)
 
 	zassert_equal(err, -EAGAIN, "pwm capture did not timeout (err %d)",
 		      err);
+}
+
+void test_pulse_capture_overflow(void)
+{
+	struct test_pwm in;
+	struct test_pwm out;
+	uint64_t timer_in_period_us;
+	uint32_t period;
+	uint32_t pulse;
+
+	/* API is limited to 32-bit and we accumulate multiple hw tim periods */
+	if (CAPTURE_PWM_TIMER_BITS >= 30) {
+		TC_PRINT("skip overflow tests for >= 30-bit counter\n");
+		ztest_test_skip();
+	}
+
+	get_test_pwms(&out, &in);
+	timer_in_period_us = get_timer_period_us(&in);
+
+	period = (uint32_t)(timer_in_period_us * 3ULL);
+	pulse = period / 2UL;
+	test_capture(period, pulse, TEST_PWM_UNIT_USEC,
+		     PWM_CAPTURE_TYPE_PULSE | PWM_POLARITY_NORMAL);
+}
+
+void test_period_capture_overflow(void)
+{
+	struct test_pwm in;
+	struct test_pwm out;
+	uint64_t timer_in_period_us;
+	uint32_t period;
+	uint32_t pulse;
+
+	/* API is limited to 32-bit and we accumulate multiple hw tim periods */
+	if (CAPTURE_PWM_TIMER_BITS >= 30) {
+		TC_PRINT("skip overflow tests for >= 30-bit counter\n");
+		ztest_test_skip();
+	}
+
+	get_test_pwms(&out, &in);
+	timer_in_period_us = get_timer_period_us(&in);
+	period = (uint32_t)(timer_in_period_us * 3ULL);
+	pulse = (uint32_t)(timer_in_period_us * 3ULL * 5ULL / 6ULL);
+	test_capture(period, pulse, TEST_PWM_UNIT_USEC,
+		     PWM_CAPTURE_TYPE_PERIOD | PWM_POLARITY_NORMAL);
+}
+
+void test_pulse_and_period_capture_overflow(void)
+{
+	struct test_pwm in;
+	struct test_pwm out;
+	uint64_t timer_in_period_us;
+	uint32_t period;
+	uint32_t pulse;
+
+	/* API is limited to 32-bit and we accumulate multiple hw tim periods */
+	if (CAPTURE_PWM_TIMER_BITS >= 30) {
+		TC_PRINT("skip overflow tests for >= 30-bit counter\n");
+		ztest_test_skip();
+	}
+
+	get_test_pwms(&out, &in);
+	timer_in_period_us = get_timer_period_us(&in);
+
+	/*
+	 * This test case tries to catch the mistakes of incorrect hardware
+	 * timer overflow accumulation when pulse and period are captured at
+	 * the same time.
+	 * However, it must be notet that if a free running timer is used to
+	 * capture the signal, it's not sure that pulse and period have the
+	 * same number of overflows.
+	 * E.g. when the hw counter has reached more (1 - 1/(48/3)) of the timer
+	 * max value when the pulse ends, the period will be triggered after
+	 * another overflow.  In those runs where they differ, this 1st capture
+	 * may test the same behavoir as the 2nd capture, and won't be able to
+	 * verfiy that independent overflow counters have been used correctly.
+	 *
+	 * Less pulse overflows than period overflows are guaranteed in the
+	 * second capture test, because: (3 * (12 - 5) / 12) > 1 period.
+	 */
+	TC_PRINT("Pulse capture likely overflows as often as period capture\n");
+	period = (uint32_t)(timer_in_period_us * 3ULL * 41ULL / 48ULL);
+	pulse = (uint32_t)(timer_in_period_us * 3ULL * 40ULL / 48ULL);
+	test_capture(period, pulse, TEST_PWM_UNIT_USEC,
+		     PWM_CAPTURE_TYPE_BOTH | PWM_POLARITY_NORMAL);
+
+	TC_PRINT("Pulse capture overflows less often than period capture\n");
+	period = (uint32_t)(timer_in_period_us * 3ULL);
+	pulse = (uint32_t)(5ULL * period / 12ULL);
+	test_capture(period, pulse, TEST_PWM_UNIT_USEC,
+		     PWM_CAPTURE_TYPE_BOTH | PWM_POLARITY_NORMAL);
 }
 
 static void continuous_capture_callback(const struct device *dev,

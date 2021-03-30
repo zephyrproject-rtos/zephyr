@@ -26,6 +26,9 @@ void test_main(void)
 			 ztest_user_unit_test(test_period_capture_inverted),
 			 ztest_user_unit_test(test_pulse_and_period_capture),
 			 ztest_user_unit_test(test_capture_timeout),
+			 ztest_user_unit_test(test_pulse_capture_overflow),
+			 ztest_user_unit_test(test_period_capture_overflow),
+			 ztest_user_unit_test(test_pulse_and_period_capture_overflow),
 			 ztest_unit_test(test_continuous_capture),
 			 ztest_unit_test(test_capture_busy));
 	ztest_run_test_suite(pwm_loopback_test);
