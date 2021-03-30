@@ -19,9 +19,9 @@ Commands
    ase - ASE related commands
    Subcommands:
      init      :
-     discover  :<type: sink, source>
+     discover  :[type: sink, source]
      preset    :[preset]
-     config    :<ase> <direction: sink, source> [codec] [preset]
+     config    :<direction: sink, source> <index> [codec] [preset]
      qos       :[preset] [interval] [framing] [latency] [pd] [sdu] [phy] [rtn]
      enable    :
      start     :
@@ -29,10 +29,11 @@ Commands
      stop      :
      release   :
      list      :
-     select    :<ase>
-     link      :<ase1> <ase2>
-     unlink    :<ase1> <ase2>
-     connect   :<ase> <direction: sink, source> [codec] [preset]
+     select    :<chan>
+     link      :<chan1> <chan2>
+     unlink    :<chan1> <chan2>
+     connect   :<direction: sink, source> <index> [codec] [preset]
+     send      :Send to Audio Channel [data]
 
 .. csv-table:: State Machine Transitions
    :header: "Command", "Depends", "Allowed States", "Next States"
@@ -65,8 +66,8 @@ Connect and estabilish a stream:
    uart:~$ bap init
    uart:~$ bt connect <address>
    uart:~$ gatt exchange-mtu
-   uart:~$ bap discover 0x01
-   uart:~$ bap config 0x01 0x01
+   uart:~$ bap discover sink
+   uart:~$ bap config sink 0
    uart:~$ bap qos
    uart:~$ bap enable
 
@@ -78,8 +79,8 @@ Or using connect command:
    uart:~$ bap init
    uart:~$ bt connect <address>
    uart:~$ gatt exchange-mtu
-   uart:~$ bap discover 0x01
-   uart:~$ bap connect 0x01 0x01
+   uart:~$ bap discover sink
+   uart:~$ bap connect sink 0
 
 Disconnect and release:
 
@@ -87,7 +88,6 @@ Disconnect and release:
 
    uart:~$ bap disable
    uart:~$ bap release
-
 
 Example Peripheral
 ******************
@@ -145,8 +145,8 @@ representing remote endpoints.
    uart:~$ gatt exchange-mtu
    Exchange pending
    Exchange successful
-   uart:~$ bap discover <dir>
-   uart:~$ bap discover 0x01
+   uart:~$ bap discover [type: sink, source]
+   uart:~$ bap discover sink
    cap 0x8175940 type 0x01
    codec 0x06 cid 0x0000 vid 0x0000 count 4
    data #0: type 0x01 len 1
@@ -203,8 +203,8 @@ omitted the default preset is used.
 
 .. code-block:: console
 
-   uart:~$ bap config <ase> <direction: sink, source> [codec] [preset]
-   uart:~$ bap config 0x01 0x01
+   uart:~$ bap config <direction: sink, source> <index> [codec] [preset]
+   uart:~$ bap config sink 0
    ASE Codec Config: conn 0x8173800 ep 0x81754e0 cap 0x816a360
    codec 0x06 cid 0x0000 vid 0x0000 count 3
    data #0: type 0x01 len 1
@@ -399,8 +399,8 @@ to quickly configure and enable a stream.
 
 .. code-block:: console
 
-   uart:~$ bap connect <ase> <direction: sink, source> [codec] [preset]
-   uart:~$ bap connect 0x01 0x01
+   uart:~$ bap connect <direction: sink, source> <index> [codec] [preset]
+   uart:~$ bap connect sink 0
    ASE Codec Config: conn 0x17ca40 ep 0x17f860 cap 0x19f6a0
    codec 0x06 cid 0x0000 vid 0x0000 count 3
    data #0: type 0x01 len 1
