@@ -72,7 +72,7 @@ int32_t osSignalClear(osThreadId thread_id, int32_t signals)
 osEvent osSignalWait(int32_t signals, uint32_t millisec)
 {
 	int retval, key;
-	osEvent evt;
+	osEvent evt = {0};
 	uint32_t time_delta_ms, timeout = millisec;
 	uint64_t time_stamp_start, hwclk_cycles_delta, time_delta_ns;
 
