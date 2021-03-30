@@ -3,31 +3,34 @@
 
 import sys
 import os
+from pathlib import Path
 import re
 
 from sphinx.highlighting import lexers
 import sphinx_rtd_theme
 
 
-if "ZEPHYR_BASE" not in os.environ:
-    sys.exit("$ZEPHYR_BASE environment variable undefined.")
-ZEPHYR_BASE = os.path.abspath(os.environ["ZEPHYR_BASE"])
+ZEPHYR_BASE = os.environ.get("ZEPHYR_BASE")
+if not ZEPHYR_BASE:
+    raise ValueError("ZEPHYR_BASE environment variable undefined")
+ZEPHYR_BASE = Path(ZEPHYR_BASE)
 
-if "ZEPHYR_BUILD" not in os.environ:
-    sys.exit("$ZEPHYR_BUILD environment variable undefined.")
-ZEPHYR_BUILD = os.path.abspath(os.environ["ZEPHYR_BUILD"])
+ZEPHYR_BUILD = os.environ.get("ZEPHYR_BUILD")
+if not ZEPHYR_BUILD:
+    raise ValueError("ZEPHYR_BUILD environment variable undefined")
+ZEPHYR_BUILD = Path(ZEPHYR_BUILD)
 
 # Add the 'extensions' directory to sys.path, to enable finding Sphinx
 # extensions within.
-sys.path.insert(0, os.path.join(ZEPHYR_BASE, 'doc', '_extensions'))
+sys.path.insert(0, str(ZEPHYR_BASE / 'doc' / '_extensions'))
 
 # Add the '_scripts' directory to sys.path, to enable finding utility
 # modules.
-sys.path.insert(0, os.path.join(ZEPHYR_BASE, 'doc', '_scripts'))
+sys.path.insert(0, str(ZEPHYR_BASE / 'doc' / '_scripts'))
 
 # Add the directory which contains the runners package as well,
 # for autodoc directives on runners.xyz.
-sys.path.insert(0, os.path.join(ZEPHYR_BASE, 'scripts', 'west_commands'))
+sys.path.insert(0, str(ZEPHYR_BASE / 'scripts' / 'west_commands'))
 
 from lexer.DtsLexer import DtsLexer
 import redirects
@@ -44,7 +47,7 @@ copyright = '2015-2021 Zephyr Project members and individual contributors'
 author = 'The Zephyr Project'
 
 # parse version from 'VERSION' file
-with open(os.path.join(ZEPHYR_BASE, 'VERSION')) as f:
+with open(ZEPHYR_BASE / 'VERSION') as f:
     m = re.match(
         (
             r"^VERSION_MAJOR\s*=\s*(\d+)$\n"
@@ -127,7 +130,7 @@ html_theme_options = {
 html_title = "Zephyr Project Documentation"
 html_logo = 'images/Zephyr-Kite-logo.png'
 html_favicon = 'images/zp_favicon.png'
-html_static_path = ['{}/doc/_static'.format(ZEPHYR_BASE)]
+html_static_path = [str(ZEPHYR_BASE / 'doc' / '_static')]
 html_last_updated_fmt = '%b %d, %Y'
 html_domain_indices = False
 html_split_index = True
@@ -166,8 +169,8 @@ latex_documents = [
 # -- Options for Breathe plugin -------------------------------------------
 
 breathe_projects = {
-    "Zephyr": "{}/doxygen/xml".format(ZEPHYR_BUILD),
-    "doc-examples": "{}/doxygen/xml".format(ZEPHYR_BUILD)
+    "Zephyr": str(ZEPHYR_BUILD / "doxygen" / "xml"),
+    "doc-examples": str(ZEPHYR_BUILD / "doxygen" / "xml")
 }
 breathe_default_project = "Zephyr"
 breathe_domain_by_extension = {
