@@ -110,6 +110,7 @@ config NUM_IRQS
 
 config RGF_NUM_BANKS
 	int "Number of General Purpose Register Banks"
+	depends on ARC_FIRQ
 	range 1 2
 	default 2
 	help
