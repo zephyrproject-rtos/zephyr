@@ -3,6 +3,7 @@
 
 import sys
 import os
+import re
 
 from sphinx.highlighting import lexers
 import sphinx_rtd_theme
@@ -42,35 +43,28 @@ project = 'Zephyr Project'
 copyright = '2015-2021 Zephyr Project members and individual contributors'
 author = 'The Zephyr Project'
 
-# The following code tries to extract the information by reading the Makefile,
-# when Sphinx is run directly (e.g. by Read the Docs).
-try:
-    version_major = None
-    version_minor = None
-    patchlevel = None
-    extraversion = None
-    for line in open(os.path.join(ZEPHYR_BASE, 'VERSION')):
-        key, val = [x.strip() for x in line.split('=', 2)]
-        if key == 'VERSION_MAJOR':
-            version_major = val
-        if key == 'VERSION_MINOR':
-            version_minor = val
-        elif key == 'PATCHLEVEL':
-            patchlevel = val
-        elif key == 'EXTRAVERSION':
-            extraversion = val
-        if version_major and version_minor and patchlevel and extraversion:
-            break
-except Exception:
-    pass
-finally:
-    if version_major and version_minor and patchlevel and extraversion is not None:
-        version = release = version_major + '.' + version_minor + '.' + patchlevel
-        if extraversion != '':
-            version = release = version + '-' + extraversion
-    else:
+# parse version from 'VERSION' file
+with open(os.path.join(ZEPHYR_BASE, 'VERSION')) as f:
+    m = re.match(
+        (
+            r"^VERSION_MAJOR\s*=\s*(\d+)$\n"
+            + r"^VERSION_MINOR\s*=\s*(\d+)$\n"
+            + r"^PATCHLEVEL\s*=\s*(\d+)$\n"
+            + r"^VERSION_TWEAK\s*=\s*\d+$\n"
+            + r"^EXTRAVERSION\s*=\s*(.*)$"
+        ),
+        f.read(),
+        re.MULTILINE,
+    )
+
+    if not m:
         sys.stderr.write('Warning: Could not extract kernel version\n')
-        version = release = "unknown version"
+        version = "Unknown"
+    else:
+        major, minor, patch, extra = m.groups(1)
+        version = ".".join((major, minor, patch))
+        if extra:
+            version += "-" + extra
 
 # -- General configuration ------------------------------------------------
 
