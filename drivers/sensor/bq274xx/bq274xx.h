@@ -8,6 +8,7 @@
 #define ZEPHYR_DRIVERS_SENSOR_BATTERY_BQ274XX_H_
 
 #include <logging/log.h>
+#include <drivers/gpio.h>
 LOG_MODULE_REGISTER(bq274xx, CONFIG_SENSOR_LOG_LEVEL);
 
 /*** General Constant ***/
@@ -95,6 +96,9 @@ struct bq274xx_data {
 	uint16_t remaining_charge_capacity;
 	uint16_t nom_avail_capacity;
 	uint16_t full_avail_capacity;
+#ifdef CONFIG_PM_DEVICE
+	enum pm_device_state pm_state;
+#endif
 };
 
 struct bq274xx_config {
@@ -103,6 +107,9 @@ struct bq274xx_config {
 	uint16_t design_capacity;
 	uint16_t taper_current;
 	uint16_t terminate_voltage;
+#ifdef CONFIG_PM_DEVICE
+	struct gpio_dt_spec int_gpios;
+#endif
 };
 
 #endif
