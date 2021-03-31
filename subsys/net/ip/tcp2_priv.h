@@ -131,7 +131,7 @@
 		(uint16_t)conn_mss((_conn)));				\
 	NET_DBG("conn: %p send_data_timer=%hu, send_data_retries=%hu",	\
 		(_conn),						\
-		(bool)k_delayed_work_remaining_get(&(_conn)->send_data_timer),\
+		(bool) k_ticks_to_ms_ceil32(k_work_delayable_remaining_get(&(_conn)->send_data_timer)),\
 		(_conn)->send_data_retries);				\
 })
 
@@ -223,17 +223,17 @@ struct tcp { /* TCP connection */
 	struct k_sem connect_sem; /* semaphore for blocking connect */
 	struct k_fifo recv_data;  /* temp queue before passing data to app */
 	struct tcp_options recv_options;
-	struct k_delayed_work send_timer;
-	struct k_delayed_work recv_queue_timer;
-	struct k_delayed_work send_data_timer;
-	struct k_delayed_work timewait_timer;
+	struct k_work_delayable send_timer;
+	struct k_work_delayable recv_queue_timer;
+	struct k_work_delayable send_data_timer;
+	struct k_work_delayable timewait_timer;
 	union {
 		/* Because FIN and establish timers are never happening
 		 * at the same time, share the timer between them to
 		 * save memory.
 		 */
-		struct k_delayed_work fin_timer;
-		struct k_delayed_work establish_timer;
+		struct k_work_delayable fin_timer;
+		struct k_work_delayable establish_timer;
 	};
 	union tcp_endpoint src;
 	union tcp_endpoint dst;

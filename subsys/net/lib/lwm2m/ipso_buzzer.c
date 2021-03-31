@@ -49,7 +49,7 @@ struct ipso_buzzer_data {
 
 	uint64_t trigger_offset;
 
-	struct k_delayed_work buzzer_work;
+	struct k_work_delayable buzzer_work;
 
 	uint16_t obj_inst_id;
 	bool onoff; /* toggle from resource */
@@ -129,7 +129,7 @@ static int start_buzzer(struct ipso_buzzer_data *buzzer)
 	lwm2m_engine_set_bool(path, true);
 
 	float2ms(&buzzer->delay_duration, &temp);
-	k_delayed_work_submit(&buzzer->buzzer_work, K_MSEC(temp));
+	k_work_reschedule(&buzzer->buzzer_work, K_MSEC(temp));
 
 	return 0;
 }
@@ -148,7 +148,7 @@ static int stop_buzzer(struct ipso_buzzer_data *buzzer, bool cancel)
 	lwm2m_engine_set_bool(path, false);
 
 	if (cancel) {
-		k_delayed_work_cancel(&buzzer->buzzer_work);
+		k_work_cancel_delayable(&buzzer->buzzer_work);
 	}
 
 	return 0;
@@ -209,7 +209,7 @@ static struct lwm2m_engine_obj_inst *buzzer_create(uint16_t obj_inst_id)
 
 	/* Set default values */
 	(void)memset(&buzzer_data[avail], 0, sizeof(buzzer_data[avail]));
-	k_delayed_work_init(&buzzer_data[avail].buzzer_work, buzzer_work_cb);
+	k_work_init_delayable(&buzzer_data[avail].buzzer_work, buzzer_work_cb);
 	buzzer_data[avail].level.val1 = 50; /* 50% */
 	buzzer_data[avail].delay_duration.val1 = 1; /* 1 seconds */
 	buzzer_data[avail].obj_inst_id = obj_inst_id;

@@ -33,8 +33,8 @@ struct data {
 	struct {
 		int sock;
 		/* Work controlling udp data sending */
-		struct k_delayed_work recv;
-		struct k_delayed_work transmit;
+		struct k_work_delayable recv;
+		struct k_work_delayable transmit;
 		uint32_t expecting;
 		uint32_t counter;
 		uint32_t mtu;

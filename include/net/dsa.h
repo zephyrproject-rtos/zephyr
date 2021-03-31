@@ -140,7 +140,7 @@ struct dsa_context {
 	struct dsa_api *dapi;
 
 	/** DSA related work (e.g. monitor if network interface is up) */
-	struct k_delayed_work dsa_work;
+	struct k_work_delayable dsa_work;
 
 	/** The switch_id, which equals to the reg property number from
 	 * DTS is used to distinct between many connected switches.

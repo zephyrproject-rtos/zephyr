@@ -305,7 +305,7 @@ static void process_tcp4(void)
 		return;
 	}
 
-	k_delayed_work_submit(&conf.ipv4.tcp.stats_print,
+	k_work_reschedule(&conf.ipv4.tcp.stats_print,
 			      K_SECONDS(STATS_TIMER));
 
 	while (ret == 0) {
@@ -334,7 +334,7 @@ static void process_tcp6(void)
 		return;
 	}
 
-	k_delayed_work_submit(&conf.ipv6.tcp.stats_print,
+	k_work_reschedule(&conf.ipv6.tcp.stats_print,
 			      K_SECONDS(STATS_TIMER));
 
 	while (ret == 0) {
@@ -364,7 +364,7 @@ static void print_stats(struct k_work *work)
 		atomic_set(&data->tcp.bytes_received, 0);
 	}
 
-	k_delayed_work_submit(&data->tcp.stats_print, K_SECONDS(STATS_TIMER));
+	k_work_reschedule(&data->tcp.stats_print, K_SECONDS(STATS_TIMER));
 }
 
 void start_tcp(void)
@@ -395,7 +395,7 @@ void start_tcp(void)
 	}
 #endif
 
-	k_delayed_work_init(&conf.ipv6.tcp.stats_print, print_stats);
+	k_work_init_delayable(&conf.ipv6.tcp.stats_print, print_stats);
 	k_thread_start(tcp6_thread_id);
 #endif
 
@@ -411,7 +411,7 @@ void start_tcp(void)
 	}
 #endif
 
-	k_delayed_work_init(&conf.ipv4.tcp.stats_print, print_stats);
+	k_work_init_delayable(&conf.ipv4.tcp.stats_print, print_stats);
 	k_thread_start(tcp4_thread_id);
 #endif
 }
