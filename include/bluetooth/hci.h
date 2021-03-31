@@ -1508,6 +1508,29 @@ struct bt_hci_cp_le_set_cl_cte_tx_params {
 	uint8_t ant_ids[0];
 } __packed;
 
+#define BT_HCI_OP_LE_SET_CL_CTE_TX_ENABLE      BT_OP(BT_OGF_LE, 0x0052)
+struct bt_hci_cp_le_set_cl_cte_tx_enable {
+	uint8_t handle;
+	uint8_t cte_enable;
+} __packed;
+
+#define BT_HCI_LE_ANTENNA_SWITCHING_SLOT_1US   0x1
+#define BT_HCI_LE_ANTENNA_SWITCHING_SLOT_2US   0x2
+
+#define BT_HCI_LE_SAMPLE_CTE_ALL               0x0
+#define BT_HCI_LE_SAMPLE_CTE_COUNT_MIN         0x1
+#define BT_HCI_LE_SAMPLE_CTE_COUNT_MAX         0x10
+
+#define BT_HCI_OP_LE_SET_CL_CTE_SAMPLING_ENABLE BT_OP(BT_OGF_LE, 0x0053)
+struct bt_hci_cp_le_set_cl_cte_sampling_enable {
+	uint16_t sync_handle;
+	uint8_t  sampling_enable;
+	uint8_t  slot_durations;
+	uint8_t  max_sampled_cte;
+	uint8_t  switch_pattern_len;
+	uint8_t  ant_ids[0];
+} __packed;
+
 #define BT_HCI_LE_AOA_CTE_RSP                   BIT(0)
 #define BT_HCI_LE_AOD_CTE_RSP_1US               BIT(1)
 #define BT_HCI_LE_AOD_CTE_RSP_2US               BIT(2)
