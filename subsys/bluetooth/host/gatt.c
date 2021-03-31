@@ -1888,7 +1888,9 @@ static int gatt_notify(struct bt_conn *conn, uint16_t handle,
 #endif
 
 	/* Confirm that the connection has the correct level of security */
-	if (bt_gatt_check_perm(conn, params->attr, BT_GATT_PERM_READ_ENCRYPT)) {
+	if (bt_gatt_check_perm(conn, params->attr,
+			       BT_GATT_PERM_READ_ENCRYPT | BT_GATT_PERM_READ_AUTHEN)) {
+		BT_WARN("Link is not encrypted");
 		return -EPERM;
 	}
 
@@ -2020,7 +2022,9 @@ static int gatt_indicate(struct bt_conn *conn, uint16_t handle,
 #endif
 
 	/* Confirm that the connection has the correct level of security */
-	if (bt_gatt_check_perm(conn, params->attr, BT_GATT_PERM_READ_ENCRYPT)) {
+	if (bt_gatt_check_perm(conn, params->attr,
+			       BT_GATT_PERM_READ_ENCRYPT | BT_GATT_PERM_READ_AUTHEN)) {
+		BT_WARN("Link is not encrypted");
 		return -EPERM;
 	}
 
@@ -2127,7 +2131,9 @@ static uint8_t notify_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 		}
 
 		/* Confirm that the connection has the correct level of security */
-		if (bt_gatt_check_perm(conn, attr, BT_GATT_PERM_READ_ENCRYPT)) {
+		if (bt_gatt_check_perm(conn, attr,
+				       BT_GATT_PERM_READ_ENCRYPT | BT_GATT_PERM_READ_AUTHEN)) {
+			BT_WARN("Link is not encrypted");
 			continue;
 		}
 
