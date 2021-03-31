@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
-set(CROSS_COMPILE_TARGET_arm64      arm-zephyr-eabi)
-set(CROSS_COMPILE_TARGET_arm     aarch64-zephyr-elf)
+set(CROSS_COMPILE_TARGET_arm        arm-zephyr-eabi)
+set(CROSS_COMPILE_TARGET_arm64   aarch64-zephyr-elf)
 set(CROSS_COMPILE_TARGET_nios2     nios2-zephyr-elf)
 set(CROSS_COMPILE_TARGET_riscv   riscv64-zephyr-elf)
 set(CROSS_COMPILE_TARGET_mips     mipsel-zephyr-elf)
