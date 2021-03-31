@@ -1261,10 +1261,10 @@ static int isotp_workq_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 	LOG_DBG("Starting workqueue");
-	k_work_q_start(&isotp_workq,
+	k_work_queue_start(&isotp_workq,
 		       tx_stack,
 		       K_KERNEL_STACK_SIZEOF(tx_stack),
-		       CONFIG_ISOTP_WORKQUEUE_PRIO);
+		       CONFIG_ISOTP_WORKQUEUE_PRIO, NULL);
 	k_thread_name_set(&isotp_workq.thread, "isotp_work");
 
 	return 0;
