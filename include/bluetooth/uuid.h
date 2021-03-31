@@ -257,6 +257,24 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_GATT \
 	BT_UUID_DECLARE_16(BT_UUID_GATT_VAL)
+/** @def BT_UUID_IAS_VAL
+ *  @brief Immediate Alert Service UUID value
+ */
+#define BT_UUID_IAS_VAL 0x1802
+/** @def BT_UUID_IAS
+ *  @brief Immediate Alert Service
+ */
+#define BT_UUID_IAS \
+	BT_UUID_DECLARE_16(BT_UUID_IAS_VAL)
+/** @def BT_UUID_LLS_VAL
+ *  @brief Link Loss Service UUID value
+ */
+#define BT_UUID_LLS_VAL 0x1803
+/** @def BT_UUID_LLS
+ *  @brief Link Loss Service
+ */
+#define BT_UUID_LLS \
+	BT_UUID_DECLARE_16(BT_UUID_LLS_VAL)
 /** @def BT_UUID_TPS_VAL
  *  @brief Tx Power Service UUID value
  */
@@ -356,6 +374,15 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_IPSS \
 	BT_UUID_DECLARE_16(BT_UUID_IPSS_VAL)
+/** @def BT_UUID_HPS_VAL
+ *  @brief HTTP Proxy Service UUID value
+ */
+#define BT_UUID_HPS_VAL 0x1823
+/** @def BT_UUID_HPS
+ *  @brief HTTP Proxy Service
+ */
+#define BT_UUID_HPS \
+	BT_UUID_DECLARE_16(BT_UUID_HPS_VAL)
 /** @def BT_UUID_OTS_VAL
  *  @brief Object Transfer Service UUID value
  */
@@ -573,6 +600,15 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_GATT_SC \
 	BT_UUID_DECLARE_16(BT_UUID_GATT_SC_VAL)
+/** @def BT_UUID_ALERT_LEVEL_VAL
+ *  @brief Alert Level UUID value
+ */
+#define BT_UUID_ALERT_LEVEL_VAL  0x2a06
+/** @def BT_UUID_ALERT_LEVEL
+ *  @brief Alert Level
+ */
+#define BT_UUID_ALERT_LEVEL \
+	BT_UUID_DECLARE_16(BT_UUID_ALERT_LEVEL_VAL)
 /** @def BT_UUID_TPS_TX_POWER_LEVEL_VAL
  *  @brief TPS Characteristic Tx Power Level UUID value
  */
@@ -1032,6 +1068,60 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_CENTRAL_ADDR_RES \
 	BT_UUID_DECLARE_16(BT_UUID_CENTRAL_ADDR_RES_VAL)
+/** @def BT_UUID_URI_VAL
+ *  @brief URI UUID value
+ */
+#define BT_UUID_URI_VAL 0x2ab6
+/** @def BT_UUID_URI
+ *  @brief URI
+ */
+#define BT_UUID_URI \
+	BT_UUID_DECLARE_16(BT_UUID_URI_VAL)
+/** @def BT_UUID_HTTP_HEADERS_VAL
+ *  @brief HTTP Headers UUID value
+ */
+#define BT_UUID_HTTP_HEADERS_VAL 0x2ab7
+/** @def BT_UUID_HTTP_HEADERS
+ *  @brief HTTP Headers
+ */
+#define BT_UUID_HTTP_HEADERS \
+	BT_UUID_DECLARE_16(BT_UUID_HTTP_HEADERS_VAL)
+/** @def BT_UUID_HTTP_STATUS_CODE_VAL
+ *  @brief HTTP Status Code UUID value
+ */
+#define BT_UUID_HTTP_STATUS_CODE_VAL 0x2ab8
+/** @def BT_UUID_HTTP_STATUS_CODE
+ *  @brief HTTP Status Code
+ */
+#define BT_UUID_HTTP_STATUS_CODE \
+	BT_UUID_DECLARE_16(BT_UUID_HTTP_STATUS_CODE_VAL)
+/** @def BT_UUID_HTTP_ENTITY_BODY_VAL
+ *  @brief HTTP Entity Body UUID value
+ */
+#define BT_UUID_HTTP_ENTITY_BODY_VAL 0x2ab9
+/** @def BT_UUID_HTTP_ENTITY_BODY
+ *  @brief HTTP Entity Body
+ */
+#define BT_UUID_HTTP_ENTITY_BODY \
+	BT_UUID_DECLARE_16(BT_UUID_HTTP_ENTITY_BODY_VAL)
+/** @def BT_UUID_HTTP_CONTROL_POINT_VAL
+ *  @brief HTTP Control Point UUID value
+ */
+#define BT_UUID_HTTP_CONTROL_POINT_VAL 0x2aba
+/** @def BT_UUID_HTTP_CONTROL_POINT
+ *  @brief HTTP Control Point
+ */
+#define BT_UUID_HTTP_CONTROL_POINT \
+	BT_UUID_DECLARE_16(BT_UUID_HTTP_CONTROL_POINT_VAL)
+/** @def BT_UUID_HTTPS_SECURITY_VAL
+ *  @brief HTTPS Security UUID value
+ */
+#define BT_UUID_HTTPS_SECURITY_VAL 0x2abb
+/** @def BT_UUID_HTTPS_SECURITY
+ *  @brief HTTPS Security
+ */
+#define BT_UUID_HTTPS_SECURITY \
+	BT_UUID_DECLARE_16(BT_UUID_HTTPS_SECURITY_VAL)
 /** @def BT_UUID_OTS_FEATURE_VAL
  *  @brief OTS Feature Characteristic UUID value
  */
