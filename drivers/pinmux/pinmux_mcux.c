@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <device.h>
 #include <drivers/pinmux.h>
+#include <drivers/pinctrl.h>
 #include <fsl_common.h>
 #include <fsl_clock.h>
 
@@ -16,6 +17,13 @@ struct pinmux_mcux_config {
 	clock_ip_name_t clock_ip_name;
 	PORT_Type *base;
 };
+
+int z_impl_pinctrl_pin_configure(const pinctrl_dt_pin_spec_t *pin_spec)
+{
+	pinmux_pin_set(pin_spec->port, pin_spec->pin, PORT_PCR_MUX(pin_spec->mux));
+
+	return 0;
+}
 
 static int pinmux_mcux_set(const struct device *dev, uint32_t pin,
 			   uint32_t func)
