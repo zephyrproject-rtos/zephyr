@@ -82,6 +82,11 @@ int init_tunnel(void)
 
 	memset(&ud, 0, sizeof(ud));
 
+	if (CONFIG_NET_SAMPLE_TUNNEL_PEER_ADDR[0] == '\0') {
+		LOG_INF("Tunnel peer address not set.");
+		return 0;
+	}
+
 	if (!net_ipaddr_parse(CONFIG_NET_SAMPLE_TUNNEL_PEER_ADDR,
 			      strlen(CONFIG_NET_SAMPLE_TUNNEL_PEER_ADDR),
 			      &peer)) {
