@@ -40,6 +40,10 @@ void radio_df_ant_switch_pattern_clear(void);
  * by call to @ref radio_df_ant_switch_pattern_clear.
  */
 void radio_df_ant_switch_pattern_set(uint8_t *patterns, uint8_t len);
+/* Provides switch pattern of antenna used to transmit PDU that is used to
+ * transmit CTE
+ */
+uint8_t radio_df_pdu_antenna_switch_pattern_get(void);
 /* Resets Direction Finding radio configuration */
 void radio_df_reset(void);
 
