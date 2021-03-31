@@ -422,7 +422,7 @@ struct hl7800_socket {
 	/** socket callbacks */
 	struct k_work recv_cb_work;
 	struct k_work rx_data_work;
-	struct k_delayed_work notif_work;
+	struct k_work_delayable notif_work;
 	net_context_recv_cb_t recv_cb;
 	struct net_pkt *recv_pkt;
 	void *recv_user_data;
@@ -467,12 +467,12 @@ struct hl7800_iface_ctx {
 	struct k_sem mdm_awake;
 
 	/* work */
-	struct k_delayed_work rssi_query_work;
-	struct k_delayed_work iface_status_work;
-	struct k_delayed_work dns_work;
+	struct k_work_delayable rssi_query_work;
+	struct k_work_delayable iface_status_work;
+	struct k_work_delayable dns_work;
 	struct k_work mdm_vgpio_work;
-	struct k_delayed_work mdm_reset_work;
-	struct k_delayed_work allow_sleep_work;
+	struct k_work_delayable mdm_reset_work;
+	struct k_work_delayable allow_sleep_work;
 
 #ifdef CONFIG_MODEM_HL7800_FW_UPDATE
 	/* firmware update */
@@ -820,12 +820,12 @@ static void allow_sleep(bool allow)
 {
 #ifdef CONFIG_MODEM_HL7800_LOW_POWER_MODE
 	if (allow) {
-		k_delayed_work_submit_to_queue(&hl7800_workq,
+		k_work_reschedule_for_queue(&hl7800_workq,
 					       &ictx.allow_sleep_work,
 					       ALLOW_SLEEP_DELAY_SECS);
 	} else {
 		LOG_DBG("Keep awake");
-		k_delayed_work_cancel(&ictx.allow_sleep_work);
+		k_work_cancel_delayable(&ictx.allow_sleep_work);
 		ictx.allow_sleep = false;
 		modem_assert_wake(true);
 		modem_assert_uart_dtr(true);
@@ -955,7 +955,7 @@ int32_t mdm_hl7800_update_apn(char *access_point_name)
 		/* After a reset the APN will be re-read from the modem
 		 * and an event will be generated.
 		 */
-		k_delayed_work_submit_to_queue(&hl7800_workq,
+		k_work_reschedule_for_queue(&hl7800_workq,
 					       &ictx.mdm_reset_work, K_NO_WAIT);
 	}
 	return ret;
@@ -1005,7 +1005,7 @@ error:
 	 * state are valid
 	 */
 	if (ret >= 0) {
-		k_delayed_work_submit_to_queue(&hl7800_workq,
+		k_work_reschedule_for_queue(&hl7800_workq,
 					       &ictx.mdm_reset_work, K_NO_WAIT);
 	}
 
@@ -1641,7 +1641,7 @@ static bool on_cmd_atcmdinfo_ipaddr(struct net_buf **buf, uint16_t len)
 			*  stack is still starting up */
 			delay = K_SECONDS(DNS_WORK_DELAY_SECS);
 		}
-		k_delayed_work_submit_to_queue(&hl7800_workq, &ictx.dns_work,
+		k_work_reschedule_for_queue(&hl7800_workq, &ictx.dns_work,
 					       delay);
 	} else {
 		LOG_ERR("iface NULL");
@@ -1946,7 +1946,7 @@ static bool on_cmd_startup_report(struct net_buf **buf, uint16_t len)
 		ictx.fw_updated = false;
 		set_fota_state(HL7800_FOTA_REBOOT_AND_RECONFIGURE);
 		/* issue reset after a firmware update to reconfigure modem state */
-		k_delayed_work_submit_to_queue(&hl7800_workq,
+		k_work_reschedule_for_queue(&hl7800_workq,
 					       &ictx.mdm_reset_work, K_NO_WAIT);
 	} else
 #endif
@@ -2157,13 +2157,13 @@ static int hl7800_query_rssi(void)
 
 static void hl7800_start_rssi_work(void)
 {
-	k_delayed_work_submit_to_queue(&hl7800_workq, &ictx.rssi_query_work,
+	k_work_reschedule_for_queue(&hl7800_workq, &ictx.rssi_query_work,
 				       K_NO_WAIT);
 }
 
 static void hl7800_stop_rssi_work(void)
 {
-	k_delayed_work_cancel(&ictx.rssi_query_work);
+	k_work_cancel_delayable(&ictx.rssi_query_work);
 }
 
 static void hl7800_rssi_query_work(struct k_work *work)
@@ -2175,7 +2175,7 @@ static void hl7800_rssi_query_work(struct k_work *work)
 	hl7800_unlock();
 
 	/* re-start RSSI query work */
-	k_delayed_work_submit_to_queue(&hl7800_workq, &ictx.rssi_query_work,
+	k_work_reschedule_for_queue(&hl7800_workq, &ictx.rssi_query_work,
 				       K_SECONDS(RSSI_TIMEOUT_SECS));
 }
 
@@ -2207,7 +2207,7 @@ static void iface_status_work_cb(struct k_work *work)
 	if (!ictx.initialized && ictx.restarting) {
 		LOG_DBG("Wait for driver init, process network state later");
 		/* we are not ready to process this yet, try again later */
-		k_delayed_work_submit_to_queue(&hl7800_workq,
+		k_work_reschedule_for_queue(&hl7800_workq,
 					       &ictx.iface_status_work,
 					       IFACE_WORK_DELAY);
 		goto done;
@@ -2216,7 +2216,7 @@ static void iface_status_work_cb(struct k_work *work)
 		LOG_DBG("Wait for +KSUP before updating network state");
 		ictx.wait_for_KSUP_tries++;
 		/* we have not received +KSUP yet, lets wait more time to receive +KSUP */
-		k_delayed_work_submit_to_queue(&hl7800_workq,
+		k_work_reschedule_for_queue(&hl7800_workq,
 					       &ictx.iface_status_work,
 					       IFACE_WORK_DELAY);
 		goto done;
@@ -2324,8 +2324,8 @@ static bool on_cmd_network_report_query(struct net_buf **buf, uint16_t len)
 		set_network_state(strtol(val, NULL, 0));
 
 		/* start work to adjust iface */
-		k_delayed_work_cancel(&ictx.iface_status_work);
-		k_delayed_work_submit_to_queue(&hl7800_workq,
+		k_work_cancel_delayable(&ictx.iface_status_work);
+		k_work_reschedule_for_queue(&hl7800_workq,
 					       &ictx.iface_status_work,
 					       IFACE_WORK_DELAY);
 	}
@@ -2466,8 +2466,8 @@ static bool on_cmd_network_report(struct net_buf **buf, uint16_t len)
 	/* keep HL7800 awake because we want to process the network state soon */
 	allow_sleep(false);
 	/* start work to adjust iface */
-	k_delayed_work_cancel(&ictx.iface_status_work);
-	k_delayed_work_submit_to_queue(&hl7800_workq, &ictx.iface_status_work,
+	k_work_cancel_delayable(&ictx.iface_status_work);
+	k_work_reschedule_for_queue(&hl7800_workq, &ictx.iface_status_work,
 				       IFACE_WORK_DELAY);
 
 	return true;
@@ -2632,7 +2632,7 @@ static void sock_notif_cb_work(struct k_work *work)
 		/* we are in the middle of RX,
 		 * requeue this and try again
 		 */
-		k_delayed_work_submit_to_queue(&hl7800_workq, &sock->notif_work,
+		k_work_reschedule_for_queue(&hl7800_workq, &sock->notif_work,
 					       MDM_SOCK_NOTIF_DELAY);
 	} else {
 		LOG_DBG("Sock %d trigger NULL packet", sock->socket_id);
@@ -2696,7 +2696,7 @@ static bool on_cmd_sock_notif(struct net_buf **buf, uint16_t len)
 			 */
 			sock->error = true;
 			sock->error_val = notif_val;
-			k_delayed_work_submit_to_queue(&hl7800_workq,
+			k_work_reschedule_for_queue(&hl7800_workq,
 						       &sock->notif_work,
 						       MDM_SOCK_NOTIF_DELAY);
 			if (trigger_sem) {
@@ -2781,8 +2781,8 @@ static void sock_read(struct net_buf **buf, uint16_t len)
 
 	if (sock->error) {
 		/* cancel notif work and restart */
-		k_delayed_work_cancel(&sock->notif_work);
-		k_delayed_work_submit_to_queue(&hl7800_workq, &sock->notif_work,
+		k_work_cancel_delayable(&sock->notif_work);
+		k_work_reschedule_for_queue(&hl7800_workq, &sock->notif_work,
 					       MDM_SOCK_NOTIF_DELAY);
 	}
 
@@ -4560,7 +4560,7 @@ static int offload_put(struct net_context *context)
 	}
 
 	/* cancel notif work if queued */
-	k_delayed_work_cancel(&sock->notif_work);
+	k_work_cancel_delayable(&sock->notif_work);
 
 	hl7800_lock();
 
@@ -4713,7 +4713,7 @@ static int hl7800_init(const struct device *dev)
 			    sockreadrecv_cb_work);
 		k_work_init(&ictx.sockets[i].rx_data_work,
 			    sock_rx_data_cb_work);
-		k_delayed_work_init(&ictx.sockets[i].notif_work,
+		k_work_init_delayable(&ictx.sockets[i].notif_work,
 				    sock_notif_cb_work);
 		k_sem_init(&ictx.sockets[i].sock_send_sem, 0, 1);
 	}
@@ -4722,17 +4722,17 @@ static int hl7800_init(const struct device *dev)
 	k_sem_init(&ictx.mdm_awake, 0, 1);
 
 	/* initialize the work queue */
-	k_work_q_start(&hl7800_workq, hl7800_workq_stack,
+	k_work_queue_start(&hl7800_workq, hl7800_workq_stack,
 		       K_THREAD_STACK_SIZEOF(hl7800_workq_stack),
-		       WORKQ_PRIORITY);
+		       WORKQ_PRIORITY, NULL);
 
 	/* init work tasks */
-	k_delayed_work_init(&ictx.rssi_query_work, hl7800_rssi_query_work);
-	k_delayed_work_init(&ictx.iface_status_work, iface_status_work_cb);
-	k_delayed_work_init(&ictx.dns_work, dns_work_cb);
+	k_work_init_delayable(&ictx.rssi_query_work, hl7800_rssi_query_work);
+	k_work_init_delayable(&ictx.iface_status_work, iface_status_work_cb);
+	k_work_init_delayable(&ictx.dns_work, dns_work_cb);
 	k_work_init(&ictx.mdm_vgpio_work, mdm_vgpio_work_cb);
-	k_delayed_work_init(&ictx.mdm_reset_work, mdm_reset_work_callback);
-	k_delayed_work_init(&ictx.allow_sleep_work, allow_sleep_work_callback);
+	k_work_init_delayable(&ictx.mdm_reset_work, mdm_reset_work_callback);
+	k_work_init_delayable(&ictx.allow_sleep_work, allow_sleep_work_callback);
 
 #ifdef CONFIG_MODEM_HL7800_FW_UPDATE
 	k_work_init(&ictx.finish_fw_update_work,
