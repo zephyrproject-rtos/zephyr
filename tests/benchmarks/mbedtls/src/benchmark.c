@@ -106,7 +106,7 @@ static void my_debug(void *ctx, int level,
 
 volatile int mbedtls_timing_alarmed;
 
-static struct k_delayed_work mbedtls_alarm;
+static struct k_work_delayable mbedtls_alarm;
 static void mbedtls_alarm_timeout(struct k_work *work);
 
 static void mbedtls_alarm_timeout(struct k_work *work)
@@ -118,7 +118,7 @@ void mbedtls_set_alarm(int seconds)
 {
 	mbedtls_timing_alarmed = 0;
 
-	k_delayed_work_submit(&mbedtls_alarm, K_SECONDS(seconds));
+	k_work_reschedule(&mbedtls_alarm, K_SECONDS(seconds));
 }
 
 /*
@@ -305,7 +305,7 @@ void main(void)
 #endif
 	mbedtls_ssl_conf_dbg(&conf, my_debug, NULL);
 
-	k_delayed_work_init(&mbedtls_alarm, mbedtls_alarm_timeout);
+	k_work_init_delayable(&mbedtls_alarm, mbedtls_alarm_timeout);
 	memset(&todo, 1, sizeof(todo));
 
 	memset(buf, 0xAA, sizeof(buf));
