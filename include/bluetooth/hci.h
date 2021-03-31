@@ -1487,12 +1487,6 @@ struct bt_hci_cp_le_set_privacy_mode {
 	uint8_t         mode;
 } __packed;
 
-#define BT_HCI_OP_LE_SET_CL_CTE_TX_ENABLE      BT_OP(BT_OGF_LE, 0x0052)
-struct bt_hci_cp_le_set_cl_cte_tx_enable {
-	uint8_t handle;
-	uint8_t cte_enable;
-} __packed;
-
 /* Min and max Constant Tone Extension length in 8us units */
 #define BT_HCI_LE_CTE_LEN_MIN                  0x2
 #define BT_HCI_LE_CTE_LEN_MAX                  0x14
