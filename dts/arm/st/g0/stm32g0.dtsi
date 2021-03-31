@@ -218,7 +218,7 @@
 			reg = <0x40012C00 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000800>;
 			interrupts = <13 0>, <14 0>;
-			interrupt-names = "brk", "cc";
+			interrupt-names = "brk_up_trg_com", "cc";
 			status = "disabled";
 			label = "TIMERS_1";
 
