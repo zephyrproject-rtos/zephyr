@@ -196,10 +196,10 @@ void test_offload_workqueue(void)
 	critical_var = 0U;
 	alt_thread_iterations = 0U;
 
-	k_work_q_start(&offload_work_q,
+	k_work_queue_start(&offload_work_q,
 		       offload_work_q_stack,
 		       K_THREAD_STACK_SIZEOF(offload_work_q_stack),
-		       CONFIG_MAIN_THREAD_PRIORITY);
+		       CONFIG_MAIN_THREAD_PRIORITY, NULL);
 
 	k_thread_create(&thread1, stack1, STACK_SIZE,
 			alternate_thread, NULL, NULL, NULL,
