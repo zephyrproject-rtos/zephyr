@@ -241,7 +241,7 @@ static int usb_dc_stm32_clock_enable(void)
 	 * device. For now, we only use MSI for USB if not already used as
 	 * system clock source.
 	 */
-#if defined(CONFIG_CLOCK_STM32_MSI_PLL_MODE) && !defined(CONFIG_CLOCK_STM32_SYSCLK_SRC_MSI)
+#if STM32_MSI_PLL_MODE && !STM32_SYSCLK_SRC_MSI
 	LL_RCC_MSI_Enable();
 	while (!LL_RCC_MSI_IsReady()) {
 		/* Wait for MSI to become ready */
@@ -256,7 +256,7 @@ static int usb_dc_stm32_clock_enable(void)
 	} else {
 		LOG_ERR("Unable to set USB clock source to PLL.");
 	}
-#endif /* CONFIG_CLOCK_STM32_MSI_PLL_MODE && !CONFIG_CLOCK_STM32_SYSCLK_SRC_MSI */
+#endif /* STM32_MSI_PLL_MODE && !STM32_SYSCLK_SRC_MSI */
 
 #elif defined(RCC_CFGR_OTGFSPRE)
 	/* On STM32F105 and STM32F107 parts the USB OTGFSCLK is derived from
