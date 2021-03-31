@@ -175,7 +175,7 @@ static void test_work_init(void)
 {
 	static K_WORK_DEFINE(fnstat, counter_handler);
 
-	struct k_work stack;
+	static struct k_work stack;
 
 	k_work_init(&stack, counter_handler);
 	zassert_mem_equal(&stack, &fnstat, sizeof(stack),
@@ -186,7 +186,7 @@ static void test_delayable_init(void)
 {
 	static K_WORK_DELAYABLE_DEFINE(fnstat, counter_handler);
 
-	struct k_work_delayable stack;
+	static struct k_work_delayable stack;
 
 	k_work_init_delayable(&stack, counter_handler);
 	zassert_mem_equal(&stack, &fnstat, sizeof(stack),
@@ -197,7 +197,7 @@ static void test_legacy_delayed_init(void)
 {
 	static K_DELAYED_WORK_DEFINE(fnstat, counter_handler);
 
-	struct k_delayed_work stack;
+	static struct k_delayed_work stack;
 
 	k_delayed_work_init(&stack, counter_handler);
 	zassert_mem_equal(&stack, &fnstat, sizeof(stack),
@@ -988,7 +988,7 @@ static void handle_1cpu_basic_schedule_running(struct k_work *work)
 static void test_1cpu_basic_schedule_running(void)
 {
 	int rc;
-	struct state_1cpu_basic_schedule_running state = {
+	static struct state_1cpu_basic_schedule_running state = {
 		.schedule_res = -1,
 	};
 
