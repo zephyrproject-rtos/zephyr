@@ -1,0 +1,13 @@
+sample:
+  name: DAC async driver sample
+tests:
+  sample.drivers.dac:
+    tags: DAC
+    platform_allow: |
+      nucleo_l4r5zi
+    depends_on: dac
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Generating sawtooth signal at DAC channel ([0-9]*)."
