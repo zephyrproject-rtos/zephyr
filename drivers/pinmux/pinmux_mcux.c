@@ -12,10 +12,20 @@
 #include <fsl_common.h>
 #include <fsl_clock.h>
 
+#include "pinmux_mcux.h"
+
 struct pinmux_mcux_config {
 	clock_ip_name_t clock_ip_name;
 	PORT_Type *base;
 };
+
+void k_pincfg(const struct soc_pinctrl *pins, size_t num_pins)
+{
+	for (int i = 0; i < num_pins; i++)
+	{
+		pinmux_pin_set(pins[i].port, pins[i].pin, PORT_PCR_MUX(pins->mux));
+	}
+}
 
 static int pinmux_mcux_set(const struct device *dev, uint32_t pin,
 			   uint32_t func)
