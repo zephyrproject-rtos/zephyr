@@ -139,6 +139,25 @@ bool npcx_pinctrl_psl_input_asserted(uint32_t i)
 				NPCX_PSL_CTS_EVENT_BIT(psl_in_confs[i].offset));
 }
 
+int npcx_pinctrl_flash_write_protect_set(void)
+{
+	struct scfg_reg *inst_scfg = HAL_SFCG_INST();
+
+	inst_scfg->DEV_CTL4 |= BIT(NPCX_DEV_CTL4_WP_IF);
+	if (!npcx_pinctrl_flash_write_protect_is_set()) {
+		return -EIO;
+	}
+
+	return 0;
+}
+
+bool npcx_pinctrl_flash_write_protect_is_set(void)
+{
+	struct scfg_reg *inst_scfg = HAL_SFCG_INST();
+
+	return IS_BIT_SET(inst_scfg->DEV_CTL4, NPCX_DEV_CTL4_WP_IF);
+}
+
 void npcx_pinctrl_psl_input_configure(void)
 {
 	/* Configure detection type of PSL input pads */

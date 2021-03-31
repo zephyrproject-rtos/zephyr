@@ -129,6 +129,21 @@ void npcx_pinctrl_psl_input_configure(void);
  */
 bool npcx_pinctrl_psl_input_asserted(uint32_t i);
 
+/**
+ * @brief Force the internal SPI flash write-protect pin (WP) to low level to
+ * protect the flash Status register.
+ *
+ * @return Standard error code.
+ */
+int npcx_pinctrl_flash_write_protect_set(void);
+
+/**
+ * @brief Get write protection status.
+ *
+ * @return true if write protection is set, false otherwise.
+ */
+bool npcx_pinctrl_flash_write_protect_is_set(void);
+
 #ifdef __cplusplus
 }
 #endif
