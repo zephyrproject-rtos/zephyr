@@ -100,32 +100,6 @@ static struct csis_instance_t csis_inst;
 extern const struct bt_gatt_service_static csis_svc;
 static bt_addr_le_t server_dummy_addr; /* 0'ed address */
 
-struct csis_cond_check_t {
-	const bt_addr_le_t *addr;
-	bool bonded;
-};
-
-static void check_bond(const struct bt_bond_info *info, void *data)
-{
-	struct csis_cond_check_t *bond_check = (struct csis_cond_check_t *)data;
-
-	if (!bond_check->bonded) {
-		bond_check->bonded = !bt_addr_le_cmp(bond_check->addr,
-						     &info->addr);
-	}
-}
-
-static bool is_bonded(struct bt_conn *conn)
-{
-	struct csis_cond_check_t bond_check = {
-		.addr = bt_conn_get_dst(conn),
-		.bonded = false
-	};
-
-	bt_foreach_bond(BT_ID_DEFAULT, check_bond, &bond_check);
-	return bond_check.bonded;
-}
-
 static bool is_last_client_to_write(struct bt_conn *conn)
 {
 	if (conn) {
@@ -536,7 +510,11 @@ static void set_lock_timer_handler(struct k_work *work)
 static void csis_security_changed(struct bt_conn *conn, bt_security_t level,
 				  enum bt_security_err err)
 {
-	if (!is_bonded(conn)) {
+	if (err || !conn->encrypt) {
+		return;
+	}
+
+	if (!bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
 		return;
 	}
 
@@ -596,7 +574,7 @@ static void csis_disconnected(struct bt_conn *conn, uint8_t reason)
 	 * If lock was taken by non-bonded device, set lock to released value,
 	 * and notify other connections.
 	 */
-	if (is_bonded(conn)) {
+	if (!bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
 		return;
 	}
 
