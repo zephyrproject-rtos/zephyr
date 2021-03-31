@@ -89,7 +89,7 @@ struct modem_data {
 	struct modem_socket sockets[MDM_MAX_SOCKETS];
 
 	/* RSSI work */
-	struct k_delayed_work rssi_query_work;
+	struct k_work_delayable rssi_query_work;
 
 	/* modem data */
 	char mdm_manufacturer[MDM_MANUFACTURER_LENGTH];

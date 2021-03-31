@@ -141,7 +141,7 @@ struct modem_data {
 
 #if defined(CONFIG_MODEM_UBLOX_SARA_RSSI_WORK)
 	/* RSSI work */
-	struct k_delayed_work rssi_query_work;
+	struct k_work_delayable rssi_query_work;
 #endif
 
 	/* modem data */
@@ -924,8 +924,8 @@ static void modem_rssi_query_work(struct k_work *work)
 #if defined(CONFIG_MODEM_UBLOX_SARA_RSSI_WORK)
 	/* re-start RSSI query work */
 	if (work) {
-		k_delayed_work_submit_to_queue(&modem_workq,
-			&mdata.rssi_query_work,
+		k_work_reschedule_for_queue(
+			&modem_workq, &mdata.rssi_query_work,
 			K_SECONDS(CONFIG_MODEM_UBLOX_SARA_RSSI_WORK_PERIOD));
 	}
 #endif
@@ -954,9 +954,9 @@ static void modem_rssi_query_work(struct k_work *work)
 #if defined(CONFIG_MODEM_UBLOX_SARA_RSSI_WORK)
 	/* re-start RSSI query work */
 	if (work) {
-		k_delayed_work_submit_to_queue(&modem_workq,
-					       &mdata.rssi_query_work,
-					       K_SECONDS(CONFIG_MODEM_UBLOX_SARA_RSSI_WORK_PERIOD));
+		k_work_reschedule_for_queue(
+			&modem_workq, &mdata.rssi_query_work,
+			K_SECONDS(CONFIG_MODEM_UBLOX_SARA_RSSI_WORK_PERIOD));
 	}
 #endif
 }
@@ -1039,7 +1039,7 @@ restart:
 
 #if defined(CONFIG_MODEM_UBLOX_SARA_RSSI_WORK)
 	/* stop RSSI delay work */
-	k_delayed_work_cancel(&mdata.rssi_query_work);
+	k_work_cancel_delayable(&mdata.rssi_query_work);
 #endif
 
 	pin_init();
@@ -1208,9 +1208,9 @@ restart:
 
 #if defined(CONFIG_MODEM_UBLOX_SARA_RSSI_WORK)
 	/* start RSSI query */
-	k_delayed_work_submit_to_queue(&modem_workq,
-				       &mdata.rssi_query_work,
-				       K_SECONDS(CONFIG_MODEM_UBLOX_SARA_RSSI_WORK_PERIOD));
+	k_work_reschedule_for_queue(
+		&modem_workq, &mdata.rssi_query_work,
+		K_SECONDS(CONFIG_MODEM_UBLOX_SARA_RSSI_WORK_PERIOD));
 #endif
 
 error:
@@ -1839,10 +1839,9 @@ static int modem_init(const struct device *dev)
 
 #if defined(CONFIG_MODEM_UBLOX_SARA_RSSI_WORK)
 	/* initialize the work queue */
-	k_work_q_start(&modem_workq,
-		       modem_workq_stack,
-		       K_KERNEL_STACK_SIZEOF(modem_workq_stack),
-		       K_PRIO_COOP(7));
+	k_work_queue_start(&modem_workq, modem_workq_stack,
+			   K_KERNEL_STACK_SIZEOF(modem_workq_stack),
+			   K_PRIO_COOP(7), NULL);
 #endif
 
 	/* socket config */
@@ -1908,7 +1907,7 @@ static int modem_init(const struct device *dev)
 
 #if defined(CONFIG_MODEM_UBLOX_SARA_RSSI_WORK)
 	/* init RSSI query */
-	k_delayed_work_init(&mdata.rssi_query_work, modem_rssi_query_work);
+	k_work_init_delayable(&mdata.rssi_query_work, modem_rssi_query_work);
 #endif
 
 	modem_reset();

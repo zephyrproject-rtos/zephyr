@@ -896,9 +896,9 @@ static void modem_rssi_query_work(struct k_work *work)
 
 	/* Re-start RSSI query work */
 	if (work) {
-		k_delayed_work_submit_to_queue(&modem_workq,
-					       &mdata.rssi_query_work,
-					       K_SECONDS(RSSI_TIMEOUT_SECS));
+		k_work_reschedule_for_queue(&modem_workq,
+					    &mdata.rssi_query_work,
+					    K_SECONDS(RSSI_TIMEOUT_SECS));
 	}
 }
 
@@ -1019,7 +1019,7 @@ restart:
 	counter = 0;
 
 	/* stop RSSI delay work */
-	k_delayed_work_cancel(&mdata.rssi_query_work);
+	k_work_cancel_delayable(&mdata.rssi_query_work);
 
 	/* Let the modem respond. */
 	LOG_INF("Waiting for modem to respond");
@@ -1068,9 +1068,8 @@ restart_rssi:
 
 	/* Network is ready - Start RSSI work in the background. */
 	LOG_INF("Network is ready.");
-	k_delayed_work_submit_to_queue(&modem_workq,
-				       &mdata.rssi_query_work,
-				       K_SECONDS(RSSI_TIMEOUT_SECS));
+	k_work_reschedule_for_queue(&modem_workq, &mdata.rssi_query_work,
+				    K_SECONDS(RSSI_TIMEOUT_SECS));
 
 	/* Once the network is ready, we try to activate the PDP context. */
 	ret = modem_pdp_context_activate();
@@ -1145,9 +1144,9 @@ static int modem_init(const struct device *dev)
 	k_sem_init(&mdata.sem_response,	 0, 1);
 	k_sem_init(&mdata.sem_tx_ready,	 0, 1);
 	k_sem_init(&mdata.sem_sock_conn, 0, 1);
-	k_work_q_start(&modem_workq, modem_workq_stack,
-		       K_KERNEL_STACK_SIZEOF(modem_workq_stack),
-		       K_PRIO_COOP(7));
+	k_work_queue_start(&modem_workq, modem_workq_stack,
+			   K_KERNEL_STACK_SIZEOF(modem_workq_stack),
+			   K_PRIO_COOP(7), NULL);
 
 	/* socket config */
 	mdata.socket_config.sockets	    = &mdata.sockets[0];
@@ -1210,7 +1209,7 @@ static int modem_init(const struct device *dev)
 			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 	/* Init RSSI query */
-	k_delayed_work_init(&mdata.rssi_query_work, modem_rssi_query_work);
+	k_work_init_delayable(&mdata.rssi_query_work, modem_rssi_query_work);
 	return modem_setup();
 
 error:
