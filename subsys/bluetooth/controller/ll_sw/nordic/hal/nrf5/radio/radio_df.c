@@ -339,6 +339,11 @@ void radio_df_ant_switch_pattern_set(uint8_t *patterns, uint8_t len)
 	}
 }
 
+uint8_t radio_df_pdu_antenna_switch_pattern_get(void)
+{
+	return DT_PROP(RADIO, dfe_pdu_antenna);
+}
+
 void radio_df_reset(void)
 {
 	radio_df_mode_set(RADIO_DFEMODE_DFEOPMODE_Disabled);
