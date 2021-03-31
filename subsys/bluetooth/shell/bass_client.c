@@ -89,10 +89,9 @@ static void bass_client_recv_state_cb(struct bt_conn *conn, int err,
 
 	if (state->pa_sync_state == BASS_PA_STATE_INFO_REQ) {
 		struct bt_le_per_adv_sync *per_adv_sync = NULL;
+		struct bt_le_ext_adv *ext_adv = NULL;
 
 		/* Lookup matching PA sync */
-
-		/* TODO: Implement a get_addr function for PA syncs */
 		for (int i = 0; i < ARRAY_SIZE(per_adv_syncs); i++) {
 			if (per_adv_syncs[i] &&
 			    !bt_addr_le_cmp(&per_adv_syncs[i]->addr,
@@ -102,22 +101,53 @@ static void bass_client_recv_state_cb(struct bt_conn *conn, int err,
 			}
 		}
 
-		if (per_adv_sync == NULL) {
-			shell_error(ctx_shell,
-				    "No periodic adv sync available");
-			/* Nothing more we can really do except wait for server
-			 * timeout
-			 */
+		if (per_adv_sync) {
+			shell_print(ctx_shell, "Sending PAST");
+
+			err = bt_le_per_adv_sync_transfer(per_adv_sync,
+							  conn,
+							  BT_UUID_BASS_VAL);
+
+			if (err) {
+				shell_error(ctx_shell, "Could not transfer periodic adv sync: %d",
+					    err);
+			}
+
 			return;
 		}
 
-		err = bt_le_per_adv_sync_transfer(per_adv_sync,
-						  conn, BT_UUID_BASS_VAL);
+		/* If no PA sync was found, check for local advertisers */
+		for (int i = 0; i < ARRAY_SIZE(adv_sets); i++) {
+			struct bt_le_oob oob_local;
 
-		if (err) {
-			shell_error(ctx_shell,
-				    "Could not transfer periodic adv sync: %d",
-				    err);
+			if (!adv_sets[i]) {
+				continue;
+			}
+
+			err = bt_le_ext_adv_oob_get_local(adv_sets[i], &oob_local);
+
+			if (err) {
+				shell_error(ctx_shell, "Could not get local OOB %d", err);
+				return;
+			}
+
+			if (!bt_addr_le_cmp(&oob_local.addr, &state->addr)) {
+				ext_adv = adv_sets[i];
+				break;
+			}
+		}
+
+		if (ext_adv) {
+			shell_print(ctx_shell, "Sending local PAST");
+
+			err = bt_le_per_adv_set_info_transfer(ext_adv, conn, BT_UUID_BASS_VAL);
+
+			if (err) {
+				shell_error(ctx_shell, "Could not transfer per adv set info: %d",
+					    err);
+			}
+		} else {
+			shell_error(ctx_shell, "Could not send PA to BASS server");
 		}
 	}
 }
