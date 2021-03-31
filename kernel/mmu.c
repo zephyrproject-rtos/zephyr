@@ -14,6 +14,7 @@
 #include <kernel_internal.h>
 #include <syscall_handler.h>
 #include <linker/linker-defs.h>
+#include <timing/timing.h>
 #include <logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -582,15 +583,27 @@ static inline void do_backing_store_page_in(uintptr_t location)
 {
 #ifdef CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM
 	uint32_t time_diff;
+
+#ifdef CONFIG_DEMAND_PAGING_STATS_USING_TIMING_FUNCTIONS
+	timing_t time_start, time_end;
+
+	time_start = timing_counter_get();
+#else
 	uint32_t time_start;
 
 	time_start = k_cycle_get_32();
+#endif /* CONFIG_DEMAND_PAGING_STATS_USING_TIMING_FUNCTIONS */
 #endif /* CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM */
 
 	z_backing_store_page_in(location);
 
 #ifdef CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM
+#ifdef CONFIG_DEMAND_PAGING_STATS_USING_TIMING_FUNCTIONS
+	time_end = timing_counter_get();
+	time_diff = (uint32_t)timing_cycles_get(&time_start, &time_end);
+#else
 	time_diff = k_cycle_get_32() - time_start;
+#endif /* CONFIG_DEMAND_PAGING_STATS_USING_TIMING_FUNCTIONS */
 
 	z_paging_histogram_inc(&z_paging_histogram_backing_store_page_in,
 			       time_diff);
@@ -601,15 +614,27 @@ static inline void do_backing_store_page_out(uintptr_t location)
 {
 #ifdef CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM
 	uint32_t time_diff;
+
+#ifdef CONFIG_DEMAND_PAGING_STATS_USING_TIMING_FUNCTIONS
+	timing_t time_start, time_end;
+
+	time_start = timing_counter_get();
+#else
 	uint32_t time_start;
 
 	time_start = k_cycle_get_32();
+#endif /* CONFIG_DEMAND_PAGING_STATS_USING_TIMING_FUNCTIONS */
 #endif /* CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM */
 
 	z_backing_store_page_out(location);
 
 #ifdef CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM
+#ifdef CONFIG_DEMAND_PAGING_STATS_USING_TIMING_FUNCTIONS
+	time_end = timing_counter_get();
+	time_diff = (uint32_t)timing_cycles_get(&time_start, &time_end);
+#else
 	time_diff = k_cycle_get_32() - time_start;
+#endif /* CONFIG_DEMAND_PAGING_STATS_USING_TIMING_FUNCTIONS */
 
 	z_paging_histogram_inc(&z_paging_histogram_backing_store_page_out,
 			       time_diff);
@@ -901,14 +926,29 @@ static inline struct z_page_frame *do_eviction_select(bool *dirty)
 	struct z_page_frame *pf;
 
 #ifdef CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM
-	uint32_t time_start = k_cycle_get_32();
 	uint32_t time_diff;
+
+#ifdef CONFIG_DEMAND_PAGING_STATS_USING_TIMING_FUNCTIONS
+	timing_t time_start, time_end;
+
+	time_start = timing_counter_get();
+#else
+	uint32_t time_start;
+
+	time_start = k_cycle_get_32();
+#endif /* CONFIG_DEMAND_PAGING_STATS_USING_TIMING_FUNCTIONS */
 #endif /* CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM */
 
 	pf = z_eviction_select(dirty);
 
 #ifdef CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM
+#ifdef CONFIG_DEMAND_PAGING_STATS_USING_TIMING_FUNCTIONS
+	time_end = timing_counter_get();
+	time_diff = (uint32_t)timing_cycles_get(&time_start, &time_end);
+#else
 	time_diff = k_cycle_get_32() - time_start;
+#endif /* CONFIG_DEMAND_PAGING_STATS_USING_TIMING_FUNCTIONS */
+
 	z_paging_histogram_inc(&z_paging_histogram_eviction, time_diff);
 #endif /* CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM */
 

@@ -684,6 +684,12 @@ config DEMAND_PAGING_STATS
 
 	  Should say N in production system as this is not without cost.
 
+config DEMAND_PAGING_STATS_USING_TIMING_FUNCTIONS
+	bool "Use Timing Functions to Gather Demand Paging Statistics"
+	select TIMING_FUNCTIONS_NEED_AT_BOOT
+	help
+	  Use timing functions to gather various demand paging statistics.
+
 config DEMAND_PAGING_THREAD_STATS
 	bool "Gather per Thread Demand Paging Statistics"
 	depends on DEMAND_PAGING_STATS
