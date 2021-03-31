@@ -344,7 +344,7 @@ static void tcp_send_queue_flush(struct tcp *conn)
 {
 	struct net_pkt *pkt;
 
-	k_delayed_work_cancel(&conn->send_timer);
+	k_work_cancel_delayable(&conn->send_timer);
 
 	while ((pkt = tcp_slist(conn, &conn->send_queue, get,
 				struct net_pkt, next))) {
@@ -413,15 +413,15 @@ static int tcp_conn_unref(struct tcp *conn)
 
 	tcp_send_queue_flush(conn);
 
-	k_delayed_work_cancel(&conn->send_data_timer);
+	k_work_cancel_delayable(&conn->send_data_timer);
 	tcp_pkt_unref(conn->send_data);
 
 	if (CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT) {
 		tcp_pkt_unref(conn->queue_recv_data);
 	}
 
-	k_delayed_work_cancel(&conn->timewait_timer);
-	k_delayed_work_cancel(&conn->fin_timer);
+	k_work_cancel_delayable(&conn->timewait_timer);
+	k_work_cancel_delayable(&conn->fin_timer);
 
 	sys_slist_find_and_remove(&tcp_conns, &conn->next);
 
@@ -489,16 +489,16 @@ static bool tcp_send_process_no_lock(struct tcp *conn)
 
 		tcp_send(pkt);
 
-		if (forget == false && !k_delayed_work_remaining_get(
-				&conn->send_timer)) {
+		if (forget == false &&
+		    !k_work_delayable_remaining_get(&conn->send_timer)) {
 			conn->send_retries = tcp_retries;
 			conn->in_retransmission = true;
 		}
 	}
 
 	if (conn->in_retransmission) {
-		k_delayed_work_submit_to_queue(&tcp_work_q, &conn->send_timer,
-					       K_MSEC(tcp_rto));
+		k_work_reschedule_for_queue(&tcp_work_q, &conn->send_timer,
+					    K_MSEC(tcp_rto));
 	}
 
 out:
@@ -527,7 +527,7 @@ static void tcp_send_timer_cancel(struct tcp *conn)
 		return;
 	}
 
-	k_delayed_work_cancel(&conn->send_timer);
+	k_work_cancel_delayable(&conn->send_timer);
 
 	{
 		struct net_pkt *pkt = tcp_slist(conn, &conn->send_queue, get,
@@ -542,8 +542,8 @@ static void tcp_send_timer_cancel(struct tcp *conn)
 		conn->in_retransmission = false;
 	} else {
 		conn->send_retries = tcp_retries;
-		k_delayed_work_submit_to_queue(&tcp_work_q, &conn->send_timer,
-					       K_MSEC(tcp_rto));
+		k_work_reschedule_for_queue(&tcp_work_q, &conn->send_timer,
+					    K_MSEC(tcp_rto));
 	}
 }
 
@@ -694,7 +694,7 @@ static size_t tcp_check_pending_data(struct tcp *conn, struct net_pkt *pkt,
 					 conn->queue_recv_data->buffer);
 			conn->queue_recv_data->buffer = NULL;
 
-			k_delayed_work_cancel(&conn->recv_queue_timer);
+			k_work_cancel_delayable(&conn->recv_queue_timer);
 		}
 	}
 
@@ -993,7 +993,7 @@ static int tcp_send_queued_data(struct tcp *conn)
 		subscribe = true;
 	}
 
-	if (k_delayed_work_remaining_get(&conn->send_data_timer)) {
+	if (k_work_delayable_remaining_get(&conn->send_data_timer)) {
 		subscribe = false;
 	}
 
@@ -1002,14 +1002,13 @@ static int tcp_send_queued_data(struct tcp *conn)
 	 */
 	if (ret == -ENOBUFS) {
 		NET_DBG("No bufs, cancelling retransmit timer");
-		k_delayed_work_cancel(&conn->send_data_timer);
+		k_work_cancel_delayable(&conn->send_data_timer);
 	}
 
 	if (subscribe) {
 		conn->send_data_retries = 0;
-		k_delayed_work_submit_to_queue(&tcp_work_q,
-					       &conn->send_data_timer,
-					       K_MSEC(tcp_rto));
+		k_work_reschedule_for_queue(&tcp_work_q, &conn->send_data_timer,
+					    K_MSEC(tcp_rto));
 	}
  out:
 	return ret;
@@ -1058,9 +1057,8 @@ static void tcp_resend_data(struct k_work *work)
 			NET_DBG("TCP connection in active close, "
 				"not disposing yet (waiting %dms)",
 				FIN_TIMEOUT_MS);
-			k_delayed_work_submit_to_queue(&tcp_work_q,
-						       &conn->fin_timer,
-						       FIN_TIMEOUT);
+			k_work_reschedule_for_queue(
+				&tcp_work_q, &conn->fin_timer, FIN_TIMEOUT);
 
 			conn_state(conn, TCP_FIN_WAIT_1);
 
@@ -1074,8 +1072,8 @@ static void tcp_resend_data(struct k_work *work)
 		}
 	}
 
-	k_delayed_work_submit_to_queue(&tcp_work_q, &conn->send_data_timer,
-				       K_MSEC(tcp_rto));
+	k_work_reschedule_for_queue(&tcp_work_q, &conn->send_data_timer,
+				    K_MSEC(tcp_rto));
 
  out:
 	k_mutex_unlock(&conn->lock);
@@ -1169,11 +1167,11 @@ static struct tcp *tcp_conn_alloc(void)
 
 	sys_slist_init(&conn->send_queue);
 
-	k_delayed_work_init(&conn->send_timer, tcp_send_process);
-	k_delayed_work_init(&conn->timewait_timer, tcp_timewait_timeout);
-	k_delayed_work_init(&conn->fin_timer, tcp_fin_timeout);
-	k_delayed_work_init(&conn->send_data_timer, tcp_resend_data);
-	k_delayed_work_init(&conn->recv_queue_timer, tcp_cleanup_recv_queue);
+	k_work_init_delayable(&conn->send_timer, tcp_send_process);
+	k_work_init_delayable(&conn->timewait_timer, tcp_timewait_timeout);
+	k_work_init_delayable(&conn->fin_timer, tcp_fin_timeout);
+	k_work_init_delayable(&conn->send_data_timer, tcp_resend_data);
+	k_work_init_delayable(&conn->recv_queue_timer, tcp_cleanup_recv_queue);
 
 	tcp_conn_ref(conn);
 
@@ -1581,10 +1579,10 @@ static void tcp_queue_recv_data(struct tcp *conn, struct net_pkt *pkt,
 		/* We need to keep the received data but free the pkt */
 		pkt->buffer = NULL;
 
-		if (!k_delayed_work_pending(&conn->recv_queue_timer)) {
-			k_delayed_work_submit_to_queue(&tcp_work_q,
-						       &conn->recv_queue_timer,
-						       K_MSEC(CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT));
+		if (!k_work_delayable_is_pending(&conn->recv_queue_timer)) {
+			k_work_reschedule_for_queue(
+				&tcp_work_q, &conn->recv_queue_timer,
+				K_MSEC(CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT));
 		}
 	}
 }
@@ -1710,9 +1708,9 @@ next_state:
 
 			/* Close the connection if we do not receive ACK on time.
 			 */
-			k_delayed_work_submit_to_queue(&tcp_work_q,
-						       &conn->establish_timer,
-						       ACK_TIMEOUT);
+			k_work_reschedule_for_queue(&tcp_work_q,
+						    &conn->establish_timer,
+						    ACK_TIMEOUT);
 		} else {
 			tcp_out(conn, SYN);
 			conn_seq(conn, + 1);
@@ -1722,7 +1720,7 @@ next_state:
 	case TCP_SYN_RECEIVED:
 		if (FL(&fl, &, ACK, th_ack(th) == conn->seq &&
 				th_seq(th) == conn->ack)) {
-			k_delayed_work_cancel(&conn->establish_timer);
+			k_work_cancel_delayable(&conn->establish_timer);
 			tcp_send_timer_cancel(conn);
 			next = TCP_ESTABLISHED;
 			net_context_set_state(conn->context,
@@ -1826,13 +1824,14 @@ next_state:
 
 			conn_send_data_dump(conn);
 
-			if (!k_delayed_work_remaining_get(&conn->send_data_timer)) {
+			if (!k_work_delayable_remaining_get(
+				    &conn->send_data_timer)) {
 				NET_DBG("conn: %p, Missing a subscription "
 					"of the send_data queue timer", conn);
 				break;
 			}
 			conn->send_data_retries = 0;
-			k_delayed_work_cancel(&conn->send_data_timer);
+			k_work_cancel_delayable(&conn->send_data_timer);
 			if (conn->data_mode == TCP_DATA_MODE_RESEND) {
 				conn->unacked_len = 0;
 			}
@@ -1904,7 +1903,7 @@ next_state:
 		if (th && (FL(&fl, ==, FIN, th_seq(th) == conn->ack) ||
 			   FL(&fl, ==, FIN | ACK, th_seq(th) == conn->ack))) {
 			/* Received FIN on FIN_WAIT_2, so cancel the timer */
-			k_delayed_work_cancel(&conn->fin_timer);
+			k_work_cancel_delayable(&conn->fin_timer);
 
 			conn_ack(conn, + 1);
 			tcp_out(conn, ACK);
@@ -1918,9 +1917,9 @@ next_state:
 		}
 		break;
 	case TCP_TIME_WAIT:
-		k_delayed_work_submit_to_queue(&tcp_work_q,
-					       &conn->timewait_timer,
-					       K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY));
+		k_work_reschedule_for_queue(
+			&tcp_work_q, &conn->timewait_timer,
+			K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY));
 		break;
 	default:
 		NET_ASSERT(false, "%s is unimplemented",
@@ -1996,17 +1995,16 @@ int net_tcp_put(struct net_context *context)
 
 			/* How long to wait until all the data has been sent?
 			 */
-			k_delayed_work_submit_to_queue(&tcp_work_q,
-						       &conn->send_data_timer,
-						       K_MSEC(tcp_rto));
+			k_work_reschedule_for_queue(&tcp_work_q,
+						    &conn->send_data_timer,
+						    K_MSEC(tcp_rto));
 		} else {
 			int ret;
 
 			NET_DBG("TCP connection in active close, not "
 				"disposing yet (waiting %dms)", FIN_TIMEOUT_MS);
-			k_delayed_work_submit_to_queue(&tcp_work_q,
-						       &conn->fin_timer,
-						       FIN_TIMEOUT);
+			k_work_reschedule_for_queue(
+				&tcp_work_q, &conn->fin_timer, FIN_TIMEOUT);
 
 			ret = tcp_out_ext(conn, FIN | ACK, NULL,
 				    conn->seq + conn->unacked_len);
@@ -2084,8 +2082,8 @@ int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt)
 		 * conn is embedded, and calling that function directly here
 		 * and in the work handler.
 		 */
-		(void)k_work_schedule_for_queue(&tcp_work_q,
-						&conn->send_data_timer.work, K_NO_WAIT);
+		(void)k_work_schedule_for_queue(
+			&tcp_work_q, &conn->send_data_timer, K_NO_WAIT);
 
 		ret = -EAGAIN;
 		goto out;
@@ -2732,9 +2730,9 @@ void net_tcp_init(void)
 
 	/* Use private workqueue in order not to block the system work queue.
 	 */
-	k_work_q_start(&tcp_work_q, work_q_stack,
-		       K_KERNEL_STACK_SIZEOF(work_q_stack),
-		       THREAD_PRIORITY);
+	k_work_queue_start(&tcp_work_q, work_q_stack,
+			   K_KERNEL_STACK_SIZEOF(work_q_stack), THREAD_PRIORITY,
+			   NULL);
 
 	k_thread_name_set(&tcp_work_q.thread, "tcp_work");
 	NET_DBG("Workq started. Thread ID: %p", &tcp_work_q.thread);

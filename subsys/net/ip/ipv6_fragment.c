@@ -128,15 +128,14 @@ static struct net_ipv6_reassembly *reassembly_get(uint32_t id,
 	int i, avail = -1;
 
 	for (i = 0; i < CONFIG_NET_IPV6_FRAGMENT_MAX_COUNT; i++) {
-
-		if (k_delayed_work_remaining_get(&reassembly[i].timer) &&
+		if (k_work_delayable_remaining_get(&reassembly[i].timer) &&
 		    reassembly[i].id == id &&
 		    net_ipv6_addr_cmp(src, &reassembly[i].src) &&
 		    net_ipv6_addr_cmp(dst, &reassembly[i].dst)) {
 			return &reassembly[i];
 		}
 
-		if (k_delayed_work_remaining_get(&reassembly[i].timer)) {
+		if (k_work_delayable_remaining_get(&reassembly[i].timer)) {
 			continue;
 		}
 
@@ -149,8 +148,7 @@ static struct net_ipv6_reassembly *reassembly_get(uint32_t id,
 		return NULL;
 	}
 
-	k_delayed_work_submit(&reassembly[avail].timer,
-			      IPV6_REASSEMBLY_TIMEOUT);
+	k_work_reschedule(&reassembly[avail].timer, IPV6_REASSEMBLY_TIMEOUT);
 
 	net_ipaddr_copy(&reassembly[avail].src, src);
 	net_ipaddr_copy(&reassembly[avail].dst, dst);
@@ -177,10 +175,9 @@ static bool reassembly_cancel(uint32_t id,
 			continue;
 		}
 
-		remaining = k_delayed_work_remaining_get(&reassembly[i].timer);
-		if (remaining) {
-			k_delayed_work_cancel(&reassembly[i].timer);
-		}
+		remaining = k_ticks_to_ms_ceil32(
+			k_work_delayable_remaining_get(&reassembly[i].timer));
+		k_work_cancel_delayable(&reassembly[i].timer);
 
 		NET_DBG("IPv6 reassembly id 0x%x remaining %d ms",
 			reassembly[i].id, remaining);
@@ -211,7 +208,8 @@ static void reassembly_info(char *str, struct net_ipv6_reassembly *reass)
 	NET_DBG("%s id 0x%x src %s dst %s remain %d ms", str, reass->id,
 		log_strdup(net_sprint_ipv6_addr(&reass->src)),
 		log_strdup(net_sprint_ipv6_addr(&reass->dst)),
-		k_delayed_work_remaining_get(&reass->timer));
+		k_ticks_to_ms_ceil32(
+			k_work_delayable_remaining_get(&reass->timer)));
 }
 
 static void reassembly_timeout(struct k_work *work)
@@ -238,7 +236,7 @@ static void reassemble_packet(struct net_ipv6_reassembly *reass)
 	uint8_t next_hdr;
 	int i, len;
 
-	k_delayed_work_cancel(&reass->timer);
+	k_work_cancel_delayable(&reass->timer);
 
 	NET_ASSERT(reass->pkt[0]);
 
@@ -355,7 +353,7 @@ void net_ipv6_frag_foreach(net_ipv6_frag_cb_t cb, void *user_data)
 
 	for (i = 0; reassembly_init_done &&
 		     i < CONFIG_NET_IPV6_FRAGMENT_MAX_COUNT; i++) {
-		if (!k_delayed_work_remaining_get(&reassembly[i].timer)) {
+		if (!k_work_delayable_remaining_get(&reassembly[i].timer)) {
 			continue;
 		}
 
@@ -441,8 +439,8 @@ enum net_verdict net_ipv6_handle_fragment_hdr(struct net_pkt *pkt,
 		 * so we must do it at runtime.
 		 */
 		for (i = 0; i < CONFIG_NET_IPV6_FRAGMENT_MAX_COUNT; i++) {
-			k_delayed_work_init(&reassembly[i].timer,
-					    reassembly_timeout);
+			k_work_init_delayable(&reassembly[i].timer,
+					      reassembly_timeout);
 		}
 
 		reassembly_init_done = true;

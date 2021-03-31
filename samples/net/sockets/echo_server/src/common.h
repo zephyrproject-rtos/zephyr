@@ -42,13 +42,13 @@ struct data {
 		char recv_buffer[RECV_BUFFER_SIZE];
 		uint32_t counter;
 		atomic_t bytes_received;
-		struct k_delayed_work stats_print;
+		struct k_work_delayable stats_print;
 	} udp;
 
 	struct {
 		int sock;
 		atomic_t bytes_received;
-		struct k_delayed_work stats_print;
+		struct k_work_delayable stats_print;
 
 		struct {
 			int sock;

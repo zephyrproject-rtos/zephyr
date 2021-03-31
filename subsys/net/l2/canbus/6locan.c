@@ -1741,9 +1741,9 @@ void net_6locan_init(struct net_if *iface)
 		thread_priority = K_PRIO_PREEMPT(6);
 	}
 
-	k_work_q_start(&net_canbus_workq, net_canbus_stack,
-		       K_KERNEL_STACK_SIZEOF(net_canbus_stack),
-		       thread_priority);
+	k_work_queue_start(&net_canbus_workq, net_canbus_stack,
+			   K_KERNEL_STACK_SIZEOF(net_canbus_stack),
+			   thread_priority, NULL);
 	k_thread_name_set(&net_canbus_workq.thread, "isotp_work");
 	NET_DBG("Workq started. Thread ID: %p", &net_canbus_workq.thread);
 }

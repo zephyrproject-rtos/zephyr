@@ -224,10 +224,9 @@ void net_tc_tx_init(void)
 							"coop" : "preempt",
 			priority);
 
-		k_work_q_start(&tx_classes[i].work_q,
-			       tx_stack[i],
-			       K_KERNEL_STACK_SIZEOF(tx_stack[i]),
-			       priority);
+		k_work_queue_start(&tx_classes[i].work_q, tx_stack[i],
+				   K_KERNEL_STACK_SIZEOF(tx_stack[i]), priority,
+				   NULL);
 
 		if (IS_ENABLED(CONFIG_THREAD_NAME)) {
 			char name[MAX_NAME_LEN];
@@ -267,10 +266,9 @@ void net_tc_rx_init(void)
 							"coop" : "preempt",
 			priority);
 
-		k_work_q_start(&rx_classes[i].work_q,
-			       rx_stack[i],
-			       K_KERNEL_STACK_SIZEOF(rx_stack[i]),
-			       priority);
+		k_work_queue_start(&rx_classes[i].work_q, rx_stack[i],
+				   K_KERNEL_STACK_SIZEOF(rx_stack[i]), priority,
+				   NULL);
 
 		if (IS_ENABLED(CONFIG_THREAD_NAME)) {
 			char name[MAX_NAME_LEN];

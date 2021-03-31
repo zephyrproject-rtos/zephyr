@@ -1574,9 +1574,8 @@ static void ipv6_frag_cb(struct net_ipv6_reassembly *reass,
 
 	snprintk(src, ADDR_LEN, "%s", net_sprint_ipv6_addr(&reass->src));
 
-	PR("%p      0x%08x  %5d %16s\t%16s\n",
-	   reass, reass->id,
-	   k_delayed_work_remaining_get(&reass->timer),
+	PR("%p      0x%08x  %5d %16s\t%16s\n", reass, reass->id,
+	   k_ticks_to_ms_ceil32(k_work_delayable_remaining_get(&reass->timer)),
 	   src, net_sprint_ipv6_addr(&reass->dst));
 
 	for (i = 0; i < NET_IPV6_FRAGMENTS_MAX_PKT; i++) {

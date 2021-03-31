@@ -404,7 +404,7 @@ struct net_ipv6_reassembly {
 	 * Timeout for cancelling the reassembly. The timer is used
 	 * also to detect if this reassembly slot is used or not.
 	 */
-	struct k_delayed_work timer;
+	struct k_work_delayable timer;
 
 	/** Pointers to pending fragments */
 	struct net_pkt *pkt[NET_IPV6_FRAGMENTS_MAX_PKT];

@@ -155,7 +155,7 @@ struct http_response {
  */
 struct http_client_internal_data {
 	/** Work for handling timeout */
-	struct k_delayed_work work;
+	struct k_work_delayable work;
 
 	/** HTTP parser context */
 	struct http_parser parser;
