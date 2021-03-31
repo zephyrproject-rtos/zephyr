@@ -148,7 +148,7 @@ void sys_trace_idle(void)
 }
 
 #ifdef CONFIG_TRACING_CPU_STATS_LOG
-static struct k_delayed_work cpu_stats_log;
+static struct k_work_delayable cpu_stats_log;
 
 static void cpu_stats_display(void)
 {
@@ -159,14 +159,14 @@ static void cpu_stats_log_fn(struct k_work *item)
 {
 	cpu_stats_display();
 	cpu_stats_reset_counters();
-	k_delayed_work_submit(&cpu_stats_log,
+	k_work_reschedule(&cpu_stats_log,
 			      K_MSEC(CONFIG_TRACING_CPU_STATS_INTERVAL));
 }
 
 static int cpu_stats_log_init(const struct device *dev)
 {
-	k_delayed_work_init(&cpu_stats_log, cpu_stats_log_fn);
-	k_delayed_work_submit(&cpu_stats_log,
+	k_work_init_delayable(&cpu_stats_log, cpu_stats_log_fn);
+	k_work_reschedule(&cpu_stats_log,
 			      K_MSEC(CONFIG_TRACING_CPU_STATS_INTERVAL));
 
 	return 0;
