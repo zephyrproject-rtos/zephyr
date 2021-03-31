@@ -16,18 +16,18 @@
 #include "clock_stm32_ll_common.h"
 
 
-#ifdef CONFIG_CLOCK_STM32_SYSCLK_SRC_PLL
+#if STM32_SYSCLK_SRC_PLL
 
 /*
  * Select PLL source for STM32F1 Connectivity line devices (STM32F105xx and
  * STM32F107xx).
  * Both flags are defined in STM32Cube LL API. Keep only the selected one.
  */
-#ifdef CONFIG_CLOCK_STM32_PLL_SRC_PLL2
+#if STM32_PLL_SRC_PLL2
 #undef RCC_PREDIV1_SOURCE_HSE
 #else
 #undef RCC_PREDIV1_SOURCE_PLL2
-#endif /* CONFIG_CLOCK_STM32_PLL_SRC_PLL2 */
+#endif /* STM32_PLL_SRC_PLL2 */
 
 
 /**
@@ -82,7 +82,7 @@ void config_pll_init(LL_UTILS_PLLInitTypeDef *pllinit)
 #endif /* CONFIG_SOC_STM32F10X_DENSITY_DEVICE */
 }
 
-#endif /* CONFIG_CLOCK_STM32_SYSCLK_SRC_PLL */
+#endif /* STM32_SYSCLK_SRC_PLL */
 
 /**
  * @brief Activate default clocks

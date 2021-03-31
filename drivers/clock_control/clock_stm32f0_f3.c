@@ -16,7 +16,7 @@
 #include "clock_stm32_ll_common.h"
 
 
-#ifdef CONFIG_CLOCK_STM32_SYSCLK_SRC_PLL
+#if STM32_SYSCLK_SRC_PLL
 
 /**
  * @brief fill in pll configuration structure
@@ -55,7 +55,7 @@ void config_pll_init(LL_UTILS_PLLInitTypeDef *pllinit)
 #endif /* RCC_PLLSRC_PREDIV1_SUPPORT */
 }
 
-#endif /* CONFIG_CLOCK_STM32_SYSCLK_SRC_PLL */
+#endif /* STM32_SYSCLK_SRC_PLL */
 
 /**
  * @brief Activate default clocks
