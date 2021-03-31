@@ -132,8 +132,41 @@ static void bass_disconnected(struct bt_conn *conn, uint8_t reason)
 	}
 }
 
+static void bass_security_changed(struct bt_conn *conn, bt_security_t level,
+				  enum bt_security_err err)
+{
+	if (err || !conn->encrypt) {
+		return;
+	}
+
+	if (!bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
+		return;
+	}
+
+	/* Notify all receive states after a bonded device reconnects */
+	for (int i = 0; i < ARRAY_SIZE(bass_inst.recv_states); i++) {
+		struct bass_recv_state_internal_t *state = &bass_inst.recv_states[i];
+		int err;
+
+		if (!bass_inst.recv_states[i].active) {
+			continue;
+		}
+
+		net_buf_put_recv_state(state);
+
+		err = bt_gatt_notify_uuid(conn, BT_UUID_BASS_RECV_STATE,
+					  state->attr, read_buf.data,
+					  read_buf.len);
+		if (err) {
+			BT_WARN("Could not notify receive state[%d] to reconnecting client: %d",
+				i, err);
+		}
+	}
+}
+
 static struct bt_conn_cb conn_cb = {
 	.disconnected = bass_disconnected,
+	.security_changed = bass_security_changed,
 };
 
 static struct bass_client_t *get_bass_client(struct bt_conn *conn)
