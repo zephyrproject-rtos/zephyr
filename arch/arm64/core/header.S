@@ -6,7 +6,7 @@
 
 #include <linker/sections.h>
 #include <arch/cpu.h>
-#include "mmu/arm_mmu.h"
+#include "mmu.h"
 
 #if CONFIG_MMU_PAGE_SIZE == 4096
 #define HEADER_PGSIZE	1
