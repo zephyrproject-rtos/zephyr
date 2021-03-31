@@ -137,7 +137,7 @@
 #define __syscall static inline
 #else
 #define __syscall
-#endif /* #ifndef ZTEST_UNITTEST */
+#endif /* ZTEST_UNITTEST */
 
 /* Definitions for struct declaration tags. These are sentinel values used by
  * parse_syscalls.py to gather a list of names of struct declarations that

@@ -476,7 +476,7 @@ static void litex_clk_print_all_params(void)
 		litex_clk_print_params(&ldev->clkouts[c]);
 	}
 }
-#endif /* #ifdef CONFIG_CLOCK_CONTROL_LOG_LEVEL_DBG */
+#endif /* CONFIG_CLOCK_CONTROL_LOG_LEVEL_DBG */
 
 /* Returns raw value ready to be written into MMCM */
 static inline uint16_t litex_clk_calc_DI(uint16_t DO_val, uint16_t mask,
@@ -1480,7 +1480,7 @@ int litex_clk_set_rate(struct litex_clk_clkout *lcko, unsigned long rate)
 #ifdef CONFIG_CLOCK_CONTROL_LOG_LEVEL_DBG
 	litex_clk_print_all_params();
 	litex_clk_print_all_regs();
-#endif /* #ifdef CONFIG_CLOCK_CONTROL_LOG_LEVEL_DBG */
+#endif /* CONFIG_CLOCK_CONTROL_LOG_LEVEL_DBG */
 
 	return 0;
 }
@@ -1769,7 +1769,7 @@ static int litex_clk_init(const struct device *dev)
 #ifdef CONFIG_CLOCK_CONTROL_LOG_LEVEL_DBG
 	litex_clk_print_all_params();
 	litex_clk_print_all_regs();
-#endif /* #ifdef CONFIG_CLOCK_CONTROL_LOG_LEVEL_DBG */
+#endif /* CONFIG_CLOCK_CONTROL_LOG_LEVEL_DBG */
 
 	LOG_INF("LiteX Clock Control driver initialized");
 	return 0;
