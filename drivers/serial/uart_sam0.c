@@ -58,11 +58,11 @@ struct uart_sam0_dev_data {
 	uart_callback_t async_cb;
 	void *async_cb_data;
 
-	struct k_delayed_work tx_timeout_work;
+	struct k_work_delayable tx_timeout_work;
 	const uint8_t *tx_buf;
 	size_t tx_len;
 
-	struct k_delayed_work rx_timeout_work;
+	struct k_work_delayable rx_timeout_work;
 	size_t rx_timeout_time;
 	size_t rx_timeout_chunk;
 	uint32_t rx_timeout_start;
@@ -130,7 +130,7 @@ static void uart_sam0_dma_tx_done(const struct device *dma_dev, void *arg,
 		(struct uart_sam0_dev_data *const) arg;
 	const struct device *dev = dev_data->dev;
 
-	k_delayed_work_cancel(&dev_data->tx_timeout_work);
+	k_work_cancel_delayable(&dev_data->tx_timeout_work);
 
 	int key = irq_lock();
 
@@ -361,7 +361,7 @@ static void uart_sam0_rx_timeout(struct k_work *work)
 	 */
 	if (dev_data->rx_timeout_from_isr) {
 		dev_data->rx_timeout_from_isr = false;
-		k_delayed_work_submit(&dev_data->rx_timeout_work,
+		k_work_reschedule(&dev_data->rx_timeout_work,
 				      K_MSEC(dev_data->rx_timeout_chunk));
 		irq_unlock(key);
 		return;
@@ -383,7 +383,7 @@ static void uart_sam0_rx_timeout(struct k_work *work)
 		uint32_t remaining = MIN(dev_data->rx_timeout_time - elapsed,
 				      dev_data->rx_timeout_chunk);
 
-		k_delayed_work_submit(&dev_data->rx_timeout_work,
+		k_work_reschedule(&dev_data->rx_timeout_work,
 				      K_MSEC(remaining));
 	}
 
@@ -570,8 +570,8 @@ static int uart_sam0_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	k_delayed_work_init(&dev_data->tx_timeout_work, uart_sam0_tx_timeout);
-	k_delayed_work_init(&dev_data->rx_timeout_work, uart_sam0_rx_timeout);
+	k_work_init_delayable(&dev_data->tx_timeout_work, uart_sam0_tx_timeout);
+	k_work_init_delayable(&dev_data->rx_timeout_work, uart_sam0_rx_timeout);
 
 	if (cfg->tx_dma_channel != 0xFFU) {
 		struct dma_config dma_cfg = { 0 };
@@ -689,7 +689,7 @@ static void uart_sam0_isr(const struct device *dev)
 		if (dev_data->rx_timeout_time != SYS_FOREVER_MS) {
 			dev_data->rx_timeout_from_isr = true;
 			dev_data->rx_timeout_start = k_uptime_get_32();
-			k_delayed_work_submit(&dev_data->rx_timeout_work,
+			k_work_reschedule(&dev_data->rx_timeout_work,
 					      K_MSEC(dev_data->rx_timeout_chunk));
 		}
 
@@ -846,7 +846,7 @@ static int uart_sam0_tx(const struct device *dev, const uint8_t *buf,
 	}
 
 	if (timeout != SYS_FOREVER_MS) {
-		k_delayed_work_submit(&dev_data->tx_timeout_work,
+		k_work_reschedule(&dev_data->tx_timeout_work,
 				      K_MSEC(timeout));
 	}
 
@@ -865,7 +865,7 @@ static int uart_sam0_tx_abort(const struct device *dev)
 		return -ENOTSUP;
 	}
 
-	k_delayed_work_cancel(&dev_data->tx_timeout_work);
+	k_work_cancel_delayable(&dev_data->tx_timeout_work);
 
 	return uart_sam0_tx_halt(dev_data);
 }
@@ -965,7 +965,7 @@ static int uart_sam0_rx_disable(const struct device *dev)
 	SercomUsart *const regs = cfg->regs;
 	struct dma_status st;
 
-	k_delayed_work_cancel(&dev_data->rx_timeout_work);
+	k_work_cancel_delayable(&dev_data->rx_timeout_work);
 
 	int key = irq_lock();
 
