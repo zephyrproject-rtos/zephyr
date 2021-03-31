@@ -91,7 +91,7 @@ struct gsm_mux {
 	uint16_t msg_len;     /* message length */
 	uint16_t received;    /* bytes so far received */
 
-	struct k_delayed_work t2_timer;
+	struct k_work_delayable t2_timer;
 	sys_slist_t pending_ctrls;
 
 	uint16_t t1_timeout_value; /* T1 default value */
@@ -169,7 +169,7 @@ static struct gsm_mux muxes[CONFIG_GSM_MUX_MAX];
 static struct gsm_dlci dlcis[CONFIG_GSM_MUX_DLCI_MAX];
 static sys_slist_t dlci_free_entries;
 static sys_slist_t dlci_active_t1_timers;
-static struct k_delayed_work t1_timer;
+static struct k_work_delayable t1_timer;
 
 static struct gsm_control_msg ctrls[CONFIG_GSM_MUX_PENDING_CMD_MAX];
 static sys_slist_t ctrls_free_entries;
@@ -454,9 +454,7 @@ static void dlci_run_timer(uint32_t current_time)
 	struct gsm_dlci *dlci, *next;
 	uint32_t new_timer = UINT_MAX;
 
-	if (k_delayed_work_remaining_get(&t1_timer)) {
-		k_delayed_work_cancel(&t1_timer);
-	}
+	(void)k_work_cancel_delayable(&t1_timer);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&dlci_active_t1_timers,
 					  dlci, next, node) {
@@ -467,7 +465,7 @@ static void dlci_run_timer(uint32_t current_time)
 	}
 
 	if (new_timer != UINT_MAX) {
-		k_delayed_work_submit(&t1_timer, K_MSEC(new_timer));
+		k_work_reschedule(&t1_timer, K_MSEC(new_timer));
 	}
 }
 
@@ -631,9 +629,9 @@ static void gsm_mux_t2_timeout(struct k_work *work)
 	}
 
 	if (entry) {
-		k_delayed_work_submit(&mux->t2_timer,
-				      K_MSEC(entry->req_start + T2_MSEC -
-					     current_time));
+		k_work_reschedule(
+			&mux->t2_timer,
+			K_MSEC(entry->req_start + T2_MSEC - current_time));
 	}
 }
 
@@ -674,8 +672,8 @@ static int gsm_mux_send_control_message(struct gsm_mux *mux, uint8_t dlci_addres
 	ctrl->req_start = k_uptime_get_32();
 
 	/* Let's start the timer if necessary */
-	if (!k_delayed_work_remaining_get(&mux->t2_timer)) {
-		k_delayed_work_submit(&mux->t2_timer, K_MSEC(T2_MSEC));
+	if (!k_work_delayable_remaining_get(&mux->t2_timer)) {
+		k_work_reschedule(&mux->t2_timer, K_MSEC(T2_MSEC));
 	}
 
 	return gsm_mux_modem_send(mux, buf->data, buf->len);
@@ -692,9 +690,9 @@ static int gsm_dlci_opening_or_closing(struct gsm_dlci *dlci,
 	dlci->command_cb = cb;
 
 	/* Let's start the timer if necessary */
-	if (!k_delayed_work_remaining_get(&t1_timer)) {
-		k_delayed_work_submit(&t1_timer,
-				      K_MSEC(dlci->mux->t1_timeout_value));
+	if (!k_work_delayable_remaining_get(&t1_timer)) {
+		k_work_reschedule(&t1_timer,
+				  K_MSEC(dlci->mux->t1_timeout_value));
 	}
 
 	sys_slist_append(&dlci_active_t1_timers, &dlci->node);
@@ -739,7 +737,7 @@ int gsm_mux_disconnect(struct gsm_mux *mux, k_timeout_t timeout)
 	(void)gsm_mux_send_control_message(dlci->mux, dlci->num,
 					   CMD_CLD, NULL, 0);
 
-	k_delayed_work_cancel(&mux->t2_timer);
+	(void)k_work_cancel_delayable(&mux->t2_timer);
 
 	(void)gsm_dlci_closing(dlci, NULL);
 
@@ -1474,7 +1472,7 @@ struct gsm_mux *gsm_mux_create(const struct device *uart)
 		mux->state = GSM_MUX_SOF;
 		mux->buf = NULL;
 
-		k_delayed_work_init(&mux->t2_timer, gsm_mux_t2_timeout);
+		k_work_init_delayable(&mux->t2_timer, gsm_mux_t2_timeout);
 		sys_slist_init(&mux->pending_ctrls);
 
 		/* The system will continue after the control DLCI is
@@ -1538,5 +1536,5 @@ void gsm_mux_init(void)
 		sys_slist_prepend(&dlci_free_entries, &dlcis[i].node);
 	}
 
-	k_delayed_work_init(&t1_timer, dlci_t1_timeout);
+	k_work_init_delayable(&t1_timer, dlci_t1_timeout);
 }
