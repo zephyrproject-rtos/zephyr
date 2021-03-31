@@ -2531,6 +2531,73 @@ static void le_df_set_cl_iq_sampling_enable(struct net_buf *buf, struct net_buf 
 
 	*evt = cmd_complete_status(status);
 }
+
+static void le_df_connectionless_iq_report(struct pdu_data *pdu_rx,
+					   struct node_rx_pdu *node_rx,
+					   struct net_buf *buf)
+{
+	struct bt_hci_evt_le_connectionless_iq_report *sep;
+	struct node_rx_iq_report *iq_report;
+
+	struct lll_sync *lll;
+	uint8_t samples_cnt;
+	int16_t iq_tmp;
+	int16_t rssi;
+	uint8_t idx;
+
+	iq_report =  (struct node_rx_iq_report *)node_rx;
+
+	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
+	    !(le_event_mask & BT_EVT_MASK_LE_CONNECTIONLESS_IQ_REPORT)) {
+		return;
+	}
+
+	/* If there are no IQ samples due to insufficient resources
+	 * HCI event should inform about it by store single octet with
+	 * special I_sample and Q_sample data.
+	 */
+	samples_cnt = (!iq_report->sample_count ? 1 : iq_report->sample_count);
+
+	sep = meta_evt(buf, BT_HCI_EVT_LE_CONNECTIONLESS_IQ_REPORT,
+		       (sizeof(*sep) +
+			(samples_cnt * sizeof(struct bt_hci_le_iq_sample))));
+
+	rssi = RSSI_DBM_TO_DECI_DBM(iq_report->hdr.rx_ftr.rssi);
+
+	sep->sync_handle = sys_cpu_to_le16(iq_report->hdr.handle);
+	sep->rssi = sys_cpu_to_le16(rssi);
+	sep->rssi_ant_id = iq_report->rssi_ant_id;
+	sep->cte_type = iq_report->cte_info.type;
+
+	lll = iq_report->hdr.rx_ftr.param;
+
+	sep->chan_idx = lll->data_chan_id;
+	sep->per_evt_counter = sys_cpu_to_le16(lll->event_counter);
+
+	if (sep->cte_type == BT_HCI_LE_AOA_CTE) {
+		sep->slot_durations = iq_report->local_slot_durations;
+	} else if (sep->cte_type == BT_HCI_LE_AOD_CTE_1US) {
+		sep->slot_durations = BT_HCI_LE_ANTENNA_SWITCHING_SLOT_1US;
+	} else {
+		sep->slot_durations = BT_HCI_LE_ANTENNA_SWITCHING_SLOT_2US;
+	}
+
+	sep->packet_status = iq_report->packet_status;
+
+	if (iq_report->packet_status == BT_HCI_LE_CTE_INSUFFICIENT_RESOURCES) {
+		sep->sample[0].i = BT_HCI_LE_CTE_REPORT_NO_VALID_SAMPLE;
+		sep->sample[0].q = BT_HCI_LE_CTE_REPORT_NO_VALID_SAMPLE;
+		sep->sample_count = 0;
+	} else {
+		for (idx = 0; idx < samples_cnt; ++idx) {
+			iq_tmp = IQ_SHIFT_12_TO_8_BIT(iq_report->sample[idx].i);
+			sep->sample[idx].i = (int8_t)iq_tmp;
+			iq_tmp = IQ_SHIFT_12_TO_8_BIT(iq_report->sample[idx].q);
+			sep->sample[idx].q = (int8_t)iq_tmp;
+		}
+		sep->sample_count = samples_cnt;
+	}
+}
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
@@ -5763,7 +5830,7 @@ static void encode_control(struct node_rx_pdu *node_rx,
 		break;
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
 	case NODE_RX_TYPE_IQ_SAMPLE_REPORT:
-		/* ToDo change to actual handling of the report */
+		le_df_connectionless_iq_report(pdu_data, node_rx, buf);
 		break;
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
