@@ -6,14 +6,14 @@
 
 #define DT_DRV_COMPAT	nxp_imx_flexspi
 
-#include <drivers/flash.h>
 #include <logging/log.h>
 #include <sys/util.h>
-#include "flash_mcux_flexspi.h"
 
-LOG_MODULE_REGISTER(flash_flexspi, CONFIG_FLASH_LOG_LEVEL);
+#include "memc_mcux_flexspi.h"
 
-struct flash_flexspi_config {
+LOG_MODULE_REGISTER(memc_flexspi, CONFIG_MEMC_LOG_LEVEL);
+
+struct memc_flexspi_config {
 	FLEXSPI_Type *base;
 	uint8_t *ahb_base;
 	bool ahb_bufferable;
@@ -24,26 +24,26 @@ struct flash_flexspi_config {
 	flexspi_read_sample_clock_t rx_sample_clock;
 };
 
-struct flash_flexspi_data {
+struct memc_flexspi_data {
 	size_t size[kFLEXSPI_PortCount];
 };
 
-int flash_flexspi_update_lut(const struct device *dev, uint32_t index,
+int memc_flexspi_update_lut(const struct device *dev, uint32_t index,
 		const uint32_t *cmd, uint32_t count)
 {
-	const struct flash_flexspi_config *config = dev->config;
+	const struct memc_flexspi_config *config = dev->config;
 
 	FLEXSPI_UpdateLUT(config->base, index, cmd, count);
 
 	return 0;
 }
 
-int flash_flexspi_set_flash_config(const struct device *dev,
+int memc_flexspi_set_device_config(const struct device *dev,
 		const flexspi_device_config_t *device_config,
 		flexspi_port_t port)
 {
-	const struct flash_flexspi_config *config = dev->config;
-	struct flash_flexspi_data *data = dev->data;
+	const struct memc_flexspi_config *config = dev->config;
+	struct memc_flexspi_data *data = dev->data;
 
 	if (port >= kFLEXSPI_PortCount) {
 		LOG_ERR("Invalid port number");
@@ -59,19 +59,19 @@ int flash_flexspi_set_flash_config(const struct device *dev,
 	return 0;
 }
 
-int flash_flexspi_reset(const struct device *dev)
+int memc_flexspi_reset(const struct device *dev)
 {
-	const struct flash_flexspi_config *config = dev->config;
+	const struct memc_flexspi_config *config = dev->config;
 
 	FLEXSPI_SoftwareReset(config->base);
 
 	return 0;
 }
 
-int flash_flexspi_transfer(const struct device *dev,
+int memc_flexspi_transfer(const struct device *dev,
 		flexspi_transfer_t *transfer)
 {
-	const struct flash_flexspi_config *config = dev->config;
+	const struct memc_flexspi_config *config = dev->config;
 	status_t status = FLEXSPI_TransferBlocking(config->base, transfer);
 
 	if (status != kStatus_Success) {
@@ -82,11 +82,11 @@ int flash_flexspi_transfer(const struct device *dev,
 	return 0;
 }
 
-void *flash_flexspi_get_ahb_address(const struct device *dev,
+void *memc_flexspi_get_ahb_address(const struct device *dev,
 		flexspi_port_t port, off_t offset)
 {
-	const struct flash_flexspi_config *config = dev->config;
-	struct flash_flexspi_data *data = dev->data;
+	const struct memc_flexspi_config *config = dev->config;
+	struct memc_flexspi_data *data = dev->data;
 	int i;
 
 	if (port >= kFLEXSPI_PortCount) {
@@ -101,9 +101,9 @@ void *flash_flexspi_get_ahb_address(const struct device *dev,
 	return config->ahb_base + offset;
 }
 
-static int flash_flexspi_init(const struct device *dev)
+static int memc_flexspi_init(const struct device *dev)
 {
-	const struct flash_flexspi_config *config = dev->config;
+	const struct memc_flexspi_config *config = dev->config;
 	flexspi_config_t flexspi_config;
 
 	FLEXSPI_GetDefaultConfig(&flexspi_config);
@@ -120,9 +120,9 @@ static int flash_flexspi_init(const struct device *dev)
 	return 0;
 }
 
-#define FLASH_FLEXSPI(n)						\
-	static const struct flash_flexspi_config			\
-		flash_flexspi_config_##n = {				\
+#define MEMC_FLEXSPI(n)							\
+	static const struct memc_flexspi_config				\
+		memc_flexspi_config_##n = {				\
 		.base = (FLEXSPI_Type *) DT_INST_REG_ADDR(n),		\
 		.ahb_base = (uint8_t *) DT_INST_REG_ADDR_BY_IDX(n, 1),	\
 		.ahb_bufferable = DT_INST_PROP(n, ahb_bufferable),	\
@@ -133,15 +133,15 @@ static int flash_flexspi_init(const struct device *dev)
 		.rx_sample_clock = DT_INST_PROP(n, rx_clock_source),	\
 	};								\
 									\
-	static struct flash_flexspi_data flash_flexspi_data_##n;	\
+	static struct memc_flexspi_data memc_flexspi_data_##n;		\
 									\
 	DEVICE_DT_INST_DEFINE(n,					\
-			      flash_flexspi_init,			\
+			      memc_flexspi_init,			\
 			      device_pm_control_nop,			\
-			      &flash_flexspi_data_##n,			\
-			      &flash_flexspi_config_##n,		\
+			      &memc_flexspi_data_##n,			\
+			      &memc_flexspi_config_##n,			\
 			      POST_KERNEL,				\
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
 			      NULL);
 
-DT_INST_FOREACH_STATUS_OKAY(FLASH_FLEXSPI)
+DT_INST_FOREACH_STATUS_OKAY(MEMC_FLEXSPI)
