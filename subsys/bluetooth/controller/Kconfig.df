@@ -130,4 +130,10 @@ config BT_CTLR_DF_INIT_ANT_SEL_GPIOS
 	  In such case application is responsible for appropriate GPIOs
 	  initialization.
 
+config BT_CTLR_DF_DEBUG_ENABLE
+	bool "Bluetooth Direction Finding debug support enable"
+	help
+	  This option enables debug support for the Direction Finding
+	  implementation in controller.
+
 endif # BT_CTLR_DF
