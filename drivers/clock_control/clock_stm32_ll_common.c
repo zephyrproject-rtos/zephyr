@@ -40,7 +40,7 @@
 #define __LL_RCC_CALC_HCLK_FREQ __LL_RCC_CALC_HCLK1_FREQ
 #endif /* CONFIG_SOC_SERIES_STM32F0X */
 
-#if CONFIG_CLOCK_STM32_AHB_PRESCALER > 1
+#if STM32_AHB_PRESCALER > 1
 /*
  * AHB prescaler allows to set a HCLK frequency (feeding cortex systick)
  * lower than SYSCLK frequency (actual core frequency).
@@ -57,31 +57,22 @@
 static void config_bus_clk_init(LL_UTILS_ClkInitTypeDef *clk_init)
 {
 #if defined(CONFIG_SOC_SERIES_STM32WBX)
-	clk_init->CPU1CLKDivider = ahb_prescaler(
-					CONFIG_CLOCK_STM32_CPU1_PRESCALER);
-	clk_init->CPU2CLKDivider = ahb_prescaler(
-					CONFIG_CLOCK_STM32_CPU2_PRESCALER);
-	clk_init->AHB4CLKDivider = ahb_prescaler(
-					CONFIG_CLOCK_STM32_AHB4_PRESCALER);
+	clk_init->CPU1CLKDivider = ahb_prescaler(STM32_CPU1_PRESCALER);
+	clk_init->CPU2CLKDivider = ahb_prescaler(STM32_CPU2_PRESCALER);
+	clk_init->AHB4CLKDivider = ahb_prescaler(STM32_AHB4_PRESCALER);
 #elif defined(CONFIG_SOC_SERIES_STM32WLX)
-	clk_init->CPU1CLKDivider = ahb_prescaler(
-					CONFIG_CLOCK_STM32_CPU1_PRESCALER);
-	clk_init->CPU2CLKDivider = ahb_prescaler(
-					CONFIG_CLOCK_STM32_CPU2_PRESCALER);
-	clk_init->AHB3CLKDivider = ahb_prescaler(
-					CONFIG_CLOCK_STM32_AHB3_PRESCALER);
+	clk_init->CPU1CLKDivider = ahb_prescaler(STM32_CPU1_PRESCALER);
+	clk_init->CPU2CLKDivider = ahb_prescaler(STM32_CPU2_PRESCALER);
+	clk_init->AHB3CLKDivider = ahb_prescaler(STM32_AHB3_PRESCALER);
 #else
-	clk_init->AHBCLKDivider = ahb_prescaler(
-					CONFIG_CLOCK_STM32_AHB_PRESCALER);
+	clk_init->AHBCLKDivider = ahb_prescaler(STM32_AHB_PRESCALER);
 #endif /* CONFIG_SOC_SERIES_STM32WBX */
 
-	clk_init->APB1CLKDivider = apb1_prescaler(
-					CONFIG_CLOCK_STM32_APB1_PRESCALER);
+	clk_init->APB1CLKDivider = apb1_prescaler(STM32_APB1_PRESCALER);
 
 #if !defined (CONFIG_SOC_SERIES_STM32F0X) && \
 	!defined (CONFIG_SOC_SERIES_STM32G0X)
-	clk_init->APB2CLKDivider = apb2_prescaler(
-					CONFIG_CLOCK_STM32_APB2_PRESCALER);
+	clk_init->APB2CLKDivider = apb2_prescaler(STM32_APB2_PRESCALER);
 #endif
 }
 
@@ -236,12 +227,10 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 	 * more likely to contain actual clock speed
 	 */
 	uint32_t ahb_clock = SystemCoreClock;
-	uint32_t apb1_clock = get_bus_clock(ahb_clock,
-				CONFIG_CLOCK_STM32_APB1_PRESCALER);
+	uint32_t apb1_clock = get_bus_clock(ahb_clock, STM32_APB1_PRESCALER);
 #if !defined (CONFIG_SOC_SERIES_STM32F0X) && \
 	!defined (CONFIG_SOC_SERIES_STM32G0X)
-	uint32_t apb2_clock = get_bus_clock(ahb_clock,
-				CONFIG_CLOCK_STM32_APB2_PRESCALER);
+	uint32_t apb2_clock = get_bus_clock(ahb_clock, STM32_APB2_PRESCALER);
 #endif
 
 	ARG_UNUSED(clock);
@@ -349,8 +338,7 @@ int stm32_clock_control_init(const struct device *dev)
 {
 	LL_UTILS_ClkInitTypeDef s_ClkInitStruct;
 	uint32_t hclk_prescaler;
-#if defined(CONFIG_CLOCK_STM32_SYSCLK_SRC_HSE) || \
-	defined(CONFIG_CLOCK_STM32_SYSCLK_SRC_MSI)
+#if STM32_SYSCLK_SRC_HSE || STM32_SYSCLK_SRC_MSI
 	uint32_t old_hclk_freq;
 	uint32_t new_hclk_freq;
 #endif
@@ -370,7 +358,7 @@ int stm32_clock_control_init(const struct device *dev)
 	/* Some clocks would be activated by default */
 	config_enable_default_clocks();
 
-#ifdef CONFIG_CLOCK_STM32_SYSCLK_SRC_PLL
+#if STM32_SYSCLK_SRC_PLL
 	LL_UTILS_PLLInitTypeDef s_PLLInitStruct;
 
 	/* configure PLL input settings */
@@ -403,21 +391,20 @@ int stm32_clock_control_init(const struct device *dev)
 	 }
 #endif
 
-#ifdef CONFIG_CLOCK_STM32_PLL_Q_DIVISOR
+#if STM32_PLL_Q_DIVISOR
 	MODIFY_REG(RCC->PLLCFGR, RCC_PLLCFGR_PLLQ,
-		   CONFIG_CLOCK_STM32_PLL_Q_DIVISOR
+		   STM32_PLL_Q_DIVISOR
 		   << RCC_PLLCFGR_PLLQ_Pos);
-#endif /* CONFIG_CLOCK_STM32_PLL_Q_DIVISOR */
+#endif /* STM32_PLL_Q_DIVISOR */
 
-#ifdef CONFIG_CLOCK_STM32_PLL_SRC_MSI
+#if STM32_PLL_SRC_MSI
 
 	/* Set MSI Range */
 	LL_RCC_MSI_EnableRangeSelection();
-	LL_RCC_MSI_SetRange(CONFIG_CLOCK_STM32_MSI_RANGE
-							<< RCC_CR_MSIRANGE_Pos);
+	LL_RCC_MSI_SetRange(STM32_MSI_RANGE << RCC_CR_MSIRANGE_Pos);
 	LL_RCC_MSI_SetCalibTrimming(0);
 
-#ifdef CONFIG_CLOCK_STM32_MSI_PLL_MODE
+#if STM32_MSI_PLL_MODE
 	/* Enable MSI hardware auto calibration */
 	LL_RCC_MSI_EnablePLLMode();
 #endif
@@ -429,7 +416,7 @@ int stm32_clock_control_init(const struct device *dev)
 	LL_RCC_HSI_Disable();
 	LL_RCC_HSE_Disable();
 
-#elif CONFIG_CLOCK_STM32_PLL_SRC_HSI
+#elif STM32_PLL_SRC_HSI
 	/* Switch to PLL with HSI as clock source */
 	LL_PLL_ConfigSystemClock_HSI(&s_PLLInitStruct, &s_ClkInitStruct);
 
@@ -437,10 +424,10 @@ int stm32_clock_control_init(const struct device *dev)
 	LL_RCC_HSE_Disable();
 	LL_RCC_MSI_Disable();
 
-#elif CONFIG_CLOCK_STM32_PLL_SRC_HSE
+#elif STM32_PLL_SRC_HSE
 	int hse_bypass;
 
-	if (IS_ENABLED(CONFIG_CLOCK_STM32_HSE_BYPASS)) {
+	if (IS_ENABLED(STM32_HSE_BYPASS)) {
 		hse_bypass = LL_UTILS_HSEBYPASS_ON;
 	} else {
 		hse_bypass = LL_UTILS_HSEBYPASS_OFF;
@@ -464,9 +451,9 @@ int stm32_clock_control_init(const struct device *dev)
 	LL_RCC_HSI_Disable();
 	LL_RCC_MSI_Disable();
 
-#endif /* CONFIG_CLOCK_STM32_PLL_SRC_* */
+#endif /* STM32_PLL_SRC_* */
 
-#elif CONFIG_CLOCK_STM32_SYSCLK_SRC_HSE
+#elif STM32_SYSCLK_SRC_HSE
 
 	old_hclk_freq = HAL_RCC_GetHCLKFreq();
 
@@ -487,7 +474,7 @@ int stm32_clock_control_init(const struct device *dev)
 	/* Enable HSE if not enabled */
 	if (LL_RCC_HSE_IsReady() != 1) {
 		/* Check if need to enable HSE bypass feature or not */
-		if (IS_ENABLED(CONFIG_CLOCK_STM32_HSE_BYPASS)) {
+		if (IS_ENABLED(STM32_HSE_BYPASS)) {
 			LL_RCC_HSE_EnableBypass();
 		} else {
 			LL_RCC_HSE_DisableBypass();
@@ -526,7 +513,7 @@ int stm32_clock_control_init(const struct device *dev)
 	LL_RCC_MSI_Disable();
 	LL_RCC_PLL_Disable();
 
-#elif CONFIG_CLOCK_STM32_SYSCLK_SRC_MSI
+#elif STM32_SYSCLK_SRC_MSI
 
 	old_hclk_freq = HAL_RCC_GetHCLKFreq();
 
@@ -535,7 +522,7 @@ int stm32_clock_control_init(const struct device *dev)
 	new_hclk_freq =
 		__LL_RCC_CALC_HCLK_FREQ(
 			__LL_RCC_CALC_MSI_FREQ(LL_RCC_MSIRANGESEL_RUN,
-			CONFIG_CLOCK_STM32_MSI_RANGE << RCC_CR_MSIRANGE_Pos),
+			STM32_MSI_RANGE << RCC_CR_MSIRANGE_Pos),
 			hclk_prescaler);
 
 #if defined(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC)
@@ -551,9 +538,9 @@ int stm32_clock_control_init(const struct device *dev)
 
 	/* Set MSI Range */
 	LL_RCC_MSI_EnableRangeSelection();
-	LL_RCC_MSI_SetRange(CONFIG_CLOCK_STM32_MSI_RANGE << RCC_CR_MSIRANGE_Pos);
+	LL_RCC_MSI_SetRange(STM32_MSI_RANGE << RCC_CR_MSIRANGE_Pos);
 
-#if defined(CONFIG_CLOCK_STM32_MSI_PLL_MODE)
+#if STM32_MSI_PLL_MODE
 	/* Enable MSI hardware auto calibration */
 	LL_RCC_MSI_EnablePLLMode();
 #endif
@@ -599,7 +586,7 @@ int stm32_clock_control_init(const struct device *dev)
 	LL_RCC_HSI_Disable();
 	LL_RCC_PLL_Disable();
 
-#elif CONFIG_CLOCK_STM32_SYSCLK_SRC_HSI
+#elif STM32_SYSCLK_SRC_HSI
 
 	stm32_clock_switch_to_hsi(hclk_prescaler);
 
@@ -623,7 +610,7 @@ int stm32_clock_control_init(const struct device *dev)
 	LL_RCC_MSI_Disable();
 	LL_RCC_PLL_Disable();
 
-#endif /* CONFIG_CLOCK_STM32_SYSCLK_SRC_... */
+#endif /* STM32_SYSCLK_SRC_... */
 
 	/* configure MCO1/MCO2 based on Kconfig */
 	stm32_clock_control_mco_init();

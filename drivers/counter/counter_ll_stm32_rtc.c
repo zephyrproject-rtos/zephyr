@@ -337,7 +337,7 @@ static int rtc_stm32_init(const struct device *dev)
 	while (LL_RCC_LSE_IsReady() != 1) {
 	}
 
-#if defined(CONFIG_CLOCK_STM32_MSI_PLL_MODE)
+#if STM32_MSI_PLL_MODE
 	/* Enable MSI hardware auto calibration */
 	LL_RCC_MSI_EnablePLLMode();
 #endif
