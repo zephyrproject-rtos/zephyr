@@ -51,7 +51,7 @@ static struct gsm_modem {
 	struct k_sem sem_response;
 
 	struct modem_iface_uart_data gsm_data;
-	struct k_delayed_work gsm_configure_work;
+	struct k_work_delayable gsm_configure_work;
 	char gsm_rx_rb_buf[PPP_MRU * 3];
 
 	uint8_t *ppp_recv_buf;
@@ -368,8 +368,8 @@ static void gsm_finalize_connection(struct gsm_modem *gsm)
 		if (ret < 0) {
 			LOG_ERR("modem setup returned %d, %s",
 				ret, "retrying...");
-			(void)k_delayed_work_submit(&gsm->gsm_configure_work,
-						    K_SECONDS(1));
+			(void)k_work_reschedule(&gsm->gsm_configure_work,
+						K_SECONDS(1));
 			return;
 		}
 	}
@@ -395,8 +395,7 @@ static void gsm_finalize_connection(struct gsm_modem *gsm)
 	if (ret < 0) {
 		LOG_DBG("modem setup returned %d, %s",
 			ret, "retrying...");
-		(void)k_delayed_work_submit(&gsm->gsm_configure_work,
-					    K_SECONDS(1));
+		(void)k_work_reschedule(&gsm->gsm_configure_work, K_SECONDS(1));
 		return;
 	}
 
@@ -422,8 +421,9 @@ attaching:
 		}
 
 		LOG_DBG("Not attached, %s", "retrying...");
-		(void)k_delayed_work_submit(&gsm->gsm_configure_work,
-					    K_MSEC(GSM_ATTACH_RETRY_DELAY_MSEC));
+
+		(void)k_work_reschedule(&gsm->gsm_configure_work,
+					K_MSEC(GSM_ATTACH_RETRY_DELAY_MSEC));
 		return;
 	}
 
@@ -441,8 +441,7 @@ attaching:
 	if (ret < 0) {
 		LOG_DBG("modem setup returned %d, %s",
 			ret, "retrying...");
-		(void)k_delayed_work_submit(&gsm->gsm_configure_work,
-					    K_SECONDS(1));
+		(void)k_work_reschedule(&gsm->gsm_configure_work, K_SECONDS(1));
 		return;
 	}
 
@@ -523,7 +522,7 @@ static int mux_enable(struct gsm_modem *gsm)
 
 static void mux_setup_next(struct gsm_modem *gsm)
 {
-	(void)k_delayed_work_submit(&gsm->gsm_configure_work, K_MSEC(1));
+	(void)k_work_reschedule(&gsm->gsm_configure_work, K_MSEC(1));
 }
 
 static void mux_attach_cb(const struct device *mux, int dlci_address,
@@ -674,8 +673,7 @@ static void gsm_configure(struct k_work *work)
 	if (ret < 0) {
 		LOG_DBG("modem not ready %d", ret);
 
-		(void)k_delayed_work_submit(&gsm->gsm_configure_work,
-					    K_NO_WAIT);
+		(void)k_work_reschedule(&gsm->gsm_configure_work, K_NO_WAIT);
 
 		return;
 	}
@@ -689,8 +687,8 @@ static void gsm_configure(struct k_work *work)
 			gsm->mux_enabled = true;
 		} else {
 			gsm->mux_enabled = false;
-			(void)k_delayed_work_submit(&gsm->gsm_configure_work,
-						    K_NO_WAIT);
+			(void)k_work_reschedule(&gsm->gsm_configure_work,
+						K_NO_WAIT);
 			return;
 		}
 
@@ -700,11 +698,11 @@ static void gsm_configure(struct k_work *work)
 		if (gsm->mux_enabled) {
 			gsm->state = STATE_INIT;
 
-			k_delayed_work_init(&gsm->gsm_configure_work,
-					    mux_setup);
+			k_work_init_delayable(&gsm->gsm_configure_work,
+					      mux_setup);
 
-			(void)k_delayed_work_submit(&gsm->gsm_configure_work,
-						    K_NO_WAIT);
+			(void)k_work_reschedule(&gsm->gsm_configure_work,
+						K_NO_WAIT);
 			return;
 		}
 	}
@@ -724,8 +722,8 @@ void gsm_ppp_start(const struct device *dev)
 		return;
 	}
 
-	k_delayed_work_init(&gsm->gsm_configure_work, gsm_configure);
-	(void)k_delayed_work_submit(&gsm->gsm_configure_work, K_NO_WAIT);
+	k_work_init_delayable(&gsm->gsm_configure_work, gsm_configure);
+	(void)k_work_reschedule(&gsm->gsm_configure_work, K_NO_WAIT);
 }
 
 void gsm_ppp_stop(const struct device *dev)
