@@ -12,6 +12,30 @@
 
 	aliases {
 		uart-0 = &uart0;
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
+		led3 = &led3;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&cy8c95xx_port1 4 GPIO_ACTIVE_HIGH>;
+			label = "LED 0";
+		};
+		led1: led_1 {
+			gpios = <&cy8c95xx_port1 5 GPIO_ACTIVE_HIGH>;
+			label = "LED 1";
+		};
+		led2: led_2 {
+			gpios = <&cy8c95xx_port1 6 GPIO_ACTIVE_HIGH>;
+			label = "LED 2";
+		};
+		led3: led_3 {
+			gpios = <&cy8c95xx_port1 7 GPIO_ACTIVE_HIGH>;
+			label = "LED 3";
+		};
 	};
 
 	chosen {
@@ -44,4 +68,39 @@
 &spi2 {
 	status = "okay";
 	clock-frequency = <33333333>;
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+
+	cy8c95xx: cy8c95xx@20 {
+		compatible = "cypress,cy8c95xx-gpio";
+		reg = <0x20>;
+		label = "cy8c95xx_gpio";
+
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cy8c95xx_port0: cy8c95xx_port@0 {
+			compatible = "cypress,cy8c95xx-gpio-port";
+			reg = <0x00>;
+			label = "cy8c95xx_port0";
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <8>;
+			status = "okay";
+		};
+
+		cy8c95xx_port1: cy8c95xx_port@1 {
+			compatible = "cypress,cy8c95xx-gpio-port";
+			reg = <0x01>;
+			label = "cy8c95xx_port1";
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <8>;
+			status = "okay";
+		};
+	};
 };
