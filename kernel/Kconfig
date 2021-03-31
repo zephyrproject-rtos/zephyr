@@ -369,7 +369,7 @@ if THREAD_RUNTIME_STATS
 
 config THREAD_RUNTIME_STATS_USE_TIMING_FUNCTIONS
 	bool "Use timing functions to gather statistics"
-	select TIMING_FUNCTIONS
+	select TIMING_FUNCTIONS_NEED_AT_BOOT
 	help
 	  Use timing functions to gather thread runtime statistics.
 
