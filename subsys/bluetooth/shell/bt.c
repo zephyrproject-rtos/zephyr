@@ -1653,25 +1653,25 @@ static int cmd_per_adv_sync_delete(const struct shell *shell, size_t argc,
 {
 	int err;
 	int index = 0;
-	struct bt_le_per_adv_sync **per_adv_sync = NULL;
+	struct bt_le_per_adv_sync *per_adv_sync = NULL;
 
 	if (argc > 1) {
 		index = strtol(argv[1], NULL, 10);
 	}
 
-	per_adv_sync = &per_adv_syncs[index];
+	per_adv_sync = per_adv_syncs[index];
 
 	if (!per_adv_sync) {
 		return -EINVAL;
 	}
 
-	err = bt_le_per_adv_sync_delete(*per_adv_sync);
+	err = bt_le_per_adv_sync_delete(per_adv_sync);
 
 	if (err) {
 		shell_error(shell, "Per adv sync delete failed (%d)", err);
 	} else {
 		shell_print(shell, "Per adv sync deleted");
-		*per_adv_sync = NULL;
+		per_adv_syncs[index] = NULL;
 	}
 
 	return 0;
