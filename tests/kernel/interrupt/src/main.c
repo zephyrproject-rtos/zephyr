@@ -9,6 +9,7 @@
 extern void test_isr_dynamic(void);
 extern void test_nested_isr(void);
 extern void test_prevent_interruption(void);
+extern void test_isr_regular(void);
 extern void test_isr_offload_job_multiple(void);
 extern void test_isr_offload_job_identi(void);
 extern void test_isr_offload_job(void);
@@ -19,6 +20,7 @@ void test_main(void)
 			ztest_unit_test(test_isr_dynamic),
 			ztest_unit_test(test_nested_isr),
 			ztest_unit_test(test_prevent_interruption),
+			ztest_unit_test(test_isr_regular),
 			ztest_unit_test(test_isr_offload_job_multiple),
 			ztest_unit_test(test_isr_offload_job_identi),
 			ztest_unit_test(test_isr_offload_job)
