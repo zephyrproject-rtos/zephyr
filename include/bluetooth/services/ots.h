@@ -197,13 +197,13 @@ enum {
 	((prop) & BIT(BT_OTS_OBJ_PROP_MARKED))
 
 /** @brief Descriptor for OTS Object Size parameter. */
-struct bt_ots_obj_size {
+__packed_struct bt_ots_obj_size {
 	/* Current Size */
 	uint32_t cur;
 
 	/* Allocated Size */
 	uint32_t alloc;
-} __packed;
+};
 
 /** @brief Descriptor for OTS object initialization. */
 struct bt_ots_obj_metadata {
@@ -465,13 +465,13 @@ enum {
 	((feat) & BIT(BT_OTS_OLCP_FEAT_CLEAR))
 
 /**@brief Features of the OTS. */
-struct bt_ots_feat {
+__packed_struct bt_ots_feat {
 	/* OACP Features */
 	uint32_t oacp;
 
 	/* OLCP Features */
 	uint32_t olcp;
-} __packed;
+};
 
 /** @brief Opaque OTS instance. */
 struct bt_ots;
