@@ -690,7 +690,7 @@ static void dsa_delayed_work(struct k_work *item)
 		context->link_up[i] = link_state;
 	}
 
-	k_delayed_work_submit(&context->dsa_work, DSA_STATUS_PERIOD_MS);
+	k_work_reschedule(&context->dsa_work, DSA_STATUS_PERIOD_MS);
 }
 
 int dsa_port_init(const struct device *dev)
@@ -975,8 +975,8 @@ static void dsa_iface_init(struct net_if *iface)
 	if (context->iface_slave[KSZ8794_PORT1] &&
 	    context->iface_slave[KSZ8794_PORT2] &&
 	    context->iface_slave[KSZ8794_PORT3]) {
-		k_delayed_work_init(&context->dsa_work, dsa_delayed_work);
-		k_delayed_work_submit(&context->dsa_work, DSA_STATUS_PERIOD_MS);
+		k_work_init_delayable(&context->dsa_work, dsa_delayed_work);
+		k_work_reschedule(&context->dsa_work, DSA_STATUS_PERIOD_MS);
 	}
 }
 
