@@ -60,6 +60,30 @@ static device_idx_t num_pm;
 /* Number of devices successfully suspended. */
 static device_idx_t num_susp;
 
+static bool should_suspend(const struct device *dev, uint32_t state)
+{
+	int rc;
+	uint32_t current_state;
+
+	rc = pm_device_state_get(dev, &current_state);
+	if ((rc != -ENOTSUP) && (rc != 0)) {
+		LOG_DBG("Was not possible to get device %s state: %d",
+			dev->name, rc);
+		return true;
+	}
+
+	/*
+	 * If the device is currently powered off or the request was
+	 * to go to the same state, just ignore it.
+	 */
+	if ((current_state == PM_DEVICE_OFF_STATE) ||
+			(current_state == state)) {
+		return false;
+	}
+
+	return true;
+}
+
 static int _pm_devices(uint32_t state)
 {
 	num_susp = 0;
@@ -67,19 +91,32 @@ static int _pm_devices(uint32_t state)
 	for (int i = num_pm - 1; i >= 0; i--) {
 		device_idx_t idx = pm_devices[i];
 		const struct device *dev = &all_devices[idx];
+		bool suspend;
 		int rc;
 
-		/* TODO: Improve the logic by checking device status
-		 * and set the device states accordingly.
-		 */
-		rc = pm_device_state_set(dev, state, NULL, NULL);
-		if ((rc != -ENOTSUP) && (rc != 0)) {
-			LOG_DBG("%s did not enter %s state: %d",
-				dev->name, pm_device_state_str(state), rc);
-			return rc;
-		}
+		suspend = should_suspend(dev, state);
+		if (suspend) {
+			/*
+			 * Don't bother the device if it is currently
+			 * in the right state.
+			 */
+			rc = pm_device_state_set(dev, state, NULL, NULL);
+			if ((rc != -ENOTSUP) && (rc != 0)) {
+				LOG_DBG("%s did not enter %s state: %d",
+					dev->name, pm_device_state_str(state),
+					rc);
+				return rc;
+			}
 
-		++num_susp;
+			/*
+			 * Just mark as suspended devices that were suspended now
+			 * otherwise we will resume devices that were already suspended
+			 * and not being used.
+			 * This still not optimal, since we are not distinguishing
+			 * between other states like DEVICE_PM_LOW_POWER_STATE.
+			 */
+			++num_susp;
+		}
 	}
 
 	return 0;
