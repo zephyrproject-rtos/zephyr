@@ -17,6 +17,23 @@ struct k_mem_paging_histogram_t z_paging_histogram_eviction;
 struct k_mem_paging_histogram_t z_paging_histogram_backing_store_page_in;
 struct k_mem_paging_histogram_t z_paging_histogram_backing_store_page_out;
 
+#ifdef CONFIG_DEMAND_PAGING_STATS_USING_TIMING_FUNCTIONS
+
+/*
+ * The frequency of timing functions is highly dependent on
+ * architecture, SoC or board. It is also not available at build time.
+ * Therefore, the bounds for the timing histograms needs to be defined
+ * externally to this file, and must be tailored to the platform
+ * being used.
+ */
+
+extern unsigned long
+z_eviction_histogram_bounds[CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM_NUM_BINS];
+
+extern unsigned long
+z_backing_store_histogram_bounds[CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM_NUM_BINS];
+
+#else
 #define NS_TO_CYC(ns)		(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / 1000000U * ns)
 
 /*
@@ -53,6 +70,7 @@ z_backing_store_histogram_bounds[CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM_NUM_BINS]
 	NS_TO_CYC(10000),
 	ULONG_MAX
 };
+#endif /* CONFIG_DEMAND_PAGING_STATS_USING_TIMING_FUNCTIONS */
 #endif /* CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM */
 
 unsigned long z_num_pagefaults_get(void)
