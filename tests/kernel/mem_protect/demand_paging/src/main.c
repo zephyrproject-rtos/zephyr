@@ -6,6 +6,7 @@
 
 #include <ztest.h>
 #include <sys/mem_manage.h>
+#include <timing/timing.h>
 #include <mmu.h>
 
 #ifdef CONFIG_BACKING_STORE_RAM_PAGES
@@ -13,6 +14,44 @@
 #else
 #error "Unsupported configuration"
 #endif
+
+#ifdef CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM
+#ifdef CONFIG_DEMAND_PAGING_STATS_USING_TIMING_FUNCTIONS
+
+#ifdef CONFIG_BOARD_QEMU_X86
+unsigned long
+z_eviction_histogram_bounds[CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM_NUM_BINS] = {
+	10000,
+	20000,
+	30000,
+	40000,
+	50000,
+	60000,
+	70000,
+	80000,
+	100000,
+	ULONG_MAX
+};
+
+unsigned long
+z_backing_store_histogram_bounds[CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM_NUM_BINS] = {
+	10000,
+	50000,
+	100000,
+	150000,
+	200000,
+	250000,
+	500000,
+	750000,
+	1000000,
+	ULONG_MAX
+};
+#else
+#error "Need to define paging histogram bounds"
+#endif
+
+#endif /* CONFIG_DEMAND_PAGING_STATS_USING_TIMING_FUNCTIONS */
+#endif /* CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM */
 
 size_t arena_size;
 char *arena;
@@ -316,7 +355,11 @@ bool print_histogram(struct k_mem_paging_histogram_t *hist)
 	for (idx = 0;
 	     idx < CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM_NUM_BINS;
 	     idx++) {
+#ifdef CONFIG_DEMAND_PAGING_STATS_USING_TIMING_FUNCTIONS
+		time_ns = timing_cycles_to_ns(hist->bounds[idx]);
+#else
 		time_ns = k_cyc_to_ns_ceil64(hist->bounds[idx]);
+#endif
 		printk("  <= %llu ns (%lu cycles): %lu\n", time_ns,
 		       hist->bounds[idx], hist->counts[idx]);
 		if (hist->counts[idx] > 0U) {
