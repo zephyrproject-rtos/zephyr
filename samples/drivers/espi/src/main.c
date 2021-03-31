@@ -778,7 +778,7 @@ int espi_saf_test1(uint32_t spi_addr)
 
 	return rc;
 }
-#endif /* #ifdef CONFIG_ESPI_SAF */
+#endif /* CONFIG_ESPI_SAF */
 
 static void host_warn_handler(uint32_t signal, uint32_t status)
 {
