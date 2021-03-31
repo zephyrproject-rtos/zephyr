@@ -45,31 +45,31 @@ extern struct net_if _net_if_list_end[];
 
 #if defined(CONFIG_NET_NATIVE_IPV4) || defined(CONFIG_NET_NATIVE_IPV6)
 static struct net_if_router routers[CONFIG_NET_MAX_ROUTERS];
-static struct k_delayed_work router_timer;
+static struct k_work_delayable router_timer;
 static sys_slist_t active_router_timers;
 #endif
 
 #if defined(CONFIG_NET_NATIVE_IPV6)
 /* Timer that triggers network address renewal */
-static struct k_delayed_work address_lifetime_timer;
+static struct k_work_delayable address_lifetime_timer;
 
 /* Track currently active address lifetime timers */
 static sys_slist_t active_address_lifetime_timers;
 
 /* Timer that triggers IPv6 prefix lifetime */
-static struct k_delayed_work prefix_lifetime_timer;
+static struct k_work_delayable prefix_lifetime_timer;
 
 /* Track currently active IPv6 prefix lifetime timers */
 static sys_slist_t active_prefix_lifetime_timers;
 
 #if defined(CONFIG_NET_IPV6_DAD)
 /** Duplicate address detection (DAD) timer */
-static struct k_delayed_work dad_timer;
+static struct k_work_delayable dad_timer;
 static sys_slist_t active_dad_timers;
 #endif
 
 #if defined(CONFIG_NET_IPV6_ND)
-static struct k_delayed_work rs_timer;
+static struct k_work_delayable rs_timer;
 static sys_slist_t active_rs_timers;
 #endif
 
@@ -750,9 +750,9 @@ static void iface_router_update_timer(uint32_t now)
 	}
 
 	if (new_delay == UINT32_MAX) {
-		k_delayed_work_cancel(&router_timer);
+		k_work_cancel_delayable(&router_timer);
 	} else {
-		k_delayed_work_submit(&router_timer, K_MSEC(new_delay));
+		k_work_reschedule(&router_timer, K_MSEC(new_delay));
 	}
 
 	k_mutex_unlock(&lock);
@@ -937,7 +937,7 @@ out:
 
 static void iface_router_init(void)
 {
-	k_delayed_work_init(&router_timer, iface_router_expired);
+	k_work_init_delayable(&router_timer, iface_router_expired);
 	sys_slist_init(&active_router_timers);
 }
 #else
@@ -1150,7 +1150,7 @@ static void dad_timeout(struct k_work *work)
 	}
 
 	if ((ifaddr != NULL) && (delay > 0)) {
-		k_delayed_work_submit(&dad_timer, K_MSEC((uint32_t)delay));
+		k_work_reschedule(&dad_timer, K_MSEC((uint32_t)delay));
 	}
 
 	k_mutex_unlock(&lock);
@@ -1177,9 +1177,9 @@ static void net_if_ipv6_start_dad(struct net_if *iface,
 			sys_slist_append(&active_dad_timers, &ifaddr->dad_node);
 
 			/* FUTURE: use schedule, not reschedule. */
-			if (!k_delayed_work_remaining_get(&dad_timer)) {
-				k_delayed_work_submit(&dad_timer,
-						      K_MSEC(DAD_TIMEOUT));
+			if (!k_work_delayable_remaining_get(&dad_timer)) {
+				k_work_reschedule(&dad_timer,
+						  K_MSEC(DAD_TIMEOUT));
 			}
 		}
 	} else {
@@ -1266,7 +1266,7 @@ out:
 
 static inline void iface_ipv6_dad_init(void)
 {
-	k_delayed_work_init(&dad_timer, dad_timeout);
+	k_work_init_delayable(&dad_timer, dad_timeout);
 	sys_slist_init(&active_dad_timers);
 }
 
@@ -1333,9 +1333,8 @@ static void rs_timeout(struct k_work *work)
 	}
 
 	if ((ipv6 != NULL) && (delay > 0)) {
-		k_delayed_work_submit(&rs_timer,
-				      K_MSEC(ipv6->rs_start +
-					     RS_TIMEOUT - current_time));
+		k_work_reschedule(&rs_timer, K_MSEC(ipv6->rs_start +
+						    RS_TIMEOUT - current_time));
 	}
 
 	k_mutex_unlock(&lock);
@@ -1359,8 +1358,8 @@ void net_if_start_rs(struct net_if *iface)
 		sys_slist_append(&active_rs_timers, &ipv6->rs_node);
 
 		/* FUTURE: use schedule, not reschedule. */
-		if (!k_delayed_work_remaining_get(&rs_timer)) {
-			k_delayed_work_submit(&rs_timer, K_MSEC(RS_TIMEOUT));
+		if (!k_work_delayable_remaining_get(&rs_timer)) {
+			k_work_reschedule(&rs_timer, K_MSEC(RS_TIMEOUT));
 		}
 	}
 
@@ -1389,7 +1388,7 @@ out:
 
 static inline void iface_ipv6_nd_init(void)
 {
-	k_delayed_work_init(&rs_timer, rs_timeout);
+	k_work_init_delayable(&rs_timer, rs_timeout);
 	sys_slist_init(&active_rs_timers);
 }
 
@@ -1548,8 +1547,7 @@ static void address_lifetime_timeout(struct k_work *work)
 	if (next_update != UINT32_MAX) {
 		NET_DBG("Waiting for %d ms", (int32_t)next_update);
 
-		k_delayed_work_submit(&address_lifetime_timer,
-				      K_MSEC(next_update));
+		k_work_reschedule(&address_lifetime_timer, K_MSEC(next_update));
 	}
 
 	k_mutex_unlock(&lock);
@@ -1568,7 +1566,7 @@ static void address_start_timer(struct net_if_addr *ifaddr, uint32_t vlifetime)
 			 &ifaddr->lifetime.node);
 
 	net_timeout_set(&ifaddr->lifetime, vlifetime, k_uptime_get_32());
-	k_delayed_work_submit(&address_lifetime_timer, K_NO_WAIT);
+	k_work_reschedule(&address_lifetime_timer, K_NO_WAIT);
 }
 
 void net_if_ipv6_addr_update_lifetime(struct net_if_addr *ifaddr,
@@ -1736,7 +1734,8 @@ bool net_if_ipv6_addr_rm(struct net_if *iface, const struct in6_addr *addr)
 
 			if (sys_slist_is_empty(
 				    &active_address_lifetime_timers)) {
-				k_delayed_work_cancel(&address_lifetime_timer);
+				k_work_cancel_delayable(
+					&address_lifetime_timer);
 			}
 		}
 
@@ -2143,8 +2142,7 @@ static void prefix_lifetime_timeout(struct k_work *work)
 	}
 
 	if (next_update != UINT32_MAX) {
-		k_delayed_work_submit(&prefix_lifetime_timer,
-				      K_MSEC(next_update));
+		k_work_reschedule(&prefix_lifetime_timer, K_MSEC(next_update));
 	}
 
 	k_mutex_unlock(&lock);
@@ -2161,7 +2159,7 @@ static void prefix_start_timer(struct net_if_ipv6_prefix *ifprefix,
 			 &ifprefix->lifetime.node);
 
 	net_timeout_set(&ifprefix->lifetime, lifetime, k_uptime_get_32());
-	k_delayed_work_submit(&prefix_lifetime_timer, K_NO_WAIT);
+	k_work_reschedule(&prefix_lifetime_timer, K_NO_WAIT);
 
 	k_mutex_unlock(&lock);
 }
@@ -2793,8 +2791,9 @@ static void iface_ipv6_init(int if_count)
 	iface_ipv6_dad_init();
 	iface_ipv6_nd_init();
 
-	k_delayed_work_init(&address_lifetime_timer, address_lifetime_timeout);
-	k_delayed_work_init(&prefix_lifetime_timer, prefix_lifetime_timeout);
+	k_work_init_delayable(&address_lifetime_timer,
+			      address_lifetime_timeout);
+	k_work_init_delayable(&prefix_lifetime_timer, prefix_lifetime_timeout);
 
 	if (if_count > ARRAY_SIZE(ipv6_addresses)) {
 		NET_WARN("You have %lu IPv6 net_if addresses but %d "

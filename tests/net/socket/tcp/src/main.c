@@ -708,7 +708,7 @@ void test_v6_so_rcvtimeo(void)
 }
 
 struct test_msg_waitall_data {
-	struct k_delayed_work tx_work;
+	struct k_work_delayable tx_work;
 	int sock;
 	const uint8_t *data;
 	size_t offset;
@@ -724,7 +724,7 @@ static void test_msg_waitall_tx_work_handler(struct k_work *work)
 		test_send(test_data->sock, test_data->data + test_data->offset, 1, 0);
 		test_data->offset++;
 		test_data->retries--;
-		k_delayed_work_submit(&test_data->tx_work, K_MSEC(10));
+		k_work_reschedule(&test_data->tx_work, K_MSEC(10));
 	}
 }
 
@@ -767,14 +767,15 @@ void test_v4_msg_waitall(void)
 	test_data.offset = 0;
 	test_data.retries = sizeof(rx_buf);
 	test_data.sock = c_sock;
-	k_delayed_work_init(&test_data.tx_work, test_msg_waitall_tx_work_handler);
-	k_delayed_work_submit(&test_data.tx_work, K_MSEC(10));
+	k_work_init_delayable(&test_data.tx_work,
+			      test_msg_waitall_tx_work_handler);
+	k_work_reschedule(&test_data.tx_work, K_MSEC(10));
 
 	ret = recv(new_sock, rx_buf, sizeof(rx_buf), MSG_WAITALL);
 	zassert_equal(ret, sizeof(rx_buf), "Invalid length received");
 	zassert_mem_equal(rx_buf, TEST_STR_SMALL, sizeof(rx_buf),
 			  "Invalid data received");
-	k_delayed_work_cancel(&test_data.tx_work);
+	k_work_cancel_delayable(&test_data.tx_work);
 
 	/* MSG_WAITALL + SO_RCVTIMEO - make sure recv returns the amount of data
 	 * received so far
@@ -787,14 +788,15 @@ void test_v4_msg_waitall(void)
 	test_data.offset = 0;
 	test_data.retries = sizeof(rx_buf) - 1;
 	test_data.sock = c_sock;
-	k_delayed_work_init(&test_data.tx_work, test_msg_waitall_tx_work_handler);
-	k_delayed_work_submit(&test_data.tx_work, K_MSEC(10));
+	k_work_init_delayable(&test_data.tx_work,
+			      test_msg_waitall_tx_work_handler);
+	k_work_reschedule(&test_data.tx_work, K_MSEC(10));
 
 	ret = recv(new_sock, rx_buf, sizeof(rx_buf) - 1, MSG_WAITALL);
 	zassert_equal(ret, sizeof(rx_buf) - 1, "Invalid length received");
 	zassert_mem_equal(rx_buf, TEST_STR_SMALL, sizeof(rx_buf) - 1,
 			  "Invalid data received");
-	k_delayed_work_cancel(&test_data.tx_work);
+	k_work_cancel_delayable(&test_data.tx_work);
 
 	test_close(new_sock);
 	test_close(s_sock);
@@ -839,14 +841,15 @@ void test_v6_msg_waitall(void)
 	test_data.offset = 0;
 	test_data.retries = sizeof(rx_buf);
 	test_data.sock = c_sock;
-	k_delayed_work_init(&test_data.tx_work, test_msg_waitall_tx_work_handler);
-	k_delayed_work_submit(&test_data.tx_work, K_MSEC(10));
+	k_work_init_delayable(&test_data.tx_work,
+			      test_msg_waitall_tx_work_handler);
+	k_work_reschedule(&test_data.tx_work, K_MSEC(10));
 
 	ret = recv(new_sock, rx_buf, sizeof(rx_buf), MSG_WAITALL);
 	zassert_equal(ret, sizeof(rx_buf), "Invalid length received");
 	zassert_mem_equal(rx_buf, TEST_STR_SMALL, sizeof(rx_buf),
 			  "Invalid data received");
-	k_delayed_work_cancel(&test_data.tx_work);
+	k_work_cancel_delayable(&test_data.tx_work);
 
 	/* MSG_WAITALL + SO_RCVTIMEO - make sure recv returns the amount of data
 	 * received so far
@@ -859,14 +862,15 @@ void test_v6_msg_waitall(void)
 	test_data.offset = 0;
 	test_data.retries = sizeof(rx_buf) - 1;
 	test_data.sock = c_sock;
-	k_delayed_work_init(&test_data.tx_work, test_msg_waitall_tx_work_handler);
-	k_delayed_work_submit(&test_data.tx_work, K_MSEC(10));
+	k_work_init_delayable(&test_data.tx_work,
+			      test_msg_waitall_tx_work_handler);
+	k_work_reschedule(&test_data.tx_work, K_MSEC(10));
 
 	ret = recv(new_sock, rx_buf, sizeof(rx_buf) - 1, MSG_WAITALL);
 	zassert_equal(ret, sizeof(rx_buf) - 1, "Invalid length received");
 	zassert_mem_equal(rx_buf, TEST_STR_SMALL, sizeof(rx_buf) - 1,
 			  "Invalid data received");
-	k_delayed_work_cancel(&test_data.tx_work);
+	k_work_cancel_delayable(&test_data.tx_work);
 
 	test_close(new_sock);
 	test_close(s_sock);

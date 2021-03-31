@@ -451,10 +451,10 @@ void net_ppp_init(struct net_if *iface)
 	 * system. The issue is not very likely as typically there
 	 * would be only one PPP network interface in the system.
 	 */
-	k_delayed_work_init(&ctx->startup, ppp_startup);
+	k_work_init_delayable(&ctx->startup, ppp_startup);
 
 	ctx->is_startup_pending = true;
 
-	k_delayed_work_submit(&ctx->startup,
-			      K_MSEC(CONFIG_NET_L2_PPP_DELAY_STARTUP_MS));
+	k_work_reschedule(&ctx->startup,
+			  K_MSEC(CONFIG_NET_L2_PPP_DELAY_STARTUP_MS));
 }

@@ -222,9 +222,9 @@ void platformRadioInit(void)
 		return;
 	}
 
-	k_work_q_start(&ot_work_q, ot_task_stack,
-		       K_KERNEL_STACK_SIZEOF(ot_task_stack),
-		       OT_WORKER_PRIORITY);
+	k_work_queue_start(&ot_work_q, ot_task_stack,
+			   K_KERNEL_STACK_SIZEOF(ot_task_stack),
+			   OT_WORKER_PRIORITY, NULL);
 	k_thread_name_set(&ot_work_q.thread, "ot_radio_workq");
 
 	if ((radio_api->get_capabilities(radio_dev) &

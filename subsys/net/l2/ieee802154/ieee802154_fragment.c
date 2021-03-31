@@ -42,7 +42,7 @@ static uint16_t datagram_tag;
  *  IPv6 packets simultaneously.
  */
 struct frag_cache {
-	struct k_delayed_work timer;	/* Reassemble timer */
+	struct k_work_delayable timer; /* Reassemble timer */
 	struct net_pkt *pkt;		/* Reassemble packet */
 	uint16_t size;			/* Datagram size */
 	uint16_t tag;			/* Datagram tag */
@@ -277,7 +277,7 @@ static inline void clear_reass_cache(uint16_t size, uint16_t tag)
 		cache[i].size = 0U;
 		cache[i].tag = 0U;
 		cache[i].used = false;
-		k_delayed_work_cancel(&cache[i].timer);
+		k_work_cancel_delayable(&cache[i].timer);
 	}
 }
 
@@ -319,8 +319,8 @@ static inline struct frag_cache *set_reass_cache(struct net_pkt *pkt,
 		cache[i].tag = tag;
 		cache[i].used = true;
 
-		k_delayed_work_init(&cache[i].timer, reass_timeout);
-		k_delayed_work_submit(&cache[i].timer, FRAG_REASSEMBLY_TIMEOUT);
+		k_work_init_delayable(&cache[i].timer, reass_timeout);
+		k_work_reschedule(&cache[i].timer, FRAG_REASSEMBLY_TIMEOUT);
 		return &cache[i];
 	}
 

@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(net_ipv4_autoconf, CONFIG_NET_IPV4_AUTO_LOG_LEVEL);
 #include "ipv4_autoconf_internal.h"
 
 /* Have only one timer in order to save memory */
-static struct k_delayed_work ipv4auto_timer;
+static struct k_work_delayable ipv4auto_timer;
 
 /* Track currently active timers */
 static sys_slist_t ipv4auto_ifaces;
@@ -248,14 +248,12 @@ static uint32_t ipv4_autoconf_get_timeout(struct net_if_ipv4_autoconf *ipv4auto)
 
 static void ipv4_autoconf_submit_work(uint32_t timeout)
 {
-	if (!k_delayed_work_remaining_get(&ipv4auto_timer) ||
-	    timeout < k_delayed_work_remaining_get(&ipv4auto_timer)) {
-		k_delayed_work_cancel(&ipv4auto_timer);
-		k_delayed_work_submit(&ipv4auto_timer, K_MSEC(timeout));
+	k_work_cancel_delayable(&ipv4auto_timer);
+	k_work_reschedule(&ipv4auto_timer, K_MSEC(timeout));
 
-		NET_DBG("Next wakeup in %d ms",
-			k_delayed_work_remaining_get(&ipv4auto_timer));
-	}
+	NET_DBG("Next wakeup in %d ms",
+		k_ticks_to_ms_ceil32(
+			k_work_delayable_remaining_get(&ipv4auto_timer)));
 }
 
 static bool ipv4_autoconf_check_timeout(int64_t start, uint32_t time, int64_t timeout)
@@ -314,7 +312,7 @@ static void ipv4_autoconf_timeout(struct k_work *work)
 	if (timeout_update != UINT32_MAX && timeout_update > 0) {
 		NET_DBG("Waiting for %u ms", timeout_update);
 
-		k_delayed_work_submit(&ipv4auto_timer, K_MSEC(timeout_update));
+		k_work_reschedule(&ipv4auto_timer, K_MSEC(timeout_update));
 	}
 }
 
@@ -376,11 +374,11 @@ void net_ipv4_autoconf_reset(struct net_if *iface)
 	sys_slist_find_and_remove(&ipv4auto_ifaces, &cfg->ipv4auto.node);
 
 	if (sys_slist_is_empty(&ipv4auto_ifaces)) {
-		k_delayed_work_cancel(&ipv4auto_timer);
+		k_work_cancel_delayable(&ipv4auto_timer);
 	}
 }
 
 void net_ipv4_autoconf_init(void)
 {
-	k_delayed_work_init(&ipv4auto_timer, ipv4_autoconf_timeout);
+	k_work_init_delayable(&ipv4auto_timer, ipv4_autoconf_timeout);
 }

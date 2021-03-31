@@ -55,7 +55,7 @@ struct ipso_timer_data {
 	uint32_t trigger_counter;
 	uint32_t cumulative_time_ms;
 
-	struct k_delayed_work timer_work;
+	struct k_work_delayable timer_work;
 
 	uint16_t obj_inst_id;
 	uint8_t timer_mode;
@@ -144,7 +144,7 @@ static int start_timer(struct ipso_timer_data *timer)
 	lwm2m_engine_set_bool(path, true);
 
 	float2ms(&timer->delay_duration, &temp);
-	k_delayed_work_submit(&timer->timer_work, K_MSEC(temp));
+	k_work_reschedule(&timer->timer_work, K_MSEC(temp));
 
 	return 0;
 }
@@ -164,7 +164,7 @@ static int stop_timer(struct ipso_timer_data *timer, bool cancel)
 	lwm2m_engine_set_bool(path, false);
 
 	if (cancel) {
-		k_delayed_work_cancel(&timer->timer_work);
+		k_work_cancel_delayable(&timer->timer_work);
 	}
 
 	return 0;
@@ -317,7 +317,7 @@ static struct lwm2m_engine_obj_inst *timer_create(uint16_t obj_inst_id)
 
 	/* Set default values */
 	(void)memset(&timer_data[avail], 0, sizeof(timer_data[avail]));
-	k_delayed_work_init(&timer_data[avail].timer_work, timer_work_cb);
+	k_work_init_delayable(&timer_data[avail].timer_work, timer_work_cb);
 	timer_data[avail].delay_duration.val1 = 5; /* 5 seconds */
 	timer_data[avail].enabled = true;
 	timer_data[avail].timer_mode = TIMER_MODE_ONE_SHOT;

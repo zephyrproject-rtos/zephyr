@@ -223,7 +223,7 @@ struct ppp_my_option_info;
  */
 struct ppp_fsm {
 	/** Timeout timer */
-	struct k_delayed_work timer;
+	struct k_work_delayable timer;
 
 	struct {
 		/** Acknowledge Configuration Information */
@@ -382,7 +382,7 @@ struct ppp_context {
 	atomic_t flags;
 
 	/** PPP startup worker. */
-	struct k_delayed_work startup;
+	struct k_work_delayable startup;
 
 	/** Carrier ON/OFF handler worker. This is used to create
 	 * network interface UP/DOWN event when PPP L2 driver

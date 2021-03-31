@@ -1052,15 +1052,16 @@ int lwm2m_send_message(struct lwm2m_message *msg)
 	}
 
 	if (msg->type == COAP_TYPE_CON) {
-		int32_t remaining = k_delayed_work_remaining_get(
-					&msg->ctx->retransmit_work);
+		int32_t remaining =
+			k_ticks_to_ms_ceil32(k_work_delayable_remaining_get(
+				&msg->ctx->retransmit_work));
 
 		/* If the item is already pending and its timeout is smaller
 		 * than the new one, skip the submission.
 		 */
 		if (remaining == 0 || remaining > msg->pending->timeout) {
-			k_delayed_work_submit(&msg->ctx->retransmit_work,
-					      K_MSEC(msg->pending->timeout));
+			k_work_reschedule(&msg->ctx->retransmit_work,
+					  K_MSEC(msg->pending->timeout));
 		}
 	} else {
 		lwm2m_reset_message(msg, true);
@@ -4250,7 +4251,7 @@ next:
 		remaining = 0;
 	}
 
-	k_delayed_work_submit(&client_ctx->retransmit_work, K_MSEC(remaining));
+	k_work_reschedule(&client_ctx->retransmit_work, K_MSEC(remaining));
 }
 
 static int notify_message_reply_cb(const struct coap_packet *response,
@@ -4496,7 +4497,7 @@ int lwm2m_engine_context_close(struct lwm2m_ctx *client_ctx)
 	size_t i;
 
 	/* Cancel pending retransmit work */
-	k_delayed_work_cancel(&client_ctx->retransmit_work);
+	k_work_cancel_delayable(&client_ctx->retransmit_work);
 
 	/* Remove observes for this context */
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&engine_observer_list,
@@ -4532,7 +4533,7 @@ int lwm2m_engine_context_close(struct lwm2m_ctx *client_ctx)
 
 void lwm2m_engine_context_init(struct lwm2m_ctx *client_ctx)
 {
-	k_delayed_work_init(&client_ctx->retransmit_work, retransmit_request);
+	k_work_init_delayable(&client_ctx->retransmit_work, retransmit_request);
 	sys_mutex_init(&client_ctx->send_lock);
 }
 

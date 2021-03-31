@@ -652,9 +652,9 @@ int http_client_req(int sock, struct http_request *req,
 
 	if (!K_TIMEOUT_EQ(req->internal.timeout, K_FOREVER) &&
 	    !K_TIMEOUT_EQ(req->internal.timeout, K_NO_WAIT)) {
-		k_delayed_work_init(&req->internal.work, http_timeout);
-		(void)k_delayed_work_submit(&req->internal.work,
-					    req->internal.timeout);
+		k_work_init_delayable(&req->internal.work, http_timeout);
+		(void)k_work_reschedule(&req->internal.work,
+					req->internal.timeout);
 	}
 
 	/* Request is sent, now wait data to be received */
@@ -667,7 +667,7 @@ int http_client_req(int sock, struct http_request *req,
 
 	if (!K_TIMEOUT_EQ(req->internal.timeout, K_FOREVER) &&
 	    !K_TIMEOUT_EQ(req->internal.timeout, K_NO_WAIT)) {
-		(void)k_delayed_work_cancel(&req->internal.work);
+		(void)k_work_cancel_delayable(&req->internal.work);
 	}
 
 	return total_sent;

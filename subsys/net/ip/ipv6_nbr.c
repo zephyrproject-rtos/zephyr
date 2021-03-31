@@ -67,7 +67,7 @@ static struct k_sem nbr_lock;
 #endif
 
 #if defined(CONFIG_NET_IPV6_ND)
-static struct k_delayed_work ipv6_nd_reachable_timer;
+static struct k_work_delayable ipv6_nd_reachable_timer;
 static void ipv6_nd_reachable_timeout(struct k_work *work);
 static void ipv6_nd_restart_reachable_timer(struct net_nbr *nbr, int64_t time);
 #endif
@@ -84,7 +84,7 @@ extern void net_neighbor_data_remove(struct net_nbr *nbr);
 extern void net_neighbor_table_clear(struct net_nbr_table *table);
 
 /** Neighbor Solicitation reply timer */
-static struct k_delayed_work ipv6_ns_reply_timer;
+static struct k_work_delayable ipv6_ns_reply_timer;
 
 NET_NBR_POOL_INIT(net_neighbor_pool,
 		  CONFIG_NET_IPV6_MAX_NEIGHBORS,
@@ -364,10 +364,10 @@ static void ipv6_ns_reply_timeout(struct k_work *work)
 		remaining = data->send_ns + NS_REPLY_TIMEOUT - current;
 
 		if (remaining > 0) {
-			if (!k_delayed_work_remaining_get(
-						&ipv6_ns_reply_timer)) {
-				k_delayed_work_submit(&ipv6_ns_reply_timer,
-						      K_MSEC(remaining));
+			if (!k_work_delayable_remaining_get(
+				    &ipv6_ns_reply_timer)) {
+				k_work_reschedule(&ipv6_ns_reply_timer,
+						  K_MSEC(remaining));
 			}
 
 			continue;
@@ -1402,9 +1402,10 @@ static void ipv6_nd_restart_reachable_timer(struct net_nbr *nbr, int64_t time)
 		net_ipv6_nbr_data(nbr)->reachable_timeout = time;
 	}
 
-	remaining = k_delayed_work_remaining_get(&ipv6_nd_reachable_timer);
+	remaining = k_ticks_to_ms_ceil32(
+		k_work_delayable_remaining_get(&ipv6_nd_reachable_timer));
 	if (!remaining || remaining > time) {
-		k_delayed_work_submit(&ipv6_nd_reachable_timer, K_MSEC(time));
+		k_work_reschedule(&ipv6_nd_reachable_timer, K_MSEC(time));
 	}
 }
 
@@ -1926,9 +1927,9 @@ int net_ipv6_send_ns(struct net_if *iface,
 		net_ipv6_nbr_data(nbr)->send_ns = k_uptime_get();
 
 		/* Let's start the timer if necessary */
-		if (!k_delayed_work_remaining_get(&ipv6_ns_reply_timer)) {
-			k_delayed_work_submit(&ipv6_ns_reply_timer,
-					      K_MSEC(NS_REPLY_TIMEOUT));
+		if (!k_work_delayable_remaining_get(&ipv6_ns_reply_timer)) {
+			k_work_reschedule(&ipv6_ns_reply_timer,
+					  K_MSEC(NS_REPLY_TIMEOUT));
 		}
 	}
 
@@ -2487,12 +2488,12 @@ void net_ipv6_nbr_init(void)
 #if defined(CONFIG_NET_IPV6_NBR_CACHE)
 	net_icmpv6_register_handler(&ns_input_handler);
 	net_icmpv6_register_handler(&na_input_handler);
-	k_delayed_work_init(&ipv6_ns_reply_timer, ipv6_ns_reply_timeout);
+	k_work_init_delayable(&ipv6_ns_reply_timer, ipv6_ns_reply_timeout);
 #endif
 #if defined(CONFIG_NET_IPV6_ND)
 	net_icmpv6_register_handler(&ra_input_handler);
-	k_delayed_work_init(&ipv6_nd_reachable_timer,
-			    ipv6_nd_reachable_timeout);
+	k_work_init_delayable(&ipv6_nd_reachable_timer,
+			      ipv6_nd_reachable_timeout);
 	k_sem_init(&nbr_lock, 1, K_SEM_MAX_LIMIT);
 #endif
 }
