@@ -21,6 +21,7 @@ struct memc_flexspi_config {
 	bool ahb_prefetch;
 	bool ahb_read_addr_opt;
 	bool combination_mode;
+	bool sck_differential_clock;
 	flexspi_read_sample_clock_t rx_sample_clock;
 };
 
@@ -113,6 +114,7 @@ static int memc_flexspi_init(const struct device *dev)
 	flexspi_config.ahbConfig.enableAHBPrefetch = config->ahb_prefetch;
 	flexspi_config.ahbConfig.enableReadAddressOpt = config->ahb_read_addr_opt;
 	flexspi_config.enableCombination = config->combination_mode;
+	flexspi_config.enableSckBDiffOpt = config->sck_differential_clock;
 	flexspi_config.rxSampleClock = config->rx_sample_clock;
 
 	FLEXSPI_Init(config->base, &flexspi_config);
@@ -130,6 +132,7 @@ static int memc_flexspi_init(const struct device *dev)
 		.ahb_prefetch = DT_INST_PROP(n, ahb_prefetch),		\
 		.ahb_read_addr_opt = DT_INST_PROP(n, ahb_read_addr_opt),\
 		.combination_mode = DT_INST_PROP(n, combination_mode),	\
+		.sck_differential_clock = DT_INST_PROP(n, sck_differential_clock),	\
 		.rx_sample_clock = DT_INST_PROP(n, rx_clock_source),	\
 	};								\
 									\
