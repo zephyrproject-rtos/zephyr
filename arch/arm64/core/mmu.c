@@ -21,7 +21,7 @@
 #include <spinlock.h>
 #include <sys/util.h>
 
-#include "arm_mmu.h"
+#include "mmu.h"
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
