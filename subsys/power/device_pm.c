@@ -17,6 +17,14 @@ LOG_MODULE_DECLARE(power);
 #define DEVICE_PM_SYNC			(0 << 0)
 #define DEVICE_PM_ASYNC			(1 << 0)
 
+/* Device PM states */
+enum device_pm_state {
+	DEVICE_PM_STATE_ACTIVE = 1,
+	DEVICE_PM_STATE_SUSPENDED,
+	DEVICE_PM_STATE_SUSPENDING,
+	DEVICE_PM_STATE_RESUMING,
+};
+
 static void device_pm_callback(const struct device *dev,
 			       int retval, void *context, void *arg)
 {

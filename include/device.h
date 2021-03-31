@@ -820,14 +820,6 @@ int device_busy_check(const struct device *chk_dev);
 
 #ifdef CONFIG_PM_DEVICE_IDLE
 
-/* Device PM states */
-enum device_pm_state {
-	DEVICE_PM_STATE_ACTIVE = 1,
-	DEVICE_PM_STATE_SUSPENDED,
-	DEVICE_PM_STATE_SUSPENDING,
-	DEVICE_PM_STATE_RESUMING,
-};
-
 /**
  * @brief Enable device idle PM
  *
