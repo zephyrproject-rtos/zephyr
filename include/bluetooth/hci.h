@@ -2371,6 +2371,35 @@ struct bt_hci_evt_le_chan_sel_algo {
 	uint8_t  chan_sel_algo;
 } __packed;
 
+#define BT_HCI_LE_CTE_CRC_OK                    0x0
+#define BT_HCI_LE_CTE_CRC_ERR_CTE_BASED_TIME    0x1
+#define BT_HCI_LE_CTE_CRC_ERR_CTE_BASED_OTHER   0x2
+#define BT_HCI_LE_CTE_INSUFFICIENT_RESOURCES    0xFF
+
+#define B_HCI_LE_CTE_REPORT_SAMPLE_COUNT_MIN    0x9
+#define B_HCI_LE_CTE_REPORT_SAMPLE_COUNT_MAX    0x52
+
+#define BT_HCI_LE_CTE_REPORT_NO_VALID_SAMPLE    0x80
+
+#define BT_HCI_EVT_LE_CONNECTIONLESS_IQ_REPORT  0x15
+struct bt_hci_le_iq_sample {
+	int8_t i;
+	int8_t q;
+};
+
+struct bt_hci_evt_le_connectionless_iq_report {
+	uint16_t sync_handle;
+	uint8_t  chan_idx;
+	int16_t  rssi;
+	uint8_t  rssi_ant_id;
+	uint8_t  cte_type;
+	uint8_t  slot_durations;
+	uint8_t  packet_status;
+	uint16_t per_evt_counter;
+	uint8_t  sample_count;
+	struct bt_hci_le_iq_sample sample[0];
+} __packed;
+
 #define BT_HCI_EVT_LE_PAST_RECEIVED                0x18
 struct bt_hci_evt_le_past_received {
 	uint8_t      status;
@@ -2559,6 +2588,7 @@ struct bt_hci_evt_le_biginfo_adv_report {
 #define BT_EVT_MASK_LE_ADV_SET_TERMINATED        BT_EVT_BIT(17)
 #define BT_EVT_MASK_LE_SCAN_REQ_RECEIVED         BT_EVT_BIT(18)
 #define BT_EVT_MASK_LE_CHAN_SEL_ALGO             BT_EVT_BIT(19)
+#define BT_EVT_MASK_LE_CONNECTIONLESS_IQ_REPORT  BT_EVT_BIT(21)
 #define BT_EVT_MASK_LE_PAST_RECEIVED             BT_EVT_BIT(23)
 #define BT_EVT_MASK_LE_CIS_ESTABLISHED           BT_EVT_BIT(24)
 #define BT_EVT_MASK_LE_CIS_REQ                   BT_EVT_BIT(25)
