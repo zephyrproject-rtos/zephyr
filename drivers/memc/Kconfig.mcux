@@ -1,0 +1,10 @@
+# Copyright (c) 2020 NXP
+# Copyright (c) 2021 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+if HAS_MCUX_FLEXSPI
+
+config MEMC_MCUX_FLEXSPI
+	bool
+
+endif

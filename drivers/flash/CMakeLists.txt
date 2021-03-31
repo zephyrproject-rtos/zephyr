@@ -18,7 +18,6 @@ zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_NIOS2_QSPI soc_flash_nios2_qspi.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_GECKO flash_gecko.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_RV32M1 soc_flash_rv32m1.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_STM32_QSPI flash_stm32_qspi.c)
-zephyr_library_sources_ifdef(CONFIG_FLASH_MCUX_FLEXSPI flash_mcux_flexspi.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_MCUX_FLEXSPI_NOR flash_mcux_flexspi_nor.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_ESP32 flash_esp32.c)
 
@@ -37,6 +36,11 @@ if(CONFIG_SOC_FLASH_STM32)
     zephyr_sources_ifdef(CONFIG_SOC_SERIES_STM32G4X flash_stm32g4x.c)
   endif()
 endif()
+
+zephyr_include_directories_ifdef(
+  CONFIG_FLASH_MCUX_FLEXSPI_NOR
+  ${ZEPHYR_BASE}/drivers/memc
+)
 
 zephyr_include_directories_ifdef(
 	CONFIG_SOC_FLASH_NRF_RADIO_SYNC_TICKER
