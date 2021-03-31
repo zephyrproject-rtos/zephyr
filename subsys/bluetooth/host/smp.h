@@ -38,7 +38,7 @@ struct bt_smp_hdr {
 #define BT_SMP_OOB_NOT_PRESENT			0x00
 #define BT_SMP_OOB_PRESENT			0x01
 
-#define BT_SMP_MIN_ENC_KEY_SIZE			7
+#define BT_SMP_MIN_ENC_KEY_SIZE			CONFIG_BT_SMP_MIN_ENC_KEY_SIZE
 #define BT_SMP_MAX_ENC_KEY_SIZE			16
 
 #define BT_SMP_DIST_ENC_KEY			0x01
