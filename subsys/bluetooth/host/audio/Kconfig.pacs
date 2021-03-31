@@ -1,6 +1,7 @@
 config BT_PACS
 	bool "Published Audio Capabilities Service Support [d09r08]"
 	default y
+	select BT_SMP_SC_PAIR_ONLY
 	help
 	  This option enables support for Published Audio Capabilities Service.
 
