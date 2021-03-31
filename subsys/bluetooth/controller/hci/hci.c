@@ -2513,6 +2513,26 @@ static void le_df_set_cl_cte_enable(struct net_buf *buf, struct net_buf **evt)
 }
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
+static void le_df_set_cl_iq_sampling_enable(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_set_cl_cte_sampling_enable *cmd = (void *)buf->data;
+	uint16_t sync_handle;
+	uint8_t status;
+
+	sync_handle = sys_le16_to_cpu(cmd->sync_handle);
+
+	status = ll_df_set_cl_iq_sampling_enable(sync_handle,
+						 cmd->sampling_enable,
+						 cmd->slot_durations,
+						 cmd->max_sampled_cte,
+						 cmd->switch_pattern_len,
+						 cmd->ant_ids);
+
+	*evt = cmd_complete_status(status);
+}
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
 static void le_df_set_conn_cte_tx_params(struct net_buf *buf,
 					 struct net_buf **evt)
@@ -3641,6 +3661,11 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 		le_df_set_cl_cte_enable(cmd, evt);
 		break;
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
+	case BT_OCF(BT_HCI_OP_LE_SET_CL_CTE_SAMPLING_ENABLE):
+		le_df_set_cl_iq_sampling_enable(cmd, evt);
+		break;
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 	case BT_OCF(BT_HCI_OP_LE_READ_ANT_INFO):
 		le_df_read_ant_inf(cmd, evt);
 		break;
