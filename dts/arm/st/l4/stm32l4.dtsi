@@ -234,6 +234,13 @@
 				label = "PWM_2";
 				#pwm-cells = <3>;
 			};
+
+			hwtrig2: hwtrig {
+				compatible = "st,stm32-timer-trigger";
+				status = "disabled";
+				st,prescaler = <0>;
+				label = "TRIG_2";
+			};
 		};
 
 		timers6: timers@40001000 {
