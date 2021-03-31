@@ -207,7 +207,7 @@ static void le_rpa_timeout_submit(void)
 		return;
 	}
 
-	k_delayed_work_submit(&bt_dev.rpa_update, RPA_TIMEOUT);
+	k_work_reschedule(&bt_dev.rpa_update, RPA_TIMEOUT);
 }
 
 /* this function sets new RPA only if current one is no longer valid */
@@ -1345,7 +1345,7 @@ static inline bool rpa_timeout_valid_check(void)
 {
 #if defined(CONFIG_BT_PRIVACY)
 	/* Check if create conn timeout will happen before RPA timeout. */
-	return k_delayed_work_remaining_get(&bt_dev.rpa_update) >
+	return k_ticks_to_ms_ceil32(k_work_delayable_remaining_get(&bt_dev.rpa_update)) >
 	       (10 * bt_dev.create_param.timeout);
 #else
 	return true;
@@ -1764,7 +1764,7 @@ int bt_id_init(void)
 	}
 
 #if defined(CONFIG_BT_PRIVACY)
-	k_delayed_work_init(&bt_dev.rpa_update, rpa_timeout);
+	k_work_init_delayable(&bt_dev.rpa_update, rpa_timeout);
 #endif
 
 	return 0;

@@ -200,7 +200,7 @@ struct bt_smp {
 	uint8_t				remote_dist;
 
 	/* Delayed work for timeout handling */
-	struct k_delayed_work		work;
+	struct k_work_delayable		work;
 };
 
 static unsigned int fixed_passkey = BT_PASSKEY_INVALID;
@@ -258,7 +258,7 @@ struct bt_smp_br {
 	uint8_t 			enc_key_size;
 
 	/* Delayed work for timeout handling */
-	struct k_delayed_work 	work;
+	struct k_work_delayable 	work;
 };
 
 static struct bt_smp_br bt_smp_br_pool[CONFIG_BT_MAX_CONN];
@@ -956,7 +956,7 @@ static void sc_derive_link_key(struct bt_smp *smp)
 
 static void smp_br_reset(struct bt_smp_br *smp)
 {
-	k_delayed_work_cancel(&smp->work);
+	k_work_cancel_delayable(&smp->work);
 
 	atomic_set(smp->flags, 0);
 	atomic_set(smp->allowed_cmds, 0);
@@ -1019,7 +1019,7 @@ static void smp_br_send(struct bt_smp_br *smp, struct net_buf *buf,
 {
 	bt_l2cap_send_cb(smp->chan.chan.conn, BT_L2CAP_CID_BR_SMP, buf, cb,
 			 NULL);
-	k_delayed_work_submit(&smp->work, SMP_TIMEOUT);
+	k_work_reschedule(&smp->work, SMP_TIMEOUT);
 }
 
 static void bt_smp_br_connected(struct bt_l2cap_chan *chan)
@@ -1047,7 +1047,7 @@ static void bt_smp_br_disconnected(struct bt_l2cap_chan *chan)
 	BT_DBG("chan %p cid 0x%04x", chan,
 	       CONTAINER_OF(chan, struct bt_l2cap_br_chan, chan)->tx.cid);
 
-	k_delayed_work_cancel(&smp->work);
+	k_work_cancel_delayable(&smp->work);
 
 	(void)memset(smp, 0, sizeof(*smp));
 }
@@ -1669,7 +1669,7 @@ static int bt_smp_br_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 
 		*chan = &smp->chan.chan;
 
-		k_delayed_work_init(&smp->work, smp_br_timeout);
+		k_work_init_delayable(&smp->work, smp_br_timeout);
 		smp_br_reset(smp);
 
 		return 0;
@@ -1773,7 +1773,7 @@ static void smp_reset(struct bt_smp *smp)
 {
 	struct bt_conn *conn = smp->chan.chan.conn;
 
-	k_delayed_work_cancel(&smp->work);
+	k_work_cancel_delayable(&smp->work);
 
 	smp->method = JUST_WORKS;
 	atomic_set(smp->allowed_cmds, 0);
@@ -1894,7 +1894,7 @@ static void smp_send(struct bt_smp *smp, struct net_buf *buf,
 		     bt_conn_tx_cb_t cb, void *user_data)
 {
 	bt_l2cap_send_cb(smp->chan.chan.conn, BT_L2CAP_CID_SMP, buf, cb, NULL);
-	k_delayed_work_submit(&smp->work, SMP_TIMEOUT);
+	k_work_reschedule(&smp->work, SMP_TIMEOUT);
 }
 
 static int smp_error(struct bt_smp *smp, uint8_t reason)
@@ -4510,7 +4510,7 @@ static void bt_smp_connected(struct bt_l2cap_chan *chan)
 	BT_DBG("chan %p cid 0x%04x", chan,
 	       CONTAINER_OF(chan, struct bt_l2cap_le_chan, chan)->tx.cid);
 
-	k_delayed_work_init(&smp->work, smp_timeout);
+	k_work_init_delayable(&smp->work, smp_timeout);
 	smp_reset(smp);
 }
 
@@ -4522,7 +4522,7 @@ static void bt_smp_disconnected(struct bt_l2cap_chan *chan)
 	BT_DBG("chan %p cid 0x%04x", chan,
 	       CONTAINER_OF(chan, struct bt_l2cap_le_chan, chan)->tx.cid);
 
-	k_delayed_work_cancel(&smp->work);
+	k_work_cancel_delayable(&smp->work);
 
 	if (atomic_test_bit(smp->flags, SMP_FLAG_PAIRING) ||
 	    atomic_test_bit(smp->flags, SMP_FLAG_ENC_PENDING) ||

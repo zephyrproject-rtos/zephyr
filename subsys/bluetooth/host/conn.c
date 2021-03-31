@@ -430,7 +430,7 @@ static struct bt_conn *acl_conn_new(void)
 		return conn;
 	}
 
-	k_delayed_work_init(&conn->deferred_work, deferred_work);
+	k_work_init_delayable(&conn->deferred_work, deferred_work);
 
 	k_work_init(&conn->tx_complete_work, tx_complete_work);
 
@@ -1296,7 +1296,7 @@ static void conn_cleanup(struct bt_conn *conn)
 
 	bt_conn_reset_rx_state(conn);
 
-	k_delayed_work_submit(&conn->deferred_work, K_NO_WAIT);
+	k_work_reschedule(&conn->deferred_work, K_NO_WAIT);
 }
 
 static int conn_prepare_events(struct bt_conn *conn,
@@ -1543,7 +1543,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 	case BT_CONN_CONNECT:
 		if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
 		    conn->type == BT_CONN_TYPE_LE) {
-			k_delayed_work_cancel(&conn->deferred_work);
+			k_work_cancel_delayable(&conn->deferred_work);
 		}
 		break;
 	default:
@@ -1573,7 +1573,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 
 		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
 		    conn->role == BT_CONN_ROLE_SLAVE) {
-			k_delayed_work_submit(&conn->deferred_work,
+			k_work_reschedule(&conn->deferred_work,
 					      CONN_UPDATE_TIMEOUT);
 		}
 
@@ -1611,7 +1611,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 
 			/* Cancel Connection Update if it is pending */
 			if (conn->type == BT_CONN_TYPE_LE) {
-				k_delayed_work_cancel(&conn->deferred_work);
+				k_work_cancel_delayable(&conn->deferred_work);
 			}
 
 			atomic_set_bit(conn->flags, BT_CONN_CLEANUP);
@@ -1688,7 +1688,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		 */
 		if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
 		    conn->type == BT_CONN_TYPE_LE) {
-			k_delayed_work_submit(
+			k_work_reschedule(
 				&conn->deferred_work,
 				K_MSEC(10 * bt_dev.create_param.timeout));
 		}
@@ -2170,7 +2170,7 @@ int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 #endif /* CONFIG_BT_BREDR */
 
 		if (IS_ENABLED(CONFIG_BT_CENTRAL)) {
-			k_delayed_work_cancel(&conn->deferred_work);
+			k_work_cancel_delayable(&conn->deferred_work);
 			return bt_le_create_conn_cancel();
 		}
 

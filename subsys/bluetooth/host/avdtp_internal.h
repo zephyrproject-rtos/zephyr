@@ -97,7 +97,7 @@ struct bt_avdtp_req {
 	uint8_t sig;
 	uint8_t tid;
 	bt_avdtp_func_t func;
-	struct k_delayed_work timeout_work;
+	struct k_work_delayable timeout_work;
 };
 
 struct bt_avdtp_single_sig_hdr {

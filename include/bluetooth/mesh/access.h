@@ -457,7 +457,7 @@ struct bt_mesh_model_pub {
 	int (*update)(struct bt_mesh_model *mod);
 
 	/** Publish Period Timer. Only for stack-internal use. */
-	struct k_delayed_work timer;
+	struct k_work_delayable timer;
 };
 
 /** @def BT_MESH_MODEL_PUB_DEFINE

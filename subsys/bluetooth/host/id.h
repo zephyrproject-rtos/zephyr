@@ -14,7 +14,7 @@ static inline bool bt_id_rpa_is_new(void)
 	/* RPA is considered new if there is less than half a second since the
 	 * timeout was started.
 	 */
-	return k_delayed_work_remaining_get(&bt_dev.rpa_update) >
+	return k_ticks_to_ms_ceil32(k_work_delayable_remaining_get(&bt_dev.rpa_update)) >
 	       (RPA_TIMEOUT_MS - 500);
 #else
 	return false;

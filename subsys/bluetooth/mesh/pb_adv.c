@@ -104,11 +104,11 @@ struct pb_adv {
 		void *cb_data;
 
 		/* Retransmit timer */
-		struct k_delayed_work retransmit;
+		struct k_work_delayable retransmit;
 	} tx;
 
 	/* Protocol timeout */
-	struct k_delayed_work prot_timer;
+	struct k_work_delayable prot_timer;
 };
 
 struct prov_rx {
@@ -133,7 +133,7 @@ static void buf_sent(int err, void *user_data)
 		return;
 	}
 
-	k_delayed_work_submit(&link.tx.retransmit, RETRANSMIT_TIMEOUT);
+	k_work_reschedule(&link.tx.retransmit, RETRANSMIT_TIMEOUT);
 }
 
 static struct bt_mesh_send_cb buf_sent_cb = {
@@ -178,7 +178,7 @@ static void prov_clear_tx(void)
 {
 	BT_DBG("");
 
-	k_delayed_work_cancel(&link.tx.retransmit);
+	k_work_cancel_delayable(&link.tx.retransmit);
 
 	free_segments();
 }
@@ -188,7 +188,7 @@ static void reset_adv_link(void)
 	BT_DBG("");
 	prov_clear_tx();
 
-	k_delayed_work_cancel(&link.prot_timer);
+	k_work_cancel_delayable(&link.prot_timer);
 
 	if (atomic_test_bit(link.flags, ADV_PROVISIONER)) {
 		/* Clear everything except the retransmit and protocol timer
@@ -253,7 +253,7 @@ static void prov_failed(uint8_t err)
 
 static void prov_msg_recv(void)
 {
-	k_delayed_work_submit(&link.prot_timer, PROTOCOL_TIMEOUT);
+	k_work_reschedule(&link.prot_timer, PROTOCOL_TIMEOUT);
 
 	if (!bt_mesh_fcs_check(link.rx.buf, link.rx.fcs)) {
 		BT_ERR("Incorrect FCS");
@@ -628,7 +628,7 @@ static int bearer_ctl_send(uint8_t op, const void *data, uint8_t data_len,
 	BT_DBG("op 0x%02x data_len %u", op, data_len);
 
 	prov_clear_tx();
-	k_delayed_work_submit(&link.prot_timer, PROTOCOL_TIMEOUT);
+	k_work_reschedule(&link.prot_timer, PROTOCOL_TIMEOUT);
 
 	buf = adv_buf_create(reliable ? RETRANSMITS_RELIABLE :
 					RETRANSMITS_UNRELIABLE);
@@ -660,7 +660,7 @@ static int prov_send_adv(struct net_buf_simple *msg,
 	uint8_t seg_len, seg_id;
 
 	prov_clear_tx();
-	k_delayed_work_submit(&link.prot_timer, PROTOCOL_TIMEOUT);
+	k_work_reschedule(&link.prot_timer, PROTOCOL_TIMEOUT);
 
 	start = adv_buf_create(RETRANSMITS_RELIABLE);
 	if (!start) {
@@ -884,8 +884,8 @@ static void prov_link_close(enum prov_bearer_link_status status)
 
 void pb_adv_init(void)
 {
-	k_delayed_work_init(&link.prot_timer, protocol_timeout);
-	k_delayed_work_init(&link.tx.retransmit, prov_retransmit);
+	k_work_init_delayable(&link.prot_timer, protocol_timeout);
+	k_work_init_delayable(&link.tx.retransmit, prov_retransmit);
 }
 
 void pb_adv_reset(void)

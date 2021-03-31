@@ -157,7 +157,7 @@ static void l2cap_br_chan_destroy(struct bt_l2cap_chan *chan)
 	BT_DBG("chan %p cid 0x%04x", BR_CHAN(chan), BR_CHAN(chan)->rx.cid);
 
 	/* Cancel ongoing work */
-	k_delayed_work_cancel(&chan->rtx_work);
+	k_work_cancel_delayable(&chan->rtx_work);
 
 	atomic_clear(BR_CHAN(chan)->flags);
 }
@@ -201,7 +201,7 @@ static bool l2cap_br_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 		return false;
 	}
 
-	k_delayed_work_init(&chan->rtx_work, l2cap_br_rtx_timeout);
+	k_work_init_delayable(&chan->rtx_work, l2cap_br_rtx_timeout);
 	bt_l2cap_chan_add(conn, chan, destroy);
 
 	return true;
@@ -232,7 +232,7 @@ static void l2cap_br_chan_send_req(struct bt_l2cap_br_chan *chan,
 	 * final expiration, when the response is received, or the physical
 	 * link is lost.
 	 */
-	k_delayed_work_submit(&chan->chan.rtx_work, timeout);
+	k_work_reschedule(&chan->chan.rtx_work, timeout);
 
 	bt_l2cap_send(chan->chan.conn, BT_L2CAP_CID_BR_SIG, buf);
 }
@@ -316,7 +316,7 @@ static int l2cap_br_info_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 		 * Release RTX timer since got the response & there's pending
 		 * command request.
 		 */
-		k_delayed_work_cancel(&l2cap->chan.chan.rtx_work);
+		k_work_cancel_delayable(&l2cap->chan.chan.rtx_work);
 	}
 
 	if (buf->len < sizeof(*rsp)) {
@@ -792,7 +792,7 @@ static void l2cap_br_conf_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 	}
 
 	/* Release RTX work since got the response */
-	k_delayed_work_cancel(&chan->rtx_work);
+	k_work_cancel_delayable(&chan->rtx_work);
 
 	/*
 	 * TODO: handle other results than success and parse response data if
@@ -1111,7 +1111,7 @@ static void l2cap_br_disconnected(struct bt_l2cap_chan *chan)
 	if (atomic_test_and_clear_bit(BR_CHAN(chan)->flags,
 				      L2CAP_FLAG_SIG_INFO_PENDING)) {
 		/* Cancel RTX work on signal channel */
-		k_delayed_work_cancel(&chan->rtx_work);
+		k_work_cancel_delayable(&chan->rtx_work);
 	}
 }
 
@@ -1288,7 +1288,7 @@ static void l2cap_br_conn_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 	}
 
 	/* Release RTX work since got the response */
-	k_delayed_work_cancel(&chan->rtx_work);
+	k_work_cancel_delayable(&chan->rtx_work);
 
 	if (chan->state != BT_L2CAP_CONNECT) {
 		BT_DBG("Invalid channel %p state %s", chan,
@@ -1305,7 +1305,7 @@ static void l2cap_br_conn_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 		atomic_clear_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_PENDING);
 		break;
 	case BT_L2CAP_BR_PENDING:
-		k_delayed_work_submit(&chan->rtx_work, L2CAP_BR_CONN_TIMEOUT);
+		k_work_reschedule(&chan->rtx_work, L2CAP_BR_CONN_TIMEOUT);
 		break;
 	default:
 		l2cap_br_chan_cleanup(chan);
