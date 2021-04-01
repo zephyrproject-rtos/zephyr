@@ -409,14 +409,14 @@ static void st7789v_enter_sleep(struct st7789v_data *data)
 }
 
 static int st7789v_pm_control(const struct device *dev, uint32_t ctrl_command,
-				 void *context, device_pm_cb cb, void *arg)
+				 uint32_t *state, device_pm_cb cb, void *arg)
 {
 	int ret = 0;
 	struct st7789v_data *data = (struct st7789v_data *)dev->data;
 
 	switch (ctrl_command) {
 	case DEVICE_PM_SET_POWER_STATE:
-		if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
+		if (*state == DEVICE_PM_ACTIVE_STATE) {
 			st7789v_exit_sleep(data);
 			data->pm_state = DEVICE_PM_ACTIVE_STATE;
 			ret = 0;
@@ -427,14 +427,14 @@ static int st7789v_pm_control(const struct device *dev, uint32_t ctrl_command,
 		}
 		break;
 	case DEVICE_PM_GET_POWER_STATE:
-		*((uint32_t *)context) = data->pm_state;
+		*state = data->pm_state;
 		break;
 	default:
 		ret = -EINVAL;
 	}
 
 	if (cb != NULL) {
-		cb(dev, ret, context, arg);
+		cb(dev, ret, state, arg);
 	}
 	return ret;
 }

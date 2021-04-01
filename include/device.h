@@ -333,7 +333,7 @@ typedef int16_t device_handle_t;
 #define DEVICE_DECLARE(name) static const struct device DEVICE_NAME_GET(name)
 
 typedef void (*device_pm_cb)(const struct device *dev,
-			     int status, void *context, void *arg);
+			     int status, uint32_t *state, void *arg);
 
 /**
  * @brief Device PM info
@@ -419,7 +419,7 @@ struct device {
 #ifdef CONFIG_PM_DEVICE
 	/** Power Management function */
 	int (*device_pm_control)(const struct device *dev, uint32_t command,
-				 void *context, device_pm_cb cb, void *arg);
+				 uint32_t *state, device_pm_cb cb, void *arg);
 	/** Pointer to device instance power management data */
 	struct device_pm * const pm;
 #endif

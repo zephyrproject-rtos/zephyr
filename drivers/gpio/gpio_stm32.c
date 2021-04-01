@@ -602,7 +602,7 @@ static int gpio_stm32_set_power_state(const struct device *dev,
 
 static int gpio_stm32_device_pm_ctrl(const struct device *dev,
 				     uint32_t ctrl_command,
-				     void *context, device_pm_cb cb, void *arg)
+				     uint32_t *state, device_pm_cb cb, void *arg)
 {
 	struct gpio_stm32_data *data = dev->data;
 	uint32_t new_state;
@@ -610,13 +610,13 @@ static int gpio_stm32_device_pm_ctrl(const struct device *dev,
 
 	switch (ctrl_command) {
 	case DEVICE_PM_SET_POWER_STATE:
-		new_state = *((const uint32_t *)context);
+		new_state = *state;
 		if (new_state != data->power_state) {
 			ret = gpio_stm32_set_power_state(dev, new_state);
 		}
 		break;
 	case DEVICE_PM_GET_POWER_STATE:
-		*((uint32_t *)context) = gpio_stm32_get_power_state(dev);
+		*state = gpio_stm32_get_power_state(dev);
 		break;
 	default:
 		ret = -EINVAL;
@@ -624,7 +624,7 @@ static int gpio_stm32_device_pm_ctrl(const struct device *dev,
 	}
 
 	if (cb) {
-		cb(dev, ret, context, arg);
+		cb(dev, ret, state, arg);
 	}
 
 	return ret;

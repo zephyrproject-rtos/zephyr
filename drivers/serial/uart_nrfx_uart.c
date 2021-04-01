@@ -1158,12 +1158,12 @@ static void uart_nrfx_set_power_state(const struct device *dev,
 
 static int uart_nrfx_pm_control(const struct device *dev,
 				uint32_t ctrl_command,
-				void *context, device_pm_cb cb, void *arg)
+				uint32_t *state, device_pm_cb cb, void *arg)
 {
 	static uint32_t current_state = DEVICE_PM_ACTIVE_STATE;
 
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
-		uint32_t new_state = *((const uint32_t *)context);
+		uint32_t new_state = *state;
 
 		if (new_state != current_state) {
 			uart_nrfx_set_power_state(dev, new_state);
@@ -1171,11 +1171,11 @@ static int uart_nrfx_pm_control(const struct device *dev,
 		}
 	} else {
 		__ASSERT_NO_MSG(ctrl_command == DEVICE_PM_GET_POWER_STATE);
-		*((uint32_t *)context) = current_state;
+		*state = current_state;
 	}
 
 	if (cb) {
-		cb(dev, 0, context, arg);
+		cb(dev, 0, state, arg);
 	}
 
 	return 0;

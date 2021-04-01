@@ -1461,24 +1461,24 @@ static int uart_stm32_set_power_state(const struct device *dev,
  */
 static int uart_stm32_pm_control(const struct device *dev,
 					 uint32_t ctrl_command,
-					 void *context, device_pm_cb cb,
+					 uint32_t *state, device_pm_cb cb,
 					 void *arg)
 {
 	struct uart_stm32_data *data = DEV_DATA(dev);
 
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
-		uint32_t new_state = *((const uint32_t *)context);
+		uint32_t new_state = *state;
 
 		if (new_state != data->pm_state) {
 			uart_stm32_set_power_state(dev, new_state);
 		}
 	} else {
 		__ASSERT_NO_MSG(ctrl_command == DEVICE_PM_GET_POWER_STATE);
-		*((uint32_t *)context) = data->pm_state;
+		*state = data->pm_state;
 	}
 
 	if (cb) {
-		cb(dev, 0, context, arg);
+		cb(dev, 0, state, arg);
 	}
 
 	return 0;

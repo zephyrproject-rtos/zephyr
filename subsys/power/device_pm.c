@@ -26,12 +26,12 @@ enum device_pm_state {
 };
 
 static void device_pm_callback(const struct device *dev,
-			       int retval, void *context, void *arg)
+			       int retval, uint32_t *state, void *arg)
 {
 	__ASSERT(retval == 0, "Device set power state failed");
 
 	/* Set the fsm_state */
-	if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
+	if (*state == DEVICE_PM_ACTIVE_STATE) {
 		atomic_set(&dev->pm->fsm_state,
 			   DEVICE_PM_STATE_ACTIVE);
 	} else {

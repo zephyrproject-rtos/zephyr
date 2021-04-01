@@ -404,7 +404,7 @@ int loapic_resume(const struct device *port)
 */
 static int loapic_device_ctrl(const struct device *port,
 			      uint32_t ctrl_command,
-			      void *context, device_pm_cb cb, void *arg)
+			      uint32_t *context, device_pm_cb cb, void *arg)
 {
 	int ret = 0;
 

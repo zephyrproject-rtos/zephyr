@@ -218,7 +218,7 @@ static int qdec_nrfx_init(const struct device *dev)
 #ifdef CONFIG_PM_DEVICE
 
 static int qdec_nrfx_pm_get_state(struct qdec_nrfx_data *data,
-				  uint32_t                 *state)
+				  uint32_t *state)
 {
 	unsigned int key = irq_lock();
 	*state = data->pm_state;
@@ -228,7 +228,7 @@ static int qdec_nrfx_pm_get_state(struct qdec_nrfx_data *data,
 }
 
 static int qdec_nrfx_pm_set_state(struct qdec_nrfx_data *data,
-				  uint32_t                  new_state)
+				  uint32_t new_state)
 {
 	uint32_t old_state;
 	unsigned int key;
@@ -268,7 +268,7 @@ static int qdec_nrfx_pm_set_state(struct qdec_nrfx_data *data,
 
 static int qdec_nrfx_pm_control(const struct device *dev,
 				uint32_t ctrl_command,
-				void *context, device_pm_cb cb, void *arg)
+				uint32_t *state, device_pm_cb cb, void *arg)
 {
 	struct qdec_nrfx_data *data = &qdec_nrfx_data;
 	int err;
@@ -277,11 +277,11 @@ static int qdec_nrfx_pm_control(const struct device *dev,
 
 	switch (ctrl_command) {
 	case DEVICE_PM_GET_POWER_STATE:
-		err = qdec_nrfx_pm_get_state(data, context);
+		err = qdec_nrfx_pm_get_state(data, state);
 		break;
 
 	case DEVICE_PM_SET_POWER_STATE:
-		err = qdec_nrfx_pm_set_state(data, *((uint32_t *)context));
+		err = qdec_nrfx_pm_set_state(data, *state);
 		break;
 
 	default:
@@ -290,7 +290,7 @@ static int qdec_nrfx_pm_control(const struct device *dev,
 	}
 
 	if (cb) {
-		cb(dev, err, context, arg);
+		cb(dev, err, state, arg);
 	}
 
 	return err;

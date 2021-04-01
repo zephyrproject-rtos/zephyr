@@ -22,18 +22,18 @@ struct fake_dev_context {
 };
 
 static int fake_dev_pm_control(const struct device *dev, uint32_t command,
-			       void *context, device_pm_cb cb, void *arg)
+			       uint32_t *state, device_pm_cb cb, void *arg)
 {
 	struct fake_dev_context *ctx = dev->data;
 	int ret = 0;
 
 	if (command == DEVICE_PM_SET_POWER_STATE) {
-		if (*(uint32_t *)context == DEVICE_PM_SUSPEND_STATE) {
+		if (*state == DEVICE_PM_SUSPEND_STATE) {
 			ret = net_if_suspend(ctx->iface);
 			if (ret == -EBUSY) {
 				goto out;
 			}
-		} else if (*(uint32_t *)context == DEVICE_PM_ACTIVE_STATE) {
+		} else if (*state == DEVICE_PM_ACTIVE_STATE) {
 			ret = net_if_resume(ctx->iface);
 		}
 	} else {
@@ -42,7 +42,7 @@ static int fake_dev_pm_control(const struct device *dev, uint32_t command,
 
 out:
 	if (cb) {
-		cb(dev, ret, context, arg);
+		cb(dev, ret, state, arg);
 	}
 
 	return ret;
