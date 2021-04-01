@@ -210,7 +210,7 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	idc_reg = idc_read(IPC_IDCCTL, cpu_num);
 	idc_reg &= ~IPC_IDCCTL_IDCTBIE(0);
 	idc_write(IPC_IDCCTL, cpu_num, idc_reg);
-	sys_clear_bit(DT_REG_ADDR(DT_NODELABEL(cavs0)) + 0x04 +
+	sys_set_bit(DT_REG_ADDR(DT_NODELABEL(cavs0)) + 0x00 +
 		      CAVS_ICTL_INT_CPU_OFFSET(cpu_num), 8);
 
 	while (start_rec.alive == 0) {
