@@ -139,9 +139,9 @@
 
 
 #define uncache_to_cache(address) \
-	((__typeof__((address)))((uint32_t)((address)) + SRAM_ALIAS_OFFSET))
+	((__typeof__(address))((uint32_t)(address) + SRAM_ALIAS_OFFSET))
 #define cache_to_uncache(address) \
-	((__typeof__((address)))((uint32_t)((address)) - SRAM_ALIAS_OFFSET))
+	((__typeof__(address))((uint32_t)(address) - SRAM_ALIAS_OFFSET))
 #define is_uncached(address) \
 	(((uint32_t)(address) & SRAM_ALIAS_MASK) == SRAM_ALIAS_BASE)
 
