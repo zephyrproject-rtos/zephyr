@@ -128,6 +128,15 @@
 			};
 		};
 
+		usart1: serial@40013800 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x40013800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00004000>;
+			interrupts = <27 0>;
+			status = "disabled";
+			label = "UART_1";
+		};
+
 		eeprom: eeprom@8080000{
 			reg = <0x08080000 DT_SIZE_K(6)>;
 		};
