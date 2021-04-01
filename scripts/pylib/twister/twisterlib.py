@@ -4104,38 +4104,3 @@ class HardwareMap:
                 table.append([platform, p.id, p.serial])
 
         print(tabulate(table, headers=header, tablefmt="github"))
-
-
-def size_report(sc):
-    logger.info(sc.filename)
-    logger.info("SECTION NAME             VMA        LMA     SIZE  HEX SZ TYPE")
-    for i in range(len(sc.sections)):
-        v = sc.sections[i]
-
-        logger.info("%-17s 0x%08x 0x%08x %8d 0x%05x %-7s" %
-                    (v["name"], v["virt_addr"], v["load_addr"], v["size"], v["size"],
-                     v["type"]))
-
-    logger.info("Totals: %d bytes (ROM), %d bytes (RAM)" %
-                (sc.rom_size, sc.ram_size))
-    logger.info("")
-
-
-
-def export_tests(filename, tests):
-    with open(filename, "wt") as csvfile:
-        fieldnames = ['section', 'subsection', 'title', 'reference']
-        cw = csv.DictWriter(csvfile, fieldnames, lineterminator=os.linesep)
-        for test in tests:
-            data = test.split(".")
-            if len(data) > 1:
-                subsec = " ".join(data[1].split("_")).title()
-                rowdict = {
-                    "section": data[0].capitalize(),
-                    "subsection": subsec,
-                    "title": test,
-                    "reference": test
-                }
-                cw.writerow(rowdict)
-            else:
-                logger.info("{} can't be exported".format(test))
