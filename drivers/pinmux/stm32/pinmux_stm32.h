@@ -19,12 +19,15 @@
 #else
 #include <dt-bindings/pinctrl/stm32-pinctrl.h>
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl) */
-#include "pinmux/pinmux.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+struct pin_config {
+	uint8_t pin_num;
+	uint32_t mode;
+};
 
 /**
  * @brief structure to convey pinctrl information for stm32 soc
