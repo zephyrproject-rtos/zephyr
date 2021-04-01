@@ -9,7 +9,7 @@
 &arduino_spi {
 	status = "okay";
 	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>,	/* D10 */
-		   <&arduino_header 12 GPIO_ACTIVE_LOW>;	/* D04 */
+		   <&arduino_header 10 GPIO_ACTIVE_LOW>;	/* D04 */
 
 
 	ili9340@0 {
