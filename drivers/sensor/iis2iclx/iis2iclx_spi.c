@@ -22,11 +22,11 @@ int iis2iclx_spi_init(const struct device *dev)
 	struct iis2iclx_data *data = dev->data;
 	const struct iis2iclx_config *cfg = dev->config;
 
-	data->ctx_spi.read_reg = (stmdev_read_ptr) stmemsc_spi_read;
-	data->ctx_spi.write_reg = (stmdev_write_ptr) stmemsc_spi_write;
+	/* Use generic stmemsc routine for read/write SPI bus */
+	data->ctx.read_reg = (stmdev_read_ptr) stmemsc_spi_read;
+	data->ctx.write_reg = (stmdev_write_ptr) stmemsc_spi_write;
 
-	data->ctx = &data->ctx_spi;
-	data->ctx->handle = (void *)&cfg->stmemsc_cfg.spi;
+	data->ctx.handle = (void *)&cfg->stmemsc_cfg.spi;
 
 	return 0;
 }

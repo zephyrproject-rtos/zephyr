@@ -23,11 +23,10 @@ int iis2iclx_i2c_init(const struct device *dev)
 	const struct iis2iclx_config *cfg = dev->config;
 
 	/* Use generic stmemsc routine for read/write I2C bus */
-	data->ctx_i2c.read_reg = (stmdev_read_ptr) stmemsc_i2c_read;
-	data->ctx_i2c.write_reg = (stmdev_write_ptr) stmemsc_i2c_write;
+	data->ctx.read_reg = (stmdev_read_ptr) stmemsc_i2c_read;
+	data->ctx.write_reg = (stmdev_write_ptr) stmemsc_i2c_write;
 
-	data->ctx = &data->ctx_i2c;
-	data->ctx->handle = (void *)&cfg->stmemsc_cfg.i2c;
+	data->ctx.handle = (void *)&cfg->stmemsc_cfg.i2c;
 
 	return 0;
 }
