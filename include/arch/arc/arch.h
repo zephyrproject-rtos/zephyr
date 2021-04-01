@@ -21,6 +21,8 @@
 #include <arch/common/ffs.h>
 #include <arch/arc/thread.h>
 #include <arch/common/sys_bitops.h>
+#include "sys-io-common.h"
+
 #ifdef CONFIG_ISA_ARCV2
 #include <arch/arc/v2/exc.h>
 #include <arch/arc/v2/irq.h>
