@@ -82,14 +82,7 @@ struct iis2iclx_data {
 	bool shub_inited;
 #endif /* CONFIG_IIS2ICLX_SENSORHUB */
 
-	stmdev_ctx_t *ctx;
-
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-	stmdev_ctx_t ctx_i2c;
-#endif
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-	stmdev_ctx_t ctx_spi;
-#endif
+	stmdev_ctx_t ctx;
 
 	uint16_t accel_freq;
 	uint8_t accel_fs;

@@ -423,16 +423,16 @@ static inline void iis2iclx_shub_wait_completed(struct iis2iclx_data *data)
 
 	do {
 		k_msleep(1);
-		iis2iclx_sh_status_get(data->ctx, &status);
+		iis2iclx_sh_status_get(&data->ctx, &status);
 	} while (status.sens_hub_endop == 0);
 }
 
 static inline void iis2iclx_shub_embedded_en(struct iis2iclx_data *data, bool on)
 {
 	if (on) {
-		(void) iis2iclx_mem_bank_set(data->ctx, IIS2ICLX_SENSOR_HUB_BANK);
+		(void) iis2iclx_mem_bank_set(&data->ctx, IIS2ICLX_SENSOR_HUB_BANK);
 	} else {
-		(void) iis2iclx_mem_bank_set(data->ctx, IIS2ICLX_USER_BANK);
+		(void) iis2iclx_mem_bank_set(&data->ctx, IIS2ICLX_USER_BANK);
 	}
 
 	k_busy_wait(150);
@@ -444,7 +444,7 @@ static int iis2iclx_shub_read_embedded_regs(struct iis2iclx_data *data,
 {
 	iis2iclx_shub_embedded_en(data, true);
 
-	if (iis2iclx_read_reg(data->ctx, reg_addr, value, len) < 0) {
+	if (iis2iclx_read_reg(&data->ctx, reg_addr, value, len) < 0) {
 		LOG_ERR("shub: failed to read external reg: %02x", reg_addr);
 		iis2iclx_shub_embedded_en(data, false);
 		return -EIO;
@@ -461,7 +461,7 @@ static int iis2iclx_shub_write_embedded_regs(struct iis2iclx_data *data,
 {
 	iis2iclx_shub_embedded_en(data, true);
 
-	if (iis2iclx_write_reg(data->ctx, reg_addr, value, len) < 0) {
+	if (iis2iclx_write_reg(&data->ctx, reg_addr, value, len) < 0) {
 		LOG_ERR("shub: failed to write external reg: %02x", reg_addr);
 		iis2iclx_shub_embedded_en(data, false);
 		return -EIO;
@@ -478,7 +478,7 @@ static void iis2iclx_shub_enable(struct iis2iclx_data *data, uint8_t enable)
 	if (!data->accel_freq) {
 		uint8_t odr = (enable) ? 2 : 0;
 
-		if (iis2iclx_xl_data_rate_set(data->ctx, odr) < 0) {
+		if (iis2iclx_xl_data_rate_set(&data->ctx, odr) < 0) {
 			LOG_DBG("shub: failed to set XL sampling rate");
 			return;
 		}
@@ -486,7 +486,7 @@ static void iis2iclx_shub_enable(struct iis2iclx_data *data, uint8_t enable)
 
 	iis2iclx_shub_embedded_en(data, true);
 
-	if (iis2iclx_sh_master_set(data->ctx, enable) < 0) {
+	if (iis2iclx_sh_master_set(&data->ctx, enable) < 0) {
 		LOG_DBG("shub: failed to set master on");
 		iis2iclx_shub_embedded_en(data, false);
 		return;
@@ -544,7 +544,7 @@ static int iis2iclx_shub_read_slave_reg(struct iis2iclx_data *data,
 
 	/* read data from external slave */
 	iis2iclx_shub_embedded_en(data, true);
-	if (iis2iclx_read_reg(data->ctx, IIS2ICLX_SHUB_DATA_OUT,
+	if (iis2iclx_read_reg(&data->ctx, IIS2ICLX_SHUB_DATA_OUT,
 				value, len) < 0) {
 		LOG_ERR("shub: error reading sensor data");
 		iis2iclx_shub_embedded_en(data, false);
@@ -645,14 +645,14 @@ static int iis2iclx_shub_set_data_channel(struct iis2iclx_data *data)
 	/* Configure the master */
 	iis2iclx_aux_sens_on_t aux = IIS2ICLX_SLV_0_1_2;
 
-	if (iis2iclx_sh_slave_connected_set(data->ctx, aux) < 0) {
+	if (iis2iclx_sh_slave_connected_set(&data->ctx, aux) < 0) {
 		LOG_ERR("shub: error setting aux sensors");
 		return -EIO;
 	}
 
 	iis2iclx_write_once_t wo = IIS2ICLX_ONLY_FIRST_CYCLE;
 
-	if (iis2iclx_sh_write_mode_set(data->ctx, wo) < 0) {
+	if (iis2iclx_sh_write_mode_set(&data->ctx, wo) < 0) {
 		LOG_ERR("shub: error setting write once");
 		return -EIO;
 	}
@@ -692,7 +692,7 @@ int iis2iclx_shub_fetch_external_devs(const struct device *dev)
 	for (n = 0; n < num_ext_dev; n++) {
 		sp = &iis2iclx_shub_slist[shub_ext[n]];
 
-		if (iis2iclx_read_reg(data->ctx, sp->sh_out_reg,
+		if (iis2iclx_read_reg(&data->ctx, sp->sh_out_reg,
 				     data->ext_data[n], sp->out_data_len) < 0) {
 			LOG_ERR("shub: failed to read sample");
 			iis2iclx_shub_embedded_en(data, false);
