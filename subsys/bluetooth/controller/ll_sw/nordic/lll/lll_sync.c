@@ -199,7 +199,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	radio_gpio_lna_setup();
 
 	radio_gpio_pa_lna_enable(remainder_us +
-				 radio_rx_ready_delay_get(lll->phy_rx, 1) -
+				 radio_rx_ready_delay_get(lll->phy, 1) -
 				 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
 #endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
 
