@@ -5,3 +5,5 @@
  */
 
 #include <nxp/nxp_ke16f256vlx16.dtsi>
+
+#include <nxp/kinetis/MKE16F256VLL16-pinctrl.dtsi"
