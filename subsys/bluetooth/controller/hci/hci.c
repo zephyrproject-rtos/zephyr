@@ -38,10 +38,10 @@
 #include "lll/lll_adv_pdu.h"
 #include "ll_sw/lll_sync_iso.h"
 #include "ll_sw/lll_scan.h"
+#include "lll/lll_df_types.h"
 #include "ll_sw/lll_sync.h"
 #include "ll_sw/lll_conn.h"
 #include "ll_sw/lll_conn_iso.h"
-#include "lll/lll_df_types.h"
 
 #include "ll_sw/ull_adv_types.h"
 #include "ll_sw/ull_scan_types.h"
