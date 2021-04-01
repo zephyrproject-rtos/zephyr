@@ -33,17 +33,17 @@ static int iis2iclx_enable_t_int(const struct device *dev, int enable)
 		int16_t buf;
 
 		/* dummy read: re-trigger interrupt */
-		iis2iclx_temperature_raw_get(iis2iclx->ctx, &buf);
+		iis2iclx_temperature_raw_get(&iis2iclx->ctx, &buf);
 	}
 
 	/* set interrupt (TEMP DRDY interrupt is only on INT2) */
 	if (cfg->int_pin == 1)
 		return -EIO;
 
-	iis2iclx_read_reg(iis2iclx->ctx, IIS2ICLX_INT2_CTRL,
+	iis2iclx_read_reg(&iis2iclx->ctx, IIS2ICLX_INT2_CTRL,
 			    (uint8_t *)&int2_route.int2_ctrl, 1);
 	int2_route.int2_ctrl.int2_drdy_temp = enable;
-	return iis2iclx_write_reg(iis2iclx->ctx, IIS2ICLX_INT2_CTRL,
+	return iis2iclx_write_reg(&iis2iclx->ctx, IIS2ICLX_INT2_CTRL,
 				    (uint8_t *)&int2_route.int2_ctrl, 1);
 }
 #endif
@@ -60,26 +60,26 @@ static int iis2iclx_enable_xl_int(const struct device *dev, int enable)
 		int16_t buf[3];
 
 		/* dummy read: re-trigger interrupt */
-		iis2iclx_acceleration_raw_get(iis2iclx->ctx, buf);
+		iis2iclx_acceleration_raw_get(&iis2iclx->ctx, buf);
 	}
 
 	/* set interrupt */
 	if (cfg->int_pin == 1) {
 		iis2iclx_pin_int1_route_t int1_route;
 
-		iis2iclx_read_reg(iis2iclx->ctx, IIS2ICLX_INT1_CTRL,
+		iis2iclx_read_reg(&iis2iclx->ctx, IIS2ICLX_INT1_CTRL,
 				    (uint8_t *)&int1_route.int1_ctrl, 1);
 
 		int1_route.int1_ctrl.int1_drdy_xl = enable;
-		return iis2iclx_write_reg(iis2iclx->ctx, IIS2ICLX_INT1_CTRL,
+		return iis2iclx_write_reg(&iis2iclx->ctx, IIS2ICLX_INT1_CTRL,
 					    (uint8_t *)&int1_route.int1_ctrl, 1);
 	} else {
 		iis2iclx_pin_int2_route_t int2_route;
 
-		iis2iclx_read_reg(iis2iclx->ctx, IIS2ICLX_INT2_CTRL,
+		iis2iclx_read_reg(&iis2iclx->ctx, IIS2ICLX_INT2_CTRL,
 				    (uint8_t *)&int2_route.int2_ctrl, 1);
 		int2_route.int2_ctrl.int2_drdy_xl = enable;
-		return iis2iclx_write_reg(iis2iclx->ctx, IIS2ICLX_INT2_CTRL,
+		return iis2iclx_write_reg(&iis2iclx->ctx, IIS2ICLX_INT2_CTRL,
 					    (uint8_t *)&int2_route.int2_ctrl, 1);
 	}
 }
@@ -135,7 +135,7 @@ static void iis2iclx_handle_interrupt(const struct device *dev)
 	iis2iclx_status_reg_t status;
 
 	while (1) {
-		if (iis2iclx_status_reg_get(iis2iclx->ctx, &status) < 0) {
+		if (iis2iclx_status_reg_get(&iis2iclx->ctx, &status) < 0) {
 			LOG_DBG("failed reading status reg");
 			return;
 		}
@@ -245,7 +245,7 @@ int iis2iclx_init_interrupt(const struct device *dev)
 	}
 
 	/* enable interrupt on int1/int2 in pulse mode */
-	if (iis2iclx_int_notification_set(iis2iclx->ctx,
+	if (iis2iclx_int_notification_set(&iis2iclx->ctx,
 					    IIS2ICLX_ALL_INT_PULSED) < 0) {
 		LOG_ERR("Could not set pulse mode");
 		return -EIO;
