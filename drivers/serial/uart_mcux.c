@@ -11,6 +11,7 @@
 #include <device.h>
 #include <drivers/uart.h>
 #include <drivers/clock_control.h>
+#include <drivers/pinctrl.h>
 #include <fsl_uart.h>
 #include <soc.h>
 
@@ -21,6 +22,8 @@ struct uart_mcux_config {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	void (*irq_config_func)(const struct device *dev);
 #endif
+	const pinctrl_dt_pin_spec_t *pins;
+	size_t num_pins;
 };
 
 struct uart_mcux_data {
@@ -39,6 +42,8 @@ static int uart_mcux_configure(const struct device *dev,
 	uart_config_t uart_config;
 	uint32_t clock_freq;
 	status_t retval;
+
+	pinctrl_pin_list_configure(config->pins, config->num_pins);
 
 	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
 				   &clock_freq)) {
@@ -359,10 +364,15 @@ static const struct uart_driver_api uart_mcux_driver_api = {
 };
 
 #define UART_MCUX_DECLARE_CFG(n, IRQ_FUNC_INIT)				\
+static const pinctrl_dt_pin_spec_t uart_pins_##n[] = 			\
+	PINCTRL_DT_SPEC_GET(DT_DRV_INST(n), 0);				\
+									\
 static const struct uart_mcux_config uart_mcux_##n##_config = {		\
 	.base = (UART_Type *)DT_INST_REG_ADDR(n),			\
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),		\
 	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
+	.pins = uart_pins_##n,						\
+	.num_pins = ARRAY_SIZE(uart_pins_##n),				\
 	IRQ_FUNC_INIT							\
 }
 
