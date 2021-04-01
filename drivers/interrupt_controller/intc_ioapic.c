@@ -303,7 +303,7 @@ int ioapic_resume_from_suspend(const struct device *port)
 */
 static int ioapic_device_ctrl(const struct device *dev,
 			      uint32_t ctrl_command,
-			      void *context, pm_device_cb cb, void *arg)
+			      uint32_t *context, pm_device_cb cb, void *arg)
 {
 	int ret = 0;
 

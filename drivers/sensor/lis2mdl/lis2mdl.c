@@ -520,7 +520,7 @@ static int lis2mdl_set_power_state(struct lis2mdl_data *lis2mdl,
 }
 
 static int lis2mdl_pm_control(const struct device *dev, uint32_t ctrl_command,
-				void *context, pm_device_cb cb, void *arg)
+				uint32_t *state, pm_device_cb cb, void *arg)
 {
 	struct lis2mdl_data *lis2mdl = dev->data;
 	const struct lis2mdl_config *const config = dev->config;
@@ -530,14 +530,14 @@ static int lis2mdl_pm_control(const struct device *dev, uint32_t ctrl_command,
 
 	switch (ctrl_command) {
 	case PM_DEVICE_STATE_SET:
-		new_state = *((const uint32_t *)context);
+		new_state = *state;
 		if (new_state != current_state) {
 			status = lis2mdl_set_power_state(lis2mdl, config,
 							new_state);
 		}
 		break;
 	case PM_DEVICE_STATE_GET:
-		*((uint32_t *)context) = current_state;
+		*state = current_state;
 		break;
 	default:
 		LOG_ERR("Got unknown power management control command");
@@ -545,7 +545,7 @@ static int lis2mdl_pm_control(const struct device *dev, uint32_t ctrl_command,
 	}
 
 	if (cb) {
-		cb(dev, status, context, arg);
+		cb(dev, status, state, arg);
 	}
 
 	return status;

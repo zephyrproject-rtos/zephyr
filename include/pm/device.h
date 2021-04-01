@@ -78,7 +78,7 @@ struct device;
 #define PM_DEVICE_STATE_GET       2
 
 typedef void (*pm_device_cb)(const struct device *dev,
-			     int status, void *context, void *arg);
+			     int status, uint32_t *state, void *arg);
 
 /**
  * @brief Device PM info

@@ -387,7 +387,7 @@ struct device {
 #ifdef CONFIG_PM_DEVICE
 	/** Power Management function */
 	int (*pm_control)(const struct device *dev, uint32_t command,
-				 void *context, pm_device_cb cb, void *arg);
+				 uint32_t *state, pm_device_cb cb, void *arg);
 	/** Pointer to device instance power management data */
 	struct pm_device * const pm;
 #endif

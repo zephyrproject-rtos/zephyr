@@ -192,7 +192,7 @@ static int arc_v2_irq_unit_get_state(const struct device *dev)
  * @return operation result
  */
 static int arc_v2_irq_unit_device_ctrl(const struct device *dev,
-				       uint32_t ctrl_command, void *context,
+				       uint32_t ctrl_command, uint32_t *context,
 				       pm_device_cb cb, void *arg)
 {
 	int ret = 0;
