@@ -5,3 +5,5 @@
  */
 
 #include <nxp/nxp_kl25z.dtsi>
+
+#include <nxp/kinetis/MKL25Z128VLK4-pinctrl.dtsi>
