@@ -39,9 +39,8 @@ MEMORY
    *
    * FIXME:
    *  - Utilize available memory regions to full capacity
-   *  - Reserve memory region for BT controller library from ROM
    */
-  dram0_0_seg(RW): org = 0x3FFB0000, len = 0x30000
+  dram0_0_seg(RW): org = 0x3FFB0000 + CONFIG_ESP32_BT_RESERVE_DRAM, len = 0x2c200 - CONFIG_ESP32_BT_RESERVE_DRAM
   dram0_1_seg(RW): org = 0x3FFE4350, len = 0x1BCB0
   drom0_0_seg(R): org = 0x3F400020, len = 0x400000-0x20
   rtc_iram_seg(RWX): org = 0x400C0000, len = 0x2000
@@ -206,6 +205,12 @@ _net_buf_pool_list = _esp_net_buf_pool_list;
   .dram0.data :
   {
     _data_start = ABSOLUTE(.);
+
+    _btdm_data_start = ABSOLUTE(.);
+    *libbtdm_app.a:(.data .data.*)
+    . = ALIGN (4);
+    _btdm_data_end = ABSOLUTE(.);
+
     *(.data)
     *(.data.*)
     *(.gnu.linkonce.d.*)
@@ -259,6 +264,26 @@ _net_buf_pool_list = _esp_net_buf_pool_list;
     Z_LINK_ITERABLE(settings_handler_static);
     . = ALIGN(4);
 #endif
+
+#if defined(CONFIG_BT_BREDR)
+    . = ALIGN(4);
+    Z_LINK_ITERABLE(bt_l2cap_br_fixed_chan);
+    . = ALIGN(4);
+#endif
+
+#if defined(CONFIG_BT_MESH)
+    Z_LINK_ITERABLE(bt_mesh_subnet_cb);
+    Z_LINK_ITERABLE(bt_mesh_app_key_cb);
+    Z_LINK_ITERABLE(bt_mesh_hb_cb);
+#endif
+
+    . = ALIGN(4);
+    Z_LINK_ITERABLE(bt_gatt_service_static);
+    . = ALIGN(4);
+
+    . = ALIGN(4);
+    Z_LINK_ITERABLE(bt_l2cap_fixed_chan);
+    . = ALIGN(4);
 
     . = ALIGN(4);
     Z_LINK_ITERABLE(shell);
@@ -363,6 +388,8 @@ __shell_root_cmds_end = __esp_shell_root_cmds_end;
 #endif
 
     _iram_text_end = ABSOLUTE(.);
+    . = ALIGN(4);
+    _iram_end = ABSOLUTE(.);
   } GROUP_LINK_IN(IRAM_REGION)
 
   .flash.text :
@@ -396,6 +423,12 @@ __shell_root_cmds_end = __esp_shell_root_cmds_end;
   {
     . = ALIGN (8);
     _bss_start = ABSOLUTE(.);
+
+    _btdm_bss_start = ABSOLUTE(.);
+    *libbtdm_app.a:(.bss .bss.* COMMON)
+    . = ALIGN (4);
+    _btdm_bss_end = ABSOLUTE(.);
+
     *(.dynsbss)
     *(.sbss)
     *(.sbss.*)
@@ -413,6 +446,9 @@ __shell_root_cmds_end = __esp_shell_root_cmds_end;
     . = ALIGN (8);
     _bss_end = ABSOLUTE(.);
   } GROUP_LINK_IN(RAMABLE_REGION)
+
+  ASSERT(((_bss_end - ORIGIN(dram0_0_seg)) <= LENGTH(dram0_0_seg)),
+          "DRAM segment data does not fit.")
 
   SECTION_DATA_PROLOGUE(_NOINIT_SECTION_NAME, (NOLOAD),)
   {
@@ -435,3 +471,6 @@ __shell_root_cmds_end = __esp_shell_root_cmds_end;
   }
 
 }
+
+ASSERT(((_iram_end - ORIGIN(iram0_0_seg)) <= LENGTH(iram0_0_seg)),
+          "IRAM0 segment data does not fit.")

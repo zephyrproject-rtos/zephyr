@@ -119,6 +119,7 @@ config BT_HCI_RESERVE
 	default 1 if BT_SPI
 	default 1 if BT_STM32_IPM
 	default 1 if BT_USERCHAN
+	default 1 if BT_ESP32
 	# Even if no driver is selected the following default is still
 	# needed e.g. for unit tests.
 	default 0
