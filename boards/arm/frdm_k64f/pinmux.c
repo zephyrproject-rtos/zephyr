@@ -165,6 +165,7 @@ static int frdm_k64f_pinmux_init(const struct device *dev)
 #endif
 
 #if CONFIG_SHIELD_ADAFRUIT_2_8_TFT_TOUCH_V2
+	pinmux_pin_set(portb, 23, PORT_PCR_MUX(kPORT_MuxAsGpio));
 	pinmux_pin_set(portc,  4, PORT_PCR_MUX(kPORT_MuxAsGpio));
 #endif
 
