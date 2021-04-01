@@ -40,20 +40,20 @@ static int dummy_resume_from_suspend(const struct device *dev)
 
 static int dummy_device_pm_ctrl(const struct device *dev,
 				uint32_t ctrl_command,
-				void *context, pm_device_cb cb, void *arg)
+				uint32_t *state, pm_device_cb cb, void *arg)
 {
 	int ret = 0;
 
 	switch (ctrl_command) {
 	case PM_DEVICE_STATE_SET:
-		if (*((uint32_t *)context) == PM_DEVICE_ACTIVE_STATE) {
+		if (*state == PM_DEVICE_ACTIVE_STATE) {
 			ret = dummy_resume_from_suspend(dev);
 		} else {
 			ret = dummy_suspend(dev);
 		}
 		break;
 	case PM_DEVICE_STATE_GET:
-		*((uint32_t *)context) = dummy_get_power_state(dev);
+		*state = dummy_get_power_state(dev);
 		break;
 	default:
 		ret = -EINVAL;
@@ -61,7 +61,7 @@ static int dummy_device_pm_ctrl(const struct device *dev,
 	}
 
 	if (cb) {
-		cb(dev, ret, context, arg);
+		cb(dev, ret, state, arg);
 	}
 
 	return ret;

@@ -1865,23 +1865,23 @@ static void uarte_nrfx_set_power_state(const struct device *dev,
 
 static int uarte_nrfx_pm_control(const struct device *dev,
 				 uint32_t ctrl_command,
-				 void *context, pm_device_cb cb, void *arg)
+				 uint32_t *state, pm_device_cb cb, void *arg)
 {
 	struct uarte_nrfx_data *data = get_dev_data(dev);
 
 	if (ctrl_command == PM_DEVICE_STATE_SET) {
-		uint32_t new_state = *((const uint32_t *)context);
+		uint32_t new_state = *state;
 
 		if (new_state != data->pm_state) {
 			uarte_nrfx_set_power_state(dev, new_state);
 		}
 	} else {
 		__ASSERT_NO_MSG(ctrl_command == PM_DEVICE_STATE_GET);
-		*((uint32_t *)context) = data->pm_state;
+		*state = data->pm_state;
 	}
 
 	if (cb) {
-		cb(dev, 0, context, arg);
+		cb(dev, 0, state, arg);
 	}
 
 	return 0;

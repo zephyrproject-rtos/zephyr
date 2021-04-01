@@ -404,18 +404,18 @@ int loapic_resume(const struct device *port)
 */
 static int loapic_device_ctrl(const struct device *port,
 			      uint32_t ctrl_command,
-			      void *context, pm_device_cb cb, void *arg)
+			      uint32_t *context, pm_device_cb cb, void *arg)
 {
 	int ret = 0;
 
 	if (ctrl_command == PM_DEVICE_STATE_SET) {
-		if (*((uint32_t *)context) == PM_DEVICE_SUSPEND_STATE) {
+		if (*context == PM_DEVICE_SUSPEND_STATE) {
 			ret = loapic_suspend(port);
-		} else if (*((uint32_t *)context) == PM_DEVICE_ACTIVE_STATE) {
+		} else if (*context == PM_DEVICE_ACTIVE_STATE) {
 			ret = loapic_resume(port);
 		}
 	} else if (ctrl_command == PM_DEVICE_STATE_GET) {
-		*((uint32_t *)context) = loapic_device_power_state;
+		*context = loapic_device_power_state;
 	}
 
 	if (cb) {

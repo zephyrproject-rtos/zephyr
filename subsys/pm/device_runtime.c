@@ -27,12 +27,12 @@ enum device_pm_state {
 #define PM_DEVICE_ASYNC			(1 << 0)
 
 static void device_pm_callback(const struct device *dev,
-			       int retval, void *context, void *arg)
+			       int retval, uint32_t *state, void *arg)
 {
 	__ASSERT(retval == 0, "Device set power state failed");
 
 	/* Set the fsm_state */
-	if (*((uint32_t *)context) == PM_DEVICE_ACTIVE_STATE) {
+	if (*state == PM_DEVICE_ACTIVE_STATE) {
 		atomic_set(&dev->pm->fsm_state,
 			   PM_DEVICE_STATE_ACTIVE);
 	} else {

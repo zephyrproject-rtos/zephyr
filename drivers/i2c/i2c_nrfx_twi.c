@@ -224,13 +224,13 @@ static int init_twi(const struct device *dev)
 #ifdef CONFIG_PM_DEVICE
 static int twi_nrfx_pm_control(const struct device *dev,
 				uint32_t ctrl_command,
-				void *context, pm_device_cb cb, void *arg)
+				uint32_t *state, pm_device_cb cb, void *arg)
 {
 	int ret = 0;
 	uint32_t pm_current_state = get_dev_data(dev)->pm_state;
 
 	if (ctrl_command == PM_DEVICE_STATE_SET) {
-		uint32_t new_state = *((const uint32_t *)context);
+		uint32_t new_state = *state;
 
 		if (new_state != pm_current_state) {
 			switch (new_state) {
@@ -260,11 +260,11 @@ static int twi_nrfx_pm_control(const struct device *dev,
 		}
 	} else {
 		__ASSERT_NO_MSG(ctrl_command == PM_DEVICE_STATE_GET);
-		*((uint32_t *)context) = get_dev_data(dev)->pm_state;
+		*state = get_dev_data(dev)->pm_state;
 	}
 
 	if (cb) {
-		cb(dev, ret, context, arg);
+		cb(dev, ret, state, arg);
 	}
 
 	return ret;
