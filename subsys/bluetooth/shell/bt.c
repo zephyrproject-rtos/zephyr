@@ -1651,12 +1651,19 @@ static int cmd_per_adv_sync_create(const struct shell *shell, size_t argc,
 static int cmd_per_adv_sync_delete(const struct shell *shell, size_t argc,
 				   char *argv[])
 {
-	int err;
-	int index = 0;
 	struct bt_le_per_adv_sync *per_adv_sync = NULL;
+	int index;
+	int err;
 
 	if (argc > 1) {
 		index = strtol(argv[1], NULL, 10);
+	} else {
+		index = 0;
+	}
+
+	if (index >= ARRAY_SIZE(per_adv_syncs)) {
+		shell_error(shell, "Maximum index is %u but %u was requested",
+			    ARRAY_SIZE(per_adv_syncs) - 1, index);
 	}
 
 	per_adv_sync = per_adv_syncs[index];
@@ -1789,6 +1796,11 @@ static int cmd_per_adv_sync_transfer(const struct shell *shell, size_t argc,
 		index = strtol(argv[1], NULL, 10);
 	} else {
 		index = 0;
+	}
+
+	if (index >= ARRAY_SIZE(per_adv_syncs)) {
+		shell_error(shell, "Maximum index is %u but %u was requested",
+			    ARRAY_SIZE(per_adv_syncs) - 1, index);
 	}
 
 	per_adv_sync = per_adv_syncs[index];
