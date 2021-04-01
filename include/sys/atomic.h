@@ -24,9 +24,9 @@ typedef void *atomic_ptr_t;
 
 /* Low-level primitives come in several styles: */
 
-#if defined(CONFIG_ATOMIC_OPERATIONS_BUILTIN)
-/* Default.  See this file for the Doxygen reference: */
-#include <sys/atomic_builtin.h>
+#if defined(CONFIG_ATOMIC_OPERATIONS_C)
+/* Generic-but-slow implementation based on kernel locking and syscalls */
+#include <sys/atomic_c.h>
 #elif defined(CONFIG_ATOMIC_OPERATIONS_ARCH)
 /* Some architectures need their own implementation */
 # ifdef CONFIG_XTENSA
@@ -34,8 +34,8 @@ typedef void *atomic_ptr_t;
 # include <arch/xtensa/atomic_xtensa.h>
 # endif
 #else
-/* Generic-but-slow implementation based on kernel locking and syscalls */
-#include <sys/atomic_c.h>
+/* Default.  See this file for the Doxygen reference: */
+#include <sys/atomic_builtin.h>
 #endif
 
 /* Portable higher-level utilities: */
