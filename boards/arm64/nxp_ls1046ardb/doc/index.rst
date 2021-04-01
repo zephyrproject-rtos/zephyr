@@ -65,9 +65,13 @@ hardware features:
 
 Other hardware features are not supported by the Zephyr kernel.
 
-The default configuration can be found in the defconfig file:
+The default configuration can be found in the defconfig file for NON-SMP:
 
         ``boards/arm64/nxp_ls1046ardb/nxp_ls1046ardb_defconfig``
+
+Or for SMP:
+
+	``boards/arm64/nxp_ls1046ardb/nxp_ls1046ardb_smp_defconfig``
 
 There are two serial port on the board: uart1 and uart2, Zephyr is using
 uart2 as serial console.
