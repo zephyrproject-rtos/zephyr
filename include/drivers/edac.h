@@ -48,10 +48,15 @@ typedef int (*edac_api_notify_cb_set_f)(const struct device *dev,
  * @{
  */
 
-/** @brief Correctable error type */
-#define EDAC_ERROR_TYPE_DRAM_COR	BIT(0)
-/** @brief Uncorrectable error type */
-#define EDAC_ERROR_TYPE_DRAM_UC		BIT(1)
+/**
+ * @brief EDAC error type
+ */
+enum edac_error_type {
+	/** Correctable error type */
+	EDAC_ERROR_TYPE_DRAM_COR = BIT(0),
+	/** Uncorrectable error type */
+	EDAC_ERROR_TYPE_DRAM_UC = BIT(1)
+};
 
 /**
  * @brief EDAC driver API
