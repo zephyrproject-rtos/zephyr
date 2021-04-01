@@ -23,22 +23,32 @@
 #include "lll/lll_adv_types.h"
 #include "lll_adv.h"
 #include "lll/lll_adv_pdu.h"
+#include "lll_scan.h"
 #include "lll/lll_df_types.h"
+#include "lll_sync.h"
 #include "lll_df.h"
+#include "lll/lll_df_internal.h"
 
+#include "ull_scan_types.h"
+#include "ull_sync_types.h"
+#include "ull_sync_internal.h"
 #include "ull_adv_types.h"
 #include "ull_df.h"
 
 #include "ull_adv_internal.h"
+#include "ull_internal.h"
 
 #include "ll.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_CTLR_DF_DEBUG_ENABLE)
 #define LOG_MODULE_NAME bt_ctlr_ull_df
 #include "common/log.h"
 #include "hal/debug.h"
 
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
+
+#define CTE_LEN_MAX_US 160U
+
 #define IQ_REPORT_HEADER_SIZE      (offsetof(struct node_rx_iq_report, pdu))
 #define IQ_REPORT_STRUCT_OVERHEAD  (IQ_REPORT_HEADER_SIZE)
 #define IQ_SAMPLE_SIZE (sizeof(struct iq_sample))
@@ -436,6 +446,127 @@ void ll_df_read_ant_inf(uint8_t *switch_sample_rates,
 }
 
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
+/* @brief Function sets IQ sampling enabled or disabled.
+ *
+ * Set IQ sampling enable for received PDUs that has attached CTE.
+ *
+ * @param[in]handle                     Connection handle.
+ * @param[in]sampling_enable            Enable or disable CTE RX
+ * @param[in]slot_durations             Switching and samplig slot durations for
+ *                                      AoA mode.
+ * @param[in]max_cte_count              Maximum number of sampled CTEs in single
+ *                                      periodic advertising event.
+ * @param[in]switch_pattern_len         Number of antenna ids in switch pattern.
+ * @param[in]ant_ids                    Array of antenna identifiers.
+ *
+ * @return Status of command completion.
+ *
+ * @Note This function may put TX thread into wait state. This may lead to a
+ *       situation that ll_sync_set instnace is relased (RX thread has higher
+ *       priority than TX thread). l_sync_set instance may not be accessed after
+ *       call to ull_sync_slot_update.
+ *       This is related with possible race condition with RX thread handling
+ *       periodic sync lost event.
+ */
+uint8_t ll_df_set_cl_iq_sampling_enable(uint16_t handle,
+					uint8_t sampling_enable,
+					uint8_t slot_durations,
+					uint8_t max_cte_count,
+					uint8_t switch_pattern_len,
+					uint8_t *ant_ids)
+{
+	struct lll_df_sync_cfg *cfg, *cfg_prev;
+	uint32_t slot_minus_us = 0;
+	uint32_t slot_plus_us = 0;
+	struct ll_sync_set *sync;
+	struct lll_sync *lll;
+	uint8_t cfg_idx;
+
+	/* After this call and before ull_sync_slot_update the function may not
+	 * call any kernel API that may put the thread into wait state. It may
+	 * cause race condition with RX thread and lead to use of released memory.
+	 */
+	sync = ull_sync_is_enabled_get(handle);
+	if (!sync) {
+		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
+	}
+
+	lll = &sync->lll;
+
+	/* CTE is not supported for CODED Phy */
+	if (lll->phy == PHY_CODED) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	cfg_prev = lll_df_sync_cfg_curr_get(&lll->df_cfg);
+	cfg = lll_df_sync_cfg_alloc(&lll->df_cfg, &cfg_idx);
+
+	if (!sampling_enable) {
+		if (!cfg->is_enabled) {
+			/* Disable already disabled CTE Rx */
+			return BT_HCI_ERR_SUCCESS;
+		}
+
+		cfg->is_enabled = 0U;
+
+		if (cfg_prev->is_enabled) {
+			slot_minus_us = CTE_LEN_MAX_US;
+		}
+	} else {
+		/* Enable of already enabled CTE updates AoA configuration */
+		if (!((IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_1US) &&
+		       slot_durations == BT_HCI_LE_ANTENNA_SWITCHING_SLOT_1US) ||
+		      slot_durations == BT_HCI_LE_ANTENNA_SWITCHING_SLOT_2US)) {
+			return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+		}
+
+		/* max_cte_count equal to 0x0 has special meaning - sample and
+		 * report continuously until there are CTEs received.
+		 */
+		if (max_cte_count > BT_HCI_LE_SAMPLE_CTE_COUNT_MAX) {
+			return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+		}
+
+		if (switch_pattern_len < BT_HCI_LE_SWITCH_PATTERN_LEN_MIN ||
+		    switch_pattern_len > BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN ||
+		    !ant_ids) {
+			return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+		}
+
+		cfg->slot_durations = slot_durations;
+		cfg->max_cte_count = max_cte_count;
+		memcpy(cfg->ant_ids, ant_ids, switch_pattern_len);
+		cfg->ant_sw_len = switch_pattern_len;
+
+		cfg->is_enabled = 1U;
+
+		if (!cfg_prev->is_enabled) {
+			/* Extend sync event by maximum CTE duration.
+			 * CTE duration denepnds on transmitter configuration
+			 * so it is unknown for receiver upfront.
+			 */
+			slot_plus_us = BT_HCI_LE_CTE_LEN_MAX;
+		}
+	}
+
+	lll_df_sync_cfg_enqueue(&lll->df_cfg, cfg_idx);
+
+	if (slot_plus_us || slot_minus_us) {
+		int err;
+		/* Update of sync slot may fail due to race condition.
+		 * If periodic sync is lost, the ticker event will be stopped.
+		 * The stop operation may preempt call to this functions.
+		 * So update may be called after that. Accept this failure
+		 * (-ENOENT) gracefully.
+		 * Periodic sync lost event also disables the CTE sampling.
+		 */
+		err = ull_sync_slot_update(sync, 0, CTE_LEN_MAX_US);
+		LL_ASSERT(err == 0 || err == -ENOENT);
+	}
+
+	return 0;
+}
+
 void *ull_df_iq_report_alloc_peek(uint8_t count)
 {
 	if (count > MFIFO_AVAIL_COUNT_GET(iq_report_free)) {
