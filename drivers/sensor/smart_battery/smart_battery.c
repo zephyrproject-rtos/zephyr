@@ -250,10 +250,10 @@ static int smartbattery_gauge_init(const struct device *dev)
 	struct smartbattery_data *smart_battery = DEV_DATA(dev);
 	const struct smartbattery_config *const config = DEV_CFG(dev);
 
-	smart_battery->i2c = device_get_binding(config->bus_name);
+	smart_battery->i2c = device_get_binding(config->i2c_dev);
 	if (smart_battery->i2c == NULL) {
 		LOG_ERR("Could not get pointer to %s device.",
-			config->bus_name);
+			config->i2c_dev);
 		return -EINVAL;
 	}
 
@@ -269,7 +269,7 @@ static const struct sensor_driver_api smartbattery_battery_driver_api = {
 	static struct smartbattery_data smartbattery_driver_##index; \
 \
 	static const struct smartbattery_config smartbattery_config_##index = { \
-		.bus_name = DT_INST_BUS_LABEL(index), \
+		.i2c_dev = DEVICE_DT_GET(DT_INST_BUS(index)), \
 		.i2c_addr = DT_INST_REG_ADDR(index), \
 	}; \
 \
