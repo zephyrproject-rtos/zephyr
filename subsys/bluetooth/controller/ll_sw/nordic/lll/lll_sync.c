@@ -11,6 +11,7 @@
 #include "hal/ccm.h"
 #include "hal/radio.h"
 #include "hal/ticker.h"
+#include "hal/radio_df.h"
 
 #include "util/util.h"
 #include "util/memq.h"
@@ -28,6 +29,9 @@
 #include "lll_tim_internal.h"
 #include "lll_prof_internal.h"
 
+#include "lll_df.h"
+#include "lll_df_internal.h"
+
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_lll_sync
 #include "common/log.h"
@@ -37,6 +41,10 @@
 static int init_reset(void);
 static int prepare_cb(struct lll_prepare_param *p);
 static void isr_rx(void *param);
+
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
+static inline void create_iq_report(struct lll_sync *lll, uint8_t rssi_ready);
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 
 int lll_sync_init(void)
 {
@@ -166,11 +174,31 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	lll_chan_set(data_chan_use);
 
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
+	struct lll_df_sync_cfg *cfg;
+
+	cfg = lll_df_sync_cfg_latest_get(&lll->df_cfg, NULL);
+
+	if (cfg->is_enabled) {
+		lll_df_conf_cte_rx_enable(cfg->slot_durations,
+					  cfg->ant_sw_len,
+					  cfg->ant_ids);
+		cfg->cte_count = 0;
+	}
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+
 	radio_isr_set(isr_rx, lll);
 
 	radio_tmr_tifs_set(EVENT_IFS_US);
 
-	radio_switch_complete_and_disable();
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
+	if (cfg->is_enabled) {
+		radio_switch_complete_and_phy_end_disable();
+	} else
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+	{
+		radio_switch_complete_and_disable();
+	}
 
 	ticks_at_event = p->ticks_at_expire;
 	ull = HDR_LLL2ULL(lll);
@@ -281,9 +309,21 @@ static void isr_rx(void *param)
 								     1);
 
 			ull_rx_put(node_rx->hdr.link, node_rx);
+
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
+			create_iq_report(lll, rssi_ready);
+
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 			ull_rx_sched();
 		}
 	}
+	/* ToDo Check if reporting of IQ samples when CRC is wrong should be
+	 * implemented.
+	 * BT Spec Vol 4. Part E, 7.7.65.21 says:
+	 * "A Controller is not required to generate this event for packets that
+	 *  have a bad CRC.". But LL Test suite has two tests cases for such
+	 * situations: 4.2.3.26 and 4.2.3.27.
+	 */
 
 isr_rx_done:
 	/* Calculate and place the drift information in done event */
@@ -306,3 +346,47 @@ isr_rx_done:
 
 	lll_isr_cleanup(param);
 }
+
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
+static inline void create_iq_report(struct lll_sync *lll, uint8_t rssi_ready)
+{
+	struct node_rx_iq_report *iq_report;
+	struct lll_df_sync_cfg *cfg;
+	struct node_rx_ftr *ftr;
+	uint8_t sample_cnt;
+	uint8_t cte_info;
+	uint8_t ant;
+
+	cfg = lll_df_sync_cfg_curr_get(&lll->df_cfg);
+
+	if (cfg->is_enabled) {
+
+		if (cfg->cte_count < cfg->max_cte_count) {
+			sample_cnt = radio_df_iq_samples_amount_get();
+
+			/* If there are no samples available, the CTEInfo was
+			 * not detected and sampling was not started.
+			 */
+			if (sample_cnt > 0) {
+				cte_info = radio_df_cte_status_get();
+				ant = radio_df_pdu_antenna_switch_pattern_get();
+				iq_report = ull_df_iq_report_alloc();
+
+				iq_report->hdr.type = NODE_RX_TYPE_IQ_SAMPLE_REPORT;
+				iq_report->sample_count = sample_cnt;
+				iq_report->packet_status = BT_HCI_LE_CTE_CRC_OK;
+				iq_report->rssi_ant_id = ant;
+				iq_report->cte_info = *(struct pdu_cte_info *)&cte_info;
+				iq_report->local_slot_durations = cfg->slot_durations;
+
+				ftr = &iq_report->hdr.rx_ftr;
+				ftr->param = lll;
+				ftr->rssi = ((rssi_ready) ? radio_rssi_get() :
+					     BT_HCI_LE_RSSI_NOT_AVAILABLE);
+
+				ull_rx_put(iq_report->hdr.link, iq_report);
+			}
+		}
+	}
+}
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
