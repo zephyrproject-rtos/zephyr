@@ -19,6 +19,24 @@
 			label = "SPI_3";
 		};
 
+		timers7: timers@40001400 {
+			compatible = "st,stm32-timers";
+			reg = <0x40001400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000020>;
+			interrupts = <55 0>;
+			interrupt-names = "global";
+			status = "disabled";
+			label = "TIMERS_7";
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				status = "disabled";
+				st,prescaler = <10000>;
+				label = "PWM_7";
+				#pwm-cells = <3>;
+			};
+		};
+
 		can1: can@40006400 {
 			compatible = "st,stm32-can";
 			#address-cells = <1>;
