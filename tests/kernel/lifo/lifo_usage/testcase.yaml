@@ -3,3 +3,4 @@ tests:
     # see #26646
     platform_exclude: m2gl025_miv
     tags: kernel
+    min_ram: 20
