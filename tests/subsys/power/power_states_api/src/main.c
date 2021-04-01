@@ -11,8 +11,8 @@
 /* Last state has not declared a minimum residency, so it should be
  * set the default 0 value
  */
-static struct pm_state_info infos[] = {{PM_STATE_SUSPEND_TO_IDLE, 0, 1},
-		{PM_STATE_SUSPEND_TO_RAM, 0, 5}, {PM_STATE_STANDBY, 0, 0}};
+static struct pm_state_info infos[] = {{PM_STATE_SUSPEND_TO_IDLE, 0, 10000},
+		{PM_STATE_SUSPEND_TO_RAM, 0, 50000}, {PM_STATE_STANDBY, 0, 0}};
 static enum pm_state states[] = {PM_STATE_SUSPEND_TO_IDLE,
 			PM_STATE_SUSPEND_TO_RAM, PM_STATE_STANDBY};
 static enum pm_state wrong_states[] = {PM_STATE_SUSPEND_TO_DISK,
