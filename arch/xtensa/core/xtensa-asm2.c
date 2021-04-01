@@ -202,7 +202,7 @@ void *xtensa_excint1_c(int *interrupted_stack)
 		LOG_ERR(" ** FATAL EXCEPTION");
 		LOG_ERR(" ** CPU %d EXCCAUSE %d (%s)",
 			arch_curr_cpu()->id, cause,
-			z_xtensa_exccause(cause));
+			log_strdup(z_xtensa_exccause(cause)));
 		LOG_ERR(" **  PC %p VADDR %p",
 			(void *)bsa[BSA_PC_OFF/4], (void *)vaddr);
 		LOG_ERR(" **  PS %p", (void *)bsa[BSA_PS_OFF/4]);

@@ -104,7 +104,7 @@ void z_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 	 * change it without also updating twister
 	 */
 	LOG_ERR(">>> ZEPHYR FATAL ERROR %d: %s on CPU %d", reason,
-		reason_to_str(reason), get_cpu());
+		log_strdup(reason_to_str(reason)), get_cpu());
 
 	/* FIXME: This doesn't seem to work as expected on all arches.
 	 * Need a reliable way to determine whether the fault happened when
