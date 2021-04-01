@@ -149,7 +149,7 @@ void z_mp_entry(void)
 
 #ifdef CONFIG_IPM_CAVS_IDC
 	/* Interrupt must be enabled while running on current core */
-	irq_enable(XTENSA_IRQ_NUMBER(DT_IRQN(DT_INST(0, intel_cavs_idc))));
+	irq_enable(DT_IRQN(DT_INST(0, intel_cavs_idc)));
 #endif /* CONFIG_IPM_CAVS_IDC */
 
 	start_rec.alive = 1;
