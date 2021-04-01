@@ -483,10 +483,21 @@ static int nvs_gc(struct nvs_fs *fs)
 
 	stop_addr = gc_addr - ate_size;
 
-	if (!nvs_ate_crc8_check(&close_ate)) {
+	if (!nvs_ate_crc8_check(&close_ate) &&
+	    (close_ate.offset <= stop_addr) &&
+	    !(close_ate.offset % ate_size)) {
 		gc_addr &= ADDR_SECT_MASK;
 		gc_addr += close_ate.offset;
 	} else {
+		/**
+		 * - If ate was corrupted or
+		 * - ate.offset has unaligned value
+		 * - If the last data ate offset is greather that allowed
+		 * assume that somehow sector was closed despite it
+		 * doesn't contain any data.
+		 *
+		 * Consider this sector as to be recovered.
+		 */
 		rc = nvs_recover_last_ate(fs, &gc_addr);
 		if (rc) {
 			return rc;
