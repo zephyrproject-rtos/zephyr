@@ -5,3 +5,5 @@
  */
 
 #include <nxp/nxp_k66.dtsi>
+
+#include <nxp/kinetis/MK66FN2M0VMD18-pinctrl.dtsi>

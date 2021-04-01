@@ -5,3 +5,5 @@
  */
 
 #include <nxp/nxp_kw40z.dtsi>
+
+#include <nxp/kinetis/MKW40Z160VHT4-pinctrl.dtsi>
