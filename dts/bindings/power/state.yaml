@@ -27,4 +27,5 @@ properties:
         required: false
         description: |
             Minimum residency duration in microseconds. It is the minimum time for a
-            given idle state to be worthwhile energywise.
+            given idle state to be worthwhile energywise. It includes the time to enter
+            in this state.
