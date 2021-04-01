@@ -589,6 +589,9 @@ static int iis2iclx_init_chip(const struct device *dev)
 static int iis2iclx_init(const struct device *dev)
 {
 	const struct iis2iclx_config * const config = dev->config;
+#if defined(CONFIG_IIS2ICLX_SENSORHUB)
+	struct iis2iclx_data *data = dev->data;
+#endif /* CONFIG_IIS2ICLX_SENSORHUB */
 
 	if (config->bus_init(dev) < 0) {
 		LOG_ERR("failed to initialize bus");
