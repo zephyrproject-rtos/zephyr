@@ -56,8 +56,8 @@ static int mbc_validate_response_fc(struct modbus_context *ctx,
 
 static int mbc_validate_fc03fp_response(struct modbus_context *ctx, float *ptbl)
 {
-	uint8_t resp_byte_cnt;
-	uint8_t req_byte_cnt;
+	size_t resp_byte_cnt;
+	size_t req_byte_cnt;
 	uint16_t req_qty;
 	uint8_t *resp_data;
 
@@ -87,8 +87,8 @@ static int mbc_validate_rd_response(struct modbus_context *ctx,
 				    uint8_t *data)
 {
 	int err;
-	uint8_t resp_byte_cnt;
-	uint8_t req_byte_cnt;
+	size_t resp_byte_cnt;
+	size_t req_byte_cnt;
 	uint16_t req_qty;
 	uint16_t req_addr;
 	uint8_t *resp_data;
@@ -103,10 +103,15 @@ static int mbc_validate_rd_response(struct modbus_context *ctx,
 	req_qty = sys_get_be16(&ctx->tx_adu.data[2]);
 	req_addr = sys_get_be16(&ctx->tx_adu.data[0]);
 
+	if ((resp_byte_cnt + 1) > sizeof(ctx->rx_adu.data)) {
+		LOG_ERR("Byte count exceeds buffer length");
+		return -EINVAL;
+	}
+
 	switch (fc) {
 	case MODBUS_FC01_COIL_RD:
 	case MODBUS_FC02_DI_RD:
-		req_byte_cnt = (uint8_t)((req_qty - 1) / 8) + 1;
+		req_byte_cnt = ((req_qty - 1) / 8) + 1;
 		if (req_byte_cnt != resp_byte_cnt) {
 			LOG_ERR("Mismatch in the number of coils or inputs");
 			err = -EINVAL;
@@ -500,9 +505,10 @@ int modbus_write_coils(const int iface,
 		       const uint16_t num_coils)
 {
 	struct modbus_context *ctx = modbus_get_context(iface);
-	uint8_t num_bytes;
-	int err;
+	size_t length = 0;
 	uint8_t *data_ptr;
+	size_t num_bytes;
+	int err;
 
 	if (ctx == NULL) {
 		return -ENODEV;
@@ -511,12 +517,22 @@ int modbus_write_coils(const int iface,
 	k_mutex_lock(&ctx->iface_lock, K_FOREVER);
 
 	sys_put_be16(start_addr, &ctx->tx_adu.data[0]);
+	length += sizeof(start_addr);
 	sys_put_be16(num_coils, &ctx->tx_adu.data[2]);
+	length += sizeof(num_coils);
 
 	num_bytes = (uint8_t)(((num_coils - 1) / 8) + 1);
 	ctx->tx_adu.data[4] = num_bytes;
+	length += num_bytes + 1;
+
+	if (length > sizeof(ctx->tx_adu.data)) {
+		LOG_ERR("Length of data buffer is not sufficient");
+		k_mutex_unlock(&ctx->iface_lock);
+		return -ENOBUFS;
+	}
+
+	ctx->tx_adu.length = length;
 	data_ptr = &ctx->tx_adu.data[5];
-	ctx->tx_adu.length = 5 + num_bytes;
 
 	memcpy(data_ptr, coil_tbl, num_bytes);
 
@@ -533,9 +549,10 @@ int modbus_write_holding_regs(const int iface,
 			      const uint16_t num_regs)
 {
 	struct modbus_context *ctx = modbus_get_context(iface);
-	uint8_t num_bytes;
-	int err;
+	size_t length = 0;
 	uint8_t *data_ptr;
+	size_t num_bytes;
+	int err;
 
 	if (ctx == NULL) {
 		return -ENODEV;
@@ -544,11 +561,21 @@ int modbus_write_holding_regs(const int iface,
 	k_mutex_lock(&ctx->iface_lock, K_FOREVER);
 
 	sys_put_be16(start_addr, &ctx->tx_adu.data[0]);
+	length += sizeof(start_addr);
 	sys_put_be16(num_regs, &ctx->tx_adu.data[2]);
+	length += sizeof(num_regs);
 
-	num_bytes = (uint8_t) (num_regs * sizeof(uint16_t));
-	ctx->tx_adu.length = num_bytes + 5;
+	num_bytes = num_regs * sizeof(uint16_t);
 	ctx->tx_adu.data[4] = num_bytes;
+	length += num_bytes + 1;
+
+	if (length > sizeof(ctx->tx_adu.data)) {
+		LOG_ERR("Length of data buffer is not sufficient");
+		k_mutex_unlock(&ctx->iface_lock);
+		return -ENOBUFS;
+	}
+
+	ctx->tx_adu.length = length;
 	data_ptr = &ctx->tx_adu.data[5];
 
 	for (uint16_t i = 0; i < num_regs; i++) {
@@ -570,9 +597,10 @@ int modbus_write_holding_regs_fp(const int iface,
 				 const uint16_t num_regs)
 {
 	struct modbus_context *ctx = modbus_get_context(iface);
-	uint8_t num_bytes;
-	int err;
+	size_t length = 0;
 	uint8_t *data_ptr;
+	size_t num_bytes;
+	int err;
 
 	if (ctx == NULL) {
 		return -ENODEV;
@@ -581,11 +609,21 @@ int modbus_write_holding_regs_fp(const int iface,
 	k_mutex_lock(&ctx->iface_lock, K_FOREVER);
 
 	sys_put_be16(start_addr, &ctx->tx_adu.data[0]);
+	length += sizeof(start_addr);
 	sys_put_be16(num_regs, &ctx->tx_adu.data[2]);
+	length += sizeof(num_regs);
 
-	num_bytes = (uint8_t) (num_regs * sizeof(float));
-	ctx->tx_adu.length = num_bytes + 5;
+	num_bytes = num_regs * sizeof(float);
 	ctx->tx_adu.data[4] = num_bytes;
+	length += num_bytes + 1;
+
+	if (length > sizeof(ctx->tx_adu.data)) {
+		LOG_ERR("Length of data buffer is not sufficient");
+		k_mutex_unlock(&ctx->iface_lock);
+		return -ENOBUFS;
+	}
+
+	ctx->tx_adu.length = length;
 	data_ptr = &ctx->tx_adu.data[5];
 
 	for (uint16_t i = 0; i < num_regs; i++) {
