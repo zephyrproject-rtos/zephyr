@@ -805,7 +805,12 @@ void ll_rx_dequeue(void)
 			    (void **)&rx);
 	LL_ASSERT(link);
 
-	mem_release(link, &mem_link_rx.free);
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
+	if (rx->type != NODE_RX_TYPE_IQ_SAMPLE_REPORT)
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+	{
+		mem_release(link, &mem_link_rx.free);
+	}
 
 	/* handle object specific clean up */
 	switch (rx->type) {
@@ -894,6 +899,13 @@ void ll_rx_dequeue(void)
 	}
 	break;
 #endif /* CONFIG_BT_BROADCASTER */
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
+	case NODE_RX_TYPE_IQ_SAMPLE_REPORT:
+	{
+		ull_df_iq_report_link_release(link);
+	}
+	break;
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 #if defined(CONFIG_BT_CONN)
@@ -1258,6 +1270,15 @@ void ll_rx_mem_release(void **node_rx)
 			ull_sync_release(sync);
 		}
 		break;
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
+		case NODE_RX_TYPE_IQ_SAMPLE_REPORT:
+		{
+			ull_iq_report_link_inc_quota(1);
+			ull_df_iq_report_mem_release(rx_free);
+			ull_df_rx_iq_report_alloc(1);
+		}
+		break;
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 
 #if defined(CONFIG_BT_CONN)
@@ -2196,6 +2217,9 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 	case NODE_RX_TYPE_EXT_AUX_REPORT:
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 	case NODE_RX_TYPE_SYNC_REPORT:
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
+	case NODE_RX_TYPE_IQ_SAMPLE_REPORT:
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 	{
 		struct pdu_adv *adv;
