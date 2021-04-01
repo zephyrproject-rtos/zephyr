@@ -634,3 +634,40 @@ using an external J-Link probe.  The "probe_id" keyword overrides the
       product: DAPLink CMSIS-DAP
       runner: jlink
       serial: null
+
+Quarantine
+++++++++++
+
+Twister allows using user-defined yaml files defining the list of tests to be put
+under quarantine. Such tests will be skipped and marked accordingly in the output
+reports. This feature is especially useful when running larger test suits, where
+a failure of one test can affect the execution of other tests (e.g. putting the
+physical board in a corrupted state).
+
+To use the quarantine feature one has to add the argument
+``--quarantine-list <PATH_TO_QUARANTINE_YAML>`` to a twister call.
+The current status of tests on the quarantine list can also be verified by adding
+``--quarantine-verify`` to the above argument. This will make twister skip all tests
+which are not on the given list.
+
+A quarantine yaml has to be a sequence of dictionaries. Each dictionary has to have
+"scenarios" and "platforms" entries listing combinations of scenarios and platforms
+to put under quarantine. In addition, an optional entry "comment" can be used, where
+some more details can be given (e.g. link to a reported issue). These comments will also
+be added to the output reports.
+
+An example of entries in a quarantine yaml::
+
+    - scenarios:
+        - sample.basic.helloworld
+      platforms:
+        - all
+      comment: "Link to the issue: https://github.com/zephyrproject-rtos/zephyr/pull/33287"
+
+    - scenarios:
+        - kernel.common
+        - kernel.common.misra
+        - kernel.common.nano64
+      platforms:
+        - qemu_cortex_m3
+        - native_posix
