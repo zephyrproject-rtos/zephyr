@@ -26,6 +26,7 @@
 #include "lll/lll_vendor.h"
 #include "lll_chan.h"
 #include "lll_scan.h"
+#include "lll/lll_df_types.h"
 #include "lll_sync.h"
 #include "lll_sync_iso.h"
 

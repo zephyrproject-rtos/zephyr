@@ -21,6 +21,7 @@
 #include "lll_vendor.h"
 #include "lll_clock.h"
 #include "lll_chan.h"
+#include "lll_df_types.h"
 #include "lll_sync.h"
 
 #include "lll_internal.h"
