@@ -34,3 +34,5 @@ void ull_df_iq_report_mem_release(struct node_rx_hdr *rx);
 void ull_iq_report_link_inc_quota(int8_t delta);
 /* Allocate node_rx_iq_report in free report PDUs list */
 void ull_df_rx_iq_report_alloc(uint8_t max);
+/* Initialized DF sync configuration. */
+void ull_df_sync_cfg_init(struct lll_df_sync *cfg);
