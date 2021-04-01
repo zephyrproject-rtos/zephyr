@@ -501,6 +501,13 @@ void ull_df_rx_iq_report_alloc(uint8_t max)
 		ull_iq_report_link_inc_quota(-1);
 	}
 }
+
+void ull_df_sync_cfg_init(struct lll_df_sync *cfg)
+{
+	memset(&cfg->cfg[0], 0, DOUBLE_BUFFER_SIZE * sizeof(cfg->cfg[0]));
+	cfg->first = 0U;
+	cfg->last = 0U;
+}
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)

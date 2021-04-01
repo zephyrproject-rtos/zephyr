@@ -36,6 +36,7 @@
 #include "ull_internal.h"
 #include "ull_scan_internal.h"
 #include "ull_sync_internal.h"
+#include "ull_df.h"
 
 #include "ll.h"
 
@@ -160,6 +161,10 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 
 	/* Reporting initially enabled/disabled */
 	lll_sync->is_rx_enabled = options & BIT(1);
+
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
+	ull_df_sync_cfg_init(&lll_sync->df_cfg);
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 
 	/* sync_lost node_rx */
 	sync->node_rx_lost.hdr.link = link_sync_lost;
