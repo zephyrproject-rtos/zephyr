@@ -1141,7 +1141,7 @@ static int usdhc_wait_cmd_done(struct usdhc_priv *priv,
 		if (!error) {
 			error = usdhc_cmd_rsp(priv);
 		} else {
-			LOG_ERR("CMD%d Polling ERROR\r\n",
+			LOG_ERR("CMD%d Polling ERROR",
 				priv->op_context.cmd.index);
 		}
 
@@ -2366,7 +2366,7 @@ static int usdhc_sd_init(struct usdhc_priv *priv)
 		priv->card_info.card_flags |= USDHC_SDHC_FLAG;
 	} else {
 		/* SDSC card */
-		LOG_ERR("USDHC SDSC not implemented yet!\r\n");
+		LOG_ERR("USDHC SDSC not implemented yet!");
 		return -ENOTSUP;
 	}
 
@@ -2379,7 +2379,7 @@ APP_SEND_OP_COND_AGAIN:
 		SDHC_APP_SEND_OP_COND, app_cmd_41_arg,
 		SDHC_RSP_TYPE_R1, SDHC_RSP_TYPE_R3, 1);
 	if (ret) {
-		LOG_ERR("APP Condition CMD failed:%d\r\n", ret);
+		LOG_ERR("APP Condition CMD failed:%d", ret);
 		return ret;
 	}
 	if (cmd->response[0U] & SD_OCR_PWR_BUSY_FLAG) {
@@ -2406,7 +2406,7 @@ APP_SEND_OP_COND_AGAIN:
 			ret = usdhc_vol_switch(priv);
 		}
 		if (ret) {
-			LOG_ERR("Voltage switch failed: %d\r\n", ret);
+			LOG_ERR("Voltage switch failed: %d", ret);
 			return ret;
 		}
 		priv->card_info.voltage = SD_VOL_1_8_V;
@@ -2422,7 +2422,7 @@ APP_SEND_OP_COND_AGAIN:
 		sdhc_decode_cid(&priv->card_info.cid,
 			priv->card_info.raw_cid);
 	} else {
-		LOG_ERR("All send CID CMD failed: %d\r\n", ret);
+		LOG_ERR("All send CID CMD failed: %d", ret);
 		return ret;
 	}
 
@@ -2433,7 +2433,7 @@ APP_SEND_OP_COND_AGAIN:
 	if (!ret) {
 		priv->card_info.relative_addr = (cmd->response[0U] >> 16U);
 	} else {
-		LOG_ERR("Send relative address CMD failed: %d\r\n", ret);
+		LOG_ERR("Send relative address CMD failed: %d", ret);
 		return ret;
 	}
 
@@ -2448,7 +2448,7 @@ APP_SEND_OP_COND_AGAIN:
 			&priv->card_info.sd_block_count,
 			&priv->card_info.sd_block_size);
 	} else {
-		LOG_ERR("Send CSD CMD failed: %d\r\n", ret);
+		LOG_ERR("Send CSD CMD failed: %d", ret);
 		return ret;
 	}
 
@@ -2458,7 +2458,7 @@ APP_SEND_OP_COND_AGAIN:
 
 	ret = usdhc_xfer(priv);
 	if (ret || (cmd->response[0U] & SDHC_R1ERR_All_FLAG)) {
-		LOG_ERR("Select card CMD failed: %d\r\n", ret);
+		LOG_ERR("Select card CMD failed: %d", ret);
 		return -EIO;
 	}
 
@@ -2471,7 +2471,7 @@ APP_SEND_OP_COND_AGAIN:
 		SDHC_RSP_TYPE_R1, SDHC_RSP_TYPE_R1, 0);
 
 	if (ret) {
-		LOG_ERR("Send SCR following APP CMD failed: %d\r\n", ret);
+		LOG_ERR("Send SCR following APP CMD failed: %d", ret);
 		return ret;
 	}
 
@@ -2528,7 +2528,7 @@ APP_SEND_OP_COND_AGAIN:
 				SDHC_RSP_TYPE_R1, SDHC_RSP_TYPE_R1, 1);
 
 		if (ret) {
-			LOG_ERR("Set bus width failed: %d\r\n", ret);
+			LOG_ERR("Set bus width failed: %d", ret);
 			return ret;
 		}
 		usdhc_set_bus_width(base, USDHC_DATA_BUS_WIDTH_4BIT);
@@ -2539,7 +2539,7 @@ APP_SEND_OP_COND_AGAIN:
 		ret = usdhc_select_fun(priv, SD_GRP_DRIVER_STRENGTH_MODE,
 			priv->card_info.driver_strength);
 		if (ret) {
-			LOG_ERR("Set SD driver strehgth failed: %d\r\n", ret);
+			LOG_ERR("Set SD driver strength failed: %d", ret);
 			return ret;
 		}
 
@@ -2547,7 +2547,7 @@ APP_SEND_OP_COND_AGAIN:
 		ret = usdhc_select_fun(priv, SD_GRP_CURRENT_LIMIT_MODE,
 			priv->card_info.max_current);
 		if (ret) {
-			LOG_ERR("Set SD current limit failed: %d\r\n", ret);
+			LOG_ERR("Set SD current limit failed: %d", ret);
 			return ret;
 		}
 	}
@@ -2558,7 +2558,7 @@ APP_SEND_OP_COND_AGAIN:
 
 	ret = usdhc_xfer(priv);
 	if (ret || cmd->response[0U] & SDHC_R1ERR_All_FLAG) {
-		LOG_ERR("Set block size failed: %d\r\n", ret);
+		LOG_ERR("Set block size failed: %d", ret);
 		return -EIO;
 	}
 
@@ -2566,7 +2566,7 @@ APP_SEND_OP_COND_AGAIN:
 		/* select bus timing */
 		ret = usdhc_select_bus_timing(priv);
 		if (ret) {
-			LOG_ERR("Select bus timing failed: %d\r\n", ret);
+			LOG_ERR("Select bus timing failed: %d", ret);
 			return ret;
 		}
 	}
@@ -2582,7 +2582,7 @@ APP_SEND_OP_COND_AGAIN:
 	}
 
 	if (ret) {
-		LOG_ERR("USDHC bus device initalization failed!\r\n");
+		LOG_ERR("USDHC bus device initalization failed!");
 	}
 
 	return ret;
@@ -2627,7 +2627,7 @@ static int usdhc_board_access_init(struct usdhc_priv *priv)
 	}
 
 	if (!priv->detect_gpio) {
-		LOG_INF("USDHC detection other than GPIO not implemented!\r\n");
+		LOG_INF("USDHC detection other than GPIO not implemented!");
 		return 0;
 	}
 
@@ -2647,13 +2647,13 @@ static int usdhc_board_access_init(struct usdhc_priv *priv)
 
 	if (gpio_level == 0) {
 		priv->inserted = false;
-		LOG_ERR("NO SD inserted!\r\n");
+		LOG_ERR("NO SD inserted!");
 
 		return -ENODEV;
 	}
 
 	priv->inserted = true;
-	LOG_INF("SD inserted!\r\n");
+	LOG_INF("SD inserted!");
 
 	return 0;
 }
