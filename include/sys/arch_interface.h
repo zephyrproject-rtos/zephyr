@@ -216,6 +216,14 @@ typedef FUNC_NORETURN void (*arch_cpustart_t)(void *data);
  */
 void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 		    arch_cpustart_t fn, void *arg);
+
+/**
+ * @brief Return CPU power status
+ *
+ * @param cpu_num Integer number of the CPU
+ */
+bool arch_cpu_active(int cpu_num);
+
 /** @} */
 
 
