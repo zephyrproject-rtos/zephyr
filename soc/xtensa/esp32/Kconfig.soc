@@ -7,12 +7,19 @@ config SOC_ESP32
 	select CLOCK_CONTROL
 	select CLOCK_CONTROL_ESP32
 
+if SOC_ESP32
+
 config IDF_TARGET_ESP32
 	bool "ESP32 as target board"
 	default y
-	depends on SOC_ESP32
 
 config ESPTOOLPY_FLASHFREQ_80M
 	bool
 	default y
-	depends on SOC_ESP32
+
+config ESP32_BT_RESERVE_DRAM
+	hex "Bluetooth controller reserved RAM region"
+	default 0xdb5c if BT
+	default 0
+
+endif # SOC_ESP32

@@ -63,6 +63,11 @@ config BT_USERCHAN
 	  The Bluetooth adapter must be powered off in order for Zephyr to
 	  be able to use it.
 
+config BT_ESP32
+	bool "ESP32 HCI driver"
+	help
+	  Espressif HCI bluetooth interface
+
 config BT_NO_DRIVER
 	bool "No default HCI driver"
 	help
@@ -128,7 +133,7 @@ endif # BT_RPMSG_NRF53
 config BT_DRIVER_QUIRK_NO_AUTO_DLE
 	bool "Host auto-initiated Data Length Update quirk"
 	depends on BT_AUTO_DATA_LEN_UPDATE
-	default y if BT_RPMSG_NRF53
+	default y if BT_RPMSG_NRF53 || BT_ESP32
 	help
 	  Enable the quirk wherein BT Host stack will auto-initiate Data Length
 	  Update procedure for new connections for controllers that do not
