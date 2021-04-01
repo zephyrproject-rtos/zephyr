@@ -152,16 +152,13 @@ uint32_t z_log_get_s_mask(const char *str, uint32_t nargs)
  */
 static bool is_rodata(const void *addr)
 {
-#if defined(CONFIG_ARM) || defined(CONFIG_ARC) || defined(CONFIG_X86) || defined(CONFIG_ARM64)
+#if defined(CONFIG_ARM) || defined(CONFIG_ARC) || defined(CONFIG_X86) || \
+	defined(CONFIG_ARM64) || defined(CONFIG_NIOS2) || \
+	defined(CONFIG_RISCV) || defined(CONFIG_SPARC)
 	extern const char *_image_rodata_start[];
 	extern const char *_image_rodata_end[];
 	#define RO_START _image_rodata_start
 	#define RO_END _image_rodata_end
-#elif defined(CONFIG_NIOS2) || defined(CONFIG_RISCV) || defined(CONFIG_SPARC)
-	extern const char *_image_rom_start[];
-	extern const char *_image_rom_end[];
-	#define RO_START _image_rom_start
-	#define RO_END _image_rom_end
 #elif defined(CONFIG_XTENSA)
 	extern const char *_rodata_start[];
 	extern const char *_rodata_end[];
