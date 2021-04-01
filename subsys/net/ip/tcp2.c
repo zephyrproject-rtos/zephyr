@@ -1709,7 +1709,7 @@ next_state:
 
 			/* Close the connection if we do not receive ACK on time.
 			 */
-			k_delayed_work_submit_to_queue(&tcp_work_q,
+			k_work_reschedule_for_queue(&tcp_work_q,
 						       &conn->establish_timer,
 						       ACK_TIMEOUT);
 		} else {
@@ -1721,7 +1721,7 @@ next_state:
 	case TCP_SYN_RECEIVED:
 		if (FL(&fl, &, ACK, th_ack(th) == conn->seq &&
 				th_seq(th) == conn->ack)) {
-			k_delayed_work_cancel(&conn->establish_timer);
+			k_work_cancel_delayable(&conn->establish_timer);
 			tcp_send_timer_cancel(conn);
 			next = TCP_ESTABLISHED;
 			net_context_set_state(conn->context,
@@ -1825,13 +1825,13 @@ next_state:
 
 			conn_send_data_dump(conn);
 
-			if (!k_delayed_work_remaining_get(&conn->send_data_timer)) {
+			if (!k_ticks_to_ms_ceil32(k_work_delayable_remaining_get(&conn->send_data_timer))) {
 				NET_DBG("conn: %p, Missing a subscription "
 					"of the send_data queue timer", conn);
 				break;
 			}
 			conn->send_data_retries = 0;
-			k_delayed_work_cancel(&conn->send_data_timer);
+			k_work_cancel_delayable(&conn->send_data_timer);
 			if (conn->data_mode == TCP_DATA_MODE_RESEND) {
 				conn->unacked_len = 0;
 			}
@@ -1903,7 +1903,7 @@ next_state:
 		if (th && (FL(&fl, ==, FIN, th_seq(th) == conn->ack) ||
 			   FL(&fl, ==, FIN | ACK, th_seq(th) == conn->ack))) {
 			/* Received FIN on FIN_WAIT_2, so cancel the timer */
-			k_delayed_work_cancel(&conn->fin_timer);
+			k_work_cancel_delayable(&conn->fin_timer);
 
 			conn_ack(conn, + 1);
 			tcp_out(conn, ACK);
@@ -1917,7 +1917,7 @@ next_state:
 		}
 		break;
 	case TCP_TIME_WAIT:
-		k_delayed_work_submit_to_queue(&tcp_work_q,
+		k_work_reschedule_for_queue(&tcp_work_q,
 					       &conn->timewait_timer,
 					       K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY));
 		break;
@@ -2084,7 +2084,7 @@ int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt)
 		 * and in the work handler.
 		 */
 		(void)k_work_schedule_for_queue(&tcp_work_q,
-						&conn->send_data_timer.work, K_NO_WAIT);
+						&conn->send_data_timer, K_NO_WAIT);
 
 		ret = -EAGAIN;
 		goto out;
