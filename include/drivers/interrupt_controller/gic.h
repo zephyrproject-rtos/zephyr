@@ -200,6 +200,7 @@
 
 #define GICD_SGIR_CPULIST(x)		((x) << 16)
 #define GICD_SGIR_CPULIST_CPU(n)	GICD_SGIR_CPULIST(BIT(n))
+#define GICD_SGIR_CPULIST_MASK		0xff
 
 #define GICD_SGIR_NSATT			BIT(15)
 
@@ -322,7 +323,6 @@ void arm_gic_eoi(unsigned int irq);
 void arm_gic_secondary_init(void);
 #endif
 
-#if defined(CONFIG_GIC_V3)
 /**
  * @brief raise SGI to target cores
  *
@@ -334,7 +334,6 @@ void arm_gic_secondary_init(void);
 void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff,
 		   uint16_t target_list);
 
-#endif /* CONFIG_GIC_V3 */
 #endif /* !_ASMLANGUAGE */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_GIC_H_ */

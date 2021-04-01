@@ -93,6 +93,22 @@ void arm_gic_eoi(unsigned int irq)
 	sys_write32(irq, GICC_EOIR);
 }
 
+void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff,
+		uint16_t target_list)
+{
+	uint32_t sgi_val;
+
+	ARG_UNUSED(target_aff);
+
+	sgi_val = GICD_SGIR_TGTFILT_CPULIST |
+		GICD_SGIR_CPULIST(target_list & GICD_SGIR_CPULIST_MASK) |
+		sgi_id;
+
+	__DSB();
+	sys_write32(sgi_val, GICD_SGIR);
+	__ISB();
+}
+
 static void gic_dist_init(void)
 {
 	unsigned int gic_irqs, i;
@@ -110,10 +126,10 @@ static void gic_dist_init(void)
 	sys_write32(0, GICD_CTLR);
 
 	/*
-	 * Set all global interrupts to this CPU only.
+	 * Set all global interrupts to all CPUs.
 	 */
 	for (i = GIC_SPI_INT_BASE; i < gic_irqs; i += 4) {
-		sys_write32(0x01010101, GICD_ITARGETSRn + i);
+		sys_write32(0xffffffff, GICD_ITARGETSRn + i);
 	}
 
 	/*
@@ -210,3 +226,11 @@ int arm_gic_init(const struct device *unused)
 }
 
 SYS_INIT(arm_gic_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+
+#ifdef CONFIG_SMP
+void arm_gic_secondary_init(void)
+{
+	/* Init CPU interface registers for each secondary core */
+	gic_cpu_init();
+}
+#endif
