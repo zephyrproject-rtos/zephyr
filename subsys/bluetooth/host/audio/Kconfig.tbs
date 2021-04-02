@@ -140,7 +140,8 @@ endif # BT_TBS
 
 config BT_CCP
 	bool "Call Control Profile"
-	default n
+	select BT_GATT_CLIENT
+	select BT_GATT_AUTO_DISCOVER_CCC
 	help
 	  This option enables support for Call Control Profile.
 
