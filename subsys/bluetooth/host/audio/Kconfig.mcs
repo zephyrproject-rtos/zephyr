@@ -46,7 +46,8 @@ endif # BT_MCS
 
 config BT_MCC
 	bool "Media Control Client Support"
-	default n
+	select BT_GATT_CLIENT
+	select BT_GATT_AUTO_DISCOVER_CCC
 	help
 	  This option enables support for the Media Control Client.
 
