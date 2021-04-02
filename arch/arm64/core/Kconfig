@@ -162,6 +162,9 @@ config ARM64_VA_BITS_32
 config ARM64_VA_BITS_36
 	bool "36-bit"
 
+config ARM64_VA_BITS_40
+	bool "40-bit"
+
 config ARM64_VA_BITS_42
 	bool "42-bit"
 
@@ -173,6 +176,7 @@ config ARM64_VA_BITS
 	int
 	default 32 if ARM64_VA_BITS_32
 	default 36 if ARM64_VA_BITS_36
+	default 40 if ARM64_VA_BITS_40
 	default 42 if ARM64_VA_BITS_42
 	default 48 if ARM64_VA_BITS_48
 
@@ -189,6 +193,9 @@ config ARM64_PA_BITS_32
 config ARM64_PA_BITS_36
 	bool "36-bit"
 
+config ARM64_PA_BITS_40
+	bool "40-bit"
+
 config ARM64_PA_BITS_42
 	bool "42-bit"
 
@@ -200,6 +207,7 @@ config ARM64_PA_BITS
 	int
 	default 32 if ARM64_PA_BITS_32
 	default 36 if ARM64_PA_BITS_36
+	default 40 if ARM64_PA_BITS_40
 	default 42 if ARM64_PA_BITS_42
 	default 48 if ARM64_PA_BITS_48
 
