@@ -80,10 +80,12 @@
 	status = "okay";
 	compatible = "nxp,kinetis-ftm-pwm";
 	#pwm-cells = <3>;
+	pinctrl-0 = <&FTM3_CH4_PTC8 &FTM3_CH5_PTC9 &FTM3_CH0_PTD0>;
 };
 
 &i2c0 {
 	status = "okay";
+	pinctrl-0 = <&I2C0_SCL_PTB0 &I2C0_SDA_PTB1>;
 
 	max30101@57 {
 		status = "disabled";
@@ -93,8 +95,17 @@
 	};
 };
 
+&I2C0_SCL_PTB0 {
+	drive-open-drain;
+};
+
+&I2C0_SDA_PTB1 {
+	drive-open-drain;
+};
+
 &i2c1 {
 	status = "okay";
+	pinctrl-0 = <&I2C1_SCL_PTC10 &I2C1_SDA_PTC11>;
 
 	fxos8700@1e {
 		compatible = "nxp,fxos8700";
@@ -113,14 +124,24 @@
 	};
 };
 
+&I2C1_SCL_PTC10 {
+	drive-open-drain;
+};
+
+&I2C1_SDA_PTC11 {
+	drive-open-drain;
+};
+
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
+	pinctrl-0 = <&UART0_RX_PTB16 &UART0_TX_PTB17>;
 };
 
 &uart4 {
 	status = "okay";
 	current-speed = <115200>;
+	pinctrl-0 = <&UART4_RX_PTE25 &UART4_TX_PTE24>;
 };
 
 &gpiob {
