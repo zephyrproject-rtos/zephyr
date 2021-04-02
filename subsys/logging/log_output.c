@@ -620,7 +620,7 @@ void log_output_hexdump(const struct log_output *output,
 	/* Print metadata */
 	print_formatted(output, "%s", metadata);
 
-	while (length) {
+	while (length != 0U) {
 		uint32_t part_len = length > HEXDUMP_BYTES_IN_LINE ?
 				HEXDUMP_BYTES_IN_LINE : length;
 
