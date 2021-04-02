@@ -582,7 +582,7 @@ void log_thread_set(k_tid_t process_tid)
 
 int log_set_timestamp_func(timestamp_get_t timestamp_getter, uint32_t freq)
 {
-	if (!timestamp_getter) {
+	if (timestamp_getter == NULL) {
 		return -EINVAL;
 	}
 
