@@ -348,6 +348,12 @@
 				compatible = "on-bus";
 			};
 		};
+		bazbar-bus {
+			compatible = "bazbar-bus";
+			node {
+				compatible = "on-bus";
+			};
+		};
 		no-bus-node {
 			compatible = "on-any-bus";
 		};
