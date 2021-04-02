@@ -12,4 +12,7 @@ choice CODE_LOCATION
 	default CODE_FLEXSPI
 endchoice
 
+config DISK_DRIVER_SDMMC
+	default y if DISK_DRIVERS
+
 endif # BOARD_MM_SWIFTIO
