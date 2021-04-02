@@ -986,20 +986,21 @@ static uint8_t discover_otc_char_func(struct bt_conn *conn,
 			BT_DBG("Object Action Control Point");
 			cur_mcs_inst->otc.oacp_handle = chrc->value_handle;
 			sub_params = &cur_mcs_inst->otc.oacp_sub_params;
+			sub_params->disc_params = &cur_mcs_inst->otc.oacp_sub_disc_params;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_OTS_LIST_CP)) {
 			BT_DBG("Object List Control Point");
 			cur_mcs_inst->otc.olcp_handle = chrc->value_handle;
 			sub_params = &cur_mcs_inst->otc.olcp_sub_params;
+			sub_params->disc_params = &cur_mcs_inst->otc.olcp_sub_disc_params;
 		}
 
 		if (sub_params) {
+			/* With ccc_handle == 0 it will use auto discovery */
+			sub_params->ccc_handle = 0;
+			sub_params->end_handle = cur_mcs_inst->otc.end_handle;
+			sub_params->ccc_handle = 0;
 			sub_params->value = BT_GATT_CCC_INDICATE;
 			sub_params->value_handle = chrc->value_handle;
-			/*
-			 * TODO: Don't assume that CCC is at handle + 2;
-			 * do proper discovery;
-			 */
-			sub_params->ccc_handle = attr->handle + 2;
 			sub_params->notify = bt_otc_indicate_handler;
 
 			bt_gatt_subscribe(conn, sub_params);

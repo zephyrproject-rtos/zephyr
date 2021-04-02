@@ -43,6 +43,8 @@ endif # BT_OTS_TEMP
 config BT_OTC
 	bool "Object Transfer Service Client Support"
 	select BT_L2CAP_DYNAMIC_CHANNEL
+	select BT_GATT_CLIENT
+	select BT_GATT_AUTO_DISCOVER_CCC
 	default n
 	help
 	  This option enables support for the Object Transfer Service Client.
