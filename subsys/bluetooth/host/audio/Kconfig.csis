@@ -68,6 +68,8 @@ endif # BT_CSIS
 
 config BT_CSIP
 	bool "Coordinated Set Identification Profile Support"
+	select BT_GATT_CLIENT
+	select BT_GATT_AUTO_DISCOVER_CCC
 	help
 	  This option enables support for Coordinated Set Identification
 	  Profile.

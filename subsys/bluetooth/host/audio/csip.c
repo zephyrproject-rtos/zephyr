@@ -53,8 +53,11 @@ struct csis_instance_t {
 
 	uint8_t idx;
 	struct bt_gatt_subscribe_params sirk_sub_params;
+	struct bt_gatt_discover_params sirk_sub_disc_params;
 	struct bt_gatt_subscribe_params size_sub_params;
+	struct bt_gatt_discover_params size_sub_disc_params;
 	struct bt_gatt_subscribe_params lock_sub_params;
+	struct bt_gatt_discover_params lock_sub_disc_params;
 };
 
 struct set_member_t {
@@ -536,16 +539,19 @@ static uint8_t discover_func(struct bt_conn *conn,
 			BT_DBG("Set SIRK");
 			cur_inst->set_sirk_handle = chrc->value_handle;
 			sub_params = &cur_inst->sirk_sub_params;
+			sub_params->disc_params = &cur_inst->sirk_sub_disc_params;
 			notify_handler = sirk_notify_func;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_CSIS_SET_SIZE)) {
 			BT_DBG("Set size");
 			cur_inst->set_size_handle = chrc->value_handle;
 			sub_params = &cur_inst->size_sub_params;
+			sub_params->disc_params = &cur_inst->size_sub_disc_params;
 			notify_handler = size_notify_func;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_CSIS_SET_LOCK)) {
 			BT_DBG("Set lock");
 			cur_inst->set_lock_handle = chrc->value_handle;
 			sub_params = &cur_inst->lock_sub_params;
+			sub_params->disc_params = &cur_inst->lock_sub_disc_params;
 			notify_handler = lock_notify_func;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_CSIS_RANK)) {
 			BT_DBG("Set rank");
@@ -561,11 +567,9 @@ static uint8_t discover_func(struct bt_conn *conn,
 			}
 
 			if (sub_params->value) {
-				/*
-				 * TODO: Don't assume that CCC is at handle + 2;
-				 * do proper discovery;
-				 */
-				sub_params->ccc_handle = attr->handle + 2;
+				/* With ccc_handle == 0 it will use auto discovery */
+				sub_params->ccc_handle = 0;
+				sub_params->end_handle = cur_inst->end_handle;
 				sub_params->value_handle = chrc->value_handle;
 				sub_params->notify = notify_handler;
 				bt_gatt_subscribe(conn, sub_params);
