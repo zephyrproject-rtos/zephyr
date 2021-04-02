@@ -6,6 +6,7 @@
 
 #include <zephyr.h>
 #include <kernel.h>
+#include <timeout_q.h>
 #include <init.h>
 #include <string.h>
 #include <power/power.h>
@@ -179,6 +180,15 @@ enum pm_state pm_system_suspend(int32_t ticks)
 		return z_power_state.state;
 	}
 	post_ops_done = 0;
+
+	if (ticks != K_TICKS_FOREVER) {
+		/*
+		 * We need to set the timer to interrupt a little bit early to
+		 * accommodate the time required by the CPU to fully wake up.
+		 */
+		z_set_timeout_expiry(ticks -
+		     k_us_to_ticks_ceil32(z_power_state.exit_latency_us), true);
+	}
 
 #if CONFIG_PM_DEVICE
 
