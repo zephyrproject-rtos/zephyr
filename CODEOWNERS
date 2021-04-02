@@ -537,6 +537,7 @@
 /scripts/coccinelle/                      @himanshujha199640 @JuliaLawall
 /scripts/coredump/                        @dcpleung
 /scripts/kconfig/                         @ulfalizer
+/scripts/logging/dictionary/              @dcpleung
 /scripts/pylib/twister/expr_parser.py     @nashif
 /scripts/schemas/twister/                 @nashif
 /scripts/gen_app_partitions.py            @dcpleung @nashif
