@@ -526,7 +526,7 @@ static inline int is_user_accessible_region(uint32_t r_index, int write)
 {
 	uint32_t r_ap = SYSMPU->WORD[r_index][2];
 
-	if (write) {
+	if (write != 0) {
 		return (r_ap & MPU_REGION_WRITE) == MPU_REGION_WRITE;
 	}
 

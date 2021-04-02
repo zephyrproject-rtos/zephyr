@@ -84,7 +84,7 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 {
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
-	if (key) {
+	if (key != 0U) {
 		return;
 	}
 	__asm__ volatile(
@@ -97,7 +97,7 @@ static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 		"isb;"
 		:  : "r"(key) : "memory");
 #elif defined(CONFIG_ARMV7_R)
-	if (key) {
+	if (key != 0U) {
 		return;
 	}
 	__asm__ volatile(
