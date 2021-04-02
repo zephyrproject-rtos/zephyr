@@ -48,7 +48,7 @@ struct bass_recv_state_internal_t {
 #if defined(CONFIG_BT_BASS_AUTO_SYNC)
 	struct bt_le_per_adv_sync *pa_sync;
 	bool pa_sync_pending;
-	struct k_delayed_work pa_timer;
+	struct k_work_delayable pa_timer;
 #endif /* defined(CONFIG_BT_BASS_AUTO_SYNC) */
 };
 
@@ -247,22 +247,6 @@ static struct bass_recv_state_internal_t *bass_lookup_addr(
 	return NULL;
 }
 
-static struct bass_recv_state_internal_t *bass_lookup_work(struct k_work *work)
-{
-	if (!work) {
-		return NULL;
-	}
-
-
-	for (int i = 0; i < ARRAY_SIZE(bass_inst.recv_states); i++) {
-		if (&bass_inst.recv_states[i].pa_timer.work.work == work) {
-			return &bass_inst.recv_states[i];
-		}
-	}
-
-	return NULL;
-}
-
 static void pa_synced(struct bt_le_per_adv_sync *sync,
 		      struct bt_le_per_adv_sync_synced_info *info)
 {
@@ -283,7 +267,7 @@ static void pa_synced(struct bt_le_per_adv_sync *sync,
 
 	BT_DBG("Synced%s", info->conn ? " via PAST" : "");
 
-	(void)k_delayed_work_cancel(&state->pa_timer);
+	(void)k_work_cancel_delayable(&state->pa_timer);
 	state->state.pa_sync_state = BASS_PA_STATE_SYNCED;
 	state->pa_sync_pending = false;
 
@@ -348,7 +332,9 @@ static struct bt_le_per_adv_sync_cb pa_sync_cb =  {
 
 static void pa_timer_handler(struct k_work *work)
 {
-	struct bass_recv_state_internal_t *recv_state = bass_lookup_work(work);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct bass_recv_state_internal_t *recv_state = CONTAINER_OF(
+		dwork, struct bass_recv_state_internal_t, pa_timer);
 
 	BT_DBG("PA timeout");
 
@@ -401,8 +387,7 @@ static void bass_pa_sync_past(struct bt_conn *conn,
 		recv_state->pa_sync_state = BASS_PA_STATE_INFO_REQ;
 	}
 
-	(void)k_delayed_work_submit(&state->pa_timer,
-				    K_MSEC(param.timeout * 10));
+	(void)k_work_reschedule(&state->pa_timer, K_MSEC(param.timeout * 10));
 #else
 	if (bass_cbs && bass_cbs->past_req) {
 		bass_cbs->past_req(recv_state, conn);
@@ -445,8 +430,8 @@ static void bass_pa_sync_no_past(struct bass_recv_state_internal_t *state,
 		BT_DBG("PA sync pending for addr %s",
 		       bt_addr_le_str(&recv_state->addr));
 		state->pa_sync_pending = true;
-		(void)k_delayed_work_submit(&state->pa_timer,
-					    K_MSEC(param.timeout * 10));
+		(void)k_work_reschedule(&state->pa_timer,
+					K_MSEC(param.timeout * 10));
 	}
 #else
 	if (bass_cbs && bass_cbs->pa_sync_req) {
@@ -464,7 +449,7 @@ static void bass_pa_sync_cancel(struct bass_recv_state_internal_t *state)
 #if defined(CONFIG_BT_BASS_AUTO_SYNC)
 	int err;
 
-	(void)k_delayed_work_cancel(&state->pa_timer);
+	(void)k_work_cancel_delayable(&state->pa_timer);
 
 	if (!state->pa_sync) {
 		return;
@@ -997,8 +982,8 @@ static int bt_bass_init(const struct device *unused)
 #if defined(CONFIG_BT_BASS_AUTO_SYNC)
 	bt_le_per_adv_sync_cb_register(&pa_sync_cb);
 	for (int i = 0; i < ARRAY_SIZE(bass_inst.recv_states); i++) {
-		k_delayed_work_init(&bass_inst.recv_states[i].pa_timer,
-				    pa_timer_handler);
+		k_work_init_delayable(&bass_inst.recv_states[i].pa_timer,
+				      pa_timer_handler);
 	}
 #endif
 	return 0;
