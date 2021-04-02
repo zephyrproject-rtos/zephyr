@@ -33,16 +33,11 @@ static int frdm_kw41z_pinmux_init(const struct device *dev)
 	 */
 #if defined(CONFIG_PWM) && DT_NODE_HAS_STATUS(DT_NODELABEL(tpm0), okay)
 	pinmux_pin_set(portc,  1, PORT_PCR_MUX(kPORT_MuxAlt5));
-#else
-	pinmux_pin_set(portc,  1, PORT_PCR_MUX(kPORT_MuxAsGpio));
 #endif
 
 #if defined(CONFIG_PWM) && DT_NODE_HAS_STATUS(DT_NODELABEL(tpm2), okay)
 	pinmux_pin_set(porta, 19, PORT_PCR_MUX(kPORT_MuxAlt5));
 	pinmux_pin_set(porta, 18, PORT_PCR_MUX(kPORT_MuxAlt5));
-#else
-	pinmux_pin_set(porta, 19, PORT_PCR_MUX(kPORT_MuxAsGpio));
-	pinmux_pin_set(porta, 18, PORT_PCR_MUX(kPORT_MuxAsGpio));
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c1), okay) && CONFIG_I2C
@@ -57,10 +52,6 @@ static int frdm_kw41z_pinmux_init(const struct device *dev)
 	/* ADC0_SE3 */
 	pinmux_pin_set(portb,  2, PORT_PCR_MUX(kPORT_PinDisabledOrAnalog));
 #endif
-
-	/* SW3, SW4 */
-	pinmux_pin_set(portc,  4, PORT_PCR_MUX(kPORT_MuxAsGpio));
-	pinmux_pin_set(portc,  5, PORT_PCR_MUX(kPORT_MuxAsGpio));
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(lpuart0), okay) && CONFIG_SERIAL
 	/* UART0 RX, TX */

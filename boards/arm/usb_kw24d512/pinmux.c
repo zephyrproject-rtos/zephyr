@@ -44,13 +44,6 @@ static int usb_kw24d512_pinmux_init(const struct device *dev)
 	pinmux_pin_set(porta, 2, PORT_PCR_MUX(kPORT_MuxAlt2));
 #endif
 
-	/* SW1 */
-	pinmux_pin_set(portc, 4, PORT_PCR_MUX(kPORT_MuxAsGpio));
-
-	/* blue LEDs D2, D3 */
-	pinmux_pin_set(portd, 4, PORT_PCR_MUX(kPORT_MuxAsGpio));
-	pinmux_pin_set(portd, 5, PORT_PCR_MUX(kPORT_MuxAsGpio));
-
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(spi1), okay) && CONFIG_SPI
 	/* SPI1 CS0, SCK, SOUT, SIN */
 	pinmux_pin_set(portb, 10, PORT_PCR_MUX(kPORT_MuxAlt2));
@@ -59,11 +52,6 @@ static int usb_kw24d512_pinmux_init(const struct device *dev)
 	pinmux_pin_set(portb, 17, PORT_PCR_MUX(kPORT_MuxAlt2));
 #endif
 
-#ifdef CONFIG_IEEE802154_MCR20A
-	/* Reset, IRQ_B */
-	pinmux_pin_set(portb, 19, PORT_PCR_MUX(kPORT_MuxAsGpio));
-	pinmux_pin_set(portb, 3, PORT_PCR_MUX(kPORT_MuxAsGpio));
-#endif
 	return 0;
 }
 

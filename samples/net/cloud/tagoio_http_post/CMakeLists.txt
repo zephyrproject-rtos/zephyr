@@ -6,5 +6,4 @@ project(tagoio_http_post)
 
 target_sources(app PRIVATE src/main.c)
 target_sources(app PRIVATE src/sockets.c)
-target_sources(app PRIVATE src/pinmux.c)
 target_sources_ifdef(CONFIG_WIFI app PRIVATE src/wifi.c)
