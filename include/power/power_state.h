@@ -120,13 +120,15 @@ struct pm_state_info {
 	 *			compatible = "zephyr,power-state";
 	 *			power-state-name = "suspend-to-idle";
 	 *			substate-id = <1>;
-	 *			min-residency-us = <1>;
+	 *			min-residency-us = <10000>;
+	 *			exit-latency-us = <100>;
 	 *		};
 	 *		state1: state1 {
 	 *			compatible = "zephyr,power-state";
 	 *			power-state-name = "suspend-to-idle";
 	 *			substate-id = <2>;
-	 *			min-residency-us = <1>;
+	 *			min-residency-us = <20000>;
+	 *			exit-latency-us = <200>;
 	 *		};
 	 *	}
 	 */
@@ -139,6 +141,13 @@ struct pm_state_info {
 	 * @note 0 means that this property is not available for this state.
 	 */
 	uint32_t min_residency_us;
+
+	/**
+	 * Worst case latency in microseconds required to exit the idle state.
+	 *
+	 * @note 0 means that this property is not available for this state.
+	 */
+	uint32_t exit_latency_us;
 };
 
 /**
@@ -156,6 +165,8 @@ struct pm_state_info {
 			cpu_power_states, i, substate_id, 0),   \
 		.min_residency_us = DT_PROP_BY_PHANDLE_IDX_OR(node_id, \
 				cpu_power_states, i, min_residency_us, 0),\
+		.exit_latency_us = DT_PROP_BY_PHANDLE_IDX_OR(node_id, \
+				cpu_power_states, i, exit_latency_us, 0),\
 	},
 
 /**
@@ -197,13 +208,15 @@ struct pm_state_info {
  *		state0: state0 {
  *			compatible = "zephyr,power-state";
  *			power-state-name = "suspend-to-idle";
- *			min-residency-us = <1>;
+ *			min-residency-us = <10000>;
+ *		        exit-latency-us = <100>;
  *		};
  *
  *		state1: state1 {
  *			compatible = "zephyr,power-state";
  *			power-state-name = "suspend-to-ram";
- *			min-residency-us = <5>;
+ *			min-residency-us = <50000>;
+ *		        exit-latency-us = <500>;
  *		};
  *	};
  *
@@ -262,13 +275,15 @@ struct pm_state_info {
  *	state0: state0 {
  *		compatible = "zephyr,power-state";
  *		power-state-name = "suspend-to-idle";
- *		min-residency-us = <1>;
+ *		min-residency-us = <10000>;
+ *		exit-latency-us = <100>;
  *	};
  *
  *	state1: state1 {
  *		compatible = "zephyr,power-state";
  *		power-state-name = "suspend-to-ram";
- *		min-residency-us = <5>;
+ *		min-residency-us = <50000>;
+ *		exit-latency-us = <500>;
  *	};
  *
  * Example usage: *
