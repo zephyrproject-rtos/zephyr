@@ -91,7 +91,9 @@ struct bt_otc_instance_t {
 	uint16_t olcp_handle;
 
 	struct bt_gatt_subscribe_params oacp_sub_params;
+	struct bt_gatt_discover_params oacp_sub_disc_params;
 	struct bt_gatt_subscribe_params olcp_sub_params;
+	struct bt_gatt_discover_params olcp_sub_disc_params;
 
 	struct bt_gatt_write_params write_params;
 	struct bt_gatt_read_params read_proc;
