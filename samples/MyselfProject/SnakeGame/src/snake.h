@@ -12,7 +12,7 @@
 #include <device.h>
 #include "drivers/lcd_display.h"
 
-#define MAX_BODY    50
+#define MAX_BODY    80
 
 #define X_STEP      10
 #define Y_STEP      10
@@ -25,6 +25,23 @@
 #define SCREEN_SIZE_Y   160
 #define MAX_STEP_X    (SCREEN_SIZE_X/X_STEP)
 #define MAX_STEP_Y    (SCREEN_SIZE_Y/Y_STEP)
+
+
+
+
+#define QUEUE_SIZE  80
+
+
+
+#define LCD_WIDTH   128
+#define LCD_HIGH    160
+
+#define TEST_SIZE   16
+
+#define VEX_NUM     (LCD_WIDTH/TEST_SIZE)*(LCD_HIGH/TEST_SIZE)
+
+
+
 enum{
     MOVE_UP,
     MOVE_DOWN,
@@ -33,8 +50,8 @@ enum{
 };
 struct pos
 {
-    int x_pos;
-    int y_pos;
+    int8_t x_pos;
+    int8_t y_pos;
 };
 
 typedef struct
@@ -52,7 +69,26 @@ typedef struct
     int play_pause;
 }Snake;
 
+struct step
+{
+    struct pos locat;
+};
+struct solve_queue
+{
+    struct step assist_queue[QUEUE_SIZE];
+    uint8_t head,rear;
+};
+
 void updata_control_input(Snake* S,uint16_t key_value);
 void CreatFood(struct device* lcd_dev,Snake* S,food* fd);
 uint8_t SnakeMove(struct device* lcd_dev,Snake* S,food* fd);
 void SnakeInit(struct device* lcd_dev,Snake* S,food* fd);
+uint8_t is_overlap(struct pos* Object,Snake* S);
+
+void solve_game(Snake* S,struct pos food,struct solve_queue* queue);
+uint8_t SnakeAutoMove(struct device* lcd_dev,Snake* S,food* fd);
+
+void map_init(void);
+
+extern struct solve_queue assist;
+extern uint8_t distance[LCD_HIGH/TEST_SIZE][LCD_WIDTH/TEST_SIZE];

@@ -50,29 +50,28 @@ uint8_t is_overlap(struct pos* Object,Snake* S)
             return true;
         }
     }
-    if(Object->x_pos<0)
-    {
-        return true;
-    }
-    if(Object->x_pos>MAX_STEP_X)
-    {
-        return true;
-    }
-    if(Object->y_pos>MAX_STEP_Y)//13
-    {
-        return true;
-    }
-    if(Object->y_pos<(Forehead_HEIGHT/Y_STEP))//2
-    {
-        return true;
-    }
+    // if(Object->x_pos<0)
+    // {
+    //     return true;
+    // }
+    // if(Object->x_pos>MAX_STEP_X)
+    // {
+    //     return true;
+    // }
+    // if(Object->y_pos>MAX_STEP_Y)//13
+    // {
+    //     return true;
+    // }
+    // if(Object->y_pos<(Forehead_HEIGHT/Y_STEP))//2
+    // {
+    //     return true;
+    // }
     return false;
 }
 
 uint8_t SnakeMove(struct device* lcd_dev,Snake* S,food* fd)
 {
     int cur_head=(S->rear-1+MAX_BODY)%MAX_BODY;
-
     if(S->play_pause)
         return 1;
 label:
@@ -180,12 +179,26 @@ label:
     return true;
 }
 
+uint8_t SnakeAutoMove(struct device* lcd_dev,Snake* S,food* fd)
+{
+    solve_game(S,fd->position,&assist);
+}
+
+
+
+
+
+
+
+
+
+
 
 void CreatFood(struct device* lcd_dev,Snake* S,food* fd)
 {
     struct pos food_pos={
-        .x_pos=k_cycle_get_32()%(MAX_STEP_X-1),
-        .y_pos=k_cycle_get_32()%(MAX_STEP_Y-Forehead_BYTE)+Forehead_BYTE,
+        .x_pos=k_cycle_get_32()%(LCD_WIDTH/TEST_SIZE),
+        .y_pos=k_cycle_get_32()%(LCD_HIGH/TEST_SIZE),
     };
     if(fd->exist==0)
     {
@@ -206,6 +219,43 @@ void CreatFood(struct device* lcd_dev,Snake* S,food* fd)
     
     
 }
+
+
+// void CreatFood(struct device* lcd_dev,Snake* S,food* fd)
+// {
+//     struct pos food_pos={
+//         .x_pos=k_cycle_get_32()%(MAX_STEP_X-1),
+//         .y_pos=k_cycle_get_32()%(MAX_STEP_Y-Forehead_BYTE)+Forehead_BYTE,
+//     };
+//     if(fd->exist==0)
+//     {
+//         while(is_overlap(&food_pos,S))
+//         {
+//             food_pos.x_pos=k_cycle_get_32()%(MAX_STEP_X-1);
+//             food_pos.y_pos=(k_cycle_get_32()%(MAX_STEP_Y-Forehead_BYTE))+Forehead_BYTE;
+//         }
+
+//         printk("ypos:%d\n",food_pos.y_pos);
+//         fd->exist=1;
+//         fd->position.x_pos=food_pos.x_pos;
+//         fd->position.y_pos=food_pos.y_pos;
+
+//         st7735_fill_area(lcd_dev,(fd->position.x_pos)*X_STEP,(fd->position.y_pos)*Y_STEP,
+//             (fd->position.x_pos+1)*X_STEP,(fd->position.y_pos+1)*Y_STEP,RED);
+//     }
+    
+    
+// }
+
+
+
+
+
+
+
+
+
+
 
 
 

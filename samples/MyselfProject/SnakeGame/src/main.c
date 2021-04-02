@@ -33,6 +33,7 @@ void main(void)
 
     // st7735_drawAscii(display_dev,10,10,0x41,24,WHITE,GREEN);
     // st7735_drawAscii(display_dev,40,10,0x1A,24,WHITE,GREEN);
+    map_init();
     while(1)
     {
         // while(!k_msgq_get(&input_key_message, &key_value, K_NO_WAIT))
@@ -47,15 +48,21 @@ void main(void)
         k_msgq_get(&input_key_message, &key_value, K_NO_WAIT);
         updata_control_input(&littlesnake,key_value);
         key_value=0;
-        if(SnakeMove(display_dev,&littlesnake,&delicious_fd))
+        if(SnakeAutoMove(display_dev,&littlesnake,&delicious_fd))
         {
             CreatFood(display_dev,&littlesnake,&delicious_fd);
             k_sleep(K_MSEC(200));
-        }else
-        {
-            st7735_LcdInit(display_dev);
-            SnakeInit(display_dev,&littlesnake,&delicious_fd);
         }
+        while(1);
+        // if(SnakeMove(display_dev,&littlesnake,&delicious_fd))
+        // {
+        //     CreatFood(display_dev,&littlesnake,&delicious_fd);
+        //     k_sleep(K_MSEC(200));
+        // }else
+        // {
+        //     st7735_LcdInit(display_dev);
+        //     SnakeInit(display_dev,&littlesnake,&delicious_fd);
+        // }
         
         
     }
