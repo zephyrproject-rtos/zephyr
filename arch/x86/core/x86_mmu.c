@@ -1139,7 +1139,7 @@ static void identity_map_remove(void)
 	 * zero the top-level table entries corresponding to the
 	 * physical mapping.
 	 */
-	while (size) {
+	while (size != 0U) {
 		pentry_t *entry = get_entry_ptr(z_x86_kernel_ptables, pos, 0);
 
 		/* set_pte */
