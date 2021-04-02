@@ -42,6 +42,8 @@ struct bass_client_instance_t {
 	bool busy;
 	struct bt_gatt_subscribe_params recv_state_sub_params
 		[CONFIG_BT_BASS_CLIENT_RECV_STATE_COUNT];
+	struct bt_gatt_discover_params recv_state_disc_params
+		[CONFIG_BT_BASS_CLIENT_RECV_STATE_COUNT];
 	struct bt_gatt_read_params read_params;
 	struct bt_gatt_write_params write_params;
 	struct bt_gatt_discover_params disc_params;
@@ -226,15 +228,17 @@ static uint8_t char_discover_func(struct bt_conn *conn,
 				       bass_client.recv_state_cnt);
 				bass_client.recv_state_handles[idx] =
 					attr->handle + 1;
-				sub_params =
-					&bass_client.recv_state_sub_params[idx];
+				sub_params = &bass_client.recv_state_sub_params[idx];
+				sub_params->disc_params = &bass_client.recv_state_disc_params[idx];
 			}
 		}
 
 		if (sub_params) {
+			/* With ccc_handle == 0 it will use auto discovery */
+			sub_params->end_handle = bass_client.end_handle;
+			sub_params->ccc_handle = 0;
 			sub_params->value = BT_GATT_CCC_NOTIFY;
 			sub_params->value_handle = attr->handle + 1;
-			sub_params->ccc_handle = attr->handle + 2;
 			sub_params->notify = notify_handler;
 			err = bt_gatt_subscribe(conn, sub_params);
 
