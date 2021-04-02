@@ -95,6 +95,7 @@
 arduino_serial: &uart3 {
 	status = "okay";
 	current-speed = <115200>;
+	pinctrl-0 = <&UART3_RX_PTC16 &UART3_TX_PTC17>;
 };
 
 &cpu0 {
@@ -120,6 +121,7 @@ arduino_serial: &uart3 {
 
 arduino_i2c: &i2c0 {
 	status = "okay";
+	pinctrl-0 = <&I2C0_SCL_PTE24 &I2C0_SDA_PTE25>;
 
 	fxos8700@1d {
 		compatible = "nxp,fxos8700";
@@ -132,23 +134,31 @@ arduino_i2c: &i2c0 {
 
 arduino_spi: &spi0 {
 	status = "okay";
+	pinctrl-0 = <&SPI0_PCS0_PTD0 &SPI0_SCK_PTD1 &SPI0_SOUT_PTD2 &SPI0_SIN_PTD3>;
 };
 
 &ftm0 {
 	status = "okay";
 	compatible = "nxp,kinetis-ftm-pwm";
 	#pwm-cells = <3>;
+	pinctrl-0 = <&FTM0_CH0_PTC1>;
 };
 
 &ftm3 {
 	status = "okay";
 	compatible = "nxp,kinetis-ftm-pwm";
 	#pwm-cells = <3>;
+	pinctrl-0 = <&FTM3_CH4_PTC8 &FTM3_CH5_PTC9>;
 };
 
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
+	pinctrl-0 = <&UART0_RX_PTB16 &UART0_TX_PTB17>;
+};
+
+&uart2 {
+	pinctrl-0 = <&UART2_RTS_b_PTD0 &UART2_CTS_b_PTD1 &UART2_RX_PTD2 &UART2_TX_PTD3>;
 };
 
 &usbotg {
@@ -217,14 +227,31 @@ arduino_spi: &spi0 {
 
 &enet {
 	status = "okay";
+	pinctrl-0 = <&RMII0_RXER_PTA5 &RMII0_RXD1_PTA12
+		     &RMII0_RXD0_PTA13 &RMII0_CRS_DV_PTA14
+		     &RMII0_TXEN_PTA15 &RMII0_TXD0_PTA16
+		     &RMII0_TXD1_PTA17 &RMII0_MDIO_PTB0
+		     &RMII0_MDC_PTB1>;
 	ptp {
 		status = "okay";
+		pinctrl-0 = <&ENET0_1588_TMR0_PTC16 &ENET0_1588_TMR1_PTC17
+			     &ENET0_1588_TMR2_PTC18>;
 	};
+};
+
+&RMII0_MDIO_PTB0 {
+	bias-pull-up;
+	drive-open-drain;
 };
 
 &flexcan0 {
 	status = "okay";
+	pinctrl-0 = <&CAN0_TX_PTB18 &CAN0_RX_PTB19>;
 	bus-speed = <125000>;
+};
+
+&CAN0_RX_PTB19 {
+	bias-pull-up;
 };
 
 &edma0 {
