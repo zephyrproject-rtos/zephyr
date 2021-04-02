@@ -144,4 +144,5 @@
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
+	pinctrl-0 = <&uart0_rx_ptb0 &uart0_tx_ptb1>;
 };
