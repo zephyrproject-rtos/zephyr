@@ -666,6 +666,9 @@ static int nvs_startup(struct nvs_fs *fs)
 	 */
 	fs->ate_wra = addr - ate_size;
 	fs->data_wra = addr & ADDR_SECT_MASK;
+#ifdef CONFIG_NVS_ALLOW_ATE_GAPS
+	uint32_t addr2 = fs->ate_wra;
+#endif
 
 	while (fs->ate_wra >= fs->data_wra) {
 		rc = nvs_flash_ate_rd(fs, fs->ate_wra, &last_ate);
@@ -673,18 +676,22 @@ static int nvs_startup(struct nvs_fs *fs)
 			goto end;
 		}
 
+#ifndef CONFIG_NVS_ALLOW_ATE_GAPS
 		rc = nvs_ate_cmp_const(&last_ate, erase_value);
 
 		if (!rc) {
 			/* found ff empty location */
 			break;
 		}
-
+#endif
 		if (!nvs_ate_crc8_check(&last_ate)) {
 			/* crc8 is ok, complete write of ate was performed */
 			fs->data_wra = addr & ADDR_SECT_MASK;
 			fs->data_wra += last_ate.offset;
 			fs->data_wra += nvs_al_size(fs, last_ate.len);
+#ifdef CONFIG_NVS_ALLOW_ATE_GAPS
+			addr2 = fs->ate_wra;
+#endif
 
 			/* ate on the last possition within the sector is
 			 * reserved for deletion an entry
@@ -698,7 +705,9 @@ static int nvs_startup(struct nvs_fs *fs)
 
 		fs->ate_wra -= ate_size;
 	}
-
+#ifdef CONFIG_NVS_ALLOW_ATE_GAPS
+	fs->ate_wra = addr2;
+#endif
 	/* possible data write after last ate write, update data_wra */
 	while (fs->ate_wra > fs->data_wra) {
 		empty_len = fs->ate_wra - fs->data_wra;

@@ -28,4 +28,12 @@ config NVS_WRITE_RETRY
 	  This option can be enabled only on memories which allow writes to
 	  same location at las twice.
 
+config NVS_ALLOW_ATE_GAPS
+	bool "Allow big gaps in ATE area"
+	help
+	  Allow scanning through empty ATE gaps in ATE area while recovering
+	  the last ate in the sector for. This might help to serve corrupted
+	  writes on devices on which same flash location rewrite attempts are
+	  forbidden or flash malfunction might cause ATE being empty.
+
 endif # NVS
