@@ -65,25 +65,42 @@ struct mcs_instance_t {
 	uint16_t content_control_id_handle;
 
 	struct bt_gatt_subscribe_params player_name_sub_params;
+	struct bt_gatt_discover_params player_name_sub_disc_params;
 	struct bt_gatt_subscribe_params track_changed_sub_params;
+	struct bt_gatt_discover_params track_changed_sub_disc_params;
 	struct bt_gatt_subscribe_params track_title_sub_params;
+	struct bt_gatt_discover_params track_title_sub_disc_params;
 	struct bt_gatt_subscribe_params track_dur_sub_params;
+	struct bt_gatt_discover_params track_dur_sub_disc_params;
 	struct bt_gatt_subscribe_params track_pos_sub_params;
+	struct bt_gatt_discover_params track_pos_sub_disc_params;
 	struct bt_gatt_subscribe_params playback_speed_sub_params;
+	struct bt_gatt_discover_params playback_speed_sub_disc_params;
 	struct bt_gatt_subscribe_params seeking_speed_sub_params;
+	struct bt_gatt_discover_params seeking_speed_sub_disc_params;
 #ifdef CONFIG_BT_MCC_OTS
 	struct bt_gatt_subscribe_params current_track_obj_sub_params;
+	struct bt_gatt_discover_params current_track_sub_disc_params;
 	struct bt_gatt_subscribe_params next_track_obj_sub_params;
+	struct bt_gatt_discover_params next_track_obj_sub_disc_params;
 	struct bt_gatt_subscribe_params current_group_obj_sub_params;
+	struct bt_gatt_discover_params current_group_obj_sub_disc_params;
 	struct bt_gatt_subscribe_params parent_group_obj_sub_params;
+	struct bt_gatt_discover_params parent_group_obj_sub_disc_params;
 #endif /* CONFIG_BT_MCC_OTS */
 	struct bt_gatt_subscribe_params playing_order_sub_params;
+	struct bt_gatt_discover_params playing_order_sub_disc_params;
 	struct bt_gatt_subscribe_params media_state_sub_params;
+	struct bt_gatt_discover_params media_state_sub_disc_params;
 	struct bt_gatt_subscribe_params cp_sub_params;
+	struct bt_gatt_discover_params cp_sub_disc_params;
 	struct bt_gatt_subscribe_params opcodes_supported_sub_params;
+	struct bt_gatt_discover_params opcodes_supported_sub_disc_params;
 #ifdef CONFIG_BT_MCC_OTS
 	struct bt_gatt_subscribe_params scp_sub_params;
+	struct bt_gatt_discover_params scp_sub_disc_params;
 	struct bt_gatt_subscribe_params search_results_obj_sub_params;
+	struct bt_gatt_discover_params search_results_obj_sub_disc_params;
 #endif /* CONFIG_BT_MCC_OTS */
 
 	/* The write buffer is used for
@@ -998,7 +1015,6 @@ static uint8_t discover_otc_char_func(struct bt_conn *conn,
 			/* With ccc_handle == 0 it will use auto discovery */
 			sub_params->ccc_handle = 0;
 			sub_params->end_handle = cur_mcs_inst->otc.end_handle;
-			sub_params->ccc_handle = 0;
 			sub_params->value = BT_GATT_CCC_INDICATE;
 			sub_params->value_handle = chrc->value_handle;
 			sub_params->notify = bt_otc_indicate_handler;
@@ -1121,6 +1137,7 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 			BT_DBG("Player name, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->player_name_handle = chrc->value_handle;
 			sub_params = &cur_mcs_inst->player_name_sub_params;
+			sub_params->disc_params = &cur_mcs_inst->player_name_sub_disc_params;
 #ifdef CONFIG_BT_MCC_OTS
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_ICON_OBJ_ID)) {
 			BT_DBG("Icon Object, UUID: %s", bt_uuid_str(chrc->uuid));
@@ -1133,26 +1150,32 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 			BT_DBG("Track Changed, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->track_changed_handle = chrc->value_handle;
 			sub_params = &cur_mcs_inst->track_changed_sub_params;
+			sub_params->disc_params = &cur_mcs_inst->track_changed_sub_disc_params;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_TRACK_TITLE)) {
 			BT_DBG("Track Title, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->track_title_handle = chrc->value_handle;
 			sub_params = &cur_mcs_inst->track_title_sub_params;
+			sub_params->disc_params = &cur_mcs_inst->track_title_sub_disc_params;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_TRACK_DURATION)) {
 			BT_DBG("Track Duration, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->track_dur_handle = chrc->value_handle;
 			sub_params = &cur_mcs_inst->track_dur_sub_params;
+			sub_params->disc_params = &cur_mcs_inst->track_dur_sub_disc_params;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_TRACK_POSITION)) {
 			BT_DBG("Track Position, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->track_pos_handle = chrc->value_handle;
 			sub_params = &cur_mcs_inst->track_pos_sub_params;
+			sub_params->disc_params = &cur_mcs_inst->track_pos_sub_disc_params;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_PLAYBACK_SPEED)) {
 			BT_DBG("Playback Speed, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->playback_speed_handle = chrc->value_handle;
 			sub_params = &cur_mcs_inst->playback_speed_sub_params;
+			sub_params->disc_params = &cur_mcs_inst->playback_speed_sub_disc_params;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_SEEKING_SPEED)) {
 			BT_DBG("Seeking Speed, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->seeking_speed_handle = chrc->value_handle;
 			sub_params = &cur_mcs_inst->seeking_speed_sub_params;
+			sub_params->disc_params = &cur_mcs_inst->seeking_speed_sub_disc_params;
 #ifdef CONFIG_BT_MCC_OTS
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_TRACK_SEGMENTS_OBJ_ID)) {
 			BT_DBG("Track Segments Object, UUID: %s", bt_uuid_str(chrc->uuid));
@@ -1161,23 +1184,28 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 			BT_DBG("Current Track Object, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->current_track_obj_id_handle = chrc->value_handle;
 			sub_params = &cur_mcs_inst->current_track_obj_sub_params;
+			sub_params->disc_params = &cur_mcs_inst->current_track_sub_disc_params;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_NEXT_TRACK_OBJ_ID)) {
 			BT_DBG("Next Track Object, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->next_track_obj_id_handle = chrc->value_handle;
 			sub_params = &cur_mcs_inst->next_track_obj_sub_params;
+			sub_params->disc_params = &cur_mcs_inst->next_track_obj_sub_disc_params;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_GROUP_OBJ_ID)) {
 			BT_DBG("Group Object, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->current_group_obj_id_handle = chrc->value_handle;
 			sub_params = &cur_mcs_inst->current_group_obj_sub_params;
+			sub_params->disc_params = &cur_mcs_inst->current_group_obj_sub_disc_params;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_PARENT_GROUP_OBJ_ID)) {
 			BT_DBG("Parent Group Object, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->parent_group_obj_id_handle = chrc->value_handle;
 			sub_params = &cur_mcs_inst->parent_group_obj_sub_params;
+			sub_params->disc_params = &cur_mcs_inst->parent_group_obj_sub_disc_params;
 #endif /* CONFIG_BT_MCC_OTS */
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_PLAYING_ORDER)) {
 			BT_DBG("Playing Order, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->playing_order_handle = chrc->value_handle;
 			sub_params = &cur_mcs_inst->playing_order_sub_params;
+			sub_params->disc_params = &cur_mcs_inst->playing_order_sub_disc_params;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_PLAYING_ORDERS)) {
 			BT_DBG("Playing Orders supported, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->playing_orders_supported_handle = chrc->value_handle;
@@ -1185,23 +1213,28 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 			BT_DBG("Media State, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->media_state_handle = chrc->value_handle;
 			sub_params = &cur_mcs_inst->media_state_sub_params;
+			sub_params->disc_params = &cur_mcs_inst->media_state_sub_disc_params;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_MEDIA_CONTROL_POINT)) {
 			BT_DBG("Media Control Point, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->cp_handle = chrc->value_handle;
 			sub_params = &cur_mcs_inst->cp_sub_params;
+			sub_params->disc_params = &cur_mcs_inst->cp_sub_disc_params;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_MEDIA_CONTROL_OPCODES)) {
 			BT_DBG("Media control opcodes supported, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->opcodes_supported_handle = chrc->value_handle;
 			sub_params = &cur_mcs_inst->opcodes_supported_sub_params;
+			sub_params->disc_params = &cur_mcs_inst->opcodes_supported_sub_disc_params;
 #ifdef CONFIG_BT_MCC_OTS
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_SEARCH_CONTROL_POINT)) {
 			BT_DBG("Search control point, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->scp_handle = chrc->value_handle;
 			sub_params = &cur_mcs_inst->scp_sub_params;
+			sub_params->disc_params = &cur_mcs_inst->scp_sub_disc_params;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_SEARCH_RESULTS_OBJ_ID)) {
 			BT_DBG("Search Results object, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->search_results_obj_id_handle = chrc->value_handle;
 			sub_params = &cur_mcs_inst->search_results_obj_sub_params;
+			sub_params->disc_params = &cur_mcs_inst->search_results_obj_sub_disc_params;
 #endif /* CONFIG_BT_MCC_OTS */
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_CCID)) {
 			BT_DBG("Content Control ID, UUID: %s", bt_uuid_str(chrc->uuid));
@@ -1211,9 +1244,12 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 
 		if (subscribe_all && sub_params) {
 			BT_DBG("Subscribing - handle: 0x%04x", attr->handle);
+
+			/* With ccc_handle == 0 it will use auto discovery */
+			sub_params->ccc_handle = 0;
+			sub_params->end_handle = cur_mcs_inst->end_handle;
 			sub_params->value = BT_GATT_CCC_NOTIFY;
 			sub_params->value_handle = chrc->value_handle;
-			sub_params->ccc_handle = attr->handle + 2;
 			sub_params->notify = mcs_notify_handler;
 			bt_gatt_subscribe(conn, sub_params);
 		}
