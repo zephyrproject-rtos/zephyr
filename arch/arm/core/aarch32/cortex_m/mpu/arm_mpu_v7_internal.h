@@ -242,7 +242,7 @@ static inline int is_user_accessible_region(uint32_t r_index, int write)
 	uint32_t r_ap = get_region_ap(r_index);
 
 
-	if (write) {
+	if (write != 0) {
 		return r_ap == P_RW_U_RW;
 	}
 

@@ -243,7 +243,7 @@ static uint32_t mem_manage_fault(z_arch_esf_t *esf, int from_hard_fault,
 		if ((SCB->CFSR & SCB_CFSR_MMARVALID_Msk) != 0) {
 			mmfar = temp;
 			PR_EXC("  MMFAR Address: 0x%x", mmfar);
-			if (from_hard_fault) {
+			if (from_hard_fault != 0) {
 				/* clear SCB_MMAR[VALID] to reset */
 				SCB->CFSR &= ~SCB_CFSR_MMARVALID_Msk;
 			}
@@ -381,7 +381,7 @@ static int bus_fault(z_arch_esf_t *esf, int from_hard_fault, bool *recoverable)
 
 		if ((SCB->CFSR & SCB_CFSR_BFARVALID_Msk) != 0) {
 			PR_EXC("  BFAR Address: 0x%x", bfar);
-			if (from_hard_fault) {
+			if (from_hard_fault != 0) {
 				/* clear SCB_CFSR_BFAR[VALID] to reset */
 				SCB->CFSR &= ~SCB_CFSR_BFARVALID_Msk;
 			}

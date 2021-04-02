@@ -147,7 +147,7 @@ static inline void arch_isr_direct_footer(int maybe_swap)
 #ifdef CONFIG_TRACING
 	sys_trace_isr_exit();
 #endif
-	if (maybe_swap) {
+	if (maybe_swap != 0) {
 		z_arm_int_exit();
 	}
 }

@@ -358,7 +358,7 @@ uint32_t z_check_thread_stack_fail(const uint32_t fault_addr, const uint32_t psp
 #if defined(CONFIG_MULTITHREADING)
 	const struct k_thread *thread = _current;
 
-	if (!thread) {
+	if (thread == NULL) {
 		return 0;
 	}
 #endif
