@@ -147,6 +147,11 @@ arduino_spi: &spi0 {
 &uart1 {
 	status = "okay";
 	current-speed = <115200>;
+	pinctrl-0 = <&uart1_rx_pte1 &uart1_tx_pte0>;
+};
+
+&uart2 {
+	pinctrl-0 = <&uart2_rx_ptd2 &uart2_tx_ptd3>;
 };
 
 &usbotg {
