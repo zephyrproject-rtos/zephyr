@@ -116,11 +116,13 @@
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
+	pinctrl-0 = <&uart0_rx_ptb16 &uart0_tx_ptb17>;
 };
 
 &uart4 {
 	status = "okay";
 	current-speed = <115200>;
+	pinctrl-0 = <&uart4_rx_pte25 &uart4_tx_pte24>;
 };
 
 &gpiob {
