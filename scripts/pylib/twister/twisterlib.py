@@ -3055,6 +3055,18 @@ class TestSuite(DisablePyTestCollectionMixin):
             else:
                 platform_scope = platforms
 
+            integration = self.integration and tc.integration_platforms
+
+            # If there isn't any overlap between the platform_allow list and the platform_scope
+            # we set the scope to the platform_allow list
+            if tc.platform_allow and not platform_filter and not integration:
+                a = set(platform_scope)
+                b = set(filter(lambda item: item.name in tc.platform_allow, self.platforms))
+                c = a.intersection(b)
+                if not c:
+                    platform_scope = list(filter(lambda item: item.name in tc.platform_allow, \
+                                             self.platforms))
+
             # list of instances per testcase, aka configurations.
             instance_list = []
             for plat in platform_scope:
@@ -3163,7 +3175,6 @@ class TestSuite(DisablePyTestCollectionMixin):
             if not instance_list:
                 continue
 
-            integration = self.integration and tc.integration_platforms
             # if twister was launched with no platform options at all, we
             # take all default platforms
             if default_platforms and not tc.build_on_all and not integration:
@@ -3175,7 +3186,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                         aa = list(filter(lambda tc: tc.platform.name in c, instance_list))
                         self.add_instances(aa)
                     else:
-                        self.add_instances(instance_list[:1])
+                        self.add_instances(instance_list)
                 else:
                     instances = list(filter(lambda tc: tc.platform.default, instance_list))
                     self.add_instances(instances)
