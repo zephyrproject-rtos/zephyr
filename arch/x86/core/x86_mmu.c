@@ -1855,7 +1855,7 @@ uintptr_t arch_page_info_get(void *addr, uintptr_t *phys, bool clear_accessed)
 		 * page table and makes no changes
 		 */
 		mask = 0;
-		options = 0;
+		options = 0U;
 	}
 
 	page_map_set(z_x86_kernel_ptables, addr, 0, &all_pte, mask, options);

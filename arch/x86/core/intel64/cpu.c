@@ -166,7 +166,7 @@ FUNC_NORETURN void z_x86_cpu_init(struct x86_cpuboot *cpuboot)
 	/* The internal cpu_number is the index to x86_cpuboot[] */
 	unsigned char cpu_num = (unsigned char)(cpuboot - x86_cpuboot);
 
-	if (cpu_num == 0) {
+	if (cpu_num == 0U) {
 		/* Only need to do these once per boot */
 		z_bss_zero();
 #ifdef CONFIG_XIP
