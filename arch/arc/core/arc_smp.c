@@ -61,7 +61,7 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	arc_cpu_wake_flag = cpu_num;
 
 	/* wait slave cpu to start */
-	while (arc_cpu_wake_flag != 0) {
+	while (arc_cpu_wake_flag != 0U) {
 		;
 	}
 }
@@ -102,7 +102,7 @@ void arch_sched_ipi(void)
 	/* broadcast sched_ipi request to other cores
 	 * if the target is current core, hardware will ignore it
 	 */
-	for (i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+	for (i = 0U; i < CONFIG_MP_NUM_CPUS; i++) {
 		z_arc_connect_ici_generate(i);
 	}
 }
