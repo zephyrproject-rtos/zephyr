@@ -230,5 +230,5 @@ int z_xtensa_irq_is_enabled(unsigned int irq)
 
 	__asm__ volatile("rsr.intenable %0" : "=r"(ie));
 
-	return (ie & (1 << irq)) != 0;
+	return (ie & (1 << irq)) != 0U;
 }
