@@ -31,7 +31,7 @@ void z_sparc_enter_irq(uint32_t irl)
 	_current_cpu->nested++;
 
 #ifdef CONFIG_IRQ_OFFLOAD
-	if (irl != 141) {
+	if (irl != 141U) {
 		irl = z_sparc_int_get_source(irl);
 		ite = &_sw_isr_table[irl];
 		ite->isr(ite->arg);

@@ -179,11 +179,11 @@ static void print_backtrace(const z_arch_esf_t *esf)
 		const uint32_t pc = s->in[7];
 		const uint32_t sp = s->in[6];
 
-		if (sp == 0 && pc == 0) {
+		if (sp == 0U && pc == 0U) {
 			break;
 		}
 		LOG_ERR(" #%-2d  %08x   %08x", i, pc, sp);
-		if (sp == 0 || sp & 7) {
+		if (sp == 0U || sp & 7U) {
 			break;
 		}
 		s = (const struct savearea *) sp;
