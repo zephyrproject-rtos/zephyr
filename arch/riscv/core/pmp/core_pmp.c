@@ -235,7 +235,7 @@ void z_riscv_init_user_accesses(struct k_thread *thread)
 #else /* CONFIG_PMP_POWER_OF_TWO_ALIGNMENT */
 	ulong_t rom_end = (ulong_t) _image_rom_end;
 #endif /* CONFIG_PMP_POWER_OF_TWO_ALIGNMENT */
-	index = 0;
+	index = 0U;
 	uchar_pmpcfg = (unsigned char *) thread->arch.u_pmpcfg;
 
 #ifdef CONFIG_PMP_STACK_GUARD
@@ -277,10 +277,10 @@ void z_riscv_configure_user_allowed_stack(struct k_thread *thread)
 
 	z_riscv_pmp_clear_config();
 
-	for (i = 0; i < CONFIG_PMP_SLOT; i++)
+	for (i = 0U; i < CONFIG_PMP_SLOT; i++)
 		csr_write_enum(CSR_PMPADDR0 + i, thread->arch.u_pmpaddr[i]);
 
-	for (i = 0; i < RISCV_PMP_CFG_NUM; i++)
+	for (i = 0U; i < RISCV_PMP_CFG_NUM; i++)
 		csr_write_enum(CSR_PMPCFG0 + i, thread->arch.u_pmpcfg[i]);
 }
 
@@ -289,7 +289,7 @@ void z_riscv_pmp_add_dynamic(struct k_thread *thread,
 			ulong_t size,
 			unsigned char flags)
 {
-	unsigned char index = 0;
+	unsigned char index = 0U;
 	unsigned char *uchar_pmpcfg;
 
 	/* Check 4 bytes alignment */
@@ -350,9 +350,9 @@ int arch_buffer_validate(void *addr, size_t size, int write)
 	uchar_pmpcfg = (unsigned char *) thread->arch.u_pmpcfg;
 
 #ifdef CONFIG_PMP_STACK_GUARD
-	index = 1;
+	index = 1U;
 #else
-	index = 0;
+	index = 0U;
 #endif /* CONFIG_PMP_STACK_GUARD */
 
 #if !defined(CONFIG_PMP_POWER_OF_TWO_ALIGNMENT) || defined(CONFIG_PMP_STACK_GUARD)
@@ -378,16 +378,16 @@ __ASSERT((uchar_pmpcfg[index] & PMP_TYPE_MASK) != PMP_TOR,
 				FROM_PMP_ADDR(thread->arch.u_pmpaddr[index]);
 
 			if ((index == CONFIG_PMP_SLOT - 1)  ||
-				((uchar_pmpcfg[index + 1] & PMP_TYPE_MASK)
+				((uchar_pmpcfg[index + 1U] & PMP_TYPE_MASK)
 					!= PMP_TOR)) {
 				pmp_addr_stop = pmp_addr_start + 4;
 			} else {
 				pmp_addr_stop = FROM_PMP_ADDR(
-					thread->arch.u_pmpaddr[index + 1]);
+					thread->arch.u_pmpaddr[index + 1U]);
 				index++;
 			}
 		} else { /* pmp_type == PMP_NAPOT */
-			for (i = 0; i < max_bit; i++) {
+			for (i = 0U; i < max_bit; i++) {
 				if (!(thread->arch.u_pmpaddr[index] & (1 << i))) {
 					break;
 				}
@@ -427,19 +427,19 @@ void arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 	if (size == 4) {
 		pmp_type = PMP_NA4;
 		pmp_addr = TO_PMP_ADDR(start);
-		num = 1;
+		num = 1U;
 	}
 #if !defined(CONFIG_PMP_POWER_OF_TWO_ALIGNMENT) || defined(CONFIG_PMP_STACK_GUARD)
 	else if ((start & (size - 1)) || (size & (size - 1))) {
 		pmp_type = PMP_TOR;
 		pmp_addr = TO_PMP_ADDR(start + size);
-		num = 2;
+		num = 2U;
 	}
 #endif /* CONFIG_PMP_POWER_OF_TWO_ALIGNMENT || CONFIG_PMP_STACK_GUARD */
 	else {
 		pmp_type = PMP_NAPOT;
 		pmp_addr = TO_PMP_NAPOT(start, size);
-		num = 1;
+		num = 1U;
 	}
 
 	node = sys_dlist_peek_head(&domain->mem_domain_q);
@@ -478,9 +478,9 @@ void arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 				thread->arch.u_pmpaddr[i];
 		}
 
-		uchar_pmpcfg[CONFIG_PMP_SLOT - 1] = 0;
-		if (num == 2) {
-			uchar_pmpcfg[CONFIG_PMP_SLOT - 2] = 0;
+		uchar_pmpcfg[CONFIG_PMP_SLOT - 1] = 0U;
+		if (num == 2U) {
+			uchar_pmpcfg[CONFIG_PMP_SLOT - 2] = 0U;
 		}
 	}
 }
@@ -528,7 +528,7 @@ void arch_mem_domain_thread_remove(struct k_thread *thread)
 	uchar_pmpcfg = (unsigned char *) thread->arch.u_pmpcfg;
 
 	for (i = PMP_REGION_NUM_FOR_U_THREAD; i < CONFIG_PMP_SLOT; i++) {
-		uchar_pmpcfg[i] = 0;
+		uchar_pmpcfg[i] = 0U;
 	}
 }
 
@@ -538,7 +538,7 @@ void arch_mem_domain_thread_remove(struct k_thread *thread)
 
 void z_riscv_init_stack_guard(struct k_thread *thread)
 {
-	unsigned char index = 0;
+	unsigned char index = 0U;
 	unsigned char *uchar_pmpcfg;
 	ulong_t stack_guard_addr;
 
@@ -594,10 +594,10 @@ void z_riscv_configure_stack_guard(struct k_thread *thread)
 
 	z_riscv_pmp_clear_config();
 
-	for (i = 0; i < PMP_REGION_NUM_FOR_STACK_GUARD; i++)
+	for (i = 0U; i < PMP_REGION_NUM_FOR_STACK_GUARD; i++)
 		csr_write_enum(CSR_PMPADDR1 + i, thread->arch.s_pmpaddr[i]);
 
-	for (i = 0; i < PMP_CFG_CSR_NUM_FOR_STACK_GUARD; i++)
+	for (i = 0U; i < PMP_CFG_CSR_NUM_FOR_STACK_GUARD; i++)
 		csr_write_enum(CSR_PMPCFG0 + i, thread->arch.s_pmpcfg[i]);
 
 	/* Enable PMP for machine mode */
@@ -626,13 +626,13 @@ void z_riscv_pmp_init_thread(struct k_thread *thread)
 
 #if defined(CONFIG_PMP_STACK_GUARD)
 	pmpcfg = thread->arch.s_pmpcfg;
-	for (i = 0; i < PMP_CFG_CSR_NUM_FOR_STACK_GUARD; i++)
+	for (i = 0U; i < PMP_CFG_CSR_NUM_FOR_STACK_GUARD; i++)
 		pmpcfg[i] = 0;
 #endif /* CONFIG_PMP_STACK_GUARD */
 
 #if defined(CONFIG_USERSPACE)
 	pmpcfg = thread->arch.u_pmpcfg;
-	for (i = 0; i < RISCV_PMP_CFG_NUM; i++)
+	for (i = 0U; i < RISCV_PMP_CFG_NUM; i++)
 		pmpcfg[i] = 0;
 #endif /* CONFIG_USERSPACE */
 }
