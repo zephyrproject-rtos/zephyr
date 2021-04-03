@@ -540,7 +540,7 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	Z_ASSERT_VALID_PRIO(prio, entry);
 
 #ifdef CONFIG_USERSPACE
-	__ASSERT((options & K_USER) == 0 || z_stack_is_user_capable(stack),
+	__ASSERT((options & K_USER) == 0U || z_stack_is_user_capable(stack),
 		 "user thread %p with kernel-only stack %p",
 		 new_thread, stack);
 	z_object_init(new_thread);
