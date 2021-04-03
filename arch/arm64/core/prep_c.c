@@ -31,7 +31,7 @@ static inline void z_arm64_bss_zero(void)
 	uint64_t *end = (uint64_t *)__bss_end;
 
 	while (p < end) {
-		*p++ = 0;
+		*p++ = 0U;
 	}
 }
 
