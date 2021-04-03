@@ -36,7 +36,7 @@ static void efi_putchar(int c)
 	efibuf[n++] = c;
 
 	if (c == '\n' || n == PUTCHAR_BUFSZ) {
-		efibuf[n] = 0;
+		efibuf[n] = 0U;
 		efi->ConOut->OutputString(efi->ConOut, efibuf);
 		n = 0;
 	}
@@ -77,7 +77,7 @@ uintptr_t __abi efi_entry(void *img_handle, struct efi_system_table *sys_tab)
 
 		printf("Zeroing %d bytes of memory at %p\n", bytes, dst);
 		for (int j = 0; j < bytes; j++) {
-			dst[j] = 0;
+			dst[j] = 0U;
 		}
 	}
 

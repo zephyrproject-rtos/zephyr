@@ -12,13 +12,13 @@ bool is_dmar_searched;
 
 static bool check_sum(struct acpi_sdt *t)
 {
-	uint8_t sum = 0, *p = (uint8_t *)t;
+	uint8_t sum = 0U, *p = (uint8_t *)t;
 
 	for (int i = 0; i < t->length; i++) {
 		sum += p[i];
 	}
 
-	return sum == 0;
+	return sum == 0U;
 }
 
 
