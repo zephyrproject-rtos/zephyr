@@ -109,13 +109,13 @@ static void msg_free(struct log_msg *msg)
 	/* Free any transient string found in arguments. */
 	if (log_msg_is_std(msg) && nargs) {
 		uint32_t i;
-		uint32_t smask = 0;
+		uint32_t smask = 0U;
 
-		for (i = 0; i < nargs; i++) {
+		for (i = 0U; i < nargs; i++) {
 			void *buf = (void *)log_msg_arg_get(msg, i);
 
 			if (log_is_strdup(buf)) {
-				if (smask == 0) {
+				if (smask == 0U) {
 					/* Do string arguments scan only when
 					 * string duplication candidate detected
 					 * since it is time consuming and free
@@ -125,7 +125,7 @@ static void msg_free(struct log_msg *msg)
 					smask = z_log_get_s_mask(
 							log_msg_str_get(msg),
 							nargs);
-					if (smask == 0) {
+					if (smask == 0U) {
 						/* if no string argument is
 						 * detected then stop searching
 						 * for candidates.

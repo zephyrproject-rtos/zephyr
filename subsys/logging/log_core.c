@@ -89,8 +89,8 @@ uint32_t z_log_get_s_mask(const char *str, uint32_t nargs)
 {
 	char curr;
 	bool arm = false;
-	uint32_t arg = 0;
-	uint32_t mask = 0;
+	uint32_t arg = 0U;
+	uint32_t mask = 0U;
 
 	__ASSERT_NO_MSG(nargs <= 8*sizeof(mask));
 
@@ -500,7 +500,7 @@ void log_core_init(void)
 	/* Set default timestamp. */
 	if (sys_clock_hw_cycles_per_sec() > 1000000) {
 		timestamp_func = k_uptime_get_32;
-		freq = 1000;
+		freq = 1000U;
 	} else {
 		timestamp_func = k_cycle_get_32_wrapper;
 		freq = sys_clock_hw_cycles_per_sec();
