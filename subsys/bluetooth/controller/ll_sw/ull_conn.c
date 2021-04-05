@@ -70,6 +70,8 @@ extern uint16_t ull_conn_interval_min_get(struct ll_conn *conn);
 inline void ull_conn_upd_curr_reset(void);
 
 static int init_reset(void);
+static void tx_demux(void *param);
+static struct node_tx *tx_ull_dequeue(struct ll_conn *conn, struct node_tx *tx);
 
 static void ticker_update_conn_op_cb(uint32_t status, void *param);
 static void ticker_stop_conn_op_cb(uint32_t status, void *param);
@@ -77,9 +79,9 @@ static void ticker_start_conn_op_cb(uint32_t status, void *param);
 
 static inline void disable(uint16_t handle);
 static void conn_cleanup(struct ll_conn *conn, uint8_t reason);
-static void tx_demux(void *param);
-static struct node_tx *tx_ull_dequeue(struct ll_conn *conn, struct node_tx *tx);
 static void tx_ull_flush(struct ll_conn *conn);
+static void ticker_op_stop_cb(uint32_t status, void *param);
+static void disabled_cb(void *param);
 static void tx_lll_flush(void *param);
 
 #if defined(CONFIG_BT_CTLR_LLID_DATA_START_EMPTY)
@@ -863,7 +865,7 @@ int ull_conn_rx(memq_link_t *link, struct node_rx_pdu **rx)
 	case PDU_DATA_LLID_DATA_START:
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 		if (conn->llcp_enc.pause_rx) {
-			conn->llcp_terminate.reason_peer =
+			conn->llcp_terminate.reason_final =
 				BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL;
 
 			/* Mark for buffer for release */
@@ -876,7 +878,7 @@ int ull_conn_rx(memq_link_t *link, struct node_rx_pdu **rx)
 	default:
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 		if (conn->llcp_enc.pause_rx) {
-			conn->llcp_terminate.reason_peer =
+			conn->llcp_terminate.reason_final =
 				BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL;
 		}
 #endif /* CONFIG_BT_CTLR_LE_ENC */
@@ -1156,7 +1158,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 	uint32_t ticks_drift_plus;
 	uint16_t latency_event;
 	uint16_t elapsed_event;
-	uint8_t reason_peer;
+	uint8_t reason_final;
 	uint16_t lazy;
 	uint8_t force;
 
@@ -1200,7 +1202,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 		break;
 
 	case LLL_CONN_MIC_FAIL:
-		conn->llcp_terminate.reason_peer =
+		conn->llcp_terminate.reason_final =
 			BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL;
 		break;
 	}
@@ -1209,8 +1211,8 @@ void ull_conn_done(struct node_rx_event_done *done)
 	/* Master transmitted ack for the received terminate ind or
 	 * Slave received terminate ind or MIC failure
 	 */
-	reason_peer = conn->llcp_terminate.reason_peer;
-	if (reason_peer && (
+	reason_final = conn->llcp_terminate.reason_final;
+	if (reason_final && (
 #if defined(CONFIG_BT_PERIPHERAL)
 			    lll->role ||
 #else /* CONFIG_BT_PERIPHERAL */
@@ -1218,12 +1220,12 @@ void ull_conn_done(struct node_rx_event_done *done)
 #endif /* CONFIG_BT_PERIPHERAL */
 #if defined(CONFIG_BT_CENTRAL)
 			    conn->master.terminate_ack ||
-			    (reason_peer == BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL)
+			    (reason_final == BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL)
 #else /* CONFIG_BT_CENTRAL */
 			    1
 #endif /* CONFIG_BT_CENTRAL */
 			    )) {
-		conn_cleanup(conn, reason_peer);
+		conn_cleanup(conn, reason_final);
 
 		return;
 	}
@@ -1265,7 +1267,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 #endif /* CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_CENTRAL)
-		} else if (reason_peer) {
+		} else if (reason_final) {
 			conn->master.terminate_ack = 1;
 #endif /* CONFIG_BT_CENTRAL */
 
@@ -1778,6 +1780,45 @@ static int init_reset(void)
 	return 0;
 }
 
+static void tx_demux(void *param)
+{
+	ull_conn_tx_demux(1);
+
+	ull_conn_tx_lll_enqueue(param, 1);
+}
+
+static struct node_tx *tx_ull_dequeue(struct ll_conn *conn, struct node_tx *tx)
+{
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+	if (!conn->tx_ctrl && (conn->tx_head != conn->tx_data)) {
+		ctrl_tx_check_and_resume(conn);
+	}
+#endif /* CONFIG_BT_CTLR_LE_ENC */
+
+	if (conn->tx_head == conn->tx_ctrl) {
+		conn->tx_head = conn->tx_head->next;
+		if (conn->tx_ctrl == conn->tx_ctrl_last) {
+			conn->tx_ctrl = NULL;
+			conn->tx_ctrl_last = NULL;
+		} else {
+			conn->tx_ctrl = conn->tx_head;
+		}
+
+		/* point to self to indicate a control PDU mem alloc */
+		tx->next = tx;
+	} else {
+		if (conn->tx_head == conn->tx_data) {
+			conn->tx_data = conn->tx_data->next;
+		}
+		conn->tx_head = conn->tx_head->next;
+
+		/* point to NULL to indicate a Data PDU mem alloc */
+		tx->next = NULL;
+	}
+
+	return tx;
+}
+
 static void ticker_update_conn_op_cb(uint32_t status, void *param)
 {
 	/* Slave drift compensation succeeds, or it fails in a race condition
@@ -1807,22 +1848,6 @@ static void ticker_start_conn_op_cb(uint32_t status, void *param)
 
 	p = ull_update_unmark(param);
 	LL_ASSERT(p == param);
-}
-
-static void ticker_op_stop_cb(uint32_t status, void *param)
-{
-	uint32_t retval;
-	static memq_link_t link;
-	static struct mayfly mfy = {0, 0, &link, NULL, tx_lll_flush};
-
-	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
-
-	mfy.param = param;
-
-	/* Flush pending tx PDUs in LLL (using a mayfly) */
-	retval = mayfly_enqueue(TICKER_USER_ID_ULL_LOW, TICKER_USER_ID_LLL, 0,
-				&mfy);
-	LL_ASSERT(!retval);
 }
 
 static inline void disable(uint16_t handle)
@@ -1884,7 +1909,7 @@ static void conn_cleanup(struct ll_conn *conn, uint8_t reason)
 	ticker_status = ticker_stop(TICKER_INSTANCE_ID_CTLR,
 				    TICKER_USER_ID_ULL_HIGH,
 				    TICKER_ID_CONN_BASE + lll->handle,
-				    ticker_op_stop_cb, (void *)lll);
+				    ticker_op_stop_cb, conn);
 	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 		  (ticker_status == TICKER_STATUS_BUSY));
 
@@ -1893,45 +1918,6 @@ static void conn_cleanup(struct ll_conn *conn, uint8_t reason)
 
 	/* Demux and flush Tx PDUs that remain enqueued in thread context */
 	ull_conn_tx_demux(UINT8_MAX);
-}
-
-static void tx_demux(void *param)
-{
-	ull_conn_tx_demux(1);
-
-	ull_conn_tx_lll_enqueue(param, 1);
-}
-
-static struct node_tx *tx_ull_dequeue(struct ll_conn *conn, struct node_tx *tx)
-{
-#if defined(CONFIG_BT_CTLR_LE_ENC)
-	if (!conn->tx_ctrl && (conn->tx_head != conn->tx_data)) {
-		ctrl_tx_check_and_resume(conn);
-	}
-#endif /* CONFIG_BT_CTLR_LE_ENC */
-
-	if (conn->tx_head == conn->tx_ctrl) {
-		conn->tx_head = conn->tx_head->next;
-		if (conn->tx_ctrl == conn->tx_ctrl_last) {
-			conn->tx_ctrl = NULL;
-			conn->tx_ctrl_last = NULL;
-		} else {
-			conn->tx_ctrl = conn->tx_head;
-		}
-
-		/* point to self to indicate a control PDU mem alloc */
-		tx->next = tx;
-	} else {
-		if (conn->tx_head == conn->tx_data) {
-			conn->tx_data = conn->tx_data->next;
-		}
-		conn->tx_head = conn->tx_head->next;
-
-		/* point to NULL to indicate a Data PDU mem alloc */
-		tx->next = NULL;
-	}
-
-	return tx;
 }
 
 static void tx_ull_flush(struct ll_conn *conn)
@@ -1947,6 +1933,57 @@ static void tx_ull_flush(struct ll_conn *conn)
 
 		memq_enqueue(link, tx, &conn->lll.memq_tx.tail);
 	}
+}
+
+static void ticker_op_stop_cb(uint32_t status, void *param)
+{
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, NULL};
+	struct ll_conn *conn;
+	struct ull_hdr *hdr;
+
+	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
+
+	/* NOTE: We are in ULL_LOW which can be pre-empted by ULL_HIGH.
+	 *       As we are in the callback after successful stop of the
+	 *       ticker, the ULL reference count will not be modified
+	 *       further hence it is safe to check and act on either the need
+	 *       to call lll_disable or not.
+	 */
+	conn = param;
+	hdr = &conn->ull;
+	mfy.param = &conn->lll;
+	if (ull_ref_get(hdr)) {
+		uint32_t ret;
+
+		LL_ASSERT(!hdr->disabled_cb);
+		hdr->disabled_param = mfy.param;
+		hdr->disabled_cb = disabled_cb;
+
+		mfy.fp = lll_disable;
+		ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW,
+				     TICKER_USER_ID_LLL, 0, &mfy);
+		LL_ASSERT(!ret);
+	} else {
+		uint32_t ret;
+
+		mfy.fp = disabled_cb;
+		ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW,
+				     TICKER_USER_ID_ULL_HIGH, 0, &mfy);
+		LL_ASSERT(!ret);
+	}
+}
+
+static void disabled_cb(void *param)
+{
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, tx_lll_flush};
+	uint32_t ret;
+
+	mfy.param = param;
+	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
+			     TICKER_USER_ID_LLL, 0, &mfy);
+	LL_ASSERT(!ret);
 }
 
 static void tx_lll_flush(void *param)
@@ -4180,7 +4217,8 @@ static void terminate_ind_recv(struct ll_conn *conn, struct node_rx_pdu *rx,
 			      struct pdu_data *pdu)
 {
 	/* Ack and then terminate */
-	conn->llcp_terminate.reason_peer = pdu->llctrl.terminate_ind.error_code;
+	conn->llcp_terminate.reason_final =
+		pdu->llctrl.terminate_ind.error_code;
 
 	/* Mark for buffer for release */
 	rx->hdr.type = NODE_RX_TYPE_RELEASE;
@@ -5513,12 +5551,14 @@ static inline void ctrl_tx_ack(struct ll_conn *conn, struct node_tx **tx,
 	switch (pdu_tx->llctrl.opcode) {
 	case PDU_DATA_LLCTRL_TYPE_TERMINATE_IND:
 	{
-		uint8_t reason = (pdu_tx->llctrl.terminate_ind.error_code ==
-			       BT_HCI_ERR_REMOTE_USER_TERM_CONN) ?
-			      BT_HCI_ERR_LOCALHOST_TERM_CONN :
+		if (pdu_tx->llctrl.terminate_ind.error_code ==
+		    BT_HCI_ERR_REMOTE_USER_TERM_CONN) {
+			conn->llcp_terminate.reason_final =
+				BT_HCI_ERR_LOCALHOST_TERM_CONN;
+		} else {
+			conn->llcp_terminate.reason_final =
 			      pdu_tx->llctrl.terminate_ind.error_code;
-
-		conn_cleanup(conn, reason);
+		}
 	}
 	break;
 
@@ -5744,7 +5784,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	/* FIXME: do check in individual case to reduce CPU time */
 	if (conn->llcp_enc.pause_rx && ctrl_is_unexpected(conn, opcode)) {
-		conn->llcp_terminate.reason_peer =
+		conn->llcp_terminate.reason_final =
 			BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL;
 
 		/* Mark for buffer for release */
@@ -5767,7 +5807,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 
 		err = conn_upd_recv(conn, link, rx, pdu_rx);
 		if (err) {
-			conn->llcp_terminate.reason_peer = err;
+			conn->llcp_terminate.reason_final = err;
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 		} else {
 			/* conn param req procedure, if any, is complete */
@@ -5788,7 +5828,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 
 		err = chan_map_upd_recv(conn, *rx, pdu_rx);
 		if (err) {
-			conn->llcp_terminate.reason_peer = err;
+			conn->llcp_terminate.reason_final = err;
 		}
 	}
 	break;
@@ -6690,7 +6730,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 
 		err = phy_upd_ind_recv(conn, link, rx, pdu_rx);
 		if (err) {
-			conn->llcp_terminate.reason_peer = err;
+			conn->llcp_terminate.reason_final = err;
 		}
 	}
 	break;
@@ -6750,7 +6790,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 
 		err = cis_req_recv(conn, link, rx, pdu_rx);
 		if (err) {
-			conn->llcp_terminate.reason_peer = err;
+			conn->llcp_terminate.reason_final = err;
 		}
 		break;
 	}
@@ -6766,7 +6806,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 
 		err = cis_ind_recv(conn, link, rx, pdu_rx);
 		if (err) {
-			conn->llcp_terminate.reason_peer = err;
+			conn->llcp_terminate.reason_final = err;
 		}
 		break;
 	}

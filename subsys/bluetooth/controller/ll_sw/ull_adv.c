@@ -913,7 +913,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 		conn->llcp_feature.features_peer = 0;
 		conn->llcp_version.req = conn->llcp_version.ack = 0;
 		conn->llcp_version.tx = conn->llcp_version.rx = 0;
-		conn->llcp_terminate.reason_peer = 0;
+		conn->llcp_terminate.reason_final = 0;
 		/* NOTE: use allocated link for generating dedicated
 		 * terminate ind rx node
 		 */
@@ -1822,7 +1822,6 @@ static void ticker_op_stop_cb(uint32_t status, void *param)
 	static struct mayfly mfy = {0, 0, &link, NULL, NULL};
 	struct ll_adv_set *adv;
 	struct ull_hdr *hdr;
-	uint32_t ret;
 
 	/* Ignore if race between thread and ULL */
 	if (status != TICKER_STATUS_SUCCESS) {
@@ -1838,10 +1837,18 @@ static void ticker_op_stop_cb(uint32_t status, void *param)
 	}
 #endif /* CONFIG_BT_HCI_MESH_EXT */
 
+	/* NOTE: We are in ULL_LOW which can be pre-empted by ULL_HIGH.
+	 *       As we are in the callback after successful stop of the
+	 *       ticker, the ULL reference count will not be modified
+	 *       further hence it is safe to check and act on either the need
+	 *       to call lll_disable or not.
+	 */
 	adv = param;
 	hdr = &adv->ull;
 	mfy.param = &adv->lll;
 	if (ull_ref_get(hdr)) {
+		uint32_t ret;
+
 		LL_ASSERT(!hdr->disabled_cb);
 		hdr->disabled_param = mfy.param;
 		hdr->disabled_cb = disabled_cb;
@@ -1851,6 +1858,8 @@ static void ticker_op_stop_cb(uint32_t status, void *param)
 				     TICKER_USER_ID_LLL, 0, &mfy);
 		LL_ASSERT(!ret);
 	} else {
+		uint32_t ret;
+
 		mfy.fp = disabled_cb;
 		ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW,
 				     TICKER_USER_ID_ULL_HIGH, 0, &mfy);
