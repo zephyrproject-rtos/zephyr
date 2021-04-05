@@ -319,8 +319,8 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	struct lll_adv *lll = prepare_param->param;
 	uint32_t aa = sys_cpu_to_le32(PDU_AC_ACCESS_ADDR);
 	uint32_t ticks_at_event, ticks_at_start;
-	struct evt_hdr *evt;
 	uint32_t remainder_us;
+	struct ull_hdr *ull;
 	uint32_t remainder;
 
 	DEBUG_RADIO_START_A(1);
@@ -390,8 +390,8 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 		}
 
 	ticks_at_event = prepare_param->ticks_at_expire;
-	evt = HDR_LLL2EVT(lll);
-	ticks_at_event += lll_evt_offset_get(evt);
+	ull = HDR_LLL2ULL(lll);
+	ticks_at_event += lll_event_offset_get(ull);
 
 	ticks_at_start = ticks_at_event;
 	ticks_at_start += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
@@ -414,7 +414,7 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED) && \
 	(EVENT_OVERHEAD_PREEMPT_US <= EVENT_OVERHEAD_PREEMPT_MIN_US)
 	/* check if preempt to start has changed */
-	if (lll_preempt_calc(evt, (TICKER_ID_ADV_BASE +
+	if (lll_preempt_calc(ull, (TICKER_ID_ADV_BASE +
 				   ull_adv_lll_handle_get(lll)),
 			     ticks_at_event)) {
 		radio_isr_set(isr_abort, lll);
@@ -436,9 +436,9 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 #if defined(CONFIG_BT_PERIPHERAL)
 static int resume_prepare_cb(struct lll_prepare_param *p)
 {
-	struct evt_hdr *evt = HDR_LLL2EVT(p->param);
+	struct ull_hdr *ull = HDR_LLL2ULL(p->param);
 
-	p->ticks_at_expire = ticker_ticks_now_get() - lll_evt_offset_get(evt);
+	p->ticks_at_expire = ticker_ticks_now_get() - lll_event_offset_get(ull);
 	p->remainder = 0;
 	p->lazy = 0;
 

@@ -1152,15 +1152,19 @@ int ull_conn_llcp(struct ll_conn *conn, uint32_t ticks_at_expire, uint16_t lazy)
 
 void ull_conn_done(struct node_rx_event_done *done)
 {
-	struct lll_conn *lll = (void *)HDR_ULL2LLL(done->param);
-	struct ll_conn *conn = (void *)HDR_LLL2EVT(lll);
 	uint32_t ticks_drift_minus;
 	uint32_t ticks_drift_plus;
 	uint16_t latency_event;
 	uint16_t elapsed_event;
+	struct lll_conn *lll;
+	struct ll_conn *conn;
 	uint8_t reason_final;
 	uint16_t lazy;
 	uint8_t force;
+
+	/* Get reference to ULL context */
+	conn = CONTAINER_OF(done->param, struct ll_conn, ull);
+	lll = &conn->lll;
 
 	/* Skip if connection terminated by local host */
 	if (unlikely(lll->handle == 0xFFFF)) {
@@ -1988,12 +1992,17 @@ static void disabled_cb(void *param)
 
 static void tx_lll_flush(void *param)
 {
-	struct ll_conn *conn = (void *)HDR_LLL2EVT(param);
-	uint16_t handle = ll_conn_handle_get(conn);
-	struct lll_conn *lll = param;
 	struct node_rx_pdu *rx;
+	struct lll_conn *lll;
+	struct ll_conn *conn;
 	struct node_tx *tx;
 	memq_link_t *link;
+	uint16_t handle;
+
+	/* Get reference to ULL context */
+	lll = param;
+	conn = HDR_LLL2ULL(lll);
+	handle = ll_conn_handle_get(conn);
 
 	lll_conn_flush(handle, lll);
 
@@ -2370,13 +2379,13 @@ static inline void event_conn_upd_init(struct ll_conn *conn,
 		conn->llcp.conn_upd.ticks_anchor = ticks_at_expire;
 
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
-		if (conn->evt.ticks_xtal_to_start & XON_BITMASK) {
+		if (conn->ull.ticks_prepare_to_start & XON_BITMASK) {
 			uint32_t ticks_prepare_to_start =
-				MAX(conn->evt.ticks_active_to_start,
-				    conn->evt.ticks_preempt_to_start);
+				MAX(conn->ull.ticks_active_to_start,
+				    conn->ull.ticks_preempt_to_start);
 
 			conn->llcp.conn_upd.ticks_anchor -=
-				(conn->evt.ticks_xtal_to_start &
+				(conn->ull.ticks_prepare_to_start &
 				 ~XON_BITMASK) - ticks_prepare_to_start;
 		}
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
@@ -2597,13 +2606,13 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
 		/* restore to normal prepare */
-		if (conn->evt.ticks_xtal_to_start & XON_BITMASK) {
+		if (conn->ull.ticks_prepare_to_start & XON_BITMASK) {
 			uint32_t ticks_prepare_to_start =
-				MAX(conn->evt.ticks_active_to_start,
-				    conn->evt.ticks_preempt_to_start);
+				MAX(conn->ull.ticks_active_to_start,
+				    conn->ull.ticks_preempt_to_start);
 
-			conn->evt.ticks_xtal_to_start &= ~XON_BITMASK;
-			ticks_at_expire -= (conn->evt.ticks_xtal_to_start -
+			conn->ull.ticks_prepare_to_start &= ~XON_BITMASK;
+			ticks_at_expire -= (conn->ull.ticks_prepare_to_start -
 					    ticks_prepare_to_start);
 		}
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
@@ -2627,8 +2636,8 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 		/* calculate the offset */
 		if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
 			ticks_slot_overhead =
-				MAX(conn->evt.ticks_active_to_start,
-				    conn->evt.ticks_xtal_to_start);
+				MAX(conn->ull.ticks_active_to_start,
+				    conn->ull.ticks_prepare_to_start);
 
 		} else {
 			ticks_slot_overhead = 0U;
@@ -2752,7 +2761,7 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 				     TICKER_LAZY_MUST_EXPIRE_KEEP,
 #endif /* CONFIG_BT_TICKER_LOW_LAT */
 				     (ticks_slot_overhead +
-				      conn->evt.ticks_slot),
+				      conn->ull.ticks_slot),
 #if defined(CONFIG_BT_PERIPHERAL) && defined(CONFIG_BT_CENTRAL)
 				     lll->role ? ull_slave_ticker_cb :
 						 ull_master_ticker_cb,
@@ -3258,13 +3267,13 @@ static inline void event_conn_param_req(struct ll_conn *conn,
 		conn->llcp_conn_param.ticks_ref = ticks_at_expire;
 
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
-		if (conn->evt.ticks_xtal_to_start & XON_BITMASK) {
+		if (conn->ull.ticks_prepare_to_start & XON_BITMASK) {
 			uint32_t ticks_prepare_to_start =
-				MAX(conn->evt.ticks_active_to_start,
-				    conn->evt.ticks_preempt_to_start);
+				MAX(conn->ull.ticks_active_to_start,
+				    conn->ull.ticks_preempt_to_start);
 
 			conn->llcp_conn_param.ticks_ref -=
-				(conn->evt.ticks_xtal_to_start &
+				(conn->ull.ticks_prepare_to_start &
 				 ~XON_BITMASK) - ticks_prepare_to_start;
 		}
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */

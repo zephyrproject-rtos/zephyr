@@ -855,7 +855,7 @@ void ll_rx_dequeue(void)
 		if (lll_aux) {
 			struct ll_adv_aux_set *aux;
 
-			aux = (void *)HDR_LLL2EVT(lll_aux);
+			aux = HDR_LLL2ULL(lll_aux);
 
 			aux->is_started = 0U;
 		}
@@ -877,7 +877,7 @@ void ll_rx_dequeue(void)
 
 		lll_conn->link_tx_free = link;
 
-		struct ll_conn *conn = (void *)HDR_LLL2EVT(lll_conn);
+		struct ll_conn *conn = HDR_LLL2ULL(lll_conn);
 
 		ll_conn_release(conn);
 		adv->lll.conn = NULL;
@@ -905,8 +905,12 @@ void ll_rx_dequeue(void)
 
 #if defined(CONFIG_BT_PERIPHERAL)
 		} else if ((cc->status == BT_HCI_ERR_ADV_TIMEOUT) || cc->role) {
-			struct lll_adv *lll = ftr->param;
-			struct ll_adv_set *adv = (void *)HDR_LLL2EVT(lll);
+			struct ll_adv_set *adv;
+			struct lll_adv *lll;
+
+			/* Get reference to ULL context */
+			lll = ftr->param;
+			adv = HDR_LLL2ULL(lll);
 
 			if (cc->status == BT_HCI_ERR_ADV_TIMEOUT) {
 				struct lll_conn *conn_lll;
@@ -923,7 +927,7 @@ void ll_rx_dequeue(void)
 				LL_ASSERT(link);
 				conn_lll->link_tx_free = link;
 
-				conn = (void *)HDR_LLL2EVT(conn_lll);
+				conn = HDR_LLL2ULL(conn_lll);
 				ll_conn_release(conn);
 			} else {
 				/* Release un-utilized node rx */
@@ -941,7 +945,7 @@ void ll_rx_dequeue(void)
 			if (lll->aux) {
 				struct ll_adv_aux_set *aux;
 
-				aux = (void *)HDR_LLL2EVT(lll->aux);
+				aux = HDR_LLL2ULL(lll->aux);
 				aux->is_started = 0U;
 			}
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
@@ -952,8 +956,7 @@ void ll_rx_dequeue(void)
 #endif /* !CONFIG_BT_PERIPHERAL */
 
 		} else if (IS_ENABLED(CONFIG_BT_CENTRAL)) {
-			struct lll_scan *lll = ftr->param;
-			struct ll_scan_set *scan = (void *)HDR_LLL2EVT(lll);
+			struct ll_scan_set *scan = HDR_LLL2ULL(ftr->param);
 
 			scan->is_enabled = 0U;
 		} else {
@@ -1510,19 +1513,15 @@ int ull_disable(void *lll)
 	struct k_sem sem;
 	uint32_t ret;
 
-	hdr = HDR_ULL(((struct lll_hdr *)lll)->parent);
-	if (!hdr) {
-		return ULL_STATUS_SUCCESS;
+	hdr = HDR_LLL2ULL(lll);
+	if (!hdr || !ull_ref_get(hdr)) {
+		return 0;
 	}
 
 	k_sem_init(&sem, 0, 1);
 
 	hdr->disabled_param = &sem;
 	hdr->disabled_cb = disabled_cb;
-
-	if (!ull_ref_get(hdr)) {
-		return ULL_STATUS_SUCCESS;
-	}
 
 	mfy.param = lll;
 	ret = mayfly_enqueue(TICKER_USER_ID_THREAD, TICKER_USER_ID_LLL, 0,

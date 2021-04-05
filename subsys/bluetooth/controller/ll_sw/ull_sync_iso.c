@@ -223,7 +223,7 @@ uint8_t ull_sync_iso_handle_get(struct ll_sync_iso *sync)
 
 uint8_t ull_sync_iso_lll_handle_get(struct lll_sync_iso *lll)
 {
-	return ull_sync_handle_get((void *)HDR_LLL2EVT(lll));
+	return ull_sync_handle_get(HDR_LLL2ULL(lll));
 }
 
 void ull_sync_iso_release(struct ll_sync_iso *sync_iso)

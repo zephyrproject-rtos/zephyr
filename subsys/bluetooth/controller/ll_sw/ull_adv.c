@@ -320,7 +320,7 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 				if (adv->lll.sync) {
 					struct ll_adv_sync_set *sync;
 
-					sync = (void *)HDR_LLL2EVT(adv->lll.sync);
+					sync = HDR_LLL2ULL(adv->lll.sync);
 					adv->lll.sync = NULL;
 
 					ull_adv_sync_release(sync);
@@ -328,7 +328,7 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 
 				/* Release auxiliary channel set */
-				aux = (void *)HDR_LLL2EVT(lll_aux);
+				aux = HDR_LLL2ULL(lll_aux);
 				adv->lll.aux = NULL;
 
 				ull_adv_aux_release(aux);
@@ -1123,15 +1123,15 @@ uint8_t ll_adv_enable(uint8_t enable)
 	lll_hdr_init(lll, adv);
 
 	/* TODO: active_to_start feature port */
-	adv->evt.ticks_active_to_start = 0;
-	adv->evt.ticks_xtal_to_start =
+	adv->ull.ticks_active_to_start = 0;
+	adv->ull.ticks_prepare_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
-	adv->evt.ticks_preempt_to_start =
+	adv->ull.ticks_preempt_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
-	adv->evt.ticks_slot = HAL_TICKER_US_TO_TICKS(slot_us);
+	adv->ull.ticks_slot = HAL_TICKER_US_TO_TICKS(slot_us);
 
-	ticks_slot_offset = MAX(adv->evt.ticks_active_to_start,
-				adv->evt.ticks_xtal_to_start);
+	ticks_slot_offset = MAX(adv->ull.ticks_active_to_start,
+				adv->ull.ticks_prepare_to_start);
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
 		ticks_slot_overhead = ticks_slot_offset;
@@ -1156,9 +1156,9 @@ uint8_t ll_adv_enable(uint8_t enable)
 				   TICKER_USER_ID_THREAD,
 				   (TICKER_ID_ADV_BASE + handle),
 				   ticks_anchor, 0,
-				   (adv->evt.ticks_slot + ticks_slot_overhead),
+				   (adv->ull.ticks_slot + ticks_slot_overhead),
 				   TICKER_NULL_REMAINDER, TICKER_NULL_LAZY,
-				   (adv->evt.ticks_slot + ticks_slot_overhead),
+				   (adv->ull.ticks_slot + ticks_slot_overhead),
 				   ticker_cb, adv,
 				   ull_ticker_status_give, (void *)&ret_cb);
 		ret = ull_ticker_status_take(ret, &ret_cb);
@@ -1179,7 +1179,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 	} else
 #endif /* CONFIG_BT_PERIPHERAL */
 	{
-		const uint32_t ticks_slot = adv->evt.ticks_slot +
+		const uint32_t ticks_slot = adv->ull.ticks_slot +
 					 ticks_slot_overhead;
 #if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
@@ -1187,7 +1187,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 
 		/* Add sync_info into auxiliary PDU */
 		if (lll->sync) {
-			sync = (void *)HDR_LLL2EVT(lll->sync);
+			sync = HDR_LLL2ULL(lll->sync);
 			if (sync->is_enabled && !sync->is_started) {
 				uint8_t err;
 
@@ -1209,7 +1209,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 			uint32_t ticks_slot_overhead_aux;
 			uint32_t ticks_anchor_aux;
 
-			aux = (void *)HDR_LLL2EVT(lll_aux);
+			aux = HDR_LLL2ULL(lll_aux);
 
 			/* schedule auxiliary PDU after primary channel PDUs */
 			ticks_anchor_aux =
@@ -1224,7 +1224,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 			 */
 			if (sync) {
 				const uint32_t ticks_slot_aux =
-					aux->evt.ticks_slot +
+					aux->ull.ticks_slot +
 					ticks_slot_overhead_aux;
 				uint32_t ticks_anchor_sync =
 					ticks_anchor_aux +
@@ -1463,7 +1463,7 @@ inline uint16_t ull_adv_handle_get(struct ll_adv_set *adv)
 
 uint16_t ull_adv_lll_handle_get(struct lll_adv *lll)
 {
-	return ull_adv_handle_get((void *)HDR_LLL2EVT(lll));
+	return ull_adv_handle_get(HDR_LLL2ULL(lll));
 }
 
 inline struct ll_adv_set *ull_adv_is_enabled_get(uint8_t handle)
@@ -1591,12 +1591,16 @@ uint8_t ull_scan_rsp_set(struct ll_adv_set *adv, uint8_t len,
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 void ull_adv_done(struct node_rx_event_done *done)
 {
-	struct lll_adv *lll = (void *)HDR_ULL2LLL(done->param);
-	struct ll_adv_set *adv = (void *)HDR_LLL2EVT(lll);
 	struct lll_adv_aux *lll_aux;
 	struct node_rx_hdr *rx_hdr;
+	struct ll_adv_set *adv;
+	struct lll_adv *lll;
 	uint8_t handle;
 	uint32_t ret;
+
+	/* Get reference to ULL context */
+	adv = CONTAINER_OF(done->param, struct ll_adv_set, ull);
+	lll = &adv->lll;
 
 	if (adv->max_events && (adv->event_counter >= adv->max_events)) {
 		adv->max_events = 0;
@@ -1628,7 +1632,7 @@ void ull_adv_done(struct node_rx_event_done *done)
 		struct ll_adv_aux_set *aux;
 		uint8_t aux_handle;
 
-		aux = (void *)HDR_LLL2EVT(lll_aux);
+		aux = HDR_LLL2ULL(lll_aux);
 		aux_handle = ull_adv_aux_handle_get(aux);
 		ret = ticker_stop(TICKER_INSTANCE_ID_CTLR,
 				  TICKER_USER_ID_ULL_HIGH,
@@ -2064,7 +2068,7 @@ static inline uint8_t disable(uint8_t handle)
 		struct ll_adv_aux_set *aux;
 		uint8_t err;
 
-		aux = (void *)HDR_LLL2EVT(lll_aux);
+		aux = HDR_LLL2ULL(lll_aux);
 
 		err = ull_adv_aux_stop(aux);
 		if (err) {
