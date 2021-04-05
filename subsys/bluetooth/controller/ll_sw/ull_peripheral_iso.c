@@ -8,30 +8,33 @@
 #include <bluetooth/buf.h>
 #include <sys/byteorder.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_ctlr_ull_peripheral_iso
-#include "common/log.h"
-#include "hal/debug.h"
-
 #include "util/memq.h"
-#include "ticker/ticker.h"
-
-#include "hal/ticker.h"
 #include "util/mayfly.h"
 
-#include "pdu.h"
-#include "lll.h"
 #include "hal/ccm.h"
+#include "hal/ticker.h"
+
+#include "ticker/ticker.h"
+
+#include "pdu.h"
+
+#include "lll.h"
+#include "lll/lll_vendor.h"
 #include "lll_conn.h"
 #include "lll_conn_iso.h"
+
 #include "ull_conn_types.h"
 #include "ull_conn_internal.h"
 #include "ull_conn_iso_types.h"
 #include "ull_conn_iso_internal.h"
 #include "ull_internal.h"
 
-#include "lll/lll_vendor.h"
 #include "lll_peripheral_iso.h"
+
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
+#define LOG_MODULE_NAME bt_ctlr_ull_peripheral_iso
+#include "common/log.h"
+#include "hal/debug.h"
 
 uint8_t ll_cis_accept(uint16_t handle)
 {
