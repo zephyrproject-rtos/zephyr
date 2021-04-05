@@ -7,11 +7,11 @@
  */
 
 #include <logging/log.h>
-#include "mbedtls_dbg.h"
+#include "mbedtls_debug.h"
 
 LOG_MODULE_REGISTER(mbedtls, CONFIG_MBEDTLS_DEBUG_LEVEL);
 
-static void dbg_func(void *ctx, int level, const char *file,
+static void debug_func(void *ctx, int level, const char *file,
 		int line, const char *str)
 {
 	const char *p, *basename;
@@ -49,7 +49,7 @@ static void dbg_func(void *ctx, int level, const char *file,
 	}
 }
 
-void mbedtls_dbg_init(mbedtls_ssl_config *config)
+void mbedtls_debug_init(mbedtls_ssl_config *config)
 {
-	mbedtls_ssl_conf_dbg(config, dbg_func, NULL);
+	mbedtls_ssl_conf_dbg(config, debug_func, NULL);
 }

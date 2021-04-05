@@ -35,7 +35,7 @@ LOG_MODULE_REGISTER(net_sock_tls, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <mbedtls/error.h>
 #include <mbedtls/debug.h>
 #ifdef CONFIG_MBEDTLS_DEBUG
-#include "mbedtls_dbg.h"
+#include <mbedtls_debug.h>
 #endif /* CONFIG_MBEDTLS_DEBUG */
 #endif /* CONFIG_MBEDTLS */
 
@@ -388,7 +388,7 @@ static struct tls_context *tls_alloc(void)
 #endif
 
 #if defined(MBEDTLS_DEBUG_C) && (CONFIG_MBEDTLS_DEBUG)
-		mbedtls_dbg_init(&tls->config);
+		mbedtls_debug_init(&tls->config);
 #endif
 	} else {
 		NET_WARN("Failed to allocate TLS context");

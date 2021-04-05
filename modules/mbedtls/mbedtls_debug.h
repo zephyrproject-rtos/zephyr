@@ -8,9 +8,9 @@
 
 #include <mbedtls/ssl.h>
 
-#ifndef _MBEDTLS_DBG_
-#define _MBEDTLS_DBG_
+#ifndef _MBEDTLS_DEBUG_
+#define _MBEDTLS_DEBUG_
 
-void mbedtls_dbg_init(mbedtls_ssl_config *config);
+void mbedtls_debug_init(mbedtls_ssl_config *config);
 
 #endif
