@@ -19,7 +19,7 @@
 #define NOR_WRITE_SIZE	1
 #define NOR_ERASE_VALUE	0xff
 
-LOG_MODULE_DECLARE(flash_flexspi, CONFIG_FLASH_LOG_LEVEL);
+LOG_MODULE_REGISTER(flash_flexspi_nor, CONFIG_FLASH_LOG_LEVEL);
 
 enum {
 	/* SPI instructions */
