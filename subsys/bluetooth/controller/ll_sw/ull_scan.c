@@ -365,23 +365,23 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 						SCAN_INT_UNIT_US);
 
 	/* TODO: active_to_start feature port */
-	scan->evt.ticks_active_to_start = 0U;
-	scan->evt.ticks_xtal_to_start =
+	scan->ull.ticks_active_to_start = 0U;
+	scan->ull.ticks_prepare_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
-	scan->evt.ticks_preempt_to_start =
+	scan->ull.ticks_preempt_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
 	if ((lll->ticks_window +
 	     HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US)) <
 	    (ticks_interval -
 	     HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US))) {
-		scan->evt.ticks_slot =
+		scan->ull.ticks_slot =
 			(lll->ticks_window +
 			 HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US));
 	} else {
 		if (IS_ENABLED(CONFIG_BT_CTLR_SCAN_UNRESERVED)) {
-			scan->evt.ticks_slot = 0U;
+			scan->ull.ticks_slot = 0U;
 		} else {
-			scan->evt.ticks_slot = ticks_interval -
+			scan->ull.ticks_slot = ticks_interval -
 				HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 		}
 
@@ -389,8 +389,8 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
-		ticks_slot_overhead = MAX(scan->evt.ticks_active_to_start,
-					  scan->evt.ticks_xtal_to_start);
+		ticks_slot_overhead = MAX(scan->ull.ticks_active_to_start,
+					  scan->ull.ticks_prepare_to_start);
 	} else {
 		ticks_slot_overhead = 0U;
 	}
@@ -403,7 +403,7 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 		uint32_t offset_us = 0U;
 
 		ull_sched_after_mstr_slot_get(TICKER_USER_ID_THREAD,
-					      (scan->evt.ticks_slot +
+					      (scan->ull.ticks_slot +
 					       ticks_slot_overhead),
 					      &ticks_ref, &offset_us);
 
@@ -427,7 +427,7 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 			   HAL_TICKER_REMAINDER((uint64_t)lll->interval *
 						SCAN_INT_UNIT_US),
 			   TICKER_NULL_LAZY,
-			   (scan->evt.ticks_slot + ticks_slot_overhead),
+			   (scan->ull.ticks_slot + ticks_slot_overhead),
 			   ticker_cb, scan,
 			   ull_ticker_status_give, (void *)&ret_cb);
 	ret = ull_ticker_status_take(ret, &ret_cb);
@@ -472,8 +472,10 @@ void ull_scan_done(struct node_rx_event_done *done)
 	uint8_t handle;
 	uint32_t ret;
 
-	lll = (void *)HDR_ULL2LLL(done->param);
-	scan = (void *)HDR_LLL2EVT(lll);
+	/* Get reference to ULL context */
+	scan = CONTAINER_OF(done->param, struct ll_scan_set, ull);
+	lll = &scan->lll;
+
 	if (likely(scan->duration_lazy || !lll->duration_reload ||
 		   lll->duration_expire)) {
 		return;
@@ -883,7 +885,7 @@ static void ext_disabled_cb(void *param)
 	 * node_rx is already utilized to send terminate event on connection
 	 */
 	lll = (void *)param;
-	scan = (void *)HDR_LLL2EVT(lll);
+	scan = HDR_LLL2ULL(lll);
 	rx_hdr = (void *)scan->node_rx_scan_term;
 	if (!rx_hdr) {
 		return;

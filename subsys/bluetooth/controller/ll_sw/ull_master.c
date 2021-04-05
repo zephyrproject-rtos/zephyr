@@ -313,12 +313,12 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 #endif
 
 	/* TODO: active_to_start feature port */
-	conn->evt.ticks_active_to_start = 0U;
-	conn->evt.ticks_xtal_to_start =
+	conn->ull.ticks_active_to_start = 0U;
+	conn->ull.ticks_prepare_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
-	conn->evt.ticks_preempt_to_start =
+	conn->ull.ticks_preempt_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
-	conn->evt.ticks_slot =
+	conn->ull.ticks_slot =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
 				       ready_delay_us +
 				       328 + EVENT_IFS_US + 328);
@@ -466,11 +466,12 @@ uint8_t ll_connect_disable(void **rx)
 	}
 
 	if (!err) {
-		struct ll_conn *conn = (void *)HDR_LLL2EVT(conn_lll);
 		struct node_rx_pdu *node_rx;
 		struct node_rx_cc *cc;
+		struct ll_conn *conn;
 		memq_link_t *link;
 
+		conn = HDR_LLL2ULL(conn_lll);
 		node_rx = (void *)&conn->llcp_terminate.node_rx;
 		link = node_rx->hdr.link;
 		LL_ASSERT(link);
@@ -613,10 +614,8 @@ uint8_t ll_enc_req_send(uint16_t handle, uint8_t const *const rand,
 
 void ull_master_cleanup(struct node_rx_hdr *rx_free)
 {
-	struct node_rx_ftr *ftr = &rx_free->rx_ftr;
-	struct ll_scan_set *scan =
-		(void *)HDR_LLL2EVT(ftr->param);
 	struct lll_conn *conn_lll;
+	struct ll_scan_set *scan;
 	struct ll_conn *conn;
 	memq_link_t *link;
 
@@ -625,6 +624,7 @@ void ull_master_cleanup(struct node_rx_hdr *rx_free)
 	 *       coded PHY scanning context, hence releasing only this one
 	 *       connection context.
 	 */
+	scan = HDR_LLL2ULL(rx_free->rx_ftr.param);
 	conn_lll = scan->lll.conn;
 	LL_ASSERT(conn_lll);
 	scan->lll.conn = NULL;
@@ -635,7 +635,7 @@ void ull_master_cleanup(struct node_rx_hdr *rx_free)
 	LL_ASSERT(link);
 	conn_lll->link_tx_free = link;
 
-	conn = (void *)HDR_LLL2EVT(conn_lll);
+	conn = HDR_LLL2ULL(conn_lll);
 	ll_conn_release(conn);
 
 	/* 1M PHY is disabled here if both 1M and coded PHY was enabled for
@@ -770,8 +770,8 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	ll_rx_put(link, rx);
 	ll_rx_sched();
 
-	ticks_slot_offset = MAX(conn->evt.ticks_active_to_start,
-				conn->evt.ticks_xtal_to_start);
+	ticks_slot_offset = MAX(conn->ull.ticks_active_to_start,
+				conn->ull.ticks_prepare_to_start);
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
 		ticks_slot_overhead = ticks_slot_offset;
@@ -824,7 +824,7 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 				     HAL_TICKER_US_TO_TICKS(conn_interval_us),
 				     HAL_TICKER_REMAINDER(conn_interval_us),
 				     TICKER_NULL_LAZY,
-				     (conn->evt.ticks_slot +
+				     (conn->ull.ticks_slot +
 				      ticks_slot_overhead),
 				     ull_master_ticker_cb, conn, ticker_op_cb,
 				     (void *)__LINE__);
@@ -924,17 +924,18 @@ static void ticker_op_cb(uint32_t status, void *params)
 
 static inline void conn_release(struct ll_scan_set *scan)
 {
-	struct lll_conn *lll = scan->lll.conn;
 	struct node_rx_pdu *cc;
+	struct lll_conn *lll;
 	struct ll_conn *conn;
 	memq_link_t *link;
 
+	lll = scan->lll.conn;
 	LL_ASSERT(!lll->link_tx_free);
 	link = memq_deinit(&lll->memq_tx.head, &lll->memq_tx.tail);
 	LL_ASSERT(link);
 	lll->link_tx_free = link;
 
-	conn = (void *)HDR_LLL2EVT(lll);
+	conn = HDR_LLL2ULL(lll);
 
 	cc = (void *)&conn->llcp_terminate.node_rx;
 	link = cc->hdr.link;

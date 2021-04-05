@@ -325,7 +325,7 @@ int lll_done(void *param)
 #endif /* CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
 
 		if (param) {
-			ull = HDR_ULL(((struct lll_hdr *)param)->parent);
+			ull = HDR_LLL2ULL(param);
 		}
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT) &&
@@ -337,7 +337,7 @@ int lll_done(void *param)
 
 		DEBUG_RADIO_CLOSE(0);
 	} else {
-		ull = HDR_ULL(((struct lll_hdr *)param)->parent);
+		ull = HDR_LLL2ULL(param);
 	}
 
 #if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL_DONE)
@@ -397,21 +397,21 @@ void lll_abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	lll_done(param);
 }
 
-uint32_t lll_evt_offset_get(struct evt_hdr *evt)
+uint32_t lll_event_offset_get(struct ull_hdr *ull)
 {
 	if (0) {
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
-	} else if (evt->ticks_xtal_to_start & XON_BITMASK) {
-		return MAX(evt->ticks_active_to_start,
-			   evt->ticks_preempt_to_start);
+	} else if (ull->ticks_prepare_to_start & XON_BITMASK) {
+		return MAX(ull->ticks_active_to_start,
+			   ull->ticks_preempt_to_start);
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
 	} else {
-		return MAX(evt->ticks_active_to_start,
-			   evt->ticks_xtal_to_start);
+		return MAX(ull->ticks_active_to_start,
+			   ull->ticks_prepare_to_start);
 	}
 }
 
-uint32_t lll_preempt_calc(struct evt_hdr *evt, uint8_t ticker_id,
+uint32_t lll_preempt_calc(struct ull_hdr *ull, uint8_t ticker_id,
 		       uint32_t ticks_at_event)
 {
 	uint32_t ticks_now;
@@ -740,16 +740,16 @@ static void ticker_start_op_cb(uint32_t status, void *param)
 static void preempt_ticker_start(struct lll_prepare_param *prepare_param)
 {
 	uint32_t preempt_anchor;
-	struct evt_hdr *evt;
+	struct ull_hdr *ull;
 	uint32_t preempt_to;
 	uint32_t ret;
 
 	/* Calc the preempt timeout */
-	evt = HDR_LLL2EVT(prepare_param->param);
+	ull = HDR_LLL2ULL(prepare_param->param);
 	preempt_anchor = prepare_param->ticks_at_expire;
-	preempt_to = MAX(evt->ticks_active_to_start,
-			 evt->ticks_xtal_to_start) -
-			 evt->ticks_preempt_to_start;
+	preempt_to = MAX(ull->ticks_active_to_start,
+			 ull->ticks_prepare_to_start) -
+		     ull->ticks_preempt_to_start;
 
 	/* Setup pre empt timeout */
 	ret = ticker_start(TICKER_INSTANCE_ID_CTLR,

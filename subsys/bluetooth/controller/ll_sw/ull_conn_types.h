@@ -31,7 +31,6 @@ enum llcp {
 };
 
 struct ll_conn {
-	struct evt_hdr  evt;
 	struct ull_hdr  ull;
 	struct lll_conn lll;
 

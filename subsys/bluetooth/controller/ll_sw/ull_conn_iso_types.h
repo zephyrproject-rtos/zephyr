@@ -24,7 +24,6 @@ struct ll_conn_iso_stream {
 };
 
 struct ll_conn_iso_group {
-	struct evt_hdr            evt;
 	struct ull_hdr            ull;
 	struct lll_conn_iso_group lll;
 

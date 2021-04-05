@@ -105,21 +105,21 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	case NODE_RX_TYPE_EXT_1M_REPORT:
 		lll = NULL;
 		aux = NULL;
-		scan = (void *)HDR_LLL2EVT(ftr->param);
+		scan = HDR_LLL2ULL(ftr->param);
 		sync = sync_create_get(scan);
 		phy = BT_HCI_LE_EXT_SCAN_PHY_1M;
 		break;
 	case NODE_RX_TYPE_EXT_CODED_REPORT:
 		lll = NULL;
 		aux = NULL;
-		scan = (void *)HDR_LLL2EVT(ftr->param);
+		scan = HDR_LLL2ULL(ftr->param);
 		sync = sync_create_get(scan);
 		phy = BT_HCI_LE_EXT_SCAN_PHY_CODED;
 		break;
 	case NODE_RX_TYPE_EXT_AUX_REPORT:
 		lll = ftr->param;
-		aux = (void *)HDR_LLL2EVT(lll);
-		scan = (void *)HDR_LLL2EVT(aux->rx_head->rx_ftr.param);
+		aux = HDR_LLL2ULL(lll);
+		scan = HDR_LLL2ULL(aux->rx_head->rx_ftr.param);
 		sync = (void *)scan;
 		scan = ull_scan_is_valid_get(scan);
 		phy = lll->phy;
@@ -164,7 +164,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 			 * passed in the node rx footer field.
 			 */
 			lll_sync = ftr->param;
-			ull_sync = (void *)HDR_LLL2EVT(lll_sync);
+			ull_sync = HDR_LLL2ULL(lll_sync);
 			rx->handle = ull_sync_handle_get(ull_sync);
 
 			lll = NULL;
@@ -291,20 +291,20 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	aux_offset_us -= window_widening_us;
 
 	/* TODO: active_to_start feature port */
-	aux->evt.ticks_active_to_start = 0;
-	aux->evt.ticks_xtal_to_start =
+	aux->ull.ticks_active_to_start = 0;
+	aux->ull.ticks_prepare_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
-	aux->evt.ticks_preempt_to_start =
+	aux->ull.ticks_preempt_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
-	aux->evt.ticks_slot =
+	aux->ull.ticks_slot =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
 				       ready_delay_us +
 				       PKT_AC_US(PDU_AC_EXT_PAYLOAD_SIZE_MAX,
 						 0, lll->phy) +
 				       EVENT_OVERHEAD_END_US);
 
-	ticks_slot_offset = MAX(aux->evt.ticks_active_to_start,
-				aux->evt.ticks_xtal_to_start);
+	ticks_slot_offset = MAX(aux->ull.ticks_active_to_start,
+				aux->ull.ticks_prepare_to_start);
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
 		ticks_slot_overhead = ticks_slot_offset;
@@ -324,7 +324,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 				     TICKER_NULL_PERIOD,
 				     TICKER_NULL_REMAINDER,
 				     TICKER_NULL_LAZY,
-				     (aux->evt.ticks_slot +
+				     (aux->ull.ticks_slot +
 				      ticks_slot_overhead),
 				     ticker_cb, aux, ticker_op_cb, aux);
 	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
@@ -358,9 +358,11 @@ ull_scan_aux_rx_flush:
 
 void ull_scan_aux_done(struct node_rx_event_done *done)
 {
-	struct lll_scan_aux *lll = (void *)HDR_ULL2LLL(done->param);
-	struct ll_scan_aux_set *aux = (void *)HDR_LLL2EVT(lll);
+	struct ll_scan_aux_set *aux;
 	struct ull_hdr *hdr;
+
+	/* Get reference to ULL context */
+	aux = CONTAINER_OF(done->param, struct ll_scan_aux_set, ull);
 
 	/* Setup the disabled callback to flush the auxiliary PDUs */
 	hdr = &aux->ull;
@@ -416,7 +418,7 @@ static void last_disabled_cb(void *param)
 	struct node_rx_hdr *rx;
 
 	rx = param;
-	aux = (void *)HDR_LLL2EVT(rx->rx_ftr.param);
+	aux = HDR_LLL2ULL(rx->rx_ftr.param);
 
 	flush(aux, rx);
 }
