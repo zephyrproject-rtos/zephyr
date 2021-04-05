@@ -97,7 +97,6 @@ set(DOXY_OUT ${CMAKE_CURRENT_BINARY_DIR}/doxygen)
 set(RST_OUT ${CMAKE_CURRENT_BINARY_DIR}/rst)
 set(DOC_LOG ${CMAKE_CURRENT_BINARY_DIR}/doc.log)
 set(DOXY_LOG ${CMAKE_CURRENT_BINARY_DIR}/doxy.log)
-set(SPHINX_LOG ${CMAKE_CURRENT_BINARY_DIR}/sphinx.log)
 set(DOC_WARN ${CMAKE_CURRENT_BINARY_DIR}/doc.warnings)
 set(CONTENT_OUTPUTS ${CMAKE_CURRENT_BINARY_DIR}/extracted-content.txt)
 
@@ -201,9 +200,7 @@ else()
   set(SEP :)
 endif()
 
-set(KI_SCRIPT ${ZEPHYR_BASE}/scripts/filter-known-issues.py)
 set(FIX_TEX_SCRIPT ${ZEPHYR_BASE}/doc/_scripts/fix_tex.py)
-set(CONF_DIR ${ZEPHYR_BASE}/.known-issues/doc)
 
 #
 # Generated Kconfig .rst documents
@@ -330,7 +327,7 @@ set(SPHINX_BUILD_HTML_COMMAND
   ${CMAKE_COMMAND} -E env
   ZEPHYR_BASE=${ZEPHYR_BASE}
   ZEPHYR_BUILD=${CMAKE_CURRENT_BINARY_DIR}
-  ${SPHINXBUILD} -w ${SPHINX_LOG} -N -t ${DOC_TAG} -b html ${ALLSPHINXOPTS} ${RST_OUT}/doc ${SPHINX_OUTPUT_DIR_HTML})
+  ${SPHINXBUILD} -W -N -t ${DOC_TAG} -b html ${ALLSPHINXOPTS} ${RST_OUT}/doc ${SPHINX_OUTPUT_DIR_HTML})
 
 # The sphinx-html target is provided as a convenience for incremental
 # re-builds of content files without regenerating the entire docs
@@ -355,9 +352,6 @@ add_dependencies(sphinx-html content)
 add_custom_target(
   html
   COMMAND ${SPHINX_BUILD_HTML_COMMAND}
-  # Merge the Doxygen and Sphinx logs into a single file
-  COMMAND ${CMAKE_COMMAND} -P ${ZEPHYR_BASE}/cmake/util/fmerge.cmake ${DOC_LOG} ${DOXY_LOG} ${SPHINX_LOG}
-  COMMAND ${PYTHON_EXECUTABLE} ${KI_SCRIPT} --config-dir ${CONF_DIR} --errors ${DOC_WARN} --warnings ${DOC_WARN} ${DOC_LOG}
   WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
   COMMENT "Generating HTML documentation with ${SPHINXBUILD} ${SPHINXOPTS}"
   ${SPHINX_USES_TERMINAL}
@@ -369,7 +363,7 @@ add_custom_target(
 set(SPHINX_BUILD_LATEX_COMMAND
   ${CMAKE_COMMAND} -E env
   ZEPHYR_BUILD=${CMAKE_CURRENT_BINARY_DIR}
-  ${SPHINXBUILD} -w ${SPHINX_LOG} -N -t ${DOC_TAG} -b latex -t svgconvert ${ALLSPHINXOPTS} ${RST_OUT}/doc ${SPHINX_OUTPUT_DIR_LATEX})
+  ${SPHINXBUILD} -W -N -t ${DOC_TAG} -b latex -t svgconvert ${ALLSPHINXOPTS} ${RST_OUT}/doc ${SPHINX_OUTPUT_DIR_LATEX})
 
 # The sphinx-latex target works similarly to sphinx-html, and carries
 # the same warnings.
@@ -386,9 +380,6 @@ add_dependencies(sphinx-latex content)
 add_custom_command(
   OUTPUT ${SPHINX_OUTPUT_DIR_LATEX}/zephyr.tex
   COMMAND ${SPHINX_BUILD_LATEX_COMMAND}
-  # Merge the Doxygen and Sphinx logs into a single file
-  COMMAND ${CMAKE_COMMAND} -P ${ZEPHYR_BASE}/cmake/util/fmerge.cmake ${DOC_LOG} ${DOXY_LOG} ${SPHINX_LOG}
-  COMMAND ${PYTHON_EXECUTABLE} ${KI_SCRIPT} --config-dir ${CONF_DIR} --errors ${DOC_WARN} --warnings ${DOC_WARN} ${DOC_LOG}
   COMMAND ${PYTHON_EXECUTABLE} ${FIX_TEX_SCRIPT} ${SPHINX_OUTPUT_DIR_LATEX}/zephyr.tex
   WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
   COMMENT "Generating LaTeX documentation"

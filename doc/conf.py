@@ -82,6 +82,7 @@ extensions = [
     "zephyr.dtcompatible-role",
     "zephyr.link-roles",
     "sphinx_tabs.tabs",
+    "zephyr.warnings_filter",
 ]
 
 # Only use SVG converter when it is really needed, e.g. LaTeX.
@@ -188,6 +189,11 @@ c_id_attributes = cpp_id_attributes
 # -- Options for html_redirect plugin -------------------------------------
 
 html_redirect_pages = redirects.REDIRECTS
+
+# -- Options for zephyr.warnings_filter -----------------------------------
+
+warnings_filter_config = str(ZEPHYR_BASE / "doc" / "known-warnings.txt")
+warnings_filter_silent = False
 
 # -- Linkcheck options ----------------------------------------------------
 

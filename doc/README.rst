@@ -197,24 +197,20 @@ there:
 Filtering expected warnings
 ***************************
 
-Alas, there are some known issues with the doxygen/Sphinx/Breathe
-processing that generates warnings for some constructs, in particular
-around unnamed structures in nested unions or structs.
-While these issues are being considered for fixing in
-Sphinx/Breathe, we've added a post-processing filter on the output of
-the documentation build process to check for "expected" messages from the
-generation process output.
+There are some known issues with Sphinx/Breathe that generate Sphinx warnings
+even though the input is valid C code. While these issues are being considered
+for fixing we have created a Sphinx extension that allows to filter them out
+based on a set of regular expressions. The extension is named
+``zephyr.warnings_filter`` and it is located at
+``doc/_extensions/zephyr/warnings_filter.py``. The warnings to be filtered out
+can be added to the ``doc/known-warnings.txt`` file.
 
-The output from the Sphinx build is processed by the python script
-``scripts/filter-known-issues.py`` together with a set of filter
-configuration files in the ``.known-issues/doc`` folder.  (This
-filtering is done as part of the ``doc/CMakeLists.txt`` CMake listfile.)
+The most common warning reported by Sphinx/Breathe is related to duplicate C
+declarations. This warning may be caused by different Sphinx/Breathe issues:
 
-If you're contributing components included in the Zephyr API
-documentation and run across these warnings, you can include filtering
-them out as "expected" warnings by adding a conf file to the
-``.known-issues/doc`` folder, following the example of other conf files
-found there.
+- Multiple declarations of the same object are not supported
+- Different objects (e.g. a struct and a function) can not share the same name
+- Nested elements (e.g. in a struct or union) can not share the same name
 
 Developer-mode Document Building
 ********************************
