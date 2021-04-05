@@ -190,7 +190,7 @@ struct ll_conn {
 		uint8_t req;
 		uint8_t ack;
 		uint8_t reason_own;
-		uint8_t reason_peer;
+		uint8_t reason_final;
 		/* node rx type with memory aligned storage for terminate
 		 * reason.
 		 * HCI will reference the value using the pdu member of
