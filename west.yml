@@ -149,6 +149,10 @@ manifest:
     - name: nanopb
       path: modules/lib/nanopb
       revision: d148bd26718e4c10414f07a7eb1bd24c62e56c5d
+    - name: tensorflow
+      repo-path: tensorflow
+      path: modules/lib/tensorflow
+      revision: dc70a45a7cc12c25726a32cd91b28be59e7bc596
 
   self:
     path: zephyr
