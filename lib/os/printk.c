@@ -259,7 +259,7 @@ int vsnprintk(char *str, size_t size, const char *fmt, va_list ap)
 
 	cbvprintf(str_out, &ctx, fmt, ap);
 
-	if (ctx.count < ctx.max) {
+	if (str != NULL && ctx.count < ctx.max) {
 		str[ctx.count] = '\0';
 	}
 
