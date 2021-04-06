@@ -159,6 +159,16 @@ struct acpi_dmar {
 	struct acpi_dmar_entry remap_entries[];
 } __packed;
 
+union acpi_dmar_id {
+	struct {
+		uint16_t function : 3;
+		uint16_t device   : 5;
+		uint16_t bus      : 8;
+	} bits;
+
+	uint16_t raw;
+};
+
 #if defined(CONFIG_ACPI)
 
 void *z_acpi_find_table(uint32_t signature);
@@ -175,6 +185,8 @@ struct acpi_dmar_dev_scope *z_acpi_get_drhd_dev_scopes(struct acpi_drhd *drhd,
 struct acpi_dmar_dev_path *
 z_acpi_get_dev_scope_paths(struct acpi_dmar_dev_scope *dev_scope, int *n);
 
+uint16_t z_acpi_get_dev_id_from_dmar(uint8_t dev_scope_type);
+
 #else /* CONFIG_ACPI */
 
 #define z_acpi_find_table(...) NULL
@@ -183,6 +195,7 @@ z_acpi_get_dev_scope_paths(struct acpi_dmar_dev_scope *dev_scope, int *n);
 #define z_acpi_find_drhds(...) NULL
 #define z_acpi_get_drhd_dev_scopes(...) NULL
 #define z_acpi_get_dev_scope_paths(...) NULL
+#define z_acpi_get_dev_id_from_dmar(...) USHRT_MAX
 
 #endif /* CONFIG_ACPI */
 
