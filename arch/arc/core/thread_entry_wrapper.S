@@ -14,6 +14,7 @@
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <v2/irq.h>
+#include <arch/arc/asm-compat/assembler.h>
 
 GTEXT(z_thread_entry_wrapper)
 GTEXT(z_thread_entry_wrapper1)
@@ -30,9 +31,9 @@ GTEXT(z_thread_entry_wrapper1)
 SECTION_FUNC(TEXT, z_thread_entry_wrapper)
 	seti _ARC_V2_INIT_IRQ_LOCK_KEY
 z_thread_entry_wrapper1:
-	pop_s r3
-	pop_s r2
-	pop_s r1
-	pop_s r0
+	POPR r3
+	POPR r2
+	POPR r1
+	POPR r0
 	j z_thread_entry
 	nop
