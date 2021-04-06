@@ -200,7 +200,7 @@ int net_virtual_interface_attach(struct net_if *virtual_iface,
 	 * network interface (if IPv6). The actual link address is typically
 	 * not need in tunnels.
 	 */
-	if (virtual_iface && iface) {
+	if (iface) {
 		random_linkaddr(ctx->lladdr.addr, sizeof(ctx->lladdr.addr));
 
 		ctx->lladdr.len = sizeof(ctx->lladdr.addr);
