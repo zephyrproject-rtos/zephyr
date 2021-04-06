@@ -62,12 +62,25 @@ config CLOCK_STM32_HSE_BYPASS
 	help
 	  Enable this option to bypass external high-speed clock (HSE).
 
+DT_STM32_HSE_CLOCK := $(dt_nodelabel_path,clk_hse)
+DT_STM32_HSE_CLOCK_FREQ := $(dt_node_int_prop_int,$(DT_STM32_HSE_CLOCK),clock-frequency)
+
 config CLOCK_STM32_HSE_CLOCK
 	int "HSE clock value"
 	depends on CLOCK_STM32_SYSCLK_SRC_HSE || CLOCK_STM32_PLL_SRC_HSE
+	default "$(DT_STM32_HSE_CLOCK_FREQ)" if "$(dt_nodelabel_enabled,clk_hse)"
 	default 8000000
 	help
-	  Value of external high-speed clock (HSE).
+	  Value of external high-speed clock (HSE). This symbol could be optionally
+	  configured using device tree by setting "clock-frequency" value of clk_hse
+	  node. For instance:
+	  &clk_hse{
+	  status = "okay";
+	  clock-frequency = <DT_FREQ_M(25)>;
+	  };
+	  Note: Device tree configuration is overridden when current symbol is set:
+	  CONFIG_CLOCK_STM32_HSE_CLOCK=32000000
+
 
 config CLOCK_STM32_MSI_RANGE
 	int "MSI frequency range"
