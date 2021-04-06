@@ -18,7 +18,8 @@ typedef uint32_t (*vtd_remap_msi_f)(const struct device *dev,
 typedef int (*vtd_remap_f)(const struct device *dev,
 			   uint8_t irte_idx,
 			   uint16_t vector,
-			   uint32_t flags);
+			   uint32_t flags,
+			   uint16_t src_id);
 
 typedef int (*vtd_set_irte_vector_f)(const struct device *dev,
 				     uint8_t irte_idx,
@@ -102,18 +103,20 @@ static inline uint32_t vtd_remap_msi(const struct device *dev,
  * @param irte_idx A previoulsy allocated irte entry index number
  * @param vector An allocated interrupt vector
  * @param flags interrupt flags
+ * @param src_id a valid source ID or USHRT_MAX if none
  *
  * @return 0 on success, a negative errno otherwise
  */
 static inline int vtd_remap(const struct device *dev,
 			    uint8_t irte_idx,
 			    uint16_t vector,
-			    uint32_t flags)
+			    uint32_t flags,
+			    uint16_t src_id)
 {
 	const struct vtd_driver_api *api =
 		(const struct vtd_driver_api *)dev->api;
 
-	return api->remap(dev, irte_idx, vector, flags);
+	return api->remap(dev, irte_idx, vector, flags, src_id);
 }
 
 /**
