@@ -14,33 +14,7 @@
 
 #include <sys/types.h>
 
-typedef int (*edac_api_inject_set_param1_f)(const struct device *dev,
-					uint64_t addr);
-typedef uint64_t (*edac_api_inject_get_param1_f)(const struct device *dev);
-
-typedef int (*edac_api_inject_set_param2_f)(const struct device *dev,
-					     uint64_t mask);
-typedef uint64_t (*edac_api_inject_get_param2_f)(const struct device *dev);
-
-typedef int (*edac_api_inject_set_error_type_f)(const struct device *dev,
-						uint32_t error_type);
-typedef uint32_t (*edac_api_inject_get_error_type_f)(const struct device *dev);
-
-typedef int (*edac_api_inject_error_trigger_f)(const struct device *dev);
-
-typedef uint64_t (*edac_api_ecc_error_log_get_f)(const struct device *dev);
-typedef void (*edac_api_ecc_error_log_clear_f)(const struct device *dev);
-
-typedef uint64_t (*edac_api_parity_error_log_get_f)(const struct device *dev);
-typedef void (*edac_api_parity_error_log_clear_f)(const struct device *dev);
-
-typedef unsigned int (*edac_api_errors_cor_get_f)(const struct device *dev);
-typedef unsigned int (*edac_api_errors_uc_get_f)(const struct device *dev);
-
-typedef void (*edac_notify_callback_f)(const struct device *dev,
-				       void *data);
-typedef int (*edac_api_notify_cb_set_f)(const struct device *dev,
-				      edac_notify_callback_f cb);
+typedef void (*edac_notify_callback_f)(const struct device *dev, void *data);
 
 /**
  * @defgroup edac EDAC API
@@ -66,27 +40,28 @@ enum edac_error_type {
 __subsystem struct edac_driver_api {
 #if defined(CONFIG_EDAC_ERROR_INJECT)
 	/* Error Injection API is disabled by default */
-	edac_api_inject_set_param1_f inject_set_param1;
-	edac_api_inject_get_param1_f inject_get_param1;
-	edac_api_inject_set_param2_f inject_set_param2;
-	edac_api_inject_get_param2_f inject_get_param2;
-	edac_api_inject_get_error_type_f inject_get_error_type;
-	edac_api_inject_set_error_type_f inject_set_error_type;
-	edac_api_inject_error_trigger_f inject_error_trigger;
+	int (*inject_set_param1)(const struct device *dev, uint64_t value);
+	int (*inject_get_param1)(const struct device *dev, uint64_t *value);
+	int (*inject_set_param2)(const struct device *dev, uint64_t value);
+	int (*inject_get_param2)(const struct device *dev, uint64_t *value);
+	int (*inject_set_error_type)(const struct device *dev, uint32_t value);
+	int (*inject_get_error_type)(const struct device *dev, uint32_t *value);
+	int (*inject_error_trigger)(const struct device *dev);
 #endif /* CONFIG_EDAC_ERROR_INJECT */
 
 	/* Error Logging  API */
-	edac_api_ecc_error_log_get_f ecc_error_log_get;
-	edac_api_ecc_error_log_clear_f ecc_error_log_clear;
-	edac_api_parity_error_log_get_f parity_error_log_get;
-	edac_api_parity_error_log_clear_f parity_error_log_clear;
+	int (*ecc_error_log_get)(const struct device *dev, uint64_t *value);
+	void (*ecc_error_log_clear)(const struct device *dev);
+	int (*parity_error_log_get)(const struct device *dev, uint64_t *value);
+	void (*parity_error_log_clear)(const struct device *dev);
 
 	/* Error stats API */
-	edac_api_errors_cor_get_f errors_cor_get;
-	edac_api_errors_uc_get_f errors_uc_get;
+	unsigned int (*errors_cor_get)(const struct device *dev);
+	unsigned int (*errors_uc_get)(const struct device *dev);
 
 	/* Notification callback API */
-	edac_api_notify_cb_set_f notify_cb_set;
+	int (*notify_cb_set)(const struct device *dev,
+			     edac_notify_callback_f cb);
 };
 
 #if defined(CONFIG_EDAC_ERROR_INJECT)
@@ -94,19 +69,25 @@ __subsystem struct edac_driver_api {
 /**
  * @brief Set injection parameter param1
  *
- * This parameter is used to set first error injection parameter value.
+ * Set first error injection parameter value.
  *
  * @param dev Pointer to the device structure
- * @param addr Injection address base
- * @return 0 on success, error code otherwise
+ * @param value First injection parameter
+ *
+ * @return -ENOTSUP if not supported
+ * @return 0 on success, other error code otherwise
  */
 static inline int edac_inject_set_param1(const struct device *dev,
-					 uint64_t addr)
+					 uint64_t value)
 {
 	const struct edac_driver_api *api =
 		(const struct edac_driver_api *)dev->api;
 
-	return api->inject_set_param1(dev, addr);
+	if (!api->inject_set_param1) {
+		return -ENOTSUP;
+	}
+
+	return api->inject_set_param1(dev, value);
 }
 
 /**
@@ -115,48 +96,69 @@ static inline int edac_inject_set_param1(const struct device *dev,
  * Get first error injection parameter value.
  *
  * @param dev Pointer to the device structure
- * @return Injection parameter param1
+ * @param value Pointer to the first injection parameter
+ *
+ * @return -ENOTSUP if not supported
+ * @return 0 on success, error code otherwise
  */
-static inline uint64_t edac_inject_get_param1(const struct device *dev)
+static inline int edac_inject_get_param1(const struct device *dev,
+					 uint64_t *value)
 {
 	const struct edac_driver_api *api =
 		(const struct edac_driver_api *)dev->api;
 
-	return api->inject_get_param1(dev);
+	if (!api->inject_get_param1) {
+		return -ENOTSUP;
+	}
+
+	return api->inject_get_param1(dev, value);
 
 }
 
 /**
  * @brief Set injection parameter param2
  *
- * This parameter is used to set second error injection parameter value.
+ * Set second error injection parameter value.
  *
  * @param dev Pointer to the device structure
- * @param addr Injection address mask
+ * @param value Second injection parameter
+ *
+ * @return -ENOTSUP if not supported
  * @return 0 on success, error code otherwise
  */
 static inline int edac_inject_set_param2(const struct device *dev,
-					 uint64_t mask)
+					 uint64_t value)
 {
 	const struct edac_driver_api *api =
 		(const struct edac_driver_api *)dev->api;
 
-	return api->inject_set_param2(dev, mask);
+	if (!api->inject_set_param2) {
+		return -ENOTSUP;
+	}
+
+	return api->inject_set_param2(dev, value);
 }
 
 /**
  * @brief Get injection parameter param2
  *
  * @param dev Pointer to the device structure
- * @return Injection parameter param2
+ * @param value Pointer to the second injection parameter
+ *
+ * @return -ENOTSUP if not supported
+ * @return 0 on success, error code otherwise
  */
-static inline uint64_t edac_inject_get_param2(const struct device *dev)
+static inline uint64_t edac_inject_get_param2(const struct device *dev,
+					      uint64_t *value)
 {
 	const struct edac_driver_api *api =
 		(const struct edac_driver_api *)dev->api;
 
-	return api->inject_get_param2(dev);
+	if (!api->inject_get_param2) {
+		return -ENOTSUP;
+	}
 
+	return api->inject_get_param2(dev, value);
 }
 
 /**
@@ -166,6 +168,8 @@ static inline uint64_t edac_inject_get_param2(const struct device *dev)
  *
  * @param dev Pointer to the device structure
  * @param error_type Error type value
+ *
+ * @return -ENOTSUP if not supported
  * @return 0 on success, error code otherwise
  */
 static inline int edac_inject_set_error_type(const struct device *dev,
@@ -173,6 +177,10 @@ static inline int edac_inject_set_error_type(const struct device *dev,
 {
 	const struct edac_driver_api *api =
 		(const struct edac_driver_api *)dev->api;
+
+	if (!api->inject_set_error_type) {
+		return -ENOTSUP;
+	}
 
 	return api->inject_set_error_type(dev, error_type);
 }
@@ -183,29 +191,42 @@ static inline int edac_inject_set_error_type(const struct device *dev,
  * Get the value of error type to be injected
  *
  * @param dev Pointer to the device structure
- * @return error_type Error type value
+ * @param error_type Pointer to error type value
+ *
+ * @return -ENOTSUP if not supported
+ * @return 0 on success, error code otherwise
  */
-static inline uint32_t edac_inject_get_error_type(const struct device *dev)
+static inline uint32_t edac_inject_get_error_type(const struct device *dev,
+						  uint32_t *error_type)
 {
 	const struct edac_driver_api *api =
 		(const struct edac_driver_api *)dev->api;
 
-	return api->inject_get_error_type(dev);
+	if (!api->inject_get_error_type) {
+		return -ENOTSUP;
+	}
+
+	return api->inject_get_error_type(dev, error_type);
 }
 
 /**
  * @brief Set injection control
  *
- * Set injection control register to the value provided.
+ * Trigger error injection.
  *
  * @param dev Pointer to the device structure
- * @param addr Injection control value
+ *
+ * @return -ENOTSUP if not supported
  * @return 0 on success, error code otherwise
  */
 static inline int edac_inject_error_trigger(const struct device *dev)
 {
 	const struct edac_driver_api *api =
 		(const struct edac_driver_api *)dev->api;
+
+	if (!api->inject_error_trigger) {
+		return -ENOTSUP;
+	}
 
 	return api->inject_error_trigger(dev);
 }
@@ -215,23 +236,29 @@ static inline int edac_inject_error_trigger(const struct device *dev)
 /**
  * @brief Get ECC Error Log
  *
- * Read value of ECC Error Log
+ * Read value of ECC Error Log.
  *
  * @param dev Pointer to the device structure
- * @return ECC Error Log value
+ * @param value Pointer to the ECC Error Log value
+ *
+ * @return 0 on success, error code otherwise
  */
-static inline uint64_t edac_ecc_error_log_get(const struct device *dev)
+static inline int edac_ecc_error_log_get(const struct device *dev,
+					 uint64_t *value)
 {
 	const struct edac_driver_api *api =
 		(const struct edac_driver_api *)dev->api;
 
-	return api->ecc_error_log_get(dev);
+	__ASSERT(api->ecc_error_log_get,
+		 "ecc_error_log_get must be implemented by driver");
+
+	return api->ecc_error_log_get(dev, value);
 }
 
 /**
  * @brief Clear ECC Error Log
  *
- * Clear value of ECC Error Log
+ * Clear value of ECC Error Log.
  *
  * @param dev Pointer to the device structure
  */
@@ -240,29 +267,38 @@ static inline void edac_ecc_error_log_clear(const struct device *dev)
 	const struct edac_driver_api *api =
 		(const struct edac_driver_api *)dev->api;
 
+	__ASSERT(api->ecc_error_log_clear,
+		 "ecc_error_log_clear must be implemented by driver");
+
 	api->ecc_error_log_clear(dev);
 }
 
 /**
  * @brief Get Parity Error Log
  *
- * Read value of Parity Error Log
+ * Read value of Parity Error Log.
  *
  * @param dev Pointer to the device structure
- * @return Parity Error Log value
+ * @param value Pointer to the parity Error Log value
+ *
+ * @return 0 on success, error code otherwise
  */
-static inline uint64_t edac_parity_error_log_get(const struct device *dev)
+static inline int edac_parity_error_log_get(const struct device *dev,
+					    uint64_t *value)
 {
 	const struct edac_driver_api *api =
 		(const struct edac_driver_api *)dev->api;
 
-	return api->parity_error_log_get(dev);
+	__ASSERT(api->parity_error_log_get,
+		 "parity_error_log_get must be implemented by driver");
+
+	return api->parity_error_log_get(dev, value);
 }
 
 /**
  * @brief Clear Parity Error Log
  *
- * Clear value of Parity Error Log
+ * Clear value of Parity Error Log.
  *
  * @param dev Pointer to the device structure
  */
@@ -270,6 +306,9 @@ static inline void edac_parity_error_log_clear(const struct device *dev)
 {
 	const struct edac_driver_api *api =
 		(const struct edac_driver_api *)dev->api;
+
+	__ASSERT(api->parity_error_log_clear,
+		 "parity_error_log_clear must be implemented by driver");
 
 	api->parity_error_log_clear(dev);
 }
@@ -285,6 +324,9 @@ static inline unsigned int edac_errors_cor_get(const struct device *dev)
 	const struct edac_driver_api *api =
 		(const struct edac_driver_api *)dev->api;
 
+	__ASSERT(api->errors_cor_get,
+		 "errors_cor_get must be implemented by driver");
+
 	return api->errors_cor_get(dev);
 }
 
@@ -299,6 +341,9 @@ static inline unsigned int edac_errors_uc_get(const struct device *dev)
 	const struct edac_driver_api *api =
 		(const struct edac_driver_api *)dev->api;
 
+	__ASSERT(api->errors_uc_get,
+		 "errors_uc_get must be implemented by driver");
+
 	return api->errors_uc_get(dev);
 }
 
@@ -309,12 +354,16 @@ static inline unsigned int edac_errors_uc_get(const struct device *dev)
  *
  * @param dev EDAC driver device to install callback
  * @param cb Callback function pointer
+ *
  * @return 0 Success, nonzero if an error occurred
  */
 static inline int edac_notify_callback_set(const struct device *dev,
 					   edac_notify_callback_f cb)
 {
 	const struct edac_driver_api *api = dev->api;
+
+	__ASSERT(api->notify_cb_set,
+		 "notify_cb_set must be implemented by driver");
 
 	return api->notify_cb_set(dev, cb);
 }
