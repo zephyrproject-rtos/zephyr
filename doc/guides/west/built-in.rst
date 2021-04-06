@@ -204,10 +204,10 @@ with the ``--rebase`` option or without it:
 .. code-block::
 
    # without --rebase, e.g. "west update":
-   git submodule update init --checkout --recursive
+   git submodule update --init --checkout --recursive
 
    # with --rebase, e.g. "west update --rebase":
-   git submodule update init --rebase --recursive
+   git submodule update --init --rebase --recursive
 
 Otherwise, the project has ``submodules: <list-of-submodules>``. In this
 case, west runs one of the following in the project repository for each
@@ -217,10 +217,10 @@ with the ``--rebase`` option or without it:
 .. code-block::
 
    # without --rebase, e.g. "west update":
-   git submodule update init --checkout --recursive <submodule-path>
+   git submodule update --init --checkout --recursive <submodule-path>
 
    # with --rebase, e.g. "west update --rebase":
-   git submodule update init --rebase --recursive <submodule-path>
+   git submodule update --init --rebase --recursive <submodule-path>
 
 .. _west-built-in-misc:
 
