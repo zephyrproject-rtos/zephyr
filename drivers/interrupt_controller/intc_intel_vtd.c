@@ -346,7 +346,8 @@ static uint32_t vtd_ictl_remap_msi(const struct device *dev,
 static int vtd_ictl_remap(const struct device *dev,
 			  uint8_t irte_idx,
 			  uint16_t vector,
-			  uint32_t flags)
+			  uint32_t flags,
+			  uint16_t src_id)
 {
 	struct vtd_ictl_data *data = dev->data;
 	union vtd_irte irte = { 0 };
@@ -360,6 +361,11 @@ static int vtd_ictl_remap(const struct device *dev,
 	} else {
 		/* As for IOAPIC: let's mask all possible IDs */
 		irte.bits.dst_id = 0xFF << 8;
+	}
+
+	if (src_id != USHRT_MAX) {
+		irte.bits.src_validation_type = 1;
+		irte.bits.src_id = src_id;
 	}
 
 	delivery_mode = (flags & IOAPIC_DELIVERY_MODE_MASK);
