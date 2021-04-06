@@ -174,8 +174,8 @@ static int cmd_discover(const struct shell *shell, size_t argc, char *argv[])
 	}
 
 	discover_params.func = discover_func;
-	discover_params.start_handle = 0x0001;
-	discover_params.end_handle = 0xffff;
+	discover_params.start_handle = BT_ATT_FIRST_ATTTRIBUTE_HANDLE;
+	discover_params.end_handle = BT_ATT_LAST_ATTTRIBUTE_HANDLE;
 
 	if (argc > 1) {
 		/* Only set the UUID if the value is valid (non zero) */
@@ -320,8 +320,8 @@ static int cmd_read_uuid(const struct shell *shell, size_t argc, char *argv[])
 
 	read_params.func = read_func;
 	read_params.handle_count = 0;
-	read_params.by_uuid.start_handle = 0x0001;
-	read_params.by_uuid.end_handle = 0xffff;
+	read_params.by_uuid.start_handle = BT_ATT_FIRST_ATTTRIBUTE_HANDLE;
+	read_params.by_uuid.end_handle = BT_ATT_LAST_ATTTRIBUTE_HANDLE;
 
 	if (argc > 1) {
 		uuid.val = strtoul(argv[1], NULL, 16);
