@@ -207,9 +207,11 @@ static int inject_set_param1(const struct device *dev, uint64_t addr)
 	return 0;
 }
 
-static uint64_t inject_get_param1(const struct device *dev)
+static int inject_get_param1(const struct device *dev, uint64_t *value)
 {
-	return ibecc_read_reg64(dev, IBECC_INJ_ADDR_BASE);
+	*value = ibecc_read_reg64(dev, IBECC_INJ_ADDR_BASE);
+
+	return 0;
 }
 
 static int inject_set_param2(const struct device *dev, uint64_t mask)
@@ -223,9 +225,11 @@ static int inject_set_param2(const struct device *dev, uint64_t mask)
 	return 0;
 }
 
-static uint64_t inject_get_param2(const struct device *dev)
+static int inject_get_param2(const struct device *dev, uint64_t *value)
 {
-	return ibecc_read_reg64(dev, IBECC_INJ_ADDR_MASK);
+	*value = ibecc_read_reg64(dev, IBECC_INJ_ADDR_MASK);
+
+	return 0;
 }
 
 static int inject_set_error_type(const struct device *dev,
@@ -238,11 +242,14 @@ static int inject_set_error_type(const struct device *dev,
 	return 0;
 }
 
-static uint32_t inject_get_error_type(const struct device *dev)
+static int inject_get_error_type(const struct device *dev,
+				      uint32_t *error_type)
 {
 	struct ibecc_data *data = dev->data;
 
-	return data->error_type;
+	*error_type = data->error_type;
+
+	return 0;
 }
 
 static int inject_error_trigger(const struct device *dev)
@@ -268,9 +275,11 @@ static int inject_error_trigger(const struct device *dev)
 }
 #endif /* CONFIG_EDAC_ERROR_INJECT */
 
-static uint64_t ecc_error_log_get(const struct device *dev)
+static int ecc_error_log_get(const struct device *dev, uint64_t *value)
 {
-	return ibecc_read_reg64(dev, IBECC_ECC_ERROR_LOG);
+	*value = ibecc_read_reg64(dev, IBECC_ECC_ERROR_LOG);
+
+	return 0;
 }
 
 static void ecc_error_log_clear(const struct device *dev)
@@ -280,9 +289,11 @@ static void ecc_error_log_clear(const struct device *dev)
 			  ECC_ERROR_MERRSTS | ECC_ERROR_CERRSTS);
 }
 
-static uint64_t parity_error_log_get(const struct device *dev)
+static int parity_error_log_get(const struct device *dev, uint64_t *value)
 {
-	return ibecc_read_reg64(dev, IBECC_PARITY_ERROR_LOG);
+	*value = ibecc_read_reg64(dev, IBECC_PARITY_ERROR_LOG);
+
+	return 0;
 }
 
 static void parity_error_log_clear(const struct device *dev)
@@ -485,7 +496,10 @@ bool z_x86_do_kernel_nmi(const z_arch_esf_t *esf)
 		goto out;
 	}
 
-	ecclog = edac_ecc_error_log_get(dev);
+	if (edac_ecc_error_log_get(dev, &ecclog)) {
+		goto out;
+	}
+
 	parse_ecclog(dev, ecclog, &error_data);
 
 	if (data->cb) {
