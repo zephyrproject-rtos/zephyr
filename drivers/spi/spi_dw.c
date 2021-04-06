@@ -342,7 +342,7 @@ static int transceive(const struct device *dev,
 	uint32_t reg_data;
 	int ret;
 
-	spi_context_lock(&spi->ctx, asynchronous, signal);
+	spi_context_lock(&spi->ctx, asynchronous, signal, config);
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	if (device_busy_check(dev) != (-EBUSY)) {

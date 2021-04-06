@@ -575,7 +575,7 @@ static int transceive(const struct device *dev,
 	}
 #endif
 
-	spi_context_lock(&data->ctx, asynchronous, signal);
+	spi_context_lock(&data->ctx, asynchronous, signal, config);
 
 	ret = spi_stm32_configure(dev, config);
 	if (ret) {
@@ -671,7 +671,7 @@ static int transceive_dma(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	spi_context_lock(&data->ctx, asynchronous, signal);
+	spi_context_lock(&data->ctx, asynchronous, signal, config);
 
 	k_sem_reset(&data->status_sem);
 

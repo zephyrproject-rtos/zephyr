@@ -26,6 +26,7 @@ enum spi_ctx_runtime_op_mode {
 
 struct spi_context {
 	const struct spi_config *config;
+	const struct spi_config *owner;
 
 	struct k_sem lock;
 	struct k_sem sync;
@@ -69,9 +70,17 @@ static inline bool spi_context_is_slave(struct spi_context *ctx)
 
 static inline void spi_context_lock(struct spi_context *ctx,
 				    bool asynchronous,
-				    struct k_poll_signal *signal)
+				    struct k_poll_signal *signal,
+				    const struct spi_config *spi_cfg)
 {
+	if ((spi_cfg->operation & SPI_LOCK_ON) &&
+		(k_sem_count_get(&ctx->lock) == 0) &&
+		(ctx->owner == spi_cfg)) {
+			return;
+	}
+
 	k_sem_take(&ctx->lock, K_FOREVER);
+	ctx->owner = spi_cfg;
 
 #ifdef CONFIG_SPI_ASYNC
 	ctx->asynchronous = asynchronous;
@@ -89,10 +98,14 @@ static inline void spi_context_release(struct spi_context *ctx, int status)
 
 #ifdef CONFIG_SPI_ASYNC
 	if (!ctx->asynchronous || (status < 0)) {
+		ctx->owner = NULL;
 		k_sem_give(&ctx->lock);
 	}
 #else
-	k_sem_give(&ctx->lock);
+	if (!(ctx->config->operation & SPI_LOCK_ON)) {
+		ctx->owner = NULL;
+		k_sem_give(&ctx->lock);
+	}
 #endif /* CONFIG_SPI_ASYNC */
 }
 
@@ -138,6 +151,7 @@ static inline void spi_context_complete(struct spi_context *ctx, int status)
 		}
 
 		if (!(ctx->config->operation & SPI_LOCK_ON)) {
+			ctx->owner = NULL;
 			k_sem_give(&ctx->lock);
 		}
 	}
@@ -205,6 +219,7 @@ static inline void spi_context_unlock_unconditionally(struct spi_context *ctx)
 	_spi_context_cs_control(ctx, false, true);
 
 	if (!k_sem_count_get(&ctx->lock)) {
+		ctx->owner = NULL;
 		k_sem_give(&ctx->lock);
 	}
 }

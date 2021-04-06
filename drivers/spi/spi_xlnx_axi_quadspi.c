@@ -321,7 +321,7 @@ static int xlnx_quadspi_transceive(const struct device *dev,
 	struct spi_context *ctx = &data->ctx;
 	int ret;
 
-	spi_context_lock(ctx, async, signal);
+	spi_context_lock(ctx, async, signal, spi_cfg);
 
 	ret = xlnx_quadspi_configure(dev, spi_cfg);
 	if (ret) {
