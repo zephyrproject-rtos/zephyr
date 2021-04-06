@@ -120,8 +120,11 @@ static void IoApicRedUpdateLo(unsigned int irq, uint32_t value,
 	!defined(CONFIG_INTEL_VTD_ICTL_XAPIC_PASSTHROUGH)
 
 #include <drivers/interrupt_controller/intel_vtd.h>
+#include <arch/x86/acpi.h>
 
 static const struct device *vtd;
+static uint16_t ioapic_id;
+
 
 static bool get_vtd(void)
 {
@@ -136,6 +139,8 @@ static bool get_vtd(void)
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT DRV_COMPAT_BAK
 #undef DRV_COMPAT_BAK
+
+	ioapic_id = z_acpi_get_dev_id_from_dmar(ACPI_DRHD_DEV_SCOPE_IOAPIC);
 
 	return vtd == NULL ? false : true;
 }
@@ -400,7 +405,7 @@ void z_ioapic_irq_set(unsigned int irq, unsigned int vector, uint32_t flags)
 			(flags & IOAPIC_POLARITY_MASK);
 		ioApicRedSetLo(irq, rteValue);
 
-		vtd_remap(vtd, irte_idx, vector, flags);
+		vtd_remap(vtd, irte_idx, vector, flags, ioapic_id);
 	} else {
 no_vtd:
 #else
