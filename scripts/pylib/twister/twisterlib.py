@@ -2893,7 +2893,7 @@ class TestSuite(DisablePyTestCollectionMixin):
 
             logger.debug("Reading test case configuration files under %s..." % root)
 
-            for dirpath, dirnames, filenames in os.walk(root, topdown=True):
+            for dirpath, _, filenames in os.walk(root, topdown=True):
                 if self.SAMPLE_FILENAME in filenames:
                     filename = self.SAMPLE_FILENAME
                 elif self.TESTCASE_FILENAME in filenames:
@@ -2903,7 +2903,6 @@ class TestSuite(DisablePyTestCollectionMixin):
 
                 logger.debug("Found possible test case in " + dirpath)
 
-                dirnames[:] = []
                 tc_path = os.path.join(dirpath, filename)
 
                 try:
