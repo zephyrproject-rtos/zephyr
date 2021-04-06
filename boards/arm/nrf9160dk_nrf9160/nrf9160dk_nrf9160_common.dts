@@ -214,8 +214,8 @@
 			/* Secure image memory */
 		};
 
-		sram0_bsd: image_bsd@20010000 {
-			/* BSD (shared) memory */
+		sram0_modem: image_modem@20016000 {
+			/* Modem (shared) memory */
 		};
 
 		sram0_ns: image_ns@20020000 {
