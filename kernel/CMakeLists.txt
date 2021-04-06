@@ -27,10 +27,15 @@ list(APPEND kernel_files
   stack.c
   system_work_q.c
   work.c
-  smp.c
   sched.c
   condvar.c
   )
+
+if(CONFIG_SMP)
+list(APPEND kernel_files
+     smp.c)
+endif()
+
 endif()
 
 if(CONFIG_XIP)
