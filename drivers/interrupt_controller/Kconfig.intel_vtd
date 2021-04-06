@@ -22,6 +22,11 @@ config INTEL_VTD_ICTL_XAPIC_PASSTHROUGH
 	help
 	  If XAPIC mode is enabled, it will avoid remapping all interrupts.
 
+config INTEL_VTD_ICTL_NO_SRC_ID_CHECK
+	bool "Never check the source id"
+	help
+	  Disable the source id check in IRTE.
+
 config INTEL_VTD_ICTL_INIT_PRIORITY
 	int "Initialization priority"
 	default 40
