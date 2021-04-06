@@ -119,4 +119,13 @@ GEN_ABSOLUTE_SYM(___callee_saved_stack_t_SIZEOF, sizeof(_callee_saved_stack_t));
 
 GEN_ABSOLUTE_SYM(_K_THREAD_NO_FLOAT_SIZEOF, sizeof(struct k_thread));
 
+GEN_ABSOLUTE_SYM(ARC_REGSZ, sizeof(uintptr_t));
+
+#ifdef CONFIG_64BIT
+GEN_ABSOLUTE_SYM(ARC_REGSHIFT, 3);
+#else
+GEN_ABSOLUTE_SYM(ARC_REGSHIFT, 2);
+#endif
+
+
 GEN_ABS_SYM_END
