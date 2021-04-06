@@ -156,13 +156,17 @@ image. The Secure image can be built using either Zephyr or
 `Trusted Firmware M`_ (TF-M). Non-Secure firmware images are always built
 using Zephyr. The two alternatives are described below.
 
+.. note::
+
+   By default the Secure image for nRF9160 is built using TF-M.
+
 Building the Secure firmware using Zephyr
 -----------------------------------------
 
 The process requires the following steps:
 
 1. Build the Secure Zephyr application using ``-DBOARD=nrf9160dk_nrf9160`` and
-   ``CONFIG_TRUSTED_EXECUTION_SECURE=y`` in the the application project configuration file.
+   ``CONFIG_TRUSTED_EXECUTION_SECURE=y`` in the application project configuration file.
 2. Build the Non-Secure Zephyr application using ``-DBOARD=nrf9160dk_nrf9160ns``.
 3. Merge the two binaries together.
 
@@ -172,9 +176,11 @@ Building the Secure firmware with TF-M
 The process to build the Secure firmware image using TF-M and the Non-Secure
 firmware image using Zephyr requires the following action:
 
-* Build the Non-Secure Zephyr application
-   using ``-DBOARD=nrf9160dk_nrf9160ns`` and
-   ``CONFIG_BUILD_WITH_TFM=y`` in the application project configuration file.
+1. Build the Non-Secure Zephyr application
+   using ``-DBOARD=nrf9160dk_nrf9160ns``.
+   To invoke the building of TF-M the Zephyr build system requires the
+   Kconfig option ``BUILD_WITH_TFM`` to be enabled, which is done by
+   default when building Zephyr as a Non-Secure application.
    The Zephyr build system will perform the following steps automatically:
 
       * Build the Non-Secure firmware image as a regular Zephyr application
