@@ -42,6 +42,8 @@ static inline struct ll_scan_aux_set *aux_acquire(void);
 static inline void aux_release(struct ll_scan_aux_set *aux);
 static inline uint8_t aux_handle_get(struct ll_scan_aux_set *aux);
 static inline struct ll_sync_set *sync_create_get(struct ll_scan_set *scan);
+static void last_disabled_cb(void *param);
+static void done_disabled_cb(void *param);
 static void flush(struct ll_scan_aux_set *aux, struct node_rx_hdr *rx);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 		      uint16_t lazy, uint8_t force, void *param);
@@ -338,7 +340,14 @@ ull_scan_aux_rx_flush:
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 
 	if (aux) {
-		flush(aux, rx);
+		struct ull_hdr *hdr;
+
+		/* Setup the disabled callback to flush the auxiliary PDUs */
+		hdr = &aux->ull;
+		LL_ASSERT(!hdr->disabled_cb);
+
+		hdr->disabled_param = rx;
+		hdr->disabled_cb = last_disabled_cb;
 
 		return;
 	}
@@ -351,8 +360,14 @@ void ull_scan_aux_done(struct node_rx_event_done *done)
 {
 	struct lll_scan_aux *lll = (void *)HDR_ULL2LLL(done->param);
 	struct ll_scan_aux_set *aux = (void *)HDR_LLL2EVT(lll);
+	struct ull_hdr *hdr;
 
-	flush(aux, NULL);
+	/* Setup the disabled callback to flush the auxiliary PDUs */
+	hdr = &aux->ull;
+	LL_ASSERT(!hdr->disabled_cb);
+
+	hdr->disabled_param = aux;
+	hdr->disabled_cb = done_disabled_cb;
 }
 
 uint8_t ull_scan_aux_lll_handle_get(struct lll_scan_aux *lll)
@@ -393,6 +408,22 @@ static inline struct ll_sync_set *sync_create_get(struct ll_scan_set *scan)
 #else /* !CONFIG_BT_CTLR_SYNC_PERIODIC */
 	return NULL;
 #endif /* !CONFIG_BT_CTLR_SYNC_PERIODIC */
+}
+
+static void last_disabled_cb(void *param)
+{
+	struct ll_scan_aux_set *aux;
+	struct node_rx_hdr *rx;
+
+	rx = param;
+	aux = (void *)HDR_LLL2EVT(rx->rx_ftr.param);
+
+	flush(aux, rx);
+}
+
+static void done_disabled_cb(void *param)
+{
+	flush(param, NULL);
 }
 
 static void flush(struct ll_scan_aux_set *aux, struct node_rx_hdr *rx)
