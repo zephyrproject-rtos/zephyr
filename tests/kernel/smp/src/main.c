@@ -624,6 +624,8 @@ void test_smp_ipi(void)
 	}
 }
 
+extern void test_smp_restart(void);
+
 void test_main(void)
 {
 	/* Sleep a bit to guarantee that both CPUs enter an idle
@@ -641,7 +643,8 @@ void test_main(void)
 			 ztest_unit_test(test_sleep_threads),
 			 ztest_unit_test(test_wakeup_threads),
 			 ztest_unit_test(test_smp_ipi),
-			 ztest_unit_test(test_get_cpu)
+			 ztest_unit_test(test_get_cpu),
+			 ztest_unit_test(test_smp_restart)
 			 );
 	ztest_run_test_suite(smp);
 }
