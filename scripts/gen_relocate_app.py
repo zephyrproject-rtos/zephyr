@@ -257,9 +257,13 @@ def string_create_helper(region, memory_type,
                 linker_string += LINKER_SECTION_SEQ_MPU.format(memory_type.lower(), region, memory_type.upper(),
                                                                region.upper(), tmp, load_address_string, align_size)
             else:
-                linker_string += LINKER_SECTION_SEQ.format(memory_type.lower(), region, memory_type.upper(),
-                                                           region.upper(), tmp, load_address_string)
-
+                if memory_type == 'SRAM' and region == 'text':
+                    align_size = 0
+                    linker_string += LINKER_SECTION_SEQ_MPU.format(memory_type.lower(), region, memory_type.upper(),
+                                                                   region.upper(), tmp, load_address_string, align_size)
+                else:
+                    linker_string += LINKER_SECTION_SEQ.format(memory_type.lower(), region, memory_type.upper(),
+                                                               region.upper(), tmp, load_address_string)
             if load_address_in_flash:
                 linker_string += SECTION_LOAD_MEMORY_SEQ.format(memory_type.lower(), region, memory_type.upper(),
                                                                 region.upper())
