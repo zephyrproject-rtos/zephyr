@@ -1,0 +1,31 @@
+tests:
+  tracing.transport.uart.async.ctf:
+    platform_allow: qemu_x86
+    extra_args: CONF_FILE="prj_uart.conf"
+    extra_configs:
+      - CONFIG_TRACING_CTF=y
+  tracing.transport.uart.async.test:
+    platform_allow: qemu_x86
+    extra_args: CONF_FILE="prj_uart.conf"
+    extra_configs:
+      - CONFIG_TRACING_TEST=y
+  tracing.transport.uart.sync.test:
+    platform_allow: qemu_x86
+    extra_args: CONF_FILE="prj_uart.conf"
+    extra_configs:
+      - CONFIG_TRACING_TEST=y
+      - CONFIG_TRACING_SYNC=y
+      - CONFIG_TRACING_ASYNC=n
+  tracing.format.cpu_stats:
+    platform_allow: qemu_x86
+    extra_configs:
+      - CONFIG_ZTEST=y
+      - CONFIG_TRACING_CPU_STATS_LOG=y
+      - CONFIG_TRACING=y
+      - CONFIG_TRACING_CPU_STATS=y
+  tracing.transport.uart.ctf:
+    platform_allow: qemu_x86
+    extra_args: CONF_FILE="prj_uart.conf"
+    extra_configs:
+      - CONFIG_TRACING_CTF=y
+    harness: pytest
