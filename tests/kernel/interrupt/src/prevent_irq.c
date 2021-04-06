@@ -32,7 +32,7 @@ static void timer_handler(struct k_timer *timer)
  */
 void test_prevent_interruption(void)
 {
-	int key;
+	unsigned int key;
 
 	printk("locking interrupts\n");
 	key = irq_lock();
