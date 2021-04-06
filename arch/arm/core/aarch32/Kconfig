@@ -221,6 +221,7 @@ choice
 
 config FP_HARDABI
 	bool "Floating point Hard ABI"
+	depends on !BUILD_WITH_TFM
 	help
 	  This option selects the Floating point ABI in which hardware floating
 	  point instructions are generated and uses FPU-specific calling
