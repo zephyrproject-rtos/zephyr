@@ -8,6 +8,23 @@ if BOARD_NRF9160DK_NRF9160 || BOARD_NRF9160DK_NRF9160NS
 config BOARD
 	default "nrf9160dk_nrf9160"
 
+# By default, if we build for a Non-Secure version of the board,
+# force building with TF-M as the Secure Execution Environment.
+
+config BUILD_WITH_TFM
+	default y if BOARD_NRF9160DK_NRF9160NS
+
+if BUILD_WITH_TFM
+
+# By default, if we build with TF-M, instruct build system to
+# flash the combined TF-M (Secure) & Zephyr (Non Secure) image
+# (when building in-tree tests).
+config TFM_FLASH_MERGED_BINARY
+	bool
+	default y if TEST_ARM_CORTEX_M
+
+endif # BUILD_WITH_TFM
+
 # For the secure version of the board the firmware is linked at the beginning
 # of the flash, or into the code-partition defined in DT if it is intended to
 # be loaded by MCUboot. If the secure firmware is to be combined with a non-
