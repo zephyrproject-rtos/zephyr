@@ -161,6 +161,7 @@ void pcie_conf_write(pcie_bdf_t bdf, unsigned int reg, uint32_t data)
 #ifdef CONFIG_INTEL_VTD_ICTL
 
 #include <drivers/interrupt_controller/intel_vtd.h>
+#include <arch/x86/acpi.h>
 
 static const struct device *vtd;
 
@@ -290,11 +291,18 @@ bool arch_pcie_msi_vector_connect(msi_vector_t *vector,
 {
 #ifdef CONFIG_INTEL_VTD_ICTL
 	if (vector->arch.remap) {
+		union acpi_dmar_id id;
+
 		if (!get_vtd()) {
 			return false;
 		}
 
-		vtd_remap(vtd, vector->arch.irte, vector->arch.vector, flags);
+		id.bits.bus = PCIE_BDF_TO_BUS(vector->bdf);
+		id.bits.device = PCIE_BDF_TO_DEV(vector->bdf);
+		id.bits.function = PCIE_BDF_TO_FUNC(vector->bdf);
+
+		vtd_remap(vtd, vector->arch.irte, vector->arch.vector,
+			  flags, id.raw);
 	}
 #endif /* CONFIG_INTEL_VTD_ICTL */
 
