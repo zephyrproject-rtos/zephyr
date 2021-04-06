@@ -363,7 +363,8 @@ static int vtd_ictl_remap(const struct device *dev,
 		irte.bits.dst_id = 0xFF << 8;
 	}
 
-	if (src_id != USHRT_MAX) {
+	if (src_id != USHRT_MAX &&
+	    !IS_ENABLED(CONFIG_INTEL_VTD_ICTL_NO_SRC_ID_CHECK)) {
 		irte.bits.src_validation_type = 1;
 		irte.bits.src_id = src_id;
 	}
