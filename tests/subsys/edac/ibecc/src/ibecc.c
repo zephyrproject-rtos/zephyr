@@ -52,19 +52,22 @@ static void callback(const struct device *d, void *data)
 
 static void test_ibecc_api(void)
 {
-	uint64_t ret;
+	uint64_t value;
+	int ret;
 
 	/* Error log API */
 
-	ret = edac_ecc_error_log_get(dev);
-	zassert_equal(ret, 0, "Error log not zero");
+	ret = edac_ecc_error_log_get(dev, &value);
+	zassert_equal(ret, 0, "edac_ecc_error_log_get failed");
 
-	edac_ecc_error_log_clear(dev);
+	ret = edac_ecc_error_log_clear(dev);
+	zassert_equal(ret, 0, "edac_ecc_error_log_clear failed");
 
-	ret = edac_parity_error_log_get(dev);
-	zassert_equal(ret, 0, "Error log not zero");
+	ret = edac_parity_error_log_get(dev, &value);
+	zassert_equal(ret, 0, "edac_parity_error_log_get failed");
 
-	edac_parity_error_log_clear(dev);
+	ret = edac_parity_error_log_clear(dev);
+	zassert_equal(ret, 0, "edac_parity_error_log_clear failed");
 
 	/* Error stat API */
 
@@ -94,7 +97,8 @@ static void test_ibecc_error_inject_api(void)
 	ret = edac_inject_set_param1(dev, UINT64_MAX);
 	zassert_not_equal(ret, 0, "Error setting invalid param1");
 
-	val = edac_inject_get_param1(dev);
+	ret = edac_inject_get_param1(dev, &val);
+	zassert_equal(ret, 0, "Error getting param1");
 	zassert_equal(val, TEST_ADDRESS1, "Read back value differs");
 
 	/* Set correct value of param2 */
@@ -105,7 +109,8 @@ static void test_ibecc_error_inject_api(void)
 	ret = edac_inject_set_param2(dev, UINT64_MAX);
 	zassert_not_equal(ret, 0, "Error setting invalid param1");
 
-	val = edac_inject_get_param2(dev);
+	ret = edac_inject_get_param2(dev, &val);
+	zassert_equal(ret, 0, "Error getting param2");
 	zassert_equal(val, TEST_ADDRESS_MASK, "Read back value differs");
 
 	/* Clearing parameters */
@@ -113,13 +118,15 @@ static void test_ibecc_error_inject_api(void)
 	ret = edac_inject_set_param1(dev, 0);
 	zassert_equal(ret, 0, "Error setting inject address");
 
-	val = edac_inject_get_param1(dev);
+	ret = edac_inject_get_param1(dev, &val);
+	zassert_equal(ret, 0, "Error getting param1");
 	zassert_equal(val, 0, "Read back value differs");
 
 	ret = edac_inject_set_param2(dev, 0);
 	zassert_equal(ret, 0, "Error setting inject address mask");
 
-	val = edac_inject_get_param2(dev);
+	ret = edac_inject_get_param2(dev, &val);
+	zassert_equal(ret, 0, "Error getting param2");
 	zassert_equal(val, 0, "Read back value differs");
 }
 #else
@@ -149,9 +156,9 @@ static void test_inject(uint64_t addr, uint64_t mask, uint8_t type)
 	ret = edac_inject_set_error_type(dev, type);
 	zassert_equal(ret, 0, "Error setting inject error type");
 
-	test_value = edac_inject_get_error_type(dev);
-	zassert_equal(test_value, type,
-		      "Read back value differs");
+	ret = edac_inject_get_error_type(dev, &test_value);
+	zassert_equal(ret, 0, "Error getting error_type");
+	zassert_equal(test_value, type, "Read back value differs");
 
 	ret = edac_inject_error_trigger(dev);
 	zassert_equal(ret, 0, "Error setting ctrl");
@@ -182,7 +189,6 @@ static void test_inject(uint64_t addr, uint64_t mask, uint8_t type)
 		      num_int);
 
 	TC_PRINT("Interrupt %d\n", num_int);
-	TC_PRINT("ECC Error Log 0x%llx\n", edac_ecc_error_log_get(dev));
 	TC_PRINT("Error: type %u, address 0x%llx, syndrome %u\n",
 		 error_type, error_address, error_syndrome);
 }
