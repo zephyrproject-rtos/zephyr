@@ -15,6 +15,7 @@
 #include <linker/sections.h>
 #include <arch/cpu.h>
 #include <swap_macros.h>
+#include <arch/arc/asm-compat/assembler.h>
 
 GDATA(z_interrupt_stacks)
 GDATA(z_main_stack)
@@ -65,11 +66,11 @@ SECTION_FUNC(TEXT,__start)
 	/* set the vector table base early,
 	 * so that exception vectors can be handled.
 	 */
-	mov_s r0, _VectorTable
+	MOVR r0, _VectorTable
 #ifdef CONFIG_ARC_SECURE_FIRMWARE
 	sr r0, [_ARC_V2_IRQ_VECT_BASE_S]
 #else
-	sr r0, [_ARC_V2_IRQ_VECT_BASE]
+	SRR r0, [_ARC_V2_IRQ_VECT_BASE]
 #endif
 
 	lr r0, [_ARC_V2_STATUS32]
