@@ -383,3 +383,55 @@ z_acpi_get_dev_scope_paths(struct acpi_dmar_dev_scope *dev_scope, int *n)
 
 	return dev_scope->path;
 }
+
+uint16_t z_acpi_get_dev_id_from_dmar(uint8_t dev_scope_type)
+{
+	struct acpi_drhd *drhd;
+	int n_drhd;
+
+	find_dmar();
+
+	if (dmar == NULL) {
+		return USHRT_MAX;
+	}
+
+	drhd = z_acpi_find_drhds(&n_drhd);
+
+	for (; n_drhd > 0; n_drhd--) {
+		struct acpi_dmar_dev_scope *dev_scope;
+		int n_ds;
+
+		dev_scope = z_acpi_get_drhd_dev_scopes(drhd, &n_ds);
+		for (; n_ds > 0; n_ds--) {
+			if (dev_scope->type == dev_scope_type) {
+				struct acpi_dmar_dev_path *path;
+				int n_path;
+
+				path = z_acpi_get_dev_scope_paths(dev_scope,
+								  &n_path);
+				if (n_path > 0) {
+					union acpi_dmar_id id;
+
+					/* Let's over simplify for now:
+					 * we don't look for secondary bus
+					 * and extra paths. We just stop here.
+					 */
+
+					id.bits.bus = dev_scope->start_bus_num;
+					id.bits.device = path->device;
+					id.bits.function = path->function;
+
+					return id.raw;
+				}
+			}
+
+			dev_scope = (struct acpi_dmar_dev_scope *)(
+				POINTER_TO_UINT(dev_scope) + dev_scope->length);
+		}
+
+		drhd = (struct acpi_drhd *)(POINTER_TO_UINT(drhd) +
+					    drhd->entry.length);
+	}
+
+	return USHRT_MAX;
+}
