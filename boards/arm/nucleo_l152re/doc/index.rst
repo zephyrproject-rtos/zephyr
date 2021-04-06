@@ -88,6 +88,8 @@ The Zephyr nucleo_l152re board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | WATCHDOG  | on-chip    | independent watchdog                |
 +-----------+------------+-------------------------------------+
+| FLASH     | on-chip    | flash memory                        |
++-----------+------------+-------------------------------------+
 | COUNTER   | on-chip    | rtc                                 |
 +-----------+------------+-------------------------------------+
 | ADC       | on-chip    | ADC Controller                      |
