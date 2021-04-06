@@ -10,7 +10,6 @@
 #include <kswap.h>
 #include <kernel_internal.h>
 
-#ifdef CONFIG_SMP
 static atomic_t global_lock;
 static atomic_t start_flag;
 
@@ -104,5 +103,3 @@ bool z_smp_cpu_mobile(void)
 	arch_irq_unlock(k);
 	return !pinned;
 }
-
-#endif /* CONFIG_SMP */
