@@ -855,6 +855,7 @@ static void ticker_op_ext_stop_cb(uint32_t status, void *param)
 		uint32_t ret;
 
 		LL_ASSERT(!hdr->disabled_cb);
+
 		hdr->disabled_param = mfy.param;
 		hdr->disabled_cb = ext_disabled_cb;
 
