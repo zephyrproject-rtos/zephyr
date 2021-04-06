@@ -782,6 +782,10 @@ static inline int net_if_set_link_addr(struct net_if *iface,
  */
 static inline uint16_t net_if_get_mtu(struct net_if *iface)
 {
+	if (iface == NULL) {
+		return 0U;
+	}
+
 	return iface->if_dev->mtu;
 }
 
@@ -794,6 +798,10 @@ static inline uint16_t net_if_get_mtu(struct net_if *iface)
 static inline void net_if_set_mtu(struct net_if *iface,
 				  uint16_t mtu)
 {
+	if (iface == NULL) {
+		return;
+	}
+
 	iface->if_dev->mtu = mtu;
 }
 
