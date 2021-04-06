@@ -20,6 +20,7 @@
 #include <linker/sections.h>
 #include <arch/cpu.h>
 #include <swap_macros.h>
+#include <arch/arc/asm-compat/assembler.h>
 
 GTEXT(_rirq_enter)
 GTEXT(_rirq_exit)
@@ -216,11 +217,11 @@ SECTION_FUNC(TEXT, _rirq_enter)
 	_check_and_inc_int_nest_counter r0, r1
 
 	bne.d rirq_nest
-	mov_s r0, sp
+	MOVR r0, sp
 
 	_get_curr_cpu_irq_stack sp
 rirq_nest:
-	push_s r0
+	PUSHR r0
 
 	seti
 	j _isr_demux
@@ -236,7 +237,7 @@ rirq_nest:
 SECTION_FUNC(TEXT, _rirq_exit)
 	clri
 
-	pop sp
+	POPR sp
 
 	_dec_int_nest_counter r0, r1
 
@@ -251,7 +252,7 @@ SECTION_FUNC(TEXT, _rirq_exit)
 	 */
 	_get_next_switch_handle
 
-	cmp r0, r2
+	CMPR r0, r2
 	beq _rirq_no_switch
 
 #ifdef CONFIG_ARC_SECURE_FIRMWARE
@@ -266,7 +267,7 @@ SECTION_FUNC(TEXT, _rirq_exit)
 	st _CAUSE_RIRQ, [r2, _thread_offset_to_relinquish_cause]
 
 	/* mov new thread (r0) to r2 */
-	mov r2, r0
+	MOVR r2, r0
 
 /* _rirq_newthread_switch required by exception handling */
 .align 4
@@ -295,11 +296,11 @@ _rirq_switch_from_coop:
 	 */
 
 	/* carve fake stack */
-	sub sp, sp, ___isf_t_pc_OFFSET
+	SUBR sp, sp, ___isf_t_pc_OFFSET
 
 
 	/* reset zero-overhead loops */
-	st 0, [sp, ___isf_t_lp_end_OFFSET]
+	STR 0, sp, ___isf_t_lp_end_OFFSET
 
 	/*
 	 * r13 is part of both the callee and caller-saved register sets because
@@ -307,14 +308,14 @@ _rirq_switch_from_coop:
 	 * IRQ prologue. r13 thus has to be set to its correct value in the IRQ
 	 * stack frame.
 	 */
-	st_s r13, [sp, ___isf_t_r13_OFFSET]
+	STR r13, sp, ___isf_t_r13_OFFSET
 
 #ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
-	push_s blink
+	PUSHR blink
 
 	bl z_thread_mark_switched_in
 
-	pop_s blink
+	POPR blink
 #endif
 	/* stack now has the IRQ stack frame layout, pointing to sp */
 	/* rtie will pop the rest from the stack */
@@ -327,11 +328,11 @@ _rirq_switch_from_rirq:
 	_set_misc_regs_irq_switch_from_irq
 
 #ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
-	push_s blink
+	PUSHR blink
 
 	bl z_thread_mark_switched_in
 
-	pop_s blink
+	POPR blink
 #endif
 _rirq_no_switch:
 	rtie
