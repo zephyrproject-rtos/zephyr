@@ -3,7 +3,7 @@
 breathe>=4.23.0
 docutils>=0.16
 sphinx>=3.3.0,<3.4.0
-sphinx_rtd_theme==0.5.2
+sphinx_rtd_theme>=0.5.2,<1.0
 sphinx-tabs
 sphinxcontrib-svg2pdfconverter
 
