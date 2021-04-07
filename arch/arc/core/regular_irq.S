@@ -300,8 +300,10 @@ _rirq_switch_from_coop:
 	SUBR sp, sp, ___isf_t_pc_OFFSET
 
 
+#ifdef CONFIG_ARC_HAS_ZOL
 	/* reset zero-overhead loops */
 	STR 0, sp, ___isf_t_lp_end_OFFSET
+#endif /* CONFIG_ARC_HAS_ZOL */
 
 	/*
 	 * r13 is part of both the callee and caller-saved register sets because

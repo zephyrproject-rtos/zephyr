@@ -104,6 +104,18 @@ config FP_FPU_DA
 
 menu "ARC CPU Options"
 
+config ARC_HAS_ZOL
+	bool "Use Zero Delay hardware loops"
+	depends on ISA_ARCV2
+	default y
+	help
+	  ARCv2 CPUs have ZOL hardware loop mechanism which the ARCv3 ISA drops.
+	  Architecturally ZOL provides
+	  - LPcc instruction
+	  - LP_COUNT core reg
+	  - LP_START, LP_END aux regs
+	  Disabling this option removes usage of ZOL regs from code
+
 config NUM_IRQ_PRIO_LEVELS
 	int "Number of supported interrupt priority levels"
 	range 1 16
