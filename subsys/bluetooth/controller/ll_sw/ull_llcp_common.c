@@ -571,6 +571,7 @@ static void rp_comm_send_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		break;
 	case PROC_MIN_USED_CHANS:
 		/* No response */
+		rr_complete(conn);
 		ctx->state = RP_COMMON_STATE_IDLE;
 		break;
 	case PROC_TERMINATE:
