@@ -6,6 +6,7 @@ zephyr_sources_ifdef(CONFIG_USB_DC_SAM0  usb_dc_sam0.c)
 zephyr_sources_ifdef(CONFIG_USB_DC_SAM   usb_dc_sam.c)
 zephyr_sources_ifdef(CONFIG_USB_NRFX     usb_dc_nrfx.c)
 zephyr_sources_ifdef(CONFIG_USB_KINETIS  usb_dc_kinetis.c)
+zephyr_sources_ifdef(CONFIG_USB_USBIP    usb_dc_usbip.c)
 zephyr_sources_ifdef(CONFIG_USB_NATIVE_POSIX
 	usb_dc_native_posix.c
 	usb_dc_native_posix_adapt.c
