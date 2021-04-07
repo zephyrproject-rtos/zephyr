@@ -70,8 +70,8 @@ __subsystem struct edac_driver_api {
  * @param dev Pointer to the device structure
  * @param value First injection parameter
  *
- * @return -ENOTSUP if not supported
- * @return 0 on success, other error code otherwise
+ * @retval -ENOTSUP if not supported
+ * @retval 0 on success, other error code otherwise
  */
 static inline int edac_inject_set_param1(const struct device *dev,
 					 uint64_t value)
@@ -94,8 +94,8 @@ static inline int edac_inject_set_param1(const struct device *dev,
  * @param dev Pointer to the device structure
  * @param value Pointer to the first injection parameter
  *
- * @return -ENOTSUP if not supported
- * @return 0 on success, error code otherwise
+ * @retval -ENOTSUP if not supported
+ * @retval 0 on success, error code otherwise
  */
 static inline int edac_inject_get_param1(const struct device *dev,
 					 uint64_t *value)
@@ -119,8 +119,8 @@ static inline int edac_inject_get_param1(const struct device *dev,
  * @param dev Pointer to the device structure
  * @param value Second injection parameter
  *
- * @return -ENOTSUP if not supported
- * @return 0 on success, error code otherwise
+ * @retval -ENOTSUP if not supported
+ * @retval 0 on success, error code otherwise
  */
 static inline int edac_inject_set_param2(const struct device *dev,
 					 uint64_t value)
@@ -141,8 +141,8 @@ static inline int edac_inject_set_param2(const struct device *dev,
  * @param dev Pointer to the device structure
  * @param value Pointer to the second injection parameter
  *
- * @return -ENOTSUP if not supported
- * @return 0 on success, error code otherwise
+ * @retval -ENOTSUP if not supported
+ * @retval 0 on success, error code otherwise
  */
 static inline uint64_t edac_inject_get_param2(const struct device *dev,
 					      uint64_t *value)
@@ -165,8 +165,8 @@ static inline uint64_t edac_inject_get_param2(const struct device *dev,
  * @param dev Pointer to the device structure
  * @param error_type Error type value
  *
- * @return -ENOTSUP if not supported
- * @return 0 on success, error code otherwise
+ * @retval -ENOTSUP if not supported
+ * @retval 0 on success, error code otherwise
  */
 static inline int edac_inject_set_error_type(const struct device *dev,
 					     uint32_t error_type)
@@ -189,8 +189,8 @@ static inline int edac_inject_set_error_type(const struct device *dev,
  * @param dev Pointer to the device structure
  * @param error_type Pointer to error type value
  *
- * @return -ENOTSUP if not supported
- * @return 0 on success, error code otherwise
+ * @retval -ENOTSUP if not supported
+ * @retval 0 on success, error code otherwise
  */
 static inline uint32_t edac_inject_get_error_type(const struct device *dev,
 						  uint32_t *error_type)
@@ -212,8 +212,8 @@ static inline uint32_t edac_inject_get_error_type(const struct device *dev,
  *
  * @param dev Pointer to the device structure
  *
- * @return -ENOTSUP if not supported
- * @return 0 on success, error code otherwise
+ * @retval -ENOTSUP if not supported
+ * @retval 0 on success, error code otherwise
  */
 static inline int edac_inject_error_trigger(const struct device *dev)
 {
@@ -235,7 +235,7 @@ static inline int edac_inject_error_trigger(const struct device *dev)
  * @param dev Pointer to the device structure
  * @param value Pointer to the ECC Error Log value
  *
- * @return 0 on success, error code otherwise
+ * @retval 0 on success, error code otherwise
  */
 static inline int edac_ecc_error_log_get(const struct device *dev,
 					 uint64_t *value)
@@ -275,7 +275,7 @@ static inline void edac_ecc_error_log_clear(const struct device *dev)
  * @param dev Pointer to the device structure
  * @param value Pointer to the parity Error Log value
  *
- * @return 0 on success, error code otherwise
+ * @retval 0 on success, error code otherwise
  */
 static inline int edac_parity_error_log_get(const struct device *dev,
 					    uint64_t *value)
@@ -311,6 +311,7 @@ static inline void edac_parity_error_log_clear(const struct device *dev)
  * @brief Get number of correctable errors
  *
  * @param dev Pointer to the device structure
+ *
  * @return Number of correctable errors
  */
 static inline unsigned int edac_errors_cor_get(const struct device *dev)
@@ -328,6 +329,7 @@ static inline unsigned int edac_errors_cor_get(const struct device *dev)
  * @brief Get number of uncorrectable errors
  *
  * @param dev Pointer to the device structure
+ *
  * @return Number of uncorrectable errors
  */
 static inline unsigned int edac_errors_uc_get(const struct device *dev)
@@ -349,7 +351,7 @@ static inline unsigned int edac_errors_uc_get(const struct device *dev)
  * @param dev EDAC driver device to install callback
  * @param cb Callback function pointer
  *
- * @return 0 Success, nonzero if an error occurred
+ * @retval 0 on success, error code otherwise
  */
 static inline int edac_notify_callback_set(const struct device *dev,
 					   edac_notify_callback_f cb)
