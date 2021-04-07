@@ -101,7 +101,7 @@ struct k_p4wq_initparam {
 /**
  * @brief Initialize P4 Queue
  *
- * Initializes a P4 Queue object.  These objects much be initialized
+ * Initializes a P4 Queue object.  These objects must be initialized
  * via this function (or statically using K_P4WQ_DEFINE) before any
  * other API calls are made on it.
  *
