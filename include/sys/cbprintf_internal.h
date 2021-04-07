@@ -127,7 +127,8 @@ extern "C" {
 	_Generic((v), \
 		float : sizeof(double), \
 		default : \
-			sizeof((v)+0) \
+			/* coverity[bad_sizeof] */ \
+			sizeof((v) + 0) \
 		)
 
 static inline void cbprintf_wcpy(int *dst, int *src, size_t len)
