@@ -350,6 +350,7 @@ static int flash_flexspi_nor_write(const struct device *dev, off_t offset,
 		flash_flexspi_nor_page_program(dev, offset, src, i);
 		flash_flexspi_nor_wait_bus_busy(dev);
 		memc_flexspi_reset(data->controller);
+		src += i;
 		offset += i;
 		len -= i;
 	}
