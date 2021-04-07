@@ -21,7 +21,7 @@ extern "C" {
 
 /**
  * @brief Network packet capture support functions
- * @defgroup capture Network packet capture
+ * @defgroup net_capture Network packet capture
  * @ingroup networking
  * @{
  */
