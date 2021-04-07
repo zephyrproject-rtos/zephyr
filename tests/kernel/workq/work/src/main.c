@@ -4,6 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* This test covers deprecated API.  Avoid inappropriate diagnostics
+ * about the use of that API.
+ */
+#include <toolchain.h>
+#undef __deprecated
+#define __deprecated
+#undef __DEPRECATED_MACRO
+#define __DEPRECATED_MACRO
+
 #include <ztest.h>
 
 #define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
