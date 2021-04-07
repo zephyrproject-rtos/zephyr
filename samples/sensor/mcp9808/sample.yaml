@@ -7,3 +7,5 @@ tests:
     depends_on: i2c
     filter: dt_compat_enabled("microchip,mcp9808")
     platform_allow: nucleo_l053r8
+    integration_platforms:
+      - nucleo_l053r8
