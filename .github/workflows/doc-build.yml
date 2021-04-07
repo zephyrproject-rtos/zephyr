@@ -19,6 +19,7 @@ on:
     - 'west.yml'
     - '.github/workflows/doc-build.yml'
     - 'scripts/dts/**'
+    - 'scripts/requirements-doc.txt'
 
 jobs:
   doc-build:
