@@ -5,6 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import os
+import platform
 import contextlib
 import string
 import mmap
@@ -390,8 +391,8 @@ class Handler:
 
         self.name = instance.name
         self.instance = instance
-        self.timeout = instance.testcase.timeout
-        self.sourcedir = instance.testcase.source_dir
+        self.timeout = instance.scenario.timeout
+        self.sourcedir = instance.scenario.source_dir
         self.build_dir = instance.build_dir
         self.log = os.path.join(self.build_dir, "handler.log")
         self.returncode = 0
@@ -505,7 +506,7 @@ class BinaryHandler(Handler):
 
     def handle(self):
 
-        harness_name = self.instance.testcase.harness.capitalize()
+        harness_name = self.instance.scenario.harness.capitalize()
         harness_import = HarnessImporter(harness_name)
         harness = harness_import.instance
         harness.configure(self.instance)
@@ -566,8 +567,6 @@ class BinaryHandler(Handler):
         # garbled and needs to be reset. Did not find a better way to do that.
         if sys.stdout.isatty():
             subprocess.call(["stty", "sane"])
-
-        self.instance.results = harness.tests
 
         if not self.terminated and self.returncode != 0:
             # When a process is killed, the default handler returns 128 + SIGTERM
@@ -651,8 +650,8 @@ class DeviceHandler(Handler):
 
     def device_is_available(self, instance):
         device = instance.platform.name
-        fixture = instance.testcase.harness_config.get("fixture")
-        for d in self.suite.duts:
+        fixture = instance.scenario.harness_config.get("fixture")
+        for d in self.runner.duts:
             if fixture and fixture not in d.fixtures:
                 continue
             if d.platform != device or not (d.serial or d.serial_pty):
@@ -670,7 +669,7 @@ class DeviceHandler(Handler):
         return None
 
     def make_device_available(self, serial):
-        for d in self.suite.duts:
+        for d in self.runner.duts:
             if d.serial == serial or d.serial_pty:
                 d.available = 1
 
@@ -696,7 +695,7 @@ class DeviceHandler(Handler):
             time.sleep(1)
             hardware = self.device_is_available(self.instance)
 
-        runner = hardware.runner or self.suite.west_runner
+        runner = hardware.runner or self.runner.west_runner
         serial_pty = hardware.serial_pty
 
         ser_pty_process = None
@@ -725,8 +724,8 @@ class DeviceHandler(Handler):
             #    This results in options.west_flash == "--board-id=42"
             # 3) Multiple values: --west-flash="--board-id=42,--erase"
             #    This results in options.west_flash == "--board-id=42 --erase"
-            if self.suite.west_flash and self.suite.west_flash != []:
-                command_extra_args.extend(self.suite.west_flash.split(','))
+            if self.runner.west_flash and self.runner.west_flash != []:
+                command_extra_args.extend(self.runner.west_flash.split(','))
 
             if runner:
                 command.append("--runner")
@@ -790,7 +789,7 @@ class DeviceHandler(Handler):
 
         ser.flush()
 
-        harness_name = self.instance.testcase.harness.capitalize()
+        harness_name = self.instance.scenario.harness.capitalize()
         harness_import = HarnessImporter(harness_name)
         harness = harness_import.instance
         harness.configure(self.instance)
@@ -849,7 +848,7 @@ class DeviceHandler(Handler):
         handler_time = time.time() - start_time
 
         if out_state in ["timeout", "flash_error"]:
-            for c in self.instance.testcase.cases:
+            for c in self.instance.scenario.testcases:
                 if c not in harness.tests:
                     harness.tests[c] = "BLOCK"
 
@@ -858,14 +857,6 @@ class DeviceHandler(Handler):
             elif out_state == "flash_error":
                 self.instance.reason = "Flash error"
 
-        self.instance.results = harness.tests
-
-        # sometimes a test instance hasn't been executed successfully with an
-        # empty dictionary results, in order to include it into final report,
-        # so fill the results as BLOCK
-        if self.instance.results == {}:
-            for k in self.instance.testcase.cases:
-                self.instance.results[k] = 'BLOCK'
 
         if harness.state:
             self.set_state(harness.state, handler_time)
@@ -901,7 +892,7 @@ class QEMUHandler(Handler):
 
         self.pid_fn = os.path.join(instance.build_dir, "qemu.pid")
 
-        if "ignore_qemu_crash" in instance.testcase.tags:
+        if "ignore_qemu_crash" in instance.scenario.tags:
             self.ignore_qemu_crash = True
             self.ignore_unexpected_eof = True
         else:
@@ -1067,7 +1058,7 @@ class QEMUHandler(Handler):
 
         self.log_fn = self.log
 
-        harness_import = HarnessImporter(self.instance.testcase.harness.capitalize())
+        harness_import = HarnessImporter(self.instance.scenario.harness.capitalize())
         harness = harness_import.instance
         harness.configure(self.instance)
         self.thread = threading.Thread(name=self.name, target=QEMUHandler._thread,
@@ -1076,7 +1067,6 @@ class QEMUHandler(Handler):
                                              self.pid_fn, self.results, harness,
                                              self.ignore_unexpected_eof))
 
-        self.instance.results = harness.tests
         self.thread.daemon = True
         logger.debug("Spawning QEMUHandler Thread for %s" % self.name)
         self.thread.start()
@@ -1554,19 +1544,48 @@ class DisablePyTestCollectionMixin(object):
 
 
 class TestCase(DisablePyTestCollectionMixin):
-    """Class representing a test application
+    def __init__(self, id=None, name=None, scenario=None):
+        self.duration = 0
+        if name:
+            self.name = "test_" + name
+        else:
+            self.name = id
+        self.id = id
+        self.result = None
+        self.scenario = scenario
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return "<TestCase %s>" % (self.name)
+
+class TestResult(TestCase):
+    def __init__(self, case):
+        self.testcase = case
+        self.result = None
+        self.duration = 0
+
+    def __str__(self):
+        return self.testcase.name
+
+    def __repr__(self):
+        return "<TestResult %s with %s>" % (self.testcase.name, self.result)
+
+class TestScenario(DisablePyTestCollectionMixin):
+    """Class representing a test scenario
     """
 
     def __init__(self, testcase_root, workdir, name):
-        """TestCase constructor.
+        """TestScenario constructor.
 
-        This gets called by TestSuite as it finds and reads test yaml files.
-        Multiple TestCase instances may be generated from a single testcase.yaml,
+        This gets called by TestRunner as it finds and reads testsuite yaml files.
+        Multiple test scenarios can be generated from a single tests.yaml,
         each one corresponds to an entry within that file.
 
-        We need to have a unique name for every single test case. Since
-        a testcase.yaml can define multiple tests, the canonical name for
-        the test case is <workdir>/<name>.
+        We need to have a unique name for every single test scenario. Since
+        a tests.yaml can define multiple tests, the canonical name for
+        the test scenario is <workdir>/<scenario name>.
 
         @param testcase_root os.path.abspath() of one of the --testcase-root
         @param workdir Sub-directory of testcase_root where the
@@ -1575,15 +1594,16 @@ class TestCase(DisablePyTestCollectionMixin):
             in the test case configuration file. For many test cases that just
             define one test, can be anything and is usually "test". This is
             really only used to distinguish between different cases when
-            the testcase.yaml defines multiple tests
+            the tests.yaml defines multiple tests
         """
 
 
         self.source_dir = ""
         self.yamlfile = ""
-        self.cases = []
+        self.testcases = []
         self.name = self.get_unique(testcase_root, workdir, name)
         self.id = name
+        self.suite = None
 
         self.type = None
         self.tags = set()
@@ -1609,6 +1629,15 @@ class TestCase(DisablePyTestCollectionMixin):
         self.extra_sections = None
         self.integration_platforms = []
 
+    def add_testcase(self, test_id, test_name):
+        tc = TestCase(id=test_id, name=test_name, scenario=self)
+        self.testcases.append(tc)
+
+    def get_case(self, name):
+        for c in self.testcases:
+            if c.name == name and c.result is None:
+                return c
+
     @staticmethod
     def get_unique(testcase_root, workdir, name):
 
@@ -1631,6 +1660,31 @@ Tests should reference the category and subsystem with a dot as a separator.
                     )
         return unique
 
+
+    def __str__(self):
+        return self.name
+
+class TestSuite():
+
+    def __init__(self, location):
+        self.name = ""
+        self.scenarios = []
+        self.location = location
+        self.instances = []
+
+    def dump(self):
+        print(f"{self.name}:")
+        for scenario in self.scenarios:
+            print(f"  Scenario: {scenario}")
+            for c in scenario.testcases:
+                print(f"    Testcasee: {c}")
+
+    def add_scenario(self, scenario):
+        self.scenarios.append(scenario)
+
+    def add_instance(self, instance):
+        self.instances.append(instance)
+
     @staticmethod
     def scan_file(inf_name):
         suite_regex = re.compile(
@@ -1649,7 +1703,7 @@ Tests should reference the category and subsystem with a dot as a separator.
             br"ztest_(?:1cpu_)?(?:user_)?unit_test(?:_setup_teardown)?"
             # Consume the argument that becomes the extra testcse
             br"\(\s*"
-            br"(?P<stc_name>[a-zA-Z0-9_]+)"
+            br"(?P<scenario_name>[a-zA-Z0-9_]+)"
             # _setup_teardown() variant has two extra arguments that we ignore
             br"(?:\s*,\s*[a-zA-Z0-9_]+\s*,\s*[a-zA-Z0-9_]+)?"
             br"\s*\)",
@@ -1675,7 +1729,12 @@ Tests should reference the category and subsystem with a dot as a separator.
                 if not suite_regex_match:
                     # can't find ztest_test_suite, maybe a client, because
                     # it includes ztest.h
-                    return None, None
+                    return (("", None),), None
+
+                if suite_regex_match.group(1):
+                    suite = suite_regex_match.group(1).decode('ascii')
+                else:
+                    suite = ""
 
                 suite_run_match = suite_run_regex.search(main_c)
                 if not suite_run_match:
@@ -1694,57 +1753,62 @@ Tests should reference the category and subsystem with a dot as a separator.
                     if not match.decode().startswith("test_"):
                         warnings = "Found a test that does not start with test_"
                 matches = [match.decode().replace("test_", "", 1) for match in _matches]
-                return matches, warnings
 
-    def scan_path(self, path):
-        subcases = []
-        for filename in glob.glob(os.path.join(path, "src", "*.c*")):
+                return ( (suite, matches),) , warnings
+
+    def scan_path(self, suite_path):
+        testcases = []
+        testsuite = ""
+        for filename in glob.glob(os.path.join(suite_path, "src", "*.c*")):
             try:
-                _subcases, warnings = self.scan_file(filename)
+                ( (testsuite , _testcases), ), warnings = self.scan_file(filename)
                 if warnings:
                     logger.error("%s: %s" % (filename, warnings))
                     raise TwisterRuntimeError("%s: %s" % (filename, warnings))
-                if _subcases:
-                    subcases += _subcases
+                if _testcases:
+                    testcases += _testcases
             except ValueError as e:
                 logger.error("%s: can't find: %s" % (filename, e))
 
-        for filename in glob.glob(os.path.join(path, "*.c")):
+        for filename in glob.glob(os.path.join(suite_path, "*.c")):
             try:
-                _subcases, warnings = self.scan_file(filename)
+                ( (testsuite , _testcases), ), warnings = self.scan_file(filename)
                 if warnings:
                     logger.error("%s: %s" % (filename, warnings))
-                if _subcases:
-                    subcases += _subcases
+                if _testcases:
+                    testcases += _testcases
             except ValueError as e:
                 logger.error("%s: can't find: %s" % (filename, e))
-        return subcases
+        if testsuite == "":
+            testsuite = os.path.basename(suite_path)
+        return testsuite, testcases
 
-    def parse_subcases(self, test_path):
-        results = self.scan_path(test_path)
-        for sub in results:
-            name = "{}.{}".format(self.id, sub)
-            self.cases.append(name)
-
-        if not results:
-            self.cases.append(self.id)
+    def parse_testcases(self, suite_path):
+        _testsuite, _testcases = self.scan_path(suite_path)
+        self.name = f"{_testsuite}"
+        testcases = []
+        for case in _testcases:
+            testcases.append(case)
+        return testcases
 
     def __str__(self):
         return self.name
 
+    def __unicode__(self):
+        return self.name
 
 class TestInstance(DisablePyTestCollectionMixin):
-    """Class representing the execution of a particular TestCase on a platform
+    """Class representing the execution of a test scenario on a platform
 
-    @param test The TestCase object we want to build/execute
+    @param test The TestScenario object we want to build/execute
     @param platform Platform object that we want to build and run against
     @param base_outdir Base directory for all test results. The actual
         out directory used is <outdir>/<platform>/<test case name>
     """
 
-    def __init__(self, testcase, platform, outdir):
+    def __init__(self, scenario, platform, outdir):
 
-        self.testcase = testcase
+        self.scenario = scenario
         self.platform = platform
 
         self.status = None
@@ -1753,12 +1817,23 @@ class TestInstance(DisablePyTestCollectionMixin):
         self.handler = None
         self.outdir = outdir
 
-        self.name = os.path.join(platform.name, testcase.name)
-        self.build_dir = os.path.join(outdir, platform.name, testcase.name)
+        self.name = os.path.join(platform.name, scenario.name)
+        self.build_dir = os.path.join(outdir, platform.name, scenario.name)
 
         self.run = False
 
-        self.results = {}
+        self.testcases = scenario.testcases
+        self.test_results = []
+        self.init_results()
+
+    def init_results(self):
+        for c in self.scenario.testcases:
+            self.test_results.append(TestResult(case=c))
+
+    def get_result(self, name):
+        for c in self.test_results:
+            if c.testcase.name == name and c.result is None:
+                return c
 
     def __getstate__(self):
         d = self.__dict__.copy()
@@ -1800,15 +1875,15 @@ class TestInstance(DisablePyTestCollectionMixin):
             return False
 
         # we asked for build-only on the command line
-        if self.testcase.build_only:
+        if self.scenario.build_only:
             return False
 
         # Do not run slow tests:
-        skip_slow = self.testcase.slow and not enable_slow
+        skip_slow = self.scenario.slow and not enable_slow
         if skip_slow:
             return False
 
-        target_ready = bool(self.testcase.type == "unit" or \
+        target_ready = bool(self.scenario.type == "unit" or \
                         self.platform.type == "native" or \
                         self.platform.simulation in ["mdb-nsim", "nsim", "renode", "qemu", "tsim"] or \
                         filter == 'runnable')
@@ -1829,7 +1904,7 @@ class TestInstance(DisablePyTestCollectionMixin):
             if not find_executable("tsim-leon3"):
                 target_ready = False
 
-        testcase_runnable = self.testcase_runnable(self.testcase, fixtures)
+        testcase_runnable = self.testcase_runnable(self.scenario, fixtures)
 
         return testcase_runnable and target_ready
 
@@ -1842,8 +1917,8 @@ class TestInstance(DisablePyTestCollectionMixin):
 
         content = ""
 
-        if self.testcase.extra_configs:
-            content = "\n".join(self.testcase.extra_configs)
+        if self.scenario.extra_configs:
+            content = "\n".join(self.scenario.extra_configs)
 
         if enable_coverage:
             if platform.name in coverage_platform:
@@ -1880,7 +1955,7 @@ class TestInstance(DisablePyTestCollectionMixin):
         if len(fns) != 1:
             raise BuildError("Missing/multiple output ELF binary")
 
-        return SizeCalculator(fns[0], self.testcase.extra_sections)
+        return SizeCalculator(fns[0], self.scenario.extra_sections)
 
     def fill_results_by_status(self):
         """Fills results according to self.status
@@ -1897,11 +1972,11 @@ class TestInstance(DisablePyTestCollectionMixin):
             'failure': 'FAILED'
         }
 
-        for k in self.results:
-            self.results[k] = status_to_verdict[self.status]
+        for k in self.testcases:
+            k.result = status_to_verdict[self.status]
 
     def __repr__(self):
-        return "<TestCase %s on %s>" % (self.testcase.name, self.platform.name)
+        return "<TestInstance %s on %s>" % (self.scenario.name, self.platform.name)
 
 
 class CMake():
@@ -1917,7 +1992,7 @@ class CMake():
         self.cmake_cache = {}
 
         self.instance = None
-        self.testcase = testcase
+        self.scenario = testcase
         self.platform = platform
         self.source_dir = source_dir
         self.build_dir = build_dir
@@ -2139,24 +2214,24 @@ class FilterBuilder(CMake):
         filter_data.update(self.cmake_cache)
 
         edt_pickle = os.path.join(self.build_dir, "zephyr", "edt.pickle")
-        if self.testcase and self.testcase.tc_filter:
+        if self.scenario and self.scenario.tc_filter:
             try:
                 if os.path.exists(edt_pickle):
                     with open(edt_pickle, 'rb') as f:
                         edt = pickle.load(f)
                 else:
                     edt = None
-                res = expr_parser.parse(self.testcase.tc_filter, filter_data, edt)
+                res = expr_parser.parse(self.scenario.tc_filter, filter_data, edt)
 
             except (ValueError, SyntaxError) as se:
                 sys.stderr.write(
-                    "Failed processing %s\n" % self.testcase.yamlfile)
+                    "Failed processing %s\n" % self.scenario.yamlfile)
                 raise se
 
             if not res:
-                return {os.path.join(self.platform.name, self.testcase.name): True}
+                return {os.path.join(self.platform.name, self.scenario.name): True}
             else:
-                return {os.path.join(self.platform.name, self.testcase.name): False}
+                return {os.path.join(self.platform.name, self.scenario.name): False}
         else:
             self.platform.filter_data = filter_data
             return filter_data
@@ -2164,12 +2239,12 @@ class FilterBuilder(CMake):
 
 class ProjectBuilder(FilterBuilder):
 
-    def __init__(self, suite, instance, **kwargs):
-        super().__init__(instance.testcase, instance.platform, instance.testcase.source_dir, instance.build_dir)
+    def __init__(self, runner, instance, **kwargs):
+        super().__init__(instance.scenario, instance.platform, instance.scenario.source_dir, instance.build_dir)
 
         self.log = "build.log"
         self.instance = instance
-        self.suite = suite
+        self.runner = runner
         self.filtered_tests = 0
 
         self.lsan = kwargs.get('lsan', False)
@@ -2232,7 +2307,7 @@ class ProjectBuilder(FilterBuilder):
             instance.handler = QEMUHandler(instance, "qemu")
             args.append("QEMU_PIPE=%s" % instance.handler.get_fifo())
             instance.handler.call_make_run = True
-        elif instance.testcase.type == "unit":
+        elif instance.scenario.type == "unit":
             instance.handler = BinaryHandler(instance, "unit")
             instance.handler.binary = os.path.join(instance.build_dir, "testbinary")
             if self.coverage:
@@ -2295,8 +2370,10 @@ class ProjectBuilder(FilterBuilder):
                     self.instance.status = "skipped"
                     self.instance.reason = "filter"
                     results.skipped_runtime += 1
-                    for case in self.instance.testcase.cases:
-                        self.instance.results.update({case: 'SKIP'})
+
+                    for case in self.instance.testcases:
+                        c = self.instance.get_result(case.name)
+                        c.result = 'SKIP'
                     pipeline.put({"op": "report", "test": self.instance})
                 else:
                     pipeline.put({"op": "build", "test": self.instance})
@@ -2431,7 +2508,7 @@ class ProjectBuilder(FilterBuilder):
                 logger.error(
                     "{:<25} {:<50} {}FAILED{}: {}".format(
                         instance.platform.name,
-                        instance.testcase.name,
+                        instance.scenario.name,
                         Fore.RED,
                         Fore.RESET,
                         instance.reason))
@@ -2461,7 +2538,7 @@ class ProjectBuilder(FilterBuilder):
 
             logger.info("{:>{}}/{} {:<25} {:<50} {} ({})".format(
                 results.done, total_tests_width, total_to_do, instance.platform.name,
-                instance.testcase.name, status, more_info))
+                instance.scenario.name, status, more_info))
 
             if instance.status in ["error", "failed", "timeout"]:
                 self.log_info_file(self.inline_logs)
@@ -2490,7 +2567,7 @@ class ProjectBuilder(FilterBuilder):
     def cmake(self):
 
         instance = self.instance
-        args = self.testcase.extra_args[:]
+        args = self.scenario.extra_args[:]
         args += self.extra_args
 
         if instance.handler:
@@ -2534,21 +2611,304 @@ class ProjectBuilder(FilterBuilder):
 
         if instance.handler:
             if instance.handler.type_str == "device":
-                instance.handler.suite = self.suite
+                instance.handler.runner = self.runner
 
             instance.handler.handle()
 
         sys.stdout.flush()
 
-class TestSuite(DisablePyTestCollectionMixin):
+
+class TestReport:
+    def __init__(self, instances=None, filename="report.xml", platform=None, append=False, version="Unknown"):
+        self.instances = instances
+        self.filename = filename
+        self.platform = platform
+        if append:
+            self.append = append
+        if version:
+            self.version = version
+
+    @staticmethod
+    def process_log(log_file):
+        filtered_string = ""
+        if os.path.exists(log_file):
+            with open(log_file, "rb") as f:
+                log = f.read().decode("utf-8")
+                filtered_string = ''.join(filter(lambda x: x in string.printable, log))
+
+        return filtered_string
+
+
+    def get_platform_instances(self, platform):
+        filtered_dict = {k:v for k,v in self.instances.items() if k.startswith(platform + "/")}
+        return filtered_dict
+
+    def add_testcases(testsuite, instance, duration):
+        pass
+
+    def generate_report(self):
+        if self.platform:
+            instances = self.get_platform_instances(self.platform)
+        else:
+            instances = self.instances
+
+        testsuites = self.create_container('testsuites')
+
+        for instance in instances.values():
+            fails = passes = errors = skips = 0
+            duration = 0
+            for test_result in instance.test_results:
+                if test_result.duration:
+                    duration += float(test_result.duration)
+                else:
+                    duration += instance.metrics.get('handler_time', 0)
+
+                if test_result.result == 'PASS':
+                    passes += 1
+                elif test_result.result == 'BLOCK':
+                    errors += 1
+                elif test_result.result == 'SKIP':
+                    skips += 1
+                else:
+                    fails += 1
+
+            total = (errors + passes + fails + skips)
+
+            testsuite = self.create_new_or_update(testsuites, instance, duration, total, fails, errors, passes, skips)
+            self.add_testcases(testsuites, testsuite, instance, duration)
+
+
+        self.write_output(testsuites);
+
+    def create_new_or_update(self, testsuites, instance, duration, total, fails, errors, passes, skips):
+        pass
+
+
+class JsonReport(TestReport):
+    def __init__(self, instances, filename, toolchain, version):
+        self.toolchain = toolchain
+        super().__init__(instances=instances, filename=filename, version=version)
+
+    def add_testcases(self, testsuite, instance, duration):
+        pass
+
+    def create_container(self, name):
+        report = {}
+        report["environment"] = {"system": platform.uname().system,
+                                 "release": platform.uname().release,
+                                 "version": platform.uname().version,
+                                 "machine": platform.uname().machine,
+                                 "zephyr_version": self.version,
+                                 "toolchain": self.toolchain
+                                 }
+        report["testsuites"] = []
+        return report
+
+    def create_new_or_update(self, testsuites, instance, duration, total, fails, errors, passes, skips):
+        name = f"{instance.scenario.suite.name}"
+        testsuite = {
+            'name': f"{name}",
+            'platform': f"{instance.platform.name}",
+            'time': f"{duration:.3f}",
+            'tests': f"{total}",
+            'failures': f"{fails}",
+            'errors': f"{errors}",
+            'skipped': f"{skips}"
+        }
+
+        return testsuite
+
+
+    def add_testcases(self, testsuites, testsuite, instance, duration):
+        testcases = []
+        for test_result in instance.test_results:
+            if test_result.duration:
+                dur = test_result.duration
+            else:
+                dur = duration
+
+            testcase = {
+                'name': f"{test_result.testcase.name}",
+                'time': f"{dur:.3f}"
+            }
+
+            if test_result.result in ['FAIL', 'BLOCK'] or \
+                (not instance.run and instance.status in ["error", "failed", "timeout"]):
+                if test_result.result == 'FAIL':
+                    testcase['result'] = 'failure'
+                    testcase['message'] = 'failed'
+                else:
+                    testcase['result'] = 'error'
+                    testcase['message'] = 'failed'
+            elif test_result.result == 'PASS' \
+                or (not instance.run and instance.status in ["passed"]):
+                testcase['result'] = 'pass'
+            elif test_result.result == 'SKIP' or (instance.status in ["skipped"]):
+                testcase['result'] = 'skipped'
+                testcase['message'] = f'{instance.reason}'
+            else:
+                testcase['result'] = 'error'
+                testcase['message'] = f'{instance.reason}'
+
+            testcases.append(testcase)
+
+        testsuite['testcases'] = testcases
+        testsuites['testsuites'].append(testsuite)
+
+
+    def write_output(self, report):
+        with open(self.filename, "wt") as json_file:
+            json.dump(report, json_file, separators=(',',':'))
+
+
+class CSVReport(TestReport):
+
+    def __init__(self, instances, filename):
+        super().__init__(instances, filename)
+        self.csvfile = None
+
+    def add_testcases(self, testsuites, testsuite, instance, duration):
+        pass
+
+    def create_container(self, name):
+        self.csvfile = open(self.filename, "wt")
+        fieldnames = ["test", "arch", "platform", "status",
+                        "extra_args", "handler", "handler_time", "ram_size",
+                        "rom_size"]
+        cw = csv.DictWriter(self.csvfile, fieldnames, lineterminator=os.linesep)
+        cw.writeheader()
+        return cw
+
+    def create_new_or_update(self, testsuites, instance, duration, total, fails, errors, passes, skips):
+        rowdict = {"test": instance.scenario.name,
+                    "arch": instance.platform.arch,
+                    "platform": instance.platform.name,
+                    "extra_args": " ".join(instance.scenario.extra_args),
+                    "handler": instance.platform.simulation}
+
+        rowdict["status"] = instance.status
+        if instance.status not in ["error", "failed", "timeout"]:
+            if instance.handler:
+                rowdict["handler_time"] = instance.metrics.get("handler_time", 0)
+            ram_size = instance.metrics.get("ram_size", 0)
+            rom_size = instance.metrics.get("rom_size", 0)
+            rowdict["ram_size"] = ram_size
+            rowdict["rom_size"] = rom_size
+        testsuites.writerow(rowdict)
+
+    def write_output(self, testsuites):
+        self.csvfile.close()
+
+
+class JunitReport(TestReport):
+
+    def create_container(self, name):
+        if os.path.exists(self.filename) and self.append:
+            tree = ET.parse(self.filename)
+            eleTestsuites = tree.getroot()
+        else:
+            eleTestsuites = ET.Element(name)
+        return eleTestsuites
+
+    def generate_output(self, testsuites):
+        return ET.tostring(testsuites)
+
+    def write_output(self, testsuites):
+        output = self.generate_output(testsuites)
+        with open(self.filename, 'wb') as report:
+            report.write(output)
+
+    def create_new_or_update(self, testsuites, instance, duration, total, fails, errors, passes, skips):
+        name = f"{instance.scenario.suite.name}({instance.platform.name})"
+        testsuite = testsuites.findall(f'testsuite/[@name="{name}"]')
+        if testsuite: # FIXME
+            return testsuite[0]
+        elif not testsuite:
+            eleTestsuite = ET.SubElement(testsuites, 'testsuite',
+                        name=f"{name}", time=f"{duration:.3f}",
+                        tests="%d" % (total),
+                        failures="%d" % fails,
+                        errors="%d" % (errors), skipped="%s" % (skips))
+            eleTSPropetries = ET.SubElement(eleTestsuite, 'properties')
+            ET.SubElement(eleTSPropetries, 'property', name="version", value=self.version)
+            ET.SubElement(eleTSPropetries, 'property', name="platform", value=instance.platform.name)
+        else:
+            eleTestsuite = testsuite[0]
+            time = float(eleTestsuite.attrib['time']) + duration
+            skips = int(eleTestsuite.attrib['skipped']) + skips
+            errors = int(eleTestsuite.attrib['errors']) + errors
+            fails = int(eleTestsuite.attrib['failures']) + fails
+            passes = int(eleTestsuite.attrib['tests']) - \
+                int(eleTestsuite.attrib['skipped']) - \
+                    int(eleTestsuite.attrib['errors']) - \
+                        int(eleTestsuite.attrib['failures']) + passes
+
+            total = (errors + passes + fails + skips)
+
+            eleTestsuite.attrib['failures'] = f"{fails}"
+            eleTestsuite.attrib['errors'] = f"{errors}"
+            eleTestsuite.attrib['skipped'] = f"{skips}"
+            eleTestsuite.attrib['tests'] = f"{total}"
+            eleTestsuite.attrib['time'] = f"{time:.3f}"
+
+        return eleTestsuite
+
+    def add_testcases(self, testsuites, testsuite, instance, duration):
+        classname = f"{instance.scenario.suite.name}.{instance.scenario.id}"
+        # remove testcases that are being re-run from exiting reports
+        for tc in testsuite.findall(f'testcase/[@classname="{classname}"]'):
+            testsuite.remove(tc)
+
+        for test_result in instance.test_results:
+            if test_result.duration:
+                dur = test_result.duration
+            else:
+                dur = duration
+
+            testcase = ET.SubElement(testsuite, 'testcase',
+                        classname=classname,
+                        name=f"{test_result.testcase.name}", time=f"{dur:.3f}")
+
+            if test_result.result in ['FAIL', 'BLOCK'] or \
+                (not instance.run and instance.status in ["error", "failed", "timeout"]):
+                if test_result.result == 'FAIL':
+                    el = ET.SubElement(
+                        testcase,
+                        'failure',
+                        type="failure",
+                        message="failed")
+                else:
+                    el = ET.SubElement(
+                        testcase,
+                        'error',
+                        type="failure",
+                        message="failed")
+                log_root = os.path.join(instance.outdir, instance.platform.name, instance.scenario.name)
+                log_file = os.path.join(log_root, "handler.log")
+                el.text = self.process_log(log_file)
+
+            elif test_result.result == 'PASS' \
+                or (not instance.run and instance.status in ["passed"]):
+                pass
+            elif test_result.result == 'SKIP' or (instance.status in ["skipped"]):
+                el = ET.SubElement(testcase, 'skipped', type="skipped", message=instance.reason)
+            else:
+                el = ET.SubElement(
+                    testcase,
+                    'error',
+                    type="error",
+                    message=f"{instance.reason}")
+
+
+class TestRunner(DisablePyTestCollectionMixin):
     config_re = re.compile('(CONFIG_[A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
     dt_re = re.compile('([A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
 
-    tc_schema = scl.yaml_load(
+    ts_schema = scl.yaml_load(
         os.path.join(ZEPHYR_BASE,
                      "scripts", "schemas", "twister", "testcase-schema.yaml"))
 
-    testcase_valid_keys = {"tags": {"type": "set", "required": False},
+    testsuite_valid_keys = {"tags": {"type": "set", "required": False},
                        "type": {"type": "str", "default": "integration"},
                        "extra_args": {"type": "list"},
                        "extra_configs": {"type": "list"},
@@ -2577,17 +2937,17 @@ class TestSuite(DisablePyTestCollectionMixin):
                             "twister_last_release.csv")
 
     SAMPLE_FILENAME = 'sample.yaml'
-    TESTCASE_FILENAME = 'testcase.yaml'
+    TESTS_FILENAME = 'tests.yaml'
 
-    def __init__(self, board_root_list=[], testcase_roots=[], outdir=None):
+    def __init__(self, board_root_list=[], test_roots=[], outdir=None):
 
-        self.roots = testcase_roots
+        self.roots = test_roots
         if not isinstance(board_root_list, list):
             self.board_roots = [board_root_list]
         else:
             self.board_roots = board_root_list
 
-        # Testsuite Options
+        # Test runner Options
         self.coverage_platform = []
         self.build_only = False
         self.cmake_only = False
@@ -2611,8 +2971,10 @@ class TestSuite(DisablePyTestCollectionMixin):
         self.overflow_as_errors = False
 
         # Keep track of which test cases we've filtered out and why
-        self.testcases = {}
+        self.suites = []
+        self.scenarios = {}
         self.platforms = []
+
         self.selected_platforms = []
         self.filtered_platforms = []
         self.default_platforms = []
@@ -2647,10 +3009,6 @@ class TestSuite(DisablePyTestCollectionMixin):
         except OSError:
             logger.info("Cannot read zephyr version.")
 
-    def get_platform_instances(self, platform):
-        filtered_dict = {k:v for k,v in self.instances.items() if k.startswith(platform + "/")}
-        return filtered_dict
-
     def config(self):
         logger.info("coverage platform: {}".format(self.coverage_platform))
 
@@ -2665,14 +3023,14 @@ class TestSuite(DisablePyTestCollectionMixin):
         results.skipped_cases = 0
         for instance in self.instances.values():
             if initial:
-                results.cases += len(instance.testcase.cases)
+                results.cases += len(instance.scenario.testcases)
             if instance.status == 'skipped':
                 results.skipped_configs += 1
-                results.skipped_cases += len(instance.testcase.cases)
+                results.skipped_cases += len(instance.scenario.testcases)
             elif instance.status == "passed":
                 results.passed += 1
-                for res in instance.results.values():
-                    if res == 'SKIP':
+                for c in instance.testcases:
+                    if c.result == 'SKIP':
                         results.skipped_cases += 1
 
     def compare_metrics(self, filename):
@@ -2695,7 +3053,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                 saved_metrics[(row["test"], row["platform"])] = d
 
         for instance in self.instances.values():
-            mkey = (instance.testcase.name, instance.platform.name)
+            mkey = (instance.scenario.name, instance.platform.name)
             if mkey not in saved_metrics:
                 continue
             sm = saved_metrics[mkey]
@@ -2814,22 +3172,49 @@ class TestSuite(DisablePyTestCollectionMixin):
             filename = "{}_{}".format(filename, suffix)
 
         if not no_update:
-            self.xunit_report(filename + ".xml", full_report=False,
-                              append=only_failed, version=self.version)
-            self.xunit_report(filename + "_report.xml", full_report=True,
-                              append=only_failed, version=self.version)
-            self.csv_report(filename + ".csv")
+            report = JunitReport(instances=self.instances,
+                                 filename=filename + ".xml",
+                                 platform=None,
+                                 append=only_failed,
+                                 version=self.version)
+            report.generate_report()
+            csv_report = CSVReport(instances=self.instances,
+                                 filename=filename + ".csv"
+                                 )
+            csv_report.generate_report()
 
             if json_report:
-                self.json_report(filename + ".json", append=only_failed, version=self.version)
+                toolchain = self.get_toolchain()
+                json_filename = filename + ".json"
+                json_rep = JsonReport(instances=self.instances, filename=json_filename, toolchain=toolchain, version=self.version)
+                json_rep.generate_report()
 
             if platform_reports:
                 self.target_report(outdir, suffix, append=only_failed)
+
             if self.discards:
                 self.discard_report(filename + "_discard.csv")
 
         if release:
-            self.csv_report(self.RELEASE_DATA)
+            csv_report = CSVReport(instances=self.instances,
+                                 filename=self.RELEASE_DATA
+                                 )
+            csv_report.generate_report()
+
+    def target_report(self, outdir, suffix, append=False):
+        platforms = {inst.platform.name for _, inst in self.instances.items()}
+        for platform in platforms:
+            if suffix:
+                filename = os.path.join(outdir,"{}_{}.xml".format(platform, suffix))
+            else:
+                filename = os.path.join(outdir,"{}.xml".format(platform))
+
+            report = JunitReport(instances=self.instances,
+                        filename=filename,
+                        platform=platform,
+                        append=append,
+                        version=self.version)
+            report.generate_report()
 
     def add_configurations(self):
 
@@ -2857,8 +3242,8 @@ class TestSuite(DisablePyTestCollectionMixin):
 
     def get_all_tests(self):
         tests = []
-        for _, tc in self.testcases.items():
-            for case in tc.cases:
+        for _, scenario in self.scenarios.items():
+            for case in scenario.testcases:
                 tests.append(case)
 
         return tests
@@ -2879,78 +3264,91 @@ class TestSuite(DisablePyTestCollectionMixin):
 
         return toolchain
 
-    def add_testcases(self, testcase_filter=[]):
+    def add_suites(self, testsuite_filter=[]):
+
         for root in self.roots:
             root = os.path.abspath(root)
 
-            logger.debug("Reading test case configuration files under %s..." % root)
+            logger.debug("Reading testsuite configuration files under %s..." % root)
 
             for dirpath, dirnames, filenames in os.walk(root, topdown=True):
                 if self.SAMPLE_FILENAME in filenames:
                     filename = self.SAMPLE_FILENAME
-                elif self.TESTCASE_FILENAME in filenames:
-                    filename = self.TESTCASE_FILENAME
+                elif self.TESTS_FILENAME in filenames:
+                    filename = self.TESTS_FILENAME
+                # backward compatibility
+                elif "testcase.yaml" in filenames:
+                    filename = "testcase.yaml"
                 else:
                     continue
 
-                logger.debug("Found possible test case in " + dirpath)
+                logger.debug("Found possible testsuite in " + dirpath)
 
                 dirnames[:] = []
-                tc_path = os.path.join(dirpath, filename)
+                test_data_path = os.path.join(dirpath, filename)
+                suite_path = os.path.dirname(test_data_path)
 
-                try:
-                    parsed_data = TwisterConfigParser(tc_path, self.tc_schema)
-                    parsed_data.load()
+                suite = TestSuite(location = suite_path)
+                parsed_data = TwisterConfigParser(test_data_path, self.ts_schema)
+                parsed_data.load()
 
-                    tc_path = os.path.dirname(tc_path)
-                    workdir = os.path.relpath(tc_path, root)
+                workdir = os.path.relpath(suite_path, root)
 
-                    for name in parsed_data.tests.keys():
-                        tc = TestCase(root, workdir, name)
+                cases = suite.parse_testcases(suite_path)
 
-                        tc_dict = parsed_data.get_test(name, self.testcase_valid_keys)
+                self.suites.append(suite)
 
-                        tc.source_dir = tc_path
-                        tc.yamlfile = tc_path
+                for name in parsed_data.tests.keys():
+                    scenario = TestScenario(root, workdir, name)
+                    suite.add_scenario(scenario)
 
-                        tc.type = tc_dict["type"]
-                        tc.tags = tc_dict["tags"]
-                        tc.extra_args = tc_dict["extra_args"]
-                        tc.extra_configs = tc_dict["extra_configs"]
-                        tc.arch_allow = tc_dict["arch_allow"]
-                        tc.arch_exclude = tc_dict["arch_exclude"]
-                        tc.skip = tc_dict["skip"]
-                        tc.platform_exclude = tc_dict["platform_exclude"]
-                        tc.platform_allow = tc_dict["platform_allow"]
-                        tc.toolchain_exclude = tc_dict["toolchain_exclude"]
-                        tc.toolchain_allow = tc_dict["toolchain_allow"]
-                        tc.tc_filter = tc_dict["filter"]
-                        tc.timeout = tc_dict["timeout"]
-                        tc.harness = tc_dict["harness"]
-                        tc.harness_config = tc_dict["harness_config"]
-                        if tc.harness == 'console' and not tc.harness_config:
-                            raise Exception('Harness config error: console harness defined without a configuration.')
-                        tc.build_only = tc_dict["build_only"]
-                        tc.build_on_all = tc_dict["build_on_all"]
-                        tc.slow = tc_dict["slow"]
-                        tc.min_ram = tc_dict["min_ram"]
-                        tc.depends_on = tc_dict["depends_on"]
-                        tc.min_flash = tc_dict["min_flash"]
-                        tc.extra_sections = tc_dict["extra_sections"]
-                        tc.integration_platforms = tc_dict["integration_platforms"]
+                    scenario_dict = parsed_data.get_test(name, self.testsuite_valid_keys)
 
-                        tc.parse_subcases(tc_path)
+                    scenario.source_dir = suite_path
+                    scenario.yamlfile = suite_path
+                    scenario.suite = suite
+                    scenario.type = scenario_dict["type"]
+                    scenario.tags = scenario_dict["tags"]
+                    scenario.extra_args = scenario_dict["extra_args"]
+                    scenario.extra_configs = scenario_dict["extra_configs"]
+                    scenario.arch_allow = scenario_dict["arch_allow"]
+                    scenario.arch_exclude = scenario_dict["arch_exclude"]
+                    scenario.skip = scenario_dict["skip"]
+                    scenario.platform_exclude = scenario_dict["platform_exclude"]
+                    scenario.platform_allow = scenario_dict["platform_allow"]
+                    scenario.toolchain_exclude = scenario_dict["toolchain_exclude"]
+                    scenario.toolchain_allow = scenario_dict["toolchain_allow"]
+                    scenario.tc_filter = scenario_dict["filter"]
+                    scenario.timeout = scenario_dict["timeout"]
+                    scenario.harness = scenario_dict["harness"]
+                    scenario.harness_config = scenario_dict["harness_config"]
+                    if scenario.harness == 'console' and not scenario.harness_config:
+                        raise Exception('Harness config error: console harness defined without a configuration.')
+                    scenario.build_only = scenario_dict["build_only"]
+                    scenario.build_on_all = scenario_dict["build_on_all"]
+                    scenario.slow = scenario_dict["slow"]
+                    scenario.min_ram = scenario_dict["min_ram"]
+                    scenario.depends_on = scenario_dict["depends_on"]
+                    scenario.min_flash = scenario_dict["min_flash"]
+                    scenario.extra_sections = scenario_dict["extra_sections"]
+                    scenario.integration_platforms = scenario_dict["integration_platforms"]
 
-                        if testcase_filter:
-                            if tc.name and tc.name in testcase_filter:
-                                self.testcases[tc.name] = tc
-                        else:
-                            self.testcases[tc.name] = tc
+                    if cases and ( scenario.harness == '' or scenario.harness == 'ztest'):
+                        for c in cases:
+                            test_id = f"{scenario.id}.{c}"
+                            test_name = c
+                            #scenario.testcases.append(name)
+                            scenario.add_testcase(test_id, test_name)
+                    else:
+                        scenario.add_testcase(scenario.id, suite.name)
 
-                except Exception as e:
-                    logger.error("%s: can't load (skipping): %s" % (tc_path, e))
-                    self.load_errors += 1
-        return len(self.testcases)
+                    if testsuite_filter:
+                        if scenario.name and scenario.name in testsuite_filter:
+                            self.scenarios[scenario.name] = scenario
+                    else:
+                        self.scenarios[scenario.name] = scenario
+
+        return len(self.suites)
 
     def get_platform(self, name):
         selected_platform = None
@@ -2973,7 +3371,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                     platform = self.get_platform(row["platform"])
                     if filter_platform and platform.name not in filter_platform:
                         continue
-                    instance = TestInstance(self.testcases[test], platform, self.outdir)
+                    instance = TestInstance(self.scenarios[test], platform, self.outdir)
                     if self.device_testing:
                         tfilter = 'runnable'
                     else:
@@ -3045,12 +3443,12 @@ class TestSuite(DisablePyTestCollectionMixin):
 
         logger.info("Building initial testcase list...")
 
-        for tc_name, tc in self.testcases.items():
-
-            if tc.build_on_all and not platform_filter:
+        for scenario_name, scenario in self.scenarios.items():
+            suite = scenario.suite
+            if scenario.build_on_all and not platform_filter:
                 platform_scope = self.platforms
-            elif tc.integration_platforms and self.integration:
-                platform_scope = list(filter(lambda item: item.name in tc.integration_platforms, \
+            elif scenario.integration_platforms and self.integration:
+                platform_scope = list(filter(lambda item: item.name in scenario.integration_platforms, \
                                          self.platforms))
             else:
                 platform_scope = platforms
@@ -3058,7 +3456,7 @@ class TestSuite(DisablePyTestCollectionMixin):
             # list of instances per testcase, aka configurations.
             instance_list = []
             for plat in platform_scope:
-                instance = TestInstance(tc, plat, self.outdir)
+                instance = TestInstance(scenario, plat, self.outdir)
                 if runnable:
                     tfilter = 'runnable'
                 else:
@@ -3070,38 +3468,35 @@ class TestSuite(DisablePyTestCollectionMixin):
                     self.fixtures
                 )
 
-                for t in tc.cases:
-                    instance.results[t] = None
-
                 if runnable and self.duts:
                     for h in self.duts:
                         if h.platform == plat.name:
-                            if tc.harness_config.get('fixture') in h.fixtures:
+                            if scenario.harness_config.get('fixture') in h.fixtures:
                                 instance.run = True
 
                 if not force_platform and plat.name in exclude_platform:
                     discards[instance] = discards.get(instance, "Platform is excluded on command line.")
 
-                if (plat.arch == "unit") != (tc.type == "unit"):
+                if (plat.arch == "unit") != (scenario.type == "unit"):
                     # Discard silently
                     continue
 
                 if runnable and not instance.run:
                     discards[instance] = discards.get(instance, "Not runnable on device")
 
-                if self.integration and tc.integration_platforms and plat.name not in tc.integration_platforms:
+                if self.integration and scenario.integration_platforms and plat.name not in scenario.integration_platforms:
                     discards[instance] = discards.get(instance, "Not part of integration platforms")
 
-                if tc.skip:
+                if scenario.skip:
                     discards[instance] = discards.get(instance, "Skip filter")
 
-                if tag_filter and not tc.tags.intersection(tag_filter):
+                if tag_filter and not scenario.tags.intersection(tag_filter):
                     discards[instance] = discards.get(instance, "Command line testcase tag filter")
 
-                if exclude_tag and tc.tags.intersection(exclude_tag):
+                if exclude_tag and scenario.tags.intersection(exclude_tag):
                     discards[instance] = discards.get(instance, "Command line testcase exclude filter")
 
-                if testcase_filter and tc_name not in testcase_filter:
+                if testcase_filter and scenario_name not in testcase_filter:
                     discards[instance] = discards.get(instance, "Testcase name filter")
 
                 if arch_filter and plat.arch not in arch_filter:
@@ -3109,25 +3504,25 @@ class TestSuite(DisablePyTestCollectionMixin):
 
                 if not force_platform:
 
-                    if tc.arch_allow and plat.arch not in tc.arch_allow:
+                    if scenario.arch_allow and plat.arch not in scenario.arch_allow:
                         discards[instance] = discards.get(instance, "Not in test case arch allow list")
 
-                    if tc.arch_exclude and plat.arch in tc.arch_exclude:
+                    if scenario.arch_exclude and plat.arch in scenario.arch_exclude:
                         discards[instance] = discards.get(instance, "In test case arch exclude")
 
-                    if tc.platform_exclude and plat.name in tc.platform_exclude:
+                    if scenario.platform_exclude and plat.name in scenario.platform_exclude:
                         discards[instance] = discards.get(instance, "In test case platform exclude")
 
-                if tc.toolchain_exclude and toolchain in tc.toolchain_exclude:
+                if scenario.toolchain_exclude and toolchain in scenario.toolchain_exclude:
                     discards[instance] = discards.get(instance, "In test case toolchain exclude")
 
                 if platform_filter and plat.name not in platform_filter:
                     discards[instance] = discards.get(instance, "Command line platform filter")
 
-                if tc.platform_allow and plat.name not in tc.platform_allow:
+                if scenario.platform_allow and plat.name not in scenario.platform_allow:
                     discards[instance] = discards.get(instance, "Not in testcase platform allow list")
 
-                if tc.toolchain_allow and toolchain not in tc.toolchain_allow:
+                if scenario.toolchain_allow and toolchain not in scenario.toolchain_allow:
                     discards[instance] = discards.get(instance, "Not in testcase toolchain allow list")
 
                 if not plat.env_satisfied:
@@ -3135,52 +3530,53 @@ class TestSuite(DisablePyTestCollectionMixin):
 
                 if not force_toolchain \
                         and toolchain and (toolchain not in plat.supported_toolchains) \
-                        and tc.type != 'unit':
+                        and scenario.type != 'unit':
                     discards[instance] = discards.get(instance, "Not supported by the toolchain")
 
-                if plat.ram < tc.min_ram:
+                if plat.ram < scenario.min_ram:
                     discards[instance] = discards.get(instance, "Not enough RAM")
 
-                if tc.depends_on:
-                    dep_intersection = tc.depends_on.intersection(set(plat.supported))
-                    if dep_intersection != set(tc.depends_on):
+                if scenario.depends_on:
+                    dep_intersection = scenario.depends_on.intersection(set(plat.supported))
+                    if dep_intersection != set(scenario.depends_on):
                         discards[instance] = discards.get(instance, "No hardware support")
 
-                if plat.flash < tc.min_flash:
+                if plat.flash < scenario.min_flash:
                     discards[instance] = discards.get(instance, "Not enough FLASH")
 
-                if set(plat.ignore_tags) & tc.tags:
+                if set(plat.ignore_tags) & scenario.tags:
                     discards[instance] = discards.get(instance, "Excluded tags per platform (exclude_tags)")
 
-                if plat.only_tags and not set(plat.only_tags) & tc.tags:
+                if plat.only_tags and not set(plat.only_tags) & scenario.tags:
                     discards[instance] = discards.get(instance, "Excluded tags per platform (only_tags)")
 
                 # if nothing stopped us until now, it means this configuration
                 # needs to be added.
                 instance_list.append(instance)
+                suite.add_instance(instance)
 
             # no configurations, so jump to next testcase
             if not instance_list:
                 continue
 
-            integration = self.integration and tc.integration_platforms
+            integration = self.integration and scenario.integration_platforms
             # if twister was launched with no platform options at all, we
             # take all default platforms
-            if default_platforms and not tc.build_on_all and not integration:
-                if tc.platform_allow:
+            if default_platforms and not scenario.build_on_all and not integration:
+                if scenario.platform_allow:
                     a = set(self.default_platforms)
-                    b = set(tc.platform_allow)
+                    b = set(scenario.platform_allow)
                     c = a.intersection(b)
                     if c:
-                        aa = list(filter(lambda tc: tc.platform.name in c, instance_list))
+                        aa = list(filter(lambda i: i.platform.name in c, instance_list))
                         self.add_instances(aa)
                     else:
                         self.add_instances(instance_list[:1])
                 else:
-                    instances = list(filter(lambda tc: tc.platform.default, instance_list))
+                    instances = list(filter(lambda s: s.platform.default, instance_list))
                     self.add_instances(instances)
             elif integration:
-                instances = list(filter(lambda item:  item.platform.name in tc.integration_platforms, instance_list))
+                instances = list(filter(lambda item:  item.platform.name in scenario.integration_platforms, instance_list))
                 self.add_instances(instances)
 
 
@@ -3308,7 +3704,6 @@ class TestSuite(DisablePyTestCollectionMixin):
         return results
 
     def discard_report(self, filename):
-
         try:
             if not self.discards:
                 raise TwisterRuntimeError("apply_filters() hasn't been run!")
@@ -3320,316 +3715,18 @@ class TestSuite(DisablePyTestCollectionMixin):
             cw = csv.DictWriter(csvfile, fieldnames, lineterminator=os.linesep)
             cw.writeheader()
             for instance, reason in sorted(self.discards.items()):
-                rowdict = {"test": instance.testcase.name,
+                rowdict = {"test": instance.scenario.name,
                            "arch": instance.platform.arch,
                            "platform": instance.platform.name,
                            "reason": reason}
                 cw.writerow(rowdict)
 
-    def target_report(self, outdir, suffix, append=False):
-        platforms = {inst.platform.name for _, inst in self.instances.items()}
-        for platform in platforms:
-            if suffix:
-                filename = os.path.join(outdir,"{}_{}.xml".format(platform, suffix))
-            else:
-                filename = os.path.join(outdir,"{}.xml".format(platform))
-            self.xunit_report(filename, platform, full_report=True,
-                              append=append, version=self.version)
-
-
-    @staticmethod
-    def process_log(log_file):
-        filtered_string = ""
-        if os.path.exists(log_file):
-            with open(log_file, "rb") as f:
-                log = f.read().decode("utf-8")
-                filtered_string = ''.join(filter(lambda x: x in string.printable, log))
-
-        return filtered_string
-
-
-    def xunit_report(self, filename, platform=None, full_report=False, append=False, version="NA"):
-        total = 0
-        fails = passes = errors = skips = 0
-        if platform:
-            selected = [platform]
-            logger.info(f"Writing target report for {platform}...")
-        else:
-            logger.info(f"Writing xunit report {filename}...")
-            selected = self.selected_platforms
-
-        if os.path.exists(filename) and append:
-            tree = ET.parse(filename)
-            eleTestsuites = tree.getroot()
-        else:
-            eleTestsuites = ET.Element('testsuites')
-
-        for p in selected:
-            inst = self.get_platform_instances(p)
-            fails = 0
-            passes = 0
-            errors = 0
-            skips = 0
-            duration = 0
-
-            for _, instance in inst.items():
-                handler_time = instance.metrics.get('handler_time', 0)
-                duration += handler_time
-                if full_report and instance.run:
-                    for k in instance.results.keys():
-                        if instance.results[k] == 'PASS':
-                            passes += 1
-                        elif instance.results[k] == 'BLOCK':
-                            errors += 1
-                        elif instance.results[k] == 'SKIP' or instance.status in ['skipped']:
-                            skips += 1
-                        else:
-                            fails += 1
-                else:
-                    if instance.status in ["error", "failed", "timeout", "flash_error"]:
-                        if instance.reason in ['build_error', 'handler_crash']:
-                            errors += 1
-                        else:
-                            fails += 1
-                    elif instance.status == 'skipped':
-                        skips += 1
-                    elif instance.status == 'passed':
-                        passes += 1
-                    else:
-                        if instance.status:
-                            logger.error(f"{instance.name}: Unknown status {instance.status}")
-                        else:
-                            logger.error(f"{instance.name}: No status")
-
-            total = (errors + passes + fails + skips)
-            # do not produce a report if no tests were actually run (only built)
-            if total == 0:
-                continue
-
-            run = p
-            eleTestsuite = None
-
-            # When we re-run the tests, we re-use the results and update only with
-            # the newly run tests.
-            if os.path.exists(filename) and append:
-                ts = eleTestsuites.findall(f'testsuite/[@name="{p}"]')
-                if ts:
-                    eleTestsuite = ts[0]
-                    eleTestsuite.attrib['failures'] = "%d" % fails
-                    eleTestsuite.attrib['errors'] = "%d" % errors
-                    eleTestsuite.attrib['skipped'] = "%d" % skips
-                else:
-                    logger.info(f"Did not find any existing results for {p}")
-                    eleTestsuite = ET.SubElement(eleTestsuites, 'testsuite',
-                                name=run, time="%f" % duration,
-                                tests="%d" % (total),
-                                failures="%d" % fails,
-                                errors="%d" % (errors), skipped="%s" % (skips))
-                    eleTSPropetries = ET.SubElement(eleTestsuite, 'properties')
-                    # Multiple 'property' can be added to 'properties'
-                    # differing by name and value
-                    ET.SubElement(eleTSPropetries, 'property', name="version", value=version)
-
-            else:
-                eleTestsuite = ET.SubElement(eleTestsuites, 'testsuite',
-                                             name=run, time="%f" % duration,
-                                             tests="%d" % (total),
-                                             failures="%d" % fails,
-                                             errors="%d" % (errors), skipped="%s" % (skips))
-                eleTSPropetries = ET.SubElement(eleTestsuite, 'properties')
-                # Multiple 'property' can be added to 'properties'
-                # differing by name and value
-                ET.SubElement(eleTSPropetries, 'property', name="version", value=version)
-
-            for _, instance in inst.items():
-                if full_report:
-                    tname = os.path.basename(instance.testcase.name)
-                else:
-                    tname = instance.testcase.id
-                handler_time = instance.metrics.get('handler_time', 0)
-
-                if full_report:
-                    for k in instance.results.keys():
-                        # remove testcases that are being re-run from exiting reports
-                        for tc in eleTestsuite.findall(f'testcase/[@name="{k}"]'):
-                            eleTestsuite.remove(tc)
-
-                        classname = ".".join(tname.split(".")[:2])
-                        eleTestcase = ET.SubElement(
-                            eleTestsuite, 'testcase',
-                            classname=classname,
-                            name="%s" % (k), time="%f" % handler_time)
-                        if instance.results[k] in ['FAIL', 'BLOCK'] or \
-                            (not instance.run and instance.status in ["error", "failed", "timeout"]):
-                            if instance.results[k] == 'FAIL':
-                                el = ET.SubElement(
-                                    eleTestcase,
-                                    'failure',
-                                    type="failure",
-                                    message="failed")
-                            else:
-                                el = ET.SubElement(
-                                    eleTestcase,
-                                    'error',
-                                    type="failure",
-                                    message=instance.reason)
-                            log_root = os.path.join(self.outdir, instance.platform.name, instance.testcase.name)
-                            log_file = os.path.join(log_root, "handler.log")
-                            el.text = self.process_log(log_file)
-
-                        elif instance.results[k] == 'PASS' \
-                            or (not instance.run and instance.status in ["passed"]):
-                            pass
-                        elif instance.results[k] == 'SKIP' or (instance.status in ["skipped"]):
-                            el = ET.SubElement(eleTestcase, 'skipped', type="skipped", message=instance.reason)
-                        else:
-                            el = ET.SubElement(
-                                eleTestcase,
-                                'error',
-                                type="error",
-                                message=f"{instance.reason}")
-                else:
-                    if platform:
-                        classname = ".".join(instance.testcase.name.split(".")[:2])
-                    else:
-                        classname = p + ":" + ".".join(instance.testcase.name.split(".")[:2])
-
-                    # remove testcases that are being re-run from exiting reports
-                    for tc in eleTestsuite.findall(f'testcase/[@classname="{classname}"][@name="{instance.testcase.name}"]'):
-                        eleTestsuite.remove(tc)
-
-                    eleTestcase = ET.SubElement(eleTestsuite, 'testcase',
-                        classname=classname,
-                        name="%s" % (instance.testcase.name),
-                        time="%f" % handler_time)
-
-                    if instance.status in ["error", "failed", "timeout", "flash_error"]:
-                        failure = ET.SubElement(
-                            eleTestcase,
-                            'failure',
-                            type="failure",
-                            message=instance.reason)
-
-                        log_root = ("%s/%s/%s" % (self.outdir, instance.platform.name, instance.testcase.name))
-                        bl = os.path.join(log_root, "build.log")
-                        hl = os.path.join(log_root, "handler.log")
-                        log_file = bl
-                        if instance.reason != 'Build error':
-                            if os.path.exists(hl):
-                                log_file = hl
-                            else:
-                                log_file = bl
-
-                        failure.text = self.process_log(log_file)
-
-                    elif instance.status == "skipped":
-                        ET.SubElement(eleTestcase, 'skipped', type="skipped", message="Skipped")
-
-        result = ET.tostring(eleTestsuites)
-        with open(filename, 'wb') as report:
-            report.write(result)
-
-        return fails, passes, errors, skips
-
-    def csv_report(self, filename):
-        with open(filename, "wt") as csvfile:
-            fieldnames = ["test", "arch", "platform", "status",
-                          "extra_args", "handler", "handler_time", "ram_size",
-                          "rom_size"]
-            cw = csv.DictWriter(csvfile, fieldnames, lineterminator=os.linesep)
-            cw.writeheader()
-            for instance in self.instances.values():
-                rowdict = {"test": instance.testcase.name,
-                           "arch": instance.platform.arch,
-                           "platform": instance.platform.name,
-                           "extra_args": " ".join(instance.testcase.extra_args),
-                           "handler": instance.platform.simulation}
-
-                rowdict["status"] = instance.status
-                if instance.status not in ["error", "failed", "timeout"]:
-                    if instance.handler:
-                        rowdict["handler_time"] = instance.metrics.get("handler_time", 0)
-                    ram_size = instance.metrics.get("ram_size", 0)
-                    rom_size = instance.metrics.get("rom_size", 0)
-                    rowdict["ram_size"] = ram_size
-                    rowdict["rom_size"] = rom_size
-                cw.writerow(rowdict)
-
-    def json_report(self, filename, append=False, version="NA"):
-        logger.info(f"Writing JSON report {filename}")
-        report = {}
-        selected = self.selected_platforms
-        report["environment"] = {"os": os.name,
-                                 "zephyr_version": version,
-                                 "toolchain": self.get_toolchain()
-                                 }
-        json_data = {}
-        if os.path.exists(filename) and append:
-            with open(filename, 'r') as json_file:
-                json_data = json.load(json_file)
-
-        suites = json_data.get("testsuites", [])
-        if suites:
-            suite = suites[0]
-            testcases = suite.get("testcases", [])
-        else:
-            suite = {}
-            testcases = []
-
-        for p in selected:
-            inst = self.get_platform_instances(p)
-            for _, instance in inst.items():
-                testcase = {}
-                handler_log = os.path.join(instance.build_dir, "handler.log")
-                build_log = os.path.join(instance.build_dir, "build.log")
-                device_log = os.path.join(instance.build_dir, "device.log")
-
-                handler_time = instance.metrics.get('handler_time', 0)
-                ram_size = instance.metrics.get ("ram_size", 0)
-                rom_size  = instance.metrics.get("rom_size",0)
-
-                for k in instance.results.keys():
-                    testcases = list(filter(lambda d: not (d.get('testcase') == k and d.get('platform') == p), testcases ))
-                    testcase = {"testcase": k,
-                                "arch": instance.platform.arch,
-                                "platform": p,
-                                }
-                    if instance.results[k] in ["PASS"]:
-                        testcase["status"] = "passed"
-                        if instance.handler:
-                            testcase["execution_time"] =  handler_time
-                        if ram_size:
-                            testcase["ram_size"] = ram_size
-                        if rom_size:
-                            testcase["rom_size"] = rom_size
-
-                    elif instance.results[k] in ['FAIL', 'BLOCK'] or instance.status in ["error", "failed", "timeout"]:
-                        testcase["status"] = "failed"
-                        testcase["reason"] = instance.reason
-                        testcase["execution_time"] =  handler_time
-                        if os.path.exists(handler_log):
-                            testcase["test_output"] = self.process_log(handler_log)
-                        elif os.path.exists(device_log):
-                            testcase["device_log"] = self.process_log(device_log)
-                        else:
-                            testcase["build_log"] = self.process_log(build_log)
-                    else:
-                        testcase["status"] = "skipped"
-                        testcase["reason"] = instance.reason
-                    testcases.append(testcase)
-
-        suites = [ {"testcases": testcases} ]
-        report["testsuites"] = suites
-
-        with open(filename, "wt") as json_file:
-            json.dump(report, json_file, indent=4, separators=(',',':'))
-
     def get_testcase(self, identifier):
         results = []
-        for _, tc in self.testcases.items():
-            for case in tc.cases:
+        for _, scenario in self.scenarios.items():
+            for case in scenario.testcases:
                 if case == identifier:
-                    results.append(tc)
+                    results.append(scenario)
         return results
 
 class CoverageTool:

@@ -2,7 +2,7 @@
 import re
 from collections import OrderedDict
 
-result_re = re.compile(".*(PASS|FAIL|SKIP) - (test_)?(.*) in")
+result_re = re.compile(".*(PASS|FAIL|SKIP) - (test_)?(.*) in (\d*[.,]?\d*) seconds")
 
 class Harness:
     GCOV_START = "GCOV_COVERAGE_DUMP_START"
@@ -18,7 +18,6 @@ class Harness:
         self.matches = OrderedDict()
         self.ordered = True
         self.repeat = 1
-        self.tests = {}
         self.id = None
         self.fail_on_fault = True
         self.fault = False
@@ -28,11 +27,14 @@ class Harness:
         self.recording = []
         self.fieldnames = []
         self.ztest = False
+        self.instance = None
 
     def configure(self, instance):
-        config = instance.testcase.harness_config
-        self.id = instance.testcase.id
-        if "ignore_faults" in instance.testcase.tags:
+        config = instance.scenario.harness_config
+        self.instance = instance
+        self.id = instance.scenario.id
+
+        if "ignore_faults" in instance.scenario.tags:
             self.fail_on_fault = False
 
         if config:
@@ -100,7 +102,6 @@ class Console(Harness):
         elif self.GCOV_END in line:
             self.capture_coverage = False
 
-
         if self.record:
             pattern = re.compile(self.record.get("regex", ""))
             match = pattern.search(line)
@@ -115,11 +116,14 @@ class Console(Harness):
                 self.recording.append(csv)
 
         self.process_test(line)
+        tr = self.instance.test_results[0]
+        case = self.instance.get_result(tr.testcase.name)
+        if self.state and case:
+            if self.state == "passed":
+                case.result = "PASS"
+            else:
+                case.result = "FAIL"
 
-        if self.state == "passed":
-            self.tests[self.id] = "PASS"
-        else:
-            self.tests[self.id] = "FAIL"
 
 class Test(Harness):
     RUN_PASSED = "PROJECT EXECUTION SUCCESSFUL"
@@ -128,18 +132,21 @@ class Test(Harness):
     def handle(self, line):
         match = result_re.match(line)
         if match and match.group(2):
-            name = "{}.{}".format(self.id, match.group(3))
-            self.tests[name] = match.group(1)
-            self.ztest = True
+            name = "test_" + match.group(3)
+            case = self.instance.get_result(name)
+            if case:
+                case.result = match.group(1)
+                case.duration = float(match.group(4))
+                self.ztest = True
 
         self.process_test(line)
 
-        if not self.ztest and self.state:
+        case = self.instance.get_result(self.id)
+        if not self.ztest and self.state and case:
             if self.state == "passed":
-                self.tests[self.id] = "PASS"
+                case.result = "PASS"
             else:
-                self.tests[self.id] = "FAIL"
-
+                case.result = "FAIL"
 
 class Ztest(Test):
     pass

@@ -8,3 +8,12 @@ tests:
     tags: test_framework
     integration_platforms:
       - native_posix
+    harness: console
+    harness_config:
+      ordered: true
+      regex:
+        - "1: Test [test_assert_pass] reported (PASS) no. 1"
+        - "2: Test [test_assert_pass] reported (PASS) no. 2"
+        - "3: Test [test_assert_pass] reported (PASS) no. 3"
+        - "4: Test [test_assert_skip] reported {SKIPPED} no. 1"
+        - "5: Test [test_assert_skip] reported {SKIPPED} no. 2"
