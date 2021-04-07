@@ -1,0 +1,8 @@
+# Fanstel BT840 DK board configuration
+
+# Copyright (c) 2021 Brian Bradley
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_FANSTEL_BT840DK
+	bool "Fanstel BT840 DK"
+	depends on SOC_NRF52840_QIAA

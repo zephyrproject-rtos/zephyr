@@ -1,0 +1,24 @@
+identifier: fanstel_bt840dk
+name: Fanstel-BT840-DK
+type: mcu
+arch: arm
+ram: 256
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - adc
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_spi
+  - ble
+  - counter
+  - gpio
+  - i2c
+  - ieee802154
+  - pwm
+  - spi
+  - watchdog
+  - netif:openthread
