@@ -145,7 +145,7 @@ static int static_init(const struct device *dev)
  * so they can initialize in parallel instead of serially on the main
  * CPU.
  */
-SYS_INIT(static_init, SMP, 99);
+SYS_INIT(static_init, APPLICATION, 99);
 
 void k_p4wq_submit(struct k_p4wq *queue, struct k_p4wq_work *item)
 {
