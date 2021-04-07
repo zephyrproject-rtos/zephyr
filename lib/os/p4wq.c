@@ -6,6 +6,7 @@
 #include <logging/log.h>
 #include <sys/p4wq.h>
 #include <wait_q.h>
+#include <kernel.h>
 #include <ksched.h>
 #include <init.h>
 
@@ -90,7 +91,9 @@ static FUNC_NORETURN void p4wq_loop(void *p0, void *p1, void *p2)
 			thread_clear_requeued(_current);
 
 			k_spin_unlock(&queue->lock, k);
+
 			w->handler(w);
+
 			k = k_spin_lock(&queue->lock);
 
 			/* Remove from the active list only if it
@@ -99,12 +102,22 @@ static FUNC_NORETURN void p4wq_loop(void *p0, void *p1, void *p2)
 			if (!thread_was_requeued(_current)) {
 				sys_dlist_remove(&w->dlnode);
 				w->thread = NULL;
+				k_sem_give(&w->done_sem);
 			}
 		} else {
 			z_pend_curr(&queue->lock, k, &queue->waitq, K_FOREVER);
 			k = k_spin_lock(&queue->lock);
 		}
 	}
+}
+
+/* Must be called to regain ownership of the work item */
+int k_p4wq_wait(struct k_p4wq_work *work, k_timeout_t timeout)
+{
+	if (work->sync)
+		return k_sem_take(&work->done_sem, timeout);
+
+	return k_sem_count_get(&work->done_sem) ? 0 : -EBUSY;
 }
 
 void k_p4wq_init(struct k_p4wq *queue)
@@ -162,10 +175,13 @@ void k_p4wq_submit(struct k_p4wq *queue, struct k_p4wq_work *item)
 		sys_dlist_remove(&item->dlnode);
 		thread_set_requeued(_current);
 		item->thread = NULL;
+	} else {
+		k_sem_init(&item->done_sem, 0, 1);
 	}
 	__ASSERT_NO_MSG(item->thread == NULL);
 
 	rb_insert(&queue->queue, &item->rbnode);
+	item->queue = queue;
 
 	/* If there were other items already ahead of it in the queue,
 	 * then we don't need to revisit active thread state and can
@@ -184,12 +200,18 @@ void k_p4wq_submit(struct k_p4wq *queue, struct k_p4wq_work *item)
 	uint32_t n_beaten_by = 0, active_target = CONFIG_MP_NUM_CPUS;
 
 	SYS_DLIST_FOR_EACH_CONTAINER(&queue->active, wi, dlnode) {
+		/*
+		 * item_lessthan(a, b) == true means a has lower priority than b
+		 * !item_lessthan(a, b) counts all work items with higher or
+		 * equal priority
+		 */
 		if (!item_lessthan(wi, item)) {
 			n_beaten_by++;
 		}
 	}
 
 	if (n_beaten_by >= active_target) {
+		/* Too many already have higher priority, not preempting */
 		goto out;
 	}
 
@@ -208,6 +230,7 @@ void k_p4wq_submit(struct k_p4wq *queue, struct k_p4wq_work *item)
 	set_prio(th, item);
 	z_ready_thread(th);
 	z_reschedule(&queue->lock, k);
+
 	return;
 
 out:
@@ -221,6 +244,7 @@ bool k_p4wq_cancel(struct k_p4wq *queue, struct k_p4wq_work *item)
 
 	if (ret) {
 		rb_remove(&queue->queue, &item->rbnode);
+		k_sem_give(&item->done_sem);
 	}
 
 	k_spin_unlock(&queue->lock, k);
