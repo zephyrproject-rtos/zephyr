@@ -19,6 +19,10 @@
 #define NOR_WRITE_SIZE	1
 #define NOR_ERASE_VALUE	0xff
 
+#ifdef CONFIG_FLASH_MCUX_FLEXSPI_NOR_WRITE_BUFFER
+static uint8_t nor_write_buf[SPI_NOR_PAGE_SIZE];
+#endif
+
 LOG_MODULE_REGISTER(flash_flexspi_nor, CONFIG_FLASH_LOG_LEVEL);
 
 enum {
@@ -346,8 +350,15 @@ static int flash_flexspi_nor_write(const struct device *dev, off_t offset,
 
 	while (len) {
 		i = MIN(SPI_NOR_PAGE_SIZE, len);
+#ifdef CONFIG_FLASH_MCUX_FLEXSPI_NOR_WRITE_BUFFER
+		memcpy(nor_write_buf, src, i);
+#endif
 		flash_flexspi_nor_write_enable(dev);
+#ifdef CONFIG_FLASH_MCUX_FLEXSPI_NOR_WRITE_BUFFER
+		flash_flexspi_nor_page_program(dev, offset, nor_write_buf, i);
+#else
 		flash_flexspi_nor_page_program(dev, offset, src, i);
+#endif
 		flash_flexspi_nor_wait_bus_busy(dev);
 		memc_flexspi_reset(data->controller);
 		src += i;
