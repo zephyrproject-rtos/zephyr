@@ -6,7 +6,6 @@ name: Documentation GitHub Workflow
 on:
   pull_request:
     paths:
-    - 'Makefile'
     - 'doc/**'
     - '**.rst'
     - 'include/**'
@@ -14,7 +13,6 @@ on:
     - 'lib/libc/**'
     - 'subsys/testsuite/ztest/include/**'
     - 'tests/**'
-    - '.known-issues/doc/**'
     - '**/Kconfig*'
     - 'west.yml'
     - '.github/workflows/doc-build.yml'
