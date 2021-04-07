@@ -56,6 +56,7 @@
 /soc/arm64/                               @carlocaione
 /soc/arm64/qemu_cortex_a53/               @carlocaione
 /soc/arm64/bcm_vk/                        @abhishek-brcm
+/soc/arm64/nxp_layerscape/                @JiafeiPan
 /soc/arm64/xenvm/                         @lorc
 /arch/x86/                                @jhedberg @nashif @jenmwms @aasthagr
 /arch/nios2/                              @nashif
@@ -145,6 +146,7 @@
 /boards/sparc/                            @martin-aberg
 /boards/arm64/qemu_cortex_a53/            @carlocaione
 /boards/arm64/bcm958402m2_a72/            @abhishek-brcm
+/boards/arm64/nxp_ls1046ardb/             @JiafeiPan
 /boards/arm64/xenvm/                      @lorc
 # All cmake related files
 /cmake/                                   @tejlmand @nashif
