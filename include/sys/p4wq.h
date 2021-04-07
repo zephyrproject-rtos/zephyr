@@ -30,6 +30,8 @@ struct k_p4wq_work {
 	int32_t priority;
 	int32_t deadline;
 	k_p4wq_handler_t handler;
+	bool sync;
+	struct k_sem done_sem;
 
 	/* reserved for implementation */
 	union {
@@ -37,6 +39,7 @@ struct k_p4wq_work {
 		sys_dlist_t dlnode;
 	};
 	struct k_thread *thread;
+	struct k_p4wq *queue;
 };
 
 /**
@@ -159,5 +162,10 @@ void k_p4wq_submit(struct k_p4wq *queue, struct k_p4wq_work *item);
  * @return true if the item was successfully removed, otherwise false
  */
 bool k_p4wq_cancel(struct k_p4wq *queue, struct k_p4wq_work *item);
+
+/**
+ * @brief Regain ownership of the work item, wait for completion if it's synchronous
+ */
+int k_p4wq_wait(struct k_p4wq_work *work, k_timeout_t timeout);
 
 #endif /* ZEPHYR_INCLUDE_SYS_P4WQ_H_ */
