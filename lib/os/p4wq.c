@@ -134,7 +134,8 @@ void k_p4wq_add_thread(struct k_p4wq *queue, struct k_thread *thread,
 {
 	k_thread_create(thread, stack, stack_size,
 			p4wq_loop, queue, NULL, NULL,
-			K_HIGHEST_THREAD_PRIO, 0, K_NO_WAIT);
+			K_HIGHEST_THREAD_PRIO, 0,
+			queue->flags & K_P4WQ_DELAYED_START ? K_FOREVER : K_NO_WAIT);
 }
 
 static int static_init(const struct device *dev)
@@ -142,16 +143,65 @@ static int static_init(const struct device *dev)
 	ARG_UNUSED(dev);
 
 	Z_STRUCT_SECTION_FOREACH(k_p4wq_initparam, pp) {
-		k_p4wq_init(pp->queue);
 		for (int i = 0; i < pp->num; i++) {
 			uintptr_t ssz = K_THREAD_STACK_LEN(pp->stack_size);
+			struct k_p4wq *q = pp->flags & K_P4WQ_QUEUE_PER_THREAD ?
+				pp->queue + i : pp->queue;
 
-			k_p4wq_add_thread(pp->queue, &pp->threads[i],
+			if (!i || (pp->flags & K_P4WQ_QUEUE_PER_THREAD))
+				k_p4wq_init(q);
+
+			q->flags = pp->flags;
+
+			/*
+			 * If the user wants to specify CPU affinity, we have to
+			 * delay starting threads until that has been done
+			 */
+			if (q->flags & K_P4WQ_USER_CPU_MASK)
+				q->flags |= K_P4WQ_DELAYED_START;
+
+			k_p4wq_add_thread(q, &pp->threads[i],
 					  &pp->stacks[ssz * i],
 					  pp->stack_size);
+
+			if (pp->flags & K_P4WQ_DELAYED_START)
+				z_mark_thread_as_suspended(&pp->threads[i]);
+
+#ifdef CONFIG_SCHED_CPU_MASK
+			if (pp->flags & K_P4WQ_USER_CPU_MASK) {
+				int ret = k_thread_cpu_mask_clear(&pp->threads[i]);
+
+				if (ret < 0)
+					LOG_ERR("Couldn't clear CPU mask: %d", ret);
+			}
+#endif
 		}
 	}
+
 	return 0;
+}
+
+void k_p4wq_enable_static_thread(struct k_p4wq *queue, struct k_thread *thread,
+				 uint32_t cpu_mask)
+{
+#ifdef CONFIG_SCHED_CPU_MASK
+	if (queue->flags & K_P4WQ_USER_CPU_MASK) {
+		unsigned int i;
+
+		while ((i = find_lsb_set(cpu_mask))) {
+			int ret = k_thread_cpu_mask_enable(thread, i - 1);
+
+			if (ret < 0)
+				LOG_ERR("Couldn't set CPU mask for %u: %d", i, ret);
+			cpu_mask &= ~BIT(i - 1);
+		}
+	}
+#endif
+
+	if (queue->flags & K_P4WQ_DELAYED_START) {
+		z_mark_thread_as_not_suspended(thread);
+		k_thread_start(thread);
+	}
 }
 
 /* We spawn a bunch of high priority threads, use the "SMP" initlevel
