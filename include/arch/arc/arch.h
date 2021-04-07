@@ -48,7 +48,11 @@
 extern "C" {
 #endif
 
+#ifdef CONFIG_64BIT
+#define ARCH_STACK_PTR_ALIGN	8
+#else
 #define ARCH_STACK_PTR_ALIGN	4
+#endif /* CONFIG_64BIT */
 
 /* Indicate, for a minimally sized MPU region, how large it must be and what
  * its base address must be aligned to.
