@@ -102,7 +102,7 @@ void test_min_used_chans_sla_loc(void)
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM-1, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_min_used_chans_mas_loc(void)
@@ -156,7 +156,7 @@ void test_min_used_chans_mas_rem(void)
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM-1, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
 }
 
 void test_main(void)
