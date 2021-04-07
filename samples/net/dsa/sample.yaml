@@ -8,5 +8,7 @@ tests:
   sample.net.dsa:
     build_only: true
     platform_allow: ip_k66f
+    integration_platforms:
+      - ip_k66f
     depends_on: netif
     tags: tests

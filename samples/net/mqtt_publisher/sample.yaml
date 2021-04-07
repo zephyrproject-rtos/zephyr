@@ -13,3 +13,5 @@ tests:
   sample.net.mqtt_publisher.bt:
     platform_allow: 96b_nitrogen
     tags: net mqtt bluetooth
+    integration_platforms:
+      - 96b_nitrogen

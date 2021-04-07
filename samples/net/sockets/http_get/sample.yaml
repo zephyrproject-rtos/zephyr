@@ -21,4 +21,6 @@ tests:
       - CONFIG_POSIX_API=y
   sample.net.sockets.http_get.offload.simplelink:
     platform_allow: cc3220sf_launchxl
+    integration_platforms:
+      - cc3220sf_launchxl
     tags: net socket offload simplelink

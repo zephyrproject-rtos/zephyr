@@ -17,21 +17,33 @@ tests:
   sample.net.sockets.echo_server.802154.rf2xx:
     extra_args: OVERLAY_CONFIG="overlay-802154.conf"
     platform_allow: atsamr21_xpro
+    integration_platforms:
+      - atsamr21_xpro
   sample.net.sockets.echo_server.802154.rf2xx.xplained:
     extra_args: SHIELD=atmel_rf2xx_xplained OVERLAY_CONFIG="overlay-802154.conf"
     platform_allow: sam4s_xplained
+    integration_platforms:
+      - sam4s_xplained
   sample.net.sockets.echo_server.802154.rf2xx.xpro:
     extra_args: SHIELD=atmel_rf2xx_xpro OVERLAY_CONFIG="overlay-802154.conf"
     platform_allow: sam4e_xpro sam_v71_xult
+    integration_platforms:
+      - sam4e_xpro
   sample.net.sockets.echo_server.802154.rf2xx.legacy:
     extra_args: SHIELD=atmel_rf2xx_legacy OVERLAY_CONFIG="overlay-802154.conf"
     platform_allow: sam4e_xpro sam_v71_xult
+    integration_platforms:
+      - sam_v71_xult
   sample.net.sockets.echo_server.802154.rf2xx.arduino:
     extra_args: SHIELD=atmel_rf2xx_arduino OVERLAY_CONFIG="overlay-802154.conf"
     platform_allow: sam_v71_xult frdm_k64f nucleo_f767zi
+    integration_platforms:
+      - nucleo_f767zi
   sample.net.sockets.echo_server.802154.rf2xx.mikrobus:
     extra_args: SHIELD=atmel_rf2xx_mikrobus OVERLAY_CONFIG="overlay-802154.conf"
     platform_allow: lpcxpresso55s69_ns
+    integration_platforms:
+      - lpcxpresso55s69_ns
   sample.net.sockets.echo_server.bt:
     extra_args: OVERLAY_CONFIG="overlay-bt.conf"
     platform_allow: qemu_x86
@@ -42,6 +54,8 @@ tests:
   sample.net.sockets.echo_server.nrf_802154:
     extra_args: OVERLAY_CONFIG="overlay-802154.conf"
     platform_allow: nrf52840dk_nrf52840
+    integration_platforms:
+      - nrf52840dk_nrf52840
   sample.net.sockets.echo_server.usbnet:
     depends_on: usb_device
     harness: net
@@ -59,12 +73,16 @@ tests:
     slow: true
     tags: net openthread
     platform_allow: nrf52840dk_nrf52840
+    integration_platforms:
+      - nrf52840dk_nrf52840
     filter: TOOLCHAIN_HAS_NEWLIB == 1
   sample.net.sockets.echo_server.kw41z_openthread:
     extra_args: OVERLAY_CONFIG="overlay-ot.conf"
     slow: true
     tags: net openthread
     platform_allow: frdm_kw41z
+    integration_platforms:
+      - frdm_kw41z
     filter: TOOLCHAIN_HAS_NEWLIB == 1
   sample.net.sockets.echo_server.e1000:
     extra_args: OVERLAY_CONFIG="overlay-e1000.conf"
@@ -74,6 +92,8 @@ tests:
     extra_args: OVERLAY_CONFIG="overlay-qemu_cortex_m3_eth.conf"
     tags: net
     platform_allow: qemu_cortex_m3
+    integration_platforms:
+      - qemu_cortex_m3
   sample.net.sockets.echo_server.smsc911x:
     extra_args: OVERLAY_CONFIG="overlay-smsc911x.conf"
     tags: net

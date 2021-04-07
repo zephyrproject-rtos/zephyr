@@ -30,6 +30,8 @@ tests:
     depends_on: usb_device
   sample.net.zperf.shield:
     platform_allow: reel_board
+    integration_platforms:
+      - reel_board
     extra_args: SHIELD=link_board_eth
     tags: shield net zperf
     depends_on: arduino_spi arduino_gpio

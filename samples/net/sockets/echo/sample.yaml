@@ -11,3 +11,5 @@ tests:
   sample.net.sockets.echo.offload.simplelink:
     platform_allow: cc3220sf_launchxl
     tags: net socket offload simplelink
+    integration_platforms:
+      - cc3220sf_launchxl
