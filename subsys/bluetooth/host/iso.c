@@ -775,12 +775,16 @@ static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 		return;
 	}
 
-	bt_iso_chan_set_state(chan, BT_ISO_BOUND);
+	if (chan->conn->iso.is_bis) {
+		bt_iso_chan_set_state(chan, BT_ISO_DISCONNECTED);
+	} else {
+		bt_iso_chan_set_state(chan, BT_ISO_BOUND);
 
-	/* Unbind if acting as slave or ACL has been disconnected */
-	if (chan->conn->role == BT_HCI_ROLE_SLAVE ||
-	    chan->conn->iso.acl->state == BT_CONN_DISCONNECTED) {
-		bt_iso_chan_unbind(chan);
+		/* Unbind if acting as slave or ACL has been disconnected */
+		if (chan->conn->role == BT_HCI_ROLE_SLAVE ||
+		    chan->conn->iso.acl->state == BT_CONN_DISCONNECTED) {
+			bt_iso_chan_unbind(chan);
+		}
 	}
 
 	if (chan->ops->disconnected) {
