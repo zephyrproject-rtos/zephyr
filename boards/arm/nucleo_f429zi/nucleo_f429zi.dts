@@ -54,6 +54,30 @@
 	};
 };
 
+&clk_hse {
+	hse-bypass;
+	clock-frequency = <DT_FREQ_M(8)>; /* STLink 8MHz clock */
+	status = "okay";
+};
+
+&pll {
+	div-m = <8>;
+	mul-n = <336>;
+	div-p = <2>;
+	div-q = <7>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(168)>; /* highest value to get a precise USB clock */
+	ahb-prescaler = <1>;
+	apb1-prescaler = <4>;
+	apb2-prescaler = <2>;
+};
+
+
 &adc1 {
 	pinctrl-0 = <&adc1_in0_pa0>;
 	status = "okay";
