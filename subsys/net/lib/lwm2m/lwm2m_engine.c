@@ -68,6 +68,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #define MAX_TOKEN_LEN		8
 
+#define LWM2M_MAX_PATH_STR_LEN sizeof("65535/65535/65535/65535")
+
 struct observe_node {
 	sys_snode_t node;
 	struct lwm2m_ctx *ctx;
@@ -556,9 +558,8 @@ static int engine_remove_observer(const uint8_t *token, uint8_t tkl)
 }
 
 #if defined(CONFIG_LOG)
-char *lwm2m_path_log_strdup(struct lwm2m_obj_path *path)
+char *lwm2m_path_log_strdup(char *buf, struct lwm2m_obj_path *path)
 {
-	char buf[sizeof("65535/65535/65535/65535")];
 	size_t cur = sprintf(buf, "%u", path->obj_id);
 
 	if (path->level > 1) {
@@ -578,6 +579,7 @@ char *lwm2m_path_log_strdup(struct lwm2m_obj_path *path)
 #if defined(CONFIG_LWM2M_CANCEL_OBSERVE_BY_PATH)
 static int engine_remove_observer_by_path(struct lwm2m_obj_path *path)
 {
+	char buf[LWM2M_MAX_PATH_STR_LEN];
 	struct observe_node *obs, *found_obj = NULL;
 	sys_snode_t *prev_node = NULL;
 
@@ -595,7 +597,8 @@ static int engine_remove_observer_by_path(struct lwm2m_obj_path *path)
 		return -ENOENT;
 	}
 
-	LOG_INF("Removing observer for path %s", lwm2m_path_log_strdup(path));
+	LOG_INF("Removing observer for path %s",
+		lwm2m_path_log_strdup(buf, path));
 	sys_slist_remove(&engine_observer_list, prev_node, &found_obj->node);
 	(void)memset(found_obj, 0, sizeof(*found_obj));
 
