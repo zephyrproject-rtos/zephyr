@@ -196,12 +196,14 @@
 	STR r1,  sp, ___isf_t_r1_OFFSET
 	STR r0,  sp, ___isf_t_r0_OFFSET
 
+#ifdef CONFIG_ARC_HAS_ZOL
 	MOVR r0, lp_count
 	STR r0, sp, ___isf_t_lp_count_OFFSET
 	LRR r1, [_ARC_V2_LP_START]
 	LRR r0, [_ARC_V2_LP_END]
 	STR r1, sp, ___isf_t_lp_start_OFFSET
 	STR r0, sp, ___isf_t_lp_end_OFFSET
+#endif /* CONFIG_ARC_HAS_ZOL */
 
 #ifdef CONFIG_CODE_DENSITY
 	lr r1, [_ARC_V2_JLI_BASE]
@@ -231,12 +233,14 @@
 	sr r2, [_ARC_V2_EI_BASE]
 #endif
 
+#ifdef CONFIG_ARC_HAS_ZOL
 	LDR r0, sp, ___isf_t_lp_count_OFFSET
 	MOVR lp_count, r0
 	LDR r1, sp, ___isf_t_lp_start_OFFSET
 	LDR r0, sp, ___isf_t_lp_end_OFFSET
 	SRR r1, [_ARC_V2_LP_START]
 	SRR r0, [_ARC_V2_LP_END]
+#endif /* CONFIG_ARC_HAS_ZOL */
 
 	LDR r13, sp, ___isf_t_r13_OFFSET
 	LDR r12, sp, ___isf_t_r12_OFFSET
