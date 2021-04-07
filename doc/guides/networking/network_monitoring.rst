@@ -192,7 +192,8 @@ be cleared like this:
    net capture cleanup
 
 It is not necessary to use ``net-shell`` for configuring the monitoring.
-The network capture API functions can be called by the application if needed.
+The :ref:`network capture API <net_capture_interface>` functions can be called
+by the application if needed.
 
 Wireshark Configuration
 ***********************
