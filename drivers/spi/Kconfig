@@ -19,6 +19,12 @@ config SPI_ASYNC
 	help
 	  This option enables the asynchronous API calls.
 
+config SPI_DEMUX
+  bool "Enable CS demultiplexing"
+  help
+    Some MCUs (such as the SAM E70) that use hardware CS have an option to use 
+    an external demux to accommodate a higher amount of CS channels.
+
 config SPI_SLAVE
 	bool "Enable Slave support [EXPERIMENTAL]"
 	help

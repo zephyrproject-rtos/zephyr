@@ -17,7 +17,6 @@ LOG_MODULE_REGISTER(spi_sam);
 #include <drivers/spi.h>
 #include <soc.h>
 
-#define SAM_SPI_CHIP_SELECT_COUNT			4
 
 /* Device constant configuration parameters */
 struct spi_sam_config {
@@ -31,6 +30,9 @@ struct spi_sam_config {
 struct spi_sam_data {
 	struct spi_context ctx;
 };
+
+#ifndef CONFIG_SPI_DEMUX
+#define SAM_SPI_CHIP_SELECT_COUNT                       4U
 
 static int spi_slave_to_mr_pcs(int slave)
 {
@@ -47,6 +49,9 @@ static int spi_slave_to_mr_pcs(int slave)
 
 	return pcs[slave];
 }
+#else
+#define SAM_SPI_CHIP_SELECT_COUNT                 15U 
+#endif /* CONFIG_SPI_DEMUX */
 
 static int spi_sam_configure(const struct device *dev,
 			     const struct spi_config *config)
@@ -60,23 +65,31 @@ static int spi_sam_configure(const struct device *dev,
 	if (spi_context_configured(&data->ctx, config)) {
 		return 0;
 	}
+	regs->SPI_CR = SPI_CR_SPIDIS; /* Disable SPI */
 
 	if (SPI_OP_MODE_GET(config->operation) != SPI_OP_MODE_MASTER) {
 		/* Slave mode is not implemented. */
 		return -ENOTSUP;
 	}
+#ifdef CONFIG_SPI_DEMUX
+	/* Set PCSDEC to 1 (Peripheral Chip Select Decoding)*/
+	spi_mr |= SPI_MR_PCSDEC;
+	spi_mr |= SPI_MR_PCS(config->slave);
 
-	if (config->slave > (SAM_SPI_CHIP_SELECT_COUNT - 1)) {
+#else
+	/* Set fixed peripheral select mode. */
+	spi_mr |= SPI_MR_PCS(spi_slave_to_mr_pcs(config->slave));
+
+#endif /* CONFIG_SPI_DEMUX */
+
+  if (config->slave > (SAM_SPI_CHIP_SELECT_COUNT - 1)) {
 		LOG_ERR("Slave %d is greater than %d",
 			config->slave, SAM_SPI_CHIP_SELECT_COUNT - 1);
 		return -EINVAL;
 	}
-
-	/* Set master mode, disable mode fault detection, set fixed peripheral
-	 * select mode.
-	 */
+	
+	/* Set master mode, disable mode fault detection */
 	spi_mr |= (SPI_MR_MSTR | SPI_MR_MODFDIS);
-	spi_mr |= SPI_MR_PCS(spi_slave_to_mr_pcs(config->slave));
 
 	if ((config->operation & SPI_MODE_CPOL) != 0U) {
 		spi_csr |= SPI_CSR_CPOL;
@@ -97,9 +110,22 @@ static int spi_sam_configure(const struct device *dev,
 	div = CLAMP(div, 1, UINT8_MAX);
 	spi_csr |= SPI_CSR_SCBR(div);
 
-	regs->SPI_CR = SPI_CR_SPIDIS; /* Disable SPI */
 	regs->SPI_MR = spi_mr;
+
+	/* In external DEMUX mode, each SPI_CSRx register controls up to 4 peripherals
+	 * e.g SPI_CSR0 defines the characteristics of CS0-3
+	 * Therefore, we must find out what register we need to write to by using
+	 * integer division.
+	 * e.g If we want to use CS2:
+	 * 2/4 = 0 -> SPI_CSR0
+	 * source: 41.7.3.7 in the SAM E70 MCU datasheet*/
+#ifdef CONFIG_SPI_DEMUX
+	uint8_t cs_reg_num = config->slave / 4;
+	regs->SPI_CSR[cs_reg_num] = spi_csr;
+#else
 	regs->SPI_CSR[config->slave] = spi_csr;
+#endif /* CONFIG_SPI_DEMUX */
+
 	regs->SPI_CR = SPI_CR_SPIEN; /* Enable SPI */
 
 	data->ctx.config = config;
