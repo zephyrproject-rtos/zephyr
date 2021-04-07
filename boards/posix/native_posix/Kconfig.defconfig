@@ -67,7 +67,7 @@ config FLASH_SIMULATOR
 	default y
 	depends on FLASH
 
-config USB_NATIVE_POSIX
+config USB_USBIP
 	default y
 	depends on USB
 
