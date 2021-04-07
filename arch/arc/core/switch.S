@@ -63,8 +63,7 @@ SECTION_FUNC(TEXT, z_arc_switch)
 
 	SUBR r2, r1, ___thread_t_switch_handle_OFFSET
 
-
-	st _CAUSE_COOP, [r2, _thread_offset_to_relinquish_cause]
+	_st32_huge_offset _CAUSE_COOP, r2, _thread_offset_to_relinquish_cause, r3
 
 	/*
 	 * Save status32 and blink on the stack before the callee-saved registers.

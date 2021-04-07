@@ -521,6 +521,19 @@
 #endif
 .endm
 
+/*
+ * When we accessing bloated struct member we can exceed u9 operand in store
+ * instruction. So we can use _st32_huge_offset macro instead
+ */
+.macro _st32_huge_offset, d, s, off, temp
+	.if MACRO_ARG(off) > 255 || MACRO_ARG(off) < -256
+		ADDR MACRO_ARG(temp), MACRO_ARG(s), MACRO_ARG(off)
+		st MACRO_ARG(d), [MACRO_ARG(temp)]
+	.else
+		st MACRO_ARG(d), [MACRO_ARG(s), MACRO_ARG(off)]
+	.endif
+.endm
+
 #endif /* _ASMLANGUAGE */
 
 #endif /*  ZEPHYR_ARCH_ARC_INCLUDE_SWAP_MACROS_H_ */
