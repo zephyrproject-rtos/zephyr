@@ -206,6 +206,7 @@ config BT_SETTINGS
 if BT_SETTINGS
 config BT_SETTINGS_CCC_LAZY_LOADING
 	bool "Load CCC values from settings when peer connects"
+	depends on BT_CONN
 	default y
 	help
 	  Load Client Configuration Characteristic setting right after a bonded
@@ -215,6 +216,7 @@ config BT_SETTINGS_CCC_LAZY_LOADING
 
 config BT_SETTINGS_CCC_STORE_ON_WRITE
 	bool "Store CCC value immediately after it has been written"
+	depends on BT_CONN
 	help
 	  Store Client Configuration Characteristic value right after it has
 	  been updated.
