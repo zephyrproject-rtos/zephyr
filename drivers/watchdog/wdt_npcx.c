@@ -16,10 +16,10 @@
  * failure detection. Please refer the block diagram for more detail.
  *
  *            +---------------------+    +-----------------+
- *  LFCLK --->| T0 Prescale Counter |--->| 16-Bit T0 Timer |---+----> T0 Timer
- * (32kHz)    |     (TWCP 1:32)     |    |     (TWDT0)     |   |       Event
- *            +---------------------+    +-----------------+   |
- *  +----------------------------------------------------------+
+ *  LFCLK --->| T0 Prescale Counter |-+->| 16-Bit T0 Timer |--------> T0 Timer
+ * (32kHz)    |     (TWCP 1:32)     | |  |     (TWDT0)     |           Event
+ *            +---------------------+ |  +-----------------+
+ *  +---------------------------------+
  *  |
  *  |    +-------------------+    +-----------------+
  *  +--->| Watchdog Prescale |--->| 8-Bit Watchdog  |-----> Watchdog Event/Reset
