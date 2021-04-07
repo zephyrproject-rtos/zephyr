@@ -103,15 +103,21 @@ void _Fault(z_arch_esf_t *esf)
 		}
 	}
 #endif /* CONFIG_USERSPACE */
-	ulong_t mcause, mtval;
+	ulong_t mcause;
 
 	__asm__ volatile("csrr %0, mcause" : "=r" (mcause));
+
+#ifndef CONFIG_SOC_OPENISA_RV32M1_RISCV32
+	ulong_t mtval;
 	__asm__ volatile("csrr %0, mtval" : "=r" (mtval));
+#endif
 
 	mcause &= SOC_MCAUSE_EXP_MASK;
 	LOG_ERR("");
 	LOG_ERR(" mcause: %ld, %s", mcause, cause_str(mcause));
+#ifndef CONFIG_SOC_OPENISA_RV32M1_RISCV32
 	LOG_ERR("  mtval: %lx", mtval);
+#endif
 
 	z_riscv_fatal_error(K_ERR_CPU_EXCEPTION, esf);
 }
