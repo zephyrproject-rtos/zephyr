@@ -38,7 +38,6 @@ enum edac_error_type {
  * This is the mandatory API any EDAC driver needs to expose.
  */
 __subsystem struct edac_driver_api {
-#if defined(CONFIG_EDAC_ERROR_INJECT)
 	/* Error Injection API is disabled by default */
 	int (*inject_set_param1)(const struct device *dev, uint64_t value);
 	int (*inject_get_param1)(const struct device *dev, uint64_t *value);
@@ -47,7 +46,6 @@ __subsystem struct edac_driver_api {
 	int (*inject_set_error_type)(const struct device *dev, uint32_t value);
 	int (*inject_get_error_type)(const struct device *dev, uint32_t *value);
 	int (*inject_error_trigger)(const struct device *dev);
-#endif /* CONFIG_EDAC_ERROR_INJECT */
 
 	/* Error Logging  API */
 	int (*ecc_error_log_get)(const struct device *dev, uint64_t *value);
@@ -63,8 +61,6 @@ __subsystem struct edac_driver_api {
 	int (*notify_cb_set)(const struct device *dev,
 			     edac_notify_callback_f cb);
 };
-
-#if defined(CONFIG_EDAC_ERROR_INJECT)
 
 /**
  * @brief Set injection parameter param1
@@ -230,8 +226,6 @@ static inline int edac_inject_error_trigger(const struct device *dev)
 
 	return api->inject_error_trigger(dev);
 }
-
-#endif /* CONFIG_EDAC_ERROR_INJECT */
 
 /**
  * @brief Get ECC Error Log
