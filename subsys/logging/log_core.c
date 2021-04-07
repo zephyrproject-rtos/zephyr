@@ -50,7 +50,7 @@ LOG_MODULE_REGISTER(log);
 struct log_strdup_buf {
 	atomic_t refcount;
 	char buf[CONFIG_LOG_STRDUP_MAX_STRING + 1]; /* for termination */
-};
+} __aligned(sizeof(uintptr_t));
 
 #define LOG_STRDUP_POOL_BUFFER_SIZE \
 	(sizeof(struct log_strdup_buf) * CONFIG_LOG_STRDUP_BUF_COUNT)
