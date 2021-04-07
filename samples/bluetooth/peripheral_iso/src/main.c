@@ -98,9 +98,9 @@ static void iso_connected(struct bt_iso_chan *chan)
 	printk("ISO Channel %p connected\n", chan);
 }
 
-static void iso_disconnected(struct bt_iso_chan *chan)
+static void iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 {
-	printk("ISO Channel %p disconnected\n", chan);
+	printk("ISO Channel %p disconnected (reason 0x%02x)\n", chan, reason);
 }
 
 static struct bt_iso_chan_ops iso_ops = {

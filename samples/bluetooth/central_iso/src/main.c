@@ -133,9 +133,9 @@ static void iso_connected(struct bt_iso_chan *chan)
 	k_delayed_work_submit(&iso_send_work, K_MSEC(0));
 }
 
-static void iso_disconnected(struct bt_iso_chan *chan)
+static void iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 {
-	printk("ISO Channel %p disconnected\n", chan);
+	printk("ISO Channel %p disconnected (reason 0x%02x)\n", chan, reason);
 	k_delayed_work_cancel(&iso_send_work);
 }
 
