@@ -6,3 +6,5 @@ tests:
     harness: sensor
     tags: sensors
     platform_allow: nrf9160dk_nrf9160
+    integration_platforms:
+      - nrf9160dk_nrf9160
