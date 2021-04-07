@@ -23,6 +23,8 @@
 #define LOG_MODULE_NAME bt_audio_chan
 #include "common/log.h"
 
+#if defined(CONFIG_BT_BAP)
+
 static struct bt_audio_chan *chan_listen;
 
 static void chan_attach(struct bt_conn *conn, struct bt_audio_chan *chan,
@@ -815,3 +817,5 @@ void bt_audio_chan_cb_register(struct bt_audio_chan *chan, struct bt_audio_chan_
 {
 	chan->ops = ops;
 }
+
+#endif /* CONFIG_BT_BAP */

@@ -30,6 +30,8 @@
 #include "capabilities.h"
 #include "pacs_internal.h"
 
+#if defined(CONFIG_BT_BAP)
+
 #define ASE_ID(_ase) ase->ep.status.id
 
 struct bt_ascs_ase {
@@ -1298,3 +1300,5 @@ BT_GATT_SERVICE_DEFINE(ascs_svc,
 	BT_GATT_CCC(ascs_cp_cfg_changed,
 		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT)
 );
+
+#endif /* CONFIG_BT_BAP */
