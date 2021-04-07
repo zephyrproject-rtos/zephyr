@@ -42,6 +42,10 @@ struct k_p4wq_work {
 	struct k_p4wq *queue;
 };
 
+#define K_P4WQ_QUEUE_PER_THREAD		BIT(0)
+#define K_P4WQ_DELAYED_START		BIT(1)
+#define K_P4WQ_USER_CPU_MASK		BIT(2)
+
 /**
  * @brief P4 Queue
  *
@@ -66,6 +70,9 @@ struct k_p4wq {
 
 	/* Work items in progress */
 	sys_dlist_t active;
+
+	/* K_P4WQ_* flags above */
+	uint32_t flags;
 };
 
 struct k_p4wq_initparam {
@@ -74,6 +81,7 @@ struct k_p4wq_initparam {
 	struct k_p4wq *queue;
 	struct k_thread *threads;
 	struct z_thread_stack_element *stacks;
+	uint32_t flags;
 };
 
 /**
@@ -99,6 +107,33 @@ struct k_p4wq_initparam {
 		.threads = _p4threads_##name,				\
 		.stacks = &(_p4stacks_##name[0][0]),			\
 		.queue = &name,						\
+		.flags = 0,						\
+	}
+
+/**
+ * @brief Statically initialize an array of P4 Work Queues
+ *
+ * Statically defines an array of struct k_p4wq objects with the specified
+ * number of threads which will be initialized at boot and ready for use on
+ * entry to main().
+ *
+ * @param name Symbol name of the struct k_p4wq array that will be defined
+ * @param n_threads Number of threads and work queues
+ * @param stack_sz Requested stack size of each thread, in bytes
+ */
+#define K_P4WQ_ARRAY_DEFINE(name, n_threads, stack_sz, flg)		\
+	static K_THREAD_STACK_ARRAY_DEFINE(_p4stacks_##name,		\
+					   n_threads, stack_sz);	\
+	static struct k_thread _p4threads_##name[n_threads];		\
+	static struct k_p4wq name[n_threads];				\
+	static const Z_STRUCT_SECTION_ITERABLE(k_p4wq_initparam,	\
+					       _init_##name) = {	\
+		.num = n_threads,					\
+		.stack_size = stack_sz,					\
+		.threads = _p4threads_##name,				\
+		.stacks = &(_p4stacks_##name[0][0]),			\
+		.queue = name,						\
+		.flags = K_P4WQ_QUEUE_PER_THREAD | flg,			\
 	}
 
 /**
@@ -167,5 +202,8 @@ bool k_p4wq_cancel(struct k_p4wq *queue, struct k_p4wq_work *item);
  * @brief Regain ownership of the work item, wait for completion if it's synchronous
  */
 int k_p4wq_wait(struct k_p4wq_work *work, k_timeout_t timeout);
+
+void k_p4wq_enable_static_thread(struct k_p4wq *queue, struct k_thread *thread,
+				 uint32_t cpu_mask);
 
 #endif /* ZEPHYR_INCLUDE_SYS_P4WQ_H_ */
