@@ -93,6 +93,7 @@ if ISA_ARCV3
 config CPU_HS6X
 	bool
 	select CPU_ARCHS
+	select ARC_LACKS_ZOL
 	select 64BIT
 	help
 	  If y, the SoC uses an ARC HS6x CPU
@@ -103,6 +104,18 @@ config FP_FPU_DA
 	bool
 
 menu "ARC CPU Options"
+
+config ARC_LACKS_ZOL
+	bool "Don't use Zero Delay hardware loops"
+	default y if ISA_ARCV3
+	default n if ISA_ARCV2
+	help
+	  ARCv2 CPUs have ZOL hardware loop mechanism which the ARCv3 ISA drops.
+	  Architecturally ZOL provides
+	  - LPcc instruction
+	  - LP_COUNT core reg
+	  - LP_START, LP_END aux regs
+	  This optional removes any use of ZOL instructions/regs from code
 
 config NUM_IRQ_PRIO_LEVELS
 	int "Number of supported interrupt priority levels"

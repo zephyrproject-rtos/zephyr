@@ -33,8 +33,10 @@ static void dump_arc_esf(const z_arch_esf_t *esf)
 	LOG_ERR("r12: 0x%" PRIxPTR " r13: 0x%" PRIxPTR "  pc: 0x%" PRIxPTR "",
 		esf->r12, esf->r13, esf->pc);
 	LOG_ERR(" blink: 0x%" PRIxPTR " status32: 0x%" PRIxPTR "", esf->blink, esf->status32);
+#ifndef CONFIG_ARC_LACKS_ZOL
 	LOG_ERR("lp_end: 0x%" PRIxPTR " lp_start: 0x%" PRIxPTR " lp_count: 0x%" PRIxPTR "",
 		esf->lp_end, esf->lp_start, esf->lp_count);
+#endif /* CONFIG_ARC_LACKS_ZOL */
 }
 #endif
 

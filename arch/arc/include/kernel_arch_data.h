@@ -37,9 +37,11 @@ extern "C" {
 
 #ifdef CONFIG_ARC_HAS_SECURE
 struct _irq_stack_frame {
+#ifndef CONFIG_ARC_LACKS_ZOL
 	uintptr_t lp_end;
 	uintptr_t lp_start;
 	uintptr_t lp_count;
+#endif /* CONFIG_ARC_LACKS_ZOL */
 #ifdef CONFIG_CODE_DENSITY
 	/*
 	 * Currently unsupported. This is where those registers are
@@ -86,9 +88,11 @@ struct _irq_stack_frame {
 	uintptr_t r12;
 	uintptr_t r13;
 	uintptr_t blink;
+#ifndef CONFIG_ARC_LACKS_ZOL
 	uintptr_t lp_end;
 	uintptr_t lp_start;
 	uintptr_t lp_count;
+#endif /* CONFIG_ARC_LACKS_ZOL */
 #ifdef CONFIG_CODE_DENSITY
 	/*
 	 * Currently unsupported. This is where those registers are
