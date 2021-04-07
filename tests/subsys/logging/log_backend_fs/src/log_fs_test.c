@@ -150,6 +150,8 @@ static void test_log_fs_file_size(void)
 		  sizeof(to_log);
 	     i++) {
 		rc = write_log_to_file(to_log, sizeof(to_log), NULL);
+		/* Written length not tracked here. */
+		ARG_UNUSED(rc);
 	}
 
 	zassert_equal(fs_stat(fname, &entry), 0, "Can not get file info.");
@@ -202,6 +204,8 @@ static void test_log_fs_files_max(void)
 		  sizeof(to_log) * (CONFIG_LOG_BACKEND_FS_FILES_LIMIT - 1);
 	     i++) {
 		rc = write_log_to_file(to_log, sizeof(to_log), NULL);
+		/* Written length not tracked here. */
+		ARG_UNUSED(rc);
 	}
 
 	rc = fs_opendir(&dir, CONFIG_LOG_BACKEND_FS_DIR);
