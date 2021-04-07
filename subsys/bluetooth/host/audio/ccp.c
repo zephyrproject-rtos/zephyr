@@ -91,8 +91,6 @@ struct tbs_instance_t {
 	struct bt_gatt_discover_params incoming_call_sub_disc_params;
 	struct bt_gatt_subscribe_params friendly_name_sub_params;
 	struct bt_gatt_discover_params friendly_name_sub_disc_params;
-
-	uint8_t write_buf[CONFIG_BT_L2CAP_TX_MTU];
 };
 
 struct tbs_server_inst {
@@ -549,7 +547,7 @@ static uint8_t notify_handler(struct bt_conn *conn,
 static int ccp_common_call_control(struct bt_conn *conn, uint8_t inst_index,
 				   uint8_t call_index, uint8_t opcode)
 {	struct tbs_instance_t *inst = get_inst_by_index(inst_index);
-	struct bt_tbs_call_cp_acc_t *common;
+	struct bt_tbs_call_cp_acc_t common;
 
 	if (!inst) {
 		return -EINVAL;
@@ -560,12 +558,11 @@ static int ccp_common_call_control(struct bt_conn *conn, uint8_t inst_index,
 		return -EINVAL;
 	}
 
-	common = (struct bt_tbs_call_cp_acc_t *)inst->write_buf;
-	common->opcode = opcode;
-	common->call_index = call_index;
+	common.opcode = opcode;
+	common.call_index = call_index;
 
 	return bt_gatt_write_without_response(conn, inst->call_cp_handle,
-					      common, sizeof(*common), false);
+					      &common, sizeof(common), false);
 }
 
 static uint8_t ccp_read_bearer_provider_name_cb(
@@ -1544,8 +1541,10 @@ int bt_ccp_originate_call(struct bt_conn *conn, uint8_t inst_index,
 			  const char *uri)
 {
 	struct tbs_instance_t *inst;
+	uint8_t write_buf[CONFIG_BT_L2CAP_TX_MTU];
 	struct bt_tbs_call_cp_originate_t *originate;
 	size_t uri_len;
+	const size_t max_uri_len = sizeof(write_buf) - sizeof(*originate);
 
 	if (!conn) {
 		return -ENOTCONN;
@@ -1565,7 +1564,14 @@ int bt_ccp_originate_call(struct bt_conn *conn, uint8_t inst_index,
 	}
 
 	uri_len = strlen(uri);
-	originate = (struct bt_tbs_call_cp_originate_t *)inst->write_buf;
+
+	if (uri_len > max_uri_len) {
+		BT_DBG("URI len (%u) longer than maximum writable %u",
+		       uri_len, max_uri_len);
+		return -ENOMEM;
+	}
+
+	originate = (struct bt_tbs_call_cp_originate_t *)write_buf;
 	originate->opcode = BT_TBS_CALL_OPCODE_ORIGINATE;
 	memcpy(originate->uri, uri, uri_len);
 
@@ -1586,6 +1592,8 @@ int bt_ccp_join_calls(struct bt_conn *conn, uint8_t inst_index,
 	if (call_indexes && count > 1 && count <= CONFIG_BT_CCP_MAX_CALLS) {
 		struct tbs_instance_t *inst;
 		struct bt_tbs_call_cp_join_t *join;
+		uint8_t write_buf[CONFIG_BT_L2CAP_TX_MTU];
+		const size_t max_call_cnt = sizeof(write_buf) - sizeof(join->opcode);
 
 		inst = get_inst_by_index(inst_index);
 		if (!inst) {
@@ -1595,7 +1603,13 @@ int bt_ccp_join_calls(struct bt_conn *conn, uint8_t inst_index,
 			return -EINVAL;
 		}
 
-		join = (struct bt_tbs_call_cp_join_t *)inst->write_buf;
+		if (count > max_call_cnt) {
+			BT_DBG("Call count (%u) larger than maximum writable %u",
+			       count, max_call_cnt);
+			return -ENOMEM;
+		}
+
+		join = (struct bt_tbs_call_cp_join_t *)write_buf;
 
 		join->opcode = BT_TBS_CALL_OPCODE_JOIN;
 		memcpy(join->call_indexes, call_indexes, count);
