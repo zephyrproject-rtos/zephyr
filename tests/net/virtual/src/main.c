@@ -247,7 +247,7 @@ static struct dummy_api net_iface_api = {
 /* For testing purposes, create two dummy network interfaces so we can check
  * that attaching virtual interface work ok.
  */
-NET_DEVICE_INIT_INSTANCE(net_iface1_test,
+NET_DEVICE_INIT_INSTANCE(eth_test_dummy1,
 			 "iface1",
 			 iface1,
 			 net_iface_dev_init,
@@ -260,7 +260,7 @@ NET_DEVICE_INIT_INSTANCE(net_iface1_test,
 			 NET_L2_GET_CTX_TYPE(DUMMY_L2),
 			 127);
 
-NET_DEVICE_INIT_INSTANCE(net_iface2_test,
+NET_DEVICE_INIT_INSTANCE(eth_test_dummy2,
 			 "iface2",
 			 iface2,
 			 net_iface_dev_init,
@@ -303,6 +303,19 @@ static void iface_cb(struct net_if *iface, void *user_data)
 {
 	struct user_data *ud = user_data;
 	static int starting_eth_idx = 1;
+
+	/*
+	 * The below code is to only use struct net_if devices defined in this
+	 * test as board on which it is run can have its own set of interfaces.
+	 *
+	 * As a result one will not rely on linker's specific 'net_if_area'
+	 * placement.
+	 */
+	if ((iface != net_if_lookup_by_dev(DEVICE_GET(eth_test_dummy1))) &&
+	    (iface != net_if_lookup_by_dev(DEVICE_GET(eth_test_dummy2))) &&
+	    (iface != net_if_lookup_by_dev(DEVICE_GET(eth_test))) &&
+	    (net_if_l2(iface) != &NET_L2_GET_NAME(VIRTUAL)))
+		return;
 
 	DBG("Interface %p (%s) [%d]\n", iface, iface2str(iface),
 	    net_if_get_by_iface(iface));
