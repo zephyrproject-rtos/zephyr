@@ -34,6 +34,15 @@ config FLASH_MCUX_FLEXSPI_NOR
 	select MEMC
 	select MEMC_MCUX_FLEXSPI
 
+config FLASH_MCUX_FLEXSPI_NOR_WRITE_BUFFER
+	bool "MCUX FlexSPI NOR write RAM buffer"
+	default y
+	depends on FLASH_MCUX_FLEXSPI_NOR
+	help
+	  Copy the data to a RAM buffer before writing it to the flash.
+	  This prevents faults when the data to write would be located on the
+	  flash itself.
+
 config FLASH_MCUX_FLEXSPI_XIP
 	bool "MCUX FlexSPI flash access with xip"
 	depends on MEMC_MCUX_FLEXSPI
