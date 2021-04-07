@@ -22,6 +22,9 @@ manifest:
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
 
+    - name: SOF
+      url-base: https://github.com/thesofproject
+
   #
   # Please add items below based on alphabetical order
   projects:
@@ -115,8 +118,13 @@ manifest:
       revision: 38c79a447e4a47d413b4e8d34448316a5cece77c
       path: modules/debug/segger
     - name: sof
-      revision: b5b772dd611879ee6309da38759def79fc7f33f1
+      remote: SOF
+      revision: 2c69afc5fdeb
       path: modules/audio/sof
+    - name: rimage
+      remote: SOF
+      revision: d1f91efdc1e1
+      path: modules/audio/sof/rimage
     - name: tinycbor
       path: modules/lib/tinycbor
       revision: 40daca97b478989884bffb5226e9ab73ca54b8c4
