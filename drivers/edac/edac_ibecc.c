@@ -282,11 +282,13 @@ static int ecc_error_log_get(const struct device *dev, uint64_t *value)
 	return 0;
 }
 
-static void ecc_error_log_clear(const struct device *dev)
+static int ecc_error_log_clear(const struct device *dev)
 {
 	/* Clear all error bits */
 	ibecc_write_reg64(dev, IBECC_ECC_ERROR_LOG,
 			  ECC_ERROR_MERRSTS | ECC_ERROR_CERRSTS);
+
+	return 0;
 }
 
 static int parity_error_log_get(const struct device *dev, uint64_t *value)
@@ -296,19 +298,21 @@ static int parity_error_log_get(const struct device *dev, uint64_t *value)
 	return 0;
 }
 
-static void parity_error_log_clear(const struct device *dev)
+static int parity_error_log_clear(const struct device *dev)
 {
 	ibecc_write_reg64(dev, IBECC_PARITY_ERROR_LOG, PARITY_ERROR_ERRSTS);
+
+	return 0;
 }
 
-static unsigned int errors_cor_get(const struct device *dev)
+static int errors_cor_get(const struct device *dev)
 {
 	struct ibecc_data *data = dev->data;
 
 	return data->errors_cor;
 }
 
-static unsigned int errors_uc_get(const struct device *dev)
+static int errors_uc_get(const struct device *dev)
 {
 	struct ibecc_data *data = dev->data;
 
