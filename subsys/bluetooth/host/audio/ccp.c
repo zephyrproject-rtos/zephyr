@@ -12,6 +12,7 @@
 #include <init.h>
 
 #include <bluetooth/bluetooth.h>
+#include <bluetooth/buf.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/gatt.h>
 #include "ccp.h"
@@ -34,14 +35,6 @@
 #define GTBS_INDEX			CONFIG_BT_CCP_MAX_TBS_INSTANCES
 
 #include "tbs_internal.h"
-
-struct ccp_read_params {
-	struct bt_gatt_read_params params;
-	/* TODO: Convert to net_buf_simple */
-	size_t bytes_read;
-	uint8_t buf[512];
-};
-
 struct tbs_instance_t {
 	struct bt_ccp_call_state_t calls[CONFIG_BT_CCP_MAX_CALLS];
 
@@ -91,6 +84,10 @@ struct tbs_instance_t {
 	struct bt_gatt_discover_params incoming_call_sub_disc_params;
 	struct bt_gatt_subscribe_params friendly_name_sub_params;
 	struct bt_gatt_discover_params friendly_name_sub_disc_params;
+
+	struct bt_gatt_read_params read_params;
+	uint8_t read_buf[BT_ATT_MAX_ATTRIBUTE_LEN];
+	struct net_buf_simple net_buf;
 };
 
 struct tbs_server_inst {
@@ -102,7 +99,6 @@ struct tbs_server_inst {
 	bool subscribe_all;
 };
 
-static struct ccp_read_params read_params_arr[MAX_CONCURRENT_REQS];
 static struct bt_ccp_cb_t *ccp_cbs;
 
 static struct tbs_server_inst srv_inst;
@@ -129,28 +125,6 @@ static struct tbs_instance_t *get_inst_by_index(uint8_t idx)
 	}
 }
 
-static struct ccp_read_params *get_read_params(void)
-{
-	for (int i = 0; i < ARRAY_SIZE(read_params_arr); i++) {
-		if (!read_params_arr[i].params.func) {
-			read_params_arr[i].bytes_read = 0;
-			return &read_params_arr[i];
-		}
-	}
-	return NULL;
-}
-
-static struct ccp_read_params *lookup_read_params(
-	struct bt_gatt_read_params *params)
-{
-	for (int i = 0; i < ARRAY_SIZE(read_params_arr); i++) {
-		if (&read_params_arr[i].params == params) {
-			return &read_params_arr[i];
-		}
-	}
-	return NULL;
-}
-
 static bool free_call_spot(struct tbs_instance_t *inst)
 {
 	for (int i = 0; i < CONFIG_BT_CCP_MAX_CALLS; i++) {
@@ -171,6 +145,65 @@ static struct tbs_instance_t *lookup_instance_by_handle(uint16_t handle)
 	}
 	BT_DBG("Could not find instance with handle 0x%04x", handle);
 	return NULL;
+}
+
+static uint8_t net_buf_pull_call_state(struct net_buf_simple *buf,
+				       struct bt_ccp_call_state_t *call_state)
+{
+	if (buf->len < sizeof(*call_state)) {
+		BT_DBG("Invalid buffer length %u", buf->len);
+		return BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
+	}
+
+	call_state->index = net_buf_simple_pull_u8(buf);
+	call_state->state = net_buf_simple_pull_u8(buf);
+	call_state->flags = net_buf_simple_pull_u8(buf);
+
+	return 0;
+}
+
+
+static uint8_t net_buf_pull_call(struct net_buf_simple *buf,
+				 struct bt_ccp_call_t *call)
+{
+	uint8_t item_len;
+	uint8_t uri_len;
+	const size_t mimimum_item_len = sizeof(call->call_info) + BT_TBS_MIN_URI_LEN;
+	uint8_t err;
+	uint8_t *uri;
+
+	__ASSERT(buf, "NULL buf");
+	__ASSERT(call, "NULL call");
+
+	if (buf->len < sizeof(item_len) + mimimum_item_len) {
+		BT_DBG("Invalid buffer length %u", buf->len);
+		return BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
+	}
+
+	item_len = net_buf_simple_pull_u8(buf);
+	uri_len = item_len - sizeof(call->call_info);
+
+	if (item_len > buf->len || item_len < mimimum_item_len) {
+		BT_DBG("Invalid current call item length %u", item_len);
+		return BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
+	}
+
+	err = net_buf_pull_call_state(buf, &call->call_info);
+	if (err) {
+		return err;
+	}
+
+	uri = net_buf_simple_pull_mem(buf, uri_len);
+	if (uri_len > sizeof(call->remote_uri) - 1) {
+		BT_WARN("Current call (index %u) uri length larger than supported %u/%zu",
+			call->call_info.index, uri_len,
+			sizeof(call->remote_uri) - 1);
+		return BT_ATT_ERR_INSUFFICIENT_RESOURCES;
+	}
+	memcpy(call->remote_uri, uri, uri_len);
+	call->remote_uri[uri_len] = '\0';
+
+	return 0;
 }
 
 static void call_cp_callback_handler(struct bt_conn *conn, int err,
@@ -287,46 +320,37 @@ static void current_calls_notify_handler(struct bt_conn *conn,
 					 const void *data, uint16_t length)
 {
 	struct bt_ccp_call_t calls[CONFIG_BT_CCP_MAX_CALLS];
-	uint16_t bytes_parsed = 0;
-	uint8_t call_index = 0;
+	uint8_t cnt = 0;
+	struct net_buf_simple buf;
 
 	BT_DBG("");
 
-	while (bytes_parsed < length && call_index < CONFIG_BT_CCP_MAX_CALLS) {
-		uint8_t parsed_len;
-		struct bt_ccp_call_t *call;
-		uint8_t item_len;
-		uint8_t uri_len;
+	net_buf_simple_init_with_data(&buf, (void *)data, length);
 
-		call = &calls[call_index];
-		item_len = ((uint8_t *)data)[bytes_parsed++];
+	/* TODO: If length == MTU, do long read for all calls */
 
-		if ((length - bytes_parsed) < item_len) {
-			BT_DBG("Invalid item length, likely the value did not "
-			       "fit in a notification");
+	while (buf.len) {
+		struct bt_ccp_call_t *call = &calls[cnt];
+		int err;
+
+		err = net_buf_pull_call(&buf, call);
+		if (err == BT_ATT_ERR_INSUFFICIENT_RESOURCES) {
+			BT_WARN("Call with skipped due to too long URI");
+			continue;
+		} else if (err) {
+			BT_DBG("Invalid current call notification: %d", err);
 			return;
 		}
 
-		parsed_len = MIN(item_len, sizeof(struct bt_ccp_call_t));
-
-		memcpy(call, (uint8_t *)data + bytes_parsed, parsed_len);
-
-		uri_len = parsed_len - sizeof(call->index) -
-				sizeof(call->state) - sizeof(call->flags);
-
-		call->remote_uri[uri_len] = '\0';
-
-		BT_DBG("Call 0x%02x is in the %s state with flags 0x%02X and "
-		       "URI %s",
-		       call->index, tbs_state_str(call->state),
-		       call->flags, log_strdup(call->remote_uri));
-		bytes_parsed += item_len;
-		call_index++;
+		cnt++;
+		if (cnt == CONFIG_BT_CCP_MAX_CALLS) {
+			BT_WARN("Could not parse all calls due to memory restrictions");
+			break;
+		}
 	}
 
 	if (ccp_cbs && ccp_cbs->current_calls) {
-		ccp_cbs->current_calls(conn, 0, tbs_inst->index, call_index,
-				       calls);
+		ccp_cbs->current_calls(conn, 0, tbs_inst->index, cnt, calls);
 	}
 }
 
@@ -366,37 +390,35 @@ static void call_state_notify_handler(struct bt_conn *conn,
 				      struct tbs_instance_t *tbs_inst,
 				      const void *data, uint16_t length)
 {
-	struct bt_ccp_call_state_t *call_state;
-	uint16_t bytes_parsed = 0;
-	uint8_t call_cnt = 0;
+	struct bt_ccp_call_state_t call_states[CONFIG_BT_CCP_MAX_CALLS];
+	uint8_t cnt = 0;
+	struct net_buf_simple buf;
 
 	BT_DBG("");
 
-	if (length > sizeof(tbs_inst->calls)) {
-		BT_WARN("Could not store all call states");
-		length = sizeof(tbs_inst->calls);
-	}
+	net_buf_simple_init_with_data(&buf, (void *)data, length);
 
-	if ((length % sizeof(*call_state)) != 0) {
-		BT_DBG("Invalid length %u", length);
-		return;
-	}
+	/* TODO: If length == MTU, do long read for all call states */
 
+	while (buf.len) {
+		struct bt_ccp_call_state_t *call_state = &call_states[cnt];
+		int err;
 
-	memset(tbs_inst->calls, 0, sizeof(tbs_inst->calls));
-	while (bytes_parsed < length && call_cnt < CONFIG_BT_CCP_MAX_CALLS) {
-		call_state = &tbs_inst->calls[call_cnt++];
-		memcpy(call_state, (uint8_t *)data + bytes_parsed,
-		       sizeof(*call_state));
-		bytes_parsed += sizeof(*call_state);
-		BT_DBG("Call 0x%02x is in the %s state with flags 0x%02X",
-		       call_state->index, tbs_state_str(call_state->state),
-		       call_state->flags);
+		err = net_buf_pull_call_state(&buf, call_state);
+		if (err) {
+			BT_DBG("Invalid current call notification: %d", err);
+			return;
+		}
+
+		cnt++;
+		if (cnt == CONFIG_BT_CCP_MAX_CALLS) {
+			BT_WARN("Could not parse all calls due to memory restrictions");
+			break;
+		}
 	}
 
 	if (ccp_cbs && ccp_cbs->call_state) {
-		ccp_cbs->call_state(conn, 0, tbs_inst->index, call_cnt,
-				    tbs_inst->calls);
+		ccp_cbs->call_state(conn, 0, tbs_inst->index, cnt, call_states);
 	}
 }
 
@@ -797,107 +819,82 @@ static uint8_t ccp_read_current_calls_cb(struct bt_conn *conn, uint8_t err,
 				      struct bt_gatt_read_params *params,
 				      const void *data, uint16_t length)
 {
-	struct tbs_instance_t *inst =
-		lookup_instance_by_handle(params->single.handle);
+	struct tbs_instance_t *inst = CONTAINER_OF(params, struct tbs_instance_t, read_params);
+	int ccp_err = err;
+	struct bt_ccp_call_t calls[CONFIG_BT_CCP_MAX_CALLS];
+	uint8_t cnt = 0;
 
-	if (inst) {
-		struct bt_ccp_call_t *cb_val = NULL;
-		uint8_t cnt = 0;
-		struct ccp_read_params *read_params;
+	if (IS_ENABLED(CONFIG_BT_CCP_GTBS) && inst->gtbs) {
+		BT_DBG("GTBS");
+	} else {
+		BT_DBG("Index %u", inst->index);
+	}
 
-		if (IS_ENABLED(CONFIG_BT_CCP_GTBS) && inst->gtbs) {
-			BT_DBG("GTBS");
-		} else {
-			BT_DBG("Index %u", inst->index);
-		}
-
-		read_params = lookup_read_params(params);
-		if (err) {
-			BT_DBG("err: 0x%02X", err);
-			memset(params, 0, sizeof(*params));
-			if (ccp_cbs && ccp_cbs->current_calls) {
-				ccp_cbs->current_calls(conn, err, inst->index,
-						       cnt, cb_val);
-			}
-			return BT_GATT_ITER_STOP;
-		}
-
-		if (data) {
-			BT_HEXDUMP_DBG(data, length, "Data read");
-
-			if (read_params->bytes_read + length <=
-				sizeof(read_params->buf)) {
-				memcpy(read_params->buf +
-						read_params->bytes_read,
-				       data, length);
-				read_params->bytes_read += length;
-				return BT_GATT_ITER_CONTINUE;
-			}
-
-			BT_DBG("Could not read all data, aborting");
-			read_params->bytes_read = 0;
-			memset(params, 0, sizeof(*params));
-
-			if (ccp_cbs && ccp_cbs->current_calls) {
-				err = BT_ATT_ERR_INSUFFICIENT_RESOURCES;
-				ccp_cbs->current_calls(conn, err, inst->index,
-						       cnt, cb_val);
-			}
-			return BT_GATT_ITER_STOP;
-		}
-
-		if (read_params->bytes_read) {
-			uint16_t bytes_processed = 0;
-			struct bt_ccp_call_t calls[CONFIG_BT_CCP_MAX_CALLS];
-
-			while (bytes_processed < read_params->bytes_read &&
-			       cnt < CONFIG_BT_CCP_MAX_CALLS) {
-				uint8_t item_len;
-				uint8_t uri_len;
-				struct bt_ccp_call_t *call;
-
-				call = &calls[cnt];
-				memcpy(&item_len,
-				       read_params->buf + bytes_processed,
-				       sizeof(item_len));
-				bytes_processed += sizeof(item_len);
-				memcpy(call,
-				       read_params->buf + bytes_processed,
-				       item_len);
-				bytes_processed += item_len;
-				uri_len = item_len -
-						sizeof(call->index) -
-						sizeof(call->state) -
-						sizeof(call->flags);
-
-				call->remote_uri[uri_len] = '\0';
-
-				BT_DBG("Call 0x%02x is in the %s state with "
-				       "flags 0x%02X and URI %s",
-				       call->index, tbs_state_str(call->state),
-				       call->flags,
-				       log_strdup(call->remote_uri));
-				cnt++;
-			}
-
-			if (bytes_processed < read_params->bytes_read) {
-				BT_DBG("Could not store all calls "
-				       "(maximum reached)");
-			}
-			read_params->bytes_read = 0;
-
-			if (cnt) {
-				cb_val = calls;
-			}
-		}
-
+	if (ccp_err) {
+		BT_DBG("err: %d", ccp_err);
 		memset(params, 0, sizeof(*params));
 		if (ccp_cbs && ccp_cbs->current_calls) {
-			ccp_cbs->current_calls(conn, 0, inst->index, cnt,
-					       cb_val);
+			ccp_cbs->current_calls(conn, ccp_err, inst->index, 0,
+					       NULL);
 		}
-	} else {
+		return BT_GATT_ITER_STOP;
+	}
+
+	if (data) {
+		BT_DBG("Current calls read (offset %u): %s",
+		       params->single.offset, bt_hex(data, length));
+
+		if (inst->net_buf.size < inst->net_buf.len + length) {
+			BT_DBG("Could not read all data, aborting");
+			memset(params, 0, sizeof(*params));
+
+			if (ccp_cbs && ccp_cbs->current_calls) {
+				ccp_err = BT_ATT_ERR_INSUFFICIENT_RESOURCES;
+				ccp_cbs->current_calls(conn, err, inst->index,
+						       0, NULL);
+			}
+			return BT_GATT_ITER_STOP;
+		}
+
+		net_buf_simple_add_mem(&inst->net_buf, data, length);
+
+		/* Returning continue will try to read more using read long procedure */
+		return BT_GATT_ITER_CONTINUE;
+	}
+
+	if (!inst->net_buf.len) {
 		memset(params, 0, sizeof(*params));
+		if (ccp_cbs && ccp_cbs->current_calls) {
+			ccp_cbs->current_calls(conn, 0, inst->index, 0, NULL);
+		}
+
+		return BT_GATT_ITER_STOP;
+	}
+
+	/* Finished reading, start parsing */
+	while (inst->net_buf.len) {
+		struct bt_ccp_call_t *call = &calls[cnt];
+
+		ccp_err = net_buf_pull_call(&inst->net_buf, call);
+		if (ccp_err == BT_ATT_ERR_INSUFFICIENT_RESOURCES) {
+			BT_WARN("Call skipped due to too long URI");
+			continue;
+		} else if (ccp_err) {
+			BT_DBG("Invalid current call read: %d", err);
+			break;
+		}
+
+		cnt++;
+		if (cnt == CONFIG_BT_CCP_MAX_CALLS) {
+			BT_WARN("Could not parse all calls due to memory restrictions");
+			break;
+		}
+	}
+
+	memset(params, 0, sizeof(*params));
+
+	if (ccp_cbs && ccp_cbs->current_calls) {
+		ccp_cbs->current_calls(conn, ccp_err, inst->index, cnt, calls);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -1022,80 +1019,80 @@ static uint8_t ccp_read_call_state_cb(struct bt_conn *conn, uint8_t err,
 				   struct bt_gatt_read_params *params,
 				   const void *data, uint16_t length)
 {
-	struct tbs_instance_t *inst =
-		lookup_instance_by_handle(params->single.handle);
+	struct tbs_instance_t *inst = CONTAINER_OF(params, struct tbs_instance_t, read_params);
+	uint8_t cnt = 0;
+	struct bt_ccp_call_state_t call_states[CONFIG_BT_CCP_MAX_CALLS];
+	int ccp_err = err;
 
-	BT_DBG("");
-
-	if (inst) {
-		struct ccp_read_params *read_params;
-		struct bt_ccp_call_state_t *cb_val = NULL;
-		uint8_t cnt = 0;
-
-		if (IS_ENABLED(CONFIG_BT_CCP_GTBS) && inst->gtbs) {
-			BT_DBG("GTBS");
-		} else {
-			BT_DBG("Index %u", inst->index);
-		}
-
-		read_params = lookup_read_params(params);
-		if (err) {
-			BT_DBG("err: 0x%02X", err);
-		} else if (data) {
-			BT_HEXDUMP_DBG(data, length, "Data read");
-
-			if (read_params->bytes_read + length <=
-				sizeof(read_params->buf)) {
-				memcpy(read_params->buf +
-						read_params->bytes_read,
-				       data, length);
-				read_params->bytes_read += length;
-				return BT_GATT_ITER_CONTINUE;
-			}
-
-			BT_DBG("Could not read all data, aborting");
-			err = BT_ATT_ERR_INSUFFICIENT_RESOURCES;
-		} else if ((read_params->bytes_read %
-				sizeof(struct bt_ccp_call_state_t)) == 1) {
-			BT_DBG("Invalid data length: %zu",
-			       read_params->bytes_read);
-			err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
-		} else if (read_params->bytes_read) {
-			uint16_t bytes_parsed = 0;
-
-			if (sizeof(inst->calls) < read_params->bytes_read) {
-				BT_WARN("Could not store all call states");
-			}
-
-			while (bytes_parsed < read_params->bytes_read &&
-			       cnt < CONFIG_BT_CCP_MAX_CALLS) {
-				struct bt_ccp_call_state_t *call_state;
-
-				call_state = &inst->calls[cnt++];
-				memcpy(call_state,
-				       read_params->buf + bytes_parsed,
-				       sizeof(*call_state));
-				bytes_parsed += sizeof(*call_state);
-				BT_DBG("Call 0x%02x is in the %s state with "
-				       "flags 0x%02X",
-				       call_state->index,
-				       tbs_state_str(call_state->state),
-				       call_state->flags);
-			}
-			read_params->bytes_read = 0;
-		}
-		memset(params, 0, sizeof(*params));
-
-		if (ccp_cbs && ccp_cbs->call_state) {
-
-			if (cnt) {
-				cb_val = inst->calls;
-			}
-			ccp_cbs->call_state(conn, err, inst->index, cnt,
-					    cb_val);
-		}
+	if (IS_ENABLED(CONFIG_BT_CCP_GTBS) && inst->gtbs) {
+		BT_DBG("GTBS");
 	} else {
+		BT_DBG("Index %u", inst->index);
+	}
+
+	if (ccp_err) {
+		BT_DBG("err: %d", ccp_err);
 		memset(params, 0, sizeof(*params));
+		if (ccp_cbs && ccp_cbs->call_state) {
+			ccp_cbs->call_state(conn, ccp_err, inst->index, 0,
+					    NULL);
+		}
+		return BT_GATT_ITER_STOP;
+	}
+
+	if (data) {
+		BT_DBG("Call states read (offset %u): %s",
+		       params->single.offset, bt_hex(data, length));
+
+		if (inst->net_buf.size < inst->net_buf.len + length) {
+			BT_DBG("Could not read all data, aborting");
+			memset(params, 0, sizeof(*params));
+
+			if (ccp_cbs && ccp_cbs->call_state) {
+				ccp_err = BT_ATT_ERR_INSUFFICIENT_RESOURCES;
+				ccp_cbs->call_state(conn, err, inst->index, 0,
+						    NULL);
+			}
+			return BT_GATT_ITER_STOP;
+		}
+
+		net_buf_simple_add_mem(&inst->net_buf, data, length);
+
+		/* Returning continue will try to read more using read long procedure */
+		return BT_GATT_ITER_CONTINUE;
+	}
+
+	if (!inst->net_buf.len) {
+		memset(params, 0, sizeof(*params));
+		if (ccp_cbs && ccp_cbs->call_state) {
+			ccp_cbs->call_state(conn, 0, inst->index, 0, NULL);
+		}
+
+		return BT_GATT_ITER_STOP;
+	}
+
+	/* Finished reading, start parsing */
+	while (inst->net_buf.len) {
+		struct bt_ccp_call_state_t *call_state = &call_states[cnt];
+
+		ccp_err = net_buf_pull_call_state(&inst->net_buf, call_state);
+		if (ccp_err) {
+			BT_DBG("Invalid current call notification: %d", err);
+			break;
+		}
+
+		cnt++;
+		if (cnt == CONFIG_BT_CCP_MAX_CALLS) {
+			BT_WARN("Could not parse all calls due to memory restrictions");
+			break;
+		}
+	}
+
+	memset(params, 0, sizeof(*params));
+
+	if (ccp_cbs && ccp_cbs->call_state) {
+		ccp_cbs->call_state(conn, ccp_err, inst->index, cnt,
+				    call_states);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -1649,7 +1646,6 @@ int bt_ccp_read_bearer_provider_name(struct bt_conn *conn, uint8_t inst_index)
 {
 	int err;
 	struct tbs_instance_t *inst;
-	struct ccp_read_params *read_params;
 
 	if (!conn) {
 		return -ENOTCONN;
@@ -1664,19 +1660,14 @@ int bt_ccp_read_bearer_provider_name(struct bt_conn *conn, uint8_t inst_index)
 		return -EINVAL;
 	}
 
-	read_params = get_read_params();
-	if (!read_params) {
-		return -EBUSY;
-	}
+	inst->read_params.func = ccp_read_bearer_provider_name_cb;
+	inst->read_params.handle_count = 1;
+	inst->read_params.single.handle = inst->provider_name_handle;
+	inst->read_params.single.offset = 0U;
 
-	read_params->params.func = ccp_read_bearer_provider_name_cb;
-	read_params->params.handle_count = 1;
-	read_params->params.single.handle = inst->provider_name_handle;
-	read_params->params.single.offset = 0U;
-
-	err = bt_gatt_read(conn, &read_params->params);
+	err = bt_gatt_read(conn, &inst->read_params);
 	if (err) {
-		memset(read_params, 0, sizeof(*read_params));
+		memset(&inst->read_params, 0, sizeof(inst->read_params));
 	}
 	return err;
 }
@@ -1685,7 +1676,6 @@ int bt_ccp_read_bearer_uci(struct bt_conn *conn, uint8_t inst_index)
 {
 	int err;
 	struct tbs_instance_t *inst;
-	struct ccp_read_params *read_params;
 
 	if (!conn) {
 		return -ENOTCONN;
@@ -1700,19 +1690,14 @@ int bt_ccp_read_bearer_uci(struct bt_conn *conn, uint8_t inst_index)
 		return -EINVAL;
 	}
 
-	read_params = get_read_params();
-	if (!read_params) {
-		return -EBUSY;
-	}
+	inst->read_params.func = ccp_read_bearer_uci_cb;
+	inst->read_params.handle_count = 1;
+	inst->read_params.single.handle = inst->bearer_uci_handle;
+	inst->read_params.single.offset = 0U;
 
-	read_params->params.func = ccp_read_bearer_uci_cb;
-	read_params->params.handle_count = 1;
-	read_params->params.single.handle = inst->bearer_uci_handle;
-	read_params->params.single.offset = 0U;
-
-	err = bt_gatt_read(conn, &read_params->params);
+	err = bt_gatt_read(conn, &inst->read_params);
 	if (err) {
-		memset(read_params, 0, sizeof(*read_params));
+		memset(&inst->read_params, 0, sizeof(inst->read_params));
 	}
 	return err;
 }
@@ -1721,7 +1706,6 @@ int bt_ccp_read_technology(struct bt_conn *conn, uint8_t inst_index)
 {
 	int err;
 	struct tbs_instance_t *inst;
-	struct ccp_read_params *read_params;
 
 	if (!conn) {
 		return -ENOTCONN;
@@ -1736,19 +1720,14 @@ int bt_ccp_read_technology(struct bt_conn *conn, uint8_t inst_index)
 		return -EINVAL;
 	}
 
-	read_params = get_read_params();
-	if (!read_params) {
-		return -EBUSY;
-	}
+	inst->read_params.func = ccp_read_technology_cb;
+	inst->read_params.handle_count = 1;
+	inst->read_params.single.handle = inst->technology_handle;
+	inst->read_params.single.offset = 0U;
 
-	read_params->params.func = ccp_read_technology_cb;
-	read_params->params.handle_count = 1;
-	read_params->params.single.handle = inst->technology_handle;
-	read_params->params.single.offset = 0U;
-
-	err = bt_gatt_read(conn, &read_params->params);
+	err = bt_gatt_read(conn, &inst->read_params);
 	if (err) {
-		memset(read_params, 0, sizeof(*read_params));
+		memset(&inst->read_params, 0, sizeof(inst->read_params));
 	}
 	return err;
 }
@@ -1757,7 +1736,6 @@ int bt_ccp_read_uri_list(struct bt_conn *conn, uint8_t inst_index)
 {
 	int err;
 	struct tbs_instance_t *inst;
-	struct ccp_read_params *read_params;
 
 	if (!conn) {
 		return -ENOTCONN;
@@ -1772,19 +1750,14 @@ int bt_ccp_read_uri_list(struct bt_conn *conn, uint8_t inst_index)
 		return -EINVAL;
 	}
 
-	read_params = get_read_params();
-	if (!read_params) {
-		return -EBUSY;
-	}
+	inst->read_params.func = ccp_read_uri_list_cb;
+	inst->read_params.handle_count = 1;
+	inst->read_params.single.handle = inst->uri_list_handle;
+	inst->read_params.single.offset = 0U;
 
-	read_params->params.func = ccp_read_uri_list_cb;
-	read_params->params.handle_count = 1;
-	read_params->params.single.handle = inst->uri_list_handle;
-	read_params->params.single.offset = 0U;
-
-	err = bt_gatt_read(conn, &read_params->params);
+	err = bt_gatt_read(conn, &inst->read_params);
 	if (err) {
-		memset(read_params, 0, sizeof(*read_params));
+		memset(&inst->read_params, 0, sizeof(inst->read_params));
 	}
 	return err;
 }
@@ -1793,7 +1766,6 @@ int bt_ccp_read_signal_strength(struct bt_conn *conn, uint8_t inst_index)
 {
 	int err;
 	struct tbs_instance_t *inst;
-	struct ccp_read_params *read_params;
 
 	if (!conn) {
 		return -ENOTCONN;
@@ -1808,19 +1780,14 @@ int bt_ccp_read_signal_strength(struct bt_conn *conn, uint8_t inst_index)
 		return -EINVAL;
 	}
 
-	read_params = get_read_params();
-	if (!read_params) {
-		return -EBUSY;
-	}
+	inst->read_params.func = ccp_read_signal_strength_cb;
+	inst->read_params.handle_count = 1;
+	inst->read_params.single.handle = inst->signal_strength_handle;
+	inst->read_params.single.offset = 0U;
 
-	read_params->params.func = ccp_read_signal_strength_cb;
-	read_params->params.handle_count = 1;
-	read_params->params.single.handle = inst->signal_strength_handle;
-	read_params->params.single.offset = 0U;
-
-	err = bt_gatt_read(conn, &read_params->params);
+	err = bt_gatt_read(conn, &inst->read_params);
 	if (err) {
-		memset(read_params, 0, sizeof(*read_params));
+		memset(&inst->read_params, 0, sizeof(inst->read_params));
 	}
 	return err;
 }
@@ -1829,7 +1796,6 @@ int bt_ccp_read_signal_interval(struct bt_conn *conn, uint8_t inst_index)
 {
 	int err;
 	struct tbs_instance_t *inst;
-	struct ccp_read_params *read_params;
 
 	if (!conn) {
 		return -ENOTCONN;
@@ -1844,19 +1810,14 @@ int bt_ccp_read_signal_interval(struct bt_conn *conn, uint8_t inst_index)
 		return -EINVAL;
 	}
 
-	read_params = get_read_params();
-	if (!read_params) {
-		return -EBUSY;
-	}
+	inst->read_params.func = ccp_read_signal_interval_cb;
+	inst->read_params.handle_count = 1;
+	inst->read_params.single.handle = inst->signal_interval_handle;
+	inst->read_params.single.offset = 0U;
 
-	read_params->params.func = ccp_read_signal_interval_cb;
-	read_params->params.handle_count = 1;
-	read_params->params.single.handle = inst->signal_interval_handle;
-	read_params->params.single.offset = 0U;
-
-	err = bt_gatt_read(conn, &read_params->params);
+	err = bt_gatt_read(conn, &inst->read_params);
 	if (err) {
-		memset(read_params, 0, sizeof(*read_params));
+		memset(&inst->read_params, 0, sizeof(inst->read_params));
 	}
 	return err;
 }
@@ -1865,7 +1826,6 @@ int bt_ccp_read_current_calls(struct bt_conn *conn, uint8_t inst_index)
 {
 	int err;
 	struct tbs_instance_t *inst;
-	struct ccp_read_params *read_params;
 
 	if (!conn) {
 		return -ENOTCONN;
@@ -1880,20 +1840,14 @@ int bt_ccp_read_current_calls(struct bt_conn *conn, uint8_t inst_index)
 		return -EINVAL;
 	}
 
-	read_params = get_read_params();
-	if (!read_params) {
-		return -EBUSY;
-	}
+	inst->read_params.func = ccp_read_current_calls_cb;
+	inst->read_params.handle_count = 1;
+	inst->read_params.single.handle = inst->current_calls_handle;
+	inst->read_params.single.offset = 0U;
 
-	read_params->bytes_read = 0;
-	read_params->params.func = ccp_read_current_calls_cb;
-	read_params->params.handle_count = 1;
-	read_params->params.single.handle = inst->current_calls_handle;
-	read_params->params.single.offset = 0U;
-
-	err = bt_gatt_read(conn, &read_params->params);
+	err = bt_gatt_read(conn, &inst->read_params);
 	if (err) {
-		memset(read_params, 0, sizeof(*read_params));
+		memset(&inst->read_params, 0, sizeof(inst->read_params));
 	}
 	return err;
 }
@@ -1902,7 +1856,6 @@ int bt_ccp_read_ccid(struct bt_conn *conn, uint8_t inst_index)
 {
 	int err;
 	struct tbs_instance_t *inst;
-	struct ccp_read_params *read_params;
 
 	if (!conn) {
 		return -ENOTCONN;
@@ -1917,19 +1870,14 @@ int bt_ccp_read_ccid(struct bt_conn *conn, uint8_t inst_index)
 		return -EINVAL;
 	}
 
-	read_params = get_read_params();
-	if (!read_params) {
-		return -EBUSY;
-	}
+	inst->read_params.func = ccp_read_ccid_cb;
+	inst->read_params.handle_count = 1;
+	inst->read_params.single.handle = inst->ccid_handle;
+	inst->read_params.single.offset = 0U;
 
-	read_params->params.func = ccp_read_ccid_cb;
-	read_params->params.handle_count = 1;
-	read_params->params.single.handle = inst->ccid_handle;
-	read_params->params.single.offset = 0U;
-
-	err = bt_gatt_read(conn, &read_params->params);
+	err = bt_gatt_read(conn, &inst->read_params);
 	if (err) {
-		memset(read_params, 0, sizeof(*read_params));
+		memset(&inst->read_params, 0, sizeof(inst->read_params));
 	}
 	return err;
 }
@@ -1938,7 +1886,6 @@ int bt_ccp_read_status_flags(struct bt_conn *conn, uint8_t inst_index)
 {
 	int err;
 	struct tbs_instance_t *inst;
-	struct ccp_read_params *read_params;
 
 	if (!conn) {
 		return -ENOTCONN;
@@ -1953,19 +1900,14 @@ int bt_ccp_read_status_flags(struct bt_conn *conn, uint8_t inst_index)
 		return -EINVAL;
 	}
 
-	read_params = get_read_params();
-	if (!read_params) {
-		return -EBUSY;
-	}
+	inst->read_params.func = ccp_read_status_flags_cb;
+	inst->read_params.handle_count = 1;
+	inst->read_params.single.handle = inst->status_flags_handle;
+	inst->read_params.single.offset = 0U;
 
-	read_params->params.func = ccp_read_status_flags_cb;
-	read_params->params.handle_count = 1;
-	read_params->params.single.handle = inst->status_flags_handle;
-	read_params->params.single.offset = 0U;
-
-	err = bt_gatt_read(conn, &read_params->params);
+	err = bt_gatt_read(conn, &inst->read_params);
 	if (err) {
-		memset(read_params, 0, sizeof(*read_params));
+		memset(&inst->read_params, 0, sizeof(inst->read_params));
 	}
 	return err;
 }
@@ -1974,7 +1916,6 @@ int bt_ccp_read_call_uri(struct bt_conn *conn, uint8_t inst_index)
 {
 	int err;
 	struct tbs_instance_t *inst;
-	struct ccp_read_params *read_params;
 
 	if (!conn) {
 		return -ENOTCONN;
@@ -1989,19 +1930,14 @@ int bt_ccp_read_call_uri(struct bt_conn *conn, uint8_t inst_index)
 		return -EINVAL;
 	}
 
-	read_params = get_read_params();
-	if (!read_params) {
-		return -EBUSY;
-	}
+	inst->read_params.func = ccp_read_call_uri_cb;
+	inst->read_params.handle_count = 1;
+	inst->read_params.single.handle = inst->in_uri_handle;
+	inst->read_params.single.offset = 0U;
 
-	read_params->params.func = ccp_read_call_uri_cb;
-	read_params->params.handle_count = 1;
-	read_params->params.single.handle = inst->in_uri_handle;
-	read_params->params.single.offset = 0U;
-
-	err = bt_gatt_read(conn, &read_params->params);
+	err = bt_gatt_read(conn, &inst->read_params);
 	if (err) {
-		memset(read_params, 0, sizeof(*read_params));
+		memset(&inst->read_params, 0, sizeof(inst->read_params));
 	}
 	return err;
 }
@@ -2010,7 +1946,6 @@ int bt_ccp_read_call_state(struct bt_conn *conn, uint8_t inst_index)
 {
 	int err;
 	struct tbs_instance_t *inst;
-	struct ccp_read_params *read_params;
 
 	if (!conn) {
 		return -ENOTCONN;
@@ -2025,20 +1960,14 @@ int bt_ccp_read_call_state(struct bt_conn *conn, uint8_t inst_index)
 		return -EINVAL;
 	}
 
-	read_params = get_read_params();
-	if (!read_params) {
-		return -EBUSY;
-	}
+	inst->read_params.func = ccp_read_call_state_cb;
+	inst->read_params.handle_count = 1;
+	inst->read_params.single.handle = inst->call_state_handle;
+	inst->read_params.single.offset = 0U;
 
-	read_params->params.func = ccp_read_call_state_cb;
-	read_params->params.handle_count = 1;
-	read_params->params.single.handle = inst->call_state_handle;
-	read_params->params.single.offset = 0U;
-	read_params->bytes_read = 0;
-
-	err = bt_gatt_read(conn, &read_params->params);
+	err = bt_gatt_read(conn, &inst->read_params);
 	if (err) {
-		memset(read_params, 0, sizeof(*read_params));
+		memset(&inst->read_params, 0, sizeof(inst->read_params));
 	}
 	return err;
 }
@@ -2047,7 +1976,6 @@ int bt_ccp_read_optional_opcodes(struct bt_conn *conn, uint8_t inst_index)
 {
 	int err;
 	struct tbs_instance_t *inst;
-	struct ccp_read_params *read_params;
 
 	if (!conn) {
 		return -ENOTCONN;
@@ -2062,20 +1990,14 @@ int bt_ccp_read_optional_opcodes(struct bt_conn *conn, uint8_t inst_index)
 		return -EINVAL;
 	}
 
-	read_params = get_read_params();
-	if (!read_params) {
-		return -EBUSY;
-	}
+	inst->read_params.func = ccp_read_optional_opcodes_cb;
+	inst->read_params.handle_count = 1;
+	inst->read_params.single.handle = inst->optional_opcodes_handle;
+	inst->read_params.single.offset = 0U;
 
-	read_params->params.func = ccp_read_optional_opcodes_cb;
-	read_params->params.handle_count = 1;
-	read_params->params.single.handle = inst->optional_opcodes_handle;
-	read_params->params.single.offset = 0U;
-	read_params->bytes_read = 0;
-
-	err = bt_gatt_read(conn, &read_params->params);
+	err = bt_gatt_read(conn, &inst->read_params);
 	if (err) {
-		memset(read_params, 0, sizeof(*read_params));
+		memset(&inst->read_params, 0, sizeof(inst->read_params));
 	}
 	return err;
 }
@@ -2083,7 +2005,6 @@ int bt_ccp_read_remote_uri(struct bt_conn *conn, uint8_t inst_index)
 {
 	int err;
 	struct tbs_instance_t *inst;
-	struct ccp_read_params *read_params;
 
 	if (!conn) {
 		return -ENOTCONN;
@@ -2098,19 +2019,14 @@ int bt_ccp_read_remote_uri(struct bt_conn *conn, uint8_t inst_index)
 		return -EINVAL;
 	}
 
-	read_params = get_read_params();
-	if (!read_params) {
-		return -EBUSY;
-	}
+	inst->read_params.func = ccp_read_remote_uri_cb;
+	inst->read_params.handle_count = 1;
+	inst->read_params.single.handle = inst->in_call_handle;
+	inst->read_params.single.offset = 0U;
 
-	read_params->params.func = ccp_read_remote_uri_cb;
-	read_params->params.handle_count = 1;
-	read_params->params.single.handle = inst->in_call_handle;
-	read_params->params.single.offset = 0U;
-
-	err = bt_gatt_read(conn, &read_params->params);
+	err = bt_gatt_read(conn, &inst->read_params);
 	if (err) {
-		memset(read_params, 0, sizeof(*read_params));
+		memset(&inst->read_params, 0, sizeof(inst->read_params));
 	}
 	return err;
 }
@@ -2119,7 +2035,6 @@ int bt_ccp_read_friendly_name(struct bt_conn *conn, uint8_t inst_index)
 {
 	int err;
 	struct tbs_instance_t *inst;
-	struct ccp_read_params *read_params;
 
 	if (!conn) {
 		return -ENOTCONN;
@@ -2134,19 +2049,14 @@ int bt_ccp_read_friendly_name(struct bt_conn *conn, uint8_t inst_index)
 		return -EINVAL;
 	}
 
-	read_params = get_read_params();
-	if (!read_params) {
-		return -EBUSY;
-	}
+	inst->read_params.func = ccp_read_friendly_name_cb;
+	inst->read_params.handle_count = 1;
+	inst->read_params.single.handle = inst->friendly_name_handle;
+	inst->read_params.single.offset = 0U;
 
-	read_params->params.func = ccp_read_friendly_name_cb;
-	read_params->params.handle_count = 1;
-	read_params->params.single.handle = inst->friendly_name_handle;
-	read_params->params.single.offset = 0U;
-
-	err = bt_gatt_read(conn, &read_params->params);
+	err = bt_gatt_read(conn, &inst->read_params);
 	if (err) {
-		memset(read_params, 0, sizeof(*read_params));
+		memset(&inst->read_params, 0, sizeof(inst->read_params));
 	}
 	return err;
 }
