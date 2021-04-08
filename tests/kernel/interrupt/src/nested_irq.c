@@ -16,6 +16,15 @@
 #define TEST_NESTED_ISR
 #endif
 
+#if defined(CONFIG_ARM64) && defined(CONFIG_FPU_SHARING)
+/*
+ * The various log outputs trigger FP access due to the va_list used by
+ * printk() and friends. IRQs are masked to prevent further IRQ nesting
+ * when that happens.
+ */
+#undef TEST_NESTED_ISR
+#endif
+
 #define DURATION	5
 
 #define ISR0_TOKEN	0xDEADBEEF

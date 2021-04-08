@@ -116,6 +116,17 @@ static void cpu_hold(void *arg1, void *arg2, void *arg3)
 
 	k_sem_give(&cpuhold_sem);
 
+#if defined(CONFIG_ARM64) && defined(CONFIG_FPU_SHARING)
+	/*
+	 * We'll be spinning with IRQs disabled. The flush-your-FPU request
+	 * IPI will never be serviced during that time. Therefore we flush
+	 * the FPU preemptively here to prevent any other CPU waiting after
+	 * this CPU forever and deadlock the system.
+	 */
+	extern void z_arm64_flush_local_fpu(void);
+	z_arm64_flush_local_fpu();
+#endif
+
 	while (cpuhold_active) {
 		k_busy_wait(1000);
 	}
