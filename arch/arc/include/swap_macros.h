@@ -309,6 +309,7 @@
 	ld MACRO_ARG(reg2), [MACRO_ARG(reg1), ___cpu_t_nested_OFFSET]
 #else
 	MOVR MACRO_ARG(reg1), _kernel
+	/* z_kernel.nested is 32 bit despite of platform bittnes */
 	ld MACRO_ARG(reg2), [MACRO_ARG(reg1), _kernel_offset_to_nested]
 #endif
 	add MACRO_ARG(reg2), MACRO_ARG(reg2), 1
@@ -331,6 +332,7 @@
 	ld MACRO_ARG(reg2), [MACRO_ARG(reg1), ___cpu_t_nested_OFFSET]
 #else
 	MOVR MACRO_ARG(reg1), _kernel
+	/* z_kernel.nested is 32 bit despite of platform bittnes */
 	ld MACRO_ARG(reg2), [MACRO_ARG(reg1), _kernel_offset_to_nested]
 #endif
 	sub MACRO_ARG(reg2), MACRO_ARG(reg2), 1
@@ -444,7 +446,7 @@
 	bl configure_mpu_thread
 	pop_s r2
 #endif
-
+	/* _thread_arch.relinquish_cause is 32 bit despite of platform bittnes */
 	ld r3, [r2, _thread_offset_to_relinquish_cause]
 .endm
 
