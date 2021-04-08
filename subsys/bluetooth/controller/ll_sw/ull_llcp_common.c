@@ -27,8 +27,10 @@
 #include "ull_tx_queue.h"
 
 #include "ull_conn_types.h"
+#include "ull_chan_internal.h"
 #include "ull_internal.h"
 #include "ull_llcp.h"
+#include "ull_conn_llcp_internal.h"
 #include "ull_llcp_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
@@ -570,6 +572,18 @@ static void rp_comm_send_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		}
 		break;
 	case PROC_MIN_USED_CHANS:
+		/* Spec says (5.2, Vol.6, Part B, Section 5.1.11):
+		     The procedure has completed when the Link Layer acknowledgment of the
+		     LL_MIN_USED_CHANNELS_IND PDU is sent or received.
+		   In effect, for this procedure, this is equivalent to RX of PDU
+		*/
+		/* So we inititate a chmap update procedure, but only if acting as central, just in case ... */
+		if (conn->lll.role == BT_HCI_ROLE_MASTER && ull_conn_lll_phy_active(conn, conn->llcp.muc.phys)) {
+			uint8_t chmap[5];
+			ull_chan_map_get((uint8_t *const)chmap);
+			ull_cp_chan_map_update(conn, chmap);
+			/* TODO - what to do on failure of ull_cp_chan_map_update() */
+		}
 		/* No response */
 		rr_complete(conn);
 		ctx->state = RP_COMMON_STATE_IDLE;
