@@ -74,6 +74,11 @@ uint8_t vocs_client_notify_handler(struct bt_conn *conn, struct bt_gatt_subscrib
 		char desc[MIN(CONFIG_BT_L2CAP_RX_MTU, BT_ATT_MAX_ATTRIBUTE_LEN) + 1];
 
 		/* Truncate if too large */
+
+		if (length > sizeof(desc) - 1) {
+			BT_DBG("Description truncated from %u to %zu octets",
+			       length, sizeof(desc) - 1);
+		}
 		length = MIN(sizeof(desc) - 1, length);
 
 		memcpy(desc, data, length);
@@ -290,18 +295,28 @@ static uint8_t vcs_client_read_output_desc_cb(struct bt_conn *conn, uint8_t err,
 	BT_DBG("Inst %p: err: 0x%02X", inst, err);
 	inst->cli.busy = false;
 
+	if (cb_err) {
+		BT_DBG("Description read failed: %d", err);
+		if (inst->cli.cb && inst->cli.cb->description) {
+			inst->cli.cb->description(conn, inst, cb_err, NULL);
+		}
+		return BT_GATT_ITER_STOP;
+	}
+
 	if (data) {
 		BT_HEXDUMP_DBG(data, length, "Output description read");
+
+		if (length > sizeof(desc) - 1) {
+			BT_DBG("Description truncated from %u to %zu octets",
+			       length, sizeof(desc) - 1);
+		}
 		length = MIN(sizeof(desc) - 1, length);
 
 		/* TODO: Handle long reads */
 		memcpy(desc, data, length);
-		desc[length] = '\0';
-		BT_DBG("Output description: %s", log_strdup(desc));
-	} else {
-		BT_DBG("Invalid output");
-		cb_err = BT_ATT_ERR_UNLIKELY;
 	}
+	desc[length] = '\0';
+	BT_DBG("Output description: %s", log_strdup(desc));
 
 	if (inst->cli.cb && inst->cli.cb->description) {
 		inst->cli.cb->description(conn, inst, cb_err, desc);
