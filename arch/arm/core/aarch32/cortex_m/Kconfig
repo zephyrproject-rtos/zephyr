@@ -244,6 +244,7 @@ config ARMV8_M_SE
 config ARMV7_M_ARMV8_M_FP
 	bool
 	depends on ARMV7_M_ARMV8_M_MAINLINE && !CPU_CORTEX_M3
+	imply FPU_SHARING
 	help
 	  This option signifies the use of an ARMv7-M processor
 	  implementation, or the use of an ARMv8-M processor
