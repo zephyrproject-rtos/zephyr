@@ -63,6 +63,7 @@ SECTION_FUNC(TEXT, z_arc_switch)
 
 	SUBR r2, r1, ___thread_t_switch_handle_OFFSET
 
+	/* _thread_arch.relinquish_cause is 32 bit despite of platform bittnes */
 	_st32_huge_offset _CAUSE_COOP, r2, _thread_offset_to_relinquish_cause, r3
 
 	/*

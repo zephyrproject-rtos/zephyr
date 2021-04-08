@@ -264,6 +264,7 @@ SECTION_FUNC(TEXT, _rirq_exit)
 	/* r2 is old thread */
 	_irq_store_old_thread_callee_regs
 
+	/* _thread_arch.relinquish_cause is 32 bit despite of platform bittnes */
 	_st32_huge_offset _CAUSE_RIRQ, r2, _thread_offset_to_relinquish_cause, r2
 
 	/* mov new thread (r0) to r2 */
