@@ -42,7 +42,7 @@ typedef struct _callee_saved _callee_saved_t;
 struct _thread_arch {
 
 	/* one of the _CAUSE_xxxx definitions above */
-	int relinquish_cause;
+	int32_t relinquish_cause;
 
 #ifdef CONFIG_ARC_STACK_CHECKING
 	/* High address of stack region, stack grows downward from this

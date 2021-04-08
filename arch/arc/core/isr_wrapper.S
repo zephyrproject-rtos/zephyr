@@ -249,6 +249,7 @@ rirq_path:
 #if defined(CONFIG_PM)
 	clri r0 /* do not interrupt exiting tickless idle operations */
 	MOVR r1, _kernel
+	/* z_kernel.idle is 32 bit despite of platform bittnes */
 	ld_s r3, [r1, _kernel_offset_to_idle] /* requested idle duration */
 	breq r3, 0, _skip_pm_save_idle_exit
 
