@@ -97,7 +97,7 @@ manifest:
       revision: 9f09bae7c0ad7df5e0a72731061125913fba61c7
       path: modules/lib/mcumgr
     - name: net-tools
-      revision: 244d685184e7e983f47569be276d9d4c1b133016
+      revision: f49bd1354616fae4093bf36e5eaee43c51a55127
       path: tools/net-tools
     - name: hal_nxp
       revision: ad8de4f9743aa7500f184bcf6c2cea07c041fe69
