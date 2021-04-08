@@ -43,7 +43,6 @@ enum {
 	BT_DEV_INITIATING,
 
 	BT_DEV_RPA_VALID,
-	BT_DEV_RPA_TIMEOUT_SET,
 
 	BT_DEV_ID_PENDING,
 	BT_DEV_STORE_ID,
@@ -302,7 +301,7 @@ struct bt_dev {
 	uint8_t			irk[CONFIG_BT_ID_MAX][16];
 
 	/* Work used for RPA rotation */
-	struct k_delayed_work rpa_update;
+	struct k_work_delayable rpa_update;
 #endif
 
 	/* Local Name */
