@@ -473,7 +473,7 @@ uint8_t ull_cp_chan_map_update(struct ll_conn *conn, uint8_t chm[5])
 	}
 
 	/* RFU bits */
-	if (chm[4] & 0x07) {
+	if (chm[4] & 0xE0) {
 		return BT_HCI_ERR_INVALID_PARAM;
 	}
 
