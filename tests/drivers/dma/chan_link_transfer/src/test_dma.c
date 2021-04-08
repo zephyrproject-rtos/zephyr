@@ -21,7 +21,7 @@
 #include <drivers/dma.h>
 #include <ztest.h>
 
-#define DMA_DEVICE_NAME CONFIG_DMA_0_NAME
+#define DMA_DEVICE_NAME CONFIG_DMA_LINK_TRANSFER_DRV_NAME
 #define TEST_DMA_CHANNEL_0 (0)
 #define TEST_DMA_CHANNEL_1 (1)
 #define RX_BUFF_SIZE (48)
