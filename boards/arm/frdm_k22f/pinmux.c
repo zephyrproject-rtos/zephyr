@@ -82,7 +82,6 @@ static int frdm_k22f_pinmux_init(const struct device *dev)
 	pinmux_pin_set(portd, 1, PORT_PCR_MUX(kPORT_MuxAlt2));
 	pinmux_pin_set(portd, 2, PORT_PCR_MUX(kPORT_MuxAlt2));
 	pinmux_pin_set(portd, 3, PORT_PCR_MUX(kPORT_MuxAlt2));
-	pinmux_pin_set(portc, 11, PORT_PCR_MUX(kPORT_MuxAsGpio));
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c0), okay) && CONFIG_I2C
