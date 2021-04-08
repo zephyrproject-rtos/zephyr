@@ -1,0 +1,26 @@
+#
+# Copyright (c) 2021 Thomas Stranger
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+mainmenu "PWM loopback sample application"
+
+choice
+	prompt "Capture type"
+	default APP_CAPTURE_TYPE_PULSE
+	help
+	  Select the capture type used for the measurement.
+
+config APP_CAPTURE_TYPE_PULSE
+	bool "Capture pulse only"
+
+config APP_CAPTURE_TYPE_PERIOD
+	bool "Capture period only"
+
+config APP_CAPTURE_TYPE_BOTH
+	bool "Capture both pulse and period"
+
+endchoice
+
+source "Kconfig.zephyr"
