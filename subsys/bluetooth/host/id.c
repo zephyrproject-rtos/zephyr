@@ -185,9 +185,6 @@ static void adv_rpa_invalidate(struct bt_le_ext_adv *adv, void *data)
 
 static void le_rpa_invalidate(void)
 {
-	/* RPA must be submitted */
-	atomic_clear_bit(bt_dev.flags, BT_DEV_RPA_TIMEOUT_SET);
-
 	/* Invalidate RPA */
 	if (!(IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 	      atomic_test_bit(bt_dev.flags, BT_DEV_SCAN_LIMITED))) {
@@ -202,12 +199,7 @@ static void le_rpa_invalidate(void)
 #if defined(CONFIG_BT_PRIVACY)
 static void le_rpa_timeout_submit(void)
 {
-	/* Check if RPA timer is running. */
-	if (atomic_test_and_set_bit(bt_dev.flags, BT_DEV_RPA_TIMEOUT_SET)) {
-		return;
-	}
-
-	k_delayed_work_submit(&bt_dev.rpa_update, RPA_TIMEOUT);
+	(void)k_work_schedule(&bt_dev.rpa_update, RPA_TIMEOUT);
 }
 
 /* this function sets new RPA only if current one is no longer valid */
@@ -432,6 +424,17 @@ static void le_update_private_addr(void)
 		bt_le_scan_set_enable(BT_HCI_LE_SCAN_ENABLE);
 	}
 #endif
+}
+
+static void le_force_rpa_timeout(void)
+{
+#if defined(CONFIG_BT_PRIVACY)
+	struct k_work_sync sync;
+
+	k_work_cancel_delayable_sync(&bt_dev.rpa_update, &sync);
+#endif
+	le_rpa_invalidate();
+	le_update_private_addr();
 }
 
 #if defined(CONFIG_BT_PRIVACY)
@@ -1344,9 +1347,10 @@ int bt_setup_random_id_addr(void)
 static inline bool rpa_timeout_valid_check(void)
 {
 #if defined(CONFIG_BT_PRIVACY)
+	uint32_t remaining_ms = k_ticks_to_ms_floor32(
+		k_work_delayable_remaining_get(&bt_dev.rpa_update));
 	/* Check if create conn timeout will happen before RPA timeout. */
-	return k_delayed_work_remaining_get(&bt_dev.rpa_update) >
-	       (10 * bt_dev.create_param.timeout);
+	return remaining_ms > (10 * bt_dev.create_param.timeout);
 #else
 	return true;
 #endif
@@ -1366,8 +1370,7 @@ int bt_id_set_create_conn_own_addr(bool use_filter, uint8_t *own_addr_type)
 			/* Force new RPA timeout so that RPA timeout is not
 			 * triggered while direct initiator is active.
 			 */
-			le_rpa_invalidate();
-			le_update_private_addr();
+			le_force_rpa_timeout();
 		}
 
 		if (BT_FEAT_LE_PRIVACY(bt_dev.le.features)) {
@@ -1627,8 +1630,7 @@ int bt_le_oob_get_local(uint8_t id, struct bt_le_oob *oob)
 			return -EINVAL;
 		}
 
-		le_rpa_invalidate();
-		le_update_private_addr();
+		le_force_rpa_timeout();
 
 		bt_addr_le_copy(&oob->addr, &bt_dev.random_addr);
 	} else {
@@ -1681,8 +1683,7 @@ int bt_le_ext_adv_oob_get_local(struct bt_le_ext_adv *adv,
 				}
 			}
 
-			le_rpa_invalidate();
-			le_update_private_addr();
+			le_force_rpa_timeout();
 		}
 
 		bt_addr_le_copy(&oob->addr, &adv->random_addr);
@@ -1766,7 +1767,7 @@ int bt_id_init(void)
 	}
 
 #if defined(CONFIG_BT_PRIVACY)
-	k_delayed_work_init(&bt_dev.rpa_update, rpa_timeout);
+	k_work_init_delayable(&bt_dev.rpa_update, rpa_timeout);
 #endif
 
 	return 0;
