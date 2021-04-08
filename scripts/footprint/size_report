@@ -12,6 +12,7 @@ import os
 import sys
 import re
 from pathlib import Path
+import json
 
 from distutils.version import LooseVersion
 
@@ -30,7 +31,7 @@ if LooseVersion(elftools.__version__) < LooseVersion('0.24'):
 from colorama import init, Fore
 
 from anytree import RenderTree, NodeMixin, findall_by_attr
-from anytree.exporter import JsonExporter
+from anytree.exporter import DictExporter
 
 
 # ELF section flags
@@ -634,10 +635,12 @@ def main():
         print_any_tree(root, symsize, args.depth)
 
         if args.json:
-            exporter = JsonExporter(indent=2, sort_keys=True)
-            data = exporter.export(root)
+            exporter = DictExporter()
+            data = dict()
+            data["symbols"] = exporter.export(root)
+            data["total_size"] = symsize
             with open(args.json, "w") as fp:
-                fp.write(data)
+                json.dump(data, fp, indent=4)
 
 
 if __name__ == "__main__":
