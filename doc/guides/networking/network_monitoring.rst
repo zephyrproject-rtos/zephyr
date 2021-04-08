@@ -54,8 +54,43 @@ The actual interface will depend on how the capturing is configured.
 You can then use Wireshark to monitor the proper network interface.
 
 After the tunneling interfaces have been created, you can use for example
-``netcat`` to provide an UDP listener like this in terminal #2, so that the
-host will not send port unreachable message to Zephyr:
+``net-capture.py`` script from ``net-tools`` project to print or save the
+captured network packets. The ``net-capture.py`` provides an UDP listener,
+it can print the captured data to screen and optionally can also save the
+data to a pcap file.
+
+.. code-block:: console
+
+   $ ./net-capture.py -i zeth-ip6ip -w capture.pcap
+   [20210408Z14:33:08.959589] Ether / IP / ICMP 192.0.2.1 > 192.0.2.2 echo-request 0 / Raw
+   [20210408Z14:33:08.976178] Ether / IP / ICMP 192.0.2.2 > 192.0.2.1 echo-reply 0 / Raw
+   [20210408Z14:33:16.176303] Ether / IPv6 / ICMPv6 Echo Request (id: 0x9feb seq: 0x0)
+   [20210408Z14:33:16.195326] Ether / IPv6 / ICMPv6 Echo Reply (id: 0x9feb seq: 0x0)
+   [20210408Z14:33:21.194979] Ether / IPv6 / ICMPv6ND_NS / ICMPv6 Neighbor Discovery Option - Source Link-Layer Address 02:00:5e:00:53:3b
+   [20210408Z14:33:21.217528] Ether / IPv6 / ICMPv6ND_NA / ICMPv6 Neighbor Discovery Option - Destination Link-Layer Address 00:00:5e:00:53:ff
+   [20210408Z14:34:10.245408] Ether / IPv6 / UDP 2001:db8::2:47319 > 2001:db8::1:4242 / Raw
+   [20210408Z14:34:10.266542] Ether / IPv6 / UDP 2001:db8::1:4242 > 2001:db8::2:47319 / Raw
+
+The ``net-capture.py`` has following command line options:
+
+.. code-block:: console
+
+   Listen captured network data from Zephyr and save it optionally to pcap file.
+   ./net-capture.py \
+	-i | --interface <network interface>
+		Listen this inferface for the data
+	[-p | --port <UDP port>]
+		UDP port (default is 4242) where the capture data is received
+	[-q | --quiet]
+		Do not print packet information
+	[-t | --type <L2 type of the data>]
+		Scapy L2 type name of the UDP payload, default is Ether
+	[-w | --write <pcap file name>]
+		Write the received data to file in PCAP format
+
+Instead of the ``net-capture.py`` script, you can for example use ``netcat``
+to provide an UDP listener so that the host will not send port unreachable
+message to Zephyr:
 
 .. code-block:: console
 
