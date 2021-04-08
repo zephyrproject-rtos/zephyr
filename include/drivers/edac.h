@@ -49,18 +49,20 @@ __subsystem struct edac_driver_api {
 
 	/* Error Logging  API */
 	int (*ecc_error_log_get)(const struct device *dev, uint64_t *value);
-	void (*ecc_error_log_clear)(const struct device *dev);
+	int (*ecc_error_log_clear)(const struct device *dev);
 	int (*parity_error_log_get)(const struct device *dev, uint64_t *value);
-	void (*parity_error_log_clear)(const struct device *dev);
+	int (*parity_error_log_clear)(const struct device *dev);
 
 	/* Error stats API */
-	unsigned int (*errors_cor_get)(const struct device *dev);
-	unsigned int (*errors_uc_get)(const struct device *dev);
+	int (*errors_cor_get)(const struct device *dev);
+	int (*errors_uc_get)(const struct device *dev);
 
 	/* Notification callback API */
 	int (*notify_cb_set)(const struct device *dev,
 			     edac_notify_callback_f cb);
 };
+
+/* Optional interfaces */
 
 /**
  * @brief Set injection parameter param1
@@ -227,6 +229,8 @@ static inline int edac_inject_error_trigger(const struct device *dev)
 	return api->inject_error_trigger(dev);
 }
 
+/* Mandatory interfaces */
+
 /**
  * @brief Get ECC Error Log
  *
@@ -236,6 +240,7 @@ static inline int edac_inject_error_trigger(const struct device *dev)
  * @param value Pointer to the ECC Error Log value
  *
  * @retval 0 on success, error code otherwise
+ * @retval -ENOSYS if the mandatory interface is not implemented
  */
 static inline int edac_ecc_error_log_get(const struct device *dev,
 					 uint64_t *value)
@@ -243,8 +248,9 @@ static inline int edac_ecc_error_log_get(const struct device *dev,
 	const struct edac_driver_api *api =
 		(const struct edac_driver_api *)dev->api;
 
-	__ASSERT(api->ecc_error_log_get,
-		 "ecc_error_log_get must be implemented by driver");
+	if (!api->ecc_error_log_get) {
+		return -ENOSYS;
+	}
 
 	return api->ecc_error_log_get(dev, value);
 }
@@ -255,16 +261,20 @@ static inline int edac_ecc_error_log_get(const struct device *dev,
  * Clear value of ECC Error Log.
  *
  * @param dev Pointer to the device structure
+ *
+ * @retval 0 on success, error code otherwise
+ * @retval -ENOSYS if the mandatory interface is not implemented
  */
-static inline void edac_ecc_error_log_clear(const struct device *dev)
+static inline int edac_ecc_error_log_clear(const struct device *dev)
 {
 	const struct edac_driver_api *api =
 		(const struct edac_driver_api *)dev->api;
 
-	__ASSERT(api->ecc_error_log_clear,
-		 "ecc_error_log_clear must be implemented by driver");
+	if (!api->ecc_error_log_clear) {
+		return -ENOSYS;
+	}
 
-	api->ecc_error_log_clear(dev);
+	return api->ecc_error_log_clear(dev);
 }
 
 /**
@@ -276,6 +286,7 @@ static inline void edac_ecc_error_log_clear(const struct device *dev)
  * @param value Pointer to the parity Error Log value
  *
  * @retval 0 on success, error code otherwise
+ * @retval -ENOSYS if the mandatory interface is not implemented
  */
 static inline int edac_parity_error_log_get(const struct device *dev,
 					    uint64_t *value)
@@ -283,8 +294,9 @@ static inline int edac_parity_error_log_get(const struct device *dev,
 	const struct edac_driver_api *api =
 		(const struct edac_driver_api *)dev->api;
 
-	__ASSERT(api->parity_error_log_get,
-		 "parity_error_log_get must be implemented by driver");
+	if (!api->parity_error_log_get) {
+		return -ENOSYS;
+	}
 
 	return api->parity_error_log_get(dev, value);
 }
@@ -295,16 +307,20 @@ static inline int edac_parity_error_log_get(const struct device *dev,
  * Clear value of Parity Error Log.
  *
  * @param dev Pointer to the device structure
+ *
+ * @retval 0 on success, error code otherwise
+ * @retval -ENOSYS if the mandatory interface is not implemented
  */
-static inline void edac_parity_error_log_clear(const struct device *dev)
+static inline int edac_parity_error_log_clear(const struct device *dev)
 {
 	const struct edac_driver_api *api =
 		(const struct edac_driver_api *)dev->api;
 
-	__ASSERT(api->parity_error_log_clear,
-		 "parity_error_log_clear must be implemented by driver");
+	if (!api->parity_error_log_clear) {
+		return -ENOSYS;
+	}
 
-	api->parity_error_log_clear(dev);
+	return api->parity_error_log_clear(dev);
 }
 
 /**
@@ -312,15 +328,17 @@ static inline void edac_parity_error_log_clear(const struct device *dev)
  *
  * @param dev Pointer to the device structure
  *
- * @return Number of correctable errors
+ * @retval num Number of correctable errors
+ * @retval -ENOSYS if the mandatory interface is not implemented
  */
-static inline unsigned int edac_errors_cor_get(const struct device *dev)
+static inline int edac_errors_cor_get(const struct device *dev)
 {
 	const struct edac_driver_api *api =
 		(const struct edac_driver_api *)dev->api;
 
-	__ASSERT(api->errors_cor_get,
-		 "errors_cor_get must be implemented by driver");
+	if (!api->errors_cor_get) {
+		return -ENOSYS;
+	}
 
 	return api->errors_cor_get(dev);
 }
@@ -330,15 +348,17 @@ static inline unsigned int edac_errors_cor_get(const struct device *dev)
  *
  * @param dev Pointer to the device structure
  *
- * @return Number of uncorrectable errors
+ * @retval num Number of uncorrectable errors
+ * @retval -ENOSYS if the mandatory interface is not implemented
  */
-static inline unsigned int edac_errors_uc_get(const struct device *dev)
+static inline int edac_errors_uc_get(const struct device *dev)
 {
 	const struct edac_driver_api *api =
 		(const struct edac_driver_api *)dev->api;
 
-	__ASSERT(api->errors_uc_get,
-		 "errors_uc_get must be implemented by driver");
+	if (!api->errors_uc_get) {
+		return -ENOSYS;
+	}
 
 	return api->errors_uc_get(dev);
 }
@@ -352,14 +372,16 @@ static inline unsigned int edac_errors_uc_get(const struct device *dev)
  * @param cb Callback function pointer
  *
  * @retval 0 on success, error code otherwise
+ * @retval -ENOSYS if the mandatory interface is not implemented
  */
 static inline int edac_notify_callback_set(const struct device *dev,
 					   edac_notify_callback_f cb)
 {
 	const struct edac_driver_api *api = dev->api;
 
-	__ASSERT(api->notify_cb_set,
-		 "notify_cb_set must be implemented by driver");
+	if (!api->notify_cb_set) {
+		return -ENOSYS;
+	}
 
 	return api->notify_cb_set(dev, cb);
 }
