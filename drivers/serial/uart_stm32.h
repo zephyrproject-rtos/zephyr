@@ -42,7 +42,7 @@ struct uart_dma_stream {
 	size_t offset;
 	volatile size_t counter;
 	int32_t timeout;
-	struct k_delayed_work timeout_work;
+	struct k_work_delayable timeout_work;
 	bool enabled;
 };
 #endif

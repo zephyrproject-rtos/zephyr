@@ -756,13 +756,13 @@ static inline void async_evt_rx_buf_release(struct uart_stm32_data *data)
 	async_user_callback(data, &evt);
 }
 
-static inline void async_timer_start(struct k_delayed_work *work,
+static inline void async_timer_start(struct k_work_delayable *work,
 				     int32_t timeout)
 {
 	if ((timeout != SYS_FOREVER_MS) && (timeout != 0)) {
 		/* start timer */
 		LOG_DBG("async timer started for %d ms", timeout);
-		k_delayed_work_submit(work, K_MSEC(timeout));
+		k_work_reschedule(work, K_MSEC(timeout));
 	}
 }
 
@@ -896,7 +896,7 @@ static int uart_stm32_async_rx_disable(const struct device *dev)
 
 	uart_stm32_dma_rx_disable(dev);
 
-	k_delayed_work_cancel(&data->dma_rx.timeout_work);
+	(void)k_work_cancel_delayable(&data->dma_rx.timeout_work);
 
 	dma_stop(data->dma_rx.dma_dev, data->dma_rx.dma_channel);
 
@@ -921,7 +921,7 @@ void uart_stm32_dma_tx_cb(const struct device *dma_dev, void *user_data,
 	/* Disable TX */
 	uart_stm32_dma_tx_disable(uart_dev);
 
-	k_delayed_work_cancel(&data->dma_tx.timeout_work);
+	(void)k_work_cancel_delayable(&data->dma_tx.timeout_work);
 
 	data->dma_tx.buffer_length = 0;
 
@@ -977,7 +977,7 @@ void uart_stm32_dma_rx_cb(const struct device *dma_dev, void *user_data,
 		return;
 	}
 
-	k_delayed_work_cancel(&data->dma_rx.timeout_work);
+	(void)k_work_cancel_delayable(&data->dma_rx.timeout_work);
 
 	/* true since this functions occurs when buffer if full */
 	data->dma_rx.counter = data->dma_rx.buffer_length;
@@ -999,7 +999,7 @@ void uart_stm32_dma_rx_cb(const struct device *dma_dev, void *user_data,
 		 * called in ISR context. So force the RX timeout
 		 * to minimum value and let the RX timeout to do the job.
 		 */
-		k_delayed_work_submit(&data->dma_rx.timeout_work, K_TICKS(1));
+		k_work_reschedule(&data->dma_rx.timeout_work, K_TICKS(1));
 	}
 }
 
@@ -1126,7 +1126,7 @@ static int uart_stm32_async_tx_abort(const struct device *dev)
 		return -EFAULT;
 	}
 
-	k_delayed_work_cancel(&data->dma_tx.timeout_work);
+	(void)k_work_cancel_delayable(&data->dma_tx.timeout_work);
 	if (!dma_get_status(data->dma_tx.dma_dev,
 				data->dma_tx.dma_channel, &stat)) {
 		data->dma_tx.counter = tx_buffer_length - stat.pending_length;
@@ -1203,9 +1203,9 @@ static int uart_stm32_async_init(const struct device *dev)
 	uart_stm32_dma_rx_disable(dev);
 	uart_stm32_dma_tx_disable(dev);
 
-	k_delayed_work_init(&data->dma_rx.timeout_work,
+	k_work_init_delayable(&data->dma_rx.timeout_work,
 			    uart_stm32_async_rx_timeout);
-	k_delayed_work_init(&data->dma_tx.timeout_work,
+	k_work_init_delayable(&data->dma_tx.timeout_work,
 			    uart_stm32_async_tx_timeout);
 
 	/* Configure dma rx config */
