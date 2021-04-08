@@ -23,6 +23,9 @@ config NET_L2_ETHERNET
 config ETH_NATIVE_POSIX
 	default y if NET_L2_ETHERNET
 
+config CAN_NATIVE_POSIX
+	default y if NET_SOCKETS_CAN
+
 endif # NETWORKING
 
 config FAKE_ENTROPY_NATIVE_POSIX

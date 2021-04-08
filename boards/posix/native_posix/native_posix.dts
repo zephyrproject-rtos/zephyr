@@ -141,6 +141,26 @@
 		current-speed = <0>;
 	};
 
+    can1: can_1 {
+		status = "okay";
+		compatible = "zephyr,native-posix-can";
+		label = "CAN_1";
+		/* Dummy bus-speed entry to comply with can
+		 * DTS binding
+		 */
+		bus-speed = <500000>;
+	};
+
+    can2: can_2 {
+		status = "okay";
+		compatible = "zephyr,native-posix-can";
+		label = "CAN_2";
+		/* Dummy bus-speed entry to comply with can
+		 * DTS binding
+		 */
+		bus-speed = <500000>;
+	};
+
 	rng: rng {
 		status = "okay";
 		compatible = "zephyr,native-posix-rng";

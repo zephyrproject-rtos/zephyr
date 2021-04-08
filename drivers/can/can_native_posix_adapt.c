@@ -24,7 +24,7 @@
 #include <sys/socket.h>
 #include <sys/select.h>
 #include <net/if.h>
-#include "posix_trace.h"
+#include "arch/posix/posix_trace.h"
 
 #ifdef __linux
 #include <linux/can.h>
@@ -41,7 +41,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <zephyr/types.h>
 
-#include "canbus_native_posix_priv.h"
+#include "can_native_posix_priv.h"
 
 int canbus_np_iface_open(const char *if_name)
 {
