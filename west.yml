@@ -145,6 +145,9 @@ manifest:
       repo-path: mcuboot
       path: modules/tee/tfm-mcuboot
       revision: v1.7.2
+    - name: nanopb
+      path: modules/lib/nanopb
+      revision: d148bd26718e4c10414f07a7eb1bd24c62e56c5d
 
   self:
     path: zephyr

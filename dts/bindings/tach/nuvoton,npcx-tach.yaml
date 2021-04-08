@@ -16,7 +16,7 @@ properties:
         type: phandles
         required: false
         description: configurations of pinmux controllers in tachometers
-    sample_clk:
+    sample-clk:
         type: int
         required: false
         description: |
@@ -26,7 +26,7 @@ properties:
         type: int
         required: false
         description: selected port of tachometer (port-A is 0 and port-B is 1)
-    pulses_per_round:
+    pulses-per-round:
         type: int
         required: false
         description: number of pulses (holes) per round of tachometer's input (encoder)

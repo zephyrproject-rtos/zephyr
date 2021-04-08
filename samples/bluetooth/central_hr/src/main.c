@@ -205,8 +205,8 @@ static void connected(struct bt_conn *conn, uint8_t conn_err)
 		memcpy(&uuid, BT_UUID_HRS, sizeof(uuid));
 		discover_params.uuid = &uuid.uuid;
 		discover_params.func = discover_func;
-		discover_params.start_handle = 0x0001;
-		discover_params.end_handle = 0xffff;
+		discover_params.start_handle = BT_ATT_FIRST_ATTTRIBUTE_HANDLE;
+		discover_params.end_handle = BT_ATT_LAST_ATTTRIBUTE_HANDLE;
 		discover_params.type = BT_GATT_DISCOVER_PRIMARY;
 
 		err = bt_gatt_discover(default_conn, &discover_params);

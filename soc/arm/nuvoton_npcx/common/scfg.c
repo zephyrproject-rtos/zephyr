@@ -23,7 +23,7 @@ struct npcx_scfg_config {
  * Get io list which default functionality are not IOs. Then switch them to
  * GPIO in pin-mux init function.
  *
- * def_io_conf: def_io_conf_list {
+ * def_io_conf: def-io-conf-list {
  *               compatible = "nuvoton,npcx-pinctrl-def";
  *               pinctrl-0 = <&alt0_gpio_no_spip
  *                            &alt0_gpio_no_fpip

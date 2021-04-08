@@ -44,7 +44,7 @@ jobs:
 
     - name: install-pip
       run: |
-        pip3 install setuptools wheel
+        sudo pip3 install -U setuptools wheel pip
         pip3 install -r scripts/requirements-base.txt
         pip3 install -r scripts/requirements-doc.txt
         pip3 install west==0.10.1
