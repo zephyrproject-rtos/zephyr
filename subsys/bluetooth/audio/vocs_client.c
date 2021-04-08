@@ -210,7 +210,7 @@ static uint8_t internal_read_volume_offset_state_cb(struct bt_conn *conn, uint8_
 			cb_err = BT_ATT_ERR_UNLIKELY;
 		}
 	} else {
-		BT_DBG("Invalid location");
+		BT_DBG("Invalid (empty) offset state read");
 		cb_err = BT_ATT_ERR_UNLIKELY;
 	}
 
@@ -245,7 +245,9 @@ static void vcs_client_write_vocs_cp_cb(struct bt_conn *conn, uint8_t err,
 	 * change counter has been read, we restart the applications write request. If it fails
 	 * the second time, we return an error to the application.
 	 */
-	if (cb_err == BT_VOCS_ERR_INVALID_COUNTER && inst->cli.state_handle) {
+	if (cb_err == BT_VOCS_ERR_INVALID_COUNTER && inst->cli.cp_retried) {
+		cb_err = BT_ATT_ERR_UNLIKELY;
+	} else if (cb_err == BT_VOCS_ERR_INVALID_COUNTER && inst->cli.state_handle) {
 		BT_DBG("Invalid change counter. Reading volume state from server.");
 
 		inst->cli.read_params.func = internal_read_volume_offset_state_cb;
@@ -255,13 +257,15 @@ static void vcs_client_write_vocs_cp_cb(struct bt_conn *conn, uint8_t err,
 		cb_err = bt_gatt_read(conn, &inst->cli.read_params);
 		if (cb_err) {
 			BT_WARN("Could not read Volume state: %d", cb_err);
+		} else {
+			inst->cli.cp_retried = true;
+			/* Wait for read callback */
+			return;
 		}
-	} else {
-		BT_DBG("Invalid location");
-		cb_err = BT_ATT_ERR_UNLIKELY;
 	}
 
 	inst->cli.busy = false;
+	inst->cli.cp_retried = false;
 
 	if (inst->cli.cb && inst->cli.cb->set_offset) {
 		inst->cli.cb->set_offset(conn, inst, cb_err);
@@ -295,7 +299,7 @@ static uint8_t vcs_client_read_output_desc_cb(struct bt_conn *conn, uint8_t err,
 		desc[length] = '\0';
 		BT_DBG("Output description: %s", log_strdup(desc));
 	} else {
-		BT_DBG("Invalid location");
+		BT_DBG("Invalid output");
 		cb_err = BT_ATT_ERR_UNLIKELY;
 	}
 
