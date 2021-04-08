@@ -285,6 +285,9 @@ uint8_t ll_phy_get(uint16_t handle, uint8_t *const tx, uint8_t *const rx);
 uint8_t ll_phy_default_set(uint8_t tx, uint8_t rx);
 uint8_t ll_phy_req_send(uint16_t handle, uint8_t tx, uint8_t flags, uint8_t rx);
 
+uint8_t ll_set_min_used_chans(uint16_t handle, uint8_t const phys,
+		     uint8_t const min_used_chans);
+
 /* Direction Finding */
 /* Sets CTE transmission parameters for periodic advertising */
 uint8_t ll_df_set_cl_cte_tx_params(uint8_t adv_handle, uint8_t cte_len,
