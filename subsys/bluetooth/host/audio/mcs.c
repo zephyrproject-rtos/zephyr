@@ -19,6 +19,7 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/gatt.h>
+#include <bluetooth/services/ots.h>
 
 #include "mpl.h"
 #include "mpl_internal.h"
@@ -26,8 +27,6 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_MCS)
 #define LOG_MODULE_NAME bt_mcs
 #include "common/log.h"
-
-#include "ots.h"
 
 
 /* Functions for reading and writing attributes, and for keeping track
@@ -52,7 +51,7 @@ static void player_name_cfg_changed(const struct bt_gatt_attr *attr,
 	BT_DBG("value 0x%04x", value);
 }
 
-#ifdef CONFIG_BT_OTS_TEMP
+#ifdef CONFIG_BT_OTS
 static ssize_t icon_id_read(struct bt_conn *conn,
 			    const struct bt_gatt_attr *attr, void *buf,
 			    uint16_t len, uint16_t offset)
@@ -63,7 +62,7 @@ static ssize_t icon_id_read(struct bt_conn *conn,
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &icon_id,
 				 BT_OTS_OBJ_ID_SIZE);
 }
-#endif /* CONFIG_BT_OTS_TEMP */
+#endif /* CONFIG_BT_OTS */
 
 static ssize_t icon_uri_read(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, void *buf,
@@ -220,7 +219,7 @@ static void seeking_speed_cfg_changed(const struct bt_gatt_attr *attr,
 	BT_DBG("value 0x%04x", value);
 }
 
-#ifdef CONFIG_BT_OTS_TEMP
+#ifdef CONFIG_BT_OTS
 static ssize_t track_segments_id_read(struct bt_conn *conn,
 				      const struct bt_gatt_attr *attr,
 				      void *buf, uint16_t len, uint16_t offset)
@@ -398,7 +397,7 @@ static void parent_group_id_cfg_changed(const struct bt_gatt_attr *attr,
 {
 	BT_DBG("value 0x%04x", value);
 }
-#endif /* CONFIG_BT_OTS_TEMP */
+#endif /* CONFIG_BT_OTS */
 
 static ssize_t playing_order_read(struct bt_conn *conn,
 				  const struct bt_gatt_attr *attr, void *buf,
@@ -530,7 +529,7 @@ static void opcodes_supported_cfg_changed(const struct bt_gatt_attr *attr,
 	BT_DBG("value 0x%04x", value);
 }
 
-#ifdef CONFIG_BT_OTS_TEMP
+#ifdef CONFIG_BT_OTS
 static ssize_t search_control_point_write(struct bt_conn *conn,
 					  const struct bt_gatt_attr *attr,
 					  const void *buf, uint16_t len,
@@ -593,7 +592,7 @@ static void search_results_id_cfg_changed(const struct bt_gatt_attr *attr,
 {
 	BT_DBG("value 0x%04x", value);
 }
-#endif /* CONFIG_BT_OTS_TEMP */
+#endif /* CONFIG_BT_OTS */
 
 static ssize_t content_ctrl_id_read(struct bt_conn *conn,
 				    const struct bt_gatt_attr *attr, void *buf,
@@ -608,7 +607,7 @@ static ssize_t content_ctrl_id_read(struct bt_conn *conn,
 }
 
 /* Defines for OTS-dependent characteristics - empty if no OTS */
-#ifdef CONFIG_BT_OTS_TEMP
+#ifdef CONFIG_BT_OTS
 #define ICON_OBJ_ID_CHARACTERISTIC_IF_OTS  \
 	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_ICON_OBJ_ID,	\
 	BT_GATT_CHRC_READ, BT_GATT_PERM_READ_ENCRYPT, \
@@ -671,7 +670,7 @@ static ssize_t content_ctrl_id_read(struct bt_conn *conn,
 #define ICON_OBJ_ID_CHARACTERISTIC_IF_OTS
 #define SEGMENTS_TRACK_GROUP_ID_CHARACTERISTICS_IF_OTS
 #define SEARCH_CHARACTERISTICS_IF_OTS
-#endif /* CONFIG_BT_OTS_TEMP */
+#endif /* CONFIG_BT_OTS */
 
 /* Media control service attributes */
 #define BT_MCS_SERVICE_DEFINITION \
@@ -771,7 +770,9 @@ static ssize_t content_ctrl_id_read(struct bt_conn *conn,
 
 static struct bt_gatt_attr svc_attrs[] = { BT_MCS_SERVICE_DEFINITION };
 static struct bt_gatt_service mcs;
-static struct ots_svc_inst_t *ots_svc_inst;
+#ifdef CONFIG_BT_OTS
+static struct bt_ots *ots;
+#endif /* CONFIG_BT_OTS */
 
 /* Register the service */
 int bt_mcs_init(struct bt_ots_cb *ots_cbs)
@@ -786,35 +787,43 @@ int bt_mcs_init(struct bt_ots_cb *ots_cbs)
 	int err;
 	mcs = (struct bt_gatt_service)BT_GATT_SERVICE(svc_attrs);
 
-#ifdef CONFIG_BT_OTS_TEMP
-	struct bt_ots_service_register_t service_reg;
+#ifdef CONFIG_BT_OTS
+	struct bt_ots_init ots_init;
 
-	service_reg.cb = ots_cbs;
-	service_reg.features = (struct bt_ots_feat){
-		BT_OTS_OACP_FEAT_READ, BT_OTS_OLCP_FEAT_GO_TO };
+	ots = bt_ots_free_instance_get();
+	if (!ots) {
+		BT_ERR("Failed to retrieve OTS instance\n");
+		return -ENOMEM;
+	}
 
-	ots_svc_inst = bt_ots_register_service(&service_reg);
+	/* Configure OTS initialization. */
+	memset(&ots_init, 0, sizeof(ots_init));
+	BT_OTS_OACP_SET_FEAT_READ(ots_init.features.oacp);
+	BT_OTS_OLCP_SET_FEAT_GO_TO(ots_init.features.olcp);
+	ots_init.cb = ots_cbs;
 
-	if (!ots_svc_inst) {
-		BT_ERR("Could not register the OTS service");
-		return -ENOEXEC;
+	/* Initialize OTS instance. */
+	err = bt_ots_init(ots, &ots_init);
+	if (err) {
+		BT_ERR("Failed to init OTS (err:%d)\n", err);
+		return err;
 	}
 
 	/* TODO: Maybe the user_data pointer can be in a different way */
 	for (int i = 0; i < mcs.attr_count; i++) {
 		if (!bt_uuid_cmp(mcs.attrs[i].uuid, BT_UUID_GATT_INCLUDE)) {
-			mcs.attrs[i].user_data = bt_ots_get_incl(ots_svc_inst);
+			mcs.attrs[i].user_data = bt_ots_svc_decl_get(ots);
 		}
 	}
-#endif /* CONFIG_BT_OTS_TEMP */
+#endif /* CONFIG_BT_OTS */
 
 	err = bt_gatt_service_register(&mcs);
 
 	if (err) {
 		BT_ERR("Could not register the MCS service");
-#ifdef CONFIG_BT_OTS_TEMP
-		bt_ots_unregister_service(ots_svc_inst);
-#endif /* CONFIG_BT_OTS_TEMP */
+#ifdef CONFIG_BT_OTS
+		/* TODO: How does one un-register the OTS? */
+#endif /* CONFIG_BT_OTS */
 		return -ENOEXEC;
 	}
 
@@ -822,10 +831,12 @@ int bt_mcs_init(struct bt_ots_cb *ots_cbs)
 	return 0;
 }
 
-struct ots_svc_inst_t *bt_mcs_get_ots(void)
+#ifdef CONFIG_BT_OTS
+struct bt_ots *bt_mcs_get_ots(void)
 {
-	return ots_svc_inst;
+	return ots;
 }
+#endif /* CONFIG_BT_OTS */
 
 /* Callback functions from the media player, notifying attributes */
 /* Placed here, after the service definition, because they reference it. */
