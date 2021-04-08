@@ -869,6 +869,19 @@ uint16_t ull_conn_lll_max_tx_octets_get(struct lll_conn *lll)
 	return max_tx_octets;
 }
 
+uint8_t ull_conn_lll_phy_active(struct ll_conn *conn, uint8_t phys)
+{
+#if defined(CONFIG_BT_CTLR_PHY)
+	if (!(phys & (conn->lll.phy_tx |
+			 conn->lll.phy_rx))) {
+#else /* !CONFIG_BT_CTLR_PHY */
+	if (!(phys & 0x01)) {
+#endif /* !CONFIG_BT_CTLR_PHY */
+		return 0;
+	}
+	return 1;
+}
+
 static int init_reset(void)
 {
 	/* Initialize conn pool. */
