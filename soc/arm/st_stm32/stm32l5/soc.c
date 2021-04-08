@@ -47,6 +47,9 @@ static int stm32l5_init(const struct device *arg)
 	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
 	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE0);
 
+	/* Disable USB Type-C dead battery pull-down behavior */
+	LL_PWR_DisableUCPDDeadBattery();
+
 	return 0;
 }
 
