@@ -633,3 +633,9 @@ test_i2c_bmp388: bmp388@4c {
 	reg = <0x4c>;
 	int-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_sbc_gauge: sbsgauge@4d {
+	compatible = "sbs,sbs-gauge";
+	label = "SBSGAUGE";
+	reg = <0x4d>;
+};
