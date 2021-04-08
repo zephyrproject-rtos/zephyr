@@ -1,0 +1,5 @@
+description: Smart Battery Fuel Gauge
+
+compatible: "smart-battery"
+
+include: i2c-device.yaml

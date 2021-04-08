@@ -1,0 +1,8 @@
+tests:
+  # section.subsection
+  testing.drivers.smartbattery:
+    build_only: true
+    tags: test_framework
+    filter: dt_alias_exists("bat0")
+    integration_platforms:
+      - nucleo_f070rb
