@@ -370,3 +370,8 @@ uint32_t radio_df_iq_samples_amount_get(void)
 {
 	return nrf_radio_dfe_amount_get(NRF_RADIO);
 }
+
+uint8_t radio_df_cte_status_get(void)
+{
+	return NRF_RADIO->CTESTATUS;
+}
