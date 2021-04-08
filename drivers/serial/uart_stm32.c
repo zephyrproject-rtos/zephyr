@@ -1249,12 +1249,20 @@ static int uart_stm32_async_init(const struct device *dev)
 static const struct uart_driver_api uart_stm32_driver_api = {
 	.poll_in = uart_stm32_poll_in,
 	.poll_out = uart_stm32_poll_out,
+#if defined(CONFIG_UART_9BITS_DATA_API)
+	.poll_in9 = NULL,
+	.poll_out9 = NULL,
+#endif	/* CONFIG_UART_9BITS_DATA_API */
 	.err_check = uart_stm32_err_check,
 	.configure = uart_stm32_configure,
 	.config_get = uart_stm32_config_get,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.fifo_fill = uart_stm32_fifo_fill,
 	.fifo_read = uart_stm32_fifo_read,
+#if defined(CONFIG_UART_9BITS_DATA_API)
+	.fifo_fill9 = NULL,
+	.fifo_read9 = NULL,
+#endif	/* CONFIG_UART_9BITS_DATA_API */
 	.irq_tx_enable = uart_stm32_irq_tx_enable,
 	.irq_tx_disable = uart_stm32_irq_tx_disable,
 	.irq_tx_ready = uart_stm32_irq_tx_ready,
@@ -1271,10 +1279,15 @@ static const struct uart_driver_api uart_stm32_driver_api = {
 #ifdef CONFIG_UART_ASYNC_API
 	.callback_set = uart_stm32_async_callback_set,
 	.tx = uart_stm32_async_tx,
+	.tx9 = NULL,
 	.tx_abort = uart_stm32_async_tx_abort,
 	.rx_enable = uart_stm32_async_rx_enable,
 	.rx_disable = uart_stm32_async_rx_disable,
 	.rx_buf_rsp = uart_stm32_async_rx_buf_rsp,
+#if defined(CONFIG_UART_9BITS_DATA_API)
+	.rx_enable9 = NULL,
+	.rx_buf_rsp9 = NULL,
+#endif	/* CONFIG_UART_9BITS_DATA_API */
 #endif  /* CONFIG_UART_ASYNC_API */
 };
 

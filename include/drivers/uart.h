@@ -356,11 +356,26 @@ __subsystem struct uart_driver_api {
 	int (*rx_buf_rsp)(const struct device *dev, uint8_t *buf, size_t len);
 	int (*rx_disable)(const struct device *dev);
 
+#if defined(CONFIG_UART_9BITS_DATA_API)
+	int (*tx9)(const struct device *dev, const uint16_t *buf, size_t len,
+		  int32_t timeout);
+	int (*rx9_enable)(const struct device *dev, uint16_t *buf, size_t len,
+			 int32_t timeout);
+	int (*rx9_buf_rsp)(const struct device *dev, uint16_t *buf, size_t len);
+#endif
+
 #endif
 
 	/** Console I/O function */
 	int (*poll_in)(const struct device *dev, unsigned char *p_char);
 	void (*poll_out)(const struct device *dev, unsigned char out_char);
+
+#if defined(CONFIG_UART_9BITS_DATA_API)
+
+	int (*poll_in9)(const struct device *dev, unsigned short *p_short);
+	void (*poll_out9)(const struct device *dev, unsigned short out_short);
+
+#endif
 
 	/** Console I/O function */
 	int (*err_check)(const struct device *dev);
@@ -379,6 +394,17 @@ __subsystem struct uart_driver_api {
 	/** Interrupt driven FIFO read function */
 	int (*fifo_read)(const struct device *dev, uint8_t *rx_data,
 			 const int size);
+
+#if defined(CONFIG_UART_9BITS_DATA_API)
+
+	/** Interrupt driven FIFO fill function */
+	int (*fifo_fill9)(const struct device *dev, const uint16_t *tx_data,
+			 int len);
+
+	/** Interrupt driven FIFO read function */
+	int (*fifo_read9)(const struct device *dev, uint16_t *rx_data,
+			 const int size);
+#endif
 
 	/** Interrupt driven transfer enabling function */
 	void (*irq_tx_enable)(const struct device *dev);
@@ -591,6 +617,117 @@ static inline int uart_rx_buf_rsp(const struct device *dev, uint8_t *buf,
 #endif
 }
 
+#if defined(CONFIG_UART_9BITS_DATA_API)
+
+/**
+ * @brief Send given number of words (9bit data) from buffer through UART.
+ *
+ * Function returns immediately and event handler,
+ * set using @ref uart_callback_set, is called after transfer is finished.
+ *
+ * @param dev     UART device structure.
+ * @param buf     Pointer to transmit buffer.
+ * @param len     Length of transmit buffer (words count, not byte count).
+ * @param timeout Timeout in milliseconds. Valid only if flow control is
+ *		  enabled. @ref SYS_FOREVER_MS disables timeout.
+ *
+ * @retval -ENOTSUP If not supported.
+ * @retval -EBUSY   There is already an ongoing transfer.
+ * @retval 0	    If successful, negative errno code otherwise.
+ */
+__syscall int uart_tx9(const struct device *dev, const uint16_t *buf,
+		      size_t len,
+		      int32_t timeout);
+
+static inline int z_impl_uart_tx9(const struct device *dev, const uint16_t *buf,
+				 size_t len, int32_t timeout)
+
+{
+#ifdef CONFIG_UART_ASYNC_API
+	const struct uart_driver_api *api =
+			(const struct uart_driver_api *)dev->api;
+
+	return api->tx9(dev, buf, len, timeout);
+#else
+	return -ENOTSUP;
+#endif
+}
+
+/**
+ * @brief Start receiving data through UART.
+ *
+ * Function sets given buffer as first buffer for receiving and returns
+ * immediately. After that event handler, set using @ref uart_callback_set,
+ * is called with @ref uart_event_type::UART_RX_RDY or
+ * @ref uart_event_type::UART_RX_BUF_REQUEST events.
+ *
+ * @param dev     UART device structure.
+ * @param buf     Pointer to receive buffer.
+ * @param len     Buffer length.
+ * @param timeout Inactivity period after receiving at least a byte which
+ *		  triggers  @ref uart_event_type::UART_RX_RDY event. Given in
+ *		  milliseconds. @ref SYS_FOREVER_MS disables timeout. See
+ *		  @ref uart_event_type for details.
+ *
+ * @retval -ENOTSUP If not supported.
+ * @retval -EBUSY   RX already in progress.
+ * @retval 0	    If successful, negative errno code otherwise.
+ *
+ */
+__syscall int uart_rx9_enable(const struct device *dev, uint16_t *buf,
+			     size_t len,
+			     int32_t timeout);
+
+static inline int z_impl_uart_rx9_enable(const struct device *dev,
+					uint16_t *buf,
+					size_t len, int32_t timeout)
+{
+#ifdef CONFIG_UART_ASYNC_API
+	const struct uart_driver_api *api =
+				(const struct uart_driver_api *)dev->api;
+
+	return api->rx9_enable(dev, buf, len, timeout);
+#else
+	return -ENOTSUP;
+#endif
+}
+
+/**
+ * @brief Provide receive buffer in response to
+ * @ref uart_event_type::UART_RX_BUF_REQUEST event.
+ *
+ * Provide pointer to RX buffer, which will be used when current buffer is
+ * filled.
+ *
+ * @note Providing buffer that is already in usage by driver leads to
+ *       undefined behavior. Buffer can be reused when it has been released
+ *       by driver.
+ *
+ * @param dev UART device structure.
+ * @param buf Pointer to receive buffer.
+ * @param len Buffer length.
+ *
+ * @retval -ENOTSUP If not supported.
+ * @retval -EBUSY   Next buffer already set.
+ * @retval -EACCES  Receiver is already disabled (function called too late?).
+ * @retval 0	    If successful, negative errno code otherwise.
+ *
+ */
+static inline int uart_rx9_buf_rsp(const struct device *dev, uint16_t *buf,
+				  size_t len)
+{
+#ifdef CONFIG_UART_ASYNC_API
+	const struct uart_driver_api *api =
+				(const struct uart_driver_api *)dev->api;
+
+	return api->rx9_buf_rsp(dev, buf, len);
+#else
+	return -ENOTSUP;
+#endif
+}
+
+#endif
+
 /**
  * @brief Disable RX
  *
@@ -689,6 +826,58 @@ static inline void z_impl_uart_poll_out(const struct device *dev,
 
 	api->poll_out(dev, out_char);
 }
+
+#if defined(CONFIG_UART_9BITS_DATA_API)
+
+/**
+ * @brief Poll the device for input.
+ *
+ * @param dev UART device structure.
+ * @param p_char Pointer to character.
+ *
+ * @retval 0 If a character arrived.
+ * @retval -1 If no character was available to read (i.e., the UART
+ *            input buffer was empty).
+ * @retval -ENOTSUP If the operation is not supported.
+ * @retval -EBUSY If reception was enabled using uart_rx_enabled
+ */
+__syscall int uart_poll_in9(const struct device *dev, unsigned short *p_short);
+
+static inline int z_impl_uart_poll_in9(const struct device *dev,
+				      unsigned short *p_short)
+{
+	const struct uart_driver_api *api =
+		(const struct uart_driver_api *)dev->api;
+
+	return api->poll_in9(dev, p_short);
+}
+
+/**
+ * @brief Output a character in polled mode.
+ *
+ * This routine checks if the transmitter is empty.
+ * When the transmitter is empty, it writes a character to the data
+ * register.
+ *
+ * To send a character when hardware flow control is enabled, the handshake
+ * signal CTS must be asserted.
+ *
+ * @param dev UART device structure.
+ * @param out_char Character to send.
+ */
+__syscall void uart_poll_out9(const struct device *dev,
+				      unsigned short out_short);
+
+static inline void z_impl_uart_poll_out9(const struct device *dev,
+						unsigned short out_short)
+{
+	const struct uart_driver_api *api =
+		(const struct uart_driver_api *)dev->api;
+
+	api->poll_out9(dev, out_short);
+}
+
+#endif /* CONFIG_UART_9BITS_DATA_API */
 
 /**
  * @brief Set UART configuration.
@@ -817,6 +1006,81 @@ static inline int uart_fifo_read(const struct device *dev, uint8_t *rx_data,
 
 	return 0;
 }
+
+#if defined(CONFIG_UART_9BITS_DATA_API)
+
+/**
+ * @brief Fill FIFO with data.
+ *
+ * @details This function is expected to be called from UART
+ * interrupt handler (ISR), if uart_irq_tx_ready() returns true.
+ * Result of calling this function not from an ISR is undefined
+ * (hardware-dependent). Likewise, *not* calling this function
+ * from an ISR if uart_irq_tx_ready() returns true may lead to
+ * undefined behavior, e.g. infinite interrupt loops. It's
+ * mandatory to test return value of this function, as different
+ * hardware has different FIFO depth (oftentimes just 1).
+ *
+ * @param dev UART device structure.
+ * @param tx_data Data to transmit.
+ * @param size Number of words (9bit data) to send.
+ *
+ * @return Number of bytes sent.
+ */
+static inline int uart_fifo_fill9(const struct device *dev,
+				 const uint16_t *tx_data,
+				 int size)
+{
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	const struct uart_driver_api *api =
+		(const struct uart_driver_api *)dev->api;
+
+	if (api->fifo_fill9) {
+		return api->fifo_fill9(dev, tx_data, size);
+	}
+#endif
+
+	return 0;
+}
+
+/**
+ * @brief Read data from FIFO.
+ *
+ * @details This function is expected to be called from UART
+ * interrupt handler (ISR), if uart_irq_rx_ready() returns true.
+ * Result of calling this function not from an ISR is undefined
+ * (hardware-dependent). It's unspecified whether "RX ready"
+ * condition as returned by uart_irq_rx_ready() is level- or
+ * edge- triggered. That means that once uart_irq_rx_ready() is
+ * detected, uart_fifo_read() must be called until it reads all
+ * available data in the FIFO (i.e. until it returns less data
+ * than was requested).
+ *
+ * Note that the calling context only applies to physical UARTs and
+ * no to the virtual ones found in USB CDC ACM code.
+ *
+ * @param dev UART device structure.
+ * @param rx_data Data container.
+ * @param size Container size in words (9bit data).
+ *
+ * @return Number of words read.
+ */
+static inline int uart_fifo_read9(const struct device *dev, uint16_t *rx_data,
+				 const int size)
+{
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	const struct uart_driver_api *api =
+		(const struct uart_driver_api *)dev->api;
+
+	if (api->fifo_read9) {
+		return api->fifo_read9(dev, rx_data, size);
+	}
+#endif
+
+	return 0;
+}
+
+#endif
 
 /**
  * @brief Enable TX interrupt in IER.
