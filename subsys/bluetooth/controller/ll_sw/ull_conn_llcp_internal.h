@@ -21,6 +21,7 @@ uint16_t ull_conn_default_tx_octets_get(void);
 uint16_t ull_conn_default_tx_time_get(void);
 void ull_conn_default_tx_octets_set(uint16_t tx_octets);
 void ull_conn_default_tx_time_set(uint16_t tx_time);
+uint8_t ull_conn_lll_phy_active(struct ll_conn *conn, uint8_t phy);
 uint8_t ull_conn_default_phy_tx_get(void);
 uint8_t ull_conn_default_phy_rx_get(void);
 void ull_conn_default_phy_tx_set(uint8_t tx);
