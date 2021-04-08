@@ -62,6 +62,13 @@ config UART_DRV_CMD
 
 	  Says no if not sure.
 
+config UART_9BITS_DATA_API
+	bool "Enable uart 9bit data API"
+	help
+	  This enables the API to send/receive 9bit data.
+
+	  Says no if not sure.
+
 comment "Serial Drivers"
 
 source "drivers/serial/Kconfig.ns16550"
