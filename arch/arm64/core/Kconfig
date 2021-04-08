@@ -134,20 +134,6 @@ if ARM_MMU
 config MMU_PAGE_SIZE
 	default 0x1000
 
-config MAX_XLAT_TABLES
-	int "Maximum numbers of translation tables"
-	default 16 if USERSPACE
-	default 8
-	help
-	  This option specifies the maximum numbers of translation tables.
-	  Based on this, translation tables are allocated at compile time and
-	  used at runtime as needed.  If the runtime need exceeds preallocated
-	  numbers of translation tables, it will result in assert. Number of
-	  translation tables required is decided based on how many discrete
-	  memory regions (both normal and device memory) are present on given
-	  platform and how much granularity is required while assigning
-	  attributes to these memory regions.
-
 choice
 	prompt "Virtual address space size"
 	default ARM64_VA_BITS_32
@@ -210,6 +196,22 @@ config ARM64_PA_BITS
 	default 40 if ARM64_PA_BITS_40
 	default 42 if ARM64_PA_BITS_42
 	default 48 if ARM64_PA_BITS_48
+
+config MAX_XLAT_TABLES
+	int "Maximum numbers of translation tables"
+	default 20 if USERSPACE && (ARM64_VA_BITS >= 40)
+	default 16 if USERSPACE
+	default 12 if (ARM64_VA_BITS >= 40)
+	default 8
+	help
+	  This option specifies the maximum numbers of translation tables.
+	  Based on this, translation tables are allocated at compile time and
+	  used at runtime as needed.  If the runtime need exceeds preallocated
+	  numbers of translation tables, it will result in assert. Number of
+	  translation tables required is decided based on how many discrete
+	  memory regions (both normal and device memory) are present on given
+	  platform and how much granularity is required while assigning
+	  attributes to these memory regions.
 
 endif # ARM_MMU
 

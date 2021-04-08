@@ -61,10 +61,10 @@
  * Calculate the initial translation table level from CONFIG_ARM64_VA_BITS
  * For a 4 KB page size:
  *
- * (va_bits <= 20)	 - base level 3
- * (21 <= va_bits <= 29) - base level 2
- * (30 <= va_bits <= 38) - base level 1
- * (39 <= va_bits <= 47) - base level 0
+ * (va_bits <= 21)	 - base level 3
+ * (22 <= va_bits <= 30) - base level 2
+ * (31 <= va_bits <= 39) - base level 1
+ * (40 <= va_bits <= 48) - base level 0
  */
 #define GET_BASE_XLAT_LEVEL(va_bits)				\
 	 ((va_bits > L0_XLAT_VA_SIZE_SHIFT) ? 0U		\
