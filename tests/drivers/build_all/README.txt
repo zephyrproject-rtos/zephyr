@@ -12,11 +12,11 @@ Tests
 drivers:
 	build all drivers
 
-sensors_a_m:
-	build sensors with name beginning a through m.
+sensors_a_h:
+	build sensors with name beginning a through h.
 
-sensors_n_z:
-	build sensors with name beginning n through z.
+sensors_i_z:
+	build sensors with name beginning i through z.
 
 sensors_trigger:
 	build sensors with trigger option enabled
