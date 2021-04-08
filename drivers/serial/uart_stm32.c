@@ -339,7 +339,10 @@ static int uart_stm32_configure(const struct device *dev,
 #ifndef LL_USART_DATAWIDTH_7B
 	    || (cfg->data_bits == UART_CFG_DATA_BITS_7)
 #endif /* LL_USART_DATAWIDTH_7B */
-	    || (cfg->data_bits == UART_CFG_DATA_BITS_9)) {
+#ifndef LL_USART_DATAWIDTH_9B
+	    || (cfg->data_bits == UART_CFG_DATA_BITS_9)
+#endif /* LL_USART_DATAWIDTH_9B */
+		) {
 		return -ENOTSUP;
 	}
 
@@ -422,9 +425,44 @@ static void uart_stm32_poll_out(const struct device *dev,
 	}
 
 	LL_USART_ClearFlag_TC(UartInstance);
-
 	LL_USART_TransmitData8(UartInstance, (uint8_t)c);
 }
+
+#if defined(CONFIG_UART_9BITS_DATA_API)
+
+static int uart_stm32_poll_in9(const struct device *dev, unsigned short *s)
+{
+	USART_TypeDef *UartInstance = UART_STRUCT(dev);
+
+	/* Clear overrun error flag */
+	if (LL_USART_IsActiveFlag_ORE(UartInstance)) {
+		LL_USART_ClearFlag_ORE(UartInstance);
+	}
+
+	if (!LL_USART_IsActiveFlag_RXNE(UartInstance)) {
+		return -1;
+	}
+
+	*s = (unsigned short)LL_USART_ReceiveData9(UartInstance);
+
+	return 0;
+}
+
+static void uart_stm32_poll_out9(const struct device *dev,
+					unsigned short s)
+{
+	USART_TypeDef *UartInstance = UART_STRUCT(dev);
+
+	/* Wait for TXE flag to be raised */
+	while (!LL_USART_IsActiveFlag_TXE(UartInstance)) {
+	}
+
+	LL_USART_ClearFlag_TC(UartInstance);
+
+	LL_USART_TransmitData9(UartInstance, (uint16_t)s);
+}
+
+#endif
 
 static int uart_stm32_err_check(const struct device *dev)
 {
@@ -516,6 +554,50 @@ static int uart_stm32_fifo_read(const struct device *dev, uint8_t *rx_data,
 
 	return num_rx;
 }
+
+#if defined(CONFIG_UART_9BITS_DATA_API)
+
+static int uart_stm32_fifo_fill9(const struct device *dev,
+				  const uint16_t *tx_data,
+				  int size)
+{
+	USART_TypeDef *UartInstance = UART_STRUCT(dev);
+	uint8_t num_tx = 0U;
+
+	while ((size - num_tx > 0) &&
+	       LL_USART_IsActiveFlag_TXE(UartInstance)) {
+		/* TXE flag will be cleared with byte write to DR|RDR register */
+
+		/* Send a character (9bit , parity none) */
+		LL_USART_TransmitData9(UartInstance, tx_data[num_tx++]);
+	}
+
+	return num_tx;
+}
+
+static int uart_stm32_fifo_read9(const struct device *dev, uint16_t *rx_data,
+				  const int size)
+{
+	USART_TypeDef *UartInstance = UART_STRUCT(dev);
+	uint8_t num_rx = 0U;
+
+	while ((size - num_rx > 0) &&
+	       LL_USART_IsActiveFlag_RXNE(UartInstance)) {
+		/* RXNE flag will be cleared upon read from DR|RDR register */
+
+		/* Receive a character (9bit , parity none) */
+		rx_data[num_rx++] = LL_USART_ReceiveData9(UartInstance);
+
+		/* Clear overrun error flag */
+		if (LL_USART_IsActiveFlag_ORE(UartInstance)) {
+			LL_USART_ClearFlag_ORE(UartInstance);
+		}
+	}
+
+	return num_rx;
+}
+
+#endif /* CONFIG_UART_9BITS_DATA_API */
 
 static void uart_stm32_irq_tx_enable(const struct device *dev)
 {
@@ -1016,6 +1098,61 @@ static int uart_stm32_async_tx(const struct device *dev,
 	return 0;
 }
 
+#if defined(CONFIG_UART_9BITS_DATA_API)
+
+static int uart_stm32_async_tx9(const struct device *dev,
+		const uint16_t *tx_data, size_t buf_size, int32_t timeout)
+{
+	struct uart_stm32_data *data = DEV_DATA(dev);
+	USART_TypeDef *UartInstance = UART_STRUCT(dev);
+	int ret;
+
+	if (data->dma_tx.dma_dev == NULL) {
+		return -ENODEV;
+	}
+
+	if (data->dma_tx.buffer_length != 0) {
+		return -EBUSY;
+	}
+
+	data->dma_tx.buffer = (uint16_t *)tx_data;
+	data->dma_tx.buffer_length = buf_size;
+	data->dma_tx.timeout = timeout;
+	data->dma_tx.src_addr_increment = sizeof(uint16_t);
+
+	LOG_DBG("tx: l=%d", data->dma_tx.buffer_length);
+
+	/* disable TX interrupt since DMA will handle it */
+	LL_USART_DisableIT_TC(UartInstance);
+
+	/* set source address */
+	data->dma_tx.blk_cfg.source_address = (uint32_t)data->dma_tx.buffer;
+	data->dma_tx.blk_cfg.block_size = data->dma_tx.buffer_length;
+
+	ret = dma_config(data->dma_tx.dma_dev, data->dma_tx.dma_channel,
+				&data->dma_tx.dma_cfg);
+
+	if (ret != 0) {
+		LOG_ERR("dma tx config error!");
+		return -EINVAL;
+	}
+
+	if (dma_start(data->dma_tx.dma_dev, data->dma_tx.dma_channel)) {
+		LOG_ERR("UART err: TX DMA start failed!");
+		return -EFAULT;
+	}
+
+	/* Start TX timer */
+	async_timer_start(&data->dma_tx.timeout_work, data->dma_tx.timeout);
+
+	/* Enable TX DMA requests */
+	uart_stm32_dma_tx_enable(dev);
+
+	return 0;
+}
+
+#endif /* CONFIG_UART_9BITS_DATA_API */
+
 static int uart_stm32_async_rx_enable(const struct device *dev,
 		uint8_t *rx_buf, size_t buf_size, int32_t timeout)
 {
@@ -1075,6 +1212,71 @@ static int uart_stm32_async_rx_enable(const struct device *dev,
 
 	return ret;
 }
+
+#if defined(CONFIG_UART_9BITS_DATA_API)
+
+static int uart_stm32_async_rx_enable9(const struct device *dev,
+		uint16_t *rx_buf, size_t buf_size, int32_t timeout)
+{
+	struct uart_stm32_data *data = DEV_DATA(dev);
+	USART_TypeDef *UartInstance = UART_STRUCT(dev);
+	int ret;
+
+	if (data->dma_rx.dma_dev == NULL) {
+		return -ENODEV;
+	}
+
+	if (data->dma_rx.enabled) {
+		LOG_WRN("RX was already enabled");
+		return -EBUSY;
+	}
+
+	data->dma_rx.offset = 0;
+	data->dma_rx.buffer = rx_buf;
+	data->dma_rx.buffer_length = buf_size;
+	data->dma_rx.counter = 0;
+	data->dma_rx.timeout = timeout;
+	data->dma_tx.dst_addr_increment = sizeof(uint16_t);
+
+	/* Disable RX interrupts to let DMA to handle it */
+	LL_USART_DisableIT_RXNE(UartInstance);
+
+	data->dma_rx.blk_cfg.block_size = buf_size;
+	data->dma_rx.blk_cfg.dest_address = (uint32_t)data->dma_rx.buffer;
+
+	ret = dma_config(data->dma_rx.dma_dev, data->dma_rx.dma_channel,
+				&data->dma_rx.dma_cfg);
+
+	if (ret != 0) {
+		LOG_ERR("UART ERR: RX DMA config failed!");
+		return -EINVAL;
+	}
+
+	if (dma_start(data->dma_rx.dma_dev, data->dma_rx.dma_channel)) {
+		LOG_ERR("UART ERR: RX DMA start failed!");
+		return -EFAULT;
+	}
+
+	/* Enable RX DMA requests */
+	uart_stm32_dma_rx_enable(dev);
+
+	/* Enable IRQ IDLE to define the end of a
+	 * RX DMA transaction.
+	 */
+	LL_USART_ClearFlag_IDLE(UartInstance);
+	LL_USART_EnableIT_IDLE(UartInstance);
+
+	LL_USART_EnableIT_ERROR(UartInstance);
+
+	/* Request next buffer */
+	async_evt_rx_buf_request(data);
+
+	LOG_DBG("async rx enabled");
+
+	return ret;
+}
+
+#endif /* CONFIG_UART_9BITS_DATA_API */
 
 static int uart_stm32_async_tx_abort(const struct device *dev)
 {
@@ -1139,6 +1341,22 @@ static int uart_stm32_async_rx_buf_rsp(const struct device *dev, uint8_t *buf,
 
 	return 0;
 }
+
+#if defined(CONFIG_UART_9BITS_DATA_API)
+
+static int uart_stm32_async_rx_buf_rsp9(const struct device *dev, uint16_t *buf,
+				       size_t len)
+{
+	struct uart_stm32_data *data = DEV_DATA(dev);
+
+	LOG_DBG("replace buffer (%d)", len);
+	data->rx_next_buffer = buf;
+	data->rx_next_buffer_len = len;
+
+	return 0;
+}
+
+#endif /* CONFIG_UART_9BITS_DATA_API */
 
 static int uart_stm32_async_init(const struct device *dev)
 {
@@ -1246,13 +1464,38 @@ static int uart_stm32_async_init(const struct device *dev)
 
 #endif /* CONFIG_UART_ASYNC_API */
 
+#if defined(CONFIG_UART_DRV_CMD)
+
+/* __weak void LL_USART_EnableFIFO(USART_TypeDef *USARTx) {} */
+
+int uart_stm32_drv_cmd(const struct device *dev, uint32_t cmd, uint32_t p)
+{
+	USART_TypeDef *UartInstance = UART_STRUCT(dev);
+
+	switch (cmd) {
+	case UART_STM32_DRV_CMD_SET_HW_FIFO_MODE:
+		if (p) {
+			LL_USART_EnableFIFO(UartInstance);
+		} else {
+			LL_USART_DisableFIFO(UartInstance);
+		}
+		break;
+
+	default:
+		return -ENOTSUP;
+	}
+	return 0;
+}
+
+#endif
+
 static const struct uart_driver_api uart_stm32_driver_api = {
 	.poll_in = uart_stm32_poll_in,
 	.poll_out = uart_stm32_poll_out,
 #if defined(CONFIG_UART_9BITS_DATA_API)
-	.poll_in9 = NULL,
-	.poll_out9 = NULL,
-#endif	/* CONFIG_UART_9BITS_DATA_API */
+	.poll_in9 = uart_stm32_poll_in9,
+	.poll_out9 = uart_stm32_poll_out9,
+#endif
 	.err_check = uart_stm32_err_check,
 	.configure = uart_stm32_configure,
 	.config_get = uart_stm32_config_get,
@@ -1260,8 +1503,8 @@ static const struct uart_driver_api uart_stm32_driver_api = {
 	.fifo_fill = uart_stm32_fifo_fill,
 	.fifo_read = uart_stm32_fifo_read,
 #if defined(CONFIG_UART_9BITS_DATA_API)
-	.fifo_fill9 = NULL,
-	.fifo_read9 = NULL,
+	.fifo_fill9 = uart_stm32_fifo_fill9,
+	.fifo_read9 = uart_stm32_fifo_read9,
 #endif	/* CONFIG_UART_9BITS_DATA_API */
 	.irq_tx_enable = uart_stm32_irq_tx_enable,
 	.irq_tx_disable = uart_stm32_irq_tx_disable,
@@ -1279,16 +1522,21 @@ static const struct uart_driver_api uart_stm32_driver_api = {
 #ifdef CONFIG_UART_ASYNC_API
 	.callback_set = uart_stm32_async_callback_set,
 	.tx = uart_stm32_async_tx,
-	.tx9 = NULL,
+#if defined(CONFIG_UART_9BITS_DATA_API)
+	.tx9 = uart_stm32_async_tx9,
+#endif
 	.tx_abort = uart_stm32_async_tx_abort,
 	.rx_enable = uart_stm32_async_rx_enable,
 	.rx_disable = uart_stm32_async_rx_disable,
 	.rx_buf_rsp = uart_stm32_async_rx_buf_rsp,
 #if defined(CONFIG_UART_9BITS_DATA_API)
-	.rx_enable9 = NULL,
-	.rx_buf_rsp9 = NULL,
+	.rx_enable9 = uart_stm32_async_rx_enable9,
+	.rx_buf_rsp9 = uart_stm32_async_rx_buf_rsp9,
 #endif	/* CONFIG_UART_9BITS_DATA_API */
 #endif  /* CONFIG_UART_ASYNC_API */
+#if defined(CONFIG_UART_DRV_CMD)
+	.drv_cmd = uart_stm32_drv_cmd,
+#endif /* CONFIG_UART_DRV_CMD */
 };
 
 /**
