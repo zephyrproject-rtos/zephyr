@@ -9,7 +9,9 @@
 
 /* Per CPU architecture specifics */
 struct _cpu_arch {
-	/* content coming soon */
+#ifdef CONFIG_FPU_SHARING
+	struct k_thread *fpu_owner;
+#endif
 };
 
 #endif /* ZEPHYR_INCLUDE_ARM64_STRUCTS_H_ */

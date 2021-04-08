@@ -27,6 +27,7 @@
 
 #define SGI_SCHED_IPI	0
 #define SGI_PTABLE_IPI	1
+#define SGI_FPU_IPI	2
 
 struct boot_params {
 	uint64_t mpid;
@@ -129,6 +130,9 @@ void z_arm64_secondary_start(void)
 #ifdef CONFIG_USERSPACE
 	irq_enable(SGI_PTABLE_IPI);
 #endif
+#ifdef CONFIG_FPU_SHARING
+	irq_enable(SGI_FPU_IPI);
+#endif
 #endif
 
 	fn = arm64_cpu_boot_params.fn;
@@ -191,6 +195,24 @@ void z_arm64_ptable_ipi(void)
 }
 #endif
 
+#ifdef CONFIG_FPU_SHARING
+void flush_fpu_ipi_handler(const void *unused)
+{
+	ARG_UNUSED(unused);
+
+	disable_irq();
+	z_arm64_flush_local_fpu();
+	/* no need to re-enable IRQs here */
+}
+
+void z_arm64_flush_fpu_ipi(unsigned int cpu)
+{
+	const uint64_t mpidr = GET_MPIDR();
+
+	gic_raise_sgi(SGI_FPU_IPI, mpidr, (1 << cpu));
+}
+#endif
+
 static int arm64_smp_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
@@ -205,6 +227,10 @@ static int arm64_smp_init(const struct device *dev)
 #ifdef CONFIG_USERSPACE
 	IRQ_CONNECT(SGI_PTABLE_IPI, IRQ_DEFAULT_PRIORITY, ptable_ipi_handler, NULL, 0);
 	irq_enable(SGI_PTABLE_IPI);
+#endif
+#ifdef CONFIG_FPU_SHARING
+	IRQ_CONNECT(SGI_FPU_IPI, IRQ_DEFAULT_PRIORITY, flush_fpu_ipi_handler, NULL, 0);
+	irq_enable(SGI_FPU_IPI);
 #endif
 
 	return 0;
