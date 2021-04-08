@@ -54,15 +54,15 @@ void simple_workq_thread(void *arg1, void *arg2, void *arg3)
 
 void delayed_workq_thread(void *arg1, void *arg2, void *arg3)
 {
-	struct k_delayed_work work_item;
+	struct k_work_delayable work_item;
 
 	ARG_UNUSED(arg1);
 	ARG_UNUSED(arg2);
 	ARG_UNUSED(arg3);
 
 	k_sem_reset(&sync_sema);
-	k_delayed_work_init(&work_item, workq_func);
-	k_delayed_work_submit_to_queue(&workq, &work_item, K_NO_WAIT);
+	k_work_init_delayable(&work_item, workq_func);
+	k_work_reschedule_for_queue(&workq, &work_item, K_NO_WAIT);
 
 	k_sem_take(&sync_sema, K_FOREVER);
 }
@@ -88,9 +88,9 @@ void run_workq(void)
 
 	k_sem_init(&sync_sema, 0, 1);
 
-	k_work_q_start(&workq, workq_stack,
-		       K_THREAD_STACK_SIZEOF(workq_stack),
-		       CONFIG_MAIN_THREAD_PRIORITY);
+	k_work_queue_start(&workq, workq_stack,
+			   K_THREAD_STACK_SIZEOF(workq_stack),
+			   CONFIG_MAIN_THREAD_PRIORITY, NULL);
 
 	/* Exercise simple workqueue */
 	tid = k_thread_create(&my_thread, my_stack_area, STACK_SIZE,

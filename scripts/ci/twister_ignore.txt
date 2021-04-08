@@ -13,7 +13,6 @@
 .editorconfig
 .gitattributes
 .gitignore
-.known-issues
 .mailmap
 .uncrustify.cfg
 CODEOWNERS

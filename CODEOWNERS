@@ -13,7 +13,6 @@
 # Do not use wildcard on all source yet
 # *                                        @galak @nashif
 
-/.known-issues/                           @nashif
 /.github/				  @nashif
 /.github/workflows/                       @galak @nashif
 /.buildkite/				  @galak
