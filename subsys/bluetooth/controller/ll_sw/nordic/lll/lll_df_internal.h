@@ -43,3 +43,7 @@ static inline struct lll_df_sync_cfg *lll_df_sync_cfg_curr_get(struct lll_df_syn
 {
 	return &df_cfg->cfg[df_cfg->first];
 }
+
+/* Enables CTE reception according to provided configuration */
+void lll_df_conf_cte_rx_enable(uint8_t slot_duration, uint8_t ant_num,
+			       uint8_t *ant_ids);
