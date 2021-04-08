@@ -85,5 +85,7 @@
 		/* Remove GPIO3 & GPIO4, they dont exist on RT1010 */
 		/delete-node/ gpio@401c0000;
 		/delete-node/ gpio@401c4000;
+		/* Remove ADC2, it doesn't exist on RT1010 */
+		/delete-node/ adc@400C8000;
 	};
 };
