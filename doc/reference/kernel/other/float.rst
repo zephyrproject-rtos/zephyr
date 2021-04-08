@@ -133,6 +133,32 @@ If an ARM thread does not require use of the floating point registers any
 more, it can call :c:func:`k_float_disable`. This instructs the kernel
 not to save or restore its FP context during thread context switching.
 
+ARM64 architecture
+------------------
+
+.. note::
+    The Shared FP registers mode is the default Floating Point
+    Services mode on ARM64. The compiler is free to optimize code
+    using FP/SIMD registers, and library functions such as memcpy
+    are known to make use of them.
+
+On the ARM64 (Aarch64) architecture the kernel treats each thread as a FPU
+user on a case-by-case basis. A "lazy save" algorithm is used during context
+switching which updates the floating point registers only when it is absolutely
+necessary. For example, the registers are *not* saved when switching from an
+FPU user to a non-user thread, and then back to the original FPU user.
+
+FPU register usage by ISRs is supported although not recommended. When an
+ISR uses floating point or SIMD registers, then the access is trapped, the
+current FPU user context is saved in the thread object and the ISR is resumed
+with interrupts disabled so to prevent another IRQ from interrupting the ISR
+and potentially requesting FPU usage. Because ISR don't have a persistent
+register context, there are no provision for saving an ISR's FPU context
+either, hence the IRQ disabling.
+
+Each thread object becomes 512 bytes larger when Shared FP registers mode
+is enabled.
+
 ARCv2 architecture
 ------------------
 

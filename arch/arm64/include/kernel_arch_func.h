@@ -44,6 +44,11 @@ extern void z_arm64_userspace_enter(z_arch_esf_t *esf, uintptr_t sp_el0);
 extern void z_arm64_set_ttbr0(uintptr_t ttbr0);
 extern void z_arm64_ptable_ipi(void);
 
+#ifdef CONFIG_FPU_SHARING
+void z_arm64_flush_local_fpu(void);
+void z_arm64_flush_fpu_ipi(unsigned int cpu);
+#endif
+
 #endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus

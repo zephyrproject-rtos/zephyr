@@ -149,7 +149,7 @@ void z_arm64_el1_init(void)
 	isb();
 
 	reg = 0U;			/* RES0 */
-	reg |= CPACR_EL1_FPEN_NOTRAP;	/* Do not trap NEON/SIMD/FP */
+	reg |= CPACR_EL1_FPEN_NOTRAP;	/* Do not trap NEON/SIMD/FP initially */
 					/* TODO: CONFIG_FLOAT_*_FORBIDDEN */
 	write_cpacr_el1(reg);
 

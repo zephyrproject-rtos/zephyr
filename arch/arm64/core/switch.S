@@ -125,6 +125,15 @@ SECTION_FUNC(TEXT, z_arm64_sync_exc)
 	mrs	x0, esr_el1
 	lsr	x1, x0, #26
 
+#ifdef CONFIG_FPU_SHARING
+	cmp	x1, #0x07 /*Access to SIMD or floating-point */
+	bne	1f
+	mov	x0, sp
+	bl	z_arm64_fpu_trap
+	b	z_arm64_exit_exc_fpu_done
+1:
+#endif
+
 	cmp	x1, #0x15 /* 0x15 = SVC */
 	bne	inv
 

@@ -58,6 +58,10 @@ _ASM_FILE_PROLOGUE
 	add	\xreg0, \xreg0, \xreg1
 	msr	tpidrro_el0, \xreg0
 
+#ifdef CONFIG_FPU_SHARING
+	bl	z_arm64_fpu_enter_exc
+#endif
+
 .endm
 
 /*
@@ -208,6 +212,13 @@ SECTION_FUNC(TEXT, z_arm64_serror)
 
 GTEXT(z_arm64_exit_exc)
 SECTION_FUNC(TEXT, z_arm64_exit_exc)
+
+#ifdef CONFIG_FPU_SHARING
+	bl	z_arm64_fpu_exit_exc
+
+ GTEXT(z_arm64_exit_exc_fpu_done)
+ SECTION_FUNC(TEXT, z_arm64_exit_exc_fpu_done)
+#endif
 
 	ldp	x0, x1, [sp, ___esf_t_spsr_elr_OFFSET]
 	msr	spsr_el1, x0
