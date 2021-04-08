@@ -64,9 +64,7 @@ struct bt_ccp_call_state_t {
 } __packed;
 
 struct bt_ccp_call_t {
-	uint8_t index;
-	uint8_t state;
-	uint8_t flags;
+	struct bt_ccp_call_state_t call_info;
 	char remote_uri[CONFIG_BT_TBS_MAX_URI_LENGTH + 1];
 } __packed;
 
