@@ -50,7 +50,7 @@ struct __esf {
 #ifdef CONFIG_USERSPACE
 	uint64_t tpidrro_el0;
 #endif
-};
+} __aligned(16);
 
 typedef struct __esf z_arch_esf_t;
 

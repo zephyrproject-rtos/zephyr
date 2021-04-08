@@ -30,8 +30,7 @@ volatile struct {
 	void *sp; /* Fixed at the first entry */
 	arch_cpustart_t fn;
 	void *arg;
-	char pad[] __aligned(L1_CACHE_BYTES);
-} arm64_cpu_init[CONFIG_MP_NUM_CPUS];
+} __aligned(L1_CACHE_BYTES) arm64_cpu_init[CONFIG_MP_NUM_CPUS];
 
 extern void __start(void);
 
