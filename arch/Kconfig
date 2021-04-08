@@ -830,7 +830,6 @@ menu "Floating Point Options"
 config FPU
 	bool "Enable floating point unit (FPU)"
 	depends on CPU_HAS_FPU
-	depends on ARC || ARM || RISCV || SPARC || X86
 	help
 	  This option enables the hardware Floating Point Unit (FPU), in order to
 	  support using the floating point registers and instructions.
@@ -851,20 +850,19 @@ config FPU
 config FPU_SHARING
 	bool "FPU register sharing"
 	depends on FPU && MULTITHREADING
-	default y if ARM && ARMV7_M_ARMV8_M_FP
 	help
 	  This option enables preservation of the hardware floating point registers
 	  across context switches to allow multiple threads to perform concurrent
 	  floating point operations.
 
-	  Note that on Cortex-M processors with the floating point extension we
-	  enable by default the FPU register sharing mode, as some GCC compilers
-	  may activate a floating point context by generating FP instructions for
-	  any thread, and that context must be preserved when switching such
-	  threads in and out. The developers can still disable the FP sharing
-	  mode in their application projects, and switch to Unshared FP registers
-	  mode, if it is guaranteed that the image code does not generate FP
-	  instructions outside the single thread context that is allowed to do so.
+	  Note that some compiler configurations may activate a floating point
+	  context by generating FP instructions for any thread, and that
+	  context must be preserved when switching such threads in and out.
+	  The developers can still disable the FP sharing mode in their
+	  application projects, and switch to Unshared FP registers mode,
+	  if it is guaranteed that the image code does not generate FP
+	  instructions outside the single thread context that is allowed
+	  to do so.
 
 endmenu
 
