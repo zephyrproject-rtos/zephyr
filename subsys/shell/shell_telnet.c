@@ -43,7 +43,8 @@ static void telnet_end_client_connection(void)
 	sh_telnet->client_ctx = NULL;
 	sh_telnet->output_lock = false;
 
-	k_work_cancel_delayable(&sh_telnet->send_work);
+	k_work_cancel_delayable_sync(&sh_telnet->send_work,
+				     &sh_telnet->work_sync);
 
 	/* Flush the RX FIFO */
 	while ((pkt = k_fifo_get(&sh_telnet->rx_fifo, K_NO_WAIT)) != NULL) {
@@ -109,7 +110,8 @@ static void telnet_reply_command(struct telnet_simple_command *cmd)
 		/* OK, no output then */
 		sh_telnet->output_lock = true;
 		sh_telnet->line_out.len = 0;
-		k_work_cancel_delayable(&sh_telnet->send_work);
+		k_work_cancel_delayable_sync(&sh_telnet->send_work,
+					     &sh_telnet->work_sync);
 		break;
 	case NVT_CMD_AYT:
 		telnet_reply_ay_command();
@@ -373,6 +375,7 @@ static int write(const struct shell_transport *transport,
 	size_t copy_len;
 	int err;
 	uint32_t timeout;
+	bool was_running;
 
 	if (sh_telnet == NULL) {
 		*cnt = 0;
@@ -391,7 +394,8 @@ static int write(const struct shell_transport *transport,
 	 */
 	timeout = k_ticks_to_ms_ceil32(
 			k_work_delayable_remaining_get(&sh_telnet->send_work));
-	k_work_cancel_delayable(&sh_telnet->send_work);
+	was_running = k_work_cancel_delayable_sync(&sh_telnet->send_work,
+						   &sh_telnet->work_sync);
 
 	do {
 		if (lb->len + length - *cnt > TELNET_LINE_SIZE) {
@@ -421,7 +425,7 @@ static int write(const struct shell_transport *transport,
 	if (lb->len > 0) {
 		/* Check if the timer was already running, initialize otherwise.
 		 */
-		timeout = (timeout == 0) ? TELNET_TIMEOUT : timeout;
+		timeout = was_running ? timeout : TELNET_TIMEOUT;
 
 		k_work_reschedule(&sh_telnet->send_work, K_MSEC(timeout));
 	}
