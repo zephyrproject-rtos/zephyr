@@ -20,6 +20,12 @@
 #include "lll_df_types.h"
 #include "lll_df_internal.h"
 
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_CTLR_DF_DEBUG_ENABLE)
+#define LOG_MODULE_NAME bt_ctlr_lll_df
+#include "common/log.h"
+#include <soc.h>
+#include "hal/debug.h"
+
 /* @brief Function performs common steps for initialization and reset
  * of Direction Finding LLL module.
  *
@@ -161,6 +167,43 @@ void lll_df_conf_cte_tx_disable(void)
 {
 	radio_df_reset();
 }
+
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
+/* @brief Function initializes reception of Constant Tone Extension.
+ *
+ * @param[in] slot_duration     Switching and sampling slots duration (1us or 2us).
+ * @param[in] ant_num           Number of antennas in switch pattern.
+ * @param[in] ant_ids           Antenna identifiers that create switch pattern.
+ *
+ * In case of AoA mode ant_num and ant_ids parameters are not used.
+ */
+void lll_df_conf_cte_rx_enable(uint8_t slot_duration, uint8_t ant_num,
+			       uint8_t *ant_ids)
+{
+	struct node_rx_iq_report *node_rx;
+
+	/* ToDo change to appropriate HCI constant */
+#if defined(CONFIG_BT_CTLR_DF_ANT_SWITCH_1US)
+	if (slot_duration == 0x1) {
+		radio_df_cte_rx_2us_switching();
+	} else
+#endif /* CONFIG_BT_CTLR_DF_ANT_SWITCH_1US */
+	{
+		radio_df_cte_rx_4us_switching();
+	}
+
+#if defined(CONFIG_BT_CTLR_DF_ANT_SWITCH_RX)
+	radio_df_ant_switching_pin_sel_cfg();
+	radio_df_ant_switch_pattern_clear();
+	radio_df_ant_switch_pattern_set(ant_ids, ant_num);
+#endif /* CONFIG_BT_CTLR_DF_ANT_SWITCH_RX */
+
+	node_rx = ull_df_iq_report_alloc_peek(1);
+	LL_ASSERT(node_rx);
+
+	radio_df_iq_data_packet_set(node_rx->pdu, IQ_SAMPLE_TOTAL_CNT);
+}
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 
 static int init_reset(void)
 {
