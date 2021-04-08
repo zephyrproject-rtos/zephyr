@@ -884,6 +884,25 @@ uint8_t ll_enc_req_send(uint16_t handle, uint8_t const *const rand,
 }
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
+#if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
+uint8_t ll_set_min_used_chans(uint16_t handle, uint8_t const phys,
+		     uint8_t const min_used_chans)
+{
+	struct ll_conn *conn;
+
+	conn = ll_connected_get(handle);
+	if (!conn) {
+		return BT_HCI_ERR_UNKNOWN_CONN_ID;
+	}
+
+	if (!conn->lll.role) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	return ull_cp_min_used_chans(conn, phys, min_used_chans);
+}
+#endif /* CONFIG_BT_CTLR_MIN_USED_CHAN */
+
 /*
  * EGON: the ll_tx_mem routines should go to their own module
  */
