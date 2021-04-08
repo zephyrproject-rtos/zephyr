@@ -114,16 +114,13 @@ static void wdt_t0out_isr(const struct device *dev, struct npcx_wui *wui)
 	struct wdt_npcx_data *const data = DRV_DATA(dev);
 	ARG_UNUSED(wui);
 
+	LOG_DBG("WDT reset will issue after %d delay cycle! WUI(%d %d %d)",
+		CONFIG_WDT_NPCX_DELAY_CYCLES, wui->table, wui->group, wui->bit);
+
 	/* Handle watchdog event here. */
 	if (data->cb) {
 		data->cb(dev, 0);
 	}
-
-	LOG_DBG("WDT issued! WUI(%d %d %d)", wui->table, wui->group, wui->bit);
-
-	/* Wait for watchdog event and reset occurred! */
-	while (1)
-		;
 }
 
 static void wdt_config_t0out_interrupt(const struct device *dev)
