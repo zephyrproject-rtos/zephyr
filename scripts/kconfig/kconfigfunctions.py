@@ -6,6 +6,7 @@
 import os
 import pickle
 import sys
+import pprint
 
 ZEPHYR_BASE = os.environ["ZEPHYR_BASE"]
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts", "dts",
@@ -439,6 +440,9 @@ def dt_irq_highest_number(kconf, _, irq_parent_label):
     if doc_mode or edt is None:
         return "0"
 
+    pp = pprint.PrettyPrinter(width=41, compact=True)
+    # pp.pprint(edt.scc_order)
+
     irq_parent_node = edt.label2node.get(irq_parent_label)
     highest_irq_number = 0
 
@@ -450,6 +454,11 @@ def dt_irq_highest_number(kconf, _, irq_parent_label):
 	# Iterate over interrupt-parent depending nodes
     for node in node_using_irqs:
         node_irqs = node.props["interrupts"].val
+
+        try:
+            pp.pprint(node.interrupts)
+        except:
+            pp.pprint("No parent")
 
         try:
             node_status = node.props["status"].val
