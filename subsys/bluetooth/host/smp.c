@@ -139,9 +139,6 @@ enum {
 
 /* SMP channel specific context */
 struct bt_smp {
-	/* The channel this context is associated with */
-	struct bt_l2cap_le_chan		chan;
-
 	/* Commands that remote is allowed to send */
 	ATOMIC_DEFINE(allowed_cmds, BT_SMP_NUM_CMDS);
 
@@ -199,6 +196,12 @@ struct bt_smp {
 	/* Remote key distribution */
 	uint8_t				remote_dist;
 
+	/* The channel this context is associated with.
+	 * This marks the beginning of the part of the structure that will not
+	 * be memset to zero in init.
+	 */
+	struct bt_l2cap_le_chan		chan;
+
 	/* Delayed work for timeout handling */
 	struct k_delayed_work		work;
 };
@@ -239,9 +242,6 @@ static const uint8_t gen_method_sc[5 /* remote */][5 /* local */] = {
 #if defined(CONFIG_BT_BREDR)
 /* SMP over BR/EDR channel specific context */
 struct bt_smp_br {
-	/* The channel this context is associated with */
-	struct bt_l2cap_br_chan	chan;
-
 	/* Commands that remote is allowed to send */
 	ATOMIC_DEFINE(allowed_cmds, BT_SMP_NUM_CMDS);
 
@@ -256,6 +256,12 @@ struct bt_smp_br {
 
 	/* Encryption Key Size used for connection */
 	uint8_t 			enc_key_size;
+
+	/* The channel this context is associated with.
+	 * This marks the beginning of the part of the structure that will not
+	 * be memset to zero in init.
+	 */
+	struct bt_l2cap_br_chan	chan;
 
 	/* Delayed work for timeout handling */
 	struct k_delayed_work 	work;
@@ -1057,9 +1063,10 @@ static void bt_smp_br_disconnected(struct bt_l2cap_chan *chan)
 
 static void smp_br_init(struct bt_smp_br *smp)
 {
-	/* Initialize SMP context without clearing L2CAP channel context */
-	(void)memset((uint8_t *)smp + sizeof(smp->chan), 0,
-		     sizeof(*smp) - (sizeof(smp->chan) + sizeof(smp->work)));
+	/* Initialize SMP context exluding L2CAP channel context and anything
+	 * else declared after.
+	 */
+	(void)memset(smp, 0, offsetof(struct bt_smp_br, chan));
 
 	atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_FAIL);
 }
@@ -2674,9 +2681,10 @@ static uint8_t smp_master_ident(struct bt_smp *smp, struct net_buf *buf)
 
 static int smp_init(struct bt_smp *smp)
 {
-	/* Initialize SMP context without clearing L2CAP channel context */
-	(void)memset((uint8_t *)smp + sizeof(smp->chan), 0,
-		     sizeof(*smp) - (sizeof(smp->chan) + sizeof(smp->work)));
+	/* Initialize SMP context exluding L2CAP channel context and anything
+	 * else declared after.
+	 */
+	(void)memset(smp, 0, offsetof(struct bt_smp, chan));
 
 	/* Generate local random number */
 	if (bt_rand(smp->prnd, 16)) {
