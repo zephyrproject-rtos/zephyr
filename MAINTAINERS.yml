@@ -1375,9 +1375,13 @@ STM32 Platforms:
     status: maintained
     maintainers:
         - erwango
+    collaborators:
+        - ABOSTM
+        - FRASTM
     files:
         - boards/arm/nucleo_*/
         - boards/arm/stm32*_disco/
+        - boards/arm/stm32*_dk*/
         - boards/arm/stm32*_eval/
         - drivers/*/*stm32*/
         - drivers/*/*stm32*
