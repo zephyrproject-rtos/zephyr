@@ -44,6 +44,14 @@ static inline struct lll_df_sync_cfg *lll_df_sync_cfg_curr_get(struct lll_df_syn
 	return &df_cfg->cfg[df_cfg->first];
 }
 
+/* Return information if DF sync configuration data were modified since last
+ * call to lll_df_sync_cfg_latest_get.
+ */
+static inline uint8_t lll_df_sync_cfg_is_modified(struct lll_df_sync *df_cfg)
+{
+	return df_cfg->first != df_cfg->last;
+}
+
 /* Enables CTE reception according to provided configuration */
 void lll_df_conf_cte_rx_enable(uint8_t slot_duration, uint8_t ant_num,
 			       uint8_t *ant_ids);
