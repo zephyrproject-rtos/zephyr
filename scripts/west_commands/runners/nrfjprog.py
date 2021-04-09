@@ -169,13 +169,13 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
         if self.family is not None:
             return
 
-        if self.build_conf.get('CONFIG_SOC_SERIES_NRF51X', False):
+        if self.build_conf.get('CONFIG_SOC_SERIES_NRF51X', 'n') == 'y':
             self.family = 'NRF51'
-        elif self.build_conf.get('CONFIG_SOC_SERIES_NRF52X', False):
+        elif self.build_conf.get('CONFIG_SOC_SERIES_NRF52X', 'n') == 'y':
             self.family = 'NRF52'
-        elif self.build_conf.get('CONFIG_SOC_SERIES_NRF53X', False):
+        elif self.build_conf.get('CONFIG_SOC_SERIES_NRF53X', 'n') == 'y':
             self.family = 'NRF53'
-        elif self.build_conf.get('CONFIG_SOC_SERIES_NRF91X', False):
+        elif self.build_conf.get('CONFIG_SOC_SERIES_NRF91X', 'n') == 'y':
             self.family = 'NRF91'
         else:
             raise RuntimeError(f'unknown nRF; update {__file__}')
