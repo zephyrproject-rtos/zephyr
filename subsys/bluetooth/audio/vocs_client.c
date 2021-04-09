@@ -119,7 +119,9 @@ static uint8_t vocs_client_read_offset_state_cb(struct bt_conn *conn, uint8_t er
 	BT_DBG("Inst %p: err: 0x%02X", inst, err);
 	inst->cli.busy = false;
 
-	if (data) {
+	if (cb_err) {
+		BT_DBG("Offset state read failed: %d", err);
+	} else if (data) {
 		if (length == sizeof(inst->cli.state)) {
 			memcpy(&inst->cli.state, data, length);
 			BT_DBG("Offset %d, counter %u",
@@ -134,7 +136,8 @@ static uint8_t vocs_client_read_offset_state_cb(struct bt_conn *conn, uint8_t er
 	}
 
 	if (inst->cli.cb && inst->cli.cb->state) {
-		inst->cli.cb->state(conn, inst, cb_err, inst->cli.state.offset);
+		inst->cli.cb->state(conn, inst, cb_err,
+				    cb_err ? 0 : inst->cli.state.offset);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -157,7 +160,9 @@ static uint8_t vocs_client_read_location_cb(struct bt_conn *conn, uint8_t err,
 	BT_DBG("Inst %p: err: 0x%02X", inst, err);
 	inst->cli.busy = false;
 
-	if (data) {
+	if (cb_err) {
+		BT_DBG("Offset state read failed: %d", err);
+	} else if (data) {
 		if (length == sizeof(inst->cli.location)) {
 			memcpy(&inst->cli.location, data, length);
 			BT_DBG("Location %u", inst->cli.location);
@@ -172,7 +177,8 @@ static uint8_t vocs_client_read_location_cb(struct bt_conn *conn, uint8_t err,
 	}
 
 	if (inst->cli.cb && inst->cli.cb->location) {
-		inst->cli.cb->location(conn, inst, cb_err, inst->cli.location);
+		inst->cli.cb->location(conn, inst, cb_err,
+				       cb_err ? 0 : inst->cli.location);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -193,7 +199,7 @@ static uint8_t internal_read_volume_offset_state_cb(struct bt_conn *conn, uint8_
 	}
 
 	if (err) {
-		BT_WARN("Volume state read failed: %d", err);
+		BT_WARN("Volume offset state read failed: %d", err);
 		cb_err = BT_ATT_ERR_UNLIKELY;
 	} else if (data) {
 		if (length == sizeof(inst->cli.state)) {
@@ -253,7 +259,7 @@ static void vcs_client_write_vocs_cp_cb(struct bt_conn *conn, uint8_t err,
 	if (cb_err == BT_VOCS_ERR_INVALID_COUNTER && inst->cli.cp_retried) {
 		cb_err = BT_ATT_ERR_UNLIKELY;
 	} else if (cb_err == BT_VOCS_ERR_INVALID_COUNTER && inst->cli.state_handle) {
-		BT_DBG("Invalid change counter. Reading volume state from server.");
+		BT_DBG("Invalid change counter. Reading volume offset state from server.");
 
 		inst->cli.read_params.func = internal_read_volume_offset_state_cb;
 		inst->cli.read_params.handle_count = 1;
@@ -261,7 +267,7 @@ static void vcs_client_write_vocs_cp_cb(struct bt_conn *conn, uint8_t err,
 
 		cb_err = bt_gatt_read(conn, &inst->cli.read_params);
 		if (cb_err) {
-			BT_WARN("Could not read Volume state: %d", cb_err);
+			BT_WARN("Could not read Volume offset state: %d", cb_err);
 		} else {
 			inst->cli.cp_retried = true;
 			/* Wait for read callback */
@@ -297,29 +303,26 @@ static uint8_t vcs_client_read_output_desc_cb(struct bt_conn *conn, uint8_t err,
 
 	if (cb_err) {
 		BT_DBG("Description read failed: %d", err);
-		if (inst->cli.cb && inst->cli.cb->description) {
-			inst->cli.cb->description(conn, inst, cb_err, NULL);
+	} else {
+		if (data) {
+			BT_HEXDUMP_DBG(data, length, "Output description read");
+
+			if (length > sizeof(desc) - 1) {
+				BT_DBG("Description truncated from %u to %zu octets",
+				       length, sizeof(desc) - 1);
+			}
+			length = MIN(sizeof(desc) - 1, length);
+
+			/* TODO: Handle long reads */
+			memcpy(desc, data, length);
 		}
-		return BT_GATT_ITER_STOP;
+		desc[length] = '\0';
+		BT_DBG("Output description: %s", log_strdup(desc));
 	}
-
-	if (data) {
-		BT_HEXDUMP_DBG(data, length, "Output description read");
-
-		if (length > sizeof(desc) - 1) {
-			BT_DBG("Description truncated from %u to %zu octets",
-			       length, sizeof(desc) - 1);
-		}
-		length = MIN(sizeof(desc) - 1, length);
-
-		/* TODO: Handle long reads */
-		memcpy(desc, data, length);
-	}
-	desc[length] = '\0';
-	BT_DBG("Output description: %s", log_strdup(desc));
 
 	if (inst->cli.cb && inst->cli.cb->description) {
-		inst->cli.cb->description(conn, inst, cb_err, desc);
+		inst->cli.cb->description(conn, inst, cb_err,
+					  cb_err ? NULL : desc);
 	}
 
 	return BT_GATT_ITER_STOP;
