@@ -112,6 +112,13 @@ config BT_CTLR_DF_SCAN_CTE_RX
 	  Enable support for Bluetooth v5.1 connectionless CTE reception
 	  in controller.
 
+config BT_CTLR_DF_SAMPLE_CTE_FOR_PDU_WITH_BAD_CRC
+	bool "Enable sampling of CTE for PDUs with bad CRC"
+	depends on BT_CTLR_DF_SCAN_CTE_RX
+	default y
+	help
+	  Enable support for sampling of CTE for PDUs that have bad CRC.
+
 # Customization setting to manage memory usage footprint
 
 config BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN
