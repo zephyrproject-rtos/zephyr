@@ -201,14 +201,12 @@ void radio_df_cte_inline_set_enabled(bool cte_info_in_s1)
 		.enable = true,
 		/* Indicates whether CTEInfo is in S1 byte or not. */
 		.info_in_s1 = cte_info_in_s1,
-		/* Disable switching and sampling when CRC is not OK.
-		 *
-		 * ToDo consider if is it required to sample PDUs with wrong CRC?
-		 * BT 5.2 Spec Vol 4, Part E section 7.7.65.21 LE Connectionless
-		 * IQ Report event allows to report CTEs sampled for PDUs that
-		 * have wrong CRC.
-		 */
+		/* Enable or disable switching and sampling when CRC is not OK. */
+#if defined(CONFIG_BT_CTLR_DF_SAMPLE_CTE_FOR_PDU_WITH_BAD_CRC)
+		.err_handling = true,
+#else
 		.err_handling = false,
+#endif /* CONFIG_BT_CTLR_DF_SAMPLE_CTE_FOR_PDU_WITH_BAD_CRC */
 		/* Maximum range of CTE time. 20 * 8us according to BT spec.*/
 		.time_range = NRF_RADIO_CTEINLINE_TIME_RANGE_20,
 		/* Spacing between samples for 1us AoD or AoA is set to 2us. */
