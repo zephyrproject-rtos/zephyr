@@ -111,10 +111,10 @@ On the Zephyr Build System
 On the ACRN SOS
 ---------------
 
-#. If you are not already using the ACRN SOS, follow `Getting started guide
-   for Intel NUC
-   <https://projectacrn.github.io/latest/getting-started/apl-nuc.html>`_ to
-   install and boot "The ACRN Service OS".
+#. If you are not already using the ACRN SOS, follow `Getting Started Guide
+   for ACRN Industry Scenario With Ubuntu Service VM
+   <https://projectacrn.github.io/latest/getting-started/rt_industry_ubuntu.html>`_
+   to install and boot "The ACRN Service OS".
 
 #. Boot Zephyr as User OS
 
