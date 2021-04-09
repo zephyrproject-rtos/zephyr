@@ -69,7 +69,7 @@ inline void set_csr(unsigned long bit)
 	}
 }
 
-static void ite_intc_isr_clear(unsigned int irq)
+void ite_intc_isr_clear(unsigned int irq)
 {
 	uint32_t g, i;
 	volatile uint8_t *isr;
