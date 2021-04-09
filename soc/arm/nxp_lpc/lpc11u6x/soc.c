@@ -18,7 +18,7 @@
 #include <soc.h>
 #include <linker/sections.h>
 #include <arch/cpu.h>
-#include <aarch32/cortex_m/exc.h>
+#include <cortex_m/exc.h>
 
 /**
  *

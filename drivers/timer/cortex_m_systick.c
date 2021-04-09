@@ -6,7 +6,7 @@
 #include <drivers/timer/system_timer.h>
 #include <sys_clock.h>
 #include <spinlock.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <arch/arm/cortex_m/cmsis.h>
 
 #define COUNTER_MAX 0x00ffffff
 #define TIMER_STOPPED 0xff000000

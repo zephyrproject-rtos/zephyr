@@ -16,7 +16,7 @@
 #elif defined(CONFIG_ARM64)
 #include <arch/arm64/arch.h>
 #elif defined(CONFIG_ARM)
-#include <arch/arm/aarch32/arch.h>
+#include <arch/arm/arch.h>
 #elif defined(CONFIG_ARC)
 #include <arch/arc/arch.h>
 #elif defined(CONFIG_NIOS2)

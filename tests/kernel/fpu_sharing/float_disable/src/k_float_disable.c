@@ -151,7 +151,7 @@ void test_k_float_disable_syscall(void)
 #if defined(CONFIG_ARM) && defined(CONFIG_DYNAMIC_INTERRUPTS)
 
 #include <arch/cpu.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <arch/arm/cortex_m/cmsis.h>
 
 struct k_thread sup_fp_thread;
 K_THREAD_STACK_DEFINE(sup_fp_thread_stack, STACKSIZE);

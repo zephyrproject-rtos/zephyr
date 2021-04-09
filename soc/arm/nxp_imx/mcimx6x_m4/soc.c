@@ -7,7 +7,7 @@
 #include <init.h>
 #include <soc.h>
 #include <dt-bindings/rdc/imx_rdc.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <arch/arm/cortex_m/cmsis.h>
 #include "wdog_imx.h"
 
 /* Initialize Resource Domain Controller. */

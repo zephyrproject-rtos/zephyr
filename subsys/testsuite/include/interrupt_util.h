@@ -10,7 +10,7 @@
 #define MS_TO_US(ms)  (ms * USEC_PER_MSEC)
 
 #if defined(CONFIG_CPU_CORTEX_M)
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <arch/arm/cortex_m/cmsis.h>
 
 static inline uint32_t get_available_nvic_line(uint32_t initial_offset)
 {

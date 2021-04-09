@@ -1,21 +1,16 @@
 /*
- * Copyright (c) 2015, Wind River Systems, Inc.
+ * Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _CORTEX_M_CPU_H
-#define _CORTEX_M_CPU_H
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_M_CPU_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_M_CPU_H_
 
-#ifdef _ASMLANGUAGE
-
-#define _SCS_BASE_ADDR _PPB_INT_SCS
-#define _SCS_ICSR (_SCS_BASE_ADDR + 0xd04)
-#define _SCS_ICSR_PENDSV (1 << 28)
-#define _SCS_ICSR_UNPENDSV (1 << 27)
-#define _SCS_ICSR_RETTOBASE (1 << 11)
-
-#define _SCS_MPU_CTRL (_SCS_BASE_ADDR + 0xd94)
+#ifndef CONFIG_COMPAT_INCLUDES
+#warning "This header file has moved, include <arch/arm/cortex_m/cpu.h> instead."
 #endif
 
-#endif
+#include <arch/arm/cortex_m/cpu.h>
+
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_M_CPU_H_ */
