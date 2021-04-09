@@ -43,7 +43,8 @@ static int prepare_cb(struct lll_prepare_param *p);
 static void isr_rx(void *param);
 
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
-static inline void create_iq_report(struct lll_sync *lll, uint8_t rssi_ready);
+static inline int create_iq_report(struct lll_sync *lll, uint8_t rssi_ready,
+				    uint8_t packet_status);
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 
 int lll_sync_init(void)
@@ -311,19 +312,23 @@ static void isr_rx(void *param)
 			ull_rx_put(node_rx->hdr.link, node_rx);
 
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
-			create_iq_report(lll, rssi_ready);
+			create_iq_report(lll, rssi_ready, BT_HCI_LE_CTE_CRC_OK);
 
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 			ull_rx_sched();
 		}
 	}
-	/* ToDo Check if reporting of IQ samples when CRC is wrong should be
-	 * implemented.
-	 * BT Spec Vol 4. Part E, 7.7.65.21 says:
-	 * "A Controller is not required to generate this event for packets that
-	 *  have a bad CRC.". But LL Test suite has two tests cases for such
-	 * situations: 4.2.3.26 and 4.2.3.27.
-	 */
+#if defined(CONFIG_BT_CTLR_DF_SAMPLE_CTE_FOR_PDU_WITH_BAD_CRC)
+	else {
+		int err;
+
+		err = create_iq_report(lll, rssi_ready,
+				       BT_HCI_LE_CTE_CRC_ERR_CTE_BASED_TIME);
+		if (!err) {
+			ull_rx_sched();
+		}
+	}
+#endif /* CONFIG_BT_CTLR_DF_SAMPLE_CTE_FOR_PDU_WITH_BAD_CRC */
 
 isr_rx_done:
 	/* Calculate and place the drift information in done event */
@@ -348,7 +353,8 @@ isr_rx_done:
 }
 
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
-static inline void create_iq_report(struct lll_sync *lll, uint8_t rssi_ready)
+static inline int create_iq_report(struct lll_sync *lll, uint8_t rssi_ready,
+				   uint8_t packet_status)
 {
 	struct node_rx_iq_report *iq_report;
 	struct lll_df_sync_cfg *cfg;
@@ -374,7 +380,7 @@ static inline void create_iq_report(struct lll_sync *lll, uint8_t rssi_ready)
 
 				iq_report->hdr.type = NODE_RX_TYPE_IQ_SAMPLE_REPORT;
 				iq_report->sample_count = sample_cnt;
-				iq_report->packet_status = BT_HCI_LE_CTE_CRC_OK;
+				iq_report->packet_status = packet_status;
 				iq_report->rssi_ant_id = ant;
 				iq_report->cte_info = *(struct pdu_cte_info *)&cte_info;
 				iq_report->local_slot_durations = cfg->slot_durations;
@@ -385,8 +391,12 @@ static inline void create_iq_report(struct lll_sync *lll, uint8_t rssi_ready)
 					     BT_HCI_LE_RSSI_NOT_AVAILABLE);
 
 				ull_rx_put(iq_report->hdr.link, iq_report);
+			} else {
+				return -ENODATA;
 			}
 		}
 	}
+
+	return 0;
 }
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
