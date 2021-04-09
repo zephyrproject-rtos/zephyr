@@ -49,6 +49,7 @@
 #include "ll_sw/ull_conn_types.h"
 #include "ll_sw/ull_conn_internal.h"
 #include "ll_sw/ull_conn_iso_types.h"
+#include "ll_sw/ull_df.h"
 
 #include "ll.h"
 #include "ll_feat.h"
@@ -2552,6 +2553,18 @@ static void le_df_connectionless_iq_report(struct pdu_data *pdu_rx,
 		return;
 	}
 
+	lll = iq_report->hdr.rx_ftr.param;
+
+	/* TX LL thread has higher priority than RX thread. It may happen that
+	 * host succefully disables CTE sampling in the meantime.
+	 * It should be verified here, to avoid reporint IQ samples after
+	 * the functionality was disabled.
+	 */
+	if (ull_df_sync_cfg_is_disabled_or_requested_to_disable(&lll->df_cfg)) {
+		/* Dropp further processing of the event. */
+		return;
+	}
+
 	/* If there are no IQ samples due to insufficient resources
 	 * HCI event should inform about it by store single octet with
 	 * special I_sample and Q_sample data.
@@ -2568,8 +2581,6 @@ static void le_df_connectionless_iq_report(struct pdu_data *pdu_rx,
 	sep->rssi = sys_cpu_to_le16(rssi);
 	sep->rssi_ant_id = iq_report->rssi_ant_id;
 	sep->cte_type = iq_report->cte_info.type;
-
-	lll = iq_report->hdr.rx_ftr.param;
 
 	sep->chan_idx = lll->data_chan_id;
 	sep->per_evt_counter = sys_cpu_to_le16(lll->event_counter);
