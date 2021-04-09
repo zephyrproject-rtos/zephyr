@@ -46,8 +46,7 @@
 
 static int init_reset(void);
 static int prepare_cb(struct lll_prepare_param *prepare_param);
-static int is_abort_cb(void *next, int prio, void *curr,
-		       lll_prepare_cb_t *resume_cb, int *resume_prio);
+static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb);
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param);
 static void isr_tx(void *param);
 static void isr_rx(void *param);
@@ -447,8 +446,7 @@ static int resume_prepare_cb(struct lll_prepare_param *p)
 }
 #endif /* CONFIG_BT_PERIPHERAL */
 
-static int is_abort_cb(void *next, int prio, void *curr,
-		       lll_prepare_cb_t *resume_cb, int *resume_prio)
+static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 {
 #if defined(CONFIG_BT_PERIPHERAL)
 	struct lll_adv *lll = curr;
@@ -464,7 +462,6 @@ static int is_abort_cb(void *next, int prio, void *curr,
 
 			/* wrap back after the pre-empter */
 			*resume_cb = resume_prepare_cb;
-			*resume_prio = 0; /* TODO: */
 
 			/* Retain HF clk */
 			err = lll_clk_on();
