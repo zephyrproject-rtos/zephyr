@@ -741,10 +741,14 @@ static int prepare_cb(struct lll_prepare_param *p)
 	lll = p->param;
 
 #if defined(CONFIG_BT_PERIPHERAL)
-	/* Check if stopped (on connection establishment race between LLL and
-	 * ULL.
+	/* Check if stopped (on connection establishment- or disabled race
+	 * between LLL and ULL.
+	 * When connectable advertising is disabled in thread context, cancelled
+	 * flag is set, and initiated flag is checked. Here, we avoid
+	 * transmitting connectable advertising event if cancelled flag is set.
 	 */
-	if (unlikely(lll->conn && lll->conn->slave.initiated)) {
+	if (unlikely(lll->conn &&
+		(lll->conn->slave.initiated || lll->conn->slave.cancelled))) {
 		radio_isr_set(lll_isr_early_abort, lll);
 		radio_disable();
 
@@ -1079,7 +1083,14 @@ static void isr_done(void *param)
 	}
 #endif /* CONFIG_BT_PERIPHERAL */
 
-	if (lll->chan_map_curr) {
+	/* NOTE: Do not continue to connectable advertise if advertising is
+	 *       being disabled, by checking the cancelled flag.
+	 */
+	if (lll->chan_map_curr &&
+#if defined(CONFIG_BT_PERIPHERAL)
+	    (!lll->conn || !lll->conn->slave.cancelled) &&
+#endif /* CONFIG_BT_PERIPHERAL */
+	    1) {
 		struct pdu_adv *pdu;
 		uint32_t start_us;
 
@@ -1321,12 +1332,22 @@ static inline int isr_rx_pdu(struct lll_adv *lll,
 		return 0;
 
 #if defined(CONFIG_BT_PERIPHERAL)
+	/* NOTE: Do not accept CONNECT_IND if cancelled flag is set in thread
+	 *       context when disabling connectable advertising. This is to
+	 *       avoid any race in checking the initiated flags in thread mode
+	 *       which is set here if accepting a connection establishment.
+	 *
+	 *       Under this race, peer central would get failed to establish
+	 *       connection as the disconnect reason. This is an acceptable
+	 *       outcome to keep the thread mode implementation simple when
+	 *       disabling connectable advertising.
+	 */
 	} else if ((pdu_rx->type == PDU_ADV_TYPE_CONNECT_IND) &&
 		   (pdu_rx->len == sizeof(struct pdu_adv_connect_ind)) &&
+		   lll->conn && !lll->conn->slave.cancelled &&
 		   lll_adv_connect_ind_check(lll, pdu_rx, tx_addr, addr,
 					     rx_addr, tgt_addr,
-					     devmatch_ok, &rl_idx) &&
-		   lll->conn) {
+					     devmatch_ok, &rl_idx)) {
 		struct node_rx_ftr *ftr;
 		struct node_rx_pdu *rx;
 

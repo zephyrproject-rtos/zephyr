@@ -874,6 +874,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 		/* FIXME: BEGIN: Move to ULL? */
 		conn_lll->role = 1;
 		conn_lll->slave.initiated = 0;
+		conn_lll->slave.cancelled = 0;
 		conn_lll->data_chan_sel = 0;
 		conn_lll->data_chan_use = 0;
 		conn_lll->event_counter = 0;
@@ -1995,6 +1996,21 @@ static inline uint8_t disable(uint8_t handle)
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
+#if defined(CONFIG_BT_PERIPHERAL)
+	if (adv->lll.conn) {
+		/* Indicate to LLL that a cancellation is requested */
+		adv->lll.conn->slave.cancelled = 1U;
+		cpu_dmb();
+
+		/* Check if a connection was initiated (connection
+		 * establishment race between LLL and ULL).
+		 */
+		if (unlikely(adv->lll.conn->slave.initiated)) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+	}
+#endif /* CONFIG_BT_PERIPHERAL */
+
 	mark = ull_disable_mark(adv);
 	LL_ASSERT(mark == adv);
 
@@ -2012,7 +2028,7 @@ static inline uint8_t disable(uint8_t handle)
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 	}
-#endif
+#endif /* CONFIG_BT_PERIPHERAL */
 
 	ret_cb = TICKER_STATUS_BUSY;
 	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
