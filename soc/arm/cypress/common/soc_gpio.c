@@ -30,6 +30,8 @@ static uint32_t soc_gpio_get_drv_mode(uint32_t flags)
 		drv_mode = CY_GPIO_DM_PULLUP_IN_OFF;
 	} else if (flags & SOC_GPIO_PULLDOWN) {
 		drv_mode = CY_GPIO_DM_PULLDOWN_IN_OFF;
+	} else {
+		;
 	}
 
 	if (flags & SOC_GPIO_INPUTENABLE) {
