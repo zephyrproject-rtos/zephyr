@@ -1,0 +1,7 @@
+sample:
+  description: Dictionary-based Logging Sample Application
+  name: logging_dictionary
+tests:
+  sample.logger.basic.dictionary:
+    build_only: true
+    tags: logging
