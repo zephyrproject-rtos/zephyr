@@ -84,7 +84,9 @@ struct uart_cmsdk_apb_dev_data {
 	((volatile struct uart_cmsdk_apb *)(DEV_CFG(dev))->base)
 
 static const struct uart_driver_api uart_cmsdk_apb_driver_api;
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_cmsdk_apb_isr(const struct device *dev);
+#endif
 
 /**
  * @brief Set the baud rate
