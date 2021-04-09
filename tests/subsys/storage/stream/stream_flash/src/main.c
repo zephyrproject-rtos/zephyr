@@ -196,6 +196,11 @@ static void test_stream_flash_buffered_write_unaligned(void)
 			       0, stream_flash_callback);
 	zassert_equal(rc, 0, "expected success");
 
+	/* Trigger verification in callback */
+	cb_buf = buf;
+	cb_len = BUF_LEN - 1;
+	cb_offset = FLASH_BASE + BUF_LEN;
+
 	/* Test unaligned data size */
 	rc = stream_flash_buffered_write(&ctx, write_buf, BUF_LEN - 1, true);
 	zassert_equal(rc, 0, "expected success");
