@@ -247,3 +247,17 @@ enable=
     deprecated-str-translate-call,
     deprecated-itertools-function,
     deprecated-types-field,
+
+[SIMILARITIES]
+
+# Minimum lines number of a similarity.
+min-similarity-lines=10
+
+# Ignore comments when computing similarities.
+ignore-comments=yes
+
+# Ignore docstrings when computing similarities.
+ignore-docstrings=yes
+
+# Ignore imports when computing similarities.
+ignore-imports=yes
