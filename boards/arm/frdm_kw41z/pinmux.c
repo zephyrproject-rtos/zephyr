@@ -31,12 +31,16 @@ static int frdm_kw41z_pinmux_init(const struct device *dev)
 	/* Red, green, blue LEDs. Note the red LED and accel INT1 are both
 	 * wired to PTC1.
 	 */
-#if defined(CONFIG_PWM) && DT_NODE_HAS_STATUS(DT_NODELABEL(pwm0), okay)
+#if defined(CONFIG_PWM) && DT_NODE_HAS_STATUS(DT_NODELABEL(tpm0), okay)
 	pinmux_pin_set(portc,  1, PORT_PCR_MUX(kPORT_MuxAlt5));
+#else
+	pinmux_pin_set(portc,  1, PORT_PCR_MUX(kPORT_MuxAsGpio));
+#endif
+
+#if defined(CONFIG_PWM) && DT_NODE_HAS_STATUS(DT_NODELABEL(tpm2), okay)
 	pinmux_pin_set(porta, 19, PORT_PCR_MUX(kPORT_MuxAlt5));
 	pinmux_pin_set(porta, 18, PORT_PCR_MUX(kPORT_MuxAlt5));
 #else
-	pinmux_pin_set(portc,  1, PORT_PCR_MUX(kPORT_MuxAsGpio));
 	pinmux_pin_set(porta, 19, PORT_PCR_MUX(kPORT_MuxAsGpio));
 	pinmux_pin_set(porta, 18, PORT_PCR_MUX(kPORT_MuxAsGpio));
 #endif
@@ -72,14 +76,14 @@ static int frdm_kw41z_pinmux_init(const struct device *dev)
 	pinmux_pin_set(portc, 19, PORT_PCR_MUX(kPORT_MuxAlt2));
 #endif
 
-#if defined(CONFIG_PWM) && DT_NODE_HAS_STATUS(DT_NODELABEL(pwm1), okay)
-	pinmux_pin_set(porta,  0, PORT_PCR_MUX(kPORT_MuxAlt4));
-	pinmux_pin_set(porta,  1, PORT_PCR_MUX(kPORT_MuxAlt4));
+#if defined(CONFIG_PWM) && DT_NODE_HAS_STATUS(DT_NODELABEL(tpm1), okay)
+	pinmux_pin_set(porta,  0, PORT_PCR_MUX(kPORT_MuxAlt5));
+	pinmux_pin_set(porta,  1, PORT_PCR_MUX(kPORT_MuxAlt5));
 #endif
 
-#if defined(CONFIG_PWM) && DT_NODE_HAS_STATUS(DT_NODELABEL(pwm2), okay)
-	pinmux_pin_set(portb, 16, PORT_PCR_MUX(kPORT_MuxAlt4));
-	pinmux_pin_set(portb, 17, PORT_PCR_MUX(kPORT_MuxAlt4));
+#if defined(CONFIG_PWM) && DT_NODE_HAS_STATUS(DT_NODELABEL(tpm2), okay)
+	pinmux_pin_set(portb, 16, PORT_PCR_MUX(kPORT_MuxAlt5));
+	pinmux_pin_set(portb, 17, PORT_PCR_MUX(kPORT_MuxAlt5));
 #endif
 
 	return 0;
