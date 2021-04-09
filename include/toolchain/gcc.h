@@ -190,6 +190,9 @@ do {                                                                    \
 #ifndef __deprecated
 #define __deprecated	__attribute__((deprecated))
 #endif
+#ifndef __attribute_const__
+#define __attribute_const__ __attribute__((__const__))
+#endif
 #define ARG_UNUSED(x) (void)(x)
 
 #define likely(x)   __builtin_expect((bool)!!(x), true)

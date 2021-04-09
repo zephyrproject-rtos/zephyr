@@ -180,6 +180,7 @@ cpp_id_attributes = [
     "__used",
     "__unused",
     "__weak",
+    "__attribute_const__",
     "__DEPRECATED_MACRO",
     "FUNC_NORETURN",
     "__subsystem",

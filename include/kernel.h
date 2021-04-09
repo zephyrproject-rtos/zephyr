@@ -528,7 +528,7 @@ __syscall void k_wakeup(k_tid_t thread);
  * @return ID of current thread.
  *
  */
-__syscall k_tid_t k_current_get(void);
+__syscall k_tid_t k_current_get(void) __attribute_const__;
 
 /**
  * @brief Abort a thread.
