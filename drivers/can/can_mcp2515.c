@@ -333,7 +333,8 @@ static int mcp2515_set_timing(const struct device *dev,
 	uint8_t reset_mode;
 
 	/* CNF1; SJW<7:6> | BRP<5:0> */
-	uint8_t brp = timing->prescaler;
+	__ASSERT(timing->prescaler > 0, "Prescaler should be bigger than zero");
+	uint8_t brp = timing->prescaler - 1;
 	const uint8_t sjw = (timing->sjw - 1) << 6;
 	uint8_t cnf1 = sjw | brp;
 
