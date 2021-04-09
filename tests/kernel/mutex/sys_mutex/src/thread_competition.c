@@ -20,7 +20,12 @@ static struct k_thread thread_high_data1;
 static K_THREAD_STACK_DEFINE(thread_high_stack2, STACKSIZE);
 static struct k_thread thread_high_data2;
 SYS_MUTEX_DEFINE(mutex);
-static uint32_t flag;
+static uint32_t flag[3];
+
+/* The order of threads getting mutex is judged by index
+ * self addition.
+ */
+static uint32_t index;
 
 static void low_prio_wait_for_mutex(void *p1, void *p2, void *p3)
 {
@@ -28,9 +33,11 @@ static void low_prio_wait_for_mutex(void *p1, void *p2, void *p3)
 
 	sys_mutex_lock(pmutex, K_FOREVER);
 
-	flag = LOW_PRO;
+	flag[index] = LOW_PRO;
+
+	index++;
 	/* Keep mutex for a while */
-	k_sleep(K_MSEC(20));
+	k_sleep(K_MSEC(10));
 
 	sys_mutex_unlock(pmutex);
 }
@@ -41,9 +48,11 @@ static void high_prio_t1_wait_for_mutex(void *p1, void *p2, void *p3)
 
 	sys_mutex_lock(pmutex, K_FOREVER);
 
-	flag = HIGH_T1;
+	flag[index] = HIGH_T1;
+
+	index++;
 	/* Keep mutex for a while */
-	k_sleep(K_MSEC(30));
+	k_sleep(K_MSEC(10));
 
 	sys_mutex_unlock(pmutex);
 }
@@ -54,9 +63,11 @@ static void high_prio_t2_wait_for_mutex(void *p1, void *p2, void *p3)
 
 	sys_mutex_lock(pmutex, K_FOREVER);
 
-	flag = HIGH_T2;
+	flag[index] = HIGH_T2;
+
+	index++;
 	/* Keep mutex for a while */
-	k_sleep(K_MSEC(20));
+	k_sleep(K_MSEC(10));
 
 	sys_mutex_unlock(pmutex);
 }
@@ -104,25 +115,23 @@ void test_mutex_multithread_competition(void)
 
 	/* Release mutex by current thread */
 	sys_mutex_unlock(&mutex);
-	/* 0 ~ 30ms, the mutex should be keep by high prio t1 thread */
-	k_sleep(K_MSEC(15));
-	zassert_true(flag == HIGH_T1,
-	"The highest priority thread failed to take the mutex.");
-
-	/* 30ms ~ 50ms, the mutex should be keep by high prio t2 thread */
-	k_sleep(K_MSEC(15));
-	zassert_true(flag == HIGH_T2,
-	"The highest priority thread failed to take the mutex.");
-
-	/* 50ms ~ 70ms, the mutex should be keep by low prio thread */
-	k_sleep(K_MSEC(15));
-	zassert_true(flag == LOW_PRO,
-	"The low priority thread failed to take the mutex.");
 
 	/* Wait for thread exiting */
 	k_thread_join(&thread_low_data, K_FOREVER);
 	k_thread_join(&thread_high_data1, K_FOREVER);
 	k_thread_join(&thread_high_data2, K_FOREVER);
+
+	/* The mutex should be keep by high prio t1 thread */
+	zassert_true(flag[0] == HIGH_T1,
+	"The highest priority thread failed to take the mutex.");
+
+	/* The mutex should be keep by high prio t2 thread */
+	zassert_true(flag[1] == HIGH_T2,
+	"The higher priority thread failed to take the mutex.");
+
+	/* The mutex should be keep by low prio thread */
+	zassert_true(flag[2] == LOW_PRO,
+	"The low priority thread failed to take the mutex.");
 
 	/* Revert priority of the main thread */
 	k_thread_priority_set(k_current_get(), old_prio);
