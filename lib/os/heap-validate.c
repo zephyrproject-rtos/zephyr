@@ -352,12 +352,15 @@ void heap_print_info(struct z_heap *h, bool dump_chunks)
 	}
 	free_bytes = allocated_bytes = 0;
 	for (chunkid_t c = 0; ; c = right_chunk(h, c)) {
-		if (c == 0 || c == h->end_chunk) {
-			/* those are always allocated for internal purposes */
-		} else if (chunk_used(h, c)) {
-			allocated_bytes += chunksz_to_bytes(h, chunk_size(h, c));
-		} else if (!solo_free_header(h, c)) {
-			free_bytes += chunksz_to_bytes(h, chunk_size(h, c));
+		if (chunk_used(h, c)) {
+			if ((c != 0) && (c != h->end_chunk)) {
+				/* 1st and last are always allocated for internal purposes */
+				allocated_bytes += chunksz_to_bytes(h, chunk_size(h, c));
+			}
+		} else {
+			if (!solo_free_header(h, c)) {
+				free_bytes += chunksz_to_bytes(h, chunk_size(h, c));
+			}
 		}
 		if (dump_chunks) {
 			printk("chunk %4d: [%c] size=%-4d left=%-4d right=%d\n",
