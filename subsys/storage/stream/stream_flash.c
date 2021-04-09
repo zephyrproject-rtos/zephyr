@@ -108,6 +108,9 @@ static int flash_sync(struct stream_flash_ctx *ctx)
 {
 	int rc = 0;
 	size_t write_addr = ctx->offset + ctx->bytes_written;
+	size_t buf_bytes_aligned;
+	size_t fill_length;
+	uint8_t filler;
 
 
 	if (ctx->buf_bytes == 0) {
@@ -125,7 +128,18 @@ static int flash_sync(struct stream_flash_ctx *ctx)
 		}
 	}
 
-	rc = flash_write(ctx->fdev, write_addr, ctx->buf, ctx->buf_bytes);
+	fill_length = flash_get_write_block_size(ctx->fdev);
+	if (ctx->buf_bytes % fill_length) {
+		fill_length -= ctx->buf_bytes % fill_length;
+		filler = flash_get_parameters(ctx->fdev)->erase_value;
+
+		memset(ctx->buf + ctx->buf_bytes, filler, fill_length);
+	} else {
+		fill_length = 0;
+	}
+
+	buf_bytes_aligned = ctx->buf_bytes + fill_length;
+	rc = flash_write(ctx->fdev, write_addr, ctx->buf, buf_bytes_aligned);
 
 	if (rc != 0) {
 		LOG_ERR("flash_write error %d offset=0x%08zx", rc,
@@ -167,8 +181,6 @@ int stream_flash_buffered_write(struct stream_flash_ctx *ctx, const uint8_t *dat
 	int processed = 0;
 	int rc = 0;
 	int buf_empty_bytes;
-	size_t fill_length;
-	uint8_t filler;
 
 	if (!ctx) {
 		return -EFAULT;
@@ -201,23 +213,7 @@ int stream_flash_buffered_write(struct stream_flash_ctx *ctx, const uint8_t *dat
 	}
 
 	if (flush && ctx->buf_bytes > 0) {
-		fill_length = flash_get_write_block_size(ctx->fdev);
-		if (ctx->buf_bytes % fill_length) {
-			fill_length -= ctx->buf_bytes % fill_length;
-			filler = flash_get_parameters(ctx->fdev)->erase_value;
-
-			memset(ctx->buf + ctx->buf_bytes, filler, fill_length);
-			ctx->buf_bytes += fill_length;
-		} else {
-			fill_length = 0;
-		}
-
 		rc = flash_sync(ctx);
-		if (rc == 0) {
-			ctx->bytes_written -= fill_length;
-		} else {
-			ctx->buf_bytes -= fill_length;
-		}
 	}
 
 	return rc;
