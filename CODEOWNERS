@@ -61,6 +61,7 @@
 /soc/arm64/nxp_layerscape/                @JiafeiPan
 /soc/arm64/xenvm/                         @lorc
 /soc/arm64/arm/                           @povergoing
+/soc/arm64/arm/fvp_aemv8a/                @carlocaione
 /arch/x86/                                @jhedberg @nashif @jenmwms @aasthagr
 /arch/nios2/                              @nashif
 /arch/posix/                              @aescolar @daor-oti
@@ -154,6 +155,7 @@
 /boards/arm64/nxp_ls1046ardb/             @JiafeiPan
 /boards/arm64/xenvm/                      @lorc
 /boards/arm64/fvp_baser_aemv8r/           @povergoing
+/boards/arm64/fvp_base_revc_2xaemv8a/     @carlocaione
 # All cmake related files
 /cmake/                                   @tejlmand @nashif
 /cmake/*/arcmwdt/                         @abrodkin @evgeniy-paltsev @tejlmand

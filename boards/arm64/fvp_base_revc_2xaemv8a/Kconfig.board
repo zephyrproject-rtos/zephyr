@@ -1,0 +1,6 @@
+# Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_FVP_BASE_REVC_2XAEMV8A
+	bool "FVP Base RevC AEMv8A simulation board"
+	depends on SOC_FVP_BASE_REVC_2XAEMV8A
