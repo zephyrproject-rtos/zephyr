@@ -51,3 +51,4 @@ scripts/ci/version_mgr.py
 scripts/requirements*
 scripts/checkpatch/*
 scripts/checkpatch.pl
+scripts/ci/pylintrc
