@@ -8,18 +8,18 @@
 #include <sys/dlist.h>
 #include <toolchain.h>
 
-#include <hal/nrf_radio.h>
 #include <hal/nrf_rtc.h>
 #include <hal/nrf_timer.h>
 #include <hal/nrf_ccm.h>
 #include <hal/nrf_aar.h>
 
 #include "util/mem.h"
+
 #include "hal/ccm.h"
 #include "hal/radio.h"
 #include "hal/ticker.h"
+
 #include "ll_sw/pdu.h"
-#include "radio_nrf5.h"
 
 #if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
 #if ((CONFIG_BT_CTLR_GPIO_PA_PIN) > 31)
@@ -432,6 +432,7 @@ void *radio_pkt_scratch_get(void)
 
 #if defined(CONFIG_SOC_COMPATIBLE_NRF52832) && \
 	defined(CONFIG_BT_CTLR_LE_ENC) && \
+	defined(HAL_RADIO_PDU_LEN_MAX) && \
 	(!defined(CONFIG_BT_CTLR_DATA_LENGTH_MAX) || \
 	 (CONFIG_BT_CTLR_DATA_LENGTH_MAX < (HAL_RADIO_PDU_LEN_MAX - 4)))
 static uint8_t MALIGN(4) _pkt_decrypt[MAX((HAL_RADIO_PDU_LEN_MAX + 3),
@@ -441,6 +442,8 @@ void *radio_pkt_decrypt_get(void)
 {
 	return _pkt_decrypt;
 }
+#elif !defined(HAL_RADIO_PDU_LEN_MAX)
+#error "Undefined HAL_RADIO_PDU_LEN_MAX."
 #endif
 
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)

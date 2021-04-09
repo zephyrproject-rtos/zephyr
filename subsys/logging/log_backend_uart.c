@@ -39,7 +39,7 @@ static void put(const struct log_backend *const backend,
 	log_backend_std_put(&log_output_uart, flag, msg);
 }
 
-static void log_backend_uart_init(void)
+static void log_backend_uart_init(struct log_backend const *const backend)
 {
 	uart_dev = device_get_binding(CONFIG_UART_CONSOLE_ON_DEV_NAME);
 	__ASSERT_NO_MSG((void *)uart_dev);

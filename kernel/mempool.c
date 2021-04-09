@@ -103,7 +103,7 @@ void *z_thread_aligned_alloc(size_t align, size_t size)
 		heap = _current->resource_pool;
 	}
 
-	if (heap) {
+	if (heap != NULL) {
 		ret = z_heap_aligned_alloc(heap, align, size);
 	} else {
 		ret = NULL;

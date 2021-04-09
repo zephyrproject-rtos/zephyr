@@ -6,7 +6,7 @@
 
 /**
  * @file
- * @brief Variables needed needed for system clock
+ * @brief Variables needed for system clock
  *
  *
  * Declare variables used by both system timer device driver and kernel
@@ -112,7 +112,6 @@ typedef struct {
 /** @} */
 
 #ifdef CONFIG_TICKLESS_KERNEL
-extern int _sys_clock_always_on;
 extern void z_enable_sys_clock(void);
 #endif
 
@@ -155,9 +154,6 @@ extern void z_enable_sys_clock(void);
 
 #endif
 
-#define z_ms_to_ticks(t) \
-	((int32_t)k_ms_to_ticks_ceil32((uint32_t)(t)))
-
 /* added tick needed to account for tick in progress */
 #define _TICK_ALIGN 1
 
@@ -169,23 +165,13 @@ extern void z_enable_sys_clock(void);
 	(uint32_t)(k_cyc_to_ns_floor64(X) / NCYCLES)
 
 /**
- * @defgroup clock_apis Kernel Clock APIs
- * @ingroup kernel_apis
- * @{
- */
-
-/**
- * @} end defgroup clock_apis
- */
-
-/**
  *
  * @brief Return the lower part of the current system tick count
  *
  * @return the current system tick count
  *
  */
-uint32_t z_tick_get_32(void);
+uint32_t sys_clock_tick_get_32(void);
 
 /**
  *
@@ -194,14 +180,14 @@ uint32_t z_tick_get_32(void);
  * @return the current system tick count
  *
  */
-int64_t z_tick_get(void);
+int64_t sys_clock_tick_get(void);
 
 #ifndef CONFIG_SYS_CLOCK_EXISTS
-#define z_tick_get() (0)
-#define z_tick_get_32() (0)
+#define sys_clock_tick_get() (0)
+#define sys_clock_tick_get_32() (0)
 #endif
 
-uint64_t z_timeout_end_calc(k_timeout_t timeout);
+uint64_t sys_clock_timeout_end_calc(k_timeout_t timeout);
 
 #ifdef __cplusplus
 }

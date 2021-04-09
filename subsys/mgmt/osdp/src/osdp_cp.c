@@ -101,37 +101,14 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 
 	switch (pd->cmd_id) {
 	case CMD_POLL:
-		if (max_len < CMD_POLL_LEN) {
-			break;
-		}
-		buf[len++] = pd->cmd_id;
-		ret = 0;
-		break;
+		__fallthrough;
 	case CMD_LSTAT:
-		if (max_len < CMD_LSTAT_LEN) {
-			break;
-		}
-		buf[len++] = pd->cmd_id;
-		ret = 0;
-		break;
+		__fallthrough;
 	case CMD_ISTAT:
-		if (max_len < CMD_ISTAT_LEN) {
-			break;
-		}
-		buf[len++] = pd->cmd_id;
-		ret = 0;
-		break;
+		__fallthrough;
 	case CMD_OSTAT:
-		if (max_len < CMD_OSTAT_LEN) {
-			break;
-		}
-		buf[len++] = pd->cmd_id;
-		ret = 0;
-		break;
+		__fallthrough;
 	case CMD_RSTAT:
-		if (max_len < CMD_RSTAT_LEN) {
-			break;
-		}
 		buf[len++] = pd->cmd_id;
 		ret = 0;
 		break;
@@ -360,7 +337,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		}
 		while (pos < len) {
 			t1 = buf[pos++]; /* func_code */
-			if (t1 > OSDP_PD_CAP_SENTINEL) {
+			if (t1 >= OSDP_PD_CAP_SENTINEL) {
 				break;
 			}
 			pd->cap[t1].function_code    = t1;

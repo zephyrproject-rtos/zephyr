@@ -28,10 +28,30 @@
 			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
 		};
 	};
+
+	power-states {
+		stop0: state0 {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			substate-id = <1>;
+			min-residency-us = <100>;
+		};
+		stop1: state1 {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			substate-id = <2>;
+			min-residency-us = <500>;
+		};
+		stop2: state2 {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			substate-id = <3>;
+			min-residency-us = <900>;
+		};
+	};
 };
 
 &usart1 {
-	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
 	current-speed = <115200>;
 	status = "okay";
 };
@@ -47,6 +67,10 @@
 		irq-gpios = <&gpiof 3 GPIO_ACTIVE_HIGH>;
 		label = "LSM6DSO";
 	};
+};
+
+&rng {
+	status = "okay";
 };
 
 &spi1 {

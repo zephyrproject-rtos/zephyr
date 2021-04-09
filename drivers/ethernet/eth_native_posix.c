@@ -30,7 +30,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <net/ethernet.h>
 #include <ethernet/eth_stats.h>
 
-#include <ptp_clock.h>
+#include <drivers/ptp_clock.h>
 #include <net/gptp.h>
 #include <net/lldp.h>
 

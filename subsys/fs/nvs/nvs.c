@@ -49,11 +49,6 @@ static int nvs_flash_al_wrt(struct nvs_fs *fs, uint32_t addr, const void *data,
 	offset += fs->sector_size * (addr >> ADDR_SECT_SHIFT);
 	offset += addr & ADDR_OFFS_MASK;
 
-	rc = flash_write_protection_set(fs->flash_device, false);
-	if (rc) {
-		/* flash protection set error */
-		return rc;
-	}
 	blen = len & ~(fs->flash_parameters->write_block_size - 1U);
 	if (blen > 0) {
 		rc = flash_write(fs->flash_device, offset, data8, blen);
@@ -72,14 +67,9 @@ static int nvs_flash_al_wrt(struct nvs_fs *fs, uint32_t addr, const void *data,
 
 		rc = flash_write(fs->flash_device, offset, buf,
 				 fs->flash_parameters->write_block_size);
-		if (rc) {
-			/* flash write error */
-			goto end;
-		}
 	}
 
 end:
-	(void) flash_write_protection_set(fs->flash_device, true);
 	return rc;
 }
 
@@ -239,20 +229,11 @@ static int nvs_flash_erase_sector(struct nvs_fs *fs, uint32_t addr)
 	offset = fs->offset;
 	offset += fs->sector_size * (addr >> ADDR_SECT_SHIFT);
 
-	rc = flash_write_protection_set(fs->flash_device, false);
-	if (rc) {
-		/* flash protection set error */
-		return rc;
-	}
 	LOG_DBG("Erasing flash at %lx, len %d", (long int) offset,
 		fs->sector_size);
 	rc = flash_erase(fs->flash_device, offset, fs->sector_size);
-	if (rc) {
-		/* flash erase error */
-		return rc;
-	}
-	(void) flash_write_protection_set(fs->flash_device, true);
-	return 0;
+
+	return rc;
 }
 
 /* crc update on allocation entry */

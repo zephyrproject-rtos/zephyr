@@ -15,6 +15,7 @@ zephyr_library_sources_ifdef(CONFIG_BT_HOST_CCM         aes_ccm.c)
 
 zephyr_library_sources_ifdef(
   CONFIG_BT_BREDR
+  br.c
   keys_br.c
   l2cap_br.c
   sdp.c
@@ -34,6 +35,15 @@ if(CONFIG_BT_HCI_HOST)
     buf.c
     hci_core.c
     hci_common.c
+    id.c
+    )
+  zephyr_library_sources_ifdef(
+    CONFIG_BT_BROADCASTER
+    adv.c
+    )
+  zephyr_library_sources_ifdef(
+    CONFIG_BT_OBSERVER
+    scan.c
     )
   zephyr_library_sources_ifdef(
     CONFIG_BT_HOST_CRYPTO

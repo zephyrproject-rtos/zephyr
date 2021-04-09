@@ -49,15 +49,26 @@ static struct {
 		lll_is_abort_cb_t is_abort_cb;
 		lll_abort_cb_t    abort_cb;
 	} curr;
+
+#if defined(CONFIG_BT_CTLR_LOW_LAT_ULL_DONE)
+	struct {
+		uint8_t volatile lll_count;
+		uint8_t          ull_count;
+	} done;
+#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
 } event;
 
 /* Entropy device */
 static const struct device *dev_entropy;
 
 static int init_reset(void);
+#if defined(CONFIG_BT_CTLR_LOW_LAT_ULL_DONE)
+static inline void done_inc(void);
+#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
 static int prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 		   lll_prepare_cb_t prepare_cb, int prio,
-		   struct lll_prepare_param *prepare_param, uint8_t is_resume);
+		   struct lll_prepare_param *prepare_param,
+		   uint8_t is_resume, uint8_t is_dequeue);
 static int resume_enqueue(lll_prepare_cb_t resume_cb, int resume_prio);
 static void isr_race(void *param);
 
@@ -240,7 +251,7 @@ int lll_prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 		struct lll_prepare_param *prepare_param)
 {
 	return prepare(is_abort_cb, abort_cb, prepare_cb, prio, prepare_param,
-		       0);
+		       0, 0);
 }
 
 void lll_resume(void *param)
@@ -250,7 +261,7 @@ void lll_resume(void *param)
 
 	next = param;
 	ret = prepare(next->is_abort_cb, next->abort_cb, next->prepare_cb,
-		      next->prio, &next->prepare_param, next->is_resume);
+		      next->prio, &next->prepare_param, next->is_resume, 1);
 	LL_ASSERT(!ret || ret == -EINPROGRESS);
 }
 
@@ -276,6 +287,14 @@ void lll_disable(void *param)
 				next->is_aborted = 1;
 				next->abort_cb(&next->prepare_param,
 					       next->prepare_param.param);
+
+#if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL_DONE)
+				/* NOTE: abort_cb called lll_done which modifies
+				 *       the prepare pipeline hence re-iterate
+				 *       through the prepare pipeline.
+				 */
+				idx = UINT8_MAX;
+#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
 			}
 
 			next = ull_prepare_dequeue_iter(&idx);
@@ -324,6 +343,10 @@ int lll_done(void *param)
 		param = event.curr.param;
 		event.curr.param = NULL;
 
+#if defined(CONFIG_BT_CTLR_LOW_LAT_ULL_DONE)
+		done_inc();
+#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
+
 		if (param) {
 			ull = HDR_ULL(((struct lll_hdr *)param)->parent);
 		}
@@ -340,12 +363,23 @@ int lll_done(void *param)
 		ull = HDR_ULL(((struct lll_hdr *)param)->parent);
 	}
 
+#if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL_DONE)
+	ull_prepare_dequeue(TICKER_USER_ID_LLL);
+#endif /* !CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
+
 	/* Let ULL know about LLL event done */
 	evdone = ull_event_done(ull);
 	LL_ASSERT(evdone);
 
 	return ret;
 }
+
+#if defined(CONFIG_BT_CTLR_LOW_LAT_ULL_DONE)
+void lll_done_sync(void)
+{
+	event.done.ull_count = event.done.lll_count;
+}
+#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
 
 bool lll_is_done(void *param)
 {
@@ -404,10 +438,13 @@ uint32_t lll_preempt_calc(struct evt_hdr *evt, uint8_t ticker_id,
 	uint32_t diff;
 
 	ticks_now = ticker_ticks_now_get();
-	diff = ticker_ticks_diff_get(ticks_now, ticks_at_event);
+	diff = ticks_now - ticks_at_event;
+	if (diff & BIT(HAL_TICKER_CNTR_MSBIT)) {
+		return 0;
+	}
+
 	diff += HAL_TICKER_CNTR_CMP_OFFSET_MIN;
-	if (!(diff & BIT(HAL_TICKER_CNTR_MSBIT)) &&
-	    (diff > HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US))) {
+	if (diff > HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US)) {
 		/* TODO: for Low Latency Feature with Advanced XTAL feature.
 		 * 1. Release retained HF clock.
 		 * 2. Advance the radio event to accommodate normal prepare
@@ -545,14 +582,46 @@ void lll_isr_cleanup(void *param)
 	lll_done(NULL);
 }
 
+void lll_isr_early_abort(void *param)
+{
+	int err;
+
+	radio_isr_set(isr_race, param);
+	if (!radio_is_idle()) {
+		radio_disable();
+	}
+
+	err = lll_hfclock_off();
+	LL_ASSERT(err >= 0);
+
+	lll_done(NULL);
+}
+
 static int init_reset(void)
 {
 	return 0;
 }
 
+#if defined(CONFIG_BT_CTLR_LOW_LAT_ULL_DONE)
+static inline void done_inc(void)
+{
+	event.done.lll_count++;
+}
+#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
+
+static inline bool is_done_sync(void)
+{
+#if defined(CONFIG_BT_CTLR_LOW_LAT_ULL_DONE)
+	return event.done.lll_count == event.done.ull_count;
+#else /* !CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
+	return true;
+#endif /* !CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
+}
+
 static int prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 		   lll_prepare_cb_t prepare_cb, int prio,
-		   struct lll_prepare_param *prepare_param, uint8_t is_resume)
+		   struct lll_prepare_param *prepare_param,
+		   uint8_t is_resume, uint8_t is_dequeue)
 {
 	struct lll_event *p;
 	uint8_t idx;
@@ -566,7 +635,9 @@ static int prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 	}
 
 	/* Current event active or another prepare is ready in the pipeline */
-	if (event.curr.abort_cb || (p && is_resume)) {
+	if ((!is_dequeue && !is_done_sync()) ||
+	    event.curr.abort_cb ||
+	    (p && is_resume)) {
 #if defined(CONFIG_BT_CTLR_LOW_LAT)
 		lll_prepare_cb_t resume_cb;
 		struct lll_event *next;
@@ -781,6 +852,14 @@ static void preempt(void *param)
 				iter->is_aborted = 1;
 				iter->abort_cb(&iter->prepare_param,
 					       iter->prepare_param.param);
+
+#if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL_DONE)
+				/* NOTE: abort_cb called lll_done which modifies
+				 *       the prepare pipeline hence re-iterate
+				 *       through the prepare pipeline.
+				 */
+				idx = UINT8_MAX;
+#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
 			}
 
 			iter = ull_prepare_dequeue_iter(&iter_idx);

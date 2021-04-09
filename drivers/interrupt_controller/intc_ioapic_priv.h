@@ -33,12 +33,9 @@
 /* Version register bits */
 
 #define IOAPIC_MRE_MASK 0x00ff0000 /* Max Red. entry mask */
+#define IOAPIC_MRE_POS 16
 #define IOAPIC_PRQ 0x00008000      /* this has IRQ reg */
 #define IOAPIC_VERSION 0x000000ff  /* version number */
-
-/* Redirection table entry number */
-
-#define MAX_REDTABLE_ENTRIES 24
 
 /* Redirection table entry bits: upper 32 bit */
 

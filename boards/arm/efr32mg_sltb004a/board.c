@@ -56,4 +56,5 @@ static int efr32mg_sltb004a_init(const struct device *dev)
 }
 
 /* needs to be done after GPIO driver init */
-SYS_INIT(efr32mg_sltb004a_init, PRE_KERNEL_1, CONFIG_BOARD_INIT_PRIORITY);
+SYS_INIT(efr32mg_sltb004a_init, POST_KERNEL,
+	 CONFIG_KERNEL_INIT_PRIORITY_DEVICE);

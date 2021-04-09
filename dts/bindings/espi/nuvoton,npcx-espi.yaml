@@ -21,11 +21,11 @@ properties:
         required: true
         description: configurations of pinmux controllers
 
-    espi_rst_wui:
+    espi-rst-wui:
         type: phandle
         required: true
         description: |
             Mapping table between Wake-Up Input (WUI) and ESPI_RST signal.
 
             For example the WUI mapping on NPCX7 would be
-               espi_rst_wui = <&wui_cr_sin1>;
+               espi-rst-wui = <&wui_cr_sin1>;

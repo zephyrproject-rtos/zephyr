@@ -403,7 +403,7 @@ int bt_ssp_auth_cancel(struct bt_conn *conn)
 	return -EINVAL;
 }
 
-void hci_evt_pin_code_req(struct net_buf *buf)
+void bt_hci_pin_code_req(struct net_buf *buf)
 {
 	struct bt_hci_evt_pin_code_req *evt = (void *)buf->data;
 	struct bt_conn *conn;
@@ -420,7 +420,7 @@ void hci_evt_pin_code_req(struct net_buf *buf)
 	bt_conn_unref(conn);
 }
 
-void hci_evt_link_key_notify(struct net_buf *buf)
+void bt_hci_link_key_notify(struct net_buf *buf)
 {
 	struct bt_hci_evt_link_key_notify *evt = (void *)buf->data;
 	struct bt_conn *conn;
@@ -533,7 +533,7 @@ void link_key_reply(const bt_addr_t *bdaddr, const uint8_t *lk)
 	bt_hci_cmd_send_sync(BT_HCI_OP_LINK_KEY_REPLY, buf, NULL);
 }
 
-void hci_evt_link_key_req(struct net_buf *buf)
+void bt_hci_link_key_req(struct net_buf *buf)
 {
 	struct bt_hci_evt_link_key_req *evt = (void *)buf->data;
 	struct bt_conn *conn;
@@ -590,7 +590,7 @@ void io_capa_neg_reply(const bt_addr_t *bdaddr, const uint8_t reason)
 	bt_hci_cmd_send_sync(BT_HCI_OP_IO_CAPABILITY_NEG_REPLY, resp_buf, NULL);
 }
 
-void hci_evt_io_capa_resp(struct net_buf *buf)
+void bt_hci_io_capa_resp(struct net_buf *buf)
 {
 	struct bt_hci_evt_io_capa_resp *evt = (void *)buf->data;
 	struct bt_conn *conn;
@@ -624,7 +624,7 @@ void hci_evt_io_capa_resp(struct net_buf *buf)
 	bt_conn_unref(conn);
 }
 
-void hci_evt_io_capa_req(struct net_buf *buf)
+void bt_hci_io_capa_req(struct net_buf *buf)
 {
 	struct bt_hci_evt_io_capa_req *evt = (void *)buf->data;
 	struct net_buf *resp_buf;
@@ -673,7 +673,7 @@ void hci_evt_io_capa_req(struct net_buf *buf)
 	bt_conn_unref(conn);
 }
 
-void hci_evt_ssp_complete(struct net_buf *buf)
+void bt_hci_ssp_complete(struct net_buf *buf)
 {
 	struct bt_hci_evt_ssp_complete *evt = (void *)buf->data;
 	struct bt_conn *conn;
@@ -694,7 +694,7 @@ void hci_evt_ssp_complete(struct net_buf *buf)
 	bt_conn_unref(conn);
 }
 
-void hci_evt_user_confirm_req(struct net_buf *buf)
+void bt_hci_user_confirm_req(struct net_buf *buf)
 {
 	struct bt_hci_evt_user_confirm_req *evt = (void *)buf->data;
 	struct bt_conn *conn;
@@ -709,7 +709,7 @@ void hci_evt_user_confirm_req(struct net_buf *buf)
 	bt_conn_unref(conn);
 }
 
-void hci_evt_user_passkey_notify(struct net_buf *buf)
+void bt_hci_user_passkey_notify(struct net_buf *buf)
 {
 	struct bt_hci_evt_user_passkey_notify *evt = (void *)buf->data;
 	struct bt_conn *conn;
@@ -726,7 +726,7 @@ void hci_evt_user_passkey_notify(struct net_buf *buf)
 	bt_conn_unref(conn);
 }
 
-void hci_evt_user_passkey_req(struct net_buf *buf)
+void bt_hci_user_passkey_req(struct net_buf *buf)
 {
 	struct bt_hci_evt_user_passkey_req *evt = (void *)buf->data;
 	struct bt_conn *conn;
@@ -761,7 +761,7 @@ static void link_encr(const uint16_t handle)
 	bt_hci_cmd_send_sync(BT_HCI_OP_SET_CONN_ENCRYPT, buf, NULL);
 }
 
-void hci_evt_auth_complete(struct net_buf *buf)
+void bt_hci_auth_complete(struct net_buf *buf)
 {
 	struct bt_hci_evt_auth_complete *evt = (void *)buf->data;
 	struct bt_conn *conn;

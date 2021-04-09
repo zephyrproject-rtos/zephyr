@@ -176,8 +176,8 @@ static inline int lora_test_cw(const struct device *dev, uint32_t frequency,
 	const struct lora_driver_api *api =
 		(const struct lora_driver_api *)dev->api;
 
-	if (!api->test_cw) {
-		return -ENOTSUP;
+	if (api->test_cw == NULL) {
+		return -ENOSYS;
 	}
 
 	return api->test_cw(dev, frequency, tx_power, duration);

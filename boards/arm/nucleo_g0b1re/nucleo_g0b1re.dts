@@ -1,0 +1,134 @@
+/*
+ * Copyright (c) 2020 Thomas Stranger
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/g0/stm32g0b1Xe.dtsi>
+#include <st/g0/stm32g0b1r(c-e)tx-pinctrl.dtsi>
+#include "arduino_r3_connector.dtsi"
+
+/ {
+	model = "STMicroelectronics STM32G0B1RE-NUCLEO board";
+	compatible = "st,stm32g0b1re-nucleo";
+
+	chosen {
+		zephyr,console = &usart2;
+		zephyr,shell-uart = &usart2;
+		zephyr,uart-mcumgr = &usart2;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led_1: led_4 {
+			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
+			label = "User LD4";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button {
+			label = "User";
+			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	aliases {
+		led0 = &green_led_1;
+		sw0 = &user_button;
+	};
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pc4 &usart1_rx_pc5>;
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&rtc {
+	status = "okay";
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&timers3 {
+	status = "okay";
+	pwm3: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim3_ch1_pa6>;
+	};
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2_scl_pa11 &i2c2_sda_pa12>;
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_nss_pb0 &spi1_sck_pa5
+		     &spi1_miso_pa6 &spi1_mosi_pa7>;
+	status = "okay";
+};
+
+&spi2 {
+	pinctrl-0 = <&spi2_nss_pb12 &spi2_sck_pb13
+		     &spi2_miso_pb14 &spi2_mosi_pb15>;
+	status = "okay";
+};
+
+&adc1 {
+	pinctrl-0 = <&adc1_in0_pa0 &adc1_in1_pa1>;
+	status = "okay";
+};
+
+&dac1 {
+	status = "okay";
+	pinctrl-0 = <&dac1_out1_pa4>;
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x0000C000>;
+			read-only;
+		};
+		slot0_partition: partition@C000 {
+			label = "image-0";
+			reg = <0x0000C000 0x00032000>;
+		};
+		slot1_partition: partition@3E000 {
+			label = "image-1";
+			reg = <0x0003E000 0x00032000>;
+		};
+		/* final 64KiB reserved for app storage partition */
+		storage_partition: partition@70000 {
+			label = "storage";
+			reg = <0x00070000 0x00010000>;
+		};
+	};
+};

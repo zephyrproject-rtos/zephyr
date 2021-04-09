@@ -243,7 +243,7 @@ static CO_SDO_abortCode_t canopen_odf_1f51(CO_ODF_arg_t *odf_arg)
 	if (CO_NMT_getInternalState(ctx.nmt) != CO_NMT_PRE_OPERATIONAL) {
 		LOG_DBG("not in pre-operational state");
 		return CO_SDO_AB_DATA_DEV_STATE;
-	};
+	}
 
 	/* Preserve old value */
 	cmd = odf_arg->data[0];

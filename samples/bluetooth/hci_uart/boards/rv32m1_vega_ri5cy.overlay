@@ -6,7 +6,7 @@
 
 / {
 	chosen {
-		zephyr,bt-c2h-uart=&uart0;
+		zephyr,bt-c2h-uart = &lpuart0;
 	};
 };
 

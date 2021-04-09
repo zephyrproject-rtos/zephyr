@@ -69,10 +69,29 @@ struct flash_parameters {
 typedef int (*flash_api_read)(const struct device *dev, off_t offset,
 			      void *data,
 			      size_t len);
+/**
+ * @brief Flash write implementation handler type
+ *
+ * @note Any necessary write protection management must be performed by
+ * the driver, with the driver responsible for ensuring the "write-protect"
+ * after the operation completes (successfully or not) matches the write-protect
+ * state when the operation was started.
+ */
 typedef int (*flash_api_write)(const struct device *dev, off_t offset,
 			       const void *data, size_t len);
+
+/**
+ * @brief Flash erase implementation handler type
+ *
+ * @note Any necessary erase protection management must be performed by
+ * the driver, with the driver responsible for ensuring the "erase-protect"
+ * after the operation completes (successfully or not) matches the erase-protect
+ * state when the operation was started.
+ */
 typedef int (*flash_api_erase)(const struct device *dev, off_t offset,
 			       size_t size);
+
+/*  This API is deprecated and will be removed in Zephyr 2.8. */
 typedef int (*flash_api_write_protection)(const struct device *dev,
 					  bool enable);
 typedef const struct flash_parameters* (*flash_api_get_parameters)(const struct device *dev);
@@ -166,8 +185,8 @@ static inline int z_impl_flash_read(const struct device *dev, off_t offset,
  *  Write size and offset must be multiples of the minimum write block size
  *  supported by the driver.
  *
- *  Prior to the invocation of this API, the flash_write_protection_set needs
- *  to be called first to disable the write protection.
+ *  Any necessary write protection management is performed by the driver
+ *  write implementation itself.
  *
  *  @param  dev             : flash device
  *  @param  offset          : starting offset for the write
@@ -185,8 +204,27 @@ static inline int z_impl_flash_write(const struct device *dev, off_t offset,
 {
 	const struct flash_driver_api *api =
 		(const struct flash_driver_api *)dev->api;
+	int rc;
 
-	return api->write(dev, offset, data, len);
+	/* write protection management in this function exists for keeping
+	 * compatibility with out-of-tree drivers which are not aligned jet
+	 * with write-protection API depreciation.
+	 * This will be removed with flash_api_write_protection handler type.
+	 */
+	if (api->write_protection != NULL) {
+		rc = api->write_protection(dev, false);
+		if (rc) {
+			return rc;
+		}
+	}
+
+	rc = api->write(dev, offset, data, len);
+
+	if (api->write_protection != NULL) {
+		(void) api->write_protection(dev, true);
+	}
+
+	return rc;
 }
 
 /**
@@ -198,8 +236,8 @@ static inline int z_impl_flash_write(const struct device *dev, off_t offset,
  *  using flash_get_page_info_by_offs() if that is supported by your
  *  flash driver.
  *
- *  Prior to the invocation of this API, the flash_write_protection_set needs
- *  to be called first to disable the write protection.
+ *  Any necessary erase protection management is performed by the driver
+ *  erase implementation itself.
  *
  *  @param  dev             : flash device
  *  @param  offset          : erase area starting offset
@@ -217,53 +255,56 @@ static inline int z_impl_flash_erase(const struct device *dev, off_t offset,
 {
 	const struct flash_driver_api *api =
 		(const struct flash_driver_api *)dev->api;
+	int rc;
 
-	return api->erase(dev, offset, size);
+	/* write protection management in this function exists for keeping
+	 * compatibility with out-of-tree drivers which are not aligned jet
+	 * with write-protection API depreciation.
+	 * This will be removed with flash_api_write_protection handler type.
+	 */
+	if (api->write_protection != NULL) {
+		rc = api->write_protection(dev, false);
+		if (rc) {
+			return rc;
+		}
+	}
+
+	rc = api->erase(dev, offset, size);
+
+	if (api->write_protection != NULL) {
+		(void) api->write_protection(dev, true);
+	}
+
+	return rc;
 }
 
 /**
  *  @brief  Enable or disable write protection for a flash memory
  *
- *  This API is required to be called before the invocation of write or erase
- *  API. Any calls to flash_write() or flash_erase() that do not first disable
- *  write protection using this function result in undefined behavior.
- *  Usage Example:
- *  @code
- *   flash_write_protection_set(flash_dev, false);
- *   flash_erase(flash_dev, page_offset, page_size);
- *
- *   flash_write_protection_set(flash_dev, false);
- *   flash_write(flash_dev, offset, data, sizeof(data));
- *
- *   flash_write_protection_set(flash_dev, true); // enable is recommended
- *  @endcode
- *
- *  Please note that on some flash components, the write protection is
- *  automatically turned on again by the device after the completion of each
- *  call to flash_write or flash_erase(). Therefore, portable programs must
- *  disable write protection using this function before each call to
- *  flash_erase() or flash_write().
- *
- *  For some flash devices, this function may implement a no-operation, as some
- *  flash hardware does not support write protection, or may not support it in
- *  a manner that is compatible with this API. For these drivers, this function
- *  always returns success.
+ *  This API is deprecated and will be removed in Zephyr 2.8.
+ *  It will be keep as No-Operation until removal.
+ *  Flash write/erase protection management has been moved to write and erase
+ *  operations implementations in flash driver shims. For Out-of-tree drivers
+ *  which are not updated yet flash write/erase protection management is done
+ *  in flash_erase() and flash_write() using deprecated <p>write_protection</p>
+ *  shim handler.
  *
  *  @param  dev             : flash device
  *  @param  enable          : enable or disable flash write protection
  *
  *  @return  0 on success, negative errno code on fail.
  */
+__deprecated
 __syscall int flash_write_protection_set(const struct device *dev,
 					 bool enable);
 
 static inline int z_impl_flash_write_protection_set(const struct device *dev,
 						    bool enable)
 {
-	const struct flash_driver_api *api =
-		(const struct flash_driver_api *)dev->api;
+	ARG_UNUSED(dev);
+	ARG_UNUSED(enable);
 
-	return api->write_protection(dev, enable);
+	return 0;
 }
 
 struct flash_pages_info {

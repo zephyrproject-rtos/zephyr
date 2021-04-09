@@ -1281,11 +1281,6 @@ static int ds3231_counter_set_top_value(const struct device *dev,
 	return -ENOTSUP;
 }
 
-static uint32_t ds3231_counter_get_max_relative_alarm(const struct device *dev)
-{
-	return UINT32_MAX;
-}
-
 static const struct counter_driver_api ds3231_api = {
 	.start = ds3231_counter_start,
 	.stop = ds3231_counter_stop,
@@ -1295,7 +1290,6 @@ static const struct counter_driver_api ds3231_api = {
 	.set_top_value = ds3231_counter_set_top_value,
 	.get_pending_int = ds3231_counter_get_pending_int,
 	.get_top_value = ds3231_counter_get_top_value,
-	.get_max_relative_alarm = ds3231_counter_get_max_relative_alarm,
 };
 
 static const struct ds3231_config ds3231_0_config = {

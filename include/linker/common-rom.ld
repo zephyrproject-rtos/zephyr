@@ -15,7 +15,7 @@
 		CREATE_OBJ_LEVEL(init, APPLICATION)
 		CREATE_OBJ_LEVEL(init, SMP)
 		__init_end = .;
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 #if defined(CONFIG_GEN_SW_ISR_TABLE) && !defined(CONFIG_DYNAMIC_INTERRUPTS)
 	SECTION_PROLOGUE(sw_isr_table,,)
@@ -27,7 +27,7 @@
 		 */
 		. = ALIGN(CONFIG_ARCH_SW_ISR_TABLE_ALIGN);
 		*(_SW_ISR_TABLE_SECTION_SYMS)
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 #endif
 
 	/* verify we don't have rogue .init_<something> initlevel sections */
@@ -62,7 +62,7 @@
 		LONG(0)
 		__CTOR_END__ = .;
 #endif
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 	SECTION_PROLOGUE(init_array,,)
 	{
@@ -70,7 +70,7 @@
 		__init_array_start = .;
 		KEEP(*(SORT_BY_NAME(".init_array*")))
 		__init_array_end = .;
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 #endif
 #ifdef CONFIG_USERSPACE
 	/* Build-time assignment of permissions to kernel objects to
@@ -84,7 +84,7 @@
 		__app_shmem_regions_start = .;
 		KEEP(*(SORT(.app_regions.*)));
 		__app_shmem_regions_end = .;
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 #if defined(CONFIG_NET_SOCKETS)
 	Z_ITERABLE_SECTION_ROM(net_socket_register, 4)
@@ -115,6 +115,10 @@
 
 #if defined(CONFIG_BT_MESH_LOW_POWER)
 	Z_ITERABLE_SECTION_ROM(bt_mesh_lpn_cb, 4)
+#endif
+
+#if defined(CONFIG_BT_MESH_PROXY)
+	Z_ITERABLE_SECTION_ROM(bt_mesh_proxy_cb, 4)
 #endif
 
 #if defined(CONFIG_EC_HOST_CMD)
@@ -154,14 +158,14 @@
 		__log_const_start = .;
 		KEEP(*(SORT(.log_const_*)));
 		__log_const_end = .;
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 	SECTION_DATA_PROLOGUE(log_backends_sections,,)
 	{
 		__log_backends_start = .;
 		KEEP(*("._log_backend.*"));
 		__log_backends_end = .;
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 	Z_ITERABLE_SECTION_ROM(shell, 4)
 
@@ -170,24 +174,29 @@
 		__shell_root_cmds_start = .;
 		KEEP(*(SORT(.shell_root_cmd_*)));
 		__shell_root_cmds_end = .;
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 	SECTION_DATA_PROLOGUE(font_entry_sections,,)
 	{
 		__font_entry_start = .;
 		KEEP(*(SORT_BY_NAME("._cfb_font.*")))
 		__font_entry_end = .;
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 	Z_ITERABLE_SECTION_ROM(tracing_backend, 4)
+
+	SECTION_DATA_PROLOGUE(zephyr_dbg_info,,)
+	{
+		KEEP(*(".dbg_thread_info"));
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 	SECTION_DATA_PROLOGUE(device_handles,,)
 	{
 		__device_handles_start = .;
-#ifdef LINKER_PASS2
+#ifdef LINKER_ZEPHYR_FINAL
 		KEEP(*(SORT(.__device_handles_pass2*)));
-#else /* LINKER_PASS2 */
+#else /* LINKER_ZEPHYR_FINAL */
 		KEEP(*(SORT(.__device_handles_pass1*)));
-#endif /* LINKER_PASS2 */
+#endif /* LINKER_ZEPHYR_FINAL */
 		__device_handles_end = .;
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)

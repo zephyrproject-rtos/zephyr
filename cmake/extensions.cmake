@@ -1311,9 +1311,9 @@ endfunction()
 # ifdef functions are added on an as-need basis. See
 # https://cmake.org/cmake/help/latest/manual/cmake-commands.7.html for
 # a list of available functions.
-function(add_subdirectory_ifdef feature_toggle dir)
+function(add_subdirectory_ifdef feature_toggle source_dir)
   if(${${feature_toggle}})
-    add_subdirectory(${dir})
+    add_subdirectory(${source_dir} ${ARGN})
   endif()
 endfunction()
 
@@ -1874,6 +1874,13 @@ endfunction()
 #                    The conf file search will return existing configuration
 #                    files for the current board.
 #                    CONF_FILES takes the following additional arguments:
+#                    BOARD <board>:             Find configuration files for specified board.
+#                    BOARD_REVISION <revision>: Find configuration files for specified board
+#                                               revision. Requires BOARD to be specified.
+#
+#                                               If no board is given the current BOARD and
+#                                               BOARD_REVISION will be used.
+#
 #                    DTS <list>:   List to populate with DTS overlay files
 #                    KCONF <list>: List to populate with Kconfig fragment files
 #                    BUILD <type>: Build type to include for search.
@@ -1892,7 +1899,7 @@ Please provide one of following: APPLICATION_ROOT, CONF_FILES")
   if(${ARGV0} STREQUAL APPLICATION_ROOT)
     set(single_args APPLICATION_ROOT)
   elseif(${ARGV0} STREQUAL CONF_FILES)
-    set(single_args CONF_FILES DTS KCONF BUILD)
+    set(single_args CONF_FILES BOARD BOARD_REVISION DTS KCONF BUILD)
   endif()
 
   cmake_parse_arguments(FILE "" "${single_args}" "" ${ARGN})
@@ -1937,10 +1944,26 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
   endif()
 
   if(FILE_CONF_FILES)
-    set(FILENAMES ${BOARD})
+    if(DEFINED FILE_BOARD_REVISION AND NOT FILE_BOARD)
+        message(FATAL_ERROR
+          "zephyr_file(${ARGV0} <path> BOARD_REVISION ${FILE_BOARD_REVISION} ...)"
+          " given without BOARD argument, please specify BOARD"
+        )
+    endif()
 
-    if(DEFINED BOARD_REVISION)
-      list(APPEND FILENAMES "${BOARD}_${BOARD_REVISION_STRING}")
+    if(NOT DEFINED FILE_BOARD)
+      # Defaulting to system wide settings when BOARD is not given as argument
+      set(FILE_BOARD ${BOARD})
+      if(DEFINED BOARD_REVISION)
+        set(FILE_BOARD_REVISION ${BOARD_REVISION})
+      endif()
+    endif()
+
+    set(FILENAMES ${FILE_BOARD})
+
+    if(DEFINED FILE_BOARD_REVISION)
+      string(REPLACE "." "_" revision_string ${FILE_BOARD_REVISION})
+      list(APPEND FILENAMES "${FILE_BOARD}_${revision_string}")
     endif()
 
     if(FILE_DTS)
@@ -2026,6 +2049,8 @@ endfunction()
 # variable: Name of <variable> to check and set, for example BOARD.
 # REQUIRED: Optional flag. If specified, then an unset <variable> will be
 #           treated as an error.
+# WATCH: Optional flag. If specified, watch the variable and print a warning if
+#        the variable is later being changed.
 #
 # Details:
 #   <variable> can be set by 3 sources.
@@ -2056,7 +2081,7 @@ endfunction()
 #   <variable> the build directory must be cleaned.
 #
 function(zephyr_check_cache variable)
-  cmake_parse_arguments(CACHE_VAR "REQUIRED" "" "" ${ARGN})
+  cmake_parse_arguments(CACHE_VAR "REQUIRED;WATCH" "" "" ${ARGN})
   string(TOLOWER ${variable} variable_text)
   string(REPLACE "_" " " variable_text ${variable_text})
 
@@ -2120,8 +2145,10 @@ function(zephyr_check_cache variable)
   set(${variable} ${${variable}} PARENT_SCOPE)
   set(CACHED_${variable} ${${variable}} CACHE STRING "Selected ${variable_text}")
 
-  # The variable is now set to its final value.
-  zephyr_boilerplate_watch(${variable})
+  if(CACHE_VAR_WATCH)
+    # The variable is now set to its final value.
+    zephyr_boilerplate_watch(${variable})
+  endif()
 endfunction(zephyr_check_cache variable)
 
 

@@ -38,11 +38,127 @@
 /** Region will be accessible to user mode (normally supervisor-only) */
 #define K_MEM_PERM_USER		BIT(5)
 
+/*
+ * This is the offset to subtract from a virtual address mapped in the
+ * kernel's permanent mapping of RAM, to obtain its physical address.
+ *
+ *     virt_addr = phys_addr + Z_MEM_VM_OFFSET
+ *
+ * This only works for virtual addresses within the interval
+ * [CONFIG_KERNEL_VM_BASE, CONFIG_KERNEL_VM_BASE + (CONFIG_SRAM_SIZE * 1024)).
+ *
+ * These macros are intended for assembly, linker code, and static initializers.
+ * Use with care.
+ *
+ * Note that when demand paging is active, these will only work with page
+ * frames that are pinned to their virtual mapping at boot.
+ *
+ * TODO: This will likely need to move to an arch API or need additional
+ * constraints defined.
+ */
+#ifdef CONFIG_MMU
+#define Z_MEM_VM_OFFSET	((CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_VM_OFFSET) - \
+			 (CONFIG_SRAM_BASE_ADDRESS + CONFIG_SRAM_OFFSET))
+#else
+#define Z_MEM_VM_OFFSET	0
+#endif
+
+#define Z_MEM_PHYS_ADDR(virt)	((virt) - Z_MEM_VM_OFFSET)
+#define Z_MEM_VIRT_ADDR(phys)	((phys) + Z_MEM_VM_OFFSET)
+
+#if Z_MEM_VM_OFFSET != 0
+#define Z_VM_KERNEL 1
+#ifdef CONFIG_XIP
+#error "XIP and a virtual memory kernel are not allowed"
+#endif
+#endif
+
 #ifndef _ASMLANGUAGE
 #include <stdint.h>
 #include <stddef.h>
 #include <inttypes.h>
 #include <sys/__assert.h>
+
+struct k_mem_paging_stats_t {
+#ifdef CONFIG_DEMAND_PAGING_STATS
+	struct {
+		/** Number of page faults */
+		unsigned long			cnt;
+
+		/** Number of page faults with IRQ locked */
+		unsigned long			irq_locked;
+
+		/** Number of page faults with IRQ unlocked */
+		unsigned long			irq_unlocked;
+
+#ifndef CONFIG_DEMAND_PAGING_ALLOW_IRQ
+		/** Number of page faults while in ISR */
+		unsigned long			in_isr;
+#endif
+	} pagefaults;
+
+	struct {
+		/** Number of clean pages selected for eviction */
+		unsigned long			clean;
+
+		/** Number of dirty pages selected for eviction */
+		unsigned long			dirty;
+	} eviction;
+#endif /* CONFIG_DEMAND_PAGING_STATS */
+};
+
+struct k_mem_paging_histogram_t {
+#ifdef CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM
+	/* Counts for each bin in timing histogram */
+	unsigned long	counts[CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM_NUM_BINS];
+
+	/* Bounds for the bins in timing histogram,
+	 * excluding the first and last (hence, NUM_SLOTS - 1).
+	 */
+	unsigned long	bounds[CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM_NUM_BINS];
+#endif /* CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM */
+};
+
+/* Just like Z_MEM_PHYS_ADDR() but with type safety and assertions */
+static inline uintptr_t z_mem_phys_addr(void *virt)
+{
+	uintptr_t addr = (uintptr_t)virt;
+
+#ifdef CONFIG_MMU
+	__ASSERT((addr >= CONFIG_KERNEL_VM_BASE) &&
+		 (addr < (CONFIG_KERNEL_VM_BASE +
+			  (CONFIG_KERNEL_VM_SIZE))),
+		 "address %p not in permanent mappings", virt);
+#else
+	/* Should be identity-mapped */
+	__ASSERT((addr >= CONFIG_SRAM_BASE_ADDRESS) &&
+		 (addr < (CONFIG_SRAM_BASE_ADDRESS +
+			  (CONFIG_SRAM_SIZE * 1024UL))),
+		 "physical address 0x%lx not in RAM",
+		 (unsigned long)addr);
+#endif /* CONFIG_MMU */
+
+	/* TODO add assertion that this page is pinned to boot mapping,
+	 * the above checks won't be sufficient with demand paging
+	 */
+
+	return Z_MEM_PHYS_ADDR(addr);
+}
+
+/* Just like Z_MEM_VIRT_ADDR() but with type safety and assertions */
+static inline void *z_mem_virt_addr(uintptr_t phys)
+{
+	__ASSERT((phys >= CONFIG_SRAM_BASE_ADDRESS) &&
+		 (phys < (CONFIG_SRAM_BASE_ADDRESS +
+			  (CONFIG_SRAM_SIZE * 1024UL))),
+		 "physical address 0x%lx not in RAM", (unsigned long)phys);
+
+	/* TODO add assertion that this page frame is pinned to boot mapping,
+	 * the above check won't be sufficient with demand paging
+	 */
+
+	return (void *)Z_MEM_VIRT_ADDR(phys);
+}
 
 #ifdef __cplusplus
 extern "C" {
@@ -272,6 +388,72 @@ void k_mem_pin(void *addr, size_t size);
  */
 void k_mem_unpin(void *addr, size_t size);
 #endif /* CONFIG_DEMAND_PAGING */
+
+#ifdef CONFIG_DEMAND_PAGING_STATS
+/**
+ * Get the paging statistics since system startup
+ *
+ * This populates the paging statistics struct being passed in
+ * as argument.
+ *
+ * @param[in,out] stats Paging statistics struct to be filled.
+ */
+__syscall void k_mem_paging_stats_get(struct k_mem_paging_stats_t *stats);
+
+#ifdef CONFIG_DEMAND_PAGING_THREAD_STATS
+struct k_thread;
+/**
+ * Get the paging statistics since system startup for a thread
+ *
+ * This populates the paging statistics struct being passed in
+ * as argument for a particular thread.
+ *
+ * @param[in] thread Thread
+ * @param[in,out] stats Paging statistics struct to be filled.
+ */
+__syscall
+void k_mem_paging_thread_stats_get(struct k_thread *thread,
+				   struct k_mem_paging_stats_t *stats);
+#endif /* CONFIG_DEMAND_PAGING_THREAD_STATS */
+
+#ifdef CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM
+/**
+ * Get the eviction timing histogram
+ *
+ * This populates the timing histogram struct being passed in
+ * as argument.
+ *
+ * @param[in,out] stats Timing histogram struct to be filled.
+ */
+__syscall void k_mem_paging_histogram_eviction_get(
+	struct k_mem_paging_histogram_t *hist);
+
+/**
+ * Get the backing store page-in timing histogram
+ *
+ * This populates the timing histogram struct being passed in
+ * as argument.
+ *
+ * @param[in,out] stats Timing histogram struct to be filled.
+ */
+__syscall void k_mem_paging_histogram_backing_store_page_in_get(
+	struct k_mem_paging_histogram_t *hist);
+
+/**
+ * Get the backing store page-out timing histogram
+ *
+ * This populates the timing histogram struct being passed in
+ * as argument.
+ *
+ * @param[in,out] stats Timing histogram struct to be filled.
+ */
+__syscall void k_mem_paging_histogram_backing_store_page_out_get(
+	struct k_mem_paging_histogram_t *hist);
+#endif /* CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM */
+
+#include <syscalls/mem_manage.h>
+
+#endif /* CONFIG_DEMAND_PAGING_STATS */
 
 #ifdef __cplusplus
 }

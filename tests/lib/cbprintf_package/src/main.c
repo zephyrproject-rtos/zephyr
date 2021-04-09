@@ -9,6 +9,12 @@
 
 #define CBPRINTF_DEBUG 1
 
+#ifndef CBPRINTF_PACKAGE_ALIGN_OFFSET
+#define CBPRINTF_PACKAGE_ALIGN_OFFSET 0
+#endif
+
+#define ALIGN_OFFSET (sizeof(void *) * CBPRINTF_PACKAGE_ALIGN_OFFSET)
+
 struct out_buffer {
 	char *buf;
 	size_t idx;
@@ -27,7 +33,8 @@ static int out(int c, void *dest)
 	return rv;
 }
 
-static char runtime_buf[128];
+static char static_buf[512];
+static char runtime_buf[512];
 static char compare_buf[128];
 
 void dump(const char *desc, uint8_t *package, size_t len)
@@ -53,18 +60,37 @@ void unpack(const char *desc, struct out_buffer *buf,
 	snprintf(compare_buf, sizeof(compare_buf), fmt, __VA_ARGS__); \
 	printk("-----------------------------------------\n"); \
 	printk("%s\n", compare_buf); \
+	uint8_t *pkg; \
 	struct out_buffer rt_buf = { \
 		.buf = runtime_buf, .idx = 0, .size = sizeof(runtime_buf) \
 	}; \
-	int rc = cbprintf_package(NULL, 0, fmt, __VA_ARGS__); \
+	int rc = cbprintf_package(NULL, ALIGN_OFFSET, fmt, __VA_ARGS__); \
 	zassert_true(rc > 0, "cbprintf_package() returned %d", rc); \
-	size_t len = rc; \
-	uint8_t __aligned(8) rt_package[len]; \
-	memset(rt_package, 0, len); \
-	rc = cbprintf_package(rt_package, len, fmt, __VA_ARGS__); \
-	zassert_equal(rc, len, "cbprintf_package() returned %d, expected %d", rc, len); \
-	dump("runtime", rt_package, len); \
-	unpack("runtime", &rt_buf, rt_package, len); \
+	int len = rc; \
+	/* Aligned so the package is similar to the static one. */ \
+	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) \
+			rt_package[len + ALIGN_OFFSET]; \
+	memset(rt_package, 0, len + ALIGN_OFFSET); \
+	pkg = &rt_package[ALIGN_OFFSET]; \
+	rc = cbprintf_package(pkg, len, fmt, __VA_ARGS__); \
+	zassert_equal(rc, len, "cbprintf_package() returned %d, expected %d", \
+		      rc, len); \
+	dump("runtime", pkg, len); \
+	unpack("runtime", &rt_buf, pkg, len); \
+	\
+	struct out_buffer st_buf = { \
+		.buf = static_buf, .idx = 0, .size = sizeof(static_buf) \
+	}; \
+	CBPRINTF_STATIC_PACKAGE(NULL, 0, len, ALIGN_OFFSET, fmt, __VA_ARGS__); \
+	zassert_true(len > 0, "CBPRINTF_STATIC_PACKAGE() returned %d", len); \
+	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) \
+		package[len + ALIGN_OFFSET];\
+	int outlen; \
+	pkg = &package[ALIGN_OFFSET]; \
+	CBPRINTF_STATIC_PACKAGE(pkg, len, outlen, ALIGN_OFFSET, fmt, __VA_ARGS__);\
+	zassert_equal(len, outlen, NULL); \
+	dump("static", pkg, len); \
+	unpack("static", &st_buf, pkg, len); \
 } while (0)
 
 void test_cbprintf_package(void)
@@ -97,6 +123,11 @@ void test_cbprintf_package(void)
 	TEST_PACKAGING("test %c %p", c, &c);
 	if (IS_ENABLED(CONFIG_CBPRINTF_FP_SUPPORT)) {
 		TEST_PACKAGING("test %f %a", f, d);
+#if CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE
+			long double ld = 1.2333;
+
+			TEST_PACKAGING("test %Lf", ld);
+#endif
 	}
 }
 
@@ -108,6 +139,7 @@ void test_main(void)
 	printk("alignof: int=%zu long=%zu ptr=%zu long long=%zu double=%zu long double=%zu\n",
 	       __alignof__(int), __alignof__(long), __alignof__(void *),
 	       __alignof__(long long), __alignof__(double), __alignof__(long double));
+	printk("%s C11 _Generic\n", Z_C_GENERIC ? "With" : "Without");
 
 	ztest_test_suite(cbprintf_package,
 			 ztest_unit_test(test_cbprintf_package)

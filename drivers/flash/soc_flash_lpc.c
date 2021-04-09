@@ -61,7 +61,7 @@ static int flash_lpc_erase(const struct device *dev, off_t offset, size_t len)
 	uint32_t stop;
 	uint32_t page_size;
 
-	if (k_sem_take(&priv->write_lock, K_NO_WAIT)) {
+	if (k_sem_take(&priv->write_lock, K_FOREVER)) {
 		return -EACCES;
 	}
 
@@ -100,7 +100,7 @@ static int flash_lpc_write(const struct device *dev, off_t offset,
 	status_t rc;
 	unsigned int key;
 
-	if (k_sem_take(&priv->write_lock, K_NO_WAIT)) {
+	if (k_sem_take(&priv->write_lock, K_FOREVER)) {
 		return -EACCES;
 	}
 
@@ -115,20 +115,6 @@ static int flash_lpc_write(const struct device *dev, off_t offset,
 	k_sem_give(&priv->write_lock);
 
 	return (rc == kStatus_FLASHIAP_Success) ? 0 : -EINVAL;
-}
-
-static int flash_lpc_write_protection(const struct device *dev, bool enable)
-{
-	struct flash_priv *priv = dev->data;
-	int rc = 0;
-
-	if (enable) {
-		rc = k_sem_take(&priv->write_lock, K_FOREVER);
-	} else {
-		k_sem_give(&priv->write_lock);
-	}
-
-	return rc;
 }
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
@@ -158,7 +144,6 @@ flash_lpc_get_parameters(const struct device *dev)
 static struct flash_priv flash_data;
 
 static const struct flash_driver_api flash_lpc_api = {
-	.write_protection = flash_lpc_write_protection,
 	.erase = flash_lpc_erase,
 	.write = flash_lpc_write,
 	.read = flash_lpc_read,
@@ -172,7 +157,7 @@ static int flash_lpc_init(const struct device *dev)
 {
 	struct flash_priv *priv = dev->data;
 
-	k_sem_init(&priv->write_lock, 0, 1);
+	k_sem_init(&priv->write_lock, 1, 1);
 
 	priv->pflash_block_base = DT_REG_ADDR(SOC_NV_FLASH_NODE);
 

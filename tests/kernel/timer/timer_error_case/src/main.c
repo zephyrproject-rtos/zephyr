@@ -335,23 +335,23 @@ void test_timer_add_timeout(void)
 	ztest_test_pass();
 }
 
-extern uint64_t z_timeout_end_calc(k_timeout_t timeout);
-extern void z_clock_announce(int32_t ticks);
+extern uint64_t sys_clock_timeout_end_calc(k_timeout_t timeout);
+extern void sys_clock_announce(int32_t ticks);
 void test_timeout_end_calc(void)
 {
 	int ret;
 	k_timeout_t timeout;
 
 	timeout = K_MSEC(DURATION);
-	ret = z_timeout_end_calc(timeout);
+	ret = sys_clock_timeout_end_calc(timeout);
 	zassert_true(ret, "---timeout end calc---");
 
 	timeout.ticks = TEST_TIMEOUT;
-	ret = z_timeout_end_calc(timeout);
+	ret = sys_clock_timeout_end_calc(timeout);
 	zassert_true(ret, "timeout end calc error");
 
 	timeout = K_FOREVER;
-	ret = z_timeout_end_calc(timeout);
+	ret = sys_clock_timeout_end_calc(timeout);
 	zassert_true(ret, "timeout end calc forever");
 }
 

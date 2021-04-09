@@ -195,7 +195,7 @@ static int check_values(void *p1, void *p2, void *p3)
 
 #if defined(CONFIG_USERSPACE)
 	TC_PRINT("Test communication in user mode thread\n");
-	zassert_true(_is_user_context(), "thread left in kernel mode");
+	zassert_true(k_is_user_context(), "thread left in kernel mode");
 #endif
 
 	/* Load to local variables to avoid using volatile in assert */

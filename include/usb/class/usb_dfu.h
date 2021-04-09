@@ -44,6 +44,8 @@
 #ifndef ZEPHYR_INCLUDE_USB_CLASS_USB_DFU_H_
 #define ZEPHYR_INCLUDE_USB_CLASS_USB_DFU_H_
 
+#include <sys_clock.h>
+
 /** DFU Class Subclass */
 #define DFU_SUBCLASS			0x01
 
@@ -121,6 +123,6 @@ enum dfu_state {
 	dfuERROR,
 };
 
-void wait_for_usb_dfu(void);
+void wait_for_usb_dfu(k_timeout_t delay);
 
 #endif /* ZEPHYR_INCLUDE_USB_CLASS_USB_DFU_H_ */

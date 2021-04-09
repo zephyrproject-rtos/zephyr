@@ -27,6 +27,9 @@
 #ifdef CONFIG_MCUMGR_CMD_SHELL_MGMT
 #include "shell_mgmt/shell_mgmt.h"
 #endif
+#ifdef CONFIG_MCUMGR_CMD_FS_MGMT
+#include "fs_mgmt/fs_mgmt.h"
+#endif
 
 #define LOG_LEVEL LOG_LEVEL_DBG
 #include <logging/log.h>
@@ -53,7 +56,7 @@ static struct fs_mount_t littlefs_mnt = {
 	.type = FS_LITTLEFS,
 	.fs_data = &cstorage,
 	.storage_dev = (void *)FLASH_AREA_ID(storage),
-	.mnt_point = "/lfs"
+	.mnt_point = "/lfs1"
 };
 #endif
 
@@ -86,6 +89,9 @@ void main(void)
 #endif
 #ifdef CONFIG_MCUMGR_CMD_SHELL_MGMT
 	shell_mgmt_register_group();
+#endif
+#ifdef CONFIG_MCUMGR_CMD_FS_MGMT
+	fs_mgmt_register_group();
 #endif
 #ifdef CONFIG_MCUMGR_SMP_BT
 	start_smp_bluetooth();

@@ -65,10 +65,6 @@ if(NOT CONFIG_ACPI)
   list(APPEND QEMU_FLAGS_${ARCH} -no-acpi)
 endif()
 
-if("${BOARD}" STREQUAL "qemu_x86_virt")
-  set(QEMU_KERNEL_OPTION "-kernel;${ZEPHYR_BINARY_DIR}/${BOARD}.elf")
-endif()
-
 # TODO: Support debug
 # board_set_debugger_ifnset(qemu)
 # debugserver: QEMU_EXTRA_FLAGS += -s -S

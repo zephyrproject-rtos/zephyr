@@ -83,6 +83,22 @@ union ic_tar_register {
 	} bits;
 };
 
+/* IC_COMP_PARAM_1 */
+union ic_comp_param_1_register {
+	uint32_t		raw;
+	struct {
+		uint32_t	apb_data_width : 2 __packed;
+		uint32_t	max_speed_mode : 2 __packed;
+		uint32_t	hc_count_values : 1 __packed;
+		uint32_t	intr_io : 1 __packed;
+		uint32_t	has_dma : 1 __packed;
+		uint32_t	add_encoded_params : 1 __packed;
+		uint32_t	rx_buffer_depth : 8 __packed;
+		uint32_t	tx_buffer_depth : 8 __packed;
+		uint32_t	reserved : 7 __packed;
+	} bits;
+};
+
 #define DW_IC_REG_CON				(0x00)
 #define DW_IC_REG_TAR				(0x04)
 #define DW_IC_REG_SAR				(0x08)
@@ -105,6 +121,7 @@ union ic_tar_register {
 #define DW_IC_REG_RXFLR				(0x78)
 #define DW_IC_REG_FS_SPKLEN			(0xA0)
 #define DW_IC_REG_HS_SPKLEN			(0xA4)
+#define DW_IC_REG_COMP_PARAM_1		(0xF4)
 #define DW_IC_REG_COMP_TYPE			(0xFC)
 
 /* CON Bit */
@@ -160,6 +177,7 @@ DEFINE_MM_REG_READ(rxflr, DW_IC_REG_RXFLR, 32)
 DEFINE_MM_REG_READ(fs_spklen, DW_IC_REG_FS_SPKLEN, 32)
 DEFINE_MM_REG_READ(hs_spklen, DW_IC_REG_HS_SPKLEN, 32)
 
+DEFINE_MM_REG_READ(comp_param_1, DW_IC_REG_COMP_PARAM_1, 32)
 DEFINE_MM_REG_READ(comp_type, DW_IC_REG_COMP_TYPE, 32)
 DEFINE_MM_REG_READ(tar, DW_IC_REG_TAR, 32)
 DEFINE_MM_REG_WRITE(tar, DW_IC_REG_TAR, 32)

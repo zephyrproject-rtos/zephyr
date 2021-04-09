@@ -36,4 +36,4 @@ static int efr32_radio_init(const struct device *dev)
 }
 
 /* needs to be done after GPIO driver init */
-SYS_INIT(efr32_radio_init, PRE_KERNEL_1, CONFIG_BOARD_INIT_PRIORITY);
+SYS_INIT(efr32_radio_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);

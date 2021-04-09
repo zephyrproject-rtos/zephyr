@@ -81,15 +81,9 @@ static void test_init(void)
 	zassert_true(flash_dev != NULL,
 		     "Simulated flash driver was not found!");
 
-	rc = flash_write_protection_set(flash_dev, false);
-	zassert_equal(0, rc, NULL);
-
 	rc = flash_erase(flash_dev, FLASH_SIMULATOR_BASE_OFFSET,
 			 FLASH_SIMULATOR_FLASH_SIZE);
 	zassert_equal(0, rc, "flash_erase should succeed");
-
-	rc = flash_write_protection_set(flash_dev, false);
-	zassert_equal(0, rc, NULL);
 }
 
 static void test_read(void)
@@ -116,8 +110,6 @@ static void test_write_read(void)
 	int rc;
 
 	for (off = 0; off < TEST_SIM_FLASH_SIZE; off += 4) {
-		rc = flash_write_protection_set(flash_dev, false);
-		zassert_equal(0, rc, NULL);
 		rc = flash_write(flash_dev, FLASH_SIMULATOR_BASE_OFFSET +
 					    off,
 				 &val32, sizeof(val32));
@@ -170,29 +162,10 @@ static void test_erase(void)
 			     FLASH_SIMULATOR_ERASE_UNIT*2);
 }
 
-static void test_access(void)
-{
-	uint32_t data[2] = {0};
-	int rc;
-
-	rc = flash_write_protection_set(flash_dev, true);
-	zassert_equal(0, rc, NULL);
-
-	rc = flash_write(flash_dev, FLASH_SIMULATOR_BASE_OFFSET,
-				 data, sizeof(data));
-	zassert_equal(-EACCES, rc, "Unexpected error code (%d)", rc);
-
-	rc = flash_erase(flash_dev, FLASH_SIMULATOR_BASE_OFFSET,
-			 FLASH_SIMULATOR_ERASE_UNIT);
-	zassert_equal(-EACCES, rc, "Unexpected error code (%d)", rc);
-}
-
 static void test_out_of_bounds(void)
 {
 	int rc;
 	uint8_t data[8] = {0};
-
-	rc = flash_write_protection_set(flash_dev, false);
 
 	rc = flash_write(flash_dev, FLASH_SIMULATOR_BASE_OFFSET - 4,
 				 data, 4);
@@ -313,7 +286,6 @@ void test_main(void)
 			 ztest_unit_test(test_read),
 			 ztest_unit_test(test_write_read),
 			 ztest_unit_test(test_erase),
-			 ztest_unit_test(test_access),
 			 ztest_unit_test(test_out_of_bounds),
 			 ztest_unit_test(test_align),
 			 ztest_unit_test(test_get_erase_value),

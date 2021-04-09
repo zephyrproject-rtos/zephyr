@@ -395,7 +395,7 @@ static bool work_flush_locked(struct k_work *work,
 			      struct z_work_flusher *flusher)
 {
 	bool need_flush = (flags_get(&work->flags)
-			   & (K_WORK_QUEUED | K_WORK_RUNNING)) != 0;
+			   & (K_WORK_QUEUED | K_WORK_RUNNING)) != 0U;
 
 	if (need_flush) {
 		struct k_work_q *queue = work->queue;
@@ -930,8 +930,8 @@ int k_work_schedule_for_queue(struct k_work_q *queue,
 	int ret = 0;
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	/* Schedule the work item if it's idle. */
-	if (work_busy_get_locked(work) == 0U) {
+	/* Schedule the work item if it's idle or running. */
+	if ((work_busy_get_locked(work) & ~K_WORK_RUNNING) == 0U) {
 		ret = schedule_for_queue_locked(&queue, dwork, delay);
 	}
 

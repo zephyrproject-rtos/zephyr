@@ -139,7 +139,9 @@ int net_ipv6_send_na(struct net_if *iface, const struct in6_addr *src,
 static inline bool net_ipv6_is_nexthdr_upper_layer(uint8_t nexthdr)
 {
 	return (nexthdr == IPPROTO_ICMPV6 || nexthdr == IPPROTO_UDP ||
-		nexthdr == IPPROTO_TCP);
+		nexthdr == IPPROTO_TCP ||
+		(IS_ENABLED(CONFIG_NET_L2_VIRTUAL) &&
+		 ((nexthdr == IPPROTO_IPV6) || (nexthdr == IPPROTO_IPIP))));
 }
 
 /**

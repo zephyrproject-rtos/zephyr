@@ -34,8 +34,4 @@ config FXOS8700_DRDY_INT1
 	default y
 	depends on FXOS8700_TRIGGER
 
-config SPI_1
-	default y
-	depends on SPI
-
 endif # BOARD_FRDM_K82F

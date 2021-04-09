@@ -34,6 +34,8 @@ source "subsys/lorawan/Kconfig"
 
 source "subsys/mgmt/Kconfig"
 
+source "subsys/modbus/Kconfig"
+
 source "subsys/net/Kconfig"
 
 source "subsys/power/Kconfig"
@@ -51,6 +53,8 @@ source "subsys/random/Kconfig"
 source "subsys/storage/Kconfig"
 
 source "subsys/settings/Kconfig"
+
+source "subsys/task_wdt/Kconfig"
 
 source "subsys/testsuite/Kconfig"
 

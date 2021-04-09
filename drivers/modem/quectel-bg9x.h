@@ -147,4 +147,4 @@ static struct modem_pin modem_pins[] = {
 #endif
 };
 
-#endif /* #ifndef QUECTEL_BG9X_H */
+#endif /* QUECTEL_BG9X_H */

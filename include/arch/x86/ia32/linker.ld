@@ -40,10 +40,11 @@
 #include <linker/linker-defs.h>
 #include <offsets.h>
 #include <sys/util.h>
+#include <sys/mem_manage.h>
 
 #include <linker/linker-tool.h>
 
-#ifdef CONFIG_XIP
+#if defined(CONFIG_XIP) || defined(Z_VM_KERNEL)
 	#define ROMABLE_REGION ROM
 	#define RAMABLE_REGION RAM
 #else
@@ -67,7 +68,8 @@
 	#define MMU_PAGE_ALIGN_PERM
 #endif
 
-ENTRY(CONFIG_KERNEL_ENTRY)
+epoint = Z_MEM_PHYS_ADDR(CONFIG_KERNEL_ENTRY);
+ENTRY(epoint)
 
 /* SECTIONS definitions */
 SECTIONS
@@ -106,8 +108,9 @@ SECTIONS
  */
 #include <snippets-rom-start.ld>
 
-	*(.text_start)
-	*(".text_start.*")
+	/* Needs KEEP() as ENTRY() is given a physical address */
+	KEEP(*(.text_start))
+	KEEP(*(".text_start.*"))
 	*(.text)
 	*(".text.*")
 	*(.gnu.linkonce.t.*)
@@ -116,13 +119,11 @@ SECTIONS
 	*(.init)
 	*(.fini)
 	*(.eini)
-	KEEP(*(.openocd_dbg))
-	KEEP(*(".openocd_dbg.*"))
 
 #include <linker/kobject-text.ld>
 
 	MMU_PAGE_ALIGN_PERM
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 	_image_text_end = .;
 	_image_text_size = _image_text_end - _image_text_start;
@@ -140,15 +141,15 @@ SECTIONS
 #ifndef CONFIG_DYNAMIC_INTERRUPTS
 	. = ALIGN(8);
 	_idt_base_address = .;
-#ifdef LINKER_PASS2
+#ifdef LINKER_ZEPHYR_FINAL
 	KEEP(*(staticIdt))
 #else
 	. += CONFIG_IDT_NUM_VECTORS * 8;
-#endif /* LINKER_PASS2 */
+#endif /* LINKER_ZEPHYR_FINAL */
 
 	. = ALIGN(4);
 	_irq_to_interrupt_vector = .;
-#ifdef LINKER_PASS2
+#ifdef LINKER_ZEPHYR_FINAL
 	KEEP(*(irq_int_vector_map))
 #else
 	. += CONFIG_MAX_IRQ_LINES;
@@ -161,7 +162,7 @@ SECTIONS
 #include <snippets-rodata.ld>
 
 #include <linker/kobject-rom.ld>
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 #include <linker/cplusplus-rom.ld>
 
@@ -234,7 +235,7 @@ SECTIONS
 	 */
 	. = ALIGN(4);
 	__bss_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
+	} GROUP_NOLOAD_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 	__bss_num_words	= (__bss_end - __bss_start) >> 2;
 
@@ -254,18 +255,18 @@ SECTIONS
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
 	. = ALIGN(4);
 	_irq_to_interrupt_vector = .;
-#ifdef LINKER_PASS2
+#ifdef LINKER_ZEPHYR_FINAL
 	KEEP(*(irq_int_vector_map))
 #else
 	. += CONFIG_MAX_IRQ_LINES;
-#endif /* LINKER_PASS2 */
+#endif /* LINKER_ZEPHYR_FINAL */
 
 	z_interrupt_vectors_allocated = .;
-#ifdef LINKER_PASS2
+#ifdef LINKER_ZEPHYR_FINAL
 	KEEP(*(irq_vectors_alloc))
 #else
 	. += (CONFIG_IDT_NUM_VECTORS + 7) / 8;
-#endif /* LINKER_PASS2 */
+#endif /* LINKER_ZEPHYR_FINAL */
 #endif /* CONFIG_DYNAMIC_INTERRUPTS */
 
 /* Located in generated directory. This file is populated by the
@@ -287,20 +288,20 @@ SECTIONS
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
 	. = ALIGN(8);
 	_idt_base_address = .;
-#ifdef LINKER_PASS2
+#ifdef LINKER_ZEPHYR_FINAL
 	KEEP(*(staticIdt))
 #else
 	. += CONFIG_IDT_NUM_VECTORS * 8;
-#endif /* LINKER_PASS2 */
+#endif /* LINKER_ZEPHYR_FINAL */
 #endif /* CONFIG_DYNAMIC_INTERRUPTS */
 
 #ifdef CONFIG_GDT_DYNAMIC
 	KEEP(*(.tss))
 	. = ALIGN(8);
 	_gdt = .;
-#ifdef LINKER_PASS2
+#ifdef LINKER_ZEPHYR_FINAL
 	KEEP(*(gdt))
-#else /* LINKER_PASS2 */
+#else /* LINKER_ZEPHYR_FINAL */
 
 #ifdef CONFIG_USERSPACE
     #define GDT_NUM_ENTRIES 7
@@ -310,7 +311,7 @@ SECTIONS
     #define GDT_NUM_ENTRIES 3
 #endif /* CONFIG_X86_USERSPACE */
 	. += GDT_NUM_ENTRIES * 8;
-#endif /* LINKER_PASS2 */
+#endif /* LINKER_ZEPHYR_FINAL */
 #endif /* CONFIG_GDT_DYNAMIC */
 
 #ifdef CONFIG_X86_KPTI
@@ -353,7 +354,7 @@ SECTIONS
 
 	GROUP_END(RAMABLE_REGION)
 
-#ifndef LINKER_PASS2
+#ifndef LINKER_ZEPHYR_FINAL
 	/* static interrupts */
 	SECTION_PROLOGUE(intList,,)
 	{

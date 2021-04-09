@@ -23,6 +23,12 @@ config NET_PPP_DRV_NAME
 	help
 	  This option sets the driver name
 
+config NET_PPP_MTU_MRU
+	int "PPP MTU and MRU"
+	default 1500
+	help
+	  This options sets MTU and MRU for PPP link.
+
 config NET_PPP_UART_BUF_LEN
 	int "Buffer length when reading from UART"
 	default 8

@@ -252,11 +252,6 @@ current :ref:`stability level <api_lifecycle>`.
      - 2.4
      - 2.4
 
-   * - :ref:`sdhc_api`
-     - Stable
-     - 1.14
-     - 2.0
-
    * - :ref:`spi_api`
      - Stable
      - 1.0
@@ -281,6 +276,11 @@ current :ref:`stability level <api_lifecycle>`.
      - Experimental
      - 2.3
      - 2.3
+
+   * - :ref:`task_wdt_api`
+     - Experimental
+     - 2.5
+     - 2.5
 
    * - :ref:`uart_api`
      - Stable

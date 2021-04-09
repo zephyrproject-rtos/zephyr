@@ -332,14 +332,14 @@ config BOOT_DELAY
 	  all serial ports have DCD.
 
 config THREAD_MONITOR
-	bool "Thread monitoring [EXPERIMENTAL]"
+	bool "Thread monitoring"
 	help
 	  This option instructs the kernel to maintain a list of all threads
 	  (excluding those that have not yet started or have already
 	  terminated).
 
 config THREAD_NAME
-	bool "Thread name [EXPERIMENTAL]"
+	bool "Thread name"
 	help
 	  This option allows to set a name for a thread.
 
@@ -369,7 +369,7 @@ if THREAD_RUNTIME_STATS
 
 config THREAD_RUNTIME_STATS_USE_TIMING_FUNCTIONS
 	bool "Use timing functions to gather statistics"
-	select TIMING_FUNCTIONS
+	select TIMING_FUNCTIONS_NEED_AT_BOOT
 	help
 	  Use timing functions to gather thread runtime statistics.
 
@@ -753,7 +753,6 @@ config ARCH_MEM_DOMAIN_SYNCHRONOUS_API
 	  arch_mem_domain_thread_remove
 	  arch_mem_domain_partition_remove
 	  arch_mem_domain_partition_add
-	  arch_mem_domain_destroy
 
 	  It's important to note that although supervisor threads can be
 	  members of memory domains, they have no implications on supervisor
@@ -840,17 +839,6 @@ config KERNEL_COHERENCE
 	  mistakes, but not all circumstances can be tested.
 
 endmenu
-
-config TICKLESS_IDLE
-	# NB: This option is deprecated, see TICKLESS_KERNEL and
-	# https://github.com/zephyrproject-rtos/zephyr/pull/12234
-	bool "Tickless idle"
-	default y if PM || TICKLESS_CAPABLE
-	help
-	  This option suppresses periodic system clock interrupts whenever the
-	  kernel becomes idle. This permits the system to remain in a power
-	  saving state for extended periods without having to wake up to
-	  service each tick as it occurs.
 
 config TICKLESS_KERNEL
 	bool "Tickless kernel"

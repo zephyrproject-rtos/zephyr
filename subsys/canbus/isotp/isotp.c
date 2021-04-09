@@ -136,6 +136,7 @@ static void receive_send_fc(struct isotp_recv_ctx *ctx, uint8_t fs)
 		.id = ctx->tx_addr.ext_id
 	};
 	uint8_t *data = frame.data;
+	uint8_t payload_len;
 	int ret;
 
 	__ASSERT_NO_MSG(!(fs & ISOTP_PCI_TYPE_MASK));
@@ -147,7 +148,16 @@ static void receive_send_fc(struct isotp_recv_ctx *ctx, uint8_t fs)
 	*data++ = ISOTP_PCI_TYPE_FC | fs;
 	*data++ = ctx->opts.bs;
 	*data++ = ctx->opts.stmin;
-	frame.dlc = data - frame.data;
+	payload_len = data - frame.data;
+
+#if defined(CONFIG_ISOTP_REQUIRE_RX_PADDING) || \
+				defined(CONFIG_ISOTP_ENABLE_TX_PADDING)
+	/* AUTOSAR requirement SWS_CanTp_00347 */
+	memset(&frame.data[payload_len], 0xCC, ISOTP_CAN_DL - payload_len);
+	frame.dlc = ISOTP_CAN_DL;
+#else
+	frame.dlc = payload_len;
+#endif
 
 	ret = can_send(ctx->can_dev, &frame, K_MSEC(ISOTP_A),
 		       receive_can_tx_isr, ctx);
@@ -264,10 +274,10 @@ static void receive_state_machine(struct isotp_recv_ctx *ctx)
 
 	switch (ctx->state) {
 	case ISOTP_RX_STATE_PROCESS_SF:
-		ctx->buf->len = receive_get_sf_length(ctx->buf);
+		ctx->length = receive_get_sf_length(ctx->buf);
 		ud_rem_len = net_buf_user_data(ctx->buf);
 		*ud_rem_len = 0;
-		LOG_DBG("SM process SF of length %d", ctx->buf->len);
+		LOG_DBG("SM process SF of length %d", ctx->length);
 		net_buf_put(&ctx->fifo, ctx->buf);
 		ctx->state = ISOTP_RX_STATE_RECYCLE;
 		receive_state_machine(ctx);
@@ -380,6 +390,8 @@ static void receive_work_handler(struct k_work *item)
 static void process_ff_sf(struct isotp_recv_ctx *ctx, struct zcan_frame *frame)
 {
 	int index = 0;
+	uint8_t payload_len;
+	uint32_t rx_sa;		/* ISO-TP fixed source address (if used) */
 
 	if (ctx->rx_addr.use_ext_addr) {
 		if (frame->data[index++] != ctx->rx_addr.ext_addr) {
@@ -387,23 +399,47 @@ static void process_ff_sf(struct isotp_recv_ctx *ctx, struct zcan_frame *frame)
 		}
 	}
 
+	if (ctx->rx_addr.use_fixed_addr) {
+		/* store actual CAN ID used by the sender */
+		ctx->rx_addr.ext_id = frame->id;
+		/* replace TX target address with RX source address */
+		rx_sa = (frame->id & ISOTP_FIXED_ADDR_SA_MASK) >>
+		     ISOTP_FIXED_ADDR_SA_POS;
+		ctx->tx_addr.ext_id &= ~(ISOTP_FIXED_ADDR_TA_MASK);
+		ctx->tx_addr.ext_id |= rx_sa << ISOTP_FIXED_ADDR_TA_POS;
+		/* use same priority for TX as in received message */
+		ctx->tx_addr.ext_id &= ~(ISOTP_FIXED_ADDR_PRIO_MASK);
+		ctx->tx_addr.ext_id |= frame->id & ISOTP_FIXED_ADDR_PRIO_MASK;
+	}
+
 	switch (frame->data[index] & ISOTP_PCI_TYPE_MASK) {
 	case ISOTP_PCI_TYPE_FF:
 		LOG_DBG("Got FF IRQ");
 		if (frame->dlc != ISOTP_CAN_DL) {
-			LOG_INF("FF DL does not match. Ignore");
+			LOG_INF("FF DLC invalid. Ignore");
 			return;
 		}
 
+		payload_len = ISOTP_CAN_DL;
 		ctx->state = ISOTP_RX_STATE_PROCESS_FF;
 		ctx->sn_expected = 1;
 		break;
 
 	case ISOTP_PCI_TYPE_SF:
 		LOG_DBG("Got SF IRQ");
-		if ((frame->data[index] & ISOTP_PCI_FF_DL_UPPER_MASK) +
-		    index + 1 != frame->dlc) {
-			LOG_INF("SF DL does not match. Ignore");
+#ifdef CONFIG_ISOTP_REQUIRE_RX_PADDING
+		/* AUTOSAR requirement SWS_CanTp_00345 */
+		if (frame->dlc != ISOTP_CAN_DL) {
+			LOG_INF("SF DLC invalid. Ignore");
+			return;
+		}
+#endif
+
+		payload_len = index + 1 + (frame->data[index] &
+						ISOTP_PCI_SF_DL_MASK);
+
+		if (payload_len > frame->dlc) {
+			LOG_INF("SF DL does not fit. Ignore");
 			return;
 		}
 
@@ -415,7 +451,7 @@ static void process_ff_sf(struct isotp_recv_ctx *ctx, struct zcan_frame *frame)
 		return;
 	}
 
-	net_buf_add_mem(ctx->buf, &frame->data[index], frame->dlc - index);
+	net_buf_add_mem(ctx->buf, &frame->data[index], payload_len - index);
 }
 
 static inline void receive_add_mem(struct isotp_recv_ctx *ctx, uint8_t *data,
@@ -432,7 +468,7 @@ static inline void receive_add_mem(struct isotp_recv_ctx *ctx, uint8_t *data,
 	net_buf_add_mem(ctx->act_frag, data, tailroom);
 	ctx->act_frag = ctx->act_frag->frags;
 	if (!ctx->act_frag) {
-		LOG_ERR("No fragmet left to append data");
+		LOG_ERR("No fragment left to append data");
 		receive_report_error(ctx, ISOTP_N_BUFFER_OVERFLW);
 		return;
 	}
@@ -444,6 +480,7 @@ static void process_cf(struct isotp_recv_ctx *ctx, struct zcan_frame *frame)
 {
 	uint32_t *ud_rem_len = (uint32_t *)net_buf_user_data(ctx->buf);
 	int index = 0;
+	uint32_t data_len;
 
 	if (ctx->rx_addr.use_ext_addr) {
 		if (frame->data[index++] != ctx->rx_addr.ext_addr) {
@@ -470,14 +507,20 @@ static void process_cf(struct isotp_recv_ctx *ctx, struct zcan_frame *frame)
 		return;
 	}
 
-	if (frame->dlc - index > ctx->length) {
-		LOG_ERR("The frame contains more bytes than expected");
+#ifdef CONFIG_ISOTP_REQUIRE_RX_PADDING
+	/* AUTOSAR requirement SWS_CanTp_00346 */
+	if (frame->dlc != ISOTP_CAN_DL) {
+		LOG_ERR("CF DL invalid");
 		receive_report_error(ctx, ISOTP_N_ERROR);
+		return;
 	}
+#endif
 
 	LOG_DBG("Got CF irq. Appending data");
-	receive_add_mem(ctx, &frame->data[index], frame->dlc - index);
-	ctx->length -= frame->dlc - index;
+	data_len = (ctx->length > frame->dlc - index) ? frame->dlc - index :
+		ctx->length;
+	receive_add_mem(ctx, &frame->data[index], data_len);
+	ctx->length -= data_len;
 	LOG_DBG("%d bytes remaining", ctx->length);
 
 	if (ctx->length == 0) {
@@ -529,12 +572,20 @@ static void receive_can_rx_isr(struct zcan_frame *frame, void *arg)
 
 static inline int attach_ff_filter(struct isotp_recv_ctx *ctx)
 {
+	uint32_t mask;
+
+	if (ctx->rx_addr.use_fixed_addr) {
+		mask = ISOTP_FIXED_ADDR_RX_MASK;
+	} else {
+		mask = CAN_EXT_ID_MASK;
+	}
+
 	struct zcan_filter filter = {
 		.id_type = ctx->rx_addr.id_type,
 		.rtr = CAN_DATAFRAME,
 		.id = ctx->rx_addr.ext_id,
 		.rtr_mask = 1,
-		.id_mask = CAN_EXT_ID_MASK
+		.id_mask = mask
 	};
 
 	ctx->filter_id = can_attach_isr(ctx->can_dev, receive_can_rx_isr, ctx,
@@ -557,7 +608,7 @@ int isotp_bind(struct isotp_recv_ctx *ctx, const struct device *can_dev,
 
 	__ASSERT(ctx, "ctx is NULL");
 	__ASSERT(can_dev, "CAN device is NULL");
-	__ASSERT(rx_addr && rx_addr, "RX or TX addr is NULL");
+	__ASSERT(rx_addr && tx_addr, "RX or TX addr is NULL");
 	__ASSERT(opts, "OPTS is NULL");
 
 	ctx->can_dev = can_dev;
@@ -755,6 +806,15 @@ static void send_process_fc(struct isotp_send_ctx *ctx,
 		return;
 	}
 
+#ifdef CONFIG_ISOTP_ENABLE_TX_PADDING
+	/* AUTOSAR requirement SWS_CanTp_00349 */
+	if (frame->dlc != ISOTP_CAN_DL) {
+		LOG_ERR("FC DL invalid. Ignore");
+		send_report_error(ctx, ISOTP_N_ERROR);
+		return;
+	}
+#endif
+
 	switch (*data++ & ISOTP_PCI_FS_MASK) {
 	case ISOTP_PCI_FS_CTS:
 		ctx->state = ISOTP_TX_SEND_CF;
@@ -853,7 +913,13 @@ static inline int send_sf(struct isotp_send_ctx *ctx)
 	__ASSERT_NO_MSG(len <= ISOTP_CAN_DL - index);
 	memcpy(&frame.data[index], data, len);
 
+#ifdef CONFIG_ISOTP_ENABLE_TX_PADDING
+	/* AUTOSAR requirement SWS_CanTp_00348 */
+	memset(&frame.data[index + len], 0xCC, ISOTP_CAN_DL - len - index);
+	frame.dlc = ISOTP_CAN_DL;
+#else
 	frame.dlc = len + index;
+#endif
 
 	ctx->state = ISOTP_TX_SEND_SF;
 	ret = can_send(ctx->can_dev, &frame, K_MSEC(ISOTP_A),
@@ -926,9 +992,16 @@ static inline int send_cf(struct isotp_send_ctx *ctx)
 	rem_len = get_ctx_data_length(ctx);
 	len = MIN(rem_len, ISOTP_CAN_DL - index);
 	rem_len -= len;
-	frame.dlc = len + index;
 	data = get_data_ctx(ctx);
 	memcpy(&frame.data[index], data, len);
+
+#ifdef CONFIG_ISOTP_ENABLE_TX_PADDING
+	/* AUTOSAR requirement SWS_CanTp_00348 */
+	memset(&frame.data[index + len], 0xCC, ISOTP_CAN_DL - len - index);
+	frame.dlc = ISOTP_CAN_DL;
+#else
+	frame.dlc = len + index;
+#endif
 
 	ret = can_send(ctx->can_dev, &frame, K_MSEC(ISOTP_A),
 		       send_can_tx_isr, ctx);
@@ -995,11 +1068,11 @@ static void send_state_machine(struct isotp_send_ctx *ctx)
 	switch (ctx->state) {
 
 	case ISOTP_TX_SEND_FF:
-		LOG_DBG("SM send FF");
 		send_ff(ctx);
 		z_add_timeout(&ctx->timeout, send_timeout_handler,
 			      K_MSEC(ISOTP_BS));
 		ctx->state = ISOTP_TX_WAIT_FC;
+		LOG_DBG("SM send FF");
 		break;
 
 	case ISOTP_TX_SEND_CF:
@@ -1021,11 +1094,11 @@ static void send_state_machine(struct isotp_send_ctx *ctx)
 			}
 
 			if (ctx->opts.bs && !ctx->bs) {
-				LOG_DBG("BS reached. Wait for FC again");
-				ctx->state = ISOTP_TX_WAIT_FC;
 				z_add_timeout(&ctx->timeout,
 					      send_timeout_handler,
 					      K_MSEC(ISOTP_BS));
+				ctx->state = ISOTP_TX_WAIT_FC;
+				LOG_DBG("BS reached. Wait for FC again");
 				break;
 			} else if (ctx->opts.stmin) {
 				ctx->state = ISOTP_TX_WAIT_ST;
@@ -1036,10 +1109,10 @@ static void send_state_machine(struct isotp_send_ctx *ctx)
 		break;
 
 	case ISOTP_TX_WAIT_ST:
-		LOG_DBG("SM wait ST");
 		z_add_timeout(&ctx->timeout, send_timeout_handler,
 			      stmin_to_ticks(ctx->opts.stmin));
 		ctx->state = ISOTP_TX_SEND_CF;
+		LOG_DBG("SM wait ST");
 		break;
 
 	case ISOTP_TX_ERR:
@@ -1106,7 +1179,7 @@ static int send(struct isotp_send_ctx *ctx, const struct device *can_dev,
 
 	__ASSERT_NO_MSG(ctx);
 	__ASSERT_NO_MSG(can_dev);
-	__ASSERT_NO_MSG(rx_addr && rx_addr);
+	__ASSERT_NO_MSG(rx_addr && tx_addr);
 
 	if (complete_cb) {
 		ctx->fin_cb.cb = complete_cb;

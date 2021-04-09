@@ -16,10 +16,10 @@
  * failure detection. Please refer the block diagram for more detail.
  *
  *            +---------------------+    +-----------------+
- *  LFCLK --->| T0 Prescale Counter |--->| 16-Bit T0 Timer |---+----> T0 Timer
- * (32kHz)    |     (TWCP 1:32)     |    |     (TWDT0)     |   |       Event
- *            +---------------------+    +-----------------+   |
- *  +----------------------------------------------------------+
+ *  LFCLK --->| T0 Prescale Counter |-+->| 16-Bit T0 Timer |--------> T0 Timer
+ * (32kHz)    |     (TWCP 1:32)     | |  |     (TWDT0)     |           Event
+ *            +---------------------+ |  +-----------------+
+ *  +---------------------------------+
  *  |
  *  |    +-------------------+    +-----------------+
  *  +--->| Watchdog Prescale |--->| 8-Bit Watchdog  |-----> Watchdog Event/Reset
@@ -88,7 +88,8 @@ static inline void wdt_t0out_reload(const struct device *dev)
 
 	key = irq_lock();
 	/* Reload and restart T0 timer */
-	inst->T0CSR |= BIT(NPCX_T0CSR_RST);
+	inst->T0CSR = (inst->T0CSR & ~BIT(NPCX_T0CSR_WDRST_STS)) |
+		      BIT(NPCX_T0CSR_RST);
 	/* Wait for timer is loaded and restart */
 	while (IS_BIT_SET(inst->T0CSR, NPCX_T0CSR_RST))
 		;
@@ -113,16 +114,13 @@ static void wdt_t0out_isr(const struct device *dev, struct npcx_wui *wui)
 	struct wdt_npcx_data *const data = DRV_DATA(dev);
 	ARG_UNUSED(wui);
 
+	LOG_DBG("WDT reset will issue after %d delay cycle! WUI(%d %d %d)",
+		CONFIG_WDT_NPCX_DELAY_CYCLES, wui->table, wui->group, wui->bit);
+
 	/* Handle watchdog event here. */
 	if (data->cb) {
 		data->cb(dev, 0);
 	}
-
-	LOG_DBG("WDT issued! WUI(%d %d %d)", wui->table, wui->group, wui->bit);
-
-	/* Wait for watchdog event and reset occurred! */
-	while (1)
-		;
 }
 
 static void wdt_config_t0out_interrupt(const struct device *dev)
@@ -312,8 +310,8 @@ static int wdt_npcx_init(const struct device *dev)
 	inst->TWCFG = BIT(NPCX_TWCFG_WDSDME) | BIT(NPCX_TWCFG_WDCT0I);
 
 	/* Disable early touch functionality */
-	inst->T0CSR |= BIT(NPCX_T0CSR_TESDIS);
-
+	inst->T0CSR = (inst->T0CSR & ~BIT(NPCX_T0CSR_WDRST_STS)) |
+		      BIT(NPCX_T0CSR_TESDIS);
 	/*
 	 * Plan clock frequency of T0 timer and watchdog timer as below:
 	 * - T0 Timer freq is LFCLK/32 Hz

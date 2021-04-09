@@ -26,7 +26,7 @@
 #include <zephyr/types.h>
 #include <stdbool.h>
 
-#ifdef CONFIG_CPU_ARCV2
+#ifdef CONFIG_ISA_ARCV2
 #include <arch/arc/v2/aux_regs.h>
 #endif
 

@@ -22,6 +22,12 @@ from west.commands import CommandError
 from west.configuration import config
 import yaml
 
+from zephyr_ext_common import ZEPHYR_SCRIPTS
+
+# Runners depend on edtlib. Make sure the copy in the tree is
+# available to them before trying to import any.
+sys.path.append(str(ZEPHYR_SCRIPTS / 'dts' / 'python-devicetree' / 'src'))
+
 from runners import get_runner_cls, ZephyrBinaryRunner, MissingProgram
 from runners.core import RunnerConfig
 import zcmake
@@ -320,7 +326,10 @@ def use_runner_cls(command, board, args, runners_yaml, cache):
                 fatal=True)
         log.inf(f'To fix, configure this runner in {board_cmake} and rebuild.')
         sys.exit(1)
-    runner_cls = get_runner_cls(runner)
+    try:
+        runner_cls = get_runner_cls(runner)
+    except ValueError as e:
+        log.die(e)
     if command.name not in runner_cls.capabilities().commands:
         log.die(f'runner {runner} does not support command {command.name}')
 

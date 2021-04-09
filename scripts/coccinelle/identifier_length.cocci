@@ -26,5 +26,5 @@ pos << r_idlen.p;
 @@
 
 if (len(id) > 31):
-   msg="WARNING: Identifier %s length %d > 31" % (id, len(id))
+   msg="WARNING: Violation to rule 5.1 or 5.2 (Identifiers shall be distinct) %s length %d > 31" % (id, len(id))
    coccilib.report.print_report(pos[0], msg)

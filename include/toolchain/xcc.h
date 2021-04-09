@@ -138,4 +138,13 @@
 #define __builtin_unreachable() do { __ASSERT(false, "Unreachable code"); } \
 	while (true)
 
+#ifdef __deprecated
+/*
+ * XCC does not support using deprecated attribute in enum,
+ * so just nullify it here to avoid compilation errors.
+ */
+#undef __deprecated
+#define __deprecated
+#endif
+
 #endif

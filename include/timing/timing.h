@@ -39,6 +39,7 @@ uint32_t board_timing_freq_get_mhz(void);
  * @{
  */
 
+#ifdef CONFIG_TIMING_FUNCTIONS
 
 /**
  * @brief Initialize the timing subsystem.
@@ -168,7 +169,10 @@ static inline uint32_t timing_freq_get_mhz(void)
 #endif
 }
 
+#endif /* CONFIG_TIMING_FUNCTIONS */
+
 /**
  * @}
  */
+
 #endif /* ZEPHYR_INCLUDE_TIMING_TIMING_H_ */

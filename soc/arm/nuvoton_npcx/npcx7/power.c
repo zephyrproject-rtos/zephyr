@@ -46,8 +46,11 @@
  */
 
 #include <zephyr.h>
+#include <drivers/espi.h>
 #include <power/power.h>
 #include <soc.h>
+
+#include "soc_host.h"
 
 #include <logging/log.h>
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
@@ -79,6 +82,27 @@ enum {
 	NPCX_STANDARD_WAKE_UP,
 };
 
+#ifdef CONFIG_UART_CONSOLE_INPUT_EXPIRED
+static int64_t expired_timeout = CONFIG_UART_CONSOLE_INPUT_EXPIRED_TIMEOUT;
+static int64_t console_expired_time = CONFIG_UART_CONSOLE_INPUT_EXPIRED_TIMEOUT;
+
+/* Platform specific power control functions */
+bool npcx_power_console_is_in_use(void)
+{
+	return (k_uptime_get() < console_expired_time);
+}
+
+void npcx_power_console_is_in_use_refresh(void)
+{
+	console_expired_time = k_uptime_get() + expired_timeout;
+}
+
+void npcx_power_set_console_in_use_timeout(int64_t timeout)
+{
+	expired_timeout = timeout;
+}
+#endif
+
 static void npcx_power_enter_system_sleep(int slp_mode, int wk_mode)
 {
 	/* Disable interrupts */
@@ -94,6 +118,9 @@ static void npcx_power_enter_system_sleep(int slp_mode, int wk_mode)
 	npcx_clock_control_turn_on_system_sleep(slp_mode == NPCX_DEEP_SLEEP,
 					wk_mode == NPCX_INSTANT_WAKE_UP);
 
+	/* Turn on host access wake-up interrupt. */
+	npcx_host_enable_access_interrupt();
+
 	/*
 	 * Capture the reading of low-freq timer for compensation before ec
 	 * enters system sleep mode.
@@ -108,6 +135,9 @@ static void npcx_power_enter_system_sleep(int slp_mode, int wk_mode)
 	 * system sleep mode.
 	 */
 	npcx_clock_compensate_system_timer();
+
+	/* Turn off host access wake-up interrupt. */
+	npcx_host_disable_access_interrupt();
 
 	/* Turn off system sleep mode. */
 	npcx_clock_control_turn_off_system_sleep();

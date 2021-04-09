@@ -41,6 +41,19 @@
 			dma-channels = <16>;
 		};
 
+		i2c4: i2c@40008400 {
+			compatible = "st,stm32-i2c-v2";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40008400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000002>;
+			interrupts = <82 0>, <83 0>;
+			interrupt-names = "event", "error";
+			status = "disabled";
+			label= "I2C_4";
+		};
+
 		spi4: spi@40013c00 {
 			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
 			#address-cells = <1>;
@@ -51,6 +64,5 @@
 			status = "disabled";
 			label = "SPI_4";
 		};
-
 	};
 };

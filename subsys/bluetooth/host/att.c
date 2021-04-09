@@ -436,6 +436,30 @@ static int bt_att_chan_send(struct bt_att_chan *chan, struct net_buf *buf,
 	return chan_send(chan, buf, cb);
 }
 
+static void att_send_process(struct bt_att *att)
+{
+	struct bt_att_chan *chan, *tmp;
+	struct net_buf *buf;
+	int err = -ENOENT;
+
+	buf = net_buf_get(&att->tx_queue, K_NO_WAIT);
+	if (!buf) {
+		return;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&att->chans, chan, tmp, node) {
+		err = bt_att_chan_send(chan, buf, NULL);
+		if (err >= 0) {
+			break;
+		}
+	}
+
+	if (err < 0) {
+		/* Push it back if it could not be send */
+		k_queue_prepend(&att->tx_queue._queue, buf);
+	}
+}
+
 static void bt_att_chan_send_rsp(struct bt_att_chan *chan, struct net_buf *buf,
 				 bt_att_chan_sent_t cb)
 {
@@ -537,7 +561,7 @@ static int bt_att_chan_req_send(struct bt_att_chan *chan,
 	return chan_req_send(chan, req);
 }
 
-static void att_process(struct bt_att *att)
+static void att_req_send_process(struct bt_att *att)
 {
 	sys_snode_t *node;
 	struct bt_att_chan *chan, *tmp;
@@ -597,7 +621,7 @@ static uint8_t att_handle_rsp(struct bt_att_chan *chan, void *pdu, uint16_t len,
 
 process:
 	/* Process pending requests */
-	att_process(chan->att);
+	att_req_send_process(chan->att);
 	if (func) {
 		func(chan->att->conn, err, pdu, len, params);
 	}
@@ -2953,9 +2977,7 @@ void bt_att_req_free(struct bt_att_req *req)
 int bt_att_send(struct bt_conn *conn, struct net_buf *buf, bt_conn_tx_cb_t cb,
 		void *user_data)
 {
-	struct bt_att_chan *chan, *tmp;
 	struct bt_att *att;
-	int ret;
 
 	__ASSERT_NO_MSG(conn);
 	__ASSERT_NO_MSG(buf);
@@ -2974,20 +2996,8 @@ int bt_att_send(struct bt_conn *conn, struct net_buf *buf, bt_conn_tx_cb_t cb,
 					user_data);
 	}
 
-	ret = 0;
-
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&att->chans, chan, tmp, node) {
-		ret = bt_att_chan_send(chan, buf, NULL);
-		if (ret >= 0) {
-			break;
-		}
-	}
-
-	if (ret < 0) {
-		/* Queue buffer to be send later */
-		BT_DBG("Queueing buffer %p", buf);
-		net_buf_put(&att->tx_queue, buf);
-	}
+	net_buf_put(&att->tx_queue, buf);
+	att_send_process(att);
 
 	return 0;
 }
@@ -2995,7 +3005,6 @@ int bt_att_send(struct bt_conn *conn, struct net_buf *buf, bt_conn_tx_cb_t cb,
 int bt_att_req_send(struct bt_conn *conn, struct bt_att_req *req)
 {
 	struct bt_att *att;
-	struct bt_att_chan *chan, *tmp;
 
 	BT_DBG("conn %p req %p", conn, req);
 
@@ -3007,22 +3016,8 @@ int bt_att_req_send(struct bt_conn *conn, struct bt_att_req *req)
 		return -ENOTCONN;
 	}
 
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&att->chans, chan, tmp, node) {
-		/* If there is nothing pending use the channel */
-		if (!chan->req) {
-			int ret;
-
-			ret = bt_att_chan_req_send(chan, req);
-			if (ret >= 0) {
-				return ret;
-			}
-		}
-	}
-
-	/* Queue the request to be send later */
 	sys_slist_append(&att->reqs, &req->node);
-
-	BT_DBG("req %p queued", req);
+	att_req_send_process(att);
 
 	return 0;
 }

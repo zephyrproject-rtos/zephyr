@@ -16,32 +16,32 @@
 #include <init.h>
 #include <drivers/timer/system_timer.h>
 
-/* Weak-linked noop defaults for optional driver interfaces: */
+/* Weak-linked noop defaults for optional driver interfaces*/
 
-void __weak z_clock_isr(void *arg)
+void __weak sys_clock_isr(void *arg)
 {
 	__ASSERT_NO_MSG(false);
 }
 
-int __weak z_clock_driver_init(const struct device *device)
+int __weak sys_clock_driver_init(const struct device *dev)
 {
-	ARG_UNUSED(device);
+	ARG_UNUSED(dev);
 
 	return 0;
 }
 
-int __weak z_clock_device_ctrl(const struct device *device,
+int __weak sys_clock_device_ctrl(const struct device *dev,
 			       uint32_t ctrl_command,
 			       void *context, device_pm_cb cb, void *arg)
 {
 	return -ENOTSUP;
 }
 
-void __weak z_clock_set_timeout(int32_t ticks, bool idle)
+void __weak sys_clock_set_timeout(int32_t ticks, bool idle)
 {
 }
 
-void __weak z_clock_idle_exit(void)
+void __weak sys_clock_idle_exit(void)
 {
 }
 
@@ -49,5 +49,5 @@ void __weak sys_clock_disable(void)
 {
 }
 
-SYS_DEVICE_DEFINE("sys_clock", z_clock_driver_init, z_clock_device_ctrl,
+SYS_DEVICE_DEFINE("sys_clock", sys_clock_driver_init, sys_clock_device_ctrl,
 		PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

@@ -276,6 +276,22 @@ struct bt_gatt_ccc {
 	uint16_t flags;
 };
 
+/** Server Characteristic Configuration Values */
+
+/** @def BT_GATT_SCC_BROADCAST
+ *  @brief Server Characteristic Configuration Broadcast
+ *
+ *  If set, the characteristic value shall be broadcast in the advertising data
+ *  when the server is advertising.
+ */
+#define BT_GATT_SCC_BROADCAST                   0x0001
+
+/** Server Characterestic Configuration Attribute Value */
+struct bt_gatt_scc {
+	/** Server Characteristic Configuration flags */
+	uint16_t flags;
+};
+
 /** @brief GATT Characteristic Presentation Format Attribute Value. */
 struct bt_gatt_cpf {
 	/** Format of the value of the characteristic */
@@ -1197,6 +1213,17 @@ enum {
 	 *        as it may incur in more round trips.
 	 */
 	BT_GATT_DISCOVER_ATTRIBUTE,
+	/** @brief Discover standard characteristic descriptor values.
+	 *
+	 *  Discover standard characterestic descriptor values and their
+	 *  properties.
+	 *  Supported descriptors:
+	 *   - Characteristic Extended Properties
+	 *   - Client Characteristic Configuration
+	 *   - Server Characteristic Configuration
+	 *   - Characteristic Presentation Format
+	 */
+	BT_GATT_DISCOVER_STD_CHAR_DESC,
 };
 
 /** @brief GATT Discover Attributes parameters */

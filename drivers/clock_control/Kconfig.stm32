@@ -161,7 +161,7 @@ config CLOCK_STM32_APB2_PRESCALER
 	int "APB2 prescaler"
 	default 1
 	range 1 16
-	depends on !SOC_SERIES_STM32F0X
+	depends on !SOC_SERIES_STM32F0X && !SOC_SERIES_STM32G0X
 	help
 	  APB2 High speed clock (PCLK2) prescaler, allowed values:
 	  1, 2, 4, 8, 16

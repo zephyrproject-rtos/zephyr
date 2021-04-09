@@ -30,7 +30,7 @@ uint64_t z_tsc_read(void)
 	uint32_t count;
 
 	key = arch_irq_lock();
-	t = (uint64_t)z_tick_get();
+	t = (uint64_t)sys_clock_tick_get();
 	count = z_arc_v2_aux_reg_read(_ARC_V2_TMR0_COUNT);
 	arch_irq_unlock(key);
 	t *= k_ticks_to_cyc_floor64(1);

@@ -13,8 +13,8 @@ SDHC controller.
 Requirements
 ************
 
-This project requires a SDHC or microSD card formatted with FAT filesystem.
-See the :ref:`sdhc_api` documentation for Zephyr implementation details.
+This project requires SD card support and microSD card formatted with FAT filesystem.
+See the :ref:`disk_access_api` documentation for Zephyr implementation details.
 
 Building and Running
 ********************

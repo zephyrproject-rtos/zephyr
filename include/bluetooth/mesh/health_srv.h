@@ -153,7 +153,7 @@ struct bt_mesh_health_srv {
 	const struct bt_mesh_health_srv_cb *cb;
 
 	/** Attention Timer state */
-	struct k_delayed_work attn_timer;
+	struct k_work_delayable attn_timer;
 };
 
 /** @def BT_MESH_MODEL_HEALTH_SRV

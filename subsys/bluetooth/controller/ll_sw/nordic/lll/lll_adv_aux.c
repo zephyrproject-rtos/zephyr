@@ -233,14 +233,9 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	/* Abort if no aux_ptr filled */
 	if (unlikely(!pri_hdr->aux_ptr || !aux_ptr->offs)) {
-		int err;
+		radio_isr_set(lll_isr_early_abort, lll);
+		radio_disable();
 
-		err = lll_hfclock_off();
-		LL_ASSERT(err >= 0);
-
-		lll_done(NULL);
-
-		DEBUG_RADIO_CLOSE_A(0);
 		return 0;
 	}
 
@@ -577,8 +572,7 @@ static inline int isr_rx_pdu(struct lll_adv_aux *lll_aux,
 		   lll_adv_connect_ind_check(lll, pdu_rx, tx_addr, addr,
 					     rx_addr, tgt_addr,
 					     devmatch_ok, &rl_idx) &&
-		   lll->conn &&
-		   !lll->conn->initiated) {
+		   lll->conn) {
 		struct node_rx_ftr *ftr;
 		struct node_rx_pdu *rx;
 		struct pdu_adv *pdu_tx;
@@ -686,7 +680,7 @@ static void isr_tx_connect_rsp(void *param)
 
 	if (is_done) {
 		/* Stop further LLL radio events */
-		lll->conn->initiated = 1;
+		lll->conn->slave.initiated = 1;
 	}
 
 	/* Clear radio status and events */

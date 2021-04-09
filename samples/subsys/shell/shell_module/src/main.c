@@ -173,6 +173,53 @@ static int cmd_version(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
+#define DEFAULT_PASSWORD "zephyr"
+
+static void login_init(void)
+{
+	printk("Shell Login Demo\nHint: password = %s\n", DEFAULT_PASSWORD);
+	shell_set_root_cmd("login");
+}
+
+static int check_passwd(char *passwd)
+{
+	/* example only -- not recommended for production use */
+	return strcmp(passwd, DEFAULT_PASSWORD);
+}
+
+static int cmd_login(const struct shell *shell, size_t argc, char **argv)
+{
+	static uint32_t attempts;
+
+	if (check_passwd(argv[1]) != 0) {
+		shell_error(shell, "Incorrect password!");
+		attempts++;
+		if (attempts > 3) {
+			k_sleep(K_SECONDS(attempts));
+		}
+		return -EINVAL;
+	}
+
+	/* clear history so password not visible there */
+	z_shell_history_purge(shell->history);
+	shell_obscure_set(shell, false);
+	shell_set_root_cmd(NULL);
+	shell_prompt_change(shell, "uart:~$ ");
+	shell_print(shell, "Shell Login Demo\n");
+	shell_print(shell, "Hit tab for help.\n");
+	attempts = 0;
+	return 0;
+}
+
+static int cmd_logout(const struct shell *shell, size_t argc, char **argv)
+{
+	shell_set_root_cmd("login");
+	shell_obscure_set(shell, true);
+	shell_prompt_change(shell, "login: ");
+	shell_print(shell, "\n");
+	return 0;
+}
+
 static int cmd_dict(const struct shell *shell, size_t argc, char **argv,
 		    void *data)
 {
@@ -202,8 +249,18 @@ SHELL_CMD_REGISTER(demo, &sub_demo, "Demo commands", NULL);
 
 SHELL_CMD_ARG_REGISTER(version, NULL, "Show kernel version", cmd_version, 1, 0);
 
+SHELL_COND_CMD_ARG_REGISTER(CONFIG_SHELL_START_OBSCURED, login, NULL,
+			    "<password>", cmd_login, 2, 0);
+
+SHELL_COND_CMD_REGISTER(CONFIG_SHELL_START_OBSCURED, logout, NULL,
+			"Log out.", cmd_logout);
+
 void main(void)
 {
+	if (IS_ENABLED(CONFIG_SHELL_START_OBSCURED)) {
+		login_init();
+	}
+
 #if defined(CONFIG_USB_UART_CONSOLE)
 	const struct device *dev;
 	uint32_t dtr = 0;

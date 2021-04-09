@@ -2,9 +2,6 @@ tests:
   subsys.power.device_pm:
     # arch_irq_unlock(0) can't work correctly on these arch
     arch_exclude: arc xtensa
-    # When CONFIG_TICKLESS_IDLE enable, some of these platforms don't
-    # provide a timer driver.  Other platforms are excluded because
-    # they lack some other required feature.
     platform_exclude: rv32m1_vega_ri5cy rv32m1_vega_zero_riscy litex_vexriscv
        nrf5340dk_nrf5340_cpunet
     integration_platforms:

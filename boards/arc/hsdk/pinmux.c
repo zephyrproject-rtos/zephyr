@@ -8,9 +8,9 @@
 #include <init.h>
 #include <drivers/pinmux.h>
 
-static int board_pinmux_init(const struct device *device)
+static int board_pinmux_init(const struct device *dev)
 {
-	ARG_UNUSED(device);
+	ARG_UNUSED(dev);
 
 	const struct device *pinmux = DEVICE_DT_GET(DT_NODELABEL(pinctrl));
 

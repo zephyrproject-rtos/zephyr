@@ -72,6 +72,7 @@ static void conn_release(struct ll_adv_set *adv);
 #endif /* CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+static void ticker_op_aux_stop_cb(uint32_t status, void *param);
 static void ticker_op_ext_stop_cb(uint32_t status, void *param);
 static void ext_disabled_cb(void *param);
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
@@ -364,8 +365,8 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 	adv->own_addr_type = own_addr_type;
 	if (adv->own_addr_type == BT_ADDR_LE_PUBLIC_ID ||
 	    adv->own_addr_type == BT_ADDR_LE_RANDOM_ID) {
-		adv->id_addr_type = direct_addr_type;
-		memcpy(&adv->id_addr, direct_addr, BDADDR_SIZE);
+		adv->peer_addr_type = direct_addr_type;
+		memcpy(&adv->peer_addr, direct_addr, BDADDR_SIZE);
 	}
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
@@ -717,8 +718,8 @@ uint8_t ll_adv_enable(uint8_t enable)
 	if (adv->own_addr_type == BT_ADDR_LE_PUBLIC_ID ||
 	    adv->own_addr_type == BT_ADDR_LE_RANDOM_ID) {
 		/* Look up the resolving list */
-		lll->rl_idx = ull_filter_rl_find(adv->id_addr_type,
-						 adv->id_addr, NULL);
+		lll->rl_idx = ull_filter_rl_find(adv->peer_addr_type,
+						 adv->peer_addr, NULL);
 
 		if (lll->rl_idx != FILTER_IDX_NONE) {
 			/* Generate RPAs if required */
@@ -872,7 +873,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 
 		/* FIXME: BEGIN: Move to ULL? */
 		conn_lll->role = 1;
-		conn_lll->initiated = 0;
+		conn_lll->slave.initiated = 0;
 		conn_lll->data_chan_sel = 0;
 		conn_lll->data_chan_use = 0;
 		conn_lll->event_counter = 0;
@@ -892,7 +893,15 @@ uint8_t ll_adv_enable(uint8_t enable)
 		conn->supervision_expire = 0;
 		conn->procedure_expire = 0;
 
+#if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN)
+		conn->own_addr_type = BT_ADDR_LE_NONE->type;
+		memcpy(conn->own_addr, BT_ADDR_LE_NONE->a.val, sizeof(conn->own_addr));
+		conn->peer_addr_type = BT_ADDR_LE_NONE->type;
+		memcpy(conn->peer_addr, BT_ADDR_LE_NONE->a.val, sizeof(conn->peer_addr));
+#endif /* CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN */
+
 		conn->common.fex_valid = 0;
+		conn->common.txn_lock = 0;
 		conn->slave.latency_cancel = 0;
 
 		conn->llcp_req = conn->llcp_ack = conn->llcp_type = 0;
@@ -1583,6 +1592,7 @@ void ull_adv_done(struct node_rx_event_done *done)
 {
 	struct lll_adv *lll = (void *)HDR_ULL2LLL(done->param);
 	struct ll_adv_set *adv = (void *)HDR_LLL2EVT(lll);
+	struct lll_adv_aux *lll_aux;
 	struct node_rx_hdr *rx_hdr;
 	uint8_t handle;
 	uint32_t ret;
@@ -1612,9 +1622,23 @@ void ull_adv_done(struct node_rx_event_done *done)
 	rx_hdr->rx_ftr.param_adv_term.conn_handle = 0xffff;
 	rx_hdr->rx_ftr.param_adv_term.num_events = adv->event_counter;
 
-	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
-			  (TICKER_ID_ADV_BASE + handle), ticker_op_ext_stop_cb,
-			  adv);
+	lll_aux = lll->aux;
+	if (lll_aux) {
+		struct ll_adv_aux_set *aux;
+		uint8_t aux_handle;
+
+		aux = (void *)HDR_LLL2EVT(lll_aux);
+		aux_handle = ull_adv_aux_handle_get(aux);
+		ret = ticker_stop(TICKER_INSTANCE_ID_CTLR,
+				  TICKER_USER_ID_ULL_HIGH,
+				  (TICKER_ID_ADV_AUX_BASE + aux_handle),
+				  ticker_op_aux_stop_cb, adv);
+	} else {
+		ret = ticker_stop(TICKER_INSTANCE_ID_CTLR,
+				  TICKER_USER_ID_ULL_HIGH,
+				  (TICKER_ID_ADV_BASE + handle),
+				  ticker_op_ext_stop_cb, adv);
+	}
 
 	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
 		  (ret == TICKER_STATUS_BUSY));
@@ -1903,6 +1927,21 @@ static void conn_release(struct ll_adv_set *adv)
 #endif /* CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+static void ticker_op_aux_stop_cb(uint32_t status, void *param)
+{
+	uint8_t handle;
+	uint32_t ret;
+
+	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
+
+	handle = ull_adv_handle_get(param);
+	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_LOW,
+			  (TICKER_ID_ADV_BASE + handle), ticker_op_ext_stop_cb,
+			  param);
+	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
+		  (ret == TICKER_STATUS_BUSY));
+}
+
 static void ticker_op_ext_stop_cb(uint32_t status, void *param)
 {
 	static memq_link_t link;
@@ -1955,22 +1994,6 @@ static inline uint8_t disable(uint8_t handle)
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-#if defined(CONFIG_BT_CTLR_ADV_EXT) && (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
-	struct lll_adv_aux *lll_aux = adv->lll.aux;
-
-	if (lll_aux) {
-		struct ll_adv_aux_set *aux;
-		uint8_t err;
-
-		aux = (void *)HDR_LLL2EVT(lll_aux);
-
-		err = ull_adv_aux_stop(aux);
-		if (err) {
-			return err;
-		}
-	}
-#endif /* CONFIG_BT_CTLR_ADV_EXT && (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
-
 	mark = ull_disable_mark(adv);
 	LL_ASSERT(mark == adv);
 
@@ -2007,6 +2030,22 @@ static inline uint8_t disable(uint8_t handle)
 
 	mark = ull_disable_unmark(adv);
 	LL_ASSERT(mark == adv);
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT) && (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
+	struct lll_adv_aux *lll_aux = adv->lll.aux;
+
+	if (lll_aux) {
+		struct ll_adv_aux_set *aux;
+		uint8_t err;
+
+		aux = (void *)HDR_LLL2EVT(lll_aux);
+
+		err = ull_adv_aux_stop(aux);
+		if (err) {
+			return err;
+		}
+	}
+#endif /* CONFIG_BT_CTLR_ADV_EXT && (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
 
 #if defined(CONFIG_BT_PERIPHERAL)
 	if (adv->lll.conn) {
@@ -2058,20 +2097,34 @@ static inline uint8_t *adv_pdu_adva_get(struct pdu_adv *pdu)
 static const uint8_t *adva_update(struct ll_adv_set *adv, struct pdu_adv *pdu)
 {
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-	const uint8_t *tx_addr = ull_filter_adva_get(adv);
+	const uint8_t *rpa = ull_filter_adva_get(adv);
 #else
-	const uint8_t *tx_addr = NULL;
+	const uint8_t *rpa = NULL;
 #endif
+	const uint8_t *own_addr;
+	const uint8_t *tx_addr;
 	uint8_t *adv_addr;
 
-	if (tx_addr) {
-		pdu->tx_addr = 1;
+	if (!rpa || IS_ENABLED(CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN)) {
+		if (0) {
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-	} else if (ll_adv_cmds_is_ext() && pdu->tx_addr) {
-		tx_addr = ll_adv_aux_random_addr_get(adv, NULL);
+		} else if (ll_adv_cmds_is_ext() && pdu->tx_addr) {
+			own_addr = ll_adv_aux_random_addr_get(adv, NULL);
 #endif
+		} else {
+			own_addr = ll_addr_get(pdu->tx_addr, NULL);
+		}
+	}
+
+#if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN)
+	memcpy(adv->own_addr, own_addr, BDADDR_SIZE);
+#endif /* CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN */
+
+	if (rpa) {
+		pdu->tx_addr = 1;
+		tx_addr = rpa;
 	} else {
-		tx_addr = ll_addr_get(pdu->tx_addr, NULL);
+		tx_addr = own_addr;
 	}
 
 	adv_addr = adv_pdu_adva_get(pdu);

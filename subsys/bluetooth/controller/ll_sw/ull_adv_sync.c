@@ -28,6 +28,7 @@
 #include "lll/lll_adv_pdu.h"
 #include "lll_adv_sync.h"
 #include "lll/lll_df_types.h"
+#include "lll_chan.h"
 
 #include "ull_adv_types.h"
 
@@ -120,15 +121,15 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 		err = util_aa_le32(lll_sync->access_addr);
 		LL_ASSERT(!err);
 
+		lll_sync->data_chan_id = lll_chan_id(lll_sync->access_addr);
+		lll_sync->data_chan_count =
+			ull_chan_map_get(lll_sync->data_chan_map);
+
 		lll_csrand_get(lll_sync->crc_init, sizeof(lll_sync->crc_init));
 
 		lll_sync->latency_prepare = 0;
 		lll_sync->latency_event = 0;
 		lll_sync->event_counter = 0;
-
-		lll_sync->data_chan_count =
-			ull_chan_map_get(lll_sync->data_chan_map);
-		lll_sync->data_chan_id = 0;
 
 		sync->is_enabled = 0U;
 		sync->is_started = 0U;
@@ -890,6 +891,7 @@ static void mfy_sync_offset_get(void *param)
 	uint32_t ticks_current;
 	struct pdu_adv *pdu;
 	uint8_t ticker_id;
+	uint16_t lazy;
 	uint8_t retry;
 	uint8_t id;
 
@@ -909,11 +911,11 @@ static void mfy_sync_offset_get(void *param)
 		ticks_previous = ticks_current;
 
 		ret_cb = TICKER_STATUS_BUSY;
-		ret = ticker_next_slot_get(TICKER_INSTANCE_ID_CTLR,
-					   TICKER_USER_ID_ULL_LOW,
-					   &id,
-					   &ticks_current, &ticks_to_expire,
-					   ticker_op_cb, (void *)&ret_cb);
+		ret = ticker_next_slot_get_ext(TICKER_INSTANCE_ID_CTLR,
+					       TICKER_USER_ID_ULL_LOW,
+					       &id, &ticks_current,
+					       &ticks_to_expire, &lazy,
+					       ticker_op_cb, (void *)&ret_cb);
 		if (ret == TICKER_STATUS_BUSY) {
 			while (ret_cb == TICKER_STATUS_BUSY) {
 				ticker_job_sched(TICKER_INSTANCE_ID_CTLR,
@@ -936,7 +938,8 @@ static void mfy_sync_offset_get(void *param)
 	pdu = lll_adv_aux_data_curr_get(adv->lll.aux);
 	si = sync_info_get(pdu);
 	sync_info_offset_fill(si, ticks_to_expire, 0);
-	si->evt_cntr = lll_sync->event_counter + lll_sync->latency_prepare;
+	si->evt_cntr = lll_sync->event_counter + lll_sync->latency_prepare +
+		       lazy;
 }
 
 static inline struct pdu_adv_sync_info *sync_info_get(struct pdu_adv *pdu)

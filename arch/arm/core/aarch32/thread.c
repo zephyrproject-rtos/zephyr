@@ -358,7 +358,7 @@ uint32_t z_check_thread_stack_fail(const uint32_t fault_addr, const uint32_t psp
 #if defined(CONFIG_MULTITHREADING)
 	const struct k_thread *thread = _current;
 
-	if (!thread) {
+	if (thread == NULL) {
 		return 0;
 	}
 #endif
@@ -457,6 +457,12 @@ int arch_float_disable(struct k_thread *thread)
 	arch_irq_unlock(key);
 
 	return 0;
+}
+
+int arch_float_enable(struct k_thread *thread, unsigned int options)
+{
+	/* This is not supported in Cortex-M and Cortex-R does not have FPU */
+	return -ENOTSUP;
 }
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 

@@ -54,6 +54,9 @@ struct bt_le_per_adv_sync;
 /* Don't require everyone to include conn.h */
 struct bt_conn;
 
+/* Don't require everyone to include iso.h */
+struct bt_iso_biginfo;
+
 struct bt_le_ext_adv_sent_info {
 	/** The number of advertising events completed. */
 	uint8_t num_sent;
@@ -1191,6 +1194,17 @@ struct bt_le_per_adv_sync_cb {
 	void (*state_changed)(struct bt_le_per_adv_sync *sync,
 			      const struct bt_le_per_adv_sync_state_info *info);
 
+	/**
+	 * @brief BIGInfo advertising report received.
+	 *
+	 * This callback notifies the application of a BIGInfo advertising report.
+	 * This is received if the advertiser is broadcasting isochronous streams in a BIG.
+	 * See iso.h for more information.
+	 *
+	 * @param sync     The advertising set object.
+	 * @param biginfo  The BIGInfo report.
+	 */
+	void (*biginfo)(struct bt_le_per_adv_sync *sync, const struct bt_iso_biginfo *biginfo);
 
 	sys_snode_t node;
 };
@@ -1275,6 +1289,43 @@ struct bt_le_per_adv_sync_param {
  * The range of the returned value is 0..CONFIG_BT_PER_ADV_SYNC_MAX-1
  */
 uint8_t bt_le_per_adv_sync_get_index(struct bt_le_per_adv_sync *per_adv_sync);
+
+/** @brief Advertising set info structure. */
+struct bt_le_per_adv_sync_info {
+	/** Periodic Advertiser Address */
+	bt_addr_le_t addr;
+
+	/** Advertiser SID */
+	uint8_t sid;
+
+	/** Periodic advertising interval (N * 1.25 ms) */
+	uint16_t interval;
+
+	/** Advertiser PHY */
+	uint8_t phy;
+};
+
+/**
+ * @brief Get periodic adv sync information.
+ *
+ * @param per_adv_sync Periodic advertising sync object.
+ * @param info          Periodic advertising sync info object
+ *
+ * @return Zero on success or (negative) error code on failure.
+ */
+int bt_le_per_adv_sync_get_info(struct bt_le_per_adv_sync *per_adv_sync,
+				struct bt_le_per_adv_sync_info *info);
+
+/**
+ * @brief Look up an existing periodic advertising sync object by advertiser address.
+ *
+ * @param adv_addr Advertiser address.
+ * @param sid      The advertising set ID.
+ *
+ * @return Periodic advertising sync object or NULL if not found.
+ */
+struct bt_le_per_adv_sync *bt_le_per_adv_sync_lookup_addr(const bt_addr_le_t *adv_addr,
+							  uint8_t sid);
 
 /**
  * @brief Create a periodic advertising sync object.

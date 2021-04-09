@@ -12,7 +12,9 @@
 #include <mmu.h>
 #include <init.h>
 #include <kernel_internal.h>
+#include <syscall_handler.h>
 #include <linker/linker-defs.h>
+#include <timing/timing.h>
 #include <logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -278,6 +280,9 @@ static void frame_mapped_set(struct z_page_frame *pf, void *addr)
 #ifdef CONFIG_DEMAND_PAGING
 static int page_frame_prepare_locked(struct z_page_frame *pf, bool *dirty_ptr,
 				     bool page_in, uintptr_t *location_ptr);
+
+static inline void do_backing_store_page_in(uintptr_t location);
+static inline void do_backing_store_page_out(uintptr_t location);
 #endif /* CONFIG_DEMAND_PAGING */
 
 /* Allocate a free page frame, and map it to a specified virtual address
@@ -293,8 +298,8 @@ static int map_anon_page(void *addr, uint32_t flags)
 {
 	struct z_page_frame *pf;
 	uintptr_t phys;
-	bool lock = (flags & K_MEM_MAP_LOCK) != 0;
-	bool uninit = (flags & K_MEM_MAP_UNINIT) != 0;
+	bool lock = (flags & K_MEM_MAP_LOCK) != 0U;
+	bool uninit = (flags & K_MEM_MAP_UNINIT) != 0U;
 
 	pf = free_page_frame_list_get();
 	if (pf == NULL) {
@@ -312,7 +317,7 @@ static int map_anon_page(void *addr, uint32_t flags)
 			return -ENOMEM;
 		}
 		if (dirty) {
-			z_backing_store_page_out(location);
+			do_backing_store_page_out(location);
 		}
 		pf->flags = 0;
 #else
@@ -346,17 +351,17 @@ void *k_mem_map(size_t size, uint32_t flags)
 	size_t total_size = size;
 	int ret;
 	k_spinlock_key_t key;
-	bool guard = (flags & K_MEM_MAP_GUARD) != 0;
+	bool guard = (flags & K_MEM_MAP_GUARD) != 0U;
 	uint8_t *pos;
 
-	__ASSERT(!(((flags & K_MEM_PERM_USER) != 0) &&
-		   ((flags & K_MEM_MAP_UNINIT) != 0)),
+	__ASSERT(!(((flags & K_MEM_PERM_USER) != 0U) &&
+		   ((flags & K_MEM_MAP_UNINIT) != 0U)),
 		 "user access to anonymous uninitialized pages is forbidden");
-	__ASSERT(size % CONFIG_MMU_PAGE_SIZE == 0,
+	__ASSERT(size % CONFIG_MMU_PAGE_SIZE == 0U,
 		 "unaligned size %zu passed to %s", size, __func__);
 	__ASSERT(size != 0, "zero sized memory mapping");
 	__ASSERT(page_frames_initialized, "%s called too early", __func__);
-	__ASSERT((flags & K_MEM_CACHE_MASK) == 0,
+	__ASSERT((flags & K_MEM_CACHE_MASK) == 0U,
 		 "%s does not support explicit cache settings", __func__);
 
 	key = k_spin_lock(&z_mm_lock);
@@ -406,7 +411,7 @@ size_t k_mem_free_get(void)
 	ret = z_free_page_count;
 	k_spin_unlock(&z_mm_lock, key);
 
-	return ret * CONFIG_MMU_PAGE_SIZE;
+	return ret * (size_t)CONFIG_MMU_PAGE_SIZE;
 }
 
 /* This may be called from arch early boot code before z_cstart() is invoked.
@@ -423,7 +428,7 @@ void z_phys_map(uint8_t **virt_ptr, uintptr_t phys, size_t size, uint32_t flags)
 	addr_offset = k_mem_region_align(&aligned_phys, &aligned_size,
 					 phys, size,
 					 CONFIG_MMU_PAGE_SIZE);
-	__ASSERT(aligned_size != 0, "0-length mapping at 0x%lx", aligned_phys);
+	__ASSERT(aligned_size != 0U, "0-length mapping at 0x%lx", aligned_phys);
 	__ASSERT(aligned_phys < (aligned_phys + (aligned_size - 1)),
 		 "wraparound for physical address 0x%lx (size %zu)",
 		 aligned_phys, aligned_size);
@@ -466,16 +471,16 @@ fail:
  * Miscellaneous
  */
 
-size_t k_mem_region_align(uintptr_t *aligned_phys, size_t *aligned_size,
-			  uintptr_t phys_addr, size_t size, size_t align)
+size_t k_mem_region_align(uintptr_t *aligned_addr, size_t *aligned_size,
+			  uintptr_t addr, size_t size, size_t align)
 {
 	size_t addr_offset;
 
 	/* The actual mapped region must be page-aligned. Round down the
 	 * physical address and pad the region size appropriately
 	 */
-	*aligned_phys = ROUND_DOWN(phys_addr, align);
-	addr_offset = phys_addr - *aligned_phys;
+	*aligned_addr = ROUND_DOWN(addr, align);
+	addr_offset = addr - *aligned_addr;
 	*aligned_size = ROUND_UP(size + addr_offset, align);
 
 	return addr_offset;
@@ -497,7 +502,7 @@ void z_kernel_map_fixup(void)
 				      CONFIG_MMU_PAGE_SIZE);
 	size_t kobject_size = (size_t)(Z_KERNEL_VIRT_END - kobject_page_begin);
 
-	if (kobject_size != 0) {
+	if (kobject_size != 0U) {
 		arch_mem_map(kobject_page_begin,
 			     Z_BOOT_VIRT_TO_PHYS(kobject_page_begin),
 			     kobject_size, K_MEM_PERM_RW | K_MEM_CACHE_WB);
@@ -553,6 +558,9 @@ void z_mem_manage_init(void)
 	LOG_DBG("free page frames: %zu", z_free_page_count);
 
 #ifdef CONFIG_DEMAND_PAGING
+#ifdef CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM
+	z_paging_histogram_init();
+#endif
 	z_backing_store_init();
 	z_eviction_init();
 #endif
@@ -563,7 +571,75 @@ void z_mem_manage_init(void)
 }
 
 #ifdef CONFIG_DEMAND_PAGING
-static unsigned long z_num_pagefaults;
+
+#ifdef CONFIG_DEMAND_PAGING_STATS
+struct k_mem_paging_stats_t paging_stats;
+extern struct k_mem_paging_histogram_t z_paging_histogram_eviction;
+extern struct k_mem_paging_histogram_t z_paging_histogram_backing_store_page_in;
+extern struct k_mem_paging_histogram_t z_paging_histogram_backing_store_page_out;
+#endif
+
+static inline void do_backing_store_page_in(uintptr_t location)
+{
+#ifdef CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM
+	uint32_t time_diff;
+
+#ifdef CONFIG_DEMAND_PAGING_STATS_USING_TIMING_FUNCTIONS
+	timing_t time_start, time_end;
+
+	time_start = timing_counter_get();
+#else
+	uint32_t time_start;
+
+	time_start = k_cycle_get_32();
+#endif /* CONFIG_DEMAND_PAGING_STATS_USING_TIMING_FUNCTIONS */
+#endif /* CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM */
+
+	z_backing_store_page_in(location);
+
+#ifdef CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM
+#ifdef CONFIG_DEMAND_PAGING_STATS_USING_TIMING_FUNCTIONS
+	time_end = timing_counter_get();
+	time_diff = (uint32_t)timing_cycles_get(&time_start, &time_end);
+#else
+	time_diff = k_cycle_get_32() - time_start;
+#endif /* CONFIG_DEMAND_PAGING_STATS_USING_TIMING_FUNCTIONS */
+
+	z_paging_histogram_inc(&z_paging_histogram_backing_store_page_in,
+			       time_diff);
+#endif /* CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM */
+}
+
+static inline void do_backing_store_page_out(uintptr_t location)
+{
+#ifdef CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM
+	uint32_t time_diff;
+
+#ifdef CONFIG_DEMAND_PAGING_STATS_USING_TIMING_FUNCTIONS
+	timing_t time_start, time_end;
+
+	time_start = timing_counter_get();
+#else
+	uint32_t time_start;
+
+	time_start = k_cycle_get_32();
+#endif /* CONFIG_DEMAND_PAGING_STATS_USING_TIMING_FUNCTIONS */
+#endif /* CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM */
+
+	z_backing_store_page_out(location);
+
+#ifdef CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM
+#ifdef CONFIG_DEMAND_PAGING_STATS_USING_TIMING_FUNCTIONS
+	time_end = timing_counter_get();
+	time_diff = (uint32_t)timing_cycles_get(&time_start, &time_end);
+#else
+	time_diff = k_cycle_get_32() - time_start;
+#endif /* CONFIG_DEMAND_PAGING_STATS_USING_TIMING_FUNCTIONS */
+
+	z_paging_histogram_inc(&z_paging_histogram_backing_store_page_out,
+			       time_diff);
+#endif /* CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM */
+}
 
 /* Current implementation relies on interrupt locking to any prevent page table
  * access, which falls over if other CPUs are active. Addressing this is not
@@ -698,7 +774,7 @@ static int do_mem_evict(void *addr)
 	irq_unlock(key);
 #endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
 	if (dirty) {
-		z_backing_store_page_out(location);
+		do_backing_store_page_out(location);
 	}
 #ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
 	key = irq_lock();
@@ -772,7 +848,7 @@ int z_page_frame_evict(uintptr_t phys)
 	irq_unlock(key);
 #endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
 	if (dirty) {
-		z_backing_store_page_out(location);
+		do_backing_store_page_out(location);
 	}
 #ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
 	key = irq_lock();
@@ -786,6 +862,99 @@ out:
 	return ret;
 }
 
+static inline void paging_stats_faults_inc(struct k_thread *faulting_thread,
+					   int key)
+{
+#ifdef CONFIG_DEMAND_PAGING_STATS
+	bool is_irq_unlocked = arch_irq_unlocked(key);
+
+	paging_stats.pagefaults.cnt++;
+
+	if (is_irq_unlocked) {
+		paging_stats.pagefaults.irq_unlocked++;
+	} else {
+		paging_stats.pagefaults.irq_locked++;
+	}
+
+#ifdef CONFIG_DEMAND_PAGING_THREAD_STATS
+	faulting_thread->paging_stats.pagefaults.cnt++;
+
+	if (is_irq_unlocked) {
+		faulting_thread->paging_stats.pagefaults.irq_unlocked++;
+	} else {
+		faulting_thread->paging_stats.pagefaults.irq_locked++;
+	}
+#else
+	ARG_UNUSED(faulting_thread);
+#endif
+
+#ifndef CONFIG_DEMAND_PAGING_ALLOW_IRQ
+	if (k_is_in_isr()) {
+		paging_stats.pagefaults.in_isr++;
+
+#ifdef CONFIG_DEMAND_PAGING_THREAD_STATS
+		faulting_thread->paging_stats.pagefaults.in_isr++;
+#endif
+	}
+#endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
+#endif /* CONFIG_DEMAND_PAGING_STATS */
+}
+
+static inline void paging_stats_eviction_inc(struct k_thread *faulting_thread,
+					     bool dirty)
+{
+#ifdef CONFIG_DEMAND_PAGING_STATS
+	if (dirty) {
+		paging_stats.eviction.dirty++;
+	} else {
+		paging_stats.eviction.clean++;
+	}
+#ifdef CONFIG_DEMAND_PAGING_THREAD_STATS
+	if (dirty) {
+		faulting_thread->paging_stats.eviction.dirty++;
+	} else {
+		faulting_thread->paging_stats.eviction.clean++;
+	}
+#else
+	ARG_UNUSED(faulting_thread);
+#endif /* CONFIG_DEMAND_PAGING_THREAD_STATS */
+#endif /* CONFIG_DEMAND_PAGING_STATS */
+}
+
+static inline struct z_page_frame *do_eviction_select(bool *dirty)
+{
+	struct z_page_frame *pf;
+
+#ifdef CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM
+	uint32_t time_diff;
+
+#ifdef CONFIG_DEMAND_PAGING_STATS_USING_TIMING_FUNCTIONS
+	timing_t time_start, time_end;
+
+	time_start = timing_counter_get();
+#else
+	uint32_t time_start;
+
+	time_start = k_cycle_get_32();
+#endif /* CONFIG_DEMAND_PAGING_STATS_USING_TIMING_FUNCTIONS */
+#endif /* CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM */
+
+	pf = z_eviction_select(dirty);
+
+#ifdef CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM
+#ifdef CONFIG_DEMAND_PAGING_STATS_USING_TIMING_FUNCTIONS
+	time_end = timing_counter_get();
+	time_diff = (uint32_t)timing_cycles_get(&time_start, &time_end);
+#else
+	time_diff = k_cycle_get_32() - time_start;
+#endif /* CONFIG_DEMAND_PAGING_STATS_USING_TIMING_FUNCTIONS */
+
+	z_paging_histogram_inc(&z_paging_histogram_eviction, time_diff);
+#endif /* CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM */
+
+	return pf;
+}
+
 static bool do_page_fault(void *addr, bool pin)
 {
 	struct z_page_frame *pf;
@@ -794,6 +963,7 @@ static bool do_page_fault(void *addr, bool pin)
 	enum arch_page_location status;
 	bool result;
 	bool dirty = false;
+	struct k_thread *faulting_thread = _current_cpu->current;
 
 	__ASSERT(page_frames_initialized, "page fault at %p happened too early",
 		 addr);
@@ -802,17 +972,8 @@ static bool do_page_fault(void *addr, bool pin)
 
 	/*
 	 * TODO: Add performance accounting:
-	 * - Number of pagefaults
-	 *   * gathered on a per-thread basis:
-	 *     . Pagefaults with IRQs locked in faulting thread (bad)
-	 *     . Pagefaults with IRQs unlocked in faulting thread
-	 *   * Pagefaults in ISRs (if allowed)
 	 * - z_eviction_select() metrics
-	 *   * Clean vs dirty page eviction counts
-	 *   * execution time histogram
 	 *   * periodic timer execution time histogram (if implemented)
-	 * - z_backing_store_page_out() execution time histogram
-	 * - z_backing_store_page_in() execution time histogram
 	 */
 
 #ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
@@ -853,6 +1014,9 @@ static bool do_page_fault(void *addr, bool pin)
 		goto out;
 	}
 	result = true;
+
+	paging_stats_faults_inc(faulting_thread, key);
+
 	if (status == ARCH_PAGE_LOCATION_PAGED_IN) {
 		if (pin) {
 			/* It's a physical memory address */
@@ -870,10 +1034,12 @@ static bool do_page_fault(void *addr, bool pin)
 	pf = free_page_frame_list_get();
 	if (pf == NULL) {
 		/* Need to evict a page frame */
-		pf = z_eviction_select(&dirty);
+		pf = do_eviction_select(&dirty);
 		__ASSERT(pf != NULL, "failed to get a page frame");
 		LOG_DBG("evicting %p at 0x%lx", pf->addr,
 			z_page_frame_to_phys(pf));
+
+		paging_stats_eviction_inc(faulting_thread, dirty);
 	}
 	ret = page_frame_prepare_locked(pf, &dirty, true, &page_out_location);
 	__ASSERT(ret == 0, "failed to prepare page frame");
@@ -886,9 +1052,9 @@ static bool do_page_fault(void *addr, bool pin)
 	 */
 #endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
 	if (dirty) {
-		z_backing_store_page_out(page_out_location);
+		do_backing_store_page_out(page_out_location);
 	}
-	z_backing_store_page_in(page_in_location);
+	do_backing_store_page_in(page_in_location);
 
 #ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
 	key = irq_lock();
@@ -946,30 +1112,7 @@ void k_mem_pin(void *addr, size_t size)
 
 bool z_page_fault(void *addr)
 {
-	bool ret;
-
-	ret = do_page_fault(addr, false);
-	if (ret) {
-		/* Wasn't an error, increment page fault count */
-		int key;
-
-		key = irq_lock();
-		z_num_pagefaults++;
-		irq_unlock(key);
-	}
-	return ret;
-}
-
-unsigned long z_num_pagefaults_get(void)
-{
-	unsigned long ret;
-	int key;
-
-	key = irq_lock();
-	ret = z_num_pagefaults;
-	irq_unlock(key);
-
-	return ret;
+	return do_page_fault(addr, false);
 }
 
 static void do_mem_unpin(void *addr)
@@ -995,4 +1138,5 @@ void k_mem_unpin(void *addr, size_t size)
 		 addr);
 	virt_region_foreach(addr, size, do_mem_unpin);
 }
+
 #endif /* CONFIG_DEMAND_PAGING */

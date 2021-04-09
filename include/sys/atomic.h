@@ -24,9 +24,9 @@ typedef void *atomic_ptr_t;
 
 /* Low-level primitives come in several styles: */
 
-#if defined(CONFIG_ATOMIC_OPERATIONS_BUILTIN)
-/* Default.  See this file for the Doxygen reference: */
-#include <sys/atomic_builtin.h>
+#if defined(CONFIG_ATOMIC_OPERATIONS_C)
+/* Generic-but-slow implementation based on kernel locking and syscalls */
+#include <sys/atomic_c.h>
 #elif defined(CONFIG_ATOMIC_OPERATIONS_ARCH)
 /* Some architectures need their own implementation */
 # ifdef CONFIG_XTENSA
@@ -34,8 +34,8 @@ typedef void *atomic_ptr_t;
 # include <arch/xtensa/atomic_xtensa.h>
 # endif
 #else
-/* Generic-but-slow implementation based on kernel locking and syscalls */
-#include <sys/atomic_c.h>
+/* Default.  See this file for the Doxygen reference: */
+#include <sys/atomic_builtin.h>
 #endif
 
 /* Portable higher-level utilities: */
@@ -69,6 +69,14 @@ typedef void *atomic_ptr_t;
  */
 
 /**
+ * @brief This macro computes the number of atomic variables necessary to
+ * represent a bitmap with @a num_bits.
+ *
+ * @param num_bits Number of bits.
+ */
+#define ATOMIC_BITMAP_SIZE(num_bits) (1 + ((num_bits) - 1) / ATOMIC_BITS)
+
+/**
  * @brief Define an array of atomic variables.
  *
  * This macro defines an array of atomic variables containing at least
@@ -78,11 +86,17 @@ typedef void *atomic_ptr_t;
  * If used from file scope, the bits of the array are initialized to zero;
  * if used from within a function, the bits are left uninitialized.
  *
+ * @cond INTERNAL_HIDDEN
+ * @note
+ * This macro should be replicated in the PREDEFINED field of the documentation
+ * Doxyfile.
+ * @endcond
+ *
  * @param name Name of array of atomic variables.
  * @param num_bits Number of bits needed.
  */
 #define ATOMIC_DEFINE(name, num_bits) \
-	atomic_t name[1 + ((num_bits) - 1) / ATOMIC_BITS]
+	atomic_t name[ATOMIC_BITMAP_SIZE(num_bits)]
 
 /**
  * @brief Atomically test a bit.

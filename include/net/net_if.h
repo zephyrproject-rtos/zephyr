@@ -187,6 +187,12 @@ enum net_if_flag {
 	 */
 	NET_IF_FORWARD_MULTICASTS,
 
+	/** Interface supports IPv4 */
+	NET_IF_IPV4,
+
+	/** Interface supports IPv6 */
+	NET_IF_IPV6,
+
 /** @cond INTERNAL_HIDDEN */
 	/* Total number of flags - must be at the end of the enum */
 	NET_IF_NUM_FLAGS
@@ -375,6 +381,14 @@ struct net_if_config {
 #if defined(CONFIG_NET_IPV4_AUTO) && defined(CONFIG_NET_NATIVE_IPV4)
 	struct net_if_ipv4_autoconf ipv4auto;
 #endif /* CONFIG_NET_IPV4_AUTO */
+
+#if defined(CONFIG_NET_L2_VIRTUAL)
+	/**
+	 * This list keeps track of the virtual network interfaces
+	 * that are attached to this network interface.
+	 */
+	sys_slist_t virtual_interfaces;
+#endif /* CONFIG_NET_L2_VIRTUAL */
 };
 
 /**
@@ -627,6 +641,8 @@ static inline struct net_offload *net_if_offload(struct net_if *iface)
 #if defined(CONFIG_NET_OFFLOAD)
 	return iface->if_dev->offload;
 #else
+	ARG_UNUSED(iface);
+
 	return NULL;
 #endif
 }
@@ -709,6 +725,30 @@ static inline void net_if_stop_rs(struct net_if *iface)
 }
 #endif /* CONFIG_NET_IPV6_ND */
 
+/** @cond INTERNAL_HIDDEN */
+
+static inline int net_if_set_link_addr_unlocked(struct net_if *iface,
+						uint8_t *addr, uint8_t len,
+						enum net_link_type type)
+{
+	if (net_if_flag_is_set(iface, NET_IF_UP)) {
+		return -EPERM;
+	}
+
+	net_if_get_link_addr(iface)->addr = addr;
+	net_if_get_link_addr(iface)->len = len;
+	net_if_get_link_addr(iface)->type = type;
+
+	net_hostname_set_postfix(addr, len);
+
+	return 0;
+}
+
+int net_if_set_link_addr_locked(struct net_if *iface,
+				uint8_t *addr, uint8_t len,
+				enum net_link_type type);
+/** @endcond */
+
 /**
  * @brief Set a network interface's link address
  *
@@ -724,17 +764,11 @@ static inline int net_if_set_link_addr(struct net_if *iface,
 				       uint8_t *addr, uint8_t len,
 				       enum net_link_type type)
 {
-	if (net_if_flag_is_set(iface, NET_IF_UP)) {
-		return -EPERM;
-	}
-
-	net_if_get_link_addr(iface)->addr = addr;
-	net_if_get_link_addr(iface)->len = len;
-	net_if_get_link_addr(iface)->type = type;
-
-	net_hostname_set_postfix(addr, len);
-
-	return 0;
+#if defined(CONFIG_NET_RAW_MODE)
+	return net_if_set_link_addr_unlocked(iface, addr, len, type);
+#else
+	return net_if_set_link_addr_locked(iface, addr, len, type);
+#endif
 }
 
 /**
@@ -808,12 +842,7 @@ static inline struct net_if_config *net_if_config_get(struct net_if *iface)
  *
  * @param router Pointer to existing router
  */
-static inline void net_if_router_rm(struct net_if_router *router)
-{
-	router->is_used = false;
-
-	/* FIXME - remove timer */
-}
+void net_if_router_rm(struct net_if_router *router);
 
 /**
  * @brief Get the default network interface.
@@ -1061,12 +1090,7 @@ void net_if_mcast_monitor(struct net_if *iface, const struct in6_addr *addr,
  *
  * @param addr IPv6 multicast address
  */
-static inline void net_if_ipv6_maddr_join(struct net_if_mcast_addr *addr)
-{
-	NET_ASSERT(addr);
-
-	addr->is_joined = true;
-}
+void net_if_ipv6_maddr_join(struct net_if_mcast_addr *addr);
 
 /**
  * @brief Check if given multicast address is joined or not.
@@ -1087,12 +1111,7 @@ static inline bool net_if_ipv6_maddr_is_joined(struct net_if_mcast_addr *addr)
  *
  * @param addr IPv6 multicast address
  */
-static inline void net_if_ipv6_maddr_leave(struct net_if_mcast_addr *addr)
-{
-	NET_ASSERT(addr);
-
-	addr->is_joined = false;
-}
+void net_if_ipv6_maddr_leave(struct net_if_mcast_addr *addr);
 
 /**
  * @brief Return prefix that corresponds to this IPv6 address.
@@ -1270,18 +1289,7 @@ bool net_if_ipv6_router_rm(struct net_if_router *router);
  *
  * @return Hop limit
  */
-static inline uint8_t net_if_ipv6_get_hop_limit(struct net_if *iface)
-{
-#if defined(CONFIG_NET_NATIVE_IPV6)
-	if (!iface->config.ip.ipv6) {
-		return 0;
-	}
-
-	return iface->config.ip.ipv6->hop_limit;
-#else
-	return 0;
-#endif
-}
+uint8_t net_if_ipv6_get_hop_limit(struct net_if *iface);
 
 /**
  * @brief Set the default IPv6 hop limit of a given interface.
@@ -1289,17 +1297,7 @@ static inline uint8_t net_if_ipv6_get_hop_limit(struct net_if *iface)
  * @param iface Network interface
  * @param hop_limit New hop limit
  */
-static inline void net_ipv6_set_hop_limit(struct net_if *iface,
-					  uint8_t hop_limit)
-{
-#if defined(CONFIG_NET_NATIVE_IPV6)
-	if (!iface->config.ip.ipv6) {
-		return;
-	}
-
-	iface->config.ip.ipv6->hop_limit = hop_limit;
-#endif
-}
+void net_ipv6_set_hop_limit(struct net_if *iface, uint8_t hop_limit);
 
 /**
  * @brief Set IPv6 reachable time for a given interface
@@ -1521,18 +1519,15 @@ int net_if_config_ipv4_put(struct net_if *iface);
  *
  * @return Time-to-live
  */
-static inline uint8_t net_if_ipv4_get_ttl(struct net_if *iface)
-{
-#if defined(CONFIG_NET_NATIVE_IPV4)
-	if (!iface->config.ip.ipv4) {
-		return 0;
-	}
+uint8_t net_if_ipv4_get_ttl(struct net_if *iface);
 
-	return iface->config.ip.ipv4->ttl;
-#else
-	return 0;
-#endif
-}
+/**
+ * @brief Set IPv4 time-to-live value specified to a given interface
+ *
+ * @param iface Network interface
+ * @param ttl Time-to-live value
+ */
+void net_if_ipv4_set_ttl(struct net_if *iface, uint8_t ttl);
 
 /**
  * @brief Check if this IPv4 address belongs to one of the interfaces.

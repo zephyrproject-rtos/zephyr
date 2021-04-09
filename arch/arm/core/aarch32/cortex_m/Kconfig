@@ -62,6 +62,15 @@ config CPU_CORTEX_M33
 	help
 	  This option signifies the use of a Cortex-M33 CPU
 
+config CPU_CORTEX_M55
+	bool
+	select CPU_CORTEX_M
+	select ARMV8_1_M_MAINLINE
+	select ARMV8_M_SE if CPU_HAS_TEE
+	select ARMV7_M_ARMV8_M_FP if CPU_HAS_FPU
+	help
+	  This option signifies the use of a Cortex-M55 CPU
+
 config CPU_CORTEX_M7
 	bool
 	select CPU_CORTEX_M
@@ -212,6 +221,16 @@ config ARMV8_M_MAINLINE
 
 	  ARMv8-M Main Extension includes additional features
 	  not present in the ARMv7-M architecture.
+
+config ARMV8_1_M_MAINLINE
+	bool
+	select ARMV8_M_MAINLINE
+	help
+	  This option signifies the use of an ARMv8.1-M processor
+	  implementation, supporting the Main Extension.
+
+	  ARMv8.1-M Main Extension includes additional features
+	  not present in the ARMv8-M architecture.
 
 config ARMV8_M_SE
 	bool

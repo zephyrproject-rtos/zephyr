@@ -241,6 +241,8 @@ if(${BOARD}_DEPRECATED)
   message(WARNING "Deprecated BOARD=${BOARD_DEPRECATED} name specified, board automatically changed to: ${BOARD}.")
 endif()
 
+zephyr_boilerplate_watch(BOARD)
+
 foreach(root ${BOARD_ROOT})
   # Check that the board root looks reasonable.
   if(NOT IS_DIRECTORY "${root}/boards")
@@ -292,7 +294,7 @@ if(DEFINED BOARD_REVISION)
 endif()
 
 # Check that SHIELD has not changed.
-zephyr_check_cache(SHIELD)
+zephyr_check_cache(SHIELD WATCH)
 
 if(SHIELD)
   set(BOARD_MESSAGE "${BOARD_MESSAGE}, Shield(s): ${SHIELD}")

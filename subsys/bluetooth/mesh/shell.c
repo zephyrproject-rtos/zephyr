@@ -574,79 +574,77 @@ static int cmd_ident(const struct shell *shell, size_t argc, char *argv[])
 
 static int cmd_get_comp(const struct shell *shell, size_t argc, char *argv[])
 {
-	NET_BUF_SIMPLE_DEFINE(comp, BT_MESH_RX_SDU_MAX);
-	uint8_t status, page = 0x00;
+	NET_BUF_SIMPLE_DEFINE(buf, BT_MESH_RX_SDU_MAX);
+	struct bt_mesh_comp_p0_elem elem;
+	struct bt_mesh_comp_p0 comp;
+	uint8_t page = 0x00;
 	int err;
 
 	if (argc > 1) {
 		page = strtol(argv[1], NULL, 0);
 	}
 
-	err = bt_mesh_cfg_comp_data_get(net.net_idx, net.dst, page,
-					&status, &comp);
+	err = bt_mesh_cfg_comp_data_get(net.net_idx, net.dst, page, &page,
+					&buf);
 	if (err) {
 		shell_error(shell, "Getting composition failed (err %d)", err);
 		return 0;
 	}
 
-	if (status != 0x00) {
-		shell_print(shell, "Got non-success status 0x%02x", status);
+	if (page != 0x00) {
+		shell_print(shell, "Got page 0x%02x. No parser available.",
+			    page);
+		return 0;
+	}
+
+	err = bt_mesh_comp_p0_get(&comp, &buf);
+	if (err) {
+		shell_error(shell, "Couldn't parse Composition data (err %d)",
+			    err);
 		return 0;
 	}
 
 	shell_print(shell, "Got Composition Data for 0x%04x:", net.dst);
-	shell_print(shell, "\tCID      0x%04x",
-		    net_buf_simple_pull_le16(&comp));
-	shell_print(shell, "\tPID      0x%04x",
-		    net_buf_simple_pull_le16(&comp));
-	shell_print(shell, "\tVID      0x%04x",
-		    net_buf_simple_pull_le16(&comp));
-	shell_print(shell, "\tCRPL     0x%04x",
-		    net_buf_simple_pull_le16(&comp));
-	shell_print(shell, "\tFeatures 0x%04x",
-		    net_buf_simple_pull_le16(&comp));
+	shell_print(shell, "\tCID      0x%04x", comp.cid);
+	shell_print(shell, "\tPID      0x%04x", comp.pid);
+	shell_print(shell, "\tVID      0x%04x", comp.vid);
+	shell_print(shell, "\tCRPL     0x%04x", comp.crpl);
+	shell_print(shell, "\tFeatures 0x%04x", comp.feat);
 
-	while (comp.len > 4) {
-		uint8_t sig, vnd;
-		uint16_t loc;
+	while (bt_mesh_comp_p0_elem_pull(&comp, &elem)) {
 		int i;
 
-		loc = net_buf_simple_pull_le16(&comp);
-		sig = net_buf_simple_pull_u8(&comp);
-		vnd = net_buf_simple_pull_u8(&comp);
+		shell_print(shell, "\tElement @ 0x%04x:", elem.loc);
 
-		shell_print(shell, "\tElement @ 0x%04x:", loc);
-
-		if (comp.len < ((sig * 2U) + (vnd * 4U))) {
-			shell_print(shell, "\t\t...truncated data!");
-			break;
-		}
-
-		if (sig) {
+		if (elem.nsig) {
 			shell_print(shell, "\t\tSIG Models:");
 		} else {
 			shell_print(shell, "\t\tNo SIG Models");
 		}
 
-		for (i = 0; i < sig; i++) {
-			uint16_t mod_id = net_buf_simple_pull_le16(&comp);
+		for (i = 0; i < elem.nsig; i++) {
+			uint16_t mod_id = bt_mesh_comp_p0_elem_mod(&elem, i);
 
 			shell_print(shell, "\t\t\t0x%04x", mod_id);
 		}
 
-		if (vnd) {
+		if (elem.nvnd) {
 			shell_print(shell, "\t\tVendor Models:");
 		} else {
 			shell_print(shell, "\t\tNo Vendor Models");
 		}
 
-		for (i = 0; i < vnd; i++) {
-			uint16_t cid = net_buf_simple_pull_le16(&comp);
-			uint16_t mod_id = net_buf_simple_pull_le16(&comp);
+		for (i = 0; i < elem.nvnd; i++) {
+			struct bt_mesh_mod_id_vnd mod =
+				bt_mesh_comp_p0_elem_mod_vnd(&elem, i);
 
-			shell_print(shell, "\t\t\tCompany 0x%04x: 0x%04x", cid,
-				    mod_id);
+			shell_print(shell, "\t\t\tCompany 0x%04x: 0x%04x",
+				    mod.company, mod.id);
 		}
+	}
+
+	if (buf.len) {
+		shell_print(shell, "\t\t...truncated data!");
 	}
 
 	return 0;

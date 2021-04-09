@@ -312,6 +312,7 @@ config BT_CTLR_ULL_LOW_PRIO
 
 config BT_CTLR_LOW_LAT
 	bool "Low latency non-negotiating event preemption"
+	select BT_CTLR_LOW_LAT_ULL_DONE
 	default y if SOC_SERIES_NRF51X
 	help
 	  Use low latency non-negotiating event preemption. This reduces
@@ -327,6 +328,12 @@ config BT_CTLR_LOW_LAT_ULL
 	help
 	  Low latency ULL implementation that uses tailchaining instead of while
 	  loop to demux rx messages from LLL.
+
+config BT_CTLR_LOW_LAT_ULL_DONE
+	prompt "Low latency ULL prepare dequeue"
+	bool
+	help
+	  Done events be processed and dequeued in ULL context.
 
 config BT_CTLR_CONN_META
 	prompt "Enable connection meta data extension"
@@ -475,6 +482,18 @@ config BT_CTLR_CONN_RSSI_EVENT
 	help
 	  Generate events for connection RSSI measurement.
 
+config BT_CTLR_ALLOW_SAME_PEER_CONN
+	bool "Allow connection requests from same peer"
+	depends on BT_MAX_CONN > 1
+	help
+	  Allow connection requests from the same peer. While the
+	  Bluetooth specification does not allow multiple connections
+	  with the same peer, allowing such connections is useful
+	  while debugging multiple connections.
+
+	  WARNING: This option enables behavior that violates the Bluetooth
+	  specification.
+
 endif # BT_CONN
 
 config BT_CTLR_ADV_INDICATION
@@ -525,6 +544,14 @@ config BT_TICKER_COMPATIBILITY_MODE
 	  ticker node timeouts and thereby prevents ticker interrupts during
 	  radio RX/TX. Enabling this option disables the ticker priority- and
 	  'must expire' features.
+
+config BT_TICKER_LAZY_GET
+	bool "Ticker Next Slot Get with Lazy"
+	default y if BT_CTLR_ADV_PERIODIC
+	help
+	  This option enables ticker interface to iterate through active
+	  ticker nodes, returning tick to expire and lazy count from a reference
+	  tick.
 
 config BT_TICKER_EXT
 	bool "Ticker extensions"
@@ -664,7 +691,7 @@ config BT_CTLR_PROFILE_ISR
 
 config BT_CTLR_DEBUG_PINS
 	bool "Bluetooth Controller Debug Pins"
-	depends on BOARD_NRF51DK_NRF51422 || BOARD_NRF52DK_NRF52832 || BOARD_NRF52DK_NRF52810 || BOARD_NRF52840DK_NRF52840 || BOARD_NRF5340DK_NRF5340_CPUNET || BOARD_RV32M1_VEGA
+	depends on BOARD_NRF51DK_NRF51422 || BOARD_NRF52DK_NRF52832 || BOARD_NRF52DK_NRF52810 || BOARD_NRF52840DK_NRF52840 || BOARD_NRF52833DK_NRF52833 || BOARD_NRF5340DK_NRF5340_CPUNET || BOARD_RV32M1_VEGA
 	help
 	  Turn on debug GPIO toggling for the BLE Controller. This is useful
 	  when debugging with a logic analyzer or profiling certain sections of

@@ -18,8 +18,7 @@ static const osEventFlagsAttr_t init_event_flags_attrs = {
 	.cb_size = 0,
 };
 
-#define DONT_CARE               (0)
-#define NSEC_PER_MSEC           (NSEC_PER_USEC * USEC_PER_MSEC)
+#define DONT_CARE        (0)
 
 /**
  * @brief Create and Initialize an Event Flags object.
@@ -37,7 +36,7 @@ osEventFlagsId_t osEventFlagsNew(const osEventFlagsAttr_t *attr)
 	}
 
 	if (k_mem_slab_alloc(&cv2_event_flags_slab, (void **)&events, K_MSEC(100))
-	    == 0) {
+		== 0) {
 		memset(events, 0, sizeof(struct cv2_event_flags));
 	} else {
 		return NULL;
@@ -66,7 +65,7 @@ uint32_t osEventFlagsSet(osEventFlagsId_t ef_id, uint32_t flags)
 	struct cv2_event_flags *events = (struct cv2_event_flags *)ef_id;
 	int key;
 
-	if ((ef_id == NULL) || (flags & 0x80000000)) {
+	if ((ef_id == NULL) || (flags & osFlagsError)) {
 		return osFlagsErrorParameter;
 	}
 
@@ -88,7 +87,7 @@ uint32_t osEventFlagsClear(osEventFlagsId_t ef_id, uint32_t flags)
 	int key;
 	uint32_t sig;
 
-	if ((ef_id == NULL) || (flags & 0x80000000)) {
+	if ((ef_id == NULL) || (flags & osFlagsError)) {
 		return osFlagsErrorParameter;
 	}
 
@@ -109,91 +108,98 @@ uint32_t osEventFlagsWait(osEventFlagsId_t ef_id, uint32_t flags,
 	struct cv2_event_flags *events = (struct cv2_event_flags *)ef_id;
 	int retval, key;
 	uint32_t sig;
-	uint32_t time_delta_ms, timeout_ms = k_ticks_to_ms_floor64(timeout);
-	uint64_t time_stamp_start, hwclk_cycles_delta, time_delta_ns;
+	k_timeout_t poll_timeout;
+	uint64_t time_stamp_start, ticks_elapsed;
+	bool flags_are_set;
 
 	/* Can be called from ISRs only if timeout is set to 0 */
 	if (timeout > 0 && k_is_in_isr()) {
 		return osFlagsErrorUnknown;
 	}
 
-	if ((ef_id == NULL) || (flags & 0x80000000)) {
+	if ((ef_id == NULL) || (flags & osFlagsError)) {
 		return osFlagsErrorParameter;
 	}
 
+	time_stamp_start = (uint64_t)k_uptime_ticks();
+
 	for (;;) {
 
-		time_stamp_start = (uint64_t)k_cycle_get_32();
+		flags_are_set = false;
 
-		switch (timeout) {
-		case 0:
-			retval = k_poll(&events->poll_event, 1, K_NO_WAIT);
-			break;
-		case osWaitForever:
-			retval = k_poll(&events->poll_event, 1, K_FOREVER);
-			break;
-		default:
-			retval = k_poll(&events->poll_event, 1,
-					K_MSEC(timeout_ms));
-			break;
+		key = irq_lock();
+
+		if (options & osFlagsWaitAll) {
+			/* Check if all events we are waiting on have
+			 * been signalled
+			 */
+			if ((events->signal_results & flags) == flags) {
+				flags_are_set = true;
+			}
+		} else {
+			/* Check if any of events we are waiting on have
+			 * been signalled
+			 */
+			if (events->signal_results & flags) {
+				flags_are_set = true;
+			}
 		}
 
-		switch (retval) {
-		case 0:
-			break;
-		case -EAGAIN:
-			return osFlagsErrorTimeout;
-		default:
-			return osFlagsErrorUnknown;
-		}
+		if (flags_are_set) {
+			sig = events->signal_results;
 
-		__ASSERT(events->poll_event.state == K_POLL_STATE_SIGNALED,
-			 "event state not signalled!");
-		__ASSERT(events->poll_event.signal->signaled == 1U,
-			 "event signaled is not 1");
+			if (!(options & osFlagsNoClear)) {
+				/* Clear signal flags as the thread is ready now */
+				events->signal_results &= ~(flags);
+			}
+
+			irq_unlock(key);
+
+			break;
+		}
 
 		/* Reset the states to facilitate the next trigger */
 		events->poll_event.signal->signaled = 0U;
 		events->poll_event.state = K_POLL_STATE_NOT_READY;
 
-		if (options & osFlagsWaitAll) {
+		irq_unlock(key);
 
-			/* Check if all events we are waiting on have
-			 * been signalled
-			 */
-			if ((events->signal_results & flags) == flags) {
-				break;
-			}
-
+		if (timeout == 0) {
+			return osFlagsErrorTimeout;
+		} else if (timeout == osWaitForever) {
+			poll_timeout = Z_FOREVER;
+		} else {
 			/* If we need to wait on more signals, we need to
 			 * adjust the timeout value accordingly based on
 			 * the time that has already elapsed.
 			 */
-			hwclk_cycles_delta =
-				(uint64_t)k_cycle_get_32() - time_stamp_start;
+			ticks_elapsed =
+				(uint64_t)k_uptime_ticks() - time_stamp_start;
 
-			time_delta_ns =
-				(uint32_t)k_cyc_to_ns_floor64(hwclk_cycles_delta);
-
-			time_delta_ms = (uint32_t)time_delta_ns / NSEC_PER_MSEC;
-
-			if (timeout_ms > time_delta_ms) {
-				timeout_ms -= time_delta_ms;
+			if (ticks_elapsed < (uint64_t)timeout) {
+				poll_timeout = Z_TIMEOUT_TICKS((k_ticks_t)(
+					timeout - (uint32_t)ticks_elapsed));
 			} else {
-				timeout_ms = 0U;
+				return osFlagsErrorTimeout;
 			}
-		} else {
-			break;
 		}
-	}
 
-	sig = events->signal_results;
-	if (!(options & osFlagsNoClear)) {
+		retval = k_poll(&events->poll_event, 1, poll_timeout);
 
-		/* Clear signal flags as the thread is ready now */
-		key = irq_lock();
-		events->signal_results &= ~(flags);
-		irq_unlock(key);
+		if (retval == -EAGAIN) {
+			/* k_poll signaled timeout. */
+			return osFlagsErrorTimeout;
+		} else if (retval != 0) {
+			return osFlagsErrorUnknown;
+		}
+
+		/* retval is zero.
+		 * k_poll found some raised signal then loop again and check flags.
+		 */
+		__ASSERT(events->poll_event.state == K_POLL_STATE_SIGNALED,
+			 "event state not signalled!");
+		__ASSERT(events->poll_event.signal->signaled == 1U,
+			 "event signaled is not 1");
 	}
 
 	return sig;

@@ -12,6 +12,10 @@ LOG_MODULE_REGISTER(net_tcp, CONFIG_NET_TCP_LOG_LEVEL);
 #include <stdlib.h>
 #include <zephyr.h>
 #include <random/rand32.h>
+
+#if defined(CONFIG_NET_TCP_ISN_RFC6528)
+#include <mbedtls/md5.h>
+#endif
 #include <net/net_pkt.h>
 #include <net/net_context.h>
 #include <net/udp.h>
@@ -348,12 +352,22 @@ static void tcp_send_queue_flush(struct tcp *conn)
 	}
 }
 
+#if CONFIG_NET_TCP_LOG_LEVEL >= LOG_LEVEL_DBG
+#define tcp_conn_unref(conn)				\
+	tcp_conn_unref_debug(conn, __func__, __LINE__)
+
+static int tcp_conn_unref_debug(struct tcp *conn, const char *caller, int line)
+#else
 static int tcp_conn_unref(struct tcp *conn)
+#endif
 {
 	int ref_count = atomic_get(&conn->ref_count);
 	struct net_pkt *pkt;
 
-	NET_DBG("conn: %p, ref_count=%d", conn, ref_count);
+#if CONFIG_NET_TCP_LOG_LEVEL >= LOG_LEVEL_DBG
+	NET_DBG("conn: %p, ref_count=%d (%s():%d)", conn, ref_count,
+		caller, line);
+#endif
 
 #if !defined(CONFIG_NET_TEST_PROTOCOL)
 	if (conn->in_connect) {
@@ -1147,8 +1161,11 @@ static struct tcp *tcp_conn_alloc(void)
 	conn->in_connect = false;
 	conn->state = TCP_LISTEN;
 	conn->recv_win = tcp_window;
-	conn->seq = (IS_ENABLED(CONFIG_NET_TEST_PROTOCOL) ||
-		     IS_ENABLED(CONFIG_NET_TEST)) ? 0 : sys_rand32_get();
+
+	/* The ISN value will be set when we get the connection attempt or
+	 * when trying to create a connection.
+	 */
+	conn->seq = 0U;
 
 	sys_slist_init(&conn->send_queue);
 
@@ -1275,6 +1292,104 @@ static enum net_verdict tcp_recv(struct net_conn *net_conn,
 	return NET_DROP;
 }
 
+static uint32_t seq_scale(uint32_t seq)
+{
+	return seq + (k_ticks_to_ns_floor32(k_uptime_ticks()) >> 6);
+}
+
+static uint8_t unique_key[16]; /* MD5 128 bits as described in RFC6528 */
+
+static uint32_t tcpv6_init_isn(struct in6_addr *saddr,
+			       struct in6_addr *daddr,
+			       uint16_t sport,
+			       uint16_t dport)
+{
+	struct {
+		uint8_t key[sizeof(unique_key)];
+		struct in6_addr saddr;
+		struct in6_addr daddr;
+		uint16_t sport;
+		uint16_t dport;
+	} buf = {
+		.saddr = *(struct in6_addr *)saddr,
+		.daddr = *(struct in6_addr *)daddr,
+		.sport = sport,
+		.dport = dport
+	};
+
+	uint8_t hash[16];
+	static bool once;
+
+	if (!once) {
+		sys_rand_get(unique_key, sizeof(unique_key));
+		once = true;
+	}
+
+	memcpy(buf.key, unique_key, sizeof(buf.key));
+
+#if IS_ENABLED(CONFIG_NET_TCP_ISN_RFC6528)
+	mbedtls_md5_ret((const unsigned char *)&buf, sizeof(buf), hash);
+#endif
+
+	return seq_scale(UNALIGNED_GET((uint32_t *)&hash[0]));
+}
+
+static uint32_t tcpv4_init_isn(struct in_addr *saddr,
+			       struct in_addr *daddr,
+			       uint16_t sport,
+			       uint16_t dport)
+{
+	struct {
+		uint8_t key[sizeof(unique_key)];
+		struct in_addr saddr;
+		struct in_addr daddr;
+		uint16_t sport;
+		uint16_t dport;
+	} buf = {
+		.saddr = *(struct in_addr *)saddr,
+		.daddr = *(struct in_addr *)daddr,
+		.sport = sport,
+		.dport = dport
+	};
+
+	uint8_t hash[16];
+	static bool once;
+
+	if (!once) {
+		sys_rand_get(unique_key, sizeof(unique_key));
+		once = true;
+	}
+
+	memcpy(buf.key, unique_key, sizeof(unique_key));
+
+#if IS_ENABLED(CONFIG_NET_TCP_ISN_RFC6528)
+	mbedtls_md5_ret((const unsigned char *)&buf, sizeof(buf), hash);
+#endif
+
+	return seq_scale(UNALIGNED_GET((uint32_t *)&hash[0]));
+}
+
+static uint32_t tcp_init_isn(struct sockaddr *saddr, struct sockaddr *daddr)
+{
+	if (IS_ENABLED(CONFIG_NET_TCP_ISN_RFC6528)) {
+		if (IS_ENABLED(CONFIG_NET_IPV6) &&
+		    saddr->sa_family == AF_INET6) {
+			return tcpv6_init_isn(&net_sin6(saddr)->sin6_addr,
+					      &net_sin6(daddr)->sin6_addr,
+					      net_sin6(saddr)->sin6_port,
+					      net_sin6(daddr)->sin6_port);
+		} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
+			   saddr->sa_family == AF_INET) {
+			return tcpv4_init_isn(&net_sin(saddr)->sin_addr,
+					      &net_sin(daddr)->sin_addr,
+					      net_sin(saddr)->sin_port,
+					      net_sin(daddr)->sin_port);
+		}
+	}
+
+	return sys_rand32_get();
+}
+
 /* Create a new tcp connection, as a part of it, create and register
  * net_context
  */
@@ -1344,6 +1459,11 @@ static struct tcp *tcp_conn_new(struct net_pkt *pkt)
 		goto err;
 	}
 
+	if (!(IS_ENABLED(CONFIG_NET_TEST_PROTOCOL) ||
+	      IS_ENABLED(CONFIG_NET_TEST))) {
+		conn->seq = tcp_init_isn(&local_addr, &context->remote);
+	}
+
 	NET_DBG("context: local: %s, remote: %s",
 		log_strdup(net_sprint_addr(
 		      local_addr.sa_family,
@@ -1356,7 +1476,7 @@ static struct tcp *tcp_conn_new(struct net_pkt *pkt)
 				&context->remote, &local_addr,
 				ntohs(conn->dst.sin.sin_port),/* local port */
 				ntohs(conn->src.sin.sin_port),/* remote port */
-				tcp_recv, context,
+				context, tcp_recv, context,
 				&context->conn_handler);
 	if (ret < 0) {
 		NET_ERR("net_conn_register(): %d", ret);
@@ -2098,6 +2218,11 @@ int net_tcp_connect(struct net_context *context,
 		ret = -EPROTONOSUPPORT;
 	}
 
+	if (!(IS_ENABLED(CONFIG_NET_TEST_PROTOCOL) ||
+	      IS_ENABLED(CONFIG_NET_TEST))) {
+		conn->seq = tcp_init_isn(&conn->src.sa, &conn->dst.sa);
+	}
+
 	NET_DBG("conn: %p src: %s, dst: %s", conn,
 		log_strdup(net_sprint_addr(conn->src.sa.sa_family,
 				(const void *)&conn->src.sin.sin_addr)),
@@ -2110,7 +2235,7 @@ int net_tcp_connect(struct net_context *context,
 				net_context_get_family(context),
 				remote_addr, local_addr,
 				ntohs(remote_port), ntohs(local_port),
-				tcp_recv, context,
+				context, tcp_recv, context,
 				&context->conn_handler);
 	if (ret < 0) {
 		goto out;
@@ -2210,7 +2335,7 @@ int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
 				 &context->remote : NULL,
 				 &local_addr,
 				 remote_port, local_port,
-				 tcp_recv, context,
+				 context, tcp_recv, context,
 				 &context->conn_handler);
 }
 
@@ -2511,6 +2636,7 @@ static void test_cb_register(sa_family_t family, uint8_t proto, uint16_t remote_
 				    &addr,	/* local address */
 				    local_port,
 				    remote_port,
+				    NULL,
 				    cb,
 				    NULL,	/* user_data */
 				    &conn_handle);

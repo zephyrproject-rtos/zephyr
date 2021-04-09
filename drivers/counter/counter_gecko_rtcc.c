@@ -153,13 +153,6 @@ static uint32_t counter_gecko_get_top_value(const struct device *dev)
 	return RTCC_ChannelCCVGet(1);
 }
 
-static uint32_t counter_gecko_get_max_relative_alarm(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return RTCC_ChannelCCVGet(1);
-}
-
 static int counter_gecko_set_alarm(const struct device *dev, uint8_t chan_id,
 				   const struct counter_alarm_cfg *alarm_cfg)
 {
@@ -327,7 +320,6 @@ static const struct counter_driver_api counter_gecko_driver_api = {
 	.set_top_value = counter_gecko_set_top_value,
 	.get_pending_int = counter_gecko_get_pending_int,
 	.get_top_value = counter_gecko_get_top_value,
-	.get_max_relative_alarm = counter_gecko_get_max_relative_alarm,
 };
 
 /* RTCC0 */

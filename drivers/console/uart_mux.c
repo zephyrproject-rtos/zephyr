@@ -897,9 +897,9 @@ UTIL_LISTIFY(CONFIG_UART_MUX_DEVICE_COUNT, DEFINE_UART_MUX_CFG_DATA, _)
 UTIL_LISTIFY(CONFIG_UART_MUX_DEVICE_COUNT, DEFINE_UART_MUX_DEV_DATA, _)
 UTIL_LISTIFY(CONFIG_UART_MUX_DEVICE_COUNT, DEFINE_UART_MUX_DEVICE, _)
 
-static int init_uart_mux(const struct device *device)
+static int init_uart_mux(const struct device *dev)
 {
-	ARG_UNUSED(device);
+	ARG_UNUSED(dev);
 
 	k_work_q_start(&uart_mux_workq, uart_mux_stack,
 		       K_KERNEL_STACK_SIZEOF(uart_mux_stack),

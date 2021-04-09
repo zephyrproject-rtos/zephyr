@@ -509,7 +509,7 @@ void test_udp(void)
 				       (struct sockaddr *)raddr,	\
 				       (struct sockaddr *)laddr,	\
 				       rport, lport,			\
-				       test_ok, &user_data,		\
+				       NULL, test_ok, &user_data,	\
 				       &handlers[i]);			\
 		if (ret) {						\
 			printk("UDP register %s failed (%d)\n",		\
@@ -525,7 +525,8 @@ void test_udp(void)
 			       (struct sockaddr *)raddr,		\
 			       (struct sockaddr *)laddr,		\
 			       rport, lport,				\
-			       test_fail, INT_TO_POINTER(0), NULL);	\
+			       NULL, test_fail, INT_TO_POINTER(0),	\
+			       NULL);					\
 	if (!ret) {							\
 		printk("UDP register invalid match %s failed\n",	\
 		       "DST="#raddr"-SRC="#laddr"-RP="#rport"-LP="#lport); \

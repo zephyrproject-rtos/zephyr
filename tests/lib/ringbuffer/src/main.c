@@ -49,7 +49,7 @@ RING_BUF_ITEM_DECLARE_POW2(ring_buf1, 8);
 #define RINGBUFFER_SIZE 5
 #define DATA_MAX_SIZE 3
 #define POW 2
-
+extern void test_ringbuffer_concurrent(void);
 /**
  * @brief Test APIs of ring buffer
  *
@@ -209,6 +209,20 @@ static void tringbuf_get(const void *p)
 	zassert_equal(memcmp(rx_data, data[index].buffer, size32), 0, NULL);
 }
 
+static void tringbuf_get_discard(const void *p)
+{
+	uint16_t type;
+	uint8_t value, size32;
+	int ret, index = POINTER_TO_INT(p);
+
+	/**TESTPOINT: ring buffer get*/
+	ret = ring_buf_item_get(pbuf, &type, &value, NULL, &size32);
+	zassert_equal(ret, 0, NULL);
+	zassert_equal(type, data[index].type, NULL);
+	zassert_equal(value, data[index].value, NULL);
+	zassert_equal(size32, data[index].length, NULL);
+}
+
 /*test cases*/
 void test_ringbuffer_init(void)
 {
@@ -308,6 +322,17 @@ void test_ringbuffer_put_get_thread_isr(void)
 	irq_offload(tringbuf_get, (const void *)1);
 	tringbuf_put((const void *)2);
 	irq_offload(tringbuf_get, (const void *)2);
+}
+
+void test_ringbuffer_put_get_discard(void)
+{
+	pbuf = &ringbuf;
+	tringbuf_put((const void *)0);
+	tringbuf_put((const void *)1);
+	zassert_false(ring_buf_is_empty(pbuf), NULL);
+	tringbuf_get_discard((const void *)0);
+	tringbuf_get_discard((const void *)1);
+	zassert_true(ring_buf_is_empty(pbuf), NULL);
 }
 
 /**
@@ -505,6 +530,21 @@ void test_ringbuffer_raw(void)
 	out_size = ring_buf_get(&ringbuf_raw, outbuf,
 					RINGBUFFER_SIZE + 1);
 	zassert_true(out_size == 0, NULL);
+	zassert_true(ring_buf_is_empty(&ringbuf_raw), NULL);
+
+	/* Validate that raw bytes can be discarded */
+	in_size = ring_buf_put(&ringbuf_raw, inbuf,
+				       RINGBUFFER_SIZE);
+	zassert_equal(in_size, RINGBUFFER_SIZE, NULL);
+
+	out_size = ring_buf_get(&ringbuf_raw, NULL,
+					RINGBUFFER_SIZE);
+	zassert_true(out_size == RINGBUFFER_SIZE, NULL);
+
+	out_size = ring_buf_get(&ringbuf_raw, NULL,
+					RINGBUFFER_SIZE + 1);
+	zassert_true(out_size == 0, NULL);
+	zassert_true(ring_buf_is_empty(&ringbuf_raw), NULL);
 }
 
 void test_ringbuffer_alloc_put(void)
@@ -917,6 +957,7 @@ void test_main(void)
 		       ztest_unit_test(test_ringbuffer_put_get_thread),
 		       ztest_unit_test(test_ringbuffer_put_get_isr),
 		       ztest_unit_test(test_ringbuffer_put_get_thread_isr),
+		       ztest_unit_test(test_ringbuffer_put_get_discard),
 		       ztest_unit_test(test_ringbuffer_pow2_put_get_thread_isr),
 		       ztest_unit_test(test_ringbuffer_size_put_get_thread_isr),
 		       ztest_unit_test(test_ringbuffer_array_perf),
@@ -929,7 +970,8 @@ void test_main(void)
 		       ztest_unit_test(test_ringbuffer_equal_bufs),
 		       ztest_unit_test(test_capacity),
 		       ztest_unit_test(test_reset),
-		       ztest_unit_test(test_ringbuffer_performance)
+		       ztest_unit_test(test_ringbuffer_performance),
+		       ztest_unit_test(test_ringbuffer_concurrent)
 		);
 	ztest_run_test_suite(test_ringbuffer_api);
 }

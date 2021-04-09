@@ -16,10 +16,8 @@
 #define BASE_FLAGS	(K_MEM_CACHE_WB)
 volatile bool expect_fault;
 
-#ifndef CONFIG_KERNEL_LINK_IN_VIRT
 static uint8_t __aligned(CONFIG_MMU_PAGE_SIZE)
 			test_page[2 * CONFIG_MMU_PAGE_SIZE];
-#endif
 
 void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 {
@@ -48,14 +46,13 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
  */
 void test_z_phys_map_rw(void)
 {
-#ifndef CONFIG_KERNEL_LINK_IN_VIRT
 	uint8_t *mapped_rw, *mapped_ro;
 	uint8_t *buf = test_page + BUF_OFFSET;
 
 	expect_fault = false;
 
 	/* Map in a page that allows writes */
-	z_phys_map(&mapped_rw, (uintptr_t)buf,
+	z_phys_map(&mapped_rw, z_mem_phys_addr(buf),
 		   BUF_SIZE, BASE_FLAGS | K_MEM_PERM_RW);
 
 	/* Initialize buf with some bytes */
@@ -64,7 +61,7 @@ void test_z_phys_map_rw(void)
 	}
 
 	/* Map again this time only allowing reads */
-	z_phys_map(&mapped_ro, (uintptr_t)buf,
+	z_phys_map(&mapped_ro, z_mem_phys_addr(buf),
 		   BUF_SIZE, BASE_FLAGS);
 
 	/* Check that the mapped area contains the expected data. */
@@ -79,20 +76,11 @@ void test_z_phys_map_rw(void)
 
 	printk("shouldn't get here\n");
 	ztest_test_fail();
-#else
-	ztest_test_skip();
-#endif /* CONFIG_KERNEL_LINK_IN_VIRT */
 }
 
-#if defined(SKIP_EXECUTE_TESTS) || defined(CONFIG_KERNEL_LINK_IN_VIRT)
-void test_z_phys_map_exec(void)
-{
-	ztest_test_skip();
-}
-#else
+#ifndef SKIP_EXECUTE_TESTS
 extern char __test_mem_map_start[];
 extern char __test_mem_map_end[];
-extern char __test_mem_map_size[];
 
 __in_section_unique(test_mem_map) __used
 static void transplanted_function(bool *executed)
@@ -120,8 +108,8 @@ void test_z_phys_map_exec(void)
 	func = transplanted_function;
 
 	/* Now map with execution enabled and try to run the copied fn */
-	z_phys_map(&mapped_exec, (uintptr_t)__test_mem_map_start,
-		   (uintptr_t)__test_mem_map_size,
+	z_phys_map(&mapped_exec, z_mem_phys_addr(__test_mem_map_start),
+		   (uintptr_t)(__test_mem_map_end - __test_mem_map_start),
 		   BASE_FLAGS | K_MEM_PERM_EXEC);
 
 	func = (void (*)(bool *executed))mapped_exec;
@@ -129,8 +117,8 @@ void test_z_phys_map_exec(void)
 	zassert_true(executed, "function did not execute");
 
 	/* Now map without execution and execution should now fail */
-	z_phys_map(&mapped_ro, (uintptr_t)__test_mem_map_start,
-		   (uintptr_t)__test_mem_map_size, BASE_FLAGS);
+	z_phys_map(&mapped_ro, z_mem_phys_addr(__test_mem_map_start),
+		   (uintptr_t)(__test_mem_map_end - __test_mem_map_start), BASE_FLAGS);
 
 	func = (void (*)(bool *executed))mapped_ro;
 	expect_fault = true;
@@ -139,7 +127,12 @@ void test_z_phys_map_exec(void)
 	printk("shouldn't get here\n");
 	ztest_test_fail();
 }
-#endif /* SKIP_EXECUTE_TESTS || CONFIG_KERNEL_LINK_IN_VIRT */
+#else
+void test_z_phys_map_exec(void)
+{
+	ztest_test_skip();
+}
+#endif /* SKIP_EXECUTE_TESTS */
 
 /**
  * Show that memory mapping doesn't have unintended side effects
@@ -148,7 +141,6 @@ void test_z_phys_map_exec(void)
  */
 void test_z_phys_map_side_effect(void)
 {
-#ifndef CONFIG_KERNEL_LINK_IN_VIRT
 	uint8_t *mapped;
 
 	expect_fault = false;
@@ -157,7 +149,7 @@ void test_z_phys_map_side_effect(void)
 	 * Show that by mapping test_page to an RO region, we can still
 	 * modify test_page.
 	 */
-	z_phys_map(&mapped, (uintptr_t)test_page,
+	z_phys_map(&mapped, z_mem_phys_addr(test_page),
 		   sizeof(test_page), BASE_FLAGS);
 
 	/* Should NOT fault */
@@ -168,9 +160,6 @@ void test_z_phys_map_side_effect(void)
 	mapped[0] = 42;
 	printk("shouldn't get here\n");
 	ztest_test_fail();
-#else
-	ztest_test_skip();
-#endif /* CONFIG_KERNEL_LINK_IN_VIRT */
 }
 
 /**

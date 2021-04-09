@@ -245,9 +245,43 @@ void test_rbtree_spam(void)
 	} while (size < MAX_NODES);
 }
 
+/**
+ * @brief Test removing a node with abnormal color.
+ *
+ * @details Initialize a tree and insert it,
+ * and test APIs rb_get_min(), rb_get_max().
+ *
+ * @ingroup lib_rbtree_tests
+ *
+ * @see rb_get_min(), rb_get_max()
+ */
+void test_rb_get_minmax(void)
+{
+	struct rbnode temp = {0};
+
+	/* Initialize a tree and insert it */
+	(void)memset(&tree, 0, sizeof(tree));
+	tree.lessthan_fn = node_lessthan;
+	(void)memset(nodes, 0, sizeof(nodes));
+
+	zassert_true(rb_get_min(&tree) == NULL, "the tree is invalid");
+
+	for (int i = 0; i < 8; i++) {
+		rb_insert(&tree, &nodes[i]);
+	}
+
+	rb_remove(&tree, &temp);
+
+	/* Check if tree's max and min node are expected */
+	zassert_true(rb_get_min(&tree) == &nodes[0], "the tree is invalid");
+	zassert_true(rb_get_max(&tree) == &nodes[7], "the tree is invalid");
+}
+
 void test_main(void)
 {
 	ztest_test_suite(test_rbtree,
-			 ztest_unit_test(test_rbtree_spam));
+			 ztest_unit_test(test_rbtree_spam),
+			 ztest_unit_test(test_rb_get_minmax)
+			 );
 	ztest_run_test_suite(test_rbtree);
 }

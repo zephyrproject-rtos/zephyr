@@ -1,0 +1,12 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for ARM Cortex-M CPU
+
+include: cpu.yaml
+
+properties:
+    swo-ref-frequency:
+      type: int
+      required: false
+      description: Reference clock frequency for SWO if different than CPU clock.

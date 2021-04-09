@@ -51,7 +51,7 @@ SECTION_FUNC(TEXT, z_x86_trampoline_to_kernel)
 	pushl	%edi
 
 	/* Switch to kernel page table */
-	movl	$Z_X86_PHYS_ADDR(z_x86_kernel_ptables), %esi
+	movl	$Z_MEM_PHYS_ADDR(z_x86_kernel_ptables), %esi
 	movl	%esi, %cr3
 
 	/* Save old trampoline stack pointer in %edi */
@@ -156,7 +156,7 @@ SECTION_FUNC(TEXT, z_x86_syscall_entry_stub)
 	pushl	%edi
 
 	/* Switch to kernel page table */
-	movl	$Z_X86_PHYS_ADDR(z_x86_kernel_ptables), %esi
+	movl	$Z_MEM_PHYS_ADDR(z_x86_kernel_ptables), %esi
 	movl	%esi, %cr3
 
 	/* Save old trampoline stack pointer in %edi */

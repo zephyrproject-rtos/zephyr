@@ -81,6 +81,7 @@ config LOG_PROCESS_THREAD_STACK_SIZE
 	default 4096 if ARM64
 	default 4096 if SPARC
 	default 2048 if (RISCV && 64BIT)
+	default 2048 if LOG_BACKEND_FS
 	default 768
 	help
 	  Set the internal stack size for log processing thread.
@@ -111,6 +112,7 @@ config LOG_DETECT_MISSED_STRDUP
 
 config LOG_STRDUP_MAX_STRING
 	int "Longest string that can be duplicated using log_strdup()"
+	range 1 8192
 	default 66 if BT
 	default 46 if NETWORKING
 	default 32

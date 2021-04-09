@@ -28,7 +28,7 @@ extern int    strncmp(const char *s1, const char *s2, size_t n);
 extern char  *strtok_r(char *str, const char *sep, char **state);
 extern char *strcat(char *_MLIBC_RESTRICT dest,
 		    const char *_MLIBC_RESTRICT src);
-extern char  *strncat(char *_MLIBC_RESTRICT d, const char *_MLIBC_RESTRICT s,
+extern char  *strncat(char *_MLIBC_RESTRICT dest, const char *_MLIBC_RESTRICT src,
 		      size_t n);
 extern char *strstr(const char *s, const char *find);
 

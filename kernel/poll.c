@@ -148,22 +148,22 @@ static inline void register_event(struct k_poll_event *event,
 /* must be called with interrupts locked */
 static inline void clear_event_registration(struct k_poll_event *event)
 {
-	bool remove = false;
+	bool remove_event = false;
 
 	event->poller = NULL;
 
 	switch (event->type) {
 	case K_POLL_TYPE_SEM_AVAILABLE:
 		__ASSERT(event->sem != NULL, "invalid semaphore\n");
-		remove = true;
+		remove_event = true;
 		break;
 	case K_POLL_TYPE_DATA_AVAILABLE:
 		__ASSERT(event->queue != NULL, "invalid queue\n");
-		remove = true;
+		remove_event = true;
 		break;
 	case K_POLL_TYPE_SIGNAL:
 		__ASSERT(event->signal != NULL, "invalid poll signal\n");
-		remove = true;
+		remove_event = true;
 		break;
 	case K_POLL_TYPE_IGNORE:
 		/* nothing to do */
@@ -172,7 +172,7 @@ static inline void clear_event_registration(struct k_poll_event *event)
 		__ASSERT(false, "invalid event type\n");
 		break;
 	}
-	if (remove && sys_dnode_is_linked(&event->_node)) {
+	if (remove_event && sys_dnode_is_linked(&event->_node)) {
 		sys_dlist_remove(&event->_node);
 	}
 }
@@ -316,7 +316,7 @@ static inline int z_vrfy_k_poll(struct k_poll_event *events,
 	/* Validate the events buffer and make a copy of it in an
 	 * allocated kernel-side buffer.
 	 */
-	if (Z_SYSCALL_VERIFY(num_events >= 0)) {
+	if (Z_SYSCALL_VERIFY(num_events >= 0U)) {
 		ret = -EINVAL;
 		goto out;
 	}
@@ -387,7 +387,7 @@ static int signal_poll_event(struct k_poll_event *event, uint32_t state)
 	struct z_poller *poller = event->poller;
 	int retcode = 0;
 
-	if (poller) {
+	if (poller != NULL) {
 		if (poller->mode == MODE_POLL) {
 			retcode = signal_poller(event, state);
 		} else if (poller->mode == MODE_TRIGGERED) {
@@ -415,51 +415,51 @@ void z_handle_obj_poll_events(sys_dlist_t *events, uint32_t state)
 	}
 }
 
-void z_impl_k_poll_signal_init(struct k_poll_signal *signal)
+void z_impl_k_poll_signal_init(struct k_poll_signal *sig)
 {
-	sys_dlist_init(&signal->poll_events);
-	signal->signaled = 0U;
-	/* signal->result is left unitialized */
-	z_object_init(signal);
+	sys_dlist_init(&sig->poll_events);
+	sig->signaled = 0U;
+	/* sig->result is left unitialized */
+	z_object_init(sig);
 }
 
 #ifdef CONFIG_USERSPACE
-static inline void z_vrfy_k_poll_signal_init(struct k_poll_signal *signal)
+static inline void z_vrfy_k_poll_signal_init(struct k_poll_signal *sig)
 {
-	Z_OOPS(Z_SYSCALL_OBJ_INIT(signal, K_OBJ_POLL_SIGNAL));
-	z_impl_k_poll_signal_init(signal);
+	Z_OOPS(Z_SYSCALL_OBJ_INIT(sig, K_OBJ_POLL_SIGNAL));
+	z_impl_k_poll_signal_init(sig);
 }
 #include <syscalls/k_poll_signal_init_mrsh.c>
 #endif
 
-void z_impl_k_poll_signal_check(struct k_poll_signal *signal,
+void z_impl_k_poll_signal_check(struct k_poll_signal *sig,
 			       unsigned int *signaled, int *result)
 {
-	*signaled = signal->signaled;
-	*result = signal->result;
+	*signaled = sig->signaled;
+	*result = sig->result;
 }
 
 #ifdef CONFIG_USERSPACE
-void z_vrfy_k_poll_signal_check(struct k_poll_signal *signal,
+void z_vrfy_k_poll_signal_check(struct k_poll_signal *sig,
 			       unsigned int *signaled, int *result)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(signal, K_OBJ_POLL_SIGNAL));
+	Z_OOPS(Z_SYSCALL_OBJ(sig, K_OBJ_POLL_SIGNAL));
 	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(signaled, sizeof(unsigned int)));
 	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(result, sizeof(int)));
-	z_impl_k_poll_signal_check(signal, signaled, result);
+	z_impl_k_poll_signal_check(sig, signaled, result);
 }
 #include <syscalls/k_poll_signal_check_mrsh.c>
 #endif
 
-int z_impl_k_poll_signal_raise(struct k_poll_signal *signal, int result)
+int z_impl_k_poll_signal_raise(struct k_poll_signal *sig, int result)
 {
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	struct k_poll_event *poll_event;
 
-	signal->result = result;
-	signal->signaled = 1U;
+	sig->result = result;
+	sig->signaled = 1U;
 
-	poll_event = (struct k_poll_event *)sys_dlist_get(&signal->poll_events);
+	poll_event = (struct k_poll_event *)sys_dlist_get(&sig->poll_events);
 	if (poll_event == NULL) {
 		k_spin_unlock(&lock, key);
 		return 0;
@@ -472,18 +472,18 @@ int z_impl_k_poll_signal_raise(struct k_poll_signal *signal, int result)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline int z_vrfy_k_poll_signal_raise(struct k_poll_signal *signal,
+static inline int z_vrfy_k_poll_signal_raise(struct k_poll_signal *sig,
 					     int result)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(signal, K_OBJ_POLL_SIGNAL));
-	return z_impl_k_poll_signal_raise(signal, result);
+	Z_OOPS(Z_SYSCALL_OBJ(sig, K_OBJ_POLL_SIGNAL));
+	return z_impl_k_poll_signal_raise(sig, result);
 }
 #include <syscalls/k_poll_signal_raise_mrsh.c>
 
-static inline void z_vrfy_k_poll_signal_reset(struct k_poll_signal *signal)
+static inline void z_vrfy_k_poll_signal_reset(struct k_poll_signal *sig)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(signal, K_OBJ_POLL_SIGNAL));
-	z_impl_k_poll_signal_reset(signal);
+	Z_OOPS(Z_SYSCALL_OBJ(sig, K_OBJ_POLL_SIGNAL));
+	z_impl_k_poll_signal_reset(sig);
 }
 #include <syscalls/k_poll_signal_reset_mrsh.c>
 

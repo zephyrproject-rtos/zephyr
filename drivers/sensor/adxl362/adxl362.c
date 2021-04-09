@@ -614,6 +614,11 @@ static int adxl362_channel_get(const struct device *dev,
 	case SENSOR_CHAN_ACCEL_Z: /* Acceleration on the Z axis, in m/s^2. */
 		adxl362_accel_convert(val, data->acc_z,  data->selected_range);
 		break;
+	case SENSOR_CHAN_ACCEL_XYZ: /* Acceleration on the XYZ axis, in m/s^2. */
+		for (size_t i = 0; i < 3; i++) {
+			adxl362_accel_convert(&val[i], data->acc_xyz[i], data->selected_range);
+		}
+		break;
 	case SENSOR_CHAN_DIE_TEMP: /* Temperature in degrees Celsius. */
 		adxl362_temp_convert(val, data->temp);
 		break;

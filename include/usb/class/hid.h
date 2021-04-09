@@ -53,6 +53,13 @@ extern "C" {
 /** USB HID Class SetProtocol bRequest value */
 #define USB_HID_SET_PROTOCOL		0x0B
 
+/** USB HID Boot Interface Protocol (bInterfaceProtocol) Code None */
+#define HID_BOOT_IFACE_CODE_NONE	0
+/** USB HID Boot Interface Protocol (bInterfaceProtocol) Code Keyboard */
+#define HID_BOOT_IFACE_CODE_KEYBOARD	1
+/** USB HID Boot Interface Protocol (bInterfaceProtocol) Code Mouse */
+#define HID_BOOT_IFACE_CODE_MOUSE	2
+
 /** USB HID Class Boot protocol code */
 #define HID_PROTOCOL_BOOT		0
 /** USB HID Class Report protocol code */

@@ -120,34 +120,34 @@ static int _check_fd(int fd)
 
 void *z_get_fd_obj(int fd, const struct fd_op_vtable *vtable, int err)
 {
-	struct fd_entry *fd_entry;
+	struct fd_entry *entry;
 
 	if (_check_fd(fd) < 0) {
 		return NULL;
 	}
 
-	fd_entry = &fdtable[fd];
+	entry = &fdtable[fd];
 
-	if (vtable != NULL && fd_entry->vtable != vtable) {
+	if (vtable != NULL && entry->vtable != vtable) {
 		errno = err;
 		return NULL;
 	}
 
-	return fd_entry->obj;
+	return entry->obj;
 }
 
 void *z_get_fd_obj_and_vtable(int fd, const struct fd_op_vtable **vtable)
 {
-	struct fd_entry *fd_entry;
+	struct fd_entry *entry;
 
 	if (_check_fd(fd) < 0) {
 		return NULL;
 	}
 
-	fd_entry = &fdtable[fd];
-	*vtable = fd_entry->vtable;
+	entry = &fdtable[fd];
+	*vtable = entry->vtable;
 
-	return fd_entry->obj;
+	return entry->obj;
 }
 
 int z_reserve_fd(void)

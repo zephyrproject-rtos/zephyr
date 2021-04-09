@@ -17,6 +17,7 @@
 
 #include <sys/util.h>
 
+#include <net/net_context.h>
 #include <net/net_core.h>
 #include <net/net_ip.h>
 #include <net/net_pkt.h>
@@ -59,6 +60,11 @@ struct net_conn {
 	/** Callback to be called when matching UDP packet is received */
 	net_conn_cb_t cb;
 
+	/** A pointer to the net_context corresponding to the connection.
+	 *  Can be NULL if no net_context is associated.
+	 */
+	struct net_context *context;
+
 	/** Possible user to pass to the callback */
 	void *user_data;
 
@@ -83,6 +89,7 @@ struct net_conn {
  * @param remote_port Remote port of the connection end point.
  * @param local_port Local port of the connection end point.
  * @param cb Callback to be called
+ * @param context net_context structure related to the connection.
  * @param user_data User data supplied by caller.
  * @param handle Connection handle that can be used when unregistering
  *
@@ -94,6 +101,7 @@ int net_conn_register(uint16_t proto, uint8_t family,
 		      const struct sockaddr *local_addr,
 		      uint16_t remote_port,
 		      uint16_t local_port,
+		      struct net_context *context,
 		      net_conn_cb_t cb,
 		      void *user_data,
 		      struct net_conn_handle **handle);
@@ -103,6 +111,7 @@ static inline int net_conn_register(uint16_t proto, uint8_t family,
 				    const struct sockaddr *local_addr,
 				    uint16_t remote_port,
 				    uint16_t local_port,
+				    struct net_context *context,
 				    net_conn_cb_t cb,
 				    void *user_data,
 				    struct net_conn_handle **handle)
@@ -114,6 +123,7 @@ static inline int net_conn_register(uint16_t proto, uint8_t family,
 	ARG_UNUSED(remote_port);
 	ARG_UNUSED(local_port);
 	ARG_UNUSED(cb);
+	ARG_UNUSED(context);
 	ARG_UNUSED(user_data);
 	ARG_UNUSED(handle);
 

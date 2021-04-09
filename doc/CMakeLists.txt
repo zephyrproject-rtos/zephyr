@@ -59,7 +59,7 @@ if(${LATEXMK} STREQUAL LATEXMK-NOTFOUND)
 endif()
 
 if(NOT DEFINED SPHINXOPTS)
-  set(SPHINXOPTS -q)
+  set(SPHINXOPTS -q -j auto)
 else()
   separate_arguments(SPHINXOPTS)
 endif()
@@ -97,7 +97,6 @@ set(DOXY_OUT ${CMAKE_CURRENT_BINARY_DIR}/doxygen)
 set(RST_OUT ${CMAKE_CURRENT_BINARY_DIR}/rst)
 set(DOC_LOG ${CMAKE_CURRENT_BINARY_DIR}/doc.log)
 set(DOXY_LOG ${CMAKE_CURRENT_BINARY_DIR}/doxy.log)
-set(SPHINX_LOG ${CMAKE_CURRENT_BINARY_DIR}/sphinx.log)
 set(DOC_WARN ${CMAKE_CURRENT_BINARY_DIR}/doc.warnings)
 set(CONTENT_OUTPUTS ${CMAKE_CURRENT_BINARY_DIR}/extracted-content.txt)
 
@@ -114,7 +113,7 @@ configure_file(${DOXYFILE_IN} ${DOXYFILE_OUT} @ONLY)
 set(EXTRACT_CONTENT_COMMAND
   ${CMAKE_COMMAND} -E env
   ZEPHYR_BASE=${ZEPHYR_BASE}
-  ${PYTHON_EXECUTABLE} scripts/extract_content.py
+  ${PYTHON_EXECUTABLE} _scripts/extract_content.py
   # Ignore any files in the output directory.
   --ignore ${CMAKE_CURRENT_BINARY_DIR}
   # Copy all files in doc to the rst folder.
@@ -183,7 +182,7 @@ add_custom_command(
 add_custom_target(
   doxy_real_modified_times
   COMMAND ${CMAKE_COMMAND} -E env
-    ${PYTHON_EXECUTABLE} scripts/restore_modification_times.py
+    ${PYTHON_EXECUTABLE} _scripts/restore_modification_times.py
     --loglevel  WARN  ${DOXY_OUT}/xml
   WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
   DEPENDS ${DOXY_RUN_TSTAMP}
@@ -201,9 +200,7 @@ else()
   set(SEP :)
 endif()
 
-set(KI_SCRIPT ${ZEPHYR_BASE}/scripts/filter-known-issues.py)
-set(FIX_TEX_SCRIPT ${ZEPHYR_BASE}/doc/scripts/fix_tex.py)
-set(CONF_DIR ${ZEPHYR_BASE}/.known-issues/doc)
+set(FIX_TEX_SCRIPT ${ZEPHYR_BASE}/doc/_scripts/fix_tex.py)
 
 #
 # Generated Kconfig .rst documents
@@ -257,7 +254,7 @@ add_custom_target(
   KCONFIG_TURBO_MODE=${KCONFIG_TURBO_MODE}
   KCONFIG_DOC_MODE=1
   ${ZEPHYR_KCONFIG_MODULES}
-    ${PYTHON_EXECUTABLE} scripts/gen_kconfig_rest.py ${RST_OUT}/doc/reference/kconfig/
+    ${PYTHON_EXECUTABLE} _scripts/gen_kconfig_rest.py ${RST_OUT}/doc/reference/kconfig/
       --separate-all-index
       --keep-module-paths
       --modules Architecture,arch,${ZEPHYR_BASE}/arch
@@ -291,7 +288,7 @@ add_custom_target(
 # - DTS_BINDINGS_RST_OUT: ${RST_OUT}/doc/reference/devicetree
 #
 
-set(GEN_DEVICETREE_REST_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/scripts/gen_devicetree_rest.py)
+set(GEN_DEVICETREE_REST_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/_scripts/gen_devicetree_rest.py)
 
 if(NOT DTS_ROOTS)
   set(DTS_ROOTS ${ZEPHYR_BASE})
@@ -309,7 +306,7 @@ endif()
 add_custom_target(
   devicetree
   COMMAND ${CMAKE_COMMAND} -E env
-  PYTHONPATH=${ZEPHYR_BASE}/scripts/dts${SEP}$ENV{PYTHONPATH}
+  PYTHONPATH=${ZEPHYR_BASE}/scripts/dts/python-devicetree/src${SEP}$ENV{PYTHONPATH}
   ZEPHYR_BASE=${ZEPHYR_BASE}
   GEN_DEVICETREE_REST_ZEPHYR_DOCSET=${GEN_DEVICETREE_REST_ZEPHYR_DOCSET}
   ${PYTHON_EXECUTABLE} ${GEN_DEVICETREE_REST_SCRIPT}
@@ -330,7 +327,7 @@ set(SPHINX_BUILD_HTML_COMMAND
   ${CMAKE_COMMAND} -E env
   ZEPHYR_BASE=${ZEPHYR_BASE}
   ZEPHYR_BUILD=${CMAKE_CURRENT_BINARY_DIR}
-  ${SPHINXBUILD} -w ${SPHINX_LOG} -N -t ${DOC_TAG} -b html ${ALLSPHINXOPTS} ${RST_OUT}/doc ${SPHINX_OUTPUT_DIR_HTML})
+  ${SPHINXBUILD} -W -N -t ${DOC_TAG} -b html ${ALLSPHINXOPTS} ${RST_OUT}/doc ${SPHINX_OUTPUT_DIR_HTML})
 
 # The sphinx-html target is provided as a convenience for incremental
 # re-builds of content files without regenerating the entire docs
@@ -355,9 +352,6 @@ add_dependencies(sphinx-html content)
 add_custom_target(
   html
   COMMAND ${SPHINX_BUILD_HTML_COMMAND}
-  # Merge the Doxygen and Sphinx logs into a single file
-  COMMAND ${CMAKE_COMMAND} -P ${ZEPHYR_BASE}/cmake/util/fmerge.cmake ${DOC_LOG} ${DOXY_LOG} ${SPHINX_LOG}
-  COMMAND ${PYTHON_EXECUTABLE} ${KI_SCRIPT} --config-dir ${CONF_DIR} --errors ${DOC_WARN} --warnings ${DOC_WARN} ${DOC_LOG}
   WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
   COMMENT "Generating HTML documentation with ${SPHINXBUILD} ${SPHINXOPTS}"
   ${SPHINX_USES_TERMINAL}
@@ -369,7 +363,7 @@ add_custom_target(
 set(SPHINX_BUILD_LATEX_COMMAND
   ${CMAKE_COMMAND} -E env
   ZEPHYR_BUILD=${CMAKE_CURRENT_BINARY_DIR}
-  ${SPHINXBUILD} -w ${SPHINX_LOG} -N -t ${DOC_TAG} -b latex -t svgconvert ${ALLSPHINXOPTS} ${RST_OUT}/doc ${SPHINX_OUTPUT_DIR_LATEX})
+  ${SPHINXBUILD} -W -N -t ${DOC_TAG} -b latex -t svgconvert ${ALLSPHINXOPTS} ${RST_OUT}/doc ${SPHINX_OUTPUT_DIR_LATEX})
 
 # The sphinx-latex target works similarly to sphinx-html, and carries
 # the same warnings.
@@ -386,9 +380,6 @@ add_dependencies(sphinx-latex content)
 add_custom_command(
   OUTPUT ${SPHINX_OUTPUT_DIR_LATEX}/zephyr.tex
   COMMAND ${SPHINX_BUILD_LATEX_COMMAND}
-  # Merge the Doxygen and Sphinx logs into a single file
-  COMMAND ${CMAKE_COMMAND} -P ${ZEPHYR_BASE}/cmake/util/fmerge.cmake ${DOC_LOG} ${DOXY_LOG} ${SPHINX_LOG}
-  COMMAND ${PYTHON_EXECUTABLE} ${KI_SCRIPT} --config-dir ${CONF_DIR} --errors ${DOC_WARN} --warnings ${DOC_WARN} ${DOC_LOG}
   COMMAND ${PYTHON_EXECUTABLE} ${FIX_TEX_SCRIPT} ${SPHINX_OUTPUT_DIR_LATEX}/zephyr.tex
   WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
   COMMENT "Generating LaTeX documentation"

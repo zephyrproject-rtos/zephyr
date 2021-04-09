@@ -146,7 +146,7 @@ int z_riscv_pmp_set(unsigned int index, ulong_t cfg_val, ulong_t addr_val)
 	int pmpcfg_csr;
 	int pmpaddr_csr;
 
-	if ((index >= PMP_SLOT_NUMBER) | (index < 0)) {
+	if (index >= PMP_SLOT_NUMBER) {
 		return -1;
 	}
 
@@ -181,7 +181,7 @@ int pmp_get(unsigned int index, ulong_t *cfg_val, ulong_t *addr_val)
 	int pmpcfg_csr;
 	int pmpaddr_csr;
 
-	if ((index >= PMP_SLOT_NUMBER) | (index < 0)) {
+	if (index >= PMP_SLOT_NUMBER) {
 		return -1;
 	}
 
@@ -500,18 +500,6 @@ void arch_mem_domain_thread_add(struct k_thread *thread)
 
 		z_riscv_pmp_add_dynamic(thread, (ulong_t) partition->start,
 			(ulong_t) partition->size, partition->attr.pmp_attr);
-	}
-}
-
-void arch_mem_domain_destroy(struct k_mem_domain *domain)
-{
-	sys_dnode_t *node, *next_node;
-	struct k_thread *thread;
-
-	SYS_DLIST_FOR_EACH_NODE_SAFE(&domain->mem_domain_q, node, next_node) {
-		thread = CONTAINER_OF(node, struct k_thread, mem_domain_info);
-
-		arch_mem_domain_thread_remove(thread);
 	}
 }
 

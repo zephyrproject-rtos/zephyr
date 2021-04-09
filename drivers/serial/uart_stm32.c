@@ -227,13 +227,18 @@ static inline enum uart_config_stop_bits uart_stm32_ll2cfg_stopbits(uint32_t sb)
 	}
 }
 
-static inline uint32_t uart_stm32_cfg2ll_databits(enum uart_config_data_bits db)
+static inline uint32_t uart_stm32_cfg2ll_databits(enum uart_config_data_bits db,
+						  enum uart_config_parity p)
 {
 	switch (db) {
 /* Some MCU's don't support 7B or 9B datawidth */
 #ifdef LL_USART_DATAWIDTH_7B
 	case UART_CFG_DATA_BITS_7:
-		return LL_USART_DATAWIDTH_7B;
+		if (p == UART_CFG_PARITY_NONE) {
+			return LL_USART_DATAWIDTH_7B;
+		} else {
+			return LL_USART_DATAWIDTH_8B;
+		}
 #endif	/* LL_USART_DATAWIDTH_7B */
 #ifdef LL_USART_DATAWIDTH_9B
 	case UART_CFG_DATA_BITS_9:
@@ -241,25 +246,45 @@ static inline uint32_t uart_stm32_cfg2ll_databits(enum uart_config_data_bits db)
 #endif	/* LL_USART_DATAWIDTH_9B */
 	case UART_CFG_DATA_BITS_8:
 	default:
+		if (p == UART_CFG_PARITY_NONE) {
+			return LL_USART_DATAWIDTH_8B;
+#ifdef LL_USART_DATAWIDTH_9B
+		} else {
+			return LL_USART_DATAWIDTH_9B;
+#endif
+		}
 		return LL_USART_DATAWIDTH_8B;
 	}
 }
 
-static inline enum uart_config_data_bits uart_stm32_ll2cfg_databits(uint32_t db)
+static inline enum uart_config_data_bits uart_stm32_ll2cfg_databits(uint32_t db,
+								    uint32_t p)
 {
 	switch (db) {
 /* Some MCU's don't support 7B or 9B datawidth */
 #ifdef LL_USART_DATAWIDTH_7B
 	case LL_USART_DATAWIDTH_7B:
-		return UART_CFG_DATA_BITS_7;
+		if (p == LL_USART_PARITY_NONE) {
+			return UART_CFG_DATA_BITS_7;
+		} else {
+			return UART_CFG_DATA_BITS_6;
+		}
 #endif	/* LL_USART_DATAWIDTH_7B */
 #ifdef LL_USART_DATAWIDTH_9B
 	case LL_USART_DATAWIDTH_9B:
-		return UART_CFG_DATA_BITS_9;
+		if (p == LL_USART_PARITY_NONE) {
+			return UART_CFG_DATA_BITS_9;
+		} else {
+			return UART_CFG_DATA_BITS_8;
+		}
 #endif	/* LL_USART_DATAWIDTH_9B */
 	case LL_USART_DATAWIDTH_8B:
 	default:
-		return UART_CFG_DATA_BITS_8;
+		if (p == LL_USART_PARITY_NONE) {
+			return UART_CFG_DATA_BITS_8;
+		} else {
+			return UART_CFG_DATA_BITS_7;
+		}
 	}
 }
 
@@ -302,12 +327,19 @@ static int uart_stm32_configure(const struct device *dev,
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
 	const uint32_t parity = uart_stm32_cfg2ll_parity(cfg->parity);
 	const uint32_t stopbits = uart_stm32_cfg2ll_stopbits(cfg->stop_bits);
-	const uint32_t databits = uart_stm32_cfg2ll_databits(cfg->data_bits);
+	const uint32_t databits = uart_stm32_cfg2ll_databits(cfg->data_bits,
+							     cfg->parity);
 	const uint32_t flowctrl = uart_stm32_cfg2ll_hwctrl(cfg->flow_ctrl);
 
 	/* Hardware doesn't support mark or space parity */
 	if ((cfg->parity == UART_CFG_PARITY_MARK) ||
 	    (cfg->parity == UART_CFG_PARITY_SPACE)) {
+		return -ENOTSUP;
+	}
+
+	/* Driver does not supports parity + 9 databits */
+	if ((cfg->parity != UART_CFG_PARITY_NONE) &&
+	    (cfg->data_bits == UART_CFG_DATA_BITS_9)) {
 		return -ENOTSUP;
 	}
 
@@ -388,7 +420,7 @@ static int uart_stm32_config_get(const struct device *dev,
 	cfg->stop_bits = uart_stm32_ll2cfg_stopbits(
 		uart_stm32_get_stopbits(dev));
 	cfg->data_bits = uart_stm32_ll2cfg_databits(
-		uart_stm32_get_databits(dev));
+		uart_stm32_get_databits(dev), uart_stm32_get_parity(dev));
 	cfg->flow_ctrl = uart_stm32_ll2cfg_hwctrl(
 		uart_stm32_get_hwctrl(dev));
 	return 0;
@@ -776,6 +808,13 @@ static void uart_stm32_isr(const struct device *dev)
 		if (data->dma_rx.timeout == 0) {
 			uart_stm32_dma_rx_flush(dev);
 		}
+	} else if (LL_USART_IsEnabledIT_TC(UartInstance) &&
+			  LL_USART_IsActiveFlag_TC(UartInstance)) {
+
+		LL_USART_DisableIT_TC(UartInstance);
+		LL_USART_ClearFlag_TC(UartInstance);
+		/* Generate TX_DONE event when transmission is done */
+		async_evt_tx_done(data);
 	}
 
 	/* Clear errors */
@@ -893,8 +932,6 @@ void uart_stm32_dma_tx_cb(const struct device *dma_dev, void *user_data,
 	}
 
 	irq_unlock(key);
-
-	async_evt_tx_done(data);
 }
 
 static void uart_stm32_dma_replace_buffer(const struct device *dev)
@@ -987,8 +1024,11 @@ static int uart_stm32_async_tx(const struct device *dev,
 
 	LOG_DBG("tx: l=%d", data->dma_tx.buffer_length);
 
-	/* disable TX interrupt since DMA will handle it */
-	LL_USART_DisableIT_TC(UartInstance);
+	/* Clear TC flag */
+	LL_USART_ClearFlag_TC(UartInstance);
+
+	/* Enable TC interrupt so we can signal correct TX done */
+	LL_USART_EnableIT_TC(UartInstance);
 
 	/* set source address */
 	data->dma_tx.blk_cfg.source_address = (uint32_t)data->dma_tx.buffer;

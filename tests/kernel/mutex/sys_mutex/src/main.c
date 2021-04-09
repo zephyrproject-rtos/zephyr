@@ -67,6 +67,7 @@ static SYS_MUTEX_DEFINE(no_access_mutex);
 #endif
 static ZTEST_BMEM SYS_MUTEX_DEFINE(not_my_mutex);
 static ZTEST_BMEM SYS_MUTEX_DEFINE(bad_count_mutex);
+extern void test_mutex_multithread_competition(void);
 
 /**
  *
@@ -446,7 +447,8 @@ void test_main(void)
 	ztest_test_suite(mutex_complex,
 			 ztest_1cpu_unit_test(test_mutex),
 			 ztest_unit_test(test_user_access),
-			 ztest_unit_test(test_supervisor_access));
+			 ztest_unit_test(test_supervisor_access),
+			 ztest_unit_test(test_mutex_multithread_competition));
 
 	ztest_run_test_suite(mutex_complex);
 #endif

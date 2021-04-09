@@ -161,6 +161,34 @@
 				reg = <0x11>;
 				label = "TEST_EXPANDER_I2C";
 			};
+
+			test_i2c_mux: i2c-mux@12 {
+				compatible = "vnd,i2c-mux";
+				label = "I2C_MUX";
+				reg = <0x12>;
+				i2c-mux-ctlr-1 {
+					compatible = "vnd,i2c-mux-controller";
+					#address-cells = <1>;
+					#size-cells = <0>;
+					label = "I2C_MUX_CTLR_1";
+					test_muxed_i2c_dev_1: muxed-i2c-dev@10 {
+						compatible = "vnd,i2c-device";
+						status = "disabled";
+						reg = <0x10>;
+					};
+				};
+				i2c-mux-ctlr-2 {
+					compatible = "vnd,i2c-mux-controller";
+					#address-cells = <1>;
+					#size-cells = <0>;
+					label = "I2C_MUX_CTLR_1";
+					test_muxed_i2c_dev_2: muxed-i2c-dev@10 {
+						compatible = "vnd,i2c-device";
+						status = "disabled";
+						reg = <0x10>;
+					};
+				};
+			};
 		};
 
 		test_i2c_no_reg: i2c {

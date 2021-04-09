@@ -110,7 +110,7 @@ void z_x86_early_serial_init(void)
 
 	early_serial_init_done = true;
 
-	if (suppressed_chars) {
+	if (suppressed_chars != 0U) {
 		printk("WARNING: %u chars lost before early serial init\n",
 		       suppressed_chars);
 	}

@@ -1,6 +1,7 @@
 /* hci_core.h - Bluetooth HCI core access */
 
 /*
+ * Copyright (c) 2021 Nordic Semiconductor ASA
  * Copyright (c) 2015-2016 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -167,7 +168,7 @@ struct bt_le_per_adv_sync {
 	/** Sync handle */
 	uint16_t handle;
 
-	/** Periodic advertising interval (N * 1.25MS) */
+	/** Periodic advertising interval (N * 1.25 ms) */
 	uint16_t interval;
 
 	/** Periodic advertising advertiser clock accuracy (ppm) */
@@ -325,19 +326,15 @@ struct bt_hci_cmd_state_set {
 	bool val;
 };
 
-/* Initialize command state instance */
-static inline void bt_hci_cmd_state_set_init(struct bt_hci_cmd_state_set *state,
-					     atomic_t *target, int bit,
-					     bool val)
-{
-	state->target = target;
-	state->bit = bit;
-	state->val = val;
-}
+struct bt_adv_id_check_data {
+	uint8_t id;
+	bool adv_enabled;
+};
 
 /* Set command state related with the command buffer */
-void bt_hci_cmd_data_state_set(struct net_buf *buf,
-			       struct bt_hci_cmd_state_set *state);
+void bt_hci_cmd_state_set_init(struct net_buf *buf,
+			       struct bt_hci_cmd_state_set *state,
+			       atomic_t *target, int bit, bool val);
 
 int bt_hci_disconnect(uint16_t handle, uint8_t reason);
 
@@ -345,6 +342,7 @@ bool bt_le_conn_params_valid(const struct bt_le_conn_param *param);
 int bt_le_set_data_len(struct bt_conn *conn, uint16_t tx_octets, uint16_t tx_time);
 int bt_le_set_phy(struct bt_conn *conn, uint8_t all_phys,
 		  uint8_t pref_tx_phy, uint8_t pref_rx_phy, uint8_t phy_opts);
+uint8_t bt_get_phy(uint8_t hci_phy);
 
 int bt_le_scan_update(bool fast_scan);
 
@@ -366,28 +364,49 @@ void bt_setup_public_id_addr(void);
 
 void bt_finalize_init(void);
 
-int bt_le_adv_start_internal(const struct bt_le_adv_param *param,
-			     const struct bt_data *ad, size_t ad_len,
-			     const struct bt_data *sd, size_t sd_len,
-			     const bt_addr_le_t *peer);
-
-void bt_le_adv_resume(void);
-bool bt_le_scan_random_addr_check(void);
-
 void bt_hci_host_num_completed_packets(struct net_buf *buf);
 
 /* HCI event handlers */
-void hci_evt_pin_code_req(struct net_buf *buf);
-void hci_evt_link_key_notify(struct net_buf *buf);
-void hci_evt_link_key_req(struct net_buf *buf);
-void hci_evt_io_capa_resp(struct net_buf *buf);
-void hci_evt_io_capa_req(struct net_buf *buf);
-void hci_evt_ssp_complete(struct net_buf *buf);
-void hci_evt_user_confirm_req(struct net_buf *buf);
-void hci_evt_user_passkey_notify(struct net_buf *buf);
-void hci_evt_user_passkey_req(struct net_buf *buf);
-void hci_evt_auth_complete(struct net_buf *buf);
+void bt_hci_pin_code_req(struct net_buf *buf);
+void bt_hci_link_key_notify(struct net_buf *buf);
+void bt_hci_link_key_req(struct net_buf *buf);
+void bt_hci_io_capa_resp(struct net_buf *buf);
+void bt_hci_io_capa_req(struct net_buf *buf);
+void bt_hci_ssp_complete(struct net_buf *buf);
+void bt_hci_user_confirm_req(struct net_buf *buf);
+void bt_hci_user_passkey_notify(struct net_buf *buf);
+void bt_hci_user_passkey_req(struct net_buf *buf);
+void bt_hci_auth_complete(struct net_buf *buf);
 
 /* ECC HCI event handlers */
 void bt_hci_evt_le_pkey_complete(struct net_buf *buf);
 void bt_hci_evt_le_dhkey_complete(struct net_buf *buf);
+
+/* Scan HCI event handlers */
+void bt_hci_le_adv_report(struct net_buf *buf);
+void bt_hci_le_scan_timeout(struct net_buf *buf);
+void bt_hci_le_adv_ext_report(struct net_buf *buf);
+void bt_hci_le_per_adv_sync_established(struct net_buf *buf);
+void bt_hci_le_per_adv_report(struct net_buf *buf);
+void bt_hci_le_per_adv_sync_lost(struct net_buf *buf);
+void bt_hci_le_biginfo_adv_report(struct net_buf *buf);
+void bt_hci_le_past_received(struct net_buf *buf);
+
+/* Adv HCI event handlers */
+void bt_hci_le_adv_set_terminated(struct net_buf *buf);
+void bt_hci_le_scan_req_received(struct net_buf *buf);
+
+/* BR/EDR HCI event handlers */
+void bt_hci_conn_req(struct net_buf *buf);
+void bt_hci_conn_complete(struct net_buf *buf);
+
+
+void bt_hci_inquiry_complete(struct net_buf *buf);
+void bt_hci_inquiry_result_with_rssi(struct net_buf *buf);
+void bt_hci_extended_inquiry_result(struct net_buf *buf);
+void bt_hci_remote_name_request_complete(struct net_buf *buf);
+
+void bt_hci_read_remote_features_complete(struct net_buf *buf);
+void bt_hci_read_remote_ext_features_complete(struct net_buf *buf);
+void bt_hci_role_change(struct net_buf *buf);
+void bt_hci_synchronous_conn_complete(struct net_buf *buf);

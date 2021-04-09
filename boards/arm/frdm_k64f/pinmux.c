@@ -146,7 +146,6 @@ static int frdm_k64f_pinmux_init(const struct device *dev)
 	pinmux_pin_set(porta, 15, PORT_PCR_MUX(kPORT_MuxAlt4));
 	pinmux_pin_set(porta, 16, PORT_PCR_MUX(kPORT_MuxAlt4));
 	pinmux_pin_set(porta, 17, PORT_PCR_MUX(kPORT_MuxAlt4));
-	pinmux_pin_set(porta, 28, PORT_PCR_MUX(kPORT_MuxAlt4));
 
 	pinmux_pin_set(portb,  0, PORT_PCR_MUX(kPORT_MuxAlt4)
 		| PORT_PCR_ODE_MASK | PORT_PCR_PE_MASK | PORT_PCR_PS_MASK);
@@ -156,7 +155,6 @@ static int frdm_k64f_pinmux_init(const struct device *dev)
 	pinmux_pin_set(portc, 16, PORT_PCR_MUX(kPORT_MuxAlt4));
 	pinmux_pin_set(portc, 17, PORT_PCR_MUX(kPORT_MuxAlt4));
 	pinmux_pin_set(portc, 18, PORT_PCR_MUX(kPORT_MuxAlt4));
-	pinmux_pin_set(portc, 19, PORT_PCR_MUX(kPORT_MuxAlt4));
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcan0), okay) && CONFIG_CAN
@@ -164,6 +162,11 @@ static int frdm_k64f_pinmux_init(const struct device *dev)
 	pinmux_pin_set(portb, 18, PORT_PCR_MUX(kPORT_MuxAlt2));
 	pinmux_pin_set(portb, 19, PORT_PCR_MUX(kPORT_MuxAlt2) |
 		       PORT_PCR_PE_MASK | PORT_PCR_PS_MASK);
+#endif
+
+#if CONFIG_SHIELD_ADAFRUIT_2_8_TFT_TOUCH_V2
+	pinmux_pin_set(portb, 23, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	pinmux_pin_set(portc,  4, PORT_PCR_MUX(kPORT_MuxAsGpio));
 #endif
 
 #if CONFIG_SHIELD_ADAFRUIT_WINC1500

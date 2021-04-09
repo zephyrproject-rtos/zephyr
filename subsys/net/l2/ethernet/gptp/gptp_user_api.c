@@ -7,7 +7,7 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(net_gptp, CONFIG_NET_GPTP_LOG_LEVEL);
 
-#include <ptp_clock.h>
+#include <drivers/ptp_clock.h>
 #include <net/gptp.h>
 
 #include "gptp_messages.h"

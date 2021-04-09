@@ -182,7 +182,7 @@ struct usb_cfg_data {
 	 */
 	const uint8_t *usb_device_description;
 	/** Pointer to interface descriptor */
-	const void *interface_descriptor;
+	void *interface_descriptor;
 	/** Function for interface runtime configuration */
 	usb_interface_config interface_config;
 	/** Callback to be notified on USB connection status change */

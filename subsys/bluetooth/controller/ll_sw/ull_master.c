@@ -28,6 +28,7 @@
 #include "lll/lll_adv_types.h"
 #include "lll_adv.h"
 #include "lll/lll_adv_pdu.h"
+#include "lll_chan.h"
 #include "lll_scan.h"
 #include "lll_conn.h"
 #include "lll_master.h"
@@ -220,7 +221,8 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	conn_lll->data_chan_sel = 0;
 	conn_lll->data_chan_use = 0;
 	conn_lll->role = 0;
-	conn_lll->initiated = 0;
+	conn_lll->master.initiated = 0;
+	conn_lll->master.cancelled = 0;
 	/* FIXME: END: Move to ULL? */
 #if defined(CONFIG_BT_CTLR_CONN_META)
 	memset(&conn_lll->conn_meta, 0, sizeof(conn_lll->conn_meta));
@@ -251,6 +253,7 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 #endif /* CONFIG_BT_CTLR_LE_PING */
 
 	conn->common.fex_valid = 0U;
+	conn->common.txn_lock = 0U;
 	conn->master.terminate_ack = 0U;
 
 	conn->llcp_req = conn->llcp_ack = conn->llcp_type = 0U;
@@ -427,8 +430,28 @@ uint8_t ll_connect_disable(void **rx)
 		scan_lll = &scan->lll;
 	}
 
+	/* Check if initiator active */
 	conn_lll = scan_lll->conn;
 	if (!conn_lll) {
+		/* Scanning not associated with initiation of a connection or
+		 * connection setup already complete (was set to NULL in
+		 * ull_master_setup), but HCI event not processed by host.
+		 */
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	/* Indicate to LLL that a cancellation is requested */
+	conn_lll->master.cancelled = 1U;
+	cpu_dmb();
+
+	/* Check if connection was established under race condition, i.e.
+	 * before the cancelled flag was set.
+	 */
+	conn_lll = scan_lll->conn;
+	if (!conn_lll) {
+		/* Connection setup completed on race condition with cancelled
+		 * flag, before it was set.
+		 */
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
@@ -735,13 +758,8 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 		cs = (void *)rx_csa->pdu;
 
 		if (chan_sel) {
-			uint16_t aa_ls = ((uint16_t)lll->access_addr[1] << 8) |
-				      lll->access_addr[0];
-			uint16_t aa_ms = ((uint16_t)lll->access_addr[3] << 8) |
-				      lll->access_addr[2];
-
 			lll->data_chan_sel = 1;
-			lll->data_chan_id = aa_ms ^ aa_ls;
+			lll->data_chan_id = lll_chan_id(lll->access_addr);
 
 			cs->csa = 0x01;
 		} else {

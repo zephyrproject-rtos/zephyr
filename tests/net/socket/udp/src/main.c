@@ -1113,6 +1113,94 @@ void test_v6_sendmsg_with_txtime(void)
 	test_started = false;
 }
 
+void test_msg_trunc(int sock_c, int sock_s, struct sockaddr *addr_c,
+		    socklen_t addrlen_c, struct sockaddr *addr_s,
+		    socklen_t addrlen_s)
+{
+	int rv;
+	uint8_t rx_buf[sizeof(TEST_STR_SMALL) - 1];
+
+	rv = bind(sock_s, addr_s, addrlen_s);
+	zassert_equal(rv, 0, "server bind failed");
+
+	rv = bind(sock_c, addr_c, addrlen_c);
+	zassert_equal(rv, 0, "client bind failed");
+
+	rv = connect(sock_c, addr_s, addrlen_s);
+	zassert_equal(rv, 0, "connect failed");
+
+	/* MSG_TRUNC */
+
+	rv = send(sock_c, BUF_AND_SIZE(TEST_STR_SMALL), 0);
+	zassert_equal(rv, sizeof(TEST_STR_SMALL) - 1, "send failed");
+
+	memset(rx_buf, 0, sizeof(rx_buf));
+	rv = recv(sock_s, rx_buf, 2, ZSOCK_MSG_TRUNC);
+	zassert_equal(rv, sizeof(TEST_STR_SMALL) - 1, "MSG_TRUNC flag failed");
+	zassert_mem_equal(rx_buf, TEST_STR_SMALL, 2, "invalid rx data");
+	zassert_equal(rx_buf[2], 0, "received more than requested");
+
+	/* The remaining data should've been discarded */
+	rv = recv(sock_s, rx_buf, sizeof(rx_buf), ZSOCK_MSG_DONTWAIT);
+	zassert_equal(rv, -1, "consecutive recv should've failed");
+	zassert_equal(errno, EAGAIN, "incorrect errno value");
+
+	/* MSG_TRUNC & MSG_PEEK combo */
+
+	rv = send(sock_c, BUF_AND_SIZE(TEST_STR_SMALL), 0);
+	zassert_equal(rv, sizeof(TEST_STR_SMALL) - 1, "send failed");
+
+	memset(rx_buf, 0, sizeof(rx_buf));
+	rv = recv(sock_s, rx_buf, 2, ZSOCK_MSG_TRUNC | ZSOCK_MSG_PEEK);
+	zassert_equal(rv, sizeof(TEST_STR_SMALL) - 1, "MSG_TRUNC flag failed");
+
+	/* The packet should still be available due to MSG_PEEK */
+	rv = recv(sock_s, rx_buf, sizeof(rx_buf), ZSOCK_MSG_TRUNC);
+	zassert_equal(rv, sizeof(TEST_STR_SMALL) - 1,
+		      "recv after MSG_PEEK failed");
+	zassert_mem_equal(rx_buf, BUF_AND_SIZE(TEST_STR_SMALL),
+			  "invalid rx data");
+
+	rv = close(sock_c);
+	zassert_equal(rv, 0, "close failed");
+	rv = close(sock_s);
+	zassert_equal(rv, 0, "close failed");
+}
+
+void test_v4_msg_trunc(void)
+{
+	int client_sock;
+	int server_sock;
+	struct sockaddr_in client_addr;
+	struct sockaddr_in server_addr;
+
+	prepare_sock_udp_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, ANY_PORT,
+			    &client_sock, &client_addr);
+	prepare_sock_udp_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, SERVER_PORT,
+			    &server_sock, &server_addr);
+
+	test_msg_trunc(client_sock, server_sock,
+		       (struct sockaddr *)&client_addr, sizeof(client_addr),
+		       (struct sockaddr *)&server_addr, sizeof(server_addr));
+}
+
+void test_v6_msg_trunc(void)
+{
+	int client_sock;
+	int server_sock;
+	struct sockaddr_in6 client_addr;
+	struct sockaddr_in6 server_addr;
+
+	prepare_sock_udp_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, ANY_PORT,
+			    &client_sock, &client_addr);
+	prepare_sock_udp_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, SERVER_PORT,
+			    &server_sock, &server_addr);
+
+	test_msg_trunc(client_sock, server_sock,
+		       (struct sockaddr *)&client_addr, sizeof(client_addr),
+		       (struct sockaddr *)&server_addr, sizeof(server_addr));
+}
+
 void test_main(void)
 {
 	k_thread_system_pool_assign(k_current_get());
@@ -1141,7 +1229,9 @@ void test_main(void)
 			 ztest_user_unit_test(test_v6_sendmsg_recvfrom_connected),
 			 ztest_unit_test(test_setup_eth),
 			 ztest_unit_test(test_v6_sendmsg_with_txtime),
-			 ztest_user_unit_test(test_v6_sendmsg_with_txtime)
+			 ztest_user_unit_test(test_v6_sendmsg_with_txtime),
+			 ztest_unit_test(test_v4_msg_trunc),
+			 ztest_unit_test(test_v6_msg_trunc)
 		);
 
 	ztest_run_test_suite(socket_udp);

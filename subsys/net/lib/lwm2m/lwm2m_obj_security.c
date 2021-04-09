@@ -17,6 +17,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_object.h"
 #include "lwm2m_engine.h"
 
+#define SECURITY_VERSION_MAJOR 1
+#define SECURITY_VERSION_MINOR 0
+
 /* Security resource IDs */
 #define SECURITY_SERVER_URI_ID			0
 #define SECURITY_BOOTSTRAP_FLAG_ID		1
@@ -176,6 +179,9 @@ static int lwm2m_security_init(const struct device *dev)
 	int ret = 0;
 
 	security.obj_id = LWM2M_OBJECT_SECURITY_ID;
+	security.version_major = SECURITY_VERSION_MAJOR;
+	security.version_minor = SECURITY_VERSION_MINOR;
+	security.is_core = true;
 	security.fields = fields;
 	security.field_count = ARRAY_SIZE(fields);
 	security.max_instance_count = MAX_INSTANCE_COUNT;

@@ -44,7 +44,7 @@ if(NOT "${ARCH}" STREQUAL "posix")
   endforeach()
 
   foreach(isystem_include_dir ${NOSTDINC})
-    list(APPEND isystem_include_flags -isystem ${isystem_include_dir})
+    list(APPEND isystem_include_flags -isystem "\"${isystem_include_dir}\"")
   endforeach()
 
   if(CONFIG_X86)

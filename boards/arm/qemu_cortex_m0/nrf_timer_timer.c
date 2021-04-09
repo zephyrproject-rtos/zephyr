@@ -157,12 +157,12 @@ void timer0_nrf_isr(void *arg)
 		set_absolute_ticks(last_count + CYC_PER_TICK);
 	}
 
-	z_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? dticks : (dticks > 0));
+	sys_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? dticks : (dticks > 0));
 }
 
-int z_clock_driver_init(const struct device *device)
+int sys_clock_driver_init(const struct device *dev)
 {
-	ARG_UNUSED(device);
+	ARG_UNUSED(dev);
 
 	/* FIXME switch to 1 MHz once this is fixed in QEMU */
 	nrf_timer_frequency_set(TIMER, NRF_TIMER_FREQ_2MHz);
@@ -185,7 +185,7 @@ int z_clock_driver_init(const struct device *device)
 	return 0;
 }
 
-void z_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 	uint32_t cyc;
@@ -234,7 +234,7 @@ void z_clock_set_timeout(int32_t ticks, bool idle)
 	NVIC_ClearPendingIRQ(TIMER0_IRQn);
 }
 
-uint32_t z_clock_elapsed(void)
+uint32_t sys_clock_elapsed(void)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return 0;
@@ -247,7 +247,7 @@ uint32_t z_clock_elapsed(void)
 	return ret;
 }
 
-uint32_t z_timer_cycle_get_32(void)
+uint32_t sys_clock_cycle_get_32(void)
 {
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	uint32_t ret = counter_sub(counter(), last_count) + last_count;

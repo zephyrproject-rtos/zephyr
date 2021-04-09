@@ -9,7 +9,7 @@ tests:
     harness_config:
       type: multi_line
       regex:
-        - "composite_pre_init: HID Device: dev"
+        - "main: HID Device: dev"
         - "main: Starting application"
   sample.usb.hid_composite:
     depends_on: usb_device
@@ -21,7 +21,7 @@ tests:
     harness_config:
       type: multi_line
       regex:
-        - "composite_pre_init: HID Device: dev"
+        - "main: HID Device: dev"
         - "main: Starting application"
   sample.usb.hid.buildonly:
     depends_on: usb_device

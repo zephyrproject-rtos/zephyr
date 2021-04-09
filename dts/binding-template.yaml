@@ -60,7 +60,50 @@ compatible: "manufacturer,device"
 # When including multiple files, any overlapping 'required' keys on properties
 # in the included files are ORed together. This makes sure that a
 # 'required: true' is always respected.
-include: other.yaml # or [other1.yaml, other2.yaml]
+#
+# When 'include:' is a list, its elements can be either filenames as
+# strings, or maps. Each map element must have a 'name' key which is
+# the filename to include, and may have 'property-allowlist' and
+# 'property-blocklist' keys that filter which properties are included.
+# You can freely intermix strings and maps in a single 'include:' list.
+# You cannot have a single map element with both 'property-allowlist' and
+# 'property-blocklist' keys. A map element with neither 'property-allowlist'
+# nor 'property-blocklist' is valid; no additional filtering is done.
+include: other.yaml
+# To include multiple files:
+#
+# include:
+#   - other1.yaml
+#   - other2.yaml
+#
+# To filter the included properties:
+#
+# include:
+#   - name: other1.yaml
+#     property-allowlist:
+#       - i-want-this-one
+#       - and-this-one
+#   - other2.yaml
+#     property-blocklist:
+#       - do-not-include-this-one
+#       - or-this-one
+#
+# You can intermix these types of includes:
+#
+# include:
+#   - other1.yaml
+#   - other2.yaml
+#     property-blocklist:
+#       - do-not-include-this-one
+#       - or-this-one
+#
+# And you can filter from a child binding like this:
+#
+# include:
+#   - name: bar.yaml
+#     child-binding:
+#       property-allowlist:
+#         - child-prop-to-allow
 
 # If the node describes a bus, then the bus type should be given, like below
 bus: <string describing bus type, e.g. "i2c">

@@ -237,7 +237,7 @@ static int pwm_nrfx_pin_set(const struct device *dev, uint32_t pwm,
 			 * sequence.
 			 */
 			while (!nrfx_pwm_is_stopped(&config->pwm)) {
-			};
+			}
 			nrfx_pwm_simple_playback(&config->pwm,
 						 &config->seq,
 						 1,

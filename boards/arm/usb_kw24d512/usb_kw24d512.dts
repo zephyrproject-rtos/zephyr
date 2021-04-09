@@ -2,7 +2,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_kw2xd.dtsi>
+#include <nxp/MKW24D512VHA5.dtsi>
 
 / {
 	model = "NXP USB-KW24D512 board";

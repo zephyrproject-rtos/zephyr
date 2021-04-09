@@ -30,7 +30,7 @@ static inline bool ptr_in_rodata(const char *addr)
 #define RO_START 0
 #define RO_END 0
 #elif defined(CONFIG_ARC) || defined(CONFIG_ARM) || defined(CONFIG_X86) \
-	|| defined(CONFIG_RISCV)
+	|| defined(CONFIG_RISCV) || defined(CONFIG_ARM64)
 	extern char _image_rodata_start[];
 	extern char _image_rodata_end[];
 #define RO_START _image_rodata_start
@@ -94,8 +94,6 @@ static int cbprintf_via_va_list(cbprintf_cb out, void *ctx,
 	return cbvprintf(out, ctx, fmt, u.ap);
 }
 
-#define VA_STACK_MIN_ALIGN	8
-
 #elif defined(__x86_64__)
 /*
  * Reference:
@@ -130,8 +128,6 @@ static int cbprintf_via_va_list(cbprintf_cb out, void *ctx,
 
 	return cbvprintf(out, ctx, fmt, u.ap);
 }
-
-#define VA_STACK_MIN_ALIGN	8
 
 #elif defined(__xtensa__)
 /*
@@ -193,41 +189,6 @@ static int cbprintf_via_va_list(cbprintf_cb out, void *ctx,
 
 #endif
 
-/*
- * Special alignment cases
- */
-
-#if defined(__i386__)
-/* there are no gaps on the stack */
-#define VA_STACK_ALIGN(type)	1
-#endif
-
-#if defined(__riscv)
-#define VA_STACK_MIN_ALIGN	(__riscv_xlen / 8)
-#endif
-
-#if defined(__sparc__)
-/* no gaps on the stack even though the CPU can't do unaligned accesses */
-#define VA_STACK_ALIGN(type)	1
-#define VA_STACK_LL_DBL_MEMCPY	true
-#endif
-
-/*
- * Default alignment values if not specified by architecture config
- */
-
-#ifndef VA_STACK_MIN_ALIGN
-#define VA_STACK_MIN_ALIGN	1
-#endif
-
-#ifndef VA_STACK_ALIGN
-#define VA_STACK_ALIGN(type)	MAX(VA_STACK_MIN_ALIGN, __alignof__(type))
-#endif
-
-#ifndef VA_STACK_LL_DBL_MEMCPY
-#define VA_STACK_LL_DBL_MEMCPY	false
-#endif
-
 int cbvprintf_package(void *packaged, size_t len,
 		      const char *fmt, va_list ap)
 {
@@ -236,6 +197,18 @@ int cbvprintf_package(void *packaged, size_t len,
 	uint8_t str_ptr_pos[16];
 	const char *s;
 	bool parsing = false;
+
+	/* Buffer must be aligned at least to size of a pointer. */
+	if ((uintptr_t)packaged & (sizeof(void *) - 1)) {
+		return -EFAULT;
+	}
+
+#if defined(__xtensa__)
+	/* Xtensa requires package to be 16 bytes aligned. */
+	if ((uintptr_t)packaged & (CBPRINTF_PACKAGE_ALIGNMENT - 1)) {
+		return -EFAULT;
+	}
+#endif
 
 	/*
 	 * Make room to store the arg list size and the number of
@@ -250,9 +223,17 @@ int cbvprintf_package(void *packaged, size_t len,
 	/*
 	 * When buf0 is NULL we don't store anything.
 	 * Instead we count the needed space to store the data.
+	 * In this case, incoming len argument indicates the anticipated
+	 * buffer "misalignment" offset.
 	 */
 	if (!buf0) {
-		len = 0;
+#if defined(__xtensa__)
+		if (len % CBPRINTF_PACKAGE_ALIGNMENT) {
+			return -EFAULT;
+		}
+#endif
+		buf += len % CBPRINTF_PACKAGE_ALIGNMENT;
+		len = -(len % CBPRINTF_PACKAGE_ALIGNMENT);
 	}
 
 	/*
@@ -385,7 +366,7 @@ int cbvprintf_package(void *packaged, size_t len,
 				if (buf - buf0 + size > len) {
 					return -ENOSPC;
 				}
-				if (VA_STACK_LL_DBL_MEMCPY) {
+				if (Z_CBPRINTF_VA_STACK_LL_DBL_MEMCPY) {
 					memcpy(buf, &v, size);
 				} else if (fmt[-1] == 'L') {
 					*(long double *)buf = v.ld;
@@ -457,7 +438,7 @@ process_string:
 			long long v = va_arg(ap, long long);
 
 			if (buf0) {
-				if (VA_STACK_LL_DBL_MEMCPY) {
+				if (Z_CBPRINTF_VA_STACK_LL_DBL_MEMCPY) {
 					memcpy(buf, &v, sizeof(long long));
 				} else {
 					*(long long *)buf = v;

@@ -12,7 +12,7 @@
 	*(".kobject_data.text*")
 	_kobject_text_area_end = .;
 	_kobject_text_area_used = _kobject_text_area_end - _kobject_text_area_start;
-#ifndef LINKER_PASS2
+#ifndef LINKER_ZEPHYR_FINAL
 #ifdef CONFIG_DYNAMIC_OBJECTS
 	PROVIDE(z_object_gperf_find = .);
 	PROVIDE(z_object_gperf_wordlist_foreach = .);

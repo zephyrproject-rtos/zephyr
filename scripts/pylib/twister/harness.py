@@ -2,7 +2,7 @@
 import re
 from collections import OrderedDict
 
-result_re = re.compile(".*(PASS|FAIL|SKIP) - (test_)?(.*)")
+result_re = re.compile(".*(PASS|FAIL|SKIP) - (test_)?(.*) in")
 
 class Harness:
     GCOV_START = "GCOV_COVERAGE_DUMP_START"
@@ -114,12 +114,12 @@ class Console(Harness):
                     csv.append(v.strip())
                 self.recording.append(csv)
 
+        self.process_test(line)
+
         if self.state == "passed":
             self.tests[self.id] = "PASS"
         else:
             self.tests[self.id] = "FAIL"
-
-        self.process_test(line)
 
 class Test(Harness):
     RUN_PASSED = "PROJECT EXECUTION SUCCESSFUL"
@@ -132,18 +132,7 @@ class Test(Harness):
             self.tests[name] = match.group(1)
             self.ztest = True
 
-        if self.RUN_PASSED in line:
-            if self.fault:
-                self.state = "failed"
-            else:
-                self.state = "passed"
-
-        if self.RUN_FAILED in line:
-            self.state = "failed"
-
-        if self.fail_on_fault:
-            if self.FAULT in line:
-                self.fault = True
+        self.process_test(line)
 
         if not self.ztest and self.state:
             if self.state == "passed":
@@ -151,12 +140,6 @@ class Test(Harness):
             else:
                 self.tests[self.id] = "FAIL"
 
-        if self.GCOV_START in line:
-            self.capture_coverage = True
-        elif self.GCOV_END in line:
-            self.capture_coverage = False
-
-        self.process_test(line)
 
 class Ztest(Test):
     pass

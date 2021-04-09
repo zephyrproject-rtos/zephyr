@@ -1,0 +1,6 @@
+sample:
+  name: Modbus RTU Client Sample
+tests:
+  sample.modbus.rtu_client:
+    tags: uart modbus
+    depends_on: gpio, arduino_serial

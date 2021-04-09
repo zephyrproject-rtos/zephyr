@@ -72,53 +72,6 @@
 #include "common/log.h"
 #include "hal/debug.h"
 
-/* When both central and peripheral are supported, one each Rx node will be
- * needed by connectable advertising and the initiator to generate connection
- * complete event, hence conditionally set the count.
- */
-#if defined(CONFIG_BT_MAX_CONN)
-#if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_PERIPHERAL)
-#define BT_CTLR_MAX_CONNECTABLE 2
-#else
-#define BT_CTLR_MAX_CONNECTABLE 1
-#endif
-#define BT_CTLR_MAX_CONN        CONFIG_BT_MAX_CONN
-#else
-#define BT_CTLR_MAX_CONNECTABLE 0
-#define BT_CTLR_MAX_CONN        0
-#endif
-
-#if !defined(TICKER_USER_LLL_VENDOR_OPS)
-#define TICKER_USER_LLL_VENDOR_OPS 0
-#endif /* TICKER_USER_LLL_VENDOR_OPS */
-
-#if !defined(TICKER_USER_ULL_HIGH_VENDOR_OPS)
-#define TICKER_USER_ULL_HIGH_VENDOR_OPS 0
-#endif /* TICKER_USER_ULL_HIGH_VENDOR_OPS */
-
-#if !defined(TICKER_USER_THREAD_VENDOR_OPS)
-#define TICKER_USER_THREAD_VENDOR_OPS 0
-#endif /* TICKER_USER_THREAD_VENDOR_OPS */
-
-/* Define ticker nodes and user operations */
-#if defined(CONFIG_BT_CTLR_LOW_LAT) && \
-	(CONFIG_BT_CTLR_LLL_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
-#define TICKER_USER_LLL_OPS      (3 + TICKER_USER_LLL_VENDOR_OPS + 1)
-/* NOTE: When ticker job is disabled inside radio events then all advertising,
- *       scanning, and slave latency cancel ticker operations will be deferred,
- *       requiring increased ticker thread context operation queue count.
- */
-#define TICKER_USER_THREAD_OPS   (BT_CTLR_ADV_SET + BT_CTLR_SCAN_SET + \
-				  BT_CTLR_MAX_CONN + \
-				  TICKER_USER_THREAD_VENDOR_OPS + 1)
-#else /* !CONFIG_BT_CTLR_LOW_LAT */
-#define TICKER_USER_LLL_OPS      (2 + TICKER_USER_LLL_VENDOR_OPS + 1)
-#define TICKER_USER_THREAD_OPS   (1 + TICKER_USER_THREAD_VENDOR_OPS + 1)
-#endif /* !CONFIG_BT_CTLR_LOW_LAT */
-
-#define TICKER_USER_ULL_HIGH_OPS (3 + TICKER_USER_ULL_HIGH_VENDOR_OPS + 1)
-#define TICKER_USER_ULL_LOW_OPS  (1 + 1)
-
 #if defined(CONFIG_BT_BROADCASTER)
 #define BT_ADV_TICKER_NODES ((TICKER_ID_ADV_LAST) - (TICKER_ID_ADV_STOP) + 1)
 #if defined(CONFIG_BT_CTLR_ADV_EXT) && (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
@@ -167,12 +120,11 @@
 #define BT_CONN_TICKER_NODES 0
 #endif
 
-#if defined(CONFIG_SOC_FLASH_NRF_RADIO_SYNC_TICKER)
-#define FLASH_TICKER_NODES        2 /* No. of tickers reserved for flashing */
-#define FLASH_TICKER_USER_APP_OPS 1 /* No. of additional ticker operations */
+#if defined(CONFIG_BT_CTLR_CONN_ISO_GROUPS)
+#define BT_CIG_TICKER_NODES ((TICKER_ID_CONN_ISO_LAST) - \
+			     (TICKER_ID_CONN_ISO_BASE) + 1)
 #else
-#define FLASH_TICKER_NODES        0
-#define FLASH_TICKER_USER_APP_OPS 0
+#define BT_CIG_TICKER_NODES 0
 #endif
 
 #if defined(CONFIG_BT_CTLR_USER_EXT)
@@ -181,6 +133,27 @@
 #define USER_TICKER_NODES         0
 #endif
 
+#if defined(CONFIG_SOC_FLASH_NRF_RADIO_SYNC_TICKER)
+#define FLASH_TICKER_NODES             2 /* No. of tickers reserved for flash
+					  * driver
+					  */
+#define TICKER_USER_ULL_HIGH_FLASH_OPS 1 /* No. of additional ticker ULL_HIGH
+					  * context operations
+					  */
+#define TICKER_USER_THREAD_FLASH_OPS   1 /* No. of additional ticker thread
+					  * context operations
+					  */
+#else
+#define FLASH_TICKER_NODES             0
+#define TICKER_USER_ULL_HIGH_FLASH_OPS 0
+#define TICKER_USER_THREAD_FLASH_OPS   0
+#endif
+
+/* Define ticker nodes */
+/* NOTE: FLASH_TICKER_NODES shall be after Link Layer's list of ticker id
+ *       allocations, refer to ll_timeslice_ticker_id_get on how ticker id
+ *       used by flash driver is returned.
+ */
 #define TICKER_NODES              (TICKER_ID_ULL_BASE + \
 				   BT_ADV_TICKER_NODES + \
 				   BT_ADV_AUX_TICKER_NODES + \
@@ -189,15 +162,72 @@
 				   BT_SCAN_AUX_TICKER_NODES + \
 				   BT_SCAN_SYNC_TICKER_NODES + \
 				   BT_CONN_TICKER_NODES + \
-				   FLASH_TICKER_NODES + \
-				   USER_TICKER_NODES)
-#define TICKER_USER_APP_OPS       (TICKER_USER_THREAD_OPS + \
-				   FLASH_TICKER_USER_APP_OPS)
+				   BT_CIG_TICKER_NODES + \
+				   USER_TICKER_NODES + \
+				   FLASH_TICKER_NODES)
+
+/* When both central and peripheral are supported, one each Rx node will be
+ * needed by connectable advertising and the initiator to generate connection
+ * complete event, hence conditionally set the count.
+ */
+#if defined(CONFIG_BT_MAX_CONN)
+#if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_PERIPHERAL)
+#define BT_CTLR_MAX_CONNECTABLE 2
+#else
+#define BT_CTLR_MAX_CONNECTABLE 1
+#endif
+#define BT_CTLR_MAX_CONN        CONFIG_BT_MAX_CONN
+#else
+#define BT_CTLR_MAX_CONNECTABLE 0
+#define BT_CTLR_MAX_CONN        0
+#endif
+
+#if !defined(TICKER_USER_LLL_VENDOR_OPS)
+#define TICKER_USER_LLL_VENDOR_OPS 0
+#endif /* TICKER_USER_LLL_VENDOR_OPS */
+
+#if !defined(TICKER_USER_ULL_HIGH_VENDOR_OPS)
+#define TICKER_USER_ULL_HIGH_VENDOR_OPS 0
+#endif /* TICKER_USER_ULL_HIGH_VENDOR_OPS */
+
+#if !defined(TICKER_USER_THREAD_VENDOR_OPS)
+#define TICKER_USER_THREAD_VENDOR_OPS 0
+#endif /* TICKER_USER_THREAD_VENDOR_OPS */
+
+/* Define ticker user operations */
+#if defined(CONFIG_BT_CTLR_LOW_LAT) && \
+	(CONFIG_BT_CTLR_LLL_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
+/* NOTE: When ticker job is disabled inside radio events then all advertising,
+ *       scanning, and slave latency cancel ticker operations will be deferred,
+ *       requiring increased ticker thread context operation queue count.
+ */
+#define TICKER_USER_THREAD_OPS   (BT_CTLR_ADV_SET + BT_CTLR_SCAN_SET + \
+				  BT_CTLR_MAX_CONN + \
+				  TICKER_USER_THREAD_VENDOR_OPS + \
+				  TICKER_USER_THREAD_FLASH_OPS + \
+				  1)
+#else /* !CONFIG_BT_CTLR_LOW_LAT */
+/* NOTE: As ticker job is not disabled inside radio events, no need for extra
+ *       thread operations queue element for flash driver.
+ */
+#define TICKER_USER_THREAD_OPS   (1 + TICKER_USER_THREAD_VENDOR_OPS + 1)
+#endif /* !CONFIG_BT_CTLR_LOW_LAT */
+
+#define TICKER_USER_ULL_LOW_OPS  (1 + 1)
+
+/* NOTE: When ULL_LOW priority is configured to lower than ULL_HIGH, then extra
+ *       ULL_HIGH operations queue elements are required to buffer the
+ *       requested ticker operations.
+ */
+#define TICKER_USER_ULL_HIGH_OPS (3 + TICKER_USER_ULL_HIGH_VENDOR_OPS + \
+				  TICKER_USER_ULL_HIGH_FLASH_OPS + 1)
+
+#define TICKER_USER_LLL_OPS      (3 + TICKER_USER_LLL_VENDOR_OPS + 1)
+
 #define TICKER_USER_OPS           (TICKER_USER_LLL_OPS + \
 				   TICKER_USER_ULL_HIGH_OPS + \
 				   TICKER_USER_ULL_LOW_OPS + \
-				   TICKER_USER_THREAD_OPS + \
-				   FLASH_TICKER_USER_APP_OPS)
+				   TICKER_USER_THREAD_OPS)
 
 /* Memory for ticker nodes/instances */
 static uint8_t MALIGN(4) ticker_nodes[TICKER_NODES][TICKER_NODE_T_SIZE];
@@ -379,7 +409,7 @@ int ll_init(struct k_sem *sem_rx)
 	ticker_users[MAYFLY_CALL_ID_0][0] = TICKER_USER_LLL_OPS;
 	ticker_users[MAYFLY_CALL_ID_1][0] = TICKER_USER_ULL_HIGH_OPS;
 	ticker_users[MAYFLY_CALL_ID_2][0] = TICKER_USER_ULL_LOW_OPS;
-	ticker_users[MAYFLY_CALL_ID_PROGRAM][0] = TICKER_USER_APP_OPS;
+	ticker_users[MAYFLY_CALL_ID_PROGRAM][0] = TICKER_USER_THREAD_OPS;
 
 	err = ticker_init(TICKER_INSTANCE_ID_CTLR,
 			  TICKER_NODES, &ticker_nodes[0],
@@ -826,8 +856,17 @@ void ll_rx_dequeue(void)
 	case NODE_RX_TYPE_EXT_ADV_TERMINATE:
 	{
 		struct ll_adv_set *adv;
+		struct lll_adv_aux *lll_aux;
 
 		adv = ull_adv_set_get(rx->handle);
+		lll_aux = adv->lll.aux;
+		if (lll_aux) {
+			struct ll_adv_aux_set *aux;
+
+			aux = (void *)HDR_LLL2EVT(lll_aux);
+
+			aux->is_started = 0U;
+		}
 
 #if defined(CONFIG_BT_PERIPHERAL)
 		struct lll_conn *lll_conn = adv->lll.conn;
@@ -1006,6 +1045,15 @@ void ll_rx_dequeue(void)
 		__fallthrough;
 #endif /* CONFIG_BT_CTLR_USER_EVT_RANGE > 0 */
 
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+	case NODE_RX_TYPE_CIS_REQUEST:
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
+
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) || \
+	defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+	case NODE_RX_TYPE_CIS_ESTABLISHED:
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO || CONFIG_BT_CTLR_CENTRAL_ISO */
+
 	/* Ensure that at least one 'case' statement is present for this
 	 * code block.
 	 */
@@ -1166,6 +1214,15 @@ void ll_rx_mem_release(void **node_rx)
 		case NODE_RX_TYPE_USER_START ... NODE_RX_TYPE_USER_END - 1:
 #endif /* CONFIG_BT_CTLR_USER_EVT_RANGE > 0 */
 
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+		case NODE_RX_TYPE_CIS_REQUEST:
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
+
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) || \
+	defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+		case NODE_RX_TYPE_CIS_ESTABLISHED:
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO || CONFIG_BT_CTLR_CENTRAL_ISO */
+
 		/* Ensure that at least one 'case' statement is present for this
 		 * code block.
 		 */
@@ -1316,10 +1373,10 @@ void ll_tx_ack_put(uint16_t handle, struct node_tx *node_tx)
 #endif /* CONFIG_BT_CONN */
 
 void ll_timeslice_ticker_id_get(uint8_t * const instance_index,
-				uint8_t * const user_id)
+				uint8_t * const ticker_id)
 {
 	*instance_index = TICKER_INSTANCE_ID_CTLR;
-	*user_id = (TICKER_NODES - FLASH_TICKER_NODES);
+	*ticker_id = (TICKER_NODES - FLASH_TICKER_NODES);
 }
 
 void ll_radio_state_abort(void)
@@ -1572,6 +1629,37 @@ void *ull_prepare_dequeue_get(void)
 void *ull_prepare_dequeue_iter(uint8_t *idx)
 {
 	return MFIFO_DEQUEUE_ITER_GET(prep, idx);
+}
+
+void ull_prepare_dequeue(uint8_t caller_id)
+{
+	struct lll_event *next;
+
+	next = ull_prepare_dequeue_get();
+	while (next) {
+		uint8_t is_aborted = next->is_aborted;
+		uint8_t is_resume = next->is_resume;
+
+		if (!is_aborted) {
+			static memq_link_t link;
+			static struct mayfly mfy = {0, 0, &link, NULL,
+						    lll_resume};
+			uint32_t ret;
+
+			mfy.param = next;
+			ret = mayfly_enqueue(caller_id, TICKER_USER_ID_LLL, 0,
+					     &mfy);
+			LL_ASSERT(!ret);
+		}
+
+		MFIFO_DEQUEUE(prep);
+
+		next = ull_prepare_dequeue_get();
+
+		if (!next || (!is_aborted && (!is_resume || next->is_resume))) {
+			break;
+		}
+	}
 }
 
 void *ull_event_done_extra_get(void)
@@ -2222,7 +2310,6 @@ static inline void rx_demux_event_done(memq_link_t *link,
 {
 	struct node_rx_event_done *done = (void *)rx;
 	struct ull_hdr *ull_hdr;
-	struct lll_event *next;
 	void *release;
 
 	/* Get the ull instance */
@@ -2260,6 +2347,12 @@ static inline void rx_demux_event_done(memq_link_t *link,
 #endif /* CONFIG_BT_OBSERVER */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
+#if defined(CONFIG_BT_CTLR_CONN_ISO_STREAMS)
+	case EVENT_DONE_EXTRA_TYPE_CIS:
+		ull_conn_iso_done(done);
+		break;
+#endif /* CONFIG_BT_CTLR_CONN_ISO_STREAMS */
+
 #if defined(CONFIG_BT_CTLR_USER_EXT)
 	case EVENT_DONE_EXTRA_TYPE_USER_START
 		... EVENT_DONE_EXTRA_TYPE_USER_END:
@@ -2281,32 +2374,13 @@ static inline void rx_demux_event_done(memq_link_t *link,
 	release = done_release(link, done);
 	LL_ASSERT(release == done);
 
+#if defined(CONFIG_BT_CTLR_LOW_LAT_ULL_DONE)
 	/* dequeue prepare pipeline */
-	next = ull_prepare_dequeue_get();
-	while (next) {
-		uint8_t is_aborted = next->is_aborted;
-		uint8_t is_resume = next->is_resume;
+	ull_prepare_dequeue(TICKER_USER_ID_ULL_HIGH);
 
-		if (!is_aborted) {
-			static memq_link_t link;
-			static struct mayfly mfy = {0, 0, &link, NULL,
-						    lll_resume};
-			uint32_t ret;
-
-			mfy.param = next;
-			ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
-					     TICKER_USER_ID_LLL, 0, &mfy);
-			LL_ASSERT(!ret);
-		}
-
-		MFIFO_DEQUEUE(prep);
-
-		next = ull_prepare_dequeue_get();
-
-		if (!next || (!is_aborted && (!is_resume || next->is_resume))) {
-			break;
-		}
-	}
+	/* LLL done synchronized */
+	lll_done_sync();
+#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
 
 	/* ull instance will resume, dont decrement ref */
 	if (!ull_hdr) {

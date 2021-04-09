@@ -154,14 +154,14 @@ int get_value(const struct device *dev, uint32_t *ticks)
 	 * the HOUR_PM flag before we adjust for BCD.
 	 */
 
-	if (state.status_b & STATUS_B_24HR) {
+	if ((state.status_b & STATUS_B_24HR) != 0U) {
 		pm = false;
 	} else {
 		pm = ((state.hour & HOUR_PM) == HOUR_PM);
 		state.hour &= ~HOUR_PM;
 	}
 
-	if (!(state.status_b & STATUS_B_BIN)) {
+	if ((state.status_b & STATUS_B_BIN) == 0U) {
 		uint8_t *cp = (uint8_t *) &state;
 		int i;
 

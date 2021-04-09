@@ -299,20 +299,19 @@ identifier for a chosen node.
    :project: Zephyr
 
 There are also conveniences for commonly used zephyr-specific properties of the
-``/chosen`` node. (These may also be set in :file:`dts_fixup.h` files for now,
-though this mechanism is deprecated.)
+``/chosen`` node.
 
 .. doxygengroup:: devicetree-zephyr
    :project: Zephyr
 
 The following table documents some commonly used Zephyr-specific chosen nodes.
 
-Often, a chosen node's label property will be used to set the default value of
-a Kconfig option which in turn configures a hardware-specific subsystem
-setting. This is usually for backwards compatibility in cases when the Kconfig
-option predates devicetree support in Zephyr. In other cases, there is no
-Kconfig option, and the devicetree node's label property is used directly in
-the source code to specify a device name.
+Sometimes, a chosen node's label property will be used to set the default value
+of a Kconfig option which in turn configures a hardware-specific device. This
+is usually for backwards compatibility in cases when the Kconfig option
+predates devicetree support in Zephyr. In other cases, there is no Kconfig
+option, and the devicetree node is used directly in the source code to select a
+device.
 
 .. Documentation maintainers: please keep this sorted by property name
 
@@ -322,7 +321,8 @@ the source code to specify a device name.
    * - Property
      - Purpose
    * - zephyr,bt-c2h-uart
-     - Sets default :option:`CONFIG_BT_CTLR_TO_HOST_UART_DEV_NAME`
+     - Selects the UART used for host communication in the
+       :ref:`bluetooth-hci-uart-sample`
    * - zephyr,bt-mon-uart
      - Sets default :option:`CONFIG_BT_MONITOR_ON_DEV_NAME`
    * - zephyr,bt-uart

@@ -144,6 +144,9 @@ static void uart_irq_init(const struct shell_uart *sh_uart)
 #ifdef CONFIG_SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN
 	const struct device *dev = sh_uart->ctrl_blk->dev;
 
+	ring_buf_reset(sh_uart->tx_ringbuf);
+	ring_buf_reset(sh_uart->rx_ringbuf);
+	sh_uart->ctrl_blk->tx_busy = 0;
 	uart_irq_callback_user_data_set(dev, uart_callback, (void *)sh_uart);
 	uart_irq_rx_enable(dev);
 #endif

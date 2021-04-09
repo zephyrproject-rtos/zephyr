@@ -14,6 +14,13 @@
  * @}
  */
 /**
+ * @brief Miscellaneous Drivers APIs
+ * @defgroup misc_interfaces Miscellaneous Drivers APIs
+ * @ingroup io_interfaces
+ * @{
+ * @}
+ */
+/**
  * @brief Device Model APIs
  * @defgroup device_model Device Model APIs
  * @{
@@ -289,9 +296,9 @@ typedef int16_t device_handle_t;
  * @param compat lowercase-and-underscores devicetree compatible
  * @return a pointer to a device, or NULL
  */
-#define DEVICE_DT_GET_ANY(compat)			\
-	COND_CODE_1(DT_HAS_COMPAT_STATUS_OKAY(compat),	\
-		    (DEVICE_DT_GET(DT_INST(0, compat))),	\
+#define DEVICE_DT_GET_ANY(compat)					    \
+	COND_CODE_1(DT_HAS_COMPAT_STATUS_OKAY(compat),			    \
+		    (DEVICE_DT_GET(DT_COMPAT_GET_ANY_STATUS_OKAY(compat))), \
 		    (NULL))
 
 /**
@@ -466,6 +473,24 @@ device_from_handle(device_handle_t dev_handle)
 }
 
 /**
+ * @brief Prototype for functions used when iterating over a set of devices.
+ *
+ * Such a function may be used in API that identifies a set of devices and
+ * provides a visitor API supporting caller-specific interaction with each
+ * device in the set.
+ *
+ * The visit is said to succeed if the visitor returns a non-negative value.
+ *
+ * @param dev a device in the set being iterated
+ *
+ * @param context state used to support the visitor function
+ *
+ * @return A non-negative number to allow walking to continue, and a negative
+ * error code to case the iteration to stop.
+ */
+typedef int (*device_visitor_callback_t)(const struct device *dev, void *context);
+
+/**
  * @brief Get the set of handles for devicetree dependencies of this device.
  *
  * These are the device dependencies inferred from devicetree.
@@ -497,6 +522,43 @@ device_required_handles_get(const struct device *dev,
 
 	return rv;
 }
+
+/**
+ * @brief Visit every device that @p dev directly requires.
+ *
+ * Zephyr maintains information about which devices are directly required by
+ * another device; for example an I2C-based sensor driver will require an I2C
+ * controller for communication.  Required devices can derive from
+ * statically-defined devicetree relationships or dependencies registered
+ * at runtime.
+ *
+ * This API supports operating on the set of required devices.  Example uses
+ * include making sure required devices are ready before the requiring device
+ * is used, and releasing them when the requiring device is no longer needed.
+ *
+ * There is no guarantee on the order in which required devices are visited.
+ *
+ * If the @p visitor function returns a negative value iteration is halted,
+ * and the returned value from the visitor is returned from this function.
+ *
+ * @note This API is not available to unprivileged threads.
+ *
+ * @param dev a device of interest.  The devices that this device depends on
+ * will be used as the set of devices to visit.  This parameter must not be
+ * null.
+ *
+ * @param visitor_cb the function that should be invoked on each device in the
+ * dependency set.  This parameter must not be null.
+ *
+ * @param context state that is passed through to the visitor function.  This
+ * parameter may be null if @p visitor tolerates a null @p context.
+ *
+ * @return The number of devices that were visited if all visits succeed, or
+ * the negative value returned from the first visit that did not succeed.
+ */
+int device_required_foreach(const struct device *dev,
+			  device_visitor_callback_t visitor_cb,
+			  void *context);
 
 /**
  * @brief Retrieve the device structure for a driver by name
@@ -583,11 +645,6 @@ static inline bool device_is_ready(const struct device *dev)
 	return device_usable_check(dev) == 0;
 }
 
-static inline bool z_impl_device_is_ready(const struct device *dev)
-{
-	return z_device_ready(dev);
-}
-
 /**
  * @}
  */
@@ -669,18 +726,18 @@ const char *device_pm_state_str(uint32_t state);
  * Called by a device driver to indicate that it is in the middle of a
  * transaction.
  *
- * @param busy_dev Pointer to device structure of the driver instance.
+ * @param dev Pointer to device structure of the driver instance.
  */
-void device_busy_set(const struct device *busy_dev);
+void device_busy_set(const struct device *dev);
 
 /**
  * @brief Indicate that the device has completed its transaction
  *
  * Called by a device driver to indicate the end of a transaction.
  *
- * @param busy_dev Pointer to device structure of the driver instance.
+ * @param dev Pointer to device structure of the driver instance.
  */
-void device_busy_clear(const struct device *busy_dev);
+void device_busy_clear(const struct device *dev);
 
 #ifdef CONFIG_PM_DEVICE
 /*
@@ -760,25 +817,6 @@ static inline int device_get_power_state(const struct device *dev,
 						 DEVICE_PM_GET_POWER_STATE,
 						 device_power_state, NULL, NULL);
 	}
-}
-
-/**
- * @brief Gets the device structure list array and device count
- *
- * Called by the Power Manager application to get the list of
- * device structures associated with the devices in the system.
- * The PM app would use this list to create its own sorted list
- * based on the order it wishes to suspend or resume the devices.
- *
- * @param device_list Pointer to receive the device list array
- * @param device_count Pointer to receive the device count
- *
- * @deprecated in 2.4 release, replace with z_device_get_all_static()
- */
-__deprecated static inline void device_list_get(const struct device * *device_list,
-						int *device_count)
-{
-	*device_count = z_device_get_all_static(device_list);
 }
 
 /**
@@ -1002,7 +1040,7 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 	COND_CODE_1(DT_NODE_EXISTS(node_id), (), (static))		\
 		const Z_DECL_ALIGN(struct device)			\
 		DEVICE_NAME_GET(dev_name) __used			\
-	__attribute__((__section__(".device_" #level STRINGIFY(prio)))) = { \
+	__attribute__((__section__(".device_" #level STRINGIFY(prio)"_"))) = { \
 		.name = drv_name,					\
 		.config = (cfg_ptr),					\
 		.api = (api_ptr),					\

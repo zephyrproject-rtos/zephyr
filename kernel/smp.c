@@ -41,17 +41,6 @@ void z_smp_global_unlock(unsigned int key)
 	arch_irq_unlock(key);
 }
 
-void z_smp_reacquire_global_lock(struct k_thread *thread)
-{
-	if (thread->base.global_lock_count) {
-		arch_irq_lock();
-
-		while (!atomic_cas(&global_lock, 0, 1)) {
-		}
-	}
-}
-
-
 /* Called from within z_swap(), so assumes lock already held */
 void z_smp_release_global_lock(struct k_thread *thread)
 {

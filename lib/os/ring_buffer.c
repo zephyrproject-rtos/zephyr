@@ -41,19 +41,19 @@ static uint32_t mod(struct ring_buf *buf, uint32_t val)
  */
 static void item_indexes_rewind(struct ring_buf *buf)
 {
-	uint32_t rewind;
+	uint32_t rew;
 	uint32_t threshold = ring_buf_get_rewind_threshold();
 
 	if (buf->head < threshold) {
 		return;
 	}
 
-	rewind = buf->size * (threshold / buf->size);
+	rew = buf->size * (threshold / buf->size);
 
 	k_spinlock_key_t key = k_spin_lock(&buf->lock);
 
-	buf->tail -= rewind;
-	buf->head -= rewind;
+	buf->tail -= rew;
+	buf->head -= rew;
 	k_spin_unlock(&buf->lock, key);
 }
 
@@ -63,7 +63,7 @@ static void item_indexes_rewind(struct ring_buf *buf)
  */
 static void byte_indexes_rewind(struct ring_buf *buf)
 {
-	uint32_t rewind;
+	uint32_t rew;
 	uint32_t threshold = ring_buf_get_rewind_threshold();
 
 	/* Checking head since it is the smallest index. */
@@ -71,14 +71,14 @@ static void byte_indexes_rewind(struct ring_buf *buf)
 		return;
 	}
 
-	rewind = buf->size * (threshold / buf->size);
+	rew = buf->size * (threshold / buf->size);
 
 	k_spinlock_key_t key = k_spin_lock(&buf->lock);
 
-	buf->tail -= rewind;
-	buf->head -= rewind;
-	buf->misc.byte_mode.tmp_head -= rewind;
-	buf->misc.byte_mode.tmp_tail -= rewind;
+	buf->tail -= rew;
+	buf->head -= rew;
+	buf->misc.byte_mode.tmp_head -= rew;
+	buf->misc.byte_mode.tmp_tail -= rew;
 	k_spin_unlock(&buf->lock, key);
 }
 
@@ -130,7 +130,7 @@ int ring_buf_item_get(struct ring_buf *buf, uint16_t *type, uint8_t *value,
 
 	header = (struct ring_element *) &buf->buf.buf32[mod(buf, buf->head)];
 
-	if (header->length > *size32) {
+	if (data && (header->length > *size32)) {
 		*size32 = header->length;
 		return -EMSGSIZE;
 	}
@@ -139,15 +139,17 @@ int ring_buf_item_get(struct ring_buf *buf, uint16_t *type, uint8_t *value,
 	*type = header->type;
 	*value = header->value;
 
-	if (likely(buf->mask)) {
-		for (i = 0U; i < header->length; ++i) {
-			index = (i + buf->head + 1) & buf->mask;
-			data[i] = buf->buf.buf32[index];
-		}
-	} else {
-		for (i = 0U; i < header->length; ++i) {
-			index = (i + buf->head + 1) % buf->size;
-			data[i] = buf->buf.buf32[index];
+	if (data) {
+		if (likely(buf->mask)) {
+			for (i = 0U; i < header->length; ++i) {
+				index = (i + buf->head + 1) & buf->mask;
+				data[i] = buf->buf.buf32[index];
+			}
+		} else {
+			for (i = 0U; i < header->length; ++i) {
+				index = (i + buf->head + 1) % buf->size;
+				data[i] = buf->buf.buf32[index];
+			}
 		}
 	}
 
@@ -269,10 +271,12 @@ uint32_t ring_buf_get(struct ring_buf *buf, uint8_t *data, uint32_t size)
 
 	do {
 		partial_size = ring_buf_get_claim(buf, &src, size);
-		memcpy(data, src, partial_size);
+		if (data) {
+			memcpy(data, src, partial_size);
+			data += partial_size;
+		}
 		total_size += partial_size;
 		size -= partial_size;
-		data += partial_size;
 	} while (size && partial_size);
 
 	err = ring_buf_get_finish(buf, total_size);

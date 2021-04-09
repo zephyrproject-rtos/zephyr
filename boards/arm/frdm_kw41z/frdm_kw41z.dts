@@ -2,7 +2,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_kw41z.dtsi>
+#include <nxp/MKW41Z512VHT4.dtsi>
 
 / {
 	model = "NXP Freedom KW41Z board";

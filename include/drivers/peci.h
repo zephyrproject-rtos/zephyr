@@ -65,9 +65,11 @@ enum peci_command_code {
 };
 
 /** PECI read/write supported responses */
-#define PECI_RW_PKG_CFG_RSP_PASS       (0x40U)
-#define PECI_RW_PKG_CFG_RSP_TIMEOUT    (0x80U)
-#define PECI_RW_PKG_CFG_RSP_ILLEGAL    (0x90U)
+#define PECI_CC_RSP_SUCCESS              (0x40U)
+#define PECI_CC_RSP_TIMEOUT              (0x80U)
+#define PECI_CC_OUT_OF_RESOURCES_TIMEOUT (0x81U)
+#define PECI_CC_RESOURCES_LOWPWR_TIMEOUT (0x82U)
+#define PECI_CC_ILLEGAL_REQUEST          (0x90U)
 
 /** Ping command format. */
 #define PECI_PING_WR_LEN               (0U)

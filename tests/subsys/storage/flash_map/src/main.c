@@ -34,14 +34,8 @@ void test_flash_area_get_sectors(void)
 	flash_dev =
 		device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
 
-	rc = flash_write_protection_set(flash_dev, false);
-	zassert_false(rc, "failed to disable flash write protection");
-
 	rc = flash_erase(flash_dev, fa->fa_off, fa->fa_size);
 	zassert_true(rc == 0, "flash area erase fail");
-
-	rc = flash_write_protection_set(flash_dev, true);
-	zassert_false(rc, "failed to enable flash write protection");
 
 	(void)memset(wd, 0xa5, sizeof(wd));
 
@@ -63,7 +57,6 @@ void test_flash_area_get_sectors(void)
 		rc = memcmp(wd, rd, sizeof(wd));
 		zassert_true(rc == 0, "read data != write data");
 
-		(void) flash_write_protection_set(flash_dev, false);
 		/* write stuff to end of area */
 		rc = flash_write(flash_dev, fa->fa_off + off +
 					    fs_sectors[i].fs_size - sizeof(wd),

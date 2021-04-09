@@ -1084,7 +1084,7 @@ RTOS Awareness
 
 Support for Zephyr RTOS awareness is implemented in `pyOCD v0.11.0`_ and later.
 It is compatible with GDB PyOCD Debugging in Eclipse, but you must enable
-CONFIG_OPENOCD_SUPPORT=y in your application.
+CONFIG_DEBUG_THREAD_INFO=y in your application.
 
 .. _cmake-details:
 

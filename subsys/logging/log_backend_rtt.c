@@ -250,7 +250,7 @@ static void log_backend_rtt_cfg(void)
 				  SEGGER_RTT_MODE_NO_BLOCK_SKIP);
 }
 
-static void log_backend_rtt_init(void)
+static void log_backend_rtt_init(struct log_backend const *const backend)
 {
 	if (CONFIG_LOG_BACKEND_RTT_BUFFER > 0) {
 		log_backend_rtt_cfg();

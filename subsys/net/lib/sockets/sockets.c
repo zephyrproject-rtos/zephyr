@@ -592,7 +592,7 @@ ssize_t zsock_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 		timeout = K_NO_WAIT;
 	} else {
 		net_context_get_option(ctx, NET_OPT_SNDTIMEO, &timeout, NULL);
-		buf_timeout = z_timeout_end_calc(MAX_WAIT_BUFS);
+		buf_timeout = sys_clock_timeout_end_calc(MAX_WAIT_BUFS);
 	}
 
 	/* Register the callback before sending in order to receive the response
@@ -625,7 +625,7 @@ ssize_t zsock_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 				 * it means that the sending window is blocked
 				 * and we just cannot send anything.
 				 */
-				int64_t remaining = buf_timeout - z_tick_get();
+				int64_t remaining = buf_timeout - sys_clock_tick_get();
 
 				if (remaining <= 0) {
 					if (status == -ENOBUFS) {
@@ -934,6 +934,7 @@ static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 {
 	k_timeout_t timeout = K_FOREVER;
 	size_t recv_len = 0;
+	size_t read_len;
 	struct net_pkt_cursor backup;
 	struct net_pkt *pkt;
 
@@ -966,13 +967,31 @@ static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 	net_pkt_cursor_backup(pkt, &backup);
 
 	if (src_addr && addrlen) {
-		int rv;
+		if (IS_ENABLED(CONFIG_NET_OFFLOAD) &&
+		    net_if_is_ip_offloaded(net_context_get_iface(ctx))) {
+			/*
+			 * Packets from offloaded IP stack do not have IP
+			 * headers, so src address cannot be figured out at this
+			 * point. The best we can do is returning remote address
+			 * if that was set using connect() call.
+			 */
+			if (ctx->flags & NET_CONTEXT_REMOTE_ADDR_SET) {
+				memcpy(src_addr, &ctx->remote,
+				       MIN(*addrlen, sizeof(ctx->remote)));
+			} else {
+				errno = ENOTSUP;
+				goto fail;
+			}
+		} else {
+			int rv;
 
-		rv = sock_get_pkt_src_addr(pkt, net_context_get_ip_proto(ctx),
-					   src_addr, *addrlen);
-		if (rv < 0) {
-			errno = -rv;
-			goto fail;
+			rv = sock_get_pkt_src_addr(pkt, net_context_get_ip_proto(ctx),
+						   src_addr, *addrlen);
+			if (rv < 0) {
+				errno = -rv;
+				LOG_ERR("sock_get_pkt_src_addr %d", rv);
+				goto fail;
+			}
 		}
 
 		/* addrlen is a value-result argument, set to actual
@@ -989,11 +1008,9 @@ static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 	}
 
 	recv_len = net_pkt_remaining_data(pkt);
-	if (recv_len > max_len) {
-		recv_len = max_len;
-	}
+	read_len = MIN(recv_len, max_len);
 
-	if (net_pkt_read(pkt, buf, recv_len)) {
+	if (net_pkt_read(pkt, buf, read_len)) {
 		errno = ENOBUFS;
 		goto fail;
 	}
@@ -1009,7 +1026,7 @@ static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 		net_pkt_cursor_restore(pkt, &backup);
 	}
 
-	return recv_len;
+	return (flags & ZSOCK_MSG_TRUNC) ? recv_len : read_len;
 
 fail:
 	if (!(flags & ZSOCK_MSG_PEEK)) {
@@ -1028,6 +1045,8 @@ static inline ssize_t zsock_recv_stream(struct net_context *ctx,
 	size_t recv_len = 0;
 	struct net_pkt_cursor backup;
 	int res;
+	uint64_t end;
+	const bool waitall = flags & ZSOCK_MSG_WAITALL;
 
 	if (!net_context_is_used(ctx)) {
 		errno = EBADF;
@@ -1045,9 +1064,12 @@ static inline ssize_t zsock_recv_stream(struct net_context *ctx,
 		net_context_get_option(ctx, NET_OPT_RCVTIMEO, &timeout, NULL);
 	}
 
+	end = sys_clock_timeout_end_calc(timeout);
+
 	do {
 		struct net_pkt *pkt;
-		size_t data_len;
+		size_t data_len, read_len;
+		bool release_pkt = true;
 
 		if (sock_is_eof(ctx)) {
 			return 0;
@@ -1066,7 +1088,10 @@ static inline ssize_t zsock_recv_stream(struct net_context *ctx,
 			 * due to connection closure by peer.
 			 */
 			NET_DBG("NULL return from fifo");
-			if (sock_is_eof(ctx)) {
+
+			if (waitall && (recv_len > 0)) {
+				return recv_len;
+			} else if (sock_is_eof(ctx)) {
 				return 0;
 			} else {
 				errno = EAGAIN;
@@ -1077,19 +1102,22 @@ static inline ssize_t zsock_recv_stream(struct net_context *ctx,
 		net_pkt_cursor_backup(pkt, &backup);
 
 		data_len = net_pkt_remaining_data(pkt);
-		recv_len = data_len;
-		if (recv_len > max_len) {
-			recv_len = max_len;
+		read_len = data_len;
+		if (recv_len + read_len > max_len) {
+			read_len = max_len - recv_len;
+			release_pkt = false;
 		}
 
 		/* Actually copy data to application buffer */
-		if (net_pkt_read(pkt, buf, recv_len)) {
+		if (net_pkt_read(pkt, (uint8_t *)buf + recv_len, read_len)) {
 			errno = ENOBUFS;
 			return -1;
 		}
 
+		recv_len += read_len;
+
 		if (!(flags & ZSOCK_MSG_PEEK)) {
-			if (recv_len == data_len) {
+			if (release_pkt) {
 				/* Finished processing head pkt in
 				 * the fifo. Drop it from there.
 				 */
@@ -1108,7 +1136,19 @@ static inline ssize_t zsock_recv_stream(struct net_context *ctx,
 		} else {
 			net_pkt_cursor_restore(pkt, &backup);
 		}
-	} while (recv_len == 0);
+
+		/* Update the timeout value in case loop is repeated. */
+		if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT) &&
+		    !K_TIMEOUT_EQ(timeout, K_FOREVER)) {
+			int64_t remaining = end - sys_clock_tick_get();
+
+			if (remaining <= 0) {
+				timeout = K_NO_WAIT;
+			} else {
+				timeout = Z_TIMEOUT_TICKS(remaining);
+			}
+		}
+	} while ((recv_len == 0) || (waitall && (recv_len < max_len)));
 
 	if (!(flags & ZSOCK_MSG_PEEK)) {
 		net_context_update_recv_wnd(ctx, recv_len);
@@ -1284,7 +1324,7 @@ int z_impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int poll_timeout)
 		timeout = K_MSEC(poll_timeout);
 	}
 
-	end = z_timeout_end_calc(timeout);
+	end = sys_clock_timeout_end_calc(timeout);
 
 	pev = poll_events;
 	for (pfd = fds, i = nfds; i--; pfd++) {
@@ -1343,7 +1383,7 @@ int z_impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int poll_timeout)
 
 	if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT) &&
 	    !K_TIMEOUT_EQ(timeout, K_FOREVER)) {
-		int64_t remaining = end - z_tick_get();
+		int64_t remaining = end - sys_clock_tick_get();
 
 		if (remaining <= 0) {
 			timeout = K_NO_WAIT;
@@ -1408,7 +1448,7 @@ int z_impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int poll_timeout)
 			}
 
 			if (!K_TIMEOUT_EQ(timeout, K_FOREVER)) {
-				int64_t remaining = end - z_tick_get();
+				int64_t remaining = end - sys_clock_tick_get();
 
 				if (remaining <= 0) {
 					break;
@@ -1724,6 +1764,50 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 			}
 
 			break;
+
+		case SO_BINDTODEVICE: {
+			struct net_if *iface;
+			const struct device *dev;
+			struct ifreq *ifreq = (struct ifreq *)optval;
+
+			if (net_context_get_family(ctx) != AF_INET &&
+			    net_context_get_family(ctx) != AF_INET6) {
+				errno = EAFNOSUPPORT;
+				return -1;
+			}
+
+			/* optlen equal to 0 or empty interface name should
+			 * remove the binding.
+			 */
+			if ((optlen == 0) || (ifreq != NULL &&
+					      strlen(ifreq->ifr_name) == 0)) {
+				ctx->flags &= ~NET_CONTEXT_BOUND_TO_IFACE;
+				return 0;
+			}
+
+			if ((ifreq == NULL) || (optlen != sizeof(*ifreq))) {
+				errno = EINVAL;
+				return -1;
+			}
+
+			dev = device_get_binding(ifreq->ifr_name);
+			if (dev == NULL) {
+				errno = ENODEV;
+				return -1;
+			}
+
+			iface = net_if_lookup_by_dev(dev);
+			if (iface == NULL) {
+				errno = ENODEV;
+				return -1;
+			}
+
+			net_context_set_iface(ctx, iface);
+			ctx->flags |= NET_CONTEXT_BOUND_TO_IFACE;
+
+			return 0;
+		}
+
 		}
 
 		break;

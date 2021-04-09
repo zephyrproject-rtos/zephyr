@@ -60,10 +60,12 @@ static inline bool isr_rx_scan_check(struct lll_scan *lll, uint8_t irkmatch_ok,
 static inline uint32_t isr_rx_pdu(struct lll_scan *lll, uint8_t devmatch_ok,
 			       uint8_t devmatch_id, uint8_t irkmatch_ok,
 			       uint8_t irkmatch_id, uint8_t rl_idx, uint8_t rssi_ready);
+#if defined(CONFIG_BT_CENTRAL)
 static inline bool isr_scan_init_check(struct lll_scan *lll,
 				       struct pdu_adv *pdu, uint8_t rl_idx);
 static inline bool isr_scan_init_adva_check(struct lll_scan *lll,
 					    struct pdu_adv *pdu, uint8_t rl_idx);
+#endif /* CONFIG_BT_CENTRAL */
 static inline bool isr_scan_tgta_check(struct lll_scan *lll, bool init,
 				       struct pdu_adv *pdu, uint8_t rl_idx,
 				       bool *dir_report);
@@ -132,7 +134,7 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	/* Check if stopped (on connection establishment race between LLL and
 	 * ULL.
 	 */
-	if (lll->conn && lll->conn->initiated) {
+	if (unlikely(lll->conn && lll->conn->master.initiated)) {
 		int err;
 
 		err = lll_clk_off();
@@ -674,7 +676,7 @@ static inline uint32_t isr_rx_pdu(struct lll_scan *lll, uint8_t devmatch_ok,
 	if (0) {
 #if defined(CONFIG_BT_CENTRAL)
 	/* Initiator */
-	} else if (lll->conn && !lll->conn->initiated &&
+	} else if (lll->conn &&
 		   isr_scan_init_check(lll, pdu_adv_rx, rl_idx)) {
 		struct lll_conn *lll_conn;
 		struct node_rx_ftr *ftr;
@@ -827,7 +829,7 @@ static inline uint32_t isr_rx_pdu(struct lll_scan *lll, uint8_t devmatch_ok,
 		 */
 
 		/* Stop further LLL radio events */
-		lll->conn->initiated = 1;
+		lll->conn->master.initiated = 1;
 
 		rx = ull_pdu_rx_alloc();
 
@@ -996,6 +998,7 @@ static inline uint32_t isr_rx_pdu(struct lll_scan *lll, uint8_t devmatch_ok,
 	return 1;
 }
 
+#if defined(CONFIG_BT_CENTRAL)
 static inline bool isr_scan_init_check(struct lll_scan *lll,
 				       struct pdu_adv *pdu, uint8_t rl_idx)
 {
@@ -1025,6 +1028,7 @@ static inline bool isr_scan_init_adva_check(struct lll_scan *lll,
 	return ((lll->adv_addr_type == pdu->tx_addr) &&
 		!memcmp(lll->adv_addr, &pdu->adv_ind.addr[0], BDADDR_SIZE));
 }
+#endif /* CONFIG_BT_CENTRAL */
 
 static inline bool isr_scan_tgta_check(struct lll_scan *lll, bool init,
 				       struct pdu_adv *pdu, uint8_t rl_idx,

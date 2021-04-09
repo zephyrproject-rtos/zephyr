@@ -124,6 +124,12 @@ struct lwm2m_ctx {
 	 *  callback in case of socket errors on receive.
 	 */
 	lwm2m_socket_fault_cb_t fault_cb;
+
+	/** Validation buffer. Used as a temporary buffer to decode the resource
+	 *  value before validation. On successful validation, its content is
+	 *  copied into the actual resource buffer.
+	 */
+	uint8_t validate_buf[CONFIG_LWM2M_ENGINE_VALIDATION_BUFFER_SIZE];
 };
 
 
@@ -159,6 +165,7 @@ typedef void *(*lwm2m_engine_get_data_cb_t)(uint16_t obj_inst_id,
  * objects.
  *
  * A function of this type can be registered via:
+ * lwm2m_engine_register_validate_callback()
  * lwm2m_engine_register_post_write_callback()
  *
  * @param[in] obj_inst_id Object instance ID generating the callback.
@@ -745,6 +752,29 @@ int lwm2m_engine_register_read_callback(char *pathstr,
  */
 int lwm2m_engine_register_pre_write_callback(char *pathstr,
 					     lwm2m_engine_get_data_cb_t cb);
+
+/**
+ * @brief Set resource (instance) validation callback
+ *
+ * This callback is triggered before setting the value of a resource to the
+ * resource data buffer.
+ *
+ * The callback allows an LwM2M client or object to validate the data before
+ * writing and notify an error if the data should be discarded for any reason
+ * (by returning a negative error code).
+ *
+ * @note All resources that have a validation callback registered are initially
+ *       decoded into a temporary validation buffer. Make sure that
+ *       ``CONFIG_LWM2M_ENGINE_VALIDATION_BUFFER_SIZE`` is large enough to
+ *       store each of the validated resources (individually).
+ *
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
+ * @param[in] cb Validate resource data callback
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_engine_register_validate_callback(char *pathstr,
+					    lwm2m_engine_set_data_cb_t cb);
 
 /**
  * @brief Set resource (instance) post-write callback

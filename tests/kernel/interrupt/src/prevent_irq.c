@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include "interrupt_util.h"
+#include <interrupt_util.h>
 
 #define DURATION	5
 #define HANDLER_TOKEN	0xDEADBEEF
@@ -32,7 +32,7 @@ static void timer_handler(struct k_timer *timer)
  */
 void test_prevent_interruption(void)
 {
-	int key;
+	unsigned int key;
 
 	printk("locking interrupts\n");
 	key = irq_lock();

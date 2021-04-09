@@ -305,7 +305,7 @@ static void monitor_log_panic(const struct log_backend *const backend)
 {
 }
 
-static void monitor_log_init(void)
+static void monitor_log_init(const struct log_backend *const backend)
 {
 	log_set_timestamp_func(monitor_ts_get, MONITOR_TS_FREQ);
 }

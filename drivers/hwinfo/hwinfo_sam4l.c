@@ -20,7 +20,7 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 		return 0;
 	}
 
-	if (length > DT_INST_REG_SIZE(0) || length < 0) {
+	if (length > DT_INST_REG_SIZE(0)) {
 		length = DT_INST_REG_SIZE(0);
 	}
 

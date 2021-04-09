@@ -12,7 +12,7 @@
 #define ACTIVE 1
 #define NOT_ACTIVE 0
 
-static void zephyr_timer_wrapper(struct k_timer *timer);
+static void zephyr_timer_wrapper(struct k_timer *ztimer);
 
 struct timer_obj {
 	struct k_timer ztimer;

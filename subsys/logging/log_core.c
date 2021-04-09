@@ -36,7 +36,11 @@ LOG_MODULE_REGISTER(log);
 #endif
 
 #ifndef CONFIG_LOG_STRDUP_MAX_STRING
-#define CONFIG_LOG_STRDUP_MAX_STRING 0
+/* Required to suppress compiler warnings related to array subscript above array bounds.
+ * log_strdup explicitly accesses element with index of (sizeof(log_strdup_buf.buf) - 2).
+ * Set to 2 because some compilers generate warning on strncpy(dst, src, 0).
+ */
+#define CONFIG_LOG_STRDUP_MAX_STRING 2
 #endif
 
 #ifndef CONFIG_LOG_STRDUP_BUF_COUNT
@@ -46,7 +50,7 @@ LOG_MODULE_REGISTER(log);
 struct log_strdup_buf {
 	atomic_t refcount;
 	char buf[CONFIG_LOG_STRDUP_MAX_STRING + 1]; /* for termination */
-};
+} __aligned(sizeof(uintptr_t));
 
 #define LOG_STRDUP_POOL_BUFFER_SIZE \
 	(sizeof(struct log_strdup_buf) * CONFIG_LOG_STRDUP_BUF_COUNT)
@@ -115,7 +119,7 @@ uint32_t z_log_get_s_mask(const char *str, uint32_t nargs)
  */
 static bool is_rodata(const void *addr)
 {
-#if defined(CONFIG_ARM) || defined(CONFIG_ARC) || defined(CONFIG_X86)
+#if defined(CONFIG_ARM) || defined(CONFIG_ARC) || defined(CONFIG_X86) || defined(CONFIG_ARM64)
 	extern const char *_image_rodata_start[];
 	extern const char *_image_rodata_end[];
 	#define RO_START _image_rodata_start
@@ -334,7 +338,7 @@ void log_printk(const char *fmt, va_list ap)
 			}
 		};
 
-		if (_is_user_context()) {
+		if (k_is_user_context()) {
 			uint8_t str[CONFIG_LOG_PRINTK_MAX_STRING_LENGTH + 1];
 
 			vsnprintk(str, sizeof(str), fmt, ap);
@@ -387,7 +391,7 @@ uint32_t log_count_args(const char *fmt)
 void log_generic(struct log_msg_ids src_level, const char *fmt, va_list ap,
 		 enum log_strdup_action strdup_action)
 {
-	if (_is_user_context()) {
+	if (k_is_user_context()) {
 		log_generic_from_user(src_level, fmt, ap);
 	} else if (IS_ENABLED(CONFIG_LOG_IMMEDIATE) &&
 	    (!IS_ENABLED(CONFIG_LOG_FRONTEND))) {
@@ -544,7 +548,7 @@ void log_init(void)
 
 		if (backend->autostart) {
 			if (backend->api->init != NULL) {
-				backend->api->init();
+				backend->api->init(backend);
 			}
 
 			log_backend_enable(backend, NULL, CONFIG_LOG_MAX_LEVEL);
@@ -578,7 +582,7 @@ void log_thread_set(k_tid_t process_tid)
 
 int log_set_timestamp_func(timestamp_get_t timestamp_getter, uint32_t freq)
 {
-	if (!timestamp_getter) {
+	if (timestamp_getter == NULL) {
 		return -EINVAL;
 	}
 
@@ -891,7 +895,7 @@ char *log_strdup(const char *str)
 	int err;
 
 	if (IS_ENABLED(CONFIG_LOG_IMMEDIATE) ||
-	    is_rodata(str) || _is_user_context()) {
+	    is_rodata(str) || k_is_user_context()) {
 		return (char *)str;
 	}
 
@@ -1067,8 +1071,8 @@ void z_vrfy_z_log_hexdump_from_user(uint32_t src_level_val, const char *metadata
 		struct log_msg_ids structure;
 		uint32_t value;
 	} src_level_union;
-	size_t mlen;
 	int err;
+	char kmeta[CONFIG_LOG_STRDUP_MAX_STRING];
 
 	src_level_union.value = src_level_val;
 
@@ -1096,16 +1100,15 @@ void z_vrfy_z_log_hexdump_from_user(uint32_t src_level_val, const char *metadata
 	 * need the log subsystem to eventually free it, we're going
 	 * to use log_strdup().
 	 */
-	mlen = z_user_string_nlen(metadata, CONFIG_LOG_STRDUP_MAX_STRING, &err);
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(err == 0, "invalid string passed in"));
-	Z_OOPS(Z_SYSCALL_MEMORY_READ(metadata, mlen));
+	err = z_user_string_copy(kmeta, metadata, sizeof(kmeta));
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(err == 0, "invalid meta passed in"));
 	Z_OOPS(Z_SYSCALL_MEMORY_READ(data, len));
 
 	if (IS_ENABLED(CONFIG_LOG_IMMEDIATE)) {
 		log_hexdump_sync(src_level_union.structure,
-				 metadata, data, len);
+				 kmeta, data, len);
 	} else {
-		metadata = log_strdup(metadata);
+		metadata = log_strdup(kmeta);
 		log_hexdump(metadata, data, len, src_level_union.structure);
 	}
 }

@@ -10,3 +10,4 @@ supported:
   - watchdog
   - uart
   - pinmux
+  - nvs
