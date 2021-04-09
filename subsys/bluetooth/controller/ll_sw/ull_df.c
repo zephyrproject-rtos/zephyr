@@ -502,16 +502,12 @@ uint8_t ll_df_set_cl_iq_sampling_enable(uint16_t handle,
 	cfg = lll_df_sync_cfg_alloc(&lll->df_cfg, &cfg_idx);
 
 	if (!sampling_enable) {
-		if (!cfg->is_enabled) {
+		if (!cfg_prev->is_enabled) {
 			/* Disable already disabled CTE Rx */
 			return BT_HCI_ERR_SUCCESS;
 		}
-
+		slot_minus_us = CTE_LEN_MAX_US;
 		cfg->is_enabled = 0U;
-
-		if (cfg_prev->is_enabled) {
-			slot_minus_us = CTE_LEN_MAX_US;
-		}
 	} else {
 		/* Enable of already enabled CTE updates AoA configuration */
 		if (!((IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_1US) &&
@@ -638,6 +634,26 @@ void ull_df_sync_cfg_init(struct lll_df_sync *cfg)
 	memset(&cfg->cfg[0], 0, DOUBLE_BUFFER_SIZE * sizeof(cfg->cfg[0]));
 	cfg->first = 0U;
 	cfg->last = 0U;
+}
+
+uint8_t ull_df_sync_cfg_is_disabled_or_requested_to_disable(struct lll_df_sync *df_cfg)
+{
+	struct lll_df_sync_cfg *cfg;
+
+	/* If new CTE sampling configuration was enqueued, get reference to
+	 * latest congiruation without swapping buffers. Buffer should be
+	 * swapped only at the beginning of the radio event.
+	 *
+	 * We may not get here if CTE sampling is not enabled in current
+	 * configuration.
+	 */
+	if (lll_df_sync_cfg_is_modified(df_cfg)) {
+		cfg = lll_df_sync_cfg_peek(df_cfg);
+	} else {
+		cfg = lll_df_sync_cfg_curr_get(df_cfg);
+	}
+
+	return !cfg->is_enabled;
 }
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 
