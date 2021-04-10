@@ -57,6 +57,5 @@ source "drivers/ethernet/Kconfig.liteeth"
 source "drivers/ethernet/Kconfig.gecko"
 source "drivers/ethernet/Kconfig.w5500"
 source "drivers/ethernet/Kconfig.dsa"
-source "drivers/ethernet/Kconfig.lowRISC"
 
 endmenu # "Ethernet Drivers"
