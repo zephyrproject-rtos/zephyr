@@ -724,29 +724,45 @@ static int bt_iso_setup_data_path(struct bt_conn *conn)
 		.dir = BT_HCI_DATAPATH_DIR_CTLR_TO_HOST };
 	struct bt_iso_data_path in_path = {
 		.dir = BT_HCI_DATAPATH_DIR_HOST_TO_CTLR };
+	struct bt_iso_chan_io_qos *tx_qos;
+	struct bt_iso_chan_io_qos *rx_qos;
 
 	chan = SYS_SLIST_PEEK_HEAD_CONTAINER(&conn->channels, chan, node);
 	if (!chan) {
 		return -EINVAL;
 	}
 
-	in_path.path = chan->qos->tx->path ? chan->qos->tx->path : &path;
-	out_path.path = chan->qos->rx->path ? chan->qos->rx->path : &path;
+	tx_qos = chan->qos->tx;
+	rx_qos = chan->qos->rx;
 
-	if (!chan->qos->tx) {
+	in_path.path = tx_qos && tx_qos->path ? tx_qos->path : &path;
+	out_path.path = rx_qos && rx_qos->path ? rx_qos->path : &path;
+
+	if (!tx_qos) {
 		in_path.pid = BT_ISO_DATA_PATH_DISABLED;
 	}
 
-	if (!chan->qos->rx) {
+	if (!rx_qos) {
 		out_path.pid = BT_ISO_DATA_PATH_DISABLED;
 	}
 
-	err = hci_le_setup_iso_data_path(conn, &in_path);
-	if (err) {
-		return err;
-	}
+	if (conn->iso.is_bis) {
+		if (tx_qos) {
+			return hci_le_setup_iso_data_path(conn, &in_path);
 
-	return hci_le_setup_iso_data_path(conn, &out_path);
+		} else {
+			return hci_le_setup_iso_data_path(conn, &out_path);
+		}
+
+	} else {
+		err = hci_le_setup_iso_data_path(conn, &in_path);
+		if (err) {
+			return err;
+		}
+
+		return hci_le_setup_iso_data_path(conn, &out_path);
+
+	}
 }
 
 void bt_iso_connected(struct bt_conn *conn)
