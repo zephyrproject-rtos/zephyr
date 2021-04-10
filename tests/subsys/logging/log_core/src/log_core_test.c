@@ -218,7 +218,7 @@ static void test_log_backend_runtime_filtering(void)
 }
 
 /*
- * When LOG_MOVE_OVERFLOW is enabled, logger should discard oldest messages when
+ * When LOG_MODE_OVERFLOW is enabled, logger should discard oldest messages when
  * there is no room. However, if after discarding all messages there is still no
  * room then current log is discarded.
  */
