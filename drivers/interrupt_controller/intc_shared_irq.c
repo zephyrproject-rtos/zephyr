@@ -18,6 +18,24 @@
 #include <drivers/interrupt_controller/ioapic.h>
 #endif
 
+typedef void (*shared_irq_config_irq_t)(void);
+
+struct shared_irq_config {
+	uint32_t irq_num;
+	shared_irq_config_irq_t config;
+	uint32_t client_count;
+};
+
+struct shared_irq_client {
+	const struct device *isr_dev;
+	isr_t isr_func;
+	uint32_t enabled;
+};
+
+struct shared_irq_runtime {
+	struct shared_irq_client client[CONFIG_SHARED_IRQ_NUM_CLIENTS];
+};
+
 /**
  *  @brief Register a device ISR
  *  @param dev Pointer to device structure for SHARED_IRQ driver instance.
