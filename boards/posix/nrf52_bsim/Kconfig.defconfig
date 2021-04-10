@@ -24,6 +24,12 @@ if LOG
 config LOG_BACKEND_NATIVE_POSIX
 	default y if !SERIAL
 
+# For this board we can log synchronously without any problem
+# Doing so will be nicer for debugging
+choice LOG_MODE
+	default LOG_MODE_IMMEDIATE
+endchoice
+
 endif # LOG
 
 endif # BOARD_NRF52_BSIM
