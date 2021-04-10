@@ -78,6 +78,11 @@
 	status = "okay";
 };
 
+&adc1 {
+	pinctrl-0 = <&adc1_in5_pa0>;
+	status = "okay";
+};
+
 &lptim1 {
 	status = "okay";
 };
