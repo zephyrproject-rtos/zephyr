@@ -110,13 +110,8 @@ valid_syscall_id:
 	ldr	x9, [x9, x8, lsl #3]
 
 	/* Recover the privileged stack */
-#ifdef CONFIG_SMP
-	get_cpu	x10, x8
+	get_cpu	x10
 	ldr	x10, [x10, #___cpu_t_current_OFFSET]
-#else
-	ldr	x10, =_kernel
-	ldr	x10, [x10, #_kernel_offset_to_current]
-#endif
 	ldr     x10, [x10, #_thread_offset_to_priv_stack_start]
 	add	x10, x10, #CONFIG_PRIVILEGED_STACK_SIZE
 

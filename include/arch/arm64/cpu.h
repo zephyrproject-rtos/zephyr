@@ -32,6 +32,7 @@
 #define SPSR_MODE_EL1H		(0x5)
 #define SPSR_MODE_EL2T		(0x8)
 #define SPSR_MODE_EL2H		(0x9)
+#define SPSR_MODE_MASK		(0xf)
 
 
 #define SCTLR_EL3_RES1		(BIT(29) | BIT(28) | BIT(23) | \
