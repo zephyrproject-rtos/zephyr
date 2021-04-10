@@ -15,6 +15,7 @@
 #include <linker/sections.h>
 #include <devicetree.h>
 
+#include <linker/devicetree_regions.h>
 #include <linker/linker-defs.h>
 #include <linker/linker-tool.h>
 
@@ -66,21 +67,6 @@
 #define RAM_ADDR CONFIG_SRAM_BASE_ADDRESS
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_ccm), okay)
-#define CCM_SIZE DT_REG_SIZE(DT_CHOSEN(zephyr_ccm))
-#define CCM_ADDR DT_REG_ADDR(DT_CHOSEN(zephyr_ccm))
-#endif
-
-#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_itcm), okay)
-#define ITCM_SIZE DT_REG_SIZE(DT_CHOSEN(zephyr_itcm))
-#define ITCM_ADDR DT_REG_ADDR(DT_CHOSEN(zephyr_itcm))
-#endif
-
-#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
-#define DTCM_SIZE DT_REG_SIZE(DT_CHOSEN(zephyr_dtcm))
-#define DTCM_ADDR DT_REG_ADDR(DT_CHOSEN(zephyr_dtcm))
-#endif
-
 #if defined(CONFIG_CUSTOM_SECTION_ALIGN)
 _region_min_align = CONFIG_CUSTOM_SECTION_MIN_ALIGN_SIZE;
 #else
@@ -110,31 +96,20 @@ MEMORY
 #ifdef CONFIG_HAS_TI_CCFG
     FLASH_CCFG            (rwx): ORIGIN = CCFG_ADDR, LENGTH = CCFG_SIZE
 #endif
-#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_ccm), okay)
-    CCM                   (rw) : ORIGIN = CCM_ADDR, LENGTH = CCM_SIZE
-#endif
-#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_itcm), okay)
-    ITCM                  (rw) : ORIGIN = ITCM_ADDR, LENGTH = ITCM_SIZE
-#endif
-#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
-    DTCM                  (rw) : ORIGIN = DTCM_ADDR, LENGTH = DTCM_SIZE
-#endif
     SRAM                  (wx) : ORIGIN = RAM_ADDR, LENGTH = RAM_SIZE
+    /* Data & Instruction Tightly Coupled Memory */
+    DT_REGION_FROM_NODE_STATUS_OKAY(ITCM, rw, DT_CHOSEN(zephyr_itcm))
+    DT_REGION_FROM_NODE_STATUS_OKAY(DTCM, rw, DT_CHOSEN(zephyr_dtcm))
+    /* STM32 Core Coupled Memory */
+    DT_REGION_FROM_NODE_STATUS_OKAY(CCM, rw, DT_CHOSEN(zephyr_ccm))
 #ifdef CONFIG_BT_STM32_IPM
     SRAM1                 (rw) : ORIGIN = RAM1_ADDR, LENGTH = RAM1_SIZE
     SRAM2                 (rw) : ORIGIN = RAM2_ADDR, LENGTH = RAM2_SIZE
 #endif
-#ifdef CONFIG_MEMC_STM32_SDRAM
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(sdram1), okay)
-    SDRAM1                (rw) : ORIGIN = DT_REG_ADDR(DT_NODELABEL(sdram1)), LENGTH = DT_REG_SIZE(DT_NODELABEL(sdram1))
-#endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(sdram2), okay)
-    SDRAM2                (rw) : ORIGIN = DT_REG_ADDR(DT_NODELABEL(sdram2)), LENGTH = DT_REG_SIZE(DT_NODELABEL(sdram2))
-#endif
-#endif
-#ifdef CONFIG_STM32_BACKUP_SRAM
-    BACKUP_SRAM           (rw) : ORIGIN = DT_REG_ADDR(DT_NODELABEL(backup_sram)), LENGTH = DT_REG_SIZE(DT_NODELABEL(backup_sram))
-#endif
+    /* STM32 alternate RAM configurations */
+    DT_REGION_FROM_NODE_STATUS_OKAY(SDRAM1, rw, DT_NODELABEL(sdram1))
+    DT_REGION_FROM_NODE_STATUS_OKAY(SDRAM2, rw, DT_NODELABEL(sdram2))
+    DT_REGION_FROM_NODE_STATUS_OKAY(BACKUP_SRAM, rw, DT_NODELABEL(backup_sram))
     /* Used by and documented in include/linker/intlist.ld */
     IDT_LIST  (wx)      : ORIGIN = (RAM_ADDR + RAM_SIZE), LENGTH = 2K
     }
