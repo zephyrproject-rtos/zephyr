@@ -1124,25 +1124,6 @@ static void isr_done(void *param)
 		radio_tmr_end_capture();
 
 		return;
-
-#if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(BT_CTLR_ADV_EXT_PBACK)
-	} else {
-		struct pdu_adv_com_ext_adv *p;
-		struct pdu_adv_ext_hdr *h;
-		struct pdu_adv *pdu;
-
-		pdu = lll_adv_data_curr_get(lll);
-		p = (void *)&pdu->adv_ext_ind;
-		h = (void *)p->ext_hdr_adv_data;
-
-		if ((pdu->type == PDU_ADV_TYPE_EXT_IND) && h->aux_ptr) {
-			radio_filter_disable();
-
-			lll_adv_aux_pback_prepare(lll);
-
-			return;
-		}
-#endif /* CONFIG_BT_CTLR_ADV_EXT */
 	}
 
 	radio_filter_disable();
