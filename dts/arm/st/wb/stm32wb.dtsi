@@ -31,6 +31,16 @@
 		compatible = "mmio-sram";
 	};
 
+	sram1: memory@20030000 {
+		compatible = "mmio-sram";
+		reg = <0x20030000 0x2800>;
+	};
+
+	sram2: memory@20038000 {
+		compatible = "mmio-sram";
+		reg = <0x20038000 0x5000>;
+	};
+
 	soc {
 		flash: flash-controller@58004000 {
 			compatible = "st,stm32-flash-controller", "st,stm32wb-flash-controller";
