@@ -45,6 +45,9 @@ static inline void z_arm64_bss_zero(void)
  */
 void z_arm64_prep_c(void)
 {
+	/* Initialize tpidrro_el0 with our struct _cpu instance address */
+	write_tpidrro_el0((uintptr_t)&_kernel.cpus[0]);
+
 	z_arm64_bss_zero();
 #ifdef CONFIG_XIP
 	z_data_copy();

@@ -47,9 +47,6 @@ struct __esf {
 	uint64_t x30;
 	uint64_t spsr;
 	uint64_t elr;
-#ifdef CONFIG_USERSPACE
-	uint64_t tpidrro_el0;
-#endif
 } __aligned(16);
 
 typedef struct __esf z_arch_esf_t;

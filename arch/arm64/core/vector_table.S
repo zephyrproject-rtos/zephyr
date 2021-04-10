@@ -10,8 +10,9 @@
 
 #include <toolchain.h>
 #include <linker/sections.h>
+#include <offsets.h>
 #include <arch/cpu.h>
-#include <offsets_short.h>
+#include <arch/arm64/tpidrro_el0.h>
 #include "vector_table.h"
 
 _ASM_FILE_PROLOGUE
@@ -56,12 +57,10 @@ _ASM_FILE_PROLOGUE
 	stp	\xreg0, \xreg1, [sp, ___esf_t_spsr_elr_OFFSET]
 
 #ifdef CONFIG_USERSPACE
-	/* Save the current kernel/user mode in the context */
+	/* Clear usermode flag */
 	mrs	\xreg0, tpidrro_el0
-	str	\xreg0, [sp, ___esf_t_tpidrro_el0_OFFSET]
-
-	/* Switch TPIDRRO_EL0 to kernel mode */
-	msr	tpidrro_el0, xzr
+	bic	\xreg0, \xreg0, #TPIDRROEL0_IN_EL0
+	msr	tpidrro_el0, \xreg0
 #endif
 
 .endm
@@ -219,8 +218,12 @@ SECTION_FUNC(TEXT, z_arm64_exit_exc)
 
 #ifdef CONFIG_USERSPACE
 	/* Restore the kernel/user mode flag */
-	ldr	x0, [sp, ___esf_t_tpidrro_el0_OFFSET]
+	tst	x0, #SPSR_MODE_MASK	/* EL0 == 0 */
+	bne	1f
+	mrs	x0, tpidrro_el0
+	orr	x0, x0, #TPIDRROEL0_IN_EL0
 	msr	tpidrro_el0, x0
+1:
 #endif
 
 	ldp	x0, x1, [sp, ___esf_t_x0_x1_OFFSET]
