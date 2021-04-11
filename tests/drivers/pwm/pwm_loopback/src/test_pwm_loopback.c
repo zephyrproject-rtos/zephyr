@@ -51,14 +51,14 @@ void test_capture(uint32_t period, uint32_t pulse, enum test_pwm_unit unit,
 		TC_PRINT("Testing PWM capture @ %u/%u nsec\n",
 			 pulse, period);
 		err = pwm_pin_set_nsec(out.dev, out.pwm, period,
-				       pulse, out.flags);
+				       pulse, out.flags | PWM_FORCE_UPDATE);
 		break;
 
 	case TEST_PWM_UNIT_USEC:
 		TC_PRINT("Testing PWM capture @ %u/%u usec\n",
 			 pulse, period);
 		err = pwm_pin_set_usec(out.dev, out.pwm, period,
-				       pulse, out.flags);
+				       pulse, out.flags | PWM_FORCE_UPDATE);
 		break;
 
 	default:
@@ -170,7 +170,8 @@ void test_capture_timeout(void)
 
 	get_test_pwms(&out, &in);
 
-	err = pwm_pin_set_cycles(out.dev, out.pwm, 100, 0, out.flags);
+	err = pwm_pin_set_cycles(out.dev, out.pwm, 100, 0,
+				 out.flags | PWM_FORCE_UPDATE);
 	zassert_equal(err, 0, "failed to set pwm output (err %d)", err);
 
 	err = pwm_pin_capture_cycles(in.dev, in.pwm,
@@ -243,7 +244,7 @@ void test_continuous_capture(void)
 	k_sem_init(&data.sem, 0, 1);
 
 	err = pwm_pin_set_usec(out.dev, out.pwm, period_usec, pulse_usec,
-			       out.flags);
+			       out.flags | PWM_FORCE_UPDATE);
 	zassert_equal(err, 0, "failed to set pwm output (err %d)", err);
 
 	err = pwm_pin_configure_capture(in.dev, in.pwm,
@@ -310,7 +311,8 @@ void test_capture_busy(void)
 	memset(buffer, 0, sizeof(buffer));
 	k_sem_init(&data.sem, 0, 1);
 
-	err = pwm_pin_set_cycles(out.dev, out.pwm, 100, 0, out.flags);
+	err = pwm_pin_set_cycles(out.dev, out.pwm, 100, 0,
+			out.flags | PWM_FORCE_UPDATE);
 	zassert_equal(err, 0, "failed to set pwm output (err %d)", err);
 
 	err = pwm_pin_configure_capture(in.dev, in.pwm,
