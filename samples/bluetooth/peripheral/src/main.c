@@ -230,6 +230,15 @@ static const struct bt_data ad[] = {
 		      0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12),
 };
 
+void mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
+{
+	printk("Updated MTU: TX: %d RX: %d bytes\n", tx, rx);
+}
+
+static struct bt_gatt_cb gatt_callbacks = {
+	.att_mtu_updated = mtu_updated
+};
+
 static void connected(struct bt_conn *conn, uint8_t err)
 {
 	if (err) {
@@ -332,6 +341,7 @@ void main(void)
 
 	bt_ready();
 
+	bt_gatt_cb_register(&gatt_callbacks);
 	bt_conn_cb_register(&conn_callbacks);
 	bt_conn_auth_cb_register(&auth_cb_display);
 
