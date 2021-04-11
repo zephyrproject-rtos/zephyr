@@ -388,6 +388,8 @@ struct usdhc_config {
 	uint8_t detect_pin;
 	gpio_dt_flags_t detect_flags;
 
+	bool no_1_8_v;
+
 	uint32_t data_timeout;
 	/* Data timeout value
 	 */
@@ -2339,8 +2341,10 @@ static int usdhc_sd_init(struct usdhc_priv *priv)
 	/* allow user select the work voltage, if not select,
 	 * sdmmc will handle it automatically
 	 */
-	if (USDHC_SUPPORT_V180_FLAG != SDMMCHOST_NOT_SUPPORT) {
-		app_cmd_41_arg |= SD_OCR_SWITCH_18_REQ_FLAG;
+	if (priv->config->no_1_8_v == false) {
+		if (USDHC_SUPPORT_V180_FLAG != SDMMCHOST_NOT_SUPPORT) {
+			app_cmd_41_arg |= SD_OCR_SWITCH_18_REQ_FLAG;
+		}
 	}
 
 	/* Check card's supported interface condition. */
@@ -2387,9 +2391,12 @@ APP_SEND_OP_COND_AGAIN:
 		if (cmd->response[0U] & SD_OCR_CARD_CAP_FLAG) {
 			priv->card_info.card_flags |= SDHC_HIGH_CAPACITY_FLAG;
 		}
-		/* 1.8V support */
-		if (cmd->response[0U] & SD_OCR_SWITCH_18_ACCEPT_FLAG) {
-			priv->card_info.card_flags |= SDHC_1800MV_FLAG;
+
+		if (priv->config->no_1_8_v == false) {
+			/* 1.8V support */
+			if (cmd->response[0U] & SD_OCR_SWITCH_18_ACCEPT_FLAG) {
+				priv->card_info.card_flags |= SDHC_1800MV_FLAG;
+			}
 		}
 		priv->card_info.raw_ocr = cmd->response[0U];
 	} else {
@@ -2831,6 +2838,7 @@ static int disk_usdhc_init(const struct device *dev)
 		.nusdhc = n,						\
 		DISK_ACCESS_USDHC_INIT_PWR(n)				\
 		DISK_ACCESS_USDHC_INIT_CD(n)				\
+		.no_1_8_v = DT_INST_PROP(n, no_1_8_v),			\
 		.data_timeout = USDHC_DATA_TIMEOUT,			\
 		.endian = USDHC_LITTLE_ENDIAN,				\
 		.read_watermark = USDHC_READ_WATERMARK_LEVEL,		\
