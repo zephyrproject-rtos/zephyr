@@ -28,7 +28,7 @@
 #define EDS_IDLE_TIMEOUT K_SECONDS(30)
 
 /* Idle timer */
-struct k_delayed_work idle_work;
+struct k_work_delayable idle_work;
 
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
@@ -655,7 +655,7 @@ static void bt_ready(int err)
 	bt_addr_le_to_str(&oob.addr, addr_s, sizeof(addr_s));
 	printk("Initial advertising as %s\n", addr_s);
 
-	k_delayed_work_submit(&idle_work, EDS_IDLE_TIMEOUT);
+	k_work_schedule(&idle_work, EDS_IDLE_TIMEOUT);
 
 	printk("Configuration mode: waiting connections...\n");
 }
@@ -674,7 +674,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 		printk("Connection failed (err 0x%02x)\n", err);
 	} else {
 		printk("Connected\n");
-		k_delayed_work_cancel(&idle_work);
+		k_work_cancel_delayable(&idle_work);
 	}
 }
 
@@ -685,7 +685,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	printk("Disconnected (reason 0x%02x)\n", reason);
 
 	if (!slot->connectable) {
-		k_delayed_work_submit(&idle_work, K_NO_WAIT);
+		k_work_reschedule(&idle_work, K_NO_WAIT);
 	}
 }
 
@@ -699,7 +699,7 @@ void main(void)
 	int err;
 
 	bt_conn_cb_register(&conn_callbacks);
-	k_delayed_work_init(&idle_work, idle_timeout);
+	k_work_init_delayable(&idle_work, idle_timeout);
 
 	/* Initialize the Bluetooth Subsystem */
 	err = bt_enable(bt_ready);
