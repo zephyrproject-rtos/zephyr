@@ -330,7 +330,13 @@ static bool l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 		return false;
 	}
 
-	k_delayed_work_init(&chan->rtx_work, l2cap_rtx_timeout);
+	/* All dynamic channels have the destroy handler which makes sure that
+	 * the RTX work structure is properly released with a cancel sync.
+	 * The fixed signal channel is only removed when disconnected and the
+	 * disconnected handler is always called from the workqueue itself so
+	 * canceling from there should always succeed.
+	 */
+	k_work_init_delayable(&chan->rtx_work, l2cap_rtx_timeout);
 	atomic_clear(chan->status);
 
 	bt_l2cap_chan_add(conn, chan, destroy);
@@ -457,7 +463,7 @@ static void l2cap_chan_send_req(struct bt_l2cap_chan *chan,
 	 * final expiration, when the response is received, or the physical
 	 * link is lost.
 	 */
-	k_delayed_work_submit(&chan->rtx_work, timeout);
+	k_work_reschedule(&chan->rtx_work, timeout);
 }
 
 static int l2cap_le_conn_req(struct bt_l2cap_le_chan *ch)
@@ -912,8 +918,11 @@ static void l2cap_chan_destroy(struct bt_l2cap_chan *chan)
 
 	BT_DBG("chan %p cid 0x%04x", ch, ch->rx.cid);
 
-	/* Cancel ongoing work */
-	k_delayed_work_cancel(&chan->rtx_work);
+	/* Cancel ongoing work. Since the channel can be re-used after this
+	 * we need to sync to make sure that the kernel does not have it
+	 * in its queue anymore.
+	 */
+	k_work_cancel_delayable_sync(&chan->rtx_work, &chan->rtx_sync);
 
 	if (ch->tx_buf) {
 		net_buf_unref(ch->tx_buf);
@@ -1421,7 +1430,7 @@ static void le_ecred_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 	case BT_L2CAP_LE_ERR_ENCRYPTION:
 		while ((chan = l2cap_lookup_ident(conn, ident))) {
 			/* Cancel RTX work */
-			k_delayed_work_cancel(&chan->chan.rtx_work);
+			k_work_cancel_delayable(&chan->chan.rtx_work);
 
 			/* If security needs changing wait it to be completed */
 			if (!l2cap_change_security(chan, result)) {
@@ -1442,7 +1451,7 @@ static void le_ecred_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 			struct bt_l2cap_chan *c;
 
 			/* Cancel RTX work */
-			k_delayed_work_cancel(&chan->chan.rtx_work);
+			k_work_cancel_delayable(&chan->chan.rtx_work);
 
 			dcid = net_buf_pull_le16(buf);
 
@@ -1539,7 +1548,7 @@ static void le_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 	}
 
 	/* Cancel RTX work */
-	k_delayed_work_cancel(&chan->chan.rtx_work);
+	k_work_cancel_delayable(&chan->chan.rtx_work);
 
 	/* Reset ident since it got a response */
 	chan->chan.ident = 0U;
@@ -2367,6 +2376,12 @@ static void l2cap_disconnected(struct bt_l2cap_chan *chan)
 {
 	BT_DBG("ch %p cid 0x%04x", BT_L2CAP_LE_CHAN(chan),
 	       BT_L2CAP_LE_CHAN(chan)->rx.cid);
+
+	/* Cancel RTX work on signal channel.
+	 * Disconnected callback is always called from system worqueue
+	 * so this should always succeed.
+	 */
+	(void)k_work_cancel_delayable(&chan->rtx_work);
 }
 
 static int l2cap_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
