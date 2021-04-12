@@ -12,7 +12,7 @@
 #include <pb_decode.h>
 #include "src/simple.pb.h"
 
-bool encode_message(uint8_t *buffer, size_t *message_length)
+bool encode_message(uint8_t *buffer, size_t buffer_size, size_t *message_length)
 {
 	bool status;
 
@@ -26,7 +26,7 @@ bool encode_message(uint8_t *buffer, size_t *message_length)
 	SimpleMessage message = SimpleMessage_init_zero;
 
 	/* Create a stream that will write to our buffer. */
-	pb_ostream_t stream = pb_ostream_from_buffer(buffer, sizeof(buffer));
+	pb_ostream_t stream = pb_ostream_from_buffer(buffer, buffer_size);
 
 	/* Fill in the lucky number */
 	message.lucky_number = 13;
@@ -73,7 +73,7 @@ void main(void)
 	size_t message_length;
 
 	/* Encode our message */
-	if (!encode_message(buffer, &message_length)) {
+	if (!encode_message(buffer, sizeof(buffer), &message_length)) {
 		return;
 	}
 
