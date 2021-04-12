@@ -1,0 +1,14 @@
+# ESP32 Interrupt Allocator messages configuration
+
+# Copyright (c) 2021 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config INTC_ESP32_DECISIONS_LOG
+	bool "Enables ESP32 interrupt allocator logging"
+	depends on SOC_ESP32
+	select LOG
+	help
+	  Enable this option to visualize information on decisions made by the
+	  interrupt allocator. This has no impact on the interrupt allocator usage
+	  but may be valuable for debugging purposes. When enabled, messages are
+	  print to the serial console.
