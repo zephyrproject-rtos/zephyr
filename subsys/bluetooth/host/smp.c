@@ -203,7 +203,7 @@ struct bt_smp {
 	struct bt_l2cap_le_chan		chan;
 
 	/* Delayed work for timeout handling */
-	struct k_delayed_work		work;
+	struct k_work_delayable		work;
 };
 
 static unsigned int fixed_passkey = BT_PASSKEY_INVALID;
@@ -264,7 +264,7 @@ struct bt_smp_br {
 	struct bt_l2cap_br_chan	chan;
 
 	/* Delayed work for timeout handling */
-	struct k_delayed_work 	work;
+	struct k_work_delayable	work;
 };
 
 static struct bt_smp_br bt_smp_br_pool[CONFIG_BT_MAX_CONN];
@@ -962,9 +962,17 @@ static void sc_derive_link_key(struct bt_smp *smp)
 
 static void smp_br_reset(struct bt_smp_br *smp)
 {
-	k_delayed_work_cancel(&smp->work);
-
+	/* Clear flags first in case canceling of timeout fails. The SMP context
+	 * shall be marked as timed out in that case.
+	 */
 	atomic_set(smp->flags, 0);
+
+	/* If canceling fails the timeout handler will set the timeout flag and
+	 * mark the it as timed out. No new pairing procedures shall be started
+	 * on this connection if that happens.
+	 */
+	(void)k_work_cancel_delayable(&smp->work);
+
 	atomic_set(smp->allowed_cmds, 0);
 
 	atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_REQ);
@@ -1028,7 +1036,7 @@ static void smp_br_send(struct bt_smp_br *smp, struct net_buf *buf,
 		return;
 	}
 
-	k_delayed_work_submit(&smp->work, SMP_TIMEOUT);
+	k_work_reschedule(&smp->work, SMP_TIMEOUT);
 }
 
 static void bt_smp_br_connected(struct bt_l2cap_chan *chan)
@@ -1056,7 +1064,10 @@ static void bt_smp_br_disconnected(struct bt_l2cap_chan *chan)
 	BT_DBG("chan %p cid 0x%04x", chan,
 	       CONTAINER_OF(chan, struct bt_l2cap_br_chan, chan)->tx.cid);
 
-	k_delayed_work_cancel(&smp->work);
+	/* Channel disconnected callback is always called from a work handler
+	 * so canceling of the timeout work should always succeed.
+	 */
+	(void)k_work_cancel_delayable(&smp->work);
 
 	(void)memset(smp, 0, sizeof(*smp));
 }
@@ -1681,7 +1692,7 @@ static int bt_smp_br_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 
 		*chan = &smp->chan.chan;
 
-		k_delayed_work_init(&smp->work, smp_br_timeout);
+		k_work_init_delayable(&smp->work, smp_br_timeout);
 		smp_br_reset(smp);
 
 		return 0;
@@ -1785,11 +1796,19 @@ static void smp_reset(struct bt_smp *smp)
 {
 	struct bt_conn *conn = smp->chan.chan.conn;
 
-	k_delayed_work_cancel(&smp->work);
+	/* Clear flags first in case canceling of timeout fails. The SMP context
+	 * shall be marked as timed out in that case.
+	 */
+	atomic_set(smp->flags, 0);
+
+	/* If canceling fails the timeout handler will set the timeout flag and
+	 * mark the it as timed out. No new pairing procedures shall be started
+	 * on this connection if that happens.
+	 */
+	(void)k_work_cancel_delayable(&smp->work);
 
 	smp->method = JUST_WORKS;
 	atomic_set(smp->allowed_cmds, 0);
-	atomic_set(smp->flags, 0);
 
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
 	    conn->role == BT_HCI_ROLE_MASTER) {
@@ -1910,7 +1929,7 @@ static void smp_send(struct bt_smp *smp, struct net_buf *buf,
 		return;
 	}
 
-	k_delayed_work_submit(&smp->work, SMP_TIMEOUT);
+	k_work_reschedule(&smp->work, SMP_TIMEOUT);
 }
 
 static int smp_error(struct bt_smp *smp, uint8_t reason)
@@ -4537,7 +4556,7 @@ static void bt_smp_connected(struct bt_l2cap_chan *chan)
 	BT_DBG("chan %p cid 0x%04x", chan,
 	       CONTAINER_OF(chan, struct bt_l2cap_le_chan, chan)->tx.cid);
 
-	k_delayed_work_init(&smp->work, smp_timeout);
+	k_work_init_delayable(&smp->work, smp_timeout);
 	smp_reset(smp);
 }
 
@@ -4549,7 +4568,10 @@ static void bt_smp_disconnected(struct bt_l2cap_chan *chan)
 	BT_DBG("chan %p cid 0x%04x", chan,
 	       CONTAINER_OF(chan, struct bt_l2cap_le_chan, chan)->tx.cid);
 
-	k_delayed_work_cancel(&smp->work);
+	/* Channel disconnected callback is always called from a work handler
+	 * so canceling of the timeout work should always succeed.
+	 */
+	(void)k_work_cancel_delayable(&smp->work);
 
 	if (atomic_test_bit(smp->flags, SMP_FLAG_PAIRING) ||
 	    atomic_test_bit(smp->flags, SMP_FLAG_ENC_PENDING) ||
