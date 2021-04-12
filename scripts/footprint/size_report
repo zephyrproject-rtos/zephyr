@@ -601,7 +601,7 @@ def main():
 
     symbols = get_symbols(elf, addr_ranges)
 
-    for sym in symbols['unassigned']:
+    for sym in symbols['unassigned'].values():
         print("WARN: Symbol '{0}' is not in RAM or ROM".format(sym['name']))
 
     symbol_dict = None
