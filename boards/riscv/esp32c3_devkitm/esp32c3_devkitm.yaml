@@ -1,0 +1,6 @@
+identifier: esp32c3
+name: ESP32-C3
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr

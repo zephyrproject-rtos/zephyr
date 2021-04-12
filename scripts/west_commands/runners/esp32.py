@@ -15,12 +15,16 @@ import sys
 class Esp32BinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for espidf.'''
 
-    def __init__(self, cfg, device, baud=921600, flash_size='detect',
+    def __init__(self, cfg, device, boot_address, part_table_address,
+                 app_address, baud=921600, flash_size='detect',
                  flash_freq='40m', flash_mode='dio', espidf='espidf',
                  bootloader_bin=None, partition_table_bin=None):
         super().__init__(cfg)
         self.elf = cfg.elf_file
         self.device = device
+        self.boot_address = boot_address
+        self.part_table_address = part_table_address
+        self.app_address = app_address        
         self.baud = baud
         self.flash_size = flash_size
         self.flash_freq = flash_freq
@@ -42,8 +46,13 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
         # Required
         parser.add_argument('--esp-idf-path', required=True,
                             help='path to ESP-IDF')
-
         # Optional
+        parser.add_argument('--esp-boot-address', default='0x1000',
+                            help='bootloader load address')
+        parser.add_argument('--esp-partition-table-address', default='0x8000',
+                            help='partition table load address')
+        parser.add_argument('--esp-app-address', default='0x10000',
+                            help='application load address')
         parser.add_argument('--esp-device', default='/dev/ttyUSB0',
                             help='serial port to flash, default /dev/ttyUSB0')
         parser.add_argument('--esp-baud-rate', default='921600',
@@ -72,7 +81,9 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
                                'esptool', 'esptool.py')
 
         return Esp32BinaryRunner(
-            cfg, args.esp_device, baud=args.esp_baud_rate,
+            cfg, args.esp_device, boot_address=args.esp_boot_address, 
+            part_table_address=args.esp_partition_table_address,
+            app_address=args.esp_app_address,baud=args.esp_baud_rate, 
             flash_size=args.esp_flash_size, flash_freq=args.esp_flash_freq,
             flash_mode=args.esp_flash_mode, espidf=espidf,
             bootloader_bin=args.esp_flash_bootloader,
@@ -81,7 +92,7 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
     def do_run(self, command, **kwargs):
         self.require(self.espidf)
         bin_name = path.splitext(self.elf)[0] + path.extsep + 'bin'
-        cmd_flash = [self.espidf, '--chip', 'esp32', '--port', self.device,
+        cmd_flash = [self.espidf, '--chip', 'auto', '--port', self.device,
                      '--baud', self.baud, '--before', 'default_reset',
                      '--after', 'hard_reset', 'write_flash', '-u',
                      '--flash_mode', self.flash_mode,
@@ -92,13 +103,13 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
         if self.espidf.lower().endswith(".py") and sys.executable:
             cmd_flash.insert(0, sys.executable)
 
-        if self.bootloader_bin:
-            cmd_flash.extend(['0x1000', self.bootloader_bin])
-            cmd_flash.extend(['0x8000', self.partition_table_bin])
-            cmd_flash.extend(['0x10000', bin_name])
-        else:
-            cmd_flash.extend(['0x1000', bin_name])
+        if self.bootloader_bin :
+            cmd_flash.extend([self.boot_address, self.bootloader_bin])
+            cmd_flash.extend([self.part_table_address, self.partition_table_bin])
+            cmd_flash.extend([self.app_address, bin_name])
+        else :             
+            cmd_flash.extend([self.boot_address, bin_name])
 
-        self.logger.info("Flashing ESP32 on {} ({}bps)".
+        self.logger.info("Flashing esp32 chip on {} ({}bps)".
                          format(self.device, self.baud))
         self.check_call(cmd_flash)
