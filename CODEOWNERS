@@ -242,6 +242,7 @@
 /drivers/ieee802154/ieee802154_cc13xx*    @bwitherspoon @cfriedt
 /drivers/interrupt_controller/            @dcpleung @nashif
 /drivers/interrupt_controller/intc_gic.c  @stephanosio
+/drivers/interrupt_controller/*esp32*     @glaubermaroto
 /drivers/ipm/ipm_mhu*                     @karl-zh
 /drivers/ipm/Kconfig.nrfx                 @masz-nordic @ioannisg
 /drivers/ipm/Kconfig.nrfx_ipc_channel     @masz-nordic @ioannisg

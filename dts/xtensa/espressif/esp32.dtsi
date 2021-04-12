@@ -8,6 +8,7 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/i2c/i2c.h>
 #include <dt-bindings/clock/esp32_clock.h>
+#include <dt-bindings/interrupt-controller/esp-xtensa-intmux.h>
 
 / {
 	chosen {
@@ -44,6 +45,15 @@
 		sram0: memory@3ffb0000 {
 			compatible = "mmio-sram";
 			reg = <0x3FFB0000 0x50000>;
+		};
+
+		intc: interrupt-controller@3ff00104 {
+			#interrupt-cells = <1>;
+			compatible = "espressif,esp32-intc";
+			interrupt-controller;
+			reg = <0x3ff00104 0x114>;
+			label = "INTC_0";
+			status = "okay";
 		};
 
 		rtc: rtc@3ff48000 {
