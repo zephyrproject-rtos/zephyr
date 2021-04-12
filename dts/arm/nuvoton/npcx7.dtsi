@@ -122,7 +122,7 @@
 			reg-names = "evt_itim", "sys_itim";
 			clocks = <&pcc NPCX_CLOCK_BUS_LFCLK NPCX_PWDWN_CTL4 3
 				  &pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL7 5>;
-			interrupts = <46 0>; /* Event timer interrupt */
+			interrupts = <46 2>; /* Event timer interrupt */
 			label = "ITIM";
 		};
 
@@ -153,7 +153,7 @@
 		uart1: serial@400c4000 {
 			compatible = "nuvoton,npcx-uart";
 			reg = <0x400C4000 0x2000>;
-			interrupts = <33 0>;
+			interrupts = <33 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL1 4>;
 			pinctrl-0 = <&alta_uart1_sl1>; /* PIN10.11 */
 			uart-rx = <&wui_cr_sin1>;
@@ -164,7 +164,7 @@
 		uart2: serial@400c6000 {
 			compatible = "nuvoton,npcx-uart";
 			reg = <0x400C6000 0x2000>;
-			interrupts = <32 0>;
+			interrupts = <32 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL7 6>;
 			pinctrl-0 = <&alta_uart2_sl>; /* PIN75.86 */
 			uart-rx = <&wui_cr_sin2>;
@@ -456,7 +456,7 @@
 			compatible = "nuvoton,npcx-adc";
 			#io-channel-cells = <1>;
 			reg = <0x400d1000 0x2000>;
-			interrupts = <10 0>;
+			interrupts = <10 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB1 NPCX_PWDWN_CTL4 4>;
 			pinctrl-0 = <&alt6_adc0_sl   /* ADC0 - PIN45 */
 				     &alt6_adc1_sl   /* ADC1 - PIN44 */
@@ -547,7 +547,7 @@
 		i2c_ctrl0: i2c@40009000 {
 			compatible = "nuvoton,npcx-i2c-ctrl";
 			reg = <0x40009000 0x1000>;
-			interrupts = <13 0>;
+			interrupts = <13 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL3 0>;
 			label = "I2CCTRL_0";
 		};
@@ -555,7 +555,7 @@
 		i2c_ctrl1: i2c@4000b000 {
 			compatible = "nuvoton,npcx-i2c-ctrl";
 			reg = <0x4000b000 0x1000>;
-			interrupts = <14 0>;
+			interrupts = <14 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL3 1>;
 			label = "I2CCTRL_1";
 		};
@@ -563,7 +563,7 @@
 		i2c_ctrl2: i2c@400c0000 {
 			compatible = "nuvoton,npcx-i2c-ctrl";
 			reg = <0x400c0000 0x1000>;
-			interrupts = <36 0>;
+			interrupts = <36 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL3 2>;
 			label = "I2CCTRL_2";
 		};
@@ -571,7 +571,7 @@
 		i2c_ctrl3: i2c@400c2000 {
 			compatible = "nuvoton,npcx-i2c-ctrl";
 			reg = <0x400c2000 0x1000>;
-			interrupts = <37 0>;
+			interrupts = <37 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL3 3>;
 			label = "I2CCTRL_3";
 		};
@@ -579,7 +579,7 @@
 		i2c_ctrl4: i2c@40008000 {
 			compatible = "nuvoton,npcx-i2c-ctrl";
 			reg = <0x40008000 0x1000>;
-			interrupts = <19 0>;
+			interrupts = <19 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL3 4>;
 			label = "I2CCTRL_4";
 		};
@@ -587,7 +587,7 @@
 		i2c_ctrl5: i2c@40017000 {
 			compatible = "nuvoton,npcx-i2c-ctrl";
 			reg = <0x40017000 0x1000>;
-			interrupts = <20 0>;
+			interrupts = <20 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL7 0>;
 			label = "I2CCTRL_5";
 		};
@@ -595,7 +595,7 @@
 		i2c_ctrl6: i2c@40018000 {
 			compatible = "nuvoton,npcx-i2c-ctrl";
 			reg = <0x40018000 0x1000>;
-			interrupts = <16 0>;
+			interrupts = <16 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL7 1>;
 			label = "I2CCTRL_6";
 		};
@@ -603,7 +603,7 @@
 		i2c_ctrl7: i2c@40019000 {
 			compatible = "nuvoton,npcx-i2c-ctrl";
 			reg = <0x40019000 0x1000>;
-			interrupts = <8 0>;
+			interrupts = <8 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL7 2>;
 			label = "I2CCTRL_7";
 		};
