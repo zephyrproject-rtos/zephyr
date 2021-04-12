@@ -98,7 +98,8 @@ struct bt_l2cap_chan {
 	sys_snode_t			node;
 	bt_l2cap_chan_destroy_t		destroy;
 	/* Response Timeout eXpired (RTX) timer */
-	struct k_delayed_work		rtx_work;
+	struct k_work_delayable		rtx_work;
+	struct k_work_sync              rtx_sync;
 	ATOMIC_DEFINE(status, BT_L2CAP_NUM_STATUS);
 
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
