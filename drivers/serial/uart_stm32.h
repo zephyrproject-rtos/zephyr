@@ -72,4 +72,6 @@ struct uart_stm32_data {
 #endif
 };
 
+#define UART_STM32_DRV_CMD_SET_HW_FIFO_MODE		1
+
 #endif	/* ZEPHYR_DRIVERS_SERIAL_UART_STM32_H_ */
