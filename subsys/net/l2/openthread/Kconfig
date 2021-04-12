@@ -286,10 +286,4 @@ config OPENTHREAD_MAC_SOFTWARE_CSMA_BACKOFF_ENABLE
 	  Set y to enable software CSMA backoff. The option can be disabled if
 	  the radio has hardware support for this feature (IEEE802154_HW_CSMA).
 
-config OPENTHREAD_PLATFORM_USEC_TIMER_ENABLE
-	bool "Enable microsecond backoff timer implemented in platform"
-	help
-	  Set y if the platform provides microsecond backoff timer implementation.
-
-
 endif # NET_L2_OPENTHREAD
