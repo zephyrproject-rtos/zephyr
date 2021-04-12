@@ -35,8 +35,8 @@ static K_KERNEL_STACK_DEFINE(rx_stack, 256);
 static struct k_thread tx_thread_data;
 static struct k_thread rx_thread_data;
 
-static struct k_delayed_work ack_work;
-static struct k_delayed_work retx_work;
+static struct k_work_delayable ack_work;
+static struct k_work_delayable retx_work;
 
 #define HCI_3WIRE_ACK_PKT	0x00
 #define HCI_COMMAND_PKT		0x01
@@ -292,7 +292,8 @@ static void h5_send(const uint8_t *payload, uint8_t type, int len)
 
 	/* Set ACK for outgoing packet and stop delayed work */
 	H5_SET_ACK(hdr, h5.tx_ack);
-	k_delayed_work_cancel(&ack_work);
+	/* If cancel fails we may ack the same seq number twice, this is OK. */
+	(void)k_work_cancel_delayable(&ack_work);
 
 	if (reliable_packet(type)) {
 		H5_SET_RELIABLE(hdr);
@@ -377,7 +378,7 @@ static void h5_process_complete_packet(uint8_t *hdr)
 		/* For reliable packet increment next transmit ack number */
 		h5.tx_ack = (h5.tx_ack + 1) % 8;
 		/* Submit delayed work to ack the packet */
-		k_delayed_work_submit(&ack_work, H5_RX_ACK_TIMEOUT);
+		k_work_reschedule(&ack_work, H5_RX_ACK_TIMEOUT);
 	}
 
 	h5_print_header(hdr, "RX: >");
@@ -636,7 +637,7 @@ static void tx_thread(void)
 			net_buf_put(&h5.unack_queue, buf);
 			unack_queue_len++;
 
-			k_delayed_work_submit(&retx_work, H5_TX_ACK_TIMEOUT);
+			k_work_reschedule(&retx_work, H5_TX_ACK_TIMEOUT);
 
 			break;
 		}
@@ -735,8 +736,8 @@ static void h5_init(void)
 	k_fifo_init(&h5.unack_queue);
 
 	/* Init delayed work */
-	k_delayed_work_init(&ack_work, ack_timeout);
-	k_delayed_work_init(&retx_work, retx_timeout);
+	k_work_init_delayable(&ack_work, ack_timeout);
+	k_work_init_delayable(&retx_work, retx_timeout);
 }
 
 static int h5_open(void)
