@@ -4126,6 +4126,8 @@ struct k_msgq {
 	/** Number of used messages */
 	uint32_t used_msgs;
 
+	_POLL_EVENT;
+
 	_OBJECT_TRACING_NEXT_PTR(k_msgq)
 	_OBJECT_TRACING_LINKED_FLAG
 
@@ -4147,6 +4149,7 @@ struct k_msgq {
 	.read_ptr = q_buffer, \
 	.write_ptr = q_buffer, \
 	.used_msgs = 0, \
+	_POLL_EVENT_OBJ_INIT(obj) \
 	_OBJECT_TRACING_INIT \
 	}
 
@@ -5098,6 +5101,9 @@ enum _poll_types_bits {
 	/* queue/FIFO/LIFO data availability */
 	_POLL_TYPE_DATA_AVAILABLE,
 
+	/* msgq data availability */
+	_POLL_TYPE_MSGQ_DATA_AVAILABLE,
+
 	_POLL_NUM_TYPES
 };
 
@@ -5119,6 +5125,9 @@ enum _poll_states_bits {
 
 	/* queue/FIFO/LIFO wait was cancelled */
 	_POLL_STATE_CANCELLED,
+
+	/* data is available to read on a message queue */
+	_POLL_STATE_MSGQ_DATA_AVAILABLE,
 
 	_POLL_NUM_STATES
 };
@@ -5150,6 +5159,7 @@ enum _poll_states_bits {
 #define K_POLL_TYPE_SEM_AVAILABLE Z_POLL_TYPE_BIT(_POLL_TYPE_SEM_AVAILABLE)
 #define K_POLL_TYPE_DATA_AVAILABLE Z_POLL_TYPE_BIT(_POLL_TYPE_DATA_AVAILABLE)
 #define K_POLL_TYPE_FIFO_DATA_AVAILABLE K_POLL_TYPE_DATA_AVAILABLE
+#define K_POLL_TYPE_MSGQ_DATA_AVAILABLE Z_POLL_TYPE_BIT(_POLL_TYPE_MSGQ_DATA_AVAILABLE)
 
 /* public - polling modes */
 enum k_poll_modes {
@@ -5165,6 +5175,7 @@ enum k_poll_modes {
 #define K_POLL_STATE_SEM_AVAILABLE Z_POLL_STATE_BIT(_POLL_STATE_SEM_AVAILABLE)
 #define K_POLL_STATE_DATA_AVAILABLE Z_POLL_STATE_BIT(_POLL_STATE_DATA_AVAILABLE)
 #define K_POLL_STATE_FIFO_DATA_AVAILABLE K_POLL_STATE_DATA_AVAILABLE
+#define K_POLL_STATE_MSGQ_DATA_AVAILABLE Z_POLL_STATE_BIT(_POLL_STATE_MSGQ_DATA_AVAILABLE)
 #define K_POLL_STATE_CANCELLED Z_POLL_STATE_BIT(_POLL_STATE_CANCELLED)
 
 /* public - poll signal object */
@@ -5221,6 +5232,7 @@ struct k_poll_event {
 		struct k_sem *sem;
 		struct k_fifo *fifo;
 		struct k_queue *queue;
+		struct k_msgq *msgq;
 	};
 };
 
