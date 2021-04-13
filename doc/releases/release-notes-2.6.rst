@@ -323,6 +323,7 @@ Trusted Firmware-m
 
 * Configured QEMU to run Zephyr samples and tests in CI on mps2_an521_nonsecure
   (Cortex-M33 Non-Secure) with TF-M as the secure firmware component.
+* Synchronized Trusted-Firmware-M module to the upstream v1.3.0 release.
 
 
 Documentation
