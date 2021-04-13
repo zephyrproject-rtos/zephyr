@@ -17,6 +17,7 @@ files.
 """
 
 import collections
+import enum
 import errno
 import os
 import re
@@ -1336,23 +1337,23 @@ class Property:
 
         Assignment                  | Property.type
         ----------------------------+------------------------
-        foo;                        | dtlib.TYPE_EMPTY
-        foo = [];                   | dtlib.TYPE_BYTES
-        foo = [01 02];              | dtlib.TYPE_BYTES
-        foo = /bits/ 8 <1>;         | dtlib.TYPE_BYTES
-        foo = <1>;                  | dtlib.TYPE_NUM
-        foo = <>;                   | dtlib.TYPE_NUMS
-        foo = <1 2 3>;              | dtlib.TYPE_NUMS
-        foo = <1 2>, <3>;           | dtlib.TYPE_NUMS
-        foo = "foo";                | dtlib.TYPE_STRING
-        foo = "foo", "bar";         | dtlib.TYPE_STRINGS
-        foo = <&l>;                 | dtlib.TYPE_PHANDLE
-        foo = <&l1 &l2 &l3>;        | dtlib.TYPE_PHANDLES
-        foo = <&l1 &l2>, <&l3>;     | dtlib.TYPE_PHANDLES
-        foo = <&l1 1 2 &l2 3 4>;    | dtlib.TYPE_PHANDLES_AND_NUMS
-        foo = <&l1 1 2>, <&l2 3 4>; | dtlib.TYPE_PHANDLES_AND_NUMS
-        foo = &l;                   | dtlib.TYPE_PATH
-        *Anything else*             | dtlib.TYPE_COMPOUND
+        foo;                        | dtlib.Type.EMPTY
+        foo = [];                   | dtlib.Type.BYTES
+        foo = [01 02];              | dtlib.Type.BYTES
+        foo = /bits/ 8 <1>;         | dtlib.Type.BYTES
+        foo = <1>;                  | dtlib.Type.NUM
+        foo = <>;                   | dtlib.Type.NUMS
+        foo = <1 2 3>;              | dtlib.Type.NUMS
+        foo = <1 2>, <3>;           | dtlib.Type.NUMS
+        foo = "foo";                | dtlib.Type.STRING
+        foo = "foo", "bar";         | dtlib.Type.STRINGS
+        foo = <&l>;                 | dtlib.Type.PHANDLE
+        foo = <&l1 &l2 &l3>;        | dtlib.Type.PHANDLES
+        foo = <&l1 &l2>, <&l3>;     | dtlib.Type.PHANDLES
+        foo = <&l1 1 2 &l2 3 4>;    | dtlib.Type.PHANDLES_AND_NUMS
+        foo = <&l1 1 2>, <&l2 3 4>; | dtlib.Type.PHANDLES_AND_NUMS
+        foo = &l;                   | dtlib.Type.PATH
+        *Anything else*             | dtlib.Type.COMPOUND
 
       *Anything else* includes properties mixing phandle (<&label>) and node
       path (&label) references with other data.
@@ -1404,7 +1405,7 @@ class Property:
         Returns the value of the property as a number.
 
         Raises DTError if the property was not assigned with this syntax (has
-        Property.type TYPE_NUM):
+        Property.type Type.NUM):
 
             foo = < 1 >;
 
@@ -1412,7 +1413,7 @@ class Property:
           If True, the value will be interpreted as signed rather than
           unsigned.
         """
-        if self.type is not TYPE_NUM:
+        if self.type is not Type.NUM:
             _err("expected property '{0}' on {1} in {2} to be assigned with "
                  "'{0} = < (number) >;', not '{3}'"
                  .format(self.name, self.node.path, self.node.dt.filename,
@@ -1425,7 +1426,7 @@ class Property:
         Returns the value of the property as a list of numbers.
 
         Raises DTError if the property was not assigned with this syntax (has
-        Property.type TYPE_NUM or TYPE_NUMS):
+        Property.type Type.NUM or Type.NUMS):
 
             foo = < 1 2 ... >;
 
@@ -1433,7 +1434,7 @@ class Property:
           If True, the values will be interpreted as signed rather than
           unsigned.
         """
-        if self.type not in (TYPE_NUM, TYPE_NUMS):
+        if self.type not in (Type.NUM, Type.NUMS):
             _err("expected property '{0}' on {1} in {2} to be assigned with "
                  "'{0} = < (number) (number) ... >;', not '{3}'"
                  .format(self.name, self.node.path, self.node.dt.filename,
@@ -1448,11 +1449,11 @@ class Property:
         Property.value, except with added type checking.
 
         Raises DTError if the property was not assigned with this syntax (has
-        Property.type TYPE_BYTES):
+        Property.type Type.BYTES):
 
             foo = [ 01 ... ];
         """
-        if self.type is not TYPE_BYTES:
+        if self.type is not Type.BYTES:
             _err("expected property '{0}' on {1} in {2} to be assigned with "
                  "'{0} = [ (byte) (byte) ... ];', not '{3}'"
                  .format(self.name, self.node.path, self.node.dt.filename,
@@ -1465,14 +1466,14 @@ class Property:
         Returns the value of the property as a string.
 
         Raises DTError if the property was not assigned with this syntax (has
-        Property.type TYPE_STRING):
+        Property.type Type.STRING):
 
             foo = "string";
 
         This function might also raise UnicodeDecodeError if the string is
         not valid UTF-8.
         """
-        if self.type is not TYPE_STRING:
+        if self.type is not Type.STRING:
             _err("expected property '{0}' on {1} in {2} to be assigned with "
                  "'{0} = \"string\";', not '{3}'"
                  .format(self.name, self.node.path, self.node.dt.filename,
@@ -1490,13 +1491,13 @@ class Property:
         Returns the value of the property as a list of strings.
 
         Raises DTError if the property was not assigned with this syntax (has
-        Property.type TYPE_STRING or TYPE_STRINGS):
+        Property.type Type.STRING or Type.STRINGS):
 
             foo = "string", "string", ... ;
 
         Also raises DTError if any of the strings are not valid UTF-8.
         """
-        if self.type not in (TYPE_STRING, TYPE_STRINGS):
+        if self.type not in (Type.STRING, Type.STRINGS):
             _err("expected property '{0}' on {1} in {2} to be assigned with "
                  "'{0} = \"string\", \"string\", ... ;', not '{3}'"
                  .format(self.name, self.node.path, self.node.dt.filename,
@@ -1514,11 +1515,11 @@ class Property:
         Returns the Node the phandle in the property points to.
 
         Raises DTError if the property was not assigned with this syntax (has
-        Property.type TYPE_PHANDLE).
+        Property.type Type.PHANDLE).
 
             foo = < &bar >;
         """
-        if self.type is not TYPE_PHANDLE:
+        if self.type is not Type.PHANDLE:
             _err("expected property '{0}' on {1} in {2} to be assigned with "
                  "'{0} = < &foo >;', not '{3}'"
                  .format(self.name, self.node.path, self.node.dt.filename,
@@ -1539,10 +1540,10 @@ class Property:
             foo = < &bar ... >, < &baz ... >;
         """
         def type_ok():
-            if self.type in (TYPE_PHANDLE, TYPE_PHANDLES):
+            if self.type in (Type.PHANDLE, Type.PHANDLES):
                 return True
             # Also accept 'foo = < >;'
-            return self.type is TYPE_NUMS and not self.value
+            return self.type is Type.NUMS and not self.value
 
         if not type_ok():
             _err("expected property '{0}' on {1} in {2} to be assigned with "
@@ -1559,14 +1560,14 @@ class Property:
         Returns the Node referenced by the path stored in the property.
 
         Raises DTError if the property was not assigned with either of these
-        syntaxes (has Property.type TYPE_PATH or TYPE_STRING):
+        syntaxes (has Property.type Type.PATH or Type.STRING):
 
             foo = &bar;
             foo = "/bar";
 
         For the second case, DTError is raised if the path does not exist.
         """
-        if self.type not in (TYPE_PATH, TYPE_STRING):
+        if self.type not in (Type.PATH, Type.STRING):
             _err("expected property '{0}' on {1} in {2} to be assigned with "
                  "either '{0} = &foo' or '{0} = \"/path/to/node\"', not '{3}'"
                  .format(self.name, self.node.path, self.node.dt.filename,
@@ -1597,35 +1598,35 @@ class Property:
                  if marker[1] != _REF_LABEL]
 
         if not types:
-            return TYPE_EMPTY
+            return Type.EMPTY
 
         if types == [_TYPE_UINT8]:
-            return TYPE_BYTES
+            return Type.BYTES
 
         if types == [_TYPE_UINT32]:
-            return TYPE_NUM if len(self.value) == 4 else TYPE_NUMS
+            return Type.NUM if len(self.value) == 4 else Type.NUMS
 
-        # Treat 'foo = <1 2 3>, <4 5>, ...' as TYPE_NUMS too
+        # Treat 'foo = <1 2 3>, <4 5>, ...' as Type.NUMS too
         if set(types) == {_TYPE_UINT32}:
-            return TYPE_NUMS
+            return Type.NUMS
 
         if set(types) == {_TYPE_STRING}:
-            return TYPE_STRING if len(types) == 1 else TYPE_STRINGS
+            return Type.STRING if len(types) == 1 else Type.STRINGS
 
         if types == [_REF_PATH]:
-            return TYPE_PATH
+            return Type.PATH
 
         if types == [_TYPE_UINT32, _REF_PHANDLE] and len(self.value) == 4:
-            return TYPE_PHANDLE
+            return Type.PHANDLE
 
         if set(types) == {_TYPE_UINT32, _REF_PHANDLE}:
             if len(self.value) == 4*types.count(_REF_PHANDLE):
                 # Array with just phandles in it
-                return TYPE_PHANDLES
+                return Type.PHANDLES
             # Array with both phandles and numbers
-            return TYPE_PHANDLES_AND_NUMS
+            return Type.PHANDLES_AND_NUMS
 
-        return TYPE_COMPOUND
+        return Type.COMPOUND
 
     def __str__(self):
         s = "".join(label + ": " for label in self.labels) + self.name
@@ -1761,17 +1762,18 @@ def to_nums(data, length=4, signed=False):
 #
 
 # See Property.type
-TYPE_EMPTY = 0
-TYPE_BYTES = 1
-TYPE_NUM = 2
-TYPE_NUMS = 3
-TYPE_STRING = 4
-TYPE_STRINGS = 5
-TYPE_PATH = 6
-TYPE_PHANDLE = 7
-TYPE_PHANDLES = 8
-TYPE_PHANDLES_AND_NUMS = 9
-TYPE_COMPOUND = 10
+class Type(enum.IntEnum):
+    EMPTY = 0
+    BYTES = 1
+    NUM = 2
+    NUMS = 3
+    STRING = 4
+    STRINGS = 5
+    PATH = 6
+    PHANDLE = 7
+    PHANDLES = 8
+    PHANDLES_AND_NUMS = 9
+    COMPOUND = 10
 
 
 def _check_is_bytes(data):
