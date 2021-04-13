@@ -339,7 +339,7 @@ static int uart_ns16550_configure(const struct device *dev,
 {
 	struct uart_ns16550_dev_data_t * const dev_data = DEV_DATA(dev);
 	const struct uart_ns16550_device_config * const dev_cfg = DEV_CFG(dev);
-
+	uint8_t lcr_cache;
 	uint8_t mdc = 0U;
 
 	/* temp for return value if error occurs in this locked region */
@@ -466,7 +466,10 @@ static int uart_ns16550_configure(const struct device *dev,
 		);
 
 	/* clear the port */
+	lcr_cache = INBYTE(LCR(dev));
+	OUTBYTE(LCR(dev), LCR_DLAB | lcr_cache);
 	INBYTE(RDR(dev));
+	OUTBYTE(LCR(dev), lcr_cache);
 
 	/* disable interrupts  */
 	OUTBYTE(IER(dev), 0x00);
