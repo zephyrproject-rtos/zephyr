@@ -207,6 +207,8 @@ enum i2s_dir {
 	I2S_DIR_RX,
 	/** Transmit data */
 	I2S_DIR_TX,
+	/** Both receive and transmit data */
+	I2S_DIR_BOTH,
 };
 
 /** Interface state */
@@ -339,11 +341,14 @@ __subsystem struct i2s_driver_api {
  * the interface state will be changed to NOT_READY.
  *
  * @param dev Pointer to the device structure for the driver instance.
- * @param dir Stream direction: RX or TX as defined by I2S_DIR_*
+ * @param dir Stream direction: RX, TX, or both, as defined by I2S_DIR_*.
+ *            The I2S_DIR_BOTH value may not be supported by some drivers.
+ *            For those, the RX and TX streams need to be configured separately.
  * @param cfg Pointer to the structure containing configuration parameters.
  *
  * @retval 0 If successful.
  * @retval -EINVAL Invalid argument.
+ * @retval -ENOSYS I2S_DIR_BOTH value is not supported.
  */
 __syscall int i2s_configure(const struct device *dev, enum i2s_dir dir,
 			    struct i2s_config *cfg);
@@ -501,7 +506,10 @@ __syscall int i2s_buf_write(const struct device *dev, void *buf, size_t size);
  * @brief Send a trigger command.
  *
  * @param dev Pointer to the device structure for the driver instance.
- * @param dir Stream direction: RX or TX.
+ * @param dir Stream direction: RX, TX, or both, as defined by I2S_DIR_*.
+ *            The I2S_DIR_BOTH value may not be supported by some drivers.
+ *            For those, triggering need to be done separately for the RX
+ *            and TX streams.
  * @param cmd Trigger command.
  *
  * @retval 0 If successful.
@@ -509,6 +517,7 @@ __syscall int i2s_buf_write(const struct device *dev, void *buf, size_t size);
  * @retval -EIO The trigger cannot be executed in the current state or a DMA
  *         channel cannot be allocated.
  * @retval -ENOMEM RX/TX memory block not available.
+ * @retval -ENOSYS I2S_DIR_BOTH value is not supported.
  */
 __syscall int i2s_trigger(const struct device *dev, enum i2s_dir dir,
 			  enum i2s_trigger_cmd cmd);
