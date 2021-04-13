@@ -227,7 +227,6 @@
 /drivers/gpio/*eos_s3*                    @wtatarski @kowalewskijan @kgugala
 /drivers/gpio/*rcar*                      @julien-massot
 /drivers/hwinfo/                          @alexanderwachter
-/drivers/i2s/i2s_ll_stm32*                @avisconti
 /drivers/i2c/i2c_common.c                 @sjg20
 /drivers/i2c/i2c_emul.c                   @sjg20
 /drivers/i2c/i2c_ite_it8xxx2.c            @GTLin08
@@ -239,6 +238,8 @@
 /drivers/i2c/i2c_test.c                   @mbolivar-nordic
 /drivers/i2c/*rcar*                       @aaillet
 /drivers/i2s/*litex*                      @mateusz-holenko @kgugala @pgielda
+/drivers/i2s/i2s_ll_stm32*                @avisconti
+/drivers/i2s/*nrfx*                       @anangl
 /drivers/ieee802154/                      @rlubos @tbursztyka
 /drivers/ieee802154/ieee802154_rf2xx*     @tbursztyka @nandojve
 /drivers/ieee802154/ieee802154_cc13xx*    @bwitherspoon @cfriedt

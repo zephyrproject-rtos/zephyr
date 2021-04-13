@@ -155,6 +155,16 @@
 			label = "I2C_1";
 		};
 
+		i2s0: i2s@40025000 {
+			compatible = "nordic,nrf-i2s";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40025000 0x1000>;
+			interrupts = <37 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "disabled";
+			label = "I2S_0";
+		};
+
 		pwm0: pwm@4001c000 {
 			compatible = "nordic,nrf-pwm";
 			reg = <0x4001c000 0x1000>;
