@@ -7,11 +7,8 @@
 #include <zephyr/types.h>
 #include <sys/byteorder.h>
 #include <ztest.h>
-#include "kconfig.h"
-
 
 #define ULL_LLCP_UNITTEST
-
 
 #include <bluetooth/hci.h>
 #include <sys/byteorder.h>
@@ -24,6 +21,7 @@
 
 #include "pdu.h"
 #include "ll.h"
+#include "ll_feat.h"
 #include "ll_settings.h"
 
 #include "lll.h"
@@ -196,13 +194,13 @@ void test_data_length_update_mas_loc_no_eff_change(void)
  *    | Start                      |                              |
  *    | Data Length Update Proc.   |                              |
  *    |--------------------------->|                              |
- *    |                            |  (251,2120,221,2020)         |
+ *    |                            |  (251,2120,221,1800)         |
  *    |                            | LL_DATA_LENGTH_UPDATE_REQ    |
  *    |                            |----------------------------->|
- *    |                            |     (101,1020,251,2120)      |
+ *    |                            |     (101,920,251,2120)       |
  *    |                            |    LL_DATA_LENGTH_UPDATE_RSP |
  *    |                            |<-----------------------------|
- *    | (251,2120,101,1020)        |                              |
+ *    | (251,2120,101,920)         |                              |
  *    | Data Length Update Proc.   |                              |
  *    |                   Complete |                              |
  *    |<---------------------------|                              |
@@ -210,10 +208,10 @@ void test_data_length_update_mas_loc_no_eff_change(void)
  *    | Start                      |                              |
  *    | Data Length Update Proc.   |                              |
  *    |--------------------------->|                              |
- *    |                            |  (251,2120,211,2020)         |
+ *    |                            |  (251,2120,211,1800)         |
  *    |                            | LL_DATA_LENGTH_UPDATE_REQ    |
  *    |                            |----------------------------->|
- *    |                            |     (101,1020,251,2120)      |
+ *    |                            |     (101, 920,251,2120)      |
  *    |                            |    LL_DATA_LENGTH_UPDATE_RSP |
  *    |                            |<-----------------------------|
  *    |                            |                              |
@@ -225,11 +223,11 @@ void test_data_length_update_mas_loc_no_eff_change2(void)
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 
-	struct pdu_data_llctrl_length_req local_length_req = {251,2120,221,2020};
-	struct pdu_data_llctrl_length_rsp remote_length_rsp = {101,1020,251,2120};
-	struct pdu_data_llctrl_length_rsp length_ntf = {251,2120,101,1020};
-	struct pdu_data_llctrl_length_req local_length_req2 = {251,2120,211,2100};
-	struct pdu_data_llctrl_length_rsp remote_length_rsp2 = {101,1020,251,2120};
+	struct pdu_data_llctrl_length_req local_length_req = {251,2120,211,1800};
+	struct pdu_data_llctrl_length_rsp remote_length_rsp = {101,920,251,2120};
+	struct pdu_data_llctrl_length_rsp length_ntf = {251,2120,101,920};
+	struct pdu_data_llctrl_length_req local_length_req2 = {251,2120,211,1800};
+	struct pdu_data_llctrl_length_rsp remote_length_rsp2 = {101,920,251,2120};
 
 	test_set_role(&conn, BT_HCI_ROLE_MASTER);
 	/* Connect */
@@ -240,7 +238,7 @@ void test_data_length_update_mas_loc_no_eff_change2(void)
 	ull_dle_init(&conn, PHY_1M);
 
 	/* Initiate a Data Length Update Procedure */
-	err = ull_cp_data_length_update(&conn, 221, 2020 );
+	err = ull_cp_data_length_update(&conn, 211, 1800 );
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	event_prepare(&conn);
@@ -264,7 +262,7 @@ void test_data_length_update_mas_loc_no_eff_change2(void)
 
 	/* Now lets generate another DLU, but one that should not result in
 	   change to effective numbers, thus not generate NTF */
-	err = ull_cp_data_length_update(&conn, 211, 2100 );
+	err = ull_cp_data_length_update(&conn, 211, 1800 );
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	event_prepare(&conn);
@@ -292,9 +290,9 @@ void test_data_length_update_sla_loc(void)
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 
-	struct pdu_data_llctrl_length_req local_length_req = { 251, 2120, 211, 2020};
-	struct pdu_data_llctrl_length_rsp remote_length_rsp = { 211, 2020, 251, 2120};
-	struct pdu_data_llctrl_length_rsp length_ntf = {251,2120,211,2020};
+	struct pdu_data_llctrl_length_req local_length_req = { 251, 2120, 211, 1800};
+	struct pdu_data_llctrl_length_rsp remote_length_rsp = { 211, 1800, 251, 2120};
+	struct pdu_data_llctrl_length_rsp length_ntf = {251,2120,211,1800};
 
 	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
 	/* Connect */
@@ -305,7 +303,7 @@ void test_data_length_update_sla_loc(void)
 	ull_dle_init(&conn, PHY_1M);
 
 	/* Initiate a Data Length Update Procedure */
-	err = ull_cp_data_length_update(&conn, 211, 2020 );
+	err = ull_cp_data_length_update(&conn, 211, 1800 );
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	event_prepare(&conn);
@@ -338,7 +336,7 @@ void test_data_length_update_sla_loc(void)
  *    |                            |  (27, 328, 251, 2120)        |
  *    |                            | LL_DATA_LENGTH_UPDATE_REQ    |
  *    |                            |<-----------------------------|
- *    |                            |   (251, 2120, 251, 2120)     |
+ *    |                            |   (251, 2120, 211, 1800)     |
  *    |                            |    LL_DATA_LENGTH_UPDATE_RSP |
  *    |                            |----------------------------->|
  *    |  (251,2120,27,328)         |                              |
@@ -352,7 +350,7 @@ void test_data_length_update_mas_rem(void)
 	struct node_tx *tx;
 
 	struct pdu_data_llctrl_length_req remote_length_req =  { 27, 328, 251, 2120};
-	struct pdu_data_llctrl_length_rsp local_length_rsp = { 251, 2120, 221, 2020};
+	struct pdu_data_llctrl_length_rsp local_length_rsp = { 251, 2120, 211, 1800};
 	struct pdu_data_llctrl_length_rsp length_ntf = {251,2120,27,328};
 
 	struct node_rx_pdu *ntf;
@@ -360,8 +358,8 @@ void test_data_length_update_mas_rem(void)
 	test_set_role(&conn, BT_HCI_ROLE_MASTER);
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 	/* Init DLE data */
-	ull_conn_default_tx_octets_set(221);
-	ull_conn_default_tx_time_set(2020);
+	ull_conn_default_tx_octets_set(211);
+	ull_conn_default_tx_time_set(1800);
 	ull_dle_init(&conn, PHY_1M);
 
 	event_prepare(&conn);
@@ -393,14 +391,14 @@ void test_data_length_update_mas_rem(void)
  * | UT  |                     | LL_A  |                       | LT  |
  * +-----+                     +-------+                       +-----+
  *    |                            |                              |
- *    |                            | (27, 328, 211, 1820)         |
+ *    |                            | (27, 328, 201, 1720)         |
  *    |                            | LL_DATA_LENGTH_UPDATE_REQ    |
  *    |                            |<-----------------------------|
  *    |                            |                              |
- *    |                            |     (251, 2120, 231, 1920)   |
+ *    |                            |     (251, 2120, 211, 1800)   |
  *    |                            |    LL_DATA_LENGTH_UPDATE_RSP |
  *    |                            |----------------------------->|
- *    |  (211,1820,27,328)         |                              |
+ *    |  (201,1720,27,328)         |                              |
  *    | Data Length Changed        |                              |
  *    |<---------------------------|                              |
  *    |                            |                              |
@@ -410,16 +408,16 @@ void test_data_length_update_sla_rem(void)
 {
 	struct node_tx *tx;
 
-	struct pdu_data_llctrl_length_req remote_length_req =  { 27, 328, 211, 1820};
-	struct pdu_data_llctrl_length_rsp local_length_rsp = { 251, 2120, 231, 1920};
-	struct pdu_data_llctrl_length_rsp length_ntf = {211,1820,27,328};
+	struct pdu_data_llctrl_length_req remote_length_req =  { 27, 328, 201, 1720};
+	struct pdu_data_llctrl_length_rsp local_length_rsp = { 251, 2120, 211, 1800};
+	struct pdu_data_llctrl_length_rsp length_ntf = {201,1720,27,328};
 	struct node_rx_pdu *ntf;
 
 	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 	/* Init DLE data */
-	ull_conn_default_tx_octets_set(231);
-	ull_conn_default_tx_time_set(1920);
+	ull_conn_default_tx_octets_set(211);
+	ull_conn_default_tx_time_set(1800);
 	ull_dle_init(&conn, PHY_1M);
 
 	event_prepare(&conn);
@@ -451,17 +449,17 @@ void test_data_length_update_sla_rem(void)
  * | UT  |                     | LL_A  |                       | LT  |
  * +-----+                     +-------+                       +-----+
  *    |                            |                              |
- *    |                            | (27, 328, 211, 1820)         |
+ *    |                            | (27, 328, 211, 1800)         |
  *    |                            | LL_DATA_LENGTH_UPDATE_REQ    |
  *    |                            |<-----------------------------|
  *    | Start                      |                              |
  *    | Data Length Update Proc.   |                              |
  *    |--------------------------->|                              |
  *    |                            |                              |
- *    |                            |   (251, 2120, 231, 1920)     |
+ *    |                            |   (251, 2120, 211, 1800)     |
  *    |                            |  LL_DATA_LENGTH_UPDATE_RSP   |
  *    |                            |----------------------------->|
- *    |  (211,1820,27,328)         |                              |
+ *    |  (211,1800,27,328)         |                              |
  *    | Data Length Changed        |                              |
  *    |<---------------------------|                              |
  *    |                            |                              |
@@ -472,16 +470,16 @@ void test_data_length_update_sla_rem_and_loc(void)
 	uint64_t err;
 	struct node_tx *tx;
 
-	struct pdu_data_llctrl_length_req remote_length_req =  { 27, 328, 211, 1820};
-	struct pdu_data_llctrl_length_rsp local_length_rsp = { 251, 2120, 211, 2020};
-	struct pdu_data_llctrl_length_rsp length_ntf = {211,1820,27,328};
+	struct pdu_data_llctrl_length_req remote_length_req =  { 27, 328, 211, 1800};
+	struct pdu_data_llctrl_length_rsp local_length_rsp = { 251, 2120, 211, 1800};
+	struct pdu_data_llctrl_length_rsp length_ntf = {211,1800,27,328};
 	struct node_rx_pdu *ntf;
 
 	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 	/* Init DLE data */
-	ull_conn_default_tx_octets_set(231);
-	ull_conn_default_tx_time_set(1920);
+	ull_conn_default_tx_octets_set(211);
+	ull_conn_default_tx_time_set(1800);
 	ull_dle_init(&conn, PHY_1M);
 
 	/* Steal all tx buffers, so as to hold back length_rsp */
@@ -502,7 +500,7 @@ void test_data_length_update_sla_rem_and_loc(void)
 	lt_rx_q_is_empty(&conn);
 
 	/* Initiate a Data Length Update Procedure */
-	err = ull_cp_data_length_update(&conn, 211, 2020 );
+	err = ull_cp_data_length_update(&conn, 211, 1800 );
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	event_done(&conn);
@@ -524,6 +522,102 @@ void test_data_length_update_sla_rem_and_loc(void)
 	ut_rx_q_is_empty();
 }
 
+void test_data_length_update_dle_max_time_get(void)
+{
+	uint16_t max_time = 0xffff;
+#ifdef CONFIG_BT_CTLR_PHY
+	max_time = 2120;
+#endif
+	uint16_t max_octets = 211;
+	conn.llcp.fex.valid = 0;
+
+	ull_dle_local_tx_update(&conn, max_octets, max_time);
+
+#ifdef CONFIG_BT_CTLR_PHY
+#ifdef CONFIG_BT_CTLR_PHY_CODED
+	zassert_equal(conn.lll.dle.local.max_rx_time, 2120, "max_rx_time mismatch.\n");
+	zassert_equal(conn.lll.dle.local.max_tx_time, 2120, "max_tx_time mismatch.\n");
+#else
+	zassert_equal(conn.lll.dle.local.max_rx_time, 2120, "max_rx_time mismatch.\n");
+	zassert_equal(conn.lll.dle.local.max_tx_time, 2120, "max_tx_time mismatch.\n");
+#endif
+#else
+	zassert_equal(conn.lll.dle.local.max_rx_time, 2120, "max_rx_time mismatch.\n");
+	zassert_equal(conn.lll.dle.local.max_tx_time, 1800, "max_tx_time mismatch.\n");
+#endif
+
+	// Emulate complete feat exch without CODED
+	conn.llcp.fex.valid = 1;
+	conn.llcp.fex.features_used = 0;
+	ull_dle_local_tx_update(&conn, max_octets, max_time);
+
+#ifdef CONFIG_BT_CTLR_PHY
+#ifdef CONFIG_BT_CTLR_PHY_CODED
+	zassert_equal(conn.lll.dle.local.max_rx_time, 2120, "max_rx_time mismatch.\n");
+	zassert_equal(conn.lll.dle.local.max_tx_time, 2120, "max_tx_time mismatch.\n");
+#else
+	zassert_equal(conn.lll.dle.local.max_rx_time, 2120, "max_rx_time mismatch.\n");
+	zassert_equal(conn.lll.dle.local.max_tx_time, 2120, "max_tx_time mismatch.\n");
+#endif
+#else
+	zassert_equal(conn.lll.dle.local.max_rx_time, 2120, "max_rx_time mismatch.\n");
+	zassert_equal(conn.lll.dle.local.max_tx_time, 1800, "max_tx_time mismatch.\n");
+#endif
+
+	// Check the case of CODED PHY support
+	conn.llcp.fex.features_used = LL_FEAT_BIT_PHY_CODED;
+	ull_dle_local_tx_update(&conn, max_octets, max_time);
+
+#ifdef CONFIG_BT_CTLR_PHY
+#ifdef CONFIG_BT_CTLR_PHY_CODED
+	zassert_equal(conn.lll.dle.local.max_rx_time, 17040, "max_rx_time mismatch.\n");
+	zassert_equal(conn.lll.dle.local.max_tx_time, 2120, "max_tx_time mismatch.\n");
+#else
+	zassert_equal(conn.lll.dle.local.max_rx_time, 2120, "max_rx_time mismatch.\n");
+	zassert_equal(conn.lll.dle.local.max_tx_time, 2120, "max_tx_time mismatch.\n");
+#endif
+#else
+	zassert_equal(conn.lll.dle.local.max_rx_time, 2120, "max_rx_time mismatch.\n");
+	zassert_equal(conn.lll.dle.local.max_tx_time, 1800, "max_tx_time mismatch.\n");
+#endif
+
+	// Finally check that MAX on max_tx_time works
+	max_time = 20000;
+	ull_dle_local_tx_update(&conn, max_octets, max_time);
+
+#ifdef CONFIG_BT_CTLR_PHY
+#ifdef CONFIG_BT_CTLR_PHY_CODED
+	zassert_equal(conn.lll.dle.local.max_rx_time, 17040, "max_rx_time mismatch.\n");
+	zassert_equal(conn.lll.dle.local.max_tx_time, 17040, "max_tx_time mismatch.\n");
+#else
+	zassert_equal(conn.lll.dle.local.max_rx_time, 2120, "max_rx_time mismatch.\n");
+	zassert_equal(conn.lll.dle.local.max_tx_time, 2120, "max_tx_time mismatch.\n");
+#endif
+#else
+	zassert_equal(conn.lll.dle.local.max_rx_time, 2120, "max_rx_time mismatch.\n");
+	zassert_equal(conn.lll.dle.local.max_tx_time, 1800, "max_tx_time mismatch.\n");
+#endif
+
+	// Check that MIN works
+	max_time = 20;
+	max_octets = 2;
+    ull_dle_local_tx_update(&conn, max_octets, max_time);
+
+#ifdef CONFIG_BT_CTLR_PHY
+#ifdef CONFIG_BT_CTLR_PHY_CODED
+	zassert_equal(conn.lll.dle.local.max_rx_time, 17040, "max_rx_time mismatch.\n");
+	zassert_equal(conn.lll.dle.local.max_tx_time, 328, "max_tx_time mismatch.\n");
+#else
+	zassert_equal(conn.lll.dle.local.max_rx_time, 2120, "max_rx_time mismatch.\n");
+	zassert_equal(conn.lll.dle.local.max_tx_time, 328, "max_tx_time mismatch.\n");
+#endif
+#else
+	zassert_equal(conn.lll.dle.local.max_rx_time, 2120, "max_rx_time mismatch.\n");
+	zassert_equal(conn.lll.dle.local.max_tx_time, 328, "max_tx_time mismatch.\n");
+#endif
+
+}
+
 void test_main(void)
 {
 	ztest_test_suite(data_length_update_master,
@@ -539,7 +633,12 @@ void test_main(void)
 			 ztest_unit_test_setup_teardown(test_data_length_update_sla_rem_and_loc, setup, unit_test_noop)
 		);
 
+	ztest_test_suite(data_length_update_util,
+			 ztest_unit_test_setup_teardown(test_data_length_update_dle_max_time_get, setup, unit_test_noop)
+		);
+
 	ztest_run_test_suite(data_length_update_master);
 	ztest_run_test_suite(data_length_update_slave);
+	ztest_run_test_suite(data_length_update_util);
 
 }

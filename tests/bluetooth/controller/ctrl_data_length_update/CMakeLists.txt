@@ -9,6 +9,13 @@ endif()
 FILE(GLOB SOURCES
   src/*.c
 )
+if(CONFIG_BT_CTLR_PHY_CODED)
+  add_compile_definitions(CONFIG_BT_CTLR_PHY_CODED)
+endif(CONFIG_BT_CTLR_PHY_CODED)
+
+if(CONFIG_BT_CTLR_PHY)
+  add_compile_definitions(CONFIG_BT_CTLR_PHY)
+endif(CONFIG_BT_CTLR_PHY)
 
 project(bluetooth_ull_llcp_data_length_update)
 find_package(ZephyrUnittest HINTS $ENV{ZEPHYR_BASE})
