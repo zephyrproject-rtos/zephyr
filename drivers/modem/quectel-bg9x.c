@@ -97,34 +97,6 @@ static inline int find_len(char *data)
 	return ATOI(buf, 0, "rx_buf");
 }
 
-/* Func: modem_at
- * Desc: Send "AT" command to the modem and wait for it to
- * respond. If the modem doesn't respond after some time, give
- * up and kill the driver.
- */
-static int modem_at(struct modem_context *mctx, struct modem_data *mdata)
-{
-	int counter = 0, ret = -1;
-
-	do {
-
-		/* Send "AT" command to the modem. */
-		ret = modem_cmd_send(&mctx->iface, &mctx->cmd_handler,
-				     NULL, 0, "AT", &mdata->sem_response,
-				     MDM_CMD_TIMEOUT);
-
-		/* Check the response from the Modem. */
-		if (ret < 0 && ret != -ETIMEDOUT) {
-			return ret;
-		}
-
-		counter++;
-		k_sleep(K_SECONDS(2));
-	} while (counter < MDM_MAX_AT_RETRIES && ret < 0);
-
-	return ret;
-}
-
 /* Func: on_cmd_sockread_common
  * Desc: Function to successfully read data from the modem on a given socket.
  */
@@ -440,6 +412,13 @@ MODEM_CMD_DEFINE(on_cmd_unsol_close)
 	/* Tell the modem to close the socket. */
 	socket_close(sock);
 	LOG_INF("Socket Closed: %d", sock_fd);
+	return 0;
+}
+
+/* Handler: Modem initialization ready. */
+MODEM_CMD_DEFINE(on_cmd_unsol_rdy)
+{
+	k_sem_give(&mdata.sem_response);
 	return 0;
 }
 
@@ -941,6 +920,7 @@ static const struct modem_cmd response_cmds[] = {
 static const struct modem_cmd unsol_cmds[] = {
 	MODEM_CMD("+QIURC: \"recv\",",	   on_cmd_unsol_recv,  1U, ""),
 	MODEM_CMD("+QIURC: \"closed\",",   on_cmd_unsol_close, 1U, ""),
+	MODEM_CMD("RDY", on_cmd_unsol_rdy, 0U, ""),
 };
 
 /* Commands sent to the modem to set it up at boot time. */
@@ -1023,9 +1003,9 @@ restart:
 
 	/* Let the modem respond. */
 	LOG_INF("Waiting for modem to respond");
-	ret = modem_at(&mctx, &mdata);
+	ret = k_sem_take(&mdata.sem_response, MDM_MAX_BOOT_TIME);
 	if (ret < 0) {
-		LOG_ERR("MODEM WAIT LOOP ERROR: %d", ret);
+		LOG_ERR("Timeout waiting for RDY");
 		goto error;
 	}
 
