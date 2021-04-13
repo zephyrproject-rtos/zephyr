@@ -15,6 +15,7 @@ jobs:
   track-issues:
     name: "Collect Issue Stats"
     runs-on: ubuntu-latest
+    if: github.repository == 'zephyrproject-rtos/zephyr'
 
     steps:
     - name: Download configuration file
