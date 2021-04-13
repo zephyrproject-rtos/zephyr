@@ -334,7 +334,7 @@ static int i2s_litex_initialize(const struct device *dev)
 }
 
 static int i2s_litex_configure(const struct device *dev, enum i2s_dir dir,
-			       struct i2s_config *i2s_cfg)
+			       const struct i2s_config *i2s_cfg)
 {
 	struct i2s_litex_data *const dev_data = DEV_DATA(dev);
 	const struct i2s_litex_cfg *const cfg = DEV_CFG(dev);
@@ -393,7 +393,9 @@ static int i2s_litex_configure(const struct device *dev, enum i2s_dir dir,
 			"only %"
 			"i bytes of data are valid ",
 			req_buf_s);
-		i2s_cfg->block_size = req_buf_s;
+		/* The block_size field will be corrected to req_buf_s in the
+		 * structure copied as stream configuration (see below).
+		 */
 	}
 
 	int dev_sample_width = i2s_get_sample_width(cfg->base);
@@ -434,6 +436,8 @@ static int i2s_litex_configure(const struct device *dev, enum i2s_dir dir,
 #endif
 
 	memcpy(&stream->cfg, i2s_cfg, sizeof(struct i2s_config));
+	stream->cfg.block_size = req_buf_s;
+
 	stream->state = I2S_STATE_READY;
 	return 0;
 }

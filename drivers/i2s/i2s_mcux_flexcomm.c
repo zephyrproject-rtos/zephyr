@@ -48,7 +48,7 @@ struct i2s_mcux_data {
 
 static int i2s_mcux_flexcomm_cfg_convert(uint32_t base_frequency,
 					 enum i2s_dir dir,
-					 struct i2s_config *i2s_cfg,
+					 const struct i2s_config *i2s_cfg,
 					 i2s_config_t *fsl_cfg)
 {
 	if (dir == I2S_DIR_RX) {
@@ -149,8 +149,8 @@ static int i2s_mcux_flexcomm_cfg_convert(uint32_t base_frequency,
 	return 0;
 }
 
-static struct i2s_config *i2s_mcux_config_get(const struct device *dev,
-				enum i2s_dir dir)
+static const struct i2s_config *i2s_mcux_config_get(const struct device *dev,
+						    enum i2s_dir dir)
 {
 	struct i2s_mcux_data *dev_data = dev->data;
 	struct stream *stream;
@@ -169,7 +169,7 @@ static struct i2s_config *i2s_mcux_config_get(const struct device *dev,
 }
 
 static int i2s_mcux_configure(const struct device *dev, enum i2s_dir dir,
-			       struct i2s_config *i2s_cfg)
+			      const struct i2s_config *i2s_cfg)
 {
 	const struct i2s_mcux_config *cfg = dev->config;
 	struct i2s_mcux_data *dev_data = dev->data;

@@ -227,7 +227,7 @@ static void i2s_dma_rx_callback(const struct device *dma_dev, void *arg,
 }
 
 static int i2s_cavs_configure(const struct device *dev, enum i2s_dir dir,
-			      struct i2s_config *i2s_cfg)
+			      const struct i2s_config *i2s_cfg)
 {
 	const struct i2s_cavs_config *const dev_cfg = DEV_CFG(dev);
 	struct i2s_cavs_dev_data *const dev_data = DEV_DATA(dev);
