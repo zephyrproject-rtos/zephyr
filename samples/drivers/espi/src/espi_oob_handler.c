@@ -45,6 +45,7 @@ struct thread_context {
 };
 
 static struct thread_context context;
+static bool need_temp;
 #endif
 
 static struct espi_oob_packet resp_pckt;
@@ -164,8 +165,6 @@ void oob_rx_handler(const struct device *dev, struct espi_callback *cb,
 }
 
 
-bool need_temp;
-
 void temperature_timer(struct k_timer *timer_id)
 {
 	LOG_WRN("%s", __func__);
@@ -196,19 +195,23 @@ void espihub_thread(void *p1, void *p2, void *p3)
 					LOG_ERR("Incorrect size response");
 				}
 
-				context.cycles--;
 				break;
 			default:
 				LOG_INF("Other host sender %x", sender);
 			}
-
+		} else {
+			LOG_ERR("Failure to retrieve temp %d", ret);
 		}
+
+		/* Decrease cycles in both cases failure/success */
+		context.cycles--;
 
 		if (need_temp) {
 			request_temp(context.espi_dev);
 			need_temp = false;
 		}
 	}
+
 	k_timer_stop(&temp_timer);
 }
 #endif /* CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC */
