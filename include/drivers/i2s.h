@@ -316,9 +316,9 @@ struct i2s_config {
  */
 __subsystem struct i2s_driver_api {
 	int (*configure)(const struct device *dev, enum i2s_dir dir,
-			 struct i2s_config *cfg);
-	struct i2s_config *(*config_get)(const struct device *dev,
-					 enum i2s_dir dir);
+			 const struct i2s_config *cfg);
+	const struct i2s_config *(*config_get)(const struct device *dev,
+				  enum i2s_dir dir);
 	int (*read)(const struct device *dev, void **mem_block, size_t *size);
 	int (*write)(const struct device *dev, void *mem_block, size_t size);
 	int (*trigger)(const struct device *dev, enum i2s_dir dir,
@@ -351,11 +351,11 @@ __subsystem struct i2s_driver_api {
  * @retval -ENOSYS I2S_DIR_BOTH value is not supported.
  */
 __syscall int i2s_configure(const struct device *dev, enum i2s_dir dir,
-			    struct i2s_config *cfg);
+			    const struct i2s_config *cfg);
 
 static inline int z_impl_i2s_configure(const struct device *dev,
 				       enum i2s_dir dir,
-				       struct i2s_config *cfg)
+				       const struct i2s_config *cfg)
 {
 	const struct i2s_driver_api *api =
 		(const struct i2s_driver_api *)dev->api;
@@ -371,8 +371,8 @@ static inline int z_impl_i2s_configure(const struct device *dev,
  * @retval Pointer to the structure containing configuration parameters,
  *         or NULL if un-configured
  */
-static inline struct i2s_config *i2s_config_get(const struct device *dev,
-						enum i2s_dir dir)
+static inline const struct i2s_config *i2s_config_get(const struct device *dev,
+						      enum i2s_dir dir)
 {
 	const struct i2s_driver_api *api =
 		(const struct i2s_driver_api *)dev->api;
