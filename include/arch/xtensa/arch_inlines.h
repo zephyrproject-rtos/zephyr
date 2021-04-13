@@ -17,6 +17,11 @@
 	 __asm__ volatile ("rsr." sr " %0" : "=a"(v)); \
 	 v; })
 
+#define RSR_NV(sr) \
+	({uint32_t v; \
+	 __asm__ ("rsr." sr " %0" : "=a"(v)); \
+	 v; })
+
 #define WSR(sr, v) \
 	do { \
 		__asm__ volatile ("wsr." sr " %0" : : "r"(v)); \
@@ -26,7 +31,7 @@ static ALWAYS_INLINE _cpu_t *arch_curr_cpu(void)
 {
 	_cpu_t *cpu;
 
-	cpu = (_cpu_t *)RSR(CONFIG_XTENSA_KERNEL_CPU_PTR_SR);
+	cpu = (_cpu_t *)RSR_NV(CONFIG_XTENSA_KERNEL_CPU_PTR_SR);
 
 	return cpu;
 }

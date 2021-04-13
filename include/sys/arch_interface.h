@@ -27,6 +27,7 @@
 #define ZEPHYR_INCLUDE_SYS_ARCH_INTERFACE_H_
 
 #ifndef _ASMLANGUAGE
+#include <kernel_structs.h>
 #include <toolchain.h>
 #include <stddef.h>
 #include <zephyr/types.h>
@@ -373,7 +374,7 @@ void arch_irq_offload(irq_offload_routine_t routine, const void *parameter);
  */
 #ifdef CONFIG_SMP
 /** Return the CPU struct for the currently executing CPU */
-static inline struct _cpu *arch_curr_cpu(void);
+static ALWAYS_INLINE __attribute__((pure, returns_nonnull)) _cpu_t *arch_curr_cpu(void);
 
 /**
  * Broadcast an interrupt to all CPUs
