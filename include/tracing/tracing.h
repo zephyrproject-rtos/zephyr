@@ -22,9 +22,6 @@
 #ifdef CONFIG_SEGGER_SYSTEMVIEW
 #include "tracing_sysview.h"
 
-#elif defined CONFIG_TRACING_CPU_STATS
-#include "tracing_cpu_stats.h"
-
 #elif defined CONFIG_TRACING_CTF
 #include "tracing_ctf.h"
 
