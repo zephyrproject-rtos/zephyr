@@ -500,13 +500,13 @@
 		};
 
 		/* Pseudo wui item means no mapping between source and wui */
-		wui_none: wui_pseudo {
+		wui_none: wui-pseudo {
 			miwus = <&miwu_none 7 7>;
 		};
 	};
 
 	/* Pseudo MIWU device to present no mapping relationship */
-	miwu_none: miwu_pseudo {
+	miwu_none: miwu-pseudo {
 		compatible = "nuvoton,npcx-miwu";
 		index = <3>;
 		#miwu-cells = <2>;

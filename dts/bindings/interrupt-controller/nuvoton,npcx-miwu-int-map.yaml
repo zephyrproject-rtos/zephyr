@@ -18,11 +18,11 @@ child-binding:
           type: int
           required: true
           description: irq for miwu group
-       irq_prio:
+       irq-prio:
           type: int
           required: true
           description: irq's priority for miwu group. The valid number is from 0 to 7.
-       group_mask:
+       group-mask:
           type: int
           required: true
           description: group bit-mask for miwu interrupts

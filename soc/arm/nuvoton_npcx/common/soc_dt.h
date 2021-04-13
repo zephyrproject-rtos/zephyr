@@ -415,16 +415,16 @@
 									name)
 
 /**
- * @brief Get phandle from wui_map property of child node with that path.
+ * @brief Get phandle from vw-wui property of child node with that path.
  *
  * @param name path which name is /npcx7-espi-vws-map/'name'.
- * @return phandle from "wui_map" prop of child node with that path.
+ * @return phandle from "vw-wui" prop of child node with that path.
  */
 #define NPCX_DT_PHANDLE_VW_WUI(name) DT_PHANDLE(NPCX_DT_NODE_FROM_VWTABLE(     \
-								name), wui_map)
+								name), vw_wui)
 
 /**
- * @brief Construct a npcx_wui structure from wui_map property of a child node
+ * @brief Construct a npcx_wui structure from vw-wui property of a child node
  * with that path.
  *
  * @param name a path which name is /npcx7-espi-vws-map/'name'.
