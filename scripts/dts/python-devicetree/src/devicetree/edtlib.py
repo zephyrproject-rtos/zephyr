@@ -1005,7 +1005,7 @@ class Node:
             return False if prop_type == "boolean" else None
 
         if prop_type == "boolean":
-            if prop.type is not Type.EMPTY:
+            if prop.type != Type.EMPTY:
                 _err("'{0}' in {1!r} is defined with 'type: boolean' in {2}, "
                      "but is assigned a value ('{3}') instead of being empty "
                      "('{0};')".format(name, node, self.binding_path, prop))
