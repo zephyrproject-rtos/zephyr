@@ -146,6 +146,11 @@ struct http_response {
 	 */
 	char http_status[HTTP_STATUS_STR_SIZE];
 
+	/** Numeric HTTP status code which corresponds to the
+	 * textual description.
+	 */
+	uint16_t http_status_code;
+
 	uint8_t cl_present : 1;
 	uint8_t body_found : 1;
 	uint8_t message_complete : 1;
