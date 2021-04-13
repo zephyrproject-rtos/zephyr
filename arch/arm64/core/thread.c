@@ -108,6 +108,9 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	/* Keep using SP_EL1 */
 	pInitCtx->spsr = SPSR_MODE_EL1H | DAIF_FIQ_BIT;
 
+	/* thread birth happens through the exception return path */
+	thread->arch.exception_depth = 1;
+
 	/*
 	 * We are saving SP_EL1 to pop out entry and parameters when going
 	 * through z_arm64_exit_exc(). For user threads the definitive location

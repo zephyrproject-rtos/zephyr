@@ -30,6 +30,8 @@
 #include <kernel_arch_data.h>
 #include <kernel_offsets.h>
 
+GEN_OFFSET_SYM(_thread_arch_t, exception_depth);
+
 GEN_NAMED_OFFSET_SYM(_callee_saved_t, x19, x19_x20);
 GEN_NAMED_OFFSET_SYM(_callee_saved_t, x21, x21_x22);
 GEN_NAMED_OFFSET_SYM(_callee_saved_t, x23, x23_x24);
