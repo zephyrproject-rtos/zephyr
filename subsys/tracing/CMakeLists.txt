@@ -1,11 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_sources_ifdef(
-  CONFIG_TRACING_CPU_STATS
-  cpu_stats.c
-  )
-
-zephyr_sources_ifdef(
   CONFIG_TRACING_CORE
   tracing_buffer.c
   tracing_core.c

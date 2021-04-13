@@ -309,6 +309,11 @@ Libraries / Subsystems
 
 * Tracing
 
+  * ``CONFIG_TRACING_CPU_STATS`` was removed in favor of
+    ``CONFIG_THREAD_RUNTIME_STATS`` which provides per thread statistics. The
+    same functionality is also available when Thread analyzer is enabled with
+    the runtime statistics enabled.
+
 * Debug
 
 HALs
