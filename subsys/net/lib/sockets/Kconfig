@@ -11,15 +11,23 @@ menuconfig NET_SOCKETS
 if NET_SOCKETS
 
 config NET_SOCKETS_POSIX_NAMES
-	bool "Standard POSIX names for Sockets API"
+	bool "POSIX names for Sockets API (without full POSIX API)"
+	default y if !POSIX_API
 	depends on !POSIX_API
 	help
-	  By default, Sockets API function are prefixed with ``zsock_`` to avoid
-	  namespacing issues. If this option is enabled, they will be provided
-	  with standard POSIX names like socket(), recv(), and close(), to help
-	  with porting existing code. Note that close() may require a special
-	  attention, as in POSIX it closes any file descriptor, while with this
-	  option enabled, it will still apply only to sockets.
+	  With this option, Socket API functions are available under the
+	  standard POSIX names like socket(), recv(), and close(), etc.,
+	  even if full POSIX API (CONFIG_POSIX_API) is not enabled. (Note
+	  that close() may require a special attention, as in POSIX it
+	  closes any file descriptor, while with this option enabled, it
+	  will apply only to sockets.)
+
+	  Various networking libraries require either
+	  CONFIG_NET_SOCKETS_POSIX_NAMES or CONFIG_POSIX_API to be set.
+	  If both are disabled, Zephyr's socket functions will be
+	  available (only) with ``zsock_`` prefix, (e.g. `zsock_socket`).
+	  This is useful only in peculiar cases, e.g. when integrating
+	  with 3rd-party socket libraries.
 
 config NET_SOCKETS_POLL_MAX
 	int "Max number of supported poll() entries"
