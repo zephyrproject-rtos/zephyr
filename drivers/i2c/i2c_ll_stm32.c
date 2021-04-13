@@ -241,9 +241,9 @@ static int i2c_stm32_init(const struct device *dev)
 	}
 #endif /* CONFIG_SOC_SERIES_STM32F3X) || CONFIG_SOC_SERIES_STM32F0X */
 
-#if defined(CONFIG_SOC_STM32F103X8) || defined(CONFIG_SOC_STM32F103XB)
+#if defined(CONFIG_SOC_SERIES_STM32F1X)
 	/*
-	 * Force i2c reset for STM32 (F101X8/B, F102X8/B), F103X8/B.
+	 * Force i2c reset for STM32F1 series.
 	 * So that they can enter master mode properly.
 	 * Issue described in ES096 2.14.7
 	 */
