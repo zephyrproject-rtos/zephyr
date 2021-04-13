@@ -210,10 +210,8 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 	};
 	struct net_linkaddr_storage ll_dst_storage;
 	struct net_context *context;
+	uint32_t create_time;
 	int status;
-
-	/* Timestamp of the current network packet sent if enabled */
-	struct net_ptp_time start_timestamp;
 
 	/* We collect send statistics for each socket priority if enabled */
 	uint8_t pkt_priority;
@@ -221,6 +219,8 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 	if (!pkt) {
 		return false;
 	}
+
+	create_time = net_pkt_create_time(pkt);
 
 	debug_check_packet(pkt);
 
@@ -247,8 +247,6 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 		}
 
 		if (IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS)) {
-			memcpy(&start_timestamp, net_pkt_timestamp(pkt),
-			       sizeof(start_timestamp));
 			pkt_priority = net_pkt_priority(pkt);
 
 			if (IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS_DETAIL)) {
@@ -268,13 +266,13 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 
 			net_stats_update_tc_tx_time(iface,
 						    pkt_priority,
-						    start_timestamp.nanosecond,
+						    create_time,
 						    end_tick);
 
 			if (IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS_DETAIL)) {
 				update_txtime_stats_detail(
 					pkt,
-					start_timestamp.nanosecond,
+					create_time,
 					end_tick);
 
 				net_stats_update_tc_tx_time_detail(
