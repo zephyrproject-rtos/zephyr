@@ -81,10 +81,7 @@ try:
 except ImportError:
     from yaml import Loader
 
-from devicetree.dtlib import \
-    DT, DTError, to_num, to_nums, TYPE_EMPTY, TYPE_BYTES, \
-    TYPE_NUM, TYPE_NUMS, TYPE_STRING, TYPE_STRINGS, \
-    TYPE_PHANDLE, TYPE_PHANDLES, TYPE_PHANDLES_AND_NUMS
+from devicetree.dtlib import DT, DTError, to_num, to_nums, Type
 from devicetree.grutils import Graph
 
 
@@ -823,26 +820,27 @@ class Node:
         }
         for name, prop in self._node.props.items():
             pp = OrderedDict()
-            if prop.type == TYPE_EMPTY:
+            if prop.type == Type.EMPTY:
                 pp["type"] = "boolean"
-            elif prop.type == TYPE_BYTES:
+            elif prop.type == Type.BYTES:
                 pp["type"] = "uint8-array"
-            elif prop.type == TYPE_NUM:
+            elif prop.type == Type.NUM:
                 pp["type"] = "int"
-            elif prop.type == TYPE_NUMS:
+            elif prop.type == Type.NUMS:
                 pp["type"] = "array"
-            elif prop.type == TYPE_STRING:
+            elif prop.type == Type.STRING:
                 pp["type"] = "string"
-            elif prop.type == TYPE_STRINGS:
+            elif prop.type == Type.STRINGS:
                 pp["type"] = "string-array"
-            elif prop.type == TYPE_PHANDLE:
+            elif prop.type == Type.PHANDLE:
                 pp["type"] = "phandle"
-            elif prop.type == TYPE_PHANDLES:
+            elif prop.type == Type.PHANDLES:
                 pp["type"] = "phandles"
-            elif prop.type == TYPE_PHANDLES_AND_NUMS:
+            elif prop.type == Type.PHANDLES_AND_NUMS:
                 pp["type"] = "phandle-array"
             else:
-                _err(f"cannot infer binding from property: {prop}")
+                _err(f"cannot infer binding from property: {prop} "
+                     f"with type {prop.type}")
             raw['properties'][name] = pp
 
         # Set up Node state.
@@ -1007,7 +1005,7 @@ class Node:
             return False if prop_type == "boolean" else None
 
         if prop_type == "boolean":
-            if prop.type is not TYPE_EMPTY:
+            if prop.type is not Type.EMPTY:
                 _err("'{0}' in {1!r} is defined with 'type: boolean' in {2}, "
                      "but is assigned a value ('{3}') instead of being empty "
                      "('{0};')".format(name, node, self.binding_path, prop))
@@ -1038,7 +1036,7 @@ class Node:
             # This type is a bit high-level for dtlib as it involves
             # information from bindings and *-names properties, so there's no
             # to_phandle_array() in dtlib. Do the type check ourselves.
-            if prop.type not in (TYPE_PHANDLE, TYPE_PHANDLES, TYPE_PHANDLES_AND_NUMS):
+            if prop.type not in (Type.PHANDLE, Type.PHANDLES, Type.PHANDLES_AND_NUMS):
                 _err(f"expected property '{name}' in {node.path} in "
                      f"{node.dt.filename} to be assigned "
                      f"with '{name} = < &foo ... &bar 1 ... &baz 2 3 >' "
@@ -2655,7 +2653,7 @@ def _check_dt(dt):
 
         ranges_prop = node.props.get("ranges")
         if ranges_prop:
-            if ranges_prop.type not in (TYPE_EMPTY, TYPE_NUMS):
+            if ranges_prop.type not in (Type.EMPTY, Type.NUMS):
                 _err("expected 'ranges = < ... >;' in {} in {}, not '{}' "
                      "(see the devicetree specification)"
                      .format(node.path, node.dt.filename, ranges_prop))
