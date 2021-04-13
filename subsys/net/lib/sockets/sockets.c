@@ -931,11 +931,11 @@ void net_socket_update_tc_rx_time(struct net_pkt *pkt, uint32_t end_tick)
 
 	net_stats_update_tc_rx_time(net_pkt_iface(pkt),
 				    net_pkt_priority(pkt),
-				    net_pkt_timestamp(pkt)->nanosecond,
+				    net_pkt_create_time(pkt),
 				    end_tick);
 
 	if (IS_ENABLED(CONFIG_NET_PKT_RXTIME_STATS_DETAIL)) {
-		uint32_t val, prev = net_pkt_timestamp(pkt)->nanosecond;
+		uint32_t val, prev = net_pkt_create_time(pkt);
 		int i;
 
 		for (i = 0; i < net_pkt_stats_tick_count(pkt); i++) {
