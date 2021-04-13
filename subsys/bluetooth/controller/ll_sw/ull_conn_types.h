@@ -140,6 +140,7 @@ struct ll_conn {
 				LLCP_ENC_STATE_INPROG,
 				LLCP_ENC_STATE_INIT,
 				LLCP_ENC_STATE_LTK_WAIT,
+				LLCP_ENC_STATE_ENC_WAIT,
 			} state:2 __packed;
 			uint8_t  error_code;
 			uint8_t  skd[16];

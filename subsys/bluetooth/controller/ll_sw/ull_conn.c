@@ -2996,6 +2996,11 @@ static inline void event_enc_prep(struct ll_conn *conn)
 			event_enc_reject_prep(conn, pdu_ctrl_tx);
 
 			ctrl_tx_enqueue(conn, tx);
+
+			/* procedure request acked */
+			conn->llcp_ack = conn->llcp_req;
+
+			return;
 		}
 		/* place the start enc req packet as next in tx queue */
 		else {
@@ -3041,19 +3046,16 @@ static inline void event_enc_prep(struct ll_conn *conn)
 		}
 
 #if !defined(CONFIG_BT_CTLR_FAST_ENC)
+	/* Peripheral sends start enc rsp after reception of start enc rsp */
 	} else {
 		start_enc_rsp_send(conn, pdu_ctrl_tx);
 
 		ctrl_tx_enqueue(conn, tx);
-
-		/* resume data packet rx and tx */
-		conn->llcp_enc.pause_rx = 0U;
-		conn->llcp_enc.pause_tx = 0U;
 #endif /* !CONFIG_BT_CTLR_FAST_ENC */
 	}
 
-	/* procedure request acked */
-	conn->llcp_ack = conn->llcp_req;
+	/* Wait for encryption setup to complete */
+	conn->llcp.encryption.state = LLCP_ENC_STATE_ENC_WAIT;
 }
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
@@ -5608,12 +5610,28 @@ static inline void ctrl_tx_ack(struct ll_conn *conn, struct node_tx **tx,
 		break;
 
 	case PDU_DATA_LLCTRL_TYPE_START_ENC_REQ:
-		/* Nothing to do.
-		 * Remember that we may have received encrypted START_ENC_RSP
+		/* Remember that we may have received encrypted START_ENC_RSP
 		 * alongwith this tx ack at this point in time.
 		 */
+		conn->llcp.encryption.state = LLCP_ENC_STATE_ENC_WAIT;
 		break;
 #endif /* CONFIG_BT_PERIPHERAL */
+
+	case PDU_DATA_LLCTRL_TYPE_START_ENC_RSP:
+		if (conn->lll.role) {
+			/* resume data packet rx and tx */
+			conn->llcp_enc.pause_rx = 0U;
+			conn->llcp_enc.pause_tx = 0U;
+
+			/* Procedure complete */
+			conn->procedure_expire = 0U;
+
+			/* procedure request acked */
+			conn->llcp_ack = conn->llcp_req;
+		} else {
+			conn->llcp.encryption.state = LLCP_ENC_STATE_ENC_WAIT;
+		}
+		break;
 
 #if defined(CONFIG_BT_CENTRAL)
 	case PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ:
@@ -5961,39 +5979,34 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 #endif /* CONFIG_BT_CENTRAL */
 
 	case PDU_DATA_LLCTRL_TYPE_START_ENC_RSP:
-		if (PDU_DATA_LLCTRL_LEN(start_enc_rsp) != pdu_rx->len) {
+		if ((conn->llcp_req == conn->llcp_ack) ||
+		    (conn->llcp_type != LLCP_ENCRYPTION) ||
+		    (PDU_DATA_LLCTRL_LEN(start_enc_rsp) != pdu_rx->len)) {
 			goto ull_conn_rx_unknown_rsp_send;
 		}
 
 		if (conn->lll.role) {
 #if !defined(CONFIG_BT_CTLR_FAST_ENC)
-			if ((conn->llcp_req != conn->llcp_ack) &&
-			    (conn->llcp_type != LLCP_ENCRYPTION)) {
-				goto ull_conn_rx_unknown_rsp_send;
-			}
-
-			/* start enc rsp to be scheduled in slave  prepare */
+			/* start enc rsp to be scheduled in slave prepare */
 			conn->llcp.encryption.state = LLCP_ENC_STATE_INPROG;
-			if (conn->llcp_req == conn->llcp_ack) {
-				conn->llcp_type = LLCP_ENCRYPTION;
-				conn->llcp_ack -= 2U;
-			}
 
 #else /* CONFIG_BT_CTLR_FAST_ENC */
 			nack = start_enc_rsp_send(conn, NULL);
 			if (nack) {
 				break;
 			}
-
-			/* resume data packet rx and tx */
-			conn->llcp_enc.pause_rx = 0U;
-			conn->llcp_enc.pause_tx = 0U;
 #endif /* CONFIG_BT_CTLR_FAST_ENC */
 
 		} else {
 			/* resume data packet rx and tx */
 			conn->llcp_enc.pause_rx = 0U;
 			conn->llcp_enc.pause_tx = 0U;
+
+			/* Procedure complete */
+			conn->procedure_expire = 0U;
+
+			/* procedure request acked */
+			conn->llcp_ack = conn->llcp_req;
 		}
 
 		/* enqueue the start enc resp (encryption change/refresh) */
@@ -6003,10 +6016,6 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 			/* key refresh event */
 			(*rx)->hdr.type = NODE_RX_TYPE_ENC_REFRESH;
 		}
-
-		/* Procedure complete */
-		conn->procedure_expire = 0U;
-
 		break;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
