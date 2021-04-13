@@ -265,4 +265,9 @@ config MODEM_HL7800_INIT_PRIORITY
 	  Note that the priority needs to be lower than the net stack
 	  so that it can start before the networking sub-system.
 
+config MODEM_HL7800_DELAY_START
+	bool "Delay secondary initialization of driver and network attach"
+	help
+		When true the application must call mdm_hl7800_reset.
+
 endif # MODEM_HL7800
