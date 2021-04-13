@@ -303,6 +303,17 @@ if(CONFIG_OVERRIDE_FRAME_POINTER_DEFAULT)
   endif()
 endif()
 
+if($ENV{ZEPHYR_BUILD_COLOR_OUTPUT})
+  if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
+    # Need to force color output (=always) for GCC because of
+    # output pipe used by Ninja, which is not regarded as
+    # color-capable terminal by GCC.
+    zephyr_compile_options(-fdiagnostics-color=always)
+  elseif(CMAKE_C_COMPILER_ID STREQUAL "Clang")
+    zephyr_cc_options(-fcolor-diagnostics)
+  endif()
+endif()
+
 separate_arguments(COMPILER_OPT_AS_LIST UNIX_COMMAND ${CONFIG_COMPILER_OPT})
 zephyr_compile_options(${COMPILER_OPT_AS_LIST})
 
