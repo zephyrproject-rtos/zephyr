@@ -1,0 +1,4 @@
+tests:
+  kernel.memory_protection.mem_protect_integration:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    tags: kernel userspace
