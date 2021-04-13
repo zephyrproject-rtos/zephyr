@@ -32,6 +32,8 @@ int smp_bt_register(void);
  */
 int smp_bt_unregister(void);
 
+int smp_bt_tx_rsp(struct bt_conn *conn, const void *data, uint16_t len);
+
 #ifdef __cplusplus
 }
 #endif

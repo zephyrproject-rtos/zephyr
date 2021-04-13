@@ -97,7 +97,7 @@ static struct bt_gatt_service smp_bt_svc = BT_GATT_SERVICE(smp_bt_attrs);
 /**
  * Transmits an SMP response over the specified Bluetooth connection.
  */
-static int smp_bt_tx_rsp(struct bt_conn *conn, const void *data, uint16_t len)
+int smp_bt_tx_rsp(struct bt_conn *conn, const void *data, uint16_t len)
 {
 	return bt_gatt_notify(conn, smp_bt_attrs + 2, data, len);
 }
