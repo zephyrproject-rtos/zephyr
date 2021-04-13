@@ -642,6 +642,10 @@ static int i2s_cavs_trigger(const struct device *dev, enum i2s_dir dir,
 	unsigned int key;
 	int ret = 0;
 
+	if (dir == I2S_DIR_BOTH) {
+		return -ENOSYS;
+	}
+
 	strm = (dir == I2S_DIR_TX) ? &dev_data->tx : &dev_data->rx;
 
 	key = irq_lock();

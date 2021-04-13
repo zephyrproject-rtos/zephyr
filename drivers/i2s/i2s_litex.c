@@ -351,6 +351,8 @@ static int i2s_litex_configure(const struct device *dev, enum i2s_dir dir,
 		stream = &dev_data->tx;
 		channels_concatenated = litex_read8(I2S_TX_STATUS_REG) &
 					I2S_TX_STAT_CHANNEL_CONCATENATED_MASK;
+	} else if (dir == I2S_DIR_BOTH) {
+		return -ENOSYS;
 	} else {
 		LOG_ERR("either RX or TX direction must be selected");
 		return -EINVAL;
@@ -498,6 +500,8 @@ static int i2s_litex_trigger(const struct device *dev, enum i2s_dir dir,
 		stream = &dev_data->rx;
 	} else if (dir == I2S_DIR_TX) {
 		stream = &dev_data->tx;
+	} else if (dir == I2S_DIR_BOTH) {
+		return -ENOSYS;
 	} else {
 		LOG_ERR("either RX or TX direction must be selected");
 		return -EINVAL;
