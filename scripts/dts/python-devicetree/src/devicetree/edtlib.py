@@ -838,6 +838,8 @@ class Node:
                 pp["type"] = "phandles"
             elif prop.type == Type.PHANDLES_AND_NUMS:
                 pp["type"] = "phandle-array"
+            elif prop.type == Type.PATH:
+                pp["type"] = "path"
             else:
                 _err(f"cannot infer binding from property: {prop} "
                      f"with type {prop.type!r}")
