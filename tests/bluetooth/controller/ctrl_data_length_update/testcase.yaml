@@ -3,3 +3,12 @@ common:
 tests:
   bluetooth.controller.ctrl_data_length_update.test:
      type: unit
+     extra_args: CONFIG_BT_CTLR_PHY=y
+  bluetooth.controller.ctrl_data_length_update.test_codedphy:
+     type: unit
+     extra_args: CONFIG_BT_CTLR_PHY=y CONFIG_BT_CTLR_PHY_CODED=y
+  bluetooth.controller.ctrl_data_length_update.test_nophy:
+     type: unit
+     extra_args: KCONFIG_OVERRIDE_FILE="kconfig_override.h"
+
+
