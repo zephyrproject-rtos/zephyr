@@ -30,8 +30,8 @@
  */
 void config_pll_init(LL_UTILS_PLLInitTypeDef *pllinit)
 {
-	pllinit->PLLMul = pll_mul(CONFIG_CLOCK_STM32_PLL_MULTIPLIER);
-	pllinit->PLLDiv = pll_div(CONFIG_CLOCK_STM32_PLL_DIVISOR);
+	pllinit->PLLMul = pll_mul(STM32_PLL_MULTIPLIER);
+	pllinit->PLLDiv = pll_div(STM32_PLL_DIVISOR);
 }
 
 #endif /* STM32_SYSCLK_SRC_PLL */
