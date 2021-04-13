@@ -176,6 +176,8 @@ static int on_status(struct http_parser *parser, const char *at, size_t length)
 	if (req->internal.response.http_cb &&
 	    req->internal.response.http_cb->on_status) {
 		req->internal.response.http_cb->on_status(parser, at, length);
+		req->internal.response.http_status_code =
+			(uint16_t)parser->status_code;
 	}
 
 	return 0;
