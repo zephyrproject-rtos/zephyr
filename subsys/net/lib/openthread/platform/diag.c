@@ -34,6 +34,10 @@ otError otPlatDiagProcess(otInstance *aInstance,
 void otPlatDiagModeSet(bool aMode)
 {
 	sDiagMode = aMode;
+
+	if (!sDiagMode) {
+		otPlatRadioSleep(NULL);
+	}
 }
 
 bool otPlatDiagModeGet(void)
