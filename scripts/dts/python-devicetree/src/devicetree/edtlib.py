@@ -840,7 +840,7 @@ class Node:
                 pp["type"] = "phandle-array"
             else:
                 _err(f"cannot infer binding from property: {prop} "
-                     f"with type {prop.type}")
+                     f"with type {prop.type!r}")
             raw['properties'][name] = pp
 
         # Set up Node state.
