@@ -4272,7 +4272,6 @@ error:
 	LOG_ERR("Unable to configure modem");
 	ictx.configured = false;
 	set_network_state(HL7800_UNABLE_TO_CONFIGURE);
-	modem_reset();
 	/* Kernel will fault with non-zero return value.
 	 * Allow other parts of application to run when modem cannot be configured.
 	 */
