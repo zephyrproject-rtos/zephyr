@@ -4724,6 +4724,7 @@ __syscall size_t k_pipe_write_avail(struct k_pipe *pipe);
 
 struct k_mem_slab {
 	_wait_q_t wait_q;
+	struct k_spinlock lock;
 	uint32_t num_blocks;
 	size_t block_size;
 	char *buffer;
@@ -4740,6 +4741,7 @@ struct k_mem_slab {
 #define Z_MEM_SLAB_INITIALIZER(obj, slab_buffer, slab_block_size, \
 			       slab_num_blocks) \
 	{ \
+	.lock = {}, \
 	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
 	.num_blocks = slab_num_blocks, \
 	.block_size = slab_block_size, \
