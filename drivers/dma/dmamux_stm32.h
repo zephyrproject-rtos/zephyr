@@ -13,23 +13,6 @@ struct dmamux_stm32_channel {
 	uint8_t dma_id; /* ref of the associated dma stream for this instance */
 };
 
-/* the table of all the dmamux channel */
-struct dmamux_stm32_data {
-	void *callback_arg;
-	void (*dmamux_callback)(void *arg, uint32_t id,
-				int error_code);
-};
-
-/* this is the configuration of the dmamux IP */
-struct dmamux_stm32_config {
-	struct stm32_pclken pclken;
-	uint32_t base;
-	uint8_t channel_nb;	/* total nb of channels */
-	uint8_t gen_nb;	/* total nb of Request generator */
-	uint8_t req_nb;	/* total nb of Peripheral Request inputs */
-	const struct dmamux_stm32_channel *mux_channels;
-};
-
 uint32_t table_ll_channel[] = {
 	LL_DMAMUX_CHANNEL_0,
 	LL_DMAMUX_CHANNEL_1,
