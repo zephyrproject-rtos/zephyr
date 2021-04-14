@@ -38,9 +38,9 @@ static int32_t msg_timeout;
 
 static struct bt_mesh_cfg_cli *cli;
 
-static void comp_data_status(struct bt_mesh_model *model,
-			     struct bt_mesh_msg_ctx *ctx,
-			     struct net_buf_simple *buf)
+static int comp_data_status(struct bt_mesh_model *model,
+			    struct bt_mesh_msg_ctx *ctx,
+			    struct net_buf_simple *buf)
 {
 	struct comp_data *param;
 	size_t to_copy;
@@ -51,7 +51,7 @@ static void comp_data_status(struct bt_mesh_model *model,
 
 	if (!bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_DEV_COMP_DATA_STATUS, ctx->addr,
 				       (void **)&param)) {
-		return;
+		return -ENOENT;
 	}
 
 	if (param->page) {
@@ -62,12 +62,14 @@ static void comp_data_status(struct bt_mesh_model *model,
 	net_buf_simple_add_mem(param->comp, buf->data, to_copy);
 
 	bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
+
+	return 0;
 }
 
-static void state_status_u8(struct bt_mesh_model *model,
-			    struct bt_mesh_msg_ctx *ctx,
-			    struct net_buf_simple *buf,
-			    uint32_t expect_status)
+static int state_status_u8(struct bt_mesh_model *model,
+			   struct bt_mesh_msg_ctx *ctx,
+			   struct net_buf_simple *buf,
+			   uint32_t expect_status)
 {
 	uint8_t *status;
 
@@ -77,40 +79,42 @@ static void state_status_u8(struct bt_mesh_model *model,
 
 	if (!bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, expect_status, ctx->addr,
 				       (void **)&status)) {
-		return;
+		return -ENOENT;
 	}
 
 	*status = net_buf_simple_pull_u8(buf);
 
 	bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
+
+	return 0;
 }
 
-static void beacon_status(struct bt_mesh_model *model,
-			  struct bt_mesh_msg_ctx *ctx,
-			  struct net_buf_simple *buf)
+static int beacon_status(struct bt_mesh_model *model,
+			 struct bt_mesh_msg_ctx *ctx,
+			 struct net_buf_simple *buf)
 {
-	state_status_u8(model, ctx, buf, OP_BEACON_STATUS);
+	return state_status_u8(model, ctx, buf, OP_BEACON_STATUS);
 }
 
-static void ttl_status(struct bt_mesh_model *model,
-			  struct bt_mesh_msg_ctx *ctx,
-			  struct net_buf_simple *buf)
+static int ttl_status(struct bt_mesh_model *model,
+		      struct bt_mesh_msg_ctx *ctx,
+		      struct net_buf_simple *buf)
 {
-	state_status_u8(model, ctx, buf, OP_DEFAULT_TTL_STATUS);
+	return state_status_u8(model, ctx, buf, OP_DEFAULT_TTL_STATUS);
 }
 
-static void friend_status(struct bt_mesh_model *model,
-			  struct bt_mesh_msg_ctx *ctx,
-			  struct net_buf_simple *buf)
+static int friend_status(struct bt_mesh_model *model,
+			 struct bt_mesh_msg_ctx *ctx,
+			 struct net_buf_simple *buf)
 {
-	state_status_u8(model, ctx, buf, OP_FRIEND_STATUS);
+	return state_status_u8(model, ctx, buf, OP_FRIEND_STATUS);
 }
 
-static void gatt_proxy_status(struct bt_mesh_model *model,
-			      struct bt_mesh_msg_ctx *ctx,
-			      struct net_buf_simple *buf)
+static int gatt_proxy_status(struct bt_mesh_model *model,
+			     struct bt_mesh_msg_ctx *ctx,
+			     struct net_buf_simple *buf)
 {
-	state_status_u8(model, ctx, buf, OP_GATT_PROXY_STATUS);
+	return state_status_u8(model, ctx, buf, OP_GATT_PROXY_STATUS);
 }
 
 struct relay_param {
@@ -118,9 +122,9 @@ struct relay_param {
 	uint8_t *transmit;
 };
 
-static void relay_status(struct bt_mesh_model *model,
-			 struct bt_mesh_msg_ctx *ctx,
-			 struct net_buf_simple *buf)
+static int relay_status(struct bt_mesh_model *model,
+			struct bt_mesh_msg_ctx *ctx,
+			struct net_buf_simple *buf)
 {
 	struct relay_param *param;
 
@@ -130,18 +134,20 @@ static void relay_status(struct bt_mesh_model *model,
 
 	if (!bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_RELAY_STATUS, ctx->addr,
 				       (void **)&param)) {
-		return;
+		return -ENOENT;
 	}
 
 	*param->status = net_buf_simple_pull_u8(buf);
 	*param->transmit = net_buf_simple_pull_u8(buf);
 
 	bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
+
+	return 0;
 }
 
-static void net_transmit_status(struct bt_mesh_model *model,
-				struct bt_mesh_msg_ctx *ctx,
-				struct net_buf_simple *buf)
+static int net_transmit_status(struct bt_mesh_model *model,
+			       struct bt_mesh_msg_ctx *ctx,
+			       struct net_buf_simple *buf)
 {
 	uint8_t *status;
 
@@ -151,12 +157,14 @@ static void net_transmit_status(struct bt_mesh_model *model,
 
 	if (!bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_NET_TRANSMIT_STATUS, ctx->addr,
 				       (void **)&status)) {
-		return;
+		return -ENOENT;
 	}
 
 	*status = net_buf_simple_pull_u8(buf);
 
 	bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
+
+	return 0;
 }
 
 struct net_key_param {
@@ -164,9 +172,9 @@ struct net_key_param {
 	uint16_t net_idx;
 };
 
-static void net_key_status(struct bt_mesh_model *model,
-			   struct bt_mesh_msg_ctx *ctx,
-			   struct net_buf_simple *buf)
+static int net_key_status(struct bt_mesh_model *model,
+			  struct bt_mesh_msg_ctx *ctx,
+			  struct net_buf_simple *buf)
 {
 	struct net_key_param *param;
 	uint16_t net_idx;
@@ -178,7 +186,7 @@ static void net_key_status(struct bt_mesh_model *model,
 
 	if (!bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_NET_KEY_STATUS, ctx->addr,
 				       (void **)&param)) {
-		return;
+		return -ENOENT;
 	}
 
 	status = net_buf_simple_pull_u8(buf);
@@ -186,7 +194,7 @@ static void net_key_status(struct bt_mesh_model *model,
 
 	if (param->net_idx != net_idx) {
 		BT_WARN("Net Key Status key index does not match");
-		return;
+		return -ENOENT;
 	}
 
 	if (param->status) {
@@ -194,6 +202,8 @@ static void net_key_status(struct bt_mesh_model *model,
 	}
 
 	bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
+
+	return 0;
 }
 
 struct net_key_list_param {
@@ -201,9 +211,9 @@ struct net_key_list_param {
 	size_t *key_cnt;
 };
 
-static void net_key_list(struct bt_mesh_model *model,
-			 struct bt_mesh_msg_ctx *ctx,
-			 struct net_buf_simple *buf)
+static int net_key_list(struct bt_mesh_model *model,
+			struct bt_mesh_msg_ctx *ctx,
+			struct net_buf_simple *buf)
 {
 	struct net_key_list_param *param;
 	int i;
@@ -214,7 +224,7 @@ static void net_key_list(struct bt_mesh_model *model,
 
 	if (!bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_NET_KEY_LIST, ctx->addr,
 				       (void **)&param)) {
-		return;
+		return -ENOENT;
 	}
 
 	for (i = 0; i < *param->key_cnt && buf->len >= 3; i += 2) {
@@ -228,10 +238,13 @@ static void net_key_list(struct bt_mesh_model *model,
 	*param->key_cnt = i;
 
 	bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
+
+	return 0;
 }
 
-static void node_reset_status(struct bt_mesh_model *model,
-		struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf)
+static int node_reset_status(struct bt_mesh_model *model,
+			     struct bt_mesh_msg_ctx *ctx,
+			     struct net_buf_simple *buf)
 {
 	bool *param = NULL;
 	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x",
@@ -239,13 +252,15 @@ static void node_reset_status(struct bt_mesh_model *model,
 
 	if (!bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_NODE_RESET_STATUS, ctx->addr,
 				       (void **)&param)) {
-		return;
+		return -ENOENT;
 	}
 
 	if (param) {
 		*param = true;
 	}
 	bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
+
+	return 0;
 }
 
 struct app_key_param {
@@ -254,9 +269,9 @@ struct app_key_param {
 	uint16_t app_idx;
 };
 
-static void app_key_status(struct bt_mesh_model *model,
-			   struct bt_mesh_msg_ctx *ctx,
-			   struct net_buf_simple *buf)
+static int app_key_status(struct bt_mesh_model *model,
+			  struct bt_mesh_msg_ctx *ctx,
+			  struct net_buf_simple *buf)
 {
 	struct app_key_param *param;
 	uint16_t net_idx, app_idx;
@@ -268,7 +283,7 @@ static void app_key_status(struct bt_mesh_model *model,
 
 	if (!bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_APP_KEY_STATUS, ctx->addr,
 				       (void **)&param)) {
-		return;
+		return -ENOENT;
 	}
 
 	status = net_buf_simple_pull_u8(buf);
@@ -276,7 +291,7 @@ static void app_key_status(struct bt_mesh_model *model,
 
 	if (param->net_idx != net_idx || param->app_idx != app_idx) {
 		BT_WARN("App Key Status key indices did not match");
-		return;
+		return -ENOENT;
 	}
 
 	if (param->status) {
@@ -284,6 +299,8 @@ static void app_key_status(struct bt_mesh_model *model,
 	}
 
 	bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
+
+	return 0;
 }
 
 struct app_key_list_param {
@@ -293,9 +310,9 @@ struct app_key_list_param {
 	size_t *key_cnt;
 };
 
-static void app_key_list(struct bt_mesh_model *model,
-			 struct bt_mesh_msg_ctx *ctx,
-			 struct net_buf_simple *buf)
+static int app_key_list(struct bt_mesh_model *model,
+			struct bt_mesh_msg_ctx *ctx,
+			struct net_buf_simple *buf)
 {
 	struct app_key_list_param *param;
 	uint16_t net_idx;
@@ -308,7 +325,7 @@ static void app_key_list(struct bt_mesh_model *model,
 
 	if (!bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_APP_KEY_LIST, ctx->addr,
 				       (void **)&param)) {
-		return;
+		return -ENOENT;
 	}
 
 	status = net_buf_simple_pull_u8(buf);
@@ -316,7 +333,7 @@ static void app_key_list(struct bt_mesh_model *model,
 
 	if (param->net_idx != net_idx) {
 		BT_WARN("App Key List Net Key index did not match");
-		return;
+		return -ENOENT;
 	}
 
 	for (i = 0; i < *param->key_cnt && buf->len >= 3; i += 2) {
@@ -333,6 +350,8 @@ static void app_key_list(struct bt_mesh_model *model,
 	}
 
 	bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
+
+	return 0;
 }
 
 struct mod_app_param {
@@ -343,9 +362,9 @@ struct mod_app_param {
 	uint16_t cid;
 };
 
-static void mod_app_status(struct bt_mesh_model *model,
-			   struct bt_mesh_msg_ctx *ctx,
-			   struct net_buf_simple *buf)
+static int mod_app_status(struct bt_mesh_model *model,
+			  struct bt_mesh_msg_ctx *ctx,
+			  struct net_buf_simple *buf)
 {
 	uint16_t elem_addr, mod_app_idx, mod_id, cid;
 	struct mod_app_param *param;
@@ -357,7 +376,7 @@ static void mod_app_status(struct bt_mesh_model *model,
 
 	if (!bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_MOD_APP_STATUS, ctx->addr,
 				       (void **)&param)) {
-		return;
+		return -ENOENT;
 	}
 
 	status = net_buf_simple_pull_u8(buf);
@@ -376,7 +395,7 @@ static void mod_app_status(struct bt_mesh_model *model,
 	    param->mod_app_idx != mod_app_idx || param->mod_id != mod_id ||
 	    param->cid != cid) {
 		BT_WARN("Model App Status parameters did not match");
-		return;
+		return -ENOENT;
 	}
 
 	if (param->status) {
@@ -384,6 +403,8 @@ static void mod_app_status(struct bt_mesh_model *model,
 	}
 
 	bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
+
+	return 0;
 }
 
 struct mod_member_list_param {
@@ -395,9 +416,9 @@ struct mod_member_list_param {
 	size_t *member_cnt;
 };
 
-static void mod_member_list_handle(struct bt_mesh_msg_ctx *ctx,
-				   struct net_buf_simple *buf, bool vnd,
-				   struct mod_member_list_param *param)
+static int mod_member_list_handle(struct bt_mesh_msg_ctx *ctx,
+				  struct net_buf_simple *buf, bool vnd,
+				  struct mod_member_list_param *param)
 {
 	uint16_t elem_addr, mod_id, cid;
 	uint8_t status;
@@ -414,12 +435,12 @@ static void mod_member_list_handle(struct bt_mesh_msg_ctx *ctx,
 	if (param->elem_addr != elem_addr || param->mod_id != mod_id ||
 	    (vnd && param->cid != cid)) {
 		BT_WARN("Model Member List parameters did not match");
-		return;
+		return -ENOENT;
 	}
 
 	if (buf->len % 2) {
 		BT_WARN("Model Member List invalid length");
-		return;
+		return -EINVAL;
 	}
 
 	for (i = 0; i < *param->member_cnt && buf->len; i++) {
@@ -432,11 +453,13 @@ static void mod_member_list_handle(struct bt_mesh_msg_ctx *ctx,
 	}
 
 	bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
+
+	return 0;
 }
 
-static void mod_app_list(struct bt_mesh_model *model,
-			 struct bt_mesh_msg_ctx *ctx,
-			 struct net_buf_simple *buf)
+static int mod_app_list(struct bt_mesh_model *model,
+			struct bt_mesh_msg_ctx *ctx,
+			struct net_buf_simple *buf)
 {
 	struct mod_member_list_param *param;
 
@@ -446,15 +469,15 @@ static void mod_app_list(struct bt_mesh_model *model,
 
 	if (!bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_SIG_MOD_APP_LIST, ctx->addr,
 				       (void **)&param)) {
-		return;
+		return -ENOENT;
 	}
 
-	mod_member_list_handle(ctx, buf, false, param);
+	return mod_member_list_handle(ctx, buf, false, param);
 }
 
-static void mod_app_list_vnd(struct bt_mesh_model *model,
-			     struct bt_mesh_msg_ctx *ctx,
-			     struct net_buf_simple *buf)
+static int mod_app_list_vnd(struct bt_mesh_model *model,
+			    struct bt_mesh_msg_ctx *ctx,
+			    struct net_buf_simple *buf)
 {
 	struct mod_member_list_param *param;
 
@@ -464,10 +487,10 @@ static void mod_app_list_vnd(struct bt_mesh_model *model,
 
 	if (!bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_VND_MOD_APP_LIST, ctx->addr,
 				       (void **)&param)) {
-		return;
+		return -ENOENT;
 	}
 
-	mod_member_list_handle(ctx, buf, true, param);
+	return mod_member_list_handle(ctx, buf, true, param);
 }
 
 struct mod_pub_param {
@@ -478,7 +501,7 @@ struct mod_pub_param {
 	struct bt_mesh_cfg_mod_pub *pub;
 };
 
-static void mod_pub_status(struct bt_mesh_model *model,
+static int mod_pub_status(struct bt_mesh_model *model,
 			   struct bt_mesh_msg_ctx *ctx,
 			   struct net_buf_simple *buf)
 {
@@ -492,13 +515,13 @@ static void mod_pub_status(struct bt_mesh_model *model,
 
 	if (!bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_MOD_PUB_STATUS, ctx->addr,
 				       (void **)&param)) {
-		return;
+		return -ENOENT;
 	}
 
 	if (param->cid != CID_NVAL) {
 		if (buf->len < 14) {
 			BT_WARN("Unexpected Mod Pub Status with SIG Model");
-			return;
+			return -ENOENT;
 		}
 
 		cid = sys_get_le16(&buf->data[10]);
@@ -506,7 +529,7 @@ static void mod_pub_status(struct bt_mesh_model *model,
 	} else {
 		if (buf->len > 12) {
 			BT_WARN("Unexpected Mod Pub Status with Vendor Model");
-			return;
+			return -ENOENT;
 		}
 
 		cid = CID_NVAL;
@@ -515,7 +538,7 @@ static void mod_pub_status(struct bt_mesh_model *model,
 
 	if (mod_id != param->mod_id || cid != param->cid) {
 		BT_WARN("Mod Pub Model ID or Company ID mismatch");
-		return;
+		return -ENOENT;
 	}
 
 	status = net_buf_simple_pull_u8(buf);
@@ -524,7 +547,7 @@ static void mod_pub_status(struct bt_mesh_model *model,
 	if (elem_addr != param->elem_addr) {
 		BT_WARN("Model Pub Status for unexpected element (0x%04x)",
 			elem_addr);
-		return;
+		return -ENOENT;
 	}
 
 	if (param->status) {
@@ -542,6 +565,8 @@ static void mod_pub_status(struct bt_mesh_model *model,
 	}
 
 	bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
+
+	return 0;
 }
 
 struct mod_sub_param {
@@ -553,9 +578,9 @@ struct mod_sub_param {
 	uint16_t cid;
 };
 
-static void mod_sub_status(struct bt_mesh_model *model,
-			   struct bt_mesh_msg_ctx *ctx,
-			   struct net_buf_simple *buf)
+static int mod_sub_status(struct bt_mesh_model *model,
+			  struct bt_mesh_msg_ctx *ctx,
+			  struct net_buf_simple *buf)
 {
 	uint16_t elem_addr, sub_addr, mod_id, cid;
 	struct mod_sub_param *param;
@@ -567,7 +592,7 @@ static void mod_sub_status(struct bt_mesh_model *model,
 
 	if (!bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_MOD_SUB_STATUS, ctx->addr,
 				       (void **)&param)) {
-		return;
+		return -ENOENT;
 	}
 
 	status = net_buf_simple_pull_u8(buf);
@@ -586,7 +611,7 @@ static void mod_sub_status(struct bt_mesh_model *model,
 	    (param->expect_sub && *param->expect_sub != sub_addr) ||
 	    param->cid != cid) {
 		BT_WARN("Model Subscription Status parameters did not match");
-		return;
+		return -ENOENT;
 	}
 
 	if (param->sub_addr) {
@@ -598,11 +623,13 @@ static void mod_sub_status(struct bt_mesh_model *model,
 	}
 
 	bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
+
+	return 0;
 }
 
-static void mod_sub_list(struct bt_mesh_model *model,
-			 struct bt_mesh_msg_ctx *ctx,
-			 struct net_buf_simple *buf)
+static int mod_sub_list(struct bt_mesh_model *model,
+			struct bt_mesh_msg_ctx *ctx,
+			struct net_buf_simple *buf)
 {
 	struct mod_member_list_param *param;
 
@@ -612,15 +639,15 @@ static void mod_sub_list(struct bt_mesh_model *model,
 
 	if (!bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_MOD_SUB_LIST, ctx->addr,
 				       (void **)&param)) {
-		return;
+		return -ENOENT;
 	}
 
-	mod_member_list_handle(ctx, buf, false, param);
+	return mod_member_list_handle(ctx, buf, false, param);
 }
 
-static void mod_sub_list_vnd(struct bt_mesh_model *model,
-			     struct bt_mesh_msg_ctx *ctx,
-			     struct net_buf_simple *buf)
+static int mod_sub_list_vnd(struct bt_mesh_model *model,
+			    struct bt_mesh_msg_ctx *ctx,
+			    struct net_buf_simple *buf)
 {
 	struct mod_member_list_param *param;
 
@@ -630,10 +657,10 @@ static void mod_sub_list_vnd(struct bt_mesh_model *model,
 
 	if (!bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_MOD_SUB_LIST_VND, ctx->addr,
 				       (void **)&param)) {
-		return;
+		return -ENOENT;
 	}
 
-	mod_member_list_handle(ctx, buf, true, param);
+	return mod_member_list_handle(ctx, buf, true, param);
 }
 
 struct hb_sub_param {
@@ -641,9 +668,9 @@ struct hb_sub_param {
 	struct bt_mesh_cfg_hb_sub *sub;
 };
 
-static void hb_sub_status(struct bt_mesh_model *model,
-			  struct bt_mesh_msg_ctx *ctx,
-			  struct net_buf_simple *buf)
+static int hb_sub_status(struct bt_mesh_model *model,
+			 struct bt_mesh_msg_ctx *ctx,
+			 struct net_buf_simple *buf)
 {
 	struct hb_sub_param *param;
 
@@ -653,7 +680,7 @@ static void hb_sub_status(struct bt_mesh_model *model,
 
 	if (!bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_HEARTBEAT_SUB_STATUS, ctx->addr,
 				       (void **)&param)) {
-		return;
+		return -ENOENT;
 	}
 
 	*param->status = net_buf_simple_pull_u8(buf);
@@ -666,6 +693,8 @@ static void hb_sub_status(struct bt_mesh_model *model,
 	param->sub->max = net_buf_simple_pull_u8(buf);
 
 	bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
+
+	return 0;
 }
 
 struct hb_pub_param {
@@ -673,9 +702,9 @@ struct hb_pub_param {
 	struct bt_mesh_cfg_hb_pub *pub;
 };
 
-static void hb_pub_status(struct bt_mesh_model *model,
-			  struct bt_mesh_msg_ctx *ctx,
-			  struct net_buf_simple *buf)
+static int hb_pub_status(struct bt_mesh_model *model,
+			 struct bt_mesh_msg_ctx *ctx,
+			 struct net_buf_simple *buf)
 {
 	struct hb_pub_param *param;
 
@@ -685,7 +714,7 @@ static void hb_pub_status(struct bt_mesh_model *model,
 
 	if (!bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_HEARTBEAT_PUB_STATUS, ctx->addr,
 				       (void **)&param)) {
-		return;
+		return -ENOENT;
 	}
 
 	*param->status = net_buf_simple_pull_u8(buf);
@@ -700,6 +729,8 @@ static void hb_pub_status(struct bt_mesh_model *model,
 	}
 
 	bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
+
+	return 0;
 }
 
 const struct bt_mesh_model_op bt_mesh_cfg_cli_op[] = {
