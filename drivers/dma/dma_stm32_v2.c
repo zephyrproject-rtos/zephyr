@@ -263,8 +263,7 @@ bool stm32_dma_is_irq_active(DMA_TypeDef *dma, uint32_t id)
 {
 	return stm32_dma_is_tc_irq_active(dma, id) ||
 	       stm32_dma_is_ht_irq_active(dma, id) ||
-	       stm32_dma_is_te_irq_active(dma, id) ||
-	       dma_stm32_is_gi_active(dma, id);
+	       stm32_dma_is_te_irq_active(dma, id);
 }
 
 void stm32_dma_clear_stream_irq(DMA_TypeDef *dma, uint32_t id)
