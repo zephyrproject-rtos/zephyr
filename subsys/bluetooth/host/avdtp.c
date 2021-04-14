@@ -77,7 +77,7 @@ static int avdtp_send(struct bt_avdtp *session,
 
 	session->req = req;
 	/* Start timeout work */
-	k_delayed_work_submit(&session->req->timeout_work, AVDTP_TIMEOUT);
+	k_work_reschedule(&session->req->timeout_work, AVDTP_TIMEOUT);
 	return result;
 }
 
@@ -126,7 +126,7 @@ void bt_avdtp_l2cap_connected(struct bt_l2cap_chan *chan)
 	session = AVDTP_CHAN(chan);
 	BT_DBG("chan %p session %p", chan, session);
 	/* Init the timer */
-	k_delayed_work_init(&session->req->timeout_work, avdtp_timeout);
+	k_work_init_delayable(&session->req->timeout_work, avdtp_timeout);
 
 }
 
