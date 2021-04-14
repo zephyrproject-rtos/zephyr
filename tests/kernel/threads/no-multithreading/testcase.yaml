@@ -2,3 +2,4 @@ tests:
   kernel.threads.no-multithreading:
     tags: kernel
     filter: not CONFIG_SMP
+    platform_allow: qemu_cortex_m3
