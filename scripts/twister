@@ -1215,6 +1215,7 @@ def main():
             except queue.Empty:
                 break
             else:
+                inst.metrics.update(suite.instances[inst.name].metrics)
                 inst.metrics["handler_time"] = inst.handler.duration if inst.handler else 0
                 inst.metrics["unrecognized"] = []
                 suite.instances[inst.name] = inst
