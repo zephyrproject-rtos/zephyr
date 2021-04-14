@@ -45,6 +45,11 @@ struct _sflist {
 
 typedef struct _sflist sys_sflist_t;
 
+ /**
+  * @defgroup flagged-single-linked-list_apis Flagged Single-linked list
+  * @ingroup datastructure_apis
+  * @{
+  */
 
 /**
  * @brief Provide the primitive to iterate on a list
@@ -471,6 +476,8 @@ static inline bool sys_sflist_find_and_remove(sys_sflist_t *list,
 					      sys_sfnode_t *node);
 
 Z_GENLIST_FIND_AND_REMOVE(sflist, sfnode)
+
+/** @} */
 
 #ifdef __cplusplus
 }
