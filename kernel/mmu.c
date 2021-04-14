@@ -467,6 +467,26 @@ fail:
 	k_panic();
 }
 
+void z_phys_unmap(uint8_t *virt, size_t size)
+{
+	uintptr_t aligned_virt, addr_offset;
+	size_t aligned_size;
+	k_spinlock_key_t key;
+
+	addr_offset = k_mem_region_align(&aligned_virt, &aligned_size,
+					 POINTER_TO_UINT(virt), size,
+					 CONFIG_MMU_PAGE_SIZE);
+	__ASSERT(aligned_size != 0U, "0-length mapping at 0x%lx", aligned_virt);
+	__ASSERT(aligned_virt < (aligned_virt + (aligned_size - 1)),
+		 "wraparound for virtual address 0x%lx (size %zu)",
+		 aligned_virt, aligned_size);
+
+	key = k_spin_lock(&z_mm_lock);
+	arch_mem_unmap(UINT_TO_POINTER(aligned_virt), aligned_size);
+	/* TODO: Need to reclaim the space allocated by virt_region_get(). */
+	k_spin_unlock(&z_mm_lock, key);
+}
+
 /*
  * Miscellaneous
  */
