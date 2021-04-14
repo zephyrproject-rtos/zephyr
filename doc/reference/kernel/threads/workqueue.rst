@@ -388,3 +388,9 @@ Related configuration options:
 * :option:`CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE`
 * :option:`CONFIG_SYSTEM_WORKQUEUE_PRIORITY`
 * :option:`CONFIG_SYSTEM_WORKQUEUE_NO_YIELD`
+
+API Reference
+**************
+
+.. doxygengroup:: workqueue_apis
+   :project: Zephyr
