@@ -26,6 +26,25 @@ LOG_MODULE_REGISTER(dmamux_stm32, CONFIG_DMA_LOG_LEVEL);
 
 #define DT_DRV_COMPAT st_stm32_dmamux
 
+/* the table of all the dmamux channel */
+struct dmamux_stm32_data {
+	void *callback_arg;
+	void (*dmamux_callback)(void *arg, uint32_t id,
+				int error_code);
+};
+
+/* this is the configuration of the dmamux IP */
+struct dmamux_stm32_config {
+#if DT_INST_NODE_HAS_PROP(0, clocks)
+	struct stm32_pclken pclken;
+#endif
+	uint32_t base;
+	uint8_t channel_nb;	/* total nb of channels */
+	uint8_t gen_nb;	/* total nb of Request generator */
+	uint8_t req_nb;	/* total nb of Peripheral Request inputs */
+	const struct dmamux_stm32_channel *mux_channels;
+};
+
 int dmamux_stm32_configure(const struct device *dev, uint32_t id,
 				struct dma_config *config)
 {
@@ -156,6 +175,7 @@ int dmamux_stm32_get_status(const struct device *dev, uint32_t id,
 
 static int dmamux_stm32_init(const struct device *dev)
 {
+#if DT_INST_NODE_HAS_PROP(0, clocks)
 	const struct dmamux_stm32_config *config = dev->config;
 	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
@@ -164,6 +184,7 @@ static int dmamux_stm32_init(const struct device *dev)
 		LOG_ERR("clock op failed\n");
 		return -EIO;
 	}
+#endif /* DT_INST_NODE_HAS_PROP(0, clocks) */
 
 	/* DMAs assigned to DMAMUX channels at build time might not be ready. */
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(dma1), okay)
@@ -230,6 +251,13 @@ static const struct dma_driver_api dma_funcs = {
 #define DMAMUX_CHANNELS_INIT_1(count) \
 	UTIL_LISTIFY(count, INIT_DMAMUX_1_CHANNEL)
 
+
+#define DMAMUX_CLOCK_INIT(index) \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(index, clocks),		\
+	(.pclken = {	.bus = DT_INST_CLOCKS_CELL(index, bus),		\
+			.enr = DT_INST_CLOCKS_CELL(index, bits)},),	\
+	())
+
 #define DMAMUX_INIT(index)						\
 static const struct dmamux_stm32_channel				\
 	dmamux_stm32_channels_##index[DT_INST_PROP(index, dma_channels)] = {   \
@@ -237,8 +265,7 @@ static const struct dmamux_stm32_channel				\
 	};								       \
 									\
 const struct dmamux_stm32_config dmamux_stm32_config_##index = {	\
-	.pclken = { .bus = DT_INST_CLOCKS_CELL(index, bus),		\
-		    .enr = DT_INST_CLOCKS_CELL(index, bits) },		\
+	DMAMUX_CLOCK_INIT(index)					\
 	.base = DT_INST_REG_ADDR(index),				\
 	.channel_nb = DT_INST_PROP(index, dma_channels),		\
 	.gen_nb = DT_INST_PROP(index, dma_generators),			\
