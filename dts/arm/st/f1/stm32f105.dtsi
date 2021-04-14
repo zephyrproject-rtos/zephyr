@@ -7,6 +7,23 @@
 #include <st/f1/stm32f1.dtsi>
 
 / {
+	clocks {
+		/delete-node/ pll;
+
+		pll: pll {
+			#clock-cells = <0>;
+			compatible = "st,stm32f105-pll-clock";
+			status = "disabled";
+		};
+
+		pll2: pll2 {
+			#clock-cells = <0>;
+			compatible = "st,stm32f105-pll2-clock";
+			clocks = <&clk_hse>;
+			status = "disabled";
+		};
+	};
+
 	soc {
 		flash-controller@40022000 {
 			flash0: flash@8000000 {
