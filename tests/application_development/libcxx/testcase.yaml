@@ -13,5 +13,6 @@ tests:
     toolchain_exclude: xcc
     min_flash: 54
     tags: cpp
+    timeout: 5
     extra_configs:
         - CONFIG_EXCEPTIONS=y

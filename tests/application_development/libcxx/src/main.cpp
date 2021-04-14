@@ -67,14 +67,42 @@ static void test_make_unique(void)
 	zassert_equal(make_unique_data::dtors, 1, "dtor count not incremented");
 }
 
+#if defined(CONFIG_EXCEPTIONS)
+static void throw_exception(void)
+{
+	throw 42;
+}
+
+static void test_exception(void)
+{
+	try
+	{
+		throw_exception();
+	}
+	catch (int i)
+	{
+		zassert_equal(i, 42, "Incorrect exception value");
+		return;
+	}
+
+	zassert_unreachable("Missing exception catch");
+}
+#else
+
+static void test_exception(void)
+{
+	ztest_test_skip();
+}
+#endif
+
 void test_main(void)
 {
 	TC_PRINT("version %u\n", (uint32_t)__cplusplus);
 	ztest_test_suite(libcxx_tests,
 			 ztest_unit_test(test_array),
 			 ztest_unit_test(test_vector),
-			 ztest_unit_test(test_make_unique)
+			 ztest_unit_test(test_make_unique),
+			 ztest_unit_test(test_exception)
 		);
-
 	ztest_run_test_suite(libcxx_tests);
 }
