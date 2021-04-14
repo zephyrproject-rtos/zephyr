@@ -179,8 +179,6 @@ extern "C" {
  * Portable code should never assume that phys_addr and linear_addr will
  * be equal.
  *
- * Once created, mappings are permanent.
- *
  * Caching and access properties are controlled by the 'flags' parameter.
  * Unused bits in 'flags' are reserved for future expansion.
  * A caching mode must be selected. By default, the region is read-only
@@ -209,6 +207,35 @@ extern "C" {
  */
 void z_phys_map(uint8_t **virt_ptr, uintptr_t phys, size_t size,
 		uint32_t flags);
+
+/**
+ * Unmap a virtual memory region from kernel's virtual address space.
+ *
+ * This function is intended to be used by drivers and early boot routines
+ * where temporary memory mappings need to be made. This allows these
+ * memory mappings to be discarded once they are no longer needed.
+ *
+ * This function alters the active page tables in the area reserved
+ * for the kernel.
+ *
+ * This will align the input parameters to page boundaries so that
+ * this can be used with the virtual address as returned by
+ * z_phys_map().
+ *
+ * This API is only available if CONFIG_MMU is enabled.
+ *
+ * It is highly discouraged to use this function to unmap memory mappings.
+ * It may conflict with anonymous memory mappings and demand paging and
+ * produce undefined behavior. Do not use this unless you know exactly
+ * what you are doing.
+ *
+ * This API is part of infrastructure still under development and may
+ * change.
+ *
+ * @param virt Starting address of the virtual address region to be unmapped.
+ * @param size Size of the virtual address region
+ */
+void z_phys_unmap(uint8_t *virt, size_t size);
 
 /*
  * k_mem_map() control flags
