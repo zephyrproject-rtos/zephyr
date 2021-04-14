@@ -586,6 +586,14 @@ do {									\
 
 #endif
 
+#define ADC_SAM0_IRQ_INIT(n, name, fn) \
+	do {								\
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, name, irq),		\
+			    DT_INST_IRQ_BY_NAME(n, name, priority),	\
+			    fn,	DEVICE_DT_INST_GET(n), 0);				\
+		irq_enable(DT_INST_IRQ_BY_NAME(n, name, irq));		\
+	} while (0)
+
 #define ADC_SAM0_DEVICE(n)						\
 	static void adc_sam0_config_##n(const struct device *dev);	\
 	static const struct adc_sam0_cfg adc_sam_cfg_##n = {		\
@@ -609,11 +617,9 @@ do {									\
 			    &adc_sam0_api);				\
 	static void adc_sam0_config_##n(const struct device *dev)	\
 	{								\
-		IRQ_CONNECT(DT_INST_IRQN(n),				\
-			    DT_INST_IRQ(n, priority),			\
-			    adc_sam0_isr,				\
-			    DEVICE_DT_INST_GET(n), 0);			\
-		irq_enable(DT_INST_IRQN(n));				\
+		COND_CODE_1(DT_INST_IRQ_HAS_NAME(n, resrdy), \
+				(ADC_SAM0_IRQ_INIT(n, resrdy, adc_sam0_isr)), \
+				(ADC_SAM0_IRQ_INIT(n, all, adc_sam0_isr))); \
 		ADC_SAM0_CONFIGURE(n);					\
 	}
 
