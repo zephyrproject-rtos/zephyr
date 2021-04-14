@@ -278,8 +278,11 @@ void z_phys_unmap(uint8_t *virt, size_t size);
  * Zephyr treats page faults on this guard page as a fatal K_ERR_STACK_CHK_FAIL
  * if it determines it immediately precedes a stack buffer, this is
  * implemented in the architecture layer.
+ *
+ * DEPRECATED: k_mem_map() will always allocate guard pages, so this bit
+ * no longer has any effect.
  */
-#define K_MEM_MAP_GUARD		BIT(18)
+#define K_MEM_MAP_GUARD		__DEPRECATED_MACRO BIT(18)
 
 /**
  * Return the amount of free memory available
@@ -319,6 +322,10 @@ size_t k_mem_free_get(void);
  * The returned virtual memory pointer will be page-aligned. The size
  * parameter, and any base address for re-mapping purposes must be page-
  * aligned.
+ *
+ * Note that the allocation includes two guard pages immediately before
+ * and after the requested region. The total size of the allocation will be
+ * the requested size plus the size of these two guard pages.
  *
  * Many K_MEM_MAP_* flags have been implemented to alter the behavior of this
  * function, with details in the documentation for these flags.
