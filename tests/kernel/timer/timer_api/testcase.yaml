@@ -9,3 +9,10 @@ tests:
       litex_vexriscv rv32m1_vega_zero_riscy rv32m1_vega_ri5cy
       nrf5340dk_nrf5340_cpunet
     tags: kernel timer userspace
+  kernel.timer.no_multitheading:
+    tags: kernel timer
+    platform_allow: qemu_cortex_m3
+    extra_configs:
+      - CONFIG_MULTITHREADING=n
+      - CONFIG_TEST_USERSPACE=n
+      - CONFIG_SPIN_VALIDATE=n
