@@ -2852,7 +2852,8 @@ struct k_work_sync;
  */
 
 /**
- * @addtogroup thread_apis
+ * @defgroup workqueue_apis Work Queue APIs
+ * @ingroup kernel_apis
  * @{
  */
 
@@ -3768,7 +3769,7 @@ static inline k_ticks_t k_delayed_work_remaining_ticks(
 struct k_work_user;
 
 /**
- * @addtogroup thread_apis
+ * @addtogroup workqueue_apis
  * @{
  */
 
@@ -3952,7 +3953,7 @@ struct k_work_poll {
  */
 
 /**
- * @addtogroup thread_apis
+ * @addtogroup workqueue_apis
  * @{
  */
 
