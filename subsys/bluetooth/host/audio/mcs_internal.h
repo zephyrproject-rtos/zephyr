@@ -18,8 +18,6 @@ extern "C" {
 
 int bt_mcs_init(struct bt_ots_cb *ots_cbs);
 
-struct ots_svc_inst_t *bt_mcs_get_ots(void);
-
 #ifdef __cplusplus
 }
 #endif
