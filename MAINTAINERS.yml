@@ -416,6 +416,9 @@ Documentation:
     collaborators:
         - henrikbrixandersen
         - karstenkoenig
+        - nixward
+        - martinjaeger
+        - legoabram
     files:
         - drivers/can/
         - include/canbus/
