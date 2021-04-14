@@ -719,7 +719,7 @@ static int bt_iso_setup_data_path(struct bt_conn *conn)
 {
 	int err;
 	struct bt_iso_chan *chan;
-	struct bt_iso_chan_path path = {};
+	struct bt_iso_chan_path default_path = { 0 };
 	struct bt_iso_data_path out_path = {
 		.dir = BT_HCI_DATAPATH_DIR_CTLR_TO_HOST };
 	struct bt_iso_data_path in_path = {
@@ -735,8 +735,8 @@ static int bt_iso_setup_data_path(struct bt_conn *conn)
 	tx_qos = chan->qos->tx;
 	rx_qos = chan->qos->rx;
 
-	in_path.path = tx_qos && tx_qos->path ? tx_qos->path : &path;
-	out_path.path = rx_qos && rx_qos->path ? rx_qos->path : &path;
+	in_path.path = tx_qos && tx_qos->path ? tx_qos->path : &default_path;
+	out_path.path = rx_qos && rx_qos->path ? rx_qos->path : &default_path;
 
 	if (!tx_qos) {
 		in_path.pid = BT_ISO_DATA_PATH_DISABLED;
@@ -747,6 +747,7 @@ static int bt_iso_setup_data_path(struct bt_conn *conn)
 	}
 
 	if (conn->iso.is_bis) {
+		/* Only set one data path for BIS as per the spec */
 		if (tx_qos) {
 			return hci_le_setup_iso_data_path(conn, &in_path);
 
@@ -755,6 +756,7 @@ static int bt_iso_setup_data_path(struct bt_conn *conn)
 		}
 
 	} else {
+		/* Setup both directions for CIS*/
 		err = hci_le_setup_iso_data_path(conn, &in_path);
 		if (err) {
 			return err;
@@ -796,9 +798,37 @@ static void bt_iso_remove_data_path(struct bt_conn *conn)
 {
 	BT_DBG("%p", conn);
 
-	/* Remove both directions */
-	hci_le_remove_iso_data_path(conn, BT_HCI_DATAPATH_DIR_CTLR_TO_HOST);
-	hci_le_remove_iso_data_path(conn, BT_HCI_DATAPATH_DIR_HOST_TO_CTLR);
+	if (conn->iso.is_bis) {
+		struct bt_iso_chan *chan;
+		struct bt_iso_chan_io_qos *tx_qos;
+		uint8_t dir;
+
+		chan = SYS_SLIST_PEEK_HEAD_CONTAINER(&conn->channels, chan, node);
+		if (!chan) {
+			return;
+		}
+
+		tx_qos = chan->qos->tx;
+
+		/* Only remove one data path for BIS as per the spec */
+		if (tx_qos) {
+			dir = BT_HCI_DATAPATH_DIR_HOST_TO_CTLR;
+		} else {
+			dir = BT_HCI_DATAPATH_DIR_CTLR_TO_HOST;
+		}
+
+		(void)hci_le_remove_iso_data_path(conn, dir);
+	} else {
+		/* Remove both directions for CIS*/
+
+		/* TODO: Check which has been setup first to avoid removing
+		 * data paths that are not setup
+		 */
+		(void)hci_le_remove_iso_data_path(conn,
+						  BT_HCI_DATAPATH_DIR_CTLR_TO_HOST);
+		(void)hci_le_remove_iso_data_path(conn,
+						  BT_HCI_DATAPATH_DIR_HOST_TO_CTLR);
+	}
 }
 
 static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)
