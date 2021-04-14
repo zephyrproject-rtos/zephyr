@@ -150,6 +150,7 @@ function(trusted_firmware_build)
                ${TFM_PROFILE_ARG}
                ${MCUBOOT_IMAGE_NUM_ARG}
                -DTFM_TEST_REPO_PATH=${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/tf-m-tests
+               -DMBEDCRYPTO_PATH=${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/../tfm-mbedcrypto
                -DMCUBOOT_PATH=${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/../tfm-mcuboot
                ${TFM_PARTITIONS_ARGS}
     BUILD_ALWAYS True
