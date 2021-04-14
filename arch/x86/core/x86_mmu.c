@@ -820,6 +820,11 @@ static inline bool atomic_pte_cas(pentry_t *target, pentry_t old_value,
  */
 #define OPTION_RESET		BIT(2)
 
+/* Indicates that the mapping will need to be cleared entirely. This is
+ * mainly used for unmapping the memory region.
+ */
+#define OPTION_CLEAR		BIT(3)
+
 /**
  * Atomically update bits in a page table entry
  *
@@ -829,9 +834,9 @@ static inline bool atomic_pte_cas(pentry_t *target, pentry_t old_value,
  *
  * @param pte Pointer to page table entry to update
  * @param update_val Updated bits to set/clear in PTE. Ignored with
- *        OPTION_RESET.
+ *        OPTION_RESET or OPTION_CLEAR.
  * @param update_mask Which bits to modify in the PTE. Ignored with
- *        OPTION_RESET
+ *        OPTION_RESET or OPTION_CLEAR.
  * @param options Control flags
  * @retval Old PTE value
  */
@@ -841,6 +846,7 @@ static inline pentry_t pte_atomic_update(pentry_t *pte, pentry_t update_val,
 {
 	bool user_table = (options & OPTION_USER) != 0U;
 	bool reset = (options & OPTION_RESET) != 0U;
+	bool clear = (options & OPTION_CLEAR) != 0U;
 	pentry_t old_val, new_val;
 
 	do {
@@ -856,6 +862,8 @@ static inline pentry_t pte_atomic_update(pentry_t *pte, pentry_t update_val,
 
 		if (reset) {
 			new_val = reset_pte(new_val);
+		} else if (clear) {
+			new_val = 0;
 		} else {
 			new_val = ((new_val & ~update_mask) |
 				   (update_val & update_mask));
@@ -895,9 +903,11 @@ static inline pentry_t pte_atomic_update(pentry_t *pte, pentry_t update_val,
  *
  * @param ptables Page tables to modify
  * @param virt Virtual page table entry to update
- * @param entry_val Value to update in the PTE (ignored if OPTION_RESET)
+ * @param entry_val Value to update in the PTE (ignored if OPTION_RESET or
+ *        OPTION_CLEAR)
  * @param [out] old_val_ptr Filled in with previous PTE value. May be NULL.
- * @param mask What bits to update in the PTE (ignored if OPTION_RESET)
+ * @param mask What bits to update in the PTE (ignored if OPTION_RESET or
+ *        OPTION_CLEAR)
  * @param options Control options, described above
  */
 static void page_map_set(pentry_t *ptables, void *virt, pentry_t entry_val,
@@ -955,21 +965,21 @@ static void page_map_set(pentry_t *ptables, void *virt, pentry_t entry_val,
  * @param ptables Page tables to modify
  * @param virt Base page-aligned virtual memory address to map the region.
  * @param phys Base page-aligned physical memory address for the region.
- *        Ignored if OPTION_RESET. Also affected by the mask parameter. This
- *        address is not directly examined, it will simply be programmed into
- *        the PTE.
+ *        Ignored if OPTION_RESET or OPTION_CLEAR. Also affected by the mask
+ *        parameter. This address is not directly examined, it will simply be
+ *        programmed into the PTE.
  * @param size Size of the physical region to map
  * @param entry_flags Non-address bits to set in every PTE. Ignored if
  *        OPTION_RESET. Also affected by the mask parameter.
  * @param mask What bits to update in each PTE. Un-set bits will never be
- *        modified. Ignored if OPTION_RESET.
+ *        modified. Ignored if OPTION_RESET or OPTION_CLEAR.
  * @param options Control options, described above
  */
 static void range_map_ptables(pentry_t *ptables, void *virt, uintptr_t phys,
 			      size_t size, pentry_t entry_flags, pentry_t mask,
 			      uint32_t options)
 {
-	bool reset = (options & OPTION_RESET) != 0U;
+	bool zero_entry = (options & (OPTION_RESET | OPTION_CLEAR)) != 0U;
 
 	assert_addr_aligned(phys);
 	__ASSERT((size & (CONFIG_MMU_PAGE_SIZE - 1)) == 0U,
@@ -986,7 +996,7 @@ static void range_map_ptables(pentry_t *ptables, void *virt, uintptr_t phys,
 		uint8_t *dest_virt = (uint8_t *)virt + offset;
 		pentry_t entry_val;
 
-		if (reset) {
+		if (zero_entry) {
 			entry_val = 0;
 		} else {
 			entry_val = (phys + offset) | entry_flags;
@@ -1120,6 +1130,13 @@ void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 {
 	range_map_unlocked(virt, phys, size, flags_to_entry(flags),
 			   MASK_ALL, 0);
+}
+
+/* unmap region addr..addr+size, reset entries and flush TLB */
+void arch_mem_unmap(void *addr, size_t size)
+{
+	range_map_unlocked((void *)addr, 0, size, 0, 0,
+			   OPTION_FLUSH | OPTION_CLEAR);
 }
 
 #ifdef Z_VM_KERNEL
