@@ -28,13 +28,15 @@
  * Kconfig related symbols.
  */
 
-#if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_rcc), ahb_prescaler)
+#if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_rcc), ahb_prescaler) || \
+	DT_NODE_HAS_PROP(DT_INST(0, st_stm32f0_rcc), ahb_prescaler)
 #define STM32_AHB_PRESCALER	DT_PROP(DT_NODELABEL(rcc), ahb_prescaler)
 #else
 #define STM32_AHB_PRESCALER	CONFIG_CLOCK_STM32_AHB_PRESCALER
 #endif
 
-#if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_rcc), apb1_prescaler)
+#if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_rcc), apb1_prescaler) || \
+	DT_NODE_HAS_PROP(DT_INST(0, st_stm32f0_rcc), apb1_prescaler)
 #define STM32_APB1_PRESCALER	DT_PROP(DT_NODELABEL(rcc), apb1_prescaler)
 #else
 #define STM32_APB1_PRESCALER	CONFIG_CLOCK_STM32_APB1_PRESCALER
@@ -42,7 +44,8 @@
 
 #if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_rcc), apb2_prescaler)
 #define STM32_APB2_PRESCALER	DT_PROP(DT_NODELABEL(rcc), apb2_prescaler)
-#else
+#elif !DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(rcc), st_stm32f0_rcc, okay)
+	/* This should not be defined in F0 binding case */
 #define STM32_APB2_PRESCALER	CONFIG_CLOCK_STM32_APB2_PRESCALER
 #endif
 
@@ -68,7 +71,9 @@
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32l4_pll_clock, okay) || \
 	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32wb_pll_clock, okay) || \
-	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32f4_pll_clock, okay)
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32f4_pll_clock, okay) || \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32g4_pll_clock, okay) || \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32g0_pll_clock, okay)
 #define STM32_PLL_M_DIVISOR	DT_PROP(DT_NODELABEL(pll), div_m)
 #define STM32_PLL_N_MULTIPLIER	DT_PROP(DT_NODELABEL(pll), mul_n)
 #define STM32_PLL_P_DIVISOR	DT_PROP(DT_NODELABEL(pll), div_p)
@@ -85,18 +90,24 @@
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32f1_pll_clock, okay)
 #define STM32_PLL_XTPRE		DT_PROP(DT_NODELABEL(pll), xtre)
 #define STM32_PLL_MULTIPLIER	DT_PROP(DT_NODELABEL(pll), mul)
-#elif DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32f105_pll_clock, okay)
+#elif DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32f105_pll_clock, okay) || \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32f0_pll_clock, okay)
 #define STM32_PLL_MULTIPLIER	DT_PROP(DT_NODELABEL(pll), mul)
 #define STM32_PLL_PREDIV1	DT_PROP(DT_NODELABEL(pll), prediv)
+/* We don't need to make a disctinction between PREDIV and PREDIV1 in dts */
+/* As PREDIV and PREDIV1 have the same description we can use prop prediv for both */
+#define STM32_PLL_PREDIV	STM32_PLL_PREDIV1
 #else
 #define STM32_PLL_XTPRE		CONFIG_CLOCK_STM32_PLL_XTPRE
 #define STM32_PLL_MULTIPLIER	CONFIG_CLOCK_STM32_PLL_MULTIPLIER
 #define STM32_PLL_PREDIV1	CONFIG_CLOCK_STM32_PLL_PREDIV1
+#define STM32_PLL_PREDIV	CONFIG_CLOCK_STM32_PLL_PREDIV
 #endif
 
 #define DT_RCC_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_NODELABEL(rcc))
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(rcc), st_stm32_rcc, okay) && \
+#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(rcc), st_stm32_rcc, okay) || \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(rcc), st_stm32f0_rcc, okay)) && \
 	DT_NODE_HAS_PROP(DT_NODELABEL(rcc), clocks)
 #define STM32_SYSCLK_SRC_PLL	DT_NODE_HAS_PROP(DT_NODELABEL(rcc), clocks)  && \
 				DT_SAME_NODE(DT_RCC_CLOCKS_CTRL, DT_NODELABEL(pll))
@@ -119,7 +130,10 @@
 	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32wb_pll_clock, okay) || \
 	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32f4_pll_clock, okay) || \
 	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32f1_pll_clock, okay) || \
-	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32f105_pll_clock, okay)) && \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32f105_pll_clock, okay) || \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32f0_pll_clock, okay) || \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32g4_pll_clock, okay) || \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32g0_pll_clock, okay)) && \
 	DT_NODE_HAS_PROP(DT_NODELABEL(pll), clocks)
 #define STM32_PLL_SRC_MSI	DT_SAME_NODE(DT_PLL_CLOCKS_CTRL, DT_NODELABEL(clk_msi))
 #define STM32_PLL_SRC_HSI	DT_SAME_NODE(DT_PLL_CLOCKS_CTRL, DT_NODELABEL(clk_hsi))
