@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2021 Thomas Stranger
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&spi1 {
+	dmas = <&dmamux1 0 11 0x20440 0
+		&dmamux1 1 10 0x20480 0>;
+	dma-names = "tx", "rx";
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&dmamux1 {
+	status = "okay";
+};
+
+&rcc {
+	/*
+	 * Reduce bus clock speed to be able to reach
+	 * SPI_LOOPBACK_SLOW_FREQ = 500000 with max prescaler 256
+	 */
+	apb2-prescaler = <2>;
+};
