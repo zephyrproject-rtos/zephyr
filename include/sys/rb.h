@@ -58,6 +58,12 @@ struct rbnode {
 #define Z_PBITS(t) (8 * sizeof(t))
 #define Z_MAX_RBTREE_DEPTH (2 * (Z_PBITS(int *) - Z_TBITS(int *) - 1) + 1)
 
+
+ /**
+  * @defgroup rbtree_apis Balanced Red/Black Tree
+  * @ingroup datastructure_apis
+  * @{
+  */
 /**
  * @typedef rb_lessthan_t
  * @brief Red/black tree comparison predicate
@@ -210,5 +216,7 @@ struct rbnode *z_rb_foreach_next(struct rbtree *tree, struct _rb_foreach *f);
 			 node = n ? CONTAINER_OF(n, __typeof__(*(node)),   \
 					 field) : NULL; }) != NULL;        \
 			 /**/)
+
+/** @} */
 
 #endif /* ZEPHYR_INCLUDE_SYS_RB_H_ */

@@ -42,6 +42,12 @@ struct _dnode {
 typedef struct _dnode sys_dlist_t;
 typedef struct _dnode sys_dnode_t;
 
+ /**
+  * @defgroup doubly-linked-list_apis Doubly-linked list
+  * @ingroup datastructure_apis
+  * @{
+  */
+
 /**
  * @brief Provide the primitive to iterate on a list
  * Note: the loop is unsafe and thus __dn should not be removed
@@ -529,6 +535,8 @@ static inline sys_dnode_t *sys_dlist_get(sys_dlist_t *list)
 
 	return node;
 }
+
+/** @} */
 
 #ifdef __cplusplus
 }

@@ -22,7 +22,7 @@ API Reference
    kernel/index.rst
    logging/index.rst
    misc/index
-   misc/data_structures.rst
+   data_structures/index.rst
    modbus/index.rst
    networking/index.rst
    peripherals/index.rst

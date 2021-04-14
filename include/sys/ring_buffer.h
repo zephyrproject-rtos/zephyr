@@ -59,7 +59,7 @@ struct ring_buf {
 
 /**
  * @defgroup ring_buffer_apis Ring Buffer APIs
- * @ingroup kernel_apis
+ * @ingroup datastructure_apis
  * @{
  */
 
