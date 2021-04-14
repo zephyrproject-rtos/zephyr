@@ -113,6 +113,7 @@ void lll_scan_prepare(void *param)
 	LL_ASSERT(!err || err == -EINPROGRESS);
 }
 
+#if defined(CONFIG_BT_CENTRAL)
 void lll_scan_prepare_connect_req(struct lll_scan *lll, struct pdu_adv *pdu_tx,
 				  uint8_t phy, uint8_t adv_tx_addr,
 				  uint8_t *adv_addr, uint8_t init_tx_addr,
@@ -198,6 +199,7 @@ void lll_scan_prepare_connect_req(struct lll_scan *lll, struct pdu_adv *pdu_tx,
 	pdu_tx->connect_ind.hop = lll_conn->data_chan_hop;
 	pdu_tx->connect_ind.sca = lll_clock_sca_local_get();
 }
+#endif /* CONFIG_BT_CENTRAL */
 
 static int init_reset(void)
 {
