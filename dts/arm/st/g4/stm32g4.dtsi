@@ -583,7 +583,7 @@
 			interrupts = <94 0>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x4>;
 			dma-generators = <4>;
-			dma-requests= <21>;
+			dma-requests= <111>;
 			status = "disabled";
 			label = "DMAMUX_1";
 		};
