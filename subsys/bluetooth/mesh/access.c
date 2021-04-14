@@ -670,7 +670,7 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 		 * receive the message.
 		 */
 		net_buf_simple_save(buf, &state);
-		op->func(model, &rx->ctx, buf);
+		(void)op->func(model, &rx->ctx, buf);
 		net_buf_simple_restore(buf, &state);
 	}
 }
