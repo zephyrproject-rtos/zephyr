@@ -42,6 +42,12 @@ description: |
                0x2: high
                0x3: very high
     4. Features. Not used. Kept for binding compatibility with "st,stm32-dma-v1"
+        - bit 3: Source Reload
+               0x0: disable source reload
+               0x1: enable source reload
+        - bit 4: Dest Reload
+               0x0: disable dest reload
+               0x1: enable dest reload
 
   Example of dma node for stm32wb55x
      dma2: dma-controller@40020400 {
