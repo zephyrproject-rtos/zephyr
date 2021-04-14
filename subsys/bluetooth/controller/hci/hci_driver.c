@@ -71,8 +71,7 @@ static sys_slist_t hbuf_pend;
 static int32_t hbuf_count;
 #endif
 
-#if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_SYNC_ISO) || \
-	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) || defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+#if defined(CONFIG_BT_CTLR_ISO)
 
 #define SDU_HCI_HDR_SIZE (BT_HCI_ISO_HDR_SIZE + BT_HCI_ISO_TS_DATA_HDR_SIZE)
 
@@ -296,10 +295,9 @@ static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
 		hci_acl_encode(node_rx, buf);
 		break;
 #endif
-#if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_SYNC_ISO) || \
-	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) || defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+#if defined(CONFIG_BT_CTLR_ISO)
 	case HCI_CLASS_ISO_DATA: {
-#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) || defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
 		struct ll_conn_iso_stream *cis =
 			ll_conn_iso_stream_get(node_rx->hdr.handle);
 		struct ll_iso_datapath *dp = cis->datapath_out;
