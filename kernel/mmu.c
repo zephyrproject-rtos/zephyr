@@ -348,10 +348,9 @@ static int map_anon_page(void *addr, uint32_t flags)
 void *k_mem_map(size_t size, uint32_t flags)
 {
 	uint8_t *dst;
-	size_t total_size = size;
+	size_t total_size;
 	int ret;
 	k_spinlock_key_t key;
-	bool guard = (flags & K_MEM_MAP_GUARD) != 0U;
 	uint8_t *pos;
 
 	__ASSERT(!(((flags & K_MEM_PERM_USER) != 0U) &&
@@ -366,22 +365,26 @@ void *k_mem_map(size_t size, uint32_t flags)
 
 	key = k_spin_lock(&z_mm_lock);
 
-	if (guard) {
-		/* Need extra virtual page for the guard which we
-		 * won't map
-		 */
-		total_size += CONFIG_MMU_PAGE_SIZE;
-	}
+	/* Need extra for the guard pages (before and after) which we
+	 * won't map.
+	 */
+	total_size = size + CONFIG_MMU_PAGE_SIZE * 2;
 
 	dst = virt_region_get(total_size);
 	if (dst == NULL) {
 		/* Address space has no free region */
 		goto out;
 	}
-	if (guard) {
-		/* Skip over the guard page in returned address. */
-		dst += CONFIG_MMU_PAGE_SIZE;
-	}
+
+	/* Unmap both guard pages to make sure accessing them
+	 * will generate fault.
+	 */
+	arch_mem_unmap(dst, CONFIG_MMU_PAGE_SIZE);
+	arch_mem_unmap(dst + CONFIG_MMU_PAGE_SIZE + size,
+		       CONFIG_MMU_PAGE_SIZE);
+
+	/* Skip over the "before" guard page in returned address. */
+	dst += CONFIG_MMU_PAGE_SIZE;
 
 	VIRT_FOREACH(dst, size, pos) {
 		ret = map_anon_page(pos, flags);
