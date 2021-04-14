@@ -201,6 +201,18 @@ static int i2s_mcux_configure(const struct device *dev, enum i2s_dir dir,
 		return 0;
 	}
 
+	/*
+	 * The memory block passed by the user to the i2s_write function is
+	 * tightly packed next to each other.
+	 * However for 8-bit word_size the I2S hardware expects the data
+	 * to be in 2bytes which does not match what is passed by the user.
+	 * This will be addressed in a separate PR once the zephyr API committee
+	 * finalizes on an I2S API for the user to probe hardware variations.
+	 */
+	if (i2s_cfg->word_size <= 8) {
+		return -ENOTSUP;
+	}
+
 	/* Figure out function base clock */
 	if (clock_control_get_rate(cfg->clock_dev,
 				   cfg->clock_subsys, &base_frequency)) {
