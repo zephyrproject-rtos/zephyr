@@ -445,7 +445,8 @@ static enum net_verdict icmpv4_handle_echo_request(struct net_pkt *pkt,
 		goto drop;
 	}
 
-	if (net_ipv4_is_addr_mcast(&ip_hdr->dst)) {
+	if (net_ipv4_is_addr_mcast(&ip_hdr->dst) ||
+	    net_ipv4_is_addr_bcast(net_pkt_iface(pkt), &ip_hdr->dst)) {
 		src = net_if_ipv4_select_src_addr(net_pkt_iface(pkt),
 						  &ip_hdr->dst);
 	} else {
