@@ -24,6 +24,14 @@
 		zephyr,shell-uart = &uart0;
 		zephyr,flash = &flash0;
 	};
+
+	soc {
+		sram0: memory@40000000 {
+			compatible = "mmio-sram";
+			reg = <0x40000000 DT_SIZE_M(128)>;
+		};
+
+	};
 };
 
 &uart0 {
