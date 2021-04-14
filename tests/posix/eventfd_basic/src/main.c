@@ -7,13 +7,13 @@
 
 #include <ztest.h>
 
-#include <net/socket.h>
-
 #ifdef CONFIG_POSIX_API
 #include <sys/eventfd.h>
 #else
 #include <posix/sys/eventfd.h>
 #endif
+
+#include <net/socket.h>
 
 static void test_eventfd(void)
 {
