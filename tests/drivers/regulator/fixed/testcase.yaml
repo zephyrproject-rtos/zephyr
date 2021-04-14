@@ -5,6 +5,8 @@ common:
   harness: ztest
   harness_config:
     fixture: regulator_loopback
+  integration_platforms:
+    - nrf52840dk_nrf52840
 
 tests:
   drivers.regulator.fixed.onoff:
