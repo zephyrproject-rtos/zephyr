@@ -4,29 +4,34 @@
 # should not be --whole-archive'd
 
 list(APPEND kernel_files
+  banner.c
   device.c
   errno.c
   fatal.c
-  idle.c
   init.c
   kheap.c
-  mailbox.c
   mem_slab.c
+  thread.c
+  version.c
+  )
+
+if(CONFIG_MULTITHREADING)
+list(APPEND kernel_files
+  idle.c
+  mailbox.c
   msg_q.c
   mutex.c
   pipes.c
   queue.c
-  sched.c
   sem.c
   stack.c
   system_work_q.c
-  thread.c
-  version.c
-  condvar.c
   work.c
   smp.c
-  banner.c
+  sched.c
+  condvar.c
   )
+endif()
 
 if(CONFIG_XIP)
 list(APPEND kernel_files
