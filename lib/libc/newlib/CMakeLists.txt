@@ -72,3 +72,7 @@ if(CONFIG_NEWLIB_LIBC_NANO)
     -specs=nano.specs
     )
 endif()
+
+  zephyr_link_libraries(
+         ${LIBGCC_DIR}/crtend.o
+  )

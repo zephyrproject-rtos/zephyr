@@ -130,7 +130,6 @@ SECTIONS
 		*(.text)
 		*(".text.*")
 		*(.gnu.linkonce.t.*)
-		*(.eh_frame)
 #include <linker/kobject-text.ld>
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
@@ -177,6 +176,13 @@ SECTIONS
 	_app_smem_size = _app_smem_end - _app_smem_start;
 	_app_smem_rom_start = LOADADDR(_APP_SMEM_SECTION_NAME);
 #endif /* CONFIG_USERSPACE */
+  SECTION_PROLOGUE(.eh_frame_hdr,,) { *(.eh_frame_hdr) }
+    SECTION_PROLOGUE(.eh_frame,,)
+	{
+    KEEP (*(EXCLUDE_FILE (*crtend.o) .eh_frame))
+    KEEP (*(.eh_frame))
+	} GROUP_LINK_IN(ROMABLE_REGION)
+
 
     SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
 	{

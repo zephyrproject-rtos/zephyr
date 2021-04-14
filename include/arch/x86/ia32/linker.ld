@@ -114,8 +114,6 @@ SECTIONS
 	*(.text)
 	*(".text.*")
 	*(.gnu.linkonce.t.*)
-	*(.eh_frame_hdr)
-	*(.eh_frame)
 	*(.init)
 	*(.fini)
 	*(.eini)
@@ -209,6 +207,13 @@ SECTIONS
 	_app_smem_rom_start = LOADADDR(_APP_SMEM_SECTION_NAME);
 	_app_smem_num_words = _app_smem_size >> 2;
 #endif /* CONFIG_USERSPACE */
+  SECTION_PROLOGUE(.eh_frame_hdr,,) { *(.eh_frame_hdr) }
+    SECTION_PROLOGUE(.eh_frame,,)
+	{
+    KEEP (*(EXCLUDE_FILE (*crtend.o) .eh_frame))
+    KEEP (*(.eh_frame))
+	} GROUP_LINK_IN(ROMABLE_REGION)
+
 
 	SECTION_PROLOGUE(_BSS_SECTION_NAME, (NOLOAD),)
 	{
@@ -216,6 +221,8 @@ SECTIONS
 #if !defined(CONFIG_USERSPACE)
 	_image_ram_start = .;
 #endif
+
+
 	/*
 	 * For performance, BSS section is forced to be both 4 byte aligned and
 	 * a multiple of 4 bytes.

@@ -1026,7 +1026,7 @@ if(CONFIG_USERSPACE)
     )
 
   set(APP_SMEM_UNALIGNED_LIB app_smem_unaligned_output_obj_renamed_lib)
-  add_executable(       app_smem_unaligned_prebuilt misc/empty_file.c)
+  add_executable(       app_smem_unaligned_prebuilt ${LIBGCC_DIR}/crtbeing.o misc/empty_file.c)
   toolchain_ld_link_elf(
     TARGET_ELF            app_smem_unaligned_prebuilt
     OUTPUT_MAP            ${PROJECT_BINARY_DIR}/app_smem_unaligned_prebuilt.map
@@ -1081,7 +1081,7 @@ set_property(TARGET
   )
 
 # FIXME: Is there any way to get rid of empty_file.c?
-add_executable(       ${ZEPHYR_PREBUILT_EXECUTABLE} misc/empty_file.c)
+add_executable(       ${ZEPHYR_PREBUILT_EXECUTABLE} ${LIBGCC_DIR}/crtbegin.o misc/empty_file.c)
 toolchain_ld_link_elf(
   TARGET_ELF            ${ZEPHYR_PREBUILT_EXECUTABLE}
   OUTPUT_MAP            ${PROJECT_BINARY_DIR}/${ZEPHYR_PREBUILT_EXECUTABLE}.map
@@ -1133,7 +1133,7 @@ else()
     ${ZEPHYR_INCLUDE_DIRS}
   )
 
-  add_executable(       ${ZEPHYR_FINAL_EXECUTABLE} misc/empty_file.c ${GKSF})
+  add_executable(       ${ZEPHYR_FINAL_EXECUTABLE} ${LIBGCC_DIR}/crtbegin.o misc/empty_file.c ${GKSF})
   toolchain_ld_link_elf(
     TARGET_ELF            ${ZEPHYR_FINAL_EXECUTABLE}
     OUTPUT_MAP            ${PROJECT_BINARY_DIR}/${ZEPHYR_FINAL_EXECUTABLE}.map
