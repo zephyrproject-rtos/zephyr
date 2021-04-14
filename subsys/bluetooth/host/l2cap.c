@@ -1118,7 +1118,7 @@ static void le_ecred_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	struct bt_l2cap_server *server;
 	struct bt_l2cap_ecred_conn_req *req;
 	struct bt_l2cap_ecred_conn_rsp *rsp;
-	uint16_t psm, mtu, mps, credits, result = BT_L2CAP_LE_ERR_INVALID_SCID;
+	uint16_t psm, mtu, mps, credits, result = BT_L2CAP_LE_SUCCESS;
 	uint16_t scid, dcid[L2CAP_ECRED_CHAN_MAX];
 	int i = 0;
 
@@ -1165,12 +1165,15 @@ static void le_ecred_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	}
 
 	while (buf->len >= sizeof(scid)) {
+		uint16_t rc;
 		scid = net_buf_pull_le16(buf);
 
-		result = l2cap_chan_accept(conn, server, scid, mtu, mps,
-					   credits, &chan[i]);
-
-		switch (result) {
+		rc = l2cap_chan_accept(conn, server, scid, mtu, mps,
+				credits, &chan[i]);
+		if (rc != BT_L2CAP_LE_SUCCESS) {
+			result = rc;
+		}
+		switch (rc) {
 		case BT_L2CAP_LE_SUCCESS:
 			ch = BT_L2CAP_LE_CHAN(chan[i]);
 			dcid[i++] = sys_cpu_to_le16(ch->rx.cid);
