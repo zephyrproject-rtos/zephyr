@@ -28,7 +28,7 @@ static K_SEM_DEFINE(sem_per_sync_lost, 0, 1);
 static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(LED0_NODE, gpios);
 #define BLINK_ONOFF K_MSEC(500)
 
-static struct k_delayed_work blink_work;
+static struct k_work_delayable blink_work;
 static bool                  led_is_on;
 
 static void blink_timeout(struct k_work *work)
@@ -36,7 +36,7 @@ static void blink_timeout(struct k_work *work)
 	led_is_on = !led_is_on;
 	gpio_pin_set(led.port, led.pin, (int)led_is_on);
 
-	k_delayed_work_submit(&blink_work, BLINK_ONOFF);
+	k_work_schedule(&blink_work, BLINK_ONOFF);
 }
 #endif
 
@@ -179,7 +179,7 @@ void main(void)
 	}
 	printk("done.\n");
 
-	k_delayed_work_init(&blink_work, blink_timeout);
+	k_work_init_delayable(&blink_work, blink_timeout);
 #endif /* HAS_LED */
 
 	/* Initialize the Bluetooth Subsystem */
@@ -207,10 +207,12 @@ void main(void)
 
 	do {
 #if defined(HAS_LED)
+		struct k_work_sync work_sync;
+
 		printk("Start blinking LED...\n");
 		led_is_on = false;
 		gpio_pin_set(led.port, led.pin, (int)led_is_on);
-		k_delayed_work_submit(&blink_work, BLINK_ONOFF);
+		k_work_schedule(&blink_work, BLINK_ONOFF);
 #endif /* HAS_LED */
 
 		printk("Waiting for periodic advertising...\n");
@@ -252,7 +254,7 @@ void main(void)
 
 #if defined(HAS_LED)
 		printk("Stop blinking LED.\n");
-		k_delayed_work_cancel(&blink_work);
+		k_work_cancel_delayable_sync(&blink_work, &work_sync);
 
 		/* Keep LED on */
 		led_is_on = true;
