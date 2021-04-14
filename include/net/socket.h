@@ -688,8 +688,22 @@ static inline ssize_t recv(int sock, void *buf, size_t max_len, int flags)
 	return zsock_recv(sock, buf, max_len, flags);
 }
 
-/* This conflicts with fcntl.h, so code must include fcntl.h before socket.h: */
-#define fcntl zsock_fcntl
+/*
+ * Need this wrapper because newer GCC versions got too smart and "typecheck"
+ * even macros, so '#define fcntl zsock_fcntl' leads to error.
+ */
+static inline int zsock_fcntl_wrapper(int sock, int cmd, ...)
+{
+	va_list args;
+	int flags;
+
+	va_start(args, cmd);
+	flags = va_arg(args, int);
+	va_end(args);
+	return zsock_fcntl(sock, cmd, flags);
+}
+
+#define fcntl zsock_fcntl_wrapper
 
 static inline ssize_t sendto(int sock, const void *buf, size_t len, int flags,
 			     const struct sockaddr *dest_addr,
