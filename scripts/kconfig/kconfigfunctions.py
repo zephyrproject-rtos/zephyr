@@ -455,10 +455,33 @@ def dt_irq_highest_number(kconf, _, irq_parent_label):
     for node in node_using_irqs:
         node_irqs = node.props["interrupts"].val
 
-        try:
-            pp.pprint(node.interrupts)
-        except:
-            pp.pprint("No parent")
+        #pp.pprint(node.interrupts)
+
+        for i, entry in enumerate(node.interrupts):
+            if entry is None:
+                continue
+
+            #pp.pprint("i")
+            #pp.pprint(i)
+            #pp.pprint(entry)
+            data = entry.data
+
+            pp.pprint("data")
+            pp.pprint(data)
+            pp.pprint("controller")
+            pp.pprint(entry.controller)
+            pp.pprint("type")
+            pp.pprint(entry.type)
+
+            pp.pprint(entry.controller.required_by)
+
+
+    #        for cell, val in data.items():
+
+    #            try:
+    #                pp.pprint(data.items())
+    #            except:
+    #                pp.pprint("No parent")
 
         try:
             node_status = node.props["status"].val

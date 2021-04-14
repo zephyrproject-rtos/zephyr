@@ -1336,6 +1336,11 @@ class ControllerAndData:
 
         return "<ControllerAndData, {}>".format(", ".join(fields))
 
+    @property
+    def type(self):
+        "See the class docstring"
+        return self.data
+
 
 class PinCtrl:
     """
