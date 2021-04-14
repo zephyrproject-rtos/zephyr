@@ -1122,6 +1122,8 @@ static void le_ecred_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	uint16_t scid, dcid[L2CAP_ECRED_CHAN_MAX];
 	int i = 0;
 
+	/* set dcid to zeros here, in case of all connections refused error */
+	memset(dcid, 0, sizeof(dcid));
 	if (buf->len < sizeof(*req)) {
 		BT_ERR("Too small LE conn req packet size");
 		result = BT_L2CAP_LE_ERR_INVALID_PARAMS;
@@ -1162,13 +1164,12 @@ static void le_ecred_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 		goto response;
 	}
 
-	memset(dcid, 0, sizeof(dcid));
-
 	while (buf->len >= sizeof(scid)) {
 		scid = net_buf_pull_le16(buf);
 
 		result = l2cap_chan_accept(conn, server, scid, mtu, mps,
 					   credits, &chan[i]);
+
 		switch (result) {
 		case BT_L2CAP_LE_SUCCESS:
 			ch = BT_L2CAP_LE_CHAN(chan[i]);
@@ -1191,23 +1192,28 @@ static void le_ecred_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 response:
 	buf = l2cap_create_le_sig_pdu(buf, BT_L2CAP_ECRED_CONN_RSP, ident,
 				      sizeof(*rsp) + (sizeof(scid) * i));
+	if (!buf) {
+		return;
+	}
 
 	rsp = net_buf_add(buf, sizeof(*rsp));
 	(void)memset(rsp, 0, sizeof(*rsp));
-
-	if (result == BT_L2CAP_LE_ERR_UNACCEPT_PARAMS ||
-	    result == BT_L2CAP_LE_ERR_PSM_NOT_SUPP ||
-	    result == BT_L2CAP_LE_ERR_AUTHENTICATION) {
-		memset(dcid, 0, sizeof(scid) * i);
-	} else if (ch) {
+	if (ch) {
 		rsp->mps = sys_cpu_to_le16(ch->rx.mps);
 		rsp->mtu = sys_cpu_to_le16(ch->rx.mtu);
 		rsp->credits = sys_cpu_to_le16(ch->rx.init_credits);
 	}
-
-	net_buf_add_mem(buf, dcid, sizeof(scid) * i);
-
 	rsp->result = sys_cpu_to_le16(result);
+	if (ch) {
+		net_buf_add_mem(buf, dcid, sizeof(scid)*i);
+	} else {
+		/* Chan of Null value indicates that all connections
+		 * were rejected: dcid is all zeros, so we can copy
+		 * from it as much as scids were requested
+		 */
+		net_buf_add_mem(buf, dcid, sizeof(scid));
+	}
+
 
 	l2cap_send(conn, BT_L2CAP_CID_LE_SIG, buf);
 }
