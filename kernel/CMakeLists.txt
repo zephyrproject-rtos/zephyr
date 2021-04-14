@@ -65,10 +65,6 @@ if(${CONFIG_KERNEL_MEM_POOL})
   target_sources(kernel PRIVATE mempool.c)
 endif()
 
-if(NOT CONFIG_MULTITHREADING)
-  message(WARNING "Single threaded mode (CONFIG_MULTITHREADING=n) is deprecated")
-endif()
-
 # The last 2 files inside the target_sources_ifdef should be
 # userspace_handler.c and userspace.c. If not the linker would complain.
 # This order has to be maintained. Any new file should be placed
