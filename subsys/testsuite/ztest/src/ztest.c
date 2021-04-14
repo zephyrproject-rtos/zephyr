@@ -68,7 +68,9 @@ static int cleanup_test(struct unit_test *test)
 	 * Because we reuse the same k_thread structure this would
 	 * causes some problems.
 	 */
-	k_thread_abort(&ztest_thread);
+	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
+		k_thread_abort(&ztest_thread);
+	}
 #endif
 
 	if (!ret && mock_status == 1) {
@@ -286,25 +288,30 @@ K_THREAD_STACK_DEFINE(ztest_thread_stack, CONFIG_ZTEST_STACKSIZE +
 		      CONFIG_TEST_EXTRA_STACKSIZE);
 static ZTEST_BMEM int test_result;
 
+static void test_finalize(void)
+{
+	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
+		k_thread_abort(&ztest_thread);
+		k_thread_abort(k_current_get());
+	}
+}
+
 void ztest_test_fail(void)
 {
 	test_result = -1;
-	k_thread_abort(&ztest_thread);
-	k_thread_abort(k_current_get());
+	test_finalize();
 }
 
 void ztest_test_pass(void)
 {
 	test_result = 0;
-	k_thread_abort(&ztest_thread);
-	k_thread_abort(k_current_get());
+	test_finalize();
 }
 
 void ztest_test_skip(void)
 {
 	test_result = -2;
-	k_thread_abort(&ztest_thread);
-	k_thread_abort(k_current_get());
+	test_finalize();
 }
 
 static void init_testing(void)
@@ -329,15 +336,21 @@ static int run_test(struct unit_test *test)
 	int ret = TC_PASS;
 
 	TC_START(test->name);
-	k_thread_create(&ztest_thread, ztest_thread_stack,
-			K_THREAD_STACK_SIZEOF(ztest_thread_stack),
-			(k_thread_entry_t) test_cb, (struct unit_test *)test,
-			NULL, NULL, CONFIG_ZTEST_THREAD_PRIORITY,
-			test->thread_options | K_INHERIT_PERMS,
-				K_NO_WAIT);
 
-	k_thread_name_set(&ztest_thread, "ztest_thread");
-	k_thread_join(&ztest_thread, K_FOREVER);
+	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
+		k_thread_create(&ztest_thread, ztest_thread_stack,
+				K_THREAD_STACK_SIZEOF(ztest_thread_stack),
+				(k_thread_entry_t) test_cb, (struct unit_test *)test,
+				NULL, NULL, CONFIG_ZTEST_THREAD_PRIORITY,
+				test->thread_options | K_INHERIT_PERMS,
+					K_NO_WAIT);
+
+		k_thread_name_set(&ztest_thread, "ztest_thread");
+		k_thread_join(&ztest_thread, K_FOREVER);
+	} else {
+		test_result = 1;
+		run_test_functions(test);
+	}
 
 	phase = TEST_PHASE_TEARDOWN;
 	test->teardown();
