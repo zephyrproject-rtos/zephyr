@@ -116,7 +116,6 @@ These pages cover other kernel services.
    other/cpu_idle.rst
    other/atomic.rst
    other/float.rst
-   other/ring_buffers.rst
    other/cxx_support.rst
    other/version.rst
    other/fatal.rst
