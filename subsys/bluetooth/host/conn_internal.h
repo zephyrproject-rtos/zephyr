@@ -187,7 +187,7 @@ struct bt_conn {
 	 * - Initiator connect create cancel.
 	 * - Connection cleanup.
 	 */
-	struct k_delayed_work	deferred_work;
+	struct k_work_delayable	deferred_work;
 
 	union {
 		struct bt_conn_le	le;
