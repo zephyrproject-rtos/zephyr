@@ -28,6 +28,12 @@
 extern "C" {
 #endif
 
+/**
+ * @defgroup doubly-linked-list_apis Doubly-linked list
+ * @ingroup datastructure_apis
+ * @{
+ */
+
 struct _dnode {
 	union {
 		struct _dnode *head; /* ptr to head of list (sys_dlist_t) */
@@ -42,11 +48,6 @@ struct _dnode {
 typedef struct _dnode sys_dlist_t;
 typedef struct _dnode sys_dnode_t;
 
- /**
-  * @defgroup doubly-linked-list_apis Doubly-linked list
-  * @ingroup datastructure_apis
-  * @{
-  */
 
 /**
  * @brief Provide the primitive to iterate on a list
