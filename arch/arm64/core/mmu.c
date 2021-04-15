@@ -785,7 +785,7 @@ static sys_slist_t domain_list;
  * This function provides the default configuration mechanism for the Memory
  * Management Unit (MMU).
  */
-void z_arm64_mmu_init(void)
+void z_arm64_mmu_init(bool is_primary_core)
 {
 	unsigned int flags = 0U;
 
@@ -801,7 +801,7 @@ void z_arm64_mmu_init(void)
 	/*
 	 * Only booting core setup up the page tables.
 	 */
-	if (IS_PRIMARY_CORE()) {
+	if (is_primary_core) {
 		kernel_ptables.base_xlat_table = new_table();
 		setup_page_tables(&kernel_ptables);
 	}
