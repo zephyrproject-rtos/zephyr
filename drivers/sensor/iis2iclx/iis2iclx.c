@@ -646,10 +646,8 @@ static int iis2iclx_init(const struct device *dev)
 
 #ifdef CONFIG_IIS2ICLX_TRIGGER
 #define IIS2ICLX_CFG_IRQ(inst) \
-		.irq_dev_name = DT_INST_GPIO_LABEL(inst, drdy_gpios),	\
-		.irq_pin = DT_INST_GPIO_PIN(inst, drdy_gpios),		\
-		.irq_flags = DT_INST_GPIO_FLAGS(inst, drdy_gpios),	\
-		.int_pin = DT_INST_PROP(inst, int_pin)
+	.gpio_drdy = GPIO_DT_SPEC_GET(DT_DRV_INST(inst), drdy_gpios),	\
+	.int_pin = DT_INST_PROP(inst, int_pin)
 #else
 #define IIS2ICLX_CFG_IRQ(inst)
 #endif /* CONFIG_IIS2ICLX_TRIGGER */

@@ -49,10 +49,8 @@ struct iis2iclx_config {
 	uint8_t odr;
 	uint8_t range;
 #ifdef CONFIG_IIS2ICLX_TRIGGER
-	const char *irq_dev_name;
-	uint8_t irq_pin;
-	uint8_t irq_flags;
 	uint8_t int_pin;
+	const struct gpio_dt_spec gpio_drdy;
 #endif /* CONFIG_IIS2ICLX_TRIGGER */
 };
 
@@ -88,7 +86,6 @@ struct iis2iclx_data {
 	uint8_t accel_fs;
 
 #ifdef CONFIG_IIS2ICLX_TRIGGER
-	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 	sensor_trigger_handler_t handler_drdy_acc;
 	sensor_trigger_handler_t handler_drdy_temp;
