@@ -233,6 +233,62 @@ void test_k_mem_map(void)
 	 */
 }
 
+/**
+ * Test that the "before" guard page is in place for k_mem_map().
+ */
+void test_k_mem_map_guard_before(void)
+{
+	uint8_t *mapped;
+
+	expect_fault = false;
+
+	mapped = k_mem_map(CONFIG_MMU_PAGE_SIZE, K_MEM_PERM_RW);
+	zassert_not_null(mapped, "failed to map memory");
+	printk("mapped a page: %p - %p\n", mapped,
+		mapped + CONFIG_MMU_PAGE_SIZE);
+
+	/* Should NOT fault */
+	mapped[0] = 42;
+
+	/* Should fault here in the guard page location */
+	expect_fault = true;
+	mapped -= sizeof(void *);
+
+	printk("trying to access %p\n", mapped);
+
+	mapped[0] = 42;
+	printk("shouldn't get here\n");
+	ztest_test_fail();
+}
+
+/**
+ * Test that the "after" guard page is in place for k_mem_map().
+ */
+void test_k_mem_map_guard_after(void)
+{
+	uint8_t *mapped;
+
+	expect_fault = false;
+
+	mapped = k_mem_map(CONFIG_MMU_PAGE_SIZE, K_MEM_PERM_RW);
+	zassert_not_null(mapped, "failed to map memory");
+	printk("mapped a page: %p - %p\n", mapped,
+		mapped + CONFIG_MMU_PAGE_SIZE);
+
+	/* Should NOT fault */
+	mapped[0] = 42;
+
+	/* Should fault here in the guard page location */
+	expect_fault = true;
+	mapped += CONFIG_MMU_PAGE_SIZE + sizeof(void *);
+
+	printk("trying to access %p\n", mapped);
+
+	mapped[0] = 42;
+	printk("shouldn't get here\n");
+	ztest_test_fail();
+}
+
 /* ztest main entry*/
 void test_main(void)
 {
@@ -247,7 +303,9 @@ void test_main(void)
 			ztest_unit_test(test_z_phys_map_exec),
 			ztest_unit_test(test_z_phys_map_side_effect),
 			ztest_unit_test(test_z_phys_unmap),
-			ztest_unit_test(test_k_mem_map)
+			ztest_unit_test(test_k_mem_map),
+			ztest_unit_test(test_k_mem_map_guard_before),
+			ztest_unit_test(test_k_mem_map_guard_after)
 			);
 	ztest_run_test_suite(test_mem_map);
 }
