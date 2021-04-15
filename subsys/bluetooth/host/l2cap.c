@@ -1147,7 +1147,7 @@ static void le_ecred_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 
 	if (mtu < L2CAP_ECRED_MIN_MTU || mps < L2CAP_ECRED_MIN_MTU) {
 		BT_ERR("Invalid ecred conn req params");
-		result = BT_L2CAP_LE_ERR_UNACCEPT_PARAMS;
+		result = BT_L2CAP_LE_ERR_INVALID_PARAMS;
 		goto response;
 	}
 
