@@ -265,12 +265,12 @@ void test_hci_phy(void)
 
 	err = ll_phy_req_send(conn_handle+1,  0x00, 0x00, 0x00);
 	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID, NULL);
-	conn_from_pool->llcp.fex.features_peer = 0x00;
+	conn_from_pool->llcp.fex.features_used = 0x00;
 	err = ll_phy_req_send(conn_handle,  0x03, 0xFF, 0x03);
 	zassert_equal(err, BT_HCI_ERR_UNSUPP_REMOTE_FEATURE,
 		      "Errorcode %d", err);
 
-	conn_from_pool->llcp.fex.features_peer = 0xFFFF;
+	conn_from_pool->llcp.fex.features_used = 0xFFFF;
 	err = ll_phy_req_send(conn_handle,  0x03, 0xFF, 0x03);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, "Errorcode %d", err);
 	err = ll_phy_get(conn_handle + 1, &phy_tx, &phy_rx);
@@ -313,24 +313,21 @@ void test_hci_dle(void)
 	tx_octets = 251;
 	tx_time = 2400;
 
-	conn_from_pool->llcp.fex.features_peer = 0x00;
+	conn_from_pool->llcp.fex.features_used = 0x00;
 	err = ll_length_req_send(conn_handle, tx_octets, tx_time);
 	zassert_equal(err, BT_HCI_ERR_UNSUPP_REMOTE_FEATURE,
 		      "Errorcode %d", err);
-	conn_from_pool->llcp.fex.features_peer = 0xFFFFFFFF;
+	conn_from_pool->llcp.fex.features_used = 0xFFFFFFFF;
 	err = ll_length_req_send(conn_handle+1, tx_octets, tx_time);
 	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID,
-		      "Errorcode %d", err);
-	err = ll_length_req_send(conn_handle, tx_octets, tx_time);
-	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CMD,
 		      "Errorcode %d", err);
 
 	ll_length_max_get(&max_tx_octets, &max_tx_time,
 			  &max_rx_octets, &max_rx_time);
 	zassert_equal(max_tx_octets, LL_LENGTH_OCTETS_RX_MAX, NULL);
 	zassert_equal(max_rx_octets, LL_LENGTH_OCTETS_RX_MAX, NULL);
-	zassert_equal(max_tx_time, 2112, "Actual time is %d", max_tx_time);
-	zassert_equal(max_rx_time, 2112, "Actual time is %d", max_rx_time);
+	zassert_equal(max_tx_time, 2120, "Actual time is %d", max_tx_time);
+	zassert_equal(max_rx_time, 2120, "Actual time is %d", max_rx_time);
 
 	err = ll_length_default_set(0x00, 0x00);
         ll_length_default_get(&max_tx_octets, &max_tx_time);
