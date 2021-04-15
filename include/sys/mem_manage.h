@@ -339,6 +339,21 @@ size_t k_mem_free_get(void);
 void *k_mem_map(size_t size, uint32_t flags);
 
 /**
+ * Un-map mapped memory
+ *
+ * This removes a memory mapping for the provided page-aligned region.
+ * Associated page frames will be free and the kernel may re-use the associated
+ * virtual address region. Any paged out data pages may be discarded.
+ *
+ * Calling this function on a region which was not mapped to begin with is
+ * undefined behavior.
+ *
+ * @param addr Page-aligned memory region base virtual address
+ * @param size Page-aligned memory region size
+ */
+void k_mem_unmap(void *addr, size_t size);
+
+/**
  * Given an arbitrary region, provide a aligned region that covers it
  *
  * The returned region will have both its base address and size aligned
