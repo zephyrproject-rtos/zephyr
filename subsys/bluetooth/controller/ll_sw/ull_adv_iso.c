@@ -58,8 +58,9 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		      uint32_t remainder, uint16_t lazy, uint8_t force,
 		      void *param);
 static void ticker_op_cb(uint32_t status, void *param);
-static void tx_lll_flush(void *param);
 static void ticker_op_stop_cb(uint32_t status, void *param);
+static void disabled_cb(void *param);
+static void tx_lll_flush(void *param);
 
 static memq_link_t link_lll_prepare;
 static struct mayfly mfy_lll_prepare = {0, 0, &link_lll_prepare, NULL, NULL};
@@ -584,11 +585,19 @@ void ull_adv_iso_done_terminate(struct node_rx_event_done *done)
 	adv_iso = CONTAINER_OF(done->param, struct ll_adv_iso_set, ull);
 	lll = &adv_iso->lll;
 
+	/* Skip if terminated already (we come here if pipeline being flushed */
+	if (unlikely(lll->handle == 0xFF)) {
+		return;
+	}
+
 	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
 			  (TICKER_ID_ADV_ISO_BASE + lll->handle),
 			  ticker_op_stop_cb, adv_iso);
 	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
 		  (ret == TICKER_STATUS_BUSY));
+
+	/* Invalidate the handle */
+	lll->handle = 0xFF;
 }
 
 static int init_reset(void)
@@ -815,11 +824,65 @@ static void ticker_op_cb(uint32_t status, void *param)
 	*((uint32_t volatile *)param) = status;
 }
 
+static void ticker_op_stop_cb(uint32_t status, void *param)
+{
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, NULL};
+	struct ll_adv_iso_set *adv_iso;
+	struct ull_hdr *hdr;
+
+	/* NOTE: We are in ULL_LOW which can be pre-empted by ULL_HIGH.
+	 *       As we are in the callback after successful stop of the
+	 *       ticker, the ULL reference count will not be modified
+	 *       further hence it is safe to check and act on either the need
+	 *       to call lll_disable or not.
+	 */
+	adv_iso = param;
+	hdr = &adv_iso->ull;
+	mfy.param = &adv_iso->lll;
+	if (ull_ref_get(hdr)) {
+		uint32_t ret;
+
+		LL_ASSERT(!hdr->disabled_cb);
+		hdr->disabled_param = mfy.param;
+		hdr->disabled_cb = disabled_cb;
+
+		mfy.fp = lll_disable;
+		ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW,
+				     TICKER_USER_ID_LLL, 0, &mfy);
+		LL_ASSERT(!ret);
+	} else {
+		uint32_t ret;
+
+		mfy.fp = disabled_cb;
+		ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW,
+				     TICKER_USER_ID_ULL_HIGH, 0, &mfy);
+		LL_ASSERT(!ret);
+	}
+}
+
+static void disabled_cb(void *param)
+{
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, tx_lll_flush};
+	uint32_t ret;
+
+	mfy.param = param;
+	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
+			     TICKER_USER_ID_LLL, 0, &mfy);
+	LL_ASSERT(!ret);
+}
+
 static void tx_lll_flush(void *param)
 {
-	struct ll_adv_iso_set *adv_iso = param;
+	struct ll_adv_iso_set *adv_iso;
+	struct lll_adv_iso *lll;
 	struct node_rx_pdu *rx;
 	memq_link_t *link;
+
+	/* Get reference to ULL context */
+	lll = param;
+	adv_iso = HDR_LLL2ULL(lll);
 
 	/* TODO: Flush TX */
 
@@ -835,20 +898,4 @@ static void tx_lll_flush(void *param)
 	/* Enqueue the terminate towards ULL context */
 	ull_rx_put(link, rx);
 	ull_rx_sched();
-}
-
-static void ticker_op_stop_cb(uint32_t status, void *param)
-{
-	uint32_t retval;
-	static memq_link_t link;
-	static struct mayfly mfy = {0, 0, &link, NULL, tx_lll_flush};
-
-	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
-
-	mfy.param = param;
-
-	/* Flush pending tx PDUs in LLL (using a mayfly) */
-	retval = mayfly_enqueue(TICKER_USER_ID_ULL_LOW, TICKER_USER_ID_LLL, 0,
-				&mfy);
-	LL_ASSERT(!retval);
 }
