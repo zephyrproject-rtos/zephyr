@@ -48,7 +48,7 @@ static uint32_t l2cap_rate;
 static uint32_t l2cap_recv_delay_ms;
 static K_FIFO_DEFINE(l2cap_recv_fifo);
 struct l2ch {
-	struct k_delayed_work recv_work;
+	struct k_work_delayable recv_work;
 	struct bt_l2cap_le_chan ch;
 };
 #define L2CH_CHAN(_chan) CONTAINER_OF(_chan, struct l2ch, ch.chan)
@@ -112,10 +112,11 @@ static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		if (k_fifo_is_empty(&l2cap_recv_fifo)) {
 			shell_print(ctx_shell, "Delaying response in %u ms...",
 				    l2cap_recv_delay_ms);
-			k_delayed_work_submit(&l2ch->recv_work,
-					      K_MSEC(l2cap_recv_delay_ms));
 		}
+
 		net_buf_put(&l2cap_recv_fifo, buf);
+		k_work_schedule(&l2ch->recv_work, K_MSEC(l2cap_recv_delay_ms));
+
 		return -EINPROGRESS;
 	}
 
@@ -136,7 +137,7 @@ static void l2cap_connected(struct bt_l2cap_chan *chan)
 {
 	struct l2ch *c = L2CH_CHAN(chan);
 
-	k_delayed_work_init(&c->recv_work, l2cap_recv_cb);
+	k_work_init_delayable(&c->recv_work, l2cap_recv_cb);
 
 	shell_print(ctx_shell, "Channel %p connected", chan);
 }
