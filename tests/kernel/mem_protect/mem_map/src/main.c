@@ -163,6 +163,35 @@ void test_z_phys_map_side_effect(void)
 }
 
 /**
+ * Test that z_phys_unmap() unmaps the memory and it is no longer
+ * accessible afterwards.
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+void test_z_phys_unmap(void)
+{
+	uint8_t *mapped;
+
+	expect_fault = false;
+
+	/* Map in a page that allows writes */
+	z_phys_map(&mapped, z_mem_phys_addr(test_page),
+		   sizeof(test_page), BASE_FLAGS | K_MEM_PERM_RW);
+
+	/* Should NOT fault */
+	mapped[0] = 42;
+
+	/* Unmap the memory */
+	z_phys_unmap(mapped, sizeof(test_page));
+
+	/* Should fault since test_page is no longer accessible */
+	expect_fault = true;
+	mapped[0] = 42;
+	printk("shouldn't get here\n");
+	ztest_test_fail();
+}
+
+/**
  * Basic k_mem_map() functionality
  *
  * Does not exercise K_MEM_MAP_* control flags, just default behavior
@@ -217,6 +246,7 @@ void test_main(void)
 			ztest_unit_test(test_z_phys_map_rw),
 			ztest_unit_test(test_z_phys_map_exec),
 			ztest_unit_test(test_z_phys_map_side_effect),
+			ztest_unit_test(test_z_phys_unmap),
 			ztest_unit_test(test_k_mem_map)
 			);
 	ztest_run_test_suite(test_mem_map);
