@@ -1,0 +1,59 @@
+# Copyright (c) 2021, Linaro ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32F7 Main PLL node binding:
+
+  Takes one of clk_hse or clk_hsi as input clock.
+
+  Up to 2 output clocks could be supported and for each output clock, the
+  frequency can be computed with the following formula:
+
+    f(PLL_P) = f(VCO clock) / PLLP  --> PLLCLK (System Clock)
+    f(PLL_Q) = f(VCO clock) / PLLQ  --> PLL48CLK (Optional)
+
+      with f(VCO clock) = f(PLL clock input) × (PLLN / PLLM)
+
+
+compatible: "st,stm32f7-pll-clock"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+    "#clock-cells":
+      const: 0
+
+    clocks:
+      required: true
+
+    div-m:
+      type: int
+      required: true
+      description: |
+          Division factor for the PLL input clock
+          Valid range: 2 - 63
+
+    mul-n:
+      type: int
+      required: true
+      description: |
+          PLL multiplication factor for VCO
+          Valid range: 50 - 432
+
+    div-p:
+      type: int
+      required: true
+      description: |
+          PLL division factor for PLLCLK
+      enum:
+        - 2
+        - 4
+        - 6
+        - 8
+
+    div-q:
+      type: int
+      required: false
+      description: |
+          PLL division factor for PLL48CK
+          Valid range: 2 - 15
