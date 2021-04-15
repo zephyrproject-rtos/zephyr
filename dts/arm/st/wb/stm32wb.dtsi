@@ -47,6 +47,7 @@
 			label = "FLASH_CTRL";
 			reg = <0x58004000 0x400>;
 			interrupts = <4 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x02000000>;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
