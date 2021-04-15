@@ -5,7 +5,7 @@ Samples and Demos
 
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 4
    :glob:
 
    classic
