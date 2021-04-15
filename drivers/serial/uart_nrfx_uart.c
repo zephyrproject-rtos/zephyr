@@ -272,10 +272,14 @@ static void uart_nrfx_poll_out(const struct device *dev, unsigned char c)
 		while (atomic_cas((atomic_t *) lock,
 				  (atomic_val_t) 0,
 				  (atomic_val_t) 1) == false) {
-			/* k_sleep allows other threads to execute and finish
-			 * their transactions.
-			 */
-			k_msleep(1);
+			if (IS_ENABLED(CONFIG_MULTITHREADING)) {
+				/* k_sleep allows other threads to execute and finish
+				 * their transactions.
+				 */
+				k_msleep(1);
+			} else {
+				k_busy_wait(1000);
+			}
 			if (--safety_cnt == 0) {
 				break;
 			}
