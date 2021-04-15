@@ -68,7 +68,7 @@ void z_arm64_secondary_start(void)
 	/* Initialize tpidrro_el0 with our struct _cpu instance address */
 	write_tpidrro_el0((uintptr_t)&_kernel.cpus[cpu_num]);
 
-	z_arm64_mmu_init();
+	z_arm64_mmu_init(false);
 
 #ifdef CONFIG_SMP
 	arm_gic_secondary_init();
