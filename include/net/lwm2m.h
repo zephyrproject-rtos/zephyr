@@ -442,6 +442,17 @@ int lwm2m_engine_update_observer_max_period(char *pathstr, uint32_t period_s);
 int lwm2m_engine_create_obj_inst(char *pathstr);
 
 /**
+ * @brief Delete an LwM2M object instance.
+ *
+ * LwM2M clients use this function to delete LwM2M objects.
+ *
+ * @param[in] pathstr LwM2M path string "obj/obj-inst"
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_engine_delete_obj_inst(char *pathstr);
+
+/**
  * @brief Set resource (instance) value (opaque buffer)
  *
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
