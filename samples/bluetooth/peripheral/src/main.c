@@ -39,7 +39,7 @@ static struct bt_uuid_128 vnd_auth_uuid = BT_UUID_INIT_128(
 	0xf2, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
 	0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12);
 
-static uint8_t vnd_value[] = { 'V', 'e', 'n', 'd', 'o', 'r' };
+static uint8_t vnd_value[] = "Vendor";
 
 static ssize_t read_vnd(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			void *buf, uint16_t len, uint16_t offset)
