@@ -217,8 +217,25 @@ list(APPEND ARCH_ROOT ${ZEPHYR_BASE})
 # Check that BOARD has been provided, and that it has not changed.
 zephyr_check_cache(BOARD REQUIRED)
 
+# Search for revision and layout separators
 string(FIND "${BOARD}" "@" REVISION_SEPARATOR_INDEX)
-if(NOT (REVISION_SEPARATOR_INDEX EQUAL -1))
+string(FIND "${BOARD}" "%" LAYOUT_SEPARATOR_INDEX)
+
+if((NOT (REVISION_SEPARATOR_INDEX EQUAL -1)) AND (NOT (LAYOUT_SEPARATOR_INDEX EQUAL -1)))
+  # Both a revision and layout are specified
+  math(EXPR BOARD_REVISION_INDEX "${REVISION_SEPARATOR_INDEX} + 1")
+  math(EXPR BOARD_LAYOUT_INDEX "${LAYOUT_SEPARATOR_INDEX} + 1")
+  math(EXPR BOARD_REVISION_LEN "${LAYOUT_SEPARATOR_INDEX} - ${REVISION_SEPARATOR_INDEX} - 1")
+  string(SUBSTRING ${BOARD} ${BOARD_LAYOUT_INDEX} -1 BOARD_LAYOUT)
+  string(SUBSTRING ${BOARD} ${BOARD_REVISION_INDEX} ${BOARD_REVISION_LEN} BOARD_REVISION)
+  string(SUBSTRING ${BOARD} 0 ${REVISION_SEPARATOR_INDEX} BOARD)
+elseif(NOT (LAYOUT_SEPARATOR_INDEX EQUAL -1))
+  # Only a layout is specified
+  math(EXPR BOARD_LAYOUT_INDEX "${LAYOUT_SEPARATOR_INDEX} + 1")
+  string(SUBSTRING ${BOARD} ${BOARD_LAYOUT_INDEX} -1 BOARD_LAYOUT)
+  string(SUBSTRING ${BOARD} 0 ${LAYOUT_SEPARATOR_INDEX} BOARD)
+elseif(NOT (REVISION_SEPARATOR_INDEX EQUAL -1))
+  # Only a revision is specified
   math(EXPR BOARD_REVISION_INDEX "${REVISION_SEPARATOR_INDEX} + 1")
   string(SUBSTRING ${BOARD} ${BOARD_REVISION_INDEX} -1 BOARD_REVISION)
   string(SUBSTRING ${BOARD} 0 ${REVISION_SEPARATOR_INDEX} BOARD)
@@ -291,6 +308,22 @@ if(DEFINED BOARD_REVISION)
   endif()
 
   string(REPLACE "." "_" BOARD_REVISION_STRING ${BOARD_REVISION})
+endif()
+
+if(EXISTS ${BOARD_DIR}/layouts)
+  # Set the default layout if not explicitly set
+  if (NOT DEFINED BOARD_LAYOUT)
+    set(BOARD_LAYOUT "default")
+  endif()
+
+  if (NOT EXISTS ${BOARD_DIR}/layouts/${BOARD_LAYOUT}.overlay)
+    message(FATAL_ERROR "Layout \"${BOARD_LAYOUT}\" doesn't exist \
+                        (${BOARD_DIR}/layouts/${BOARD_LAYOUT}.overlay)")
+  endif()
+  set(BOARD_MESSAGE "${BOARD_MESSAGE}, Layout: ${BOARD_LAYOUT}")
+elseif(DEFINED BOARD_LAYOUT)
+  message(FATAL_ERROR "Board layout ${BOARD_LAYOUT} specified for ${BOARD}, \
+                   but board has no layouts.")
 endif()
 
 # Check that SHIELD has not changed.
