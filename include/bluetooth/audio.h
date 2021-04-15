@@ -79,29 +79,29 @@ struct bt_codec_data {
 	}
 
 /* TODO: Remove base once LTV types are defined, are these specific to LC3? */
-#define BT_CODEC_META_BASE		0x01
+#define BT_CODEC_META_BASE               0x01
 
-#define BT_CODEC_META_PREFER_CONTEXT	(BT_CODEC_META_BASE)
-#define BT_CODEC_META_CONTEXT		(BT_CODEC_META_BASE + 1)
+#define BT_CODEC_META_PREFER_CONTEXT     (BT_CODEC_META_BASE)
+#define BT_CODEC_META_CONTEXT            (BT_CODEC_META_BASE + 1)
 
 /* @def BT_CODEC_META_CONTEXT_NONE
  *
  * Unspecified. Matches any audio content.
  */
-#define BT_CODEC_META_CONTEXT_NONE	BIT(0)
+#define BT_CODEC_META_CONTEXT_NONE       BIT(0)
 
 /* @def BT_CODEC_META_CONTEXT_VOICE
  *
  * Conversation between humans as, for example, in telephony or video calls.
  */
-#define BT_CODEC_META_CONTEXT_VOICE	BIT(1)
+#define BT_CODEC_META_CONTEXT_VOICE      BIT(1)
 
 /* @def BT_CODEC_META_CONTEXT_MEDIA
  *
  * Media as, for example, in music, public radio, podcast or video soundtrack.
  * Conversation between humans as, for example, in telephony or video calls.
  */
-#define BT_CODEC_META_CONTEXT_MEDIA	BIT(2)
+#define BT_CODEC_META_CONTEXT_MEDIA      BIT(2)
 
 /* @def BT_CODEC_META_CONTEXT_INSTRUCTION
  *
@@ -115,55 +115,55 @@ struct bt_codec_data {
  * Attention seeking audio as, for example, in beeps signalling arrival of a
  * message or keyboard clicks.
  */
-#define BT_CODEC_META_CONTEXT_ATTENTION	BIT(4)
+#define BT_CODEC_META_CONTEXT_ATTENTION  BIT(4)
 
 /* @def BT_CODEC_META_CONTEXT_ALERT
  *
  * Immediate alerts as, for example, in a low battery alarm, timer expiry or
  * alarm clock.
  */
-#define BT_CODEC_META_CONTEXT_ALERT	BIT(5)
+#define BT_CODEC_META_CONTEXT_ALERT      BIT(5)
 
 /* @def BT_CODEC_META_CONTEXT_MAN_MACHINE
  *
  * Man machine communication as, for example, with voice recognition or
  * virtual assistant.
  */
-#define BT_CODEC_META_CONTEXT_MAN_MACHINE	BIT(6)
+#define BT_CODEC_META_CONTEXT_MAN_MACHINE BIT(6)
 
 /* @def BT_CODEC_META_CONTEXT_EMERGENCY
  *
  * Emergency alerts as, for example, with fire alarms or other urgent alerts.
  */
-#define BT_CODEC_META_CONTEXT_EMERGENCY	BIT(7)
+#define BT_CODEC_META_CONTEXT_EMERGENCY  BIT(7)
 
 /* @def BT_CODEC_META_CONTEXT_RINGTONE
  *
  * Ringtone as in a call alert.
  */
-#define BT_CODEC_META_CONTEXT_RINGTONE	BIT(8)
+#define BT_CODEC_META_CONTEXT_RINGTONE   BIT(8)
 
 /* @def BT_CODEC_META_CONTEXT_TV
  *
  * Audio associated with a television program and/or with metadata conforming
  * to the Bluetooth Broadcast TV profile.
  */
-#define BT_CODEC_META_CONTEXT_TV	BIT(9)
+#define BT_CODEC_META_CONTEXT_TV         BIT(9)
 
 /* @def BT_CODEC_META_CONTEXT_ANY
  *
  * Any known context.
  */
-#define BT_CODEC_META_CONTEXT_ANY	(BT_CODEC_META_CONTEXT_NONE | \
-					 BT_CODEC_META_CONTEXT_VOICE | \
-					 BT_CODEC_META_CONTEXT_MEDIA | \
-					 BT_CODEC_META_CONTEXT_INSTRUCTION | \
-					 BT_CODEC_META_CONTEXT_ATTENTION | \
-					 BT_CODEC_META_CONTEXT_ALERT | \
-					 BT_CODEC_META_CONTEXT_MAN_MACHINE | \
-					 BT_CODEC_META_CONTEXT_EMERGENCY | \
-					 BT_CODEC_META_CONTEXT_RINGTONE | \
-					 BT_CODEC_META_CONTEXT_TV)
+#define BT_CODEC_META_CONTEXT_ANY	 (BT_CODEC_META_CONTEXT_NONE | \
+					  BT_CODEC_META_CONTEXT_VOICE | \
+					  BT_CODEC_META_CONTEXT_MEDIA | \
+					  BT_CODEC_META_CONTEXT_INSTRUCTION | \
+					  BT_CODEC_META_CONTEXT_ATTENTION | \
+					  BT_CODEC_META_CONTEXT_ALERT | \
+					  BT_CODEC_META_CONTEXT_MAN_MACHINE | \
+					  BT_CODEC_META_CONTEXT_EMERGENCY | \
+					  BT_CODEC_META_CONTEXT_RINGTONE | \
+					  BT_CODEC_META_CONTEXT_TV)
 
 /** @brief Codec structure. */
 struct bt_codec {
@@ -494,14 +494,14 @@ enum bt_audio_pac_type {
 	BT_AUDIO_SOURCE = 0x02,
 } __packed;
 
-#define BT_AUDIO_CONTENT_UNSPECIFIED	BIT(0)
-#define BT_AUDIO_CONTENT_CONVERSATIONAL	BIT(1)
-#define BT_AUDIO_CONTENT_MEDIA		BIT(2)
-#define BT_AUDIO_CONTENT_INSTRUMENTAL	BIT(3)
-#define BT_AUDIO_CONTENT_ATTENTION	BIT(4)
-#define BT_AUDIO_CONTENT_ALERT		BIT(5)
-#define BT_AUDIO_CONTENT_MAN_MACHINE	BIT(6)
-#define BT_AUDIO_CONTENT_EMERGENCY	BIT(7)
+#define BT_AUDIO_CONTENT_UNSPECIFIED     BIT(0)
+#define BT_AUDIO_CONTENT_CONVERSATIONAL  BIT(1)
+#define BT_AUDIO_CONTENT_MEDIA           BIT(2)
+#define BT_AUDIO_CONTENT_INSTRUMENTAL    BIT(3)
+#define BT_AUDIO_CONTENT_ATTENTION       BIT(4)
+#define BT_AUDIO_CONTENT_ALERT           BIT(5)
+#define BT_AUDIO_CONTENT_MAN_MACHINE     BIT(6)
+#define BT_AUDIO_CONTENT_EMERGENCY       BIT(7)
 
 /** @def BT_AUDIO_QOS
  *  @brief Helper to declare elements of bt_audio_qos
