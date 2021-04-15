@@ -61,6 +61,29 @@
 	};
 };
 
+&clk_hse {
+	hse-bypass;
+	clock-frequency = <DT_FREQ_M(8)>; /* STLink 8MHz clock */
+	status = "okay";
+};
+
+&pll {
+	div-m = <4>;
+	mul-n = <72>;
+	div-p = <2>;
+	div-q = <3>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(72)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <2>;
+	apb2-prescaler = <1>;
+};
+
 &usart2 {
 	pinctrl-0 = <&usart2_tx_pd5 &usart2_rx_pd6
 		     &usart2_rts_pd4 &usart2_cts_pd3>;
