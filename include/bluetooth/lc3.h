@@ -24,74 +24,74 @@ extern "C" {
 /** @def BT_CODEC_LC3_ID
  *  @brief LC3 codec ID
  */
-#define BT_CODEC_LC3_ID			0x06
+#define BT_CODEC_LC3_ID                  0x06
 
 /* TODO: Remove base once LTV types are defined */
-#define BT_CODEC_LC3_CAP_BASE		0x01
+#define BT_CODEC_LC3_CAP_BASE            0x01
 
 /** @def BT_CODEC_LC3_FREQ
  *  @brief LC3 sample frequency capability type
  */
-#define BT_CODEC_LC3_FREQ		(BT_CODEC_LC3_CAP_BASE)
+#define BT_CODEC_LC3_FREQ                (BT_CODEC_LC3_CAP_BASE)
 /** @def BT_CODEC_LC3_FREQ_8KHZ
  *  @brief LC3 8 Khz frequency capability
  */
-#define BT_CODEC_LC3_FREQ_8KHZ		BIT(0)
+#define BT_CODEC_LC3_FREQ_8KHZ           BIT(0)
 /** @def BT_CODEC_LC3_FREQ_11KHZ
  *  @brief LC3 11.025 Khz frequency capability
  */
-#define BT_CODEC_LC3_FREQ_11KHZ		BIT(1)
+#define BT_CODEC_LC3_FREQ_11KHZ          BIT(1)
 /** @def BT_CODEC_LC3_FREQ_16KHZ
  *  @brief LC3 16 Khz frequency capability
  */
-#define BT_CODEC_LC3_FREQ_16KHZ		BIT(2)
+#define BT_CODEC_LC3_FREQ_16KHZ          BIT(2)
 /** @def BT_CODEC_LC3_FREQ_22KHZ
  *  @brief LC3 22.05 Khz frequency capability
  */
-#define BT_CODEC_LC3_FREQ_22KHZ		BIT(3)
+#define BT_CODEC_LC3_FREQ_22KHZ          BIT(3)
 /** @def BT_CODEC_LC3_FREQ_24KHZ
  *  @brief LC3 24 Khz frequency capability
  */
-#define BT_CODEC_LC3_FREQ_24KHZ		BIT(4)
+#define BT_CODEC_LC3_FREQ_24KHZ          BIT(4)
 /** @def BT_CODEC_LC3_FREQ_32KHZ
  *  @brief LC3 32 Khz frequency capability
  */
-#define BT_CODEC_LC3_FREQ_32KHZ		BIT(5)
+#define BT_CODEC_LC3_FREQ_32KHZ          BIT(5)
 /** @def BT_CODEC_LC3_FREQ_44KHZ
  *  @brief LC3 44.1 Khz frequency capability
  */
-#define BT_CODEC_LC3_FREQ_44KHZ		BIT(6)
+#define BT_CODEC_LC3_FREQ_44KHZ          BIT(6)
 /** @def BT_CODEC_LC3_FREQ_48KHZ
  *  @brief LC3 48 Khz frequency capability
  */
-#define BT_CODEC_LC3_FREQ_48KHZ		BIT(7)
+#define BT_CODEC_LC3_FREQ_48KHZ          BIT(7)
 /** @def BT_CODEC_LC3_FREQ_ANY
  *  @brief LC3 any frequency capability
  */
-#define BT_CODEC_LC3_FREQ_ANY		(BT_CODEC_LC3_FREQ_8KHZ | \
-					BT_CODEC_LC3_FREQ_16KHZ | \
-					BT_CODEC_LC3_FREQ_24KHZ | \
-					BT_CODEC_LC3_FREQ_32KHZ | \
-					BT_CODEC_LC3_FREQ_44KHZ | \
-					BT_CODEC_LC3_FREQ_48KHZ)
+#define BT_CODEC_LC3_FREQ_ANY            (BT_CODEC_LC3_FREQ_8KHZ | \
+					  BT_CODEC_LC3_FREQ_16KHZ | \
+					  BT_CODEC_LC3_FREQ_24KHZ | \
+					  BT_CODEC_LC3_FREQ_32KHZ | \
+					  BT_CODEC_LC3_FREQ_44KHZ | \
+					  BT_CODEC_LC3_FREQ_48KHZ)
 
 /** @def BT_CODEC_LC3_DURATION
  *  @brief LC3 frame duration capability type
  */
-#define BT_CODEC_LC3_DURATION		(BT_CODEC_LC3_CAP_BASE + 1)
+#define BT_CODEC_LC3_DURATION            (BT_CODEC_LC3_CAP_BASE + 1)
 /** @def BT_CODEC_LC3_DURATION_7_5
  *  @brief LC3 7.5 msec frame duration capability
  */
-#define BT_CODEC_LC3_DURATION_7_5	BIT(0)
+#define BT_CODEC_LC3_DURATION_7_5        BIT(0)
 /** @def BT_CODEC_LC3_DURATION_10
  *  @brief LC3 10 msec frame duration capability
  */
-#define BT_CODEC_LC3_DURATION_10	BIT(1)
+#define BT_CODEC_LC3_DURATION_10         BIT(1)
 /** @def BT_CODEC_LC3_DURATION_ANY
  *  @brief LC3 any frame duration capability
  */
-#define BT_CODEC_LC3_DURATION_ANY	(BT_CODEC_LC3_DURATION_7_5 | \
-					 BT_CODEC_LC3_DURATION_10)
+#define BT_CODEC_LC3_DURATION_ANY        (BT_CODEC_LC3_DURATION_7_5 | \
+					  BT_CODEC_LC3_DURATION_10)
 /** @def BT_CODEC_LC3_DURATION_PREFER_7_5
  *  @brief LC3 7.5 msec preferred frame duration capability
  */
@@ -99,30 +99,30 @@ extern "C" {
 /** @def BT_CODEC_LC3_DURATION_PREFER_10
  *  @brief LC3 10 msec preferred frame duration capability
  */
-#define BT_CODEC_LC3_DURATION_PREFER_10 BIT(5)
+#define BT_CODEC_LC3_DURATION_PREFER_10  BIT(5)
 
 
 /** @def BT_CODEC_LC3_CHAN_COUNT
  *  @brief LC3 channel count capability type
  */
-#define BT_CODEC_LC3_CHAN_COUNT		(BT_CODEC_LC3_CAP_BASE + 2)
+#define BT_CODEC_LC3_CHAN_COUNT          (BT_CODEC_LC3_CAP_BASE + 2)
 /** @def BT_CODEC_LC3_CHAN_COUNT_SUPPORT
  *  @brief LC3 channel count support capability
  */
-#define BT_CODEC_LC3_CHAN_COUNT_SUPPORT	BIT(0)
+#define BT_CODEC_LC3_CHAN_COUNT_SUPPORT  BIT(0)
 
 /** @def BT_CODEC_LC3_FRAME_LEN
  *  @brief LC3 frame length capability type
  */
-#define BT_CODEC_LC3_FRAME_LEN		(BT_CODEC_LC3_CAP_BASE + 3)
+#define BT_CODEC_LC3_FRAME_LEN           (BT_CODEC_LC3_CAP_BASE + 3)
 
 /** @def BT_CODEC_LC3_FRAME_COUNT
  *  @brief LC3 frame count capability type
  */
-#define BT_CODEC_LC3_FRAME_COUNT	(BT_CODEC_LC3_CAP_BASE + 4)
+#define BT_CODEC_LC3_FRAME_COUNT         (BT_CODEC_LC3_CAP_BASE + 4)
 
 /* TODO: Remove base once LTV types are defined */
-#define BT_CODEC_LC3_CONFIG_BASE	0x01
+#define BT_CODEC_LC3_CONFIG_BASE         0x01
 
 struct bt_codec_lc3_frame_len {
 	uint16_t min;
@@ -132,44 +132,44 @@ struct bt_codec_lc3_frame_len {
 /** @def BT_CODEC_CONFIG_LC3_FREQ
  *  @brief LC3 Sample Frequency configuration type
  */
-#define BT_CODEC_CONFIG_LC3_FREQ	(BT_CODEC_LC3_CONFIG_BASE)
+#define BT_CODEC_CONFIG_LC3_FREQ         (BT_CODEC_LC3_CONFIG_BASE)
 /** @def BT_CODEC_CONFIG_LC3_FREQ_8KHZ
  *  @brief LC3 8 Khz Sample Frequency configuration
  */
-#define BT_CODEC_CONFIG_LC3_FREQ_8KHZ	0x01
+#define BT_CODEC_CONFIG_LC3_FREQ_8KHZ    0x01
 /** @def BT_CODEC_CONFIG_LC3_FREQ_11KHZ
  *  @brief LC3 11.025 Khz Sample Frequency configuration
  */
-#define BT_CODEC_CONFIG_LC3_FREQ_11KHZ	0x02
+#define BT_CODEC_CONFIG_LC3_FREQ_11KHZ   0x02
 /** @def BT_CODEC_CONFIG_LC3_FREQ_16KHZ
  *  @brief LC3 16 Khz Sample Frequency configuration
  */
-#define BT_CODEC_CONFIG_LC3_FREQ_16KHZ	0x03
+#define BT_CODEC_CONFIG_LC3_FREQ_16KHZ   0x03
 /** @def BT_CODEC_CONFIG_LC3_FREQ_22KHZ
  *  @brief LC3 22.05 Khz Sample Frequency configuration
  */
-#define BT_CODEC_CONFIG_LC3_FREQ_22KHZ	0x04
+#define BT_CODEC_CONFIG_LC3_FREQ_22KHZ   0x04
 /** @def BT_CODEC_CONFIG_LC3_FREQ_24KHZ
  *  @brief LC3 24 Khz Sample Frequency configuration
  */
-#define BT_CODEC_CONFIG_LC3_FREQ_24KHZ	0x05
+#define BT_CODEC_CONFIG_LC3_FREQ_24KHZ   0x05
 /** @def BT_CODEC_CONFIG_LC3_FREQ_32KHZ
  *  @brief LC3 32 Khz Sample Frequency configuration
  */
-#define BT_CODEC_CONFIG_LC3_FREQ_32KHZ	0x06
+#define BT_CODEC_CONFIG_LC3_FREQ_32KHZ   0x06
 /** @def BT_CODEC_CONFIG_LC3_FREQ_44KHZ
  *  @brief LC3 44.1 Khz Sample Frequency configuration
  */
-#define BT_CODEC_CONFIG_LC3_FREQ_44KHZ	0x07
+#define BT_CODEC_CONFIG_LC3_FREQ_44KHZ   0x07
 /** @def BT_CODEC_CONFIG_LC3_FREQ_48KHZ
  *  @brief LC3 48 Khz Sample Frequency configuration
  */
-#define BT_CODEC_CONFIG_LC3_FREQ_48KHZ	0x08
+#define BT_CODEC_CONFIG_LC3_FREQ_48KHZ   0x08
 
 /** @def BT_CODEC_CONFIG_LC3_DURATION
  *  @brief LC3 Frame Duration configuration type
  */
-#define BT_CODEC_CONFIG_LC3_DURATION	(BT_CODEC_LC3_CONFIG_BASE + 1)
+#define BT_CODEC_CONFIG_LC3_DURATION     (BT_CODEC_LC3_CONFIG_BASE + 1)
 /** @def BT_CODEC_CONFIG_LC3_DURATION_7_5
  *  @brief LC3 7.5 msec Frame Duration configuration
  */
@@ -177,17 +177,17 @@ struct bt_codec_lc3_frame_len {
 /** @def BT_CODEC_CONFIG_LC3_DURATION_10
  *  @brief LC3 10 msec Frame Duration configuration
  */
-#define BT_CODEC_CONFIG_LC3_DURATION_10	0x01
+#define BT_CODEC_CONFIG_LC3_DURATION_10  0x01
 
 /** @def BT_CODEC_CONFIG_LC3_CHAN_ALLOC
  *  @brief LC3 channel Allocation configuration type
  */
-#define BT_CODEC_CONFIG_LC3_CHAN_ALLOC	(BT_CODEC_LC3_CONFIG_BASE + 2)
+#define BT_CODEC_CONFIG_LC3_CHAN_ALLOC   (BT_CODEC_LC3_CONFIG_BASE + 2)
 
 /** @def BT_CODEC_CONFIG_LC3_FRAME_LEN
  *  @brief LC3 Frame Length configuration type
  */
-#define BT_CODEC_CONFIG_LC3_FRAME_LEN	(BT_CODEC_LC3_CONFIG_BASE + 3)
+#define BT_CODEC_CONFIG_LC3_FRAME_LEN    (BT_CODEC_LC3_CONFIG_BASE + 3)
 
 /** @def BT_CODEC_LC3_DATA
  *  @brief Helper to declare LC3 codec capability
