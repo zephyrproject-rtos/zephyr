@@ -632,12 +632,12 @@ int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
 		return -EINVAL;
 	}
 
-	if (msg->len > BT_MESH_TX_SDU_MAX) {
-		BT_ERR("Not enough segment buffers for length %u", msg->len);
+	if (msg->len > BT_MESH_TX_SDU_MAX - BT_MESH_MIC_SHORT) {
+		BT_ERR("Message too big: %u", msg->len);
 		return -EMSGSIZE;
 	}
 
-	if (net_buf_simple_tailroom(msg) < 4) {
+	if (net_buf_simple_tailroom(msg) < BT_MESH_MIC_SHORT) {
 		BT_ERR("Insufficient tailroom for Transport MIC");
 		return -EINVAL;
 	}
