@@ -41,3 +41,6 @@ else()
   zephyr_sources_ifdef(CONFIG_SOC_SERIES_STM32WLX clock_stm32l4_l5_wb_wl.c)
 endif()
 endif()
+
+zephyr_sources_ifdef(CONFIG_SOC_SERIES_AGILEX clock_agilex_ll.c)
+zephyr_sources_ifdef(CONFIG_SOC_SERIES_AGILEX clock_agilex.c)
