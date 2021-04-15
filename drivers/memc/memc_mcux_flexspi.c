@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(memc_flexspi, CONFIG_MEMC_LOG_LEVEL);
 struct memc_flexspi_config {
 	FLEXSPI_Type *base;
 	uint8_t *ahb_base;
+	bool xip;
 	bool ahb_bufferable;
 	bool ahb_cacheable;
 	bool ahb_prefetch;
@@ -28,6 +29,13 @@ struct memc_flexspi_config {
 struct memc_flexspi_data {
 	size_t size[kFLEXSPI_PortCount];
 };
+
+bool memc_flexspi_is_running_xip(const struct device *dev)
+{
+	const struct memc_flexspi_config *config = dev->config;
+
+	return config->xip;
+}
 
 int memc_flexspi_update_lut(const struct device *dev, uint32_t index,
 		const uint32_t *cmd, uint32_t count)
@@ -107,6 +115,12 @@ static int memc_flexspi_init(const struct device *dev)
 	const struct memc_flexspi_config *config = dev->config;
 	flexspi_config_t flexspi_config;
 
+	/* we should not configure the device we are running on */
+	if (memc_flexspi_is_running_xip(dev)) {
+		LOG_DBG("XIP active on %s, skipping init", dev->name);
+		return 0;
+	}
+
 	FLEXSPI_GetDefaultConfig(&flexspi_config);
 
 	flexspi_config.ahbConfig.enableAHBBufferable = config->ahb_bufferable;
@@ -122,10 +136,19 @@ static int memc_flexspi_init(const struct device *dev)
 	return 0;
 }
 
+#if defined(CONFIG_XIP) && defined(CONFIG_CODE_FLEXSPI)
+#define MEMC_FLEXSPI_CFG_XIP(node_id) DT_SAME_NODE(node_id, DT_NODELABEL(flexspi))
+#elif defined(CONFIG_XIP) && defined(CONFIG_CODE_FLEXSPI2)
+#define MEMC_FLEXSPI_CFG_XIP(node_id) DT_SAME_NODE(node_id, DT_NODELABEL(flexspi2))
+#else
+#define MEMC_FLEXSPI_CFG_XIP(node_id) false
+#endif
+
 #define MEMC_FLEXSPI(n)							\
 	static const struct memc_flexspi_config				\
 		memc_flexspi_config_##n = {				\
 		.base = (FLEXSPI_Type *) DT_INST_REG_ADDR(n),		\
+		.xip = MEMC_FLEXSPI_CFG_XIP(DT_DRV_INST(n)),		\
 		.ahb_base = (uint8_t *) DT_INST_REG_ADDR_BY_IDX(n, 1),	\
 		.ahb_bufferable = DT_INST_PROP(n, ahb_bufferable),	\
 		.ahb_cacheable = DT_INST_PROP(n, ahb_cacheable),	\

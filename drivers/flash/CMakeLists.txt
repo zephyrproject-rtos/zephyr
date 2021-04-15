@@ -21,6 +21,10 @@ zephyr_library_sources_ifdef(CONFIG_FLASH_STM32_QSPI flash_stm32_qspi.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_MCUX_FLEXSPI_NOR flash_mcux_flexspi_nor.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_ESP32 flash_esp32.c)
 
+if(CONFIG_FLASH_MCUX_FLEXSPI_XIP)
+  zephyr_code_relocate(flash_mcux_flexspi_nor.c ${CONFIG_FLASH_MCUX_FLEXSPI_XIP_MEM}_TEXT)
+endif()
+
 if(CONFIG_SOC_FLASH_STM32)
   if(CONFIG_SOC_SERIES_STM32H7X)
     zephyr_sources_ifdef(CONFIG_SOC_SERIES_STM32H7X flash_stm32h7x.c)

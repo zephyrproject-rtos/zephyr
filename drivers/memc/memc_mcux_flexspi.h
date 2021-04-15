@@ -8,6 +8,8 @@
 #include <sys/types.h>
 #include <fsl_flexspi.h>
 
+bool memc_flexspi_is_running_xip(const struct device *dev);
+
 int memc_flexspi_update_lut(const struct device *dev, uint32_t index,
 		const uint32_t *cmd, uint32_t count);
 
