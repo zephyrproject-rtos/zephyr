@@ -7,51 +7,51 @@
  */
 
 /* Response Status Code */
-#define BT_ASCS_RSP_SUCCESS		0x00
-#define BT_ASCS_RSP_NOT_SUPPORTED	0x01
-#define BT_ASCS_RSP_TRUNCATED		0x02
-#define BT_ASCS_RSP_INVALID_ASE		0x03
-#define BT_ASCS_RSP_INVALID_ASE_STATE	0x04
-#define BT_ASCS_RSP_INVALID_DIR		0x05
-#define BT_ASCS_RSP_CAP_UNSUPPORTED	0x06
-#define BT_ASCS_RSP_CONF_UNSUPPORTED	0x07
-#define BT_ASCS_RSP_CONF_REJECTED	0x08
-#define BT_ASCS_RSP_CONF_INVALID	0x09
+#define BT_ASCS_RSP_SUCCESS              0x00
+#define BT_ASCS_RSP_NOT_SUPPORTED        0x01
+#define BT_ASCS_RSP_TRUNCATED            0x02
+#define BT_ASCS_RSP_INVALID_ASE          0x03
+#define BT_ASCS_RSP_INVALID_ASE_STATE    0x04
+#define BT_ASCS_RSP_INVALID_DIR          0x05
+#define BT_ASCS_RSP_CAP_UNSUPPORTED      0x06
+#define BT_ASCS_RSP_CONF_UNSUPPORTED     0x07
+#define BT_ASCS_RSP_CONF_REJECTED        0x08
+#define BT_ASCS_RSP_CONF_INVALID         0x09
 #define BT_ASCS_RSP_METADATA_UNSUPPORTED 0x0a
-#define BT_ASCS_RSP_METADATA_REJECTED	0x0b
-#define BT_ASCS_RSP_METADATA_INVALID	0x0c
-#define BT_ASCS_RSP_NO_MEM		0x0d
-#define BT_ASCS_RSP_UNSPECIFIED		0x0e
+#define BT_ASCS_RSP_METADATA_REJECTED    0x0b
+#define BT_ASCS_RSP_METADATA_INVALID     0x0c
+#define BT_ASCS_RSP_NO_MEM               0x0d
+#define BT_ASCS_RSP_UNSPECIFIED          0x0e
 
 /* Response Reasons */
-#define BT_ASCS_REASON_NONE		0x00
-#define BT_ASCS_REASON_CODEC		0x01
-#define BT_ASCS_REASON_CODEC_DATA	0x02
-#define BT_ASCS_REASON_INTERVAL		0x03
-#define BT_ASCS_REASON_FRAMING		0x04
-#define BT_ASCS_REASON_PHY		0x05
-#define BT_ASCS_REASON_SDU		0x06
-#define BT_ASCS_REASON_RTN		0x07
-#define BT_ASCS_REASON_LATENCY		0x08
-#define BT_ASCS_REASON_PD		0x09
-#define BT_ASCS_REASON_CIS		0x0a
+#define BT_ASCS_REASON_NONE              0x00
+#define BT_ASCS_REASON_CODEC             0x01
+#define BT_ASCS_REASON_CODEC_DATA        0x02
+#define BT_ASCS_REASON_INTERVAL          0x03
+#define BT_ASCS_REASON_FRAMING           0x04
+#define BT_ASCS_REASON_PHY               0x05
+#define BT_ASCS_REASON_SDU               0x06
+#define BT_ASCS_REASON_RTN               0x07
+#define BT_ASCS_REASON_LATENCY           0x08
+#define BT_ASCS_REASON_PD                0x09
+#define BT_ASCS_REASON_CIS               0x0a
 
 /* Transport QoS Packing */
-#define BT_ASCS_QOS_PACKING_SEQ		0x00
-#define BT_ASCS_QOS_PACKING_INT		0x01
+#define BT_ASCS_QOS_PACKING_SEQ          0x00
+#define BT_ASCS_QOS_PACKING_INT          0x01
 
 /* Transport QoS Framing */
-#define BT_ASCS_QOS_FRAMING_UNFRAMED	0x00
-#define BT_ASCS_QOS_FRAMING_FRAMED	0x01
+#define BT_ASCS_QOS_FRAMING_UNFRAMED     0x00
+#define BT_ASCS_QOS_FRAMING_FRAMED       0x01
 
 /* ASE characteristic states */
-#define BT_ASCS_ASE_STATE_IDLE		0x00
-#define BT_ASCS_ASE_STATE_CONFIG	0x01
-#define BT_ASCS_ASE_STATE_QOS		0x02
-#define BT_ASCS_ASE_STATE_ENABLING	0x03
-#define BT_ASCS_ASE_STATE_STREAMING	0x04
-#define BT_ASCS_ASE_STATE_DISABLING	0x05
-#define BT_ASCS_ASE_STATE_RELEASING	0x06
+#define BT_ASCS_ASE_STATE_IDLE           0x00
+#define BT_ASCS_ASE_STATE_CONFIG         0x01
+#define BT_ASCS_ASE_STATE_QOS            0x02
+#define BT_ASCS_ASE_STATE_ENABLING       0x03
+#define BT_ASCS_ASE_STATE_STREAMING      0x04
+#define BT_ASCS_ASE_STATE_DISABLING      0x05
+#define BT_ASCS_ASE_STATE_RELEASING      0x06
 
 /* Format of the ASE characteristic, defined in Table 4.6 */
 struct bt_ascs_ase_status {
@@ -111,106 +111,147 @@ struct bt_ascs_ase_status_enable {
 
 /* ASE Control Point Protocol */
 struct bt_ascs_ase_cp {
-	uint8_t  op;			/* Request/Notification opcode */
+	/* Request/Notification opcode */
+	uint8_t  op;
 	uint8_t  pdu[0];
 } __packed;
 
 /* Opcodes */
-#define BT_ASCS_CONFIG_OP		0x01
+#define BT_ASCS_CONFIG_OP                0x01
 
-#define BT_ASCS_CONFIG_LATENCY_LOW	0x01
-#define BT_ASCS_CONFIG_LATENCY_MEDIUM	0x02
-#define BT_ASCS_CONFIG_LATENCY_HIGH	0x03
+#define BT_ASCS_CONFIG_LATENCY_LOW       0x01
+#define BT_ASCS_CONFIG_LATENCY_MEDIUM    0x02
+#define BT_ASCS_CONFIG_LATENCY_HIGH      0x03
 
-#define BT_ASCS_CONFIG_PHY_LE_1M	0x01
-#define BT_ASCS_CONFIG_PHY_LE_2M	0x02
-#define BT_ASCS_CONFIG_PHY_LE_CODED	0x03
+#define BT_ASCS_CONFIG_PHY_LE_1M         0x01
+#define BT_ASCS_CONFIG_PHY_LE_2M         0x02
+#define BT_ASCS_CONFIG_PHY_LE_CODED      0x03
 
 struct bt_ascs_config {
-	uint8_t  ase;			/* ASE ID */
-	uint8_t  latency;		/* Target latency */
-	uint8_t  phy;			/* Target PHY */
-	struct bt_ascs_codec codec;	/* Codec ID */
-	uint8_t  cc_len;		/* Codec Specific Config Length */
+	/* ASE ID */
+	uint8_t  ase;
+	/* Target latency */
+	uint8_t  latency;
+	/* Target PHY */
+	uint8_t  phy;
+	/* Codec ID */
+	struct bt_ascs_codec codec;
+	/* Codec Specific Config Length */
+	uint8_t  cc_len;
 	/* LTV-formatted Codec-Specific Configuration */
 	struct bt_ascs_codec_config cc[0];
 } __packed;
 
 struct bt_ascs_config_op {
-	uint8_t  num_ases;			/* Num of ASEs */
+	/* Number of ASEs */
+	uint8_t  num_ases;
+	/* Config Parameters */
 	struct bt_ascs_config cfg[0];
 } __packed;
 
-#define BT_ASCS_QOS_OP			0x02
+#define BT_ASCS_QOS_OP                   0x02
 struct bt_ascs_qos {
-	uint8_t  ase;			/* ASE ID */
-	uint8_t  cig;			/* CIG ID*/
-	uint8_t  cis;			/* CIG ID*/
-	uint8_t  interval[3];		/* Frame interval */
-	uint8_t  framing;		/* Frame framing */
-	uint8_t  phy;			/* PHY */
-	uint16_t sdu;			/* Maximum SDU Size */
-	uint8_t  rtn;			/* Retransmission Effort */
-	uint16_t latency;		/* Transport Latency */
-	uint8_t  pd[3];			/* Presentation Delay */
+	/* ASE ID */
+	uint8_t  ase;
+	/* CIG ID*/
+	uint8_t  cig;
+	/* CIG ID*/
+	uint8_t  cis;
+	/* Frame interval */
+	uint8_t  interval[3];
+	/* Frame framing */
+	uint8_t  framing;
+	/* PHY */
+	uint8_t  phy;
+	/* Maximum SDU Size */
+	uint16_t sdu;
+	/* Retransmission Effort */
+	uint8_t  rtn;
+	/* Transport Latency */
+	uint16_t latency;
+	/* Presentation Delay */
+	uint8_t  pd[3];
 } __packed;
 
 struct bt_ascs_qos_op {
-	uint8_t  num_ases;		/* Num of ASEs */
-	struct bt_ascs_qos qos[0];	/* QoS Parameters */
+	/* Number of ASEs */
+	uint8_t  num_ases;
+	/* QoS Parameters */
+	struct bt_ascs_qos qos[0];
 } __packed;
 
-#define BT_ASCS_ENABLE_OP		0x03
+#define BT_ASCS_ENABLE_OP                0x03
 struct bt_ascs_metadata {
-	uint8_t  ase;			/* ASE ID */
-	uint8_t  len;			/* Metadata length */
-	uint8_t  data[0];		/* LTV-formatted Metadata */
+	/* ASE ID */
+	uint8_t  ase;
+	/* Metadata length */
+	uint8_t  len;
+	/* LTV-formatted Metadata */
+	uint8_t  data[0];
 } __packed;
 
 struct bt_ascs_enable_op {
-	uint8_t  num_ases;			/* Num of ASEs */
-	struct bt_ascs_metadata metadata[0];	/* Metadata */
+	/* Number of ASEs */
+	uint8_t  num_ases;
+	/* Metadata */
+	struct bt_ascs_metadata metadata[0];
 } __packed;
 
-#define BT_ASCS_START_OP		0x04
+#define BT_ASCS_START_OP                 0x04
 struct bt_ascs_start_op {
-	uint8_t  num_ases;		/* Num of ASEs */
-	uint8_t  ase[0];		/* Ase IDs */
+	/* Number of ASEs */
+	uint8_t  num_ases;
+	/* ASE IDs */
+	uint8_t  ase[0];
 } __packed;
 
-#define BT_ASCS_DISABLE_OP		0x05
+#define BT_ASCS_DISABLE_OP               0x05
 struct bt_ascs_disable_op {
-	uint8_t  num_ases;		/* Num of ASEs */
-	uint8_t  ase[0];		/* Ase IDs */
+	/* Number of ASEs */
+	uint8_t  num_ases;
+	/* ASE IDs */
+	uint8_t  ase[0];
 } __packed;
 
-#define BT_ASCS_STOP_OP			0x06
+#define BT_ASCS_STOP_OP                  0x06
 struct bt_ascs_stop_op {
-	uint8_t  num_ases;		/* Num of ASEs */
-	uint8_t  ase[0];		/* Ase IDs */
+	/* Number of ASEs */
+	uint8_t  num_ases;
+	/* ASE IDs */
+	uint8_t  ase[0];
 } __packed;
 
-#define BT_ASCS_METADATA_OP		0x07
+#define BT_ASCS_METADATA_OP              0x07
 struct bt_ascs_metadata_op {
-	uint8_t  num_ases;			/* Num of ASEs */
-	struct bt_ascs_metadata metadata[0];	/* Metadata */
+	/* Number of ASEs */
+	uint8_t  num_ases;
+	/* Metadata */
+	struct bt_ascs_metadata metadata[0];
 } __packed;
 
-#define BT_ASCS_RELEASE_OP		0x08
+#define BT_ASCS_RELEASE_OP              0x08
 struct bt_ascs_release_op {
-	uint8_t  num_ases;		/* Num of ASEs */
-	uint8_t  ase[0];		/* Ase IDs */
+	/* Number of ASEs */
+	uint8_t  num_ases;
+	/* Ase IDs */
+	uint8_t  ase[0];
 } __packed;
 
 struct bt_ascs_cp_ase_rsp {
+	/* ASE ID */
 	uint8_t  id;
+	/* Response code */
 	uint8_t  code;
+	/* Response reason */
 	uint8_t  reason;
 } __packed;
 
 struct bt_ascs_cp_rsp {
+	/* Opcode */
 	uint8_t  op;
+	/* Number of ASEs */
 	uint8_t  num_ase;
+	/* ASE response */
 	struct bt_ascs_cp_ase_rsp ase_rsp[0];
 } __packed;
 
