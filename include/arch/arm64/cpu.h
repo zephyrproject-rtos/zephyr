@@ -207,4 +207,13 @@
 #define L1_CACHE_BYTES		BIT(L1_CACHE_SHIFT)
 #define ARM64_CPU_INIT_SIZE	L1_CACHE_BYTES
 
+#ifndef _ASMLANGUAGE
+typedef struct {
+	void *sp;
+	uint64_t mpid;
+	arch_cpustart_t fn;
+	void *arg;
+} __aligned(L1_CACHE_BYTES) arm64_cpu_init_data_t;
+#endif
+
 #endif /* ZEPHYR_INCLUDE_ARCH_ARM64_CPU_H_ */

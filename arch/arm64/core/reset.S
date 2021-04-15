@@ -7,6 +7,7 @@
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <arch/cpu.h>
+#include <offsets.h>
 #include "vector_table.h"
 #include "macro_priv.inc"
 
@@ -30,6 +31,18 @@ SECTION_FUNC(TEXT,z_arm64_el2_plat_prep_c)
 WTEXT(z_arm64_el1_plat_prep_c)
 SECTION_FUNC(TEXT,z_arm64_el1_plat_prep_c)
 	ret
+
+#if CONFIG_MP_NUM_CPUS > 1
+/*
+ * Global variable secondary_core_boot:
+ * 0: is master Core booting
+ * 1: is secondary Core booting
+ */
+SECTION_VAR(DATA,secondary_core_boot)
+	.align 8
+	.long 0
+	.long 0
+#endif
 
 /*
  * Set the minimum necessary to safely call C code
@@ -76,7 +89,8 @@ out:
 	msr	SPSel, #0
 
 #if CONFIG_MP_NUM_CPUS > 1
-	get_cpu_id x0
+	adr	x0, secondary_core_boot
+	ldr	x0, [x0]
 	cbnz    x0, L_secondary_stack
 #endif
 
@@ -89,16 +103,33 @@ out:
 
 #if CONFIG_MP_NUM_CPUS > 1
 L_secondary_stack:
-	get_cpu_id x1
+	get_cpu_id x3
 	adr	x0, arm64_cpu_init
 	mov	x2, #ARM64_CPU_INIT_SIZE
-	madd	x0, x1, x2, x0
-	ldr	x0, [x0]
-	cbz	x0, L_enable_secondary
+	/* Loop and find its table */
+	mov	x1, xzr
+4:
+	madd	x4, x1, x2, x0
+	add	x4, x4, #(__arm64_cpu_init_data_t_mpid_OFFSET)
+	ldr	x4, [x4]
+	cmp	x4, x3
+	dmb	ld
+	b.eq	5f
+	add	x1, x1, #1
+	cmp	x1, #CONFIG_MP_NUM_CPUS
+	b.lt	4b
+	/* can't find related table */
+	b	L_enable_secondary
+5:
+	/* found related table */
+	madd	x4, x1, x2, x0
+	/* Get SP address */
+	add     x4, x4, #(__arm64_cpu_init_data_t_sp_OFFSET)
+	ldr	x4, [x4]
+	cbz	x4, L_enable_secondary
 	dmb	ld
 
-	mov	sp, x0
-
+	mov	sp, x4
 	ret	x23
 #endif
 
@@ -156,8 +187,17 @@ switch_el:
 	isb
 
 #if CONFIG_MP_NUM_CPUS > 1
-	get_cpu_id x0
+	adr	x0, secondary_core_boot
+	ldr	x0, [x0]
 	cbnz    x0, L_enable_secondary
+
+	/*
+	 * Is booting from master Core, change it to be "1" for all
+	 * secondary core boot.
+	 */
+	adr	x0, secondary_core_boot
+	mov	x1, #1
+	str	x1, [x0]
 #endif
 
 	b	z_arm64_prep_c

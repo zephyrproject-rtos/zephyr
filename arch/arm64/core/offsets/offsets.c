@@ -29,6 +29,7 @@
 #include <kernel.h>
 #include <kernel_arch_data.h>
 #include <kernel_offsets.h>
+#include <arch/cpu.h>
 
 #ifdef CONFIG_USERSPACE
 GEN_OFFSET_SYM(_thread_arch_t, priv_stack_start);
@@ -67,6 +68,9 @@ GEN_NAMED_OFFSET_SYM(arm_smccc_res_t, a4, a4_a5);
 GEN_NAMED_OFFSET_SYM(arm_smccc_res_t, a6, a6_a7);
 
 #endif /* CONFIG_HAS_ARM_SMCCC */
+
+GEN_OFFSET_SYM(arm64_cpu_init_data_t, sp);
+GEN_OFFSET_SYM(arm64_cpu_init_data_t, mpid);
 
 GEN_ABS_SYM_END
 
