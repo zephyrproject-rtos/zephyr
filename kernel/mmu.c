@@ -254,6 +254,12 @@ static void free_page_frame_list_init(void)
 	sys_slist_init(&free_page_frame_list);
 }
 
+static void page_frame_free_locked(struct z_page_frame *pf)
+{
+	pf->flags = 0;
+	free_page_frame_list_put(pf);
+}
+
 /*
  * Memory Mapping
  */
@@ -432,6 +438,89 @@ void *k_mem_map(size_t size, uint32_t flags)
 out:
 	k_spin_unlock(&z_mm_lock, key);
 	return dst;
+}
+
+void k_mem_unmap(void *addr, size_t size)
+{
+	uintptr_t phys;
+	uint8_t *pos;
+	struct z_page_frame *pf;
+	k_spinlock_key_t key;
+	int ret;
+
+	/* Need space for the "before" guard page */
+	__ASSERT_NO_MSG(POINTER_TO_UINT(addr) >= CONFIG_MMU_PAGE_SIZE);
+
+	/* Make sure address range is still valid after accounting
+	 * for two guard pages.
+	 */
+	pos = (uint8_t *)addr - CONFIG_MMU_PAGE_SIZE;
+	z_mem_assert_virtual_region(pos, size + (CONFIG_MMU_PAGE_SIZE * 2));
+
+	key = k_spin_lock(&z_mm_lock);
+
+	/* Check if both guard pages are unmapped.
+	 * Bail if not, as this is probably a region not mapped
+	 * using k_mem_map().
+	 */
+	pos = addr;
+	ret = arch_page_phys_get(pos - CONFIG_MMU_PAGE_SIZE, NULL);
+	if (ret == 0) {
+		__ASSERT(ret == 0,
+			 "%s: cannot find preceding guard page for (%p, %zu)",
+			 __func__, addr, size);
+		goto out;
+	}
+
+	ret = arch_page_phys_get(pos + size, NULL);
+	if (ret == 0) {
+		__ASSERT(ret == 0,
+			 "%s: cannot find succeeding guard page for (%p, %zu)",
+			 __func__, addr, size);
+		goto out;
+	}
+
+	VIRT_FOREACH(addr, size, pos) {
+		ret = arch_page_phys_get(pos, &phys);
+
+		__ASSERT(ret == 0,
+			 "%s: cannot unmap an unmapped address %p",
+			 __func__, pos);
+		if (ret != 0) {
+			/* Found an address not mapped. Do not continue. */
+			goto out;
+		}
+
+		__ASSERT(z_is_page_frame(phys),
+			 "%s: 0x%lx is not a page frame", __func__, phys);
+		if (!z_is_page_frame(phys)) {
+			/* Physical address has no corresponding page frame
+			 * description in the page frame array.
+			 * This should not happen. Do not continue.
+			 */
+			goto out;
+		}
+
+		/* Grab the corresponding page frame from physical address */
+		pf = z_phys_to_page_frame(phys);
+
+		__ASSERT(z_page_frame_is_mapped(pf),
+			 "%s: 0x%lx is not a mapped page frame", __func__, phys);
+		if (!z_page_frame_is_mapped(pf)) {
+			/* Page frame is not marked mapped.
+			 * This should not happen. Do not continue.
+			 */
+			goto out;
+		}
+
+		arch_mem_unmap(pos, CONFIG_MMU_PAGE_SIZE);
+
+		/* Put the page frame back into free list */
+		page_frame_free_locked(pf);
+	}
+
+out:
+	k_spin_unlock(&z_mm_lock, key);
 }
 
 size_t k_mem_free_get(void)
@@ -688,12 +777,6 @@ static void virt_region_foreach(void *addr, size_t size,
 	for (size_t offset = 0; offset < size; offset += CONFIG_MMU_PAGE_SIZE) {
 		func((uint8_t *)addr + offset);
 	}
-}
-
-static void page_frame_free_locked(struct z_page_frame *pf)
-{
-	pf->flags = 0;
-	free_page_frame_list_put(pf);
 }
 
 /*
