@@ -16,12 +16,9 @@
 #include "common.h"
 
 struct bt_le_ext_adv *g_adv;
-struct bt_le_adv_param g_param =
-		BT_LE_ADV_PARAM_INIT(BT_LE_ADV_OPT_EXT_ADV |
-				     BT_LE_ADV_OPT_NOTIFY_SCAN_REQ,
-				     BT_GAP_ADV_FAST_INT_MIN_2,
-				     BT_GAP_ADV_FAST_INT_MAX_2,
-				     NULL);
+struct bt_le_adv_param g_param = BT_LE_ADV_PARAM_INIT(
+	(BT_LE_ADV_OPT_EXT_ADV | BT_LE_ADV_OPT_NOTIFY_SCAN_REQ),
+	BT_GAP_ADV_FAST_INT_MIN_2, BT_GAP_ADV_FAST_INT_MAX_2, NULL);
 
 /* Example cte length value in allowed range, no particular meaning */
 uint8_t g_cte_len = 0x14U;
@@ -36,15 +33,6 @@ static struct bt_le_ext_adv_start_param ext_adv_start_param = {
 	.timeout = 0,
 	.num_events = 0,
 };
-
-void common_setup(void)
-{
-	int err;
-
-	/* Initialize bluetooth subsystem */
-	err = bt_enable(NULL);
-	zassert_equal(err, 0, "Bluetooth subsystem initialization failed");
-}
 
 void common_create_adv_set(void)
 {
@@ -64,7 +52,7 @@ void common_delete_adv_set(void)
 
 void common_set_cl_cte_tx_params(void)
 {
-	uint8_t ant_ids[] = { 0x1, 0x2, 0x3, 0x4, 0x5};
+	uint8_t ant_ids[] = { 0x1, 0x2, 0x3, 0x4, 0x5 };
 
 	struct bt_hci_cp_le_set_cl_cte_tx_params *cp;
 	uint8_t *dest_ant_ids;
@@ -86,8 +74,8 @@ void common_set_cl_cte_tx_params(void)
 
 	cp->switch_pattern_len = ARRAY_SIZE(ant_ids);
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_CL_CTE_TX_PARAMS,
-				   buf, NULL);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_CL_CTE_TX_PARAMS, buf,
+				   NULL);
 	zassert_equal(err, 0, "Failed to  set CTE parameters");
 }
 
