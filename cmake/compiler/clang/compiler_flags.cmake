@@ -13,6 +13,9 @@ check_set_compiler_property(PROPERTY hosted)
 # clang flags for coverage generation
 set_property(TARGET compiler PROPERTY coverage --coverage -fno-inline)
 
+# clang flag for colourful diagnostic messages
+set_compiler_property(PROPERTY diagnostic -fcolor-diagnostics)
+
 #######################################################
 # This section covers flags related to warning levels #
 #######################################################
