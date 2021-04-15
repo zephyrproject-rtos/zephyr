@@ -337,6 +337,9 @@ static int spi_nor_wait_until_ready(const struct device *dev)
 /*
  * @brief Read content from the SFDP hierarchy
  *
+ * @note The device must be externally acquired before invoking this
+ * function.
+ *
  * @param dev Device struct
  * @param addr The address to send
  * @param data The buffer to store or read the value
@@ -601,6 +604,9 @@ static int spi_nor_erase(const struct device *dev, off_t addr, size_t size)
 	return ret;
 }
 
+/* @note The device must be externally acquired before invoking this
+ * function.
+ */
 static int spi_nor_write_protection_set(const struct device *dev,
 					bool write_protect)
 {
