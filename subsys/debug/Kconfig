@@ -222,6 +222,7 @@ config ASSERT_LEVEL
 config SPIN_VALIDATE
 	bool "Enable spinlock validation"
 	depends on ASSERT
+	depends on MULTITHREADING
 	depends on MP_NUM_CPUS <= 4
 	default y if !FLASH || FLASH_SIZE > 32
 	help
