@@ -3650,14 +3650,15 @@ class TestSuite(DisablePyTestCollectionMixin):
                                 "arch": instance.platform.arch,
                                 "platform": p,
                                 }
+                    if ram_size:
+                        testcase["ram_size"] = ram_size
+                    if rom_size:
+                        testcase["rom_size"] = rom_size
+
                     if instance.results[k] in ["PASS"]:
                         testcase["status"] = "passed"
                         if instance.handler:
                             testcase["execution_time"] =  handler_time
-                        if ram_size:
-                            testcase["ram_size"] = ram_size
-                        if rom_size:
-                            testcase["rom_size"] = rom_size
 
                     elif instance.results[k] in ['FAIL', 'BLOCK'] or instance.status in ["error", "failed", "timeout"]:
                         testcase["status"] = "failed"
