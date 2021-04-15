@@ -1456,6 +1456,37 @@ int lwm2m_engine_create_obj_inst(char *pathstr)
 	return 0;
 }
 
+int lwm2m_engine_delete_obj_inst(char *pathstr)
+{
+	struct lwm2m_obj_path path;
+	int ret = 0;
+
+	LOG_DBG("path: %s", log_strdup(pathstr));
+
+	/* translate path -> path_obj */
+	ret = string_to_path(pathstr, &path, '/');
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (path.level != 2U) {
+		LOG_ERR("path must have 2 parts");
+		return -EINVAL;
+	}
+
+	ret = lwm2m_delete_obj_inst(path.obj_id, path.obj_inst_id);
+	if (ret < 0) {
+		return ret;
+	}
+
+#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT)
+	engine_trigger_update(true);
+#endif
+
+	return 0;
+}
+
+
 int lwm2m_engine_set_res_data(char *pathstr, void *data_ptr, uint16_t data_len,
 			      uint8_t data_flags)
 {
@@ -3116,13 +3147,17 @@ static int lwm2m_delete_handler(struct lwm2m_message *msg)
 	}
 
 	ret = lwm2m_delete_obj_inst(msg->path.obj_id, msg->path.obj_inst_id);
+	if (ret < 0) {
+		return ret;
+	}
+
 #if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT)
-	if (!ret) {
+	if (!msg->ctx->bootstrap_mode) {
 		engine_trigger_update(true);
 	}
 #endif
 
-	return ret;
+	return 0;
 }
 
 static int do_read_op(struct lwm2m_message *msg, uint16_t content_format)

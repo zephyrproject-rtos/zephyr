@@ -42,6 +42,8 @@ API Changes
 * Align error handling of :c:func:bt_l2cap_chan_send and
   :c:func:bt_iso_chan_send so when an error occur the buffer is not unref.
 
+* Added c:func:`lwm2m_engine_delete_obj_inst` function to the LwM2M library API.
+
 Deprecated in this release
 
 * :c:macro:`DT_CLOCKS_LABEL_BY_IDX`, :c:macro:`DT_CLOCKS_LABEL_BY_NAME`,
