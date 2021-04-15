@@ -211,7 +211,7 @@ zephyr_compile_options($<TARGET_PROPERTY:compiler,no_common>)
 # @Intent: Set compiler specific flag for production of debug information
 zephyr_compile_options($<TARGET_PROPERTY:compiler,debug>)
 
-if($ENV{ZEPHYR_BUILD_COLOUR_DIAGNOSTIC})
+if(CONFIG_COMPILER_COLOR_DIAGNOSTICS)
 # @Intent: Set compiler specific flag for diagnostic messages
 zephyr_compile_options($<TARGET_PROPERTY:compiler,diagnostic>)
 endif()
