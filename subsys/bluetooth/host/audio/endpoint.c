@@ -21,6 +21,9 @@
 #include "endpoint.h"
 #include "chan.h"
 
+/* Temporary compile guard - disable until upstream iso changes are sorted out */
+#if defined(CONFIG_BT_BAP)
+
 #if defined(CONFIG_BT_BAP)
 #define CACHE_SIZE CONFIG_BT_BAP_ASE_COUNT
 #else
@@ -1205,3 +1208,5 @@ int bt_audio_ep_send(struct bt_conn *conn, struct bt_audio_ep *ep,
 	return bt_gatt_write_without_response(conn, ep->cp_handle,
 					      buf->data, buf->len, false);
 }
+
+#endif /* CONFIG_BT_BAP */
