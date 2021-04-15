@@ -52,7 +52,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 static void ticker_start_op_cb(uint32_t status, void *param);
 static void ticker_update_op_cb(uint32_t status, void *param);
 static void ticker_stop_op_cb(uint32_t status, void *param);
-static void sync_lost(void *param);
+static void disabled_cb(void *param);
 
 static memq_link_t link_lll_prepare;
 static struct mayfly mfy_lll_prepare = {0, 0, &link_lll_prepare, NULL, NULL};
@@ -528,8 +528,10 @@ static inline struct ll_sync_iso_set *sync_iso_acquire(void)
 
 static void timeout_cleanup(struct ll_sync_iso_set *sync_iso)
 {
-	uint16_t handle = ull_sync_iso_handle_get(sync_iso);
+	uint16_t handle;
 	uint32_t ret;
+
+	handle = ull_sync_iso_handle_get(sync_iso);
 
 	/* Stop Periodic Sync Ticker */
 	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
@@ -544,13 +546,14 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		      void *param)
 {
 	static struct lll_prepare_param p;
-	struct ll_sync_iso_set *sync_iso = param;
+	struct ll_sync_iso_set *sync_iso;
 	struct lll_sync_iso *lll;
 	uint32_t ret;
 	uint8_t ref;
 
 	DEBUG_RADIO_PREPARE_O(1);
 
+	sync_iso = param;
 	lll = &sync_iso->lll;
 
 	/* Increment prepare reference count */
@@ -588,23 +591,50 @@ static void ticker_update_op_cb(uint32_t status, void *param)
 
 static void ticker_stop_op_cb(uint32_t status, void *param)
 {
-	uint32_t retval;
 	static memq_link_t link;
-	static struct mayfly mfy = {0, 0, &link, NULL, sync_lost};
+	static struct mayfly mfy = {0, 0, &link, NULL, NULL};
+	struct ll_sync_iso_set *sync_iso;
+	struct ull_hdr *hdr;
 
 	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
 
-	mfy.param = param;
+	/* NOTE: We are in ULL_LOW which can be pre-empted by ULL_HIGH.
+	 *       As we are in the callback after successful stop of the
+	 *       ticker, the ULL reference count will not be modified
+	 *       further hence it is safe to check and act on either the need
+	 *       to call lll_disable or not.
+	 */
+	sync_iso = param;
+	hdr = &sync_iso->ull;
+	mfy.param = &sync_iso->lll;
+	if (ull_ref_get(hdr)) {
+		uint32_t ret;
 
-	retval = mayfly_enqueue(TICKER_USER_ID_ULL_LOW, TICKER_USER_ID_ULL_HIGH,
-				0, &mfy);
-	LL_ASSERT(!retval);
+		LL_ASSERT(!hdr->disabled_cb);
+		hdr->disabled_param = mfy.param;
+		hdr->disabled_cb = disabled_cb;
+
+		mfy.fp = lll_disable;
+		ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW,
+				     TICKER_USER_ID_LLL, 0, &mfy);
+		LL_ASSERT(!ret);
+	} else {
+		uint32_t ret;
+
+		mfy.fp = disabled_cb;
+		ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW,
+				     TICKER_USER_ID_ULL_HIGH, 0, &mfy);
+		LL_ASSERT(!ret);
+	}
 }
 
-static void sync_lost(void *param)
+static void disabled_cb(void *param)
 {
-	struct ll_sync_iso_set *sync_iso = param;
+	struct ll_sync_iso_set *sync_iso;
 	struct node_rx_pdu *rx;
+
+	/* Get reference to ULL context */
+	sync_iso = HDR_LLL2ULL(param);
 
 	/* Generate BIG sync lost */
 	rx = (void *)&sync_iso->node_rx_lost;
