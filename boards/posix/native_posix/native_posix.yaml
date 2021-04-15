@@ -9,5 +9,6 @@ supported:
   - eeprom
   - netif:eth
   - usb_device
+  - adc
 testing:
   default: true
