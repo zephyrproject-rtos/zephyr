@@ -625,6 +625,10 @@ int stm32_clock_control_init(const struct device *dev)
 
 #endif /* CONFIG_CLOCK_STM32_SYSCLK_SRC_... */
 
+#ifdef CONFIG_SOC_SERIES_STM32G0X
+	LL_FLASH_SetLatency(LL_FLASH_LATENCY_1);
+#endif /* CONFIG_SOC_SERIES_STM32G0X */
+
 	/* configure MCO1/MCO2 based on Kconfig */
 	stm32_clock_control_mco_init();
 
