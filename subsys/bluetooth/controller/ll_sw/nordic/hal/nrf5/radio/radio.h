@@ -82,6 +82,8 @@ uint32_t radio_tmr_aa_get(void);
 void radio_tmr_aa_save(uint32_t aa);
 uint32_t radio_tmr_aa_restore(void);
 uint32_t radio_tmr_ready_get(void);
+void radio_tmr_ready_save(uint32_t ready);
+uint32_t radio_tmr_ready_restore(void);
 void radio_tmr_end_capture(void);
 uint32_t radio_tmr_end_get(void);
 uint32_t radio_tmr_tifs_base_get(void);
