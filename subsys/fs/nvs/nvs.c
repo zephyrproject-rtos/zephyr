@@ -486,6 +486,13 @@ static int nvs_gc(struct nvs_fs *fs)
 	if (!nvs_ate_crc8_check(&close_ate) &&
 	    (close_ate.offset <= stop_addr) &&
 	    !(close_ate.offset % ate_size)) {
+		if (close_ate.offset == stop_addr) {
+			/* close_ate.offset == stop_addr is results of closing
+			 * a sector which contain only corrupted written data.
+			 * It is possible corner case
+			 */
+			goto clean_up;
+		}
 		gc_addr &= ADDR_SECT_MASK;
 		gc_addr += close_ate.offset;
 	} else {
@@ -495,8 +502,6 @@ static int nvs_gc(struct nvs_fs *fs)
 		 * - If the last data ate offset is greather that allowed
 		 * assume that somehow sector was closed despite it
 		 * doesn't contain any data.
-		 * @todo consider close_ate.offset == stop_addr as designation
-		 * of any empty-closed sector
 		 *
 		 * Consider this sector as to be recovered.
 		 */
@@ -559,7 +564,7 @@ static int nvs_gc(struct nvs_fs *fs)
 			}
 		}
 	} while (gc_prev_addr != stop_addr);
-
+clean_up:
 	rc = nvs_flash_erase_sector(fs, sec_addr);
 	if (rc) {
 		return rc;
