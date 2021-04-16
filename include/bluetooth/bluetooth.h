@@ -389,6 +389,9 @@ enum {
 	 *  advertising data.
 	 *  If the GAP device name does not fit into advertising data it will be
 	 *  converted to a shortened name if possible.
+	 *  @ref BT_LE_ADV_OPT_FORCE_NAME_IN_AD can be used to force the device
+	 *  name to appear in the advertising data of an advert with scan
+	 *  response data.
 	 *
 	 *  The application can set the device name itself by including the
 	 *  following in the advertising data.
@@ -513,6 +516,16 @@ enum {
 
 	/** Disable advertising on channel index 39. */
 	BT_LE_ADV_OPT_DISABLE_CHAN_39 = BIT(17),
+
+	/**
+	 * @brief Put GAP device name into advert data
+	 *
+	 * Will place the GAP device name into the advertising data rather
+	 * than the scan response data.
+	 *
+	 * @note Requires @ref BT_LE_ADV_OPT_USE_NAME
+	 */
+	BT_LE_ADV_OPT_FORCE_NAME_IN_AD = BIT(18),
 };
 
 /** LE Advertising Parameters. */
@@ -656,6 +669,12 @@ struct bt_le_per_adv_param {
 
 #define BT_LE_ADV_CONN_NAME BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONNECTABLE | \
 					    BT_LE_ADV_OPT_USE_NAME, \
+					    BT_GAP_ADV_FAST_INT_MIN_2, \
+					    BT_GAP_ADV_FAST_INT_MAX_2, NULL)
+
+#define BT_LE_ADV_CONN_NAME_AD BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONNECTABLE | \
+					    BT_LE_ADV_OPT_USE_NAME | \
+					    BT_LE_ADV_OPT_FORCE_NAME_IN_AD, \
 					    BT_GAP_ADV_FAST_INT_MIN_2, \
 					    BT_GAP_ADV_FAST_INT_MAX_2, NULL)
 
