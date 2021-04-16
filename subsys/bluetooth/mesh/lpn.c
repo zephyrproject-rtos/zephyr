@@ -513,6 +513,14 @@ void bt_mesh_lpn_msg_received(struct bt_mesh_net_rx *rx)
 		return;
 	}
 
+	/* If the message was a Friend control message, it's possible that a
+	 * Poll was already queued for sending. In this case, we're already in
+	 * a different state.
+	 */
+	if (lpn->state != BT_MESH_LPN_WAIT_UPDATE) {
+		return;
+	}
+
 	if (lpn->sent_req != TRANS_CTL_OP_FRIEND_POLL) {
 		BT_WARN("Unexpected message withouth a preceding Poll");
 		return;
