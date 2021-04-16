@@ -201,7 +201,7 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 
 	/* Initialize to mandatory parameter values */
 	lll->bis_curr = 1U;
-	lll->pto_curr = 0U;
+	lll->ptc_curr = 0U;
 	lll->irc_curr = 1U;
 	lll->bn_curr = 1U;
 
@@ -235,7 +235,7 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 
 	phy = lll->phy;
 	radio_phy_set(phy, 1);
-	radio_pkt_configure(8, LL_BIS_OCTETS_TX_MAX, (phy << 1));
+	radio_pkt_configure(8, lll->max_pdu, (phy << 1));
 	radio_aa_set(access_addr);
 	radio_crc_configure(((0x5bUL) | ((0x06UL) << 8) | ((0x00UL) << 16)),
 			    (((uint32_t)crc_init[2] << 16) |
@@ -255,7 +255,7 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 
 		pdu->payload[0] = lll->bn_curr;
 		pdu->payload[1] = lll->irc_curr;
-		pdu->payload[2] = lll->pto_curr;
+		pdu->payload[2] = lll->ptc_curr;
 		pdu->payload[3] = lll->bis_curr;
 
 		pdu->payload[4] = lll->payload_count;
@@ -294,7 +294,7 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 
 	if ((lll->bn_curr == lll->bn) &&
 	    (lll->irc_curr == lll->irc) &&
-	    (lll->pto_curr == lll->pto) &&
+	    (lll->ptc_curr == lll->ptc) &&
 	    (lll->bis_curr == lll->num_bis) &&
 	    !pdu->cstf) {
 		radio_switch_complete_and_disable();
@@ -383,15 +383,15 @@ static void isr_tx_common(void *param,
 
 		bis = lll->bis_curr;
 
-	} else if (lll->pto_curr < lll->pto) {
-		lll->pto_curr++; /* pre increment */
-		/* transmit the (pto_curr * bn)th Tx PDU */
+	} else if (lll->ptc_curr < lll->ptc) {
+		lll->ptc_curr++; /* pre increment */
+		/* transmit the (ptc_curr * bn)th Tx PDU */
 
 		bis = lll->bis_curr;
 
 	} else if (lll->bis_curr < lll->num_bis) {
 		lll->bis_curr++;
-		lll->pto_curr = 0;
+		lll->ptc_curr = 0;
 		lll->irc_curr = 1U;
 		lll->bn_curr = 0;
 		/* transmit the (bn_curr)th PDU of bis_curr */
@@ -468,7 +468,7 @@ static void isr_tx_common(void *param,
 
 		pdu->payload[0] = lll->bn_curr;
 		pdu->payload[1] = lll->irc_curr;
-		pdu->payload[2] = lll->pto_curr;
+		pdu->payload[2] = lll->ptc_curr;
 		pdu->payload[3] = lll->bis_curr;
 
 		/* Calculate the radio channel to use for ISO event */
