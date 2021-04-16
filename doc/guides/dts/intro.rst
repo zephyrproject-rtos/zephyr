@@ -442,6 +442,18 @@ Additional notes on the above:
   values as *node identifiers*. Node identifiers are covered in more detail in
   :ref:`dt-from-c`.
 
+- Array and similar type property values can be split several ``<>``
+  blocks, like this:
+
+  .. code-block:: none
+
+     foo = <1 2>, <3 4>;                         // Okay for 'type: array'
+     foo = <&label1 &label2>, <&label3 &label4>; // Okay for 'type: phandles'
+     foo = <&label1 1 2>, <&label2 3 4>;         // Okay for 'type: phandle-array'
+
+  This is recommended for readability when possible if the value can be
+  logically grouped into blocks of sub-values.
+
 .. _dt-alias-chosen:
 
 Aliases and chosen nodes
