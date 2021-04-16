@@ -67,6 +67,11 @@ static struct bt_mesh_adv *adv_alloc(int id)
 	return &adv_pool[id].adv;
 }
 
+static bool friend_is_allocated(const struct bt_mesh_friend *frnd)
+{
+	return frnd->subnet != NULL;
+}
+
 static bool is_lpn_unicast(struct bt_mesh_friend *frnd, uint16_t addr)
 {
 	if (frnd->lpn == BT_MESH_ADDR_UNASSIGNED) {
@@ -86,7 +91,7 @@ struct bt_mesh_friend *bt_mesh_friend_find(uint16_t net_idx, uint16_t lpn_addr,
 	for (i = 0; i < ARRAY_SIZE(bt_mesh.frnd); i++) {
 		struct bt_mesh_friend *frnd = &bt_mesh.frnd[i];
 
-		if (valid && !frnd->subnet) {
+		if (valid && !friend_is_allocated(frnd)) {
 			continue;
 		}
 
@@ -197,7 +202,7 @@ void bt_mesh_friends_clear(void)
 	for (i = 0; i < ARRAY_SIZE(bt_mesh.frnd); i++) {
 		struct bt_mesh_friend *frnd = &bt_mesh.frnd[i];
 
-		if (!frnd->subnet) {
+		if (!friend_is_allocated(frnd)) {
 			continue;
 		}
 
@@ -216,7 +221,7 @@ void bt_mesh_friend_sec_update(uint16_t net_idx)
 	for (i = 0; i < ARRAY_SIZE(bt_mesh.frnd); i++) {
 		struct bt_mesh_friend *frnd = &bt_mesh.frnd[i];
 
-		if (!frnd->subnet) {
+		if (!friend_is_allocated(frnd)) {
 			continue;
 		}
 
@@ -531,7 +536,7 @@ static struct net_buf *encode_update(struct bt_mesh_friend *frnd, uint8_t md)
 	struct bt_mesh_ctl_friend_update *upd;
 	NET_BUF_SIMPLE_DEFINE(sdu, 1 + sizeof(*upd));
 
-	__ASSERT_NO_MSG(frnd->subnet);
+	__ASSERT_NO_MSG(friend_is_allocated(frnd));
 
 	BT_DBG("lpn 0x%04x md 0x%02x", frnd->lpn, md);
 
