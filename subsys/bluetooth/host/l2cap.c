@@ -1219,7 +1219,7 @@ static void le_ecred_reconf_req(struct bt_l2cap *l2cap, uint8_t ident,
 	struct bt_l2cap_ecred_reconf_req *req;
 	struct bt_l2cap_ecred_reconf_rsp *rsp;
 	uint16_t mtu, mps;
-	uint16_t scid, result;
+	uint16_t scid, result = BT_L2CAP_RECONF_SUCCESS;
 
 	if (buf->len < sizeof(*req)) {
 		BT_ERR("Too small ecred reconf req packet size");
@@ -1231,12 +1231,12 @@ static void le_ecred_reconf_req(struct bt_l2cap *l2cap, uint8_t ident,
 	mtu = sys_le16_to_cpu(req->mtu);
 	mps = sys_le16_to_cpu(req->mps);
 
-	if (mtu < L2CAP_ECRED_MIN_MTU) {
-		result = BT_L2CAP_RECONF_INVALID_MTU;
+	if (mps < L2CAP_ECRED_MIN_MTU) {
+		result = BT_L2CAP_RECONF_OTHER_UNACCEPT;
 		goto response;
 	}
 
-	if (mps < L2CAP_ECRED_MIN_MTU) {
+	if (mtu < L2CAP_ECRED_MIN_MTU) {
 		result = BT_L2CAP_RECONF_INVALID_MTU;
 		goto response;
 	}
@@ -1254,6 +1254,7 @@ static void le_ecred_reconf_req(struct bt_l2cap *l2cap, uint8_t ident,
 
 		chan = bt_l2cap_le_lookup_tx_cid(conn, scid);
 		if (!chan) {
+			result = BT_L2CAP_RECONF_INVALID_CID;
 			continue;
 		}
 
@@ -1274,8 +1275,6 @@ static void le_ecred_reconf_req(struct bt_l2cap *l2cap, uint8_t ident,
 	}
 
 	BT_DBG("mtu %u mps %u", mtu, mps);
-
-	result = BT_L2CAP_RECONF_SUCCESS;
 
 response:
 	buf = l2cap_create_le_sig_pdu(buf, BT_L2CAP_ECRED_RECONF_RSP, ident,
