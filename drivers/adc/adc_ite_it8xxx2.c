@@ -314,6 +314,11 @@ static int adc_it8xxx2_init(const struct device *dev)
 	 * SCLKDIV has to be equal to or greater than 1h;
 	 */
 	IT83XX_ADC_ADCCTL = 1;
+	/*
+	 * Enable this bit, and data of VCHxDATL/VCHxDATM will be
+	 * kept until data valid is cleared.
+	 */
+	IT83XX_ADC_ADCGCR |= IT83XX_ADC_DBKEN;
 
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
 		    adc_it8xxx2_isr, DEVICE_DT_INST_GET(0), 0);

@@ -1954,6 +1954,8 @@
 #define IT83XX_ADC_ADCEN			BIT(0)
 #define IT83XX_ADC_ADCCTL       ECREG(IT83XX_ADC_BASE + 0x02)
 #define IT83XX_ADC_ADCGCR       ECREG(IT83XX_ADC_BASE + 0x03)
+/* ADC data buffer keep enable. */
+#define IT83XX_ADC_DBKEN			BIT(7)
 #define IT83XX_ADC_VCH0CTL      ECREG(IT83XX_ADC_BASE + 0x04)
 /* W/C data valid flag */
 #define IT83XX_ADC_DATVAL			BIT(7)
