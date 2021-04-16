@@ -86,6 +86,8 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	memq_link_t *link_cmplt;
 	memq_link_t *link_term;
 	struct ll_adv_set *adv;
+	uint16_t ctrl_spacing;
+	uint16_t latency_pdu;
 	uint8_t ter_idx;
 	uint8_t *acad;
 	uint32_t ret;
@@ -154,22 +156,6 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 		}
 	}
 
-	/* Store parameters in LLL context */
-	/* TODO: parameters to ULL if only accessed by ULL */
-	lll_adv_iso = &adv_iso->lll;
-	lll_adv_iso->handle = big_handle;
-	lll_adv_iso->max_pdu = LL_BIS_OCTETS_TX_MAX;
-
-	/* Mandatory Num_BIS = 1 */
-	lll_adv_iso->num_bis = num_bis;
-
-	/* BN (Burst Count), Mandatory BN = 1 */
-	bn = (max_sdu + (lll_adv_iso->max_pdu - 1)) / lll_adv_iso->max_pdu;
-	if (bn > 0x07) {
-		return BT_HCI_ERR_INVALID_PARAM;
-	}
-	lll_adv_iso->bn = bn;
-
 	/* Allocate link buffer for created event */
 	link_cmplt = ll_rx_link_alloc();
 	if (!link_cmplt) {
@@ -184,7 +170,26 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 	}
 
-	/* Immediate Repetation Count (IRC), Mandatory IRC = 1 */
+	/* Store parameters in LLL context */
+	/* TODO: parameters to ULL if only accessed by ULL */
+	lll_adv_iso = &adv_iso->lll;
+	lll_adv_iso->handle = big_handle;
+	lll_adv_iso->max_pdu = LL_BIS_OCTETS_TX_MAX;
+
+	/* Mandatory Num_BIS = 1 */
+	lll_adv_iso->num_bis = num_bis;
+
+	/* BN (Burst Count), Mandatory BN = 1 */
+	bn = (max_sdu + (lll_adv_iso->max_pdu - 1U)) / lll_adv_iso->max_pdu;
+	if (bn > PDU_BIG_BN_MAX) {
+		lll_adv_iso->bn = PDU_BIG_BN_MAX;
+		bn = ((bn + (PDU_BIG_BN_MAX - 1)) / PDU_BIG_BN_MAX) *
+		     PDU_BIG_BN_MAX;
+	} else {
+		lll_adv_iso->bn = bn;
+	}
+
+	/* Immediate Repetition Count (IRC), Mandatory IRC = 1 */
 	lll_adv_iso->irc = rtn + 1;
 
 	/* Calculate NSE (No. of Sub Events), Mandatory NSE = 1,
@@ -202,43 +207,68 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 			PKT_BIS_US(lll_adv_iso->max_pdu, PDU_MIC_SIZE,
 				   phy) +
 			EVENT_MSS_US;
+		ctrl_spacing = PKT_BIS_US(sizeof(struct pdu_big_ctrl),
+					  PDU_MIC_SIZE, phy) +
+			       EVENT_IFS_US;
 	} else {
 		lll_adv_iso->sub_interval =
-			PKT_BIS_US(lll_adv_iso->max_pdu, 0,
+			PKT_BIS_US(lll_adv_iso->max_pdu, 0U,
 				   phy) +
 			EVENT_MSS_US;
+		ctrl_spacing = PKT_BIS_US(sizeof(struct pdu_big_ctrl),
+					  0U, phy) +
+			       EVENT_IFS_US;
 	}
+
+	latency_pdu = max_latency * lll_adv_iso->bn / bn;
 
 	/* Based on packing requested, sequential or interleaved */
 	if (packing) {
 		uint32_t latency;
+		uint32_t reserve;
 
 		lll_adv_iso->bis_spacing = lll_adv_iso->sub_interval;
 		latency = lll_adv_iso->sub_interval * lll_adv_iso->nse *
 			   lll_adv_iso->num_bis;
-		if (latency < (max_latency * 1000)) {
-			lll_adv_iso->pto = ((max_latency * 1000) - latency) /
-					   lll_adv_iso->sub_interval;
+		reserve = latency + ctrl_spacing +
+			  (EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US);
+		if (reserve < (latency_pdu * 1000U)) {
+			lll_adv_iso->ptc = (((latency_pdu * 1000U) - reserve) /
+					    (lll_adv_iso->sub_interval *
+					     lll_adv_iso->bn)) *
+					   lll_adv_iso->bn;
 		} else {
-			lll_adv_iso->pto = 0;
+			lll_adv_iso->ptc = 0U;
 		}
-		lll_adv_iso->nse += lll_adv_iso->pto;
+		lll_adv_iso->nse += lll_adv_iso->ptc;
 		lll_adv_iso->sub_interval = lll_adv_iso->bis_spacing *
 					    lll_adv_iso->nse;
 	} else {
 		uint32_t latency;
+		uint32_t reserve;
 
 		latency = lll_adv_iso->sub_interval * lll_adv_iso->nse;
-		if (latency < (max_latency * 1000)) {
-			lll_adv_iso->pto = ((max_latency * 1000) - latency) /
-					   lll_adv_iso->sub_interval;
+		reserve = latency + ctrl_spacing +
+			  (EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US);
+		if (reserve < (latency_pdu * 1000U)) {
+			lll_adv_iso->ptc = (((latency_pdu * 1000U) - reserve) /
+					    (lll_adv_iso->sub_interval *
+					     lll_adv_iso->bn)) *
+					   lll_adv_iso->bn;
 		} else {
-			lll_adv_iso->pto = 0;
+			lll_adv_iso->ptc = 0U;
 		}
 
-		lll_adv_iso->nse += lll_adv_iso->pto;
+		lll_adv_iso->nse += lll_adv_iso->ptc;
 		lll_adv_iso->bis_spacing = lll_adv_iso->sub_interval *
 					   lll_adv_iso->nse;
+	}
+
+	/* Pre-Transmission Offset (PTO) */
+	if (lll_adv_iso->ptc) {
+		lll_adv_iso->pto = bn / lll_adv_iso->bn;
+	} else {
+		lll_adv_iso->pto = 0U;
 	}
 
 	/* TODO: Group count, GC = NSE / BN; PTO = GC - IRC;
@@ -255,8 +285,8 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	lll_adv_iso->data_chan_count =
 		ull_chan_map_get(lll_adv_iso->data_chan_map);
 	lll_adv_iso->phy = phy;
-	lll_adv_iso->latency_prepare = 0;
-	lll_adv_iso->latency_event = 0;
+	lll_adv_iso->latency_prepare = 0U;
+	lll_adv_iso->latency_event = 0U;
 	lll_adv_iso->term_req = 0U;
 	lll_adv_iso->term_ack = 0U;
 	lll_adv_iso->chm_req = 0U;
@@ -270,7 +300,8 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	/* iso_interval shall be at least SDU interval,
 	 * or integer multiple of SDU interval for unframed PDUs
 	 */
-	iso_interval_us = sdu_interval * lll_adv_iso->bn;
+	iso_interval_us = ((sdu_interval * lll_adv_iso->bn) /
+			   (bn * 1250U)) * 1250U;
 
 	/* Allocate next PDU */
 	err = ull_adv_sync_pdu_alloc(adv, ULL_ADV_PDU_EXTRA_DATA_ALLOC_IF_EXIST, &pdu_prev, &pdu,
@@ -285,7 +316,7 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	} else {
 		pdu_big_info_size = PDU_BIG_INFO_CLEARTEXT_SIZE;
 	}
-	hdr_data[0] = pdu_big_info_size + 2;
+	hdr_data[0] = pdu_big_info_size + 2U;
 	err = ull_adv_sync_pdu_set_clear(lll_adv_sync, pdu_prev, pdu,
 					 ULL_ADV_PDU_HDR_FIELD_ACAD, 0U,
 					 &hdr_data);
@@ -297,7 +328,7 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	}
 
 	memcpy(&acad, &hdr_data[1], sizeof(acad));
-	acad[0] = pdu_big_info_size + 1;
+	acad[0] = pdu_big_info_size + 1U;
 	acad[1] = BT_DATA_BIG_INFO;
 	big_info = (void *)&acad[2];
 
@@ -324,7 +355,7 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	memcpy(big_info->chm_phy, lll_adv_iso->data_chan_map,
 	       sizeof(big_info->chm_phy));
 	big_info->chm_phy[4] &= 0x1F;
-	big_info->chm_phy[4] |= ((find_lsb_set(phy) - 1) << 5);
+	big_info->chm_phy[4] |= ((find_lsb_set(phy) - 1U) << 5);
 	big_info->payload_count_framing[0] = lll_adv_iso->payload_count;
 	big_info->payload_count_framing[1] = lll_adv_iso->payload_count >> 8;
 	big_info->payload_count_framing[2] = lll_adv_iso->payload_count >> 16;
