@@ -6,7 +6,6 @@ User and Developer Guides
 .. toctree::
    :maxdepth: 1
 
-   getting-help.rst
    beyond-GSG.rst
    arch/index.rst
    bluetooth/index.rst
