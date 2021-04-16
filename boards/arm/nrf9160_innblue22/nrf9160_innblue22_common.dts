@@ -89,8 +89,8 @@
 &i2c2 {
 	compatible = "nordic,nrf-twim";
 	status = "okay";
-	sda-gpios = <&gpio0 25 0>;
-	scl-gpios = <&gpio0 26 0>;
+	sda-pin = <25>;
+	scl-pin = <26>;
 
 	clock-frequency = <I2C_BITRATE_FAST>;
 
