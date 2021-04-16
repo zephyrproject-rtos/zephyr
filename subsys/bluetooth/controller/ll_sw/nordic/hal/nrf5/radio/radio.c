@@ -1008,6 +1008,18 @@ uint32_t radio_tmr_ready_get(void)
 	return EVENT_TIMER->CC[0];
 }
 
+static uint32_t radio_tmr_ready;
+
+void radio_tmr_ready_save(uint32_t ready)
+{
+	radio_tmr_ready = ready;
+}
+
+uint32_t radio_tmr_ready_restore(void)
+{
+	return radio_tmr_ready;
+}
+
 void radio_tmr_end_capture(void)
 {
 	/* NOTE: nRF5340 shares the DPPI channel being triggered by Radio End
