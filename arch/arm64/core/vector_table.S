@@ -13,7 +13,6 @@
 #include <offsets.h>
 #include <arch/cpu.h>
 #include <arch/arm64/tpidrro_el0.h>
-#include "vector_table.h"
 
 _ASM_FILE_PROLOGUE
 
@@ -104,8 +103,10 @@ _ASM_FILE_PROLOGUE
  * +------------------+------------------+-------------------------+
  */
 
-	/* The whole table must be 2K aligned */
+GDATA(_vector_table)
 SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
+
+	/* The whole table must be 2K aligned */
 	.align 11
 
 	/* Current EL with SP0 / Synchronous */

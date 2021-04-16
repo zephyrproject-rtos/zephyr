@@ -5,7 +5,7 @@
  */
 
 #include <kernel_internal.h>
-#include "vector_table.h"
+#include "boot.h"
 
 void z_arm64_el2_init(void);
 
