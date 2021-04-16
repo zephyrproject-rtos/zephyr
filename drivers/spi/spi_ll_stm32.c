@@ -120,7 +120,7 @@ static int spi_stm32_dma_tx_load(const struct device *dev, const uint8_t *buf,
 		}
 	}
 
-	blk_cfg->dest_address = (uint32_t)LL_SPI_DMA_GetRegAddr(cfg->spi);
+	blk_cfg->dest_address = ll_func_spi_get_dma_tx_addr(cfg->spi);
 	/* fifo mode NOT USED there */
 	if (data->dma_tx.dst_addr_increment) {
 		blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
@@ -179,7 +179,7 @@ static int spi_stm32_dma_rx_load(const struct device *dev, uint8_t *buf,
 		}
 	}
 
-	blk_cfg->source_address = (uint32_t)LL_SPI_DMA_GetRegAddr(cfg->spi);
+	blk_cfg->source_address = ll_func_spi_get_dma_rx_addr(cfg->spi);
 	if (data->dma_rx.src_addr_increment) {
 		blk_cfg->source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
 	} else {
@@ -720,8 +720,23 @@ static int transceive_dma(const struct device *dev,
 		LL_SPI_EnableDMAReq_RX(spi);
 		LL_SPI_EnableDMAReq_TX(spi);
 
+#if defined(CONFIG_SOC_SERIES_STM32MP1X) || \
+	defined(CONFIG_SOC_SERIES_STM32H7X)
+		/* With the STM32MP1 and the STM32H7, if the device is the SPI master,
+		 * we need to enable the start of the transfer with
+		 * LL_SPI_StartMasterTransfer(spi)
+		 */
+		if (LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER) {
+			LL_SPI_StartMasterTransfer(spi);
+			while (!LL_SPI_IsActiveMasterTransfer(spi)) {
+				/* NOP */
+			}
+		}
+#endif
+
 		ret = wait_dma_rx_tx_done(dev);
 		if (ret != 0) {
+			LOG_ERR("dma transfer timeout in SPI");
 			break;
 		}
 
@@ -731,11 +746,11 @@ static int transceive_dma(const struct device *dev,
 #endif
 
 		/* wait until TX buffer is really empty */
-		while (LL_SPI_IsActiveFlag_TXE(spi) == 0) {
+		while (ll_func_tx_is_empty(spi) == 0) {
 		}
 
 		/* wait until hardware is really ready */
-		while (LL_SPI_IsActiveFlag_BSY(spi) == 1) {
+		while (ll_func_spi_is_busy(spi) == 1) {
 		}
 
 		LL_SPI_DisableDMAReq_TX(spi);
@@ -745,7 +760,7 @@ static int transceive_dma(const struct device *dev,
 		spi_context_update_rx(&data->ctx, 1, dma_len);
 	}
 
-	LL_SPI_Disable(spi);
+	/* spi device gets disabled in spi_stm32_complete */
 	LL_SPI_DisableDMAReq_TX(spi);
 	LL_SPI_DisableDMAReq_RX(spi);
 

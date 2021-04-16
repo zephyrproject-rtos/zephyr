@@ -201,4 +201,26 @@ static inline void ll_func_disable_spi(SPI_TypeDef *spi)
 #endif
 }
 
+#ifdef CONFIG_SPI_STM32_DMA
+static inline uint32_t ll_func_spi_get_dma_rx_addr(SPI_TypeDef *spi)
+{
+#if defined(CONFIG_SOC_SERIES_STM32MP1X) || \
+	defined(CONFIG_SOC_SERIES_STM32H7X)
+	return (uint32_t) &(spi->RXDR);
+#else
+	return (uint32_t)LL_SPI_DMA_GetRegAddr(spi);
+#endif
+}
+
+static inline uint32_t ll_func_spi_get_dma_tx_addr(SPI_TypeDef *spi)
+{
+#if defined(CONFIG_SOC_SERIES_STM32MP1X) || \
+	defined(CONFIG_SOC_SERIES_STM32H7X)
+	return (uint32_t) &(spi->TXDR);
+#else
+	return (uint32_t)LL_SPI_DMA_GetRegAddr(spi);
+#endif
+}
+#endif  /* CONFIG_SPI_STM32_DMA */
+
 #endif	/* ZEPHYR_DRIVERS_SPI_SPI_LL_STM32_H_ */
