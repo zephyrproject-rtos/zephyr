@@ -93,7 +93,8 @@ set(I18NSPHINXOPTS  ${SPHINXOPTS})
 
 set(DOXYFILE_IN ${CMAKE_CURRENT_LIST_DIR}/zephyr.doxyfile.in)
 set(DOXYFILE_OUT ${CMAKE_CURRENT_BINARY_DIR}/zephyr.doxyfile)
-set(DOXY_OUT ${CMAKE_CURRENT_BINARY_DIR}/doxygen)
+set(DOXY_PERM_OUT ${CMAKE_CURRENT_BINARY_DIR}/doxygen)
+set(DOXY_OUT ${CMAKE_CURRENT_BINARY_DIR}/latest_doxygen)
 set(RST_OUT ${CMAKE_CURRENT_BINARY_DIR}/rst)
 set(DOC_LOG ${CMAKE_CURRENT_BINARY_DIR}/doc.log)
 set(DOXY_LOG ${CMAKE_CURRENT_BINARY_DIR}/doxy.log)
@@ -180,13 +181,12 @@ add_custom_command(
 # For now this optimization speeds-up non-doxygen documentation work
 # only (by one order of magnitude).
 add_custom_target(
-  doxy_real_modified_times
+  doxygen_sync
   COMMAND ${CMAKE_COMMAND} -E env
-    ${PYTHON_EXECUTABLE} _scripts/restore_modification_times.py
-    --loglevel  WARN  ${DOXY_OUT}/xml
+    ${PYTHON_EXECUTABLE} _scripts/doxygen_sync.py -o ${DOXY_PERM_OUT} -l ${DOXY_OUT}
   WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
   DEPENDS ${DOXY_RUN_TSTAMP}
-  COMMENT "Fixing modification times of ${DOXY_OUT}/xml/ output"
+  COMMENT "Syncing Doxygen output"
 )
 
 add_custom_target(
@@ -428,7 +428,7 @@ endif()
 #
 # Dependencies and final targets
 #
-add_dependencies(html content doxy_real_modified_times kconfig devicetree)
+add_dependencies(html content doxygen_sync kconfig devicetree)
 
 add_custom_target(
   htmldocs
@@ -439,9 +439,9 @@ add_dependencies(htmldocs html)
 add_custom_target(
   doxygen
 )
-add_dependencies(doxygen doxy_real_modified_times)
+add_dependencies(doxygen_sync doxygen)
 
-add_dependencies(latex content doxy_real_modified_times kconfig devicetree)
+add_dependencies(latex content doxygen_sync kconfig devicetree)
 
 add_custom_target(
   latexdocs
