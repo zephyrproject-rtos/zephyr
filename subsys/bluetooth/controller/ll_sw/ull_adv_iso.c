@@ -556,7 +556,14 @@ void ull_adv_iso_done_complete(struct node_rx_event_done *done)
 	/* Prepare BIG complete event */
 	rx = (void *)&adv_iso->node_rx_complete;
 	link = rx->link;
-	LL_ASSERT(link);
+	if (!link) {
+		/* NOTE: When BIS events have overlapping prepare placed in
+		 *       in the pipeline, more than one done complete event
+		 *       will be generated, lets ignore the additional done
+		 *       events.
+		 */
+		return;
+	}
 	rx->link = NULL;
 
 	rx->type = NODE_RX_TYPE_BIG_COMPLETE;
