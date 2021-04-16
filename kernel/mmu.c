@@ -13,6 +13,7 @@
 #include <init.h>
 #include <kernel_internal.h>
 #include <syscall_handler.h>
+#include <toolchain.h>
 #include <linker/linker-defs.h>
 #include <timing/timing.h>
 #include <logging/log.h>
@@ -276,6 +277,36 @@ static void frame_mapped_set(struct z_page_frame *pf, void *addr)
 	pf->flags |= Z_PAGE_FRAME_MAPPED;
 	pf->addr = addr;
 }
+
+/* Go through page frames to find the physical address mapped
+ * by a virtual address.
+ *
+ * @param[in]  virt Virtual Address
+ * @param[out] phys Physical address mapped to the input virtual address
+ *                  if such mapping exists.
+ *
+ * @retval 0 if mapping is found and valid
+ * @retval -EFAULT if virtual address is not mapped
+ */
+static int virt_to_page_frame(void *virt, uintptr_t *phys)
+{
+	uintptr_t paddr;
+	struct z_page_frame *pf;
+	int ret = -EFAULT;
+
+	Z_PAGE_FRAME_FOREACH(paddr, pf) {
+		if (z_page_frame_is_mapped(pf)) {
+			if (virt == pf->addr) {
+				ret = 0;
+				*phys = z_page_frame_to_phys(pf);
+				break;
+			}
+		}
+	}
+
+	return ret;
+}
+__weak FUNC_ALIAS(virt_to_page_frame, arch_page_phys_get, int);
 
 #ifdef CONFIG_DEMAND_PAGING
 static int page_frame_prepare_locked(struct z_page_frame *pf, bool *dirty_ptr,
