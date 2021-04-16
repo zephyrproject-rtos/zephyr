@@ -49,7 +49,11 @@
 #define STM32_APB2_PRESCALER	CONFIG_CLOCK_STM32_APB2_PRESCALER
 #endif
 
+#if DT_NODE_HAS_PROP(DT_INST(0, st_stm32wl_rcc), ahb3_prescaler)
+#define STM32_AHB3_PRESCALER	DT_PROP(DT_NODELABEL(rcc), ahb3_prescaler)
+#else
 #define STM32_AHB3_PRESCALER	CONFIG_CLOCK_STM32_AHB3_PRESCALER
+#endif
 
 #if DT_NODE_HAS_PROP(DT_INST(0, st_stm32wb_rcc), ahb4_prescaler)
 #define STM32_AHB4_PRESCALER	DT_PROP(DT_NODELABEL(rcc), ahb4_prescaler)
@@ -57,13 +61,15 @@
 #define STM32_AHB4_PRESCALER	CONFIG_CLOCK_STM32_AHB4_PRESCALER
 #endif
 
-#if DT_NODE_HAS_PROP(DT_INST(0, st_stm32wb_rcc), cpu1_prescaler)
+#if DT_NODE_HAS_PROP(DT_INST(0, st_stm32wb_rcc), cpu1_prescaler) || \
+	DT_NODE_HAS_PROP(DT_INST(0, st_stm32wl_rcc), cpu1_prescaler)
 #define STM32_CPU1_PRESCALER	DT_PROP(DT_NODELABEL(rcc), cpu1_prescaler)
 #else
 #define STM32_CPU1_PRESCALER	CONFIG_CLOCK_STM32_CPU1_PRESCALER
 #endif
 
-#if DT_NODE_HAS_PROP(DT_INST(0, st_stm32wb_rcc), cpu2_prescaler)
+#if DT_NODE_HAS_PROP(DT_INST(0, st_stm32wb_rcc), cpu2_prescaler) || \
+	DT_NODE_HAS_PROP(DT_INST(0, st_stm32wl_rcc), cpu2_prescaler)
 #define STM32_CPU2_PRESCALER	DT_PROP(DT_NODELABEL(rcc), cpu2_prescaler)
 #else
 #define STM32_CPU2_PRESCALER	CONFIG_CLOCK_STM32_CPU2_PRESCALER
@@ -111,7 +117,9 @@
 #endif
 
 #if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(rcc), st_stm32_rcc, okay) || \
-	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(rcc), st_stm32f0_rcc, okay)) && \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(rcc), st_stm32f0_rcc, okay) || \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(rcc), st_stm32wb_rcc, okay) || \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(rcc), st_stm32wl_rcc, okay)) && \
 	DT_NODE_HAS_PROP(DT_NODELABEL(rcc), clocks)
 #define DT_RCC_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_NODELABEL(rcc))
 #define STM32_SYSCLK_SRC_PLL	DT_SAME_NODE(DT_RCC_CLOCKS_CTRL, DT_NODELABEL(pll))
