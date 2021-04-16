@@ -348,6 +348,9 @@ flash_stm32_get_parameters(const struct device *dev)
 
 static struct flash_stm32_priv flash_data = {
 	.regs = (FLASH_TypeDef *) DT_INST_REG_ADDR(0),
+	/* Getting clocks information from device tree description depending
+	 * on the presence of 'clocks' property.
+	 */
 #if DT_INST_NODE_HAS_PROP(0, clocks)
 	.pclken = {
 		.enr = DT_INST_CLOCKS_CELL(0, bits),
@@ -369,19 +372,21 @@ static const struct flash_driver_api flash_stm32_api = {
 static int stm32_flash_init(const struct device *dev)
 {
 	int rc;
-	/* Below is applicable to L4, F0, F1, F3, G0*/
+	/* Below is applicable to F0, F1, F3, G0, G4, L1, L4 & WB55 series.
+	 * For F2, F4, F7 & H7 series, this is not applicable.
+	 */
 #if DT_INST_NODE_HAS_PROP(0, clocks)
 	struct flash_stm32_priv *p = FLASH_STM32_PRIV(dev);
 	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
 	/*
-	 * On STM32F0, Flash interface clock source is always HSI,
-	 * so statically enable HSI here.
-	 * Below is applicable to F0, F1 and F3 as HSI is the source
+	 * On STM32 F0, F1, F3 & L1 series, flash interface clock source is
+	 * always HSI, so statically enable HSI here.
 	 */
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || \
 	defined(CONFIG_SOC_SERIES_STM32F1X) || \
-	defined(CONFIG_SOC_SERIES_STM32F3X)
+	defined(CONFIG_SOC_SERIES_STM32F3X) || \
+	defined(CONFIG_SOC_SERIES_STM32L1X)
 	LL_RCC_HSI_Enable();
 
 	while (!LL_RCC_HSI_IsReady()) {
