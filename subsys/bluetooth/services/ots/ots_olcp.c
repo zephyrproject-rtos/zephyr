@@ -276,7 +276,7 @@ ssize_t bt_gatt_ots_olcp_write(struct bt_conn *conn,
 
 	if (olcp_status != BT_GATT_OTS_OLCP_RES_SUCCESS) {
 		LOG_WRN("OLCP Write error status: 0x%02X", olcp_status);
-	} else if (old_obj != ots->cur_obj) {
+	} else {
 		char id[BT_OTS_OBJ_ID_STR_LEN];
 
 		bt_ots_obj_id_to_str(ots->cur_obj->id, id,
