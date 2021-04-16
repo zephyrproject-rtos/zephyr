@@ -484,8 +484,15 @@ static int nvs_gc(struct nvs_fs *fs)
 	stop_addr = gc_addr - ate_size;
 
 	if (!nvs_ate_crc8_check(&close_ate) &&
-	    (close_ate.offset <= stop_addr) &&
+	    (close_ate.offset <= fs->sector_size - ate_size) &&
 	    !(close_ate.offset % ate_size)) {
+		if (close_ate.offset == fs->sector_size - ate_size) {
+			/* close_ate.offset == stop_addr is results of closing
+			 * a sector which contain only corrupted written data.
+			 * It is possible corner case
+			 */
+			goto clean_up;
+		}
 		gc_addr &= ADDR_SECT_MASK;
 		gc_addr += close_ate.offset;
 	} else {
@@ -557,7 +564,7 @@ static int nvs_gc(struct nvs_fs *fs)
 			}
 		}
 	} while (gc_prev_addr != stop_addr);
-
+clean_up:
 	rc = nvs_flash_erase_sector(fs, sec_addr);
 	if (rc) {
 		return rc;
