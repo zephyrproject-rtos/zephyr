@@ -213,55 +213,9 @@ Issues`_ in Github issues.
 
  .. _Continuous Integration:
 
-Continuous Integration (CI)
-***************************
 
-The Zephyr Project operates a Continuous Integration (CI) system that runs on
-every Pull Request (PR) in order to verify several aspects of the PR:
-
-* Git commit formatting
-* Coding Style
-* Twister builds for multiple architectures and boards
-* Documentation build to verify any doc changes
-
-CI is run both on the ``buildkite`` cloud service and Github Actions and it uses
-the same tools described in the `Contribution Tools`_ section.
-The CI results must be green indicating "All checks have passed" before
-the Pull Request can be merged.  CI is run when the PR is created, and
-again every time the PR is modified with a commit.
-
-The current status of the CI run can always be found at the bottom of the
-GitHub PR page, below the review status. Depending on the success or failure
-of the run you will see:
-
-* "All checks have passed"
-* "All checks have failed"
-
-In case of failure you can click on the "Details" link presented below the
-failure message in order to navigate to ``buildkite`` or ``Github Actions``
-and inspect the results.
-Once you click on the link you will be taken to the ``buildkite`` summary
-results page where a table with all the different builds will be shown. To see
-what build or test failed click on the row that contains the failed (i.e.
-non-green) build and then click on the "Tests" tab to see the console output
-messages indicating the failure.
-
-The `builds@lists.zephyrproject.org mailing list
-<https://lists.zephyrproject.org/g/builds>`_
-archives the CI (buildkite) nightly build results.
-
-Coding Guidelines
-*****************
-
-Beyond the :ref:`coding_style` that Zephyr enforces for all code that is
-submitted for inclusion, the project targets compliance with a series of
-coding guidelines. Refer to the :ref:`coding_guidelines` section of the
-documentation for additional details.
-
- .. _Contribution Tools:
-
-Contribution Tools and Git Setup
-********************************
+Tools and Git Setup
+*******************
 
 Signed-off-by
 =============
@@ -411,6 +365,17 @@ issues, you can add option --no-verify to the git push command.
 
 A more complete alternative to this is using check_compliance.py script from
 ci-tools repo.
+
+
+Coding Guidelines
+*****************
+
+Beyond the :ref:`coding_style` that Zephyr enforces for all code that is
+submitted for inclusion, the project targets compliance with a series of
+coding guidelines. Refer to the :ref:`coding_guidelines` section of the
+documentation for additional details.
+
+.. _Contribution Tools:
 
 .. _Contribution workflow:
 
@@ -576,12 +541,6 @@ workflow here:
    Additional information about the CI system can be found in
    `Continuous Integration`_.
 
-Contributions to External Modules
-**********************************
-
-Follow the guidelines in the :ref:`modules` section for contributing
-:ref:`new modules <submitting_new_modules>` and
-submitting changes to :ref:`existing modules <changes_to_existing_module>`.
 
 Commit Guidelines
 *****************
@@ -651,6 +610,7 @@ Other Commit Expectations
   and tests MUST cover at least 80% of the added functionality using the code
   coverage tool and reporting provided by the project.
 
+
 Submitting Proposals
 ====================
 
@@ -683,7 +643,7 @@ cases where the file is an original to Zephyr, the commit message should
 include the following ("Original" is the assumption if no Origin tag is
 present)::
 
-    Origin: Original
+      Origin: Original
 
 In cases where the file is :ref:`imported from an external project
 <external-contributions>`, the commit message shall contain details regarding
@@ -692,19 +652,64 @@ commit for the file and the intended purpose.
 
 For example, a copy of a locally maintained import::
 
-    Origin: Contiki OS
-    License: BSD 3-Clause
-    URL: http://www.contiki-os.org/
-    commit: 853207acfdc6549b10eb3e44504b1a75ae1ad63a
-    Purpose: Introduction of networking stack.
+      Origin: Contiki OS
+      License: BSD 3-Clause
+      URL: http://www.contiki-os.org/
+      commit: 853207acfdc6549b10eb3e44504b1a75ae1ad63a
+      Purpose: Introduction of networking stack.
 
 For example, a copy of an externally maintained import in a module repository::
 
-    Origin: Tiny Crypt
-    License: BSD 3-Clause
-    URL: https://github.com/01org/tinycrypt
-    commit: 08ded7f21529c39e5133688ffb93a9d0c94e5c6e
-    Purpose: Introduction of TinyCrypt
+      Origin: Tiny Crypt
+      License: BSD 3-Clause
+      URL: https://github.com/01org/tinycrypt
+      commit: 08ded7f21529c39e5133688ffb93a9d0c94e5c6e
+      Purpose: Introduction of TinyCrypt
+
+
+Continuous Integration (CI)
+***************************
+
+The Zephyr Project operates a Continuous Integration (CI) system that runs on
+every Pull Request (PR) in order to verify several aspects of the PR:
+
+* Git commit formatting
+* Coding Style
+* Twister builds for multiple architectures and boards
+* Documentation build to verify any doc changes
+
+CI is run both on the ``buildkite`` cloud service and Github Actions and it uses
+the same tools described in the `Contribution Tools`_ section.
+The CI results must be green indicating "All checks have passed" before
+the Pull Request can be merged.  CI is run when the PR is created, and
+again every time the PR is modified with a commit.
+
+The current status of the CI run can always be found at the bottom of the
+GitHub PR page, below the review status. Depending on the success or failure
+of the run you will see:
+
+* "All checks have passed"
+* "All checks have failed"
+
+In case of failure you can click on the "Details" link presented below the
+failure message in order to navigate to ``buildkite`` or ``Github Actions``
+and inspect the results.
+Once you click on the link you will be taken to the ``buildkite`` summary
+results page where a table with all the different builds will be shown. To see
+what build or test failed click on the row that contains the failed (i.e.
+non-green) build and then click on the "Tests" tab to see the console output
+messages indicating the failure.
+
+The `builds@lists.zephyrproject.org mailing list
+<https://lists.zephyrproject.org/g/builds>`_
+archives the CI (buildkite) nightly build results.
+
+Contributions to External Modules
+**********************************
+
+Follow the guidelines in the :ref:`modules` section for contributing
+:ref:`new modules <submitting_new_modules>` and
+submitting changes to :ref:`existing modules <changes_to_existing_module>`.
 
 Contributing External Components
 ********************************
@@ -713,6 +718,7 @@ Contributing External Components
    :maxdepth: 1
 
    external.rst
+
 
 Contribution Roles and Responsibilities
 ***************************************
