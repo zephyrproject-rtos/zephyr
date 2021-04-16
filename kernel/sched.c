@@ -46,9 +46,6 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 #define _priq_wait_best		z_priq_dumb_best
 #endif
 
-/* the only struct z_kernel instance */
-struct z_kernel _kernel;
-
 struct k_spinlock sched_spinlock;
 
 static void update_cache(int);

@@ -43,6 +43,9 @@ uint32_t __noinit z_timestamp_main;  /* timestamp when main task starts */
 uint32_t __noinit z_timestamp_idle;  /* timestamp when CPU goes idle */
 #endif
 
+/* the only struct z_kernel instance */
+struct z_kernel _kernel;
+
 /* init/main and idle threads */
 K_THREAD_STACK_DEFINE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
 struct k_thread z_main_thread;
