@@ -77,16 +77,16 @@
 &i2c0 {
 	compatible = "nordic,nrf-twi";
 	status = "okay";
-	sda-gpios = <&gpio0 13 0>;
-	scl-gpios = <&gpio0 14 0>;
+	sda-pin = <13>;
+	scl-pin = <14>;
 };
 
 &i2c1 {
 	compatible = "nordic,nrf-twi";
 	/* Cannot be used together with spi1. */
 	/* status = "okay"; */
-	sda-gpios = <&gpio0 24 0>;
-	scl-gpios = <&gpio0 25 0>;
+	sda-pin = <24>;
+	scl-pin = <25>;
 };
 
 &spi1 {
