@@ -7,7 +7,7 @@
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <arch/cpu.h>
-#include "vector_table.h"
+#include "boot.h"
 #include "macro_priv.inc"
 
 _ASM_FILE_PROLOGUE
@@ -16,7 +16,7 @@ _ASM_FILE_PROLOGUE
  * Platform specific pre-C init code
  *
  * Note: - Stack is not yet available
- *       - x23 must be preserved
+ *       - x23, x24 and x25 must be preserved
  */
 
 WTEXT(z_arm64_el3_plat_prep_c)
@@ -75,32 +75,10 @@ out:
 	/* Select SP_EL0 */
 	msr	SPSel, #0
 
-#if CONFIG_MP_NUM_CPUS > 1
-	get_cpu_id x0
-	cbnz    x0, L_secondary_stack
-#endif
-
 	/* Initialize stack */
-	ldr	x0, =(z_interrupt_stacks)
-	add	x0, x0, #(CONFIG_ISR_STACK_SIZE)
-	mov	sp, x0
+	mov	sp, x24
 
 	ret	x23
-
-#if CONFIG_MP_NUM_CPUS > 1
-L_secondary_stack:
-	get_cpu_id x1
-	adr	x0, arm64_cpu_init
-	mov	x2, #ARM64_CPU_INIT_SIZE
-	madd	x0, x1, x2, x0
-	ldr	x0, [x0]
-	cbz	x0, L_enable_secondary
-	dmb	ld
-
-	mov	sp, x0
-
-	ret	x23
-#endif
 
 /*
  * Reset vector
@@ -118,6 +96,33 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 	/* Mask all exceptions */
 	msr	DAIFSet, #0xf
 
+#if CONFIG_MP_NUM_CPUS > 1
+
+	ldr	x0, =arm64_cpu_boot_params
+	get_cpu_id x1
+	ldr	x2, [x0, #BOOT_PARAM_MPID_OFFSET]
+	cmp	x2, #-1
+	beq	primary_core
+
+	/* loop until our turn comes */
+1:	dmb	ld
+	ldr	x2, [x0]
+	cmp	x1, x2
+	bne	1b
+
+	/* we can now load our stack pointer value and move on */
+	ldr	x24, [x0, #BOOT_PARAM_SP_OFFSET]
+	ldr	x25, =z_arm64_secondary_prep_c
+	b	2f
+
+primary_core:
+	/* advertise ourself */
+	str	x1, [x0, #BOOT_PARAM_MPID_OFFSET]
+#endif
+	/* load primary stack and entry point */
+	ldr	x24, =(z_interrupt_stacks + CONFIG_ISR_STACK_SIZE)
+	ldr	x25, =z_arm64_prep_c
+2:
 	/* Prepare for calling C code */
 	bl	__reset_prep_c
 
@@ -155,14 +160,4 @@ switch_el:
 	msr	DAIFClr, #(DAIFCLR_ABT_BIT)
 	isb
 
-#if CONFIG_MP_NUM_CPUS > 1
-	get_cpu_id x0
-	cbnz    x0, L_enable_secondary
-#endif
-
-	b	z_arm64_prep_c
-
-#if CONFIG_MP_NUM_CPUS > 1
-L_enable_secondary:
-	b	z_arm64_secondary_prep_c
-#endif
+	ret	x25  /* either z_arm64_prep_c or z_arm64_secondary_prep_c */
