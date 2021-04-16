@@ -183,7 +183,7 @@ config LWM2M_SECURITY_KEY_SIZE
 
 config LWM2M_SERVER_DEFAULT_PMIN
 	int "Default server record PMIN"
-	default 10
+	default 0
 	help
 	  Default minimum amount of time in seconds the client must wait
 	  between notifications.  If a resource has to be notified during this
@@ -192,7 +192,7 @@ config LWM2M_SERVER_DEFAULT_PMIN
 
 config LWM2M_SERVER_DEFAULT_PMAX
 	int "Default server record PMAX"
-	default 60
+	default 0
 	help
 	  Default maximum amount of time in seconds the client may wait
 	  between notifications.  When this time period expires a notification
