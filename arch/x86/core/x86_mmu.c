@@ -1844,6 +1844,29 @@ void arch_reserved_pages_update(void)
 }
 #endif /* CONFIG_ARCH_HAS_RESERVED_PAGE_FRAMES */
 
+int arch_page_phys_get(void *virt, uintptr_t *phys)
+{
+	pentry_t pte = 0;
+	int level, ret;
+
+	__ASSERT(POINTER_TO_UINT(virt) % CONFIG_MMU_PAGE_SIZE == 0U,
+		 "unaligned address %p to %s", virt, __func__);
+
+	pentry_get(&level, &pte, z_x86_page_tables_get(), virt);
+
+	if ((pte & MMU_P) != 0) {
+		if (phys != NULL) {
+			*phys = (uintptr_t)get_entry_phys(pte, PTE_LEVEL);
+		}
+		ret = 0;
+	} else {
+		/* Not mapped */
+		ret = -EFAULT;
+	}
+
+	return ret;
+}
+
 #ifdef CONFIG_DEMAND_PAGING
 #define PTE_MASK (paging_levels[PTE_LEVEL].mask)
 
