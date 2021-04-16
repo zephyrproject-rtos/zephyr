@@ -506,7 +506,8 @@ static int engine_add_observer(struct lwm2m_message *msg,
 	observe_node_data[i].event_timestamp =
 			observe_node_data[i].last_timestamp;
 	observe_node_data[i].min_period_sec = attrs.pmin;
-	observe_node_data[i].max_period_sec = MAX(attrs.pmax, attrs.pmin);
+	observe_node_data[i].max_period_sec = (attrs.pmax > 0) ? MAX(attrs.pmax, attrs.pmin)
+							       : attrs.pmax;
 	observe_node_data[i].format = format;
 	observe_node_data[i].counter = OBSERVE_COUNTER_START;
 	sys_slist_append(&engine_observer_list,
@@ -4453,19 +4454,23 @@ static int lwm2m_engine_service(void)
 		/*
 		 * manual notify requirements:
 		 * - event_timestamp > last_timestamp
-		 * - current timestamp > last_timestamp + min_period_sec
+		 * - if min_period_sec is set:
+		 *   current timestamp > last_timestamp + min_period_sec
 		 */
 		if (obs->event_timestamp > obs->last_timestamp &&
-		    timestamp > obs->last_timestamp +
-				MSEC_PER_SEC * obs->min_period_sec) {
+		    (obs->min_period_sec == 0 ||
+		     timestamp > obs->last_timestamp +
+				MSEC_PER_SEC * obs->min_period_sec)) {
 			obs->last_timestamp = k_uptime_get();
 			generate_notify_message(obs, true);
 
 		/*
 		 * automatic time-based notify requirements:
-		 * - current timestamp > last_timestamp + max_period_sec
+		 * - if max_period_sec is set:
+		 *   current timestamp > last_timestamp + max_period_sec
 		 */
-		} else if (timestamp > obs->last_timestamp +
+		} else if (obs->max_period_sec > 0 &&
+			   timestamp > obs->last_timestamp +
 				MSEC_PER_SEC * obs->max_period_sec) {
 			obs->last_timestamp = k_uptime_get();
 			generate_notify_message(obs, false);
