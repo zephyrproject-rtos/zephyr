@@ -38,12 +38,28 @@ struct spi_cs_control spi_cs = {
 
 #define STACK_SIZE 512
 #define BUF_SIZE 17
-uint8_t buffer_tx[] = "0123456789abcdef\0";
+#define BUF2_SIZE 36
+
+static const uint8_t BUFFER_TX[] = "0123456789abcdef\0";
+static const uint8_t BUFFER2_TX[] = "Thequickbrownfoxjumpsoverthelazydog\0";
+
+#if CONFIG_NOCACHE_MEMORY
+static __aligned(32) uint8_t buffer_tx[BUF_SIZE] __used
+	__attribute__((__section__(".nocache")));
+static __aligned(32) uint8_t buffer_rx[BUF_SIZE] __used
+	__attribute__((__section__(".nocache.dma")));
+
+static __aligned(32) uint8_t buffer2_tx[BUF2_SIZE] __used
+	__attribute__((__section__(".nocache")));
+static __aligned(32) uint8_t buffer2_rx[BUF2_SIZE] __used
+	__attribute__((__section__(".nocache.dma")));
+#else
+uint8_t buffer_tx[BUF_SIZE] = {};
 uint8_t buffer_rx[BUF_SIZE] = {};
 
-#define BUF2_SIZE 36
-uint8_t buffer2_tx[] = "Thequickbrownfoxjumpsoverthelazydog\0";
+uint8_t buffer2_tx[BUF2_SIZE] = {};
 uint8_t buffer2_rx[BUF2_SIZE] = {};
+#endif
 
 /*
  * We need 5x(buffer size) + 1 to print a comma-separated list of each
@@ -584,6 +600,9 @@ void test_spi_loopback(void)
 	const struct device *spi_fast;
 
 	LOG_INF("SPI test on buffers TX/RX %p/%p", buffer_tx, buffer_rx);
+
+	memcpy(buffer_tx, BUFFER_TX, sizeof(BUFFER_TX));
+	memcpy(buffer2_tx, BUFFER2_TX, sizeof(BUFFER2_TX));
 
 #if defined(CONFIG_SPI_LOOPBACK_CS_GPIO)
 	if (cs_ctrl_gpio_config()) {
