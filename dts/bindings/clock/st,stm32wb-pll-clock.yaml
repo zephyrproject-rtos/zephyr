@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  STM32WB PLL node.
+  STM32WB and STM32WL PLL node.
 
   It can be used to describe 2 different PLLs: PLL, PLLSAI1.
   Only main PLL is supported for now.
@@ -20,7 +20,9 @@ description: |
 
       with f(VCO clock) = f(PLL clock input) × (PLLN / PLLM)
 
-  The PLL output frequency must not exceed 64 MHz.
+  The PLL output frequency must not exceed:
+          - 64 MHz on STM32WB
+          - 62 MHz on STM32WL
 
 compatible: "st,stm32wb-pll-clock"
 
@@ -32,6 +34,13 @@ properties:
 
     clocks:
       required: true
+
+    div-m:
+      type: int
+      required: true
+      description: |
+          Main PLL division factor for PLL input clock
+          Valid range: 1 - 8
 
     mul-n:
       type: int
