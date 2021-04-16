@@ -537,8 +537,10 @@ static void test_1cpu_queued_cancel_sync(void)
 	zassert_equal(rc, 1, NULL);
 	zassert_equal(coophi_counter(), 0, NULL);
 
-	/* Cancellation should complete immediately. */
-	zassert_false(k_work_cancel_sync(&work, &work_sync), NULL);
+	/* Cancellation should complete immediately, indicating that
+	 * work was pending.
+	 */
+	zassert_true(k_work_cancel_sync(&work, &work_sync), NULL);
 
 	/* Shouldn't have run. */
 	zassert_equal(coophi_counter(), 0, NULL);
@@ -582,8 +584,10 @@ static void test_1cpu_delayed_cancel_sync(void)
 	zassert_equal(rc, 1, NULL);
 	zassert_equal(coophi_counter(), 0, NULL);
 
-	/* Cancellation should complete immediately. */
-	zassert_false(k_work_cancel_delayable_sync(&dwork, &work_sync), NULL);
+	/* Cancellation should complete immediately, indicating that
+	 * work was pending.
+	 */
+	zassert_true(k_work_cancel_delayable_sync(&dwork, &work_sync), NULL);
 
 	/* Shouldn't have run. */
 	zassert_equal(coophi_counter(), 0, NULL);

@@ -3020,8 +3020,9 @@ int k_work_cancel(struct k_work *work);
  * one completes.  On architectures with CONFIG_KERNEL_COHERENCE the object
  * must be allocated in coherent memory.
  *
- * @retval true if work was not idle (call had to wait for cancellation to
- * complete);
+ * @retval true if work was pending (call had to wait for cancellation of a
+ * running handler to complete, or scheduled or submitted operations were
+ * cancelled);
  * @retval false otherwise
  */
 bool k_work_cancel_sync(struct k_work *work, struct k_work_sync *sync);
@@ -3357,8 +3358,9 @@ int k_work_cancel_delayable(struct k_work_delayable *dwork);
  * one completes.  On architectures with CONFIG_KERNEL_COHERENCE the object
  * must be allocated in coherent memory.
  *
- * @retval true if work was not idle (call had to wait for cancellation to
- * complete);
+ * @retval true if work was not idle (call had to wait for cancellation of a
+ * running handler to complete, or scheduled or submitted operations were
+ * cancelled);
  * @retval false otherwise
  */
 bool k_work_cancel_delayable_sync(struct k_work_delayable *dwork,
