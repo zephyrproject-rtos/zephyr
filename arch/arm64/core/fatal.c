@@ -272,9 +272,7 @@ void z_arm64_do_kernel_oops(z_arch_esf_t *esf)
 #ifdef CONFIG_USERSPACE
 FUNC_NORETURN void arch_syscall_oops(void *ssf_ptr)
 {
-	ARG_UNUSED(ssf_ptr);
-
-	z_arm64_fatal_error(K_ERR_KERNEL_OOPS, NULL);
+	z_arm64_fatal_error(K_ERR_KERNEL_OOPS, ssf_ptr);
 	CODE_UNREACHABLE;
 }
 #endif
