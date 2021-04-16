@@ -89,3 +89,12 @@
 		};
 	};
 };
+
+&timers3 {
+	status = "okay";
+
+	pwm3: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim3_ch1_pa6>;
+	};
+};
