@@ -96,6 +96,9 @@ SECTION_FUNC(TEXT, z_arm64_do_syscall)
 	ldp	x2, x3, [sp, ___esf_t_x2_x3_OFFSET]
 	ldp	x4, x5, [sp, ___esf_t_x4_x5_OFFSET]
 
+	/* Use the ESF as SSF */
+	mov	x6, sp
+
 	/* Recover the syscall ID */
 	ldr	x8, [sp, ___esf_t_x8_x9_OFFSET]
 
@@ -103,6 +106,9 @@ SECTION_FUNC(TEXT, z_arm64_do_syscall)
 	ldr	x9, =K_SYSCALL_LIMIT
 	cmp	x8, x9
 	blo	valid_syscall_id
+
+	/* Save the bad ID for handler_bad_syscall() */
+	mov	x0, x8
 	ldr	x8, =K_SYSCALL_BAD
 
 valid_syscall_id:
