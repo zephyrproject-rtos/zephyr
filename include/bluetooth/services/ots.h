@@ -33,6 +33,9 @@ extern "C" {
 /** @brief Length of OTS object ID string (in bytes). */
 #define BT_OTS_OBJ_ID_STR_LEN 15
 
+/** @brief Maximum object name length */
+#define BT_OTS_OBJ_MAX_NAME_LEN 120
+
 /** @brief Type of an OTS object. */
 struct bt_ots_obj_type {
 	union {
