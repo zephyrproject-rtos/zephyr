@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2021 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &slot1_partition;
+/delete-node/ &storage_partition;
+/delete-node/ &scratch_partition;
+
+&flash0 {
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/*
+		 * 128kiB partition; in intensive tests it might be worht to change the address
+		 * of the partition from time to reduce a wear of a single area.
+		 */
+		storage_partition: partition@80000 {
+			label = "storage";
+			reg = <0x00080000 0x00020000>;
+		};
+	};
+};

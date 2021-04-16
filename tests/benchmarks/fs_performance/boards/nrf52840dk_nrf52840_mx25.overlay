@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2021 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &storage_partition;
+
+&mx25r64 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Use 128kiB of flash for storage, starting at 0x0000 address */
+		storage_partition: partition@0 {
+			label = "storage";
+			reg = <0x00000000 0x00020000>;
+		};
+	};
+};
