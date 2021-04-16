@@ -1,0 +1,17 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&spi1 {
+	dmas = <&dmamux1 3 38 0x440 0
+		&dmamux1 2 37 0x480 0>;
+	dma-names = "tx", "rx";
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&dmamux1 {
+	status = "okay";
+};
