@@ -16,6 +16,10 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(fs_nvs, CONFIG_NVS_LOG_LEVEL);
 
+
+static int nvs_flash_block_cmp(struct nvs_fs *fs, uint32_t addr, const void *data,
+				size_t len);
+
 /* basic routines */
 /* nvs_al_size returns size aligned to fs->write_block_size */
 static inline size_t nvs_al_size(struct nvs_fs *fs, size_t len)
@@ -31,8 +35,8 @@ static inline size_t nvs_al_size(struct nvs_fs *fs, size_t len)
 
 /* flash routines */
 /* basic aligned flash write to nvs address */
-static int nvs_flash_al_wrt(struct nvs_fs *fs, uint32_t addr, const void *data,
-			     size_t len)
+static inline int _nvs_flash_al_wrt(struct nvs_fs *fs, uint32_t addr,
+				    const void *data, size_t len)
 {
 	const uint8_t *data8 = (const uint8_t *)data;
 	int rc = 0;
@@ -70,6 +74,35 @@ static int nvs_flash_al_wrt(struct nvs_fs *fs, uint32_t addr, const void *data,
 	}
 
 end:
+	return rc;
+}
+
+static int nvs_flash_al_wrt(struct nvs_fs *fs, uint32_t addr, const void *data,
+			     size_t len)
+{
+	int rc;
+
+#ifdef CONFIG_NVS_WRITE_RETRY
+	for (int i = 0; i < 2; i++) {
+#endif
+		rc = _nvs_flash_al_wrt(fs, addr, data, len);
+#ifdef CONFIG_NVS_WRITE_CHECK
+		if (rc == 0) {
+			rc = nvs_flash_block_cmp(fs, addr, data, len);
+			if (rc == 1) {
+				rc = -EIO;
+			}
+	#ifdef CONFIG_NVS_WRITE_RETRY
+			if (rc <= 0) {
+				break;
+			}
+	#endif	/* CONFIG_NVS_WRITE_RETRY */
+		}
+
+#endif /* CONFIG_NVS_WRITE_CHECK */
+#ifdef CONFIG_NVS_WRITE_RETRY
+	}
+#endif
 	return rc;
 }
 

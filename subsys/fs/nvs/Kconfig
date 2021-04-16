@@ -3,7 +3,7 @@
 # Copyright (c) 2018 Laczen
 # SPDX-License-Identifier: Apache-2.0
 
-config NVS
+menuconfig NVS
 	bool "Non-volatile Storage"
 	help
 	  Enable support of Non-volatile Storage.
@@ -13,5 +13,19 @@ if NVS
 module = NVS
 module-str = nvs
 source "subsys/logging/Kconfig.template.log_config"
+
+config NVS_WRITE_CHECK
+	bool "Check written content"
+	help
+	  Check whether flash content match data written. Write API returns
+	  error if check fails as for other flash driver error.
+
+config NVS_WRITE_RETRY
+	bool "Retry write"
+	depends on NVS_WRITE_CHECK
+	help
+	  Retry write operation if flash content doesn't match to data written.
+	  This option can be enabled only on memories which allow writes to
+	  same location at las twice.
 
 endif # NVS
