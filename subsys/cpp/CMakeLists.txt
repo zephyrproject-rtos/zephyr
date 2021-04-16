@@ -15,3 +15,7 @@ zephyr_sources(
   cpp_new.cpp
 )
 endif()
+
+if (NOT CONFIG_LIB_CPLUSPLUS AND NOT CONFIG_MINIMAL_LIBC)
+  zephyr_sources(cxa_handlers.cpp)
+endif()
