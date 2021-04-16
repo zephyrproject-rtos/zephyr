@@ -819,6 +819,9 @@ struct bt_conn_cb {
 	 *  parameters as returned by previous callbacks, i.e. they are not
 	 *  necessarily the same ones as the remote originally sent.
 	 *
+	 *  If the application does not have this callback then the default
+	 *  is to accept the parameters.
+	 *
 	 *  @param conn Connection object.
 	 *  @param param Proposed connection parameters.
 	 *
