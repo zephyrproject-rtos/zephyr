@@ -167,6 +167,12 @@ config LINKER_SORT_BY_ALIGNMENT
 	  in decreasing size of symbols. This helps to minimize
 	  padding between symbols.
 
+config SRAM_VECTOR_TABLE
+	bool "Place the vector table in SRAM instead of flash"
+	help
+	  The option specifies that the vector table should be placed at the
+	  start of SRAM instead of the start of flash.
+
 config HAS_SRAM_OFFSET
 	bool
 	help

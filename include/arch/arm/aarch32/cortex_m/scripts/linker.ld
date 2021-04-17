@@ -254,7 +254,7 @@ SECTIONS
 	. = ALIGN(_region_min_align);
 	_image_ram_start = .;
 
-#if defined(CONFIG_SOC_SERIES_STM32F0X) && !defined(CONFIG_IS_BOOTLOADER)
+#if defined(CONFIG_SOC_SERIES_STM32F0X) && defined(CONFIG_SRAM_VECTOR_TABLE)
     /* Must be first in ramable region */
 	SECTION_PROLOGUE(.st_stm32f0x_vt,(NOLOAD),)
 	{
