@@ -84,6 +84,9 @@ config BT_DEBUG
 	# Hidden option to make the conditions more intuitive
 	bool
 
+config BT_MONITOR
+	bool
+
 choice
 	prompt "Bluetooth debug type"
 	default BT_DEBUG_NONE
@@ -101,11 +104,12 @@ config BT_DEBUG_LOG
 	  This option enables Bluetooth debug going to standard
 	  serial console.
 
-config BT_DEBUG_MONITOR
+config BT_DEBUG_MONITOR_UART
 	bool "Monitor protocol over UART"
 	select BT_DEBUG
 	select LOG
 	select CONSOLE_HAS_DRIVER
+	select BT_MONITOR
 	help
 	  Use a custom logging protocol over the console UART
 	  instead of plain-text output. Requires a special application
@@ -118,7 +122,45 @@ config BT_DEBUG_MONITOR
 	  UART_CONSOLE needs to be disabled (in which case printk/printf
 	  will get encoded into the monitor protocol).
 
-endchoice
+config BT_DEBUG_MONITOR_RTT
+	bool "Monitor protocol over RTT"
+	depends on USE_SEGGER_RTT
+	depends on SEGGER_RTT_MAX_NUM_UP_BUFFERS >= 2
+	select BT_DEBUG
+	select BT_MONITOR
+	help
+	  Use a custom logging protocol over the RTT buffer instead of
+	  plain-text output. Requires a special application
+	  on the host side that can decode this protocol. Currently
+	  the 'btmon' tool from BlueZ is capable of doing this.
+
+if BT_DEBUG_MONITOR_RTT
+
+config BT_DEBUG_MONITOR_RTT_BUFFER
+	int "Buffer number used for custom logger output."
+	range 1 SEGGER_RTT_MAX_NUM_UP_BUFFERS
+	default 1
+	help
+	  Select index of up-buffer used for logger output.
+	  Make sure the buffer number is not used by other logger,
+	  e.g. in LOG_BACKEND_RTT_BUFFER, otherwise the buffer will be
+	  overwritten.
+
+config BT_DEBUG_MONITOR_RTT_BUFFER_NAME
+	string "Buffer name used for custom logger output."
+	default "btmonitor"
+	help
+	  Select index of up-buffer used for logger output.
+
+config BT_DEBUG_MONITOR_RTT_BUFFER_SIZE
+	int "Size of reserved up-buffer for custom logger output."
+	default 1024
+	help
+	  Specify reserved size of up-buffer used for custom logger output.
+
+endif # BT_DEBUG_MONITOR_RTT
+
+endchoice # Bluetooth debug type
 
 if BT_DEBUG
 
@@ -127,7 +169,7 @@ DT_CHOSEN_Z_BT_MON_UART := zephyr,bt-mon-uart
 
 config BT_MONITOR_ON_DEV_NAME
 	string "Device Name of Bluetooth monitor logging UART"
-	depends on BT_DEBUG_MONITOR
+	depends on BT_DEBUG_MONITOR_UART
 	default "$(dt_chosen_label,$(DT_CHOSEN_Z_BT_MON_UART))" if HAS_DTS
 	default "UART_0"
 	help

@@ -57,10 +57,10 @@ application:
 
 .. code-block:: console
 
-   CONFIG_BT_DEBUG_MONITOR=y
+   CONFIG_BT_DEBUG_MONITOR_UART=y
    CONFIG_UART_CONSOLE=n
 
-Setting :option:`CONFIG_BT_DEBUG_MONITOR` to ``y`` replaces the
+Setting :option:`CONFIG_BT_DEBUG_MONITOR_UART` to ``y`` replaces the
 :option:`CONFIG_BT_DEBUG_LOG` option, and setting :option:`CONFIG_UART_CONSOLE`
 to ``n`` disables the default ``printk``/``printf`` hooks.
 
