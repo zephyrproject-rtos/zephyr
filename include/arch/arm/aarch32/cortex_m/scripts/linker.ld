@@ -254,16 +254,6 @@ SECTIONS
 	. = ALIGN(_region_min_align);
 	_image_ram_start = .;
 
-#if defined(CONFIG_SOC_SERIES_STM32F0X) && defined(CONFIG_SRAM_VECTOR_TABLE)
-    /* Must be first in ramable region */
-	SECTION_PROLOGUE(.st_stm32f0x_vt,(NOLOAD),)
-	{
-        _ram_vector_start = .;
-        . += _vector_end - _vector_start;
-        _ram_vector_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
-#endif
-
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
  */
