@@ -187,8 +187,12 @@ struct bt_hci_cmd_hdr {
 						BT_LE_FEAT_BIT_PER_ADV)
 #define BT_FEAT_LE_CONNECTIONLESS_CTE_TX(feat)  BT_LE_FEAT_TEST(feat, \
 						BT_LE_FEAT_BIT_CONNECTIONLESS_CTE_TX)
-#define BT_FEAT_LE_ANT_SWITCH_TX_AOD(feat)	BT_LE_FEAT_TEST(feat, \
+#define BT_FEAT_LE_CONNECTIONLESS_CTE_RX(feat)  BT_LE_FEAT_TEST(feat, \
+						BT_LE_FEAT_BIT_CONNECTIONLESS_CTE_RX)
+#define BT_FEAT_LE_ANT_SWITCH_TX_AOD(feat)      BT_LE_FEAT_TEST(feat, \
 						BT_LE_FEAT_BIT_ANT_SWITCH_TX_AOD)
+#define BT_FEAT_LE_ANT_SWITCH_RX_AOA(feat)      BT_LE_FEAT_TEST(feat, \
+						BT_LE_FEAT_BIT_ANT_SWITCH_RX_AOA)
 #define BT_FEAT_LE_PAST_SEND(feat)              BT_LE_FEAT_TEST(feat, \
 						BT_LE_FEAT_BIT_PAST_SEND)
 #define BT_FEAT_LE_PAST_RECV(feat)              BT_LE_FEAT_TEST(feat, \
