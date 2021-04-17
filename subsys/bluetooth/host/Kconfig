@@ -552,6 +552,13 @@ config BT_DF
 	  It will allow to: get information about antennae, configure
 	  Constant Tone Extension, transmit CTE and sample incoming CTE.
 
+config BT_DF_CONNECTIONLESS_CTE_RX
+	bool "Enable support for receive of CTE in connectionless mode"
+	depends on BT_DF
+	help
+	  Enable support for reception and sampling of Constant Tone Extension
+	  in connectionless mode.
+
 config BT_DEBUG_DF
 	bool "Bluetooth Direction Finding debug"
 	depends on BT_DF
