@@ -3,7 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef SAMPLE_METAIRQ_MAIN_H
+#ifndef __MSGDEV_H__
+#define __MSGDEV_H__
 
 /* Define this to enable logging of every event as it is processed to
  * carefully inspect behavior.  Note that at high event rates (see
@@ -67,4 +68,4 @@ void message_dev_init(void);
  */
 void message_dev_fetch(struct msg *m);
 
-#endif
+#endif /* __MSGDEV_H__ */
