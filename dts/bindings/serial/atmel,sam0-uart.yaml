@@ -27,6 +27,10 @@ properties:
       required: true
       description: Transmit Data Pinout
 
+    collision-detection:
+      type: boolean
+      description: Enable collision detection for half-duplex mode.
+
     dmas:
       description: |
         Optional TX & RX dma specifiers.  Each specifier will have a phandle
