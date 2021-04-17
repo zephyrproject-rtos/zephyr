@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <timeout_q.h>
-#include "main.h"
+#include "msgdev.h"
 
 /* This file implements a fake device that creates and enqueues
  * "struct msg" messages for handling by the rest of the test.  It's
