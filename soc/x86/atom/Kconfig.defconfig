@@ -18,7 +18,7 @@ config UART_PIPE_ON_DEV_NAME
 	depends on UART_PIPE
 
 config BT_MONITOR_ON_DEV_NAME
-	default "UART_1" if BT_DEBUG_MONITOR
+	default "UART_1" if BT_DEBUG_MONITOR_UART
 
 endif
 
