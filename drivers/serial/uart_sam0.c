@@ -32,6 +32,7 @@ struct uart_sam0_dev_cfg {
 	SercomUsart *regs;
 	uint32_t baudrate;
 	uint32_t pads;
+	bool     collision_detect;
 #ifdef MCLK
 	volatile uint32_t *mclk;
 	uint32_t mclk_mask;
@@ -479,6 +480,10 @@ static int uart_sam0_configure(const struct device *dev,
 
 	dev_data->config_cache.data_bits = new_cfg->data_bits;
 
+#if defined(SERCOM_REV500)
+	CTRLB_temp.bit.COLDEN = cfg->pads;
+#endif
+
 	usart->CTRLA = CTRLA_temp;
 	wait_synchronization(usart);
 
@@ -846,9 +851,14 @@ static int uart_sam0_err_check(const struct device *dev)
 		err |= UART_BREAK;
 	}
 
+	if (regs->STATUS.reg & SERCOM_USART_STATUS_COLL) {
+		err |= UART_ERROR_COLLISION;
+	}
+
 	regs->STATUS.reg |=	SERCOM_USART_STATUS_BUFOVF
 			 |	SERCOM_USART_STATUS_FERR
 			 |	SERCOM_USART_STATUS_PERR
+			 |	SERCOM_USART_STATUS_COLL
 			 |	SERCOM_USART_STATUS_ISF;
 #else
 	regs->STATUS.reg |=	SERCOM_USART_STATUS_BUFOVF
@@ -1188,6 +1198,9 @@ static void uart_sam0_irq_config_##n(const struct device *dev)		\
 	(DT_INST_PROP(n, rxpo) << SERCOM_USART_CTRLA_RXPO_Pos) |	\
 	(DT_INST_PROP(n, txpo) << SERCOM_USART_CTRLA_TXPO_Pos)
 
+#define UART_SAM0_SERCOM_COLLISION_DETECT(n) \
+	(DT_INST_PROP(n, collision_detect))
+
 #ifdef MCLK
 #define UART_SAM0_CONFIG_DEFN(n)					\
 static const struct uart_sam0_dev_cfg uart_sam0_config_##n = {		\
@@ -1197,6 +1210,7 @@ static const struct uart_sam0_dev_cfg uart_sam0_config_##n = {		\
 	.mclk_mask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, bit)),	\
 	.gclk_core_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, periph_ch),\
 	.pads = UART_SAM0_SERCOM_PADS(n),				\
+	.collision_detect = UART_SAM0_SERCOM_PADS(n),			\
 	UART_SAM0_IRQ_HANDLER_FUNC(n)					\
 	UART_SAM0_DMA_CHANNELS(n)					\
 }
@@ -1208,6 +1222,7 @@ static const struct uart_sam0_dev_cfg uart_sam0_config_##n = {		\
 	.pm_apbcmask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, pm, bit)),	\
 	.gclk_clkctrl_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, clkctrl_id),\
 	.pads = UART_SAM0_SERCOM_PADS(n),				\
+	.collision_detect = UART_SAM0_SERCOM_PADS(n),			\
 	UART_SAM0_IRQ_HANDLER_FUNC(n)					\
 	UART_SAM0_DMA_CHANNELS(n)					\
 }
