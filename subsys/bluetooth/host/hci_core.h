@@ -144,7 +144,6 @@ struct bt_le_ext_adv {
 #endif /* defined(CONFIG_BT_EXT_ADV) */
 };
 
-
 enum {
 	/** Periodic Advertising Sync has been created in the host. */
 	BT_PER_ADV_SYNC_CREATED,
@@ -157,6 +156,11 @@ enum {
 
 	/** Periodic advertising is attempting sync sync */
 	BT_PER_ADV_SYNC_RECV_DISABLED,
+
+	/** Constant Tone Extension for Periodic Advertising has been enabled
+	 * in the controller.
+	 */
+	BT_PER_ADV_SYNC_CTE_ENABLED,
 
 	BT_PER_ADV_SYNC_NUM_FLAGS,
 };
@@ -179,6 +183,11 @@ struct bt_le_per_adv_sync {
 
 	/** Advertiser PHY */
 	uint8_t phy;
+
+#if defined(CONFIG_BT_DF_CONNECTIONLESS_CTE_RX)
+	/** Accepted CTE type */
+	uint8_t cte_type;
+#endif /* CONFIG_BT_DF_CONNECTIONLESS_CTE_RX */
 
 	/** Flags */
 	ATOMIC_DEFINE(flags, BT_PER_ADV_SYNC_NUM_FLAGS);
