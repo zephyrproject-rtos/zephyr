@@ -765,31 +765,3 @@ Contributing External Components
    :maxdepth: 1
 
    external.rst
-
-
-Contribution Roles and Responsibilities
-***************************************
-
-.. toctree::
-   :maxdepth: 1
-
-   modifying_contributions.rst
-   project_roles.rst
-
-The Zephyr project defines a development process workflow using GitHub
-**Issues** to track feature, enhancement, and bug reports together with GitHub
-**Pull Requests** (PRs) for submitting and reviewing changes.  Zephyr
-community members work together to review these Issues and PRs, managing
-feature enhancements and quality improvements of Zephyr through its regular
-releases, as outlined in the
-`program management overview <https://wiki.zephyrproject.org/Program-Management>`_.
-
-We can only manage the volume of Issues and PRs, by requiring timely reviews,
-feedback, and responses from the community and contributors, both for initial
-submissions and for followup questions and clarifications.  Read about the
-project's :ref:`development processes and tools <dev-environment-and-tools>`
-and specifics about :ref:`review timelines <review_time>` to learn about the
-project's goals and guidelines for our active developer community.
-
-:ref:`project_roles` describes in detail the Zephyr project roles and associated permissions
-with respect to the development process workflow.
