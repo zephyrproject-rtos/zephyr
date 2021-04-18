@@ -9,7 +9,7 @@
 #include <logging/log.h>
 #include <sys/printk.h>
 
-#define HEXDUMP_BYTES_IN_LINE 8
+#define HEXDUMP_BYTES_IN_LINE 8U
 
 void z_log_minimal_printk(const char *fmt, ...)
 {
@@ -27,7 +27,7 @@ void z_log_minimal_vprintk(const char *fmt, va_list ap)
 
 static void minimal_hexdump_line_print(const char *data, size_t length)
 {
-	for (size_t i = 0; i < HEXDUMP_BYTES_IN_LINE; i++) {
+	for (size_t i = 0U; i < HEXDUMP_BYTES_IN_LINE; i++) {
 		if (i < length) {
 			printk("%02x ", data[i] & 0xFF);
 		} else {
@@ -37,7 +37,7 @@ static void minimal_hexdump_line_print(const char *data, size_t length)
 
 	printk("|");
 
-	for (size_t i = 0; i < HEXDUMP_BYTES_IN_LINE; i++) {
+	for (size_t i = 0U; i < HEXDUMP_BYTES_IN_LINE; i++) {
 		if (i < length) {
 			unsigned char c = data[i];
 
@@ -52,7 +52,7 @@ static void minimal_hexdump_line_print(const char *data, size_t length)
 void z_log_minimal_hexdump_print(int level, const void *_data, size_t size)
 {
 	const char *data = (const char *)_data;
-	while (size > 0) {
+	while (size > 0U) {
 		printk("%c: ", z_log_minimal_level_to_char(level));
 		minimal_hexdump_line_print(data, size);
 
