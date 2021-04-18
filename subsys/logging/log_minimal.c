@@ -49,18 +49,18 @@ static void minimal_hexdump_line_print(const char *data, size_t length)
 	printk("\n");
 }
 
-void z_log_minimal_hexdump_print(int level, const void *_data, size_t size)
+void z_log_minimal_hexdump_print(int level, const void *data, size_t size)
 {
-	const char *data = (const char *)_data;
+	const char *data_buffer = (const char *)data;
 	while (size > 0U) {
 		printk("%c: ", z_log_minimal_level_to_char(level));
-		minimal_hexdump_line_print(data, size);
+		minimal_hexdump_line_print(data_buffer, size);
 
 		if (size < HEXDUMP_BYTES_IN_LINE) {
 			break;
 		}
 
 		size -= HEXDUMP_BYTES_IN_LINE;
-		data += HEXDUMP_BYTES_IN_LINE;
+		data_buffer += HEXDUMP_BYTES_IN_LINE;
 	}
 }
