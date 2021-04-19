@@ -395,9 +395,13 @@ uint32_t sys_clock_elapsed(void)
 
 uint32_t sys_clock_cycle_get_32(void)
 {
-	k_spinlock_key_t key = k_spin_lock(&lock);
-	uint32_t ret = counter_sub(counter(), last_count) + last_count;
+	volatile uint32_t *base = &last_count;
+	uint32_t ret, anchor;
 
-	k_spin_unlock(&lock, key);
+	do {
+		anchor = *base;
+		ret = counter_sub(counter(), anchor) + anchor;
+	} while (anchor != *base);
+
 	return ret;
 }
