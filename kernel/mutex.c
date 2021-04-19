@@ -34,7 +34,6 @@
 #include <errno.h>
 #include <init.h>
 #include <syscall_handler.h>
-#include <debug/object_tracing_common.h>
 #include <tracing/tracing.h>
 #include <sys/check.h>
 #include <logging/log.h>
@@ -47,27 +46,6 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
  */
 static struct k_spinlock lock;
 
-#ifdef CONFIG_OBJECT_TRACING
-
-struct k_mutex *_trace_list_k_mutex;
-
-/*
- * Complete initialization of statically defined mutexes.
- */
-static int init_mutex_module(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	Z_STRUCT_SECTION_FOREACH(k_mutex, mutex) {
-		SYS_TRACING_OBJ_INIT(k_mutex, mutex);
-	}
-	return 0;
-}
-
-SYS_INIT(init_mutex_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
-
-#endif /* CONFIG_OBJECT_TRACING */
-
 int z_impl_k_mutex_init(struct k_mutex *mutex)
 {
 	mutex->owner = NULL;
@@ -75,7 +53,6 @@ int z_impl_k_mutex_init(struct k_mutex *mutex)
 
 	z_waitq_init(&mutex->wait_q);
 
-	SYS_TRACING_OBJ_INIT(k_mutex, mutex);
 	z_object_init(mutex);
 
 	SYS_PORT_TRACING_OBJ_INIT(k_mutex, mutex, 0);

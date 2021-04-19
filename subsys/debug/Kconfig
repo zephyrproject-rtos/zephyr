@@ -266,12 +266,6 @@ config ASSERT_NO_MSG_INFO
 	  before disabling file info since the message can be found in the
 	  source using file info.
 
-config OBJECT_TRACING
-	bool "Kernel object tracing"
-	help
-	  This option enable the feature for tracing kernel objects. This option
-	  is for debug purposes and increases the memory footprint of the kernel.
-
 config OVERRIDE_FRAME_POINTER_DEFAULT
 	bool "Override compiler defaults for -fomit-frame-pointer"
 	help

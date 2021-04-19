@@ -19,7 +19,7 @@
 
 #include <kernel.h>
 #include <kernel_structs.h>
-#include <debug/object_tracing_common.h>
+
 #include <toolchain.h>
 #include <wait_q.h>
 #include <sys/dlist.h>
@@ -37,27 +37,6 @@
  * and not a spinlock per se.  Useful optimization for the future...
  */
 static struct k_spinlock lock;
-
-#ifdef CONFIG_OBJECT_TRACING
-
-struct k_sem *_trace_list_k_sem;
-
-/*
- * Complete initialization of statically defined semaphores.
- */
-static int init_sem_module(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	Z_STRUCT_SECTION_FOREACH(k_sem, sem) {
-		SYS_TRACING_OBJ_INIT(k_sem, sem);
-	}
-	return 0;
-}
-
-SYS_INIT(init_sem_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
-
-#endif /* CONFIG_OBJECT_TRACING */
 
 int z_impl_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 		      unsigned int limit)
@@ -80,8 +59,6 @@ int z_impl_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 #if defined(CONFIG_POLL)
 	sys_dlist_init(&sem->poll_events);
 #endif
-	SYS_TRACING_OBJ_INIT(k_sem, sem);
-
 	z_object_init(sem);
 
 	return 0;
