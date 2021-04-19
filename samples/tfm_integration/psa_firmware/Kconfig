@@ -1,0 +1,22 @@
+# Private config options for PSA firmware application
+
+# Copyright (c) 2021 Linaro
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "PSA firmware sample application"
+
+menu "Application configuration"
+
+module = APP
+module-str = app
+source "subsys/logging/Kconfig.template.log_config"
+
+endmenu
+
+config PSA_SHELL
+	bool "Enable the 'psa' shell command"
+	depends on SHELL
+	help
+	  Enabling this option will make the 'psa' shell command available.
+
+source "Kconfig.zephyr"
