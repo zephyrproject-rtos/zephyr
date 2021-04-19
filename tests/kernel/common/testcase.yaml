@@ -23,6 +23,7 @@ tests:
     extra_configs:
       - CONFIG_CBPRINTF_NANO=y
       - CONFIG_CBPRINTF_REDUCED_INTEGRAL=y
+    platform_exclude: qemu_arc_hs6x
   kernel.common.nano64:
     tags: kernel userspace
     min_flash: 33
