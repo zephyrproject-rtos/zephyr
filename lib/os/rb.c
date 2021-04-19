@@ -435,7 +435,7 @@ void rb_remove(struct rbtree *tree, struct rbnode *node)
 		stack[stacksz0 - 1] = stack[stacksz - 1];
 		stack[stacksz - 1] = tmp;
 
-		int ctmp = get_color(node);
+		enum rb_color ctmp = get_color(node);
 
 		set_color(node, get_color(node2));
 		set_color(node2, ctmp);
