@@ -4841,7 +4841,7 @@ extern int k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
  * This routine allocates a memory block from a memory slab.
  *
  * @note @a timeout must be set to K_NO_WAIT if called from ISR.
- * @note When CONFIG_MULTITHREADING=n any @timeout is treated as K_NO_WAIT.
+ * @note When CONFIG_MULTITHREADING=n any @a timeout is treated as K_NO_WAIT.
  *
  * @funcprops \isr_ok
  *
@@ -4962,6 +4962,7 @@ void k_heap_init(struct k_heap *h, void *mem, size_t bytes);
  * k_heap_free().
  *
  * @note @a timeout must be set to K_NO_WAIT if called from ISR.
+ * @note When CONFIG_MULTITHREADING=n any @a timeout is treated as K_NO_WAIT.
  *
  * @funcprops \isr_ok
  *
@@ -4985,6 +4986,7 @@ void *k_heap_aligned_alloc(struct k_heap *h, size_t align, size_t bytes,
  * the timeout, NULL will be returned.
  *
  * @note @a timeout must be set to K_NO_WAIT if called from ISR.
+ * @note When CONFIG_MULTITHREADING=n any @a timeout is treated as K_NO_WAIT.
  *
  * @funcprops \isr_ok
  *
