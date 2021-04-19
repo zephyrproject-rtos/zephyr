@@ -1,0 +1,10 @@
+identifier: nxp_adsp_imx8
+name: i.MX8 DSP
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+testing:
+  only_tags:
+     - kernel
+     - sof
