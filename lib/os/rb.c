@@ -159,8 +159,10 @@ static void fix_extra_red(struct rbnode **stack, int stacksz)
 		struct rbnode *parent = stack[stacksz - 2];
 
 		/* Correct child colors are a precondition of the loop */
-		CHECK(!get_child(node, 0U) || is_black(get_child(node, 0U)));
-		CHECK(!get_child(node, 1U) || is_black(get_child(node, 1U)));
+		CHECK((get_child(node, 0U) == NULL) ||
+		      is_black(get_child(node, 0U)));
+		CHECK((get_child(node, 1U) == NULL) ||
+		      is_black(get_child(node, 1U)));
 
 		if (is_black(parent)) {
 			return;
@@ -389,7 +391,7 @@ void rb_remove(struct rbtree *tree, struct rbnode *node)
 
 		hiparent = stacksz > 1 ? stack[stacksz - 2] : NULL;
 		stack[stacksz++] = node2;
-		while (get_child(node2, 1U)) {
+		while (get_child(node2, 1U) != NULL) {
 			node2 = get_child(node2, 1U);
 			stack[stacksz++] = node2;
 		}
@@ -441,7 +443,8 @@ void rb_remove(struct rbtree *tree, struct rbnode *node)
 		set_color(node2, ctmp);
 	}
 
-	CHECK(!get_child(node, 0U) || !get_child(node, 1U));
+	CHECK((get_child(node, 0U) == NULL) ||
+	      (get_child(node, 1U) == NULL));
 
 	struct rbnode *child = get_child(node, 0U);
 
