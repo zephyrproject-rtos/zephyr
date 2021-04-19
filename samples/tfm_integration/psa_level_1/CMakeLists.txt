@@ -2,9 +2,6 @@
 
 cmake_minimum_required(VERSION 3.13.1)
 
-# Override the binary used by qemu
-set(QEMU_KERNEL_OPTION "-device;loader,file=${CMAKE_BINARY_DIR}/tfm_merged.hex")
-
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
 project(tfm_psa_level_1)
