@@ -121,7 +121,8 @@ int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, k_timeout_t timeout)
 #endif
 
 		result = 0;
-	} else if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+	} else if (K_TIMEOUT_EQ(timeout, K_NO_WAIT) ||
+		   !IS_ENABLED(CONFIG_MULTITHREADING)) {
 		/* don't wait for a free block to become available */
 		*mem = NULL;
 		result = -ENOMEM;
@@ -143,7 +144,7 @@ void k_mem_slab_free(struct k_mem_slab *slab, void **mem)
 {
 	k_spinlock_key_t key = k_spin_lock(&slab->lock);
 
-	if (slab->free_list == NULL) {
+	if (slab->free_list == NULL && IS_ENABLED(CONFIG_MULTITHREADING)) {
 		struct k_thread *pending_thread = z_unpend_first_thread(&slab->wait_q);
 
 		if (pending_thread != NULL) {
