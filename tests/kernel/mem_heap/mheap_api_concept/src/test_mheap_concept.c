@@ -75,6 +75,10 @@ static void tmheap_handler(void *p1, void *p2, void *p3)
  */
 void test_mheap_threadsafe(void)
 {
+	if (!IS_ENABLED(CONFIG_MULTITHREADING)) {
+		return;
+	}
+
 	k_tid_t tid[THREAD_NUM];
 
 	k_sem_init(&sync_sema, 0, THREAD_NUM);
