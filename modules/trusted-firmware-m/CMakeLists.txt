@@ -210,39 +210,33 @@ function(trusted_firmware_build)
     TFM_S_NS_SIGNED_BIN_FILE ${TFM_S_NS_SIGNED_BIN_FILE} # Merged TFM Secure/Nonsecure FW (signed)
     )
 
-  add_library(tfm_api
-    ${ZEPHYR_BASE}/modules/trusted-firmware-m/src/zephyr_tfm_log.c
-  )
-  zephyr_sources_ifndef(CONFIG_TFM_PSA_TEST_NONE src/zephyr_tfm_psa_test.c)
+  zephyr_library_named(tfm_api)
 
-  target_include_directories(tfm_api
-    PRIVATE
-    ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/tf-m-tests/CMSIS/RTOS2/Include
-    PUBLIC
+  zephyr_library_sources(
+    src/zephyr_tfm_log.c
+    interface/interface.c
+    )
+  # Non-Secure interface to request system reboot
+  zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PLATFORM src/reboot.c)
+  zephyr_library_sources_ifndef(CONFIG_TFM_PSA_TEST_NONE src/zephyr_tfm_psa_test.c)
+
+  zephyr_include_directories(
     ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/trusted-firmware-m/interface/include
-    INTERFACE
     ${TFM_GENERATED_INCLUDES}
-  )
+    )
 
-  target_link_libraries(tfm_api
-    PUBLIC
-    zephyr_interface
-    INTERFACE
+  zephyr_library_link_libraries(
     ${PSA_TEST_VAL_FILE}
     ${PSA_TEST_PAL_FILE}
     ${PSA_TEST_COMBINE_FILE}
     ${PLATFORM_NS_FILE}
     ${TFM_API_NS_PATH}
     ${VENEERS_FILE}
-    $<TARGET_FILE:tfm_api>
-  )
+    )
 
-  add_dependencies(tfm_api tfm)
+  # To ensure that generated include files are created before they are used.
+  add_dependencies(zephyr_interface tfm)
 endfunction()
-
-zephyr_library_sources_ifdef(CONFIG_BUILD_WITH_TFM  interface/interface.c)
-# Non-Secure interface to request system reboot
-zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PLATFORM  src/reboot.c)
 
 if (CONFIG_BUILD_WITH_TFM)
   if (CONFIG_TFM_IPC)
@@ -309,8 +303,6 @@ if (CONFIG_BUILD_WITH_TFM)
     ${TFM_PSA_TEST_ARG}
     CMAKE_BUILD_TYPE ${TFM_CMAKE_BUILD_TYPE}
   )
-
-  zephyr_link_libraries(tfm_api)
 
   # Set default image versions if not defined elsewhere
   if (NOT DEFINED TFM_IMAGE_VERSION_S)
