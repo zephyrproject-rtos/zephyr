@@ -76,18 +76,6 @@ extern "C" {
 #define K_HIGHEST_APPLICATION_THREAD_PRIO (K_HIGHEST_THREAD_PRIO)
 #define K_LOWEST_APPLICATION_THREAD_PRIO (K_LOWEST_THREAD_PRIO - 1)
 
-#ifdef CONFIG_OBJECT_TRACING
-#define _OBJECT_TRACING_NEXT_PTR(type) struct type *__next;
-#define _OBJECT_TRACING_LINKED_FLAG uint8_t __linked;
-#define _OBJECT_TRACING_INIT \
-	.__next = NULL,	     \
-	.__linked = 0,
-#else
-#define _OBJECT_TRACING_INIT
-#define _OBJECT_TRACING_NEXT_PTR(type)
-#define _OBJECT_TRACING_LINKED_FLAG
-#endif
-
 #ifdef CONFIG_POLL
 #define _POLL_EVENT_OBJ_INIT(obj) \
 	.poll_events = SYS_DLIST_STATIC_INIT(&obj.poll_events),
@@ -1296,8 +1284,6 @@ struct k_timer {
 	/* user-specific data, also used to support legacy features */
 	void *user_data;
 
-	_OBJECT_TRACING_NEXT_PTR(k_timer)
-	_OBJECT_TRACING_LINKED_FLAG
 };
 
 #define Z_TIMER_INITIALIZER(obj, expiry, stop) \
@@ -1312,7 +1298,6 @@ struct k_timer {
 	.stop_fn = stop, \
 	.status = 0, \
 	.user_data = 0, \
-	_OBJECT_TRACING_INIT \
 	}
 
 /**
@@ -1659,8 +1644,6 @@ struct k_queue {
 	_wait_q_t wait_q;
 
 	_POLL_EVENT;
-	_OBJECT_TRACING_NEXT_PTR(k_queue)
-	_OBJECT_TRACING_LINKED_FLAG
 };
 
 #define Z_QUEUE_INITIALIZER(obj) \
@@ -1669,7 +1652,6 @@ struct k_queue {
 	.lock = { }, \
 	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q),	\
 	_POLL_EVENT_OBJ_INIT(obj)		\
-	_OBJECT_TRACING_INIT \
 	}
 
 extern void *z_queue_node_peek(sys_sfnode_t *node, bool needs_free);
@@ -2403,8 +2385,6 @@ struct k_stack {
 	struct k_spinlock lock;
 	stack_data_t *base, *next, *top;
 
-	_OBJECT_TRACING_NEXT_PTR(k_stack)
-	_OBJECT_TRACING_LINKED_FLAG
 	uint8_t flags;
 };
 
@@ -2414,7 +2394,6 @@ struct k_stack {
 	.base = stack_buffer, \
 	.next = stack_buffer, \
 	.top = stack_buffer + stack_num_entries, \
-	_OBJECT_TRACING_INIT \
 	}
 
 /**
@@ -2564,9 +2543,6 @@ struct k_mutex {
 
 	/** Original thread priority */
 	int owner_orig_prio;
-
-	_OBJECT_TRACING_NEXT_PTR(k_mutex)
-	_OBJECT_TRACING_LINKED_FLAG
 };
 
 /**
@@ -2578,7 +2554,6 @@ struct k_mutex {
 	.owner = NULL, \
 	.lock_count = 0, \
 	.owner_orig_prio = K_LOWEST_THREAD_PRIO, \
-	_OBJECT_TRACING_INIT \
 	}
 
 /**
@@ -2751,8 +2726,6 @@ struct k_sem {
 
 	_POLL_EVENT;
 
-	_OBJECT_TRACING_NEXT_PTR(k_sem)
-	_OBJECT_TRACING_LINKED_FLAG
 };
 
 #define Z_SEM_INITIALIZER(obj, initial_count, count_limit) \
@@ -2761,7 +2734,6 @@ struct k_sem {
 	.count = initial_count, \
 	.limit = count_limit, \
 	_POLL_EVENT_OBJ_INIT(obj) \
-	_OBJECT_TRACING_INIT \
 	}
 
 /**
@@ -4164,9 +4136,6 @@ struct k_msgq {
 
 	_POLL_EVENT;
 
-	_OBJECT_TRACING_NEXT_PTR(k_msgq)
-	_OBJECT_TRACING_LINKED_FLAG
-
 	/** Message queue */
 	uint8_t flags;
 };
@@ -4186,7 +4155,6 @@ struct k_msgq {
 	.write_ptr = q_buffer, \
 	.used_msgs = 0, \
 	_POLL_EVENT_OBJ_INIT(obj) \
-	_OBJECT_TRACING_INIT \
 	}
 
 /**
@@ -4459,8 +4427,6 @@ struct k_mbox {
 	_wait_q_t rx_msg_queue;
 	struct k_spinlock lock;
 
-	_OBJECT_TRACING_NEXT_PTR(k_mbox)
-	_OBJECT_TRACING_LINKED_FLAG
 };
 /**
  * @cond INTERNAL_HIDDEN
@@ -4470,7 +4436,6 @@ struct k_mbox {
 	{ \
 	.tx_msg_queue = Z_WAIT_Q_INIT(&obj.tx_msg_queue), \
 	.rx_msg_queue = Z_WAIT_Q_INIT(&obj.rx_msg_queue), \
-	_OBJECT_TRACING_INIT \
 	}
 
 /**
@@ -4600,8 +4565,6 @@ struct k_pipe {
 		_wait_q_t      writers; /**< Writer wait queue */
 	} wait_q;			/** Wait queue */
 
-	_OBJECT_TRACING_NEXT_PTR(k_pipe)
-	_OBJECT_TRACING_LINKED_FLAG
 	uint8_t	       flags;		/**< Flags */
 };
 
@@ -4622,7 +4585,6 @@ struct k_pipe {
 		.readers = Z_WAIT_Q_INIT(&obj.wait_q.readers),       \
 		.writers = Z_WAIT_Q_INIT(&obj.wait_q.writers)        \
 	},                                                          \
-	_OBJECT_TRACING_INIT                                        \
 	.flags = 0                                                  \
 	}
 
@@ -4777,8 +4739,6 @@ struct k_mem_slab {
 	uint32_t max_used;
 #endif
 
-	_OBJECT_TRACING_NEXT_PTR(k_mem_slab)
-	_OBJECT_TRACING_LINKED_FLAG
 };
 
 #define Z_MEM_SLAB_INITIALIZER(obj, slab_buffer, slab_block_size, \
@@ -4791,7 +4751,6 @@ struct k_mem_slab {
 	.buffer = slab_buffer, \
 	.free_list = NULL, \
 	.num_used = 0, \
-	_OBJECT_TRACING_INIT \
 	}
 
 
