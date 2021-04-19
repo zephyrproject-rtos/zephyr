@@ -71,7 +71,7 @@
 			interrupts = <108 0>;
 			label = "FLEXSPI";
 			#address-cells = <1>;
-			#size-cells = <0>;
+			#size-cells = <1>;
 			ahb-bufferable;
 			ahb-cacheable;
 			status = "disabled";
@@ -83,7 +83,7 @@
 			interrupts = <107 0>;
 			label = "FLEXSPI1";
 			#address-cells = <1>;
-			#size-cells = <0>;
+			#size-cells = <1>;
 			ahb-bufferable;
 			ahb-cacheable;
 			status = "disabled";

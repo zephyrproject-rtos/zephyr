@@ -13,7 +13,7 @@
 		compatible = "nxp,imx-flexspi-nor";
 		size = <33554432>;
 		label = "W25Q32JVWJ0";
-		reg = <0>;
+		reg = <0 0x1000>, <0x70000000 DT_SIZE_M(4)>;
 		spi-max-frequency = <133000000>;
 		status = "okay";
 		jedec-id = [ef 40 16];

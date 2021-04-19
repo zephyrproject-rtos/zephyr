@@ -85,7 +85,7 @@ arduino_serial: &lpuart2 {};
 		compatible = "nxp,imx-flexspi-nor";
 		size = <67108864>;
 		label = "IS25WP064";
-		reg = <0>;
+		reg = <0 0x1000>, <0x60000000 DT_SIZE_M(8)>;
 		spi-max-frequency = <133000000>;
 		status = "okay";
 		jedec-id = [9d 70 17];
