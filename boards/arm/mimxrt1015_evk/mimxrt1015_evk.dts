@@ -18,6 +18,7 @@
 	};
 
 	chosen {
+		zephyr,flash = &at25sf128a;
 		zephyr,sram = &dtcm;
 		zephyr,itcm = &itcm;
 		zephyr,console = &lpuart1;
@@ -73,7 +74,6 @@
 arduino_serial: &lpuart4 {};
 
 &flexspi {
-	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(16)>;
 	at25sf128a: at25sf128a@0 {
 		compatible = "nxp,imx-flexspi-nor";
 		size = <134217728>;

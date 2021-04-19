@@ -67,7 +67,7 @@
 
 		flexspi: spi@402a8000 {
 			compatible = "nxp,imx-flexspi";
-			reg = <0x402a8000 0x4000>;
+			reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(256)>;
 			interrupts = <108 0>;
 			label = "FLEXSPI";
 			#address-cells = <1>;
@@ -79,7 +79,7 @@
 
 		flexspi2: spi@402a4000 {
 			compatible = "nxp,imx-flexspi";
-			reg = <0x402a4000 0x4000>;
+			reg = <0x402a4000 0x4000>, <0x70000000 DT_SIZE_M(240)>;
 			interrupts = <107 0>;
 			label = "FLEXSPI1";
 			#address-cells = <1>;

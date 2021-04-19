@@ -63,45 +63,13 @@ config WDT_MCUX_IMX_WDOG
 	default y
 	depends on WATCHDOG
 
-if CODE_SEMC
+DT_CHOSEN_Z_FLASH := zephyr,flash
 
 config FLASH_SIZE
-	default $(dt_node_reg_size_int,/memory@80000000,0,K)
+	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),1,K) if XIP
 
 config FLASH_BASE_ADDRESS
-	default $(dt_node_reg_addr_hex,/memory@80000000)
-
-endif # CODE_SEMC
-
-if CODE_ITCM
-
-config FLASH_SIZE
-	default $(dt_node_reg_size_int,/soc/flexram@400b0000/itcm@0,0,K)
-
-config FLASH_BASE_ADDRESS
-	default $(dt_node_reg_addr_hex,/soc/flexram@400b0000/itcm@0)
-
-endif # CODE_ITCM
-
-if CODE_FLEXSPI
-
-config FLASH_SIZE
-	default $(dt_node_reg_size_int,/soc/spi@402a8000,1,K)
-
-config FLASH_BASE_ADDRESS
-	default $(dt_node_reg_addr_hex,/soc/spi@402a8000,1)
-
-endif # CODE_FLEXSPI
-
-if CODE_FLEXSPI2
-
-config FLASH_SIZE
-	default $(dt_node_reg_size_int,/soc/spi@402a4000,1,K)
-
-config FLASH_BASE_ADDRESS
-	default $(dt_node_reg_addr_hex,/soc/spi@402a4000,1)
-
-endif # CODE_FLEXSPI2
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH),1) if XIP
 
 config USB_DC_NXP_EHCI
 	default y
