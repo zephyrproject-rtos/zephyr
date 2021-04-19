@@ -176,6 +176,10 @@ void test_k_aligned_alloc(void)
  */
 void test_sys_heap_mem_pool_assign(void)
 {
+	if (!IS_ENABLED(CONFIG_MULTITHREADING)) {
+		return;
+	}
+
 	void *ptr;
 
 	k_thread_system_pool_assign(k_current_get());
@@ -201,6 +205,10 @@ void test_sys_heap_mem_pool_assign(void)
  */
 void test_malloc_in_isr(void)
 {
+	if (!IS_ENABLED(CONFIG_IRQ_OFFLOAD)) {
+		return;
+	}
+
 	irq_offload((irq_offload_routine_t)tIsr_malloc_and_free, NULL);
 }
 
@@ -216,6 +224,10 @@ void test_malloc_in_isr(void)
  */
 void test_malloc_in_thread(void)
 {
+	if (!IS_ENABLED(CONFIG_MULTITHREADING)) {
+		return;
+	}
+
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 			      thread_entry, NULL, NULL, NULL,
 			      0, 0, K_NO_WAIT);
