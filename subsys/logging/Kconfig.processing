@@ -29,6 +29,7 @@ config LOG_MODE_OVERFLOW
 
 config LOG_BLOCK_IN_THREAD
 	bool "Block in thread context on full"
+	depends on MULTITHREADING
 	help
 	  When enabled logger will block (if in the thread context) when
 	  internal logger buffer is full and new message cannot be allocated.
@@ -47,6 +48,7 @@ config LOG_BLOCK_IN_THREAD_TIMEOUT_MS
 config LOG_PROCESS_TRIGGER_THRESHOLD
 	int "Number of buffered log messages before flushing"
 	default 10
+	depends on MULTITHREADING
 	help
 	  When number of buffered messages reaches the threshold thread is waken
 	  up. Log processing thread ID is provided during log initialization.
