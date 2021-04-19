@@ -402,12 +402,12 @@ int edac_ibecc_init(const struct device *dev)
 
 	mchbar &= MCHBAR_MASK;
 
-	/* workaround for 32 bit read */
+	/* TODO: Use 64 bit API when available */
 	touud = pcie_conf_read(bdf, TOUUD_REG);
 	touud |= (uint64_t)pcie_conf_read(bdf, TOUUD_REG + 1) << 32;
 	touud &= TOUUD_MASK;
 
-	/* workaround for 32 bit read */
+	/* TODO: Use 64 bit API when available */
 	tom = pcie_conf_read(bdf, TOM_REG);
 	tom |= (uint64_t)pcie_conf_read(bdf, TOM_REG + 1) << 32;
 	tom &= TOM_MASK;
