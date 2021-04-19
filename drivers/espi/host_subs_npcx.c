@@ -964,6 +964,8 @@ void npcx_host_init_subs_host_domain(void)
 
 void npcx_host_enable_access_interrupt(void)
 {
+	npcx_miwu_irq_get_and_clear_pending(&host_sub_cfg.host_acc_wui);
+
 	npcx_miwu_irq_enable(&host_sub_cfg.host_acc_wui);
 }
 
