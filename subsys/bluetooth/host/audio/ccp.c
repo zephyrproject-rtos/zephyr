@@ -101,27 +101,40 @@ struct tbs_server_inst {
 
 static struct bt_ccp_cb_t *ccp_cbs;
 
-static struct tbs_server_inst srv_inst;
+static struct tbs_server_inst srv_insts[CONFIG_BT_MAX_CONN];
 static struct bt_uuid *tbs_uuid = BT_UUID_TBS;
 static struct bt_uuid *gtbs_uuid = BT_UUID_GTBS;
 
 static void discover_next_instance(struct bt_conn *conn, uint8_t index);
 
-static bool valid_inst_index(uint8_t idx)
+static bool valid_inst_index(struct bt_conn *conn, uint8_t idx)
 {
+	uint8_t conn_index;
+
+	__ASSERT(conn, "NULL conn");
+
+	conn_index = bt_conn_index(conn);
+
 	if (IS_ENABLED(CONFIG_BT_CCP_GTBS) && idx == BT_CCP_GTBS_INDEX) {
 		return true;
 	} else {
-		return idx < srv_inst.inst_cnt;
+		return idx < srv_insts[conn_index].inst_cnt;
 	}
 }
 
-static struct tbs_instance_t *get_inst_by_index(uint8_t idx)
+static struct tbs_instance_t *get_inst_by_index(struct bt_conn *conn,
+						uint8_t idx)
 {
+	uint8_t conn_index;
+
+	__ASSERT(conn, "NULL conn");
+
+	conn_index = bt_conn_index(conn);
+
 	if (IS_ENABLED(CONFIG_BT_CCP_GTBS) && idx == BT_CCP_GTBS_INDEX) {
-		return &srv_inst.tbs_insts[GTBS_INDEX];
+		return &srv_insts[conn_index].tbs_insts[GTBS_INDEX];
 	} else {
-		return &srv_inst.tbs_insts[idx];
+		return &srv_insts[conn_index].tbs_insts[idx];
 	}
 }
 
@@ -135,15 +148,25 @@ static bool free_call_spot(struct tbs_instance_t *inst)
 	return false;
 }
 
-static struct tbs_instance_t *lookup_instance_by_handle(uint16_t handle)
+static struct tbs_instance_t *lookup_instance_by_handle(struct bt_conn *conn,
+							uint16_t handle)
 {
-	for (int i = 0; i < ARRAY_SIZE(srv_inst.tbs_insts); i++) {
-		if (srv_inst.tbs_insts[i].start_handle <= handle &&
-		    srv_inst.tbs_insts[i].end_handle >= handle) {
-			return &srv_inst.tbs_insts[i];
+	uint8_t conn_index;
+	struct tbs_server_inst *srv_inst;
+
+	__ASSERT(conn, "NULL conn");
+
+	conn_index = bt_conn_index(conn);
+	srv_inst = &srv_insts[conn_index];
+
+	for (int i = 0; i < ARRAY_SIZE(srv_inst->tbs_insts); i++) {
+		if (srv_inst->tbs_insts[i].start_handle <= handle &&
+		    srv_inst->tbs_insts[i].end_handle >= handle) {
+			return &srv_inst->tbs_insts[i];
 		}
 	}
 	BT_DBG("Could not find instance with handle 0x%04x", handle);
+
 	return NULL;
 }
 
@@ -498,15 +521,8 @@ static uint8_t notify_handler(struct bt_conn *conn,
 			   const void *data, uint16_t length)
 {
 	uint16_t handle = params->value_handle;
-	struct tbs_instance_t *tbs_inst = NULL;
-
-	for (int i = 0; i < ARRAY_SIZE(srv_inst.tbs_insts); i++) {
-		if (handle <= srv_inst.tbs_insts[i].end_handle &&
-		    handle >= srv_inst.tbs_insts[i].start_handle) {
-			tbs_inst = &srv_inst.tbs_insts[i];
-			break;
-		}
-	}
+	struct tbs_instance_t *tbs_inst = lookup_instance_by_handle(conn,
+								    handle);
 
 	if (!data) {
 		BT_DBG("[UNSUBSCRIBED] 0x%04X", params->value_handle);
@@ -568,7 +584,7 @@ static uint8_t notify_handler(struct bt_conn *conn,
 
 static int ccp_common_call_control(struct bt_conn *conn, uint8_t inst_index,
 				   uint8_t call_index, uint8_t opcode)
-{	struct tbs_instance_t *inst = get_inst_by_index(inst_index);
+{	struct tbs_instance_t *inst = get_inst_by_index(conn, inst_index);
 	struct bt_tbs_call_cp_acc_t common;
 
 	if (!inst) {
@@ -591,8 +607,7 @@ static uint8_t ccp_read_bearer_provider_name_cb(
 	struct bt_conn *conn, uint8_t err, struct bt_gatt_read_params *params,
 	const void *data, uint16_t length)
 {
-	struct tbs_instance_t *inst =
-		lookup_instance_by_handle(params->single.handle);
+	struct tbs_instance_t *inst = CONTAINER_OF(params, struct tbs_instance_t, read_params);
 	const char *provider_name = NULL;
 
 	memset(params, 0, sizeof(*params));
@@ -627,8 +642,7 @@ static uint8_t ccp_read_bearer_uci_cb(struct bt_conn *conn, uint8_t err,
 				   struct bt_gatt_read_params *params,
 				   const void *data, uint16_t length)
 {
-	struct tbs_instance_t *inst =
-		lookup_instance_by_handle(params->single.handle);
+	struct tbs_instance_t *inst = CONTAINER_OF(params, struct tbs_instance_t, read_params);
 	const char *bearer_uci = NULL;
 
 	memset(params, 0, sizeof(*params));
@@ -662,8 +676,7 @@ static uint8_t ccp_read_technology_cb(struct bt_conn *conn, uint8_t err,
 {
 	uint8_t cb_err = err;
 	uint8_t technology = 0;
-	struct tbs_instance_t *inst =
-		lookup_instance_by_handle(params->single.handle);
+	struct tbs_instance_t *inst = CONTAINER_OF(params, struct tbs_instance_t, read_params);
 
 	memset(params, 0, sizeof(*params));
 
@@ -704,8 +717,7 @@ static uint8_t ccp_read_uri_list_cb(struct bt_conn *conn, uint8_t err,
 				 const void *data, uint16_t length)
 {
 	const char *uri_scheme_list = NULL;
-	struct tbs_instance_t *inst =
-		lookup_instance_by_handle(params->single.handle);
+	struct tbs_instance_t *inst = CONTAINER_OF(params, struct tbs_instance_t, read_params);
 
 	memset(params, 0, sizeof(*params));
 
@@ -740,8 +752,7 @@ static uint8_t ccp_read_signal_strength_cb(struct bt_conn *conn, uint8_t err,
 {
 	uint8_t cb_err = err;
 	uint8_t signal_strength = 0;
-	struct tbs_instance_t *inst =
-		lookup_instance_by_handle(params->single.handle);
+	struct tbs_instance_t *inst = CONTAINER_OF(params, struct tbs_instance_t, read_params);
 
 	memset(params, 0, sizeof(*params));
 
@@ -780,8 +791,7 @@ static uint8_t ccp_read_signal_interval_cb(struct bt_conn *conn, uint8_t err,
 {
 	uint8_t cb_err = err;
 	uint8_t signal_interval = 0;
-	struct tbs_instance_t *inst =
-		lookup_instance_by_handle(params->single.handle);
+	struct tbs_instance_t *inst = CONTAINER_OF(params, struct tbs_instance_t, read_params);
 
 	memset(params, 0, sizeof(*params));
 
@@ -906,8 +916,7 @@ static uint8_t ccp_read_ccid_cb(struct bt_conn *conn, uint8_t err,
 {
 	uint8_t cb_err = err;
 	uint8_t ccid = 0;
-	struct tbs_instance_t *inst =
-		lookup_instance_by_handle(params->single.handle);
+	struct tbs_instance_t *inst = CONTAINER_OF(params, struct tbs_instance_t, read_params);
 
 	memset(params, 0, sizeof(*params));
 
@@ -945,8 +954,7 @@ static uint8_t ccp_read_status_flags_cb(struct bt_conn *conn, uint8_t err,
 {
 	uint8_t cb_err = err;
 	uint16_t status_flags = 0;
-	struct tbs_instance_t *inst =
-		lookup_instance_by_handle(params->single.handle);
+	struct tbs_instance_t *inst = CONTAINER_OF(params, struct tbs_instance_t, read_params);
 
 	memset(params, 0, sizeof(*params));
 
@@ -985,8 +993,7 @@ static uint8_t ccp_read_call_uri_cb(struct bt_conn *conn, uint8_t err,
 				       const void *data, uint16_t length)
 {
 	const char *in_target_uri = NULL;
-	struct tbs_instance_t *inst =
-		lookup_instance_by_handle(params->single.handle);
+	struct tbs_instance_t *inst = CONTAINER_OF(params, struct tbs_instance_t, read_params);
 
 	memset(params, 0, sizeof(*params));
 
@@ -1104,8 +1111,7 @@ static uint8_t ccp_read_optional_opcodes_cb(struct bt_conn *conn, uint8_t err,
 {
 	uint8_t cb_err = err;
 	uint16_t optional_opcodes = 0;
-	struct tbs_instance_t *inst =
-		lookup_instance_by_handle(params->single.handle);
+	struct tbs_instance_t *inst = CONTAINER_OF(params, struct tbs_instance_t, read_params);
 
 	memset(params, 0, sizeof(*params));
 
@@ -1143,8 +1149,7 @@ static uint8_t ccp_read_remote_uri_cb(struct bt_conn *conn, uint8_t err,
 					 struct bt_gatt_read_params *params,
 					 const void *data, uint16_t length)
 {
-	struct tbs_instance_t *inst =
-		lookup_instance_by_handle(params->single.handle);
+	struct tbs_instance_t *inst = CONTAINER_OF(params, struct tbs_instance_t, read_params);
 	const char *remote_uri = NULL;
 
 	memset(params, 0, sizeof(*params));
@@ -1177,8 +1182,7 @@ static uint8_t ccp_read_friendly_name_cb(struct bt_conn *conn, uint8_t err,
 					 struct bt_gatt_read_params *params,
 					 const void *data, uint16_t length)
 {
-	struct tbs_instance_t *inst =
-		lookup_instance_by_handle(params->single.handle);
+	struct tbs_instance_t *inst = CONTAINER_OF(params, struct tbs_instance_t, read_params);
 	const char *friendly_name = NULL;
 
 	memset(params, 0, sizeof(*params));
@@ -1220,30 +1224,32 @@ static uint8_t discover_func(struct bt_conn *conn,
 {
 	struct bt_gatt_chrc *chrc;
 	struct bt_gatt_subscribe_params *sub_params = NULL;
-	struct tbs_instance_t *current_inst = srv_inst.current_inst;
+	uint8_t conn_index = bt_conn_index(conn);
+	struct tbs_server_inst *srv_inst = &srv_insts[conn_index];
+	struct tbs_instance_t *current_inst = srv_inst->current_inst;
 
 	if (!attr) {
 		if (IS_ENABLED(CONFIG_BT_CCP_GTBS) &&
-		    srv_inst.current_inst->index == GTBS_INDEX) {
+		    current_inst->index == GTBS_INDEX) {
 			BT_DBG("Setup complete GTBS");
 		} else {
 			BT_DBG("Setup complete for %u / %u TBS",
-			       srv_inst.current_inst->index + 1,
-			       srv_inst.inst_cnt);
+			       current_inst->index + 1,
+			       srv_inst->inst_cnt);
 		}
 		(void)memset(params, 0, sizeof(*params));
 
 		if (TBS_INSTANCE_MAX_CNT > 1 &&
-		    (((srv_inst.current_inst->index + 1) < srv_inst.inst_cnt) ||
+		    (((current_inst->index + 1) < srv_inst->inst_cnt) ||
 			(IS_ENABLED(CONFIG_BT_CCP_GTBS) &&
-			 srv_inst.gtbs_found &&
-			 srv_inst.current_inst->index + 1 == GTBS_INDEX))) {
-			discover_next_instance(conn, srv_inst.current_inst->index + 1);
+			 srv_inst->gtbs_found &&
+			 current_inst->index + 1 == GTBS_INDEX))) {
+			discover_next_instance(conn, current_inst->index + 1);
 		} else {
-			srv_inst.current_inst = NULL;
+			srv_inst->current_inst = NULL;
 			if (ccp_cbs && ccp_cbs->discover) {
-				ccp_cbs->discover(conn, 0, srv_inst.inst_cnt,
-						  srv_inst.gtbs_found);
+				ccp_cbs->discover(conn, 0, srv_inst->inst_cnt,
+						  srv_inst->gtbs_found);
 			}
 		}
 		return BT_GATT_ITER_STOP;
@@ -1260,7 +1266,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 			sub_params->disc_params = &current_inst->name_sub_disc_params;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_TBS_UCI)) {
 			BT_DBG("Bearer UCI");
-			srv_inst.current_inst->bearer_uci_handle = chrc->value_handle;
+			current_inst->bearer_uci_handle = chrc->value_handle;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_TBS_TECHNOLOGY)) {
 			BT_DBG("Technology");
 			current_inst->technology_handle = chrc->value_handle;
@@ -1268,7 +1274,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 			sub_params->disc_params = &current_inst->technology_sub_disc_params;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_TBS_URI_LIST)) {
 			BT_DBG("URI Scheme List");
-			srv_inst.current_inst->uri_list_handle = chrc->value_handle;
+			current_inst->uri_list_handle = chrc->value_handle;
 		} else if (!bt_uuid_cmp(chrc->uuid,
 					BT_UUID_TBS_SIGNAL_STRENGTH)) {
 			BT_DBG("Signal strength");
@@ -1279,7 +1285,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 		} else if (!bt_uuid_cmp(chrc->uuid,
 					BT_UUID_TBS_SIGNAL_INTERVAL)) {
 			BT_DBG("Signal strength reporting interval");
-			srv_inst.current_inst->signal_interval_handle = chrc->value_handle;
+			current_inst->signal_interval_handle = chrc->value_handle;
 		} else if (!bt_uuid_cmp(chrc->uuid,
 					BT_UUID_TBS_LIST_CURRENT_CALLS)) {
 			BT_DBG("Current calls");
@@ -1289,7 +1295,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 		} else if (!bt_uuid_cmp(chrc->uuid,
 					BT_UUID_CCID)) {
 			BT_DBG("CCID");
-			srv_inst.current_inst->ccid_handle = chrc->value_handle;
+			current_inst->ccid_handle = chrc->value_handle;
 		} else if (!bt_uuid_cmp(chrc->uuid,
 					BT_UUID_TBS_STATUS_FLAGS)) {
 			BT_DBG("Status flags");
@@ -1318,7 +1324,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 		} else if (!bt_uuid_cmp(chrc->uuid,
 					BT_UUID_TBS_OPTIONAL_OPCODES)) {
 			BT_DBG("Supported opcodes");
-			srv_inst.current_inst->optional_opcodes_handle = chrc->value_handle;
+			current_inst->optional_opcodes_handle = chrc->value_handle;
 		} else if (!bt_uuid_cmp(chrc->uuid,
 					BT_UUID_TBS_TERMINATE_REASON)) {
 			BT_DBG("Termination reason");
@@ -1342,7 +1348,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 			sub_params->disc_params = &current_inst->incoming_call_sub_disc_params;
 		}
 
-		if (srv_inst.subscribe_all && sub_params) {
+		if (srv_insts[conn_index].subscribe_all && sub_params) {
 			sub_params->value = 0;
 			if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
 				sub_params->value = BT_GATT_CCC_NOTIFY;
@@ -1379,21 +1385,24 @@ static uint8_t discover_func(struct bt_conn *conn,
 static void discover_next_instance(struct bt_conn *conn, uint8_t index)
 {
 	int err;
+	uint8_t conn_index = bt_conn_index(conn);
+	struct tbs_server_inst *srv_inst = &srv_insts[conn_index];
 
-	srv_inst.current_inst = &srv_inst.tbs_insts[index];
-	memset(&srv_inst.discover_params, 0, sizeof(srv_inst.discover_params));
-	srv_inst.discover_params.uuid = NULL;
-	srv_inst.discover_params.start_handle = srv_inst.current_inst->start_handle;
-	srv_inst.discover_params.end_handle = srv_inst.current_inst->end_handle;
-	srv_inst.discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
-	srv_inst.discover_params.func = discover_func;
+	srv_inst->current_inst = &srv_inst->tbs_insts[index];
+	memset(&srv_inst->discover_params, 0, sizeof(srv_inst->discover_params));
+	srv_inst->discover_params.uuid = NULL;
+	srv_inst->discover_params.start_handle = srv_inst->current_inst->start_handle;
+	srv_inst->discover_params.end_handle = srv_inst->current_inst->end_handle;
+	srv_inst->discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
+	srv_inst->discover_params.func = discover_func;
 
-	err = bt_gatt_discover(conn, &srv_inst.discover_params);
+	err = bt_gatt_discover(conn, &srv_inst->discover_params);
 	if (err) {
 		BT_DBG("Discover failed (err %d)", err);
-		srv_inst.current_inst = NULL;
+		srv_inst->current_inst = NULL;
 		if (ccp_cbs && ccp_cbs->discover) {
-			ccp_cbs->discover(conn, err, srv_inst.inst_cnt, srv_inst.gtbs_found);
+			ccp_cbs->discover(conn, err, srv_inst->inst_cnt,
+					  srv_inst->gtbs_found);
 		}
 	}
 }
@@ -1409,6 +1418,9 @@ static uint8_t primary_discover_func(struct bt_conn *conn,
 				     struct bt_gatt_discover_params *params)
 {
 	struct bt_gatt_service_val *prim_service;
+	uint8_t conn_index = bt_conn_index(conn);
+	struct tbs_server_inst *srv_inst = &srv_insts[conn_index];
+
 	/*
 	 * TODO: Since we know the ranges of each instance, we could do
 	 * discover of more than just prim_service->start and
@@ -1416,7 +1428,7 @@ static uint8_t primary_discover_func(struct bt_conn *conn,
 	 * faster
 	 */
 
-	if (!attr || srv_inst.inst_cnt == TBS_INSTANCE_MAX_CNT) {
+	if (!attr || srv_inst->inst_cnt == TBS_INSTANCE_MAX_CNT) {
 		if (IS_ENABLED(CONFIG_BT_CCP_GTBS) &&
 		    !bt_uuid_cmp(params->uuid, BT_UUID_GTBS)) {
 			int err;
@@ -1428,7 +1440,7 @@ static uint8_t primary_discover_func(struct bt_conn *conn,
 
 			if (err) {
 				BT_DBG("Discover failed (err %d)", err);
-				srv_inst.current_inst = NULL;
+				srv_inst->current_inst = NULL;
 				if (ccp_cbs && ccp_cbs->discover) {
 					ccp_cbs->discover(conn, err, 0, false);
 				}
@@ -1437,26 +1449,26 @@ static uint8_t primary_discover_func(struct bt_conn *conn,
 		}
 
 		if (IS_ENABLED(CONFIG_BT_CCP_GTBS)) {
-			srv_inst.gtbs_found = srv_inst.tbs_insts[GTBS_INDEX].gtbs;
+			srv_inst->gtbs_found = srv_inst->tbs_insts[GTBS_INDEX].gtbs;
 			BT_DBG("Discover complete, found %u instances "
 			       "(GTBS%s found)",
-				srv_inst.inst_cnt,
-				srv_inst.gtbs_found ? "" : " not");
+				srv_inst->inst_cnt,
+				srv_inst->gtbs_found ? "" : " not");
 		} else {
 			BT_DBG("Discover complete, found %u instances",
-			       srv_inst.inst_cnt);
+			       srv_inst->inst_cnt);
 		}
 
-		if (srv_inst.inst_cnt) {
+		if (srv_inst->inst_cnt) {
 			discover_next_instance(conn, 0);
 		} else if (IS_ENABLED(CONFIG_BT_CCP_GTBS) &&
-			   srv_inst.gtbs_found) {
+			   srv_inst->gtbs_found) {
 			discover_next_instance(conn, GTBS_INDEX);
 		} else {
-			srv_inst.current_inst = NULL;
+			srv_inst->current_inst = NULL;
 			if (ccp_cbs && ccp_cbs->discover) {
-				ccp_cbs->discover(conn, 0, srv_inst.inst_cnt,
-						  srv_inst.gtbs_found);
+				ccp_cbs->discover(conn, 0, srv_inst->inst_cnt,
+						  srv_inst->gtbs_found);
 			}
 		}
 
@@ -1469,19 +1481,19 @@ static uint8_t primary_discover_func(struct bt_conn *conn,
 		prim_service = (struct bt_gatt_service_val *)attr->user_data;
 		params->start_handle = attr->handle + 1;
 
-		srv_inst.current_inst = &srv_inst.tbs_insts[srv_inst.inst_cnt];
-		srv_inst.current_inst->index = srv_inst.inst_cnt;
+		srv_inst->current_inst = &srv_inst->tbs_insts[srv_inst->inst_cnt];
+		srv_inst->current_inst->index = srv_inst->inst_cnt;
 
 		if (IS_ENABLED(CONFIG_BT_CCP_GTBS) &&
 		    !bt_uuid_cmp(params->uuid, BT_UUID_GTBS)) {
 			int err;
 
 			/* GTBS is placed as the "last" instance */
-			srv_inst.current_inst = &srv_inst.tbs_insts[GTBS_INDEX];
-			srv_inst.current_inst->index = GTBS_INDEX;
-			srv_inst.current_inst->gtbs = true;
-			srv_inst.current_inst->start_handle = attr->handle + 1;
-			srv_inst.current_inst->end_handle = prim_service->end_handle;
+			srv_inst->current_inst = &srv_inst->tbs_insts[GTBS_INDEX];
+			srv_inst->current_inst->index = GTBS_INDEX;
+			srv_inst->current_inst->gtbs = true;
+			srv_inst->current_inst->start_handle = attr->handle + 1;
+			srv_inst->current_inst->end_handle = prim_service->end_handle;
 
 			params->uuid = tbs_uuid;
 			params->start_handle = FIRST_HANDLE;
@@ -1489,16 +1501,16 @@ static uint8_t primary_discover_func(struct bt_conn *conn,
 			err = bt_gatt_discover(conn, params);
 			if (err) {
 				BT_DBG("Discover failed (err %d)", err);
-				srv_inst.current_inst = NULL;
+				srv_inst->current_inst = NULL;
 				if (ccp_cbs && ccp_cbs->discover) {
 					ccp_cbs->discover(conn, err, 0, false);
 				}
 			}
 			return BT_GATT_ITER_STOP;
 		}
-		srv_inst.current_inst->start_handle = attr->handle + 1;
-		srv_inst.current_inst->end_handle = prim_service->end_handle;
-		srv_inst.inst_cnt++;
+		srv_inst->current_inst->start_handle = attr->handle + 1;
+		srv_inst->current_inst->end_handle = prim_service->end_handle;
+		srv_inst->inst_cnt++;
 	}
 
 	return BT_GATT_ITER_CONTINUE;
@@ -1545,14 +1557,14 @@ int bt_ccp_originate_call(struct bt_conn *conn, uint8_t inst_index,
 
 	if (!conn) {
 		return -ENOTCONN;
-	} else if (!valid_inst_index(inst_index)) {
+	} else if (!valid_inst_index(conn, inst_index)) {
 		return -EINVAL;
 	} else if (!tbs_valid_uri(uri)) {
 		BT_DBG("Invalid URI: %s", log_strdup(uri));
 		return -EINVAL;
 	}
 
-	inst = get_inst_by_index(inst_index);
+	inst = get_inst_by_index(conn, inst_index);
 
 	/* Check if there are free spots */
 	if (!free_call_spot(inst)) {
@@ -1592,7 +1604,7 @@ int bt_ccp_join_calls(struct bt_conn *conn, uint8_t inst_index,
 		uint8_t write_buf[CONFIG_BT_L2CAP_TX_MTU];
 		const size_t max_call_cnt = sizeof(write_buf) - sizeof(join->opcode);
 
-		inst = get_inst_by_index(inst_index);
+		inst = get_inst_by_index(conn, inst_index);
 		if (!inst) {
 			return -EINVAL;
 		} else if (!inst->call_cp_handle) {
@@ -1625,11 +1637,11 @@ int bt_ccp_set_signal_strength_interval(struct bt_conn *conn,
 
 	if (!conn) {
 		return -ENOTCONN;
-	} else if (!valid_inst_index(inst_index)) {
+	} else if (!valid_inst_index(conn, inst_index)) {
 		return -EINVAL;
 	}
 
-	inst = get_inst_by_index(inst_index);
+	inst = get_inst_by_index(conn, inst_index);
 	/* Populate Outgoing Remote URI */
 	if (!inst->signal_interval_handle) {
 		BT_DBG("Handle not set");
@@ -1649,11 +1661,11 @@ int bt_ccp_read_bearer_provider_name(struct bt_conn *conn, uint8_t inst_index)
 
 	if (!conn) {
 		return -ENOTCONN;
-	} else if (!valid_inst_index(inst_index)) {
+	} else if (!valid_inst_index(conn, inst_index)) {
 		return -EINVAL;
 	}
 
-	inst = get_inst_by_index(inst_index);
+	inst = get_inst_by_index(conn, inst_index);
 
 	if (!inst->provider_name_handle) {
 		BT_DBG("Handle not set");
@@ -1679,11 +1691,11 @@ int bt_ccp_read_bearer_uci(struct bt_conn *conn, uint8_t inst_index)
 
 	if (!conn) {
 		return -ENOTCONN;
-	} else if (!valid_inst_index(inst_index)) {
+	} else if (!valid_inst_index(conn, inst_index)) {
 		return -EINVAL;
 	}
 
-	inst = get_inst_by_index(inst_index);
+	inst = get_inst_by_index(conn, inst_index);
 
 	if (!inst->bearer_uci_handle) {
 		BT_DBG("Handle not set");
@@ -1709,11 +1721,11 @@ int bt_ccp_read_technology(struct bt_conn *conn, uint8_t inst_index)
 
 	if (!conn) {
 		return -ENOTCONN;
-	} else if (!valid_inst_index(inst_index)) {
+	} else if (!valid_inst_index(conn, inst_index)) {
 		return -EINVAL;
 	}
 
-	inst = get_inst_by_index(inst_index);
+	inst = get_inst_by_index(conn, inst_index);
 
 	if (!inst->technology_handle) {
 		BT_DBG("Handle not set");
@@ -1739,11 +1751,11 @@ int bt_ccp_read_uri_list(struct bt_conn *conn, uint8_t inst_index)
 
 	if (!conn) {
 		return -ENOTCONN;
-	} else if (!valid_inst_index(inst_index)) {
+	} else if (!valid_inst_index(conn, inst_index)) {
 		return -EINVAL;
 	}
 
-	inst = get_inst_by_index(inst_index);
+	inst = get_inst_by_index(conn, inst_index);
 
 	if (!inst->uri_list_handle) {
 		BT_DBG("Handle not set");
@@ -1769,11 +1781,11 @@ int bt_ccp_read_signal_strength(struct bt_conn *conn, uint8_t inst_index)
 
 	if (!conn) {
 		return -ENOTCONN;
-	} else if (!valid_inst_index(inst_index)) {
+	} else if (!valid_inst_index(conn, inst_index)) {
 		return -EINVAL;
 	}
 
-	inst = get_inst_by_index(inst_index);
+	inst = get_inst_by_index(conn, inst_index);
 
 	if (!inst->signal_strength_handle) {
 		BT_DBG("Handle not set");
@@ -1799,11 +1811,11 @@ int bt_ccp_read_signal_interval(struct bt_conn *conn, uint8_t inst_index)
 
 	if (!conn) {
 		return -ENOTCONN;
-	} else if (!valid_inst_index(inst_index)) {
+	} else if (!valid_inst_index(conn, inst_index)) {
 		return -EINVAL;
 	}
 
-	inst = get_inst_by_index(inst_index);
+	inst = get_inst_by_index(conn, inst_index);
 
 	if (!inst->signal_interval_handle) {
 		BT_DBG("Handle not set");
@@ -1829,11 +1841,11 @@ int bt_ccp_read_current_calls(struct bt_conn *conn, uint8_t inst_index)
 
 	if (!conn) {
 		return -ENOTCONN;
-	} else if (!valid_inst_index(inst_index)) {
+	} else if (!valid_inst_index(conn, inst_index)) {
 		return -EINVAL;
 	}
 
-	inst = get_inst_by_index(inst_index);
+	inst = get_inst_by_index(conn, inst_index);
 
 	if (!inst->current_calls_handle) {
 		BT_DBG("Handle not set");
@@ -1859,11 +1871,11 @@ int bt_ccp_read_ccid(struct bt_conn *conn, uint8_t inst_index)
 
 	if (!conn) {
 		return -ENOTCONN;
-	} else if (!valid_inst_index(inst_index)) {
+	} else if (!valid_inst_index(conn, inst_index)) {
 		return -EINVAL;
 	}
 
-	inst = get_inst_by_index(inst_index);
+	inst = get_inst_by_index(conn, inst_index);
 
 	if (!inst->ccid_handle) {
 		BT_DBG("Handle not set");
@@ -1889,11 +1901,11 @@ int bt_ccp_read_status_flags(struct bt_conn *conn, uint8_t inst_index)
 
 	if (!conn) {
 		return -ENOTCONN;
-	} else if (!valid_inst_index(inst_index)) {
+	} else if (!valid_inst_index(conn, inst_index)) {
 		return -EINVAL;
 	}
 
-	inst = get_inst_by_index(inst_index);
+	inst = get_inst_by_index(conn, inst_index);
 
 	if (!inst->status_flags_handle) {
 		BT_DBG("Handle not set");
@@ -1919,11 +1931,11 @@ int bt_ccp_read_call_uri(struct bt_conn *conn, uint8_t inst_index)
 
 	if (!conn) {
 		return -ENOTCONN;
-	} else if (!valid_inst_index(inst_index)) {
+	} else if (!valid_inst_index(conn, inst_index)) {
 		return -EINVAL;
 	}
 
-	inst = get_inst_by_index(inst_index);
+	inst = get_inst_by_index(conn, inst_index);
 
 	if (!inst->in_uri_handle) {
 		BT_DBG("Handle not set");
@@ -1949,11 +1961,11 @@ int bt_ccp_read_call_state(struct bt_conn *conn, uint8_t inst_index)
 
 	if (!conn) {
 		return -ENOTCONN;
-	} else if (!valid_inst_index(inst_index)) {
+	} else if (!valid_inst_index(conn, inst_index)) {
 		return -EINVAL;
 	}
 
-	inst = get_inst_by_index(inst_index);
+	inst = get_inst_by_index(conn, inst_index);
 
 	if (!inst->call_state_handle) {
 		BT_DBG("Handle not set");
@@ -1979,11 +1991,11 @@ int bt_ccp_read_optional_opcodes(struct bt_conn *conn, uint8_t inst_index)
 
 	if (!conn) {
 		return -ENOTCONN;
-	} else if (!valid_inst_index(inst_index)) {
+	} else if (!valid_inst_index(conn, inst_index)) {
 		return -EINVAL;
 	}
 
-	inst = get_inst_by_index(inst_index);
+	inst = get_inst_by_index(conn, inst_index);
 
 	if (!inst->optional_opcodes_handle) {
 		BT_DBG("Handle not set");
@@ -2008,11 +2020,11 @@ int bt_ccp_read_remote_uri(struct bt_conn *conn, uint8_t inst_index)
 
 	if (!conn) {
 		return -ENOTCONN;
-	} else if (!valid_inst_index(inst_index)) {
+	} else if (!valid_inst_index(conn, inst_index)) {
 		return -EINVAL;
 	}
 
-	inst = get_inst_by_index(inst_index);
+	inst = get_inst_by_index(conn, inst_index);
 
 	if (!inst->in_call_handle) {
 		BT_DBG("Handle not set");
@@ -2038,11 +2050,11 @@ int bt_ccp_read_friendly_name(struct bt_conn *conn, uint8_t inst_index)
 
 	if (!conn) {
 		return -ENOTCONN;
-	} else if (!valid_inst_index(inst_index)) {
+	} else if (!valid_inst_index(conn, inst_index)) {
 		return -EINVAL;
 	}
 
-	inst = get_inst_by_index(inst_index);
+	inst = get_inst_by_index(conn, inst_index);
 
 	if (!inst->friendly_name_handle) {
 		BT_DBG("Handle not set");
@@ -2063,29 +2075,38 @@ int bt_ccp_read_friendly_name(struct bt_conn *conn, uint8_t inst_index)
 
 int bt_ccp_discover(struct bt_conn *conn, bool subscribe)
 {
+	uint8_t conn_index;
+	struct tbs_server_inst *srv_inst;
+
 	if (!conn) {
 		return -ENOTCONN;
-	} else if (srv_inst.current_inst) {
+	}
+
+	conn_index = bt_conn_index(conn);
+	srv_inst = &srv_insts[conn_index];
+
+	if (srv_inst->current_inst) {
 		return -EBUSY;
 	}
 
-	memset(srv_inst.tbs_insts, 0, sizeof(srv_inst.tbs_insts)); /* reset data */
-	srv_inst.inst_cnt = 0;
-	srv_inst.gtbs_found = false;
+	memset(srv_inst->tbs_insts, 0, sizeof(srv_inst->tbs_insts)); /* reset data */
+	srv_inst->inst_cnt = 0;
+	srv_inst->gtbs_found = false;
 	/* Discover TBS on peer, setup handles and notify/indicate */
-	srv_inst.subscribe_all = subscribe;
-	(void)memset(&srv_inst.discover_params, 0, sizeof(srv_inst.discover_params));
+	srv_inst->subscribe_all = subscribe;
+	(void)memset(&srv_inst->discover_params, 0, sizeof(srv_inst->discover_params));
 	if (IS_ENABLED(CONFIG_BT_CCP_GTBS)) {
 		BT_DBG("Discovering GTBS");
-		srv_inst.discover_params.uuid = gtbs_uuid;
+		srv_inst->discover_params.uuid = gtbs_uuid;
 	} else {
-		srv_inst.discover_params.uuid = tbs_uuid;
+		srv_inst->discover_params.uuid = tbs_uuid;
 	}
-	srv_inst.discover_params.func = primary_discover_func;
-	srv_inst.discover_params.type = BT_GATT_DISCOVER_PRIMARY;
-	srv_inst.discover_params.start_handle = FIRST_HANDLE;
-	srv_inst.discover_params.end_handle = LAST_HANDLE;
-	return bt_gatt_discover(conn, &srv_inst.discover_params);
+	srv_inst->discover_params.func = primary_discover_func;
+	srv_inst->discover_params.type = BT_GATT_DISCOVER_PRIMARY;
+	srv_inst->discover_params.start_handle = FIRST_HANDLE;
+	srv_inst->discover_params.end_handle = LAST_HANDLE;
+
+	return bt_gatt_discover(conn, &srv_inst->discover_params);
 }
 
 void bt_ccp_register_cb(struct bt_ccp_cb_t *cb)
