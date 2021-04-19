@@ -177,6 +177,18 @@ bool npcx_miwu_irq_get_state(const struct npcx_wui *wui)
 	return IS_BIT_SET(NPCX_WKEN(base, wui->group), wui->bit);
 }
 
+bool npcx_miwu_irq_get_and_clear_pending(const struct npcx_wui *wui)
+{
+	const uint32_t base = DRV_CONFIG(miwu_devs[wui->table])->base;
+	bool pending = IS_BIT_SET(NPCX_WKPND(base, wui->group), wui->bit);
+
+	if (pending) {
+		NPCX_WKPCL(base, wui->group) = BIT(wui->bit);
+	}
+
+	return pending;
+}
+
 int npcx_miwu_interrupt_configure(const struct npcx_wui *wui,
 		enum miwu_int_mode mode, enum miwu_int_trig trig)
 {
