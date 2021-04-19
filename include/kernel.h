@@ -4841,6 +4841,7 @@ extern int k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
  * This routine allocates a memory block from a memory slab.
  *
  * @note @a timeout must be set to K_NO_WAIT if called from ISR.
+ * @note When CONFIG_MULTITHREADING=n any @timeout is treated as K_NO_WAIT.
  *
  * @funcprops \isr_ok
  *
