@@ -10,7 +10,7 @@
 
 #include <kernel.h>
 #include <kernel_structs.h>
-#include <debug/object_tracing_common.h>
+
 #include <toolchain.h>
 #include <ksched.h>
 #include <wait_q.h>
@@ -18,27 +18,6 @@
 #include <init.h>
 #include <syscall_handler.h>
 #include <kernel_internal.h>
-
-#ifdef CONFIG_OBJECT_TRACING
-
-struct k_stack *_trace_list_k_stack;
-
-/*
- * Complete initialization of statically defined stacks.
- */
-static int init_stack_module(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	Z_STRUCT_SECTION_FOREACH(k_stack, stack) {
-		SYS_TRACING_OBJ_INIT(k_stack, stack);
-	}
-	return 0;
-}
-
-SYS_INIT(init_stack_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
-
-#endif /* CONFIG_OBJECT_TRACING */
 
 void k_stack_init(struct k_stack *stack, stack_data_t *buffer,
 		  uint32_t num_entries)
@@ -49,8 +28,6 @@ void k_stack_init(struct k_stack *stack, stack_data_t *buffer,
 	stack->top = stack->base + num_entries;
 
 	SYS_PORT_TRACING_OBJ_INIT(k_stack, stack);
-
-	SYS_TRACING_OBJ_INIT(k_stack, stack);
 	z_object_init(stack);
 }
 

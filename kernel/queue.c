@@ -13,7 +13,7 @@
 
 #include <kernel.h>
 #include <kernel_structs.h>
-#include <debug/object_tracing_common.h>
+
 #include <toolchain.h>
 #include <wait_q.h>
 #include <ksched.h>
@@ -55,27 +55,6 @@ void *z_queue_node_peek(sys_sfnode_t *node, bool needs_free)
 	return ret;
 }
 
-#ifdef CONFIG_OBJECT_TRACING
-
-struct k_queue *_trace_list_k_queue;
-
-/*
- * Complete initialization of statically defined queues.
- */
-static int init_queue_module(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	Z_STRUCT_SECTION_FOREACH(k_queue, queue) {
-		SYS_TRACING_OBJ_INIT(k_queue, queue);
-	}
-	return 0;
-}
-
-SYS_INIT(init_queue_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
-
-#endif /* CONFIG_OBJECT_TRACING */
-
 void z_impl_k_queue_init(struct k_queue *queue)
 {
 	sys_sflist_init(&queue->data_q);
@@ -87,7 +66,6 @@ void z_impl_k_queue_init(struct k_queue *queue)
 
 	SYS_PORT_TRACING_OBJ_INIT(k_queue, queue);
 
-	SYS_TRACING_OBJ_INIT(k_queue, queue);
 	z_object_init(queue);
 }
 

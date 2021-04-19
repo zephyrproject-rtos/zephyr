@@ -12,7 +12,7 @@
 
 #include <kernel.h>
 #include <kernel_structs.h>
-#include <debug/object_tracing_common.h>
+
 #include <toolchain.h>
 #include <ksched.h>
 #include <wait_q.h>
@@ -36,17 +36,12 @@ struct k_pipe_async {
 	struct k_pipe_desc  desc;     /* Pipe message descriptor */
 };
 
-#ifdef CONFIG_OBJECT_TRACING
-struct k_pipe *_trace_list_k_pipe;
-#endif	/* CONFIG_OBJECT_TRACING */
-
 #if (CONFIG_NUM_PIPE_ASYNC_MSGS > 0)
 /* stack of unused asynchronous message descriptors */
 K_STACK_DEFINE(pipe_async_msgs, CONFIG_NUM_PIPE_ASYNC_MSGS);
 #endif /* CONFIG_NUM_PIPE_ASYNC_MSGS > 0 */
 
-#if (CONFIG_NUM_PIPE_ASYNC_MSGS > 0) || \
-	defined(CONFIG_OBJECT_TRACING)
+#if (CONFIG_NUM_PIPE_ASYNC_MSGS > 0)
 
 /*
  * Do run-time initialization of pipe object subsystem.
@@ -83,18 +78,12 @@ static int init_pipes_module(const struct device *dev)
 
 	/* Complete initialization of statically defined mailboxes. */
 
-#ifdef CONFIG_OBJECT_TRACING
-	Z_STRUCT_SECTION_FOREACH(k_pipe, pipe) {
-		SYS_TRACING_OBJ_INIT(k_pipe, pipe);
-	}
-#endif /* CONFIG_OBJECT_TRACING */
-
 	return 0;
 }
 
 SYS_INIT(init_pipes_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
-#endif /* CONFIG_NUM_PIPE_ASYNC_MSGS or CONFIG_OBJECT_TRACING */
+#endif /* CONFIG_NUM_PIPE_ASYNC_MSGS */
 
 void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
 {
@@ -106,10 +95,8 @@ void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
 	pipe->lock = (struct k_spinlock){};
 	z_waitq_init(&pipe->wait_q.writers);
 	z_waitq_init(&pipe->wait_q.readers);
-
 	SYS_PORT_TRACING_OBJ_INIT(k_pipe, pipe);
 
-	SYS_TRACING_OBJ_INIT(k_pipe, pipe);
 	pipe->flags = 0;
 	z_object_init(pipe);
 }

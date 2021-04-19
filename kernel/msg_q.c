@@ -12,7 +12,7 @@
 
 #include <kernel.h>
 #include <kernel_structs.h>
-#include <debug/object_tracing_common.h>
+
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <string.h>
@@ -24,27 +24,6 @@
 #include <syscall_handler.h>
 #include <kernel_internal.h>
 #include <sys/check.h>
-
-#ifdef CONFIG_OBJECT_TRACING
-
-struct k_msgq *_trace_list_k_msgq;
-
-/*
- * Complete initialization of statically defined message queues.
- */
-static int init_msgq_module(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	Z_STRUCT_SECTION_FOREACH(k_msgq, msgq) {
-		SYS_TRACING_OBJ_INIT(k_msgq, msgq);
-	}
-	return 0;
-}
-
-SYS_INIT(init_msgq_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
-
-#endif /* CONFIG_OBJECT_TRACING */
 
 #ifdef CONFIG_POLL
 static inline void handle_poll_events(struct k_msgq *msgq, uint32_t state)
@@ -71,8 +50,6 @@ void k_msgq_init(struct k_msgq *msgq, char *buffer, size_t msg_size,
 #endif	/* CONFIG_POLL */
 
 	SYS_PORT_TRACING_OBJ_INIT(k_msgq, msgq);
-
-	SYS_TRACING_OBJ_INIT(k_msgq, msgq);
 
 	z_object_init(msgq);
 }

@@ -5,7 +5,7 @@
  */
 
 #include <kernel.h>
-#include <debug/object_tracing_common.h>
+
 #include <init.h>
 #include <ksched.h>
 #include <wait_q.h>
@@ -14,27 +14,6 @@
 #include <spinlock.h>
 
 static struct k_spinlock lock;
-
-#ifdef CONFIG_OBJECT_TRACING
-
-struct k_timer *_trace_list_k_timer;
-
-/*
- * Complete initialization of statically defined timers.
- */
-static int init_timer_module(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	Z_STRUCT_SECTION_FOREACH(k_timer, timer) {
-		SYS_TRACING_OBJ_INIT(k_timer, timer);
-	}
-	return 0;
-}
-
-SYS_INIT(init_timer_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
-
-#endif /* CONFIG_OBJECT_TRACING */
 
 /**
  * @brief Handle expiration of a kernel timer object.
@@ -107,8 +86,6 @@ void k_timer_init(struct k_timer *timer,
 	z_init_timeout(&timer->timeout);
 
 	SYS_PORT_TRACING_OBJ_INIT(k_timer, timer);
-
-	SYS_TRACING_OBJ_INIT(k_timer, timer);
 
 	timer->user_data = NULL;
 

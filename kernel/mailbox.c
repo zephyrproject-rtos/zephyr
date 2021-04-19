@@ -10,7 +10,7 @@
 
 #include <kernel.h>
 #include <kernel_structs.h>
-#include <debug/object_tracing_common.h>
+
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <string.h>
@@ -44,12 +44,7 @@ static inline void mbox_async_free(struct k_mbox_async *async)
 
 #endif /* CONFIG_NUM_MBOX_ASYNC_MSGS > 0 */
 
-#ifdef CONFIG_OBJECT_TRACING
-struct k_mbox *_trace_list_k_mbox;
-#endif	/* CONFIG_OBJECT_TRACING */
-
-#if (CONFIG_NUM_MBOX_ASYNC_MSGS > 0) || \
-	defined(CONFIG_OBJECT_TRACING)
+#if (CONFIG_NUM_MBOX_ASYNC_MSGS > 0)
 
 /*
  * Do run-time initialization of mailbox object subsystem.
@@ -84,18 +79,12 @@ static int init_mbox_module(const struct device *dev)
 
 	/* Complete initialization of statically defined mailboxes. */
 
-#ifdef CONFIG_OBJECT_TRACING
-	Z_STRUCT_SECTION_FOREACH(k_mbox, mbox) {
-		SYS_TRACING_OBJ_INIT(k_mbox, mbox);
-	}
-#endif /* CONFIG_OBJECT_TRACING */
-
 	return 0;
 }
 
 SYS_INIT(init_mbox_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
-#endif /* CONFIG_NUM_MBOX_ASYNC_MSGS or CONFIG_OBJECT_TRACING */
+#endif /* CONFIG_NUM_MBOX_ASYNC_MSGS */
 
 void k_mbox_init(struct k_mbox *mbox)
 {
@@ -104,8 +93,6 @@ void k_mbox_init(struct k_mbox *mbox)
 	mbox->lock = (struct k_spinlock) {};
 
 	SYS_PORT_TRACING_OBJ_INIT(k_mbox, mbox);
-
-	SYS_TRACING_OBJ_INIT(k_mbox, mbox);
 }
 
 /**
