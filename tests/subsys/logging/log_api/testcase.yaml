@@ -3,6 +3,7 @@ common:
   tags: log_api logging
   integration_platforms:
     - native_posix
+  platform_exclude: qemu_arc_hs6x
 tests:
   logging.log_api_deferred_overflow_rt_filter:
     extra_configs:
