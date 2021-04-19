@@ -6,7 +6,7 @@
 
 #include <kernel.h>
 #include <kernel_structs.h>
-#include <debug/object_tracing_common.h>
+
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <wait_q.h>
@@ -14,10 +14,6 @@
 #include <ksched.h>
 #include <init.h>
 #include <sys/check.h>
-
-#ifdef CONFIG_OBJECT_TRACING
-struct k_mem_slab *_trace_list_k_mem_slab;
-#endif	/* CONFIG_OBJECT_TRACING */
 
 /**
  * @brief Initialize kernel memory slab subsystem.
@@ -66,7 +62,6 @@ static int init_mem_slab_module(const struct device *dev)
 		if (rc < 0) {
 			goto out;
 		}
-		SYS_TRACING_OBJ_INIT(k_mem_slab, slab);
 		z_object_init(slab);
 	}
 
@@ -97,8 +92,6 @@ int k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
 		goto out;
 	}
 	z_waitq_init(&slab->wait_q);
-	SYS_TRACING_OBJ_INIT(k_mem_slab, slab);
-
 	z_object_init(slab);
 
 out:
