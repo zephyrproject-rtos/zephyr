@@ -966,7 +966,7 @@ void log_backend_enable(struct log_backend const *const backend,
 	/* Wakeup logger thread after attaching first backend. It might be
 	 * blocked with log messages pending.
 	 */
-	if (!backend_attached) {
+	if (IS_ENABLED(CONFIG_LOG_PROCESS_THREAD) && !backend_attached) {
 		k_sem_give(&log_process_thread_sem);
 	}
 
