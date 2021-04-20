@@ -404,6 +404,12 @@ static void aics_client_write_aics_cp_cb(struct bt_conn *conn, uint8_t err,
 
 	BT_DBG("Inst %p: err: %d", inst, cb_err);
 
+	/* If the change counter is out of data when a write was attempted from
+	 * the application, we automatically initiate a read to get the newest
+	 * state and try again. Once the change counter has been read, we
+	 * restart the applications write request. If it fails
+	 * the second time, we return an error to the application.
+	 */
 	if (cb_err == BT_AICS_ERR_INVALID_COUNTER && inst->cli.cp_retried) {
 		cb_err = BT_ATT_ERR_UNLIKELY;
 	} else if (cb_err == BT_AICS_ERR_INVALID_COUNTER && inst->cli.state_handle) {
