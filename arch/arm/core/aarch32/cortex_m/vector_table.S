@@ -22,6 +22,10 @@
 #include "vector_table.h"
 
 _ASM_FILE_PROLOGUE
+/*
+ * Tell armclang that stack alignment are ensured.
+ */
+.eabi_attribute Tag_ABI_align_preserved, 1
 
 GDATA(z_main_stack)
 
