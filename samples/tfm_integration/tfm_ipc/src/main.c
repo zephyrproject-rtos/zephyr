@@ -6,6 +6,7 @@
 
 #include <zephyr.h>
 #include <sys/printk.h>
+#include <power/reboot.h>
 
 #include "tfm_api.h"
 #include "tfm_ns_interface.h"
@@ -185,4 +186,7 @@ void main(void)
 	tfm_ipc_test_1006();
 
 	printk("TF-M IPC on %s\n", CONFIG_BOARD);
+
+	k_sleep(K_MSEC(5000));
+	sys_reboot(0);
 }
