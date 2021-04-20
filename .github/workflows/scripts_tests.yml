@@ -45,3 +45,9 @@ jobs:
         with:
           name: scripts-coverage
           path: scripts/htmlcov
+
+      # FIXME: only west_commands runners are ready for type checking
+      - name: type check scripts
+        run: |
+          mypy west_commands/runners
+        working-directory: scripts
