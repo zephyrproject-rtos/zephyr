@@ -79,6 +79,11 @@ uint8_t ull_cp_min_used_chans(struct ll_conn *conn, uint8_t phys, uint8_t min_us
 uint8_t ull_cp_encryption_start(struct ll_conn *conn, const uint8_t rand[8], const uint8_t ediv[2], const uint8_t ltk[16]);
 
 /**
+ * @brief Initiate a Encryption Pause Procedure.
+ */
+uint8_t ull_cp_encryption_pause(struct ll_conn *conn, const uint8_t rand[8], const uint8_t ediv[2], const uint8_t ltk[16]);
+
+/**
  */
 void ull_cp_ltk_req_reply(struct ll_conn *conn, const uint8_t ltk[16]);
 
