@@ -710,6 +710,11 @@ static int bass_mod_src(struct bt_conn *conn, struct net_buf_simple *buf)
 	for (int i = 0; i < num_subgroups; i++) {
 		internal_state->requested_bis_sync[i] = subgroups[i].bis_sync;
 
+		/* If the metadata len is 0, we shall not overwrite the existing metadata */
+		if (subgroups[i].metadata_len == 0) {
+			continue;
+		}
+
 		if (subgroups[i].metadata_len != state->subgroups[i].metadata_len) {
 			state->subgroups[i].metadata_len = subgroups[i].metadata_len;
 			notify = true;
