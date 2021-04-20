@@ -96,4 +96,15 @@ static int _mbedtls_init(const struct device *device)
 	return 0;
 }
 
+#if defined(CONFIG_MBEDTLS_INIT)
 SYS_INIT(_mbedtls_init, POST_KERNEL, 0);
+#endif
+
+/* if CONFIG_MBEDTLS_INIT is not defined then this function
+ * should be called by the platform before any mbedtls functionality
+ * is used
+ */
+int mbedtls_init(void)
+{
+	return _mbedtls_init(NULL);
+}
