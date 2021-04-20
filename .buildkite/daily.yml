@@ -27,15 +27,8 @@ steps:
       - junit-annotate#v1.7.0:
           artifacts: twister-*.xml
 
-  - command: |
-      buildkite-agent artifact download twister-*.xml .
-      junitparser merge twister-*.xml junit.xml
-      buildkite-agent artifact upload junit.xml
-      junit2html junit.xml
-      buildkite-agent artifact upload junit.xml.html
-      cat << EOF | buildkite-agent annotate --style "info"
-        Read the <a href="artifact://junit.xml.html">JUnit test report</a>
-      EOF
+  - command:
+    - .buildkite/mergejunit.sh
 
 notify:
   - email: "builds+int+399+7809482394022958124@lists.zephyrproject.org"
