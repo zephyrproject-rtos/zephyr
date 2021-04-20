@@ -49,10 +49,6 @@ config I2C_DW
 	default y
 	depends on I2C
 
-config I2C_DW_MAX_INSTANCES
-	default 15
-	depends on I2C_DW
-
 config UART_NS16550_MAX_INSTANCES
 	default 11
 	depends on UART_NS16550
