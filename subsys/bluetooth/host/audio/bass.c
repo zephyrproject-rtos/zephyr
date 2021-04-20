@@ -528,7 +528,7 @@ static int bass_add_source(struct bt_conn *conn, struct net_buf_simple *buf)
 
 	state->src_id = next_src_id();
 	state->addr.type = net_buf_simple_pull_u8(buf);
-	if (state->addr.type > BT_ADDR_LE_RANDOM_ID) {
+	if (state->addr.type > BT_ADDR_LE_RANDOM) {
 		BT_DBG("Invalid address type %u", state->addr.type);
 		return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
 
