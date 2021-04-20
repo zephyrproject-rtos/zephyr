@@ -12,6 +12,7 @@ set(TFM_VALID_PARTITIONS
   TFM_PARTITION_INITIAL_ATTESTATION
   TFM_PARTITION_PLATFORM
   TFM_PARTITION_AUDIT_LOG
+  TFM_PARTITION_FIRMWARE_UPDATE
   )
 
 # Adds trusted-firmware-m as an external project.
@@ -151,6 +152,7 @@ function(trusted_firmware_build)
                ${MCUBOOT_IMAGE_NUM_ARG}
                -DTFM_TEST_REPO_PATH=${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/tf-m-tests
                -DMCUBOOT_PATH=${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/../tfm-mcuboot
+               -DMCUBOOT_DATA_SHARING=ON
                ${TFM_PARTITIONS_ARGS}
     BUILD_ALWAYS True
     USES_TERMINAL_BUILD True
