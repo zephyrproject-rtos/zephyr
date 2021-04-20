@@ -191,6 +191,7 @@ struct proc_ctx *ull_cp_priv_create_local_procedure(enum llcp_proc proc)
 		lp_comm_init_proc(ctx);
 		break;
 	case PROC_ENCRYPTION_START:
+	case PROC_ENCRYPTION_PAUSE:
 		lp_enc_init_proc(ctx);
 		break;
 	case PROC_PHY_UPDATE:
@@ -408,6 +409,29 @@ uint8_t ull_cp_encryption_start(struct ll_conn *conn, const uint8_t rand[8], con
 	/* TODO(thoh): Proper checks for role, parameters etc. */
 
 	ctx = create_local_procedure(PROC_ENCRYPTION_START);
+	if (!ctx) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	/* Copy input parameters */
+	memcpy(ctx->data.enc.rand, rand, sizeof(ctx->data.enc.rand));
+	ctx->data.enc.ediv[0] = ediv[0];
+	ctx->data.enc.ediv[1] = ediv[1];
+	memcpy(ctx->data.enc.ltk, ltk, sizeof(ctx->data.enc.ltk));
+
+	/* Enqueue request */
+	lr_enqueue(conn, ctx);
+
+	return BT_HCI_ERR_SUCCESS;
+}
+
+uint8_t ull_cp_encryption_pause(struct ll_conn *conn, const uint8_t rand[8], const uint8_t ediv[2], const uint8_t ltk[16])
+{
+	struct proc_ctx *ctx;
+
+	/* TODO(thoh): Proper checks for role, parameters etc. */
+
+	ctx = create_local_procedure(PROC_ENCRYPTION_PAUSE);
 	if (!ctx) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
