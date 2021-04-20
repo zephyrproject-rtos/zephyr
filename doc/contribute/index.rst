@@ -318,6 +318,35 @@ various samples with advanced features that can't run in QEMU.
 We highly recommend you run these tests locally to avoid any CI
 failures.
 
+pytest
+======
+
+Some Zephyr ``scripts`` have associated unit-tests written using the ``pytest``
+framework. If you modify any of the scripts make sure to run the ``scripts``
+unit-test suite to verify that your changes do not break anything.
+
+Aside from Zephyr base dependencies, you will also need to install:
+
+.. code-block:: console
+
+    pip install -r scripts/requirements-build-test.txt
+
+You can run the whole test suite by running (from ``scripts``):
+
+.. code-block:: console
+
+    pytest
+
+You may also check coverage by running (from ``scripts``):
+
+.. code-block:: console
+
+    pytest --cov=.
+
+
+You can also refer to the `Pytest Documentation <https://docs.pytest.org/>`_
+for more details on the available runner arguments.
+
 uncrustify
 ==========
 
