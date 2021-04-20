@@ -224,7 +224,7 @@ if [ -n "$main_ci" ]; then
 		echo "Build and run BT simulator tests"
 		# Run BLE tests in simulator on the 1st CI instance:
 		if [ "$matrix" = "1" ]; then
-			run_bsim_bt_tests
+			echo "NO BSIM"
 		fi
 	else
 		echo "Skipping BT simulator tests"
