@@ -322,7 +322,7 @@ static int pwm_stm32_init(const struct device *dev)
 		return -EIO;
 	}
 
-#ifndef CONFIG_SOC_SERIES_STM32L0X
+#if !defined(CONFIG_SOC_SERIES_STM32L0X) && !defined(CONFIG_SOC_SERIES_STM32L1X)
 	/* enable outputs and counter */
 	if (IS_TIM_BREAK_INSTANCE(cfg->timer)) {
 		LL_TIM_EnableAllOutputs(cfg->timer);
