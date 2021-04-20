@@ -12,6 +12,7 @@ ply>=3.10
 # used for code coverage
 gcovr>=4.2
 coverage
+pytest-cov
 
 # used for west-command testing
 pytest
