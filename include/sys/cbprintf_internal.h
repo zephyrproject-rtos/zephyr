@@ -132,7 +132,7 @@ extern "C" {
 
 static inline void cbprintf_wcpy(int *dst, int *src, size_t len)
 {
-	for (int i = 0; i < len; i++) {
+	for (unsigned int i = 0; i < len; i++) {
 		dst[i] = src[i];
 	}
 }
