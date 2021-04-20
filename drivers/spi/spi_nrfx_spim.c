@@ -31,6 +31,7 @@ struct spi_nrfx_data {
 struct spi_nrfx_config {
 	nrfx_spim_t	   spim;
 	size_t		   max_chunk_len;
+	uint32_t	   max_freq;
 	nrfx_spim_config_t config;
 };
 
@@ -108,6 +109,7 @@ static int configure(const struct device *dev,
 {
 	struct spi_context *ctx = &get_dev_data(dev)->ctx;
 	const nrfx_spim_t *spim = &get_dev_config(dev)->spim;
+	nrf_spim_frequency_t freq;
 
 	if (spi_context_configured(ctx, spi_cfg)) {
 		/* Already configured. No need to do it again. */
@@ -144,11 +146,14 @@ static int configure(const struct device *dev,
 	ctx->config = spi_cfg;
 	spi_context_cs_configure(ctx);
 
+	/* Limit the frequency to that supported by the SPIM instance */
+	freq = get_nrf_spim_frequency(MIN(spi_cfg->frequency,
+					  get_dev_config(dev)->max_freq));
+
 	nrf_spim_configure(spim->p_reg,
 			   get_nrf_spim_mode(spi_cfg->operation),
 			   get_nrf_spim_bit_order(spi_cfg->operation));
-	nrf_spim_frequency_set(spim->p_reg,
-			       get_nrf_spim_frequency(spi_cfg->frequency));
+	nrf_spim_frequency_set(spim->p_reg, freq);
 
 	return 0;
 }
@@ -424,6 +429,7 @@ static int spim_nrfx_pm_control(const struct device *dev,
 	static const struct spi_nrfx_config spi_##idx##z_config = {	       \
 		.spim = NRFX_SPIM_INSTANCE(idx),			       \
 		.max_chunk_len = (1 << SPIM##idx##_EASYDMA_MAXCNT_SIZE) - 1,   \
+		.max_freq = SPIM##idx##_MAX_DATARATE * 1000000,		       \
 		.config = {						       \
 			.sck_pin   = SPIM_PROP(idx, sck_pin),		       \
 			.mosi_pin  = SPIM_PROP(idx, mosi_pin),		       \
