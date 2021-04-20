@@ -73,6 +73,9 @@ enum {
 
 	/* Unknown response recieved */
 	LP_ENC_EVT_UNKNOWN,
+
+	/* Response recieved */
+	LP_ENC_EVT_PAUSE_ENC_RSP,
 };
 
 /* LLCP Remote Procedure Encryption FSM states */
@@ -138,6 +141,9 @@ static struct node_tx *lp_enc_tx(struct ll_conn *conn, struct proc_ctx *ctx, uin
 		break;
 	case PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ:
 		pdu_encode_pause_enc_req(pdu);
+		break;
+	case PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_RSP:
+		pdu_encode_pause_enc_rsp(pdu);
 		break;
 	default:
 		LL_ASSERT(0);
@@ -222,6 +228,15 @@ static void lp_enc_send_pause_enc_req(struct ll_conn *conn, struct proc_ctx *ctx
 		/* Wait for the LL_PAUSE_ENC_RSP */
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_RSP;
 		ctx->state = LP_ENC_STATE_WAIT_RX_PAUSE_ENC_RSP;
+	}
+}
+
+static void lp_enc_send_pause_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+{
+	if (!tx_alloc_is_available()) {
+		ctx->state = LP_ENC_STATE_WAIT_TX_PAUSE_ENC_RSP;
+	} else {
+		lp_enc_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_RSP);
 	}
 }
 
@@ -412,13 +427,26 @@ static void lp_enc_state_wait_tx_pause_enc_req(struct ll_conn *conn, struct proc
 
 static void lp_enc_state_wait_rx_pause_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
-
-	/* TODO */
+	switch (evt) {
+	case LP_ENC_EVT_PAUSE_ENC_RSP:
+		lp_enc_send_pause_enc_rsp(conn, ctx, evt, param);
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
 }
 
 static void lp_enc_state_wait_tx_pause_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
-	/* TODO */
+	switch (evt) {
+	case LP_ENC_EVT_RUN:
+		lp_enc_send_pause_enc_rsp(conn, ctx, evt, param);
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
 }
 
 static void lp_enc_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
@@ -481,6 +509,9 @@ void ull_cp_priv_lp_enc_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct no
 		break;
 	case PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND:
 		lp_enc_execute_fsm(conn, ctx, LP_ENC_EVT_REJECT, pdu);
+		break;
+	case PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_RSP:
+		lp_enc_execute_fsm(conn, ctx, LP_ENC_EVT_PAUSE_ENC_RSP, pdu);
 		break;
 	default:
 		/* Unknown opcode */
