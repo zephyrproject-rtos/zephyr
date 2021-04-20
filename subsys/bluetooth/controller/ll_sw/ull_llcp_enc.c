@@ -237,6 +237,16 @@ static void lp_enc_send_pause_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx
 		ctx->state = LP_ENC_STATE_WAIT_TX_PAUSE_ENC_RSP;
 	} else {
 		lp_enc_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_RSP);
+
+		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_UNUSED;
+		/* Continue with an encapsulated Start Procedure */
+		ctx->state = LP_ENC_STATE_UNENCRYPTED;
+
+		/* Tx Encryption disabled */
+		conn->lll.enc_tx = 0U;
+
+		/* Rx Decryption disabled */
+		conn->lll.enc_rx = 0U;
 	}
 }
 
