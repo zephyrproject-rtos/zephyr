@@ -167,7 +167,8 @@
 		wdt0: watchdog@3ff5f048 {
 			compatible = "espressif,esp32-watchdog";
 			reg = <0x3ff5f048 0x20>;
-			/* interrupts = <24>; - FIXME: Enable interrupts when interrupt-controller got supported in device tree */
+			interrupts = <TG0_WDT_LEVEL_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
 			label = "WDT_0";
 			status = "okay";
 		};
@@ -175,7 +176,8 @@
 		wdt1: watchdog@3ff60048 {
 			compatible = "espressif,esp32-watchdog";
 			reg = <0x3ff60048 0x20>;
-			/* interrupts = <25>; - FIXME: Enable interrupts when interrupt-controller got supported in device tree */
+			interrupts = <TG1_WDT_LEVEL_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
 			label = "WDT_1";
 			status = "disabled";
 		};
