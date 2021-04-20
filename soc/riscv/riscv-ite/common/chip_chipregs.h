@@ -1733,9 +1733,116 @@
 #define IT83XX_I2C_RAMH2A(base)		ECREG(base+0x50)
 #define IT83XX_I2C_CMD_ADDH2(base)	ECREG(base+0x52)
 
+/* --- External Timer and Watchdog (ETWD) --- */
+#define IT83XX_ETWD_BASE  0x00F01F00
+
+#define IT83XX_ETWD_ETWCFG           ECREG(IT83XX_ETWD_BASE + 0x01)
+#define IT83XX_ETWD_ET1PSR           ECREG(IT83XX_ETWD_BASE + 0x02)
+#define IT83XX_ETWD_ET1CNTLHR        ECREG(IT83XX_ETWD_BASE + 0x03)
+#define IT83XX_ETWD_ET1CNTLLR        ECREG(IT83XX_ETWD_BASE + 0x04)
+#define IT83XX_ETWD_ETWCTRL          ECREG(IT83XX_ETWD_BASE + 0x05)
+#define IT83XX_ETWD_EWDCNTLLR        ECREG(IT83XX_ETWD_BASE + 0x06)
+#define IT83XX_ETWD_EWDKEYR          ECREG(IT83XX_ETWD_BASE + 0x07)
+#define IT83XX_ETWD_EWDCNTLHR        ECREG(IT83XX_ETWD_BASE + 0x09)
+#define IT83XX_ETWD_ETXCTRL(n)       ECREG(IT83XX_ETWD_BASE + 0x10 + (n << 3))
+#define IT83XX_ETWD_ETXPSR(n)        ECREG(IT83XX_ETWD_BASE + 0x11 + (n << 3))
+#define IT83XX_ETWD_ETXCNTLR(n)      ECREG_u32(IT83XX_ETWD_BASE + 0x14 + (n << 3))
+#define IT83XX_ETWD_ETXCNTOR(n)      ECREG_u32(IT83XX_ETWD_BASE + 0x48 + (n << 2))
+
 /* --- General Control (GCTRL) --- */
 #define IT83XX_GCTRL_BASE 0x00F02000
 
-#define IT83XX_GCTRL_WNCKR        ECREG(IT83XX_GCTRL_BASE + 0x0B)
+#ifdef IT83XX_CHIP_ID_3BYTES
+#define IT83XX_GCTRL_CHIPID1         ECREG(IT83XX_GCTRL_BASE + 0x85)
+#define IT83XX_GCTRL_CHIPID2         ECREG(IT83XX_GCTRL_BASE + 0x86)
+#define IT83XX_GCTRL_CHIPID3         ECREG(IT83XX_GCTRL_BASE + 0x87)
+#else
+#define IT83XX_GCTRL_CHIPID1         ECREG(IT83XX_GCTRL_BASE + 0x00)
+#define IT83XX_GCTRL_CHIPID2         ECREG(IT83XX_GCTRL_BASE + 0x01)
+#endif
+#define IT83XX_GCTRL_CHIPVER         ECREG(IT83XX_GCTRL_BASE + 0x02)
+#define IT83XX_GCTRL_DBGROS          ECREG(IT83XX_GCTRL_BASE + 0x03)
+#define IT83XX_SMB_DBGR                    BIT(0)
+#define IT83XX_GCTRL_WNCKR           ECREG(IT83XX_GCTRL_BASE + 0x0B)
+#define IT83XX_GCTRL_RSTS            ECREG(IT83XX_GCTRL_BASE + 0x06)
+#define IT83XX_GCTRL_BADRSEL         ECREG(IT83XX_GCTRL_BASE + 0x0A)
+#define IT83XX_GCTRL_SPCTRL1         ECREG(IT83XX_GCTRL_BASE + 0x0D)
+#define IT83XX_GCTRL_RSTDMMC         ECREG(IT83XX_GCTRL_BASE + 0x10)
+#define IT83XX_GCTRL_RSTC4           ECREG(IT83XX_GCTRL_BASE + 0x11)
+#define IT83XX_GCTRL_SPCTRL4         ECREG(IT83XX_GCTRL_BASE + 0x1C)
+#define IT83XX_GCTRL_MCCR3           ECREG(IT83XX_GCTRL_BASE + 0x20)
+#define IT83XX_GCTRL_SPISLVPFE             BIT(6)
+#define IT83XX_GCTRL_RSTC5           ECREG(IT83XX_GCTRL_BASE + 0x21)
+#define IT83XX_GCTRL_MCCR            ECREG(IT83XX_GCTRL_BASE + 0x30)
+#define IT83XX_GCTRL_PMER1           ECREG(IT83XX_GCTRL_BASE + 0x32)
+#define IT83XX_GCTRL_PMER2           ECREG(IT83XX_GCTRL_BASE + 0x33)
+#define IT83XX_GCTRL_EPLR            ECREG(IT83XX_GCTRL_BASE + 0x37)
+#define IT83XX_GCTRL_IVTBAR          ECREG(IT83XX_GCTRL_BASE + 0x41)
+#define IT83XX_GCTRL_MCCR2           ECREG(IT83XX_GCTRL_BASE + 0x44)
+#define IT83XX_GCTRL_PIN_MUX0        ECREG(IT83XX_GCTRL_BASE + 0x46)
+#define IT83XX_DLM14_ENABLE                BIT(5)
+#define IT83XX_GCTRL_SSCR            ECREG(IT83XX_GCTRL_BASE + 0x4A)
+#define IT83XX_GCTRL_ETWDUARTCR      ECREG(IT83XX_GCTRL_BASE + 0x4B)
+#define IT83XX_GCTRL_WMCR            ECREG(IT83XX_GCTRL_BASE + 0x4C)
+#define IT83XX_GCTRL_H2ROFSR         ECREG(IT83XX_GCTRL_BASE + 0x53)
+/* bit[0] = 0 or 1 : disable or enable ETWD hardware reset */
+#define ETWD_HW_RST_EN                     BIT(0)
+#define IT83XX_GCTRL_RVILMCR0        ECREG(IT83XX_GCTRL_BASE + 0x5D)
+#define ILMCR_ILM0_ENABLE                  BIT(0)
+#define ILMCR_ILM2_ENABLE                  BIT(2)
+#define IT83XX_GCTRL_EWPR0PFH(i)     ECREG(IT83XX_GCTRL_BASE + 0x60 + i)
+#define IT83XX_GCTRL_EWPR0PFD(i)     ECREG(IT83XX_GCTRL_BASE + 0xA0 + i)
+#define IT83XX_GCTRL_EWPR0PFEC(i)    ECREG(IT83XX_GCTRL_BASE + 0xC0 + i)
+
+/* Serial Peripheral Interface (SPI) */
+#define IT83XX_SPI_BASE  0x00F03A00
+
+#define IT83XX_SPI_SPISGCR           ECREG(IT83XX_SPI_BASE + 0x00)
+#define IT83XX_SPI_SPISCEN                 BIT(0)
+#define IT83XX_SPI_TXRXFAR           ECREG(IT83XX_SPI_BASE + 0x01)
+#define IT83XX_SPI_CPURXF2A                BIT(4)
+#define IT83XX_SPI_CPURXF1A                BIT(3)
+#define IT83XX_SPI_CPUTFA                  BIT(1)
+#define IT83XX_SPI_TXFCR             ECREG(IT83XX_SPI_BASE + 0x02)
+#define IT83XX_SPI_TXFCMR                  BIT(2)
+#define IT83XX_SPI_TXFR                    BIT(1)
+#define IT83XX_SPI_TXFS                    BIT(0)
+#define IT83XX_SPI_GCR2              ECREG(IT83XX_SPI_BASE + 0x03)
+#define IT83XX_SPI_RXF2OC                  BIT(4)
+#define IT83XX_SPI_RXF1OC                  BIT(3)
+#define IT83XX_SPI_RXFAR                   BIT(0)
+#define IT83XX_SPI_IMR               ECREG(IT83XX_SPI_BASE + 0x04)
+#define IT83XX_SPI_RX_FIFO_FULL            BIT(7)
+#define IT83XX_SPI_RX_REACH                BIT(5)
+#define IT83XX_SPI_EDIM                    BIT(2)
+#define IT83XX_SPI_ISR               ECREG(IT83XX_SPI_BASE + 0x05)
+#define IT83XX_SPI_TXFSR             ECREG(IT83XX_SPI_BASE + 0x06)
+#define IT83XX_SPI_ENDDETECTINT            BIT(2)
+#define IT83XX_SPI_RXFSR             ECREG(IT83XX_SPI_BASE + 0x07)
+#define IT83XX_SPI_RXFFSM                  (BIT(4) | BIT(3))
+#define IT83XX_SPI_RXF2FS                  BIT(2)
+#define IT83XX_SPI_RXF1FS                  BIT(1)
+#ifdef CHIP_VARIANT_IT83202BX
+#define IT83XX_SPI_SPISRDR           ECREG(IT83XX_SPI_BASE + 0x08)
+#else
+#define IT83XX_SPI_SPISRDR           ECREG(IT83XX_SPI_BASE + 0x0b)
+#endif
+#define IT83XX_SPI_CPUWTFDB0         ECREG_u32(IT83XX_SPI_BASE + 0x08)
+#define IT83XX_SPI_FCR               ECREG(IT83XX_SPI_BASE + 0x09)
+#define IT83XX_SPI_SPISRTXF                BIT(2)
+#define IT83XX_SPI_RXFR                    BIT(1)
+#define IT83XX_SPI_RXFCMR                  BIT(0)
+#define IT83XX_SPI_RXFRDRB0          ECREG_u32(IT83XX_SPI_BASE + 0x0C)
+#define IT83XX_SPI_FTCB0R            ECREG(IT83XX_SPI_BASE + 0x18)
+#define IT83XX_SPI_FTCB1R            ECREG(IT83XX_SPI_BASE + 0x19)
+#define IT83XX_SPI_TCCB0             ECREG(IT83XX_SPI_BASE + 0x1A)
+#define IT83XX_SPI_TCCB1             ECREG(IT83XX_SPI_BASE + 0x1B)
+#define IT83XX_SPI_HPR2              ECREG(IT83XX_SPI_BASE + 0x1E)
+#define IT83XX_SPI_EMMCBMR           ECREG(IT83XX_SPI_BASE + 0x21)
+#define IT83XX_SPI_EMMCABM                 BIT(1) /* eMMC Alternative Boot Mode */
+#define IT83XX_SPI_RX_VLISMR         ECREG(IT83XX_SPI_BASE + 0x26)
+#define IT83XX_SPI_RVLIM                   BIT(0)
+#define IT83XX_SPI_RX_VLISR          ECREG(IT83XX_SPI_BASE + 0x27)
+#define IT83XX_SPI_RVLI                    BIT(0)
 
 #endif /* CHIP_CHIPREGS_H */
