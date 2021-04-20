@@ -622,7 +622,7 @@ static int bass_mod_src(struct bt_conn *conn, struct net_buf_simple *buf)
 
 	if (!internal_state) {
 		BT_DBG("Could not find state by src id %u", src_id);
-		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
+		return BT_GATT_ERR(BASS_ERR_OPCODE_INVALID_SRC_ID);
 	}
 
 	addr = net_buf_simple_pull_mem(buf, sizeof(*addr));
@@ -746,7 +746,7 @@ static int bass_broadcast_code(struct net_buf_simple *buf)
 
 	if (!internal_state) {
 		BT_DBG("Could not find state by src id %u", src_id);
-		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
+		return BT_GATT_ERR(BASS_ERR_OPCODE_INVALID_SRC_ID);
 	}
 
 	broadcast_code = net_buf_simple_pull_mem(buf, sizeof(internal_state->broadcast_code));
@@ -776,7 +776,7 @@ static int bass_rem_src(struct net_buf_simple *buf)
 
 	if (!internal_state) {
 		BT_DBG("Could not find state by src id %u", src_id);
-		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
+		return BT_GATT_ERR(BASS_ERR_OPCODE_INVALID_SRC_ID);
 	}
 
 	bass_pa_sync(NULL /* unused */, internal_state, false, 0 /* unused */); /* delete syncs */
