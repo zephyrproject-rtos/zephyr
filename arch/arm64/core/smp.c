@@ -55,7 +55,8 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 		    arch_cpustart_t fn, void *arg)
 {
 	int cpu_count, i, j;
-	uint64_t cpu_mpid, master_core_mpid;
+	uint64_t cpu_mpid = 0;
+	uint64_t master_core_mpid;
 
 	/* Now it is on master core */
 	master_core_mpid = MPIDR_TO_CORE(GET_MPIDR());
