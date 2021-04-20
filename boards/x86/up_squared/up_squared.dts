@@ -16,6 +16,11 @@
 	model = "up_squared";
 	compatible = "up_board,up_squared";
 
+	aliases {
+		i2c-0 = &i2c0;
+		i2c-1 = &i2c1;
+	};
+
 	chosen {
 		zephyr,sram = &dram0;
 		zephyr,console = &uart0;
