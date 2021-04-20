@@ -229,11 +229,17 @@ config TFM_IPC
 	  TF-M Profile option is supplied, do not allow manual setting of
 	  the IPC mode, as it is determined by the profile setting.
 
-config TFM_REGRESSION
-	bool "Regression tests"
+config TFM_REGRESSION_S
+	bool "TF-M Secure Regression tests"
 	help
 	  When enabled, this option signifies that the TF-M build includes
-	  the Secure and the Non-Secure regression tests.
+	  the Secure domain regression tests.
+
+config TFM_REGRESSION_NS
+	bool "Use the TF-M Non-Secure Regression test application"
+	help
+	  When this is enabled, the Zephyr application as a whole will be
+	  replaced with the TF-M Non-Secure Regression test application.
 
 choice TFM_PSA_TEST
 	prompt "Enable a PSA test suite"

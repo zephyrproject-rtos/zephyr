@@ -30,7 +30,10 @@ set(TFM_VALID_PARTITIONS
 # IPC: Build TFM IPC library. This library allows a non-secure application to
 #      interface to secure domain using IPC.
 # ISOLATION_LEVEL: The TF-M isolation level to use
-# REGRESSION: Boolean if TF-M build includes building the TF-M regression tests
+# REGRESSION_S: Boolean if TF-M build includes building the secure TF-M
+#               regression tests
+# REGRESSION_NS: Boolean if TF-M build includes building the non-secure
+#                TF-M regression tests
 # BL2: Boolean if the TF-M build uses MCUboot. Default: True
 # ENABLED_PARTITIONS: List of TFM partitions to enable.
 #
@@ -41,12 +44,13 @@ set(TFM_VALID_PARTITIONS
 #                        CMAKE_BUILD_TYPE Release
 #                        IPC
 #                        ISOLATION_LEVEL 2
-#                        REGRESSION
+#                        REGRESSION_S
+#                        REGRESSION_NS
 #                        BL2
 #                        BUILD_PROFILE profile_small
 #                        ENABLED_PARTITIONS TFM_PARTITION_PLATFORM TFM_PARTITION_CRYPTO)
 function(trusted_firmware_build)
-  set(options IPC REGRESSION BL2)
+  set(options IPC BL2 REGRESSION_S REGRESSION_NS)
   set(oneValueArgs BINARY_DIR BOARD ISOLATION_LEVEL CMAKE_BUILD_TYPE BUILD_PROFILE
     MCUBOOT_IMAGE_NUMBER PSA_TEST_SUITE)
   set(multiValueArgs ENABLED_PARTITIONS)
@@ -68,12 +72,12 @@ function(trusted_firmware_build)
     target_compile_definitions(app PRIVATE "TFM_PSA_API")
   endif()
 
-  if(DEFINED TFM_ISOLATION_LEVEL)
-    set(TFM_ISOLATION_LEVEL_ARG -DTFM_ISOLATION_LEVEL=${TFM_ISOLATION_LEVEL})
+  if (TFM_REGRESSION_S)
+    set(TFM_REGRESSION_S_ARG -DTEST_S=ON)
   endif()
 
-  if(TFM_REGRESSION)
-    set(TFM_REGRESSION_ARG -DTEST_S=ON)
+  if (TFM_REGRESSION_NS)
+    set(TFM_REGRESSION_NS_ARG -DTEST_NS=ON)
   endif()
 
   if(DEFINED TFM_CMAKE_BUILD_TYPE)
@@ -169,7 +173,8 @@ function(trusted_firmware_build)
                -DBL2=${TFM_BL2}
                ${TFM_IPC_ARG}
                ${TFM_ISOLATION_LEVEL_ARG}
-               ${TFM_REGRESSION_ARG}
+               ${TFM_REGRESSION_S_ARG}
+               ${TFM_REGRESSION_NS_ARG}
                ${TFM_PROFILE_ARG}
                ${MCUBOOT_IMAGE_NUM_ARG}
                ${PSA_TEST_ARG}
@@ -243,8 +248,11 @@ if (CONFIG_BUILD_WITH_TFM)
   if (CONFIG_TFM_IPC)
     set(TFM_IPC_ARG IPC)
   endif()
-  if (CONFIG_TFM_REGRESSION)
-    set(TFM_REGRESSION_ARG REGRESSION)
+  if (CONFIG_TFM_REGRESSION_S)
+    set(TFM_REGRESSION_S_ARG REGRESSION_S)
+  endif()
+  if (CONFIG_TFM_REGRESSION_NS)
+    set(TFM_REGRESSION_NS_ARG REGRESSION_NS)
   endif()
   if (CONFIG_TFM_BL2)
     set(TFM_BL2_ARG BL2)
@@ -295,7 +303,8 @@ if (CONFIG_BUILD_WITH_TFM)
     ${TFM_IMAGE_NUMBER_ARG}
     ${TFM_BL2_ARG}
     ${TFM_IPC_ARG}
-    ${TFM_REGRESSION_ARG}
+    ${TFM_REGRESSION_S_ARG}
+    ${TFM_REGRESSION_NS_ARG}
     ENABLED_PARTITIONS ${TFM_ENABLED_PARTITIONS_ARG}
     ${TFM_PSA_TEST_ARG}
     CMAKE_BUILD_TYPE ${TFM_CMAKE_BUILD_TYPE}
@@ -375,11 +384,17 @@ if (CONFIG_BUILD_WITH_TFM)
   elseif(CONFIG_TFM_MCUBOOT_IMAGE_NUMBER STREQUAL "1")
     tfm_sign(sign_cmd NS TRUE ${S_NS_FILE} ${S_NS_SIGNED_FILE})
 
+    if (CONFIG_TFM_REGRESSION_NS)
+      set(NS_APP_FILE $<TARGET_PROPERTY:tfm,TFM_NS_HEX_FILE>)
+    else()
+      set(NS_APP_FILE ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_HEX_NAME})
+    endif()
+
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
       COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/mergehex.py
         -o ${S_NS_FILE}
         $<TARGET_PROPERTY:tfm,TFM_S_HEX_FILE>
-        ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_HEX_NAME}
+        ${NS_APP_FILE}
 
       COMMAND ${sign_cmd}
 
@@ -396,7 +411,12 @@ if (CONFIG_BUILD_WITH_TFM)
     )
 
   else()
-    tfm_sign(sign_cmd_ns NS FALSE ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_HEX_NAME} ${NS_SIGNED_FILE})
+    if (CONFIG_TFM_REGRESSION_NS)
+      tfm_sign(sign_cmd_ns NS TRUE $<TARGET_PROPERTY:tfm,TFM_NS_HEX_FILE> ${NS_SIGNED_FILE})
+    else()
+      tfm_sign(sign_cmd_ns NS FALSE ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_HEX_NAME} ${NS_SIGNED_FILE})
+    endif()
+
     tfm_sign(sign_cmd_s S TRUE $<TARGET_PROPERTY:tfm,TFM_S_HEX_FILE> ${S_SIGNED_FILE})
 
     #Create and sign for concatenated binary image, should align with the TF-M BL2
