@@ -4,7 +4,14 @@
 
 '''Common fixtures for use testing the runner package.'''
 
+import os
+from pathlib import Path
+import sys
+
 import pytest
+
+ZEPHYR_BASE = Path(os.environ.get("ZEPHYR_BASE"))
+sys.path.insert(0, str(ZEPHYR_BASE / "scripts" / "west_commands"))
 
 from runners.core import RunnerConfig
 
