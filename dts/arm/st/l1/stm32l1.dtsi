@@ -32,6 +32,30 @@
 	};
 
 	soc {
+
+		flash: flash-controller@40023c00 {
+			compatible = "st,stm32-flash-controller", "st,stm32l1-flash-controller";
+			label = "FLASH_CTRL";
+			reg = <0x40023c00 0x400>;
+			interrupts = <4 0>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@8000000 {
+				compatible = "soc-nv-flash";
+				label = "FLASH_STM32";
+
+				write-block-size = <4>;
+			};
+		};
+
+		rcc: rcc@40023800 {
+			compatible = "st,stm32-rcc";
+			#clock-cells = <2>;
+			reg = <0x40023800 0x400>;
+		};
+
 		rtc: rtc@40002800 {
 			compatible = "st,stm32-rtc";
 			reg = <0x40002800 0x400>;
@@ -236,29 +260,6 @@
 			interrupts = <0 7>;
 			status = "disabled";
 			label = "WWDG";
-		};
-
-		rcc: rcc@40023800 {
-			compatible = "st,stm32-rcc";
-			#clock-cells = <2>;
-			reg = <0x40023800 0x400>;
-		};
-
-		flash: flash-controller@40023c00 {
-			compatible = "st,stm32-flash-controller", "st,stm32l1-flash-controller";
-			label = "FLASH_CTRL";
-			reg = <0x40023c00 0x400>;
-			interrupts = <4 0>;
-
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			flash0: flash@8000000 {
-				compatible = "soc-nv-flash";
-				label = "FLASH_STM32";
-
-				write-block-size = <4>;
-			};
 		};
 
 		eeprom: eeprom@8080000{
