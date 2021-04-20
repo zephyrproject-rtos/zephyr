@@ -42,6 +42,8 @@
 #include <toolchain/xcc.h>
 #elif defined(__CCAC__)
 #include <toolchain/mwdt.h>
+#elif defined(__ARMCOMPILER_VERSION)
+#include <toolchain/armclang.h>
 #elif defined(__llvm__)
 #include <toolchain/llvm.h>
 #elif defined(__GNUC__) || (defined(_LINKER) && defined(__GCC_LINKER_CMD__))
