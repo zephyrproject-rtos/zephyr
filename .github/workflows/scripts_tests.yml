@@ -1,0 +1,47 @@
+name: Test scripts
+
+on:
+  push:
+    paths:
+      - 'scripts'
+      - '.github/workflows/scripts_tests.yml'
+  pull_request:
+    paths:
+      - 'scripts'
+      - '.github/workflows/scripts_tests.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7, 3.8]
+    steps:
+      - uses: actions/checkout@v1
+      - name: Set up Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ hashFiles('scripts/requirements-base.txt') }}-${{ hashFiles('scripts/requirements-build-test.txt') }}
+
+      - name: install dependencies
+        run: |
+          pip install -r scripts/requirements-base.txt
+          pip install -r scripts/requirements-build-test.txt
+
+      - name: run script tests
+        run: |
+          pytest --cov=. --cov-report html
+        working-directory: scripts
+        env:
+          ZEPHYR_TOOLCHAIN_VARIANT=zephyr
+
+      - name: store coverage report
+        uses: actions/upload-artifact@v2
+        with:
+          name: scripts-coverage
+          path: scripts/htmlcov
