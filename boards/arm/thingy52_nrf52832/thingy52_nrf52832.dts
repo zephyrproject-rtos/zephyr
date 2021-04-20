@@ -33,18 +33,18 @@
 		compatible = "gpio-leds";
 		/* Lightwell RGB */
 		led0: led_0 {
+			gpios = <&sx1509b 7 GPIO_ACTIVE_LOW>;
+			label = "Red LED";
+			//vin-supply = <&vdd_pwr>;
+		};
+		led1: led_1 {
 			gpios = <&sx1509b 5 GPIO_ACTIVE_LOW>;
 			label = "Green LED";
 			//vin-supply = <&vdd_pwr>;
 		};
-		led1: led_1 {
+		led2: led_2 {
 			gpios = <&sx1509b 6 GPIO_ACTIVE_LOW>;
 			label = "Blue LED";
-			//vin-supply = <&vdd_pwr>;
-		};
-		led2: led_2 {
-			gpios = <&sx1509b 7 GPIO_ACTIVE_LOW>;
-			label = "Red LED";
 			//vin-supply = <&vdd_pwr>;
 		};
 	};
