@@ -167,6 +167,16 @@ enum uart_rx_stop_reason {
 	 * start time + data bits + parity + stop bits.
 	 */
 	UART_BREAK = (1 << 3),
+	/**
+	 * @brief Collision error
+	 *
+	 * This error is raised when transmitted data does not match
+	 * received data. Typically this is useful in scenarios where
+	 * the TX and RX lines maybe connected together such as
+	 * RS-485 half-duplex. This error is only valid on UARTs that
+	 * support collision checking.
+	 */
+	UART_ERROR_COLLISION = (1 << 4),
 };
 
 /** @brief UART TX event data. */
