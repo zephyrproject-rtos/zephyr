@@ -183,6 +183,14 @@ enum pm_state pm_system_suspend(int32_t ticks)
 
 	if (ticks != K_TICKS_FOREVER) {
 		/*
+		 * Just a sanity check in case the policy manager does not
+		 * handle this error condition properly.
+		 */
+		__ASSERT(z_power_state.min_residency_us >=
+			z_power_state.exit_latency_us,
+			"min_residency_us < exit_latency_us");
+
+		/*
 		 * We need to set the timer to interrupt a little bit early to
 		 * accommodate the time required by the CPU to fully wake up.
 		 */
