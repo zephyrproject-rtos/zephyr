@@ -1,8 +1,0 @@
-identifier: nxp_ls1046ardb_smp
-name: NXP LS1046ARDB SMP
-type: mcu
-arch: arm64
-toolchain:
-  - zephyr
-  - cross-compile
-ram: 1024
