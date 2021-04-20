@@ -1150,8 +1150,9 @@ int bt_le_per_adv_sync_create(const struct bt_le_per_adv_sync_param *param,
 	}
 
 	if (param->sid > BT_GAP_SID_MAX ||
-		   param->skip > BT_GAP_PER_ADV_MAX_MAX_SKIP ||
-		   param->timeout > BT_GAP_PER_ADV_MAX_MAX_TIMEOUT) {
+		   param->skip > BT_GAP_PER_ADV_MAX_SKIP ||
+		   param->timeout > BT_GAP_PER_ADV_MAX_TIMEOUT ||
+		   param->timeout < BT_GAP_PER_ADV_MIN_TIMEOUT) {
 		return -EINVAL;
 	}
 
