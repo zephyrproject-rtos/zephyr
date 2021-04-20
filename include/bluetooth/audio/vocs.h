@@ -167,8 +167,9 @@ typedef void (*bt_vocs_description_cb_t)(struct bt_conn *conn, struct bt_vocs *i
 /**
  * @brief Callback function for bt_vocs_discover.
  *
- * This callback will usually be overwritten by the primary service that
- * includes the Volume Control Offset Service client.
+ * This callback should be overwritten by the primary service that
+ * includes the Volume Control Offset Service client, and should thus not be
+ * set by the application.
  *
  * @param conn         Connection to peer device, or NULL if local server read.
  * @param inst         The instance pointer.
