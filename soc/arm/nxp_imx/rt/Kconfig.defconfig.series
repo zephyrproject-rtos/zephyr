@@ -12,6 +12,9 @@ config ROM_START_OFFSET
 	default 0x400 if BOOTLOADER_MCUBOOT
 	default 0x2000 if BOOT_FLEXSPI_NOR || BOOT_SEMC_NOR
 
+config BUILD_OUTPUT_HEX
+	default y
+
 config CAN_MCUX_FLEXCAN
 	default y if HAS_MCUX_FLEXCAN
 	depends on CAN
