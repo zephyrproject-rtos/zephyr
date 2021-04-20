@@ -136,6 +136,9 @@ static struct node_tx *lp_enc_tx(struct ll_conn *conn, struct proc_ctx *ctx, uin
 	case PDU_DATA_LLCTRL_TYPE_START_ENC_RSP:
 		pdu_encode_start_enc_rsp(pdu);
 		break;
+	case PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ:
+		pdu_encode_pause_enc_req(pdu);
+		break;
 	default:
 		LL_ASSERT(0);
 	}
@@ -207,6 +210,18 @@ static void lp_enc_send_enc_req(struct ll_conn *conn, struct proc_ctx *ctx, uint
 		/* Wait for the LL_ENC_RSP */
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_ENC_RSP;
 		ctx->state = LP_ENC_STATE_WAIT_RX_ENC_RSP;
+	}
+}
+
+static void lp_enc_send_pause_enc_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+{
+	if (!tx_alloc_is_available()) {
+		ctx->state = LP_ENC_STATE_WAIT_TX_PAUSE_ENC_REQ;
+	} else {
+		lp_enc_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ);
+		/* Wait for the LL_PAUSE_ENC_RSP */
+		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_RSP;
+		ctx->state = LP_ENC_STATE_WAIT_RX_PAUSE_ENC_RSP;
 	}
 }
 
@@ -371,12 +386,28 @@ static void lp_enc_st_wait_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8
 static void lp_enc_state_encrypted(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	/* TODO */
+	switch (evt) {
+	case LP_ENC_EVT_RUN:
+		tx_pause_data(conn);
+		tx_flush(conn);
+		lp_enc_send_pause_enc_req(conn, ctx, evt, param);
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
 }
 
 static void lp_enc_state_wait_tx_pause_enc_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
-
-	/* TODO */
+	switch (evt) {
+	case LP_ENC_EVT_RUN:
+		lp_enc_send_pause_enc_req(conn, ctx, evt, param);
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
 }
 
 static void lp_enc_state_wait_rx_pause_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
