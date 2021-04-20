@@ -916,6 +916,12 @@ static inline void pdu_encode_start_enc_rsp(struct pdu_data *pdu)
 	return ull_cp_priv_pdu_encode_start_enc_rsp(pdu);
 }
 
+void ull_cp_priv_pdu_encode_pause_enc_req(struct pdu_data *pdu);
+
+static inline void pdu_encode_pause_enc_req(struct pdu_data *pdu)
+{
+	return ull_cp_priv_pdu_encode_pause_enc_req(pdu);
+}
 void ull_cp_priv_pdu_encode_reject_ind(struct pdu_data *pdu, uint8_t error_code);
 
 static inline void pdu_encode_reject_ind(struct pdu_data *pdu, uint8_t error_code)
