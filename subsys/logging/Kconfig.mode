@@ -7,6 +7,7 @@ choice LOG_MODE
 
 config LOG_MODE_DEFERRED
 	bool "Deferred logging"
+	select MPSC_PBUF
 	help
 	  Log messages are buffered and processed later. This mode has the
 	  least impact on the application. Time consuming processing is
@@ -31,6 +32,7 @@ config LOG2_MODE_IMMEDIATE
 
 config LOG_MODE_IMMEDIATE
 	bool "Synchronous"
+	select MPSC_PBUF
 	help
 	  When enabled log is processed in the context of the call. It impacts
 	  performance of the system since time consuming operations are
