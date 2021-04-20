@@ -39,10 +39,9 @@ static void i2c_config_@NUM@(const struct device *port)
 	ARG_UNUSED(port);
 
 #if DT_INST_ON_BUS(@NUM@, pcie)
-#if DT_INST_IRQN(@NUM@) == PCIE_IRQ_DETECT
-
 	/* PCI(e) with auto IRQ detection */
-
+	BUILD_ASSERT(DT_INST_IRQN(@NUM@) == PCIE_IRQ_DETECT,
+		     "Only runtime IRQ configuration is supported");
 	BUILD_ASSERT(IS_ENABLED(CONFIG_DYNAMIC_INTERRUPTS),
 		     "DW I2C PCI auto-IRQ needs CONFIG_DYNAMIC_INTERRUPTS");
 
@@ -59,23 +58,8 @@ static void i2c_config_@NUM@(const struct device *port)
 			    (void (*)(const void *))i2c_dw_isr,
 			    DEVICE_DT_INST_GET(@NUM@), INST_@NUM@_IRQ_FLAGS);
 	pcie_irq_enable(DT_INST_REG_ADDR(@NUM@), irq);
-
 #else
-
-	/* PCI(e) with fixed or MSI IRQ */
-
-	IRQ_CONNECT(DT_INST_IRQN(@NUM@),
-		    DT_INST_IRQ(@NUM@, priority),
-		    i2c_dw_isr, DEVICE_DT_INST_GET(@NUM@),
-		    INST_@NUM@_IRQ_FLAGS);
-	pcie_irq_enable(DT_INST_REG_ADDR(@NUM@),
-			DT_INST_IRQN(@NUM@));
-
-#endif
-#else
-
 	/* not PCI(e) */
-
 	IRQ_CONNECT(DT_INST_IRQN(@NUM@),
 		    DT_INST_IRQ(@NUM@, priority),
 		    i2c_dw_isr, DEVICE_DT_INST_GET(@NUM@),
