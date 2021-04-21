@@ -102,12 +102,12 @@ operations that are potentially blocking (e.g. taking a semaphore) must be
 used with care, since the workqueue cannot process subsequent work items in
 its queue until the handler function finishes executing.
 
-The single argument that is passed to a handler function can be ignored if
-it is not required. If the handler function requires additional information
-about the work it is to perform, the work item can be embedded in a larger
-data structure. The handler function can then use the argument value to compute
-the address of the enclosing data structure, and thereby obtain access to the
-additional information it needs.
+The single argument that is passed to a handler function can be ignored if it
+is not required. If the handler function requires additional information about
+the work it is to perform, the work item can be embedded in a larger data
+structure. The handler function can then use the argument value to compute the
+address of the enclosing data structure with :c:macro:`CONTAINER_OF`, and
+thereby obtain access to the additional information it needs.
 
 A work item is typically initialized once and then submitted to a specific
 workqueue whenever work needs to be performed. If an ISR or a thread attempts
@@ -146,6 +146,21 @@ the schedule request is made the kernel initiates a timeout mechanism that is
 triggered after the specified delay has elapsed. Once the timeout occurs the
 kernel submits the work item to the specified workqueue, where it remains
 queued until it is processed in the standard manner.
+
+Note that work handler used for delayable still receives a pointer to the
+underlying non-delayed work structure, which is not publicly accessible from
+:c:struct:`k_work_delayable`.  To get access to an object that contains the
+delayable work object use this idiom:
+
+.. code-block:: c
+
+   static void work_handler(struct k_work *work)
+   {
+           struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+           struct work_context *ctx = CONTAINER_OF(dwork, struct work_context,
+	                                           timed_work);
+           ...
+
 
 Triggered Work
 **************
