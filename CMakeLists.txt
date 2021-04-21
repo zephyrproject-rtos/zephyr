@@ -768,19 +768,21 @@ if(CONFIG_GEN_ISR_TABLES)
   set_property(GLOBAL APPEND PROPERTY GENERATED_KERNEL_SOURCE_FILES isr_tables.c)
 endif()
 
-# dev_handles.c is generated from ${ZEPHYR_PREBUILT_EXECUTABLE} by
-# gen_handles.py
-add_custom_command(
-  OUTPUT dev_handles.c
-  COMMAND
-  ${PYTHON_EXECUTABLE}
-  ${ZEPHYR_BASE}/scripts/gen_handles.py
-  --output-source dev_handles.c
-  --kernel $<TARGET_FILE:${ZEPHYR_PREBUILT_EXECUTABLE}>
-  --zephyr-base ${ZEPHYR_BASE}
-  DEPENDS ${ZEPHYR_PREBUILT_EXECUTABLE}
-  )
-set_property(GLOBAL APPEND PROPERTY GENERATED_KERNEL_SOURCE_FILES dev_handles.c)
+if(CONFIG_HAS_DTS)
+  # dev_handles.c is generated from ${ZEPHYR_PREBUILT_EXECUTABLE} by
+  # gen_handles.py
+  add_custom_command(
+    OUTPUT dev_handles.c
+    COMMAND
+    ${PYTHON_EXECUTABLE}
+    ${ZEPHYR_BASE}/scripts/gen_handles.py
+    --output-source dev_handles.c
+    --kernel $<TARGET_FILE:${ZEPHYR_PREBUILT_EXECUTABLE}>
+    --zephyr-base ${ZEPHYR_BASE}
+    DEPENDS ${ZEPHYR_PREBUILT_EXECUTABLE}
+    )
+  set_property(GLOBAL APPEND PROPERTY GENERATED_KERNEL_SOURCE_FILES dev_handles.c)
+endif()
 
 if(CONFIG_CODE_DATA_RELOCATION)
   # @Intent: Linker script to relocate .text, data and .bss sections
