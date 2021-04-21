@@ -148,7 +148,7 @@ kernel submits the work item to the specified workqueue, where it remains
 queued until it is processed in the standard manner.
 
 Note that work handler used for delayable still receives a pointer to the
-underlying non-delayed work structure, which is not publicly accessible from
+underlying non-delayable work structure, which is not publicly accessible from
 :c:struct:`k_work_delayable`.  To get access to an object that contains the
 delayable work object use this idiom:
 
@@ -226,7 +226,7 @@ and then calling :c:func:`k_work_queue_start`. The stack area must be defined
 using :c:macro:`K_THREAD_STACK_DEFINE` to ensure it is properly set up in
 memory.
 
-The following code defines and initializes a workqueue.
+The following code defines and initializes a workqueue:
 
 .. code-block:: c
 
@@ -253,6 +253,9 @@ The following API can be used to interact with a workqueue:
   thread or ISR are rejected.  The restriction on submitting more work can be
   extended past the completion of the drain operation in order to allow the
   blocking thread to perform additional work while the queue is "plugged".
+  Note that draining a queue has no effect on scheduling or processing
+  delayable items, but if the queue is plugged and the deadline expires the
+  item will silently fail to be submitted.
 * :c:func:`k_work_queue_unplug()` removes any previous block on submission to
   the queue due to a previous drain operation.
 
