@@ -39,6 +39,9 @@ API Changes
 
 * Added disconnect reason to the :c:func:`disconnected` callback of :c:struct:`bt_iso_chan_ops`.
 
+* Align error handling of :c:func:bt_l2cap_chan_send and
+  :c:func:bt_iso_chan_send so when an error occur the buffer is not unref.
+
 Deprecated in this release
 
 * :c:macro:`DT_CLOCKS_LABEL_BY_IDX`, :c:macro:`DT_CLOCKS_LABEL_BY_NAME`,
@@ -308,6 +311,11 @@ Libraries / Subsystems
 * Storage
 
 * Tracing
+
+  * ``CONFIG_TRACING_CPU_STATS`` was removed in favor of
+    ``CONFIG_THREAD_RUNTIME_STATS`` which provides per thread statistics. The
+    same functionality is also available when Thread analyzer is enabled with
+    the runtime statistics enabled.
 
 * Debug
 

@@ -120,10 +120,10 @@ config TFM_CMAKE_BUILD_TYPE_DEBUG
 endchoice
 
 config TFM_ISOLATION_LEVEL
-	int "Isolation level setting." if TFM_PROFILE_TYPE_NOT_SET
+	int "Isolation level setting." if (TFM_PROFILE_TYPE_NOT_SET && TFM_IPC)
 	range 1 3
 	depends on BUILD_WITH_TFM
-	default 1 if TFM_PROFILE_TYPE_SMALL
+	default 1 if TFM_PROFILE_TYPE_SMALL || !TFM_IPC
 	default 2 if TFM_PROFILE_TYPE_MEDIUM
 	default 3 if TFM_PROFILE_TYPE_LARGE
 	help
@@ -131,6 +131,8 @@ config TFM_ISOLATION_LEVEL
 	  1,2 or 3; the default is set by build configuration. When TF-M
 	  Profile option is supplied, do not allow manual setting of the
 	  isolation level, as it is determined by the profile setting.
+	  As isolation levels 2 and 3 require PSA_API (TFM_IPC) support,
+	  force level 1 when TFM_IPC is not enabled.
 
 config TFM_BL2
 	bool "Add MCUboot to TFM"
@@ -233,6 +235,42 @@ config TFM_REGRESSION
 	  When enabled, this option signifies that the TF-M build includes
 	  the Secure and the Non-Secure regression tests.
 
+choice TFM_PSA_TEST
+	prompt "Enable a PSA test suite"
+	default TFM_PSA_TEST_NONE
+
+config TFM_PSA_TEST_CRYPTO
+	bool "Crypto tests"
+	depends on MAIN_STACK_SIZE >= 4096
+	help
+	  Enable the PSA Crypto test suite.
+
+config TFM_PSA_TEST_PROTECTED_STORAGE
+	bool "Storage tests"
+	help
+	  Enable the PSA Protected Storage test suite.
+
+config TFM_PSA_TEST_INTERNAL_TRUSTED_STORAGE
+	bool "Internal Trusted Storage tests"
+	help
+	  Enable the PSA Internal Trusted Storage test suite.
+
+config TFM_PSA_TEST_STORAGE
+	bool "Storage tests"
+	help
+	  Enable the PSA Storage test suite. This is a combination of the
+	  protected storage and internal trusted storage tests.
+
+config TFM_PSA_TEST_INITIAL_ATTESTATION
+	bool "Initial attestation tests"
+	depends on MAIN_STACK_SIZE >= 4096
+	help
+	  Enable the PSA Initial Attestation test suite.
+
+config TFM_PSA_TEST_NONE
+	bool "No PSA test suite"
+
+endchoice
 
 if TFM_BL2
 

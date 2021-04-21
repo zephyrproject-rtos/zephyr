@@ -53,7 +53,7 @@ int iis2mdc_trigger_set(const struct device *dev,
 static void iis2mdc_handle_interrupt(const struct device *dev)
 {
 	struct iis2mdc_data *iis2mdc = dev->data;
-	const struct iis2mdc_config *const config = dev->config;
+	const struct iis2mdc_dev_config *const config = dev->config;
 	struct sensor_trigger drdy_trigger = {
 		.type = SENSOR_TRIG_DATA_READY,
 	};
@@ -62,7 +62,7 @@ static void iis2mdc_handle_interrupt(const struct device *dev)
 		iis2mdc->handler_drdy(dev, &drdy_trigger);
 	}
 
-	gpio_pin_interrupt_configure(iis2mdc->gpio, config->drdy_pin,
+	gpio_pin_interrupt_configure(config->gpio_drdy.port, config->gpio_drdy.pin,
 				     GPIO_INT_EDGE_TO_ACTIVE);
 }
 
@@ -71,11 +71,11 @@ static void iis2mdc_gpio_callback(const struct device *dev,
 {
 	struct iis2mdc_data *iis2mdc =
 		CONTAINER_OF(cb, struct iis2mdc_data, gpio_cb);
-	const struct iis2mdc_config *const config = iis2mdc->dev->config;
+	const struct iis2mdc_dev_config *const config = iis2mdc->dev->config;
 
 	ARG_UNUSED(pins);
 
-	gpio_pin_interrupt_configure(dev, config->drdy_pin, GPIO_INT_DISABLE);
+	gpio_pin_interrupt_configure(dev, config->gpio_drdy.pin, GPIO_INT_DISABLE);
 
 #if defined(CONFIG_IIS2MDC_TRIGGER_OWN_THREAD)
 	k_sem_give(&iis2mdc->gpio_sem);
@@ -107,14 +107,12 @@ static void iis2mdc_work_cb(struct k_work *work)
 int iis2mdc_init_interrupt(const struct device *dev)
 {
 	struct iis2mdc_data *iis2mdc = dev->data;
-	const struct iis2mdc_config *const config = dev->config;
+	const struct iis2mdc_dev_config *const config = dev->config;
 
 	/* setup data ready gpio interrupt */
-	iis2mdc->gpio = device_get_binding(config->drdy_port);
-	if (iis2mdc->gpio == NULL) {
-		LOG_DBG("Cannot get pointer to %s device",
-			    config->drdy_port);
-		return -EINVAL;
+	if (!device_is_ready(config->gpio_drdy.port)) {
+		LOG_ERR("Cannot get pointer to drdy_gpio device");
+		return -ENODEV;
 	}
 
 #if defined(CONFIG_IIS2MDC_TRIGGER_OWN_THREAD)
@@ -128,18 +126,18 @@ int iis2mdc_init_interrupt(const struct device *dev)
 	iis2mdc->work.handler = iis2mdc_work_cb;
 #endif
 
-	gpio_pin_configure(iis2mdc->gpio, config->drdy_pin,
-			   GPIO_INPUT | config->drdy_flags);
+	gpio_pin_configure(config->gpio_drdy.port, config->gpio_drdy.pin,
+			   GPIO_INPUT | config->gpio_drdy.dt_flags);
 
 	gpio_init_callback(&iis2mdc->gpio_cb,
 			   iis2mdc_gpio_callback,
-			   BIT(config->drdy_pin));
+			   BIT(config->gpio_drdy.pin));
 
-	if (gpio_add_callback(iis2mdc->gpio, &iis2mdc->gpio_cb) < 0) {
+	if (gpio_add_callback(config->gpio_drdy.port, &iis2mdc->gpio_cb) < 0) {
 		LOG_DBG("Could not set gpio callback");
 		return -EIO;
 	}
 
-	return gpio_pin_interrupt_configure(iis2mdc->gpio, config->drdy_pin,
+	return gpio_pin_interrupt_configure(config->gpio_drdy.port, config->gpio_drdy.pin,
 					    GPIO_INT_EDGE_TO_ACTIVE);
 }

@@ -78,7 +78,7 @@ need one.
 
          sudo apt-get install --no-install-recommends git cmake ninja-build gperf \
            ccache dfu-util device-tree-compiler wget \
-           python3-dev python3-pip python3-setuptools python3-tk python3-wheel xz-utils file \
+           python3-dev python3-pip python3-setuptools python3-tk python3-wheel xz-utils file libpython3.8-dev \
            make gcc gcc-multilib g++-multilib libsdl2-dev
 
    .. group-tab:: Fedora
@@ -87,7 +87,7 @@ need one.
 
          sudo dnf group install "Development Tools" "C Development Tools and Libraries"
          dnf install git cmake ninja-build gperf ccache dfu-util dtc wget \
-           python3-pip python3-tkinter xz file glibc-devel.i686 libstdc++-devel.i686 \
+           python3-pip python3-tkinter xz file glibc-devel.i686 libstdc++-devel.i686 python38 \
            SDL2-devel
 
    .. group-tab:: Clear Linux

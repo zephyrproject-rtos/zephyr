@@ -26,3 +26,6 @@ steps:
   - plugins:
       - junit-annotate#v1.7.0:
           artifacts: twister-*.xml
+
+  - command:
+    - .buildkite/mergejunit.sh

@@ -228,7 +228,7 @@ uint8_t ll_df_set_cl_cte_tx_enable(uint8_t adv_handle, uint8_t cte_enable)
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	sync = (void *)HDR_LLL2EVT(lll_sync);
+	sync = HDR_LLL2ULL(lll_sync);
 
 	/* If df_cfg is NULL, then the HCI_LE_Set_Connectionless_CTE_Transmit_-
 	 * Parameters command was not issued before.

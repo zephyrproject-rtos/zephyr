@@ -60,7 +60,7 @@ LOAD_ADDRESS_LOCATION_BSS = "GROUP_LINK_IN({0})"
 
 MPU_RO_REGION_START = """
 
-     _{0}_mpu_ro_region_start = {1}_ADDR;
+     _{0}_mpu_ro_region_start = ORIGIN({1});
 
 """
 

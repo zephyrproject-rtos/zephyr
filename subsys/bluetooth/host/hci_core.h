@@ -114,6 +114,10 @@ enum {
 	 * in the controller.
 	 */
 	BT_PER_ADV_CTE_ENABLED,
+	/* The device name has been forced to appear in the advertising data
+	 * instead of in the scan response data
+	 */
+	BT_ADV_FORCE_NAME_IN_AD,
 
 	BT_ADV_NUM_FLAGS,
 };

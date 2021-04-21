@@ -1598,6 +1598,11 @@ int usb_dc_ep_disable(const uint8_t ep)
 	LOG_DBG("EP disable: 0x%02x", ep);
 
 	nrfx_usbd_ep_disable(ep_addr_to_nrfx(ep));
+	/* Clear write_in_progress as nrfx_usbd_ep_disable()
+	 * terminates endpoint transaction.
+	 */
+	ep_ctx->write_in_progress = false;
+	ep_ctx_reset(ep_ctx);
 	ep_ctx->cfg.en = false;
 
 	return 0;

@@ -538,7 +538,9 @@ static inline void net_if_flag_clear(struct net_if *iface,
 static inline bool net_if_flag_is_set(struct net_if *iface,
 				      enum net_if_flag value)
 {
-	NET_ASSERT(iface);
+	if (iface == NULL) {
+		return false;
+	}
 
 	return atomic_test_bit(iface->if_dev->flags, value);
 }
@@ -780,6 +782,10 @@ static inline int net_if_set_link_addr(struct net_if *iface,
  */
 static inline uint16_t net_if_get_mtu(struct net_if *iface)
 {
+	if (iface == NULL) {
+		return 0U;
+	}
+
 	return iface->if_dev->mtu;
 }
 
@@ -792,6 +798,10 @@ static inline uint16_t net_if_get_mtu(struct net_if *iface)
 static inline void net_if_set_mtu(struct net_if *iface,
 				  uint16_t mtu)
 {
+	if (iface == NULL) {
+		return;
+	}
+
 	iface->if_dev->mtu = mtu;
 }
 
@@ -2178,7 +2188,8 @@ struct net_if_api {
 	};								\
 	static Z_DECL_ALIGN(struct net_if)				\
 		       NET_IF_GET_NAME(dev_name, sfx)[_num_configs]	\
-		       __used __in_section(_net_if, static, net_if) = {	\
+		       __used __in_section(_net_if, static,             \
+					   dev_name) = {                \
 		[0 ... (_num_configs - 1)] = {				\
 			.if_dev = &(NET_IF_DEV_GET_NAME(dev_name, sfx)), \
 			NET_IF_CONFIG_INIT				\
@@ -2193,7 +2204,8 @@ struct net_if_api {
 	};								\
 	static Z_DECL_ALIGN(struct net_if)				\
 		NET_IF_GET_NAME(dev_name, sfx)[NET_IF_MAX_CONFIGS]	\
-		       __used __in_section(_net_if, static, net_if) = {	\
+		       __used __in_section(_net_if, static,             \
+					   dev_name) = {                \
 		[0 ... (NET_IF_MAX_CONFIGS - 1)] = {			\
 			.if_dev = &(NET_IF_DEV_GET_NAME(dev_name, sfx)), \
 			NET_IF_CONFIG_INIT				\

@@ -124,7 +124,7 @@
 #define BT_CONN_TICKER_NODES 0
 #endif
 
-#if defined(CONFIG_BT_CTLR_CONN_ISO_GROUPS)
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
 #define BT_CIG_TICKER_NODES ((TICKER_ID_CONN_ISO_LAST) - \
 			     (TICKER_ID_CONN_ISO_BASE) + 1)
 #else
@@ -504,25 +504,19 @@ int ll_init(struct k_sem *sem_rx)
 	}
 #endif
 
-#if defined(CONFIG_BT_CTLR_ADV_ISO) || \
-	defined(CONFIG_BT_CTLR_SYNC_ISO) || \
-	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) || \
-	defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+#if defined(CONFIG_BT_CTLR_ISO)
 	err = ull_iso_init();
 	if (err) {
 		return err;
 	}
-#endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_SYNC_ISO ||
-	* CONFIG_BT_CTLR_PERIPHERAL_ISO || CONFIG_BT_CTLR_CENTRAL_ISO
-	*/
+#endif /* CONFIG_BT_CTLR_ISO */
 
-#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) || \
-	defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
 	err = ull_conn_iso_init();
 	if (err) {
 		return err;
 	}
-#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO || CONFIG_BT_CTLR_CENTRAL_ISO */
+#endif /* CONFIG_BT_CTLR_CONN_ISO */
 
 #if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
 	err = ull_peripheral_iso_init();
@@ -604,21 +598,15 @@ void ll_reset(void)
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 
-#if defined(CONFIG_BT_CTLR_ADV_ISO) || \
-	defined(CONFIG_BT_CTLR_SYNC_ISO) || \
-	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) || \
-	defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+#if defined(CONFIG_BT_CTLR_ISO)
 	err = ull_iso_reset();
 	LL_ASSERT(!err);
-#endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_SYNC_ISO ||
-	* CONFIG_BT_CTLR_PERIPHERAL_ISO || CONFIG_BT_CTLR_CENTRAL_ISO
-	*/
+#endif /* CONFIG_BT_CTLR_ISO */
 
-#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) || \
-	defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
 	err = ull_conn_iso_reset();
 	LL_ASSERT(!err);
-#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO || CONFIG_BT_CTLR_CENTRAL_ISO */
+#endif /* CONFIG_BT_CTLR_CONN_ISO */
 
 #if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
 	err = ull_peripheral_iso_reset();
@@ -867,7 +855,7 @@ void ll_rx_dequeue(void)
 		if (lll_aux) {
 			struct ll_adv_aux_set *aux;
 
-			aux = (void *)HDR_LLL2EVT(lll_aux);
+			aux = HDR_LLL2ULL(lll_aux);
 
 			aux->is_started = 0U;
 		}
@@ -889,7 +877,7 @@ void ll_rx_dequeue(void)
 
 		lll_conn->link_tx_free = link;
 
-		struct ll_conn *conn = (void *)HDR_LLL2EVT(lll_conn);
+		struct ll_conn *conn = HDR_LLL2ULL(lll_conn);
 
 		ll_conn_release(conn);
 		adv->lll.conn = NULL;
@@ -917,8 +905,12 @@ void ll_rx_dequeue(void)
 
 #if defined(CONFIG_BT_PERIPHERAL)
 		} else if ((cc->status == BT_HCI_ERR_ADV_TIMEOUT) || cc->role) {
-			struct lll_adv *lll = ftr->param;
-			struct ll_adv_set *adv = (void *)HDR_LLL2EVT(lll);
+			struct ll_adv_set *adv;
+			struct lll_adv *lll;
+
+			/* Get reference to ULL context */
+			lll = ftr->param;
+			adv = HDR_LLL2ULL(lll);
 
 			if (cc->status == BT_HCI_ERR_ADV_TIMEOUT) {
 				struct lll_conn *conn_lll;
@@ -935,7 +927,7 @@ void ll_rx_dequeue(void)
 				LL_ASSERT(link);
 				conn_lll->link_tx_free = link;
 
-				conn = (void *)HDR_LLL2EVT(conn_lll);
+				conn = HDR_LLL2ULL(conn_lll);
 				ll_conn_release(conn);
 			} else {
 				/* Release un-utilized node rx */
@@ -953,7 +945,7 @@ void ll_rx_dequeue(void)
 			if (lll->aux) {
 				struct ll_adv_aux_set *aux;
 
-				aux = (void *)HDR_LLL2EVT(lll->aux);
+				aux = HDR_LLL2ULL(lll->aux);
 				aux->is_started = 0U;
 			}
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
@@ -964,8 +956,7 @@ void ll_rx_dequeue(void)
 #endif /* !CONFIG_BT_PERIPHERAL */
 
 		} else if (IS_ENABLED(CONFIG_BT_CENTRAL)) {
-			struct lll_scan *lll = ftr->param;
-			struct ll_scan_set *scan = (void *)HDR_LLL2EVT(lll);
+			struct ll_scan_set *scan = HDR_LLL2ULL(ftr->param);
 
 			scan->is_enabled = 0U;
 		} else {
@@ -1053,13 +1044,11 @@ void ll_rx_dequeue(void)
 	case NODE_RX_TYPE_CIS_REQUEST:
 #endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
 
-#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) || \
-	defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
 	case NODE_RX_TYPE_CIS_ESTABLISHED:
-#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO || CONFIG_BT_CTLR_CENTRAL_ISO */
+#endif /* CONFIG_BT_CTLR_CONN_ISO */
 
-#if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_SYNC_ISO) || \
-	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) || defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+#if defined(CONFIG_BT_CTLR_ISO)
 	case NODE_RX_TYPE_ISO_PDU:
 #endif
 
@@ -1227,13 +1216,11 @@ void ll_rx_mem_release(void **node_rx)
 		case NODE_RX_TYPE_CIS_REQUEST:
 #endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
 
-#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) || \
-	defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
 		case NODE_RX_TYPE_CIS_ESTABLISHED:
-#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO || CONFIG_BT_CTLR_CENTRAL_ISO */
+#endif /* CONFIG_BT_CTLR_CONN_ISO */
 
-#if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_SYNC_ISO) || \
-	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) || defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+#if defined(CONFIG_BT_CTLR_ISO)
 		case NODE_RX_TYPE_ISO_PDU:
 #endif
 
@@ -1526,19 +1513,15 @@ int ull_disable(void *lll)
 	struct k_sem sem;
 	uint32_t ret;
 
-	hdr = HDR_ULL(((struct lll_hdr *)lll)->parent);
-	if (!hdr) {
-		return ULL_STATUS_SUCCESS;
+	hdr = HDR_LLL2ULL(lll);
+	if (!hdr || !ull_ref_get(hdr)) {
+		return 0;
 	}
 
 	k_sem_init(&sem, 0, 1);
 
 	hdr->disabled_param = &sem;
 	hdr->disabled_cb = disabled_cb;
-
-	if (!ull_ref_get(hdr)) {
-		return ULL_STATUS_SUCCESS;
-	}
 
 	mfy.param = lll;
 	ret = mayfly_enqueue(TICKER_USER_ID_THREAD, TICKER_USER_ID_LLL, 0,
@@ -2302,14 +2285,13 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 	* CONFIG_BT_CONN
 	*/
 
-#if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_SYNC_ISO) || \
-	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) || defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+#if defined(CONFIG_BT_CTLR_ISO)
 	case NODE_RX_TYPE_ISO_PDU:
 	{
 		/* Remove from receive-queue; ULL has received this now */
 		memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
 
-#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) || defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
 		struct node_rx_pdu *rx_pdu = (struct node_rx_pdu *)rx;
 		struct ll_conn_iso_stream *cis =
 			ll_conn_iso_stream_get(rx_pdu->hdr.handle);
@@ -2399,11 +2381,11 @@ static inline void rx_demux_event_done(memq_link_t *link,
 #endif /* CONFIG_BT_OBSERVER */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
-#if defined(CONFIG_BT_CTLR_CONN_ISO_STREAMS)
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
 	case EVENT_DONE_EXTRA_TYPE_CIS:
 		ull_conn_iso_done(done);
 		break;
-#endif /* CONFIG_BT_CTLR_CONN_ISO_STREAMS */
+#endif /* CONFIG_BT_CTLR_CONN_ISO */
 
 #if defined(CONFIG_BT_CTLR_USER_EXT)
 	case EVENT_DONE_EXTRA_TYPE_USER_START

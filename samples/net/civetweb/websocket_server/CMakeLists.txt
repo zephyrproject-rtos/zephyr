@@ -30,6 +30,8 @@ target_sources(app PRIVATE
 set(gen_dir ${ZEPHYR_BINARY_DIR}/include/generated/)
 set(web_page_dir web_page)
 
+file(MAKE_DIRECTORY ${gen_dir}/${web_page_dir})
+
 # List of files that are used to generate .h file that can be included
 # into .c file.
 foreach(inc_file

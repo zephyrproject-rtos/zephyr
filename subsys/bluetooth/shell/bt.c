@@ -2179,6 +2179,13 @@ static int cmd_conn_phy_update(const struct shell *shell, size_t argc,
 	struct bt_conn_le_phy_param param;
 	int err;
 
+	if (default_conn == NULL) {
+		shell_error(shell,
+				"%s: at least, one connection is required",
+				shell->ctx->active_cmd.syntax);
+		return -ENOEXEC;
+	}
+
 	param.pref_tx_phy = strtoul(argv[1], NULL, 16);
 	param.pref_rx_phy = param.pref_tx_phy;
 	param.options = BT_CONN_LE_PHY_OPT_NONE;

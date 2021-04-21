@@ -324,16 +324,16 @@ static uint32_t ull_adv_iso_start(struct ll_adv_iso *adv_iso,
 	slot_us = EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
 	slot_us += 1000;
 
-	adv_iso->evt.ticks_active_to_start = 0;
-	adv_iso->evt.ticks_xtal_to_start =
+	adv_iso->ull.ticks_active_to_start = 0;
+	adv_iso->ull.ticks_prepare_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
-	adv_iso->evt.ticks_preempt_to_start =
+	adv_iso->ull.ticks_preempt_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
-	adv_iso->evt.ticks_slot = HAL_TICKER_US_TO_TICKS(slot_us);
+	adv_iso->ull.ticks_slot = HAL_TICKER_US_TO_TICKS(slot_us);
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
-		ticks_slot_overhead = MAX(adv_iso->evt.ticks_active_to_start,
-					  adv_iso->evt.ticks_xtal_to_start);
+		ticks_slot_overhead = MAX(adv_iso->ull.ticks_active_to_start,
+					  adv_iso->ull.ticks_prepare_to_start);
 	} else {
 		ticks_slot_overhead = 0;
 	}
@@ -351,7 +351,7 @@ static uint32_t ull_adv_iso_start(struct ll_adv_iso *adv_iso,
 			   HAL_TICKER_US_TO_TICKS(iso_interval_us),
 			   HAL_TICKER_REMAINDER(iso_interval_us),
 			   TICKER_NULL_LAZY,
-			   (ll_adv_iso->evt.ticks_slot + ticks_slot_overhead),
+			   (ll_adv_iso->ull.ticks_slot + ticks_slot_overhead),
 			   ticker_cb, ll_adv_iso,
 			   ull_ticker_status_give, (void *)&ret_cb);
 	ret = ull_ticker_status_take(ret, &ret_cb);

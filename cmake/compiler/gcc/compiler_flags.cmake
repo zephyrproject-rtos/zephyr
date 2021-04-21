@@ -179,3 +179,6 @@ set_compiler_property(PROPERTY sanitize_undefined -fsanitize=undefined)
 
 # Required ASM flags when using gcc
 set_property(TARGET asm PROPERTY required "-xassembler-with-cpp")
+
+# gcc flag for colourful diagnostic messages
+set_compiler_property(PROPERTY diagnostic -fdiagnostics-color=always)

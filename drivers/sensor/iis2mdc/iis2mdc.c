@@ -244,60 +244,20 @@ static const struct sensor_driver_api iis2mdc_driver_api = {
 	.channel_get = iis2mdc_channel_get,
 };
 
-static int iis2mdc_init_interface(const struct device *dev)
-{
-	const struct iis2mdc_config *const config = dev->config;
-	struct iis2mdc_data *iis2mdc = dev->data;
-
-	iis2mdc->bus = device_get_binding(config->master_dev_name);
-	if (!iis2mdc->bus) {
-		LOG_DBG("Could not get pointer to %s device",
-			    config->master_dev_name);
-		return -EINVAL;
-	}
-
-	return config->bus_init(dev);
-}
-
-static const struct iis2mdc_config iis2mdc_dev_config = {
-	.master_dev_name = DT_INST_BUS_LABEL(0),
-#ifdef CONFIG_IIS2MDC_TRIGGER
-	.drdy_port = DT_INST_GPIO_LABEL(0, drdy_gpios),
-	.drdy_pin = DT_INST_GPIO_PIN(0, drdy_gpios),
-	.drdy_flags = DT_INST_GPIO_FLAGS(0, drdy_gpios),
-#endif  /* CONFIG_IIS2MDC_TRIGGER */
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-	.bus_init = iis2mdc_spi_init,
-	.spi_conf.frequency = DT_INST_PROP(0, spi_max_frequency),
-	.spi_conf.operation = (SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
-			       SPI_MODE_CPHA | SPI_WORD_SET(8) |
-			       SPI_LINES_SINGLE),
-	.spi_conf.slave     = DT_INST_REG_ADDR(0),
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	.gpio_cs_port	    = DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
-	.cs_gpio	    = DT_INST_SPI_DEV_CS_GPIOS_PIN(0),
-	.cs_gpio_flags	    = DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
-
-	.spi_conf.cs        =  &iis2mdc_data.cs_ctrl,
-#else
-	.spi_conf.cs        = NULL,
-#endif
-#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-	.bus_init = iis2mdc_i2c_init,
-	.i2c_slv_addr = DT_INST_REG_ADDR(0),
-#else
-#error "BUS MACRO NOT DEFINED IN DTS"
-#endif
-};
-
 static int iis2mdc_init(const struct device *dev)
 {
+	const struct iis2mdc_dev_config *const cfg = dev->config;
 	struct iis2mdc_data *iis2mdc = dev->data;
 	uint8_t wai;
 
 	iis2mdc->dev = dev;
 
-	if (iis2mdc_init_interface(dev)) {
+	if (!device_is_ready(cfg->bus)) {
+		LOG_ERR("Cannot get pointer to bus device");
+		return -ENODEV;
+	}
+
+	if (cfg->bus_init(dev) < 0) {
 		return -EINVAL;
 	}
 
@@ -318,13 +278,6 @@ static int iis2mdc_init(const struct device *dev)
 	}
 
 	k_busy_wait(100);
-
-#if CONFIG_IIS2MDC_SPI_FULL_DUPLEX
-	/* After s/w reset set SPI 4wires again if the case */
-	if (iis2mdc_spi_mode_set(iis2mdc->ctx, IIS2MDC_SPI_4_WIRE) < 0) {
-		return -EIO;
-	}
-#endif
 
 	/* enable BDU */
 	if (iis2mdc_block_data_update_set(iis2mdc->ctx, PROPERTY_ENABLE) < 0) {
@@ -367,6 +320,78 @@ static int iis2mdc_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0, iis2mdc_init, device_pm_control_nop,
-		     &iis2mdc_data, &iis2mdc_dev_config, POST_KERNEL,
-		     CONFIG_SENSOR_INIT_PRIORITY, &iis2mdc_driver_api);
+#if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0
+#warning "IIS2MDC driver enabled without any devices"
+#endif
+
+/*
+ * Device creation macro, shared by IIS2MDC_DEFINE_SPI() and
+ * IIS2MDC_DEFINE_I2C().
+ */
+
+#define IIS2MDC_DEVICE_INIT(inst)					\
+	DEVICE_DT_INST_DEFINE(inst,					\
+			    iis2mdc_init,				\
+			    device_pm_control_nop,			\
+			    &iis2mdc_data_##inst,			\
+			    &iis2mdc_config_##inst,			\
+			    POST_KERNEL,				\
+			    CONFIG_SENSOR_INIT_PRIORITY,		\
+			    &iis2mdc_driver_api);
+
+/*
+ * Instantiation macros used when a device is on a SPI bus.
+ */
+
+#ifdef CONFIG_IIS2MDC_TRIGGER
+#define IIS2MDC_CFG_IRQ(inst) \
+	.gpio_drdy = GPIO_DT_SPEC_GET(DT_DRV_INST(inst), drdy_gpios),
+#else
+#define IIS2MDC_CFG_IRQ(inst)
+#endif /* CONFIG_IIS2MDC_TRIGGER */
+
+#define IIS2MDC_SPI_OP  (SPI_WORD_SET(8) |				\
+			 SPI_OP_MODE_MASTER |				\
+			 SPI_LINES_SINGLE |				\
+			 SPI_MODE_CPOL |				\
+			 SPI_MODE_CPHA)					\
+
+#define IIS2MDC_CONFIG_SPI(inst)					\
+	{								\
+		.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),		\
+		.bus_init = iis2mdc_spi_init,				\
+		.bus_cfg.spi_cfg =					\
+			SPI_CONFIG_DT_INST(inst,			\
+					   IIS2MDC_SPI_OP,		\
+					   0),				\
+		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),	\
+			(IIS2MDC_CFG_IRQ(inst)), ())			\
+	}
+
+/*
+ * Instantiation macros used when a device is on an I2C bus.
+ */
+
+#define IIS2MDC_CONFIG_I2C(inst)					\
+	{								\
+		.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),		\
+		.bus_init = iis2mdc_i2c_init,				\
+		.bus_cfg.i2c_slv_addr = DT_INST_REG_ADDR(inst),		\
+		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),	\
+			(IIS2MDC_CFG_IRQ(inst)), ())			\
+	}
+
+/*
+ * Main instantiation macro. Use of COND_CODE_1() selects the right
+ * bus-specific macro at preprocessor time.
+ */
+
+#define IIS2MDC_DEFINE(inst)						\
+	static struct iis2mdc_data iis2mdc_data_##inst;			\
+	static const struct iis2mdc_dev_config iis2mdc_config_##inst =	\
+		COND_CODE_1(DT_INST_ON_BUS(inst, spi),			\
+			(IIS2MDC_CONFIG_SPI(inst)),			\
+			(IIS2MDC_CONFIG_I2C(inst)));			\
+	IIS2MDC_DEVICE_INIT(inst)
+
+DT_INST_FOREACH_STATUS_OKAY(IIS2MDC_DEFINE)

@@ -78,3 +78,20 @@ properties:
       deep power down and be ready to receive additional commands.
 
       If not provided the driver does not enforce a delay.
+
+  has-lock:
+    type: int
+    required: false
+    description: |
+      Bit mask of bits of the status register that should be cleared on
+      startup.
+
+      Some devices from certain vendors power-up with block protect bits
+      set in the status register, which prevent any erase or program
+      operation from working.  Devices that have this behavior need to
+      clear those bits on startup.  However, other devices have
+      non-volatile bits in the status register that should not be
+      cleared.
+
+      This value, when present, identifies bits in the status register
+      that should be cleared when the device is initialized.

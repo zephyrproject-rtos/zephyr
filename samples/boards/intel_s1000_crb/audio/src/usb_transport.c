@@ -16,33 +16,13 @@ LOG_MODULE_REGISTER(usb_transport);
 #include "usb_transport.h"
 
 /* callback function list */
-static int usb_transport_get_report(const struct device *dev,
-		struct usb_setup_packet *setup,
-		int32_t *len, uint8_t **data);
-static int usb_transport_get_idle(const struct device *dev,
-		struct usb_setup_packet *setup,
-		int32_t *len, uint8_t **data);
-static int usb_transport_get_protocol(const struct device *dev,
-		struct usb_setup_packet *setup,
-		int32_t *len, uint8_t **data);
 static int usb_transport_set_report(const struct device *dev,
-		struct usb_setup_packet *setup,
-		int32_t *len, uint8_t **data);
-static int usb_transport_set_idle(const struct device *dev,
-		struct usb_setup_packet *setup,
-		int32_t *len, uint8_t **data);
-static int usb_transport_set_protocol(const struct device *dev,
 		struct usb_setup_packet *setup,
 		int32_t *len, uint8_t **data);
 static void usb_transport_host_ready(const struct device *dev);
 
 static const struct hid_ops usb_transport_callbacks = {
-	.get_report	= usb_transport_get_report,
-	.get_idle	= usb_transport_get_idle,
-	.get_protocol	= usb_transport_get_protocol,
 	.set_report	= usb_transport_set_report,
-	.set_idle	= usb_transport_set_idle,
-	.set_protocol	= usb_transport_set_protocol,
 	.int_in_ready	= usb_transport_host_ready,
 };
 
@@ -161,30 +141,6 @@ int usb_transport_send_reply(uint8_t *data, uint32_t len)
 	return ret;
 }
 
-static int usb_transport_get_report(const struct device *dev,
-		struct usb_setup_packet *setup,
-		int32_t *len, uint8_t **data)
-{
-	LOG_DBG("usb_transport_get_report");
-	return 0;
-}
-
-static int usb_transport_get_idle(const struct device *dev,
-		struct usb_setup_packet *setup,
-		int32_t *len, uint8_t **data)
-{
-	LOG_DBG("usb_transport_get_idle");
-	return 0;
-}
-
-static int usb_transport_get_protocol(const struct device *dev,
-		struct usb_setup_packet *setup,
-		int32_t *len, uint8_t **data)
-{
-	LOG_DBG("usb_transport_get_protocol");
-	return 0;
-}
-
 static int usb_transport_set_report(const struct device *dev,
 		struct usb_setup_packet *setup,
 		int32_t *len, uint8_t **data)
@@ -197,22 +153,6 @@ static int usb_transport_set_report(const struct device *dev,
 	size = *len - sizeof(union usb_hid_report_hdr);
 
 	receive_data_cb(buffer, size);
-	return 0;
-}
-
-static int usb_transport_set_idle(const struct device *dev,
-		struct usb_setup_packet *setup,
-		int32_t *len, uint8_t **data)
-{
-	LOG_DBG("usb_transport_set_idle");
-	return 0;
-}
-
-static int usb_transport_set_protocol(const struct device *dev,
-		struct usb_setup_packet *setup,
-		int32_t *len, uint8_t **data)
-{
-	LOG_DBG("usb_transport_set_protocol");
 	return 0;
 }
 

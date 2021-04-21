@@ -42,7 +42,7 @@ manifest:
       path: modules/lib/civetweb
     - name: hal_espressif
       west-commands: west/west-commands.yml
-      revision: 7d27051e7e39b65d6a402b0f4609264194a00d18
+      revision: 4d8961f39c10540a2b313e3c83701eb2211acb00
       path: modules/hal/espressif
     - name: fatfs
       revision: 1d1fcc725aa1cb3c32f366e0c53d7490d0fe1109
@@ -115,7 +115,8 @@ manifest:
       revision: 38c79a447e4a47d413b4e8d34448316a5cece77c
       path: modules/debug/segger
     - name: sof
-      revision: b5b772dd611879ee6309da38759def79fc7f33f1
+      url: https://github.com/nordic-krch/sof
+      revision: 2f8ef204454d278f0c189e8c7cc70e84f745561a
       path: modules/audio/sof
     - name: tinycbor
       path: modules/lib/tinycbor
@@ -140,7 +141,7 @@ manifest:
       revision: 7dd56fc100d79cc45c33d43e7401d1803e26f6e7
     - name: trusted-firmware-m
       path: modules/tee/tfm
-      revision: 33216b0d61a6bc585a87e548c4a345d3fd0d2177
+      revision: 2c2aa3724a040233095a5c41ab79c8ad36134c8e
     - name: tfm-mcuboot # This is used by the trusted-firmware-m module.
       repo-path: mcuboot
       path: modules/tee/tfm-mcuboot

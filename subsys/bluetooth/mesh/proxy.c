@@ -548,7 +548,7 @@ static void proxy_connected(struct bt_conn *conn, uint8_t err)
 	struct bt_mesh_proxy_client *client;
 	int i;
 
-	BT_DBG("conn %p err 0x%02x", conn, err);
+	BT_DBG("conn %p err 0x%02x", (void *)conn, err);
 
 	conn_count++;
 
@@ -579,7 +579,7 @@ static void proxy_disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	int i;
 
-	BT_DBG("conn %p reason 0x%02x", conn, reason);
+	BT_DBG("conn %p reason 0x%02x", (void *)conn, reason);
 
 	conn_count--;
 
@@ -981,7 +981,7 @@ static int proxy_segment_and_send(struct bt_conn *conn, uint8_t type,
 {
 	uint16_t mtu;
 
-	BT_DBG("conn %p type 0x%02x len %u: %s", conn, type, msg->len,
+	BT_DBG("conn %p type 0x%02x len %u: %s", (void *)conn, type, msg->len,
 	       bt_hex(msg->data, msg->len));
 
 	/* ATT_MTU - OpCode (1 byte) - Handle (2 bytes) */

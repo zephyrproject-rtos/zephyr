@@ -356,6 +356,9 @@ int bt_iso_chan_disconnect(struct bt_iso_chan *chan);
  *  Regarding to first input parameter, to get details see reference description
  *  to bt_iso_chan_connect() API above.
  *
+ *  @note Buffer ownership is transferred to the stack in case of success, in
+ *  case of an error the caller retains the ownership of the buffer.
+ *
  *  @param chan Channel object.
  *  @param buf Buffer containing data to be sent.
  *

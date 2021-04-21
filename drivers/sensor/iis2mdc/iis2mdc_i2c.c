@@ -11,30 +11,29 @@
 #define DT_DRV_COMPAT st_iis2mdc
 
 #include <string.h>
-#include <drivers/i2c.h>
 #include <logging/log.h>
 
 #include "iis2mdc.h"
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_DECLARE(IIS2MDC);
+LOG_MODULE_DECLARE(IIS2MDC, CONFIG_SENSOR_LOG_LEVEL);
 
-static int iis2mdc_i2c_read(struct iis2mdc_data *data, uint8_t reg_addr,
-			    uint8_t *value, uint16_t len)
-{	const struct iis2mdc_config *cfg = data->dev->config;
+static int iis2mdc_i2c_read(const struct device *dev, uint8_t reg_addr,
+				 uint8_t *value, uint16_t len)
+{
+	const struct iis2mdc_dev_config *cfg = dev->config;
 
-	return i2c_burst_read(data->bus, cfg->i2c_slv_addr,
+	return i2c_burst_read(cfg->bus, cfg->bus_cfg.i2c_slv_addr,
 			      reg_addr, value, len);
 }
 
-static int iis2mdc_i2c_write(struct iis2mdc_data *data, uint8_t reg_addr,
-			     uint8_t *value, uint16_t len)
+static int iis2mdc_i2c_write(const struct device *dev, uint8_t reg_addr,
+				  uint8_t *value, uint16_t len)
 {
-	const struct iis2mdc_config *cfg = data->dev->config     ;
+	const struct iis2mdc_dev_config *cfg = dev->config;
 
-	return i2c_burst_write(data->bus, cfg->i2c_slv_addr,
+	return i2c_burst_write(cfg->bus, cfg->bus_cfg.i2c_slv_addr,
 			       reg_addr, value, len);
 }
 
@@ -46,7 +45,7 @@ int iis2mdc_i2c_init(const struct device *dev)
 	data->ctx_i2c.write_reg = (stmdev_write_ptr) iis2mdc_i2c_write;
 
 	data->ctx = &data->ctx_i2c;
-	data->ctx->handle = data;
+	data->ctx->handle = (void *)dev;
 
 	return 0;
 }

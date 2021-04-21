@@ -1748,6 +1748,13 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch,
 		BT_WARN("Unable to send seg %d", err);
 		atomic_inc(&ch->tx.credits);
 
+		/* If the segment is not the original buffer release it since it
+		 * won't be needed anymore.
+		 */
+		if (seg != buf) {
+			net_buf_unref(seg);
+		}
+
 		if (err == -ENOBUFS) {
 			/* Restore state since segment could not be sent */
 			net_buf_simple_restore(&buf->b, &state);

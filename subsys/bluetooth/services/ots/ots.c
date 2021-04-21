@@ -202,11 +202,6 @@ int bt_ots_obj_add(struct bt_ots *ots,
 		}
 	}
 
-	/* Make object the Current Object if this is the first one added. */
-	if (!ots->cur_obj) {
-		ots->cur_obj = obj;
-	}
-
 	return 0;
 }
 

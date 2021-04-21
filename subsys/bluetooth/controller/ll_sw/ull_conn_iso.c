@@ -181,10 +181,14 @@ void ull_conn_iso_cis_established(struct ll_conn_iso_stream *cis)
 
 void ull_conn_iso_done(struct node_rx_event_done *done)
 {
-	struct lll_conn_iso_group *lll = (void *)HDR_ULL2LLL(done->param);
-	struct ll_conn_iso_group *cig = (void *)HDR_LLL2EVT(lll);
+	struct lll_conn_iso_group *lll;
+	struct ll_conn_iso_group *cig;
 	uint32_t ticks_drift_minus;
 	uint32_t ticks_drift_plus;
+
+	/* Get reference to ULL context */
+	cig = CONTAINER_OF(done->param, struct ll_conn_iso_group, ull);
+	lll = &cig->lll;
 
 	/* Skip if CIG terminated by local host */
 	if (unlikely(lll->handle == 0xFFFF)) {

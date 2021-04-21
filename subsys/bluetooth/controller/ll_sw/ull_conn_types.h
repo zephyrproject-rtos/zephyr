@@ -31,7 +31,6 @@ enum llcp {
 };
 
 struct ll_conn {
-	struct evt_hdr  evt;
 	struct ull_hdr  ull;
 	struct lll_conn lll;
 
@@ -141,6 +140,7 @@ struct ll_conn {
 				LLCP_ENC_STATE_INPROG,
 				LLCP_ENC_STATE_INIT,
 				LLCP_ENC_STATE_LTK_WAIT,
+				LLCP_ENC_STATE_ENC_WAIT,
 			} state:2 __packed;
 			uint8_t  error_code;
 			uint8_t  skd[16];
@@ -190,7 +190,7 @@ struct ll_conn {
 		uint8_t req;
 		uint8_t ack;
 		uint8_t reason_own;
-		uint8_t reason_peer;
+		uint8_t reason_final;
 		/* node rx type with memory aligned storage for terminate
 		 * reason.
 		 * HCI will reference the value using the pdu member of

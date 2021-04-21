@@ -180,9 +180,9 @@ int rpmsg_backend_init(struct metal_io_region **io, struct virtio_device *vdev)
 	struct metal_device     *device;
 
 	/* Start IPM workqueue */
-	k_work_q_start(&ipm_work_q, ipm_stack_area,
+	k_work_queue_start(&ipm_work_q, ipm_stack_area,
 			   K_THREAD_STACK_SIZEOF(ipm_stack_area),
-			   IPM_WORK_QUEUE_PRIORITY);
+			   IPM_WORK_QUEUE_PRIORITY, NULL);
 	k_thread_name_set(&ipm_work_q.thread, "ipm_work_q");
 
 	/* Setup IPM workqueue item */

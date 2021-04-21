@@ -84,8 +84,8 @@
 
 &i2c0 {
 	compatible = "nordic,nrf-twi";
-	sda-gpios = <&gpio0 25 0>;
-	scl-gpios = <&gpio0 26 0>;
+	sda-pin = <25>;
+	scl-pin = <26>;
 };
 
 &flash0 {

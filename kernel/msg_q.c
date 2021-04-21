@@ -46,6 +46,13 @@ SYS_INIT(init_msgq_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
 #endif /* CONFIG_OBJECT_TRACING */
 
+#ifdef CONFIG_POLL
+static inline void handle_poll_events(struct k_msgq *msgq, uint32_t state)
+{
+	z_handle_obj_poll_events(&msgq->poll_events, state);
+}
+#endif /* CONFIG_POLL */
+
 void k_msgq_init(struct k_msgq *msgq, char *buffer, size_t msg_size,
 		 uint32_t max_msgs)
 {
@@ -59,7 +66,9 @@ void k_msgq_init(struct k_msgq *msgq, char *buffer, size_t msg_size,
 	msgq->flags = 0;
 	z_waitq_init(&msgq->wait_q);
 	msgq->lock = (struct k_spinlock) {};
-
+#ifdef CONFIG_POLL
+	sys_dlist_init(&msgq->poll_events);
+#endif	/* CONFIG_POLL */
 	SYS_TRACING_OBJ_INIT(k_msgq, msgq);
 
 	z_object_init(msgq);
@@ -143,6 +152,9 @@ int z_impl_k_msgq_put(struct k_msgq *msgq, const void *data, k_timeout_t timeout
 				msgq->write_ptr = msgq->buffer_start;
 			}
 			msgq->used_msgs++;
+#ifdef CONFIG_POLL
+			handle_poll_events(msgq, K_POLL_STATE_MSGQ_DATA_AVAILABLE);
+#endif /* CONFIG_POLL */
 		}
 		result = 0;
 	} else if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {

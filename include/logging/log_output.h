@@ -109,6 +109,18 @@ void log_output_msg_process(const struct log_output *output,
 			    struct log_msg *msg,
 			    uint32_t flags);
 
+/** @brief Process log messages v2 to readable strings.
+ *
+ * Function is using provided context with the buffer and output function to
+ * process formatted string and output the data.
+ *
+ * @param log_output Pointer to the log output instance.
+ * @param msg Log message.
+ * @param flags Optional flags.
+ */
+void log_output_msg2_process(const struct log_output *log_output,
+			     struct log_msg2 *msg, uint32_t flags);
+
 /** @brief Process log string
  *
  * Function is formatting provided string adding optional prefixes and
@@ -187,6 +199,14 @@ static inline void log_output_hostname_set(const struct log_output *output,
  * @param freq Frequency in Hz.
  */
 void log_output_timestamp_freq_set(uint32_t freq);
+
+/** @brief Convert timestamp of the message to us.
+ *
+ * @param timestamp Message timestamp
+ *
+ * @return Timestamp value in us.
+ */
+uint64_t log_output_timestamp_to_us(uint32_t timestamp);
 
 /**
  * @}

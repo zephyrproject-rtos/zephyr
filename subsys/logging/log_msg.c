@@ -168,13 +168,13 @@ union log_msg_chunk *log_msg_no_space_handle(void)
 	if (IS_ENABLED(CONFIG_LOG_MODE_OVERFLOW)) {
 		do {
 			more = log_process(true);
-			log_dropped();
+			z_log_dropped();
 			err = k_mem_slab_alloc(&log_msg_pool,
 					       (void **)&msg,
 					       K_NO_WAIT);
 		} while ((err != 0) && more);
 	} else {
-		log_dropped();
+		z_log_dropped();
 	}
 	return msg;
 

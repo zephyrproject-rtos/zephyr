@@ -100,6 +100,8 @@ The Zephyr nucleo_207zg board configuration supports the following hardware feat
 +-------------+------------+-------------------------------------+
 | Backup SRAM | on-chip    | Backup SRAM                         |
 +-------------+------------+-------------------------------------+
+| PWM         | on-chip    | PWM                                 |
++-------------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -154,6 +156,7 @@ Default Zephyr Peripheral Mapping:
 - LD3 : PB14
 - DAC: PA4
 - ADC: PA0
+- PWM_1_CH1 : PE9
 
 System Clock
 ------------

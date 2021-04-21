@@ -26,11 +26,6 @@
 #define SCAN_INT_UNIT_US 625U
 #define CONN_INT_UNIT_US 1250U
 
-#define HDR_ULL(p)     ((void *)((uint8_t *)(p) + sizeof(struct evt_hdr)))
-#define HDR_ULL2LLL(p) ((struct lll_hdr *)((uint8_t *)(p) + \
-					   sizeof(struct ull_hdr)))
-#define HDR_LLL2EVT(p) ((struct evt_hdr *)((struct lll_hdr *)(p))->parent)
-
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
 #define XON_BITMASK BIT(31) /* XTAL has been retained from previous prepare */
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
@@ -114,11 +109,11 @@ enum {
 			       1),
 #endif /* CONFIG_BT_CONN */
 
-#if defined(CONFIG_BT_CTLR_CONN_ISO_GROUPS)
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
 	TICKER_ID_CONN_ISO_BASE,
 	TICKER_ID_CONN_ISO_LAST = ((TICKER_ID_CONN_ISO_BASE) +
 				   (CONFIG_BT_CTLR_CONN_ISO_GROUPS) - 1),
-#endif /* CONFIG_BT_CTLR_CONN_ISO_GROUPS */
+#endif /* CONFIG_BT_CTLR_CONN_ISO */
 
 #if defined(CONFIG_BT_CTLR_USER_EXT) && \
 	(CONFIG_BT_CTLR_USER_TICKER_ID_RANGE > 0)
@@ -137,23 +132,29 @@ enum {
 
 #define TICKER_ID_ULL_BASE ((TICKER_ID_LLL_PREEMPT) + 1)
 
-enum ull_status {
-	ULL_STATUS_SUCCESS,
-	ULL_STATUS_FAILURE,
-	ULL_STATUS_BUSY,
-};
-
-struct evt_hdr {
-	uint32_t ticks_xtal_to_start;
-	uint32_t ticks_active_to_start;
-	uint32_t ticks_preempt_to_start;
-	uint32_t ticks_slot;
-};
-
 struct ull_hdr {
 	uint8_t volatile ref;  /* Number of ongoing (between Prepare and Done)
 				* events
 				*/
+
+	/* Event parameters */
+	/* TODO: The intention is to use the greater of the
+	 *       ticks_prepare_to_start or ticks_active_to_start as the prepare
+	 *       offset. At the prepare tick generate a software interrupt
+	 *       servicable by application as the per role configurable advance
+	 *       radio event notification, usable for data acquisitions.
+	 *       ticks_preempt_to_start is the per role dynamic preempt offset,
+	 *       which shall be based on role's preparation CPU usage
+	 *       requirements.
+	 */
+	struct {
+		uint32_t ticks_active_to_start;
+		uint32_t ticks_prepare_to_start;
+		uint32_t ticks_preempt_to_start;
+		uint32_t ticks_slot;
+	};
+
+	/* ULL context disabled callback and its parameter */
 	void (*disabled_cb)(void *param);
 	void *disabled_param;
 };
@@ -165,6 +166,8 @@ struct lll_hdr {
 	uint8_t latency;
 #endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
 };
+
+#define HDR_LLL2ULL(p) (((struct lll_hdr *)(p))->parent)
 
 struct lll_prepare_param {
 	uint32_t ticks_at_expire;
@@ -292,9 +295,7 @@ struct node_rx_hdr {
 
 	union {
 		struct node_rx_ftr rx_ftr;
-#if defined(CONFIG_BT_CTLR_SYNC_ISO) || \
-	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) || \
-	defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+#if defined(CONFIG_BT_CTLR_SYNC_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
 		struct node_rx_iso_meta rx_iso_meta;
 #endif
 #if defined(CONFIG_BT_CTLR_RX_PDU_META)
@@ -338,9 +339,9 @@ enum {
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_OBSERVER */
 
-#if defined(CONFIG_BT_CTLR_CONN_ISO_STREAMS)
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
 	EVENT_DONE_EXTRA_TYPE_CIS,
-#endif /* CONFIG_BT_CTLR_CONN_ISO_STREAMS */
+#endif /* CONFIG_BT_CTLR_CONN_ISO */
 
 /* Following proprietary defines must be at end of enum range */
 #if defined(CONFIG_BT_CTLR_USER_EXT)

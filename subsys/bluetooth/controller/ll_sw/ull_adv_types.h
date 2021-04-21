@@ -9,7 +9,6 @@ struct lll_df_adv_cfg;
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 
 struct ll_adv_set {
-	struct evt_hdr evt;
 	struct ull_hdr ull;
 	struct lll_adv lll;
 
@@ -52,7 +51,6 @@ struct ll_adv_set {
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 struct ll_adv_aux_set {
-	struct evt_hdr     evt;
 	struct ull_hdr     ull;
 	struct lll_adv_aux lll;
 
@@ -62,7 +60,6 @@ struct ll_adv_aux_set {
 };
 
 struct ll_adv_sync_set {
-	struct evt_hdr      evt;
 	struct ull_hdr      ull;
 	struct lll_adv_sync lll;
 
@@ -73,7 +70,6 @@ struct ll_adv_sync_set {
 };
 
 struct ll_adv_iso {
-	struct evt_hdr        evt;
 	struct ull_hdr        ull;
 	struct lll_adv_iso    lll;
 

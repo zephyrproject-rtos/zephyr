@@ -121,7 +121,7 @@ html_theme = "sphinx_rtd_theme"
 html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 html_theme_options = {"prev_next_buttons_location": None}
 html_title = "Zephyr Project Documentation"
-html_logo = "images/Zephyr-Kite-logo.png"
+html_logo = "_static/images/logo.svg"
 html_favicon = "images/zp_favicon.png"
 html_static_path = [str(ZEPHYR_BASE / "doc" / "_static")]
 html_last_updated_fmt = "%b %d, %Y"
@@ -209,8 +209,10 @@ linkcheck_anchors = False
 
 
 def setup(app):
-    app.add_css_file("css/zephyr-custom.css")
-    app.add_js_file("js/zephyr-custom.js")
+    # theme customizations
+    app.add_css_file("css/custom.css")
+    app.add_js_file("js/custom.js")
+    app.add_js_file("js/dark-mode-toggle.min.mjs", type="module")
 
     app.add_js_file("https://www.googletagmanager.com/gtag/js?id=UA-831873-47")
     app.add_js_file("js/ga-tracker.js")
