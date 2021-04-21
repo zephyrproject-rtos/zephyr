@@ -454,6 +454,11 @@ static int parse_option(uint8_t *data, uint16_t offset, uint16_t *pos,
 	uint8_t opt;
 	int r;
 
+	/* Check if there are options to parse */
+	if (offset == max_len) {
+		return 0;
+	}
+
 	r = read_u8(data, offset, pos, max_len, &opt);
 	if (r < 0) {
 		return r;
