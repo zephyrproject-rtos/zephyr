@@ -49,8 +49,4 @@ config I2C_DW
 	default y
 	depends on I2C
 
-config UART_NS16550_MAX_INSTANCES
-	default 11
-	depends on UART_NS16550
-
 endif # SOC_ELKHART_LAKE
