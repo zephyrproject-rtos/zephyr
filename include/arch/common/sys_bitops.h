@@ -42,6 +42,20 @@ static ALWAYS_INLINE int sys_test_bit(mem_addr_t addr, unsigned int bit)
 	return temp & (1 << bit);
 }
 
+static ALWAYS_INLINE void sys_set_bits(mem_addr_t addr, unsigned int mask)
+{
+	uint32_t temp = *(volatile uint32_t *)addr;
+
+	*(volatile uint32_t *)addr = temp | mask;
+}
+
+static ALWAYS_INLINE void sys_clear_bits(mem_addr_t addr, unsigned int mask)
+{
+	uint32_t temp = *(volatile uint32_t *)addr;
+
+	*(volatile uint32_t *)addr = temp & ~mask;
+}
+
 static ALWAYS_INLINE
 	void sys_bitfield_set_bit(mem_addr_t addr, unsigned int bit)
 {
