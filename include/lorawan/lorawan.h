@@ -198,7 +198,7 @@ int lorawan_set_conf_msg_tries(uint8_t tries);
  * @brief Enable Adaptive Data Rate (ADR)
  *
  * Control whether adaptive data rate (ADR) is enabled. When ADR is enabled,
- * the data rate is treated as a default data rate that wil be used if the
+ * the data rate is treated as a default data rate that will be used if the
  * ADR algorithm has not established a data rate. ADR should normally only
  * be enabled for devices with stable RF conditions (i.e., devices in a mostly
  * static location).
@@ -245,4 +245,4 @@ void lorawan_get_payload_sizes(uint8_t *max_next_payload_size,
 }
 #endif
 
-#endif	/* ZEPHYR_INCLUDE_LORAWAN_LORAWAN_H_ */
+#endif /* ZEPHYR_INCLUDE_LORAWAN_LORAWAN_H_ */
