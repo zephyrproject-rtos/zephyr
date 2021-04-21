@@ -864,15 +864,8 @@ static int bass_rem_src(struct net_buf_simple *buf)
 	memset(&internal_state->state, 0, sizeof(internal_state->state));
 	memset(internal_state->broadcast_code, 0, sizeof(internal_state->broadcast_code));
 
-	/* restore src_id */
-	internal_state->state.src_id = src_id;
-
-	bt_debug_dump_recv_state(internal_state);
-
-	net_buf_put_recv_state(internal_state);
-
 	bt_gatt_notify_uuid(NULL, BT_UUID_BASS_RECV_STATE, internal_state->attr,
-			    read_buf.data, read_buf.len);
+			    NULL, 0);
 
 	return 0;
 }
@@ -991,13 +984,20 @@ static ssize_t read_recv_state(struct bt_conn *conn,
 	struct bass_recv_state_internal_t *recv_state = &bass_inst.recv_states[idx];
 	struct bt_bass_recv_state *state = &recv_state->state;
 
-	BT_DBG("Index %u: Source ID 0x%02x", idx, state->src_id);
-	bt_debug_dump_recv_state(recv_state);
+	if (recv_state->active) {
+		BT_DBG("Index %u: Source ID 0x%02x", idx, state->src_id);
 
-	net_buf_put_recv_state(recv_state);
+		bt_debug_dump_recv_state(recv_state);
 
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, read_buf.data,
-				 read_buf.len);
+		net_buf_put_recv_state(recv_state);
+
+		return bt_gatt_attr_read(conn, attr, buf, len, offset,
+					 read_buf.data, read_buf.len);
+	} else {
+		BT_DBG("Index %u: Not active", idx);
+
+		return bt_gatt_attr_read(conn, attr, buf, len, offset, NULL, 0);
+	}
 }
 
 #define RECEIVE_STATE_CHARACTERISTIC(idx) \

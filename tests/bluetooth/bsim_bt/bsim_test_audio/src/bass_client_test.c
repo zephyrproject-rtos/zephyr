@@ -135,12 +135,12 @@ static void bass_client_recv_state_cb(struct bt_conn *conn, int err,
 }
 
 static void bass_client_recv_state_removed_cb(struct bt_conn *conn, int err,
-					      const struct bt_bass_recv_state *state)
+					      uint8_t src_id)
 {
 	if (err) {
 		FAIL("BASS recv state removed failed (%d)\n", err);
 	} else {
-		printk("BASS recv state %u removed\n", state->src_id);
+		printk("BASS recv state %u removed\n", src_id);
 	}
 
 	g_cb = true;

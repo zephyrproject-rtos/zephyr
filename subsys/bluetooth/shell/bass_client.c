@@ -160,14 +160,13 @@ static void bass_client_recv_state_cb(struct bt_conn *conn, int err,
 }
 
 static void bass_client_recv_state_removed_cb(
-	struct bt_conn *conn, int err, const struct bt_bass_recv_state *state)
+	struct bt_conn *conn, int err, uint8_t src_id)
 {
 	if (err) {
 		shell_error(ctx_shell, "BASS recv state removed failed (%d)",
 			    err);
 	} else {
-		shell_print(ctx_shell, "BASS recv state %u removed",
-			    state->src_id);
+		shell_print(ctx_shell, "BASS recv state %u removed", src_id);
 	}
 }
 
