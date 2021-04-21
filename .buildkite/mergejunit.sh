@@ -15,7 +15,5 @@ if [ "${xmls}" ]; then
    buildkite-agent artifact upload junit.xml
    junit2html junit.xml
    buildkite-agent artifact upload junit.xml.html
-   cat << EOF | buildkite-agent annotate --style "info"
-      Read the <a href="artifact://junit.xml.html">JUnit test report</a>
-   EOF
+   buildkite-agent annotate --style "info" "Read the <a href=\"artifact://junit.xml.html"">JUnit test report</a>"
 fi
