@@ -54,6 +54,7 @@ struct bass_cp_add_src_t {
 	uint8_t opcode;
 	bt_addr_le_t addr;
 	uint8_t adv_sid;
+	uint8_t broadcast_id[BT_BASS_BROADCAST_ID_SIZE];
 	uint8_t pa_sync;
 	uint16_t pa_interval;
 	uint8_t num_subgroups;
@@ -63,7 +64,6 @@ struct bass_cp_add_src_t {
 struct bass_cp_mod_src_t {
 	uint8_t opcode;
 	uint8_t src_id;
-	bt_addr_t addr;
 	uint8_t pa_sync;
 	uint16_t pa_interval;
 	uint8_t num_subgroups;

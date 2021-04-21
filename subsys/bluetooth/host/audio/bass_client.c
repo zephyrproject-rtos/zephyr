@@ -30,6 +30,8 @@
 #define FIRST_HANDLE			0x0001
 #define LAST_HANDLE			0xFFFF
 
+#define MINIMUM_RECV_STATE_LEN          15
+
 struct bass_client_instance_t {
 	bool discovering;
 	bool scanning;
@@ -63,7 +65,6 @@ static int parse_recv_state(const void *data, uint16_t length,
 {
 	struct net_buf_simple buf;
 	bt_addr_t *addr;
-	const uint16_t min_length = 12; /* minimum length of a receive state*/
 
 	__ASSERT(recv_state, "NULL receive state");
 
@@ -72,9 +73,9 @@ static int parse_recv_state(const void *data, uint16_t length,
 		return -EINVAL;
 	}
 
-	if (length < min_length) {
+	if (length < MINIMUM_RECV_STATE_LEN) {
 		BT_DBG("Invalid receive state length %u, expected at least %u",
-			length, min_length);
+			length, MINIMUM_RECV_STATE_LEN);
 		return -EINVAL;
 	}
 
@@ -87,6 +88,7 @@ static int parse_recv_state(const void *data, uint16_t length,
 	addr = net_buf_simple_pull_mem(&buf, sizeof(*addr));
 	bt_addr_copy(&recv_state->addr.a, addr);
 	recv_state->adv_sid = net_buf_simple_pull_u8(&buf);
+	recv_state->broadcast_id = net_buf_simple_pull_le24(&buf);
 	recv_state->pa_sync_state = net_buf_simple_pull_u8(&buf);
 	recv_state->encrypt_state = net_buf_simple_pull_u8(&buf);
 	if (recv_state->encrypt_state == BASS_BIG_ENC_STATE_BAD_CODE) {
@@ -444,37 +446,35 @@ static int bt_bass_client_common_cp(struct bt_conn *conn, const struct net_buf_s
 static bool broadcaster_found(struct bt_data *data, void *user_data)
 {
 	const struct bt_le_scan_recv_info *info = user_data;
+	struct bt_uuid_16 adv_uuid;
+	uint32_t broadcast_id;
 
-	switch (data->type) {
-	case BT_DATA_UUID16_SOME:
-	case BT_DATA_UUID16_ALL:
-		if (data->data_len % sizeof(uint16_t) != 0U) {
-			BT_DBG("AD malformed\n");
-			return true;
-		}
-
-		for (int i = 0; i < data->data_len; i += sizeof(uint16_t)) {
-			struct bt_uuid *adv_uuid;
-			uint16_t u16;
-
-			memcpy(&u16, &data->data[i], sizeof(u16));
-			adv_uuid = BT_UUID_DECLARE_16(sys_le16_to_cpu(u16));
-			if (bt_uuid_cmp(adv_uuid, BT_UUID_BROADCAST_AUDIO)) {
-				continue;
-			}
-
-			BT_DBG("Found BIS advertiser with address %s",
-			       bt_addr_le_str(info->addr));
-
-			if (bass_cbs && bass_cbs->scan) {
-				bass_cbs->scan(info);
-			}
-
-			return false;
-		}
+	if (data->type != BT_DATA_SVC_DATA16) {
+		return true;
 	}
 
-	return true;
+	if (data->data_len < BT_UUID_SIZE_16 + BT_BASS_BROADCAST_ID_SIZE) {
+		return true;
+	}
+
+	if (!bt_uuid_create(&adv_uuid.uuid, data->data, BT_UUID_SIZE_16)) {
+		return true;
+	}
+
+	if (bt_uuid_cmp(&adv_uuid.uuid, BT_UUID_BROADCAST_AUDIO)) {
+		return true;
+	}
+
+	broadcast_id = sys_get_le24(data->data + BT_UUID_SIZE_16);
+
+	BT_DBG("Found BIS advertiser with address %s",
+	       bt_addr_le_str(info->addr));
+
+	if (bass_cbs && bass_cbs->scan) {
+		bass_cbs->scan(info, broadcast_id);
+	}
+
+	return false;
 }
 
 void scan_recv(const struct bt_le_scan_recv_info *info, struct net_buf_simple *ad)
@@ -613,6 +613,8 @@ int bt_bass_client_add_src(struct bt_conn *conn, struct bt_bass_add_src_param *p
 	cp->adv_sid = param->adv_sid;
 	bt_addr_le_copy(&cp->addr, &param->addr);
 
+	sys_put_le24(param->broadcast_id, cp->broadcast_id);
+
 	if (param->pa_sync) {
 		if (BT_FEAT_LE_PAST_SEND(conn->le.features) &&
 		    BT_FEAT_LE_PAST_RECV(bt_dev.le.features)) {
@@ -682,7 +684,6 @@ int bt_bass_client_mod_src(struct bt_conn *conn, struct bt_bass_mod_src_param *p
 
 	cp->opcode = BASS_OP_MOD_SRC;
 	cp->src_id = param->src_id;
-	bt_addr_copy(&cp->addr, &param->addr);
 
 	if (param->pa_sync) {
 		if (BT_FEAT_LE_PAST_SEND(conn->le.features) &&

@@ -25,6 +25,9 @@ static volatile bool g_broadcaster_found;
 static volatile bool g_pa_synced;
 static volatile bool g_state_synced;
 static volatile uint8_t g_src_id;
+static volatile uint32_t g_broadcast_id;
+
+static volatile bool g_cb;
 static struct bt_conn *g_conn;
 
 /* Broadcaster variables */
@@ -55,25 +58,20 @@ static void bass_client_discover_cb(struct bt_conn *conn, int err,
 	}
 }
 
-static void bass_client_scan_cb(const struct bt_le_scan_recv_info *info)
+static void bass_client_scan_cb(const struct bt_le_scan_recv_info *info,
+				uint32_t broadcast_id)
 {
 	char le_addr[BT_ADDR_LE_STR_LEN];
 
 	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
-	printk("Scan Recv: [DEVICE]: %s, AD evt type %u, RSSI %i C:%u S:%u "
-	       "D:%d SR:%u E:%u Prim: %s, Secn: %s, Interval: 0x%04x (%u ms), "
-	       "SID: 0x%x\n",
-	       le_addr, info->adv_type, info->rssi,
-	       (info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) != 0,
-	       (info->adv_props & BT_GAP_ADV_PROP_SCANNABLE) != 0,
-	       (info->adv_props & BT_GAP_ADV_PROP_DIRECTED) != 0,
-	       (info->adv_props & BT_GAP_ADV_PROP_SCAN_RESPONSE) != 0,
-	       (info->adv_props & BT_GAP_ADV_PROP_EXT_ADV) != 0,
-	       phy2str(info->primary_phy), phy2str(info->secondary_phy),
-	       info->interval, info->interval * 5 / 4, info->sid);
+	printk("Scan Recv: [DEVICE]: %s, broadcast_id %u, "
+	       "interval (ms) %u), SID 0x%x, RSSI %i",
+	       le_addr, broadcast_id, info->interval * 5 / 4,
+	       info->sid, info->rssi);
 
 	memcpy(&g_broadcaster_info, info, sizeof(g_broadcaster_info));
 	bt_addr_le_copy(&g_broadcaster_addr, info->addr);
+	g_broadcast_id = broadcast_id;
 	g_broadcaster_found = true;
 }
 
@@ -401,6 +399,7 @@ static void test_bass_add_source(void)
 	add_src_param.num_subgroups = 1;
 	add_src_param.pa_interval = g_broadcaster_info.interval;
 	add_src_param.pa_sync = false;
+	add_src_param.broadcast_id = g_broadcast_id;
 	add_src_param.subgroups = &subgroup;
 	subgroup.bis_sync = 0;
 	subgroup.metadata_len = 0;
@@ -422,7 +421,6 @@ static void test_bass_mod_source(void)
 	printk("Modify source\n");
 	g_cb = g_write_complete = false;
 	mod_src_param.src_id = g_src_id;
-	bt_addr_copy(&mod_src_param.addr, &g_broadcaster_addr.a);
 	mod_src_param.num_subgroups = 1;
 	mod_src_param.pa_sync = true;
 	mod_src_param.subgroups = &subgroup;

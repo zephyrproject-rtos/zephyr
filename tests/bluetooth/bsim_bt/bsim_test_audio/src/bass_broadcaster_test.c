@@ -9,13 +9,21 @@
 
 extern enum bst_result_t bst_result;
 
+#define BROADCAST_ID_ENCODE(broadcast_id)  \
+	(((broadcast_id) >>  0) & 0xFF), \
+	(((broadcast_id) >>  8) & 0xFF), \
+	(((broadcast_id) >> 16) & 0xFF)
+
 static void test_main(void)
 {
 	int err;
+	uint32_t broadcast_id = 1234;
 	struct bt_le_ext_adv *adv;
 	struct bt_data ad[2] = {
 		BT_DATA_BYTES(BT_DATA_FLAGS, BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR),
-		BT_DATA_BYTES(BT_DATA_UUID16_ALL, BT_UUID_16_ENCODE(BT_UUID_BROADCAST_AUDIO_VAL))
+		BT_DATA_BYTES(BT_DATA_SVC_DATA16,
+			      BT_UUID_16_ENCODE(BT_UUID_BROADCAST_AUDIO_VAL),
+			      BROADCAST_ID_ENCODE(broadcast_id))
 	};
 
 	err = bt_enable(NULL);
