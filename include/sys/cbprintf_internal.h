@@ -259,6 +259,18 @@ union z_cbprintf_hdr {
 	void *raw;
 };
 
+/* When using clang additional warning needs to be suppressed since each
+ * argument of fmt string is used for sizeof() which results in the warning
+ * if argument is a stirng literal. Suppression is added here instead of
+ * the macro which generates the warning to not slow down the compiler.
+ */
+#if __clang__ == 1
+#define Z_CBPRINTF_SUPPRESS_SIZEOF_ARRAY_DECAY \
+	_Pragma("GCC diagnostic ignored \"-Wsizeof-array-decay\"")
+#else
+#define Z_CBPRINTF_SUPPRESS_SIZEOF_ARRAY_DECAY
+#endif
+
 /** @brief Statically package a formatted string with arguments.
  *
  * @param buf buffer. If null then only length is calculated.
@@ -277,6 +289,7 @@ union z_cbprintf_hdr {
 do { \
 	_Pragma("GCC diagnostic push") \
 	_Pragma("GCC diagnostic ignored \"-Wpointer-arith\"") \
+	Z_CBPRINTF_SUPPRESS_SIZEOF_ARRAY_DECAY \
 	BUILD_ASSERT(!IS_ENABLED(CONFIG_XTENSA) || \
 		     (IS_ENABLED(CONFIG_XTENSA) && \
 		      !(_align_offset % CBPRINTF_PACKAGE_ALIGNMENT)), \
