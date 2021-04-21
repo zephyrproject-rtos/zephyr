@@ -35,15 +35,19 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 	/* addr of callee-saved regs in thread in x2 */
 	add	x2, x1, x3
 
-	/* Save the current SP */
-	mov	x4, sp
+	/* Save the current SP_EL0 */
+	mrs	x4, sp_el0
 
 	stp	x19, x20, [x2, ___callee_saved_t_x19_x20_OFFSET]
 	stp	x21, x22, [x2, ___callee_saved_t_x21_x22_OFFSET]
 	stp	x23, x24, [x2, ___callee_saved_t_x23_x24_OFFSET]
 	stp	x25, x26, [x2, ___callee_saved_t_x25_x26_OFFSET]
 	stp	x27, x28, [x2, ___callee_saved_t_x27_x28_OFFSET]
-	stp	x29, x4, [x2, ___callee_saved_t_x29_sp_OFFSET]
+	stp	x29, x4,  [x2, ___callee_saved_t_x29_sp_el0_OFFSET]
+
+	/* Save the current SP_ELx */
+	mov	x4, sp
+	stp	x4, xzr,  [x2, ___callee_saved_t_sp_elx_OFFSET]
 
 #ifdef CONFIG_SMP
 	/* save old thread into switch handle which is required by
@@ -72,8 +76,13 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 	ldp	x23, x24, [x2, ___callee_saved_t_x23_x24_OFFSET]
 	ldp	x25, x26, [x2, ___callee_saved_t_x25_x26_OFFSET]
 	ldp	x27, x28, [x2, ___callee_saved_t_x27_x28_OFFSET]
-	ldp	x29, x1, [x2, ___callee_saved_t_x29_sp_OFFSET]
+	ldp	x29, x1,  [x2, ___callee_saved_t_x29_sp_el0_OFFSET]
 
+	/* Restore SP_EL0 */
+	msr	sp_el0, x1
+
+	/* Restore SP_EL1 */
+	ldp	x1, xzr, [x2, ___callee_saved_t_sp_elx_OFFSET]
 	mov	sp, x1
 
 #ifdef CONFIG_USERSPACE

@@ -33,8 +33,10 @@ struct _callee_saved {
 	uint64_t x26;
 	uint64_t x27;
 	uint64_t x28;
-	uint64_t x29; /* FP */
-	uint64_t sp;
+	uint64_t x29;
+	uint64_t sp_el0;
+	uint64_t sp_elx;
+	uint64_t xzr;
 };
 
 typedef struct _callee_saved _callee_saved_t;
@@ -42,7 +44,6 @@ typedef struct _callee_saved _callee_saved_t;
 struct _thread_arch {
 #ifdef CONFIG_USERSPACE
 	struct arm_mmu_ptables *ptables;
-	uint64_t priv_stack_start;
 #endif
 };
 
