@@ -70,14 +70,14 @@ itself.  The work item also maintains information about its status.
 A work item must be initialized before it can be used. This records the work
 item's handler function and marks it as not pending.
 
-A work item may be **submitted** (:c:macro:`K_WORK_QUEUED`) to a workqueue by
-an ISR or a thread.  Submitting a work item appends the work item to the
-workqueue's queue.  Once the workqueue's thread has processed all of the
-preceding work items in its queue the thread will remove a pending work item
-from its queue and invoke the work item's handler function. Depending on the
-scheduling priority of the workqueue's thread, and the work required by other
-items in the queue, a pending work item may be processed quickly or it may
-remain in the queue for an extended period of time.
+A work item may be **queued** (:c:macro:`K_WORK_QUEUED`) by submitting it to a
+workqueue by an ISR or a thread.  Submitting a work item appends the work item
+to the workqueue's queue.  Once the workqueue's thread has processed all of
+the preceding work items in its queue the thread will remove the next work
+item from the queue and invoke the work item's handler function. Depending on
+the scheduling priority of the workqueue's thread, and the work required by
+other items in the queue, a queued work item may be processed quickly or it
+may remain in the queue for an extended period of time.
 
 A delayable work item may be **scheduled** (:c:macro:`K_WORK_DELAYED`) to a
 workqueue; see `Delayable Work`_.
@@ -111,12 +111,12 @@ additional information it needs.
 
 A work item is typically initialized once and then submitted to a specific
 workqueue whenever work needs to be performed. If an ISR or a thread attempts
-to submit a work item that is already pending, the work item is not affected;
+to submit a work item that is already queued the work item is not affected;
 the work item remains in its current place in the workqueue's queue, and
 the work is only performed once.
 
 A handler function is permitted to re-submit its work item argument
-to the workqueue, since the work item is no longer pending at that time.
+to the workqueue, since the work item is no longer queued at that time.
 This allows the handler to execute work in stages, without unduly delaying
 the processing of other work items in the workqueue's queue.
 
@@ -145,7 +145,7 @@ manner to a standard work item, although different kernel APIs are used.  When
 the schedule request is made the kernel initiates a timeout mechanism that is
 triggered after the specified delay has elapsed. Once the timeout occurs the
 kernel submits the work item to the specified workqueue, where it remains
-pending until it is processed in the standard manner.
+queued until it is processed in the standard manner.
 
 Triggered Work
 **************
@@ -170,7 +170,7 @@ manner to a standard work item, although dedicated kernel APIs are used.
 When a submit request is made, the kernel begins observing kernel objects
 specified by the poll events. Once at least one of the observed kernel
 object's changes state, the work item is submitted to the specified workqueue,
-where it remains pending until it is processed in the standard manner.
+where it remains queued until it is processed in the standard manner.
 
 .. important::
     The triggered work item as well as the referenced array of poll events
@@ -232,8 +232,8 @@ rescheduling can be controlled by the optional final parameter; see
 
 The following API can be used to interact with a workqueue:
 
-* :c:func:`k_work_queue_drain()` can be used to block the caller until no more
-  items are pending for the queue.  Work items resubmitted from the workqueue
+* :c:func:`k_work_queue_drain()` can be used to block the caller until the
+  work queue has no items left.  Work items resubmitted from the workqueue
   thread are accepted while a queue is draining, but work items from any other
   thread or ISR are rejected.  The restriction on submitting more work can be
   extended past the completion of the drain operation in order to allow the
@@ -253,7 +253,7 @@ calling :c:func:`k_work_submit_to_queue`.
 
 The following code demonstrates how an ISR can offload the printing
 of error messages to the system workqueue. Note that if the ISR attempts
-to resubmit the work item while it is still pending, the work item is left
+to resubmit the work item while it is still queued, the work item is left
 unchanged and the associated error message will not be printed.
 
 .. code-block:: c
@@ -297,7 +297,7 @@ work item:
   executed, or otherwise still being referenced by the workqueue
   infrastructure.
 * :c:func:`k_work_is_pending()` is a helper that indicates ``true`` if and only
-  if the work is scheduled, submitted, or being executed.
+  if the work is scheduled, queued, or running.
 * :c:func:`k_work_flush()` may be invoked from threads to block until the work
   item has completed.  It returns immediately if the work is not pending.
 * :c:func:`k_work_cancel()` attempts to prevent the work item from being
@@ -309,14 +309,14 @@ work item:
   can be used after :c:func:`k_work_cancel()` is invoked (from an ISR)` to
   confirm completion of an ISR-initiated cancellation.
 
-Submitting a Delayable Work Item
+Scheduling a Delayable Work Item
 ================================
 
 A delayable work item is defined using a variable of type
 :c:struct:`k_work_delayable`. It must be initialized by calling
 :c:func:`k_work_init_delayable`.
 
-There are two APIs that submit delayable work:
+There are two APIs that submit work after a delay:
 
 * :c:func:`k_work_schedule()` (or :c:func:`k_work_schedule_for_queue()`)
   schedules work to be executed at a specific time or after a delay.  Further
