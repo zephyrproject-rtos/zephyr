@@ -32,6 +32,16 @@ LOG_MODULE_REGISTER(lorawan_class_a);
 
 char data[] = {'h', 'e', 'l', 'l', 'o', 'w', 'o', 'r', 'l', 'd'};
 
+static void dl_callback(uint8_t port, bool data_pending,
+			int16_t rssi, int8_t snr,
+			uint8_t len, const uint8_t *data)
+{
+	LOG_INF("Port %d, Pending %d, RSSI %ddB, SNR %ddBm", port, data_pending, rssi, snr);
+	if (data) {
+		LOG_HEXDUMP_INF(data, len, "Payload: ");
+	}
+}
+
 static void lorwan_datarate_changed(enum lorawan_datarate dr)
 {
 	uint8_t unused, max_size;
@@ -49,6 +59,11 @@ void main(void)
 	uint8_t app_key[] = LORAWAN_APP_KEY;
 	int ret;
 
+	struct lorawan_downlink_cb downlink_cb = {
+		.port = LW_RECV_PORT_ANY,
+		.cb = dl_callback
+	};
+
 	lora_dev = device_get_binding(DEFAULT_RADIO);
 	if (!lora_dev) {
 		LOG_ERR("%s Device not found", DEFAULT_RADIO);
@@ -61,6 +76,7 @@ void main(void)
 		return;
 	}
 
+	lorawan_register_downlink_callback(&downlink_cb);
 	lorawan_register_dr_changed_callback(lorwan_datarate_changed);
 
 	join_cfg.mode = LORAWAN_ACT_OTAA;
