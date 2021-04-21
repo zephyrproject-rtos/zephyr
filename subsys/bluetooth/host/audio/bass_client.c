@@ -37,6 +37,10 @@ struct bass_client_instance_t {
 	bool scanning;
 	uint8_t pa_sync;
 	uint8_t recv_state_cnt;
+	/* Source ID cache so that we can notify application about
+	 * which source ID was removed
+	 */
+	uint8_t src_ids[CONFIG_BT_BASS_CLIENT_RECV_STATE_COUNT];
 
 	uint16_t start_handle;
 	uint16_t end_handle;
@@ -59,6 +63,19 @@ static struct bass_client_instance_t bass_client;
 static struct bt_uuid_16 uuid = BT_UUID_INIT_16(0);
 
 NET_BUF_SIMPLE_DEFINE_STATIC(cp_buf, CONFIG_BT_L2CAP_TX_MTU);
+
+static int16_t lookup_index_by_handle(uint16_t handle)
+{
+	for (int i = 0; i < ARRAY_SIZE(bass_client.recv_state_handles); i++) {
+		if (bass_client.recv_state_handles[i] == handle) {
+			return i;
+		}
+	}
+
+	BT_ERR("Unknown source was removed");
+
+	return -1;
+}
 
 static int parse_recv_state(const void *data, uint16_t length,
 			    struct bt_bass_recv_state *recv_state)
@@ -157,6 +174,7 @@ static uint8_t notify_handler(struct bt_conn *conn,
 	uint16_t handle = params->value_handle;
 	struct bt_bass_recv_state recv_state;
 	int err;
+	int16_t index;
 
 	if (!data) {
 		BT_DBG("[UNSUBSCRIBED] %u", handle);
@@ -167,20 +185,29 @@ static uint8_t notify_handler(struct bt_conn *conn,
 
 	BT_HEXDUMP_DBG(data, length, "Receive state notification:");
 
-	err = parse_recv_state(data, length, &recv_state);
-
-	if (err) {
-		/* TODO: Likely due to the length. Start a read autonomously */
-		BT_WARN("Invalid receive state received");
+	index = lookup_index_by_handle(handle);
+	if (index < 0) {
+		BT_DBG("Invalid index");
 		return BT_GATT_ITER_STOP;
 	}
 
-	if (!BASS_RECV_STATE_EMPTY(&recv_state)) {
+	if (data && length) {
+		err = parse_recv_state(data, length, &recv_state);
+
+		if (err) {
+			/* TODO: Likely due to the length. Start a read autonomously */
+			BT_WARN("Invalid receive state received");
+			return BT_GATT_ITER_STOP;
+		}
+
+		bass_client.src_ids[index] = recv_state.src_id;
+
 		if (bass_cbs && bass_cbs->recv_state) {
 			bass_cbs->recv_state(conn, 0, &recv_state);
 		}
 	} else if (bass_cbs && bass_cbs->recv_state_removed) {
-		bass_cbs->recv_state_removed(conn, 0, &recv_state);
+		bass_cbs->recv_state_removed(conn, 0,
+					     bass_client.src_ids[index]);
 	}
 
 	return BT_GATT_ITER_CONTINUE;
@@ -194,17 +221,27 @@ static uint8_t read_recv_state_cb(struct bt_conn *conn, uint8_t err,
 	uint8_t last_handle_index = bass_client.recv_state_cnt - 1;
 	uint16_t last_handle = bass_client.recv_state_handles[last_handle_index];
 	struct bt_bass_recv_state recv_state;
-	int bass_err;
+	int bass_err = err;
+	bool active_recv_state = data && length;
+
+	/* TODO: Split discovery and receive state characteristic read */
 
 	memset(params, 0, sizeof(*params));
 
-	if (err) {
-		bass_err = err;
-	} else {
-		bass_err = parse_recv_state(data, length, &recv_state);
+	if (!bass_err && active_recv_state) {
+		int16_t index;
 
-		if (bass_err) {
-			BT_DBG("Invalid receive state");
+		index = lookup_index_by_handle(handle);
+		if (index < 0) {
+			bass_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_HANDLE);
+		} else {
+			bass_err = parse_recv_state(data, length, &recv_state);
+
+			if (bass_err) {
+				BT_DBG("Invalid receive state");
+			} else {
+				bass_client.src_ids[index] = recv_state.src_id;
+			}
 		}
 	}
 
@@ -226,10 +263,10 @@ static uint8_t read_recv_state_cb(struct bt_conn *conn, uint8_t err,
 			if (bass_cbs && bass_cbs->discover) {
 				bass_cbs->discover(conn, bass_err, bass_client.recv_state_cnt);
 			}
-		}
-
-		if (bass_cbs && bass_cbs->recv_state) {
-			bass_cbs->recv_state(conn, bass_err, &recv_state);
+		} else {
+			if (bass_cbs && bass_cbs->recv_state) {
+				bass_cbs->recv_state(conn, bass_err, &recv_state);
+			}
 		}
 	} else {
 		for (int i = 0; i < bass_client.recv_state_cnt; i++) {
