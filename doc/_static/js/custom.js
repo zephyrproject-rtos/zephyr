@@ -15,13 +15,13 @@ const registerOnScrollEvent = (function(){
   // Configuration.
 
   // The number of pixels the user must scroll by before the logo is completely hidden.
-  const scrollTopPixels = 129;
+  const scrollTopPixels = 148;
   // The target margin to be applied to the navigation bar when the logo is hidden.
-  const menuTopMargin = 90;
+  const menuTopMargin = 80;
   // The max-height offset when the logo is completely visible.
-  const menuHeightOffset_default = 232;
+  const menuHeightOffset_default = 230;
   // The max-height offset when the logo is completely hidden.
-  const menuHeightOffset_fixed = 102;
+  const menuHeightOffset_fixed = 90;
   // The distance between the two max-height offset values above; used for intermediate values.
   const menuHeightOffset_diff = (menuHeightOffset_default - menuHeightOffset_fixed);
 
