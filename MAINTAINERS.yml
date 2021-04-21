@@ -1508,6 +1508,7 @@ West:
         - mbolivar-nordic
     collaborators:
         - carlescufi
+        - swinslow
     files:
         - scripts/west-commands.yml
         - scripts/west_commands/
