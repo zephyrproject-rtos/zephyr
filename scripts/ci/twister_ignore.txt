@@ -54,3 +54,4 @@ scripts/checkpatch.pl
 scripts/ci/pylintrc
 .buildkite/pipeline.yml
 scripts/ci/run_ci.sh
+.buildkite/mergejunit.sh
