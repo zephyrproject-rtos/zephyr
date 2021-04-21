@@ -95,7 +95,7 @@ static void ibecc_errsts_clear(const pcie_bdf_t bdf)
 
 	errsts = pcie_conf_read(bdf, ERRSTS_REG);
 
-	if (!(errsts & (ERRSTS_IBECC_COR | ERRSTS_IBECC_UC))) {
+	if ((errsts & (ERRSTS_IBECC_COR | ERRSTS_IBECC_UC)) == 0) {
 		return;
 	}
 
@@ -155,7 +155,7 @@ static void mchbar_regs_dump(const struct device *dev)
 			uint64_t size;
 			const char *type;
 
-			if (d ^ l_map) {
+			if ((d ^ l_map) != 0) {
 				type = get_dimm_width(DIMM_S_WIDTH(dimm_ch));
 				size = s_size;
 			} else {
@@ -163,7 +163,7 @@ static void mchbar_regs_dump(const struct device *dev)
 				size = l_size;
 			}
 
-			if (!size) {
+			if (size == 0) {
 				continue;
 			}
 
@@ -178,7 +178,7 @@ static void parse_ecclog(const struct device *dev, const uint64_t ecclog,
 {
 	struct ibecc_data *data = dev->data;
 
-	if (!ecclog) {
+	if (ecclog == 0) {
 		return;
 	}
 
@@ -186,11 +186,11 @@ static void parse_ecclog(const struct device *dev, const uint64_t ecclog,
 	error_data->address = ECC_ERROR_ERRADD(ecclog);
 	error_data->syndrome = ECC_ERROR_ERRSYND(ecclog);
 
-	if (ecclog & ECC_ERROR_MERRSTS) {
+	if ((ecclog & ECC_ERROR_MERRSTS) != 0) {
 		data->errors_uc++;
 	}
 
-	if (ecclog & ECC_ERROR_CERRSTS) {
+	if ((ecclog & ECC_ERROR_CERRSTS) != 0) {
 		data->errors_cor++;
 	}
 }
@@ -198,7 +198,7 @@ static void parse_ecclog(const struct device *dev, const uint64_t ecclog,
 #if defined(CONFIG_EDAC_ERROR_INJECT)
 static int inject_set_param1(const struct device *dev, uint64_t addr)
 {
-	if (addr & ~INJ_ADDR_BASE_MASK) {
+	if ((addr & ~INJ_ADDR_BASE_MASK) != 0) {
 		return -EINVAL;
 	}
 
@@ -216,7 +216,7 @@ static int inject_get_param1(const struct device *dev, uint64_t *value)
 
 static int inject_set_param2(const struct device *dev, uint64_t mask)
 {
-	if (mask & ~INJ_ADDR_BASE_MASK_MASK) {
+	if ((mask & ~INJ_ADDR_BASE_MASK_MASK) != 0) {
 		return -EINVAL;
 	}
 
@@ -395,7 +395,7 @@ int edac_ibecc_init(const struct device *dev)
 	mchbar |= (uint64_t)pcie_conf_read(bdf, MCHBAR_REG + 1) << 32;
 
 	/* Check that MCHBAR is enabled */
-	if (!(mchbar & MCHBAR_ENABLE)) {
+	if ((mchbar & MCHBAR_ENABLE) == 0) {
 		LOG_ERR("MCHBAR is not enabled");
 		return -ENODEV;
 	}
@@ -454,7 +454,7 @@ static bool handle_nmi(void)
 
 	status = sys_in8(NMI_STS_CNT_REG);
 
-	if (!(status & NMI_STS_SRC_SERR)) {
+	if (status & NMI_STS_SRC_SERR == 0) {
 		LOG_DBG("Skip NMI, NMI_STS_CNT: 0x%x", status);
 		/**
 		 * We should be able to find that this NMI we
@@ -495,18 +495,18 @@ bool z_x86_do_kernel_nmi(const z_arch_esf_t *esf)
 	}
 
 	/* Skip the same NMI handling for other cores and return handled */
-	if (arch_curr_cpu()->id) {
+	if (arch_curr_cpu()->id != 0) {
 		ret = true;
 		goto out;
 	}
 
-	if (edac_ecc_error_log_get(dev, &ecclog)) {
+	if (edac_ecc_error_log_get(dev, &ecclog) != 0) {
 		goto out;
 	}
 
 	parse_ecclog(dev, ecclog, &error_data);
 
-	if (data->cb) {
+	if (data->cb != NULL) {
 		data->cb(dev, &error_data);
 	}
 
