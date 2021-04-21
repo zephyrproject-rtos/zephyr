@@ -62,7 +62,7 @@ static enum lorawan_datarate current_datarate;
 static uint8_t lorawan_conf_msg_tries = 1;
 static bool lorawan_adr_enable;
 
-
+static sys_slist_t dl_callbacks;
 
 static LoRaMacPrimitives_t macPrimitives;
 static LoRaMacCallback_t macCallbacks;
@@ -129,6 +129,8 @@ static void McpsConfirm(McpsConfirm_t *mcpsConfirm)
 
 static void McpsIndication(McpsIndication_t *mcpsIndication)
 {
+	struct lorawan_downlink_cb *cb;
+
 	LOG_DBG("Received McpsIndication %d", mcpsIndication->McpsIndication);
 
 	if (mcpsIndication->Status != LORAMAC_EVENT_INFO_STATUS_OK) {
@@ -142,17 +144,19 @@ static void McpsIndication(McpsIndication_t *mcpsIndication)
 		datarate_observe(false);
 	}
 
-	/* TODO: Check MCPS Indication type */
-	if (mcpsIndication->RxData == true) {
-		if (mcpsIndication->BufferSize != 0) {
-			LOG_DBG("Rx Data: %s",
-				log_strdup(mcpsIndication->Buffer));
+	/* Iterate over all registered downlink callbacks */
+	SYS_SLIST_FOR_EACH_CONTAINER(&dl_callbacks, cb, node) {
+		if ((cb->port == LW_RECV_PORT_ANY) ||
+		    (cb->port == mcpsIndication->Port)) {
+			cb->cb(mcpsIndication->Port,
+			       !!mcpsIndication->FramePending,
+			       mcpsIndication->Rssi, mcpsIndication->Snr,
+			       mcpsIndication->BufferSize,
+			       mcpsIndication->Buffer);
 		}
 	}
 
 	last_mcps_indication_status = mcpsIndication->Status;
-
-	/* TODO: Compliance test based on FPort value*/
 }
 
 static void MlmeConfirm(MlmeConfirm_t *mlmeConfirm)
@@ -523,6 +527,11 @@ int lorawan_set_battery_level_callback(uint8_t (*battery_lvl_cb)(void))
 	return 0;
 }
 
+void lorawan_register_downlink_callback(struct lorawan_downlink_cb *cb)
+{
+	sys_slist_append(&dl_callbacks, &cb->node);
+}
+
 void lorawan_register_dr_changed_callback(void (*cb)(enum lorawan_datarate))
 {
 	dr_change_cb = cb;
@@ -559,6 +568,8 @@ int lorawan_start(void)
 static int lorawan_init(const struct device *dev)
 {
 	LoRaMacStatus_t status;
+
+	sys_slist_init(&dl_callbacks);
 
 	macPrimitives.MacMcpsConfirm = McpsConfirm;
 	macPrimitives.MacMcpsIndication = McpsIndication;
