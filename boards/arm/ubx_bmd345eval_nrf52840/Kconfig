@@ -1,0 +1,8 @@
+# BMD-345-EVAL board configuration
+
+# Copyright (c) 2021 u-blox AG
+# Copyright (c) 2021 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+# No special configuration is required.
+# The BMD-345 does not include DCDC components
