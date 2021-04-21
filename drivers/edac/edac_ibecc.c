@@ -453,20 +453,14 @@ static bool handle_nmi(void)
 	uint8_t status;
 
 	status = sys_in8(NMI_STS_CNT_REG);
-
-	if (status & NMI_STS_SRC_SERR == 0) {
-		LOG_DBG("Skip NMI, NMI_STS_CNT: 0x%x", status);
-		/**
-		 * We should be able to find that this NMI we
-		 * should not handle and return false. However this
-		 * does not work for some older SKUs
+	if ((status & NMI_STS_SRC_SERR) == 0) {
+		/* For other NMI sources return false to handle it by
+		 * Zephyr exception handler
 		 */
-		return true;
+		return false;
 	}
 
-	LOG_DBG("core: %d status 0x%x", arch_curr_cpu()->id, status);
-
-	/* Re-enable */
+	/* Re-enable SERR# NMI sources */
 
 	status = (status & NMI_STS_MASK_EN) | NMI_STS_SERR_EN;
 	sys_out8(status, NMI_STS_CNT_REG);
@@ -488,15 +482,15 @@ bool z_x86_do_kernel_nmi(const z_arch_esf_t *esf)
 
 	key = k_spin_lock(&nmi_lock);
 
-	if (!handle_nmi()) {
-		/* Indicate that we do not handle this NMI */
-		ret = false;
-		goto out;
-	}
-
 	/* Skip the same NMI handling for other cores and return handled */
 	if (arch_curr_cpu()->id != 0) {
 		ret = true;
+		goto out;
+	}
+
+	if (!handle_nmi()) {
+		/* Indicate that we do not handle this NMI */
+		ret = false;
 		goto out;
 	}
 
