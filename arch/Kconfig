@@ -52,6 +52,7 @@ config ARM64
 config SPARC
 	bool
 	select ARCH_IS_SET
+	select HAS_DTS
 	select USE_SWITCH
 	select USE_SWITCH_SUPPORTED
 	select BIG_ENDIAN
