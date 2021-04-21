@@ -719,7 +719,7 @@ static int bt_iso_setup_data_path(struct bt_conn *conn)
 {
 	int err;
 	struct bt_iso_chan *chan;
-	struct bt_iso_chan_path default_path = { 0 };
+	struct bt_iso_chan_path default_path = { .pid = BT_ISO_DATA_PATH_HCI };
 	struct bt_iso_data_path out_path = {
 		.dir = BT_HCI_DATAPATH_DIR_CTLR_TO_HOST };
 	struct bt_iso_data_path in_path = {
