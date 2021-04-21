@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019-2021 Antmicro <www.antmicro.com>
+ * Copyright (c) 2021 Raptor Engineering, LLC <sales@raptorengineering.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,6 +35,8 @@ static const char *LITEX_LOG_CANNOT_CHANGE_DIR =
 struct gpio_litex_cfg {
 	volatile uint32_t *reg_addr;
 	int reg_size;
+	volatile uint32_t *ev_pending_addr;
+	volatile uint32_t *ev_enable_addr;
 	int nr_gpios;
 	bool port_is_output;
 };
@@ -48,13 +51,6 @@ struct gpio_litex_data {
 
 #define DEV_GPIO_CFG(dev)						\
 	((const struct gpio_litex_cfg *)(dev)->config)
-
-/* Helper macros for GPIO interrupts */
-
-#define GPIO_EV_PENDING(dev) \
-		((volatile uint32_t *)((uint32_t)DEV_GPIO_CFG(dev)->reg_addr + 0x0008))
-#define GPIO_EV_ENABLE(dev) \
-		((volatile uint32_t *)((uint32_t)DEV_GPIO_CFG(dev)->reg_addr + 0x000c))
 
 /* Helper functions for bit / port access */
 
@@ -195,10 +191,10 @@ static void gpio_litex_irq_handler(const struct device *dev)
 	struct gpio_litex_data *data = dev->data;
 
 	uint8_t int_status =
-		litex_read(GPIO_EV_PENDING(dev), gpio_config->reg_size);
+		litex_read(gpio_config->ev_pending_addr, gpio_config->reg_size);
 
 	/* clear events */
-	litex_write(GPIO_EV_PENDING(dev), gpio_config->reg_size,
+	litex_write(gpio_config->ev_pending_addr, gpio_config->reg_size,
 			int_status);
 
 	gpio_fire_callbacks(&data->cb, dev, int_status);
@@ -224,9 +220,9 @@ static int gpio_litex_pin_interrupt_configure(const struct device *dev,
 	}
 
 	if (mode == GPIO_INT_MODE_EDGE) {
-		uint8_t ev_enabled = litex_read(GPIO_EV_ENABLE(dev),
+		uint8_t ev_enabled = litex_read(gpio_config->ev_enable_addr,
 				gpio_config->reg_size);
-		litex_write(GPIO_EV_ENABLE(dev), gpio_config->reg_size,
+		litex_write(gpio_config->ev_enable_addr, gpio_config->reg_size,
 			    ev_enabled | BIT(pin));
 		return 0;
 	}
@@ -266,6 +262,12 @@ static const struct gpio_driver_api gpio_litex_driver_api = {
 		(volatile uint32_t *) DT_INST_REG_ADDR(n), \
 		.reg_size = DT_INST_REG_SIZE(n) / 4, \
 		.nr_gpios = DT_INST_PROP(n, ngpios), \
+		IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, 0), ( \
+			.ev_pending_addr = \
+			(volatile uint32_t *) DT_INST_REG_ADDR_BY_NAME(n, irq_pend), \
+			.ev_enable_addr = \
+			(volatile uint32_t *) DT_INST_REG_ADDR_BY_NAME(n, irq_en), \
+		)) \
 		.port_is_output = DT_INST_PROP(n, port_is_output), \
 	}; \
 	static struct gpio_litex_data gpio_litex_data_##n; \
