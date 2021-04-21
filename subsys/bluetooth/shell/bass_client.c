@@ -20,17 +20,6 @@
 #include "../host/hci_core.h"
 #include "bt.h"
 
-static const char *phy2str(uint8_t phy)
-{
-	switch (phy) {
-	case 0: return "No packets";
-	case BT_GAP_LE_PHY_1M: return "LE 1M";
-	case BT_GAP_LE_PHY_2M: return "LE 2M";
-	case BT_GAP_LE_PHY_CODED: return "LE Coded";
-	default: return "Unknown";
-	}
-}
-
 static void bass_client_discover_cb(struct bt_conn *conn, int err,
 				    uint8_t recv_state_count)
 {
@@ -43,7 +32,8 @@ static void bass_client_discover_cb(struct bt_conn *conn, int err,
 
 }
 
-static void bass_client_scan_cb(const struct bt_le_scan_recv_info *info)
+static void bass_client_scan_cb(const struct bt_le_scan_recv_info *info,
+				uint32_t broadcast_id)
 {
 	char le_addr[BT_ADDR_LE_STR_LEN];
 	char name[30];
@@ -51,17 +41,10 @@ static void bass_client_scan_cb(const struct bt_le_scan_recv_info *info)
 	(void)memset(name, 0, sizeof(name));
 
 	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
-	shell_print(ctx_shell, "[DEVICE]: %s, AD evt type %u, RSSI %i %s "
-		    "C:%u S:%u D:%d SR:%u E:%u Prim: %s, Secn: %s, "
-		    "Interval: 0x%04x (%u ms), SID: 0x%x",
-		    le_addr, info->adv_type, info->rssi, name,
-		    (info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) != 0,
-		    (info->adv_props & BT_GAP_ADV_PROP_SCANNABLE) != 0,
-		    (info->adv_props & BT_GAP_ADV_PROP_DIRECTED) != 0,
-		    (info->adv_props & BT_GAP_ADV_PROP_SCAN_RESPONSE) != 0,
-		    (info->adv_props & BT_GAP_ADV_PROP_EXT_ADV) != 0,
-		    phy2str(info->primary_phy), phy2str(info->secondary_phy),
-		    info->interval, info->interval * 5 / 4, info->sid);
+	shell_print(ctx_shell, "[DEVICE]: %s (%s), broadcast_id %u, "
+		    "interval (ms) %u), SID 0x%x, RSSI %i",
+		    le_addr, name, broadcast_id, info->interval * 5 / 4,
+		    info->sid, info->rssi);
 
 }
 
@@ -328,9 +311,17 @@ static int cmd_bass_client_add_src(const struct shell *shell, size_t argc,
 		return -ENOEXEC;
 	}
 
+	param.broadcast_id = strtol(argv[5], NULL, 0);
+	if (param.broadcast_id < 0 ||
+	    param.broadcast_id > 0xFFFFFF /* 24 bits */) {
+		shell_error(shell, "Broadcast ID maximum 24 bits (was %x)",
+			    param.broadcast_id);
+		return -ENOEXEC;
+	}
+
 	/* TODO: Support multiple subgroups */
-	if (argc > 5) {
-		subgroup.bis_sync = strtoul(argv[5], NULL, 0);
+	if (argc > 6) {
+		subgroup.bis_sync = strtoul(argv[6], NULL, 0);
 		if (subgroup.bis_sync > UINT32_MAX) {
 			shell_error(shell, "bis_sync shall be 0x00000000 "
 				    "to 0xFFFFFFFF");
@@ -338,8 +329,8 @@ static int cmd_bass_client_add_src(const struct shell *shell, size_t argc,
 		}
 	}
 
-	if (argc > 6) {
-		subgroup.metadata_len = hex2bin(argv[6], strlen(argv[6]),
+	if (argc > 7) {
+		subgroup.metadata_len = hex2bin(argv[7], strlen(argv[7]),
 						subgroup.metadata, sizeof(subgroup.metadata));
 
 		if (!subgroup.metadata_len) {
@@ -371,21 +362,15 @@ static int cmd_bass_client_mod_src(const struct shell *shell, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_addr_from_str(argv[2], &param.addr);
-	if (result) {
-		shell_error(shell, "Invalid peer address (err %d)", result);
-		return -ENOEXEC;
-	}
-
-	param.pa_sync = strtol(argv[3], NULL, 0);
+	param.pa_sync = strtol(argv[2], NULL, 0);
 	if (param.pa_sync < 0 || param.pa_sync > 1) {
 		shell_error(shell, "pa_sync shall be boolean");
 		return -ENOEXEC;
 	}
 
 	/* TODO: Support multiple subgroups */
-	if (argc > 4) {
-		subgroup.bis_sync = strtoul(argv[4], NULL, 0);
+	if (argc > 3) {
+		subgroup.bis_sync = strtoul(argv[3], NULL, 0);
 		if (subgroup.bis_sync > UINT32_MAX) {
 			shell_error(shell, "bis_sync shall be 0x00000000 "
 				    "to 0xFFFFFFFF");
@@ -393,9 +378,10 @@ static int cmd_bass_client_mod_src(const struct shell *shell, size_t argc,
 		}
 	}
 
-	if (argc > 5) {
-		subgroup.metadata_len = hex2bin(argv[6], strlen(argv[6]),
-						subgroup.metadata, sizeof(subgroup.metadata));
+	if (argc > 4) {
+		subgroup.metadata_len = hex2bin(argv[4], strlen(argv[4]),
+						subgroup.metadata,
+						sizeof(subgroup.metadata));
 
 		if (!subgroup.metadata_len) {
 			shell_error(shell, "Could not parse metadata");
@@ -503,12 +489,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bass_client_cmds,
 		      cmd_bass_client_scan_stop, 1, 0),
 	SHELL_CMD_ARG(add_src, NULL,
 		      "Add a source <address: XX:XX:XX:XX:XX:XX> "
-		      "<type: public/random> <adv_sid> <sync_pa> [<sync_bis>] "
-		      "[<metadata>]",
-		      cmd_bass_client_add_src, 5, 2),
+		      "<type: public/random> <adv_sid> <sync_pa> "
+		      "<broadcast_id> [<sync_bis>] [<metadata>]",
+		      cmd_bass_client_add_src, 6, 2),
 	SHELL_CMD_ARG(mod_src, NULL,
-		      "Set sync <src_id> <address: XX:XX:XX:XX:XX:XX> <sync_pa> [<sync_bis>] [<metadata>]",
-		      cmd_bass_client_mod_src, 4, 2),
+		      "Set sync <src_id> <sync_pa> [<sync_bis>] [<metadata>]",
+		      cmd_bass_client_mod_src, 3, 2),
 	SHELL_CMD_ARG(broadcast_code, NULL,
 		      "Send a space separated broadcast code of up to 16 bytes "
 		      "<src_id> [broadcast code]",

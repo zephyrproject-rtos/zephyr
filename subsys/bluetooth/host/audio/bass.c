@@ -92,10 +92,12 @@ static void bt_debug_dump_recv_state(const struct bass_recv_state_internal_t *re
 {
 	const struct bt_bass_recv_state *state = &recv_state->state;
 
-	BT_DBG("Receive State[%d]: src ID %u, addr %s, adv_sid %u, pa_sync_state %u, "
+	BT_DBG("Receive State[%d]: src ID %u, addr %s, adv_sid %u, "
+	       "broadcast_id %u, pa_sync_state %u, "
 	       "encrypt state %u%s%s, num_subgroups %u",
 	       recv_state->index, state->src_id, bt_addr_le_str(&state->addr),
-	       state->adv_sid, state->pa_sync_state, state->encrypt_state,
+	       state->adv_sid, state->pa_sync_state, state->broadcast_id,
+	       state->encrypt_state,
 	       state->encrypt_state == BASS_BIG_ENC_STATE_BAD_CODE ? ", bad code" : "",
 	       state->encrypt_state == BASS_BIG_ENC_STATE_BAD_CODE ?
 					bt_hex(state->bad_code, sizeof(state->bad_code)) : "",
@@ -122,6 +124,7 @@ static void net_buf_put_recv_state(const struct bass_recv_state_internal_t *recv
 	net_buf_simple_add_mem(&read_buf, &recv_state->state.addr.a,
 			       sizeof(recv_state->state.addr.a));
 	net_buf_simple_add_u8(&read_buf, recv_state->state.adv_sid);
+	net_buf_simple_add_le24(&read_buf, recv_state->state.broadcast_id);
 	net_buf_simple_add_u8(&read_buf, recv_state->state.pa_sync_state);
 	net_buf_simple_add_u8(&read_buf, recv_state->state.encrypt_state);
 	if (recv_state->state.encrypt_state == BASS_BIG_ENC_STATE_BAD_CODE) {
@@ -570,6 +573,8 @@ static int bass_add_source(struct bt_conn *conn, struct net_buf_simple *buf)
 
 	}
 
+	state->broadcast_id = net_buf_simple_pull_le24(buf);
+
 	pa_sync = net_buf_simple_pull_u8(buf);
 	if (pa_sync > BASS_PA_REQ_SYNC_PAST) {
 		BT_DBG("Invalid PA sync value %u", pa_sync);
@@ -661,13 +666,12 @@ static int bass_mod_src(struct bt_conn *conn, struct net_buf_simple *buf)
 {
 	struct bass_recv_state_internal_t *internal_state;
 	struct bt_bass_recv_state *state;
-	bt_addr_t *addr;
 	uint8_t src_id;
 	uint8_t old_pa_sync_state;
 	bool notify = false;
 	uint16_t pa_interval;
 	uint8_t num_subgroups;
-	struct bt_bass_subgroup subgroups[CONFIG_BT_BASS_MAX_SUBGROUPS];
+	struct bt_bass_subgroup subgroups[CONFIG_BT_BASS_MAX_SUBGROUPS] = { 0 };
 	uint8_t pa_sync;
 	uint32_t aggregated_bis_syncs = 0;
 
@@ -684,8 +688,6 @@ static int bass_mod_src(struct bt_conn *conn, struct net_buf_simple *buf)
 		BT_DBG("Could not find state by src id %u", src_id);
 		return BT_GATT_ERR(BASS_ERR_OPCODE_INVALID_SRC_ID);
 	}
-
-	addr = net_buf_simple_pull_mem(buf, sizeof(*addr));
 
 	pa_sync = net_buf_simple_pull_u8(buf);
 	if (pa_sync > BASS_PA_REQ_SYNC_PAST) {
@@ -753,11 +755,6 @@ static int bass_mod_src(struct bt_conn *conn, struct net_buf_simple *buf)
 	/* All input has been validated; update receive state and check for changes */
 	state = &internal_state->state;
 	old_pa_sync_state = state->pa_sync_state;
-
-	if (bt_addr_cmp(&state->addr.a, addr)) {
-		bt_addr_copy(&state->addr.a, addr);
-		notify = true;
-	}
 
 	if (state->num_subgroups != num_subgroups) {
 		state->num_subgroups = num_subgroups;

@@ -37,6 +37,8 @@
 
 #define BASS_PA_INTERVAL_UNKNOWN        0xFFFF
 
+#define BT_BASS_BROADCAST_ID_SIZE       3
+
 #define BASS_RECV_STATE_EMPTY(rs) \
 	((rs)->pa_sync_state == 0 && (rs)->encrypt_state == 0 && \
 	 !bt_addr_le_cmp(&(rs)->addr, BT_ADDR_LE_ANY) && (rs)->adv_sid == 0 && \
@@ -58,6 +60,7 @@ struct bt_bass_recv_state {
 	uint8_t adv_sid;
 	uint8_t pa_sync_state;
 	uint8_t encrypt_state;
+	uint32_t broadcast_id; /* 24 bits */
 	uint8_t bad_code[BASS_BROADCAST_CODE_SIZE];
 	uint8_t num_subgroups;
 	struct bt_bass_subgroup subgroups[BASS_MAX_SUBGROUPS];
@@ -118,8 +121,8 @@ typedef void (*bt_bass_client_discover_cb_t)(struct bt_conn *conn, int err,
  *
  *  @param info     Advertiser information.
  */
-typedef void (*bt_bass_client_scan_cb_t)(
-	const struct bt_le_scan_recv_info *info);
+typedef void (*bt_bass_client_scan_cb_t)(const struct bt_le_scan_recv_info *info,
+					 uint32_t broadcast_id);
 
 /** @brief Callback function for when a receive state is read, updated or
  *  removed.
@@ -200,6 +203,8 @@ struct bt_bass_add_src_param {
 	uint8_t adv_sid;
 	/** Whether to sync to periodic advertisements. */
 	uint8_t pa_sync;
+	/** 24-bit broadcast ID */
+	uint32_t broadcast_id;
 	/** Periodic advertising interval. BASS_PA_INTERVAL_UNKNOWN if unknown. */
 	uint16_t pa_interval;
 	/** Number of subgroups */
@@ -225,8 +230,6 @@ struct bt_bass_mod_src_param {
 	uint8_t pa_sync;
 	/** Periodic advertising interval. BASS_PA_INTERVAL_UNKNOWN if unknown. */
 	uint16_t pa_interval;
-	/** Address of the advertiser. */
-	bt_addr_t addr;
 	/** Number of subgroups */
 	uint8_t num_subgroups;
 	/** Pointer to array of subgroups */
