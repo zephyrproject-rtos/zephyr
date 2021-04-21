@@ -26,6 +26,13 @@ properties:
     interrupts:
       required: true
 
+    ch17-internal:
+       required: false
+       type: boolean
+       description: |
+         defines if channel 17 (VRef) is an internal channel
+           ch17-internal = true;
+            
     "#io-channel-cells":
       const: 1
 

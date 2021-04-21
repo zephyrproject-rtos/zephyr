@@ -248,6 +248,18 @@ static int check_buffer_size(const struct adc_sequence *sequence,
 	return 0;
 }
 
+static uint32_t adc_stm32_getChannelByIndx(const uint8_t index) {
+	uint32_t channel = __LL_ADC_DECIMAL_NB_TO_CHANNEL(index);
+#if DT_N_S_soc_S_adc_40012000_P_ch17_internal == 1
+	if (index == 17) {
+		channel = LL_ADC_CHANNEL_VREFINT;
+	}
+#else
+	// we don't use the internal channel
+#endif
+	return channel;
+}
+
 static void adc_stm32_start_conversion(const struct device *dev)
 {
 	const struct adc_stm32_cfg *config = dev->config;
@@ -328,7 +340,7 @@ static int start_read(const struct device *dev,
 
 	data->buffer = sequence->buffer;
 
-	uint32_t channel = __LL_ADC_DECIMAL_NB_TO_CHANNEL(index);
+	uint32_t channel = adc_stm32_getChannelByIndx(index);
 #if defined(CONFIG_SOC_SERIES_STM32H7X)
 	/*
 	 * Each channel in the sequence must be previously enabled in PCSEL.
@@ -491,7 +503,7 @@ static void adc_stm32_setup_speed(const struct device *dev, uint8_t id,
 		table_samp_time[acq_time_index]);
 #else
 	LL_ADC_SetChannelSamplingTime(adc,
-		__LL_ADC_DECIMAL_NB_TO_CHANNEL(id),
+		adc_stm32_getChannelByIndx(id),
 		table_samp_time[acq_time_index]);
 #endif
 }
@@ -714,6 +726,13 @@ static int adc_stm32_init(const struct device *dev)
 
 	for (int i = wait_cycles; i >= 0; i--) {
 	}
+#endif
+
+	// handle internal channels
+#if DT_N_S_soc_S_adc_40012000_P_ch17_internal == 1
+	LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc), LL_ADC_PATH_INTERNAL_VREFINT);
+#else
+	// we don't use the internal channel
 #endif
 
 	LL_ADC_Enable(adc);
