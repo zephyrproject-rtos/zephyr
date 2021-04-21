@@ -65,7 +65,7 @@ static int cmd_edac_info(const struct shell *shell, size_t argc, char **argv)
 	int err;
 
 	dev = device_get_binding(DEVICE_NAME);
-	if (!dev) {
+	if (dev == NULL) {
 		shell_error(shell, "IBECC device not found");
 		return -ENODEV;
 	}
@@ -73,19 +73,19 @@ static int cmd_edac_info(const struct shell *shell, size_t argc, char **argv)
 	shell_fprintf(shell, SHELL_NORMAL, "Show EDAC status\n");
 
 	err = edac_ecc_error_log_get(dev, &error);
-	if (err) {
+	if (err != 0) {
 		shell_error(shell, "Error getting ecc error log");
 		return err;
 	}
 
 	shell_fprintf(shell, SHELL_NORMAL, "ECC Error Log 0x%llx\n", error);
 
-	if (error) {
+	if (error != 0) {
 		decode_ecc_error(shell, error);
 	}
 
 	err = edac_parity_error_log_get(dev, &error);
-	if (err) {
+	if (err != 0) {
 		shell_error(shell, "Error getting parity error log");
 		return err;
 	}
@@ -106,7 +106,7 @@ static int cmd_inject_addr(const struct shell *shell, size_t argc, char **argv)
 	int err;
 
 	dev = device_get_binding(DEVICE_NAME);
-	if (!dev) {
+	if (dev == NULL) {
 		shell_error(shell, "IBECC device not found");
 		return -ENODEV;
 	}
@@ -122,7 +122,7 @@ static int cmd_inject_addr(const struct shell *shell, size_t argc, char **argv)
 		uint64_t addr;
 
 		err = edac_inject_get_param1(dev, &addr);
-		if (err) {
+		if (err != 0) {
 			shell_error(shell, "Error getting address");
 			return err;
 		}
@@ -136,7 +136,7 @@ static int cmd_inject_addr(const struct shell *shell, size_t argc, char **argv)
 			      "Set injection address base to: %s\n", argv[1]);
 
 		err = edac_inject_set_param1(dev, value);
-		if (err) {
+		if (err != 0) {
 			shell_error(shell, "Error setting address");
 			return err;
 		}
@@ -151,7 +151,7 @@ static int cmd_inject_mask(const struct shell *shell, size_t argc, char **argv)
 	int err;
 
 	dev = device_get_binding(DEVICE_NAME);
-	if (!dev) {
+	if (dev == NULL) {
 		shell_error(shell, "IBECC device not found");
 		return -ENODEV;
 	}
@@ -167,7 +167,7 @@ static int cmd_inject_mask(const struct shell *shell, size_t argc, char **argv)
 		uint64_t mask;
 
 		err = edac_inject_get_param2(dev, &mask);
-		if (err) {
+		if (err != 0) {
 			shell_error(shell, "Error getting mask");
 			return err;
 		}
@@ -181,7 +181,7 @@ static int cmd_inject_mask(const struct shell *shell, size_t argc, char **argv)
 			      "Set injection address mask to %lx\n", value);
 
 		err = edac_inject_set_param2(dev, value);
-		if (err) {
+		if (err != 0) {
 			shell_error(shell, "Error setting mask");
 			return err;
 		}
@@ -196,7 +196,7 @@ static int cmd_inject_trigger(const struct shell *shell, size_t argc,
 	const struct device *dev;
 
 	dev = device_get_binding(DEVICE_NAME);
-	if (!dev) {
+	if (dev == NULL) {
 		shell_error(shell, "IBECC device not found");
 		return -ENODEV;
 	}
@@ -244,13 +244,13 @@ static int cmd_inject_error_type_show(const struct shell *shell, size_t argc,
 	int err;
 
 	dev = device_get_binding(DEVICE_NAME);
-	if (!dev) {
+	if (dev == NULL) {
 		shell_error(shell, "IBECC device not found");
 		return -ENODEV;
 	}
 
 	err = edac_inject_get_error_type(dev, &error_type);
-	if (err) {
+	if (err != 0) {
 		shell_error(shell, "Error getting error type");
 		return err;
 	}
@@ -266,7 +266,7 @@ static int set_error_type(const struct shell *shell, uint32_t error_type)
 	const struct device *dev;
 
 	dev = device_get_binding(DEVICE_NAME);
-	if (!dev) {
+	if (dev == NULL) {
 		shell_error(shell, "IBECC device not found");
 		return -ENODEV;
 	}
@@ -294,7 +294,7 @@ static int cmd_inject_test(const struct shell *shell, size_t argc, char **argv)
 	const struct device *dev;
 
 	dev = device_get_binding(DEVICE_NAME);
-	if (!dev) {
+	if (dev == NULL) {
 		shell_error(shell, "IBECC device not found");
 		return -ENODEV;
 	}
@@ -339,20 +339,20 @@ static int cmd_ecc_error_show(const struct shell *shell, size_t argc,
 	int err;
 
 	dev = device_get_binding(DEVICE_NAME);
-	if (!dev) {
+	if (dev == NULL) {
 		shell_error(shell, "IBECC device not found");
 		return -ENODEV;
 	}
 
 	err = edac_ecc_error_log_get(dev, &error);
-	if (err) {
+	if (err != 0) {
 		shell_error(shell, "Error getting error log");
 		return err;
 	}
 
 	shell_fprintf(shell, SHELL_NORMAL, "ECC Error: 0x%lx\n", error);
 
-	if (error) {
+	if (error != 0) {
 		decode_ecc_error(shell, error);
 	}
 
@@ -365,7 +365,7 @@ static int cmd_ecc_error_clear(const struct shell *shell, size_t argc,
 	const struct device *dev;
 
 	dev = device_get_binding(DEVICE_NAME);
-	if (!dev) {
+	if (dev == NULL) {
 		shell_error(shell, "IBECC device not found");
 		return -ENODEV;
 	}
@@ -391,13 +391,13 @@ static int cmd_parity_error_show(const struct shell *shell, size_t argc,
 	int err;
 
 	dev = device_get_binding(DEVICE_NAME);
-	if (!dev) {
+	if (dev == NULL) {
 		shell_error(shell, "IBECC device not found");
 		return -ENODEV;
 	}
 
 	err = edac_parity_error_log_get(dev, &error);
-	if (err) {
+	if (err != 0) {
 		shell_error(shell, "Error getting parity error log");
 		return err;
 	}
@@ -413,7 +413,7 @@ static int cmd_parity_error_clear(const struct shell *shell, size_t argc,
 	const struct device *dev;
 
 	dev = device_get_binding(DEVICE_NAME);
-	if (!dev) {
+	if (dev == NULL) {
 		shell_error(shell, "IBECC device not found");
 		return -ENODEV;
 	}
