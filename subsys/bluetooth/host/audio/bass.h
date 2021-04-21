@@ -39,11 +39,6 @@
 
 #define BT_BASS_BROADCAST_ID_SIZE       3
 
-#define BASS_RECV_STATE_EMPTY(rs) \
-	((rs)->pa_sync_state == 0 && (rs)->encrypt_state == 0 && \
-	 !bt_addr_le_cmp(&(rs)->addr, BT_ADDR_LE_ANY) && (rs)->adv_sid == 0 && \
-	 (rs)->num_subgroups == 0)
-
 #define BT_BASS_BIS_SYNC_NO_PREF        0xFFFFFFFF
 
 struct bt_bass_subgroup {
@@ -124,18 +119,26 @@ typedef void (*bt_bass_client_discover_cb_t)(struct bt_conn *conn, int err,
 typedef void (*bt_bass_client_scan_cb_t)(const struct bt_le_scan_recv_info *info,
 					 uint32_t broadcast_id);
 
-/** @brief Callback function for when a receive state is read, updated or
- *  removed.
+/** @brief Callback function for when a receive state is read or updated
  *
- *  Called whenever a receive state is read (typically during discovery), or
- *  later changed by either the client or the server.
+ *  Called whenever a receive state is read or updated.
  *
  * @param conn     The connection to the BASS server.
  * @param err      Error value. 0 on success, GATT error on fail.
- * @param state    The receive state
+ * @param state    The receive state.
  */
 typedef void (*bt_bass_client_recv_state_cb_t)(
 	struct bt_conn *conn, int err, const struct bt_bass_recv_state *state);
+
+
+/** @brief Callback function for when a receive state is removed.
+ *
+ * @param conn     The connection to the BASS server.
+ * @param err      Error value. 0 on success, GATT error on fail.
+ * @param src_id   The receive state.
+ */
+typedef void (*bt_bass_client_recv_state_rem_cb_t)(
+	struct bt_conn *conn, int err, uint8_t src_id);
 
 /** @brief Callback function for writes.
  *
@@ -146,17 +149,17 @@ typedef void (*bt_bass_client_write_cb_t)(
 	struct bt_conn *conn, int err);
 
 struct bt_bass_client_cb_t {
-	bt_bass_client_discover_cb_t    discover;
-	bt_bass_client_scan_cb_t        scan;
-	bt_bass_client_recv_state_cb_t  recv_state;
-	bt_bass_client_recv_state_cb_t  recv_state_removed;
+	bt_bass_client_discover_cb_t        discover;
+	bt_bass_client_scan_cb_t            scan;
+	bt_bass_client_recv_state_cb_t      recv_state;
+	bt_bass_client_recv_state_rem_cb_t  recv_state_removed;
 
-	bt_bass_client_write_cb_t       scan_start;
-	bt_bass_client_write_cb_t       scan_stop;
-	bt_bass_client_write_cb_t       add_src;
-	bt_bass_client_write_cb_t       mod_src;
-	bt_bass_client_write_cb_t       broadcast_code;
-	bt_bass_client_write_cb_t       rem_src;
+	bt_bass_client_write_cb_t           scan_start;
+	bt_bass_client_write_cb_t           scan_stop;
+	bt_bass_client_write_cb_t           add_src;
+	bt_bass_client_write_cb_t           mod_src;
+	bt_bass_client_write_cb_t           broadcast_code;
+	bt_bass_client_write_cb_t           rem_src;
 };
 
 /**
