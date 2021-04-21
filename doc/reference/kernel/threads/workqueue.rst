@@ -245,7 +245,9 @@ Submitting a Work Item
 ======================
 
 A work item is defined using a variable of type :c:struct:`k_work`.  It must
-be initialized by calling :c:func:`k_work_init`.
+be initialized by calling :c:func:`k_work_init`, unless it is defined using
+:c:macro:`K_WORK_DEFINE` in which case initialization is performed at
+compile-time.
 
 An initialized work item can be submitted to the system workqueue by
 calling :c:func:`k_work_submit`, or to a specified workqueue by
