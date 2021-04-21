@@ -62,7 +62,7 @@ static int cmd_edac_info(const struct shell *shell, size_t argc, char **argv)
 {
 	const struct device *dev;
 	uint64_t error;
-	int ret;
+	int err;
 
 	dev = device_get_binding(DEVICE_NAME);
 	if (!dev) {
@@ -72,10 +72,10 @@ static int cmd_edac_info(const struct shell *shell, size_t argc, char **argv)
 
 	shell_fprintf(shell, SHELL_NORMAL, "Show EDAC status\n");
 
-	ret = edac_ecc_error_log_get(dev, &error);
-	if (ret) {
+	err = edac_ecc_error_log_get(dev, &error);
+	if (err) {
 		shell_error(shell, "Error getting ecc error log");
-		return ret;
+		return err;
 	}
 
 	shell_fprintf(shell, SHELL_NORMAL, "ECC Error Log 0x%llx\n", error);
@@ -84,10 +84,10 @@ static int cmd_edac_info(const struct shell *shell, size_t argc, char **argv)
 		decode_ecc_error(shell, error);
 	}
 
-	ret = edac_parity_error_log_get(dev, &error);
-	if (ret) {
+	err = edac_parity_error_log_get(dev, &error);
+	if (err) {
 		shell_error(shell, "Error getting parity error log");
-		return ret;
+		return err;
 	}
 
 	shell_fprintf(shell, SHELL_NORMAL, "Parity Error Log 0x%llx\n", error);
@@ -96,14 +96,14 @@ static int cmd_edac_info(const struct shell *shell, size_t argc, char **argv)
 		      "Errors correctable: %d Errors uncorrectable %d\n",
 		      edac_errors_cor_get(dev), edac_errors_uc_get(dev));
 
-	return ret;
+	return err;
 }
 
 #if defined(CONFIG_EDAC_ERROR_INJECT)
 static int cmd_inject_addr(const struct shell *shell, size_t argc, char **argv)
 {
 	const struct device *dev;
-	int ret;
+	int err;
 
 	dev = device_get_binding(DEVICE_NAME);
 	if (!dev) {
@@ -121,10 +121,10 @@ static int cmd_inject_addr(const struct shell *shell, size_t argc, char **argv)
 	if (argc == 1) {
 		uint64_t addr;
 
-		ret = edac_inject_get_param1(dev, &addr);
-		if (ret) {
+		err = edac_inject_get_param1(dev, &addr);
+		if (err) {
 			shell_error(shell, "Error getting address");
-			return ret;
+			return err;
 		}
 
 		shell_fprintf(shell, SHELL_NORMAL,
@@ -135,20 +135,20 @@ static int cmd_inject_addr(const struct shell *shell, size_t argc, char **argv)
 		shell_fprintf(shell, SHELL_NORMAL,
 			      "Set injection address base to: %s\n", argv[1]);
 
-		ret = edac_inject_set_param1(dev, value);
-		if (ret) {
+		err = edac_inject_set_param1(dev, value);
+		if (err) {
 			shell_error(shell, "Error setting address");
-			return ret;
+			return err;
 		}
 	}
 
-	return ret;
+	return err;
 }
 
 static int cmd_inject_mask(const struct shell *shell, size_t argc, char **argv)
 {
 	const struct device *dev;
-	int ret;
+	int err;
 
 	dev = device_get_binding(DEVICE_NAME);
 	if (!dev) {
@@ -166,10 +166,10 @@ static int cmd_inject_mask(const struct shell *shell, size_t argc, char **argv)
 	if (argc == 1) {
 		uint64_t mask;
 
-		ret = edac_inject_get_param2(dev, &mask);
-		if (ret) {
+		err = edac_inject_get_param2(dev, &mask);
+		if (err) {
 			shell_error(shell, "Error getting mask");
-			return ret;
+			return err;
 		}
 
 		shell_fprintf(shell, SHELL_NORMAL,
@@ -180,14 +180,14 @@ static int cmd_inject_mask(const struct shell *shell, size_t argc, char **argv)
 		shell_fprintf(shell, SHELL_NORMAL,
 			      "Set injection address mask to %lx\n", value);
 
-		ret = edac_inject_set_param2(dev, value);
-		if (ret) {
+		err = edac_inject_set_param2(dev, value);
+		if (err) {
 			shell_error(shell, "Error setting mask");
-			return ret;
+			return err;
 		}
 	}
 
-	return ret;
+	return err;
 }
 
 static int cmd_inject_trigger(const struct shell *shell, size_t argc,
@@ -241,7 +241,7 @@ static int cmd_inject_error_type_show(const struct shell *shell, size_t argc,
 {
 	const struct device *dev;
 	uint32_t error_type;
-	int ret;
+	int err;
 
 	dev = device_get_binding(DEVICE_NAME);
 	if (!dev) {
@@ -249,16 +249,16 @@ static int cmd_inject_error_type_show(const struct shell *shell, size_t argc,
 		return -ENODEV;
 	}
 
-	ret = edac_inject_get_error_type(dev, &error_type);
-	if (ret) {
+	err = edac_inject_get_error_type(dev, &error_type);
+	if (err) {
 		shell_error(shell, "Error getting error type");
-		return ret;
+		return err;
 	}
 
 	shell_fprintf(shell, SHELL_NORMAL, "Injection error type: %s\n",
 		      get_error_type(error_type));
 
-	return ret;
+	return err;
 }
 
 static int set_error_type(const struct shell *shell, uint32_t error_type)
@@ -336,7 +336,7 @@ static int cmd_ecc_error_show(const struct shell *shell, size_t argc,
 {
 	const struct device *dev;
 	uint64_t error;
-	int ret;
+	int err;
 
 	dev = device_get_binding(DEVICE_NAME);
 	if (!dev) {
@@ -344,10 +344,10 @@ static int cmd_ecc_error_show(const struct shell *shell, size_t argc,
 		return -ENODEV;
 	}
 
-	ret = edac_ecc_error_log_get(dev, &error);
-	if (ret) {
+	err = edac_ecc_error_log_get(dev, &error);
+	if (err) {
 		shell_error(shell, "Error getting error log");
-		return ret;
+		return err;
 	}
 
 	shell_fprintf(shell, SHELL_NORMAL, "ECC Error: 0x%lx\n", error);
@@ -356,7 +356,7 @@ static int cmd_ecc_error_show(const struct shell *shell, size_t argc,
 		decode_ecc_error(shell, error);
 	}
 
-	return ret;
+	return err;
 }
 
 static int cmd_ecc_error_clear(const struct shell *shell, size_t argc,
@@ -388,7 +388,7 @@ static int cmd_parity_error_show(const struct shell *shell, size_t argc,
 {
 	const struct device *dev;
 	uint64_t error;
-	int ret;
+	int err;
 
 	dev = device_get_binding(DEVICE_NAME);
 	if (!dev) {
@@ -396,10 +396,10 @@ static int cmd_parity_error_show(const struct shell *shell, size_t argc,
 		return -ENODEV;
 	}
 
-	ret = edac_parity_error_log_get(dev, &error);
-	if (ret) {
+	err = edac_parity_error_log_get(dev, &error);
+	if (err) {
 		shell_error(shell, "Error getting parity error log");
-		return ret;
+		return err;
 	}
 
 	shell_fprintf(shell, SHELL_NORMAL, "Parity Error: 0x%lx\n", error);
