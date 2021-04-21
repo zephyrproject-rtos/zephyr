@@ -31,7 +31,7 @@ properties:
        type: boolean
        description: |
          defines if channel 17 (VRef) is an internal channel
-           ch17-internal = true;
+           ch17-internal;
             
     "#io-channel-cells":
       const: 1
